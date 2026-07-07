@@ -71,15 +71,24 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   var hitChance = clamp((aCfg.hit || 100) - (dCfg.dodge || 0), 5, 100);
   if (!chance(hitChance)) { out.miss = true; return out; }
   // 防禦選型（物理/魔法）＋破甲＋穿透
-  var magic = aCfg.dmgType === 'magic';
-  var defVal = (magic ? (dCfg.mdef || 0) : (dCfg.def || 0));
-  defVal *= (1 - (aCfg.sunder || 0) / 100) * (1 - (aCfg.pen || 0) / 100);
-  var red = defReduction(defVal, aCfg.level || 1);
-  var dmg = aCfg.atk * (1 - red) * rnd(0.9, 1.1);
+  var dmg = 0;
+  if (aCfg.dmgType !== 'magic') {
+    var pDef = (dCfg.def || 0) * (1 - (aCfg.sunder || 0) / 100) * (1 - (aCfg.pen || 0) / 100);
+    var pDmg = (aCfg.atk || 0) * (1 - defReduction(pDef, aCfg.level || 1));
+    pDmg *= 1 - clamp(dCfg.pRes || 0, 0, 60) / 100;
+    dmg += pDmg;
+  }
+  if (aCfg.dmgType === 'magic' || aCfg.dmgType === 'both') {
+    var mPen = (aCfg.dmgType === 'both') ? (aCfg.mPen || 0) : (aCfg.pen || 0);
+    var baseMAtk = (aCfg.dmgType === 'both') ? (aCfg.matk || 0) : (aCfg.atk || 0);
+    var mDef = (dCfg.mdef || 0) * (1 - (aCfg.sunder || 0) / 100) * (1 - mPen / 100);
+    var mDmg = baseMAtk * (1 - defReduction(mDef, aCfg.level || 1));
+    mDmg *= 1 - clamp(dCfg.mRes || 0, 0, 60) / 100;
+    dmg += mDmg;
+  }
+  dmg *= rnd(0.9, 1.1);
   // 暴擊
   if (chance(aCfg.critRate || 0)) { dmg *= (aCfg.critDmg || 150) / 100; out.crit = true; }
-  // 物理/魔法抗性
-  dmg *= 1 - clamp(magic ? (dCfg.mRes || 0) : (dCfg.pRes || 0), 0, 60) / 100;
   // 元素附加（各自受對應抗性影響，並觸發元素特效）
   var elem = aCfg.elemAtk || null;
   if (elem) {
@@ -135,9 +144,9 @@ function resistCtrl(dCfg) {
 function playerAtkCfg() {
   var st = getStats();
   return {
-    atk: st.atk, dmgType: 'phys', level: st.level,
+    atk: st.atk, matk: st.matk, dmgType: 'both', level: st.level,
     critRate: st.critRate, critDmg: st.critDmg, hit: st.hit,
-    sunder: st.passives.sunder || 0, pen: st.pPen,
+    sunder: st.passives.sunder || 0, pen: st.pPen, mPen: st.mPen,
     trueDmgPct: st.passives.trueDmg || 0, elemAtk: st.elemAtk,
     eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, isPlayer: true
   };
