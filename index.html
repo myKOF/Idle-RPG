@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>無限征途：合成之巔</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header id="topbar">
+  <div class="brand">⚔️ 無限征途<span class="brand-sub">合成之巔</span></div>
+  <div id="res-bar">
+    <span class="res" title="金幣">💰 <b id="r-gold">0</b></span>
+    <span class="res" title="裝備碎片">🔩 <b id="r-scrap">0</b></span>
+    <span class="res" title="附魔精華">🔮 <b id="r-essence">0</b></span>
+    <span class="res" title="寶石">💎 <b id="r-gems">0</b></span>
+    <span class="res" title="附魔書">📖 <b id="r-books">0</b></span>
+  </div>
+</header>
+
+<div id="game-layout">
+  <div id="stats-sidebar" class="panel">
+    <div class="sidebar-avatar">🧝</div>
+    <div class="sidebar-title">冒險者</div>
+    <div class="sidebar-level">
+      <span id="p-level" class="plevel">Lv.1</span>
+      <div id="xp-bar"><div id="xp-fill"></div></div>
+    </div>
+    
+    <div class="sidebar-stats">
+      <div class="stat-row"><span>❤️ 生命值</span><b id="s-hp">0</b></div>
+      <div class="stat-row"><span>⚔️ 攻擊力</span><b id="s-atk">0</b></div>
+      <div class="stat-row"><span>🛡️ 防禦力</span><b id="s-def">0</b></div>
+      <div class="stat-row" title="攻速（次/秒）"><span>⚡ 攻擊速度</span><b id="s-aspd">1</b></div>
+      <div class="stat-row" title="爆擊率 / 爆擊傷害"><span>💥 爆擊能力</span><b id="s-crit">5%</b></div>
+      <div class="stat-row" title="吸血"><span>🩸 吸血</span><b id="s-ls">0%</b></div>
+      <div class="stat-row" title="命中率"><span>🎯 命中率</span><b id="s-hit">100%</b></div>
+      <div class="stat-row" title="掉寶率"><span>💰 掉寶率</span><b id="s-loot">0%</b></div>
+      
+      <div class="stat-divider"></div>
+      <div class="stat-row" title="近 10 秒 DPS"><span>📈 實時 DPS</span><b id="s-dps">0</b></div>
+    </div>
+  </div>
+
+  <div id="workspace-area">
+    <nav id="tabs">
+      <button class="tab-btn active" data-tab="equip">🎒 裝備</button>
+      <button class="tab-btn" data-tab="factory">🏭 生產線</button>
+      <button class="tab-btn" data-tab="tower">🗼 高塔</button>
+      <button class="tab-btn" data-tab="settings">⚙️ 設定</button>
+    </nav>
+    
+    <main>
+
+  <section id="tab-equip" class="tab active">
+    <div class="equip-section-box">
+      <div class="equip-layout">
+        <div>
+          <div class="sec-title">已裝備（8 部位）</div>
+          <div id="equip-grid"></div>
+        </div>
+        <div>
+          <div class="sec-title">裝備詳情</div>
+          <div id="detail-pane" class="panel"><div class="hint">點選裝備查看詳情</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="equip-section-box">
+      <div class="inv-head">
+        <span class="sec-title">背包 <span id="inv-count">0/60</span></span>
+        <div style="display: flex; gap: 6px;">
+          <button id="inv-sort" class="btn sm">🔄 排序</button>
+          <button id="inv-salvage-all" class="btn sm warn">⚒️ 分解全部未鎖定</button>
+        </div>
+      </div>
+      <div id="inventory-grid"></div>
+    </div>
+  </section>
+
+  <!-- ============ 生產線 ============ -->
+  <section id="tab-factory" class="tab">
+    <div class="panel conveyor-panel">
+      <div class="sec-title">📦 輸送帶 <span id="conveyor-count" class="dim-text">0/40</span></div>
+      <div id="conveyor-items" class="chip-row"></div>
+      <div class="hint">戰鬥掉落的裝備依序進入輸送帶，由下方節點依規則自動處理。</div>
+    </div>
+
+    <div class="factory-flow">
+      <!-- 篩選節點 -->
+      <div class="panel node-card">
+        <div class="node-title">🔀 篩選節點 <span class="node-badge">Filter</span></div>
+        <div class="node-body">
+          <label class="chk"><input type="checkbox" id="flt-autoequip"> 更強自動換裝（合成優先度）</label>
+          <label class="chk"><input type="checkbox" id="flt-smart"> 比已裝備弱 → 直接分解</label>
+          <div class="flt-grid">
+            <div class="flt-row"><span class="rar-tag" style="color:#9aa5b1">普通</span>
+              <select class="flt-sel" data-rarity="0"><option value="keep">保留</option><option value="salvage">分解</option><option value="synth">合成素材</option></select></div>
+            <div class="flt-row"><span class="rar-tag" style="color:#4ade80">精良</span>
+              <select class="flt-sel" data-rarity="1"><option value="keep">保留</option><option value="salvage">分解</option><option value="synth">合成素材</option></select></div>
+            <div class="flt-row"><span class="rar-tag" style="color:#38bdf8">稀有</span>
+              <select class="flt-sel" data-rarity="2"><option value="keep">保留</option><option value="salvage">分解</option><option value="synth">合成素材</option></select></div>
+            <div class="flt-row"><span class="rar-tag" style="color:#c084fc">史詩</span>
+              <select class="flt-sel" data-rarity="3"><option value="keep">保留</option><option value="salvage">分解</option><option value="synth">合成素材</option></select></div>
+            <div class="flt-row"><span class="rar-tag" style="color:#fb923c">傳說</span>
+              <select class="flt-sel" data-rarity="4"><option value="keep">保留</option><option value="salvage">分解</option><option value="synth">合成素材</option></select></div>
+            <div class="flt-row"><span class="rar-tag" style="color:#f87171">神話</span>
+              <select class="flt-sel" data-rarity="5"><option value="keep">保留</option><option value="salvage">分解</option><option value="synth">合成素材</option></select></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分解槽 -->
+      <div class="panel node-card">
+        <div class="node-title">⚒️ 分解槽 <span class="node-badge">Salvage</span></div>
+        <div class="node-body">
+          <div class="node-info" id="salv-info"></div>
+          <div class="hint">分解產出碎片，10% 機率觸發「精粹提取」獲得附魔精華與寶石。</div>
+          <div class="sec-sub">已安裝零件</div>
+          <div id="salv-parts" class="chip-row"></div>
+        </div>
+      </div>
+
+      <!-- 合成節點 -->
+      <div class="panel node-card">
+        <div class="node-title">🔮 合成節點 <span class="node-badge">Synthesis</span></div>
+        <div class="node-body">
+          <label class="chk"><input type="checkbox" id="syn-hybrid"> 混合合成：裝備＋寶石＋附魔書 → 附魔裝備</label>
+          <div class="flt-row indent">
+            <span>寶石等級下限</span>
+            <select id="syn-mingem"><option value="1">1 級</option><option value="2">2 級</option><option value="3">3 級</option><option value="4">4 級</option><option value="5">5 級</option></select>
+          </div>
+          <div class="flt-row indent">
+            <span>指定附魔書</span>
+            <select id="syn-book">
+              <option value="any">任意</option>
+              <option value="fire">🔥 火焰附魔</option><option value="ice">❄️ 冰凍附魔</option><option value="lightning">⚡ 閃電附魔</option>
+              <option value="fireRes">🧯 火焰抗性</option><option value="iceRes">🧊 冰霜抗性</option><option value="ctrlRes">🛡️ 控制抵抗</option>
+              <option value="loot">💰 尋寶附魔</option><option value="haste">🌀 疾行附魔</option>
+            </select>
+          </div>
+          <label class="chk"><input type="checkbox" id="syn-merge"> 品質合成：同稀有度 x3 → 高一階裝備</label>
+          <label class="chk"><input type="checkbox" id="syn-gem"> 寶石合成：同級 x3 → 高一級寶石</label>
+          <div class="node-info" id="syn-info"></div>
+          <div class="sec-sub">合成暫存區</div>
+          <div id="synth-buffer" class="chip-row"></div>
+          <div class="sec-sub">已安裝零件</div>
+          <div id="syn-parts" class="chip-row"></div>
+        </div>
+      </div>
+
+      <!-- 附魔節點 -->
+      <div class="panel node-card">
+        <div class="node-title">✨ 附魔節點 <span class="node-badge">Enchant</span></div>
+        <div class="node-body">
+          <label class="chk"><input type="checkbox" id="enc-enabled"> 啟用自動附魔（書＋精華 → 已裝備裝備）</label>
+          <label class="chk"><input type="checkbox" id="enc-overwrite"> 允許覆蓋既有附魔</label>
+          <div class="node-info" id="enc-info"></div>
+          <div class="sec-sub">附魔書庫存</div>
+          <div id="enc-books" class="chip-row"></div>
+          <div class="hint">攻擊類 → 武器/戒指｜防禦類 → 頭盔/胸甲/護腿｜功能類 → 項鍊/靴子</div>
+        </div>
+      </div>
+
+      <!-- 強化節點 -->
+      <div class="panel node-card">
+        <div class="node-title">⬆️ 強化節點 <span class="node-badge">Upgrade</span></div>
+        <div class="node-body">
+          <label class="chk"><input type="checkbox" id="up-enabled"> 啟用自動強化（消耗金幣＋碎片）</label>
+          <div class="flt-row indent"><span>強化上限 +</span><input type="number" id="up-cap" min="0" max="30" value="5"></div>
+          <div class="node-info" id="up-info"></div>
+        </div>
+      </div>
+
+      <!-- 零件庫 -->
+      <div class="panel node-card">
+        <div class="node-title">🔩 自動機組零件庫</div>
+        <div class="node-body">
+          <div id="parts-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="log-title">生產線紀錄</div>
+    <div id="factory-log" class="log"></div>
+  </section>
+
+  <!-- ============ 高塔 ============ -->
+  <section id="tab-tower" class="tab">
+    <div id="tower-fight" style="display:none">
+      <div class="tower-head">
+        <span class="tw-title">🗼 BOSS 高塔挑戰</span>
+        <span id="tw-timer" class="tw-timer">60s</span>
+        <span id="tw-enrage" class="tw-enrage" style="display:none">🔥 狂暴中 +200%</span>
+        <span id="tw-dps" class="dim-text"></span>
+        <button id="tw-flee" class="btn sm warn">撤退</button>
+      </div>
+      <div class="battle-scene">
+        <div class="combatant">
+          <div class="float-layer" id="tp-float"></div>
+          <div class="cb-emoji">🧝</div>
+          <div class="cb-name">冒險者（你）</div>
+          <div class="cb-status" id="tp-status"></div>
+          <div class="hp-bar"><div class="hp-fill player" id="tp-hp"></div><span class="hp-text" id="tp-hptext"></span></div>
+        </div>
+        <div class="vs">VS</div>
+        <div class="combatant boss">
+          <div class="float-layer" id="tb-float"></div>
+          <div class="cb-emoji" id="tb-emoji">👹</div>
+          <div class="cb-name" id="tb-name">BOSS</div>
+          <div class="cb-status" id="tb-status"></div>
+          <div class="hp-bar"><div class="hp-fill boss" id="tb-hp"></div><span class="hp-text" id="tb-hptext"></span></div>
+        </div>
+      </div>
+      <div class="hint">限時 60 秒；40 秒時若 BOSS 血量仍高於 50%，將進入狂暴（傷害 +200%）！</div>
+    </div>
+
+    <div id="tower-list-wrap">
+      <div class="sec-title">🗼 BOSS 高塔（試煉之塔）</div>
+      <div class="hint">限時 60 秒擊敗 BOSS。通關可獲得「自動機組零件」，安裝於生產線節點提升自動化效率！</div>
+      <div id="tower-result" class="panel" style="display:none"></div>
+      <div id="tower-floors"></div>
+    </div>
+  </section>
+
+  <!-- ============ 設定 ============ -->
+  <section id="tab-settings" class="tab">
+    <div class="panel">
+      <div class="sec-title">💾 存檔管理</div>
+      <div class="btn-row">
+        <button id="btn-save" class="btn">立即存檔</button>
+        <button id="btn-export" class="btn">匯出存檔</button>
+        <button id="btn-import" class="btn">匯入存檔</button>
+        <button id="btn-reset" class="btn danger">重置遊戲</button>
+      </div>
+      <textarea id="save-io" placeholder="匯出的存檔碼會顯示在這裡；匯入時請貼上存檔碼後按「匯入存檔」"></textarea>
+      <div class="hint">遊戲每 15 秒自動存檔；離線收益上限 8 小時。</div>
+    </div>
+    <div class="panel">
+      <div class="sec-title">📖 玩法指南</div>
+      <div class="help">
+        <p><b>核心循環：</b>戰鬥收集材料 → 生產線自動處理 → 資源配比養成 → 挑戰更高層 BOSS。</p>
+        <p><b>⚔️ 戰鬥：</b>角色全自動攻防（基礎 1 次/秒，受攻速影響）。每階段擊殺 10 隻怪（第 10 隻為菁英）後推進。死亡會退回上一階段。</p>
+        <p><b>🎒 裝備：</b>7 部位，隨機 2~5 詞條；稀有（藍）以上附帶特殊被動：破甲、反震、連擊、暈眩、減速、真傷、吸魂。</p>
+        <p><b>🏭 生產線：</b>掉落裝備進入輸送帶 → 篩選節點依品質決定「保留 / 分解 / 合成素材」。分解有 10% 機率「精粹提取」出高階材料。</p>
+        <p><b>🔮 混合合成：</b>[裝備] + [寶石] + [附魔書] = 附魔特殊裝備。開啟「更強自動換裝」讓系統自動把新合成的神裝穿上！</p>
+        <p><b>✨ 附魔：</b>攻擊類（火/冰/電）、防禦類（抗性）、功能類（掉寶/疾行）。附魔書＋附魔精華即可自動附魔。</p>
+        <p><b>🗼 BOSS 高塔：</b>60 秒限時戰。40 秒時 BOSS 血量 &gt; 50% 會狂暴（傷害 +200%）。通關獲得自動機組零件：加速齒輪、幸運核心、重骰模組。失敗會有分析報告，照著調整生產線配比吧！</p>
+      </div>
+    </div>
+  </section>
+    </main>
+  </div>
+
+  <div id="combat-area">
+    <div id="battle-area">
+      <div id="stage-bar">
+        <button id="st-prev" class="btn sm">◀</button>
+        <span id="stage-label">第 1 階段</span>
+        <button id="st-next" class="btn sm">▶</button>
+        <span id="stage-best" class="dim-text">最高 1</span>
+        <label class="chk"><input type="checkbox" id="st-auto" checked> 自動推進</label>
+        <span id="kill-count">擊殺 0/10</span>
+      </div>
+      <div class="battle-scene">
+        <div class="combatant">
+          <div class="float-layer" id="pv-float"></div>
+          <div class="cb-emoji">🧝</div>
+          <div class="cb-name">冒險者（你）</div>
+          <div class="cb-status" id="pv-status"></div>
+          <div class="hp-bar"><div class="hp-fill player" id="pv-hp"></div><span class="hp-text" id="pv-hptext"></span></div>
+        </div>
+        <div class="vs">VS</div>
+        <div class="combatant">
+          <div class="float-layer" id="mv-float"></div>
+          <div class="cb-emoji" id="mv-emoji">⏳</div>
+          <div class="cb-name" id="mv-name">搜索敵人中…</div>
+          <div class="cb-status" id="mv-status"></div>
+          <div class="hp-bar"><div class="hp-fill monster" id="mv-hp"></div><span class="hp-text" id="mv-hptext"></span></div>
+        </div>
+      </div>
+      <div class="log-header">
+        <div class="log-title">綜合紀錄</div>
+        <select id="log-filter" class="log-filter">
+          <option value="all">全部</option>
+          <option value="combat">戰鬥與進度</option>
+          <option value="factory">裝備與強化</option>
+          <option value="system">系統訊息</option>
+        </select>
+      </div>
+      <div id="battle-log" class="log"></div>
+    </div>
+  </div>
+</div>
+<script src="js/util.js"></script>
+<script src="js/data.js"></script>
+<script src="js/item.js"></script>
+<script src="js/player.js"></script>
+<script src="js/combat.js"></script>
+<script src="js/tower.js"></script>
+<script src="js/factory.js"></script>
+<script src="js/save.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
