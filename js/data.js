@@ -176,7 +176,7 @@ var MONSTER_POOL = [
   { name: '幽靈', emoji: '👻', magic: true }, { name: '石像鬼', emoji: '🗿' },
   { name: '牛頭人', emoji: '🐂' }, { name: '雙足飛龍', emoji: '🐉', magic: true }
 ];
-var KILLS_PER_STAGE = 10;      // 每階段需擊殺數（第 10 隻為菁英）
+var KILLS_PER_STAGE = 1;       // 只要擊殺 1 隻即推進階段
 var RESPAWN_DELAY = 0.8;       // 出怪間隔（秒）
 var REVIVE_DELAY = 3.0;        // 死亡復活時間（秒）
 

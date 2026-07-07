@@ -20,7 +20,7 @@ function initFieldPlayer() {
 
 function spawnFieldMonster() {
   var s = G.stage.current;
-  var elite = (G.stage.kills === KILLS_PER_STAGE - 1); // 第 10 隻為菁英
+  var elite = (G.stage.kills === KILLS_PER_STAGE - 1);
   var base = monsterStatsFor(s, elite);
   var mtype = pick(MONSTER_POOL);
   FIELD.monster = {

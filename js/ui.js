@@ -79,6 +79,19 @@ function renderHeader() {
   $id('xp-bar').title = '經驗 ' + fmt(p.xp) + ' / ' + fmt(need);
 
   renderAttrPanel(st);
+  
+  // 更新側欄硬編碼的屬性
+  if ($id('s-hp')) {
+    $id('s-hp').textContent = fmt(st.hp);
+    $id('s-atk').textContent = fmt(st.atk);
+    $id('s-def').textContent = fmt(st.def);
+    $id('s-aspd').textContent = fmt1(st.aspd);
+    $id('s-crit').textContent = (st.critRate * 100).toFixed(1) + '%';
+    $id('s-ls').textContent = (st.lifesteal * 100).toFixed(1) + '%';
+    $id('s-hit').textContent = (st.hit * 100).toFixed(1) + '%';
+    $id('s-loot').textContent = (st.lootBonus * 100).toFixed(1) + '%';
+  }
+
   var dpsEl = $id('s-dps');
   if (dpsEl) dpsEl.textContent = fmt(currentDps());
 }
