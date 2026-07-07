@@ -28,19 +28,7 @@
       <div id="xp-bar"><div id="xp-fill"></div></div>
     </div>
     
-    <div class="sidebar-stats">
-      <div class="stat-row"><span>❤️ 生命值</span><b id="s-hp">0</b></div>
-      <div class="stat-row"><span>⚔️ 攻擊力</span><b id="s-atk">0</b></div>
-      <div class="stat-row"><span>🛡️ 防禦力</span><b id="s-def">0</b></div>
-      <div class="stat-row" title="攻速（次/秒）"><span>⚡ 攻擊速度</span><b id="s-aspd">1</b></div>
-      <div class="stat-row" title="爆擊率 / 爆擊傷害"><span>💥 爆擊能力</span><b id="s-crit">5%</b></div>
-      <div class="stat-row" title="吸血"><span>🩸 吸血</span><b id="s-ls">0%</b></div>
-      <div class="stat-row" title="命中率"><span>🎯 命中率</span><b id="s-hit">100%</b></div>
-      <div class="stat-row" title="掉寶率"><span>💰 掉寶率</span><b id="s-loot">0%</b></div>
-      
-      <div class="stat-divider"></div>
-      <div class="stat-row" title="近 10 秒 DPS"><span>📈 實時 DPS</span><b id="s-dps">0</b></div>
-    </div>
+    <div class="sidebar-stats" id="attr-panel"></div>
   </div>
 
   <div id="workspace-area">
@@ -70,6 +58,7 @@
       <div class="inv-head">
         <span class="sec-title">背包 <span id="inv-count">0/60</span></span>
         <div style="display: flex; gap: 6px;">
+          <button id="inv-expand" class="btn sm" title="擴充背包空間">➕ 擴充 (10000G)</button>
           <button id="inv-sort" class="btn sm">🔄 排序</button>
           <button id="inv-salvage-all" class="btn sm warn">⚒️ 分解全部未鎖定</button>
         </div>
@@ -135,7 +124,10 @@
             <select id="syn-book">
               <option value="any">任意</option>
               <option value="fire">🔥 火焰附魔</option><option value="ice">❄️ 冰凍附魔</option><option value="lightning">⚡ 閃電附魔</option>
-              <option value="fireRes">🧯 火焰抗性</option><option value="iceRes">🧊 冰霜抗性</option><option value="ctrlRes">🛡️ 控制抵抗</option>
+              <option value="poison">🧪 毒液附魔</option><option value="light">🌟 聖光附魔</option><option value="dark">🌑 暗影附魔</option>
+              <option value="fireRes">🧯 火焰抗性</option><option value="iceRes">🧊 冰霜抗性</option><option value="lightningRes">🔌 雷電抗性</option>
+              <option value="poisonRes">💊 劇毒抗性</option><option value="lightRes">🕶️ 聖光抗性</option><option value="darkRes">🕯️ 暗影抗性</option>
+              <option value="ctrlRes">🛡️ 控制抵抗</option>
               <option value="loot">💰 尋寶附魔</option><option value="haste">🌀 疾行附魔</option>
             </select>
           </div>
@@ -158,7 +150,7 @@
           <div class="node-info" id="enc-info"></div>
           <div class="sec-sub">附魔書庫存</div>
           <div id="enc-books" class="chip-row"></div>
-          <div class="hint">攻擊類 → 武器/戒指｜防禦類 → 頭盔/胸甲/護腿｜功能類 → 項鍊/靴子</div>
+          <div class="hint">攻擊類（六元素）→ 武器/戒指/護手｜防禦類（抗性）→ 頭盔/胸甲/護腿｜功能類 → 項鍊/靴子</div>
         </div>
       </div>
 
@@ -202,6 +194,8 @@
           <div class="cb-name">冒險者（你）</div>
           <div class="cb-status" id="tp-status"></div>
           <div class="hp-bar"><div class="hp-fill player" id="tp-hp"></div><span class="hp-text" id="tp-hptext"></span></div>
+          <div class="mp-bar"><div class="mp-fill" id="tp-mp"></div><span class="hp-text" id="tp-mptext"></span></div>
+          <div class="cb-skill" id="tp-skill"></div>
         </div>
         <div class="vs">VS</div>
         <div class="combatant boss">
@@ -240,11 +234,13 @@
       <div class="sec-title">📖 玩法指南</div>
       <div class="help">
         <p><b>核心循環：</b>戰鬥收集材料 → 生產線自動處理 → 資源配比養成 → 挑戰更高層 BOSS。</p>
-        <p><b>⚔️ 戰鬥：</b>角色全自動攻防（基礎 1 次/秒，受攻速影響）。每階段擊殺 10 隻怪（第 10 隻為菁英）後推進。死亡會退回上一階段。</p>
-        <p><b>🎒 裝備：</b>7 部位，隨機 2~5 詞條；稀有（藍）以上附帶特殊被動：破甲、反震、連擊、暈眩、減速、真傷、吸魂。</p>
+        <p><b>📊 屬性系統（50+）：</b>四維主屬性（💪力量→物攻/負重、🏃敏捷→閃避/暴擊/攻速、🧠智力→魔攻/法力、🪨耐力→生命/物防）每級 +2，並可由裝備詞條累加。完整屬性見左側面板。</p>
+        <p><b>⚔️ 戰鬥：</b>角色全自動攻防（基礎 1 次/秒，受攻速影響）。法力充足時自動施放【🌠奧術衝擊】造成魔法傷害（對魔防，受冷卻縮減/施法速度/範圍傷害/吸魔影響）。魔法系怪物（幽靈、樹妖等）的攻擊對你的魔防。格擋、閃避、韌性、護盾（治療溢出轉化）皆會生效。每階段擊殺 10 隻怪（第 10 隻為菁英）後推進，死亡會退回上一階段。</p>
+        <p><b>🎒 裝備：</b>8 部位，隨機 2~5 詞條（「詞條上限率」可突破至 6）；稀有（藍）以上附帶特殊被動：破甲、反震、連擊、暈眩、減速、真傷、吸魂。飾品可掉出幸運、經驗/金幣加成等專屬詞條。</p>
         <p><b>🏭 生產線：</b>掉落裝備進入輸送帶 → 篩選節點依品質決定「保留 / 分解 / 合成素材」。分解有 10% 機率「精粹提取」出高階材料。</p>
         <p><b>🔮 混合合成：</b>[裝備] + [寶石] + [附魔書] = 附魔特殊裝備。開啟「更強自動換裝」讓系統自動把新合成的神裝穿上！</p>
-        <p><b>✨ 附魔：</b>攻擊類（火/冰/電）、防禦類（抗性）、功能類（掉寶/疾行）。附魔書＋附魔精華即可自動附魔。</p>
+        <p><b>✨ 附魔：</b>攻擊類六元素（🔥高傷、❄️減速、⚡連鎖、🧪中毒、🌟淨化、🌑汲取）、防禦類（六元素抗性/控制抵抗）、功能類（掉寶/疾行）。附魔書＋附魔精華即可自動附魔。</p>
+        <p><b>🔨 強化與機制：</b>+5 內必定成功，之後成功率遞減（失敗損失半數材料），可堆「強化成功率」。「幸運值」影響詞條品質/大成功/精粹提取；「負重上限」擴充輸送帶與合成區容量；「狂暴閾值」提高 BOSS 狂暴門檻；「合成變異率」讓混合合成有機率產出強化附魔＋額外詞條。</p>
         <p><b>🗼 BOSS 高塔：</b>60 秒限時戰。40 秒時 BOSS 血量 &gt; 50% 會狂暴（傷害 +200%）。通關獲得自動機組零件：加速齒輪、幸運核心、重骰模組。失敗會有分析報告，照著調整生產線配比吧！</p>
       </div>
     </div>
@@ -269,6 +265,8 @@
           <div class="cb-name">冒險者（你）</div>
           <div class="cb-status" id="pv-status"></div>
           <div class="hp-bar"><div class="hp-fill player" id="pv-hp"></div><span class="hp-text" id="pv-hptext"></span></div>
+          <div class="mp-bar"><div class="mp-fill" id="pv-mp"></div><span class="hp-text" id="pv-mptext"></span></div>
+          <div class="cb-skill" id="pv-skill"></div>
         </div>
         <div class="vs">VS</div>
         <div class="combatant">

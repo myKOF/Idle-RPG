@@ -88,8 +88,8 @@ function applyOfflineProgress() {
   if (kills < 1) return;
   kills = Math.min(kills, 20000);
 
-  var gold = Math.round(m.gold * kills);
-  var xp = Math.round(m.xp * kills);
+  var gold = Math.round(m.gold * kills * (1 + st.goldBonus / 100));
+  var xp = Math.round(m.xp * kills * (1 + st.xpBonus / 100));
   G.player.gold += gold;
   gainXp(xp);
   // 掉落的裝備直接以生產線邏輯即時處理（最多 30 件實體，其餘折算碎片）

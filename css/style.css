@@ -356,3 +356,24 @@ textarea#save-io {
   .vs { display: none; }
   .factory-flow { grid-template-columns: 1fr; }
 }
+
+/* ---- 法力條 / 技能（屬性系統） ---- */
+.mp-bar {
+  position: relative; height: 12px; background: #0a0d14; border-radius: 6px;
+  border: 1px solid var(--border); overflow: hidden; margin-top: 4px;
+}
+.mp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #1d4ed8, #38bdf8); transition: width .2s; }
+.mp-bar .hp-text { font-size: 9.5px; }
+.cb-skill { min-height: 16px; font-size: 11px; color: var(--info); margin-top: 4px; }
+.float-txt.skill { color: #7dd3fc; font-size: 20px; }
+
+/* ---- 側欄屬性面板（分組摺疊） ---- */
+.attr-group { margin-bottom: 6px; }
+.attr-group summary {
+  cursor: pointer; color: var(--accent); font-weight: bold; font-size: 13px;
+  padding: 4px 0; user-select: none; list-style: none;
+}
+.attr-group summary::before { content: '▸ '; color: var(--dim); }
+.attr-group[open] summary::before { content: '▾ '; }
+.attr-group .stat-row { padding: 2px 0 2px 12px; font-size: 12px; }
+#stats-sidebar { overflow-y: auto; }

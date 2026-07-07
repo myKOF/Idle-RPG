@@ -218,8 +218,13 @@ function renderEquip() {
 }
 
 function renderInventory() {
+  var cap = INVENTORY_CAP + (G.player.invUpgrades || 0);
+  var cost = 10000 + (G.player.invUpgrades || 0) * 1000;
+  var btn = $id('inv-expand');
+  if (btn) btn.textContent = '➕ 擴充 (' + cost + 'G)';
+  
   var box = $id('inventory-grid');
-  $id('inv-count').textContent = G.inventory.length + '/' + INVENTORY_CAP;
+  $id('inv-count').textContent = G.inventory.length + '/' + cap;
   if (!G.inventory.length) {
     box.innerHTML = '<div class="hint">背包是空的。戰鬥掉落的裝備會先進入生產線輸送帶，「保留」的會送到這裡。</div>';
   } else {
@@ -293,7 +298,8 @@ function detailAction(act) {
     UI.sel = { id: it.id, source: 'equip' };
     UI.dirty.inv = true; UI.dirty.equip = true;
   } else if (act === 'unequip') {
-    if (G.inventory.length >= INVENTORY_CAP) { blog('⚠️ 背包已滿，無法卸下', 'warn'); return; }
+    var cap = INVENTORY_CAP + (G.player.invUpgrades || 0);
+    if (G.inventory.length >= cap) { blog('⚠️ 背包已滿，無法卸下', 'warn'); return; }
     G.equipment[it.slot] = null;
     markStatsDirty();
     addToInventory(it);
@@ -587,6 +593,19 @@ function initUI() {
   });
 
   $id('inv-salvage-all').addEventListener('click', salvageAllUnlocked);
+  $id('inv-expand').addEventListener('click', function () {
+    var upg = G.player.invUpgrades || 0;
+    var cost = 10000 + upg * 1000;
+    if (G.player.gold < cost) {
+      blog('❌ 金幣不足，擴充需要 ' + cost + ' 金幣', 'warn', 'system');
+      return;
+    }
+    G.player.gold -= cost;
+    G.player.invUpgrades = upg + 1;
+    blog('✅ 背包容量已擴充至 ' + (INVENTORY_CAP + G.player.invUpgrades), 'good', 'system');
+    UI.dirty.inv = true;
+    UI.dirty.header = true;
+  });
   $id('inv-sort').addEventListener('click', function () {
     G.inventory.sort(function (a, b) {
       if (b.rarity !== a.rarity) return b.rarity - a.rarity;

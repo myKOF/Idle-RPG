@@ -13,7 +13,8 @@ function newGameState() {
       level: 1, xp: 0,
       gold: 50, scrap: 0, essence: 0,
       gems: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-      books: books
+      books: books,
+      invUpgrades: 0
     },
     equipment: equipment,
     inventory: [],
@@ -213,7 +214,7 @@ function rarityTag(it) {
 
 // 放入背包（滿了自動分解）
 function addToInventory(it) {
-  if (G.inventory.length >= INVENTORY_CAP) {
+  if (G.inventory.length >= (INVENTORY_CAP + (G.player.invUpgrades || 0))) {
     var res = doSalvage(it, true);
     flog('📦 背包已滿，自動分解 ' + rarityTag(it) + ' → 碎片x' + res.scrap, 'warn');
     return false;
