@@ -22,17 +22,46 @@ function spawnFieldMonster() {
   var s = G.stage.current;
   var elite = (s % 10 === 0);
   var base = monsterStatsFor(s, elite);
-  var mtype = pick(MONSTER_POOL);
+  var zn = currentZoneDef();
+  var mtype = pick(zn.pool);
   FIELD.monster = {
     name: (elite ? '菁英・' : '') + mtype.name, emoji: mtype.emoji,
-    level: base.level, maxHp: base.hp, hp: base.hp,
-    atk: base.atk, def: base.def, mdef: base.mdef,
+    level: base.level,
+    maxHp: base.hp * zn.hpMult, hp: base.hp * zn.hpMult,
+    atk: base.atk * zn.atkMult,
+    def: base.def * zn.defMult, mdef: base.mdef * zn.defMult,
     magic: !!mtype.magic,          // 魔法系怪物：攻擊對玩家魔防
     aspd: base.aspd, dodge: base.dodge,
-    elite: elite, isBoss: false, gold: base.gold, xp: base.xp,
+    elite: elite, isBoss: false,
+    gold: base.gold * zn.rewardMult, xp: base.xp * zn.rewardMult, // 金幣/經驗 x場景倍率
     atkCd: 1 / base.aspd + 0.4, effects: {}, ctrlRes: 0,
     poisonUntil: 0, poisonDps: 0, shield: 0, buffs: {}, dots: []
   };
+  UI.dirty.battle = true;
+}
+
+/* ---- 場景切換：各場景獨立保存進度與最高階段 ---- */
+function switchZone(zoneKey) {
+  if (!ZONES[zoneKey] || G.stage.zone === zoneKey) return;
+  var zd = ZONES[zoneKey];
+  if (zd.reqZone) {
+    var b = (G.stage.zone === zd.reqZone) ? G.stage.best : ((G.zoneProgress && G.zoneProgress[zd.reqZone] && G.zoneProgress[zd.reqZone].best) || 1);
+    if (b < zd.reqStage) return; // 尚未解鎖
+  }
+  // 保存目前場景進度
+  if (!G.zoneProgress) G.zoneProgress = {};
+  G.zoneProgress[G.stage.zone || 'plains'] = { current: G.stage.current, best: G.stage.best };
+  // 載入目標場景進度
+  var zp = G.zoneProgress[zoneKey] || { current: 1, best: 1 };
+  G.stage.zone = zoneKey;
+  G.stage.current = zp.current || 1;
+  G.stage.best = zp.best || 1;
+  G.stage.kills = 0;
+  FIELD.monster = null;
+  FIELD.respawnCd = 0.5;
+  var zn = ZONES[zoneKey];
+  blog(zn.emoji + ' 前往【' + zn.name + '】！第 ' + G.stage.current + ' 階段（歷史最高 ' + G.stage.best +
+    (zn.rewardMult > 1 ? '，非裝備掉落 x' + zn.rewardMult : '') + '）', 'info');
   UI.dirty.battle = true;
 }
 
@@ -460,23 +489,31 @@ function rollFieldDrops(m) {
       if (r >= 4) blog('✨ 獲得 ' + rarityTag(it) + '！已送入生產線', 'loot');
     }
   }
+  // ===== 材料掉落：場景倍率（荒漠 x2 / 沼澤 x3；>100% 依必掉+餘數規則）=====
+  var rw = currentZoneDef().rewardMult;
   // 寶石（階段 4+，隨機種類）
-  if (s >= 4 && chance(6 * (1 + lootBonus / 100))) {
-    var glv = clamp(1 + Math.floor(s / 15), 1, GEM_MAX_LEVEL);
-    var lv = wpick([[glv, 70], [Math.max(1, glv - 1), 30]]);
-    var gtype = randomGemType();
-    addGem(gtype, lv, 1);
-    flog('💎 撿到 ' + gemLabel(gtype, lv), 'info');
+  if (s >= 4) {
+    var gemN = rollDropCount(6 * (1 + lootBonus / 100) * rw);
+    for (var gi = 0; gi < gemN; gi++) {
+      var glv = clamp(1 + Math.floor(s / 15), 1, GEM_MAX_LEVEL);
+      var lv = wpick([[glv, 70], [Math.max(1, glv - 1), 30]]);
+      var gtype = randomGemType();
+      addGem(gtype, lv, 1);
+      flog('💎 撿到 ' + gemLabel(gtype, lv), 'info');
+    }
   }
   // 附魔書（階段 8+）
-  if (s >= 8 && chance(4 * (1 + lootBonus / 100))) {
-    var bk = pick(Object.keys(ENCHANTS));
-    G.player.books[bk]++;
-    flog('📖 撿到 ' + ENCHANTS[bk].name + '書', 'info');
+  if (s >= 8) {
+    var bookN = rollDropCount(4 * (1 + lootBonus / 100) * rw);
+    for (var bi = 0; bi < bookN; bi++) {
+      var bk = pick(Object.keys(ENCHANTS));
+      G.player.books[bk]++;
+      flog('📖 撿到 ' + ENCHANTS[bk].name + '書', 'info');
+    }
   }
-  // 附魔精華（階段 10+）
+  // 附魔精華（階段 10+，數量 x場景倍率）
   if (s >= 10 && chance(9)) {
-    G.player.essence += ri(1, 2);
+    G.player.essence += ri(1, 2) * rw;
   }
 }
 

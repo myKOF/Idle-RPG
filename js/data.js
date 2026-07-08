@@ -200,6 +200,38 @@ var MONSTER_POOL = [
   { name: '幽靈', emoji: '👻', magic: true }, { name: '石像鬼', emoji: '🗿' },
   { name: '牛頭人', emoji: '🐂' }, { name: '雙足飛龍', emoji: '🐉', magic: true }
 ];
+/* ---- 戰鬥場景 ----
+   荒漠/沼澤敵人更強；經驗、金幣、材料（寶石/附魔書/精華）掉落 x2 / x3，
+   裝備掉落表不變。各場景獨立保存推進進度與最高階段。 */
+var DESERT_POOL = [
+  { name: '沙漠蠍', emoji: '🦂' }, { name: '沙蟲', emoji: '🪱' },
+  { name: '木乃伊', emoji: '🧟', magic: true }, { name: '沙漠禿鷹', emoji: '🦅' },
+  { name: '響尾蛇', emoji: '🐍' }, { name: '沙魔', emoji: '👹', magic: true },
+  { name: '石化蜥蜴', emoji: '🦎' }, { name: '沙漠強盜', emoji: '🏴‍☠️' },
+  { name: '火焰精靈', emoji: '🔥', magic: true }, { name: '遠古石像', emoji: '🗿' },
+  { name: '沙丘巨獸', emoji: '🐫' }, { name: '太陽祭司', emoji: '☀️', magic: true }
+];
+var SWAMP_POOL = [
+  { name: '劇毒蛙', emoji: '🐸' }, { name: '沼澤鱷', emoji: '🐊' },
+  { name: '巨型水蛭', emoji: '🪱' }, { name: '瘴氣幽魂', emoji: '👻', magic: true },
+  { name: '食人花', emoji: '🌺' }, { name: '泥漿怪', emoji: '🫠' },
+  { name: '毒蚊群', emoji: '🦟' }, { name: '沼澤巫婆', emoji: '🧙', magic: true },
+  { name: '腐爛樹人', emoji: '🌳', magic: true }, { name: '蜥蜴薩滿', emoji: '🦎', magic: true },
+  { name: '深沼水蛇', emoji: '🐍' }, { name: '沼澤霸主', emoji: '🐲', magic: true }
+];
+var ZONE_LIST = ['plains', 'desert', 'swamp'];
+var ZONES = {
+  plains: { name: '草原', emoji: '🌿', pool: MONSTER_POOL,
+    hpMult: 1,   atkMult: 1,   defMult: 1,   rewardMult: 1 },
+  desert: { name: '荒漠', emoji: '🏜️', pool: DESERT_POOL,
+    hpMult: 2.2, atkMult: 1.8, defMult: 1.6, rewardMult: 2, reqZone: 'plains', reqStage: 100 },
+  swamp:  { name: '沼澤', emoji: '🦠', pool: SWAMP_POOL,
+    hpMult: 4,   atkMult: 2.8, defMult: 2.4, rewardMult: 3, reqZone: 'desert', reqStage: 100 }
+};
+function currentZoneDef() {
+  return ZONES[(G.stage && G.stage.zone) || 'plains'] || ZONES.plains;
+}
+
 var RESPAWN_DELAY = 0.8;       // 出怪間隔（秒）
 var REVIVE_DELAY = 3.0;        // 死亡復活時間（秒）
 

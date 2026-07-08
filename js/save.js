@@ -26,6 +26,7 @@ function loadGame() {
 // 以預設狀態為底，深補缺漏欄位（存檔向前相容）
 function migrateSave(data) {
   // 技能點改由等級即時推導（availableSkillPoints），無需在此補發
+  var hadZone = data.stage && data.stage.zone !== undefined; // 需在 mergeDefaults 前判斷
   var def = newGameState();
   
   // 防止玩家手動降級（刪除）的初始技能，在讀檔時被 mergeDefaults 誤判為缺漏而自動補回 1 級
@@ -55,6 +56,11 @@ function migrateSave(data) {
         data.player.gems[t][lv] = (data.player.gems[t][lv] || 0) + 1;
       }
     }
+  }
+  // 戰鬥場景系統：舊存檔進度歸入「草原」
+  if (!hadZone) {
+    data.stage.zone = 'plains';
+    data.zoneProgress.plains = { current: data.stage.current || 1, best: data.stage.best || 1 };
   }
   data.tower.active = false; // 讀檔時不可能處於高塔戰鬥
   if (!data.settings) data.settings = { compareEq: false };

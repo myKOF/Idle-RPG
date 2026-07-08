@@ -198,10 +198,46 @@ function renderMpSkill(pEnt, prefix) {
     skillEl.innerHTML = h;
   }
 }
+// 場景最高階段（當前場景以即時值為準）
+function zoneBestOf(z) {
+  if (G.stage.zone === z) return G.stage.best;
+  return (G.zoneProgress && G.zoneProgress[z] && G.zoneProgress[z].best) || 1;
+}
+function renderZoneBar() {
+  var cur = G.stage.zone || 'plains';
+  document.querySelectorAll('.zone-btn').forEach(function (b) {
+    var z = b.getAttribute('data-zone');
+    var zd = ZONES[z];
+    var locked = false;
+    if (zd && zd.reqZone) {
+      if (zoneBestOf(zd.reqZone) < zd.reqStage) locked = true;
+    }
+    
+    if (locked) {
+      b.classList.add('locked');
+      b.classList.remove('active');
+      b.disabled = true;
+      b.style.opacity = '0.5';
+      b.style.cursor = 'not-allowed';
+      var badge = b.querySelector('.zone-best');
+      if (badge) badge.innerHTML = '🔒需' + ZONES[zd.reqZone].name + ' ' + zd.reqStage + '級';
+    } else {
+      b.classList.remove('locked');
+      b.classList.toggle('active', z === cur);
+      b.disabled = false;
+      b.style.opacity = '1';
+      b.style.cursor = 'pointer';
+      var badge = b.querySelector('.zone-best');
+      if (badge) badge.textContent = '最高 ' + fmt(zoneBestOf(z));
+    }
+  });
+}
 function renderBattle() {
   var st = getStats();
   var stg = G.stage;
-  $id('stage-label').textContent = '第 ' + stg.current + ' 階段';
+  renderZoneBar();
+  var znd = currentZoneDef();
+  $id('stage-label').textContent = znd.emoji + ' 第 ' + stg.current + ' 階段';
   $id('stage-best').textContent = '最高 ' + stg.best;
   $id('st-auto').checked = stg.autoAdvance;
 
@@ -1167,7 +1203,7 @@ function miniSnapshot() {
     s.info = '⏱️ 剩餘 ' + fmt1(Math.max(0, TOWER_TIME_LIMIT - TOWER.elapsed)) + 's' + (TOWER.enraged ? '　🔥狂暴中' : '');
   } else {
     p = FIELD.player; enemy = FIELD.monster;
-    s.stage = '🚩 第 ' + G.stage.current + ' 階段';
+    s.stage = currentZoneDef().emoji + currentZoneDef().name + ' 第 ' + G.stage.current + ' 階段';
     s.info = '📈 DPS ' + fmt(currentDps()) + '　💰 ' + fmt(G.player.gold);
   }
   if (p) {
@@ -1245,7 +1281,7 @@ function updateLiveTitle() {
   } else {
     var p = FIELD.player;
     var hpPct = p ? Math.round(p.hp / st.hp * 100) : 100;
-    t = '⚔️第' + G.stage.current + '階段 Lv.' + G.player.level + ' ❤️' + hpPct + '%';
+    t = currentZoneDef().emoji + '第' + G.stage.current + '階段 Lv.' + G.player.level + ' ❤️' + hpPct + '%';
   }
   document.title = t + '｜無限征途';
 }
@@ -1510,6 +1546,14 @@ function initUI() {
   var pipBtn = $id('btn-pip');
   if (pipBtn) pipBtn.addEventListener('click', openMiniWindow);
 
+  // 戰鬥場景切換
+  document.querySelectorAll('.zone-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      switchZone(b.getAttribute('data-zone'));
+      renderZoneBar();
+    });
+  });
+
   // 階段控制
   $id('st-prev').addEventListener('click', function () { stageGo(-1); });
   $id('st-next').addEventListener('click', function () { stageGo(1); });
@@ -1517,6 +1561,10 @@ function initUI() {
 
   // 裝備 / 背包點擊（事件委派）
   document.addEventListener('click', function (e) {
+    if (!e.target.closest('.it-pool-box')) {
+      var pools = document.querySelectorAll('.it-pool-box');
+      for (var i = 0; i < pools.length; i++) pools[i].style.display = 'none';
+    }
     var cell = e.target.closest('.item-cell, .eq-slot');
     if (cell) {
       if (cell.classList.contains('empty')) {

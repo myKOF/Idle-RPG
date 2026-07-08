@@ -549,11 +549,35 @@ function enchantLine(en) {
 // 物品完整說明 HTML
 function itemDetailHTML(it, cmp) {
   var r = RARITIES[it.rarity];
-  var h = '<div class="it-name" style="color:' + r.color + '">' +
+  
+  var poolHtml = '<div class="it-pool-box" style="display:none;">';
+  poolHtml += '<div class="it-pool-title">可能出現的詞條：</div>';
+  for (var k in AFFIX_POOL) {
+    var d = AFFIX_POOL[k];
+    if (d.slots && d.slots.indexOf(it.slot) < 0 && d.slots.indexOf('all') < 0) continue;
+    var reqRarity = d.minR ? ' <span style="font-size:10.5px;color:'+RARITIES[d.minR].color+'">('+RARITIES[d.minR].name+'+)</span>' : '';
+    
+    var baseVal = (d.base + d.base * d.lv * (it.level - 1)) * r.mult;
+    var vMin = baseVal * 0.8;
+    var vMax = baseVal * 1.2;
+    var strMin = d.pct ? Math.round(vMin * 10)/10 + '%' : Math.round(vMin);
+    var strMax = d.pct ? Math.round(vMax * 10)/10 + '%' : Math.round(vMax);
+
+    poolHtml += '<div class="it-pool-item" style="display:flex; justify-content:space-between; gap:12px;">' +
+      '<span>• ' + d.name + reqRarity + '</span>' + 
+      '<span style="color:#71717a; font-size:11.5px; font-family:monospace;">[' + strMin + ' ~ ' + strMax + ']</span>' +
+      '</div>';
+  }
+  poolHtml += '</div>';
+
+  var h = '<div class="it-name" style="position:relative; color:' + r.color + '">' +
     SLOT_INFO[it.slot].emoji + ' ' + esc(it.name) +
     (it.upgrade ? ' <span class="it-up">+' + it.upgrade + '</span>' : '') +
     (it.synthesized ? ' <span class="it-syn">✦合成</span>' : '') +
-    (it.locked ? ' 🔒' : '') + '</div>';
+    (it.locked ? ' 🔒' : '') +
+    '<button class="btn-it-pool" onclick="var b=this.nextElementSibling; b.style.display=b.style.display===\'none\'?\'block\':\'none\'; event.stopPropagation();">!</button>' +
+    poolHtml +
+    '</div>';
   
   h += '<div class="it-sub">' + r.name + '・' + SLOT_INFO[it.slot].name + '・等級 ' + it.level;
   if (cmp && cmp.level !== it.level) {

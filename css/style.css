@@ -394,7 +394,7 @@ textarea#save-io {
 }
 
 /* 裝備詳情 */
-.it-name { font-size: 15px; font-weight: bold; }
+.it-name { font-size: 15px; font-weight: bold; position: relative; }
 .it-up { color: var(--accent); }
 .it-syn { color: #c084fc; font-size: 12px; }
 .it-sub { color: var(--dim); font-size: 12px; margin-bottom: 6px; }
@@ -403,6 +403,26 @@ textarea#save-io {
 .it-enchant { margin-top: 4px; color: var(--info); font-size: 12.5px; }
 .it-score { margin-top: 6px; color: var(--dim); font-size: 12px; }
 .detail-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.btn-it-pool {
+  position: absolute; right: 0; top: 0;
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 1px solid var(--text); color: var(--text);
+  font-size: 13px; font-weight: bold; background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; padding: 0; line-height: 1;
+}
+.btn-it-pool:hover { border-color: var(--accent); color: var(--accent); background: rgba(255,255,255,0.05); }
+.it-pool-box {
+  position: absolute; right: 0; top: 26px; z-index: 10;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 4px; padding: 8px;
+  font-size: 12.5px; color: var(--text); font-weight: normal;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  max-height: 500px; overflow-y: auto; text-align: left;
+  white-space: nowrap; min-width: 140px;
+}
+.it-pool-title { color: var(--accent); margin-bottom: 6px; font-weight: bold; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+.it-pool-item { margin: 3px 0; color: #a1a1aa; }
 
 /* ---- 生產線 ---- */
 .conveyor-panel { margin-bottom: 12px; }
@@ -659,3 +679,19 @@ textarea#save-io {
 .shop-name { font-weight: bold; font-size: 12.5px; }
 .shop-stat { color: var(--dim); font-size: 11px; }
 .shop-sold { color: var(--dim); font-size: 12px; padding: 4px 0; }
+
+/* ---- 戰鬥場景頁籤 ---- */
+#zone-bar { display: flex; gap: 6px; margin-bottom: 10px; }
+.zone-btn {
+  flex: 1; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--panel); color: var(--dim); cursor: pointer;
+  font-family: inherit; font-size: 13.5px; font-weight: bold;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.zone-btn:hover { color: var(--text); border-color: var(--accent); }
+.zone-btn.active { background: var(--panel2); color: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px #f5b94233; }
+.zone-best {
+  font-size: 10.5px; font-weight: normal; color: var(--dim);
+  background: var(--bg2); border-radius: 4px; padding: 1px 6px;
+}
+.zone-btn.active .zone-best { color: var(--accent); }
