@@ -75,10 +75,7 @@ function normalizeFuseMaterial(ref) {
   if (!fg) return null;
   return { stats: fg.stats, fusions: fg.fusions || 0, ref: ref };
 }
-// 成功率：60% - 10% x（雙方累計成功融合次數），最低 10%
-function gemFuseRate(m1, m2) {
-  return Math.max(GEM_FUSE_MIN_RATE, GEM_FUSE_BASE_RATE - GEM_FUSE_RATE_DECAY * ((m1 ? m1.fusions : 0) + (m2 ? m2.fusions : 0)));
-}
+// 融合成功率公式 gemFuseRate → js/formula.js §8
 // 屬性相容：融合後屬性種類聯集不得超過 2（涵蓋規則 4 全部情境）
 function gemFuseTypesOk(m1, m2) {
   var set = {};
@@ -165,6 +162,7 @@ function shopHourlyReset() {
   if (Date.now() - s.hourStart >= 3600 * 1000) {
     s.refreshCount = 0;
     s.hourStart = Date.now();
+    rollGemShop();
     UI.dirty.gems = true;
   }
 }
@@ -180,9 +178,7 @@ function rollGemShop() {
   }
   UI.dirty.gems = true;
 }
-function shopRefreshCost() {
-  return GEM_SHOP_REFRESH_BASE + gemShop().refreshCount * GEM_SHOP_REFRESH_STEP;
-}
+// 刷新費用公式 shopRefreshCost → js/formula.js §8
 // 手動刷新（消耗金幣，次數每小時重置）
 function refreshGemShop() {
   shopHourlyReset();
@@ -274,38 +270,7 @@ function unsocketGem(it, idx) {
   return true;
 }
 
-// 依階段擲稀有度（lootBonus 為額外掉寶加成 %，略微上移品質）
-function rollRarity(stage, lootBonus) {
-  var s = stage || 1;
-  var b = 1 + (lootBonus || 0) / 200 + s * 0.006;
-  var w = [
-    [0, 55],
-    [1, 25 * Math.min(b, 2)],
-    [2, 12 * Math.min(b, 2.5)],
-    [3, 5.5 * Math.min(b, 3)],                       // 獨特（紫）
-    [4, (s >= 8 ? 1.8 : 0) * Math.min(b, 3.5)],      // 史詩（金）
-    [5, (s >= 15 ? 0.35 : 0) * Math.min(b, 4)],      // 傳說（橘）
-    [6, (s >= 25 ? 0.08 : 0) * Math.min(b, 4.5)],    // 神話（紅）
-    [7, (s >= 40 ? 0.015 : 0) * Math.min(b, 5)]      // 創世（暗金）
-  ];
-  return wpick(w);
-}
-
-function rollAffixValue(key, itemLevel, rarityIdx) {
-  var def = AFFIX_POOL[key];
-  var r = RARITIES[rarityIdx];
-  var v = (def.base + def.base * def.lv * (itemLevel - 1)) * r.mult * rnd(0.8, 1.2);
-  return def.pct ? Math.round(v * 10) / 10 : Math.round(v);
-}
-
-function getAffixLimits(key, itemLevel, rarityIdx) {
-  var def = AFFIX_POOL[key];
-  var r = RARITIES[rarityIdx];
-  var baseV = (def.base + def.base * def.lv * (itemLevel - 1)) * r.mult;
-  var minV = def.pct ? Math.round(baseV * 0.8 * 10) / 10 : Math.round(baseV * 0.8);
-  var maxV = def.pct ? Math.round(baseV * 1.2 * 10) / 10 : Math.round(baseV * 1.2);
-  return { min: minV, max: maxV };
-}
+/* 稀有度擲骰 rollRarity、詞條數值 rollAffixValue、詞條區間 getAffixLimits → js/formula.js §5 / §6 */
 
 function rollAffixes(count, itemLevel, rarityIdx, slot, luck) {
   var pool = [];
@@ -362,34 +327,15 @@ function makeEquipment(stage, opts) {
     locked: false
   };
   ensureSockets(it);
-  // 稀有級以上附帶特殊被動
+  // 稀有級以上附帶特殊被動（數值公式 passiveValueFor → js/formula.js §6）
   if (rarity >= RARE_IDX) {
     var pk = pick(Object.keys(PASSIVE_POOL));
-    var pd = PASSIVE_POOL[pk];
-    it.passive = { key: pk, val: Math.round((pd.base + pd.perR * (rarity - RARE_IDX)) * 10) / 10 };
+    it.passive = { key: pk, val: passiveValueFor(pk, rarity) };
   }
   return it;
 }
 
-// 附魔威力（依裝備稀有度與等級）
-function enchantPower(item, gemLevel) {
-  var r = RARITIES[item.rarity];
-  var v = (5 + item.level * 1.2) * r.mult * (1 + 0.15 * (gemLevel || 0));
-  return Math.round(v);
-}
-
-// 附魔數值試算（不改動裝備）；atk 類為附加元素傷害，def/util 類為百分比
-function enchantValueFor(item, bookKey, gemLevel) {
-  var e = ENCHANTS[bookKey];
-  if (e.cat === 'atk') {
-    var v = enchantPower(item, gemLevel);
-    if (bookKey === 'fire') v = Math.round(v * 1.25); // 火焰：純高額傷害
-    return v;
-  }
-  // 抗性 / 功能類：百分比，隨稀有度與寶石成長，設定上限
-  var val = Math.round((8 + item.rarity * 4 + (gemLevel || 0) * 3) * 10) / 10;
-  return Math.min(val, 60);
-}
+/* 附魔威力/數值公式（enchantPower、enchantValueFor）→ js/formula.js §6 */
 
 /* ---- 多附魔欄位 ----
    附魔數量依稀有度（普~稀有 1、獨特~傳說 2、神話/創世 3）。
@@ -463,72 +409,8 @@ function removeEnchantAt(it, idx) {
   return true;
 }
 
-// 升級後詞條倍率
-function upgradeMult(item) { return 1 + 0.05 * (item.upgrade || 0); }
-
-// 裝備戰力評分（自動換裝比較用；未列出的詞條以 1 計）
-var SCORE_WEIGHTS = {
-  atkFlat: 1.0, atkPct: 2.6, matkFlat: 1.0, matkPct: 2.6,
-  hpFlat: 0.16, hpPct: 2.2, hpRegen: 0.6,
-  defFlat: 0.9, defPct: 1.8, mdefFlat: 0.9,
-  mpFlat: 0.25, mpRegen: 2.0,
-  str: 1.8, agi: 1.8, int: 1.8, vit: 1.8,
-  aspd: 2.8, critRate: 2.4, critDmg: 0.9,
-  pPen: 2.2, mPen: 2.2, hit: 1.2, cdr: 2.0, castSpeed: 1.4,
-  lifesteal: 2.2, manaSteal: 1.4, eliteDmg: 1.2, bossDmg: 1.2, aoeDmg: 1.4,
-  blockRate: 2.0, blockDmgRed: 1.2, evasion: 2.2, tenacity: 1.2, shieldEff: 1.0,
-  pRes: 2.0, mRes: 2.0,
-  resFire: 0.8, resIce: 0.8, resLightning: 0.8, resPoison: 0.8, resLight: 0.8, resDark: 0.8,
-  ccRed: 1.2, moveSpeed: 1.5, loot: 0.8, xpBonus: 0.8, goldBonus: 0.8,
-  luck: 1.5, weight: 0.8, enhanceSuccess: 0.8, decomposeYield: 0.8,
-  hybridMutation: 1.2, enrageThreshold: 1.0, affixCap: 1.2, gemEff: 1.0
-};
-function itemScore(it) {
-  if (!it) return 0;
-  var s = 0, um = upgradeMult(it);
-  for (var i = 0; i < it.affixes.length; i++) {
-    var a = it.affixes[i];
-    s += (SCORE_WEIGHTS[a.key] || 1) * a.val * um;
-  }
-  // 鑲嵌的寶石計入評分（避免自動換裝丟棄鑲嵌裝備；融合寶石逐屬性計）
-  if (it.sockets) {
-    for (var j = 0; j < it.sockets.length; j++) {
-      var g = it.sockets[j];
-      if (!g) continue;
-      if (g.fused) {
-        g.fused.stats.forEach(function (fs) { s += fs.val * (SCORE_WEIGHTS[GEM_TYPES[fs.type].stat] || 1); });
-      } else if (GEM_TYPES[g.type]) {
-        s += gemStatValue(g.type, g.level) * (SCORE_WEIGHTS[GEM_TYPES[g.type].stat] || 1);
-      }
-    }
-  }
-  if (it.passive) s *= 1.15;
-  var ens = itemEnchants(it);
-  for (var ei = 0; ei < ens.length; ei++) {
-    var e = ENCHANTS[ens[ei].key];
-    if (e) s += (e.cat === 'atk') ? ens[ei].val * 1.2 : ens[ei].val * 2;
-  }
-  s *= 1 + it.rarity * 0.06;
-  return s;
-}
-
-// 分解產出（extractChance 可由呼叫端帶入「分解高產率」等加成）
-function salvageResult(it, extractChance) {
-  var r = RARITIES[it.rarity];
-  var out = {
-    scrap: Math.max(1, Math.round((2 + it.level * 0.6) * r.salv * rnd(0.85, 1.15))),
-    gold: Math.round((3 + it.level) * r.salv * 0.5),
-    essence: 0, gem: 0, extracted: false
-  };
-  // 精粹提取：基礎 10% 機率產出高階材料
-  if (chance(extractChance === undefined ? ESSENCE_EXTRACT_CHANCE : extractChance)) {
-    out.extracted = true;
-    out.essence = ri(1, 2) + Math.floor(it.rarity / 2);
-    if (chance(30)) out.gem = 1; // 額外一級寶石
-  }
-  out.essence += itemEnchants(it).length; // 每個附魔回收 1 額外精華
-  return out;
-}
+/* 強化倍率 upgradeMult、戰力評分 itemScore（含 SCORE_WEIGHTS 權重表）、
+   分解產出 salvageResult → js/formula.js §6 */
 
 function affixLine(a) {
   var def = AFFIX_POOL[a.key];
@@ -750,13 +632,7 @@ function itemDetailHTML(it, cmp) {
   return h;
 }
 
-/* ---- 裝備洗煉（隨機重骰所有詞條） ---- */
-function rerollCost(it) {
-  return {
-    gold: Math.round(40 * Math.pow(1.7, it.rarity) * (1 + it.level * 0.15)),
-    essence: 1 + it.rarity
-  };
-}
+/* ---- 裝備洗煉（隨機重骰所有詞條；費用公式 rerollCost → js/formula.js §7） ---- */
 // 回傳 null=成功，否則錯誤訊息
 function rerollItemAffixes(it) {
   var cost = rerollCost(it);

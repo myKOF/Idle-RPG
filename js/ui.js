@@ -251,7 +251,8 @@ function renderBattle() {
   }
   var m = FIELD.monster;
   if (m) {
-    $id('mv-emoji').textContent = m.emoji;
+    var iconClass = m.isBoss ? 'cb-icon boss' : 'cb-icon monster';
+    $id('mv-emoji').innerHTML = '<img src="images/icon_avatar.png" class="' + iconClass + '">';
     $id('mv-name').textContent = m.name + ' Lv.' + m.level;
     $id('mv-name').classList.toggle('elite', m.elite);
     var mhp = clamp(m.hp / m.maxHp * 100, 0, 100);
@@ -259,7 +260,7 @@ function renderBattle() {
     $id('mv-hptext').textContent = fmt(Math.max(0, m.hp)) + ' / ' + fmt(m.maxHp);
     $id('mv-status').textContent = entStatus(m);
   } else {
-    $id('mv-emoji').textContent = '⏳';
+    $id('mv-emoji').innerHTML = '<img src="images/icon_avatar.png" class="cb-icon">';
     $id('mv-name').textContent = G.tower.active ? '（高塔戰鬥中…）' : '搜索敵人中…';
     $id('mv-hp').style.width = '0%';
     $id('mv-hptext').textContent = '';
@@ -669,9 +670,10 @@ function renderTower() {
       var cleared = fl <= G.tower.highest;
       var bd = BOSS_LIST[(fl - 1) % BOSS_LIST.length];
         
+      var bossIcon = bd.img ? 'images/' + bd.img : 'images/icon_avatar.png';
       h += '<div class="tower-floor' + (cleared ? ' cleared' : '') + (unlocked ? '' : ' locked') + '" data-tower-tip="' + fl + '">' +
-        '<span class="tf-emoji">' + bd.emoji + '</span>' +
-        '<span class="tf-name">第 ' + fl + ' 層・' + bd.name + (cleared ? ' ✅' : '') + '</span>' +
+        '<span class="tf-emoji" style="margin-right:12px;"><img src="' + bossIcon + '" style="width:32px;height:32px;vertical-align:middle;border-radius:4px;box-shadow:0 0 5px #000;"></span>' +
+        '<span class="tf-name" style="vertical-align:middle;">第 ' + fl + ' 層・' + bd.name + (cleared ? ' ✅' : '') + '</span>' +
         '<span class="tf-hint" style="margin-left:auto; margin-right:10px;">建議野外階段 ' + (4 + fl * 5) + '+</span>' +
         (unlocked ? '<button class="btn sm" data-tower-floor="' + fl + '">挑戰</button>' : '<span class="tf-lock">🔒</span>') +
         '</div>';
@@ -707,11 +709,12 @@ function renderTowerFight() {
   $id('tw-timer').textContent = fmt1(remain) + 's';
   $id('tw-timer').classList.toggle('urgent', remain < 15);
   $id('tw-enrage').style.display = TOWER.enraged ? '' : 'none';
-  $id('tb-emoji').textContent = b.emoji;
-  $id('tb-name').textContent = b.name + ' Lv.' + b.level;
+  var bossImgSrc = TOWER.boss.img ? 'images/' + TOWER.boss.img : 'images/icon_avatar.png';
+  $id('tb-emoji').innerHTML = '<img src="' + bossImgSrc + '" class="cb-icon boss">';
+  $id('tb-name').innerHTML = b.name + ' Lv.' + b.level;
   $id('tb-hp').style.width = clamp(b.hp / b.maxHp * 100, 0, 100) + '%';
-  $id('tb-hptext').textContent = fmt(Math.max(0, b.hp)) + ' / ' + fmt(b.maxHp) + '（' + Math.round(b.hp / b.maxHp * 100) + '%）';
-  $id('tb-status').textContent = entStatus(b) + (b.elem ? ' 屬性:' + ENCHANTS[b.elem].emoji : '');
+  $id('tb-hptext').innerHTML = fmt(Math.max(0, b.hp)) + ' / ' + fmt(b.maxHp) + '（' + Math.round(b.hp / b.maxHp * 100) + '%）';
+  $id('tb-status').innerHTML = entStatus(b) + (b.elem ? ' 屬性:' + ENCHANTS[b.elem].emoji : '');
   $id('tp-hp').style.width = clamp(p.hp / st.hp * 100, 0, 100) + '%';
   $id('tp-hptext').textContent = fmt(Math.max(0, p.hp)) + ' / ' + fmt(st.hp);
   $id('tp-status').textContent = entStatus(p);

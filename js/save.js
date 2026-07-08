@@ -113,23 +113,17 @@ function importSave(str) {
   } catch (e) { return false; }
 }
 
-/* ---- 離線收益（上限 8 小時） ---- */
+/* ---- 離線收益（時間上限與擊殺估算公式 → js/formula.js §10） ---- */
 function applyOfflineProgress() {
   if (!G.savedAt) return;
   var elapsed = (Date.now() - G.savedAt) / 1000;
   if (elapsed < 60) return; // 一分鐘內不計
-  elapsed = Math.min(elapsed, 8 * 3600);
+  elapsed = Math.min(elapsed, OFFLINE_MAX_HOURS * 3600);
 
   var st = getStats();
-  var s = Math.max(1, G.stage.current);
-  var m = monsterStatsFor(s, false);
-  // 估算單殺時間：怪物血量 / 玩家 DPS（含爆擊期望），效率 50%
-  var critMult = 1 + st.critRate / 100 * (st.critDmg / 100 - 1);
-  var dps = Math.max(1, st.atk * (1 - defReduction(m.def, st.level)) * st.aspd * critMult);
-  var killTime = m.hp / dps + RESPAWN_DELAY;
-  var kills = Math.floor(elapsed / killTime * 0.5);
+  var est = offlineKillEstimate(elapsed);
+  var kills = est.kills, m = est.monster, s = est.stage;
   if (kills < 1) return;
-  kills = Math.min(kills, 20000);
 
   var gold = Math.round(m.gold * kills * (1 + st.goldBonus / 100));
   var xp = Math.round(m.xp * kills * (1 + st.xpBonus / 100));

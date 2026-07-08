@@ -273,7 +273,7 @@
       <div class="battle-scene">
         <div class="combatant">
           <div class="float-layer" id="tp-float"></div>
-          <div class="cb-emoji">🧝</div>
+          <img src="images/icon_avatar.png" class="cb-icon">
           <div class="cb-name">冒險者（你）</div>
           <div class="cb-status" id="tp-status"></div>
           <div class="hp-bar"><div class="hp-fill player" id="tp-hp"></div><span class="hp-text" id="tp-hptext"></span></div>
@@ -283,7 +283,7 @@
         <div class="vs">VS</div>
         <div class="combatant boss">
           <div class="float-layer" id="tb-float"></div>
-          <div class="cb-emoji" id="tb-emoji">👹</div>
+          <div id="tb-emoji"></div>
           <div class="cb-name" id="tb-name">BOSS</div>
           <div class="cb-status" id="tb-status"></div>
           <div class="hp-bar"><div class="hp-fill boss" id="tb-hp"></div><span class="hp-text" id="tb-hptext"></span></div>
@@ -351,7 +351,7 @@
       <div class="battle-scene">
         <div class="combatant">
           <div class="float-layer" id="pv-float"></div>
-          <div class="cb-emoji">🧝</div>
+          <img src="images/icon_avatar.png" class="cb-icon">
           <div class="cb-name">冒險者（你）</div>
           <div class="cb-status" id="pv-status"></div>
           <div class="hp-bar"><div class="hp-fill player" id="pv-hp"></div><span class="hp-text" id="pv-hptext"></span></div>
@@ -362,7 +362,7 @@
         <div class="combatant" style="position:relative;">
           <div class="float-layer" id="mv-float"></div>
           <div id="btn-enemy-tip" class="info-btn">!</div>
-          <div class="cb-emoji" id="mv-emoji">⏳</div>
+          <div id="mv-emoji"></div>
           <div class="cb-name" id="mv-name">搜索敵人中…</div>
           <div class="cb-status" id="mv-status"></div>
           <div class="hp-bar"><div class="hp-fill monster" id="mv-hp"></div><span class="hp-text" id="mv-hptext"></span></div>
@@ -399,6 +399,7 @@
 
 <script src="js/util.js"></script>
 <script src="js/data.js"></script>
+<script src="js/formula.js"></script>
 <script src="js/item.js"></script>
 <script src="js/skills.js"></script>
 <script src="js/player.js"></script>

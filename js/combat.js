@@ -20,7 +20,7 @@ function initFieldPlayer() {
 
 function spawnFieldMonster() {
   var s = G.stage.current;
-  var elite = (s % 10 === 0);
+  var elite = isEliteStage(s); // 菁英規則 → formula.js §4
   var base = monsterStatsFor(s, elite);
   var zn = currentZoneDef();
   var mtype = pick(zn.pool);
@@ -68,8 +68,7 @@ function switchZone(zoneKey) {
 /* ---- 效果（暈眩/減速/中毒/淨化） ---- */
 function applyEffect(ent, key, dur) { ent.effects[key] = GT + dur; }
 function effectActive(ent, key) { return (ent.effects[key] || 0) > GT; }
-// 減速：攻速 -30%（冷卻累積速度 x0.7）
-function slowFactor(ent) { return effectActive(ent, 'slow') ? 0.7 : 1; }
+// 減速攻速倍率公式 slowFactor → js/formula.js §3
 
 function applyPoison(ent, dps, dur) {
   ent.poisonDps = Math.max(ent.poisonDps || 0, dps);
@@ -137,85 +136,7 @@ function tickDots(ent, dt) {
 }
 
 /* ---- 共用攻擊流程 ----
-   aCfg: { atk, dmgType('phys'|'magic'), level, critRate, critDmg, hit, sunder, pen,
-           trueDmgPct, elemAtk, eliteDmg, bossDmg, isPlayer }
-   dCfg: { def, mdef, level, dodge, blockRate, blockDmgRed, pRes, mRes, resist{六元素+ctrl},
-           ctrlRes, ccFactor, thornsPct, maxHp, isElite, isBoss }
-   回傳 { dmg, crit, miss, blocked, killed, thorns, heal, procs[] }        */
-function resolveHit(attacker, defender, aCfg, dCfg) {
-  var out = { dmg: 0, crit: false, miss: false, blocked: false, killed: false, thorns: 0, heal: 0, absorbed: 0, procs: [] };
-  // 命中 vs 閃避
-  var hitChance = clamp((aCfg.hit || 100) - (dCfg.dodge || 0), 5, 100);
-  if (!chance(hitChance)) { out.miss = true; return out; }
-  // 防禦選型（物理/魔法）＋破甲＋穿透
-  var dmg = 0;
-  if (aCfg.dmgType !== 'magic') {
-    var pDef = (dCfg.def || 0) * (1 - (aCfg.sunder || 0) / 100) * (1 - (aCfg.pen || 0) / 100);
-    var pDmg = (aCfg.atk || 0) * (1 - defReduction(pDef, aCfg.level || 1));
-    pDmg *= 1 - clamp(dCfg.pRes || 0, 0, 60) / 100;
-    dmg += pDmg;
-  }
-  if (aCfg.dmgType === 'magic' || aCfg.dmgType === 'both') {
-    var mPen = (aCfg.dmgType === 'both') ? (aCfg.mPen || 0) : (aCfg.pen || 0);
-    var baseMAtk = (aCfg.dmgType === 'both') ? (aCfg.matk || 0) : (aCfg.atk || 0);
-    var mDef = (dCfg.mdef || 0) * (1 - (aCfg.sunder || 0) / 100) * (1 - mPen / 100);
-    var mDmg = baseMAtk * (1 - defReduction(mDef, aCfg.level || 1));
-    mDmg *= 1 - clamp(dCfg.mRes || 0, 0, 60) / 100;
-    dmg += mDmg;
-  }
-  dmg *= rnd(0.9, 1.1);
-  // 暴擊
-  if (chance(aCfg.critRate || 0)) { dmg *= (aCfg.critDmg || 150) / 100; out.crit = true; }
-  // 元素附加（各自受對應抗性影響，並觸發元素特效）
-  var elem = aCfg.elemAtk || null;
-  if (elem) {
-    var res = dCfg.resist || {};
-    var ccF = (dCfg.ccFactor === undefined) ? 1 : dCfg.ccFactor;
-    for (var i = 0; i < ELEMENTS.length; i++) {
-      var ek = ELEMENTS[i];
-      var ev = elem[ek] || 0;
-      if (!ev) continue;
-      var edmg = ev * (1 - clamp(res[ek] || 0, 0, 75) / 100);
-      dmg += edmg;
-      if (ek === 'ice' && chance(15) && !resistCtrl(dCfg)) { applyEffect(defender, 'slow', 2 * ccF); out.procs.push('減速'); }
-      else if (ek === 'lightning' && chance(10)) { dmg += edmg * 0.8; out.procs.push('連鎖電擊'); }
-      else if (ek === 'poison' && chance(25)) { applyPoison(defender, edmg * 0.5, 4); out.procs.push('中毒'); }
-      else if (ek === 'light' && chance(20)) { cleanse(attacker); out.procs.push('淨化'); }
-      else if (ek === 'dark') { out.heal += edmg * 0.25; } // 暗影汲取
-    }
-  }
-  // 真實傷害（無視防禦與抗性）
-  if (aCfg.trueDmgPct) dmg += aCfg.atk * aCfg.trueDmgPct / 100;
-  // 對菁英 / 對 BOSS 傷害
-  if (dCfg.isElite && aCfg.eliteDmg) dmg *= 1 + aCfg.eliteDmg / 100;
-  if (dCfg.isBoss && aCfg.bossDmg) dmg *= 1 + aCfg.bossDmg / 100;
-  // 格擋（機率減傷）
-  if ((dCfg.blockRate || 0) > 0 && chance(clamp(dCfg.blockRate, 0, 50))) {
-    dmg *= 1 - clamp(30 + (dCfg.blockDmgRed || 0), 0, 85) / 100;
-    out.blocked = true;
-  }
-  dmg = Math.max(1, Math.round(dmg));
-  // 護盾吸收
-  if (defender.shield && defender.shield > 0) {
-    out.absorbed = Math.min(defender.shield, dmg);
-    defender.shield -= out.absorbed;
-    dmg -= out.absorbed;
-  }
-  defender.hp -= dmg;
-  out.dmg = dmg + out.absorbed; // 統計上含護盾吸收量
-  if (defender.hp <= 0) { defender.hp = 0; out.killed = true; }
-  // 反震（防守方被動）
-  if (dCfg.thornsPct && !out.killed) {
-    out.thorns = Math.max(1, Math.round(dCfg.maxHp * dCfg.thornsPct / 100));
-    attacker.hp -= out.thorns;
-  }
-  return out;
-}
-
-function resistCtrl(dCfg) {
-  var r = (dCfg.ctrlRes || 0);
-  return r > 0 && chance(r);
-}
+   傷害結算總公式 resolveHit 與控制抵抗判定 resistCtrl → js/formula.js §3 */
 
 /* ---- 攻防組態（pEnt 可帶入戰鬥實體以套用技能增益） ---- */
 function playerAtkCfg(pEnt) {
@@ -264,16 +185,7 @@ function monsterDefCfg(m) {
   };
 }
 
-/* ---- 治療（溢出的 50% 轉為護盾，上限受護盾效率影響） ---- */
-function healPlayer(pEnt, amount, st) {
-  if (amount <= 0) return;
-  var space = st.hp - pEnt.hp;
-  if (amount <= space) { pEnt.hp += amount; return; }
-  pEnt.hp = st.hp;
-  var over = amount - space;
-  var cap = st.hp * 0.15 * (1 + (st.shieldEff || 0) / 100);
-  pEnt.shield = Math.min(cap, (pEnt.shield || 0) + over * 0.5);
-}
+/* ---- 治療（溢出轉護盾）公式 healPlayer → js/formula.js §3 ---- */
 
 // 完整的一次玩家普攻（含連擊/暈眩/減速/吸血/吸魔/暗影汲取）
 function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
@@ -390,9 +302,9 @@ function fieldTick(dt) {
     return;
   }
 
-  // 回復：基礎 1.5%/秒 + 生命恢復屬性 + 再生增益；法力恢復；技能冷卻
+  // 回復：基礎 BASE_HP_REGEN_PCT%/秒 + 生命恢復屬性 + 再生增益；法力恢復；技能冷卻
   var hot = buffVal(p, 'hot');
-  if (p.hp < st.hp) p.hp = Math.min(st.hp, p.hp + (st.hp * (0.015 + hot / 100) + st.hpRegen) * dt);
+  if (p.hp < st.hp) p.hp = Math.min(st.hp, p.hp + (st.hp * (BASE_HP_REGEN_PCT / 100 + hot / 100) + st.hpRegen) * dt);
   p.mp = Math.min(st.mp, p.mp + st.mpRegen * dt);
   tickSkillCds(p, dt);
 
@@ -437,8 +349,8 @@ function fieldTick(dt) {
 
 function onFieldKill(m) {
   var st = getStats();
-  // 擊殺回復 12% 最大生命（溢出轉護盾）
-  healPlayer(FIELD.player, st.hp * 0.12, st);
+  // 擊殺回復 KILL_HEAL_PCT% 最大生命（溢出轉護盾）
+  healPlayer(FIELD.player, st.hp * KILL_HEAL_PCT / 100, st);
   // 吸魂
   if ((st.passives.soulEater || 0) > 0) {
     healPlayer(FIELD.player, st.hp * st.passives.soulEater / 100, st);
@@ -447,8 +359,12 @@ function onFieldKill(m) {
   var xpGain = Math.round(m.xp * (1 + st.xpBonus / 100));
   G.player.gold += goldGain;
   gainXp(xpGain);
-  blog('💀 擊敗 ' + m.name + '，獲得 ' + fmt(goldGain) + ' 金幣、' + fmt(xpGain) + ' 經驗值。', 'good', 'combat');
-  rollFieldDrops(m);
+  
+  var drops = rollFieldDrops(m);
+  blog('💀 擊敗 ' + m.name, 'dim-text', 'combat');
+  var lootMsg = '📦 戰利品：💰' + fmt(goldGain) + ' 💡' + fmt(xpGain);
+  if (drops.length) lootMsg += ' ' + drops.join('、');
+  blog(lootMsg, 'good', 'loot');
   G.stage.kills++;
   FIELD.monster = null;
   // 移動速度：縮短推圖間隔
@@ -477,6 +393,7 @@ function rollFieldDrops(m) {
   var st = getStats();
   var s = G.stage.current;
   var lootBonus = st.loot + buffVal(FIELD.player, 'lootUp'); // 尋寶直覺增益
+  var drops = [];
   // 裝備：依「物品掉落表」各品質獨立擲骰（掉寶率加成、菁英 x2）
   var rates = dropRatesFor(FIELD_DROP_TABLE, m.level);
   var dropMult = (1 + lootBonus / 100) * (m.elite ? 2 : 1);
@@ -486,35 +403,38 @@ function rollFieldDrops(m) {
     for (var k = 0; k < n; k++) {
       var it = makeEquipment(s, { rarity: r });
       pushConveyor(it);
-      if (r >= 4) blog('✨ 獲得 ' + rarityTag(it) + '！已送入生產線', 'loot');
+      drops.push('裝備[' + rarityTag(it) + ']');
     }
   }
-  // ===== 材料掉落：場景倍率（荒漠 x2 / 沼澤 x3；>100% 依必掉+餘數規則）=====
+  // ===== 材料掉落：場景倍率（荒漠 x2 / 沼澤 x3；>100% 依必掉+餘數規則）
+  //       基礎機率與寶石等級公式 → formula.js §5 =====
   var rw = currentZoneDef().rewardMult;
   // 寶石（階段 4+，隨機種類）
   if (s >= 4) {
-    var gemN = rollDropCount(6 * (1 + lootBonus / 100) * rw);
+    var gemN = rollDropCount(FIELD_GEM_DROP_PCT * (1 + lootBonus / 100) * rw);
     for (var gi = 0; gi < gemN; gi++) {
-      var glv = clamp(1 + Math.floor(s / 15), 1, GEM_MAX_LEVEL);
-      var lv = wpick([[glv, 70], [Math.max(1, glv - 1), 30]]);
+      var lv = fieldGemLevelFor(s);
       var gtype = randomGemType();
       addGem(gtype, lv, 1);
-      flog('💎 撿到 ' + gemLabel(gtype, lv), 'info');
+      drops.push('💎' + gemLabel(gtype, lv));
     }
   }
   // 附魔書（階段 8+）
   if (s >= 8) {
-    var bookN = rollDropCount(4 * (1 + lootBonus / 100) * rw);
+    var bookN = rollDropCount(FIELD_BOOK_DROP_PCT * (1 + lootBonus / 100) * rw);
     for (var bi = 0; bi < bookN; bi++) {
       var bk = pick(Object.keys(ENCHANTS));
       G.player.books[bk]++;
-      flog('📖 撿到 ' + ENCHANTS[bk].name + '書', 'info');
+      drops.push('📖' + ENCHANTS[bk].name + '書');
     }
   }
   // 附魔精華（階段 10+，數量 x場景倍率）
-  if (s >= 10 && chance(9)) {
-    G.player.essence += ri(1, 2) * rw;
+  if (s >= 10 && chance(FIELD_ESSENCE_DROP_PCT)) {
+    var amt = ri(1, 2) * rw;
+    G.player.essence += amt;
+    drops.push('✨精華x' + amt);
   }
+  return drops;
 }
 
 /* ---- 手動階段控制 ---- */

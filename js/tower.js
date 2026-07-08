@@ -15,25 +15,23 @@ var TOWER = {
 
 function makeBoss(floor) {
   var bd = BOSS_LIST[(floor - 1) % BOSS_LIST.length];
-  var refStage = 4 + floor * 5;              // 對應野外難度
-  var base = monsterStatsFor(refStage, false);
+  var bs = bossStatsFor(floor);              // BOSS 數值公式 → formula.js §4
   var b = {
-    name: '第' + floor + '層・' + bd.name, emoji: bd.emoji,
-    level: refStage + 3,
-    maxHp: base.hp * 22, hp: base.hp * 22,
-    atk: base.atk * 1.9, def: base.def * 1.5, mdef: base.mdef * 1.5,
+    name: '第' + floor + '層・' + bd.name, emoji: bd.emoji, img: bd.img,
+    level: bs.level,
+    maxHp: bs.hp, hp: bs.hp,
+    atk: bs.atk, def: bs.def, mdef: bs.mdef,
     magic: !!bd.elem,                        // 元素 BOSS 以魔法攻擊（對玩家魔防）
-    aspd: 2.0, dodge: Math.min(5 + floor, 20),
-    atkCd: 1.5, effects: {}, ctrlRes: 70,
+    aspd: bs.aspd, dodge: bs.dodge,
+    atkCd: 1.5, effects: {}, ctrlRes: bs.ctrlRes,
     elite: false, isBoss: true,
     elem: bd.elem, elemAtk: null, resist: {}, stunCount: 0,
     poisonUntil: 0, poisonDps: 0, shield: 0
   };
   if (bd.elem) {
-    var ev = base.atk * 0.5;
     b.elemAtk = {};
     ELEMENTS.forEach(function (e) { b.elemAtk[e] = 0; });
-    b.elemAtk[bd.elem] = ev;
+    b.elemAtk[bd.elem] = bs.elemAtkVal;
   }
   return b;
 }
@@ -148,10 +146,10 @@ function endTowerFight(win, reason) {
     var firstClear = floor > G.tower.highest;
     if (firstClear) G.tower.highest = floor;
     blog('🏆 通關高塔第 ' + floor + ' 層！', 'good');
-    // 獎勵：自動機組零件 + 資源
-    var tier = clamp(1 + Math.floor((floor - 1) / 4), 1, PART_MAX_TIER);
-    if (firstClear || chance(30)) {
-      var part = makePart(tier);
+    // 獎勵：自動機組零件 + 資源（獎勵公式 towerRewardFor → formula.js §5）
+    var rw = towerRewardFor(floor, firstClear);
+    if (chance(rw.partChance)) {
+      var part = makePart(rw.partTier);
       G.factory.parts.push(part);
       result.rewards.push(PART_TYPES[part.key].emoji + ' ' + part.name + '（' + partDesc(part) + '）');
       flog('🔩 獲得自動機組零件：' + part.name, 'good');
@@ -161,32 +159,28 @@ function endTowerFight(win, reason) {
     var bossRates = dropRatesFor(BOSS_DROP_TABLE, floor);
     var bossMult = 1 + st2.loot / 100;
     var lootCounts = [];
-    var itemLevel = 4 + floor * 5;
     for (var br = 0; br < bossRates.length; br++) {
       if (!bossRates[br]) continue;
       var bn = rollDropCount(bossRates[br] * bossMult);
       if (!bn) continue;
       for (var bk2 = 0; bk2 < bn; bk2++) {
-        pushConveyor(makeEquipment(itemLevel, { rarity: br, level: itemLevel }));
+        pushConveyor(makeEquipment(rw.itemLevel, { rarity: br, level: rw.itemLevel }));
       }
       lootCounts.push(RARITIES[br].name + ' x' + bn);
     }
     if (lootCounts.length) {
       result.rewards.push('⚔️ 裝備戰利品：' + lootCounts.join('、') + '（已送入生產線）');
     }
-    var goldR = Math.round(200 * floor * (firstClear ? 2 : 1));
-    G.player.gold += goldR;
-    result.rewards.push('💰 金幣 x' + fmt(goldR));
-    var glv = clamp(1 + Math.floor(floor / 4), 1, GEM_MAX_LEVEL);
+    G.player.gold += rw.gold;
+    result.rewards.push('💰 金幣 x' + fmt(rw.gold));
     var gt1 = randomGemType(), gt2 = randomGemType();
-    addGem(gt1, glv, 1); addGem(gt2, glv, 1);
-    result.rewards.push('💎 ' + gemLabel(gt1, glv) + '、' + gemLabel(gt2, glv));
+    addGem(gt1, rw.gemLevel, 1); addGem(gt2, rw.gemLevel, 1);
+    result.rewards.push('💎 ' + gemLabel(gt1, rw.gemLevel) + '、' + gemLabel(gt2, rw.gemLevel));
     var bk = pick(Object.keys(ENCHANTS));
     G.player.books[bk] += 2;
     result.rewards.push('📖 ' + ENCHANTS[bk].name + '書 x2');
-    var ess = 3 + floor;
-    G.player.essence += ess;
-    result.rewards.push('🔮 附魔精華 x' + ess);
+    G.player.essence += rw.essence;
+    result.rewards.push('🔮 附魔精華 x' + rw.essence);
     
     blog('🎁 高塔通關獎勵：' + result.rewards.join('、'), 'good', 'combat');
   } else if (reason === 'flee') {

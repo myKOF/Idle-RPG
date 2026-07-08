@@ -42,9 +42,7 @@ function uninstallPart(node, id) {
   if (idx >= 0) { arr.splice(idx, 1); UI.dirty.factory = true; }
 }
 
-/* ---- 容量（受「負重上限」屬性擴充） ---- */
-function conveyorCap() { return CONVEYOR_CAP + getStats().weight; }
-function synthBufCap() { return SYNTH_BUFFER_CAP + Math.floor(getStats().weight / 2); }
+/* ---- 容量公式（conveyorCap、synthBufCap）→ js/formula.js §7 ---- */
 
 /* ---- 輸送帶 ---- */
 function pushConveyor(item) {
@@ -71,12 +69,7 @@ function decideFilter(it) {
   return f.filter.actions[it.rarity] || 'keep';
 }
 
-/* ---- 分解槽 ---- */
-// 精粹提取率 = 基礎 + 分解高產率屬性 + 幸運值/3
-function extractChanceNow() {
-  var st = getStats();
-  return ESSENCE_EXTRACT_CHANCE + st.decomposeYield + st.luck / 3;
-}
+/* ---- 分解槽（精粹提取率公式 extractChanceNow → js/formula.js §7） ---- */
 function doSalvage(it, silent) {
   // 鑲嵌的寶石先取回，不隨分解銷毀（含融合寶石）
   if (it.sockets) {
@@ -210,9 +203,8 @@ function tryHybridSynthesis() {
   G.player.books[bookKey]--;
   UI.dirty.header = true; UI.dirty.factory = true;
 
-  // 大成功：稀有度 +1（幸運核心 + 幸運值加成）
-  var greatChance = SYNTH_GREAT_BASE + partBonus('synth', 'luckCore') + st.luck / 2;
-  var great = chance(greatChance);
+  // 大成功：稀有度 +1（機率公式 synthGreatChanceNow → formula.js §7）
+  var great = chance(synthGreatChanceNow());
   if (great && it.rarity < RARITIES.length - 1) {
     it.rarity++;
     ensureSockets(it); // 稀有度提升 → 插槽數同步增加
@@ -220,8 +212,7 @@ function tryHybridSynthesis() {
     // 升稀有度補被動
     if (it.rarity >= RARE_IDX && !it.passive) {
       var pk = pick(Object.keys(PASSIVE_POOL));
-      var pd = PASSIVE_POOL[pk];
-      it.passive = { key: pk, val: Math.round((pd.base + pd.perR * (it.rarity - RARE_IDX)) * 10) / 10 };
+      it.passive = { key: pk, val: passiveValueFor(pk, it.rarity) };
     }
   }
   // 詞條重骰（重骰模組）：每條詞條重骰一次取較佳值
@@ -275,8 +266,7 @@ function tryRarityMerge() {
       // 由後往前移除避免位移
       for (var j = 2; j >= 0; j--) mats.push(f.synthBuffer.splice(idxs[j], 1)[0]);
       var avgLv = Math.max(1, Math.round((mats[0].level + mats[1].level + mats[2].level) / 3));
-      var greatChance = SYNTH_GREAT_BASE + partBonus('synth', 'luckCore') + getStats().luck / 2;
-      var great = chance(greatChance);
+      var great = chance(synthGreatChanceNow());
       var newRarity = clamp(rr + 1 + (great ? 1 : 0), 0, RARITIES.length - 1);
       var it = makeEquipment(avgLv, { rarity: newRarity, level: avgLv });
       // 重骰模組
@@ -306,8 +296,7 @@ function fuseGems(lv) {
   G.player.gold -= cost;
   takeGemOfLevel(lv);
   takeGemOfLevel(lv);
-  var st = getStats();
-  var up = lv < GEM_MAX_LEVEL && chance(FUSE_UPGRADE_CHANCE + st.luck / 2);
+  var up = lv < GEM_MAX_LEVEL && chance(gemComposeUpChance()); // 昇華率公式 → formula.js §8
   var type = randomGemType();
   addGem(type, up ? lv + 1 : lv, 1);
   flog('🔀 寶石合成：' + (up ? '🌟 昇華！' : '') + '獲得 ' + gemLabel(type, up ? lv + 1 : lv), up ? 'good' : 'info');
@@ -317,19 +306,8 @@ function fuseGems(lv) {
 
 /* （附魔節點已移除：附魔改為裝備介面手動操作，見 item.js manualEnchant） */
 
-/* ---- 強化節點：自動強化已裝備裝備 ---- */
-function upgradeCost(it) {
-  var lv = it.upgrade || 0;
-  return {
-    gold: Math.round(25 * Math.pow(1.45, lv) * (1 + it.level * 0.08)),
-    scrap: Math.round(8 * Math.pow(1.35, lv) * (1 + it.level * 0.04))
-  };
-}
-// 強化成功率 = 基礎（+5 內必成，之後遞減）+「強化成功率」屬性
-function upgradeSuccessChance(it) {
-  var next = (it.upgrade || 0) + 1;
-  return Math.min(100, upgradeSuccessBase(next) + getStats().enhanceSuccess);
-}
+/* ---- 強化節點：自動強化已裝備裝備 ----
+   費用/成功率公式（upgradeCost、upgradeSuccessChance）→ js/formula.js §7 */
 
 // 執行一次強化嘗試；失敗時消耗半數資源。回傳 'ok' | 'fail' | 'poor'
 function tryUpgrade(it) {

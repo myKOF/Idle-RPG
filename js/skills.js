@@ -4,16 +4,9 @@
    - 被動技能：學會即永久生效（計入屬性）
    - 學習/升級：每升 1 級獲得 1 技能點；學習或升 1 級各花 1 點，上限 Lv.5   */
 
-var SKILL_MAX_LV = 10;         // 一般技能等級上限
-var SKILL_CAST_LOCK = 0.5;     // 施放硬直（秒，受施法速度縮短）
-var TIER_GATE_POINTS = 3;      // 技能樹：每階層需要在該系已投入的點數
-
-// 裝載欄：角色每 20 級 +1 格（最低 2 格，最多 20 格）
-function loadoutSize() { return Math.min(20, Math.max(2, Math.floor(G.player.level / 20))); }
-
-function skillUpgradeCost(lv) {
-  return Math.floor(20000 * lv + Math.pow(20, 1 + lv / 10));
-}
+/* 技能數值公式（SKILL_CAST_LOCK、TIER_GATE_POINTS、loadoutSize、
+   skillUpgradeCost、skillMaxLv、skillValue、skillCdFor、scaleAt、
+   融合參數 FUSE_FACTOR / FUSION_MUTATION_CHANCE 等）→ js/formula.js §9 */
 
 var SKILL_CATS = {
   phys:    { name: '物理', emoji: '⚔️' },
@@ -30,12 +23,7 @@ function skillDef(id) {
   for (var i = 0; i < fs.length; i++) if (fs[i].id === id) return fs[i];
   return null;
 }
-function skillMaxLv(def) { 
-  if (def && def.maxLv) return def.maxLv;
-  if (def && def.cat === 'fusion') return 40;
-  if (def && def.cat === 'passive') return 30;
-  return 20;
-}
+// skillMaxLv → js/formula.js §9
 
 /* fx 欄位說明（主動）：
    dmgType phys/magic/true、stat atk/matk、base+per=傷害%（每級 per）、hits 段數
@@ -261,11 +249,8 @@ function spentSkillPoints() {
 }
 function availableSkillPoints() { return Math.max(0, totalSkillPoints() - spentSkillPoints()); }
 
-/* ---- 查詢 ---- */
+/* ---- 查詢（skillValue / skillCdFor / scaleAt → js/formula.js §9） ---- */
 function skillLevel(id) { return (G.player.skills && G.player.skills[id]) || 0; }
-function skillValue(sk, lv) { return (sk.fx.base || 0) + (sk.fx.per || 0) * (lv - 1); }
-function skillCdFor(sk) { return sk.cd * (1 - getStats().cdr / 100); }
-function scaleAt(def, lv) { return def.base + def.per * (lv - 1); } // buff/heal 等 {base,per} 通用
 
 /* ---- 技能樹階層（每 4 個為一階，需在該系投入足夠點數） ---- */
 function skillTier(id) {
@@ -545,9 +530,8 @@ function tickSkillCds(pEnt, dt) {
    2~4 個已學習的主動技能 → 融合技：繼承素材的部分效果（以素材當前等級的
    完整效果為準，含里程碑），並有機率誕生一種變異效果。
    初始等級 = 素材等級加總，可再升 20 級；素材歸零可重學；
-   刪除融合技時（點數採等級推導制）所有投入點數自動歸還。            */
-var FUSE_FACTOR = 0.6;            // 效果繼承比例
-var FUSION_MUTATION_CHANCE = 45;  // 變異基礎機率 %（+幸運值/3）
+   刪除融合技時（點數採等級推導制）所有投入點數自動歸還。
+   （FUSE_FACTOR、FUSION_MUTATION_CHANCE 等融合參數 → js/formula.js §9） */
 
 // 變異效果池（req 檢查與融合結果的關聯性；apply 直接改寫 fx；存檔只存 key/name/desc）
 var FUSION_MUTATIONS = [
@@ -688,9 +672,9 @@ function fuseSkills(ids) {
   if (debuff) fx.debuff = { key: debuff.key, base: Math.round(debuff.base * 0.8), per: debuff.per, dur: debuff.dur };
   if (maxHpDot) { fx.maxHpDotPct = { base: Math.round(maxHpDot.maxHpDotPct.base * 0.7 * 10) / 10, per: maxHpDot.maxHpDotPct.per }; fx.dotDur = maxHpDot.dotDur || 5; }
 
-  // --- 變異效果（每次至多一種，需與融合結果相關）---
+  // --- 變異效果（每次至多一種，需與融合結果相關；觸發率公式 → formula.js §9）---
   var mutation = null;
-  if (chance(FUSION_MUTATION_CHANCE + getStats().luck / 3)) {
+  if (chance(fusionMutationChance())) {
     var pool = FUSION_MUTATIONS.filter(function (m) { return m.req(fx); });
     if (pool.length) {
       var m = pick(pool);
@@ -699,8 +683,8 @@ function fuseSkills(ids) {
     }
   }
 
-  var cost = Math.round(comps.reduce(function (s, c) { return s + (c.def.cost || 0); }, 0) * 0.65);
-  var cd = Math.round(Math.max.apply(null, comps.map(function (c) { return c.def.cd || 8; })) * 1.25);
+  var cost = Math.round(comps.reduce(function (s, c) { return s + (c.def.cost || 0); }, 0) * FUSION_COST_FACTOR);
+  var cd = Math.round(Math.max.apply(null, comps.map(function (c) { return c.def.cd || 8; })) * FUSION_CD_FACTOR);
   var def = {
     id: 'fusion_' + uid(), name: fusionName(comps, fx), emoji: '🧬', cat: 'fusion',
     cost: cost, cd: cd, maxLv: totalLv + 20, components: ids.slice(),

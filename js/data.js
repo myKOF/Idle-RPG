@@ -42,10 +42,10 @@ var SLOT_INFO = {
   belt:     { name: '腰帶', emoji: '🪢', icon: 'icon_belt.png' },
   gloves:   { name: '護手', emoji: '🧤', icon: 'icon_gloves.png' },
   legs:     { name: '護腿', emoji: '👖', icon: 'icon_legs.png' },
-  boots:    { name: '靴子', emoji: '🥾' },
-  ring:     { name: '戒指', emoji: '💍' },
-  ring2:    { name: '戒指Ⅱ', emoji: '💍' },
-  amulet:   { name: '項鍊', emoji: '📿' }
+  boots:    { name: '靴子', emoji: '🥾', icon: 'icon_legs.png' },
+  ring:     { name: '戒指', emoji: '💍', icon: 'icon_gold.png' },
+  ring2:    { name: '戒指Ⅱ', emoji: '💍', icon: 'icon_gold.png' },
+  amulet:   { name: '項鍊', emoji: '📿', icon: 'icon_gems.png' }
 };
 var SLOT_BASENAMES = {
   weapon:   ['短劍', '長劍', '戰斧', '法杖', '巨鎚'],
@@ -237,16 +237,16 @@ var REVIVE_DELAY = 3.0;        // 死亡復活時間（秒）
 
 // ---- BOSS 高塔（元素 BOSS 以魔法攻擊） ----
 var BOSS_LIST = [
-  { name: '烈焰魔君', emoji: '🔥', elem: 'fire' },
-  { name: '冰霜女皇', emoji: '❄️', elem: 'ice' },
-  { name: '雷霆巨獸', emoji: '⚡', elem: 'lightning' },
-  { name: '鋼鐵魔像', emoji: '🤖', elem: null },
-  { name: '劇毒之母', emoji: '🕷️', elem: 'poison' },
-  { name: '深淵領主', emoji: '😈', elem: 'dark' },
-  { name: '亡靈霜龍', emoji: '🐲', elem: 'ice' },
-  { name: '聖焰審判官', emoji: '😇', elem: 'light' },
-  { name: '風暴泰坦', emoji: '🌩️', elem: 'lightning' },
-  { name: '混沌之影', emoji: '🌑', elem: 'dark' }
+  { name: '烈焰魔君', emoji: '🔥', elem: 'fire', img: 'boss_flame.png' },
+  { name: '冰霜女皇', emoji: '❄️', elem: 'ice', img: 'boss_ice.png' },
+  { name: '雷霆巨獸', emoji: '⚡', elem: 'lightning', img: 'boss_thunder.png' },
+  { name: '鋼鐵魔像', emoji: '🤖', elem: null, img: 'boss_iron.png' },
+  { name: '劇毒之母', emoji: '🕷️', elem: 'poison', img: 'boss_poison.png' },
+  { name: '深淵領主', emoji: '😈', elem: 'dark', img: 'boss_abyss.png' },
+  { name: '亡靈霜龍', emoji: '🐲', elem: 'ice', img: 'boss_dragon.png' },
+  { name: '聖焰審判官', emoji: '😇', elem: 'light', img: 'boss_light.png' },
+  { name: '風暴泰坦', emoji: '🌩️', elem: 'lightning', img: 'boss_storm.png' },
+  { name: '混沌之影', emoji: '🌑', elem: 'dark', img: 'boss_chaos.png' }
 ];
 var TOWER_TIME_LIMIT = 60;     // 限時 60 秒
 var TOWER_ENRAGE_TIME = 40;    // 40 秒檢查狂暴
@@ -279,11 +279,7 @@ var INVENTORY_CAP = 60;        // 背包容量
 var FACTORY_BASE_INTERVAL = 2.0; // 生產線基礎處理間隔（秒/件）
 var ESSENCE_EXTRACT_CHANCE = 10; // 分解觸發「精粹提取」基礎機率 %
 var SYNTH_GREAT_BASE = 5;        // 合成大成功基礎機率 %
-// 強化成功率：+5 以內必成，之後每級 -6%，下限 30%（受「強化成功率」屬性提升）
-function upgradeSuccessBase(nextLevel) {
-  if (nextLevel <= 5) return 100;
-  return Math.max(30, 100 - (nextLevel - 5) * 6);
-}
+// 強化成功率公式 upgradeSuccessBase → 集中於 js/formula.js §7
 
 // ---- 寶石 ----
 var GEM_MAX_LEVEL = 5;
@@ -305,20 +301,7 @@ var GEM_TYPES = {
   moonstone: { name: '月光石', emoji: '🌙', stat: 'evasion',   statName: '閃避率%',    base: 1,   pct: true },
   sunstone:  { name: '太陽石', emoji: '☀️', stat: 'luck',      statName: '幸運值',     base: 1.5, pct: false }
 };
-// 寶石能力數值（隨等級超線性成長）
-function gemStatValue(type, level) {
-  var g = GEM_TYPES[type];
-  return Math.round(g.base * level * (1 + 0.2 * (level - 1)) * 10) / 10;
-}
-// 插槽數：依稀有度表（普/精良 1、稀有/獨特 2、史詩 3、傳說 4、神話 5、創世 6）
-function socketCountFor(rarity) {
-  var r = RARITIES[clamp(rarity, 0, RARITIES.length - 1)];
-  return r.sockets;
-}
-// 附魔欄位數
-function enchantCapFor(it) {
-  return RARITIES[clamp(it.rarity, 0, RARITIES.length - 1)].enchants;
-}
+// 寶石數值/插槽/附魔欄位公式（gemStatValue、socketCountFor、enchantCapFor）→ js/formula.js §8
 // 寶石合成（原融合改名）：消耗 2 顆同級寶石 → 隨機種類同級，機率升 1 級
 var FUSE_GOLD_COST = [0, 100, 300, 900, 2700, 8100]; // 依等級
 var FUSE_UPGRADE_CHANCE = 25; // % 基礎（+幸運值/2）
@@ -344,7 +327,7 @@ var GEM_SHOP_TABLE = [
 var GEM_SHOP_SIZE = 10;
 var GEM_SHOP_REFRESH_BASE = 50000;
 var GEM_SHOP_REFRESH_STEP = 10000;
-function gemShopPrice(lv) {
+function gemShopPrice(lv) { // 商店標價：查上方 GEM_SHOP_TABLE（刷新費用公式 shopRefreshCost → js/formula.js §8）
   for (var i = 0; i < GEM_SHOP_TABLE.length; i++) if (GEM_SHOP_TABLE[i].lv === lv) return GEM_SHOP_TABLE[i].price;
   return 0;
 }
@@ -367,54 +350,10 @@ var BOSS_DROP_TABLE = [    // 高塔 BOSS：依樓層 7 檔（與掉落表加總
   { min: 6,  rates: [0, 0, 100, 100, 20,  10,  2,  0] },    // 6~10（232%）
   { min: 1,  rates: [0, 0, 100, 50,  10,  5,   0,  0] }     // 1~5（165%）
 ];
-function dropRatesFor(table, lvl) {
-  for (var i = 0; i < table.length; i++) {
-    if (lvl >= table[i].min) return table[i].rates;
-  }
-  return table[table.length - 1].rates;
-}
-// 機率 → 掉落件數（>100% 規則：150% = 必掉 1 件 + 50% 再 1 件）
-function rollDropCount(pct) {
-  if (pct <= 0) return 0;
-  var n = Math.floor(pct / 100);
-  if (chance(pct - n * 100)) n++;
-  return n;
-}
-
-// ---- 怪物 / 成長曲線 ----
-function monsterStatsFor(stage, elite) {
-  var hp = (30 + stage * 8) * Math.pow(1.13, stage - 1);
-  var atk = (6 + stage * 1.2) * Math.pow(1.10, stage - 1);
-  var def = (2 + stage * 0.5) * Math.pow(1.08, stage - 1);
-  var gold = (5 + stage) * Math.pow(1.07, stage - 1);
-  var xp = (8 + stage) * Math.pow(1.08, stage - 1);
-  var m = {
-    level: stage, hp: hp, atk: atk,
-    def: def,                 // 物理防禦
-    mdef: def * 0.75,         // 魔法防禦
-    aspd: 0.75,
-    dodge: 0, gold: gold, xp: xp, elite: !!elite
-  };
-  if (elite) {
-    m.hp *= 2.5; m.atk *= 1.5; m.gold *= 3; m.xp *= 3; m.dodge = 5; m.aspd = 1.25;
-  }
-  return m;
-}
-
-function xpForLevel(l) { return Math.floor(30 * Math.pow(l, 1.85) + 40); }
-
-/* ---- 玩家基礎屬性（不含裝備）----
-   四維主屬性隨等級成長，再派生出各項數值（詳見 computeStats） */
-function basePrimaryFor(level) {
-  var v = 5 + (level - 1) * 2;
-  return { str: v, agi: v, int: v, vit: v };
-}
-
-// 防禦減傷：def / (def + 60 + 8 * 攻擊者等級)
-function defReduction(def, attackerLevel) {
-  if (def <= 0) return 0;
-  return def / (def + 60 + 8 * attackerLevel);
-}
+/* 掉落表取用/擲骰公式（dropRatesFor、rollDropCount）→ js/formula.js §5
+   怪物成長曲線 monsterStatsFor → js/formula.js §4
+   升級經驗 xpForLevel、等級基礎四維 basePrimaryFor → js/formula.js §1
+   防禦減傷 defReduction → js/formula.js §3 */
 
 /* ---- 屬性面板顯示定義（側欄用） ---- */
 function statFmt(val, cap, type, prefix) {
@@ -445,7 +384,7 @@ function statDesc(st, baseDesc, label, keyBase, pctKey) {
 var STAT_GROUPS = [
   { title: '基礎屬性', rows: [
     ['❤️ 生命值', function (st) { return statFmt(st.hp, null); }, function(st) { return statDesc(st, '承受傷害的能力，歸零時角色將會死亡。', '生命', 'hp', 'hpPct'); }],
-    ['💗 生命恢復', function (st) { return statFmt(st.hpRegen + st.hp * 0.015, null, '/s'); }, '每秒自動回復的生命值（包含基礎 1.5% 與額外加成）。'],
+    ['💗 生命恢復', function (st) { return statFmt(st.hpRegen + st.hp * BASE_HP_REGEN_PCT / 100, null, '/s'); }, '每秒自動回復的生命值（包含基礎 1.5% 與額外加成）。'],
     ['🔵 法力值', function (st) { return statFmt(st.mp, null); }, function(st) { return statDesc(st, '施放多數技能所需的能量。', '法力', 'mp', null); }],
     ['💧 法力恢復', function (st) { return statFmt(st.mpRegen, null, '/s'); }, '每秒自動回復的法力值。'],
     ['💪 力量', function (st) { return statFmt(st.str, null); }, '每增加 1 點提高 2 點物理攻擊力。'],
