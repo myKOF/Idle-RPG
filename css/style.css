@@ -279,6 +279,28 @@ textarea#save-io {
 #battle-log.filter-loot .log-line:not([data-cat="loot"]) { display: none; }
 #battle-log.filter-system .log-line:not([data-cat="system"]) { display: none; }
 
+#update-banner {
+  display: none;
+  background: var(--bad);
+  color: #fff;
+  text-align: center;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 9999;
+  position: sticky;
+  top: 0;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  animation: pulse 2s infinite;
+}
+#update-banner:hover { filter: brightness(1.2); }
+@keyframes pulse {
+  0% { background: #b91c1c; }
+  50% { background: #dc2626; }
+  100% { background: #b91c1c; }
+}
+
 /* ---- 裝備分頁 ---- */
 .equip-section-box {
   border: 2px solid #e7823a;

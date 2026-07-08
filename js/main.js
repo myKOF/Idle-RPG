@@ -14,6 +14,22 @@ function stepGame(dt) {
   if (_autosaveTimer >= 15) { _autosaveTimer = 0; saveGame(); }
 }
 
+function checkForUpdates() {
+  var url = location.href.split('#')[0];
+  url += (url.indexOf('?') === -1 ? '?' : '&') + '_t=' + Date.now();
+  fetch(url, { method: 'HEAD' })
+    .then(function(res) {
+      var hash = res.headers.get('Last-Modified') || res.headers.get('ETag');
+      if (!hash) return;
+      if (!window._appVersionHash) window._appVersionHash = hash;
+      else if (window._appVersionHash !== hash) {
+        var banner = document.getElementById('update-banner');
+        if (banner) banner.style.display = 'block';
+      }
+    })
+    .catch(function(e){});
+}
+
 // 以實際經過時間切片模擬（背景分頁被瀏覽器節流時仍維持正常遊戲速度）
 function gameTick() {
   var now = Date.now();
@@ -48,4 +64,8 @@ document.addEventListener('DOMContentLoaded', function () {
   setInterval(gameTick, TICK_MS);
   setInterval(uiTick, 200);
   window.addEventListener('beforeunload', saveGame);
+  
+  // 檢查新版本 (每 3 分鐘)
+  setTimeout(checkForUpdates, 3000);
+  setInterval(checkForUpdates, 3 * 60000);
 });
