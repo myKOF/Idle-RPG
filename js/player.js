@@ -219,22 +219,37 @@ function gainXp(n) {
   }
 }
 
-/* ---- 裝備操作 ---- */
-// 穿上裝備，回傳被替換下來的舊裝備（可能為 null）
-function equipItem(it) {
-  var old = G.equipment[it.slot];
-  G.equipment[it.slot] = it;
+/* ---- 裝備操作 ----
+   武器/戒指類可裝入主/副兩欄：優先裝入空欄，皆有裝備時替換較弱者 */
+function equipTargetSlot(it) {
+  var cands = equipSlotsForType(it.slot);
+  var best = cands[0], bestScore = Infinity;
+  for (var i = 0; i < cands.length; i++) {
+    var cur = G.equipment[cands[i]];
+    if (!cur) return cands[i]; // 空欄優先
+    var s = itemScore(cur);
+    if (s < bestScore) { bestScore = s; best = cands[i]; }
+  }
+  return best;
+}
+
+// 穿上裝備（可指定欄位），回傳被替換下來的舊裝備（可能為 null）
+function equipItem(it, slotKey) {
+  var key = slotKey || equipTargetSlot(it);
+  var old = G.equipment[key];
+  G.equipment[key] = it;
   markStatsDirty();
   UI.dirty.equip = true; UI.dirty.header = true;
   return old;
 }
 
-// 嘗試自動換裝：若比目前裝備強則穿上，舊裝回輸送帶。回傳是否換裝
+// 嘗試自動換裝：與（較弱的）現有裝備比較，較強則穿上，舊裝回輸送帶
 function tryAutoEquip(it) {
-  var cur = G.equipment[it.slot];
+  var key = equipTargetSlot(it);
+  var cur = G.equipment[key];
   if (itemScore(it) > itemScore(cur) * 1.02) {
-    var old = equipItem(it);
-    blog('🔁 自動換裝：' + rarityTag(it) + '（' + SLOT_INFO[it.slot].name + '）', 'info');
+    var old = equipItem(it, key);
+    blog('🔁 自動換裝：' + rarityTag(it) + '（' + SLOT_INFO[key].name + '）', 'info');
     if (old) {
       old.locked = false;
       pushConveyor(old); // 舊裝備回到輸送帶，交給生產線處置

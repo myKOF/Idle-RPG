@@ -13,27 +13,48 @@ var RARITIES = [
 var RARE_IDX = 2; // 稀有級（含）以上附帶特殊被動
 var MAX_AFFIXES = 6; // 詞條上限屬性可突破至此
 
-// ---- 裝備部位 ----
-var SLOT_LIST = ['weapon', 'helmet', 'chest', 'gloves', 'legs', 'boots', 'ring', 'amulet'];
+/* ---- 裝備部位 ----
+   SLOT_LIST = 裝備欄位（12 欄，含雙武器/雙戒指）；ITEM_TYPES = 物品種類（10 種）。
+   武器/戒指類物品可裝入主/副兩個欄位（slotTypeOf 對應）。 */
+var SLOT_LIST = ['weapon', 'weapon2', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'legs', 'boots', 'ring', 'ring2', 'amulet'];
+var ITEM_TYPES = ['weapon', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'legs', 'boots', 'ring', 'amulet'];
+// 欄位 → 物品種類
+function slotTypeOf(slotKey) {
+  if (slotKey === 'weapon2') return 'weapon';
+  if (slotKey === 'ring2') return 'ring';
+  return slotKey;
+}
+// 物品種類 → 可裝入的欄位
+function equipSlotsForType(type) {
+  if (type === 'weapon') return ['weapon', 'weapon2'];
+  if (type === 'ring') return ['ring', 'ring2'];
+  return [type];
+}
 var SLOT_INFO = {
-  weapon: { name: '武器', emoji: '⚔️' },
-  helmet: { name: '頭盔', emoji: '🪖' },
-  chest:  { name: '胸甲', emoji: '🛡️' },
-  gloves: { name: '護手', emoji: '🧤' },
-  legs:   { name: '護腿', emoji: '👖' },
-  boots:  { name: '靴子', emoji: '🥾' },
-  ring:   { name: '戒指', emoji: '💍' },
-  amulet: { name: '項鍊', emoji: '📿' }
+  weapon:   { name: '主武器', emoji: '⚔️' },
+  weapon2:  { name: '副武器', emoji: '🗡️' },
+  helmet:   { name: '頭盔', emoji: '🪖' },
+  shoulder: { name: '肩甲', emoji: '🦾' },
+  chest:    { name: '胸甲', emoji: '🛡️' },
+  belt:     { name: '腰帶', emoji: '🪢' },
+  gloves:   { name: '護手', emoji: '🧤' },
+  legs:     { name: '護腿', emoji: '👖' },
+  boots:    { name: '靴子', emoji: '🥾' },
+  ring:     { name: '戒指', emoji: '💍' },
+  ring2:    { name: '戒指Ⅱ', emoji: '💍' },
+  amulet:   { name: '項鍊', emoji: '📿' }
 };
 var SLOT_BASENAMES = {
-  weapon: ['短劍', '長劍', '戰斧', '法杖', '巨鎚'],
-  helmet: ['皮帽', '鐵盔', '戰盔', '龍首盔'],
-  chest:  ['布衣', '鎖甲', '板甲', '龍鱗甲'],
-  gloves: ['布手套', '皮護手', '鐵護手', '龍鱗護手'],
-  legs:   ['布褲', '鐵護腿', '重甲腿鎧'],
-  boots:  ['草鞋', '皮靴', '疾風之靴'],
-  ring:   ['銅戒', '銀戒', '秘紋戒指'],
-  amulet: ['木墜', '銀鍊', '星辰項鍊']
+  weapon:   ['短劍', '長劍', '戰斧', '法杖', '巨鎚'],
+  helmet:   ['皮帽', '鐵盔', '戰盔', '龍首盔'],
+  shoulder: ['布肩墊', '鐵肩甲', '戰場護肩', '龍骨肩鎧'],
+  chest:    ['布衣', '鎖甲', '板甲', '龍鱗甲'],
+  belt:     ['麻繩腰帶', '皮革腰帶', '鎖鏈腰帶', '巨龍束帶'],
+  gloves:   ['布手套', '皮護手', '鐵護手', '龍鱗護手'],
+  legs:     ['布褲', '鐵護腿', '重甲腿鎧'],
+  boots:    ['草鞋', '皮靴', '疾風之靴'],
+  ring:     ['銅戒', '銀戒', '秘紋戒指'],
+  amulet:   ['木墜', '銀鍊', '星辰項鍊']
 };
 var RARITY_PREFIX = ['粗糙的', '堅實的', '精工的', '大師級', '傳世的', '神鑄的'];
 var ACCESSORY_SLOTS = ['ring', 'amulet'];
@@ -144,10 +165,10 @@ var ENCHANTS = {
   loot:      { name: '尋寶附魔', cat: 'util', desc: '增加裝備掉落率', emoji: '💰' },
   haste:     { name: '疾行附魔', cat: 'util', desc: '增加移動速度（縮短推圖間隔）', emoji: '🌀' }
 };
-// 附魔可作用部位
+// 附魔可作用部位（裝備欄位）
 var ENCHANT_SLOTS = {
-  atk: ['weapon', 'ring', 'gloves'],
-  def: ['helmet', 'chest', 'legs'],
+  atk: ['weapon', 'weapon2', 'ring', 'ring2', 'gloves'],
+  def: ['helmet', 'shoulder', 'chest', 'belt', 'legs'],
   util: ['amulet', 'boots']
 };
 var ENCHANT_ESSENCE_COST = 5; // 每次附魔消耗附魔精華

@@ -256,7 +256,10 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
     floatText(floatSel, 'MISS', 'miss');
     logMsg += (depth ? '<span class="log-hl-bad">攻擊被閃避了！</span>' : '<span class="log-hl-bad">被閃避了！</span>');
   } else {
-    floatText(floatSel, fmt(res.dmg), res.crit ? 'crit' : 'dmg');
+    var dmgStr = fmt(res.dmg);
+    if (res.crit) dmgStr = '爆擊 ' + dmgStr;
+    if (res.blocked) dmgStr = '格擋 ' + dmgStr;
+    floatText(floatSel, dmgStr, res.crit ? 'crit' : 'dmg');
     trackDps(res.dmg);
     recordRunDamage('普攻', res.dmg);
     logMsg += (res.crit ? '<span class="log-hl-good">爆擊</span> ' : '造成 ') + fmt(res.dmg) + ' 傷害。';
@@ -267,9 +270,14 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
     var healAmt = res.dmg * st.lifesteal / 100 + (res.heal || 0);
     if (healAmt > 0) {
       healPlayer(pEnt, healAmt, st);
+      floatText('pv-float', '+' + fmt(Math.round(healAmt)), 'heal');
       if (st.lifesteal > 0 || res.heal) logMsg += '<span class="log-hl-good">汲取回復 ' + fmt(healAmt) + '。</span>';
     }
-    if (st.manaSteal > 0) pEnt.mp = Math.min(st.mp, pEnt.mp + res.dmg * st.manaSteal / 100);
+    if (st.manaSteal > 0) {
+      var mpGain = res.dmg * st.manaSteal / 100;
+      pEnt.mp = Math.min(st.mp, pEnt.mp + mpGain);
+      floatText('pv-float', '+' + fmt(Math.round(mpGain)) + ' MP', 'mp');
+    }
     // 被動：暈眩 / 減速
     if (!res.killed) {
       if ((st.passives.stun || 0) > 0 && chance(st.passives.stun) && !resistCtrl(monsterDefCfg(mEnt))) {
@@ -305,14 +313,18 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult) {
     floatText(floatSel, 'MISS', 'miss');
     logMsg += '<span class="log-hl-good">被你閃避了！</span>';
   } else {
-    floatText(floatSel, fmt(res.dmg), mult && mult > 1 ? 'crit' : 'mdmg');
+    var isCrit = mult && mult > 1;
+    var dmgStr = fmt(res.dmg);
+    if (isCrit) dmgStr = '爆擊 ' + dmgStr;
+    if (res.blocked) dmgStr = '格擋 ' + dmgStr;
+    floatText(floatSel, dmgStr, isCrit ? 'crit' : 'mdmg');
     logMsg += '造成 ' + fmt(res.dmg) + (mEnt.magic ? ' 魔法' : '') + ' 傷害。';
     if (res.blocked) logMsg += '<span class="log-hl-good">你格擋了部分傷害！</span>';
     if (res.absorbed) logMsg += '<span class="log-hl-good">護盾吸收 ' + fmt(res.absorbed) + '。</span>';
     if (res.procs.length) logMsg += '<span class="log-hl-bad">［' + res.procs.join('・') + '］</span>';
   }
   if (res.thorns) {
-    floatText(THORN_FLOAT_MAP[floatSel] || floatSel, fmt(res.thorns), 'thorn');
+    floatText(THORN_FLOAT_MAP[floatSel] || floatSel, '反傷 ' + fmt(res.thorns), 'defend');
     logMsg += '<span class="log-hl-good">並遭到荊棘反震 ' + fmt(res.thorns) + ' 傷害！</span>';
   }
   blog('🛡️ ' + logMsg, 'dim-text', 'combat');

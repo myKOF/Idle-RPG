@@ -63,9 +63,9 @@ function pushConveyor(item) {
 function decideFilter(it) {
   var f = G.factory;
   if (it.locked) return 'keep';
-  // 智慧分解：比已裝備差 → 分解
+  // 智慧分解：比（較弱的那件）已裝備差 → 分解
   if (f.filter.smartSalvage) {
-    var cur = G.equipment[it.slot];
+    var cur = G.equipment[equipTargetSlot(it)];
     if (cur && itemScore(it) <= itemScore(cur)) return 'salvage';
   }
   return f.filter.actions[it.rarity] || 'keep';

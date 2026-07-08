@@ -36,7 +36,8 @@ function floatText(elId, text, cls) {
   var sp = document.createElement('span');
   sp.className = 'float-txt ' + (cls || '');
   sp.textContent = text;
-  sp.style.left = (20 + Math.random() * 60) + '%';
+  sp.style.left = (15 + Math.random() * 70) + '%';
+  sp.style.marginTop = (Math.random() * 30 - 15) + 'px';
   layer.appendChild(sp);
   setTimeout(function () { if (sp.parentNode) sp.parentNode.removeChild(sp); }, 950);
 }
@@ -361,7 +362,10 @@ function detailAction(act) {
   } else if (act === 'unequip') {
     var cap = INVENTORY_CAP + (G.player.invUpgrades || 0);
     if (G.inventory.length >= cap) { blog('⚠️ 背包已滿，無法卸下', 'warn'); return; }
-    G.equipment[it.slot] = null;
+    // 依物品 id 找出實際佔用的欄位（武器/戒指有主副兩欄）
+    for (var sk2 in G.equipment) {
+      if (G.equipment[sk2] && G.equipment[sk2].id === it.id) { G.equipment[sk2] = null; break; }
+    }
     markStatsDirty();
     addToInventory(it);
     UI.sel = { id: it.id, source: 'inv' };
@@ -609,7 +613,7 @@ function skillCellHTML(id) {
   var inLoadout = (G.player.loadout || []).indexOf(id) >= 0;
   var cls = 'tree-cell' + (lv > 0 ? ' learned' : '') + (lock ? ' locked' : '') +
     (UI.selSkill === id ? ' selected' : '') + (inLoadout ? ' equipped' : '');
-  return '<div class="' + cls + '" data-sk="' + id + '" title="' + esc(sk.name) + '">' +
+  return '<div class="' + cls + '" data-sk="' + id + '">' +
     '<span class="tc-emoji">' + sk.emoji + '</span>' +
     (lv > 0 ? '<span class="tc-lv">' + lv + '</span>' : (lock ? '<span class="tc-lock">🔒</span>' : '')) +
     (inLoadout ? '<span class="tc-eq">⚔</span>' : '') +
@@ -632,7 +636,7 @@ function renderSkills() {
     var id0 = lo[i];
     var d0 = id0 ? skillDef(id0) : null;
     if (d0) {
-      lh += '<span class="loadout-slot filled" data-skill-unequip="' + id0 + '" title="點擊卸下">' +
+      lh += '<span class="loadout-slot filled" data-skill-unequip="' + id0 + '">' +
         d0.emoji + ' ' + esc(d0.name) + ' Lv.' + skillLevel(id0) + '</span>';
     } else {
       lh += '<span class="loadout-slot">空欄位</span>';

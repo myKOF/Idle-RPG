@@ -427,7 +427,10 @@ function castSkill(pEnt, target, id, lv, floatSel) {
         allMiss = false;
         totalDmg += dmgRes.dmg;
         if (dmgRes.crit) anyCrit = true;
-        floatText(floatSel, sk.emoji + fmt(dmgRes.dmg), 'skill');
+        var dmgStr = fmt(dmgRes.dmg);
+        if (dmgRes.crit) dmgStr = '爆擊 ' + dmgStr;
+        if (dmgRes.blocked) dmgStr = '格擋 ' + dmgStr;
+        floatText(floatSel, sk.emoji + dmgStr, dmgRes.crit ? 'crit' : 'dmg');
         trackDps(dmgRes.dmg);
         if (typeof recordRunDamage === 'function') recordRunDamage(sk.name, dmgRes.dmg);
       } else {

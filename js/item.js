@@ -118,7 +118,7 @@ function rollAffixes(count, itemLevel, rarityIdx, slot, luck) {
 
 function makeEquipment(stage, opts) {
   opts = opts || {};
-  var slot = opts.slot || pick(SLOT_LIST);
+  var slot = opts.slot || pick(ITEM_TYPES);
   var rarity = (opts.rarity !== undefined) ? opts.rarity : rollRarity(stage, opts.lootBonus);
   rarity = clamp(rarity, 0, RARITIES.length - 1);
   var lvl = Math.max(1, opts.level || (stage + ri(-1, 1)));
