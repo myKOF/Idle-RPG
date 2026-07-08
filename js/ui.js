@@ -20,8 +20,9 @@ function addLog(elId, msg, cls, cap, cat) {
 }
 function blog(msg, cls, cat) {
   if (!cat) {
-    if (msg.includes('強化') || msg.includes('換裝') || msg.includes('獲得') || msg.includes('資源不足') || msg.includes('背包已滿') || msg.includes('暫存區已滿')) cat = 'factory';
-    else if (msg.includes('推進') || msg.includes('退回') || msg.includes('高塔') || msg.includes('狂暴') || msg.includes('撤出') || msg.includes('復活') || msg.includes('重擊') || msg.includes('擊倒')) cat = 'combat';
+    if (msg.includes('戰利品') || msg.includes('獲得') || msg.includes('掉落')) cat = 'loot';
+    else if (msg.includes('強化') || msg.includes('換裝') || msg.includes('資源不足') || msg.includes('背包已滿') || msg.includes('暫存區已滿')) cat = 'factory';
+    else if (msg.includes('推進') || msg.includes('退回') || msg.includes('高塔') || msg.includes('狂暴') || msg.includes('撤出') || msg.includes('復活') || msg.includes('重擊') || msg.includes('擊倒') || msg.includes('遭遇')) cat = 'combat';
     else cat = 'system';
   }
   addLog('battle-log', msg, cls, 150, cat);

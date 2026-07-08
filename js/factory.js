@@ -211,7 +211,7 @@ function tryHybridSynthesis() {
   if (great && it.rarity < RARITIES.length - 1) {
     it.rarity++;
     ensureSockets(it); // 稀有度提升 → 插槽數同步增加
-    it.name = RARITY_PREFIX[it.rarity] + it.name.replace(/^(粗糙的|堅實的|精工的|奇異的|大師級|傳世的|神鑄的|創世的)/, '');
+    it.name = RARITY_PREFIX[it.rarity] + it.name.replace(/^(粗糙的|堅實的|精工的|奇異的|大師級|傳世的|神鑄的|創世的|普通的|精良的|稀有的|獨特的|史詩的|傳說的|神話的)/, '');
     // 升稀有度補被動
     if (it.rarity >= RARE_IDX && !it.passive) {
       var pk = pick(Object.keys(PASSIVE_POOL));

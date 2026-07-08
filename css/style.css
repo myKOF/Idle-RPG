@@ -267,6 +267,7 @@ textarea#save-io {
 
 #battle-log.filter-combat .log-line:not([data-cat="combat"]) { display: none; }
 #battle-log.filter-factory .log-line:not([data-cat="factory"]) { display: none; }
+#battle-log.filter-loot .log-line:not([data-cat="loot"]) { display: none; }
 #battle-log.filter-system .log-line:not([data-cat="system"]) { display: none; }
 
 /* ---- 裝備分頁 ---- */
