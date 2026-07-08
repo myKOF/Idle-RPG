@@ -57,6 +57,7 @@ function migrateSave(data) {
     }
   }
   data.tower.active = false; // 讀檔時不可能處於高塔戰鬥
+  if (!data.settings) data.settings = { compareEq: false };
   
   // 修正舊有裝備名稱前綴
   var fixName = function(it) {

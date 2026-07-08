@@ -15,6 +15,8 @@ function newGameState() {
       level: 1, xp: 0,
       gold: 50, scrap: 0, essence: 0,
       gems: gems,
+      fusedGems: [],          // 融合寶石（雙屬性，個別實體）
+      gemShop: { items: [], refreshCount: 0, hourStart: Date.now() },
       books: books,
       invUpgrades: 0,
       // 技能：初始自帶 2 個 1 級技能；每升 1 級 +1 技能點
@@ -42,6 +44,7 @@ function newGameState() {
       stats: { salvaged: 0, extracted: 0, synthesized: 0, enchanted: 0, upgraded: 0, upgradeFailed: 0, mutated: 0 }
     },
     tower: { highest: 0, active: false },
+    settings: { compareEq: false },
     firstRunAt: Date.now()
   };
 }
@@ -82,7 +85,7 @@ function computeStats() {
     var it = G.equipment[slot];
     if (!it) return;
     if (it.sockets) {
-      it.sockets.forEach(function (g) { if (g && GEM_TYPES[g.type]) socketed.push(g); });
+      it.sockets.forEach(function (g) { if (g && (g.fused || GEM_TYPES[g.type])) socketed.push(g); });
     }
     var um = upgradeMult(it);
     it.affixes.forEach(function (a) {
@@ -120,15 +123,22 @@ function computeStats() {
     }
   }
 
-  // 鑲嵌寶石加成（受「寶石鑲嵌效率」屬性放大）
+  // 鑲嵌寶石加成（受「寶石鑲嵌效率」屬性放大；融合寶石逐屬性計入）
   var gemMult = 1 + A.gemEff / 100;
-  socketed.forEach(function (g) {
-    var v = gemStatValue(g.type, g.level) * gemMult;
-    var key = GEM_TYPES[g.type].stat;
+  function applyGemStat(gemType, rawVal) {
+    var v = rawVal * gemMult;
+    var key = GEM_TYPES[gemType].stat;
     var re = affixResElem(key);
     if (key === 'aspd') A.aspdPct += v;
     else if (re) resist[re] = (resist[re] || 0) + v;
     else if (A[key] !== undefined) A[key] += v;
+  }
+  socketed.forEach(function (g) {
+    if (g.fused) {
+      g.fused.stats.forEach(function (s) { applyGemStat(s.type, s.val); });
+    } else if (GEM_TYPES[g.type]) {
+      applyGemStat(g.type, gemStatValue(g.type, g.level));
+    }
   });
 
   var lv = p.level;

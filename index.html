@@ -55,7 +55,7 @@
           <div class="sec-title" style="display: flex; align-items: center; justify-content: space-between;">
             <span>裝備詳情</span>
             <label style="font-size: 13px; font-weight: normal; cursor: pointer; color: var(--text);">
-              <input type="checkbox" id="toggle-compare" checked style="margin-right: 4px; cursor: pointer;">比較裝備
+              <input type="checkbox" id="toggle-compare" style="margin-right: 4px; cursor: pointer;">比較裝備
             </label>
           </div>
           <div id="detail-pane" class="panel"><div class="hint">點選裝備查看詳情</div></div>
@@ -144,7 +144,7 @@
             </select>
           </div>
           <label class="chk"><input type="checkbox" id="syn-merge"> 品質合成：同稀有度 x3 → 高一階裝備</label>
-          <label class="chk"><input type="checkbox" id="syn-gem"> 寶石合成：同級 x3 → 高一級寶石</label>
+          <label class="chk"><input type="checkbox" id="syn-gem"> 寶石升階：同種同級 x3 → 高一級寶石</label>
           <div class="node-info" id="syn-info"></div>
           <div class="sec-sub">合成暫存區</div>
           <div id="synth-buffer" class="chip-row"></div>
@@ -195,18 +195,43 @@
       <div class="hint">寶石可鑲嵌到稀有以上裝備的插槽（稀有 1｜史詩 2｜傳說 3｜神話 4 格）。到「裝備」分頁點選裝備，即可鑲嵌或點擊已鑲寶石取下；「寶石鑲嵌效率」屬性會放大鑲嵌加成。生產線合成節點開啟「寶石合成」後，會自動把 3 顆同種同級寶石合成高一級。分解裝備時鑲嵌的寶石會自動取回。</div>
       <div id="gem-table"></div>
     </div>
-    <div class="panel">
-      <div class="sec-title">🔀 寶石融合</div>
+    <div class="panel" style="margin-bottom:12px">
+      <div class="sec-title">🔀 寶石合成</div>
       <div class="hint">消耗 2 顆同等級寶石（不限種類）＋金幣 → 1 顆隨機種類的同級寶石，並有機率「昇華」成高一級。用來把冗餘寶石轉換成需要的種類。</div>
       <div class="flt-row" style="margin-top:8px">
-        <span>融合等級</span>
+        <span>合成等級</span>
         <select id="fuse-level">
           <option value="1">一級</option><option value="2">二級</option><option value="3">三級</option>
           <option value="4">四級</option><option value="5">五級</option>
         </select>
-        <button id="fuse-btn" class="btn">🔀 融合</button>
+        <button id="fuse-btn" class="btn">🔀 合成</button>
       </div>
       <div class="node-info" id="fuse-info"></div>
+    </div>
+
+    <div class="panel" style="margin-bottom:12px">
+      <div class="sec-title">🧬 寶石融合 <span class="dim-text">（僅限 5 階寶石）</span></div>
+      <div class="hint">兩顆不同屬性 → 雙屬性融合寶石（數值隨機，不一定更高）；兩顆同屬性 → 數值介於兩者之間、上限 2 倍。雙屬性寶石只能與相同雙屬性、或含其屬性的單一寶石融合。基礎成功率 60%，成品每成功融合一次 -10%（最低 10%）。<b>失敗時較弱的寶石會降解</b>為 4~8 顆 1 級或 2~4 顆 2 級同屬性寶石。</div>
+      <div id="gfuse-slots" class="chip-row" style="margin:8px 0"></div>
+      <div class="btn-row">
+        <button id="gfuse-btn" class="btn">🧬 執行融合</button>
+        <button id="gfuse-clear" class="btn sm">清空</button>
+      </div>
+      <div class="node-info" id="gfuse-info"></div>
+      <div class="sec-sub">可用素材（點擊放入融合槽）</div>
+      <div id="gfuse-pool" class="chip-row"></div>
+      <div class="sec-sub">持有的融合寶石（可至裝備分頁鑲嵌）</div>
+      <div id="fused-gem-list" class="chip-row"></div>
+    </div>
+
+    <div class="panel">
+      <div class="sec-title">🏪 寶石商店 <span class="dim-text" id="shop-reset-cd"></span></div>
+      <div id="gem-shop-grid"></div>
+      <div class="btn-row" style="margin-top:8px">
+        <button id="shop-buy-all" class="btn">🛒 一鍵全購買</button>
+        <button id="shop-refresh" class="btn warn">🔄 手動刷新</button>
+      </div>
+      <div class="hint">每次刷出 10 顆寶石（1階 60%｜2階 30%｜3階 6%｜4階 3%｜5階 1%）。手動刷新費用 = 50,000 + 刷新次數 × 10,000，刷新次數每小時重置。</div>
     </div>
   </section>
 

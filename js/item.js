@@ -39,6 +39,191 @@ function gemLabel(type, lv) {
   return GEM_TYPES[type].emoji + GEM_NAMES[lv] + GEM_TYPES[type].name;
 }
 
+/* ================ 融合寶石（雙屬性，僅 5 階可融合） ================
+   G.player.fusedGems = [ { id, stats:[{type,val}x1~2], level:5, fusions:n } ] */
+function fusedGemStatText(fg) {
+  return fg.stats.map(function (s) {
+    var gt = GEM_TYPES[s.type];
+    return gt.statName.replace('%', '') + ' +' + (gt.pct ? pctStr(s.val) : fmt(s.val));
+  }).join('、');
+}
+function fusedGemLabel(fg) {
+  var emojis = fg.stats.map(function (s) { return GEM_TYPES[s.type].emoji; }).join('');
+  return emojis + '融合寶石（' + fusedGemStatText(fg) + '）';
+}
+function findFusedGem(id) {
+  var list = G.player.fusedGems || [];
+  for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+  return null;
+}
+function removeFusedGem(id) {
+  var list = G.player.fusedGems || [];
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].id === id) { return list.splice(i, 1)[0]; }
+  }
+  return null;
+}
+
+// 融合素材參照 → 正規化 { stats, fusions, ref }；plain 需持有 5 階寶石
+function normalizeFuseMaterial(ref) {
+  if (!ref) return null;
+  if (ref.kind === 'plain') {
+    if (gemCount(ref.type, GEM_MAX_LEVEL) < 1) return null;
+    return { stats: [{ type: ref.type, val: gemStatValue(ref.type, GEM_MAX_LEVEL) }], fusions: 0, ref: ref };
+  }
+  var fg = findFusedGem(ref.id);
+  if (!fg) return null;
+  return { stats: fg.stats, fusions: fg.fusions || 0, ref: ref };
+}
+// 成功率：60% - 10% x（雙方累計成功融合次數），最低 10%
+function gemFuseRate(m1, m2) {
+  return Math.max(GEM_FUSE_MIN_RATE, GEM_FUSE_BASE_RATE - GEM_FUSE_RATE_DECAY * ((m1 ? m1.fusions : 0) + (m2 ? m2.fusions : 0)));
+}
+// 屬性相容：融合後屬性種類聯集不得超過 2（涵蓋規則 4 全部情境）
+function gemFuseTypesOk(m1, m2) {
+  var set = {};
+  m1.stats.forEach(function (s) { set[s.type] = true; });
+  m2.stats.forEach(function (s) { set[s.type] = true; });
+  return Object.keys(set).length <= 2 ? Object.keys(set) : null;
+}
+// 消耗素材（成功時雙方都消耗；失敗時只消耗較弱方）
+function consumeFuseMaterial(m) {
+  if (m.ref.kind === 'plain') addGem(m.ref.type, GEM_MAX_LEVEL, -1);
+  else removeFusedGem(m.ref.id);
+}
+// 失敗降解：4~8 顆 1 級或 2~4 顆 2 級同屬性寶石（各 50%）
+function degradeFuseMaterial(m) {
+  var type = pick(m.stats).type;
+  var out;
+  if (chance(50)) { out = { lv: 1, n: ri(4, 8) }; }
+  else { out = { lv: 2, n: ri(2, 4) }; }
+  addGem(type, out.lv, out.n);
+  return { type: type, lv: out.lv, n: out.n };
+}
+
+/* 執行融合 v2；回傳 { err } 或 { success, result } 或 { success:false, degraded } */
+function fuseGemsV2(ref1, ref2) {
+  var m1 = normalizeFuseMaterial(ref1);
+  var m2 = normalizeFuseMaterial(ref2);
+  if (!m1 || !m2) return { err: '素材不足（僅限 5 階寶石）' };
+  if (ref1.kind === 'plain' && ref2.kind === 'plain' && ref1.type === ref2.type && gemCount(ref1.type, GEM_MAX_LEVEL) < 2) {
+    return { err: '同種寶石需要 2 顆' };
+  }
+  if (ref1.kind === 'fused' && ref2.kind === 'fused' && ref1.id === ref2.id) return { err: '不能與自己融合' };
+  var unionTypes = gemFuseTypesOk(m1, m2);
+  if (!unionTypes) return { err: '屬性不相容：融合後最多只能有 2 種屬性（雙屬性寶石只能與相同雙屬性、或含其屬性的單一寶石融合）' };
+
+  var rate = gemFuseRate(m1, m2);
+  if (chance(rate)) {
+    // === 成功：雙方消耗，產出融合寶石 ===
+    consumeFuseMaterial(m1);
+    consumeFuseMaterial(m2);
+    var stats = unionTypes.map(function (t) {
+      var v1 = null, v2 = null;
+      m1.stats.forEach(function (s) { if (s.type === t) v1 = s.val; });
+      m2.stats.forEach(function (s) { if (s.type === t) v2 = s.val; });
+      var v;
+      if (v1 !== null && v2 !== null) {
+        // 同屬性：介於兩者之間，上限為較大值的 2 倍
+        v = rnd(Math.min(v1, v2), Math.max(v1, v2) * 2);
+      } else {
+        // 單方屬性：數值隨機（不一定更高）
+        v = (v1 !== null ? v1 : v2) * rnd(0.5, 1.5);
+      }
+      return { type: t, val: Math.round(v * 10) / 10 };
+    });
+    var result = { id: uid(), stats: stats, level: GEM_MAX_LEVEL, fusions: m1.fusions + m2.fusions + 1 };
+    if (!G.player.fusedGems) G.player.fusedGems = [];
+    G.player.fusedGems.push(result);
+    UI.dirty.gems = true; UI.dirty.header = true;
+    return { success: true, result: result, rate: rate };
+  }
+  // === 失敗：較弱方降解（單屬性先於雙屬性；同為雙屬性比數值加總） ===
+  var weaker;
+  if (m1.stats.length !== m2.stats.length) {
+    weaker = m1.stats.length < m2.stats.length ? m1 : m2;
+  } else {
+    var sum1 = m1.stats.reduce(function (a, s) { return a + s.val; }, 0);
+    var sum2 = m2.stats.reduce(function (a, s) { return a + s.val; }, 0);
+    weaker = sum1 <= sum2 ? m1 : m2;
+  }
+  consumeFuseMaterial(weaker);
+  var deg = degradeFuseMaterial(weaker);
+  UI.dirty.gems = true; UI.dirty.header = true;
+  return { success: false, degraded: deg, rate: rate };
+}
+
+/* ================ 寶石商店 ================ */
+function gemShop() {
+  if (!G.player.gemShop) {
+    G.player.gemShop = { items: [], refreshCount: 0, hourStart: Date.now() };
+  }
+  return G.player.gemShop;
+}
+function shopHourlyReset() {
+  var s = gemShop();
+  if (Date.now() - s.hourStart >= 3600 * 1000) {
+    s.refreshCount = 0;
+    s.hourStart = Date.now();
+    UI.dirty.gems = true;
+  }
+}
+function shopResetCountdown() { // 秒
+  return Math.max(0, Math.ceil((gemShop().hourStart + 3600 * 1000 - Date.now()) / 1000));
+}
+function rollGemShop() {
+  var s = gemShop();
+  s.items = [];
+  for (var i = 0; i < GEM_SHOP_SIZE; i++) {
+    var lv = wpick(GEM_SHOP_TABLE.map(function (t) { return [t.lv, t.w]; }));
+    s.items.push({ type: randomGemType(), lv: lv, sold: false });
+  }
+  UI.dirty.gems = true;
+}
+function shopRefreshCost() {
+  return GEM_SHOP_REFRESH_BASE + gemShop().refreshCount * GEM_SHOP_REFRESH_STEP;
+}
+// 手動刷新（消耗金幣，次數每小時重置）
+function refreshGemShop() {
+  shopHourlyReset();
+  var cost = shopRefreshCost();
+  if (G.player.gold < cost) return '金幣不足（需 ' + fmt(cost) + '）';
+  G.player.gold -= cost;
+  gemShop().refreshCount++;
+  rollGemShop();
+  UI.dirty.header = true;
+  return null;
+}
+function buyShopGem(idx) {
+  var s = gemShop();
+  var item = s.items[idx];
+  if (!item || item.sold) return '此寶石已售出';
+  var price = gemShopPrice(item.lv);
+  if (G.player.gold < price) return '金幣不足（需 ' + fmt(price) + '）';
+  G.player.gold -= price;
+  item.sold = true;
+  addGem(item.type, item.lv, 1);
+  UI.dirty.gems = true; UI.dirty.header = true;
+  return null;
+}
+function buyAllShopGems() {
+  var s = gemShop();
+  var bought = 0, spent = 0;
+  for (var i = 0; i < s.items.length; i++) {
+    var item = s.items[i];
+    if (item.sold) continue;
+    var price = gemShopPrice(item.lv);
+    if (G.player.gold < price) break;
+    G.player.gold -= price;
+    item.sold = true;
+    addGem(item.type, item.lv, 1);
+    bought++;
+    spent += price;
+  }
+  UI.dirty.gems = true; UI.dirty.header = true;
+  return { bought: bought, spent: spent };
+}
+
 /* ---- 裝備插槽 ---- */
 // 補齊插槽陣列（舊存檔裝備 / 稀有度提升後）
 function ensureSockets(it) {
@@ -60,11 +245,30 @@ function socketGem(it, type) {
   markStatsDirty();
   return null; // 成功
 }
-// 取下指定插槽的寶石回到庫存
+// 鑲嵌融合寶石（從 fusedGems 庫存移入插槽）
+function socketFusedGem(it, fusedId) {
+  ensureSockets(it);
+  var idx = it.sockets.indexOf(null);
+  if (idx < 0) return '插槽已滿';
+  var fg = removeFusedGem(fusedId);
+  if (!fg) return '找不到該融合寶石';
+  it.sockets[idx] = { fused: fg };
+  markStatsDirty();
+  UI.dirty.gems = true;
+  return null;
+}
+
+// 取下指定插槽的寶石回到庫存（一般 / 融合皆可）
 function unsocketGem(it, idx) {
   if (!it.sockets || !it.sockets[idx]) return false;
   var g = it.sockets[idx];
-  addGem(g.type, g.level, 1);
+  if (g.fused) {
+    if (!G.player.fusedGems) G.player.fusedGems = [];
+    G.player.fusedGems.push(g.fused);
+    UI.dirty.gems = true;
+  } else {
+    addGem(g.type, g.level, 1);
+  }
   it.sockets[idx] = null;
   markStatsDirty();
   return true;
@@ -286,11 +490,16 @@ function itemScore(it) {
     var a = it.affixes[i];
     s += (SCORE_WEIGHTS[a.key] || 1) * a.val * um;
   }
-  // 鑲嵌的寶石計入評分（避免自動換裝丟棄鑲嵌裝備）
+  // 鑲嵌的寶石計入評分（避免自動換裝丟棄鑲嵌裝備；融合寶石逐屬性計）
   if (it.sockets) {
     for (var j = 0; j < it.sockets.length; j++) {
       var g = it.sockets[j];
-      if (g && GEM_TYPES[g.type]) s += gemStatValue(g.type, g.level) * (SCORE_WEIGHTS[GEM_TYPES[g.type].stat] || 1);
+      if (!g) continue;
+      if (g.fused) {
+        g.fused.stats.forEach(function (fs) { s += fs.val * (SCORE_WEIGHTS[GEM_TYPES[fs.type].stat] || 1); });
+      } else if (GEM_TYPES[g.type]) {
+        s += gemStatValue(g.type, g.level) * (SCORE_WEIGHTS[GEM_TYPES[g.type].stat] || 1);
+      }
     }
   }
   if (it.passive) s *= 1.15;
@@ -488,7 +697,10 @@ function itemDetailHTML(it, cmp) {
     h += '<div class="it-sockets">';
     for (var si = 0; si < it.sockets.length; si++) {
       var g = it.sockets[si];
-      if (g && GEM_TYPES[g.type]) {
+      if (g && g.fused) {
+        h += '<span class="socket filled fused-socket" data-socket-remove="' + si + '" title="點擊取下">' +
+          esc(fusedGemLabel(g.fused)) + '</span>';
+      } else if (g && GEM_TYPES[g.type]) {
         var gt = GEM_TYPES[g.type];
         h += '<span class="socket filled" data-socket-remove="' + si + '" title="點擊取下">' +
           gt.emoji + ' ' + esc(GEM_NAMES[g.level] + gt.name) + '（' + esc(gt.statName.replace('%', '')) + ' +' +

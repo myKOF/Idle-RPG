@@ -636,3 +636,20 @@ textarea#save-io {
 .it-enchant.removable { cursor: pointer; border-radius: 4px; padding: 1px 4px; }
 .it-enchant.removable:hover { background: #2a1e2e; text-decoration: line-through; color: var(--bad) !important; }
 .gem-chip.dim-chip { opacity: .55; border-style: dashed; }
+
+/* ---- 寶石融合 v2 / 寶石商店 ---- */
+.gem-chip.fused-chip { border-color: #e879f9; color: #f0abfc; }
+.socket.fused-socket { border-color: #e879f9; }
+#gem-shop-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: 8px; margin-top: 8px;
+}
+.shop-card {
+  background: var(--bg2); border: 2px solid var(--border); border-radius: 10px;
+  padding: 10px 8px; text-align: center; display: flex; flex-direction: column; gap: 4px; align-items: center;
+}
+.shop-card.sold { opacity: .4; }
+.shop-emoji { font-size: 28px; }
+.shop-name { font-weight: bold; font-size: 12.5px; }
+.shop-stat { color: var(--dim); font-size: 11px; }
+.shop-sold { color: var(--dim); font-size: 12px; padding: 4px 0; }

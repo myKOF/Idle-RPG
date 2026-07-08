@@ -78,11 +78,16 @@ function extractChanceNow() {
   return ESSENCE_EXTRACT_CHANCE + st.decomposeYield + st.luck / 3;
 }
 function doSalvage(it, silent) {
-  // 鑲嵌的寶石先取回，不隨分解銷毀
+  // 鑲嵌的寶石先取回，不隨分解銷毀（含融合寶石）
   if (it.sockets) {
     for (var si = 0; si < it.sockets.length; si++) {
       var sg = it.sockets[si];
-      if (sg && GEM_TYPES[sg.type]) {
+      if (sg && sg.fused) {
+        if (!G.player.fusedGems) G.player.fusedGems = [];
+        G.player.fusedGems.push(sg.fused);
+        if (!silent) flog('💎 取回融合寶石：' + fusedGemLabel(sg.fused), 'info');
+        it.sockets[si] = null;
+      } else if (sg && GEM_TYPES[sg.type]) {
         addGem(sg.type, sg.level, 1);
         if (!silent) flog('💎 取回鑲嵌寶石：' + gemLabel(sg.type, sg.level), 'info');
         it.sockets[si] = null;
@@ -162,7 +167,7 @@ function synthTick() {
         if (gemCount(gt, lv) >= 3) {
           addGem(gt, lv, -3);
           addGem(gt, lv + 1, 1);
-          flog('💎 寶石合成：' + gemLabel(gt, lv) + ' x3 → ' + gemLabel(gt, lv + 1), 'info');
+          flog('💎 寶石升階：' + gemLabel(gt, lv) + ' x3 → ' + gemLabel(gt, lv + 1), 'info');
           merged = true;
           break; // 每 tick 只合一次
         }
@@ -305,7 +310,7 @@ function fuseGems(lv) {
   var up = lv < GEM_MAX_LEVEL && chance(FUSE_UPGRADE_CHANCE + st.luck / 2);
   var type = randomGemType();
   addGem(type, up ? lv + 1 : lv, 1);
-  flog('🔀 寶石融合：' + (up ? '🌟 昇華！' : '') + '獲得 ' + gemLabel(type, up ? lv + 1 : lv), up ? 'good' : 'info');
+  flog('🔀 寶石合成：' + (up ? '🌟 昇華！' : '') + '獲得 ' + gemLabel(type, up ? lv + 1 : lv), up ? 'good' : 'info');
   UI.dirty.header = true; UI.dirty.gems = true;
   return null;
 }

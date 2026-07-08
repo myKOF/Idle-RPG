@@ -288,9 +288,35 @@ function socketCountFor(rarity) {
 function enchantCapFor(it) {
   return RARITIES[clamp(it.rarity, 0, RARITIES.length - 1)].enchants;
 }
-// 寶石融合：消耗 2 顆同級寶石 → 隨機種類同級，機率升 1 級
+// 寶石合成（原融合改名）：消耗 2 顆同級寶石 → 隨機種類同級，機率升 1 級
 var FUSE_GOLD_COST = [0, 100, 300, 900, 2700, 8100]; // 依等級
 var FUSE_UPGRADE_CHANCE = 25; // % 基礎（+幸運值/2）
+
+/* ---- 寶石融合 v2（僅限 5 階）----
+   不同屬性 x2 → 雙屬性寶石（數值隨機）；同屬性 → 數值介於兩者間、上限 2 倍。
+   成功率 60%，融合成品每成功一次 -10%（最低 10%）。
+   失敗：較弱的一顆降解為低階寶石（4~8 顆 1 級或 2~4 顆 2 級同屬性）。 */
+var GEM_FUSE_BASE_RATE = 60;
+var GEM_FUSE_RATE_DECAY = 10;
+var GEM_FUSE_MIN_RATE = 10;
+
+/* ---- 寶石商店 ----
+   每次刷出 10 顆；價格與刷出機率依品階。
+   手動刷新費用 = 50000 + 刷新次數 x 10000，刷新次數每小時重置。 */
+var GEM_SHOP_TABLE = [
+  { lv: 1, price: 50000,   w: 60 },
+  { lv: 2, price: 125000,  w: 30 },
+  { lv: 3, price: 312500,  w: 6 },
+  { lv: 4, price: 781250,  w: 3 },
+  { lv: 5, price: 1953125, w: 1 }
+];
+var GEM_SHOP_SIZE = 10;
+var GEM_SHOP_REFRESH_BASE = 50000;
+var GEM_SHOP_REFRESH_STEP = 10000;
+function gemShopPrice(lv) {
+  for (var i = 0; i < GEM_SHOP_TABLE.length; i++) if (GEM_SHOP_TABLE[i].lv === lv) return GEM_SHOP_TABLE[i].price;
+  return 0;
+}
 
 /* ---- 物品掉落表 ----
    每個品質獨立擲骰（可同時掉多件）；機率 >100%：必掉 floor(p/100) 件，餘數為再掉 1 件的機率。
