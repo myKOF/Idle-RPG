@@ -271,9 +271,11 @@ function renderBattle() {
 function itemCellHTML(it, source) {
   var r = RARITIES[it.rarity];
   var effClass = (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= 7 ? ' eff-genesis' : '');
+  var info = SLOT_INFO[it.slot];
+  var iconHtml = info.icon ? '<img src="images/' + info.icon + '" class="item-icon">' : '<span class="ic-emoji">' + info.emoji + '</span>';
   return '<div class="item-cell' + effClass + '" data-id="' + it.id + '" data-src="' + source + '" data-slot="' + it.slot + '" ' +
     'style="border-color:' + r.color + ';box-shadow:inset 0 0 12px ' + r.color + '33">' +
-    '<span class="ic-emoji">' + SLOT_INFO[it.slot].emoji + '</span>' +
+    iconHtml +
     (it.upgrade ? '<span class="ic-up">+' + it.upgrade + '</span>' : '') +
     (itemEnchants(it).length ? '<span class="ic-enc">' + (ENCHANTS[itemEnchants(it)[0].key] || {}).emoji +
       (itemEnchants(it).length > 1 ? '×' + itemEnchants(it).length : '') + '</span>' : '') +
@@ -292,13 +294,15 @@ function renderEquip() {
     if (it) {
       var r = RARITIES[it.rarity];
       var effClass = (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= 7 ? ' eff-genesis' : '');
+      var iconHtml = info.icon ? '<img src="images/' + info.icon + '" class="eq-icon">' : '<div class="eq-emoji">' + info.emoji + '</div>';
       h += '<div class="eq-slot filled' + effClass + '" data-id="' + it.id + '" data-src="equip" data-slot="' + slot + '" style="border-color:' + r.color + '">' +
-        '<div class="eq-emoji">' + info.emoji + '</div>' +
+        iconHtml +
         '<div class="eq-name" style="color:' + r.color + '">' + esc(it.name) + (it.upgrade ? ' +' + it.upgrade : '') + '</div>' +
         '<div class="eq-sub">' + info.name + '・Lv.' + it.level +
         (itemEnchants(it).length ? ' ' + itemEnchants(it).map(function (en) { return (ENCHANTS[en.key] || {}).emoji || ''; }).join('') : '') + '</div></div>';
     } else {
-      h += '<div class="eq-slot empty"><div class="eq-emoji dim">' + info.emoji + '</div>' +
+      var iconHtml = info.icon ? '<img src="images/' + info.icon + '" class="eq-icon dim">' : '<div class="eq-emoji dim">' + info.emoji + '</div>';
+      h += '<div class="eq-slot empty">' + iconHtml +
         '<div class="eq-sub">' + info.name + '（未裝備）</div></div>';
     }
   });

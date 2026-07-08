@@ -34,14 +34,14 @@ function equipSlotsForType(type) {
   return [type];
 }
 var SLOT_INFO = {
-  weapon:   { name: '主武器', emoji: '⚔️' },
-  weapon2:  { name: '副武器', emoji: '🗡️' },
-  helmet:   { name: '頭盔', emoji: '🪖' },
-  shoulder: { name: '肩甲', emoji: '🦾' },
-  chest:    { name: '胸甲', emoji: '🛡️' },
-  belt:     { name: '腰帶', emoji: '🪢' },
-  gloves:   { name: '護手', emoji: '🧤' },
-  legs:     { name: '護腿', emoji: '👖' },
+  weapon:   { name: '主武器', emoji: '⚔️', icon: 'icon_weapon.png' },
+  weapon2:  { name: '副武器', emoji: '🗡️', icon: 'icon_weapon.png' },
+  helmet:   { name: '頭盔', emoji: '🪖', icon: 'icon_helmet.png' },
+  shoulder: { name: '肩甲', emoji: '🦾', icon: 'icon_shoulder.png' },
+  chest:    { name: '胸甲', emoji: '🛡️', icon: 'icon_chest.png' },
+  belt:     { name: '腰帶', emoji: '🪢', icon: 'icon_belt.png' },
+  gloves:   { name: '護手', emoji: '🧤', icon: 'icon_gloves.png' },
+  legs:     { name: '護腿', emoji: '👖', icon: 'icon_legs.png' },
   boots:    { name: '靴子', emoji: '🥾' },
   ring:     { name: '戒指', emoji: '💍' },
   ring2:    { name: '戒指Ⅱ', emoji: '💍' },

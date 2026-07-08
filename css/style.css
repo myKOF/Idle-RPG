@@ -1,39 +1,45 @@
 /* ============ 無限征途：合成之巔 ============ */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
-  --bg: #0d1017;
-  --bg2: #141926;
-  --panel: #1a2032;
-  --panel2: #202942;
-  --border: #2c3654;
-  --text: #d7deed;
-  --dim: #7d89a6;
-  --accent: #f5b942;
-  --good: #4ade80;
-  --bad: #f87171;
-  --warn: #fbbf24;
-  --info: #38bdf8;
+  --bg: #0a0a0a;
+  --bg2: #121010;
+  --panel: rgba(20, 16, 12, 0.85);
+  --panel2: rgba(30, 24, 18, 0.9);
+  --border: #52402a;
+  --border-light: #7a6344;
+  --text: #e0d0b0;
+  --dim: #8b7961;
+  --accent: #c4a464;
+  --good: #5f9e53;
+  --bad: #b22222;
+  --warn: #d49a37;
+  --info: #4682b4;
 }
 html, body { height: 100%; }
 body {
-  background: radial-gradient(1200px 600px at 50% -100px, #1c2440 0%, var(--bg) 60%);
+  background: url('../images/diablo_main_bg.png') no-repeat center center fixed, #0a0a0a;
+  background-size: cover;
   color: var(--text);
-  font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+  font-family: Palatino, "Palatino Linotype", "Book Antiqua", "Microsoft JhengHei", serif;
   font-size: 14px;
   line-height: 1.5;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
 }
 
 /* ---- 頂部 ---- */
 #topbar {
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
   padding: 10px 16px;
-  background: linear-gradient(180deg, #1b2138, #131829);
-  border-bottom: 1px solid var(--border);
+  background: url('../images/diablo_panel_tex.png') repeat, linear-gradient(180deg, #241c14, #120e0a);
+  background-blend-mode: overlay;
+  border-bottom: 2px solid var(--border);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.8);
 }
 .brand { font-size: 18px; font-weight: bold; color: var(--accent); letter-spacing: 1px; }
 .brand-sub { font-size: 12px; color: var(--dim); margin-left: 8px; letter-spacing: 4px; }
-#res-bar { display: flex; gap: 14px; flex-wrap: wrap; }
-.res { color: var(--dim); cursor: default; }
+#res-bar { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+.res { color: var(--dim); cursor: default; display: flex; align-items: center; }
+.res-icon { width: 22px; height: 22px; margin-right: 6px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); }
 .res b { color: var(--text); font-variant-numeric: tabular-nums; }
 
 /* ---- 左側屬性面板 ---- */
@@ -44,26 +50,27 @@ body {
   padding: 16px;
   flex-shrink: 0;
 }
-.sidebar-avatar { font-size: 64px; text-align: center; margin-bottom: 8px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.5)); }
-.sidebar-title { text-align: center; font-weight: bold; font-size: 18px; color: var(--accent); margin-bottom: 8px; }
-.sidebar-level { text-align: center; margin-bottom: 16px; }
-.sidebar-level .plevel { color: var(--accent); font-weight: bold; }
-#stats-sidebar #xp-bar { width: 100%; height: 6px; background: #0a0d14; border-radius: 4px; overflow: hidden; border: 1px solid var(--border); margin-top: 6px; }
-#stats-sidebar #xp-fill { height: 100%; width: 0; background: linear-gradient(90deg, #8b5cf6, #c084fc); transition: width .3s; }
+.sidebar-avatar { text-align: center; margin-bottom: 8px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.8)); }
+.sidebar-avatar img { width: 80px; height: 80px; border: 2px solid var(--border); border-radius: 4px; box-shadow: 0 0 10px rgba(0,0,0,0.8); object-fit: cover; }
+.sidebar-title { text-align: center; font-weight: bold; font-size: 18px; color: var(--accent); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+.sidebar-level { text-align: center; margin-bottom: 16px; font-weight: bold; }
+.sidebar-level .plevel { color: var(--text); font-weight: bold; }
+#stats-sidebar #xp-bar { width: 100%; height: 8px; background: #000; border-radius: 2px; overflow: hidden; border: 1px solid var(--border); margin-top: 6px; box-shadow: inset 0 0 5px rgba(0,0,0,0.8); }
+#stats-sidebar #xp-fill { height: 100%; width: 0; background: linear-gradient(90deg, #5c2900, #c4a464); transition: width .3s; }
 .sidebar-stats { display: flex; flex-direction: column; gap: 10px; }
-.stat-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--dim); border-bottom: 1px dashed #1b2236; padding-bottom: 4px; }
+.stat-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--dim); border-bottom: 1px dashed var(--border); padding-bottom: 4px; }
 .stat-row b { color: var(--text); font-variant-numeric: tabular-nums; }
-.stat-divider { height: 1px; background: var(--border); margin: 6px 0; border: none; }
+.stat-divider { height: 1px; background: var(--border); margin: 6px 0; border: none; box-shadow: 0 1px 0 rgba(0,0,0,0.8); }
 
 /* ---- 分頁 ---- */
-#tabs { display: flex; gap: 4px; padding: 8px 16px 0; background: var(--bg2); border-bottom: 1px solid var(--border); }
+#tabs { display: flex; gap: 4px; padding: 8px 16px 0; background: transparent; border-bottom: 2px solid var(--border); }
 .tab-btn {
-  padding: 8px 18px; border: 1px solid var(--border); border-bottom: none;
-  border-radius: 8px 8px 0 0; background: var(--panel); color: var(--dim);
-  cursor: pointer; font-size: 14px; font-family: inherit;
+  padding: 8px 18px; border: 2px solid var(--border); border-bottom: none;
+  border-radius: 4px 4px 0 0; background: url('../images/diablo_panel_tex.png') repeat, #16120e; background-blend-mode: multiply; color: var(--dim);
+  cursor: pointer; font-size: 14px; font-family: inherit; box-shadow: inset 0 5px 10px rgba(0,0,0,0.5); font-weight: bold;
 }
-.tab-btn:hover { color: var(--text); }
-.tab-btn.active { background: var(--panel2); color: var(--accent); font-weight: bold; }
+.tab-btn:hover { color: var(--text); filter: brightness(1.2); }
+.tab-btn.active { background: url('../images/diablo_panel_tex.png') repeat, #241c14; background-blend-mode: multiply; color: var(--accent); box-shadow: inset 0 2px 5px rgba(255,255,255,0.1); border-color: var(--accent); border-bottom: 2px solid transparent; margin-bottom: -2px; }
 
 /* ---- 主要佈局 ---- */
 #game-layout {
@@ -79,16 +86,16 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: 0; /* prevent flex blowout */
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--bg2);
+  min-width: 0;
+  border: 12px solid var(--border); border-image: url('../images/diablo_frame_9slice.png') 30 stretch;
+  border-radius: 0;
+  background: url('../images/diablo_panel_tex.png') repeat, rgba(10, 8, 6, 0.9); background-blend-mode: multiply;
+  box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 0 15px rgba(0,0,0,0.8);
   overflow: hidden;
 }
 
 #workspace-area #tabs {
-  border-bottom: 1px solid var(--border);
-  border-radius: 10px 10px 0 0;
+  border-bottom: 2px solid var(--border);
   padding: 8px 16px 0;
 }
 
@@ -106,9 +113,10 @@ body {
   flex-direction: row;
   gap: 16px;
   min-width: 0;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--bg2);
+  border: 12px solid var(--border); border-image: url('../images/diablo_frame_9slice.png') 30 stretch;
+  border-radius: 0;
+  background: url('../images/diablo_panel_tex.png') repeat, rgba(10, 8, 6, 0.9); background-blend-mode: multiply;
+  box-shadow: inset 0 0 40px rgba(0,0,0,0.9);
   padding: 14px 16px;
   overflow-y: auto;
 }
@@ -130,44 +138,49 @@ body {
   flex-direction: column;
 }
 .summary-card {
-  background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 13px;
+  background: url('../images/diablo_panel_tex.png') repeat, var(--panel2); background-blend-mode: multiply; border: 2px solid var(--border); border-radius: 4px; padding: 10px; font-size: 13px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
 }
 .summary-card-title {
-  color: var(--accent); font-weight: bold; margin-bottom: 6px; text-align: center;
+  color: var(--accent); font-weight: bold; margin-bottom: 6px; text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 4px;
 }
 .summary-card-row {
-  color: var(--dim); line-height: 1.4;
+  color: var(--dim); line-height: 1.5;
 }
 .summary-card-row b { color: var(--text); font-variant-numeric: tabular-nums; }
 
 /* ---- 通用 ---- */
-.panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
-.sec-title { font-weight: bold; color: var(--accent); margin-bottom: 8px; }
-.sec-sub { color: var(--dim); font-size: 12px; margin-top: 8px; margin-bottom: 4px; }
-.hint { color: var(--dim); font-size: 12px; margin-top: 6px; }
-.dim-text { color: var(--dim); font-size: 12px; }
-.btn {
-  padding: 6px 14px; border: 1px solid var(--border); border-radius: 6px;
-  background: var(--panel2); color: var(--text); cursor: pointer; font-family: inherit; font-size: 13px;
+.panel {
+  background: url('../images/diablo_panel_tex.png') repeat, var(--panel); background-blend-mode: multiply;
+  border: 12px solid var(--border); border-image: url('../images/diablo_frame_9slice.png') 30 stretch;
+  border-radius: 0; padding: 12px; box-shadow: inset 0 0 20px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.5);
 }
-.btn:hover { border-color: var(--accent); color: var(--accent); }
-.btn.sm { padding: 3px 10px; font-size: 12px; }
-.btn.warn { border-color: #7a5b22; }
-.btn.warn:hover { border-color: var(--warn); color: var(--warn); }
-.btn.danger { border-color: #7a2929; color: #f0a0a0; }
+.sec-title { font-weight: bold; color: var(--accent); margin-bottom: 8px; font-size: 15px; border-bottom: 1px solid var(--border); padding-bottom: 4px; text-shadow: 1px 1px 2px #000; }
+.sec-sub { color: var(--dim); font-size: 12px; margin-top: 8px; margin-bottom: 4px; }
+.hint { color: var(--dim); font-size: 13px; margin-top: 6px; font-style: italic; }
+.dim-text { color: var(--dim); font-size: 13px; }
+.btn {
+  padding: 6px 14px; border: 1px solid var(--border-light); border-radius: 2px;
+  background: linear-gradient(180deg, #3a2b1f, #1f150e); color: var(--text); cursor: pointer; font-family: inherit; font-size: 14px; font-weight: bold; box-shadow: inset 0 0 5px rgba(0,0,0,0.8), 0 2px 5px rgba(0,0,0,0.5); text-shadow: 1px 1px 1px #000;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); background: linear-gradient(180deg, #4a382a, #2a1e16); }
+.btn:active { box-shadow: inset 0 0 10px rgba(0,0,0,0.9); transform: translateY(1px); }
+.btn.sm { padding: 3px 10px; font-size: 13px; }
+.btn.warn { border-color: #8b6b22; background: linear-gradient(180deg, #4a3a1f, #2a2016); color: var(--warn); }
+.btn.warn:hover { border-color: var(--accent); color: var(--accent); }
+.btn.danger { border-color: #7a2929; color: #f0a0a0; background: linear-gradient(180deg, #4a1f1f, #2a1616); }
 .btn.danger:hover { border-color: var(--bad); color: var(--bad); }
 .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
-.chk { display: block; color: var(--text); margin: 4px 0; cursor: pointer; font-size: 13px; }
+.chk { display: block; color: var(--text); margin: 4px 0; cursor: pointer; font-size: 14px; }
 .chk input { margin-right: 6px; accent-color: var(--accent); }
 select, input[type="number"] {
-  background: var(--bg2); color: var(--text); border: 1px solid var(--border);
-  border-radius: 5px; padding: 3px 8px; font-family: inherit; font-size: 13px;
+  background: #000; color: var(--text); border: 1px solid var(--border);
+  border-radius: 2px; padding: 3px 8px; font-family: inherit; font-size: 14px; box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
 }
 input[type="number"] { width: 70px; }
 textarea#save-io {
-  width: 100%; height: 80px; background: var(--bg2); color: var(--dim);
-  border: 1px solid var(--border); border-radius: 6px; padding: 8px;
-  font-size: 11px; resize: vertical; margin-top: 4px;
+  width: 100%; height: 80px; background: #000; color: var(--dim);
+  border: 1px solid var(--border); border-radius: 2px; padding: 8px;
+  font-size: 12px; resize: vertical; margin-top: 4px; font-family: monospace; box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
 }
 
 /* ---- 戰鬥場景 ---- */
@@ -179,10 +192,12 @@ textarea#save-io {
   margin-bottom: 14px;
 }
 .combatant {
-  position: relative; background: var(--panel); border: 1px solid var(--border);
-  border-radius: 12px; padding: 18px 14px 14px; text-align: center; overflow: hidden;
+  position: relative; background: url('../images/diablo_panel_tex.png') repeat, var(--panel); background-blend-mode: multiply;
+  border: 12px solid var(--border); border-image: url('../images/diablo_frame_9slice.png') 30 stretch;
+  border-radius: 0; padding: 18px 14px 14px; text-align: center; overflow: hidden;
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.9), 0 5px 15px rgba(0,0,0,0.7);
 }
-.combatant.boss { border-color: #6d2836; }
+.combatant.boss { border-color: #8b0000; box-shadow: inset 0 0 40px rgba(139,0,0,0.4), 0 5px 15px rgba(0,0,0,0.7); }
 .info-btn {
   position: absolute; top: 6px; right: 6px; width: 22px; height: 22px;
   border-radius: 50%; background: rgba(15,23,42,0.9); border: 1px solid #f97316;
@@ -225,16 +240,16 @@ textarea#save-io {
 .sk-run-item.on-cd span { color: var(--accent); }
 .sk-run-item.no-mp span { color: var(--bad); opacity: 0.8; }
 .hp-bar {
-  position: relative; height: 20px; background: #0a0d14; border-radius: 10px;
-  border: 1px solid var(--border); overflow: hidden; margin-top: 6px;
+  position: relative; height: 22px; background: #050505; border-radius: 2px;
+  border: 1px solid var(--border); overflow: hidden; margin-top: 6px; box-shadow: inset 0 0 8px rgba(0,0,0,0.9);
 }
 .hp-fill { height: 100%; width: 100%; transition: width .2s; }
-.hp-fill.player { background: linear-gradient(90deg, #16a34a, #4ade80); }
-.hp-fill.monster { background: linear-gradient(90deg, #b91c1c, #f87171); }
-.hp-fill.boss { background: linear-gradient(90deg, #9333ea, #f87171); }
+.hp-fill.player { background: linear-gradient(180deg, #b22222, #5e1111); box-shadow: inset 0 2px 5px rgba(255,255,255,0.2); }
+.hp-fill.monster { background: linear-gradient(180deg, #8b0000, #3a0000); box-shadow: inset 0 2px 5px rgba(255,255,255,0.1); }
+.hp-fill.boss { background: linear-gradient(180deg, #4b0082, #1a0033); box-shadow: inset 0 2px 5px rgba(255,255,255,0.2); }
 .hp-text {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  font-size: 11px; color: #fff; text-shadow: 0 1px 2px #000; font-variant-numeric: tabular-nums;
+  font-size: 12px; font-weight: bold; color: #fff; text-shadow: 1px 1px 2px #000, 0 0 4px #000; font-variant-numeric: tabular-nums;
 }
 
 /* 漂浮傷害字 */
@@ -259,10 +274,11 @@ textarea#save-io {
 /* ---- 日誌 ---- */
 .log-header { display: flex; align-items: center; justify-content: space-between; margin: 6px 0 4px; }
 .log-title { color: var(--dim); font-size: 12px; margin: 0; }
-.log-filter { background: var(--panel); border: 1px solid var(--border); color: var(--dim); padding: 2px 4px; border-radius: 4px; font-size: 11px; cursor: pointer; }
+.log-filter { background: url('../images/diablo_panel_tex.png') repeat, var(--panel); border: 1px solid var(--border); color: var(--text); padding: 2px 6px; border-radius: 2px; font-size: 12px; cursor: pointer; box-shadow: inset 0 0 5px rgba(0,0,0,0.8); }
 .log {
-  background: #10141f; border: 1px solid var(--border); border-radius: 8px;
-  flex: 1; min-height: 190px; overflow-y: auto; padding: 8px 10px; font-size: 12.5px;
+  background: #080605; border: 12px solid var(--border); border-image: url('../images/diablo_frame_9slice.png') 30 stretch;
+  border-radius: 0;
+  flex: 1; min-height: 190px; overflow-y: auto; padding: 8px 10px; font-size: 13px; font-family: Palatino, serif; box-shadow: inset 0 0 20px rgba(0,0,0,0.9);
 }
 .log-line { padding: 1px 0; color: var(--dim); border-bottom: 1px dashed #1b2236; }
 .log-line.good { color: var(--good); }
@@ -304,10 +320,12 @@ textarea#save-io {
 
 /* ---- 裝備分頁 ---- */
 .equip-section-box {
-  border: 2px solid #e7823a;
-  border-radius: 8px;
+  background: url('../images/diablo_panel_tex.png') repeat, rgba(20, 15, 10, 0.8); background-blend-mode: multiply;
+  border: 12px solid var(--border); border-image: url('../images/diablo_frame_9slice.png') 30 stretch;
+  border-radius: 0;
   padding: 12px;
   margin-bottom: 12px;
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.5);
 }
 #tab-equip .equip-section-box:nth-child(2) {
   flex: 1;
@@ -580,8 +598,9 @@ textarea#save-io {
 /* ---- 技能樹 ---- */
 #skill-trees { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
 .tree-panel {
-  background: linear-gradient(180deg, #1c2340, #141a2c);
-  border: 1px solid var(--border); border-radius: 10px; padding: 12px;
+  background: url('../images/diablo_panel_tex.png') repeat, rgba(10,5,2,0.8); background-blend-mode: multiply;
+  border: 12px solid var(--border); border-image: url('../images/diablo_frame_9slice.png') 30 stretch;
+  border-radius: 0; padding: 12px; box-shadow: inset 0 0 30px rgba(0,0,0,0.9);
 }
 .tree-title { font-weight: bold; color: var(--accent); margin-bottom: 10px; }
 .tree-row { display: flex; gap: 10px; margin-bottom: 4px; min-height: 30px; align-items: center; flex-wrap: wrap; }
@@ -617,26 +636,27 @@ textarea#save-io {
 /* ---- 技能彈窗 / 懸停提示 ---- */
 .modal-overlay {
   position: fixed; inset: 0; z-index: 90;
-  background: rgba(5, 8, 16, .65); backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, .85); backdrop-filter: blur(2px);
   display: flex; align-items: center; justify-content: center;
 }
 .modal-box {
   position: relative; width: min(440px, 92vw);
-  background: var(--panel); border: 1px solid var(--accent);
-  border-radius: 12px; padding: 18px 16px 14px;
-  box-shadow: 0 12px 40px rgba(0,0,0,.6);
+  background: url('../images/diablo_panel_tex.png') repeat, rgba(15,10,5,0.9); background-blend-mode: multiply;
+  border: 12px solid var(--border); border-image: url('../images/diablo_frame_9slice.png') 30 stretch;
+  border-radius: 0; padding: 18px 16px 14px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.9), inset 0 0 20px rgba(0,0,0,0.8);
 }
 .modal-x {
   position: absolute; top: 8px; right: 8px;
-  width: 26px; height: 26px; border-radius: 6px;
-  background: var(--bg2); border: 1px solid var(--border); color: var(--dim);
-  cursor: pointer; font-size: 13px; line-height: 1;
+  width: 26px; height: 26px; border-radius: 2px;
+  background: #000; border: 1px solid var(--border); color: var(--dim);
+  cursor: pointer; font-size: 13px; line-height: 1; box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
 }
 .modal-x:hover { color: var(--bad); border-color: var(--bad); }
 #sk-tooltip {
   position: fixed; z-index: 95; max-width: 300px; pointer-events: none;
-  background: #10152a; border: 1px solid var(--accent); border-radius: 8px;
-  padding: 8px 10px; font-size: 12px; box-shadow: 0 6px 20px rgba(0,0,0,.55);
+  background: url('../images/diablo_panel_tex.png') repeat, rgba(0,0,0,0.9); background-blend-mode: multiply; border: 2px solid var(--accent); border-radius: 2px;
+  padding: 10px 12px; font-size: 13px; box-shadow: 0 6px 20px rgba(0,0,0,.9); font-family: Palatino, serif;
 }
 .skt-name { font-weight: bold; color: var(--accent); font-size: 13px; }
 .skt-meta { color: var(--info); font-size: 11px; margin: 2px 0; }
@@ -695,3 +715,29 @@ textarea#save-io {
   background: var(--bg2); border-radius: 4px; padding: 1px 6px;
 }
 .zone-btn.active .zone-best { color: var(--accent); }
+
+/* ---- 自訂滾動條 ---- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #080605;
+  border-left: 1px solid var(--border);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border: 1px solid #1a140f;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+::-webkit-scrollbar-corner {
+  background: #080605;
+}
+
+/* ---- 裝備與物品圖示 ---- */
+.eq-icon { width: 34px; height: 34px; margin-bottom: 4px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); object-fit: contain; }
+.eq-icon.dim { opacity: 0.3; filter: grayscale(1) drop-shadow(0 2px 4px rgba(0,0,0,0.8)); }
+.item-icon { width: 28px; height: 28px; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.8)); object-fit: contain; }
