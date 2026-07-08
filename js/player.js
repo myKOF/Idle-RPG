@@ -6,15 +6,23 @@ function newGameState() {
   SLOT_LIST.forEach(function (s) { equipment[s] = null; });
   var books = {};
   for (var bk in ENCHANTS) books[bk] = 0;
+  var gems = {};
+  for (var gt in GEM_TYPES) gems[gt] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   return {
     version: 1,
     savedAt: Date.now(),
     player: {
       level: 1, xp: 0,
       gold: 50, scrap: 0, essence: 0,
-      gems: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+      gems: gems,
       books: books,
-      invUpgrades: 0
+      invUpgrades: 0,
+      // 技能：初始自帶 2 個 1 級技能；每升 1 級 +1 技能點
+      skills: { powerSlash: 1, arcaneBurst: 1 },
+      skillPoints: 0,
+      loadout: ['powerSlash', 'arcaneBurst'],
+      fusions: []   // 玩家自創的融合技定義
+
     },
     equipment: equipment,
     inventory: [],
@@ -68,10 +76,14 @@ function computeStats() {
   var resist = { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0, ctrl: 0 };
   var passives = {};
   var elemAtk = { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0 };
+  var socketed = []; // 鑲嵌的寶石（gemEff 需在詞條聚合完成後才知道，先蒐集）
 
   SLOT_LIST.forEach(function (slot) {
     var it = G.equipment[slot];
     if (!it) return;
+    if (it.sockets) {
+      it.sockets.forEach(function (g) { if (g && GEM_TYPES[g.type]) socketed.push(g); });
+    }
     var um = upgradeMult(it);
     it.affixes.forEach(function (a) {
       var v = a.val * um;
@@ -94,6 +106,29 @@ function computeStats() {
       else if (ek === 'loot') A.loot += ev;
       else if (ek === 'haste') A.moveSpeed += ev;
     }
+  });
+
+  // 被動技能加成
+  if (G.player.skills) {
+    for (var sid in G.player.skills) {
+      var slv = G.player.skills[sid];
+      var sdef = (typeof SKILLS !== 'undefined') ? SKILLS[sid] : null;
+      if (!sdef || !sdef.fx || !sdef.fx.passive || !slv) continue;
+      for (var pk in sdef.fx.passive) {
+        if (A[pk] !== undefined) A[pk] += sdef.fx.passive[pk] * slv;
+      }
+    }
+  }
+
+  // 鑲嵌寶石加成（受「寶石鑲嵌效率」屬性放大）
+  var gemMult = 1 + A.gemEff / 100;
+  socketed.forEach(function (g) {
+    var v = gemStatValue(g.type, g.level) * gemMult;
+    var key = GEM_TYPES[g.type].stat;
+    var re = affixResElem(key);
+    if (key === 'aspd') A.aspdPct += v;
+    else if (re) resist[re] = (resist[re] || 0) + v;
+    else if (A[key] !== undefined) A[key] += v;
   });
 
   var lv = p.level;
@@ -167,19 +202,20 @@ function getStats() {
 function gainXp(n) {
   var p = G.player;
   p.xp += n;
-  var leveled = false;
+  var gained = 0;
   while (p.xp >= xpForLevel(p.level)) {
     p.xp -= xpForLevel(p.level);
     p.level++;
-    leveled = true;
+    gained++;
   }
-  if (leveled) {
+  if (gained > 0) {
+    // 技能點由等級推導（availableSkillPoints），此處無需累加
     markStatsDirty();
-    blog('🎉 等級提升！目前等級 ' + p.level + '（四維主屬性 +2）', 'good');
+    blog('🎉 等級提升！目前等級 ' + p.level + '（四維主屬性 +2、<span class="log-hl-good">技能點 +' + gained + '</span>）', 'good');
     // 升級回滿血藍
     var st = getStats();
     if (FIELD.player) { FIELD.player.hp = st.hp; FIELD.player.mp = st.mp; }
-    UI.dirty.header = true;
+    UI.dirty.header = true; UI.dirty.skills = true;
   }
 }
 

@@ -1,5 +1,74 @@
 'use strict';
-/* ============ 裝備 / 物品生成 ============ */
+/* ============ 裝備 / 物品生成 / 寶石 ============ */
+
+/* ---- 寶石庫存（G.player.gems = { type: {1..5: count} }） ---- */
+function gemCount(type, lv) {
+  var t = G.player.gems[type];
+  return (t && t[lv]) || 0;
+}
+function addGem(type, lv, n) {
+  if (!G.player.gems[type]) {
+    G.player.gems[type] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  }
+  G.player.gems[type][lv] = Math.max(0, (G.player.gems[type][lv] || 0) + (n === undefined ? 1 : n));
+  UI.dirty.header = true; UI.dirty.gems = true;
+}
+function randomGemType() { return pick(Object.keys(GEM_TYPES)); }
+function totalGemsOfLevel(lv) {
+  var sum = 0;
+  for (var t in GEM_TYPES) sum += gemCount(t, lv);
+  return sum;
+}
+function totalGemsAll() {
+  var sum = 0;
+  for (var t in GEM_TYPES) for (var lv = 1; lv <= GEM_MAX_LEVEL; lv++) sum += gemCount(t, lv);
+  return sum;
+}
+// 消耗一顆指定等級的寶石（取存量最多的種類）；回傳種類或 null
+function takeGemOfLevel(lv) {
+  var best = null, bestN = 0;
+  for (var t in GEM_TYPES) {
+    var n = gemCount(t, lv);
+    if (n > bestN) { best = t; bestN = n; }
+  }
+  if (!best) return null;
+  addGem(best, lv, -1);
+  return best;
+}
+function gemLabel(type, lv) {
+  return GEM_TYPES[type].emoji + GEM_NAMES[lv] + GEM_TYPES[type].name;
+}
+
+/* ---- 裝備插槽 ---- */
+// 補齊插槽陣列（舊存檔裝備 / 稀有度提升後）
+function ensureSockets(it) {
+  var n = socketCountFor(it.rarity);
+  if (!it.sockets) it.sockets = [];
+  while (it.sockets.length < n) it.sockets.push(null);
+  return it.sockets;
+}
+// 鑲嵌：從庫存取一顆該種類最高等級的寶石放入第一個空槽
+function socketGem(it, type) {
+  ensureSockets(it);
+  var idx = it.sockets.indexOf(null);
+  if (idx < 0) return '插槽已滿';
+  var lv = 0;
+  for (var l = GEM_MAX_LEVEL; l >= 1; l--) { if (gemCount(type, l) > 0) { lv = l; break; } }
+  if (!lv) return '沒有這種寶石';
+  addGem(type, lv, -1);
+  it.sockets[idx] = { type: type, level: lv };
+  markStatsDirty();
+  return null; // 成功
+}
+// 取下指定插槽的寶石回到庫存
+function unsocketGem(it, idx) {
+  if (!it.sockets || !it.sockets[idx]) return false;
+  var g = it.sockets[idx];
+  addGem(g.type, g.level, 1);
+  it.sockets[idx] = null;
+  markStatsDirty();
+  return true;
+}
 
 // 依階段擲稀有度（lootBonus 為額外掉寶加成 %，略微上移品質）
 function rollRarity(stage, lootBonus) {
@@ -72,10 +141,12 @@ function makeEquipment(stage, opts) {
     affixes: rollAffixes(affixCount, lvl, rarity, slot, luck),
     passive: null,
     enchant: null,   // { key, val }
+    sockets: [],     // 寶石插槽 [{type, level}|null, ...]
     upgrade: 0,
     synthesized: false,
     locked: false
   };
+  ensureSockets(it);
   // 稀有級以上附帶特殊被動
   if (rarity >= RARE_IDX) {
     var pk = pick(Object.keys(PASSIVE_POOL));
@@ -137,6 +208,13 @@ function itemScore(it) {
   for (var i = 0; i < it.affixes.length; i++) {
     var a = it.affixes[i];
     s += (SCORE_WEIGHTS[a.key] || 1) * a.val * um;
+  }
+  // 鑲嵌的寶石計入評分（避免自動換裝丟棄鑲嵌裝備）
+  if (it.sockets) {
+    for (var j = 0; j < it.sockets.length; j++) {
+      var g = it.sockets[j];
+      if (g && GEM_TYPES[g.type]) s += gemStatValue(g.type, g.level) * (SCORE_WEIGHTS[GEM_TYPES[g.type].stat] || 1);
+    }
   }
   if (it.passive) s *= 1.15;
   if (it.enchant) {
@@ -202,8 +280,47 @@ function itemDetailHTML(it) {
   h += '</div>';
   if (it.passive) h += '<div class="it-passive">' + esc(passiveLine(it.passive)) + '</div>';
   if (it.enchant) h += '<div class="it-enchant">' + esc(enchantLine(it.enchant)) + '</div>';
+  // 寶石插槽
+  ensureSockets(it);
+  if (it.sockets.length) {
+    h += '<div class="it-sockets">';
+    for (var si = 0; si < it.sockets.length; si++) {
+      var g = it.sockets[si];
+      if (g && GEM_TYPES[g.type]) {
+        var gt = GEM_TYPES[g.type];
+        h += '<span class="socket filled" data-socket-remove="' + si + '" title="點擊取下">' +
+          gt.emoji + ' ' + esc(GEM_NAMES[g.level] + gt.name) + '（' + esc(gt.statName.replace('%', '')) + ' +' +
+          (gt.pct ? pctStr(gemStatValue(g.type, g.level)) : fmt(gemStatValue(g.type, g.level))) + '）</span>';
+      } else {
+        h += '<span class="socket empty">◇ 空插槽</span>';
+      }
+    }
+    h += '</div>';
+  }
   h += '<div class="it-score">評分 ' + fmt(itemScore(it)) + '</div>';
   return h;
+}
+
+/* ---- 裝備洗煉（隨機重骰所有詞條） ---- */
+function rerollCost(it) {
+  return {
+    gold: Math.round(40 * Math.pow(1.7, it.rarity) * (1 + it.level * 0.15)),
+    essence: 1 + it.rarity
+  };
+}
+// 回傳 null=成功，否則錯誤訊息
+function rerollItemAffixes(it) {
+  var cost = rerollCost(it);
+  if (G.player.gold < cost.gold || G.player.essence < cost.essence) {
+    return '資源不足（需要金幣 ' + fmt(cost.gold) + '、精華 ' + cost.essence + '）';
+  }
+  G.player.gold -= cost.gold;
+  G.player.essence -= cost.essence;
+  var luck = getStats().luck;
+  it.affixes = rollAffixes(it.affixes.length, it.level, it.rarity, it.slot, luck);
+  markStatsDirty();
+  UI.dirty.header = true; UI.dirty.equip = true; UI.dirty.inv = true;
+  return null;
 }
 
 // 自動機組零件生成

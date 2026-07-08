@@ -35,6 +35,8 @@
     <nav id="tabs">
       <button class="tab-btn active" data-tab="equip">🎒 裝備</button>
       <button class="tab-btn" data-tab="factory">🏭 生產線</button>
+      <button class="tab-btn" data-tab="gems">💎 寶石</button>
+      <button class="tab-btn" data-tab="skills">🧠 技能</button>
       <button class="tab-btn" data-tab="tower">🗼 高塔</button>
       <button class="tab-btn" data-tab="settings">⚙️ 設定</button>
     </nav>
@@ -177,6 +179,53 @@
     <div id="factory-log" class="log"></div>
   </section>
 
+  <!-- ============ 寶石 ============ -->
+  <section id="tab-gems" class="tab">
+    <div class="panel" style="margin-bottom:12px">
+      <div class="sec-title">💎 寶石圖鑑與庫存（12 種能力）</div>
+      <div class="hint">寶石可鑲嵌到稀有以上裝備的插槽（稀有 1｜史詩 2｜傳說 3｜神話 4 格）。到「裝備」分頁點選裝備，即可鑲嵌或點擊已鑲寶石取下；「寶石鑲嵌效率」屬性會放大鑲嵌加成。生產線合成節點開啟「寶石合成」後，會自動把 3 顆同種同級寶石合成高一級。分解裝備時鑲嵌的寶石會自動取回。</div>
+      <div id="gem-table"></div>
+    </div>
+    <div class="panel">
+      <div class="sec-title">🔀 寶石融合</div>
+      <div class="hint">消耗 2 顆同等級寶石（不限種類）＋金幣 → 1 顆隨機種類的同級寶石，並有機率「昇華」成高一級。用來把冗餘寶石轉換成需要的種類。</div>
+      <div class="flt-row" style="margin-top:8px">
+        <span>融合等級</span>
+        <select id="fuse-level">
+          <option value="1">一級</option><option value="2">二級</option><option value="3">三級</option>
+          <option value="4">四級</option><option value="5">五級</option>
+        </select>
+        <button id="fuse-btn" class="btn">🔀 融合</button>
+      </div>
+      <div class="node-info" id="fuse-info"></div>
+    </div>
+  </section>
+
+  <!-- ============ 技能 ============ -->
+  <section id="tab-skills" class="tab">
+    <div class="panel" style="margin-bottom:12px">
+      <div class="sec-title">🧠 技能 <span class="dim-text">可用技能點：<b id="sp-count" style="color:var(--accent)">0</b>（每升 1 級 +1 點，一般技能上限 Lv.10）</span></div>
+      <div class="sec-sub">⚔️ 裝載欄 <span id="loadout-cap" class="dim-text"></span>（依順序自動施放；點擊卸下）</div>
+      <div id="skill-loadout" class="chip-row"></div>
+    </div>
+    <div class="hint" style="margin-bottom:12px">💡 滑鼠移到技能圖示上顯示說明；左鍵點擊開啟升級面板（升級/降級/裝備/加入融合）。</div>
+    <div class="panel" style="margin-bottom:12px">
+      <div class="sec-title">🧬 融合技 <span class="dim-text">你的專屬奧義（初始等級＝素材加總，可再升 20 級）</span></div>
+      <div id="fusion-skill-list" class="tree-row"></div>
+    </div>
+    <div id="skill-trees"></div>
+    <div class="panel" style="margin-top:12px">
+      <div class="sec-title">⚗️ 技能融合</div>
+      <div class="hint">放入 2~4 個已學習的主動技能：融合技繼承素材的部分效果（以素材當前等級計算，等級越高繼承越強），並有機率覺醒「變異效果」（每次只會出現一種，與融合內容相關）。素材技能等級歸零（可重新學習）；融合技可刪除並歸還所有投入點數。</div>
+      <div id="fusion-slots" class="chip-row" style="margin:8px 0"></div>
+      <div class="btn-row">
+        <button id="btn-fuse" class="btn">⚗️ 執行融合</button>
+        <button id="btn-fuse-clear" class="btn sm">清空素材槽</button>
+      </div>
+      <div class="node-info" id="fusion-preview"></div>
+    </div>
+  </section>
+
   <!-- ============ 高塔 ============ -->
   <section id="tab-tower" class="tab">
     <div id="tower-fight" style="display:none">
@@ -240,6 +289,8 @@
         <p><b>🏭 生產線：</b>掉落裝備進入輸送帶 → 篩選節點依品質決定「保留 / 分解 / 合成素材」。分解有 10% 機率「精粹提取」出高階材料。</p>
         <p><b>🔮 混合合成：</b>[裝備] + [寶石] + [附魔書] = 附魔特殊裝備。開啟「更強自動換裝」讓系統自動把新合成的神裝穿上！</p>
         <p><b>✨ 附魔：</b>攻擊類六元素（🔥高傷、❄️減速、⚡連鎖、🧪中毒、🌟淨化、🌑汲取）、防禦類（六元素抗性/控制抵抗）、功能類（掉寶/疾行）。附魔書＋附魔精華即可自動附魔。</p>
+        <p><b>🧠 技能：</b>54 個技能以五系技能樹呈現（每階需在該系投入點數解鎖）。每升 1 級獲得 1 技能點，技能上限 Lv.10 — 前期升級加基礎數值，Lv.4 解鎖附加狀態、Lv.8 強化該狀態。裝載欄每 10 級 +1 格（無上限），戰鬥中依順序自動施放；治療/護盾類會等血量偏低才施放；被動學會即永久生效。</p>
+        <p><b>⚗️ 技能融合：</b>放入 2~4 個已學主動技能融合成專屬奧義：繼承素材部分效果（以素材當前等級計，等級越高繼承越強），並有機率覺醒變異效果（冰與火之歌、雷鳴回響、劇毒綻放…每次僅一種）。融合技初始等級＝素材加總、可再升 20 級；素材歸零可重學；刪除融合技會歸還所有投入點數。</p>
         <p><b>🔨 強化與機制：</b>+5 內必定成功，之後成功率遞減（失敗損失半數材料），可堆「強化成功率」。「幸運值」影響詞條品質/大成功/精粹提取；「負重上限」擴充輸送帶與合成區容量；「狂暴閾值」提高 BOSS 狂暴門檻；「合成變異率」讓混合合成有機率產出強化附魔＋額外詞條。</p>
         <p><b>🗼 BOSS 高塔：</b>60 秒限時戰。40 秒時 BOSS 血量 &gt; 50% 會狂暴（傷害 +200%）。通關獲得自動機組零件：加速齒輪、幸運核心、重骰模組。失敗會有分析報告，照著調整生產線配比吧！</p>
       </div>
@@ -257,6 +308,7 @@
         <span id="stage-best" class="dim-text">最高 1</span>
         <label class="chk"><input type="checkbox" id="st-auto" checked> 自動推進</label>
         <span id="kill-count">擊殺 0/10</span>
+        <button id="btn-pip" class="btn sm" title="開啟永遠置頂的迷你監控視窗，背景掛機也能看到戰況">📺 迷你視窗</button>
       </div>
       <div class="battle-scene">
         <div class="combatant">
@@ -288,11 +340,27 @@
       </div>
       <div id="battle-log" class="log"></div>
     </div>
+    <div id="summary-area" class="panel">
+      <div class="sec-title" style="text-align:center; margin-bottom:12px;">戰鬥結算日誌</div>
+      <div class="hint" style="text-align:center; margin-bottom:8px;">(關卡失敗時總結)</div>
+      <div id="battle-summary-list" style="overflow-y:auto; display:flex; flex-direction:column; gap:8px; flex:1;"></div>
+    </div>
   </div>
 </div>
+<!-- 技能升級彈窗 -->
+<div id="skill-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <button id="skill-modal-close" class="modal-x" title="關閉">✕</button>
+    <div id="skill-modal-body"></div>
+  </div>
+</div>
+<!-- 技能懸停提示 -->
+<div id="sk-tooltip" style="display:none"></div>
+
 <script src="js/util.js"></script>
 <script src="js/data.js"></script>
 <script src="js/item.js"></script>
+<script src="js/skills.js"></script>
 <script src="js/player.js"></script>
 <script src="js/combat.js"></script>
 <script src="js/tower.js"></script>

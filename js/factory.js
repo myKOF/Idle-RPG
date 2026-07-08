@@ -78,12 +78,23 @@ function extractChanceNow() {
   return ESSENCE_EXTRACT_CHANCE + st.decomposeYield + st.luck / 3;
 }
 function doSalvage(it, silent) {
+  // 鑲嵌的寶石先取回，不隨分解銷毀
+  if (it.sockets) {
+    for (var si = 0; si < it.sockets.length; si++) {
+      var sg = it.sockets[si];
+      if (sg && GEM_TYPES[sg.type]) {
+        addGem(sg.type, sg.level, 1);
+        if (!silent) flog('💎 取回鑲嵌寶石：' + gemLabel(sg.type, sg.level), 'info');
+        it.sockets[si] = null;
+      }
+    }
+  }
   var res = salvageResult(it, extractChanceNow());
   G.player.scrap += res.scrap;
   G.player.gold += res.gold;
   if (res.extracted) {
     G.player.essence += res.essence;
-    if (res.gem) G.player.gems[1] += res.gem;
+    if (res.gem) addGem(randomGemType(), 1, res.gem);
     G.factory.stats.extracted++;
     if (!silent) flog('✨ 精粹提取！' + rarityTag(it) + ' → 碎片x' + res.scrap + '、精華x' + res.essence + (res.gem ? '、寶石x1' : ''), 'good');
   } else {
@@ -143,16 +154,20 @@ function processOneConveyorItem() {
 /* ---- 合成節點 ---- */
 function synthTick() {
   var f = G.factory;
-  // 寶石合成：3 顆同級 → 1 顆下一級
+  // 寶石合成：3 顆同種同級 → 1 顆同種下一級
   if (f.synth.gemMerge) {
-    for (var lv = 1; lv < GEM_MAX_LEVEL; lv++) {
-      if (G.player.gems[lv] >= 3) {
-        G.player.gems[lv] -= 3;
-        G.player.gems[lv + 1] += 1;
-        flog('💎 寶石合成：' + GEM_NAMES[lv] + ' x3 → ' + GEM_NAMES[lv + 1], 'info');
-        UI.dirty.header = true;
-        break; // 每 tick 只合一次
+    var merged = false;
+    for (var gt in GEM_TYPES) {
+      for (var lv = 1; lv < GEM_MAX_LEVEL; lv++) {
+        if (gemCount(gt, lv) >= 3) {
+          addGem(gt, lv, -3);
+          addGem(gt, lv + 1, 1);
+          flog('💎 寶石合成：' + gemLabel(gt, lv) + ' x3 → ' + gemLabel(gt, lv + 1), 'info');
+          merged = true;
+          break; // 每 tick 只合一次
+        }
       }
+      if (merged) break;
     }
   }
   // 混合合成優先，其次品質合成
@@ -164,10 +179,10 @@ function synthTick() {
 function tryHybridSynthesis() {
   var f = G.factory;
   if (!f.synthBuffer.length) return false;
-  // 找可用寶石（滿足最低等級設定，用最低可用等級以節約高級寶石）
+  // 找可用寶石（滿足最低等級設定，用最低可用等級以節約高級寶石；不限種類）
   var gemLv = 0;
   for (var lv = f.synth.minGemLevel; lv <= GEM_MAX_LEVEL; lv++) {
-    if (G.player.gems[lv] > 0) { gemLv = lv; break; }
+    if (totalGemsOfLevel(lv) > 0) { gemLv = lv; break; }
   }
   if (!gemLv) return false;
   // 找附魔書
@@ -186,7 +201,7 @@ function tryHybridSynthesis() {
   }
   var it = f.synthBuffer.splice(bestIdx, 1)[0];
   var st = getStats();
-  G.player.gems[gemLv]--;
+  takeGemOfLevel(gemLv);
   G.player.books[bookKey]--;
   UI.dirty.header = true; UI.dirty.factory = true;
 
@@ -195,6 +210,7 @@ function tryHybridSynthesis() {
   var great = chance(greatChance);
   if (great && it.rarity < RARITIES.length - 1) {
     it.rarity++;
+    ensureSockets(it); // 稀有度提升 → 插槽數同步增加
     it.name = RARITY_PREFIX[it.rarity] + it.name.replace(/^(粗糙的|堅實的|精工的|大師級|傳世的|神鑄的)/, '');
     // 升稀有度補被動
     if (it.rarity >= RARE_IDX && !it.passive) {
@@ -271,6 +287,24 @@ function tryRarityMerge() {
     }
   }
   return false;
+}
+
+/* ---- 寶石融合：2 顆同級寶石（不限種類）→ 隨機種類同級，機率昇華 +1 級 ---- */
+function fuseGems(lv) {
+  lv = clamp(lv, 1, GEM_MAX_LEVEL);
+  if (totalGemsOfLevel(lv) < 2) return '該等級寶石不足 2 顆';
+  var cost = FUSE_GOLD_COST[lv];
+  if (G.player.gold < cost) return '金幣不足（需要 ' + fmt(cost) + '）';
+  G.player.gold -= cost;
+  takeGemOfLevel(lv);
+  takeGemOfLevel(lv);
+  var st = getStats();
+  var up = lv < GEM_MAX_LEVEL && chance(FUSE_UPGRADE_CHANCE + st.luck / 2);
+  var type = randomGemType();
+  addGem(type, up ? lv + 1 : lv, 1);
+  flog('🔀 寶石融合：' + (up ? '🌟 昇華！' : '') + '獲得 ' + gemLabel(type, up ? lv + 1 : lv), up ? 'good' : 'info');
+  UI.dirty.header = true; UI.dirty.gems = true;
+  return null;
 }
 
 /* ---- 附魔節點：自動將附魔書用於已裝備裝備 ---- */

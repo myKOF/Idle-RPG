@@ -232,7 +232,34 @@ function upgradeSuccessBase(nextLevel) {
 
 // ---- 寶石 ----
 var GEM_MAX_LEVEL = 5;
-var GEM_NAMES = ['', '一級寶石', '二級寶石', '三級寶石', '四級寶石', '五級寶石'];
+var GEM_NAMES = ['', '一級', '二級', '三級', '四級', '五級'];
+
+/* 寶石種類（12 種能力）：鑲嵌到裝備插槽後生效。
+   stat 對應 computeStats 的聚合桶（aspd 會轉為 aspdPct） */
+var GEM_TYPES = {
+  ruby:      { name: '紅寶石', emoji: '🔴', stat: 'atkFlat',   statName: '物理攻擊',   base: 6,   pct: false },
+  sapphire:  { name: '藍寶石', emoji: '🔵', stat: 'matkFlat',  statName: '魔法攻擊',   base: 6,   pct: false },
+  topaz:     { name: '黃玉',   emoji: '🟡', stat: 'hpFlat',    statName: '生命值',     base: 40,  pct: false },
+  emerald:   { name: '綠寶石', emoji: '🟢', stat: 'hpRegen',   statName: '生命恢復/秒', base: 3,  pct: false },
+  diamond:   { name: '鑽石',   emoji: '⚪', stat: 'defFlat',   statName: '物理防禦',   base: 5,   pct: false },
+  lapis:     { name: '青金石', emoji: '🔷', stat: 'mdefFlat',  statName: '魔法防禦',   base: 5,   pct: false },
+  amethyst:  { name: '紫水晶', emoji: '🟣', stat: 'critRate',  statName: '暴擊率%',    base: 1.5, pct: true },
+  garnet:    { name: '石榴石', emoji: '🟠', stat: 'critDmg',   statName: '暴擊傷害%',  base: 5,   pct: true },
+  opal:      { name: '蛋白石', emoji: '🩵', stat: 'aspd',      statName: '攻擊速度%',  base: 1.5, pct: true },
+  onyx:      { name: '黑曜石', emoji: '⚫', stat: 'lifesteal', statName: '吸血%',      base: 1,   pct: true },
+  moonstone: { name: '月光石', emoji: '🌙', stat: 'evasion',   statName: '閃避率%',    base: 1,   pct: true },
+  sunstone:  { name: '太陽石', emoji: '☀️', stat: 'luck',      statName: '幸運值',     base: 1.5, pct: false }
+};
+// 寶石能力數值（隨等級超線性成長）
+function gemStatValue(type, level) {
+  var g = GEM_TYPES[type];
+  return Math.round(g.base * level * (1 + 0.2 * (level - 1)) * 10) / 10;
+}
+// 插槽數：稀有 1、史詩 2、傳說 3、神話 4
+function socketCountFor(rarity) { return Math.max(0, rarity - 1); }
+// 寶石融合：消耗 2 顆同級寶石 → 隨機種類同級，機率升 1 級
+var FUSE_GOLD_COST = [0, 100, 300, 900, 2700, 8100]; // 依等級
+var FUSE_UPGRADE_CHANCE = 25; // % 基礎（+幸運值/2）
 
 // ---- 怪物 / 成長曲線 ----
 function monsterStatsFor(stage, elite) {

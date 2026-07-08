@@ -25,12 +25,26 @@ function loadGame() {
 
 // 以預設狀態為底，深補缺漏欄位（存檔向前相容）
 function migrateSave(data) {
+  // 技能點改由等級即時推導（availableSkillPoints），無需在此補發
   var def = newGameState();
   mergeDefaults(data, def);
   // 確保裝備槽位齊全
   SLOT_LIST.forEach(function (s) {
     if (data.equipment[s] === undefined) data.equipment[s] = null;
   });
+  // 舊版寶石（{1..5: 數量}）→ 轉換為隨機種類
+  var gemTypeKeys = Object.keys(GEM_TYPES);
+  for (var lv = 1; lv <= GEM_MAX_LEVEL; lv++) {
+    var n = data.player.gems[lv];
+    if (typeof n === 'number') {
+      delete data.player.gems[lv];
+      for (var i = 0; i < n; i++) {
+        var t = gemTypeKeys[Math.floor(Math.random() * gemTypeKeys.length)];
+        if (!data.player.gems[t]) data.player.gems[t] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+        data.player.gems[t][lv] = (data.player.gems[t][lv] || 0) + 1;
+      }
+    }
+  }
   data.tower.active = false; // 讀檔時不可能處於高塔戰鬥
   return data;
 }

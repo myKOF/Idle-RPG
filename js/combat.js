@@ -11,7 +11,7 @@ var FIELD = {
 };
 
 function newPlayerEntity(st) {
-  return { hp: st.hp, mp: st.mp, shield: 0, atkCd: 1 / st.aspd, skillCd: 3, effects: {}, poisonUntil: 0, poisonDps: 0 };
+  return { hp: st.hp, mp: st.mp, shield: 0, atkCd: 1 / st.aspd, skillCds: {}, buffs: {}, dots: [], effects: {}, poisonUntil: 0, poisonDps: 0 };
 }
 
 function initFieldPlayer() {
@@ -31,7 +31,7 @@ function spawnFieldMonster() {
     aspd: base.aspd, dodge: base.dodge,
     elite: elite, isBoss: false, gold: base.gold, xp: base.xp,
     atkCd: 1 / base.aspd + 0.4, effects: {}, ctrlRes: 0,
-    poisonUntil: 0, poisonDps: 0, shield: 0
+    poisonUntil: 0, poisonDps: 0, shield: 0, buffs: {}, dots: []
   };
   UI.dirty.battle = true;
 }
@@ -57,6 +57,54 @@ function tickPoison(ent, dt) {
 function cleanse(ent) {
   ent.effects = {};
   ent.poisonUntil = 0;
+  ent.dots = [];
+}
+
+/* ---- 增益 / 減益（技能系統用） ---- */
+function applyBuff(ent, key, val, dur) {
+  if (!ent.buffs) ent.buffs = {};
+  ent.buffs[key] = { val: val, until: GT + dur };
+}
+function buffVal(ent, key) {
+  if (!ent || !ent.buffs) return 0;
+  var b = ent.buffs[key];
+  return (b && b.until > GT) ? b.val : 0;
+}
+function activeBuffKeys(ent) {
+  var out = [];
+  if (ent && ent.buffs) for (var k in ent.buffs) if (ent.buffs[k].until > GT) out.push(k);
+  return out;
+}
+
+/* ---- 通用持續傷害（流血/燃燒/詛咒…；同名疊加取高） ---- */
+function applyDot(ent, dps, dur, name) {
+  if (!ent.dots) ent.dots = [];
+  for (var i = 0; i < ent.dots.length; i++) {
+    if (ent.dots[i].name === name) {
+      ent.dots[i].dps = Math.max(ent.dots[i].dps, dps);
+      ent.dots[i].until = GT + dur;
+      return;
+    }
+  }
+  ent.dots.push({ dps: dps, until: GT + dur, name: name });
+}
+function hasDots(ent) {
+  if (poisonActive(ent)) return true;
+  if (!ent.dots) return false;
+  for (var i = 0; i < ent.dots.length; i++) if (ent.dots[i].until > GT) return true;
+  return false;
+}
+// 回傳是否致死
+function tickDots(ent, dt) {
+  if (!ent.dots || !ent.dots.length) return false;
+  var total = 0;
+  ent.dots = ent.dots.filter(function (d) { return d.until > GT; });
+  for (var i = 0; i < ent.dots.length; i++) total += ent.dots[i].dps;
+  if (total > 0) {
+    ent.hp -= total * dt;
+    if (ent.hp <= 0) { ent.hp = 0; return true; }
+  }
+  return false;
 }
 
 /* ---- 共用攻擊流程 ----
@@ -140,35 +188,28 @@ function resistCtrl(dCfg) {
   return r > 0 && chance(r);
 }
 
-/* ---- 攻防組態 ---- */
-function playerAtkCfg() {
+/* ---- 攻防組態（pEnt 可帶入戰鬥實體以套用技能增益） ---- */
+function playerAtkCfg(pEnt) {
   var st = getStats();
+  var atkMul = 1 + buffVal(pEnt, 'atkUp') / 100;
   return {
-    atk: st.atk, matk: st.matk, dmgType: 'both', level: st.level,
-    critRate: st.critRate, critDmg: st.critDmg, hit: st.hit,
+    atk: st.atk * atkMul, matk: st.matk * atkMul, dmgType: 'both', level: st.level,
+    critRate: st.critRate, critDmg: st.critDmg + buffVal(pEnt, 'critDmgUp'), hit: st.hit,
     sunder: st.passives.sunder || 0, pen: st.pPen, mPen: st.mPen,
     trueDmgPct: st.passives.trueDmg || 0, elemAtk: st.elemAtk,
     eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, isPlayer: true
   };
 }
-// 技能：奧術衝擊（魔法傷害，吃魔攻/魔穿/範圍傷害）
-function playerSkillCfg() {
+function playerDefCfg(pEnt) {
   var st = getStats();
+  var defMul = 1 + buffVal(pEnt, 'defUp') / 100;
   return {
-    atk: (st.matk * SKILL.matkScale + st.atk * SKILL.atkScale) * (1 + st.aoeDmg / 100),
-    dmgType: 'magic', level: st.level,
-    critRate: st.critRate, critDmg: st.critDmg, hit: 100, pen: st.mPen,
-    elemAtk: null, eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, isPlayer: true
-  };
-}
-function playerDefCfg() {
-  var st = getStats();
-  return {
-    def: st.def, mdef: st.mdef, level: st.level, dodge: st.evasion,
-    blockRate: st.blockRate, blockDmgRed: st.blockDmgRed,
+    def: st.def * defMul, mdef: st.mdef * defMul, level: st.level,
+    dodge: st.evasion + buffVal(pEnt, 'evasionUp'),
+    blockRate: st.blockRate + buffVal(pEnt, 'blockUp'), blockDmgRed: st.blockDmgRed,
     pRes: st.pRes, mRes: st.mRes, resist: st.resist, ctrlRes: st.resist.ctrl,
     ccFactor: (1 - st.tenacity / 100) * (1 - st.ccRed / 100),
-    thornsPct: st.passives.thorns || 0, maxHp: st.hp, isPlayer: true
+    thornsPct: (st.passives.thorns || 0) + buffVal(pEnt, 'thornsUp'), maxHp: st.hp, isPlayer: true
   };
 }
 function monsterAtkCfg(m, mult) {
@@ -180,13 +221,15 @@ function monsterAtkCfg(m, mult) {
     ea = scaled;
   }
   return {
-    atk: m.atk * mult, dmgType: m.magic ? 'magic' : 'phys', level: m.level,
+    atk: m.atk * mult * (1 - buffVal(m, 'atkDown') / 100),
+    dmgType: m.magic ? 'magic' : 'phys', level: m.level,
     critRate: 5, critDmg: 150, hit: 100, elemAtk: ea
   };
 }
 function monsterDefCfg(m) {
+  var defMul = 1 - buffVal(m, 'defDown') / 100;
   return {
-    def: m.def, mdef: m.mdef || m.def * 0.75, level: m.level, dodge: m.dodge || 0,
+    def: m.def * defMul, mdef: (m.mdef || m.def * 0.75) * defMul, level: m.level, dodge: m.dodge || 0,
     resist: m.resist || {}, ctrlRes: m.ctrlRes || 0, maxHp: m.maxHp,
     isElite: !!m.elite, isBoss: !!m.isBoss
   };
@@ -206,7 +249,7 @@ function healPlayer(pEnt, amount, st) {
 // 完整的一次玩家普攻（含連擊/暈眩/減速/吸血/吸魔/暗影汲取）
 function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
   var st = getStats();
-  var res = resolveHit(pEnt, mEnt, playerAtkCfg(), monsterDefCfg(mEnt));
+  var res = resolveHit(pEnt, mEnt, playerAtkCfg(pEnt), monsterDefCfg(mEnt));
   var mName = mEnt.name || '怪物';
   var logMsg = (depth ? '' : '你攻擊 ' + mName + '，');
   if (res.miss) {
@@ -215,6 +258,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
   } else {
     floatText(floatSel, fmt(res.dmg), res.crit ? 'crit' : 'dmg');
     trackDps(res.dmg);
+    recordRunDamage('普攻', res.dmg);
     logMsg += (res.crit ? '<span class="log-hl-good">爆擊</span> ' : '造成 ') + fmt(res.dmg) + ' 傷害。';
     if (res.blocked) logMsg += '<span class="log-hl-bad">（被格擋）</span>';
     if (res.procs.length) logMsg += '<span class="log-hl-good">［' + res.procs.join('・') + '］</span>';
@@ -251,35 +295,10 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
   return res;
 }
 
-// 技能施放（奧術衝擊）：MP 足夠且冷卻結束時自動施放
-function tryCastSkill(pEnt, target, floatSel) {
-  var st = getStats();
-  if (pEnt.skillCd > 0 || pEnt.mp < SKILL.cost || !target || target.hp <= 0) return null;
-  pEnt.mp -= SKILL.cost;
-  pEnt.skillCd = SKILL.baseCd * (1 - st.cdr / 100);
-  // 施法時間會延後下一次普攻（施法速度可縮短）
-  pEnt.atkCd += SKILL.castTime * (1 - st.castSpeed / 100);
-  var res = resolveHit(pEnt, target, playerSkillCfg(), monsterDefCfg(target));
-  var logMsg = SKILL.emoji + ' 你施放【' + SKILL.name + '】，';
-  if (res.miss) {
-    floatText(floatSel, 'MISS', 'miss');
-    logMsg += '<span class="log-hl-bad">被閃避了！</span>';
-  } else {
-    floatText(floatSel, SKILL.emoji + fmt(res.dmg), 'skill');
-    trackDps(res.dmg);
-    logMsg += (res.crit ? '<span class="log-hl-good">爆擊</span> ' : '造成 ') + fmt(res.dmg) + ' <span class="log-hl-good">魔法傷害</span>。';
-    var healAmt = res.dmg * st.lifesteal / 100;
-    if (healAmt > 0) healPlayer(pEnt, healAmt, st);
-    if (st.manaSteal > 0) pEnt.mp = Math.min(st.mp, pEnt.mp + res.dmg * st.manaSteal / 100);
-  }
-  blog(logMsg, 'dim-text', 'combat');
-  return res;
-}
-
 // 怪物攻擊玩家
 var THORN_FLOAT_MAP = { 'pv-float': 'mv-float', 'tp-float': 'tb-float' };
 function doMonsterAttack(mEnt, pEnt, floatSel, mult) {
-  var dCfg = playerDefCfg();
+  var dCfg = playerDefCfg(pEnt);
   var res = resolveHit(mEnt, pEnt, monsterAtkCfg(mEnt, mult), dCfg);
   var logMsg = (mEnt.name || '怪物') + (mult && mult > 1 ? ' <span class="log-hl-bad">重擊</span>你，' : ' 攻擊你，');
   if (res.miss) {
@@ -330,13 +349,14 @@ function fieldTick(dt) {
     return;
   }
 
-  // 回復：基礎 1.5%/秒 + 生命恢復屬性；法力恢復；技能冷卻
-  if (p.hp < st.hp) p.hp = Math.min(st.hp, p.hp + (st.hp * 0.015 + st.hpRegen) * dt);
+  // 回復：基礎 1.5%/秒 + 生命恢復屬性 + 再生增益；法力恢復；技能冷卻
+  var hot = buffVal(p, 'hot');
+  if (p.hp < st.hp) p.hp = Math.min(st.hp, p.hp + (st.hp * (0.015 + hot / 100) + st.hpRegen) * dt);
   p.mp = Math.min(st.mp, p.mp + st.mpRegen * dt);
-  if (p.skillCd > 0) p.skillCd -= dt;
+  tickSkillCds(p, dt);
 
-  // 中毒跳傷（玩家）
-  if (tickPoison(p, dt)) { onPlayerFieldDeath(); return; }
+  // 持續傷害（玩家：中毒 / 詛咒等）
+  if (tickPoison(p, dt) || tickDots(p, dt)) { onPlayerFieldDeath(); return; }
 
   // 出怪
   if (!FIELD.monster) {
@@ -346,15 +366,16 @@ function fieldTick(dt) {
   }
   var m = FIELD.monster;
 
-  // 中毒跳傷（怪物）
-  if (tickPoison(m, dt)) { onFieldKill(m); return; }
+  // 持續傷害（怪物：中毒 / 流血 / 燃燒 / 詛咒）
+  if (tickPoison(m, dt) || tickDots(m, dt)) { onFieldKill(m); return; }
 
-  // 玩家行動（減速：攻速 -30%）
+  // 玩家行動（減速 -30%；時間扭曲等攻速增益加速）
   if (!effectActive(p, 'stun')) {
-    // 技能優先
-    var sres = tryCastSkill(p, m, 'mv-float');
+    // 技能優先（依裝載順序）
+    var sres = pickAndCastSkill(p, m, 'mv-float');
     if (sres && sres.killed) { onFieldKill(m); return; }
-    p.atkCd -= dt * slowFactor(p);
+    if (p.hp <= 0) { onPlayerFieldDeath(); return; } // 狂暴打擊等自傷技能
+    p.atkCd -= dt * slowFactor(p) * (1 + buffVal(p, 'aspdUp') / 100);
     if (p.atkCd <= 0) {
       var res = doPlayerAttack(p, m, 'mv-float');
       p.atkCd += 1 / st.aspd;
@@ -404,6 +425,7 @@ function onFieldKill(m) {
 
 function onPlayerFieldDeath() {
   blog('☠️ 你被擊倒了…退回第 1 階段重頭來過（' + REVIVE_DELAY + ' 秒後復活）', 'bad');
+  flushRunSummary();
   FIELD.monster = null;
   FIELD.reviveCd = REVIVE_DELAY;
   G.stage.kills = 0;
@@ -415,7 +437,7 @@ function onPlayerFieldDeath() {
 function rollFieldDrops(m) {
   var st = getStats();
   var s = G.stage.current;
-  var lootBonus = st.loot;
+  var lootBonus = st.loot + buffVal(FIELD.player, 'lootUp'); // 尋寶直覺增益
   // 裝備：基礎 28%（菁英必掉）
   var eqChance = m.elite ? 100 : 28 * (1 + lootBonus / 100);
   if (chance(Math.min(eqChance, 95)) || m.elite) {
@@ -423,12 +445,13 @@ function rollFieldDrops(m) {
     pushConveyor(it);
     if (it.rarity >= 3) blog('✨ 獲得 ' + rarityTag(it) + '！已送入生產線', 'loot');
   }
-  // 寶石（階段 4+）
+  // 寶石（階段 4+，隨機種類）
   if (s >= 4 && chance(6 * (1 + lootBonus / 100))) {
     var glv = clamp(1 + Math.floor(s / 15), 1, GEM_MAX_LEVEL);
     var lv = wpick([[glv, 70], [Math.max(1, glv - 1), 30]]);
-    G.player.gems[lv]++;
-    flog('💎 撿到 ' + GEM_NAMES[lv], 'info');
+    var gtype = randomGemType();
+    addGem(gtype, lv, 1);
+    flog('💎 撿到 ' + gemLabel(gtype, lv), 'info');
   }
   // 附魔書（階段 8+）
   if (s >= 8 && chance(4 * (1 + lootBonus / 100))) {
@@ -451,4 +474,42 @@ function stageGo(delta) {
   FIELD.monster = null;
   FIELD.respawnCd = 0.3;
   UI.dirty.battle = true;
+}
+/* ---- 塔戰相關邏輯省略 ---- */
+
+window.RUN_STATS = { runCount: 1, maxStage: 1, skills: {} };
+function recordRunDamage(skillName, dmg) {
+  if (!RUN_STATS.skills[skillName]) RUN_STATS.skills[skillName] = { count: 0, damage: 0 };
+  RUN_STATS.skills[skillName].count++;
+  RUN_STATS.skills[skillName].damage += (dmg || 0);
+  RUN_STATS.maxStage = Math.max(RUN_STATS.maxStage, G.stage.current);
+}
+
+function generateSummaryHtml() {
+  var totalDmg = 0;
+  for (var k in RUN_STATS.skills) totalDmg += RUN_STATS.skills[k].damage;
+  if (totalDmg === 0) return '';
+  var html = '<div class="summary-card">';
+  html += '<div class="summary-card-title">------------第 ' + RUN_STATS.runCount + ' 場戰鬥--------------</div>';
+  html += '<div class="summary-card-row">最高關數：' + RUN_STATS.maxStage + '</div>';
+  for (var k in RUN_STATS.skills) {
+    var sk = RUN_STATS.skills[k];
+    var pct = totalDmg > 0 ? (sk.damage / totalDmg * 100).toFixed(1) : 0;
+    html += '<div class="summary-card-row">' + k + '：' + fmt(sk.count) + '次，傷害 ' + Math.round(sk.damage).toLocaleString() + ' (' + pct + '%)</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function flushRunSummary() {
+  var list = $id('battle-summary-list');
+  var html = generateSummaryHtml();
+  if (list && html) {
+    var d = document.createElement('div');
+    d.innerHTML = html;
+    list.insertBefore(d.firstChild, list.firstChild);
+  }
+  RUN_STATS.runCount++;
+  RUN_STATS.maxStage = G.stage.current > 1 ? 1 : G.stage.current; // Next run starts at 1
+  RUN_STATS.skills = {};
 }

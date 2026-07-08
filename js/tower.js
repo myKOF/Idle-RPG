@@ -75,24 +75,28 @@ function towerTick(dt) {
     }
   }
 
-  // 回復與冷卻
+  // 回復與冷卻（含再生增益）
   p.mp = Math.min(st.mp, p.mp + st.mpRegen * dt);
-  if (st.hpRegen > 0 && p.hp < st.hp) p.hp = Math.min(st.hp, p.hp + st.hpRegen * dt);
-  if (p.skillCd > 0) p.skillCd -= dt;
+  var hot = buffVal(p, 'hot');
+  if ((st.hpRegen > 0 || hot > 0) && p.hp < st.hp) {
+    p.hp = Math.min(st.hp, p.hp + (st.hpRegen + st.hp * hot / 100) * dt);
+  }
+  tickSkillCds(p, dt);
 
-  // 中毒跳傷
-  if (tickPoison(p, dt)) { endTowerFight(false, 'death'); return; }
-  if (tickPoison(b, dt)) { TOWER.dmgDealt += 0; endTowerFight(true); return; }
+  // 持續傷害
+  if (tickPoison(p, dt) || tickDots(p, dt)) { endTowerFight(false, 'death'); return; }
+  if (tickPoison(b, dt) || tickDots(b, dt)) { endTowerFight(true); return; }
 
-  // 玩家行動（減速：攻速 -30%）
+  // 玩家行動（減速 -30%；攻速增益加速）
   if (!effectActive(p, 'stun')) {
     var before0 = b.hp;
-    var sres = tryCastSkill(p, b, 'tb-float');
+    var sres = pickAndCastSkill(p, b, 'tb-float');
     if (sres) {
       TOWER.dmgDealt += (before0 - b.hp);
       if (sres.killed) { endTowerFight(true); return; }
+      if (p.hp <= 0) { endTowerFight(false, 'death'); return; } // 自傷技能
     }
-    p.atkCd -= dt * slowFactor(p);
+    p.atkCd -= dt * slowFactor(p) * (1 + buffVal(p, 'aspdUp') / 100);
     if (p.atkCd <= 0) {
       var before = b.hp;
       var res = doPlayerAttack(p, b, 'tb-float');
@@ -156,8 +160,9 @@ function endTowerFight(win, reason) {
     G.player.gold += goldR;
     result.rewards.push('💰 金幣 x' + fmt(goldR));
     var glv = clamp(1 + Math.floor(floor / 4), 1, GEM_MAX_LEVEL);
-    G.player.gems[glv] += 2;
-    result.rewards.push('💎 ' + GEM_NAMES[glv] + ' x2');
+    var gt1 = randomGemType(), gt2 = randomGemType();
+    addGem(gt1, glv, 1); addGem(gt2, glv, 1);
+    result.rewards.push('💎 ' + gemLabel(gt1, glv) + '、' + gemLabel(gt2, glv));
     var bk = pick(Object.keys(ENCHANTS));
     G.player.books[bk] += 2;
     result.rewards.push('📖 ' + ENCHANTS[bk].name + '書 x2');
