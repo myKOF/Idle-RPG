@@ -234,7 +234,8 @@ function renderBattle() {
 /* ---- 裝備分頁 ---- */
 function itemCellHTML(it, source) {
   var r = RARITIES[it.rarity];
-  return '<div class="item-cell" data-id="' + it.id + '" data-src="' + source + '" data-slot="' + it.slot + '" ' +
+  var effClass = (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= 7 ? ' eff-genesis' : '');
+  return '<div class="item-cell' + effClass + '" data-id="' + it.id + '" data-src="' + source + '" data-slot="' + it.slot + '" ' +
     'style="border-color:' + r.color + ';box-shadow:inset 0 0 12px ' + r.color + '33">' +
     '<span class="ic-emoji">' + SLOT_INFO[it.slot].emoji + '</span>' +
     (it.upgrade ? '<span class="ic-up">+' + it.upgrade + '</span>' : '') +
@@ -254,7 +255,8 @@ function renderEquip() {
     var info = SLOT_INFO[slot];
     if (it) {
       var r = RARITIES[it.rarity];
-      h += '<div class="eq-slot filled" data-id="' + it.id + '" data-src="equip" data-slot="' + slot + '" style="border-color:' + r.color + '">' +
+      var effClass = (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= 7 ? ' eff-genesis' : '');
+      h += '<div class="eq-slot filled' + effClass + '" data-id="' + it.id + '" data-src="equip" data-slot="' + slot + '" style="border-color:' + r.color + '">' +
         '<div class="eq-emoji">' + info.emoji + '</div>' +
         '<div class="eq-name" style="color:' + r.color + '">' + esc(it.name) + (it.upgrade ? ' +' + it.upgrade : '') + '</div>' +
         '<div class="eq-sub">' + info.name + '・Lv.' + it.level +
@@ -911,6 +913,48 @@ function showTowerTooltip(flStr, anchorEl) {
   tip.style.left = x + 'px';
   tip.style.top = y + 'px';
 }
+function showEnemyTooltip(anchorEl) {
+  var tip = $id('sk-tooltip');
+  if (!tip) return;
+  var m = G.tower.active ? (typeof TOWER_FIGHT !== 'undefined' && TOWER_FIGHT ? TOWER_FIGHT.monster : null) : (typeof FIELD !== 'undefined' && FIELD ? FIELD.monster : null);
+  if (!m || m.hp <= 0) return;
+  
+  var dropTip = '<div class="skt-name" style="margin-bottom:6px;">【敵人情報】</div>' +
+    '<div class="skt-desc" style="text-align:left;">' +
+    '⚔️ 攻擊力：' + fmt(m.atk) + '<br>' +
+    '🛡️ 物理防禦：' + fmt(m.def) + '<br>' +
+    '🔮 魔法防禦：' + fmt(m.mdef || m.def*0.75) + '<br>' +
+    '❤️ 最大生命：' + fmt(m.maxHp) + '</div>';
+    
+  var rates = dropRatesFor(FIELD_DROP_TABLE, m.level);
+  var equipStrs = [];
+  for (var r = rates.length - 1; r >= 0; r--) {
+    if (!rates[r]) continue;
+    var rate = rates[r];
+    var rateStr = rate + '%';
+    equipStrs.push('⚔️ <span style="color:' + RARITIES[r].color + '; font-weight:bold;">' + RARITIES[r].name + '裝備</span> <span style="color:var(--dim)">(' + rateStr + ')</span>');
+  }
+  
+  if (equipStrs.length) {
+    dropTip += '<div class="skt-name" style="margin:8px 0 6px;">【可能掉落】</div>' +
+      '<div class="skt-desc" style="text-align:left;">' +
+      '💰 金幣 x' + fmt(m.gold) + ' <span style="color:var(--dim)">(基礎)</span><br>' +
+      '✨ 經驗 x' + fmt(m.xp) + ' <span style="color:var(--dim)">(基礎)</span><br>' +
+      equipStrs.join('<br>') + '</div>';
+  }
+  
+  tip.innerHTML = dropTip;
+  tip.style.display = 'block';
+  var rRect = anchorEl.getBoundingClientRect();
+  var tw = tip.offsetWidth, th = tip.offsetHeight;
+  var x = rRect.right + 10, y = rRect.top;
+  if (x + tw > window.innerWidth - 8) x = rRect.left - tw - 10;
+  if (x < 8) x = 8;
+  if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
+  if (y < 8) y = 8;
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+}
 function hideTooltip() {
   var tip = $id('sk-tooltip');
   if (tip) tip.style.display = 'none';
@@ -1190,6 +1234,14 @@ function initUI() {
       openSkillModal(cell.getAttribute('data-sk'));
       return;
     }
+    // 敵人情報 Tooltip（手機點擊支援）
+    var etip = e.target.closest('#btn-enemy-tip');
+    if (etip) {
+      var tip = $id('sk-tooltip');
+      if (tip && tip.style.display === 'block') hideTooltip();
+      else showEnemyTooltip(etip);
+      return;
+    }
     // 降級
     var dg = e.target.closest('[data-skill-downgrade]');
     if (dg) {
@@ -1257,9 +1309,11 @@ function initUI() {
     if (statRow) { showStatTooltip(statRow.getAttribute('data-tt-title'), statRow.getAttribute('data-tt-desc'), statRow); return; }
     var tf = e.target.closest('[data-tower-tip]');
     if (tf) { showTowerTooltip(tf.getAttribute('data-tower-tip'), tf); return; }
+    var etip = e.target.closest('#btn-enemy-tip');
+    if (etip) { showEnemyTooltip(etip); return; }
   });
   document.addEventListener('mouseout', function (e) {
-    if (e.target.closest('[data-sk]') || e.target.closest('.stat-row[data-tt-title]') || e.target.closest('[data-tower-tip]')) hideTooltip();
+    if (e.target.closest('[data-sk]') || e.target.closest('.stat-row[data-tt-title]') || e.target.closest('[data-tower-tip]') || e.target.closest('#btn-enemy-tip')) hideTooltip();
   });
 
   // 執行融合 / 清空
