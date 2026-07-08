@@ -315,9 +315,20 @@ function renderDetail() {
   } else {
     h += '<button class="btn" data-act="unequip">卸下</button>';
   }
-  h += '<button class="btn" data-act="upgrade">強化（💰' + fmt(cost.gold) + ' 🔩' + fmt(cost.scrap) + '）</button>';
+  var enoughUpGold = G.player.gold >= cost.gold;
+  var enoughUpScrap = G.player.scrap >= cost.scrap;
+  var upGoldHtml = '<span' + (enoughUpGold ? '' : ' style="color:#fca5a5"') + '>💰 ' + fmt(cost.gold) + '</span>';
+  var upScrapHtml = '<span' + (enoughUpScrap ? '' : ' style="color:#fca5a5"') + '>🔩 ' + fmt(cost.scrap) + '</span>';
+  var upTip = '需要：' + upGoldHtml + ' &nbsp;' + upScrapHtml;
+  h += '<button class="btn act-btn-tooltip" data-act="upgrade">強化<div class="btn-tip">' + upTip + '</div></button>';
+
   var rc = rerollCost(it);
-  h += '<button class="btn" data-act="reroll" title="隨機重骰此裝備的所有詞條（幸運值可取較佳結果）">🎲 洗煉（💰' + fmt(rc.gold) + ' 🔮' + rc.essence + '）</button>';
+  var enoughRrGold = G.player.gold >= rc.gold;
+  var enoughRrEssence = G.player.essence >= rc.essence;
+  var rrGoldHtml = '<span' + (enoughRrGold ? '' : ' style="color:#fca5a5"') + '>💰 ' + fmt(rc.gold) + '</span>';
+  var rrEssenceHtml = '<span' + (enoughRrEssence ? '' : ' style="color:#fca5a5"') + '>🔮 ' + fmt(rc.essence) + '</span>';
+  var rrTip = '<div style="color:var(--dim);margin-bottom:4px">隨機重骰此裝備的所有詞條</div>需要：' + rrGoldHtml + ' &nbsp;' + rrEssenceHtml;
+  h += '<button class="btn act-btn-tooltip" data-act="reroll">🎲 洗煉<div class="btn-tip">' + rrTip + '</div></button>';
   h += '<button class="btn" data-act="lock">' + (it.locked ? '解鎖' : '鎖定') + '</button>';
   h += '</div>';
   // 鑲嵌選擇（有空插槽時列出持有寶石）
@@ -370,8 +381,34 @@ function updateSelectionUI() {
   });
 }
 
+function showFloatingText(btn, text, color) {
+  var rect = btn.getBoundingClientRect();
+  var el = document.createElement('div');
+  el.textContent = text;
+  el.style.position = 'fixed';
+  el.style.left = (rect.left + rect.width / 2) + 'px';
+  el.style.top = rect.top + 'px';
+  el.style.transform = 'translate(-50%, -100%)';
+  el.style.color = color;
+  el.style.fontWeight = 'bold';
+  el.style.textShadow = '0 0 4px #000';
+  el.style.pointerEvents = 'none';
+  el.style.zIndex = '9999';
+  el.style.transition = 'all 0.8s ease-out';
+  document.body.appendChild(el);
+  
+  el.offsetHeight; // force reflow
+  
+  el.style.top = (rect.top - 40) + 'px';
+  el.style.opacity = '0';
+  
+  setTimeout(function() {
+    if (el.parentNode) el.parentNode.removeChild(el);
+  }, 800);
+}
+
 /* ---- 生產線與合成 ---- */
-function detailAction(act) {
+function detailAction(act, actBtn) {
   var it = findSelItem();
   if (!it) return;
   var idx;
@@ -413,7 +450,14 @@ function detailAction(act) {
       UI.dirty.inv = true; UI.dirty.factory = true;
     }
   } else if (act === 'upgrade') {
-    manualUpgrade(it); // 成功/失敗日誌由 manualUpgrade 記錄
+    var upResult = manualUpgrade(it);
+    if (actBtn && upResult === 'ok') {
+      showFloatingText(actBtn, '強化成功！', '#7dd3fc');
+    } else if (actBtn && upResult === 'fail') {
+      showFloatingText(actBtn, '強化失敗！', '#fca5a5');
+    } else if (actBtn && upResult === 'poor') {
+      showFloatingText(actBtn, '材料不足', '#fbbf24');
+    }
   } else if (act === 'reroll') {
     var rerr = rerollItemAffixes(it);
     if (rerr) blog('⚠️ 洗煉失敗：' + rerr, 'warn');
@@ -1211,7 +1255,7 @@ function initUI() {
       return;
     }
     var actBtn = e.target.closest('#detail-pane .btn');
-    if (actBtn) { detailAction(actBtn.getAttribute('data-act')); return; }
+    if (actBtn) { detailAction(actBtn.getAttribute('data-act'), actBtn); return; }
     // 寶石鑲嵌 / 取下
     var gs = e.target.closest('[data-gem-socket]');
     if (gs) {

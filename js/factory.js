@@ -403,5 +403,5 @@ function manualUpgrade(it) {
   } else {
     blog('💥 強化失敗！損失半數材料（成功率 ' + fmt1(upgradeSuccessChance(it)) + '%，可堆「強化成功率」屬性）', 'warn');
   }
-  return r === 'ok';
+  return r;
 }

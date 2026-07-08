@@ -547,3 +547,13 @@ textarea#save-io {
 .skt-components { color: var(--dim); margin-top: 6px; font-size: 11px; }
 .skt-lock { color: var(--warn); margin-top: 4px; }
 .skt-hint { color: var(--dim); font-size: 10.5px; margin-top: 4px; border-top: 1px dashed var(--border); padding-top: 3px; }
+
+.act-btn-tooltip { position: relative; overflow: visible !important; }
+.act-btn-tooltip .btn-tip {
+  display: none; position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.95); border: 1px solid var(--border); border-radius: 6px;
+  padding: 6px 10px; font-size: 12px; white-space: nowrap; color: var(--text); z-index: 100;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5); pointer-events: none; line-height: 1.4; font-weight: normal;
+}
+.act-btn-tooltip:hover .btn-tip { display: block; }
+
