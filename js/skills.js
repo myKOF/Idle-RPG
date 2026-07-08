@@ -736,55 +736,65 @@ function describeSkill(id, lv) {
   if (!sk) return '';
   lv = Math.max(1, lv || 1);
   var fx = effectiveFx(id, sk, lv);
+  
+  function growStr(v) { return '<span class="txt-grow">' + v + '</span>'; }
+  function statStr(v) { return '<span class="txt-static">' + v + '</span>'; }
+  function scaleStr(defObj, lvArg) {
+    var val = scaleAt(defObj, lvArg);
+    return (defObj && defObj.per) ? growStr(fmt1(val)) : statStr(fmt1(val));
+  }
+  
   var p = [];
   if (fx.passive) {
     var names = { hpPct: '生命上限', atkPct: '物理攻擊', matkPct: '魔法攻擊', aspdPct: '攻擊速度',
       critRate: '暴擊率', critDmg: '暴擊傷害', lifesteal: '吸血', mpFlat: '法力上限',
       mpRegen: '法力恢復/秒', defPct: '物理/魔法防禦', goldBonus: '金幣獲取', xpBonus: '經驗獲取' };
-    for (var k in fx.passive) p.push((names[k] || k) + ' +' + fmt1(fx.passive[k] * lv) + (k === 'mpFlat' || k === 'mpRegen' ? '' : '%'));
+    for (var k in fx.passive) p.push((names[k] || k) + ' +' + growStr(fmt1(fx.passive[k] * lv)) + (k === 'mpFlat' || k === 'mpRegen' ? '' : '%'));
     return '被動：' + p.join('、');
   }
   if (fx.dmgType) {
     var t = fx.dmgType === 'true' ? '真實' : (fx.dmgType === 'magic' ? '魔法' : '物理');
     var statName = fx.stat === 'matk' ? '魔攻' : '物攻';
-    p.push('造成 ' + fmt1((fx.base || 0) + (fx.per || 0) * (lv - 1)) + '% ' + statName + ' 的' + t + '傷害' + (fx.hits ? ' x' + fx.hits + ' 段' : ''));
-    if (fx.elem) p.push(ELEM_INFO[fx.elem.type].name + '屬性佔 ' + Math.round(fx.elem.portion * 100) + '%');
+    var dVal = (fx.base || 0) + (fx.per || 0) * (lv - 1);
+    var dStr = fx.per ? growStr(fmt1(dVal)) : statStr(fmt1(dVal));
+    p.push('造成 ' + dStr + '% ' + statName + ' 的' + t + '傷害' + (fx.hits ? ' x' + statStr(fx.hits) + ' 段' : ''));
+    if (fx.elem) p.push(ELEM_INFO[fx.elem.type].name + '屬性佔 ' + statStr(Math.round(fx.elem.portion * 100)) + '%');
     if (fx.elems) {
       var eparts = [];
-      for (var ek2 in fx.elems) eparts.push(ELEM_INFO[ek2].name + ' ' + Math.round(fx.elems[ek2] * 100) + '%');
+      for (var ek2 in fx.elems) eparts.push(ELEM_INFO[ek2].name + ' ' + statStr(Math.round(fx.elems[ek2] * 100)) + '%');
       p.push('元素屬性：' + eparts.join('、'));
     }
-    if (fx.doubleCastPct) p.push(fx.doubleCastPct + '% 機率雙重施法');
-    if (fx.comboDetonate) p.push('目標同時處於減速與燃燒時，引發冰火爆炸追加 ' + fx.comboDetonate + '% 傷害');
-    if (fx.execBelow) p.push('目標血量 <' + fx.execBelow + '% 時傷害 x' + fx.execMult);
+    if (fx.doubleCastPct) p.push(statStr(fx.doubleCastPct) + '% 機率雙重施法');
+    if (fx.comboDetonate) p.push('目標同時處於減速與燃燒時，引發冰火爆炸追加 ' + statStr(fx.comboDetonate) + '% 傷害');
+    if (fx.execBelow) p.push('目標血量 <' + statStr(fx.execBelow) + '% 時傷害 x' + statStr(fx.execMult));
     if (fx.neverMiss) p.push('必定命中');
-    if (fx.critBonus) p.push('此擊暴擊率 +' + fx.critBonus + '%');
-    if (fx.gamble) p.push('傷害隨機浮動 ±67%');
-    if (fx.selfDmgPct) p.push('自身損失 ' + fx.selfDmgPct + '% 生命');
-    if (fx.healPctOfDmg) p.push('汲取傷害的 ' + fx.healPctOfDmg + '% 為生命');
-    if (fx.mpOnCrit) p.push('爆擊返還 ' + fx.mpOnCrit + ' 法力');
+    if (fx.critBonus) p.push('此擊暴擊率 +' + statStr(fx.critBonus) + '%');
+    if (fx.gamble) p.push('傷害隨機浮動 ±' + statStr(67) + '%');
+    if (fx.selfDmgPct) p.push('自身損失 ' + statStr(fx.selfDmgPct) + '% 生命');
+    if (fx.healPctOfDmg) p.push('汲取傷害的 ' + statStr(fx.healPctOfDmg) + '% 為生命');
+    if (fx.mpOnCrit) p.push('爆擊返還 ' + statStr(fx.mpOnCrit) + ' 法力');
     if (fx.goldPer) p.push('掠奪金幣');
-    if (fx.dot) p.push('附加' + fx.dot.name + '（每秒 ' + fx.dot.pct + '% 技能傷害，' + fx.dot.dur + ' 秒）');
-    if (fx.dotList) fx.dotList.forEach(function (dd) { p.push('附加' + dd.name + '（每秒 ' + dd.pct + '%，' + dd.dur + ' 秒）'); });
-    if (fx.stunDur) p.push('暈眩 ' + fx.stunDur + ' 秒');
-    if (fx.slowDur) p.push('減速 ' + fx.slowDur + ' 秒');
+    if (fx.dot) p.push('附加' + fx.dot.name + '（每秒 ' + statStr(fx.dot.pct) + '% 技能傷害，' + statStr(fx.dot.dur) + ' 秒）');
+    if (fx.dotList) fx.dotList.forEach(function (dd) { p.push('附加' + dd.name + '（每秒 ' + statStr(dd.pct) + '%，' + statStr(dd.dur) + ' 秒）'); });
+    if (fx.stunDur) p.push('暈眩 ' + statStr(fx.stunDur) + ' 秒');
+    if (fx.slowDur) p.push('減速 ' + statStr(fx.slowDur) + ' 秒');
   }
-  if (fx.healPctMax) p.push('回復 ' + fmt1(scaleAt(fx.healPctMax, lv)) + '% 最大生命');
-  if (fx.hotPct) p.push('每秒再生 ' + fmt1(scaleAt(fx.hotPct, lv)) + '% 生命，持續 ' + fx.hotDur + ' 秒');
-  if (fx.shieldPctMax) p.push('獲得 ' + fmt1(scaleAt(fx.shieldPctMax, lv)) + '% 最大生命的護盾');
+  if (fx.healPctMax) p.push('回復 ' + scaleStr(fx.healPctMax, lv) + '% 最大生命');
+  if (fx.hotPct) p.push('每秒再生 ' + scaleStr(fx.hotPct, lv) + '% 生命，持續 ' + statStr(fx.hotDur) + ' 秒');
+  if (fx.shieldPctMax) p.push('獲得 ' + scaleStr(fx.shieldPctMax, lv) + '% 最大生命的護盾');
   if (fx.selfCleanse) p.push('淨化自身負面狀態');
-  if (fx.mpRestore) p.push('回復 ' + fx.mpRestore + ' 法力');
-  if (fx.buff) p.push('自身' + buffLabel(fx.buff.key) + ' +' + fmt1(scaleAt(fx.buff, lv)) + '%，持續 ' + fx.buff.dur + ' 秒');
-  if (fx.buff2) p.push(buffLabel(fx.buff2.key) + ' +' + fmt1(scaleAt(fx.buff2, lv)) + '%');
-  if (fx.debuff) p.push('敵方' + buffLabel(fx.debuff.key) + ' -' + fmt1(scaleAt(fx.debuff, lv)) + '%，持續 ' + fx.debuff.dur + ' 秒');
-  if (fx.maxHpDotPct) p.push('每秒造成敵方最大生命 ' + fmt1(scaleAt(fx.maxHpDotPct, lv)) + '% 的詛咒傷害（' + (fx.dotDur || 5) + '秒，有上限）');
+  if (fx.mpRestore) p.push('回復 ' + statStr(fx.mpRestore) + ' 法力');
+  if (fx.buff) p.push('自身' + buffLabel(fx.buff.key) + ' +' + scaleStr(fx.buff, lv) + '%，持續 ' + statStr(fx.buff.dur) + ' 秒');
+  if (fx.buff2) p.push(buffLabel(fx.buff2.key) + ' +' + scaleStr(fx.buff2, lv) + '%');
+  if (fx.debuff) p.push('敵方' + buffLabel(fx.debuff.key) + ' -' + scaleStr(fx.debuff, lv) + '%，持續 ' + statStr(fx.debuff.dur) + ' 秒');
+  if (fx.maxHpDotPct) p.push('每秒造成敵方最大生命 ' + scaleStr(fx.maxHpDotPct, lv) + '% 的詛咒傷害（' + statStr(fx.dotDur || 5) + '秒，有上限）');
   var desc = p.join('；');
   // 融合技：附上變異與素材資訊
   if (sk.cat === 'fusion') {
-    if (sk.mutation) desc += '。【變異：' + sk.mutation.name + '】' + sk.mutation.desc;
+    if (sk.mutation) desc += '<div class="skt-mutation">【變異：' + sk.mutation.name + '】' + sk.mutation.desc + '</div>';
     if (sk.components) {
       var cn = sk.components.map(function (cid) { var d = SKILLS[cid]; return d ? d.name : cid; });
-      desc += '（融合自：' + cn.join('＋') + '）';
+      desc += '<div class="skt-components">（融合自：' + cn.join(' ＋ ') + '）</div>';
     }
   } else {
     var nx = nextUnlockLv(id, lv);

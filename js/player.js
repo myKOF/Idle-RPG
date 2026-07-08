@@ -137,13 +137,18 @@ function computeStats() {
   st.str = Math.round(A.str); st.agi = Math.round(A.agi);
   st.int = Math.round(A.int); st.vit = Math.round(A.vit);
   // 基礎
-  st.hp = Math.round((120 + (lv - 1) * 22 + st.vit * 10 + A.hpFlat) * (1 + A.hpPct / 100));
+  st.base = {};
+  st.base.hp = 120 + (lv - 1) * 22 + st.vit * 10;
+  st.hp = Math.round((st.base.hp + A.hpFlat) * (1 + A.hpPct / 100));
   st.hpRegen = A.hpRegen;                                    // 額外生命恢復/秒（另有 1.5%/秒 基礎回復）
-  st.mp = Math.round(40 + st.int * 4 + A.mpFlat);
+  st.base.mp = 40 + st.int * 4;
+  st.mp = Math.round(st.base.mp + A.mpFlat);
   st.mpRegen = 2 + st.int * 0.06 + A.mpRegen;
   // 進攻
-  st.atk = Math.round((8 + (lv - 1) * 1.6 + st.str * 2 + A.atkFlat) * (1 + A.atkPct / 100));    // 物理攻擊
-  st.matk = Math.round((6 + (lv - 1) * 1.2 + st.int * 2 + A.matkFlat) * (1 + A.matkPct / 100)); // 魔法攻擊
+  st.base.atk = 8 + (lv - 1) * 1.6 + st.str * 2;
+  st.atk = Math.round((st.base.atk + A.atkFlat) * (1 + A.atkPct / 100));    // 物理攻擊
+  st.base.matk = 6 + (lv - 1) * 1.2 + st.int * 2;
+  st.matk = Math.round((st.base.matk + A.matkFlat) * (1 + A.matkPct / 100)); // 魔法攻擊
   st.critRate = clamp(5 + st.agi * 0.06 + A.critRate, 0, 100);
   st.critDmg = 150 + A.critDmg;
   st.pPen = clamp(A.pPen, 0, 80);
@@ -158,8 +163,10 @@ function computeStats() {
   st.bossDmg = A.bossDmg;
   st.aoeDmg = A.aoeDmg;
   // 防禦
-  st.def = Math.round((4 + (lv - 1) * 1.0 + st.vit * 0.9 + A.defFlat) * (1 + A.defPct / 100));   // 物理防禦
-  st.mdef = Math.round((3 + (lv - 1) * 0.8 + st.int * 0.7 + A.mdefFlat) * (1 + A.defPct / 100)); // 魔法防禦
+  st.base.def = 4 + (lv - 1) * 1.0 + st.vit * 0.9;
+  st.def = Math.round((st.base.def + A.defFlat) * (1 + A.defPct / 100));   // 物理防禦
+  st.base.mdef = 3 + (lv - 1) * 0.8 + st.int * 0.7;
+  st.mdef = Math.round((st.base.mdef + A.mdefFlat) * (1 + A.defPct / 100)); // 魔法防禦
   st.blockRate = clamp(A.blockRate, 0, 50);
   st.blockDmgRed = clamp(A.blockDmgRed, 0, 50);
   st.evasion = clamp(st.agi * 0.08 + A.evasion, 0, 40);
@@ -190,6 +197,7 @@ function computeStats() {
   if (passives.stun) passives.stun = Math.min(passives.stun, 30);
   st.passives = passives;
   st.elemAtk = elemAtk;
+  st.A = A;
   return st;
 }
 

@@ -541,5 +541,9 @@ textarea#save-io {
 .skt-name { font-weight: bold; color: var(--accent); font-size: 13px; }
 .skt-meta { color: var(--info); font-size: 11px; margin: 2px 0; }
 .skt-desc { color: var(--text); line-height: 1.5; }
+.txt-grow { color: #38bdf8; font-weight: 500; }
+.txt-static { color: #fb923c; font-weight: 500; }
+.skt-mutation { color: #facc15; margin-top: 8px; font-weight: 500; }
+.skt-components { color: var(--dim); margin-top: 6px; font-size: 11px; }
 .skt-lock { color: var(--warn); margin-top: 4px; }
 .skt-hint { color: var(--dim); font-size: 10.5px; margin-top: 4px; border-top: 1px dashed var(--border); padding-top: 3px; }

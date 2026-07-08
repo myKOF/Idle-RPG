@@ -109,7 +109,9 @@ function renderAttrPanel(st) {
     STAT_GROUPS.forEach(function (g, gi) {
       h += '<details class="attr-group"' + (gi < 2 ? ' open' : '') + '><summary>' + esc(g.title) + '</summary>';
       g.rows.forEach(function (row, ri) {
-        h += '<div class="stat-row"><span>' + row[0] + '</span><b data-attr="' + gi + '-' + ri + '"></b></div>';
+        var descStr = typeof row[2] === 'function' ? row[2](st) : row[2];
+        var tip = descStr ? ' data-tt-title="' + esc(row[0].replace(/<[^>]+>/g, '')) + '" data-tt-desc="' + esc(descStr) + '"' : '';
+        h += '<div class="stat-row"' + tip + '><span>' + row[0] + '</span><b data-attr="' + gi + '-' + ri + '"></b></div>';
       });
       h += '</details>';
     });
@@ -122,7 +124,13 @@ function renderAttrPanel(st) {
   STAT_GROUPS.forEach(function (g, gi) {
     g.rows.forEach(function (row, ri) {
       var el = panel.querySelector('[data-attr="' + gi + '-' + ri + '"]');
-      if (el) el.textContent = row[1](st);
+      if (el) {
+        el.innerHTML = row[1](st);
+        if (typeof row[2] === 'function') {
+          var p = el.parentElement;
+          if (p) p.setAttribute('data-tt-desc', row[2](st));
+        }
+      }
     });
   });
 }
@@ -267,7 +275,7 @@ function renderInventory() {
   var box = $id('inventory-grid');
   $id('inv-count').textContent = G.inventory.length + '/' + cap;
   if (!G.inventory.length) {
-    box.innerHTML = '<div class="hint">背包是空的。戰鬥掉落的裝備會先進入生產線輸送帶，「保留」的會送到這裡。</div>';
+    box.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">背包是空的。戰鬥掉落的裝備會先進入生產線輸送帶，「保留」的會送到這裡。</div>';
   } else {
     box.innerHTML = G.inventory.map(function (it) { return itemCellHTML(it, 'inv'); }).join('');
   }
@@ -675,7 +683,7 @@ function renderSkills() {
 /* ---- 技能升級彈窗 ---- */
 function openSkillModal(id) {
   UI.selSkill = id;
-  hideSkillTooltip();
+  hideTooltip();
   var overlay = $id('skill-modal');
   if (overlay) overlay.style.display = 'flex';
   renderSkillModal();
@@ -700,9 +708,9 @@ function renderSkillModal() {
   var h = '<div class="skd-head"><span class="skd-emoji">' + sk.emoji + '</span><b>' + esc(sk.name) + '</b> ' +
     '<span class="dim-text">Lv.' + lv + '/' + maxLv + '｜' + (SKILL_CATS[sk.cat] ? SKILL_CATS[sk.cat].name : '融合技') + '</span>' +
     (sk.cat !== 'passive' ? '<span class="sk-meta">🔵 ' + sk.cost + ' MP　⏱️ ' + sk.cd + 's</span>' : '') + '</div>';
-  h += '<div class="sk-desc">' + esc(describeSkill(id, Math.max(1, lv))) + '</div>';
+  h += '<div class="sk-desc">' + describeSkill(id, Math.max(1, lv)) + '</div>';
   if (lv > 0 && lv < maxLv) {
-    h += '<div class="skd-next dim-text">下一級：' + esc(describeSkill(id, lv + 1)) + '</div>';
+    h += '<div class="skd-next dim-text">下一級：' + describeSkill(id, lv + 1) + '</div>';
   }
   if (sk.flavor) h += '<div class="sk-flavor">' + esc(sk.flavor) + '</div>';
   if (lock) h += '<div class="hint">🔒 ' + esc(lock) + '</div>';
@@ -742,7 +750,7 @@ function showSkillTooltip(id, anchorEl) {
   var h = '<div class="skt-name">' + sk.emoji + ' ' + esc(sk.name) +
     ' <span class="dim-text">Lv.' + lv + '/' + skillMaxLv(sk) + '</span></div>';
   if (sk.cat !== 'passive') h += '<div class="skt-meta">🔵 ' + sk.cost + ' MP　⏱️ ' + sk.cd + 's</div>';
-  h += '<div class="skt-desc">' + esc(describeSkill(id, Math.max(1, lv))) + '</div>';
+  h += '<div class="skt-desc">' + describeSkill(id, Math.max(1, lv)) + '</div>';
   if (lock) h += '<div class="skt-lock">🔒 ' + esc(lock) + '</div>';
   h += '<div class="skt-hint">點擊開啟升級面板</div>';
   tip.innerHTML = h;
@@ -758,7 +766,24 @@ function showSkillTooltip(id, anchorEl) {
   tip.style.left = x + 'px';
   tip.style.top = y + 'px';
 }
-function hideSkillTooltip() {
+function showStatTooltip(title, desc, anchorEl) {
+  var tip = $id('sk-tooltip');
+  if (!tip) return;
+  var h = '<div class="skt-name">' + title + '</div>';
+  h += '<div class="skt-desc">' + desc + '</div>';
+  tip.innerHTML = h;
+  tip.style.display = 'block';
+  var r = anchorEl.getBoundingClientRect();
+  var tw = tip.offsetWidth, th = tip.offsetHeight;
+  var x = r.right + 10, y = r.top;
+  if (x + tw > window.innerWidth - 8) x = r.left - tw - 10;
+  if (x < 8) x = 8;
+  if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
+  if (y < 8) y = 8;
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+}
+function hideTooltip() {
   var tip = $id('sk-tooltip');
   if (tip) tip.style.display = 'none';
 }
@@ -1092,13 +1117,15 @@ function initUI() {
     $id('skill-modal-close').addEventListener('click', closeSkillModal);
   }
 
-  // 技能懸停提示（事件委派）
+  // 懸停提示（事件委派）
   document.addEventListener('mouseover', function (e) {
     var cell = e.target.closest('[data-sk]');
     if (cell) showSkillTooltip(cell.getAttribute('data-sk'), cell);
+    var statRow = e.target.closest('.stat-row[data-tt-title]');
+    if (statRow) showStatTooltip(statRow.getAttribute('data-tt-title'), statRow.getAttribute('data-tt-desc'), statRow);
   });
   document.addEventListener('mouseout', function (e) {
-    if (e.target.closest('[data-sk]')) hideSkillTooltip();
+    if (e.target.closest('[data-sk]') || e.target.closest('.stat-row[data-tt-title]')) hideTooltip();
   });
 
   // 執行融合 / 清空
