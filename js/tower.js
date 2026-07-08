@@ -23,7 +23,7 @@ function makeBoss(floor) {
     maxHp: base.hp * 22, hp: base.hp * 22,
     atk: base.atk * 1.9, def: base.def * 1.5, mdef: base.mdef * 1.5,
     magic: !!bd.elem,                        // 元素 BOSS 以魔法攻擊（對玩家魔防）
-    aspd: 0.9, dodge: Math.min(5 + floor, 20),
+    aspd: 2.0, dodge: Math.min(5 + floor, 20),
     atkCd: 1.5, effects: {}, ctrlRes: 70,
     elite: false, isBoss: true,
     elem: bd.elem, elemAtk: null, resist: {}, stunCount: 0,

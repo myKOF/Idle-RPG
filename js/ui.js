@@ -203,7 +203,6 @@ function renderBattle() {
   var stg = G.stage;
   $id('stage-label').textContent = '第 ' + stg.current + ' 階段';
   $id('stage-best').textContent = '最高 ' + stg.best;
-  $id('kill-count').textContent = '擊殺 ' + stg.kills + '/' + KILLS_PER_STAGE;
   $id('st-auto').checked = stg.autoAdvance;
 
   var p = FIELD.player;
@@ -709,11 +708,12 @@ function skillCellHTML(id) {
   var lv = skillLevel(id);
   var lock = tierLockReason(id);
   var inLoadout = (G.player.loadout || []).indexOf(id) >= 0;
+  var maxLv = skillMaxLv(sk);
   var cls = 'tree-cell' + (lv > 0 ? ' learned' : '') + (lock ? ' locked' : '') +
     (UI.selSkill === id ? ' selected' : '') + (inLoadout ? ' equipped' : '');
   return '<div class="' + cls + '" data-sk="' + id + '">' +
     '<span class="tc-emoji">' + sk.emoji + '</span>' +
-    (lv > 0 ? '<span class="tc-lv">' + lv + '</span>' : (lock ? '<span class="tc-lock">🔒</span>' : '')) +
+    (lv > 0 ? '<span class="tc-lv' + (lv >= maxLv ? ' max-lv' : '') + '">' + lv + '</span>' : (lock ? '<span class="tc-lock">🔒</span>' : '')) +
     (inLoadout ? '<span class="tc-eq">⚔</span>' : '') +
     '</div>';
 }
@@ -724,11 +724,11 @@ function renderSkills() {
   var p = G.player;
   $id('sp-count').textContent = availableSkillPoints() + '（等級 ' + p.level + ' 共 ' + totalSkillPoints() + ' 點，已用 ' + spentSkillPoints() + '）';
 
-  // 裝載欄（每 10 級 +1 格）
+  // 裝載欄（每 20 級 +1 格）
   var loBox = $id('skill-loadout');
   var lo = p.loadout || [];
   var cap = loadoutSize();
-  $id('loadout-cap').textContent = lo.length + '/' + cap + ' 格（角色每 10 級 +1 格）';
+  $id('loadout-cap').textContent = lo.length + '/' + cap + ' 格（角色每 20 級 +1 格）';
   var lh = '';
   for (var i = 0; i < cap; i++) {
     var id0 = lo[i];
@@ -806,13 +806,15 @@ function renderSkillModal() {
   if (lock) h += '<div class="hint">🔒 ' + esc(lock) + '</div>';
   h += '<div class="detail-actions">';
   if (lv < maxLv && !lock) {
-    h += '<button class="btn sm" data-skill-learn="' + id + '"' + (availableSkillPoints() < 1 ? ' disabled' : '') + '>' +
-      (lv === 0 ? '📖 學習' : '⬆️ 升級') + '（1 點）</button>';
+    var cost = skillUpgradeCost(lv);
+    h += '<button class="btn sm" data-skill-learn="' + id + '"' + (G.player.gold < cost ? ' disabled' : '') + '>' +
+      (lv === 0 ? '📖 學習' : '⬆️ 升級') + '（' + fmt(cost) + ' 金幣）</button>';
   } else if (lv >= maxLv) {
     h += '<span class="sk-max">已滿級</span>';
   }
   if (lv > 0) {
-    h += '<button class="btn sm warn" data-skill-downgrade="' + id + '">⬇️ 降級（還 1 點）</button>';
+    var refund = skillUpgradeCost(lv - 1);
+    h += '<button class="btn sm warn" data-skill-downgrade="' + id + '">⬇️ 降級（還 ' + fmt(refund) + ' 金）</button>';
   }
   if (sk.cat !== 'passive' && lv > 0) {
     h += inLoadout
@@ -928,6 +930,7 @@ function showEnemyTooltip(anchorEl) {
   var dropTip = '<div class="skt-name" style="margin-bottom:6px;">【敵人情報】</div>' +
     '<div class="skt-desc" style="text-align:left;">' +
     '⚔️ 攻擊力：' + fmt(m.atk) + '<br>' +
+    '⚡ 攻擊速度：' + fmt1(m.aspd) + ' 次/秒<br>' +
     '🛡️ 物理防禦：' + fmt(m.def) + '<br>' +
     '🔮 魔法防禦：' + fmt(m.mdef || m.def*0.75) + '<br>' +
     '❤️ 最大生命：' + fmt(m.maxHp) + '</div>';
@@ -1164,7 +1167,7 @@ function miniSnapshot() {
     s.info = '⏱️ 剩餘 ' + fmt1(Math.max(0, TOWER_TIME_LIMIT - TOWER.elapsed)) + 's' + (TOWER.enraged ? '　🔥狂暴中' : '');
   } else {
     p = FIELD.player; enemy = FIELD.monster;
-    s.stage = '🚩 第 ' + G.stage.current + ' 階段（' + G.stage.kills + '/' + KILLS_PER_STAGE + '）';
+    s.stage = '🚩 第 ' + G.stage.current + ' 階段';
     s.info = '📈 DPS ' + fmt(currentDps()) + '　💰 ' + fmt(G.player.gold);
   }
   if (p) {

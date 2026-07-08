@@ -20,7 +20,7 @@ function initFieldPlayer() {
 
 function spawnFieldMonster() {
   var s = G.stage.current;
-  var elite = (G.stage.kills === KILLS_PER_STAGE - 1);
+  var elite = (s % 10 === 0);
   var base = monsterStatsFor(s, elite);
   var mtype = pick(MONSTER_POOL);
   FIELD.monster = {
@@ -424,13 +424,11 @@ function onFieldKill(m) {
   FIELD.monster = null;
   // 移動速度：縮短推圖間隔
   FIELD.respawnCd = RESPAWN_DELAY * (1 - st.moveSpeed / 100);
-  if (G.stage.kills >= KILLS_PER_STAGE) {
-    G.stage.kills = 0;
-    if (G.stage.autoAdvance) {
-      G.stage.current++;
-      if (G.stage.current > G.stage.best) G.stage.best = G.stage.current;
-      blog('🚩 推進至第 ' + G.stage.current + ' 階段！', 'good');
-    }
+  G.stage.kills++;
+  if (G.stage.autoAdvance) {
+    G.stage.current++;
+    if (G.stage.current > G.stage.best) G.stage.best = G.stage.current;
+    blog('🚩 推進至第 ' + G.stage.current + ' 階段！', 'good');
   }
   UI.dirty.battle = true; UI.dirty.header = true;
 }
@@ -477,7 +475,7 @@ function rollFieldDrops(m) {
     flog('📖 撿到 ' + ENCHANTS[bk].name + '書', 'info');
   }
   // 附魔精華（階段 10+）
-  if (s >= 10 && chance(3)) {
+  if (s >= 10 && chance(9)) {
     G.player.essence += ri(1, 2);
   }
 }
