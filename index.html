@@ -51,7 +51,12 @@
           <div id="equip-grid"></div>
         </div>
         <div>
-          <div class="sec-title">裝備詳情</div>
+          <div class="sec-title" style="display: flex; align-items: center; justify-content: space-between;">
+            <span>裝備詳情</span>
+            <label style="font-size: 13px; font-weight: normal; cursor: pointer; color: var(--text);">
+              <input type="checkbox" id="toggle-compare" checked style="margin-right: 4px; cursor: pointer;">比較裝備
+            </label>
+          </div>
           <div id="detail-pane" class="panel"><div class="hint">點選裝備查看詳情</div></div>
         </div>
       </div>
@@ -91,12 +96,16 @@
               <select class="flt-sel" data-rarity="1"><option value="keep">保留</option><option value="salvage">分解</option><option value="synth">合成素材</option></select></div>
             <div class="flt-row"><span class="rar-tag" style="color:#38bdf8">稀有</span>
               <select class="flt-sel" data-rarity="2"><option value="keep">保留</option><option value="salvage">分解</option><option value="synth">合成素材</option></select></div>
-            <div class="flt-row"><span class="rar-tag" style="color:#c084fc">史詩</span>
+            <div class="flt-row"><span class="rar-tag" style="color:#c084fc">獨特</span>
               <select class="flt-sel" data-rarity="3"><option value="keep">保留</option><option value="salvage">分解</option><option value="synth">合成素材</option></select></div>
-            <div class="flt-row"><span class="rar-tag" style="color:#fb923c">傳說</span>
+            <div class="flt-row"><span class="rar-tag" style="color:#ffd700">史詩</span>
               <select class="flt-sel" data-rarity="4"><option value="keep">保留</option><option value="salvage">分解</option><option value="synth">合成素材</option></select></div>
-            <div class="flt-row"><span class="rar-tag" style="color:#f87171">神話</span>
+            <div class="flt-row"><span class="rar-tag" style="color:#fb923c">傳說</span>
               <select class="flt-sel" data-rarity="5"><option value="keep">保留</option><option value="salvage">分解</option><option value="synth">合成素材</option></select></div>
+            <div class="flt-row"><span class="rar-tag" style="color:#f87171">神話</span>
+              <select class="flt-sel" data-rarity="6"><option value="keep">保留</option><option value="salvage">分解</option><option value="synth">合成素材</option></select></div>
+            <div class="flt-row"><span class="rar-tag" style="color:#b8860b">創世</span>
+              <select class="flt-sel" data-rarity="7"><option value="keep">保留</option><option value="salvage">分解</option><option value="synth">合成素材</option></select></div>
           </div>
         </div>
       </div>
@@ -145,14 +154,13 @@
 
       <!-- 附魔節點 -->
       <div class="panel node-card">
-        <div class="node-title">✨ 附魔節點 <span class="node-badge">Enchant</span></div>
+        <div class="node-title">✨ 附魔書庫存 <span class="node-badge">Enchant</span></div>
         <div class="node-body">
-          <label class="chk"><input type="checkbox" id="enc-enabled"> 啟用自動附魔（書＋精華 → 已裝備裝備）</label>
-          <label class="chk"><input type="checkbox" id="enc-overwrite"> 允許覆蓋既有附魔</label>
+          <div class="hint">📌 附魔已改為手動操作：到「🎒 裝備」分頁點選裝備，即可用附魔書附魔（消耗書＋精華），點擊既有附魔可取下（返還書）。混合合成仍會自動消耗附魔書。</div>
           <div class="node-info" id="enc-info"></div>
           <div class="sec-sub">附魔書庫存</div>
           <div id="enc-books" class="chip-row"></div>
-          <div class="hint">攻擊類（六元素）→ 武器/戒指/護手｜防禦類（抗性）→ 頭盔/胸甲/護腿｜功能類 → 項鍊/靴子</div>
+          <div class="hint">攻擊類（六元素）→ 武器/戒指/護手｜防禦類（抗性）→ 頭盔/肩甲/胸甲/腰帶/護腿｜功能類 → 項鍊/靴子。附魔欄位數依品質：普~稀有 1、獨特~傳說 2、神話/創世 3。</div>
         </div>
       </div>
 
@@ -285,10 +293,10 @@
         <p><b>核心循環：</b>戰鬥收集材料 → 生產線自動處理 → 資源配比養成 → 挑戰更高層 BOSS。</p>
         <p><b>📊 屬性系統（50+）：</b>四維主屬性（💪力量→物攻/負重、🏃敏捷→閃避/暴擊/攻速、🧠智力→魔攻/法力、🪨耐力→生命/物防）每級 +2，並可由裝備詞條累加。完整屬性見左側面板。</p>
         <p><b>⚔️ 戰鬥：</b>角色全自動攻防（基礎 1 次/秒，受攻速影響）。法力充足時自動施放【🌠奧術衝擊】造成魔法傷害（對魔防，受冷卻縮減/施法速度/範圍傷害/吸魔影響）。魔法系怪物（幽靈、樹妖等）的攻擊對你的魔防。格擋、閃避、韌性、護盾（治療溢出轉化）皆會生效。每階段擊殺 10 隻怪（第 10 隻為菁英）後推進，死亡會退回上一階段。</p>
-        <p><b>🎒 裝備：</b>12 欄位（武器 x2、戒指 x2、頭盔、肩甲、胸甲、腰帶、護手、護腿、靴子、項鍊），隨機 2~5 詞條（「詞條上限率」可突破至 6）；稀有（藍）以上附帶特殊被動：破甲、反震、連擊、暈眩、減速、真傷、吸魂。武器/戒指會優先裝入空欄、再替換較弱的那件；飾品可掉出幸運、經驗/金幣加成等專屬詞條。</p>
+        <p><b>🎒 裝備：</b>12 欄位（武器 x2、戒指 x2、頭盔、肩甲、胸甲、腰帶、護手、護腿、靴子、項鍊）。品質 8 階：普通（灰）→精良（綠）→稀有（藍）→獨特（紫）→史詩（金）→傳說（橘）→神話（紅）→創世（暗金）；品質決定詞條數（1~7，「詞條上限率」可再突破 +1）、寶石鑲孔（1~6）與附魔欄位（1~3）。神話 25 階起、創世 40 階起掉落。稀有以上附帶特殊被動；武器/戒指優先裝入空欄、再替換較弱者。</p>
         <p><b>🏭 生產線：</b>掉落裝備進入輸送帶 → 篩選節點依品質決定「保留 / 分解 / 合成素材」。分解有 10% 機率「精粹提取」出高階材料。</p>
         <p><b>🔮 混合合成：</b>[裝備] + [寶石] + [附魔書] = 附魔特殊裝備。開啟「更強自動換裝」讓系統自動把新合成的神裝穿上！</p>
-        <p><b>✨ 附魔：</b>攻擊類六元素（🔥高傷、❄️減速、⚡連鎖、🧪中毒、🌟淨化、🌑汲取）、防禦類（六元素抗性/控制抵抗）、功能類（掉寶/疾行）。附魔書＋附魔精華即可自動附魔。</p>
+        <p><b>✨ 附魔：</b>攻擊類六元素（🔥高傷、❄️減速、⚡連鎖、🧪中毒、🌟淨化、🌑汲取）、防禦類（六元素抗性/控制抵抗）、功能類（掉寶/疾行）。在「裝備」分頁點選裝備 → 點附魔書即可附魔（消耗 1 書＋精華），點擊既有附魔可取下（返還書）。附魔欄位數依品質 1~3 欄；混合合成仍會自動賦予附魔。</p>
         <p><b>🧠 技能：</b>54 個技能以五系技能樹呈現（每階需在該系投入點數解鎖）。每升 1 級獲得 1 技能點，技能上限 Lv.10 — 前期升級加基礎數值，Lv.4 解鎖附加狀態、Lv.8 強化該狀態。裝載欄每 10 級 +1 格（無上限），戰鬥中依順序自動施放；治療/護盾類會等血量偏低才施放；被動學會即永久生效。</p>
         <p><b>⚗️ 技能融合：</b>放入 2~4 個已學主動技能融合成專屬奧義：繼承素材部分效果（以素材當前等級計，等級越高繼承越強），並有機率覺醒變異效果（冰與火之歌、雷鳴回響、劇毒綻放…每次僅一種）。融合技初始等級＝素材加總、可再升 20 級；素材歸零可重學；刪除融合技會歸還所有投入點數。</p>
         <p><b>🔨 強化與機制：</b>+5 內必定成功，之後成功率遞減（失敗損失半數材料），可堆「強化成功率」。「幸運值」影響詞條品質/大成功/精粹提取；「負重上限」擴充輸送帶與合成區容量；「狂暴閾值」提高 BOSS 狂暴門檻；「合成變異率」讓混合合成有機率產出強化附魔＋額外詞條。</p>

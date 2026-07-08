@@ -39,6 +39,10 @@ function migrateSave(data) {
   SLOT_LIST.forEach(function (s) {
     if (data.equipment[s] === undefined) data.equipment[s] = null;
   });
+  // 品質擴充至 8 階：篩選規則陣列補齊（新階預設保留）
+  if (data.factory && data.factory.filter && data.factory.filter.actions) {
+    while (data.factory.filter.actions.length < RARITIES.length) data.factory.filter.actions.push('keep');
+  }
   // 舊版寶石（{1..5: 數量}）→ 轉換為隨機種類
   var gemTypeKeys = Object.keys(GEM_TYPES);
   for (var lv = 1; lv <= GEM_MAX_LEVEL; lv++) {
@@ -113,13 +117,20 @@ function applyOfflineProgress() {
   var xp = Math.round(m.xp * kills * (1 + st.xpBonus / 100));
   G.player.gold += gold;
   gainXp(xp);
-  // 掉落的裝備直接以生產線邏輯即時處理（最多 30 件實體，其餘折算碎片）
-  var drops = Math.floor(kills * 0.28);
-  var realDrops = Math.min(drops, 30);
-  for (var i = 0; i < realDrops; i++) {
-    pushConveyor(makeEquipment(s, {}));
+  // 掉落：依「物品掉落表」計算各品質期望件數（高品質優先實體化，最多 30 件，其餘折算碎片）
+  var rates = dropRatesFor(FIELD_DROP_TABLE, s);
+  var lootMult = 1 + st.loot / 100;
+  var realDrops = 0, scrapExtra = 0, slotsLeft = 30;
+  for (var r = rates.length - 1; r >= 0; r--) {
+    if (!rates[r]) continue;
+    var cnt = Math.floor(kills * rates[r] * lootMult / 100);
+    if (chance((kills * rates[r] * lootMult) % 100)) cnt++;
+    var real = Math.min(cnt, slotsLeft);
+    for (var i = 0; i < real; i++) pushConveyor(makeEquipment(s, { rarity: r }));
+    slotsLeft -= real;
+    realDrops += real;
+    scrapExtra += Math.max(0, cnt - real) * Math.round(3 * RARITIES[r].salv);
   }
-  var scrapExtra = Math.max(0, drops - realDrops) * 3;
   G.player.scrap += scrapExtra;
 
   var hrs = Math.floor(elapsed / 3600), mins = Math.floor((elapsed % 3600) / 60);

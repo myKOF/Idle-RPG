@@ -78,9 +78,11 @@ function rollRarity(stage, lootBonus) {
     [0, 55],
     [1, 25 * Math.min(b, 2)],
     [2, 12 * Math.min(b, 2.5)],
-    [3, 5.5 * Math.min(b, 3)],
-    [4, (s >= 8 ? 1.8 : 0) * Math.min(b, 3.5)],
-    [5, (s >= 15 ? 0.35 : 0) * Math.min(b, 4)]
+    [3, 5.5 * Math.min(b, 3)],                       // 獨特（紫）
+    [4, (s >= 8 ? 1.8 : 0) * Math.min(b, 3.5)],      // 史詩（金）
+    [5, (s >= 15 ? 0.35 : 0) * Math.min(b, 4)],      // 傳說（橘）
+    [6, (s >= 25 ? 0.08 : 0) * Math.min(b, 4.5)],    // 神話（紅）
+    [7, (s >= 40 ? 0.015 : 0) * Math.min(b, 5)]      // 創世（暗金）
   ];
   return wpick(w);
 }
@@ -90,6 +92,15 @@ function rollAffixValue(key, itemLevel, rarityIdx) {
   var r = RARITIES[rarityIdx];
   var v = (def.base + def.base * def.lv * (itemLevel - 1)) * r.mult * rnd(0.8, 1.2);
   return def.pct ? Math.round(v * 10) / 10 : Math.round(v);
+}
+
+function getAffixLimits(key, itemLevel, rarityIdx) {
+  var def = AFFIX_POOL[key];
+  var r = RARITIES[rarityIdx];
+  var baseV = (def.base + def.base * def.lv * (itemLevel - 1)) * r.mult;
+  var minV = def.pct ? Math.round(baseV * 0.8 * 10) / 10 : Math.round(baseV * 0.8);
+  var maxV = def.pct ? Math.round(baseV * 1.2 * 10) / 10 : Math.round(baseV * 1.2);
+  return { min: minV, max: maxV };
 }
 
 function rollAffixes(count, itemLevel, rarityIdx, slot, luck) {
@@ -176,10 +187,76 @@ function enchantValueFor(item, bookKey, gemLevel) {
   return Math.min(val, 60);
 }
 
-// 對裝備套用附魔
+/* ---- 多附魔欄位 ----
+   附魔數量依稀有度（普~稀有 1、獨特~傳說 2、神話/創世 3）。
+   舊存檔單附魔（it.enchant）延遲轉換為 it.enchants 陣列。 */
+function itemEnchants(it) {
+  if (!it.enchants) {
+    it.enchants = it.enchant ? [it.enchant] : [];
+    delete it.enchant;
+  }
+  return it.enchants;
+}
+
+// 對裝備套用附魔：同類附魔取較高值；有空欄位則新增；全滿則覆蓋最後一欄
 function applyEnchantTo(item, bookKey, gemLevel) {
-  item.enchant = { key: bookKey, val: enchantValueFor(item, bookKey, gemLevel) };
+  var ens = itemEnchants(item);
+  var val = enchantValueFor(item, bookKey, gemLevel);
+  for (var i = 0; i < ens.length; i++) {
+    if (ens[i].key === bookKey) {
+      ens[i].val = Math.max(ens[i].val, val);
+      return item;
+    }
+  }
+  if (ens.length < enchantCapFor(item)) ens.push({ key: bookKey, val: val });
+  else ens[ens.length - 1] = { key: bookKey, val: val };
   return item;
+}
+
+/* ---- 手動附魔（裝備介面操作，比照寶石鑲嵌） ---- */
+// 物品種類 → 可用附魔類別
+function enchantCatForType(type) {
+  if (type === 'weapon' || type === 'ring' || type === 'gloves') return 'atk';
+  if (type === 'amulet' || type === 'boots') return 'util';
+  return 'def'; // helmet / shoulder / chest / belt / legs
+}
+// 附魔：消耗 1 本書 + 精華；同類附魔僅可升級為更高數值。回傳 null=成功
+function manualEnchant(it, bookKey) {
+  var e = ENCHANTS[bookKey];
+  if (!e) return '未知附魔書';
+  if ((G.player.books[bookKey] || 0) < 1) return '沒有「' + e.name + '」書';
+  var cat = enchantCatForType(it.slot);
+  if (e.cat !== cat) {
+    var catNames = { atk: '攻擊', def: '防禦', util: '功能' };
+    return SLOT_INFO[it.slot].name + '只能使用' + catNames[cat] + '類附魔';
+  }
+  if (G.player.essence < ENCHANT_ESSENCE_COST) return '附魔精華不足（需 ' + ENCHANT_ESSENCE_COST + '）';
+  var ens = itemEnchants(it);
+  var same = null;
+  for (var i = 0; i < ens.length; i++) if (ens[i].key === bookKey) { same = ens[i]; break; }
+  if (same) {
+    if (enchantValueFor(it, bookKey, 0) <= same.val) return '已有同類附魔且數值不會提升';
+  } else if (ens.length >= enchantCapFor(it)) {
+    return '附魔欄已滿（點擊既有附魔可取下）';
+  }
+  G.player.books[bookKey]--;
+  G.player.essence -= ENCHANT_ESSENCE_COST;
+  applyEnchantTo(it, bookKey, 0);
+  G.factory.stats.enchanted++;
+  markStatsDirty();
+  UI.dirty.equip = true; UI.dirty.inv = true; UI.dirty.header = true;
+  return null;
+}
+// 取下附魔：返還 1 本附魔書（精華不退）
+function removeEnchantAt(it, idx) {
+  var ens = itemEnchants(it);
+  var en = ens[idx];
+  if (!en) return false;
+  ens.splice(idx, 1);
+  G.player.books[en.key] = (G.player.books[en.key] || 0) + 1;
+  markStatsDirty();
+  UI.dirty.equip = true; UI.dirty.inv = true; UI.dirty.header = true;
+  return true;
 }
 
 // 升級後詞條倍率
@@ -217,9 +294,10 @@ function itemScore(it) {
     }
   }
   if (it.passive) s *= 1.15;
-  if (it.enchant) {
-    var e = ENCHANTS[it.enchant.key];
-    s += (e.cat === 'atk') ? it.enchant.val * 1.2 : it.enchant.val * 2;
+  var ens = itemEnchants(it);
+  for (var ei = 0; ei < ens.length; ei++) {
+    var e = ENCHANTS[ens[ei].key];
+    if (e) s += (e.cat === 'atk') ? ens[ei].val * 1.2 : ens[ei].val * 2;
   }
   s *= 1 + it.rarity * 0.06;
   return s;
@@ -239,7 +317,7 @@ function salvageResult(it, extractChance) {
     out.essence = ri(1, 2) + Math.floor(it.rarity / 2);
     if (chance(30)) out.gem = 1; // 額外一級寶石
   }
-  if (it.enchant) out.essence += 1; // 已附魔裝備回收額外精華
+  out.essence += itemEnchants(it).length; // 每個附魔回收 1 額外精華
   return out;
 }
 
@@ -297,25 +375,40 @@ function itemDetailHTML(it, cmp) {
     var k = it.affixes[i].key;
     if (processedKeys[k]) continue;
     processedKeys[k] = true;
+    var baseVal = it.affixes[i].val;
     var vCur = curMap[k];
     var vCmp = cmpMap[k] || 0;
     var def = AFFIX_POOL[k];
     var name = esc(def.name.replace('%', ''));
-    if (vCmp === 0) {
-      if (cmp) {
-        h += '<div class="it-affix" style="color: #4ade80">◆ ' + name + ' +' + (def.pct ? pctStr(vCur) : fmt(vCur)) + '</div>';
-      } else {
-        h += '<div class="it-affix">◆ ' + name + ' +' + (def.pct ? pctStr(vCur) : fmt(vCur)) + '</div>';
-      }
-    } else {
+    
+    var limits = getAffixLimits(k, it.level, it.rarity);
+    var isMax = baseVal >= limits.max - 0.01;
+    var minDisplay = def.pct ? pctStr(limits.min * um) : fmt(limits.min * um);
+    var maxDisplay = def.pct ? pctStr(limits.max * um) : fmt(limits.max * um);
+    var limitTip = '洗煉區間：' + minDisplay + ' ~ ' + maxDisplay;
+    
+    var valColor = isMax ? '#fbbf24' : '';
+    var valHtml = '<span' + (valColor ? ' style="color:' + valColor + ';font-weight:bold"' : '') + '>' + (def.pct ? pctStr(vCur) : fmt(vCur)) + '</span>';
+    
+    var rrCost = rerollCost(it);
+    var rrGoldHtml = '<span' + (G.player.gold >= rrCost.gold ? '' : ' style="color:#fca5a5"') + '>💰 ' + fmt(rrCost.gold) + '</span>';
+    var rrEssenceHtml = '<span' + (G.player.essence >= rrCost.essence ? '' : ' style="color:#fca5a5"') + '>🔮 ' + fmt(rrCost.essence) + '</span>';
+    var rrTip = '<div style="color:var(--dim);margin-bottom:4px">單獨洗煉此屬性（改變種類與數值）</div>需要：' + rrGoldHtml + ' &nbsp;' + rrEssenceHtml;
+    var rrBtn = ' <button class="btn act-btn-tooltip" style="padding: 1px 4px; font-size: 11px; vertical-align: middle; margin-left: 4px;" data-act="reroll-affix" data-affix="' + k + '">🎲<div class="btn-tip" style="text-align:left; font-size: 12px; line-height: 1.4; font-weight: normal;">' + rrTip + '</div></button>';
+    
+    var diffStr = '';
+    if (vCmp !== 0) {
       var diff = vCur - vCmp;
-      var diffStr = '';
       if (Math.abs(diff) > 0.05) {
         if (diff > 0) diffStr = ' <span style="color: #4ade80">↑' + (def.pct ? pctStr(diff) : fmt(diff)) + '</span>';
-        else diffStr = ' <span style="color: #f87171">↓' + (def.pct ? pctStr(-diff) : fmt(-diff)) + '</span>';
+        else diffStr = ' <span style="color: #fca5a5">↓' + (def.pct ? pctStr(-diff) : fmt(-diff)) + '</span>';
       }
-      h += '<div class="it-affix">◆ ' + name + ' +' + (def.pct ? pctStr(vCur) : fmt(vCur)) + diffStr + '</div>';
     }
+    
+    var lineStyle = (vCmp === 0 && cmp) ? 'color: #4ade80;' : '';
+    h += '<div class="it-affix" style="' + lineStyle + '">' +
+         '<span class="act-btn-tooltip" style="cursor:help;">◆ ' + name + ' +' + valHtml + '<div class="btn-tip" style="font-weight:normal;color:var(--text);">' + limitTip + '</div></span>' +
+         diffStr + rrBtn + '</div>';
   }
   if (cmp) {
     for (var i = 0; i < cmp.affixes.length; i++) {
@@ -351,28 +444,42 @@ function itemDetailHTML(it, cmp) {
     }
   }
 
-  if (cmp && cmp.enchant && (!it.enchant || it.enchant.key !== cmp.enchant.key)) {
-    h += '<div class="it-enchant" style="color: #f87171; text-decoration: line-through;">' + esc(enchantLine(cmp.enchant)) + '</div>';
-  }
-  if (it.enchant) {
-    if (!cmp) {
-      h += '<div class="it-enchant">' + esc(enchantLine(it.enchant)) + '</div>';
-    } else if (!cmp.enchant || cmp.enchant.key !== it.enchant.key) {
-      h += '<div class="it-enchant" style="color: #4ade80">' + esc(enchantLine(it.enchant)) + '</div>';
-    } else {
-      var diff = it.enchant.val - cmp.enchant.val;
-      var diffStr = '';
-      if (Math.abs(diff) > 0.05) {
-        var e = ENCHANTS[it.enchant.key];
-        var dfStr = (e.cat === 'atk') ? fmt(diff) : pctStr(diff);
-        if (diff > 0) diffStr = ' <span style="color: #4ade80">↑' + dfStr + '</span>';
-        else diffStr = ' <span style="color: #f87171">↓' + ((e.cat === 'atk') ? fmt(-diff) : pctStr(-diff)) + '</span>';
-      }
-      var en = it.enchant;
-      var e = ENCHANTS[en.key];
-      var vs = (e.cat === 'atk') ? '+' + fmt(en.val) : '+' + pctStr(en.val);
-      h += '<div class="it-enchant">' + e.emoji + ' ' + esc(e.name) + ' ' + vs + diffStr + '</div>';
+  // 附魔（多欄位，數量依稀有度）
+  var itEns = itemEnchants(it);
+  var cmpEns = cmp ? itemEnchants(cmp) : [];
+  var enCap = enchantCapFor(it);
+  var cmpEnMap = {};
+  cmpEns.forEach(function (ce) { cmpEnMap[ce.key] = ce.val; });
+  var itEnKeys = {};
+  itEns.forEach(function (en2) { itEnKeys[en2.key] = true; });
+  // 對方有而自己沒有的附魔（劃線顯示）
+  cmpEns.forEach(function (ce) {
+    if (!itEnKeys[ce.key] && ENCHANTS[ce.key]) {
+      h += '<div class="it-enchant" style="color: #f87171; text-decoration: line-through;">' + esc(enchantLine(ce)) + '</div>';
     }
+  });
+  itEns.forEach(function (en, enIdx) {
+    var e = ENCHANTS[en.key];
+    if (!e) return;
+    if (!cmp) {
+      h += '<div class="it-enchant removable" data-enchant-remove="' + enIdx + '" title="點擊取下（返還附魔書，精華不退）">' + esc(enchantLine(en)) + '</div>';
+    } else if (!(en.key in cmpEnMap)) {
+      h += '<div class="it-enchant" style="color: #4ade80">' + esc(enchantLine(en)) + '</div>';
+    } else {
+      var ediff = en.val - cmpEnMap[en.key];
+      var ediffStr = '';
+      if (Math.abs(ediff) > 0.05) {
+        var dfStr = (e.cat === 'atk') ? fmt(Math.abs(ediff)) : pctStr(Math.abs(ediff));
+        ediffStr = ediff > 0
+          ? ' <span style="color: #4ade80">↑' + dfStr + '</span>'
+          : ' <span style="color: #f87171">↓' + dfStr + '</span>';
+      }
+      var vs = (e.cat === 'atk') ? '+' + fmt(en.val) : '+' + pctStr(en.val);
+      h += '<div class="it-enchant">' + e.emoji + ' ' + esc(e.name) + ' ' + vs + ediffStr + '</div>';
+    }
+  });
+  for (var enSlot = itEns.length; enSlot < enCap; enSlot++) {
+    h += '<div class="it-enchant" style="color: var(--dim)">◇ 空附魔欄（' + (enSlot + 1) + '/' + enCap + '）</div>';
   }
 
   // 寶石插槽
@@ -424,6 +531,52 @@ function rerollItemAffixes(it) {
   G.player.essence -= cost.essence;
   var luck = getStats().luck;
   it.affixes = rollAffixes(it.affixes.length, it.level, it.rarity, it.slot, luck);
+  markStatsDirty();
+  UI.dirty.header = true; UI.dirty.equip = true; UI.dirty.inv = true;
+  return null;
+}
+
+// 單獨重骰某一個屬性的種類與數值
+function rerollSingleAffix(it, affixKey) {
+  var cost = rerollCost(it);
+  if (G.player.gold < cost.gold || G.player.essence < cost.essence) {
+    return '資源不足（需要金幣 ' + fmt(cost.gold) + '、精華 ' + cost.essence + '）';
+  }
+  
+  var targetIdx = -1;
+  var used = {};
+  for (var i = 0; i < it.affixes.length; i++) {
+    if (it.affixes[i].key === affixKey) {
+      targetIdx = i; 
+    } else {
+      used[it.affixes[i].key] = true;
+    }
+  }
+  if (targetIdx < 0) return '找不到指定的屬性';
+  
+  var pool = [];
+  for (var k in AFFIX_POOL) {
+    var d = AFFIX_POOL[k];
+    if (d.minR !== undefined && it.rarity < d.minR) continue;
+    if (d.slots && it.slot && d.slots.indexOf(it.slot) < 0) continue;
+    if (used[k]) continue;
+    pool.push([k, d.weight]);
+  }
+  
+  if (pool.length === 0) return '沒有其他可用的屬性';
+  
+  G.player.gold -= cost.gold;
+  G.player.essence -= cost.essence;
+  
+  var luck = getStats().luck;
+  var newKey = wpick(pool);
+  var newVal = rollAffixValue(newKey, it.level, it.rarity);
+  if (luck && chance(luck / 2)) {
+    newVal = Math.max(newVal, rollAffixValue(newKey, it.level, it.rarity));
+  }
+  
+  it.affixes[targetIdx] = { key: newKey, val: newVal };
+  
   markStatsDirty();
   UI.dirty.header = true; UI.dirty.equip = true; UI.dirty.inv = true;
   return null;

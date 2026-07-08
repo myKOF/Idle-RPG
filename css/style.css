@@ -557,3 +557,8 @@ textarea#save-io {
 }
 .act-btn-tooltip:hover .btn-tip { display: block; }
 
+
+/* ---- 手動附魔 ---- */
+.it-enchant.removable { cursor: pointer; border-radius: 4px; padding: 1px 4px; }
+.it-enchant.removable:hover { background: #2a1e2e; text-decoration: line-through; color: var(--bad) !important; }
+.gem-chip.dim-chip { opacity: .55; border-style: dashed; }

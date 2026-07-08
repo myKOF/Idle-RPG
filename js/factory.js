@@ -120,7 +120,7 @@ function factoryTick(dt) {
   if (f.synth.enabled) synthTick();
   // 附魔節點（每 3 秒）
   f.enchTimer -= dt;
-  if (f.enchTimer <= 0) { f.enchTimer = 3; if (f.enchant.enabled) enchantTick(); }
+  if (f.enchTimer <= 0) { f.enchTimer = 3; /* 附魔已改為裝備介面手動操作 */ }
   // 強化節點（每 2 秒）
   f.upTimer -= dt;
   if (f.upTimer <= 0) { f.upTimer = 2; if (f.upgrade.enabled) upgradeTick(); }
@@ -211,7 +211,7 @@ function tryHybridSynthesis() {
   if (great && it.rarity < RARITIES.length - 1) {
     it.rarity++;
     ensureSockets(it); // 稀有度提升 → 插槽數同步增加
-    it.name = RARITY_PREFIX[it.rarity] + it.name.replace(/^(粗糙的|堅實的|精工的|大師級|傳世的|神鑄的)/, '');
+    it.name = RARITY_PREFIX[it.rarity] + it.name.replace(/^(粗糙的|堅實的|精工的|奇異的|大師級|傳世的|神鑄的|創世的)/, '');
     // 升稀有度補被動
     if (it.rarity >= RARE_IDX && !it.passive) {
       var pk = pick(Object.keys(PASSIVE_POOL));
@@ -231,10 +231,13 @@ function tryHybridSynthesis() {
   // 寶石鑲嵌效率：提高寶石對附魔威力的貢獻
   var effGemLv = gemLv * (1 + st.gemEff / 100);
   applyEnchantTo(it, bookKey, effGemLv);
-  // 混合合成變異：附魔威力 x1.5 並追加一條詞條
+  // 混合合成變異：本次附魔威力 x1.5 並追加一條詞條
   var mutated = st.hybridMutation > 0 && chance(st.hybridMutation);
   if (mutated) {
-    it.enchant.val = Math.round(it.enchant.val * 1.5 * 10) / 10;
+    var mens = itemEnchants(it);
+    for (var mi = 0; mi < mens.length; mi++) {
+      if (mens[mi].key === bookKey) { mens[mi].val = Math.round(mens[mi].val * 1.5 * 10) / 10; break; }
+    }
     if (it.affixes.length < MAX_AFFIXES) {
       it.affixes = it.affixes.concat(rollAffixes(1, it.level, it.rarity, it.slot, st.luck)
         .filter(function (na) { return !it.affixes.some(function (a) { return a.key === na.key; }); }));
@@ -307,35 +310,7 @@ function fuseGems(lv) {
   return null;
 }
 
-/* ---- 附魔節點：自動將附魔書用於已裝備裝備 ---- */
-function enchantTick() {
-  var f = G.factory;
-  if (G.player.essence < ENCHANT_ESSENCE_COST) return;
-  // 找有庫存的書
-  for (var bk in G.player.books) {
-    if (G.player.books[bk] <= 0) continue;
-    var cat = ENCHANTS[bk].cat;
-    var slots = ENCHANT_SLOTS[cat];
-    for (var i = 0; i < slots.length; i++) {
-      var it = G.equipment[slots[i]];
-      if (!it) continue;
-      if (it.enchant) {
-        if (!f.enchant.overwrite) continue;
-        // 覆蓋僅在數值嚴格更高時執行（避免同類書互相洗掉、燒光資源）
-        if (enchantValueFor(it, bk, 0) <= it.enchant.val) continue;
-      }
-      // 執行附魔
-      G.player.books[bk]--;
-      G.player.essence -= ENCHANT_ESSENCE_COST;
-      applyEnchantTo(it, bk, 0);
-      G.factory.stats.enchanted++;
-      markStatsDirty();
-      flog('✨ 自動附魔：' + rarityTag(it) + ' 獲得 ' + ENCHANTS[bk].name + '（精華 -' + ENCHANT_ESSENCE_COST + '）', 'good');
-      UI.dirty.equip = true; UI.dirty.header = true;
-      return;
-    }
-  }
-}
+/* （附魔節點已移除：附魔改為裝備介面手動操作，見 item.js manualEnchant） */
 
 /* ---- 強化節點：自動強化已裝備裝備 ---- */
 function upgradeCost(it) {

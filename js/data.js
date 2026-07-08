@@ -1,17 +1,20 @@
 'use strict';
 /* ============ 遊戲資料定義 ============ */
 
-// ---- 稀有度 ----
+/* ---- 稀有度（8 階）----
+   affix: 詞條數量範圍｜sockets: 寶石鑲孔數｜enchants: 附魔欄位數 */
 var RARITIES = [
-  { key: 'common',    name: '普通', color: '#9aa5b1', mult: 1.0, affix: [2, 2], salv: 1.0 },
-  { key: 'uncommon',  name: '精良', color: '#4ade80', mult: 1.35, affix: [2, 3], salv: 1.7 },
-  { key: 'rare',      name: '稀有', color: '#38bdf8', mult: 1.75, affix: [3, 3], salv: 2.8 },
-  { key: 'epic',      name: '史詩', color: '#c084fc', mult: 2.3, affix: [3, 4], salv: 4.5 },
-  { key: 'legendary', name: '傳說', color: '#fb923c', mult: 3.0, affix: [4, 5], salv: 7.5 },
-  { key: 'mythic',    name: '神話', color: '#f87171', mult: 4.0, affix: [5, 5], salv: 12 }
+  { key: 'common',    name: '普通', color: '#9aa5b1', mult: 1.0,  affix: [1, 2], sockets: 1, enchants: 1, salv: 1.0 },
+  { key: 'uncommon',  name: '精良', color: '#4ade80', mult: 1.35, affix: [1, 2], sockets: 1, enchants: 1, salv: 1.7 },
+  { key: 'rare',      name: '稀有', color: '#38bdf8', mult: 1.75, affix: [2, 3], sockets: 2, enchants: 1, salv: 2.8 },
+  { key: 'unique',    name: '獨特', color: '#c084fc', mult: 2.3,  affix: [3, 4], sockets: 2, enchants: 2, salv: 4.5 },
+  { key: 'epic',      name: '史詩', color: '#ffd700', mult: 3.0,  affix: [4, 5], sockets: 3, enchants: 2, salv: 7.5 },
+  { key: 'legendary', name: '傳說', color: '#fb923c', mult: 4.0,  affix: [4, 5], sockets: 4, enchants: 2, salv: 12 },
+  { key: 'mythic',    name: '神話', color: '#f87171', mult: 5.2,  affix: [6, 6], sockets: 5, enchants: 3, salv: 19 },
+  { key: 'genesis',   name: '創世', color: '#b8860b', mult: 6.8,  affix: [7, 7], sockets: 6, enchants: 3, salv: 30 }
 ];
 var RARE_IDX = 2; // 稀有級（含）以上附帶特殊被動
-var MAX_AFFIXES = 6; // 詞條上限屬性可突破至此
+var MAX_AFFIXES = 8; // 詞條上限屬性可突破至此（創世 7 + 突破 1）
 
 /* ---- 裝備部位 ----
    SLOT_LIST = 裝備欄位（12 欄，含雙武器/雙戒指）；ITEM_TYPES = 物品種類（10 種）。
@@ -56,7 +59,7 @@ var SLOT_BASENAMES = {
   ring:     ['銅戒', '銀戒', '秘紋戒指'],
   amulet:   ['木墜', '銀鍊', '星辰項鍊']
 };
-var RARITY_PREFIX = ['粗糙的', '堅實的', '精工的', '大師級', '傳世的', '神鑄的'];
+var RARITY_PREFIX = ['粗糙的', '堅實的', '精工的', '奇異的', '大師級', '傳世的', '神鑄的', '創世的'];
 var ACCESSORY_SLOTS = ['ring', 'amulet'];
 
 /* ---- 詞條池（50+ 屬性核心） ----
@@ -276,11 +279,50 @@ function gemStatValue(type, level) {
   var g = GEM_TYPES[type];
   return Math.round(g.base * level * (1 + 0.2 * (level - 1)) * 10) / 10;
 }
-// 插槽數：稀有 1、史詩 2、傳說 3、神話 4
-function socketCountFor(rarity) { return Math.max(0, rarity - 1); }
+// 插槽數：依稀有度表（普/精良 1、稀有/獨特 2、史詩 3、傳說 4、神話 5、創世 6）
+function socketCountFor(rarity) {
+  var r = RARITIES[clamp(rarity, 0, RARITIES.length - 1)];
+  return r.sockets;
+}
+// 附魔欄位數
+function enchantCapFor(it) {
+  return RARITIES[clamp(it.rarity, 0, RARITIES.length - 1)].enchants;
+}
 // 寶石融合：消耗 2 顆同級寶石 → 隨機種類同級，機率升 1 級
 var FUSE_GOLD_COST = [0, 100, 300, 900, 2700, 8100]; // 依等級
 var FUSE_UPGRADE_CHANCE = 25; // % 基礎（+幸運值/2）
+
+/* ---- 物品掉落表 ----
+   每個品質獨立擲骰（可同時掉多件）；機率 >100%：必掉 floor(p/100) 件，餘數為再掉 1 件的機率。
+   rates 索引 = 品質 0~7（普通~創世）。 */
+var FIELD_DROP_TABLE = [   // 野外：依怪物等級
+  { min: 150, rates: [0,  0,  25, 15, 5, 2, 1, 0] },
+  { min: 100, rates: [0,  20, 15, 10, 5, 2, 0, 0] },
+  { min: 50,  rates: [25, 10, 5,  2,  0, 0, 0, 0] },
+  { min: 1,   rates: [25, 10, 5,  0,  0, 0, 0, 0] }
+];
+var BOSS_DROP_TABLE = [    // 高塔 BOSS：依樓層 7 檔（與掉落表加總列逐欄核對：165/232/256/323/538/700/715）
+  { min: 31, rates: [0, 0, 0,   300, 200, 150, 50, 15] },   // 30級含以上（715%）
+  { min: 26, rates: [0, 0, 0,   300, 200, 150, 40, 10] },   // 26~30（700%）
+  { min: 21, rates: [0, 0, 0,   250, 150, 100, 33, 5] },    // 21~25（538%）
+  { min: 16, rates: [0, 0, 0,   150, 100, 50,  20, 2.5] },  // 16~20（322.5%）
+  { min: 11, rates: [0, 0, 0,   100, 100, 50,  5,  1] },    // 11~15（256%）
+  { min: 6,  rates: [0, 0, 100, 100, 20,  10,  2,  0] },    // 6~10（232%）
+  { min: 1,  rates: [0, 0, 100, 50,  10,  5,   0,  0] }     // 1~5（165%）
+];
+function dropRatesFor(table, lvl) {
+  for (var i = 0; i < table.length; i++) {
+    if (lvl >= table[i].min) return table[i].rates;
+  }
+  return table[table.length - 1].rates;
+}
+// 機率 → 掉落件數（>100% 規則：150% = 必掉 1 件 + 50% 再 1 件）
+function rollDropCount(pct) {
+  if (pct <= 0) return 0;
+  var n = Math.floor(pct / 100);
+  if (chance(pct - n * 100)) n++;
+  return n;
+}
 
 // ---- 怪物 / 成長曲線 ----
 function monsterStatsFor(stage, elite) {

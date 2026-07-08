@@ -450,12 +450,17 @@ function rollFieldDrops(m) {
   var st = getStats();
   var s = G.stage.current;
   var lootBonus = st.loot + buffVal(FIELD.player, 'lootUp'); // 尋寶直覺增益
-  // 裝備：基礎 28%（菁英必掉）
-  var eqChance = m.elite ? 100 : 28 * (1 + lootBonus / 100);
-  if (chance(Math.min(eqChance, 95)) || m.elite) {
-    var it = makeEquipment(s, { lootBonus: lootBonus });
-    pushConveyor(it);
-    if (it.rarity >= 3) blog('✨ 獲得 ' + rarityTag(it) + '！已送入生產線', 'loot');
+  // 裝備：依「物品掉落表」各品質獨立擲骰（掉寶率加成、菁英 x2）
+  var rates = dropRatesFor(FIELD_DROP_TABLE, m.level);
+  var dropMult = (1 + lootBonus / 100) * (m.elite ? 2 : 1);
+  for (var r = 0; r < rates.length; r++) {
+    if (!rates[r]) continue;
+    var n = rollDropCount(rates[r] * dropMult);
+    for (var k = 0; k < n; k++) {
+      var it = makeEquipment(s, { rarity: r });
+      pushConveyor(it);
+      if (r >= 4) blog('✨ 獲得 ' + rarityTag(it) + '！已送入生產線', 'loot');
+    }
   }
   // 寶石（階段 4+，隨機種類）
   if (s >= 4 && chance(6 * (1 + lootBonus / 100))) {

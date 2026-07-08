@@ -28,7 +28,7 @@ function newGameState() {
     inventory: [],
     stage: { current: 1, best: 1, kills: 0, autoAdvance: true },
     factory: {
-      filter: { actions: ['salvage', 'keep', 'keep', 'keep', 'keep', 'keep'], smartSalvage: false },
+      filter: { actions: ['salvage', 'keep', 'keep', 'keep', 'keep', 'keep', 'keep', 'keep'], smartSalvage: false },
       autoEquip: true,
       salvage: {},
       synth: { enabled: true, mergeEnabled: true, hybridEnabled: true, gemMerge: true, minGemLevel: 1, bookChoice: 'any' },
@@ -96,8 +96,8 @@ function computeStats() {
     if (it.passive) {
       passives[it.passive.key] = (passives[it.passive.key] || 0) + it.passive.val;
     }
-    if (it.enchant) {
-      var ek = it.enchant.key, ev = it.enchant.val;
+    itemEnchants(it).forEach(function (en) {
+      var ek = en.key, ev = en.val;
       var e = ENCHANTS[ek];
       if (!e) return;
       if (e.cat === 'atk' && e.elem) elemAtk[e.elem] += ev;
@@ -105,7 +105,7 @@ function computeStats() {
       else if (ek === 'ctrlRes') resist.ctrl += ev;
       else if (ek === 'loot') A.loot += ev;
       else if (ek === 'haste') A.moveSpeed += ev;
-    }
+    });
   });
 
   // 被動技能加成

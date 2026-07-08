@@ -156,6 +156,24 @@ function endTowerFight(win, reason) {
       result.rewards.push(PART_TYPES[part.key].emoji + ' ' + part.name + '（' + partDesc(part) + '）');
       flog('🔩 獲得自動機組零件：' + part.name, 'good');
     }
+    // 裝備戰利品：依「BOSS 掉落表」各品質獨立擲骰（>100% 必掉 + 餘數機率）
+    var st2 = getStats();
+    var bossRates = dropRatesFor(BOSS_DROP_TABLE, floor);
+    var bossMult = 1 + st2.loot / 100;
+    var lootCounts = [];
+    var itemLevel = 4 + floor * 5;
+    for (var br = 0; br < bossRates.length; br++) {
+      if (!bossRates[br]) continue;
+      var bn = rollDropCount(bossRates[br] * bossMult);
+      if (!bn) continue;
+      for (var bk2 = 0; bk2 < bn; bk2++) {
+        pushConveyor(makeEquipment(itemLevel, { rarity: br, level: itemLevel }));
+      }
+      lootCounts.push(RARITIES[br].name + ' x' + bn);
+    }
+    if (lootCounts.length) {
+      result.rewards.push('⚔️ 裝備戰利品：' + lootCounts.join('、') + '（已送入生產線）');
+    }
     var goldR = Math.round(200 * floor * (firstClear ? 2 : 1));
     G.player.gold += goldR;
     result.rewards.push('💰 金幣 x' + fmt(goldR));

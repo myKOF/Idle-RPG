@@ -237,7 +237,8 @@ function itemCellHTML(it, source) {
     'style="border-color:' + r.color + ';box-shadow:inset 0 0 12px ' + r.color + '33">' +
     '<span class="ic-emoji">' + SLOT_INFO[it.slot].emoji + '</span>' +
     (it.upgrade ? '<span class="ic-up">+' + it.upgrade + '</span>' : '') +
-    (it.enchant ? '<span class="ic-enc">' + ENCHANTS[it.enchant.key].emoji + '</span>' : '') +
+    (itemEnchants(it).length ? '<span class="ic-enc">' + (ENCHANTS[itemEnchants(it)[0].key] || {}).emoji +
+      (itemEnchants(it).length > 1 ? '×' + itemEnchants(it).length : '') + '</span>' : '') +
     (it.locked ? '<span class="ic-lock">🔒</span>' : '') +
     (it.synthesized ? '<span class="ic-syn">✦</span>' : '') +
     '<span class="ic-lv">' + it.level + '</span>' +
@@ -256,7 +257,7 @@ function renderEquip() {
         '<div class="eq-emoji">' + info.emoji + '</div>' +
         '<div class="eq-name" style="color:' + r.color + '">' + esc(it.name) + (it.upgrade ? ' +' + it.upgrade : '') + '</div>' +
         '<div class="eq-sub">' + info.name + '・Lv.' + it.level +
-        (it.enchant ? ' ' + ENCHANTS[it.enchant.key].emoji : '') + '</div></div>';
+        (itemEnchants(it).length ? ' ' + itemEnchants(it).map(function (en) { return (ENCHANTS[en.key] || {}).emoji || ''; }).join('') : '') + '</div></div>';
     } else {
       h += '<div class="eq-slot empty"><div class="eq-emoji dim">' + info.emoji + '</div>' +
         '<div class="eq-sub">' + info.name + '（未裝備）</div></div>';
@@ -302,7 +303,8 @@ function renderDetail() {
   }
   var cost = upgradeCost(it);
   var compareItem = null;
-  if (UI.sel.source === 'inv') {
+  var tc = $id('toggle-compare');
+  if (tc && tc.checked && UI.sel.source === 'inv') {
     var key = equipTargetSlot(it);
     compareItem = G.equipment[key];
   }
@@ -322,13 +324,6 @@ function renderDetail() {
   var upTip = '需要：' + upGoldHtml + ' &nbsp;' + upScrapHtml;
   h += '<button class="btn act-btn-tooltip" data-act="upgrade">強化<div class="btn-tip">' + upTip + '</div></button>';
 
-  var rc = rerollCost(it);
-  var enoughRrGold = G.player.gold >= rc.gold;
-  var enoughRrEssence = G.player.essence >= rc.essence;
-  var rrGoldHtml = '<span' + (enoughRrGold ? '' : ' style="color:#fca5a5"') + '>💰 ' + fmt(rc.gold) + '</span>';
-  var rrEssenceHtml = '<span' + (enoughRrEssence ? '' : ' style="color:#fca5a5"') + '>🔮 ' + fmt(rc.essence) + '</span>';
-  var rrTip = '<div style="color:var(--dim);margin-bottom:4px">隨機重骰此裝備的所有詞條</div>需要：' + rrGoldHtml + ' &nbsp;' + rrEssenceHtml;
-  h += '<button class="btn act-btn-tooltip" data-act="reroll">🎲 洗煉<div class="btn-tip">' + rrTip + '</div></button>';
   h += '<button class="btn" data-act="lock">' + (it.locked ? '解鎖' : '鎖定') + '</button>';
   h += '</div>';
   // 鑲嵌選擇（有空插槽時列出持有寶石）
@@ -349,6 +344,25 @@ function renderDetail() {
     }
     h += '<div class="sec-sub">💎 鑲嵌寶石（點擊鑲入空插槽，自動取最高等級）</div>' +
       '<div class="gem-picker">' + (chips.length ? chips.join('') : '<span class="hint">尚無寶石庫存</span>') + '</div>';
+  }
+  // 附魔書選擇（有空附魔欄時列出此部位可用的書；點擊既有附魔可取下）
+  var itEns2 = itemEnchants(it);
+  if (itEns2.length < enchantCapFor(it)) {
+    var cat2 = enchantCatForType(it.slot);
+    var bookChips2 = [];
+    for (var bk2 in ENCHANTS) {
+      if (ENCHANTS[bk2].cat !== cat2) continue;
+      var bn2 = G.player.books[bk2] || 0;
+      if (!bn2) continue;
+      var owned = itEns2.some(function (en2) { return en2.key === bk2; });
+      bookChips2.push('<span class="gem-chip' + (owned ? ' dim-chip' : '') + '" data-book-enchant="' + bk2 + '" title="' +
+        esc(ENCHANTS[bk2].desc) + (owned ? '（已附魔，僅可升級數值）' : '') + '">' +
+        ENCHANTS[bk2].emoji + esc(ENCHANTS[bk2].name) + ' ×' + bn2 + '</span>');
+    }
+    var catNames2 = { atk: '攻擊', def: '防禦', util: '功能' };
+    h += '<div class="sec-sub">✨ 附魔（' + catNames2[cat2] + '類，每次消耗 1 書＋🔮' + ENCHANT_ESSENCE_COST +
+      ' 精華，庫存 ' + fmt(G.player.essence) + '）</div>' +
+      '<div class="gem-picker">' + (bookChips2.length ? bookChips2.join('') : '<span class="hint">沒有此部位可用的附魔書（階段 8+ 掉落 / 高塔獎勵）</span>') + '</div>';
   }
   pane.innerHTML = h;
 }
@@ -458,10 +472,18 @@ function detailAction(act, actBtn) {
     } else if (actBtn && upResult === 'poor') {
       showFloatingText(actBtn, '材料不足', '#fbbf24');
     }
-  } else if (act === 'reroll') {
-    var rerr = rerollItemAffixes(it);
-    if (rerr) blog('⚠️ 洗煉失敗：' + rerr, 'warn');
-    else blog('🎲 洗煉完成：' + rarityTag(it) + ' 的詞條已全部重骰！', 'good');
+  } else if (act === 'reroll-affix') {
+    var affixKey = actBtn.getAttribute('data-affix');
+    if (affixKey) {
+      var rerr = rerollSingleAffix(it, affixKey);
+      if (rerr) {
+        showFloatingText(actBtn, '材料不足', '#fbbf24');
+        blog('⚠️ 洗煉失敗：' + rerr, 'warn');
+      } else {
+        showFloatingText(actBtn, '洗煉完成', '#4ade80');
+        blog('🎲 洗煉完成：' + rarityTag(it) + ' 的詞條已重骰！', 'good');
+      }
+    }
   } else if (act === 'lock') {
     it.locked = !it.locked;
     UI.dirty.inv = true; UI.dirty.equip = true;
@@ -577,8 +599,7 @@ function syncFactoryInputs() {
   $id('syn-gem').checked = f.synth.gemMerge;
   $id('syn-mingem').value = String(f.synth.minGemLevel);
   $id('syn-book').value = f.synth.bookChoice;
-  $id('enc-enabled').checked = f.enchant.enabled;
-  $id('enc-overwrite').checked = f.enchant.overwrite;
+  // 附魔已改為裝備介面手動操作（無自動附魔設定）
   $id('up-enabled').checked = f.upgrade.enabled;
   $id('up-cap').value = String(f.upgrade.cap);
 }
@@ -600,10 +621,11 @@ function renderTower() {
       var unlocked = fl <= G.tower.highest + 1;
       var cleared = fl <= G.tower.highest;
       var bd = BOSS_LIST[(fl - 1) % BOSS_LIST.length];
-      h += '<div class="tower-floor' + (cleared ? ' cleared' : '') + (unlocked ? '' : ' locked') + '">' +
+        
+      h += '<div class="tower-floor' + (cleared ? ' cleared' : '') + (unlocked ? '' : ' locked') + '" data-tower-tip="' + fl + '">' +
         '<span class="tf-emoji">' + bd.emoji + '</span>' +
         '<span class="tf-name">第 ' + fl + ' 層・' + bd.name + (cleared ? ' ✅' : '') + '</span>' +
-        '<span class="tf-hint">建議野外階段 ' + (4 + fl * 5) + '+</span>' +
+        '<span class="tf-hint" style="margin-left:auto; margin-right:10px;">建議野外階段 ' + (4 + fl * 5) + '+</span>' +
         (unlocked ? '<button class="btn sm" data-tower-floor="' + fl + '">挑戰</button>' : '<span class="tf-lock">🔒</span>') +
         '</div>';
     }
@@ -838,6 +860,52 @@ function showStatTooltip(title, desc, anchorEl) {
   if (x + tw > window.innerWidth - 8) x = r.left - tw - 10;
   if (x < 8) x = 8;
   if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
+  if (y < 8) y = 8;
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+}
+function showTowerTooltip(flStr, anchorEl) {
+  var tip = $id('sk-tooltip');
+  if (!tip) return;
+  var fl = parseInt(flStr, 10);
+  if (!fl) return;
+  
+  var dropTip = '<div class="skt-name" style="margin-bottom:6px;">【可能掉落物】</div>' +
+    '<div class="skt-desc" style="text-align:left;">' +
+    '💰 金幣 x' + fmt(200 * fl) + ' <span style="color:var(--dim)">(首通雙倍)</span><br>' +
+    '🔮 附魔精華 x' + (3 + fl) + ' <span style="color:var(--dim)">(100%)</span><br>' +
+    '💎 隨機寶石 x2 <span style="color:var(--dim)">(100%)</span><br>' +
+    '📖 隨機附魔書 x2 <span style="color:var(--dim)">(100%)</span><br>' +
+    '🔩 機組零件 <span style="color:var(--dim)">(首通必掉 / 之後30%)</span>';
+  
+  var bossRates = dropRatesFor(BOSS_DROP_TABLE, fl);
+  var equipStrs = [];
+  for (var br = bossRates.length - 1; br >= 0; br--) {
+    if (!bossRates[br]) continue;
+    var rate = bossRates[br];
+    var rateStr = '';
+    if (rate >= 100) {
+      rateStr = '必定' + Math.floor(rate/100) + '件';
+      var rem = rate % 100;
+      if (rem > 0) rateStr += ' + ' + rem + '%再1件';
+    } else {
+      rateStr = '機率' + rate + '%';
+    }
+    equipStrs.push('⚔️ <span style="color:' + RARITIES[br].color + '; font-weight:bold;">' + RARITIES[br].name + '裝備</span> <span style="color:var(--dim)">(' + rateStr + ')</span>');
+  }
+  if (equipStrs.length) {
+    dropTip += '<br>' + equipStrs.join('<br>');
+  }
+  
+  dropTip += '</div>';
+  tip.innerHTML = dropTip;
+  tip.style.display = 'block';
+  var r = anchorEl.getBoundingClientRect();
+  var tw = tip.offsetWidth, th = tip.offsetHeight;
+  var x = r.left + 20, y = r.bottom + 8;
+  if (x + tw > window.innerWidth - 8) x = window.innerWidth - tw - 8;
+  if (x < 8) x = 8;
+  if (y + th > window.innerHeight - 8) y = r.top - th - 8;
   if (y < 8) y = 8;
   tip.style.left = x + 'px';
   tip.style.top = y + 'px';
@@ -1178,13 +1246,19 @@ function initUI() {
 
   // 懸停提示（事件委派）
   document.addEventListener('mouseover', function (e) {
+    if (e.target.closest('button') || e.target.closest('.btn')) {
+      hideTooltip();
+      return;
+    }
     var cell = e.target.closest('[data-sk]');
-    if (cell) showSkillTooltip(cell.getAttribute('data-sk'), cell);
+    if (cell) { showSkillTooltip(cell.getAttribute('data-sk'), cell); return; }
     var statRow = e.target.closest('.stat-row[data-tt-title]');
-    if (statRow) showStatTooltip(statRow.getAttribute('data-tt-title'), statRow.getAttribute('data-tt-desc'), statRow);
+    if (statRow) { showStatTooltip(statRow.getAttribute('data-tt-title'), statRow.getAttribute('data-tt-desc'), statRow); return; }
+    var tf = e.target.closest('[data-tower-tip]');
+    if (tf) { showTowerTooltip(tf.getAttribute('data-tower-tip'), tf); return; }
   });
   document.addEventListener('mouseout', function (e) {
-    if (e.target.closest('[data-sk]') || e.target.closest('.stat-row[data-tt-title]')) hideTooltip();
+    if (e.target.closest('[data-sk]') || e.target.closest('.stat-row[data-tt-title]') || e.target.closest('[data-tower-tip]')) hideTooltip();
   });
 
   // 執行融合 / 清空
@@ -1279,6 +1353,34 @@ function initUI() {
       }
       return;
     }
+    // 手動附魔 / 取下附魔
+    var be = e.target.closest('[data-book-enchant]');
+    if (be) {
+      var eit = findSelItem();
+      if (eit) {
+        var bkey = be.getAttribute('data-book-enchant');
+        var eerr2 = manualEnchant(eit, bkey);
+        if (eerr2) blog('⚠️ 附魔失敗：' + eerr2, 'warn');
+        else blog('✨ 附魔成功：' + rarityTag(eit) + ' 獲得 ' + ENCHANTS[bkey].name + '（' + itemEnchants(eit).length + '/' + enchantCapFor(eit) + ' 欄）', 'good');
+        UI.dirty.header = true;
+        renderDetail();
+      }
+      return;
+    }
+    var er = e.target.closest('[data-enchant-remove]');
+    if (er) {
+      var rit = findSelItem();
+      if (rit) {
+        var rIdx = parseInt(er.getAttribute('data-enchant-remove'), 10);
+        var rEn = itemEnchants(rit)[rIdx];
+        if (rEn && removeEnchantAt(rit, rIdx)) {
+          blog('↩️ 已取下附魔「' + ENCHANTS[rEn.key].name + '」，返還 1 本附魔書', 'info');
+          UI.dirty.header = true;
+          renderDetail();
+        }
+      }
+      return;
+    }
     var pin = e.target.closest('[data-part-install]');
     if (pin) {
       var pid = pin.getAttribute('data-part-install');
@@ -1326,6 +1428,9 @@ function initUI() {
     blog('🎒 背包已排序完成。', 'info', 'system');
   });
   $id('tw-flee').addEventListener('click', fleeTower);
+  $id('toggle-compare').addEventListener('change', function () {
+    renderDetail();
+  });
 
   // 生產線設定
   document.querySelectorAll('.flt-sel').forEach(function (sel) {
@@ -1342,8 +1447,7 @@ function initUI() {
   $id('syn-gem').addEventListener('change', function () { G.factory.synth.gemMerge = this.checked; });
   $id('syn-mingem').addEventListener('change', function () { G.factory.synth.minGemLevel = parseInt(this.value, 10) || 1; });
   $id('syn-book').addEventListener('change', function () { G.factory.synth.bookChoice = this.value; });
-  $id('enc-enabled').addEventListener('change', function () { G.factory.enchant.enabled = this.checked; });
-  $id('enc-overwrite').addEventListener('change', function () { G.factory.enchant.overwrite = this.checked; });
+  // 附魔已改為裝備介面手動操作（無自動附魔設定）
   $id('up-enabled').addEventListener('change', function () { G.factory.upgrade.enabled = this.checked; });
   $id('up-cap').addEventListener('change', function () {
     G.factory.upgrade.cap = clamp(parseInt(this.value, 10) || 0, 0, 30);
