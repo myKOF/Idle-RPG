@@ -231,6 +231,9 @@ function gainXp(n) {
    武器/戒指類可裝入主/副兩欄：優先裝入空欄，皆有裝備時替換較弱者 */
 function equipTargetSlot(it) {
   var cands = equipSlotsForType(it.slot);
+  if (typeof UI !== 'undefined' && UI.lastEquipSlot && cands.indexOf(UI.lastEquipSlot) >= 0) {
+    return UI.lastEquipSlot;
+  }
   var best = cands[0], bestScore = Infinity;
   for (var i = 0; i < cands.length; i++) {
     var cur = G.equipment[cands[i]];

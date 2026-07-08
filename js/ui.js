@@ -301,7 +301,12 @@ function renderDetail() {
     return;
   }
   var cost = upgradeCost(it);
-  var h = itemDetailHTML(it);
+  var compareItem = null;
+  if (UI.sel.source === 'inv') {
+    var key = equipTargetSlot(it);
+    compareItem = G.equipment[key];
+  }
+  var h = itemDetailHTML(it, compareItem);
   h += '<div class="detail-actions">';
   if (UI.sel.source === 'inv') {
     h += '<button class="btn" data-act="equip">裝備</button>';
@@ -339,12 +344,22 @@ function renderDetail() {
 
 function updateSelectionUI() {
   var selItem = findSelItem();
+  var targetSlot = null;
+  if (selItem && UI.sel.source === 'inv') {
+    targetSlot = equipTargetSlot(selItem);
+  }
+
   document.querySelectorAll('.item-cell, .eq-slot').forEach(function (el) {
     el.classList.remove('selected', 'dimmed');
+    
+    if (targetSlot && el.classList.contains('eq-slot') && el.getAttribute('data-slot') === targetSlot) {
+      el.classList.add('selected');
+    }
+
     if (!selItem) return;
     
     var elId = el.getAttribute('data-id');
-    if (elId === selItem.id) {
+    if (elId && elId === selItem.id) {
       el.classList.add('selected');
     } else if (el.classList.contains('item-cell')) {
       var elSlot = el.getAttribute('data-slot');
@@ -1176,13 +1191,21 @@ function initUI() {
 
   // 裝備 / 背包點擊（事件委派）
   document.addEventListener('click', function (e) {
-    var cell = e.target.closest('.item-cell, .eq-slot.filled');
+    var cell = e.target.closest('.item-cell, .eq-slot');
     if (cell) {
-      var cid = cell.getAttribute('data-id');
-      if (UI.sel && UI.sel.id === cid) {
+      if (cell.classList.contains('empty')) {
         UI.sel = null;
+        UI.lastEquipSlot = cell.getAttribute('data-slot');
       } else {
-        UI.sel = { id: cid, source: cell.getAttribute('data-src') };
+        var cid = cell.getAttribute('data-id');
+        if (UI.sel && UI.sel.id === cid) {
+          UI.sel = null;
+        } else {
+          UI.sel = { id: cid, source: cell.getAttribute('data-src') };
+          if (UI.sel.source === 'equip') {
+            UI.lastEquipSlot = cell.getAttribute('data-slot');
+          }
+        }
       }
       renderDetail();
       return;

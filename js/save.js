@@ -27,6 +27,13 @@ function loadGame() {
 function migrateSave(data) {
   // 技能點改由等級即時推導（availableSkillPoints），無需在此補發
   var def = newGameState();
+  
+  // 防止玩家手動降級（刪除）的初始技能，在讀檔時被 mergeDefaults 誤判為缺漏而自動補回 1 級
+  if (data.player && data.player.skills) {
+    delete def.player.skills.powerSlash;
+    delete def.player.skills.arcaneBurst;
+  }
+  
   mergeDefaults(data, def);
   // 確保裝備槽位齊全
   SLOT_LIST.forEach(function (s) {

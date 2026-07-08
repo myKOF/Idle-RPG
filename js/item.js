@@ -260,26 +260,121 @@ function enchantLine(en) {
 }
 
 // 物品完整說明 HTML
-function itemDetailHTML(it) {
+function itemDetailHTML(it, cmp) {
   var r = RARITIES[it.rarity];
-  var um = upgradeMult(it);
   var h = '<div class="it-name" style="color:' + r.color + '">' +
     SLOT_INFO[it.slot].emoji + ' ' + esc(it.name) +
     (it.upgrade ? ' <span class="it-up">+' + it.upgrade + '</span>' : '') +
     (it.synthesized ? ' <span class="it-syn">✦合成</span>' : '') +
     (it.locked ? ' 🔒' : '') + '</div>';
-  h += '<div class="it-sub">' + r.name + '・' + SLOT_INFO[it.slot].name + '・等級 ' + it.level + '</div>';
-  h += '<div class="it-affixes">';
-  for (var i = 0; i < it.affixes.length; i++) {
-    var a = it.affixes[i];
-    var def = AFFIX_POOL[a.key];
-    var v = a.val * um;
-    h += '<div class="it-affix">◆ ' + esc(def.name.replace('%', '')) + ' +' +
-      (def.pct ? pctStr(v) : fmt(v)) + '</div>';
+  
+  h += '<div class="it-sub">' + r.name + '・' + SLOT_INFO[it.slot].name + '・等級 ' + it.level;
+  if (cmp && cmp.level !== it.level) {
+    var ldiff = it.level - cmp.level;
+    if (ldiff > 0) h += ' <span style="color: #4ade80">↑' + ldiff + '</span>';
+    else if (ldiff < 0) h += ' <span style="color: #f87171">↓' + (-ldiff) + '</span>';
   }
   h += '</div>';
-  if (it.passive) h += '<div class="it-passive">' + esc(passiveLine(it.passive)) + '</div>';
-  if (it.enchant) h += '<div class="it-enchant">' + esc(enchantLine(it.enchant)) + '</div>';
+
+  h += '<div class="it-affixes">';
+  var um = upgradeMult(it);
+  var curMap = {};
+  for (var i = 0; i < it.affixes.length; i++) {
+    var a = it.affixes[i];
+    curMap[a.key] = (curMap[a.key] || 0) + a.val * um;
+  }
+  var cmpMap = {};
+  if (cmp) {
+    var cum = upgradeMult(cmp);
+    for (var i = 0; i < cmp.affixes.length; i++) {
+      var a = cmp.affixes[i];
+      cmpMap[a.key] = (cmpMap[a.key] || 0) + a.val * cum;
+    }
+  }
+  
+  var processedKeys = {};
+  for (var i = 0; i < it.affixes.length; i++) {
+    var k = it.affixes[i].key;
+    if (processedKeys[k]) continue;
+    processedKeys[k] = true;
+    var vCur = curMap[k];
+    var vCmp = cmpMap[k] || 0;
+    var def = AFFIX_POOL[k];
+    var name = esc(def.name.replace('%', ''));
+    if (vCmp === 0) {
+      if (cmp) {
+        h += '<div class="it-affix" style="color: #4ade80">◆ ' + name + ' +' + (def.pct ? pctStr(vCur) : fmt(vCur)) + '</div>';
+      } else {
+        h += '<div class="it-affix">◆ ' + name + ' +' + (def.pct ? pctStr(vCur) : fmt(vCur)) + '</div>';
+      }
+    } else {
+      var diff = vCur - vCmp;
+      var diffStr = '';
+      if (Math.abs(diff) > 0.05) {
+        if (diff > 0) diffStr = ' <span style="color: #4ade80">↑' + (def.pct ? pctStr(diff) : fmt(diff)) + '</span>';
+        else diffStr = ' <span style="color: #f87171">↓' + (def.pct ? pctStr(-diff) : fmt(-diff)) + '</span>';
+      }
+      h += '<div class="it-affix">◆ ' + name + ' +' + (def.pct ? pctStr(vCur) : fmt(vCur)) + diffStr + '</div>';
+    }
+  }
+  if (cmp) {
+    for (var i = 0; i < cmp.affixes.length; i++) {
+      var k = cmp.affixes[i].key;
+      if (processedKeys[k]) continue;
+      processedKeys[k] = true;
+      var vCmp = cmpMap[k];
+      var def = AFFIX_POOL[k];
+      var name = esc(def.name.replace('%', ''));
+      h += '<div class="it-affix" style="color: #f87171; text-decoration: line-through;">◆ ' + name + ' -' + (def.pct ? pctStr(vCmp) : fmt(vCmp)) + '</div>';
+    }
+  }
+  h += '</div>';
+
+  if (cmp && cmp.passive && (!it.passive || it.passive.key !== cmp.passive.key)) {
+    h += '<div class="it-passive" style="color: #f87171; text-decoration: line-through;">' + esc(passiveLine(cmp.passive)) + '</div>';
+  }
+  if (it.passive) {
+    if (!cmp) {
+      h += '<div class="it-passive">' + esc(passiveLine(it.passive)) + '</div>';
+    } else if (!cmp.passive || cmp.passive.key !== it.passive.key) {
+      h += '<div class="it-passive" style="color: #4ade80">' + esc(passiveLine(it.passive)) + '</div>';
+    } else {
+      var diff = it.passive.val - cmp.passive.val;
+      var diffStr = '';
+      if (Math.abs(diff) > 0.05) {
+        if (diff > 0) diffStr = ' <span style="color: #4ade80">↑' + fmt1(diff) + '</span>';
+        else diffStr = ' <span style="color: #f87171">↓' + fmt1(-diff) + '</span>';
+      }
+      var p = it.passive;
+      var d = PASSIVE_POOL[p.key];
+      h += '<div class="it-passive">【' + esc(d.name) + '】' + esc(d.desc).replace('{v}', fmt1(p.val) + diffStr) + '</div>';
+    }
+  }
+
+  if (cmp && cmp.enchant && (!it.enchant || it.enchant.key !== cmp.enchant.key)) {
+    h += '<div class="it-enchant" style="color: #f87171; text-decoration: line-through;">' + esc(enchantLine(cmp.enchant)) + '</div>';
+  }
+  if (it.enchant) {
+    if (!cmp) {
+      h += '<div class="it-enchant">' + esc(enchantLine(it.enchant)) + '</div>';
+    } else if (!cmp.enchant || cmp.enchant.key !== it.enchant.key) {
+      h += '<div class="it-enchant" style="color: #4ade80">' + esc(enchantLine(it.enchant)) + '</div>';
+    } else {
+      var diff = it.enchant.val - cmp.enchant.val;
+      var diffStr = '';
+      if (Math.abs(diff) > 0.05) {
+        var e = ENCHANTS[it.enchant.key];
+        var dfStr = (e.cat === 'atk') ? fmt(diff) : pctStr(diff);
+        if (diff > 0) diffStr = ' <span style="color: #4ade80">↑' + dfStr + '</span>';
+        else diffStr = ' <span style="color: #f87171">↓' + ((e.cat === 'atk') ? fmt(-diff) : pctStr(-diff)) + '</span>';
+      }
+      var en = it.enchant;
+      var e = ENCHANTS[en.key];
+      var vs = (e.cat === 'atk') ? '+' + fmt(en.val) : '+' + pctStr(en.val);
+      h += '<div class="it-enchant">' + e.emoji + ' ' + esc(e.name) + ' ' + vs + diffStr + '</div>';
+    }
+  }
+
   // 寶石插槽
   ensureSockets(it);
   if (it.sockets.length) {
@@ -297,7 +392,18 @@ function itemDetailHTML(it) {
     }
     h += '</div>';
   }
-  h += '<div class="it-score">評分 ' + fmt(itemScore(it)) + '</div>';
+
+  var curScore = itemScore(it);
+  var cmpScore = cmp ? itemScore(cmp) : 0;
+  var sdiffStr = '';
+  if (cmp) {
+    var diffScore = curScore - cmpScore;
+    if (Math.abs(diffScore) > 0.5) {
+      if (diffScore > 0) sdiffStr = ' <span style="color: #4ade80">↑' + fmt(diffScore) + '</span>';
+      else sdiffStr = ' <span style="color: #f87171">↓' + fmt(-diffScore) + '</span>';
+    }
+  }
+  h += '<div class="it-score">評分 ' + fmt(curScore) + sdiffStr + '</div>';
   return h;
 }
 
