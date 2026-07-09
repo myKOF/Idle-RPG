@@ -289,6 +289,8 @@ function learnOrUpgradeSkill(id) {
   if (!sk) return '未知技能';
   var lv = skillLevel(id);
   if (lv >= skillMaxLv(sk)) return '已達最高等級';
+  if (availableSkillPoints() <= 0) return '技能點不足';
+  
   var cost = skillUpgradeCost(lv);
   if (G.player.gold < cost) return '金幣不足（需要 ' + fmt(cost) + '）';
   var lock = tierLockReason(id);
@@ -298,7 +300,7 @@ function learnOrUpgradeSkill(id) {
   if (sk.cat === 'passive') markStatsDirty();
   UI.dirty.skills = true; UI.dirty.header = true;
   var newFx = UNLOCKS[id] && UNLOCKS[id][lv + 1];
-  blog((lv === 0 ? '📖 學會技能' : '⬆️ 技能升級') + '：' + sk.emoji + sk.name + ' Lv.' + (lv + 1) + '（消耗 ' + fmt(cost) + ' 金幣）' +
+  blog((lv === 0 ? '📖 學會技能' : '⬆️ 技能升級') + '：' + sk.emoji + sk.name + ' Lv.' + (lv + 1) + '（消耗 ' + fmt(cost) + ' 金幣，1 技能點）' +
     (newFx ? ' <span class="log-hl-good">✨解鎖新效果！</span>' : ''), 'good');
   return null;
 }
@@ -310,8 +312,6 @@ function downgradeSkill(id) {
   if (!lv) return '尚未學習';
   if (sk.cat === 'fusion' && lv <= 1) return '融合技最低為 Lv.1，如要移除請使用「刪除」';
   var nl = lv - 1;
-  var refund = skillUpgradeCost(nl);
-  G.player.gold += refund;
   if (nl <= 0) {
     delete G.player.skills[id];
     unequipSkillFromLoadout(id);
@@ -319,10 +319,10 @@ function downgradeSkill(id) {
       var fi = UI.fuseSlots.indexOf(id);
       if (fi >= 0) UI.fuseSlots.splice(fi, 1);
     }
-    blog('↩️ 已遺忘技能：' + sk.emoji + sk.name + '（歸還 ' + fmt(refund) + ' 金幣）', 'info');
+    blog('↩️ 已遺忘技能：' + sk.emoji + sk.name + '（歸還 1 技能點）', 'info');
   } else {
     G.player.skills[id] = nl;
-    blog('⬇️ 技能降級：' + sk.emoji + sk.name + ' Lv.' + nl + '（歸還 ' + fmt(refund) + ' 金幣）', 'info');
+    blog('⬇️ 技能降級：' + sk.emoji + sk.name + ' Lv.' + nl + '（歸還 1 技能點）', 'info');
   }
   if (sk.cat === 'passive') markStatsDirty();
   UI.dirty.skills = true; UI.dirty.header = true;

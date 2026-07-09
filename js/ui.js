@@ -777,10 +777,10 @@ function renderSkills() {
     var id0 = lo[i];
     var d0 = id0 ? skillDef(id0) : null;
     if (d0) {
-      lh += '<span class="loadout-slot filled" data-skill-unequip="' + id0 + '" data-sk="' + id0 + '">' +
+      lh += '<span class="loadout-slot filled" draggable="true" data-index="' + i + '" data-skill-unequip="' + id0 + '" data-sk="' + id0 + '">' +
         d0.emoji + ' ' + esc(d0.name) + ' Lv.' + skillLevel(id0) + '</span>';
     } else {
-      lh += '<span class="loadout-slot">空欄位</span>';
+      lh += '<span class="loadout-slot" data-index="' + i + '">空欄位</span>';
     }
   }
   loBox.innerHTML = lh;
@@ -847,7 +847,9 @@ function renderSkillModal() {
   }
   if (sk.flavor) h += '<div class="sk-flavor">' + esc(sk.flavor) + '</div>';
   if (lock) h += '<div class="hint">🔒 ' + esc(lock) + '</div>';
-  h += '<div class="detail-actions" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px;">';
+  
+  h += '<div style="text-align: right; margin-top: 12px; color: #facc15; font-size: 14px; font-weight: bold;">技能點：' + availableSkillPoints() + '</div>';
+  h += '<div class="detail-actions" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px;">';
   if (lv < maxLv && !lock) {
     var cost = skillUpgradeCost(lv);
     h += '<button class="btn sm" data-skill-learn="' + id + '" data-tip="花費 ' + fmt(cost) + ' 金幣"' + (G.player.gold < cost ? ' disabled' : '') + '>' +
@@ -859,8 +861,7 @@ function renderSkillModal() {
   }
   
   if (lv > 0) {
-    var refund = skillUpgradeCost(lv - 1);
-    h += '<button class="btn sm warn" data-skill-downgrade="' + id + '" data-tip="歸還 ' + fmt(refund) + ' 金幣">⬇️ 降級</button>';
+    h += '<button class="btn sm warn" data-skill-downgrade="' + id + '" data-tip="退回 1 技能點（不退還金幣）">⬇️ 降級</button>';
   } else {
     h += '<div></div>'; // empty grid cell
   }
@@ -1464,8 +1465,60 @@ function initUI() {
     $id('skill-modal-close').addEventListener('click', closeSkillModal);
   }
 
+  // 技能拖曳排序
+  var loBox = $id('skill-loadout');
+  if (loBox) {
+    loBox.addEventListener('dragstart', function(e) {
+      var slot = e.target.closest('.loadout-slot.filled');
+      if (!slot) { e.preventDefault(); return; }
+      e.dataTransfer.setData('text/plain', slot.getAttribute('data-index'));
+      e.dataTransfer.effectAllowed = 'move';
+      slot.classList.add('dragging');
+    });
+    loBox.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      var target = e.target.closest('.loadout-slot');
+      if (target) target.classList.add('drag-over');
+    });
+    loBox.addEventListener('dragleave', function(e) {
+      var target = e.target.closest('.loadout-slot');
+      if (target) target.classList.remove('drag-over');
+    });
+    loBox.addEventListener('drop', function(e) {
+      e.preventDefault();
+      var target = e.target.closest('.loadout-slot');
+      if (target) {
+        target.classList.remove('drag-over');
+        var fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+        var toIndex = parseInt(target.getAttribute('data-index'), 10);
+        if (!isNaN(fromIndex) && !isNaN(toIndex) && fromIndex !== toIndex) {
+          var lo = G.player.loadout || [];
+          if (fromIndex >= 0 && fromIndex < lo.length) {
+            if (toIndex >= lo.length) {
+              var id = lo.splice(fromIndex, 1)[0];
+              lo.push(id);
+            } else {
+              var item = lo.splice(fromIndex, 1)[0];
+              lo.splice(toIndex, 0, item);
+            }
+            G.player.loadout = lo;
+            renderSkills();
+          }
+        }
+      }
+    });
+    loBox.addEventListener('dragend', function(e) {
+      var slot = e.target.closest('.loadout-slot.filled');
+      if (slot) slot.classList.remove('dragging');
+      loBox.querySelectorAll('.drag-over').forEach(function(el) { el.classList.remove('drag-over'); });
+    });
+  }
+
   // 懸停提示（事件委派）
   document.addEventListener('mouseover', function (e) {
+    var tipBtn = e.target.closest('[data-tip]');
+    if (tipBtn) { showStatTooltip('', tipBtn.getAttribute('data-tip'), tipBtn); return; }
+    
     if (e.target.closest('button') || e.target.closest('.btn')) {
       hideTooltip();
       return;
@@ -1480,7 +1533,7 @@ function initUI() {
     if (etip) { showEnemyTooltip(etip); return; }
   });
   document.addEventListener('mouseout', function (e) {
-    if (e.target.closest('[data-sk]') || e.target.closest('.stat-row[data-tt-title]') || e.target.closest('[data-tower-tip]') || e.target.closest('#btn-enemy-tip')) hideTooltip();
+    if (e.target.closest('[data-sk]') || e.target.closest('.stat-row[data-tt-title]') || e.target.closest('[data-tower-tip]') || e.target.closest('#btn-enemy-tip') || e.target.closest('[data-tip]')) hideTooltip();
   });
 
   // 執行融合 / 清空
