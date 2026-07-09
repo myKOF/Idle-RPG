@@ -577,7 +577,7 @@ function itemDetailHTML(it, cmp) {
     var e = ENCHANTS[en.key];
     if (!e) return;
     if (!cmp) {
-      h += '<div class="it-enchant removable" data-enchant-remove="' + enIdx + '" title="點擊取下（返還附魔書，精華不退）">' + esc(enchantLine(en)) + '</div>';
+      h += '<div class="it-enchant removable" data-enchant-remove="' + enIdx + '" data-tip="點擊取下（返還附魔書，精華不退）">' + esc(enchantLine(en)) + '</div>';
     } else if (!(en.key in cmpEnMap)) {
       h += '<div class="it-enchant" style="color: #4ade80">' + esc(enchantLine(en)) + '</div>';
     } else {
@@ -604,11 +604,11 @@ function itemDetailHTML(it, cmp) {
     for (var si = 0; si < it.sockets.length; si++) {
       var g = it.sockets[si];
       if (g && g.fused) {
-        h += '<span class="socket filled fused-socket" data-socket-remove="' + si + '" title="點擊取下">' +
+        h += '<span class="socket filled fused-socket" data-socket-remove="' + si + '" data-tip="點擊取下">' +
           esc(fusedGemLabel(g.fused)) + '</span>';
       } else if (g && GEM_TYPES[g.type]) {
         var gt = GEM_TYPES[g.type];
-        h += '<span class="socket filled" data-socket-remove="' + si + '" title="點擊取下">' +
+        h += '<span class="socket filled" data-socket-remove="' + si + '" data-tip="點擊取下">' +
           gt.emoji + ' ' + esc(GEM_NAMES[g.level] + gt.name) + '（' + esc(gt.statName.replace('%', '')) + ' +' +
           (gt.pct ? pctStr(gemStatValue(g.type, g.level)) : fmt(gemStatValue(g.type, g.level))) + '）</span>';
       } else {

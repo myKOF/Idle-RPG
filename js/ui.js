@@ -327,14 +327,16 @@ function renderInventory() {
   renderDetail();
 }
 
+function findItemById(id) {
+  if (!id) return null;
+  for (var i = 0; i < G.inventory.length; i++) if (G.inventory[i].id === id) return G.inventory[i];
+  for (var s in G.equipment) if (G.equipment[s] && G.equipment[s].id === id) return G.equipment[s];
+  return null;
+}
+
 function findSelItem() {
   if (!UI.sel) return null;
-  if (UI.sel.source === 'inv') {
-    for (var i = 0; i < G.inventory.length; i++) if (G.inventory[i].id === UI.sel.id) return G.inventory[i];
-  } else {
-    for (var s in G.equipment) if (G.equipment[s] && G.equipment[s].id === UI.sel.id) return G.equipment[s];
-  }
-  return null;
+  return findItemById(UI.sel.id);
 }
 
 function renderDetail() {
@@ -382,12 +384,12 @@ function renderDetail() {
         if (n && !hi) hi = lv;
       }
       if (total) {
-        chips.push('<span class="gem-chip" data-gem-socket="' + gt + '" title="鑲嵌 ' + esc(GEM_NAMES[hi] + GEM_TYPES[gt].name) + '">' +
+        chips.push('<span class="gem-chip" data-gem-socket="' + gt + '" data-tip="鑲嵌 ' + esc(GEM_NAMES[hi] + GEM_TYPES[gt].name) + '">' +
           GEM_TYPES[gt].emoji + esc(GEM_TYPES[gt].name) + ' L' + hi + '×' + gemCount(gt, hi) + '</span>');
       }
     }
     (G.player.fusedGems || []).forEach(function (fg) {
-      chips.push('<span class="gem-chip fused-chip" data-gem-socket-fused="' + fg.id + '" title="鑲嵌雙屬性融合寶石">' +
+      chips.push('<span class="gem-chip fused-chip" data-gem-socket-fused="' + fg.id + '" data-tip="鑲嵌雙屬性融合寶石">' +
         esc(fusedGemLabel(fg)) + '</span>');
     });
     h += '<div class="sec-sub">💎 鑲嵌寶石（點擊鑲入空插槽，自動取最高等級；🧬 為融合寶石）</div>' +
@@ -403,7 +405,7 @@ function renderDetail() {
       var bn2 = G.player.books[bk2] || 0;
       if (!bn2) continue;
       var owned = itEns2.some(function (en2) { return en2.key === bk2; });
-      bookChips2.push('<span class="gem-chip' + (owned ? ' dim-chip' : '') + '" data-book-enchant="' + bk2 + '" title="' +
+      bookChips2.push('<span class="gem-chip' + (owned ? ' dim-chip' : '') + '" data-book-enchant="' + bk2 + '" data-tip="' +
         esc(ENCHANTS[bk2].desc) + (owned ? '（已附魔，僅可升級數值）' : '') + '">' +
         ENCHANTS[bk2].emoji + esc(ENCHANTS[bk2].name) + ' ×' + bn2 + '</span>');
     }
@@ -561,7 +563,7 @@ function renderFactory() {
   var show = f.conveyor.slice(0, 18);
   conv.innerHTML = show.map(function (it) {
     var r = RARITIES[it.rarity];
-    return '<span class="conv-chip" style="border-color:' + r.color + ';color:' + r.color + '" title="' +
+    return '<span class="conv-chip" style="border-color:' + r.color + ';color:' + r.color + '" data-tip="' +
       esc(rarityTag(it)) + '">' + SLOT_INFO[it.slot].emoji + '</span>';
   }).join('') + (f.conveyor.length > 18 ? '<span class="conv-more">+' + (f.conveyor.length - 18) + '</span>' : '');
   $id('conveyor-count').textContent = f.conveyor.length + '/' + conveyorCap();
@@ -581,7 +583,7 @@ function renderFactory() {
   buf.innerHTML = f.synthBuffer.length
     ? f.synthBuffer.slice(0, 12).map(function (it) {
         var r = RARITIES[it.rarity];
-        return '<span class="conv-chip" style="border-color:' + r.color + ';color:' + r.color + '" title="' +
+        return '<span class="conv-chip" style="border-color:' + r.color + ';color:' + r.color + '" data-tip="' +
           esc(rarityTag(it)) + '">' + SLOT_INFO[it.slot].emoji + '</span>';
       }).join('') + (f.synthBuffer.length > 12 ? '<span class="conv-more">+' + (f.synthBuffer.length - 12) + '</span>' : '')
     : '<span class="hint">（空）篩選規則設為「合成素材」的裝備會進到這裡</span>';
@@ -627,7 +629,7 @@ function renderInstalledParts(node, elId) {
   var h = ids.map(function (id) {
     var p = findPart(id);
     if (!p) return '';
-    return '<span class="part-chip" title="' + esc(partDesc(p)) + '">' + PART_TYPES[p.key].emoji + esc(p.name) + '</span>';
+    return '<span class="part-chip" data-tip="' + esc(partDesc(p)) + '">' + PART_TYPES[p.key].emoji + esc(p.name) + '</span>';
   }).join('');
   for (var i = ids.length; i < PART_SLOTS_PER_NODE; i++) h += '<span class="part-chip empty">空槽</span>';
   $id(elId).innerHTML = h;
@@ -928,6 +930,20 @@ function showStatTooltip(title, desc, anchorEl) {
   var tw = tip.offsetWidth, th = tip.offsetHeight;
   var x = r.right + 10, y = r.top;
   if (x + tw > window.innerWidth - 8) x = r.left - tw - 10;
+  if (y < 8) y = 8;
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+}
+function showItemTooltip(it, anchorEl) {
+  var tip = $id('sk-tooltip');
+  if (!tip) return;
+  var h = itemDetailHTML(it, null);
+  tip.innerHTML = '<div style="padding: 6px; min-width: 220px;">' + h + '</div>';
+  tip.style.display = 'block';
+  var r = anchorEl.getBoundingClientRect();
+  var tw = tip.offsetWidth, th = tip.offsetHeight;
+  var x = r.right + 10, y = r.top;
+  if (x + tw > window.innerWidth - 8) x = r.left - tw - 10;
   if (x < 8) x = 8;
   if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
   if (y < 8) y = 8;
@@ -1037,7 +1053,7 @@ function renderFusionPanel() {
     var id = UI.fuseSlots[i];
     var d = id ? SKILLS[id] : null;
     if (d) {
-      h += '<span class="loadout-slot filled" data-fuse-remove="' + id + '" title="點擊移出">' +
+      h += '<span class="loadout-slot filled" data-fuse-remove="' + id + '" data-tip="點擊移出">' +
         d.emoji + ' ' + esc(d.name) + ' Lv.' + skillLevel(id) + '</span>';
     } else {
       h += '<span class="loadout-slot">素材 ' + (i + 1) + '</span>';
@@ -1101,7 +1117,7 @@ function renderGemFusion() {
       var label = ref.kind === 'plain'
         ? gemLabel(ref.type, GEM_MAX_LEVEL)
         : (findFusedGem(ref.id) ? fusedGemLabel(findFusedGem(ref.id)) : '（已消失）');
-      h += '<span class="loadout-slot filled" data-gfuse-remove="' + i + '" title="點擊移出">' + esc(label) + '</span>';
+      h += '<span class="loadout-slot filled" data-gfuse-remove="' + i + '" data-tip="點擊移出">' + esc(label) + '</span>';
     } else {
       h += '<span class="loadout-slot">素材 ' + (i + 1) + '（5 階寶石）</span>';
     }
@@ -1134,7 +1150,7 @@ function renderGemFusion() {
     }
   }
   (G.player.fusedGems || []).forEach(function (fg) {
-    chips.push('<span class="gem-chip fused-chip" data-gfuse-pick="fused:' + fg.id + '" title="已成功融合 ' + (fg.fusions || 0) + ' 次（下次成功率遞減）">' +
+    chips.push('<span class="gem-chip fused-chip" data-gfuse-pick="fused:' + fg.id + '" data-tip="已成功融合 ' + (fg.fusions || 0) + ' 次（下次成功率遞減）">' +
       esc(fusedGemLabel(fg)) + '</span>');
   });
   pool.innerHTML = chips.length ? chips.join('') : '<span class="hint">沒有 5 階寶石 — 可透過寶石升階、寶石合成或商店取得</span>';
@@ -1519,6 +1535,12 @@ function initUI() {
     var tipBtn = e.target.closest('[data-tip]');
     if (tipBtn) { showStatTooltip('', tipBtn.getAttribute('data-tip'), tipBtn); return; }
     
+    var eqCell = e.target.closest('.item-cell[data-id]') || e.target.closest('.eq-slot.filled[data-id]');
+    if (eqCell) {
+      var it = findItemById(eqCell.getAttribute('data-id'));
+      if (it) { showItemTooltip(it, eqCell); return; }
+    }
+    
     if (e.target.closest('button') || e.target.closest('.btn')) {
       hideTooltip();
       return;
@@ -1533,7 +1555,12 @@ function initUI() {
     if (etip) { showEnemyTooltip(etip); return; }
   });
   document.addEventListener('mouseout', function (e) {
-    if (e.target.closest('[data-sk]') || e.target.closest('.stat-row[data-tt-title]') || e.target.closest('[data-tower-tip]') || e.target.closest('#btn-enemy-tip') || e.target.closest('[data-tip]')) hideTooltip();
+    if (e.target.closest('[data-sk]') || e.target.closest('.stat-row[data-tt-title]') || 
+        e.target.closest('[data-tower-tip]') || e.target.closest('#btn-enemy-tip') || 
+        e.target.closest('[data-tip]') || e.target.closest('.item-cell[data-id]') || 
+        e.target.closest('.eq-slot.filled[data-id]')) {
+      hideTooltip();
+    }
   });
 
   // 執行融合 / 清空

@@ -73,6 +73,24 @@ function migrateSave(data) {
       if (fs.fx.per) fs.fx.per = Math.round(fs.fx.per * mult * 10) / 10;
     });
   }
+  /* ---- 技能點異常修復（每次讀檔檢查）----
+     舊 bug：沒有技能點也能升級技能 → 已花費點數超過總點數（等級-1），
+     推導制下可用點永遠為 0：無法再升級、升級拿到的點也被超支吃掉。
+     偵測（與 skills.js 的 spentSkillPoints/freeStarterCredit 同口徑）：
+       已花費 = 所有技能等級總和 - 初始免費額度 > 總點數 = 等級-1
+     修復：清除所有技能與融合技 → 重發 2 個初始 1 級技能（免費額度）
+          → 已花費歸零，點數依等級即時推導全額可用。 */
+  var spSpent = 0;
+  for (var skId in data.player.skills) spSpent += data.player.skills[skId] || 0;
+  spSpent -= (data.player.skills.powerSlash > 0 ? 1 : 0) + (data.player.skills.arcaneBurst > 0 ? 1 : 0);
+  var spTotal = Math.max(0, (data.player.level || 1) - 1);
+  if (spSpent > spTotal) {
+    data.player.skills = { powerSlash: 1, arcaneBurst: 1 };
+    data.player.fusions = [];
+    data.player.loadout = ['powerSlash', 'arcaneBurst'];
+    data.player.skillPoints = 0;   // 舊版遺留欄位一併歸零（現行點數為即時推導，不讀此值）
+    data._skillResetNotice = spSpent + ' 點（總點數僅 ' + spTotal + ' 點）'; // 讀檔後顯示公告用，顯示完即刪
+  }
   data.tower.active = false; // 讀檔時不可能處於高塔戰鬥
   if (!data.settings) data.settings = { compareEq: false };
   

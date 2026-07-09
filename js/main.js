@@ -53,6 +53,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (loaded) {
     blog('📖 歡迎回來，冒險者！讀取存檔成功。', 'good');
+    // 技能點異常修復公告（migrateSave 偵測到超支重置時設定）
+    if (G._skillResetNotice) {
+      blog('🛠️ 偵測到技能點異常：已使用 ' + G._skillResetNotice +
+        '，已重置所有技能並發還初始技能。技能點已依等級全額退還（可用 ' + availableSkillPoints() +
+        ' 點），請重新配點；之後升級將正常獲得技能點。', 'warn');
+      delete G._skillResetNotice;
+    }
     applyOfflineProgress();
   } else {
     blog('⚔️ 歡迎來到《無限征途：合成之巔》！', 'good');
