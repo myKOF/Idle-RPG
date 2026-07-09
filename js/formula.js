@@ -659,7 +659,8 @@ function loadoutSize() { return Math.min(20, Math.max(2, Math.floor(G.player.lev
 
 // 技能升級金幣費用 = 20000 × 當前等級 + 20^(1 + 當前等級/10)
 function skillUpgradeCost(lv) {
-  return Math.floor(20000 * lv + Math.pow(20, 1 + lv / 10));
+  var cost = Math.floor(20000 * lv + Math.pow(20, 1 + lv / 10));
+  return Math.min(5000000, cost);
 }
 
 // 各類技能等級上限：融合技 = 素材加總+20（存於 def.maxLv）／被動 30／主動 20
@@ -678,7 +679,7 @@ function skillCdFor(sk) { return sk.cd * (1 - getStats().cdr / 100); }
 function scaleAt(def, lv) { return def.base + def.per * (lv - 1); }
 
 /* ---- 技能融合參數 ---- */
-var FUSE_FACTOR = 0.6;            // 素材效果繼承比例（傷害/元素占比等 ×0.6 後合併）
+var FUSE_FACTOR = 0.75;           // 素材效果繼承比例（傷害/元素占比等 ×0.75 後合併；2026-07-09 由 0.6 上調，融合技傷害最高可達舊版 +300%）
 var FUSION_MUTATION_CHANCE = 45;  // 變異基礎機率 %（實際 = 45 + 幸運值/3）
 var FUSION_COST_FACTOR = 0.65;    // 融合技 MP 消耗 = 素材消耗加總 × 0.65
 var FUSION_CD_FACTOR = 1.25;      // 融合技冷卻 = 素材最長冷卻 × 1.25

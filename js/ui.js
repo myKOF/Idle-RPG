@@ -777,7 +777,7 @@ function renderSkills() {
     var id0 = lo[i];
     var d0 = id0 ? skillDef(id0) : null;
     if (d0) {
-      lh += '<span class="loadout-slot filled" data-skill-unequip="' + id0 + '">' +
+      lh += '<span class="loadout-slot filled" data-skill-unequip="' + id0 + '" data-sk="' + id0 + '">' +
         d0.emoji + ' ' + esc(d0.name) + ' Lv.' + skillLevel(id0) + '</span>';
     } else {
       lh += '<span class="loadout-slot">空欄位</span>';
@@ -847,29 +847,44 @@ function renderSkillModal() {
   }
   if (sk.flavor) h += '<div class="sk-flavor">' + esc(sk.flavor) + '</div>';
   if (lock) h += '<div class="hint">🔒 ' + esc(lock) + '</div>';
-  h += '<div class="detail-actions">';
+  h += '<div class="detail-actions" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px;">';
   if (lv < maxLv && !lock) {
     var cost = skillUpgradeCost(lv);
-    h += '<button class="btn sm" data-skill-learn="' + id + '"' + (G.player.gold < cost ? ' disabled' : '') + '>' +
-      (lv === 0 ? '📖 學習' : '⬆️ 升級') + '（' + fmt(cost) + ' 金幣）</button>';
+    h += '<button class="btn sm" data-skill-learn="' + id + '" data-tip="花費 ' + fmt(cost) + ' 金幣"' + (G.player.gold < cost ? ' disabled' : '') + '>' +
+      (lv === 0 ? '📖 學習' : '⬆️ 升級') + '</button>';
   } else if (lv >= maxLv) {
-    h += '<span class="sk-max">已滿級</span>';
+    h += '<div style="text-align:center; padding: 4px; color: var(--good); font-size: 12px;">已滿級</div>';
+  } else {
+    h += '<div></div>'; // empty grid cell
   }
+  
   if (lv > 0) {
     var refund = skillUpgradeCost(lv - 1);
-    h += '<button class="btn sm warn" data-skill-downgrade="' + id + '">⬇️ 降級（還 ' + fmt(refund) + ' 金）</button>';
+    h += '<button class="btn sm warn" data-skill-downgrade="' + id + '" data-tip="歸還 ' + fmt(refund) + ' 金幣">⬇️ 降級</button>';
+  } else {
+    h += '<div></div>'; // empty grid cell
   }
+  
   if (sk.cat !== 'passive' && lv > 0) {
     h += inLoadout
       ? '<button class="btn sm warn" data-skill-unequip="' + id + '">卸下</button>'
       : '<button class="btn sm" data-skill-equip="' + id + '">⚔️ 裝備</button>';
+  } else {
+    h += '<div></div>'; // empty grid cell
   }
+  
   if (!isFusion && sk.cat !== 'passive' && lv > 0) {
     h += '<button class="btn sm" data-skill-fuse-add="' + id + '">⚗️ 加入融合</button>';
+  } else {
+    h += '<div></div>';
   }
+  
   if (isFusion) {
-    h += '<button class="btn sm danger" data-fusion-delete="' + id + '">🗑️ 刪除（歸還全部點數）</button>';
+    h += '<button class="btn sm danger" data-fusion-delete="' + id + '">🗑️ 刪除</button>';
+  } else {
+    h += '<div></div>';
   }
+  
   h += '</div>';
   body.innerHTML = h;
 }

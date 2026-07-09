@@ -27,6 +27,7 @@ function loadGame() {
 function migrateSave(data) {
   // 技能點改由等級即時推導（availableSkillPoints），無需在此補發
   var hadZone = data.stage && data.stage.zone !== undefined; // 需在 mergeDefaults 前判斷
+  var hadSkillDmgV2 = !!data.skillDmgV2;                     // 需在 mergeDefaults 前判斷（merge 會補 true）
   var def = newGameState();
   
   // 防止玩家手動降級（刪除）的初始技能，在讀檔時被 mergeDefaults 誤判為缺漏而自動補回 1 級
@@ -61,6 +62,16 @@ function migrateSave(data) {
   if (!hadZone) {
     data.stage.zone = 'plains';
     data.zoneProgress.plains = { current: data.stage.current || 1, best: data.stage.best || 1 };
+  }
+  /* 2026-07-09 技能傷害全面重調：一般技能定義（SKILLS）已直接改數值，
+     但玩家自創融合技的 fx 是存檔快照 → 一次性等比加成（越強加越多，最高 +300%）。 */
+  if (!hadSkillDmgV2 && data.player.fusions && data.player.fusions.length) {
+    data.player.fusions.forEach(function (fs) {
+      if (!fs.fx || !fs.fx.base) return;
+      var mult = fs.fx.base >= 700 ? 4 : (fs.fx.base >= 400 ? 3.5 : 3);
+      fs.fx.base = Math.round(fs.fx.base * mult);
+      if (fs.fx.per) fs.fx.per = Math.round(fs.fx.per * mult * 10) / 10;
+    });
   }
   data.tower.active = false; // 讀檔時不可能處於高塔戰鬥
   if (!data.settings) data.settings = { compareEq: false };

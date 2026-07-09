@@ -618,7 +618,7 @@ textarea#save-io {
 .tree-cell.learned { opacity: 1; border-color: #b98a2d; box-shadow: 0 0 8px #b98a2d55, inset 0 0 8px #b98a2d22; }
 .tree-cell.selected { border-color: var(--accent); box-shadow: 0 0 10px var(--accent); opacity: 1; }
 .tree-cell.locked { cursor: not-allowed; }
-.tree-cell.equipped { background: #232f52; }
+.tree-cell.equipped { background: rgba(250, 204, 21, 0.25); border-color: #facc15; }
 .tc-emoji { font-size: 26px; }
 .tc-lv {
   position: absolute; bottom: -6px; right: -6px;
@@ -633,7 +633,7 @@ textarea#save-io {
 .tc-lock { position: absolute; bottom: -4px; right: -4px; font-size: 11px; }
 .tc-eq { position: absolute; top: -6px; left: -5px; color: var(--info); font-size: 11px; }
 .skd-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 15px; }
-.skd-emoji { font-size: 26px; }
+.skd-emoji { font-size: 26px; border: 2px solid var(--border); background: rgba(0,0,0,0.4); border-radius: 4px; padding: 4px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; }
 .skd-next { font-size: 12px; margin-top: 4px; }
 
 /* ---- 技能彈窗 / 懸停提示 ---- */
@@ -644,10 +644,9 @@ textarea#save-io {
 }
 .modal-box {
   position: relative; width: min(440px, 92vw);
-  background: url('../images/diablo_panel_tex.png') repeat, rgba(15,10,5,0.9); background-blend-mode: multiply;
-  border: 12px solid var(--border); border-image: url('../images/diablo_frame_9slice.png') 30 stretch;
-  border-radius: 0; padding: 18px 16px 14px;
-  box-shadow: 0 12px 40px rgba(0,0,0,.9), inset 0 0 20px rgba(0,0,0,0.8);
+  background: url('../images/diablo_panel_tex.png') repeat, rgba(15,10,5,0.95); background-blend-mode: multiply;
+  border: 2px solid var(--border); border-radius: 4px; padding: 18px 16px 14px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.9), inset 0 0 15px rgba(0,0,0,0.8);
 }
 .modal-x {
   position: absolute; top: 8px; right: 8px;

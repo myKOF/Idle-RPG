@@ -10,6 +10,7 @@ function newGameState() {
   for (var gt in GEM_TYPES) gems[gt] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   return {
     version: 1,
+    skillDmgV2: true,   // 2026-07-09 技能傷害重調旗標（migrateSave 據此對舊存檔融合技做一次性加成）
     savedAt: Date.now(),
     player: {
       level: 1, xp: 0,

@@ -34,57 +34,58 @@ function skillDef(id) {
    ai：施放條件 hurt30/50/70、debuffed、always（預設有敵人就放）
    被動：fx.passive = { 屬性桶: 每級數值 }、fx.elemMult = 每級元素傷% */
 var SKILLS = {
-  /* ================ 物理（12） ================ */
+  /* ================ 物理（12） ================
+     2026-07-09 傷害全面重調：基礎傷害 ×2.0~×3.0（越強的技能加越多） */
   powerSlash:   { name: '強力斬', emoji: '🗡️', cat: 'phys', cost: 15, cd: 6,
-    flavor: '蓄力揮出沉重的一擊。', fx: { dmgType: 'phys', stat: 'atk', base: 180, per: 40 } },
+    flavor: '蓄力揮出沉重的一擊。', fx: { dmgType: 'phys', stat: 'atk', base: 360, per: 80 } },
   doubleStrike: { name: '二連擊', emoji: '⚔️', cat: 'phys', cost: 20, cd: 8,
-    flavor: '快速的兩段斬擊。', fx: { dmgType: 'phys', stat: 'atk', base: 105, per: 22, hits: 2 } },
+    flavor: '快速的兩段斬擊。', fx: { dmgType: 'phys', stat: 'atk', base: 210, per: 44, hits: 2 } },
   whirlwind:    { name: '旋風斬', emoji: '🌪️', cat: 'phys', cost: 25, cd: 10,
-    flavor: '旋轉身軀橫掃周遭。', fx: { dmgType: 'phys', stat: 'atk', base: 230, per: 50 } },
+    flavor: '旋轉身軀橫掃周遭。', fx: { dmgType: 'phys', stat: 'atk', base: 505, per: 110 } },
   armorBreak:   { name: '破甲擊', emoji: '🔨', cat: 'phys', cost: 20, cd: 12,
-    flavor: '重擊敵人的護甲弱點。', fx: { dmgType: 'phys', stat: 'atk', base: 150, per: 30, debuff: { key: 'defDown', base: 25, per: 5, dur: 5 } } },
+    flavor: '重擊敵人的護甲弱點。', fx: { dmgType: 'phys', stat: 'atk', base: 300, per: 60, debuff: { key: 'defDown', base: 25, per: 5, dur: 5 } } },
   executeStrike:{ name: '處決', emoji: '💀', cat: 'phys', cost: 30, cd: 15,
-    flavor: '對瀕死敵人給予終結。', fx: { dmgType: 'phys', stat: 'atk', base: 200, per: 45, execBelow: 30, execMult: 2 } },
+    flavor: '對瀕死敵人給予終結。', fx: { dmgType: 'phys', stat: 'atk', base: 500, per: 110, execBelow: 30, execMult: 2 } },
   rendWound:    { name: '撕裂', emoji: '🩸', cat: 'phys', cost: 18, cd: 10,
-    flavor: '造成難以癒合的傷口。', fx: { dmgType: 'phys', stat: 'atk', base: 120, per: 25, dot: { pct: 25, dur: 5, name: '流血' } } },
+    flavor: '造成難以癒合的傷口。', fx: { dmgType: 'phys', stat: 'atk', base: 240, per: 50, dot: { pct: 25, dur: 5, name: '流血' } } },
   stunBlow:     { name: '震盪重擊', emoji: '💫', cat: 'phys', cost: 25, cd: 14,
-    flavor: '猛擊敵人使其暈眩。', fx: { dmgType: 'phys', stat: 'atk', base: 160, per: 32, stunDur: 1.5 } },
+    flavor: '猛擊敵人使其暈眩。', fx: { dmgType: 'phys', stat: 'atk', base: 320, per: 65, stunDur: 1.5 } },
   berserkStrike:{ name: '狂暴打擊', emoji: '😤', cat: 'phys', cost: 20, cd: 12,
-    flavor: '不顧自身安危的猛攻。', fx: { dmgType: 'phys', stat: 'atk', base: 300, per: 60, selfDmgPct: 5 } },
+    flavor: '不顧自身安危的猛攻。', fx: { dmgType: 'phys', stat: 'atk', base: 840, per: 170, selfDmgPct: 5 } },
   preciseThrust:{ name: '精準突刺', emoji: '🎯', cat: 'phys', cost: 15, cd: 8,
-    flavor: '絕不落空的致命突刺。', fx: { dmgType: 'phys', stat: 'atk', base: 150, per: 32, neverMiss: true, critBonus: 30 } },
+    flavor: '絕不落空的致命突刺。', fx: { dmgType: 'phys', stat: 'atk', base: 300, per: 65, neverMiss: true, critBonus: 30 } },
   heavySmash:   { name: '泰山壓頂', emoji: '🪨', cat: 'phys', cost: 28, cd: 13,
-    flavor: '沉重的壓制性打擊。', fx: { dmgType: 'phys', stat: 'atk', base: 250, per: 55, slowDur: 3 } },
+    flavor: '沉重的壓制性打擊。', fx: { dmgType: 'phys', stat: 'atk', base: 600, per: 130, slowDur: 3 } },
   swiftCuts:    { name: '疾風連斬', emoji: '🍃', cat: 'phys', cost: 32, cd: 16,
-    flavor: '化作疾風的三段斬。', fx: { dmgType: 'phys', stat: 'atk', base: 75, per: 16, hits: 3 } },
+    flavor: '化作疾風的三段斬。', fx: { dmgType: 'phys', stat: 'atk', base: 165, per: 35, hits: 3 } },
   counterStance:{ name: '反擊架勢', emoji: '🔄', cat: 'phys', cost: 22, cd: 18,
     flavor: '擺出以牙還牙的架勢。', fx: { buff: { key: 'thornsUp', base: 12, per: 4, dur: 6 } } },
 
   /* ================ 魔法（12） ================ */
   arcaneBurst:  { name: '奧術衝擊', emoji: '🌠', cat: 'magic', cost: 30, cd: 10,
-    flavor: '釋放純粹的奧術能量。', fx: { dmgType: 'magic', stat: 'matk', base: 165, per: 38 } },
+    flavor: '釋放純粹的奧術能量。', fx: { dmgType: 'magic', stat: 'matk', base: 330, per: 75 } },
   fireball:     { name: '火球術', emoji: '🔥', cat: 'magic', cost: 25, cd: 9,
-    flavor: '投出灼熱的火球並點燃敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 180, per: 40, elem: { type: 'fire', portion: 0.5 }, dot: { pct: 20, dur: 4, name: '燃燒' } } },
+    flavor: '投出灼熱的火球並點燃敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 360, per: 80, elem: { type: 'fire', portion: 0.5 }, dot: { pct: 20, dur: 4, name: '燃燒' } } },
   iceLance:     { name: '寒冰槍', emoji: '❄️', cat: 'magic', cost: 25, cd: 9,
-    flavor: '冰冷的長槍刺穿敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 165, per: 35, elem: { type: 'ice', portion: 0.5 }, slowDur: 3 } },
+    flavor: '冰冷的長槍刺穿敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 330, per: 70, elem: { type: 'ice', portion: 0.5 }, slowDur: 3 } },
   chainLightning:{ name: '連鎖閃電', emoji: '⚡', cat: 'magic', cost: 28, cd: 11,
-    flavor: '躍動的閃電連續劈落。', fx: { dmgType: 'magic', stat: 'matk', base: 95, per: 20, hits: 2, elem: { type: 'lightning', portion: 0.4 } } },
+    flavor: '躍動的閃電連續劈落。', fx: { dmgType: 'magic', stat: 'matk', base: 190, per: 40, hits: 2, elem: { type: 'lightning', portion: 0.4 } } },
   venomCloud:   { name: '劇毒雲霧', emoji: '☠️', cat: 'magic', cost: 26, cd: 12,
-    flavor: '瀰漫的毒霧侵蝕敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 100, per: 20, dot: { pct: 40, dur: 6, name: '中毒' } } },
+    flavor: '瀰漫的毒霧侵蝕敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 200, per: 40, dot: { pct: 40, dur: 6, name: '中毒' } } },
   holySmite:    { name: '聖光審判', emoji: '🌟', cat: 'magic', cost: 25, cd: 10,
-    flavor: '聖光降下裁決並潔淨己身。', fx: { dmgType: 'magic', stat: 'matk', base: 170, per: 36, elem: { type: 'light', portion: 0.4 }, selfCleanse: true } },
+    flavor: '聖光降下裁決並潔淨己身。', fx: { dmgType: 'magic', stat: 'matk', base: 340, per: 70, elem: { type: 'light', portion: 0.4 }, selfCleanse: true } },
   shadowBolt:   { name: '暗影箭', emoji: '🌑', cat: 'magic', cost: 25, cd: 10,
-    flavor: '汲取生命的暗影之矢。', fx: { dmgType: 'magic', stat: 'matk', base: 160, per: 34, healPctOfDmg: 30 } },
+    flavor: '汲取生命的暗影之矢。', fx: { dmgType: 'magic', stat: 'matk', base: 320, per: 70, healPctOfDmg: 30 } },
   arcaneBarrage:{ name: '奧術彈幕', emoji: '💫', cat: 'magic', cost: 40, cd: 15,
-    flavor: '傾瀉四發奧術飛彈。', fx: { dmgType: 'magic', stat: 'matk', base: 58, per: 13, hits: 4 } },
+    flavor: '傾瀉四發奧術飛彈。', fx: { dmgType: 'magic', stat: 'matk', base: 135, per: 30, hits: 4 } },
   meteor:       { name: '隕石術', emoji: '☄️', cat: 'magic', cost: 60, cd: 25,
-    flavor: '呼喚天降隕石毀滅一切。', fx: { dmgType: 'magic', stat: 'matk', base: 420, per: 85, elem: { type: 'fire', portion: 0.3 } } },
+    flavor: '呼喚天降隕石毀滅一切。', fx: { dmgType: 'magic', stat: 'matk', base: 1260, per: 255, elem: { type: 'fire', portion: 0.3 } } },
   manaBurn:     { name: '法力灼燒', emoji: '🔮', cat: 'magic', cost: 20, cd: 8,
-    flavor: '以法力引發劇烈爆燃，爆擊時返還法力。', fx: { dmgType: 'magic', stat: 'matk', base: 160, per: 34, mpOnCrit: 20 } },
+    flavor: '以法力引發劇烈爆燃，爆擊時返還法力。', fx: { dmgType: 'magic', stat: 'matk', base: 320, per: 70, mpOnCrit: 20 } },
   frostNova:    { name: '霜之新星', emoji: '🧊', cat: 'magic', cost: 30, cd: 14,
-    flavor: '迸發的冰環凍結敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 130, per: 28, elem: { type: 'ice', portion: 0.3 }, stunDur: 1 } },
+    flavor: '迸發的冰環凍結敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 260, per: 55, elem: { type: 'ice', portion: 0.3 }, stunDur: 1 } },
   voidRift:     { name: '虛空裂隙', emoji: '🕳️', cat: 'magic', cost: 45, cd: 18,
-    flavor: '撕開無視一切防禦的虛空。', fx: { dmgType: 'true', stat: 'matk', base: 130, per: 28 } },
+    flavor: '撕開無視一切防禦的虛空。', fx: { dmgType: 'true', stat: 'matk', base: 325, per: 70 } },
 
   /* ================ 防禦與治療（10） ================ */
   healWound:    { name: '治癒術', emoji: '💚', cat: 'def', cost: 30, cd: 12, ai: 'hurt70',
@@ -98,7 +99,7 @@ var SKILLS = {
   purify:       { name: '淨化術', emoji: '✨', cat: 'def', cost: 15, cd: 10, ai: 'debuffed',
     flavor: '洗去身上的負面狀態。', fx: { selfCleanse: true, healPctMax: { base: 5, per: 1.5 } } },
   lifeLink:     { name: '生命汲取', emoji: '🧛', cat: 'def', cost: 22, cd: 10,
-    flavor: '奪取敵人的生命力。', fx: { dmgType: 'magic', stat: 'matk', base: 110, per: 24, healPctOfDmg: 100 } },
+    flavor: '奪取敵人的生命力。', fx: { dmgType: 'magic', stat: 'matk', base: 220, per: 50, healPctOfDmg: 100 } },
   sanctuary:    { name: '庇護所', emoji: '⛪', cat: 'def', cost: 30, cd: 20, ai: 'hurt40',
     flavor: '神聖領域護佑己身。', fx: { buff: { key: 'evasionUp', base: 25, per: 5, dur: 5 } } },
   secondWind:   { name: '回春氣息', emoji: '💨', cat: 'def', cost: 0, cd: 25, ai: 'hurt30',
@@ -112,23 +113,23 @@ var SKILLS = {
   timeWarp:     { name: '時間扭曲', emoji: '⏳', cat: 'special', cost: 35, cd: 20,
     flavor: '加速自身的時間流。', fx: { buff: { key: 'aspdUp', base: 25, per: 7, dur: 6 } } },
   midasTouch:   { name: '點金手', emoji: '🪙', cat: 'special', cost: 25, cd: 20,
-    flavor: '揮出將敵人化為財富的一擊。', fx: { dmgType: 'phys', stat: 'atk', base: 100, per: 20, goldPer: 15 } },
+    flavor: '揮出將敵人化為財富的一擊。', fx: { dmgType: 'phys', stat: 'atk', base: 200, per: 40, goldPer: 15 } },
   treasureSense:{ name: '尋寶直覺', emoji: '🔍', cat: 'special', cost: 30, cd: 30,
     flavor: '嗅出寶物的氣息。', fx: { buff: { key: 'lootUp', base: 30, per: 10, dur: 10 } } },
   weakenCurse:  { name: '虛弱詛咒', emoji: '📉', cat: 'special', cost: 22, cd: 15,
     flavor: '削弱敵人的力量。', fx: { debuff: { key: 'atkDown', base: 18, per: 4, dur: 6 } } },
   deathCurse:   { name: '死亡詛咒', emoji: '⚰️', cat: 'special', cost: 40, cd: 20,
-    flavor: '以敵人生命為薪的詛咒。', fx: { maxHpDotPct: { base: 1.2, per: 0.4 }, dotDur: 5 } },
+    flavor: '以敵人生命為薪的詛咒。', fx: { maxHpDotPct: { base: 2.4, per: 0.8 }, dotDur: 5 } },
   blinkDodge:   { name: '瞬身', emoji: '🌀', cat: 'special', cost: 20, cd: 16,
     flavor: '殘影閃避致命攻擊。', fx: { buff: { key: 'evasionUp', base: 35, per: 7, dur: 3 } } },
   mpSiphon:     { name: '法力虹吸', emoji: '🌊', cat: 'special', cost: 0, cd: 12,
-    flavor: '從敵人身上抽取法力（不耗魔）。', fx: { dmgType: 'magic', stat: 'matk', base: 80, per: 16, mpRestore: 25 } },
+    flavor: '從敵人身上抽取法力（不耗魔）。', fx: { dmgType: 'magic', stat: 'matk', base: 160, per: 30, mpRestore: 25 } },
   overload:     { name: '超載', emoji: '💥', cat: 'special', cost: 30, cd: 22,
     flavor: '讓每次爆擊更加致命。', fx: { buff: { key: 'critDmgUp', base: 40, per: 12, dur: 6 } } },
   warcry:       { name: '戰吼', emoji: '📣', cat: 'special', cost: 25, cd: 18,
     flavor: '震天的吼聲鼓舞自己、震懾敵人。', fx: { buff: { key: 'atkUp', base: 12, per: 4, dur: 6 }, debuff: { key: 'atkDown', base: 8, per: 2, dur: 6 } } },
   gamble:       { name: '孤注一擲', emoji: '🎲', cat: 'special', cost: 30, cd: 15,
-    flavor: '傷害在 50%~250% 之間隨機。', fx: { dmgType: 'phys', stat: 'atk', base: 150, per: 35, gamble: true } },
+    flavor: '傷害在 50%~250% 之間隨機。', fx: { dmgType: 'phys', stat: 'atk', base: 375, per: 85, gamble: true } },
 
   /* ================ 被動（10） ================ */
   toughness:    { name: '堅韌體魄', emoji: '🪨', cat: 'passive', flavor: '生命上限提升。',
@@ -482,8 +483,8 @@ function castSkill(pEnt, target, id, lv, floatSel) {
   if (fx.buff2) { applyBuff(pEnt, fx.buff2.key, scaleAt(fx.buff2, lv), fx.buff2.dur); }
   if (fx.debuff && target && target.hp > 0) { applyBuff(target, fx.debuff.key, scaleAt(fx.debuff, lv), fx.debuff.dur); parts.push('<span class="log-hl-bad">敵方' + buffLabel(fx.debuff.key) + ' -' + fmt1(scaleAt(fx.debuff, lv)) + '%</span>'); }
   if (fx.maxHpDotPct && target && target.hp > 0) {
-    // 死亡詛咒：以敵方最大生命為基準的跳傷（對高血量目標設上限）
-    var cdps = Math.min(target.maxHp * scaleAt(fx.maxHpDotPct, lv) / 100, st.matk * 3);
+    // 死亡詛咒：以敵方最大生命為基準的跳傷（對高血量目標設上限 = 魔攻 x6）
+    var cdps = Math.min(target.maxHp * scaleAt(fx.maxHpDotPct, lv) / 100, st.matk * 6);
     applyDot(target, cdps, fx.dotDur || 5, '詛咒');
     parts.push('<span class="log-hl-bad">附加死亡詛咒</span>');
   }
