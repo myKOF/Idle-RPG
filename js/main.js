@@ -75,4 +75,54 @@ document.addEventListener('DOMContentLoaded', function () {
   // 檢查新版本 (每 3 分鐘)
   setTimeout(checkForUpdates, 3000);
   setInterval(checkForUpdates, 3 * 60000);
+
+  // 啟動時自動重新連接上次使用的存檔資料夾（靜默、不跳視窗）
+  if (window.showDirectoryPicker) {
+    idbGetDir(function (stored) {
+      if (stored) {
+        stored.requestPermission({ mode: 'readwrite' }).then(function (perm) {
+          if (perm !== 'granted') {
+            // 需要使用者重新授權，顯示提示 Banner
+            var bn = document.getElementById('save-folder-banner');
+            if (bn) bn.style.display = 'block';
+            return;
+          }
+          _saveDir = stored;
+          syncSaveFolder();
+          // 已連接，隱藏 Banner
+          var bn = document.getElementById('save-folder-banner');
+          if (bn) bn.style.display = 'none';
+        }).catch(function () {
+          var bn = document.getElementById('save-folder-banner');
+          if (bn) bn.style.display = 'block';
+        });
+      } else {
+        // 從未設定過資料夾，顯示引導 Banner
+        var bn = document.getElementById('save-folder-banner');
+        if (bn) bn.style.display = 'block';
+      }
+    });
+  }
+
+  // Banner 上的按鈕 (與 btn-folder 共用邏輯)
+  var btnFolderBanner = document.getElementById('btn-folder-banner');
+  if (btnFolderBanner) {
+    btnFolderBanner.addEventListener('click', function () {
+      var m = document.getElementById('save-msg');
+      if (m) m.textContent = '⏳ 請在跳出的視窗中選擇存檔資料夾…';
+      openSaveFolder(function (err, res) {
+        var text;
+        if (err) {
+          text = '⚠️ ' + err;
+        } else {
+          var bn = document.getElementById('save-folder-banner');
+          if (bn) bn.style.display = 'none';
+          text = '✅ 已連接「' + res.dirName + '」，之後每次存檔都會自動同步到這個資料夾！';
+        }
+        if (m) m.textContent = text;
+        blog('📂 ' + text, err ? 'warn' : 'good');
+        if (typeof renderSaveList === 'function') renderSaveList();
+      });
+    });
+  }
 });

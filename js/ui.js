@@ -91,7 +91,11 @@ function renderSaveList() {
         '<div class="save-file">' + esc(r.fname) + '　<span class="save-time">' + saveTimeStr(r.savedAt) + '</span></div>' +
         '<div class="save-meta">Lv.' + r.level + '｜' + (ZONES[r.zone] ? ZONES[r.zone].emoji + ZONES[r.zone].name : '') + ' 第 ' + r.stage + ' 階｜第 ' + (r.runId || 1) + ' 局</div>' +
       '</div>' +
-      '<button class="btn sm" data-load-save="' + r.id + '">📥 讀取存檔</button>' +
+      '<div style="display:flex; gap:8px;">' +
+        '<button class="btn sm" data-load-save="' + r.id + '">📥 讀取</button>' +
+        '<button class="btn sm" data-dl-save="' + r.id + '">⬇️ 下載</button>' +
+        '<button class="btn sm" style="color:var(--danger, #f87171); border-color:var(--danger, #f87171);" data-del-save="' + r.id + '">🗑️ 刪除</button>' +
+      '</div>' +
       '</div>';
   }).join('');
 }
@@ -2303,19 +2307,37 @@ function initUI() {
       restartGame();
     }, { title: '重新開局確認', okText: '重新開局', danger: true });
   });
-  // 讀取存檔（每列右側按鈕，需二次確認）
+  // 讀取/下載/刪除存檔（每列右側按鈕，需二次確認）
   $id('save-list').addEventListener('click', function (e) {
-    var btn = e.target.closest('[data-load-save]');
-    if (!btn) return;
-    var id = btn.getAttribute('data-load-save');
+    var loadBtn = e.target.closest('[data-load-save]');
+    var dlBtn = e.target.closest('[data-dl-save]');
+    var delBtn = e.target.closest('[data-del-save]');
+    if (!loadBtn && !dlBtn && !delBtn) return;
+
+    var id = loadBtn ? loadBtn.getAttribute('data-load-save')
+           : dlBtn ? dlBtn.getAttribute('data-dl-save')
+           : delBtn.getAttribute('data-del-save');
     var rec = null;
     saveIndex().forEach(function (r) { if (r.id === id) rec = r; });
     if (!rec) return;
-    showConfirmDialog('確定要讀取「' + saveRecName(rec) + '」嗎？\n檔名：' + rec.fname + '\n時間：' + saveTimeStr(rec.savedAt) +
-      '\n\n目前進度會先寫入本局的自動存檔，再切換為此存檔。', function () {
-      var err = loadSaveRecord(id);
-      if (err) blog('⚠️ 讀取存檔失敗：' + err, 'bad');
-    }, { title: '讀取存檔確認', okText: '讀取存檔', danger: true });
+
+    if (loadBtn) {
+      showConfirmDialog('確定要讀取「' + saveRecName(rec) + '」嗎？\n檔名：' + rec.fname + '\n時間：' + saveTimeStr(rec.savedAt) +
+        '\n\n目前進度會先寫入本局的自動存檔，再切換為此存檔。', function () {
+        var err = loadSaveRecord(id);
+        if (err) blog('⚠️ 讀取存檔失敗：' + err, 'bad');
+      }, { title: '讀取存檔確認', okText: '讀取存檔', danger: true });
+    } else if (dlBtn) {
+      downloadSingleSave(id, rec.fname);
+      blog('⬇️ 存檔已下載：' + rec.fname, 'good');
+    } else if (delBtn) {
+      showConfirmDialog('確定要刪除「' + saveRecName(rec) + '」嗎？\n檔名：' + rec.fname + '\n時間：' + saveTimeStr(rec.savedAt) +
+        '\n\n刪除後無法恢復，是否繼續？', function () {
+        deleteSaveRecord(id);
+        blog('🗑️ 存檔已刪除：' + rec.fname);
+        renderSaveList();
+      }, { title: '刪除存檔確認', okText: '刪除存檔', danger: true });
+    }
   });
   renderSaveList();
 

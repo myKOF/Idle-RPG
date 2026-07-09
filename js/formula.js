@@ -24,8 +24,8 @@
    §1 成長與經驗
    ============================================================ */
 
-// 升到下一級所需經驗 = 30 × 等級^1.85 + 40
-function xpForLevel(l) { return Math.floor(30 * Math.pow(l, 1.85) + 40); }
+// 升到下一級所需經驗 = 30 × 等級^2 + 40
+function xpForLevel(l) { return Math.floor(30 * Math.pow(l, 2) + 40); }
 
 /* 等級基礎四維主屬性（不含裝備）：力/敏/智/耐 相同
    = 5 + (等級 - 1) × 2 */
@@ -644,10 +644,12 @@ var GEM_DISMANTLE_KEEP = 0.7;  // 拆解保留比例（損失 30%）
 function gemL1Worth(lv) { return Math.pow(2, lv - 1); }
 // 一般寶石拆解產出（同種 1 級寶石）= ⌊2^(等級-1) × 0.7⌋（例：5 級 → ⌊16×0.7⌋ = 11 顆）
 function gemDismantleYield(lv) { return Math.floor(gemL1Worth(lv) * GEM_DISMANTLE_KEEP); }
-/* 融合寶石拆解：融合素材樹的葉子都是 5 階寶石（各值 16 顆 1 級），
-   累計融合 n 次共消耗 n+1 顆 5 階（不計成功率，一律視為 100%）
-   → 總成本 = 16 × (融合次數+1) 顆 1 級，拆解產出 = ⌊總成本 × 0.7⌋（依屬性種類均分）。 */
-function fusedGemL1Worth(fg) { return gemL1Worth(GEM_MAX_LEVEL) * ((fg.fusions || 0) + 1); }
+/* 融合寶石拆解：融合素材樹的葉子都是 5 階寶石（各值 16 顆 1 級）。
+   fg.leaves 記錄素材 5 階總數（融合時雙方相加；不計成功率，一律視為 100%）
+   → 總成本 = 16 × leaves 顆 1 級，拆解產出 = ⌊總成本 × 0.7⌋（依屬性種類均分）。
+   ※ fg.fusions 為「融合世代」（max+1，見 item.js），僅用於顯示與成功率遞減；
+     舊存檔無 leaves 欄位時以 (fusions+1) 後備（migrateSave 會補）。 */
+function fusedGemL1Worth(fg) { return gemL1Worth(GEM_MAX_LEVEL) * (fg.leaves || ((fg.fusions || 0) + 1)); }
 function fusedGemDismantleYield(fg) { return Math.floor(fusedGemL1Worth(fg) * GEM_DISMANTLE_KEEP); }
 
 // 寶石融合成功率 = 60% - 10% ×（雙方累計成功融合次數），最低 10%

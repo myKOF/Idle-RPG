@@ -106,7 +106,10 @@ function dismantleFusedGem(id) {
 }
 
 /* ================ 融合寶石（雙屬性，僅 5 階可融合） ================
-   G.player.fusedGems = [ { id, stats:[{type,val}x1~2], level:5, fusions:n } ] */
+   G.player.fusedGems = [ { id, stats:[{type,val}x1~2], level:5, fusions:n, leaves:m } ]
+   fusions = 融合世代（次數）：兩顆一般寶石 → 1；兩顆融合 1 次的再融合 → 2
+             （取雙方較大值 +1，用於顯示與成功率遞減）
+   leaves  = 素材 5 階寶石總數（融合樹的葉子數，雙方相加）：拆解成本推算用 */
 function fusedGemStatText(fg) {
   return fg.stats.map(function (s) {
     var gt = GEM_TYPES[s.type];
@@ -130,16 +133,16 @@ function removeFusedGem(id) {
   return null;
 }
 
-// 融合素材參照 → 正規化 { stats, fusions, ref }；plain 需持有 5 階寶石
+// 融合素材參照 → 正規化 { stats, fusions, leaves, ref }；plain 需持有 5 階寶石
 function normalizeFuseMaterial(ref) {
   if (!ref) return null;
   if (ref.kind === 'plain') {
     if (gemCount(ref.type, GEM_MAX_LEVEL) < 1) return null;
-    return { stats: [{ type: ref.type, val: gemStatValue(ref.type, GEM_MAX_LEVEL) }], fusions: 0, ref: ref };
+    return { stats: [{ type: ref.type, val: gemStatValue(ref.type, GEM_MAX_LEVEL) }], fusions: 0, leaves: 1, ref: ref };
   }
   var fg = findFusedGem(ref.id);
   if (!fg) return null;
-  return { stats: fg.stats, fusions: fg.fusions || 0, ref: ref };
+  return { stats: fg.stats, fusions: fg.fusions || 0, leaves: fg.leaves || ((fg.fusions || 0) + 1), ref: ref };
 }
 // 融合成功率公式 gemFuseRate → js/formula.js §8
 // 屬性相容：融合後屬性種類聯集不得超過 2（涵蓋規則 4 全部情境）
@@ -195,7 +198,13 @@ function fuseGemsV2(ref1, ref2) {
       }
       return { type: t, val: Math.round(v * 10) / 10 };
     });
-    var result = { id: uid(), stats: stats, level: GEM_MAX_LEVEL, fusions: m1.fusions + m2.fusions + 1 };
+    // 融合次數＝世代：取雙方較大值 +1（一般+一般=1；融合1次+融合1次=2）
+    // leaves＝素材 5 階總數：雙方相加（拆解成本精確推算用）
+    var result = {
+      id: uid(), stats: stats, level: GEM_MAX_LEVEL,
+      fusions: Math.max(m1.fusions, m2.fusions) + 1,
+      leaves: m1.leaves + m2.leaves
+    };
     if (!G.player.fusedGems) G.player.fusedGems = [];
     G.player.fusedGems.push(result);
     UI.dirty.gems = true; UI.dirty.header = true;

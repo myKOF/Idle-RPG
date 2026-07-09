@@ -70,6 +70,7 @@ function saveGame() {
     // 即時自動存檔記錄（每局固定同一個檔，特別標注）
     var runId = G.runId || 1;
     putSaveRecord(saveRecMeta('auto', 'auto_run' + runId, 'IC_autosave_run' + runId + '.json'), json);
+    syncSaveFolder(); // 已連接存檔資料夾時，順帶寫出檔案（靜默）
   } catch (e) { /* 容量滿或隱私模式，靜默失敗 */ }
 }
 
@@ -84,6 +85,14 @@ function manualSave(label) {
   syncSaveFolder(); // 已連接存檔資料夾時，順帶寫出檔案（靜默）
   return rec;
 }
+
+// 刪除存檔記錄
+function deleteSaveRecord(id) {
+  try { localStorage.removeItem(SAVE_REC_PREFIX + id); } catch (e) {}
+  var list = saveIndex().filter(function (x) { return x.id !== id; });
+  writeSaveIndex(list);
+}
+
 
 // 讀取存檔記錄（覆蓋目前遊戲並重新整理）；回傳 null=成功
 function loadSaveRecord(id) {
@@ -178,6 +187,27 @@ function migrateSave(data) {
     data.player.skillPoints = 0;   // 舊版遺留欄位一併歸零（現行點數為即時推導，不讀此值）
     data._skillResetNotice = spSpent + ' 點（總點數僅 ' + spTotal + ' 點）'; // 讀檔後顯示公告用，顯示完即刪
   }
+  /* ---- 融合寶石「融合次數」改為世代制（2026-07-09 修正）----
+     舊定義 fusions = 融合事件總數（兩顆融合1次的再融合 → 3，玩家預期 2）。
+     新定義 fusions = 世代（max+1），另補 leaves = 素材 5 階總數（拆解成本用）。
+     以「有無 leaves 欄位」判斷是否已遷移（逐顆冪等，不需全域旗標）：
+       leaves = 舊 fusions + 1（舊定義下事件數 n → 葉子 n+1，成本不變）
+       fusions = ⌈log2(leaves)⌉（以平衡樹回推世代；1→1、3→2 符合玩家實例） */
+  var fixFusedGem = function (fg) {
+    if (!fg || fg.leaves !== undefined) return;
+    var oldF = fg.fusions || 1;
+    fg.leaves = oldF + 1;
+    fg.fusions = Math.max(1, Math.ceil(Math.log(oldF + 1) / Math.LN2));
+  };
+  (data.player.fusedGems || []).forEach(fixFusedGem);
+  var fixSockets = function (it) {
+    if (it && it.sockets) it.sockets.forEach(function (g) { if (g && g.fused) fixFusedGem(g.fused); });
+  };
+  for (var eqk in data.equipment) fixSockets(data.equipment[eqk]);
+  data.inventory.forEach(fixSockets);
+  data.factory.conveyor.forEach(fixSockets);
+  data.factory.synthBuffer.forEach(fixSockets);
+
   data.tower.active = false; // 讀檔時不可能處於高塔戰鬥
   if (!data.settings) data.settings = { compareEq: false };
   
@@ -264,8 +294,8 @@ function openSaveFolder(cb) {
       ? stored.requestPermission({ mode: 'readwrite' }).then(function (perm) {
           if (perm !== 'granted') throw new Error('repick');
           return stored;
-        }).catch(function () { return window.showDirectoryPicker({ mode: 'readwrite' }); })
-      : window.showDirectoryPicker({ mode: 'readwrite' });
+        }).catch(function () { return window.showDirectoryPicker({ id: 'idle_rpg_saves', mode: 'readwrite' }); })
+      : window.showDirectoryPicker({ id: 'idle_rpg_saves', mode: 'readwrite' });
     Promise.resolve(p).then(function (dir) {
       _saveDir = dir;
       idbSetDir(dir);
@@ -332,17 +362,28 @@ function syncSaveFolder() {
 // 後備方案：不支援 File System Access 時，逐檔下載 .json
 function downloadAllSaves() {
   saveIndex().forEach(function (r) {
-    var raw = localStorage.getItem(SAVE_REC_PREFIX + r.id);
-    if (!raw) return;
-    var url = URL.createObjectURL(new Blob([raw], { type: 'application/json' }));
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = r.fname;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+    downloadSingleSave(r.id, r.fname);
   });
+}
+
+function downloadSingleSave(id, fname) {
+  var raw = localStorage.getItem(SAVE_REC_PREFIX + id);
+  if (!raw) return;
+  if (!fname) {
+    var list = saveIndex();
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === id) { fname = list[i].fname; break; }
+    }
+    if (!fname) fname = 'save.json';
+  }
+  var url = URL.createObjectURL(new Blob([raw], { type: 'application/json' }));
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = fname;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
 }
 
 /* ---- 離線收益（時間上限與擊殺估算公式 → js/formula.js §10） ---- */

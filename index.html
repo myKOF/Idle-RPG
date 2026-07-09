@@ -451,12 +451,17 @@
         <section id="tab-settings" class="tab">
           <div class="panel">
             <div class="sec-title">💾 存檔管理</div>
+            <div id="save-folder-banner" style="display:none; background:rgba(251,191,36,0.12); border:1px solid #f59e0b; border-radius:8px; padding:12px 16px; margin-bottom:12px;">
+              <div style="font-weight:bold; color:#f59e0b; margin-bottom:6px;">📂 設定本機存檔資料夾（僅需一次）</div>
+              <div style="font-size:13px; color:var(--dim); margin-bottom:10px;">選擇後，遊戲每次自動存檔時都會自動同步到你選擇的資料夾，再也不用手動操作。瀏覽器安全限制需要你授權一次。</div>
+              <button id="btn-folder-banner" class="btn" style="background:linear-gradient(135deg,#f59e0b,#d97706); color:#000; border:none;">📂 選擇存檔資料夾</button>
+            </div>
             <div class="btn-row">
               <button id="btn-save" class="btn">💾 立即存檔</button>
               <button id="btn-folder" class="btn">📂 打開存檔資料夾</button>
               <button id="btn-restart" class="btn danger">🔄 重新開局</button>
             </div>
-            <div class="hint">遊戲每 15 秒自動寫入「⚡ 即時自動存檔」（每一局各自一個檔，不互相覆蓋）；「立即存檔」另外建立一筆存檔記錄（最多保留 5 筆）。「打開存檔資料夾」會把所有存檔寫成 .json 實體檔案 — 直接把檔案傳給別人即可分享；把別人的 .json 放進資料夾後再按一次即可匯入為存檔記錄。「重新開局」開一個全新角色重玩，舊存檔記錄全部保留。離線收益上限 8 小時。</div>
+            <div class="hint">存檔預設儲存在瀏覽器中。點「存檔資料夾設定」選擇一次本機資料夾後，之後每次自動存檔都會同步到那個資料夾，無需再手動操作。每列的「⬇️ 下載」按鈕可隨時把單一存檔下載為 .json 檔案。</div>
             <div class="sec-sub">存檔記錄</div>
             <div id="save-list"></div>
             <div class="node-info" id="save-msg"></div>
