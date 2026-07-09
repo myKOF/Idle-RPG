@@ -575,7 +575,7 @@ function itemDetailHTML(it, cmp) {
     var rrGoldHtml = '<span' + (G.player.gold >= rrCost.gold ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_gold.png" class="res-icon">' + fmt(rrCost.gold) + '</span>';
     var rrEssenceHtml = '<span' + (G.player.essence >= rrCost.essence ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_essence.png" class="res-icon">' + fmt(rrCost.essence) + '</span>';
     var rrTip = '<div style="color:var(--dim);margin-bottom:4px">單獨洗煉此屬性（改變種類與數值）</div>需要：' + rrGoldHtml + ' &nbsp;' + rrEssenceHtml;
-    var rrBtn = ' <button class="btn act-btn-tooltip" style="padding: 1px 4px; font-size: 11px; vertical-align: middle; margin-left: 4px;" data-act="reroll-affix" data-affix="' + k + '">🎲<div class="btn-tip" style="text-align:left; font-size: 12px; line-height: 1.4; font-weight: normal;">' + rrTip + '</div></button>';
+    var rrBtn = '<button class="btn affix-reroll-btn act-btn-tooltip" data-act="reroll-affix" data-affix="' + k + '" aria-label="洗煉詞條">🎲<div class="btn-tip affix-reroll-tip">' + rrTip + '</div></button>';
     
     var diffStr = '';
     if (vCmp !== 0) {
@@ -587,9 +587,9 @@ function itemDetailHTML(it, cmp) {
     }
     
     var lineStyle = (vCmp === 0 && cmp) ? 'color: #4ade80;' : '';
-    h += '<div class="it-affix" style="' + lineStyle + '">' +
-         '<span class="act-btn-tooltip" style="cursor:help;">◆ ' + name + ' +' + valHtml + '<div class="btn-tip" style="font-weight:normal;color:var(--text);">' + limitTip + '</div></span>' +
-         diffStr + rrBtn + '</div>';
+    h += '<div class="it-affix-row it-affix" style="' + lineStyle + '">' +
+         '<div class="it-affix-text"><span class="act-btn-tooltip" style="cursor:help;">◆ ' + name + ' +' + valHtml + '<div class="btn-tip" style="font-weight:normal;color:var(--text);">' + limitTip + '</div></span>' +
+         diffStr + '</div><div class="it-affix-action">' + rrBtn + '</div></div>';
   }
   if (cmp) {
     for (var i = 0; i < cmp.affixes.length; i++) {

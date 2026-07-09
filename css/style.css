@@ -1130,6 +1130,51 @@ textarea#save-io {
   color: var(--text);
 }
 
+.it-affixes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+
+.it-affix-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px;
+  align-items: center;
+  column-gap: 8px;
+  min-height: 22px;
+  width: 100%;
+}
+
+.it-affix-text {
+  min-width: 0;
+}
+
+.it-affix-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+}
+
+.affix-reroll-btn {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  font-size: 11px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.affix-reroll-tip {
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: normal;
+}
+
 .it-passive {
   margin-top: 6px;
   color: var(--warn);
@@ -1946,6 +1991,46 @@ textarea#save-io {
   box-shadow: 0 12px 40px rgba(0, 0, 0, .9), inset 0 0 15px rgba(0, 0, 0, 0.8);
 }
 
+.confirm-modal {
+  z-index: 10000;
+}
+
+.confirm-box {
+  width: min(460px, 92vw);
+}
+
+.confirm-title {
+  color: var(--accent);
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.confirm-message {
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-line;
+  word-break: break-word;
+  min-height: 44px;
+}
+
+.confirm-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(72px, 96px));
+  justify-content: center;
+  column-gap: 80px;
+  margin-top: 18px;
+}
+
+.confirm-actions .btn {
+  width: 100%;
+  min-width: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .modal-x {
   position: absolute;
   top: 8px;
@@ -2265,20 +2350,21 @@ textarea#save-io {
 .gconv-layout {
   display: flex;
   gap: 16px;
-  align-items: center;
+  align-items: flex-start; /* 右側控制元件靠上對齊 */
   margin-top: 8px;
   flex-wrap: wrap;
 }
 
 .gconv-grid {
   display: grid;
-  grid-template-columns: repeat(3, 86px);
-  grid-template-rows: repeat(3, 86px);
+  grid-template-columns: repeat(3, 80px);
+  grid-template-rows: repeat(3, 80px);
   gap: 6px;
   padding: 10px;
   background: #05070b;
   border: 3px solid #1b2230;
   border-radius: 10px;
+  flex: 0 0 auto;
 }
 
 .gconv-slot {
@@ -2326,14 +2412,111 @@ textarea#save-io {
   flex-direction: column;
   gap: 8px;
   align-items: stretch;
-  min-width: 180px;
+  flex: 1 1 190px;   /* 與九宮格同列，寬度不夠時內容自行收縮 */
+  min-width: 0;
+  max-width: 240px;
+}
+
+.gconv-side select {
+  width: 100%;
+  min-width: 0;
 }
 
 .gconv-arrow {
-  font-size: 26px;
+  font-size: 22px;
   text-align: center;
+  margin-top: 2px;
 }
 
 .gem-chip.dim {
   opacity: 0.45;
+}
+
+/* ---- 寶石操作結果訊息區（轉換 / 拆解） ---- */
+.gem-result {
+  border: 1px dashed #2a3345;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--dim);
+  min-height: 42px;
+  margin-top: 2px;
+  word-break: break-all;
+}
+
+.gem-result.gem-result-3 {
+  min-height: 64px; /* 約三行 */
+  margin-top: 8px;
+}
+
+.gem-result .gr-line {
+  display: block;
+  color: var(--text);
+}
+
+.gem-result .gr-line.warn {
+  color: #fca5a5;
+}
+
+/* 拆解列：限縮種類下拉寬度，讓「拆解一顆／全部拆解」與選單同列 */
+#gdis-type {
+  max-width: 148px;
+}
+
+/* ---- 存檔記錄列表 ---- */
+.save-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin-bottom: 6px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.save-row.auto {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 8px rgba(196, 164, 100, 0.12);
+}
+
+.save-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.save-name {
+  font-weight: bold;
+  color: var(--text);
+}
+
+.save-cur {
+  font-size: 11px;
+  color: #0d0a06;
+  background: var(--accent);
+  border-radius: 3px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.save-file {
+  color: var(--dim);
+  font-size: 12px;
+  font-family: Consolas, monospace;
+  word-break: break-all;
+}
+
+.save-time {
+  font-family: inherit;
+}
+
+.save-meta {
+  color: var(--dim);
+  font-size: 12px;
+}
+
+.save-row .btn {
+  flex-shrink: 0;
 }

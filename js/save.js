@@ -5,12 +5,99 @@ var SAVE_KEY = 'infinite_conquest_save_v1';
 // 重置/匯入後重新整理前，須阻止 beforeunload 自動存檔把舊狀態寫回去
 var _saveSuppressed = false;
 
+/* ============ 存檔記錄系統（多存檔 + 每局自動存檔） ============
+   - 目前遊戲：SAVE_KEY（開機讀取點，永遠是「正在玩」的狀態）
+   - 存檔記錄：索引存 SAVE_INDEX_KEY，各筆內容存 ic_save_<id>
+       kind 'auto'   = ⚡ 即時自動存檔（每局一個檔，15 秒自動更新，檔名標注局數）
+       kind 'manual' = 💾 手動「立即存檔」（最多保留 5 筆，新的擠掉最舊的）
+   - 重新開局（restartGame）：runId +1 → 新局自動存檔為另一個檔案，舊記錄全數保留 */
+var SAVE_INDEX_KEY = 'ic_save_index_v1';
+var SAVE_REC_PREFIX = 'ic_save_';
+var MAX_MANUAL_SAVES = 5;   // 手動存檔記錄上限
+var MAX_AUTO_SAVES = 5;     // 自動存檔（每局一筆）最多保留局數
+
+function saveIndex() {
+  try { return JSON.parse(localStorage.getItem(SAVE_INDEX_KEY)) || []; }
+  catch (e) { return []; }
+}
+function writeSaveIndex(list) {
+  try { localStorage.setItem(SAVE_INDEX_KEY, JSON.stringify(list)); } catch (e) {}
+}
+function pad2(n) { return (n < 10 ? '0' : '') + n; }
+function saveStamp(ts) {
+  var d = new Date(ts);
+  return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + '_' +
+    pad2(d.getHours()) + pad2(d.getMinutes()) + pad2(d.getSeconds());
+}
+function saveRecName(rec) {
+  return rec.kind === 'auto' ? '⚡ 即時自動存檔（第 ' + rec.runId + ' 局）' : '💾 手動存檔';
+}
+// 寫入/更新一筆存檔記錄，並依上限修剪最舊的記錄
+function putSaveRecord(rec, json) {
+  try { localStorage.setItem(SAVE_REC_PREFIX + rec.id, json); } catch (e) { return false; }
+  var list = saveIndex();
+  var found = false;
+  for (var i = 0; i < list.length; i++) if (list[i].id === rec.id) { list[i] = rec; found = true; break; }
+  if (!found) list.unshift(rec);
+  var manual = list.filter(function (r) { return r.kind === 'manual'; });
+  var autos = list.filter(function (r) { return r.kind === 'auto'; });
+  manual.sort(function (a, b) { return b.savedAt - a.savedAt; });
+  autos.sort(function (a, b) { return b.savedAt - a.savedAt; });
+  var curRun = (typeof G !== 'undefined' && G) ? (G.runId || 1) : -1;
+  manual.slice(MAX_MANUAL_SAVES)
+    .concat(autos.slice(MAX_AUTO_SAVES).filter(function (r) { return r.runId !== curRun; }))
+    .forEach(function (r) {
+      try { localStorage.removeItem(SAVE_REC_PREFIX + r.id); } catch (e) {}
+      list = list.filter(function (x) { return x.id !== r.id; });
+    });
+  writeSaveIndex(list);
+  return true;
+}
+function saveRecMeta(kind, id, fname) {
+  return {
+    id: id, kind: kind, runId: G.runId || 1, savedAt: Date.now(), fname: fname,
+    level: G.player.level, stage: (G.stage && G.stage.current) || 1,
+    zone: (G.stage && G.stage.zone) || 'plains'
+  };
+}
+
 function saveGame() {
   if (_saveSuppressed) return;
   try {
     G.savedAt = Date.now();
-    localStorage.setItem(SAVE_KEY, JSON.stringify(G));
+    var json = JSON.stringify(G);
+    localStorage.setItem(SAVE_KEY, json);
+    // 即時自動存檔記錄（每局固定同一個檔，特別標注）
+    var runId = G.runId || 1;
+    putSaveRecord(saveRecMeta('auto', 'auto_run' + runId, 'IC_autosave_run' + runId + '.json'), json);
   } catch (e) { /* 容量滿或隱私模式，靜默失敗 */ }
+}
+
+// 手動「立即存檔」：另存一筆記錄；回傳記錄（失敗 null）
+function manualSave(label) {
+  saveGame(); // 目前遊戲存檔點同步更新
+  G.savedAt = Date.now();
+  var id = 'm' + Date.now().toString(36) + ri(100, 999);
+  var prefix = label ? String(label).replace(/[^a-z0-9_-]+/ig, '_') : 'manual';
+  var rec = saveRecMeta('manual', id, 'IC_' + prefix + '_' + saveStamp(Date.now()) + '.json');
+  if (!putSaveRecord(rec, JSON.stringify(G))) return null;
+  syncSaveFolder(); // 已連接存檔資料夾時，順帶寫出檔案（靜默）
+  return rec;
+}
+
+// 讀取存檔記錄（覆蓋目前遊戲並重新整理）；回傳 null=成功
+function loadSaveRecord(id) {
+  var raw = localStorage.getItem(SAVE_REC_PREFIX + id);
+  if (!raw) return '找不到存檔資料';
+  try {
+    var d = JSON.parse(raw);
+    if (!d || d.version !== 1) return '存檔格式錯誤';
+  } catch (e) { return '存檔格式錯誤'; }
+  saveGame();               // 目前進度先寫入本局的自動存檔
+  _saveSuppressed = true;   // 防止 beforeunload 把舊狀態蓋回去
+  localStorage.setItem(SAVE_KEY, raw);
+  location.reload();
+  return null;
 }
 
 function loadGame() {
@@ -121,25 +208,141 @@ function mergeDefaults(target, def) {
   }
 }
 
-function resetGame() {
+/* ---- 重新開局：開新角色重玩（runId +1），所有舊存檔記錄保留 ---- */
+function restartGame() {
+  saveGame(); // 目前進度保底寫入本局自動存檔
+  var maxRun = G.runId || 1;
+  saveIndex().forEach(function (r) { if ((r.runId || 1) > maxRun) maxRun = r.runId; });
+  var fresh = newGameState();
+  fresh.runId = maxRun + 1; // 新局的自動存檔是另一個檔案，不會蓋掉舊局
   _saveSuppressed = true;
-  localStorage.removeItem(SAVE_KEY);
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(fresh)); } catch (e) {}
   location.reload();
 }
 
-function exportSave() {
-  saveGame();
-  return btoa(unescape(encodeURIComponent(JSON.stringify(G))));
-}
-function importSave(str) {
+/* ---- 存檔資料夾（File System Access API；Chrome / Edge） ----
+   連接本機資料夾後，所有存檔記錄會寫成實體 .json 檔案 —
+   直接把檔案傳給別人即可分享；把別人的 .json 放進資料夾後
+   再按一次「打開存檔資料夾」，會自動匯入為手動存檔記錄。      */
+var _saveDir = null; // 本次瀏覽期間已連接的資料夾把手
+
+function idbKV(cb) {
   try {
-    var data = JSON.parse(decodeURIComponent(escape(atob(str.trim()))));
-    if (!data || data.version !== 1) return false;
-    _saveSuppressed = true;
-    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
-    location.reload();
-    return true;
-  } catch (e) { return false; }
+    var req = indexedDB.open('ic_fs_kv', 1);
+    req.onupgradeneeded = function () { req.result.createObjectStore('kv'); };
+    req.onsuccess = function () { cb(req.result); };
+    req.onerror = function () { cb(null); };
+  } catch (e) { cb(null); }
+}
+function idbSetDir(handle) {
+  idbKV(function (db) {
+    if (!db) return;
+    try { db.transaction('kv', 'readwrite').objectStore('kv').put(handle, 'saveDir'); } catch (e) {}
+  });
+}
+function idbGetDir(cb) {
+  idbKV(function (db) {
+    if (!db) return cb(null);
+    try {
+      var r = db.transaction('kv', 'readonly').objectStore('kv').get('saveDir');
+      r.onsuccess = function () { cb(r.result || null); };
+      r.onerror = function () { cb(null); };
+    } catch (e) { cb(null); }
+  });
+}
+
+// 開啟/連接存檔資料夾 → 寫出所有記錄 + 掃描匯入新檔案；cb(err, {wrote, imported, dirName})
+function openSaveFolder(cb) {
+  cb = cb || function () {};
+  if (!window.showDirectoryPicker) {
+    downloadAllSaves(); // 不支援 File System Access：改為逐檔下載到「下載」資料夾
+    cb(null, { fallback: true });
+    return;
+  }
+  idbGetDir(function (stored) {
+    var p = stored
+      ? stored.requestPermission({ mode: 'readwrite' }).then(function (perm) {
+          if (perm !== 'granted') throw new Error('repick');
+          return stored;
+        }).catch(function () { return window.showDirectoryPicker({ mode: 'readwrite' }); })
+      : window.showDirectoryPicker({ mode: 'readwrite' });
+    Promise.resolve(p).then(function (dir) {
+      _saveDir = dir;
+      idbSetDir(dir);
+      return syncSaveFolderNow();
+    }).then(function (res) {
+      cb(null, res);
+    }).catch(function (e) {
+      cb('未選擇資料夾或無存取權限' + (e && e.name ? '（' + e.name + '）' : ''));
+    });
+  });
+}
+
+// 同步資料夾：寫出所有存檔記錄 → 掃描未知 .json 匯入為手動記錄
+function syncSaveFolderNow() {
+  var list = saveIndex();
+  var known = {};
+  list.forEach(function (r) { known[r.fname] = true; });
+  var wrote = 0;
+  var chain = Promise.resolve();
+  list.forEach(function (r) {
+    chain = chain.then(function () {
+      var raw = localStorage.getItem(SAVE_REC_PREFIX + r.id);
+      if (!raw) return;
+      return _saveDir.getFileHandle(r.fname, { create: true })
+        .then(function (fh) { return fh.createWritable(); })
+        .then(function (w) { return w.write(raw).then(function () { return w.close(); }); })
+        .then(function () { wrote++; });
+    });
+  });
+  return chain.then(function () {
+    return (async function () {
+      var files = [];
+      for await (var ent of _saveDir.values()) {
+        if (ent.kind === 'file' && /\.json$/i.test(ent.name) && !known[ent.name]) files.push(ent);
+      }
+      var imported = 0;
+      for (var i = 0; i < files.length; i++) {
+        try {
+          var text = await (await files[i].getFile()).text();
+          var d = JSON.parse(text);
+          if (!d || d.version !== 1) continue; // 非本遊戲存檔，跳過
+          putSaveRecord({
+            id: 'm' + Date.now().toString(36) + 'f' + i,
+            kind: 'manual', runId: d.runId || 1, savedAt: d.savedAt || Date.now(),
+            fname: files[i].name,
+            level: (d.player && d.player.level) || 1,
+            stage: (d.stage && d.stage.current) || 1,
+            zone: (d.stage && d.stage.zone) || 'plains'
+          }, text);
+          imported++;
+        } catch (e) { /* 壞檔跳過 */ }
+      }
+      return { wrote: wrote, imported: imported, dirName: _saveDir.name };
+    })();
+  });
+}
+
+// 已連接資料夾時的靜默同步（手動存檔後呼叫）
+function syncSaveFolder() {
+  if (!_saveDir) return;
+  syncSaveFolderNow().catch(function () {});
+}
+
+// 後備方案：不支援 File System Access 時，逐檔下載 .json
+function downloadAllSaves() {
+  saveIndex().forEach(function (r) {
+    var raw = localStorage.getItem(SAVE_REC_PREFIX + r.id);
+    if (!raw) return;
+    var url = URL.createObjectURL(new Blob([raw], { type: 'application/json' }));
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = r.fname;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+  });
 }
 
 /* ---- 離線收益（時間上限與擊殺估算公式 → js/formula.js §10） ---- */

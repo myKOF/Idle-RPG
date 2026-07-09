@@ -48,13 +48,22 @@ function uninstallPart(node, id) {
 function pushConveyor(item) {
   var f = G.factory;
   if (f.conveyor.length >= conveyorCap()) {
-    // 溢出：直接分解最舊一件
-    var old = f.conveyor.shift();
-    var res = doSalvage(old, true);
-    flog('⚠️ 輸送帶滿載，強制分解 ' + rarityTag(old) + ' → 碎片x' + res.scrap, 'warn');
+    var old = takeAutoSalvageCandidate(f.conveyor);
+    if (old) {
+      var res = doSalvage(old, true);
+      flog('⚠️ 輸送帶滿載，自動分解較低品質 ' + rarityTag(old) + ' → 碎片x' + res.scrap, 'warn');
+    } else if (!isAutoSalvageProtected(item)) {
+      var ires = doSalvage(item, true);
+      flog('⚠️ 輸送帶滿載，為保留高品質裝備，自動分解新進 ' + rarityTag(item) + ' → 碎片x' + ires.scrap, 'warn');
+      UI.dirty.factory = true;
+      return false;
+    } else {
+      flog('🛡️ 輸送帶滿載，已保留高品質 ' + rarityTag(item) + '（目前超出容量）', 'warn');
+    }
   }
   f.conveyor.push(item);
   UI.dirty.factory = true;
+  return true;
 }
 
 /* ---- 篩選節點 ---- */
@@ -143,12 +152,25 @@ function processOneConveyorItem() {
 
   var act = decideFilter(it);
   if (act === 'salvage') {
-    doSalvage(it);
+    if (isAutoSalvageProtected(it)) {
+      flog('🛡️ 自動分解保護：已保留 ' + rarityTag(it), 'warn');
+      addToInventory(it);
+    } else {
+      doSalvage(it);
+    }
   } else if (act === 'synth') {
     if (f.synthBuffer.length >= synthBufCap()) {
-      var old = f.synthBuffer.shift();
-      doSalvage(old, true);
-      flog('⚠️ 合成暫存區滿載，分解最舊素材', 'warn');
+      var old = takeAutoSalvageCandidate(f.synthBuffer);
+      if (old) {
+        var res = doSalvage(old, true);
+        flog('⚠️ 合成暫存區滿載，自動分解較低品質素材 ' + rarityTag(old) + ' → 碎片x' + res.scrap, 'warn');
+      } else if (!isAutoSalvageProtected(it)) {
+        var ires = doSalvage(it, true);
+        flog('⚠️ 合成暫存區滿載，為保留高品質素材，自動分解新進 ' + rarityTag(it) + ' → 碎片x' + ires.scrap, 'warn');
+        return;
+      } else {
+        flog('🛡️ 合成暫存區滿載，已保留高品質素材 ' + rarityTag(it) + '（目前超出容量）', 'warn');
+      }
     }
     f.synthBuffer.push(it);
     flog('🧪 ' + rarityTag(it) + ' 送入合成暫存區', '');

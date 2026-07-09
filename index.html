@@ -79,7 +79,19 @@
               <div style="display: flex; gap: 6px;">
                 <button id="inv-expand" class="btn sm" title="擴充背包空間">➕ 擴充 (10000G)</button>
                 <button id="inv-sort" class="btn sm">🔄 排序</button>
-                <button id="inv-salvage-all" class="btn sm warn">⚒️ 分解全部未鎖定</button>
+                <div style="position: relative; display: inline-block;" id="salvage-settings-container">
+                  <button id="btn-salvage-settings" class="btn sm warn">⚒️ 分解設定</button>
+                  <div id="salvage-settings-panel" style="display: none; position: absolute; top: 100%; right: 0; background: #0b0f16; border: 1px solid #1b2230; padding: 10px; border-radius: 8px; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.8); width: max-content; margin-top: 5px; flex-direction: column; gap: 8px;">
+                    <select id="salvage-rarity-select" class="dropdown" style="width: 100%;">
+                      <option value="2">分解全部稀有品質及以下裝備</option>
+                      <option value="3">分解全部獨特品質及以下裝備</option>
+                      <option value="4">分解全部史詩品質及以下裝備</option>
+                      <option value="5">分解全部傳說品質及以下裝備</option>
+                      <option value="6">分解全部神話品質及以下裝備</option>
+                    </select>
+                    <button id="btn-salvage-confirm" class="btn sm warn" style="width: 100%;">確定</button>
+                  </div>
+                </div>
               </div>
             </div>
             <div id="inventory-grid"></div>
@@ -300,6 +312,7 @@
                 <select id="gconv-target"></select>
                 <button id="gconv-btn" class="btn">🔄 一鍵轉換</button>
                 <button id="gconv-clear" class="btn sm">清空</button>
+                <div id="gconv-result" class="gem-result">尚未進行轉換</div>
               </div>
             </div>
             <div class="node-info" id="gconv-info"></div>
@@ -321,12 +334,13 @@
                 <option value="4">四級</option>
                 <option value="5">五級</option>
               </select>
-              <button id="gdis-btn" class="btn">⛏️ 拆解一顆</button>
+              <button id="gdis-btn" class="btn sm">⛏️ 拆解一顆</button>
               <button id="gdis-all-btn" class="btn sm warn">⛏️ 全部拆解</button>
             </div>
-            <div class="node-info" id="gdis-info"></div>
-            <div class="sec-sub">融合寶石拆解（點擊拆解，會先確認）</div>
+            <div class="node-info" id="gdis-info" style="margin:4px 0 2px"></div>
+            <div class="sec-sub" style="margin-top:4px">融合寶石拆解（點擊拆解，會先確認）</div>
             <div id="gdis-fused" class="chip-row"></div>
+            <div id="gdis-result" class="gem-result gem-result-3">尚未進行拆解</div>
           </div>
 
           <div class="panel" style="margin-bottom:12px">
@@ -438,13 +452,14 @@
           <div class="panel">
             <div class="sec-title">💾 存檔管理</div>
             <div class="btn-row">
-              <button id="btn-save" class="btn">立即存檔</button>
-              <button id="btn-export" class="btn">匯出存檔</button>
-              <button id="btn-import" class="btn">匯入存檔</button>
-              <button id="btn-reset" class="btn danger">重置遊戲</button>
+              <button id="btn-save" class="btn">💾 立即存檔</button>
+              <button id="btn-folder" class="btn">📂 打開存檔資料夾</button>
+              <button id="btn-restart" class="btn danger">🔄 重新開局</button>
             </div>
-            <textarea id="save-io" placeholder="匯出的存檔碼會顯示在這裡；匯入時請貼上存檔碼後按「匯入存檔」"></textarea>
-            <div class="hint">遊戲每 15 秒自動存檔；離線收益上限 8 小時。</div>
+            <div class="hint">遊戲每 15 秒自動寫入「⚡ 即時自動存檔」（每一局各自一個檔，不互相覆蓋）；「立即存檔」另外建立一筆存檔記錄（最多保留 5 筆）。「打開存檔資料夾」會把所有存檔寫成 .json 實體檔案 — 直接把檔案傳給別人即可分享；把別人的 .json 放進資料夾後再按一次即可匯入為存檔記錄。「重新開局」開一個全新角色重玩，舊存檔記錄全部保留。離線收益上限 8 小時。</div>
+            <div class="sec-sub">存檔記錄</div>
+            <div id="save-list"></div>
+            <div class="node-info" id="save-msg"></div>
           </div>
           <div class="panel">
             <div class="sec-title">📖 玩法指南</div>
@@ -551,6 +566,17 @@
   </div>
 
   <!-- 挑戰BOSS結算彈窗 -->
+  <div id="confirm-modal" class="modal-overlay confirm-modal" style="display:none">
+    <div class="modal-box confirm-box">
+      <div id="confirm-title" class="confirm-title">操作確認</div>
+      <div id="confirm-message" class="confirm-message"></div>
+      <div class="confirm-actions">
+        <button id="confirm-cancel" class="btn" type="button">取消</button>
+        <button id="confirm-ok" class="btn danger" type="button">確定</button>
+      </div>
+    </div>
+  </div>
+
   <div id="tower-result-modal"
     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
     <div

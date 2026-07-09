@@ -10,6 +10,7 @@ function newGameState() {
   for (var gt in GEM_TYPES) gems[gt] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   return {
     version: 1,
+    runId: 1,           // 第幾局（重新開局 +1；每局的自動存檔各自獨立，舊存檔以 mergeDefaults 補 1）
     skillDmgV2: true,   // 2026-07-09 技能傷害重調旗標（migrateSave 據此對舊存檔融合技做一次性加成）
     savedAt: Date.now(),
     player: {
@@ -135,9 +136,51 @@ function rarityTag(it) {
   return '[' + RARITIES[it.rarity].name + '] ' + it.name;
 }
 
-// 放入背包（滿了自動分解）
+// 神話以上不允許背景自動分解；需要玩家手動確認後才拆。
+var AUTO_SALVAGE_PROTECT_RARITY = 6;
+function isAutoSalvageProtected(it) {
+  return it && it.rarity >= AUTO_SALVAGE_PROTECT_RARITY;
+}
+function autoSalvageScore(it) {
+  try { return itemScore(it); }
+  catch (e) { return (it && it.level ? it.level : 0) + (it && it.rarity ? it.rarity : 0) * 1000; }
+}
+function findAutoSalvageCandidateIndex(items) {
+  if (!items || !items.length) return -1;
+  var best = -1;
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
+    if (!it || it.locked || isAutoSalvageProtected(it)) continue;
+    if (best < 0 ||
+      it.rarity < items[best].rarity ||
+      (it.rarity === items[best].rarity && autoSalvageScore(it) < autoSalvageScore(items[best]))) {
+      best = i;
+    }
+  }
+  return best;
+}
+function takeAutoSalvageCandidate(items) {
+  var idx = findAutoSalvageCandidateIndex(items);
+  return idx >= 0 ? items.splice(idx, 1)[0] : null;
+}
+
+// 放入背包（滿了自動分解；神話以上會保護）
 function addToInventory(it) {
   if (G.inventory.length >= (INVENTORY_CAP + (G.player.invUpgrades || 0))) {
+    if (isAutoSalvageProtected(it)) {
+      var cand = takeAutoSalvageCandidate(G.inventory);
+      if (cand) {
+        var cres = doSalvage(cand, true);
+        G.inventory.push(it);
+        UI.dirty.inv = true;
+        flog('🛡️ 背包已滿，保留高品質 ' + rarityTag(it) + '，改為自動分解 ' + rarityTag(cand) + ' → 碎片x' + cres.scrap, 'warn');
+        return true;
+      }
+      G.inventory.push(it);
+      UI.dirty.inv = true;
+      flog('🛡️ 背包已滿，已保留高品質 ' + rarityTag(it) + '（目前超出容量，請整理背包）', 'warn');
+      return true;
+    }
     var res = doSalvage(it, true);
     flog('📦 背包已滿，自動分解 ' + rarityTag(it) + ' → 碎片x' + res.scrap, 'warn');
     return false;
