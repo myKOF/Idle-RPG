@@ -412,6 +412,12 @@ function renderDetail() {
   updateSelectionUI();
   if (!it) {
     pane.innerHTML = '<div class="hint">點選裝備查看詳情</div>';
+    pane.classList.remove('has-detail');
+    var actionBar = $id('equip-action-bar');
+    if (actionBar) {
+      actionBar.innerHTML = '';
+      actionBar.style.display = 'none';
+    }
     return;
   }
   var cost = upgradeCost(it);
@@ -422,23 +428,22 @@ function renderDetail() {
     compareItem = G.equipment[key];
   }
   var h = itemDetailHTML(it, compareItem);
-  h += '<div class="detail-actions">';
+  var actionsHtml = '';
   if (UI.sel.source === 'inv') {
-    h += '<button class="btn" data-act="equip">裝備</button>';
-    h += '<button class="btn warn" data-act="salvage">分解</button>';
-    h += '<button class="btn" data-act="tosynth">送合成區</button>';
+    actionsHtml += '<button class="btn" data-act="equip">裝備</button>';
+    actionsHtml += '<button class="btn warn" data-act="salvage">分解</button>';
+    actionsHtml += '<button class="btn" data-act="tosynth">送合成區</button>';
   } else {
-    h += '<button class="btn" data-act="unequip">卸下</button>';
+    actionsHtml += '<button class="btn" data-act="unequip">卸下</button>';
   }
   var enoughUpGold = G.player.gold >= cost.gold;
   var enoughUpScrap = G.player.scrap >= cost.scrap;
   var upGoldHtml = '<span' + (enoughUpGold ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_gold.png" class="res-icon"> ' + fmt(cost.gold) + '</span>';
   var upScrapHtml = '<span' + (enoughUpScrap ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_scrap.png" class="res-icon"> ' + fmt(cost.scrap) + '</span>';
   var upTip = '需要：' + upGoldHtml + ' &nbsp;' + upScrapHtml;
-  h += '<button class="btn act-btn-tooltip" data-act="upgrade">強化<div class="btn-tip">' + upTip + '</div></button>';
+  actionsHtml += '<button class="btn act-btn-tooltip" data-act="upgrade">強化<div class="btn-tip">' + upTip + '</div></button>';
 
-  h += '<button class="btn" data-act="lock">' + (it.locked ? '解鎖' : '鎖定') + '</button>';
-  h += '</div>';
+  actionsHtml += '<button class="btn" data-act="lock">' + (it.locked ? '解鎖' : '鎖定') + '</button>';
   // 鑲嵌選擇（有空插槽時列出持有寶石）
   ensureSockets(it);
   if (it.sockets.indexOf(null) >= 0) {
@@ -482,6 +487,12 @@ function renderDetail() {
       '<div class="gem-picker">' + (bookChips2.length ? bookChips2.join('') : '<span class="hint">沒有此部位可用的附魔書（階段 8+ 掉落 / 高塔獎勵）</span>') + '</div>';
   }
   pane.innerHTML = h;
+  pane.classList.add('has-detail');
+  var actionBar = $id('equip-action-bar');
+  if (actionBar) {
+    actionBar.innerHTML = actionsHtml;
+    actionBar.style.display = 'flex';
+  }
 }
 
 function updateSelectionUI() {
@@ -2067,7 +2078,7 @@ function initUI() {
       renderDetail();
       return;
     }
-    var actBtn = e.target.closest('#detail-pane .btn');
+    var actBtn = e.target.closest('#detail-pane .btn, #equip-action-bar .btn');
     if (actBtn) { detailAction(actBtn.getAttribute('data-act'), actBtn); return; }
     // 寶石鑲嵌 / 取下
     var gs = e.target.closest('[data-gem-socket]');

@@ -1,29 +1,23 @@
 # PLAN.md — 開發計畫
 
-## 當前任務：主畫面改造計劃
+## 當前任務：主畫面改造計劃（第三階段）
 
 ### 任務需求與設計方案
-1. **戰鬥結算日誌改為隱藏與彈窗顯示**
-   - 隱藏（移除）原有的右側 `#summary-area`。
-   - 在 `#stage-bar` 內新增一個「結算日誌」按鈕 (`#btn-summary`)。
-   - 在底層新增一個彈窗 `#summary-modal`，其中包含 `#battle-summary-list`，按下按鈕後開啟。
-   - 彈窗採用 `.modal-overlay` 與固定定位，開關此介面時不會改變戰鬥區域 (`#battle-area`) 的位置。
+1. **按鈕下移對齊**
+   - 藉由給 `.equip-layout` 右側欄容器設置 `display: flex; flex-direction: column;`。
+   - 使 `#detail-pane` 設置 `flex: 1; min-height: 0;`。
+   - 這使得右側欄高度自動與左側裝備區（`#equip-grid`）等高，且 `#equip-action-bar` 固定位於右側欄最底部，底邊與左側 `#equip-grid` 完美貼齊。
 
-2. **場景切換標籤樣式優化**
-   - 移除標籤中的「最高」字樣，改成 `圖標 場景名稱 (最高等級數字)` 格式。
-   - 在 CSS 中對 `.zone-btn` 設定 `white-space: nowrap;` 確保文字不換行。
+2. **裝備詳情高度拉伸與外框隱顯**
+   - `#detail-pane` 移除固定的 `420px` 高度限制，使用 `flex: 1` 填充。
+   - 預設邊框設為透明，背景與陰影均為透明（未選取裝備時不顯示外框）。
+   - 在 `js/ui.js` 中動態切換 `#detail-pane` 的 `.has-detail` 類。當加載裝備詳情時加上該類，渲染金色外框與暗色磨砂背景。
 
-3. **整個戰鬥區貼緊右側畫面邊界且維持原寬度**
-   - 修改 `#game-layout` 的 padding，將 right padding 從 `16px` 改為 `0`。
-   - 將 `#combat-area` 的 `flex: 0.92;` 改為固定寬度 `flex: 0 0 450px;`，使其寬度恢復成原本大小，不再拉伸變寬。
-   - 這樣一來，整個戰鬥區會靠最右側對齊，而左側的 `#workspace-area` 會自動延伸，獲得更多可用空間。
+3. **背包區域整體下移**
+   - 將 `.equip-top-layout` 的 `margin-bottom` 從 `12px` 調高至 `30px`，將下方背包推移，避開按鈕重疊。
+   - 背包維持剛好 3 列展示。
 
 ### 微型任務拆解
-1. [MODIFY] `index.html`：移除 `#summary-area`，在 `#stage-bar` 新增 `#btn-summary`，並在底部新增 `#summary-modal`。（已完成）
-2. [MODIFY] `css/style.css`：變更 `#game-layout` 的 padding-right，並為 `.zone-btn` 新增 `white-space: nowrap;`。（已完成）
-3. [MODIFY] `css/style.css`：將 `#combat-area` 設為固定寬度 `flex: 0 0 450px;` 以恢復原寬度。（進行中）
-4. [MODIFY] `js/ui.js`：修改 `renderZoneBar` 中場景最高等級顯示格式；在 `initUI` 中綁定 `#btn-summary` 與 `#summary-modal` 的點擊與關閉事件。（已完成）
-5. [VERIFY] 檢查主介面排版，驗證按鈕點擊彈窗、關閉功能，以及文字不換行的效果。
-
-### 驗證方式
-- 靜態代碼自我審查與手動在瀏覽器中運行驗證。
+1. [MODIFY] `css/style.css`：修改 `#detail-pane` 樣式為自適應 Flex，移出外框樣式到 `.has-detail`；調整 `.equip-top-layout` 底部外邊距；添加對 `.equip-layout > div:nth-child(2)` 的 Flex 定義。
+2. [MODIFY] `js/ui.js`：在 `renderDetail()` 中選中裝備時 `pane.classList.add('has-detail')`，否則 `pane.classList.remove('has-detail')`。
+3. [VERIFY] 手動在瀏覽器中運行驗證。
