@@ -52,6 +52,9 @@ document.addEventListener('DOMContentLoaded', function () {
   initFieldPlayer();
 
   if (loaded) {
+    // 清理存檔資料夾「自匯入」bug 產生的同檔名重複記錄
+    var dupRemoved = (typeof dedupeSaveIndex === 'function') ? dedupeSaveIndex() : 0;
+    if (dupRemoved > 0) blog('🧹 已清理 ' + dupRemoved + ' 筆重複的存檔記錄（存檔資料夾自匯入問題已修正）', 'info');
     blog('📖 歡迎回來，冒險者！讀取存檔成功。', 'good');
     // 技能點異常修復公告（migrateSave 偵測到超支重置時設定）
     if (G._skillResetNotice) {

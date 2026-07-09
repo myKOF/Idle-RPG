@@ -378,6 +378,7 @@ function castSkill(pEnt, target, id, lv, floatSel) {
   pEnt.mp -= sk.cost;
   if (!pEnt.skillCds) pEnt.skillCds = {};
   pEnt.skillCds[id] = skillCdFor(sk);
+  pEnt.skillGcd = SKILL_GLOBAL_COOLDOWN;
   pEnt.atkCd += SKILL_CAST_LOCK * (1 - st.castSpeed / 100); // 施放硬直
   var out = { killed: false, dmg: 0 };
   var logMsg = sk.emoji + ' 你施放【' + sk.name + ' Lv.' + lv + '】，';
@@ -507,6 +508,7 @@ function targetHasDot(ent, name) {
 function pickAndCastSkill(pEnt, target, floatSel) {
   var st = getStats();
   if (!pEnt.skillCds) pEnt.skillCds = {};
+  if ((pEnt.skillGcd || 0) > 0) return null;
   var lo = G.player.loadout || [];
   for (var i = 0; i < lo.length; i++) {
     var id = lo[i];
@@ -521,9 +523,14 @@ function pickAndCastSkill(pEnt, target, floatSel) {
   return null;
 }
 function tickSkillCds(pEnt, dt) {
-  if (!pEnt.skillCds) return;
-  for (var k in pEnt.skillCds) {
-    if (pEnt.skillCds[k] > 0) pEnt.skillCds[k] -= dt;
+  if (pEnt.skillGcd > 0) {
+    pEnt.skillGcd = Math.max(0, pEnt.skillGcd - dt);
+    if (pEnt.skillGcd < 1e-6) pEnt.skillGcd = 0;
+  }
+  if (pEnt.skillCds) {
+    for (var k in pEnt.skillCds) {
+      if (pEnt.skillCds[k] > 0) pEnt.skillCds[k] -= dt;
+    }
   }
 }
 

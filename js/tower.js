@@ -159,6 +159,7 @@ function endTowerFight(win, reason) {
     if (chance(rw.partChance)) {
       var part = makePart(rw.partTier);
       G.factory.parts.push(part);
+      trimFactoryParts(); // 收斂零件庫存，防無限成長
       result.rewards.push(PART_TYPES[part.key].emoji + ' ' + part.name + '（' + partDesc(part) + '）');
       flog('🔩 獲得自動機組零件：' + part.name, 'good');
     }

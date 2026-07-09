@@ -28,7 +28,7 @@ function installPart(id, node) {
   if (PART_TYPES[p.key].node !== node) { flog('⚠️ ' + p.name + ' 無法安裝到' + NODE_NAMES[node], 'warn'); return false; }
   if (isInstalled(id)) return false;
   var arr = G.factory.installed[node];
-  if (arr.length >= PART_SLOTS_PER_NODE) {
+  if (arr.length >= slotsForNode(node)) {
     arr.shift(); // 擠掉最舊的（回到零件庫，本來就都在 parts 陣列中）
   }
   arr.push(id);
@@ -40,6 +40,29 @@ function uninstallPart(node, id) {
   var arr = G.factory.installed[node];
   var idx = arr.indexOf(id);
   if (idx >= 0) { arr.splice(idx, 1); UI.dirty.factory = true; }
+}
+
+/* ---- 零件庫存收斂 ----
+   G.factory.parts 是全遊戲唯一無容量上限的集合，長期前景掛機（野外/高塔/探礦核心
+   持續掉零件）會無限成長，拖慢工廠渲染、膨脹存檔並逼近 localStorage 上限。
+   每種零件只有最高階最有用，故：已安裝者一律保留；未安裝者依（階級→數值）由高至低
+   保留 PART_KEEP_PER_KEY 顆，其餘靜默分解為少量碎片。於各零件掉落點呼叫。 */
+function trimFactoryParts() {
+  var f = G.factory;
+  var byKey = {};
+  f.parts.forEach(function (p) { (byKey[p.key] || (byKey[p.key] = [])).push(p); });
+  var keep = [], scrapGain = 0;
+  Object.keys(byKey).forEach(function (k) {
+    var installedParts = byKey[k].filter(function (p) { return isInstalled(p.id); });
+    var loose = byKey[k].filter(function (p) { return !isInstalled(p.id); })
+      .sort(function (a, b) { return (b.tier - a.tier) || (b.val - a.val); });
+    keep = keep.concat(installedParts, loose.slice(0, PART_KEEP_PER_KEY));
+    loose.slice(PART_KEEP_PER_KEY).forEach(function (p) { scrapGain += p.tier * 2; });
+  });
+  if (keep.length === f.parts.length) return; // 未超量，無需重建
+  f.parts = keep;
+  if (scrapGain) { G.player.scrap += scrapGain; UI.dirty.header = true; }
+  UI.dirty.factory = true;
 }
 
 /* ---- 容量公式（conveyorCap、synthBufCap）→ js/formula.js §7 ---- */
@@ -104,20 +127,77 @@ function doSalvage(it, silent) {
       }
     }
   }
-  var res = salvageResult(it, extractChanceNow());
+  // 基礎分解產出（精粹透鏡：提高提取機率）
+  var res = salvageResult(it, extractChanceNow() + partBonus('salvage', 'extractLens'));
+
+  // 產量倍率：碎片熔煉爐 / 淘金濾網
+  res.scrap = Math.max(1, Math.round(res.scrap * (1 + partBonus('salvage', 'scrapForge') / 100)));
+  res.gold = Math.round(res.gold * (1 + partBonus('salvage', 'goldSluice') / 100));
+  // 精華凝結線圈：提取時額外精華
+  if (res.extracted) res.essence += partBonus('salvage', 'essenceCoil');
+
+  var extras = []; // 額外掉落 / 事件（記入日誌）
+  // 複製處理艙：碎片＋金幣翻倍
+  var dupC = partBonus('salvage', 'duplicator');
+  if (dupC > 0 && chance(dupC)) { res.scrap *= 2; res.gold *= 2; extras.push('♻️翻倍'); }
+  // 幸運晶片：大豐收（碎片/金幣/精華 ×3）
+  var fc = partBonus('salvage', 'fortuneChip');
+  if (fc > 0 && chance(fc)) { res.scrap *= 3; res.gold *= 3; res.essence *= 3; extras.push('🎰大豐收×3'); }
+
+  // 入帳
   G.player.scrap += res.scrap;
   G.player.gold += res.gold;
+  if (res.essence) G.player.essence += res.essence;
+
   if (res.extracted) {
-    G.player.essence += res.essence;
-    if (res.gem) addGem(randomGemType(), 1, res.gem);
     G.factory.stats.extracted++;
-    if (!silent) flog('✨ 精粹提取！' + rarityTag(it) + ' → 碎片x' + res.scrap + '、精華x' + res.essence + (res.gem ? '、寶石x1' : ''), 'good');
-  } else {
-    if (res.essence) G.player.essence += res.essence;
-    if (!silent) flog('⚒️ 分解 ' + rarityTag(it) + ' → 碎片x' + res.scrap, '');
+    if (res.gem) {
+      // 寶石提純器：逐級嘗試提升提取寶石的等級
+      // 每次判定機率上限 90%，確保最高階寶石永遠是機率而非保證（避免堆滿 3 格 → 必得 5 級）
+      var glv = 1, pur = Math.min(partBonus('salvage', 'gemPurifier'), 90);
+      while (glv < GEM_MAX_LEVEL && pur > 0 && chance(pur)) glv++;
+      addGem(randomGemType(), glv, res.gem);
+      res.gemLv = glv;
+    }
   }
+  // 寶石篩選器：獨立額外寶石
+  var sieve = partBonus('salvage', 'gemSieve');
+  if (sieve > 0 && chance(sieve)) { addGem(randomGemType(), 1, 1); extras.push('💎寶石'); }
+  // 拓本回收臂：回收附魔書
+  var bookB = partBonus('salvage', 'bookScavenger');
+  if (bookB > 0 && chance(bookB)) {
+    var bk = pick(Object.keys(ENCHANTS));
+    G.player.books[bk] = (G.player.books[bk] || 0) + 1;
+    extras.push('📖' + ENCHANTS[bk].name);
+  }
+  // 知識回收器：分解取得經驗
+  var arch = partBonus('salvage', 'archivist');
+  if (arch > 0 && chance(arch)) {
+    var xpG = Math.max(1, Math.round(it.level * 25));
+    gainXp(xpG);
+    extras.push('📚經驗+' + fmt(xpG));
+  }
+  // 探礦核心：額外掉落自動機組零件
+  var pros = partBonus('salvage', 'prospector');
+  if (pros > 0 && chance(pros)) {
+    var np = makePart(clamp(1 + Math.floor(it.rarity / 2), 1, PART_MAX_TIER));
+    G.factory.parts.push(np);
+    trimFactoryParts(); // 收斂零件庫存，防無限成長
+    extras.push('⛏️' + np.name);
+    UI.dirty.factory = true;
+  }
+
   G.factory.stats.salvaged++;
   UI.dirty.header = true;
+  if (!silent) {
+    var tail = extras.length ? '（' + extras.join('、') + '）' : '';
+    if (res.extracted) {
+      flog('✨ 精粹提取！' + rarityTag(it) + ' → 碎片x' + res.scrap + '、精華x' + res.essence +
+        (res.gem ? '、' + GEM_NAMES[res.gemLv || 1] + '寶石x' + res.gem : '') + tail, 'good');
+    } else {
+      flog('⚒️ 分解 ' + rarityTag(it) + ' → 碎片x' + res.scrap + tail, extras.length ? 'good' : '');
+    }
+  }
   return res;
 }
 

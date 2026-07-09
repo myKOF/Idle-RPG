@@ -769,16 +769,25 @@ function rerollSingleAffix(it, affixKey) {
   return null;
 }
 
-// 自動機組零件生成
-function makePart(tier) {
+// 自動機組零件生成（node 未指定時「依節點均衡」挑選，避免分解零件過多稀釋合成零件）
+function makePart(tier, node) {
   tier = clamp(tier, 1, PART_MAX_TIER);
-  var key = pick(Object.keys(PART_TYPES));
+  var keys = Object.keys(PART_TYPES);
+  if (!node) {
+    var nodeSet = {};
+    keys.forEach(function (k) { nodeSet[PART_TYPES[k].node] = true; });
+    node = pick(Object.keys(nodeSet));
+  }
+  var pool = keys.filter(function (k) { return PART_TYPES[k].node === node; });
+  var key = pick(pool.length ? pool : keys);
   var pt = PART_TYPES[key];
   return {
     id: uid(), kind: 'part', key: key, tier: tier,
-    name: 'T' + tier + ' ' + pt.name, val: pt.perTier * tier
+    name: 'T' + tier + ' ' + pt.name, val: Math.round(pt.perTier * tier * 100) / 100
   };
 }
 function partDesc(p) {
-  return PART_TYPES[p.key].desc.replace('{v}', fmt1(p.val));
+  // 小於 1 的機率值保留兩位小數（如 0.15%），其餘一位
+  var vs = (p.val < 1) ? String(Math.round(p.val * 100) / 100) : fmt1(p.val);
+  return PART_TYPES[p.key].desc.replace('{v}', vs);
 }

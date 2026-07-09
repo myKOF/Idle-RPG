@@ -683,6 +683,8 @@ function renderFactory() {
   // 已安裝零件
   renderInstalledParts('salvage', 'salv-parts');
   renderInstalledParts('synth', 'syn-parts');
+  var salvLbl = $id('salv-slot-label'); // 分解槽格數隨等級成長，即時顯示
+  if (salvLbl) salvLbl.textContent = '（' + slotsForNode('salvage') + ' 格，每 ' + SALVAGE_SLOT_PER_LEVEL + ' 級 +1，上限 ' + SALVAGE_SLOT_MAX + '）';
   renderAvailableParts('salvage', 'salv-avail-parts');
   renderAvailableParts('synth', 'syn-avail-parts');
 }
@@ -694,7 +696,7 @@ function renderInstalledParts(node, elId) {
     if (!p) return '';
     return '<span class="part-chip" style="cursor:pointer; border-color:var(--good);" data-part-uninstall="' + p.id + '" data-tip="【點擊卸下】 ' + esc(partDesc(p)) + '">' + PART_TYPES[p.key].emoji + esc(p.name) + '</span>';
   }).join('');
-  for (var i = ids.length; i < PART_SLOTS_PER_NODE; i++) h += '<span class="part-chip empty">空槽</span>';
+  for (var i = ids.length; i < slotsForNode(node); i++) h += '<span class="part-chip empty">空槽</span>';
   $id(elId).innerHTML = h;
 }
 

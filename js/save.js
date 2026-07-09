@@ -44,13 +44,17 @@ function putSaveRecord(rec, json) {
   manual.sort(function (a, b) { return b.savedAt - a.savedAt; });
   autos.sort(function (a, b) { return b.savedAt - a.savedAt; });
   var curRun = (typeof G !== 'undefined' && G) ? (G.runId || 1) : -1;
-  manual.slice(MAX_MANUAL_SAVES)
-    .concat(autos.slice(MAX_AUTO_SAVES).filter(function (r) { return r.runId !== curRun; }))
-    .forEach(function (r) {
-      try { localStorage.removeItem(SAVE_REC_PREFIX + r.id); } catch (e) {}
-      list = list.filter(function (x) { return x.id !== r.id; });
-    });
+  var toRemove = manual.slice(MAX_MANUAL_SAVES)
+    .concat(autos.slice(MAX_AUTO_SAVES).filter(function (r) { return r.runId !== curRun; }));
+  toRemove.forEach(function (r) {
+    try { localStorage.removeItem(SAVE_REC_PREFIX + r.id); } catch (e) {}
+    list = list.filter(function (x) { return x.id !== r.id; });
+  });
   writeSaveIndex(list);
+  // 一併刪除已無記錄使用的資料夾實體檔（避免孤兒檔下次同步被匯入復活）
+  toRemove.forEach(function (r) {
+    if (!list.some(function (x) { return x.fname === r.fname; })) removeFolderFile(r.fname);
+  });
   return true;
 }
 function saveRecMeta(kind, id, fname) {
@@ -86,11 +90,37 @@ function manualSave(label) {
   return rec;
 }
 
-// 刪除存檔記錄
+// 刪除存檔記錄（一併刪除已無其他記錄使用的資料夾實體檔）
 function deleteSaveRecord(id) {
+  var rec = null;
+  saveIndex().forEach(function (x) { if (x.id === id) rec = x; });
   try { localStorage.removeItem(SAVE_REC_PREFIX + id); } catch (e) {}
   var list = saveIndex().filter(function (x) { return x.id !== id; });
   writeSaveIndex(list);
+  if (rec && rec.fname && !list.some(function (x) { return x.fname === rec.fname; })) {
+    removeFolderFile(rec.fname);
+  }
+}
+
+// 依檔名去重：清理「自匯入」bug 產生的同檔名複本，每檔名保留 savedAt 最新一筆；回傳清掉筆數
+function dedupeSaveIndex() {
+  var list = saveIndex();
+  var bestByName = {};
+  list.forEach(function (r) {
+    var cur = bestByName[r.fname];
+    if (!cur || (r.savedAt || 0) > (cur.savedAt || 0)) bestByName[r.fname] = r;
+  });
+  var keep = [], removed = 0;
+  list.forEach(function (r) {
+    if (bestByName[r.fname] === r) {
+      keep.push(r); // 每檔名僅保留最新一筆（複本共用同一實體檔，不刪資料夾檔）
+    } else {
+      try { localStorage.removeItem(SAVE_REC_PREFIX + r.id); } catch (e) {}
+      removed++;
+    }
+  });
+  if (removed > 0) writeSaveIndex(keep);
+  return removed;
 }
 
 
@@ -299,7 +329,10 @@ function openSaveFolder(cb) {
     Promise.resolve(p).then(function (dir) {
       _saveDir = dir;
       idbSetDir(dir);
-      return syncSaveFolderNow();
+      var wroteN = 0;
+      // 主動開啟資料夾：先寫出全部記錄，再掃描匯入外部新檔（單次、無並發）
+      return writeAllToFolder().then(function (w) { wroteN = w; return importUnknownFromFolder(); })
+        .then(function (imp) { return { wrote: wroteN, imported: imp, dirName: _saveDir.name }; });
     }).then(function (res) {
       cb(null, res);
     }).catch(function (e) {
@@ -308,11 +341,25 @@ function openSaveFolder(cb) {
   });
 }
 
-// 同步資料夾：寫出所有存檔記錄 → 掃描未知 .json 匯入為手動記錄
-function syncSaveFolderNow() {
+/* ---- 資料夾同步：拆分「寫出」與「掃描匯入」（根治自匯入重複記錄）----
+   舊版把「寫出所有記錄」與「掃描未知檔匯入」綁在同一函式，且 saveGame/manualSave
+   會並發觸發兩次；先啟動者的 known 快照過期，會把後啟動者剛寫出的檔當外部檔匯入，
+   產生同檔名同時間的複本。改為：靜默同步只「寫出」；「掃描匯入」僅在使用者主動
+   開啟資料夾時單次執行，並以檔名去重。 */
+var _folderWriting = false, _folderPending = false; // 寫出中/待重跑旗標：避免並發重複寫，又不漏寫最新記錄
+
+// 刪除資料夾內對應的實體存檔檔（避免孤兒檔在下次匯入時復活）
+function removeFolderFile(fname) {
+  if (!_saveDir || !fname) return;
+  try { _saveDir.removeEntry(fname).catch(function () {}); } catch (e) {}
+}
+
+// 只把目前所有存檔記錄寫成資料夾實體檔（不掃描、不匯入）
+function writeAllToFolder() {
+  if (!_saveDir) return Promise.resolve(0);
+  if (_folderWriting) { _folderPending = true; return Promise.resolve(0); } // 寫出中：標記待重跑，完成後補寫最新 index
+  _folderWriting = true;
   var list = saveIndex();
-  var known = {};
-  list.forEach(function (r) { known[r.fname] = true; });
   var wrote = 0;
   var chain = Promise.resolve();
   list.forEach(function (r) {
@@ -326,37 +373,51 @@ function syncSaveFolderNow() {
     });
   });
   return chain.then(function () {
-    return (async function () {
-      var files = [];
-      for await (var ent of _saveDir.values()) {
-        if (ent.kind === 'file' && /\.json$/i.test(ent.name) && !known[ent.name]) files.push(ent);
-      }
-      var imported = 0;
-      for (var i = 0; i < files.length; i++) {
-        try {
-          var text = await (await files[i].getFile()).text();
-          var d = JSON.parse(text);
-          if (!d || d.version !== 1) continue; // 非本遊戲存檔，跳過
-          putSaveRecord({
-            id: 'm' + Date.now().toString(36) + 'f' + i,
-            kind: 'manual', runId: d.runId || 1, savedAt: d.savedAt || Date.now(),
-            fname: files[i].name,
-            level: (d.player && d.player.level) || 1,
-            stage: (d.stage && d.stage.current) || 1,
-            zone: (d.stage && d.stage.zone) || 'plains'
-          }, text);
-          imported++;
-        } catch (e) { /* 壞檔跳過 */ }
-      }
-      return { wrote: wrote, imported: imported, dirName: _saveDir.name };
-    })();
-  });
+    _folderWriting = false;
+    if (_folderPending) { _folderPending = false; return writeAllToFolder(); } // 期間有新記錄 → 補寫一次
+    return wrote;
+  }, function (e) { _folderWriting = false; _folderPending = false; throw e; });
 }
 
-// 已連接資料夾時的靜默同步（手動存檔後呼叫）
+// 掃描資料夾把「index 尚無的檔名」匯入為手動記錄；僅在使用者主動開啟資料夾時呼叫（單次、無並發）
+function importUnknownFromFolder() {
+  if (!_saveDir) return Promise.resolve(0);
+  return (async function () {
+    var known = {};
+    saveIndex().forEach(function (r) { known[r.fname] = true; });
+    var files = [];
+    for await (var ent of _saveDir.values()) {
+      if (ent.kind === 'file' && /\.json$/i.test(ent.name) && !known[ent.name]) files.push(ent);
+    }
+    var imported = 0;
+    for (var i = 0; i < files.length; i++) {
+      // 二次防護：匯入當下若 index 已有同檔名則跳過，杜絕同名複本
+      var dup = false;
+      saveIndex().forEach(function (r) { if (r.fname === files[i].name) dup = true; });
+      if (dup) continue;
+      try {
+        var text = await (await files[i].getFile()).text();
+        var d = JSON.parse(text);
+        if (!d || d.version !== 1) continue; // 非本遊戲存檔，跳過
+        putSaveRecord({
+          id: 'm' + Date.now().toString(36) + 'f' + i,
+          kind: 'manual', runId: d.runId || 1, savedAt: d.savedAt || Date.now(),
+          fname: files[i].name,
+          level: (d.player && d.player.level) || 1,
+          stage: (d.stage && d.stage.current) || 1,
+          zone: (d.stage && d.stage.zone) || 'plains'
+        }, text);
+        imported++;
+      } catch (e) { /* 壞檔跳過 */ }
+    }
+    return imported;
+  })();
+}
+
+// 已連接資料夾時的靜默同步：只寫出、不掃描匯入（杜絕自匯入重複記錄）
 function syncSaveFolder() {
   if (!_saveDir) return;
-  syncSaveFolderNow().catch(function () {});
+  writeAllToFolder().catch(function () {});
 }
 
 // 後備方案：不支援 File System Access 時，逐檔下載 .json

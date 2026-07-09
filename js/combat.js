@@ -11,7 +11,7 @@ var FIELD = {
 };
 
 function newPlayerEntity(st) {
-  return { hp: st.hp, mp: st.mp, shield: 0, atkCd: 1 / st.aspd, skillCds: {}, buffs: {}, dots: [], effects: {}, poisonUntil: 0, poisonDps: 0 };
+  return { hp: st.hp, mp: st.mp, shield: 0, atkCd: 1 / st.aspd, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {}, poisonUntil: 0, poisonDps: 0 };
 }
 
 function initFieldPlayer() {
@@ -369,7 +369,6 @@ function onFieldKill(m) {
   FIELD.monster = null;
   // 移動速度：縮短推圖間隔
   FIELD.respawnCd = RESPAWN_DELAY * (1 - st.moveSpeed / 100);
-  G.stage.kills++;
   if (G.stage.autoAdvance) {
     G.stage.current++;
     if (G.stage.current > G.stage.best) G.stage.best = G.stage.current;
@@ -433,6 +432,17 @@ function rollFieldDrops(m) {
     var amt = ri(1, 2) * rw;
     G.player.essence += amt;
     drops.push('✨精華x' + amt);
+  }
+  // 自動機組零件（階段 5+；機率低，菁英 x3，場景倍率同其他材料，node 均衡挑選）
+  if (s >= 5) {
+    var partN = rollDropCount(FIELD_PART_DROP_PCT * (1 + lootBonus / 100) * rw * (m.elite ? 3 : 1));
+    for (var pn = 0; pn < partN; pn++) {
+      var np = makePart(fieldPartTierFor(s, m.elite));
+      G.factory.parts.push(np);
+      drops.push('🔧' + PART_TYPES[np.key].emoji + np.name);
+      if (np.tier >= 3) blog('🔩 敵人掉落自動機組零件：' + PART_TYPES[np.key].emoji + np.name + '（' + partDesc(np) + '）', 'loot');
+    }
+    if (partN) { trimFactoryParts(); UI.dirty.factory = true; } // 收斂零件庫存，防無限成長
   }
   return drops;
 }

@@ -416,6 +416,12 @@ function rollRarity(stage, lootBonus) {
 var FIELD_GEM_DROP_PCT = 6;      // 寶石（階段 4+）
 var FIELD_BOOK_DROP_PCT = 4;     // 附魔書（階段 8+）
 var FIELD_ESSENCE_DROP_PCT = 9;  // 附魔精華（階段 10+，掉 1~2 顆 × 場景倍率）
+var FIELD_PART_DROP_PCT = 0.5;   // 自動機組零件（階段 5+，機率低；菁英 x3、場景倍率同其他材料）
+
+// 野外掉落零件的階級：隨階段成長（每 12 階 +1），菁英再 +1，上限 T5
+function fieldPartTierFor(stage, elite) {
+  return clamp(1 + Math.floor(stage / 12) + (elite ? 1 : 0), 1, PART_MAX_TIER);
+}
 
 // 野外寶石等級：基準級 = 1 + ⌊階段/15⌋（上限 5）；70% 出基準級、30% 出低一級
 function fieldGemLevelFor(stage) {
@@ -614,6 +620,14 @@ function synthGreatChanceNow() {
 function conveyorCap() { return CONVEYOR_CAP + getStats().weight; }          // 輸送帶 = 40 + 負重
 function synthBufCap() { return SYNTH_BUFFER_CAP + Math.floor(getStats().weight / 2); } // 暫存區 = 30 + 負重/2
 
+// 分解槽零件安裝格數：初始 2，每 500 級 +1，上限 10
+var SALVAGE_SLOT_BASE = 2;
+var SALVAGE_SLOT_PER_LEVEL = 500;
+var SALVAGE_SLOT_MAX = 10;
+function salvageSlotCount() {
+  return clamp(SALVAGE_SLOT_BASE + Math.floor(G.player.level / SALVAGE_SLOT_PER_LEVEL), SALVAGE_SLOT_BASE, SALVAGE_SLOT_MAX);
+}
+
 /* ============================================================
    §8 寶石
    ============================================================ */
@@ -668,6 +682,7 @@ function shopRefreshCost() {
 
 var SKILL_MAX_LV = 10;         // 一般技能等級上限（保留給外部參照）
 var SKILL_CAST_LOCK = 0.5;     // 施放硬直（秒；實際 = 0.5 × (1 - 施法速度%)）
+var SKILL_GLOBAL_COOLDOWN = 0.4; // 技能共用冷卻（秒；固定值，不受冷卻縮減影響）
 var TIER_GATE_POINTS = 3;      // 技能樹：每階層需在該系已投入的點數（第 N 階需 N×3 點）
 
 // 裝載欄：角色每 20 級 +1 格（最低 2 格，最多 20 格）
