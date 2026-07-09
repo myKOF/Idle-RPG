@@ -506,8 +506,8 @@ function itemDetailHTML(it, cmp) {
     var valHtml = '<span' + (valColor ? ' style="color:' + valColor + ';font-weight:bold"' : '') + '>' + (def.pct ? pctStr(vCur) : fmt(vCur)) + '</span>';
     
     var rrCost = rerollCost(it);
-    var rrGoldHtml = '<span' + (G.player.gold >= rrCost.gold ? '' : ' style="color:#fca5a5"') + '>💰 ' + fmt(rrCost.gold) + '</span>';
-    var rrEssenceHtml = '<span' + (G.player.essence >= rrCost.essence ? '' : ' style="color:#fca5a5"') + '>🔮 ' + fmt(rrCost.essence) + '</span>';
+    var rrGoldHtml = '<span' + (G.player.gold >= rrCost.gold ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_gold.png" class="res-icon">' + fmt(rrCost.gold) + '</span>';
+    var rrEssenceHtml = '<span' + (G.player.essence >= rrCost.essence ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_essence.png" class="res-icon">' + fmt(rrCost.essence) + '</span>';
     var rrTip = '<div style="color:var(--dim);margin-bottom:4px">單獨洗煉此屬性（改變種類與數值）</div>需要：' + rrGoldHtml + ' &nbsp;' + rrEssenceHtml;
     var rrBtn = ' <button class="btn act-btn-tooltip" style="padding: 1px 4px; font-size: 11px; vertical-align: middle; margin-left: 4px;" data-act="reroll-affix" data-affix="' + k + '">🎲<div class="btn-tip" style="text-align:left; font-size: 12px; line-height: 1.4; font-weight: normal;">' + rrTip + '</div></button>';
     

@@ -418,9 +418,7 @@ var STAT_GROUPS = [
     ['🦾 韌性', function (st) { return statFmt(st.tenacity, 60, '%'); }, '降低自身被施加暈眩、減速等控制狀態的機率。（上限：60%）'],
     ['🫧 護盾效率', function (st) { return statFmt(st.shieldEff, null, '%', true); }, '提升護盾的最大吸收上限與獲取量。'],
     ['🗿 物理抗性', function (st) { return statFmt(st.pRes, 60, '%'); }, '結算防禦後，進一步按比例直接減免受到的物理傷害。（上限：60%）'],
-    ['🌌 魔法抗性', function (st) { return statFmt(st.mRes, 60, '%'); }, '結算防禦後，進一步按比例直接減免受到的魔法傷害。（上限：60%）']
-  ]},
-  { title: '元素抗性', rows: [
+    ['🌌 魔法抗性', function (st) { return statFmt(st.mRes, 60, '%'); }, '結算防禦後，進一步按比例直接減免受到的魔法傷害。（上限：60%）'],
     ['🔥 火焰抗性', function (st) { return statFmt(st.resist.fire, 75, '%'); }, '按比例降低受到的火焰屬性傷害。（上限：75%）'],
     ['❄️ 冰霜抗性', function (st) { return statFmt(st.resist.ice, 75, '%'); }, '按比例降低受到的冰霜屬性傷害。（上限：75%）'],
     ['⚡ 雷電抗性', function (st) { return statFmt(st.resist.lightning, 75, '%'); }, '按比例降低受到的雷電屬性傷害。（上限：75%）'],

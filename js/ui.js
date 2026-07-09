@@ -365,8 +365,8 @@ function renderDetail() {
   }
   var enoughUpGold = G.player.gold >= cost.gold;
   var enoughUpScrap = G.player.scrap >= cost.scrap;
-  var upGoldHtml = '<span' + (enoughUpGold ? '' : ' style="color:#fca5a5"') + '>💰 ' + fmt(cost.gold) + '</span>';
-  var upScrapHtml = '<span' + (enoughUpScrap ? '' : ' style="color:#fca5a5"') + '>🔩 ' + fmt(cost.scrap) + '</span>';
+  var upGoldHtml = '<span' + (enoughUpGold ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_gold.png" class="res-icon"> ' + fmt(cost.gold) + '</span>';
+  var upScrapHtml = '<span' + (enoughUpScrap ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_scrap.png" class="res-icon"> ' + fmt(cost.scrap) + '</span>';
   var upTip = '需要：' + upGoldHtml + ' &nbsp;' + upScrapHtml;
   h += '<button class="btn act-btn-tooltip" data-act="upgrade">強化<div class="btn-tip">' + upTip + '</div></button>';
 
@@ -1101,7 +1101,7 @@ function renderFuseInfo() {
   var info = $id('fuse-info');
   if (!sel || !info) return;
   var lv = parseInt(sel.value, 10) || 1;
-  info.textContent = '該等級庫存 ' + fmt(totalGemsOfLevel(lv)) + ' 顆｜費用 💰' + fmt(FUSE_GOLD_COST[lv]) +
+  info.innerHTML = '該等級庫存 ' + fmt(totalGemsOfLevel(lv)) + ' 顆｜費用 <img src="images/icon_gold.png" class="res-icon">' + fmt(FUSE_GOLD_COST[lv]) +
     '｜昇華機率 ' + fmt1(Math.min(100, FUSE_UPGRADE_CHANCE + getStats().luck / 2)) + '%（幸運值加成）';
 }
 
@@ -1181,15 +1181,15 @@ function renderGemShop() {
         (gt.pct ? pctStr(gemStatValue(item.type, item.lv)) : fmt(gemStatValue(item.type, item.lv))) + '</div>' +
       (item.sold
         ? '<div class="shop-sold">已售出</div>'
-        : '<button class="btn sm" data-shop-buy="' + i + '">💰 ' + fmt(gemShopPrice(item.lv)) + '</button>') +
+        : '<button class="btn sm" data-shop-buy="' + i + '"><img src="images/icon_gold.png" class="res-icon"> ' + fmt(gemShopPrice(item.lv)) + '</button>') +
       '</div>';
   }).join('');
   var total = 0;
   s.items.forEach(function (it2) { if (!it2.sold) total += gemShopPrice(it2.lv); });
   var buyAllBtn = $id('shop-buy-all');
-  if (buyAllBtn) buyAllBtn.textContent = '🛒 一鍵全購買（💰' + fmt(total) + '）';
+  if (buyAllBtn) buyAllBtn.innerHTML = '🛒 一鍵全購買（<img src="images/icon_gold.png" class="res-icon">' + fmt(total) + '）';
   var refBtn = $id('shop-refresh');
-  if (refBtn) refBtn.textContent = '🔄 手動刷新（💰' + fmt(shopRefreshCost()) + '）';
+  if (refBtn) refBtn.innerHTML = '🔄 手動刷新（<img src="images/icon_gold.png" class="res-icon">' + fmt(shopRefreshCost()) + '）';
   updateShopCountdown();
 }
 function updateShopCountdown() {
@@ -1243,7 +1243,7 @@ function miniSnapshot() {
   } else {
     p = FIELD.player; enemy = FIELD.monster;
     s.stage = currentZoneDef().emoji + currentZoneDef().name + ' 第 ' + G.stage.current + ' 階段';
-    s.info = '📈 DPS ' + fmt(currentDps()) + '　💰 ' + fmt(G.player.gold);
+    s.info = '📈 DPS ' + fmt(currentDps()) + '　<img src="images/icon_gold.png" class="res-icon">' + fmt(G.player.gold);
   }
   if (p) {
     s.pHp = clamp(p.hp / st.hp * 100, 0, 100);
@@ -1622,7 +1622,7 @@ function initUI() {
   if (shopBuyAll) {
     shopBuyAll.addEventListener('click', function () {
       var r = buyAllShopGems();
-      if (r.bought > 0) blog('🛒 一鍵購買 ' + r.bought + ' 顆寶石，花費 💰' + fmt(r.spent), 'good');
+      if (r.bought > 0) blog('🛒 一鍵購買 ' + r.bought + ' 顆寶石，花費 <img src="images/icon_gold.png" class="res-icon">' + fmt(r.spent), 'good');
       else blog('⚠️ 沒有可購買的寶石（金幣不足或已售罄）', 'warn');
       renderGems();
     });

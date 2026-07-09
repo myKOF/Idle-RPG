@@ -60,6 +60,7 @@ body {
 .sidebar-stats { display: flex; flex-direction: column; gap: 10px; }
 .stat-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--dim); border-bottom: 1px dashed var(--border); padding-bottom: 4px; }
 .stat-row b { color: var(--text); font-variant-numeric: tabular-nums; }
+.res-icon { height: 1.2em; vertical-align: text-bottom; margin-right: 2px; }
 .stat-divider { height: 1px; background: var(--border); margin: 6px 0; border: none; box-shadow: 0 1px 0 rgba(0,0,0,0.8); }
 
 /* ---- 分頁 ---- */
