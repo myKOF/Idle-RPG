@@ -232,7 +232,7 @@ body {
   max-width: 1720px;
   margin: 0 auto;
   gap: 16px;
-  padding: 14px 16px 40px;
+  padding: 14px 0 40px 16px;
   height: calc(100vh - 70px);
 }
 
@@ -264,7 +264,7 @@ body {
 }
 
 #combat-area {
-  flex: 1;
+  flex: 0 0 450px;
   display: flex;
   flex-direction: row;
   gap: 16px;
@@ -954,21 +954,21 @@ textarea#save-io {
   font-size: 26px;
 }
 
-/* 座標取自 Character UI.png 原圖（1844x2304）的裝備框中心。 */
-.slot-weapon   { left: 26.25%; top: 20.01%; width: 16.92%; height: 18.32%; }
+/* 座標取自 Character UI.png 原圖（1844x2304），部位依裝備介面參考圖配置。 */
+.slot-shoulder { left: 26.25%; top: 20.01%; width: 16.92%; height: 18.32%; }
 .slot-gloves   { left: 18.76%; top: 43.45%; width: 16.92%; height: 18.49%; }
 .slot-ring     { left: 18.76%; top: 61.55%; width: 10.41%; height: 7.99%; }
-.slot-boots    { left: 18.76%; top: 81.16%; width: 16.92%; height: 21.18%; }
+.slot-weapon   { left: 18.76%; top: 81.16%; width: 16.92%; height: 21.18%; }
 
 .slot-helmet   { left: 50.49%; top: 11.72%; width: 17.03%; height: 13.54%; }
 .slot-chest    { left: 50.54%; top: 36.55%; width: 16.92%; height: 26.39%; }
 .slot-belt     { left: 50.54%; top: 61.02%; width: 21.69%; height: 6.08%; }
-.slot-legs     { left: 50.54%; top: 80.34%; width: 16.92%; height: 18.66%; }
+.slot-boots    { left: 50.54%; top: 80.34%; width: 16.92%; height: 18.66%; }
 
 .slot-amulet   { left: 73.43%; top: 21.01%; width: 14.32%; height: 11.11%; }
-.slot-weapon2  { left: 82.10%; top: 43.45%; width: 16.92%; height: 18.49%; }
+.slot-legs     { left: 82.10%; top: 43.45%; width: 16.92%; height: 18.49%; }
 .slot-ring2    { left: 82.21%; top: 61.55%; width: 10.41%; height: 7.99%; }
-.slot-shoulder { left: 82.10%; top: 81.42%; width: 16.92%; height: 21.70%; }
+.slot-weapon2  { left: 82.10%; top: 81.42%; width: 16.92%; height: 21.70%; }
 
 .eq-emoji.dim {
   opacity: .3;
@@ -2292,6 +2292,7 @@ textarea#save-io {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  white-space: nowrap;
 }
 
 .zone-btn:hover {

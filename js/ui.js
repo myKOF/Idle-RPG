@@ -276,7 +276,7 @@ function renderZoneBar() {
       b.style.opacity = '1';
       b.style.cursor = 'pointer';
       var badge = b.querySelector('.zone-best');
-      if (badge) badge.textContent = '最高 ' + fmt(zoneBestOf(z));
+      if (badge) badge.textContent = '(' + fmt(zoneBestOf(z)) + ')';
     }
   });
 }
@@ -2348,6 +2348,29 @@ function initUI() {
   renderSaveList();
 
   syncFactoryInputs();
+
+  // 戰鬥結算日誌彈窗
+  var btnSummary = $id('btn-summary');
+  if (btnSummary) {
+    btnSummary.addEventListener('click', function () {
+      var modal = $id('summary-modal');
+      if (modal) modal.style.display = 'flex';
+    });
+  }
+  var summaryModal = $id('summary-modal');
+  if (summaryModal) {
+    summaryModal.addEventListener('click', function (e) {
+      if (e.target === summaryModal) {
+        summaryModal.style.display = 'none';
+      }
+    });
+    var summaryClose = $id('summary-modal-close');
+    if (summaryClose) {
+      summaryClose.addEventListener('click', function () {
+        summaryModal.style.display = 'none';
+      });
+    }
+  }
 }
 
 /* ---- 高塔結算彈窗 ---- */

@@ -1,31 +1,29 @@
 # PLAN.md — 開發計畫
 
-## 當前任務：修正存檔資料夾「自匯入」重複記錄 + 清理現有複本
+## 當前任務：主畫面改造計劃
 
-### 根因（對抗式複核 CONFIRMED，六分析收斂）
-1. `manualSave` 觸發**兩次**無互斥的 `syncSaveFolderNow`（開頭 `saveGame()` 內 1 次 + 結尾 1 次）；第一次的 `known` 快照擷取於「新記錄 putSaveRecord 之前」，掃描階段卻讀到第二次剛寫出的新檔 → 因不在過期 known 而被當未知檔匯入，複本沿用原檔名與原 savedAt。
-2. `putSaveRecord` 只以 **id** 去重、不看 fname → 同檔名複本並存、永不折疊。
-3. 修剪/刪除只移除 localStorage/index，**不刪資料夾實體檔** → 孤兒檔下次同步「復活」、刪不掉。
+### 任務需求與設計方案
+1. **戰鬥結算日誌改為隱藏與彈窗顯示**
+   - 隱藏（移除）原有的右側 `#summary-area`。
+   - 在 `#stage-bar` 內新增一個「結算日誌」按鈕 (`#btn-summary`)。
+   - 在底層新增一個彈窗 `#summary-modal`，其中包含 `#battle-summary-list`，按下按鈕後開啟。
+   - 彈窗採用 `.modal-overlay` 與固定定位，開關此介面時不會改變戰鬥區域 (`#battle-area`) 的位置。
 
-### 設計方案（職責分離，SSOT）
-- **拆開「寫出」與「掃描匯入」**：`writeAllToFolder()`（只寫出）／`importUnknownFromFolder()`（只掃描匯入，含 fname 去重）。
-- 靜默同步 `syncSaveFolder()`（每次存檔後）改為**只 writeAllToFolder，不再自我掃描匯入** → 根因 1、3 的自動觸發消失。
-- 掃描匯入只在使用者主動「打開存檔資料夾」`openSaveFolder` 時做一次（單次、無並發）。
-- `putSaveRecord` 修剪 + `deleteSaveRecord`：若已連接資料夾，一併 `_saveDir.removeEntry(fname)`。
-- 新增 `dedupeSaveIndex()`：載入時對 index 依 fname 去重（保留 savedAt 最新一筆），清掉現有複本；main.js 載入後呼叫一次。
-- `writeAllToFolder` 加 in-flight 旗標，避免並發重複寫。
+2. **場景切換標籤樣式優化**
+   - 移除標籤中的「最高」字樣，改成 `圖標 場景名稱 (最高等級數字)` 格式。
+   - 在 CSS 中對 `.zone-btn` 設定 `white-space: nowrap;` 確保文字不換行。
 
-### 微型任務
-1. save.js：`syncSaveFolderNow` 拆成 `writeAllToFolder` + `importUnknownFromFolder`（+ fname 去重 + in-flight 旗標）。
-2. save.js：`syncSaveFolder` 改為只呼叫 `writeAllToFolder`。
-3. save.js：`openSaveFolder` 改為呼叫 `writeAllToFolder` + `importUnknownFromFolder`。
-4. save.js：`putSaveRecord` 修剪 + `deleteSaveRecord` 一併刪資料夾實體檔。
-5. save.js：新增 `dedupeSaveIndex()`。
-6. main.js：載入後呼叫 `dedupeSaveIndex()`。
-7. 自我審查 + 文件/記憶同步。
+3. **整個戰鬥區貼緊右側畫面邊界且維持原寬度**
+   - 修改 `#game-layout` 的 padding，將 right padding 從 `16px` 改為 `0`。
+   - 將 `#combat-area` 的 `flex: 0.92;` 改為固定寬度 `flex: 0 0 450px;`，使其寬度恢復成原本大小，不再拉伸變寬。
+   - 這樣一來，整個戰鬥區會靠最右側對齊，而左側的 `#workspace-area` 會自動延伸，獲得更多可用空間。
+
+### 微型任務拆解
+1. [MODIFY] `index.html`：移除 `#summary-area`，在 `#stage-bar` 新增 `#btn-summary`，並在底部新增 `#summary-modal`。（已完成）
+2. [MODIFY] `css/style.css`：變更 `#game-layout` 的 padding-right，並為 `.zone-btn` 新增 `white-space: nowrap;`。（已完成）
+3. [MODIFY] `css/style.css`：將 `#combat-area` 設為固定寬度 `flex: 0 0 450px;` 以恢復原寬度。（進行中）
+4. [MODIFY] `js/ui.js`：修改 `renderZoneBar` 中場景最高等級顯示格式；在 `initUI` 中綁定 `#btn-summary` 與 `#summary-modal` 的點擊與關閉事件。（已完成）
+5. [VERIFY] 檢查主介面排版，驗證按鈕點擊彈窗、關閉功能，以及文字不換行的效果。
 
 ### 驗證方式
-- 依 AI_RULES.md 第 30 條「預設不進行自測」，採靜態自我審查（第 4 條）+ 邏輯推導（去並發、匯入 fname 去重、寫出不再自掃描 → 不再自匯入）。preview 為隔離環境，不觸及使用者真實存檔。
-
-### 收斂（第 28、37 條）
-- 無新增除錯 log／未引用變數；注釋一律繁體中文。
+- 靜態代碼自我審查與手動在瀏覽器中運行驗證。

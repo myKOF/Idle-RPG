@@ -504,8 +504,20 @@ function enchantLine(en) {
 }
 
 // 物品完整說明 HTML
-function itemDetailHTML(it, cmp) {
+function itemDetailHTML(it, cmp, opts) {
+  opts = opts || {};
+  var showAffixReroll = opts.showAffixReroll !== false;
   var r = RARITIES[it.rarity];
+  var curScore = itemScore(it);
+  var cmpScore = cmp ? itemScore(cmp) : 0;
+  var sdiffStr = '';
+  if (cmp) {
+    var diffScore = curScore - cmpScore;
+    if (Math.abs(diffScore) > 0.5) {
+      if (diffScore > 0) sdiffStr = ' <span style="color: #4ade80">↑' + fmt(diffScore) + '</span>';
+      else sdiffStr = ' <span style="color: #f87171">↓' + fmt(-diffScore) + '</span>';
+    }
+  }
   
   var poolHtml = '<div class="it-pool-box" style="display:none;">';
   poolHtml += '<div class="it-pool-title">可能出現的詞條：</div>';
@@ -532,6 +544,7 @@ function itemDetailHTML(it, cmp) {
     (it.upgrade ? ' <span class="it-up">+' + it.upgrade + '</span>' : '') +
     (it.synthesized ? ' <span class="it-syn">✦合成</span>' : '') +
     (it.locked ? ' 🔒' : '') +
+    '<span class="it-score it-score-top">評分 ' + fmt(curScore) + sdiffStr + '</span>' +
     '<button class="btn-it-pool" onclick="var b=this.nextElementSibling; b.style.display=b.style.display===\'none\'?\'block\':\'none\'; event.stopPropagation();">!</button>' +
     poolHtml +
     '</div>';
@@ -580,11 +593,14 @@ function itemDetailHTML(it, cmp) {
     var valColor = isMax ? '#fbbf24' : '';
     var valHtml = '<span' + (valColor ? ' style="color:' + valColor + ';font-weight:bold"' : '') + '>' + (def.pct ? pctStr(vCur) : fmt(vCur)) + '</span>';
     
-    var rrCost = rerollCost(it);
-    var rrGoldHtml = '<span' + (G.player.gold >= rrCost.gold ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_gold.png" class="res-icon">' + fmt(rrCost.gold) + '</span>';
-    var rrEssenceHtml = '<span' + (G.player.essence >= rrCost.essence ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_essence.png" class="res-icon">' + fmt(rrCost.essence) + '</span>';
-    var rrTip = '<div style="color:var(--dim);margin-bottom:4px">單獨洗煉此屬性（改變種類與數值）</div>需要：' + rrGoldHtml + ' &nbsp;' + rrEssenceHtml;
-    var rrBtn = '<button class="btn affix-reroll-btn act-btn-tooltip" data-act="reroll-affix" data-affix="' + k + '" aria-label="洗煉詞條">🎲<div class="btn-tip affix-reroll-tip">' + rrTip + '</div></button>';
+    var rrBtn = '';
+    if (showAffixReroll) {
+      var rrCost = rerollCost(it);
+      var rrGoldHtml = '<span' + (G.player.gold >= rrCost.gold ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_gold.png" class="res-icon">' + fmt(rrCost.gold) + '</span>';
+      var rrEssenceHtml = '<span' + (G.player.essence >= rrCost.essence ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_essence.png" class="res-icon">' + fmt(rrCost.essence) + '</span>';
+      var rrTip = '<div style="color:var(--dim);margin-bottom:4px">單獨洗煉此屬性（改變種類與數值）</div>需要：' + rrGoldHtml + ' &nbsp;' + rrEssenceHtml;
+      rrBtn = '<button class="btn affix-reroll-btn act-btn-tooltip" data-act="reroll-affix" data-affix="' + k + '" aria-label="洗煉詞條">🎲<div class="btn-tip affix-reroll-tip">' + rrTip + '</div></button>';
+    }
     
     var diffStr = '';
     if (vCmp !== 0) {
@@ -596,9 +612,14 @@ function itemDetailHTML(it, cmp) {
     }
     
     var lineStyle = (vCmp === 0 && cmp) ? 'color: #4ade80;' : '';
-    h += '<div class="it-affix-row it-affix" style="' + lineStyle + '">' +
-         '<div class="it-affix-text"><span class="act-btn-tooltip" style="cursor:help;">◆ ' + name + ' +' + valHtml + '<div class="btn-tip" style="font-weight:normal;color:var(--text);">' + limitTip + '</div></span>' +
-         diffStr + '</div><div class="it-affix-action">' + rrBtn + '</div></div>';
+    if (showAffixReroll) {
+      h += '<div class="it-affix-row it-affix" style="' + lineStyle + '">' +
+           '<div class="it-affix-text"><span class="act-btn-tooltip" style="cursor:help;">◆ ' + name + ' +' + valHtml + '<div class="btn-tip" style="font-weight:normal;color:var(--text);">' + limitTip + '</div></span>' +
+           diffStr + '</div><div class="it-affix-action">' + rrBtn + '</div></div>';
+    } else {
+      h += '<div class="it-affix" style="' + lineStyle + '"><span class="act-btn-tooltip" style="cursor:help;">◆ ' + name + ' +' + valHtml + '<div class="btn-tip" style="font-weight:normal;color:var(--text);">' + limitTip + '</div></span>' +
+           diffStr + '</div>';
+    }
   }
   if (cmp) {
     for (var i = 0; i < cmp.affixes.length; i++) {
@@ -692,18 +713,6 @@ function itemDetailHTML(it, cmp) {
     }
     h += '</div>';
   }
-
-  var curScore = itemScore(it);
-  var cmpScore = cmp ? itemScore(cmp) : 0;
-  var sdiffStr = '';
-  if (cmp) {
-    var diffScore = curScore - cmpScore;
-    if (Math.abs(diffScore) > 0.5) {
-      if (diffScore > 0) sdiffStr = ' <span style="color: #4ade80">↑' + fmt(diffScore) + '</span>';
-      else sdiffStr = ' <span style="color: #f87171">↓' + fmt(-diffScore) + '</span>';
-    }
-  }
-  h += '<div class="it-score">評分 ' + fmt(curScore) + sdiffStr + '</div>';
   return h;
 }
 
