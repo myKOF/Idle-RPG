@@ -78,6 +78,8 @@ function renderHeader() {
 
   $id('toggle-compare').checked = !!G.settings.compareEq;
   $id('p-level').textContent = 'Lv.' + p.level;
+  if ($id('pv-level')) $id('pv-level').textContent = 'Lv.' + p.level;
+  if ($id('tp-level')) $id('tp-level').textContent = 'Lv.' + p.level;
   var need = xpForLevel(p.level);
   $id('xp-fill').style.width = clamp(p.xp / need * 100, 0, 100) + '%';
   $id('xp-bar').title = '經驗 ' + fmt(p.xp) + ' / ' + fmt(need);
@@ -253,16 +255,20 @@ function renderBattle() {
   if (m) {
     var iconClass = m.isBoss ? 'cb-icon boss' : 'cb-icon monster';
     $id('mv-emoji').innerHTML = '<img src="images/icon_avatar.png" class="' + iconClass + '">';
-    $id('mv-name').textContent = m.name + ' Lv.' + m.level;
+    $id('mv-name').textContent = m.name;
+    if ($id('mv-level')) $id('mv-level').textContent = 'Lv.' + m.level;
     $id('mv-name').classList.toggle('elite', m.elite);
     var mhp = clamp(m.hp / m.maxHp * 100, 0, 100);
     $id('mv-hp').style.width = mhp + '%';
+    $id('mv-hp').parentNode.style.visibility = 'visible';
     $id('mv-hptext').textContent = fmt(Math.max(0, m.hp)) + ' / ' + fmt(m.maxHp);
     $id('mv-status').textContent = entStatus(m);
   } else {
     $id('mv-emoji').innerHTML = '<img src="images/icon_avatar.png" class="cb-icon">';
     $id('mv-name').textContent = G.tower.active ? '（高塔戰鬥中…）' : '搜索敵人中…';
+    if ($id('mv-level')) $id('mv-level').textContent = '';
     $id('mv-hp').style.width = '0%';
+    $id('mv-hp').parentNode.style.visibility = 'hidden';
     $id('mv-hptext').textContent = '';
     $id('mv-status').textContent = '';
   }
@@ -713,7 +719,8 @@ function renderTowerFight() {
   $id('tw-enrage').style.display = TOWER.enraged ? '' : 'none';
   var bossImgSrc = TOWER.boss.img ? 'images/' + TOWER.boss.img : 'images/icon_avatar.png';
   $id('tb-emoji').innerHTML = '<img src="' + bossImgSrc + '" class="cb-icon boss">';
-  $id('tb-name').innerHTML = b.name + ' Lv.' + b.level;
+  $id('tb-name').innerHTML = b.name;
+  if ($id('tb-level')) $id('tb-level').textContent = 'Lv.' + b.level;
   $id('tb-hp').style.width = clamp(b.hp / b.maxHp * 100, 0, 100) + '%';
   $id('tb-hptext').innerHTML = fmt(Math.max(0, b.hp)) + ' / ' + fmt(b.maxHp) + '（' + Math.round(b.hp / b.maxHp * 100) + '%）';
   $id('tb-status').innerHTML = entStatus(b) + (b.elem ? ' 屬性:' + ENCHANTS[b.elem].emoji : '');
