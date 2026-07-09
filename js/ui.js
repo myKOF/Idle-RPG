@@ -60,6 +60,7 @@ function switchTab(name) {
     s.classList.toggle('active', s.id === 'tab-' + name);
   });
   if (name === 'settings') renderSaveList(); // 進入設定分頁時刷新存檔記錄
+  if (name === 'tower') UI._scrollTower = true;
 }
 
 /* ---- 存檔記錄列表（設定分頁） ---- */
@@ -366,15 +367,11 @@ function renderEquip() {
       var r = RARITIES[it.rarity];
       var effClass = (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= 7 ? ' eff-genesis' : '');
       var iconHtml = info.icon ? '<img src="images/' + info.icon + '" class="eq-icon">' : '<div class="eq-emoji">' + info.emoji + '</div>';
-      h += '<div class="eq-slot filled' + effClass + '" data-id="' + it.id + '" data-src="equip" data-slot="' + slot + '" style="border-color:' + r.color + '">' +
-        iconHtml +
-        '<div class="eq-name" style="color:' + r.color + '">' + esc(it.name) + (it.upgrade ? ' +' + it.upgrade : '') + '</div>' +
-        '<div class="eq-sub">' + info.name + '・Lv.' + it.level +
-        (itemEnchants(it).length ? ' ' + itemEnchants(it).map(function (en) { return (ENCHANTS[en.key] || {}).emoji || ''; }).join('') : '') + '</div></div>';
+      h += '<div class="eq-slot filled' + effClass + ' slot-' + slot + '" data-id="' + it.id + '" data-src="equip" data-slot="' + slot + '" style="border-color:' + r.color + '; box-shadow: inset 0 0 15px ' + r.color + '40">' +
+        iconHtml + '</div>';
     } else {
       var iconHtml = info.icon ? '<img src="images/' + info.icon + '" class="eq-icon dim">' : '<div class="eq-emoji dim">' + info.emoji + '</div>';
-      h += '<div class="eq-slot empty">' + iconHtml +
-        '<div class="eq-sub">' + info.name + '（未裝備）</div></div>';
+      h += '<div class="eq-slot empty slot-' + slot + '" data-slot="' + slot + '">' + iconHtml + '</div>';
     }
   });
   box.innerHTML = h;
@@ -781,6 +778,13 @@ function renderTower() {
       rbox.style.display = '';
     } else {
       rbox.style.display = 'none';
+    }
+    if (UI._scrollTower) {
+      UI._scrollTower = false;
+      setTimeout(function() {
+        var el = document.querySelector('.tower-floor[data-tower-tip="' + (G.tower.highest + 1) + '"]');
+        if (el) el.scrollIntoView({ behavior: 'auto', block: 'center' });
+      }, 10);
     }
   }
 }

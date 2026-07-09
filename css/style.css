@@ -894,37 +894,81 @@ textarea#save-io {
 
 .equip-layout {
   display: grid;
-  grid-template-columns: 1fr 1.2fr;
+  grid-template-columns: 330px minmax(250px, 1fr);
   gap: 14px;
   margin-bottom: 14px;
 }
 
 #equip-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
+  position: relative;
+  width: 100%;
+  max-width: 330px;
+  aspect-ratio: 1844 / 2304;
+  background-image: url('../images/Character UI.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  margin: 0 auto;
+  align-self: start;
 }
 
 .eq-slot {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 8px 4px;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  padding: 0;
   text-align: center;
-  min-height: 76px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: all 0.2s;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.eq-slot .eq-icon, .eq-slot .eq-emoji {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
 }
 
 .eq-slot.filled {
+  background: rgba(0, 0, 0, 0.5);
   cursor: pointer;
 }
 
 .eq-slot.filled:hover {
+  background: rgba(0, 0, 0, 0.7);
   filter: brightness(1.2);
 }
 
 .eq-emoji {
   font-size: 26px;
 }
+
+/* 座標取自 Character UI.png 原圖（1844x2304）的裝備框中心。 */
+.slot-weapon   { left: 26.25%; top: 20.01%; width: 16.92%; height: 18.32%; }
+.slot-gloves   { left: 18.76%; top: 43.45%; width: 16.92%; height: 18.49%; }
+.slot-ring     { left: 18.76%; top: 61.55%; width: 10.41%; height: 7.99%; }
+.slot-boots    { left: 18.76%; top: 81.16%; width: 16.92%; height: 21.18%; }
+
+.slot-helmet   { left: 50.49%; top: 11.72%; width: 17.03%; height: 13.54%; }
+.slot-chest    { left: 50.54%; top: 36.55%; width: 16.92%; height: 26.39%; }
+.slot-belt     { left: 50.54%; top: 61.02%; width: 21.69%; height: 6.08%; }
+.slot-legs     { left: 50.54%; top: 80.34%; width: 16.92%; height: 18.66%; }
+
+.slot-amulet   { left: 73.43%; top: 21.01%; width: 14.32%; height: 11.11%; }
+.slot-weapon2  { left: 82.10%; top: 43.45%; width: 16.92%; height: 18.49%; }
+.slot-ring2    { left: 82.21%; top: 61.55%; width: 10.41%; height: 7.99%; }
+.slot-shoulder { left: 82.10%; top: 81.42%; width: 16.92%; height: 21.70%; }
 
 .eq-emoji.dim {
   opacity: .3;
@@ -1055,6 +1099,12 @@ textarea#save-io {
   border: none !important;
   isolation: isolate;
   /* Create stacking context */
+}
+
+.eq-slot.eff-mythic,
+.eq-slot.eff-genesis {
+  position: absolute;
+  transform: translate(-50%, -50%);
 }
 
 /* 外層旋轉漸層 */

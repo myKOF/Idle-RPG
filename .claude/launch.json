@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "idle-rpg",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["-y", "http-server", "-p", "8123", "-c-1", "."],
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", ".claude/serve.ps1", "-Port", "8123"],
       "port": 8123
     }
   ]
