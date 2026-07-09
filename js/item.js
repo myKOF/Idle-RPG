@@ -39,6 +39,72 @@ function gemLabel(type, lv) {
   return GEM_TYPES[type].emoji + GEM_NAMES[lv] + GEM_TYPES[type].name;
 }
 
+/* ================ 寶石合成 / 轉換 / 拆解（2026-07-09 改版） ================ */
+
+// 寶石合成：2 顆同種同級 → 1 顆同種下一級（消耗金幣）。回傳 null=成功
+function composeGems(type, lv) {
+  if (!GEM_TYPES[type]) return '未知寶石種類';
+  if (lv < 1 || lv >= GEM_MAX_LEVEL) return '五級寶石已是最高階';
+  if (gemCount(type, lv) < 2) return '「' + GEM_NAMES[lv] + GEM_TYPES[type].name + '」不足 2 顆';
+  var cost = FUSE_GOLD_COST[lv];
+  if (G.player.gold < cost) return '金幣不足（需要 ' + fmt(cost) + '）';
+  G.player.gold -= cost;
+  addGem(type, lv, -2);
+  addGem(type, lv + 1, 1);
+  UI.dirty.header = true; UI.dirty.gems = true;
+  return null;
+}
+
+/* 寶石轉換（九宮格）：多組 {type, lv, n} 一次性轉換為目標種類
+   規則：同階轉換、數量不變；每格一種（同種同級）上限 10 顆；融合寶石不可轉換。
+   回傳 null=成功，否則錯誤訊息 */
+function convertGems(slots, targetType) {
+  if (!GEM_TYPES[targetType]) return '未知目標種類';
+  if (!slots || !slots.length) return '請先將寶石放入九宮格';
+  if (slots.length > GEM_CONVERT_SLOTS) return '最多 ' + GEM_CONVERT_SLOTS + ' 格';
+  for (var i = 0; i < slots.length; i++) {
+    var s = slots[i];
+    if (!GEM_TYPES[s.type]) return '未知寶石種類';
+    if (!(s.n >= 1) || s.n > GEM_CONVERT_STACK) return '每格 1~' + GEM_CONVERT_STACK + ' 顆';
+    if (gemCount(s.type, s.lv) < s.n) return '「' + GEM_NAMES[s.lv] + GEM_TYPES[s.type].name + '」庫存不足';
+  }
+  slots.forEach(function (s) {
+    addGem(s.type, s.lv, -s.n);
+    addGem(targetType, s.lv, s.n);
+  });
+  UI.dirty.gems = true; UI.dirty.header = true;
+  return null;
+}
+
+// 寶石拆解：1 顆 2 階以上寶石 → 同種 1 階寶石（損失 30%，公式見 formula.js §8）
+function dismantleGem(type, lv) {
+  if (!GEM_TYPES[type]) return { err: '未知寶石種類' };
+  if (lv < 2 || lv > GEM_MAX_LEVEL) return { err: '只能拆解 2 階以上的寶石' };
+  if (gemCount(type, lv) < 1) return { err: '沒有「' + GEM_NAMES[lv] + GEM_TYPES[type].name + '」' };
+  var y = gemDismantleYield(lv);
+  addGem(type, lv, -1);
+  addGem(type, 1, y);
+  UI.dirty.gems = true; UI.dirty.header = true;
+  return { n: y };
+}
+
+// 融合寶石拆解：依融合次數推算 1 階總成本 × 0.7，依其屬性種類均分（餘數給第一種）
+function dismantleFusedGem(id) {
+  var fg = findFusedGem(id);
+  if (!fg) return { err: '找不到該融合寶石' };
+  var total = fusedGemDismantleYield(fg);
+  removeFusedGem(id);
+  var types = fg.stats.map(function (s) { return s.type; });
+  var per = Math.floor(total / types.length);
+  var got = [];
+  types.forEach(function (t, i) {
+    var n = per + (i === 0 ? total - per * types.length : 0);
+    if (n > 0) { addGem(t, 1, n); got.push({ type: t, n: n }); }
+  });
+  UI.dirty.gems = true; UI.dirty.header = true;
+  return { got: got, total: total };
+}
+
 /* ================ 融合寶石（雙屬性，僅 5 階可融合） ================
    G.player.fusedGems = [ { id, stats:[{type,val}x1~2], level:5, fusions:n } ] */
 function fusedGemStatText(fg) {

@@ -26,12 +26,12 @@ function blog(msg, cls, cat) {
     else if (msg.includes('推進') || msg.includes('退回') || msg.includes('復活') || msg.includes('擊倒') || msg.includes('遭遇')) cat = 'combat';
     else cat = 'system';
   }
-  
+
   // 若處於高塔BOSS戰期間，將戰鬥與掉落日誌轉向到 boss 分類
   if (window.G && G.tower && G.tower.active && (cat === 'combat' || cat === 'loot')) {
     cat = 'boss';
   }
-  
+
   addLog('battle-log', msg, cls, 150, cat);
 }
 function flog(msg, cls) { addLog('factory-log', msg, cls, 50); }
@@ -92,7 +92,7 @@ function renderHeader() {
   $id('xp-bar').title = '經驗 ' + fmt(p.xp) + ' / ' + fmt(need);
 
   renderAttrPanel(st);
-  
+
   // 更新側欄硬編碼的屬性
   if ($id('s-hp')) {
     $id('s-hp').textContent = fmt(st.hp);
@@ -164,7 +164,6 @@ function entStatus(ent) {
     if (k === 'atkDown' || k === 'defDown') s.push('📉' + buffLabel(k) + '↓');
     else s.push('💪' + buffLabel(k) + '↑');
   }
-  if (ent.shield && ent.shield > 0.5) s.push('🫧護盾' + fmt(ent.shield));
   return s.join(' ');
 }
 // MP 條與裝載技能狀態（prefix: 'pv' 野外 / 'tp' 高塔）
@@ -175,11 +174,11 @@ function renderMpSkill(pEnt, prefix) {
   if (mpText) mpText.textContent = fmt(Math.floor(pEnt.mp)) + ' / ' + fmt(st.mp);
   if (skillEl) {
     var lo = G.player.loadout || [];
-    if (!lo.length) { 
-      skillEl.innerHTML = '<div style="grid-column:1/-1;color:var(--dim);text-align:center;font-size:12px;margin-top:4px;">（未裝備）</div>'; 
-      return; 
+    if (!lo.length) {
+      skillEl.innerHTML = '<div style="grid-column:1/-1;color:var(--dim);text-align:center;font-size:12px;margin-top:4px;">（未裝備）</div>';
+      return;
     }
-    
+
     var arr = [];
     for (var i = 0; i < lo.length; i++) {
       var sk = skillDef(lo[i]);
@@ -187,13 +186,13 @@ function renderMpSkill(pEnt, prefix) {
       var cd = (pEnt.skillCds && pEnt.skillCds[lo[i]]) || 0;
       arr.push({ sk: sk, cd: cd, cost: sk.cost || 0 });
     }
-    
-    arr.sort(function(a, b) {
+
+    arr.sort(function (a, b) {
       return a.cd - b.cd;
     });
-    
+
     arr = arr.slice(0, 12);
-    
+
     var h = '';
     for (var i = 0; i < arr.length; i++) {
       var it = arr[i];
@@ -221,7 +220,7 @@ function renderZoneBar() {
     if (zd && zd.reqZone) {
       if (zoneBestOf(zd.reqZone) < zd.reqStage) locked = true;
     }
-    
+
     if (locked) {
       b.classList.add('locked');
       b.classList.remove('active');
@@ -254,24 +253,48 @@ function renderBattle() {
   if (p) {
     var php = clamp(p.hp / st.hp * 100, 0, 100);
     $id('pv-hp').style.width = php + '%';
-    $id('pv-hptext').textContent = fmt(Math.max(0, p.hp)) + ' / ' + fmt(st.hp);
+    var pSh = (p.shield > 0.5) ? '<span style="color:var(--info)">+' + fmt(Math.max(0, p.shield)) + '</span>' : '';
+    $id('pv-hptext').innerHTML = fmt(Math.max(0, p.hp)) + pSh + ' / ' + fmt(st.hp);
     $id('pv-status').textContent = FIELD.reviveCd > 0 ? ('💀 復活中 ' + fmt1(FIELD.reviveCd) + 's') : entStatus(p);
     renderMpSkill(p, 'pv');
   }
   var m = FIELD.monster;
   if (m) {
     var iconClass = m.isBoss ? 'cb-icon boss' : 'cb-icon monster';
-    $id('mv-emoji').innerHTML = '<img src="images/icon_avatar.png" class="' + iconClass + '">';
+    var mvImg = $id('mv-emoji').querySelector('img');
+    var targetSrc = 'images/icon_avatar.png';
+    if (!mvImg) {
+      $id('mv-emoji').innerHTML = '<img src="' + targetSrc + '" class="' + iconClass + '" data-src="' + targetSrc + '" onerror="this.onerror=null; this.src=\'images/icon_avatar.png\'">';
+    } else {
+      if (mvImg.getAttribute('data-src') !== targetSrc) {
+        mvImg.setAttribute('data-src', targetSrc);
+        mvImg.setAttribute('src', targetSrc);
+        mvImg.onerror = function () { this.onerror = null; this.src = 'images/icon_avatar.png'; };
+      }
+      if (mvImg.className !== iconClass) mvImg.className = iconClass;
+    }
     $id('mv-name').textContent = m.name;
     if ($id('mv-level')) $id('mv-level').textContent = 'Lv.' + m.level;
     $id('mv-name').classList.toggle('elite', m.elite);
     var mhp = clamp(m.hp / m.maxHp * 100, 0, 100);
     $id('mv-hp').style.width = mhp + '%';
     $id('mv-hp').parentNode.style.visibility = 'visible';
-    $id('mv-hptext').textContent = fmt(Math.max(0, m.hp)) + ' / ' + fmt(m.maxHp);
+    var mSh = (m.shield > 0.5) ? '<span style="color:var(--info)">+' + fmt(Math.max(0, m.shield)) + '</span>' : '';
+    $id('mv-hptext').innerHTML = fmt(Math.max(0, m.hp)) + mSh + ' / ' + fmt(m.maxHp);
     $id('mv-status').textContent = entStatus(m);
   } else {
-    $id('mv-emoji').innerHTML = '<img src="images/icon_avatar.png" class="cb-icon">';
+    var mvImgEmpty = $id('mv-emoji').querySelector('img');
+    var targetSrcEmpty = 'images/icon_avatar.png';
+    if (!mvImgEmpty) {
+      $id('mv-emoji').innerHTML = '<img src="' + targetSrcEmpty + '" class="cb-icon" data-src="' + targetSrcEmpty + '" onerror="this.onerror=null; this.src=\'images/icon_avatar.png\'">';
+    } else {
+      if (mvImgEmpty.getAttribute('data-src') !== targetSrcEmpty) {
+        mvImgEmpty.setAttribute('data-src', targetSrcEmpty);
+        mvImgEmpty.setAttribute('src', targetSrcEmpty);
+        mvImgEmpty.onerror = function () { this.onerror = null; this.src = 'images/icon_avatar.png'; };
+      }
+      if (mvImgEmpty.className !== 'cb-icon') mvImgEmpty.className = 'cb-icon';
+    }
     $id('mv-name').textContent = G.tower.active ? '（高塔戰鬥中…）' : '搜索敵人中…';
     if ($id('mv-level')) $id('mv-level').textContent = '';
     $id('mv-hp').style.width = '0%';
@@ -329,7 +352,7 @@ function renderInventory() {
   var cost = 10000 + (G.player.invUpgrades || 0) * 1000;
   var btn = $id('inv-expand');
   if (btn) btn.textContent = '➕ 擴充 (' + cost + 'G)';
-  
+
   var box = $id('inventory-grid');
   $id('inv-count').textContent = G.inventory.length + '/' + cap;
   if (!G.inventory.length) {
@@ -439,13 +462,13 @@ function updateSelectionUI() {
 
   document.querySelectorAll('.item-cell, .eq-slot').forEach(function (el) {
     el.classList.remove('selected', 'dimmed');
-    
+
     if (targetSlot && el.classList.contains('eq-slot') && el.getAttribute('data-slot') === targetSlot) {
       el.classList.add('selected');
     }
 
     if (!selItem) return;
-    
+
     var elId = el.getAttribute('data-id');
     if (elId && elId === selItem.id) {
       el.classList.add('selected');
@@ -473,13 +496,13 @@ function showFloatingText(btn, text, color) {
   el.style.zIndex = '9999';
   el.style.transition = 'all 0.8s ease-out';
   document.body.appendChild(el);
-  
+
   el.offsetHeight; // force reflow
-  
+
   el.style.top = (rect.top - 40) + 'px';
   el.style.opacity = '0';
-  
-  setTimeout(function() {
+
+  setTimeout(function () {
     if (el.parentNode) el.parentNode.removeChild(el);
   }, 800);
 }
@@ -595,10 +618,10 @@ function renderFactory() {
   var buf = $id('synth-buffer');
   buf.innerHTML = f.synthBuffer.length
     ? f.synthBuffer.slice(0, 12).map(function (it) {
-        var r = RARITIES[it.rarity];
-        return '<span class="conv-chip" style="border-color:' + r.color + ';color:' + r.color + '" data-tip="' +
-          esc(rarityTag(it)) + '">' + SLOT_INFO[it.slot].emoji + '</span>';
-      }).join('') + (f.synthBuffer.length > 12 ? '<span class="conv-more">+' + (f.synthBuffer.length - 12) + '</span>' : '')
+      var r = RARITIES[it.rarity];
+      return '<span class="conv-chip" style="border-color:' + r.color + ';color:' + r.color + '" data-tip="' +
+        esc(rarityTag(it)) + '">' + SLOT_INFO[it.slot].emoji + '</span>';
+    }).join('') + (f.synthBuffer.length > 12 ? '<span class="conv-more">+' + (f.synthBuffer.length - 12) + '</span>' : '')
     : '<span class="hint">（空）篩選規則設為「合成素材」的裝備會進到這裡</span>';
 
   // 附魔節點資訊
@@ -617,24 +640,8 @@ function renderFactory() {
   // 已安裝零件
   renderInstalledParts('salvage', 'salv-parts');
   renderInstalledParts('synth', 'syn-parts');
-
-  // 零件庫
-  var plist = $id('parts-list');
-  if (!f.parts.length) {
-    plist.innerHTML = '<div class="hint">尚無自動機組零件 — 通關 BOSS 高塔可獲得！</div>';
-  } else {
-    plist.innerHTML = f.parts.map(function (p) {
-      var inst = isInstalled(p.id);
-      var pt = PART_TYPES[p.key];
-      return '<div class="part-row' + (inst ? ' installed' : '') + '">' +
-        '<span class="part-name">' + pt.emoji + ' ' + esc(p.name) + '</span>' +
-        '<span class="part-desc">' + esc(partDesc(p)) + '（' + NODE_NAMES[pt.node] + '）</span>' +
-        (inst
-          ? '<button class="btn sm" data-part-uninstall="' + p.id + '">卸下</button>'
-          : '<button class="btn sm" data-part-install="' + p.id + '">安裝</button>') +
-        '</div>';
-    }).join('');
-  }
+  renderAvailableParts('salvage', 'salv-avail-parts');
+  renderAvailableParts('synth', 'syn-avail-parts');
 }
 
 function renderInstalledParts(node, elId) {
@@ -642,10 +649,25 @@ function renderInstalledParts(node, elId) {
   var h = ids.map(function (id) {
     var p = findPart(id);
     if (!p) return '';
-    return '<span class="part-chip" data-tip="' + esc(partDesc(p)) + '">' + PART_TYPES[p.key].emoji + esc(p.name) + '</span>';
+    return '<span class="part-chip" style="cursor:pointer; border-color:var(--good);" data-part-uninstall="' + p.id + '" data-tip="【點擊卸下】 ' + esc(partDesc(p)) + '">' + PART_TYPES[p.key].emoji + esc(p.name) + '</span>';
   }).join('');
   for (var i = ids.length; i < PART_SLOTS_PER_NODE; i++) h += '<span class="part-chip empty">空槽</span>';
   $id(elId).innerHTML = h;
+}
+
+function renderAvailableParts(node, elId) {
+  var avail = G.factory.parts.filter(function (p) {
+    var pt = PART_TYPES[p.key];
+    return pt && pt.node === node && !isInstalled(p.id);
+  });
+  if (!avail.length) {
+    $id(elId).innerHTML = '<span class="hint" style="font-size:12px;">尚無可用零件</span>';
+  } else {
+    $id(elId).innerHTML = avail.map(function (p) {
+      var pt = PART_TYPES[p.key];
+      return '<span class="part-chip" style="cursor:pointer; border-color:var(--accent);" data-part-install="' + p.id + '" data-tip="【點擊安裝】 ' + esc(partDesc(p)) + '">' + pt.emoji + esc(p.name) + '</span>';
+    }).join('');
+  }
 }
 
 // 將工廠設定同步到輸入元件（初始化 / 讀檔後）
@@ -655,7 +677,6 @@ function syncFactoryInputs() {
     var r = parseInt(sel.getAttribute('data-rarity'), 10);
     sel.value = f.filter.actions[r];
   });
-  $id('flt-smart').checked = f.filter.smartSalvage;
   $id('flt-autoequip').checked = f.autoEquip;
   $id('syn-hybrid').checked = f.synth.hybridEnabled;
   $id('syn-merge').checked = f.synth.mergeEnabled;
@@ -684,7 +705,7 @@ function renderTower() {
       var unlocked = fl <= G.tower.highest + 1;
       var cleared = fl <= G.tower.highest;
       var bd = BOSS_LIST[(fl - 1) % BOSS_LIST.length];
-        
+
       var bossIcon = bd.img ? 'images/' + bd.img : 'images/icon_avatar.png';
       h += '<div class="tower-floor' + (cleared ? ' cleared' : '') + (unlocked ? '' : ' locked') + '" data-tower-tip="' + fl + '">' +
         '<span class="tf-emoji" style="margin-right:12px;"><img src="' + bossIcon + '" style="width:32px;height:32px;vertical-align:middle;border-radius:4px;box-shadow:0 0 5px #000;"></span>' +
@@ -701,7 +722,7 @@ function renderTower() {
       var rh = '<div class="tr-title ' + (r.win ? 'good' : 'bad') + '">' +
         (r.win ? '🏆 通關第 ' + r.floor + ' 層！' : '💀 第 ' + r.floor + ' 層挑戰失敗') + '</div>';
       if (r.win) {
-        rh += '<div class="tr-sub">獲得獎勵：</div>' + r.rewards.map(function (x) { return '<div class="tr-line">' + esc(x) + '</div>'; }).join('');
+        rh += '<div class="tr-sub">獲得獎勵：</div>' + r.rewards.map(function (x) { return '<div class="tr-line">' + x + '</div>'; }).join('');
       } else {
         rh += '<div class="tr-sub">戰鬥數據：DPS ' + fmt(r.myDps) + '（通關需求約 ' + fmt(r.needDps) + '）｜BOSS 剩餘血量 ' + r.bossHpPct + '%</div>';
         rh += '<div class="tr-sub">失敗分析：</div>' + r.analysis.map(function (x) { return '<div class="tr-line">📋 ' + esc(x) + '</div>'; }).join('');
@@ -725,14 +746,26 @@ function renderTowerFight() {
   $id('tw-timer').classList.toggle('urgent', remain < 15);
   $id('tw-enrage').style.display = TOWER.enraged ? '' : 'none';
   var bossImgSrc = TOWER.boss.img ? 'images/' + TOWER.boss.img : 'images/icon_avatar.png';
-  $id('tb-emoji').innerHTML = '<img src="' + bossImgSrc + '" class="cb-icon boss">';
+  var tbImg = $id('tb-emoji').querySelector('img');
+  if (!tbImg) {
+    $id('tb-emoji').innerHTML = '<img src="' + bossImgSrc + '" class="cb-icon boss" data-src="' + bossImgSrc + '" onerror="this.onerror=null; this.src=\'images/icon_avatar.png\'">';
+  } else {
+    if (tbImg.getAttribute('data-src') !== bossImgSrc) {
+      tbImg.setAttribute('data-src', bossImgSrc);
+      tbImg.setAttribute('src', bossImgSrc);
+      tbImg.onerror = function () { this.onerror = null; this.src = 'images/icon_avatar.png'; };
+    }
+    if (tbImg.className !== 'cb-icon boss') tbImg.className = 'cb-icon boss';
+  }
   $id('tb-name').innerHTML = b.name;
   if ($id('tb-level')) $id('tb-level').textContent = 'Lv.' + b.level;
   $id('tb-hp').style.width = clamp(b.hp / b.maxHp * 100, 0, 100) + '%';
-  $id('tb-hptext').innerHTML = fmt(Math.max(0, b.hp)) + ' / ' + fmt(b.maxHp) + '（' + Math.round(b.hp / b.maxHp * 100) + '%）';
+  var bSh = (b.shield > 0.5) ? '<span style="color:var(--info)">+' + fmt(Math.max(0, b.shield)) + '</span>' : '';
+  $id('tb-hptext').innerHTML = fmt(Math.max(0, b.hp)) + bSh + ' / ' + fmt(b.maxHp) + '（' + Math.round(b.hp / b.maxHp * 100) + '%）';
   $id('tb-status').innerHTML = entStatus(b) + (b.elem ? ' 屬性:' + ENCHANTS[b.elem].emoji : '');
   $id('tp-hp').style.width = clamp(p.hp / st.hp * 100, 0, 100) + '%';
-  $id('tp-hptext').textContent = fmt(Math.max(0, p.hp)) + ' / ' + fmt(st.hp);
+  var pSh2 = (p.shield > 0.5) ? '<span style="color:var(--info)">+' + fmt(Math.max(0, p.shield)) + '</span>' : '';
+  $id('tp-hptext').innerHTML = fmt(Math.max(0, p.hp)) + pSh2 + ' / ' + fmt(st.hp);
   $id('tp-status').textContent = entStatus(p);
   renderMpSkill(p, 'tp');
   $id('tw-dps').textContent = 'DPS ' + fmt(TOWER.elapsed > 1 ? TOWER.dmgDealt / TOWER.elapsed : 0) +
@@ -863,7 +896,7 @@ function renderSkillModal() {
   }
   if (sk.flavor) h += '<div class="sk-flavor">' + esc(sk.flavor) + '</div>';
   if (lock) h += '<div class="hint">🔒 ' + esc(lock) + '</div>';
-  
+
   h += '<div style="text-align: right; margin-top: 12px; color: #facc15; font-size: 14px; font-weight: bold;">技能點：' + availableSkillPoints() + '</div>';
   h += '<div class="detail-actions" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px;">';
   if (lv < maxLv && !lock) {
@@ -875,13 +908,13 @@ function renderSkillModal() {
   } else {
     h += '<div></div>'; // empty grid cell
   }
-  
+
   if (lv > 0) {
     h += '<button class="btn sm warn" data-skill-downgrade="' + id + '" data-tip="退回 1 技能點（不退還金幣）">⬇️ 降級</button>';
   } else {
     h += '<div></div>'; // empty grid cell
   }
-  
+
   if (sk.cat !== 'passive' && lv > 0) {
     h += inLoadout
       ? '<button class="btn sm warn" data-skill-unequip="' + id + '">卸下</button>'
@@ -889,19 +922,19 @@ function renderSkillModal() {
   } else {
     h += '<div></div>'; // empty grid cell
   }
-  
+
   if (!isFusion && sk.cat !== 'passive' && lv > 0) {
     h += '<button class="btn sm" data-skill-fuse-add="' + id + '">⚗️ 加入融合</button>';
   } else {
     h += '<div></div>';
   }
-  
+
   if (isFusion) {
     h += '<button class="btn sm danger" data-fusion-delete="' + id + '">🗑️ 刪除</button>';
   } else {
     h += '<div></div>';
   }
-  
+
   h += '</div>';
   body.innerHTML = h;
 }
@@ -969,7 +1002,7 @@ function showTowerTooltip(flStr, anchorEl) {
   if (!tip) return;
   var fl = parseInt(flStr, 10);
   if (!fl) return;
-  
+
   var dropTip = '<div class="skt-name" style="margin-bottom:6px;">【可能掉落物】</div>' +
     '<div class="skt-desc" style="text-align:left;">' +
     '💰 金幣 x' + fmt(200 * fl) + ' <span style="color:var(--dim)">(首通雙倍)</span><br>' +
@@ -977,7 +1010,7 @@ function showTowerTooltip(flStr, anchorEl) {
     '💎 隨機寶石 x2 <span style="color:var(--dim)">(100%)</span><br>' +
     '📖 隨機附魔書 x2 <span style="color:var(--dim)">(100%)</span><br>' +
     '🔩 機組零件 <span style="color:var(--dim)">(首通必掉 / 之後30%)</span>';
-  
+
   var bossRates = dropRatesFor(BOSS_DROP_TABLE, fl);
   var equipStrs = [];
   for (var br = bossRates.length - 1; br >= 0; br--) {
@@ -985,7 +1018,7 @@ function showTowerTooltip(flStr, anchorEl) {
     var rate = bossRates[br];
     var rateStr = '';
     if (rate >= 100) {
-      rateStr = '必定' + Math.floor(rate/100) + '件';
+      rateStr = '必定' + Math.floor(rate / 100) + '件';
       var rem = rate % 100;
       if (rem > 0) rateStr += ' + ' + rem + '%再1件';
     } else {
@@ -996,7 +1029,7 @@ function showTowerTooltip(flStr, anchorEl) {
   if (equipStrs.length) {
     dropTip += '<br>' + equipStrs.join('<br>');
   }
-  
+
   dropTip += '</div>';
   tip.innerHTML = dropTip;
   tip.style.display = 'block';
@@ -1015,15 +1048,15 @@ function showEnemyTooltip(anchorEl) {
   if (!tip) return;
   var m = G.tower.active ? (typeof TOWER_FIGHT !== 'undefined' && TOWER_FIGHT ? TOWER_FIGHT.monster : null) : (typeof FIELD !== 'undefined' && FIELD ? FIELD.monster : null);
   if (!m || m.hp <= 0) return;
-  
+
   var dropTip = '<div class="skt-name" style="margin-bottom:6px;">【敵人情報】</div>' +
     '<div class="skt-desc" style="text-align:left;">' +
     '⚔️ 攻擊力：' + fmt(m.atk) + '<br>' +
     '⚡ 攻擊速度：' + fmt1(m.aspd) + ' 次/秒<br>' +
     '🛡️ 物理防禦：' + fmt(m.def) + '<br>' +
-    '🔮 魔法防禦：' + fmt(m.mdef || m.def*0.75) + '<br>' +
+    '🔮 魔法防禦：' + fmt(m.mdef || m.def * 0.75) + '<br>' +
     '❤️ 最大生命：' + fmt(m.maxHp) + '</div>';
-    
+
   var rates = dropRatesFor(FIELD_DROP_TABLE, m.level);
   var equipStrs = [];
   for (var r = rates.length - 1; r >= 0; r--) {
@@ -1032,7 +1065,7 @@ function showEnemyTooltip(anchorEl) {
     var rateStr = rate + '%';
     equipStrs.push('⚔️ <span style="color:' + RARITIES[r].color + '; font-weight:bold;">' + RARITIES[r].name + '裝備</span> <span style="color:var(--dim)">(' + rateStr + ')</span>');
   }
-  
+
   if (equipStrs.length) {
     dropTip += '<div class="skt-name" style="margin:8px 0 6px;">【可能掉落】</div>' +
       '<div class="skt-desc" style="text-align:left;">' +
@@ -1040,7 +1073,7 @@ function showEnemyTooltip(anchorEl) {
       '✨ 經驗 x' + fmt(m.xp) + ' <span style="color:var(--dim)">(基礎)</span><br>' +
       equipStrs.join('<br>') + '</div>';
   }
-  
+
   tip.innerHTML = dropTip;
   tip.style.display = 'block';
   var rRect = anchorEl.getBoundingClientRect();
@@ -1106,17 +1139,119 @@ function renderGems() {
   }
   h += '</table>';
   box.innerHTML = h;
+  var gmToggle = $id('gem-merge-toggle');
+  if (gmToggle) gmToggle.checked = !!(G.factory.synth && G.factory.synth.gemMerge);
+  fillGemTypeSelect($id('fuse-type'));
+  fillGemTypeSelect($id('gconv-target'));
+  fillGemTypeSelect($id('gdis-type'));
   renderFuseInfo();
+  renderGemConvert();
+  renderGemDismantle();
   renderGemFusion();
   renderGemShop();
 }
+
+function gemAbilityText(type, lv) {
+  var gt = GEM_TYPES[type];
+  if (!gt) return '';
+  var val = gemStatValue(type, lv);
+  return gt.statName.replace(/%/g, '') + ' +' + (gt.pct ? pctStr(val) : fmt(val));
+}
+
+// 寶石種類下拉選單（18 種；只填一次，保留玩家選擇）
+function fillGemTypeSelect(sel) {
+  if (!sel || sel.options.length) return;
+  var h = '';
+  for (var t in GEM_TYPES) {
+    h += '<option value="' + t + '">' + GEM_TYPES[t].emoji + ' ' + esc(GEM_TYPES[t].name) + '（' + esc(GEM_TYPES[t].statName.replace('%', '')) + '）</option>';
+  }
+  sel.innerHTML = h;
+}
+/* ---- 寶石合成（2 顆同種同級 → 下一階） ---- */
 function renderFuseInfo() {
-  var sel = $id('fuse-level');
+  var selT = $id('fuse-type'), selL = $id('fuse-level');
   var info = $id('fuse-info');
-  if (!sel || !info) return;
-  var lv = parseInt(sel.value, 10) || 1;
-  info.innerHTML = '該等級庫存 ' + fmt(totalGemsOfLevel(lv)) + ' 顆｜費用 <img src="images/icon_gold.png" class="res-icon">' + fmt(FUSE_GOLD_COST[lv]) +
-    '｜昇華機率 ' + fmt1(Math.min(100, FUSE_UPGRADE_CHANCE + getStats().luck / 2)) + '%（幸運值加成）';
+  if (!selT || !selL || !info) return;
+  var t = selT.value, lv = parseInt(selL.value, 10) || 1;
+  if (!GEM_TYPES[t]) return;
+  var n = gemCount(t, lv);
+  info.innerHTML = '「' + GEM_TYPES[t].emoji + esc(GEM_NAMES[lv] + GEM_TYPES[t].name) + '」庫存 ' + fmt(n) +
+    ' 顆｜每次消耗 2 顆＋<img src="images/icon_gold.png" class="res-icon">' + fmt(FUSE_GOLD_COST[lv]) +
+    ' → 1 顆' + esc(GEM_NAMES[lv + 1] + GEM_TYPES[t].name) + '｜目前可合成 ' + Math.floor(n / 2) + ' 次';
+}
+
+/* ---- 寶石轉換（九宮格；UI.convertSlots = [{type,lv,n}]，轉換時才實際扣庫存） ---- */
+function renderGemConvert() {
+  var grid = $id('gconv-grid');
+  if (!grid) return;
+  if (!UI.convertSlots) UI.convertSlots = [];
+  var h = '';
+  for (var i = 0; i < GEM_CONVERT_SLOTS; i++) {
+    var s = UI.convertSlots[i];
+    if (s) {
+      h += '<div class="gconv-slot filled" data-gconv-slot="' + i + '" title="點擊取出">' +
+        '<div class="gconv-emoji">' + GEM_TYPES[s.type].emoji + '</div>' +
+        '<div class="gconv-label">' + esc(GEM_NAMES[s.lv] + GEM_TYPES[s.type].name) + '</div>' +
+        '<div class="gconv-n">×' + s.n + '</div></div>';
+    } else {
+      h += '<div class="gconv-slot"></div>';
+    }
+  }
+  grid.innerHTML = h;
+  // 轉換結果預覽
+  var targetSel = $id('gconv-target');
+  var target = targetSel ? targetSel.value : null;
+  var info = $id('gconv-info');
+  if (info) {
+    if (UI.convertSlots.length && target && GEM_TYPES[target]) {
+      var byLv = {};
+      UI.convertSlots.forEach(function (s2) { byLv[s2.lv] = (byLv[s2.lv] || 0) + s2.n; });
+      var parts = Object.keys(byLv).sort().map(function (lv2) { return esc(GEM_NAMES[lv2]) + ' ×' + byLv[lv2]; });
+      info.innerHTML = '轉換結果預覽：' + GEM_TYPES[target].emoji + esc(GEM_TYPES[target].name) + '（' + parts.join('、') + '）— 同階轉換、數量不變';
+    } else {
+      info.textContent = '點下方庫存寶石放入九宮格，選擇目標種類後按「一鍵轉換」。';
+    }
+  }
+  // 庫存池（顯示尚可放入的數量）
+  var pool = $id('gconv-pool');
+  if (!pool) return;
+  var chips = [];
+  for (var t in GEM_TYPES) {
+    for (var lv = 1; lv <= GEM_MAX_LEVEL; lv++) {
+      var have = gemCount(t, lv);
+      if (!have) continue;
+      var placed = 0;
+      for (var ci = 0; ci < UI.convertSlots.length; ci++) {
+        if (UI.convertSlots[ci].type === t && UI.convertSlots[ci].lv === lv) placed = UI.convertSlots[ci].n;
+      }
+      var left = have - placed;
+      var tip = esc(GEM_NAMES[lv] + GEM_TYPES[t].name + '｜' + gemAbilityText(t, lv) + '｜可放入 ' + left + ' 顆｜點擊放入九宮格');
+      chips.push('<span class="gem-chip' + (left > 0 ? '' : ' dim') + '" data-gconv-pick="' + t + ':' + lv + '" data-tip="' + tip + '">' +
+        GEM_TYPES[t].emoji + esc(GEM_NAMES[lv] + GEM_TYPES[t].name) + ' ×' + left + '</span>');
+    }
+  }
+  pool.innerHTML = chips.length ? chips.join('') : '<span class="hint">沒有寶石庫存</span>';
+}
+
+/* ---- 寶石拆解 ---- */
+function renderGemDismantle() {
+  var selT = $id('gdis-type'), selL = $id('gdis-level'), info = $id('gdis-info');
+  if (!selT || !selL || !info) return;
+  var t = selT.value, lv = parseInt(selL.value, 10) || 2;
+  if (GEM_TYPES[t]) {
+    var n = gemCount(t, lv);
+    info.innerHTML = '「' + GEM_TYPES[t].emoji + esc(GEM_NAMES[lv] + GEM_TYPES[t].name) + '」庫存 ' + fmt(n) +
+      ' 顆｜每顆拆解 → <b>' + gemDismantleYield(lv) + '</b> 顆一級' + esc(GEM_TYPES[t].name) +
+      '（合成成本 ' + gemL1Worth(lv) + ' 顆一級 × 70%）';
+  }
+  var fl = $id('gdis-fused');
+  if (fl) {
+    var chips = (G.player.fusedGems || []).map(function (fg) {
+      return '<span class="gem-chip fused-chip" data-gdis-fused="' + fg.id + '" title="融合 ' + ((fg.fusions || 0)) + ' 次 → 成本 ' + fusedGemL1Worth(fg) + ' 顆一級 × 70%">' +
+        esc(fusedGemLabel(fg)) + ' → ⛏️' + fusedGemDismantleYield(fg) + ' 顆</span>';
+    });
+    fl.innerHTML = chips.length ? chips.join('') : '<span class="hint">尚無融合寶石</span>';
+  }
 }
 
 /* ---- 寶石融合 v2（雙屬性，僅限 5 階） ---- */
@@ -1192,7 +1327,7 @@ function renderGemShop() {
       '<div class="shop-emoji">' + gt.emoji + '</div>' +
       '<div class="shop-name" style="color:' + c + '">' + esc(GEM_NAMES[item.lv] + gt.name) + '</div>' +
       '<div class="shop-stat">' + esc(gt.statName.replace('%', '')) + ' +' +
-        (gt.pct ? pctStr(gemStatValue(item.type, item.lv)) : fmt(gemStatValue(item.type, item.lv))) + '</div>' +
+      (gt.pct ? pctStr(gemStatValue(item.type, item.lv)) : fmt(gemStatValue(item.type, item.lv))) + '</div>' +
       (item.sold
         ? '<div class="shop-sold">已售出</div>'
         : '<button class="btn sm" data-shop-buy="' + i + '"><img src="images/icon_gold.png" class="res-icon"> ' + fmt(gemShopPrice(item.lv)) + '</button>') +
@@ -1498,23 +1633,23 @@ function initUI() {
   // 技能拖曳排序
   var loBox = $id('skill-loadout');
   if (loBox) {
-    loBox.addEventListener('dragstart', function(e) {
+    loBox.addEventListener('dragstart', function (e) {
       var slot = e.target.closest('.loadout-slot.filled');
       if (!slot) { e.preventDefault(); return; }
       e.dataTransfer.setData('text/plain', slot.getAttribute('data-index'));
       e.dataTransfer.effectAllowed = 'move';
       slot.classList.add('dragging');
     });
-    loBox.addEventListener('dragover', function(e) {
+    loBox.addEventListener('dragover', function (e) {
       e.preventDefault();
       var target = e.target.closest('.loadout-slot');
       if (target) target.classList.add('drag-over');
     });
-    loBox.addEventListener('dragleave', function(e) {
+    loBox.addEventListener('dragleave', function (e) {
       var target = e.target.closest('.loadout-slot');
       if (target) target.classList.remove('drag-over');
     });
-    loBox.addEventListener('drop', function(e) {
+    loBox.addEventListener('drop', function (e) {
       e.preventDefault();
       var target = e.target.closest('.loadout-slot');
       if (target) {
@@ -1537,10 +1672,10 @@ function initUI() {
         }
       }
     });
-    loBox.addEventListener('dragend', function(e) {
+    loBox.addEventListener('dragend', function (e) {
       var slot = e.target.closest('.loadout-slot.filled');
       if (slot) slot.classList.remove('dragging');
-      loBox.querySelectorAll('.drag-over').forEach(function(el) { el.classList.remove('drag-over'); });
+      loBox.querySelectorAll('.drag-over').forEach(function (el) { el.classList.remove('drag-over'); });
     });
   }
 
@@ -1548,13 +1683,13 @@ function initUI() {
   document.addEventListener('mouseover', function (e) {
     var tipBtn = e.target.closest('[data-tip]');
     if (tipBtn) { showStatTooltip('', tipBtn.getAttribute('data-tip'), tipBtn); return; }
-    
+
     var eqCell = e.target.closest('.item-cell[data-id]') || e.target.closest('.eq-slot.filled[data-id]');
     if (eqCell) {
       var it = findItemById(eqCell.getAttribute('data-id'));
       if (it) { showItemTooltip(it, eqCell); return; }
     }
-    
+
     if (e.target.closest('button') || e.target.closest('.btn')) {
       hideTooltip();
       return;
@@ -1569,10 +1704,10 @@ function initUI() {
     if (etip) { showEnemyTooltip(etip); return; }
   });
   document.addEventListener('mouseout', function (e) {
-    if (e.target.closest('[data-sk]') || e.target.closest('.stat-row[data-tt-title]') || 
-        e.target.closest('[data-tower-tip]') || e.target.closest('#btn-enemy-tip') || 
-        e.target.closest('[data-tip]') || e.target.closest('.item-cell[data-id]') || 
-        e.target.closest('.eq-slot.filled[data-id]')) {
+    if (e.target.closest('[data-sk]') || e.target.closest('.stat-row[data-tt-title]') ||
+      e.target.closest('[data-tower-tip]') || e.target.closest('#btn-enemy-tip') ||
+      e.target.closest('[data-tip]') || e.target.closest('.item-cell[data-id]') ||
+      e.target.closest('.eq-slot.filled[data-id]')) {
       hideTooltip();
     }
   });
@@ -1592,16 +1727,113 @@ function initUI() {
     });
   }
 
-  // 寶石合成（原融合改名）
+  // 寶石合成（2 顆同種同級 → 同種下一階）
   var fuseBtn = $id('fuse-btn');
   if (fuseBtn) {
     fuseBtn.addEventListener('click', function () {
+      var t = $id('fuse-type').value;
       var lv = parseInt($id('fuse-level').value, 10) || 1;
-      var err = fuseGems(lv);
+      var err = composeGems(t, lv);
       if (err) blog('⚠️ 合成失敗：' + err, 'warn');
+      else blog('🔀 寶石合成：' + gemLabel(t, lv) + ' ×2 → ' + gemLabel(t, lv + 1), 'info');
+      renderGems();
+    });
+    $id('fuse-all-btn').addEventListener('click', function () {
+      var t = $id('fuse-type').value;
+      var lv = parseInt($id('fuse-level').value, 10) || 1;
+      var made = 0, err = null;
+      while (made < 500 && !(err = composeGems(t, lv))) made++;
+      if (made > 0) blog('♻️ 全部合成：' + gemLabel(t, lv) + ' ×' + (made * 2) + ' → ' + gemLabel(t, lv + 1) + ' ×' + made, 'good');
+      else blog('⚠️ 合成失敗：' + err, 'warn');
       renderGems();
     });
     $id('fuse-level').addEventListener('change', renderFuseInfo);
+    $id('fuse-type').addEventListener('change', renderFuseInfo);
+  }
+
+  // 寶石轉換（九宮格）
+  var gconvPool = $id('gconv-pool');
+  if (gconvPool) {
+    gconvPool.addEventListener('click', function (e) {
+      var chip = e.target.closest('[data-gconv-pick]');
+      if (!chip) return;
+      var pk = chip.getAttribute('data-gconv-pick').split(':');
+      var t = pk[0], lv = parseInt(pk[1], 10);
+      if (!UI.convertSlots) UI.convertSlots = [];
+      var slot = null;
+      UI.convertSlots.forEach(function (s) { if (s.type === t && s.lv === lv) slot = s; });
+      var placed = slot ? slot.n : 0;
+      var can = Math.min(GEM_CONVERT_STACK - placed, gemCount(t, lv) - placed);
+      if (can <= 0) { blog('⚠️ 該格已達上限（' + GEM_CONVERT_STACK + ' 顆）或庫存已放完', 'warn'); return; }
+      if (slot) slot.n += can;
+      else {
+        if (UI.convertSlots.length >= GEM_CONVERT_SLOTS) { blog('⚠️ 九宮格已滿（最多 ' + GEM_CONVERT_SLOTS + ' 種）', 'warn'); return; }
+        UI.convertSlots.push({ type: t, lv: lv, n: can });
+      }
+      renderGemConvert();
+    });
+    $id('gconv-grid').addEventListener('click', function (e) {
+      var el = e.target.closest('[data-gconv-slot]');
+      if (!el) return;
+      UI.convertSlots.splice(parseInt(el.getAttribute('data-gconv-slot'), 10), 1);
+      renderGemConvert();
+    });
+    $id('gconv-btn').addEventListener('click', function () {
+      var target = $id('gconv-target').value;
+      var slots = (UI.convertSlots || []).slice();
+      var err = convertGems(slots, target);
+      if (err) { blog('⚠️ 轉換失敗：' + err, 'warn'); return; }
+      // 各階明細（方便對帳）
+      var byLv = {};
+      slots.forEach(function (s) { byLv[s.lv] = (byLv[s.lv] || 0) + s.n; });
+      var detail = Object.keys(byLv).sort().map(function (lv) { return GEM_NAMES[lv] + '×' + byLv[lv]; }).join('、');
+      blog('🔄 寶石轉換完成：獲得 ' + GEM_TYPES[target].emoji + GEM_TYPES[target].name + ' ' + detail + '（同階轉換）' +
+        (G.factory.synth && G.factory.synth.gemMerge ? '<span class="dim-text">｜⚙️ 提醒：「寶石升階」自動化開啟中，湊滿 3 顆會被自動合成高一級</span>' : ''), 'good');
+      UI.convertSlots = [];
+      renderGems();
+    });
+    $id('gconv-clear').addEventListener('click', function () { UI.convertSlots = []; renderGemConvert(); });
+    $id('gconv-target').addEventListener('change', renderGemConvert);
+  }
+
+  // 寶石拆解
+  var gdisBtn = $id('gdis-btn');
+  if (gdisBtn) {
+    gdisBtn.addEventListener('click', function () {
+      var t = $id('gdis-type').value;
+      var lv = parseInt($id('gdis-level').value, 10) || 2;
+      var r = dismantleGem(t, lv);
+      if (r.err) blog('⚠️ 拆解失敗：' + r.err, 'warn');
+      else blog('⛏️ 拆解 ' + gemLabel(t, lv) + ' → ' + gemLabel(t, 1) + ' ×' + r.n, 'info');
+      renderGems();
+    });
+    $id('gdis-all-btn').addEventListener('click', function () {
+      var t = $id('gdis-type').value;
+      var lv = parseInt($id('gdis-level').value, 10) || 2;
+      var cnt = 0, gain = 0, r = null;
+      while (cnt < 999) {
+        r = dismantleGem(t, lv);
+        if (r.err) break;
+        cnt++; gain += r.n;
+      }
+      if (cnt > 0) blog('⛏️ 全部拆解：' + gemLabel(t, lv) + ' ×' + cnt + ' → ' + gemLabel(t, 1) + ' ×' + gain, 'good');
+      else blog('⚠️ 拆解失敗：' + r.err, 'warn');
+      renderGems();
+    });
+    $id('gdis-type').addEventListener('change', renderGemDismantle);
+    $id('gdis-level').addEventListener('change', renderGemDismantle);
+    $id('gdis-fused').addEventListener('click', function (e) {
+      var el = e.target.closest('[data-gdis-fused]');
+      if (!el) return;
+      var fid = el.getAttribute('data-gdis-fused');
+      var fg = findFusedGem(fid);
+      if (!fg) return;
+      if (!confirm('確定拆解「' + fusedGemLabel(fg) + '」？\n將獲得 ' + fusedGemDismantleYield(fg) + ' 顆 1 階寶石（依屬性均分），此操作無法復原。')) return;
+      var r = dismantleFusedGem(fid);
+      if (r.err) { blog('⚠️ 拆解失敗：' + r.err, 'warn'); return; }
+      blog('⛏️ 融合寶石拆解 → ' + r.got.map(function (g) { return gemLabel(g.type, 1) + ' ×' + g.n; }).join('、'), 'good');
+      renderGems();
+    });
   }
 
   // 寶石融合 v2（雙屬性）
@@ -1856,14 +2088,26 @@ function initUI() {
     sel.addEventListener('change', function () {
       var r = parseInt(sel.getAttribute('data-rarity'), 10);
       G.factory.filter.actions[r] = sel.value;
-      flog('🔀 篩選規則更新：' + RARITIES[r].name + ' → ' + ({ keep: '保留', salvage: '分解', synth: '合成素材' })[sel.value], 'info');
+      flog('🔀 篩選規則更新：' + RARITIES[r].name + ' → ' + ({ keep: '保留', salvage: '分解', smart: '比已裝備弱則分解', synth: '合成素材' })[sel.value], 'info');
     });
   });
-  $id('flt-smart').addEventListener('change', function () { G.factory.filter.smartSalvage = this.checked; });
   $id('flt-autoequip').addEventListener('change', function () { G.factory.autoEquip = this.checked; });
   $id('syn-hybrid').addEventListener('change', function () { G.factory.synth.hybridEnabled = this.checked; });
   $id('syn-merge').addEventListener('change', function () { G.factory.synth.mergeEnabled = this.checked; });
-  $id('syn-gem').addEventListener('change', function () { G.factory.synth.gemMerge = this.checked; });
+  $id('syn-gem').addEventListener('change', function () {
+    G.factory.synth.gemMerge = this.checked;
+    UI.dirty.gems = true; // 寶石分頁的「寶石升階」開關同步顯示
+  });
+  // 寶石分頁的「寶石升階」快速開關（與熔爐頁 syn-gem 同步）
+  var gemMergeToggle = $id('gem-merge-toggle');
+  if (gemMergeToggle) {
+    gemMergeToggle.addEventListener('change', function () {
+      G.factory.synth.gemMerge = this.checked;
+      var synGem = $id('syn-gem');
+      if (synGem) synGem.checked = this.checked;
+      blog(this.checked ? '⚙️ 已開啟熔爐自動「寶石升階」（3 顆同種同級 → 高一級）' : '⚙️ 已關閉熔爐自動「寶石升階」，寶石庫存不會再被自動合成', 'info');
+    });
+  }
   $id('syn-mingem').addEventListener('change', function () { G.factory.synth.minGemLevel = parseInt(this.value, 10) || 1; });
   $id('syn-book').addEventListener('change', function () { G.factory.synth.bookChoice = this.value; });
   // 附魔已改為裝備介面手動操作（無自動附魔設定）
@@ -1894,7 +2138,7 @@ function initUI() {
 function showTowerResultModal(r, p, b, myDmg, bDmg) {
   var modal = $id('tower-result-modal');
   var title = $id('trm-title');
-  
+
   if (r.win) {
     title.innerHTML = '🏆 挑戰成功！通關第 ' + r.floor + ' 層';
     title.className = 'tr-title good';
@@ -1902,37 +2146,37 @@ function showTowerResultModal(r, p, b, myDmg, bDmg) {
     title.innerHTML = '💀 挑戰失敗（第 ' + r.floor + ' 層）';
     title.className = 'tr-title bad';
   }
-  
+
   var st = getStats();
   var pMax = st.hp;
   var pHp = p ? p.hp : 0;
   var bMax = b ? b.maxHp : 1;
   var bHp = b ? b.hp : 0;
-  
+
   var pPct = Math.max(0, Math.round(pHp / pMax * 100));
   var bPct = Math.max(0, Math.round(bHp / bMax * 100));
-  
-  var hpStatsHtml = 
+
+  var hpStatsHtml =
     '<div style="display:flex; justify-content:space-between; margin-bottom: 4px;"><span>冒險者：</span><span>' + fmt(Math.max(0, pHp)) + ' / ' + fmt(pMax) + ' (' + pPct + '%)</span></div>' +
     '<div style="display:flex; justify-content:space-between;"><span>' + (b ? b.name : 'BOSS') + '：</span><span>' + fmt(Math.max(0, bHp)) + ' / ' + fmt(bMax) + ' (' + bPct + '%)</span></div>';
   $id('trm-hp-stats').innerHTML = hpStatsHtml;
-  
-  var dmgStatsHtml = 
+
+  var dmgStatsHtml =
     '<div style="display:flex; justify-content:space-between; margin-bottom: 4px;"><span>我方造成：</span><span>' + fmt(myDmg) + '</span></div>' +
     '<div style="display:flex; justify-content:space-between;"><span>敵方造成：</span><span>' + fmt(bDmg) + '</span></div>';
   $id('trm-dmg-stats').innerHTML = dmgStatsHtml;
-  
+
   if (r.win) {
-    $id('trm-rewards').innerHTML = r.rewards.map(function(x) { return '<div style="margin-bottom:4px;">' + esc(x) + '</div>'; }).join('');
+    $id('trm-rewards').innerHTML = r.rewards.map(function (x) { return '<div style="margin-bottom:4px;">' + x + '</div>'; }).join('');
   } else {
-    $id('trm-rewards').innerHTML = r.analysis.map(function(x) { return '<div style="margin-bottom:4px; color:#ffb366;">📋 ' + esc(x) + '</div>'; }).join('');
+    $id('trm-rewards').innerHTML = r.analysis.map(function (x) { return '<div style="margin-bottom:4px; color:#ffb366;">📋 ' + esc(x) + '</div>'; }).join('');
   }
-  
+
   modal.style.display = 'flex';
 }
 
 if ($id('trm-confirm')) {
-  $id('trm-confirm').onclick = function() {
+  $id('trm-confirm').onclick = function () {
     $id('tower-result-modal').style.display = 'none';
     if (typeof finishTowerFight === 'function') finishTowerFight();
   };

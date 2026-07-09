@@ -61,12 +61,20 @@ function pushConveyor(item) {
 function decideFilter(it) {
   var f = G.factory;
   if (it.locked) return 'keep';
-  // 智慧分解：比（較弱的那件）已裝備差 → 分解
-  if (f.filter.smartSalvage) {
+  
+  var action = f.filter.actions[it.rarity] || 'keep';
+  
+  // 智慧分解：比（較弱的那件）已裝備差 → 分解，否則保留
+  if (action === 'smart') {
     var cur = G.equipment[equipTargetSlot(it)];
-    if (cur && itemScore(it) <= itemScore(cur)) return 'salvage';
+    if (cur && itemScore(it) <= itemScore(cur)) {
+      return 'salvage';
+    } else {
+      return 'keep';
+    }
   }
-  return f.filter.actions[it.rarity] || 'keep';
+  
+  return action;
 }
 
 /* ---- 分解槽（精粹提取率公式 extractChanceNow → js/formula.js §7） ---- */
@@ -287,22 +295,7 @@ function tryRarityMerge() {
   return false;
 }
 
-/* ---- 寶石融合：2 顆同級寶石（不限種類）→ 隨機種類同級，機率昇華 +1 級 ---- */
-function fuseGems(lv) {
-  lv = clamp(lv, 1, GEM_MAX_LEVEL);
-  if (totalGemsOfLevel(lv) < 2) return '該等級寶石不足 2 顆';
-  var cost = FUSE_GOLD_COST[lv];
-  if (G.player.gold < cost) return '金幣不足（需要 ' + fmt(cost) + '）';
-  G.player.gold -= cost;
-  takeGemOfLevel(lv);
-  takeGemOfLevel(lv);
-  var up = lv < GEM_MAX_LEVEL && chance(gemComposeUpChance()); // 昇華率公式 → formula.js §8
-  var type = randomGemType();
-  addGem(type, up ? lv + 1 : lv, 1);
-  flog('🔀 寶石合成：' + (up ? '🌟 昇華！' : '') + '獲得 ' + gemLabel(type, up ? lv + 1 : lv), up ? 'good' : 'info');
-  UI.dirty.header = true; UI.dirty.gems = true;
-  return null;
-}
+/* ---- 寶石合成已改版（2 顆同種同級 → 下一級）：composeGems → item.js ---- */
 
 /* （附魔節點已移除：附魔改為裝備介面手動操作，見 item.js manualEnchant） */
 

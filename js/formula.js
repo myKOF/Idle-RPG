@@ -633,8 +633,22 @@ function enchantCapFor(it) {
   return RARITIES[clamp(it.rarity, 0, RARITIES.length - 1)].enchants;
 }
 
-// 寶石合成昇華率 = 基礎 25% + 幸運值/2
-function gemComposeUpChance() { return FUSE_UPGRADE_CHANCE + getStats().luck / 2; }
+/* ---- 寶石合成 / 轉換 / 拆解換算（2026-07-09 改版）----
+   合成鏈：2 顆同種同級 → 1 顆同種下一級（消耗金幣 FUSE_GOLD_COST[素材等級]），
+   故 1 顆 N 級寶石的合成總成本 = 2^(N-1) 顆 1 級（5 級 = 16 顆）。 */
+var GEM_CONVERT_SLOTS = 9;     // 寶石轉換九宮格格數
+var GEM_CONVERT_STACK = 10;    // 每格同種同級寶石上限
+var GEM_DISMANTLE_KEEP = 0.7;  // 拆解保留比例（損失 30%）
+
+// 1 顆 lv 級寶石換算多少顆 1 級寶石
+function gemL1Worth(lv) { return Math.pow(2, lv - 1); }
+// 一般寶石拆解產出（同種 1 級寶石）= ⌊2^(等級-1) × 0.7⌋（例：5 級 → ⌊16×0.7⌋ = 11 顆）
+function gemDismantleYield(lv) { return Math.floor(gemL1Worth(lv) * GEM_DISMANTLE_KEEP); }
+/* 融合寶石拆解：融合素材樹的葉子都是 5 階寶石（各值 16 顆 1 級），
+   累計融合 n 次共消耗 n+1 顆 5 階（不計成功率，一律視為 100%）
+   → 總成本 = 16 × (融合次數+1) 顆 1 級，拆解產出 = ⌊總成本 × 0.7⌋（依屬性種類均分）。 */
+function fusedGemL1Worth(fg) { return gemL1Worth(GEM_MAX_LEVEL) * ((fg.fusions || 0) + 1); }
+function fusedGemDismantleYield(fg) { return Math.floor(fusedGemL1Worth(fg) * GEM_DISMANTLE_KEEP); }
 
 // 寶石融合成功率 = 60% - 10% ×（雙方累計成功融合次數），最低 10%
 function gemFuseRate(m1, m2) {

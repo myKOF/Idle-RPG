@@ -174,10 +174,13 @@ function endTowerFight(win, reason) {
       for (var bk2 = 0; bk2 < bn; bk2++) {
         pushConveyor(makeEquipment(rw.itemLevel, { rarity: br, level: rw.itemLevel }));
       }
-      lootCounts.push(RARITIES[br].name + ' x' + bn);
+      lootCounts.push('&nbsp;&nbsp;<span style="color:' + RARITIES[br].color + '">' + RARITIES[br].name + '裝備*' + bn + '</span>');
     }
     if (lootCounts.length) {
-      result.rewards.push('⚔️ 裝備戰利品：' + lootCounts.join('、') + '（已送入生產線）');
+      result.rewards.push('⚔️ 裝備戰利品（已送入生產線）：');
+      for (var i = 0; i < lootCounts.length; i++) {
+        result.rewards.push(lootCounts[i]);
+      }
     }
     G.player.gold += rw.gold;
     result.rewards.push('💰 金幣 x' + fmt(rw.gold));

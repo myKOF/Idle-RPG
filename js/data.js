@@ -43,8 +43,8 @@ var SLOT_INFO = {
   gloves:   { name: '護手', emoji: '🧤', icon: 'icon_gloves.png' },
   legs:     { name: '護腿', emoji: '👖', icon: 'icon_legs.png' },
   boots:    { name: '靴子', emoji: '🥾', icon: 'icon_legs.png' },
-  ring:     { name: '戒指', emoji: '💍', icon: 'icon_gold.png' },
-  ring2:    { name: '戒指Ⅱ', emoji: '💍', icon: 'icon_gold.png' },
+  ring:     { name: '戒指', emoji: '💍', icon: 'icon_ring.png' },
+  ring2:    { name: '戒指Ⅱ', emoji: '💍', icon: 'icon_ring.png' },
   amulet:   { name: '項鍊', emoji: '📿', icon: 'icon_gems.png' }
 };
 var SLOT_BASENAMES = {
@@ -299,12 +299,18 @@ var GEM_TYPES = {
   opal:      { name: '蛋白石', emoji: '🩵', stat: 'aspd',      statName: '攻擊速度%',  base: 1.5, pct: true },
   onyx:      { name: '黑曜石', emoji: '⚫', stat: 'lifesteal', statName: '吸血%',      base: 1,   pct: true },
   moonstone: { name: '月光石', emoji: '🌙', stat: 'evasion',   statName: '閃避率%',    base: 1,   pct: true },
-  sunstone:  { name: '太陽石', emoji: '☀️', stat: 'luck',      statName: '幸運值',     base: 1.5, pct: false }
+  sunstone:  { name: '太陽石', emoji: '☀️', stat: 'luck',      statName: '幸運值',     base: 1.5, pct: false },
+  // === 防禦類（2026-07-09 新增 6 種）===
+  jade:      { name: '翡翠',   emoji: '🟩', stat: 'tenacity',    statName: '韌性%',     base: 1.5, pct: true },
+  turquoise: { name: '綠松石', emoji: '🟦', stat: 'blockRate',   statName: '格擋率%',   base: 1,   pct: true },
+  agate:     { name: '瑪瑙',   emoji: '🟤', stat: 'blockDmgRed', statName: '格擋減傷%', base: 1.5, pct: true },
+  pearl:     { name: '珍珠',   emoji: '🤍', stat: 'shieldEff',   statName: '護盾效率%', base: 2,   pct: true },
+  malachite: { name: '孔雀石', emoji: '💚', stat: 'pRes',        statName: '物理抗性%', base: 0.8, pct: true },
+  fluorite:  { name: '螢石',   emoji: '💙', stat: 'mRes',        statName: '魔法抗性%', base: 0.8, pct: true }
 };
 // 寶石數值/插槽/附魔欄位公式（gemStatValue、socketCountFor、enchantCapFor）→ js/formula.js §8
-// 寶石合成（原融合改名）：消耗 2 顆同級寶石 → 隨機種類同級，機率升 1 級
-var FUSE_GOLD_COST = [0, 100, 300, 900, 2700, 8100]; // 依等級
-var FUSE_UPGRADE_CHANCE = 25; // % 基礎（+幸運值/2）
+// 寶石合成：2 顆「同種類、同等級」→ 1 顆同種類下一級（2026-07-09 改版，無昇華機率）
+var FUSE_GOLD_COST = [0, 100, 300, 900, 2700, 8100]; // 金幣費用，依素材等級
 
 /* ---- 寶石融合 v2（僅限 5 階）----
    不同屬性 x2 → 雙屬性寶石（數值隨機）；同屬性 → 數值介於兩者間、上限 2 倍。
