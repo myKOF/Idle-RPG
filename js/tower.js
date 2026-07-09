@@ -10,7 +10,9 @@ var TOWER = {
   enraged: false,
   specialCd: 8,
   dmgDealt: 0,
-  result: null       // 結束後的結算資料（顯示用）
+  bossDmgDealt: 0,
+  result: null,       // 結束後的結算資料（顯示用）
+  showingResult: false
 };
 
 function makeBoss(floor) {
@@ -50,13 +52,15 @@ function startTowerFight(floor) {
   TOWER.enraged = false;
   TOWER.specialCd = 8;
   TOWER.dmgDealt = 0;
+  TOWER.bossDmgDealt = 0;
   TOWER.result = null;
+  TOWER.showingResult = false;
   blog('🗼 挑戰高塔第 ' + floor + ' 層：' + TOWER.boss.name + '（限時 60 秒）', 'info');
   UI.dirty.tower = true; UI.dirty.battle = true;
 }
 
 function towerTick(dt) {
-  if (!G.tower.active) return;
+  if (!G.tower.active || TOWER.showingResult) return;
   var st = getStats();
   var p = TOWER.player, b = TOWER.boss;
   TOWER.elapsed += dt;
@@ -110,7 +114,9 @@ function towerTick(dt) {
     var mult = TOWER.enraged ? TOWER_ENRAGE_MULT : 1;
     b.atkCd -= dt * slowFactor(b);
     if (b.atkCd <= 0) {
+      var beforeHp = p.hp;
       doMonsterAttack(b, p, 'tp-float', mult);
+      TOWER.bossDmgDealt += (beforeHp - p.hp);
       b.atkCd += 1 / b.aspd;
       if (p.hp <= 0) { endTowerFight(false, 'death'); return; }
       if (b.hp <= 0) { endTowerFight(true); return; } // 反震擊殺
@@ -120,7 +126,9 @@ function towerTick(dt) {
     if (TOWER.specialCd <= 0 && p.hp > 0) {
       TOWER.specialCd = 8;
       blog('💢 ' + b.name + ' 蓄力重擊！', 'warn');
+      var beforeHp2 = p.hp;
       doMonsterAttack(b, p, 'tp-float', 2.2 * mult);
+      TOWER.bossDmgDealt += (beforeHp2 - p.hp);
       if (p.hp <= 0) { endTowerFight(false, 'death'); return; }
       if (b.hp <= 0) { endTowerFight(true); return; }
     }
@@ -134,7 +142,7 @@ function endTowerFight(win, reason) {
   var hpPct = b ? (b.hp / b.maxHp * 100) : 0;
   var myDps = TOWER.elapsed > 0.5 ? TOWER.dmgDealt / TOWER.elapsed : 0;
   var needDps = b ? b.maxHp / TOWER_TIME_LIMIT : 0;
-  G.tower.active = false;
+  TOWER.showingResult = true;
 
   var result = {
     win: win, floor: floor, reason: reason || null,
@@ -182,7 +190,7 @@ function endTowerFight(win, reason) {
     G.player.essence += rw.essence;
     result.rewards.push('🔮 附魔精華 x' + rw.essence);
     
-    blog('🎁 高塔通關獎勵：' + result.rewards.join('、'), 'good', 'combat');
+    blog('🎁 高塔通關獎勵：' + result.rewards.join('、'), 'good', 'boss');
   } else if (reason === 'flee') {
     blog('🏃 你撤出了高塔挑戰。', 'warn');
     result.analysis.push('已撤退。可隨時再次挑戰。');
@@ -206,6 +214,15 @@ function endTowerFight(win, reason) {
   }
 
   TOWER.result = result;
+  
+  if (typeof showTowerResultModal === 'function') {
+    showTowerResultModal(result, TOWER.player, TOWER.boss, TOWER.dmgDealt, TOWER.bossDmgDealt);
+  }
+}
+
+function finishTowerFight() {
+  TOWER.showingResult = false;
+  G.tower.active = false;
   TOWER.boss = null;
   TOWER.player = null;
   // 野外重生

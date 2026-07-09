@@ -20,11 +20,18 @@ function addLog(elId, msg, cls, cap, cat) {
 }
 function blog(msg, cls, cat) {
   if (!cat) {
-    if (msg.includes('戰利品') || msg.includes('獲得') || msg.includes('掉落')) cat = 'loot';
+    if (msg.includes('高塔') || msg.includes('狂暴') || msg.includes('重擊') || msg.includes('撤出')) cat = 'boss';
+    else if (msg.includes('戰利品') || msg.includes('獲得') || msg.includes('掉落')) cat = 'loot';
     else if (msg.includes('強化') || msg.includes('換裝') || msg.includes('資源不足') || msg.includes('背包已滿') || msg.includes('暫存區已滿')) cat = 'factory';
-    else if (msg.includes('推進') || msg.includes('退回') || msg.includes('高塔') || msg.includes('狂暴') || msg.includes('撤出') || msg.includes('復活') || msg.includes('重擊') || msg.includes('擊倒') || msg.includes('遭遇')) cat = 'combat';
+    else if (msg.includes('推進') || msg.includes('退回') || msg.includes('復活') || msg.includes('擊倒') || msg.includes('遭遇')) cat = 'combat';
     else cat = 'system';
   }
+  
+  // 若處於高塔BOSS戰期間，將戰鬥與掉落日誌轉向到 boss 分類
+  if (window.G && G.tower && G.tower.active && (cat === 'combat' || cat === 'loot')) {
+    cat = 'boss';
+  }
+  
   addLog('battle-log', msg, cls, 150, cat);
 }
 function flog(msg, cls) { addLog('factory-log', msg, cls, 50); }
@@ -1881,4 +1888,52 @@ function initUI() {
   });
 
   syncFactoryInputs();
+}
+
+/* ---- 高塔結算彈窗 ---- */
+function showTowerResultModal(r, p, b, myDmg, bDmg) {
+  var modal = $id('tower-result-modal');
+  var title = $id('trm-title');
+  
+  if (r.win) {
+    title.innerHTML = '🏆 挑戰成功！通關第 ' + r.floor + ' 層';
+    title.className = 'tr-title good';
+  } else {
+    title.innerHTML = '💀 挑戰失敗（第 ' + r.floor + ' 層）';
+    title.className = 'tr-title bad';
+  }
+  
+  var st = getStats();
+  var pMax = st.hp;
+  var pHp = p ? p.hp : 0;
+  var bMax = b ? b.maxHp : 1;
+  var bHp = b ? b.hp : 0;
+  
+  var pPct = Math.max(0, Math.round(pHp / pMax * 100));
+  var bPct = Math.max(0, Math.round(bHp / bMax * 100));
+  
+  var hpStatsHtml = 
+    '<div style="display:flex; justify-content:space-between; margin-bottom: 4px;"><span>冒險者：</span><span>' + fmt(Math.max(0, pHp)) + ' / ' + fmt(pMax) + ' (' + pPct + '%)</span></div>' +
+    '<div style="display:flex; justify-content:space-between;"><span>' + (b ? b.name : 'BOSS') + '：</span><span>' + fmt(Math.max(0, bHp)) + ' / ' + fmt(bMax) + ' (' + bPct + '%)</span></div>';
+  $id('trm-hp-stats').innerHTML = hpStatsHtml;
+  
+  var dmgStatsHtml = 
+    '<div style="display:flex; justify-content:space-between; margin-bottom: 4px;"><span>我方造成：</span><span>' + fmt(myDmg) + '</span></div>' +
+    '<div style="display:flex; justify-content:space-between;"><span>敵方造成：</span><span>' + fmt(bDmg) + '</span></div>';
+  $id('trm-dmg-stats').innerHTML = dmgStatsHtml;
+  
+  if (r.win) {
+    $id('trm-rewards').innerHTML = r.rewards.map(function(x) { return '<div style="margin-bottom:4px;">' + esc(x) + '</div>'; }).join('');
+  } else {
+    $id('trm-rewards').innerHTML = r.analysis.map(function(x) { return '<div style="margin-bottom:4px; color:#ffb366;">📋 ' + esc(x) + '</div>'; }).join('');
+  }
+  
+  modal.style.display = 'flex';
+}
+
+if ($id('trm-confirm')) {
+  $id('trm-confirm').onclick = function() {
+    $id('tower-result-modal').style.display = 'none';
+    if (typeof finishTowerFight === 'function') finishTowerFight();
+  };
 }

@@ -463,11 +463,11 @@ function generateSummaryHtml() {
   if (totalDmg === 0) return '';
   var html = '<div class="summary-card">';
   html += '<div class="summary-card-title">------------第 ' + RUN_STATS.runCount + ' 場戰鬥--------------</div>';
-  html += '<div class="summary-card-row">最高關數：' + RUN_STATS.maxStage + '</div>';
+  html += '<div class="summary-card-row"><span style="color:var(--accent)">最高關數</span>：' + RUN_STATS.maxStage + '</div>';
   for (var k in RUN_STATS.skills) {
     var sk = RUN_STATS.skills[k];
     var pct = totalDmg > 0 ? (sk.damage / totalDmg * 100).toFixed(1) : 0;
-    html += '<div class="summary-card-row">' + k + '：' + fmt(sk.count) + '次，傷害 ' + Math.round(sk.damage).toLocaleString() + ' (' + pct + '%)</div>';
+    html += '<div class="summary-card-row"><span style="color:var(--accent)">' + k + '</span>：' + fmt(sk.count) + '次，傷害 ' + Math.round(sk.damage).toLocaleString() + ' (' + pct + '%)</div>';
   }
   html += '</div>';
   return html;

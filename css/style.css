@@ -215,7 +215,7 @@ textarea#save-io {
 .cb-icon.boss { width: 84px; height: 84px; filter: hue-rotate(-45deg) contrast(1.2) drop-shadow(0 0 15px rgba(255,0,0,0.6)); }
 .cb-name { font-weight: bold; margin-top: 4px; }
 .cb-name.elite { color: var(--warn); }
-.cb-status { min-height: 18px; font-size: 12px; color: var(--warn); }
+.cb-status { height: 40px; overflow: hidden; font-size: 12px; color: var(--warn); margin-top: 4px; }
 .cb-skill {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -496,7 +496,7 @@ textarea#save-io {
   display: flex; align-items: center; gap: 10px; background: var(--panel);
   border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin-bottom: 6px;
 }
-.tower-floor.cleared { border-color: #2d5b3e; }
+.tower-floor.cleared { border-color: #2d5b3e; background-color: rgba(45, 91, 62, 0.35); }
 .tower-floor.locked { opacity: .45; }
 .tf-emoji { font-size: 22px; }
 .tf-name { font-weight: bold; flex: 1; }
@@ -749,3 +749,10 @@ textarea#save-io {
 
 /* ---- 戰鬥等級顯示 ---- */
 .cb-level { font-size: 13px; color: var(--accent); font-weight: bold; text-align: center; margin-bottom: 2px; min-height: 18px; }
+
+/* ---- 日誌篩選 ---- */
+.log.filter-combat .log-line:not([data-cat="combat"]) { display: none; }
+.log.filter-boss .log-line:not([data-cat="boss"]) { display: none; }
+.log.filter-factory .log-line:not([data-cat="factory"]) { display: none; }
+.log.filter-loot .log-line:not([data-cat="loot"]) { display: none; }
+.log.filter-system .log-line:not([data-cat="system"]) { display: none; }

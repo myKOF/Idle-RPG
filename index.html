@@ -377,6 +377,7 @@
         <select id="log-filter" class="log-filter">
           <option value="all">全部</option>
           <option value="combat">戰鬥與進度</option>
+          <option value="boss">高塔BOSS戰</option>
           <option value="factory">裝備與強化</option>
           <option value="loot">掉落物</option>
           <option value="system">系統訊息</option>
@@ -398,6 +399,27 @@
     <div id="skill-modal-body"></div>
   </div>
 </div>
+
+<!-- 挑戰BOSS結算彈窗 -->
+<div id="tower-result-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+  <div style="background:#1a140f; border:1px solid var(--border); border-radius:4px; padding:20px; width:400px; max-width:90%; box-shadow:0 0 20px rgba(0,0,0,0.8);">
+    <div id="trm-title" class="tr-title" style="text-align:center; font-size: 20px; margin-bottom: 16px;"></div>
+    
+    <div class="tr-sub" style="color:var(--text); margin-bottom:4px; font-weight:bold;">【雙方剩餘血量】</div>
+    <div id="trm-hp-stats" class="tr-line" style="margin-bottom: 12px;"></div>
+    
+    <div class="tr-sub" style="color:var(--text); margin-bottom:4px; font-weight:bold;">【雙方造成總傷害】</div>
+    <div id="trm-dmg-stats" class="tr-line" style="margin-bottom: 12px;"></div>
+    
+    <div class="tr-sub" style="color:var(--text); margin-bottom:4px; font-weight:bold;">【掉落物品獎勵】</div>
+    <div id="trm-rewards" class="tr-line" style="min-height: 40px; margin-bottom: 20px;"></div>
+    
+    <div style="text-align: center;">
+      <button id="trm-confirm" class="btn" style="padding: 8px 30px; font-size: 16px;">確定退出</button>
+    </div>
+  </div>
+</div>
+
 <!-- 技能懸停提示 -->
 <div id="sk-tooltip" style="display:none"></div>
 
