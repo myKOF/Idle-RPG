@@ -237,19 +237,21 @@ function migrateSave(data) {
   data.inventory.forEach(fixSockets);
   data.factory.conveyor.forEach(fixSockets);
   data.factory.synthBuffer.forEach(fixSockets);
+  ((data.forge && data.forge.slots) || []).forEach(fixSockets); // 神鑄槽位內的裝備一併遷移
 
   data.tower.active = false; // 讀檔時不可能處於高塔戰鬥
   if (!data.settings) data.settings = { compareEq: false };
   
-  // 修正舊有裝備名稱前綴
+  // 修正舊有裝備名稱前綴（「神鑄創世的」須排最前，避免被「神鑄的/創世的」截半）
   var fixName = function(it) {
     if (!it) return;
-    it.name = RARITY_PREFIX[it.rarity] + it.name.replace(/^(粗糙的|堅實的|精工的|奇異的|大師級|傳世的|神鑄的|創世的|普通的|精良的|稀有的|獨特的|史詩的|傳說的|神話的)/, '');
+    it.name = RARITY_PREFIX[it.rarity] + it.name.replace(/^(神鑄創世的|粗糙的|堅實的|精工的|奇異的|大師級|傳世的|神鑄的|創世的|普通的|精良的|稀有的|獨特的|史詩的|傳說的|神話的)/, '');
   };
   for (var k in data.equipment) fixName(data.equipment[k]);
   data.inventory.forEach(fixName);
   data.factory.conveyor.forEach(fixName);
   data.factory.synthBuffer.forEach(fixName);
+  ((data.forge && data.forge.slots) || []).forEach(fixName);
 
   return data;
 }

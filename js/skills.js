@@ -387,6 +387,8 @@ function castSkill(pEnt, target, id, lv, floatSel) {
   // === 傷害段 ===
   if (fx.dmgType) {
     var baseVal = ((fx.base || 0) + (fx.per || 0) * (lv - 1)) / 100 * (st[fx.stat] || st.atk) * (1 + st.aoeDmg / 100);
+    // 神鑄特效【神怒】：生命低於 30% 時技能傷害同步提高
+    if ((st.passives.godWrath || 0) > 0 && pEnt.hp < st.hp * 0.3) baseVal *= 1 + st.passives.godWrath / 100;
     if (fx.gamble) baseVal *= rnd(0.33, 1.67); // 孤注一擲：50%~250% 相對波動
     var hits = fx.hits || 1;
     // 雙重施法（奧術過載等）：追加一段
@@ -417,6 +419,7 @@ function castSkill(pEnt, target, id, lv, floatSel) {
           atk: baseVal * (1 - portion), dmgType: fx.dmgType, level: st.level,
           critRate: st.critRate + (fx.critBonus || 0), critDmg: st.critDmg,
           hit: fx.neverMiss ? 999 : 100, pen: fx.dmgType === 'magic' ? st.mPen : st.pPen,
+          annihilate: st.passives.annihilate || 0, // 神鑄特效【破滅】：技能暴擊同樣適用
           elemAtk: elemAtk, eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, isPlayer: true
         };
         // 處決：低血量加成

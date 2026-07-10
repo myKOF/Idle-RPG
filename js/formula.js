@@ -85,6 +85,18 @@ function computeStats() {
     if (it.passive) {
       passives[it.passive.key] = (passives[it.passive.key] || 0) + it.passive.val;
     }
+    // 神鑄創世專屬特效：屬性型直接併入聚合桶，觸發型併入 passives 供戰鬥掛勾讀取
+    if (it.godPassives) {
+      it.godPassives.forEach(function (gp) {
+        var gd = GODFORGE_POOL[gp.key];
+        if (!gd) return;
+        if (gd.stats) {
+          gd.stats.forEach(function (bk) { if (A[bk] !== undefined) A[bk] += gp.val; });
+        } else {
+          passives[gp.key] = (passives[gp.key] || 0) + gp.val;
+        }
+      });
+    }
     itemEnchants(it).forEach(function (en) {
       var ek = en.key, ev = en.val;
       var e = ENCHANTS[ek];
@@ -248,8 +260,11 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     dmg += mDmg;
   }
   dmg *= rnd(0.9, 1.1);   // 傷害浮動 ±10%
-  // 暴擊：傷害 × 暴傷%（基礎 150%）
-  if (chance(aCfg.critRate || 0)) { dmg *= (aCfg.critDmg || 150) / 100; out.crit = true; }
+  // 暴擊：傷害 × 暴傷%（基礎 150%）；神鑄特效【破滅】暴擊時機率翻倍
+  if (chance(aCfg.critRate || 0)) {
+    dmg *= (aCfg.critDmg || 150) / 100; out.crit = true;
+    if (aCfg.annihilate && chance(aCfg.annihilate)) { dmg *= 2; out.procs.push('破滅'); }
+  }
   // 元素附加（各自受對應抗性影響，並觸發元素特效）
   var elem = aCfg.elemAtk || null;
   if (elem) {
@@ -280,6 +295,8 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     dmg *= 1 - clamp(30 + (dCfg.blockDmgRed || 0), 0, 85) / 100;
     out.blocked = true;
   }
+  // 神鑄特效【聖佑】：受到的所有傷害按比例降低（上限 50%）
+  if (dCfg.dmgRed) dmg *= 1 - clamp(dCfg.dmgRed, 0, 50) / 100;
   dmg = Math.max(1, Math.round(dmg));   // 最低傷害 1
   // 護盾吸收
   if (defender.shield && defender.shield > 0) {
@@ -289,7 +306,16 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   }
   defender.hp -= dmg;
   out.dmg = dmg + out.absorbed; // 統計上含護盾吸收量
-  if (defender.hp <= 0) { defender.hp = 0; out.killed = true; }
+  if (defender.hp <= 0) {
+    // 神鑄特效【不朽】：致命攻擊時機率保留 1 點生命並回復 30% 最大生命（60 秒內限一次）
+    if (dCfg.undying && (!defender._undyingAt || GT - defender._undyingAt >= 60) && chance(dCfg.undying)) {
+      defender._undyingAt = GT;
+      defender.hp = Math.max(1, Math.round((dCfg.maxHp || 1) * 0.3));
+      out.procs.push('不朽');
+    } else {
+      defender.hp = 0; out.killed = true;
+    }
+  }
   // 反震（防守方被動）= 防守方最大生命 × 反震%
   if (dCfg.thornsPct && !out.killed) {
     out.thorns = Math.max(1, Math.round(dCfg.maxHp * dCfg.thornsPct / 100));
@@ -429,6 +455,22 @@ function fieldGemLevelFor(stage) {
   return wpick([[glv, 70], [Math.max(1, glv - 1), 30]]);
 }
 
+// 高塔挑戰金幣消耗 = 100000 + 樓層 × 200000
+function towerChallengeCost(floor) {
+  return 100000 + floor * 200000;
+}
+
+// 高塔 BOSS 魔塵掉落率 = min(30%, 2% + BOSS等級 × 0.2%)
+function bossDustRate(bossLevel) {
+  return Math.min(DUST_BOSS_CAP, DUST_BOSS_BASE + bossLevel * DUST_BOSS_PER_LEVEL);
+}
+
+// 野外魔塵掉落率 = min(5%, 0.1% + (敵人等級 - 150) × 0.1%)；150 級以下不掉落
+function fieldDustRate(level) {
+  if (level < DUST_FIELD_MIN_LEVEL) return 0;
+  return Math.min(DUST_FIELD_CAP, DUST_FIELD_BASE + (level - DUST_FIELD_MIN_LEVEL) * DUST_FIELD_PER_LEVEL);
+}
+
 /* ---- 高塔通關獎勵 ----
    零件階級 = 1 + ⌊(樓層-1)/4⌋（上限 T5）；首通必得，重複通關 30%
    金幣 = 200 × 樓層（首通 ×2）
@@ -476,6 +518,17 @@ function upgradeMult(item) { return 1 + 0.05 * (item.upgrade || 0); }
 function passiveValueFor(key, rarity) {
   var pd = PASSIVE_POOL[key];
   return Math.round((pd.base + pd.perR * (rarity - RARE_IDX)) * 10) / 10;
+}
+
+// 神鑄創世專屬特效數值 = base × rnd(0.8, 1.2)
+function godforgePassiveValue(key) {
+  var d = GODFORGE_POOL[key];
+  return Math.round(d.base * rnd(0.8, 1.2) * 10) / 10;
+}
+
+// 神鑄成功率 = 基礎（依素材品質）+ 魔塵數 × 5%
+function forgeSuccessRateFor(rarity, dustCount) {
+  return clamp((FORGE_BASE_RATE[rarity] || 0) + dustCount * FORGE_DUST_RATE, 0, 100);
 }
 
 /* ---- 附魔數值 ----
@@ -539,6 +592,7 @@ function itemScore(it) {
     }
   }
   if (it.passive) s *= 1.15;
+  if (it.godPassives && it.godPassives.length) s *= 1 + 0.15 * it.godPassives.length; // 神鑄創世專屬特效
   var ens = itemEnchants(it);
   for (var ei = 0; ei < ens.length; ei++) {
     var e = ENCHANTS[ens[ei].key];

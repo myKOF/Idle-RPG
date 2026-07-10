@@ -142,11 +142,16 @@ function tickDots(ent, dt) {
 function playerAtkCfg(pEnt) {
   var st = getStats();
   var atkMul = 1 + buffVal(pEnt, 'atkUp') / 100;
+  // 神鑄特效【神怒】：生命低於 30% 時，造成的傷害提高
+  if (pEnt && (st.passives.godWrath || 0) > 0 && pEnt.hp < st.hp * 0.3) {
+    atkMul *= 1 + st.passives.godWrath / 100;
+  }
   return {
     atk: st.atk * atkMul, matk: st.matk * atkMul, dmgType: 'both', level: st.level,
     critRate: st.critRate, critDmg: st.critDmg + buffVal(pEnt, 'critDmgUp'), hit: st.hit,
     sunder: st.passives.sunder || 0, pen: st.pPen, mPen: st.mPen,
     trueDmgPct: st.passives.trueDmg || 0, elemAtk: st.elemAtk,
+    annihilate: st.passives.annihilate || 0,
     eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, isPlayer: true
   };
 }
@@ -159,6 +164,7 @@ function playerDefCfg(pEnt) {
     blockRate: st.blockRate + buffVal(pEnt, 'blockUp'), blockDmgRed: st.blockDmgRed,
     pRes: st.pRes, mRes: st.mRes, resist: st.resist, ctrlRes: st.resist.ctrl,
     ccFactor: (1 - st.tenacity / 100) * (1 - st.ccRed / 100),
+    dmgRed: st.passives.sanctuary || 0, undying: st.passives.undying || 0,
     thornsPct: (st.passives.thorns || 0) + buffVal(pEnt, 'thornsUp'), maxHp: st.hp, isPlayer: true
   };
 }
@@ -207,15 +213,16 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
     if (res.blocked) logMsg += '<span class="log-hl-bad">（被格擋）</span>';
     if (res.procs.length) logMsg += '<span class="log-hl-good">［' + res.procs.join('・') + '］</span>';
     if (res.thorns) logMsg += '<span class="log-hl-bad">遭到反震 ' + fmt(res.thorns) + ' 傷害。</span>';
-    // 吸血 / 暗影汲取 / 吸魔
-    var healAmt = res.dmg * st.lifesteal / 100 + (res.heal || 0);
+    // 吸血 / 暗影汲取 / 吸魔（神鑄特效【萬象汲取】同時加成生命與法力回復）
+    var omni = st.passives.omniDrain || 0;
+    var healAmt = res.dmg * (st.lifesteal + omni) / 100 + (res.heal || 0);
     if (healAmt > 0) {
       healPlayer(pEnt, healAmt, st);
       floatText('pv-float', '+' + fmt(Math.round(healAmt)), 'heal');
-      if (st.lifesteal > 0 || res.heal) logMsg += '<span class="log-hl-good">汲取回復 ' + fmt(healAmt) + '。</span>';
+      if (st.lifesteal > 0 || omni > 0 || res.heal) logMsg += '<span class="log-hl-good">汲取回復 ' + fmt(healAmt) + '。</span>';
     }
-    if (st.manaSteal > 0) {
-      var mpGain = res.dmg * st.manaSteal / 100;
+    if (st.manaSteal + omni > 0) {
+      var mpGain = res.dmg * (st.manaSteal + omni) / 100;
       pEnt.mp = Math.min(st.mp, pEnt.mp + mpGain);
       floatText('pv-float', '+' + fmt(Math.round(mpGain)) + ' MP', 'mp');
     }
@@ -228,6 +235,16 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
       if ((st.passives.slowHit || 0) > 0 && chance(st.passives.slowHit) && !resistCtrl(monsterDefCfg(mEnt))) {
         applyEffect(mEnt, 'slow', 3);
         logMsg += '<span class="log-hl-good">附加減速！</span>';
+      }
+      // 神鑄特效【天罰】：機率降下神雷，造成 250% 物理攻擊的真實傷害（無視防禦）
+      if ((st.passives.smite || 0) > 0 && chance(st.passives.smite)) {
+        var smiteDmg = Math.max(1, Math.round(st.atk * 2.5));
+        mEnt.hp -= smiteDmg;
+        trackDps(smiteDmg);
+        recordRunDamage('天罰', smiteDmg);
+        floatText(floatSel, '⚡' + fmt(smiteDmg), 'crit');
+        logMsg += '<span class="log-hl-good">天罰降臨，追加 ' + fmt(smiteDmg) + ' 真實傷害！</span>';
+        if (mEnt.hp <= 0) { mEnt.hp = 0; res.killed = true; res.dmg += smiteDmg; }
       }
     }
   }
@@ -432,6 +449,15 @@ function rollFieldDrops(m) {
     var amt = ri(1, 2) * rw;
     G.player.essence += amt;
     drops.push('✨精華x' + amt);
+  }
+  // 魔塵（神鑄材料）：150 級起掉落，敵人每高 1 級 +0.1%、上限 5%
+  //（fieldDustRate → formula.js §5；不受掉寶率/場景倍率影響）
+  var dustRate = fieldDustRate(m.level);
+  if (dustRate > 0 && chance(dustRate)) {
+    G.player.dust = (G.player.dust || 0) + 1;
+    drops.push('💫魔塵');
+    blog('💫 敵人掉落神鑄材料：魔塵 x1（持有 ' + fmt(G.player.dust) + '）', 'loot');
+    UI.dirty.forge = true;
   }
   // 自動機組零件（階段 5+；機率低，菁英 x3，場景倍率同其他材料，node 均衡挑選）
   if (s >= 5) {

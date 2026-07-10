@@ -20,6 +20,7 @@
           id="r-scrap">0</b></span>
       <span class="res" title="附魔精華"><img src="images/icon_essence.png" class="res-icon" alt="Essence"> <b
           id="r-essence">0</b></span>
+      <span class="res" title="魔塵（神鑄材料，可提升鑄造成功率）">💫 <b id="r-dust">0</b></span>
       <span class="res" title="寶石"><img src="images/icon_gems.png" class="res-icon" alt="Gems"> <b
           id="r-gems">0</b></span>
       <span class="res" title="附魔書"><img src="images/icon_books.png" class="res-icon" alt="Books"> <b
@@ -47,6 +48,7 @@
         <button class="tab-btn" data-tab="factory">🏭 熔爐</button>
         <button class="tab-btn" data-tab="gems">💎 寶石</button>
         <button class="tab-btn" data-tab="skills">🧠 技能</button>
+        <button class="tab-btn" data-tab="forge" style="display:none">🔯 神鑄</button>
         <button class="tab-btn" data-tab="tower">🗼 高塔</button>
         <button class="tab-btn" data-tab="settings">⚙️ 設定</button>
       </nav>
@@ -275,6 +277,40 @@
           <div id="factory-log" class="log"></div>
         </section>
 
+        <!-- ============ 神鑄 ============ -->
+        <section id="tab-forge" class="tab">
+          <div class="panel forge-panel">
+            <div class="forge-head">
+              <span class="sec-title">🔯 神鑄法陣</span>
+              <span id="forge-rate" class="forge-rate"></span>
+            </div>
+            <div id="forge-stage">
+              <div id="forge-log" class="forge-log"></div>
+              <div id="forge-hex"></div>
+              <div class="forge-actions">
+                <button id="forge-unload" class="btn forge-btn">全卸下</button>
+                <button id="forge-go" class="btn forge-btn">鑄造</button>
+              </div>
+            </div>
+            <div class="forge-foot">
+              <label class="chk"><input type="checkbox" id="forge-autodust"> ✅ 自動使用魔塵</label>
+              <span id="forge-dust-own" class="dim-text"></span>
+            </div>
+            <div class="hint">將 6 件<b>相同品質</b>的裝備（僅限 <span style="color:#fb923c">傳說</span> / <span
+                style="color:#f87171">神話</span> / <span style="color:#b8860b">創世</span>）放入六芒星，點「鑄造」有機會獲得<b>下一品質</b>隨機部位裝備 1
+              件；失敗將隨機消耗 2 件、其餘退回背包。點擊六個角尖的圓形符位可放置 💫 魔塵，每個 +5% 成功率（最多 6 個）。6 件創世鑄造成功將獲得<b
+                style="color:#f5c542">神鑄創世</b>暗金裝備：屬性與上限為創世的 1.5 倍、必帶 2 條專屬特效，且無法再放入法陣。基礎成功率：傳說 55%｜神話 40%｜創世
+              25%。金幣消耗：傳說 500 萬｜神話 2000 萬｜創世 1 億。（神鑄系統於角色 1000 級開放）</div>
+          </div>
+          <div class="equip-section-box">
+            <div class="inv-head">
+              <span class="sec-title">背包 <span id="forge-inv-count">0/60</span></span>
+              <span class="dim-text" style="font-size:12px">點擊背包裝備放入法陣；點擊法陣上的裝備取回</span>
+            </div>
+            <div id="forge-inventory-grid"></div>
+          </div>
+        </section>
+
         <!-- ============ 寶石 ============ -->
         <section id="tab-gems" class="tab">
           <div class="panel" style="margin-bottom:12px">
@@ -476,9 +512,11 @@
               <p><b>⚔️ 戰鬥：</b>角色全自動攻防（基礎 1
                 次/秒，受攻速影響）。法力充足時自動施放【🌠奧術衝擊】造成魔法傷害（對魔防，受冷卻縮減/施法速度/範圍傷害/吸魔影響）。魔法系怪物（幽靈、樹妖等）的攻擊對你的魔防。格擋、閃避、韌性、護盾（治療溢出轉化）皆會生效。每階段擊殺
                 10 隻怪（第 10 隻為菁英）後推進，死亡會退回上一階段。</p>
-              <p><b>🎒 裝備：</b>12 欄位（武器 x2、戒指 x2、頭盔、肩甲、胸甲、腰帶、護手、護腿、靴子、項鍊）。品質 8
-                階：普通（灰）→精良（綠）→稀有（藍）→獨特（紫）→史詩（金）→傳說（橘）→神話（紅）→創世（暗金）；品質決定詞條數（1~7，「詞條上限率」可再突破 +1）、寶石鑲孔（1~6）與附魔欄位（1~3）。神話 25
+              <p><b>🎒 裝備：</b>12 欄位（武器 x2、戒指 x2、頭盔、肩甲、胸甲、腰帶、護手、護腿、靴子、項鍊）。品質 9
+                階：普通（灰）→精良（綠）→稀有（藍）→獨特（紫）→史詩（金）→傳說（橘）→神話（紅）→創世（暗金）→神鑄創世（耀金，僅能鑄造取得）；品質決定詞條數（1~7，「詞條上限率」可再突破 +1）、寶石鑲孔（1~6）與附魔欄位（1~3）。神話 25
                 階起、創世 40 階起掉落。稀有以上附帶特殊被動；武器/戒指優先裝入空欄、再替換較弱者。</p>
+              <p><b>🔯 神鑄：</b>角色 1000 級開放。將 6 件相同品質（傳說/神話/創世）的裝備放入六芒星法陣，消耗金幣鑄造下一品質裝備；失敗隨機消耗 2 件、其餘退回。角尖符位可放💫魔塵（每個
+                +5% 成功率，等級 150+ 敵人與高塔 BOSS 掉落）。6 件創世鑄造成功可得「神鑄創世」：屬性上限 1.5 倍、必帶 2 條專屬特效（龍血/神力/天罰/不朽…共 12 種），無法再入爐。</p>
               <p><b>🏭 生產線：</b>掉落裝備進入輸送帶 → 篩選節點依品質決定「保留 / 分解 / 合成素材」。分解有 10% 機率「精粹提取」出高階材料。</p>
               <p><b>🔮 混合合成：</b>[裝備] + [寶石] + [附魔書] = 附魔特殊裝備。開啟「更強自動換裝」讓系統自動把新合成的神裝穿上！</p>
               <p><b>✨ 附魔：</b>攻擊類六元素（🔥高傷、❄️減速、⚡連鎖、🧪中毒、🌟淨化、🌑汲取）、防禦類（六元素抗性/控制抵抗）、功能類（掉寶/疾行）。在「裝備」分頁點選裝備 → 點附魔書即可附魔（消耗 1
@@ -623,6 +661,7 @@
   <script src="js/combat.js"></script>
   <script src="js/tower.js"></script>
   <script src="js/factory.js"></script>
+  <script src="js/forge.js"></script>
   <script src="js/save.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/main.js"></script>

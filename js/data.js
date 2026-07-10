@@ -1,8 +1,10 @@
 'use strict';
 /* ============ 遊戲資料定義 ============ */
 
-/* ---- 稀有度（8 階）----
-   affix: 詞條數量範圍｜sockets: 寶石鑲孔數｜enchants: 附魔欄位數 */
+/* ---- 稀有度（9 階）----
+   affix: 詞條數量範圍｜sockets: 寶石鑲孔數｜enchants: 附魔欄位數
+   godforged（神鑄創世）：僅能由神鑄系統以 6 件創世鑄造獲得，不自然掉落、
+   不可由熔爐合成升階；mult = 創世 × 1.5（詞條數值與洗煉上限同步 1.5 倍）。 */
 var RARITIES = [
   { key: 'common',    name: '普通', color: '#9aa5b1', mult: 1.0,  affix: [1, 2], sockets: 1, enchants: 1, salv: 1.0 },
   { key: 'uncommon',  name: '精良', color: '#4ade80', mult: 1.35, affix: [1, 2], sockets: 1, enchants: 1, salv: 1.7 },
@@ -11,7 +13,8 @@ var RARITIES = [
   { key: 'epic',      name: '史詩', color: '#ffd700', mult: 3.0,  affix: [4, 5], sockets: 3, enchants: 2, salv: 7.5 },
   { key: 'legendary', name: '傳說', color: '#fb923c', mult: 4.0,  affix: [4, 5], sockets: 4, enchants: 2, salv: 12 },
   { key: 'mythic',    name: '神話', color: '#f87171', mult: 5.2,  affix: [6, 6], sockets: 5, enchants: 3, salv: 19 },
-  { key: 'genesis',   name: '創世', color: '#b8860b', mult: 6.8,  affix: [7, 7], sockets: 6, enchants: 3, salv: 30 }
+  { key: 'genesis',   name: '創世', color: '#b8860b', mult: 6.8,  affix: [7, 7], sockets: 6, enchants: 3, salv: 30 },
+  { key: 'godforged', name: '神鑄創世', color: '#f5c542', mult: 10.2, affix: [7, 7], sockets: 6, enchants: 3, salv: 45 }
 ];
 var RARE_IDX = 2; // 稀有級（含）以上附帶特殊被動
 var MAX_AFFIXES = 8; // 詞條上限屬性可突破至此（創世 7 + 突破 1）
@@ -59,8 +62,47 @@ var SLOT_BASENAMES = {
   ring:     ['銅戒', '銀戒', '秘紋戒指'],
   amulet:   ['木墜', '銀鍊', '星辰項鍊']
 };
-var RARITY_PREFIX = ['普通的', '精良的', '稀有的', '獨特的', '史詩的', '傳說的', '神話的', '創世的'];
+var RARITY_PREFIX = ['普通的', '精良的', '稀有的', '獨特的', '史詩的', '傳說的', '神話的', '創世的', '神鑄創世的'];
 var ACCESSORY_SLOTS = ['ring', 'amulet'];
+
+/* ---- 神鑄系統（Divine Forge）----
+   六芒星法陣放入 6 件「同品質」裝備（限傳說/神話/創世）鑄造下一品質裝備；
+   失敗隨機消耗 2 件、其餘退回背包。魔塵每個 +5% 成功率，最多 6 個。 */
+var GODFORGED_IDX = 8;                       // 神鑄創世稀有度索引
+var FORGE_UNLOCK_LEVEL = 1000;               // 神鑄系統開放等級（未達前頁籤隱藏）
+var FORGE_MIN_RARITY = 5;                    // 可入爐最低品質（傳說）
+var FORGE_SLOTS = 6;                         // 六芒星槽位數
+var FORGE_BASE_RATE = { 5: 55, 6: 40, 7: 25 };                  // 基礎成功率 %（依素材品質）
+var FORGE_GOLD_COST = { 5: 5000000, 6: 20000000, 7: 100000000 }; // 單次金幣消耗（傳說 500 萬｜神話 2000 萬｜創世 1 億）
+var FORGE_DUST_RATE = 5;                     // 每個魔塵 +5% 成功率
+var FORGE_FAIL_CONSUME = 2;                  // 鑄造失敗消耗件數
+var DUST_FIELD_MIN_LEVEL = 150;              // 野外魔塵掉落的最低敵人等級
+var DUST_FIELD_BASE = 0.1;                   // 野外魔塵基礎掉落率 %（150 級時）
+var DUST_FIELD_PER_LEVEL = 0.1;              // 敵人每高 1 級的掉落率加成 %
+var DUST_FIELD_CAP = 5;                      // 野外魔塵掉落率上限 %
+var DUST_BOSS_BASE = 2;                      // 高塔 BOSS 魔塵基礎掉落率 %
+var DUST_BOSS_PER_LEVEL = 0.2;               // BOSS 等級每 +1 的掉落率加成 %
+var DUST_BOSS_CAP = 30;                      // 高塔 BOSS 魔塵掉落率上限 %
+
+/* ---- 神鑄創世專屬特效池（12 種，僅出現於神鑄創世裝備，生成時必帶 2 條）----
+   stats: 直接併入 computeStats 的屬性聚合桶；無 stats 者為戰鬥觸發型
+  （掛勾：resolveHit［破滅/聖佑/不朽］、doPlayerAttack［天罰/萬象汲取］、
+   playerAtkCfg［神怒］）。數值公式 godforgePassiveValue → js/formula.js §6。 */
+var GODFORGE_PASSIVE_COUNT = 2;
+var GODFORGE_POOL = {
+  dragonBlood: { name: '龍血', desc: '生命上限提高 {v}%', base: 25, stats: ['hpPct'] },
+  godMight:    { name: '神力', desc: '物理與魔法攻擊提高 {v}%', base: 18, stats: ['atkPct', 'matkPct'] },
+  godHaste:    { name: '神速', desc: '攻擊速度提高 {v}%', base: 15, stats: ['aspdPct'] },
+  godSlayer:   { name: '屠神', desc: '對菁英與BOSS傷害提高 {v}%', base: 30, stats: ['eliteDmg', 'bossDmg'] },
+  greed:       { name: '貪婪', desc: '金幣加成與掉寶率提高 {v}%', base: 25, stats: ['goldBonus', 'loot'] },
+  godWall:     { name: '神壁', desc: '物理與魔法防禦提高 {v}%', base: 25, stats: ['defPct'] },
+  smite:       { name: '天罰', desc: '攻擊時有 {v}% 機率降下神雷，造成 250% 物理攻擊的真實傷害', base: 12 },
+  annihilate:  { name: '破滅', desc: '暴擊時有 {v}% 機率使本次傷害翻倍', base: 15 },
+  sanctuary:   { name: '聖佑', desc: '受到的所有傷害降低 {v}%', base: 8 },
+  undying:     { name: '不朽', desc: '受到致命攻擊時有 {v}% 機率保留 1 點生命並回復 30% 最大生命（60 秒內限一次）', base: 30 },
+  omniDrain:   { name: '萬象汲取', desc: '攻擊時額外回復造成傷害 {v}% 的生命與法力', base: 5 },
+  godWrath:    { name: '神怒', desc: '生命低於 30% 時，造成的傷害提高 {v}%', base: 35 }
+};
 
 /* ---- 詞條池（50+ 屬性核心） ----
    base: 一級基準值, lv: 每裝備等級成長係數, pct: 是否百分比顯示,

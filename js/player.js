@@ -16,6 +16,7 @@ function newGameState() {
     player: {
       level: 1, xp: 0,
       gold: 50, scrap: 0, essence: 0,
+      dust: 0,                // 魔塵（神鑄材料）
       gems: gems,
       fusedGems: [],          // 融合寶石（雙屬性，個別實體）
       gemShop: { items: [], refreshCount: 0, hourStart: Date.now() },
@@ -37,7 +38,7 @@ function newGameState() {
       swamp:  { current: 1, best: 1 }
     },
     factory: {
-      filter: { actions: ['salvage', 'keep', 'keep', 'keep', 'keep', 'keep', 'keep', 'keep'], smartSalvage: false },
+      filter: { actions: ['salvage', 'keep', 'keep', 'keep', 'keep', 'keep', 'keep', 'keep', 'keep'], smartSalvage: false },
       autoEquip: true,
       salvage: {},
       synth: { enabled: true, mergeEnabled: true, hybridEnabled: true, gemMerge: true, minGemLevel: 1, bookChoice: 'any' },
@@ -51,6 +52,11 @@ function newGameState() {
       stats: { salvaged: 0, extracted: 0, synthesized: 0, enchanted: 0, upgraded: 0, upgradeFailed: 0, mutated: 0 }
     },
     tower: { highest: 0, active: false },
+    forge: {  // 神鑄系統：六芒星槽位 / 六格魔塵符位 / 自動魔塵 / 上次產物 / 法陣紀錄 / 開放通知旗標
+      slots: [null, null, null, null, null, null],
+      dustSlots: [false, false, false, false, false, false],
+      autoDust: true, result: null, log: [], unlockNotified: false
+    },
     settings: { compareEq: false },
     firstRunAt: Date.now()
   };

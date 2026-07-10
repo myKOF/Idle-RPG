@@ -2,7 +2,7 @@
 /* ============ UI 渲染與互動 ============ */
 
 var UI = {
-  dirty: { header: true, battle: true, equip: true, inv: true, factory: true, tower: true, gems: true, skills: true },
+  dirty: { header: true, battle: true, equip: true, inv: true, factory: true, forge: true, tower: true, gems: true, skills: true },
   sel: null,           // { id, source: 'inv' | 'equip' }
   tab: 'equip'
 };
@@ -107,6 +107,10 @@ function renderHeader() {
   $id('r-gold').textContent = fmt(p.gold);
   $id('r-scrap').textContent = fmt(p.scrap);
   $id('r-essence').textContent = fmt(p.essence);
+  if ($id('r-dust')) $id('r-dust').textContent = fmt(p.dust || 0);
+  // 神鑄頁籤：達到開放等級才顯示
+  var forgeTabBtn = document.querySelector('.tab-btn[data-tab="forge"]');
+  if (forgeTabBtn) forgeTabBtn.style.display = forgeUnlocked() ? '' : 'none';
   var gemTip = [];
   for (var gt in GEM_TYPES) {
     var tn = 0;
@@ -340,12 +344,12 @@ $id('mv-emoji').innerHTML = '<span style="font-size:48px;">🔍</span>';
 }
 
 /* ---- 裝備分頁 ---- */
-function itemCellHTML(it, source) {
+function itemCellHTML(it, source, extraClass) {
   var r = RARITIES[it.rarity];
-  var effClass = (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= 7 ? ' eff-genesis' : '');
+  var effClass = (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= GODFORGED_IDX ? ' eff-godforged' : (it.rarity === 7 ? ' eff-genesis' : ''));
   var info = SLOT_INFO[it.slot];
   var iconHtml = info.icon ? '<img src="images/' + info.icon + '" class="item-icon">' : '<span class="ic-emoji">' + info.emoji + '</span>';
-  return '<div class="item-cell' + effClass + '" data-id="' + it.id + '" data-src="' + source + '" data-slot="' + it.slot + '" ' +
+  return '<div class="item-cell' + effClass + (extraClass || '') + '" data-id="' + it.id + '" data-src="' + source + '" data-slot="' + it.slot + '" ' +
     'style="border-color:' + r.color + ';box-shadow:inset 0 0 12px ' + r.color + '33">' +
     iconHtml +
     (it.upgrade ? '<span class="ic-up">+' + it.upgrade + '</span>' : '') +
@@ -365,7 +369,7 @@ function renderEquip() {
     var info = SLOT_INFO[slot];
     if (it) {
       var r = RARITIES[it.rarity];
-      var effClass = (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= 7 ? ' eff-genesis' : '');
+      var effClass = (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= GODFORGED_IDX ? ' eff-godforged' : (it.rarity === 7 ? ' eff-genesis' : ''));
       var iconHtml = info.icon ? '<img src="images/' + info.icon + '" class="eq-icon">' : '<div class="eq-emoji">' + info.emoji + '</div>';
       h += '<div class="eq-slot filled' + effClass + ' slot-' + slot + '" data-id="' + it.id + '" data-src="equip" data-slot="' + slot + '" style="border-color:' + r.color + '; box-shadow: inset 0 0 15px ' + r.color + '40">' +
         iconHtml + '</div>';
@@ -394,6 +398,8 @@ function renderInventory() {
   renderDetail();
 }
 
+/* 僅搜尋背包與裝備欄。刻意不含神鑄法陣槽位：detailAction 的操作（裝備/強化/洗煉）
+   以此為來源依據，若涵蓋法陣槽位，殘留的 UI.sel 會讓槽內裝備被再次穿上造成複製。 */
 function findItemById(id) {
   if (!id) return null;
   for (var i = 0; i < G.inventory.length; i++) if (G.inventory[i].id === id) return G.inventory[i];
@@ -441,7 +447,7 @@ function renderDetail() {
   var upGoldHtml = '<span' + (enoughUpGold ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_gold.png" class="res-icon"> ' + fmt(cost.gold) + '</span>';
   var upScrapHtml = '<span' + (enoughUpScrap ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_scrap.png" class="res-icon"> ' + fmt(cost.scrap) + '</span>';
   var upTip = '需要：' + upGoldHtml + ' &nbsp;' + upScrapHtml;
-  actionsHtml += '<button class="btn act-btn-tooltip" data-act="upgrade">強化<div class="btn-tip">' + upTip + '</div></button>';
+  actionsHtml += '<button class="btn act-btn-tooltip" data-act="upgrade" data-tip="' + esc(upTip) + '">強化</button>';
 
   actionsHtml += '<button class="btn" data-act="lock">' + (it.locked ? '解鎖' : '鎖定') + '</button>';
   // 鑲嵌選擇（有空插槽時列出持有寶石）
@@ -741,6 +747,90 @@ function syncFactoryInputs() {
   $id('up-cap').value = String(f.upgrade.cap);
 }
 
+/* ---- 神鑄分頁 ----
+   六芒星以 Hexagram.png 為底，槽位/魔塵符位以百分比座標絕對定位
+  （座標對應法陣星角，順時針自頂點起）。邏輯層 → js/forge.js。 */
+var FORGE_SLOT_POS = [
+  { x: 50, y: 21 }, { x: 63, y: 36 }, { x: 63, y: 64 },
+  { x: 50, y: 79 }, { x: 37, y: 64 }, { x: 37, y: 36 }
+];
+var FORGE_DUST_POS = [
+  { x: 50, y: 7 }, { x: 70.5, y: 28.5 }, { x: 70.5, y: 71.5 },
+  { x: 50, y: 93 }, { x: 29.5, y: 71.5 }, { x: 29.5, y: 28.5 }
+];
+
+function renderForge() {
+  var hex = $id('forge-hex');
+  if (!hex) return;
+  var f = forgeState();
+  var h = '';
+  // 六件裝備槽
+  for (var i = 0; i < FORGE_SLOTS; i++) {
+    var p = FORGE_SLOT_POS[i];
+    var it = f.slots[i];
+    var style = 'left:' + p.x + '%;top:' + p.y + '%;';
+    if (it) {
+      var r = RARITIES[it.rarity];
+      var info = SLOT_INFO[it.slot];
+      var iconHtml = info.icon ? '<img src="images/' + info.icon + '" class="item-icon">' : '<span class="ic-emoji">' + info.emoji + '</span>';
+      h += '<div class="forge-slot filled" data-forge-slot="' + i + '" data-id="' + it.id + '" data-tip="' + esc(it.name) + '（點擊取回背包）" ' +
+        'style="' + style + 'border-color:' + r.color + ';box-shadow:0 0 14px ' + r.color + 'aa, inset 0 0 10px ' + r.color + '55">' +
+        iconHtml + '<span class="ic-lv">' + it.level + '</span></div>';
+    } else {
+      h += '<div class="forge-slot empty" data-forge-slot="' + i + '" data-tip="點擊背包中的傳說/神話/創世裝備放入" style="' + style + '"></div>';
+    }
+  }
+  // 六個魔塵符位（各自獨立：點哪格亮哪格）
+  var dustN = forgeDustCount();
+  for (var di = 0; di < FORGE_SLOTS; di++) {
+    var dp = FORGE_DUST_POS[di];
+    var lit = !!f.dustSlots[di];
+    h += '<div class="forge-dust' + (lit ? ' lit' : '') + '" data-forge-dust="' + di + '" data-tip="' +
+      (lit ? '點擊取下魔塵' : '點擊放入魔塵（+' + FORGE_DUST_RATE + '% 成功率）') + '" style="left:' + dp.x + '%;top:' + dp.y + '%;">💫</div>';
+  }
+  // 中央產物（上次鑄造成功的裝備）
+  if (f.result && RARITIES[f.result.rarity] && SLOT_INFO[f.result.slot]) {
+    var rr = RARITIES[f.result.rarity];
+    var rInfo = SLOT_INFO[f.result.slot];
+    var rIcon = rInfo.icon ? '<img src="images/' + rInfo.icon + '" class="item-icon">' : '<span class="ic-emoji">' + rInfo.emoji + '</span>';
+    h += '<div class="forge-center" data-tip="上次鑄造產物：' + esc(f.result.name) + '（Lv.' + f.result.level + '，已放入背包）" ' +
+      'style="border-color:' + rr.color + ';box-shadow:0 0 25px ' + rr.color + 'cc, inset 0 0 14px ' + rr.color + '66">' + rIcon +
+      '<div class="forge-center-name" style="color:' + rr.color + '">' + esc(f.result.name) + '</div></div>';
+  } else {
+    h += '<div class="forge-center empty" data-tip="鑄造成功的裝備會顯示在此"></div>';
+  }
+  hex.innerHTML = h;
+  // 成功率與金幣消耗
+  var rate = forgeRateInfo();
+  var rateEl = $id('forge-rate');
+  if (rate) {
+    rateEl.innerHTML = '鑄造成功率：<b style="color:#ffd700">' + fmt1(rate.base) + '%</b>' +
+      (rate.dust > 0 ? ' <b style="color:#4ade80">+ ' + fmt1(rate.dust) + '%</b>' : '') +
+      '　<span class="dim-text">金幣消耗：<img src="images/icon_gold.png" class="res-icon">' + fmt(FORGE_GOLD_COST[forgeRarity()] || 0) + '</span>';
+  } else {
+    rateEl.innerHTML = '<span class="dim-text">放入 6 件相同品質的裝備（傳說 55%｜神話 40%｜創世 25%）</span>';
+  }
+  // 法陣紀錄
+  $id('forge-log').innerHTML = f.log.map(function (l) {
+    return '<div class="forge-log-line ' + l.cls + '">' + esc(l.msg) + '</div>';
+  }).join('');
+  // 自動魔塵與持有量
+  $id('forge-autodust').checked = !!f.autoDust;
+  $id('forge-dust-own').textContent = '持有魔塵 ' + fmt(G.player.dust || 0) + ' 個｜已放置 ' + dustN + '/' + FORGE_SLOTS;
+  // 背包（不符資格者以灰階顯示）
+  var cap = INVENTORY_CAP + (G.player.invUpgrades || 0);
+  $id('forge-inv-count').textContent = G.inventory.length + '/' + cap;
+  var grid = $id('forge-inventory-grid');
+  if (!G.inventory.length) {
+    grid.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">背包是空的。戰鬥掉落的裝備會先進入生產線輸送帶，「保留」的會送到這裡。</div>';
+  } else {
+    grid.innerHTML = G.inventory.map(function (it2) {
+      var ok = it2.rarity >= FORGE_MIN_RARITY && it2.rarity < GODFORGED_IDX;
+      return itemCellHTML(it2, 'forgeinv', ok ? '' : ' forge-na');
+    }).join('');
+  }
+}
+
 /* ---- 高塔分頁 ---- */
 function renderTower() {
   var fightBox = $id('tower-fight');
@@ -765,10 +855,11 @@ function renderTower() {
         ? '<img src="' + bossIcon + '" style="width:32px;height:32px;vertical-align:middle;border-radius:4px;box-shadow:0 0 5px #000;" onerror="BOSS_LIST[' + bossIdx + '].imgFailed=true; this.outerHTML=\'<span style=&quot;font-size:24px;vertical-align:middle;&quot;>\' + (bd.emoji || \'👾\') + \'</span>\';">'
         : '<span style="font-size:24px;vertical-align:middle;">' + (bd.emoji || '👾') + '</span>';
 
+      var twCost = towerChallengeCost(fl);
       h += '<div class="tower-floor' + (cleared ? ' cleared' : '') + (unlocked ? '' : ' locked') + '" data-tower-tip="' + fl + '">' +
         '<span class="tf-emoji" style="margin-right:12px;">' + iconHtml + '</span>' +
         '<span class="tf-name" style="vertical-align:middle;">第 ' + fl + ' 層・' + bd.name + (cleared ? ' ✅' : '') + '</span>' +
-        '<span class="tf-hint" style="margin-left:auto; margin-right:10px;">建議野外階段 ' + (4 + fl * 5) + '+</span>' +
+        '<span class="tf-hint" style="margin-left:auto; margin-right:10px;">建議野外階段 ' + (4 + fl * 5) + '+｜挑戰費 <span style="color:' + (G.player.gold >= twCost ? '#ffd700' : '#fca5a5') + '">💰' + fmt(twCost) + '</span></span>' +
         (unlocked ? '<button class="btn sm" data-tower-floor="' + fl + '">挑戰</button>' : '<span class="tf-lock">🔒</span>') +
         '</div>';
     }
@@ -848,6 +939,16 @@ function uiTick() {
   // 分頁標題戰況（每秒更新一次即可）
   _titleTimer += 0.2;
   if (_titleTimer >= 1) { _titleTimer = 0; updateLiveTitle(); }
+  // 神鑄系統開放通知（達標後僅提示一次，涵蓋升級當下與讀檔已達標兩種情況）
+  if (forgeUnlocked() && !forgeState().unlockNotified) {
+    forgeState().unlockNotified = true;
+    UI.dirty.header = true; // 立即顯示神鑄頁籤
+    blog('🔯 <span class="log-hl-good">神鑄系統已開啟！</span>角色達到 ' + FORGE_UNLOCK_LEVEL + ' 級，可於「神鑄」分頁鑄造更高品質的裝備。', 'good');
+    showConfirmDialog('神鑄系統已開啟！\n\n將 6 件相同品質的裝備（傳說/神話/創世）放入六芒星法陣，即可鑄造下一品質的裝備。是否前往查看？', function () {
+      switchTab('forge');
+      UI.dirty.forge = true;
+    }, { title: '🔯 神鑄系統', okText: '前往神鑄', cancelText: '稍後再說' });
+  }
   if (d.header) { renderHeader(); d.header = false; }
   renderBattle(); // Battle is always visible
   if (UI.tab === 'tower' && G.tower.active) renderTowerFight();
@@ -855,6 +956,7 @@ function uiTick() {
   if (d.equip && UI.tab === 'equip') { renderEquip(); d.equip = false; }
   if (d.inv && UI.tab === 'equip') { renderInventory(); d.inv = false; }
   if (d.factory && UI.tab === 'factory') { renderFactory(); d.factory = false; }
+  if ((d.forge || d.inv) && UI.tab === 'forge') { renderForge(); d.forge = false; d.inv = false; }
   if (d.tower && UI.tab === 'tower') { renderTower(); d.tower = false; }
   if (d.gems && UI.tab === 'gems') { renderGems(); d.gems = false; }
   if (UI.tab === 'gems') updateShopCountdown(); // 商店重置倒數即時更新
@@ -1074,12 +1176,16 @@ function showTowerTooltip(flStr, anchorEl) {
   var fl = parseInt(flStr, 10);
   if (!fl) return;
 
-  var dropTip = '<div class="skt-name" style="margin-bottom:6px;">【可能掉落物】</div>' +
+  var dropTip = '<div class="skt-name" style="margin-bottom:6px;">【挑戰費用】</div>' +
+    '<div class="skt-desc" style="text-align:left;">💰 ' + fmt(towerChallengeCost(fl)) +
+    ' 金幣 <span style="color:var(--dim)">(100000 + 樓層 x 200000)</span></div>' +
+    '<div class="skt-name" style="margin:6px 0;">【可能掉落物】</div>' +
     '<div class="skt-desc" style="text-align:left;">' +
     '💰 金幣 x' + fmt(200 * fl) + ' <span style="color:var(--dim)">(首通雙倍)</span><br>' +
     '🔮 附魔精華 x' + (3 + fl) + ' <span style="color:var(--dim)">(100%)</span><br>' +
     '💎 隨機寶石 x2 <span style="color:var(--dim)">(100%)</span><br>' +
     '📖 隨機附魔書 x2 <span style="color:var(--dim)">(100%)</span><br>' +
+    '💫 魔塵 <span style="color:var(--dim)">(' + fmt1(bossDustRate(bossStatsFor(fl).level)) + '%，神鑄材料)</span><br>' +
     '🔩 機組零件 <span style="color:var(--dim)">(首通必掉 / 之後30%)</span>';
 
   var bossRates = dropRatesFor(BOSS_DROP_TABLE, fl);
@@ -1655,7 +1761,7 @@ function initUI() {
   document.querySelectorAll('.tab-btn').forEach(function (b) {
     b.addEventListener('click', function () {
       switchTab(b.getAttribute('data-tab'));
-      UI.dirty.equip = true; UI.dirty.inv = true; UI.dirty.factory = true; UI.dirty.tower = true; UI.dirty.gems = true; UI.dirty.skills = true;
+      UI.dirty.equip = true; UI.dirty.inv = true; UI.dirty.factory = true; UI.dirty.forge = true; UI.dirty.tower = true; UI.dirty.gems = true; UI.dirty.skills = true;
     });
   });
 
@@ -2059,8 +2165,30 @@ function initUI() {
       var pools = document.querySelectorAll('.it-pool-box');
       for (var i = 0; i < pools.length; i++) pools[i].style.display = 'none';
     }
+    // 神鑄：法陣槽位（點擊取回）/ 魔塵符位（點擊放入或取下）
+    var fslot = e.target.closest('[data-forge-slot]');
+    if (fslot) {
+      if (fslot.classList.contains('filled')) {
+        forgeRemoveItem(parseInt(fslot.getAttribute('data-forge-slot'), 10));
+      }
+      return;
+    }
+    var fdust = e.target.closest('[data-forge-dust]');
+    if (fdust) {
+      var derr = forgeToggleDust(parseInt(fdust.getAttribute('data-forge-dust'), 10));
+      if (derr) blog('⚠️ 神鑄：' + derr, 'warn');
+      return;
+    }
     var cell = e.target.closest('.item-cell, .eq-slot');
     if (cell) {
+      // 神鑄背包：點擊裝備直接放入法陣（成功後清除殘留選取，防止跨分頁誤操作）
+      if (cell.getAttribute('data-src') === 'forgeinv') {
+        var fid = cell.getAttribute('data-id');
+        var perr = forgePlaceItem(fid);
+        if (perr) blog('⚠️ 神鑄：' + perr, 'warn');
+        else if (UI.sel && UI.sel.id === fid) UI.sel = null;
+        return;
+      }
       if (cell.classList.contains('empty')) {
         UI.sel = null;
         UI.lastEquipSlot = cell.getAttribute('data-slot');
@@ -2253,6 +2381,28 @@ function initUI() {
     blog('🎒 背包已排序完成。', 'info', 'system');
   });
   $id('tw-flee').addEventListener('click', fleeTower);
+
+  // 神鑄：鑄造 / 全卸下 / 自動使用魔塵
+  var forgeGoBtn = $id('forge-go');
+  if (forgeGoBtn) {
+    forgeGoBtn.addEventListener('click', function () {
+      var err = doForge();
+      if (err) {
+        forgeLog(err, 'bad');
+        blog('⚠️ 神鑄：' + err, 'warn');
+      }
+    });
+    $id('forge-unload').addEventListener('click', function () {
+      var n = forgeUnloadAll();
+      if (n) blog('↩️ 神鑄：已取回 ' + n + ' 件裝備', 'info');
+    });
+    $id('forge-autodust').addEventListener('change', function () {
+      var f = forgeState();
+      f.autoDust = this.checked;
+      if (f.autoDust && forgeItemCount() > 0) forgeAutoFillDust();
+      UI.dirty.forge = true;
+    });
+  }
   $id('toggle-compare').addEventListener('change', function () {
     G.settings.compareEq = this.checked;
     renderDetail();

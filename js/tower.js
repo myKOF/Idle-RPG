@@ -41,6 +41,15 @@ function makeBoss(floor) {
 function startTowerFight(floor) {
   if (G.tower.active) return;
   if (floor > G.tower.highest + 1) { blog('⚠️ 需先通過前面的樓層！', 'warn'); return; }
+  // 挑戰金幣消耗 = 100000 + BOSS等級 × 200000（towerChallengeCost → formula.js §5）
+  var cost = towerChallengeCost(floor);
+  if (G.player.gold < cost) {
+    blog('⚠️ 金幣不足！挑戰第 ' + floor + ' 層需要 ' + fmt(cost) + ' 金幣（持有 ' + fmt(G.player.gold) + '）。', 'warn');
+    return;
+  }
+  G.player.gold -= cost;
+  UI.dirty.header = true;
+  blog('💰 支付高塔挑戰費用 ' + fmt(cost) + ' 金幣。', 'info');
   var st = getStats();
   G.tower.active = true;
   TOWER.floor = floor;
@@ -116,7 +125,8 @@ function towerTick(dt) {
     if (b.atkCd <= 0) {
       var beforeHp = p.hp;
       doMonsterAttack(b, p, 'tp-float', mult);
-      TOWER.bossDmgDealt += (beforeHp - p.hp);
+      // 不朽觸發時血量回升，避免統計被倒扣為負
+      TOWER.bossDmgDealt += Math.max(0, beforeHp - p.hp);
       b.atkCd += 1 / b.aspd;
       if (p.hp <= 0) { endTowerFight(false, 'death'); return; }
       if (b.hp <= 0) { endTowerFight(true); return; } // 反震擊殺
@@ -128,7 +138,7 @@ function towerTick(dt) {
       blog('💢 ' + b.name + ' 蓄力重擊！', 'warn');
       var beforeHp2 = p.hp;
       doMonsterAttack(b, p, 'tp-float', 2.2 * mult);
-      TOWER.bossDmgDealt += (beforeHp2 - p.hp);
+      TOWER.bossDmgDealt += Math.max(0, beforeHp2 - p.hp);
       if (p.hp <= 0) { endTowerFight(false, 'death'); return; }
       if (b.hp <= 0) { endTowerFight(true); return; }
     }
@@ -193,7 +203,13 @@ function endTowerFight(win, reason) {
     result.rewards.push('📖 ' + ENCHANTS[bk].name + '書 x2');
     G.player.essence += rw.essence;
     result.rewards.push('🔮 附魔精華 x' + rw.essence);
-    
+    // 魔塵（神鑄材料）：掉落率 = min(15%, 2% + BOSS等級 × 0.2%)（bossDustRate → formula.js §5）
+    if (b && chance(bossDustRate(b.level))) {
+      G.player.dust = (G.player.dust || 0) + 1;
+      result.rewards.push('💫 魔塵 x1（神鑄材料）');
+      UI.dirty.forge = true;
+    }
+
     blog('🎁 高塔通關獎勵：' + result.rewards.join('、'), 'good', 'boss');
   } else if (reason === 'flee') {
     blog('🏃 你撤出了高塔挑戰。', 'warn');

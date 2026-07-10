@@ -314,11 +314,12 @@ function tryHybridSynthesis() {
   UI.dirty.header = true; UI.dirty.factory = true;
 
   // 大成功：稀有度 +1（機率公式 synthGreatChanceNow → formula.js §7）
+  // 上限鎖定創世：神鑄創世僅能由神鑄系統產出
   var great = chance(synthGreatChanceNow());
-  if (great && it.rarity < RARITIES.length - 1) {
+  if (great && it.rarity < GODFORGED_IDX - 1) {
     it.rarity++;
     ensureSockets(it); // 稀有度提升 → 插槽數同步增加
-    it.name = RARITY_PREFIX[it.rarity] + it.name.replace(/^(粗糙的|堅實的|精工的|奇異的|大師級|傳世的|神鑄的|創世的|普通的|精良的|稀有的|獨特的|史詩的|傳說的|神話的)/, '');
+    it.name = RARITY_PREFIX[it.rarity] + it.name.replace(/^(神鑄創世的|粗糙的|堅實的|精工的|奇異的|大師級|傳世的|神鑄的|創世的|普通的|精良的|稀有的|獨特的|史詩的|傳說的|神話的)/, '');
     // 升稀有度補被動
     if (it.rarity >= RARE_IDX && !it.passive) {
       var pk = pick(Object.keys(PASSIVE_POOL));
@@ -369,7 +370,8 @@ function tryRarityMerge() {
     var r = f.synthBuffer[i].rarity;
     (byRarity[r] = byRarity[r] || []).push(i);
   }
-  for (var rr = 0; rr < RARITIES.length - 1; rr++) {
+  // 上限鎖定創世（GODFORGED_IDX - 1）：神鑄創世僅能由神鑄系統產出
+  for (var rr = 0; rr < GODFORGED_IDX - 1; rr++) {
     var idxs = byRarity[rr];
     if (idxs && idxs.length >= 3) {
       var mats = [];
@@ -377,7 +379,7 @@ function tryRarityMerge() {
       for (var j = 2; j >= 0; j--) mats.push(f.synthBuffer.splice(idxs[j], 1)[0]);
       var avgLv = Math.max(1, Math.round((mats[0].level + mats[1].level + mats[2].level) / 3));
       var great = chance(synthGreatChanceNow());
-      var newRarity = clamp(rr + 1 + (great ? 1 : 0), 0, RARITIES.length - 1);
+      var newRarity = clamp(rr + 1 + (great ? 1 : 0), 0, GODFORGED_IDX - 1);
       var it = makeEquipment(avgLv, { rarity: newRarity, level: avgLv });
       // 重骰模組
       var rerollChance = partBonus('synth', 'rerollModule');

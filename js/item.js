@@ -407,6 +407,15 @@ function makeEquipment(stage, opts) {
     var pk = pick(Object.keys(PASSIVE_POOL));
     it.passive = { key: pk, val: passiveValueFor(pk, rarity) };
   }
+  // 神鑄創世：必帶 2 條不重複的專屬特效（池 GODFORGE_POOL）
+  if (rarity === GODFORGED_IDX) {
+    var gkeys = Object.keys(GODFORGE_POOL).slice();
+    it.godPassives = [];
+    for (var gi = 0; gi < GODFORGE_PASSIVE_COUNT && gkeys.length; gi++) {
+      var gk = gkeys.splice(Math.floor(Math.random() * gkeys.length), 1)[0];
+      it.godPassives.push({ key: gk, val: godforgePassiveValue(gk) });
+    }
+  }
   return it;
 }
 
@@ -599,7 +608,7 @@ function itemDetailHTML(it, cmp, opts) {
       var rrGoldHtml = '<span' + (G.player.gold >= rrCost.gold ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_gold.png" class="res-icon">' + fmt(rrCost.gold) + '</span>';
       var rrEssenceHtml = '<span' + (G.player.essence >= rrCost.essence ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_essence.png" class="res-icon">' + fmt(rrCost.essence) + '</span>';
       var rrTip = '<div style="color:var(--dim);margin-bottom:4px">單獨洗煉此屬性（改變種類與數值）</div>需要：' + rrGoldHtml + ' &nbsp;' + rrEssenceHtml;
-      rrBtn = '<button class="btn affix-reroll-btn act-btn-tooltip" data-act="reroll-affix" data-affix="' + k + '" aria-label="洗煉詞條">🎲<div class="btn-tip affix-reroll-tip">' + rrTip + '</div></button>';
+      rrBtn = '<button class="btn affix-reroll-btn act-btn-tooltip" data-act="reroll-affix" data-affix="' + k + '" aria-label="洗煉詞條" data-tip="' + esc(rrTip) + '">🎲</button>';
     }
     
     var diffStr = '';
@@ -614,10 +623,10 @@ function itemDetailHTML(it, cmp, opts) {
     var lineStyle = (vCmp === 0 && cmp) ? 'color: #4ade80;' : '';
     if (showAffixReroll) {
       h += '<div class="it-affix-row it-affix" style="' + lineStyle + '">' +
-           '<div class="it-affix-text"><span class="act-btn-tooltip" style="cursor:help;">◆ ' + name + ' +' + valHtml + '<div class="btn-tip" style="font-weight:normal;color:var(--text);">' + limitTip + '</div></span>' +
+           '<div class="it-affix-text"><span class="act-btn-tooltip" style="cursor:help;" data-tip="' + esc(limitTip) + '">◆ ' + name + ' +' + valHtml + '</span>' +
            diffStr + '</div><div class="it-affix-action">' + rrBtn + '</div></div>';
     } else {
-      h += '<div class="it-affix" style="' + lineStyle + '"><span class="act-btn-tooltip" style="cursor:help;">◆ ' + name + ' +' + valHtml + '<div class="btn-tip" style="font-weight:normal;color:var(--text);">' + limitTip + '</div></span>' +
+      h += '<div class="it-affix" style="' + lineStyle + '"><span class="act-btn-tooltip" style="cursor:help;" data-tip="' + esc(limitTip) + '">◆ ' + name + ' +' + valHtml + '</span>' +
            diffStr + '</div>';
     }
   }
@@ -653,6 +662,15 @@ function itemDetailHTML(it, cmp, opts) {
       var d = PASSIVE_POOL[p.key];
       h += '<div class="it-passive">【' + esc(d.name) + '】' + esc(d.desc).replace('{v}', fmt1(p.val) + diffStr) + '</div>';
     }
+  }
+
+  // 神鑄創世專屬特效（2 條，不參與比較差值）
+  if (it.godPassives && it.godPassives.length) {
+    it.godPassives.forEach(function (gp) {
+      var gd = GODFORGE_POOL[gp.key];
+      if (!gd) return;
+      h += '<div class="it-godpassive">【' + esc(gd.name) + '】' + esc(gd.desc).replace('{v}', fmt1(gp.val)) + '</div>';
+    });
   }
 
   // 附魔（多欄位，數量依稀有度）
