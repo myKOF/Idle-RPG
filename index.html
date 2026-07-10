@@ -122,7 +122,6 @@
                       <option value="keep">保留</option>
                       <option value="salvage">分解</option>
                       <option value="smart">比已裝備弱則分解</option>
-                      <option value="synth">合成素材</option>
                     </select>
                   </div>
                   <div class="flt-row"><span class="rar-tag" style="color:#4ade80">精良</span>
@@ -130,7 +129,6 @@
                       <option value="keep">保留</option>
                       <option value="salvage">分解</option>
                       <option value="smart">比已裝備弱則分解</option>
-                      <option value="synth">合成素材</option>
                     </select>
                   </div>
                   <div class="flt-row"><span class="rar-tag" style="color:#38bdf8">稀有</span>
@@ -138,7 +136,6 @@
                       <option value="keep">保留</option>
                       <option value="salvage">分解</option>
                       <option value="smart">比已裝備弱則分解</option>
-                      <option value="synth">合成素材</option>
                     </select>
                   </div>
                   <div class="flt-row"><span class="rar-tag" style="color:#c084fc">獨特</span>
@@ -146,7 +143,6 @@
                       <option value="keep">保留</option>
                       <option value="salvage">分解</option>
                       <option value="smart">比已裝備弱則分解</option>
-                      <option value="synth">合成素材</option>
                     </select>
                   </div>
                   <div class="flt-row"><span class="rar-tag" style="color:#ffd700">史詩</span>
@@ -154,7 +150,6 @@
                       <option value="keep">保留</option>
                       <option value="salvage">分解</option>
                       <option value="smart">比已裝備弱則分解</option>
-                      <option value="synth">合成素材</option>
                     </select>
                   </div>
                   <div class="flt-row"><span class="rar-tag" style="color:#fb923c">傳說</span>
@@ -162,7 +157,6 @@
                       <option value="keep">保留</option>
                       <option value="salvage">分解</option>
                       <option value="smart">比已裝備弱則分解</option>
-                      <option value="synth">合成素材</option>
                     </select>
                   </div>
                   <div class="flt-row"><span class="rar-tag" style="color:#f87171">神話</span>
@@ -170,7 +164,6 @@
                       <option value="keep">保留</option>
                       <option value="salvage">分解</option>
                       <option value="smart">比已裝備弱則分解</option>
-                      <option value="synth">合成素材</option>
                     </select>
                   </div>
                   <div class="flt-row"><span class="rar-tag" style="color:#b8860b">創世</span>
@@ -178,7 +171,6 @@
                       <option value="keep">保留</option>
                       <option value="salvage">分解</option>
                       <option value="smart">比已裝備弱則分解</option>
-                      <option value="synth">合成素材</option>
                     </select>
                   </div>
                 </div>
@@ -199,7 +191,7 @@
             </div>
 
             <!-- 合成節點 -->
-            <div class="panel node-card" style="grid-column: 1 / -1;">
+            <div id="synthesis-node" class="panel node-card" style="grid-column: 1 / -1;" hidden>
               <div class="node-title">🔮 合成節點 <span class="node-badge">Synthesis</span></div>
               <div class="node-body">
                 <label class="chk"><input type="checkbox" id="syn-hybrid"> 混合合成：裝備＋寶石＋附魔書 → 附魔裝備</label>
@@ -300,12 +292,19 @@
                 style="color:#f87171">神話</span> / <span style="color:#b8860b">創世</span>）放入六芒星，點「鑄造」有機會獲得<b>下一品質</b>隨機部位裝備 1
               件；失敗將隨機消耗 2 件、其餘退回背包。點擊六個角尖的圓形符位可放置 💫 魔塵，每個 +5% 成功率（最多 6 個）。6 件創世鑄造成功將獲得<b
                 style="color:#f5c542">神鑄創世</b>暗金裝備：屬性與上限為創世的 1.5 倍、必帶 2 條專屬特效，且無法再放入法陣。基礎成功率：傳說 55%｜神話 40%｜創世
-              25%。金幣消耗：傳說 500 萬｜神話 2000 萬｜創世 1 億。（神鑄系統於角色 1000 級開放）</div>
+              25%。金幣消耗：傳說 500 萬｜神話 2000 萬｜創世 1 億。（神鑄系統於角色 1000 級開放）<br>
+              💎 <b>寶石神鑄</b>：切換下方「寶石」頁籤，放入 6 顆<b>相同種類與階級</b>（五階以上）的寶石，成功合成<b>高一階</b>寶石（最高十階，每高一階能力
+              ×2）；失敗損失 2 顆、其餘退回。魔塵對寶石鑄造每個 +3% 成功率。基礎成功率：五階 45%｜六階 35%｜七階 25%｜八階 15%｜九階
+              5%。金幣消耗：100 萬 +（階級 − 5）× 100 萬。<b>融合寶石無法用於神鑄</b>（可至寶石分頁進行融合）。</div>
           </div>
-          <div class="equip-section-box">
+          <div id="forge-inv-box" class="equip-section-box">
             <div class="inv-head">
               <span class="sec-title">背包 <span id="forge-inv-count">0/60</span></span>
-              <span class="dim-text" style="font-size:12px">點擊背包裝備放入法陣；點擊法陣上的裝備取回</span>
+              <div class="forge-inv-tabs">
+                <button id="forge-invtab-items" class="btn sm active">🎒 裝備</button>
+                <button id="forge-invtab-gems" class="btn sm">💎 寶石</button>
+              </div>
+              <span class="dim-text" style="font-size:12px">點擊放入法陣；點擊法陣上的物件取回</span>
             </div>
             <div id="forge-inventory-grid"></div>
           </div>
@@ -340,7 +339,7 @@
 
           <div class="panel" style="margin-bottom:12px">
             <div class="sec-title">🔄 寶石轉換</div>
-            <div class="hint">把九宮格中的寶石一次性轉換為右側選擇的種類（<b>同階轉換</b>、數量不變）。每格放一種「同種類同等級」寶石、每格上限 10
+            <div class="hint">把九宮格中的寶石一次性轉換為右側選擇的種類（<b>同階轉換</b>、數量不變）。每格放一種「同種類同等級」寶石、每格上限 100
               顆；點下方庫存寶石放入（一次放滿可放數量），點格子取出。<b>融合寶石無法轉換</b>。</div>
             <div class="gconv-layout">
               <div id="gconv-grid" class="gconv-grid"></div>
@@ -371,6 +370,11 @@
                 <option value="3">三級</option>
                 <option value="4">四級</option>
                 <option value="5">五級</option>
+                <option value="6">六級</option>
+                <option value="7">七級</option>
+                <option value="8">八級</option>
+                <option value="9">九級</option>
+                <option value="10">十級</option>
               </select>
               <button id="gdis-btn" class="btn sm">⛏️ 拆解一顆</button>
               <button id="gdis-all-btn" class="btn sm warn">⛏️ 全部拆解</button>
@@ -382,9 +386,9 @@
           </div>
 
           <div class="panel" style="margin-bottom:12px">
-            <div class="sec-title">🧬 寶石融合 <span class="dim-text">（僅限 5 階寶石）</span></div>
+            <div class="sec-title">🧬 寶石融合 <span class="dim-text">（5 階以上寶石均可，含神鑄寶石）</span></div>
             <div class="hint">兩顆不同屬性 → 雙屬性融合寶石（數值隨機，不一定更高）；兩顆同屬性 → 數值介於兩者之間、上限 2 倍。雙屬性寶石只能與相同雙屬性、或含其屬性的單一寶石融合。基礎成功率
-              60%，成品每成功融合一次 -10%（最低 10%）。<b>失敗時較弱的寶石會降解</b>為 4~8 顆 1 級或 2~4 顆 2 級同屬性寶石。</div>
+              60%，成品每成功融合一次 -10%（最低 10%）。<b>失敗時較弱的寶石會降解</b>為 4~8 顆 1 級或 2~4 顆 2 級同屬性寶石。<b>融合寶石無法用於神鑄法陣</b>。</div>
             <div id="gfuse-slots" class="chip-row" style="margin:8px 0"></div>
             <div class="btn-row">
               <button id="gfuse-btn" class="btn">🧬 執行融合</button>
@@ -517,7 +521,7 @@
                 階起、創世 40 階起掉落。稀有以上附帶特殊被動；武器/戒指優先裝入空欄、再替換較弱者。</p>
               <p><b>🔯 神鑄：</b>角色 1000 級開放。將 6 件相同品質（傳說/神話/創世）的裝備放入六芒星法陣，消耗金幣鑄造下一品質裝備；失敗隨機消耗 2 件、其餘退回。角尖符位可放💫魔塵（每個
                 +5% 成功率，等級 150+ 敵人與高塔 BOSS 掉落）。6 件創世鑄造成功可得「神鑄創世」：屬性上限 1.5 倍、必帶 2 條專屬特效（龍血/神力/天罰/不朽…共 12 種），無法再入爐。</p>
-              <p><b>🏭 生產線：</b>掉落裝備進入輸送帶 → 篩選節點依品質決定「保留 / 分解 / 合成素材」。分解有 10% 機率「精粹提取」出高階材料。</p>
+              <p><b>🏭 生產線：</b>掉落裝備進入輸送帶 → 篩選節點依品質決定「保留 / 分解」。分解有 10% 機率「精粹提取」出高階材料。</p>
               <p><b>🔮 混合合成：</b>[裝備] + [寶石] + [附魔書] = 附魔特殊裝備。開啟「更強自動換裝」讓系統自動把新合成的神裝穿上！</p>
               <p><b>✨ 附魔：</b>攻擊類六元素（🔥高傷、❄️減速、⚡連鎖、🧪中毒、🌟淨化、🌑汲取）、防禦類（六元素抗性/控制抵抗）、功能類（掉寶/疾行）。在「裝備」分頁點選裝備 → 點附魔書即可附魔（消耗 1
                 書＋精華），點擊既有附魔可取下（返還書）。附魔欄位數依品質 1~3 欄；混合合成仍會自動賦予附魔。</p>
@@ -594,6 +598,7 @@
           </select>
         </div>
         <div id="battle-log" class="log"></div>
+        <div id="boss-log" class="log" style="display:none"></div>
       </div>
     </div>
   </div>

@@ -41,7 +41,7 @@ function newGameState() {
       filter: { actions: ['salvage', 'keep', 'keep', 'keep', 'keep', 'keep', 'keep', 'keep', 'keep'], smartSalvage: false },
       autoEquip: true,
       salvage: {},
-      synth: { enabled: true, mergeEnabled: true, hybridEnabled: true, gemMerge: true, minGemLevel: 1, bookChoice: 'any' },
+      synth: { enabled: false, mergeEnabled: true, hybridEnabled: true, gemMerge: true, minGemLevel: 1, bookChoice: 'any' },
       enchant: { enabled: false, overwrite: false },
       upgrade: { enabled: false, cap: 5 },
       conveyor: [],

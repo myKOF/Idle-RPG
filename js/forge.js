@@ -42,10 +42,31 @@ function forgeLog(msg, cls) {
   UI.dirty.forge = true;
 }
 
-// 目前法陣要求的品質（由第一件放入的裝備決定）；null = 尚未放入
+/* 法陣模式：'equip'（裝備鑄造）/ 'gem'（寶石鑄造）/ null（空）
+   由第一個放入的物件決定，兩種模式不可混放。 */
+function forgeMode() {
+  var f = forgeState();
+  for (var i = 0; i < f.slots.length; i++) {
+    if (f.slots[i]) return f.slots[i].kind === 'gem' ? 'gem' : 'equip';
+  }
+  return null;
+}
+
+// 目前法陣要求的裝備品質（由第一件放入的裝備決定）；null = 尚未放入裝備
 function forgeRarity() {
   var f = forgeState();
-  for (var i = 0; i < f.slots.length; i++) if (f.slots[i]) return f.slots[i].rarity;
+  for (var i = 0; i < f.slots.length; i++) {
+    if (f.slots[i] && f.slots[i].kind !== 'gem') return f.slots[i].rarity;
+  }
+  return null;
+}
+
+// 寶石模式：第一顆放入的寶石（{ kind:'gem', type, level }）；null = 尚未放入寶石
+function forgeGemFirst() {
+  var f = forgeState();
+  for (var i = 0; i < f.slots.length; i++) {
+    if (f.slots[i] && f.slots[i].kind === 'gem') return f.slots[i];
+  }
   return null;
 }
 
@@ -79,17 +100,29 @@ function forgeClearDust() {
   for (var i = 0; i < FORGE_SLOTS; i++) f.dustSlots[i] = false;
 }
 
-// 成功率組成 { base, dust, total }；法陣為空時回傳 null
+// 成功率與費用組成 { mode, base, dust, total, cost }；法陣為空時回傳 null
 function forgeRateInfo() {
+  var mode = forgeMode();
+  if (!mode) return null;
+  var dustN = forgeDustCount();
+  if (mode === 'gem') {
+    var g = forgeGemFirst();
+    return {
+      mode: 'gem', base: FORGE_GEM_BASE_RATE[g.level] || 0, dust: dustN * FORGE_GEM_DUST_RATE,
+      total: forgeGemSuccessRateFor(g.level, dustN), cost: forgeGemCost(g.level)
+    };
+  }
   var r = forgeRarity();
-  if (r === null) return null;
-  var dustBonus = forgeDustCount() * FORGE_DUST_RATE;
-  return { base: FORGE_BASE_RATE[r] || 0, dust: dustBonus, total: forgeSuccessRateFor(r, forgeDustCount()) };
+  return {
+    mode: 'equip', base: FORGE_BASE_RATE[r] || 0, dust: dustN * FORGE_DUST_RATE,
+    total: forgeSuccessRateFor(r, dustN), cost: FORGE_GOLD_COST[r] || 0
+  };
 }
 
 // 放入裝備（自背包移入第一個空槽）；回傳 null=成功，否則錯誤訊息
 function forgePlaceItem(id) {
   var f = forgeState();
+  if (forgeMode() === 'gem') return '法陣中已放入寶石，裝備與寶石不可混放';
   var idx = -1;
   for (var i = 0; i < G.inventory.length; i++) if (G.inventory[i].id === id) { idx = i; break; }
   if (idx < 0) return '找不到該裝備';
@@ -104,28 +137,56 @@ function forgePlaceItem(id) {
   if (slot < 0) return '法陣已放滿 6 件裝備';
   G.inventory.splice(idx, 1);
   f.slots[slot] = it;
-  if (f.autoDust) forgeAutoFillDust(); // 自動使用魔塵：放入裝備時補滿
+  if (f.autoDust) forgeAutoFillDust(); // 自動使用魔塵：放入時補滿
   UI.dirty.forge = true; UI.dirty.inv = true;
   return null;
 }
 
-// 取回單一槽位裝備
+/* 放入寶石（自寶石庫存扣 1 顆移入第一個空槽）；回傳 null=成功，否則錯誤訊息。
+   限 5~9 階、六顆必須同種類同階級；放入當下即自庫存扣除，取回時歸還。 */
+function forgePlaceGem(type, level) {
+  var f = forgeState();
+  if (!GEM_TYPES[type]) return '未知寶石種類';
+  if (forgeMode() === 'equip') return '法陣中已放入裝備，裝備與寶石不可混放';
+  if (level < GEM_MAX_LEVEL) return '只有五階以上的寶石可放入法陣';
+  if (level >= GEM_FORGE_MAX_LEVEL) return GEM_NAMES[GEM_FORGE_MAX_LEVEL] + '寶石已是最高階級，無法再鑄造';
+  var first = forgeGemFirst();
+  if (first && (first.type !== type || first.level !== level)) {
+    return '六顆寶石必須為相同種類與階級（法陣目前為「' + gemLabel(first.type, first.level) + '」）';
+  }
+  if (gemCount(type, level) < 1) return '沒有「' + gemLabel(type, level) + '」';
+  var slot = f.slots.indexOf(null);
+  if (slot < 0) return '法陣已放滿 6 顆寶石';
+  addGem(type, level, -1);
+  f.slots[slot] = { kind: 'gem', type: type, level: level };
+  if (f.autoDust) forgeAutoFillDust();
+  UI.dirty.forge = true;
+  return null;
+}
+
+// 取回單一槽位物件（裝備回背包、寶石回庫存）
 function forgeRemoveItem(slotIdx) {
   var f = forgeState();
   var it = f.slots[slotIdx];
   if (!it) return;
   f.slots[slotIdx] = null;
-  forgeReturnItem(it);
+  if (it.kind === 'gem') addGem(it.type, it.level, 1);
+  else forgeReturnItem(it);
   if (forgeItemCount() === 0) forgeClearDust();
   UI.dirty.forge = true;
 }
 
-// 全卸下：所有槽位裝備退回背包並清空魔塵；回傳取回件數
+// 全卸下：所有槽位物件退回並清空魔塵；回傳取回件數
 function forgeUnloadAll() {
   var f = forgeState();
   var n = 0;
   for (var i = 0; i < f.slots.length; i++) {
-    if (f.slots[i]) { forgeReturnItem(f.slots[i]); f.slots[i] = null; n++; }
+    var it = f.slots[i];
+    if (!it) continue;
+    if (it.kind === 'gem') addGem(it.type, it.level, 1);
+    else forgeReturnItem(it);
+    f.slots[i] = null;
+    n++;
   }
   forgeClearDust();
   UI.dirty.forge = true;
@@ -177,16 +238,41 @@ function forgeReclaimSockets(it) {
 // 執行鑄造；回傳 null=已執行（結果寫入紀錄），否則錯誤訊息
 function doForge() {
   var f = forgeState();
-  if (forgeItemCount() < FORGE_SLOTS) return '需放滿 6 件相同品質的裝備';
-  var r = forgeRarity();
-  var cost = FORGE_GOLD_COST[r] || 0;
+  var mode = forgeMode();
+  if (forgeItemCount() < FORGE_SLOTS) {
+    return mode === 'gem' ? '需放滿 6 顆相同種類與階級的寶石' : '需放滿 6 件相同品質的裝備';
+  }
+  var info = forgeRateInfo();
+  var cost = info.cost;
   if (G.player.gold < cost) return '金幣不足（需要 ' + fmt(cost) + '，持有 ' + fmt(G.player.gold) + '）';
   var dustUsed = forgeDustCount();
-  var rate = forgeSuccessRateFor(r, dustUsed);
+  var rate = info.total;
   G.player.gold -= cost;
   if (dustUsed > 0) G.player.dust -= dustUsed;
   forgeClearDust();
   UI.dirty.header = true;
+
+  // === 寶石鑄造：6 顆同種同階 → 1 顆高一階；失敗損失 2 顆、其餘退回庫存 ===
+  if (mode === 'gem') {
+    var g = forgeGemFirst();
+    var costTail = '（成功率 ' + fmt1(rate) + '%，金幣 -' + fmt(cost) + (dustUsed ? '、魔塵 -' + dustUsed : '') + '）';
+    f.slots = [null, null, null, null, null, null];
+    if (chance(rate)) {
+      addGem(g.type, g.level + 1, 1);
+      f.result = { kind: 'gem', type: g.type, level: g.level + 1 };
+      forgeLog('獲得 ' + gemLabel(g.type, g.level + 1) + '*1', 'good');
+      blog('🔯 神鑄成功！6 顆' + gemLabel(g.type, g.level) + ' 合成 ' + gemLabel(g.type, g.level + 1) + ' x1' + costTail, 'good');
+    } else {
+      // 放入時已自庫存扣除：退回 4 顆（六顆同種同階，等同隨機消耗 2 顆）
+      addGem(g.type, g.level, FORGE_SLOTS - FORGE_FAIL_CONSUME);
+      forgeLog('鑄造失敗！退回寶石。', 'bad');
+      blog('🔯 鑄造失敗！損失 ' + gemLabel(g.type, g.level) + ' x' + FORGE_FAIL_CONSUME +
+        '，其餘 ' + (FORGE_SLOTS - FORGE_FAIL_CONSUME) + ' 顆已退回庫存' + costTail, 'warn');
+    }
+    UI.dirty.forge = true;
+    return null;
+  }
+  var r = forgeRarity();
 
   if (chance(rate)) {
     // 成功：消耗全部 6 件（取回鑲嵌寶石），產出下一品質隨機部位裝備（等級 = 素材中最高）

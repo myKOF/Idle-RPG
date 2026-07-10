@@ -464,6 +464,7 @@ function rollFieldDrops(m) {
     var partN = rollDropCount(FIELD_PART_DROP_PCT * (1 + lootBonus / 100) * rw * (m.elite ? 3 : 1));
     for (var pn = 0; pn < partN; pn++) {
       var np = makePart(fieldPartTierFor(s, m.elite));
+      if (!np) continue;
       G.factory.parts.push(np);
       drops.push('🔧' + PART_TYPES[np.key].emoji + np.name);
       if (np.tier >= 3) blog('🔩 敵人掉落自動機組零件：' + PART_TYPES[np.key].emoji + np.name + '（' + partDesc(np) + '）', 'loot');

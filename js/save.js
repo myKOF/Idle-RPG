@@ -170,7 +170,12 @@ function migrateSave(data) {
   // 品質擴充至 8 階：篩選規則陣列補齊（新階預設保留）
   if (data.factory && data.factory.filter && data.factory.filter.actions) {
     while (data.factory.filter.actions.length < RARITIES.length) data.factory.filter.actions.push('keep');
+    data.factory.filter.actions = data.factory.filter.actions.map(function (action) {
+      return action === 'synth' ? 'keep' : action;
+    });
   }
+  // 合成節點暫停期間，即使舊存檔曾開啟也不可重新啟動。
+  if (data.factory && data.factory.synth) data.factory.synth.enabled = false;
   // 舊版寶石（{1..5: 數量}）→ 轉換為隨機種類
   var gemTypeKeys = Object.keys(GEM_TYPES);
   for (var lv = 1; lv <= GEM_MAX_LEVEL; lv++) {
@@ -237,7 +242,8 @@ function migrateSave(data) {
   data.inventory.forEach(fixSockets);
   data.factory.conveyor.forEach(fixSockets);
   data.factory.synthBuffer.forEach(fixSockets);
-  ((data.forge && data.forge.slots) || []).forEach(fixSockets); // 神鑄槽位內的裝備一併遷移
+  // 神鑄槽位內的裝備一併遷移（寶石槽位項目 kind:'gem' 無 sockets/name，跳過）
+  ((data.forge && data.forge.slots) || []).forEach(function (it) { if (it && it.kind !== 'gem') fixSockets(it); });
 
   data.tower.active = false; // 讀檔時不可能處於高塔戰鬥
   if (!data.settings) data.settings = { compareEq: false };
@@ -251,7 +257,7 @@ function migrateSave(data) {
   data.inventory.forEach(fixName);
   data.factory.conveyor.forEach(fixName);
   data.factory.synthBuffer.forEach(fixName);
-  ((data.forge && data.forge.slots) || []).forEach(fixName);
+  ((data.forge && data.forge.slots) || []).forEach(function (it) { if (it && it.kind !== 'gem') fixName(it); });
 
   return data;
 }

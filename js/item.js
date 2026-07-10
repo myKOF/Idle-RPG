@@ -21,7 +21,7 @@ function totalGemsOfLevel(lv) {
 }
 function totalGemsAll() {
   var sum = 0;
-  for (var t in GEM_TYPES) for (var lv = 1; lv <= GEM_MAX_LEVEL; lv++) sum += gemCount(t, lv);
+  for (var t in GEM_TYPES) for (var lv = 1; lv <= GEM_FORGE_MAX_LEVEL; lv++) sum += gemCount(t, lv);
   return sum;
 }
 // 消耗一顆指定等級的寶石（取存量最多的種類）；回傳種類或 null
@@ -56,7 +56,7 @@ function composeGems(type, lv) {
 }
 
 /* 寶石轉換（九宮格）：多組 {type, lv, n} 一次性轉換為目標種類
-   規則：同階轉換、數量不變；每格一種（同種同級）上限 10 顆；融合寶石不可轉換。
+   規則：同階轉換、數量不變；每格一種（同種同級）上限 100 顆；融合寶石不可轉換。
    回傳 null=成功，否則錯誤訊息 */
 function convertGems(slots, targetType) {
   if (!GEM_TYPES[targetType]) return '未知目標種類';
@@ -79,7 +79,7 @@ function convertGems(slots, targetType) {
 // 寶石拆解：1 顆 2 階以上寶石 → 同種 1 階寶石（損失 30%，公式見 formula.js §8）
 function dismantleGem(type, lv) {
   if (!GEM_TYPES[type]) return { err: '未知寶石種類' };
-  if (lv < 2 || lv > GEM_MAX_LEVEL) return { err: '只能拆解 2 階以上的寶石' };
+  if (lv < 2 || lv > GEM_FORGE_MAX_LEVEL) return { err: '只能拆解 2 階以上的寶石' };
   if (gemCount(type, lv) < 1) return { err: '沒有「' + GEM_NAMES[lv] + GEM_TYPES[type].name + '」' };
   var y = gemDismantleYield(lv);
   addGem(type, lv, -1);
@@ -133,12 +133,19 @@ function removeFusedGem(id) {
   return null;
 }
 
-// 融合素材參照 → 正規化 { stats, fusions, leaves, ref }；plain 需持有 5 階寶石
+/* 融合素材參照 → 正規化 { stats, fusions, leaves, ref }；plain 需持有 5 階以上寶石
+  （ref.lv 省略時視為 5 階，向下相容）。leaves 以「5 階等值」計：
+   6 階 = 2、7 階 = 4…（2^(階級-5)），維持拆解成本換算一致。 */
 function normalizeFuseMaterial(ref) {
   if (!ref) return null;
   if (ref.kind === 'plain') {
-    if (gemCount(ref.type, GEM_MAX_LEVEL) < 1) return null;
-    return { stats: [{ type: ref.type, val: gemStatValue(ref.type, GEM_MAX_LEVEL) }], fusions: 0, leaves: 1, ref: ref };
+    var lv = ref.lv || GEM_MAX_LEVEL;
+    if (lv < GEM_MAX_LEVEL || lv > GEM_FORGE_MAX_LEVEL) return null;
+    if (gemCount(ref.type, lv) < 1) return null;
+    return {
+      stats: [{ type: ref.type, val: gemStatValue(ref.type, lv) }], fusions: 0,
+      leaves: Math.pow(2, lv - GEM_MAX_LEVEL), ref: ref
+    };
   }
   var fg = findFusedGem(ref.id);
   if (!fg) return null;
@@ -154,7 +161,7 @@ function gemFuseTypesOk(m1, m2) {
 }
 // 消耗素材（成功時雙方都消耗；失敗時只消耗較弱方）
 function consumeFuseMaterial(m) {
-  if (m.ref.kind === 'plain') addGem(m.ref.type, GEM_MAX_LEVEL, -1);
+  if (m.ref.kind === 'plain') addGem(m.ref.type, m.ref.lv || GEM_MAX_LEVEL, -1);
   else removeFusedGem(m.ref.id);
 }
 // 失敗降解：4~8 顆 1 級或 2~4 顆 2 級同屬性寶石（各 50%）
@@ -171,9 +178,11 @@ function degradeFuseMaterial(m) {
 function fuseGemsV2(ref1, ref2) {
   var m1 = normalizeFuseMaterial(ref1);
   var m2 = normalizeFuseMaterial(ref2);
-  if (!m1 || !m2) return { err: '素材不足（僅限 5 階寶石）' };
-  if (ref1.kind === 'plain' && ref2.kind === 'plain' && ref1.type === ref2.type && gemCount(ref1.type, GEM_MAX_LEVEL) < 2) {
-    return { err: '同種寶石需要 2 顆' };
+  if (!m1 || !m2) return { err: '素材不足（僅限 5 階以上寶石）' };
+  if (ref1.kind === 'plain' && ref2.kind === 'plain' && ref1.type === ref2.type &&
+      (ref1.lv || GEM_MAX_LEVEL) === (ref2.lv || GEM_MAX_LEVEL) &&
+      gemCount(ref1.type, ref1.lv || GEM_MAX_LEVEL) < 2) {
+    return { err: '同種同階寶石需要 2 顆' };
   }
   if (ref1.kind === 'fused' && ref2.kind === 'fused' && ref1.id === ref2.id) return { err: '不能與自己融合' };
   var unionTypes = gemFuseTypesOk(m1, m2);
@@ -303,13 +312,13 @@ function ensureSockets(it) {
   while (it.sockets.length < n) it.sockets.push(null);
   return it.sockets;
 }
-// 鑲嵌：從庫存取一顆該種類最高等級的寶石放入第一個空槽
+// 鑲嵌：從庫存取一顆該種類最高等級的寶石放入第一個空槽（含 6~10 階神鑄寶石）
 function socketGem(it, type) {
   ensureSockets(it);
   var idx = it.sockets.indexOf(null);
   if (idx < 0) return '插槽已滿';
   var lv = 0;
-  for (var l = GEM_MAX_LEVEL; l >= 1; l--) { if (gemCount(type, l) > 0) { lv = l; break; } }
+  for (var l = GEM_FORGE_MAX_LEVEL; l >= 1; l--) { if (gemCount(type, l) > 0) { lv = l; break; } }
   if (!lv) return '沒有這種寶石';
   addGem(type, lv, -1);
   it.sockets[idx] = { type: type, level: lv };
@@ -799,14 +808,21 @@ function rerollSingleAffix(it, affixKey) {
 // 自動機組零件生成（node 未指定時「依節點均衡」挑選，避免分解零件過多稀釋合成零件）
 function makePart(tier, node) {
   tier = clamp(tier, 1, PART_MAX_TIER);
+  if (node && !isFactoryNodeEnabled(node)) return null;
   var keys = Object.keys(PART_TYPES);
   if (!node) {
     var nodeSet = {};
-    keys.forEach(function (k) { nodeSet[PART_TYPES[k].node] = true; });
+    keys.forEach(function (k) {
+      if (isFactoryNodeEnabled(PART_TYPES[k].node)) nodeSet[PART_TYPES[k].node] = true;
+    });
     node = pick(Object.keys(nodeSet));
   }
-  var pool = keys.filter(function (k) { return PART_TYPES[k].node === node; });
-  var key = pick(pool.length ? pool : keys);
+  var pool = keys.filter(function (k) {
+    return PART_TYPES[k].node === node && isFactoryNodeEnabled(PART_TYPES[k].node);
+  });
+  var enabledKeys = keys.filter(function (k) { return isFactoryNodeEnabled(PART_TYPES[k].node); });
+  if (!pool.length && !enabledKeys.length) return null;
+  var key = pick(pool.length ? pool : enabledKeys);
   var pt = PART_TYPES[key];
   return {
     id: uid(), kind: 'part', key: key, tier: tier,

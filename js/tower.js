@@ -168,10 +168,12 @@ function endTowerFight(win, reason) {
     var rw = towerRewardFor(floor, firstClear);
     if (chance(rw.partChance)) {
       var part = makePart(rw.partTier);
-      G.factory.parts.push(part);
-      trimFactoryParts(); // 收斂零件庫存，防無限成長
-      result.rewards.push(PART_TYPES[part.key].emoji + ' ' + part.name + '（' + partDesc(part) + '）');
-      flog('🔩 獲得自動機組零件：' + part.name, 'good');
+      if (part) {
+        G.factory.parts.push(part);
+        trimFactoryParts(); // 收斂零件庫存，防無限成長
+        result.rewards.push(PART_TYPES[part.key].emoji + ' ' + part.name + '（' + partDesc(part) + '）');
+        flog('🔩 獲得自動機組零件：' + part.name, 'good');
+      }
     }
     // 裝備戰利品：依「BOSS 掉落表」各品質獨立擲骰（>100% 必掉 + 餘數機率）
     var st2 = getStats();
@@ -203,8 +205,8 @@ function endTowerFight(win, reason) {
     result.rewards.push('📖 ' + ENCHANTS[bk].name + '書 x2');
     G.player.essence += rw.essence;
     result.rewards.push('🔮 附魔精華 x' + rw.essence);
-    // 魔塵（神鑄材料）：掉落率 = min(15%, 2% + BOSS等級 × 0.2%)（bossDustRate → formula.js §5）
-    if (b && chance(bossDustRate(b.level))) {
+    // 魔塵（神鑄材料）：掉落率 = min(30%, 2% + 樓層 × 0.2%)（bossDustRate → formula.js §5）
+    if (chance(bossDustRate(floor))) {
       G.player.dust = (G.player.dust || 0) + 1;
       result.rewards.push('💫 魔塵 x1（神鑄材料）');
       UI.dirty.forge = true;

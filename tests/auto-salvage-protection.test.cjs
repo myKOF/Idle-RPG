@@ -99,7 +99,7 @@ test('full conveyor never auto-salvages protected mythic equipment', () => {
   assert.deepEqual(Array.from(context.G.factory.conveyor, (it) => it.id), ['mythic', 'genesis']);
 });
 
-test('full synth buffer never auto-salvages protected mythic materials', () => {
+test('關閉合成後不會再把掉落送進合成暫存區', () => {
   const context = loadGameContext();
   baseState(context);
   context.SYNTH_BUFFER_CAP = 2;
@@ -117,8 +117,9 @@ test('full synth buffer never auto-salvages protected mythic materials', () => {
 
   context.processOneConveyorItem();
 
-  assert.deepEqual(salvaged, ['common']);
-  assert.deepEqual(Array.from(context.G.factory.synthBuffer, (it) => it.id), ['mythic', 'genesis']);
+  assert.deepEqual(salvaged, []);
+  assert.deepEqual(Array.from(context.G.factory.synthBuffer, (it) => it.id), ['mythic', 'common']);
+  assert.deepEqual(Array.from(context.G.inventory, (it) => it.id), ['genesis']);
 });
 
 test('filter salvage automation preserves protected mythic equipment', () => {

@@ -3,6 +3,7 @@
 
 /* ---- 零件加成查詢 ---- */
 function partBonus(node, key) {
+  if (!isFactoryNodeEnabled(node)) return 0;
   var f = G.factory;
   var ids = f.installed[node] || [];
   var sum = 0;
@@ -23,6 +24,7 @@ function isInstalled(id) {
   return false;
 }
 function installPart(id, node) {
+  if (!isFactoryNodeEnabled(node)) return false;
   var p = findPart(id);
   if (!p) return false;
   if (PART_TYPES[p.key].node !== node) { flog('⚠️ ' + p.name + ' 無法安裝到' + NODE_NAMES[node], 'warn'); return false; }
@@ -212,7 +214,7 @@ function factoryTick(dt) {
     processOneConveyorItem();
   }
   // 合成節點
-  if (f.synth.enabled) synthTick();
+  if (SYNTHESIS_ENABLED && f.synth.enabled) synthTick();
   // 附魔節點（每 3 秒）
   f.enchTimer -= dt;
   if (f.enchTimer <= 0) { f.enchTimer = 3; /* 附魔已改為裝備介面手動操作 */ }
@@ -231,6 +233,7 @@ function processOneConveyorItem() {
   if (f.autoEquip && tryAutoEquip(it)) return;
 
   var act = decideFilter(it);
+  if (act === 'synth' && !SYNTHESIS_ENABLED) act = 'keep';
   if (act === 'salvage') {
     if (isAutoSalvageProtected(it)) {
       flog('🛡️ 自動分解保護：已保留 ' + rarityTag(it), 'warn');
@@ -261,6 +264,7 @@ function processOneConveyorItem() {
 
 /* ---- 合成節點 ---- */
 function synthTick() {
+  if (!SYNTHESIS_ENABLED) return;
   var f = G.factory;
   // 寶石合成：3 顆同種同級 → 1 顆同種下一級
   if (f.synth.gemMerge) {
@@ -285,6 +289,7 @@ function synthTick() {
 
 // 混合合成：[裝備(任何)] + [寶石(X等級)] + [附魔書(特定)] = 特殊裝備（賦予附魔）
 function tryHybridSynthesis() {
+  if (!SYNTHESIS_ENABLED) return false;
   var f = G.factory;
   if (!f.synthBuffer.length) return false;
   // 找可用寶石（滿足最低等級設定，用最低可用等級以節約高級寶石；不限種類）
@@ -363,6 +368,7 @@ function tryHybridSynthesis() {
 
 // 品質合成：3 件同稀有度素材 → 1 件更高稀有度隨機裝備
 function tryRarityMerge() {
+  if (!SYNTHESIS_ENABLED) return false;
   var f = G.factory;
   if (f.synthBuffer.length < 3) return false;
   var byRarity = {};

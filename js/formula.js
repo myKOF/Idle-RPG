@@ -223,6 +223,12 @@ function defReduction(def, attackerLevel) {
   return def / (def + 60 + 8 * attackerLevel);
 }
 
+// 元素附傷減免：只套用對應元素抗性，不重複套用魔法抗性
+function elementalResistanceMultiplier(resist, element) {
+  var value = resist && resist[element] || 0;
+  return 1 - clamp(value, 0, 75) / 100;
+}
+
 var SLOW_ASPD_FACTOR = 0.7;   // 減速狀態：攻速 -30%（攻擊冷卻累積 ×0.7）
 var BASE_HP_REGEN_PCT = 1.5;  // 野外每秒基礎生命回復（最大生命 %；高塔內無此回復）
 var KILL_HEAL_PCT = 12;       // 野外擊殺回復（最大生命 %，溢出轉護盾）
@@ -274,7 +280,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
       var ek = ELEMENTS[i];
       var ev = elem[ek] || 0;
       if (!ev) continue;
-      var edmg = ev * (1 - clamp(res[ek] || 0, 0, 75) / 100);
+      var edmg = ev * elementalResistanceMultiplier(res, ek);
       dmg += edmg;
       // 元素特效：冰 15% 減速 2 秒｜雷 10% 追加 80% 電擊｜毒 25% 中毒（50% 元傷/秒×4 秒）
       //          光 20% 淨化自身｜暗 汲取元傷 25% 回復
@@ -460,9 +466,9 @@ function towerChallengeCost(floor) {
   return 100000 + floor * 200000;
 }
 
-// 高塔 BOSS 魔塵掉落率 = min(30%, 2% + BOSS等級 × 0.2%)
-function bossDustRate(bossLevel) {
-  return Math.min(DUST_BOSS_CAP, DUST_BOSS_BASE + bossLevel * DUST_BOSS_PER_LEVEL);
+// 高塔 BOSS 魔塵掉落率 = min(30%, 2% + 樓層 × 0.2%)
+function bossDustRate(floor) {
+  return Math.min(DUST_BOSS_CAP, DUST_BOSS_BASE + floor * DUST_BOSS_PER_LEVEL);
 }
 
 // 野外魔塵掉落率 = min(5%, 0.1% + (敵人等級 - 150) × 0.1%)；150 級以下不掉落
@@ -526,9 +532,19 @@ function godforgePassiveValue(key) {
   return Math.round(d.base * rnd(0.8, 1.2) * 10) / 10;
 }
 
-// 神鑄成功率 = 基礎（依素材品質）+ 魔塵數 × 5%
+// 神鑄成功率（裝備）= 基礎（依素材品質）+ 魔塵數 × 5%
 function forgeSuccessRateFor(rarity, dustCount) {
   return clamp((FORGE_BASE_RATE[rarity] || 0) + dustCount * FORGE_DUST_RATE, 0, 100);
+}
+
+// 神鑄成功率（寶石）= 基礎（依素材階級）+ 魔塵數 × 3%
+function forgeGemSuccessRateFor(level, dustCount) {
+  return clamp((FORGE_GEM_BASE_RATE[level] || 0) + dustCount * FORGE_GEM_DUST_RATE, 0, 100);
+}
+
+// 寶石神鑄金幣費用 = 1000000 + (素材階級 - 5) × 1000000
+function forgeGemCost(level) {
+  return 1000000 + (level - GEM_MAX_LEVEL) * 1000000;
 }
 
 /* ---- 附魔數值 ----
@@ -686,9 +702,15 @@ function salvageSlotCount() {
    §8 寶石
    ============================================================ */
 
-// 寶石能力數值（隨等級超線性成長）= base × 等級 × (1 + 0.2 × (等級-1))
+/* 寶石能力數值：
+   1~5 階（一般）= base × 等級 × (1 + 0.2 × (等級-1))
+   6~10 階（神鑄）= 五階數值 × 2^(階級-5)（每高 1 階能力 ×2） */
 function gemStatValue(type, level) {
   var g = GEM_TYPES[type];
+  if (level > GEM_MAX_LEVEL) {
+    var base5 = g.base * GEM_MAX_LEVEL * (1 + 0.2 * (GEM_MAX_LEVEL - 1));
+    return Math.round(base5 * Math.pow(2, level - GEM_MAX_LEVEL) * 10) / 10;
+  }
   return Math.round(g.base * level * (1 + 0.2 * (level - 1)) * 10) / 10;
 }
 // 插槽數：依稀有度表（普/精良 1、稀有/獨特 2、史詩 3、傳說 4、神話 5、創世 6）
@@ -705,7 +727,7 @@ function enchantCapFor(it) {
    合成鏈：2 顆同種同級 → 1 顆同種下一級（消耗金幣 FUSE_GOLD_COST[素材等級]），
    故 1 顆 N 級寶石的合成總成本 = 2^(N-1) 顆 1 級（5 級 = 16 顆）。 */
 var GEM_CONVERT_SLOTS = 9;     // 寶石轉換九宮格格數
-var GEM_CONVERT_STACK = 10;    // 每格同種同級寶石上限
+var GEM_CONVERT_STACK = 100;    // 每格同種同級寶石上限
 var GEM_DISMANTLE_KEEP = 0.7;  // 拆解保留比例（損失 30%）
 
 // 1 顆 lv 級寶石換算多少顆 1 級寶石

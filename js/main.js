@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function () {
     blog('⚔️ 歡迎來到《無限征途：合成之巔》！', 'good');
     blog('你的角色會自動戰鬥。掉落的裝備會流進【生產線】，記得去設定篩選 / 分解 / 合成規則！', 'info');
     blog('💡 提示：預設「普通」品質會自動分解成碎片，撿到更強的裝備會自動換上。', 'info');
-    flog('🏭 生產線已啟動。試著把某個稀有度的處置改成「合成素材」，就能開始自動合成！', 'info');
+    flog('🏭 生產線已啟動。掉落裝備會依篩選規則自動保留或分解。', 'info');
   }
 
   setInterval(gameTick, TICK_MS);

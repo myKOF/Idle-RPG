@@ -56,7 +56,7 @@ function loadGameContext() {
 function makeGemInventory(gemTypes) {
   const gems = {};
   Object.keys(gemTypes).forEach((type) => {
-    gems[type] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    gems[type] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0 };
   });
   return gems;
 }
@@ -78,4 +78,38 @@ test('conversion gem inventory chips expose gem ability values in tooltip text',
   assert.match(html, /物理攻擊 \+25/);
   assert.match(html, /四級蛋白石/);
   assert.match(html, /攻擊速度 \+9\.6%/);
+});
+
+test('一般寶石庫存顯示神鑄六階寶石並使用方形圖示', () => {
+  const { context, elements } = loadGameContext();
+  const gems = makeGemInventory(context.GEM_TYPES);
+  gems.garnet[6] = 1;
+  context.G = { player: { gems, fusedGems: [] } };
+  context.UI.convertSlots = [];
+
+  context.renderGemConvert();
+
+  const html = elements.get('gconv-pool').innerHTML;
+  assert.match(html, /六級石榴石/);
+  assert.match(html, /gem-inventory-cell/);
+  assert.match(html, /gem-chip-emoji/);
+  assert.match(html, /gem-chip-count/);
+  assert.match(html, /gem-chip-level/);
+  assert.doesNotMatch(html, /gem-chip-label/);
+});
+
+test('寶石融合素材池使用相同的方形圖示資訊', () => {
+  const { context, elements } = loadGameContext();
+  const gems = makeGemInventory(context.GEM_TYPES);
+  gems.garnet[6] = 1;
+  context.G = { player: { gems, fusedGems: [] } };
+  context.UI.gemFuseSlots = [null, null];
+
+  context.renderGemFusion();
+
+  const html = elements.get('gfuse-pool').innerHTML;
+  assert.match(html, /gem-inventory-cell/);
+  assert.match(html, /gem-chip-count/);
+  assert.match(html, /gem-chip-emoji/);
+  assert.match(html, /gem-chip-level/);
 });
