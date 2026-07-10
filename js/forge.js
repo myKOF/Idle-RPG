@@ -42,6 +42,13 @@ function forgeLog(msg, cls) {
   UI.dirty.forge = true;
 }
 
+// 神鑄失敗補償：無論裝備或寶石模式，失敗固定獲得 1 個魔塵。
+function forgeFailureReward() {
+  G.player.dust = (G.player.dust || 0) + 1;
+  UI.dirty.header = true;
+  UI.dirty.forge = true;
+}
+
 /* 法陣模式：'equip'（裝備鑄造）/ 'gem'（寶石鑄造）/ null（空）
    由第一個放入的物件決定，兩種模式不可混放。 */
 function forgeMode() {
@@ -267,9 +274,10 @@ function doForge() {
     } else {
       // 放入時已自庫存扣除：退回 4 顆（六顆同種同階，等同隨機消耗 2 顆）
       addGem(g.type, g.level, FORGE_SLOTS - FORGE_FAIL_CONSUME);
+      forgeFailureReward();
       forgeLog('鑄造失敗！退回寶石*' + (FORGE_SLOTS - FORGE_FAIL_CONSUME), 'bad');
       blog('🔯 鑄造失敗！損失 ' + gemLabel(g.type, g.level) + ' x' + FORGE_FAIL_CONSUME +
-        '，其餘 ' + (FORGE_SLOTS - FORGE_FAIL_CONSUME) + ' 顆已退回庫存' + costTail, 'warn');
+        '，其餘 ' + (FORGE_SLOTS - FORGE_FAIL_CONSUME) + ' 顆已退回庫存，獲得魔塵 x1' + costTail, 'warn');
     }
     UI.dirty.forge = true;
     return null;
@@ -306,9 +314,10 @@ function doForge() {
       if (f.slots[s]) { forgeReturnItem(f.slots[s]); f.slots[s] = null; }
     }
     var rName = RARITIES[r] ? RARITIES[r].name : '裝備';
+    forgeFailureReward();
     forgeLog('鑄造失敗！退回' + rName + '裝備*' + (FORGE_SLOTS - FORGE_FAIL_CONSUME), 'bad');
     blog('🔯 鑄造失敗！損失 ' + lostNames.join('、') + '，其餘裝備已退回背包（成功率 ' + fmt1(rate) +
-      '%，金幣 -' + fmt(cost) + (dustUsed ? '、魔塵 -' + dustUsed : '') + '）', 'warn');
+      '%，金幣 -' + fmt(cost) + (dustUsed ? '、魔塵 -' + dustUsed : '') + '，獲得魔塵 x1）', 'warn');
   }
   UI.dirty.forge = true; UI.dirty.inv = true;
   return null;

@@ -838,7 +838,7 @@ function renderForge() {
   if (rate) {
     rateEl.innerHTML = (rate.mode === 'gem' ? '💎 寶石' : '') + '鑄造成功率：<b style="color:#ffd700">' + fmt1(rate.base) + '%</b>' +
       (rate.dust > 0 ? ' <b style="color:#4ade80">+ ' + fmt1(rate.dust) + '%</b>' : '') +
-      '　<span class="dim-text">金幣消耗：<img src="images/icon_gold.png" class="res-icon">' + fmt(rate.cost) + '</span>';
+      '　<span class="dim-text">金幣消耗：<img src="images/icon_gold.png" class="res-icon">' + fmt(rate.cost) + '｜失敗獲得魔塵 x1</span>';
   } else {
     rateEl.innerHTML = '<span class="dim-text">放入 6 件相同品質的裝備（傳說 55%｜神話 40%｜創世 25%）或 6 顆同種同階寶石（五階 45% ~ 九階 5%）</span>';
   }
