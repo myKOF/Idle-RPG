@@ -15,6 +15,8 @@ function newGameState() {
     savedAt: Date.now(),
     player: {
       level: 1, xp: 0,
+      reincarnations: 0,
+      reincarnationTalentPoints: 0,
       gold: 50, scrap: 0, essence: 0,
       dust: 0,                // 魔塵（神鑄材料）
       gems: gems,
@@ -79,20 +81,51 @@ function gainXp(n) {
   var p = G.player;
   p.xp += n;
   var gained = 0;
-  while (p.xp >= xpForLevel(p.level)) {
+  while (p.level < REINCARNATION_LEVEL && p.xp >= xpForLevel(p.level)) {
     p.xp -= xpForLevel(p.level);
     p.level++;
     gained++;
+    if (reincarnationCount() > 0) p.reincarnationTalentPoints = (p.reincarnationTalentPoints || 0) + 1;
   }
+  if (p.level >= REINCARNATION_LEVEL) p.xp = 0;
   if (gained > 0) {
-    // 技能點由等級推導（availableSkillPoints），此處無需累加
     markStatsDirty();
-    blog('🎉 等級提升！目前等級 ' + p.level + '（四維主屬性 +2、<span class="log-hl-good">技能點 +' + gained + '</span>）', 'good');
+    var reward = reincarnationCount() > 0
+      ? '<span class="log-hl-good">轉生天賦點 +' + gained + '</span>'
+      : '<span class="log-hl-good">技能點 +' + gained + '</span>';
+    blog('🎉 等級提升！目前等級 ' + p.level + '（四維主屬性 +2、' + reward + '）', 'good');
     // 升級回滿血藍
     var st = getStats();
     if (FIELD.player) { FIELD.player.hp = st.hp; FIELD.player.mp = st.mp; }
     UI.dirty.header = true; UI.dirty.skills = true;
   }
+}
+
+/* ---- 轉生 ----
+   保留裝備、技能、資源與關卡，只重置等級／經驗；轉生後的天賦點持續累計。 */
+function reincarnate() {
+  var p = G.player;
+  var count = reincarnationCount();
+  if (count >= REINCARNATION_MAX) return '已達最高轉生次數（' + REINCARNATION_MAX + ' 轉）';
+  if (p.level < REINCARNATION_LEVEL) return '角色尚未達到 ' + REINCARNATION_LEVEL + ' 級';
+  p.reincarnations = count + 1;
+  p.level = 1;
+  p.xp = 0;
+  p.skillPoints = 0;
+  markStatsDirty();
+  if (typeof FIELD !== 'undefined' && FIELD && FIELD.player) {
+    var st = getStats();
+    FIELD.player.hp = st.hp;
+    FIELD.player.mp = st.mp;
+    FIELD.player.shield = 0;
+    FIELD.player.skillCds = {};
+    FIELD.player.skillGcd = 0;
+  }
+  UI.dirty.header = true;
+  UI.dirty.skills = true;
+  UI.dirty.battle = true;
+  blog('🌟 轉生成功！成為【' + reincarnationRankName(p.reincarnations) + '】。等級重置為 1，生命、法力與四大屬性變為 ×' + reincarnationTotalMultiplier() + '，經驗需求 ×' + reincarnationExpMultiplier() + '。', 'good');
+  return null;
 }
 
 /* ---- 裝備操作 ----

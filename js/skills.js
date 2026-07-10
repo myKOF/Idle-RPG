@@ -2,7 +2,7 @@
 /* ============ 技能系統 ============
    - 主動技能：消耗 MP、依強度有冷卻（受 CDR 影響），戰鬥中依裝載順序自動施放
    - 被動技能：學會即永久生效（計入屬性）
-   - 學習/升級：每升 1 級獲得 1 技能點；學習或升 1 級各花 1 點，上限 Lv.5   */
+   - 學習/升級：轉生前每升 1 級獲得 1 技能點；轉生後改獲得轉生天賦點，上限隨轉生提高 */
 
 /* 技能數值公式（SKILL_CAST_LOCK、TIER_GATE_POINTS、loadoutSize、
    skillUpgradeCost、skillMaxLv、skillValue、skillCdFor、scaleAt、
@@ -240,7 +240,10 @@ function nextUnlockLv(id, lv) {
 function freeStarterCredit() {
   return (skillLevel('powerSlash') > 0 ? 1 : 0) + (skillLevel('arcaneBurst') > 0 ? 1 : 0);
 }
-function totalSkillPoints() { return Math.max(0, G.player.level - 1); }
+function totalSkillPoints() {
+  // 轉生後等級只產生轉生天賦點，不再產生技能點。
+  return reincarnationCount() > 0 ? 0 : Math.max(0, G.player.level - 1);
+}
 function spentSkillPoints() {
   var spent = 0;
   if (G.player.skills) {
@@ -304,6 +307,37 @@ function learnOrUpgradeSkill(id) {
     (newFx ? ' <span class="log-hl-good">✨解鎖新效果！</span>' : ''), 'good');
   return null;
 }
+
+// 一鍵升到目前技能上限：逐級檢查技能點與金幣，資源不足時停在可達等級。
+function maxUpgradeSkill(id) {
+  var sk = skillDef(id);
+  if (!sk) return '未知技能';
+  var lv = skillLevel(id);
+  var maxLv = skillMaxLv(sk);
+  if (lv >= maxLv) return '已達最高等級';
+  var lock = tierLockReason(id);
+  if (lock) return lock;
+  if (availableSkillPoints() <= 0) return '技能點不足';
+
+  var startLv = lv;
+  var spentGold = 0;
+  while (lv < maxLv && availableSkillPoints() > 0) {
+    var cost = skillUpgradeCost(lv);
+    if (G.player.gold < cost) break;
+    G.player.gold -= cost;
+    spentGold += cost;
+    lv++;
+    G.player.skills[id] = lv;
+  }
+  if (lv === startLv) return G.player.gold < skillUpgradeCost(lv) ? '金幣不足（需要 ' + fmt(skillUpgradeCost(lv)) + '）' : '技能點不足';
+
+  if (sk.cat === 'passive') markStatsDirty();
+  UI.dirty.skills = true; UI.dirty.header = true;
+  blog('⚡ 一鍵滿級：' + sk.emoji + sk.name + ' Lv.' + startLv + ' → Lv.' + lv +
+    '（消耗 ' + fmt(spentGold) + ' 金幣、' + (lv - startLv) + ' 技能點）', 'good');
+  return null;
+}
+
 // 降級：退回 1 級並歸還消耗金幣（降至 0 = 遺忘；融合技最低 Lv.1，移除請用刪除）
 function downgradeSkill(id) {
   var sk = skillDef(id);

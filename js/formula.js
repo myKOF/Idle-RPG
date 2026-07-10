@@ -24,8 +24,29 @@
    §1 成長與經驗
    ============================================================ */
 
-// 升到下一級所需經驗 = 30 × 等級^2 + 40
-function xpForLevel(l) { return Math.floor(30 * Math.pow(l, 2) + 40); }
+// 轉生次數只接受 0~5，避免舊存檔或外部資料造成倍率失控。
+function reincarnationCount() {
+  var n = (typeof G !== 'undefined' && G && G.player) ? Number(G.player.reincarnations) : 0;
+  return clamp(Math.floor(isFinite(n) ? n : 0), 0, REINCARNATION_MAX);
+}
+function reincarnationRankName(count) {
+  var n = count === undefined ? reincarnationCount() : clamp(Math.floor(Number(count) || 0), 0, REINCARNATION_MAX);
+  return REINCARNATION_RANKS[n] || REINCARNATION_RANKS[0];
+}
+function reincarnationExtraMultiplier(count) {
+  var n = count === undefined ? reincarnationCount() : clamp(Math.floor(Number(count) || 0), 0, REINCARNATION_MAX);
+  return REINCARNATION_EXTRA_MULTIPLIERS[n] || 0;
+}
+function reincarnationTotalMultiplier(count) {
+  var n = count === undefined ? reincarnationCount() : clamp(Math.floor(Number(count) || 0), 0, REINCARNATION_MAX);
+  return n === 0 ? 1 : reincarnationExtraMultiplier(n);
+}
+function reincarnationExpMultiplier(count) {
+  return Math.pow(2, count === undefined ? reincarnationCount() : count);
+}
+
+// 升到下一級所需經驗 =（30 × 等級^2 + 40）× 2^轉生次數
+function xpForLevel(l) { return Math.floor((30 * Math.pow(l, 2) + 40) * reincarnationExpMultiplier()); }
 
 /* 等級基礎四維主屬性（不含裝備）：力/敏/智/耐 相同
    = 5 + (等級 - 1) × 2 */
@@ -146,18 +167,23 @@ function computeStats() {
 
   /* ---- 派生公式（st.base = 純等級/四維的基礎值，供屬性面板拆解顯示） ---- */
   var lv = p.level;
-  var st = { level: lv };
-  // 四維主屬性
-  st.str = Math.round(A.str); st.agi = Math.round(A.agi);
-  st.int = Math.round(A.int); st.vit = Math.round(A.vit);
+  var reincMult = reincarnationTotalMultiplier();
+  var rawStr = Math.round(A.str), rawAgi = Math.round(A.agi);
+  var rawInt = Math.round(A.int), rawVit = Math.round(A.vit);
+  var st = { level: lv, reincarnationMultiplier: reincMult };
+  // 四維主屬性：原始總值完成後，再套用轉生最終倍率。
+  st.str = Math.round(rawStr * reincMult); st.agi = Math.round(rawAgi * reincMult);
+  st.int = Math.round(rawInt * reincMult); st.vit = Math.round(rawVit * reincMult);
   // 基礎：生命 = (120 + (等級-1)×22 + 耐力×10 + 定值) × (1 + 生命%)
   st.base = {};
-  st.base.hp = 120 + (lv - 1) * 22 + st.vit * 10;
-  st.hp = Math.round((st.base.hp + A.hpFlat) * (1 + A.hpPct / 100));
+  st.base.hp = 120 + (lv - 1) * 22 + rawVit * 10;
+  var rawHp = (st.base.hp + A.hpFlat) * (1 + A.hpPct / 100);
+  st.hp = Math.round(rawHp * reincMult);
   st.hpRegen = A.hpRegen;                                    // 額外生命恢復/秒（另有 BASE_HP_REGEN_PCT%/秒 基礎回復）
-  // 法力 = 40 + 智力×4 + 定值；法力恢復 = 2 + 智力×0.06 + 加成
-  st.base.mp = 40 + st.int * 4;
-  st.mp = Math.round(st.base.mp + A.mpFlat);
+  // 法力 =（40 + 原始智力×4 + 定值）×轉生倍率；法力恢復另依原有公式計算
+  st.base.mp = 40 + rawInt * 4;
+  var rawMp = st.base.mp + A.mpFlat;
+  st.mp = Math.round(rawMp * reincMult);
   st.mpRegen = 2 + st.int * 0.06 + A.mpRegen;
   // 進攻：物攻 = (8 + (等級-1)×1.6 + 力量×2 + 定值) × (1 + 物攻%)
   st.base.atk = 8 + (lv - 1) * 1.6 + st.str * 2;
@@ -794,12 +820,12 @@ function skillUpgradeCost(lv) {
   return Math.min(5000000, cost);
 }
 
-// 各類技能等級上限：融合技 = 素材加總+20（存於 def.maxLv）／被動 30／主動 20
+// 各類技能等級上限：每轉生一般技能 +10、融合技 +20。
 function skillMaxLv(def) {
-  if (def && def.maxLv) return def.maxLv;
-  if (def && def.cat === 'fusion') return 40;
-  if (def && def.cat === 'passive') return 30;
-  return 20;
+  var rc = reincarnationCount();
+  if (def && def.cat === 'fusion') return (def.maxLv || 40) + rc * 20;
+  if (def && def.cat === 'passive') return 30 + rc * 10;
+  return 20 + rc * 10;
 }
 
 // 技能傷害倍率（%）= base + per × (等級-1)

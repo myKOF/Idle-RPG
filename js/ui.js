@@ -106,6 +106,12 @@ function renderSaveList() {
 }
 
 /* ---- 頂部資源 / 屬性 ---- */
+function applyReincarnationTitleClass(el, count) {
+  if (!el) return;
+  for (var i = 1; i <= REINCARNATION_MAX; i++) el.classList.remove('reinc-title-' + i);
+  if (count > 0) el.classList.add('reinc-title-' + count);
+}
+
 function renderHeader() {
   var p = G.player, st = getStats();
   $id('r-gold').textContent = fmt(p.gold);
@@ -135,6 +141,24 @@ function renderHeader() {
   $id('p-level').textContent = 'Lv.' + p.level;
   if ($id('pv-level')) $id('pv-level').textContent = 'Lv.' + p.level;
   if ($id('tp-level')) $id('tp-level').textContent = 'Lv.' + p.level;
+  var reinc = reincarnationCount();
+  var rank = reincarnationRankName(reinc);
+  var classEl = $id('p-class');
+  if (classEl) { classEl.textContent = rank; applyReincarnationTitleClass(classEl, reinc); }
+  if ($id('p-reincarnation')) $id('p-reincarnation').textContent = '轉生：' + reinc + '/' + REINCARNATION_MAX;
+  var pvName = $id('pv-name');
+  var tpName = $id('tp-name');
+  if (pvName) { pvName.textContent = rank + '（你）'; applyReincarnationTitleClass(pvName, reinc); }
+  if (tpName) { tpName.textContent = rank + '（你）'; applyReincarnationTitleClass(tpName, reinc); }
+  var reincBtn = $id('btn-reincarnate');
+  if (reincBtn) {
+    var canReincarnate = p.level >= REINCARNATION_LEVEL && reinc < REINCARNATION_MAX;
+    reincBtn.classList.toggle('reincarnate-ready', canReincarnate);
+    reincBtn.setAttribute('data-tip', reinc >= REINCARNATION_MAX
+      ? '已達最高 ' + REINCARNATION_MAX + ' 轉'
+      : (canReincarnate ? '目前可進行轉生' : '等級達到 ' + REINCARNATION_LEVEL + ' 級可使用'));
+    reincBtn.title = reincBtn.getAttribute('data-tip');
+  }
   var need = xpForLevel(p.level);
   $id('xp-fill').style.width = clamp(p.xp / need * 100, 0, 100) + '%';
   $id('xp-bar').title = '經驗 ' + fmt(p.xp) + ' / ' + fmt(need);
@@ -1163,15 +1187,17 @@ function renderSkillModal() {
   if (lock) h += '<div class="hint">🔒 ' + esc(lock) + '</div>';
 
   h += '<div style="text-align: right; margin-top: 12px; color: #facc15; font-size: 14px; font-weight: bold;">技能點：' + availableSkillPoints() + '</div>';
-  h += '<div class="detail-actions" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px;">';
+  h += '<div class="detail-actions skill-modal-actions">';
   if (lv < maxLv && !lock) {
     var cost = skillUpgradeCost(lv);
     h += '<button class="btn sm" data-skill-learn="' + id + '" data-tip="花費 ' + fmt(cost) + ' 金幣"' + (G.player.gold < cost ? ' disabled' : '') + '>' +
       (lv === 0 ? '📖 學習' : '⬆️ 升級') + '</button>';
+    h += '<button class="btn sm" data-skill-max="' + id + '" data-tip="自動消耗技能點與金幣，升到目前技能上限">⚡ 一鍵滿級</button>';
   } else if (lv >= maxLv) {
     h += '<div style="text-align:center; padding: 4px; color: var(--good); font-size: 12px;">已滿級</div>';
+    h += '<div></div>'; // 保留一鍵滿級欄位，讓後方按鈕位置固定
   } else {
-    h += '<div></div>'; // empty grid cell
+    h += '<div></div><div></div>'; // 升級與一鍵滿級欄位
   }
 
   if (lv > 0) {
@@ -1930,8 +1956,49 @@ function initUI() {
     });
   });
 
+  // 轉生按鈕：先顯示效果確認，只有按下確認後才執行。
+  var reincBtn = $id('btn-reincarnate');
+  if (reincBtn) {
+    reincBtn.addEventListener('click', function () {
+      var count = reincarnationCount();
+      if (G.player.level < REINCARNATION_LEVEL || count >= REINCARNATION_MAX) {
+        blog('⚠️ ' + (count >= REINCARNATION_MAX
+          ? '已達最高 ' + REINCARNATION_MAX + ' 轉'
+          : '等級達到 ' + REINCARNATION_LEVEL + ' 級後才能轉生'), 'warn');
+        return;
+      }
+      var nextCount = count + 1;
+      showConfirmDialog(
+        '轉生效果：\n' +
+        '・人物等級回到 1 級，經驗歸零。\n' +
+        '・生命、法力及力量、敏捷、耐力、智力變為 ×' + reincarnationTotalMultiplier(nextCount) + '。\n' +
+        '・不再獲得技能點，改獲得轉生天賦點。\n' +
+        '・一般技能上限 +10 級，融合技能上限 +20 級。\n' +
+        '・裝備、技能、資源與關卡進度保留。\n\n確定要進行轉生嗎？',
+        function () {
+          var err = reincarnate();
+          if (err) { blog('⚠️ ' + err, 'warn'); return; }
+          renderHeader();
+          renderSkills();
+          renderBattle();
+          showConfirmDialog('恭喜轉生成功！目前為 ' + reincarnationCount() + ' 轉。', function () {}, {
+            title: '轉生成功', okText: '確認', singleAction: true
+          });
+        },
+        { title: '轉生確認', okText: '確定轉生' }
+      );
+    });
+  }
+
   // 技能：學習/升級/裝載/融合（事件委派）
   document.addEventListener('click', function (e) {
+    var mx = e.target.closest('[data-skill-max]');
+    if (mx) {
+      var merr = maxUpgradeSkill(mx.getAttribute('data-skill-max'));
+      if (merr) blog('⚠️ ' + merr, 'warn');
+      renderSkills();
+      return;
+    }
     var ln = e.target.closest('[data-skill-learn]');
     if (ln) {
       var lerr = learnOrUpgradeSkill(ln.getAttribute('data-skill-learn'));
@@ -2757,7 +2824,10 @@ function initUI() {
   if (btnSummary) {
     btnSummary.addEventListener('click', function () {
       var modal = $id('summary-modal');
-      if (modal) modal.style.display = 'flex';
+      if (modal) {
+        if (typeof renderCurrentSummary === 'function') renderCurrentSummary();
+        modal.style.display = 'flex';
+      }
     });
   }
   var summaryModal = $id('summary-modal');
@@ -2771,6 +2841,20 @@ function initUI() {
     if (summaryClose) {
       summaryClose.addEventListener('click', function () {
         summaryModal.style.display = 'none';
+      });
+    }
+    var btnSummaryClear = $id('btn-summary-clear');
+    if (btnSummaryClear) {
+      btnSummaryClear.addEventListener('click', function () {
+        if (window.RUN_STATS) {
+          window.RUN_STATS.skills = {};
+          window.RUN_STATS.maxStage = typeof G !== 'undefined' && G.stage ? G.stage.current : 1;
+        }
+        var list = $id('battle-summary-list');
+        if (list) {
+          list.innerHTML = '';
+          if (typeof renderCurrentSummary === 'function') renderCurrentSummary();
+        }
       });
     }
   }
@@ -2823,3 +2907,23 @@ if ($id('trm-confirm')) {
     if (typeof finishTowerFight === 'function') finishTowerFight();
   };
 }
+// 開啟結算彈窗時，將目前尚未死亡結算的戰鬥統計更新到最上方。
+function renderCurrentSummary() {
+  var list = $id('battle-summary-list');
+  if (!list) return;
+  var old = list.querySelector('[data-summary-current]');
+  if (old) old.remove();
+  var html = typeof generateSummaryHtml === 'function' ? generateSummaryHtml(true) : '';
+  if (!html) {
+    var empty = document.createElement('div');
+    empty.className = 'summary-card';
+    empty.setAttribute('data-summary-current', 'true');
+    empty.innerHTML = '<div class="summary-card-title">目前戰鬥（即時統計）</div><div class="summary-card-row">尚未產生傷害統計</div>';
+    list.insertBefore(empty, list.firstChild);
+    return;
+  }
+  var holder = document.createElement('div');
+  holder.innerHTML = html;
+  list.insertBefore(holder.firstChild, list.firstChild);
+}
+

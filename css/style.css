@@ -146,6 +146,41 @@ body {
   letter-spacing: 1px;
 }
 
+.reinc-title-1 {
+  color: #facc15 !important;
+  text-shadow: 0 0 8px rgba(250, 204, 21, .65);
+}
+
+.reinc-title-2 {
+  color: #60a5fa !important;
+  text-shadow: 0 0 8px rgba(96, 165, 250, .65);
+}
+
+.reinc-title-3 {
+  color: #c084fc !important;
+  text-shadow: 0 0 8px rgba(192, 132, 252, .65);
+}
+
+.reinc-title-4 {
+  color: #f87171 !important;
+  text-shadow: 0 0 8px rgba(248, 113, 113, .65);
+}
+
+.reinc-title-5 {
+  color: transparent !important;
+  background: linear-gradient(90deg, #f87171, #facc15, #4ade80, #60a5fa, #c084fc, #f87171);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: reincarnation-rainbow 3s linear infinite;
+  text-shadow: none;
+}
+
+@keyframes reincarnation-rainbow {
+  from { background-position: 0% 50%; }
+  to { background-position: 300% 50%; }
+}
+
 .sidebar-level {
   text-align: center;
   margin-bottom: 16px;
@@ -155,6 +190,28 @@ body {
 .sidebar-level .plevel {
   color: var(--text);
   font-weight: bold;
+}
+
+.reincarnation-info {
+  margin-top: 7px;
+  color: var(--dim);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.reincarnate-btn {
+  width: 100%;
+  margin-top: 7px;
+  color: var(--accent);
+}
+
+.reincarnate-btn:not(.reincarnate-ready) {
+  opacity: .55;
+}
+
+.reincarnate-btn.reincarnate-ready {
+  border-color: var(--good);
+  color: var(--good);
 }
 
 #stats-sidebar #xp-bar {
@@ -2111,6 +2168,62 @@ textarea#save-io {
 .skd-next {
   font-size: 12px;
   margin-top: 4px;
+}
+
+#skill-modal .modal-box {
+  width: min(460px, 92vw);
+}
+
+#skill-modal-body {
+  display: grid;
+  grid-template-rows: 48px 140px 28px 66px;
+  min-height: 282px;
+}
+
+#skill-modal-body .skd-head {
+  min-height: 48px;
+  max-height: 48px;
+  margin-bottom: 0;
+  overflow: hidden;
+}
+
+#skill-modal-body .skd-head > b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#skill-modal-body .skill-modal-copy {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px 4px 0 0;
+  scrollbar-width: thin;
+}
+
+#skill-modal-body .skill-modal-points {
+  align-self: end;
+  text-align: right;
+  color: #facc15;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+#skill-modal-body .skill-modal-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: 26px;
+  align-content: start;
+  gap: 8px;
+  height: 60px;
+  margin-top: 8px;
+}
+
+#skill-modal-body .skill-modal-actions .btn,
+#skill-modal-body .skill-modal-actions > div {
+  min-width: 0;
+  min-height: 26px;
+  box-sizing: border-box;
 }
 
 /* ---- 技能彈窗 / 懸停提示 ---- */

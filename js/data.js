@@ -19,6 +19,14 @@ var RARITIES = [
 var RARE_IDX = 2; // 稀有級（含）以上附帶特殊被動
 var MAX_AFFIXES = 8; // 詞條上限屬性可突破至此（創世 7 + 突破 1）
 
+/* ---- 轉生系統 ----
+   生命與四維在原始總值完成後套用最終倍率：
+   1～5 轉分別為 ×10、×20、×40、×80、×160。 */
+var REINCARNATION_LEVEL = 9999;
+var REINCARNATION_MAX = 5;
+var REINCARNATION_RANKS = ['冒險者', '勇者', '大劍師', '王者', '聖王', '創世神'];
+var REINCARNATION_EXTRA_MULTIPLIERS = [0, 10, 20, 40, 80, 160];
+
 /* ---- 普通關卡敵人數量 ----
    僅普通敵人使用；菁英與高塔 BOSS 固定單一敵人。權重總和 = 100%。 */
 var FIELD_ENEMY_COUNT_TABLE = [[1, 78], [2, 15], [3, 5], [4, 2]];
@@ -494,7 +502,7 @@ var BOSS_DROP_TABLE = [    // 高塔 BOSS：依樓層 7 檔（與掉落表加總
 function statFmt(val, cap, type, prefix) {
   var s = '';
   if (type === '%') s = pctStr(val);
-  else if (type === '/s') s = fmt1(val) + '/秒';
+  else if (type === '/s') s = fmt(val) + '/秒';
   else if (type === 'raw1') s = fmt1(val);
   else s = fmt(val);
   if (prefix) s = '+' + s;

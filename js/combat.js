@@ -567,12 +567,12 @@ function recordRunDamage(skillName, dmg) {
   RUN_STATS.maxStage = Math.max(RUN_STATS.maxStage, G.stage.current);
 }
 
-function generateSummaryHtml() {
+function generateSummaryHtml(current) {
   var totalDmg = 0;
   for (var k in RUN_STATS.skills) totalDmg += RUN_STATS.skills[k].damage;
   if (totalDmg === 0) return '';
-  var html = '<div class="summary-card">';
-  html += '<div class="summary-card-title">------------第 ' + RUN_STATS.runCount + ' 場戰鬥--------------</div>';
+  var html = '<div class="summary-card"' + (current ? ' data-summary-current="true"' : '') + '>';
+  html += '<div class="summary-card-title">------------' + (current ? '目前戰鬥（即時統計）' : '第 ' + RUN_STATS.runCount + ' 場戰鬥') + '--------------</div>';
   html += '<div class="summary-card-row"><span style="color:var(--accent)">最高關數</span>：' + RUN_STATS.maxStage + '</div>';
   for (var k in RUN_STATS.skills) {
     var sk = RUN_STATS.skills[k];
@@ -585,6 +585,10 @@ function generateSummaryHtml() {
 
 function flushRunSummary() {
   var list = $id('battle-summary-list');
+  if (list) {
+    var current = list.querySelector('[data-summary-current]');
+    if (current) current.remove();
+  }
   var html = generateSummaryHtml();
   if (list && html) {
     var d = document.createElement('div');

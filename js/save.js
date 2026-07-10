@@ -163,6 +163,13 @@ function migrateSave(data) {
   }
   
   mergeDefaults(data, def);
+  // 轉生欄位相容：舊存檔視為 0 轉；等級上限固定為 9999。
+  data.player.reincarnations = clamp(data.player.reincarnations || 0, 0, REINCARNATION_MAX);
+  data.player.reincarnationTalentPoints = Math.max(0, Math.floor(Number(data.player.reincarnationTalentPoints) || 0));
+  if (data.player.level > REINCARNATION_LEVEL) {
+    data.player.level = REINCARNATION_LEVEL;
+    data.player.xp = 0;
+  }
   // 寶石商店等級相容：舊存檔沒有 level 時沿用 Lv.1，並限制在 1~20 級。
   if (data.player && data.player.gemShop) {
     data.player.gemShop.level = clamp(data.player.gemShop.level || 1, 1, GEM_SHOP_MAX_LEVEL);
