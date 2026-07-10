@@ -24,6 +24,28 @@
 html,
 body {
   height: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 遊戲畫面不允許拖曳反白；可輸入的欄位仍保留文字選取與游標。 */
+input,
+textarea,
+select,
+[contenteditable="true"] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+button,
+summary {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+button:focus,
+select:focus {
+  outline: none;
 }
 
 body {

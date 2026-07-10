@@ -853,9 +853,17 @@ function renderForge() {
   if (goBtn) {
     if (forgeItemCount() < FORGE_SLOTS) {
       goBtn.disabled = true;
-      goBtn.style.filter = 'grayscale(100%) opacity(50%)';
+      goBtn.style.background = '#4b5563';
+      goBtn.style.color = '#d1d5db';
+      goBtn.style.border = '1px solid #374151';
+      goBtn.style.opacity = '1';
+      goBtn.style.filter = 'none';
     } else {
       goBtn.disabled = false;
+      goBtn.style.background = '';
+      goBtn.style.color = '';
+      goBtn.style.border = '';
+      goBtn.style.opacity = '';
       goBtn.style.filter = '';
     }
   }
@@ -1983,6 +1991,13 @@ function initUI() {
   document.addEventListener('contextmenu', function (e) {
     var t = e.target;
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+    e.preventDefault();
+  });
+
+  // 屏蔽遊戲畫面文字反白；輸入框、文字區與可編輯元素保留正常選取功能。
+  document.addEventListener('selectstart', function (e) {
+    var t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
     e.preventDefault();
   });
 

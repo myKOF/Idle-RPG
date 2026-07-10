@@ -543,7 +543,7 @@ function enchantLine(en) {
 // 物品完整說明 HTML
 function itemDetailHTML(it, cmp, opts) {
   opts = opts || {};
-  var showAffixReroll = opts.showAffixReroll !== false;
+  var showAffixReroll = false;
   var r = RARITIES[it.rarity];
   var curScore = itemScore(it);
   var cmpScore = cmp ? itemScore(cmp) : 0;
@@ -582,8 +582,6 @@ function itemDetailHTML(it, cmp, opts) {
     (it.synthesized ? ' <span class="it-syn">✦合成</span>' : '') +
     (it.locked ? ' 🔒' : '') +
     '<span class="it-score it-score-top">評分 ' + fmt(curScore) + sdiffStr + '</span>' +
-    '<button class="btn-it-pool" onclick="var b=this.nextElementSibling; b.style.display=b.style.display===\'none\'?\'block\':\'none\'; event.stopPropagation();">!</button>' +
-    poolHtml +
     '</div>';
   
   h += '<div class="it-sub">' + r.name + '・' + SLOT_INFO[it.slot].name + '・等級 ' + it.level;

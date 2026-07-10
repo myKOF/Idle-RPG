@@ -276,6 +276,7 @@ function doForge() {
       addGem(g.type, g.level, FORGE_SLOTS - FORGE_FAIL_CONSUME);
       forgeFailureReward();
       forgeLog('鑄造失敗！退回寶石*' + (FORGE_SLOTS - FORGE_FAIL_CONSUME), 'bad');
+      forgeLog('獲得 魔塵*1', 'good');
       blog('🔯 鑄造失敗！損失 ' + gemLabel(g.type, g.level) + ' x' + FORGE_FAIL_CONSUME +
         '，其餘 ' + (FORGE_SLOTS - FORGE_FAIL_CONSUME) + ' 顆已退回庫存，獲得魔塵 x1' + costTail, 'warn');
     }
@@ -316,6 +317,7 @@ function doForge() {
     var rName = RARITIES[r] ? RARITIES[r].name : '裝備';
     forgeFailureReward();
     forgeLog('鑄造失敗！退回' + rName + '裝備*' + (FORGE_SLOTS - FORGE_FAIL_CONSUME), 'bad');
+    forgeLog('獲得 魔塵*1', 'good');
     blog('🔯 鑄造失敗！損失 ' + lostNames.join('、') + '，其餘裝備已退回背包（成功率 ' + fmt1(rate) +
       '%，金幣 -' + fmt(cost) + (dustUsed ? '、魔塵 -' + dustUsed : '') + '，獲得魔塵 x1）', 'warn');
   }
