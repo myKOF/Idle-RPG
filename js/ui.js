@@ -306,14 +306,22 @@ function renderBattle() {
     $id('pv-status').textContent = FIELD.reviveCd > 0 ? ('💀 復活中 ' + fmt1(FIELD.reviveCd) + 's') : entStatus(p);
     renderMpSkill(p, 'pv');
   }
-  var enemies = Array.isArray(FIELD.monsters) ? FIELD.monsters.filter(function (enemy) { return enemy && enemy.hp > 0; }) : (FIELD.monster ? [FIELD.monster] : []);
+  // 與戰鬥引擎共用敵人集合，避免相容欄位仍有目標時畫面誤判為空。
+  var enemies = (typeof fieldEnemyList === 'function' ? fieldEnemyList() : (FIELD.monster ? [FIELD.monster] : []))
+    .filter(function (enemy) { return enemy && enemy.hp > 0; });
   var party = $id('mv-party');
   if (!party) return;
   party.className = 'enemy-party enemy-count-' + enemies.length;
   if (!enemies.length) {
-    party.innerHTML = '<div class="enemy-empty">' + (G.tower.active ? '（高塔戰鬥中…）' : '🔍 搜索敵人中…') + '</div>';
+    if (party.getAttribute('data-enemy-signature') !== 'empty') {
+      party.innerHTML = '<div class="enemy-empty">' + (G.tower.active ? '（高塔戰鬥中…）' : '🔍 搜索敵人中…') + '</div>';
+      party.setAttribute('data-enemy-signature', 'empty');
+    }
     return;
   }
+  var enemySignature = enemies.map(function (enemy, index) {
+    return index + ':' + enemy.name + ':' + enemy.level;
+  }).join('|');
   var partyHtml = '';
   for (var ei = 0; ei < enemies.length; ei++) {
     var enemy = enemies[ei];
@@ -330,7 +338,22 @@ function renderBattle() {
       '<div class="enemy-hp hp-bar"><div class="hp-fill monster" style="width:' + enemyHp + '%"></div><span class="hp-text">' + fmt(Math.max(0, enemy.hp)) + enemyShield + ' / ' + fmt(enemy.maxHp) + '</span></div>' +
       '<div class="enemy-status">' + entStatus(enemy) + '</div></div>';
   }
-  party.innerHTML = partyHtml;
+  // 只有換波、敵人數量或敵人身分變化時才重建 DOM；避免刪除尚未播完的傷害浮字。
+  if (party.getAttribute('data-enemy-signature') !== enemySignature) {
+    party.innerHTML = partyHtml;
+    party.setAttribute('data-enemy-signature', enemySignature);
+  }
+  var cards = party.querySelectorAll('.enemy-card');
+  for (var ci = 0; ci < cards.length && ci < enemies.length; ci++) {
+    var card = cards[ci];
+    var liveEnemy = enemies[ci];
+    var fill = card.querySelector('.enemy-hp .hp-fill');
+    var hpText = card.querySelector('.enemy-hp .hp-text');
+    var status = card.querySelector('.enemy-status');
+    if (fill) fill.style.width = clamp(liveEnemy.hp / liveEnemy.maxHp * 100, 0, 100) + '%';
+    if (hpText) hpText.innerHTML = fmt(Math.max(0, liveEnemy.hp)) + (liveEnemy.shield > 0.5 ? '<span class="enemy-shield">+' + fmt(Math.max(0, liveEnemy.shield)) + '</span>' : '') + ' / ' + fmt(liveEnemy.maxHp);
+    if (status) status.innerHTML = entStatus(liveEnemy);
+  }
 }
 
 /* ---- 裝備分頁 ---- */
@@ -826,6 +849,16 @@ function renderForge() {
   // 自動魔塵與持有量
   $id('forge-autodust').checked = !!f.autoDust;
   $id('forge-dust-own').textContent = '持有魔塵 ' + fmt(G.player.dust || 0) + ' 個｜已放置 ' + dustN + '/' + FORGE_SLOTS;
+  var goBtn = $id('forge-go');
+  if (goBtn) {
+    if (forgeItemCount() < FORGE_SLOTS) {
+      goBtn.disabled = true;
+      goBtn.style.filter = 'grayscale(100%) opacity(50%)';
+    } else {
+      goBtn.disabled = false;
+      goBtn.style.filter = '';
+    }
+  }
   // 背包（裝備 / 寶石切頁；不符資格者以灰階顯示）
   var invTab = UI.forgeInvTab || 'items';
   var tabItemsBtn = $id('forge-invtab-items'), tabGemsBtn = $id('forge-invtab-gems');
@@ -1279,11 +1312,19 @@ function showEnemyTooltip(anchorEl) {
     equipStrs.push('⚔️ <span style="color:' + RARITIES[r].color + '; font-weight:bold;">' + RARITIES[r].name + '裝備</span> <span style="color:var(--dim)">(' + rateStr + ')</span>');
   }
 
-  if (equipStrs.length) {
+  // 普通敵人 tips 顯示野外魔塵掉落；高塔 BOSS 的魔塵提示由上方 BOSS tips 維持，不在此重複加入。
+  var dustLine = '';
+  if (!G.tower.active) {
+    var dustRate = fieldDustRate(m.level);
+    if (dustRate > 0) dustLine = '💫 魔塵 <span style="color:var(--dim)">(' + fmt1(dustRate) + '%，神鑄材料)</span>';
+  }
+
+  if (equipStrs.length || dustLine) {
     dropTip += '<div class="skt-name" style="margin:8px 0 6px;">【可能掉落】</div>' +
       '<div class="skt-desc" style="text-align:left;">' +
       '💰 金幣 x' + fmt(m.gold) + ' <span style="color:var(--dim)">(基礎)</span><br>' +
       '✨ 經驗 x' + fmt(m.xp) + ' <span style="color:var(--dim)">(基礎)</span><br>' +
+      (dustLine ? dustLine + (equipStrs.length ? '<br>' : '') : '') +
       equipStrs.join('<br>') + '</div>';
   }
 

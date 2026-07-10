@@ -150,6 +150,11 @@ darkRes      = 暗影抗性
 ctrlRes      = 控制抵抗
 loot         = 尋寶附魔
 haste        = 疾行附魔
+vigor        = 活力附魔
+clarity      = 澄明附魔
+focus        = 專注附魔
+fortune      = 財運附魔
+wisdom       = 智慧附魔
 ```
 
 範例：

@@ -106,7 +106,7 @@ function poisonActive(ent) { return (ent.poisonUntil || 0) > GT; }
 // 中毒跳傷（無視防禦）；回傳是否致死
 function tickPoison(ent, dt) {
   if (!poisonActive(ent)) return false;
-  ent.hp -= ent.poisonDps * dt;
+  ent.hp -= ent.poisonDps * dt * globalDamageMultiplierForEntity(ent);
   if (ent.hp <= 0) { ent.hp = 0; return true; }
   return false;
 }
@@ -157,10 +157,19 @@ function tickDots(ent, dt) {
   ent.dots = ent.dots.filter(function (d) { return d.until > GT; });
   for (var i = 0; i < ent.dots.length; i++) total += ent.dots[i].dps;
   if (total > 0) {
-    ent.hp -= total * dt;
+    ent.hp -= total * dt * globalDamageMultiplierForEntity(ent);
     if (ent.hp <= 0) { ent.hp = 0; return true; }
   }
   return false;
+}
+
+function globalDamageMultiplierForEntity(ent) {
+  var total = ent && ent.globalDmgRed || 0;
+  if (ent === FIELD.player && typeof getStats === 'function') {
+    var st = getStats();
+    total = st.globalDmgRed || 0;
+  }
+  return globalDamageMultiplier(total);
 }
 
 /* ---- 共用攻擊流程 ----
@@ -178,7 +187,7 @@ function playerAtkCfg(pEnt) {
     atk: st.atk * atkMul, matk: st.matk * atkMul, dmgType: 'both', level: st.level,
     critRate: st.critRate, critDmg: st.critDmg + buffVal(pEnt, 'critDmgUp'), hit: st.hit,
     sunder: st.passives.sunder || 0, pen: st.pPen, mPen: st.mPen,
-    trueDmgPct: st.passives.trueDmg || 0, elemAtk: st.elemAtk,
+    trueDmgPct: st.passives.trueDmg || 0, elemAtk: st.elemAtk, globalDmgRed: st.globalDmgRed,
     annihilate: st.passives.annihilate || 0,
     eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, isPlayer: true
   };
@@ -192,7 +201,7 @@ function playerDefCfg(pEnt) {
     blockRate: st.blockRate + buffVal(pEnt, 'blockUp'), blockDmgRed: st.blockDmgRed,
     pRes: st.pRes, mRes: st.mRes, resist: st.resist, ctrlRes: st.resist.ctrl,
     ccFactor: (1 - st.tenacity / 100) * (1 - st.ccRed / 100),
-    dmgRed: st.passives.sanctuary || 0, undying: st.passives.undying || 0,
+    dmgRed: st.passives.sanctuary || 0, globalDmgRed: st.globalDmgRed, undying: st.passives.undying || 0,
     thornsPct: (st.passives.thorns || 0) + buffVal(pEnt, 'thornsUp'), maxHp: st.hp, isPlayer: true
   };
 }
@@ -207,7 +216,7 @@ function monsterAtkCfg(m, mult) {
   return {
     atk: m.atk * mult * (1 - buffVal(m, 'atkDown') / 100),
     dmgType: m.magic ? 'magic' : 'phys', level: m.level,
-    critRate: 5, critDmg: 150, hit: 100, elemAtk: ea
+    critRate: 5, critDmg: 150, hit: 100, elemAtk: ea, globalDmgRed: m.globalDmgRed || 0
   };
 }
 function monsterDefCfg(m) {
@@ -215,7 +224,7 @@ function monsterDefCfg(m) {
   return {
     def: m.def * defMul, mdef: (m.mdef || m.def * 0.75) * defMul, level: m.level, dodge: m.dodge || 0,
     resist: m.resist || {}, ctrlRes: m.ctrlRes || 0, maxHp: m.maxHp,
-    isElite: !!m.elite, isBoss: !!m.isBoss
+    isElite: !!m.elite, isBoss: !!m.isBoss, globalDmgRed: m.globalDmgRed || 0
   };
 }
 

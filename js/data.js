@@ -134,6 +134,7 @@ var AFFIX_POOL = {
   defFlat:   { name: '物理防禦',   base: 3,   lv: 0.35,  pct: false, weight: 9 },
   defPct:    { name: '物理防禦%',  base: 4,   lv: 0.02,  pct: true,  weight: 6 },
   mdefFlat:  { name: '魔法防禦',   base: 3,   lv: 0.35,  pct: false, weight: 9 },
+  globalDmgRed:{ name: '全局減傷', base: 3,   lv: 0.35,  pct: false, weight: 9, minR: 4 },
   aspd:      { name: '攻擊速度%',  base: 3,   lv: 0.012, pct: true,  weight: 6 },
   critRate:  { name: '暴擊率%',    base: 2.5, lv: 0.012, pct: true,  weight: 6 },
   critDmg:   { name: '暴擊傷害%',  base: 8,   lv: 0.05,  pct: true,  weight: 5 },
@@ -216,7 +217,12 @@ var ENCHANTS = {
   darkRes:   { name: '暗影抗性', cat: 'def',  desc: '減少受到的暗影傷害', emoji: '🕯️' },
   ctrlRes:   { name: '控制抵抗', cat: 'def',  desc: '機率完全抵抗暈眩與減速', emoji: '🛡️' },
   loot:      { name: '尋寶附魔', cat: 'util', desc: '增加裝備掉落率', emoji: '💰' },
-  haste:     { name: '疾行附魔', cat: 'util', desc: '增加移動速度（縮短推圖間隔）', emoji: '🌀' }
+  haste:     { name: '疾行附魔', cat: 'util', desc: '增加移動速度（縮短推圖間隔）', emoji: '🌀' },
+  vigor:     { name: '活力附魔', cat: 'util', desc: '提升生命上限', emoji: '❤️' },
+  clarity:   { name: '澄明附魔', cat: 'util', desc: '提升法力恢復速度', emoji: '💧' },
+  focus:     { name: '專注附魔', cat: 'util', desc: '縮短技能冷卻時間', emoji: '🎯' },
+  fortune:   { name: '財運附魔', cat: 'util', desc: '提高金幣獲取量', emoji: '🪙' },
+  wisdom:    { name: '智慧附魔', cat: 'util', desc: '提高經驗獲取量', emoji: '📚' }
 };
 // 附魔可作用部位（裝備欄位）
 var ENCHANT_SLOTS = {
@@ -541,6 +547,7 @@ var STAT_GROUPS = [
   { title: '防禦屬性', rows: [
     ['🛡️ 物理防禦', function (st) { return statFmt(st.def, null); }, function(st) { return statDesc(st, '根據防禦公式降低受到的物理傷害。', '物理防禦', 'def', 'defPct'); }],
     ['🔰 魔法防禦', function (st) { return statFmt(st.mdef, null); }, function(st) { return statDesc(st, '根據防禦公式降低受到的魔法傷害。', '魔法防禦', 'mdef', 'defPct'); }],
+    ['🛡️ 全局減傷', function (st) { return statFmt(st.globalDmgRed, null); }, '最終傷害階段的全局減傷總合；傷害會依 1000 ÷（全局減傷總合 + 30000）比例結算。'],
     ['🧱 格擋率', function (st) { return statFmt(st.blockRate, 50, '%'); }, '受到攻擊時，有機率觸發格擋來減輕部分傷害。（上限：50%）'],
     ['🧲 格擋減傷', function (st) { return statFmt(30 + st.blockDmgRed, 80, '%'); }, '成功格擋時能減免的傷害比例。（上限：80%）'],
     ['💨 閃避率', function (st) { return statFmt(st.evasion, 40, '%'); }, '完全避開敵人攻擊的機率（受敵方命中率影響）。（上限：40%）'],

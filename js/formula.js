@@ -57,7 +57,7 @@ function computeStats() {
     defFlat: 0, defPct: 0, mdefFlat: 0, mpFlat: 0,
     hpRegen: 0, mpRegen: 0, aspdPct: 0, critRate: 0, critDmg: 0,
     pPen: 0, mPen: 0, hit: 0, cdr: 0, castSpeed: 0, lifesteal: 0, manaSteal: 0,
-    eliteDmg: 0, bossDmg: 0, aoeDmg: 0,
+    eliteDmg: 0, bossDmg: 0, aoeDmg: 0, globalDmgRed: 0,
     blockRate: 0, blockDmgRed: 0, evasion: 0, tenacity: 0, shieldEff: 0, pRes: 0, mRes: 0,
     ccRed: 0, moveSpeed: 0, loot: 0, xpBonus: 0, goldBonus: 0, luck: 0, weight: 0,
     enhanceSuccess: 0, decomposeYield: 0, hybridMutation: 0, enrageThreshold: 0, affixCap: 0, gemEff: 0
@@ -106,6 +106,11 @@ function computeStats() {
       else if (ek === 'ctrlRes') resist.ctrl += ev;
       else if (ek === 'loot') A.loot += ev;
       else if (ek === 'haste') A.moveSpeed += ev;
+      else if (ek === 'vigor') A.hpPct += ev;
+      else if (ek === 'clarity') A.mpRegen += ev;
+      else if (ek === 'focus') A.cdr += ev;
+      else if (ek === 'fortune') A.goldBonus += ev;
+      else if (ek === 'wisdom') A.xpBonus += ev;
     });
   });
 
@@ -173,6 +178,7 @@ function computeStats() {
   st.eliteDmg = A.eliteDmg;
   st.bossDmg = A.bossDmg;
   st.aoeDmg = A.aoeDmg;
+  st.globalDmgRed = A.globalDmgRed;
   // 防禦：物防 = (4 + (等級-1)×1.0 + 耐力×0.9 + 定值) × (1 + 物防%)
   st.base.def = 4 + (lv - 1) * 1.0 + st.vit * 0.9;
   st.def = Math.round((st.base.def + A.defFlat) * (1 + A.defPct / 100));
@@ -227,6 +233,12 @@ function defReduction(def, attackerLevel) {
 function elementalResistanceMultiplier(resist, element) {
   var value = resist && resist[element] || 0;
   return 1 - clamp(value, 0, 75) / 100;
+}
+
+// 全局減傷只在有該詞綴時啟用；沒有詞綴時維持原有傷害流程。
+function globalDamageMultiplier(total) {
+  total = Number(total) || 0;
+  return total > 0 ? 1000 / (total + 30000) : 1;
 }
 
 var SLOW_ASPD_FACTOR = 0.7;   // 減速狀態：攻速 -30%（攻擊冷卻累積 ×0.7）
@@ -303,6 +315,8 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   }
   // 神鑄特效【聖佑】：受到的所有傷害按比例降低（上限 50%）
   if (dCfg.dmgRed) dmg *= 1 - clamp(dCfg.dmgRed, 0, 50) / 100;
+  // 全局減傷：所有既有傷害計算完成後才套用，之後才進入最低傷害與護盾結算。
+  if (dCfg.globalDmgRed) dmg *= globalDamageMultiplier(dCfg.globalDmgRed);
   dmg = Math.max(1, Math.round(dmg));   // 最低傷害 1
   // 護盾吸收
   if (defender.shield && defender.shield > 0) {
@@ -324,7 +338,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   }
   // 反震（防守方被動）= 防守方最大生命 × 反震%
   if (dCfg.thornsPct && !out.killed) {
-    out.thorns = Math.max(1, Math.round(dCfg.maxHp * dCfg.thornsPct / 100));
+    out.thorns = Math.max(1, Math.round(dCfg.maxHp * dCfg.thornsPct / 100 * globalDamageMultiplier(aCfg.globalDmgRed)));
     attacker.hp -= out.thorns;
   }
   return out;
@@ -583,7 +597,7 @@ var SCORE_WEIGHTS = {
   str: 1.8, agi: 1.8, int: 1.8, vit: 1.8,
   aspd: 2.8, critRate: 2.4, critDmg: 0.9,
   pPen: 2.2, mPen: 2.2, hit: 1.2, cdr: 2.0, castSpeed: 1.4,
-  lifesteal: 2.2, manaSteal: 1.4, eliteDmg: 1.2, bossDmg: 1.2, aoeDmg: 1.4,
+  lifesteal: 2.2, manaSteal: 1.4, eliteDmg: 1.2, bossDmg: 1.2, aoeDmg: 1.4, globalDmgRed: 1.0,
   blockRate: 2.0, blockDmgRed: 1.2, evasion: 2.2, tenacity: 1.2, shieldEff: 1.0,
   pRes: 2.0, mRes: 2.0,
   resFire: 0.8, resIce: 0.8, resLightning: 0.8, resPoison: 0.8, resLight: 0.8, resDark: 0.8,
