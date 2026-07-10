@@ -64,6 +64,10 @@ document.addEventListener('DOMContentLoaded', function () {
         ' 點），請重新配點；之後升級將正常獲得技能點。', 'warn');
       delete G._skillResetNotice;
     }
+    if (G._skillPointRepairNotice) {
+      blog('🧮 ' + G._skillPointRepairNotice + '；目前可用技能點 ' + availableSkillPoints() + ' 點。', 'info');
+      delete G._skillPointRepairNotice;
+    }
     applyOfflineProgress();
   } else {
     blog('⚔️ 歡迎來到《無限征途：合成之巔》！', 'good');

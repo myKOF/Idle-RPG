@@ -151,7 +151,8 @@ function loadGame() {
 
 // 以預設狀態為底，深補缺漏欄位（存檔向前相容）
 function migrateSave(data) {
-  // 技能點改由等級即時推導（availableSkillPoints），無需在此補發
+  // 技能點總預算遷移：舊存檔沒有此欄位時，依轉生狀態補建。
+  var hadSkillPointBudget = !!(data.player && data.player.skillPointBudget !== undefined);
   var hadZone = data.stage && data.stage.zone !== undefined; // 需在 mergeDefaults 前判斷
   var hadSkillDmgV2 = !!data.skillDmgV2;                     // 需在 mergeDefaults 前判斷（merge 會補 true）
   var def = newGameState();
@@ -166,6 +167,13 @@ function migrateSave(data) {
   // 轉生欄位相容：舊存檔視為 0 轉；等級上限固定為 9999。
   data.player.reincarnations = clamp(data.player.reincarnations || 0, 0, REINCARNATION_MAX);
   data.player.reincarnationTalentPoints = Math.max(0, Math.floor(Number(data.player.reincarnationTalentPoints) || 0));
+  var expectedSkillBudget = data.player.reincarnations > 0 ? 10000 : Math.min(10000, Math.max(0, (data.player.level || 1) + 1));
+  if (!hadSkillPointBudget || Number(data.player.skillPointBudget) < expectedSkillBudget) {
+    data.player.skillPointBudget = expectedSkillBudget;
+    data._skillPointRepairNotice = '技能點總預算已依規則補建為 ' + expectedSkillBudget + ' 點';
+  } else {
+    data.player.skillPointBudget = Math.max(0, Math.floor(Number(data.player.skillPointBudget) || 0));
+  }
   if (data.player.level > REINCARNATION_LEVEL) {
     data.player.level = REINCARNATION_LEVEL;
     data.player.xp = 0;
@@ -215,23 +223,15 @@ function migrateSave(data) {
       if (fs.fx.per) fs.fx.per = Math.round(fs.fx.per * mult * 10) / 10;
     });
   }
-  /* ---- 技能點異常修復（每次讀檔檢查）----
-     舊 bug：沒有技能點也能升級技能 → 已花費點數超過總點數（等級-1），
-     推導制下可用點永遠為 0：無法再升級、升級拿到的點也被超支吃掉。
-     偵測（與 skills.js 的 spentSkillPoints/freeStarterCredit 同口徑）：
-       已花費 = 所有技能等級總和 - 初始免費額度 > 總點數 = 等級-1
-     修復：清除所有技能與融合技 → 重發 2 個初始 1 級技能（免費額度）
-          → 已花費歸零，點數依等級即時推導全額可用。 */
+  /* ---- 技能點回溯修復（每次讀檔檢查）----
+     已使用點數以所有技能等級總和計算；轉生玩家總預算固定 10000。
+     若舊存檔曾因 bug 超支，保留玩家技能資料，不再破壞性清除；可用點數會安全封頂為 0。 */
   var spSpent = 0;
   for (var skId in data.player.skills) spSpent += data.player.skills[skId] || 0;
-  spSpent -= (data.player.skills.powerSlash > 0 ? 1 : 0) + (data.player.skills.arcaneBurst > 0 ? 1 : 0);
-  var spTotal = Math.max(0, (data.player.level || 1) - 1);
+  spSpent = Math.max(0, Math.floor(spSpent));
+  var spTotal = Math.max(0, Math.floor(Number(data.player.skillPointBudget) || 0));
   if (spSpent > spTotal) {
-    data.player.skills = { powerSlash: 1, arcaneBurst: 1 };
-    data.player.fusions = [];
-    data.player.loadout = ['powerSlash', 'arcaneBurst'];
-    data.player.skillPoints = 0;   // 舊版遺留欄位一併歸零（現行點數為即時推導，不讀此值）
-    data._skillResetNotice = spSpent + ' 點（總點數僅 ' + spTotal + ' 點）'; // 讀檔後顯示公告用，顯示完即刪
+    data._skillPointRepairNotice = '技能投入 ' + spSpent + ' 點超過總預算 ' + spTotal + ' 點，可用技能點已保護為 0；既有技能未刪除';
   }
   /* ---- 融合寶石「融合次數」改為世代制（2026-07-09 修正）----
      舊定義 fusions = 融合事件總數（兩顆融合1次的再融合 → 3，玩家預期 2）。

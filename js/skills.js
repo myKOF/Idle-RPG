@@ -234,24 +234,30 @@ function nextUnlockLv(id, lv) {
   return 0;
 }
 
-/* ---- 技能點（由等級直接推導，杜絕漏發） ----
-   總點數 = 等級 - 1；已花費 = 所有已學技能等級總和 - 2（初始兩個免費 1 級技能） */
-// 初始免費技能額度：僅在仍持有該起始技能時計入（防止降級套利）
-function freeStarterCredit() {
-  return (skillLevel('powerSlash') > 0 ? 1 : 0) + (skillLevel('arcaneBurst') > 0 ? 1 : 0);
-}
+/* ---- 技能點 ----
+   總預算：初始兩個 1 級技能即計入 2 點，9999 級時為 10000 點。
+   已使用：所有技能等級總和；可用 = 總預算 - 已使用。
+   轉生後總預算保留，但不再因升級增加。 */
 function totalSkillPoints() {
-  // 轉生後等級只產生轉生天賦點，不再產生技能點。
-  return reincarnationCount() > 0 ? 0 : Math.max(0, G.player.level - 1);
+  var p = G.player;
+  var expected = reincarnationCount() > 0 ? 10000 : Math.min(10000, Math.max(0, p.level + 1));
+  if (p.skillPointBudget === undefined || p.skillPointBudget === null || p.skillPointBudget < expected) {
+    p.skillPointBudget = expected;
+  }
+  return Math.max(0, Math.floor(Number(p.skillPointBudget) || 0));
 }
 function spentSkillPoints() {
   var spent = 0;
   if (G.player.skills) {
     for (var id in G.player.skills) spent += G.player.skills[id];
   }
-  return Math.max(0, spent - freeStarterCredit());
+  return Math.max(0, Math.floor(spent));
 }
-function availableSkillPoints() { return Math.max(0, totalSkillPoints() - spentSkillPoints()); }
+function availableSkillPoints() {
+  var available = Math.max(0, totalSkillPoints() - spentSkillPoints());
+  G.player.skillPoints = available;
+  return available;
+}
 
 /* ---- 查詢（skillValue / skillCdFor / scaleAt → js/formula.js §9） ---- */
 function skillLevel(id) { return (G.player.skills && G.player.skills[id]) || 0; }

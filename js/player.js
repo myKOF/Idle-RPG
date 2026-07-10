@@ -27,6 +27,7 @@ function newGameState() {
       // 技能：初始自帶 2 個 1 級技能；每升 1 級 +1 技能點
       skills: { powerSlash: 1, arcaneBurst: 1 },
       skillPoints: 0,
+      skillPointBudget: 2,     // 技能點總預算；初始兩個 1 級技能也計入 2 點
       loadout: ['powerSlash', 'arcaneBurst'],
       fusions: []   // 玩家自創的融合技定義
 
@@ -85,7 +86,11 @@ function gainXp(n) {
     p.xp -= xpForLevel(p.level);
     p.level++;
     gained++;
-    if (reincarnationCount() > 0) p.reincarnationTalentPoints = (p.reincarnationTalentPoints || 0) + 1;
+    if (reincarnationCount() > 0) {
+      p.reincarnationTalentPoints = (p.reincarnationTalentPoints || 0) + 1;
+    } else {
+      p.skillPointBudget = (p.skillPointBudget || 0) + 1;
+    }
   }
   if (p.level >= REINCARNATION_LEVEL) p.xp = 0;
   if (gained > 0) {
@@ -108,10 +113,12 @@ function reincarnate() {
   var count = reincarnationCount();
   if (count >= REINCARNATION_MAX) return '已達最高轉生次數（' + REINCARNATION_MAX + ' 轉）';
   if (p.level < REINCARNATION_LEVEL) return '角色尚未達到 ' + REINCARNATION_LEVEL + ' 級';
+  var skillBudgetBeforeReinc = Math.max(p.skillPointBudget || 0, p.level + 1);
   p.reincarnations = count + 1;
   p.level = 1;
   p.xp = 0;
-  p.skillPoints = 0;
+  // 技能點總預算在轉生後保留；之後升級只增加轉生天賦點。
+  p.skillPointBudget = skillBudgetBeforeReinc;
   markStatsDirty();
   if (typeof FIELD !== 'undefined' && FIELD && FIELD.player) {
     var st = getStats();
