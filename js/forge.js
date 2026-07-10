@@ -34,11 +34,11 @@ function forgeUnlocked() {
   return G && G.player && G.player.level >= FORGE_UNLOCK_LEVEL;
 }
 
-// 法陣內部紀錄（顯示於六芒星左側，保留最近 8 筆）
+// 法陣內部紀錄（顯示於六芒星左側，保留最近 18 筆）
 function forgeLog(msg, cls) {
   var f = forgeState();
   f.log.unshift({ msg: msg, cls: cls || '' });
-  while (f.log.length > 8) f.log.pop();
+  while (f.log.length > 18) f.log.pop();
   UI.dirty.forge = true;
 }
 
@@ -137,6 +137,7 @@ function forgePlaceItem(id) {
   if (slot < 0) return '法陣已放滿 6 件裝備';
   G.inventory.splice(idx, 1);
   f.slots[slot] = it;
+  f.result = null;
   if (f.autoDust) forgeAutoFillDust(); // 自動使用魔塵：放入時補滿
   UI.dirty.forge = true; UI.dirty.inv = true;
   return null;
@@ -159,6 +160,7 @@ function forgePlaceGem(type, level) {
   if (slot < 0) return '法陣已放滿 6 顆寶石';
   addGem(type, level, -1);
   f.slots[slot] = { kind: 'gem', type: type, level: level };
+  f.result = null;
   if (f.autoDust) forgeAutoFillDust();
   UI.dirty.forge = true;
   return null;
@@ -265,7 +267,7 @@ function doForge() {
     } else {
       // 放入時已自庫存扣除：退回 4 顆（六顆同種同階，等同隨機消耗 2 顆）
       addGem(g.type, g.level, FORGE_SLOTS - FORGE_FAIL_CONSUME);
-      forgeLog('鑄造失敗！退回寶石。', 'bad');
+      forgeLog('鑄造失敗！退回寶石*' + (FORGE_SLOTS - FORGE_FAIL_CONSUME), 'bad');
       blog('🔯 鑄造失敗！損失 ' + gemLabel(g.type, g.level) + ' x' + FORGE_FAIL_CONSUME +
         '，其餘 ' + (FORGE_SLOTS - FORGE_FAIL_CONSUME) + ' 顆已退回庫存' + costTail, 'warn');
     }
@@ -303,7 +305,8 @@ function doForge() {
     for (var s = 0; s < f.slots.length; s++) {
       if (f.slots[s]) { forgeReturnItem(f.slots[s]); f.slots[s] = null; }
     }
-    forgeLog('鑄造失敗！退回裝備。', 'bad');
+    var rName = RARITIES[r] ? RARITIES[r].name : '裝備';
+    forgeLog('鑄造失敗！退回' + rName + '裝備*' + (FORGE_SLOTS - FORGE_FAIL_CONSUME), 'bad');
     blog('🔯 鑄造失敗！損失 ' + lostNames.join('、') + '，其餘裝備已退回背包（成功率 ' + fmt1(rate) +
       '%，金幣 -' + fmt(cost) + (dustUsed ? '、魔塵 -' + dustUsed : '') + '）', 'warn');
   }

@@ -8,6 +8,7 @@ function loadGameContext() {
   const root = path.resolve(__dirname, '..');
   const context = {
     console,
+    Math: Object.create(Math),
     setTimeout() {},
     clearTimeout() {},
     document: { addEventListener() {} },
@@ -32,7 +33,8 @@ function loadGameContext() {
       skills: { timeWarp: 1, treasureSense: 1 },
       loadout: ['timeWarp', 'treasureSense'],
       fusions: []
-    }
+    },
+    stage: { current: 1 }
   };
   context.getStats = () => ({
     cdr: 60,
@@ -83,4 +85,34 @@ test('skill global cooldown prevents casting another skill for a fixed 0.4 secon
   assert.equal(second && typeof second, 'object');
   assert.equal(player.skillGcd, 0.4);
   assert.equal(player.skillCds.treasureSense, 12);
+});
+
+test('多敵人技能傷害依範圍傷害與敵人數量分攤', () => {
+  const context = loadGameContext();
+  assert.equal(context.skillDamageShare(10000, 100, 4), 5000);
+  assert.equal(context.skillDamageShare(10000, 50, 2), 7500);
+  assert.equal(context.skillDamageShare(10000, 100, 1), 10000);
+});
+
+test('傷害技能會命中全部存活敵人，普攻規則不由技能流程取代', () => {
+  const context = loadGameContext();
+  context.Math.random = () => 0.5;
+  context.G.player.skills = { powerSlash: 1 };
+  context.G.player.loadout = ['powerSlash'];
+  context.getStats = () => ({
+    cdr: 0, castSpeed: 0, hp: 1000, mp: 1000, atk: 100, matk: 100,
+    aoeDmg: 100, critRate: 0, critDmg: 150, pPen: 0, mPen: 0,
+    passives: {}, lifesteal: 0, manaSteal: 0, shieldEff: 0
+  });
+  const makeEnemy = () => ({
+    hp: 10000, maxHp: 10000, def: 0, mdef: 0, dodge: 0, resist: {},
+    ctrlRes: 0, elite: false, isBoss: false, buffs: {}, dots: [], effects: {}, shield: 0
+  });
+  const player = { hp: 1000, mp: 1000, atkCd: 0, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {} };
+  const enemies = [makeEnemy(), makeEnemy()];
+
+  const result = context.castSkill(player, enemies, 'powerSlash', 1, 'float-layer');
+  assert.equal(result.killed, false);
+  assert.equal(enemies[0].hp, enemies[1].hp);
+  assert.ok(enemies[0].hp < 10000);
 });

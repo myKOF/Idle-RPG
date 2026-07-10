@@ -249,7 +249,7 @@ function finishTowerFight() {
   TOWER.player = null;
   // 野外重生
   if (FIELD.player) FIELD.player.hp = getStats().hp;
-  FIELD.monster = null; FIELD.respawnCd = 0.5;
+  FIELD.monster = null; FIELD.monsters = []; FIELD.respawnCd = 0.5;
   UI.dirty.tower = true; UI.dirty.battle = true; UI.dirty.header = true; UI.dirty.factory = true;
 }
 

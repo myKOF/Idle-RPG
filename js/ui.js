@@ -92,14 +92,14 @@ function renderSaveList() {
     var cur = r.kind === 'auto' && r.runId === curRun;
     return '<div class="save-row' + (r.kind === 'auto' ? ' auto' : '') + '">' +
       '<div class="save-info">' +
-        '<div class="save-name">' + saveRecName(r) + (cur ? ' <span class="save-cur">目前遊戲</span>' : '') + '</div>' +
-        '<div class="save-file">' + esc(r.fname) + '　<span class="save-time">' + saveTimeStr(r.savedAt) + '</span></div>' +
-        '<div class="save-meta">Lv.' + r.level + '｜' + (ZONES[r.zone] ? ZONES[r.zone].emoji + ZONES[r.zone].name : '') + ' 第 ' + r.stage + ' 階｜第 ' + (r.runId || 1) + ' 局</div>' +
+      '<div class="save-name">' + saveRecName(r) + (cur ? ' <span class="save-cur">目前遊戲</span>' : '') + '</div>' +
+      '<div class="save-file">' + esc(r.fname) + '　<span class="save-time">' + saveTimeStr(r.savedAt) + '</span></div>' +
+      '<div class="save-meta">Lv.' + r.level + '｜' + (ZONES[r.zone] ? ZONES[r.zone].emoji + ZONES[r.zone].name : '') + ' 第 ' + r.stage + ' 階｜第 ' + (r.runId || 1) + ' 局</div>' +
       '</div>' +
       '<div style="display:flex; gap:8px;">' +
-        '<button class="btn sm" data-load-save="' + r.id + '">📥 讀取</button>' +
-        '<button class="btn sm" data-dl-save="' + r.id + '">⬇️ 下載</button>' +
-        '<button class="btn sm" style="color:var(--danger, #f87171); border-color:var(--danger, #f87171);" data-del-save="' + r.id + '">🗑️ 刪除</button>' +
+      '<button class="btn sm" data-load-save="' + r.id + '">📥 讀取</button>' +
+      '<button class="btn sm" data-dl-save="' + r.id + '">⬇️ 下載</button>' +
+      '<button class="btn sm" style="color:var(--danger, #f87171); border-color:var(--danger, #f87171);" data-del-save="' + r.id + '">🗑️ 刪除</button>' +
       '</div>' +
       '</div>';
   }).join('');
@@ -306,45 +306,31 @@ function renderBattle() {
     $id('pv-status').textContent = FIELD.reviveCd > 0 ? ('💀 復活中 ' + fmt1(FIELD.reviveCd) + 's') : entStatus(p);
     renderMpSkill(p, 'pv');
   }
-  var m = FIELD.monster;
-  if (m) {
-        if (m.img && !m.imgFailed) {
-      var iconClass = m.isBoss ? 'cb-icon boss' : 'cb-icon monster';
-      var mvImg = $id('mv-emoji').querySelector('img');
-      var targetSrc = 'images/' + m.img;
-      if (!mvImg) {
-        $id('mv-emoji').innerHTML = '<img src="' + targetSrc + '" class="' + iconClass + '" data-src="' + targetSrc + '">';
-        mvImg = $id('mv-emoji').querySelector('img');
-        if (mvImg) mvImg.onerror = function () { m.imgFailed = true; };
-      } else {
-        if (mvImg.getAttribute('data-src') !== targetSrc) {
-          mvImg.setAttribute('data-src', targetSrc);
-          mvImg.setAttribute('src', targetSrc);
-          mvImg.onerror = function () { m.imgFailed = true; };
-        }
-        if (mvImg.className !== iconClass) mvImg.className = iconClass;
-      }
-    } else {
-      $id('mv-emoji').innerHTML = '<span style="font-size:48px;">' + (m.emoji || '👾') + '</span>';
-    }
-    $id('mv-name').textContent = m.name;
-    if ($id('mv-level')) $id('mv-level').textContent = 'Lv.' + m.level;
-    $id('mv-name').classList.toggle('elite', m.elite);
-    var mhp = clamp(m.hp / m.maxHp * 100, 0, 100);
-    $id('mv-hp').style.width = mhp + '%';
-    $id('mv-hp').parentNode.style.visibility = 'visible';
-    var mSh = (m.shield > 0.5) ? '<span style="color:var(--info)">+' + fmt(Math.max(0, m.shield)) + '</span>' : '';
-    $id('mv-hptext').innerHTML = fmt(Math.max(0, m.hp)) + mSh + ' / ' + fmt(m.maxHp);
-    $id('mv-status').textContent = entStatus(m);
-  } else {
-$id('mv-emoji').innerHTML = '<span style="font-size:48px;">🔍</span>';
-    $id('mv-name').textContent = G.tower.active ? '（高塔戰鬥中…）' : '搜索敵人中…';
-    if ($id('mv-level')) $id('mv-level').textContent = '';
-    $id('mv-hp').style.width = '0%';
-    $id('mv-hp').parentNode.style.visibility = 'hidden';
-    $id('mv-hptext').textContent = '';
-    $id('mv-status').textContent = '';
+  var enemies = Array.isArray(FIELD.monsters) ? FIELD.monsters.filter(function (enemy) { return enemy && enemy.hp > 0; }) : (FIELD.monster ? [FIELD.monster] : []);
+  var party = $id('mv-party');
+  if (!party) return;
+  party.className = 'enemy-party enemy-count-' + enemies.length;
+  if (!enemies.length) {
+    party.innerHTML = '<div class="enemy-empty">' + (G.tower.active ? '（高塔戰鬥中…）' : '🔍 搜索敵人中…') + '</div>';
+    return;
   }
+  var partyHtml = '';
+  for (var ei = 0; ei < enemies.length; ei++) {
+    var enemy = enemies[ei];
+    var icon = (enemy.img && !enemy.imgFailed)
+      ? '<img src="images/' + enemy.img + '" class="cb-icon monster" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'inline\';">' +
+      '<span class="enemy-emoji-fallback" style="display:none;">' + (enemy.emoji || '👾') + '</span>'
+      : '<span class="enemy-emoji-fallback">' + (enemy.emoji || '👾') + '</span>';
+    var enemyHp = clamp(enemy.hp / enemy.maxHp * 100, 0, 100);
+    var enemyShield = enemy.shield > 0.5 ? '<span class="enemy-shield">+' + fmt(Math.max(0, enemy.shield)) + '</span>' : '';
+    partyHtml += '<div class="enemy-card' + (enemy.elite ? ' elite' : '') + '">' +
+      '<div class="float-layer" id="mv-float-' + ei + '"></div>' +
+      '<div class="cb-level">Lv.' + enemy.level + '</div>' + icon +
+      '<div class="enemy-name">' + (enemies.length > 1 ? (ei + 1) + '. ' : '') + enemy.name + '</div>' +
+      '<div class="enemy-hp hp-bar"><div class="hp-fill monster" style="width:' + enemyHp + '%"></div><span class="hp-text">' + fmt(Math.max(0, enemy.hp)) + enemyShield + ' / ' + fmt(enemy.maxHp) + '</span></div>' +
+      '<div class="enemy-status">' + entStatus(enemy) + '</div></div>';
+  }
+  party.innerHTML = partyHtml;
 }
 
 /* ---- 裝備分頁 ---- */
@@ -899,7 +885,7 @@ function renderTower() {
       var cleared = fl <= G.tower.highest;
       var bd = BOSS_LIST[(fl - 1) % BOSS_LIST.length];
 
-            var bossIcon = (bd.img && !bd.imgFailed) ? 'images/' + bd.img : null;
+      var bossIcon = (bd.img && !bd.imgFailed) ? 'images/' + bd.img : null;
       var bossIdx = (fl - 1) % BOSS_LIST.length;
       var iconHtml = bossIcon
         ? '<img src="' + bossIcon + '" style="width:32px;height:32px;vertical-align:middle;border-radius:4px;box-shadow:0 0 5px #000;" onerror="BOSS_LIST[' + bossIdx + '].imgFailed=true; this.outerHTML=\'<span style=&quot;font-size:24px;vertical-align:middle;&quot;>\' + (bd.emoji || \'👾\') + \'</span>\';">'
@@ -933,7 +919,7 @@ function renderTower() {
     }
     if (UI._scrollTower) {
       UI._scrollTower = false;
-      setTimeout(function() {
+      setTimeout(function () {
         var el = document.querySelector('.tower-floor[data-tower-tip="' + (G.tower.highest + 1) + '"]');
         if (el) el.scrollIntoView({ behavior: 'auto', block: 'center' });
       }, 10);
@@ -1476,8 +1462,13 @@ function renderGemDismantle() {
   var fl = $id('gdis-fused');
   if (fl) {
     var chips = (G.player.fusedGems || []).map(function (fg) {
-      return '<span class="gem-chip fused-chip" data-gdis-fused="' + fg.id + '" title="融合 ' + ((fg.fusions || 0)) + ' 次 → 成本 ' + fusedGemL1Worth(fg) + ' 顆一級 × 70%">' +
-        esc(fusedGemLabel(fg)) + ' → ⛏️' + fusedGemDismantleYield(fg) + ' 顆</span>';
+      var emojis = fg.stats.map(function (s) { return GEM_TYPES[s.type].emoji; }).join('');
+      var yieldAmt = fusedGemDismantleYield(fg);
+      var tip = esc(fusedGemLabel(fg)) + '｜融合 ' + (fg.fusions || 0) + ' 次｜拆解可得 ⛏️ ' + yieldAmt + ' 顆｜成本 ' + fusedGemL1Worth(fg) + ' 顆一級 × 70%';
+      return '<span class="gem-chip fused-chip gem-inventory-cell" data-gdis-fused="' + fg.id + '" data-tip="' + tip + '">' +
+        '<span class="gem-chip-count">×1</span>' +
+        '<span class="gem-chip-emoji">' + emojis + '</span>' +
+        '<span class="gem-chip-level" style="color:#f0abfc">融' + (fg.fusions || 0) + '</span></span>';
     });
     fl.innerHTML = chips.length ? chips.join('') : '<span class="hint">尚無融合寶石</span>';
   }
@@ -1494,6 +1485,17 @@ function gdisShow(msg, warn) {
   }).join('');
 }
 
+function gfuseShow(msg, type) {
+  var box = $id('gfuse-result');
+  if (!box) return;
+  if (!UI.gfuseMsgs) UI.gfuseMsgs = [];
+  UI.gfuseMsgs.unshift({ t: msg, c: type });
+  if (UI.gfuseMsgs.length > 3) UI.gfuseMsgs.length = 3;
+  box.innerHTML = UI.gfuseMsgs.map(function (m) {
+    var cls = m.c === 'yellow' ? ' yellow' : (m.c === 'warn' ? ' warn' : '');
+    return '<span class="gr-line' + cls + '">' + m.t + '</span>';
+  }).join('');
+}
 /* ---- 寶石融合 v2（雙屬性，5 階以上寶石均可） ---- */
 function renderGemFusion() {
   var slotBox = $id('gfuse-slots');
@@ -1503,12 +1505,27 @@ function renderGemFusion() {
   for (var i = 0; i < 2; i++) {
     var ref = UI.gemFuseSlots[i];
     if (ref) {
-      var label = ref.kind === 'plain'
-        ? gemLabel(ref.type, ref.lv || GEM_MAX_LEVEL)
-        : (findFusedGem(ref.id) ? fusedGemLabel(findFusedGem(ref.id)) : '（已消失）');
-      h += '<span class="loadout-slot filled" data-gfuse-remove="' + i + '" data-tip="點擊移出">' + esc(label) + '</span>';
+      if (ref.kind === 'plain') {
+        var t = ref.type, flv = ref.lv || GEM_MAX_LEVEL;
+        var fcol = GEM_TIER_COLORS[flv] || '#ffd700';
+        h += '<span class="gem-chip gem-inventory-cell" data-gfuse-remove="' + i + '" style="border-color:' + fcol + '" data-tip="' + esc(gemLabel(t, flv)) + '｜點擊移出">' +
+          '<span class="gem-chip-count">×1</span>' +
+          '<span class="gem-chip-emoji">' + GEM_TYPES[t].emoji + '</span>' +
+          '<span class="gem-chip-level">' + flv + '</span></span>';
+      } else {
+        var fg = findFusedGem(ref.id);
+        if (fg) {
+          var emojis = fg.stats.map(function(s){ return GEM_TYPES[s.type].emoji; }).join('');
+          h += '<span class="gem-chip fused-chip gem-inventory-cell" data-gfuse-remove="' + i + '" data-tip="' + esc(fusedGemLabel(fg)) + '｜點擊移出">' +
+            '<span class="gem-chip-count">×1</span>' +
+            '<span class="gem-chip-emoji">' + emojis + '</span>' +
+            '<span class="gem-chip-level" style="color:#f0abfc">融' + (fg.fusions || 0) + '</span></span>';
+        } else {
+          h += '<span class="loadout-slot filled" data-gfuse-remove="' + i + '">（已消失）</span>';
+        }
+      }
     } else {
-      h += '<span class="loadout-slot">素材 ' + (i + 1) + '（5 階以上寶石）</span>';
+      h += '<span class="loadout-slot" style="display:inline-flex;align-items:center;height:48px;box-sizing:border-box;vertical-align:top;">素材 ' + (i + 1) + '（5階以上）</span>';
     }
   }
   slotBox.innerHTML = h;
@@ -1546,17 +1563,13 @@ function renderGemFusion() {
     }
   }
   (G.player.fusedGems || []).forEach(function (fg) {
-    chips.push('<span class="gem-chip fused-chip" data-gfuse-pick="fused:' + fg.id + '" data-tip="已成功融合 ' + (fg.fusions || 0) + ' 次（下次成功率遞減）">' +
-      esc(fusedGemLabel(fg)) + '</span>');
+    var emojis = fg.stats.map(function (s) { return GEM_TYPES[s.type].emoji; }).join('');
+    chips.push('<span class="gem-chip fused-chip gem-inventory-cell" data-gfuse-pick="fused:' + fg.id + '" data-tip="' + esc(fusedGemLabel(fg)) + '｜已成功融合 ' + (fg.fusions || 0) + ' 次（下次成功率遞減）">' +
+      '<span class="gem-chip-count">×1</span>' +
+      '<span class="gem-chip-emoji">' + emojis + '</span>' +
+      '<span class="gem-chip-level" style="color:#f0abfc">融' + (fg.fusions || 0) + '</span></span>');
   });
   pool.innerHTML = chips.length ? chips.join('') : '<span class="hint">沒有 5 階以上寶石 — 可透過寶石升階、寶石合成、商店或神鑄取得</span>';
-  // 持有融合寶石清單
-  var fl = $id('fused-gem-list');
-  var fchips = (G.player.fusedGems || []).map(function (fg) {
-    return '<span class="gem-chip fused-chip">' + esc(fusedGemLabel(fg)) +
-      ((fg.fusions || 0) > 1 ? '〔融合×' + fg.fusions + '〕' : '') + '</span>';
-  });
-  fl.innerHTML = fchips.length ? fchips.join('') : '<span class="hint">尚無融合寶石 — 融合成功後會出現在這裡，可至裝備分頁鑲嵌</span>';
 }
 
 /* ---- 寶石商店 ---- */
@@ -2184,12 +2197,16 @@ function initUI() {
       var res = fuseGemsV2(UI.gemFuseSlots[0], UI.gemFuseSlots[1]);
       if (res.err) {
         blog('⚠️ 無法融合：' + res.err, 'warn');
+        gfuseShow('⚠️ ' + res.err, 'warn');
       } else if (res.success) {
+        var msgStr = '🧬 寶石融合成功！獲得 ' + fusedGemLabel(res.result) + '（成功率 ' + res.rate + '%）';
         blog('🧬 <span class="log-hl-good">寶石融合成功！</span>獲得 ' + fusedGemLabel(res.result) + '（成功率 ' + res.rate + '%）', 'good');
+        gfuseShow(msgStr, 'yellow');
         UI.gemFuseSlots = [null, null];
       } else {
-        blog('💥 寶石融合失敗（成功率 ' + res.rate + '%）…較弱的寶石降解為 ' + res.degraded.n + ' 顆 ' +
-          gemLabel(res.degraded.type, res.degraded.lv), 'warn');
+        var msgStr = '💥 寶石融合失敗（成功率 ' + res.rate + '%）…較弱的寶石降解為 ' + res.degraded.n + ' 顆 ' + gemLabel(res.degraded.type, res.degraded.lv);
+        blog('💥 寶石融合失敗（成功率 ' + res.rate + '%）…較弱的寶石降解為 ' + res.degraded.n + ' 顆 ' + gemLabel(res.degraded.type, res.degraded.lv), 'warn');
+        gfuseShow(msgStr, 'warn');
         UI.gemFuseSlots = [null, null];
       }
       renderGems();
@@ -2606,8 +2623,8 @@ function initUI() {
     if (!loadBtn && !dlBtn && !delBtn) return;
 
     var id = loadBtn ? loadBtn.getAttribute('data-load-save')
-           : dlBtn ? dlBtn.getAttribute('data-dl-save')
-           : delBtn.getAttribute('data-del-save');
+      : dlBtn ? dlBtn.getAttribute('data-dl-save')
+        : delBtn.getAttribute('data-del-save');
     var rec = null;
     saveIndex().forEach(function (r) { if (r.id === id) rec = r; });
     if (!rec) return;
@@ -2615,19 +2632,19 @@ function initUI() {
     if (loadBtn) {
       showConfirmDialog('確定要讀取「' + saveRecName(rec) + '」嗎？\n檔名：' + rec.fname + '\n時間：' + saveTimeStr(rec.savedAt) +
         '\n\n目前進度會先寫入本局的自動存檔，再切換為此存檔。', function () {
-        var err = loadSaveRecord(id);
-        if (err) blog('⚠️ 讀取存檔失敗：' + err, 'bad');
-      }, { title: '讀取存檔確認', okText: '讀取存檔', danger: true });
+          var err = loadSaveRecord(id);
+          if (err) blog('⚠️ 讀取存檔失敗：' + err, 'bad');
+        }, { title: '讀取存檔確認', okText: '讀取存檔', danger: true });
     } else if (dlBtn) {
       downloadSingleSave(id, rec.fname);
       blog('⬇️ 存檔已下載：' + rec.fname, 'good');
     } else if (delBtn) {
       showConfirmDialog('確定要刪除「' + saveRecName(rec) + '」嗎？\n檔名：' + rec.fname + '\n時間：' + saveTimeStr(rec.savedAt) +
         '\n\n刪除後無法恢復，是否繼續？', function () {
-        deleteSaveRecord(id);
-        blog('🗑️ 存檔已刪除：' + rec.fname);
-        renderSaveList();
-      }, { title: '刪除存檔確認', okText: '刪除存檔', danger: true });
+          deleteSaveRecord(id);
+          blog('🗑️ 存檔已刪除：' + rec.fname);
+          renderSaveList();
+        }, { title: '刪除存檔確認', okText: '刪除存檔', danger: true });
     }
   });
   renderSaveList();

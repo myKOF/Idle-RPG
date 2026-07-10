@@ -364,10 +364,19 @@ function skillConditionOk(sk, fx, pEnt, target, st) {
       break;
   }
   // 傷害/減益類需要目標
-  if ((fx.dmgType || fx.debuff || fx.maxHpDotPct) && (!target || target.hp <= 0)) return false;
+  var hasTarget = Array.isArray(target)
+    ? target.some(function (ent) { return ent && ent.hp > 0; })
+    : !!(target && target.hp > 0);
+  if ((fx.dmgType || fx.debuff || fx.maxHpDotPct) && !hasTarget) return false;
   // 增益不重複疊放
   if (fx.buff && buffVal(pEnt, fx.buff.key) > 0) return false;
   return true;
+}
+
+// 多敵人時，技能總傷害先套用範圍傷害，再平均分配給所有敵人；單敵人維持原始傷害。
+function skillDamageShare(baseDamage, aoePct, targetCount) {
+  var count = Math.max(1, targetCount || 1);
+  return count > 1 ? baseDamage * (1 + aoePct / 100) / count : baseDamage;
 }
 
 /* ---- 施放執行 ---- */
@@ -375,6 +384,8 @@ function castSkill(pEnt, target, id, lv, floatSel) {
   var sk = skillDef(id);
   var fx = effectiveFx(id, sk, lv);
   var st = getStats();
+  var targets = Array.isArray(target) ? target.filter(function (ent) { return ent && ent.hp > 0; }) : (target ? [target] : []);
+  var targetCount = Math.max(1, targets.length);
   pEnt.mp -= sk.cost;
   if (!pEnt.skillCds) pEnt.skillCds = {};
   pEnt.skillCds[id] = skillCdFor(sk);
@@ -386,7 +397,8 @@ function castSkill(pEnt, target, id, lv, floatSel) {
 
   // === 傷害段 ===
   if (fx.dmgType) {
-    var baseVal = ((fx.base || 0) + (fx.per || 0) * (lv - 1)) / 100 * (st[fx.stat] || st.atk) * (1 + st.aoeDmg / 100);
+    var rawBaseVal = ((fx.base || 0) + (fx.per || 0) * (lv - 1)) / 100 * (st[fx.stat] || st.atk);
+    var baseVal = skillDamageShare(rawBaseVal, st.aoeDmg || 0, targetCount);
     // 神鑄特效【神怒】：生命低於 30% 時技能傷害同步提高
     if ((st.passives.godWrath || 0) > 0 && pEnt.hp < st.hp * 0.3) baseVal *= 1 + st.passives.godWrath / 100;
     if (fx.gamble) baseVal *= rnd(0.33, 1.67); // 孤注一擲：50%~250% 相對波動
@@ -395,61 +407,67 @@ function castSkill(pEnt, target, id, lv, floatSel) {
     if (fx.doubleCastPct && chance(fx.doubleCastPct)) { hits++; parts.push('<span class="log-hl-good">雙重施法！</span>'); }
     var totalDmg = 0, anyCrit = false, allMiss = true;
     for (var h = 0; h < hits; h++) {
-      if (target.hp <= 0) break;
-      var dmgRes;
-      if (fx.dmgType === 'true') {
-        // 真實傷害：無視防禦/抗性/格擋
-        var td = Math.max(1, Math.round(baseVal * rnd(0.95, 1.05)));
-        target.hp -= td;
-        dmgRes = { dmg: td, killed: target.hp <= 0, miss: false, crit: false };
-        if (dmgRes.killed) target.hp = 0;
-      } else {
-        // 元素占比：單一 elem 或融合技的 elems 多元素表
-        var elemAtk = null, portion = 0;
-        if (fx.elems) {
-          elemAtk = {};
-          for (var ee in fx.elems) { elemAtk[ee] = baseVal * fx.elems[ee]; portion += fx.elems[ee]; }
-        } else if (fx.elem) {
-          portion = fx.elem.portion;
-          elemAtk = {};
-          elemAtk[fx.elem.type] = baseVal * portion;
+      for (var ti = 0; ti < targets.length; ti++) {
+        var targetEnt = targets[ti];
+        if (targetEnt.hp <= 0) continue;
+        var dmgRes;
+        if (fx.dmgType === 'true') {
+          // 真實傷害：無視防禦/抗性/格擋
+          var td = Math.max(1, Math.round(baseVal * rnd(0.95, 1.05)));
+          targetEnt.hp -= td;
+          dmgRes = { dmg: td, killed: targetEnt.hp <= 0, miss: false, crit: false };
+          if (dmgRes.killed) targetEnt.hp = 0;
+        } else {
+          // 元素占比：單一 elem 或融合技的 elems 多元素表
+          var elemAtk = null, portion = 0;
+          if (fx.elems) {
+            elemAtk = {};
+            for (var ee in fx.elems) { elemAtk[ee] = baseVal * fx.elems[ee]; portion += fx.elems[ee]; }
+          } else if (fx.elem) {
+            portion = fx.elem.portion;
+            elemAtk = {};
+            elemAtk[fx.elem.type] = baseVal * portion;
+          }
+          portion = Math.min(portion, 0.8);
+          var aCfg = {
+            atk: baseVal * (1 - portion), dmgType: fx.dmgType, level: st.level,
+            critRate: st.critRate + (fx.critBonus || 0), critDmg: st.critDmg,
+            hit: fx.neverMiss ? 999 : 100, pen: fx.dmgType === 'magic' ? st.mPen : st.pPen,
+            annihilate: st.passives.annihilate || 0, // 神鑄特效【破滅】：技能暴擊同樣適用
+            elemAtk: elemAtk, eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, isPlayer: true
+          };
+          // 處決：低血量加成
+          if (fx.execBelow && targetEnt.hp / targetEnt.maxHp * 100 < fx.execBelow) aCfg.atk *= (fx.execMult || 2);
+          dmgRes = resolveHit(pEnt, targetEnt, aCfg, monsterDefCfg(targetEnt));
         }
-        portion = Math.min(portion, 0.8);
-        var aCfg = {
-          atk: baseVal * (1 - portion), dmgType: fx.dmgType, level: st.level,
-          critRate: st.critRate + (fx.critBonus || 0), critDmg: st.critDmg,
-          hit: fx.neverMiss ? 999 : 100, pen: fx.dmgType === 'magic' ? st.mPen : st.pPen,
-          annihilate: st.passives.annihilate || 0, // 神鑄特效【破滅】：技能暴擊同樣適用
-          elemAtk: elemAtk, eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, isPlayer: true
-        };
-        // 處決：低血量加成
-        if (fx.execBelow && target.hp / target.maxHp * 100 < fx.execBelow) aCfg.atk *= (fx.execMult || 2);
-        dmgRes = resolveHit(pEnt, target, aCfg, monsterDefCfg(target));
+        if (!dmgRes.miss) {
+          allMiss = false;
+          totalDmg += dmgRes.dmg;
+          if (dmgRes.crit) anyCrit = true;
+          var dmgStr = fmt(dmgRes.dmg);
+          if (dmgRes.crit) dmgStr = '爆擊 ' + dmgStr;
+          if (dmgRes.blocked) dmgStr = '格擋 ' + dmgStr;
+          floatText(targetEnt.floatSel || floatSel, sk.emoji + dmgStr, dmgRes.crit ? 'crit' : 'dmg');
+          trackDps(dmgRes.dmg);
+          if (typeof recordRunDamage === 'function') recordRunDamage(sk.name, dmgRes.dmg);
+        } else {
+          floatText(targetEnt.floatSel || floatSel, 'MISS', 'miss');
+        }
+        if (dmgRes.killed) out.killed = true;
       }
-      if (!dmgRes.miss) {
-        allMiss = false;
-        totalDmg += dmgRes.dmg;
-        if (dmgRes.crit) anyCrit = true;
-        var dmgStr = fmt(dmgRes.dmg);
-        if (dmgRes.crit) dmgStr = '爆擊 ' + dmgStr;
-        if (dmgRes.blocked) dmgStr = '格擋 ' + dmgStr;
-        floatText(floatSel, sk.emoji + dmgStr, dmgRes.crit ? 'crit' : 'dmg');
-        trackDps(dmgRes.dmg);
-        if (typeof recordRunDamage === 'function') recordRunDamage(sk.name, dmgRes.dmg);
-      } else {
-        floatText(floatSel, 'MISS', 'miss');
-      }
-      if (dmgRes.killed) { out.killed = true; break; }
     }
-    // 冰與火之歌：目標同時處於減速與燃燒時引爆
-    if (fx.comboDetonate && target.hp > 0 && effectActive(target, 'slow') && targetHasDot(target, '燃燒')) {
-      var boom = Math.max(1, Math.round(totalDmg * fx.comboDetonate / 100));
-      target.hp -= boom;
-      totalDmg += boom;
-      floatText(floatSel, '❄️🔥' + fmt(boom), 'crit');
-      trackDps(boom);
-      parts.push('<span class="log-hl-good">冰火引爆 ' + fmt(boom) + '！</span>');
-      if (target.hp <= 0) { target.hp = 0; out.killed = true; }
+    // 冰與火之歌：每名目標同時處於減速與燃燒時各自引爆
+    for (var ci = 0; ci < targets.length; ci++) {
+      var comboTarget = targets[ci];
+      if (fx.comboDetonate && comboTarget.hp > 0 && effectActive(comboTarget, 'slow') && targetHasDot(comboTarget, '燃燒')) {
+        var boom = Math.max(1, Math.round(baseVal * fx.comboDetonate / 100));
+        comboTarget.hp -= boom;
+        totalDmg += boom;
+        floatText(comboTarget.floatSel || floatSel, '❄️🔥' + fmt(boom), 'crit');
+        trackDps(boom);
+        parts.push('<span class="log-hl-good">冰火引爆 ' + fmt(boom) + '！</span>');
+        if (comboTarget.hp <= 0) { comboTarget.hp = 0; out.killed = true; }
+      }
     }
     out.dmg = totalDmg;
     if (allMiss) parts.push('<span class="log-hl-bad">被閃避了！</span>');
@@ -459,16 +477,26 @@ function castSkill(pEnt, target, id, lv, floatSel) {
       if (fx.healPctOfDmg) { healPlayer(pEnt, totalDmg * fx.healPctOfDmg / 100, st); parts.push('<span class="log-hl-good">汲取 ' + fmt(totalDmg * fx.healPctOfDmg / 100) + ' 生命</span>'); }
       if (fx.mpOnCrit && anyCrit) { pEnt.mp = Math.min(st.mp, pEnt.mp + fx.mpOnCrit); parts.push('返還 ' + fx.mpOnCrit + ' 法力'); }
       if (fx.goldPer) { var gg = Math.round(fx.goldPer * lv * st.level); G.player.gold += gg; parts.push('<span class="log-hl-good">獲得 ' + fmt(gg) + ' 金幣</span>'); UI.dirty.header = true; }
-      if (fx.dot && target.hp > 0) { applyDot(target, baseVal * fx.dot.pct / 100, fx.dot.dur, fx.dot.name); parts.push('附加' + fx.dot.name); }
-      if (fx.dotList && target.hp > 0) {
-        for (var dl = 0; dl < fx.dotList.length; dl++) {
-          var dd = fx.dotList[dl];
-          applyDot(target, baseVal * dd.pct / 100, dd.dur, dd.name);
-          parts.push('附加' + dd.name);
+      for (var ei = 0; ei < targets.length; ei++) {
+        var effectTarget = targets[ei];
+        if (effectTarget.hp <= 0) continue;
+        if (fx.dot) { applyDot(effectTarget, baseVal * fx.dot.pct / 100, fx.dot.dur, fx.dot.name); parts.push('附加' + fx.dot.name); }
+        if (fx.dotList) {
+          for (var dl = 0; dl < fx.dotList.length; dl++) {
+            var dd = fx.dotList[dl];
+            applyDot(effectTarget, baseVal * dd.pct / 100, dd.dur, dd.name);
+            parts.push('附加' + dd.name);
+          }
+        }
+        if (fx.stunDur && !resistCtrl(monsterDefCfg(effectTarget))) { applyEffect(effectTarget, 'stun', fx.stunDur); parts.push('<span class="log-hl-good">暈眩 ' + fx.stunDur + ' 秒</span>'); }
+        if (fx.slowDur && !resistCtrl(monsterDefCfg(effectTarget))) { applyEffect(effectTarget, 'slow', fx.slowDur); parts.push('減速'); }
+        if (fx.debuff) { applyBuff(effectTarget, fx.debuff.key, scaleAt(fx.debuff, lv), fx.debuff.dur); parts.push('<span class="log-hl-bad">敵方' + buffLabel(fx.debuff.key) + ' -' + fmt1(scaleAt(fx.debuff, lv)) + '%</span>'); }
+        if (fx.maxHpDotPct) {
+          var cdps = Math.min(effectTarget.maxHp * scaleAt(fx.maxHpDotPct, lv) / 100, st.matk * 6);
+          applyDot(effectTarget, cdps, fx.dotDur || 5, '詛咒');
+          parts.push('<span class="log-hl-bad">附加死亡詛咒</span>');
         }
       }
-      if (fx.stunDur && target.hp > 0 && !resistCtrl(monsterDefCfg(target))) { applyEffect(target, 'stun', fx.stunDur); parts.push('<span class="log-hl-good">暈眩 ' + fx.stunDur + ' 秒</span>'); }
-      if (fx.slowDur && target.hp > 0 && !resistCtrl(monsterDefCfg(target))) { applyEffect(target, 'slow', fx.slowDur); parts.push('減速'); }
       if (st.manaSteal > 0) pEnt.mp = Math.min(st.mp, pEnt.mp + totalDmg * st.manaSteal / 100);
       if (st.lifesteal > 0) healPlayer(pEnt, totalDmg * st.lifesteal / 100, st);
     }
@@ -485,11 +513,19 @@ function castSkill(pEnt, target, id, lv, floatSel) {
   if (fx.mpRestore) { pEnt.mp = Math.min(st.mp, pEnt.mp + fx.mpRestore); parts.push('回復 ' + fx.mpRestore + ' 法力'); }
   if (fx.buff) { applyBuff(pEnt, fx.buff.key, scaleAt(fx.buff, lv), fx.buff.dur); parts.push('<span class="log-hl-good">' + buffLabel(fx.buff.key) + ' +' + fmt1(scaleAt(fx.buff, lv)) + '%（' + fx.buff.dur + '秒）</span>'); }
   if (fx.buff2) { applyBuff(pEnt, fx.buff2.key, scaleAt(fx.buff2, lv), fx.buff2.dur); }
-  if (fx.debuff && target && target.hp > 0) { applyBuff(target, fx.debuff.key, scaleAt(fx.debuff, lv), fx.debuff.dur); parts.push('<span class="log-hl-bad">敵方' + buffLabel(fx.debuff.key) + ' -' + fmt1(scaleAt(fx.debuff, lv)) + '%</span>'); }
-  if (fx.maxHpDotPct && target && target.hp > 0) {
-    // 死亡詛咒：以敵方最大生命為基準的跳傷（對高血量目標設上限 = 魔攻 x6）
-    var cdps = Math.min(target.maxHp * scaleAt(fx.maxHpDotPct, lv) / 100, st.matk * 6);
-    applyDot(target, cdps, fx.dotDur || 5, '詛咒');
+  if (!fx.dmgType && fx.debuff) {
+    for (var ndi = 0; ndi < targets.length; ndi++) {
+      if (targets[ndi].hp <= 0) continue;
+      applyBuff(targets[ndi], fx.debuff.key, scaleAt(fx.debuff, lv), fx.debuff.dur);
+    }
+    parts.push('<span class="log-hl-bad">敵方' + buffLabel(fx.debuff.key) + ' -' + fmt1(scaleAt(fx.debuff, lv)) + '%</span>');
+  }
+  if (!fx.dmgType && fx.maxHpDotPct) {
+    for (var nci = 0; nci < targets.length; nci++) {
+      if (targets[nci].hp <= 0) continue;
+      var ncdps = Math.min(targets[nci].maxHp * scaleAt(fx.maxHpDotPct, lv) / 100, st.matk * 6);
+      applyDot(targets[nci], ncdps, fx.dotDur || 5, '詛咒');
+    }
     parts.push('<span class="log-hl-bad">附加死亡詛咒</span>');
   }
 

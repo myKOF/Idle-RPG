@@ -383,6 +383,9 @@ function monsterStatsFor(stage, elite) {
 // 菁英出現規則：階段為 10 的倍數
 function isEliteStage(stage) { return stage % 10 === 0; }
 
+// 普通關卡敵人數量：1 隻 78%、2 隻 15%、3 隻 5%、4 隻 2%。
+function rollFieldEnemyCount() { return wpick(FIELD_ENEMY_COUNT_TABLE); }
+
 /* ---- 高塔 BOSS 數值 ----
    對應野外階段 = 4 + 樓層×5（以此為基準怪物再放大）
    等級 = 對應階段+3｜生命 ×22｜攻擊 ×1.9｜物/魔防 ×1.5

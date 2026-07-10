@@ -5,6 +5,7 @@
 var FIELD = {
   player: null,      // { hp, mp, shield, atkCd, skillCd, effects:{}, poisonUntil, poisonDps }
   monster: null,
+  monsters: [],
   respawnCd: 0,
   reviveCd: 0,
   dpsWindow: []      // [ [GT, dmg], ... ] 供 DPS 顯示
@@ -18,25 +19,51 @@ function initFieldPlayer() {
   FIELD.player = newPlayerEntity(getStats());
 }
 
+function fieldEnemyList() {
+  if (Array.isArray(FIELD.monsters) && (FIELD.monsters.length || !FIELD.monster)) return FIELD.monsters;
+  return FIELD.monster ? [FIELD.monster] : [];
+}
+
+function syncFieldPrimary() {
+  var enemies = Array.isArray(FIELD.monsters) ? FIELD.monsters : fieldEnemyList();
+  FIELD.monster = enemies.length ? enemies[0] : null;
+  FIELD.monsters = enemies;
+}
+
+function liveFieldEnemies() {
+  return fieldEnemyList().filter(function (m) { return m && m.hp > 0; });
+}
+
+function markFieldEnemyFloatTargets(enemies) {
+  for (var i = 0; i < enemies.length; i++) enemies[i].floatSel = 'mv-float-' + i;
+}
+
 function spawnFieldMonster() {
   var s = G.stage.current;
   var elite = isEliteStage(s); // 菁英規則 → formula.js §4
   var base = monsterStatsFor(s, elite);
   var zn = currentZoneDef();
-  var mtype = pick(zn.pool);
-  FIELD.monster = {
-    name: (elite ? '菁英・' : '') + mtype.name, emoji: mtype.emoji,
-    level: base.level,
-    maxHp: base.hp * zn.hpMult, hp: base.hp * zn.hpMult,
-    atk: base.atk * zn.atkMult,
-    def: base.def * zn.defMult, mdef: base.mdef * zn.defMult,
-    magic: !!mtype.magic,          // 魔法系怪物：攻擊對玩家魔防
-    aspd: base.aspd, dodge: base.dodge,
-    elite: elite, isBoss: false,
-    gold: base.gold * zn.rewardMult, xp: base.xp * zn.rewardMult, // 金幣/經驗 x場景倍率
-    atkCd: 1 / base.aspd + 0.4, effects: {}, ctrlRes: 0,
-    poisonUntil: 0, poisonDps: 0, shield: 0, buffs: {}, dots: []
-  };
+  var count = elite ? 1 : rollFieldEnemyCount();
+  var enemies = [];
+  for (var i = 0; i < count; i++) {
+    var mtype = pick(zn.pool);
+    enemies.push({
+      name: (elite ? '菁英・' : '') + mtype.name, emoji: mtype.emoji,
+      level: base.level,
+      maxHp: base.hp * zn.hpMult, hp: base.hp * zn.hpMult,
+      atk: base.atk * zn.atkMult,
+      def: base.def * zn.defMult, mdef: base.mdef * zn.defMult,
+      magic: !!mtype.magic,          // 魔法系怪物：攻擊對玩家魔防
+      aspd: base.aspd, dodge: base.dodge,
+      elite: elite, isBoss: false,
+      gold: base.gold * zn.rewardMult, xp: base.xp * zn.rewardMult, // 金幣/經驗 x場景倍率
+      atkCd: 1 / base.aspd + 0.4, effects: {}, ctrlRes: 0,
+      poisonUntil: 0, poisonDps: 0, shield: 0, buffs: {}, dots: []
+    });
+  }
+  FIELD.monsters = enemies;
+  markFieldEnemyFloatTargets(enemies);
+  syncFieldPrimary();
   UI.dirty.battle = true;
 }
 
@@ -58,6 +85,7 @@ function switchZone(zoneKey) {
   G.stage.best = zp.best || 1;
   G.stage.kills = 0;
   FIELD.monster = null;
+  FIELD.monsters = [];
   FIELD.respawnCd = 0.5;
   var zn = ZONES[zoneKey];
   blog(zn.emoji + ' 前往【' + zn.name + '】！第 ' + G.stage.current + ' 階段（歷史最高 ' + G.stage.best +
@@ -200,13 +228,13 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
   var mName = mEnt.name || '怪物';
   var logMsg = (depth ? '' : '你攻擊 ' + mName + '，');
   if (res.miss) {
-    floatText(floatSel, 'MISS', 'miss');
+    floatText(mEnt.floatSel || floatSel, 'MISS', 'miss');
     logMsg += (depth ? '<span class="log-hl-bad">攻擊被閃避了！</span>' : '<span class="log-hl-bad">被閃避了！</span>');
   } else {
     var dmgStr = fmt(res.dmg);
     if (res.crit) dmgStr = '爆擊 ' + dmgStr;
     if (res.blocked) dmgStr = '格擋 ' + dmgStr;
-    floatText(floatSel, dmgStr, res.crit ? 'crit' : 'dmg');
+    floatText(mEnt.floatSel || floatSel, dmgStr, res.crit ? 'crit' : 'dmg');
     trackDps(res.dmg);
     recordRunDamage('普攻', res.dmg);
     logMsg += (res.crit ? '<span class="log-hl-good">爆擊</span> ' : '造成 ') + fmt(res.dmg) + ' 傷害。';
@@ -242,7 +270,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
         mEnt.hp -= smiteDmg;
         trackDps(smiteDmg);
         recordRunDamage('天罰', smiteDmg);
-        floatText(floatSel, '⚡' + fmt(smiteDmg), 'crit');
+        floatText(mEnt.floatSel || floatSel, '⚡' + fmt(smiteDmg), 'crit');
         logMsg += '<span class="log-hl-good">天罰降臨，追加 ' + fmt(smiteDmg) + ' 真實傷害！</span>';
         if (mEnt.hp <= 0) { mEnt.hp = 0; res.killed = true; res.dmg += smiteDmg; }
       }
@@ -329,42 +357,60 @@ function fieldTick(dt) {
   if (tickPoison(p, dt) || tickDots(p, dt)) { onPlayerFieldDeath(); return; }
 
   // 出怪
-  if (!FIELD.monster) {
+  if (!liveFieldEnemies().length) {
     FIELD.respawnCd -= dt;
     if (FIELD.respawnCd <= 0) spawnFieldMonster();
     return;
   }
-  var m = FIELD.monster;
+  var enemies = liveFieldEnemies();
 
   // 持續傷害（怪物：中毒 / 流血 / 燃燒 / 詛咒）
-  if (tickPoison(m, dt) || tickDots(m, dt)) { onFieldKill(m); return; }
+  for (var di = 0; di < enemies.length; di++) {
+    if (tickPoison(enemies[di], dt) || tickDots(enemies[di], dt)) onFieldKill(enemies[di]);
+  }
+  enemies = liveFieldEnemies();
+  if (!enemies.length) return;
 
   // 玩家行動（減速 -30%；時間扭曲等攻速增益加速）
   if (!effectActive(p, 'stun')) {
     // 技能優先（依裝載順序）
-    var sres = pickAndCastSkill(p, m, 'mv-float');
-    if (sres && sres.killed) { onFieldKill(m); return; }
+    var sres = pickAndCastSkill(p, enemies, 'mv-float');
+    if (sres && sres.killed) {
+      onFieldDeaths();
+      enemies = liveFieldEnemies();
+      if (!enemies.length) return;
+      return;
+    }
     if (p.hp <= 0) { onPlayerFieldDeath(); return; } // 狂暴打擊等自傷技能
     p.atkCd -= dt * slowFactor(p) * (1 + buffVal(p, 'aspdUp') / 100);
     if (p.atkCd <= 0) {
-      var res = doPlayerAttack(p, m, 'mv-float');
+      // 普攻固定鎖定第一名存活敵人，直到其死亡才切換下一名。
+      var primary = liveFieldEnemies()[0];
+      var res = doPlayerAttack(p, primary, primary.floatSel || 'mv-float');
       p.atkCd += 1 / st.aspd;
-      if (res.killed) { onFieldKill(m); return; }
+      if (res.killed) onFieldDeaths();
+      if (!liveFieldEnemies().length) return;
     }
   }
   // 怪物攻擊
-  if (!effectActive(m, 'stun')) {
-    m.atkCd -= dt * slowFactor(m);
-    if (m.atkCd <= 0) {
-      doMonsterAttack(m, p, 'pv-float');
-      m.atkCd += 1 / m.aspd;
-      if (p.hp <= 0) { onPlayerFieldDeath(); return; }
-      if (m.hp <= 0) { onFieldKill(m); return; } // 反震擊殺
+  enemies = liveFieldEnemies();
+  for (var mi = 0; mi < enemies.length; mi++) {
+    var m = enemies[mi];
+    if (!effectActive(m, 'stun')) {
+      m.atkCd -= dt * slowFactor(m);
+      if (m.atkCd <= 0) {
+        doMonsterAttack(m, p, 'pv-float');
+        m.atkCd += 1 / m.aspd;
+        if (p.hp <= 0) { onPlayerFieldDeath(); return; }
+        if (m.hp <= 0) onFieldKill(m); // 反震擊殺
+      }
     }
   }
 }
 
 function onFieldKill(m) {
+  if (!m || m._rewarded) return;
+  m._rewarded = true;
   var st = getStats();
   // 擊殺回復 KILL_HEAL_PCT% 最大生命（溢出轉護盾）
   healPlayer(FIELD.player, st.hp * KILL_HEAL_PCT / 100, st);
@@ -382,9 +428,18 @@ function onFieldKill(m) {
   var lootMsg = '📦 戰利品：💰' + fmt(goldGain) + ' 💡' + fmt(xpGain);
   if (drops.length) lootMsg += ' ' + drops.join('、');
   blog(lootMsg, 'good', 'loot');
+  var enemies = fieldEnemyList();
+  var idx = enemies.indexOf(m);
+  if (idx >= 0) enemies.splice(idx, 1);
+  FIELD.monsters = enemies;
+  markFieldEnemyFloatTargets(enemies);
+  syncFieldPrimary();
+  if (enemies.length) {
+    UI.dirty.battle = true;
+    return;
+  }
   G.stage.kills++;
-  FIELD.monster = null;
-  // 移動速度：縮短推圖間隔
+  // 移動速度：縮短推圖間隔；只有整波敵人全部擊殺後才進入下一波。
   FIELD.respawnCd = RESPAWN_DELAY * (1 - st.moveSpeed / 100);
   if (G.stage.autoAdvance) {
     G.stage.current++;
@@ -394,10 +449,18 @@ function onFieldKill(m) {
   UI.dirty.battle = true; UI.dirty.header = true;
 }
 
+function onFieldDeaths() {
+  var enemies = fieldEnemyList().slice();
+  for (var i = 0; i < enemies.length; i++) {
+    if (enemies[i].hp <= 0) onFieldKill(enemies[i]);
+  }
+}
+
 function onPlayerFieldDeath() {
   blog('☠️ 你被擊倒了…退回第 1 階段重頭來過（' + REVIVE_DELAY + ' 秒後復活）', 'bad');
   flushRunSummary();
   FIELD.monster = null;
+  FIELD.monsters = [];
   FIELD.reviveCd = REVIVE_DELAY;
   G.stage.kills = 0;
   G.stage.current = 1;
@@ -481,6 +544,7 @@ function stageGo(delta) {
   G.stage.current = t;
   G.stage.kills = 0;
   FIELD.monster = null;
+  FIELD.monsters = [];
   FIELD.respawnCd = 0.3;
   UI.dirty.battle = true;
 }
