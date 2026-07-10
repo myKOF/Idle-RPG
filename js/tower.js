@@ -12,8 +12,12 @@ var TOWER = {
   dmgDealt: 0,
   bossDmgDealt: 0,
   result: null,       // 結束後的結算資料（顯示用）
-  showingResult: false
+  showingResult: false,
+  auto: null,         // 連續挑戰 { floor, total, done, wins }；null = 未啟用
+  autoNextCd: 0       // 連續挑戰下一場倒數（秒）
 };
+var TOWER_AUTO_DELAY = 1.0;   // 連續挑戰場與場之間的間隔（秒）
+var TOWER_AUTO_MAX = 999;     // 連續挑戰次數上限
 
 function makeBoss(floor) {
   var bd = BOSS_LIST[(floor - 1) % BOSS_LIST.length];
@@ -68,7 +72,36 @@ function startTowerFight(floor) {
   UI.dirty.tower = true; UI.dirty.battle = true;
 }
 
+/* ---- 連續挑戰 ----
+   同一樓層自動重複挑戰 count 場，場與場之間間隔 TOWER_AUTO_DELAY 秒；
+   金幣不足或次數用完自動停止並回到野外；戰鬥中按「撤退」立即中止。 */
+function startTowerAuto(floor, count) {
+  if (G.tower.active) return;
+  count = Math.floor(count);
+  if (!(count >= 1)) { blog('⚠️ 請先在高塔分頁上方輸入有效的連續挑戰次數（1 以上）', 'warn'); return; }
+  if (count > TOWER_AUTO_MAX) count = TOWER_AUTO_MAX;
+  TOWER.auto = { floor: floor, total: count, done: 0, wins: 0 };
+  TOWER.autoNextCd = 0;
+  blog('🔁 開始連續挑戰第 ' + floor + ' 層，共 ' + count + ' 場（戰鬥中按「撤退」可中止）', 'info', 'boss');
+  startTowerFight(floor);
+  if (!G.tower.active) TOWER.auto = null; // 開場失敗（金幣不足 / 樓層未解鎖）
+}
+
 function towerTick(dt) {
+  // 連續挑戰：上一場結束後倒數，自動開始下一場
+  if (!G.tower.active && TOWER.auto && TOWER.autoNextCd > 0) {
+    TOWER.autoNextCd -= dt;
+    if (TOWER.autoNextCd <= 0) {
+      TOWER.autoNextCd = 0;
+      var auto = TOWER.auto;
+      startTowerFight(auto.floor);
+      if (!G.tower.active) { // 意外無法開場（金幣被其他系統消耗等）
+        blog('🔁 無法開始下一場，連續挑戰停止（已挑戰 ' + auto.done + '/' + auto.total + ' 場，勝 ' + auto.wins + '）', 'warn', 'boss');
+        TOWER.auto = null;
+      }
+    }
+    return;
+  }
   if (!G.tower.active || TOWER.showingResult) return;
   var st = getStats();
   var p = TOWER.player, b = TOWER.boss;
@@ -236,7 +269,29 @@ function endTowerFight(win, reason) {
   }
 
   TOWER.result = result;
-  
+
+  // 連續挑戰：不彈結算視窗，自動接續下一場；撤退 / 次數用完 / 金幣不足則停止並回到野外
+  if (TOWER.auto) {
+    var auto = TOWER.auto;
+    auto.done++;
+    if (win) auto.wins++;
+    finishTowerFight();
+    var tail = '共挑戰 ' + auto.done + '/' + auto.total + ' 場，勝 ' + auto.wins + ' 敗 ' + (auto.done - auto.wins);
+    if (reason === 'flee') {
+      blog('🔁 已中止連續挑戰第 ' + auto.floor + ' 層：' + tail + '，回到野外繼續戰鬥。', 'warn', 'boss');
+      TOWER.auto = null;
+    } else if (auto.done >= auto.total) {
+      blog('🔁 連續挑戰第 ' + auto.floor + ' 層結束：' + tail + '，回到野外繼續戰鬥。', 'good', 'boss');
+      TOWER.auto = null;
+    } else if (G.player.gold < towerChallengeCost(auto.floor)) {
+      blog('🔁 金幣不足（下一場需 ' + fmt(towerChallengeCost(auto.floor)) + '），連續挑戰自動停止：' + tail + '，回到野外繼續戰鬥。', 'warn', 'boss');
+      TOWER.auto = null;
+    } else {
+      TOWER.autoNextCd = TOWER_AUTO_DELAY;
+    }
+    return;
+  }
+
   if (typeof showTowerResultModal === 'function') {
     showTowerResultModal(result, TOWER.player, TOWER.boss, TOWER.dmgDealt, TOWER.bossDmgDealt);
   }

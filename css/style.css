@@ -1159,8 +1159,8 @@ textarea#save-io {
 }
 
 .eff-genesis::before {
-  background: conic-gradient(from 0deg, #c084fc, #fcd34d, #f43f5e, #c084fc, #fcd34d, #f43f5e, #c084fc);
-  animation: borderSpin 2.4s linear infinite;
+  background: conic-gradient(from 0deg, #b8860b, #e6c229, #8b6508, #e6c229, #b8860b);
+  animation: borderSpin 2s linear infinite;
 }
 
 /* 內層遮罩蓋住中間，只留邊框 */
@@ -1182,9 +1182,8 @@ textarea#save-io {
 
 .eff-genesis::after,
 .eq-slot.eff-genesis::after {
-  inset: 3.5px;
-  /* 創世邊框加寬 */
-  background: linear-gradient(to bottom, rgba(160, 120, 10, 0.9) 0%, rgba(90, 60, 10, 0.95) 45%, var(--panel) 80%);
+  inset: 2px;
+  background: linear-gradient(to bottom, rgba(184, 134, 11, 0.9) 0%, rgba(139, 101, 8, 0.95) 45%, var(--panel) 80%);
 }
 
 /* 裝備詳情 */
@@ -3246,3 +3245,47 @@ textarea#save-io {
 
 #gm-command-panel .gm-status.good { color: var(--good); }
 #gm-command-panel .gm-status.bad { color: var(--bad); }
+
+/* ============ 高塔連續挑戰 ============ */
+.tower-auto-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 8px 0 10px;
+  font-size: 13.5px;
+}
+
+#tw-auto-count {
+  width: 72px;
+  background: #0b0f16;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 13.5px;
+}
+
+#tw-auto-status {
+  color: #7dd3fc;
+  font-weight: bold;
+  font-size: 13.5px;
+  white-space: nowrap;
+}
+
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes fusionRotate {
+  to { --angle: 360deg; }
+}
+.tree-cell.fusion-selected {
+  border: 3px solid transparent !important;
+  background: linear-gradient(var(--bg2), var(--bg2)) padding-box,
+              conic-gradient(from var(--angle, 0deg), #c084fc, #4c1d95, #e879f9, #4c1d95, #c084fc) border-box !important;
+  animation: fusionRotate 2s linear infinite;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.7), inset 0 0 8px rgba(168, 85, 247, 0.4);
+  opacity: 1 !important;
+}

@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 /* ============ UI 渲染與互動 ============ */
 
 var UI = {
@@ -937,7 +937,10 @@ function renderTower() {
         '<span class="tf-emoji" style="margin-right:12px;">' + iconHtml + '</span>' +
         '<span class="tf-name" style="vertical-align:middle;">第 ' + fl + ' 層・' + bd.name + (cleared ? ' ✅' : '') + '</span>' +
         '<span class="tf-hint" style="margin-left:auto; margin-right:10px;">建議野外階段 ' + (4 + fl * 5) + '+｜挑戰費 <span style="color:' + (G.player.gold >= twCost ? '#ffd700' : '#fca5a5') + '">💰' + fmt(twCost) + '</span></span>' +
-        (unlocked ? '<button class="btn sm" data-tower-floor="' + fl + '">挑戰</button>' : '<span class="tf-lock">🔒</span>') +
+        (unlocked
+          ? '<button class="btn sm" data-tower-floor="' + fl + '">挑戰</button>' +
+            '<button class="btn sm" data-tower-auto="' + fl + '" data-tip="連續挑戰此層（次數見上方設定）：金幣不足或次數用完自動停止並回到野外">🔁 連挑</button>'
+          : '<span class="tf-lock">🔒</span>') +
         '</div>';
     }
     $id('tower-floors').innerHTML = h;
@@ -978,6 +981,16 @@ function renderTowerFight() {
   $id('tw-timer').textContent = fmt1(remain) + 's';
   $id('tw-timer').classList.toggle('urgent', remain < 15);
   $id('tw-enrage').style.display = TOWER.enraged ? '' : 'none';
+  // 連續挑戰進度（第 X/Y 場）
+  var autoEl = $id('tw-auto-status');
+  if (autoEl) {
+    if (TOWER.auto) {
+      autoEl.style.display = '';
+      autoEl.textContent = '🔁 連挑 第 ' + (TOWER.auto.done + 1) + '/' + TOWER.auto.total + ' 場（勝 ' + TOWER.auto.wins + '）';
+    } else {
+      autoEl.style.display = 'none';
+    }
+  }
   if (b.img && !b.imgFailed) {
     var bossImgSrc = 'images/' + b.img;
     var tbImg = $id('tb-emoji').querySelector('img');
@@ -1051,8 +1064,10 @@ function skillCellHTML(id) {
   var lock = tierLockReason(id);
   var inLoadout = (G.player.loadout || []).indexOf(id) >= 0;
   var maxLv = skillMaxLv(sk);
+  var inFusion = (UI.fuseSlots || []).indexOf(id) >= 0;
   var cls = 'tree-cell' + (lv > 0 ? ' learned' : '') + (lock ? ' locked' : '') +
-    (UI.selSkill === id ? ' selected' : '') + (inLoadout ? ' equipped' : '');
+    (UI.selSkill === id ? ' selected' : '') + (inLoadout ? ' equipped' : '') +
+    (inFusion ? ' fusion-selected' : '');
   return '<div class="' + cls + '" data-sk="' + id + '">' +
     '<span class="tc-emoji">' + sk.emoji + '</span>' +
     (lv > 0 ? '<span class="tc-lv' + (lv >= maxLv ? ' max-lv' : '') + '">' + lv + '</span>' : (lock ? '<span class="tc-lock">🔒</span>' : '')) +
@@ -1362,10 +1377,13 @@ function renderFusionPanel() {
     var id = UI.fuseSlots[i];
     var d = id ? SKILLS[id] : null;
     if (d) {
-      h += '<span class="loadout-slot filled" data-fuse-remove="' + id + '" data-tip="點擊移出">' +
-        d.emoji + ' ' + esc(d.name) + ' Lv.' + skillLevel(id) + '</span>';
+      var lv = skillLevel(id);
+      h += '<div class="tree-cell fusion-selected" data-fuse-remove="' + id + '" data-tip="點擊移出" style="margin:0 4px; cursor:pointer;">' +
+           '<span class="tc-emoji">' + d.emoji + '</span>' +
+           '<span class="tc-lv">' + lv + '</span>' +
+           '</div>';
     } else {
-      h += '<span class="loadout-slot">素材 ' + (i + 1) + '</span>';
+      h += '<div class="tree-cell" style="margin:0 4px; border:2px dashed var(--border); background:transparent; opacity:0.5; color:var(--dim); font-size:11px; cursor:default;">素材 ' + (i+1) + '</div>';
     }
   }
   slotBox.innerHTML = h;
@@ -2513,7 +2531,16 @@ function initUI() {
     }
     var tf = e.target.closest('[data-tower-floor]');
     if (tf) {
+      TOWER.auto = null; TOWER.autoNextCd = 0; // 手動挑戰視為取消等待中的連挑
       startTowerFight(parseInt(tf.getAttribute('data-tower-floor'), 10));
+      switchTab('tower');
+      return;
+    }
+    // 高塔連續挑戰（次數取自 #tw-auto-count 輸入框）
+    var ta = e.target.closest('[data-tower-auto]');
+    if (ta) {
+      var taInput = $id('tw-auto-count');
+      startTowerAuto(parseInt(ta.getAttribute('data-tower-auto'), 10), taInput ? parseInt(taInput.value, 10) : 0);
       switchTab('tower');
       return;
     }

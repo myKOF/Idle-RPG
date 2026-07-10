@@ -1,6 +1,31 @@
 # PATCH.md
 
-## 本次變更摘要：本機 GM 指令集
+## 本次變更摘要：BOSS 高塔連續挑戰
+
+### js/tower.js
+- `TOWER` 新增 `auto`（{ floor, total, done, wins }）與 `autoNextCd`；常數 `TOWER_AUTO_DELAY = 1 秒`、`TOWER_AUTO_MAX = 999`。
+- 新增 `startTowerAuto(floor, count)`：驗證次數後啟動連挑（首場開場失敗即取消）。
+- `towerTick`：場與場之間倒數 1 秒自動開始下一場；意外無法開場（金幣被其他系統消耗）則停止。
+- `endTowerFight`：連挑模式下不彈結算視窗，直接 `finishTowerFight` 並判定——
+  撤退 → 中止；次數用完 → 結束；金幣不足下一場 → 自動停止並回到野外；否則排程下一場。
+  停止時皆輸出統計（共 X/Y 場，勝 W 敗 L）至 BOSS 戰日誌。
+
+### index.html
+- 高塔列表上方新增「🔁 連續挑戰次數」數字輸入列（預設 5，1~999）；
+  戰鬥標頭新增 `#tw-auto-status`（連挑進度「第 X/Y 場（勝 N）」）。
+
+### js/ui.js
+- `renderTower`：每個已解鎖樓層新增「🔁 連挑」按鈕（含懸停說明）。
+- 事件委派：`data-tower-auto` 讀取次數輸入並呼叫 `startTowerAuto`；
+  手動「挑戰」會取消等待中的連挑。
+- `renderTowerFight` 顯示連挑進度。
+
+### css/style.css
+- 新增 `.tower-auto-bar`、`#tw-auto-count`、`#tw-auto-status` 樣式。
+
+---
+
+## 歷史變更摘要：本機 GM 指令集
 
 ### 新增檔案
 - `GM_command.md`：詳細記錄本機限制、鍵盤操作、貨幣／材料／寶石／附魔書／裝備／零件／等級／商店／存檔指令與範例。

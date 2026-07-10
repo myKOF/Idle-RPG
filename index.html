@@ -445,6 +445,7 @@
             <div class="tower-head">
               <span class="tw-title">🗼 BOSS 高塔挑戰</span>
               <span id="tw-timer" class="tw-timer">60s</span>
+              <span id="tw-auto-status" style="display:none"></span>
               <span id="tw-enrage" class="tw-enrage" style="display:none">🔥 狂暴中 +200%</span>
               <span id="tw-dps" class="dim-text"></span>
               <button id="tw-flee" class="btn sm warn">撤退</button>
@@ -482,6 +483,11 @@
           <div id="tower-list-wrap">
             <div class="sec-title">🗼 BOSS 高塔（試煉之塔）</div>
             <div class="hint">限時 60 秒擊敗 BOSS。通關可獲得「自動機組零件」，安裝於生產線節點提升自動化效率！</div>
+            <div class="tower-auto-bar">
+              <span>🔁 連續挑戰次數：</span>
+              <input type="number" id="tw-auto-count" value="5" min="1" max="999">
+              <span class="dim-text" style="font-size:12.5px">按各樓層「連挑」啟動：自動重複挑戰該層，金幣不足或次數用完自動停止並回到野外（戰鬥中按「撤退」可中止）</span>
+            </div>
             <div id="tower-result" class="panel" style="display:none"></div>
             <div id="tower-floors"></div>
           </div>
