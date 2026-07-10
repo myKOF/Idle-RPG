@@ -1571,7 +1571,20 @@ function renderGemShop() {
   shopHourlyReset();
   var s = gemShop();
   if (!s.items.length) rollGemShop(); // 首次免費鋪貨
-  grid.innerHTML = s.items.map(function (item, i) {
+  var levelEl = $id('gem-shop-level');
+  if (levelEl) levelEl.textContent = '商店 Lv.' + s.level;
+  var upgradeBtn = $id('shop-upgrade');
+  if (upgradeBtn) {
+    if (s.level >= GEM_SHOP_MAX_LEVEL) {
+      upgradeBtn.textContent = '✅ 已滿級';
+      upgradeBtn.disabled = true;
+      upgradeBtn.removeAttribute('data-tip');
+    } else {
+      upgradeBtn.innerHTML = '⬆️ 升級（<img src="images/icon_gold.png" class="res-icon">' + fmt(gemShopUpgradeCost(s.level)) + '）';
+      upgradeBtn.disabled = G.player.gold < gemShopUpgradeCost(s.level);
+    }
+  }
+  var htmls = s.items.map(function (item, i) {
     var gt = GEM_TYPES[item.type];
     var c = GEM_TIER_COLORS[item.lv];
     return '<div class="shop-card' + (item.sold ? ' sold' : '') + '" style="border-color:' + c + '">' +
@@ -1580,10 +1593,14 @@ function renderGemShop() {
       '<div class="shop-stat">' + esc(gt.statName.replace('%', '')) + ' +' +
       (gt.pct ? pctStr(gemStatValue(item.type, item.lv)) : fmt(gemStatValue(item.type, item.lv))) + '</div>' +
       (item.sold
-        ? '<div class="shop-sold">已售出</div>'
+        ? '<div class="shop-sold">已購買</div>'
         : '<button class="btn sm" data-shop-buy="' + i + '"><img src="images/icon_gold.png" class="res-icon"> ' + fmt(gemShopPrice(item.lv)) + '</button>') +
       '</div>';
-  }).join('');
+  });
+  for (var i = htmls.length; i < 20; i++) {
+    htmls.push('<div class="shop-card empty" style="border-color:transparent;background:transparent;"></div>');
+  }
+  grid.innerHTML = htmls.join('');
   var total = 0;
   s.items.forEach(function (it2) { if (!it2.sold) total += gemShopPrice(it2.lv); });
   var buyAllBtn = $id('shop-buy-all');
@@ -1599,8 +1616,10 @@ function updateShopCountdown() {
   shopHourlyReset();
   if (gemShop().refreshCount !== before) UI.dirty.gems = true; // 重置時刷新按鈕費用
   var sec = shopResetCountdown();
-  var mm = Math.floor(sec / 60), ss = sec % 60;
-  el.textContent = '本小時已刷新 ' + gemShop().refreshCount + ' 次｜次數重置倒數 ' + mm + ':' + (ss < 10 ? '0' : '') + ss;
+  var hh = Math.floor(sec / 3600);
+  var mm = Math.floor((sec % 3600) / 60);
+  var ss = sec % 60;
+  el.textContent = '本週期已刷新 ' + gemShop().refreshCount + ' 次｜重置倒數 ' + hh + ':' + (mm < 10 ? '0' : '') + mm + ':' + (ss < 10 ? '0' : '') + ss;
 }
 
 /* ============ 迷你監控視窗（子母畫面 PiP） ============
@@ -2193,9 +2212,18 @@ function initUI() {
     $id('shop-refresh').addEventListener('click', function () {
       var err = refreshGemShop();
       if (err) blog('⚠️ 刷新失敗：' + err, 'warn');
-      else blog('🔄 寶石商店已刷新（本小時第 ' + gemShop().refreshCount + ' 次）', 'info');
+      else blog('🔄 寶石商店已刷新（本週期第 ' + gemShop().refreshCount + ' 次）', 'info');
       renderGems();
     });
+    var upgradeBtn = $id('shop-upgrade');
+    if (upgradeBtn) {
+      upgradeBtn.addEventListener('click', function () {
+        var err = upgradeGemShop();
+        if (err) blog('⚠️ 升級失敗：' + err, 'warn');
+        else blog('⬆️ 寶石商店升級至 Lv.' + gemShop().level, 'good');
+        renderGems();
+      });
+    }
   }
 
   // 日誌篩選

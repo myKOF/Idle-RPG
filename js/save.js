@@ -163,6 +163,10 @@ function migrateSave(data) {
   }
   
   mergeDefaults(data, def);
+  // 寶石商店等級相容：舊存檔沒有 level 時沿用 Lv.1，並限制在 1~20 級。
+  if (data.player && data.player.gemShop) {
+    data.player.gemShop.level = clamp(data.player.gemShop.level || 1, 1, GEM_SHOP_MAX_LEVEL);
+  }
   // 確保裝備槽位齊全
   SLOT_LIST.forEach(function (s) {
     if (data.equipment[s] === undefined) data.equipment[s] = null;

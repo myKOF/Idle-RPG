@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', function () {
   G = loaded || newGameState();
   markStatsDirty();
   initUI();
+  if (typeof initGM === 'function') initGM();
   initFieldPlayer();
 
   if (loaded) {

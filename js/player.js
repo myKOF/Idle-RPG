@@ -19,7 +19,7 @@ function newGameState() {
       dust: 0,                // 魔塵（神鑄材料）
       gems: gems,
       fusedGems: [],          // 融合寶石（雙屬性，個別實體）
-      gemShop: { items: [], refreshCount: 0, hourStart: Date.now() },
+      gemShop: { level: 1, items: [], refreshCount: 0, hourStart: Date.now() },
       books: books,
       invUpgrades: 0,
       // 技能：初始自帶 2 個 1 級技能；每升 1 級 +1 技能點

@@ -237,13 +237,15 @@ function fuseGemsV2(ref1, ref2) {
 /* ================ 寶石商店 ================ */
 function gemShop() {
   if (!G.player.gemShop) {
-    G.player.gemShop = { items: [], refreshCount: 0, hourStart: Date.now() };
+    G.player.gemShop = { level: 1, items: [], refreshCount: 0, hourStart: Date.now() };
   }
-  return G.player.gemShop;
+  var s = G.player.gemShop;
+  s.level = clamp(s.level || 1, 1, GEM_SHOP_MAX_LEVEL);
+  return s;
 }
 function shopHourlyReset() {
   var s = gemShop();
-  if (Date.now() - s.hourStart >= 3600 * 1000) {
+  if (Date.now() - s.hourStart >= 8 * 3600 * 1000) {
     s.refreshCount = 0;
     s.hourStart = Date.now();
     rollGemShop();
@@ -251,13 +253,17 @@ function shopHourlyReset() {
   }
 }
 function shopResetCountdown() { // 秒
-  return Math.max(0, Math.ceil((gemShop().hourStart + 3600 * 1000 - Date.now()) / 1000));
+  return Math.max(0, Math.ceil((gemShop().hourStart + 8 * 3600 * 1000 - Date.now()) / 1000));
 }
 function rollGemShop() {
   var s = gemShop();
   s.items = [];
-  for (var i = 0; i < GEM_SHOP_SIZE; i++) {
-    var lv = wpick(GEM_SHOP_TABLE.map(function (t) { return [t.lv, t.w]; }));
+  var level = s.level;
+  var countPairs = GEM_SHOP_COUNT_TABLE[level - 1] || GEM_SHOP_COUNT_TABLE[0];
+  var tierPairs = GEM_SHOP_TIER_TABLE[level - 1] || GEM_SHOP_TIER_TABLE[0];
+  var size = wpick(countPairs);
+  for (var i = 0; i < size; i++) {
+    var lv = wpick(tierPairs);
     s.items.push({ type: randomGemType(), lv: lv, sold: false });
   }
   UI.dirty.gems = true;
@@ -272,6 +278,19 @@ function refreshGemShop() {
   gemShop().refreshCount++;
   rollGemShop();
   UI.dirty.header = true;
+  return null;
+}
+// 升級寶石商店：扣除金幣後立即依新等級重刷商品
+function upgradeGemShop() {
+  var s = gemShop();
+  shopHourlyReset();
+  if (s.level >= GEM_SHOP_MAX_LEVEL) return '寶石商店已達最高等級';
+  var cost = gemShopUpgradeCost(s.level);
+  if (G.player.gold < cost) return '金幣不足（需 ' + fmt(cost) + '）';
+  G.player.gold -= cost;
+  s.level++;
+  rollGemShop();
+  UI.dirty.header = true; UI.dirty.gems = true;
   return null;
 }
 function buyShopGem(idx) {

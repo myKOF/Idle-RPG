@@ -752,6 +752,13 @@ function shopRefreshCost() {
   return GEM_SHOP_REFRESH_BASE + gemShop().refreshCount * GEM_SHOP_REFRESH_STEP;
 }
 
+// 寶石商店升級費用 = 10000 + 商店等級^3 × 4000000；Lv.20 已滿級
+function gemShopUpgradeCost(level) {
+  level = clamp(level || 1, 1, GEM_SHOP_MAX_LEVEL);
+  if (level >= GEM_SHOP_MAX_LEVEL) return 0;
+  return 10000 + Math.pow(level, 3) * 4000000;
+}
+
 /* ============================================================
    §9 技能
    ============================================================ */
