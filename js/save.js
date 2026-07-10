@@ -324,7 +324,7 @@ function idbGetDir(cb) {
 }
 
 // 開啟/連接存檔資料夾 → 寫出所有記錄 + 掃描匯入新檔案；cb(err, {wrote, imported, dirName})
-function openSaveFolder(cb) {
+function openSaveFolder(cb, forceOpen) {
   cb = cb || function () {};
   if (!window.showDirectoryPicker) {
     downloadAllSaves(); // 不支援 File System Access：改為逐檔下載到「下載」資料夾
@@ -332,24 +332,41 @@ function openSaveFolder(cb) {
     return;
   }
   idbGetDir(function (stored) {
-    var p = stored
-      ? stored.requestPermission({ mode: 'readwrite' }).then(function (perm) {
-          if (perm !== 'granted') throw new Error('repick');
-          return stored;
-        }).catch(function () { return window.showDirectoryPicker({ id: 'idle_rpg_saves', mode: 'readwrite' }); })
-      : window.showDirectoryPicker({ id: 'idle_rpg_saves', mode: 'readwrite' });
-    Promise.resolve(p).then(function (dir) {
+    var doSync = function(dir) {
       _saveDir = dir;
       idbSetDir(dir);
       var wroteN = 0;
-      // 主動開啟資料夾：先寫出全部記錄，再掃描匯入外部新檔（單次、無並發）
       return writeAllToFolder().then(function (w) { wroteN = w; return importUnknownFromFolder(); })
         .then(function (imp) { return { wrote: wroteN, imported: imp, dirName: _saveDir.name }; });
-    }).then(function (res) {
-      cb(null, res);
-    }).catch(function (e) {
-      cb('未選擇資料夾或無存取權限' + (e && e.name ? '（' + e.name + '）' : ''));
-    });
+    };
+
+    if (stored && !forceOpen) {
+      stored.requestPermission({ mode: 'readwrite' }).then(function (perm) {
+        if (perm !== 'granted') throw new Error('repick');
+        return stored;
+      }).catch(function () { return window.showDirectoryPicker({ id: 'idle_rpg_saves', mode: 'readwrite' }); })
+      .then(doSync).then(function(res){ cb(null, res); }).catch(function(e){ cb('未選擇資料夾或無存取權限' + (e && e.name ? '（' + e.name + '）' : '')); });
+    } else {
+      if (stored && forceOpen) {
+         // 先在背景嘗試同步，這樣跳出的視窗裡就能看到最新的檔案
+         stored.requestPermission({ mode: 'readwrite' }).then(function(perm) {
+            if (perm === 'granted') {
+               _saveDir = stored;
+               writeAllToFolder().then(function(){ importUnknownFromFolder(); });
+            }
+         }).catch(function(){});
+      }
+      window.showDirectoryPicker({ id: 'idle_rpg_saves', mode: 'readwrite' })
+        .then(doSync)
+        .then(function(res){ cb(null, res); })
+        .catch(function(e){
+           if (forceOpen && stored && e && e.name === 'AbortError') {
+               cb(null, { wrote: 0, imported: 0, dirName: stored.name, viewOnly: true });
+           } else {
+               cb('未選擇資料夾或無存取權限' + (e && e.name ? '（' + e.name + '）' : ''));
+           }
+        });
+    }
   });
 }
 

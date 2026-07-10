@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 /* ============ UI 渲染與互動 ============ */
 
 var UI = {
@@ -2590,6 +2590,13 @@ function initUI() {
     if (rec) {
       blog('💾 已建立存檔記錄：' + rec.fname, 'good');
       if (m) m.textContent = '💾 已建立存檔記錄：' + rec.fname;
+      openSaveFolder(function(err, res) {
+         if (err) {
+            blog('⚠️ 同步失敗：' + err, 'warn');
+         } else if (res && res.wrote !== undefined && !res.fallback && !res.viewOnly) {
+            blog('✅ 已同步資料夾「' + res.dirName + '」：寫出 ' + res.wrote + ' 個存檔', 'good');
+         }
+      }, false);
     } else {
       blog('⚠️ 存檔失敗（儲存空間可能已滿）', 'bad');
       if (m) m.textContent = '⚠️ 存檔失敗（儲存空間可能已滿）';
@@ -2601,14 +2608,25 @@ function initUI() {
     if (m) m.textContent = '⏳ 連接存檔資料夾中…（請在跳出的視窗選擇資料夾）';
     openSaveFolder(function (err, res) {
       var text;
-      if (err) text = '⚠️ ' + err;
+      if (err) {
+        if (err.indexOf('repick') > -1 || err.indexOf('AbortError') > -1) {
+           text = 'ℹ️ 已取消選擇資料夾';
+           blog('ℹ️ ' + text, 'info');
+           if (m) m.textContent = text;
+           return;
+        }
+        text = '⚠️ ' + err;
+      }
       else if (res.fallback) text = '📥 此瀏覽器不支援存檔資料夾，已改為下載 .json 存檔（見「下載」資料夾）';
+      else if (res.viewOnly) text = '✅ 已同步打開存檔資料夾「' + res.dirName + '」';
       else text = '✅ 已同步資料夾「' + res.dirName + '」：寫出 ' + res.wrote + ' 個存檔檔案' +
         (res.imported ? '、匯入 ' + res.imported + ' 個新存檔' : '') + '。可直接把資料夾中的 .json 檔傳給別人分享。';
-      if (m) m.textContent = text;
-      blog((err ? '⚠️ ' : '📂 ') + text, err ? 'warn' : 'good');
+      if (text) {
+          if (m) m.textContent = text;
+          if (!res || !res.viewOnly) blog((err ? '⚠️ ' : '📂 ') + text, err ? 'warn' : 'good');
+      }
       renderSaveList();
-    });
+    }, true);
   });
   $id('btn-restart').addEventListener('click', function () {
     showConfirmDialog('確定要重新開局嗎？將開一個全新角色從頭重玩。\n目前進度已保留在「⚡ 即時自動存檔（第 ' + (G.runId || 1) + ' 局）」，所有存檔記錄都不會刪除，隨時可以讀回來。', function () {

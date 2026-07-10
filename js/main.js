@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 /* ============ 遊戲入口 / 主迴圈 ============ */
 
 var TICK_MS = 100;
@@ -117,16 +117,26 @@ document.addEventListener('DOMContentLoaded', function () {
       openSaveFolder(function (err, res) {
         var text;
         if (err) {
+          if (err.indexOf('repick') > -1 || err.indexOf('AbortError') > -1) {
+             text = 'ℹ️ 已取消選擇資料夾';
+             blog('ℹ️ ' + text, 'info');
+             if (m) m.textContent = text;
+             return;
+          }
           text = '⚠️ ' + err;
+        } else if (res.viewOnly) {
+          text = '✅ 已同步打開存檔資料夾「' + res.dirName + '」';
+          var bn = document.getElementById('save-folder-banner');
+          if (bn) bn.style.display = 'none';
         } else {
           var bn = document.getElementById('save-folder-banner');
           if (bn) bn.style.display = 'none';
           text = '✅ 已連接「' + res.dirName + '」，之後每次存檔都會自動同步到這個資料夾！';
         }
         if (m) m.textContent = text;
-        blog('📂 ' + text, err ? 'warn' : 'good');
+        if (!res || !res.viewOnly) blog('📂 ' + text, err ? 'warn' : 'good');
         if (typeof renderSaveList === 'function') renderSaveList();
-      });
+      }, true);
     });
   }
 });
