@@ -32,6 +32,9 @@ test('神鑄使用可保存的鑄造狀態並由主迴圈完成結算', () => {
 
   assert.match(forgeJs, /f\.crafting\s*=/);
   assert.match(forgeJs, /function forgeTick\(/);
+  assert.match(forgeJs, /function doForge\(startedAt\)/);
+  assert.match(forgeJs, /while \(f\.crafting && catchUpRounds < 200\)/);
+  assert.match(forgeJs, /doForge\(endAt\)/);
   assert.match(mainJs, /forgeTick\(/);
   assert.match(uiJs, /function renderForgeProgress\(/);
   assert.match(uiJs, /forge-progress-countdown/);

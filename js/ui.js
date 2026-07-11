@@ -907,6 +907,9 @@ function forgeInventoryTab() {
 function renderForgeAutoMenu() {
   var menu = $id('forge-auto-menu');
   if (!menu) return;
+  // 重建前記住素材清單卷軸位置：自動鑄造運行中觸發的同步重繪不可把清單刷回頂部
+  var prevList = menu.querySelector('.fam-list');
+  var prevScrollTop = prevList ? prevList.scrollTop : 0;
   var invTab = forgeInventoryTab();
   menu.classList.toggle('fam-gem-mode', invTab === 'gems');
   var pick = UI.forgeAutoPick;
@@ -994,6 +997,29 @@ function renderForgeAutoMenu() {
       famList.style.height = '';
     }
   }
+  // 還原重建前的卷軸位置（clamp 交由瀏覽器處理，超出時自動停在最底）
+  var newList = menu.querySelector('.fam-list');
+  if (newList && prevScrollTop > 0) newList.scrollTop = prevScrollTop;
+}
+
+/* 點選素材時就地更新高亮與確定鈕，不重建選單（保留清單卷軸位置）。 */
+function famApplyPickHighlight(menu) {
+  var pick = UI.forgeAutoPick;
+  var opts = menu.querySelectorAll('.fam-opt');
+  for (var i = 0; i < opts.length; i++) {
+    var el = opts[i];
+    var isPicked = false;
+    if (pick) {
+      if (pick.kind === 'equip') {
+        isPicked = el.getAttribute('data-fam-equip') === String(pick.rarity);
+      } else {
+        isPicked = el.getAttribute('data-fam-gem') === pick.type + ':' + pick.level;
+      }
+    }
+    el.classList.toggle('picked', isPicked);
+  }
+  var confirmBtn = menu.querySelector('#fam-confirm');
+  if (confirmBtn) confirmBtn.disabled = !pick;
 }
 
 function renderForgeProgress() {
@@ -1053,14 +1079,18 @@ function renderForge() {
     var style = 'left:' + p.x + '%;top:' + p.y + '%;';
     if (it && it.kind === 'gem') {
       var gcol = GEM_TIER_COLORS[it.level] || '#f5c542';
-      h += '<div class="forge-slot filled" data-forge-slot="' + i + '" data-tip="' + esc(gemLabel(it.type, it.level)) + '（點擊取回）" ' +
+      var gdefS = GEM_TYPES[it.type];
+      var gvalS = gdefS.pct ? pctStr(gemStatValue(it.type, it.level)) : fmt(gemStatValue(it.type, it.level));
+      h += '<div class="forge-slot filled" data-forge-slot="' + i + '" data-tip="' +
+        esc(gemLabel(it.type, it.level) + '｜' + gdefS.statName.replace('%', '') + ' +' + gvalS + '｜點擊取回') + '" ' +
         'style="' + style + 'border-color:' + gcol + ';box-shadow:0 0 14px ' + gcol + 'aa, inset 0 0 10px ' + gcol + '55">' +
         '<span class="ic-emoji">' + GEM_TYPES[it.type].emoji + '</span><span class="ic-lv">' + it.level + '</span></div>';
     } else if (it) {
       var r = RARITIES[it.rarity];
       var info = SLOT_INFO[it.slot];
       var iconHtml = info.icon ? '<img src="images/' + info.icon + '" class="item-icon">' : '<span class="ic-emoji">' + info.emoji + '</span>';
-      h += '<div class="forge-slot filled" data-forge-slot="' + i + '" data-id="' + it.id + '" data-tip="' + esc(it.name) + '（點擊取回背包）" ' +
+      // 裝備槽不掛 data-tip：滑過改由 mouseover 委派顯示完整裝備詳情 tooltip
+      h += '<div class="forge-slot filled" data-forge-slot="' + i + '" data-id="' + it.id + '" ' +
         'style="' + style + 'border-color:' + r.color + ';box-shadow:0 0 14px ' + r.color + 'aa, inset 0 0 10px ' + r.color + '55">' +
         iconHtml + '<span class="ic-lv">' + it.level + '</span></div>';
     } else {
@@ -1545,11 +1575,12 @@ function showStatTooltip(title, desc, anchorEl) {
   tip.style.left = x + 'px';
   tip.style.top = y + 'px';
 }
-function showItemTooltip(it, anchorEl) {
+function showItemTooltip(it, anchorEl, opts) {
   var tip = $id('sk-tooltip');
   if (!tip) return;
   // 滑過提示為純資訊模式：不顯示洗煉與可能詞條說明按鈕（僅裝備詳情介面可操作）
   var h = itemDetailHTML(it, null, { showAffixReroll: false });
+  if (opts && opts.hint) h += '<div class="skt-hint">' + opts.hint + '</div>';
   tip.innerHTML = '<div style="padding: 6px; min-width: 220px;">' + h + '</div>';
   tip.style.display = 'block';
   var r = anchorEl.getBoundingClientRect();
@@ -2437,6 +2468,16 @@ function initUI() {
     var tipBtn = e.target.closest('[data-tip]');
     if (tipBtn) { showStatTooltip('', tipBtn.getAttribute('data-tip'), tipBtn); return; }
 
+    // 神鑄法陣裝備槽：顯示完整裝備詳情（寶石槽走上方 data-tip 分支）
+    var fSlotEl = e.target.closest('.forge-slot.filled[data-forge-slot]');
+    if (fSlotEl) {
+      var fSlotIt = forgeState().slots[parseInt(fSlotEl.getAttribute('data-forge-slot'), 10)];
+      if (fSlotIt && fSlotIt.kind !== 'gem') {
+        showItemTooltip(fSlotIt, fSlotEl, { hint: '點擊取回背包' });
+        return;
+      }
+    }
+
     var eqCell = e.target.closest('.item-cell[data-id]') || e.target.closest('.eq-slot.filled[data-id]');
     if (eqCell) {
       var it = findItemById(eqCell.getAttribute('data-id'));
@@ -2467,7 +2508,8 @@ function initUI() {
       e.target.closest('[data-tt-title]') ||
       e.target.closest('[data-tower-tip]') || e.target.closest('#btn-enemy-tip') ||
       e.target.closest('[data-tip]') || e.target.closest('.item-cell[data-id]') ||
-      e.target.closest('.eq-slot.filled[data-id]')) {
+      e.target.closest('.eq-slot.filled[data-id]') ||
+      e.target.closest('.forge-slot.filled[data-forge-slot]')) {
       hideTooltip();
     }
   });
@@ -2745,14 +2787,14 @@ function initUI() {
       var famOptE = e.target.closest('[data-fam-equip]');
       if (famOptE) {
         UI.forgeAutoPick = { kind: 'equip', rarity: parseInt(famOptE.getAttribute('data-fam-equip'), 10) };
-        renderForgeAutoMenu();
+        famApplyPickHighlight(famMenu);   // 就地更新高亮，不重建選單、不動卷軸位置
         return;
       }
       var famOptG = e.target.closest('[data-fam-gem]');
       if (famOptG) {
         var famG = famOptG.getAttribute('data-fam-gem').split(':');
         UI.forgeAutoPick = { kind: 'gem', type: famG[0], level: parseInt(famG[1], 10) };
-        renderForgeAutoMenu();
+        famApplyPickHighlight(famMenu);
         return;
       }
       if (e.target.closest('#fam-confirm')) {

@@ -83,7 +83,7 @@ var ACCESSORY_SLOTS = ['ring', 'amulet'];
    六芒星法陣放入 6 件「同品質」裝備（限傳說/神話/創世）鑄造下一品質裝備；
    失敗隨機消耗 2 件、其餘退回背包。魔塵每個 +5% 成功率，最多 6 個。 */
 var GODFORGED_IDX = 8;                       // 神鑄創世稀有度索引
-var FORGE_UNLOCK_LEVEL = 1000;               // 神鑄系統開放等級（未達前頁籤隱藏）
+var FORGE_UNLOCK_LEVEL = 1000;               // 神鑄系統 0 轉開放等級；解鎖後永久保留
 var FORGE_MIN_RARITY = 5;                    // 可入爐最低品質（傳說）
 var FORGE_SLOTS = 6;                         // 六芒星槽位數
 var FORGE_BASE_RATE = { 5: 55, 6: 40, 7: 25 };                  // 基礎成功率 %（依素材品質）

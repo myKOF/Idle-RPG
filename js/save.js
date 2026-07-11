@@ -282,6 +282,7 @@ function migrateSave(data) {
   var hadZone = data.stage && data.stage.zone !== undefined; // 需在 mergeDefaults 前判斷
   var hadSkillDmgV2 = !!data.skillDmgV2;                     // 需在 mergeDefaults 前判斷（merge 會補 true）
   var hadSpecialBuffTrimV1 = !!data.specialBuffTrimV1;        // 一次性移除特殊技能第二增益
+  var hadForgeUnlockNotice = !!(data.forge && data.forge.unlockNotified);
   var def = newGameState();
   
   // 防止玩家手動降級（刪除）的初始技能，在讀檔時被 mergeDefaults 誤判為缺漏而自動補回 1 級
@@ -291,6 +292,8 @@ function migrateSave(data) {
   }
   
   mergeDefaults(data, def);
+  // 神鑄永久開放相容：舊存檔只有 unlockNotified，合併預設後補回永久解鎖旗標。
+  if (hadForgeUnlockNotice && data.forge) data.forge.unlocked = true;
   // 轉生欄位相容：舊存檔視為 0 轉；等級上限固定為 9999。
   data.player.reincarnations = clamp(data.player.reincarnations || 0, 0, REINCARNATION_MAX);
   data.player.reincarnationTalentPoints = Math.max(0, Math.floor(Number(data.player.reincarnationTalentPoints) || 0));

@@ -26,6 +26,8 @@ function forgeState() {
     delete G.forge.dust;
   }
   if (!G.forge.log) G.forge.log = [];
+  // 永久開放旗標：舊存檔已有開放通知時，視為已完成解鎖。
+  if (!('unlocked' in G.forge)) G.forge.unlocked = !!G.forge.unlockNotified;
   if (!('autoFill' in G.forge)) G.forge.autoFill = null;
   if (!('autoForge' in G.forge)) G.forge.autoForge = false;
   if (!('crafting' in G.forge)) G.forge.crafting = null;
@@ -33,9 +35,16 @@ function forgeState() {
   return G.forge;
 }
 
-// 神鑄系統是否已開放（角色等級門檻，未達前頁籤隱藏）
+// 神鑄系統是否已開放：只允許 0 轉達到 1000 級解鎖，解鎖後永久保留。
 function forgeUnlocked() {
-  return G && G.player && G.player.level >= FORGE_UNLOCK_LEVEL;
+  if (!G || !G.player) return false;
+  var f = forgeState();
+  if (f.unlocked) return true;
+  if (reincarnationCount() === 0 && G.player.level >= FORGE_UNLOCK_LEVEL) {
+    f.unlocked = true;
+    return true;
+  }
+  return false;
 }
 
 // 法陣內部紀錄（顯示於六芒星左側，保留最近 18 筆）
@@ -355,7 +364,7 @@ function forgeAutoRefill() {
 }
 
 // 開始鑄造；回傳 null=已進入等待，否則錯誤訊息。
-function doForge() {
+function doForge(startedAt) {
   var f = forgeState();
   if (f.crafting) return '目前已有鑄造進行中';
   var mode = forgeMode();
@@ -372,7 +381,7 @@ function doForge() {
   f.crafting = {
     mode: mode,
     key: key,
-    startedAt: Date.now(),
+    startedAt: startedAt === undefined ? Date.now() : startedAt,
     durationMs: seconds * 1000,
     rate: info.total,
     cost: info.cost,
@@ -469,33 +478,35 @@ function resolveForge(crafting) {
 // 主迴圈中的神鑄計時器：到期才結算，並在自動鑄造模式下接續下一輪。
 function forgeTick(now) {
   var f = forgeState();
-  var c = f.crafting;
-  if (!c) return;
-  var current = now || Date.now();
-  var endAt = Number(c.startedAt) + Number(c.durationMs);
-  if (!isFinite(endAt) || current < endAt) return;
-  f.crafting = null;
-  var err = resolveForge(c);
-  if (err) {
-    f.autoForge = false;
-    forgeLog('鑄造停止：' + err, 'bad');
-    blog('⚠️ 神鑄：' + err, 'warn');
-    UI.dirty.forge = true;
-    return;
-  }
-  if (f.autoForge) {
+  var current = now === undefined ? Date.now() : now;
+  var catchUpRounds = 0;
+  while (f.crafting && catchUpRounds < 200) {
+    var c = f.crafting;
+    var endAt = Number(c.startedAt) + Number(c.durationMs);
+    if (!isFinite(endAt) || current < endAt) break;
+    f.crafting = null;
+    var err = resolveForge(c);
+    if (err) {
+      f.autoForge = false;
+      forgeLog('鑄造停止：' + err, 'bad');
+      blog('⚠️ 神鑄：' + err, 'warn');
+      break;
+    }
+    catchUpRounds++;
+    if (!f.autoForge) break;
     if (forgeItemCount() < FORGE_SLOTS) {
       f.autoForge = false;
       forgeLog('自動鑄造停止：材料不足', 'bad');
       blog('🔁 自動鑄造已停止：材料不足', 'warn');
-    } else {
-      var nextErr = doForge();
-      if (nextErr) {
-        f.autoForge = false;
-        forgeLog('自動鑄造停止：' + nextErr, 'bad');
-        blog('🔁 自動鑄造已停止：' + nextErr, 'warn');
-      }
+      break;
+    }
+    var nextErr = doForge(endAt);
+    if (nextErr) {
+      f.autoForge = false;
+      forgeLog('自動鑄造停止：' + nextErr, 'bad');
+      blog('🔁 自動鑄造已停止：' + nextErr, 'warn');
+      break;
     }
   }
-  UI.dirty.forge = true;
+  if (catchUpRounds > 0) UI.dirty.forge = true;
 }
