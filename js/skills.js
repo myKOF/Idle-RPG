@@ -483,7 +483,7 @@ function castSkill(pEnt, target, id, lv, floatSel) {
   var st = getStats();
   var targets = Array.isArray(target) ? target.filter(function (ent) { return ent && ent.hp > 0; }) : (target ? [target] : []);
   var targetCount = Math.max(1, targets.length);
-  pEnt.mp -= sk.cost;
+  pEnt.mp -= skillManaCost(sk, lv);
   if (!pEnt.skillCds) pEnt.skillCds = {};
   pEnt.skillCds[id] = skillCdFor(sk);
   pEnt.skillGcd = SKILL_GLOBAL_COOLDOWN;
@@ -646,7 +646,7 @@ function pickAndCastSkill(pEnt, target, floatSel) {
     var lv = skillLevel(id);
     if (!sk || !lv) continue;
     if ((pEnt.skillCds[id] || 0) > 0) continue;
-    if (pEnt.mp < sk.cost) continue;
+    if (pEnt.mp < skillManaCost(sk, lv)) continue;
     if (!skillConditionOk(sk, effectiveFx(id, sk, lv), pEnt, target, st)) continue;
     return castSkill(pEnt, target, id, lv, floatSel);
   }
@@ -826,7 +826,7 @@ function fuseSkills(ids) {
     }
   }
 
-  var cost = Math.round(comps.reduce(function (s, c) { return s + (c.def.cost || 0); }, 0) * FUSION_COST_FACTOR);
+  var cost = Math.round(comps.reduce(function (s, c) { return s + (c.def.cost || 0); }, 0));
   var cd = Math.round(Math.max.apply(null, comps.map(function (c) { return c.def.cd || 8; })) * FUSION_CD_FACTOR);
   var def = {
     id: 'fusion_' + uid(), name: fusionName(comps, fx), emoji: '🧬', cat: 'fusion',

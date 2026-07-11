@@ -8,6 +8,7 @@ var _lastTickAt = Date.now();
 
 function stepGame(dt) {
   GT += dt;
+  if (typeof forgeTick === 'function') forgeTick(Date.now());
   fieldTick(dt);
   towerTick(dt);
   factoryTick(dt);

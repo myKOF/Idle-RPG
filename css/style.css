@@ -13,12 +13,19 @@
   --border: #52402a;
   --border-light: #7a6344;
   --text: #e0d0b0;
-  --dim: #8b7961;
+  --dim: #9c8a70;
   --accent: #c4a464;
   --good: #5f9e53;
   --bad: #b22222;
   --warn: #d49a37;
   --info: #4682b4;
+  /* 全站主字型：微軟雅黑優先（最接近參考遊戲的粗壯黑體），繁體正黑/蘋方為後備 */
+  --font-main: "Microsoft YaHei", "微軟雅黑", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", "Segoe UI", sans-serif;
+  /* 詞條分類色（裝備詳情/滑過提示）：基礎紫/進攻粉/防禦青/功能綠 */
+  --afx-base: #c9a0ff;
+  --afx-off: #ff8fb8;
+  --afx-def: #7fdcf5;
+  --afx-util: #9ae6a0;
 }
 
 html,
@@ -52,9 +59,9 @@ body {
   background: url('../images/diablo_main_bg.png') no-repeat center center fixed, #0a0a0a;
   background-size: cover;
   color: var(--text);
-  font-family: Palatino, "Palatino Linotype", "Book Antiqua", "Microsoft JhengHei", serif;
-  font-size: 14px;
-  line-height: 1.5;
+  font-family: var(--font-main);
+  font-size: 15px;
+  line-height: 1.55;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 
@@ -432,7 +439,7 @@ body {
   font-weight: bold;
   color: var(--accent);
   margin-bottom: 8px;
-  font-size: 15px;
+  font-size: 16px;
   border-bottom: 1px solid var(--border);
   padding-bottom: 4px;
   text-shadow: 1px 1px 2px #000;
@@ -447,9 +454,10 @@ body {
 
 .hint {
   color: var(--dim);
-  font-size: 13px;
+  font-size: 13.5px;
   margin-top: 6px;
-  font-style: italic;
+  /* 中文假斜體模糊難讀，取消斜體 */
+  font-style: normal;
 }
 
 .dim-text {
@@ -842,7 +850,7 @@ textarea#save-io {
 
 .log-title {
   color: var(--dim);
-  font-size: 12px;
+  font-size: 13px;
   margin: 0;
 }
 
@@ -866,8 +874,8 @@ textarea#save-io {
   min-height: 190px;
   overflow-y: auto;
   padding: 8px 10px;
-  font-size: 13px;
-  font-family: Palatino, serif;
+  font-size: 14px;
+  font-family: var(--font-main);
   box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.9);
 }
 
@@ -1072,13 +1080,14 @@ textarea#save-io {
 
 .equip-material-title {
   color: var(--accent);
-  font-size: 12px;
+  font-size: 13.5px;
+  font-weight: bold;
   margin-bottom: 5px;
 }
 
 .equip-material-subtitle {
   color: var(--dim);
-  font-size: 11px;
+  font-size: 12.5px;
   margin: 7px 0 4px;
 }
 
@@ -1131,7 +1140,7 @@ textarea#save-io {
 
 .equip-material-empty {
   color: var(--dim);
-  font-size: 11px;
+  font-size: 12.5px;
 }
 
 /* 新版底圖的內襯較淺；已裝備欄位加深並略放大圖示，避免淺色底從圖示四周透出。 */
@@ -1326,7 +1335,7 @@ textarea#save-io {
   position: absolute;
   top: 1px;
   right: 3px;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--accent);
   font-weight: bold;
 }
@@ -1359,8 +1368,8 @@ textarea#save-io {
   left: 0;
   right: 0;
   text-align: center;
-  font-size: 9px;
-  color: var(--dim);
+  font-size: 11px;
+  color: var(--text);
   background: rgba(0, 0, 0, .35);
   border-radius: 0 0 6px 6px;
 }
@@ -1438,7 +1447,7 @@ textarea#save-io {
 
 /* 裝備詳情 */
 .it-name {
-  font-size: 15px;
+  font-size: 19px;
   font-weight: bold;
   position: relative;
 }
@@ -1449,24 +1458,31 @@ textarea#save-io {
 
 .it-syn {
   color: #c084fc;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .it-sub {
   color: var(--dim);
-  font-size: 12px;
-  margin-bottom: 6px;
+  font-size: 13px;
+  margin-bottom: 8px;
 }
 
 .it-affix {
-  font-size: 13px;
+  font-size: 15px;
+  font-weight: bold;   /* 比照參考遊戲：詞條行加粗 */
   color: var(--text);
 }
+
+/* 詞條分類分色（比照參考遊戲：類別一眼可辨，數值同色） */
+.it-affix.afx-base { color: var(--afx-base); }
+.it-affix.afx-off  { color: var(--afx-off); }
+.it-affix.afx-def  { color: var(--afx-def); }
+.it-affix.afx-util { color: var(--afx-util); }
 
 .it-affixes {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   width: 100%;
 }
 
@@ -1508,22 +1524,25 @@ textarea#save-io {
   font-weight: normal;
 }
 
+/* 特殊被動（【破甲】等）：橘色粗體段落，比照參考遊戲的特效文字 */
 .it-passive {
-  margin-top: 6px;
-  color: var(--warn);
-  font-size: 12.5px;
+  margin-top: 8px;
+  color: #ffa940;
+  font-size: 15px;
+  font-weight: bold;
+  line-height: 1.45;
 }
 
 .it-enchant {
   margin-top: 4px;
-  color: var(--info);
-  font-size: 12.5px;
+  color: #6fb5e8;
+  font-size: 14px;
 }
 
 .it-score {
   margin-top: 6px;
   color: var(--dim);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .detail-actions {
@@ -1573,7 +1592,7 @@ textarea#save-io {
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 8px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: var(--text);
   font-weight: normal;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
@@ -1956,7 +1975,7 @@ textarea#save-io {
 
 .socket {
   display: inline-block;
-  font-size: 12px;
+  font-size: 13.5px;
   padding: 2px 8px;
   border-radius: 5px;
   border: 1px dashed var(--border);
@@ -2511,27 +2530,27 @@ textarea#save-io {
 #sk-tooltip {
   position: fixed;
   z-index: 95;
-  max-width: 300px;
+  max-width: 400px;
   pointer-events: none;
-  background: url('../images/diablo_panel_tex.png') repeat, rgba(0, 0, 0, 0.9);
+  background: url('../images/diablo_panel_tex.png') repeat, rgba(0, 0, 0, 0.92);
   background-blend-mode: multiply;
   border: 2px solid var(--accent);
   border-radius: 2px;
-  padding: 10px 12px;
-  font-size: 13px;
+  padding: 12px 14px;
+  font-size: 14.5px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, .9);
-  font-family: Palatino, serif;
+  font-family: var(--font-main);
 }
 
 .skt-name {
   font-weight: bold;
   color: var(--accent);
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .skt-meta {
   color: var(--info);
-  font-size: 11px;
+  font-size: 12.5px;
   margin: 2px 0;
 }
 
@@ -2569,7 +2588,7 @@ textarea#save-io {
 
 .skt-hint {
   color: var(--dim);
-  font-size: 10.5px;
+  font-size: 12px;
   margin-top: 4px;
   border-top: 1px dashed var(--border);
   padding-top: 3px;
@@ -3300,6 +3319,131 @@ textarea#save-io {
   filter: brightness(1.1);
 }
 
+/* ---- 神鑄自動放入選單 ---- */
+.forge-auto-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.forge-auto-btn.afk-on {
+  background: linear-gradient(180deg, #7df9a8, #34d399);
+  border-color: #0f7a4d;
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.5);
+}
+
+.forge-auto-menu {
+  position: absolute;
+  right: calc(100% + 10px);
+  bottom: 0;              /* 底部對齊按鈕、往上展開，避免超出法陣下緣被切掉 */
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  width: 400px;
+  max-width: calc(100vw - 32px);
+  max-height: 400px;
+  overflow: hidden;       /* 只有素材清單捲動，底部操作列固定常駐 */
+  box-sizing: border-box;
+  background: url('../images/diablo_panel_tex.png') repeat, rgba(10, 7, 4, 0.96);
+  background-blend-mode: multiply;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  padding: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .9);
+}
+
+.fam-title {
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 14.5px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+}
+
+.fam-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: scroll;       /* 固定保留捲軸欄位，避免清單高度變動 */
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-right: 2px;
+}
+
+/* 寶石模式：以零高度為 flex 基準，只占用標題與固定操作列之間的剩餘空間。 */
+.forge-auto-menu.fam-gem-mode .fam-list {
+  flex: 0 0 auto;
+}
+
+.fam-opt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14.5px;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.fam-opt > span:first-child {
+  flex: 0 0 auto;
+}
+
+.fam-opt > span:nth-child(2):not(.fam-cnt) {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.fam-opt > span:nth-child(2):not(.fam-cnt) + .fam-cnt {
+  margin-left: auto;
+}
+
+.fam-opt:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.fam-opt.picked {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* 數量不足仍整行可點選（按確定時才提示不足），僅以半透明提示 */
+.fam-opt.fam-dim {
+  opacity: .55;
+}
+
+.fam-cnt {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--dim);
+  font-size: 12.5px;
+  font-weight: normal;
+  white-space: nowrap;
+}
+
+.fam-foot {
+  display: flex;
+  flex: 0 0 auto;
+  min-height: 38px;
+  gap: 6px;
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.fam-empty {
+  color: var(--dim);
+  font-size: 13px;
+  padding: 6px 2px;
+}
+
 .forge-head {
   display: flex;
   align-items: center;
@@ -3318,6 +3462,96 @@ textarea#save-io {
   align-items: center;
   gap: 14px;
   margin: 8px 0 4px;
+  flex-wrap: wrap;
+}
+
+/* 神鑄控制項使用可見的自訂 checkbox，避免以按鈕或文字 emoji 模擬勾選。 */
+.forge-foot .chk {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.forge-foot .chk input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  opacity: 1;
+  cursor: pointer;
+  border: 1px solid #9b7b30;
+  border-radius: 3px;
+  background: rgba(10, 8, 4, 0.9);
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.8);
+}
+
+.forge-foot .chk input:checked {
+  border-color: #0f7a4d;
+  background: #34d399;
+  box-shadow: 0 0 6px rgba(52, 211, 153, 0.55);
+}
+
+.forge-foot .chk input:checked::after {
+  content: '✓';
+  display: block;
+  color: #082516;
+  font-size: 15px;
+  font-weight: bold;
+  line-height: 16px;
+  text-align: center;
+}
+
+.forge-foot .chk input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.forge-foot .chk:focus-within {
+  color: var(--accent);
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.forge-foot .chk.is-active {
+  color: var(--good);
+}
+
+.forge-progress {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: rgba(20, 12, 5, 0.88);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7);
+}
+
+.forge-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #ffd84d;
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.forge-progress-track {
+  height: 12px;
+  overflow: hidden;
+  border: 1px solid #7a5b20;
+  border-radius: 3px;
+  background: #170e08;
+}
+
+#forge-progress-fill {
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #fde047);
+  box-shadow: 0 0 8px rgba(253, 224, 71, 0.8);
+  transition: width 0.15s linear;
 }
 
 #forge-inventory-grid {
@@ -3378,7 +3612,7 @@ textarea#save-io {
   border-radius: 6px;
   background: rgba(184, 134, 11, 0.12);
   color: #ffd700;
-  font-size: 13px;
+  font-size: 14.5px;
   box-shadow: inset 0 0 8px rgba(255, 215, 0, 0.15);
 }
 

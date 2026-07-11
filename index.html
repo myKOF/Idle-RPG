@@ -14,16 +14,16 @@
   <header id="topbar">
     <div class="brand">⚔️ 無限征途<span class="brand-sub">合成之巔</span></div>
     <div id="res-bar">
-      <span class="res" title="金幣"><img src="images/icon_gold.png" class="res-icon" alt="Gold"> <b
+      <span class="res" data-tt-title="金幣" data-tt-desc="目前持有的金幣"><img src="images/icon_gold.png" class="res-icon" alt="Gold"> <b
           id="r-gold">0</b></span>
-      <span class="res" title="裝備碎片"><img src="images/icon_scrap.png" class="res-icon" alt="Scrap"> <b
+      <span class="res" data-tt-title="裝備碎片" data-tt-desc="目前持有的裝備碎片"><img src="images/icon_scrap.png" class="res-icon" alt="Scrap"> <b
           id="r-scrap">0</b></span>
-      <span class="res" title="附魔精華"><img src="images/icon_essence.png" class="res-icon" alt="Essence"> <b
+      <span class="res" data-tt-title="附魔精華" data-tt-desc="目前持有的附魔精華"><img src="images/icon_essence.png" class="res-icon" alt="Essence"> <b
           id="r-essence">0</b></span>
-      <span class="res" title="魔塵（神鑄材料，可提升鑄造成功率）">💫 <b id="r-dust">0</b></span>
-      <span class="res" title="寶石"><img src="images/icon_gems.png" class="res-icon" alt="Gems"> <b
+      <span class="res" data-tt-title="魔塵" data-tt-desc="神鑄材料，可提升鑄造成功率">💫 <b id="r-dust">0</b></span>
+      <span class="res" data-tt-title="寶石" data-tt-desc="目前持有的寶石"><img src="images/icon_gems.png" class="res-icon" alt="Gems"> <b
           id="r-gems">0</b></span>
-      <span class="res" title="附魔書"><img src="images/icon_books.png" class="res-icon" alt="Books"> <b
+      <span class="res" data-tt-title="附魔書" data-tt-desc="目前持有的附魔書"><img src="images/icon_books.png" class="res-icon" alt="Books"> <b
           id="r-books">0</b></span>
     </div>
   </header>
@@ -288,12 +288,24 @@
               <div id="forge-hex"></div>
               <div class="forge-actions">
                 <button id="forge-unload" class="btn forge-btn">全卸下</button>
+                <div class="forge-auto-wrap">
+                  <button id="forge-autofill" class="btn forge-btn forge-auto-btn">自動放入</button>
+                  <div id="forge-auto-menu" class="forge-auto-menu" style="display:none"></div>
+                </div>
                 <button id="forge-go" class="btn forge-btn">鑄造</button>
               </div>
             </div>
             <div class="forge-foot">
-              <label class="chk"><input type="checkbox" id="forge-autodust"> ✅ 自動使用魔塵</label>
+              <label class="chk"><input type="checkbox" id="forge-autodust"> 自動使用魔塵</label>
+              <label class="chk"><input type="checkbox" id="forge-autoforge"> 自動鑄造</label>
               <span id="forge-dust-own" class="dim-text"></span>
+            </div>
+            <div id="forge-progress" class="forge-progress" style="display:none">
+              <div class="forge-progress-head">
+                <span id="forge-progress-status">鑄造中....</span>
+                <span id="forge-progress-countdown">0.0 秒</span>
+              </div>
+              <div class="forge-progress-track"><div id="forge-progress-fill"></div></div>
             </div>
           </div>
           <div id="forge-inv-box" class="equip-section-box">

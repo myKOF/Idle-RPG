@@ -262,10 +262,17 @@ function elementalResistanceMultiplier(resist, element) {
   return 1 - clamp(value, 0, 75) / 100;
 }
 
-// 全局減傷只在有該詞綴時啟用；沒有詞綴時維持原有傷害流程。
-function globalDamageMultiplier(total) {
+// 全局減傷：減傷率 = min(85%, 全局減傷總合 /（全局減傷總合 + 20000）)，上限 85%。
+// globalDamageReduction 回傳減傷率（0~0.85）；globalDamageMultiplier 回傳套用後的
+// 剩餘傷害倍率 = 1 − 減傷率。只在有該詞綴（total>0）時啟用，否則維持原傷害（倍率 1）。
+var GLOBAL_DMG_RED_CAP = 85;   // 全局減傷上限（%）
+function globalDamageReduction(total) {
   total = Number(total) || 0;
-  return total > 0 ? total / (total + 20000) : 1;
+  if (total <= 0) return 0;
+  return Math.min(GLOBAL_DMG_RED_CAP / 100, total / (total + 20000));
+}
+function globalDamageMultiplier(total) {
+  return 1 - globalDamageReduction(total);
 }
 
 var SLOW_ASPD_FACTOR = 0.7;   // 減速狀態：攻速 -30%（攻擊冷卻累積 ×0.7）
@@ -833,13 +840,33 @@ function skillMaxLv(def) {
 function skillValue(sk, lv) { return (sk.fx.base || 0) + (sk.fx.per || 0) * (lv - 1); }
 // 實際冷卻 = 技能冷卻 × (1 - 冷卻縮減%)
 function skillCdFor(sk) { return sk.cd * (1 - getStats().cdr / 100); }
+// 技能基礎法力消耗：融合技能取所有素材技能的原始消耗總和。
+function skillBaseManaCost(def) {
+  if (!def) return 0;
+  if (def.cat === 'fusion' && Array.isArray(def.components)) {
+    var total = 0, found = 0;
+    for (var i = 0; i < def.components.length; i++) {
+      var component = (typeof SKILLS !== 'undefined') ? SKILLS[def.components[i]] : null;
+      if (!component) continue;
+      total += Math.max(0, Number(component.cost) || 0);
+      found++;
+    }
+    if (found) return total;
+  }
+  return Math.max(0, Number(def.cost) || 0);
+}
+// 實際法力消耗 = 基礎消耗 ×（1 + 10% ×（技能等級 - 1））；非複利。
+function skillManaCost(def, level) {
+  if (!def || def.cat === 'passive') return 0;
+  var lv = Math.max(1, Number(level) || 1);
+  return Math.max(0, Math.round(skillBaseManaCost(def) * (1 + 0.1 * (lv - 1))));
+}
 // buff/heal 等 {base,per} 縮放通用式 = base + per × (等級-1)
 function scaleAt(def, lv) { return def.base + def.per * (lv - 1); }
 
 /* ---- 技能融合參數 ---- */
 var FUSE_FACTOR = 0.75;           // 素材效果繼承比例（傷害/元素占比等 ×0.75 後合併；2026-07-09 由 0.6 上調，融合技傷害最高可達舊版 +300%）
 var FUSION_MUTATION_CHANCE = 45;  // 變異基礎機率 %（實際 = 45 + 幸運值/3）
-var FUSION_COST_FACTOR = 0.65;    // 融合技 MP 消耗 = 素材消耗加總 × 0.65
 var FUSION_CD_FACTOR = 1.25;      // 融合技冷卻 = 素材最長冷卻 × 1.25
 
 // 融合變異觸發率 = 基礎 45% + 幸運值/3

@@ -56,10 +56,11 @@ function newGameState() {
       stats: { salvaged: 0, extracted: 0, synthesized: 0, enchanted: 0, upgraded: 0, upgradeFailed: 0, mutated: 0 }
     },
     tower: { highest: 0, active: false },
-    forge: {  // 神鑄系統：六芒星槽位 / 六格魔塵符位 / 自動魔塵 / 上次產物 / 法陣紀錄 / 開放通知旗標
+    forge: {  // 神鑄系統：六芒星槽位 / 六格魔塵符位 / 自動魔塵 / 自動鑄造 / 等待狀態 / 上次產物 / 法陣紀錄
       slots: [null, null, null, null, null, null],
       dustSlots: [false, false, false, false, false, false],
-      autoDust: true, result: null, log: [], unlockNotified: false
+      autoDust: true, result: null, log: [], unlockNotified: false,
+      autoFill: null, autoForge: false, crafting: null
     },
     settings: { compareEq: false },
     firstRunAt: Date.now()

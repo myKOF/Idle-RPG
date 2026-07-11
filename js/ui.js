@@ -147,6 +147,17 @@ function applyReincarnationTitleClass(el, count) {
 
 function renderHeader() {
   var p = G.player, st = getStats();
+  function updateResourceTip(id, title, desc) {
+    var valueEl = $id(id);
+    if (!valueEl || !valueEl.parentNode) return;
+    valueEl.parentNode.setAttribute('data-tt-title', title);
+    valueEl.parentNode.setAttribute('data-tt-desc', desc);
+    valueEl.parentNode.removeAttribute('title');
+  }
+  updateResourceTip('r-gold', '金幣', '目前持有：' + fmt(p.gold));
+  updateResourceTip('r-scrap', '裝備碎片', '目前持有：' + fmt(p.scrap));
+  updateResourceTip('r-essence', '附魔精華', '目前持有：' + fmt(p.essence));
+  updateResourceTip('r-dust', '魔塵', '神鑄材料，可提升鑄造成功率。｜目前持有：' + fmt(p.dust || 0));
   $id('r-gold').textContent = fmt(p.gold);
   $id('r-scrap').textContent = fmt(p.scrap);
   $id('r-essence').textContent = fmt(p.essence);
@@ -161,14 +172,14 @@ function renderHeader() {
     if (tn) gemTip.push(GEM_TYPES[gt].emoji + GEM_TYPES[gt].name + ' x' + tn);
   }
   $id('r-gems').textContent = fmt(totalGemsAll());
-  $id('r-gems').parentNode.title = gemTip.join('、') || '尚無寶石';
+  updateResourceTip('r-gems', '寶石', gemTip.join('、') || '尚無寶石');
   var bookTotal = 0, bookTip = [];
   for (var bk in p.books) {
     bookTotal += p.books[bk];
     if (p.books[bk]) bookTip.push(ENCHANTS[bk].name + ' x' + p.books[bk]);
   }
   $id('r-books').textContent = fmt(bookTotal);
-  $id('r-books').parentNode.title = bookTip.join('、') || '尚無附魔書';
+  updateResourceTip('r-books', '附魔書', bookTip.join('、') || '尚無附魔書');
 
   $id('toggle-compare').checked = !!G.settings.compareEq;
   $id('p-level').textContent = 'Lv.' + p.level;
@@ -190,11 +201,14 @@ function renderHeader() {
     reincBtn.setAttribute('data-tip', reinc >= REINCARNATION_MAX
       ? '已達最高 ' + REINCARNATION_MAX + ' 轉'
       : (canReincarnate ? '目前可進行轉生' : '等級達到 ' + REINCARNATION_LEVEL + ' 級可使用'));
-    reincBtn.title = reincBtn.getAttribute('data-tip');
+    reincBtn.removeAttribute('title');
   }
   var need = xpForLevel(p.level);
   $id('xp-fill').style.width = clamp(p.xp / need * 100, 0, 100) + '%';
-  $id('xp-bar').title = '經驗 ' + fmt(p.xp) + ' / ' + fmt(need);
+  var xpBar = $id('xp-bar');
+  xpBar.setAttribute('data-tt-title', '角色經驗');
+  xpBar.setAttribute('data-tt-desc', '當前經驗值：' + fmt(p.xp) + ' / 升級經驗值：' + fmt(need));
+  xpBar.removeAttribute('title');
 
   renderAttrPanel(st);
 
@@ -289,7 +303,8 @@ function renderMpSkill(pEnt, prefix) {
       var sk = skillDef(lo[i]);
       if (!sk) continue;
       var cd = (pEnt.skillCds && pEnt.skillCds[lo[i]]) || 0;
-      arr.push({ sk: sk, cd: cd, cost: sk.cost || 0 });
+      var lv = skillLevel(lo[i]);
+      arr.push({ sk: sk, lv: lv, cd: cd, cost: skillManaCost(sk, lv) });
     }
 
     arr.sort(function (a, b) {
@@ -850,10 +865,123 @@ var FORGE_DUST_POS = [
   { x: 50, y: 93 }, { x: 29.5, y: 71.5 }, { x: 29.5, y: 28.5 }
 ];
 
+/* 神鑄「自動放入」選單：依目前背包切頁列出可選素材。
+   裝備頁＝三種品質（品質色字）；寶石頁＝所有持有的五～九階寶石（emoji 小圖示＋屬性）。
+   持有不足 6 者半透明不可選；UI.forgeAutoPick 為選單中的暫選項。 */
+function renderForgeAutoMenu() {
+  var menu = $id('forge-auto-menu');
+  if (!menu) return;
+  var invTab = UI.forgeInvTab || 'items';
+  menu.classList.toggle('fam-gem-mode', invTab === 'gems');
+  var pick = UI.forgeAutoPick;
+  var title = '';
+  var rows = '';
+  if (invTab === 'gems') {
+    title = '💎 自動放入寶石（五～九階）';
+    var gemOptions = [];
+    for (var lv = GEM_FORGE_MAX_LEVEL - 1; lv >= GEM_MAX_LEVEL; lv--) {
+      for (var t in GEM_TYPES) {
+        var n = gemCount(t, lv);
+        if (!n) continue;
+        gemOptions.push({ type: t, level: lv, count: n, canForge: n >= FORGE_SLOTS });
+      }
+    }
+    // 可直接放滿六個鑄造槽的寶石優先，接著依階級由高到低排列。
+    gemOptions.sort(function (a, b) {
+      return b.canForge - a.canForge || b.level - a.level || String(a.type).localeCompare(String(b.type));
+    });
+    for (var gi = 0; gi < gemOptions.length; gi++) {
+      var gem = gemOptions[gi];
+      var gd = GEM_TYPES[gem.type];
+      var val = gd.pct ? pctStr(gemStatValue(gem.type, gem.level)) : fmt(gemStatValue(gem.type, gem.level));
+      var gPicked = pick && pick.kind === 'gem' && pick.type === gem.type && pick.level === gem.level;
+      var col = GEM_TIER_COLORS[gem.level] || '#f5c542';
+      rows += '<div class="fam-opt' + (gem.canForge ? '' : ' fam-dim') + (gPicked ? ' picked' : '') + '"' +
+        ' data-fam-gem="' + gem.type + ':' + gem.level + '"' +
+        ' style="color:' + col + '">' +
+        '<span>' + gd.emoji + '</span>' +
+        '<span>' + esc(GEM_NAMES[gem.level] + gd.name) + '（' + esc(gd.statName.replace('%', '')) + ' +' + val + '）</span>' +
+        '<span class="fam-cnt">×' + fmt(gem.count) + (gem.canForge ? '' : '｜不足6') + '</span></div>';
+    }
+  } else {
+    title = '🎒 自動放入裝備（取未上鎖、評分最低 6 件）';
+    for (var r = FORGE_MIN_RARITY; r < GODFORGED_IDX; r++) {
+      var cnt = 0;
+      for (var i = 0; i < G.inventory.length; i++) {
+        var it = G.inventory[i];
+        if (it && it.rarity === r && !it.locked) cnt++;
+      }
+      var rok = cnt >= FORGE_SLOTS;
+      var rPicked = pick && pick.kind === 'equip' && pick.rarity === r;
+      rows += '<div class="fam-opt' + (rok ? '' : ' fam-dim') + (rPicked ? ' picked' : '') + '"' +
+        ' data-fam-equip="' + r + '"' +
+        ' style="color:' + RARITIES[r].color + '">' +
+        '<span>' + esc(RARITIES[r].name) + '裝備</span>' +
+        '<span class="fam-cnt">持有 ' + cnt + (rok ? '' : '｜不足6') + '</span></div>';
+    }
+  }
+  var emptyText = invTab === 'gems'
+    ? '沒有五階以上的寶石（十階已是最高，不可鑄造）'
+    : '目前沒有可自動放入的裝備';
+  menu.innerHTML = '<div class="fam-title">' + title + '</div>' +
+    '<div class="fam-list">' + (rows || '<div class="fam-empty">' + emptyText + '</div>') + '</div>' +
+    '<div class="fam-foot">' +
+    '<button id="fam-confirm" class="btn sm"' + (pick ? '' : ' disabled') + '>確定</button>' +
+    (forgeState().autoFill ? '<button id="fam-stop" class="btn sm warn">取消自動放入</button>' : '') +
+    '<button id="fam-close" class="btn sm">關閉</button></div>';
+  // 法陣區為 overflow:hidden：選單往上展開的最大高度以「按鈕底～法陣頂」為限，
+  // 超出改由素材清單內卷軸承接，標題與操作列不隨清單移動。
+  var stage = $id('forge-stage');
+  if (stage && menu.parentElement) {
+    var avail = menu.parentElement.getBoundingClientRect().bottom - stage.getBoundingClientRect().top - 10;
+    var menuHeight = Math.max(160, Math.min(400, Math.floor(avail)));
+    menu.style.maxHeight = menuHeight + 'px';
+    // 寶石清單使用明確高度，確保 footer 不會被素材內容擠出選單。
+    menu.style.height = invTab === 'gems' ? menuHeight + 'px' : '';
+    var famList = menu.querySelector('.fam-list');
+    if (famList && invTab === 'gems') {
+      var famTitle = menu.querySelector('.fam-title');
+      var famFoot = menu.querySelector('.fam-foot');
+      var menuCss = window.getComputedStyle(menu);
+      var titleCss = window.getComputedStyle(famTitle);
+      var footCss = window.getComputedStyle(famFoot);
+      var verticalPadding = (parseFloat(menuCss.paddingTop) || 0) + (parseFloat(menuCss.paddingBottom) || 0);
+      var titleMargin = parseFloat(titleCss.marginBottom) || 0;
+      var footMargin = parseFloat(footCss.marginTop) || 0;
+      var measuredHeight = menu.clientHeight
+        ? menu.clientHeight - verticalPadding - famTitle.offsetHeight - titleMargin - famFoot.offsetHeight - footMargin
+        : menuHeight - 100;
+      famList.style.flex = '0 0 auto';
+      famList.style.height = Math.max(40, Math.floor(measuredHeight)) + 'px';
+    } else if (famList) {
+      famList.style.flex = '';
+      famList.style.height = '';
+    }
+  }
+}
+
+function renderForgeProgress() {
+  var box = $id('forge-progress');
+  if (!box) return;
+  var c = forgeState().crafting;
+  if (!c) {
+    box.style.display = 'none';
+    return;
+  }
+  var duration = Math.max(1, Number(c.durationMs) || 1);
+  var elapsed = clamp(Date.now() - Number(c.startedAt), 0, duration);
+  var remain = Math.max(0, duration - elapsed);
+  box.style.display = '';
+  $id('forge-progress-status').textContent = '鑄造中....';
+  $id('forge-progress-countdown').textContent = (remain / 1000).toFixed(1) + ' 秒';
+  $id('forge-progress-fill').style.width = (elapsed / duration * 100).toFixed(2) + '%';
+}
+
 function renderForge() {
   var hex = $id('forge-hex');
   if (!hex) return;
   var f = forgeState();
+  var forgeBusy = forgeIsBusy();
   var h = '';
   // 六個素材槽（裝備或寶石，二擇一模式）
   for (var i = 0; i < FORGE_SLOTS; i++) {
@@ -918,11 +1046,19 @@ function renderForge() {
     return '<div class="forge-log-line ' + l.cls + '">' + esc(l.msg) + '</div>';
   }).join('');
   // 自動魔塵與持有量
-  $id('forge-autodust').checked = !!f.autoDust;
+  var autoDustInput = $id('forge-autodust');
+  var autoForgeInput = $id('forge-autoforge');
+  autoDustInput.checked = !!f.autoDust;
+  autoForgeInput.checked = !!f.autoForge;
+  autoDustInput.parentElement.classList.toggle('is-active', autoDustInput.checked);
+  autoForgeInput.parentElement.classList.toggle('is-active', autoForgeInput.checked);
   $id('forge-dust-own').textContent = '持有魔塵 ' + fmt(G.player.dust || 0) + ' 個｜已放置 ' + dustN + '/' + FORGE_SLOTS;
+  renderForgeProgress();
+  $id('forge-unload').disabled = forgeBusy;
+  $id('forge-autodust').disabled = forgeBusy;
   var goBtn = $id('forge-go');
   if (goBtn) {
-    if (forgeItemCount() < FORGE_SLOTS) {
+    if (forgeBusy || forgeItemCount() < FORGE_SLOTS) {
       goBtn.disabled = true;
       goBtn.style.background = '#4b5563';
       goBtn.style.color = '#d1d5db';
@@ -938,11 +1074,28 @@ function renderForge() {
       goBtn.style.filter = '';
     }
   }
+  // 自動放入按鈕狀態（已設定時亮起）與開啟中的選單同步刷新
+  var afBtn = $id('forge-autofill');
+  if (afBtn) {
+    afBtn.disabled = forgeBusy;
+    var afLabel = forgeAutoFillLabel();
+    afBtn.classList.toggle('afk-on', !!afLabel);
+    afBtn.setAttribute('data-tip', afLabel
+      ? '自動放入中：' + afLabel + '（每次鑄造後自動補放 6 件，數量不足自動停止；點擊變更）'
+      : '選擇素材後立即放入 6 件，之後每次鑄造自動補放同一素材');
+  }
+  var famMenuSync = $id('forge-auto-menu');
+  if (forgeBusy && famMenuSync) {
+    famMenuSync.style.display = 'none';
+    UI.forgeAutoPick = null;
+  } else if (famMenuSync && famMenuSync.style.display !== 'none') renderForgeAutoMenu();
   // 背包（裝備 / 寶石切頁；不符資格者以灰階顯示）
   var invTab = UI.forgeInvTab || 'items';
   var tabItemsBtn = $id('forge-invtab-items'), tabGemsBtn = $id('forge-invtab-gems');
   if (tabItemsBtn) tabItemsBtn.classList.toggle('active', invTab === 'items');
   if (tabGemsBtn) tabGemsBtn.classList.toggle('active', invTab === 'gems');
+  if (tabItemsBtn) tabItemsBtn.disabled = forgeBusy;
+  if (tabGemsBtn) tabGemsBtn.disabled = forgeBusy;
   var grid = $id('forge-inventory-grid');
   if (invTab === 'gems') {
     $id('forge-inv-count').textContent = fmt(totalGemsAll());
@@ -1118,6 +1271,7 @@ function uiTick() {
   if (d.inv && UI.tab === 'equip') { renderInventory(); d.inv = false; }
   if (d.factory && UI.tab === 'factory') { renderFactory(); d.factory = false; }
   if ((d.forge || d.inv) && UI.tab === 'forge') { renderForge(); d.forge = false; d.inv = false; }
+  if (UI.tab === 'forge' && forgeIsBusy()) renderForgeProgress();
   if (d.tower && UI.tab === 'tower') { renderTower(); d.tower = false; }
   if (d.gems && UI.tab === 'gems') { renderGems(); d.gems = false; }
   if (UI.tab === 'gems') updateShopCountdown(); // 商店重置倒數即時更新
@@ -1225,7 +1379,7 @@ function renderSkillModal() {
   var isFusion = sk.cat === 'fusion';
   var h = '<div class="skd-head"><span class="skd-emoji">' + sk.emoji + '</span><b>' + esc(sk.name) + '</b> ' +
     '<span class="dim-text">Lv.' + lv + '/' + maxLv + '｜' + (SKILL_CATS[sk.cat] ? SKILL_CATS[sk.cat].name : '融合技') + '</span>' +
-    (sk.cat !== 'passive' ? '<span class="sk-meta">🔵 ' + sk.cost + ' MP　⏱️ ' + sk.cd + 's</span>' : '') + '</div>';
+    (sk.cat !== 'passive' ? '<span class="sk-meta">🔵 ' + skillManaCost(sk, Math.max(1, lv)) + ' MP　⏱️ ' + sk.cd + 's</span>' : '') + '</div>';
   h += '<div class="sk-desc">' + describeSkill(id, Math.max(1, lv)) + '</div>';
   if (lv > 0 && lv < maxLv) {
     h += '<div class="skd-next dim-text">下一級：' + describeSkill(id, lv + 1) + '</div>';
@@ -1287,7 +1441,7 @@ function showSkillTooltip(id, anchorEl) {
   var lock = tierLockReason(id);
   var h = '<div class="skt-name">' + sk.emoji + ' ' + esc(sk.name) +
     ' <span class="dim-text">Lv.' + lv + '/' + skillMaxLv(sk) + '</span></div>';
-  if (sk.cat !== 'passive') h += '<div class="skt-meta">🔵 ' + sk.cost + ' MP　⏱️ ' + sk.cd + 's</div>';
+  if (sk.cat !== 'passive') h += '<div class="skt-meta">🔵 ' + skillManaCost(sk, Math.max(1, lv)) + ' MP　⏱️ ' + sk.cd + 's</div>';
   h += '<div class="skt-desc">' + describeSkill(id, Math.max(1, lv)) + '</div>';
   if (lock) h += '<div class="skt-lock">🔒 ' + esc(lock) + '</div>';
   h += '<div class="skt-hint">點擊開啟升級面板</div>';
@@ -2134,6 +2288,20 @@ function initUI() {
     e.preventDefault();
   });
 
+  // 神鑄寶石自動放入清單：捲動只作用於清單，不冒泡到主畫面。
+  var forgeAutoMenuWheel = $id('forge-auto-menu');
+  if (forgeAutoMenuWheel) {
+    forgeAutoMenuWheel.addEventListener('wheel', function (e) {
+      var list = e.target.closest('.fam-list');
+      if (!list) return;
+      if (list.scrollHeight > list.clientHeight) {
+        list.scrollTop += e.deltaY;
+        e.preventDefault();
+      }
+      e.stopPropagation();
+    }, { passive: false });
+  }
+
   // 技能彈窗：右上 X / 點擊遮罩關閉
   var skModal = $id('skill-modal');
   if (skModal) {
@@ -2203,6 +2371,12 @@ function initUI() {
       if (it) { showItemTooltip(it, eqCell); return; }
     }
 
+    var genericTip = e.target.closest('[data-tt-title]');
+    if (genericTip) {
+      showStatTooltip(genericTip.getAttribute('data-tt-title'), genericTip.getAttribute('data-tt-desc') || '', genericTip);
+      return;
+    }
+
     if (e.target.closest('button') || e.target.closest('.btn')) {
       hideTooltip();
       return;
@@ -2218,6 +2392,7 @@ function initUI() {
   });
   document.addEventListener('mouseout', function (e) {
     if (e.target.closest('[data-sk]') || e.target.closest('.stat-row[data-tt-title]') ||
+      e.target.closest('[data-tt-title]') ||
       e.target.closest('[data-tower-tip]') || e.target.closest('#btn-enemy-tip') ||
       e.target.closest('[data-tip]') || e.target.closest('.item-cell[data-id]') ||
       e.target.closest('.eq-slot.filled[data-id]')) {
@@ -2492,6 +2667,58 @@ function initUI() {
       if (derr) blog('⚠️ 神鑄：' + derr, 'warn');
       return;
     }
+    // 神鑄自動放入選單（選取 / 確定 / 取消 / 外點關閉）
+    var famMenu = $id('forge-auto-menu');
+    if (famMenu && famMenu.style.display !== 'none') {
+      var famOptE = e.target.closest('[data-fam-equip]');
+      if (famOptE) {
+        UI.forgeAutoPick = { kind: 'equip', rarity: parseInt(famOptE.getAttribute('data-fam-equip'), 10) };
+        renderForgeAutoMenu();
+        return;
+      }
+      var famOptG = e.target.closest('[data-fam-gem]');
+      if (famOptG) {
+        var famG = famOptG.getAttribute('data-fam-gem').split(':');
+        UI.forgeAutoPick = { kind: 'gem', type: famG[0], level: parseInt(famG[1], 10) };
+        renderForgeAutoMenu();
+        return;
+      }
+      if (e.target.closest('#fam-confirm')) {
+        if (UI.forgeAutoPick) {
+          var fst = forgeState();
+          if (forgeItemCount() > 0) forgeUnloadAll();  // 先清空法陣，再放入指定素材
+          fst.autoFill = UI.forgeAutoPick;
+          var famErr = forgeAutoFillApply();
+          if (famErr) {
+            fst.autoFill = null;
+            blog('⚠️ 神鑄自動放入：' + famErr, 'warn');
+          } else {
+            blog('🔁 神鑄自動放入已啟用：' + forgeAutoFillLabel() +
+              '（每次鑄造後自動補放 6 件，數量不足自動停止）', 'good');
+          }
+          famMenu.style.display = 'none';
+          UI.forgeAutoPick = null;
+          UI.dirty.forge = true;
+        }
+        return;
+      }
+      if (e.target.closest('#fam-stop')) {
+        forgeState().autoFill = null;
+        blog('🔁 神鑄自動放入已取消', 'info');
+        famMenu.style.display = 'none';
+        UI.forgeAutoPick = null;
+        UI.dirty.forge = true;
+        return;
+      }
+      if (e.target.closest('#fam-close')) {
+        famMenu.style.display = 'none';
+        UI.forgeAutoPick = null;
+        return;
+      }
+      if (e.target.closest('.forge-auto-wrap')) return;  // 點在選單其他區域不動作
+      famMenu.style.display = 'none';                    // 外點關閉，後續處理照常進行
+      UI.forgeAutoPick = null;
+    }
     // 神鑄寶石頁：點擊寶石放入法陣
     var fgem = e.target.closest('[data-forge-gem]');
     if (fgem) {
@@ -2728,11 +2955,36 @@ function initUI() {
       var n = forgeUnloadAll();
       if (n) blog('↩️ 神鑄：已取回 ' + n + ' 件裝備', 'info');
     });
+    // 自動放入：開關選單（點擊時依目前切頁重建內容）
+    var afToggleBtn = $id('forge-autofill');
+    if (afToggleBtn) {
+      afToggleBtn.addEventListener('click', function (e) {
+        var menu = $id('forge-auto-menu');
+        if (!menu) return;
+        if (menu.style.display === 'none') {
+          UI.forgeAutoPick = null;
+          menu.style.display = 'block';
+          renderForgeAutoMenu();
+        } else {
+          menu.style.display = 'none';
+          UI.forgeAutoPick = null;
+        }
+        e.stopPropagation();
+      });
+    }
     $id('forge-autodust').addEventListener('change', function () {
       var f = forgeState();
       f.autoDust = this.checked;
       if (f.autoDust && forgeItemCount() > 0) forgeAutoFillDust();
       UI.dirty.forge = true;
+    });
+    $id('forge-autoforge').addEventListener('change', function () {
+      var f = forgeState();
+      f.autoForge = this.checked;
+      if (this.checked) blog('🔁 自動鑄造已啟用，請先按一次「鑄造」開始', 'info');
+      else blog('⏹️ 自動鑄造已停用', 'info');
+      UI.dirty.forge = true;
+      UI.dirty.inv = true;
     });
     // 背包 / 寶石切頁
     $id('forge-invtab-items').addEventListener('click', function () {

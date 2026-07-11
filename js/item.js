@@ -648,12 +648,13 @@ function itemDetailHTML(it, cmp, opts) {
     }
     
     var lineStyle = (vCmp === 0 && cmp) ? 'color: #4ade80;' : '';
+    var catClass = ' afx-' + affixCat(k);   // 詞條分類分色（基礎紫/進攻粉/防禦青/功能綠）
     if (showAffixReroll) {
-      h += '<div class="it-affix-row it-affix" style="' + lineStyle + '">' +
+      h += '<div class="it-affix-row it-affix' + catClass + '" style="' + lineStyle + '">' +
            '<div class="it-affix-text"><span class="act-btn-tooltip" style="cursor:help;" data-tip="' + esc(limitTip) + '">◆ ' + name + ' +' + valHtml + '</span>' +
            diffStr + '</div><div class="it-affix-action">' + rrBtn + '</div></div>';
     } else {
-      h += '<div class="it-affix" style="' + lineStyle + '"><span class="act-btn-tooltip" style="cursor:help;" data-tip="' + esc(limitTip) + '">◆ ' + name + ' +' + valHtml + '</span>' +
+      h += '<div class="it-affix' + catClass + '" style="' + lineStyle + '"><span class="act-btn-tooltip" style="cursor:help;" data-tip="' + esc(limitTip) + '">◆ ' + name + ' +' + valHtml + '</span>' +
            diffStr + '</div>';
     }
   }
