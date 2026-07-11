@@ -4,7 +4,8 @@
 var UI = {
   dirty: { header: true, battle: true, equip: true, inv: true, factory: true, forge: true, tower: true, gems: true, skills: true },
   sel: null,           // { id, source: 'inv' | 'equip' }
-  tab: 'equip'
+  tab: 'equip',
+  saveNoticeId: null
 };
 
 /* ---- 日誌 ---- */
@@ -63,7 +64,11 @@ function switchTab(name) {
   document.querySelectorAll('.tab').forEach(function (s) {
     s.classList.toggle('active', s.id === 'tab-' + name);
   });
-  if (name === 'settings') renderSaveList(); // 進入設定分頁時刷新存檔記錄
+  if (name !== 'settings') UI.saveNoticeId = null;
+  if (name === 'settings') {
+    renderSaveList();
+    refreshSaveFolderFilesV2();
+  }
   if (name === 'tower') UI._scrollTower = true;
 }
 
@@ -73,32 +78,60 @@ function saveTimeStr(ts) {
   return t.getFullYear() + '/' + pad2(t.getMonth() + 1) + '/' + pad2(t.getDate()) + ' ' +
     pad2(t.getHours()) + ':' + pad2(t.getMinutes()) + ':' + pad2(t.getSeconds());
 }
+
+function saveFileSizeStr(size) {
+  if (size >= 1024 * 1024) return (size / (1024 * 1024)).toFixed(1) + ' MB';
+  if (size >= 1024) return Math.round(size / 1024) + ' KB';
+  return size + ' B';
+}
+
+function renderSaveFolderFilesV2(files) {
+  var box = $id('save-folder-files');
+  var listBox = $id('save-folder-files-list');
+  if (!box || !listBox) return;
+  box.hidden = false;
+  if (!files || !files.length) {
+    listBox.innerHTML = '<div class="hint">目前資料夾沒有檔案。</div>';
+    return;
+  }
+  listBox.innerHTML = files.map(function (f) {
+    return '<div class="save-folder-file-row"><span class="save-folder-file-name" title="' + esc(f.name) + '">' + esc(f.name) +
+      '</span><span class="save-folder-file-size">' + saveFileSizeStr(f.size) + '</span><span class="save-folder-file-time">' + saveTimeStr(f.lastModified) + '</span></div>';
+  }).join('');
+}
+
+function refreshSaveFolderFilesV2(files) {
+  if (files) { renderSaveFolderFilesV2(files); return; }
+  var box = $id('save-folder-files');
+  if (!box) return;
+  if (typeof listSaveFolderFilesV2 !== 'function' || typeof _saveDir === 'undefined' || !_saveDir) {
+    box.hidden = true;
+    return;
+  }
+  listSaveFolderFilesV2().then(renderSaveFolderFilesV2).catch(function () { box.hidden = true; });
+}
+
 function renderSaveList() {
   var box = $id('save-list');
   if (!box) return;
   var curRun = (G && G.runId) || 1;
-  var list = saveIndex().slice().sort(function (a, b) {
-    // 本局的即時自動存檔置頂，其餘依時間新 → 舊
-    var ac = (a.kind === 'auto' && a.runId === curRun) ? 1 : 0;
-    var bc = (b.kind === 'auto' && b.runId === curRun) ? 1 : 0;
-    if (ac !== bc) return bc - ac;
-    return b.savedAt - a.savedAt;
-  });
-  if (!list.length) {
-    box.innerHTML = '<div class="hint">尚無存檔記錄 — 按「💾 立即存檔」建立第一筆（自動存檔會在 15 秒內出現）</div>';
-    return;
-  }
+  var auto = (typeof autoSaveMetaV2 === 'function') ? autoSaveMetaV2() : {
+    id: 'auto_current', kind: 'auto', runId: curRun, savedAt: G.savedAt || Date.now(),
+    fname: 'IC_autosave.json', level: G.player.level, stage: G.stage.current, zone: G.stage.zone
+  };
+  var list = [auto].concat(saveIndex().slice().sort(function (a, b) { return b.savedAt - a.savedAt; }).slice(0, 10));
   box.innerHTML = list.map(function (r) {
     var cur = r.kind === 'auto' && r.runId === curRun;
+    var newNotice = UI.saveNoticeId === r.id ? '<div class="save-new-notice">✅ 已新增存檔！</div>' : '';
     return '<div class="save-row' + (r.kind === 'auto' ? ' auto' : '') + '">' +
       '<div class="save-info">' +
       '<div class="save-name">' + saveRecName(r) + (cur ? ' <span class="save-cur">目前遊戲</span>' : '') + '</div>' +
       '<div class="save-file">' + esc(r.fname) + '　<span class="save-time">' + saveTimeStr(r.savedAt) + '</span></div>' +
       '<div class="save-meta">Lv.' + r.level + '｜' + (ZONES[r.zone] ? ZONES[r.zone].emoji + ZONES[r.zone].name : '') + ' 第 ' + r.stage + ' 階｜第 ' + (r.runId || 1) + ' 局</div>' +
+      newNotice +
       '</div>' +
       '<div style="display:flex; gap:8px;">' +
       '<button class="btn sm" data-load-save="' + r.id + '">📥 讀取</button>' +
-      '<button class="btn sm" data-dl-save="' + r.id + '">⬇️ 下載</button>' +
       '<button class="btn sm" style="color:var(--danger, #f87171); border-color:var(--danger, #f87171);" data-del-save="' + r.id + '">🗑️ 刪除</button>' +
       '</div>' +
       '</div>';
@@ -458,9 +491,12 @@ function renderDetail() {
     pane.classList.remove('has-detail');
     var actionBar = $id('equip-action-bar');
     if (actionBar) {
+      // 保留按鈕列高度（min-height），避免選取/取消選取時背包區上下跳動
       actionBar.innerHTML = '';
-      actionBar.style.display = 'none';
+      actionBar.style.display = 'flex';
     }
+    var matPanelEmpty = $id('equip-material-panel');
+    if (matPanelEmpty) matPanelEmpty.innerHTML = '';
     return;
   }
   var cost = upgradeCost(it);
@@ -487,10 +523,11 @@ function renderDetail() {
   actionsHtml += '<button class="btn act-btn-tooltip" data-act="upgrade" data-tip="' + esc(upTip) + '">強化</button>';
 
   actionsHtml += '<button class="btn" data-act="lock">' + (it.locked ? '解鎖' : '鎖定') + '</button>';
-  // 鑲嵌選擇（有空插槽時列出持有寶石）
+  // 右側素材面板：可用寶石／附魔書改為小圖示，完整名稱、數值與持有量由滑鼠提示顯示
+  var matHtml = '';
   ensureSockets(it);
   if (it.sockets.indexOf(null) >= 0) {
-    var chips = [];
+    var gemIcons = [];
     for (var gt in GEM_TYPES) {
       var total = 0, hi = 0;
       for (var lv = GEM_FORGE_MAX_LEVEL; lv >= 1; lv--) {
@@ -498,39 +535,49 @@ function renderDetail() {
         total += n;
         if (n && !hi) hi = lv;
       }
-      if (total) {
-        chips.push('<span class="gem-chip" data-gem-socket="' + gt + '" data-tip="鑲嵌 ' + esc(GEM_NAMES[hi] + GEM_TYPES[gt].name) + '">' +
-          GEM_TYPES[gt].emoji + esc(GEM_TYPES[gt].name) + ' L' + hi + '×' + gemCount(gt, hi) + '</span>');
-      }
+      if (!total) continue;
+      var gdef = GEM_TYPES[gt];
+      var gv = gdef.pct ? pctStr(gemStatValue(gt, hi)) : fmt(gemStatValue(gt, hi));
+      gemIcons.push('<button class="equip-material-icon" data-gem-socket="' + gt + '" data-tip="' +
+        esc(GEM_NAMES[hi] + gdef.name + ' ×' + gemCount(gt, hi) + '｜' + gdef.statName.replace('%', '') + ' +' + gv +
+          '｜點擊鑲入空插槽（自動取最高等級）') + '">' + gdef.emoji + '</button>');
     }
     (G.player.fusedGems || []).forEach(function (fg) {
-      chips.push('<span class="gem-chip fused-chip" data-gem-socket-fused="' + fg.id + '" data-tip="鑲嵌雙屬性融合寶石">' +
-        esc(fusedGemLabel(fg)) + '</span>');
+      gemIcons.push('<button class="equip-material-icon" data-gem-socket-fused="' + fg.id + '" data-tip="' +
+        esc(fusedGemLabel(fg) + '｜雙屬性融合寶石，點擊鑲入空插槽') + '">🧬</button>');
     });
-    h += '<div class="sec-sub">💎 鑲嵌寶石（點擊鑲入空插槽，自動取最高等級；🧬 為融合寶石）</div>' +
-      '<div class="gem-picker">' + (chips.length ? chips.join('') : '<span class="hint">尚無寶石庫存</span>') + '</div>';
+    matHtml += '<div class="equip-material-section">' +
+      '<div class="equip-material-title">💎 可用寶石（點擊鑲嵌）</div>' +
+      (gemIcons.length ? '<div class="equip-material-grid">' + gemIcons.join('') + '</div>'
+        : '<div class="equip-material-empty">尚無寶石庫存</div>') +
+      '</div>';
   }
-  // 附魔書選擇（有空附魔欄時列出此部位可用的書；點擊既有附魔可取下）
   var itEns2 = itemEnchants(it);
   if (itEns2.length < enchantCapFor(it)) {
     var cat2 = enchantCatForType(it.slot);
-    var bookChips2 = [];
+    var bookIcons = [];
     for (var bk2 in ENCHANTS) {
       if (ENCHANTS[bk2].cat !== cat2) continue;
       var bn2 = G.player.books[bk2] || 0;
       if (!bn2) continue;
       var owned = itEns2.some(function (en2) { return en2.key === bk2; });
-      bookChips2.push('<span class="gem-chip' + (owned ? ' dim-chip' : '') + '" data-book-enchant="' + bk2 + '" data-tip="' +
-        esc(ENCHANTS[bk2].desc) + (owned ? '（已附魔，僅可升級數值）' : '') + '">' +
-        ENCHANTS[bk2].emoji + esc(ENCHANTS[bk2].name) + ' ×' + bn2 + '</span>');
+      bookIcons.push('<button class="equip-material-icon' + (owned ? ' dim-chip' : '') + '" data-book-enchant="' + bk2 + '" data-tip="' +
+        esc(ENCHANTS[bk2].name + ' ×' + bn2 + '｜' + ENCHANTS[bk2].desc +
+          '｜消耗 1 書＋🔮' + ENCHANT_ESSENCE_COST + ' 精華（庫存 ' + fmt(G.player.essence) + '）' +
+          (owned ? '｜已附魔，僅可升級數值' : '')) + '">' + ENCHANTS[bk2].emoji + '</button>');
     }
     var catNames2 = { atk: '攻擊', def: '防禦', util: '功能' };
-    h += '<div class="sec-sub">✨ 附魔（' + catNames2[cat2] + '類，每次消耗 1 書＋🔮' + ENCHANT_ESSENCE_COST +
-      ' 精華，庫存 ' + fmt(G.player.essence) + '）</div>' +
-      '<div class="gem-picker">' + (bookChips2.length ? bookChips2.join('') : '<span class="hint">沒有此部位可用的附魔書（階段 8+ 掉落 / 高塔獎勵）</span>') + '</div>';
+    matHtml += '<div class="equip-material-section">' +
+      '<div class="equip-material-title">✨ 可用附魔書（點擊附魔）</div>' +
+      '<div class="equip-material-subtitle">' + catNames2[cat2] + '類部位' +
+      (bookIcons.length ? '' : '｜沒有可用的書（階段 8+ 掉落 / 高塔獎勵）') + '</div>' +
+      (bookIcons.length ? '<div class="equip-material-grid">' + bookIcons.join('') + '</div>' : '') +
+      '</div>';
   }
   pane.innerHTML = h;
   pane.classList.add('has-detail');
+  var matPanel = $id('equip-material-panel');
+  if (matPanel) matPanel.innerHTML = matHtml;
   var actionBar = $id('equip-action-bar');
   if (actionBar) {
     actionBar.innerHTML = actionsHtml;
@@ -963,7 +1010,7 @@ function renderTower() {
         '<span class="tf-hint" style="margin-left:auto; margin-right:10px;">建議野外階段 ' + (4 + fl * 5) + '+｜挑戰費 <span style="color:' + (G.player.gold >= twCost ? '#ffd700' : '#fca5a5') + '">💰' + fmt(twCost) + '</span></span>' +
         (unlocked
           ? '<button class="btn sm" data-tower-floor="' + fl + '">挑戰</button>' +
-            '<button class="btn sm" data-tower-auto="' + fl + '" data-tip="連續挑戰此層（次數見上方設定）：金幣不足或次數用完自動停止並回到野外">🔁 連挑</button>'
+          '<button class="btn sm" data-tower-auto="' + fl + '" data-tip="連續挑戰此層（次數見上方設定）：金幣不足或次數用完自動停止並回到野外">🔁 連挑</button>'
           : '<span class="tf-lock">🔒</span>') +
         '</div>';
     }
@@ -1275,7 +1322,8 @@ function showStatTooltip(title, desc, anchorEl) {
 function showItemTooltip(it, anchorEl) {
   var tip = $id('sk-tooltip');
   if (!tip) return;
-  var h = itemDetailHTML(it, null);
+  // 滑過提示為純資訊模式：不顯示洗煉與可能詞條說明按鈕（僅裝備詳情介面可操作）
+  var h = itemDetailHTML(it, null, { showAffixReroll: false });
   tip.innerHTML = '<div style="padding: 6px; min-width: 220px;">' + h + '</div>';
   tip.style.display = 'block';
   var r = anchorEl.getBoundingClientRect();
@@ -1405,11 +1453,11 @@ function renderFusionPanel() {
     if (d) {
       var lv = skillLevel(id);
       h += '<div class="tree-cell fusion-selected" data-fuse-remove="' + id + '" data-tip="點擊移出" style="margin:0 4px; cursor:pointer;">' +
-           '<span class="tc-emoji">' + d.emoji + '</span>' +
-           '<span class="tc-lv">' + lv + '</span>' +
-           '</div>';
+        '<span class="tc-emoji">' + d.emoji + '</span>' +
+        '<span class="tc-lv">' + lv + '</span>' +
+        '</div>';
     } else {
-      h += '<div class="tree-cell" style="margin:0 4px; border:2px dashed var(--border); background:transparent; opacity:0.5; color:var(--dim); font-size:11px; cursor:default;">素材 ' + (i+1) + '</div>';
+      h += '<div class="tree-cell" style="margin:0 4px; border:2px dashed var(--border); background:transparent; opacity:0.5; color:var(--dim); font-size:11px; cursor:default;">素材 ' + (i + 1) + '</div>';
     }
   }
   slotBox.innerHTML = h;
@@ -1608,7 +1656,7 @@ function renderGemFusion() {
       } else {
         var fg = findFusedGem(ref.id);
         if (fg) {
-          var emojis = fg.stats.map(function(s){ return GEM_TYPES[s.type].emoji; }).join('');
+          var emojis = fg.stats.map(function (s) { return GEM_TYPES[s.type].emoji; }).join('');
           h += '<span class="gem-chip fused-chip gem-inventory-cell" data-gfuse-remove="' + i + '" data-tip="' + esc(fusedGemLabel(fg)) + '｜點擊移出">' +
             '<span class="gem-chip-count">×1</span>' +
             '<span class="gem-chip-emoji">' + emojis + '</span>' +
@@ -1981,7 +2029,7 @@ function initUI() {
           renderHeader();
           renderSkills();
           renderBattle();
-          showConfirmDialog('恭喜轉生成功！目前為 ' + reincarnationCount() + ' 轉。', function () {}, {
+          showConfirmDialog('恭喜轉生成功！目前為 ' + reincarnationCount() + ' 轉。', function () { }, {
             title: '轉生成功', okText: '確認', singleAction: true
           });
         },
@@ -2735,77 +2783,75 @@ function initUI() {
 
   // 設定分頁：存檔管理
   $id('btn-save').addEventListener('click', function () {
-    var rec = manualSave();
     var m = $id('save-msg');
-    if (rec) {
-      blog('💾 已建立存檔記錄：' + rec.fname, 'good');
-      if (m) m.textContent = '💾 已建立存檔記錄：' + rec.fname;
-      openSaveFolder(function(err, res) {
-         if (err) {
-            blog('⚠️ 同步失敗：' + err, 'warn');
-         } else if (res && res.wrote !== undefined && !res.fallback && !res.viewOnly) {
-            blog('✅ 已同步資料夾「' + res.dirName + '」：寫出 ' + res.wrote + ' 個存檔', 'good');
-         }
-      }, false);
-    } else {
-      blog('⚠️ 存檔失敗（儲存空間可能已滿）', 'bad');
-      if (m) m.textContent = '⚠️ 存檔失敗（儲存空間可能已滿）';
-    }
-    renderSaveList();
+    if (m) m.textContent = '⏳ 正在確認本地存檔資料夾…';
+    ensureSaveFolderV2(function (err, folderRes) {
+      if (err || !folderRes) {
+        var reason = '⚠️ 未建立手動存檔：' + (err || '尚未選擇本地資料夾');
+        if (m) m.textContent = reason;
+        blog(reason, 'warn');
+        return;
+      }
+      createManualSaveToFolderV2().then(function (rec) {
+        UI.saveNoticeId = rec.id;
+        var text = '✅ 手動存檔已寫入本地資料夾「' + folderRes.dirName + '」：' + rec.fname;
+        if (m) m.textContent = text;
+        blog(text, 'good');
+        renderSaveList();
+        refreshSaveFolderFilesV2();
+      }).catch(function (e) {
+        var detail = e && e.message ? e.message : String(e);
+        var text = '⚠️ 手動存檔寫入失敗：' + detail;
+        if (m) m.textContent = text;
+        blog(text, 'bad');
+      });
+    });
   });
   $id('btn-folder').addEventListener('click', function () {
     var m = $id('save-msg');
-    if (m) m.textContent = '⏳ 連接存檔資料夾中…（請在跳出的視窗選擇資料夾）';
+    if (m) m.textContent = '⏳ 請選擇或更新存檔資料夾…';
     openSaveFolder(function (err, res) {
-      var text;
+      var text = '';
       if (err) {
-        if (err.indexOf('repick') > -1 || err.indexOf('AbortError') > -1) {
-           text = 'ℹ️ 已取消選擇資料夾';
-           blog('ℹ️ ' + text, 'info');
-           if (m) m.textContent = text;
-           return;
-        }
         text = '⚠️ ' + err;
+      } else if (res && res.selected) {
+        text = '✅ 已選定存檔資料夾「' + res.dirName + '」；目前共有 ' + ((res.files || []).length) + ' 個檔案。';
+        refreshSaveFolderFilesV2(res.files || []);
       }
-      else if (res.fallback) text = '📥 此瀏覽器不支援存檔資料夾，已改為下載 .json 存檔（見「下載」資料夾）';
-      else if (res.viewOnly) text = '✅ 已同步打開存檔資料夾「' + res.dirName + '」';
-      else text = '✅ 已同步資料夾「' + res.dirName + '」：寫出 ' + res.wrote + ' 個存檔檔案' +
-        (res.imported ? '、匯入 ' + res.imported + ' 個新存檔' : '') + '。可直接把資料夾中的 .json 檔傳給別人分享。';
       if (text) {
-          if (m) m.textContent = text;
-          if (!res || !res.viewOnly) blog((err ? '⚠️ ' : '📂 ') + text, err ? 'warn' : 'good');
+        if (m) m.textContent = text;
+        blog(text, err ? 'warn' : 'good');
       }
       renderSaveList();
     }, true);
   });
+  var bannerFolderBtn = $id('btn-folder-banner');
+  if (bannerFolderBtn) bannerFolderBtn.addEventListener('click', function () { $id('btn-folder').click(); });
   $id('btn-restart').addEventListener('click', function () {
     showConfirmDialog('確定要重新開局嗎？將開一個全新角色從頭重玩。\n目前進度已保留在「⚡ 即時自動存檔（第 ' + (G.runId || 1) + ' 局）」，所有存檔記錄都不會刪除，隨時可以讀回來。', function () {
       restartGame();
     }, { title: '重新開局確認', okText: '重新開局', danger: true });
   });
-  // 讀取/下載/刪除存檔（每列右側按鈕，需二次確認）
+  // 讀取/刪除本地存檔（每列右側按鈕，需二次確認）
   $id('save-list').addEventListener('click', function (e) {
     var loadBtn = e.target.closest('[data-load-save]');
-    var dlBtn = e.target.closest('[data-dl-save]');
     var delBtn = e.target.closest('[data-del-save]');
-    if (!loadBtn && !dlBtn && !delBtn) return;
+    if (!loadBtn && !delBtn) return;
 
     var id = loadBtn ? loadBtn.getAttribute('data-load-save')
-      : dlBtn ? dlBtn.getAttribute('data-dl-save')
-        : delBtn.getAttribute('data-del-save');
-    var rec = null;
-    saveIndex().forEach(function (r) { if (r.id === id) rec = r; });
+      : delBtn.getAttribute('data-del-save');
+    var rec = typeof findSaveRecordV2 === 'function' ? findSaveRecordV2(id) : null;
     if (!rec) return;
 
     if (loadBtn) {
       showConfirmDialog('確定要讀取「' + saveRecName(rec) + '」嗎？\n檔名：' + rec.fname + '\n時間：' + saveTimeStr(rec.savedAt) +
         '\n\n目前進度會先寫入本局的自動存檔，再切換為此存檔。', function () {
-          var err = loadSaveRecord(id);
-          if (err) blog('⚠️ 讀取存檔失敗：' + err, 'bad');
+          Promise.resolve(loadSaveRecord(id)).then(function (err) {
+            if (err) blog('⚠️ 讀取存檔失敗：' + err, 'bad');
+          }).catch(function (e) {
+            blog('⚠️ 讀取存檔失敗：' + (e && e.message ? e.message : e), 'bad');
+          });
         }, { title: '讀取存檔確認', okText: '讀取存檔', danger: true });
-    } else if (dlBtn) {
-      downloadSingleSave(id, rec.fname);
-      blog('⬇️ 存檔已下載：' + rec.fname, 'good');
     } else if (delBtn) {
       showConfirmDialog('確定要刪除「' + saveRecName(rec) + '」嗎？\n檔名：' + rec.fname + '\n時間：' + saveTimeStr(rec.savedAt) +
         '\n\n刪除後無法恢復，是否繼續？', function () {

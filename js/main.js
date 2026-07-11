@@ -3,6 +3,7 @@
 
 var TICK_MS = 100;
 var _autosaveTimer = 0;
+var _folderAutosaveTimer = 0;
 var _lastTickAt = Date.now();
 
 function stepGame(dt) {
@@ -12,6 +13,8 @@ function stepGame(dt) {
   factoryTick(dt);
   _autosaveTimer += dt;
   if (_autosaveTimer >= 15) { _autosaveTimer = 0; saveGame(); }
+  _folderAutosaveTimer += dt;
+  if (_folderAutosaveTimer >= 600) { _folderAutosaveTimer = 0; syncSaveFolder(); }
 }
 
 function checkForUpdates() {
@@ -45,7 +48,12 @@ function gameTick() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  var loaded = loadGame();
+  var localLoaded = loadGame();
+  loadLatestFolderSave(function (folderSave) {
+  var loaded = localLoaded;
+  if (folderSave && (!loaded || (folderSave.savedAt || 0) > (loaded.savedAt || 0))) {
+    loaded = folderSave.data;
+  }
   G = loaded || newGameState();
   markStatsDirty();
   initUI();
@@ -68,6 +76,11 @@ document.addEventListener('DOMContentLoaded', function () {
       blog('🧮 ' + G._skillPointRepairNotice + '；目前可用技能點 ' + availableSkillPoints() + ' 點。', 'info');
       delete G._skillPointRepairNotice;
     }
+    // 背包超量提示（修正超量收納漏洞前的遺留）
+    var invCapNow = INVENTORY_CAP + (G.player.invUpgrades || 0);
+    if (G.inventory.length > invCapNow) {
+      blog('⚠️ 背包超出容量（' + G.inventory.length + '/' + invCapNow + '）。今後滿載時將維持上限：新裝備與包內未鎖定最弱者「捨弱留強」擇一保留（上鎖裝備不受影響）。超出的部分可用「分解設定」批次清理。', 'warn');
+    }
     applyOfflineProgress();
   } else {
     blog('⚔️ 歡迎來到《無限征途：合成之巔》！', 'good');
@@ -88,6 +101,11 @@ document.addEventListener('DOMContentLoaded', function () {
   if (window.showDirectoryPicker) {
     idbGetDir(function (stored) {
       if (stored) {
+        if (typeof isValidSaveDirectoryV2 === 'function' && !isValidSaveDirectoryV2(stored)) {
+          var invalidBn = document.getElementById('save-folder-banner');
+          if (invalidBn) invalidBn.style.display = 'block';
+          return;
+        }
         stored.requestPermission({ mode: 'readwrite' }).then(function (perm) {
           if (perm !== 'granted') {
             // 需要使用者重新授權，顯示提示 Banner
@@ -96,7 +114,6 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
           }
           _saveDir = stored;
-          syncSaveFolder();
           // 已連接，隱藏 Banner
           var bn = document.getElementById('save-folder-banner');
           if (bn) bn.style.display = 'none';
@@ -121,26 +138,18 @@ document.addEventListener('DOMContentLoaded', function () {
       openSaveFolder(function (err, res) {
         var text;
         if (err) {
-          if (err.indexOf('repick') > -1 || err.indexOf('AbortError') > -1) {
-             text = 'ℹ️ 已取消選擇資料夾';
-             blog('ℹ️ ' + text, 'info');
-             if (m) m.textContent = text;
-             return;
-          }
           text = '⚠️ ' + err;
-        } else if (res.viewOnly) {
-          text = '✅ 已同步打開存檔資料夾「' + res.dirName + '」';
-          var bn = document.getElementById('save-folder-banner');
-          if (bn) bn.style.display = 'none';
         } else {
           var bn = document.getElementById('save-folder-banner');
           if (bn) bn.style.display = 'none';
-          text = '✅ 已連接「' + res.dirName + '」，之後每次存檔都會自動同步到這個資料夾！';
+          text = '✅ 已選定存檔資料夾「' + res.dirName + '」；自動存檔將每 10 分鐘同步一次。';
         }
         if (m) m.textContent = text;
-        if (!res || !res.viewOnly) blog('📂 ' + text, err ? 'warn' : 'good');
+        blog(text, err ? 'warn' : 'good');
+        if (res && res.files && typeof renderSaveFolderFilesV2 === 'function') renderSaveFolderFilesV2(res.files);
         if (typeof renderSaveList === 'function') renderSaveList();
       }, true);
     });
   }
+  });
 });

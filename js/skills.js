@@ -196,14 +196,14 @@ var UNLOCKS = {
   reflectShield: { 4: { shieldPctMax: { base: 8, per: 2 } }, 8: { buff: { key: 'thornsUp', base: 25, per: 6, dur: 8 } } },
   lastStand:     { 4: { buff2: { key: 'aspdUp', base: 15, per: 3, dur: 6 } }, 8: { healPctMax: { base: 30, per: 6 } } },
   // 特殊
-  timeWarp:      { 4: { buff2: { key: 'evasionUp', base: 10, per: 2, dur: 6 } }, 8: { buff: { key: 'aspdUp', base: 40, per: 9, dur: 7 } } },
+  timeWarp:      { 4: {}, 8: { buff: { key: 'aspdUp', base: 40, per: 9, dur: 7 } } },
   midasTouch:    { 4: { goldPer: 25 }, 8: { goldPer: 35, buff: { key: 'lootUp', base: 15, per: 3, dur: 5 } } },
   treasureSense: { 4: { buff: { key: 'lootUp', base: 45, per: 12, dur: 12 } }, 8: { goldPer: 10 } },
   weakenCurse:   { 4: { slowDur: 2 }, 8: { debuff: { key: 'atkDown', base: 28, per: 5, dur: 8 } } },
   deathCurse:    { 4: { dotDur: 7 }, 8: { maxHpDotPct: { base: 1.8, per: 0.5 }, dotDur: 7 } },
-  blinkDodge:    { 4: { buff: { key: 'evasionUp', base: 45, per: 8, dur: 4 } }, 8: { buff2: { key: 'aspdUp', base: 12, per: 3, dur: 4 } } },
+  blinkDodge:    { 4: { buff: { key: 'evasionUp', base: 45, per: 8, dur: 4 } }, 8: {} },
   mpSiphon:      { 4: { mpRestore: 40 }, 8: { mpRestore: 45, debuff: { key: 'atkDown', base: 10, per: 2, dur: 4 } } },
-  overload:      { 4: { buff2: { key: 'atkUp', base: 8, per: 2, dur: 6 } }, 8: { buff: { key: 'critDmgUp', base: 60, per: 15, dur: 8 } } },
+  overload:      { 4: {}, 8: { buff: { key: 'critDmgUp', base: 60, per: 15, dur: 8 } } },
   warcry:        { 4: { debuff: { key: 'atkDown', base: 12, per: 3, dur: 6 } }, 8: { buff: { key: 'atkUp', base: 18, per: 5, dur: 8 } } },
   gamble:        { 4: { critBonus: 20 }, 8: { critBonus: 20, execBelow: 35, execMult: 2 } }
 };
@@ -419,6 +419,63 @@ function skillDamageShare(baseDamage, aoePct, targetCount) {
   return count > 1 ? baseDamage * (1 + aoePct / 100) / count : baseDamage;
 }
 
+// 融合效果候選整理：同類型只保留素材當前實際數值較高者，再依首次出現順序取前 N 種。
+function fusionSelectEffects(entries, limit) {
+  var best = {}, order = [];
+  (entries || []).forEach(function (entry) {
+    if (!entry || !entry.effect || !entry.effect.key) return;
+    var key = entry.effect.key;
+    var value = scaleAt(entry.effect, entry.lv || 1);
+    if (!best[key]) {
+      best[key] = { effect: entry.effect, lv: entry.lv || 1, value: value };
+      order.push(key);
+    } else if (value > best[key].value) {
+      best[key] = { effect: entry.effect, lv: entry.lv || 1, value: value };
+    }
+  });
+  return order.slice(0, limit).map(function (key) { return best[key]; });
+}
+
+// 融合後的增益/減益基礎值折減 20%，每級成長值與持續時間沿用較高者的效果定義。
+function fusionEffectValueDef(entry) {
+  var e = entry.effect;
+  return { key: e.key, base: Math.round((e.base || 0) * 0.8), per: e.per || 0, dur: e.dur };
+}
+
+// 一次性存檔遷移用：特殊技能已移除的第二增益效果。
+var REMOVED_SPECIAL_SECOND_BUFFS = {
+  timeWarp: 'evasionUp',
+  blinkDodge: 'aspdUp',
+  overload: 'atkUp'
+};
+function trimLegacySpecialFusionBuff(fs) {
+  if (!fs || !fs.fx || !fs.fx.buff2 || !Array.isArray(fs.components)) return false;
+  var removedKeys = {};
+  fs.components.forEach(function (id) {
+    var key = REMOVED_SPECIAL_SECOND_BUFFS[id];
+    if (key) removedKeys[key] = true;
+  });
+  if (!removedKeys[fs.fx.buff2.key]) return false;
+  delete fs.fx.buff2;
+  return true;
+}
+
+// 套用最多兩個減益；多目標時每個存活目標都套用一次。
+function applySkillDebuffs(targets, fx, lv, parts) {
+  var debuffs = [];
+  if (fx.debuff) debuffs.push(fx.debuff);
+  if (fx.debuff2) debuffs.push(fx.debuff2);
+  debuffs.forEach(function (debuff) {
+    var applied = false;
+    targets.forEach(function (target) {
+      if (target.hp <= 0) return;
+      applyBuff(target, debuff.key, scaleAt(debuff, lv), debuff.dur);
+      applied = true;
+    });
+    if (applied) parts.push('<span class="log-hl-bad">敵方' + buffLabel(debuff.key) + ' -' + fmt1(scaleAt(debuff, lv)) + '%</span>');
+  });
+}
+
 /* ---- 施放執行 ---- */
 function castSkill(pEnt, target, id, lv, floatSel) {
   var sk = skillDef(id);
@@ -530,13 +587,13 @@ function castSkill(pEnt, target, id, lv, floatSel) {
         }
         if (fx.stunDur && !resistCtrl(monsterDefCfg(effectTarget))) { applyEffect(effectTarget, 'stun', fx.stunDur); parts.push('<span class="log-hl-good">暈眩 ' + fx.stunDur + ' 秒</span>'); }
         if (fx.slowDur && !resistCtrl(monsterDefCfg(effectTarget))) { applyEffect(effectTarget, 'slow', fx.slowDur); parts.push('減速'); }
-        if (fx.debuff) { applyBuff(effectTarget, fx.debuff.key, scaleAt(fx.debuff, lv), fx.debuff.dur); parts.push('<span class="log-hl-bad">敵方' + buffLabel(fx.debuff.key) + ' -' + fmt1(scaleAt(fx.debuff, lv)) + '%</span>'); }
         if (fx.maxHpDotPct) {
           var cdps = Math.min(effectTarget.maxHp * scaleAt(fx.maxHpDotPct, lv) / 100, st.matk * 6);
           applyDot(effectTarget, cdps, fx.dotDur || 5, '詛咒');
           parts.push('<span class="log-hl-bad">附加死亡詛咒</span>');
         }
       }
+      applySkillDebuffs(targets, fx, lv, parts);
       if (st.manaSteal > 0) pEnt.mp = Math.min(st.mp, pEnt.mp + totalDmg * st.manaSteal / 100);
       if (st.lifesteal > 0) healPlayer(pEnt, totalDmg * st.lifesteal / 100, st);
     }
@@ -553,13 +610,7 @@ function castSkill(pEnt, target, id, lv, floatSel) {
   if (fx.mpRestore) { pEnt.mp = Math.min(st.mp, pEnt.mp + fx.mpRestore); parts.push('回復 ' + fx.mpRestore + ' 法力'); }
   if (fx.buff) { applyBuff(pEnt, fx.buff.key, scaleAt(fx.buff, lv), fx.buff.dur); parts.push('<span class="log-hl-good">' + buffLabel(fx.buff.key) + ' +' + fmt1(scaleAt(fx.buff, lv)) + '%（' + fx.buff.dur + '秒）</span>'); }
   if (fx.buff2) { applyBuff(pEnt, fx.buff2.key, scaleAt(fx.buff2, lv), fx.buff2.dur); }
-  if (!fx.dmgType && fx.debuff) {
-    for (var ndi = 0; ndi < targets.length; ndi++) {
-      if (targets[ndi].hp <= 0) continue;
-      applyBuff(targets[ndi], fx.debuff.key, scaleAt(fx.debuff, lv), fx.debuff.dur);
-    }
-    parts.push('<span class="log-hl-bad">敵方' + buffLabel(fx.debuff.key) + ' -' + fmt1(scaleAt(fx.debuff, lv)) + '%</span>');
-  }
+  if (!fx.dmgType) applySkillDebuffs(targets, fx, lv, parts);
   if (!fx.dmgType && fx.maxHpDotPct) {
     for (var nci = 0; nci < targets.length; nci++) {
       if (targets[nci].hp <= 0) continue;
@@ -678,7 +729,7 @@ function fuseSkills(ids) {
     totalLv += lv;
   }
   var fx = {};
-  // --- 傷害合併（各取 60% 相加；屬性採多數決）---
+  // --- 傷害合併（各取 75% 相加；屬性採多數決）---
   var dmgComps = comps.filter(function (c) { return c.fx.dmgType; });
   if (dmgComps.length) {
     var base = 0, per = 0, matkVotes = 0, hits = 1, anyTrue = false;
@@ -721,7 +772,7 @@ function fuseSkills(ids) {
   // --- 控場 / 治療 / 護盾 / 其他（擇優或加總後打折）---
   var agg = { stun: 0, slow: 0, healB: 0, healP: 0, hotB: 0, hotP: 0, hotDur: 0, shB: 0, shP: 0,
     hpod: 0, mpRestore: 0, mpOnCrit: 0, goldPer: 0, critBonus: 0, execB: 0, execM: 0 };
-  var buffs = [], debuff = null, maxHpDot = null;
+  var buffCandidates = [], debuffCandidates = [], maxHpDot = null;
   comps.forEach(function (c) {
     var f = c.fx;
     agg.stun = Math.max(agg.stun, f.stunDur || 0);
@@ -738,9 +789,10 @@ function fuseSkills(ids) {
     agg.execM = Math.max(agg.execM, f.execMult || 0);
     if (f.neverMiss) fx.neverMiss = true;
     if (f.selfCleanse) fx.selfCleanse = true;
-    if (f.buff) buffs.push(f.buff);
-    if (f.buff2) buffs.push(f.buff2);
-    if (f.debuff && !debuff) debuff = f.debuff;
+    if (f.buff) buffCandidates.push({ effect: f.buff, lv: c.lv });
+    if (f.buff2) buffCandidates.push({ effect: f.buff2, lv: c.lv });
+    if (f.debuff) debuffCandidates.push({ effect: f.debuff, lv: c.lv });
+    if (f.debuff2) debuffCandidates.push({ effect: f.debuff2, lv: c.lv });
     if (f.maxHpDotPct && !maxHpDot) maxHpDot = f;
   });
   if (agg.stun) fx.stunDur = Math.round(agg.stun * 0.8 * 10) / 10;
@@ -754,9 +806,13 @@ function fuseSkills(ids) {
   if (agg.goldPer) fx.goldPer = Math.round(agg.goldPer);
   if (agg.critBonus) fx.critBonus = Math.round(agg.critBonus);
   if (agg.execB) { fx.execBelow = agg.execB; fx.execMult = agg.execM || 2; }
-  if (buffs[0]) fx.buff = { key: buffs[0].key, base: Math.round(buffs[0].base * 0.8), per: buffs[0].per, dur: buffs[0].dur };
-  if (buffs[1]) fx.buff2 = { key: buffs[1].key, base: Math.round(buffs[1].base * 0.8), per: buffs[1].per, dur: buffs[1].dur };
-  if (debuff) fx.debuff = { key: debuff.key, base: Math.round(debuff.base * 0.8), per: debuff.per, dur: debuff.dur };
+  // 增益與減益各自最多保留 2 種；同 key 先取素材當前實際數值較高者。
+  var selectedBuffs = fusionSelectEffects(buffCandidates, 2);
+  var selectedDebuffs = fusionSelectEffects(debuffCandidates, 2);
+  if (selectedBuffs[0]) fx.buff = fusionEffectValueDef(selectedBuffs[0]);
+  if (selectedBuffs[1]) fx.buff2 = fusionEffectValueDef(selectedBuffs[1]);
+  if (selectedDebuffs[0]) fx.debuff = fusionEffectValueDef(selectedDebuffs[0]);
+  if (selectedDebuffs[1]) fx.debuff2 = fusionEffectValueDef(selectedDebuffs[1]);
   if (maxHpDot) { fx.maxHpDotPct = { base: Math.round(maxHpDot.maxHpDotPct.base * 0.7 * 10) / 10, per: maxHpDot.maxHpDotPct.per }; fx.dotDur = maxHpDot.dotDur || 5; }
 
   // --- 變異效果（每次至多一種，需與融合結果相關；觸發率公式 → formula.js §9）---
@@ -774,7 +830,7 @@ function fuseSkills(ids) {
   var cd = Math.round(Math.max.apply(null, comps.map(function (c) { return c.def.cd || 8; })) * FUSION_CD_FACTOR);
   var def = {
     id: 'fusion_' + uid(), name: fusionName(comps, fx), emoji: '🧬', cat: 'fusion',
-    cost: cost, cd: cd, maxLv: totalLv + 20, components: ids.slice(),
+    cost: cost, cd: cd, maxLv: totalLv + 20, components: ids.slice(), componentLevels: comps.map(function (c) { return c.lv; }),
     mutation: mutation, flavor: '由 ' + comps.map(function (c) { return c.def.name; }).join('、') + ' 融合而成的專屬奧義。',
     fx: fx
   };
@@ -871,6 +927,7 @@ function describeSkill(id, lv) {
   if (fx.buff) p.push('自身' + buffLabel(fx.buff.key) + ' +' + scaleStr(fx.buff, lv) + '%，持續 ' + statStr(fx.buff.dur) + ' 秒');
   if (fx.buff2) p.push(buffLabel(fx.buff2.key) + ' +' + scaleStr(fx.buff2, lv) + '%');
   if (fx.debuff) p.push('敵方' + buffLabel(fx.debuff.key) + ' -' + scaleStr(fx.debuff, lv) + '%，持續 ' + statStr(fx.debuff.dur) + ' 秒');
+  if (fx.debuff2) p.push('敵方' + buffLabel(fx.debuff2.key) + ' -' + scaleStr(fx.debuff2, lv) + '%，持續 ' + statStr(fx.debuff2.dur) + ' 秒');
   if (fx.maxHpDotPct) p.push('每秒造成敵方最大生命 ' + scaleStr(fx.maxHpDotPct, lv) + '% 的詛咒傷害（' + statStr(fx.dotDur || 5) + '秒，有上限）');
   var desc = p.join('；');
   // 融合技：附上變異與素材資訊

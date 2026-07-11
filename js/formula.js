@@ -42,10 +42,11 @@ function reincarnationTotalMultiplier(count) {
   return n === 0 ? 1 : reincarnationExtraMultiplier(n);
 }
 function reincarnationExpMultiplier(count) {
-  return Math.pow(2, count === undefined ? reincarnationCount() : count);
+  var n = clamp(Math.floor(count === undefined ? reincarnationCount() : count), 0, REINCARNATION_MAX);
+  return [1, 3, 10, 30, 100, 500][n];
 }
 
-// 升到下一級所需經驗 =（30 × 等級^2 + 40）× 2^轉生次數
+// 升到下一級所需經驗 =（30 × 等級^2 + 40）× 轉生經驗倍率（0~5轉：1/3/10/30/100/500）
 function xpForLevel(l) { return Math.floor((30 * Math.pow(l, 2) + 40) * reincarnationExpMultiplier()); }
 
 /* 等級基礎四維主屬性（不含裝備）：力/敏/智/耐 相同
@@ -264,7 +265,7 @@ function elementalResistanceMultiplier(resist, element) {
 // 全局減傷只在有該詞綴時啟用；沒有詞綴時維持原有傷害流程。
 function globalDamageMultiplier(total) {
   total = Number(total) || 0;
-  return total > 0 ? 1000 / (total + 30000) : 1;
+  return total > 0 ? total / (total + 20000) : 1;
 }
 
 var SLOW_ASPD_FACTOR = 0.7;   // 減速狀態：攻速 -30%（攻擊冷卻累積 ×0.7）

@@ -12,6 +12,7 @@ function newGameState() {
     version: 1,
     runId: 1,           // 第幾局（重新開局 +1；每局的自動存檔各自獨立，舊存檔以 mergeDefaults 補 1）
     skillDmgV2: true,   // 2026-07-09 技能傷害重調旗標（migrateSave 據此對舊存檔融合技做一次性加成）
+    specialBuffTrimV1: true, // 特殊技能第二增益移除後的既有融合技能一次性清理旗標
     savedAt: Date.now(),
     player: {
       level: 1, xp: 0,
@@ -210,28 +211,48 @@ function takeAutoSalvageCandidate(items) {
   return idx >= 0 ? items.splice(idx, 1)[0] : null;
 }
 
-// 放入背包（滿了自動分解；神話以上會保護）
+/* 放入背包（嚴格維持容量上限，不再超量收納）：
+   滿載時 —— 未受保護（傳說以下）的新物品直接分解；
+   受保護（神話+）的新物品先分解包內未受保護的最弱者騰位；
+   若包內全為神話+，則與「未鎖定中評分最低者」捨弱留強交換，
+   新物品較弱（或包內全上鎖）時分解新物品。上鎖裝備永不被動分解。 */
 function addToInventory(it) {
-  if (G.inventory.length >= (INVENTORY_CAP + (G.player.invUpgrades || 0))) {
-    if (isAutoSalvageProtected(it)) {
-      var cand = takeAutoSalvageCandidate(G.inventory);
-      if (cand) {
-        var cres = doSalvage(cand, true);
-        G.inventory.push(it);
-        UI.dirty.inv = true;
-        flog('🛡️ 背包已滿，保留高品質 ' + rarityTag(it) + '，改為自動分解 ' + rarityTag(cand) + ' → 碎片x' + cres.scrap, 'warn');
-        return true;
-      }
+  var cap = INVENTORY_CAP + (G.player.invUpgrades || 0);
+  if (G.inventory.length < cap) {
+    G.inventory.push(it);
+    UI.dirty.inv = true;
+    return true;
+  }
+  if (isAutoSalvageProtected(it)) {
+    var cand = takeAutoSalvageCandidate(G.inventory);
+    if (cand) {
+      var cres = doSalvage(cand, true);
       G.inventory.push(it);
       UI.dirty.inv = true;
-      flog('🛡️ 背包已滿，已保留高品質 ' + rarityTag(it) + '（目前超出容量，請整理背包）', 'warn');
+      flog('🛡️ 背包已滿，保留高品質 ' + rarityTag(it) + '，改為自動分解 ' + rarityTag(cand) + ' → 碎片x' + cres.scrap, 'warn');
       return true;
     }
-    var res = doSalvage(it, true);
-    flog('📦 背包已滿，自動分解 ' + rarityTag(it) + ' → 碎片x' + res.scrap, 'warn');
+    // 包內全為受保護品質：捨弱留強（新品強於未鎖定最弱者才收納）
+    var worstIdx = -1, worstScore = Infinity;
+    for (var i = 0; i < G.inventory.length; i++) {
+      var x = G.inventory[i];
+      if (!x || x.locked) continue;
+      var s = autoSalvageScore(x);
+      if (s < worstScore) { worstScore = s; worstIdx = i; }
+    }
+    if (worstIdx >= 0 && worstScore < autoSalvageScore(it)) {
+      var old = G.inventory.splice(worstIdx, 1)[0];
+      var ores = doSalvage(old, true);
+      G.inventory.push(it);
+      UI.dirty.inv = true;
+      flog('🛡️ 背包已滿，捨弱留強：自動分解較弱的 ' + rarityTag(old) + ' → 碎片x' + ores.scrap + '，收納 ' + rarityTag(it), 'warn');
+      return true;
+    }
+    var nres = doSalvage(it, true);
+    flog('📦 背包已滿且新獲得的 ' + rarityTag(it) + ' 未強於包內未鎖定裝備，自動分解 → 碎片x' + nres.scrap, 'warn');
     return false;
   }
-  G.inventory.push(it);
-  UI.dirty.inv = true;
-  return true;
+  var res = doSalvage(it, true);
+  flog('📦 背包已滿，自動分解 ' + rarityTag(it) + ' → 碎片x' + res.scrap, 'warn');
+  return false;
 }

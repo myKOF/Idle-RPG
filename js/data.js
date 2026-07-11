@@ -32,10 +32,10 @@ var REINCARNATION_EXTRA_MULTIPLIERS = [0, 10, 20, 40, 80, 160];
 var FIELD_ENEMY_COUNT_TABLE = [[1, 78], [2, 15], [3, 5], [4, 2]];
 
 /* ---- 裝備部位 ----
-   SLOT_LIST = 裝備欄位（12 欄，含雙武器/雙戒指）；ITEM_TYPES = 物品種類（10 種）。
+   SLOT_LIST = 裝備欄位（13 欄，含雙武器/雙戒指）；ITEM_TYPES = 物品種類（11 種）。
    武器/戒指類物品可裝入主/副兩個欄位（slotTypeOf 對應）。 */
-var SLOT_LIST = ['weapon', 'weapon2', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'legs', 'boots', 'ring', 'ring2', 'amulet'];
-var ITEM_TYPES = ['weapon', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'legs', 'boots', 'ring', 'amulet'];
+var SLOT_LIST = ['weapon', 'weapon2', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'ring2', 'amulet'];
+var ITEM_TYPES = ['weapon', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'];
 // 欄位 → 物品種類
 function slotTypeOf(slotKey) {
   if (slotKey === 'weapon2') return 'weapon';
@@ -56,7 +56,8 @@ var SLOT_INFO = {
   chest:    { name: '胸甲', emoji: '🛡️', icon: 'icon_chest.png' },
   belt:     { name: '腰帶', emoji: '🪢', icon: 'icon_belt.png' },
   gloves:   { name: '護手', emoji: '🧤', icon: 'icon_gloves.png' },
-  legs:     { name: '護腿', emoji: '👖', icon: 'icon_legs.png' },
+  wrist:    { name: '手腕', emoji: '🦾', icon: 'icon_wrist.png' },
+  legs:     { name: '護腿', emoji: '👖', icon: 'icon_legs_armor.png' },
   boots:    { name: '靴子', emoji: '🥾', icon: 'icon_legs.png' },
   ring:     { name: '戒指', emoji: '💍', icon: 'icon_ring.png' },
   ring2:    { name: '戒指Ⅱ', emoji: '💍', icon: 'icon_ring.png' },
@@ -69,6 +70,7 @@ var SLOT_BASENAMES = {
   chest:    ['布衣', '鎖甲', '板甲', '龍鱗甲'],
   belt:     ['麻繩腰帶', '皮革腰帶', '鎖鏈腰帶', '巨龍束帶'],
   gloves:   ['布手套', '皮護手', '鐵護手', '龍鱗護手'],
+  wrist:    ['布腕帶', '皮護腕', '鐵護腕', '龍鱗護腕'],
   legs:     ['布褲', '鐵護腿', '重甲腿鎧'],
   boots:    ['草鞋', '皮靴', '疾風之靴'],
   ring:     ['銅戒', '銀戒', '秘紋戒指'],
@@ -234,7 +236,7 @@ var ENCHANTS = {
 };
 // 附魔可作用部位（裝備欄位）
 var ENCHANT_SLOTS = {
-  atk: ['weapon', 'weapon2', 'ring', 'ring2', 'gloves'],
+  atk: ['weapon', 'weapon2', 'ring', 'ring2', 'gloves', 'wrist'],
   def: ['helmet', 'shoulder', 'chest', 'belt', 'legs'],
   util: ['amulet', 'boots']
 };
@@ -555,7 +557,11 @@ var STAT_GROUPS = [
   { title: '防禦屬性', rows: [
     ['🛡️ 物理防禦', function (st) { return statFmt(st.def, null); }, function(st) { return statDesc(st, '根據防禦公式降低受到的物理傷害。', '物理防禦', 'def', 'defPct'); }],
     ['🔰 魔法防禦', function (st) { return statFmt(st.mdef, null); }, function(st) { return statDesc(st, '根據防禦公式降低受到的魔法傷害。', '魔法防禦', 'mdef', 'defPct'); }],
-    ['🛡️ 全局減傷', function (st) { return statFmt(st.globalDmgRed, null); }, '最終傷害階段的全局減傷總合；傷害會依 1000 ÷（全局減傷總合 + 30000）比例結算。'],
+    ['🛡️ 全局減傷', function (st) { return statFmt(st.globalDmgRed, null); }, function (st) {
+      var multiplier = st.globalDmgRed > 0 ? st.globalDmgRed / (st.globalDmgRed + 20000) : 1;
+      var reduction = (1 - multiplier) * 100;
+      return '最終傷害階段的全局減傷。<br><br><span style="color:#ffd700">目前實際減傷：' + pctStr(reduction) + '</span>';
+    }],
     ['🧱 格擋率', function (st) { return statFmt(st.blockRate, 50, '%'); }, '受到攻擊時，有機率觸發格擋來減輕部分傷害。（上限：50%）'],
     ['🧲 格擋減傷', function (st) { return statFmt(30 + st.blockDmgRed, 80, '%'); }, '成功格擋時能減免的傷害比例。（上限：80%）'],
     ['💨 閃避率', function (st) { return statFmt(st.evasion, 40, '%'); }, '完全避開敵人攻擊的機率（受敵方命中率影響）。（上限：40%）'],

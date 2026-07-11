@@ -1,0 +1,188 @@
+﻿diff --git a/js/ui.js b/js/ui.js
+index 0ec0a2d..3150497 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -63,7 +63,7 @@ function switchTab(name) {
+   document.querySelectorAll('.tab').forEach(function (s) {
+     s.classList.toggle('active', s.id === 'tab-' + name);
+   });
+-  if (name === 'settings') renderSaveList(); // 進入設定分頁時刷新存檔記錄
++  if (name === 'settings') { renderSaveList(); refreshSaveFolderFilesV2(); } // 進入設定分頁時刷新存檔記錄與唯讀檔案清單
+   if (name === 'tower') UI._scrollTower = true;
+ }
+ 
+@@ -73,21 +73,48 @@ function saveTimeStr(ts) {
+   return t.getFullYear() + '/' + pad2(t.getMonth() + 1) + '/' + pad2(t.getDate()) + ' ' +
+     pad2(t.getHours()) + ':' + pad2(t.getMinutes()) + ':' + pad2(t.getSeconds());
+ }
++
++function saveFileSizeStr(size) {
++  if (size >= 1024 * 1024) return (size / (1024 * 1024)).toFixed(1) + ' MB';
++  if (size >= 1024) return Math.round(size / 1024) + ' KB';
++  return size + ' B';
++}
++
++function renderSaveFolderFilesV2(files) {
++  var box = $id('save-folder-files');
++  var listBox = $id('save-folder-files-list');
++  if (!box || !listBox) return;
++  if (!files || !files.length) {
++    box.hidden = false;
++    listBox.innerHTML = '<div class="hint">目前資料夾沒有檔案。</div>';
++    return;
++  }
++  box.hidden = false;
++  listBox.innerHTML = files.map(function (f) {
++    return '<div class="save-folder-file-row"><span class="save-folder-file-name" title="' + esc(f.name) + '">' + esc(f.name) +
++      '</span><span class="save-folder-file-size">' + saveFileSizeStr(f.size) + '</span><span class="save-folder-file-time">' + saveTimeStr(f.lastModified) + '</span></div>';
++  }).join('');
++}
++
++function refreshSaveFolderFilesV2(files) {
++  if (files) { renderSaveFolderFilesV2(files); return; }
++  var box = $id('save-folder-files');
++  if (!box) return;
++  if (typeof listSaveFolderFilesV2 !== 'function' || typeof _saveDir === 'undefined' || !_saveDir) {
++    box.hidden = true;
++    return;
++  }
++  listSaveFolderFilesV2().then(renderSaveFolderFilesV2).catch(function () { box.hidden = true; });
++}
+ function renderSaveList() {
+   var box = $id('save-list');
+   if (!box) return;
+   var curRun = (G && G.runId) || 1;
+-  var list = saveIndex().slice().sort(function (a, b) {
+-    // 本局的即時自動存檔置頂，其餘依時間新 → 舊
+-    var ac = (a.kind === 'auto' && a.runId === curRun) ? 1 : 0;
+-    var bc = (b.kind === 'auto' && b.runId === curRun) ? 1 : 0;
+-    if (ac !== bc) return bc - ac;
+-    return b.savedAt - a.savedAt;
+-  });
+-  if (!list.length) {
+-    box.innerHTML = '<div class="hint">尚無存檔記錄 — 按「💾 立即存檔」建立第一筆（自動存檔會在 15 秒內出現）</div>';
+-    return;
+-  }
++  var auto = (typeof autoSaveMetaV2 === 'function') ? autoSaveMetaV2() : {
++    id: 'auto_current', kind: 'auto', runId: curRun, savedAt: G.savedAt || Date.now(),
++    fname: 'IC_autosave.json', level: G.player.level, stage: G.stage.current, zone: G.stage.zone
++  };
++  var list = [auto].concat(saveIndex().slice().sort(function (a, b) { return b.savedAt - a.savedAt; }).slice(0, 10));
+   box.innerHTML = list.map(function (r) {
+     var cur = r.kind === 'auto' && r.runId === curRun;
+     return '<div class="save-row' + (r.kind === 'auto' ? ' auto' : '') + '">' +
+@@ -98,7 +125,6 @@ function renderSaveList() {
+       '</div>' +
+       '<div style="display:flex; gap:8px;">' +
+       '<button class="btn sm" data-load-save="' + r.id + '">📥 讀取</button>' +
+-      '<button class="btn sm" data-dl-save="' + r.id + '">⬇️ 下載</button>' +
+       '<button class="btn sm" style="color:var(--danger, #f87171); border-color:var(--danger, #f87171);" data-del-save="' + r.id + '">🗑️ 刪除</button>' +
+       '</div>' +
+       '</div>';
+@@ -2735,46 +1279,40 @@ function initUI() {
+ 
+   // 設定分頁：存檔管理
+   $id('btn-save').addEventListener('click', function () {
+-    var rec = manualSave();
+     var m = $id('save-msg');
+-    if (rec) {
+-      blog('💾 已建立存檔記錄：' + rec.fname, 'good');
+-      if (m) m.textContent = '💾 已建立存檔記錄：' + rec.fname;
+-      openSaveFolder(function(err, res) {
+-         if (err) {
+-            blog('⚠️ 同步失敗：' + err, 'warn');
+-         } else if (res && res.wrote !== undefined && !res.fallback && !res.viewOnly) {
+-            blog('✅ 已同步資料夾「' + res.dirName + '」：寫出 ' + res.wrote + ' 個存檔', 'good');
+-         }
+-      }, false);
+-    } else {
+-      blog('⚠️ 存檔失敗（儲存空間可能已滿）', 'bad');
+-      if (m) m.textContent = '⚠️ 存檔失敗（儲存空間可能已滿）';
+-    }
+-    renderSaveList();
++    if (m) m.textContent = '⏳ 正在確認本地存檔資料夾…';
++    ensureSaveFolderV2(function (err, folderRes) {
++      if (err || !folderRes) {
++        var reason = '⚠️ 未建立手動存檔：' + (err || '尚未選擇本地資料夾');
++        if (m) m.textContent = reason;
++        blog(reason, 'warn');
++        return;
++      }
++      createManualSaveToFolderV2().then(function (rec) {
++        var text = '✅ 手動存檔已寫入本地資料夾「' + folderRes.dirName + '」：' + rec.fname;
++        if (m) m.textContent = text;
++        blog(text, 'good');
++        renderSaveList();
++      }).catch(function (e) {
++        var text = '⚠️ 手動存檔寫入失敗：' + (e && e.message ? e.message : e);
++        if (m) m.textContent = text;
++        blog(text, 'bad');
++      });
++    });
+   });
+   $id('btn-folder').addEventListener('click', function () {
+     var m = $id('save-msg');
+-    if (m) m.textContent = '⏳ 連接存檔資料夾中…（請在跳出的視窗選擇資料夾）';
++    if (m) m.textContent = '⏳ 請選擇或更新存檔資料夾…';
+     openSaveFolder(function (err, res) {
+       var text;
+       if (err) {
+-        if (err.indexOf('repick') > -1 || err.indexOf('AbortError') > -1) {
+-           text = 'ℹ️ 已取消選擇資料夾';
+-           blog('ℹ️ ' + text, 'info');
+-           if (m) m.textContent = text;
+-           return;
+-        }
+         text = '⚠️ ' + err;
+-      }
+-      else if (res.fallback) text = '📥 此瀏覽器不支援存檔資料夾，已改為下載 .json 存檔（見「下載」資料夾）';
+-      else if (res.viewOnly) text = '✅ 已同步打開存檔資料夾「' + res.dirName + '」';
+-      else text = '✅ 已同步資料夾「' + res.dirName + '」：寫出 ' + res.wrote + ' 個存檔檔案' +
+-        (res.imported ? '、匯入 ' + res.imported + ' 個新存檔' : '') + '。可直接把資料夾中的 .json 檔傳給別人分享。';
++      } else text = '✅ 已選定存檔資料夾「' + res.dirName + '」；自動存檔將每 10 分鐘同步一次。';
+       if (text) {
+-          if (m) m.textContent = text;
+-          if (!res || !res.viewOnly) blog((err ? '⚠️ ' : '📂 ') + text, err ? 'warn' : 'good');
++        if (m) m.textContent = text;
++        blog(text, err ? 'warn' : 'good');
+       }
++      if (res && res.files) renderSaveFolderFilesV2(res.files);
+       renderSaveList();
+     }, true);
+   });
+@@ -2786,26 +1324,23 @@ function initUI() {
+   // 讀取/下載/刪除存檔（每列右側按鈕，需二次確認）
+   $id('save-list').addEventListener('click', function (e) {
+     var loadBtn = e.target.closest('[data-load-save]');
+-    var dlBtn = e.target.closest('[data-dl-save]');
+     var delBtn = e.target.closest('[data-del-save]');
+-    if (!loadBtn && !dlBtn && !delBtn) return;
++    if (!loadBtn && !delBtn) return;
+ 
+     var id = loadBtn ? loadBtn.getAttribute('data-load-save')
+-      : dlBtn ? dlBtn.getAttribute('data-dl-save')
+-        : delBtn.getAttribute('data-del-save');
+-    var rec = null;
+-    saveIndex().forEach(function (r) { if (r.id === id) rec = r; });
++      : delBtn.getAttribute('data-del-save');
++    var rec = (typeof findSaveRecordV2 === 'function') ? findSaveRecordV2(id) : null;
+     if (!rec) return;
+ 
+     if (loadBtn) {
+       showConfirmDialog('確定要讀取「' + saveRecName(rec) + '」嗎？\n檔名：' + rec.fname + '\n時間：' + saveTimeStr(rec.savedAt) +
+         '\n\n目前進度會先寫入本局的自動存檔，再切換為此存檔。', function () {
+-          var err = loadSaveRecord(id);
+-          if (err) blog('⚠️ 讀取存檔失敗：' + err, 'bad');
++          var result = loadSaveRecord(id);
++          if (result && typeof result.then === 'function') {
++            result.then(function (err) { if (err) blog('⚠️ 讀取存檔失敗：' + err, 'bad'); })
++              .catch(function (e) { blog('⚠️ 讀取存檔失敗：' + (e && e.message ? e.message : e), 'bad'); });
++          } else if (result) blog('⚠️ 讀取存檔失敗：' + result, 'bad');
+         }, { title: '讀取存檔確認', okText: '讀取存檔', danger: true });
+-    } else if (dlBtn) {
+-      downloadSingleSave(id, rec.fname);
+-      blog('⬇️ 存檔已下載：' + rec.fname, 'good');
+     } else if (delBtn) {
+       showConfirmDialog('確定要刪除「' + saveRecName(rec) + '」嗎？\n檔名：' + rec.fname + '\n時間：' + saveTimeStr(rec.savedAt) +
+         '\n\n刪除後無法恢復，是否繼續？', function () {
+

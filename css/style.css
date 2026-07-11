@@ -177,8 +177,13 @@ body {
 }
 
 @keyframes reincarnation-rainbow {
-  from { background-position: 0% 50%; }
-  to { background-position: 300% 50%; }
+  from {
+    background-position: 0% 50%;
+  }
+
+  to {
+    background-position: 300% 50%;
+  }
 }
 
 .sidebar-level {
@@ -972,26 +977,32 @@ textarea#save-io {
 }
 
 .equip-top-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 796px) minmax(200px, 210px);
+  gap: 10px;
+  align-items: start;
   background: transparent;
   border: none;
   box-shadow: none;
   padding: 0;
-  margin-bottom: 30px !important;
+  margin-bottom: 8px !important;
 }
 
+/* 裝備格欄位優先取滿上限（詳情欄為 fr 彈性欄，吃剩餘空間），
+   避免兩欄按比例分配時裝備格永遠到不了放大後的尺寸。 */
 .equip-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 410px) minmax(250px, 350px);
+  grid-template-columns: minmax(320px, 428px) minmax(250px, 1fr);
   gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 0;
 }
 
 #equip-grid {
   position: relative;
   width: 100%;
-  max-width: 410px;
-  aspect-ratio: 1844 / 2304;
-  background-image: url('../images/Character UI.png');
+  max-width: 428px;
+  aspect-ratio: 780 / 1024;
+  background-image: url('../images/character_UI .png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -1017,7 +1028,8 @@ textarea#save-io {
   box-sizing: border-box;
 }
 
-.eq-slot .eq-icon, .eq-slot .eq-emoji {
+.eq-slot .eq-icon,
+.eq-slot .eq-emoji {
   width: 80%;
   height: 80%;
   object-fit: contain;
@@ -1028,8 +1040,105 @@ textarea#save-io {
 }
 
 .eq-slot.filled {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(7, 6, 5, 0.90);
   cursor: pointer;
+}
+
+/* 裝備頁右側的寶石／附魔小圖示區：固定高度，避免把背包往下推。 */
+.equip-material-panel {
+  min-width: 0;
+  width: 100%;
+  height: 465px;
+  max-height: 465px;
+  margin-top: 30px;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: rgba(10, 7, 4, 0.82);
+  box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.85);
+  box-sizing: border-box;
+}
+
+.equip-material-panel:empty {
+  display: none;
+}
+
+.equip-material-section + .equip-material-section {
+  margin-top: 9px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(184, 134, 11, 0.45);
+}
+
+.equip-material-title {
+  color: var(--accent);
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.equip-material-subtitle {
+  color: var(--dim);
+  font-size: 11px;
+  margin: 7px 0 4px;
+}
+
+.equip-material-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 32px);
+  gap: 5px;
+  align-items: center;
+}
+
+.equip-material-icon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid #7c6df2;
+  border-radius: 4px;
+  background: rgba(20, 16, 12, 0.95);
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  transition: filter .15s, border-color .15s, transform .15s;
+}
+
+.equip-material-icon:hover {
+  border-color: var(--accent);
+  filter: brightness(1.25);
+  transform: translateY(-1px);
+}
+
+.equip-material-icon.installed {
+  border-color: #fbbf24;
+  box-shadow: 0 0 5px rgba(251, 191, 36, 0.4);
+}
+
+.equip-material-icon.empty {
+  border-style: dashed;
+  border-color: var(--border);
+  color: var(--dim);
+  cursor: default;
+}
+
+.equip-material-icon.dim-chip {
+  opacity: .45;
+}
+
+.equip-material-empty {
+  color: var(--dim);
+  font-size: 11px;
+}
+
+/* 新版底圖的內襯較淺；已裝備欄位加深並略放大圖示，避免淺色底從圖示四周透出。 */
+.eq-slot.filled .eq-icon,
+.eq-slot.filled .eq-emoji {
+  width: 84%;
+  height: 84%;
 }
 
 .eq-slot.filled:hover {
@@ -1041,21 +1150,98 @@ textarea#save-io {
   font-size: 26px;
 }
 
-/* 座標取自 Character UI.png 原圖（1844x2304），部位依裝備介面參考圖配置。 */
-.slot-shoulder { left: 26.25%; top: 20.01%; width: 16.92%; height: 18.32%; }
-.slot-gloves   { left: 18.76%; top: 43.45%; width: 16.92%; height: 18.49%; }
-.slot-ring     { left: 18.76%; top: 61.55%; width: 10.41%; height: 7.99%; }
-.slot-weapon   { left: 18.76%; top: 81.16%; width: 16.92%; height: 21.18%; }
+/* 座標實測自 character_UI .png 原圖（780x1024）各格羊皮紙內框的像素邊界。 */
+.slot-shoulder {
+  left: 26.15%;
+  top: 19.34%;
+  width: 17.05%;
+  height: 17.87%;
+}
 
-.slot-helmet   { left: 50.49%; top: 11.72%; width: 17.03%; height: 13.54%; }
-.slot-chest    { left: 50.54%; top: 36.55%; width: 16.92%; height: 26.39%; }
-.slot-belt     { left: 50.54%; top: 61.02%; width: 21.69%; height: 6.08%; }
-.slot-boots    { left: 50.54%; top: 80.34%; width: 16.92%; height: 18.66%; }
+.slot-gloves {
+  left: 18.72%;
+  top: 41.70%;
+  width: 17.05%;
+  height: 17.68%;
+}
 
-.slot-amulet   { left: 73.43%; top: 21.01%; width: 14.32%; height: 11.11%; }
-.slot-legs     { left: 82.10%; top: 43.45%; width: 16.92%; height: 18.49%; }
-.slot-ring2    { left: 82.21%; top: 61.55%; width: 10.41%; height: 7.99%; }
-.slot-weapon2  { left: 82.10%; top: 81.42%; width: 16.92%; height: 21.70%; }
+.slot-ring {
+  left: 18.85%;
+  top: 59.23%;
+  width: 10.90%;
+  height: 8.20%;
+}
+
+.slot-weapon {
+  left: 18.78%;
+  top: 81.64%;
+  width: 17.18%;
+  height: 27.44%;
+}
+
+.slot-helmet {
+  left: 50.45%;
+  top: 11.33%;
+  width: 17.18%;
+  height: 13.38%;
+}
+
+.slot-chest {
+  left: 50.51%;
+  top: 33.50%;
+  width: 17.05%;
+  height: 22.17%;
+}
+
+.slot-belt {
+  left: 51.15%;
+  top: 50.63%;
+  width: 22.44%;
+  height: 6.25%;
+}
+
+.slot-boots {
+  left: 51.15%;
+  top: 86.38%;
+  width: 17.31%;
+  height: 18.16%;
+}
+
+.slot-amulet {
+  left: 73.46%;
+  top: 20.21%;
+  width: 14.49%;
+  height: 11.04%;
+}
+
+.slot-wrist {
+  left: 82.18%;
+  top: 41.70%;
+  width: 17.05%;
+  height: 17.68%;
+}
+
+.slot-legs {
+  left: 51.09%;
+  top: 65.33%;
+  width: 17.18%;
+  height: 17.87%;
+  z-index: 3;
+}
+
+.slot-ring2 {
+  left: 83.27%;
+  top: 59.23%;
+  width: 11.03%;
+  height: 8.20%;
+}
+
+.slot-weapon2 {
+  left: 83.40%;
+  top: 81.64%;
+  width: 17.18%;
+  height: 27.44%;
+}
 
 .eq-emoji.dim {
   opacity: .3;
@@ -1112,10 +1298,17 @@ textarea#save-io {
   transition: opacity 0.2s, filter 0.2s, box-shadow 0.2s, outline 0.2s;
 }
 
-.eq-slot.filled.selected,
+/* 選中標示：在裝備框「外圈」再畫一圈白框（與框之間留出間隙），
+   與神話/創世/神鑄的流光邊框明顯區隔，不疊在原本的框上。 */
+.eq-slot.selected {
+  outline: 3px solid #fff;
+  outline-offset: 5px;
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.45) !important;
+}
+
 .item-cell.selected {
   outline: 2px solid #fff;
-  outline-offset: 1px;
+  outline-offset: 2px;
   box-shadow: 0 0 15px rgba(255, 255, 255, 0.4) !important;
 }
 
@@ -1338,6 +1531,11 @@ textarea#save-io {
   gap: 6px;
   flex-wrap: wrap;
   margin-top: 10px;
+}
+
+/* 裝備詳情下方按鈕列常駐保留高度：未選取裝備時不塌陷，背包區位置固定不跳動。 */
+.equip-action-bar {
+  min-height: 33px;
 }
 
 .btn-it-pool {
@@ -1927,10 +2125,10 @@ textarea#save-io {
 }
 
 .loadout-slot.drag-over {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(130, 85, 0, 0.55);
   border-color: var(--accent);
   border-style: solid;
-  box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.65), 0 0 6px rgba(250, 204, 21, 0.35);
 }
 
 .skill-cat-title {
@@ -2187,7 +2385,7 @@ textarea#save-io {
   overflow: hidden;
 }
 
-#skill-modal-body .skd-head > b {
+#skill-modal-body .skd-head>b {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2220,7 +2418,7 @@ textarea#save-io {
 }
 
 #skill-modal-body .skill-modal-actions .btn,
-#skill-modal-body .skill-modal-actions > div {
+#skill-modal-body .skill-modal-actions>div {
   min-width: 0;
   min-height: 26px;
   box-sizing: border-box;
@@ -2644,7 +2842,8 @@ textarea#save-io {
 .gconv-layout {
   display: flex;
   gap: 16px;
-  align-items: flex-start; /* 右側控制元件靠上對齊 */
+  align-items: flex-start;
+  /* 右側控制元件靠上對齊 */
   margin-top: 8px;
   flex-wrap: wrap;
 }
@@ -2706,7 +2905,8 @@ textarea#save-io {
   flex-direction: column;
   gap: 8px;
   align-items: stretch;
-  flex: 1 1 190px;   /* 與九宮格同列，寬度不夠時內容自行收縮 */
+  flex: 1 1 190px;
+  /* 與九宮格同列，寬度不夠時內容自行收縮 */
   min-width: 0;
   max-width: 240px;
 }
@@ -2740,7 +2940,8 @@ textarea#save-io {
 }
 
 .gem-result.gem-result-3 {
-  min-height: 64px; /* 約三行 */
+  min-height: 64px;
+  /* 約三行 */
   margin-top: 8px;
 }
 
@@ -2815,21 +3016,63 @@ textarea#save-io {
   font-size: 12px;
 }
 
+.save-new-notice {
+  color: #39ff88;
+  font-size: 15px;
+  font-weight: bold;
+  text-shadow: 0 0 6px rgba(57, 255, 136, 0.8);
+  margin-top: 3px;
+}
+
 .save-row .btn {
   flex-shrink: 0;
 }
 
+.save-folder-files {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(184, 134, 11, 0.65);
+  border-radius: 5px;
+  background: rgba(10, 7, 4, 0.72);
+}
+
+.save-folder-files-title {
+  color: var(--accent);
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+#save-folder-files-list {
+  max-height: 180px;
+  overflow-y: auto;
+  color: var(--dim);
+  font-size: 11px;
+}
+
+.save-folder-file-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 70px 130px;
+  gap: 8px;
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(184, 134, 11, 0.14);
+}
+
+.save-folder-file-row:last-child { border-bottom: none; }
+.save-folder-file-name { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.save-folder-file-size, .save-folder-file-time { text-align: right; white-space: nowrap; }
+
 /* ---- 主畫面改造第三階段新增樣式 ---- */
-.equip-layout > div:nth-child(2) {
+.equip-layout>div:nth-child(2) {
   display: flex;
   flex-direction: column;
 }
 
+/* 詳情框固定高度：內容過多時框內出現卷軸，不再撐長版面把背包往下推。 */
 #detail-pane {
   width: 100% !important;
-  flex: 1 !important;
+  flex: 0 0 auto !important;
   min-height: 0 !important;
-  height: auto !important;
+  height: 500px !important;
   overflow-y: auto !important;
   border: 1px solid transparent !important;
   border-image: none !important;
@@ -3356,8 +3599,13 @@ textarea#save-io {
   font-size: 11px;
 }
 
-#gm-command-panel .gm-status.good { color: var(--good); }
-#gm-command-panel .gm-status.bad { color: var(--bad); }
+#gm-command-panel .gm-status.good {
+  color: var(--good);
+}
+
+#gm-command-panel .gm-status.bad {
+  color: var(--bad);
+}
 
 /* ============ 高塔連續挑戰 ============ */
 .tower-auto-bar {
@@ -3391,13 +3639,17 @@ textarea#save-io {
   initial-value: 0deg;
   inherits: false;
 }
+
 @keyframes fusionRotate {
-  to { --angle: 360deg; }
+  to {
+    --angle: 360deg;
+  }
 }
+
 .tree-cell.fusion-selected {
   border: 3px solid transparent !important;
   background: linear-gradient(var(--bg2), var(--bg2)) padding-box,
-              conic-gradient(from var(--angle, 0deg), #c084fc, #4c1d95, #e879f9, #4c1d95, #c084fc) border-box !important;
+    conic-gradient(from var(--angle, 0deg), #c084fc, #4c1d95, #e879f9, #4c1d95, #c084fc) border-box !important;
   animation: fusionRotate 2s linear infinite;
   box-shadow: 0 0 12px rgba(168, 85, 247, 0.7), inset 0 0 8px rgba(168, 85, 247, 0.4);
   opacity: 1 !important;

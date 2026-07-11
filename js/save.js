@@ -30,15 +30,24 @@ function saveStamp(ts) {
     pad2(d.getHours()) + pad2(d.getMinutes()) + pad2(d.getSeconds());
 }
 function saveRecName(rec) {
-  return rec.kind === 'auto' ? '⚡ 即時自動存檔（第 ' + rec.runId + ' 局）' : '💾 手動存檔';
+  return rec.kind === 'auto' ? '⚡ 自動存檔' : '💾 手動存檔';
 }
-// 寫入/更新一筆存檔記錄，並依上限修剪最舊的記錄
-function putSaveRecord(rec, json) {
-  try { localStorage.setItem(SAVE_REC_PREFIX + rec.id, json); } catch (e) { return false; }
-  var list = saveIndex();
-  var found = false;
-  for (var i = 0; i < list.length; i++) if (list[i].id === rec.id) { list[i] = rec; found = true; break; }
-  if (!found) list.unshift(rec);
+// 清理索引外的孤兒資料，避免舊版匯入／刪除異常長期佔用 localStorage。
+function removeUnindexedSaveRecords(list) {
+  var known = {};
+  list.forEach(function (r) { known[SAVE_REC_PREFIX + r.id] = true; });
+  for (var i = localStorage.length - 1; i >= 0; i--) {
+    var key = localStorage.key(i);
+    if (key && key !== SAVE_INDEX_KEY && key.indexOf(SAVE_REC_PREFIX) === 0 && !known[key]) {
+      try { localStorage.removeItem(key); } catch (e) {}
+    }
+  }
+}
+
+// 依記錄上限修剪最舊存檔；回傳修剪後索引。
+function pruneSaveRecords(inputList) {
+  var list = inputList || saveIndex();
+  removeUnindexedSaveRecords(list);
   var manual = list.filter(function (r) { return r.kind === 'manual'; });
   var autos = list.filter(function (r) { return r.kind === 'auto'; });
   manual.sort(function (a, b) { return b.savedAt - a.savedAt; });
@@ -55,6 +64,75 @@ function putSaveRecord(rec, json) {
   toRemove.forEach(function (r) {
     if (!list.some(function (x) { return x.fname === r.fname; })) removeFolderFile(r.fname);
   });
+  return list;
+}
+
+// 儲存空間不足時，逐筆釋放最舊記錄，讓最新存檔有重試機會。
+function removeOldestSaveRecord() {
+  var list = saveIndex().slice().sort(function (a, b) { return (a.savedAt || 0) - (b.savedAt || 0); });
+  if (!list.length) return false;
+  var victim = list[0];
+  try { localStorage.removeItem(SAVE_REC_PREFIX + victim.id); } catch (e) {}
+  var next = saveIndex().filter(function (r) { return r.id !== victim.id; });
+  writeSaveIndex(next);
+  if (victim.fname && !next.some(function (r) { return r.fname === victim.fname; })) removeFolderFile(victim.fname);
+  return true;
+}
+
+// 多份完整遊戲快照容易塞滿 localStorage；清理瀏覽器內的副本時不碰目前主存檔，
+// 本地資料夾中的實體檔仍保留，之後可重新掃描匯入。
+function compactSaveRecordStorage() {
+  for (var i = localStorage.length - 1; i >= 0; i--) {
+    var key = localStorage.key(i);
+    if (key && key !== SAVE_INDEX_KEY && key.indexOf(SAVE_REC_PREFIX) === 0) {
+      try { localStorage.removeItem(key); } catch (e) {}
+    }
+  }
+  try { localStorage.removeItem(SAVE_INDEX_KEY); } catch (e2) {}
+}
+
+// 先正常寫入；失敗時清理並逐筆刪除最舊記錄後重試。
+function setSaveStorage(key, json) {
+  try {
+    localStorage.setItem(key, json);
+    return true;
+  } catch (e) {
+    pruneSaveRecords();
+    try {
+      localStorage.setItem(key, json);
+      return true;
+    } catch (e2) {
+      compactSaveRecordStorage();
+      try {
+        localStorage.setItem(key, json);
+        return true;
+      } catch (eCompact) {}
+      var attempts = saveIndex().length;
+      for (var i = 0; i < attempts; i++) {
+        if (!removeOldestSaveRecord()) break;
+        try {
+          localStorage.setItem(key, json);
+          return true;
+        } catch (e3) {}
+      }
+      return false;
+    }
+  }
+}
+
+// 寫入/更新一筆存檔記錄，並依上限修剪最舊的記錄。
+function putSaveRecord(rec, json) {
+  var list = saveIndex();
+  var found = false;
+  for (var i = 0; i < list.length; i++) if (list[i].id === rec.id) { list[i] = rec; found = true; break; }
+  if (!found) list.unshift(rec);
+  list = pruneSaveRecords(list);
+  writeSaveIndex(list);
+  if (!setSaveStorage(SAVE_REC_PREFIX + rec.id, json)) return false;
+  // 寫入過程可能清掉最舊索引，確保剛成功的記錄仍保留在清單中。
+  list = saveIndex();
+  if (!list.some(function (r) { return r.id === rec.id; })) list.unshift(rec);
+  writeSaveIndex(list);
   return true;
 }
 function saveRecMeta(kind, id, fname) {
@@ -65,28 +143,51 @@ function saveRecMeta(kind, id, fname) {
   };
 }
 
-function saveGame() {
+function saveGame(opts) {
   if (_saveSuppressed) return;
   try {
     G.savedAt = Date.now();
     var json = JSON.stringify(G);
-    localStorage.setItem(SAVE_KEY, json);
+    var primarySaved = setSaveStorage(SAVE_KEY, json);
     // 即時自動存檔記錄（每局固定同一個檔，特別標注）
     var runId = G.runId || 1;
-    putSaveRecord(saveRecMeta('auto', 'auto_run' + runId, 'IC_autosave_run' + runId + '.json'), json);
-    syncSaveFolder(); // 已連接存檔資料夾時，順帶寫出檔案（靜默）
-  } catch (e) { /* 容量滿或隱私模式，靜默失敗 */ }
+    var autoRec = saveRecMeta('auto', 'auto_run' + runId, 'IC_autosave_run' + runId + '.json');
+    var recordSaved = putSaveRecord(autoRec, json);
+    if (recordSaved) {
+      if (!(opts && opts.skipFolderSync)) syncSaveFolder(); // 已連接存檔資料夾時，順帶寫出檔案（靜默）
+    } else if (_saveDir) {
+      // localStorage 配額不足時，將自動存檔直接落地本地資料夾，索引只保留 metadata。
+      writeManualSaveToFolder(autoRec, json).catch(function () {});
+    }
+    // 主存檔是防回檔的必要資料；歷史自動存檔副本寫不進去時，不應覆蓋主存檔成功。
+    return primarySaved;
+  } catch (e) { /* 儲存空間滿或隱私模式 */ return false; }
 }
 
 // 手動「立即存檔」：另存一筆記錄；回傳記錄（失敗 null）
-function manualSave(label) {
-  saveGame(); // 目前遊戲存檔點同步更新
+function manualSave(label, opts) {
+  opts = opts || {};
+  saveGame({ skipFolderSync: !!opts.skipFolderSync }); // 目前遊戲存檔點同步更新
   G.savedAt = Date.now();
   var id = 'm' + Date.now().toString(36) + ri(100, 999);
   var prefix = label ? String(label).replace(/[^a-z0-9_-]+/ig, '_') : 'manual';
   var rec = saveRecMeta('manual', id, 'IC_' + prefix + '_' + saveStamp(Date.now()) + '.json');
-  if (!putSaveRecord(rec, JSON.stringify(G))) return null;
-  syncSaveFolder(); // 已連接存檔資料夾時，順帶寫出檔案（靜默）
+  var manualJson = JSON.stringify(G);
+  // 已連接本地資料夾時，避免先嘗試寫入完整 localStorage 快照而清掉既有 metadata。
+  if (opts.allowFolderOnly && opts.skipFolderSync && _saveDir) {
+    rec._folderOnly = true;
+    rec._folderJson = manualJson;
+    return rec;
+  }
+  if (!putSaveRecord(rec, manualJson)) {
+    if (opts.allowFolderOnly && _saveDir) {
+      rec._folderOnly = true;
+      rec._folderJson = manualJson;
+      return rec;
+    }
+    return null;
+  }
+  if (!opts.skipFolderSync) syncSaveFolder(); // 已連接存檔資料夾時，順帶寫出檔案（靜默）
   return rec;
 }
 
@@ -96,7 +197,10 @@ function deleteSaveRecord(id) {
   saveIndex().forEach(function (x) { if (x.id === id) rec = x; });
   try { localStorage.removeItem(SAVE_REC_PREFIX + id); } catch (e) {}
   var list = saveIndex().filter(function (x) { return x.id !== id; });
-  writeSaveIndex(list);
+  try { localStorage.setItem(SAVE_INDEX_KEY, JSON.stringify(list)); } catch (e) {
+    compactSaveRecordStorage();
+    try { localStorage.setItem(SAVE_INDEX_KEY, JSON.stringify(list)); } catch (e2) {}
+  }
   if (rec && rec.fname && !list.some(function (x) { return x.fname === rec.fname; })) {
     removeFolderFile(rec.fname);
   }
@@ -124,19 +228,41 @@ function dedupeSaveIndex() {
 }
 
 
-// 讀取存檔記錄（覆蓋目前遊戲並重新整理）；回傳 null=成功
-function loadSaveRecord(id) {
-  var raw = localStorage.getItem(SAVE_REC_PREFIX + id);
-  if (!raw) return '找不到存檔資料';
+function findSaveRecord(id) {
+  var found = null;
+  saveIndex().forEach(function (r) { if (r.id === id) found = r; });
+  return found;
+}
+
+function readFolderSaveRecord(rec) {
+  if (!_saveDir || !rec || !rec.fname) return Promise.reject(new Error('尚未連接存檔資料夾'));
+  return _saveDir.getFileHandle(rec.fname, { create: false })
+    .then(function (fh) { return fh.getFile(); })
+    .then(function (file) { return file.text(); });
+}
+
+function applyLoadedSaveRaw(raw) {
   try {
     var d = JSON.parse(raw);
     if (!d || d.version !== 1) return '存檔格式錯誤';
   } catch (e) { return '存檔格式錯誤'; }
-  saveGame();               // 目前進度先寫入本局的自動存檔
-  _saveSuppressed = true;   // 防止 beforeunload 把舊狀態蓋回去
-  localStorage.setItem(SAVE_KEY, raw);
+  saveGame(); // 目前進度先寫入本局的自動存檔
+  _saveSuppressed = true; // 防止 beforeunload 把舊狀態蓋回去
+  if (!setSaveStorage(SAVE_KEY, raw)) return '目前瀏覽器空間不足，無法切換主存檔';
   location.reload();
   return null;
+}
+
+// 讀取存檔記錄（覆蓋目前遊戲並重新整理）；本地資料夾存檔回傳 Promise
+function loadSaveRecord(id) {
+  var rec = findSaveRecord(id);
+  var raw = localStorage.getItem(SAVE_REC_PREFIX + id);
+  if (raw) return applyLoadedSaveRaw(raw);
+  if (rec && rec.folderOnly && _saveDir) {
+    return readFolderSaveRecord(rec).then(function (text) { return applyLoadedSaveRaw(text); })
+      .catch(function (e) { return '讀取本地存檔失敗：' + (e && e.message ? e.message : e); });
+  }
+  return '找不到存檔資料';
 }
 
 function loadGame() {
@@ -155,6 +281,7 @@ function migrateSave(data) {
   var hadSkillPointBudget = !!(data.player && data.player.skillPointBudget !== undefined);
   var hadZone = data.stage && data.stage.zone !== undefined; // 需在 mergeDefaults 前判斷
   var hadSkillDmgV2 = !!data.skillDmgV2;                     // 需在 mergeDefaults 前判斷（merge 會補 true）
+  var hadSpecialBuffTrimV1 = !!data.specialBuffTrimV1;        // 一次性移除特殊技能第二增益
   var def = newGameState();
   
   // 防止玩家手動降級（刪除）的初始技能，在讀檔時被 mergeDefaults 誤判為缺漏而自動補回 1 級
@@ -232,6 +359,19 @@ function migrateSave(data) {
   var spTotal = Math.max(0, Math.floor(Number(data.player.skillPointBudget) || 0));
   if (spSpent > spTotal) {
     data._skillPointRepairNotice = '技能投入 ' + spSpent + ' 點超過總預算 ' + spTotal + ' 點，可用技能點已保護為 0；既有技能未刪除';
+  }
+  /* ONE-TIME MIGRATION: specialBuffTrimV1
+     特殊技能已移除第二個增益效果；既有融合技的 fx 是存檔快照，
+     只清理由這些特殊技能帶入的 buff2，不要求玩家重新消耗素材。 */
+  if (!hadSpecialBuffTrimV1 && data.player.fusions && data.player.fusions.length) {
+    var trimmedSpecialBuffs = 0;
+    data.player.fusions.forEach(function (fs) {
+      if (typeof trimLegacySpecialFusionBuff === 'function' && trimLegacySpecialFusionBuff(fs)) trimmedSpecialBuffs++;
+    });
+    data.specialBuffTrimV1 = true;
+    if (trimmedSpecialBuffs) {
+      data._specialBuffTrimNotice = '已清理 ' + trimmedSpecialBuffs + ' 個融合技能的特殊第二增益效果';
+    }
   }
   /* ---- 融合寶石「融合次數」改為世代制（2026-07-09 修正）----
      舊定義 fusions = 融合事件總數（兩顆融合1次的再融合 → 3，玩家預期 2）。
@@ -330,6 +470,34 @@ function idbGetDir(cb) {
   });
 }
 
+// 啟動時讀取已授權資料夾內最新的有效存檔，避免 localStorage 配額不足時回到舊快照。
+function loadLatestFolderSave(cb) {
+  cb = cb || function () {};
+  if (!window.showDirectoryPicker) { cb(null); return; }
+  idbGetDir(function (stored) {
+    if (!stored) { cb(null); return; }
+    stored.requestPermission({ mode: 'readwrite' }).then(function (perm) {
+      if (perm !== 'granted') { cb(null); return; }
+      _saveDir = stored;
+      return (async function () {
+        var best = null;
+        for await (var ent of stored.values()) {
+          if (ent.kind !== 'file' || !/\.json$/i.test(ent.name)) continue;
+          try {
+            var raw = await (await ent.getFile()).text();
+            var data = JSON.parse(raw);
+            if (!data || data.version !== 1) continue;
+            var ts = Number(data.savedAt) || 0;
+            if (!best || ts > best.savedAt) best = { data: data, savedAt: ts, fname: ent.name };
+          } catch (e) {}
+        }
+        if (best) best.data = migrateSave(best.data);
+        cb(best);
+      })();
+    }).catch(function () { cb(null); });
+  });
+}
+
 // 開啟/連接存檔資料夾 → 寫出所有記錄 + 掃描匯入新檔案；cb(err, {wrote, imported, dirName})
 function openSaveFolder(cb, forceOpen) {
   cb = cb || function () {};
@@ -343,38 +511,49 @@ function openSaveFolder(cb, forceOpen) {
       _saveDir = dir;
       idbSetDir(dir);
       var wroteN = 0;
-      return writeAllToFolder().then(function (w) { wroteN = w; return importUnknownFromFolder(); })
-        .then(function (imp) { return { wrote: wroteN, imported: imp, dirName: _saveDir.name }; });
+      return cleanupFolderSwapFiles().then(function () { return writeAllToFolder(); }).then(function (w) { wroteN = w; return importUnknownFromFolder(); })
+        .then(function (imp) { return { wrote: wroteN.wrote, skipped: wroteN.skipped, total: wroteN.total, imported: imp, dirName: _saveDir.name }; });
+    };
+
+    var chooseFolder = function () {
+      return window.showDirectoryPicker({ id: 'idle_rpg_saves', mode: 'readwrite' }).then(doSync);
     };
 
     if (stored && !forceOpen) {
       stored.requestPermission({ mode: 'readwrite' }).then(function (perm) {
         if (perm !== 'granted') throw new Error('repick');
         return stored;
-      }).catch(function () { return window.showDirectoryPicker({ id: 'idle_rpg_saves', mode: 'readwrite' }); })
+      }).catch(function () { return chooseFolder(); })
       .then(doSync).then(function(res){ cb(null, res); }).catch(function(e){ cb('未選擇資料夾或無存取權限' + (e && e.name ? '（' + e.name + '）' : '')); });
+    } else if (forceOpen) {
+      // 使用者主動按下「打開」時，每次都叫出資料夾選擇器，避免只在背景同步而沒有開啟動作。
+      chooseFolder().then(function(res){ cb(null, res); }).catch(function(e){
+        if (e && e.name === 'AbortError') {
+          cb(null, { wrote: 0, imported: 0, dirName: stored ? stored.name : '', viewOnly: true });
+        } else {
+          cb('未選擇資料夾或無存取權限' + (e && e.name ? '（' + e.name + '）' : ''));
+        }
+      });
     } else {
-      if (stored && forceOpen) {
-         // 先在背景嘗試同步，這樣跳出的視窗裡就能看到最新的檔案
-         stored.requestPermission({ mode: 'readwrite' }).then(function(perm) {
-            if (perm === 'granted') {
-               _saveDir = stored;
-               writeAllToFolder().then(function(){ importUnknownFromFolder(); });
-            }
-         }).catch(function(){});
-      }
-      window.showDirectoryPicker({ id: 'idle_rpg_saves', mode: 'readwrite' })
-        .then(doSync)
+      chooseFolder()
         .then(function(res){ cb(null, res); })
-        .catch(function(e){
-           if (forceOpen && stored && e && e.name === 'AbortError') {
-               cb(null, { wrote: 0, imported: 0, dirName: stored.name, viewOnly: true });
-           } else {
-               cb('未選擇資料夾或無存取權限' + (e && e.name ? '（' + e.name + '）' : ''));
-           }
-        });
+        .catch(function(e){ cb('未選擇資料夾或無存取權限' + (e && e.name ? '（' + e.name + '）' : '')); });
     }
   });
+}
+
+// 清理 Chromium 寫入中斷留下的暫存檔；只處理已知的 .crswap 檔，不碰其他使用者檔案。
+function cleanupFolderSwapFiles() {
+  if (!_saveDir) return Promise.resolve();
+  return (async function () {
+    var stale = [];
+    for await (var ent of _saveDir.values()) {
+      if (ent.kind === 'file' && /\.crswap$/i.test(ent.name)) stale.push(ent.name);
+    }
+    for (var i = 0; i < stale.length; i++) {
+      try { await _saveDir.removeEntry(stale[i]); } catch (e) {}
+    }
+  })();
 }
 
 /* ---- 資料夾同步：拆分「寫出」與「掃描匯入」（根治自匯入重複記錄）----
@@ -392,27 +571,73 @@ function removeFolderFile(fname) {
 
 // 只把目前所有存檔記錄寫成資料夾實體檔（不掃描、不匯入）
 function writeAllToFolder() {
-  if (!_saveDir) return Promise.resolve(0);
-  if (_folderWriting) { _folderPending = true; return Promise.resolve(0); } // 寫出中：標記待重跑，完成後補寫最新 index
+  if (!_saveDir) return Promise.resolve({ wrote: 0, skipped: 0, total: 0 });
+  if (_folderWriting) { _folderPending = true; return Promise.resolve({ wrote: 0, skipped: 0, total: 0 }); } // 寫出中：標記待重跑，完成後補寫最新 index
   _folderWriting = true;
   var list = saveIndex();
   var wrote = 0;
+  var skipped = 0;
+  var entries = list.slice();
+  // 索引遺失時仍保留目前遊戲進度，避免使用者選定資料夾後得到空資料夾。
+  if (!entries.length && localStorage.getItem(SAVE_KEY)) {
+    entries.push({ id: null, fname: 'IC_current.json', kind: 'current' });
+  }
+  var total = entries.length;
+  var writeEntry = function (r) {
+    var raw = r.kind === 'current' ? localStorage.getItem(SAVE_KEY) : localStorage.getItem(SAVE_REC_PREFIX + r.id);
+    // 自動存檔內容若因舊版異常遺失，使用目前存檔回填，至少保住最新進度。
+    if (!raw && r.kind === 'auto') raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) { skipped++; return Promise.resolve(); }
+    return writeRawToFolder(r.fname, raw).then(function () { wrote++; });
+  };
   var chain = Promise.resolve();
-  list.forEach(function (r) {
-    chain = chain.then(function () {
-      var raw = localStorage.getItem(SAVE_REC_PREFIX + r.id);
-      if (!raw) return;
-      return _saveDir.getFileHandle(r.fname, { create: true })
-        .then(function (fh) { return fh.createWritable(); })
-        .then(function (w) { return w.write(raw).then(function () { return w.close(); }); })
-        .then(function () { wrote++; });
-    });
+  entries.forEach(function (r) {
+    chain = chain.then(function () { return writeEntry(r); });
   });
   return chain.then(function () {
     _folderWriting = false;
     if (_folderPending) { _folderPending = false; return writeAllToFolder(); } // 期間有新記錄 → 補寫一次
-    return wrote;
+    return { wrote: wrote, skipped: skipped, total: total };
   }, function (e) { _folderWriting = false; _folderPending = false; throw e; });
+}
+
+// 單檔安全寫入：失敗時中止暫存寫入，避免資料夾留下 0 KB .crswap 假檔。
+function writeRawToFolder(fname, raw) {
+  if (!_saveDir) return Promise.reject(new Error('尚未連接存檔資料夾'));
+  var writer = null;
+  return _saveDir.getFileHandle(fname, { create: true })
+    .then(function (fh) { return fh.createWritable({ keepExistingData: false }); })
+    .then(function (w) {
+      writer = w;
+      return writer.write(raw);
+    })
+    .then(function () { return writer.close(); })
+    .catch(function (e) {
+      if (writer) {
+        try { return writer.abort().catch(function () {}).then(function () { throw e; }); }
+        catch (abortErr) {}
+      }
+      throw e;
+    });
+}
+
+// 手動存檔在 localStorage 配額不足時，直接把快照落地資料夾，再補回小型索引。
+function writeManualSaveToFolder(rec, raw) {
+  return writeRawToFolder(rec.fname, raw).then(function () {
+    // 索引只保存小型 metadata，絕不能把 5 MB 快照中的 _folderJson 一起寫進 localStorage。
+    var meta = {
+      id: rec.id, kind: rec.kind, runId: rec.runId, savedAt: rec.savedAt,
+      fname: rec.fname, level: rec.level, stage: rec.stage, zone: rec.zone,
+      folderOnly: true
+    };
+    var list = saveIndex();
+    if (!list.some(function (x) { return x.id === rec.id; })) list.unshift(meta);
+    try { localStorage.setItem(SAVE_INDEX_KEY, JSON.stringify(list)); } catch (e) {
+      compactSaveRecordStorage();
+      try { localStorage.setItem(SAVE_INDEX_KEY, JSON.stringify([meta])); } catch (e2) {}
+    }
+    return { wrote: 1, skipped: 0, total: 1 };
+  });
 }
 
 // 掃描資料夾把「index 尚無的檔名」匯入為手動記錄；僅在使用者主動開啟資料夾時呼叫（單次、無並發）
@@ -435,14 +660,24 @@ function importUnknownFromFolder() {
         var text = await (await files[i].getFile()).text();
         var d = JSON.parse(text);
         if (!d || d.version !== 1) continue; // 非本遊戲存檔，跳過
-        putSaveRecord({
+        var folderRec = {
           id: 'm' + Date.now().toString(36) + 'f' + i,
           kind: 'manual', runId: d.runId || 1, savedAt: d.savedAt || Date.now(),
           fname: files[i].name,
           level: (d.player && d.player.level) || 1,
           stage: (d.stage && d.stage.current) || 1,
           zone: (d.stage && d.stage.zone) || 'plains'
-        }, text);
+        };
+        if (!putSaveRecord(folderRec, text)) {
+          // 配額不足時只登記本地檔案 metadata，實際內容留在資料夾。
+          folderRec.folderOnly = true;
+          var metaList = saveIndex();
+          metaList.unshift(folderRec);
+          try { localStorage.setItem(SAVE_INDEX_KEY, JSON.stringify(metaList)); } catch (e3) {
+            compactSaveRecordStorage();
+            try { localStorage.setItem(SAVE_INDEX_KEY, JSON.stringify([folderRec])); } catch (e4) {}
+          }
+        }
         imported++;
       } catch (e) { /* 壞檔跳過 */ }
     }
@@ -463,14 +698,8 @@ function downloadAllSaves() {
   });
 }
 
-function downloadSingleSave(id, fname) {
-  var raw = localStorage.getItem(SAVE_REC_PREFIX + id);
-  if (!raw) return;
+function downloadRawSave(raw, fname) {
   if (!fname) {
-    var list = saveIndex();
-    for (var i = 0; i < list.length; i++) {
-      if (list[i].id === id) { fname = list[i].fname; break; }
-    }
     if (!fname) fname = 'save.json';
   }
   var url = URL.createObjectURL(new Blob([raw], { type: 'application/json' }));
@@ -481,6 +710,19 @@ function downloadSingleSave(id, fname) {
   a.click();
   a.remove();
   setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+}
+
+function downloadSingleSave(id, fname) {
+  var raw = localStorage.getItem(SAVE_REC_PREFIX + id);
+  if (raw) { downloadRawSave(raw, fname); return Promise.resolve(true); }
+  var rec = findSaveRecord(id);
+  if (rec && rec.folderOnly && _saveDir) {
+    return readFolderSaveRecord(rec).then(function (text) {
+      downloadRawSave(text, fname || rec.fname);
+      return true;
+    }).catch(function () { return false; });
+  }
+  return Promise.resolve(false);
 }
 
 /* ---- 離線收益（時間上限與擊殺估算公式 → js/formula.js §10） ---- */
@@ -520,3 +762,370 @@ function applyOfflineProgress() {
     '、金幣 +' + fmt(gold) + '、經驗 +' + fmt(xp) +
     '、裝備 x' + realDrops + ' 已送入輸送帶' + (scrapExtra ? '、碎片 +' + fmt(scrapExtra) : ''), 'good');
 }
+
+/* ============ 存檔機制 V2：單一自動快取＋本地手動歷史 ============ */
+var AUTO_CACHE_KEY_V2 = 'ic_auto_cache_v2';
+var AUTO_META_KEY_V2 = 'ic_auto_meta_v2';
+var AUTO_FOLDER_FILE_V2 = 'IC_autosave.json';
+var MAX_MANUAL_SAVES_V2 = 10;
+var _legacyPayloadsCompactedV2 = false;
+
+function removeLegacyRecordPayloadsV2() {
+  for (var i = localStorage.length - 1; i >= 0; i--) {
+    var key = localStorage.key(i);
+    if (key && key !== SAVE_INDEX_KEY && key.indexOf(SAVE_REC_PREFIX) === 0) {
+      try { localStorage.removeItem(key); } catch (e) {}
+    }
+  }
+  _legacyPayloadsCompactedV2 = true;
+}
+
+function idbSetAutoV2(raw, done) {
+  idbKV(function (db) {
+    if (!db) { if (done) done(); return; }
+    try {
+      var tx = db.transaction('kv', 'readwrite');
+      tx.oncomplete = function () { if (done) done(); };
+      tx.onerror = function () { if (done) done(); };
+      tx.onabort = function () { if (done) done(); };
+      tx.objectStore('kv').put(raw, AUTO_CACHE_KEY_V2);
+    } catch (e) { if (done) done(); }
+  });
+}
+
+function idbGetAutoV2(cb) {
+  idbKV(function (db) {
+    if (!db) return cb(null);
+    try {
+      var req = db.transaction('kv', 'readonly').objectStore('kv').get(AUTO_CACHE_KEY_V2);
+      req.onsuccess = function () { cb(req.result || null); };
+      req.onerror = function () { cb(null); };
+    } catch (e) { cb(null); }
+  });
+}
+
+function saveManualMetaListV2(list) {
+  var seen = {}, clean = [];
+  // V2 的完整自動快照由 IndexedDB 保存；先移除舊版 localStorage 大快照，
+  // 確保這份小型手動檔索引能正常寫入。
+  try { localStorage.removeItem(SAVE_KEY); } catch (e0) {}
+  (list || []).forEach(function (r) {
+    if (!r || r.kind !== 'manual' || !r.fname || seen[r.fname]) return;
+    seen[r.fname] = true;
+    clean.push({
+      id: r.id, kind: 'manual', runId: r.runId || 1, savedAt: r.savedAt || 0,
+      fname: r.fname, level: r.level || 1, stage: r.stage || 1,
+      zone: r.zone || 'plains', folderOnly: true
+    });
+  });
+  clean.sort(function (a, b) { return b.savedAt - a.savedAt; });
+  clean = clean.slice(0, MAX_MANUAL_SAVES_V2);
+  try { localStorage.setItem(SAVE_INDEX_KEY, JSON.stringify(clean)); }
+  catch (e) {
+    compactSaveRecordStorage();
+    try { localStorage.setItem(SAVE_INDEX_KEY, JSON.stringify(clean)); } catch (e2) {}
+  }
+  return clean;
+}
+
+function saveIndexV2() {
+  var list = [];
+  try { list = JSON.parse(localStorage.getItem(SAVE_INDEX_KEY)) || []; } catch (e) {}
+  return list.filter(function (r) { return r && r.kind === 'manual' && r.fname; })
+    .sort(function (a, b) { return (b.savedAt || 0) - (a.savedAt || 0); })
+    .slice(0, MAX_MANUAL_SAVES_V2);
+}
+
+function autoSaveMetaV2() {
+  var m = null;
+  try { m = JSON.parse(localStorage.getItem(AUTO_META_KEY_V2)); } catch (e) {}
+  if (m && m.kind === 'auto') return m;
+  return {
+    id: 'auto_current', kind: 'auto', runId: (typeof G !== 'undefined' && G ? G.runId || 1 : 1),
+    savedAt: (typeof G !== 'undefined' && G ? G.savedAt || Date.now() : Date.now()),
+    fname: AUTO_FOLDER_FILE_V2,
+    level: (typeof G !== 'undefined' && G && G.player ? G.player.level : 1),
+    stage: (typeof G !== 'undefined' && G && G.stage ? G.stage.current : 1),
+    zone: (typeof G !== 'undefined' && G && G.stage ? G.stage.zone : 'plains')
+  };
+}
+
+function writeAutoMetaV2(meta) {
+  try { localStorage.setItem(AUTO_META_KEY_V2, JSON.stringify(meta)); } catch (e) {}
+}
+
+function readRawTextV2(handle) {
+  return handle.getFile().then(function (file) { return file.text(); });
+}
+
+function parseSaveTextV2(raw) {
+  try {
+    var data = JSON.parse(raw);
+    if (!data || data.version !== 1) return null;
+    return data;
+  } catch (e) { return null; }
+}
+
+function readFolderAutoV2(cb) {
+  if (!_saveDir) { cb(null); return; }
+  _saveDir.getFileHandle(AUTO_FOLDER_FILE_V2, { create: false })
+    .then(readRawTextV2).then(function (raw) {
+      var data = parseSaveTextV2(raw);
+      cb(data ? { data: data, savedAt: Number(data.savedAt) || 0 } : null);
+    }).catch(function () {
+      // 相容舊版保底檔，但只接受自動存檔命名，不把手動存檔當成目前進度。
+      (async function () {
+        var best = null;
+        for await (var ent of _saveDir.values()) {
+          if (ent.kind !== 'file' || !/^(IC_current|IC_autosave_run[^.]*)[^/]*\.json$/i.test(ent.name)) continue;
+          try {
+            var data = parseSaveTextV2(await (await ent.getFile()).text());
+            if (!data) continue;
+            var ts = Number(data.savedAt) || 0;
+            if (!best || ts > best.savedAt) best = { data: data, savedAt: ts };
+          } catch (e) {}
+        }
+        cb(best);
+      })().catch(function () { cb(null); });
+    });
+}
+
+function folderNameHashV2(name) {
+  var h = 2166136261;
+  for (var i = 0; i < name.length; i++) h = Math.imul(h ^ name.charCodeAt(i), 16777619);
+  return 'folder_' + (h >>> 0).toString(36);
+}
+
+// 只讀取本地手動檔 metadata，不複製大型 JSON 到瀏覽器。
+function scanManualMetadataV2() {
+  if (!_saveDir) return Promise.resolve();
+  return (async function () {
+    var list = saveIndexV2();
+    var byName = {};
+    list.forEach(function (r) { byName[r.fname] = r; });
+    for await (var ent of _saveDir.values()) {
+      if (ent.kind !== 'file' || !/^IC_(manual|before_bulk_salvage)_.*\.json$/i.test(ent.name)) continue;
+      if (byName[ent.name]) continue;
+      try {
+        var data = parseSaveTextV2(await (await ent.getFile()).text());
+        if (!data) continue;
+        list.push({
+          id: folderNameHashV2(ent.name), kind: 'manual', runId: data.runId || 1,
+          savedAt: Number(data.savedAt) || Date.now(), fname: ent.name,
+          level: data.player && data.player.level || 1,
+          stage: data.stage && data.stage.current || 1,
+          zone: data.stage && data.stage.zone || 'plains', folderOnly: true
+        });
+      } catch (e) {}
+    }
+    saveManualMetaListV2(list);
+  })();
+}
+
+function chooseNewestSaveV2(a, b) {
+  if (!a) return b;
+  if (!b) return a;
+  return (b.savedAt || 0) > (a.savedAt || 0) ? b : a;
+}
+
+function loadLatestFolderSaveV2(cb) {
+  cb = cb || function () {};
+  var finish = function (folderBest) {
+    idbGetAutoV2(function (raw) {
+      var cacheBest = null;
+      var data = parseSaveTextV2(raw);
+      if (data) cacheBest = { data: data, savedAt: Number(data.savedAt) || 0 };
+      var best = chooseNewestSaveV2(folderBest, cacheBest);
+      if (best) best.data = migrateSave(best.data);
+      cb(best);
+    });
+  };
+  if (!window.showDirectoryPicker) { finish(null); return; }
+  idbGetDir(function (stored) {
+    if (!stored || !isValidSaveDirectoryV2(stored)) { finish(null); return; }
+    stored.requestPermission({ mode: 'readwrite' }).then(function (perm) {
+      if (perm !== 'granted') { finish(null); return; }
+      _saveDir = stored;
+      scanManualMetadataV2().then(function () { readFolderAutoV2(finish); }).catch(function () { readFolderAutoV2(finish); });
+    }).catch(function () { finish(null); });
+  });
+}
+
+function saveGameV2(opts) {
+  if (_saveSuppressed || typeof G === 'undefined' || !G) return false;
+  try {
+    G.savedAt = Date.now();
+    var raw = JSON.stringify(G);
+    if (_saveDir && !_legacyPayloadsCompactedV2) removeLegacyRecordPayloadsV2();
+    // 大型完整快照只放 IndexedDB，localStorage 僅保留小型 metadata，避免配額阻塞索引。
+    try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+    idbSetAutoV2(raw);
+    var meta = saveRecMeta('auto', 'auto_current', AUTO_FOLDER_FILE_V2);
+    writeAutoMetaV2(meta);
+    return true;
+  } catch (e3) { return false; }
+}
+
+function ensureSaveFolderV2(cb) {
+  if (_saveDir && isValidSaveDirectoryV2(_saveDir)) { cb(null, { dirName: _saveDir.name }); return; }
+  openSaveFolderV2(function (err, res) { cb(err, res); }, false);
+}
+
+function saveFolderMetaV2(rec) {
+  var list = saveIndexV2();
+  list.unshift(rec);
+  return saveManualMetaListV2(list);
+}
+
+function createManualSaveToFolderV2(label) {
+  if (!_saveDir) return Promise.reject(new Error('尚未選擇本地存檔資料夾'));
+  var rec = saveRecMeta('manual', 'manual_' + Date.now().toString(36) + '_' + ri(100, 999),
+    'IC_manual_' + saveStamp(Date.now()) + '.json');
+  return new Promise(function (resolve) {
+    idbGetAutoV2(function (cachedRaw) {
+      var raw = cachedRaw;
+      if (!raw) {
+        try { raw = JSON.stringify(G); } catch (e) { raw = null; }
+      }
+      resolve(raw);
+    });
+  }).then(function (raw) {
+    if (!raw) throw new Error('找不到可複製的瀏覽器自動存檔快取');
+    return writeRawToFolder(rec.fname, raw).then(function () {
+      saveFolderMetaV2(rec);
+      return rec;
+    });
+  });
+}
+
+function syncAutoSaveToFolderV2() {
+  if (!_saveDir) return Promise.resolve(false);
+  return new Promise(function (resolve) {
+    idbGetAutoV2(function (raw) {
+      var data = parseSaveTextV2(raw) || parseSaveTextV2(localStorage.getItem(SAVE_KEY));
+      if (!data) { resolve(false); return; }
+      writeRawToFolder(AUTO_FOLDER_FILE_V2, JSON.stringify(data)).then(function () {
+        writeAutoMetaV2(saveRecMeta('auto', 'auto_current', AUTO_FOLDER_FILE_V2));
+        resolve(true);
+      }).catch(function () { resolve(false); });
+    });
+  });
+}
+
+function normalizeSaveDirectoryV2(dir) {
+  if (!dir) return Promise.reject(new Error('未選擇資料夾'));
+  if (dir.name === 'Idle-RPG') {
+    return Promise.reject(new Error('目前選到的是遊戲專案根目錄，請改選 Documents 或 Save 資料夾'));
+  }
+  if (dir.name === 'Documents') {
+    return dir.getDirectoryHandle('Idle_RPG', { create: true })
+      .then(function (idle) { return idle.getDirectoryHandle('Save', { create: true }); });
+  }
+  if (dir.name === 'Idle_RPG') return dir.getDirectoryHandle('Save', { create: true });
+  return Promise.resolve(dir);
+}
+
+function isValidSaveDirectoryV2(dir) {
+  return !!dir && dir.name !== 'Idle-RPG';
+}
+
+function listSaveFolderFilesV2() {
+  if (!_saveDir) return Promise.resolve([]);
+  return (async function () {
+    var files = [];
+    for await (var ent of _saveDir.values()) {
+      if (ent.kind !== 'file') continue;
+      try {
+        var file = await ent.getFile();
+        files.push({ name: ent.name, size: file.size, lastModified: file.lastModified });
+      } catch (e) {}
+    }
+    files.sort(function (a, b) { return (b.lastModified || 0) - (a.lastModified || 0); });
+    return files;
+  })();
+}
+
+function openSaveFolderV2(cb, forceOpen) {
+  cb = cb || function () {};
+  if (!window.showDirectoryPicker) { cb('此瀏覽器不支援本地資料夾存取'); return; }
+  idbGetDir(function (stored) {
+    var source;
+    if (stored && isValidSaveDirectoryV2(stored) && !forceOpen) {
+      source = stored.requestPermission({ mode: 'readwrite' }).then(function (perm) {
+        if (perm !== 'granted') throw new Error('需要重新選擇資料夾');
+        return stored;
+      });
+    } else {
+      source = window.showDirectoryPicker({ id: 'idle_rpg_save_folder', startIn: 'documents', mode: 'readwrite' });
+    }
+    source.then(normalizeSaveDirectoryV2).then(function (dir) {
+      _saveDir = dir;
+      idbSetDir(dir);
+      return scanManualMetadataV2().then(function () { return listSaveFolderFilesV2(); }).then(function (files) {
+        cb(null, { selected: true, dirName: dir.name, files: files });
+      });
+    }).catch(function (e) {
+      cb(e && e.name === 'AbortError' ? '已取消資料夾選擇' : (e.message || '無法連接存檔資料夾'));
+    });
+  });
+}
+
+function readSaveRawV2(rec) {
+  if (rec && rec.kind === 'auto') {
+    if (_saveDir) return _saveDir.getFileHandle(AUTO_FOLDER_FILE_V2, { create: false }).then(readRawTextV2);
+    return new Promise(function (resolve) { idbGetAutoV2(function (raw) { resolve(raw || localStorage.getItem(SAVE_KEY)); }); });
+  }
+  if (rec && rec.fname && _saveDir) return _saveDir.getFileHandle(rec.fname, { create: false }).then(readRawTextV2);
+  var raw = rec ? localStorage.getItem(SAVE_REC_PREFIX + rec.id) : null;
+  return raw ? Promise.resolve(raw) : Promise.reject(new Error('找不到本地存檔檔案'));
+}
+
+function findSaveRecordV2(id) {
+  if (id === 'auto_current') return autoSaveMetaV2();
+  var found = null;
+  saveIndexV2().forEach(function (r) { if (r.id === id) found = r; });
+  return found;
+}
+
+function loadSaveRecordV2(id) {
+  var rec = findSaveRecordV2(id);
+  if (!rec) return Promise.reject(new Error('找不到存檔記錄'));
+  return readSaveRawV2(rec).then(function (raw) {
+    var data = parseSaveTextV2(raw);
+    if (!data) throw new Error('存檔格式錯誤');
+    // 讀檔後把載入內容視為目前快取，並更新時間，避免重新整理時被較新的舊自動檔覆蓋。
+    data = migrateSave(data);
+    data.savedAt = Date.now();
+    raw = JSON.stringify(data);
+    _saveSuppressed = true;
+    writeAutoMetaV2({
+      id: 'auto_current', kind: 'auto', runId: data.runId || 1, savedAt: data.savedAt,
+      fname: AUTO_FOLDER_FILE_V2,
+      level: data.player && data.player.level || 1,
+      stage: data.stage && data.stage.current || 1,
+      zone: data.stage && data.stage.zone || 'plains'
+    });
+    idbSetAutoV2(raw, function () { location.reload(); });
+    return null;
+  });
+}
+
+function deleteSaveRecordV2(id) {
+  var rec = findSaveRecordV2(id);
+  if (!rec) return false;
+  var fname = rec.kind === 'auto' ? AUTO_FOLDER_FILE_V2 : rec.fname;
+  if (_saveDir) removeFolderFile(fname);
+  if (rec.kind !== 'auto') saveManualMetaListV2(saveIndexV2().filter(function (r) { return r.id !== id; }));
+  return true;
+}
+
+// 新機制入口；舊函式保留供既有存檔格式相容，但不再參與新流程。
+MAX_MANUAL_SAVES = MAX_MANUAL_SAVES_V2;
+saveIndex = saveIndexV2;
+writeSaveIndex = saveManualMetaListV2;
+saveGame = saveGameV2;
+openSaveFolder = openSaveFolderV2;
+syncSaveFolder = syncAutoSaveToFolderV2;
+loadLatestFolderSave = loadLatestFolderSaveV2;
+loadSaveRecord = loadSaveRecordV2;
+deleteSaveRecord = deleteSaveRecordV2;

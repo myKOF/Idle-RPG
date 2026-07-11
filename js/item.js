@@ -478,7 +478,7 @@ function applyEnchantTo(item, bookKey, gemLevel) {
 /* ---- 手動附魔（裝備介面操作，比照寶石鑲嵌） ---- */
 // 物品種類 → 可用附魔類別
 function enchantCatForType(type) {
-  if (type === 'weapon' || type === 'ring' || type === 'gloves') return 'atk';
+  if (type === 'weapon' || type === 'ring' || type === 'gloves' || type === 'wrist') return 'atk';
   if (type === 'amulet' || type === 'boots') return 'util';
   return 'def'; // helmet / shoulder / chest / belt / legs
 }
@@ -543,7 +543,7 @@ function enchantLine(en) {
 // 物品完整說明 HTML
 function itemDetailHTML(it, cmp, opts) {
   opts = opts || {};
-  var showAffixReroll = false;
+  var showAffixReroll = opts.showAffixReroll !== false;
   var r = RARITIES[it.rarity];
   var curScore = itemScore(it);
   var cmpScore = cmp ? itemScore(cmp) : 0;
@@ -582,6 +582,7 @@ function itemDetailHTML(it, cmp, opts) {
     (it.synthesized ? ' <span class="it-syn">✦合成</span>' : '') +
     (it.locked ? ' 🔒' : '') +
     '<span class="it-score it-score-top">評分 ' + fmt(curScore) + sdiffStr + '</span>' +
+    (showAffixReroll ? '<button class="btn-it-pool" onclick="var b=this.nextElementSibling; b.style.display=b.style.display===\'none\'?\'block\':\'none\'; event.stopPropagation();">!</button>' + poolHtml : '') +
     '</div>';
   
   h += '<div class="it-sub">' + r.name + '・' + SLOT_INFO[it.slot].name + '・等級 ' + it.level;
@@ -699,6 +700,8 @@ function itemDetailHTML(it, cmp, opts) {
     });
   }
 
+  // 附魔與寶石區塊可移至裝備頁右側；懸停提示仍保留完整效果。
+  if (opts.showEnhancements !== false) {
   // 附魔（多欄位，數量依稀有度）
   var itEns = itemEnchants(it);
   var cmpEns = cmp ? itemEnchants(cmp) : [];
@@ -756,6 +759,7 @@ function itemDetailHTML(it, cmp, opts) {
       }
     }
     h += '</div>';
+  }
   }
   return h;
 }

@@ -197,6 +197,7 @@ shoulder = 肩甲
 chest    = 胸甲
 belt     = 腰帶
 gloves   = 護手
+wrist    = 手腕
 legs     = 護腿
 boots    = 靴子
 ring     = 戒指
