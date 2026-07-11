@@ -24,14 +24,14 @@
    §1 成長與經驗
    ============================================================ */
 
-// 轉生次數只接受 0~5，避免舊存檔或外部資料造成倍率失控。
+// 轉生次數只接受 0~10，避免舊存檔或外部資料造成倍率失控。
 function reincarnationCount() {
   var n = (typeof G !== 'undefined' && G && G.player) ? Number(G.player.reincarnations) : 0;
   return clamp(Math.floor(isFinite(n) ? n : 0), 0, REINCARNATION_MAX);
 }
 function reincarnationRankName(count) {
   var n = count === undefined ? reincarnationCount() : clamp(Math.floor(Number(count) || 0), 0, REINCARNATION_MAX);
-  return REINCARNATION_RANKS[n] || REINCARNATION_RANKS[0];
+  return REINCARNATION_RANKS[n] || REINCARNATION_RANKS[REINCARNATION_RANKS.length - 1];
 }
 function reincarnationExtraMultiplier(count) {
   var n = count === undefined ? reincarnationCount() : clamp(Math.floor(Number(count) || 0), 0, REINCARNATION_MAX);
@@ -43,10 +43,10 @@ function reincarnationTotalMultiplier(count) {
 }
 function reincarnationExpMultiplier(count) {
   var n = clamp(Math.floor(count === undefined ? reincarnationCount() : count), 0, REINCARNATION_MAX);
-  return [1, 3, 10, 30, 100, 500][n];
+  return Math.pow(10, n);
 }
 
-// 升到下一級所需經驗 =（30 × 等級^2 + 40）× 轉生經驗倍率（0~5轉：1/3/10/30/100/500）
+// 升到下一級所需經驗 =（30 × 等級^2 + 40）× 轉生經驗倍率（每轉為上一次的 10 倍）
 function xpForLevel(l) { return Math.floor((30 * Math.pow(l, 2) + 40) * reincarnationExpMultiplier()); }
 
 /* 等級基礎四維主屬性（不含裝備）：力/敏/智/耐 相同
