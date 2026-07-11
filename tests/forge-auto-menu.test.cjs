@@ -33,6 +33,14 @@ test('神鑄自動放入選單的操作列固定且清單獨立捲動', () => {
   assert.match(css, /\.forge-auto-menu\.fam-gem-mode\s+\.fam-list\s*{[\s\S]*flex:\s*0\s+0\s+auto/);
 });
 
+test('神鑄切回頁面時依目前鑄造模式選擇素材分頁', () => {
+  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+
+  assert.match(ui, /function forgeInventoryTab\(\)[\s\S]*c\.mode === 'gem'[\s\S]*return 'gems'[\s\S]*c\.mode === 'equip'[\s\S]*return 'items'/);
+  assert.match(ui, /function renderForgeAutoMenu\(\)[\s\S]*var invTab = forgeInventoryTab\(\)/);
+  assert.match(ui, /function renderForge\(\)[\s\S]*var invTab = forgeInventoryTab\(\)/);
+});
+
 test('寶石自動放入選單會設定明確高度並隔離滑鼠滾輪', () => {
   const uiJs = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');

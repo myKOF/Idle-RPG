@@ -1,5 +1,160 @@
 # PATCH.md
 
+## 本次變更摘要：神鑄頁籤運行中旋轉小圖標
+
+### index.html、css/style.css、js/ui.js
+- 神鑄頁籤右上角新增淺藍色（#7dd3fc）旋轉小圖標（11px 圓環缺口 spinner，
+  1 秒/圈 CSS 動畫）：鑄造進行中顯示，結束即消失。
+- `.tab-btn` 補 `position: relative` 供圖標定位。
+- uiTick 每 tick 依 `forgeIsBusy()` 切換顯示（不論玩家目前在哪個分頁都會更新），
+  display 無變化時不觸碰 DOM。
+- 驗證：開鑄前隱藏、鑄造中顯示於頁籤右上角並旋轉（11×11、淺藍、forgeRunSpin 1s）、
+  切到裝備分頁仍顯示、鑄造結束即隱藏；主控台零錯誤。
+
+---
+
+## 本次變更摘要：鑄造進度列改顯示可再鑄造次數
+
+### js/forge.js、js/ui.js
+- 進度列剩餘欄由「剩餘 xN 顆/件」改為「可再鑄造 N 次」（剩餘庫存 ÷ 6 取整）。
+- `forgeRemainInfo()` 移除不再使用的 unit 欄位。
+- 驗證：寶石 285 顆放 6 開鑄 → 46 次；裝備剩 3 件 → 0 次、剩 7 件 → 1 次；
+  主控台零錯誤。
+
+---
+
+## 本次變更摘要：鑄造進度列顯示素材剩餘數量
+
+### js/forge.js
+- 新增 `forgeRemainInfo()`：目前鑄造素材的剩餘庫存——優先取自動放入設定
+  （連續鑄造素材），否則由法陣槽位推導；寶石回傳庫存顆數，裝備回傳
+  「未上鎖、同品質」件數（與自動放入取件規則一致，不含法陣中 6 件）。
+
+### index.html、js/ui.js、css/style.css
+- 進度列「鑄造中....」右側新增剩餘數量欄（例：「🔴七級紅寶石 剩餘 x279 顆」／
+  「傳說裝備 剩餘 x3 件」），倒數秒數維持靠右；文字無變化時不觸碰 DOM。
+- 驗證：寶石模式 285 顆放 6 開鑄顯示 x279 顆；裝備模式 9 件放 6 顯示 x3 件；
+  鑄造結束進度列連同剩餘欄一併隱藏；主控台零錯誤。
+
+---
+
+## 本次變更摘要：全螢幕按鈕往返切換確認與強化
+
+### js/ui.js
+- `exitFullscreen()` 補上 `.catch`，避免特殊情況下的未處理 promise 拒絕。
+- 驗證往返切換：連按三次呼叫序列為 request → exit → request（按一次全屏、
+  再按一次恢復、可反覆），第二次按下後按鈕亮起狀態與提示正確還原；主控台零錯誤。
+
+---
+
+## 本次變更摘要：頂欄新增全螢幕切換按鈕
+
+### index.html、css/style.css
+- 品牌標題「無限征途 合成之巔」右側新增 ⛶ 全螢幕按鈕（26×26，懸停提示
+  「進入全螢幕（等同 F11）」）；全螢幕中按鈕亮金色並提示「離開全螢幕（Esc）」。
+
+### js/ui.js
+- 點擊以 Fullscreen API 切換：未全螢幕 → `documentElement.requestFullscreen()`；
+  全螢幕中 → `exitFullscreen()`。瀏覽器拒絕時輸出系統日誌提示改用 F11。
+- 監聽 `fullscreenchange` 同步按鈕亮起狀態與提示文字（含 Esc 離開的情況）。
+- 驗證：按鈕位置/樣式正確；stub API 實測點擊觸發 request/exit、
+  fullscreenchange 正確切換 active 與提示；主控台零錯誤。
+  （測試用內嵌預覽視窗本身封鎖 Fullscreen API，實際效果需在正式瀏覽器確認。）
+
+---
+
+## 本次變更摘要：加寬裝備詳情並右移素材面板
+
+### css/style.css、tests/equipment-detail-layout.test.cjs
+- 裝備圖欄上限由 428px 調整為 400px，將空間讓給裝備詳情欄。
+- 裝備詳情內的寶石插槽資訊改為單行顯示，避免長名稱與數值換行。
+- 右側寶石／附魔素材面板向右移 14px，利用現有空間並保留原有操作位置邏輯。
+
+## 本次變更摘要：傷害浮字面板邊界夾取（裁切修復二）
+
+### js/ui.js
+- 前次修復解除了敵人卡片的裁切，但外層戰鬥面板 `.combatant` 也是
+  `overflow: hidden`，長數字在邊緣卡片仍會踩出面板內緣被切。
+- `floatText` 改為：先隨機落點，掛載後量測實際文字寬度，把水平中心夾取在
+  面板可視範圍（padding box）內——數字仍可跨出頭像卡片（維持前次需求），
+  但不再超出面板被裁切；面板比文字窄時置中顯示。玩家側浮字同樣受惠。
+- 不動 `.combatant` 的 overflow（保留華麗邊框的裁切行為，避免數字疊到框外）。
+- 驗證（4 敵人小卡、強制極左/極右落點）：「爆擊 12.1T」「爆擊 999.9T」等
+  全部完整顯示於面板內、仍跨出頭像卡片、無截斷；主控台零錯誤。
+
+---
+
+## 本次變更摘要：多人戰鬥傷害浮字等比縮小且不被裁切
+
+### css/style.css
+- `.enemy-card` 與其 `.float-layer` 由 `overflow: hidden` 改為 `overflow: visible`，
+  讓傷害浮字可超出頭像卡片範圍，不再被小卡片裁掉。
+- `.float-txt` 加 `white-space: nowrap`，避免數字被折成多行而看似被切斷。
+- 多人戰鬥（`enemy-count` 非 0／1）時傷害浮字等比縮小：一般 14→11px、
+  暴擊/技能 20→15px、格擋/反震 →12px；並把浮層 z-index 提高到 20，數字疊在最上層。
+- 單人戰鬥維持原字級（14／20px）不受影響。
+
+### 驗證（瀏覽器實測，4 敵人 56px 小卡）
+- 卡片與浮層 overflow 皆 visible、浮層 z-index 20；大額傷害（5.23T／15.21T／8.88B）
+  字級正確縮小、nowrap 不換行、`fullyRendered` 為 true（可見寬度＝內容寬度，完全未裁切），
+  且允許超出卡片邊界。單人維持 14／20px。主控台零錯誤。
+
+---
+
+## 本次變更摘要：背包擴充費用改用金幣圖示
+
+### index.html、js/ui.js、tests/inventory-expand-display.test.cjs
+- 背包擴充按鈕不再顯示 `G` 字尾，改為金額後接 `icon_gold.png` 金幣圖示。
+- 保留原本的擴充費用計算與金幣扣款邏輯，僅調整顯示格式。
+
+## 本次變更摘要：切回神鑄時同步目前鑄造素材分頁
+
+### js/ui.js、tests/forge-auto-menu.test.cjs
+- 新增共用 `forgeInventoryTab()`：鑄造進行中依 `crafting.mode` 優先選擇裝備或寶石分頁。
+- 神鑄背包與自動放入選單共用此判斷；沒有等待中的鑄造時仍沿用玩家上次選擇。
+
+## 本次變更摘要：背包擴充費用改二次方＋上限 1000 格
+
+### js/data.js、js/formula.js
+- 新增常數 `INVENTORY_MAX = 1000`（背包擴充上限，含 60 基礎容量）。
+- 新增 `inventoryExpandCost(upg) = 10000 × (upg+1)²`（購買次數＝本次為第幾次擴充）。
+  取代原本線性費用 `10000 + 次數×1000`。第 1 次仍為 10000，第 2 次 40000、
+  第 3 次 90000…第 940 次（達 1000 格）8.836B。
+
+### js/ui.js
+- `renderInventory` 與擴充按鈕改用 `inventoryExpandCost`，金額以 `fmt` 顯示。
+- 達 1000 格時按鈕顯示「➕ 已達上限 (1000)」並停用；點擊擴充時再次防呆擋下。
+- 既有存檔若已超過 1000 格（舊線性費用時代的超買）保留原格數不削減，只是不能再擴充。
+
+### game_formula.md
+- §7.5 補上「背包容量上限 1000 格」與「背包擴充費用 = 10000 × 購買次數²」。
+
+### 驗證（瀏覽器實測）
+- 費用表 10000/40000/90000/160000…8.836B 與公式一致；連續購買扣款與容量遞增正確。
+- 999→1000 可買、1000 後按鈕停用且再點被擋（金幣與次數不變）；超量存檔（1260）保留不削減。
+- 主控台零錯誤。
+
+---
+
+## 本次變更摘要：修正自動鑄造換輪後進度條停在 100%
+
+### js/ui.js、tests/forge-duration.test.cjs
+- 自動鑄造進入新一輪時，先以 `animationName = 'none'` 加一次性 reflow 清除上一輪的完成狀態。
+- 新輪次重新套用正確的動畫時長與負延遲，避免進度條停在 100% 但倒數仍繼續。
+
+## 本次變更摘要：神鑄進度條改用 compositor 動畫
+
+### js/ui.js、css/style.css、tests/forge-duration.test.cjs
+- 移除逐幀修改 `width` 的 JavaScript 動畫，改用 `transform: scaleX()` 的 CSS compositor 動畫，降低主執行緒重排造成的卡頓。
+- 依 `startedAt` 設定負動畫延遲，支援重新載入或切回神鑄頁時從正確進度接續，且相同鑄造狀態不重置動畫。
+
+## 本次變更摘要：神鑄時間進度條改為平滑更新
+
+### js/ui.js、css/style.css、tests/forge-duration.test.cjs
+- 進度條改由 `requestAnimationFrame` 依保存的鑄造開始時間與總時長逐幀計算，不再受 200ms UI 迴圈限制。
+- 倒數文字與進度寬度同步刷新；鑄造完成或狀態消失時取消動畫 frame。
+- 移除離散寬度更新使用的 CSS transition，避免進度追趕造成卡頓。
+
 ## 本次變更摘要：全局減傷 tooltip 移除計算公式
 
 ### js/data.js
@@ -894,3 +1049,40 @@
 - 結算彈窗開啟時新增並更新「目前戰鬥（即時統計）」卡片。
 - 死亡時即時卡片會轉為歷史戰鬥紀錄，避免重複顯示。
 - 按鈕、彈窗標題與說明統一改為「傷害統計」。
+
+# 本次變更摘要：裝備圖示批次去背
+
+- `images/icon_weapon.png`、`icon_helmet.png`、`icon_shoulder.png`、`icon_chest.png`、`icon_belt.png`、
+  `icon_gloves.png`、`icon_wrist.png`、`icon_legs_armor.png`、`icon_legs.png`、`icon_ring.png` 改為 RGBA PNG。
+- 透明度由裝備輪廓遮罩產生，RGB 仍取自原始圖示；去除黑色／藍灰色背景、保留裝備材質、光效與戒指內圈透明。
+- 新增 `tests/equipment-background-removal.test.cjs`，檢查 10 組圖示均為帶透明通道的 PNG。
+
+# 本次變更摘要：神鑄創世彩色流動外框
+
+- `css/style.css` 的 `.eff-godforged` 改用彩虹色 `conic-gradient` 旋轉動畫，並加入粉藍外部光暈。
+- 保留深色內襯，避免彩色動畫遮蓋裝備圖示；只影響神鑄創世類別，不改變其他品質外框。
+- 補上 `prefers-reduced-motion` 支援與 `tests/godforged-border-effect.test.cjs` 回歸檢查。
+
+# 本次變更摘要：加快神鑄創世外框並恢復創世級背景色
+
+- 彩虹外框動畫週期由 `1.8s` 調整為 `0.9s`，流動速度加快一倍。
+- 神鑄創世內襯改回與創世裝備一致的金色漸層，避免被深色特效內層壓暗。
+- 更新 `tests/godforged-border-effect.test.cjs` 驗證動畫速度與金色內襯。
+
+# 本次變更摘要：新增項鏈專用圖示
+
+- 新增 `images/icon_amulet.png`：透明背景的暗黑風格項鏈圖示。
+- `js/data.js` 的 `SLOT_INFO.amulet` 改用 `icon_amulet.png`，不再誤用 `icon_gems.png` 寶石資源圖。
+- 新增 `tests/amulet-icon.test.cjs`，檢查項鏈圖檔存在、為 RGBA PNG 且不引用寶石圖。
+
+# 本次變更摘要：神鑄創世加入半透明旋轉背景
+
+- `.eff-godforged::after` 在創世級金色內襯上加入低透明度黑色旋轉 `conic-gradient`。
+- 使用 `--godforged-inner-angle` 與 `godforgedInnerFlow` 動畫，不遮蓋裝備圖示與彩虹外框。
+- 減少動態偏好時同步放慢內部旋轉效果；回歸檢查同步驗證內部動畫存在。
+
+# 本次變更摘要：再次加快三倍彩色外框
+
+- 神鑄創世彩色外框 `godforgedRainbowSpin` 週期由 `0.9s` 改為 `0.3s`。
+- 只調整彩色外框速度，內部黑色旋轉背景維持原設定。
+- 更新 `tests/godforged-border-effect.test.cjs` 並通過差異檢查。

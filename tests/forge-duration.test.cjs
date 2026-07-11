@@ -38,3 +38,20 @@ test('神鑄使用可保存的鑄造狀態並由主迴圈完成結算', () => {
   assert.match(html, /id="forge-autoforge"/);
   assert.match(html, /id="forge-progress"/);
 });
+
+test('神鑄進度條使用 compositor 動畫避免主執行緒重排', () => {
+  const uiJs = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
+
+  assert.match(uiJs, /var fill = \$id\('forge-progress-fill'\);[\s\S]*fill\.dataset\.forgeAnimation/);
+  assert.match(uiJs, /style\.animationDuration\s*=/);
+  assert.match(uiJs, /style\.animationDelay\s*=/);
+  assert.match(uiJs, /fill\.style\.animationName\s*=\s*'none'[\s\S]*fill\.offsetWidth[\s\S]*fill\.style\.animationName\s*=\s*'forge-progress-fill'/);
+  assert.doesNotMatch(uiJs, /requestAnimationFrame\(updateForgeProgressFrame\)/);
+  const fillBlock = css.match(/#forge-progress-fill\s*\{([^}]*)\}/s);
+  assert.ok(fillBlock, '找不到神鑄進度條樣式');
+  assert.match(fillBlock[1], /transform-origin:\s*left/);
+  assert.match(fillBlock[1], /will-change:\s*transform;/);
+  assert.doesNotMatch(fillBlock[1], /transition:\s*width/);
+  assert.match(css, /@keyframes\s+forge-progress-fill[\s\S]*transform:\s*scaleX\(1\)/);
+});

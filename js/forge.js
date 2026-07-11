@@ -318,6 +318,24 @@ function forgeAutoSpecFromSlots() {
   return { kind: 'equip', rarity: first.rarity };
 }
 
+/* 目前鑄造素材的剩餘庫存 { label, count }；無法判定時回傳 null。
+   優先採自動放入設定（連續鑄造的素材），否則由法陣槽位推導。
+   裝備只計「未上鎖、同品質」者（與自動放入取件規則一致），不含法陣中的 6 件。 */
+function forgeRemainInfo() {
+  var f = forgeState();
+  var spec = f.autoFill || forgeAutoSpecFromSlots();
+  if (!spec) return null;
+  if (spec.kind === 'gem') {
+    return { label: gemLabel(spec.type, spec.level), count: gemCount(spec.type, spec.level) };
+  }
+  var n = 0;
+  for (var i = 0; i < G.inventory.length; i++) {
+    var it = G.inventory[i];
+    if (it && it.rarity === spec.rarity && !it.locked && it.kind !== 'gem') n++;
+  }
+  return { label: (RARITIES[spec.rarity] ? RARITIES[spec.rarity].name : '') + '裝備', count: n };
+}
+
 // 鑄造收尾：有自動放入設定時補放下一輪；不足 → 停止並清除設定
 function forgeAutoRefill() {
   var f = forgeState();

@@ -41,7 +41,9 @@ function blog(msg, cls, cat) {
 }
 function flog(msg, cls) { addLog('factory-log', msg, cls, 50); }
 
-/* ---- 漂浮傷害字 ---- */
+/* ---- 漂浮傷害字 ----
+   位置先隨機落點，再依實際文字寬度夾取在戰鬥面板（.combatant）可視範圍內：
+   多人戰鬥的小卡片允許數字跨出頭像範圍，但不會超出面板 overflow 邊界被裁切。 */
 function floatText(elId, text, cls) {
   var layer = $id(elId);
   if (!layer || layer.offsetParent === null) return; // 不可見時略過
@@ -49,9 +51,29 @@ function floatText(elId, text, cls) {
   var sp = document.createElement('span');
   sp.className = 'float-txt ' + (cls || '');
   sp.textContent = text;
-  sp.style.left = (15 + Math.random() * 70) + '%';
+  var pct = 15 + Math.random() * 70;
+  sp.style.left = pct + '%';
   sp.style.marginTop = (Math.random() * 30 - 15) + 'px';
   layer.appendChild(sp);
+  var panel = layer.closest('.combatant');
+  if (panel) {
+    var lr = layer.getBoundingClientRect();
+    if (lr.width > 0) {
+      var pr = panel.getBoundingClientRect();
+      // overflow:hidden 以 padding box 裁切：面板可視範圍 = 邊框內側
+      var clipLeft = pr.left + panel.clientLeft;
+      var clipRight = clipLeft + panel.clientWidth;
+      var w = sp.offsetWidth;
+      var centerX = lr.left + lr.width * pct / 100;
+      var minC = clipLeft + w / 2 + 1;
+      var maxC = clipRight - w / 2 - 1;
+      if (maxC < minC) { minC = maxC = (clipLeft + clipRight) / 2; } // 面板比字窄時置中
+      var clamped = Math.min(maxC, Math.max(minC, centerX));
+      if (Math.abs(clamped - centerX) > 0.5) {
+        sp.style.left = ((clamped - lr.left) / lr.width * 100) + '%';
+      }
+    }
+  }
   setTimeout(function () { if (sp.parentNode) sp.parentNode.removeChild(sp); }, 950);
 }
 
@@ -469,9 +491,16 @@ function renderEquip() {
 
 function renderInventory() {
   var cap = INVENTORY_CAP + (G.player.invUpgrades || 0);
-  var cost = 10000 + (G.player.invUpgrades || 0) * 1000;
   var btn = $id('inv-expand');
-  if (btn) btn.textContent = '➕ 擴充 (' + cost + 'G)';
+  if (btn) {
+    if (cap >= INVENTORY_MAX) {
+      btn.textContent = '➕ 已達上限 (' + INVENTORY_MAX + ')';
+      btn.disabled = true;
+    } else {
+      btn.innerHTML = '➕ 擴充 (' + fmt(inventoryExpandCost(G.player.invUpgrades || 0)) + '<img src="images/icon_gold.png" class="res-icon">)';
+      btn.disabled = false;
+    }
+  }
 
   var box = $id('inventory-grid');
   $id('inv-count').textContent = G.inventory.length + '/' + cap;
@@ -865,13 +894,20 @@ var FORGE_DUST_POS = [
   { x: 50, y: 93 }, { x: 29.5, y: 71.5 }, { x: 29.5, y: 28.5 }
 ];
 
+function forgeInventoryTab() {
+  var c = forgeState().crafting;
+  if (c && c.mode === 'gem') return 'gems';
+  if (c && c.mode === 'equip') return 'items';
+  return UI.forgeInvTab || 'items';
+}
+
 /* 神鑄「自動放入」選單：依目前背包切頁列出可選素材。
    裝備頁＝三種品質（品質色字）；寶石頁＝所有持有的五～九階寶石（emoji 小圖示＋屬性）。
    持有不足 6 者半透明不可選；UI.forgeAutoPick 為選單中的暫選項。 */
 function renderForgeAutoMenu() {
   var menu = $id('forge-auto-menu');
   if (!menu) return;
-  var invTab = UI.forgeInvTab || 'items';
+  var invTab = forgeInventoryTab();
   menu.classList.toggle('fam-gem-mode', invTab === 'gems');
   var pick = UI.forgeAutoPick;
   var title = '';
@@ -964,8 +1000,14 @@ function renderForgeProgress() {
   var box = $id('forge-progress');
   if (!box) return;
   var c = forgeState().crafting;
+  var fill = $id('forge-progress-fill');
   if (!c) {
     box.style.display = 'none';
+    if (fill) {
+      fill.style.animationName = 'none';
+      fill.style.transform = 'scaleX(0)';
+      delete fill.dataset.forgeAnimation;
+    }
     return;
   }
   var duration = Math.max(1, Number(c.durationMs) || 1);
@@ -973,8 +1015,29 @@ function renderForgeProgress() {
   var remain = Math.max(0, duration - elapsed);
   box.style.display = '';
   $id('forge-progress-status').textContent = '鑄造中....';
+  // 目前素材可再鑄造次數 = 剩餘庫存 ÷ 6 取整（內容無變化時不觸碰 DOM）
+  var remainEl = $id('forge-progress-remain');
+  if (remainEl) {
+    var ri = forgeRemainInfo();
+    var remainText = ri ? ri.label + ' 可再鑄造 ' + fmt(Math.floor(ri.count / FORGE_SLOTS)) + ' 次' : '';
+    if (remainEl.textContent !== remainText) remainEl.textContent = remainText;
+  }
   $id('forge-progress-countdown').textContent = (remain / 1000).toFixed(1) + ' 秒';
-  $id('forge-progress-fill').style.width = (elapsed / duration * 100).toFixed(2) + '%';
+  if (fill) {
+    var animationKey = String(c.startedAt) + '/' + duration;
+    if (fill.dataset.forgeAnimation !== animationKey) {
+      // 自動鑄造換輪會沿用同一個 DOM；先強制結束上一輪，確保新輪次從正確進度重播。
+      fill.style.animationName = 'none';
+      void fill.offsetWidth;
+      fill.dataset.forgeAnimation = animationKey;
+      fill.style.animationName = 'forge-progress-fill';
+      fill.style.animationDuration = duration + 'ms';
+      fill.style.animationDelay = '-' + Math.min(elapsed, duration) + 'ms';
+      fill.style.animationTimingFunction = 'linear';
+      fill.style.animationFillMode = 'forwards';
+      fill.style.animationPlayState = 'running';
+    }
+  }
 }
 
 function renderForge() {
@@ -1090,7 +1153,8 @@ function renderForge() {
     UI.forgeAutoPick = null;
   } else if (famMenuSync && famMenuSync.style.display !== 'none') renderForgeAutoMenu();
   // 背包（裝備 / 寶石切頁；不符資格者以灰階顯示）
-  var invTab = UI.forgeInvTab || 'items';
+  var invTab = forgeInventoryTab();
+  UI.forgeInvTab = invTab;
   var tabItemsBtn = $id('forge-invtab-items'), tabGemsBtn = $id('forge-invtab-gems');
   if (tabItemsBtn) tabItemsBtn.classList.toggle('active', invTab === 'items');
   if (tabGemsBtn) tabGemsBtn.classList.toggle('active', invTab === 'gems');
@@ -1272,6 +1336,14 @@ function uiTick() {
   if (d.factory && UI.tab === 'factory') { renderFactory(); d.factory = false; }
   if ((d.forge || d.inv) && UI.tab === 'forge') { renderForge(); d.forge = false; d.inv = false; }
   if (UI.tab === 'forge' && forgeIsBusy()) renderForgeProgress();
+  // 神鑄頁籤運行中小圖標：鑄造進行時旋轉顯示（不論目前所在分頁）
+  var runInd = $id('forge-run-ind');
+  if (runInd) {
+    var forgeRunning = forgeIsBusy();
+    if (forgeRunning !== (runInd.style.display !== 'none')) {
+      runInd.style.display = forgeRunning ? '' : 'none';
+    }
+  }
   if (d.tower && UI.tab === 'tower') { renderTower(); d.tower = false; }
   if (d.gems && UI.tab === 'gems') { renderGems(); d.gems = false; }
   if (UI.tab === 'gems') updateShopCountdown(); // 商店重置倒數即時更新
@@ -2920,9 +2992,13 @@ function initUI() {
   }
   $id('inv-expand').addEventListener('click', function () {
     var upg = G.player.invUpgrades || 0;
-    var cost = 10000 + upg * 1000;
+    if (INVENTORY_CAP + upg >= INVENTORY_MAX) {
+      blog('❌ 背包已達最大容量 ' + INVENTORY_MAX + ' 格，無法再擴充', 'warn', 'system');
+      return;
+    }
+    var cost = inventoryExpandCost(upg);
     if (G.player.gold < cost) {
-      blog('❌ 金幣不足，擴充需要 ' + cost + ' 金幣', 'warn', 'system');
+      blog('❌ 金幣不足，擴充需要 ' + fmt(cost) + ' 金幣', 'warn', 'system');
       return;
     }
     G.player.gold -= cost;
@@ -2998,6 +3074,26 @@ function initUI() {
     G.settings.compareEq = this.checked;
     renderDetail();
   });
+
+  // 頂欄全螢幕切換（等同 F11；Esc 或再按一次可離開）
+  var fsBtn = $id('btn-fullscreen');
+  if (fsBtn) {
+    fsBtn.addEventListener('click', function () {
+      if (document.fullscreenElement) {
+        // 第二次按下：離開全螢幕恢復正常
+        document.exitFullscreen().catch(function () {});
+      } else {
+        document.documentElement.requestFullscreen().catch(function () {
+          blog('⚠️ 瀏覽器拒絕進入全螢幕，請改用 F11', 'warn', 'system');
+        });
+      }
+    });
+    document.addEventListener('fullscreenchange', function () {
+      var on = !!document.fullscreenElement;
+      fsBtn.classList.toggle('active', on);
+      fsBtn.setAttribute('data-tip', on ? '離開全螢幕（Esc）' : '進入全螢幕（等同 F11）');
+    });
+  }
 
   // 生產線設定
   document.querySelectorAll('.flt-sel').forEach(function (sel) {

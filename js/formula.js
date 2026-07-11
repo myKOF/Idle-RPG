@@ -737,6 +737,12 @@ function synthGreatChanceNow() {
   return SYNTH_GREAT_BASE + partBonus('synth', 'luckCore') + getStats().luck / 2;
 }
 
+// 背包擴充費用：10000 × 購買次數²（購買次數 = 已擴充次數 + 1，即本次為第幾次擴充）
+function inventoryExpandCost(upg) {
+  var n = (upg || 0) + 1;
+  return 10000 * n * n;
+}
+
 // 生產線容量（受「負重上限」屬性擴充）
 function conveyorCap() { return CONVEYOR_CAP + getStats().weight; }          // 輸送帶 = 40 + 負重
 function synthBufCap() { return SYNTH_BUFFER_CAP + Math.floor(getStats().weight / 2); } // 暫存區 = 30 + 負重/2
