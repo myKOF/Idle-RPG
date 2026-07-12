@@ -9,7 +9,7 @@ function partBonus(node, key) {
   var sum = 0;
   ids.forEach(function (id) {
     var p = findPart(id);
-    if (p && p.key === key) sum += p.val;
+    if (p && p.key === key) sum += effectiveFactoryPartValue(p.key, p.val);
   });
   return sum;
 }
@@ -179,7 +179,7 @@ function doSalvage(it, silent) {
   if (res.essence) G.player.essence += res.essence;
   if (res.ancientEssence) {
     G.player.ancientEssence = (G.player.ancientEssence || 0) + res.ancientEssence;
-    extras.push('🧬太古精華x' + res.ancientEssence);
+    extras.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華">太古精華x' + res.ancientEssence);
   }
 
   if (res.extracted) {

@@ -1,5 +1,5 @@
 'use strict';
-/* ============ BOSS 高塔（試煉之塔） ============ */
+/* ============ BOSS 高塔（試煉之塔／地獄之塔） ============ */
 
 var TOWER = {
   floor: 0,
@@ -24,6 +24,7 @@ function makeBoss(floor) {
   var bs = bossStatsFor(floor);              // BOSS 數值公式 → formula.js §4
   var b = {
     name: '第' + floor + '層・' + bd.name, emoji: bd.emoji, img: bd.img,
+    hell: !!bs.hell,
     level: bs.level,
     maxHp: bs.hp, hp: bs.hp,
     atk: bs.atk, def: bs.def, mdef: bs.mdef,
@@ -44,8 +45,12 @@ function makeBoss(floor) {
 
 function startTowerFight(floor) {
   if (G.tower.active) return;
+  if (floor < 1 || floor > TOWER_MAX_FLOOR) {
+    blog('⚠️ 目前僅開放第 1～' + TOWER_MAX_FLOOR + ' 層高塔。', 'warn');
+    return;
+  }
   if (floor > G.tower.highest + 1) { blog('⚠️ 需先通過前面的樓層！', 'warn'); return; }
-  // 挑戰金幣消耗 = 100000 + BOSS等級 × 200000（towerChallengeCost → formula.js §5）
+  // 挑戰金幣消耗 = 100000 × 高塔樓層^2.6（towerChallengeCost → formula.js §5）
   var cost = towerChallengeCost(floor);
   if (G.player.gold < cost) {
     blog('⚠️ 金幣不足！挑戰第 ' + floor + ' 層需要 ' + fmt(cost) + ' 金幣（持有 ' + fmt(G.player.gold) + '）。', 'warn');
@@ -68,7 +73,7 @@ function startTowerFight(floor) {
   TOWER.bossDmgDealt = 0;
   TOWER.result = null;
   TOWER.showingResult = false;
-  blog('🗼 挑戰高塔第 ' + floor + ' 層：' + TOWER.boss.name + '（限時 60 秒）', 'info');
+  blog('🗼 挑戰' + (TOWER.boss.hell ? '地獄之塔' : '試煉之塔') + '第 ' + floor + ' 層：' + TOWER.boss.name + '（限時 60 秒）', 'info');
   UI.dirty.tower = true; UI.dirty.battle = true;
 }
 
@@ -133,18 +138,17 @@ function towerTick(dt) {
 
   // 玩家行動（減速 -30%；攻速增益加速）
   if (!effectActive(p, 'stun')) {
-    var before0 = b.hp;
     var sres = pickAndCastSkill(p, b, 'tb-float');
     if (sres) {
-      TOWER.dmgDealt += (before0 - b.hp);
+      // 使用攻擊結果的實際輸出，包含護盾吸收與擊殺時超出生命的溢出傷害。
+      TOWER.dmgDealt += Math.max(0, (sres.dmg || 0));
       if (sres.killed) { endTowerFight(true); return; }
       if (p.hp <= 0) { endTowerFight(false, 'death'); return; } // 自傷技能
     }
     p.atkCd -= dt * slowFactor(p) * (1 + buffVal(p, 'aspdUp') / 100);
     if (p.atkCd <= 0) {
-      var before = b.hp;
       var res = doPlayerAttack(p, b, 'tb-float');
-      TOWER.dmgDealt += (before - b.hp);
+      TOWER.dmgDealt += Math.max(0, (res.dmg || 0));
       p.atkCd += 1 / st.aspd;
       if (res.killed) { endTowerFight(true); return; }
     }
@@ -156,10 +160,9 @@ function towerTick(dt) {
     var mult = TOWER.enraged ? TOWER_ENRAGE_MULT : 1;
     b.atkCd -= dt * slowFactor(b);
     if (b.atkCd <= 0) {
-      var beforeHp = p.hp;
-      doMonsterAttack(b, p, 'tp-float', mult);
-      // 不朽觸發時血量回升，避免統計被倒扣為負
-      TOWER.bossDmgDealt += Math.max(0, beforeHp - p.hp);
+      var bossHit = doMonsterAttack(b, p, 'tp-float', mult);
+      // 使用攻擊結果的實際輸出，包含護盾吸收與擊殺時超出生命的溢出傷害。
+      TOWER.bossDmgDealt += Math.max(0, (bossHit.dmg || 0));
       b.atkCd += 1 / b.aspd;
       if (p.hp <= 0) { endTowerFight(false, 'death'); return; }
       if (b.hp <= 0) { endTowerFight(true); return; } // 反震擊殺
@@ -169,9 +172,8 @@ function towerTick(dt) {
     if (TOWER.specialCd <= 0 && p.hp > 0) {
       TOWER.specialCd = 8;
       blog('💢 ' + b.name + ' 蓄力重擊！', 'warn');
-      var beforeHp2 = p.hp;
-      doMonsterAttack(b, p, 'tp-float', 2.2 * mult);
-      TOWER.bossDmgDealt += Math.max(0, beforeHp2 - p.hp);
+      var bossSpecialHit = doMonsterAttack(b, p, 'tp-float', 2.2 * mult);
+      TOWER.bossDmgDealt += Math.max(0, (bossSpecialHit.dmg || 0));
       if (p.hp <= 0) { endTowerFight(false, 'death'); return; }
       if (b.hp <= 0) { endTowerFight(true); return; }
     }
@@ -199,6 +201,17 @@ function endTowerFight(win, reason) {
     blog('🏆 通關高塔第 ' + floor + ' 層！', 'good');
     // 獎勵：自動機組零件 + 資源（獎勵公式 towerRewardFor → formula.js §5）
     var rw = towerRewardFor(floor, firstClear);
+    var st2 = getStats();
+    var xpGain = Math.round((b.xp || 0) * (1 + st2.xpBonus / 100));
+    gainXp(xpGain);
+    UI.dirty.header = true;
+    result.rewards.push('✨ 經驗 x' + fmt(xpGain));
+    var soulOriginRate = hellSoulOriginDropChance(floor);
+    if (soulOriginRate > 0 && chance(soulOriginRate)) {
+      G.player.soulOrigin = (G.player.soulOrigin || 0) + 1;
+      result.rewards.push('🧿 魔魂本源 x1');
+      UI.dirty.header = true;
+    }
     if (chance(rw.partChance)) {
       var part = makePart(rw.partTier);
       if (part) {
@@ -209,7 +222,6 @@ function endTowerFight(win, reason) {
       }
     }
     // 裝備戰利品：依「BOSS 掉落表」各品質獨立擲骰（>100% 必掉 + 餘數機率）
-    var st2 = getStats();
     var bossRates = dropRatesFor(BOSS_DROP_TABLE, floor);
     var bossMult = 1 + st2.loot / 100;
     var lootCounts = [];
@@ -246,7 +258,7 @@ function endTowerFight(win, reason) {
     var ancientEssenceRate = ancientEssenceDropChanceForBoss(b.level);
     if (ancientEssenceRate > 0 && chance(ancientEssenceRate)) {
       G.player.ancientEssence = (G.player.ancientEssence || 0) + 1;
-      result.rewards.push('🧬 太古精華 x1');
+      result.rewards.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華"> 太古精華 x1');
       UI.dirty.header = true;
     }
     // 魔塵（神鑄材料）：掉落率 = min(30%, 2% + 樓層 × 0.2%)（bossDustRate → formula.js §5）

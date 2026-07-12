@@ -6,7 +6,10 @@ var UI = {
   sel: null,           // { id, source: 'inv' | 'equip' }
   tab: 'equip',
   saveNoticeId: null,
-  tooltipAnchor: null
+  tooltipAnchor: null,
+  affixPoolSource: null,
+  towerTimerRaf: 0,
+  towerTimerAnchor: null
 };
 
 /* ---- 日誌 ---- */
@@ -181,12 +184,14 @@ function renderHeader() {
   updateResourceTip('r-scrap', '裝備碎片', '目前持有：' + fmtFull(p.scrap));
   updateResourceTip('r-essence', '附魔精華', '目前持有：' + fmtFull(p.essence));
   updateResourceTip('r-dust', '魔塵', '神鑄材料，可提升鑄造成功率。｜目前持有：' + fmtFull(p.dust || 0));
-  updateResourceTip('r-ancient-essence', '太古精華', '洗煉時消耗 1 個；每個詞條有 20% 機率成為太古詞條。｜目前持有：' + fmtFull(p.ancientEssence || 0));
+  updateResourceTip('r-ancient-essence', '太古精華', '洗煉時消耗 1 個；每個詞條有 30% 機率成為太古詞條。｜目前持有：' + fmtFull(p.ancientEssence || 0));
+  updateResourceTip('r-soul-origin', '魔魂本源', '用於本源覺醒的道具。｜目前持有：' + fmtFull(p.soulOrigin || 0));
   $id('r-gold').textContent = fmt(p.gold);
   $id('r-scrap').textContent = fmt(p.scrap);
   $id('r-essence').textContent = fmt(p.essence);
   if ($id('r-dust')) $id('r-dust').textContent = fmt(p.dust || 0);
   if ($id('r-ancient-essence')) $id('r-ancient-essence').textContent = fmt(p.ancientEssence || 0);
+  if ($id('r-soul-origin')) $id('r-soul-origin').textContent = fmt(p.soulOrigin || 0);
   // 神鑄頁籤：達到開放等級才顯示
   var forgeTabBtn = document.querySelector('.tab-btn[data-tab="forge"]');
   if (forgeTabBtn) forgeTabBtn.style.display = forgeUnlocked() ? '' : 'none';
@@ -460,6 +465,17 @@ function renderBattle() {
 }
 
 /* ---- 裝備分頁 ---- */
+function ancientStarBadgeHTML(it) {
+  var count = (it && Array.isArray(it.affixes))
+    ? it.affixes.filter(function (a) { return a && a.ancient; }).length
+    : 0;
+  if (!count) return '';
+  var shown = Math.min(7, count);
+  var stars = '';
+  for (var i = 0; i < shown; i++) stars += '<span class="ancient-star">✡</span>';
+  var overlapClass = shown > 4 ? ' overlap' : '';
+  return '<span class="ancient-star-badge' + overlapClass + '" aria-label="太古詞條 ' + count + ' 條">' + stars + '</span>';
+}
 function itemCellHTML(it, source, extraClass) {
   var r = RARITIES[it.rarity];
   var effClass = (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= GODFORGED_IDX ? ' eff-godforged' : (it.rarity === 7 ? ' eff-genesis' : ''));
@@ -468,6 +484,7 @@ function itemCellHTML(it, source, extraClass) {
   return '<div class="item-cell' + effClass + (extraClass || '') + '" data-id="' + it.id + '" data-src="' + source + '" data-slot="' + it.slot + '" ' +
     'style="border-color:' + r.color + ';box-shadow:inset 0 0 12px ' + r.color + '33">' +
     iconHtml +
+    ancientStarBadgeHTML(it) +
     (it.upgrade ? '<span class="ic-up">+' + it.upgrade + '</span>' : '') +
     (itemEnchants(it).length ? '<span class="ic-enc">' + (ENCHANTS[itemEnchants(it)[0].key] || {}).emoji +
       (itemEnchants(it).length > 1 ? '×' + itemEnchants(it).length : '') + '</span>' : '') +
@@ -488,7 +505,7 @@ function renderEquip() {
       var effClass = (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= GODFORGED_IDX ? ' eff-godforged' : (it.rarity === 7 ? ' eff-genesis' : ''));
       var iconHtml = info.icon ? '<img src="images/' + info.icon + '" class="eq-icon">' : '<div class="eq-emoji">' + info.emoji + '</div>';
       h += '<div class="eq-slot filled' + effClass + ' slot-' + slot + '" data-id="' + it.id + '" data-src="equip" data-slot="' + slot + '" style="border-color:' + r.color + '; box-shadow: inset 0 0 15px ' + r.color + '40">' +
-        iconHtml + '</div>';
+        iconHtml + ancientStarBadgeHTML(it) + '</div>';
     } else {
       var iconHtml = info.icon ? '<img src="images/' + info.icon + '" class="eq-icon dim">' : '<div class="eq-emoji dim">' + info.emoji + '</div>';
       h += '<div class="eq-slot empty slot-' + slot + '" data-slot="' + slot + '">' + iconHtml + '</div>';
@@ -536,6 +553,7 @@ function findSelItem() {
 }
 
 function renderDetail() {
+  hideAffixPool();
   var pane = $id('detail-pane');
   var it = findSelItem();
   updateSelectionUI();
@@ -1131,7 +1149,7 @@ function renderForge() {
       // 裝備槽不掛 data-tip：滑過改由 mouseover 委派顯示完整裝備詳情 tooltip
       h += '<div class="forge-slot filled" data-forge-slot="' + i + '" data-id="' + it.id + '" ' +
         'style="' + style + 'border-color:' + r.color + ';box-shadow:0 0 14px ' + r.color + 'aa, inset 0 0 10px ' + r.color + '55">' +
-        iconHtml + '<span class="ic-lv">' + it.level + '</span></div>';
+        iconHtml + ancientStarBadgeHTML(it) + '<span class="ic-lv">' + it.level + '</span></div>';
     } else {
       h += '<div class="forge-slot empty" data-forge-slot="' + i + '" data-tip="點擊下方背包中的裝備（傳說/神話/創世）或寶石（五階以上）放入" style="' + style + '"></div>';
     }
@@ -1277,11 +1295,16 @@ function renderTower() {
     fightBox.style.display = 'none';
     listBox.style.display = '';
     var h = '';
-    var maxShow = G.tower.highest + 3;
+    var maxShow = Math.min(TOWER_MAX_FLOOR, G.tower.highest + 3);
     for (var fl = 1; fl <= maxShow; fl++) {
       var unlocked = fl <= G.tower.highest + 1;
       var cleared = fl <= G.tower.highest;
       var bd = BOSS_LIST[(fl - 1) % BOSS_LIST.length];
+      var hell = isHellTowerFloor(fl);
+      if (fl === 1 || fl === TOWER_TRIAL_MAX_FLOOR + 1) {
+        h += '<div class="tower-section-title ' + (hell ? 'hell' : 'trial') + '">🗼 ' +
+          (hell ? '地獄之塔' : '試煉之塔') + '<span>第 ' + (hell ? (TOWER_TRIAL_MAX_FLOOR + 1) + '～' + TOWER_HELL_MAX_FLOOR : '1～' + TOWER_TRIAL_MAX_FLOOR) + ' 層</span></div>';
+      }
 
       var bossIcon = (bd.img && !bd.imgFailed) ? 'images/' + bd.img : null;
       var bossIdx = (fl - 1) % BOSS_LIST.length;
@@ -1290,7 +1313,7 @@ function renderTower() {
         : '<span style="font-size:24px;vertical-align:middle;">' + (bd.emoji || '👾') + '</span>';
 
       var twCost = towerChallengeCost(fl);
-      h += '<div class="tower-floor' + (cleared ? ' cleared' : '') + (unlocked ? '' : ' locked') + '" data-tower-tip="' + fl + '">' +
+      h += '<div class="tower-floor' + (hell ? ' hell' : '') + (cleared ? ' cleared' : '') + (unlocked ? '' : ' locked') + '" data-tower-tip="' + fl + '">' +
         '<span class="tf-emoji" style="margin-right:12px;">' + iconHtml + '</span>' +
         '<span class="tf-name" style="vertical-align:middle;">第 ' + fl + ' 層・' + bd.name + (cleared ? ' ✅' : '') + '</span>' +
         '<span class="tf-hint" style="margin-left:auto; margin-right:10px;">建議野外階段 ' + (4 + fl * 5) + '+｜挑戰費 <span style="color:' + (G.player.gold >= twCost ? '#ffd700' : '#fca5a5') + '">💰' + fmt(twCost) + '</span></span>' +
@@ -1328,15 +1351,59 @@ function renderTower() {
   }
 }
 
-// 高塔戰鬥動態渲染（每 tick）
+function towerTimerNow() {
+  return (typeof performance !== 'undefined' && typeof performance.now === 'function') ? performance.now() : Date.now();
+}
+
+function stopTowerTimerAnimation() {
+  if (UI.towerTimerRaf) {
+    if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(UI.towerTimerRaf);
+    else clearTimeout(UI.towerTimerRaf);
+    UI.towerTimerRaf = 0;
+  }
+  UI.towerTimerAnchor = null;
+}
+
+function scheduleTowerTimerFrame() {
+  if (typeof requestAnimationFrame === 'function') return requestAnimationFrame(renderTowerTimerFrame);
+  return setTimeout(renderTowerTimerFrame, 50);
+}
+
+function formatTowerTimerSeconds(seconds) {
+  return Math.max(0, Number(seconds) || 0).toFixed(1);
+}
+
+function renderTowerTimerFrame() {
+  if (!G.tower.active || UI.tab !== 'tower' || !TOWER.boss) {
+    stopTowerTimerAnimation();
+    return;
+  }
+  var anchor = UI.towerTimerAnchor;
+  var remain = anchor
+    ? Math.max(0, TOWER_TIME_LIMIT - (anchor.elapsed + (towerTimerNow() - anchor.at) / 1000))
+    : Math.max(0, TOWER_TIME_LIMIT - TOWER.elapsed);
+  var timerEl = $id('tw-timer');
+  if (timerEl) {
+    timerEl.textContent = formatTowerTimerSeconds(remain) + 's';
+    timerEl.classList.toggle('urgent', remain < 15);
+  }
+  UI.towerTimerRaf = scheduleTowerTimerFrame();
+}
+
+// 高塔戰鬥動態渲染（每 tick）；倒數文字另外以逐幀動畫更新
 function renderTowerFight() {
-  if (!G.tower.active) return;
+  if (!G.tower.active || UI.tab !== 'tower') {
+    stopTowerTimerAnimation();
+    return;
+  }
   var st = getStats();
   var b = TOWER.boss, p = TOWER.player;
-  if (!b || !p) return;
-  var remain = Math.max(0, TOWER_TIME_LIMIT - TOWER.elapsed);
-  $id('tw-timer').textContent = fmt1(remain) + 's';
-  $id('tw-timer').classList.toggle('urgent', remain < 15);
+  if (!b || !p) {
+    stopTowerTimerAnimation();
+    return;
+  }
+  UI.towerTimerAnchor = { elapsed: TOWER.elapsed, at: towerTimerNow() };
+  if (!UI.towerTimerRaf) renderTowerTimerFrame();
   $id('tw-enrage').style.display = TOWER.enraged ? '' : 'none';
   // 連續挑戰進度（第 X/Y 場）
   var autoEl = $id('tw-auto-status');
@@ -1645,17 +1712,25 @@ function showTowerTooltip(flStr, anchorEl) {
   if (!tip) return;
   var fl = parseInt(flStr, 10);
   if (!fl) return;
+  var hell = isHellTowerFloor(fl);
+  var bossStats = bossStatsFor(fl);
+  var bossXp = bossStats.xp;
+  var soulRate = hellSoulOriginDropChance(fl);
+  var ancientEssenceRate = ancientEssenceDropChanceForBoss(bossStats.level);
 
   var dropTip = '<div class="skt-name" style="margin-bottom:6px;">【挑戰費用】</div>' +
     '<div class="skt-desc" style="text-align:left;">💰 ' + fmt(towerChallengeCost(fl)) +
-    ' 金幣 <span style="color:var(--dim)">(100000 + 樓層 x 200000)</span></div>' +
+    ' 金幣</div>' +
     '<div class="skt-name" style="margin:6px 0;">【可能掉落物】</div>' +
     '<div class="skt-desc" style="text-align:left;">' +
     '💰 金幣 x' + fmt(200 * fl) + ' <span style="color:var(--dim)">(首通雙倍)</span><br>' +
+    '✨ 經驗 x' + fmt(bossXp) + ' <span style="color:var(--dim)">(基礎，另加經驗加成)</span><br>' +
     '🔮 附魔精華 x' + (3 + fl) + ' <span style="color:var(--dim)">(100%)</span><br>' +
     '💎 隨機寶石 x2 <span style="color:var(--dim)">(100%)</span><br>' +
     '📖 隨機附魔書 x2 <span style="color:var(--dim)">(100%)</span><br>' +
-    '💫 魔塵 <span style="color:var(--dim)">(' + fmt1(bossDustRate(fl)) + '%，神鑄材料)</span><br>' +
+    '💫 魔塵 <span style="color:var(--dim)">(' + fmt1(bossDustRate(fl)) + '%，神鑄材料)</span>' +
+    '<br><img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華"> 太古精華 <span style="color:var(--dim)">(' + fmt1(ancientEssenceRate) + '%)</span>' +
+    (hell ? '<br>🧿 魔魂本源 <span style="color:var(--dim)">(' + fmt1(soulRate) + '%，地獄之塔限定)</span>' : '') + '<br>' +
     '🔩 機組零件 <span style="color:var(--dim)">(首通必掉 / 之後30%)</span>';
 
   var bossRates = dropRatesFor(BOSS_DROP_TABLE, fl);
@@ -1745,6 +1820,37 @@ function hideTooltip() {
   var tip = $id('sk-tooltip');
   if (tip) tip.style.display = 'none';
   UI.tooltipAnchor = null;
+}
+
+function hideAffixPool() {
+  var overlay = $id('affix-pool-overlay');
+  if (!overlay) return;
+  overlay.style.display = 'none';
+  overlay.innerHTML = '';
+  UI.affixPoolSource = null;
+}
+
+function toggleAffixPool(anchorEl) {
+  var overlay = $id('affix-pool-overlay');
+  var source = anchorEl && anchorEl.nextElementSibling;
+  if (!overlay || !source) return;
+  if (UI.affixPoolSource === source && overlay.style.display !== 'none') {
+    hideAffixPool();
+    return;
+  }
+  overlay.innerHTML = source.innerHTML;
+  overlay.style.display = 'block';
+  UI.affixPoolSource = source;
+
+  var r = anchorEl.getBoundingClientRect();
+  var tw = overlay.offsetWidth, th = overlay.offsetHeight;
+  var x = r.right - tw, y = r.bottom + 8;
+  if (x < 8) x = r.left;
+  if (x + tw > window.innerWidth - 8) x = window.innerWidth - tw - 8;
+  if (y + th > window.innerHeight - 8) y = r.top - th - 8;
+  if (y < 8) y = 8;
+  overlay.style.left = x + 'px';
+  overlay.style.top = y + 'px';
 }
 
 // 融合面板
@@ -2827,10 +2933,12 @@ function initUI() {
 
   // 裝備 / 背包點擊（事件委派）
   document.addEventListener('click', function (e) {
-    if (!e.target.closest('.it-pool-box')) {
-      var pools = document.querySelectorAll('.it-pool-box');
-      for (var i = 0; i < pools.length; i++) pools[i].style.display = 'none';
+    var poolBtn = e.target.closest('[data-affix-pool-toggle]');
+    if (poolBtn) {
+      toggleAffixPool(poolBtn);
+      return;
     }
+    if (!e.target.closest('#affix-pool-overlay')) hideAffixPool();
     // 神鑄：法陣槽位（點擊取回）/ 魔塵符位（點擊放入或取下）
     var fslot = e.target.closest('[data-forge-slot]');
     if (fslot) {

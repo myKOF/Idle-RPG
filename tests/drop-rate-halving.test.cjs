@@ -22,6 +22,8 @@ test('掉寶率來源統一減半，既有數值也透過計算套用', () => {
   assert.equal(context.effectivePartEffectValue('ancientEssenceRate', 175), 87.5);
   assert.equal(context.effectivePartEffectValue('gemSieve', 4.2), 2.1);
   assert.equal(context.effectivePartEffectValue('speedGear', 25), 25);
+  assert.equal(context.effectiveFactoryPartValue('speedGear', 175), 225);
+  assert.equal(context.effectiveFactoryPartValue('scrapForge', 140), 140);
 });
 
 test('掉寶率實際消費點使用減半後的裝備與技能加成', () => {

@@ -18,7 +18,7 @@ function newGameState() {
       level: 1, xp: 0,
       reincarnations: 0,
       reincarnationTalentPoints: 0,
-      gold: 50, scrap: 0, essence: 0, ancientEssence: 0,
+      gold: 50, scrap: 0, essence: 0, ancientEssence: 0, soulOrigin: 0,
       dust: 0,                // 魔塵（神鑄材料）
       gems: gems,
       fusedGems: [],          // 融合寶石（雙屬性，個別實體）

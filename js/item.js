@@ -593,7 +593,8 @@ function itemDetailHTML(it, cmp, opts) {
     }
   }
   
-  var poolHtml = '<div class="it-pool-box" style="display:none;">';
+  // 詞條池內容保留為隱藏模板，點擊按鈕時會搬到 body 層的獨立浮層，避免被詳情捲軸裁切。
+  var poolHtml = '<div class="it-pool-box" aria-hidden="true">';
   poolHtml += '<div class="it-pool-title">可能出現的詞條：</div>';
   for (var k in AFFIX_POOL) {
     var d = AFFIX_POOL[k];
@@ -618,7 +619,7 @@ function itemDetailHTML(it, cmp, opts) {
     (it.upgrade ? ' <span class="it-up">+' + it.upgrade + '</span>' : '') +
     (it.synthesized ? ' <span class="it-syn">✦合成</span>' : '') +
     (it.locked ? ' 🔒' : '') +
-    (showAffixReroll ? '<button class="btn-it-pool" onclick="var b=this.nextElementSibling; b.style.display=b.style.display===\'none\'?\'block\':\'none\'; event.stopPropagation();">!</button>' + poolHtml : '') +
+    (showAffixReroll ? '<button type="button" class="btn-it-pool" data-affix-pool-toggle aria-label="查看可能詞條">!</button>' + poolHtml : '') +
     '</div>';
   
   h += '<div class="it-sub"><span>' + r.name + '・' + SLOT_INFO[it.slot].name + '・等級 ' + it.level;
@@ -902,7 +903,7 @@ function makePart(tier, node) {
 }
 function partDesc(p) {
   // 小於 1 的機率值保留兩位小數（如 0.15%），其餘一位
-  var val = effectivePartEffectValue(p.key, p.val);
+  var val = effectivePartEffectValue(p.key, effectiveFactoryPartValue(p.key, p.val));
   var vs = (val < 1) ? String(Math.round(val * 100) / 100) : fmt1(val);
   return PART_TYPES[p.key].desc.replace('{v}', vs);
 }

@@ -527,7 +527,7 @@ function rollFieldDrops(m) {
   var ancientEssenceRate = ancientEssenceDropChanceForEnemy(m.level) * eliteDropMult;
   if (ancientEssenceRate > 0 && chance(ancientEssenceRate)) {
     G.player.ancientEssence = (G.player.ancientEssence || 0) + 1;
-    drops.push('🧬太古精華');
+    drops.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華">太古精華');
     UI.dirty.header = true;
   }
   // 魔塵（神鑄材料）：150 級起掉落，敵人每高 1 級 +0.1%、上限 5%

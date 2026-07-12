@@ -147,6 +147,15 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+.res-emoji {
+  display: inline-block;
+  width: 22px;
+  margin-right: 6px;
+  text-align: center;
+  font-size: 18px;
+  line-height: 1;
+}
+
 /* ---- 左側屬性面板 ---- */
 #stats-sidebar {
   width: 220px;
@@ -1404,6 +1413,52 @@ textarea#save-io {
   font-size: 24px;
 }
 
+/* 裝備圖示上緣的太古詞條數量：最多容納 7 顆六角星。 */
+.ancient-star-badge {
+  position: absolute;
+  z-index: 2;
+  top: 1px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: none;
+  padding: 0;
+  overflow: visible;
+  white-space: nowrap;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.ancient-star-badge .ancient-star {
+  color: #ffe45c !important;
+  font-size: 18px;
+  line-height: 1;
+  margin-left: 0;
+  -webkit-text-stroke: 1px #fff8bd;
+  text-shadow: -1px -1px 0 #263b4c, 1px -1px 0 #263b4c,
+    -1px 1px 0 #263b4c, 1px 1px 0 #263b4c,
+    0 0 3px #000;
+}
+
+.ancient-star-badge .ancient-star:first-child {
+  margin-left: 0;
+}
+
+/* 超過四顆時，所有相鄰星星平均小幅重疊，避免多出的星星集中壓在最後一顆。 */
+.ancient-star-badge.overlap .ancient-star + .ancient-star {
+  margin-left: -4px;
+}
+
+.eq-slot .ancient-star-badge {
+  top: 3px;
+}
+
+.forge-slot .ancient-star-badge {
+  top: 2px;
+}
+
 .ic-up {
   position: absolute;
   top: 1px;
@@ -1668,10 +1723,14 @@ textarea#save-io {
 }
 
 .it-pool-box {
-  position: absolute;
-  right: 0;
-  top: 26px;
-  z-index: 10;
+  display: none !important;
+}
+
+/* 查看詞條的內容搬到 body 層，避免被裝備詳情面板的 overflow 捲軸裁切。 */
+#affix-pool-overlay {
+  position: fixed;
+  display: none;
+  z-index: 10050;
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -1680,7 +1739,8 @@ textarea#save-io {
   color: var(--text);
   font-weight: normal;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  max-height: 500px;
+  max-width: min(520px, calc(100vw - 16px));
+  max-height: min(500px, calc(100vh - 16px));
   overflow-y: auto;
   text-align: left;
   white-space: nowrap;
@@ -1885,6 +1945,8 @@ textarea#save-io {
   font-weight: bold;
   color: var(--info);
   font-variant-numeric: tabular-nums;
+  flex: 0 0 72px;
+  text-align: right;
 }
 
 .tw-timer.urgent {
@@ -1896,6 +1958,12 @@ textarea#save-io {
   color: var(--bad);
   font-weight: bold;
   animation: blink .8s infinite;
+}
+
+/* DPS 資訊固定在倒數計時右側，避免計時文字長短造成水平跳動。 */
+.tower-head #tw-dps {
+  margin-left: 16px;
+  flex: 0 0 auto;
 }
 
 @keyframes blink {
@@ -1922,6 +1990,29 @@ textarea#save-io {
 
 .tower-floor.locked {
   opacity: .45;
+}
+
+.tower-section-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 16px 0 8px;
+  padding: 0 8px 6px;
+  border-bottom: 1px solid var(--border);
+  color: var(--accent);
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.tower-section-title span {
+  color: var(--dim);
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.tower-section-title.hell,
+.tower-floor.hell .tf-name {
+  color: #ffd700;
 }
 
 .tf-emoji {

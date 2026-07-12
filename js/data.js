@@ -29,7 +29,7 @@ var ANCIENT_AFFIX_ENEMY_RATE = 0.1;
 var ANCIENT_AFFIX_RATE_CAP = 3;
 var ANCIENT_BOSS_AFFIX_BASE_RATE = 5;
 var ANCIENT_BOSS_AFFIX_LEVEL_RATE = 0.5;
-var ANCIENT_REROLL_CHANCE = 20;
+var ANCIENT_REROLL_CHANCE = 30;
 var ANCIENT_ESSENCE_ENEMY_BASE_RATE = 2;
 var ANCIENT_ESSENCE_ENEMY_LEVEL_RATE = 0.2;
 var ANCIENT_ESSENCE_ENEMY_RATE_CAP = 20;
@@ -131,7 +131,7 @@ var DUST_BOSS_CAP = 30;                      // 高塔 BOSS 魔塵掉落率上�
 var GODFORGE_PASSIVE_COUNT = 2;
 var GODFORGE_POOL = {
   dragonBlood: { name: '龍血', desc: '生命上限提高 {v}%', base: 25, stats: ['hpPct'] },
-  godMight:    { name: '神力', desc: '物理與魔法攻擊提高 {v}%', base: 18, stats: ['atkPct', 'matkPct'] },
+  godMight:    { name: '神力', desc: '物理與魔法攻擊額外提高 {v}%', base: 18, stats: ['atkPct', 'matkPct'] },
   godHaste:    { name: '神速', desc: '攻擊速度提高 {v}%', base: 15, stats: ['aspdPct'] },
   godSlayer:   { name: '屠神', desc: '對菁英與BOSS傷害提高 {v}%', base: 30, stats: ['eliteDmg', 'bossDmg'] },
   greed:       { name: '貪婪', desc: '金幣加成與掉寶率提高 {v}%', base: 25, stats: ['goldBonus', 'loot'] },
@@ -354,6 +354,13 @@ var BOSS_LIST = [
   { name: '風暴泰坦', emoji: '🌩️', elem: 'lightning', img: 'boss_storm.png' },
   { name: '混沌之影', emoji: '🌑', elem: 'dark', img: 'boss_chaos.png' }
 ];
+var TOWER_TRIAL_MAX_FLOOR = 50;
+var TOWER_HELL_MAX_FLOOR = 100;
+var TOWER_MAX_FLOOR = TOWER_HELL_MAX_FLOOR;
+var TOWER_HELL_ATK_MULT = 2;
+var TOWER_HELL_HP_MULT = 5;
+var TOWER_HELL_SOUL_ORIGIN_BASE_RATE = 5;
+var TOWER_HELL_SOUL_ORIGIN_PER_FLOOR = 1;
 var TOWER_TIME_LIMIT = 60;     // 限時 60 秒
 var TOWER_ENRAGE_TIME = 40;    // 40 秒檢查狂暴
 var TOWER_ENRAGE_HP = 50;      // 血量高於 50% 觸發（玩家「狂暴閾值」屬性可提高此門檻）

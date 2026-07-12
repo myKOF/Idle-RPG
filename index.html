@@ -22,6 +22,7 @@
           id="r-essence">0</b></span>
       <span class="res" data-tt-title="魔塵" data-tt-desc="神鑄材料，可提升鑄造成功率">💫 <b id="r-dust">0</b></span>
       <span class="res" data-tt-title="太古精華" data-tt-desc="可在洗煉時提高詞條成為太古詞條的機率"><img src="images/icon_ancient_essence.png" class="res-icon" alt="Ancient Essence"> <b id="r-ancient-essence">0</b></span>
+      <span class="res" data-tt-title="魔魂本源" data-tt-desc="用於本源覺醒的道具"><span class="res-emoji" aria-hidden="true">🧿</span> <b id="r-soul-origin">0</b></span>
       <span class="res" data-tt-title="寶石" data-tt-desc="目前持有的寶石"><img src="images/icon_gems.png" class="res-icon" alt="Gems"> <b
           id="r-gems">0</b></span>
       <span class="res" data-tt-title="附魔書" data-tt-desc="目前持有的附魔書"><img src="images/icon_books.png" class="res-icon" alt="Books"> <b
@@ -507,8 +508,8 @@
           </div>
 
           <div id="tower-list-wrap">
-            <div class="sec-title">🗼 BOSS 高塔（試煉之塔）</div>
-            <div class="hint">限時 60 秒擊敗 BOSS。通關可獲得「自動機組零件」，安裝於生產線節點提升自動化效率！</div>
+            <div class="sec-title">🗼 BOSS 高塔</div>
+            <div class="hint">限時 60 秒擊敗 BOSS；目前開放試煉之塔 1～50 層、地獄之塔 51～100 層。地獄之塔可額外獲得「魔魂本源」。</div>
             <div class="tower-auto-bar">
               <span>🔁 連續挑戰次數：</span>
               <input type="number" id="tw-auto-count" value="5" min="1" max="999">
@@ -696,6 +697,9 @@
 
   <!-- 技能懸停提示 -->
   <div id="sk-tooltip" style="display:none"></div>
+
+  <!-- 裝備可能詞條獨立浮層：避免被裝備詳情捲軸裁切 -->
+  <div id="affix-pool-overlay" aria-live="polite"></div>
 
   <script src="js/util.js"></script>
   <script src="js/data.js"></script>

@@ -86,6 +86,7 @@ function computeStats() {
   };
   var resist = { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0, ctrl: 0 };
   var passives = {};
+  var godAttackMultiplier = 1;
   var elemAtk = { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0 };
   var socketed = []; // 鑲嵌的寶石（gemEff 需在詞條聚合完成後才知道，先蒐集）
 
@@ -113,6 +114,10 @@ function computeStats() {
         var gd = GODFORGE_POOL[gp.key];
         if (!gd) return;
         if (gd.stats) {
+          if (gp.key === 'godMight') {
+            godAttackMultiplier *= 1 + gp.val / 100;
+            return;
+          }
           gd.stats.forEach(function (bk) {
             if (A[bk] !== undefined) A[bk] += bk === 'loot' ? effectiveDropRateEffect(gp.val) : gp.val;
           });
@@ -193,10 +198,10 @@ function computeStats() {
   st.mpRegen = 2 + st.int * 0.06 + A.mpRegen;
   // 進攻：物攻 = (8 + (等級-1)×1.6 + 力量×2 + 定值) × (1 + 物攻%)
   st.base.atk = 8 + (lv - 1) * 1.6 + st.str * 2;
-  st.atk = Math.round((st.base.atk + A.atkFlat) * (1 + A.atkPct / 100));
+  st.atk = Math.round((st.base.atk + A.atkFlat) * (1 + A.atkPct / 100) * godAttackMultiplier);
   // 魔攻 = (6 + (等級-1)×1.2 + 智力×2 + 定值) × (1 + 魔攻%)
   st.base.matk = 6 + (lv - 1) * 1.2 + st.int * 2;
-  st.matk = Math.round((st.base.matk + A.matkFlat) * (1 + A.matkPct / 100));
+  st.matk = Math.round((st.base.matk + A.matkFlat) * (1 + A.matkPct / 100) * godAttackMultiplier);
   st.critRate = clamp(5 + st.agi * 0.06 + A.critRate, 0, 100);   // 暴擊率：基礎 5% + 敏捷×0.06
   st.critDmg = 150 + A.critDmg;                                  // 暴擊傷害：基礎 150%
   st.pPen = clamp(A.pPen, 0, 80);                                // 穿透上限 80%
@@ -436,6 +441,12 @@ function monsterStatsFor(stage, elite) {
 // 菁英出現規則：階段為 10 的倍數
 function isEliteStage(stage) { return stage % 10 === 0; }
 
+// 高塔分區：1~50 試煉之塔、51~100 地獄之塔，100 層後尚未開放。
+function isHellTowerFloor(floor) {
+  floor = Math.floor(Number(floor) || 0);
+  return floor > TOWER_TRIAL_MAX_FLOOR && floor <= TOWER_HELL_MAX_FLOOR;
+}
+
 // 普通關卡敵人數量：1 隻 78%、2 隻 15%、3 隻 5%、4 隻 2%。
 function rollFieldEnemyCount() { return wpick(FIELD_ENEMY_COUNT_TABLE); }
 
@@ -447,17 +458,22 @@ function rollFieldEnemyCount() { return wpick(FIELD_ENEMY_COUNT_TABLE); }
 function bossStatsFor(floor) {
   var refStage = 4 + floor * 5;
   var base = monsterStatsFor(refStage, false);
+  var hell = isHellTowerFloor(floor);
+  var hpMult = hell ? TOWER_HELL_HP_MULT : 1;
+  var atkMult = hell ? TOWER_HELL_ATK_MULT : 1;
   return {
     refStage: refStage,
     level: refStage + 3,
-    hp: base.hp * 22,
-    atk: base.atk * 1.9,
+    hell: hell,
+    hp: base.hp * 22 * hpMult,
+    atk: base.atk * 1.9 * atkMult,
     def: base.def * 1.5,
     mdef: base.mdef * 1.5,
     aspd: 2.0,
     dodge: Math.min(5 + floor, 20),
     ctrlRes: 70,
-    elemAtkVal: base.atk * 0.5
+    elemAtkVal: base.atk * 0.5 * atkMult,
+    xp: base.xp * 2
   };
 }
 
@@ -473,11 +489,15 @@ var DROP_RATE_PART_KEYS = {
   extractLens: true, ancientEssenceRate: true, duplicator: true,
   fortuneChip: true, gemSieve: true, bookScavenger: true, prospector: true
 };
+var SPEED_GEAR_FIXED_BONUS = 50;
 function effectiveDropRateEffect(value) {
   return (Number(value) || 0) * DROP_RATE_EFFECT_MULT;
 }
 function effectivePartEffectValue(key, value) {
   return DROP_RATE_PART_KEYS[key] ? effectiveDropRateEffect(value) : value;
+}
+function effectiveFactoryPartValue(key, value) {
+  return key === 'speedGear' ? (Number(value) || 0) + SPEED_GEAR_FIXED_BONUS : value;
 }
 
 function dropRatesFor(table, lvl) {
@@ -559,14 +579,22 @@ function fieldGemLevelFor(stage) {
   return wpick([[glv, 70], [Math.max(1, glv - 1), 30]]);
 }
 
-// 高塔挑戰金幣消耗 = 100000 + 樓層 × 200000
+// 高塔挑戰金幣消耗 = 100000 × 樓層^2.6
 function towerChallengeCost(floor) {
-  return 100000 + floor * 200000;
+  return Math.round(100000 * Math.pow(Math.max(1, Number(floor) || 1), 2.6));
 }
 
 // 高塔 BOSS 魔塵掉落率 = min(30%, 2% + 樓層 × 0.2%)
 function bossDustRate(floor) {
   return Math.min(DUST_BOSS_CAP, DUST_BOSS_BASE + floor * DUST_BOSS_PER_LEVEL);
+}
+
+// 地獄之塔魔魂本源掉落率 = 5% +（樓層 - 51）× 1%；只在 51~100 樓生效。
+function hellSoulOriginDropChance(floor) {
+  floor = Math.floor(Number(floor) || 0);
+  if (!isHellTowerFloor(floor)) return 0;
+  return Math.min(100, TOWER_HELL_SOUL_ORIGIN_BASE_RATE +
+    (floor - TOWER_TRIAL_MAX_FLOOR - 1) * TOWER_HELL_SOUL_ORIGIN_PER_FLOOR);
 }
 
 // 野外魔塵掉落率 = min(5%, 0.1% + (敵人等級 - 150) × 0.1%)；150 級以下不掉落

@@ -439,7 +439,11 @@ function resolveForge(crafting) {
     var maxLv = 1;
     f.slots.forEach(function (it) { maxLv = Math.max(maxLv, it.level); forgeReclaimSockets(it); });
     f.slots = [null, null, null, null, null, null];
-    var newIt = makeEquipment(maxLv, { rarity: r + 1, level: maxLv });
+    var newIt = makeEquipment(maxLv, {
+      rarity: r + 1,
+      level: maxLv,
+      ancientRate: ancientAffixChanceForEnemy(maxLv)
+    });
     f.result = { name: newIt.name, rarity: newIt.rarity, slot: newIt.slot, level: newIt.level };
     addToInventory(newIt);
     forgeLog('獲得 ' + newIt.name + '*1', 'good');

@@ -300,6 +300,7 @@ function migrateSave(data) {
     data.factory.salvageSlots = clamp(Math.floor(Number(data.factory.salvageSlots) || SALVAGE_SLOT_INITIAL), SALVAGE_SLOT_INITIAL, SALVAGE_SLOT_MAX);
   }
   data.player.ancientEssence = Math.max(0, Math.floor(Number(data.player.ancientEssence) || 0));
+  data.player.soulOrigin = Math.max(0, Math.floor(Number(data.player.soulOrigin) || 0));
   data.settings.useAncientEssence = !!data.settings.useAncientEssence;
   // 神鑄永久開放相容：舊存檔只有 unlockNotified，合併預設後補回永久解鎖旗標。
   if (hadForgeUnlockNotice && data.forge) data.forge.unlocked = true;
@@ -784,7 +785,7 @@ function applyOfflineProgress() {
   blog('🌙 離線收益（' + (hrs ? hrs + ' 小時 ' : '') + mins + ' 分鐘）：擊殺 ' + fmt(kills) +
     '、金幣 +' + fmt(gold) + '、經驗 +' + fmt(xp) +
     '、裝備 x' + realDrops + ' 已送入輸送帶' + (scrapExtra ? '、碎片 +' + fmt(scrapExtra) : '') +
-    (ancientEssenceCount ? '、太古精華 +' + fmt(ancientEssenceCount) : ''), 'good');
+    (ancientEssenceCount ? '、<img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華">太古精華 +' + fmt(ancientEssenceCount) : ''), 'good');
 }
 
 /* ============ 存檔機制 V2：單一自動快取＋本地手動歷史 ============ */
