@@ -13,10 +13,21 @@ function partBonus(node, key) {
   });
   return sum;
 }
+function effectivePartBonus(node, key) {
+  return effectivePartEffectValue(key, partBonus(node, key));
+}
 function findPart(id) {
   var f = G.factory;
   for (var i = 0; i < f.parts.length; i++) if (f.parts[i].id === id) return f.parts[i];
   return null;
+}
+function bestAvailablePartForInstall(node, key) {
+  var best = null;
+  G.factory.parts.forEach(function (p) {
+    if (!p || p.key !== key || !PART_TYPES[p.key] || PART_TYPES[p.key].node !== node || isInstalled(p.id)) return;
+    if (!best || p.tier > best.tier || (p.tier === best.tier && p.val > best.val)) best = p;
+  });
+  return best;
 }
 function isInstalled(id) {
   var inst = G.factory.installed;
@@ -42,6 +53,20 @@ function uninstallPart(node, id) {
   var arr = G.factory.installed[node];
   var idx = arr.indexOf(id);
   if (idx >= 0) { arr.splice(idx, 1); UI.dirty.factory = true; }
+}
+
+// 分解槽擴充：依目前已解鎖格數支付金幣，最多 20 格。
+function expandSalvageSlot() {
+  var current = salvageSlotCount();
+  if (current >= SALVAGE_SLOT_MAX) return '分解槽已達上限（' + SALVAGE_SLOT_MAX + ' 格）';
+  var cost = salvageSlotUnlockCost(current);
+  if (G.player.gold < cost) return '金幣不足（需要 ' + fmt(cost) + '）';
+  G.player.gold -= cost;
+  G.factory.salvageSlots = current + 1;
+  UI.dirty.header = true;
+  UI.dirty.factory = true;
+  flog('🔓 分解槽已擴充至 ' + G.factory.salvageSlots + '/' + SALVAGE_SLOT_MAX + ' 格，消耗金幣 ' + fmt(cost), 'good');
+  return null;
 }
 
 /* ---- 零件庫存收斂 ----
@@ -130,7 +155,9 @@ function doSalvage(it, silent) {
     }
   }
   // 基礎分解產出（精粹透鏡：提高提取機率）
-  var res = salvageResult(it, extractChanceNow() + partBonus('salvage', 'extractLens'));
+  var res = salvageResult(it,
+    extractChanceNow() + effectivePartBonus('salvage', 'extractLens'),
+    effectivePartBonus('salvage', 'ancientEssenceRate'));
 
   // 產量倍率：碎片熔煉爐 / 淘金濾網
   res.scrap = Math.max(1, Math.round(res.scrap * (1 + partBonus('salvage', 'scrapForge') / 100)));
@@ -140,16 +167,20 @@ function doSalvage(it, silent) {
 
   var extras = []; // 額外掉落 / 事件（記入日誌）
   // 複製處理艙：碎片＋金幣翻倍
-  var dupC = partBonus('salvage', 'duplicator');
+  var dupC = effectivePartBonus('salvage', 'duplicator');
   if (dupC > 0 && chance(dupC)) { res.scrap *= 2; res.gold *= 2; extras.push('♻️翻倍'); }
   // 幸運晶片：大豐收（碎片/金幣/精華 ×3）
-  var fc = partBonus('salvage', 'fortuneChip');
+  var fc = effectivePartBonus('salvage', 'fortuneChip');
   if (fc > 0 && chance(fc)) { res.scrap *= 3; res.gold *= 3; res.essence *= 3; extras.push('🎰大豐收×3'); }
 
   // 入帳
   G.player.scrap += res.scrap;
   G.player.gold += res.gold;
   if (res.essence) G.player.essence += res.essence;
+  if (res.ancientEssence) {
+    G.player.ancientEssence = (G.player.ancientEssence || 0) + res.ancientEssence;
+    extras.push('🧬太古精華x' + res.ancientEssence);
+  }
 
   if (res.extracted) {
     G.factory.stats.extracted++;
@@ -163,10 +194,10 @@ function doSalvage(it, silent) {
     }
   }
   // 寶石篩選器：獨立額外寶石
-  var sieve = partBonus('salvage', 'gemSieve');
+  var sieve = effectivePartBonus('salvage', 'gemSieve');
   if (sieve > 0 && chance(sieve)) { addGem(randomGemType(), 1, 1); extras.push('💎寶石'); }
   // 拓本回收臂：回收附魔書
-  var bookB = partBonus('salvage', 'bookScavenger');
+  var bookB = effectivePartBonus('salvage', 'bookScavenger');
   if (bookB > 0 && chance(bookB)) {
     var bk = pick(Object.keys(ENCHANTS));
     G.player.books[bk] = (G.player.books[bk] || 0) + 1;
@@ -180,7 +211,7 @@ function doSalvage(it, silent) {
     extras.push('📚經驗+' + fmt(xpG));
   }
   // 探礦核心：額外掉落自動機組零件
-  var pros = partBonus('salvage', 'prospector');
+  var pros = effectivePartBonus('salvage', 'prospector');
   if (pros > 0 && chance(pros)) {
     var np = makePart(clamp(1 + Math.floor(it.rarity / 2), 1, PART_MAX_TIER));
     G.factory.parts.push(np);

@@ -12,7 +12,7 @@
   <div id="update-banner" onclick="location.reload()">🔄 發現遊戲新版本！點擊此處或按 F5 重新整理以載入最新內容。</div>
 
   <header id="topbar">
-    <div class="brand">⚔️ 無限征途<span class="brand-sub">合成之巔</span><button id="btn-fullscreen" class="fs-btn" data-tip="進入全螢幕（等同 F11）">⛶</button></div>
+    <div class="brand">⚔️ 無限征途<span class="brand-sub">合成之巔</span><button id="btn-fullscreen" class="fs-btn" data-tip="進入網頁全螢幕">⛶</button></div>
     <div id="res-bar">
       <span class="res" data-tt-title="金幣" data-tt-desc="目前持有的金幣"><img src="images/icon_gold.png" class="res-icon" alt="Gold"> <b
           id="r-gold">0</b></span>
@@ -21,6 +21,7 @@
       <span class="res" data-tt-title="附魔精華" data-tt-desc="目前持有的附魔精華"><img src="images/icon_essence.png" class="res-icon" alt="Essence"> <b
           id="r-essence">0</b></span>
       <span class="res" data-tt-title="魔塵" data-tt-desc="神鑄材料，可提升鑄造成功率">💫 <b id="r-dust">0</b></span>
+      <span class="res" data-tt-title="太古精華" data-tt-desc="可在洗煉時提高詞條成為太古詞條的機率"><img src="images/icon_ancient_essence.png" class="res-icon" alt="Ancient Essence"> <b id="r-ancient-essence">0</b></span>
       <span class="res" data-tt-title="寶石" data-tt-desc="目前持有的寶石"><img src="images/icon_gems.png" class="res-icon" alt="Gems"> <b
           id="r-gems">0</b></span>
       <span class="res" data-tt-title="附魔書" data-tt-desc="目前持有的附魔書"><img src="images/icon_books.png" class="res-icon" alt="Books"> <b
@@ -66,9 +67,14 @@
               <div>
                 <div class="sec-title" style="display: flex; align-items: center; justify-content: space-between;">
                   <span>裝備詳情</span>
-                  <label style="font-size: 13px; font-weight: normal; cursor: pointer; color: var(--text);">
-                    <input type="checkbox" id="toggle-compare" style="margin-right: 4px; cursor: pointer;">比較裝備
-                  </label>
+                  <span style="display:flex; gap:12px; align-items:center;">
+                    <label style="font-size: 13px; font-weight: normal; cursor: pointer; color: var(--text);">
+                      <input type="checkbox" id="toggle-ancient-essence" style="margin-right: 4px; cursor: pointer;">使用太古精華
+                    </label>
+                    <label style="font-size: 13px; font-weight: normal; cursor: pointer; color: var(--text);">
+                      <input type="checkbox" id="toggle-compare" style="margin-right: 4px; cursor: pointer;">比較裝備
+                    </label>
+                  </span>
                 </div>
                 <div id="detail-pane" class="panel">
                   <div class="hint">點選裝備查看詳情</div>
@@ -140,14 +146,14 @@
                       <option value="smart">比已裝備弱則分解</option>
                     </select>
                   </div>
-                  <div class="flt-row"><span class="rar-tag" style="color:#c084fc">獨特</span>
+                  <div class="flt-row"><span class="rar-tag" style="color:#ffd700">獨特</span>
                     <select class="flt-sel" data-rarity="3">
                       <option value="keep">保留</option>
                       <option value="salvage">分解</option>
                       <option value="smart">比已裝備弱則分解</option>
                     </select>
                   </div>
-                  <div class="flt-row"><span class="rar-tag" style="color:#ffd700">史詩</span>
+                  <div class="flt-row"><span class="rar-tag" style="color:#c084fc">史詩</span>
                     <select class="flt-sel" data-rarity="4">
                       <option value="keep">保留</option>
                       <option value="salvage">分解</option>
@@ -184,8 +190,7 @@
               <div class="node-title">⚒️ 分解槽 <span class="node-badge">Salvage</span></div>
               <div class="node-body">
                 <div class="node-info" id="salv-info"></div>
-                <div class="hint">分解產出碎片，10% 機率觸發「精粹提取」獲得附魔精華與寶石。可安裝分解槽零件強化產出（槽位隨等級成長：初始 2、每 500 級 +1、上限
-                  10）：加速齒輪、碎片熔煉爐、淘金濾網、精粹透鏡、精華凝結線圈、寶石篩選器、寶石提純器、拓本回收臂、複製處理艙、知識回收器、探礦核心、幸運晶片（共 12 種，由高塔通關與「探礦核心」掉落）。</div>
+                <div class="hint">分解產出碎片，10% 機率觸發「精粹提取」獲得附魔精華與寶石。分解槽目前 10 格，可使用金幣逐格解鎖，最高 20 格；可安裝零件強化產出：加速齒輪、碎片熔煉爐、淘金濾網、精粹透鏡、精華凝結線圈、太古精華萃取器、寶石篩選器、寶石提純器、拓本回收臂、複製處理艙、知識回收器、探礦核心、幸運晶片（共 13 種）。</div>
                 <div class="sec-sub">已安裝零件 <span id="salv-slot-label" class="dim-text"></span></div>
                 <div id="salv-parts" class="chip-row"></div>
                 <div class="sec-sub">可用零件（點擊安裝）</div>
@@ -282,7 +287,7 @@
             </div>
             <div id="forge-stage">
               <div class="forge-info-btn"
-                data-tip="將 6 件&lt;b&gt;相同品質&lt;/b&gt;的裝備（僅限 &lt;span style=&quot;color:#fb923c&quot;&gt;傳說&lt;/span&gt; / &lt;span style=&quot;color:#f87171&quot;&gt;神話&lt;/span&gt; / &lt;span style=&quot;color:#b8860b&quot;&gt;創世&lt;/span&gt;）放入六芒星，點「鑄造」有機會獲得&lt;b&gt;下一品質&lt;/b&gt;隨機部位裝備 1 件；失敗將隨機消耗 2 件、其餘退回背包。&lt;br&gt;點擊六個角尖的圓形符位可放置 💫 魔塵，每個 +5% 成功率（最多 6 個）。&lt;br&gt;6 件創世鑄造成功將獲得&lt;b style=&quot;color:#f5c542&quot;&gt;神鑄創世&lt;/b&gt;暗金裝備：屬性與上限為創世的 1.5 倍、必帶 2 條專屬特效，且無法再放入法陣。&lt;br&gt;基礎成功率：傳說 55%｜神話 40%｜創世 25%。金幣消耗：傳說 500 萬｜神話 2000 萬｜創世 1 億。&lt;br&gt;&lt;br&gt;💎 &lt;b&gt;寶石神鑄&lt;/b&gt;：切換下方「寶石」頁籤，放入 6 顆&lt;b&gt;相同種類與階級&lt;/b&gt;（五階以上）的寶石，成功合成&lt;b&gt;高一階&lt;/b&gt;寶石（最高十階，每高一階能力 ×2）；失敗損失 2 顆、其餘退回。魔塵對寶石鑄造每個 +3% 成功率。&lt;br&gt;基礎成功率：五階 45%｜六階 35%｜七階 25%｜八階 15%｜九階 5%。金幣消耗：100 萬 +（階級 − 5）× 100 萬。&lt;br&gt;&lt;b&gt;融合寶石無法用於神鑄&lt;/b&gt;（可至寶石分頁進行融合）。">
+                data-tip="將 6 件&lt;b&gt;相同品質&lt;/b&gt;的裝備（僅限 &lt;span style=&quot;color:#fb923c&quot;&gt;傳說&lt;/span&gt; / &lt;span style=&quot;color:#f87171&quot;&gt;神話&lt;/span&gt; / &lt;span style=&quot;color:#b8860b&quot;&gt;創世&lt;/span&gt;）放入六芒星，點「鑄造」有機會獲得&lt;b&gt;下一品質&lt;/b&gt;隨機部位裝備 1 件；失敗將隨機消耗 3 件、其餘退回背包。&lt;br&gt;點擊六個角尖的圓形符位可放置 💫 魔塵，每個 +5% 成功率（最多 6 個）。&lt;br&gt;6 件創世鑄造成功將獲得&lt;b style=&quot;color:#f5c542&quot;&gt;神鑄創世&lt;/b&gt;暗金裝備：屬性與上限為創世的 1.5 倍、必帶 2 條專屬特效，且無法再放入法陣。&lt;br&gt;基礎成功率：傳說 55%｜神話 40%｜創世 25%。金幣消耗：傳說 500 萬｜神話 2000 萬｜創世 1 億。&lt;br&gt;&lt;br&gt;💎 &lt;b&gt;寶石神鑄&lt;/b&gt;：切換下方「寶石」頁籤，放入 6 顆&lt;b&gt;相同種類與階級&lt;/b&gt;（五階以上）的寶石，成功合成&lt;b&gt;高一階&lt;/b&gt;寶石（最高十階，每高一階能力 ×2）；失敗損失 3 顆、其餘退回。魔塵對寶石鑄造每個 +3% 成功率。&lt;br&gt;基礎成功率：五階 45%｜六階 35%｜七階 25%｜八階 15%｜九階 5%。金幣消耗：100 萬 +（階級 − 5）× 100 萬。&lt;br&gt;&lt;b&gt;融合寶石無法用於神鑄&lt;/b&gt;（可至寶石分頁進行融合）。">
                 !</div>
               <div id="forge-log" class="forge-log"></div>
               <div id="forge-hex"></div>
@@ -334,7 +339,7 @@
           </div>
           <div class="panel" style="margin-bottom:12px">
             <div class="sec-title">🔀 寶石合成</div>
-            <div class="hint">消耗 2 顆「同種類、同等級」寶石＋金幣 → 1 顆同種類的<b>下一階</b>寶石。</div>
+            <div class="hint">消耗 2 顆「同種類、同等級」寶石＋金幣 → 1 顆同種類的<b>下一階</b>寶石；可選擇「全部類型寶石」逐種類合成。</div>
             <div class="flt-row" style="margin-top:8px; flex-wrap:wrap">
               <span>寶石種類</span>
               <select id="fuse-type"></select>
@@ -554,7 +559,7 @@
                 階：普通（灰）→精良（綠）→稀有（藍）→獨特（紫）→史詩（金）→傳說（橘）→神話（紅）→創世（暗金）→神鑄創世（耀金，僅能鑄造取得）；品質決定詞條數（1~7，「詞條上限率」可再突破
                 +1）、寶石鑲孔（1~6）與附魔欄位（1~3）。神話 25
                 階起、創世 40 階起掉落。稀有以上附帶特殊被動；武器/戒指優先裝入空欄、再替換較弱者。</p>
-              <p><b>🔯 神鑄：</b>角色 1000 級開放。將 6 件相同品質（傳說/神話/創世）的裝備放入六芒星法陣，消耗金幣鑄造下一品質裝備；失敗隨機消耗 2 件、其餘退回。角尖符位可放💫魔塵（每個
+              <p><b>🔯 神鑄：</b>角色 1000 級開放。將 6 件相同品質（傳說/神話/創世）的裝備放入六芒星法陣，消耗金幣鑄造下一品質裝備；失敗隨機消耗 3 件、其餘退回。角尖符位可放💫魔塵（每個
                 +5% 成功率，等級 150+ 敵人與高塔 BOSS 掉落；神鑄失敗額外獲得 1 個魔塵）。6 件創世鑄造成功可得「神鑄創世」：屬性上限 1.5 倍、必帶 2 條專屬特效（龍血/神力/天罰/不朽…共 12
                 種），無法再入爐。</p>
               <p><b>🏭 生產線：</b>掉落裝備進入輸送帶 → 篩選節點依品質決定「保留 / 分解」。分解有 10% 機率「精粹提取」出高階材料。</p>
@@ -589,6 +594,7 @@
           <button id="st-prev" class="btn sm">◀</button>
           <span id="stage-label">第 1 階段</span>
           <button id="st-next" class="btn sm">▶</button>
+          <button id="st-max" class="btn sm" title="直達目前最高階段" aria-label="直達目前最高階段">⏭</button>
           <span id="stage-best" class="dim-text">最高 1</span>
           <label class="chk"><input type="checkbox" id="st-auto" checked> 自動推進</label>
           <button id="btn-pip" class="btn sm" title="開啟永遠置頂的迷你監控視窗，背景掛機也能看到戰況">📺 迷你視窗</button>

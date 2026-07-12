@@ -37,6 +37,16 @@ test('商店升級費用與等級上限正確', () => {
   assert.equal(context.gemShopUpgradeCost(20), 0);
 });
 
+test('寶石商店手動刷新費用依下一次重置序號的 2.5 次方計算', () => {
+  const context = loadGameContext();
+  context.G.player.gemShop.refreshCount = 0;
+  assert.equal(context.shopRefreshCost(), 5000);
+  context.G.player.gemShop.refreshCount = 1;
+  assert.equal(context.shopRefreshCost(), Math.round(5000 * Math.pow(2, 2.5)));
+  context.G.player.gemShop.refreshCount = 2;
+  assert.equal(context.shopRefreshCost(), Math.round(5000 * Math.pow(3, 2.5)));
+});
+
 test('商店依等級刷出對應數量與高階寶石', () => {
   const context = loadGameContext();
   context.wpick = (pairs) => pairs[pairs.length - 1][0];

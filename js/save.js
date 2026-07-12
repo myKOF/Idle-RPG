@@ -283,6 +283,7 @@ function migrateSave(data) {
   var hadSkillDmgV2 = !!data.skillDmgV2;                     // 需在 mergeDefaults 前判斷（merge 會補 true）
   var hadSpecialBuffTrimV1 = !!data.specialBuffTrimV1;        // 一次性移除特殊技能第二增益
   var hadForgeUnlockNotice = !!(data.forge && data.forge.unlockNotified);
+  var hadSalvageSlots = !!(data.factory && data.factory.salvageSlots !== undefined);
   var def = newGameState();
   
   // 防止玩家手動降級（刪除）的初始技能，在讀檔時被 mergeDefaults 誤判為缺漏而自動補回 1 級
@@ -292,6 +293,14 @@ function migrateSave(data) {
   }
   
   mergeDefaults(data, def);
+  if (!hadSalvageSlots) {
+    var legacySalvageInstalled = data.factory && data.factory.installed && data.factory.installed.salvage;
+    data.factory.salvageSlots = clamp(Math.max(SALVAGE_SLOT_LEGACY_DEFAULT, (legacySalvageInstalled || []).length), SALVAGE_SLOT_INITIAL, SALVAGE_SLOT_MAX);
+  } else {
+    data.factory.salvageSlots = clamp(Math.floor(Number(data.factory.salvageSlots) || SALVAGE_SLOT_INITIAL), SALVAGE_SLOT_INITIAL, SALVAGE_SLOT_MAX);
+  }
+  data.player.ancientEssence = Math.max(0, Math.floor(Number(data.player.ancientEssence) || 0));
+  data.settings.useAncientEssence = !!data.settings.useAncientEssence;
   // 神鑄永久開放相容：舊存檔只有 unlockNotified，合併預設後補回永久解鎖旗標。
   if (hadForgeUnlockNotice && data.forge) data.forge.unlocked = true;
   // 轉生欄位相容：舊存檔視為 0 轉；等級上限固定為 9999。
@@ -753,17 +762,29 @@ function applyOfflineProgress() {
     var cnt = Math.floor(kills * rates[r] * lootMult / 100);
     if (chance((kills * rates[r] * lootMult) % 100)) cnt++;
     var real = Math.min(cnt, slotsLeft);
-    for (var i = 0; i < real; i++) pushConveyor(makeEquipment(s, { rarity: r }));
+    for (var i = 0; i < real; i++) pushConveyor(makeEquipment(s, {
+      rarity: r,
+      ancientRate: ancientAffixChanceForEnemy(m.level)
+    }));
     slotsLeft -= real;
     realDrops += real;
     scrapExtra += Math.max(0, cnt - real) * Math.round(3 * RARITIES[r].salv);
   }
   G.player.scrap += scrapExtra;
+  var ancientEssenceRate = ancientEssenceDropChanceForEnemy(m.level);
+  var ancientEssenceCount = 0;
+  if (ancientEssenceRate > 0) {
+    var ancientEssencePoints = ancientEssenceRate * kills;
+    ancientEssenceCount = Math.floor(ancientEssencePoints / 100);
+    if (chance(ancientEssencePoints % 100)) ancientEssenceCount++;
+    G.player.ancientEssence += ancientEssenceCount;
+  }
 
   var hrs = Math.floor(elapsed / 3600), mins = Math.floor((elapsed % 3600) / 60);
   blog('🌙 離線收益（' + (hrs ? hrs + ' 小時 ' : '') + mins + ' 分鐘）：擊殺 ' + fmt(kills) +
     '、金幣 +' + fmt(gold) + '、經驗 +' + fmt(xp) +
-    '、裝備 x' + realDrops + ' 已送入輸送帶' + (scrapExtra ? '、碎片 +' + fmt(scrapExtra) : ''), 'good');
+    '、裝備 x' + realDrops + ' 已送入輸送帶' + (scrapExtra ? '、碎片 +' + fmt(scrapExtra) : '') +
+    (ancientEssenceCount ? '、太古精華 +' + fmt(ancientEssenceCount) : ''), 'good');
 }
 
 /* ============ 存檔機制 V2：單一自動快取＋本地手動歷史 ============ */

@@ -36,6 +36,11 @@ function fmt(n) {
   while (x >= 1000 && u < units.length - 1) { x /= 1000; u++; }
   return (x >= 100 ? x.toFixed(0) : x.toFixed(1)) + units[u];
 }
+// 顯示完整整數，不使用 K/M/B 等縮寫（用於資源提示）。
+function fmtFull(n) {
+  if (n === null || n === undefined || isNaN(n)) return '0';
+  return Math.floor(n).toLocaleString('en-US');
+}
 function fmt1(n) { // 保留一位小數
   if (n === null || n === undefined || isNaN(n)) return '0';
   return (Math.round(n * 10) / 10).toString();

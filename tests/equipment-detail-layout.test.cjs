@@ -13,3 +13,12 @@ test('裝備詳情加寬、寶石資訊不換行且素材面板向右移', () =>
   assert.match(css, /\.it-sockets\s+\.socket\s*\{[\s\S]*white-space:\s*nowrap/);
   assert.match(css, /\.equip-material-panel\s*\{[\s\S]*margin-left:\s*14px[\s\S]*width:\s*calc\(100%\s*-\s*14px\)/);
 });
+
+test('裝備評分移到裝備等級列右側，避免遮住裝備名稱', () => {
+  const item = fs.readFileSync(path.join(root, 'js/item.js'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
+  assert.doesNotMatch(item, /it-score it-score-top/);
+  assert.match(item, /it-score it-score-sub/);
+  assert.match(css, /\.it-sub\s*\{[\s\S]*display:\s*flex[\s\S]*justify-content:\s*space-between/);
+  assert.match(css, /\.it-score-sub\s*\{[\s\S]*white-space:\s*nowrap/);
+});

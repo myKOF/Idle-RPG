@@ -43,7 +43,7 @@ function spawnFieldMonster() {
   var elite = isEliteStage(s); // 菁英規則 → formula.js §4
   var base = monsterStatsFor(s, elite);
   var zn = currentZoneDef();
-  var count = elite ? 1 : rollFieldEnemyCount();
+  var count = rollFieldEnemyCount();
   var enemies = [];
   for (var i = 0; i < count; i++) {
     var mtype = pick(zn.pool);
@@ -480,16 +480,17 @@ function onPlayerFieldDeath() {
 function rollFieldDrops(m) {
   var st = getStats();
   var s = G.stage.current;
-  var lootBonus = st.loot + buffVal(FIELD.player, 'lootUp'); // 尋寶直覺增益
+  var lootBonus = st.loot + effectiveDropRateEffect(buffVal(FIELD.player, 'lootUp')); // 尋寶直覺增益已減半
   var drops = [];
-  // 裝備：依「物品掉落表」各品質獨立擲骰（掉寶率加成、菁英 x2）
+  // 菁英掉落：裝備與材料都在一般基礎上乘 1.5，不再使用舊版裝備 x2／零件 x3 特例。
   var rates = dropRatesFor(FIELD_DROP_TABLE, m.level);
-  var dropMult = (1 + lootBonus / 100) * (m.elite ? 2 : 1);
+  var eliteDropMult = m.elite ? 1.5 : 1;
+  var dropMult = (1 + lootBonus / 100) * eliteDropMult;
   for (var r = 0; r < rates.length; r++) {
     if (!rates[r]) continue;
     var n = rollDropCount(rates[r] * dropMult);
     for (var k = 0; k < n; k++) {
-      var it = makeEquipment(s, { rarity: r });
+      var it = makeEquipment(s, { rarity: r, ancientRate: ancientAffixChanceForEnemy(m.level) });
       pushConveyor(it);
       drops.push('裝備[' + rarityTag(it) + ']');
     }
@@ -499,7 +500,7 @@ function rollFieldDrops(m) {
   var rw = currentZoneDef().rewardMult;
   // 寶石（階段 4+，隨機種類）
   if (s >= 4) {
-    var gemN = rollDropCount(FIELD_GEM_DROP_PCT * (1 + lootBonus / 100) * rw);
+    var gemN = rollDropCount(FIELD_GEM_DROP_PCT * (1 + lootBonus / 100) * rw * eliteDropMult);
     for (var gi = 0; gi < gemN; gi++) {
       var lv = fieldGemLevelFor(s);
       var gtype = randomGemType();
@@ -509,7 +510,7 @@ function rollFieldDrops(m) {
   }
   // 附魔書（階段 8+）
   if (s >= 8) {
-    var bookN = rollDropCount(FIELD_BOOK_DROP_PCT * (1 + lootBonus / 100) * rw);
+    var bookN = rollDropCount(FIELD_BOOK_DROP_PCT * (1 + lootBonus / 100) * rw * eliteDropMult);
     for (var bi = 0; bi < bookN; bi++) {
       var bk = pick(Object.keys(ENCHANTS));
       G.player.books[bk]++;
@@ -517,23 +518,30 @@ function rollFieldDrops(m) {
     }
   }
   // 附魔精華（階段 10+，數量 x場景倍率）
-  if (s >= 10 && chance(FIELD_ESSENCE_DROP_PCT)) {
+  if (s >= 10 && chance(FIELD_ESSENCE_DROP_PCT * eliteDropMult)) {
     var amt = ri(1, 2) * rw;
     G.player.essence += amt;
     drops.push('✨精華x' + amt);
   }
+  // 太古精華（250 級以上敵人；獨立機率，不受掉寶率與場景倍率影響）
+  var ancientEssenceRate = ancientEssenceDropChanceForEnemy(m.level) * eliteDropMult;
+  if (ancientEssenceRate > 0 && chance(ancientEssenceRate)) {
+    G.player.ancientEssence = (G.player.ancientEssence || 0) + 1;
+    drops.push('🧬太古精華');
+    UI.dirty.header = true;
+  }
   // 魔塵（神鑄材料）：150 級起掉落，敵人每高 1 級 +0.1%、上限 5%
   //（fieldDustRate → formula.js §5；不受掉寶率/場景倍率影響）
-  var dustRate = fieldDustRate(m.level);
+  var dustRate = fieldDustRate(m.level) * eliteDropMult;
   if (dustRate > 0 && chance(dustRate)) {
     G.player.dust = (G.player.dust || 0) + 1;
     drops.push('💫魔塵');
     blog('💫 敵人掉落神鑄材料：魔塵 x1（持有 ' + fmt(G.player.dust) + '）', 'loot');
     UI.dirty.forge = true;
   }
-  // 自動機組零件（階段 5+；機率低，菁英 x3，場景倍率同其他材料，node 均衡挑選）
+  // 自動機組零件（階段 5+；材料掉落率同樣乘以菁英 1.5 倍）
   if (s >= 5) {
-    var partN = rollDropCount(FIELD_PART_DROP_PCT * (1 + lootBonus / 100) * rw * (m.elite ? 3 : 1));
+    var partN = rollDropCount(FIELD_PART_DROP_PCT * (1 + lootBonus / 100) * rw * eliteDropMult);
     for (var pn = 0; pn < partN; pn++) {
       var np = makePart(fieldPartTierFor(s, m.elite));
       if (!np) continue;
@@ -556,6 +564,9 @@ function stageGo(delta) {
   FIELD.monsters = [];
   FIELD.respawnCd = 0.3;
   UI.dirty.battle = true;
+}
+function stageGoMax() {
+  stageGo(G.stage.best - G.stage.current);
 }
 /* ---- 塔戰相關邏輯省略 ---- */
 

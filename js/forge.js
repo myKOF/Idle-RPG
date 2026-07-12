@@ -2,7 +2,7 @@
 /* ============ 神鑄系統（Divine Forge，邏輯層） ============
    六芒星法陣放入 6 件「同品質」裝備（限傳說/神話/創世），消耗金幣鑄造：
      成功 → 消耗全部 6 件，獲得下一品質隨機部位裝備 1 件（6 件創世 → 神鑄創世）
-     失敗 → 隨機消耗 2 件，其餘退回背包
+     失敗 → 隨機消耗 3 件，其餘退回背包
    魔塵：六個角尖各可放 1 個，每個 +5% 成功率（鑄造時才實際消耗）。
    常數（FORGE_* / GODFORGE_*）→ js/data.js；成功率公式 forgeSuccessRateFor → js/formula.js §6。
    狀態封裝於 G.forge（slots/dust/autoDust/autoForge/crafting/result/log），渲染由 ui.js renderForge 負責。 */
@@ -409,7 +409,7 @@ function resolveForge(crafting) {
   forgeClearDust();
   UI.dirty.header = true;
 
-  // === 寶石鑄造：6 顆同種同階 → 1 顆高一階；失敗損失 2 顆、其餘退回庫存 ===
+  // === 寶石鑄造：6 顆同種同階 → 1 顆高一階；失敗損失 3 顆、其餘退回庫存 ===
   if (mode === 'gem') {
     var g = forgeGemFirst();
     var costTail = '（成功率 ' + fmt1(rate) + '%，金幣 -' + fmt(cost) + (dustUsed ? '、魔塵 -' + dustUsed : '') + '）';
@@ -420,7 +420,7 @@ function resolveForge(crafting) {
       forgeLog('獲得 ' + gemLabel(g.type, g.level + 1) + '*1', 'good');
       blog('🔯 神鑄成功！6 顆' + gemLabel(g.type, g.level) + ' 合成 ' + gemLabel(g.type, g.level + 1) + ' x1' + costTail, 'good');
     } else {
-      // 放入時已自庫存扣除：退回 4 顆（六顆同種同階，等同隨機消耗 2 顆）
+      // 放入時已自庫存扣除：退回 3 顆（六顆同種同階，等同隨機消耗 3 顆）
       addGem(g.type, g.level, FORGE_SLOTS - FORGE_FAIL_CONSUME);
       forgeFailureReward();
       forgeLog('鑄造失敗！退回寶石*' + (FORGE_SLOTS - FORGE_FAIL_CONSUME), 'bad');
@@ -446,7 +446,7 @@ function resolveForge(crafting) {
     blog('🔯 神鑄成功！獲得 ' + rarityTag(newIt) + '（成功率 ' + fmt1(rate) + '%，金幣 -' + fmt(cost) +
       (dustUsed ? '、魔塵 -' + dustUsed : '') + '）', 'good');
   } else {
-    // 失敗：隨機消耗 2 件（取回鑲嵌寶石），其餘退回背包
+    // 失敗：隨機消耗 3 件（取回鑲嵌寶石），其餘退回背包
     var order = [];
     for (var oi = 0; oi < FORGE_SLOTS; oi++) order.push(oi);
     for (var si = order.length - 1; si > 0; si--) {

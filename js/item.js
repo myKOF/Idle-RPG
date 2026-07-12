@@ -41,10 +41,24 @@ function gemLabel(type, lv) {
 
 /* ================ 寶石合成 / 轉換 / 拆解（2026-07-09 改版） ================ */
 
+function fuseableGemTypesAtLevel(lv) {
+  var types = [];
+  for (var type in GEM_TYPES) {
+    if (gemCount(type, lv) >= 2) types.push(type);
+  }
+  return types;
+}
+
 // 寶石合成：2 顆同種同級 → 1 顆同種下一級（消耗金幣）。回傳 null=成功
+// 選擇全部類型時，每次挑選一種目前足夠的寶石，絕不混合種類。
 function composeGems(type, lv) {
-  if (!GEM_TYPES[type]) return '未知寶石種類';
   if (lv < 1 || lv >= GEM_MAX_LEVEL) return '五級寶石已是最高階';
+  if (type === GEM_TYPE_ALL) {
+    var availableTypes = fuseableGemTypesAtLevel(lv);
+    if (!availableTypes.length) return '沒有任何種類的寶石足夠合成';
+    return composeGems(availableTypes[0], lv);
+  }
+  if (!GEM_TYPES[type]) return '未知寶石種類';
   if (gemCount(type, lv) < 2) return '「' + GEM_NAMES[lv] + GEM_TYPES[type].name + '」不足 2 顆';
   var cost = FUSE_GOLD_COST[lv];
   if (G.player.gold < cost) return '金幣不足（需要 ' + fmt(cost) + '）';
@@ -375,7 +389,7 @@ function unsocketGem(it, idx) {
 
 /* 稀有度擲骰 rollRarity、詞條數值 rollAffixValue、詞條區間 getAffixLimits → js/formula.js §5 / §6 */
 
-function rollAffixes(count, itemLevel, rarityIdx, slot, luck) {
+function rollAffixes(count, itemLevel, rarityIdx, slot, luck, ancientRate) {
   var pool = [];
   for (var k in AFFIX_POOL) {
     var d = AFFIX_POOL[k];
@@ -389,12 +403,13 @@ function rollAffixes(count, itemLevel, rarityIdx, slot, luck) {
     var key = wpick(pool);
     if (used[key]) continue;
     used[key] = true;
-    var val = rollAffixValue(key, itemLevel, rarityIdx);
+    var ancient = itemLevel >= ANCIENT_EQUIP_MIN_LEVEL && rarityIdx >= ANCIENT_EQUIP_MIN_RARITY && ancientRate > 0 && chance(ancientRate);
+    var val = ancient ? ancientAffixValue(key, itemLevel, rarityIdx) : rollAffixValue(key, itemLevel, rarityIdx);
     // 幸運值：機率重骰一次取較佳值
-    if (luck && chance(luck / 2)) {
+    if (!ancient && luck && chance(luck / 2)) {
       val = Math.max(val, rollAffixValue(key, itemLevel, rarityIdx));
     }
-    out.push({ key: key, val: val });
+    out.push({ key: key, val: val, ancient: ancient });
   }
   return out;
 }
@@ -407,6 +422,7 @@ function makeEquipment(stage, opts) {
   var lvl = Math.max(1, opts.level || (stage + ri(-1, 1)));
   var r = RARITIES[rarity];
   var affixCount = ri(r.affix[0], r.affix[1]);
+  var ancientRate = (lvl >= ANCIENT_EQUIP_MIN_LEVEL && opts.ancientRate > 0) ? opts.ancientRate : 0;
   // 玩家屬性：幸運值（詞條取優）與詞條上限率（突破稀有度詞條數，至多 MAX_AFFIXES）
   var luck = 0;
   if (typeof G !== 'undefined' && G && G.player) {
@@ -421,7 +437,7 @@ function makeEquipment(stage, opts) {
     rarity: rarity,
     level: lvl,
     name: RARITY_PREFIX[rarity] + pick(SLOT_BASENAMES[slot]),
-    affixes: rollAffixes(affixCount, lvl, rarity, slot, luck),
+    affixes: rollAffixes(affixCount, lvl, rarity, slot, luck, ancientRate),
     passive: null,
     enchant: null,   // { key, val }
     sockets: [],     // 寶石插槽 [{type, level}|null, ...]
@@ -526,7 +542,27 @@ function removeEnchantAt(it, idx) {
 
 function affixLine(a) {
   var def = AFFIX_POOL[a.key];
-  return def.name.replace('%', '') + ' +' + (def.pct ? pctStr(a.val) : fmt(a.val));
+  var val = a.key === 'loot' ? effectiveDropRateEffect(a.val) : a.val;
+  return def.name.replace('%', '') + ' +' + (def.pct ? pctStr(val) : fmt(val));
+}
+
+function rerollUsesAncientEssence() {
+  return typeof G !== 'undefined' && G && G.settings && !!G.settings.useAncientEssence;
+}
+function rerollAncientEssenceCost() {
+  return rerollUsesAncientEssence() ? 1 : 0;
+}
+function rerollResourceError(cost, ancientCost) {
+  var missing = [];
+  if (G.player.gold < cost.gold) missing.push('金幣 ' + fmt(cost.gold));
+  if (G.player.essence < cost.essence) missing.push('精華 ' + cost.essence);
+  if (ancientCost && (G.player.ancientEssence || 0) < ancientCost) missing.push('太古精華 ' + ancientCost);
+  return missing.length ? '資源不足（需要 ' + missing.join('、') + '）' : null;
+}
+function consumeRerollResources(cost, ancientCost) {
+  G.player.gold -= cost.gold;
+  G.player.essence -= cost.essence;
+  if (ancientCost) G.player.ancientEssence -= ancientCost;
 }
 
 function passiveLine(p) {
@@ -536,7 +572,8 @@ function passiveLine(p) {
 
 function enchantLine(en) {
   var e = ENCHANTS[en.key];
-  var vs = (e.cat === 'atk') ? '+' + fmt(en.val) : '+' + pctStr(en.val);
+  var val = en.key === 'loot' ? effectiveDropRateEffect(en.val) : en.val;
+  var vs = (e.cat === 'atk') ? '+' + fmt(val) : '+' + pctStr(val);
   return e.emoji + ' ' + e.name + ' ' + vs;
 }
 
@@ -581,31 +618,30 @@ function itemDetailHTML(it, cmp, opts) {
     (it.upgrade ? ' <span class="it-up">+' + it.upgrade + '</span>' : '') +
     (it.synthesized ? ' <span class="it-syn">✦合成</span>' : '') +
     (it.locked ? ' 🔒' : '') +
-    '<span class="it-score it-score-top">評分 ' + fmt(curScore) + sdiffStr + '</span>' +
     (showAffixReroll ? '<button class="btn-it-pool" onclick="var b=this.nextElementSibling; b.style.display=b.style.display===\'none\'?\'block\':\'none\'; event.stopPropagation();">!</button>' + poolHtml : '') +
     '</div>';
   
-  h += '<div class="it-sub">' + r.name + '・' + SLOT_INFO[it.slot].name + '・等級 ' + it.level;
+  h += '<div class="it-sub"><span>' + r.name + '・' + SLOT_INFO[it.slot].name + '・等級 ' + it.level;
   if (cmp && cmp.level !== it.level) {
     var ldiff = it.level - cmp.level;
     if (ldiff > 0) h += ' <span style="color: #4ade80">↑' + ldiff + '</span>';
     else if (ldiff < 0) h += ' <span style="color: #f87171">↓' + (-ldiff) + '</span>';
   }
-  h += '</div>';
+  h += '</span><span class="it-score it-score-sub">評分 ' + fmt(curScore) + sdiffStr + '</span></div>';
 
   h += '<div class="it-affixes">';
   var um = upgradeMult(it);
   var curMap = {};
   for (var i = 0; i < it.affixes.length; i++) {
     var a = it.affixes[i];
-    curMap[a.key] = (curMap[a.key] || 0) + a.val * um;
+    curMap[a.key] = (curMap[a.key] || 0) + (a.key === 'loot' ? effectiveDropRateEffect(a.val) : a.val) * um;
   }
   var cmpMap = {};
   if (cmp) {
     var cum = upgradeMult(cmp);
     for (var i = 0; i < cmp.affixes.length; i++) {
       var a = cmp.affixes[i];
-      cmpMap[a.key] = (cmpMap[a.key] || 0) + a.val * cum;
+      cmpMap[a.key] = (cmpMap[a.key] || 0) + (a.key === 'loot' ? effectiveDropRateEffect(a.val) : a.val) * cum;
     }
   }
   
@@ -622,9 +658,13 @@ function itemDetailHTML(it, cmp, opts) {
     
     var limits = getAffixLimits(k, it.level, it.rarity);
     var isMax = baseVal >= limits.max - 0.01;
-    var minDisplay = def.pct ? pctStr(limits.min * um) : fmt(limits.min * um);
-    var maxDisplay = def.pct ? pctStr(limits.max * um) : fmt(limits.max * um);
-    var limitTip = '洗煉區間：' + minDisplay + ' ~ ' + maxDisplay;
+    var limitMult = k === 'loot' ? DROP_RATE_EFFECT_MULT : 1;
+    var minDisplay = def.pct ? pctStr(limits.min * um * limitMult) : fmt(limits.min * um * limitMult);
+    var maxDisplay = def.pct ? pctStr(limits.max * um * limitMult) : fmt(limits.max * um * limitMult);
+    var isAncient = !!it.affixes[i].ancient;
+    var limitTip = isAncient
+      ? '太古詞條：固定隨機上限 ×1.35（可再次洗煉）'
+      : '洗煉區間：' + minDisplay + ' ~ ' + maxDisplay;
     
     var valColor = isMax ? '#fbbf24' : '';
     var valHtml = '<span' + (valColor ? ' style="color:' + valColor + ';font-weight:bold"' : '') + '>' + (def.pct ? pctStr(vCur) : fmt(vCur)) + '</span>';
@@ -634,7 +674,11 @@ function itemDetailHTML(it, cmp, opts) {
       var rrCost = rerollCost(it);
       var rrGoldHtml = '<span' + (G.player.gold >= rrCost.gold ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_gold.png" class="res-icon">' + fmt(rrCost.gold) + '</span>';
       var rrEssenceHtml = '<span' + (G.player.essence >= rrCost.essence ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_essence.png" class="res-icon">' + fmt(rrCost.essence) + '</span>';
-      var rrTip = '<div style="color:var(--dim);margin-bottom:4px">單獨洗煉此屬性（改變種類與數值）</div>需要：' + rrGoldHtml + ' &nbsp;' + rrEssenceHtml;
+      var rrAncientHtml = '';
+      if (rerollUsesAncientEssence()) {
+        rrAncientHtml = ' &nbsp;<span' + ((G.player.ancientEssence || 0) >= 1 ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_ancient_essence.png" class="res-icon">1</span>';
+      }
+      var rrTip = '<div style="color:var(--dim);margin-bottom:4px">單獨洗煉此屬性（改變種類與數值）</div>需要：' + rrGoldHtml + ' &nbsp;' + rrEssenceHtml + rrAncientHtml;
       rrBtn = '<button class="btn affix-reroll-btn act-btn-tooltip" data-act="reroll-affix" data-affix="' + k + '" aria-label="洗煉詞條" data-tip="' + esc(rrTip) + '">🎲</button>';
     }
     
@@ -647,14 +691,16 @@ function itemDetailHTML(it, cmp, opts) {
       }
     }
     
-    var lineStyle = (vCmp === 0 && cmp) ? 'color: #4ade80;' : '';
+    var lineStyle = (vCmp === 0 && cmp && !isAncient) ? 'color: #4ade80;' : '';
     var catClass = ' afx-' + affixCat(k);   // 詞條分類分色（基礎紫/進攻粉/防禦青/功能綠）
+    if (isAncient) catClass += ' ancient-affix';
+    var marker = isAncient ? '<span class="ancient-star" aria-label="太古詞條">✡</span>' : '◆';
     if (showAffixReroll) {
       h += '<div class="it-affix-row it-affix' + catClass + '" style="' + lineStyle + '">' +
-           '<div class="it-affix-text"><span class="act-btn-tooltip" style="cursor:help;" data-tip="' + esc(limitTip) + '">◆ ' + name + ' +' + valHtml + '</span>' +
+           '<div class="it-affix-text"><span class="act-btn-tooltip" style="cursor:help;" data-tip="' + esc(limitTip) + '">' + marker + ' ' + name + ' +' + valHtml + '</span>' +
            diffStr + '</div><div class="it-affix-action">' + rrBtn + '</div></div>';
     } else {
-      h += '<div class="it-affix' + catClass + '" style="' + lineStyle + '"><span class="act-btn-tooltip" style="cursor:help;" data-tip="' + esc(limitTip) + '">◆ ' + name + ' +' + valHtml + '</span>' +
+      h += '<div class="it-affix' + catClass + '" style="' + lineStyle + '"><span class="act-btn-tooltip" style="cursor:help;" data-tip="' + esc(limitTip) + '">' + marker + ' ' + name + ' +' + valHtml + '</span>' +
            diffStr + '</div>';
     }
   }
@@ -666,7 +712,8 @@ function itemDetailHTML(it, cmp, opts) {
       var vCmp = cmpMap[k];
       var def = AFFIX_POOL[k];
       var name = esc(def.name.replace('%', ''));
-      h += '<div class="it-affix" style="color: #f87171; text-decoration: line-through;">◆ ' + name + ' -' + (def.pct ? pctStr(vCmp) : fmt(vCmp)) + '</div>';
+      var cmpMarker = cmp.affixes[i].ancient ? '<span class="ancient-star">✡</span>' : '◆';
+      h += '<div class="it-affix' + (cmp.affixes[i].ancient ? ' ancient-affix' : '') + '" style="color: #f87171; text-decoration: line-through;">' + cmpMarker + ' ' + name + ' -' + (def.pct ? pctStr(vCmp) : fmt(vCmp)) + '</div>';
     }
   }
   h += '</div>';
@@ -697,7 +744,10 @@ function itemDetailHTML(it, cmp, opts) {
     it.godPassives.forEach(function (gp) {
       var gd = GODFORGE_POOL[gp.key];
       if (!gd) return;
-      h += '<div class="it-godpassive">【' + esc(gd.name) + '】' + esc(gd.desc).replace('{v}', fmt1(gp.val)) + '</div>';
+      var gpDesc = gp.key === 'greed'
+        ? '金幣加成與掉寶率提高 ' + fmt1(gp.val) + '%／' + fmt1(effectiveDropRateEffect(gp.val)) + '%'
+        : esc(gd.desc).replace('{v}', fmt1(gp.val));
+      h += '<div class="it-godpassive">【' + esc(gd.name) + '】' + gpDesc + '</div>';
     });
   }
 
@@ -769,13 +819,12 @@ function itemDetailHTML(it, cmp, opts) {
 // 回傳 null=成功，否則錯誤訊息
 function rerollItemAffixes(it) {
   var cost = rerollCost(it);
-  if (G.player.gold < cost.gold || G.player.essence < cost.essence) {
-    return '資源不足（需要金幣 ' + fmt(cost.gold) + '、精華 ' + cost.essence + '）';
-  }
-  G.player.gold -= cost.gold;
-  G.player.essence -= cost.essence;
+  var ancientCost = rerollAncientEssenceCost();
+  var err = rerollResourceError(cost, ancientCost);
+  if (err) return err;
+  consumeRerollResources(cost, ancientCost);
   var luck = getStats().luck;
-  it.affixes = rollAffixes(it.affixes.length, it.level, it.rarity, it.slot, luck);
+  it.affixes = rollAffixes(it.affixes.length, it.level, it.rarity, it.slot, luck, ancientCost ? ANCIENT_REROLL_CHANCE : 0);
   markStatsDirty();
   UI.dirty.header = true; UI.dirty.equip = true; UI.dirty.inv = true;
   return null;
@@ -784,9 +833,9 @@ function rerollItemAffixes(it) {
 // 單獨重骰某一個屬性的種類與數值
 function rerollSingleAffix(it, affixKey) {
   var cost = rerollCost(it);
-  if (G.player.gold < cost.gold || G.player.essence < cost.essence) {
-    return '資源不足（需要金幣 ' + fmt(cost.gold) + '、精華 ' + cost.essence + '）';
-  }
+  var ancientCost = rerollAncientEssenceCost();
+  var err = rerollResourceError(cost, ancientCost);
+  if (err) return err;
   
   var targetIdx = -1;
   var used = {};
@@ -810,17 +859,17 @@ function rerollSingleAffix(it, affixKey) {
   
   if (pool.length === 0) return '沒有其他可用的屬性';
   
-  G.player.gold -= cost.gold;
-  G.player.essence -= cost.essence;
+  consumeRerollResources(cost, ancientCost);
   
   var luck = getStats().luck;
   var newKey = wpick(pool);
-  var newVal = rollAffixValue(newKey, it.level, it.rarity);
-  if (luck && chance(luck / 2)) {
+  var newAncient = it.level >= ANCIENT_EQUIP_MIN_LEVEL && it.rarity >= ANCIENT_EQUIP_MIN_RARITY && ancientCost > 0 && chance(ANCIENT_REROLL_CHANCE);
+  var newVal = newAncient ? ancientAffixValue(newKey, it.level, it.rarity) : rollAffixValue(newKey, it.level, it.rarity);
+  if (!newAncient && luck && chance(luck / 2)) {
     newVal = Math.max(newVal, rollAffixValue(newKey, it.level, it.rarity));
   }
   
-  it.affixes[targetIdx] = { key: newKey, val: newVal };
+  it.affixes[targetIdx] = { key: newKey, val: newVal, ancient: newAncient };
   
   markStatsDirty();
   UI.dirty.header = true; UI.dirty.equip = true; UI.dirty.inv = true;
@@ -853,6 +902,7 @@ function makePart(tier, node) {
 }
 function partDesc(p) {
   // 小於 1 的機率值保留兩位小數（如 0.15%），其餘一位
-  var vs = (p.val < 1) ? String(Math.round(p.val * 100) / 100) : fmt1(p.val);
+  var val = effectivePartEffectValue(p.key, p.val);
+  var vs = (val < 1) ? String(Math.round(val * 100) / 100) : fmt1(val);
   return PART_TYPES[p.key].desc.replace('{v}', vs);
 }

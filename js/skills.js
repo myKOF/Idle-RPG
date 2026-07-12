@@ -608,7 +608,7 @@ function castSkill(pEnt, target, id, lv, floatSel) {
   }
   if (fx.selfCleanse) { cleanse(pEnt); parts.push('淨化負面狀態'); }
   if (fx.mpRestore) { pEnt.mp = Math.min(st.mp, pEnt.mp + fx.mpRestore); parts.push('回復 ' + fx.mpRestore + ' 法力'); }
-  if (fx.buff) { applyBuff(pEnt, fx.buff.key, scaleAt(fx.buff, lv), fx.buff.dur); parts.push('<span class="log-hl-good">' + buffLabel(fx.buff.key) + ' +' + fmt1(scaleAt(fx.buff, lv)) + '%（' + fx.buff.dur + '秒）</span>'); }
+  if (fx.buff) { applyBuff(pEnt, fx.buff.key, scaleAt(fx.buff, lv), fx.buff.dur); parts.push('<span class="log-hl-good">' + buffLabel(fx.buff.key) + ' +' + fmt1(skillBuffDisplayValue(fx.buff, lv)) + '%（' + fx.buff.dur + '秒）</span>'); }
   if (fx.buff2) { applyBuff(pEnt, fx.buff2.key, scaleAt(fx.buff2, lv), fx.buff2.dur); }
   if (!fx.dmgType) applySkillDebuffs(targets, fx, lv, parts);
   if (!fx.dmgType && fx.maxHpDotPct) {
@@ -871,6 +871,10 @@ function buffLabel(key) {
     lootUp: '掉寶', thornsUp: '反震', blockUp: '格擋', hot: '再生',
     atkDown: '攻擊', defDown: '防禦' })[key] || key;
 }
+function skillBuffDisplayValue(defObj, lvArg) {
+  var value = scaleAt(defObj, lvArg);
+  return defObj && defObj.key === 'lootUp' ? effectiveDropRateEffect(value) : value;
+}
 function describeSkill(id, lv) {
   var sk = skillDef(id);
   if (!sk) return '';
@@ -880,7 +884,7 @@ function describeSkill(id, lv) {
   function growStr(v) { return '<span class="txt-grow">' + v + '</span>'; }
   function statStr(v) { return '<span class="txt-static">' + v + '</span>'; }
   function scaleStr(defObj, lvArg) {
-    var val = scaleAt(defObj, lvArg);
+    var val = skillBuffDisplayValue(defObj, lvArg);
     return (defObj && defObj.per) ? growStr(fmt1(val)) : statStr(fmt1(val));
   }
   

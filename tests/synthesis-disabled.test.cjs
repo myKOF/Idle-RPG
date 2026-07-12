@@ -38,6 +38,10 @@ test('合成系統關閉且預設不啟用', () => {
   const context = loadGameContext();
   assert.equal(context.SYNTHESIS_ENABLED, false);
   assert.equal(context.newGameState().factory.synth.enabled, false);
+  const css = fs.readFileSync(path.join(__dirname, '..', 'css/style.css'), 'utf8');
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  assert.match(css, /#synthesis-node\s*\{[\s\S]*display:\s*none\s*!important/);
+  assert.match(html, /id="synthesis-node"[^>]*hidden/);
 });
 
 test('關閉時合成零件不會生成', () => {

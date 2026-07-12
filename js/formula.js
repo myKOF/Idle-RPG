@@ -113,7 +113,9 @@ function computeStats() {
         var gd = GODFORGE_POOL[gp.key];
         if (!gd) return;
         if (gd.stats) {
-          gd.stats.forEach(function (bk) { if (A[bk] !== undefined) A[bk] += gp.val; });
+          gd.stats.forEach(function (bk) {
+            if (A[bk] !== undefined) A[bk] += bk === 'loot' ? effectiveDropRateEffect(gp.val) : gp.val;
+          });
         } else {
           passives[gp.key] = (passives[gp.key] || 0) + gp.val;
         }
@@ -143,7 +145,10 @@ function computeStats() {
       var sdef = (typeof SKILLS !== 'undefined') ? SKILLS[sid] : null;
       if (!sdef || !sdef.fx || !sdef.fx.passive || !slv) continue;
       for (var pk in sdef.fx.passive) {
-        if (A[pk] !== undefined) A[pk] += sdef.fx.passive[pk] * slv;
+        if (A[pk] !== undefined) {
+          var passiveVal = sdef.fx.passive[pk] * slv;
+          A[pk] += pk === 'loot' ? effectiveDropRateEffect(passiveVal) : passiveVal;
+        }
       }
     }
   }
@@ -226,7 +231,7 @@ function computeStats() {
   // 特殊與機制
   st.ccRed = clamp(A.ccRed, 0, 60);                              // 控制時間縮減上限 60%
   st.moveSpeed = clamp(A.moveSpeed, 0, 50);                      // 移動速度上限 50%（縮短出怪間隔）
-  st.loot = A.loot;
+  st.loot = effectiveDropRateEffect(A.loot);
   st.xpBonus = A.xpBonus;
   st.goldBonus = A.goldBonus;
   st.luck = clamp(A.luck, 0, 100);                               // 幸運值上限 100
@@ -461,6 +466,20 @@ function bossStatsFor(floor) {
    ============================================================ */
 
 // 依等級/樓層從掉落表（data.js 的 FIELD_DROP_TABLE / BOSS_DROP_TABLE）取機率列
+// 掉寶率來源平衡：裝備詞條、附魔、技能與相關分解零件的效果統一減半。
+// 存檔仍保留原始數值，透過此入口計算即可讓既有物品立即套用新規則。
+var DROP_RATE_EFFECT_MULT = 0.5;
+var DROP_RATE_PART_KEYS = {
+  extractLens: true, ancientEssenceRate: true, duplicator: true,
+  fortuneChip: true, gemSieve: true, bookScavenger: true, prospector: true
+};
+function effectiveDropRateEffect(value) {
+  return (Number(value) || 0) * DROP_RATE_EFFECT_MULT;
+}
+function effectivePartEffectValue(key, value) {
+  return DROP_RATE_PART_KEYS[key] ? effectiveDropRateEffect(value) : value;
+}
+
 function dropRatesFor(table, lvl) {
   for (var i = 0; i < table.length; i++) {
     if (lvl >= table[i].min) return table[i].rates;
@@ -480,7 +499,7 @@ function rollDropCount(pct) {
    史詩 8 階起、傳說 15 階起、神話 25 階起、創世 40 階起才可能出現） */
 function rollRarity(stage, lootBonus) {
   var s = stage || 1;
-  var b = 1 + (lootBonus || 0) / 200 + s * 0.006;
+  var b = 1 + effectiveDropRateEffect(lootBonus || 0) / 200 + s * 0.006;
   var w = [
     [0, 55],
     [1, 25 * Math.min(b, 2)],
@@ -499,9 +518,37 @@ function rollRarity(stage, lootBonus) {
 var FIELD_GEM_DROP_PCT = 6;      // 寶石（階段 4+）
 var FIELD_BOOK_DROP_PCT = 4;     // 附魔書（階段 8+）
 var FIELD_ESSENCE_DROP_PCT = 9;  // 附魔精華（階段 10+，掉 1~2 顆 × 場景倍率）
-var FIELD_PART_DROP_PCT = 0.5;   // 自動機組零件（階段 5+，機率低；菁英 x3、場景倍率同其他材料）
+var FIELD_PART_DROP_PCT = 0.5;   // 自動機組零件（階段 5+，機率低；菁英掉落率 ×1.5）
 
-// 野外掉落零件的階級：隨階段成長（每 12 階 +1），菁英再 +1，上限 T5
+/* ---- 太古詞條／太古精華機率 ---- */
+function ancientAffixChanceForEnemy(level) {
+  level = Number(level) || 0;
+  if (level < ANCIENT_ENEMY_MIN_LEVEL) return ANCIENT_AFFIX_BASE_RATE;
+  return Math.min(ANCIENT_AFFIX_RATE_CAP,
+    ANCIENT_AFFIX_BASE_RATE + (level - ANCIENT_ENEMY_MIN_LEVEL) * ANCIENT_AFFIX_ENEMY_RATE);
+}
+function ancientBossAffixChanceForBoss(level) {
+  level = Number(level) || 0;
+  if (level < 40) return 0;
+  return Math.min(100, ANCIENT_BOSS_AFFIX_BASE_RATE + (level - 40) * ANCIENT_BOSS_AFFIX_LEVEL_RATE);
+}
+function ancientEssenceDropChanceForEnemy(level) {
+  level = Number(level) || 0;
+  if (level < ANCIENT_ENEMY_MIN_LEVEL) return 0;
+  return Math.min(ANCIENT_ESSENCE_ENEMY_RATE_CAP,
+    ANCIENT_ESSENCE_ENEMY_BASE_RATE + (level - ANCIENT_ENEMY_MIN_LEVEL) * ANCIENT_ESSENCE_ENEMY_LEVEL_RATE);
+}
+function ancientEssenceDropChanceForBoss(level) {
+  level = Number(level) || 0;
+  if (level < 40) return 0;
+  return Math.min(ANCIENT_ESSENCE_BOSS_RATE_CAP,
+    ANCIENT_ESSENCE_BOSS_BASE_RATE + (level - 40) * ANCIENT_ESSENCE_BOSS_LEVEL_RATE);
+}
+function ancientEssenceSalvageChanceForRarity(rarity) {
+  return ANCIENT_ESSENCE_SALVAGE_CHANCE[rarity] || 0;
+}
+
+// 野外掉落零件的階級：隨階段成長（每 12 階 +1），菁英再 +1，上限 T7
 function fieldPartTierFor(stage, elite) {
   return clamp(1 + Math.floor(stage / 12) + (elite ? 1 : 0), 1, PART_MAX_TIER);
 }
@@ -529,7 +576,7 @@ function fieldDustRate(level) {
 }
 
 /* ---- 高塔通關獎勵 ----
-   零件階級 = 1 + ⌊(樓層-1)/4⌋（上限 T5）；首通必得，重複通關 30%
+   零件階級 = 1 + ⌊(樓層-1)/4⌋（上限 T7）；首通必得，重複通關 30%
    金幣 = 200 × 樓層（首通 ×2）
    寶石等級 = 1 + ⌊樓層/4⌋（上限 5，隨機種類 ×2 顆）
    附魔精華 = 3 + 樓層（另附魔書 ×2）
@@ -556,6 +603,13 @@ function rollAffixValue(key, itemLevel, rarityIdx) {
   var def = AFFIX_POOL[key];
   var r = RARITIES[rarityIdx];
   var v = (def.base + def.base * def.lv * (itemLevel - 1)) * r.mult * rnd(0.8, 1.2);
+  return def.pct ? Math.round(v * 10) / 10 : Math.round(v);
+}
+function ancientAffixValue(key, itemLevel, rarityIdx) {
+  var def = AFFIX_POOL[key];
+  var r = RARITIES[rarityIdx];
+  var baseV = (def.base + def.base * def.lv * (itemLevel - 1)) * r.mult;
+  var v = baseV * 1.2 * ANCIENT_AFFIX_VALUE_MULT;
   return def.pct ? Math.round(v * 10) / 10 : Math.round(v);
 }
 // 詞條可能範圍（洗煉區間顯示用）：基準值 × 0.8 ~ × 1.2
@@ -675,13 +729,26 @@ function itemScore(it) {
    精粹提取（機率 = extractChance，見 extractChanceNow）：
      精華 = 1~2 + ⌊稀有度/2⌋，另 30% 機率附贈 1 顆一級寶石
    每個附魔額外回收 1 精華 */
-function salvageResult(it, extractChance) {
+var ANCIENT_AFFIX_SALVAGE_CHANCE = 50;
+function salvageResult(it, extractChance, ancientEssenceBonus) {
   var r = RARITIES[it.rarity];
   var out = {
     scrap: Math.max(1, Math.round((2 + it.level * 0.6) * r.salv * rnd(0.85, 1.15))),
     gold: Math.round((3 + it.level) * r.salv * 0.5),
-    essence: 0, gem: 0, extracted: false
+    essence: 0, ancientEssence: 0, gem: 0, extracted: false
   };
+  var ancientBaseChance = ancientEssenceSalvageChanceForRarity(it.rarity);
+  var ancientSalvageChance = ancientBaseChance * (1 + (Number(ancientEssenceBonus) || 0) / 100);
+  var ancientEssenceWon = ancientSalvageChance > 0 && chance(ancientSalvageChance);
+  if (!ancientEssenceWon && it.affixes) {
+    for (var ai = 0; ai < it.affixes.length; ai++) {
+      if (it.affixes[ai] && it.affixes[ai].ancient && chance(ANCIENT_AFFIX_SALVAGE_CHANCE)) {
+        ancientEssenceWon = true;
+        break;
+      }
+    }
+  }
+  if (ancientEssenceWon) out.ancientEssence = 1;
   if (chance(extractChance === undefined ? ESSENCE_EXTRACT_CHANCE : extractChance)) {
     out.extracted = true;
     out.essence = ri(1, 2) + Math.floor(it.rarity / 2);
@@ -718,11 +785,13 @@ function upgradeSuccessChance(it) {
 
 /* 洗煉費用（整件或單詞條同價）：
    金幣 = 40 × 1.7^稀有度 × (1 + 裝備等級×0.15)
-   精華 = 1 + 稀有度 */
+   精華 = 普通～傳說沿用 1 + 稀有度；神話／創世／神鑄創世固定為 9／14／20 */
 function rerollCost(it) {
+  var essence = REROLL_ESSENCE_COST[it.rarity];
+  if (essence === undefined) essence = 1 + it.rarity;
   return {
     gold: Math.round(40 * Math.pow(1.7, it.rarity) * (1 + it.level * 0.15)),
-    essence: 1 + it.rarity
+    essence: essence
   };
 }
 
@@ -747,12 +816,30 @@ function inventoryExpandCost(upg) {
 function conveyorCap() { return CONVEYOR_CAP + getStats().weight; }          // 輸送帶 = 40 + 負重
 function synthBufCap() { return SYNTH_BUFFER_CAP + Math.floor(getStats().weight / 2); } // 暫存區 = 30 + 負重/2
 
-// 分解槽零件安裝格數：初始 2，每 500 級 +1，上限 10
-var SALVAGE_SLOT_BASE = 2;
-var SALVAGE_SLOT_PER_LEVEL = 500;
-var SALVAGE_SLOT_MAX = 10;
+// 分解槽零件安裝格數：目前初始 10 格，使用金幣逐格解鎖，最高 20 格。
+// 舊存檔沒有 salvageSlots 欄位時由 migrateSave 保留既有 10 格。
+var SALVAGE_SLOT_MAX = 20;
+var SALVAGE_SLOT_INITIAL = 10;
+var SALVAGE_SLOT_LEGACY_DEFAULT = 10;
+var SALVAGE_SLOT_UNLOCK_GOLD_BASE = 10000;
+var SALVAGE_SLOT_UNLOCK_GOLD_RATE = 3;
 function salvageSlotCount() {
-  return clamp(SALVAGE_SLOT_BASE + Math.floor(G.player.level / SALVAGE_SLOT_PER_LEVEL), SALVAGE_SLOT_BASE, SALVAGE_SLOT_MAX);
+  if (typeof G === 'undefined' || !G || !G.factory || G.factory.salvageSlots === undefined) return SALVAGE_SLOT_LEGACY_DEFAULT;
+  var slots = Math.floor(Number(G.factory.salvageSlots) || SALVAGE_SLOT_INITIAL);
+  if (slots < SALVAGE_SLOT_INITIAL) {
+    G.factory.salvageSlots = SALVAGE_SLOT_INITIAL;
+    return SALVAGE_SLOT_INITIAL;
+  }
+  slots = clamp(slots, SALVAGE_SLOT_INITIAL, SALVAGE_SLOT_MAX);
+  G.factory.salvageSlots = slots;
+  return slots;
+}
+// 解鎖至第 N 格的費用：10,000 × 3^(N-1)，N 為解鎖後的目標格數。
+function salvageSlotUnlockCost(currentSlots) {
+  var current = clamp(Math.floor(Number(currentSlots) || SALVAGE_SLOT_INITIAL), SALVAGE_SLOT_INITIAL, SALVAGE_SLOT_MAX);
+  if (current >= SALVAGE_SLOT_MAX) return 0;
+  var target = current + 1;
+  return SALVAGE_SLOT_UNLOCK_GOLD_BASE * Math.pow(SALVAGE_SLOT_UNLOCK_GOLD_RATE, target - 1);
 }
 
 /* ============================================================
@@ -804,9 +891,10 @@ function gemFuseRate(m1, m2) {
   return Math.max(GEM_FUSE_MIN_RATE, GEM_FUSE_BASE_RATE - GEM_FUSE_RATE_DECAY * ((m1 ? m1.fusions : 0) + (m2 ? m2.fusions : 0)));
 }
 
-// 商店手動刷新費用 = 50000 + 本小時刷新次數 × 10000（次數每小時重置）
+// 商店手動刷新費用 = 5000 ×（下一次重置序號 ^ 2.5）；次數每 8 小時重置
 function shopRefreshCost() {
-  return GEM_SHOP_REFRESH_BASE + gemShop().refreshCount * GEM_SHOP_REFRESH_STEP;
+  var resetNo = (gemShop().refreshCount || 0) + 1;
+  return Math.round(GEM_SHOP_REFRESH_BASE * Math.pow(resetNo, GEM_SHOP_REFRESH_EXPONENT));
 }
 
 // 寶石商店升級費用 = 10000 + 商店等級^3 × 4000000；Lv.20 已滿級

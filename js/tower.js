@@ -218,7 +218,11 @@ function endTowerFight(win, reason) {
       var bn = rollDropCount(bossRates[br] * bossMult);
       if (!bn) continue;
       for (var bk2 = 0; bk2 < bn; bk2++) {
-        pushConveyor(makeEquipment(rw.itemLevel, { rarity: br, level: rw.itemLevel }));
+        pushConveyor(makeEquipment(rw.itemLevel, {
+          rarity: br,
+          level: rw.itemLevel,
+          ancientRate: ancientBossAffixChanceForBoss(b.level)
+        }));
       }
       lootCounts.push('&nbsp;&nbsp;<span style="color:' + RARITIES[br].color + '">' + RARITIES[br].name + '裝備*' + bn + '</span>');
     }
@@ -238,6 +242,13 @@ function endTowerFight(win, reason) {
     result.rewards.push('📖 ' + ENCHANTS[bk].name + '書 x2');
     G.player.essence += rw.essence;
     result.rewards.push('🔮 附魔精華 x' + rw.essence);
+    // 太古精華（40 級以上 BOSS；獨立機率，不受掉寶率影響）
+    var ancientEssenceRate = ancientEssenceDropChanceForBoss(b.level);
+    if (ancientEssenceRate > 0 && chance(ancientEssenceRate)) {
+      G.player.ancientEssence = (G.player.ancientEssence || 0) + 1;
+      result.rewards.push('🧬 太古精華 x1');
+      UI.dirty.header = true;
+    }
     // 魔塵（神鑄材料）：掉落率 = min(30%, 2% + 樓層 × 0.2%)（bossDustRate → formula.js §5）
     if (chance(bossDustRate(floor))) {
       G.player.dust = (G.player.dust || 0) + 1;

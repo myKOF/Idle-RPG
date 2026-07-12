@@ -5,7 +5,8 @@ var UI = {
   dirty: { header: true, battle: true, equip: true, inv: true, factory: true, forge: true, tower: true, gems: true, skills: true },
   sel: null,           // { id, source: 'inv' | 'equip' }
   tab: 'equip',
-  saveNoticeId: null
+  saveNoticeId: null,
+  tooltipAnchor: null
 };
 
 /* ---- 日誌 ---- */
@@ -176,14 +177,16 @@ function renderHeader() {
     valueEl.parentNode.setAttribute('data-tt-desc', desc);
     valueEl.parentNode.removeAttribute('title');
   }
-  updateResourceTip('r-gold', '金幣', '目前持有：' + fmt(p.gold));
-  updateResourceTip('r-scrap', '裝備碎片', '目前持有：' + fmt(p.scrap));
-  updateResourceTip('r-essence', '附魔精華', '目前持有：' + fmt(p.essence));
-  updateResourceTip('r-dust', '魔塵', '神鑄材料，可提升鑄造成功率。｜目前持有：' + fmt(p.dust || 0));
+  updateResourceTip('r-gold', '金幣', '目前持有：' + fmtFull(p.gold));
+  updateResourceTip('r-scrap', '裝備碎片', '目前持有：' + fmtFull(p.scrap));
+  updateResourceTip('r-essence', '附魔精華', '目前持有：' + fmtFull(p.essence));
+  updateResourceTip('r-dust', '魔塵', '神鑄材料，可提升鑄造成功率。｜目前持有：' + fmtFull(p.dust || 0));
+  updateResourceTip('r-ancient-essence', '太古精華', '洗煉時消耗 1 個；每個詞條有 20% 機率成為太古詞條。｜目前持有：' + fmtFull(p.ancientEssence || 0));
   $id('r-gold').textContent = fmt(p.gold);
   $id('r-scrap').textContent = fmt(p.scrap);
   $id('r-essence').textContent = fmt(p.essence);
   if ($id('r-dust')) $id('r-dust').textContent = fmt(p.dust || 0);
+  if ($id('r-ancient-essence')) $id('r-ancient-essence').textContent = fmt(p.ancientEssence || 0);
   // 神鑄頁籤：達到開放等級才顯示
   var forgeTabBtn = document.querySelector('.tab-btn[data-tab="forge"]');
   if (forgeTabBtn) forgeTabBtn.style.display = forgeUnlocked() ? '' : 'none';
@@ -202,8 +205,11 @@ function renderHeader() {
   }
   $id('r-books').textContent = fmt(bookTotal);
   updateResourceTip('r-books', '附魔書', bookTip.join('、') || '尚無附魔書');
+  refreshOpenResourceTooltip();
 
   $id('toggle-compare').checked = !!G.settings.compareEq;
+  var ancientToggle = $id('toggle-ancient-essence');
+  if (ancientToggle) ancientToggle.checked = !!G.settings.useAncientEssence;
   $id('p-level').textContent = 'Lv.' + p.level;
   if ($id('pv-level')) $id('pv-level').textContent = 'Lv.' + p.level;
   if ($id('tp-level')) $id('tp-level').textContent = 'Lv.' + p.level;
@@ -405,6 +411,9 @@ function renderBattle() {
     .filter(function (enemy) { return enemy && enemy.hp > 0; });
   var party = $id('mv-party');
   if (!party) return;
+  var scene = party.closest ? party.closest('.battle-scene') : null;
+  if (scene) scene.classList.toggle('multi-enemy', enemies.length > 1);
+  if (scene) scene.classList.toggle('multi-enemy-layout', enemies.length > 3);
   party.className = 'enemy-party enemy-count-' + enemies.length;
   if (!enemies.length) {
     if (party.getAttribute('data-enemy-signature') !== 'empty') {
@@ -830,10 +839,30 @@ function renderFactory() {
   // 已安裝零件
   renderInstalledParts('salvage', 'salv-parts');
   renderInstalledParts('synth', 'syn-parts');
-  var salvLbl = $id('salv-slot-label'); // 分解槽格數隨等級成長，即時顯示
-  if (salvLbl) salvLbl.textContent = '（' + slotsForNode('salvage') + ' 格，每 ' + SALVAGE_SLOT_PER_LEVEL + ' 級 +1，上限 ' + SALVAGE_SLOT_MAX + '）';
+  var salvLbl = $id('salv-slot-label');
+  if (salvLbl) salvLbl.textContent = '（' + slotsForNode('salvage') + '/' + SALVAGE_SLOT_MAX + '）';
   renderAvailableParts('salvage', 'salv-avail-parts');
   renderAvailableParts('synth', 'syn-avail-parts');
+}
+
+function partIconHTML(key) {
+  var iconMap = {
+    scrapForge: ['icon_scrap.png'],
+    goldSluice: ['icon_gold.png'],
+    extractLens: ['icon_essence.png'],
+    essenceCoil: ['icon_essence.png'],
+    gemSieve: ['icon_gems.png'],
+    gemPurifier: ['icon_gems.png'],
+    bookScavenger: ['icon_books.png'],
+    duplicator: ['icon_scrap.png', 'icon_gold.png'],
+    fortuneChip: ['icon_scrap.png', 'icon_gold.png', 'icon_essence.png'],
+    ancientEssenceRate: ['icon_ancient_essence.png']
+  };
+  var icons = iconMap[key];
+  if (!icons) return PART_TYPES[key] ? PART_TYPES[key].emoji : '';
+  return icons.map(function (name) {
+    return '<img src="images/' + name + '" class="part-material-icon" alt="">';
+  }).join('');
 }
 
 function renderInstalledParts(node, elId) {
@@ -842,9 +871,13 @@ function renderInstalledParts(node, elId) {
   var h = ids.map(function (id) {
     var p = findPart(id);
     if (!p) return '';
-    return '<span class="part-chip" style="cursor:pointer; border-color:var(--good);" data-part-uninstall="' + p.id + '" data-tip="【點擊卸下】 ' + esc(partDesc(p)) + '">' + PART_TYPES[p.key].emoji + esc(p.name) + '</span>';
+    return '<span class="part-chip" style="cursor:pointer; border-color:var(--good);" data-part-uninstall="' + p.id + '" data-tip="【點擊卸下】 ' + esc(partDesc(p)) + '">' + partIconHTML(p.key) + esc(p.name) + '</span>';
   }).join('');
   for (var i = ids.length; i < slotsForNode(node); i++) h += '<span class="part-chip empty">空槽</span>';
+  if (node === 'salvage' && slotsForNode(node) < SALVAGE_SLOT_MAX) {
+    var expandCost = salvageSlotUnlockCost(slotsForNode(node));
+    h += '<button type="button" class="part-chip part-expand-chip" data-salvage-expand data-tip="【擴充分解槽】解鎖至 ' + (slotsForNode(node) + 1) + '/' + SALVAGE_SLOT_MAX + '，需要金幣 ' + fmt(expandCost) + '">➕</button>';
+  }
   $id(elId).innerHTML = h;
 }
 
@@ -857,9 +890,15 @@ function renderAvailableParts(node, elId) {
   if (!avail.length) {
     $id(elId).innerHTML = '<span class="hint" style="font-size:12px;">尚無可用零件</span>';
   } else {
-    $id(elId).innerHTML = avail.map(function (p) {
-      var pt = PART_TYPES[p.key];
-      return '<span class="part-chip" style="cursor:pointer; border-color:var(--accent);" data-part-install="' + p.id + '" data-tip="【點擊安裝】 ' + esc(partDesc(p)) + '">' + pt.emoji + esc(p.name) + '</span>';
+    var byKey = {};
+    avail.forEach(function (p) { (byKey[p.key] || (byKey[p.key] = [])).push(p); });
+    $id(elId).innerHTML = Object.keys(byKey).map(function (key) {
+      var group = byKey[key];
+      var best = group.slice().sort(function (a, b) { return (b.tier - a.tier) || (b.val - a.val); })[0];
+      var pt = PART_TYPES[key];
+      return '<span class="part-chip" style="cursor:pointer; border-color:var(--accent);" data-part-install-key="' + key +
+        '" data-tip="【點擊安裝】優先取最高階級與數值的零件：' + esc(partDesc(best)) + '｜可用 ' + group.length + ' 個">' +
+        partIconHTML(key) + esc(best.name) + ' ×' + group.length + '</span>';
     }).join('');
   }
 }
@@ -1563,6 +1602,7 @@ function showSkillTooltip(id, anchorEl) {
 function showStatTooltip(title, desc, anchorEl) {
   var tip = $id('sk-tooltip');
   if (!tip) return;
+  UI.tooltipAnchor = anchorEl;
   var h = '<div class="skt-name">' + title + '</div>';
   h += '<div class="skt-desc">' + desc + '</div>';
   tip.innerHTML = h;
@@ -1574,6 +1614,13 @@ function showStatTooltip(title, desc, anchorEl) {
   if (y < 8) y = 8;
   tip.style.left = x + 'px';
   tip.style.top = y + 'px';
+}
+function refreshOpenResourceTooltip() {
+  var tip = $id('sk-tooltip');
+  var anchorEl = UI.tooltipAnchor;
+  if (!tip || tip.style.display !== 'block' || !anchorEl || !anchorEl.classList ||
+    !anchorEl.classList.contains('res') || !document.documentElement.contains(anchorEl)) return;
+  showStatTooltip(anchorEl.getAttribute('data-tt-title') || '', anchorEl.getAttribute('data-tt-desc') || '', anchorEl);
 }
 function showItemTooltip(it, anchorEl, opts) {
   var tip = $id('sk-tooltip');
@@ -1697,6 +1744,7 @@ function showEnemyTooltip(anchorEl) {
 function hideTooltip() {
   var tip = $id('sk-tooltip');
   if (tip) tip.style.display = 'none';
+  UI.tooltipAnchor = null;
 }
 
 // 融合面板
@@ -1752,7 +1800,7 @@ function renderGems() {
   box.innerHTML = h;
   var gmToggle = $id('gem-merge-toggle');
   if (gmToggle) gmToggle.checked = !!(G.factory.synth && G.factory.synth.gemMerge);
-  fillGemTypeSelect($id('fuse-type'));
+  fillGemTypeSelect($id('fuse-type'), true);
   fillGemTypeSelect($id('gconv-target'));
   fillGemTypeSelect($id('gdis-type'));
   renderFuseInfo();
@@ -1770,12 +1818,13 @@ function gemAbilityText(type, lv) {
 }
 
 // 寶石種類下拉選單（18 種；只填一次，保留玩家選擇）
-function fillGemTypeSelect(sel) {
+function fillGemTypeSelect(sel, includeAll) {
   if (!sel || sel.options.length) return;
   var h = '';
   for (var t in GEM_TYPES) {
     h += '<option value="' + t + '">' + GEM_TYPES[t].emoji + ' ' + esc(GEM_TYPES[t].name) + '（' + esc(GEM_TYPES[t].statName.replace('%', '')) + '）</option>';
   }
+  if (includeAll) h += '<option value="' + GEM_TYPE_ALL + '">💎 全部類型寶石</option>';
   sel.innerHTML = h;
 }
 /* ---- 寶石合成（2 顆同種同級 → 下一階） ---- */
@@ -1784,6 +1833,18 @@ function renderFuseInfo() {
   var info = $id('fuse-info');
   if (!selT || !selL || !info) return;
   var t = selT.value, lv = parseInt(selL.value, 10) || 1;
+  if (t === GEM_TYPE_ALL) {
+    var total = 0, available = 0;
+    for (var allType in GEM_TYPES) {
+      var allCount = gemCount(allType, lv);
+      total += allCount;
+      available += Math.floor(allCount / 2);
+    }
+    info.innerHTML = '「💎 全部類型寶石」' + GEM_NAMES[lv] + '庫存總計 ' + fmt(total) +
+      ' 顆｜每次消耗同種類 2 顆＋<img src="images/icon_gold.png" class="res-icon">' + fmt(FUSE_GOLD_COST[lv]) +
+      ' → 1 顆下一階寶石｜目前可合成 ' + available + ' 次';
+    return;
+  }
   if (!GEM_TYPES[t]) return;
   var n = gemCount(t, lv);
   info.innerHTML = '「' + GEM_TYPES[t].emoji + esc(GEM_NAMES[lv] + GEM_TYPES[t].name) + '」庫存 ' + fmt(n) +
@@ -2537,7 +2598,8 @@ function initUI() {
       var lv = parseInt($id('fuse-level').value, 10) || 1;
       var err = composeGems(t, lv);
       if (err) blog('⚠️ 合成失敗：' + err, 'warn');
-      else blog('🔀 寶石合成：' + gemLabel(t, lv) + ' ×2 → ' + gemLabel(t, lv + 1), 'info');
+      else blog('🔀 寶石合成：' + (t === GEM_TYPE_ALL ? '全部類型寶石' : gemLabel(t, lv)) + ' ×2 → ' +
+        (t === GEM_TYPE_ALL ? GEM_NAMES[lv + 1] + '下一階寶石' : gemLabel(t, lv + 1)), 'info');
       renderGems();
     });
     $id('fuse-all-btn').addEventListener('click', function () {
@@ -2545,7 +2607,8 @@ function initUI() {
       var lv = parseInt($id('fuse-level').value, 10) || 1;
       var made = 0, err = null;
       while (made < 500 && !(err = composeGems(t, lv))) made++;
-      if (made > 0) blog('♻️ 全部合成：' + gemLabel(t, lv) + ' ×' + (made * 2) + ' → ' + gemLabel(t, lv + 1) + ' ×' + made, 'good');
+      if (made > 0) blog('♻️ 全部合成：' + (t === GEM_TYPE_ALL ? '全部類型寶石' : gemLabel(t, lv)) + ' ×' + (made * 2) +
+        ' → ' + (t === GEM_TYPE_ALL ? GEM_NAMES[lv + 1] + '下一階寶石' : gemLabel(t, lv + 1)) + ' ×' + made, 'good');
       else blog('⚠️ 合成失敗：' + err, 'warn');
       renderGems();
     });
@@ -2759,6 +2822,7 @@ function initUI() {
   // 階段控制
   $id('st-prev').addEventListener('click', function () { stageGo(-1); });
   $id('st-next').addEventListener('click', function () { stageGo(1); });
+  $id('st-max').addEventListener('click', function () { stageGoMax(); });
   $id('st-auto').addEventListener('change', function () { G.stage.autoAdvance = this.checked; });
 
   // 裝備 / 背包點擊（事件委派）
@@ -2969,12 +3033,28 @@ function initUI() {
       }
       return;
     }
-    var pin = e.target.closest('[data-part-install]');
+    var pin = e.target.closest('[data-part-install-key]');
     if (pin) {
-      var pid = pin.getAttribute('data-part-install');
-      var part = findPart(pid);
-      if (part) installPart(pid, PART_TYPES[part.key].node);
+      var key = pin.getAttribute('data-part-install-key');
+      var node = PART_TYPES[key] && PART_TYPES[key].node;
+      var part = node ? bestAvailablePartForInstall(node, key) : null;
+      if (part) installPart(part.id, node);
       UI.dirty.factory = true;
+      return;
+    }
+    var sex = e.target.closest('[data-salvage-expand]');
+    if (sex) {
+      e.preventDefault();
+      e.stopPropagation();
+      var expandErr = expandSalvageSlot();
+      if (expandErr) blog('⚠️ 分解槽擴充失敗：' + expandErr, 'warn');
+      else {
+        // 擴充是同步操作，立即刷新數量、費用與金幣，避免等待 uiTick 造成按鈕像是沒有反應。
+        renderHeader();
+        renderFactory();
+        UI.dirty.header = false;
+        UI.dirty.factory = false;
+      }
       return;
     }
     var pun = e.target.closest('[data-part-uninstall]');
@@ -3116,25 +3196,51 @@ function initUI() {
     G.settings.compareEq = this.checked;
     renderDetail();
   });
+  var ancientToggle = $id('toggle-ancient-essence');
+  if (ancientToggle) ancientToggle.addEventListener('change', function () {
+    // itemDetailHTML 會以 ancient-affix 樣式標示本次洗煉產生的太古詞條。
+    G.settings.useAncientEssence = this.checked;
+    UI.dirty.header = true;
+    UI.dirty.equip = true;
+    UI.dirty.inv = true;
+    renderDetail();
+  });
 
-  // 頂欄全螢幕切換（等同 F11；Esc 或再按一次可離開）
+  // 頂欄網頁全螢幕切換；瀏覽器 F11 屬於瀏覽器層級，網頁無法代替 F11 退出
+  function isBrowserFullscreen() {
+    var screenObj = typeof screen !== 'undefined' ? screen : null;
+    if (!screenObj || document.fullscreenElement) return false;
+    var firefoxF11 = typeof window.fullScreen === 'boolean' && window.fullScreen;
+    var sizeF11 = window.outerWidth >= screenObj.width && window.outerHeight >= screenObj.height;
+    return !!(firefoxF11 || sizeF11);
+  }
   var fsBtn = $id('btn-fullscreen');
   if (fsBtn) {
+    function syncFullscreenButton() {
+      var pageFullscreen = !!document.fullscreenElement;
+      var browserFullscreen = !pageFullscreen && isBrowserFullscreen();
+      fsBtn.classList.toggle('active', pageFullscreen || browserFullscreen);
+      fsBtn.setAttribute('data-tip', pageFullscreen
+        ? '離開網頁全螢幕（Esc）'
+        : (browserFullscreen ? '目前為瀏覽器 F11 全螢幕，請按 F11 返回' : '進入網頁全螢幕'));
+    }
     fsBtn.addEventListener('click', function () {
       if (document.fullscreenElement) {
         // 第二次按下：離開全螢幕恢復正常
         document.exitFullscreen().catch(function () {});
+      } else if (isBrowserFullscreen()) {
+        blog('⚠️ 目前是瀏覽器 F11 全螢幕，網頁無法代替瀏覽器退出，請再按 F11 返回', 'warn', 'system');
       } else {
         document.documentElement.requestFullscreen().catch(function () {
-          blog('⚠️ 瀏覽器拒絕進入全螢幕，請改用 F11', 'warn', 'system');
+          blog('⚠️ 瀏覽器拒絕進入網頁全螢幕，請使用 F11', 'warn', 'system');
         });
       }
     });
     document.addEventListener('fullscreenchange', function () {
-      var on = !!document.fullscreenElement;
-      fsBtn.classList.toggle('active', on);
-      fsBtn.setAttribute('data-tip', on ? '離開全螢幕（Esc）' : '進入全螢幕（等同 F11）');
+      syncFullscreenButton();
     });
+    window.addEventListener('resize', syncFullscreenButton);
+    syncFullscreenButton();
   }
 
   // 生產線設定

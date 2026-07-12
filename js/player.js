@@ -18,7 +18,7 @@ function newGameState() {
       level: 1, xp: 0,
       reincarnations: 0,
       reincarnationTalentPoints: 0,
-      gold: 50, scrap: 0, essence: 0,
+      gold: 50, scrap: 0, essence: 0, ancientEssence: 0,
       dust: 0,                // 魔塵（神鑄材料）
       gems: gems,
       fusedGems: [],          // 融合寶石（雙屬性，個別實體）
@@ -52,6 +52,7 @@ function newGameState() {
       synthBuffer: [],
       parts: [],
       installed: { salvage: [], synth: [] },
+      salvageSlots: 10,
       procTimer: 0, enchTimer: 0, upTimer: 0,
       stats: { salvaged: 0, extracted: 0, synthesized: 0, enchanted: 0, upgraded: 0, upgradeFailed: 0, mutated: 0 }
     },
@@ -62,7 +63,7 @@ function newGameState() {
       autoDust: true, result: null, log: [], unlockNotified: false, unlocked: false,
       autoFill: null, autoForge: false, crafting: null
     },
-    settings: { compareEq: false },
+    settings: { compareEq: false, useAncientEssence: false },
     firstRunAt: Date.now()
   };
 }
