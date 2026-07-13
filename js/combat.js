@@ -431,7 +431,9 @@ function onFieldKill(m) {
   var xpGain = Math.round(m.xp * (1 + st.xpBonus / 100));
   G.player.gold += goldGain;
   gainXp(xpGain);
-  
+  if (window.recordLootGold) window.recordLootGold(goldGain, 'field');
+  if (window.recordLootKill) window.recordLootKill(undefined, 'field');
+
   var drops = rollFieldDrops(m);
   blog('💀 擊敗 ' + m.name, 'dim-text', 'combat');
   var lootMsg = '📦 戰利品：💰' + fmt(goldGain) + ' 💡' + fmt(xpGain);
@@ -448,6 +450,7 @@ function onFieldKill(m) {
     return;
   }
   G.stage.kills++;
+  if (window.recordLootBattle) window.recordLootBattle('field'); // 整波敵人清空 = 一場戰鬥
   // 移動速度：縮短推圖間隔；只有整波敵人全部擊殺後才進入下一波。
   FIELD.respawnCd = RESPAWN_DELAY * (1 - st.moveSpeed / 100);
   if (G.stage.autoAdvance) {
@@ -482,6 +485,7 @@ function rollFieldDrops(m) {
   var s = G.stage.current;
   var lootBonus = st.loot + effectiveDropRateEffect(buffVal(FIELD.player, 'lootUp')); // 尋寶直覺增益已減半
   var drops = [];
+  if (window.recordLootDrop) window.recordLootDrop('field');
   // 菁英掉落：裝備與材料都在一般基礎上乘 1.5，不再使用舊版裝備 x2／零件 x3 特例。
   var rates = dropRatesFor(FIELD_DROP_TABLE, m.level);
   var eliteDropMult = m.elite ? 1.5 : 1;
@@ -492,19 +496,23 @@ function rollFieldDrops(m) {
     for (var k = 0; k < n; k++) {
       var it = makeEquipment(s, { rarity: r, ancientRate: ancientAffixChanceForEnemy(m.level) });
       pushConveyor(it);
+      if (window.recordLootEquip) window.recordLootEquip(r, 1, 'field');
       drops.push('裝備[' + rarityTag(it) + ']');
     }
   }
   // ===== 材料掉落：場景倍率（荒漠 x2 / 沼澤 x3；>100% 依必掉+餘數規則）
   //       基礎機率與寶石等級公式 → formula.js §5 =====
   var rw = currentZoneDef().rewardMult;
-  // 寶石（階段 4+，隨機種類）
-  if (s >= 4) {
-    var gemN = rollDropCount(FIELD_GEM_DROP_PCT * (1 + lootBonus / 100) * rw * eliteDropMult);
+  // 寶石：依怪物等級查表，各階級獨立判定
+  var gemRates = fieldGemDropRatesFor(m.level);
+  for (var glv = 0; glv < gemRates.length; glv++) {
+    if (!gemRates[glv]) continue;
+    var gemN = rollDropCount(gemRates[glv] * (1 + lootBonus / 100) * rw * eliteDropMult);
     for (var gi = 0; gi < gemN; gi++) {
-      var lv = fieldGemLevelFor(s);
+      var lv = glv + 1;
       var gtype = randomGemType();
       addGem(gtype, lv, 1);
+      if (window.recordLootGem) window.recordLootGem(gtype, lv, 1, 'field');
       drops.push('💎' + gemLabel(gtype, lv));
     }
   }
@@ -514,19 +522,15 @@ function rollFieldDrops(m) {
     for (var bi = 0; bi < bookN; bi++) {
       var bk = pick(Object.keys(ENCHANTS));
       G.player.books[bk]++;
+      if (window.recordLootMat) window.recordLootMat('book', 1, 'field');
       drops.push('📖' + ENCHANTS[bk].name + '書');
     }
-  }
-  // 附魔精華（階段 10+，數量 x場景倍率）
-  if (s >= 10 && chance(FIELD_ESSENCE_DROP_PCT * eliteDropMult)) {
-    var amt = ri(1, 2) * rw;
-    G.player.essence += amt;
-    drops.push('✨精華x' + amt);
   }
   // 太古精華（250 級以上敵人；獨立機率，不受掉寶率與場景倍率影響）
   var ancientEssenceRate = ancientEssenceDropChanceForEnemy(m.level) * eliteDropMult;
   if (ancientEssenceRate > 0 && chance(ancientEssenceRate)) {
     G.player.ancientEssence = (G.player.ancientEssence || 0) + 1;
+    if (window.recordLootMat) window.recordLootMat('ancientEssence', 1, 'field');
     drops.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華">太古精華');
     UI.dirty.header = true;
   }
@@ -535,6 +539,7 @@ function rollFieldDrops(m) {
   var dustRate = fieldDustRate(m.level) * eliteDropMult;
   if (dustRate > 0 && chance(dustRate)) {
     G.player.dust = (G.player.dust || 0) + 1;
+    if (window.recordLootMat) window.recordLootMat('dust', 1, 'field');
     drops.push('💫魔塵');
     blog('💫 敵人掉落神鑄材料：魔塵 x1（持有 ' + fmt(G.player.dust) + '）', 'loot');
     UI.dirty.forge = true;
@@ -546,6 +551,7 @@ function rollFieldDrops(m) {
       var np = makePart(fieldPartTierFor(s, m.elite));
       if (!np) continue;
       G.factory.parts.push(np);
+      if (window.recordLootMat) window.recordLootMat('part', 1, 'field');
       drops.push('🔧' + PART_TYPES[np.key].emoji + np.name);
       if (np.tier >= 3) blog('🔩 敵人掉落自動機組零件：' + PART_TYPES[np.key].emoji + np.name + '（' + partDesc(np) + '）', 'loot');
     }

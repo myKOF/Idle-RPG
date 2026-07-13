@@ -38,7 +38,7 @@ function installPart(id, node) {
   if (!isFactoryNodeEnabled(node)) return false;
   var p = findPart(id);
   if (!p) return false;
-  if (PART_TYPES[p.key].node !== node) { flog('⚠️ ' + p.name + ' 無法安裝到' + NODE_NAMES[node], 'warn'); return false; }
+  if (!PART_TYPES[p.key] || PART_TYPES[p.key].node !== node) { flog('⚠️ ' + p.name + ' 無法安裝到' + NODE_NAMES[node], 'warn'); return false; }
   if (isInstalled(id)) return false;
   var arr = G.factory.installed[node];
   if (arr.length >= slotsForNode(node)) {
@@ -136,7 +136,7 @@ function decideFilter(it) {
   return action;
 }
 
-/* ---- 分解槽（精粹提取率公式 extractChanceNow → js/formula.js §7） ---- */
+/* ---- 分解槽（附魔精華與太古精華公式 → js/formula.js §7） ---- */
 function doSalvage(it, silent) {
   // 鑲嵌的寶石先取回，不隨分解銷毀（含融合寶石）
   if (it.sockets) {
@@ -154,17 +154,14 @@ function doSalvage(it, silent) {
       }
     }
   }
-  // 基礎分解產出（精粹透鏡：提高提取機率）
+  // 基礎分解產出（精粹透鏡：提高附魔精華產出率）
   var res = salvageResult(it,
-    extractChanceNow() + effectivePartBonus('salvage', 'extractLens'),
-    effectivePartBonus('salvage', 'ancientEssenceRate'));
+    effectivePartBonus('salvage', 'ancientEssenceRate'),
+    partBonus('salvage', 'extractLens'));
 
   // 產量倍率：碎片熔煉爐 / 淘金濾網
   res.scrap = Math.max(1, Math.round(res.scrap * (1 + partBonus('salvage', 'scrapForge') / 100)));
   res.gold = Math.round(res.gold * (1 + partBonus('salvage', 'goldSluice') / 100));
-  // 精華凝結線圈：提取時額外精華
-  if (res.extracted) res.essence += partBonus('salvage', 'essenceCoil');
-
   var extras = []; // 額外掉落 / 事件（記入日誌）
   // 複製處理艙：碎片＋金幣翻倍
   var dupC = effectivePartBonus('salvage', 'duplicator');
@@ -176,31 +173,24 @@ function doSalvage(it, silent) {
   // 入帳
   G.player.scrap += res.scrap;
   G.player.gold += res.gold;
-  if (res.essence) G.player.essence += res.essence;
+  if (window.recordLootMat) window.recordLootMat('scrap', res.scrap, 'factory');
+  if (window.recordLootGold) window.recordLootGold(res.gold, 'factory');
+  if (res.essence) {
+    G.player.essence += res.essence;
+    if (window.recordLootMat) window.recordLootMat('essence', res.essence, 'factory');
+  }
   if (res.ancientEssence) {
     G.player.ancientEssence = (G.player.ancientEssence || 0) + res.ancientEssence;
+    if (window.recordLootMat) window.recordLootMat('ancientEssence', res.ancientEssence, 'factory');
     extras.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華">太古精華x' + res.ancientEssence);
   }
 
-  if (res.extracted) {
-    G.factory.stats.extracted++;
-    if (res.gem) {
-      // 寶石提純器：逐級嘗試提升提取寶石的等級
-      // 每次判定機率上限 90%，確保最高階寶石永遠是機率而非保證（避免堆滿 3 格 → 必得 5 級）
-      var glv = 1, pur = Math.min(partBonus('salvage', 'gemPurifier'), 90);
-      while (glv < GEM_MAX_LEVEL && pur > 0 && chance(pur)) glv++;
-      addGem(randomGemType(), glv, res.gem);
-      res.gemLv = glv;
-    }
-  }
-  // 寶石篩選器：獨立額外寶石
-  var sieve = effectivePartBonus('salvage', 'gemSieve');
-  if (sieve > 0 && chance(sieve)) { addGem(randomGemType(), 1, 1); extras.push('💎寶石'); }
   // 拓本回收臂：回收附魔書
   var bookB = effectivePartBonus('salvage', 'bookScavenger');
   if (bookB > 0 && chance(bookB)) {
     var bk = pick(Object.keys(ENCHANTS));
     G.player.books[bk] = (G.player.books[bk] || 0) + 1;
+    if (window.recordLootMat) window.recordLootMat('book', 1, 'factory');
     extras.push('📖' + ENCHANTS[bk].name);
   }
   // 知識回收器：分解取得經驗
@@ -215,6 +205,7 @@ function doSalvage(it, silent) {
   if (pros > 0 && chance(pros)) {
     var np = makePart(clamp(1 + Math.floor(it.rarity / 2), 1, PART_MAX_TIER));
     G.factory.parts.push(np);
+    if (window.recordLootMat) window.recordLootMat('part', 1, 'factory');
     trimFactoryParts(); // 收斂零件庫存，防無限成長
     extras.push('⛏️' + np.name);
     UI.dirty.factory = true;
@@ -224,9 +215,9 @@ function doSalvage(it, silent) {
   UI.dirty.header = true;
   if (!silent) {
     var tail = extras.length ? '（' + extras.join('、') + '）' : '';
-    if (res.extracted) {
-      flog('✨ 精粹提取！' + rarityTag(it) + ' → 碎片x' + res.scrap + '、精華x' + res.essence +
-        (res.gem ? '、' + GEM_NAMES[res.gemLv || 1] + '寶石x' + res.gem : '') + tail, 'good');
+    if (res.essence) {
+      flog('🔮 附魔精華回收！' + rarityTag(it) + ' → 碎片x' + res.scrap +
+        '、附魔精華x' + res.essence + tail, 'good');
     } else {
       flog('⚒️ 分解 ' + rarityTag(it) + ' → 碎片x' + res.scrap + tail, extras.length ? 'good' : '');
     }

@@ -191,7 +191,7 @@
               <div class="node-title">⚒️ 分解槽 <span class="node-badge">Salvage</span></div>
               <div class="node-body">
                 <div class="node-info" id="salv-info"></div>
-                <div class="hint">分解產出碎片，10% 機率觸發「精粹提取」獲得附魔精華與寶石。分解槽目前 10 格，可使用金幣逐格解鎖，最高 20 格；可安裝零件強化產出：加速齒輪、碎片熔煉爐、淘金濾網、精粹透鏡、精華凝結線圈、太古精華萃取器、寶石篩選器、寶石提純器、拓本回收臂、複製處理艙、知識回收器、探礦核心、幸運晶片（共 13 種）。</div>
+                <div class="hint">分解產出碎片與附魔精華，不會產出寶石。分解槽目前 10 格，可使用金幣逐格解鎖，最高 20 格；可安裝零件強化產出：加速齒輪、碎片熔煉爐、淘金濾網、精粹透鏡、太古精華萃取器、拓本回收臂、複製處理艙、知識回收器、探礦核心、幸運晶片（共 10 種）。</div>
                 <div class="sec-sub">已安裝零件 <span id="salv-slot-label" class="dim-text"></span></div>
                 <div id="salv-parts" class="chip-row"></div>
                 <div class="sec-sub">可用零件（點擊安裝）</div>
@@ -563,7 +563,7 @@
               <p><b>🔯 神鑄：</b>角色 1000 級開放。將 6 件相同品質（傳說/神話/創世）的裝備放入六芒星法陣，消耗金幣鑄造下一品質裝備；失敗隨機消耗 3 件、其餘退回。角尖符位可放💫魔塵（每個
                 +5% 成功率，等級 150+ 敵人與高塔 BOSS 掉落；神鑄失敗額外獲得 1 個魔塵）。6 件創世鑄造成功可得「神鑄創世」：屬性上限 1.5 倍、必帶 2 條專屬特效（龍血/神力/天罰/不朽…共 12
                 種），無法再入爐。</p>
-              <p><b>🏭 生產線：</b>掉落裝備進入輸送帶 → 篩選節點依品質決定「保留 / 分解」。分解有 10% 機率「精粹提取」出高階材料。</p>
+              <p><b>🏭 生產線：</b>掉落裝備進入輸送帶 → 篩選節點依品質決定「保留 / 分解」。分解會依裝備品質與精粹透鏡加成產出附魔精華，不會產出寶石。</p>
               <p><b>🔮 混合合成：</b>[裝備] + [寶石] + [附魔書] = 附魔特殊裝備。開啟「更強自動換裝」讓系統自動把新合成的神裝穿上！</p>
               <p><b>✨ 附魔：</b>攻擊類六元素（🔥高傷、❄️減速、⚡連鎖、🧪中毒、🌟淨化、🌑汲取）、防禦類（六元素抗性/控制抵抗）、功能類（掉寶/疾行）。在「裝備」分頁點選裝備 → 點附魔書即可附魔（消耗 1
                 書＋精華），點擊既有附魔可取下（返還書）。附魔欄位數依品質 1~3 欄；混合合成仍會自動賦予附魔。</p>
@@ -572,7 +572,7 @@
               <p><b>⚗️ 技能融合：</b>放入 2~4
                 個已學主動技能融合成專屬奧義：繼承素材部分效果（以素材當前等級計，等級越高繼承越強），並有機率覺醒變異效果（冰與火之歌、雷鳴回響、劇毒綻放…每次僅一種）。融合技初始等級＝素材加總、可再升 20
                 級；素材歸零可重學；刪除融合技會歸還所有投入點數。</p>
-              <p><b>🔨 強化與機制：</b>+5 內必定成功，之後成功率遞減（失敗損失半數材料），可堆「強化成功率」。「幸運值」影響詞條品質/大成功/精粹提取；「負重上限」擴充輸送帶與合成區容量；「狂暴閾值」提高
+              <p><b>🔨 強化與機制：</b>+5 內必定成功，之後成功率遞減（失敗損失半數材料），可堆「強化成功率」。「幸運值」影響詞條品質/大成功；「負重上限」擴充輸送帶與合成區容量；「狂暴閾值」提高
                 BOSS 狂暴門檻；「合成變異率」讓混合合成有機率產出強化附魔＋額外詞條。</p>
               <p><b>🗼 BOSS 高塔：</b>60 秒限時戰。40 秒時 BOSS 血量 &gt; 50% 會狂暴（傷害
                 +200%）。通關獲得自動機組零件：加速齒輪、幸運核心、重骰模組。失敗會有分析報告，照著調整生產線配比吧！</p>
@@ -599,7 +599,7 @@
           <span id="stage-best" class="dim-text">最高 1</span>
           <label class="chk"><input type="checkbox" id="st-auto" checked> 自動推進</label>
           <button id="btn-pip" class="btn sm" title="開啟永遠置頂的迷你監控視窗，背景掛機也能看到戰況">📺 迷你視窗</button>
-          <button id="btn-summary" class="btn sm" title="開啟傷害統計">📊 傷害統計</button>
+          <button id="btn-summary" class="btn sm" title="開啟統計面板">📊 統計面板</button>
         </div>
         <div class="battle-scene">
           <div class="combatant">
@@ -624,18 +624,42 @@
         </div>
         <div class="log-header">
           <div class="log-title">綜合紀錄</div>
-          <select id="log-filter" class="log-filter">
+          <div class="log-header-actions">
+            <button id="btn-detail-log" class="btn sm" type="button" title="開啟完整戰鬥日誌">📜 詳細日誌</button>
+            <select id="log-filter" class="log-filter">
             <option value="all">全部</option>
             <option value="combat">戰鬥與進度</option>
             <option value="boss">高塔BOSS戰</option>
             <option value="factory">裝備與強化</option>
             <option value="loot">掉落物</option>
             <option value="system">系統訊息</option>
-          </select>
+            </select>
+          </div>
         </div>
         <div id="battle-log" class="log"></div>
         <div id="boss-log" class="log" style="display:none"></div>
       </div>
+    </div>
+  </div>
+  <!-- 完整戰鬥日誌視窗 -->
+  <div id="detail-log-modal" class="detail-log-modal" style="display:none" aria-hidden="true">
+    <div class="detail-log-box" role="dialog" aria-modal="true" aria-labelledby="detail-log-title">
+      <div class="detail-log-head">
+        <div id="detail-log-title" class="sec-title">詳細戰鬥日誌</div>
+        <button id="detail-log-close" class="modal-x" type="button" title="關閉">✕</button>
+      </div>
+      <div class="detail-log-toolbar">
+        <select id="detail-log-filter" class="log-filter" aria-label="詳細日誌分類">
+          <option value="all">全部</option>
+          <option value="combat">戰鬥與進度</option>
+          <option value="boss">高塔BOSS戰</option>
+          <option value="factory">裝備與強化</option>
+          <option value="loot">掉落物</option>
+          <option value="system">系統訊息</option>
+        </select>
+        <button id="detail-log-clear" class="btn sm" type="button">清除詳細日誌</button>
+      </div>
+      <div id="detail-log-content" class="detail-log-content"></div>
     </div>
   </div>
   <!-- 技能升級彈窗 -->
@@ -650,14 +674,18 @@
   <div id="summary-modal" class="modal-overlay" style="display:none; background: transparent; backdrop-filter: none;">
     <div class="modal-box" style="display:flex; flex-direction:column; max-height:85vh; width:min(440px, 92vw);">
       <button id="summary-modal-close" class="modal-x" title="關閉">✕</button>
-      <div class="sec-title" style="text-align:center; margin-bottom:12px;">傷害統計</div>
+      <div class="sec-title" style="text-align:center; margin-bottom:12px;">統計面板</div>
       <div style="display:flex; justify-content:center; align-items:center; margin-bottom:8px; position:relative;">
-        <div class="hint" style="text-shadow: 1px 1px 2px #000; margin:0;">(開啟時更新目前戰鬥，死亡後保留歷史紀錄)</div>
+        <div class="hint" style="text-shadow: 1px 1px 2px #000; margin:0;">(統計即時更新，按清理歸零重計)</div>
         <button id="btn-summary-clear" class="btn sm"
           style="position:absolute; right:10px; padding:2px 8px;">清理</button>
       </div>
-      <div id="battle-summary-list"
+      <div id="stats-scroll"
         style="overflow-y:auto; display:flex; flex-direction:column; gap:8px; flex:1; max-height:60vh;">
+        <div class="summary-card" id="stats-basic-card"></div>
+        <div class="summary-card" id="stats-source-card"></div>
+        <div id="battle-summary-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+        <div class="summary-card" id="stats-loot-card"></div>
       </div>
     </div>
   </div>
@@ -704,6 +732,7 @@
   <script src="js/util.js"></script>
   <script src="js/data.js"></script>
   <script src="js/formula.js"></script>
+  <script src="js/stats.js"></script>
   <script src="js/item.js"></script>
   <script src="js/skills.js"></script>
   <script src="js/player.js"></script>

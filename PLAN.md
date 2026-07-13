@@ -1,5 +1,80 @@
 # PLAN.md — 開發計畫
 
+## Detailed battle log window (2026-07-13)
+
+- [DONE] Added a button beside the combined combat log and an independent tall log window.
+- [DONE] Retain up to 500 recent combat/BOSS entries with timestamp and category filters; clearing this view does not affect game state or loot statistics.
+
+## 本次修正：野外掉落來源與菁英敵人數量統計
+
+### 架構決策
+
+- 統計面板的總掉落量仍包含野外、高塔、工廠拆解與技能產出，符合玩家實際資源增量。
+- `LOOT_STATS.sources` 額外保存來源分項；野外寶石只由 `field` 來源記錄，工廠拆解不會產生寶石。
+- 野外統計另外記錄 `dropRolls`，用來核對擊殺數與實際掉落結算次數，避免把波次數、敵人數與資源來源混為一談。
+
+### 實作與驗證
+
+1. [DONE] 普通與菁英波次均依既有 1～4 隻數量表生成敵人。
+2. [DONE] 野外、高塔、工廠與技能掉落事件加入來源標記，總量仍照常累加。
+3. [DONE] 統計面板新增來源分項與野外掉落結算數。
+4. [DONE] 新增來源隔離、菁英單體生成與統計面板回歸測試。
+
+## 當前任務：戰鬥區域固定我方寬度與敵人卡片等比縮放
+
+### 一、設計方案與架構規劃（腦力激盪）
+
+現況問題：`.battle-scene` 預設 `1fr auto 1fr`（我方寬度隨敵方浮動），4 隻敵人才套
+`multi-enemy-layout` 改我方 240px 並加寬場景，造成「多敵時我方變寬、單敵反而較窄」。
+
+改造（以單敵標準版型實測我方欄寬 202px 為唯一基準）：
+1. `.battle-scene` 全模式固定 `202px auto minmax(0, 1fr)`：我方寬度永不變動。
+2. 敵人 3 隻以上（ui.js 條件 >3 改 >2）套 `multi-enemy-layout`：只吃兩側 16px 內距
+  （width +32px、margin-left -16px）讓我方左移、敵方區域加寬，我方寬度不變。
+3. 敵人卡片統一模板：以 `--ec-scale` 等比縮放（1 隻 =1、2 隻 =0.75、3/4 隻 =0.7），
+   圖示、字級、血條、狀態列全部 calc 縮放（字級以 max() 保 9px 下限），血條
+   `min(100%, calc(200px × scale))` 置中防溢出；刪除 count-1 專屬放大與多敵固定 180px 血條特例。
+   排列維持：1 隻置中、2 隻直向堆疊、3 隻第一張置中上列、4 隻 2×2。
+
+### 二、微型任務拆解
+
+1. [DONE] 改寫 multi-enemy-layout 版型回歸測試為新設計。
+2. [DONE] CSS：固定我方欄寬、multi-enemy-layout 只平移加寬、敵卡等比縮放模板。
+3. [DONE] ui.js：multi-enemy-layout 觸發改為敵人 >2。
+4. [DONE] 預覽實測 1～4 隻敵人版型、執行測試與自我審查、PATCH.md 記錄。
+
+### 三、追加修正：多敵人出現垂直捲軸
+
+敵方隊伍內容會把戰鬥場景撐高（高於我方面板），導致 #combat-area 溢出出現捲軸。
+`.enemy-party` 改為絕對定位填滿面板（場景高度只由我方面板決定），卡片改縱向 flex、
+狀態列可收縮吸收空間不足，列高以 grid-auto-rows minmax(0,1fr) 均分。
+
+1. [DONE] 版型測試補上絕對定位與狀態列收縮斷言。
+2. [DONE] CSS：隊伍絕對定位、卡片 flex 化、狀態列彈性收縮。
+3. [DONE] 預覽實測 1～4 隻：場景高度恆定、溢出量與單敵相同、卡片零重疊。
+
+## 已完成任務：傷害統計面板改造為統計面板
+
+### 一、設計方案與架構規劃（腦力激盪）
+
+將「傷害統計」彈窗改名「統計面板」，內容分三區：
+1. 基本統計：統計時間（開啟面板時每秒即時更新）、戰鬥場次（野外每清一波敵人＋每次高塔挑戰算一場）、殺敵數（野外敵人與高塔 BOSS）。
+2. 戰鬥傷害統計：沿用現有 `RUN_STATS` 目前戰鬥即時卡片與死亡歷史卡片，不變。
+3. 掉落物統計：各品質裝備件數（每品質一行、文字用品質色）、材料與寶石（每類型一行，有專用圖示者加圖示，寶石用 emoji＋階級＋名稱）、總獲得金幣（完整數字不簡寫）。
+
+架構（職責分離）：新增邏輯層 `js/stats.js` 保存 `LOOT_STATS` 並提供 `recordLootXxx` 累計函式與
+`statsBasicHtml()`／`statsLootHtml()` 純字串產生器；掉落點（combat／tower／factory／skills）以
+`window.recordLootXxx &&` 安全掛勾（不影響既有 vm 測試）；ui.js 只負責 DOM 寫入與開啟期間的每秒定時器。
+統計為工作階段內記憶體資料，按「清理」歸零重計，不入存檔；離線收益不計入。
+
+### 二、微型任務拆解
+
+1. [DONE] 新增統計累計、時間格式與統計 HTML 的 TDD 回歸測試。
+2. [DONE] 建立 `js/stats.js` 邏輯層並接入 index.html 載入順序。
+3. [DONE] 掛勾野外擊殺／掉落、高塔獎勵、分解產出與技能金幣。
+4. [DONE] 改造彈窗結構、標題與 ui.js 即時更新、清理歸零。
+5. [DONE] 執行測試、語法檢查、自我審查與 PATCH.md 記錄。
+
 ## 當前任務：統一神鑄自動控制項的勾選外觀
 
 ### 一、設計方案與架構規劃（腦力激盪）

@@ -25,7 +25,9 @@ test('菁英裝備與材料掉落率均在一般基礎上乘以 1.5', () => {
   context.FIELD = { player: {} };
   context.getStats = () => ({ loot: 0 });
   context.buffVal = () => 0;
-  context.dropRatesFor = () => [10, 0, 0, 0, 0, 0, 0, 0];
+  context.dropRatesFor = (table) => table === context.FIELD_GEM_DROP_TABLE
+    ? [5, 1, 0.5, 0, 0]
+    : [10, 0, 0, 0, 0, 0, 0, 0];
   context.currentZoneDef = () => ({ rewardMult: 1 });
   context.fieldDustRate = () => 0;
   context.rollDropCount = (rate) => { context._dropRates.push(rate); return 0; };
@@ -43,9 +45,11 @@ test('菁英裝備與材料掉落率均在一般基礎上乘以 1.5', () => {
   const elite = run(true);
 
   assert.deepEqual(elite.drops.slice(0, 1), [15]);
-  assert.deepEqual(elite.drops.slice(1, 4), [9, 6, 0.75]);
+  assert.deepEqual(elite.drops.slice(1, 4), [7.5, 1.5, 0.75]);
   assert.deepEqual(normal.drops.slice(0, 1), [10]);
-  assert.deepEqual(normal.drops.slice(1, 4), [6, 4, 0.5]);
-  assert.deepEqual(elite.chances, [13.5]);
-  assert.deepEqual(normal.chances, [9]);
+  assert.deepEqual(normal.drops.slice(1, 4), [5, 1, 0.5]);
+  assert.deepEqual(elite.drops.slice(4), [6, 0.75]);
+  assert.deepEqual(normal.drops.slice(4), [4, 0.5]);
+  assert.deepEqual(elite.chances, []);
+  assert.deepEqual(normal.chances, []);
 });

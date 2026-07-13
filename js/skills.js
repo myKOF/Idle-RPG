@@ -573,7 +573,7 @@ function castSkill(pEnt, target, id, lv, floatSel) {
     if (totalDmg > 0) {
       if (fx.healPctOfDmg) { healPlayer(pEnt, totalDmg * fx.healPctOfDmg / 100, st); parts.push('<span class="log-hl-good">汲取 ' + fmt(totalDmg * fx.healPctOfDmg / 100) + ' 生命</span>'); }
       if (fx.mpOnCrit && anyCrit) { pEnt.mp = Math.min(st.mp, pEnt.mp + fx.mpOnCrit); parts.push('返還 ' + fx.mpOnCrit + ' 法力'); }
-      if (fx.goldPer) { var gg = Math.round(fx.goldPer * lv * st.level); G.player.gold += gg; parts.push('<span class="log-hl-good">獲得 ' + fmt(gg) + ' 金幣</span>'); UI.dirty.header = true; }
+      if (fx.goldPer) { var gg = Math.round(fx.goldPer * lv * st.level); G.player.gold += gg; if (window.recordLootGold) window.recordLootGold(gg, 'skill'); parts.push('<span class="log-hl-good">獲得 ' + fmt(gg) + ' 金幣</span>'); UI.dirty.header = true; }
       for (var ei = 0; ei < targets.length; ei++) {
         var effectTarget = targets[ei];
         if (effectTarget.hp <= 0) continue;

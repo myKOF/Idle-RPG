@@ -486,8 +486,8 @@ function bossStatsFor(floor) {
 // 存檔仍保留原始數值，透過此入口計算即可讓既有物品立即套用新規則。
 var DROP_RATE_EFFECT_MULT = 0.5;
 var DROP_RATE_PART_KEYS = {
-  extractLens: true, ancientEssenceRate: true, duplicator: true,
-  fortuneChip: true, gemSieve: true, bookScavenger: true, prospector: true
+  ancientEssenceRate: true, duplicator: true,
+  fortuneChip: true, bookScavenger: true, prospector: true
 };
 var SPEED_GEAR_FIXED_BONUS = 50;
 function effectiveDropRateEffect(value) {
@@ -535,9 +535,7 @@ function rollRarity(stage, lootBonus) {
 
 /* ---- 野外材料掉落（基礎機率 %；實際機率 × (1+掉寶率) × 場景倍率，
        用 rollDropCount 結算 >100% 必掉規則）---- */
-var FIELD_GEM_DROP_PCT = 6;      // 寶石（階段 4+）
 var FIELD_BOOK_DROP_PCT = 4;     // 附魔書（階段 8+）
-var FIELD_ESSENCE_DROP_PCT = 9;  // 附魔精華（階段 10+，掉 1~2 顆 × 場景倍率）
 var FIELD_PART_DROP_PCT = 0.5;   // 自動機組零件（階段 5+，機率低；菁英掉落率 ×1.5）
 
 /* ---- 太古詞條／太古精華機率 ---- */
@@ -573,10 +571,9 @@ function fieldPartTierFor(stage, elite) {
   return clamp(1 + Math.floor(stage / 12) + (elite ? 1 : 0), 1, PART_MAX_TIER);
 }
 
-// 野外寶石等級：基準級 = 1 + ⌊階段/15⌋（上限 5）；70% 出基準級、30% 出低一級
-function fieldGemLevelFor(stage) {
-  var glv = clamp(1 + Math.floor(stage / 15), 1, GEM_MAX_LEVEL);
-  return wpick([[glv, 70], [Math.max(1, glv - 1), 30]]);
+// 野外寶石掉落率：依怪物等級查表，各階級獨立判定
+function fieldGemDropRatesFor(level) {
+  return dropRatesFor(FIELD_GEM_DROP_TABLE, level);
 }
 
 // 高塔挑戰金幣消耗 = 100000 × 樓層^2.6
@@ -754,17 +751,24 @@ function itemScore(it) {
 /* ---- 分解產出 ----
    碎片 = (2 + 裝備等級×0.6) × 稀有度分解係數 × rnd(0.85, 1.15)（最低 1）
    金幣 = (3 + 裝備等級) × 分解係數 × 0.5
-   精粹提取（機率 = extractChance，見 extractChanceNow）：
-     精華 = 1~2 + ⌊稀有度/2⌋，另 30% 機率附贈 1 顆一級寶石
-   每個附魔額外回收 1 精華 */
+   附魔精華 = rollDropCount(稀有度基礎機率 × (1 + 精粹透鏡加成總合/100))
+   鑲嵌寶石會在分解前取回，但分解本身不產出寶石。 */
 var ANCIENT_AFFIX_SALVAGE_CHANCE = 50;
-function salvageResult(it, extractChance, ancientEssenceBonus) {
+var ESSENCE_SALVAGE_CHANCE_BY_RARITY = [0.1, 0.5, 1, 2, 4, 8, 20, 100, 100];
+function essenceSalvageChanceForRarity(rarity) {
+  var idx = clamp(Math.floor(Number(rarity) || 0), 0, ESSENCE_SALVAGE_CHANCE_BY_RARITY.length - 1);
+  return ESSENCE_SALVAGE_CHANCE_BY_RARITY[idx];
+}
+function salvageResult(it, ancientEssenceBonus, essenceBonus) {
   var r = RARITIES[it.rarity];
   var out = {
     scrap: Math.max(1, Math.round((2 + it.level * 0.6) * r.salv * rnd(0.85, 1.15))),
     gold: Math.round((3 + it.level) * r.salv * 0.5),
-    essence: 0, ancientEssence: 0, gem: 0, extracted: false
+    essence: 0, ancientEssence: 0
   };
+  var essenceChance = essenceSalvageChanceForRarity(it.rarity) *
+    (1 + Math.max(0, Number(essenceBonus) || 0) / 100);
+  out.essence = rollDropCount(essenceChance);
   var ancientBaseChance = ancientEssenceSalvageChanceForRarity(it.rarity);
   var ancientSalvageChance = ancientBaseChance * (1 + (Number(ancientEssenceBonus) || 0) / 100);
   var ancientEssenceWon = ancientSalvageChance > 0 && chance(ancientSalvageChance);
@@ -777,12 +781,6 @@ function salvageResult(it, extractChance, ancientEssenceBonus) {
     }
   }
   if (ancientEssenceWon) out.ancientEssence = 1;
-  if (chance(extractChance === undefined ? ESSENCE_EXTRACT_CHANCE : extractChance)) {
-    out.extracted = true;
-    out.essence = ri(1, 2) + Math.floor(it.rarity / 2);
-    if (chance(30)) out.gem = 1; // 額外一級寶石
-  }
-  out.essence += itemEnchants(it).length; // 每個附魔回收 1 額外精華
   return out;
 }
 
@@ -821,12 +819,6 @@ function rerollCost(it) {
     gold: Math.round(40 * Math.pow(1.7, it.rarity) * (1 + it.level * 0.15)),
     essence: essence
   };
-}
-
-// 精粹提取率 = 基礎 10% + 分解高產率屬性 + 幸運值/3
-function extractChanceNow() {
-  var st = getStats();
-  return ESSENCE_EXTRACT_CHANCE + st.decomposeYield + st.luck / 3;
 }
 
 // 合成大成功率 = 基礎 5% + 幸運核心零件加成 + 幸運值/2（稀有度額外 +1）

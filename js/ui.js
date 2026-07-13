@@ -13,6 +13,33 @@ var UI = {
 };
 
 /* ---- 日誌 ---- */
+var DETAIL_LOG_HISTORY = [];
+var DETAIL_LOG_CAP = 500;
+
+function detailLogCategoryLabel(cat) {
+  return ({ combat: '戰鬥', boss: '高塔', factory: '裝備', loot: '掉落', system: '系統' })[cat] || '其他';
+}
+
+function renderDetailLog() {
+  var box = $id('detail-log-content');
+  if (!box) return;
+  var filterEl = $id('detail-log-filter');
+  var filter = filterEl ? filterEl.value : 'all';
+  var rows = DETAIL_LOG_HISTORY.filter(function (entry) {
+    return filter === 'all' || entry.cat === filter;
+  });
+  if (!rows.length) {
+    box.innerHTML = '<div class="detail-log-empty">目前沒有符合條件的日誌</div>';
+    return;
+  }
+  box.innerHTML = rows.map(function (entry) {
+    var label = entry.cat ? '[' + detailLogCategoryLabel(entry.cat) + '] ' : '';
+    return '<div class="detail-log-line ' + (entry.cls || '') + '">' +
+      '<span class="detail-log-time">' + esc(entry.time) + '</span>' +
+      '<span class="detail-log-category">' + esc(label) + '</span>' + entry.msg + '</div>';
+  }).join('');
+}
+
 function addLog(elId, msg, cls, cap, cat) {
   var box = $id(elId);
   if (!box) return;
@@ -22,6 +49,18 @@ function addLog(elId, msg, cls, cap, cat) {
   div.innerHTML = msg;
   box.insertBefore(div, box.firstChild);
   while (box.children.length > (cap || 150)) box.removeChild(box.lastChild);
+  if (elId === 'battle-log' || elId === 'boss-log') {
+    var now = new Date();
+    DETAIL_LOG_HISTORY.unshift({
+      msg: msg,
+      cls: cls || '',
+      cat: cat || 'system',
+      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    });
+    if (DETAIL_LOG_HISTORY.length > DETAIL_LOG_CAP) DETAIL_LOG_HISTORY.pop();
+    var detailModal = $id('detail-log-modal');
+    if (detailModal && detailModal.style.display !== 'none') renderDetailLog();
+  }
 }
 function blog(msg, cls, cat) {
   if (!cat) {
@@ -264,7 +303,7 @@ function renderHeader() {
     $id('s-crit').textContent = (st.critRate * 100).toFixed(1) + '%';
     $id('s-ls').textContent = (st.lifesteal * 100).toFixed(1) + '%';
     $id('s-hit').textContent = (st.hit * 100).toFixed(1) + '%';
-    $id('s-loot').textContent = (st.lootBonus * 100).toFixed(1) + '%';
+    $id('s-loot').textContent = (st.loot * 100).toFixed(1) + '%';
   }
 
   var dpsEl = $id('s-dps');
@@ -428,7 +467,7 @@ function renderBattle() {
   if (!party) return;
   var scene = party.closest ? party.closest('.battle-scene') : null;
   if (scene) scene.classList.toggle('multi-enemy', enemies.length > 1);
-  if (scene) scene.classList.toggle('multi-enemy-layout', enemies.length > 3);
+  if (scene) scene.classList.toggle('multi-enemy-layout', enemies.length > 2); // 3 隻以上才左移我方、加寬敵方
   party.className = 'enemy-party enemy-count-' + enemies.length;
   if (!enemies.length) {
     if (party.getAttribute('data-enemy-signature') !== 'empty') {
@@ -827,10 +866,10 @@ function renderFactory() {
   }).join('') + (f.conveyor.length > 18 ? '<span class="conv-more">+' + (f.conveyor.length - 18) + '</span>' : '');
   $id('conveyor-count').textContent = f.conveyor.length + '/' + conveyorCap();
 
-  // 分解槽資訊（精粹提取率含分解高產/幸運加成）
+  // 分解槽資訊（顯示精粹透鏡的附魔精華加成）
   var speedUp = 1 + partBonus('salvage', 'speedGear') / 100;
-  $id('salv-info').textContent = '處理速度 ' + fmt1(speedUp) + 'x｜精粹提取率 ' + fmt1(extractChanceNow()) +
-    '%｜已分解 ' + fmt(f.stats.salvaged) + '｜精粹提取 ' + fmt(f.stats.extracted) + ' 次';
+  $id('salv-info').textContent = '處理速度 ' + fmt1(speedUp) + 'x｜附魔精華加成 +' + fmt1(partBonus('salvage', 'extractLens')) +
+    '%｜已分解 ' + fmt(f.stats.salvaged);
 
   // 合成節點資訊（大成功率含幸運值加成）
   if (SYNTHESIS_ENABLED) {
@@ -878,9 +917,6 @@ function partIconHTML(key) {
     scrapForge: ['icon_scrap.png'],
     goldSluice: ['icon_gold.png'],
     extractLens: ['icon_essence.png'],
-    essenceCoil: ['icon_essence.png'],
-    gemSieve: ['icon_gems.png'],
-    gemPurifier: ['icon_gems.png'],
     bookScavenger: ['icon_books.png'],
     duplicator: ['icon_scrap.png', 'icon_gold.png'],
     fortuneChip: ['icon_scrap.png', 'icon_gold.png', 'icon_essence.png'],
@@ -2924,6 +2960,35 @@ function initUI() {
   }
 
   // 迷你監控視窗
+  var detailLogBtn = $id('btn-detail-log');
+  var detailLogModal = $id('detail-log-modal');
+  var detailLogClose = $id('detail-log-close');
+  var detailLogFilter = $id('detail-log-filter');
+  var detailLogClear = $id('detail-log-clear');
+  function closeDetailLog() {
+    if (!detailLogModal) return;
+    detailLogModal.style.display = 'none';
+    detailLogModal.setAttribute('aria-hidden', 'true');
+  }
+  if (detailLogBtn && detailLogModal) {
+    detailLogBtn.addEventListener('click', function () {
+      var mainFilter = $id('log-filter');
+      if (detailLogFilter) detailLogFilter.value = mainFilter ? mainFilter.value : 'all';
+      renderDetailLog();
+      detailLogModal.style.display = 'flex';
+      detailLogModal.setAttribute('aria-hidden', 'false');
+    });
+    if (detailLogClose) detailLogClose.addEventListener('click', closeDetailLog);
+    detailLogModal.addEventListener('click', function (e) {
+      if (e.target === detailLogModal) closeDetailLog();
+    });
+    if (detailLogFilter) detailLogFilter.addEventListener('change', renderDetailLog);
+    if (detailLogClear) detailLogClear.addEventListener('click', function () {
+      DETAIL_LOG_HISTORY.length = 0;
+      renderDetailLog();
+    });
+  }
+
   var pipBtn = $id('btn-pip');
   if (pipBtn) pipBtn.addEventListener('click', openMiniWindow);
 
@@ -3479,14 +3544,15 @@ function initUI() {
 
   syncFactoryInputs();
 
-  // 戰鬥結算日誌彈窗
+  // 統計面板彈窗
   var btnSummary = $id('btn-summary');
   if (btnSummary) {
     btnSummary.addEventListener('click', function () {
       var modal = $id('summary-modal');
       if (modal) {
-        if (typeof renderCurrentSummary === 'function') renderCurrentSummary();
+        renderStatsPanel();
         modal.style.display = 'flex';
+        startStatsPanelTimer();
       }
     });
   }
@@ -3495,12 +3561,14 @@ function initUI() {
     summaryModal.addEventListener('click', function (e) {
       if (e.target === summaryModal) {
         summaryModal.style.display = 'none';
+        stopStatsPanelTimer();
       }
     });
     var summaryClose = $id('summary-modal-close');
     if (summaryClose) {
       summaryClose.addEventListener('click', function () {
         summaryModal.style.display = 'none';
+        stopStatsPanelTimer();
       });
     }
     var btnSummaryClear = $id('btn-summary-clear');
@@ -3510,11 +3578,10 @@ function initUI() {
           window.RUN_STATS.skills = {};
           window.RUN_STATS.maxStage = typeof G !== 'undefined' && G.stage ? G.stage.current : 1;
         }
+        if (typeof resetLootStats === 'function') resetLootStats(); // 掉落統計歸零重計
         var list = $id('battle-summary-list');
-        if (list) {
-          list.innerHTML = '';
-          if (typeof renderCurrentSummary === 'function') renderCurrentSummary();
-        }
+        if (list) list.innerHTML = '';
+        renderStatsPanel();
       });
     }
   }
@@ -3567,6 +3634,26 @@ if ($id('trm-confirm')) {
     if (typeof finishTowerFight === 'function') finishTowerFight();
   };
 }
+/* ---- 統計面板：基本統計與掉落物統計（HTML 由 js/stats.js 產生） ---- */
+var statsPanelTimer = null;
+function renderStatsPanel() {
+  var basic = $id('stats-basic-card');
+  var source = $id('stats-source-card');
+  var loot = $id('stats-loot-card');
+  if (basic && typeof statsBasicHtml === 'function') basic.innerHTML = statsBasicHtml();
+  if (source && typeof statsSourceHtml === 'function') source.innerHTML = statsSourceHtml();
+  if (loot && typeof statsLootHtml === 'function') loot.innerHTML = statsLootHtml();
+  if (typeof renderCurrentSummary === 'function') renderCurrentSummary(); // 目前戰鬥傷害卡片同步刷新
+}
+// 面板開啟期間每秒重繪，統計時間與掉落數量即時更新；關閉即停止，避免閒置耗損。
+function startStatsPanelTimer() {
+  stopStatsPanelTimer();
+  statsPanelTimer = setInterval(renderStatsPanel, 1000);
+}
+function stopStatsPanelTimer() {
+  if (statsPanelTimer) { clearInterval(statsPanelTimer); statsPanelTimer = null; }
+}
+
 // 開啟結算彈窗時，將目前尚未死亡結算的戰鬥統計更新到最上方。
 function renderCurrentSummary() {
   var list = $id('battle-summary-list');

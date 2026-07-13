@@ -20,7 +20,6 @@ test('掉寶率來源統一減半，既有數值也透過計算套用', () => {
   assert.equal(context.effectiveDropRateEffect(880), 440);
   assert.equal(context.effectiveDropRateEffect(-20), -10);
   assert.equal(context.effectivePartEffectValue('ancientEssenceRate', 175), 87.5);
-  assert.equal(context.effectivePartEffectValue('gemSieve', 4.2), 2.1);
   assert.equal(context.effectivePartEffectValue('speedGear', 25), 25);
   assert.equal(context.effectiveFactoryPartValue('speedGear', 175), 225);
   assert.equal(context.effectiveFactoryPartValue('scrapForge', 140), 140);
@@ -30,7 +29,10 @@ test('掉寶率實際消費點使用減半後的裝備與技能加成', () => {
   const combat = fs.readFileSync(path.join(root, 'js/combat.js'), 'utf8');
   const formula = fs.readFileSync(path.join(root, 'js/formula.js'), 'utf8');
   const skills = fs.readFileSync(path.join(root, 'js/skills.js'), 'utf8');
+  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   assert.match(formula, /st\.loot\s*=\s*effectiveDropRateEffect\(A\.loot\)/);
   assert.match(combat, /effectiveDropRateEffect\(buffVal\(FIELD\.player, 'lootUp'\)\)/);
   assert.match(skills, /key === 'lootUp'[\s\S]*effectiveDropRateEffect/);
+  assert.match(ui, /s-loot'\)\.textContent\s*=\s*\(st\.loot\s*\*\s*100\)/);
+  assert.doesNotMatch(ui, /s-loot'\)\.textContent\s*=\s*\(st\.lootBonus/);
 });

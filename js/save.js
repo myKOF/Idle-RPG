@@ -293,6 +293,32 @@ function migrateSave(data) {
   }
   
   mergeDefaults(data, def);
+  // 移除已淘汰的精華凝結線圈、寶石篩選器、寶石提純器；舊存檔中的零件按既有零件回收規則返還碎片。
+  if (data.factory && Array.isArray(data.factory.parts)) {
+    var deprecatedPartKeys = { essenceCoil: true, gemSieve: true, gemPurifier: true };
+    var removedPartIds = {};
+    var deprecatedPartScrap = 0;
+    var keptParts = [];
+    data.factory.parts.forEach(function (part) {
+      if (part && deprecatedPartKeys[part.key]) {
+        removedPartIds[part.id] = true;
+        deprecatedPartScrap += Math.max(0, Math.floor(Number(part.tier) || 1) * 2);
+      } else {
+        keptParts.push(part);
+      }
+    });
+    data.factory.parts = keptParts;
+    if (deprecatedPartScrap) {
+      data.player.scrap = Math.max(0, Math.floor(Number(data.player.scrap) || 0)) + deprecatedPartScrap;
+    }
+    if (data.factory.installed) {
+      Object.keys(data.factory.installed).forEach(function (node) {
+        data.factory.installed[node] = (data.factory.installed[node] || []).filter(function (id) {
+          return !removedPartIds[id];
+        });
+      });
+    }
+  }
   if (!hadSalvageSlots) {
     var legacySalvageInstalled = data.factory && data.factory.installed && data.factory.installed.salvage;
     data.factory.salvageSlots = clamp(Math.max(SALVAGE_SLOT_LEGACY_DEFAULT, (legacySalvageInstalled || []).length), SALVAGE_SLOT_INITIAL, SALVAGE_SLOT_MAX);

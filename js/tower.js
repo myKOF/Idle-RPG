@@ -188,6 +188,8 @@ function endTowerFight(win, reason) {
   var myDps = TOWER.elapsed > 0.5 ? TOWER.dmgDealt / TOWER.elapsed : 0;
   var needDps = b ? b.maxHp / TOWER_TIME_LIMIT : 0;
   TOWER.showingResult = true;
+  if (window.recordLootBattle) window.recordLootBattle('tower'); // 每次高塔挑戰算一場戰鬥
+  if (win && window.recordLootKill) window.recordLootKill(undefined, 'tower'); // 擊敗 BOSS 計入殺敵數
 
   var result = {
     win: win, floor: floor, reason: reason || null,
@@ -209,6 +211,7 @@ function endTowerFight(win, reason) {
     var soulOriginRate = hellSoulOriginDropChance(floor);
     if (soulOriginRate > 0 && chance(soulOriginRate)) {
       G.player.soulOrigin = (G.player.soulOrigin || 0) + 1;
+      if (window.recordLootMat) window.recordLootMat('soulOrigin', 1, 'tower');
       result.rewards.push('🧿 魔魂本源 x1');
       UI.dirty.header = true;
     }
@@ -216,6 +219,7 @@ function endTowerFight(win, reason) {
       var part = makePart(rw.partTier);
       if (part) {
         G.factory.parts.push(part);
+        if (window.recordLootMat) window.recordLootMat('part', 1, 'tower');
         trimFactoryParts(); // 收斂零件庫存，防無限成長
         result.rewards.push(PART_TYPES[part.key].emoji + ' ' + part.name + '（' + partDesc(part) + '）');
         flog('🔩 獲得自動機組零件：' + part.name, 'good');
@@ -236,6 +240,7 @@ function endTowerFight(win, reason) {
           ancientRate: ancientBossAffixChanceForBoss(b.level)
         }));
       }
+      if (window.recordLootEquip) window.recordLootEquip(br, bn, 'tower');
       lootCounts.push('&nbsp;&nbsp;<span style="color:' + RARITIES[br].color + '">' + RARITIES[br].name + '裝備*' + bn + '</span>');
     }
     if (lootCounts.length) {
@@ -245,25 +250,34 @@ function endTowerFight(win, reason) {
       }
     }
     G.player.gold += rw.gold;
+    if (window.recordLootGold) window.recordLootGold(rw.gold, 'tower');
     result.rewards.push('💰 金幣 x' + fmt(rw.gold));
     var gt1 = randomGemType(), gt2 = randomGemType();
     addGem(gt1, rw.gemLevel, 1); addGem(gt2, rw.gemLevel, 1);
+    if (window.recordLootGem) {
+      window.recordLootGem(gt1, rw.gemLevel, 1, 'tower');
+      window.recordLootGem(gt2, rw.gemLevel, 1, 'tower');
+    }
     result.rewards.push('💎 ' + gemLabel(gt1, rw.gemLevel) + '、' + gemLabel(gt2, rw.gemLevel));
     var bk = pick(Object.keys(ENCHANTS));
     G.player.books[bk] += 2;
+    if (window.recordLootMat) window.recordLootMat('book', 2, 'tower');
     result.rewards.push('📖 ' + ENCHANTS[bk].name + '書 x2');
     G.player.essence += rw.essence;
+    if (window.recordLootMat) window.recordLootMat('essence', rw.essence, 'tower');
     result.rewards.push('🔮 附魔精華 x' + rw.essence);
     // 太古精華（40 級以上 BOSS；獨立機率，不受掉寶率影響）
     var ancientEssenceRate = ancientEssenceDropChanceForBoss(b.level);
     if (ancientEssenceRate > 0 && chance(ancientEssenceRate)) {
       G.player.ancientEssence = (G.player.ancientEssence || 0) + 1;
+      if (window.recordLootMat) window.recordLootMat('ancientEssence', 1, 'tower');
       result.rewards.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華"> 太古精華 x1');
       UI.dirty.header = true;
     }
     // 魔塵（神鑄材料）：掉落率 = min(30%, 2% + 樓層 × 0.2%)（bossDustRate → formula.js §5）
     if (chance(bossDustRate(floor))) {
       G.player.dust = (G.player.dust || 0) + 1;
+      if (window.recordLootMat) window.recordLootMat('dust', 1, 'tower');
       result.rewards.push('💫 魔塵 x1（神鑄材料）');
       UI.dirty.forge = true;
     }
