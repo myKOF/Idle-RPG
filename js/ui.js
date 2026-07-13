@@ -92,8 +92,18 @@ function switchTab(name) {
   });
   if (name !== 'settings') UI.saveNoticeId = null;
   if (name === 'settings') {
-    renderSaveList();
-    refreshSaveFolderFilesV2();
+    if (typeof scanManualMetadataV2 === 'function' && typeof _saveDir !== 'undefined' && _saveDir) {
+      scanManualMetadataV2().then(function () {
+        renderSaveList();
+        refreshSaveFolderFilesV2();
+      }).catch(function () {
+        renderSaveList();
+        refreshSaveFolderFilesV2();
+      });
+    } else {
+      renderSaveList();
+      refreshSaveFolderFilesV2();
+    }
   }
   if (name === 'tower') UI._scrollTower = true;
 }

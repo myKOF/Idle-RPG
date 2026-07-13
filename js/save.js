@@ -625,6 +625,7 @@ function writeRawToFolder(fname, raw) {
       return writer.write(raw);
     })
     .then(function () { return writer.close(); })
+    .then(function () { return folderFileInfoV2(fname); })
     .catch(function (e) {
       if (writer) {
         try { return writer.abort().catch(function () {}).then(function () { throw e; }); }
@@ -883,6 +884,15 @@ function readRawTextV2(handle) {
   return handle.getFile().then(function (file) { return file.text(); });
 }
 
+function folderFileInfoV2(fname) {
+  if (!_saveDir) return Promise.reject(new Error('尚未連接存檔資料夾'));
+  return _saveDir.getFileHandle(fname, { create: false })
+    .then(function (fh) { return fh.getFile(); })
+    .then(function (file) {
+      return { name: fname, size: file.size || 0, lastModified: file.lastModified || 0 };
+    });
+}
+
 function parseSaveTextV2(raw) {
   try {
     var data = JSON.parse(raw);
@@ -894,9 +904,25 @@ function parseSaveTextV2(raw) {
 function readFolderAutoV2(cb) {
   if (!_saveDir) { cb(null); return; }
   _saveDir.getFileHandle(AUTO_FOLDER_FILE_V2, { create: false })
-    .then(readRawTextV2).then(function (raw) {
+    .then(function (fh) {
+      return fh.getFile().then(function (file) {
+        return file.text().then(function (raw) { return { file: file, raw: raw }; });
+      });
+    }).then(function (res) {
+      var raw = res.raw;
+      var file = res.file;
       var data = parseSaveTextV2(raw);
-      cb(data ? { data: data, savedAt: Number(data.savedAt) || 0 } : null);
+      if (!data) { cb(null); return; }
+      var meta = {
+        id: 'auto_current', kind: 'auto', runId: data.runId || 1,
+        savedAt: Number(file.lastModified) || Number(data.savedAt) || 0,
+        fname: AUTO_FOLDER_FILE_V2,
+        level: data.player && data.player.level || 1,
+        stage: data.stage && data.stage.current || 1,
+        zone: data.stage && data.stage.zone || 'plains'
+      };
+      writeAutoMetaV2(meta);
+      cb({ data: data, savedAt: meta.savedAt });
     }).catch(function () {
       // 相容舊版保底檔，但只接受自動存檔命名，不把手動存檔當成目前進度。
       (async function () {
@@ -904,9 +930,10 @@ function readFolderAutoV2(cb) {
         for await (var ent of _saveDir.values()) {
           if (ent.kind !== 'file' || !/^(IC_current|IC_autosave_run[^.]*)[^/]*\.json$/i.test(ent.name)) continue;
           try {
-            var data = parseSaveTextV2(await (await ent.getFile()).text());
+            var file = await ent.getFile();
+            var data = parseSaveTextV2(await file.text());
             if (!data) continue;
-            var ts = Number(data.savedAt) || 0;
+            var ts = Number(file.lastModified) || Number(data.savedAt) || 0;
             if (!best || ts > best.savedAt) best = { data: data, savedAt: ts };
           } catch (e) {}
         }
@@ -925,18 +952,19 @@ function folderNameHashV2(name) {
 function scanManualMetadataV2() {
   if (!_saveDir) return Promise.resolve();
   return (async function () {
-    var list = saveIndexV2();
-    var byName = {};
-    list.forEach(function (r) { byName[r.fname] = r; });
+    var oldByName = {};
+    saveIndexV2().forEach(function (r) { oldByName[r.fname] = r; });
+    var list = [];
     for await (var ent of _saveDir.values()) {
       if (ent.kind !== 'file' || !/^IC_(manual|before_bulk_salvage)_.*\.json$/i.test(ent.name)) continue;
-      if (byName[ent.name]) continue;
       try {
-        var data = parseSaveTextV2(await (await ent.getFile()).text());
+        var file = await ent.getFile();
+        var data = parseSaveTextV2(await file.text());
         if (!data) continue;
+        var old = oldByName[ent.name];
         list.push({
-          id: folderNameHashV2(ent.name), kind: 'manual', runId: data.runId || 1,
-          savedAt: Number(data.savedAt) || Date.now(), fname: ent.name,
+          id: old ? old.id : folderNameHashV2(ent.name), kind: 'manual', runId: data.runId || 1,
+          savedAt: Number(file.lastModified) || Number(data.savedAt) || Date.now(), fname: ent.name,
           level: data.player && data.player.level || 1,
           stage: data.stage && data.stage.current || 1,
           zone: data.stage && data.stage.zone || 'plains', folderOnly: true
@@ -986,7 +1014,7 @@ function saveGameV2(opts) {
     try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
     idbSetAutoV2(raw);
     var meta = saveRecMeta('auto', 'auto_current', AUTO_FOLDER_FILE_V2);
-    writeAutoMetaV2(meta);
+    if (!_saveDir) writeAutoMetaV2(meta);
     return true;
   } catch (e3) { return false; }
 }
@@ -1004,22 +1032,20 @@ function saveFolderMetaV2(rec) {
 
 function createManualSaveToFolderV2(label) {
   if (!_saveDir) return Promise.reject(new Error('尚未選擇本地存檔資料夾'));
+  if (typeof G === 'undefined' || !G) return Promise.reject(new Error('目前沒有可儲存的遊戲進度'));
+  G.savedAt = Date.now();
+  var raw = JSON.stringify(G);
+  idbSetAutoV2(raw);
+  var prefix = label ? String(label).replace(/[^a-z0-9_-]+/ig, '_') : 'manual';
   var rec = saveRecMeta('manual', 'manual_' + Date.now().toString(36) + '_' + ri(100, 999),
-    'IC_manual_' + saveStamp(Date.now()) + '.json');
-  return new Promise(function (resolve) {
-    idbGetAutoV2(function (cachedRaw) {
-      var raw = cachedRaw;
-      if (!raw) {
-        try { raw = JSON.stringify(G); } catch (e) { raw = null; }
-      }
-      resolve(raw);
-    });
-  }).then(function (raw) {
-    if (!raw) throw new Error('找不到可複製的瀏覽器自動存檔快取');
-    return writeRawToFolder(rec.fname, raw).then(function () {
+    'IC_' + prefix + '_' + saveStamp(Date.now()) + '.json');
+  return writeRawToFolder(rec.fname, raw).then(function (info) {
+      rec.savedAt = Number(info && info.lastModified) || rec.savedAt;
+      rec.level = G.player && G.player.level || rec.level;
+      rec.stage = G.stage && G.stage.current || rec.stage;
+      rec.zone = G.stage && G.stage.zone || rec.zone;
       saveFolderMetaV2(rec);
       return rec;
-    });
   });
 }
 
@@ -1029,8 +1055,19 @@ function syncAutoSaveToFolderV2() {
     idbGetAutoV2(function (raw) {
       var data = parseSaveTextV2(raw) || parseSaveTextV2(localStorage.getItem(SAVE_KEY));
       if (!data) { resolve(false); return; }
-      writeRawToFolder(AUTO_FOLDER_FILE_V2, JSON.stringify(data)).then(function () {
-        writeAutoMetaV2(saveRecMeta('auto', 'auto_current', AUTO_FOLDER_FILE_V2));
+      writeRawToFolder(AUTO_FOLDER_FILE_V2, JSON.stringify(data)).then(function (info) {
+        writeAutoMetaV2({
+          id: 'auto_current', kind: 'auto', runId: data.runId || 1,
+          savedAt: Number(info && info.lastModified) || Number(data.savedAt) || Date.now(),
+          fname: AUTO_FOLDER_FILE_V2,
+          level: data.player && data.player.level || 1,
+          stage: data.stage && data.stage.current || 1,
+          zone: data.stage && data.stage.zone || 'plains'
+        });
+        if (typeof UI !== 'undefined' && UI.tab === 'settings') {
+          if (typeof renderSaveList === 'function') renderSaveList();
+          if (typeof refreshSaveFolderFilesV2 === 'function') refreshSaveFolderFilesV2();
+        }
         resolve(true);
       }).catch(function () { resolve(false); });
     });
@@ -1086,7 +1123,11 @@ function openSaveFolderV2(cb, forceOpen) {
     source.then(normalizeSaveDirectoryV2).then(function (dir) {
       _saveDir = dir;
       idbSetDir(dir);
-      return scanManualMetadataV2().then(function () { return listSaveFolderFilesV2(); }).then(function (files) {
+      return scanManualMetadataV2()
+        .then(function () {
+          return new Promise(function (resolve) { readFolderAutoV2(function () { resolve(); }); });
+        })
+        .then(function () { return listSaveFolderFilesV2(); }).then(function (files) {
         cb(null, { selected: true, dirName: dir.name, files: files });
       });
     }).catch(function (e) {
