@@ -98,18 +98,9 @@ function trimFactoryParts() {
 function pushConveyor(item) {
   var f = G.factory;
   if (f.conveyor.length >= conveyorCap()) {
-    var old = takeAutoSalvageCandidate(f.conveyor);
-    if (old) {
-      var res = doSalvage(old, true);
-      flog('⚠️ 輸送帶滿載，自動分解較低品質 ' + rarityTag(old) + ' → 碎片x' + res.scrap, 'warn');
-    } else if (!isAutoSalvageProtected(item)) {
-      var ires = doSalvage(item, true);
-      flog('⚠️ 輸送帶滿載，為保留高品質裝備，自動分解新進 ' + rarityTag(item) + ' → 碎片x' + ires.scrap, 'warn');
-      UI.dirty.factory = true;
-      return false;
-    } else {
-      flog('🛡️ 輸送帶滿載，已保留高品質 ' + rarityTag(item) + '（目前超出容量）', 'warn');
-    }
+    flog('⚠️ 輸送帶已達 ' + conveyorCap() + ' 件上限，新裝備已丟棄', 'warn');
+    UI.dirty.factory = true;
+    return false;
   }
   f.conveyor.push(item);
   UI.dirty.factory = true;

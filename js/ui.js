@@ -1762,7 +1762,7 @@ function showTowerTooltip(flStr, anchorEl) {
   var bossStats = bossStatsFor(fl);
   var bossXp = bossStats.xp;
   var soulRate = hellSoulOriginDropChance(fl);
-  var ancientEssenceRate = ancientEssenceDropChanceForBoss(bossStats.level);
+  var ancientEssenceRate = ancientEssenceDropChanceForBoss(fl);
 
   var dropTip = '<div class="skt-name" style="margin-bottom:6px;">【挑戰費用】</div>' +
     '<div class="skt-desc" style="text-align:left;">💰 ' + fmt(towerChallengeCost(fl)) +

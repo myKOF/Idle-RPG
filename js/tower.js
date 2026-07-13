@@ -237,7 +237,7 @@ function endTowerFight(win, reason) {
         pushConveyor(makeEquipment(rw.itemLevel, {
           rarity: br,
           level: rw.itemLevel,
-          ancientRate: ancientBossAffixChanceForBoss(b.level)
+          ancientRate: ancientBossAffixChanceForBoss(floor)
         }));
       }
       if (window.recordLootEquip) window.recordLootEquip(br, bn, 'tower');
@@ -266,8 +266,8 @@ function endTowerFight(win, reason) {
     G.player.essence += rw.essence;
     if (window.recordLootMat) window.recordLootMat('essence', rw.essence, 'tower');
     result.rewards.push('🔮 附魔精華 x' + rw.essence);
-    // 太古精華（40 級以上 BOSS；獨立機率，不受掉寶率影響）
-    var ancientEssenceRate = ancientEssenceDropChanceForBoss(b.level);
+    // 太古精華（40 層以上；獨立機率，不受掉寶率影響）
+    var ancientEssenceRate = ancientEssenceDropChanceForBoss(floor);
     if (ancientEssenceRate > 0 && chance(ancientEssenceRate)) {
       G.player.ancientEssence = (G.player.ancientEssence || 0) + 1;
       if (window.recordLootMat) window.recordLootMat('ancientEssence', 1, 'tower');

@@ -545,10 +545,11 @@ function ancientAffixChanceForEnemy(level) {
   return Math.min(ANCIENT_AFFIX_RATE_CAP,
     ANCIENT_AFFIX_BASE_RATE + (level - ANCIENT_ENEMY_MIN_LEVEL) * ANCIENT_AFFIX_ENEMY_RATE);
 }
-function ancientBossAffixChanceForBoss(level) {
-  level = Number(level) || 0;
-  if (level < 40) return 0;
-  return Math.min(100, ANCIENT_BOSS_AFFIX_BASE_RATE + (level - 40) * ANCIENT_BOSS_AFFIX_LEVEL_RATE);
+// 高塔太古機率一律以「樓層」計算；勿傳 BOSS 等級（= 樓層×5+7，會使機率過早封頂）。
+function ancientBossAffixChanceForBoss(floor) {
+  floor = Number(floor) || 0;
+  if (floor < 40) return 0;
+  return Math.min(100, ANCIENT_BOSS_AFFIX_BASE_RATE + (floor - 40) * ANCIENT_BOSS_AFFIX_LEVEL_RATE);
 }
 function ancientEssenceDropChanceForEnemy(level) {
   level = Number(level) || 0;
@@ -556,11 +557,11 @@ function ancientEssenceDropChanceForEnemy(level) {
   return Math.min(ANCIENT_ESSENCE_ENEMY_RATE_CAP,
     ANCIENT_ESSENCE_ENEMY_BASE_RATE + (level - ANCIENT_ENEMY_MIN_LEVEL) * ANCIENT_ESSENCE_ENEMY_LEVEL_RATE);
 }
-function ancientEssenceDropChanceForBoss(level) {
-  level = Number(level) || 0;
-  if (level < 40) return 0;
+function ancientEssenceDropChanceForBoss(floor) {
+  floor = Number(floor) || 0;
+  if (floor < 40) return 0;
   return Math.min(ANCIENT_ESSENCE_BOSS_RATE_CAP,
-    ANCIENT_ESSENCE_BOSS_BASE_RATE + (level - 40) * ANCIENT_ESSENCE_BOSS_LEVEL_RATE);
+    ANCIENT_ESSENCE_BOSS_BASE_RATE + (floor - 40) * ANCIENT_ESSENCE_BOSS_LEVEL_RATE);
 }
 function ancientEssenceSalvageChanceForRarity(rarity) {
   return ANCIENT_ESSENCE_SALVAGE_CHANCE[rarity] || 0;
@@ -833,7 +834,7 @@ function inventoryExpandCost(upg) {
 }
 
 // 生產線容量（受「負重上限」屬性擴充）
-function conveyorCap() { return CONVEYOR_CAP + getStats().weight; }          // 輸送帶 = 40 + 負重
+function conveyorCap() { return CONVEYOR_CAP; }                              // 輸送帶固定上限
 function synthBufCap() { return SYNTH_BUFFER_CAP + Math.floor(getStats().weight / 2); } // 暫存區 = 30 + 負重/2
 
 // 分解槽零件安裝格數：目前初始 10 格，使用金幣逐格解鎖，最高 20 格。

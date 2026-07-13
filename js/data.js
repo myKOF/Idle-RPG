@@ -397,7 +397,7 @@ function slotsForNode(node) {
 var PART_KEEP_PER_KEY = 10;    // 零件庫存收斂：每種零件未安裝者最多保留 10 顆
 
 // ---- 生產線 ----
-var CONVEYOR_CAP = 40;         // 輸送帶基礎容量（受「負重上限」屬性擴充）
+var CONVEYOR_CAP = 20000;      // 輸送帶固定硬上限；超出的新裝備直接丟棄
 var SYNTH_BUFFER_CAP = 30;     // 合成暫存區基礎容量（受「負重上限」屬性擴充）
 var INVENTORY_CAP = 60;        // 背包基礎容量
 var INVENTORY_MAX = 1000;      // 背包擴充上限（含基礎容量）

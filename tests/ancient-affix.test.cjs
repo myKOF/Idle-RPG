@@ -20,8 +20,10 @@ test('太古詞條與太古精華掉落機率符合規則與上限', () => {
   assert.equal(context.ancientAffixChanceForEnemy(250), 1);
   assert.equal(context.ancientAffixChanceForEnemy(270), 3);
   assert.equal(context.ancientAffixChanceForEnemy(9999), 3);
+  // 高塔公式的輸入是「樓層」而非 BOSS 等級
   assert.equal(context.ancientBossAffixChanceForBoss(40), 5);
   assert.equal(context.ancientBossAffixChanceForBoss(50), 10);
+  assert.equal(context.ancientBossAffixChanceForBoss(56), 13);
   assert.equal(context.ancientBossAffixChanceForBoss(999), 100);
   assert.equal(context.ancientEssenceDropChanceForEnemy(250), 2);
   assert.equal(context.ancientEssenceDropChanceForEnemy(340), 20);
@@ -32,6 +34,18 @@ test('太古詞條與太古精華掉落機率符合規則與上限', () => {
   assert.equal(context.ancientEssenceSalvageChanceForRarity(6), 10);
   assert.equal(context.ancientEssenceSalvageChanceForRarity(7), 100);
   assert.equal(context.ancientEssenceSalvageChanceForRarity(8), 100);
+});
+
+test('高塔太古機率一律以樓層計算，不再誤用 BOSS 等級', () => {
+  const root = path.resolve(__dirname, '..');
+  const tower = fs.readFileSync(path.join(root, 'js/tower.js'), 'utf8');
+  assert.match(tower, /ancientBossAffixChanceForBoss\(floor\)/);
+  assert.match(tower, /ancientEssenceDropChanceForBoss\(floor\)/);
+  assert.doesNotMatch(tower, /ancientBossAffixChanceForBoss\(b\.level\)/);
+  assert.doesNotMatch(tower, /ancientEssenceDropChanceForBoss\(b\.level\)/);
+  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  assert.match(ui, /ancientEssenceDropChanceForBoss\(fl\)/);
+  assert.doesNotMatch(ui, /ancientEssenceDropChanceForBoss\(bossStats\.level\)/);
 });
 
 test('200 級以上裝備可逐詞條生成太古詞條，數值為上限再加 35%', () => {

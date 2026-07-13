@@ -78,7 +78,7 @@ test('full inventory preserves incoming mythic by salvaging a lower unlocked ite
   assert.deepEqual(Array.from(context.G.inventory, (it) => it.id), ['locked-rare', 'mythic']);
 });
 
-test('full conveyor never auto-salvages protected mythic equipment', () => {
+test('輸送帶達到固定上限後直接丟棄新裝備', () => {
   const context = loadGameContext();
   baseState(context);
   context.CONVEYOR_CAP = 2;
@@ -94,9 +94,9 @@ test('full conveyor never auto-salvages protected mythic equipment', () => {
 
   const pushed = context.pushConveyor(item('genesis', 7));
 
-  assert.equal(pushed, true);
-  assert.deepEqual(salvaged, ['common']);
-  assert.deepEqual(Array.from(context.G.factory.conveyor, (it) => it.id), ['mythic', 'genesis']);
+  assert.equal(pushed, false);
+  assert.deepEqual(salvaged, []);
+  assert.deepEqual(Array.from(context.G.factory.conveyor, (it) => it.id), ['mythic', 'common']);
 });
 
 test('關閉合成後不會再把掉落送進合成暫存區', () => {

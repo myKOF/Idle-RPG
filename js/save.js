@@ -238,7 +238,7 @@ function readFolderSaveRecord(rec) {
   if (!_saveDir || !rec || !rec.fname) return Promise.reject(new Error('尚未連接存檔資料夾'));
   return _saveDir.getFileHandle(rec.fname, { create: false })
     .then(function (fh) { return fh.getFile(); })
-    .then(function (file) { return file.text(); });
+    .then(readSaveFilePayloadV2);
 }
 
 function applyLoadedSaveRaw(raw) {
@@ -293,6 +293,11 @@ function migrateSave(data) {
   }
   
   mergeDefaults(data, def);
+  // 輸送帶改為固定 20,000 件；舊存檔超出的尾端項目直接丟棄，避免載入後仍保留巨型積壓。
+  var conveyorLimit = typeof CONVEYOR_CAP === 'number' ? CONVEYOR_CAP : 20000;
+  if (data.factory && Array.isArray(data.factory.conveyor) && data.factory.conveyor.length > conveyorLimit) {
+    data.factory.conveyor.length = conveyorLimit;
+  }
   // 移除已淘汰的精華凝結線圈、寶石篩選器、寶石提純器；舊存檔中的零件按既有零件回收規則返還碎片。
   if (data.factory && Array.isArray(data.factory.parts)) {
     var deprecatedPartKeys = { essenceCoil: true, gemSieve: true, gemPurifier: true };
@@ -644,21 +649,22 @@ function writeAllToFolder() {
 function writeRawToFolder(fname, raw) {
   if (!_saveDir) return Promise.reject(new Error('尚未連接存檔資料夾'));
   var writer = null;
-  return _saveDir.getFileHandle(fname, { create: true })
-    .then(function (fh) { return fh.createWritable({ keepExistingData: false }); })
-    .then(function (w) {
-      writer = w;
-      return writer.write(raw);
-    })
-    .then(function () { return writer.close(); })
-    .then(function () { return folderFileInfoV2(fname); })
-    .catch(function (e) {
-      if (writer) {
-        try { return writer.abort().catch(function () {}).then(function () { throw e; }); }
-        catch (abortErr) {}
-      }
-      throw e;
-    });
+  return encodeSavePayloadV2(raw).then(function (payload) {
+    return _saveDir.getFileHandle(fname, { create: true })
+      .then(function (fh) { return fh.createWritable({ keepExistingData: false }); })
+      .then(function (w) {
+        writer = w;
+        return writer.write(payload);
+      })
+      .then(function () { return writer.close(); })
+      .then(function () { return folderFileInfoV2(fname); });
+  }).catch(function (e) {
+    if (writer) {
+      try { return writer.abort().catch(function () {}).then(function () { throw e; }); }
+      catch (abortErr) {}
+    }
+    throw e;
+  });
 }
 
 // 手動存檔在 localStorage 配額不足時，直接把快照落地資料夾，再補回小型索引。
@@ -697,7 +703,7 @@ function importUnknownFromFolder() {
       saveIndex().forEach(function (r) { if (r.fname === files[i].name) dup = true; });
       if (dup) continue;
       try {
-        var text = await (await files[i].getFile()).text();
+        var text = await readSaveFilePayloadV2(await files[i].getFile());
         var d = JSON.parse(text);
         if (!d || d.version !== 1) continue; // 非本遊戲存檔，跳過
         var folderRec = {
@@ -821,6 +827,57 @@ var AUTO_META_KEY_V2 = 'ic_auto_meta_v2';
 var AUTO_FOLDER_FILE_V2 = 'IC_autosave.json';
 var MAX_MANUAL_SAVES_V2 = 10;
 var _legacyPayloadsCompactedV2 = false;
+var _autoRawV2 = null;
+var _autoWriteSeqV2 = 0;
+
+// 以瀏覽器原生 gzip 保存大型快照；不支援 CompressionStream 時退回純 JSON。
+function encodeSavePayloadV2(raw) {
+  if (typeof CompressionStream !== 'function' || typeof Response !== 'function' ||
+      typeof Blob !== 'function') return Promise.resolve(raw);
+  try {
+    var stream = new Blob([raw]).stream();
+    if (!stream || typeof stream.pipeThrough !== 'function') return Promise.resolve(raw);
+    return new Response(stream.pipeThrough(new CompressionStream('gzip'))).arrayBuffer();
+  } catch (e) {
+    return Promise.resolve(raw);
+  }
+}
+
+function savePayloadBytesV2(payload) {
+  if (Object.prototype.toString.call(payload) === '[object ArrayBuffer]') return new Uint8Array(payload);
+  if (ArrayBuffer.isView(payload)) return new Uint8Array(payload.buffer, payload.byteOffset, payload.byteLength);
+  return null;
+}
+
+function isGzipPayloadV2(payload) {
+  var bytes = savePayloadBytesV2(payload);
+  return !!(bytes && bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b);
+}
+
+function decodeSavePayloadV2(payload) {
+  if (typeof payload === 'string') return Promise.resolve(payload);
+  if (payload && typeof payload.arrayBuffer === 'function') {
+    return payload.arrayBuffer().then(decodeSavePayloadV2);
+  }
+  var bytes = savePayloadBytesV2(payload);
+  if (!bytes) return Promise.reject(new Error('無法辨識存檔資料格式'));
+  if (!isGzipPayloadV2(payload)) return Promise.resolve(new TextDecoder().decode(bytes));
+  if (typeof DecompressionStream !== 'function' || typeof Response !== 'function' ||
+      typeof Blob !== 'function') return Promise.reject(new Error('此瀏覽器不支援 gzip 存檔解壓縮'));
+  try {
+    var stream = new Blob([bytes]).stream();
+    return new Response(stream.pipeThrough(new DecompressionStream('gzip'))).text();
+  } catch (e) {
+    return Promise.reject(e);
+  }
+}
+
+function readSaveFilePayloadV2(file) {
+  if (file && typeof file.arrayBuffer === 'function') {
+    return file.arrayBuffer().then(decodeSavePayloadV2);
+  }
+  return file.text().then(decodeSavePayloadV2);
+}
 
 function removeLegacyRecordPayloadsV2() {
   for (var i = localStorage.length - 1; i >= 0; i--) {
@@ -833,24 +890,36 @@ function removeLegacyRecordPayloadsV2() {
 }
 
 function idbSetAutoV2(raw, done) {
-  idbKV(function (db) {
-    if (!db) { if (done) done(); return; }
-    try {
-      var tx = db.transaction('kv', 'readwrite');
-      tx.oncomplete = function () { if (done) done(); };
-      tx.onerror = function () { if (done) done(); };
-      tx.onabort = function () { if (done) done(); };
-      tx.objectStore('kv').put(raw, AUTO_CACHE_KEY_V2);
-    } catch (e) { if (done) done(); }
-  });
+  var seq = ++_autoWriteSeqV2;
+  _autoRawV2 = raw;
+  encodeSavePayloadV2(raw).then(function (payload) {
+    // 每 15 秒可能觸發一次存檔；只寫入最新快照，避免壓縮較慢時排隊保存大量舊快照。
+    if (seq !== _autoWriteSeqV2) { if (done) done(); return; }
+    idbKV(function (db) {
+      if (!db) { if (done) done(); return; }
+      try {
+        var tx = db.transaction('kv', 'readwrite');
+        tx.oncomplete = function () { if (done) done(); };
+        tx.onerror = function () { if (done) done(); };
+        tx.onabort = function () { if (done) done(); };
+        tx.objectStore('kv').put(payload, AUTO_CACHE_KEY_V2);
+      } catch (e) { if (done) done(); }
+    });
+  }).catch(function () { if (done) done(); });
 }
 
 function idbGetAutoV2(cb) {
+  if (_autoRawV2 !== null) { cb(_autoRawV2); return; }
   idbKV(function (db) {
     if (!db) return cb(null);
     try {
       var req = db.transaction('kv', 'readonly').objectStore('kv').get(AUTO_CACHE_KEY_V2);
-      req.onsuccess = function () { cb(req.result || null); };
+      req.onsuccess = function () {
+        decodeSavePayloadV2(req.result || null).then(function (raw) {
+          _autoRawV2 = raw;
+          cb(raw);
+        }).catch(function () { cb(null); });
+      };
       req.onerror = function () { cb(null); };
     } catch (e) { cb(null); }
   });
@@ -907,7 +976,7 @@ function writeAutoMetaV2(meta) {
 }
 
 function readRawTextV2(handle) {
-  return handle.getFile().then(function (file) { return file.text(); });
+  return handle.getFile().then(readSaveFilePayloadV2);
 }
 
 function folderFileInfoV2(fname) {
@@ -932,7 +1001,7 @@ function readFolderAutoV2(cb) {
   _saveDir.getFileHandle(AUTO_FOLDER_FILE_V2, { create: false })
     .then(function (fh) {
       return fh.getFile().then(function (file) {
-        return file.text().then(function (raw) { return { file: file, raw: raw }; });
+        return readSaveFilePayloadV2(file).then(function (raw) { return { file: file, raw: raw }; });
       });
     }).then(function (res) {
       var raw = res.raw;
@@ -957,7 +1026,7 @@ function readFolderAutoV2(cb) {
           if (ent.kind !== 'file' || !/^(IC_current|IC_autosave_run[^.]*)[^/]*\.json$/i.test(ent.name)) continue;
           try {
             var file = await ent.getFile();
-            var data = parseSaveTextV2(await file.text());
+            var data = parseSaveTextV2(await readSaveFilePayloadV2(file));
             if (!data) continue;
             var ts = Number(file.lastModified) || Number(data.savedAt) || 0;
             if (!best || ts > best.savedAt) best = { data: data, savedAt: ts };

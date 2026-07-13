@@ -54,7 +54,7 @@ test('高塔通關流程會發放 BOSS 經驗並套用經驗加成', () => {
   assert.match(ui, /r-soul-origin/);
   assert.match(ui, /✨ 經驗 x' \+ fmt\(bossXp\)/);
   assert.match(ui, /hellSoulOriginDropChance\(fl\)/);
-  assert.match(ui, /ancientEssenceDropChanceForBoss\(bossStats\.level\)/);
+  assert.match(ui, /ancientEssenceDropChanceForBoss\(fl\)/);
   assert.match(ui, /icon_ancient_essence\.png/);
   assert.doesNotMatch(ui, /100000 × 樓層\^2\.6/);
 });

@@ -92,7 +92,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   setInterval(gameTick, TICK_MS);
   setInterval(uiTick, 200);
-  window.addEventListener('beforeunload', saveGame);
+  window.addEventListener('beforeunload', function () {
+    if (typeof showLoadingScreen === 'function') showLoadingScreen();
+    saveGame();
+  });
   
   // 檢查新版本 (每 3 分鐘)
   setTimeout(checkForUpdates, 3000);
@@ -152,5 +155,6 @@ document.addEventListener('DOMContentLoaded', function () {
       }, true);
     });
   }
+  if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
   });
 });

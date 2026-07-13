@@ -9,7 +9,39 @@
 </head>
 
 <body>
-  <div id="update-banner" onclick="location.reload()">🔄 發現遊戲新版本！點擊此處或按 F5 重新整理以載入最新內容。</div>
+  <div id="loading-screen" class="loading-screen" role="status" aria-live="polite" aria-hidden="false">
+    <div id="loading-screen-label" class="loading-screen-label">Loading.</div>
+  </div>
+  <script>
+    (function () {
+      var timer = 0;
+      var dots = 1;
+      function updateLoadingText() {
+        var label = document.getElementById('loading-screen-label');
+        if (label) label.textContent = 'Loading' + '.'.repeat(dots);
+        dots = dots >= 3 ? 1 : dots + 1;
+      }
+      window.showLoadingScreen = function () {
+        var screen = document.getElementById('loading-screen');
+        if (!screen) return;
+        screen.classList.remove('is-hidden');
+        screen.setAttribute('aria-hidden', 'false');
+        clearInterval(timer);
+        dots = 1;
+        updateLoadingText();
+        timer = setInterval(updateLoadingText, 350);
+      };
+      window.hideLoadingScreen = function () {
+        clearInterval(timer);
+        var screen = document.getElementById('loading-screen');
+        if (!screen) return;
+        screen.classList.add('is-hidden');
+        screen.setAttribute('aria-hidden', 'true');
+      };
+      window.showLoadingScreen();
+    })();
+  </script>
+  <div id="update-banner" onclick="showLoadingScreen(); location.reload()">🔄 發現遊戲新版本！點擊此處或按 F5 重新整理以載入最新內容。</div>
 
   <header id="topbar">
     <div class="brand">⚔️ 無限征途<span class="brand-sub">合成之巔</span><button id="btn-fullscreen" class="fs-btn" data-tip="進入網頁全螢幕">⛶</button></div>
