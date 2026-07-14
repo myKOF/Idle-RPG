@@ -596,6 +596,10 @@ numCtx('combat', 'hit: ', ',', P('3-戰鬥核心', '怪物固定戰鬥值', 2), 
 numCtx('combat', 'm.elite ? ', ' : 1', P('4-野外怪物', '野外菁英掉落倍率', 0), '菁英掉落倍率');
 // 寶石商店刷新週期（item.js，單一常數）
 scalar('item', 'GEM_SHOP_REFRESH_HOURS', '8-寶石商店', '刷新週期', 0);
+// 技能點總預算：a=初始(player.js)、b=每級(player.js)、c=上限(data.js 常數 SKILL_POINT_BUDGET_CAP，skills/save 引用)
+numCtx('player', 'skillPointBudget: ', ',', P('1-成長經驗', '技能點總預算', 0), '技能點-初始');
+numCtx('player', '(p.skillPointBudget || 0) + ', ';', P('1-成長經驗', '技能點總預算', 1), '技能點-每級');
+scalar('data', 'SKILL_POINT_BUDGET_CAP', '1-成長經驗', '技能點總預算', 2);
 
 /* ===========================================================================
    套用引擎

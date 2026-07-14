@@ -1025,6 +1025,16 @@ textarea#save-io {
   color: #ffffff;
 }
 
+.float-txt.enemy-hit-float.dmg,
+.float-txt.enemy-hit-float.mdmg {
+  font-size: 12px;
+}
+
+.float-txt.enemy-hit-float.crit,
+.float-txt.enemy-hit-float.skill {
+  font-size: 18px;
+}
+
 .float-txt.heal {
   color: #4ade80;
 }
@@ -4491,9 +4501,19 @@ textarea#save-io {
   font-size: 11px;
 }
 
+.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.dmg,
+.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.mdmg {
+  font-size: 9px;
+}
+
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.crit,
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.skill {
   font-size: 15px;
+}
+
+.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.crit,
+.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.skill {
+  font-size: 13px;
 }
 
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.defend,

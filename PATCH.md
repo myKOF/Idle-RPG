@@ -1,5 +1,12 @@
 # PATCH.md
 
+## 本次變更摘要：分散敵人傷害浮字並縮小字號
+
+- `js/ui.js`：新增敵人傷害浮字判斷，只對 `mv-float-*` / `tb-float` 上的 `dmg`、`mdmg`、`crit`、`skill` 套用 `enemy-hit-float`；X 軸隨機範圍由 15%-85% 擴為 8%-92%，Y 軸改為 28%-72% 加少量抖動，避免集中在血條附近。
+- `css/style.css`：敵人一般傷害字由 14px 降到 12px；暴擊/技能傷害由 20px 降到 18px；多人敵人版也同步各降 2px。
+- `tests/player-event-float.test.cjs`：補上敵人傷害浮字大小與隨機範圍檢查。
+- 驗證：`node --test tests\player-event-float.test.cjs`、`node --check js\ui.js`、`node --check js\combat.js`、`node --check js\skills.js` 通過。
+
 ## 本次變更摘要：batch 2b — 擴充 apply 涵蓋跨檔 + 補接 13 項（含護盾改 1%/10%）
 
 - `apply_params` `FILES` 由 {data,formula} 擴充為含 combat/item/skills/player/save（src/備份/寫入/語法檢查皆依 FILES 迭代，自動涵蓋）。

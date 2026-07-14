@@ -115,7 +115,7 @@ var SKILLS = {
   midasTouch:   { name: '點金手', emoji: '🪙', cat: 'special', cost: 25, cd: 20,
     flavor: '揮出將敵人化為財富的一擊。', fx: { dmgType: 'phys', stat: 'atk', base: 200, per: 40, goldPer: 15 } },
   treasureSense:{ name: '尋寶直覺', emoji: '🔍', cat: 'special', cost: 30, cd: 30,
-    flavor: '嗅出寶物的氣息。', fx: { buff: { key: 'lootUp', base: 30, per: 10, dur: 10 } } },
+    flavor: '嗅出寶物的氣息。', fx: { buff: { key: 'lootUp', base: 15, per: 5, dur: 10 } } },
   weakenCurse:  { name: '虛弱詛咒', emoji: '📉', cat: 'special', cost: 22, cd: 15,
     flavor: '削弱敵人的力量。', fx: { debuff: { key: 'atkDown', base: 18, per: 4, dur: 6 } } },
   deathCurse:   { name: '死亡詛咒', emoji: '⚰️', cat: 'special', cost: 40, cd: 20,
@@ -198,7 +198,7 @@ var UNLOCKS = {
   // 特殊
   timeWarp:      { 4: {}, 8: { buff: { key: 'aspdUp', base: 40, per: 9, dur: 7 } } },
   midasTouch:    { 4: { goldPer: 25 }, 8: { goldPer: 35, buff: { key: 'lootUp', base: 15, per: 3, dur: 5 } } },
-  treasureSense: { 4: { buff: { key: 'lootUp', base: 45, per: 12, dur: 12 } }, 8: { goldPer: 10 } },
+  treasureSense: { 4: { buff: { key: 'lootUp', base: 22.5, per: 6, dur: 12 } }, 8: { goldPer: 5 } },
   weakenCurse:   { 4: { slowDur: 2 }, 8: { debuff: { key: 'atkDown', base: 28, per: 5, dur: 8 } } },
   deathCurse:    { 4: { dotDur: 7 }, 8: { maxHpDotPct: { base: 1.8, per: 0.5 }, dotDur: 7 } },
   blinkDodge:    { 4: { buff: { key: 'evasionUp', base: 45, per: 8, dur: 4 } }, 8: {} },
@@ -240,7 +240,7 @@ function nextUnlockLv(id, lv) {
    轉生後總預算保留，但不再因升級增加。 */
 function totalSkillPoints() {
   var p = G.player;
-  var expected = reincarnationCount() > 0 ? 10000 : Math.min(10000, Math.max(0, p.level + 1));
+  var expected = reincarnationCount() > 0 ? SKILL_POINT_BUDGET_CAP : Math.min(SKILL_POINT_BUDGET_CAP, Math.max(0, p.level + 1));
   if (p.skillPointBudget === undefined || p.skillPointBudget === null || p.skillPointBudget < expected) {
     p.skillPointBudget = expected;
   }

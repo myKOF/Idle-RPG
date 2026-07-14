@@ -5,6 +5,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 const util = fs.readFileSync(path.join(root, 'js', 'util.js'), 'utf8');
+const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
 const combat = fs.readFileSync(path.join(root, 'js', 'combat.js'), 'utf8');
 const skills = fs.readFileSync(path.join(root, 'js', 'skills.js'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
@@ -38,6 +39,16 @@ test('我方攻擊被敵方閃避時，MISS 顯示在敵方浮層', () => {
   assert.ok(missBlock, '找不到 MISS 浮字樣式');
   assert.match(missBlock[1], /color:\s*#dc2626/);
   assert.match(missBlock[1], /rgba\(127,\s*29,\s*29,\s*0\.9\)/);
+});
+
+test('敵人傷害浮字字號較小且出現範圍更分散', () => {
+  assert.match(ui, /function isEnemyHitFloat\(elId,\s*cls\)/);
+  assert.match(ui, /sp\.className \+= ' enemy-hit-float'/);
+  assert.match(ui, /var pct = enemyHitFloat \? 8 \+ Math\.random\(\) \* 84 : 15 \+ Math\.random\(\) \* 70/);
+  assert.match(ui, /sp\.style\.top = \(28 \+ Math\.random\(\) \* 44\) \+ '%'/);
+  assert.match(ui, /sp\.style\.marginTop = \(enemyHitFloat \? \(Math\.random\(\) \* 24 - 12\) : \(Math\.random\(\) \* 30 - 15\)\) \+ 'px'/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.dmg,[\s\S]*?\.float-txt\.enemy-hit-float\.mdmg\s*\{[\s\S]*?font-size:\s*12px/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.crit,[\s\S]*?\.float-txt\.enemy-hit-float\.skill\s*\{[\s\S]*?font-size:\s*18px/);
 });
 
 test('玩家技能取得護盾與所有自身 buff 時會顯示玩家事件浮字', () => {

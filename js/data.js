@@ -43,6 +43,7 @@ var ANCIENT_AFFIX_VALUE_MULT = 1.35;
    生命與四維在原始總值完成後套用最終倍率：
    1～10 轉分別為 ×10、×20、×40、×80、×160、×320、×640、×1280、×2560、×5120。 */
 var MAX_LEVEL = 9999;             // 角色等級上限（升級所需經驗 參數 d）
+var SKILL_POINT_BUDGET_CAP = 10000; // 技能點總預算上限（技能點總預算 參數 c）
 var REINCARNATION_LEVEL = 9999;   // 可轉生等級：達此級可轉生（可轉生等級 參數 a）
 var REINCARNATION_MAX = 10;
 var REINCARNATION_RANKS = ['冒險者', '勇者', '大劍師', '破世者', '不朽者', '王者', '大主宰', '神聖尊者', '大聖王', '至高主宰', '位面創世神'];

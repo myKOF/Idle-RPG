@@ -91,16 +91,24 @@ function flog(msg, cls) { addLog('factory-log', msg, cls, 50); }
 /* ---- 漂浮傷害字 ----
    位置先隨機落點，再依實際文字寬度夾取在戰鬥面板（.combatant）可視範圍內：
    多人戰鬥的小卡片允許數字跨出頭像範圍，但不會超出面板 overflow 邊界被裁切。 */
+function isEnemyHitFloat(elId, cls) {
+  var isEnemyLayer = elId === 'tb-float' || (elId && elId.indexOf('mv-float') === 0);
+  return isEnemyLayer && (cls === 'dmg' || cls === 'mdmg' || cls === 'crit' || cls === 'skill');
+}
+
 function floatText(elId, text, cls) {
   var layer = $id(elId);
   if (!layer || layer.offsetParent === null) return; // 不可見時略過
   if (layer.children.length > 12) layer.removeChild(layer.firstChild);
   var sp = document.createElement('span');
   sp.className = 'float-txt ' + (cls || '');
+  var enemyHitFloat = isEnemyHitFloat(elId, cls);
+  if (enemyHitFloat) sp.className += ' enemy-hit-float';
   sp.textContent = text;
-  var pct = 15 + Math.random() * 70;
+  var pct = enemyHitFloat ? 8 + Math.random() * 84 : 15 + Math.random() * 70;
   sp.style.left = pct + '%';
-  sp.style.marginTop = (Math.random() * 30 - 15) + 'px';
+  if (enemyHitFloat) sp.style.top = (28 + Math.random() * 44) + '%';
+  sp.style.marginTop = (enemyHitFloat ? (Math.random() * 24 - 12) : (Math.random() * 30 - 15)) + 'px';
   layer.appendChild(sp);
   var panel = layer.closest('.combatant');
   if (panel) {

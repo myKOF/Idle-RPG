@@ -338,7 +338,7 @@ function migrateSave(data) {
   // 轉生欄位相容：舊存檔視為 0 轉；等級上限為 MAX_LEVEL（超過者夾回）。
   data.player.reincarnations = clamp(data.player.reincarnations || 0, 0, REINCARNATION_MAX);
   data.player.reincarnationTalentPoints = Math.max(0, Math.floor(Number(data.player.reincarnationTalentPoints) || 0));
-  var expectedSkillBudget = data.player.reincarnations > 0 ? 10000 : Math.min(10000, Math.max(0, (data.player.level || 1) + 1));
+  var expectedSkillBudget = data.player.reincarnations > 0 ? SKILL_POINT_BUDGET_CAP : Math.min(SKILL_POINT_BUDGET_CAP, Math.max(0, (data.player.level || 1) + 1));
   if (!hadSkillPointBudget || Number(data.player.skillPointBudget) < expectedSkillBudget) {
     data.player.skillPointBudget = expectedSkillBudget;
     data._skillPointRepairNotice = '技能點總預算已依規則補建為 ' + expectedSkillBudget + ' 點';
