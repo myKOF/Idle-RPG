@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const zlib = require('node:zlib');
 
 function makeLocalStorage() {
   const data = new Map();
@@ -17,12 +18,28 @@ function makeLocalStorage() {
 
 function makeFolder(files, writeLastModified) {
   const map = new Map();
+  const payloadSize = (raw) => {
+    if (raw instanceof ArrayBuffer) return raw.byteLength;
+    if (ArrayBuffer.isView(raw)) return raw.byteLength;
+    return Buffer.byteLength(String(raw));
+  };
+  const payloadText = (raw) => {
+    if (raw instanceof ArrayBuffer) return Buffer.from(raw).toString('utf8');
+    if (ArrayBuffer.isView(raw)) return Buffer.from(raw.buffer, raw.byteOffset, raw.byteLength).toString('utf8');
+    return String(raw);
+  };
+  const payloadArrayBuffer = (raw) => {
+    if (raw instanceof ArrayBuffer) return raw.slice(0);
+    if (ArrayBuffer.isView(raw)) return raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength);
+    const buf = Buffer.from(String(raw));
+    return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+  };
   Object.keys(files || {}).forEach((name) => {
     map.set(name, {
       name,
       raw: files[name].raw,
       lastModified: files[name].lastModified,
-      size: files[name].raw.length
+      size: payloadSize(files[name].raw)
     });
   });
 
@@ -30,16 +47,17 @@ function makeFolder(files, writeLastModified) {
     return {
       getFile() {
         return Promise.resolve({
-          size: file.raw.length,
+          size: payloadSize(file.raw),
           lastModified: file.lastModified,
-          text: () => Promise.resolve(file.raw)
+          text: () => Promise.resolve(payloadText(file.raw)),
+          arrayBuffer: () => Promise.resolve(payloadArrayBuffer(file.raw))
         });
       },
       createWritable() {
         return Promise.resolve({
           write(raw) {
-            file.raw = String(raw);
-            file.size = file.raw.length;
+            file.raw = raw;
+            file.size = payloadSize(raw);
             return Promise.resolve();
           },
           close() {
@@ -78,7 +96,11 @@ function loadSaveContext() {
     location: { reload() {} },
     window: {},
     indexedDB: null,
-    document: { addEventListener() {} }
+    document: { addEventListener() {} },
+    Blob,
+    Response,
+    TextDecoder,
+    DecompressionStream: globalThis.DecompressionStream
   };
   context.window = context;
   vm.createContext(context);
@@ -118,6 +140,29 @@ test('folder scan rebuilds manual save metadata from file modified time', async 
   assert.equal(list[0].savedAt, 7000);
   assert.equal(list[0].level, 42);
   assert.equal(list[0].stage, 270);
+  assert.equal(list[0].zone, 'swamp');
+});
+
+test('folder scan reads gzip manual save metadata', async (t) => {
+  if (typeof DecompressionStream !== 'function') {
+    t.skip('目前 Node 執行環境沒有 DecompressionStream');
+    return;
+  }
+
+  const context = loadSaveContext();
+  const fname = 'IC_manual_gzip.json';
+  context._saveDir = makeFolder({
+    [fname]: { raw: zlib.gzipSync(saveData(77, 515, 'swamp', 3000)), lastModified: 8000 }
+  }, 0);
+
+  await context.scanManualMetadataV2();
+
+  const list = context.saveIndexV2();
+  assert.equal(list.length, 1);
+  assert.equal(list[0].fname, fname);
+  assert.equal(list[0].savedAt, 8000);
+  assert.equal(list[0].level, 77);
+  assert.equal(list[0].stage, 515);
   assert.equal(list[0].zone, 'swamp');
 });
 

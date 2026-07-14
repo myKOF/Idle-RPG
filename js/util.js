@@ -9,6 +9,28 @@ function chance(p) { return Math.random() * 100 < p; }
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
 
+function playerEventFloatTarget(floatSel) {
+  return (floatSel === 'tp-float' || floatSel === 'tb-float') ? 'tp-float' : 'pv-float';
+}
+
+function floatPlayerEvent(floatSel, text, cls) {
+  if (typeof floatText !== 'function') return;
+  var extra = cls ? (' ' + cls) : '';
+  floatText(playerEventFloatTarget(floatSel), text, 'player-event' + extra);
+}
+
+function enemyEventFloatTarget(ent, floatSel) {
+  if (ent && ent.floatSel) return ent.floatSel;
+  if (floatSel === 'tb-float') return 'tb-float';
+  if (floatSel && floatSel.indexOf('mv-float-') === 0) return floatSel;
+  return 'mv-float-0';
+}
+
+function floatEnemyEvent(ent, floatSel, text, cls) {
+  if (typeof floatText !== 'function') return;
+  floatText(enemyEventFloatTarget(ent, floatSel), text, cls);
+}
+
 var _uid = 0;
 function uid() { return 'i' + (Date.now().toString(36)) + (_uid++).toString(36); }
 
@@ -30,11 +52,14 @@ function fmt(n) {
   n = Math.floor(n);
   if (n < 0) return '-' + fmt(-n);
   if (n < 1000) return String(n);
-  var units = ['K', 'M', 'B', 'T', 'Q'];
-  var u = -1;
-  var x = n;
-  while (x >= 1000 && u < units.length - 1) { x /= 1000; u++; }
-  return (x >= 100 ? x.toFixed(0) : x.toFixed(1)) + units[u];
+  var units = ['k', 'M', 'B', 'T', 'Q', 'Qi', 'Sx', 'Sp', 'O', 'N', 'D', 'Ud'];
+  var u = Math.floor(Math.log10(n) / 3) - 1;
+  if (u < 0) u = 0;
+  if (u > units.length - 1) u = units.length - 1;
+  var x = n / Math.pow(1000, u + 1);
+  if (x >= 100) return Math.floor(x).toString() + units[u];
+  if (x >= 10) return (Math.floor(x * 10) / 10).toFixed(1) + units[u];
+  return (Math.floor(x * 100) / 100).toFixed(2) + units[u];
 }
 // 顯示完整整數，不使用 K/M/B 等縮寫（用於資源提示）。
 function fmtFull(n) {

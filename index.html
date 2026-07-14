@@ -119,9 +119,23 @@
           </div>
           <div id="inv-section-box" class="equip-section-box">
             <div class="inv-head">
-              <span class="sec-title">背包 <span id="inv-count">0/60</span></span>
-              <div style="display: flex; gap: 6px;">
+              <span class="sec-title" style="display: flex; align-items: center; gap: 8px;">
+                背包 <span id="inv-count">0/60</span>
                 <button id="inv-expand" class="btn sm" title="擴充背包空間">➕ 擴充 (10000<img src="images/icon_gold.png" class="res-icon">)</button>
+              </span>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <select id="inv-rarity-filter" class="dropdown sm" style="background: #0b0f16; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 20px 2px 6px; font-size: 13px; cursor: pointer; height: 26px; outline: none;">
+                  <option value="" style="color: var(--text);">取消篩選</option>
+                  <option value="0" style="color: #9aa5b1; background: #000;">普通</option>
+                  <option value="1" style="color: #4ade80; background: #000;">精良</option>
+                  <option value="2" style="color: #38bdf8; background: #000;">稀有</option>
+                  <option value="3" style="color: #ffd700; background: #000;">獨特</option>
+                  <option value="4" style="color: #c084fc; background: #000;">史詩</option>
+                  <option value="5" style="color: #fb923c; background: #000;">傳說</option>
+                  <option value="6" style="color: #f87171; background: #000;">神話</option>
+                  <option value="7" style="color: #b8860b; background: #000;">創世</option>
+                  <option value="8" style="color: #f5c542; background: #000;">神鑄創世</option>
+                </select>
                 <button id="inv-sort" class="btn sm">🔄 排序</button>
                 <div style="position: relative; display: inline-block;" id="salvage-settings-container">
                   <button id="btn-salvage-settings" class="btn sm warn">⚒️ 分解設定</button>
@@ -516,6 +530,7 @@
                 <img src="images/icon_avatar.png" class="cb-icon">
                 <div class="cb-name" id="tp-name">冒險者（你）</div>
                 <div class="hp-bar">
+                  <div class="shield-bar" id="tp-shield"></div>
                   <div class="hp-fill player" id="tp-hp"></div><span class="hp-text" id="tp-hptext"></span>
                 </div>
                 <div class="mp-bar">
@@ -567,6 +582,7 @@
             <div class="btn-row">
               <button id="btn-save" class="btn">💾 立即存檔</button>
               <button id="btn-folder" class="btn">📂 選擇／更新存檔資料夾</button>
+              <button id="btn-folder-refresh" class="btn">🔄 重新掃描</button>
               <button id="btn-restart" class="btn danger">🔄 重新開局</button>
             </div>
             <div class="hint">手動存檔必須寫入本地資料夾；首次請先選擇並授權資料夾。授權後，自動存檔每 10 分鐘同步為
@@ -624,10 +640,11 @@
               id="zb-swamp"></span></button>
         </div>
         <div id="stage-bar">
-          <button id="st-prev" class="btn sm">◀</button>
+          <button id="btn-combat-pause" class="btn sm warn" type="button" title="暫停野外與高塔戰鬥" aria-pressed="false">⏸ 暫停戰鬥</button>
+          <button id="st-prev" class="btn sm" type="button" aria-label="後退關卡" data-tip="後退關卡&lt;br&gt;鼠標按住可以快速後退" data-tip-placement="stage-left">◀</button>
           <span id="stage-label">第 1 階段</span>
-          <button id="st-next" class="btn sm">▶</button>
-          <button id="st-max" class="btn sm" title="直達目前最高階段" aria-label="直達目前最高階段">⏭</button>
+          <button id="st-next" class="btn sm" type="button" aria-label="前進關卡" data-tip="前進關卡&lt;br&gt;鼠標按住可以快速前進" data-tip-placement="stage-right">▶</button>
+          <button id="st-max" class="btn sm" data-tip="直達目前最高階段" aria-label="直達目前最高階段">⏭</button>
           <span id="stage-best" class="dim-text">最高 1</span>
           <label class="chk"><input type="checkbox" id="st-auto" checked> 自動推進</label>
           <button id="btn-pip" class="btn sm" title="開啟永遠置頂的迷你監控視窗，背景掛機也能看到戰況">📺 迷你視窗</button>
@@ -640,6 +657,7 @@
             <img src="images/icon_avatar.png" class="cb-icon">
             <div class="cb-name" id="pv-name">冒險者（你）</div>
             <div class="hp-bar">
+              <div class="shield-bar" id="pv-shield"></div>
               <div class="hp-fill player" id="pv-hp"></div><span class="hp-text" id="pv-hptext"></span>
             </div>
             <div class="mp-bar">
@@ -774,6 +792,7 @@
   <script src="js/forge.js"></script>
   <script src="js/save.js"></script>
   <script src="js/ui.js"></script>
+  <script src="js/param_autoreload.js"></script>
   <script src="js/gm.js"></script>
   <script src="js/main.js"></script>
 </body>

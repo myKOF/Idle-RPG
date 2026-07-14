@@ -1,6 +1,157 @@
 # PLAN.md — 開發計畫
 
-## 當前任務：修正高塔太古機率誤用 BOSS 等級
+## 當前任務：融合技效果改為「動態重算」（不存 fx 快照）
+
+### 一、設計方案（腦力激盪）
+
+**問題**：融合技把聚合後的 `fx`（效果與數值）直接快照存進 `G.player.fusions[]`，
+所以事後調整素材技能（SKILLS）的定義，既有融合技不會跟著變動。
+
+**目標**：融合技只存「融了哪些技能 `components`、當時等級 `componentLevels`、變異 `mutation`」，
+`fx` 改為由 `skillDef()` 依素材技能的**現行定義** + **凍結的素材等級** + **已存變異**即時重算。
+如此日後改 SKILLS 定義（如削弱尋寶直覺 lootUp 的 base/per），融合技自動跟著變。
+
+**關鍵設計**：
+- 素材技能在融合時已從 `G.player.skills` 移除，其「當時等級」必須凍結（沿用 `componentLevels`）；
+  故「定義變動會傳導、等級不會」——正是使用者要的語意（效果隨定義變）。
+- 抽出 `fuseSkills` 內的 fx 聚合邏輯為純函式 `fusionAggregateFx(comps)`；`fuseSkills` 與重建共用。
+- 變異在融合時只擲一次、存 `{key,name,desc}`；重建時以 `applyFusionMutationByKey` 依 key 重套（`req(fx)` 通過才套，避免崩潰）。
+- `skillDef(id)` 對融合技回傳重建後的 def（含即時 fx），並以模組層 `_fusionRtCache`（不入存檔）依記錄物件同一性快取。
+- `fuseSkills` 只存最小記錄（**不含 fx**）；結構欄位（name/cost/cd/maxLv/emoji/flavor）沿用（非「效果數值」）。
+- 相依面乾淨：UI／說明全走 `skillDef(id)`（只直接讀 `.id`）；存檔遷移直接讀 `fs.fx` 者皆一次性旗標保護。
+
+**存檔遷移（idempotent 常態正規化，非旗標一次性）**：讀檔時對「可用現行定義重建」的融合技移除 `fx` 快照；
+無法重建（素材技能已不存在）者保留快照作後備。登錄於 ONE_TIME_MIGRATIONS.md 的 `fusionFxDynamicV1`。
+
+### 二、微型任務拆解
+
+1. [DONE] 調查融合資料結構、fuseSkills、skillDef、effectiveFx、相依面（依賴爆炸檢查）。
+2. [DONE] skills.js：抽 `fusionAggregateFx`、加 `applyFusionMutationByKey`、`buildFusionRuntimeDef`＋`_fusionRtCache`／`resolveFusionRecord`、改 `skillDef`、改 `fuseSkills` 存最小記錄（不含 fx）。
+3. [DONE] save.js：讀檔時對可重建的融合技移除 fx 快照（置於既有融合遷移之後；冪等）。
+4. [DONE] ONE_TIME_MIGRATIONS.md 登錄 `fusionFxDynamicV1`；game_formula.md §9.3 同步敘述。
+5. [DONE] 驗證：node sandbox 載入真實 skills.js 跑 12 項斷言全過——不存 fx／等級凍結／skillDef 重算／改素材定義動態跟變／快取同實例／遷移剝離＋重建採現行定義／素材缺失退回快照；另驗變異重套（時空漣漪 buff.dur 12→24）與 req 不符安全略過。node --check 兩檔通過。
+
+## 當前任務：簡化為「雙擊 .bat 套用＋遊戲自動重載」
+
+### 設計與驗證
+
+使用者要「雙擊一個 .bat 就套用並讓遊戲自動重整，不用再按遊戲內按鈕」。
+- apply_params.cjs 成功寫入後更新根目錄 `params_version.txt`（Date.now 權杖）。
+- 新增 `js/param_autoreload.js`（僅本機）：每 2 秒讀權杖，內容一變即 location.reload()。
+- `套用參數.bat` 改為直接 `apply_params --write`（CRLF、正斜線、node 檢查、失敗才 pause），成功自動關窗。
+- 移除上一版的左上角按鈕（apply_button.js）、套用伺服器（apply_server.cjs）、啟動套用伺服器.bat（不再需要常駐伺服器）。
+- 順修 .bat 閃退主因：LF→CRLF；路徑 `\`→`/` 避免掉字。
+- `params_version.txt` 加入 .gitignore（避免每次套用的 git churn）。
+
+1. [DONE] apply_params 寫權杖；param_autoreload 輪詢重載；套用參數.bat 直接套用。
+2. [DONE] 刪除按鈕/伺服器/舊 bat；index.html 換載入 param_autoreload.js；補 .gitignore。
+3. [DONE] 預覽實測：開著遊戲→終端跑 --write→遊戲約 2 秒內自動重載，怪物 stage50 HP 4696→3,260,990（c=1.05→1.2）；主控台 0 錯誤。
+4. [DONE] 更新 tools/參數表使用說明.md、GM_command.md §10.5、PATCH.md。
+
+## 已完成任務：一鍵套用參數按鈕（取代 GM reload）+ 修復 Excel 破壞
+
+### 一、設計方案（腦力激盪）
+
+使用者要「遊戲左上角一鍵按鈕，按下就套用 CSV 並重載；僅本機；刪掉 GM reload 指令」。
+瀏覽器不能寫檔，故：新增本機小伺服器 tools/apply_server.cjs（綁 127.0.0.1、只接受 localhost 來源、
+只代跑 apply_params --write），左上角按鈕（僅 localhost 建立）呼叫它、成功後 location.reload()。
+- 另修：Excel 存檔把含冒號的寶石表格轉成時間值破壞資料 → 分隔符 `:`→`=`（Excel 安全）；
+  工具與載入器加防呆：偵測被破壞的值一律中止／跳過，絕不寫入 NaN。
+- 刪除 GM `reload game_parameters` 指令與 js/param_reload.js（改用按鈕＋伺服器＋重載，永久生效、覆蓋內嵌係數）。
+
+### 二、微型任務拆解
+
+1. [DONE] 修復 CSV：產生器改 `=` 分隔、工具/載入器加數值防呆；重生乾淨 CSV（round-trip 626/0）。
+2. [DONE] tools/apply_server.cjs（本機 127.0.0.1:8790、CORS 限 localhost、代跑 --write）＋ 啟動套用伺服器.bat。
+3. [DONE] js/apply_button.js（localhost 限定、插入 topbar 左上、呼叫伺服器後自動重載）；index.html 載入。
+4. [DONE] 刪除 GM reload 指令、param_reload.js、其 script 與文件段落。
+5. [DONE] 預覽實測：伺服器啟動→按鈕→寫入 data.js→自動重載→值生效；伺服器關閉→按鈕顯示提示。還原乾淨。
+6. [DONE] 更新 tools/參數表使用說明.md、GM_command.md、PATCH.md。
+
+## 已完成任務：接完剩餘公式參數 + 文件對齊程式
+
+### 一、設計方案（腦力激盪）
+
+- Part B（文件對齊，以程式為準）：修正 4 處文件/註解與程式不一致——敵人數量註解、
+  野外零件菁英倍率 ×3→×1.5、太古精華拆解傳說 2%→1%、輸送帶容量 40+負重→固定 20000。
+- Part A（接完內嵌係數）：把 formula.js 寫在算式中間的係數也接進 node 回寫工具，
+  用「前後文夾住數字」的唯一錨點就地取代（不重構 formula.js、不動數學）。以 round-trip 恆等為正確性閘門。
+  涵蓋：玩家屬性派生、屬性上限、戰鬥核心、高塔 BOSS 倍率與挑戰金幣、稀有度擲骰權重、
+  強化/洗煉費用、附魔/分解、寶石/神鑄/商店費用、技能升級與裝載欄。參數數由 495 → 626。
+- 內嵌係數只由 node 檔案工具覆蓋（GM 即時重載無法重新指派內嵌字面量）；仍未接者明列。
+
+### 二、微型任務拆解
+
+1. [DONE] Part B：formula.js 註解與 game_formula.md §5.2/§7.3/§7.5 對齊程式；全庫掃描無殘留。
+2. [DONE] Part A：新增 numCtx 前後文錨點；補 131 個內嵌係數錨點（含 22 個屬性上限）。
+3. [DONE] round-trip 恆等：626 全一致、0 變更、0 錨點問題（修正攻速名稱、boss 攻速跨行、寶石神鑄金幣誤指 CSV 列）。
+4. [DONE] 實測寫入三型（玩家基底/屬性上限/BOSS 倍率）→ 過語法檢查 → 預覽開機屬性正常 → git 還原；完整測試 132/134（2 為既有 CSS 失敗）。
+5. [DONE] 更新 tools/參數表使用說明.md、apply_params 標頭、PATCH.md。
+
+## 已完成任務：GM 指令 reload game_parameters（即時重載參數）
+
+### 一、設計方案（腦力激盪）
+
+GM 指令在瀏覽器執行，無法跑 node 或寫檔，但可 fetch game_parameters.csv 並即時套用到記憶體全域。
+- 新增 js/param_reload.js：fetch CSV → 解析 → 套用到可重新指派的全域（資料表以 .name 比對、純量重新指派、
+  物件/陣列就地改），回傳 {applied, skipped, error}。
+- gm.js 新增 `reload game_parameters`（寬鬆別名 game_parameter）：呼叫 reloadGameParameters()，
+  立即回「讀取中…」，async 完成後更新狀態列與日誌。
+- 純記憶體覆蓋（重整還原）；永久生效仍走 node tools/apply_params.cjs --write。
+- 涵蓋 = 檔案工具的可重新指派子集（不含 formula.js 內嵌算式係數，因無變數可指派）。
+- 僅 localhost 生效（沿用 GM host 限制）；需 http 開啟（file:// 無法 fetch）。
+
+### 二、微型任務拆解
+
+1. [DONE] js/param_reload.js：CSV 解析 + 全域套用 + Promise API（含可選 url）。
+2. [DONE] gm.js 接 reload 指令；index.html 載入 param_reload.js（gm.js 之前）。
+3. [DONE] 預覽實測：以測試 CSV 即時改 3 值（純量/稀有度/詞條池）成功，applied=539、0 錯誤；GM 輸入框走完整流程；鎖檔時走失敗訊息。
+4. [DONE] 更新 GM_command.md、PATCH.md；確認真實 CSV 未受測試影響。
+
+## 已完成任務：CSV → 程式碼參數回寫工具（tools/apply_params.cjs）
+
+### 一、設計方案（腦力激盪）
+
+使用者已選「轉換腳本回寫程式碼」：改完 game_parameters.csv → 執行 node 指令 → 把數值寫回 data.js/formula.js。
+- 只作用於「數值參數」，不重塑公式形狀。
+- 以「錨點取代」為核心：每個參數用唯一錨點正則(單一擷取群組)定位程式中的數字；資料表陣列則整段重建。
+- 安全機制：預設 dry-run 只列印變更；--write 才寫入；寫入前備份、寫入後 node --check 驗證語法，失敗自動還原；
+  錨點若匹配 0 或 >1 次一律中止(不猜)。
+- 正確性閘門：對「未修改的 CSV」跑 dry-run 必須回報 0 變更(round-trip 恆等)，藉此證明每個錨點都讀到正確的值。
+- 涵蓋範圍以能安全錨定者為主(data.js 全部具名常數與資料表 + formula.js 具名常數與關鍵內嵌係數)；
+  無法安全錨定者明列，仍由人工修改。
+
+### 二、微型任務拆解
+
+1. [DONE] 撰寫 tools/apply_params.cjs：CSV 解析、錨點/重建映射、dry-run/--write、備份與 node --check 還原。
+2. [DONE] round-trip 恆等測試：對未改動 CSV dry-run → 495 一致 / 0 變更 / 0 錨點問題（修正欄位冒號、掉落表 min:1 跨表衝突、陣列重建的數值序列比較）。
+3. [DONE] 實測三種寫入路徑（純量 RESPAWN_DELAY、物件欄 topaz.base、巢狀陣列 BOSS min31）→ --write → 程式碼正確變更且過 node --check → 預覽開機三值皆生效、主控台 0 錯誤 → git 還原。
+4. [DONE] 撰寫 tools/參數表使用說明.md、更新 PATCH.md、回報涵蓋範圍與未涵蓋清單。
+
+## 已完成任務：全遊戲公式與參數表單化（game_parameters.csv）
+
+### 一、設計方案與架構規劃（腦力激盪）
+
+把 formula.js（公式）與 data.js（資料表）的所有數值參數彙整成單一可編輯的 CSV。
+欄位：編號｜系統分類｜名稱｜參數化公式（以 a/b/c… 代號標示數值位置）｜中文說明｜參數a…參數l。
+- 一般公式：一列一條，參數格填實際數值（例：升級經驗 a=30 b=2 c=40）。
+- 無法一條公式描述者（掉落表、寶石商店表、稀有度表、詞條池…）：轉為多列，
+  一列代表一個品質/類別，參數格填 `{下限~上限=值}` 或 `階級:機率` 之類的元組，避免逗號破壞 CSV。
+- 編碼：UTF-8 with BOM（讓 Excel 正確顯示繁中）；全部說明用繁體中文。
+- 值以「程式實際值」為準（formula.js / data.js）；發現與 game_formula.md 不一致者另行回報，不擅改文件。
+- 產生方式：以 scratchpad 的 node 產生器腳本輸出 CSV 至專案根目錄（純資料、不讀遊戲狀態）。
+- 執行期是否讓遊戲讀 CSV：因遊戲支援 file:// 雙擊開啟，fetch 本地 CSV 會被 CORS 擋，故本階段 CSV 為
+  「權威可編輯目錄」，不接入執行期；接入方式列為後續選項供使用者決定。
+
+### 二、微型任務拆解
+
+1. [DONE] 通讀 game_formula.md／formula.js／data.js，蒐集所有公式與常數。
+2. [DONE] 撰寫產生器，輸出 game_parameters.csv（444 列、含 BOM、繁中、多列元組）。
+3. [DONE] 以 12 個代理的工作流逐區塊對照原始碼驗證：386 列 0 誤植；補上完整性稽核找到的
+   戰力權重表(56)、詞條數硬上限、最低傷害下限，並修正戰力評分/元素附傷公式。
+4. [DONE] CSV 結構驗證（445 行全為 17 欄、編號連續）、回報 md 與程式不一致處、PATCH.md 記錄。
+
+## 已完成任務：修正高塔太古機率誤用 BOSS 等級
 
 ### 一、設計方案與架構規劃（腦力激盪）
 
@@ -962,3 +1113,13 @@ CSS transition，避免出現追趕式跳動。
 1. [DONE] 新增全黑 Loading 覆蓋層與 1~3 點循環動畫。
 2. [DONE] 接上版本刷新、瀏覽器重新整理與 F5 的卸載前顯示流程。
 3. [DONE] 初始化完成後隱藏覆蓋層並新增 UI 回歸測試。
+
+## 已完成任務：戰鬥暫停控制
+
+戰鬥界面上方新增暫停按鈕。暫停時停止野外與高塔戰鬥的攻防、技能、狀態效果、復活與戰鬥倒數，並凍結戰鬥用遊戲時鐘；工廠處理、鑄造與存檔計時維持運作。狀態只存在當前頁面，不寫入存檔。
+
+### 微型任務拆解
+
+1. [DONE] 新增可切換的戰鬥暫停狀態與主迴圈凍結邏輯。
+2. [DONE] 在戰鬥界面上方加入暫停／繼續按鈕及 `aria-pressed` 狀態同步。
+3. [DONE] 新增暫停行為測試並完成語法與回歸驗證。

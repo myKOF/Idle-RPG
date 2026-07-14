@@ -20,7 +20,7 @@ var SKILL_CATS = {
 function skillDef(id) {
   if (SKILLS[id]) return SKILLS[id];
   var fs = G.player.fusions || [];
-  for (var i = 0; i < fs.length; i++) if (fs[i].id === id) return fs[i];
+  for (var i = 0; i < fs.length; i++) if (fs[i].id === id) return resolveFusionRecord(fs[i]);
   return null;
 }
 // skillMaxLv → js/formula.js §9
@@ -476,6 +476,25 @@ function applySkillDebuffs(targets, fx, lv, parts) {
   });
 }
 
+function playerBuffFloatClass(key) {
+  if (key === 'atkUp' || key === 'aspdUp' || key === 'critDmgUp' || key === 'thornsUp' ||
+    key === 'matkUp' || key === 'magicUp') return 'attack';
+  if (key === 'defUp' || key === 'evasionUp' || key === 'blockUp' || key === 'hot') return 'defense';
+  if (key === 'lootUp') return 'special';
+  if (key === 'atkDown' || key === 'defDown') return 'debuff';
+  return 'buff';
+}
+
+function showPlayerBuffFloat(floatSel, buff, lv) {
+  if (!buff) return;
+  floatPlayerEvent(floatSel, buffLabel(buff.key) + ' +' + fmt1(skillBuffDisplayValue(buff, lv)) + '%', playerBuffFloatClass(buff.key));
+}
+
+function showPlayerShieldGainAfterHeal(floatSel, pEnt, beforeShield) {
+  var gainedShield = Math.max(0, ((pEnt && pEnt.shield) || 0) - beforeShield);
+  if (gainedShield > 0) floatPlayerEvent(floatSel, '🛡️+' + fmt(gainedShield), 'shield');
+}
+
 /* ---- 施放執行 ---- */
 function castSkill(pEnt, target, id, lv, floatSel) {
   var sk = skillDef(id);
@@ -544,11 +563,11 @@ function castSkill(pEnt, target, id, lv, floatSel) {
           var dmgStr = fmt(dmgRes.dmg);
           if (dmgRes.crit) dmgStr = '爆擊 ' + dmgStr;
           if (dmgRes.blocked) dmgStr = '格擋 ' + dmgStr;
-          floatText(targetEnt.floatSel || floatSel, sk.emoji + dmgStr, dmgRes.crit ? 'crit' : 'dmg');
+          floatEnemyEvent(targetEnt, floatSel, sk.emoji + dmgStr, dmgRes.crit ? 'crit' : 'dmg');
           trackDps(dmgRes.dmg);
           if (typeof recordRunDamage === 'function') recordRunDamage(sk.name, dmgRes.dmg);
         } else {
-          floatText(targetEnt.floatSel || floatSel, 'MISS', 'miss');
+          floatEnemyEvent(targetEnt, floatSel, 'MISS', 'miss');
         }
         if (dmgRes.killed) out.killed = true;
       }
@@ -560,7 +579,7 @@ function castSkill(pEnt, target, id, lv, floatSel) {
         var boom = Math.max(1, Math.round(baseVal * fx.comboDetonate / 100));
         comboTarget.hp -= boom;
         totalDmg += boom;
-        floatText(comboTarget.floatSel || floatSel, '❄️🔥' + fmt(boom), 'crit');
+        floatEnemyEvent(comboTarget, floatSel, '❄️🔥' + fmt(boom), 'crit');
         trackDps(boom);
         parts.push('<span class="log-hl-good">冰火引爆 ' + fmt(boom) + '！</span>');
         if (comboTarget.hp <= 0) { comboTarget.hp = 0; out.killed = true; }
@@ -571,7 +590,12 @@ function castSkill(pEnt, target, id, lv, floatSel) {
     else parts.push((anyCrit ? '<span class="log-hl-good">爆擊</span>' : '') + '造成 ' + fmt(totalDmg) + (hits > 1 ? '（' + hits + ' 段）' : '') + ' 傷害');
     // 命中後效果
     if (totalDmg > 0) {
-      if (fx.healPctOfDmg) { healPlayer(pEnt, totalDmg * fx.healPctOfDmg / 100, st); parts.push('<span class="log-hl-good">汲取 ' + fmt(totalDmg * fx.healPctOfDmg / 100) + ' 生命</span>'); }
+      if (fx.healPctOfDmg) {
+        var beforeDrainShield = Math.max(0, pEnt.shield || 0);
+        healPlayer(pEnt, totalDmg * fx.healPctOfDmg / 100, st);
+        showPlayerShieldGainAfterHeal(floatSel, pEnt, beforeDrainShield);
+        parts.push('<span class="log-hl-good">汲取 ' + fmt(totalDmg * fx.healPctOfDmg / 100) + ' 生命</span>');
+      }
       if (fx.mpOnCrit && anyCrit) { pEnt.mp = Math.min(st.mp, pEnt.mp + fx.mpOnCrit); parts.push('返還 ' + fx.mpOnCrit + ' 法力'); }
       if (fx.goldPer) { var gg = Math.round(fx.goldPer * lv * st.level); G.player.gold += gg; if (window.recordLootGold) window.recordLootGold(gg, 'skill'); parts.push('<span class="log-hl-good">獲得 ' + fmt(gg) + ' 金幣</span>'); UI.dirty.header = true; }
       for (var ei = 0; ei < targets.length; ei++) {
@@ -595,21 +619,47 @@ function castSkill(pEnt, target, id, lv, floatSel) {
       }
       applySkillDebuffs(targets, fx, lv, parts);
       if (st.manaSteal > 0) pEnt.mp = Math.min(st.mp, pEnt.mp + totalDmg * st.manaSteal / 100);
-      if (st.lifesteal > 0) healPlayer(pEnt, totalDmg * st.lifesteal / 100, st);
+      if (st.lifesteal > 0) {
+        var beforeSkillLifeShield = Math.max(0, pEnt.shield || 0);
+        healPlayer(pEnt, totalDmg * st.lifesteal / 100, st);
+        showPlayerShieldGainAfterHeal(floatSel, pEnt, beforeSkillLifeShield);
+      }
     }
   }
   // === 非傷害效果 ===
-  if (fx.healPctMax) { var hv = st.hp * scaleAt(fx.healPctMax, lv) / 100; healPlayer(pEnt, hv, st); parts.push('<span class="log-hl-good">回復 ' + fmt(hv) + ' 生命</span>'); }
-  if (fx.hotPct) { applyBuff(pEnt, 'hot', scaleAt(fx.hotPct, lv), fx.hotDur); parts.push('<span class="log-hl-good">持續再生 ' + fx.hotDur + ' 秒</span>'); }
+  if (fx.healPctMax) {
+    var hv = st.hp * scaleAt(fx.healPctMax, lv) / 100;
+    var beforeHealShield = Math.max(0, pEnt.shield || 0);
+    healPlayer(pEnt, hv, st);
+    showPlayerShieldGainAfterHeal(floatSel, pEnt, beforeHealShield);
+    floatPlayerEvent(floatSel, '回復 +' + fmt(hv), 'heal');
+    parts.push('<span class="log-hl-good">回復 ' + fmt(hv) + ' 生命</span>');
+  }
+  if (fx.hotPct) {
+    applyBuff(pEnt, 'hot', scaleAt(fx.hotPct, lv), fx.hotDur);
+    floatPlayerEvent(floatSel, '再生 ' + fx.hotDur + '秒', 'heal');
+    parts.push('<span class="log-hl-good">持續再生 ' + fx.hotDur + ' 秒</span>');
+  }
   if (fx.shieldPctMax) {
+    var beforeShield = Math.max(0, pEnt.shield || 0);
     var sv = st.hp * scaleAt(fx.shieldPctMax, lv) / 100 * (1 + st.shieldEff / 100);
     pEnt.shield = Math.min(st.hp * 0.5, (pEnt.shield || 0) + sv);
+    var gainedShield = Math.max(0, pEnt.shield - beforeShield);
+    if (gainedShield > 0) floatPlayerEvent(floatSel, '🛡️+' + fmt(gainedShield), 'shield');
     parts.push('<span class="log-hl-good">獲得 ' + fmt(sv) + ' 護盾</span>');
   }
-  if (fx.selfCleanse) { cleanse(pEnt); parts.push('淨化負面狀態'); }
-  if (fx.mpRestore) { pEnt.mp = Math.min(st.mp, pEnt.mp + fx.mpRestore); parts.push('回復 ' + fx.mpRestore + ' 法力'); }
-  if (fx.buff) { applyBuff(pEnt, fx.buff.key, scaleAt(fx.buff, lv), fx.buff.dur); parts.push('<span class="log-hl-good">' + buffLabel(fx.buff.key) + ' +' + fmt1(skillBuffDisplayValue(fx.buff, lv)) + '%（' + fx.buff.dur + '秒）</span>'); }
-  if (fx.buff2) { applyBuff(pEnt, fx.buff2.key, scaleAt(fx.buff2, lv), fx.buff2.dur); }
+  if (fx.selfCleanse) { cleanse(pEnt); floatPlayerEvent(floatSel, '✨淨化', 'special'); parts.push('淨化負面狀態'); }
+  if (fx.mpRestore) { pEnt.mp = Math.min(st.mp, pEnt.mp + fx.mpRestore); floatPlayerEvent(floatSel, '法力 +' + fx.mpRestore, 'mana'); parts.push('回復 ' + fx.mpRestore + ' 法力'); }
+  if (fx.buff) {
+    applyBuff(pEnt, fx.buff.key, scaleAt(fx.buff, lv), fx.buff.dur);
+    showPlayerBuffFloat(floatSel, fx.buff, lv);
+    parts.push('<span class="log-hl-good">' + buffLabel(fx.buff.key) + ' +' + fmt1(skillBuffDisplayValue(fx.buff, lv)) + '%（' + fx.buff.dur + '秒）</span>');
+  }
+  if (fx.buff2) {
+    applyBuff(pEnt, fx.buff2.key, scaleAt(fx.buff2, lv), fx.buff2.dur);
+    showPlayerBuffFloat(floatSel, fx.buff2, lv);
+    parts.push('<span class="log-hl-good">' + buffLabel(fx.buff2.key) + ' +' + fmt1(skillBuffDisplayValue(fx.buff2, lv)) + '%（' + fx.buff2.dur + '秒）</span>');
+  }
   if (!fx.dmgType) applySkillDebuffs(targets, fx, lv, parts);
   if (!fx.dmgType && fx.maxHpDotPct) {
     for (var nci = 0; nci < targets.length; nci++) {
@@ -714,20 +764,10 @@ function fusionName(comps, fx) {
   return (chars.join('') || '混沌') + '融合·' + suffix;
 }
 
-// 執行融合；回傳 null=成功，否則錯誤訊息
-function fuseSkills(ids) {
-  if (!ids || ids.length < 2) return '至少需要 2 個素材技能';
-  if (ids.length > 4) return '最多 4 個素材技能';
-  var comps = [], totalLv = 0, i;
-  for (i = 0; i < ids.length; i++) {
-    var d = SKILLS[ids[i]];
-    if (!d) return '融合技不能作為素材';
-    if (d.cat === 'passive') return '被動技能無法融合';
-    var lv = skillLevel(ids[i]);
-    if (!lv) return '素材技能「' + d.name + '」尚未學習';
-    comps.push({ id: ids[i], def: d, lv: lv, fx: effectiveFx(ids[i], d, lv) });
-    totalLv += lv;
-  }
+/* ---- 融合 fx 聚合（純函式）----
+   由素材 comps（[{id,def,lv,fx}]）產生融合 fx，供 fuseSkills 與動態重建共用。
+   不含變異擲骰與 def 組裝；變異另由 applyFusionMutationByKey 依 key 重套。 */
+function fusionAggregateFx(comps) {
   var fx = {};
   // --- 傷害合併（各取 75% 相加；屬性採多數決）---
   var dmgComps = comps.filter(function (c) { return c.fx.dmgType; });
@@ -814,6 +854,72 @@ function fuseSkills(ids) {
   if (selectedDebuffs[0]) fx.debuff = fusionEffectValueDef(selectedDebuffs[0]);
   if (selectedDebuffs[1]) fx.debuff2 = fusionEffectValueDef(selectedDebuffs[1]);
   if (maxHpDot) { fx.maxHpDotPct = { base: Math.round(maxHpDot.maxHpDotPct.base * 0.7 * 10) / 10, per: maxHpDot.maxHpDotPct.per }; fx.dotDur = maxHpDot.dotDur || 5; }
+  return fx;
+}
+
+// 依 key 重套融合變異（req(fx) 通過才套，避免缺欄位崩潰）；回傳變異定義或 null。
+function applyFusionMutationByKey(fx, key) {
+  if (!key) return null;
+  for (var i = 0; i < FUSION_MUTATIONS.length; i++) {
+    if (FUSION_MUTATIONS[i].key === key) {
+      if (FUSION_MUTATIONS[i].req(fx)) FUSION_MUTATIONS[i].apply(fx);
+      return FUSION_MUTATIONS[i];
+    }
+  }
+  return null;
+}
+
+/* 融合技動態重建：以素材技能「現行定義」+ 凍結的素材等級 + 已存變異即時重算 fx。
+   素材技能已不存在時回傳 null（呼叫端退回存檔快照）。結構欄位（name/cost/cd/maxLv…）沿用記錄值。 */
+function buildFusionRuntimeDef(rec) {
+  if (!rec || !Array.isArray(rec.components) || !rec.componentLevels) return null;
+  var comps = [], lvls = rec.componentLevels;
+  for (var i = 0; i < rec.components.length; i++) {
+    var d = (typeof SKILLS !== 'undefined') ? SKILLS[rec.components[i]] : null;
+    if (!d) return null;
+    var lv = Math.max(1, lvls[i] || 1);
+    comps.push({ id: rec.components[i], def: d, lv: lv, fx: effectiveFx(rec.components[i], d, lv) });
+  }
+  var fx = fusionAggregateFx(comps);
+  if (rec.mutation && rec.mutation.key) applyFusionMutationByKey(fx, rec.mutation.key);
+  return {
+    id: rec.id, name: rec.name, emoji: rec.emoji || '🧬', cat: 'fusion',
+    cost: rec.cost, cd: rec.cd, maxLv: rec.maxLv,
+    components: rec.components, componentLevels: rec.componentLevels,
+    mutation: rec.mutation, flavor: rec.flavor, fx: fx
+  };
+}
+
+// 融合技即時 def 快取（模組層、不入存檔；依記錄物件同一性失效）。
+var _fusionRtCache = {};
+function resolveFusionRecord(rec) {
+  if (Array.isArray(rec.components) && rec.componentLevels) {
+    var c = _fusionRtCache[rec.id];
+    if (!c || c._srcRef !== rec) {
+      var built = buildFusionRuntimeDef(rec);
+      if (built) { built._srcRef = rec; _fusionRtCache[rec.id] = built; return built; }
+      return rec; // 無法重建（素材技能已移除）→ 退回存檔快照
+    }
+    return c;
+  }
+  return rec; // 舊融合技無素材記錄 → 沿用快照 fx
+}
+
+// 執行融合；回傳 null=成功，否則錯誤訊息
+function fuseSkills(ids) {
+  if (!ids || ids.length < 2) return '至少需要 2 個素材技能';
+  if (ids.length > 4) return '最多 4 個素材技能';
+  var comps = [], totalLv = 0, i;
+  for (i = 0; i < ids.length; i++) {
+    var d = SKILLS[ids[i]];
+    if (!d) return '融合技不能作為素材';
+    if (d.cat === 'passive') return '被動技能無法融合';
+    var lv = skillLevel(ids[i]);
+    if (!lv) return '素材技能「' + d.name + '」尚未學習';
+    comps.push({ id: ids[i], def: d, lv: lv, fx: effectiveFx(ids[i], d, lv) });
+    totalLv += lv;
+  }
+  var fx = fusionAggregateFx(comps);
 
   // --- 變異效果（每次至多一種，需與融合結果相關；觸發率公式 → formula.js §9）---
   var mutation = null;
@@ -831,8 +937,8 @@ function fuseSkills(ids) {
   var def = {
     id: 'fusion_' + uid(), name: fusionName(comps, fx), emoji: '🧬', cat: 'fusion',
     cost: cost, cd: cd, maxLv: totalLv + 20, components: ids.slice(), componentLevels: comps.map(function (c) { return c.lv; }),
-    mutation: mutation, flavor: '由 ' + comps.map(function (c) { return c.def.name; }).join('、') + ' 融合而成的專屬奧義。',
-    fx: fx
+    mutation: mutation, flavor: '由 ' + comps.map(function (c) { return c.def.name; }).join('、') + ' 融合而成的專屬奧義。'
+    // 不存 fx：融合技效果改為由 skillDef()→buildFusionRuntimeDef() 依素材現行定義即時重算。
   };
   if (!G.player.fusions) G.player.fusions = [];
   G.player.fusions.push(def);

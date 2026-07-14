@@ -16,27 +16,37 @@ function loadContext() {
   return context;
 }
 
-test('神鑄在 0 轉達到 1000 級後永久開放，轉生後不會關閉', () => {
+test('需同時滿足等級與轉生次數才開放，開放後永久保留', () => {
   const context = loadContext();
   context.G = context.newGameState();
   context.G.player.level = context.FORGE_UNLOCK_LEVEL;
+  context.G.player.reincarnations = context.FORGE_UNLOCK_REINCARNATION;
 
   assert.equal(context.forgeUnlocked(), true);
   assert.equal(context.G.forge.unlocked, true);
 
-  context.G.player.reincarnations = 1;
+  // 永久保留：即使之後等級與轉生次數皆降到門檻以下，仍維持開放。
   context.G.player.level = 1;
+  context.G.player.reincarnations = 0;
   assert.equal(context.forgeUnlocked(), true);
 });
 
-test('未曾在 0 轉達到門檻的轉生存檔仍維持鎖定', () => {
-  const context = loadContext();
-  context.G = context.newGameState();
-  context.G.player.reincarnations = 1;
-  context.G.player.level = context.FORGE_UNLOCK_LEVEL;
+test('只滿足其中一個條件時維持鎖定', () => {
+  // 轉生次數達標、等級不足 → 鎖定
+  const c1 = loadContext();
+  c1.G = c1.newGameState();
+  c1.G.player.reincarnations = c1.FORGE_UNLOCK_REINCARNATION;
+  c1.G.player.level = Math.max(0, c1.FORGE_UNLOCK_LEVEL - 1);
+  assert.equal(c1.forgeUnlocked(), false);
+  assert.equal(c1.G.forge.unlocked, false);
 
-  assert.equal(context.forgeUnlocked(), false);
-  assert.equal(context.G.forge.unlocked, false);
+  // 等級達標、轉生次數不足 → 鎖定
+  const c2 = loadContext();
+  c2.G = c2.newGameState();
+  c2.G.player.level = c2.FORGE_UNLOCK_LEVEL;
+  c2.G.player.reincarnations = Math.max(0, c2.FORGE_UNLOCK_REINCARNATION - 1);
+  assert.equal(c2.forgeUnlocked(), false);
+  assert.equal(c2.G.forge.unlocked, false);
 });
 
 test('舊存檔已有開放通知時會遷移為永久開放', () => {

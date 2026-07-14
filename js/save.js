@@ -335,7 +335,7 @@ function migrateSave(data) {
   data.settings.useAncientEssence = !!data.settings.useAncientEssence;
   // 神鑄永久開放相容：舊存檔只有 unlockNotified，合併預設後補回永久解鎖旗標。
   if (hadForgeUnlockNotice && data.forge) data.forge.unlocked = true;
-  // 轉生欄位相容：舊存檔視為 0 轉；等級上限固定為 9999。
+  // 轉生欄位相容：舊存檔視為 0 轉；等級上限為 MAX_LEVEL（超過者夾回）。
   data.player.reincarnations = clamp(data.player.reincarnations || 0, 0, REINCARNATION_MAX);
   data.player.reincarnationTalentPoints = Math.max(0, Math.floor(Number(data.player.reincarnationTalentPoints) || 0));
   var expectedSkillBudget = data.player.reincarnations > 0 ? 10000 : Math.min(10000, Math.max(0, (data.player.level || 1) + 1));
@@ -345,8 +345,8 @@ function migrateSave(data) {
   } else {
     data.player.skillPointBudget = Math.max(0, Math.floor(Number(data.player.skillPointBudget) || 0));
   }
-  if (data.player.level > REINCARNATION_LEVEL) {
-    data.player.level = REINCARNATION_LEVEL;
+  if (data.player.level > MAX_LEVEL) {
+    data.player.level = MAX_LEVEL;
     data.player.xp = 0;
   }
   // 寶石商店等級相容：舊存檔沒有 level 時沿用 Lv.1，並限制在 1~20 級。
@@ -416,6 +416,17 @@ function migrateSave(data) {
     if (trimmedSpecialBuffs) {
       data._specialBuffTrimNotice = '已清理 ' + trimmedSpecialBuffs + ' 個融合技能的特殊第二增益效果';
     }
+  }
+  /* ONE-TIME MIGRATION: fusionFxDynamicV1（登錄於 ONE_TIME_MIGRATIONS.md）
+     融合技效果改為動態重算：不再保存 fx 快照。能以現行素材定義重建者移除 fx；
+     無法重建（素材技能已不存在）者保留快照作後備。置於上方既有融合遷移之後，
+     讓一次性旗標遷移仍先作用於舊快照。此正規化為冪等（fx 移除後不再存在），故不需旗標。 */
+  if (data.player.fusions && data.player.fusions.length && typeof buildFusionRuntimeDef === 'function') {
+    data.player.fusions.forEach(function (fs) {
+      if (fs && fs.fx && Array.isArray(fs.components) && fs.componentLevels && buildFusionRuntimeDef(fs)) {
+        delete fs.fx;
+      }
+    });
   }
   /* ---- 融合寶石「融合次數」改為世代制（2026-07-09 修正）----
      舊定義 fusions = 融合事件總數（兩顆融合1次的再融合 → 3，玩家預期 2）。
@@ -1054,7 +1065,7 @@ function scanManualMetadataV2() {
       if (ent.kind !== 'file' || !/^IC_(manual|before_bulk_salvage)_.*\.json$/i.test(ent.name)) continue;
       try {
         var file = await ent.getFile();
-        var data = parseSaveTextV2(await file.text());
+        var data = parseSaveTextV2(await readSaveFilePayloadV2(file));
         if (!data) continue;
         var old = oldByName[ent.name];
         list.push({

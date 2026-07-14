@@ -9,8 +9,12 @@ var UI = {
   tooltipAnchor: null,
   affixPoolSource: null,
   towerTimerRaf: 0,
-  towerTimerAnchor: null
+  towerTimerAnchor: null,
+  stageHold: { startTimer: null, repeatTimer: null, suppressClick: false, suppressTimer: null, pointerId: null }
 };
+
+var STAGE_HOLD_START_MS = 300;
+var STAGE_HOLD_REPEAT_MS = 50;
 
 /* ---- 日誌 ---- */
 var DETAIL_LOG_HISTORY = [];
@@ -442,21 +446,54 @@ function renderZoneBar() {
     }
   });
 }
+function refreshStageDisplay() {
+  if (!G || !G.stage) return;
+  var stg = G.stage;
+  var znd = currentZoneDef();
+  var label = $id('stage-label');
+  var best = $id('stage-best');
+  var auto = $id('st-auto');
+  if (label) label.textContent = znd.emoji + ' 第 ' + stg.current + ' 階段';
+  if (best) best.textContent = '最高 ' + stg.best;
+  if (auto) auto.checked = stg.autoAdvance;
+}
+function refreshCombatPauseButton() {
+  var btn = $id('btn-combat-pause');
+  if (!btn) return;
+  var paused = typeof isCombatPaused === 'function' && isCombatPaused();
+  btn.setAttribute('aria-pressed', paused ? 'true' : 'false');
+  btn.textContent = paused ? '▶ 繼續戰鬥' : '⏸ 暫停戰鬥';
+  btn.title = paused ? '繼續野外與高塔戰鬥' : '暫停野外與高塔戰鬥';
+  btn.classList.toggle('active', paused);
+}
+function renderPlayerShieldBar(prefix, entity, stats) {
+  var shieldBar = $id(prefix + '-shield');
+  if (!shieldBar || !entity || !stats) return;
+  var shield = Math.max(0, entity.shield || 0);
+  if (shield > 0.5 && stats.hp > 0) {
+    shieldBar.style.display = 'block';
+    shieldBar.style.width = clamp(shield / stats.hp * 100, 0, 100) + '%';
+  } else {
+    shieldBar.style.display = 'none';
+    shieldBar.style.width = '0%';
+  }
+}
+function playerShieldText(entity) {
+  var shield = entity ? Math.max(0, entity.shield || 0) : 0;
+  return shield > 0.5 ? '<span style="color:var(--info)">+' + fmt(shield) + '</span>' : '';
+}
 function renderBattle() {
   var st = getStats();
-  var stg = G.stage;
   renderZoneBar();
-  var znd = currentZoneDef();
-  $id('stage-label').textContent = znd.emoji + ' 第 ' + stg.current + ' 階段';
-  $id('stage-best').textContent = '最高 ' + stg.best;
-  $id('st-auto').checked = stg.autoAdvance;
+  refreshStageDisplay();
+  refreshCombatPauseButton();
 
   var p = FIELD.player;
   if (p) {
     var php = clamp(p.hp / st.hp * 100, 0, 100);
     $id('pv-hp').style.width = php + '%';
-    var pSh = (p.shield > 0.5) ? '<span style="color:var(--info)">+' + fmt(Math.max(0, p.shield)) + '</span>' : '';
-    $id('pv-hptext').innerHTML = fmt(Math.max(0, p.hp)) + pSh + ' / ' + fmt(st.hp);
+    renderPlayerShieldBar('pv', p, st);
+    $id('pv-hptext').innerHTML = fmt(Math.max(0, p.hp)) + playerShieldText(p) + ' / ' + fmt(st.hp);
     $id('pv-status').textContent = FIELD.reviveCd > 0 ? ('💀 復活中 ' + fmt1(FIELD.reviveCd) + 's') : entStatus(p);
     renderMpSkill(p, 'pv');
   }
@@ -582,7 +619,20 @@ function renderInventory() {
   if (!G.inventory.length) {
     box.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">背包是空的。戰鬥掉落的裝備會先進入生產線輸送帶，「保留」的會送到這裡。</div>';
   } else {
-    box.innerHTML = G.inventory.map(function (it) { return itemCellHTML(it, 'inv'); }).join('');
+    var filterSelect = $id('inv-rarity-filter');
+    var filterRarity = filterSelect ? filterSelect.value : '';
+    var displayedItems = G.inventory;
+    if (filterRarity !== '') {
+      var rVal = parseInt(filterRarity, 10);
+      displayedItems = G.inventory.filter(function (it) {
+        return it.rarity === rVal;
+      });
+    }
+    if (!displayedItems.length) {
+      box.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">沒有符合篩選條件的裝備。</div>';
+    } else {
+      box.innerHTML = displayedItems.map(function (it) { return itemCellHTML(it, 'inv'); }).join('');
+    }
   }
   renderDetail();
 }
@@ -1486,8 +1536,8 @@ function renderTowerFight() {
   $id('tb-hptext').innerHTML = fmt(Math.max(0, b.hp)) + bSh + ' / ' + fmt(b.maxHp) + '（' + Math.round(b.hp / b.maxHp * 100) + '%）';
   $id('tb-status').innerHTML = entStatus(b) + (b.elem ? ' 屬性:' + ENCHANTS[b.elem].emoji : '');
   $id('tp-hp').style.width = clamp(p.hp / st.hp * 100, 0, 100) + '%';
-  var pSh2 = (p.shield > 0.5) ? '<span style="color:var(--info)">+' + fmt(Math.max(0, p.shield)) + '</span>' : '';
-  $id('tp-hptext').innerHTML = fmt(Math.max(0, p.hp)) + pSh2 + ' / ' + fmt(st.hp);
+  renderPlayerShieldBar('tp', p, st);
+  $id('tp-hptext').innerHTML = fmt(Math.max(0, p.hp)) + playerShieldText(p) + ' / ' + fmt(st.hp);
   $id('tp-status').textContent = entStatus(p);
   renderMpSkill(p, 'tp');
   $id('tw-dps').textContent = 'DPS ' + fmt(TOWER.elapsed > 1 ? TOWER.dmgDealt / TOWER.elapsed : 0) +
@@ -1722,8 +1772,22 @@ function showStatTooltip(title, desc, anchorEl) {
   tip.style.display = 'block';
   var r = anchorEl.getBoundingClientRect();
   var tw = tip.offsetWidth, th = tip.offsetHeight;
+  var placement = anchorEl.getAttribute('data-tip-placement');
   var x = r.right + 10, y = r.top;
-  if (x + tw > window.innerWidth - 8) x = r.left - tw - 10;
+  if (placement === 'stage-left') {
+    x = r.left - tw - 10;
+    y = r.bottom + 8;
+    if (y + th > window.innerHeight - 8) y = r.top - th - 8;
+  } else if (placement === 'stage-right') {
+    x = r.right + 10;
+    y = r.bottom + 8;
+    if (y + th > window.innerHeight - 8) y = r.top - th - 8;
+  } else if (x + tw > window.innerWidth - 8) {
+    x = r.left - tw - 10;
+  }
+  if (x + tw > window.innerWidth - 8) x = window.innerWidth - tw - 8;
+  if (x < 8) x = 8;
+  if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
   if (y < 8) y = 8;
   tip.style.left = x + 'px';
   tip.style.top = y + 'px';
@@ -2465,6 +2529,60 @@ function showConfirmDialog(message, onConfirm, options) {
   };
 }
 
+function stopStageHoldRepeat(btn) {
+  clearTimeout(UI.stageHold.startTimer);
+  clearInterval(UI.stageHold.repeatTimer);
+  UI.stageHold.startTimer = null;
+  UI.stageHold.repeatTimer = null;
+  if (btn && UI.stageHold.pointerId !== null && btn.hasPointerCapture && btn.hasPointerCapture(UI.stageHold.pointerId)) {
+    btn.releasePointerCapture(UI.stageHold.pointerId);
+  }
+  UI.stageHold.pointerId = null;
+  if (UI.stageHold.suppressClick) {
+    clearTimeout(UI.stageHold.suppressTimer);
+    UI.stageHold.suppressTimer = setTimeout(function () {
+      UI.stageHold.suppressClick = false;
+      UI.stageHold.suppressTimer = null;
+    }, 120);
+  }
+}
+
+function stepStageButton(delta) {
+  stageGo(delta);
+  refreshStageDisplay();
+}
+
+function bindStageHoldButton(id, delta) {
+  var btn = $id(id);
+  if (!btn) return;
+  btn.addEventListener('click', function (e) {
+    if (UI.stageHold.suppressClick) {
+      e.preventDefault();
+      return;
+    }
+    stepStageButton(delta);
+  });
+  btn.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    stopStageHoldRepeat(btn);
+    clearTimeout(UI.stageHold.suppressTimer);
+    UI.stageHold.suppressTimer = null;
+    UI.stageHold.suppressClick = false;
+    UI.stageHold.pointerId = e.pointerId;
+    if (btn.setPointerCapture) btn.setPointerCapture(e.pointerId);
+    UI.stageHold.startTimer = setTimeout(function () {
+      UI.stageHold.suppressClick = true;
+      stepStageButton(delta);
+      UI.stageHold.repeatTimer = setInterval(function () {
+        stepStageButton(delta);
+      }, STAGE_HOLD_REPEAT_MS);
+    }, STAGE_HOLD_START_MS);
+  });
+  btn.addEventListener('pointerup', function () { stopStageHoldRepeat(btn); });
+  btn.addEventListener('pointercancel', function () { stopStageHoldRepeat(btn); });
+  btn.addEventListener('lostpointercapture', function () { stopStageHoldRepeat(btn); });
+}
+
 function initUI() {
   // 分頁
   document.querySelectorAll('.tab-btn').forEach(function (b) {
@@ -3001,8 +3119,13 @@ function initUI() {
   });
 
   // 階段控制
-  $id('st-prev').addEventListener('click', function () { stageGo(-1); });
-  $id('st-next').addEventListener('click', function () { stageGo(1); });
+  var combatPauseBtn = $id('btn-combat-pause');
+  if (combatPauseBtn) combatPauseBtn.addEventListener('click', function () {
+    toggleCombatPaused();
+    refreshCombatPauseButton();
+  });
+  bindStageHoldButton('st-prev', -1);
+  bindStageHoldButton('st-next', 1);
   $id('st-max').addEventListener('click', function () { stageGoMax(); });
   $id('st-auto').addEventListener('change', function () { G.stage.autoAdvance = this.checked; });
 
@@ -3320,6 +3443,12 @@ function initUI() {
     UI.dirty.inv = true;
     blog('🎒 背包已排序完成。', 'info', 'system');
   });
+  var rarityFilter = $id('inv-rarity-filter');
+  if (rarityFilter) {
+    rarityFilter.addEventListener('change', function () {
+      renderInventory();
+    });
+  }
   $id('tw-flee').addEventListener('click', fleeTower);
 
   // 神鑄：鑄造 / 全卸下 / 自動使用魔塵

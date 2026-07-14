@@ -257,9 +257,10 @@ function gemShop() {
   s.level = clamp(s.level || 1, 1, GEM_SHOP_MAX_LEVEL);
   return s;
 }
+var GEM_SHOP_REFRESH_HOURS = 8;   // 寶石商店自動刷新週期（小時）
 function shopHourlyReset() {
   var s = gemShop();
-  if (Date.now() - s.hourStart >= 8 * 3600 * 1000) {
+  if (Date.now() - s.hourStart >= GEM_SHOP_REFRESH_HOURS * 3600 * 1000) {
     s.refreshCount = 0;
     s.hourStart = Date.now();
     rollGemShop();
@@ -267,7 +268,7 @@ function shopHourlyReset() {
   }
 }
 function shopResetCountdown() { // 秒
-  return Math.max(0, Math.ceil((gemShop().hourStart + 8 * 3600 * 1000 - Date.now()) / 1000));
+  return Math.max(0, Math.ceil((gemShop().hourStart + GEM_SHOP_REFRESH_HOURS * 3600 * 1000 - Date.now()) / 1000));
 }
 function rollGemShop() {
   var s = gemShop();

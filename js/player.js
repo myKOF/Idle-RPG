@@ -85,7 +85,7 @@ function gainXp(n) {
   var p = G.player;
   p.xp += n;
   var gained = 0;
-  while (p.level < REINCARNATION_LEVEL && p.xp >= xpForLevel(p.level)) {
+  while (p.level < MAX_LEVEL && p.xp >= xpForLevel(p.level)) {
     p.xp -= xpForLevel(p.level);
     p.level++;
     gained++;
@@ -95,7 +95,7 @@ function gainXp(n) {
       p.skillPointBudget = (p.skillPointBudget || 0) + 1;
     }
   }
-  if (p.level >= REINCARNATION_LEVEL) p.xp = 0;
+  if (p.level >= MAX_LEVEL) p.xp = 0;
   if (gained > 0) {
     markStatsDirty();
     var reward = reincarnationCount() > 0

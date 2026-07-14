@@ -44,6 +44,21 @@ test('寶石合成選單提供全部類型寶石，且不會混合不同種類',
   assert.equal(gems.sapphire[2], 0);
 });
 
+test('寶石合成選單將全部類型寶石置頂、標黃並預設選中', () => {
+  const root = path.resolve(__dirname, '..');
+  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const fillBody = ui.match(/function fillGemTypeSelect\(sel, includeAll\) \{([\s\S]*?)\n\}/);
+  assert.ok(fillBody, '找不到 fillGemTypeSelect');
+
+  const body = fillBody[1];
+  const allOption = body.indexOf('GEM_TYPE_ALL');
+  const gemTypeLoop = body.indexOf('for (var t in GEM_TYPES)');
+  assert.ok(allOption >= 0, '找不到全部類型寶石選項');
+  assert.ok(allOption < gemTypeLoop, '全部類型寶石應排在所有寶石種類前面');
+  assert.match(body, /style="color:#f5c542;font-weight:bold"/);
+  assert.match(body, /selected>💎 全部類型寶石/);
+});
+
 test('全部類型寶石全部合成時會逐種類處理可合成庫存', () => {
   const context = loadGameContext();
   const gems = makeGemInventory(context.GEM_TYPES);

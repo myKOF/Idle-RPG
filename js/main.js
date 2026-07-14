@@ -7,10 +7,13 @@ var _folderAutosaveTimer = 0;
 var _lastTickAt = Date.now();
 
 function stepGame(dt) {
-  GT += dt;
+  var combatPaused = typeof isCombatPaused === 'function' && isCombatPaused();
+  if (!combatPaused) GT += dt;
   if (typeof forgeTick === 'function') forgeTick(Date.now());
-  fieldTick(dt);
-  towerTick(dt);
+  if (!combatPaused) {
+    fieldTick(dt);
+    towerTick(dt);
+  }
   factoryTick(dt);
   _autosaveTimer += dt;
   if (_autosaveTimer >= 15) { _autosaveTimer = 0; saveGame(); }

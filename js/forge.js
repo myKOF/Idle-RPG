@@ -35,12 +35,12 @@ function forgeState() {
   return G.forge;
 }
 
-// 神鑄系統是否已開放：只允許 0 轉達到 1000 級解鎖，解鎖後永久保留。
+// 神鑄系統是否已開放：需同時滿足「等級 ≥ FORGE_UNLOCK_LEVEL」與「轉生次數 ≥ FORGE_UNLOCK_REINCARNATION」，解鎖後永久保留。
 function forgeUnlocked() {
   if (!G || !G.player) return false;
   var f = forgeState();
   if (f.unlocked) return true;
-  if (reincarnationCount() === 0 && G.player.level >= FORGE_UNLOCK_LEVEL) {
+  if (G.player.level >= FORGE_UNLOCK_LEVEL && reincarnationCount() >= FORGE_UNLOCK_REINCARNATION) {
     f.unlocked = true;
     return true;
   }

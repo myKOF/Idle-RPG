@@ -293,6 +293,18 @@ save
 
 這會呼叫遊戲目前的存檔函式。一般情況下遊戲仍會依原本的自動存檔機制保存進度。
 
+## 10.5 套用參數表（Excel → CSV → 遊戲，雙擊 .bat 自動重載）
+
+在 `config/Excel/game_parameters.xlsx`（工作表 `game_parameters`）調整數值後：
+
+1. 在 Excel 按**存檔**（Ctrl+S）。此時遊戲**不會**刷新；Excel 可繼續開著，不必關。
+2. **雙擊專案根目錄的「套用參數.bat」**，它會依序：
+   - **[1/2]** 把 `config/Excel/game_parameters.xlsx` 轉成 `config/CSV/game_parameters.csv`（純 Node 讀 xlsx，Excel 開著也能轉）。
+   - **[2/2]** 把 CSV 數值寫進遊戲並更新重載權杖 `params_version.txt`。
+3. 開著的遊戲頁面（本機）約 2 秒內會**自動重新整理**，新數值即生效，不必手動 F5 或按任何按鈕。
+
+（舊的 `reload game_parameters` GM 文字指令、左上角按鈕與套用伺服器皆已移除，改用此單一雙擊流程。詳見 `tools/參數表使用說明.md`。）
+
 ## 11. 常用測試流程範例
 
 ### 測試高階寶石與神鑄

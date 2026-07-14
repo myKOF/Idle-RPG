@@ -57,6 +57,24 @@
 
 **資料限制**：舊版融合存檔只保存融合後的效果快照，未保存每個素材的完整效果快照；因此本次遷移只移除能由 `components` 與 `fx.buff2` 明確辨識的效果，不猜測其它增益。
 
+### `fusionFxDynamicV1`：融合技效果改為動態重算、移除 fx 快照
+
+**狀態：已實作。**
+
+**性質（例外說明）**：這是**永久性的冪等正規化**，不是傳統「日後移除」的旗標式一次性遷移，故**不寫入完成旗標**——`fx` 一旦移除即不存在，重複讀檔（含重新匯入舊備份）自然無副作用。列此登錄僅為讓維護者理解為何讀檔會刪 `fx`。
+
+**正式規則**：融合技不再保存效果快照。`G.player.fusions[]` 只保存 `id / name / cost / cd / maxLv / components / componentLevels / mutation / flavor`；`fx` 由 `skillDef()`→`buildFusionRuntimeDef()` 依素材技能**現行定義** + 凍結的 `componentLevels` + 已存 `mutation` 即時重算（純函式 `fusionAggregateFx` 與 `fuseSkills` 共用）。因此調整素材技能定義，既有融合技自動跟著變（素材等級凍結不變）。
+
+**既有存檔處理**：
+
+- 於 `migrateSave(data)` 讀檔時執行，**置於 `skillDmgV2`、`specialBuffTrimV1` 兩個既有融合遷移之後**（讓旗標式一次性遷移仍先作用於舊快照）。
+- 對每個 `data.player.fusions` 記錄：若同時具備 `fx`、`components`、`componentLevels` 且 `buildFusionRuntimeDef(fs)` 能成功重建，則 `delete fs.fx`。
+- 素材技能已不存在而無法重建者**保留** `fx` 快照作後備（`skillDef` 對這類記錄退回快照）。
+
+**影響**：既有融合技的效果數值會由「凍結快照」改為「以現行 SKILLS 定義重算」。若某素材技能定義自融合後曾變動，重算後數值會隨之改變（此為預期行為）。`skillDmgV2` 的等比加成因此被取代——重算即得調整後數值。
+
+**涉及位置**：`js/skills.js`（`fusionAggregateFx` / `applyFusionMutationByKey` / `buildFusionRuntimeDef` / `resolveFusionRecord` / `skillDef` / `fuseSkills`）、`js/save.js`（讀檔正規化）、`game_formula.md` §9.3。
+
 ## 何時可以刪除
 
 符合以下條件後，才可以移除該遷移：

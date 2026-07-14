@@ -75,6 +75,18 @@ test('confirm modal actions are centered and evenly spaced', () => {
   assert.match(css, /\.confirm-actions\s*{[\s\S]*column-gap:\s*80px/);
 });
 
+test('轉生確認視窗使用專屬淡彩流光外框', () => {
+  const css = fs.readFileSync(path.resolve(__dirname, '..', 'css/style.css'), 'utf8');
+  const ui = fs.readFileSync(path.resolve(__dirname, '..', 'js/ui.js'), 'utf8');
+
+  assert.match(ui, /modal\.className = 'modal-overlay confirm-modal' \+ \(options\.dialogClass \? ' ' \+ options\.dialogClass : ''\)/);
+  assert.match(ui, /title: '轉生確認', okText: '確定轉生', dialogClass: 'reincarnation-confirm'/);
+  assert.match(css, /\.confirm-modal\.reincarnation-confirm \.confirm-box\s*\{[\s\S]*animation:\s*reincConfirmBgFlow\s+5\.5s\s+linear\s+infinite/);
+  assert.match(css, /\.confirm-modal\.reincarnation-confirm \.confirm-box::before\s*\{[\s\S]*linear-gradient\(90deg[\s\S]*animation:\s*reincConfirmBorderFlow\s+1\.8s\s+linear\s+infinite/);
+  assert.match(css, /@keyframes\s+reincConfirmBorderFlow\s*\{/);
+  assert.match(css, /@keyframes\s+reincConfirmBgFlow\s*\{/);
+});
+
 test('shared confirm modal shows message and runs callback only on confirm', () => {
   const { context, elements } = loadGameContext();
   let confirmed = 0;
@@ -82,6 +94,7 @@ test('shared confirm modal shows message and runs callback only on confirm', () 
   context.showConfirmDialog('第一行\n第二行', () => { confirmed += 1; }, { title: '寶石拆解確認' });
 
   assert.equal(elements.get('confirm-modal').style.display, 'flex');
+  assert.equal(elements.get('confirm-modal').className, 'modal-overlay confirm-modal');
   assert.equal(elements.get('confirm-title').textContent, '寶石拆解確認');
   assert.equal(elements.get('confirm-message').textContent, '第一行\n第二行');
   assert.equal(confirmed, 0);

@@ -11,6 +11,22 @@ var FIELD = {
   dpsWindow: []      // [ [GT, dmg], ... ] 供 DPS 顯示
 };
 
+var COMBAT_PAUSED = false;
+
+function isCombatPaused() {
+  return COMBAT_PAUSED;
+}
+
+function setCombatPaused(paused) {
+  COMBAT_PAUSED = !!paused;
+  if (typeof UI !== 'undefined' && UI.dirty) UI.dirty.battle = true;
+  return COMBAT_PAUSED;
+}
+
+function toggleCombatPaused() {
+  return setCombatPaused(!COMBAT_PAUSED);
+}
+
 function newPlayerEntity(st) {
   return { hp: st.hp, mp: st.mp, shield: 0, atkCd: 1 / st.aspd, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {}, poisonUntil: 0, poisonDps: 0 };
 }
@@ -47,6 +63,7 @@ function spawnFieldMonster() {
   var enemies = [];
   for (var i = 0; i < count; i++) {
     var mtype = pick(zn.pool);
+    var mAspd = base.aspd * zn.aspdMult; // 攻速 × 場景攻速倍率（與原始攻速相乘）
     enemies.push({
       name: (elite ? '菁英・' : '') + mtype.name, emoji: mtype.emoji,
       level: base.level,
@@ -54,10 +71,10 @@ function spawnFieldMonster() {
       atk: base.atk * zn.atkMult,
       def: base.def * zn.defMult, mdef: base.mdef * zn.defMult,
       magic: !!mtype.magic,          // 魔法系怪物：攻擊對玩家魔防
-      aspd: base.aspd, dodge: base.dodge,
+      aspd: mAspd, dodge: base.dodge,
       elite: elite, isBoss: false,
       gold: base.gold * zn.rewardMult, xp: base.xp * zn.rewardMult, // 金幣/經驗 x場景倍率
-      atkCd: 1 / base.aspd + 0.4, effects: {}, ctrlRes: 0,
+      atkCd: 1 / mAspd, effects: {}, ctrlRes: 0,
       poisonUntil: 0, poisonDps: 0, shield: 0, buffs: {}, dots: []
     });
   }
@@ -229,6 +246,12 @@ function monsterDefCfg(m) {
 }
 
 /* ---- 治療（溢出轉護盾）公式 healPlayer → js/formula.js §3 ---- */
+function healPlayerWithShieldEvent(pEnt, amount, st, floatSel) {
+  var beforeShield = Math.max(0, (pEnt && pEnt.shield) || 0);
+  healPlayer(pEnt, amount, st);
+  var gainedShield = Math.max(0, ((pEnt && pEnt.shield) || 0) - beforeShield);
+  if (gainedShield > 0) floatPlayerEvent(floatSel || 'pv-float', '🛡️+' + fmt(gainedShield), 'shield');
+}
 
 // 完整的一次玩家普攻（含連擊/暈眩/減速/吸血/吸魔/暗影汲取）
 function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
@@ -236,14 +259,15 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
   var res = resolveHit(pEnt, mEnt, playerAtkCfg(pEnt), monsterDefCfg(mEnt));
   var mName = mEnt.name || '怪物';
   var logMsg = (depth ? '' : '你攻擊 ' + mName + '，');
+  var playerFloatSel = playerEventFloatTarget(floatSel);
   if (res.miss) {
-    floatText(mEnt.floatSel || floatSel, 'MISS', 'miss');
+    floatEnemyEvent(mEnt, floatSel, 'MISS', 'miss');
     logMsg += (depth ? '<span class="log-hl-bad">攻擊被閃避了！</span>' : '<span class="log-hl-bad">被閃避了！</span>');
   } else {
     var dmgStr = fmt(res.dmg);
     if (res.crit) dmgStr = '爆擊 ' + dmgStr;
     if (res.blocked) dmgStr = '格擋 ' + dmgStr;
-    floatText(mEnt.floatSel || floatSel, dmgStr, res.crit ? 'crit' : 'dmg');
+    floatEnemyEvent(mEnt, floatSel, dmgStr, res.crit ? 'crit' : 'dmg');
     trackDps(res.dmg);
     recordRunDamage('普攻', res.dmg);
     logMsg += (res.crit ? '<span class="log-hl-good">爆擊</span> ' : '造成 ') + fmt(res.dmg) + ' 傷害。';
@@ -254,14 +278,14 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
     var omni = st.passives.omniDrain || 0;
     var healAmt = res.dmg * (st.lifesteal + omni) / 100 + (res.heal || 0);
     if (healAmt > 0) {
-      healPlayer(pEnt, healAmt, st);
-      floatText('pv-float', '+' + fmt(Math.round(healAmt)), 'heal');
+      healPlayerWithShieldEvent(pEnt, healAmt, st, playerFloatSel);
+      floatText(playerFloatSel, '+' + fmt(Math.round(healAmt)), 'heal');
       if (st.lifesteal > 0 || omni > 0 || res.heal) logMsg += '<span class="log-hl-good">汲取回復 ' + fmt(healAmt) + '。</span>';
     }
     if (st.manaSteal + omni > 0) {
       var mpGain = res.dmg * (st.manaSteal + omni) / 100;
       pEnt.mp = Math.min(st.mp, pEnt.mp + mpGain);
-      floatText('pv-float', '+' + fmt(Math.round(mpGain)) + ' MP', 'mp');
+      floatText(playerFloatSel, '+' + fmt(Math.round(mpGain)) + ' MP', 'mp');
     }
     // 被動：暈眩 / 減速
     if (!res.killed) {
@@ -279,7 +303,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
         mEnt.hp -= smiteDmg;
         trackDps(smiteDmg);
         recordRunDamage('天罰', smiteDmg);
-        floatText(mEnt.floatSel || floatSel, '⚡' + fmt(smiteDmg), 'crit');
+        floatEnemyEvent(mEnt, floatSel, '⚡' + fmt(smiteDmg), 'crit');
         logMsg += '<span class="log-hl-good">天罰降臨，追加 ' + fmt(smiteDmg) + ' 真實傷害！</span>';
         if (mEnt.hp <= 0) { mEnt.hp = 0; res.killed = true; res.dmg += smiteDmg; }
       }
@@ -306,20 +330,29 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult) {
   var logMsg = (mEnt.name || '怪物') + (mult && mult > 1 ? ' <span class="log-hl-bad">重擊</span>你，' : ' 攻擊你，');
   if (res.miss) {
     floatText(floatSel, 'MISS', 'miss');
+    floatPlayerEvent(floatSel, '閃避!', 'defend');
     logMsg += '<span class="log-hl-good">被你閃避了！</span>';
   } else {
     var isCrit = mult && mult > 1;
     var dmgStr = fmt(res.dmg);
     if (isCrit) dmgStr = '爆擊 ' + dmgStr;
-    if (res.blocked) dmgStr = '格擋 ' + dmgStr;
     floatText(floatSel, dmgStr, isCrit ? 'crit' : 'mdmg');
+    if (res.blocked) floatPlayerEvent(floatSel, '格擋!', 'defend');
     logMsg += '造成 ' + fmt(res.dmg) + (mEnt.magic ? ' 魔法' : '') + ' 傷害。';
     if (res.blocked) logMsg += '<span class="log-hl-good">你格擋了部分傷害！</span>';
-    if (res.absorbed) logMsg += '<span class="log-hl-good">護盾吸收 ' + fmt(res.absorbed) + '。</span>';
-    if (res.procs.length) logMsg += '<span class="log-hl-bad">［' + res.procs.join('・') + '］</span>';
+    if (res.absorbed) {
+      floatPlayerEvent(floatSel, '🛡️護盾吸收 ' + fmt(res.absorbed), 'shield');
+      logMsg += '<span class="log-hl-good">護盾吸收 ' + fmt(res.absorbed) + '。</span>';
+    }
+    if (res.procs.length) {
+      res.procs.forEach(function (proc) {
+        floatPlayerEvent(floatSel, proc + '!', proc === '不朽' ? 'buff' : 'debuff');
+      });
+      logMsg += '<span class="log-hl-bad">［' + res.procs.join('・') + '］</span>';
+    }
   }
   if (res.thorns) {
-    floatText(THORN_FLOAT_MAP[floatSel] || floatSel, '反傷 ' + fmt(res.thorns), 'defend');
+    floatEnemyEvent(mEnt, THORN_FLOAT_MAP[floatSel] || floatSel, '反傷 ' + fmt(res.thorns), 'defend');
     logMsg += '<span class="log-hl-good">並遭到荊棘反震 ' + fmt(res.thorns) + ' 傷害！</span>';
   }
   blog('🛡️ ' + logMsg, 'dim-text', 'combat');
@@ -422,10 +455,10 @@ function onFieldKill(m) {
   m._rewarded = true;
   var st = getStats();
   // 擊殺回復 KILL_HEAL_PCT% 最大生命（溢出轉護盾）
-  healPlayer(FIELD.player, st.hp * KILL_HEAL_PCT / 100, st);
+  healPlayerWithShieldEvent(FIELD.player, st.hp * KILL_HEAL_PCT / 100, st, 'pv-float');
   // 吸魂
   if ((st.passives.soulEater || 0) > 0) {
-    healPlayer(FIELD.player, st.hp * st.passives.soulEater / 100, st);
+    healPlayerWithShieldEvent(FIELD.player, st.hp * st.passives.soulEater / 100, st, 'pv-float');
   }
   var goldGain = Math.round(m.gold * (1 + st.goldBonus / 100));
   var xpGain = Math.round(m.xp * (1 + st.xpBonus / 100));
@@ -468,14 +501,19 @@ function onFieldDeaths() {
   }
 }
 
+function fieldDeathRetreatStage(currentStage) {
+  return Math.max(1, (currentStage || 1) - FIELD_DEATH_STAGE_RETREAT);
+}
+
 function onPlayerFieldDeath() {
-  blog('☠️ 你被擊倒了…退回第 1 階段重頭來過（' + REVIVE_DELAY + ' 秒後復活）', 'bad');
-  flushRunSummary();
+  var retreatStage = fieldDeathRetreatStage(G.stage.current);
+  blog('☠️ 你被擊倒了…退回第 ' + retreatStage + ' 階段繼續挑戰（' + REVIVE_DELAY + ' 秒後復活）', 'bad');
+  flushRunSummary(retreatStage);
   FIELD.monster = null;
   FIELD.monsters = [];
   FIELD.reviveCd = REVIVE_DELAY;
   G.stage.kills = 0;
-  G.stage.current = 1;
+  G.stage.current = retreatStage;
   UI.dirty.battle = true;
 }
 
@@ -600,7 +638,7 @@ function generateSummaryHtml(current) {
   return html;
 }
 
-function flushRunSummary() {
+function flushRunSummary(nextMaxStage) {
   var list = $id('battle-summary-list');
   if (list) {
     var current = list.querySelector('[data-summary-current]');
@@ -613,6 +651,6 @@ function flushRunSummary() {
     list.insertBefore(d.firstChild, list.firstChild);
   }
   RUN_STATS.runCount++;
-  RUN_STATS.maxStage = G.stage.current > 1 ? 1 : G.stage.current; // Next run starts at 1
+  RUN_STATS.maxStage = Math.max(1, nextMaxStage || (G.stage.current > 1 ? 1 : G.stage.current));
   RUN_STATS.skills = {};
 }

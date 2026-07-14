@@ -42,10 +42,13 @@ var ANCIENT_AFFIX_VALUE_MULT = 1.35;
 /* ---- 轉生系統 ----
    生命與四維在原始總值完成後套用最終倍率：
    1～10 轉分別為 ×10、×20、×40、×80、×160、×320、×640、×1280、×2560、×5120。 */
-var REINCARNATION_LEVEL = 9999;
+var MAX_LEVEL = 9999;             // 角色等級上限（升級所需經驗 參數 d）
+var REINCARNATION_LEVEL = 9999;   // 可轉生等級：達此級可轉生（可轉生等級 參數 a）
 var REINCARNATION_MAX = 10;
 var REINCARNATION_RANKS = ['冒險者', '勇者', '大劍師', '破世者', '不朽者', '王者', '大主宰', '神聖尊者', '大聖王', '至高主宰', '位面創世神'];
 var REINCARNATION_EXTRA_MULTIPLIERS = [0, 10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120];
+// 升級經驗基礎增加值：升級所需經驗在括號外再加此值（依轉生次數；轉生 0 次為 0，1~10 次見轉生對照表 參數 c）。
+var REINCARNATION_EXP_BASE_ADD = [0, 100000, 300000, 900000, 2700000, 8100000, 24300000, 72900000, 218700000, 656100000, 1968300000];
 
 /* ---- 普通關卡敵人數量 ----
    僅普通敵人使用；菁英與高塔 BOSS 固定單一敵人。權重總和 = 100%。 */
@@ -102,8 +105,19 @@ var ACCESSORY_SLOTS = ['ring', 'amulet'];
 /* ---- 神鑄系統（Divine Forge）----
    六芒星法陣放入 6 件「同品質」裝備（限傳說/神話/創世）鑄造下一品質裝備；
    失敗隨機消耗 3 件、其餘退回背包。魔塵每個 +5% 成功率，最多 6 個。 */
+/* 屬性數值上限（單一來源）：computeStats 夾限、面板顯示、提示文字、apply_params 一律引用此表。
+   改上限只需改這裡（或參數表「2-屬性上限」→ apply_params 寫入此表），夾限與 tip 會一起同步。 */
+var STAT_CAPS = {
+  critRate: 100, pPen: 80, mPen: 80, cdr: 60, castSpeed: 50,
+  lifesteal: 60, manaSteal: 30, blockRate: 50, blockDmgRed: 50,
+  evasion: 40, tenacity: 60, pRes: 60, mRes: 60, elemRes: 75, ctrlRes: 80,
+  ccRed: 60, moveSpeed: 50, luck: 100, hybridMutation: 60, enrageThreshold: 30,
+  affixCap: 100, doubleHit: 45, stun: 30
+  // 註：全局減傷上限＝GLOBAL_DMG_RED_CAP（由「2-屬性派生/全局減傷」控制）；此處不重複。
+};
 var GODFORGED_IDX = 8;                       // 神鑄創世稀有度索引
-var FORGE_UNLOCK_LEVEL = 1000;               // 神鑄系統 0 轉開放等級；解鎖後永久保留
+var FORGE_UNLOCK_LEVEL = 1;                  // 神鑄系統解鎖等級（條件一：等級 ≥ 此值）；解鎖後永久保留
+var FORGE_UNLOCK_REINCARNATION = 1;          // 神鑄系統解鎖所需轉生次數（條件二：轉生 ≥ 此值）；需與條件一同時滿足
 var FORGE_MIN_RARITY = 5;                    // 可入爐最低品質（傳說）
 var FORGE_SLOTS = 6;                         // 六芒星槽位數
 var FORGE_BASE_RATE = { 5: 55, 6: 40, 7: 25 };                  // 基礎成功率 %（依素材品質）
@@ -328,11 +342,11 @@ var SWAMP_POOL = [
 var ZONE_LIST = ['plains', 'desert', 'swamp'];
 var ZONES = {
   plains: { name: '草原', emoji: '🌿', pool: MONSTER_POOL,
-    hpMult: 1,   atkMult: 1,   defMult: 1,   rewardMult: 1 },
+    hpMult: 1,   atkMult: 1,   defMult: 1,   aspdMult: 1,   rewardMult: 1 },
   desert: { name: '荒漠', emoji: '🏜️', pool: DESERT_POOL,
-    hpMult: 2.2, atkMult: 1.8, defMult: 1.6, rewardMult: 2, reqZone: 'plains', reqStage: 100 },
+    hpMult: 2.2, atkMult: 1.8, defMult: 1.6, aspdMult: 1.5, rewardMult: 1.25, reqZone: 'plains', reqStage: 100 },
   swamp:  { name: '沼澤', emoji: '🦠', pool: SWAMP_POOL,
-    hpMult: 4,   atkMult: 2.8, defMult: 2.4, rewardMult: 3, reqZone: 'desert', reqStage: 100 }
+    hpMult: 4,   atkMult: 2.8, defMult: 2.4, aspdMult: 2,   rewardMult: 1.5, reqZone: 'desert', reqStage: 100 }
 };
 function currentZoneDef() {
   return ZONES[(G.stage && G.stage.zone) || 'plains'] || ZONES.plains;
@@ -340,6 +354,7 @@ function currentZoneDef() {
 
 var RESPAWN_DELAY = 0.8;       // 出怪間隔（秒）
 var REVIVE_DELAY = 3.0;        // 死亡復活時間（秒）
+var FIELD_DEATH_STAGE_RETREAT = 10; // 野外死亡退回階段數
 
 // ---- BOSS 高塔（元素 BOSS 以魔法攻擊） ----
 var BOSS_LIST = [
@@ -595,16 +610,16 @@ var STAT_GROUPS = [
   { title: '進攻屬性', rows: [
     ['⚔️ 物理攻擊', function (st) { return statFmt(st.atk, null); }, function(st) { return statDesc(st, '影響普攻與多數物理技能的傷害基礎。', '物理攻擊', 'atk', 'atkPct'); }],
     ['🔮 魔法攻擊', function (st) { return statFmt(st.matk, null); }, function(st) { return statDesc(st, '影響多數魔法技能的傷害基礎。', '魔法攻擊', 'matk', 'matkPct'); }],
-    ['💥 暴擊率', function (st) { return statFmt(st.critRate, 100, '%'); }, '攻擊時造成額外暴擊傷害的機率。（上限：100%）'],
+    ['💥 暴擊率', function (st) { return statFmt(st.critRate, STAT_CAPS.critRate, '%'); }, '攻擊時造成額外暴擊傷害的機率。（上限：' + STAT_CAPS.critRate + '%）'],
     ['🩸 暴擊傷害', function (st) { return Math.round(st.critDmg) + '%'; }, '觸發暴擊時的傷害倍率。'],
-    ['🗡️ 物理穿透', function (st) { return statFmt(st.pPen, 80, '%'); }, '造成物理傷害時，無視敵方一定比例的物理防禦。（上限：80%）'],
-    ['🪄 魔法穿透', function (st) { return statFmt(st.mPen, 80, '%'); }, '造成魔法傷害時，無視敵方一定比例的魔法防禦。（上限：80%）'],
+    ['🗡️ 物理穿透', function (st) { return statFmt(st.pPen, STAT_CAPS.pPen, '%'); }, '造成物理傷害時，無視敵方一定比例的物理防禦。（上限：' + STAT_CAPS.pPen + '%）'],
+    ['🪄 魔法穿透', function (st) { return statFmt(st.mPen, STAT_CAPS.mPen, '%'); }, '造成魔法傷害時，無視敵方一定比例的魔法防禦。（上限：' + STAT_CAPS.mPen + '%）'],
     ['🎯 命中率', function (st) { return statFmt(st.hit, null, '%'); }, '直接抵消敵方的閃避機率。'],
     ['⚡ 攻擊速度', function (st) { return statFmt(st.aspd, 5, '/s'); }, '每秒進行普通攻擊的次數。（上限：5/秒）'],
-    ['⏱️ 冷卻縮減', function (st) { return statFmt(st.cdr, 60, '%'); }, '減少技能所需的冷卻時間。（上限：60%）'],
-    ['🌀 施法速度', function (st) { return statFmt(st.castSpeed, 50, '%'); }, '縮短技能的施放延遲或詠唱時間。（上限：50%）'],
-    ['🧛 吸血', function (st) { return statFmt(st.lifesteal, 60, '%'); }, '造成傷害時，將部分傷害轉化為自身生命值。（上限：60%）'],
-    ['🌊 吸魔', function (st) { return statFmt(st.manaSteal, 30, '%'); }, '造成傷害時，將部分傷害轉化為自身法力值。（上限：30%）'],
+    ['⏱️ 冷卻縮減', function (st) { return statFmt(st.cdr, STAT_CAPS.cdr, '%'); }, '減少技能所需的冷卻時間。（上限：' + STAT_CAPS.cdr + '%）'],
+    ['🌀 施法速度', function (st) { return statFmt(st.castSpeed, STAT_CAPS.castSpeed, '%'); }, '縮短技能的施放延遲或詠唱時間。（上限：' + STAT_CAPS.castSpeed + '%）'],
+    ['🧛 吸血', function (st) { return statFmt(st.lifesteal, STAT_CAPS.lifesteal, '%'); }, '造成傷害時，將部分傷害轉化為自身生命值。（上限：' + STAT_CAPS.lifesteal + '%）'],
+    ['🌊 吸魔', function (st) { return statFmt(st.manaSteal, STAT_CAPS.manaSteal, '%'); }, '造成傷害時，將部分傷害轉化為自身法力值。（上限：' + STAT_CAPS.manaSteal + '%）'],
     ['👑 對菁英傷害', function (st) { return statFmt(st.eliteDmg, null, '%', true); }, '對菁英怪或首領怪物造成的額外傷害加成。'],
     ['😈 對BOSS傷害', function (st) { return statFmt(st.bossDmg, null, '%', true); }, '專門對首領怪物造成的額外傷害加成。'],
     ['💫 範圍傷害', function (st) { return statFmt(st.aoeDmg, null, '%', true); }, '多目標或範圍技能的總體傷害加成。']
@@ -614,36 +629,36 @@ var STAT_GROUPS = [
     ['🔰 魔法防禦', function (st) { return statFmt(st.mdef, null); }, function(st) { return statDesc(st, '根據防禦公式降低受到的魔法傷害。', '魔法防禦', 'mdef', 'defPct'); }],
     ['🛡️ 全局減傷', function (st) { return statFmt(st.globalDmgRed, null); }, function (st) {
       var reduction = globalDamageReduction(st.globalDmgRed) * 100;
-      return '在最終傷害階段降低受到的所有傷害（減傷上限 85%）。<br><br><span style="color:#ffd700">目前實際減傷：' + pctStr(reduction) + '</span>';
+      return '在最終傷害階段降低受到的所有傷害（減傷上限 ' + GLOBAL_DMG_RED_CAP + '%）。<br><br><span style="color:#ffd700">目前實際減傷：' + pctStr(reduction) + '</span>';
     }],
-    ['🧱 格擋率', function (st) { return statFmt(st.blockRate, 50, '%'); }, '受到攻擊時，有機率觸發格擋來減輕部分傷害。（上限：50%）'],
-    ['🧲 格擋減傷', function (st) { return statFmt(30 + st.blockDmgRed, 80, '%'); }, '成功格擋時能減免的傷害比例。（上限：80%）'],
-    ['💨 閃避率', function (st) { return statFmt(st.evasion, 40, '%'); }, '完全避開敵人攻擊的機率（受敵方命中率影響）。（上限：40%）'],
-    ['🦾 韌性', function (st) { return statFmt(st.tenacity, 60, '%'); }, '降低自身被施加暈眩、減速等控制狀態的機率。（上限：60%）'],
+    ['🧱 格擋率', function (st) { return statFmt(st.blockRate, STAT_CAPS.blockRate, '%'); }, '受到攻擊時，有機率觸發格擋來減輕部分傷害。（上限：' + STAT_CAPS.blockRate + '%）'],
+    ['🧲 格擋減傷', function (st) { return statFmt(30 + st.blockDmgRed, 30 + STAT_CAPS.blockDmgRed, '%'); }, '成功格擋時能減免的傷害比例（30% 基礎 + 詞條）。（上限：' + (30 + STAT_CAPS.blockDmgRed) + '%）'],
+    ['💨 閃避率', function (st) { return statFmt(st.evasion, STAT_CAPS.evasion, '%'); }, '完全避開敵人攻擊的機率（受敵方命中率影響）。（上限：' + STAT_CAPS.evasion + '%）'],
+    ['🦾 韌性', function (st) { return statFmt(st.tenacity, STAT_CAPS.tenacity, '%'); }, '降低自身被施加暈眩、減速等控制狀態的機率。（上限：' + STAT_CAPS.tenacity + '%）'],
     ['🫧 護盾效率', function (st) { return statFmt(st.shieldEff, null, '%', true); }, '提升護盾的最大吸收上限與獲取量。'],
-    ['🗿 物理抗性', function (st) { return statFmt(st.pRes, 60, '%'); }, '結算防禦後，進一步按比例直接減免受到的物理傷害。（上限：60%）'],
-    ['🌌 魔法抗性', function (st) { return statFmt(st.mRes, 60, '%'); }, '結算防禦後，進一步按比例直接減免受到的魔法傷害。（上限：60%）'],
-    ['🔥 火焰抗性', function (st) { return statFmt(st.resist.fire, 75, '%'); }, '按比例降低受到的火焰屬性傷害。（上限：75%）'],
-    ['❄️ 冰霜抗性', function (st) { return statFmt(st.resist.ice, 75, '%'); }, '按比例降低受到的冰霜屬性傷害。（上限：75%）'],
-    ['⚡ 雷電抗性', function (st) { return statFmt(st.resist.lightning, 75, '%'); }, '按比例降低受到的雷電屬性傷害。（上限：75%）'],
-    ['☠️ 劇毒抗性', function (st) { return statFmt(st.resist.poison, 75, '%'); }, '按比例降低受到的劇毒屬性傷害。（上限：75%）'],
-    ['✨ 聖光抗性', function (st) { return statFmt(st.resist.light, 75, '%'); }, '按比例降低受到的聖光屬性傷害。（上限：75%）'],
-    ['🌑 暗影抗性', function (st) { return statFmt(st.resist.dark, 75, '%'); }, '按比例降低受到的暗影屬性傷害。（上限：75%）'],
-    ['🛡️ 控制抵抗', function (st) { return statFmt(st.resist.ctrl, 80, '%'); }, '全面降低所有負面異常狀態的命中率。（上限：80%）']
+    ['🗿 物理抗性', function (st) { return statFmt(st.pRes, STAT_CAPS.pRes, '%'); }, '結算防禦後，進一步按比例直接減免受到的物理傷害。（上限：' + STAT_CAPS.pRes + '%）'],
+    ['🌌 魔法抗性', function (st) { return statFmt(st.mRes, STAT_CAPS.mRes, '%'); }, '結算防禦後，進一步按比例直接減免受到的魔法傷害。（上限：' + STAT_CAPS.mRes + '%）'],
+    ['🔥 火焰抗性', function (st) { return statFmt(st.resist.fire, STAT_CAPS.elemRes, '%'); }, '按比例降低受到的火焰屬性傷害。（上限：' + STAT_CAPS.elemRes + '%）'],
+    ['❄️ 冰霜抗性', function (st) { return statFmt(st.resist.ice, STAT_CAPS.elemRes, '%'); }, '按比例降低受到的冰霜屬性傷害。（上限：' + STAT_CAPS.elemRes + '%）'],
+    ['⚡ 雷電抗性', function (st) { return statFmt(st.resist.lightning, STAT_CAPS.elemRes, '%'); }, '按比例降低受到的雷電屬性傷害。（上限：' + STAT_CAPS.elemRes + '%）'],
+    ['☠️ 劇毒抗性', function (st) { return statFmt(st.resist.poison, STAT_CAPS.elemRes, '%'); }, '按比例降低受到的劇毒屬性傷害。（上限：' + STAT_CAPS.elemRes + '%）'],
+    ['✨ 聖光抗性', function (st) { return statFmt(st.resist.light, STAT_CAPS.elemRes, '%'); }, '按比例降低受到的聖光屬性傷害。（上限：' + STAT_CAPS.elemRes + '%）'],
+    ['🌑 暗影抗性', function (st) { return statFmt(st.resist.dark, STAT_CAPS.elemRes, '%'); }, '按比例降低受到的暗影屬性傷害。（上限：' + STAT_CAPS.elemRes + '%）'],
+    ['🛡️ 控制抵抗', function (st) { return statFmt(st.resist.ctrl, STAT_CAPS.ctrlRes, '%'); }, '全面降低所有負面異常狀態的命中率。（上限：' + STAT_CAPS.ctrlRes + '%）']
   ]},
   { title: '特殊與機制', rows: [
-    ['⛓️ 控制時間縮減', function (st) { return statFmt(st.ccRed, 60, '%'); }, '減少被施加暈眩、減速等控制狀態的持續時間。（上限：60%）'],
-    ['👟 移動速度', function (st) { return statFmt(st.moveSpeed, 50, '%', true); }, '提高探索地圖、遇敵或到達終點的速度。（上限：+50%）'],
+    ['⛓️ 控制時間縮減', function (st) { return statFmt(st.ccRed, STAT_CAPS.ccRed, '%'); }, '減少被施加暈眩、減速等控制狀態的持續時間。（上限：' + STAT_CAPS.ccRed + '%）'],
+    ['👟 移動速度', function (st) { return statFmt(st.moveSpeed, STAT_CAPS.moveSpeed, '%', true); }, '提高探索地圖、遇敵或到達終點的速度。（上限：+' + STAT_CAPS.moveSpeed + '%）'],
     ['💰 掉寶率', function (st) { return statFmt(st.loot, null, '%', true); }, '提高擊殺怪物後掉落裝備與道具的機率。'],
     ['📚 經驗加成', function (st) { return statFmt(st.xpBonus, null, '%', true); }, '額外增加戰鬥勝利後獲得的經驗值。'],
     ['🪙 金幣加成', function (st) { return statFmt(st.goldBonus, null, '%', true); }, '額外增加戰鬥勝利後獲得的金幣。'],
-    ['🍀 幸運值', function (st) { return statFmt(st.luck, 100, 'raw1'); }, '提升在洗煉或合成裝備時出現高階詞條的機率。（上限：100）'],
+    ['🍀 幸運值', function (st) { return statFmt(st.luck, STAT_CAPS.luck, 'raw1'); }, '提升在洗煉或合成裝備時出現高階詞條的機率。（上限：' + STAT_CAPS.luck + '）'],
     ['🎒 負重上限', function (st) { return statFmt(st.weight, null, null, true); }, '提升生產線輸送帶與合成暫存區的容量上限。'],
     ['🔨 強化成功率', function (st) { return statFmt(st.enhanceSuccess, null, '%', true); }, '提升裝備強化的成功機率。'],
     ['⚗️ 分解高產率', function (st) { return statFmt(st.decomposeYield, null, '%', true); }, '增加分解裝備時獲得洗煉精粹的數量或機率。'],
-    ['🧬 合成變異率', function (st) { return statFmt(st.hybridMutation, 60, '%'); }, '提升裝備合成時發生特殊異變（如詞條升級）的機率。（上限：60%）'],
-    ['🚨 狂暴閾值', function (st) { return statFmt(st.enrageThreshold, 30, '%', true); }, '影響怪物進入狂暴狀態的時間點或血量條件。（上限：+30%）'],
-    ['📜 詞條上限率', function (st) { return statFmt(st.affixCap, 100, '%'); }, '影響裝備洗煉或生成時獲得更多詞條的機率。（上限：100%）'],
+    ['🧬 合成變異率', function (st) { return statFmt(st.hybridMutation, STAT_CAPS.hybridMutation, '%'); }, '提升裝備合成時發生特殊異變（如詞條升級）的機率。（上限：' + STAT_CAPS.hybridMutation + '%）'],
+    ['🚨 狂暴閾值', function (st) { return statFmt(st.enrageThreshold, STAT_CAPS.enrageThreshold, '%', true); }, '影響怪物進入狂暴狀態的時間點或血量條件。（上限：+' + STAT_CAPS.enrageThreshold + '%）'],
+    ['📜 詞條上限率', function (st) { return statFmt(st.affixCap, STAT_CAPS.affixCap, '%'); }, '影響裝備洗煉或生成時獲得更多詞條的機率。（上限：' + STAT_CAPS.affixCap + '%）'],
     ['💎 寶石鑲嵌效率', function (st) { return statFmt(st.gemEff, null, '%', true); }, '全面放大所有已鑲嵌寶石的能力值。']
   ]}
 ];

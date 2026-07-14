@@ -15,11 +15,13 @@ function loadFormulaContext() {
   return context;
 }
 
-test('level up xp requirement uses quadratic scaling', () => {
+test('level up xp requirement uses cubic scaling', () => {
   const context = loadFormulaContext();
 
-  assert.equal(context.xpForLevel(1), 70);
-  assert.equal(context.xpForLevel(4000), 480000040);
+  // xpForLevel(l) = floor((30 × l^3 + 40) × 轉生經驗倍率 + 升級經驗基礎增加值)；未轉生時倍率 1、基礎增加值 0。
+  assert.equal(context.xpForLevel(1), 70);        // 30×1 + 40
+  assert.equal(context.xpForLevel(10), 30040);    // 30×1000 + 40
+  assert.equal(context.xpForLevel(100), 30000040); // 30×1,000,000 + 40
 });
 
 test('轉生設定依公式表支援 10 轉與十倍遞增經驗倍率', () => {

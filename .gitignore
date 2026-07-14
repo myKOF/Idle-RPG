@@ -43,3 +43,10 @@ logs/
 .logs/
 playwright-report/
 test-results/
+
+# 參數套用的重載權杖（每次套用都會變，不需版控）
+params_version.txt
+
+# Excel 開啟中的暫存鎖定檔（~$ 開頭），不需版控
+~$*.xlsx
+config/Excel/~$*.xlsx

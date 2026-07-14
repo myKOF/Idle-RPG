@@ -1,5 +1,229 @@
 # PATCH.md
 
+## 本次變更摘要：batch 2b — 擴充 apply 涵蓋跨檔 + 補接 13 項（含護盾改 1%/10%）
+
+- `apply_params` `FILES` 由 {data,formula} 擴充為含 combat/item/skills/player/save（src/備份/寫入/語法檢查皆依 FILES 迭代，自動涵蓋）。
+- 補接：護盾（新增 formula.js 常數 SHIELD_OVERFLOW_PCT/SHIELD_HEAL_CAP_PCT，依使用者決定改為 1%/10%）、菁英倍率(formula.js 6 值，金幣/經驗共用 c)、怪物固定戰鬥值(combat.js 暴擊/暴傷/命中；玩家設定用 st.xxx 無數字故錨點只中怪物行)、野外菁英掉落倍率(combat.js)、寶石商店刷新週期(item.js 新增常數 GEM_SHOP_REFRESH_HOURS)。參數總數 647→660，dry-run 錨點問題 0。
+- 驗證：實跑 --write 改菁英hp/怪物暴擊/商店刷新 → 正確寫入對應檔(formula/combat/item)，且玩家 critRate 與其他菁英倍率未被誤動。
+- 修正流程疏失：先前 --write 測試（apply 會寫全部 FILES）誤把使用者待套用的掉落表值套進 data.js 未還原；已從 batch1 乾淨備份還原 data.js（保留 STAT_CAPS、回退使用者掉落值交其自行套用），3 個掉落表測試恢復通過。
+- 未接（batch 2c/待議）：技能點總預算（跨 player/skills/save 多處、需常數化 10000 上限）；結構/停用/資訊/重複列改 xlsx 中文說明。
+
+## 本次變更摘要：稽核參數表接線缺口 + 補接 formula.js 15 項（batch 2a）
+
+- 以執行期實測稽核 apply_params 讀取涵蓋：全表 444 列，396 已讀，48 未接。分類：可接單值、結構、停用(合成)、資訊/指標列、重複、寫死分數。
+- batch 2a 補接 formula.js 內漏接的可調單值（多值行用正規式避免相依錨點失配）：轉生經驗倍率、附魔書/自動機組零件掉率、高塔獎勵(零件階級/金幣/寶石/附魔精華/裝備等級 a+b)、戰力評分(神鑄每條 a/稀有度 b)、背包擴充費用、寶石轉換(格數/堆疊)、寶石拆解保留率。參數總數 632→647，dry-run 錨點問題 0。
+- 驗證：實跑 --write 改附魔書/高塔金幣/寶石轉換/裝備等級 → 皆正確寫入，且 `gold: Math.round(` 的另外三處(分解/寶石金幣)未被誤動。
+- 待辦（batch 2b/2c）：擴充 apply_params 涵蓋 combat.js/item.js/skills.js 以接菁英倍率、怪物固定戰鬥值、菁英掉落倍率、寶石商店刷新週期、技能點總預算；其餘結構/停用/資訊/重複列改寫 xlsx 中文說明標註。
+- 待使用者確認（值不一致）：溢出治療轉護盾(CSV 1 vs 程式 50%)、護盾上限治療轉化(CSV 10 vs 程式 15%)、全局減傷上限(2-屬性上限 85 vs 已生效 GLOBAL_DMG_RED_CAP 95)。
+
+## 本次變更摘要：加深 MISS 浮字紅色
+
+- `css/style.css`：將 `.float-txt.miss` 從偏橘色改為較深紅 `#dc2626`，並增加深紅外光與黑色陰影，讓敵人身上的 MISS 更清楚。
+- `tests/player-event-float.test.cjs`：補上 MISS 浮字顏色與陰影檢查。
+- 驗證：`node --test tests\player-event-float.test.cjs`、`node --check js\combat.js`、`node --check js\skills.js` 通過。
+
+## 本次變更摘要：補回玩家護盾條渲染
+
+- `js/ui.js`：補回 `renderPlayerShieldBar()`，野外玩家 `pv-shield` 與高塔玩家 `tp-shield` 會依目前護盾值顯示/隱藏並更新寬度。
+- `js/ui.js`：新增 `playerShieldText()`，血條文字仍保留原本的 `+護盾值` 顯示，避免護盾條與文字其中一邊被改丟。
+- 驗證：`node --test tests\player-shield-bar.test.cjs`、`node --check js\ui.js` 通過。
+
+## 本次變更摘要：屬性上限收斂為單一來源 STAT_CAPS（夾限/顯示/提示同步）+ apply 取代定位修正
+
+- 問題：改上限只有 `computeStats` 的 clamp 生效，面板顯示與提示文字（`（上限：N%）`）仍是舊值——因為上限值散落在 clamp、statFmt、tip 文字（甚至傷害計算的抗性 clamp）各處，apply 只改了 clamp。
+- 修法：新增單一來源 `STAT_CAPS`（data.js，23 項），`formula.js` 全部 clamp/Math.min（含傷害計算 pRes/mRes）改引用 `STAT_CAPS.X`；`data.js` STAT_GROUPS 面板顯示的 statFmt 上限與提示文字改由 `STAT_CAPS.X` 組出；全局減傷上限沿用既有 `GLOBAL_DMG_RED_CAP`（面板提示同步引用之）。`apply_params` §2 屬性上限的接線由「改 formula.js clamp 數字」改為「寫 data.js `STAT_CAPS.X`」（objFieldML）。
+- 連帶修正 apply 取代定位 bug：`applyOne` 的套用順序改以「被取代群組的起點」排序（原為 match 起點）。同一行若有多筆同起點 edit（如 `gold-a` 改基底、`gold-c` 改冪次，皆自 `var gold =(` 起算），舊排序會讓前者的長度變化位移後者、寫壞成 `Math.pow(11.05 stage - 1)`；改以群組實際位置由後往前套用後正確。
+- 驗證：改「冷卻縮減上限 60→70」套用後 `STAT_CAPS.cdr=70`、clamp 用 70、面板提示同步顯示「上限：70%」，且 gold 行正確 `(20 + stage) * Math.pow(1.05, stage - 1)`；apply dry-run 錨點問題 0。
+- 註：全局減傷上限（2-屬性上限）為與「2-屬性派生/全局減傷」重複之列，未接（實由後者控制）；待中文說明批次標註。
+- 測試：13 失敗均與本次無關（2 既有 CSS、2 使用者自行改值 xp次方2.2/全局減傷95、9 為使用者開發中 UI 功能測試如 renderPlayerShieldBar 尚未實作）。
+
+## 本次變更摘要：修復階段前進/後退與提示位置
+
+- `index.html`：將前進/後退關卡按鈕的 tooltip placement 改為 `stage-right` / `stage-left`，避免提示框蓋住中央關卡階段文字。
+- `js/ui.js`：補回前進/後退按鈕的長按邏輯，按住 300ms 後以每 50ms 一次切換，等同每秒 20 關；一般點擊也會立即刷新階段顯示。
+- `js/ui.js`：`showStatTooltip()` 新增階段按鈕外側定位，並保留視窗邊界夾取。
+- `js/ui.js`：同控制列的暫停戰鬥按鈕補回 `toggleCombatPaused()` 綁定與 `aria-pressed` / 文案刷新。
+- 驗證：`node --test tests\stage-jump-ui.test.cjs`、`node --test tests\combat-pause.test.cjs`、`node --check js\ui.js` 通過。
+
+## 本次變更摘要：修正野外怪物成長錨點（gold-c 依賴 gold-a 值而失配）
+
+- 現象：套用時 `gold-c 錨點匹配 0 次` 而中止（安全機制未寫壞檔）。與使用者「空白填 0」無關。
+- 根因：`gold-c` 錨點寫死 `(5 + stage) * Math.pow(`，但先前套用已把 gold-a 由 5 改成 100（現為 `(100 + stage)`），錨點便找不到。同類脆弱錨點還有 hp-b/c、atk-b/c、def-b/c、xp2-c——它們都寫死了同一行的 a（與 b）值，使用者只要調 a/b 就會讓 b/c 錨點失配。
+- 修法：把野外怪物成長 `var X = (a + stage [* b]) * Math.pow(c)` 的 b/c 錨點改為正規式、以 `[\d.]+` 萬用掉同行的 a（與 b），並以 `var X =` 定行確保唯一（`grp:2`，前綴成群組）。a 錨點本就穩健，不動。
+- 驗證：dry-run 錨點問題 0；實跑 `apply --write` 套用 13 項（含掉落表/寶石表 0 值、hp-c、xp2-c、gold-c）通過 node --check，金幣行正確 `var gold = (100 + stage) * Math.pow(1.06 …)`，驗證後還原交使用者自行套用。
+- 附註：使用者「空白格填 0」不影響——清單型表（掉落表/寶石/成對表）本就會略過補位 0，其餘尾端 0 也不被讀。
+
+## 本次變更摘要：玩家事件浮字移到頭像區並補齊提示
+
+- `util.js`：新增 `floatPlayerEvent()`，依野外/高塔自動把玩家事件提示送到 `pv-float` 或 `tp-float`。
+- `css/style.css`：新增 `.float-txt.player-event`，將玩家閃避、格擋、護盾、buff/debuff 取得提示固定顯示在頭像區，不再和傷害/補血數字混在血條與狀態列附近；並依效果分類分色：護盾/法力藍、攻擊/攻速/爆傷橘、掉寶/特殊金、防禦/再生綠、負面紅。
+- `combat.js`：怪物攻擊玩家時，閃避、格擋、護盾吸收、元素/不朽等 proc 會額外顯示玩家事件浮字；普攻吸血/吸魔提示也修正為依野外/高塔顯示在正確玩家浮層；我方攻擊被閃避的 `MISS` 改為固定顯示在敵方浮層。
+- `skills.js`：技能獲得護盾、再生、淨化、回魔、buff 與 buff2 都會跳玩家事件浮字；原本只套用不顯示的第二 buff 也補進戰鬥日誌；技能傷害與技能 `MISS` 改用敵方浮字 helper，避免回落到我方面板。
+- 驗證：`node --test tests\player-event-float.test.cjs tests\skill-gcd.test.cjs`、`node --test tests\player-shield-bar.test.cjs tests\tower-xp.test.cjs tests\combat-pause.test.cjs`、`node --check js\util.js`、`node --check js\combat.js`、`node --check js\skills.js`、`node --check js\ui.js` 通過。
+
+## 本次變更摘要：修正 apply_params 兩個取代定位 bug（多筆同物件/同檔變更會寫壞數字）
+
+- 現象：套用 `套用參數.bat` 時 node 語法檢查失敗（如 `hpMult: 1.25.2`、`rewardMul1.5: 3`），安全機制自動還原，未寫壞磁碟。
+- **Bug1（群組定位）**：`objField`/`objFieldML` 以「整段 match 內第一個相同數字字串」定位要取代的數字（`grp:1`＋`whole.indexOf(gtext,0)`），導致 `rewardMult` 的 `2` 誤中前面 `hpMult: 2.2` 的 `2`。修法：把前綴（keyAnchor→field:）獨立成群組1、數字為群組2（`grp:2`），定位時從前綴之後才找數字（與 `scalar`/`inline` 一致）。此 bug 過去因該值未變（2→2 不觸發取代）而未爆。
+- **Bug2（多筆取代位移）**：同檔多筆變更以「由前往後」順序套用，前面較長/較短的取代會位移後面尚未套用之錨點的絕對位置，使後者寫錯位（如 `rewardMult` 的 `t` 被覆蓋）。修法：在 result 記錄目標絕對位置 `pos`，套用時 `changes.sort((a,b)=>b.pos-a.pos)`「由後往前」套用。
+- 驗證：實跑 `apply --write` 套用 12 項（含 荒漠/沼澤 rewardMult、MAX_LEVEL、次方、mob-aspd 等）→ 通過 node --check，場景行正確（`荒漠 …aspdMult:1.5, rewardMult:1.25`、`沼澤 …aspdMult:2, rewardMult:1.5`），驗證後還原檔案交由使用者自行套用。dry-run 錨點問題 0；測試 149/151（2 失敗為既有 CSS 測試）。
+
+## 本次變更摘要：寶石合成選單預設全部類型
+
+- `js/ui.js`：寶石合成的「全部類型寶石」選項改為下拉選單第一個，並以黃色粗體顯示、預設選中；轉換與拆解選單不受影響。
+- `tests/gem-compose-all.test.cjs`：新增檢查全部類型寶石置頂、標黃、預設選中的測試。
+- 驗證：`node --test tests\gem-compose-all.test.cjs`、`node --check js\ui.js` 通過。
+
+## 本次變更摘要：場景倍率新增「攻速倍率」（與基礎攻速相乘）
+
+- 使用者於參數表「4-場景倍率」在 c(防禦) 後插入 d=攻速倍率，欄位順序變為 a生命 b攻擊 c防禦 d攻速 e獎勵 f解鎖。
+- `data.js` ZONES 各場景新增 `aspdMult`：草原 1、荒漠 1.5、沼澤 2。
+- `combat.js`：野外怪 `aspd` 與初次 `atkCd` 改用 `mAspd = base.aspd × zn.aspdMult`（與基礎攻速相乘；對普通/菁英皆生效，因 base.aspd 已含菁英 1.25）。高塔 BOSS 走 tower.js，不受影響。
+- `apply_params.cjs`：場景倍率接線新增 `aspdMult`(index 3)，並把 `rewardMult` 由 index 3 改為 index 4（因插欄位移）。參數總數 629→632。
+- `game_formula.md` §4.1/§4.2 同步：野外攻速註明為「基礎，另乘場景攻速倍率」；場景表加入攻速欄與相乘說明。
+- 驗證：apply aspdMult 一致、0 錨點問題；實測 荒漠普通怪 1.125/秒、沼澤菁英 2.5/秒；測試 148/150（2 失敗為既有 CSS 測試）。
+- 註：未動使用者其他數值調整（apply 顯示 10 項待套用值，含 reward/等級上限/次方等，均由使用者自行雙擊 bat 套用）。
+
+## 本次變更摘要：拿掉野外敵方初次出手的 +0.4 秒延遲
+
+- 需求：戰鬥開始時敵方原有「1/攻速 + 0.4 秒」的初次出手延遲，拿掉那 0.4 秒的額外延遲；我方不變。
+- `combat.js:76`：野外怪初次 `atkCd` 由 `1 / base.aspd + 0.4` 改為 `1 / base.aspd`（與玩家 combat.js:31 相同時機，雙方對等）。
+- 未動：玩家（combat.js:31，照舊）；高塔 BOSS 初次 `atkCd` 為固定 `1.5`（tower.js:33，不是 0.4，非本次範圍）。
+- `game_formula.md` §3.6 同步：野外怪初次出手延遲 `1/攻速`（無額外延遲）。
+- 驗證：野外怪 aspd 0.75 → 初次出手 1.333 秒（原 1.733 秒）；測試 148/150（2 失敗為既有 CSS 測試）。
+
+## 本次變更摘要：野外死亡改為退 10 關續打
+
+- `data.js`：新增 `FIELD_DEATH_STAGE_RETREAT = 10`，作為野外死亡回退階段數。
+- `combat.js`：玩家野外死亡後不再固定回第 1 階，而是退回 `目前階段 -10`，最低夾到第 1 階；歷史最高階段保留，敵人清空、擊殺數歸零、復活倒數維持 3 秒。
+- `game_formula.md`：同步更新玩家死亡與每波推進規則描述。
+- 驗證：`node --test tests\field-death-retreat.test.cjs`、`node --check js\combat.js`、`node --check js\data.js` 通過。
+
+## 本次變更摘要：玩家護盾改為血條上方細藍條顯示
+
+- `index.html`：野外玩家血條與高塔玩家血條內新增 `shield-bar` 層，直接疊在血條上方，不改動頭像、名稱、MP、技能或狀態資訊的位置。
+- `css/style.css`：新增 `.shield-bar`，以絕對定位顯示 3px 淺藍護盾條，顏色比法力條更淡，且不佔排版高度；血條允許上方護盾條溢出顯示，並保留最小可視寬度。
+- `js/ui.js`：新增 `renderPlayerShieldBar()`，依玩家護盾量更新護盾條寬度；原本血量文字中的 `+護盾值` 保留不變。
+- 驗證：`node --test tests\player-shield-bar.test.cjs`、`node --check js\ui.js` 通過。
+
+## 本次變更摘要：神鑄系統解鎖改為「等級 + 轉生次數」雙條件（編號7 調整）
+
+- 編號7「神鑄系統解鎖等級」新增第二條件：需**同時**滿足 等級 ≥ 解鎖等級（a）**且** 轉生次數 ≥ 解鎖轉生次數（b）才開放；解鎖後仍永久保留。
+- `data.js`：新增 `FORGE_UNLOCK_REINCARNATION`（＝b）；`FORGE_UNLOCK_LEVEL` 依 CSV 為 a。
+- `forge.js`：`forgeUnlocked()` 條件由「`reincarnationCount()===0 && level>=FORGE_UNLOCK_LEVEL`」改為「`level>=FORGE_UNLOCK_LEVEL && reincarnationCount()>=FORGE_UNLOCK_REINCARNATION`」。
+- `apply_params.cjs`：新增接線 `FORGE_UNLOCK_REINCARNATION`（神鑄系統解鎖等級 param b）。參數總數 628→629。
+- `ui.js`：解鎖提示訊息補上「轉生 N 次」條件。
+- `game_formula.md` §1.1 與 `tests/forge-unlock.test.cjs` 同步為雙條件邏輯（測試改以兩常數表述，不寫死數值）。
+- 驗證：forgeUnlocked 實測「等級9999 轉生0→鎖定、等級5 轉生2→開放」；測試 142/144（2 失敗為既有 CSS 測試）。
+- 註：本次未套用 CSV 中另外 3 個非本請求的值變更（MAX_LEVEL/可轉生等級 1000→9999、次方 3→2.2），留待使用者確認後由 套用參數.bat 套用。
+
+## 本次變更摘要：實作參數表「調整」標記的公式（升級經驗基礎增加值 + 等級上限分離）
+
+- 「變動」欄新增第三種標記 `調整`（＝要求修改現有公式），並把三態語意（空白/0＝原有、`新增`＝待命不接、`調整`＝依說明實作）寫入 `AI_RULES.md`、`tools/參數表使用說明.md` 與長期記憶。
+- 依使用者確認實作 12 列「調整」：
+  - **升級經驗基礎增加值**（轉生對照表新增 c 欄）：`xpForLevel` 改為括號外相加 `⌊(30×等級^b+40)×轉生經驗倍率 + 基礎增加值⌋`。新增 `REINCARNATION_EXP_BASE_ADD = [0,100000,300000,…,1968300000]`（轉生 0 次為 0；1~10 次＝`100000×3^(n-1)`）與 `reincarnationExpBaseAdd()`。轉生 0 次時基礎值為 0，故未轉生玩家的相對曲線不變。
+  - **升級次方 b：2 → 3（立方成長）**：使用者於 xlsx 把 `升級所需經驗` 參數 b 由 2 改為 3，經 apply 套用為 `Math.pow(l, 3)`。連帶把 apply 的 xp-c（常數 40）錨點由寫死 `Math.pow(l, 2) + ` 改為以 `Math.pow(l, <任意次方>) + ` 比對（次方本身可被調整，錨點不得依賴其值）。`game_formula.md` 與 `tests/xp-formula.test.cjs` 同步為立方。
+  - **等級上限與可轉生等級分離**：`升級所需經驗` 參數 d＝等級上限 → 新增 `MAX_LEVEL = 1000`（原本升級/存檔夾限都用 `REINCARNATION_LEVEL=9999` 兼作上限）。升級迴圈與存檔夾限（player.js:88/98、save.js:348）改用 `MAX_LEVEL`；轉生觸發條件（player.js:118、ui.js）仍用 `REINCARNATION_LEVEL`。兩者現皆為 1000（可轉生等級 9999→1000）。
+- `apply_params.cjs` 新增兩處接線：`MAX_LEVEL`（升級所需經驗 param d）、`REINCARNATION_EXP_BASE_ADD`（轉生 1~10 param c，索引 0 固定 0）。參數總數 626→628。
+- `game_formula.md` §1 同步：升級經驗公式、等級上限 9,999→1,000、可轉生等級說明。
+- 驗證：apply 試跑 628 一致、0 錨點問題、0 變更；VM 實算 xpForLevel 各轉生數皆正確（轉生0 L1=70 不變、轉生1 L1=100700、轉生10 L1=701968300000）；測試 141/143（2 失敗為既有 CSS 同步測試）。
+- 註：轉生 0 次列在 xlsx 仍為舊排版（名稱在 c 欄），已於接線時把索引 0 固定為 0 處理；階級名稱與技能上限本就不由 CSV 驅動（硬編碼於 data.js），值未變。
+
+## 本次變更摘要：新增「變動」欄 + 讀取邏輯改為以表頭名稱定位（抗欄位位移）
+
+- 使用者在 Excel 於「編號」後插入「變動」欄（空白=原有公式、新增=本次新增），使「系統分類/名稱/參數」整體右移一格。
+- `apply_params.cjs`：讀取欄位改為**以表頭名稱動態定位**（`系統分類`/`名稱`/`參數a` 用 `header.indexOf` 找欄位),不再寫死 `r[1]/r[2]/r.slice(5)`。日後再插欄也不會錯位;`編號`、`變動`等註記欄一律忽略。找不到必要表頭欄會明確報錯。
+- 修 Excel「空格自動填 0」造成的清單表破壞：使用者在 Excel 編輯後,原本留空的參數格被填成 `0`。單值列不受影響(依索引取值,不讀尾端補位格);但**成對表**(寶店刷出數量/階級)會把 `0` 誤當成 `數量=機率`。修法:`rebuildPairTable` 只取含 `=` 的格(空格與 `0` 補位一律略過);`parseTuple` 對空格/純數字 0 的「空 bracket」回傳 `0`(該區段 0% 掉落)。野外裝備/高塔/野外寶石掉落表經查讀取位置皆為有效值,不受影響。
+- `xlsx_to_csv.cjs`：欄寬下限 17→18(6 基本欄 + 參數 a..l);表頭自動驅動,實際輸出 448 列×18 欄。
+- 提醒:使用者新增的「轉生 11/12/13 次」列可被正確解析,但 `apply_params` 目前只接 `轉生 1~10 次`(迴圈上限 10),故這 3 列尚不會生效——需另行擴充遊戲端轉生上限程式才會作用。
+- 驗證:xlsx→csv→apply 試跑 626 參數一致、錨點問題 0;測試 136/138 通過(2 失敗為既有 CSS 同步測試,與本次無關)。
+
+## 本次變更摘要：改用 Excel 當來源（xlsx → CSV → 遊戲）
+
+- 需求：使用者要用 Excel 高效調數值。新結構 `config/Excel/game_parameters.xlsx`（工作表 `game_parameters`）為主檔，`config/CSV/game_parameters.csv` 改為「自動產生」的中繼檔。
+- 新增 `tools/xlsx_to_csv.cjs`（純 Node，用內建 zlib 解 xlsx 的 ZIP，不需任何套件；直接讀位元組，**Excel 開著也能轉**）：以工作表「名稱」定位 `game_parameters`，解析 sharedStrings/inlineStr/公式快取值，數字走 Number 最短往返洗掉 Excel 滿精度雜訊，輸出 UTF-8 BOM + CRLF + RFC-4180 引號。**產出與原手工 CSV byte-identical**（445 列×17 欄）。
+- `套用參數.bat` 改為兩步：[1/2] `node tools/xlsx_to_csv.cjs`（xlsx→CSV）→ [2/2] `node tools/apply_params.cjs --write`（CSV→遊戲＋更新權杖）。任一步失敗即停並顯示原因。
+- `apply_params.cjs` 預設讀取路徑改為 `config/CSV/game_parameters.csv`（原為根目錄）。`PARAMS_CSV` 環境變數覆寫不受影響。
+- `.vscode/settings.json` 的 Live Server 忽略清單改為排除整個 `**/config/**`（xlsx 與 csv 存檔皆不觸發重整）。
+- `.gitignore` 加入 Excel 鎖定暫存檔 `~$*.xlsx`。
+- 文件同步：`tools/參數表使用說明.md`（改寫為 Excel 流程；移除已不適用的「Excel 破壞 CSV」警語，改提醒「別把格子設成百分比格式」與「套用前先存檔」）、`GM_command.md` §10.5。
+- 驗證：xlsx→CSV byte-identical；apply_params 對 config/CSV 試跑 626 參數一致、錨點問題 0、變更 0（恆等）；缺檔時轉換 exit 2 讓 .bat 正確落到失敗分支；兩支 .cjs `node --check` 通過。
+
+## 本次變更摘要：存檔 CSV 不再觸發重整（Live Server 忽略設定）
+
+- 現象：存檔 game_parameters.csv 也會讓遊戲重整一次。根因是 VS Code Live Server 監看整個資料夾、任何檔案變動都重整（本專案的 param_autoreload.js 只監看 params_version.txt，不監看 CSV，並非它造成）。
+- 修正：新增 `.vscode/settings.json` 的 `liveServer.settings.ignoreFiles`，排除 `game_parameters.csv`、`params_version.txt`、`js/data.js`、`js/formula.js`。如此 Live Server 在調參流程中不再自行重整，改由 param_autoreload.js（偵測 params_version.txt）在「套用時」重整「一次」。
+- 效果：改 CSV 存檔 → 不重整；雙擊 套用參數.bat → 只重整一次。（Live Server 需停止再重啟才生效。）
+- 另修 .gitignore：把先前誤接成 `test-results/params_version.txt` 的一行拆正，`params_version.txt` 正確被忽略。
+
+## 本次變更摘要：簡化為「雙擊 套用參數.bat → 遊戲自動重載」
+
+- 使用者只想雙擊一個 .bat 就套用並讓遊戲自動重整，不必再啟動伺服器＋按遊戲內按鈕。
+- apply_params.cjs 成功寫入後更新根目錄 `params_version.txt`（時間戳權杖）。
+- 新增 `js/param_autoreload.js`（僅 localhost）：每 2 秒讀 `params_version.txt`，內容一變即 `location.reload()`，套用後不必手動 F5。
+- `套用參數.bat` 改為直接執行 `apply_params --write`（CRLF、正斜線、`where node` 檢查、成功自動關窗、失敗才 pause）。
+- 移除上一版的左上角「套用參數」按鈕（js/apply_button.js）、本機套用伺服器（tools/apply_server.cjs）與「啟動套用伺服器.bat」——不再需要常駐伺服器。index.html 改載入 param_autoreload.js。
+- `params_version.txt` 加入 .gitignore（避免每次套用造成 git 變動）。
+- 實測：開著遊戲頁面→套用 c=1.05→1.2→遊戲約 2 秒內自動重載，怪物 stage50 HP 4,696→3,260,990；主控台 0 錯誤。
+
+## 本次變更摘要：一鍵套用參數按鈕（取代 GM reload）+ 修復 Excel 破壞 CSV
+
+- 修復 Excel 破壞：寶石商店「刷出數量/階級」表原用 `數量:機率`，Excel 存檔會把含冒號的格當「時間」轉成亂碼（如 `1:75`→`0.09375`）。改用 Excel 安全的 `=` 分隔（`1=75`）；apply_params 與載入器加數值防呆：偵測到無法解析為數字的格一律中止（不寫 NaN）／跳過。重生乾淨 CSV，round-trip 626 全一致。
+- 新增本機「套用伺服器」`tools/apply_server.cjs`：綁 127.0.0.1:8790、只接受 localhost 來源、只代跑 `apply_params --write`；配 `啟動套用伺服器.bat`。瀏覽器無法寫檔，故由此伺服器代寫。
+- 新增遊戲左上角「⚙️ 套用參數」按鈕 `js/apply_button.js`：僅 localhost 建立（外部玩家看不到用不到），插入 topbar 最左；按下呼叫伺服器套用，成功後自動 `location.reload()`，永久生效且涵蓋內嵌係數；伺服器未啟動時提示先雙擊 .bat。
+- 移除舊的 GM `reload game_parameters` 文字指令與即時記憶體重載 `js/param_reload.js`（改由按鈕＋伺服器＋重載取代）。
+- 另補 `套用參數.bat`（雙擊：試跑→確認→寫入）給不想用按鈕者。
+- 實測：伺服器啟動→按鈕→寫入 data.js（RESPAWN_DELAY 0.8→0.9）→自動重載→值生效；伺服器關閉→按鈕顯示「連不到套用伺服器」提示並復原。測試 135/137（2 為既有 css 測試不同步）。
+- 修正 .bat 一開就閃退：兩個 .bat 原為 LF 行尾（cmd.exe 會出錯閃退），改為 CRLF；node 路徑改用正斜線避免轉義掉字；加 `where node` 檢查與失敗時的清楚訊息＋always pause。以 Start-Process 直接執行 .bat 實測可正常啟動伺服器。按鈕失敗時另加 alert 彈窗避免使用者沒注意（例如忘了啟動伺服器）。
+
+## 本次變更摘要：融合技效果改為「動態重算」（不存 fx 快照）
+
+- **目的**：融合技原本把聚合後的 `fx` 直接快照存檔，事後調整素材技能（SKILLS/UNLOCKS）定義既有融合技不會跟著變。改為只存「素材 id＋融合時等級（凍結）＋變異」，`fx` 由 `skillDef()` 依素材技能**現行定義**即時重算。
+- **`js/skills.js`**：
+  - 抽出純函式 `fusionAggregateFx(comps)`（原 `fuseSkills` 內的 fx 聚合邏輯，供融合與重建共用）。
+  - 新增 `applyFusionMutationByKey(fx,key)`（依 key 重套變異，`req(fx)` 通過才套，避免缺欄位崩潰）。
+  - 新增 `buildFusionRuntimeDef(rec)`（以 `SKILLS[素材]` 現行定義 + 凍結 `componentLevels` + 已存 `mutation` 重算 fx；素材技能缺失回 null）。
+  - 新增模組層快取 `_fusionRtCache` 與 `resolveFusionRecord(rec)`（依記錄物件同一性失效；不入存檔）。
+  - `skillDef(id)` 對融合技改回傳 `resolveFusionRecord`；`fuseSkills` 改存**最小記錄（不含 fx）**。
+- **`js/save.js`**：`migrateSave` 新增 `fusionFxDynamicV1` 正規化——對能以現行定義重建的融合技 `delete fs.fx`；素材缺失者保留快照後備。置於既有 `skillDmgV2`／`specialBuffTrimV1` 融合遷移之後；冪等、不寫旗標。
+- **相依面**：UI／說明全走 `skillDef(id)`（只直接讀 `.id`），無破壞；`skillBaseManaCost` 本已從 components 動態計算。
+- **文件**：`game_formula.md` §9.3 新增「效果儲存（動態重算）」列並更新舊存檔敘述；`ONE_TIME_MIGRATIONS.md` 登錄 `fusionFxDynamicV1`（永久冪等正規化，例外說明不寫旗標）。
+- **驗證**：node sandbox 載入真實 `js/skills.js` 跑 12 項斷言全過——不存 fx／等級凍結 `[5,3]`／`skillDef` 重算含 lootUp／改素材 UNLOCK 定義後融合技 `buff.base` 45→? 動態跟變（→80）／快取同實例／遷移剝離且重建採現行定義（非 9999 舊值）／素材缺失退回快照；另驗變異重套（時空漣漪 `buff.dur` 12→24，符合玩家截圖「持續 24 秒」）與 `req` 不符安全略過。`node --check` 兩檔通過。
+- **影響**：既有融合技效果數值由「凍結快照」改為「以現行 SKILLS 定義重算」；若某素材技能定義自融合後曾變動，重算後數值隨之改變（預期行為，即本需求目的）。素材技能等級仍凍結（素材在融合時已移除，無現行等級可取）。
+
+## 本次變更摘要：接完剩餘公式參數 + 文件對齊程式
+
+- 文件對齊（以程式為準）：修正 4 處不一致——formula.js 敵人數量註解改述 60/25/10/5；game_formula.md §5.2 野外零件菁英倍率 ×3→×1.5、§7.3 太古精華拆解傳說 2%→1%、§7.5 輸送帶容量「40+負重」→固定 20000。全庫掃描無殘留。
+- 接完內嵌係數：tools/apply_params.cjs 新增 numCtx（前後文夾住數字的唯一錨點），把 formula.js 寫在算式中間的係數也接入回寫（不重構 formula.js、不動數學）。新增涵蓋：玩家屬性派生、22 項屬性上限、防禦減傷、元素特效機率、高塔 BOSS 各項倍率與挑戰金幣、稀有度擲骰權重與上限、強化/洗煉費用、附魔與分解數值、寶石/神鑄/商店費用、技能升級與裝載欄係數。可回寫參數由 495 → 626。
+- 正確性：對未改動 CSV 試跑為「626 全一致、0 變更、0 錨點問題」；實測寫入玩家基底(120→130)/屬性上限(暴擊 100→120)/BOSS 生命倍率(×22→×25) 三型皆就地精準取代、過 node --check、預覽開機屬性正常；完整測試 132/134 通過（2 為既有 css/style.css 測試不同步）。
+- 說明：內嵌算式係數僅由 node 檔案工具覆蓋，GM 即時重載（reload game_parameters）仍只涵蓋具名常數與資料表子集；未接清單（少數分數形式係數、combat.js 怪物固定值、公式結構）已記於 tools/參數表使用說明.md。
+
+## 本次變更摘要：新增 GM 指令 reload game_parameters（即時重載參數）
+
+- 新增 `js/param_reload.js`：fetch `game_parameters.csv` → 解析 → 即時套用到記憶體全域（資料表以 `.name` 比對設定、具名純量重新指派、物件/陣列就地改），提供 `window.reloadGameParameters([url])` 回傳 `{applied, skipped, error}`。
+- `js/gm.js` 新增 `reload game_parameters` 指令（寬鬆別名 `reload game_parameter`）：立即回「讀取中…」，async 完成後在狀態列與日誌回報套用項數或錯誤。
+- `index.html` 於 gm.js 之前載入 param_reload.js。
+- 純記憶體覆蓋（重整頁面後還原）；永久生效仍用 `node tools/apply_params.cjs --write`。僅 localhost 生效、需以 http 開啟（file:// 或檔案被 Excel 鎖住時 fetch 失敗並提示）。
+- 涵蓋範圍為檔案工具的「可重新指派子集」：data.js 全部資料表與具名常數 + formula.js 具名常數與戰力權重；不含 formula.js 內嵌算式係數。
+- 預覽實測：以測試 CSV 即時改 3 值（RESPAWN_DELAY 0.8→0.9、神話 mult 5.2→7、物攻 base 4→88）成功，applied=539、0 錯誤、主控台 0 錯誤；GM 輸入框完整流程正常；`GM_command.md` 新增第 10.5 節說明。
+
+## 本次變更摘要：新增 CSV → 程式碼參數回寫工具 tools/apply_params.cjs
+
+- 新增 `tools/apply_params.cjs`：讀 game_parameters.csv，把數值以「唯一錨點就地取代／資料表陣列整段重建」寫回 js/data.js 與 js/formula.js。
+- 用法：`node tools/apply_params.cjs`（試跑，只列變更）／`node tools/apply_params.cjs --write`（實寫）。可用 `PARAMS_CSV=路徑` 指定其他 CSV。
+- 安全：預設 dry-run；--write 前記憶體備份、寫入後 `node --check` 驗證、失敗自動還原；錨點匹配非剛好 1 次一律中止不猜。
+- 正確性：對未改動 CSV 試跑為「495 參數全一致、0 變更、0 錨點問題」（round-trip 恆等）；實測純量／物件欄／巢狀陣列三種寫入路徑皆正確且過語法檢查、預覽開機生效。
+- 涵蓋：data.js 全部具名常數與資料表 + formula.js 具名常數 + 部分內嵌係數（升級經驗、基礎四維、野外怪物成長）。未涵蓋：formula.js 其餘內嵌係數（玩家屬性派生、BOSS 倍率、稀有度擲骰權重、強化/洗煉/技能費用公式等），詳見 tools/參數表使用說明.md。
+- 新增 `tools/參數表使用說明.md`：非工程使用者的操作、安全機制與涵蓋範圍說明。
+
+## 本次變更摘要：新增全遊戲公式參數總表 game_parameters.csv
+
+- 新增專案根目錄 `game_parameters.csv`（444 列、UTF-8 with BOM、繁體中文），彙整 formula.js 全部公式與 data.js 全部數值資料表。
+- 欄位：編號｜系統分類｜名稱｜參數化公式（以 a/b/c… 代號標示數值位置）｜中文說明｜參數a…參數l（12 欄）。
+- 無法用單一公式描述者（野外/高塔掉落表、寶石商店刷出數量/階級表、稀有度表、詞條池、戰力權重表…）改為多列，一列一個品質/類別，元組用 `{下限~上限=機率}`、`階級:機率`、`數量:機率` 避免逗號破壞 CSV。
+- 值一律以程式實際值為準；經 12 代理工作流逐區塊對照原始碼驗證，386 列 0 誤植，另補上完整性稽核找到的戰力權重表(SCORE_WEIGHTS 56 條)、詞條數硬上限(MAX_AFFIXES=8)、最低傷害下限(=1)，並於戰力評分公式補上神鑄特效乘區、高塔元素附傷補上地獄之塔×2。
+- CSV 為權威可編輯目錄；因遊戲支援 file:// 雙擊開啟（fetch 本地檔會被 CORS 擋），本階段未接入執行期。
+
 ## 本次變更摘要：AI_RULES 核心協議加入公式與文件同步規則
 
 - [核心運作與計畫協議] 新增「公式與文件同步」：調整任何公式、參數、數值或變數語意，必須同一任務內同步更新 `game_formula.md` 所有相關段落並檢查無矛盾殘留；程式與文件不一致時須先回報確認基準，禁止擅自擇一修改。
@@ -1449,3 +1673,9 @@
 - 頁面初始載入與重新整理前顯示全黑 Loading 覆蓋層，避免讀檔和 UI 建立期間露出半完成畫面。
 - `Loading.`、`Loading..`、`Loading...` 每 350 毫秒循環一次。
 - 遊戲初始化完成後自動隱藏；版本刷新、瀏覽器刷新與 F5 都會套用。
+
+# 本次變更摘要：戰鬥暫停控制
+
+- 戰鬥界面上方新增「暫停戰鬥」按鈕，可切換為「繼續戰鬥」。
+- 暫停時凍結野外與高塔戰鬥及其倒數，不停止工廠、鑄造與存檔計時。
+- 暫停狀態不寫入存檔，並同步按鈕的 `aria-pressed` 狀態。

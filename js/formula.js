@@ -45,9 +45,14 @@ function reincarnationExpMultiplier(count) {
   var n = clamp(Math.floor(count === undefined ? reincarnationCount() : count), 0, REINCARNATION_MAX);
   return Math.pow(10, n);
 }
+// 升級經驗基礎增加值（依轉生次數，於括號外相加；轉生 0 次為 0）
+function reincarnationExpBaseAdd(count) {
+  var n = clamp(Math.floor(count === undefined ? reincarnationCount() : count), 0, REINCARNATION_MAX);
+  return REINCARNATION_EXP_BASE_ADD[n] || 0;
+}
 
-// 升到下一級所需經驗 =（30 × 等級^2 + 40）× 轉生經驗倍率（每轉為上一次的 10 倍）
-function xpForLevel(l) { return Math.floor((30 * Math.pow(l, 2) + 40) * reincarnationExpMultiplier()); }
+// 升到下一級所需經驗 =（30 × 等級^2 + 40）× 轉生經驗倍率（每轉 ×10）＋ 升級經驗基礎增加值（依轉生次數）
+function xpForLevel(l) { return Math.floor((30 * Math.pow(l, 2.2) + 40) * reincarnationExpMultiplier() + reincarnationExpBaseAdd()); }
 
 /* 等級基礎四維主屬性（不含裝備）：力/敏/智/耐 相同
    = 5 + (等級 - 1) × 2 */
@@ -202,16 +207,16 @@ function computeStats() {
   // 魔攻 = (6 + (等級-1)×1.2 + 智力×2 + 定值) × (1 + 魔攻%)
   st.base.matk = 6 + (lv - 1) * 1.2 + st.int * 2;
   st.matk = Math.round((st.base.matk + A.matkFlat) * (1 + A.matkPct / 100) * godAttackMultiplier);
-  st.critRate = clamp(5 + st.agi * 0.06 + A.critRate, 0, 100);   // 暴擊率：基礎 5% + 敏捷×0.06
+  st.critRate = clamp(5 + st.agi * 0.06 + A.critRate, 0, STAT_CAPS.critRate);   // 暴擊率：基礎 5% + 敏捷×0.06
   st.critDmg = 150 + A.critDmg;                                  // 暴擊傷害：基礎 150%
-  st.pPen = clamp(A.pPen, 0, 80);                                // 穿透上限 80%
-  st.mPen = clamp(A.mPen, 0, 80);
+  st.pPen = clamp(A.pPen, 0, STAT_CAPS.pPen);                                // 穿透上限
+  st.mPen = clamp(A.mPen, 0, STAT_CAPS.mPen);
   st.hit = 100 + A.hit;                                          // 命中：基礎 100%
   st.aspd = clamp(1.0 * (1 + (A.aspdPct + st.agi * 0.15) / 100), 0.2, 5); // 攻速：基礎 1/秒，敏捷×0.15%，上限 5
-  st.cdr = clamp(A.cdr, 0, 60);                                  // 冷卻縮減上限 60%
-  st.castSpeed = clamp(A.castSpeed, 0, 50);                      // 施法速度上限 50%
-  st.lifesteal = clamp(A.lifesteal, 0, 60);                      // 吸血上限 60%
-  st.manaSteal = clamp(A.manaSteal, 0, 30);                      // 吸魔上限 30%
+  st.cdr = clamp(A.cdr, 0, STAT_CAPS.cdr);                                  // 冷卻縮減上限
+  st.castSpeed = clamp(A.castSpeed, 0, STAT_CAPS.castSpeed);                      // 施法速度上限
+  st.lifesteal = clamp(A.lifesteal, 0, STAT_CAPS.lifesteal);                      // 吸血上限
+  st.manaSteal = clamp(A.manaSteal, 0, STAT_CAPS.manaSteal);                      // 吸魔上限
   st.eliteDmg = A.eliteDmg;
   st.bossDmg = A.bossDmg;
   st.aoeDmg = A.aoeDmg;
@@ -222,34 +227,34 @@ function computeStats() {
   // 魔防 = (3 + (等級-1)×0.8 + 智力×0.7 + 定值) × (1 + 物防%［共用］)
   st.base.mdef = 3 + (lv - 1) * 0.8 + st.int * 0.7;
   st.mdef = Math.round((st.base.mdef + A.mdefFlat) * (1 + A.defPct / 100));
-  st.blockRate = clamp(A.blockRate, 0, 50);                      // 格擋率上限 50%
-  st.blockDmgRed = clamp(A.blockDmgRed, 0, 50);                  // 額外格擋減傷上限 50%（總減傷 = 30% + 此值）
-  st.evasion = clamp(st.agi * 0.08 + A.evasion, 0, 40);          // 閃避：敏捷×0.08，上限 40%
-  st.tenacity = clamp(A.tenacity, 0, 60);                        // 韌性上限 60%
+  st.blockRate = clamp(A.blockRate, 0, STAT_CAPS.blockRate);                      // 格擋率上限
+  st.blockDmgRed = clamp(A.blockDmgRed, 0, STAT_CAPS.blockDmgRed);                  // 額外格擋減傷上限（總減傷 = 30% + 此值）
+  st.evasion = clamp(st.agi * 0.08 + A.evasion, 0, STAT_CAPS.evasion);          // 閃避：敏捷×0.08
+  st.tenacity = clamp(A.tenacity, 0, STAT_CAPS.tenacity);                        // 韌性上限
   st.shieldEff = A.shieldEff;
-  st.pRes = clamp(A.pRes, 0, 60);                                // 物理/魔法抗性上限 60%
-  st.mRes = clamp(A.mRes, 0, 60);
-  // 元素抗性上限 75%、控制抵抗上限 80%
-  ELEMENTS.forEach(function (e2) { resist[e2] = clamp(resist[e2], 0, 75); });
-  resist.ctrl = clamp(resist.ctrl, 0, 80);
+  st.pRes = clamp(A.pRes, 0, STAT_CAPS.pRes);                                // 物理/魔法抗性上限
+  st.mRes = clamp(A.mRes, 0, STAT_CAPS.mRes);
+  // 元素抗性上限、控制抵抗上限
+  ELEMENTS.forEach(function (e2) { resist[e2] = clamp(resist[e2], 0, STAT_CAPS.elemRes); });
+  resist.ctrl = clamp(resist.ctrl, 0, STAT_CAPS.ctrlRes);
   st.resist = resist;
   // 特殊與機制
-  st.ccRed = clamp(A.ccRed, 0, 60);                              // 控制時間縮減上限 60%
-  st.moveSpeed = clamp(A.moveSpeed, 0, 50);                      // 移動速度上限 50%（縮短出怪間隔）
+  st.ccRed = clamp(A.ccRed, 0, STAT_CAPS.ccRed);                              // 控制時間縮減上限
+  st.moveSpeed = clamp(A.moveSpeed, 0, STAT_CAPS.moveSpeed);                      // 移動速度上限（縮短出怪間隔）
   st.loot = effectiveDropRateEffect(A.loot);
   st.xpBonus = A.xpBonus;
   st.goldBonus = A.goldBonus;
-  st.luck = clamp(A.luck, 0, 100);                               // 幸運值上限 100
+  st.luck = clamp(A.luck, 0, STAT_CAPS.luck);                               // 幸運值上限
   st.weight = Math.round(st.str * 0.5 + A.weight);               // 負重 = 力量×0.5 + 詞條
   st.enhanceSuccess = A.enhanceSuccess;
   st.decomposeYield = A.decomposeYield;
-  st.hybridMutation = clamp(A.hybridMutation, 0, 60);            // 合成變異率上限 60%
-  st.enrageThreshold = clamp(A.enrageThreshold, 0, 30);          // 狂暴閾值上限 +30
-  st.affixCap = clamp(A.affixCap, 0, 100);
+  st.hybridMutation = clamp(A.hybridMutation, 0, STAT_CAPS.hybridMutation);            // 合成變異率上限
+  st.enrageThreshold = clamp(A.enrageThreshold, 0, STAT_CAPS.enrageThreshold);          // 狂暴閾值上限
+  st.affixCap = clamp(A.affixCap, 0, STAT_CAPS.affixCap);
   st.gemEff = A.gemEff;
   // 被動上限：連擊 45%、暈眩 30%
-  if (passives.doubleHit) passives.doubleHit = Math.min(passives.doubleHit, 45);
-  if (passives.stun) passives.stun = Math.min(passives.stun, 30);
+  if (passives.doubleHit) passives.doubleHit = Math.min(passives.doubleHit, STAT_CAPS.doubleHit);
+  if (passives.stun) passives.stun = Math.min(passives.stun, STAT_CAPS.stun);
   st.passives = passives;
   st.elemAtk = elemAtk;
   st.A = A;
@@ -275,7 +280,7 @@ function elementalResistanceMultiplier(resist, element) {
 // 全局減傷：減傷率 = min(85%, 全局減傷總合 /（全局減傷總合 + 20000）)，上限 85%。
 // globalDamageReduction 回傳減傷率（0~0.85）；globalDamageMultiplier 回傳套用後的
 // 剩餘傷害倍率 = 1 − 減傷率。只在有該詞綴（total>0）時啟用，否則維持原傷害（倍率 1）。
-var GLOBAL_DMG_RED_CAP = 85;   // 全局減傷上限（%）
+var GLOBAL_DMG_RED_CAP = 95;   // 全局減傷上限（%）
 function globalDamageReduction(total) {
   total = Number(total) || 0;
   if (total <= 0) return 0;
@@ -310,7 +315,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   if (aCfg.dmgType !== 'magic') {
     var pDef = (dCfg.def || 0) * (1 - (aCfg.sunder || 0) / 100) * (1 - (aCfg.pen || 0) / 100);
     var pDmg = (aCfg.atk || 0) * (1 - defReduction(pDef, aCfg.level || 1));
-    pDmg *= 1 - clamp(dCfg.pRes || 0, 0, 60) / 100;   // 物理抗性：結算防禦後再按比例減免
+    pDmg *= 1 - clamp(dCfg.pRes || 0, 0, STAT_CAPS.pRes) / 100;   // 物理抗性：結算防禦後再按比例減免
     dmg += pDmg;
   }
   if (aCfg.dmgType === 'magic' || aCfg.dmgType === 'both') {
@@ -318,7 +323,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     var baseMAtk = (aCfg.dmgType === 'both') ? (aCfg.matk || 0) : (aCfg.atk || 0);
     var mDef = (dCfg.mdef || 0) * (1 - (aCfg.sunder || 0) / 100) * (1 - mPen / 100);
     var mDmg = baseMAtk * (1 - defReduction(mDef, aCfg.level || 1));
-    mDmg *= 1 - clamp(dCfg.mRes || 0, 0, 60) / 100;   // 魔法抗性
+    mDmg *= 1 - clamp(dCfg.mRes || 0, 0, STAT_CAPS.mRes) / 100;   // 魔法抗性
     dmg += mDmg;
   }
   dmg *= rnd(0.9, 1.1);   // 傷害浮動 ±10%
@@ -394,16 +399,19 @@ function resistCtrl(dCfg) {
   return r > 0 && chance(r);
 }
 
-/* ---- 治療公式：溢出治療的 50% 轉為護盾 ----
-   護盾上限 = 最大生命 × 15% × (1 + 護盾效率%) */
+/* ---- 治療公式 ----
+   溢出治療的 SHIELD_OVERFLOW_PCT% 轉為護盾；
+   護盾上限 = 最大生命 × SHIELD_HEAL_CAP_PCT% × (1 + 護盾效率%) */
+var SHIELD_HEAL_CAP_PCT = 10;   // 治療轉化護盾上限（占最大生命 %）
+var SHIELD_OVERFLOW_PCT = 1;    // 溢出治療轉護盾比例（%）
 function healPlayer(pEnt, amount, st) {
   if (amount <= 0) return;
   var space = st.hp - pEnt.hp;
   if (amount <= space) { pEnt.hp += amount; return; }
   pEnt.hp = st.hp;
   var over = amount - space;
-  var cap = st.hp * 0.15 * (1 + (st.shieldEff || 0) / 100);
-  pEnt.shield = Math.min(cap, (pEnt.shield || 0) + over * 0.5);
+  var cap = st.hp * (SHIELD_HEAL_CAP_PCT / 100) * (1 + (st.shieldEff || 0) / 100);
+  pEnt.shield = Math.min(cap, (pEnt.shield || 0) + over * (SHIELD_OVERFLOW_PCT / 100));
 }
 
 /* ============================================================
@@ -420,16 +428,16 @@ function healPlayer(pEnt, amount, st) {
    ※ 場景倍率（ZONES 的 hpMult/atkMult/defMult/rewardMult）在
      spawnFieldMonster（combat.js）套用。 */
 function monsterStatsFor(stage, elite) {
-  var hp = (30 + stage * 8) * Math.pow(1.13, stage - 1);
-  var atk = (6 + stage * 1.2) * Math.pow(1.10, stage - 1);
+  var hp = (30 + stage * 8) * Math.pow(1.12, stage - 1);
+  var atk = (6 + stage * 1.2) * Math.pow(1.11, stage - 1);
   var def = (2 + stage * 0.5) * Math.pow(1.08, stage - 1);
-  var gold = (5 + stage) * Math.pow(1.07, stage - 1);
+  var gold = (100 + stage) * Math.pow(1.06, stage - 1);
   var xp = (8 + stage) * Math.pow(1.08, stage - 1);
   var m = {
     level: stage, hp: hp, atk: atk,
     def: def,                 // 物理防禦
     mdef: def * 0.75,         // 魔法防禦
-    aspd: 0.75,
+    aspd: 2,
     dodge: 0, gold: gold, xp: xp, elite: !!elite
   };
   if (elite) {
