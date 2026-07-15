@@ -192,7 +192,7 @@ body {
 
 /* ---- 左側屬性面板 ---- */
 #stats-sidebar {
-  width: 220px;
+  width: 236px;
   display: flex;
   flex-direction: column;
   padding: 16px;
@@ -2528,8 +2528,24 @@ textarea#save-io {
 }
 
 .attr-group .stat-row {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  justify-content: space-between;
+  column-gap: 8px;
   padding: 2px 0 2px 12px;
   font-size: 12px;
+  white-space: nowrap;
+}
+
+.attr-group .stat-row span,
+.attr-group .stat-row b {
+  min-width: max-content;
+  white-space: nowrap;
+}
+
+.attr-group .stat-row b {
+  justify-self: end;
+  overflow: visible;
 }
 
 #stats-sidebar {
@@ -3174,7 +3190,7 @@ textarea#save-io {
 
 #sk-tooltip {
   position: fixed;
-  z-index: 95;
+  z-index: 10005;
   max-width: 400px;
   pointer-events: none;
   background: url('../images/diablo_panel_tex.png') repeat, rgba(0, 0, 0, 0.92);

@@ -72,6 +72,8 @@ test('屬性面板加寬且屬性列不換行', () => {
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
 
   assert.match(css, /#stats-sidebar\s*\{[\s\S]*width:\s*236px/);
+  assert.match(css, /\.attr-group \.stat-row\s*\{[\s\S]*display:\s*grid/);
+  assert.match(css, /\.attr-group \.stat-row\s*\{[\s\S]*grid-template-columns:\s*max-content\s+max-content/);
   assert.match(css, /\.attr-group \.stat-row\s*\{[\s\S]*white-space:\s*nowrap/);
   assert.match(css, /\.attr-group \.stat-row span,\s*[\s\S]*\.attr-group \.stat-row b\s*\{[\s\S]*white-space:\s*nowrap/);
 });

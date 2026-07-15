@@ -1928,40 +1928,81 @@ function showTowerTooltip(flStr, anchorEl) {
 function showEnemyTooltip(anchorEl) {
   var tip = $id('sk-tooltip');
   if (!tip) return;
-  var m = G.tower.active ? (typeof TOWER_FIGHT !== 'undefined' && TOWER_FIGHT ? TOWER_FIGHT.monster : null) : (typeof FIELD !== 'undefined' && FIELD ? FIELD.monster : null);
-  if (!m || m.hp <= 0) return;
+  
+  var isBossTip = (anchorEl.id === 'btn-boss-tip' || anchorEl.id === 'btn-tower-result-boss-tip');
+  var m = null;
+  if (isBossTip) {
+    m = TOWER.boss || (TOWER.floor ? makeBoss(TOWER.floor) : null);
+  } else if (G.tower.active) {
+    m = TOWER.boss;
+  } else {
+    m = (typeof FIELD !== 'undefined' && FIELD ? FIELD.monster : null);
+  }
+  
+  if (!m) return;
+  if (!isBossTip && m.hp <= 0) return;
 
-  var dropTip = '<div class="skt-name" style="margin-bottom:6px;">【敵人情報】</div>' +
+  var title = isBossTip ? (m.name || '高塔 BOSS') : '敵人情報';
+  var dropTip = '<div class="skt-name" style="margin-bottom:6px;">【' + title + '】</div>' +
     '<div class="skt-desc" style="text-align:left;">' +
     '⚔️ 攻擊力：' + fmt(m.atk) + '<br>' +
     '⚡ 攻擊速度：' + fmt1(m.aspd) + ' 次/秒<br>' +
     '🛡️ 物理防禦：' + fmt(m.def) + '<br>' +
     '🔮 魔法防禦：' + fmt(m.mdef || m.def * 0.75) + '<br>' +
-    '❤️ 最大生命：' + fmt(m.maxHp) + '</div>';
+    '❤️ 最大生命：' + fmt(m.maxHp) + '<br>' +
+    '🎯 命中率：' + (m.hit || 100) + '%<br>' +
+    '🌀 閃避率：' + (m.dodge || 0) + '%<br>' +
+    '🧠 控制抵抗：' + (m.ctrlRes || 0) + '%';
 
-  var rates = dropRatesFor(FIELD_DROP_TABLE, m.level);
-  var equipStrs = [];
-  for (var r = rates.length - 1; r >= 0; r--) {
-    if (!rates[r]) continue;
-    var rate = rates[r];
-    var rateStr = rate + '%';
-    equipStrs.push('⚔️ <span style="color:' + RARITIES[r].color + '; font-weight:bold;">' + RARITIES[r].name + '裝備</span> <span style="color:var(--dim)">(' + rateStr + ')</span>');
+  if (m.elem) {
+    dropTip += '<br>🌌 屬性：' + (ENCHANTS[m.elem] ? ENCHANTS[m.elem].emoji + ' ' + ENCHANTS[m.elem].name : m.elem);
   }
+  dropTip += '</div>';
 
-  // 普通敵人 tips 顯示野外魔塵掉落；高塔 BOSS 的魔塵提示由上方 BOSS tips 維持，不在此重複加入。
-  var dustLine = '';
-  if (!G.tower.active) {
-    var dustRate = fieldDustRate(m.level);
-    if (dustRate > 0) dustLine = '💫 魔塵 <span style="color:var(--dim)">(' + fmt1(dustRate) + '%，神鑄材料)</span>';
-  }
+  if (isBossTip) {
+    var floor = TOWER.floor || 1;
+    var rw = towerRewardFor(floor, false);
+    var dustRate = bossDustRate(floor);
+    var soulOriginRate = hellSoulOriginDropChance(floor);
+    var ancientEssenceRate = ancientEssenceDropChanceForBoss(floor);
+    
+    var rewardLines = [];
+    rewardLines.push('💰 金幣 x' + fmt(rw.gold));
+    rewardLines.push('✨ 經驗 x' + fmt(m.xp));
+    rewardLines.push('💎 寶石 等級 ' + rw.gemLevel + ' x2 顆');
+    rewardLines.push('🔮 附魔精華 x' + rw.essence + '（另附魔書 x2）');
+    if (dustRate > 0) rewardLines.push('💫 魔塵 (' + fmt1(dustRate) + '%)');
+    if (soulOriginRate > 0) rewardLines.push('🧿 魔魂本源 (' + fmt1(soulOriginRate) + '%)');
+    if (ancientEssenceRate > 0) rewardLines.push('🧿 太古精華 (' + fmt1(ancientEssenceRate) + '%)');
+    if (rw.partChance > 0) rewardLines.push('⚙️ T' + rw.partTier + ' 零件 (' + rw.partChance + '%)');
 
-  if (equipStrs.length || dustLine) {
     dropTip += '<div class="skt-name" style="margin:8px 0 6px;">【可能掉落】</div>' +
       '<div class="skt-desc" style="text-align:left;">' +
-      '💰 金幣 x' + fmt(m.gold) + ' <span style="color:var(--dim)">(基礎)</span><br>' +
-      '✨ 經驗 x' + fmt(m.xp) + ' <span style="color:var(--dim)">(基礎)</span><br>' +
-      (dustLine ? dustLine + (equipStrs.length ? '<br>' : '') : '') +
-      equipStrs.join('<br>') + '</div>';
+      rewardLines.join('<br>') + '</div>';
+  } else {
+    var rates = dropRatesFor(FIELD_DROP_TABLE, m.level);
+    var equipStrs = [];
+    for (var r = rates.length - 1; r >= 0; r--) {
+      if (!rates[r]) continue;
+      var rate = rates[r];
+      var rateStr = rate + '%';
+      equipStrs.push('⚔️ <span style="color:' + RARITIES[r].color + '; font-weight:bold;">' + RARITIES[r].name + '裝備</span> <span style="color:var(--dim)">(' + rateStr + ')</span>');
+    }
+
+    var dustLine = '';
+    if (!G.tower.active) {
+      var dustRate = fieldDustRate(m.level);
+      if (dustRate > 0) dustLine = '💫 魔塵 <span style="color:var(--dim)">(' + fmt1(dustRate) + '%，神鑄材料)</span>';
+    }
+
+    if (equipStrs.length || dustLine) {
+      dropTip += '<div class="skt-name" style="margin:8px 0 6px;">【可能掉落】</div>' +
+        '<div class="skt-desc" style="text-align:left;">' +
+        '💰 金幣 x' + fmt(m.gold) + ' <span style="color:var(--dim)">(基礎)</span><br>' +
+        '✨ 經驗 x' + fmt(m.xp) + ' <span style="color:var(--dim)">(基礎)</span><br>' +
+        (dustLine ? dustLine + (equipStrs.length ? '<br>' : '') : '') +
+        equipStrs.join('<br>') + '</div>';
+    }
   }
 
   tip.innerHTML = dropTip;
@@ -2712,7 +2753,7 @@ function initUI() {
       return;
     }
     // 敵人情報 Tooltip（手機點擊支援）
-    var etip = e.target.closest('#btn-enemy-tip');
+    var etip = e.target.closest('#btn-enemy-tip') || e.target.closest('#btn-boss-tip') || e.target.closest('#btn-tower-result-boss-tip');
     if (etip) {
       var tip = $id('sk-tooltip');
       if (tip && tip.style.display === 'block') hideTooltip();
@@ -2881,13 +2922,14 @@ function initUI() {
     if (statRow) { showStatTooltip(statRow.getAttribute('data-tt-title'), statRow.getAttribute('data-tt-desc'), statRow); return; }
     var tf = e.target.closest('[data-tower-tip]');
     if (tf) { showTowerTooltip(tf.getAttribute('data-tower-tip'), tf); return; }
-    var etip = e.target.closest('#btn-enemy-tip');
+    var etip = e.target.closest('#btn-enemy-tip') || e.target.closest('#btn-boss-tip') || e.target.closest('#btn-tower-result-boss-tip');
     if (etip) { showEnemyTooltip(etip); return; }
   });
   document.addEventListener('mouseout', function (e) {
     if (e.target.closest('[data-sk]') || e.target.closest('.stat-row[data-tt-title]') ||
       e.target.closest('[data-tt-title]') ||
       e.target.closest('[data-tower-tip]') || e.target.closest('#btn-enemy-tip') ||
+      e.target.closest('#btn-boss-tip') || e.target.closest('#btn-tower-result-boss-tip') ||
       e.target.closest('[data-tip]') || e.target.closest('.item-cell[data-id]') ||
       e.target.closest('.eq-slot.filled[data-id]') ||
       e.target.closest('.forge-slot.filled[data-forge-slot]')) {
