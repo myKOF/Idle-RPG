@@ -418,7 +418,7 @@ function resolveForge(crafting) {
       addGem(g.type, g.level + 1, 1);
       f.result = { kind: 'gem', type: g.type, level: g.level + 1 };
       forgeLog('獲得 ' + gemLabel(g.type, g.level + 1) + '*1', 'good');
-      blog('🔯 神鑄成功！6 顆' + gemLabel(g.type, g.level) + ' 合成 ' + gemLabel(g.type, g.level + 1) + ' x1' + costTail, 'good');
+      blog('🔯 神鑄成功！6 顆' + gemLabel(g.type, g.level) + ' 合成 ' + gemLabel(g.type, g.level + 1) + ' x1' + costTail, 'good', 'factory');
     } else {
       // 放入時已自庫存扣除：退回 3 顆（六顆同種同階，等同隨機消耗 3 顆）
       addGem(g.type, g.level, FORGE_SLOTS - FORGE_FAIL_CONSUME);
@@ -426,7 +426,7 @@ function resolveForge(crafting) {
       forgeLog('鑄造失敗！退回寶石*' + (FORGE_SLOTS - FORGE_FAIL_CONSUME), 'bad');
       forgeLog('獲得 魔塵*1', 'good');
       blog('🔯 鑄造失敗！損失 ' + gemLabel(g.type, g.level) + ' x' + FORGE_FAIL_CONSUME +
-        '，其餘 ' + (FORGE_SLOTS - FORGE_FAIL_CONSUME) + ' 顆已退回庫存，獲得魔塵 x1' + costTail, 'warn');
+        '，其餘 ' + (FORGE_SLOTS - FORGE_FAIL_CONSUME) + ' 顆已退回庫存，獲得魔塵 x1' + costTail, 'warn', 'factory');
     }
     forgeAutoRefill();
     UI.dirty.forge = true;
@@ -448,7 +448,7 @@ function resolveForge(crafting) {
     addToInventory(newIt);
     forgeLog('獲得 ' + newIt.name + '*1', 'good');
     blog('🔯 神鑄成功！獲得 ' + rarityTag(newIt) + '（成功率 ' + fmt1(rate) + '%，金幣 -' + fmt(cost) +
-      (dustUsed ? '、魔塵 -' + dustUsed : '') + '）', 'good');
+      (dustUsed ? '、魔塵 -' + dustUsed : '') + '）', 'good', 'factory');
   } else {
     // 失敗：隨機消耗 3 件（取回鑲嵌寶石），其餘退回背包
     var order = [];
@@ -472,7 +472,7 @@ function resolveForge(crafting) {
     forgeLog('鑄造失敗！退回' + rName + '裝備*' + (FORGE_SLOTS - FORGE_FAIL_CONSUME), 'bad');
     forgeLog('獲得 魔塵*1', 'good');
     blog('🔯 鑄造失敗！損失 ' + lostNames.join('、') + '，其餘裝備已退回背包（成功率 ' + fmt1(rate) +
-      '%，金幣 -' + fmt(cost) + (dustUsed ? '、魔塵 -' + dustUsed : '') + '，獲得魔塵 x1）', 'warn');
+      '%，金幣 -' + fmt(cost) + (dustUsed ? '、魔塵 -' + dustUsed : '') + '，獲得魔塵 x1）', 'warn', 'factory');
   }
   forgeAutoRefill();
   UI.dirty.forge = true; UI.dirty.inv = true;

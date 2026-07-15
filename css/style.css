@@ -855,6 +855,70 @@ textarea#save-io {
   color: #10141f;
 }
 
+/* 玩家增益詳情按鈕（左上，綠色，與敵人情報「!」對稱） */
+.combatant .buff-btn {
+  top: 6px;
+  left: 6px;
+  right: auto;
+  border-color: var(--good);
+  color: var(--good);
+  box-shadow: 0 0 5px rgba(74, 222, 128, 0.5);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.combatant .buff-btn:hover {
+  background: var(--good);
+  color: #10141f;
+}
+
+.cb-status[data-buff-tip],
+.enemy-status[data-enemy-buff-tip],
+#tb-status[data-enemy-buff-tip] {
+  cursor: pointer;
+}
+
+.buff-tip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 1px 0;
+}
+
+.buff-remain {
+  color: var(--dim);
+  font-size: 0.9em;
+}
+
+.active-buffs {
+  border-bottom: 1px dashed var(--border);
+  padding: 2px 0 5px 12px;
+  font-size: 12px;
+}
+
+.active-buffs-title {
+  color: var(--accent);
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.active-buffs-empty {
+  color: var(--dim);
+}
+
+.active-buff-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.active-buff-main,
+.active-buff-side {
+  min-width: max-content;
+}
+
+
 .vs {
   align-self: center;
   color: var(--dim);
@@ -1201,6 +1265,50 @@ textarea#save-io {
   color: var(--info);
 }
 
+.log-line.log-kill {
+  color: #ff3131;
+  background: rgba(0, 0, 0, 0);
+  border-bottom-color: rgba(220, 150, 80, 0.90);
+  font-weight: 600;
+}
+
+.log-line.log-player-attack {
+  color: #ffffff;
+}
+
+.log-line.log-player-skill {
+  color: #fde047;
+}
+
+.log-line.log-player-buff {
+  color: #86efac;
+}
+
+.log-line.log-enemy-attack {
+  color: #fca5a5;
+  background: rgba(210, 56, 56, 0.12);
+  border-bottom-color: rgba(210, 56, 56, 0.18);
+}
+
+
+.log-line.log-enemy-damage {
+  color: #fca5a5;
+  background: rgba(210, 56, 56, 0.12);
+  border-bottom-color: rgba(210, 56, 56, 0.18);
+}
+
+.log-line.log-enemy-skill {
+  color: #fff59d;
+  background: rgba(210, 56, 56, 0.12);
+  border-bottom-color: rgba(210, 56, 56, 0.18);
+}
+
+.log-line.log-enemy-buff {
+  color: #d7ccc8;
+  background: rgba(210, 56, 56, 0.08);
+  border-bottom-color: rgba(210, 56, 56, 0.12);
+}
+
 .detail-log-modal {
   position: fixed;
   inset: 0;
@@ -1208,7 +1316,7 @@ textarea#save-io {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: clamp(64px, 10vh, 110px) 12px 20px;
+  padding: clamp(8px, 2vh, 20px) clamp(8px, 2vw, 20px);
   box-sizing: border-box;
   background: rgba(0, 0, 0, .72);
   backdrop-filter: blur(2px);
@@ -1218,8 +1326,8 @@ textarea#save-io {
   position: relative;
   display: flex;
   flex-direction: column;
-  width: min(620px, 94vw);
-  height: min(700px, 76vh);
+  width: min(1200px, 96vw);
+  height: calc(100vh - clamp(16px, 4vh, 40px));
   min-height: 300px;
   padding: 14px 14px 12px;
   box-sizing: border-box;
@@ -1243,6 +1351,10 @@ textarea#save-io {
 .detail-log-head .sec-title {
   margin: 0;
   text-align: center;
+}
+
+.detail-log-head .modal-x {
+  top: 2px;
 }
 
 .detail-log-toolbar {
@@ -1288,8 +1400,58 @@ textarea#save-io {
   color: var(--info);
 }
 
+.detail-log-line.log-kill {
+  color: #fd3b00;
+  background: rgba(255, 162, 162, 0);
+  border-bottom-color: rgba(220, 150, 80, 0.90);
+  font-weight: 600;
+}
+
 .detail-log-line.loot {
   color: #c084fc;
+}
+
+.detail-log-line.log-player-attack {
+  color: #ffffff;
+  background: rgba(56, 130, 210, 0.10);
+  border-bottom-color: rgba(56, 130, 210, 0.15);
+}
+
+.detail-log-line.log-enemy-attack {
+  color: #fca5a5;
+  background: rgba(210, 56, 56, 0.12);
+  border-bottom-color: rgba(210, 56, 56, 0.18);
+}
+
+
+.detail-log-line.log-player-skill {
+  color: #fde047;
+  background: rgba(56, 130, 210, 0.10);
+  border-bottom-color: rgba(56, 130, 210, 0.15);
+}
+
+.detail-log-line.log-player-buff {
+  color: #86efac;
+  background: rgba(56, 130, 210, 0.07);
+  border-bottom-color: rgba(56, 130, 210, 0.12);
+}
+
+.detail-log-line.log-enemy-damage {
+  color: #fca5a5;
+  background: rgba(210, 56, 56, 0.10);
+  border-bottom-color: rgba(210, 56, 56, 0.15);
+}
+
+.detail-log-line.log-enemy-skill {
+  color: #fff59d;
+  background: rgba(210, 56, 56, 0.10);
+  border-bottom-color: rgba(210, 56, 56, 0.15);
+}
+
+.detail-log-line.log-enemy-buff {
+  color: #d7ccc8;
+  background: rgba(210, 56, 56, 0.07);
+  border-bottom-color: rgba(210, 56, 56, 0.12);
 }
 
 .detail-log-time {
@@ -2834,8 +2996,8 @@ textarea#save-io {
 /* ---- 技能樹 ---- */
 #skill-trees {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(288px, 1fr));
+  gap: 10px;
 }
 
 .tree-panel {
@@ -2855,12 +3017,27 @@ textarea#save-io {
 }
 
 .tree-row {
-  display: flex;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(4, 52px);
+  gap: 8px;
   margin-bottom: 4px;
   min-height: 30px;
   align-items: center;
-  flex-wrap: wrap;
+  justify-content: start;
+}
+
+#fusion-skill-list.tree-row {
+  display: grid;
+  grid-template-columns: repeat(12, 52px);
+  gap: 8px;
+  align-items: center;
+  justify-content: start;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+#fusion-skill-list .hint {
+  grid-column: 1 / -1;
 }
 
 .tree-gate {
@@ -3498,6 +3675,10 @@ textarea#save-io {
 }
 
 /* ---- 日誌篩選 ---- */
+.log:not(.filter-factory) .log-line[data-cat="factory"] {
+  display: none;
+}
+
 .log.filter-combat .log-line:not([data-cat="combat"]) {
   display: none;
 }
@@ -4518,6 +4699,13 @@ textarea#save-io {
   margin-right: auto;
 }
 
+/* 死亡清除延遲淡出：頭像與血條的透明度用短 transition 平滑 renderBattle 每 tick 的逐幀更新 */
+.enemy-card .cb-icon,
+.enemy-card .enemy-emoji-fallback,
+.enemy-card .enemy-hp {
+  transition: opacity 0.2s linear;
+}
+
 .enemy-hp .hp-text {
   font-size: max(calc(12px * var(--ec-scale)), 8px);
 }
@@ -4678,4 +4866,22 @@ textarea#save-io {
   animation: fusionRotate 2s linear infinite;
   box-shadow: 0 0 12px rgba(168, 85, 247, 0.7), inset 0 0 8px rgba(168, 85, 247, 0.4);
   opacity: 1 !important;
+}
+
+/* 確保 .battle-scene 為相對定位，以便 #btn-enemy-tip 以其為基準定位 */
+.battle-scene {
+  position: relative !important;
+}
+
+/* 固定野外敵人詳情按鈕的位置，不受 multi-enemy-layout 影響 */
+.battle-scene-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+#btn-enemy-tip {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 10;
 }

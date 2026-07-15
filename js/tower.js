@@ -121,7 +121,7 @@ function towerTick(dt) {
     TOWER.enrageChecked = true;
     if (b.hp / b.maxHp * 100 > TOWER_ENRAGE_HP + st.enrageThreshold) {
       TOWER.enraged = true;
-      blog('🔥 ' + b.name + ' 進入狂暴狀態！傷害增加 200%！', 'bad');
+      blog('🔥 ' + b.name + ' 進入狂暴狀態！傷害增加 200%！', 'log-enemy-buff');
     }
   }
 
@@ -172,7 +172,7 @@ function towerTick(dt) {
     TOWER.specialCd -= dt;
     if (TOWER.specialCd <= 0 && p.hp > 0) {
       TOWER.specialCd = 8;
-      blog('💢 ' + b.name + ' 蓄力重擊！', 'warn');
+      blog('💢 ' + b.name + ' 蓄力重擊！', 'log-enemy-skill');
       var bossSpecialHit = doMonsterAttack(b, p, 'tp-float', 2.2 * mult);
       TOWER.bossDmgDealt += Math.max(0, (bossSpecialHit.dmg || 0));
       if (p.hp <= 0) { endTowerFight(false, 'death'); return; }
@@ -379,7 +379,7 @@ function finishTowerFight() {
   TOWER.player = null;
   // 野外重生
   if (FIELD.player) FIELD.player.hp = getStats().hp;
-  FIELD.monster = null; FIELD.monsters = []; FIELD.respawnCd = 0.5;
+  FIELD.monster = null; FIELD.monsters = []; FIELD._waveClearPending = false; FIELD.respawnCd = 0.5;
   UI.dirty.tower = true; UI.dirty.battle = true; UI.dirty.header = true; UI.dirty.factory = true;
 }
 

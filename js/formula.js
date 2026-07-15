@@ -209,6 +209,7 @@ function computeStats() {
   st.matk = Math.round((st.base.matk + A.matkFlat) * (1 + A.matkPct / 100) * godAttackMultiplier);
   st.critRate = capValue(5 + st.agi * PRIMARY_STAT_EFFECTS.agiCritRate + A.critRate, STAT_CAPS.critRate);   // 暴擊率：基礎 5% + 敏捷係數
   st.critDmg = 150 + A.critDmg;                                  // 暴擊傷害：基礎 150%
+  st.comboHits = comboHitsFor(st.critRate);                     // 連擊數：暴擊率破 100% 衍生的額外攻擊次數（僅普攻／技能直接傷害，持續傷害不計）
   st.pPen = capValue(A.pPen, STAT_CAPS.pPen);                                // 穿透上限（上限 0＝無上限）
   st.mPen = capValue(A.mPen, STAT_CAPS.mPen);
   st.hit = st.agi * 0.0001 + A.hit;                                // 命中率：敏捷×a + 加成（無上限；戰鬥結算再 clamp 5~100）
@@ -300,6 +301,29 @@ var BASE_HP_REGEN_PCT = 1.5;  // 野外每秒基礎生命回復（最大生命 %
 var KILL_HEAL_PCT = 12;       // 野外擊殺回復（最大生命 %，溢出轉護盾）
 
 function slowFactor(ent) { return effectActive(ent, 'slow') ? SLOW_ASPD_FACTOR : 1; }
+
+/* ---- 連擊數（暴擊率破 100% 衍生的多段攻擊） ----
+   語意：暴擊率 = 100% 為「完全爆擊」；超過 100% 才衍生額外攻擊次數。
+   公式：連擊數 = a·ln(暴擊率%) + b·暴擊率% + c，取 max(0)。
+   其中「暴擊率%」＝把暴擊率當比值直接代入（例：暴擊率 5000% → 代入 50，即 critRate 數值 ÷ 100），不做「減 100」。
+   係數 COMBO_HITS_COEF 由參數表「2-屬性派生／連擊數」控制（a=自然對數乘數、b=暴擊乘數、c=常數）。
+   例：暴擊率 1380% → 代入 13.8 → ≈2.57 → 固定額外 2 次 + 57% 機率第 3 次。僅作用於普攻與技能直接傷害，持續傷害不計。 */
+function comboHitsFor(critRate) {
+  var cr = Number(critRate) || 0;
+  if (cr <= 100) return 0;                 // ≤100% 為完全爆擊，尚無連擊
+  var x = cr / 100;                        // 暴擊率% 直接代入（5000% → 50）
+  var n = COMBO_HITS_COEF.a * Math.log(x) + COMBO_HITS_COEF.b * x + COMBO_HITS_COEF.c;
+  return n > 0 ? n : 0;
+}
+
+// 依連擊數擲骰出本次實際追加攻擊次數：整數部分固定追加，小數部分為機率再追加一次
+function rollComboHits(st) {
+  var c = (st && st.comboHits) || 0;
+  if (c <= 0) return 0;
+  var n = Math.floor(c);
+  if (chance((c - n) * 100)) n++;
+  return n;
+}
 
 /* ---- 共用攻擊流程（傷害結算總公式） ----
    結算順序：命中 → 防禦減傷（含破甲/穿透）→ 物/魔抗性 → ±10% 浮動
@@ -464,22 +488,22 @@ function healPlayer(pEnt, amount, st) {
    ※ 場景倍率（ZONES 的 hpMult/atkMult/defMult/rewardMult）在
      spawnFieldMonster（combat.js）套用。 */
 function monsterStatsFor(stage, elite) {
-  var hp = (30 + stage * 8) * Math.pow(1.08, stage - 1);
+  var hp = (30 + stage * 8) * Math.pow(1.095, stage - 1);
   var atk = (6 + stage * 1.2) * Math.pow(1.11, stage - 1);
   var def = (2 + stage * 0.5) * Math.pow(1.08, stage - 1);
-  var gold = (20 + stage) * Math.pow(1.05, stage - 1);
+  var gold = (20 + stage) * Math.pow(1.03, stage - 1);
   var xp = (8 + stage) * Math.pow(1.06, stage - 1);
   var m = {
     level: stage, hp: hp, atk: atk,
     def: def,                 // 物理防禦
     mdef: def * 0.75,         // 魔法防禦
     aspd: 2,
-    dodge: 0,
-    hit: 100 + stage * 1,     // 命中率 = 100% + 敵人等級×1%（敵人等級 = 階段）
+    dodge: 10 + stage * 4,
+    hit: 100 + stage * 4,     // 命中率 = 100% + 敵人等級×1%（敵人等級 = 階段）
     gold: gold, xp: xp, elite: !!elite
   };
   if (elite) {
-    m.hp *= 2.5; m.atk *= 1.5; m.gold *= 3; m.xp *= 3; m.dodge = 5; m.aspd = 1.25;
+    m.hp *= 3; m.atk *= 2; m.gold *= 2; m.xp *= 2; m.dodge += 5; m.aspd = 3;
   }
   return m;
 }
@@ -518,7 +542,7 @@ function bossStatsFor(floor) {
     mdef: base.mdef * 10,
     aspd: 5,
     dodge: Math.min(20 + floor * 20, 10000000),
-    hit: 200 + floor * 10,    // 命中率 = 200% + BOSS 階層×10%（BOSS 階層 = 樓層）
+    hit: 200 + floor * 20,    // 命中率 = 200% + BOSS 階層×10%（BOSS 階層 = 樓層）
     ctrlRes: 70,
     elemAtkVal: base.atk * 3 * atkMult,
     xp: base.xp * 2

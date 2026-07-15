@@ -70,7 +70,7 @@ function composeGems(type, lv) {
 }
 
 /* 寶石轉換（九宮格）：多組 {type, lv, n} 一次性轉換為目標種類
-   規則：同階轉換、數量不變；每格一種（同種同級）上限 100 顆；融合寶石不可轉換。
+   規則：同階轉換、數量不變；每格一種（同種同級）上限 1000 顆；融合寶石不可轉換。
    回傳 null=成功，否則錯誤訊息 */
 function convertGems(slots, targetType) {
   if (!GEM_TYPES[targetType]) return '未知目標種類';

@@ -30,7 +30,8 @@ function renderDetailLog() {
   var filterEl = $id('detail-log-filter');
   var filter = filterEl ? filterEl.value : 'all';
   var rows = DETAIL_LOG_HISTORY.filter(function (entry) {
-    return filter === 'all' || entry.cat === filter;
+    if (filter === 'all') return entry.cat !== 'factory';
+    return entry.cat === filter;
   });
   if (!rows.length) {
     box.innerHTML = '<div class="detail-log-empty">目前沒有符合條件的日誌</div>';
@@ -69,7 +70,7 @@ function addLog(elId, msg, cls, cap, cat) {
 function blog(msg, cls, cat) {
   if (!cat) {
     if (msg.includes('高塔') || msg.includes('狂暴') || msg.includes('重擊') || msg.includes('撤出')) cat = 'boss';
-    else if (msg.includes('戰利品') || msg.includes('獲得') || msg.includes('掉落')) cat = 'loot';
+    else if (msg.includes('📦 戰利品：') || msg.includes('敵人掉落')) cat = 'loot';
     else if (msg.includes('強化') || msg.includes('換裝') || msg.includes('資源不足') || msg.includes('背包已滿') || msg.includes('暫存區已滿')) cat = 'factory';
     else if (msg.includes('推進') || msg.includes('退回') || msg.includes('復活') || msg.includes('擊倒') || msg.includes('遭遇')) cat = 'combat';
     else cat = 'system';
@@ -97,8 +98,19 @@ function isEnemyHitFloat(elId, cls) {
 }
 
 function floatText(elId, text, cls) {
+  if (elId === 'tb-float' && text === 'MISS' && cls === 'miss') {
+    elId = 'tp-float';
+    text = '閃避!';
+    cls = 'player-event defend';
+  }
   var layer = $id(elId);
   if (!layer || layer.offsetParent === null) return; // 不可見時略過
+  if (elId === 'tb-float' && text === 'MISS' && cls && cls.indexOf('enemy-dodge') >= 0) {
+    var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    var lastMissAt = parseFloat(layer.getAttribute('data-last-miss-at') || '-9999');
+    if (now - lastMissAt < 300) return;
+    layer.setAttribute('data-last-miss-at', String(now));
+  }
   if (layer.children.length > 12) layer.removeChild(layer.firstChild);
   var sp = document.createElement('span');
   sp.className = 'float-txt ' + (cls || '');
@@ -340,6 +352,7 @@ function renderAttrPanel(st) {
       h += '</details>';
     });
     h += '<div class="stat-divider"></div>' +
+      '<div id="active-buffs" class="active-buffs"></div>' +
       '<div class="stat-row" title="近 10 秒 DPS"><span>📈 實時 DPS</span><b id="s-dps">0</b></div>';
     panel.innerHTML = h;
     _attrPanelBuilt = true;
@@ -357,6 +370,122 @@ function renderAttrPanel(st) {
       }
     });
   });
+  var activeBuffsEl = $id('active-buffs');
+  if (activeBuffsEl) activeBuffsEl.innerHTML = activeBuffsHtml();
+}
+
+var BUFF_TIP_EMOJI = {
+  atkUp: '⚔️',
+  defUp: '🛡️',
+  aspdUp: '⚡',
+  evasionUp: '🌀',
+  critDmgUp: '💥',
+  blockUp: '🔰',
+  thornsUp: '🌵',
+  lootUp: '🎁',
+  hot: '💚',
+  atkDown: '⚔️',
+  defDown: '🛡️'
+};
+
+function currentCombatPlayerEntity() {
+  if (typeof G !== 'undefined' && G.tower && G.tower.active && typeof TOWER !== 'undefined' && TOWER.player) return TOWER.player;
+  return (typeof FIELD !== 'undefined' && FIELD) ? FIELD.player : null;
+}
+
+function buffSignedValueHtml(val, colorVar) {
+  var n = Number(val) || 0;
+  var text = (n >= 0 ? '+' : '') + fmt1(n) + '%';
+  if (!colorVar || colorVar === 'var(--good)') return '<span class="buff-val" style="color:var(--good)">' + text + '</span>';
+  return '<span class="buff-val" style="color:' + colorVar + '">' + text + '</span>';
+}
+
+function buffRemainHtml(remain) {
+  return '<span class="buff-remain">' + Math.max(0, Math.ceil(remain || 0)) + 's</span>';
+}
+
+function activeBuffsHtml() {
+  var buffs = activePlayerBuffs(currentCombatPlayerEntity());
+  var h = '<div class="active-buffs-title">目前技能增益</div>';
+  if (!buffs.length) return h + '<div class="active-buffs-empty">無</div>';
+  for (var i = 0; i < buffs.length; i++) {
+    var b = buffs[i];
+    var label = buffLabel(b.key);
+    h += '<div class="active-buff-row"><span class="active-buff-main">' +
+      (BUFF_TIP_EMOJI[b.key] || '💪') + ' ' + esc(label) + '</span><span class="active-buff-side">' +
+      buffSignedValueHtml(b.val) + ' ' + buffRemainHtml(b.remain) + '</span></div>';
+  }
+  return h;
+}
+
+function buffTooltipDesc() {
+  var buffs = activePlayerBuffs(currentCombatPlayerEntity());
+  if (!buffs.length) return '<span class="dim-text">目前沒有技能增益</span>';
+  var rows = [];
+  for (var i = 0; i < buffs.length; i++) {
+    var b = buffs[i];
+    rows.push('<div class="buff-tip-row"><span>' + (BUFF_TIP_EMOJI[b.key] || '💪') + ' ' +
+      esc(buffLabel(b.key)) + '</span><span>' + buffSignedValueHtml(b.val) + ' ' +
+      buffRemainHtml(b.remain) + '</span></div>');
+  }
+  return rows.join('');
+}
+
+function currentCombatEnemyEntity(anchorEl) {
+  if (typeof G !== 'undefined' && G.tower && G.tower.active && typeof TOWER !== 'undefined' && TOWER.boss) return TOWER.boss;
+  var enemies = [];
+  if (typeof visibleFieldEnemies === 'function') enemies = visibleFieldEnemies();
+  else if (typeof liveFieldEnemies === 'function') enemies = liveFieldEnemies();
+  else if (typeof fieldEnemyList === 'function') {
+    enemies = fieldEnemyList().filter(function (enemy) { return enemy && enemy.hp > 0; });
+  } else if (typeof FIELD !== 'undefined' && FIELD && FIELD.monster && FIELD.monster.hp > 0) {
+    enemies = [FIELD.monster];
+  }
+  var idx = NaN;
+  if (anchorEl && anchorEl.getAttribute) idx = parseInt(anchorEl.getAttribute('data-enemy-index'), 10);
+  if (isNaN(idx) && anchorEl && anchorEl.closest) {
+    var card = anchorEl.closest('.enemy-card');
+    if (card && card.parentNode) {
+      var cards = Array.prototype.slice.call(card.parentNode.querySelectorAll('.enemy-card'));
+      idx = cards.indexOf(card);
+    }
+  }
+  if (!isNaN(idx) && enemies[idx]) return enemies[idx];
+  return enemies[0] || null;
+}
+
+function combatStatusRemain(until) {
+  return Math.max(0, Math.ceil((until || 0) - GT));
+}
+
+function combatStatusRow(icon, label, valueHtml, remain) {
+  return '<div class="buff-tip-row"><span>' + icon + ' ' + esc(label) + '</span><span>' +
+    (valueHtml || '') + (remain ? ' ' + buffRemainHtml(remain) : '') + '</span></div>';
+}
+
+function enemyBuffTooltipDesc(anchorEl) {
+  var ent = currentCombatEnemyEntity(anchorEl);
+  if (!ent) return '<span class="dim-text">目前沒有狀態</span>';
+  var rows = [];
+  if (ent.effects && effectActive(ent, 'stun')) rows.push(combatStatusRow('😵', '暈眩', '', combatStatusRemain(ent.effects.stun)));
+  if (ent.effects && effectActive(ent, 'slow')) rows.push(combatStatusRow('🐌', '減速', '', combatStatusRemain(ent.effects.slow)));
+  if (poisonActive(ent)) rows.push(combatStatusRow('☠️', '中毒', '', combatStatusRemain(ent.poisonUntil)));
+  if (ent.dots) {
+    for (var i = 0; i < ent.dots.length; i++) {
+      var dot = ent.dots[i];
+      if (dot && dot.until > GT) rows.push(combatStatusRow('🩸', dot.name || '持續傷害', '', combatStatusRemain(dot.until)));
+    }
+  }
+  var keys = activeBuffKeys(ent);
+  for (var k = 0; k < keys.length; k++) {
+    var key = keys[k];
+    var buff = ent.buffs && ent.buffs[key];
+    if (!buff || buff.until <= GT) continue;
+    var down = key === 'atkDown' || key === 'defDown';
+    rows.push(combatStatusRow(BUFF_TIP_EMOJI[key] || (down ? '📉' : '💪'), buffLabel(key) + (down ? '↓' : '↑'),
+      buffSignedValueHtml(buff.val, down ? 'var(--danger)' : 'var(--good)'), combatStatusRemain(buff.until)));
+  }
+  return rows.length ? rows.join('') : '<span class="dim-text">目前沒有狀態</span>';
 }
 
 /* ---- 戰鬥畫面 ---- */
@@ -379,8 +508,7 @@ function entStatus(ent) {
   }
   return s.join(' ');
 }
-// MP 條與裝載技能狀態（prefix: 'pv' 野外 / 'tp' 高塔）
-function renderMpSkill(pEnt, prefix) {
+      function renderMpSkill(pEnt, prefix) {
   var st = getStats();
   var mpFill = $id(prefix + '-mp'), mpText = $id(prefix + '-mptext'), skillEl = $id(prefix + '-skill');
   if (mpFill) mpFill.style.width = clamp(pEnt.mp / st.mp * 100, 0, 100) + '%';
@@ -467,12 +595,15 @@ function refreshStageDisplay() {
 }
 function refreshCombatPauseButton() {
   var btn = $id('btn-combat-pause');
-  if (!btn) return;
+  var detailBtn = $id('btn-detail-combat-pause');
   var paused = typeof isCombatPaused === 'function' && isCombatPaused();
-  btn.setAttribute('aria-pressed', paused ? 'true' : 'false');
-  btn.textContent = paused ? '▶ 繼續戰鬥' : '⏸ 暫停戰鬥';
-  btn.title = paused ? '繼續野外與高塔戰鬥' : '暫停野外與高塔戰鬥';
-  btn.classList.toggle('active', paused);
+  [btn, detailBtn].forEach(function (el) {
+    if (!el) return;
+    el.setAttribute('aria-pressed', paused ? 'true' : 'false');
+    el.textContent = paused ? '▶ 繼續戰鬥' : '⏸ 暫停戰鬥';
+    el.title = paused ? '繼續野外與高塔戰鬥' : '暫停野外與高塔戰鬥';
+    el.classList.toggle('active', paused);
+  });
 }
 function currentShieldSkillCap(stats) {
   if (!stats || !(stats.hp > 0)) return 0;
@@ -548,8 +679,10 @@ function renderBattle() {
     renderMpSkill(p, 'pv');
   }
   // 與戰鬥引擎共用敵人集合，避免相容欄位仍有目標時畫面誤判為空。
-  var enemies = (typeof fieldEnemyList === 'function' ? fieldEnemyList() : (FIELD.monster ? [FIELD.monster] : []))
-    .filter(function (enemy) { return enemy && enemy.hp > 0; });
+  var enemies = (typeof visibleFieldEnemies === 'function')
+    ? visibleFieldEnemies()
+    : (typeof fieldEnemyList === 'function' ? fieldEnemyList() : (FIELD.monster ? [FIELD.monster] : []))
+      .filter(function (enemy) { return enemy && enemy.hp > 0; });
   var party = $id('mv-party');
   if (!party) return;
   var scene = party.closest ? party.closest('.battle-scene') : null;
@@ -580,7 +713,7 @@ function renderBattle() {
       '<div class="cb-level">Lv.' + enemy.level + '</div>' + icon +
       '<div class="enemy-name">' + (enemies.length > 1 ? (ei + 1) + '. ' : '') + enemy.name + '</div>' +
       '<div class="enemy-hp hp-bar"><div class="hp-fill monster" style="width:' + enemyHp + '%"></div><span class="hp-text">' + fmt(Math.max(0, enemy.hp)) + enemyShield + ' / ' + fmt(enemy.maxHp) + '</span></div>' +
-      '<div class="enemy-status">' + entStatus(enemy) + '</div></div>';
+      '<div class="enemy-status" data-enemy-buff-tip data-enemy-index="' + ei + '">' + entStatus(enemy) + '</div></div>';
   }
   // 只有換波、敵人數量或敵人身分變化時才重建 DOM；避免刪除尚未播完的傷害浮字。
   if (party.getAttribute('data-enemy-signature') !== enemySignature) {
@@ -596,7 +729,17 @@ function renderBattle() {
     var status = card.querySelector('.enemy-status');
     if (fill) fill.style.width = clamp(liveEnemy.hp / liveEnemy.maxHp * 100, 0, 100) + '%';
     if (hpText) hpText.innerHTML = fmt(Math.max(0, liveEnemy.hp)) + (liveEnemy.shield > 0.5 ? '<span class="enemy-shield">+' + fmt(Math.max(0, liveEnemy.shield)) + '</span>' : '') + ' / ' + fmt(liveEnemy.maxHp);
-    if (status) status.innerHTML = entStatus(liveEnemy);
+    if (status) {
+      status.setAttribute('data-enemy-index', String(ci));
+      status.innerHTML = entStatus(liveEnemy);
+    }
+    // 死亡清除延遲期間：頭像與血條在 FIELD_ENEMY_DEATH_CLEAR_DELAY 秒內由不透明線性淡出至約 10%
+    var deathDelay = (typeof FIELD_ENEMY_DEATH_CLEAR_DELAY === 'number' && FIELD_ENEMY_DEATH_CLEAR_DELAY > 0) ? FIELD_ENEMY_DEATH_CLEAR_DELAY : 1;
+    var fadeOpacity = (liveEnemy.hp <= 0)
+      ? (0.1 + 0.9 * clamp((liveEnemy._deathClearCd || 0) / deathDelay, 0, 1))
+      : 1;
+    var fadeEls = card.querySelectorAll('.cb-icon, .enemy-emoji-fallback, .enemy-hp');
+    for (var di = 0; di < fadeEls.length; di++) fadeEls[di].style.opacity = (fadeOpacity < 1 ? String(fadeOpacity) : '');
   }
 }
 
@@ -1611,6 +1754,7 @@ function uiTick() {
   }
   if (d.header) { renderHeader(); d.header = false; }
   renderBattle(); // Battle is always visible
+  refreshBuffTooltip();
   if (UI.tab === 'tower' && G.tower.active) renderTowerFight();
   d.battle = false;
   if (d.equip && UI.tab === 'equip') { renderEquip(); d.equip = false; }
@@ -1842,12 +1986,55 @@ function showStatTooltip(title, desc, anchorEl) {
   tip.style.left = x + 'px';
   tip.style.top = y + 'px';
 }
+function showBuffTooltip(anchorEl) {
+  var tip = $id('sk-tooltip');
+  if (!tip || !anchorEl) return;
+  UI.tooltipAnchor = anchorEl;
+  tip.innerHTML = '<div class="skt-name">💪 目前技能增益</div>' +
+    '<div class="skt-desc" style="text-align:left;">' + buffTooltipDesc() + '</div>';
+  tip.style.display = 'block';
+  var r = anchorEl.getBoundingClientRect();
+  var tw = tip.offsetWidth, th = tip.offsetHeight;
+  var x = r.right + 10, y = r.top;
+  if (x + tw > window.innerWidth - 8) x = r.left - tw - 10;
+  if (x < 8) x = 8;
+  if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
+  if (y < 8) y = 8;
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+}
+function showEnemyBuffTooltip(anchorEl) {
+  var tip = $id('sk-tooltip');
+  if (!tip || !anchorEl) return;
+  UI.tooltipAnchor = anchorEl;
+  tip.innerHTML = '<div class="skt-name">💪 目前狀態詳情</div>' +
+    '<div class="skt-desc" style="text-align:left;">' + enemyBuffTooltipDesc(anchorEl) + '</div>';
+  tip.style.display = 'block';
+  var r = anchorEl.getBoundingClientRect();
+  var tw = tip.offsetWidth, th = tip.offsetHeight;
+  var x = r.right + 10, y = r.top;
+  if (x + tw > window.innerWidth - 8) x = r.left - tw - 10;
+  if (x < 8) x = 8;
+  if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
+  if (y < 8) y = 8;
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+}
 function refreshOpenResourceTooltip() {
   var tip = $id('sk-tooltip');
   var anchorEl = UI.tooltipAnchor;
   if (!tip || tip.style.display !== 'block' || !anchorEl || !anchorEl.classList ||
     !anchorEl.classList.contains('res') || !document.documentElement.contains(anchorEl)) return;
   showStatTooltip(anchorEl.getAttribute('data-tt-title') || '', anchorEl.getAttribute('data-tt-desc') || '', anchorEl);
+}
+function refreshBuffTooltip() {
+  var tip = $id('sk-tooltip');
+  var anchor = UI.tooltipAnchor;
+  if (!tip || tip.style.display !== 'block' || !anchor || !document.documentElement.contains(anchor)) return;
+  var descEl = tip.querySelector('.skt-desc');
+  if (!descEl || !anchor.closest) return;
+  if (anchor.closest('[data-buff-tip]')) descEl.innerHTML = buffTooltipDesc();
+  else if (anchor.closest('[data-enemy-buff-tip]')) descEl.innerHTML = enemyBuffTooltipDesc(anchor);
 }
 function showItemTooltip(it, anchorEl, opts) {
   var tip = $id('sk-tooltip');
@@ -2128,10 +2315,12 @@ function gemAbilityText(type, lv) {
 function fillGemTypeSelect(sel, includeAll) {
   if (!sel || sel.options.length) return;
   var h = '';
+  if (includeAll) {
+    h += '<option value="' + GEM_TYPE_ALL + '" style="color:#f5c542;font-weight:bold" selected>💎 全部類型寶石</option>';
+  }
   for (var t in GEM_TYPES) {
     h += '<option value="' + t + '">' + GEM_TYPES[t].emoji + ' ' + esc(GEM_TYPES[t].name) + '（' + esc(GEM_TYPES[t].statName.replace('%', '')) + '）</option>';
   }
-  if (includeAll) h += '<option value="' + GEM_TYPE_ALL + '">💎 全部類型寶石</option>';
   sel.innerHTML = h;
 }
 /* ---- 寶石合成（2 顆同種同級 → 下一階） ---- */
@@ -2760,6 +2949,20 @@ function initUI() {
       else showEnemyTooltip(etip);
       return;
     }
+    var btip = e.target.closest('[data-buff-tip]');
+    if (btip) {
+      var btipEl = $id('sk-tooltip');
+      if (btipEl && btipEl.style.display === 'block' && UI.tooltipAnchor === btip) hideTooltip();
+      else showBuffTooltip(btip);
+      return;
+    }
+    var ebtip = e.target.closest('[data-enemy-buff-tip]');
+    if (ebtip) {
+      var ebtipEl = $id('sk-tooltip');
+      if (ebtipEl && ebtipEl.style.display === 'block' && UI.tooltipAnchor === ebtip) hideTooltip();
+      else showEnemyBuffTooltip(ebtip);
+      return;
+    }
     // 降級
     var dg = e.target.closest('[data-skill-downgrade]');
     if (dg) {
@@ -2889,6 +3092,10 @@ function initUI() {
   document.addEventListener('mouseover', function (e) {
     var tipBtn = e.target.closest('[data-tip]');
     if (tipBtn) { showStatTooltip('', tipBtn.getAttribute('data-tip'), tipBtn); return; }
+    var buffTipHover = e.target.closest('[data-buff-tip]');
+    if (buffTipHover) { showBuffTooltip(buffTipHover); return; }
+    var enemyBuffTipHover = e.target.closest('[data-enemy-buff-tip]');
+    if (enemyBuffTipHover) { showEnemyBuffTooltip(enemyBuffTipHover); return; }
 
     // 神鑄法陣裝備槽：顯示完整裝備詳情（寶石槽走上方 data-tip 分支）
     var fSlotEl = e.target.closest('.forge-slot.filled[data-forge-slot]');
@@ -2930,7 +3137,8 @@ function initUI() {
       e.target.closest('[data-tt-title]') ||
       e.target.closest('[data-tower-tip]') || e.target.closest('#btn-enemy-tip') ||
       e.target.closest('#btn-boss-tip') || e.target.closest('#btn-tower-result-boss-tip') ||
-      e.target.closest('[data-tip]') || e.target.closest('.item-cell[data-id]') ||
+      e.target.closest('[data-tip]') || e.target.closest('[data-buff-tip]') ||
+      e.target.closest('[data-enemy-buff-tip]') || e.target.closest('.item-cell[data-id]') ||
       e.target.closest('.eq-slot.filled[data-id]') ||
       e.target.closest('.forge-slot.filled[data-forge-slot]')) {
       hideTooltip();
@@ -2961,16 +3169,16 @@ function initUI() {
       var err = composeGems(t, lv);
       if (err) blog('⚠️ 合成失敗：' + err, 'warn');
       else blog('🔀 寶石合成：' + (t === GEM_TYPE_ALL ? '全部類型寶石' : gemLabel(t, lv)) + ' ×2 → ' +
-        (t === GEM_TYPE_ALL ? GEM_NAMES[lv + 1] + '下一階寶石' : gemLabel(t, lv + 1)), 'info');
+        (t === GEM_TYPE_ALL ? GEM_NAMES[lv + 1] + '下一階寶石' : gemLabel(t, lv + 1)), 'info', 'factory');
       renderGems();
     });
     $id('fuse-all-btn').addEventListener('click', function () {
       var t = $id('fuse-type').value;
       var lv = parseInt($id('fuse-level').value, 10) || 1;
       var made = 0, err = null;
-      while (made < 500 && !(err = composeGems(t, lv))) made++;
+      while (made < 2500 && !(err = composeGems(t, lv))) made++;
       if (made > 0) blog('♻️ 全部合成：' + (t === GEM_TYPE_ALL ? '全部類型寶石' : gemLabel(t, lv)) + ' ×' + (made * 2) +
-        ' → ' + (t === GEM_TYPE_ALL ? GEM_NAMES[lv + 1] + '下一階寶石' : gemLabel(t, lv + 1)) + ' ×' + made, 'good');
+        ' → ' + (t === GEM_TYPE_ALL ? GEM_NAMES[lv + 1] + '下一階寶石' : gemLabel(t, lv + 1)) + ' ×' + made, 'good', 'factory');
       else blog('⚠️ 合成失敗：' + err, 'warn');
       renderGems();
     });
@@ -3028,7 +3236,7 @@ function initUI() {
           (G.factory.synth && G.factory.synth.gemMerge
             ? '<span class="gr-line" style="color:var(--dim)">⚙️ 寶石升階自動化開啟中，湊滿 3 顆會被自動升階</span>' : '');
       }
-      blog('🔄 寶石轉換完成：獲得 ' + GEM_TYPES[target].emoji + detail + '（同階轉換）', 'good');
+      blog('🔄 寶石轉換完成：獲得 ' + GEM_TYPES[target].emoji + detail + '（同階轉換）', 'good', 'factory');
       UI.convertSlots = [];
       renderGems();
     });
@@ -3048,7 +3256,7 @@ function initUI() {
         blog('⚠️ 拆解失敗：' + r.err, 'warn');
       } else {
         gdisShow('⛏️ 拆解 ' + gemLabel(t, lv) + ' → 獲得 ' + gemLabel(t, 1) + ' ×' + r.n);
-        blog('⛏️ 拆解 ' + gemLabel(t, lv) + ' → ' + gemLabel(t, 1) + ' ×' + r.n, 'info');
+        blog('⛏️ 拆解 ' + gemLabel(t, lv) + ' → ' + gemLabel(t, 1) + ' ×' + r.n, 'info', 'factory');
       }
       renderGems();
     });
@@ -3063,7 +3271,7 @@ function initUI() {
       }
       if (cnt > 0) {
         gdisShow('⛏️ 全部拆解 ' + gemLabel(t, lv) + ' ×' + cnt + ' → 獲得 ' + gemLabel(t, 1) + ' ×' + gain);
-        blog('⛏️ 全部拆解：' + gemLabel(t, lv) + ' ×' + cnt + ' → ' + gemLabel(t, 1) + ' ×' + gain, 'good');
+        blog('⛏️ 全部拆解：' + gemLabel(t, lv) + ' ×' + cnt + ' → ' + gemLabel(t, 1) + ' ×' + gain, 'good', 'factory');
       } else {
         gdisShow('⚠️ ' + r.err, true);
         blog('⚠️ 拆解失敗：' + r.err, 'warn');
@@ -3083,7 +3291,7 @@ function initUI() {
         if (r.err) { gdisShow('⚠️ ' + r.err, true); blog('⚠️ 拆解失敗：' + r.err, 'warn'); return; }
         var gotStr = r.got.map(function (g) { return gemLabel(g.type, 1) + ' ×' + g.n; }).join('、');
         gdisShow('⛏️ 融合寶石拆解 → 獲得 ' + gotStr);
-        blog('⛏️ 融合寶石拆解 → ' + gotStr, 'good');
+        blog('⛏️ 融合寶石拆解 → ' + gotStr, 'good', 'factory');
         renderGems();
       }, { title: '寶石拆解確認', danger: true });
     });
@@ -3103,12 +3311,12 @@ function initUI() {
         gfuseShow('⚠️ ' + res.err, 'warn');
       } else if (res.success) {
         var msgStr = '🧬 寶石融合成功！獲得 ' + fusedGemLabel(res.result) + '（成功率 ' + res.rate + '%）';
-        blog('🧬 <span class="log-hl-good">寶石融合成功！</span>獲得 ' + fusedGemLabel(res.result) + '（成功率 ' + res.rate + '%）', 'good');
+        blog('🧬 <span class="log-hl-good">寶石融合成功！</span>獲得 ' + fusedGemLabel(res.result) + '（成功率 ' + res.rate + '%）', 'good', 'factory');
         gfuseShow(msgStr, 'yellow');
         UI.gemFuseSlots = [null, null];
       } else {
         var msgStr = '💥 寶石融合失敗（成功率 ' + res.rate + '%）…較弱的寶石降解為 ' + res.degraded.n + ' 顆 ' + gemLabel(res.degraded.type, res.degraded.lv);
-        blog('💥 寶石融合失敗（成功率 ' + res.rate + '%）…較弱的寶石降解為 ' + res.degraded.n + ' 顆 ' + gemLabel(res.degraded.type, res.degraded.lv), 'warn');
+        blog('💥 寶石融合失敗（成功率 ' + res.rate + '%）…較弱的寶石降解為 ' + res.degraded.n + ' 顆 ' + gemLabel(res.degraded.type, res.degraded.lv), 'warn', 'factory');
         gfuseShow(msgStr, 'warn');
         UI.gemFuseSlots = [null, null];
       }
@@ -3125,14 +3333,14 @@ function initUI() {
   if (shopBuyAll) {
     shopBuyAll.addEventListener('click', function () {
       var r = buyAllShopGems();
-      if (r.bought > 0) blog('🛒 一鍵購買 ' + r.bought + ' 顆寶石，花費 <img src="images/icon_gold.png" class="res-icon">' + fmt(r.spent), 'good');
+      if (r.bought > 0) blog('🛒 一鍵購買 ' + r.bought + ' 顆寶石，花費 <img src="images/icon_gold.png" class="res-icon">' + fmt(r.spent), 'good', 'factory');
       else blog('⚠️ 沒有可購買的寶石（金幣不足或已售罄）', 'warn');
       renderGems();
     });
     $id('shop-refresh').addEventListener('click', function () {
       var err = refreshGemShop();
       if (err) blog('⚠️ 刷新失敗：' + err, 'warn');
-      else blog('🔄 寶石商店已刷新（本週期第 ' + gemShop().refreshCount + ' 次）', 'info');
+      else blog('🔄 寶石商店已刷新（本週期第 ' + gemShop().refreshCount + ' 次）', 'info', 'factory');
       renderGems();
     });
     var upgradeBtn = $id('shop-upgrade');
@@ -3140,7 +3348,7 @@ function initUI() {
       upgradeBtn.addEventListener('click', function () {
         var err = upgradeGemShop();
         if (err) blog('⚠️ 升級失敗：' + err, 'warn');
-        else blog('⬆️ 寶石商店升級至 Lv.' + gemShop().level, 'good');
+        else blog('⬆️ 寶石商店升級至 Lv.' + gemShop().level, 'good', 'factory');
         renderGems();
       });
     }
@@ -3211,11 +3419,14 @@ function initUI() {
   });
 
   // 階段控制
-  var combatPauseBtn = $id('btn-combat-pause');
-  if (combatPauseBtn) combatPauseBtn.addEventListener('click', function () {
+  var handlePauseClick = function () {
     toggleCombatPaused();
     refreshCombatPauseButton();
-  });
+  };
+  var combatPauseBtn = $id('btn-combat-pause');
+  if (combatPauseBtn) combatPauseBtn.addEventListener('click', handlePauseClick);
+  var detailCombatPauseBtn = $id('btn-detail-combat-pause');
+  if (detailCombatPauseBtn) detailCombatPauseBtn.addEventListener('click', handlePauseClick);
   bindStageHoldButton('st-prev', -1);
   bindStageHoldButton('st-next', 1);
   $id('st-max').addEventListener('click', function () { stageGoMax(); });

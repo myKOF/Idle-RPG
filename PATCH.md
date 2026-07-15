@@ -1,5 +1,130 @@
 # PATCH.md
 
+## 變更紀錄：野外敵人死亡清除延遲期間頭像與血條淡出
+
+- 需求：敵人死亡後的清除延遲（`FIELD_ENEMY_DEATH_CLEAR_DELAY`，玩家可調，如 3 秒）期間，讓頭像與血條在該秒數內透明度由 100% 線性降至約 10%。
+- `js/ui.js` `renderBattle` 就地更新迴圈：對每張卡片依 `liveEnemy.hp<=0` 判定，透明度＝`0.1 + 0.9 × clamp(_deathClearCd / FIELD_ENEMY_DEATH_CLEAR_DELAY, 0, 1)`（剛死＝1.0、清除前＝0.1），套用到頭像（`.cb-icon`／`.enemy-emoji-fallback`）與血條（`.enemy-hp`）；存活敵人清空 inline opacity（維持 100%）。以常數為基準，玩家改幾秒都對。
+- `css/style.css`：`.enemy-card` 的頭像與血條加 `transition: opacity 0.2s linear`，平滑 renderBattle 每 tick（200ms）的逐幀更新。傷害/掉落浮字層不淡出。
+- 純視覺，不改任何數值/戰鬥/清除時機邏輯。
+- 驗證（隔離埠 8123）：暫停戰鬥、手動設死亡並給不同 `_deathClearCd` 強制 renderBattle，實測 cd=滿→100%、半程→0.55、快清除→0.118（≈10%），頭像與血條同步、transition＝`opacity 0.2s`；主控台 0 錯誤。
+
+## 變更紀錄：野外敵人死亡後延遲清除戰鬥資訊
+
+- `js/data.js`：新增可調整秒數 `FIELD_ENEMY_DEATH_CLEAR_DELAY = 1.5`，控制野外敵人死亡後保留敵方戰鬥資訊的時間。
+- `js/combat.js`：`onFieldKill()` 改為先結算獎勵並標記 `_deathClearCd`，不立刻移除敵人；`tickFieldDeathClears()` 每 tick 倒數，時間到才移除；整波清空時等死亡資訊清除後才推進階段與開始下一波搜尋。
+- `js/ui.js`：戰鬥畫面與敵方狀態 tooltip 改用 `visibleFieldEnemies()`，保留 HP 0 且尚在死亡倒數中的敵人卡片、狀態與浮字層。
+- `js/tower.js`：切入高塔時同步清掉野外延遲清除旗標，避免殘留狀態。
+- `tests/multi-enemy.test.cjs`：補回歸測試，鎖定死亡敵人保留 1.5 秒、活敵人仍可被戰鬥邏輯選取、整波完成延後到清除後。
+- 驗證：`node --test tests\multi-enemy.test.cjs tests\field-death-retreat.test.cjs`、`node --check js\data.js js\combat.js js\ui.js js\tower.js tests\multi-enemy.test.cjs` 通過；`git diff --check` 僅有 CRLF/LF 提醒。
+
+## 變更紀錄：連擊數 tooltip 移除括號補充
+
+- `js/data.js`：連擊數 tooltip 刪除括號內的追加規則範例與持續傷害例子，只保留效果結論：「普攻與技能直接傷害會額外追加攻擊次數；持續傷害不受影響」。
+- `tests/combo-hits.test.cjs`：補 tooltip 文案斷言，避免括號補充文字回流。
+
+## 變更紀錄：技能命中改吃玩家命中率（修高閃避敵人大量 MISS）
+
+- 問題：技能傷害段命中寫死 `100%`（`hit: fx.neverMiss ? 999 : 100`），不吃玩家命中率。野外敵人閃避＝`5 + 階段×2`（階段 430 → 865%，菁英再 +5 → 870%），使技能命中率被夾到下限 5% → 95% 被閃避；玩家命中率高達 2890% 卻用不到。連擊讓每次施放的傷害段重複 2~3 段、各自擲命中，把 MISS 放大成「一整排」。普攻不受影響（普攻本就吃 `st.hit`，2890% > 870% → 必中）。
+- 修正（`js/skills.js` castSkill aCfg）：`hit: fx.neverMiss ? 999 : Math.max(100, st.hit)`。技能至少保有 100% 基礎命中（低命中前期不受影響），命中率 >100% 時可壓過高閃避敵人。純命中判定改動，不動傷害數值/連擊/持續傷害。
+- `game_formula.md`：§3 補「技能命中率＝max(100%, 玩家命中率)」與野外高階敵人閃避說明。
+- `tests/skill-hit.test.cjs`：新增 resolveHit 行為測試（命中 2890% vs 閃避 870% 必中；固定 100% vs 870% 夾到 5% 必 MISS）＋接線斷言。3/3 通過（連擊測試 10/10 併測共 13/13）。
+
+## 變更紀錄：高塔 BOSS 大量 MISS 浮字修正
+
+- `js/ui.js`：補回 `floatText()` 入口保護；若 `tb-float` 收到裸 `MISS` / `miss`，轉成玩家浮層 `tp-float` 的黃色 `閃避!`（`player-event defend`）。
+- `js/combat.js`、`js/skills.js`：我方攻擊被敵方閃避時改用 `miss enemy-dodge`，保留敵方區顯示語意，但與玩家閃避 fallback 分流。
+- `js/ui.js`：高塔 BOSS 浮層的 `enemy-dodge` MISS 加 300ms 節流，避免普攻連擊與多段技能在 BOSS 身上洗出大量紅色 MISS。
+- `tests/player-event-float.test.cjs`：補回歸測試，鎖定 BOSS 浮層裸 MISS 轉玩家區，以及敵方閃避 MISS 節流。
+- 驗證：`node --test tests\player-event-float.test.cjs`、`node --check js\ui.js js\combat.js js\skills.js tests\player-event-float.test.cjs` 通過。
+
+## 變更紀錄：融合技能列表恢復每排 12 個
+
+- `css/style.css`：新增 `#fusion-skill-list.tree-row` 覆蓋樣式，融合技能列表固定 `repeat(12, 52px)`，不再套用一般技能樹的 4 欄排列；窄寬度時允許水平捲動。
+- `tests/skill-tree-layout.test.cjs`：補回歸測試，鎖定一般技能樹維持 4 欄、融合技能列表維持每排 12 個。
+- 驗證：`node --test tests\skill-tree-layout.test.cjs`、`node --check tests\skill-tree-layout.test.cjs`、`git diff --check -- css/style.css tests/skill-tree-layout.test.cjs` 皆通過；`git diff --check` 僅有既有 CRLF/LF 提示。
+
+## 變更紀錄：重做玩家/敵方即時增益 tooltip
+
+- 修復玩家區 tooltip 消失：`js/ui.js` 補回 `activeBuffsHtml()`、`buffTooltipDesc()`、`showBuffTooltip(anchorEl)` 與 `[data-buff-tip]` hover/click/mouseout 事件。
+- 敵方狀態列改走獨立 `data-enemy-buff-tip`：高塔 BOSS 讀 `TOWER.boss`，一般敵人用 `data-enemy-index` 對應目前存活敵人，不再覆蓋玩家 tooltip。
+- `refreshBuffTooltip()` 會依目前 `UI.tooltipAnchor` 分流刷新玩家或敵方 `.skt-desc`，讓剩餘秒數與數值即時更新。
+- `css/style.css` 補 `#active-buffs` 與 buff tooltip 相關顯示樣式。
+- 驗證：`node --check js\ui.js`、`node --test tests\active-buffs-panel.test.cjs tests\enemy-buffs-tooltip.test.cjs`、`git diff --check -- js/ui.js css/style.css` 皆通過；`git diff --check` 僅有既有 CRLF/LF 提示。
+
+## 變更紀錄：連擊數公式語意更正（暴擊率% 直接代入）＋面板移位＋tooltip
+
+- 使用者澄清：公式中「暴擊率%」＝把暴擊率當比值**直接代入**（例：5000% → 代入 50，即 `暴擊率 ÷ 100`），**不做「減 100」**。先前實作採「暴擊率−100」會使高暴擊時線性項爆炸（暴擊 5000% → b×4900≈68 → +75 段），此更正把線性項壓回合理範圍（b×50≈0.69）。
+- `js/formula.js` `comboHitsFor`：改為 `cr ≤ 100 → 0`；否則 `x = cr/100`，`n = a·ln(x) + b·x + c`，取 `max(0)`。對照：100%→0、200%→≈0.72、1380%→≈2.57（原範例 2.57 落於此暴擊率）、5000%→≈4.20。保留「=100% 完全爆擊、超過才觸發」閘門。
+- `js/data.js`：「🔗 連擊數」面板列**移到暴擊率正下方**（暴擊率 → 連擊數 → 暴擊傷害）；補強暴擊率與連擊數 tooltip（暴擊率 tip 加註「100% 完全爆擊、超出衍生連擊數」；連擊數 tip 含「2.57＝固定 2 次＋57% 機率第 3 次」範例）。
+- `game_formula.md`：§2 連擊數列公式改為 `a·ln(暴擊率%)+b·暴擊率%+c`，明註「暴擊率%＝÷100 直接代入、不減 100」。
+- `tests/combo-hits.test.cjs`：更新預期值（100→0、101→≈0.1088、1380→≈2.574、200→≈0.7203、5000→≈4.2026）。10/10 通過。
+
+## 變更紀錄：敵方狀態列顯示即時增減益詳情
+
+- 需求：我方狀態列已有「目前技能增益」即時 tooltip；敵方區也要能查看目前狀態與增減益詳情。
+- `index.html`：高塔 BOSS 狀態列 `#tb-status` 加 `data-enemy-buff-tip`。
+- `js/ui.js`：新增 `currentCombatEnemyEntity(anchorEl)`、`enemyBuffTooltipDesc(anchorEl)`、`showEnemyBuffTooltip(anchorEl)`；高塔讀 `TOWER.boss`，野外依 `.enemy-status[data-enemy-index]` 讀目前存活敵人。
+- `js/ui.js`：野外敵人 `.enemy-status` 生成時加 `data-enemy-buff-tip data-enemy-index`，重繪時同步 index；事件委派支援 hover/click 顯示，mouseout 收起；`refreshBuffTooltip()` 同時支援敵方 tooltip 即時刷新。
+- 詳情涵蓋暈眩、減速、中毒、持續傷害（燃燒/流血/詛咒等）、buff/debuff（攻擊↓/防禦↓等），顯示數值與剩餘秒數。
+- `css/style.css`：敵方狀態列 hover 顯示 pointer，提示該區可查看詳情。
+- `tests/enemy-buffs-tooltip.test.cjs`：新增敵方 tooltip 接線與狀態類型覆蓋測試。
+- 驗證：`node --test tests\active-buffs-panel.test.cjs tests\enemy-buffs-tooltip.test.cjs`（7/7）、`node --check js\ui.js tests\active-buffs-panel.test.cjs tests\enemy-buffs-tooltip.test.cjs` 通過。未啟動或操作 5500。
+
+## 變更紀錄：新增屬性「連擊數」（暴擊率破 100% 衍生多段攻擊）
+
+- 需求：暴擊率 100% 為完全爆擊；**超過** 100% 的部分衍生「連擊數」＝額外攻擊次數。公式 `連擊數 = a·LN(暴擊率%) + b·暴擊率% + c`（a=0.875、b=0.01387、c=0.0861），僅作用於普攻與技能直接傷害，持續傷害不計。小數為機率追加（例 2.57 → 固定 2 次＋57% 機率第 3 次）。使用者已在參數表加入公式（2-屬性派生／連擊數，變動＝新增）並明確指示實作。
+- **公式輸入語意判斷**：採「超過 100% 的部分」＝`暴擊率−100` 為輸入。理由：設計語意須自 100% 平滑起步；常數零交叉點在超出 ≈0.9%（暴擊 100.9%）完美對齊；範例 2.57 反推輸入≈13.8→暴擊 113.8% 合理（若用原始暴擊率則零交叉在 0.9%，5% 暴擊就有 1.5 次連擊，明顯錯誤）。`暴擊率≤100%` 時為 0，結果再取 `max(0,…)`。
+- `js/formula.js`：新增 `comboHitsFor(critRate)`（純函式）與 `rollComboHits(st)`（整數固定＋小數機率擲骰）；`computeStats` 派生 `st.comboHits = comboHitsFor(st.critRate)`。
+- `js/data.js`：新增具名常數 `COMBO_HITS_COEF={a,b,c}`；`STAT_ROWS` 進攻屬性加「🔗 連擊數」顯示列（>0 顯示「N 次」，否則「—」）。
+- `js/combat.js`：`doPlayerAttack` 主攻擊命中且未致死後，依 `rollComboHits` 追加整段普攻（`depth 0` 才觸發，遞迴段帶深度避免與「連擊被動」互相爆炸）。
+- `js/skills.js`：`castSkill` 傷害段外層包 `for rep 0..comboReps`，僅重複「直接傷害段」；DoT／減益／吸血在段外一次結算 → 持續傷害不受影響。日誌加「（連擊數 ×N）」。
+- `tools/apply_params.cjs`：接 `COMBO_HITS_COEF` a/b/c ←（2-屬性派生／連擊數）。dry-run：一致 675、將變更 0、錨點問題 0。
+- `game_formula.md`：§2 衍生表加「連擊數」列；修正「暴擊率上限 100%→無上限」（程式 `STAT_CAPS.critRate=0` 與參數表「暴擊率 上限」a=0 早已無上限，僅文件殘留舊值，連擊機制正依賴此）；§3 補連擊數多段結算註記。
+- 待回報疑點（未擅改）：`game_formula.md` §2 與 §2 敏捷表「暴擊率 敏捷×0.06」與程式/參數表 `agiCritRate=0.0001` 不一致，屬既有、與本任務無關且有歧義，依規則先回報不動。
+- 驗證：`tests/combo-hits.test.cjs`（10/10）；`node --check` formula/data/combat/skills 皆通過；apply_params dry-run 一致。純機制新增，未動既有數值。
+
+## 變更紀錄：技能樹分類卡片維持四個技能一排
+
+- 問題：技能樹資料已在 `renderSkills()` 以每 4 個技能切列，但 `.tree-row` 使用 flex 且允許換行；分類卡片寬度略不足時會呈現 3+1。
+- `css/style.css`：`#skill-trees` 分類卡片最小寬度 `280px → 288px`，外層 gap `12px → 10px`；`.tree-row` 改為 grid，固定 `repeat(4, 52px)`，gap `8px`，不再 flex-wrap。
+- `tests/skill-tree-layout.test.cjs`：新增回歸測試，鎖定 JS 每 4 個切列、CSS 技能樹卡片最小寬度與 `.tree-row` 固定 4 欄。
+- 驗證：`node --test tests\skill-tree-layout.test.cjs`（1/1）、`node --check js\ui.js tests\skill-tree-layout.test.cjs` 通過。未啟動或操作 5500。
+
+## 變更紀錄：增益 tooltip 即時刷新＋面板增益數值改綠色
+
+- **即時刷新（戰鬥區增益 tooltip）**：`js/ui.js` 抽出 `buffTooltipDesc()` 供顯示與刷新共用；新增 `refreshBuffTooltip()`——當 `#sk-tooltip` 開啟中且 `UI.tooltipAnchor` 為 `[data-buff-tip]` 元素時，每個 UI tick 只更新 `.skt-desc` 內容（數值與剩餘秒數同步倒數，不重新定位避免抖動）；於 `uiTick` 的 `renderBattle()` 後呼叫。
+- **面板數值綠色**：並行工具先前把 `#active-buffs .buff-val`/`.buff-remain` 的 CSS 規則移除，導致面板數值失去綠色。改為在 `activeBuffsHtml` 直接內嵌 `style="color:var(--good)"`（數值）與 `color:var(--dim);font-size:0.9em`（秒數），與 tooltip 綠色一致、且不再倚賴易被移除的 CSS。
+- 純顯示，不改任何數值/戰鬥邏輯。
+- 驗證：`node --test tests/active-buffs-panel.test.cjs`（5/5，含刷新與內嵌綠色斷言）；`node -c js/ui.js`。預覽（isolated 8123）：面板數值 `getComputedStyle` = `rgb(95,158,83)`（=var(--good)）；tooltip 保持開啟且倒數即時更新（實測 26s→6s），`UI.tooltipAnchor` 確為 buff 錨點。
+
+## 變更紀錄：戰鬥區可查看技能增益詳情（狀態列點擊＋增益按鈕）
+
+- 承上一版「目前技能增益」面板清單保留；另在戰鬥場景加上查看入口（沿用敵人情報「!」的 tooltip 模式：懸停顯示、點擊切換、mouseout 收起）。
+- `js/ui.js`：新增 `showBuffTooltip(anchorEl)`——由 `currentCombatPlayerEntity()` + `activePlayerBuffs()` 產出增益詳情（emoji＋名稱↑＋數值＋剩餘秒數；無增益顯示提示），走既有 `showStatTooltip`/`#sk-tooltip`。事件委派加 `[data-buff-tip]`：mouseover 顯示、click 切換（手機支援）、mouseout 收起。
+- `index.html`：玩家戰鬥狀態列 `#tp-status`／`#pv-status` 加 `data-buff-tip`（整塊可點）；兩個玩家 combatant 各加一顆綠色 `.info-btn.buff-btn`（💪）作為小按鈕入口。
+- `css/style.css`：`.buff-btn`（左上、綠色，與敵人情報「!」右上對稱）、`.cb-status[data-buff-tip]` 游標、`.buff-tip-row` 兩端對齊樣式。
+- 純顯示，不改任何數值/戰鬥邏輯。
+- 驗證：`node --test tests/active-buffs-panel.test.cjs`（4/4，含新 tooltip 接線斷言）；`node -c js/ui.js`。預覽（isolated 8123）：主控台 0 錯誤、野外場景增益按鈕 22px 綠圈可見、狀態列可點、注入增益後 tooltip 正確顯示「⚔️攻擊↑ +644% 4s／⚡攻速↑ +967%／💨閃避↑ +2588% 8s」。（截圖因持續動畫逾時，改以 DOM/JS 驗證。）
+
+## 變更紀錄：屬性面板新增「目前技能增益」清單
+
+- 問題：`computeStats()`（面板來源）不含戰鬥中的技能增益（evasionUp/atkUp… 於 playerAtkCfg/playerDefCfg 才以 buffVal 加上），面板只顯示裸值，玩家看不到當下生效的增益。使用者選「另列清單」方案。
+- `js/combat.js`：新增純函式 `activePlayerBuffs(ent)`（＋`PLAYER_BUFF_ORDER`），依固定順序回傳目前生效的玩家增益 `{key,val,remain}`（只讀 `ent.buffs` 與 `GT`，過濾 `until<=GT`）。
+- `js/ui.js`：`renderAttrPanel` 骨架於 DPS 後加 `#active-buffs` 容器；每 tick 讀取目前戰鬥實體（`currentCombatPlayerEntity`：高塔 `TOWER.player` 優先，否則 `FIELD.player`）的增益，產出「⏱️ 目前技能增益」清單（emoji＋`buffLabel`↑＋數值＋剩餘秒數）；無增益則隱藏。基礎數值完全不變。
+- `css/style.css`：`#active-buffs` 的 `.buff-val`（綠）／`.buff-remain`（暗、縮小）小樣式；其餘沿用 `.attr-group/summary/.stat-row`。
+- 純顯示，不改任何數值或戰鬥邏輯。
+- 驗證：`node --test tests/active-buffs-panel.test.cjs`（3/3：過濾/排序/剩餘秒數、空實體、ui 接線）；`node -c js/combat.js js/ui.js`。預覽（isolated 8123）主控台 0 錯誤、`#active-buffs` 存在、空狀態隱藏、以假實體注入渲染出「⚔️攻擊↑ +1609% 6s／⚡攻速↑ +120% 3s／💨閃避↑ +2588% 8s」順序與數值皆正確。
+
+## 變更紀錄：BOSS 攻擊玩家閃避浮字區域修正
+
+- 問題：怪物/BOSS 攻擊玩家時，`doMonsterAttack()` 仍直接用傳入的 `floatSel` 顯示 `MISS` 與傷害；若呼叫端傳入敵方浮層，玩家閃避會出現在 BOSS 區域，且為紅色 MISS。
+- `js/combat.js`：新增 `playerFloatSel = playerEventFloatTarget(floatSel)`；怪物/BOSS 對玩家造成的傷害字改畫到玩家浮層；玩家閃避時移除紅色 `MISS`，只保留玩家區黃色 `閃避!`（`player-event defend`）。
+- `js/ui.js`：在 `floatText()` 入口加高塔保護；任何送到 BOSS 浮層 `tb-float` 的 `MISS/miss`，都會改送玩家浮層 `tp-float`，文字改 `閃避!`，class 改 `player-event defend`。這層保護只針對高塔 BOSS 浮層，不影響普通野怪 `mv-float-*`。
+- `js/combat.js`、`js/skills.js`：玩家普攻或技能被敵方閃避時，恢復普通戰鬥規則，敵方區域顯示 `MISS`；避免把「敵方閃避我方攻擊」誤顯成玩家防禦閃避。
+- 規則對齊：我方被敵方造成的效果（傷害、閃避、格擋、護盾吸收等）顯示在我方區域；反傷仍透過 `floatEnemyEvent()` 顯示在敵方區域。
+- `tests/player-event-float.test.cjs`：鎖定 `doMonsterAttack()` 必須轉成玩家浮層，且不得直接 `floatText(floatSel, 'MISS', ...)` 或 `floatText(floatSel, dmgStr, ...)`；新增 VM 實際呼叫測試，驗證 `doMonsterAttack(..., 'tp-float')` 在 miss 時輸出 `{ id:'tp-float', text:'閃避!', cls:'player-event defend' }`；新增 `tb-float + MISS/miss` 轉向保護測試。
+- 驗證：`node --test tests\player-event-float.test.cjs`（8/8）、`node --check js\ui.js js\combat.js tests\player-event-float.test.cjs` 通過。未啟動或操作 5500。
+
 ## 變更紀錄：太古精華洗煉消耗依裝備品質（實作使用者新增列）
 
 - 需求：洗煉勾選太古精華模式時，改為依裝備稀有度消耗不同數量（原本固定 1 顆）。實作使用者於參數表新增的 `7-洗煉/太古精華洗煉消耗` 列（普通~傳說 1、神話 2、創世 3、神鑄創世 4）。

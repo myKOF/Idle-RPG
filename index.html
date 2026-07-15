@@ -526,6 +526,7 @@
             <div class="battle-scene">
               <div class="combatant">
                 <div class="float-layer" id="tp-float"></div>
+                <div class="info-btn buff-btn" data-buff-tip title="技能增益詳情">💪</div>
                 <div class="cb-level" id="tp-level"></div>
                 <img src="images/icon_avatar.png" class="cb-icon">
                 <div class="cb-name" id="tp-name">冒險者（你）</div>
@@ -537,7 +538,7 @@
                   <div class="mp-fill" id="tp-mp"></div><span class="hp-text" id="tp-mptext"></span>
                 </div>
                 <div class="cb-skill" id="tp-skill"></div>
-                <div class="cb-status" id="tp-status"></div>
+                <div class="cb-status" id="tp-status" data-buff-tip></div>
               </div>
               <div class="vs">VS</div>
               <div class="combatant boss">
@@ -549,7 +550,7 @@
                 <div class="hp-bar">
                   <div class="hp-fill boss" id="tb-hp"></div><span class="hp-text" id="tb-hptext"></span>
                 </div>
-                <div class="cb-status" id="tb-status"></div>
+                <div class="cb-status" id="tb-status" data-enemy-buff-tip></div>
               </div>
             </div>
             <div class="hint">限時 60 秒；40 秒時若 BOSS 血量仍高於 50%，將進入狂暴（傷害 +200%）！</div>
@@ -651,9 +652,12 @@
           <button id="btn-pip" class="btn sm" title="開啟永遠置頂的迷你監控視窗，背景掛機也能看到戰況">📺 迷你視窗</button>
           <button id="btn-summary" class="btn sm" title="開啟統計面板">📊 統計面板</button>
         </div>
-        <div class="battle-scene">
-          <div class="combatant">
-            <div class="float-layer" id="pv-float"></div>
+        <div class="battle-scene-wrapper" style="position: relative; width: 100%;">
+          <div id="btn-enemy-tip" class="info-btn">!</div>
+          <div class="battle-scene">
+            <div class="combatant">
+            <div class="float-layer" id="pv-float">
+            <div class="info-btn buff-btn" data-buff-tip title="技能增益詳情">💪</div></div>
             <div class="cb-level" id="pv-level"></div>
             <img src="images/icon_avatar.png" class="cb-icon">
             <div class="cb-name" id="pv-name">冒險者（你）</div>
@@ -665,14 +669,14 @@
               <div class="mp-fill" id="pv-mp"></div><span class="hp-text" id="pv-mptext"></span>
             </div>
             <div class="cb-skill" id="pv-skill"></div>
-            <div class="cb-status" id="pv-status"></div>
+            <div class="cb-status" id="pv-status" data-buff-tip></div>
           </div>
           <div class="vs">VS</div>
           <div class="combatant enemy-combatant" style="position:relative;">
-            <div id="btn-enemy-tip" class="info-btn">!</div>
             <div class="enemy-party enemy-count-0" id="mv-party"></div>
           </div>
         </div>
+      </div>
         <div class="log-header">
           <div class="log-title">綜合紀錄</div>
           <div class="log-header-actions">
@@ -708,6 +712,7 @@
           <option value="loot">掉落物</option>
           <option value="system">系統訊息</option>
         </select>
+        <button id="btn-detail-combat-pause" class="btn sm warn" type="button" title="暫停野外與高塔戰鬥" aria-pressed="false">⏸ 暫停戰鬥</button>
         <button id="detail-log-clear" class="btn sm" type="button">清除詳細日誌</button>
       </div>
       <div id="detail-log-content" class="detail-log-content"></div>

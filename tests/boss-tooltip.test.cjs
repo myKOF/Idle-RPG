@@ -20,3 +20,17 @@ test('BOSS對戰及高塔結果結算界面具備屬性提示按鈕', () => {
   assert.match(ui, /TOWER\.boss \|\| \(TOWER\.floor \? makeBoss\(TOWER\.floor\) : null\)/);
   assert.match(ui, /e\.target\.closest\('#btn-enemy-tip'\) \|\| e\.target\.closest\('#btn-boss-tip'\) \|\| e\.target\.closest\('#btn-tower-result-boss-tip'\)/);
 });
+
+test('野外怪物閃避率公式串接驗證', () => {
+  const formula = fs.readFileSync(path.join(root, 'js/formula.js'), 'utf8');
+  const applyParams = fs.readFileSync(path.join(root, 'tools/apply_params.cjs'), 'utf8');
+
+  // 確保 monsterStatsFor 內部的 dodge 使用公式並與 params 對接
+  assert.match(formula, /dodge:\s*\d+\s*\+\s*stage\s*\*\s*\d+/);
+  assert.match(formula, /m\.dodge\s*\+=\s*\d+/);
+
+  // 確保 apply_params.cjs 有對接 4-野外怪物 閃避率 及 菁英閃避累加 規則
+  assert.match(applyParams, /怪物閃避-a/);
+  assert.match(applyParams, /怪物閃避-b/);
+  assert.match(applyParams, /m\.dodge \+=/);
+});

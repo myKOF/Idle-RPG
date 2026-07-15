@@ -522,6 +522,9 @@ function castSkill(pEnt, target, id, lv, floatSel) {
     // 雙重施法（奧術過載等）：追加一段
     if (fx.doubleCastPct && chance(fx.doubleCastPct)) { hits++; parts.push('<span class="log-hl-good">雙重施法！</span>'); }
     var totalDmg = 0, anyCrit = false, allMiss = true;
+    // 連擊數（暴擊率破 100% 衍生）：僅對技能「直接傷害段」整段重複；DoT／減益／吸血在此迴圈外一次結算，故持續傷害不受連擊影響
+    var comboReps = rollComboHits(st);
+    for (var rep = 0; rep <= comboReps; rep++) {
     for (var h = 0; h < hits; h++) {
       for (var ti = 0; ti < targets.length; ti++) {
         var targetEnt = targets[ti];
@@ -548,7 +551,7 @@ function castSkill(pEnt, target, id, lv, floatSel) {
           var aCfg = {
             atk: baseVal * (1 - portion), dmgType: fx.dmgType, level: st.level,
             critRate: st.critRate + (fx.critBonus || 0), critDmg: st.critDmg,
-            hit: fx.neverMiss ? 999 : 100, pen: fx.dmgType === 'magic' ? st.mPen : st.pPen,
+            hit: fx.neverMiss ? 999 : Math.max(100, st.hit), pen: fx.dmgType === 'magic' ? st.mPen : st.pPen, // 技能命中吃玩家命中率，保留 100 當地板（低命中不受影響、高命中能壓過高閃避敵人）
             annihilate: st.passives.annihilate || 0, // 神鑄特效【破滅】：技能暴擊同樣適用
             elemAtk: elemAtk, eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, isPlayer: true
           };
@@ -567,10 +570,11 @@ function castSkill(pEnt, target, id, lv, floatSel) {
           trackDps(dmgRes.dmg);
           if (typeof recordRunDamage === 'function') recordRunDamage(sk.name, dmgRes.dmg);
         } else {
-          floatEnemyEvent(targetEnt, floatSel, 'MISS', 'miss');
+          floatEnemyEvent(targetEnt, floatSel, 'MISS', 'miss enemy-dodge');
         }
         if (dmgRes.killed) out.killed = true;
       }
+    }
     }
     // 冰與火之歌：每名目標同時處於減速與燃燒時各自引爆
     for (var ci = 0; ci < targets.length; ci++) {
@@ -587,7 +591,7 @@ function castSkill(pEnt, target, id, lv, floatSel) {
     }
     out.dmg = totalDmg;
     if (allMiss) parts.push('<span class="log-hl-bad">被閃避了！</span>');
-    else parts.push((anyCrit ? '<span class="log-hl-good">爆擊</span>' : '') + '造成 ' + fmt(totalDmg) + (hits > 1 ? '（' + hits + ' 段）' : '') + ' 傷害');
+    else parts.push((anyCrit ? '<span class="log-hl-good">爆擊</span>' : '') + '造成 ' + fmt(totalDmg) + (hits > 1 ? '（' + hits + ' 段）' : '') + (comboReps > 0 ? '<span class="log-hl-good">（連擊數 ×' + comboReps + '）</span>' : '') + ' 傷害');
     // 命中後效果
     if (totalDmg > 0) {
       if (fx.healPctOfDmg) {
@@ -675,7 +679,11 @@ function castSkill(pEnt, target, id, lv, floatSel) {
     parts.push('<span class="log-hl-bad">附加死亡詛咒</span>');
   }
 
-  blog(logMsg + parts.join('，') + '。', 'dim-text', 'combat');
+  var cls = 'log-player-skill';
+  if (sk.cat === 'def' || sk.cat === 'special' || (sk.cat === 'fusion' && !fx.dmgType)) {
+    cls = 'log-player-buff';
+  }
+  blog(logMsg + parts.join('，') + '。', cls, 'combat');
   UI.dirty.battle = true;
   return out;
 }
