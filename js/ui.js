@@ -245,7 +245,7 @@ function renderHeader() {
   updateResourceTip('r-scrap', '裝備碎片', '目前持有：' + fmtFull(p.scrap));
   updateResourceTip('r-essence', '附魔精華', '目前持有：' + fmtFull(p.essence));
   updateResourceTip('r-dust', '魔塵', '神鑄材料，可提升鑄造成功率。｜目前持有：' + fmtFull(p.dust || 0));
-  updateResourceTip('r-ancient-essence', '太古精華', '洗煉時消耗 1 個；每個詞條有 30% 機率成為太古詞條。｜目前持有：' + fmtFull(p.ancientEssence || 0));
+  updateResourceTip('r-ancient-essence', '太古精華', '洗煉時依裝備品質消耗（品質越高消耗越多）；每個詞條有 ' + ANCIENT_REROLL_CHANCE + '% 機率成為太古詞條。｜目前持有：' + fmtFull(p.ancientEssence || 0));
   updateResourceTip('r-soul-origin', '魔魂本源', '用於本源覺醒的道具。｜目前持有：' + fmtFull(p.soulOrigin || 0));
   $id('r-gold').textContent = fmt(p.gold);
   $id('r-scrap').textContent = fmt(p.scrap);
@@ -474,13 +474,55 @@ function refreshCombatPauseButton() {
   btn.title = paused ? '繼續野外與高塔戰鬥' : '暫停野外與高塔戰鬥';
   btn.classList.toggle('active', paused);
 }
+function currentShieldSkillCap(stats) {
+  if (!stats || !(stats.hp > 0)) return 0;
+  var cap = stats.hp * 20;
+  if (typeof G === 'undefined' || !G.player || !Array.isArray(G.player.loadout)) return cap;
+  if (typeof mergedSkillFx !== 'function' || typeof scaleAt !== 'function') return cap;
+  for (var i = 0; i < G.player.loadout.length; i++) {
+    var id = G.player.loadout[i];
+    var lv = (G.player.skills && G.player.skills[id]) || 0;
+    if (!id || lv <= 0) continue;
+    var fx = mergedSkillFx(id);
+    if (!fx || !fx.shieldPctMax) continue;
+    var pct = scaleAt(fx.shieldPctMax, lv) * (1 + (stats.shieldEff || 0) / 100);
+    cap = Math.max(cap, stats.hp * (1 + pct / 100));
+  }
+  return cap;
+}
+function playerShieldMax(entity, stats) {
+  if (!entity) return 0;
+  var shield = Math.max(0, entity.shield || 0);
+  if (shield <= 0) return 0;
+  var version = (typeof SHIELD_MAX_VERSION === 'number') ? SHIELD_MAX_VERSION : 2;
+  if (entity.shieldMaxVersion !== version) {
+    var cap = currentShieldSkillCap(stats);
+    if (cap > 0 && shield > cap) {
+      entity.shield = cap;
+      shield = cap;
+    }
+    entity.shieldMax = shield;
+    entity.shieldMaxVersion = version;
+    entity.shieldSkillBase = 0;
+    entity.shieldSkillPct = 0;
+    return shield;
+  }
+  var shieldMax = Math.max(0, entity.shieldMax || 0);
+  if (!(shieldMax > 0) || shieldMax < shield) {
+    entity.shieldMax = shield;
+    entity.shieldMaxVersion = version;
+    return shield;
+  }
+  return shieldMax;
+}
 function renderPlayerShieldBar(prefix, entity, stats) {
   var shieldBar = $id(prefix + '-shield');
   if (!shieldBar || !entity || !stats) return;
   var shield = Math.max(0, entity.shield || 0);
-  if (shield > 0.5 && stats.hp > 0) {
+  var shieldMax = playerShieldMax(entity, stats);
+  if (shield > 0.5 && shieldMax > 0) {
     shieldBar.style.display = 'block';
-    shieldBar.style.width = clamp(shield / stats.hp * 100, 0, 100) + '%';
+    shieldBar.style.width = clamp(shield / shieldMax * 100, 0, 100) + '%';
   } else {
     shieldBar.style.display = 'none';
     shieldBar.style.width = '0%';
@@ -3725,9 +3767,46 @@ function initUI() {
 }
 
 /* ---- 高塔結算彈窗 ---- */
-function showTowerResultModal(r, p, b, myDmg, bDmg) {
+function clearTowerResultCountdown() {
+  if (UI.towerResultCountdownTimer) {
+    clearInterval(UI.towerResultCountdownTimer);
+    UI.towerResultCountdownTimer = null;
+  }
+}
+function confirmTowerResultModal() {
+  clearTowerResultCountdown();
+  var modal = $id('tower-result-modal');
+  var confirmBtn = $id('trm-confirm');
+  var stopAutoBtn = $id('trm-stop-auto');
+  if (confirmBtn) confirmBtn.disabled = false;
+  if (stopAutoBtn) {
+    stopAutoBtn.disabled = false;
+    stopAutoBtn.style.display = 'none';
+  }
+  if (modal) modal.style.display = 'none';
+  if (typeof confirmTowerResult === 'function') confirmTowerResult();
+  else if (typeof finishTowerFight === 'function') finishTowerFight();
+}
+function stopTowerAutoFromResultModal() {
+  clearTowerResultCountdown();
+  if (typeof stopTowerAutoFromResult === 'function') stopTowerAutoFromResult();
+  var confirmBtn = $id('trm-confirm');
+  var stopAutoBtn = $id('trm-stop-auto');
+  if (confirmBtn) {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = '確定';
+  }
+  if (stopAutoBtn) {
+    stopAutoBtn.disabled = true;
+    stopAutoBtn.style.display = 'none';
+  }
+}
+function showTowerResultModal(r, p, b, myDmg, bDmg, options) {
   var modal = $id('tower-result-modal');
   var title = $id('trm-title');
+  var confirmBtn = $id('trm-confirm');
+  var stopAutoBtn = $id('trm-stop-auto');
+  clearTowerResultCountdown();
 
   if (r.win) {
     title.innerHTML = '🏆 挑戰成功！通關第 ' + r.floor + ' 層';
@@ -3762,14 +3841,34 @@ function showTowerResultModal(r, p, b, myDmg, bDmg) {
     $id('trm-rewards').innerHTML = r.analysis.map(function (x) { return '<div style="margin-bottom:4px; color:#ffb366;">📋 ' + esc(x) + '</div>'; }).join('');
   }
 
+  if (confirmBtn) {
+    var countdown = options && options.autoCountdown ? Math.ceil(options.countdown || 3) : 0;
+    confirmBtn.disabled = countdown > 0;
+    confirmBtn.textContent = countdown > 0 ? '確定（' + countdown + '）' : '確定';
+    if (stopAutoBtn) {
+      var canStopAuto = countdown > 0 && r && r.autoContinue;
+      stopAutoBtn.style.display = canStopAuto ? 'inline-block' : 'none';
+      stopAutoBtn.disabled = !canStopAuto;
+    }
+    if (countdown > 0) {
+      UI.towerResultCountdownTimer = setInterval(function () {
+        countdown--;
+        if (confirmBtn) confirmBtn.textContent = countdown > 0 ? '確定（' + countdown + '）' : '確定';
+        if (countdown <= 0) {
+          if (confirmBtn) confirmBtn.disabled = false;
+          confirmTowerResultModal();
+        }
+      }, 1000);
+    }
+  }
   modal.style.display = 'flex';
 }
 
 if ($id('trm-confirm')) {
-  $id('trm-confirm').onclick = function () {
-    $id('tower-result-modal').style.display = 'none';
-    if (typeof finishTowerFight === 'function') finishTowerFight();
-  };
+  $id('trm-confirm').onclick = confirmTowerResultModal;
+}
+if ($id('trm-stop-auto')) {
+  $id('trm-stop-auto').onclick = stopTowerAutoFromResultModal;
 }
 /* ---- 統計面板：基本統計與掉落物統計（HTML 由 js/stats.js 產生） ---- */
 var statsPanelTimer = null;

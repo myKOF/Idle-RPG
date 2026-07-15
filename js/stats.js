@@ -16,7 +16,7 @@ var LOOT_MAT_DEFS = [
 ];
 
 function newLootStatsBucket() {
-  return { battles: 0, kills: 0, dropRolls: 0, gold: 0, equip: {}, mats: {}, gems: {} };
+  return { battles: 0, kills: 0, deaths: 0, dropRolls: 0, gold: 0, equip: {}, mats: {}, gems: {} };
 }
 
 function currentLootStats() {
@@ -48,6 +48,12 @@ function recordLootKill(n, source) {
   n = n === undefined ? 1 : n;
   currentLootStats().kills += n;
   lootSourceBucket(source).kills += n;
+}
+function recordLootDeath(n, source) {
+  if (typeof n === 'string') { source = n; n = 1; }
+  n = n === undefined ? 1 : n;
+  currentLootStats().deaths += n;
+  lootSourceBucket(source).deaths += n;
 }
 function recordLootDrop(source) {
   currentLootStats().dropRolls++;
@@ -98,6 +104,7 @@ function statsSourceHtml() {
     var sourceSt = st.sources[keys[i]], details = [];
     if (sourceSt.battles) details.push('戰鬥 ' + fmtFull(sourceSt.battles));
     if (sourceSt.kills) details.push('擊殺 ' + fmtFull(sourceSt.kills));
+    if (sourceSt.deaths) details.push('死亡 ' + fmtFull(sourceSt.deaths));
     if (sourceSt.dropRolls) details.push('掉落結算 ' + fmtFull(sourceSt.dropRolls));
     if (sourceSt.gold) details.push('金幣 ' + fmtFull(sourceSt.gold));
     var equipTotal = Object.keys(sourceSt.equip).reduce(function (sum, key) { return sum + sourceSt.equip[key]; }, 0);
@@ -136,7 +143,8 @@ function statsBasicHtml() {
   return '<div class="summary-card-title">------------基本統計------------</div>' +
     statsCardRow('統計時間', statsDurationStr(Date.now() - st.start)) +
     statsCardRow('戰鬥場次', fmtFull(st.battles)) +
-    statsCardRow('殺敵數', fmtFull(st.kills));
+    statsCardRow('殺敵數', fmtFull(st.kills)) +
+    statsCardRow('死亡數', fmtFull(st.deaths));
 }
 
 /* 掉落物統計卡片內容：裝備（品質色）→ 材料（圖示）→ 寶石 → 金幣（完整數字） */

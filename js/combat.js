@@ -28,7 +28,7 @@ function toggleCombatPaused() {
 }
 
 function newPlayerEntity(st) {
-  return { hp: st.hp, mp: st.mp, shield: 0, atkCd: 1 / st.aspd, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {}, poisonUntil: 0, poisonDps: 0 };
+  return { hp: st.hp, mp: st.mp, shield: 0, shieldMax: 0, shieldMaxVersion: SHIELD_MAX_VERSION, shieldSkillBase: 0, shieldSkillPct: 0, atkCd: 1 / st.aspd, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {}, poisonUntil: 0, poisonDps: 0 };
 }
 
 function initFieldPlayer() {
@@ -71,7 +71,7 @@ function spawnFieldMonster() {
       atk: base.atk * zn.atkMult,
       def: base.def * zn.defMult, mdef: base.mdef * zn.defMult,
       magic: !!mtype.magic,          // 魔法系怪物：攻擊對玩家魔防
-      aspd: mAspd, dodge: base.dodge,
+      aspd: mAspd, dodge: base.dodge, hit: base.hit, // 命中率隨敵人等級成長 → formula.js §4
       elite: elite, isBoss: false,
       gold: base.gold * zn.rewardMult, xp: base.xp * zn.rewardMult, // 金幣/經驗 x場景倍率
       atkCd: 1 / mAspd, effects: {}, ctrlRes: 0,
@@ -233,7 +233,7 @@ function monsterAtkCfg(m, mult) {
   return {
     atk: m.atk * mult * (1 - buffVal(m, 'atkDown') / 100),
     dmgType: m.magic ? 'magic' : 'phys', level: m.level,
-    critRate: 5, critDmg: 150, hit: 100, elemAtk: ea, globalDmgRed: m.globalDmgRed || 0
+    critRate: 5, critDmg: 150, hit: m.hit || 100, elemAtk: ea, globalDmgRed: m.globalDmgRed || 0
   };
 }
 function monsterDefCfg(m) {
@@ -381,7 +381,7 @@ function fieldTick(dt) {
   if (FIELD.reviveCd > 0) {
     FIELD.reviveCd -= dt;
     if (FIELD.reviveCd <= 0) {
-      p.hp = st.hp; p.mp = st.mp; p.shield = 0;
+      p.hp = st.hp; p.mp = st.mp; p.shield = 0; p.shieldMax = 0; p.shieldMaxVersion = SHIELD_MAX_VERSION; p.shieldSkillBase = 0; p.shieldSkillPct = 0;
       cleanse(p);
       blog('💫 你已復活，繼續征途！', 'info');
       UI.dirty.battle = true;
@@ -508,6 +508,7 @@ function fieldDeathRetreatStage(currentStage) {
 function onPlayerFieldDeath() {
   var retreatStage = fieldDeathRetreatStage(G.stage.current);
   blog('☠️ 你被擊倒了…退回第 ' + retreatStage + ' 階段繼續挑戰（' + REVIVE_DELAY + ' 秒後復活）', 'bad');
+  if (window.recordLootDeath) window.recordLootDeath('field');
   flushRunSummary(retreatStage);
   FIELD.monster = null;
   FIELD.monsters = [];

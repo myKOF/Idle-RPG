@@ -1,5 +1,93 @@
 # PLAN.md — 開發計畫
 
+## 當前任務：太古精華洗煉消耗依裝備品質（新增，使用者指示實作）
+
+### 設計
+- 現況：洗煉勾選太古精華模式時，固定每次消耗 1 顆（`rerollAncientEssenceCost()` 回傳 1）。
+- 需求：改為依裝備品質（稀有度 0~8）不同消耗量。使用者已於參數表加列
+  `7-洗煉/太古精華洗煉消耗`（變動＝新增），值：普通~傳說=1、神話=2、創世=3、神鑄創世=4。
+- 仿照既有 `ESSENCE_SALVAGE_CHANCE_BY_RARITY`（依稀有度陣列）做法：
+  - `data.js`：新增 `REROLL_ANCIENT_ESSENCE_COST = [1,1,1,1,1,1,2,3,4]`（索引＝稀有度）。
+  - `formula.js §7`：`rerollAncientEssenceCostFor(rarity)` 取表值（含邊界防呆）。
+  - `item.js`：`rerollAncientEssenceCost(it)` = 開啟模式 ? `rerollAncientEssenceCostFor(it.rarity)` : 0；
+    兩處呼叫（rerollItemAffixes / rerollSingleAffix）改傳 `it`；單詞條洗煉 UI 顯示改為依品質。
+  - `ui.js`：太古精華資源提示不再寫死「1 個」。
+  - `apply_params`：`arrayContent('data','REROLL_ANCIENT_ESSENCE_COST', 該列9值)` 接入。
+  - `game_formula.md §7`：補說明。
+
+### 微型任務
+1. [DONE] TDD：rerollAncientEssenceCostFor 各稀有度值、item.js 傳 it、UI 依品質。
+2. [DONE] data.js 陣列 + formula.js 函式。
+3. [DONE] item.js 消耗/呼叫/UI；ui.js 提示。
+4. [DONE] apply_params arrayContent；game_formula.md §7.2。
+5. [DONE] node --test（3/3）、apply_params 試跑 670 一致、PATCH.md。
+
+## 當前任務：全局減傷分母接入參數
+
+### 設計
+- 問題：tooltip 已讀 `globalDamageReduction(st.globalDmgRed)`，但公式分母 `20000` 硬編在 `js/formula.js`，`tools/apply_params.cjs` 只回寫「全局減傷」列的參數 a（上限），沒有回寫參數 b（分母常數）。
+- 修正：新增 `GLOBAL_DMG_RED_DENOMINATOR`，`globalDamageReduction()` 改用此常數；`apply_params` 將 `2-屬性派生/全局減傷` 的參數 b 回寫到該常數。
+
+### 微型任務
+1. [DONE] `js/formula.js` 抽出 `GLOBAL_DMG_RED_DENOMINATOR` 並套入公式。
+2. [DONE] `tools/apply_params.cjs` 接上參數 b；dry-run 顯示 669 一致、0 錨點問題。
+3. [DONE] `tests/global-damage-reduction.test.cjs` 補「分母改變會影響實際減傷」回歸測試。
+4. [DONE] 同步 `game_formula.md` 與 `tools/參數表使用說明.md`。
+5. [DONE] 相關測試與語法檢查通過；PATCH.md 記錄。
+
+## 當前任務：屬性 tooltip 由實際公式值產生
+
+### 設計
+- 將四維主屬性的派生係數集中到 `PRIMARY_STAT_EFFECTS`，`computeStats` 與屬性 tooltip 共用同一來源。
+- tooltip 只列出係數不為 0 的效果；若某效果係數改為 0，不再顯示該效果文字。
+- 上限文字改為 `cap > 0` 才顯示；`cap <= 0` 仍代表無上限，但 tooltip 不顯示「上限」或「無上限」。
+- 格擋率與格擋減傷實戰結算改用 `STAT_CAPS`/helper，避免 tooltip 與實際結算上限分離。
+- 側欄屬性列加寬並固定不換行，避免長屬性名稱被拆行。
+
+### 微型任務
+1. [DONE] 補 `tests/attribute-tooltip.test.cjs` 覆蓋動態係數、0 值隱藏、cap=0 隱藏上限文字、格擋上限 helper 與 CSS nowrap。
+2. [DONE] `js/data.js` 新增共用係數與 tooltip 生成 helper，調整 `capText` 與格擋減傷顯示。
+3. [DONE] `js/formula.js` 改用共用係數，格擋結算移除硬編 50/85。
+4. [DONE] `tools/apply_params.cjs` 回寫目標改到共用係數，dry-run 667/667 一致、0 錨點問題。
+5. [DONE] `game_formula.md` 同步敏捷係數、cap=0 顯示語意與格擋/全局減傷上限來源。
+6. [DONE] 相關測試與語法檢查通過；PATCH.md 記錄。
+
+## 當前任務：屬性上限填 0 = 無上限
+
+### 設計
+- 規則：所有「有上限的屬性」（程式 `STAT_CAPS`／參數表「2-屬性上限」段），上限值填 0 代表無上限。
+- 以 `capValue(v, cap)`（util.js）統一實作：`cap > 0 ? clamp(v,0,cap) : max(0,v)`；取代 formula.js 內所有 `clamp(.,0,STAT_CAPS.X)` 與 `Math.min(.,STAT_CAPS.X)`，以及 resolveHit 的 pRes/mRes、globalDamageReduction 的上限。
+- 顯示：statFmt 只在 `cap>0 && val>=cap` 標金；新增 capText（0→「無上限」）供屬性面板說明；capText 不可依賴後載入的 fmt。
+- 參數表：現有上限列填 0 即生效，屬純語意變更，不新增列。
+
+### 微型任務
+1. [DONE] util.js 加 capValue。
+2. [DONE] formula.js 全數改用 capValue（computeStats + resolveHit + globalDamageReduction）。
+3. [DONE] data.js statFmt 標金條件 + capText + 所有（上限：…）說明改用 capText。
+4. [DONE] game_formula.md §2.4 上限通則（0=無上限）與元素抗性 75% 例外註記。
+5. [DONE] tests/stat-cap-unlimited.test.cjs（5 項）；修回 capText 對 fmt 的載入期相依（rarity-colors 通過）。
+6. [DONE] 全庫測試確認無新增回歸（159 pass／14 既有 fail）；PATCH.md。
+
+## 當前任務：普通敵人與 BOSS 新增「命中率」屬性
+
+### 一、需求與設計
+- 普通敵人命中率 = `100% + 敵人等級 × 1%`（敵人等級 = 階段）。
+- BOSS 命中率 = `200% + BOSS 階層 × 10%`（BOSS 階層 = 樓層）。
+- 戰鬥核心 `resolveHit`（formula.js §3）已支援 `aCfg.hit`（命中率 = clamp(攻擊者命中 − 防守者閃避, 5, 100)）；
+  但 `monsterAtkCfg`（combat.js）寫死 `hit: 100`、`monsterStatsFor`／`bossStatsFor` 無 `hit` 欄位 → 敵人命中恆 100%。
+- ⚠️ xlsx 與 CSV 有使用者未指定的在途數值差異（閃避率上限 xlsx=0 / CSV=40），依 AI_RULES「不干預使用者自行調數值」：
+  只手動新增自己的兩列、不重生成 CSV、不執行套用參數.bat、不碰其他任何列。
+
+### 二、微型任務拆解
+1. [DONE] 先寫 TDD：`tests/enemy-hit.test.cjs`（怪物/ BOSS hit 公式 + combat/tower 帶入命中）。
+2. [DONE] `js/formula.js`：`monsterStatsFor` 加 `hit = 100 + stage`；`bossStatsFor` 加 `hit = 200 + floor×10`。
+3. [DONE] `js/combat.js`：`spawnFieldMonster` 敵人物件加 `hit: base.hit`；`monsterAtkCfg` 改 `hit: m.hit || 100`。
+4. [DONE] `js/tower.js`：`makeBoss` BOSS 物件加 `hit: bs.hit`。
+5. [DONE] 同步 `game_formula.md` §4 敵方屬性（普通怪／BOSS 各補命中率一行）。
+6. [DONE] 參數表手動加列：CSV 4-野外怪物段（攻擊速度後）與 4-高塔BOSS段（BOSS 等級後）各加「命中率」；
+   xlsx 同位置以 openpyxl 插入；變動欄標「調整」、編號用未占用的 445／446。
+7. [DONE] 執行 `node --test tests/`、更新 PATCH.md。
+
 ## 當前任務：融合技效果改為「動態重算」（不存 fx 快照）
 
 ### 一、設計方案（腦力激盪）

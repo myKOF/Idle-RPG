@@ -642,11 +642,16 @@ function castSkill(pEnt, target, id, lv, floatSel) {
   }
   if (fx.shieldPctMax) {
     var beforeShield = Math.max(0, pEnt.shield || 0);
-    var sv = st.hp * scaleAt(fx.shieldPctMax, lv) / 100 * (1 + st.shieldEff / 100);
-    pEnt.shield = Math.min(st.hp * 0.5, (pEnt.shield || 0) + sv);
+    var shieldPct = scaleAt(fx.shieldPctMax, lv) * (1 + st.shieldEff / 100);
+    var shieldBase = beforeShield > 0 ? Math.max(0, pEnt.shieldSkillBase || 0) || beforeShield : st.hp;
+    var targetShield = shieldBase * (1 + shieldPct / 100);
+    pEnt.shield = Math.max(beforeShield, targetShield);
+    pEnt.shieldSkillBase = shieldBase;
+    pEnt.shieldSkillPct = Math.max(pEnt.shieldSkillPct || 0, shieldPct);
+    refreshShieldMaxAfterGain(pEnt, beforeShield);
     var gainedShield = Math.max(0, pEnt.shield - beforeShield);
     if (gainedShield > 0) floatPlayerEvent(floatSel, '🛡️+' + fmt(gainedShield), 'shield');
-    parts.push('<span class="log-hl-good">獲得 ' + fmt(sv) + ' 護盾</span>');
+    parts.push('<span class="log-hl-good">' + (gainedShield > 0 ? '獲得 ' + fmt(gainedShield) + ' 護盾' : '護盾維持 ' + fmt(beforeShield)) + '</span>');
   }
   if (fx.selfCleanse) { cleanse(pEnt); floatPlayerEvent(floatSel, '✨淨化', 'special'); parts.push('淨化負面狀態'); }
   if (fx.mpRestore) { pEnt.mp = Math.min(st.mp, pEnt.mp + fx.mpRestore); floatPlayerEvent(floatSel, '法力 +' + fx.mpRestore, 'mana'); parts.push('回復 ' + fx.mpRestore + ' 法力'); }
@@ -1031,7 +1036,7 @@ function describeSkill(id, lv) {
   }
   if (fx.healPctMax) p.push('回復 ' + scaleStr(fx.healPctMax, lv) + '% 最大生命');
   if (fx.hotPct) p.push('每秒再生 ' + scaleStr(fx.hotPct, lv) + '% 生命，持續 ' + statStr(fx.hotDur) + ' 秒');
-  if (fx.shieldPctMax) p.push('獲得 ' + scaleStr(fx.shieldPctMax, lv) + '% 最大生命的護盾');
+  if (fx.shieldPctMax) p.push('目前護盾提高 ' + scaleStr(fx.shieldPctMax, lv) + '%（無護盾時以最大生命計算）');
   if (fx.selfCleanse) p.push('淨化自身負面狀態');
   if (fx.mpRestore) p.push('回復 ' + statStr(fx.mpRestore) + ' 法力');
   if (fx.buff) p.push('自身' + buffLabel(fx.buff.key) + ' +' + scaleStr(fx.buff, lv) + '%，持續 ' + statStr(fx.buff.dur) + ' 秒');

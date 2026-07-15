@@ -26,6 +26,16 @@
   --afx-off: #ff8fb8;
   --afx-def: #7fdcf5;
   --afx-util: #9ae6a0;
+
+  /* 裝備詳情面板間距設定 (像素/px) */
+  --it-affix-gap: 4px;
+  /* 1. 各屬性(詞條)的間距顯示 */
+  --it-enchant-gap: 4px;
+  /* 2. 附魔效果的間距顯示 */
+  --it-socket-gap: 4px;
+  /* 3. 寶石效果的間距顯示 */
+  --it-godpassive-gap: 2px;
+  /* 4. 神鑄創世特性的間距顯示 */
 }
 
 html,
@@ -1262,11 +1272,25 @@ textarea#save-io {
   word-break: break-word;
 }
 
-.detail-log-line.good { color: var(--good); }
-.detail-log-line.bad { color: var(--bad); }
-.detail-log-line.warn { color: var(--warn); }
-.detail-log-line.info { color: var(--info); }
-.detail-log-line.loot { color: #c084fc; }
+.detail-log-line.good {
+  color: var(--good);
+}
+
+.detail-log-line.bad {
+  color: var(--bad);
+}
+
+.detail-log-line.warn {
+  color: var(--warn);
+}
+
+.detail-log-line.info {
+  color: var(--info);
+}
+
+.detail-log-line.loot {
+  color: #c084fc;
+}
 
 .detail-log-time {
   display: inline-block;
@@ -1284,11 +1308,24 @@ textarea#save-io {
 }
 
 @media (max-width: 560px) {
-  .log-header-actions { gap: 4px; }
-  .log-header-actions .btn { padding-left: 6px; padding-right: 6px; }
-  .detail-log-toolbar { align-items: stretch; flex-direction: column; }
+  .log-header-actions {
+    gap: 4px;
+  }
+
+  .log-header-actions .btn {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .detail-log-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .detail-log-toolbar .log-filter,
-  .detail-log-toolbar .btn { width: 100%; }
+  .detail-log-toolbar .btn {
+    width: 100%;
+  }
 }
 
 .log-line.loot {
@@ -1884,7 +1921,7 @@ textarea#save-io {
 
 /* 裝備詳情 */
 .it-name {
-  font-size: 19px;
+  font-size: 16px;
   font-weight: bold;
   position: relative;
 }
@@ -1913,6 +1950,7 @@ textarea#save-io {
   font-weight: bold;
   /* 比照參考遊戲：詞條行加粗 */
   color: var(--text);
+  line-height: 1;
 }
 
 /* 詞條分類分色（比照參考遊戲：類別一眼可辨，數值同色） */
@@ -1935,7 +1973,7 @@ textarea#save-io {
 .it-affixes {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--it-affix-gap);
   width: 100%;
 }
 
@@ -1944,7 +1982,8 @@ textarea#save-io {
   grid-template-columns: minmax(0, 1fr) 32px;
   align-items: center;
   column-gap: 8px;
-  min-height: 22px;
+  min-height: 15px;
+  height: 15px;
   width: 100%;
 }
 
@@ -1956,7 +1995,8 @@ textarea#save-io {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 22px;
+  min-height: 15px;
+  height: 15px;
 }
 
 .affix-reroll-btn {
@@ -1987,9 +2027,10 @@ textarea#save-io {
 }
 
 .it-enchant {
-  margin-top: 4px;
+  margin-top: var(--it-enchant-gap);
   color: #6fb5e8;
   font-size: 14px;
+  line-height: 1;
 }
 
 .it-score {
@@ -2500,7 +2541,7 @@ textarea#save-io {
   margin-top: 6px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--it-socket-gap);
 }
 
 .socket {
@@ -2511,6 +2552,7 @@ textarea#save-io {
   border: 1px dashed var(--border);
   color: var(--dim);
   width: fit-content;
+  line-height: 1;
 }
 
 .it-sockets .socket {
@@ -4306,13 +4348,14 @@ textarea#save-io {
 
 /* 神鑄創世專屬特效（裝備詳情/懸停提示） */
 .it-godpassive {
-  margin-top: 4px;
-  padding: 5px 8px;
+  margin-top: var(--it-godpassive-gap);
+  padding: 3px 8px;
   border: 1px solid #b8860b;
   border-radius: 6px;
   background: rgba(184, 134, 11, 0.12);
   color: #ffd700;
   font-size: 14.5px;
+  line-height: 1.25;
   box-shadow: inset 0 0 8px rgba(255, 215, 0, 0.15);
 }
 

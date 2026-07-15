@@ -1,5 +1,123 @@
 # PATCH.md
 
+## 變更紀錄：太古精華洗煉消耗依裝備品質（實作使用者新增列）
+
+- 需求：洗煉勾選太古精華模式時，改為依裝備稀有度消耗不同數量（原本固定 1 顆）。實作使用者於參數表新增的 `7-洗煉/太古精華洗煉消耗` 列（普通~傳說 1、神話 2、創世 3、神鑄創世 4）。
+- `js/data.js`：新增 `REROLL_ANCIENT_ESSENCE_COST = [1,1,1,1,1,1,2,3,4]`（索引＝稀有度）。
+- `js/formula.js` §7：新增 `rerollAncientEssenceCostFor(rarity)`（查表、越界夾在有效範圍）。
+- `js/item.js`：`rerollAncientEssenceCost()` → `rerollAncientEssenceCost(it)`（依 `it.rarity`）；`rerollItemAffixes`／`rerollSingleAffix` 兩處呼叫改傳 `it`；單詞條洗煉 UI 由寫死「1」改為依品質顯示與判斷可負擔。
+- `js/ui.js`：太古精華資源提示不再寫死「消耗 1 個」，改「依裝備品質消耗」，太古機率讀 `ANCIENT_REROLL_CHANCE`。
+- `tools/apply_params.cjs`：`arrayContent('data','REROLL_ANCIENT_ESSENCE_COST', 該列 9 值)` 接入，使消耗量可由參數表調整。
+- `game_formula.md` §7.2：更新「使用太古精華」說明為依品質消耗。
+- 驗證：`node -c`（data/formula/item/ui/apply_params）；`node --test tests/reroll-ancient-cost.test.cjs`（3/3）；apply_params 試跑 670 一致／0 待變更／0 錨點問題。未執行 --write。
+- 註：參數表該列變動欄仍為「新增」（使用者標記）；已依其明確指示接入系統，變動欄由使用者自行決定是否改標。
+
+## 變更紀錄：全局減傷分母接入參數表
+
+- 診斷：全局減傷 tooltip 已呼叫 `globalDamageReduction(st.globalDmgRed)`，所以顯示有參照公式；但該公式的分母 `20000` 仍硬編在 `js/formula.js`，`tools/apply_params.cjs` 只回寫「2-屬性派生/全局減傷」的參數 a（上限），沒有接參數 b（分母常數）。因此改 b 不會讓顯示或實戰變動。
+- `js/formula.js`：新增 `GLOBAL_DMG_RED_DENOMINATOR = 20000`，`globalDamageReduction()` 改為 `total / (total + GLOBAL_DMG_RED_DENOMINATOR)`，並保護分母至少為 1。
+- `tools/apply_params.cjs`：新增 `GLOBAL_DMG_RED_DENOMINATOR` 的回寫錨點，讀取 `2-屬性派生 / 全局減傷` 的參數 b。
+- `tests/global-damage-reduction.test.cjs`：補上「分母常數會影響實際減傷率」測試；既有上限測試改為明確設定 `GLOBAL_DMG_RED_CAP = 85`。
+- `game_formula.md`、`tools/參數表使用說明.md`：同步全局減傷公式與目前可回寫參數數量。
+- 驗證：`node --test tests\global-damage-reduction.test.cjs tests\attribute-tooltip.test.cjs tests\stat-cap-unlimited.test.cjs`（13/13）、`node tools\apply_params.cjs`（669 一致、0 變更、0 錨點問題）、`node --check js\formula.js tools\apply_params.cjs` 通過。未執行 `--write`。
+
+## 變更紀錄：玩家命中率／高塔BOSS閃避 公式結構調整（依參數表）
+
+- 依參數表「調整」列做**結構性手改**（apply_params 只寫數值、無法改結構，故手動補結構）：
+  - **玩家命中率**（2-屬性派生/命中率＝`敏捷×a+加成`）：`js/formula.js` `st.hit = 0.0001 + A.hit` → `st.hit = st.agi * 0.0001 + A.hit`；apply_params 錨點 `命中基底`（`st.hit = `）改為 `命中每敏`（`st.hit = st.agi * `）。
+  - **高塔BOSS閃避**（4-高塔BOSS/閃避＝`min(a+樓層*c, b)`）：`bossStatsFor` `Math.min(20 + floor, 10000000)` → `Math.min(20 + floor * 20, 10000000)`；apply_params 新增 `boss閃避加乘`(c)、`boss閃避上`(b) 正則改含 `* [\d.]+`。
+- **野外怪物閃避率**（4-野外怪物/閃避率，變動欄＝**新增**）：依「新增列不主動接系統」規約**未接入**（monsterStatsFor 仍 `dodge: 0`），僅留於參數表待明確指示。
+- `game_formula.md`：§2.4 命中率改 `敏捷×0.0001 + 加成`、敏捷效果加註「命中 +0.0001%」；§4.3 BOSS 閃避改 `min(20 + f×20, 10000000)%`；`formula.js` §4 註解同步。
+- 驗證：`node -c js/formula.js js/data.js tools/apply_params.cjs`；`node --test tests/stat-cap-unlimited.test.cjs tests/enemy-hit.test.cjs`（9/9）；apply_params 試跑 669 一致／0 待變更／0 錨點問題。未執行 --write。
+- 註：本批檔案同時被並行 AI 工具（Antigravity）重構（`PRIMARY_STAT_EFFECTS`／`ASPD_CAP`／`blockDmgRedTotalCap`／`capText` 空字串），編輯前後皆以現況為準、以 apply_params 試跑「一致」交叉驗證。
+
+## 變更紀錄：屬性 tooltip 改讀實際公式係數
+
+- `js/data.js`：新增 `PRIMARY_STAT_EFFECTS`、`ASPD_*`、`BLOCK_DMG_RED_BASE` 與格擋減傷 helper；四維 tooltip 改由共用係數產生，係數為 0 的效果不再顯示。`capText` 改為 `cap <= 0` 回傳空字串，因此 tooltip 不再顯示「無上限」。
+- `js/formula.js`：生命/法力/攻擊/防禦/暴擊/攻速/閃避/負重等派生公式改讀 `PRIMARY_STAT_EFFECTS`；格擋實戰結算改用 `STAT_CAPS.blockRate` 與 `blockDmgReduction()`，不再硬編 50/85。
+- `tools/apply_params.cjs`：玩家屬性派生係數的回寫錨點改到 `PRIMARY_STAT_EFFECTS`/`ASPD_BASE`，保留 CSV 套用能力。
+- `css/style.css`：左側屬性面板寬度 220px → 236px，屬性列 label/value 設為 nowrap，避免「對菁英傷害」等文字被拆行。
+- `game_formula.md`：同步敏捷閃避係數、cap=0 tooltip 顯示語意、格擋與全局減傷上限來源。
+- `tests/attribute-tooltip.test.cjs`：新增動態係數、0 值隱藏、cap=0 隱藏上限文字、格擋上限 helper 與 CSS nowrap 回歸測試；`tests/stat-cap-unlimited.test.cjs` 更新 `capText` 期待值。
+- 驗證：`node --test tests\attribute-tooltip.test.cjs`、`node --test tests\stat-cap-unlimited.test.cjs tests\defense-tooltip.test.cjs`、`node tools\apply_params.cjs`（667 一致、0 變更、0 錨點問題）、`node --check js\data.js js\formula.js tools\apply_params.cjs` 通過。未執行 `--write`，未啟動或操作 5500。
+
+## 變更紀錄：修復 apply_params 錨點（命中率／capValue 改動連帶）＋接上新命中率列
+
+- 診斷「閃避率仍顯示上限 40%」：非程式錯誤——參數表（CSV/xlsx）閃避率上限已填 0，但遊戲讀取的 `data.js` `STAT_CAPS.evasion` 仍為 40（尚未經套用參數.bat 寫入）。套用＋重載後即成 0＝無上限。過程中發現先前變更破壞了 `tools/apply_params.cjs` 數個錨點，會在套用時報 ✗ 並略過對應參數，故一併修復：
+  - 命中率任務連帶：`mob-aspd`（monsterStatsFor 於 `dodge: 0,` 與 `gold` 間插入了 `hit:` 行，改錨點正則收在 `dodge: 0,`）；`怪物-命中`（`hit: 100`→`hit: m.hit || 100`，錨點改為 `hit: m.hit || `）。
+  - capValue 任務連帶：`暴擊率基底`／`暴擊率每敏`／`閃避每敏`（`st.critRate = clamp(`／`st.evasion = clamp(` → `capValue(`）。
+  - 既有陳舊錨點：`boss閃避上`（程式為 `Math.min(10 + floor, 1000)`，錨點仍寫 `5 + floor`）改為對基底值容錯的正則。
+  - 補接新列：`4-野外怪物/命中率`（`hit = a + 階段×b`）與 `4-高塔BOSS/命中率`（`hit = a + 樓層×b`）各 a/b 兩錨點，使新命中率公式可由參數表調整。
+- 驗證：`node -c tools/apply_params.cjs`；試跑 `node tools/apply_params.cjs` → 錨點問題 0、對應參數 667（666 一致、待變更僅 `上限-閃避.evasion 40→0`）。未執行 --write（依規約，套用由使用者自行雙擊 bat）。
+
+## 變更紀錄：屬性上限填 0 代表無上限
+
+- `js/util.js`：新增 `capValue(v, cap)`——`cap > 0` 時夾在 `[0, cap]`，`cap <= 0`（即填 0）時視為無上限、僅保留下限 0。
+- `js/formula.js`：`computeStats` 內所有 `clamp(值, 0, STAT_CAPS.X)` 與 `Math.min(值, STAT_CAPS.X)`（暴擊率/穿透/冷卻縮減/施法速度/吸血吸魔/格擋/閃避/韌性/物魔抗/元素抗/控制抵抗/控制時間縮減/移動速度/幸運/合成變異/狂暴閾值/詞條上限/連擊/暈眩）改用 `capValue`；`resolveHit` 的 pRes/mRes 減免同改；`globalDamageReduction` 於 `GLOBAL_DMG_RED_CAP` 為 0 時以 1.0（100%）為上限（即無上限）。
+- `js/data.js`：`statFmt` 只在 `cap > 0 && val >= cap` 才做「達上限」金色標示（上限 0 不標金）；新增 `capText(cap, unit, plus)`（0 → 顯示「（無上限）」），屬性面板所有「（上限：…）」說明改用之（含全局減傷說明的無上限分支）。`capText` 不依賴 `fmt`（於 STAT_GROUPS 載入時即呼叫，須自足）。
+- `game_formula.md`：§2.4 新增「上限通則（0 = 無上限）」說明，並註明六系元素抗性的 75% 戰鬥結算保護夾值為例外。
+- 參數表：現有「2-屬性上限」各列填 0 即生效為無上限，屬純程式語意變更，未新增/改動任何參數列。
+- `tests/stat-cap-unlimited.test.cjs`：新增 capValue/capText/statFmt/globalDamageReduction 與 formula.js 已改用 capValue 的回歸測試（5 項）。
+- 驗證：`node --check js/util.js js/data.js js/formula.js`、`node --test tests/stat-cap-unlimited.test.cjs`（5/5）、`tests/rarity-colors.test.cjs`（修回 capText 對 fmt 的載入期相依後通過）。全庫 159 通過／14 失敗，該 14 項為既有失敗（使用者持續平衡與 UI/存檔類舊斷言），與本變更無關。
+
+## 變更紀錄：普通敵人與 BOSS 新增命中率屬性
+
+- `js/formula.js`：`monsterStatsFor` 產出 `hit = 100 + 敵人等級×1%`（敵人等級 = 階段）；`bossStatsFor` 產出 `hit = 200 + BOSS 階層×10%`（階層 = 樓層）。戰鬥核心 `resolveHit` 原已支援 `aCfg.hit`（命中率 = clamp(命中 − 玩家閃避, 5%, 100%)），本次改由敵人自身命中率驅動。
+- `js/combat.js`：`spawnFieldMonster` 敵人物件帶入 `hit: base.hit`；`monsterAtkCfg` 由寫死 `hit: 100` 改為 `hit: m.hit || 100`（野外與高塔 BOSS 皆走此組態）。
+- `js/tower.js`：`makeBoss` BOSS 物件帶入 `hit: bs.hit`。
+- `game_formula.md`：§3.6 移除「命中 100%」的過時敘述；§4.1、§4.3 各補命中率公式。
+- 參數表（手動加列，僅新增自己的兩列、未動其他列，未執行套用參數.bat）：`config/CSV/game_parameters.csv` 於 4-野外怪物段（攻擊速度後）、4-高塔BOSS段（BOSS 等級後）各加「命中率」列（編號 445／446、變動欄「調整」）；`config/Excel/game_parameters.xlsx` 同位置插入——game_parameters 鏡像分頁以自足字面值插入兩列並修正被下移列的 `=計算表!` 參照列號，計算表分頁（含串接編號公式）不動；移除失效的 calcChain.xml 交由 Excel 重建。以 `tools/xlsx_to_csv.cjs` round-trip 驗證：重生 CSV 與手改 CSV 僅差使用者自管的閃避率上限一列。
+- `tests/enemy-hit.test.cjs`：新增怪物／BOSS 命中率公式與 combat／tower 命中率接入的回歸測試（4 項）。
+- 驗證：`node --test tests/enemy-hit.test.cjs`（4/4 通過）、`node --check js/formula.js js/combat.js js/tower.js` 通過。全庫 `node --test "tests/*.test.cjs"` 為 152 通過／15 失敗，該 15 項為既有失敗（使用者持續平衡調整，如經驗 `^2.2` 與 BOSS 生命/攻擊倍率 ×30／×3 vs 舊斷言 ×22／×1.9），與本次命中率變更無關。
+
+## 變更紀錄：高塔連續挑戰結算倒數
+
+- `js/tower.js`：連續挑戰結束一場時不再直接跳過結算；會保留勝利/失敗結果，記錄連挑進度，等結果面板確認後才收場並啟動下一場。
+- `index.html`、`js/ui.js`：高塔結果面板支援連挑倒數與「終止連續」按鈕；連挑時確定按鈕顯示 3 秒倒數並暫時禁用，倒數結束自動關閉；按下終止連續會取消倒數、停止後續連挑，單場挑戰維持普通「確定」按鈕。
+- `tests/tower-auto-result.test.cjs`：新增連挑結果面板與倒數自動確認回歸測試。
+- 驗證：`node --test tests\tower-auto-result.test.cjs tests\stats-panel.test.cjs tests\player-shield-bar.test.cjs`、`node --check js\tower.js`、`node --check js\ui.js` 通過。
+
+## 變更紀錄：護盾條滿值重設
+
+- `js/formula.js`：護盾被打空時清除 `shieldMax`；溢出治療新增護盾時用當前護盾重設滿條基準，且不再把既有高護盾壓回治療轉化上限。
+- `js/skills.js`：技能護盾改為同一狀態刷新，不再用已被技能放大的護盾反覆乘算；同技能重放只刷新到護盾基準換算後的值。
+- `js/ui.js`：護盾條分母移除舊版 `最大生命 × 50%` fallback，改為只看目前護盾層的 `shieldMax`；新增版本遷移，會把舊 runtime 產生的爆炸護盾壓回目前技能可建立的合理值。
+- `game_formula.md`：同步補充護盾條滿值與溢出治療護盾上限規則。
+- `tests/skill-gcd.test.cjs`、`tests/player-shield-bar.test.cjs`、`tests/shield-max.test.cjs`：補上舊分母重設、同技能不疊加、護盾打空清除、溢出治療不降低高護盾與 UI 分母 fallback 移除的回歸測試。
+- 驗證：`node --test tests\shield-max.test.cjs tests\skill-gcd.test.cjs tests\player-shield-bar.test.cjs tests\defense-tooltip.test.cjs`、`node --check js\formula.js`、`node --check js\skills.js`、`node --check js\ui.js`、`node --check js\combat.js`、`node --check js\player.js`、`node --check js\data.js` 通過。
+
+## 變更紀錄：護盾技能乘法加成與防禦減傷小數顯示
+
+- `js/skills.js`：護盾技能改為依「目前護盾」做額外乘法加成；例如目前 10T、技能護盾 +500% 時，結果為 60T。若目前沒有護盾，改以最大生命作為起盾基礎。
+- `js/ui.js`、`js/formula.js`、`js/combat.js`、`js/player.js`：新增並維護 `shieldMax`，讓護盾條可用本次護盾實際最高值作為滿條分母。
+- `js/data.js`：防禦 tooltip 的同級減傷率改為固定小數 4 位並向下截斷，不會把接近 100% 的值四捨五入成 100%。
+- `game_formula.md`：同步更新護盾技能公式說明。
+- `tests/skill-gcd.test.cjs`、`tests/player-shield-bar.test.cjs`、`tests/defense-tooltip.test.cjs`：補上乘法護盾、動態護盾滿條、防禦減傷截斷顯示測試。
+- 驗證：`node --test tests\skill-gcd.test.cjs`、`node --test tests\player-shield-bar.test.cjs`、`node --test tests\defense-tooltip.test.cjs`、`node --check js\skills.js`、`node --check js\ui.js`、`node --check js\data.js`、`node --check js\formula.js`、`node --check js\combat.js`、`node --check js\player.js` 通過。
+
+## 變更紀錄：護盾條比例修正與防禦 tooltip 減傷率
+
+- `js/ui.js`：護盾條寬度改用目前可達護盾上限作為分母，不再用最大生命值；高護盾剩餘少量時會正確顯示接近空條。
+- `js/skills.js`：技能給予護盾時不再把既有高護盾壓低到技能護盾上限，避免高額溢出治療護盾被覆蓋成 50% 生命。
+- `js/data.js`：物理防禦、魔法防禦 tooltip 底部新增黃色「目前同級減傷率」。
+- `tests/player-shield-bar.test.cjs`、`tests/skill-gcd.test.cjs`、`tests/defense-tooltip.test.cjs`：補上護盾條分母、技能護盾不降值、防禦 tooltip 減傷率測試。
+- 驗證：`node --test tests\player-shield-bar.test.cjs`、`node --test tests\skill-gcd.test.cjs`、`node --test tests\defense-tooltip.test.cjs`、`node --check js\ui.js`、`node --check js\skills.js`、`node --check js\data.js` 通過。
+
+## 變更紀錄：統計面板加入死亡數
+
+- `js/stats.js`：統計桶新增 `deaths`，加入 `recordLootDeath()`，基本統計在「殺敵數」下方顯示「死亡數」，來源統計也會列出死亡次數。
+- `js/combat.js`：野外我方死亡時記錄 `field` 死亡數。
+- `js/tower.js`：高塔挑戰因我方死亡失敗時記錄 `tower` 死亡數。
+- `tests/stats-panel.test.cjs`：補上死亡數累計、重置、來源分桶、HTML 顯示與戰鬥掛勾測試。
+- 驗證：`node --test tests\stats-panel.test.cjs`、`node --check js\stats.js`、`node --check js\combat.js`、`node --check js\tower.js` 通過。
+
+## 本次變更摘要：尋寶直覺減半 + 技能點總預算接線 + xlsx 中文說明標註(batch 2c)
+
+- 尋寶直覺(skills.js)效果減半：掉寶增益 base 30→15/per 10→5；4轉 45/12→22.5/6；8轉 goldPer 10→5（持續時間不變）。
+- 技能點總預算：新增常數 `SKILL_POINT_BUDGET_CAP=10000`(data.js)取代 skills.js/save.js 4 處寫死；apply 接上初始(player.js)、每級(player.js)、上限(常數)。參數總數 660→663，錨點問題 0。
+- 新增 `tools/xlsx_annotate.cjs`：處理本 xlsx 的雙表結構(計算表＝資料源共享字串、game_parameters＝=計算表!Fn 公式鏡像)，為 27 個結構/停用/重複/資訊列在「中文說明」附加標註（空白列直接以註記為說明、必要時於計算表插入 F 格並同步 sheet1 公式快取）；純 Node、store 重建 ZIP、zlib.crc32。
+- 已對真實 xlsx 套用 27/27 標註（寫入前備份），重生 CSV 445×18，apply 錨點問題 0。註記僅動「中文說明」欄，不影響任何數值。
+
 ## 本次變更摘要：分散敵人傷害浮字並縮小字號
 
 - `js/ui.js`：新增敵人傷害浮字判斷，只對 `mv-float-*` / `tb-float` 上的 `dmg`、`mdmg`、`crit`、`skill` 套用 `enemy-hit-float`；X 軸隨機範圍由 15%-85% 擴為 8%-92%，Y 軸改為 28%-72% 加少量抖動，避免集中在血條附近。

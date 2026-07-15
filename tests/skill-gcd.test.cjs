@@ -4,6 +4,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
+function assertClose(actual, expected, epsilon = 1e-9) {
+  assert.ok(Math.abs(actual - expected) < epsilon, `${actual} !== ${expected}`);
+}
+
 function loadGameContext() {
   const root = path.resolve(__dirname, '..');
   const context = {
@@ -115,4 +119,32 @@ test('傷害技能會命中全部存活敵人，普攻規則不由技能流程�
   assert.equal(result.killed, false);
   assert.equal(enemies[0].hp, enemies[1].hp);
   assert.ok(enemies[0].hp < 10000);
+});
+
+test('護盾技能依目前護盾做額外乘法加成', () => {
+  const context = loadGameContext();
+  context.G.player.skills = { manaBarrier: 80 };
+  context.G.player.loadout = ['manaBarrier'];
+  context.getStats = () => ({
+    cdr: 0,
+    castSpeed: 0,
+    hp: 1000,
+    mp: 1000,
+    shieldEff: 0,
+    aoeDmg: 0,
+    passives: {}
+  });
+  const player = playerEntity();
+  player.shield = 10;
+  player.shieldMax = 1000;
+
+  context.castSkill(player, null, 'manaBarrier', 80, 'float-layer');
+
+  assertClose(player.shield, 60.2);
+  assertClose(player.shieldMax, 60.2);
+
+  context.castSkill(player, null, 'manaBarrier', 80, 'float-layer');
+
+  assertClose(player.shield, 60.2);
+  assertClose(player.shieldMax, 60.2);
 });

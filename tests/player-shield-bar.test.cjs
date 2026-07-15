@@ -33,7 +33,16 @@ test('玩家護盾同時顯示獨立護盾條與血量文字數值', () => {
   assert.match(ui, /prefix \+ '-shield'/);
   assert.match(ui, /shieldBar\.style\.display = 'block'/);
   assert.match(ui, /shieldBar\.style\.display = 'none'/);
-  assert.match(ui, /shieldBar\.style\.width = clamp\(shield \/ stats\.hp \* 100,\s*0,\s*100\) \+ '%'/);
+  assert.match(ui, /function currentShieldSkillCap\(stats\)/);
+  assert.match(ui, /function playerShieldMax\(entity,\s*stats\)/);
+  assert.match(ui, /entity\.shieldMax/);
+  assert.match(ui, /entity\.shieldMaxVersion/);
+  assert.match(ui, /entity\.shieldSkillBase = 0/);
+  assert.match(ui, /entity\.shieldMax = shield/);
+  assert.match(ui, /var shieldMax = playerShieldMax\(entity,\s*stats\)/);
+  assert.match(ui, /shieldBar\.style\.width = clamp\(shield \/ shieldMax \* 100,\s*0,\s*100\) \+ '%'/);
+  assert.doesNotMatch(ui, /shieldBar\.style\.width = clamp\(shield \/ stats\.hp \* 100/);
+  assert.doesNotMatch(ui, /stats\.hp \* 0\.5/);
   assert.match(ui, /pv-hptext'\)\.innerHTML = fmt\(Math\.max\(0,\s*p\.hp\)\) \+ playerShieldText\(p\) \+ ' \/ ' \+ fmt\(st\.hp\)/);
   assert.match(ui, /tp-hptext'\)\.innerHTML = fmt\(Math\.max\(0,\s*p\.hp\)\) \+ playerShieldText\(p\) \+ ' \/ ' \+ fmt\(st\.hp\)/);
 });

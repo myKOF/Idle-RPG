@@ -550,8 +550,9 @@ function affixLine(a) {
 function rerollUsesAncientEssence() {
   return typeof G !== 'undefined' && G && G.settings && !!G.settings.useAncientEssence;
 }
-function rerollAncientEssenceCost() {
-  return rerollUsesAncientEssence() ? 1 : 0;
+// 開啟太古精華模式時，消耗量依裝備品質（rerollAncientEssenceCostFor → formula.js §7）
+function rerollAncientEssenceCost(it) {
+  return rerollUsesAncientEssence() ? rerollAncientEssenceCostFor(it.rarity) : 0;
 }
 function rerollResourceError(cost, ancientCost) {
   var missing = [];
@@ -678,7 +679,8 @@ function itemDetailHTML(it, cmp, opts) {
       var rrEssenceHtml = '<span' + (G.player.essence >= rrCost.essence ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_essence.png" class="res-icon">' + fmt(rrCost.essence) + '</span>';
       var rrAncientHtml = '';
       if (rerollUsesAncientEssence()) {
-        rrAncientHtml = ' &nbsp;<span' + ((G.player.ancientEssence || 0) >= 1 ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_ancient_essence.png" class="res-icon">1</span>';
+        var rrAncientCost = rerollAncientEssenceCostFor(it.rarity);
+        rrAncientHtml = ' &nbsp;<span' + ((G.player.ancientEssence || 0) >= rrAncientCost ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_ancient_essence.png" class="res-icon">' + rrAncientCost + '</span>';
       }
       var rrTip = '<div style="color:var(--dim);margin-bottom:4px">單獨洗煉此屬性（改變種類與數值）</div>需要：' + rrGoldHtml + ' &nbsp;' + rrEssenceHtml + rrAncientHtml;
       rrBtn = '<button class="btn affix-reroll-btn act-btn-tooltip" data-act="reroll-affix" data-affix="' + k + '" aria-label="洗煉詞條" data-tip="' + esc(rrTip) + '">🎲</button>';
@@ -821,7 +823,7 @@ function itemDetailHTML(it, cmp, opts) {
 // 回傳 null=成功，否則錯誤訊息
 function rerollItemAffixes(it) {
   var cost = rerollCost(it);
-  var ancientCost = rerollAncientEssenceCost();
+  var ancientCost = rerollAncientEssenceCost(it);
   var err = rerollResourceError(cost, ancientCost);
   if (err) return err;
   consumeRerollResources(cost, ancientCost);
@@ -835,7 +837,7 @@ function rerollItemAffixes(it) {
 // 單獨重骰某一個屬性的種類與數值
 function rerollSingleAffix(it, affixKey) {
   var cost = rerollCost(it);
-  var ancientCost = rerollAncientEssenceCost();
+  var ancientCost = rerollAncientEssenceCost(it);
   var err = rerollResourceError(cost, ancientCost);
   if (err) return err;
   

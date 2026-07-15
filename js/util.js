@@ -8,6 +8,8 @@ function ri(a, b) { return Math.floor(a + Math.random() * (b - a + 1)); }
 function chance(p) { return Math.random() * 100 < p; }
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+// 屬性上限套用：上限 cap 為 0（或負）代表「無上限」，僅保留下限 0；否則夾在 [0, cap]。
+function capValue(v, cap) { return cap > 0 ? clamp(v, 0, cap) : Math.max(0, v); }
 
 function playerEventFloatTarget(floatSel) {
   return (floatSel === 'tp-float' || floatSel === 'tb-float') ? 'tp-float' : 'pv-float';

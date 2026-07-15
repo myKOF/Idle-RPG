@@ -128,6 +128,10 @@ function reincarnate() {
     FIELD.player.hp = st.hp;
     FIELD.player.mp = st.mp;
     FIELD.player.shield = 0;
+    FIELD.player.shieldMax = 0;
+    FIELD.player.shieldMaxVersion = SHIELD_MAX_VERSION;
+    FIELD.player.shieldSkillBase = 0;
+    FIELD.player.shieldSkillPct = 0;
     FIELD.player.skillCds = {};
     FIELD.player.skillGcd = 0;
   }

@@ -17,6 +17,7 @@ var TOWER = {
   autoNextCd: 0       // 連續挑戰下一場倒數（秒）
 };
 var TOWER_AUTO_DELAY = 1.0;   // 連續挑戰場與場之間的間隔（秒）
+var TOWER_AUTO_RESULT_DELAY = 3.0; // 連續挑戰結果畫面停留秒數
 var TOWER_AUTO_MAX = 999;     // 連續挑戰次數上限
 
 function makeBoss(floor) {
@@ -29,9 +30,9 @@ function makeBoss(floor) {
     maxHp: bs.hp, hp: bs.hp,
     atk: bs.atk, def: bs.def, mdef: bs.mdef,
     magic: !!bd.elem,                        // 元素 BOSS 以魔法攻擊（對玩家魔防）
-    aspd: bs.aspd, dodge: bs.dodge,
+    aspd: bs.aspd, dodge: bs.dodge, hit: bs.hit, // 命中率 = 200% + 樓層×10% → formula.js §4
     atkCd: 1.5, effects: {}, ctrlRes: bs.ctrlRes,
-    elite: false, isBoss: true,
+    elite: false, isBoss: true, xp: bs.xp,
     elem: bd.elem, elemAtk: null, resist: {}, stunCount: 0,
     poisonUntil: 0, poisonDps: 0, shield: 0
   };
@@ -190,6 +191,7 @@ function endTowerFight(win, reason) {
   TOWER.showingResult = true;
   if (window.recordLootBattle) window.recordLootBattle('tower'); // 每次高塔挑戰算一場戰鬥
   if (win && window.recordLootKill) window.recordLootKill(undefined, 'tower'); // 擊敗 BOSS 計入殺敵數
+  if (!win && window.recordLootDeath) window.recordLootDeath('tower');
 
   var result = {
     win: win, floor: floor, reason: reason || null,
@@ -312,7 +314,12 @@ function endTowerFight(win, reason) {
     var auto = TOWER.auto;
     auto.done++;
     if (win) auto.wins++;
-    finishTowerFight();
+    result.autoTotal = auto.total;
+    result.autoDone = auto.done;
+    result.autoWins = auto.wins;
+    result.autoLosses = auto.done - auto.wins;
+    result.autoCountdown = reason !== 'flee';
+    result.autoContinue = false;
     var tail = '共挑戰 ' + auto.done + '/' + auto.total + ' 場，勝 ' + auto.wins + ' 敗 ' + (auto.done - auto.wins);
     if (reason === 'flee') {
       blog('🔁 已中止連續挑戰第 ' + auto.floor + ' 層：' + tail + '，回到野外繼續戰鬥。', 'warn', 'boss');
@@ -324,7 +331,15 @@ function endTowerFight(win, reason) {
       blog('🔁 金幣不足（下一場需 ' + fmt(towerChallengeCost(auto.floor)) + '），連續挑戰自動停止：' + tail + '，回到野外繼續戰鬥。', 'warn', 'boss');
       TOWER.auto = null;
     } else {
-      TOWER.autoNextCd = TOWER_AUTO_DELAY;
+      result.autoContinue = true;
+    }
+    if (typeof showTowerResultModal === 'function') {
+      showTowerResultModal(result, TOWER.player, TOWER.boss, TOWER.dmgDealt, TOWER.bossDmgDealt, {
+        autoCountdown: result.autoCountdown,
+        countdown: TOWER_AUTO_RESULT_DELAY
+      });
+    } else {
+      confirmTowerResult();
     }
     return;
   }
@@ -332,6 +347,29 @@ function endTowerFight(win, reason) {
   if (typeof showTowerResultModal === 'function') {
     showTowerResultModal(result, TOWER.player, TOWER.boss, TOWER.dmgDealt, TOWER.bossDmgDealt);
   }
+}
+
+function confirmTowerResult() {
+  var result = TOWER.result;
+  var auto = TOWER.auto;
+  var shouldStartNext = !!(result && result.autoContinue && auto);
+  finishTowerFight();
+  if (!shouldStartNext) return;
+  startTowerFight(auto.floor);
+  if (!G.tower.active) {
+    blog('⚠️ 連續挑戰下一場啟動失敗，已停止。', 'warn', 'boss');
+    TOWER.auto = null;
+  }
+}
+
+function stopTowerAutoFromResult() {
+  if (TOWER.result) {
+    TOWER.result.autoContinue = false;
+    TOWER.result.autoCountdown = false;
+  }
+  if (TOWER.auto) blog('⏹ 已終止連續挑戰，本場結果保留，確認後返回野外。', 'warn', 'boss');
+  TOWER.auto = null;
+  TOWER.autoNextCd = 0;
 }
 
 function finishTowerFight() {
