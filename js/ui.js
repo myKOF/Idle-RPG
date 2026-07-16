@@ -94,14 +94,16 @@ function flog(msg, cls) { addLog('factory-log', msg, cls, 50); }
    多人戰鬥的小卡片允許數字跨出頭像範圍，但不會超出面板 overflow 邊界被裁切。 */
 function isEnemyHitFloat(elId, cls) {
   var isEnemyLayer = elId === 'tb-float' || (elId && elId.indexOf('mv-float') === 0);
-  return isEnemyLayer && (cls === 'dmg' || cls === 'mdmg' || cls === 'crit' || cls === 'skill');
+  var tokens = (cls || '').split(/\s+/);
+  return isEnemyLayer && (tokens.indexOf('dmg') >= 0 || tokens.indexOf('mdmg') >= 0 ||
+    tokens.indexOf('crit') >= 0 || tokens.indexOf('skill') >= 0);
 }
 
 function floatText(elId, text, cls) {
   if (elId === 'tb-float' && text === 'MISS' && cls === 'miss') {
     elId = 'tp-float';
     text = '閃避!';
-    cls = 'player-event defend';
+    cls = 'player-event dodge defend';
   }
   var layer = $id(elId);
   if (!layer || layer.offsetParent === null) return; // 不可見時略過
@@ -111,7 +113,16 @@ function floatText(elId, text, cls) {
     if (now - lastMissAt < 300) return;
     layer.setAttribute('data-last-miss-at', String(now));
   }
-  if (layer.children.length > 12) layer.removeChild(layer.firstChild);
+  // 戰鬥中會持續產生傷害/事件浮字；一般浮字的數量上限不能提前刪除
+  // 尚未播完的玩家事件（增益、閃避、護盾、格擋等）。玩家事件由自身
+  // 的動畫結束清理，避免「只有戰鬥中約 0.5 秒、停戰後才有 2 秒」的差異。
+  var isPlayerEvent = (cls || '').split(/\s+/).indexOf('player-event') >= 0;
+  if (!isPlayerEvent) {
+    var normalFloats = layer.querySelectorAll('.float-txt:not(.player-event)');
+    if (normalFloats.length >= 50) {
+      normalFloats[0].parentNode.removeChild(normalFloats[0]);
+    }
+  }
   var sp = document.createElement('span');
   sp.className = 'float-txt ' + (cls || '');
   var enemyHitFloat = isEnemyHitFloat(elId, cls);
@@ -141,7 +152,7 @@ function floatText(elId, text, cls) {
       }
     }
   }
-  setTimeout(function () { if (sp.parentNode) sp.parentNode.removeChild(sp); }, 950);
+  setTimeout(function () { if (sp.parentNode) sp.parentNode.removeChild(sp); }, 2000);
 }
 
 /* ---- 分頁 ---- */
@@ -508,7 +519,7 @@ function entStatus(ent) {
   }
   return s.join(' ');
 }
-      function renderMpSkill(pEnt, prefix) {
+function renderMpSkill(pEnt, prefix) {
   var st = getStats();
   var mpFill = $id(prefix + '-mp'), mpText = $id(prefix + '-mptext'), skillEl = $id(prefix + '-skill');
   if (mpFill) mpFill.style.width = clamp(pEnt.mp / st.mp * 100, 0, 100) + '%';
@@ -776,8 +787,9 @@ function itemCellHTML(it, source, extraClass) {
 function renderEquip() {
   var box = $id('equip-grid');
   var h = '';
+  var eq = (typeof viewedEquipment === 'function') ? viewedEquipment() : G.equipment; // 面板顯示「檢視中」那套
   SLOT_LIST.forEach(function (slot) {
-    var it = G.equipment[slot];
+    var it = eq[slot];
     var info = SLOT_INFO[slot];
     if (it) {
       var r = RARITIES[it.rarity];
@@ -791,7 +803,51 @@ function renderEquip() {
     }
   });
   box.innerHTML = h;
+  renderEquipSetTabs();
   renderDetail();
+}
+
+// 裝備欄下方三套切頁＋確定切換
+function renderEquipSetTabs() {
+  var box = $id('equip-set-tabs');
+  if (!box) return;
+  if (!Array.isArray(G.equipmentSets)) { box.innerHTML = ''; return; }
+  var active = G.equipActive || 0;
+  var view = (typeof G.equipView === 'number') ? G.equipView : active;
+  var h = '<div class="eqset-tabrow">';
+  for (var i = 0; i < G.equipmentSets.length; i++) {
+    var cls = 'eqset-tab' + (i === view ? ' viewing' : '') + (i === active ? ' active' : '');
+    var defName = (typeof equipSetName === 'function') ? equipSetName(i) : ('第' + (i + 1) + '套');
+    var custom = (Array.isArray(G.equipSetNames) && G.equipSetNames[i]) ? String(G.equipSetNames[i]).trim() : '';
+    h += '<div class="eqset-tabwrap">' +
+      '<div class="eqset-name"' + (custom ? '' : ' data-empty="1"') + '>' + esc(custom) + '</div>' +
+      '<button class="' + cls + '" data-eqset="' + i + '">' + defName +
+        (i === active ? '<span class="eqset-badge">使用中</span>' : '') + '</button>' +
+      '<span class="eqset-rename" data-eqset-rename="' + i + '" title="為這套改名稱">✏️</span>' +
+    '</div>';
+  }
+  h += '</div>';
+  var same = view === active;
+  var viewLabel = (typeof equipSetLabel === 'function') ? equipSetLabel(view) : ('第' + (view + 1) + '套');
+  h += '<button id="eqset-confirm" class="btn eqset-confirm"' + (same ? ' disabled' : '') + '>' +
+    (same ? '目前使用中' : ('確定切換到「' + esc(viewLabel) + '」')) + '</button>';
+  box.innerHTML = h;
+}
+
+// 為某一套裝備改名稱（留空恢復預設「第X套」）；用遊戲通用彈窗（帶輸入框）
+function renameEquipSet(idx) {
+  if (!Array.isArray(G.equipmentSets)) return;
+  idx = clamp(Math.floor(Number(idx) || 0), 0, G.equipmentSets.length - 1);
+  if (!Array.isArray(G.equipSetNames)) G.equipSetNames = [];
+  var defName = (typeof equipSetName === 'function') ? equipSetName(idx) : ('第' + (idx + 1) + '套');
+  var cur = G.equipSetNames[idx] || '';
+  showConfirmDialog('為「' + defName + '」設定自訂名稱（留空恢復預設）：', function (val) {
+    var name = String(val == null ? '' : val).trim().slice(0, 12); // 上限 12 字
+    G.equipSetNames[idx] = name;
+    UI.dirty.equip = true;
+    renderEquip();
+  }, { title: '裝備套改名', okText: '確定', cancelText: '取消',
+       input: { value: cur, placeholder: '例：輸出套（留空恢復預設）', maxLength: 12 } });
 }
 
 function renderInventory() {
@@ -835,7 +891,8 @@ function renderInventory() {
 function findItemById(id) {
   if (!id) return null;
   for (var i = 0; i < G.inventory.length; i++) if (G.inventory[i].id === id) return G.inventory[i];
-  for (var s in G.equipment) if (G.equipment[s] && G.equipment[s].id === id) return G.equipment[s];
+  var eq = (typeof viewedEquipment === 'function') ? viewedEquipment() : G.equipment; // 面板操作對象＝檢視中那套
+  for (var s in eq) if (eq[s] && eq[s].id === id) return eq[s];
   return null;
 }
 
@@ -866,8 +923,9 @@ function renderDetail() {
   var compareItem = null;
   var tc = $id('toggle-compare');
   if (tc && tc.checked && UI.sel.source === 'inv') {
-    var key = equipTargetSlot(it);
-    compareItem = G.equipment[key];
+    var cmpEq = (typeof viewedEquipment === 'function') ? viewedEquipment() : G.equipment; // 與檢視中那套比較
+    var key = equipTargetSlot(it, cmpEq);
+    compareItem = cmpEq[key];
   }
   var h = itemDetailHTML(it, compareItem);
   var actionsHtml = '';
@@ -1007,10 +1065,11 @@ function detailAction(act, actBtn) {
   var it = findSelItem();
   if (!it) return;
   var idx;
+  var panelEq = (typeof viewedEquipment === 'function') ? viewedEquipment() : G.equipment; // 面板操作對象＝檢視中那套
   if (act === 'equip') {
     idx = G.inventory.indexOf(it);
     if (idx >= 0) G.inventory.splice(idx, 1);
-    var old = equipItem(it);
+    var old = equipItem(it, null, panelEq); // 裝入檢視中那套（若＝使用中會一併重算屬性）
     if (old) { old.locked = false; addToInventory(old); }
     UI.sel = { id: it.id, source: 'equip' };
     UI.dirty.inv = true; UI.dirty.equip = true;
@@ -1018,10 +1077,10 @@ function detailAction(act, actBtn) {
     var cap = INVENTORY_CAP + (G.player.invUpgrades || 0);
     if (G.inventory.length >= cap) { blog('⚠️ 背包已滿，無法卸下', 'warn'); return; }
     // 依物品 id 找出實際佔用的欄位（武器/戒指有主副兩欄）
-    for (var sk2 in G.equipment) {
-      if (G.equipment[sk2] && G.equipment[sk2].id === it.id) { G.equipment[sk2] = null; break; }
+    for (var sk2 in panelEq) {
+      if (panelEq[sk2] && panelEq[sk2].id === it.id) { panelEq[sk2] = null; break; }
     }
-    markStatsDirty();
+    if (panelEq === G.equipment) markStatsDirty(); // 只有動到使用中那套才重算屬性
     addToInventory(it);
     UI.sel = { id: it.id, source: 'inv' };
     UI.dirty.inv = true; UI.dirty.equip = true; UI.dirty.header = true;
@@ -2115,7 +2174,7 @@ function showTowerTooltip(flStr, anchorEl) {
 function showEnemyTooltip(anchorEl) {
   var tip = $id('sk-tooltip');
   if (!tip) return;
-  
+
   var isBossTip = (anchorEl.id === 'btn-boss-tip' || anchorEl.id === 'btn-tower-result-boss-tip');
   var m = null;
   if (isBossTip) {
@@ -2125,7 +2184,7 @@ function showEnemyTooltip(anchorEl) {
   } else {
     m = (typeof FIELD !== 'undefined' && FIELD ? FIELD.monster : null);
   }
-  
+
   if (!m) return;
   if (!isBossTip && m.hp <= 0) return;
 
@@ -2152,7 +2211,7 @@ function showEnemyTooltip(anchorEl) {
     var dustRate = bossDustRate(floor);
     var soulOriginRate = hellSoulOriginDropChance(floor);
     var ancientEssenceRate = ancientEssenceDropChanceForBoss(floor);
-    
+
     var rewardLines = [];
     rewardLines.push('💰 金幣 x' + fmt(rw.gold));
     rewardLines.push('✨ 經驗 x' + fmt(m.xp));
@@ -2790,23 +2849,49 @@ function showConfirmDialog(message, onConfirm, options) {
   cancel.textContent = options.cancelText || '取消';
   ok.className = 'btn' + (options.danger ? ' danger' : '');
   cancel.className = 'btn';
+
+  // 可選文字輸入框（options.input）：改名等需要輸入的操作用；未指定則維持純是/否確認
+  var input = $id('confirm-input');
+  var useInput = !!(options.input && input);
+  if (input) {
+    if (useInput) {
+      input.style.display = '';
+      input.value = (options.input.value != null) ? String(options.input.value) : '';
+      input.placeholder = options.input.placeholder || '';
+      if (options.input.maxLength) input.maxLength = options.input.maxLength; else input.removeAttribute('maxlength');
+    } else {
+      input.style.display = 'none';
+      input.value = '';
+      input.onkeydown = null;
+    }
+  }
   modal.style.display = 'flex';
+  if (useInput) setTimeout(function () { try { input.focus(); input.select(); } catch (e) {} }, 0);
 
   function close() {
     modal.style.display = 'none';
     ok.onclick = null;
     cancel.onclick = null;
     modal.onclick = null;
+    if (input) input.onkeydown = null;
+  }
+  function doConfirm() {
+    var val = useInput && input ? input.value : undefined;
+    close();
+    if (typeof onConfirm === 'function') onConfirm(val);
   }
 
-  ok.onclick = function () {
-    close();
-    if (typeof onConfirm === 'function') onConfirm();
-  };
+  ok.onclick = doConfirm;
   cancel.onclick = close;
   modal.onclick = function (e) {
     if (e.target === modal) close();
   };
+  if (useInput && input) {
+    input.onkeydown = function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); doConfirm(); }
+      else if (e.key === 'Escape') { e.preventDefault(); close(); }
+    };
+  }
 }
 
 function stopStageHoldRepeat(btn) {
@@ -2908,6 +2993,28 @@ function initUI() {
 
   // 技能：學習/升級/裝載/融合（事件委派）
   document.addEventListener('click', function (e) {
+    // 裝備三套切頁：改名按鈕須在切頁判斷之前處理（避免同時觸發切換檢視）
+    var eqRename = e.target.closest('[data-eqset-rename]');
+    if (eqRename) {
+      if (typeof renameEquipSet === 'function') renameEquipSet(parseInt(eqRename.getAttribute('data-eqset-rename'), 10));
+      return;
+    }
+    // 裝備三套切頁：點切頁只切換「檢視」，點「確定切換」才換穿
+    var eqTab = e.target.closest('[data-eqset]');
+    if (eqTab) {
+      if (typeof setEquipView === 'function') setEquipView(parseInt(eqTab.getAttribute('data-eqset'), 10));
+      renderEquip(); renderInventory();
+      return;
+    }
+    var eqConfirm = e.target.closest('#eqset-confirm');
+    if (eqConfirm) {
+      if (!eqConfirm.disabled && typeof switchToEquipSet === 'function') {
+        switchToEquipSet(G.equipView || 0);
+        blog('🎽 已換穿' + (typeof equipSetName === 'function' ? equipSetName(G.equipActive) : '該套') + '裝備', 'good');
+        renderEquip(); renderInventory();
+      }
+      return;
+    }
     var mx = e.target.closest('[data-skill-max]');
     if (mx) {
       var merr = maxUpgradeSkill(mx.getAttribute('data-skill-max'));
@@ -3842,7 +3949,7 @@ function initUI() {
     fsBtn.addEventListener('click', function () {
       if (document.fullscreenElement) {
         // 第二次按下：離開全螢幕恢復正常
-        document.exitFullscreen().catch(function () {});
+        document.exitFullscreen().catch(function () { });
       } else if (isBrowserFullscreen()) {
         blog('⚠️ 目前是瀏覽器 F11 全螢幕，網頁無法代替瀏覽器退出，請再按 F11 返回', 'warn', 'system');
       } else {
@@ -3938,6 +4045,27 @@ function initUI() {
   });
   var bannerFolderBtn = $id('btn-folder-banner');
   if (bannerFolderBtn) bannerFolderBtn.addEventListener('click', function () { $id('btn-folder').click(); });
+  // 重新掃描：用「已授權」的資料夾重新同步＋匯入新存檔並刷新清單，不重新彈出資料夾選擇器（原本漏綁 handler → 點了沒反應）
+  var folderRefreshBtn = $id('btn-folder-refresh');
+  if (folderRefreshBtn) folderRefreshBtn.addEventListener('click', function () {
+    var m = $id('save-msg');
+    if (typeof _saveDir === 'undefined' || !_saveDir) {
+      var hint = '⚠️ 尚未連接存檔資料夾，請先按「選擇 / 更新存檔資料夾」授權。';
+      if (m) m.textContent = hint;
+      blog(hint, 'warn');
+      return;
+    }
+    if (m) m.textContent = '⏳ 重新掃描存檔資料夾…';
+    openSaveFolder(function (err, res) {
+      var text = err ? ('⚠️ 重新掃描失敗：' + err)
+        : ('✅ 已重新掃描' + (res && res.dirName ? '「' + res.dirName + '」' : '') +
+          (res && res.imported ? '，新匯入 ' + res.imported + ' 筆存檔' : '，沒有新存檔'));
+      if (m) m.textContent = text;
+      blog(text, err ? 'warn' : 'good');
+      refreshSaveFolderFilesV2(); // 無參數 → 從已授權資料夾重新列出檔案
+      renderSaveList();
+    }, false); // false = 使用已授權資料夾、不重新彈選擇器
+  });
   $id('btn-restart').addEventListener('click', function () {
     showConfirmDialog('確定要重新開局嗎？將開一個全新角色從頭重玩。\n目前進度已保留在「⚡ 即時自動存檔（第 ' + (G.runId || 1) + ' 局）」，所有存檔記錄都不會刪除，隨時可以讀回來。', function () {
       restartGame();

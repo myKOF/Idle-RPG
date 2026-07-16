@@ -1,9 +1,26 @@
 'use strict';
 /* ============ 玩家狀態與屬性計算（50+ 屬性系統） ============ */
 
+// 空的一套裝備（所有欄位為 null）
+function emptyEquipmentSet() {
+  var e = {};
+  SLOT_LIST.forEach(function (s) { e[s] = null; });
+  return e;
+}
+var EQUIP_SET_COUNT = 3;
+var EQUIP_SET_NAMES = ['第一套', '第二套', '第三套'];
+function equipSetName(i) { return EQUIP_SET_NAMES[i] || ('第' + (i + 1) + '套'); }
+// 顯示用名稱：有自訂名稱則用之，否則用預設「第X套」
+function equipSetLabel(i) {
+  var n = (typeof G !== 'undefined' && Array.isArray(G.equipSetNames) && G.equipSetNames[i]) ? String(G.equipSetNames[i]).trim() : '';
+  return n || equipSetName(i);
+}
+
 function newGameState() {
-  var equipment = {};
-  SLOT_LIST.forEach(function (s) { equipment[s] = null; });
+  // 三套裝備；equipment 永遠指向「使用中」那套（equipActive）以維持既有屬性/戰鬥/存檔行為
+  var equipmentSets = [];
+  for (var _es = 0; _es < EQUIP_SET_COUNT; _es++) equipmentSets.push(emptyEquipmentSet());
+  var equipment = equipmentSets[0];
   var books = {};
   for (var bk in ENCHANTS) books[bk] = 0;
   var gems = {};
@@ -33,7 +50,11 @@ function newGameState() {
       fusions: []   // 玩家自創的融合技定義
 
     },
-    equipment: equipment,
+    equipmentSets: equipmentSets,   // 三套裝備
+    equipActive: 0,                 // 使用中（穿著）那套索引 → 供屬性/戰鬥
+    equipView: 0,                   // 面板檢視中那套索引（純 UI）
+    equipSetNames: ['', '', ''],    // 每套自訂名稱（空＝用預設「第X套」）
+    equipment: equipment,           // 永遠 = equipmentSets[equipActive]
     inventory: [],
     stage: { current: 1, best: 1, kills: 0, autoAdvance: true, zone: 'plains' },
     zoneProgress: {   // 各戰鬥場景獨立進度（stage 為當前場景的即時狀態）
@@ -142,16 +163,46 @@ function reincarnate() {
   return null;
 }
 
+/* ---- 三套裝備輔助 ----
+   G.equipment 永遠 = equipmentSets[equipActive]（使用中）；面板檢視另有 equipView。 */
+function equipmentSetAt(i) {
+  if (!Array.isArray(G.equipmentSets)) return G.equipment; // 極舊存檔容錯
+  var idx = clamp(Math.floor(Number(i) || 0), 0, G.equipmentSets.length - 1);
+  return G.equipmentSets[idx];
+}
+function activeEquipment() { return equipmentSetAt(G.equipActive || 0); }
+function viewedEquipment() { return equipmentSetAt(typeof G.equipView === 'number' ? G.equipView : (G.equipActive || 0)); }
+function isViewingActiveSet() { return (G.equipView || 0) === (G.equipActive || 0); }
+// 面板檢視切頁（純 UI，不換穿、不重算屬性）
+function setEquipView(idx) {
+  if (!Array.isArray(G.equipmentSets)) return;
+  G.equipView = clamp(Math.floor(Number(idx) || 0), 0, G.equipmentSets.length - 1);
+  UI.sel = null;
+  UI.dirty.equip = true;
+}
+// 確定切換：把使用中那套換成目前檢視那套 → 重算屬性
+function switchToEquipSet(idx) {
+  if (!Array.isArray(G.equipmentSets)) return;
+  var i = clamp(Math.floor(Number(idx) || 0), 0, G.equipmentSets.length - 1);
+  G.equipActive = i;
+  G.equipView = i;
+  G.equipment = G.equipmentSets[i]; // 重導使用中那套
+  markStatsDirty();
+  UI.dirty.equip = true; UI.dirty.header = true; UI.dirty.battle = true;
+}
+
 /* ---- 裝備操作 ----
-   武器/戒指類可裝入主/副兩欄：優先裝入空欄，皆有裝備時替換較弱者 */
-function equipTargetSlot(it) {
+   武器/戒指類可裝入主/副兩欄：優先裝入空欄，皆有裝備時替換較弱者。
+   eq 可指定目標套（預設使用中 G.equipment；面板檢視非使用中套時傳入檢視套）。 */
+function equipTargetSlot(it, eq) {
+  eq = eq || G.equipment;
   var cands = equipSlotsForType(it.slot);
   if (typeof UI !== 'undefined' && UI.lastEquipSlot && cands.indexOf(UI.lastEquipSlot) >= 0) {
     return UI.lastEquipSlot;
   }
   var best = cands[0], bestScore = Infinity;
   for (var i = 0; i < cands.length; i++) {
-    var cur = G.equipment[cands[i]];
+    var cur = eq[cands[i]];
     if (!cur) return cands[i]; // 空欄優先
     var s = itemScore(cur);
     if (s < bestScore) { bestScore = s; best = cands[i]; }
@@ -159,12 +210,13 @@ function equipTargetSlot(it) {
   return best;
 }
 
-// 穿上裝備（可指定欄位），回傳被替換下來的舊裝備（可能為 null）
-function equipItem(it, slotKey) {
-  var key = slotKey || equipTargetSlot(it);
-  var old = G.equipment[key];
-  G.equipment[key] = it;
-  markStatsDirty();
+// 穿上裝備（可指定欄位與目標套），回傳被替換下來的舊裝備（可能為 null）
+function equipItem(it, slotKey, eq) {
+  eq = eq || G.equipment;
+  var key = slotKey || equipTargetSlot(it, eq);
+  var old = eq[key];
+  eq[key] = it;
+  if (eq === G.equipment) markStatsDirty(); // 只有動到使用中那套才需重算屬性
   UI.dirty.equip = true; UI.dirty.header = true;
   return old;
 }

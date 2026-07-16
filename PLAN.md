@@ -1,5 +1,40 @@
 # PLAN.md — 開發計畫
 
+## 當前任務：裝備三套切換系統（切頁檢視＋確定切換）
+
+### 需求
+- 裝備欄下方新增 3 個切頁（第一/二/三套），目前身上為第一套。
+- 點切頁：切到該套「檢視」其裝備，並可對其執行洗煉/強化/裝上/卸下/鎖定等操作。
+- 點「確定切換」按鈕後才正式換穿該套（屬性/戰鬥才改變）。
+
+### 設計（最小侵入＋遷移安全）
+- 資料：`G.equipmentSets`＝3 套裝備物件（各 `{slot:item|null}`）、`G.equipActive`＝穿著中索引、`G.equipView`＝面板檢視索引。
+- **`G.equipment` 永遠 === `equipmentSets[equipActive]`（同參照）** → `computeStats`／戰鬥／工廠自動換裝／存檔序列化全部維持原樣、零改動。
+- 面板層才分離：`renderEquip`／`findItemById`／面板「裝上・卸下」／比較裝備 → 導向 `viewedEquipment()`＝`equipmentSets[equipView]`。檢視索引＝穿著索引時（常態）行為完全等同現況。
+- 洗煉/強化/鎖定本就對 `findItemById` 取得的物件參照原地修改 → 只要 findItemById 也搜檢視套即可，無需改各操作本身。
+- 「確定切換」：`equipActive = equipView` → `G.equipment = equipmentSets[equipActive]` → `markStatsDirty()`。
+- 背包共用（同一個 `G.inventory`）；一件裝備只會在背包或某一套的某欄，不重複。
+
+### 遷移（save.js migrateSave）
+- 無 `equipmentSets` 舊存檔：`equipmentSets=[既有 equipment, 空套, 空套]`、`equipActive=0`；每套補齊 SLOT_LIST 欄位；`equipment=equipmentSets[0]`。
+- 有則夾限 equipActive/View、補齊欄位、重導 `equipment`。存檔序列化會冗餘寫出 `equipment`，載入時一律以 `equipmentSets[equipActive]` 重導，避免參照複製後脫鉤。
+
+### 檔案
+- `player.js`：newGameState 資料、helpers（viewedEquipment/switchToEquipSet/setEquipView/equipSetName）、`equipItem`/`equipTargetSlot` 加可選目標套參數（預設 G.equipment）。
+- `save.js`：migrateSave 遷移＋載入重導。
+- `ui.js`：renderEquip 用檢視套＋renderEquipSetTabs；findItemById/compare/detailAction(equip/unequip) 導向檢視套；全域 click 委派接 `[data-eqset]`／`#eqset-confirm`。
+- `index.html`：`#equip-grid` 下方加 `#equip-set-tabs`。
+- `css/style.css`：切頁與確定切換按鈕樣式。
+
+### 微型任務
+1. [DONE] player.js 資料模型＋helpers＋equipItem/equipTargetSlot 參數化。
+2. [DONE] save.js 遷移＋重導（修正 mergeDefaults 補空 sets 導致舊裝備孤立的 bug）。
+3. [DONE] index.html 容器；css 樣式。
+4. [DONE] ui.js renderEquip/tabs/findItemById/detailAction/click 委派。
+5. [DONE] `npm run build`（93 檔過）＋隔離埠 8124 實測（資料模型/切頁/裝入/確定切換）＋真實存檔 migrateSave 驗證（13 件全保留、computeStats 一致、不當機）。
+6. [DONE] PATCH.md／（本檔）同步。
+
+
 ## 本次任務：野外敵人死亡後延遲清除戰鬥資訊
 
 ### 目標

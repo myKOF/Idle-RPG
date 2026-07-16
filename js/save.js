@@ -284,6 +284,9 @@ function migrateSave(data) {
   var hadSpecialBuffTrimV1 = !!data.specialBuffTrimV1;        // 一次性移除特殊技能第二增益
   var hadForgeUnlockNotice = !!(data.forge && data.forge.unlockNotified);
   var hadSalvageSlots = !!(data.factory && data.factory.salvageSlots !== undefined);
+  // 三套裝備遷移旗標：須在 mergeDefaults 前判斷（否則 mergeDefaults 會補上空的 equipmentSets 使舊存檔誤判）
+  var hadEquipmentSets = Array.isArray(data.equipmentSets) && data.equipmentSets.length > 0;
+  var originalEquipment = (data.equipment && typeof data.equipment === 'object') ? data.equipment : null; // 保留真正裝備參照
   var def = newGameState();
   
   // 防止玩家手動降級（刪除）的初始技能，在讀檔時被 mergeDefaults 誤判為缺漏而自動補回 1 級
@@ -354,9 +357,40 @@ function migrateSave(data) {
     data.player.gemShop.level = clamp(data.player.gemShop.level || 1, 1, GEM_SHOP_MAX_LEVEL);
   }
   // 確保裝備槽位齊全
+  if (!data.equipment || typeof data.equipment !== 'object') data.equipment = {};
   SLOT_LIST.forEach(function (s) {
     if (data.equipment[s] === undefined) data.equipment[s] = null;
   });
+  // 三套裝備遷移：舊存檔只有單一 equipment → 轉為 [既有, 空, 空]，並重導使用中那套。
+  // equipment 與 equipmentSets[active] 序列化後是兩份複本，載入時一律以 sets[active] 為準避免脫鉤。
+  (function migrateEquipmentSets() {
+    var COUNT = (typeof EQUIP_SET_COUNT === 'number') ? EQUIP_SET_COUNT : 3;
+    function ensureSlots(set) {
+      if (!set || typeof set !== 'object') set = {};
+      SLOT_LIST.forEach(function (s) { if (set[s] === undefined) set[s] = null; });
+      return set;
+    }
+    if (!hadEquipmentSets) {
+      // 舊存檔：mergeDefaults 剛補了空的 equipmentSets，但真正的裝備在 originalEquipment → 以它為第一套
+      data.equipmentSets = [ensureSlots(originalEquipment || data.equipment)];
+      while (data.equipmentSets.length < COUNT) data.equipmentSets.push(ensureSlots(null));
+      data.equipActive = 0;
+      data.equipView = 0;
+    } else {
+      for (var i = 0; i < data.equipmentSets.length; i++) data.equipmentSets[i] = ensureSlots(data.equipmentSets[i]);
+      while (data.equipmentSets.length < COUNT) data.equipmentSets.push(ensureSlots(null));
+      var last = data.equipmentSets.length - 1;
+      data.equipActive = clamp(Math.floor(Number(data.equipActive) || 0), 0, last);
+      data.equipView = clamp(Math.floor(Number(data.equipView) || 0), 0, last);
+    }
+    data.equipment = data.equipmentSets[data.equipActive]; // 重導使用中那套（避免載入後參照脫鉤）
+    // 每套自訂名稱：補齊為與套數等長的字串陣列（舊存檔無此欄 → 全空＝用預設）
+    if (!Array.isArray(data.equipSetNames)) data.equipSetNames = [];
+    for (var ni = 0; ni < data.equipmentSets.length; ni++) {
+      data.equipSetNames[ni] = (typeof data.equipSetNames[ni] === 'string') ? data.equipSetNames[ni] : '';
+    }
+    data.equipSetNames.length = data.equipmentSets.length;
+  })();
   // 品質擴充至 8 階：篩選規則陣列補齊（新階預設保留）
   if (data.factory && data.factory.filter && data.factory.filter.actions) {
     while (data.factory.filter.actions.length < RARITIES.length) data.factory.filter.actions.push('keep');

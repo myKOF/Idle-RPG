@@ -124,8 +124,8 @@ var PRIMARY_STAT_EFFECTS = {
   agiCritRate: 0.0001,
   agiAspdPct: 0,
   agiEvasion: 0.0001,
-  intMp: 4,
-  intMpRegen: 0.06,
+  intMp: 2,
+  intMpRegen: 0.002,
   intMatk: 2,
   intMdef: 0.7,
   vitHp: 10,
@@ -149,7 +149,7 @@ var FORGE_FAIL_CONSUME = 3;                  // 鑄造失敗消耗件數
 var FORGE_EQUIP_DURATION = { 5: 3, 6: 5, 7: 8 };                // 裝備神鑄時間（秒）
 /* 寶石神鑄：6 顆同種同階（5~9 階）→ 1 顆高一階（上限 10 階）。
    費用公式 forgeGemCost、成功率 forgeGemSuccessRateFor → js/formula.js §6 */
-var FORGE_GEM_BASE_RATE = { 5: 45, 6: 35, 7: 25, 8: 15, 9: 5 }; // 基礎成功率 %（依素材階級）
+var FORGE_GEM_BASE_RATE = { 5: 50, 6: 40, 7: 35, 8: 25, 9: 15 }; // 基礎成功率 %（依素材階級）
 var FORGE_GEM_DUST_RATE = 3;                 // 每個魔塵 +3% 成功率（寶石鑄造）
 var FORGE_GEM_DURATION = { 5: 2, 6: 3, 7: 4, 8: 5, 9: 6 };       // 寶石神鑄時間（秒）
 var DUST_FIELD_MIN_LEVEL = 150;              // 野外魔塵掉落的最低敵人等級

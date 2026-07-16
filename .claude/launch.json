@@ -4,8 +4,8 @@
     {
       "name": "idle-rpg",
       "runtimeExecutable": "powershell",
-      "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", ".claude/serve.ps1", "-Port", "8123"],
-      "port": 8123
+      "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", ".claude/serve.ps1", "-Port", "8124"],
+      "port": 8124
     }
   ]
 }

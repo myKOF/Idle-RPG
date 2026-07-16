@@ -36,9 +36,17 @@ test('戰鬥日誌分類與色彩樣式規則驗證', () => {
   assert.match(combat, /var\s+cls\s*=\s*'log-enemy-damage';/);
   assert.match(css, /\.log-line\.log-enemy-damage\s*\{[\s\S]*?color:\s*#fca5a5;[\s\S]*?\}/);
 
+  // 敵方命中時拆分總傷害、生命實際損失與護盾吸收量
+  assert.match(combat, /var\s+hpDamage\s*=\s*Math\.max\(0,\s*res\.dmg\s*-\s*\(res\.absorbed\s*\|\|\s*0\)\)/);
+  assert.match(combat, /生命減少\s+'\s*\+\s*fmt\(hpDamage\)\s*\+\s*'，護盾吸收/);
+
   // 敵方的技能: log-enemy-skill (淡黃色)
   assert.match(combat, /if\s*\(mult\s*&&\s*mult\s*>\s*1\)\s*\{\s*cls\s*=\s*'log-enemy-skill';\s*\}/);
   assert.match(css, /\.log-line\.log-enemy-skill\s*\{[\s\S]*?color:\s*#fff59d;[\s\S]*?\}/);
+  assert.match(combat, /function\s+doMonsterAttack\(mEnt,\s*pEnt,\s*floatSel,\s*mult,\s*skillName\)/);
+  assert.match(combat, /skillName\s*\?\s*' 使用【'\s*\+\s*skillName\s*\+\s*'】'/);
+  assert.match(combat, /if\s*\(skillName\)\s*\{\s*cls\s*=\s*'log-enemy-skill';\s*\}/);
+  assert.match(tower, /doMonsterAttack\(b,\s*p,\s*'tp-float',\s*2\.2\s*\*\s*mult,\s*'蓄力重擊'\)/);
 
   // 敵方施放的buff或debuff: log-enemy-buff (淡咖啡色)
   assert.match(combat, /if\s*\(hasDebuff\)\s*\{\s*cls\s*=\s*'log-enemy-buff';\s*\}/);

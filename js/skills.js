@@ -566,7 +566,7 @@ function castSkill(pEnt, target, id, lv, floatSel) {
           var dmgStr = fmt(dmgRes.dmg);
           if (dmgRes.crit) dmgStr = '爆擊 ' + dmgStr;
           if (dmgRes.blocked) dmgStr = '格擋 ' + dmgStr;
-          floatEnemyEvent(targetEnt, floatSel, sk.emoji + dmgStr, dmgRes.crit ? 'crit' : 'dmg');
+          floatEnemyEvent(targetEnt, floatSel, sk.emoji + dmgStr, (dmgRes.crit ? 'crit ' : 'dmg ') + 'enemy-skill');
           trackDps(dmgRes.dmg);
           if (typeof recordRunDamage === 'function') recordRunDamage(sk.name, dmgRes.dmg);
         } else {
@@ -583,7 +583,7 @@ function castSkill(pEnt, target, id, lv, floatSel) {
         var boom = Math.max(1, Math.round(baseVal * fx.comboDetonate / 100));
         comboTarget.hp -= boom;
         totalDmg += boom;
-        floatEnemyEvent(comboTarget, floatSel, '❄️🔥' + fmt(boom), 'crit');
+        floatEnemyEvent(comboTarget, floatSel, '❄️🔥' + fmt(boom), 'crit enemy-skill');
         trackDps(boom);
         parts.push('<span class="log-hl-good">冰火引爆 ' + fmt(boom) + '！</span>');
         if (comboTarget.hp <= 0) { comboTarget.hp = 0; out.killed = true; }

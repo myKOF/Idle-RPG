@@ -172,8 +172,7 @@ function towerTick(dt) {
     TOWER.specialCd -= dt;
     if (TOWER.specialCd <= 0 && p.hp > 0) {
       TOWER.specialCd = 8;
-      blog('💢 ' + b.name + ' 蓄力重擊！', 'log-enemy-skill');
-      var bossSpecialHit = doMonsterAttack(b, p, 'tp-float', 2.2 * mult);
+      var bossSpecialHit = doMonsterAttack(b, p, 'tp-float', 2.2 * mult, '蓄力重擊');
       TOWER.bossDmgDealt += Math.max(0, (bossSpecialHit.dmg || 0));
       if (p.hp <= 0) { endTowerFight(false, 'death'); return; }
       if (b.hp <= 0) { endTowerFight(true); return; }

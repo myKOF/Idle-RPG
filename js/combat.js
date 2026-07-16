@@ -311,7 +311,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
         var dmgStr = fmt(res.dmg);
         if (res.crit) dmgStr = '爆擊 ' + dmgStr;
         if (res.blocked) dmgStr = '格擋 ' + dmgStr;
-        floatEnemyEvent(mEnt, floatSel, dmgStr, res.crit ? 'crit' : 'dmg');
+        floatEnemyEvent(mEnt, floatSel, dmgStr, (res.crit ? 'crit ' : 'dmg ') + 'enemy-attack');
         trackDps(res.dmg);
         recordRunDamage('普攻', res.dmg);
         logMsg += (res.crit ? '<span class="log-hl-good">爆擊</span> ' : '造成 ') + fmt(res.dmg) + ' 傷害。';
@@ -347,7 +347,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
                 mEnt.hp -= smiteDmg;
                 trackDps(smiteDmg);
                 recordRunDamage('天罰', smiteDmg);
-                floatEnemyEvent(mEnt, floatSel, '⚡' + fmt(smiteDmg), 'crit');
+                floatEnemyEvent(mEnt, floatSel, '⚡' + fmt(smiteDmg), 'crit enemy-attack');
                 logMsg += '<span class="log-hl-good">天罰降臨，追加 ' + fmt(smiteDmg) + ' 真實傷害！</span>';
                 if (mEnt.hp <= 0) { mEnt.hp = 0; res.killed = true; res.dmg += smiteDmg; }
             }
@@ -377,13 +377,14 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
 
 // 怪物攻擊玩家
 var THORN_FLOAT_MAP = { 'pv-float': 'mv-float', 'tp-float': 'tb-float' };
-function doMonsterAttack(mEnt, pEnt, floatSel, mult) {
+function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
     var dCfg = playerDefCfg(pEnt);
     var res = resolveHit(mEnt, pEnt, monsterAtkCfg(mEnt, mult), dCfg);
-    var logMsg = (mEnt.name || '怪物') + (mult && mult > 1 ? ' <span class="log-hl-bad">重擊</span>你，' : ' 攻擊你，');
+    var skillLabel = skillName ? ' 使用【' + skillName + '】' : '';
+    var logMsg = (mEnt.name || '怪物') + skillLabel + (mult && mult > 1 ? ' <span class="log-hl-bad">重擊</span>你，' : ' 攻擊你，');
     var playerFloatSel = playerEventFloatTarget(floatSel);
     if (res.miss) {
-        floatPlayerEvent(playerFloatSel, '閃避!', 'defend');
+        floatPlayerEvent(playerFloatSel, '閃避!', 'dodge defend');
         logMsg += '<span class="log-hl-good">被你閃避了！</span>';
     } else {
         var isCrit = mult && mult > 1;
@@ -391,11 +392,12 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult) {
         if (isCrit) dmgStr = '爆擊 ' + dmgStr;
         floatText(playerFloatSel, dmgStr, isCrit ? 'crit' : 'mdmg');
         if (res.blocked) floatPlayerEvent(playerFloatSel, '格擋!', 'defend');
+        var hpDamage = Math.max(0, res.dmg - (res.absorbed || 0));
         logMsg += '造成 ' + fmt(res.dmg) + (mEnt.magic ? ' 魔法' : '') + ' 傷害。';
         if (res.blocked) logMsg += '<span class="log-hl-good">你格擋了部分傷害！</span>';
         if (res.absorbed) {
             floatPlayerEvent(playerFloatSel, '🛡️護盾吸收 ' + fmt(res.absorbed), 'shield');
-            logMsg += '<span class="log-hl-good">護盾吸收 ' + fmt(res.absorbed) + '。</span>';
+            logMsg += '<span class="log-hl-good">生命減少 ' + fmt(hpDamage) + '，護盾吸收 ' + fmt(res.absorbed) + '。</span>';
         }
         if (res.procs.length) {
             res.procs.forEach(function (proc) {
@@ -410,6 +412,7 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult) {
     }
     var cls = 'log-enemy-damage';
     if (mult && mult > 1) { cls = 'log-enemy-skill'; }
+    if (skillName) { cls = 'log-enemy-skill'; }
     var hasDebuff = res.procs && res.procs.length > 0;
     if (hasDebuff) { cls = 'log-enemy-buff'; }
     blog('🛡️ ' + logMsg, cls, 'combat');

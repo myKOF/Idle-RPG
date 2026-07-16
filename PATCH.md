@@ -1,5 +1,45 @@
 # PATCH.md
 
+## 變更紀錄：改名彈窗改用遊戲通用樣式（取代原生 prompt）
+
+- 需求：裝備套改名原本用瀏覽器原生 `prompt()`，改為遊戲通用的確認彈窗。
+- `index.html`：`#confirm-modal` 內於訊息與按鈕間加 `#confirm-input`（預設隱藏）。
+- `js/ui.js`：`showConfirmDialog` 擴充可選 `options.input`（`{value,placeholder,maxLength}`）——顯示輸入框、自動聚焦全選、Enter 確定／Esc 取消，`onConfirm(值)` 帶回輸入內容；未指定 input 時維持原純是/否確認、輸入框隱藏。`renameEquipSet` 改呼叫此彈窗（不再用 `window.prompt`）。
+- `css/style.css`：`.confirm-input` 深色輸入框樣式（聚焦 accent 邊框）。
+- 驗證：`npm run build`（93 檔過）；隔離埠 8124 實測——改名開啟遊戲彈窗（標題「裝備套改名」、輸入框可見、maxLength 12），輸入後確定→名稱設定並顯示；**既有是/否確認框不受影響**（無 input 時輸入框隱藏、onConfirm 正常）；主控台 0 錯誤。
+
+## 變更紀錄：裝備三套可自訂名稱（切頁上方顯示＋右上角改名鈕）
+
+- 需求：每套切頁右上角加小按鈕，點擊改名；名稱顯示在切頁按鈕上方。
+- `js/player.js`：newGameState 加 `equipSetNames: ['','','']`；新增 `equipSetLabel(i)`（有自訂名用之、否則預設「第X套」）。
+- `js/save.js`：migrateSave 補齊 `equipSetNames` 為與套數等長的字串陣列（舊存檔全空＝用預設）。
+- `js/ui.js`：`renderEquipSetTabs` 每套改為 `.eqset-tabwrap`（上方 `.eqset-name` 顯示自訂名＋`.eqset-tab`＋右上角 `.eqset-rename` ✏️）；確定切換鈕改用 `equipSetLabel(view)`；新增 `renameEquipSet(idx)`（`prompt` 輸入、上限 12 字、留空恢復預設）；全域 click 委派在切頁判斷「之前」接 `[data-eqset-rename]`（避免改名同時誤觸切換檢視），名稱以 `esc()` 防注入。
+- `css/style.css`：`.eqset-tabwrap`/`.eqset-name`（空時保留高度對齊）/`.eqset-rename`（絕對定位切頁右上角）。
+- 驗證：`npm run build`（93 檔過）；隔離埠 8124 實測——3 套各有名稱列＋改名鈕；改名「輸出套」正確顯示於該套上方、清空恢復預設；**改名不會誤觸切換檢視**（equipView 前後皆 0）；改名鈕位於切頁右上角；主控台 0 錯誤。
+
+## 變更紀錄：修正「重新掃描」按鈕無反應
+
+- 問題：存檔管理的「🔄 重新掃描」按鈕（`#btn-folder-refresh`）**完全沒有綁定點擊事件**（全專案無任何 handler）→ 點了沒反應。
+- `js/ui.js`：於 `btn-folder` handler 附近補上 `#btn-folder-refresh` 的點擊事件——用**已授權的資料夾**呼叫 `openSaveFolder(cb, false)`（重新同步＋匯入新存檔、不重新彈出資料夾選擇器），再 `refreshSaveFolderFilesV2()`（無參數→重列資料夾檔案）＋`renderSaveList()`；未連接資料夾時提示先授權。
+- 驗證：`npm run build`（93 檔過）；隔離埠 8124 實測——按鈕點擊有反應（未連接時顯示提示，證明不再是無反應），主控台 0 錯誤。
+
+## 變更紀錄：裝備三套切換系統（切頁檢視＋確定切換）
+
+- 需求：裝備欄下方 3 切頁（第一/二/三套），點切頁檢視該套並可操作（洗煉/強化/裝上/卸下/鎖定），點「確定切換」才正式換穿。
+- 設計（最小侵入）：`G.equipmentSets`（3 套）＋`G.equipActive`（穿著）＋`G.equipView`（面板檢視）；**`G.equipment` 永遠 === `equipmentSets[equipActive]`**，故 computeStats／戰鬥／工廠自動換裝／存檔序列化全部零改動。只有面板層（renderEquip／findItemById／比較／裝上卸下）導向 `viewedEquipment()`；檢視＝使用中時行為完全等同現況。
+- `js/player.js`：newGameState 建三套（emptyEquipmentSet×3，equipment=sets[0]）；新增 `viewedEquipment/activeEquipment/isViewingActiveSet/setEquipView/switchToEquipSet/equipSetName/equipmentSetAt`；`equipItem`/`equipTargetSlot` 加可選目標套參數（預設 G.equipment，非使用中套不重算屬性）。
+- `js/save.js`：migrateSave 三套遷移——**在 mergeDefaults 前**記錄 `hadEquipmentSets`／`originalEquipment`（否則 mergeDefaults 會補空 sets 使舊存檔誤判、把真裝備孤立），舊存檔以真 equipment 為第一套、另補兩空套；載入一律 `equipment=sets[active]` 重導避免序列化參照脫鉤。
+- `js/ui.js`：renderEquip 顯示檢視套＋`renderEquipSetTabs`（切頁＋確定切換，使用中徽章、檢視高亮、view==active 時停用）；findItemById／compare／detailAction(equip/unequip) 導向檢視套；全域 click 委派接 `[data-eqset]`（只切檢視）與 `#eqset-confirm`（換穿）。
+- `index.html`：`#equip-grid` 下加 `#equip-set-tabs`。`css/style.css`：切頁/徽章/確定鈕樣式。`.claude/launch.json`：測試埠 8123→8124（8123 被殘留 node 佔用）。
+- 驗證：`npm run build` 通過（93 檔）。隔離埠 8124 實測——(1) 資料模型 3 套、`equipment===sets[active]` 不變式成立；(2) 檢視切頁不改 active；(3) 裝入檢視第二套→物件進第二套不進第一套、active/屬性不變；(4) 確定切換→active=1、`equipment===set1`、屬性重算。**用真實存檔 node 測 migrateSave：13 件裝備全保留於第一套、二三套空、computeStats atk 169M 與原本一致、不當機。**
+
+## 變更紀錄：新增修改後驗證協議（npm run build）＋建置檢查基礎設施
+
+- `AI_RULES.md`：新增〔程式碼修改後驗證協議 (Post-Edit Verification)〕——(1) 每次改碼後必須 `npm run build` 且 0 Error；(2) 核心數值/機制修改須自主啟動隔離伺服器（8123/5501+，嚴禁 5500）驗證不當機；(3) 數值集中規則明確對應本專案 SSOT（`js/data.js`＋`js/formula.js`＋參數表管線），不另建第二數值來源。涉及核心修改時本協議優先於「按需自測」預設。
+- 新增 `package.json`（scripts：`build`＝`node tools/build_check.cjs`、`test`＝`node --test tests/*.test.cjs`）。
+- 新增 `tools/build_check.cjs`：對 `js/`、`tools/`、`tests/` 全檔 `node --check` 語法/編譯檢查，並偵測遊戲檔 0 bytes 空檔（防止 combat.js 被並行編輯工具清空這類事故再度造成卡 Loading）。
+- 驗證：`npm run build` 實跑通過（93 檔全數 OK、無空檔）。
+
 ## 變更紀錄：野外敵人死亡清除延遲期間頭像與血條淡出
 
 - 需求：敵人死亡後的清除延遲（`FIELD_ENEMY_DEATH_CLEAR_DELAY`，玩家可調，如 3 秒）期間，讓頭像與血條在該秒數內透明度由 100% 線性降至約 10%。

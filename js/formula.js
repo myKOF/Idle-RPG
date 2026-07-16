@@ -491,7 +491,7 @@ function monsterStatsFor(stage, elite) {
   var hp = (30 + stage * 8) * Math.pow(1.095, stage - 1);
   var atk = (6 + stage * 1.2) * Math.pow(1.11, stage - 1);
   var def = (2 + stage * 0.5) * Math.pow(1.08, stage - 1);
-  var gold = (20 + stage) * Math.pow(1.03, stage - 1);
+  var gold = (20 + stage) * Math.pow(1.02, stage - 1);
   var xp = (8 + stage) * Math.pow(1.06, stage - 1);
   var m = {
     level: stage, hp: hp, atk: atk,
@@ -536,12 +536,12 @@ function bossStatsFor(floor) {
     refStage: refStage,
     level: refStage + 3,
     hell: hell,
-    hp: base.hp * 30 * hpMult,
+    hp: base.hp * 20 * hpMult,
     atk: base.atk * 3 * atkMult,
     def: base.def * 10,
     mdef: base.mdef * 10,
     aspd: 5,
-    dodge: Math.min(20 + floor * 20, 10000000),
+    dodge: Math.min(20 + floor * 40, 10000000),
     hit: 200 + floor * 20,    // 命中率 = 200% + BOSS 階層×10%（BOSS 階層 = 樓層）
     ctrlRes: 70,
     elemAtkVal: base.atk * 3 * atkMult,

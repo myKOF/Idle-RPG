@@ -1,10 +1,14 @@
-/* ============ 無限征途：合成之巔 ============ */
+/* ==========================================================================
+   【專案主標題】無限征途：合成之巔 (Infinite Journey: Peak of Synthesis)
+   說明：這是一部暗黑破壞神風格的 Idle-RPG 網頁遊戲樣式表檔案。
+   ========================================================================== */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+/* 全域 CSS 變數定義區（包括色調與版面間距） */
 :root {
   --bg: #0a0a0a;
   --bg2: #121010;
@@ -19,6 +23,10 @@
   --bad: #b22222;
   --warn: #d49a37;
   --info: #4682b4;
+  /* ==========================================================================
+     【全局變數與基礎樣式】Global Variables & Base Styling
+     說明：定義全站的主色彩主題（暗黑系深色調）、字型設定、裝備品階色與間距變數。
+     ========================================================================== */
   /* 全站主字型：微軟雅黑優先（最接近參考遊戲的粗壯黑體），繁體正黑/蘋方為後備 */
   --font-main: "Microsoft YaHei", "微軟雅黑", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", "Segoe UI", sans-serif;
   /* 詞條分類色（裝備詳情/滑過提示）：基礎紫/進攻粉/防禦青/功能綠 */
@@ -39,6 +47,7 @@
 }
 
 html,
+/* 全站基礎字型、背景色與防止內容拖曳選取 */
 body {
   height: 100%;
   user-select: none;
@@ -65,6 +74,7 @@ select:focus {
   outline: none;
 }
 
+/* 全站基礎字型、背景色與防止內容拖曳選取 */
 body {
   background: url('../images/diablo_main_bg.png') no-repeat center center fixed, #0a0a0a;
   background-size: cover;
@@ -75,6 +85,7 @@ body {
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 
+/* 遊戲初始載入遮罩畫面 */
 .loading-screen {
   position: fixed;
   inset: 0;
@@ -89,17 +100,22 @@ body {
   pointer-events: auto;
 }
 
+/* 載入完成後隱藏載入畫面的類別（透明度漸隱） */
 .loading-screen.is-hidden {
   display: none;
 }
 
+/* 載入中進度提示文字標籤 */
 .loading-screen-label {
   min-width: 88px;
   text-align: center;
   letter-spacing: 0;
 }
 
-/* ---- 頂部 ---- */
+/* ==========================================================================
+   【頂部資訊欄】Top Header Info Bar
+   說明：控制遊戲網頁頂部區塊，包括遊戲 Logo、金幣/經驗/精華/魔塵數量、全螢幕切換按鈕。
+   ========================================================================== */
 #topbar {
   display: flex;
   align-items: center;
@@ -113,6 +129,7 @@ body {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.8);
 }
 
+/* 遊戲主標題字型（Diablo風格金色字體） */
 .brand {
   font-size: 18px;
   font-weight: bold;
@@ -120,6 +137,7 @@ body {
   letter-spacing: 1px;
 }
 
+/* 遊戲副標題字型（如版本號，位於主標題右側，字距較寬） */
 .brand-sub {
   font-size: 12px;
   color: var(--dim);
@@ -144,17 +162,20 @@ body {
   box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.8);
 }
 
+/* 全螢幕按鈕懸停狀態：亮度增加、邊框高亮 */
 .fs-btn:hover {
   border-color: var(--accent);
   filter: brightness(1.25);
 }
 
+/* 全螢幕按鈕啟用狀態：字體變黃，按鈕發光 */
 .fs-btn.active {
   border-color: var(--accent);
   color: #ffe45c;
   box-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
 }
 
+/* 資源欄容器（金幣、經驗等橫向排列） */
 #res-bar {
   display: flex;
   gap: 14px;
@@ -162,6 +183,7 @@ body {
   align-items: center;
 }
 
+/* 單項資源（如：金幣、經驗）的包裹容器 */
 .res {
   color: var(--dim);
   cursor: default;
@@ -169,6 +191,7 @@ body {
   align-items: center;
 }
 
+/* 資源項目的圖標樣式，帶有陰影效果 */
 .res-icon {
   width: 22px;
   height: 22px;
@@ -176,11 +199,13 @@ body {
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
 }
 
+/* 資源數值文字（等寬數字，避免排版隨數值變動抖動） */
 .res b {
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 
+/* 資源備用 Emoji 的圖示大小與對齊 */
 .res-emoji {
   display: inline-block;
   width: 22px;
@@ -190,7 +215,10 @@ body {
   line-height: 1;
 }
 
-/* ---- 左側屬性面板 ---- */
+/* ==========================================================================
+   【左側屬性面板】Left Stats Sidebar Panel
+   說明：控制左側角色詳細屬性數值面板，包括等級、戰力評分、攻擊、防禦等基礎與衍生屬性行。
+   ========================================================================== */
 #stats-sidebar {
   width: 236px;
   display: flex;
@@ -199,12 +227,14 @@ body {
   flex-shrink: 0;
 }
 
+/* 左側屬性欄 - 玩家頭像容器 */
 .sidebar-avatar {
   text-align: center;
   margin-bottom: 8px;
   filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .8));
 }
 
+/* 左側屬性欄 - 玩家頭像圖片 */
 .sidebar-avatar img {
   width: 80px;
   height: 80px;
@@ -214,6 +244,7 @@ body {
   object-fit: cover;
 }
 
+/* 左側屬性欄 - 玩家稱號與名稱 */
 .sidebar-title {
   text-align: center;
   font-weight: bold;
@@ -264,17 +295,20 @@ body {
   }
 }
 
+/* 左側屬性欄 - 玩家等級顯示列 */
 .sidebar-level {
   text-align: center;
   margin-bottom: 16px;
   font-weight: bold;
 }
 
+/* 左側屬性欄 - 等級數值高亮 */
 .sidebar-level .plevel {
   color: var(--text);
   font-weight: bold;
 }
 
+/* 左側屬性欄 - 轉生相關資訊區 */
 .reincarnation-info {
   margin-top: 7px;
   color: var(--dim);
@@ -282,6 +316,7 @@ body {
   line-height: 1.4;
 }
 
+/* 左側屬性欄 - 轉生按鈕樣式 */
 .reincarnate-btn {
   position: relative;
   isolation: isolate;
@@ -291,10 +326,12 @@ body {
   color: var(--accent);
 }
 
+/* 轉生系統相關樣式 (針對: .reincarnate-btn:not(.reincarnate-ready)) */
 .reincarnate-btn:not(.reincarnate-ready) {
   opacity: .55;
 }
 
+/* 轉生系統相關樣式 (針對: .reincarnate-btn.reincarnate-ready) */
 .reincarnate-btn.reincarnate-ready {
   border-color: transparent;
   color: #fff7a8;
@@ -310,6 +347,7 @@ body {
   animation: reincReadyBgFlow 0.75s linear infinite, reincReadyButtonPulse 0.55s ease-in-out infinite alternate;
 }
 
+/* 轉生系統相關樣式 (針對: .reincarnate-btn.reincarnate-ready::after) */
 .reincarnate-btn.reincarnate-ready::after {
   content: "";
   position: absolute;
@@ -373,6 +411,7 @@ body {
   }
 }
 
+/* 經驗值條樣式 (針對: #stats-sidebar #xp-bar) */
 #stats-sidebar #xp-bar {
   width: 100%;
   height: 8px;
@@ -384,6 +423,7 @@ body {
   box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);
 }
 
+/* 經驗值填充樣式 (針對: #stats-sidebar #xp-fill) */
 #stats-sidebar #xp-fill {
   height: 100%;
   width: 0;
@@ -391,12 +431,14 @@ body {
   transition: width .3s;
 }
 
+/* 左側屬性欄 - 屬性數值區域容器 */
 .sidebar-stats {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
+/* 屬性行樣式（屬性名稱與數值兩側對齊） */
 .stat-row {
   display: flex;
   justify-content: space-between;
@@ -406,11 +448,13 @@ body {
   padding-bottom: 4px;
 }
 
+/* 屬性值樣式（高亮文字顯示） */
 .stat-row b {
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 
+/* 頂欄資源數據樣式 (針對: .res-icon) */
 .res-icon {
   height: 1.2em;
   vertical-align: text-bottom;
@@ -419,11 +463,13 @@ body {
 
 /* 太古詞條：固定橘色並以較大的六角星標記，避免被一般詞條分類色覆蓋。 */
 .ancient-affix,
+/* 按鈕及操作元件樣式 (針對: .ancient-affix .act-btn-tooltip) */
 .ancient-affix .act-btn-tooltip {
   color: #fb923c !important;
   font-weight: bold;
 }
 
+/* 太古品質專屬的橘色六角星標記 */
 .ancient-star {
   display: inline-block;
   color: #fb923c;
@@ -432,6 +478,7 @@ body {
   text-shadow: 0 0 5px rgba(251, 146, 60, 0.8);
 }
 
+/* 屬性欄內部的橫向分隔線 */
 .stat-divider {
   height: 1px;
   background: var(--border);
@@ -440,7 +487,10 @@ body {
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.8);
 }
 
-/* ---- 分頁 ---- */
+/* ==========================================================================
+   【主頁籤分頁按鈕】Main Tab Navigation
+   說明：控制遊戲中主要功能頁籤（裝備、生產線、高塔、設定）的切換按鈕外觀與狀態。
+   ========================================================================== */
 #tabs {
   display: flex;
   gap: 4px;
@@ -449,6 +499,7 @@ body {
   border-bottom: 2px solid var(--border);
 }
 
+/* 功能分頁切換頁籤按鈕樣式 */
 .tab-btn {
   position: relative;
   padding: 8px 18px;
@@ -490,11 +541,13 @@ body {
   }
 }
 
+/* 按鈕及操作元件樣式 (針對: .tab-btn:hover) */
 .tab-btn:hover {
   color: var(--text);
   filter: brightness(1.2);
 }
 
+/* 按鈕及操作元件樣式 (針對: .tab-btn.active) */
 .tab-btn.active {
   background: url('../images/diablo_panel_tex.png') repeat, #241c14;
   background-blend-mode: multiply;
@@ -505,7 +558,10 @@ body {
   margin-bottom: -2px;
 }
 
-/* ---- 主要佈局 ---- */
+/* ==========================================================================
+   【遊戲主畫面佈局】Main Game Screen Layout
+   說明：控制三欄式自適應主佈局結構（左邊屬性、中間戰鬥區/分頁區、右邊日誌區）。
+   ========================================================================== */
 #game-layout {
   display: flex;
   max-width: 1720px;
@@ -515,6 +571,7 @@ body {
   height: calc(100vh - 70px);
 }
 
+/* 遊戲中央主工作區域（包含各分頁內容） */
 #workspace-area {
   flex: 1;
   display: flex;
@@ -542,6 +599,7 @@ body {
   flex-direction: column;
 }
 
+/* 戰鬥與戰場場景樣式 (針對: #combat-area) */
 #combat-area {
   flex: 0 0 500px;
   display: flex;
@@ -558,6 +616,7 @@ body {
   overflow-y: auto;
 }
 
+/* 戰場對決區域樣式 (針對: #battle-area) */
 #battle-area {
   flex: 1;
   display: flex;
@@ -576,6 +635,7 @@ body {
   flex: 1;
 }
 
+/* 右側或底部的戰局簡報卡片區域 */
 #summary-area {
   width: 230px;
   flex-shrink: 0;
@@ -583,6 +643,7 @@ body {
   flex-direction: column;
 }
 
+/* 戰局簡報卡片容器（如擊殺數、勝率統計） */
 .summary-card {
   background: url('../images/diablo_panel_tex.png') repeat, var(--panel2);
   background-blend-mode: multiply;
@@ -612,7 +673,10 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* ---- 通用 ---- */
+/* ==========================================================================
+   【全域通用組件】Global Common UI Components
+   說明：控制通用按鈕（.btn）、輸入框、彈出對話框、以及基礎數值微調的通用類別。
+   ========================================================================== */
 .panel {
   background: url('../images/diablo_panel_tex.png') repeat, var(--panel);
   background-blend-mode: multiply;
@@ -623,6 +687,7 @@ body {
   box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.9), 0 0 8px rgba(0, 0, 0, 0.5);
 }
 
+/* 區塊主標題樣式（帶有底部框線與文字陰影） */
 .sec-title {
   font-weight: bold;
   color: var(--accent);
@@ -633,6 +698,7 @@ body {
   text-shadow: 1px 1px 2px #000;
 }
 
+/* 區塊副標題或說明文字，字型較小 */
 .sec-sub {
   color: var(--dim);
   font-size: 12px;
@@ -640,6 +706,7 @@ body {
   margin-bottom: 4px;
 }
 
+/* 通用提示文字（取消中文假斜體以免難以閱讀） */
 .hint {
   color: var(--dim);
   font-size: 13.5px;
@@ -648,11 +715,13 @@ body {
   font-style: normal;
 }
 
+/* 灰暗弱化文字樣式（用於次要資訊顯示） */
 .dim-text {
   color: var(--dim);
   font-size: 13px;
 }
 
+/* 通用暗黑風格按鈕 */
 .btn {
   padding: 6px 14px;
   border: 1px solid var(--border-light);
@@ -667,44 +736,52 @@ body {
   text-shadow: 1px 1px 1px #000;
 }
 
+/* 按鈕懸停效果（亮度增加、邊框變亮） */
 .btn:hover {
   border-color: var(--accent);
   color: var(--accent);
   background: linear-gradient(180deg, #4a382a, #2a1e16);
 }
 
+/* 按鈕點擊效果（向內壓下） */
 .btn:active {
   box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.9);
   transform: translateY(1px);
 }
 
+/* 按鈕及操作元件樣式 (針對: .btn.sm) */
 .btn.sm {
   padding: 3px 10px;
   font-size: 13px;
 }
 
+/* 按鈕及操作元件樣式 (針對: .btn.warn) */
 .btn.warn {
   border-color: #8b6b22;
   background: linear-gradient(180deg, #4a3a1f, #2a2016);
   color: var(--warn);
 }
 
+/* 按鈕及操作元件樣式 (針對: .btn.warn:hover) */
 .btn.warn:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
 
+/* 按鈕及操作元件樣式 (針對: .btn.danger) */
 .btn.danger {
   border-color: #7a2929;
   color: #f0a0a0;
   background: linear-gradient(180deg, #4a1f1f, #2a1616);
 }
 
+/* 按鈕及操作元件樣式 (針對: .btn.danger:hover) */
 .btn.danger:hover {
   border-color: var(--bad);
   color: var(--bad);
 }
 
+/* 按鈕及操作元件樣式 (針對: .btn-row) */
 .btn-row {
   display: flex;
   gap: 8px;
@@ -741,6 +818,7 @@ input[type="number"] {
   width: 70px;
 }
 
+/* 存檔系統相關樣式 (針對: textarea#save-io) */
 textarea#save-io {
   width: 100%;
   height: 80px;
@@ -756,7 +834,10 @@ textarea#save-io {
   box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);
 }
 
-/* ---- 戰鬥場景 ---- */
+/* ==========================================================================
+   【主戰鬥對決場景】Combat Scene Arena
+   說明：控制戰鬥中央區域（VS 對決、我方頭像、敵方多怪獸排列、生命值/法力值條、狀態圖示）。
+   ========================================================================== */
 #stage-bar {
   display: flex;
   align-items: center;
@@ -777,6 +858,7 @@ textarea#save-io {
   color: var(--info);
 }
 
+/* 戰場對決區域樣式 (針對: .battle-scene) */
 .battle-scene {
   display: grid;
   /* 我方欄位固定寬度（單敵標準版型實測值），不隨敵人數量變動；敵方取剩餘空間。 */
@@ -786,6 +868,7 @@ textarea#save-io {
   margin-bottom: 14px;
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .battle-scene.multi-enemy-layout) */
 .battle-scene.multi-enemy-layout {
   /* 3 隻以上敵人：我方欄寬不變，只吃掉兩側內距讓整體左移、敵方區域加寬。 */
   width: calc(100% + 32px);
@@ -810,6 +893,7 @@ textarea#save-io {
   left: 6px;
 }
 
+/* 戰鬥參戰者面板容器（包含我方與敵方） */
 .combatant {
   position: relative;
   background: url('../images/diablo_panel_tex.png') repeat, var(--panel);
@@ -823,11 +907,13 @@ textarea#save-io {
   box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.9), 0 5px 15px rgba(0, 0, 0, 0.7);
 }
 
+/* 戰鬥與戰場場景樣式 (針對: .combatant.boss) */
 .combatant.boss {
   border-color: #8b0000;
   box-shadow: inset 0 0 40px rgba(139, 0, 0, 0.4), 0 5px 15px rgba(0, 0, 0, 0.7);
 }
 
+/* 按鈕及操作元件樣式 (針對: .info-btn) */
 .info-btn {
   position: absolute;
   top: 6px;
@@ -850,6 +936,7 @@ textarea#save-io {
   transition: all 0.2s;
 }
 
+/* 按鈕及操作元件樣式 (針對: .info-btn:hover) */
 .info-btn:hover {
   background: #f97316;
   color: #10141f;
@@ -867,6 +954,7 @@ textarea#save-io {
   font-size: 12px;
 }
 
+/* 按鈕及操作元件樣式 (針對: .combatant .buff-btn:hover) */
 .combatant .buff-btn:hover {
   background: var(--good);
   color: #10141f;
@@ -874,10 +962,12 @@ textarea#save-io {
 
 .cb-status[data-buff-tip],
 .enemy-status[data-enemy-buff-tip],
+/* 敵方怪物/BOSS相關樣式 (針對: #tb-status[data-enemy-buff-tip]) */
 #tb-status[data-enemy-buff-tip] {
   cursor: pointer;
 }
 
+/* 滑鼠懸停資訊提示樣式 (針對: .buff-tip-row) */
 .buff-tip-row {
   display: flex;
   justify-content: space-between;
@@ -919,6 +1009,7 @@ textarea#save-io {
 }
 
 
+/* 戰場中央的 VS 對決高亮文字 */
 .vs {
   align-self: center;
   color: var(--dim);
@@ -940,6 +1031,7 @@ textarea#save-io {
   margin-bottom: 4px;
 }
 
+/* 敵方怪物相關樣式 (針對: .cb-icon.monster) */
 .cb-icon.monster {
   filter: hue-rotate(180deg) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.8));
   opacity: 0.9;
@@ -968,6 +1060,7 @@ textarea#save-io {
   margin-top: 4px;
 }
 
+/* 目前施放技能的提示文字 */
 .cb-skill {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1008,6 +1101,7 @@ textarea#save-io {
   opacity: 0.8;
 }
 
+/* 生命值條容器（紅色羊皮紙邊框） */
 .hp-bar {
   position: relative;
   height: 22px;
@@ -1035,27 +1129,32 @@ textarea#save-io {
   transition: width .16s linear;
 }
 
+/* 生命值條填充條（紅色漸層，支援寬度動畫） */
 .hp-fill {
   height: 100%;
   width: 100%;
   transition: width .2s;
 }
 
+/* 生命值填充樣式 (針對: .hp-fill.player) */
 .hp-fill.player {
   background: linear-gradient(180deg, #b22222, #5e1111);
   box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.2);
 }
 
+/* 生命值填充樣式 (針對: .hp-fill.monster) */
 .hp-fill.monster {
   background: linear-gradient(180deg, #8b0000, #3a0000);
   box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.1);
 }
 
+/* 生命值填充樣式 (針對: .hp-fill.boss) */
 .hp-fill.boss {
   background: linear-gradient(180deg, #4b0082, #1a0033);
   box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.2);
 }
 
+/* 生命值條上的數值文字（等寬數字置中） */
 .hp-text {
   position: absolute;
   inset: 0;
@@ -1069,7 +1168,10 @@ textarea#save-io {
   font-variant-numeric: tabular-nums;
 }
 
-/* 漂浮傷害字 */
+/* ==========================================================================
+   【戰鬥飄浮文字特效】Combat Damage Float Texts
+   說明：控制戰鬥中飄浮的傷害數字、暴擊、治療、法力、閃避（player-event）等位移與漸隱動畫。
+   ========================================================================== */
 .float-layer {
   position: absolute;
   inset: 0;
@@ -1077,61 +1179,84 @@ textarea#save-io {
   z-index: 5;
 }
 
+/* 飄浮文字基礎樣式（絕對定位與文字發光陰影） */
 .float-txt {
   position: absolute;
   top: 55%;
   font-weight: bold;
   font-size: 14px;
-  animation: floatUp .95s ease-out forwards;
+  animation: floatUp .80s ease-out forwards;
   text-shadow: 0 1px 3px #000;
 }
 
+/* 一般物理傷害飄浮字 */
 .float-txt.dmg {
   color: #ffffff;
 }
 
+/* 暴擊傷害飄浮字（字型放大且呈現金黃色） */
 .float-txt.crit {
   color: #ffd700;
   font-size: 20px;
 }
 
+/* 魔法傷害飄浮字 */
 .float-txt.mdmg {
   color: #ffffff;
 }
 
 .float-txt.enemy-hit-float.dmg,
+/* 敵方怪物/BOSS相關樣式 (針對: .float-txt.enemy-hit-float.mdmg) */
 .float-txt.enemy-hit-float.mdmg {
   font-size: 12px;
 }
 
 .float-txt.enemy-hit-float.crit,
+/* 技能系統相關樣式 (針對: .float-txt.enemy-hit-float.skill) */
 .float-txt.enemy-hit-float.skill {
   font-size: 18px;
 }
 
+/* 敵方區傷害顏色依來源判定：普攻白色、技能黃色；爆擊只影響字體大小。 */
+.float-txt.enemy-hit-float.enemy-attack {
+  color: #ffffff;
+  z-index: 1;
+}
+
+.float-txt.enemy-hit-float.enemy-skill {
+  color: #ffd700;
+  z-index: 2;
+}
+
+/* 生命治療恢復飄浮字（綠色） */
 .float-txt.heal {
   color: #4ade80;
 }
 
+/* 法力恢復飄浮字（藍色） */
 .float-txt.mp {
   color: #3b82f6;
 }
 
+/* 玩家防禦閃避飄浮字 */
 .float-txt.defend {
   color: #e6b88a;
   font-size: 16px;
 }
 
+/* 未擊中（MISS）紅色飄浮字 */
 .float-txt.miss {
   color: #dc2626;
   text-shadow: 0 1px 3px #000, 0 0 6px rgba(127, 29, 29, 0.9);
 }
 
+/* 反彈傷害（荊棘）飄浮字 */
 .float-txt.thorn {
   color: #e6b88a;
   font-size: 14px;
 }
 
+/* 玩家獲得增益/減益或觸發效果的上浮文字 */
 .float-txt.player-event {
   top: 20%;
   z-index: 7;
@@ -1140,7 +1265,8 @@ textarea#save-io {
   letter-spacing: 0;
   white-space: nowrap;
   text-shadow: 0 1px 3px #000, 0 0 8px rgba(0, 0, 0, 0.95);
-  animation: playerEventFloat .95s ease-out forwards;
+  /* 顯示時間延長至 2 秒；上浮距離不變，因此上浮速度同步放慢。 */
+  animation: playerEventFloat 2s ease-out forwards;
 }
 
 .float-txt.player-event.shield,
@@ -1174,6 +1300,13 @@ textarea#save-io {
   font-size: 16px;
 }
 
+/* 閃避事件優先顯示在增益、MP、護盾等玩家事件上方，避免高攻速時被覆蓋。 */
+.float-txt.player-event.dodge {
+  z-index: 8;
+  color: #fde047;
+  font-size: 17px;
+}
+
 @keyframes floatUp {
   0% {
     transform: translate(-50%, 0);
@@ -1198,7 +1331,10 @@ textarea#save-io {
   }
 }
 
-/* ---- 日誌 ---- */
+/* ==========================================================================
+   【右側戰鬥日誌】Combat & System Logs Panel
+   說明：控制右側日誌面板、日誌篩選按鈕列、以及各種不同分類日誌（戰鬥、掉落、生產、系統）的字體色調。
+   ========================================================================== */
 .log-header {
   display: flex;
   align-items: center;
@@ -1206,18 +1342,21 @@ textarea#save-io {
   margin: 6px 0 4px;
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .log-header-actions) */
 .log-header-actions {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .log-title) */
 .log-title {
   color: var(--dim);
   font-size: 13px;
   margin: 0;
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .log-filter) */
 .log-filter {
   background: url('../images/diablo_panel_tex.png') repeat, var(--panel);
   border: 1px solid var(--border);
@@ -1229,6 +1368,7 @@ textarea#save-io {
   box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .log) */
 .log {
   background: #080605;
   border: 12px solid var(--border);
@@ -1243,28 +1383,34 @@ textarea#save-io {
   box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.9);
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .log-line) */
 .log-line {
   padding: 1px 0;
   color: var(--dim);
   border-bottom: 1px dashed #1b2236;
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .log-line.good) */
 .log-line.good {
   color: var(--good);
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .log-line.bad) */
 .log-line.bad {
   color: var(--bad);
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .log-line.warn) */
 .log-line.warn {
   color: var(--warn);
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .log-line.info) */
 .log-line.info {
   color: var(--info);
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .log-line.log-kill) */
 .log-line.log-kill {
   color: #ff3131;
   background: rgba(0, 0, 0, 0);
@@ -1272,18 +1418,22 @@ textarea#save-io {
   font-weight: 600;
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .log-line.log-player-attack) */
 .log-line.log-player-attack {
   color: #ffffff;
 }
 
+/* 技能系統相關樣式 (針對: .log-line.log-player-skill) */
 .log-line.log-player-skill {
   color: #fde047;
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .log-line.log-player-buff) */
 .log-line.log-player-buff {
   color: #86efac;
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .log-line.log-enemy-attack) */
 .log-line.log-enemy-attack {
   color: #fca5a5;
   background: rgba(210, 56, 56, 0.12);
@@ -1291,24 +1441,28 @@ textarea#save-io {
 }
 
 
+/* 敵方怪物/BOSS相關樣式 (針對: .log-line.log-enemy-damage) */
 .log-line.log-enemy-damage {
   color: #fca5a5;
   background: rgba(210, 56, 56, 0.12);
   border-bottom-color: rgba(210, 56, 56, 0.18);
 }
 
+/* 技能系統相關樣式 (針對: .log-line.log-enemy-skill) */
 .log-line.log-enemy-skill {
   color: #fff59d;
   background: rgba(210, 56, 56, 0.12);
   border-bottom-color: rgba(210, 56, 56, 0.18);
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .log-line.log-enemy-buff) */
 .log-line.log-enemy-buff {
   color: #d7ccc8;
   background: rgba(210, 56, 56, 0.08);
   border-bottom-color: rgba(210, 56, 56, 0.12);
 }
 
+/* 彈窗與遮罩層樣式 (針對: .detail-log-modal) */
 .detail-log-modal {
   position: fixed;
   inset: 0;
@@ -1322,6 +1476,7 @@ textarea#save-io {
   backdrop-filter: blur(2px);
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .detail-log-box) */
 .detail-log-box {
   position: relative;
   display: flex;
@@ -1338,6 +1493,7 @@ textarea#save-io {
   box-shadow: 0 12px 40px rgba(0, 0, 0, .95), inset 0 0 18px rgba(0, 0, 0, .85);
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .detail-log-head) */
 .detail-log-head {
   position: relative;
   display: flex;
@@ -1348,15 +1504,18 @@ textarea#save-io {
   border-bottom: 1px solid var(--border);
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .detail-log-head .sec-title) */
 .detail-log-head .sec-title {
   margin: 0;
   text-align: center;
 }
 
+/* 彈窗與遮罩層樣式 (針對: .detail-log-head .modal-x) */
 .detail-log-head .modal-x {
   top: 2px;
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .detail-log-toolbar) */
 .detail-log-toolbar {
   display: flex;
   align-items: center;
@@ -1365,6 +1524,7 @@ textarea#save-io {
   padding: 8px 0;
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .detail-log-content) */
 .detail-log-content {
   flex: 1;
   min-height: 0;
@@ -1377,6 +1537,7 @@ textarea#save-io {
   line-height: 1.55;
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .detail-log-line) */
 .detail-log-line {
   padding: 3px 0;
   color: var(--dim);
@@ -1384,22 +1545,27 @@ textarea#save-io {
   word-break: break-word;
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .detail-log-line.good) */
 .detail-log-line.good {
   color: var(--good);
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .detail-log-line.bad) */
 .detail-log-line.bad {
   color: var(--bad);
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .detail-log-line.warn) */
 .detail-log-line.warn {
   color: var(--warn);
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .detail-log-line.info) */
 .detail-log-line.info {
   color: var(--info);
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .detail-log-line.log-kill) */
 .detail-log-line.log-kill {
   color: #fd3b00;
   background: rgba(255, 162, 162, 0);
@@ -1407,16 +1573,19 @@ textarea#save-io {
   font-weight: 600;
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .detail-log-line.loot) */
 .detail-log-line.loot {
   color: #c084fc;
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .detail-log-line.log-player-attack) */
 .detail-log-line.log-player-attack {
   color: #ffffff;
   background: rgba(56, 130, 210, 0.10);
   border-bottom-color: rgba(56, 130, 210, 0.15);
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .detail-log-line.log-enemy-attack) */
 .detail-log-line.log-enemy-attack {
   color: #fca5a5;
   background: rgba(210, 56, 56, 0.12);
@@ -1424,36 +1593,42 @@ textarea#save-io {
 }
 
 
+/* 技能系統相關樣式 (針對: .detail-log-line.log-player-skill) */
 .detail-log-line.log-player-skill {
   color: #fde047;
   background: rgba(56, 130, 210, 0.10);
   border-bottom-color: rgba(56, 130, 210, 0.15);
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .detail-log-line.log-player-buff) */
 .detail-log-line.log-player-buff {
   color: #86efac;
   background: rgba(56, 130, 210, 0.07);
   border-bottom-color: rgba(56, 130, 210, 0.12);
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .detail-log-line.log-enemy-damage) */
 .detail-log-line.log-enemy-damage {
   color: #fca5a5;
   background: rgba(210, 56, 56, 0.10);
   border-bottom-color: rgba(210, 56, 56, 0.15);
 }
 
+/* 技能系統相關樣式 (針對: .detail-log-line.log-enemy-skill) */
 .detail-log-line.log-enemy-skill {
   color: #fff59d;
   background: rgba(210, 56, 56, 0.10);
   border-bottom-color: rgba(210, 56, 56, 0.15);
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .detail-log-line.log-enemy-buff) */
 .detail-log-line.log-enemy-buff {
   color: #d7ccc8;
   background: rgba(210, 56, 56, 0.07);
   border-bottom-color: rgba(210, 56, 56, 0.12);
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .detail-log-time) */
 .detail-log-time {
   display: inline-block;
   min-width: 58px;
@@ -1463,6 +1638,7 @@ textarea#save-io {
   font-variant-numeric: tabular-nums;
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .detail-log-empty) */
 .detail-log-empty {
   padding: 18px 4px;
   color: var(--dim);
@@ -1470,50 +1646,61 @@ textarea#save-io {
 }
 
 @media (max-width: 560px) {
+  /* 日誌與系統訊息發佈樣式 (針對: .log-header-actions) */
   .log-header-actions {
     gap: 4px;
   }
 
+  /* 按鈕及操作元件樣式 (針對: .log-header-actions .btn) */
   .log-header-actions .btn {
     padding-left: 6px;
     padding-right: 6px;
   }
 
+  /* 日誌與系統訊息發佈樣式 (針對: .detail-log-toolbar) */
   .detail-log-toolbar {
     align-items: stretch;
     flex-direction: column;
   }
 
   .detail-log-toolbar .log-filter,
+  /* 按鈕及操作元件樣式 (針對: .detail-log-toolbar .btn) */
   .detail-log-toolbar .btn {
     width: 100%;
   }
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .log-line.loot) */
 .log-line.loot {
   color: #c084fc;
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .log-hl-good) */
 .log-hl-good {
   color: var(--info);
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .log-hl-bad) */
 .log-hl-bad {
   color: var(--bad);
 }
 
+/* 戰鬥與戰場場景樣式 (針對: #battle-log.filter-combat .log-line:not([data-cat="combat"])) */
 #battle-log.filter-combat .log-line:not([data-cat="combat"]) {
   display: none;
 }
 
+/* 戰場對決區域樣式 (針對: #battle-log.filter-factory .log-line:not([data-cat="factory"])) */
 #battle-log.filter-factory .log-line:not([data-cat="factory"]) {
   display: none;
 }
 
+/* 戰場對決區域樣式 (針對: #battle-log.filter-loot .log-line:not([data-cat="loot"])) */
 #battle-log.filter-loot .log-line:not([data-cat="loot"]) {
   display: none;
 }
 
+/* 戰場對決區域樣式 (針對: #battle-log.filter-system .log-line:not([data-cat="system"])) */
 #battle-log.filter-system .log-line:not([data-cat="system"]) {
   display: none;
 }
@@ -1556,7 +1743,10 @@ textarea#save-io {
   }
 }
 
-/* ---- 裝備分頁 ---- */
+/* ==========================================================================
+   【裝備與背包系統】Equipment & Inventory System
+   說明：控制玩家裝備槽、背包格子（4x5或自適應格網）、物品品質（稀有/史詩/傳奇/神話）的框線與發光效果。
+   ========================================================================== */
 .equip-section-box {
   background: url('../images/diablo_panel_tex.png') repeat, rgba(20, 15, 10, 0.8);
   background-blend-mode: multiply;
@@ -1568,6 +1758,7 @@ textarea#save-io {
   box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
+/* 功能分頁容器樣式 (針對: #tab-equip .equip-section-box:nth-child(2)) */
 #tab-equip .equip-section-box:nth-child(2) {
   flex: 1;
   margin-bottom: 0;
@@ -1607,6 +1798,83 @@ textarea#save-io {
   align-self: start;
 }
 
+/* 裝備三套切頁 */
+#equip-set-tabs {
+  max-width: 400px;
+  margin: 8px auto 0;
+}
+.eqset-tabrow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.eqset-tabwrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+/* 切頁上方的自訂名稱（空時仍保留高度以對齊） */
+.eqset-name {
+  min-height: 15px;
+  line-height: 15px;
+  margin-bottom: 2px;
+  font-size: 11px;
+  font-weight: bold;
+  text-align: center;
+  color: var(--accent);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 右上角改名小按鈕 */
+.eqset-rename {
+  position: absolute;
+  top: 17px;
+  right: 3px;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px;
+  cursor: pointer;
+  opacity: 0.5;
+  z-index: 2;
+  transition: opacity 0.15s;
+}
+.eqset-rename:hover { opacity: 1; }
+.eqset-tab {
+  position: relative;
+  width: 100%;
+  padding: 7px 4px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--dim);
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.eqset-tab:hover { color: var(--text); border-color: var(--accent); }
+.eqset-tab.viewing {
+  color: var(--text);
+  border-color: var(--accent);
+  background: rgba(255, 200, 80, 0.12);
+  box-shadow: inset 0 0 8px rgba(255, 200, 80, 0.25);
+}
+.eqset-tab.active { color: var(--good); }
+.eqset-badge {
+  display: block;
+  font-size: 10px;
+  font-weight: normal;
+  color: var(--good);
+  margin-top: 1px;
+}
+.eqset-confirm {
+  width: 100%;
+  margin-top: 6px;
+}
+.eqset-confirm:disabled { opacity: 0.5; cursor: default; }
+
+/* 角色裝備欄位槽格 */
 .eq-slot {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -1875,6 +2143,7 @@ textarea#save-io {
   overflow-y: auto;
 }
 
+/* 背包或裝備格子的通用容器格 */
 .item-cell {
   position: relative;
   aspect-ratio: 1;
@@ -1888,11 +2157,13 @@ textarea#save-io {
   transition: opacity 0.2s, filter 0.2s, box-shadow 0.2s;
 }
 
+/* 格子懸浮狀態（邊框高亮） */
 .item-cell:hover {
   filter: brightness(1.3);
 }
 
 .eq-slot.filled,
+/* 背包或裝備格子的通用容器格 */
 .item-cell {
   transition: opacity 0.2s, filter 0.2s, box-shadow 0.2s, outline 0.2s;
 }
@@ -1963,6 +2234,7 @@ textarea#save-io {
   top: 3px;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-slot .ancient-star-badge) */
 .forge-slot .ancient-star-badge {
   top: 2px;
 }
@@ -2010,7 +2282,10 @@ textarea#save-io {
   border-radius: 0 0 6px 6px;
 }
 
-/* ---- 流動特效邊框 (旋轉炫光) ---- */
+/* ==========================================================================
+   【高階裝備旋轉流光邊框】High Rarity Stacking Border Glow
+   說明：神話與創世等高階稀有度裝備格子的動態旋轉光暈與漸層外框特效。
+   ========================================================================== */
 @keyframes borderSpin {
   0% {
     transform: translate(-50%, -50%) rotate(0deg);
@@ -2081,22 +2356,28 @@ textarea#save-io {
   background: linear-gradient(to bottom, rgba(184, 134, 11, 0.9) 0%, rgba(139, 101, 8, 0.95) 45%, var(--panel) 80%);
 }
 
-/* 裝備詳情 */
+/* ==========================================================================
+   【裝備詳細資訊 Tooltip 懸浮窗】Equipment Detail Tooltip Pane
+   說明：Hover 裝備或物品時顯示的浮動彈出視窗樣式，包含基礎數值、詞條屬性、寶石鑲嵌孔、神鑄屬性。
+   ========================================================================== */
 .it-name {
   font-size: 16px;
   font-weight: bold;
   position: relative;
 }
 
+/* 裝備或物品詳細屬性樣式 (針對: .it-up) */
 .it-up {
   color: var(--accent);
 }
 
+/* 裝備或物品詳細屬性樣式 (針對: .it-syn) */
 .it-syn {
   color: #c084fc;
   font-size: 13px;
 }
 
+/* 裝備或物品詳細屬性樣式 (針對: .it-sub) */
 .it-sub {
   display: flex;
   align-items: baseline;
@@ -2107,6 +2388,7 @@ textarea#save-io {
   margin-bottom: 8px;
 }
 
+/* 裝備或物品詳細屬性樣式 (針對: .it-affix) */
 .it-affix {
   font-size: 15px;
   font-weight: bold;
@@ -2120,18 +2402,22 @@ textarea#save-io {
   color: var(--afx-base);
 }
 
+/* 裝備或物品詳細屬性樣式 (針對: .it-affix.afx-off) */
 .it-affix.afx-off {
   color: var(--afx-off);
 }
 
+/* 裝備或物品詳細屬性樣式 (針對: .it-affix.afx-def) */
 .it-affix.afx-def {
   color: var(--afx-def);
 }
 
+/* 裝備或物品詳細屬性樣式 (針對: .it-affix.afx-util) */
 .it-affix.afx-util {
   color: var(--afx-util);
 }
 
+/* 裝備或物品詳細屬性樣式 (針對: .it-affixes) */
 .it-affixes {
   display: flex;
   flex-direction: column;
@@ -2139,6 +2425,7 @@ textarea#save-io {
   width: 100%;
 }
 
+/* 裝備或物品詳細屬性樣式 (針對: .it-affix-row) */
 .it-affix-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 32px;
@@ -2149,10 +2436,12 @@ textarea#save-io {
   width: 100%;
 }
 
+/* 裝備或物品詳細屬性樣式 (針對: .it-affix-text) */
 .it-affix-text {
   min-width: 0;
 }
 
+/* 裝備或物品詳細屬性樣式 (針對: .it-affix-action) */
 .it-affix-action {
   display: flex;
   align-items: center;
@@ -2161,6 +2450,7 @@ textarea#save-io {
   height: 15px;
 }
 
+/* 按鈕及操作元件樣式 (針對: .affix-reroll-btn) */
 .affix-reroll-btn {
   width: 22px;
   height: 22px;
@@ -2172,6 +2462,7 @@ textarea#save-io {
   justify-content: center;
 }
 
+/* 滑鼠懸停資訊提示樣式 (針對: .affix-reroll-tip) */
 .affix-reroll-tip {
   text-align: left;
   font-size: 12px;
@@ -2188,6 +2479,7 @@ textarea#save-io {
   line-height: 1.45;
 }
 
+/* 裝備或物品詳細屬性樣式 (針對: .it-enchant) */
 .it-enchant {
   margin-top: var(--it-enchant-gap);
   color: #6fb5e8;
@@ -2195,12 +2487,14 @@ textarea#save-io {
   line-height: 1;
 }
 
+/* 裝備或物品詳細屬性樣式 (針對: .it-score) */
 .it-score {
   margin-top: 6px;
   color: var(--dim);
   font-size: 13px;
 }
 
+/* 裝備或物品詳細屬性樣式 (針對: .it-score-sub) */
 .it-score-sub {
   margin-top: 0;
   margin-left: auto;
@@ -2220,6 +2514,7 @@ textarea#save-io {
   min-height: 33px;
 }
 
+/* 按鈕及操作元件樣式 (針對: .btn-it-pool) */
 .btn-it-pool {
   position: absolute;
   right: 0;
@@ -2240,12 +2535,14 @@ textarea#save-io {
   line-height: 1;
 }
 
+/* 按鈕及操作元件樣式 (針對: .btn-it-pool:hover) */
 .btn-it-pool:hover {
   border-color: var(--accent);
   color: var(--accent);
   background: rgba(255, 255, 255, 0.05);
 }
 
+/* 裝備或物品詳細屬性樣式 (針對: .it-pool-box) */
 .it-pool-box {
   display: none !important;
 }
@@ -2271,6 +2568,7 @@ textarea#save-io {
   min-width: 140px;
 }
 
+/* 裝備或物品詳細屬性樣式 (針對: .it-pool-title) */
 .it-pool-title {
   color: var(--accent);
   margin-bottom: 6px;
@@ -2279,12 +2577,16 @@ textarea#save-io {
   padding-bottom: 4px;
 }
 
+/* 裝備或物品詳細屬性樣式 (針對: .it-pool-item) */
 .it-pool-item {
   margin: 3px 0;
   color: #a1a1aa;
 }
 
-/* ---- 生產線 ---- */
+/* ==========================================================================
+   【生產線與熔煉合成系統】Production & Crafting Line System
+   說明：控制生產分頁的配置，包含合成節點、進度條、暫存庫存區、以及合成相關按鈕。
+   ========================================================================== */
 .conveyor-panel {
   margin-bottom: 12px;
 }
@@ -2449,7 +2751,10 @@ textarea#save-io {
   flex: 1;
 }
 
-/* ---- 高塔 ---- */
+/* ==========================================================================
+   【大荒高塔挑戰分頁】Great Wild Tower Challenge
+   說明：控制挑戰高塔的分頁樣式，包含層數選擇、高塔戰鬥數據、倒計時、高塔獎勵列表及 BOSS 專屬資訊。
+   ========================================================================== */
 .tower-head {
   display: flex;
   align-items: center;
@@ -2582,7 +2887,10 @@ textarea#save-io {
   margin-bottom: 10px;
 }
 
-/* ---- 設定 ---- */
+/* ==========================================================================
+   【系統與存檔設定】System & Save Game Settings
+   說明：控制設定分頁，包含存檔匯出/匯入按鈕、GM 指令控制閥、玩法指南文字說明與排版。
+   ========================================================================== */
 #tab-settings .panel {
   margin-bottom: 12px;
 }
@@ -2597,7 +2905,10 @@ textarea#save-io {
   color: var(--accent);
 }
 
-/* ---- 響應式 ---- */
+/* ==========================================================================
+   【行動端響應式排版修正】Responsive Mobile Adaptations
+   說明：使用 @media 查詢，針對寬度 900px 以下的手機或小螢幕，將排版轉換為單欄直向排列。
+   ========================================================================== */
 @media (max-width: 900px) {
   #game-layout {
     flex-direction: column;
@@ -2612,16 +2923,19 @@ textarea#save-io {
     grid-template-columns: 1fr;
   }
 
+  /* 戰場對決區域樣式 (針對: .battle-scene) */
   .battle-scene {
     grid-template-columns: 1fr;
   }
 
+  /* 敵方怪物/BOSS相關樣式 (針對: .battle-scene.multi-enemy-layout) */
   .battle-scene.multi-enemy-layout {
     width: 100%;
     margin-left: 0;
     grid-template-columns: 1fr;
   }
 
+  /* 戰場中央的 VS 對決高亮文字 */
   .vs {
     display: none;
   }
@@ -2631,7 +2945,10 @@ textarea#save-io {
   }
 }
 
-/* ---- 法力條 / 技能（屬性系統） ---- */
+/* ==========================================================================
+   【法力條與技能釋放 UI】Mana Bar & Skill Trigger Indicators
+   說明：控制戰鬥中角色的藍色法力條、技能冷卻進度、技能觸發時的飄字樣式。
+   ========================================================================== */
 .mp-bar {
   position: relative;
   height: 12px;
@@ -2642,6 +2959,7 @@ textarea#save-io {
   margin-top: 4px;
 }
 
+/* 法力值條填充條（藍色漸層） */
 .mp-fill {
   height: 100%;
   width: 100%;
@@ -2649,10 +2967,12 @@ textarea#save-io {
   transition: width .2s;
 }
 
+/* 法力值條樣式 (針對: .mp-bar .hp-text) */
 .mp-bar .hp-text {
   font-size: 9.5px;
 }
 
+/* 目前施放技能的提示文字 */
 .cb-skill {
   min-height: 16px;
   font-size: 11px;
@@ -2660,12 +2980,16 @@ textarea#save-io {
   margin-top: 4px;
 }
 
+/* 技能系統相關樣式 (針對: .float-txt.skill) */
 .float-txt.skill {
   color: #7dd3fc;
   font-size: 20px;
 }
 
-/* ---- 側欄屬性面板（分組摺疊） ---- */
+/* ==========================================================================
+   【屬性側欄分組摺疊功能】Collapsible Sidebar Stat Groups
+   說明：支援屬性側邊欄中的 <details> 分組摺疊面板，包含展開/收起動畫及屬性行（stat-row）排版。
+   ========================================================================== */
 .attr-group {
   margin-bottom: 6px;
 }
@@ -2714,7 +3038,10 @@ textarea#save-io {
   overflow-y: auto;
 }
 
-/* ---- 寶石系統 ---- */
+/* ==========================================================================
+   【寶石鑲嵌與鑲孔系統】Gem Socketing & Inventory System
+   說明：控制裝備詳情中的鑲嵌孔（Dashed Sockets）樣式、寶石選擇器浮動面板、寶石獨立倉庫方形格。
+   ========================================================================== */
 .it-sockets {
   margin-top: 6px;
   display: flex;
@@ -2722,6 +3049,7 @@ textarea#save-io {
   gap: var(--it-socket-gap);
 }
 
+/* 寶石插槽樣式 (針對: .socket) */
 .socket {
   display: inline-block;
   font-size: 13.5px;
@@ -2733,10 +3061,12 @@ textarea#save-io {
   line-height: 1;
 }
 
+/* 寶石插槽樣式 (針對: .it-sockets .socket) */
 .it-sockets .socket {
   white-space: nowrap;
 }
 
+/* 寶石插槽樣式 (針對: .socket.filled) */
 .socket.filled {
   border-style: solid;
   border-color: #7c6df2;
@@ -2744,17 +3074,20 @@ textarea#save-io {
   cursor: pointer;
 }
 
+/* 寶石插槽樣式 (針對: .socket.filled:hover) */
 .socket.filled:hover {
   border-color: var(--bad);
   text-decoration: line-through;
 }
 
+/* 寶石鑲嵌/加工系統樣式 (針對: .gem-picker) */
 .gem-picker {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
 }
 
+/* 寶石鑲嵌/加工系統樣式 (針對: .gem-chip) */
 .gem-chip {
   background: var(--bg2);
   border: 1px solid #7c6df2;
@@ -2765,6 +3098,7 @@ textarea#save-io {
   color: var(--text);
 }
 
+/* 寶石鑲嵌/加工系統樣式 (針對: .gem-chip:hover) */
 .gem-chip:hover {
   border-color: var(--accent);
   color: var(--accent);
@@ -2784,6 +3118,7 @@ textarea#save-io {
 #gconv-pool .gem-inventory-cell,
 #gfuse-pool .gem-inventory-cell,
 #gdis-fused .gem-inventory-cell,
+/* 寶石鑲嵌/加工系統樣式 (針對: #gfuse-slots .gem-inventory-cell) */
 #gfuse-slots .gem-inventory-cell {
   position: relative;
   width: 48px;
@@ -2802,6 +3137,7 @@ textarea#save-io {
 
 #gconv-pool .gem-chip-emoji,
 #gfuse-pool .gem-chip-emoji,
+/* 寶石鑲嵌/加工系統樣式 (針對: #gdis-fused .gem-chip-emoji) */
 #gdis-fused .gem-chip-emoji {
   font-size: 17px;
   line-height: 1;
@@ -2809,6 +3145,7 @@ textarea#save-io {
 
 #gconv-pool .gem-chip-count,
 #gfuse-pool .gem-chip-count,
+/* 寶石鑲嵌/加工系統樣式 (針對: #gdis-fused .gem-chip-count) */
 #gdis-fused .gem-chip-count {
   position: absolute;
   left: 3px;
@@ -2821,6 +3158,7 @@ textarea#save-io {
 
 #gconv-pool .gem-chip-level,
 #gfuse-pool .gem-chip-level,
+/* 寶石鑲嵌/加工系統樣式 (針對: #gdis-fused .gem-chip-level) */
 #gdis-fused .gem-chip-level {
   position: absolute;
   left: 0;
@@ -2832,6 +3170,7 @@ textarea#save-io {
   text-shadow: 0 0 3px #000;
 }
 
+/* 寶石鑲嵌/加工系統樣式 (針對: .gem-tbl) */
 .gem-tbl {
   width: 100%;
   border-collapse: collapse;
@@ -2839,6 +3178,7 @@ textarea#save-io {
   font-size: 12.5px;
 }
 
+/* 寶石鑲嵌/加工系統樣式 (針對: .gem-tbl th) */
 .gem-tbl th {
   text-align: left;
   color: var(--dim);
@@ -2848,28 +3188,35 @@ textarea#save-io {
   padding: 4px 6px;
 }
 
+/* 寶石鑲嵌/加工系統樣式 (針對: .gem-tbl td) */
 .gem-tbl td {
   padding: 4px 6px;
   border-bottom: 1px dashed #1b2236;
 }
 
+/* 寶石鑲嵌/加工系統樣式 (針對: .gem-tbl .gem-name) */
 .gem-tbl .gem-name {
   white-space: nowrap;
   font-weight: bold;
 }
 
+/* 寶石鑲嵌/加工系統樣式 (針對: .gem-tbl .gem-cnt) */
 .gem-tbl .gem-cnt {
   text-align: center;
   color: var(--dim);
   min-width: 34px;
 }
 
+/* 寶石鑲嵌/加工系統樣式 (針對: .gem-tbl .gem-cnt.has) */
 .gem-tbl .gem-cnt.has {
   color: var(--accent);
   font-weight: bold;
 }
 
-/* ---- 技能系統 ---- */
+/* ==========================================================================
+   【技能系統配置】Skill System Configurations
+   說明：控制戰鬥快捷技能欄位、技能可拖曳狀態、技能列表行（包含技能等級星點、描述、升級按鈕）。
+   ========================================================================== */
 .loadout-slot {
   display: inline-block;
   padding: 4px 12px;
@@ -2904,6 +3251,7 @@ textarea#save-io {
   box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.65), 0 0 6px rgba(250, 204, 21, 0.35);
 }
 
+/* 技能系統相關樣式 (針對: .skill-cat-title) */
 .skill-cat-title {
   font-weight: bold;
   color: var(--accent);
@@ -2911,6 +3259,7 @@ textarea#save-io {
   font-size: 15px;
 }
 
+/* 技能系統相關樣式 (針對: .skill-row) */
 .skill-row {
   display: flex;
   align-items: flex-start;
@@ -2923,6 +3272,7 @@ textarea#save-io {
   opacity: .72;
 }
 
+/* 技能系統相關樣式 (針對: .skill-row.learned) */
 .skill-row.learned {
   opacity: 1;
   border-color: #3d4a75;
@@ -2988,18 +3338,23 @@ textarea#save-io {
   white-space: nowrap;
 }
 
+/* 按鈕停用狀態（半透明且不允許滑鼠點擊） */
 .btn[disabled] {
   opacity: .4;
   cursor: not-allowed;
 }
 
-/* ---- 技能樹 ---- */
+/* ==========================================================================
+   【天賦與技能樹面板】Skill Talent Tree Panel
+   說明：控制天賦樹底圖（暗黑羊皮紙法陣）、解鎖前置等級門檻、天賦網格、學習與裝配狀態。
+   ========================================================================== */
 #skill-trees {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(288px, 1fr));
   gap: 10px;
 }
 
+/* 技能/天賦樹系統樣式 (針對: .tree-panel) */
 .tree-panel {
   background: url('../images/diablo_panel_tex.png') repeat, rgba(10, 5, 2, 0.8);
   background-blend-mode: multiply;
@@ -3010,12 +3365,14 @@ textarea#save-io {
   box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.9);
 }
 
+/* 技能/天賦樹系統樣式 (針對: .tree-title) */
 .tree-title {
   font-weight: bold;
   color: var(--accent);
   margin-bottom: 10px;
 }
 
+/* 技能/天賦樹系統樣式 (針對: .tree-row) */
 .tree-row {
   display: grid;
   grid-template-columns: repeat(4, 52px);
@@ -3026,6 +3383,7 @@ textarea#save-io {
   justify-content: start;
 }
 
+/* 技能系統相關樣式 (針對: #fusion-skill-list.tree-row) */
 #fusion-skill-list.tree-row {
   display: grid;
   grid-template-columns: repeat(12, 52px);
@@ -3036,10 +3394,12 @@ textarea#save-io {
   padding-bottom: 4px;
 }
 
+/* 技能系統相關樣式 (針對: #fusion-skill-list .hint) */
 #fusion-skill-list .hint {
   grid-column: 1 / -1;
 }
 
+/* 技能/天賦樹系統樣式 (針對: .tree-gate) */
 .tree-gate {
   color: var(--dim);
   font-size: 10.5px;
@@ -3047,6 +3407,7 @@ textarea#save-io {
   margin: 2px 0 6px;
 }
 
+/* 技能/天賦樹系統樣式 (針對: .tree-cell) */
 .tree-cell {
   position: relative;
   width: 52px;
@@ -3062,27 +3423,32 @@ textarea#save-io {
   transition: transform .1s;
 }
 
+/* 技能/天賦樹系統樣式 (針對: .tree-cell:hover) */
 .tree-cell:hover {
   transform: scale(1.08);
   opacity: .9;
 }
 
+/* 技能/天賦樹系統樣式 (針對: .tree-cell.learned) */
 .tree-cell.learned {
   opacity: 1;
   border-color: #b98a2d;
   box-shadow: 0 0 8px #b98a2d55, inset 0 0 8px #b98a2d22;
 }
 
+/* 技能/天賦樹系統樣式 (針對: .tree-cell.selected) */
 .tree-cell.selected {
   border-color: var(--accent);
   box-shadow: 0 0 10px var(--accent);
   opacity: 1;
 }
 
+/* 技能/天賦樹系統樣式 (針對: .tree-cell.locked) */
 .tree-cell.locked {
   cursor: not-allowed;
 }
 
+/* 技能/天賦樹系統樣式 (針對: .tree-cell.equipped) */
 .tree-cell.equipped {
   background: rgba(250, 204, 21, 0.25);
   border-color: #facc15;
@@ -3156,16 +3522,19 @@ textarea#save-io {
   margin-top: 4px;
 }
 
+/* 彈窗與遮罩層樣式 (針對: #skill-modal .modal-box) */
 #skill-modal .modal-box {
   width: min(460px, 92vw);
 }
 
+/* 彈窗與遮罩層樣式 (針對: #skill-modal-body) */
 #skill-modal-body {
   display: grid;
   grid-template-rows: 48px 140px 28px 66px;
   min-height: 282px;
 }
 
+/* 彈窗與遮罩層樣式 (針對: #skill-modal-body .skd-head) */
 #skill-modal-body .skd-head {
   min-height: 48px;
   max-height: 48px;
@@ -3173,6 +3542,7 @@ textarea#save-io {
   overflow: hidden;
 }
 
+/* 彈窗與遮罩層樣式 (針對: #skill-modal-body .skd-head>b) */
 #skill-modal-body .skd-head>b {
   min-width: 0;
   overflow: hidden;
@@ -3180,6 +3550,7 @@ textarea#save-io {
   white-space: nowrap;
 }
 
+/* 彈窗與遮罩層樣式 (針對: #skill-modal-body .skill-modal-copy) */
 #skill-modal-body .skill-modal-copy {
   min-height: 0;
   overflow-y: auto;
@@ -3187,6 +3558,7 @@ textarea#save-io {
   scrollbar-width: thin;
 }
 
+/* 彈窗與遮罩層樣式 (針對: #skill-modal-body .skill-modal-points) */
 #skill-modal-body .skill-modal-points {
   align-self: end;
   text-align: right;
@@ -3195,6 +3567,7 @@ textarea#save-io {
   font-weight: bold;
 }
 
+/* 彈窗與遮罩層樣式 (針對: #skill-modal-body .skill-modal-actions) */
 #skill-modal-body .skill-modal-actions {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -3206,13 +3579,17 @@ textarea#save-io {
 }
 
 #skill-modal-body .skill-modal-actions .btn,
+/* 彈窗與遮罩層樣式 (針對: #skill-modal-body .skill-modal-actions>div) */
 #skill-modal-body .skill-modal-actions>div {
   min-width: 0;
   min-height: 26px;
   box-sizing: border-box;
 }
 
-/* ---- 技能彈窗 / 懸停提示 ---- */
+/* ==========================================================================
+   【系統通用 Modal 彈窗與 Tooltip】System Modal Overlays & Hover Tooltips
+   說明：覆蓋在遊戲畫面中央的黑色半透明彈窗、二次確認框（如轉生確認彩虹光暈特效）、技能懸停提示框。
+   ========================================================================== */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -3224,6 +3601,7 @@ textarea#save-io {
   justify-content: center;
 }
 
+/* 通用彈窗主視窗容器 */
 .modal-box {
   position: relative;
   width: min(440px, 92vw);
@@ -3235,6 +3613,7 @@ textarea#save-io {
   box-shadow: 0 12px 40px rgba(0, 0, 0, .9), inset 0 0 15px rgba(0, 0, 0, 0.8);
 }
 
+/* 彈窗與遮罩層樣式 (針對: .confirm-modal) */
 .confirm-modal {
   z-index: 10000;
 }
@@ -3243,6 +3622,7 @@ textarea#save-io {
   width: min(460px, 92vw);
 }
 
+/* 轉生系統相關樣式 (針對: .confirm-modal.reincarnation-confirm .confirm-box) */
 .confirm-modal.reincarnation-confirm .confirm-box {
   isolation: isolate;
   overflow: visible;
@@ -3268,6 +3648,7 @@ textarea#save-io {
   animation: reincConfirmBgFlow 5.5s linear infinite;
 }
 
+/* 轉生系統相關樣式 (針對: .confirm-modal.reincarnation-confirm .confirm-box::before) */
 .confirm-modal.reincarnation-confirm .confirm-box::before {
   content: "";
   position: absolute;
@@ -3329,6 +3710,24 @@ textarea#save-io {
   min-height: 44px;
 }
 
+/* 確認彈窗的可選輸入框（裝備套改名等） */
+.confirm-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 12px;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.confirm-input:focus { border-color: var(--accent); }
+.confirm-input::placeholder { color: var(--dim); }
+
 .confirm-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(72px, 96px));
@@ -3337,6 +3736,7 @@ textarea#save-io {
   margin-top: 18px;
 }
 
+/* 按鈕及操作元件樣式 (針對: .confirm-actions .btn) */
 .confirm-actions .btn {
   width: 100%;
   min-width: 0;
@@ -3344,6 +3744,7 @@ textarea#save-io {
   padding-right: 0;
 }
 
+/* 彈窗右上角的關閉按鈕（叉叉鍵） */
 .modal-x {
   position: absolute;
   top: 8px;
@@ -3360,11 +3761,13 @@ textarea#save-io {
   box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);
 }
 
+/* 彈窗與遮罩層樣式 (針對: .modal-x:hover) */
 .modal-x:hover {
   color: var(--bad);
   border-color: var(--bad);
 }
 
+/* 資訊提示懸浮窗樣式 (針對: #sk-tooltip) */
 #sk-tooltip {
   position: fixed;
   z-index: 10005;
@@ -3432,11 +3835,13 @@ textarea#save-io {
   padding-top: 3px;
 }
 
+/* 按鈕及操作元件樣式 (針對: .act-btn-tooltip) */
 .act-btn-tooltip {
   position: relative;
   overflow: visible !important;
 }
 
+/* 按鈕及操作元件樣式 (針對: .act-btn-tooltip .btn-tip) */
 .act-btn-tooltip .btn-tip {
   display: none;
   position: absolute;
@@ -3457,40 +3862,51 @@ textarea#save-io {
   font-weight: normal;
 }
 
+/* 按鈕及操作元件樣式 (針對: .act-btn-tooltip:hover .btn-tip) */
 .act-btn-tooltip:hover .btn-tip {
   display: block;
 }
 
 
-/* ---- 手動附魔 ---- */
+/* ==========================================================================
+   【裝備附魔面板】Equipment Enchantment Settings
+   說明：控制裝備詳情面板中手動附魔項目的外觀、可移除狀態滑過時的刪除線樣式。
+   ========================================================================== */
 .it-enchant.removable {
   cursor: pointer;
   border-radius: 4px;
   padding: 1px 4px;
 }
 
+/* 裝備或物品詳細屬性樣式 (針對: .it-enchant.removable:hover) */
 .it-enchant.removable:hover {
   background: #2a1e2e;
   text-decoration: line-through;
   color: var(--bad) !important;
 }
 
+/* 寶石鑲嵌/加工系統樣式 (針對: .gem-chip.dim-chip) */
 .gem-chip.dim-chip {
   opacity: .55;
   border-style: dashed;
 }
 
-/* ---- 寶石融合 v2 / 寶石商店 ---- */
+/* ==========================================================================
+   【寶石合成與商店系統】Gem Synthesis & Shop Grid
+   說明：控制寶石商店網格卡片、售罄狀態遮罩、已融合寶石特殊粉紫背景效果。
+   ========================================================================== */
 .gem-chip.fused-chip {
   border-color: #e879f9;
   color: #f0abfc;
   background: rgba(232, 121, 249, 0.35);
 }
 
+/* 寶石插槽樣式 (針對: .socket.fused-socket) */
 .socket.fused-socket {
   border-color: #e879f9;
 }
 
+/* 寶石鑲嵌/加工系統樣式 (針對: #gem-shop-grid) */
 #gem-shop-grid {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
@@ -3540,6 +3956,7 @@ textarea#save-io {
   white-space: nowrap;
 }
 
+/* 按鈕及操作元件樣式 (針對: .shop-card .btn) */
 .shop-card .btn {
   max-width: 100%;
   padding: 0 4px;
@@ -3568,13 +3985,17 @@ textarea#save-io {
   width: 100%;
 }
 
-/* ---- 戰鬥場景頁籤 ---- */
+/* ==========================================================================
+   【野外關卡地圖切換欄】Adventure Battle Zone Tabs
+   說明：控制野外戰鬥關卡（平原、森林、荒漠等）頁籤按鈕、當前挑戰最高紀錄。
+   ========================================================================== */
 #zone-bar {
   display: flex;
   gap: 6px;
   margin-bottom: 10px;
 }
 
+/* 按鈕及操作元件樣式 (針對: .zone-btn) */
 .zone-btn {
   flex: 1;
   padding: 7px 10px;
@@ -3593,11 +4014,13 @@ textarea#save-io {
   white-space: nowrap;
 }
 
+/* 按鈕及操作元件樣式 (針對: .zone-btn:hover) */
 .zone-btn:hover {
   color: var(--text);
   border-color: var(--accent);
 }
 
+/* 按鈕及操作元件樣式 (針對: .zone-btn.active) */
 .zone-btn.active {
   background: var(--panel2);
   color: var(--accent);
@@ -3605,6 +4028,7 @@ textarea#save-io {
   box-shadow: 0 0 8px #f5b94233;
 }
 
+/* 關卡/關卡切換相關樣式 (針對: .zone-best) */
 .zone-best {
   font-size: 10.5px;
   font-weight: normal;
@@ -3614,36 +4038,47 @@ textarea#save-io {
   padding: 1px 6px;
 }
 
+/* 按鈕及操作元件樣式 (針對: .zone-btn.active .zone-best) */
 .zone-btn.active .zone-best {
   color: var(--accent);
 }
 
-/* ---- 自訂滾動條 ---- */
+/* ==========================================================================
+   【自訂捲軸風格】Custom Webkit Scrollbars
+   說明：覆蓋網頁與各個 overflow 面板的預設捲軸，改為暗黑金屬質感的細邊框捲軸。
+   ========================================================================== */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 
+/* 自訂捲軸軌道背景 */
 ::-webkit-scrollbar-track {
   background: #080605;
   border-left: 1px solid var(--border);
 }
 
+/* 自訂捲軸滑塊（暗金色） */
 ::-webkit-scrollbar-thumb {
   background: var(--border-light);
   border: 1px solid #1a140f;
   border-radius: 2px;
 }
 
+/* 自訂捲軸滑塊懸停高亮 */
 ::-webkit-scrollbar-thumb:hover {
   background: var(--accent);
 }
 
+/* 裝備或物品詳細屬性樣式 (針對: ::-webkit-scrollbar-corner) */
 ::-webkit-scrollbar-corner {
   background: #080605;
 }
 
-/* ---- 裝備與物品圖示 ---- */
+/* ==========================================================================
+   【裝備與物品圖示】Equipment & Material Icon Renders
+   說明：設定 34px/28px 獨立物品小圖示的陰影與灰色未擁有狀態 filter。
+   ========================================================================== */
 .eq-icon {
   width: 34px;
   height: 34px;
@@ -3657,6 +4092,7 @@ textarea#save-io {
   filter: grayscale(1) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
 }
 
+/* 物品或材料的方形圖示 */
 .item-icon {
   width: 28px;
   height: 28px;
@@ -3664,7 +4100,10 @@ textarea#save-io {
   object-fit: contain;
 }
 
-/* ---- 戰鬥等級顯示 ---- */
+/* ==========================================================================
+   【戰鬥等級顯示】Combatant Levels
+   說明：對決雙方頭像正上方的等級字體大小與高亮黃金色彩設定。
+   ========================================================================== */
 .cb-level {
   font-size: 13px;
   color: var(--accent);
@@ -3674,32 +4113,43 @@ textarea#save-io {
   min-height: 18px;
 }
 
-/* ---- 日誌篩選 ---- */
+/* ==========================================================================
+   【戰鬥日誌分類過濾機制】Combat Log Category Filters
+   說明：當日誌面板選中某個分類時，自動以 display: none 隱藏其餘無關日誌。
+   ========================================================================== */
 .log:not(.filter-factory) .log-line[data-cat="factory"] {
   display: none;
 }
 
+/* 戰鬥與戰場場景樣式 (針對: .log.filter-combat .log-line:not([data-cat="combat"])) */
 .log.filter-combat .log-line:not([data-cat="combat"]) {
   display: none;
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .log.filter-boss .log-line:not([data-cat="boss"])) */
 .log.filter-boss .log-line:not([data-cat="boss"]) {
   display: none;
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .log.filter-factory .log-line:not([data-cat="factory"])) */
 .log.filter-factory .log-line:not([data-cat="factory"]) {
   display: none;
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .log.filter-loot .log-line:not([data-cat="loot"])) */
 .log.filter-loot .log-line:not([data-cat="loot"]) {
   display: none;
 }
 
+/* 日誌與系統訊息發佈樣式 (針對: .log.filter-system .log-line:not([data-cat="system"])) */
 .log.filter-system .log-line:not([data-cat="system"]) {
   display: none;
 }
 
-/* ---- 寶石轉換（九宮格） ---- */
+/* ==========================================================================
+   【寶石合成九宮格轉換面板】Gem Synthesis Matrix Grid
+   說明：控制 3x3 的寶石轉換矩陣槽格、填充狀態、下拉寶石種類選單及箭頭導向。
+   ========================================================================== */
 .gconv-layout {
   display: flex;
   gap: 16px;
@@ -3783,11 +4233,15 @@ textarea#save-io {
   margin-top: 2px;
 }
 
+/* 寶石鑲嵌/加工系統樣式 (針對: .gem-chip.dim) */
 .gem-chip.dim {
   opacity: 0.45;
 }
 
-/* ---- 寶石操作結果訊息區（轉換 / 拆解） ---- */
+/* ==========================================================================
+   【寶石加工操作日誌顯示區】Gem Modification Status Feed
+   說明：當執行轉換或拆解時，顯示在加工控制台下方的虛線操作狀態與成功/警告文字。
+   ========================================================================== */
 .gem-result {
   border: 1px dashed #2a3345;
   border-radius: 8px;
@@ -3800,21 +4254,25 @@ textarea#save-io {
   word-break: break-all;
 }
 
+/* 寶石鑲嵌/加工系統樣式 (針對: .gem-result.gem-result-3) */
 .gem-result.gem-result-3 {
   min-height: 64px;
   /* 約三行 */
   margin-top: 8px;
 }
 
+/* 寶石鑲嵌/加工系統樣式 (針對: .gem-result .gr-line) */
 .gem-result .gr-line {
   display: block;
   color: var(--text);
 }
 
+/* 寶石鑲嵌/加工系統樣式 (針對: .gem-result .gr-line.warn) */
 .gem-result .gr-line.warn {
   color: #fca5a5;
 }
 
+/* 寶石鑲嵌/加工系統樣式 (針對: .gem-result .gr-line.yellow) */
 .gem-result .gr-line.yellow {
   color: #fbbf24;
 }
@@ -3824,7 +4282,10 @@ textarea#save-io {
   max-width: 148px;
 }
 
-/* ---- 存檔記錄列表 ---- */
+/* ==========================================================================
+   【存檔列表與備份管理器】Saved Game Management List
+   說明：控制系統設定底下的存檔歷史記錄列、自動存檔高亮發光外框、物理備份資料夾檔案清單表格。
+   ========================================================================== */
 .save-row {
   display: flex;
   align-items: center;
@@ -3836,21 +4297,25 @@ textarea#save-io {
   background: rgba(0, 0, 0, 0.3);
 }
 
+/* 存檔系統相關樣式 (針對: .save-row.auto) */
 .save-row.auto {
   border-color: var(--accent);
   box-shadow: inset 0 0 8px rgba(196, 164, 100, 0.12);
 }
 
+/* 存檔系統相關樣式 (針對: .save-info) */
 .save-info {
   flex: 1;
   min-width: 0;
 }
 
+/* 存檔系統相關樣式 (針對: .save-name) */
 .save-name {
   font-weight: bold;
   color: var(--text);
 }
 
+/* 存檔系統相關樣式 (針對: .save-cur) */
 .save-cur {
   font-size: 11px;
   color: #0d0a06;
@@ -3861,6 +4326,7 @@ textarea#save-io {
   vertical-align: middle;
 }
 
+/* 存檔系統相關樣式 (針對: .save-file) */
 .save-file {
   color: var(--dim);
   font-size: 12px;
@@ -3868,15 +4334,18 @@ textarea#save-io {
   word-break: break-all;
 }
 
+/* 存檔系統相關樣式 (針對: .save-time) */
 .save-time {
   font-family: inherit;
 }
 
+/* 存檔系統相關樣式 (針對: .save-meta) */
 .save-meta {
   color: var(--dim);
   font-size: 12px;
 }
 
+/* 存檔系統相關樣式 (針對: .save-new-notice) */
 .save-new-notice {
   color: #39ff88;
   font-size: 15px;
@@ -3885,10 +4354,12 @@ textarea#save-io {
   margin-top: 3px;
 }
 
+/* 按鈕及操作元件樣式 (針對: .save-row .btn) */
 .save-row .btn {
   flex-shrink: 0;
 }
 
+/* 存檔系統相關樣式 (針對: .save-folder-files) */
 .save-folder-files {
   margin-top: 10px;
   padding: 8px 10px;
@@ -3897,12 +4368,14 @@ textarea#save-io {
   background: rgba(10, 7, 4, 0.72);
 }
 
+/* 存檔系統相關樣式 (針對: .save-folder-files-title) */
 .save-folder-files-title {
   color: var(--accent);
   font-size: 12px;
   margin-bottom: 5px;
 }
 
+/* 存檔系統相關樣式 (針對: #save-folder-files-list) */
 #save-folder-files-list {
   max-height: 180px;
   overflow-y: auto;
@@ -3910,6 +4383,7 @@ textarea#save-io {
   font-size: 11px;
 }
 
+/* 存檔系統相關樣式 (針對: .save-folder-file-row) */
 .save-folder-file-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 70px 130px;
@@ -3918,10 +4392,12 @@ textarea#save-io {
   border-bottom: 1px solid rgba(184, 134, 11, 0.14);
 }
 
+/* 存檔系統相關樣式 (針對: .save-folder-file-row:last-child) */
 .save-folder-file-row:last-child {
   border-bottom: none;
 }
 
+/* 存檔系統相關樣式 (針對: .save-folder-file-name) */
 .save-folder-file-name {
   color: var(--text);
   overflow: hidden;
@@ -3930,6 +4406,7 @@ textarea#save-io {
 }
 
 .save-folder-file-size,
+/* 存檔系統相關樣式 (針對: .save-folder-file-time) */
 .save-folder-file-time {
   text-align: right;
   white-space: nowrap;
@@ -3964,6 +4441,7 @@ textarea#save-io {
 }
 
 #inv-section-box,
+/* 神鑄系統相關樣式 (針對: #forge-inv-box) */
 #forge-inv-box {
   border: 1px solid var(--accent) !important;
   border-image: none !important;
@@ -3974,7 +4452,10 @@ textarea#save-io {
   margin-top: 10px !important;
 }
 
-/* ============ 神鑄系統（Divine Forge） ============ */
+/* ==========================================================================
+   【大荒神鑄系統控制台】Divine Forge Core UI
+   說明：主神鑄背景大星陣圖（Hexagram）、周圍六星槽位、中央創世主星槽及星陣魔塵點火特效。
+   ========================================================================== */
 #forge-stage {
   position: relative;
   width: 100%;
@@ -3987,6 +4468,7 @@ textarea#save-io {
   overflow: hidden;
 }
 
+/* 按鈕及操作元件樣式 (針對: .forge-info-btn) */
 .forge-info-btn {
   position: absolute;
   top: 15px;
@@ -4008,11 +4490,13 @@ textarea#save-io {
   transition: all 0.2s;
 }
 
+/* 按鈕及操作元件樣式 (針對: .forge-info-btn:hover) */
 .forge-info-btn:hover {
   background: rgba(245, 185, 66, 0.2);
   border-color: #f5b942;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-slot) */
 .forge-slot {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -4028,25 +4512,30 @@ textarea#save-io {
   z-index: 2;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-slot.empty) */
 .forge-slot.empty {
   border-style: dashed;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-slot.empty:hover) */
 .forge-slot.empty:hover {
   border-color: #ffd700;
   background: rgba(255, 215, 0, 0.12);
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-slot.filled:hover) */
 .forge-slot.filled:hover {
   filter: brightness(1.3);
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-slot .item-icon) */
 .forge-slot .item-icon {
   width: 82%;
   height: 82%;
   object-fit: contain;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-slot .ic-lv) */
 .forge-slot .ic-lv {
   position: absolute;
   right: 2px;
@@ -4056,6 +4545,7 @@ textarea#save-io {
   text-shadow: 0 0 3px #000;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-dust) */
 .forge-dust {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -4074,17 +4564,20 @@ textarea#save-io {
   user-select: none;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-dust:hover) */
 .forge-dust:hover {
   border-color: #ffd700;
   filter: brightness(1.25);
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-dust.lit) */
 .forge-dust.lit {
   background: radial-gradient(circle, #ffd700, #b8860b);
   color: #fff;
   box-shadow: 0 0 14px rgba(255, 215, 0, 0.8);
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-center) */
 .forge-center {
   position: absolute;
   left: 50%;
@@ -4101,17 +4594,20 @@ textarea#save-io {
   z-index: 2;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-center.empty) */
 .forge-center.empty {
   border-color: rgba(255, 255, 255, 0.12);
   background: rgba(0, 0, 0, 0.25);
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-center .item-icon) */
 .forge-center .item-icon {
   width: 80%;
   height: 80%;
   object-fit: contain;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-center-name) */
 .forge-center-name {
   position: absolute;
   top: 103%;
@@ -4123,6 +4619,7 @@ textarea#save-io {
   text-shadow: 0 0 4px #000, 1px 1px 2px #000;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-log) */
 .forge-log {
   position: absolute;
   left: 1.5%;
@@ -4135,6 +4632,7 @@ textarea#save-io {
   gap: 3px;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-log-line) */
 .forge-log-line {
   font-size: 13px;
   font-weight: bold;
@@ -4142,14 +4640,17 @@ textarea#save-io {
   text-shadow: 0 0 4px #000, 1px 1px 2px #000;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-log-line.good) */
 .forge-log-line.good {
   color: #ffd700;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-log-line.bad) */
 .forge-log-line.bad {
   color: #f87171;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-actions) */
 .forge-actions {
   position: absolute;
   right: 3%;
@@ -4160,6 +4661,7 @@ textarea#save-io {
   z-index: 3;
 }
 
+/* 按鈕及操作元件樣式 (針對: .forge-btn) */
 .forge-btn {
   background: linear-gradient(180deg, #ffe45c, #ffd700);
   color: #1a1405;
@@ -4170,23 +4672,29 @@ textarea#save-io {
   box-shadow: 0 0 10px rgba(255, 215, 0, 0.35);
 }
 
+/* 按鈕及操作元件樣式 (針對: .forge-btn:hover) */
 .forge-btn:hover {
   filter: brightness(1.1);
 }
 
-/* ---- 神鑄自動放入選單 ---- */
+/* ==========================================================================
+   【神鑄自動鑄造篩選選單】Divine Forge Auto-Selector Dropdown
+   說明：點擊自動鑄造時彈出的側邊控制面板，提供篩選特定品質與屬性作為素材放入的快速點選列表。
+   ========================================================================== */
 .forge-auto-wrap {
   position: relative;
   display: flex;
   flex-direction: column;
 }
 
+/* 按鈕及操作元件樣式 (針對: .forge-auto-btn.afk-on) */
 .forge-auto-btn.afk-on {
   background: linear-gradient(180deg, #7df9a8, #34d399);
   border-color: #0f7a4d;
   box-shadow: 0 0 10px rgba(52, 211, 153, 0.5);
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-auto-menu) */
 .forge-auto-menu {
   position: absolute;
   right: calc(100% + 10px);
@@ -4302,6 +4810,7 @@ textarea#save-io {
   padding: 6px 2px;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-head) */
 .forge-head {
   display: flex;
   align-items: center;
@@ -4311,10 +4820,12 @@ textarea#save-io {
   gap: 6px;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-rate) */
 .forge-rate {
   font-size: 14.5px;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-foot) */
 .forge-foot {
   display: flex;
   align-items: center;
@@ -4331,6 +4842,7 @@ textarea#save-io {
   white-space: nowrap;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-foot .chk input) */
 .forge-foot .chk input {
   flex: 0 0 auto;
   width: 18px;
@@ -4346,12 +4858,14 @@ textarea#save-io {
   box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.8);
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-foot .chk input:checked) */
 .forge-foot .chk input:checked {
   border-color: #0f7a4d;
   background: #34d399;
   box-shadow: 0 0 6px rgba(52, 211, 153, 0.55);
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-foot .chk input:checked::after) */
 .forge-foot .chk input:checked::after {
   content: '✓';
   display: block;
@@ -4362,21 +4876,25 @@ textarea#save-io {
   text-align: center;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-foot .chk input:disabled) */
 .forge-foot .chk input:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-foot .chk:focus-within) */
 .forge-foot .chk:focus-within {
   color: var(--accent);
   outline: 1px solid var(--accent);
   outline-offset: 2px;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-foot .chk.is-active) */
 .forge-foot .chk.is-active {
   color: var(--good);
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-progress) */
 .forge-progress {
   margin-top: 8px;
   padding: 8px 12px;
@@ -4386,6 +4904,7 @@ textarea#save-io {
   box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7);
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-progress-head) */
 .forge-progress-head {
   display: flex;
   justify-content: space-between;
@@ -4408,6 +4927,7 @@ textarea#save-io {
   text-overflow: ellipsis;
 }
 
+/* 神鑄系統相關樣式 (針對: .forge-progress-track) */
 .forge-progress-track {
   height: 12px;
   overflow: hidden;
@@ -4416,6 +4936,7 @@ textarea#save-io {
   background: #170e08;
 }
 
+/* 神鑄系統相關樣式 (針對: #forge-progress-fill) */
 #forge-progress-fill {
   width: 100%;
   height: 100%;
@@ -4436,6 +4957,7 @@ textarea#save-io {
   }
 }
 
+/* 神鑄系統相關樣式 (針對: #forge-inventory-grid) */
 #forge-inventory-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, 58px);
@@ -4446,6 +4968,7 @@ textarea#save-io {
   overflow-y: auto;
 }
 
+/* 神鑄系統相關樣式 (針對: .item-cell.forge-na) */
 .item-cell.forge-na {
   opacity: 0.35;
   filter: grayscale(75%);
@@ -4457,7 +4980,10 @@ textarea#save-io {
   initial-value: 0deg;
 }
 
-/* 神鑄創世（彩虹）流動特效邊框：僅套用最終品質 */
+/* ==========================================================================
+   【創世品階彩虹流光外框特效】Creation Tier Conic Rainbow Glow
+   說明：神鑄最終極創世級別裝備的 conic-gradient 360度彩色跑馬燈流光發光特效。
+   ========================================================================== */
 .eff-godforged {
   position: relative;
   overflow: hidden;
@@ -4466,11 +4992,13 @@ textarea#save-io {
   box-shadow: 0 0 8px rgba(255, 75, 190, 0.7), 0 0 16px rgba(70, 160, 255, 0.45);
 }
 
+/* 神鑄系統相關樣式 (針對: .eq-slot.eff-godforged) */
 .eq-slot.eff-godforged {
   position: absolute;
   transform: translate(-50%, -50%);
 }
 
+/* 神鑄系統相關樣式 (針對: .eff-godforged::before) */
 .eff-godforged::before {
   content: "";
   position: absolute;
@@ -4493,6 +5021,7 @@ textarea#save-io {
   animation: godforgedRainbowSpin 2.0s linear infinite;
 }
 
+/* 神鑄系統相關樣式 (針對: .eff-godforged::after) */
 .eff-godforged::after {
   content: "";
   position: absolute;
@@ -4538,6 +5067,7 @@ textarea#save-io {
 @media (prefers-reduced-motion: reduce) {
 
   .eff-godforged::before,
+  /* 神鑄系統相關樣式 (針對: .eff-godforged::after) */
   .eff-godforged::after {
     animation-duration: 8s;
   }
@@ -4556,12 +5086,16 @@ textarea#save-io {
   box-shadow: inset 0 0 8px rgba(255, 215, 0, 0.15);
 }
 
-/* 神鑄背包切頁（裝備 / 寶石）與寶石格 */
+/* ==========================================================================
+   【神鑄專屬背包切換欄】Divine Forge Inventory Sub-navigation
+   說明：神鑄界面下方的裝備/寶石切換頁籤、以及神鑄特定規格的寶石格子佈局。
+   ========================================================================== */
 .forge-inv-tabs {
   display: flex;
   gap: 6px;
 }
 
+/* 按鈕及操作元件樣式 (針對: .forge-inv-tabs .btn.active) */
 .forge-inv-tabs .btn.active {
   background: linear-gradient(180deg, #ffe45c, #ffd700);
   color: #1a1405;
@@ -4569,10 +5103,12 @@ textarea#save-io {
   font-weight: bold;
 }
 
+/* 寶石鑲嵌/加工系統樣式 (針對: .forge-gem-cell .ic-emoji) */
 .forge-gem-cell .ic-emoji {
   font-size: 22px;
 }
 
+/* 寶石鑲嵌/加工系統樣式 (針對: .forge-gem-cell .gem-cnt) */
 .forge-gem-cell .gem-cnt {
   position: absolute;
   left: 3px;
@@ -4582,10 +5118,12 @@ textarea#save-io {
   text-shadow: 0 0 3px #000, 1px 1px 2px #000;
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-combatant) */
 .enemy-combatant {
   min-width: 0;
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-party) */
 .enemy-party {
   /* 敵人卡片共用同一版型，只以 --ec-scale 等比縮放：1 隻為標準（1.0）。 */
   --ec-scale: 1;
@@ -4599,6 +5137,7 @@ textarea#save-io {
   justify-items: stretch;
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-party.enemy-count-0) */
 .enemy-party.enemy-count-0 {
   display: flex;
   align-items: center;
@@ -4606,12 +5145,14 @@ textarea#save-io {
   color: var(--dim);
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-party.enemy-count-1) */
 .enemy-party.enemy-count-1 {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-party.enemy-count-2) */
 .enemy-party.enemy-count-2 {
   --ec-scale: 0.75;
   grid-template-columns: 1fr;
@@ -4620,16 +5161,19 @@ textarea#save-io {
 }
 
 .enemy-party.enemy-count-3,
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-party.enemy-count-4) */
 .enemy-party.enemy-count-4 {
   --ec-scale: 0.7;
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-party.enemy-count-3 .enemy-card:first-child) */
 .enemy-party.enemy-count-3 .enemy-card:first-child {
   grid-column: 1 / -1;
   width: calc(50% - 4px);
   justify-self: center;
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-card) */
 .enemy-card {
   position: relative;
   min-width: 0;
@@ -4647,15 +5191,18 @@ textarea#save-io {
   background: transparent;
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-card>*) */
 .enemy-card>* {
   flex-shrink: 0;
 }
 
 .enemy-card .enemy-name,
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-card .enemy-status) */
 .enemy-card .enemy-status {
   width: 100%;
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-card.elite) */
 .enemy-card.elite {
   border: none;
 }
@@ -4667,12 +5214,14 @@ textarea#save-io {
   margin-bottom: calc(3px * var(--ec-scale));
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-card .cb-icon) */
 .enemy-card .cb-icon {
   width: calc(72px * var(--ec-scale));
   height: calc(72px * var(--ec-scale));
   margin-bottom: calc(4px * var(--ec-scale));
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-emoji-fallback) */
 .enemy-emoji-fallback {
   display: inline-block;
   height: calc(54px * var(--ec-scale));
@@ -4680,6 +5229,7 @@ textarea#save-io {
   font-size: calc(54px * var(--ec-scale));
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-name) */
 .enemy-name {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4690,6 +5240,7 @@ textarea#save-io {
   margin-top: calc(4px * var(--ec-scale));
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-card .enemy-hp) */
 .enemy-card .enemy-hp {
   height: calc(22px * var(--ec-scale));
   margin-top: calc(6px * var(--ec-scale));
@@ -4702,18 +5253,22 @@ textarea#save-io {
 /* 死亡清除延遲淡出：頭像與血條的透明度用短 transition 平滑 renderBattle 每 tick 的逐幀更新 */
 .enemy-card .cb-icon,
 .enemy-card .enemy-emoji-fallback,
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-card .enemy-hp) */
 .enemy-card .enemy-hp {
   transition: opacity 0.2s linear;
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-hp .hp-text) */
 .enemy-hp .hp-text {
   font-size: max(calc(12px * var(--ec-scale)), 8px);
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-shield) */
 .enemy-shield {
   color: var(--info);
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-card .enemy-status) */
 .enemy-card .enemy-status {
   /* 預留標準高度但允許收縮：空間不足時優先縮小狀態列。 */
   flex: 0 1 calc(80px * var(--ec-scale));
@@ -4726,6 +5281,7 @@ textarea#save-io {
   margin-top: calc(4px * var(--ec-scale));
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-card .float-layer) */
 .enemy-card .float-layer {
   z-index: 3;
   overflow: visible;
@@ -4736,34 +5292,41 @@ textarea#save-io {
   white-space: nowrap;
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .enemy-card) */
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .enemy-card {
   z-index: 1;
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-layer) */
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-layer {
   z-index: 20;
 }
 
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt) */
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt {
   font-size: 11px;
 }
 
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.dmg,
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.mdmg) */
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.mdmg {
   font-size: 9px;
 }
 
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.crit,
+/* 技能系統相關樣式 (針對: .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.skill) */
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.skill {
   font-size: 15px;
 }
 
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.crit,
+/* 技能系統相關樣式 (針對: .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.skill) */
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.skill {
   font-size: 13px;
 }
 
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.defend,
+/* 敵方怪物/BOSS相關樣式 (針對: .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.thorn) */
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.thorn {
   font-size: 12px;
 }
@@ -4774,7 +5337,10 @@ textarea#save-io {
   padding: 0;
 }
 
-/* ============ 本機 GM 指令輸入框 ============ */
+/* ==========================================================================
+   【開發者 GM 指令後台】Developer GM Console Overlay
+   說明：僅在本機或特定開發環境中顯示的 GM 命令輸入面板（懸浮於畫面左下角）。
+   ========================================================================== */
 #gm-command-panel {
   position: fixed;
   left: 12px;
@@ -4820,7 +5386,10 @@ textarea#save-io {
   color: var(--bad);
 }
 
-/* ============ 高塔連續挑戰 ============ */
+/* ==========================================================================
+   【高塔連續自動爬樓機制】Wild Tower Auto-Climber UI
+   說明：控制高塔面板頂端的自動爬樓開關、指定次數輸入框、以及當前自動執行狀態的提示。
+   ========================================================================== */
 .tower-auto-bar {
   display: flex;
   align-items: center;
@@ -4859,6 +5428,7 @@ textarea#save-io {
   }
 }
 
+/* 技能/天賦樹系統樣式 (針對: .tree-cell.fusion-selected) */
 .tree-cell.fusion-selected {
   border: 3px solid transparent !important;
   background: linear-gradient(var(--bg2), var(--bg2)) padding-box,
@@ -4879,6 +5449,7 @@ textarea#save-io {
   width: 100%;
 }
 
+/* 按鈕及操作元件樣式 (針對: #btn-enemy-tip) */
 #btn-enemy-tip {
   position: absolute;
   top: 6px;
