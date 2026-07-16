@@ -1,6 +1,55 @@
 # PATCH.md
 
-## 變更紀錄：敵種屬性改名＋9 種詞條升獨特級（下方兩則紀錄中的舊名稱以本則為準）
+## 變更紀錄：新熔爐 V2——熔爐大圖＋每爐最多三條傳送帶（企劃書：熔爐改造V2.xlsx）
+
+- 需求：①熔爐卡片左方顯示熔爐大圖（Forging/Runes/Magic_Furnace.png）；②每爐最多 3 條傳送帶（生產線），設定篩選器後自動篩選相應原材料上帶、由右至左入爐（與原版輸送帶視覺一致）。
+- **`js/data.js`**：新增 `NEW_FORGE_LINES_MAX=3`、`NEW_FORGE_BELT_CAP=10`（帶上在途批次上限）、`NEW_FORGE_LINE_LOAD_PER_TICK=5`、`NEW_FORGE_FILTERS`（各爐型篩選器：鍛造＝拆解/鍛造/熔煉；符文＝製作附魔卷軸/製作寶石、魔法＝製作裝備碎片/附魔精華/魔塵/太古精華，後兩爐企劃書未給配方→全部標 `wip` 僅顯示不可用）、`NEW_FORGE_IMAGES`；移除 `NEW_FORGE_MODES`。
+- **`js/player.js`**：`newForgeDefaultLine(ftype, filterKey)`（拆解預設普通~傳說分解＋條件不限；craft.recipe/smelt.product/belt/timer/enabled）；熔爐改為 `{id, ftype, lines[]}`。
+- **`js/newforge.js`（重寫）**：每線獨立計時，tick＝先入爐帶頭 1 批再裝載（**裝載時即扣資源**）——拆解線自佇列逐件判定（分解上帶、保留直接入包、帶滿放回佇列頭）；鍛造線材料＋佇列對應品質未上鎖裝備＋背包有空位才裝載，入爐產出品質+1（等級/部位同素材、寶石取回、直接入包）；熔煉線材料足夠自動扣料上帶、入爐產品+1。`newForgeLineRefund`：移除線/切篩選器/移除熔爐時在途批次全額退回（裝備→背包、材料→庫存）。`sanitizeNewForge` 含 **V1（furnace.mode 形狀）→V2（lines）一次性形狀遷移**（品質設定與熔煉產品搬移到線上、舊欄位清除）＋線/帶批次淨化。移除 V1 手動 `newForgeCraft`/`newForgeSmeltOnce`（由傳送帶自動化取代）。`newForgeAllQueuedItems(data)` 供存檔修正。
+- **`js/save.js`**：fixSockets/fixName 改經 `newForgeAllQueuedItems`（佇列＋各帶在途裝備）。
+- **`js/ui.js`（nf 區重寫）**：熔爐卡片＝左側大圖（`NEW_FORGE_IMAGES`）＋右側傳送帶清單；每線＝篩選器下拉（wip 選項 disabled）＋啟用勾選＋拆解「⚙ 品質設定」收合格（收合時顯示摘要）＋鍛造產物/熔煉產品下拉（皆 state 綁定 selected）＋帶視覺（爐口在左、`.conv-chip` 批次由右至左、+N 溢出）；「➕ 添加傳送帶 n/3」。事件委派改以 `data-nf-fid`＋`data-nf-li` 定位線。
+- **`css/style.css`**：`.nf-*` 區塊改版（`.nf-furnace-body` 左右欄、`.nf-furnace-img`、`.nf-line`/`.nf-belt` 虛線帶槽、窄螢幕大圖上移）。
+- 文件：`game_formula.md` §11 改寫為 V2 傳送帶模型；`index.html` 提示文案同步。
+- 測試：`tests/new-forge.test.cjs` 改版（18 測試：V2 常數/篩選器/大圖、傳送帶增刪與退回、拆解線兩段式 tick、鍛造線裝載條件（材料/品質/上鎖/背包滿）、熔煉線自動上帶與停用、V1→V2 遷移、壞線淨化、接線與圖片存在檢查）。
+- 多代理對抗式審查（3 維度 3 發現、2 確認）後修正：①帶批次視覺抽離熔爐清單快取字串——`nfLineHTML` 只輸出空的 `data-nf-belt` 容器、新增 `nfUpdateBelts` 每輪定點更新（批次流動不再每 2 秒擊穿快取整段重建）＋重建前焦點防衛（聚焦清單內 SELECT/INPUT 時延後重建，打字中的等級門檻與展開中的下拉不被銷毀）；②品質設定展開狀態鍵改用**穩定 line.id**（`newForgeDefaultLine` 產生 `uid()`、sanitize 補缺漏），移除傳送帶後不再錯位到別條線。
+- 驗證：`npm run build` 97 檔過；專屬測試 20/20；全套 241＝224 過/17 失敗（既有基線）；隔離埠 8124 實測——V1 測試存檔自動遷移（craft 模式→鍛造線、rune→scroll、舊欄位清除、線補穩定 id）、三張大圖載入（naturalWidth>0）、拆解線持續運轉（實際掉落）、真實點擊添加傳送帶→切熔煉→自動扣料上帶（帶滿 10 批圖示）→入爐產出金錠、移除線退回在途材料（爐渣+20）、帶批次變動時清單節點不重建且帶圖示定點更新、主控台 0 錯誤。
+
+## 變更紀錄：新熔爐（測試版）——主畫面新增「新熔爐」頁籤（企劃書：熔爐改造.xlsx）
+
+- 需求：與舊熔爐（factory 生產線）**並行**的新熔爐測試系統；新獲得裝備導入新熔爐；舊機制零改動。
+- **路由切換（無損搬移）**：`js/factory.js` `pushConveyor` 頂端 3 行掛勾 `newForgeTryIntake`——「導入新裝備」開啟（預設開）時新掉落改流入 `G.newForge.queue`；關閉或佇列滿載（20,000）回退舊輸送帶；`typeof` 防衛相容未載入 newforge.js 的測試環境。舊輸送帶既有積壓仍由舊生產線處理。
+- **`js/data.js`**：`NEW_FORGE_MATERIALS`（15 種礦石/材料註冊表：爐渣~魔鋼碎片 8 種碎料＋鐵錠~魔鋼 7 種產物，含名稱/emoji/顏色）、`NEW_FORGE_SALVAGE_YIELD`（品質 0~7 拆解產出表，數值照企劃書）、`NEW_FORGE_CRAFT_RECIPES`（稀有/獨特/史詩/傳說 4 配方）、`NEW_FORGE_SMELT_RECIPES`（7 種熔煉配方）、`NEW_FORGE_MAX=10`、`NEW_FORGE_INTERVAL=2s`、`NEW_FORGE_QUEUE_CAP=20000`、`NEW_FORGE_TYPES`（鍛造/符文/魔法，後兩者尚未開放）、`NEW_FORGE_MODES`。
+- **`js/formula.js`**：`newForgeRollAmount(v)`＝`rollDropCount(v×100)`（整數必得＋小數機率額外 1 件）。
+- **`js/player.js`**：`newForgeDefaultFurnace(id, ftype)`（預設拆解模式；普通~傳說＝分解、神話+＝保留、條件不限，照企劃示意圖）；newGameState 加 `player.forgeMats`（15 種計數）與 `G.newForge`（intake/queue/furnaces/nextId/stats）。
+- **`js/newforge.js`（新檔，載於 factory 之後、save 之前）**：路由攔截與 `_nfBypass` 防遞迴、`newForgeTick`（每座每 2 秒處理一次）、拆解判定 `newForgeDecide`（上鎖/神鑄創世一律保留；動作＋等級條件 lte/gte/any，**不符＝保留**）、佇列處理（沿用 `G.factory.autoEquip` 更強自動換裝；換下舊裝經 pushConveyor 自然回流）、`newForgeSalvage`（鑲嵌寶石先取回；產出僅企劃表碎料，不產碎片/金幣/精華）、`newForgeCraft`（手動；素材寶石取回；**產物直接入包不走滿載自動分解**，素材已移除故淨長度不增）、`newForgeSmeltOnce`（手動＋自動）、熔爐增刪（上限 10）、`newForgeReturnQueueToConveyor`（佇列退回舊輸送帶，滿載即停不丟失）、`sanitizeNewForge`（遷移淨化）。
+- **`js/main.js`**：`stepGame` 加 `newForgeTick(dt)`（typeof 防衛）。
+- **`js/save.js`**：migrateSave 呼叫 `sanitizeNewForge`（furnaces 夾限/補欄、queue 截斷、forgeMats 只留註冊 key 並補 0）；`newForge.queue` 納入 fixSockets/fixName 修正迴圈。舊存檔靠 mergeDefaults 自動補預設，無需一次性遷移旗標。
+- **`index.html`**：頁籤鈕「🧪 新熔爐」（熔爐右側）＋`#tab-newforge` 面板（導入開關/佇列數/退回按鈕/材料庫存/熔爐清單/添加熔爐/新熔爐紀錄）＋`js/newforge.js` script。
+- **`js/ui.js`**：`UI.dirty.newforge`＋uiTick 惰性渲染＋`renderNewForge`（材料棋格/熔爐卡片三模式切換/拆解 8 品質列「分解/保留＋等級條件＋數字輸入」/鍛造配方列含素材下拉/熔煉產品選單與×1×10；熔爐清單 HTML 比對後才覆寫，避免週期重繪關閉下拉）＋`bindNewForgeEvents` 容器事件委派。
+- **`css/style.css`**：`.nf-*` 樣式（材料格、模式切換、條件輸入、配方列、成本紅綠）。
+- **`js/gm.js`／`GM_command.md`**：新增 `nfmat 材料key|all 數量`（不分大小寫、負數扣除、下限 0）。
+- 文件：`game_formula.md` 新增 §11 新熔爐（測試版）三小節＋目錄。
+- 測試：新增 `tests/new-forge.test.cjs`（17 測試：資料表逐值、擲量、路由開關/滿載回退、拆解判定（條件/上鎖/神鑄創世/神話自選）、拆解產出與寶石取回、佇列處理、鍛造成功/失敗/滿載直入包、熔煉、熔爐上限、存檔遷移、接線靜態檢查）。
+- 多代理對抗式審查（4 維度 7 發現、2 確認）後修正：①背包滿載時「保留」改依 `addToInventory` 回傳值計數（滿載被舊系統分解不再虛增 kept）；②鍛造素材下拉選取持久化到熔爐 state（`fu.craft.sel[配方]`，重繪後還原 selected、鍛造成功清除；sanitize 補舊存檔缺欄），修復「週期重繪清空選取→誤鍛第一件」的競態。
+- 驗證：`npm run build` 97 檔過；專屬測試 19/19；全套 240＝223 過/17 失敗（既有基線，零新增退步）；隔離埠 8124 實測——舊存檔自動遷移（newForge 預設補齊）、實際掉落→佇列→自動拆解→爐渣/碎鐵入帳（舊輸送帶保持 0）、模式切換、熔煉×10 與自動熔煉、鍛造（精良→稀有，等級/部位相同、秘銀 −2）、添加符文熔爐顯示尚未開放、導入開關切換、GM `nfmat all 500` 生效、鍛造選取重繪後保留（state 儲存＋新 DOM 還原）、主控台 0 錯誤。
+
+- 需求：切頁檢視某套裝備時（不需按「確定切換」），側欄屬性面板即顯示該套的 would-be 屬性，方便比較強度。
+- `js/formula.js`：`computeStats(equipmentOverride)` 增加可選裝備套參數（省略＝穿著中 `G.equipment`，原路徑不變）。
+- `js/player.js`：新增 `getViewStats()`（檢視套＝穿著套時回傳 `getStats()`；否則以 `computeStats(viewedEquipment())` 計算＋獨立快取 `_viewStatsCache`）；`markStatsDirty` 同步清兩份快取（洗煉/強化/裝卸檢視套後預覽即時更新）；`setEquipView` 清預覽快取＋標記 header 重繪（切頁立即生效）。
+- `js/ui.js`：`renderHeader` 的 `renderAttrPanel` 改餵 `getViewStats()`（header 其餘區塊維持穿著中）；面板頂端新增 `#attr-preview-note`，檢視非穿著套時顯示「👁 屬性預覽：〈檢視套名〉（尚未穿上，戰鬥仍用〈穿著套名〉）」。
+- `css/style.css`：`.attr-preview-note` 虛線框提示樣式。
+- 邊界：戰鬥／回復／掉落等一切邏輯仍用 `getStats()`（穿著中），切頁完全不影響實際數值；tooltip（含敵種傷害抗性黃字減傷率）同步吃預覽屬性。
+- 測試：新增 `tests/equip-set-preview-stats.test.cjs`（3 測試：覆寫計算、檢視/穿著分離、變動後即時更新）。
+- 驗證：build 95 檔過；全套 221＝204 過/17 失敗（既有基線）；隔離埠實測——檢視非穿著套面板數值即變（155 vs 穿著 422）＋提示正確顯示套名、檢視穿著套提示隱藏、`getStats()` 全程不變、主控台 0 錯誤。
+
+## 變更紀錄：敵種傷害抗性二次改名（普通敵人／菁英／BOSS）
+
+- 依使用者最終命名：`eliteDmgRed`「普通菁英傷害抗性」→**菁英傷害抗性**、`bossDmgRed`「普通BOSS傷害抗性」→**BOSS傷害抗性**（`normalDmgRed`「普通敵人傷害抗性」不變）。
+- 同步範圍：`AFFIX_POOL` name、屬性面板列（👑 菁英傷害抗性／😈 BOSS傷害抗性）、`apply_params.cjs` wKeyByName、參數表（表-詞條池／表-戰力權重 名稱欄、3-戰鬥核心「敵種傷害抗性」列的說明文字）、game_formula.md、測試斷言。
+- 驗證：build 94 檔過；專屬測試 6/6；全套 218＝201 過/17 失敗（既有基線）；round-trip 逐列比對通過；apply_params dry-run 一致；隔離埠實測面板顯示新名稱、頁面無舊名殘留、主控台 0 錯誤。
+- xlsx 換入完成（第二輪）：使用者關閉 Excel 前在表上把「敵種傷害抗性」a/b 調成 1000/0.5——改用「僅改名」最小補丁（rename_xlsx.cjs：sharedStrings/sheet1/sheet2 三檔 8 處字串替換，不動數值/公式/calcChain）直接套在使用者最新檔上，調參完整保留。換入後 round-trip 一致；dry-run 693 參數＝691 一致＋2 筆待套用（即使用者的 a/b 調參，依規則留給使用者跑套用參數.bat 生效）、0 錨點問題。
+
+## 變更紀錄：敵種屬性改名＋9 種詞條升獨特級（下方兩則紀錄中的舊名稱以本則為準；抗性名稱再依上則二次改名）
 
 - 改名（`AFFIX_POOL` name／屬性面板列／參數表 表-詞條池與表-戰力權重 名稱欄／game_formula.md 全同步；內部 key 不變）：
   - `normalDmg`：對普通傷害% → **對普通敵人傷害%**（面板「👤 對普通敵人傷害」）
@@ -11,7 +60,7 @@
 - 獨特級門檻（`minR: 3`，僅獨特含以上裝備出現）：對普通敵人傷害%、對菁英傷害%、對BOSS傷害%、三種敵種傷害抗性、掉寶率%、經驗加成%、金幣加成% 共 9 種（對菁英/對BOSS 原為稀有級、其餘原無門檻）；參數表 表-詞條池 對應 5 列的參數d 同步改「獨特」、4 條新列直接標「獨特」。
 - 測試：enemy-type-damage.test.cjs 更新名稱斷言＋新增獨特級 minR 測試（6 測試全過；全套 218＝201 過/17 失敗＝既有基線）。
 - 驗證：`npm run build` 94 檔過；apply_params dry-run 693 參數一致/0 錨點問題；round-trip 逐列比對通過（含 5 列參數d 變更檢查）；隔離埠 8124 實測——稀有(2)裝備 400 次擲骰 0 洩漏、獨特(3) 9 種詞條全部可出現（金幣/經驗僅飾品部位）、面板 4 列新名稱正確、主控台 0 錯誤。
-- 註：xlsx 仍因 Excel 開啟中而待換入（監看中）；CSV 已為最新（含改名與獨特級）。
+- xlsx 換入完成：Excel 關閉後偵測到檔案被重存（內容比對無實質變更），改以「對最新檔重跑補丁」流程換入；換入後 xlsx→CSV round-trip 一致、apply_params dry-run 無變更無錨點問題。Excel 首次開啟會自動重算並重建 calcChain，屬正常。
 
 ## 變更紀錄：參數表加入敵種傷害屬性公式＋「刪除」標記處理
 

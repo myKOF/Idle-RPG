@@ -205,8 +205,8 @@ var AFFIX_POOL = {
   globalDmgRed: { name: '全局減傷', base: 3, lv: 0.35, pct: false, weight: 9, minR: 4 },
   // 敵種傷害抗性（定值減免）：放出量約為物理防禦（defFlat）的 2 倍；減傷公式 enemyTypeDamageReduction → formula.js §3
   normalDmgRed: { name: '普通敵人傷害抗性', base: 6, lv: 0.35, pct: false, weight: 9, minR: 3 },
-  eliteDmgRed: { name: '普通菁英傷害抗性', base: 6, lv: 0.35, pct: false, weight: 9, minR: 3 },
-  bossDmgRed: { name: '普通BOSS傷害抗性', base: 6, lv: 0.35, pct: false, weight: 9, minR: 3 },
+  eliteDmgRed: { name: '菁英傷害抗性', base: 6, lv: 0.35, pct: false, weight: 9, minR: 3 },
+  bossDmgRed: { name: 'BOSS傷害抗性', base: 6, lv: 0.35, pct: false, weight: 9, minR: 3 },
   aspd: { name: '攻擊速度%', base: 3, lv: 0.012, pct: true, weight: 6 },
   critRate: { name: '暴擊率%', base: 2.5, lv: 0.012, pct: true, weight: 6 },
   critDmg: { name: '暴擊傷害%', base: 8, lv: 0.05, pct: true, weight: 5 },
@@ -405,9 +405,13 @@ var BOSS_LIST = [
 ];
 var TOWER_TRIAL_MAX_FLOOR = 50;
 var TOWER_HELL_MAX_FLOOR = 100;
-var TOWER_MAX_FLOOR = TOWER_HELL_MAX_FLOOR;
+var TOWER_PURGATORY_MAX_FLOOR = 150;
+var TOWER_MAX_FLOOR = TOWER_PURGATORY_MAX_FLOOR;
 var TOWER_HELL_ATK_MULT = 5;
 var TOWER_HELL_HP_MULT = 20;
+// 煉獄之塔相對於地獄之塔的 BOSS 攻擊／生命倍率
+var TOWER_PURGATORY_ATK_MULT = 10;
+var TOWER_PURGATORY_HP_MULT = 10;
 var TOWER_HELL_SOUL_ORIGIN_BASE_RATE = 5;
 var TOWER_HELL_SOUL_ORIGIN_PER_FLOOR = 1;
 var TOWER_TIME_LIMIT = 60;     // 限時 60 秒
@@ -458,6 +462,91 @@ function isFactoryNodeEnabled(node) {
   return node !== 'synth' || SYNTHESIS_ENABLED;
 }
 // 強化成功率公式 upgradeSuccessBase → 集中於 js/formula.js §7
+
+// ---- 新熔爐（測試版；與舊生產線並行，企劃書：熔爐改造）----
+var NEW_FORGE_MAX = 10;            // 熔爐座數上限
+var NEW_FORGE_INTERVAL = 2.0;      // 每座熔爐處理間隔（秒/次）
+var NEW_FORGE_QUEUE_CAP = 20000;   // 導入佇列上限；滿載時新裝備回退舊輸送帶
+var NEW_FORGE_TYPES = {
+  smith: { name: '鍛造熔爐', emoji: '🔥', desc: '專門處理裝備及礦石' },
+  rune:  { name: '符文熔爐', emoji: '🔮', desc: '處理附魔書及寶石', wip: true },
+  magic: { name: '魔法熔爐', emoji: '✨', desc: '處理所有強化、洗煉等高級材料', wip: true }
+};
+// 傳送帶（生產線）：每爐最多 3 條；篩選器自動篩選原材料上帶，由右至左入爐
+var NEW_FORGE_LINES_MAX = 3;          // 每座熔爐傳送帶上限
+var NEW_FORGE_BELT_CAP = 10;          // 每條傳送帶在途批次上限（視覺緩衝）
+var NEW_FORGE_LINE_LOAD_PER_TICK = 5; // 每 tick 每條傳送帶最多自佇列篩選件數
+// 各熔爐類型可選篩選器（wip＝企劃書尚未提供配方，僅顯示不可用）
+var NEW_FORGE_FILTERS = {
+  smith: [
+    { key: 'salvage', name: '拆解裝備' },
+    { key: 'craft',   name: '鍛造裝備' },
+    { key: 'smelt',   name: '熔煉礦石' }
+  ],
+  rune: [
+    { key: 'scroll', name: '製作附魔卷軸', wip: true },
+    { key: 'gem',    name: '製作寶石', wip: true }
+  ],
+  magic: [
+    { key: 'scrap',   name: '製作裝備碎片', wip: true },
+    { key: 'essence', name: '製作附魔精華', wip: true },
+    { key: 'dust',    name: '製作魔塵', wip: true },
+    { key: 'ancient', name: '製作太古精華', wip: true }
+  ]
+};
+// 熔爐大圖（卡片左側）
+var NEW_FORGE_IMAGES = {
+  smith: 'images/Forging_Furnace.png',
+  rune: 'images/Runes_Furnace.png',
+  magic: 'images/Magic_Furnace.png'
+};
+// 15 種礦石/材料註冊表（tier 0＝拆解碎料、tier 1＝熔煉產物）
+var NEW_FORGE_MATERIALS = {
+  slag:           { name: '爐渣',     emoji: '🪨', tier: 0, color: '#9aa5b1' },
+  ironShard:      { name: '碎鐵塊',   emoji: '⚙️', tier: 0, color: '#c8ccd4' },
+  silverShard:    { name: '碎銀',     emoji: '🥈', tier: 0, color: '#e3e6ee' },
+  goldShard:      { name: '碎金塊',   emoji: '🥇', tier: 0, color: '#ffd700' },
+  mithrilShard:   { name: '秘銀碎片', emoji: '🔹', tier: 0, color: '#7dd3fc' },
+  thoriumShard:   { name: '瑟銀碎片', emoji: '🟢', tier: 0, color: '#4ade80' },
+  arcaniteShard:  { name: '奧金碎片', emoji: '🔸', tier: 0, color: '#fb923c' },
+  magisteelShard: { name: '魔鋼碎片', emoji: '🟣', tier: 0, color: '#c084fc' },
+  ironIngot:      { name: '鐵錠',     emoji: '🧱', tier: 1, color: '#c8ccd4' },
+  silverIngot:    { name: '銀錠',     emoji: '⬜', tier: 1, color: '#e3e6ee' },
+  goldIngot:      { name: '金錠',     emoji: '🟨', tier: 1, color: '#ffd700' },
+  mithril:        { name: '秘銀',     emoji: '💠', tier: 1, color: '#7dd3fc' },
+  thorium:        { name: '瑟銀',     emoji: '🟩', tier: 1, color: '#4ade80' },
+  arcanite:       { name: '奧金',     emoji: '🟧', tier: 1, color: '#fb923c' },
+  magisteel:      { name: '魔鋼',     emoji: '🟪', tier: 1, color: '#c084fc' }
+};
+/* 拆解產出表（索引＝裝備品質 0 普通 ~ 7 創世；神鑄創世(8)不入表、一律保留）。
+   數值＝期望件數：整數部分必得、小數部分為額外 1 件的機率（newForgeRollAmount → formula.js §7）。 */
+var NEW_FORGE_SALVAGE_YIELD = [
+  { slag: 1,  ironShard: 0.5, silverShard: 0.1 },
+  { slag: 2,  ironShard: 0.6, silverShard: 0.2, goldShard: 0.1 },
+  { slag: 3,  ironShard: 0.8, silverShard: 0.3, goldShard: 0.25 },
+  { slag: 4,  ironShard: 1,   silverShard: 0.4, goldShard: 0.3,  mithrilShard: 0.1,  thoriumShard: 0.01, arcaniteShard: 0.001 },
+  { slag: 5,  ironShard: 2,   silverShard: 0.6, goldShard: 0.5,  mithrilShard: 0.25, thoriumShard: 0.02, arcaniteShard: 0.002, magisteelShard: 0.0002 },
+  { slag: 7,  ironShard: 3,   silverShard: 1,   goldShard: 0.75, mithrilShard: 0.5,  thoriumShard: 0.2,  arcaniteShard: 0.04,  magisteelShard: 0.01 },
+  { slag: 10, ironShard: 10,  silverShard: 10,  goldShard: 5,    mithrilShard: 3,    thoriumShard: 1,    arcaniteShard: 1 },
+  { slag: 50, ironShard: 20,  silverShard: 20,  goldShard: 10,   mithrilShard: 10,   thoriumShard: 5,    arcaniteShard: 3,     magisteelShard: 1 }
+];
+// 鍛造裝備配方：消耗材料＋任 1 件 inputRarity 品質裝備 → target 品質（等級/部位同素材）
+var NEW_FORGE_CRAFT_RECIPES = [
+  { target: 2, inputRarity: 1, mats: { mithril: 2 } },
+  { target: 3, inputRarity: 2, mats: { mithril: 5 } },
+  { target: 4, inputRarity: 3, mats: { mithril: 10 } },
+  { target: 5, inputRarity: 4, mats: { mithril: 10, thorium: 5 } }
+];
+// 熔煉礦石配方：產品 → 消耗材料（每次產出 1 件）
+var NEW_FORGE_SMELT_RECIPES = {
+  ironIngot:   { slag: 2,  ironShard: 2 },
+  silverIngot: { slag: 2,  silverShard: 2 },
+  goldIngot:   { slag: 2,  goldShard: 2 },
+  mithril:     { slag: 3,  mithrilShard: 2,   ironIngot: 2,  silverIngot: 3 },
+  thorium:     { slag: 4,  thoriumShard: 2,   ironIngot: 2,  silverIngot: 3 },
+  arcanite:    { slag: 5,  arcaniteShard: 2,  goldIngot: 2,  mithril: 2 },
+  magisteel:   { slag: 10, magisteelShard: 2, ironIngot: 10, thorium: 4, arcanite: 4 }
+};
 
 // ---- 寶石 ----
 /* GEM_MAX_LEVEL = 一般系統上限（掉落/商店/合成/轉換/拆解/融合皆以此為限）。
@@ -754,8 +843,8 @@ var STAT_GROUPS = [
         return '在最終傷害階段降低受到的所有傷害' + capNote + '。<br><br><span style="color:#ffd700">目前實際減傷：' + pctStr(reduction) + '</span>';
       }],
       ['👤 普通敵人傷害抗性', function (st) { return statFmt(st.normalDmgRed, null); }, function (st) { return enemyTypeDmgRedDesc(st, 'normalDmgRed', '普通敵人（非菁英、非BOSS）'); }],
-      ['👑 普通菁英傷害抗性', function (st) { return statFmt(st.eliteDmgRed, null); }, function (st) { return enemyTypeDmgRedDesc(st, 'eliteDmgRed', '菁英敵人'); }],
-      ['😈 普通BOSS傷害抗性', function (st) { return statFmt(st.bossDmgRed, null); }, function (st) { return enemyTypeDmgRedDesc(st, 'bossDmgRed', 'BOSS'); }],
+      ['👑 菁英傷害抗性', function (st) { return statFmt(st.eliteDmgRed, null); }, function (st) { return enemyTypeDmgRedDesc(st, 'eliteDmgRed', '菁英敵人'); }],
+      ['😈 BOSS傷害抗性', function (st) { return statFmt(st.bossDmgRed, null); }, function (st) { return enemyTypeDmgRedDesc(st, 'bossDmgRed', 'BOSS'); }],
       ['🧱 格擋率', function (st) { return statFmt(st.blockRate, STAT_CAPS.blockRate, '%'); }, '受到攻擊時，有機率觸發格擋來減輕部分傷害。' + capText(STAT_CAPS.blockRate, '%')],
       ['🧲 格擋減傷', function (st) { return statFmt(blockDmgReduction(st.blockDmgRed), blockDmgRedTotalCap(), '%'); }, function () { return '成功格擋時能減免的傷害比例（' + BLOCK_DMG_RED_BASE + '% 基礎 + 詞條）。' + capText(blockDmgRedTotalCap(), '%'); }],
       ['💨 閃避率', function (st) { return statFmt(st.evasion, STAT_CAPS.evasion, '%'); }, '完全避開敵人攻擊的機率（受敵方命中率影響）。' + capText(STAT_CAPS.evasion, '%')],

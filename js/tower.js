@@ -1,5 +1,5 @@
 'use strict';
-/* ============ BOSS 高塔（試煉之塔／地獄之塔） ============ */
+/* ============ BOSS 高塔（試煉之塔／地獄之塔／煉獄之塔） ============ */
 
 var TOWER = {
   floor: 0,
@@ -26,6 +26,7 @@ function makeBoss(floor) {
   var b = {
     name: '第' + floor + '層・' + bd.name, emoji: bd.emoji, img: bd.img,
     hell: !!bs.hell,
+    purgatory: !!bs.purgatory,
     level: bs.level,
     maxHp: bs.hp, hp: bs.hp,
     atk: bs.atk, def: bs.def, mdef: bs.mdef,
@@ -74,7 +75,8 @@ function startTowerFight(floor) {
   TOWER.bossDmgDealt = 0;
   TOWER.result = null;
   TOWER.showingResult = false;
-  blog('🗼 挑戰' + (TOWER.boss.hell ? '地獄之塔' : '試煉之塔') + '第 ' + floor + ' 層：' + TOWER.boss.name + '（限時 60 秒）', 'info');
+  var towerName = TOWER.boss.purgatory ? '煉獄之塔' : (TOWER.boss.hell ? '地獄之塔' : '試煉之塔');
+  blog('🗼 挑戰' + towerName + '第 ' + floor + ' 層：' + TOWER.boss.name + '（限時 60 秒）', 'info');
   UI.dirty.tower = true; UI.dirty.battle = true;
 }
 

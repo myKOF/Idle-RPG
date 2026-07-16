@@ -83,6 +83,29 @@ mat dust 數量
 
 GM 發放只會增加資源，不會覆蓋原有數量。
 
+### 新熔爐材料（測試版）
+
+```text
+nfmat 材料key 數量
+nfmat all 數量
+```
+
+材料 key（不分大小寫，共 15 種，定義於 `js/data.js` `NEW_FORGE_MATERIALS`）：
+`slag`（爐渣）、`ironShard`（碎鐵塊）、`silverShard`（碎銀）、`goldShard`（碎金塊）、
+`mithrilShard`（秘銀碎片）、`thoriumShard`（瑟銀碎片）、`arcaniteShard`（奧金碎片）、
+`magisteelShard`（魔鋼碎片）、`ironIngot`（鐵錠）、`silverIngot`（銀錠）、`goldIngot`（金錠）、
+`mithril`（秘銀）、`thorium`（瑟銀）、`arcanite`（奧金）、`magisteel`（魔鋼）。
+
+範例：
+
+```text
+nfmat mithril 50
+nfmat all 500
+nfmat slag -100
+```
+
+`all` 會對全部 15 種材料一起加減；支援負數扣除，扣除後最低為 0。
+
 ## 4. 寶石
 
 ### 指令格式
@@ -304,6 +327,34 @@ save
 3. 開著的遊戲頁面（本機）約 2 秒內會**自動重新整理**，新數值即生效，不必手動 F5 或按任何按鈕。
 
 （舊的 `reload game_parameters` GM 文字指令、左上角按鈕與套用伺服器皆已移除，改用此單一雙擊流程。詳見 `tools/參數表使用說明.md`。）
+
+## 10.6 高塔一鍵通關
+
+以下指令會把高塔最高通關層推進到指定塔區的最後一層，方便測試後續內容；不會補發歷層通關獎勵。若目前正在高塔戰鬥中，指令會拒絕執行。
+
+```text
+tower_trial_clear
+tower_hell_clear
+tower_purgatory_clear
+```
+
+### 清除指定塔區的已挑戰標記
+
+這三個指令會重設指定塔區的通關進度，但保留前一塔區的進度：
+
+```text
+tower_trial_reset
+tower_hell_reset
+tower_purgatory_reset
+```
+
+### 指定下一個可挑戰的高塔樓層
+
+```text
+tower_jump 樓層
+```
+
+例如 `tower_jump 101` 會把第 1～100 層視為已挑戰成功，下一個可挑戰樓層為第 101 層。樓層限制為 `1`～`150`。
 
 ## 11. 常用測試流程範例
 

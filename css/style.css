@@ -419,6 +419,18 @@ body {
   gap: 10px;
 }
 
+/* 屬性面板「檢視套預覽」提示（檢視非穿著中的裝備套時顯示） */
+.attr-preview-note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--accent);
+  border: 1px dashed var(--accent);
+  border-radius: 6px;
+  padding: 4px 8px;
+  text-align: center;
+}
+.attr-preview-note[hidden] { display: none; }
+
 .stat-row {
   display: flex;
   justify-content: space-between;
@@ -2770,6 +2782,12 @@ textarea#save-io {
 .tower-section-title.hell,
 .tower-floor.hell .tf-name {
   color: #ffd700;
+}
+
+.tower-section-title.purgatory,
+.tower-floor.purgatory .tf-name,
+.purgatory-boss {
+  color: #ff8c00;
 }
 
 .tf-emoji {
@@ -5209,4 +5227,216 @@ textarea#save-io {
   top: 6px;
   right: 6px;
   z-index: 10;
+}
+
+/* ============ 新熔爐（測試版 V2：熔爐大圖＋傳送帶）分頁 ============ */
+.nf-top-panel .nf-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 6px 0;
+}
+
+.nf-mats-title {
+  margin-top: 10px;
+}
+
+.nf-mats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.nf-mat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+.nf-mat b {
+  margin-left: auto;
+}
+
+.nf-furnace .node-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nf-furnace .nf-remove {
+  margin-left: auto;
+}
+
+/* 熔爐卡片：左大圖＋右傳送帶清單 */
+.nf-furnace-body {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.nf-furnace-left {
+  flex: 0 0 148px;
+  text-align: center;
+}
+
+.nf-furnace-img {
+  width: 100%;
+  max-width: 148px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg2);
+  display: block;
+}
+
+.nf-furnace-caption {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.nf-lines {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 單條傳送帶 */
+.nf-line {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.nf-line-off {
+  opacity: 0.55;
+}
+
+.nf-line-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nf-line-no {
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.nf-line-head .nf-line-remove {
+  margin-left: auto;
+}
+
+.nf-line-sum {
+  font-size: 12px;
+  margin: 4px 0;
+}
+
+.nf-line-cfg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 4px 0;
+  font-size: 13px;
+}
+
+.nf-line-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+/* 傳送帶：爐口在左，批次由右至左流入（沿用原版 conv-chip） */
+.nf-belt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 4px 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.nf-belt-mouth {
+  font-size: 18px;
+  flex: 0 0 auto;
+}
+
+.nf-belt-items {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.nf-belt-dir {
+  font-size: 11px;
+  flex: 0 0 auto;
+}
+
+.nf-belt-empty {
+  font-size: 12px;
+}
+
+.nf-line-add {
+  margin-top: 2px;
+}
+
+.nf-row .rar-tag {
+  width: 64px;
+}
+
+.nf-cond-lv {
+  width: 72px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 2px 6px;
+}
+
+.nf-cond-lv:disabled {
+  opacity: 0.4;
+}
+
+.nf-cost-ok {
+  color: var(--good, #4ade80);
+}
+
+.nf-cost-lack {
+  color: var(--bad, #f87171);
+}
+
+.nf-add-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 6px 0;
+}
+
+/* 窄螢幕：大圖移到上方 */
+@media (max-width: 720px) {
+  .nf-furnace-body {
+    flex-direction: column;
+  }
+
+  .nf-furnace-left {
+    flex: none;
+    align-self: center;
+  }
 }

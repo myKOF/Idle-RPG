@@ -44,6 +44,7 @@ test('ui.js 屬性面板接上「目前技能增益」清單', () => {
   assert.match(ui, /id="active-buffs"/);
   assert.match(ui, /目前技能增益/);
   assert.match(ui, /activePlayerBuffs\(currentCombatPlayerEntity\(\)\)/);
+  assert.ok(ui.indexOf('id="s-dps"') < ui.indexOf('id="active-buffs"'), '目前技能增益應顯示在實時 DPS 下方');
   // 高塔優先取 TOWER.player、否則 FIELD.player
   assert.match(ui, /G\.tower\.active[\s\S]*?TOWER\.player/);
 });

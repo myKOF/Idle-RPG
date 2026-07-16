@@ -214,8 +214,11 @@ scalar('data', 'DUST_BOSS_CAP', '4-高塔BOSS', '高塔 BOSS 魔塵', 0);
 // 高塔
 scalar('data', 'TOWER_TRIAL_MAX_FLOOR', '4-高塔BOSS', '試煉之塔範圍', 1);
 scalar('data', 'TOWER_HELL_MAX_FLOOR', '4-高塔BOSS', '地獄之塔範圍', 1);
+scalar('data', 'TOWER_PURGATORY_MAX_FLOOR', '4-高塔BOSS', '煉獄之塔範圍', 1);
 scalar('data', 'TOWER_HELL_ATK_MULT', '4-高塔BOSS', '攻擊', 1);
 scalar('data', 'TOWER_HELL_HP_MULT', '4-高塔BOSS', '生命', 1);
+scalar('data', 'TOWER_PURGATORY_ATK_MULT', '4-高塔BOSS', '煉獄之塔攻擊倍率', 1);
+scalar('data', 'TOWER_PURGATORY_HP_MULT', '4-高塔BOSS', '煉獄之塔生命倍率', 1);
 scalar('data', 'TOWER_HELL_SOUL_ORIGIN_BASE_RATE', '4-高塔BOSS', '魔魂本源(地獄之塔)', 0);
 scalar('data', 'TOWER_HELL_SOUL_ORIGIN_PER_FLOOR', '4-高塔BOSS', '魔魂本源(地獄之塔)', 1);
 scalar('data', 'TOWER_TIME_LIMIT', '4-高塔BOSS', '戰鬥規則', 0);
@@ -375,7 +378,7 @@ arrayContent('formula', 'ESSENCE_SALVAGE_CHANCE_BY_RARITY',
     '法力值': 'mpFlat', '法力恢復/秒': 'mpRegen', '力量': 'str', '敏捷': 'agi', '智力': 'int', '耐力': 'vit',
     '攻擊速度%': 'aspd', '暴擊率%': 'critRate', '暴擊傷害%': 'critDmg', '物理穿透%': 'pPen', '魔法穿透%': 'mPen', '命中率%': 'hit', '冷卻縮減%': 'cdr', '施法速度%': 'castSpeed',
     '吸血%': 'lifesteal', '吸魔%': 'manaSteal', '對菁英傷害%': 'eliteDmg', '對BOSS傷害%': 'bossDmg', '對普通敵人傷害%': 'normalDmg', '範圍傷害%': 'aoeDmg', '全局減傷': 'globalDmgRed',
-    '普通敵人傷害抗性': 'normalDmgRed', '普通菁英傷害抗性': 'eliteDmgRed', '普通BOSS傷害抗性': 'bossDmgRed',
+    '普通敵人傷害抗性': 'normalDmgRed', '菁英傷害抗性': 'eliteDmgRed', 'BOSS傷害抗性': 'bossDmgRed',
     '格擋率%': 'blockRate', '格擋減傷%': 'blockDmgRed', '閃避率%': 'evasion', '韌性%': 'tenacity', '護盾效率%': 'shieldEff', '物理抗性%': 'pRes', '魔法抗性%': 'mRes',
     '火焰抗性%': 'resFire', '冰霜抗性%': 'resIce', '雷電抗性%': 'resLightning', '劇毒抗性%': 'resPoison', '聖光抗性%': 'resLight', '暗影抗性%': 'resDark',
     '控制時間縮減%': 'ccRed', '移動速度%': 'moveSpeed', '掉寶率%': 'loot', '經驗加成%': 'xpBonus', '金幣加成%': 'goldBonus',

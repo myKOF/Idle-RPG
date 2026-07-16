@@ -96,6 +96,9 @@ function trimFactoryParts() {
 
 /* ---- 輸送帶 ---- */
 function pushConveyor(item) {
+  // 新熔爐（測試版）路由切換：「導入新裝備」開啟時新掉落改流入新熔爐佇列（newforge.js）；
+  // 關閉或佇列滿載時走以下原有流程，舊機制不變。
+  if (typeof newForgeTryIntake === 'function' && newForgeTryIntake(item)) return true;
   var f = G.factory;
   if (f.conveyor.length >= conveyorCap()) {
     flog('⚠️ 輸送帶已達 ' + conveyorCap() + ' 件上限，新裝備已丟棄', 'warn');

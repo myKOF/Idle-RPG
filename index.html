@@ -82,6 +82,7 @@
       <nav id="tabs">
         <button class="tab-btn active" data-tab="equip">🎒 裝備</button>
         <button class="tab-btn" data-tab="factory">🏭 熔爐</button>
+        <button class="tab-btn" data-tab="newforge">🧪 新熔爐</button>
         <button class="tab-btn" data-tab="gems">💎 寶石</button>
         <button class="tab-btn" data-tab="skills">🧠 技能</button>
         <button class="tab-btn" data-tab="forge" style="display:none">🔯 神鑄<span id="forge-run-ind" class="forge-run-ind" style="display:none"></span></button>
@@ -326,6 +327,36 @@
           <div id="factory-log" class="log"></div>
         </section>
 
+        <!-- ============ 新熔爐（測試版） ============ -->
+        <section id="tab-newforge" class="tab">
+          <div class="panel nf-top-panel">
+            <div class="sec-title">🧪 新熔爐 <span class="node-badge">測試版</span></div>
+            <div class="nf-controls">
+              <label class="chk"><input type="checkbox" id="nf-intake"> 導入新獲得的裝備</label>
+              <span class="dim-text">佇列 <b id="nf-queue-count">0</b> 件</span>
+              <button class="btn sm" id="nf-return-queue">佇列退回舊輸送帶</button>
+            </div>
+            <div class="hint">開啟導入後，新掉落的裝備改流入新熔爐佇列，由下方各熔爐的傳送帶依篩選器自動處理（物品由右至左流入熔爐）；關閉即恢復舊輸送帶流程。舊熔爐機制完全不受影響。</div>
+            <div class="sec-title nf-mats-title">📦 材料庫存</div>
+            <div id="nf-mats" class="nf-mats"></div>
+          </div>
+
+          <div id="nf-furnaces"></div>
+
+          <div class="panel">
+            <div class="sec-title">➕ 添加熔爐 <span id="nf-count" class="dim-text"></span></div>
+            <div class="nf-add-row">
+              <button class="btn sm" data-nf-add="smith">🔥 鍛造熔爐</button>
+              <button class="btn sm" data-nf-add="rune">🔮 符文熔爐</button>
+              <button class="btn sm" data-nf-add="magic">✨ 魔法熔爐</button>
+            </div>
+            <div class="hint">鍛造熔爐：拆解裝備／鍛造裝備／熔煉礦石。符文熔爐（製作附魔卷軸、製作寶石）與魔法熔爐（製作裝備碎片、附魔精華、魔塵、太古精華）篩選器尚未開放。最多 10 座，每座最多 3 條傳送帶。</div>
+          </div>
+
+          <div class="log-title">新熔爐紀錄</div>
+          <div id="newforge-log" class="log"></div>
+        </section>
+
         <!-- ============ 神鑄 ============ -->
         <section id="tab-forge" class="tab">
           <div class="panel forge-panel">
@@ -406,7 +437,7 @@
 
           <div class="panel" style="margin-bottom:12px">
             <div class="sec-title">🔄 寶石轉換</div>
-            <div class="hint">把九宮格中的寶石一次性轉換為右側選擇的種類（<b>同階轉換</b>、數量不變）。每格放一種「同種類同等級」寶石、每格上限 100
+            <div class="hint">把九宮格中的寶石一次性轉換為右側選擇的種類（<b>同階轉換</b>、數量不變）。每格放一種「同種類同等級」寶石、每格上限 1000
               顆；點下方庫存寶石放入（一次放滿可放數量），點格子取出。<b>融合寶石無法轉換</b>。</div>
             <div class="gconv-layout">
               <div id="gconv-grid" class="gconv-grid"></div>
@@ -799,6 +830,7 @@
   <script src="js/combat.js"></script>
   <script src="js/tower.js"></script>
   <script src="js/factory.js"></script>
+  <script src="js/newforge.js"></script>
   <script src="js/forge.js"></script>
   <script src="js/save.js"></script>
   <script src="js/ui.js"></script>

@@ -74,7 +74,9 @@ function affixResElem(key) {
   return e.charAt(0).toLowerCase() + e.slice(1); // fire / ice / lightning / poison / light / dark
 }
 
-function computeStats() {
+function computeStats(equipmentOverride) {
+  // equipmentOverride：計算指定裝備套的屬性（屬性面板預覽「檢視中」那套用）；省略＝穿著中 G.equipment。
+  var equipment = equipmentOverride || G.equipment;
   var p = G.player;
   var prim = basePrimaryFor(p.level);
   // 聚合桶（詞條 key 與桶名一致；特例：aspd → aspdPct、resX → resist）
@@ -97,7 +99,7 @@ function computeStats() {
   var socketed = []; // 鑲嵌的寶石（gemEff 需在詞條聚合完成後才知道，先蒐集）
 
   SLOT_LIST.forEach(function (slot) {
-    var it = G.equipment[slot];
+    var it = equipment[slot];
     if (!it) return;
     if (it.sockets) {
       it.sockets.forEach(function (g) { if (g && (g.fused || GEM_TYPES[g.type])) socketed.push(g); });
@@ -305,8 +307,8 @@ function globalDamageMultiplier(total) {
    減傷率 = 抗性值總合 / (抗性值總合 + a + b × 攻擊者等級)，a/b 與防禦減傷曲線同基準。
    於 resolveHit 全局減傷之後、最低傷害之前的最末端套用；
    依攻擊者敵種（普通/菁英/BOSS）選用防守方對應的抗性總合。 */
-var ENEMY_TYPE_DMG_RED_A = 60;  // 常數 a
-var ENEMY_TYPE_DMG_RED_B = 8;   // 攻擊者每級係數 b
+var ENEMY_TYPE_DMG_RED_A = 100;  // 常數 a
+var ENEMY_TYPE_DMG_RED_B = 0.25;   // 攻擊者每級係數 b
 function enemyTypeDamageReduction(total, attackerLevel) {
   total = Number(total) || 0;
   if (total <= 0) return 0;
@@ -535,10 +537,15 @@ function monsterStatsFor(stage, elite) {
 // 菁英出現規則：階段為 10 的倍數
 function isEliteStage(stage) { return stage % 10 === 0; }
 
-// 高塔分區：1~50 試煉之塔、51~100 地獄之塔，100 層後尚未開放。
+// 高塔分區：1~50 試煉之塔、51~100 地獄之塔、101~150 煉獄之塔。
 function isHellTowerFloor(floor) {
   floor = Math.floor(Number(floor) || 0);
   return floor > TOWER_TRIAL_MAX_FLOOR && floor <= TOWER_HELL_MAX_FLOOR;
+}
+
+function isPurgatoryTowerFloor(floor) {
+  floor = Math.floor(Number(floor) || 0);
+  return floor > TOWER_HELL_MAX_FLOOR && floor <= TOWER_PURGATORY_MAX_FLOOR;
 }
 
 // 普通關卡敵人數量：1 隻 78%、2 隻 15%、3 隻 5%、4 隻 2%。
@@ -554,12 +561,16 @@ function bossStatsFor(floor) {
   var refStage = 4 + floor * 5;
   var base = monsterStatsFor(refStage, false);
   var hell = isHellTowerFloor(floor);
-  var hpMult = hell ? TOWER_HELL_HP_MULT : 1;
-  var atkMult = hell ? TOWER_HELL_ATK_MULT : 1;
+  var purgatory = isPurgatoryTowerFloor(floor);
+  var hpMult = purgatory ? TOWER_HELL_HP_MULT * TOWER_PURGATORY_HP_MULT
+    : (hell ? TOWER_HELL_HP_MULT : 1);
+  var atkMult = purgatory ? TOWER_HELL_ATK_MULT * TOWER_PURGATORY_ATK_MULT
+    : (hell ? TOWER_HELL_ATK_MULT : 1);
   return {
     refStage: refStage,
     level: refStage + 3,
     hell: hell,
+    purgatory: purgatory,
     hp: base.hp * 20 * hpMult,
     atk: base.atk * 3 * atkMult,
     def: base.def * 10,
@@ -608,6 +619,10 @@ function rollDropCount(pct) {
   var n = Math.floor(pct / 100);
   if (chance(pct - n * 100)) n++;
   return n;
+}
+// 新熔爐拆解擲量：期望件數 v → 實得件數（整數部分必得、小數部分為額外 1 件的機率）
+function newForgeRollAmount(v) {
+  return rollDropCount((Number(v) || 0) * 100);
 }
 
 /* ---- 稀有度擲骰（非掉落表路徑：合成產物等用）----
@@ -996,7 +1011,7 @@ function enchantCapFor(it) {
    合成鏈：2 顆同種同級 → 1 顆同種下一級（消耗金幣 FUSE_GOLD_COST[素材等級]），
    故 1 顆 N 級寶石的合成總成本 = 2^(N-1) 顆 1 級（5 級 = 16 顆）。 */
 var GEM_CONVERT_SLOTS = 9;     // 寶石轉換九宮格格數
-var GEM_CONVERT_STACK = 100;    // 每格同種同級寶石上限
+var GEM_CONVERT_STACK = 1000;   // 每格同種同級寶石上限
 var GEM_DISMANTLE_KEEP = 0.7;  // 拆解保留比例（損失 30%）
 
 // 1 顆 lv 級寶石換算多少顆 1 級寶石

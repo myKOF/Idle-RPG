@@ -400,6 +400,8 @@ function migrateSave(data) {
   }
   // 合成節點暫停期間，即使舊存檔曾開啟也不可重新啟動。
   if (data.factory && data.factory.synth) data.factory.synth.enabled = false;
+  // 新熔爐（測試版）：熔爐清單/佇列/材料計數淨化（newforge.js；未載入時跳過以相容部分測試環境）
+  if (typeof sanitizeNewForge === 'function') sanitizeNewForge(data);
   // 舊版寶石（{1..5: 數量}）→ 轉換為隨機種類
   var gemTypeKeys = Object.keys(GEM_TYPES);
   for (var lv = 1; lv <= GEM_MAX_LEVEL; lv++) {
@@ -482,6 +484,8 @@ function migrateSave(data) {
   data.inventory.forEach(fixSockets);
   data.factory.conveyor.forEach(fixSockets);
   data.factory.synthBuffer.forEach(fixSockets);
+  // 新熔爐：導入佇列＋各傳送帶在途裝備
+  (typeof newForgeAllQueuedItems === 'function' ? newForgeAllQueuedItems(data) : ((data.newForge && data.newForge.queue) || [])).forEach(fixSockets);
   // 神鑄槽位內的裝備一併遷移（寶石槽位項目 kind:'gem' 無 sockets/name，跳過）
   ((data.forge && data.forge.slots) || []).forEach(function (it) { if (it && it.kind !== 'gem') fixSockets(it); });
 
@@ -497,6 +501,7 @@ function migrateSave(data) {
   data.inventory.forEach(fixName);
   data.factory.conveyor.forEach(fixName);
   data.factory.synthBuffer.forEach(fixName);
+  (typeof newForgeAllQueuedItems === 'function' ? newForgeAllQueuedItems(data) : ((data.newForge && data.newForge.queue) || [])).forEach(fixName);
   ((data.forge && data.forge.slots) || []).forEach(function (it) { if (it && it.kind !== 'gem') fixName(it); });
 
   return data;

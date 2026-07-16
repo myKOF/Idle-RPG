@@ -16,6 +16,32 @@ function equipSetLabel(i) {
   return n || equipSetName(i);
 }
 
+// 新熔爐：建立一條預設傳送帶（生產線）。拆解品質預設依企劃示意：普通~傳說＝分解、
+// 神話/創世＝保留（神鑄創世不在企劃表，一律保留）；等級條件預設「不限」。
+function newForgeDefaultLine(ftype, filterKey) {
+  var actions = [], conds = [];
+  for (var r = 0; r < RARITIES.length; r++) {
+    actions.push(r <= 5 ? 'salvage' : 'keep');
+    conds.push({ op: 'any', lv: 200 });
+  }
+  var filters = NEW_FORGE_FILTERS[ftype] || NEW_FORGE_FILTERS.smith;
+  var valid = filters.some(function (f) { return f.key === filterKey; });
+  return {
+    id: uid(),                       // 穩定識別（UI 展開狀態等以此為鍵，不隨陣列索引位移）
+    filter: valid ? filterKey : filters[0].key,
+    enabled: true,
+    salvage: { actions: actions, conds: conds },
+    craft: { recipe: 0 },            // 鍛造配方索引（NEW_FORGE_CRAFT_RECIPES）
+    smelt: { product: 'ironIngot' },
+    belt: [],                        // 在途批次：{kind:'salv'|'craft', item, recipe?} | {kind:'smelt', product}
+    timer: 0
+  };
+}
+function newForgeDefaultFurnace(id, ftype) {
+  var t = NEW_FORGE_TYPES[ftype] ? ftype : 'smith';
+  return { id: id, ftype: t, lines: [newForgeDefaultLine(t)] };
+}
+
 function newGameState() {
   // 三套裝備；equipment 永遠指向「使用中」那套（equipActive）以維持既有屬性/戰鬥/存檔行為
   var equipmentSets = [];
@@ -25,6 +51,8 @@ function newGameState() {
   for (var bk in ENCHANTS) books[bk] = 0;
   var gems = {};
   for (var gt in GEM_TYPES) gems[gt] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  var forgeMats = {};
+  for (var fm in NEW_FORGE_MATERIALS) forgeMats[fm] = 0;
   return {
     version: 1,
     runId: 1,           // 第幾局（重新開局 +1；每局的自動存檔各自獨立，舊存檔以 mergeDefaults 補 1）
@@ -37,6 +65,7 @@ function newGameState() {
       reincarnationTalentPoints: 0,
       gold: 50, scrap: 0, essence: 0, ancientEssence: 0, soulOrigin: 0,
       dust: 0,                // 魔塵（神鑄材料）
+      forgeMats: forgeMats,   // 新熔爐 15 種礦石/材料計數（key → 數量）
       gems: gems,
       fusedGems: [],          // 融合寶石（雙屬性，個別實體）
       gemShop: { level: 1, items: [], refreshCount: 0, hourStart: Date.now() },
@@ -77,6 +106,13 @@ function newGameState() {
       procTimer: 0, enchTimer: 0, upTimer: 0,
       stats: { salvaged: 0, extracted: 0, synthesized: 0, enchanted: 0, upgraded: 0, upgradeFailed: 0, mutated: 0 }
     },
+    newForge: {   // 新熔爐（測試版）：導入開關 / 待處理佇列 / 熔爐清單（最多 NEW_FORGE_MAX 座）
+      intake: true,
+      queue: [],
+      furnaces: [newForgeDefaultFurnace(1, 'smith')],
+      nextId: 2,
+      stats: { salvaged: 0, kept: 0, crafted: 0, smelted: 0 }
+    },
     tower: { highest: 0, active: false },
     forge: {  // 神鑄系統：六芒星槽位 / 六格魔塵符位 / 自動魔塵 / 自動鑄造 / 等待狀態 / 上次產物 / 法陣紀錄
       slots: [null, null, null, null, null, null],
@@ -94,11 +130,21 @@ function newGameState() {
    計算公式本體（computeStats、affixResElem）→ js/formula.js §2；
    此處僅保留快取機制。 */
 var _statsCache = null;
-function markStatsDirty() { _statsCache = null; }
+var _viewStatsCache = null; // 「檢視中」裝備套的預覽屬性快取（僅屬性面板顯示用）
+function markStatsDirty() { _statsCache = null; _viewStatsCache = null; }
 
 function getStats() {
   if (!_statsCache) _statsCache = computeStats();
   return _statsCache;
+}
+
+/* 屬性面板顯示用：檢視中裝備套的屬性預覽。
+   檢視套＝穿著套時即為 getStats()；否則以檢視套計算 would-be 屬性。
+   戰鬥／回復／掉落等一切邏輯仍使用 getStats()（穿著中那套），不受切頁影響。 */
+function getViewStats() {
+  if (typeof isViewingActiveSet !== 'function' || isViewingActiveSet()) return getStats();
+  if (!_viewStatsCache) _viewStatsCache = computeStats(viewedEquipment());
+  return _viewStatsCache;
 }
 
 /* ---- 經驗 / 升級 ---- */
@@ -173,12 +219,14 @@ function equipmentSetAt(i) {
 function activeEquipment() { return equipmentSetAt(G.equipActive || 0); }
 function viewedEquipment() { return equipmentSetAt(typeof G.equipView === 'number' ? G.equipView : (G.equipActive || 0)); }
 function isViewingActiveSet() { return (G.equipView || 0) === (G.equipActive || 0); }
-// 面板檢視切頁（純 UI，不換穿、不重算屬性）
+// 面板檢視切頁（純 UI，不換穿；屬性面板改顯示檢視套的預覽屬性）
 function setEquipView(idx) {
   if (!Array.isArray(G.equipmentSets)) return;
   G.equipView = clamp(Math.floor(Number(idx) || 0), 0, G.equipmentSets.length - 1);
+  _viewStatsCache = null;           // 換檢視目標 → 重算預覽
   UI.sel = null;
   UI.dirty.equip = true;
+  UI.dirty.header = true;           // 屬性面板立即改顯檢視套
 }
 // 確定切換：把使用中那套換成目前檢視那套 → 重算屬性
 function switchToEquipSet(idx) {

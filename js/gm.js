@@ -76,6 +76,48 @@
     return '增加自動機組零件 T' + tier + (node ? '（' + node + '）' : '') + ' x' + count;
   }
 
+  function gmTowerDirty() {
+    if (typeof UI === 'undefined' || !UI.dirty) return;
+    UI.dirty.tower = true;
+    UI.dirty.header = true;
+  }
+
+  function gmClearTowerTo(maxFloor, towerName) {
+    if (!G.tower) return { ok: false, message: '目前找不到高塔進度資料。' };
+    if (G.tower.active) return { ok: false, message: '高塔戰鬥進行中，請先結束目前戰鬥。' };
+    var before = Number(G.tower.highest) || 0;
+    G.tower.highest = Math.max(before, maxFloor);
+    gmTowerDirty();
+    return {
+      ok: true,
+      message: towerName + '已通關至第 ' + G.tower.highest + ' 層（GM 不補發通關獎勵）'
+    };
+  }
+
+  function gmResetTowerFrom(startFloor, towerName) {
+    if (!G.tower) return { ok: false, message: '目前找不到高塔進度資料。' };
+    if (G.tower.active) return { ok: false, message: '高塔戰鬥進行中，請先結束目前戰鬥。' };
+    var before = Number(G.tower.highest) || 0;
+    G.tower.highest = Math.min(before, startFloor - 1);
+    gmTowerDirty();
+    return {
+      ok: true,
+      message: '已清除' + towerName + '的已挑戰標記，目前最高通關第 ' + G.tower.highest + ' 層'
+    };
+  }
+
+  function gmJumpTowerTo(rawFloor) {
+    var floor = gmNumber(rawFloor, 1, TOWER_MAX_FLOOR);
+    if (floor === null) {
+      return { ok: false, message: '格式：tower_jump 樓層（1~' + TOWER_MAX_FLOOR + '）' };
+    }
+    if (!G.tower) return { ok: false, message: '目前找不到高塔進度資料。' };
+    if (G.tower.active) return { ok: false, message: '高塔戰鬥進行中，請先結束目前戰鬥。' };
+    G.tower.highest = floor - 1;
+    gmTowerDirty();
+    return { ok: true, message: '已跳至高塔第 ' + floor + ' 層，之前的樓層視為已挑戰成功' };
+  }
+
   function executeGMCommand(raw) {
     if (!isGMHost()) return { ok: false, message: 'GM 指令僅能在本機開發環境使用。' };
     var text = String(raw || '').trim();
@@ -98,6 +140,23 @@
       amount = gmSignedAmount(args[1], 1000000000000);
       if (amount === null) return { ok: false, message: '格式：mat 材料 數量（可為正負整數）' };
       return { ok: true, message: gmAddCurrency(key, amount) };
+    }
+    if (command === 'nfmat') {
+      // 新熔爐材料（js/data.js NEW_FORGE_MATERIALS）；key 不分大小寫，all＝全部材料一起加
+      var nfRaw = String(args[0] || '').toLowerCase();
+      amount = gmSignedAmount(args[1], 1000000000000);
+      if (amount === null) return { ok: false, message: '格式：nfmat 材料key|all 數量（可為正負整數）' };
+      if (!G.player.forgeMats) G.player.forgeMats = {};
+      var nfKeys = Object.keys(NEW_FORGE_MATERIALS).filter(function (k) {
+        return nfRaw === 'all' || k.toLowerCase() === nfRaw;
+      });
+      if (!nfKeys.length) return { ok: false, message: '未知材料：' + nfRaw + '（可用：all、' + Object.keys(NEW_FORGE_MATERIALS).join('、') + '）' };
+      nfKeys.forEach(function (k) {
+        G.player.forgeMats[k] = Math.max(0, (Number(G.player.forgeMats[k]) || 0) + amount);
+      });
+      gmDirty();
+      UI.dirty.newforge = true;
+      return { ok: true, message: (amount >= 0 ? '增加' : '扣除') + ' 新熔爐材料 ' + (nfRaw === 'all' ? '全部 15 種' : NEW_FORGE_MATERIALS[nfKeys[0]].name) + ' x' + Math.abs(amount).toLocaleString() };
     }
     if (command === 'gem') {
       type = String(args[0] || '').toLowerCase();
@@ -133,6 +192,27 @@
       if (node && ['salvage', 'synth'].indexOf(node) < 0) return { ok: false, message: '節點只能是 salvage 或 synth' };
       result = gmGivePart(level, node, count);
       return { ok: result.indexOf('此節點目前關閉') !== 0, message: result };
+    }
+    if (command === 'tower_trial_clear') {
+      return gmClearTowerTo(TOWER_TRIAL_MAX_FLOOR, '試煉之塔');
+    }
+    if (command === 'tower_hell_clear') {
+      return gmClearTowerTo(TOWER_HELL_MAX_FLOOR, '地獄之塔');
+    }
+    if (command === 'tower_purgatory_clear') {
+      return gmClearTowerTo(TOWER_PURGATORY_MAX_FLOOR, '煉獄之塔');
+    }
+    if (command === 'tower_trial_reset') {
+      return gmResetTowerFrom(1, '試煉之塔');
+    }
+    if (command === 'tower_hell_reset') {
+      return gmResetTowerFrom(TOWER_TRIAL_MAX_FLOOR + 1, '地獄之塔');
+    }
+    if (command === 'tower_purgatory_reset') {
+      return gmResetTowerFrom(TOWER_HELL_MAX_FLOOR + 1, '煉獄之塔');
+    }
+    if (command === 'tower_jump') {
+      return gmJumpTowerTo(args[0]);
     }
     if (command === 'level' || command === 'lv') {
       level = gmNumber(args[0], 1, 100000);

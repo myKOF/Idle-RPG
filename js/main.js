@@ -15,6 +15,7 @@ function stepGame(dt) {
     towerTick(dt);
   }
   factoryTick(dt);
+  if (typeof newForgeTick === 'function') newForgeTick(dt);
   _autosaveTimer += dt;
   if (_autosaveTimer >= 15) { _autosaveTimer = 0; saveGame(); }
   _folderAutosaveTimer += dt;

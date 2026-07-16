@@ -1,5 +1,84 @@
 # PLAN.md — 開發計畫
 
+## 當前任務：新熔爐改為本地服限定（外服沿用舊熔爐）
+
+### 需求
+- 新熔爐只在**本地服**開放；**外服**維持舊版熔爐，裝備引導切回舊輸送帶，外部能正常運行。
+
+### 設計
+- **主機判定** `newForgeHostAvailable()`（newforge.js）：與 GM 同一安全邊界——只認 hostname `localhost / 127.0.0.1 / ::1`，不依賴可被覆寫的前端旗標。
+- **三道閘**：
+  1. `newForgeTryIntake` 非本地一律回 false → `pushConveyor` 走舊路徑（裝備引導切回舊版）。
+  2. `newForgeTick` 非本地直接 return（傳送帶全停）。
+  3. 頁籤按鈕 `index.html` 預設 `display:none`，`initUI` 於本地服顯示（仿神鑄頁籤顯隱模式）。
+- **滯留資產歸還**（sanitizeNewForge 末端，非本地才執行）：佇列與各傳送帶在途**裝備**→ 舊輸送帶（`data.factory.conveyor`）、在途**材料批次**→ 退回 `forgeMats`；熔爐配置/材料庫存/統計保留在存檔，回本地服自動恢復。
+- 存檔結構不變；純資料層轉移，不動舊熔爐程式。
+
+### 微型任務
+1. [ ] 測試：外服 intake 拒收/ tick 停用/滯留歸還；本地服行為不變；頁籤顯隱接線。
+2. [ ] newforge.js 閘門＋歸還；index.html/ui.js 頁籤顯隱。
+3. [ ] build＋全套測試＋隔離埠實測（本地）＋模擬外服驗證。
+4. [ ] game_formula.md／PATCH.md／本檔同步。
+
+## 當前任務：新熔爐 V2——熔爐大圖＋每爐最多三條傳送帶（企劃書：熔爐改造V2.xlsx）
+
+### 需求（相對 V1 的變更）
+1. 每個熔爐卡片**左方顯示熔爐大圖**：鍛造=images/Forging_Furnace.png、符文=Runes_Furnace.png、魔法=Magic_Furnace.png。
+2. **每爐最多 3 條傳送帶（生產線）**：每條傳送帶各自設定篩選器後，自動篩選相應原材料放入輸送帶（例：熔煉金錠→爐渣×2＋碎金塊×2 足夠時自動送帶）；輸送帶與原版一致，物品由右至左流入熔爐後消失。
+3. 各熔爐可選篩選器：鍛造＝拆解裝備/鍛造裝備/熔煉礦石；符文＝製作附魔卷軸/製作寶石；魔法＝製作裝備碎片/附魔精華/魔塵/太古精華（符文/魔法企劃書仍未給配方→顯示選項但標示尚未開放）。
+
+### 設計
+- **資料**：熔爐 `{id, ftype, lines[≤3]}`；傳送帶 `{filter, enabled, salvage:{actions,conds}, craft:{recipe}, smelt:{product}, belt[], timer}`。`data.js` 新增 `NEW_FORGE_LINES_MAX=3`、`NEW_FORGE_BELT_CAP=10`、`NEW_FORGE_LINE_LOAD_PER_TICK=5`、`NEW_FORGE_FILTERS`（各爐型篩選器清單，wip 標記）、`NEW_FORGE_IMAGES`；移除 `NEW_FORGE_MODES`。
+- **傳送帶運作**（每條線每 2 秒 tick：先入爐 1 批、再裝載）：
+  - 拆解線：自佇列掃描（每 tick ≤5 件）——更強自動換裝→判定：分解→上帶（帶滿則放回佇列頭），保留→直接入包（不佔帶位）。
+  - 鍛造線：材料足夠＋佇列有對應品質未上鎖裝備＋背包有空位→扣材料、取件上帶；入爐時產出品質+1 裝備（直接入包）。**素材來源＝導入佇列**（不動背包既有裝備）。
+  - 熔煉線：材料足夠→扣料上帶（一批＝一次配方）；入爐時產品 +1。
+  - 帶上物品＝已扣資源的「在途批次」：移除線/改篩選器/移除熔爐時**全額退回**（裝備→背包、材料→庫存）。
+- **V1→V2 存檔遷移**（sanitizeNewForge 內做形狀偵測）：舊熔爐 `mode/salvage/craft/smelt` → 轉為 1 條對應篩選器的傳送帶（保留品質設定與熔煉產品），刪除舊欄位；帶內容驗證，壞批次剔除。V1 手動鍛造/手動熔煉/craft.sel 機制移除（由傳送帶自動化取代）。
+- **UI**：熔爐卡片＝左大圖＋右傳送帶清單；每線＝篩選器下拉（rune/magic 選項 disabled）＋啟用勾選＋設定（拆解品質格自動收合）＋移除；帶視覺＝爐口圖示在左、`.conv-chip` 由右至左排列；「➕ 添加傳送帶 n/3」。
+- 存檔 fixSockets/fixName 改用 `newForgeAllQueuedItems(data)`（佇列＋各線帶上裝備）。
+
+### 微型任務（全部完成；審查修正：帶視覺定點更新＋焦點防衛、展開狀態改穩定 line.id）
+1. [DONE] 重寫 `tests/new-forge.test.cjs`（傳送帶裝載/入爐/退回、V1→V2 遷移、大圖靜態檢查）。
+2. [DONE] `data.js` 常數改版＋`player.js` 預設線工廠。
+3. [DONE] `newforge.js` 傳送帶邏輯重寫＋`save.js` 帶內容修正接線。
+4. [DONE] `ui.js`/`css` 大圖＋傳送帶界面。
+5. [DONE] build＋全套測試＋隔離埠 8124 實測。
+6. [DONE] `game_formula.md` §11／`PATCH.md`／本檔同步。
+
+## 當前任務：新熔爐（測試版）——主畫面新增「新熔爐」頁籤
+
+### 需求（企劃書：`熔爐改造.xlsx`，內容已解析）
+- 主畫面上方頁籤新增「新熔爐」切頁測試，**不改動舊熔爐（factory 生產線）機制**。
+- 新獲得的裝備導入新熔爐進行測試（掉落路由切換，可開關）。
+- 熔爐類型共 3 種：鍛造熔爐（裝備＋礦石）／符文熔爐（附魔書＋寶石，尚未開放）／魔法熔爐（強化洗煉材料，尚未開放）；可持續添加熔爐，**最多 10 座**。
+- 鍛造熔爐三種模式（篩選器）：
+  1. **拆解裝備**：各品質獨立選「分解/保留」（同舊篩選節點形式）＋自訂等級條件（例：[普通][分解][200級以下]）；拆解依品質產出 8 種碎料（爐渣/碎鐵塊/碎銀/碎金塊/秘銀碎片/瑟銀碎片/奧金碎片/魔鋼碎片），小數值＝機率性額外 1 件。
+  2. **鍛造裝備**：稀有=秘銀×2+任1精良；獨特=秘銀×5+任1稀有；史詩=秘銀×10+任1獨特；傳說=秘銀×10+瑟銀×5+任1史詩。產物等級與部位同素材裝備。
+  3. **熔煉礦石**：鐵錠=爐渣2+碎鐵2；銀錠=爐渣2+碎銀2；金錠=爐渣2+碎金2；秘銀=爐渣3+秘銀碎片2+鐵錠2+銀錠3；瑟銀=爐渣4+瑟銀碎片2+鐵錠2+銀錠3；奧金=爐渣5+奧金碎片2+金錠2+秘銀2；魔鋼=爐渣10+魔鋼碎片2+鐵錠10+瑟銀4+奧金4。
+
+### 設計（無損搬移：並行建置＋路由切換，舊機制零改動）
+- **路由**：`pushConveyor()` 頂端加 3 行掛勾 `newForgeTryIntake(item)`——「導入新裝備」開啟時新掉落改入 `G.newForge.queue`（佇列滿載即回退舊輸送帶）；關閉時行為與舊版完全一致。舊輸送帶既有積壓仍由舊生產線處理。
+- **資料（SSOT＝data.js）**：`NEW_FORGE_MATERIALS`（15 種材料註冊表）、`NEW_FORGE_SALVAGE_YIELD`（品質 0~7 產出表）、`NEW_FORGE_CRAFT_RECIPES`、`NEW_FORGE_SMELT_RECIPES`、`NEW_FORGE_MAX=10`、`NEW_FORGE_INTERVAL=2s`、`NEW_FORGE_QUEUE_CAP=20000`、`NEW_FORGE_TYPES`。
+- **狀態**：`G.player.forgeMats`（15 種材料計數）；`G.newForge = { intake, queue, furnaces[], nextId, stats }`；熔爐＝`{ id, ftype, mode, salvage:{actions[9], conds[9]}, smelt:{product, auto}, timer }`。預設 1 座鍛造熔爐（拆解模式；依企劃示意普通~傳說=分解、神話/創世=保留；神鑄創世一律保留不入表）。
+- **邏輯層 `js/newforge.js`**（新檔，載於 forge.js 之後、save.js 之前）：`newForgeTryIntake`／`newForgeTick`（每座 2 秒處理 1 件/次）／拆解（沿用 `tryAutoEquip` 更強自動換裝與鑲嵌寶石取回；等級條件不符＝保留）／`newForgeCraft`（手動）／`newForgeSmeltOnce`（自動＋手動）／熔爐增刪／`sanitizeNewForge`（存檔遷移淨化）／佇列退回舊輸送帶。
+- **公式**：`formula.js` 新增 `newForgeRollAmount(v)`＝`rollDropCount(v×100)`（整數必得＋小數機率加 1）。
+- **UI**：`index.html` 頁籤鈕（熔爐右側）＋`#tab-newforge` 區塊＋`js/newforge.js` script；`ui.js` `UI.dirty.newforge`＋uiTick 惰性渲染＋`renderNewForge()`＋容器事件委派；`css` 新增 `.nf-*` 樣式。
+- **拆解產出僅企劃表 8 種碎料**（不產碎片/金幣/精華——以企劃表為準）；神話/創世可由玩家自選分解（新系統設計），預設保留；上鎖一律保留。
+- **存檔**：`mergeDefaults` 自動補新欄位；`migrateSave` 加 1 行 `sanitizeNewForge(data)`（furnaces 夾限/補欄、queue 截斷、forgeMats 淨化）＋佇列裝備納入 fixSockets/fixName 修正。
+- **GM**：`nfmat 材料key|all 數量` 測試指令＋`GM_command.md` 同步。
+
+### 微型任務
+1. [DONE] `tests/new-forge.test.cjs`（TDD：資料表/擲量/路由/拆解判定與產出/鍛造/熔煉/遷移/接線靜態檢查）。
+2. [DONE] `data.js` 常數＋`formula.js` 擲量公式。
+3. [DONE] `player.js` 狀態（forgeMats/newForge/newForgeDefaultFurnace）。
+4. [DONE] `js/newforge.js` 邏輯層＋`factory.js` 路由掛勾＋`main.js` tick。
+5. [DONE] `save.js` sanitize＋佇列 fixSockets。
+6. [DONE] `index.html`/`ui.js`/`css` 新頁籤與渲染。
+7. [DONE] `gm.js` nfmat＋`GM_command.md`。
+8. [DONE] `npm run build`＋`npm test`（新測試全過、既有基線不退步）＋隔離埠 8124 實測。
+9. [DONE] `game_formula.md`／`PATCH.md`／本檔同步。
+
 ## 當前任務：裝備三套切換系統（切頁檢視＋確定切換）
 
 ### 需求
@@ -1458,6 +1537,25 @@ CSS transition，避免出現追趕式跳動。
 ### 微型任務
 1. [DONE] 轉換腳本（scratchpad）：讀 zip → sheet2 增刪列＋重編號＋A 鏈重建 → sheet1 鏡像重生 → 重壓 ZIP。
 2. [DONE] 驗證閘門：xlsx_to_csv round-trip，與「基線 CSV＋預期變更」逐列比對（忽略編號欄後全等）。
-3. [DONE-CSV / xlsx 待 Excel 關閉後換入（監看中）] 覆寫 config/Excel/xlsx 與 config/CSV（以重生輸出為準，保證兩者同步）。
+3. [DONE]（Excel 關閉後以重跑補丁流程換入，內容比對無使用者變更遺失） 覆寫 config/Excel/xlsx 與 config/CSV（以重生輸出為準，保證兩者同步）。
 4. [DONE] apply_params.cjs 接線＋dry-run 無錯誤。
 5. [DONE] AI_RULES.md「刪除」定義；PLAN/PATCH/記憶同步。
+
+## 當前任務（2026-07-16 續2）：屬性面板跟隨「檢視中」裝備套即時預覽
+
+### 需求
+- 切到某套裝備「檢視」時（不需按確定切換），側欄屬性面板即顯示該套的would-be屬性，方便比較強度。
+- 戰鬥／生命法力／掉落等一切遊戲邏輯仍以「穿著中」那套為準（getStats 不變）。
+
+### 設計
+- formula.js `computeStats(equipmentOverride)`：裝備聚合迴圈改讀傳入的裝備套（預設 G.equipment），其餘不動。
+- player.js：`markStatsDirty` 同步清空新增的 `_viewStatsCache`；新增 `getViewStats()`＝檢視套==穿著套時回傳 getStats()，否則以 `computeStats(viewedEquipment())` 計算＋快取；`setEquipView` 清預覽快取並標記 header 重繪。
+- ui.js `renderHeader`：attr-panel 改餵 `getViewStats()`（header 其他區塊維持穿著中 st）；`renderAttrPanel` 骨架頂端加 `#attr-preview-note`，檢視非穿著套時顯示「👁 屬性預覽：第X套（尚未穿上）」。
+- css：`.attr-preview-note` 樣式。
+- 測試：computeStats 覆寫裝備套產生不同數值；getViewStats 於 equipView≠equipActive 時回傳檢視套數值、切回後與 getStats 相同。
+
+### 微型任務
+1. [DONE] 測試 tests/equip-set-preview-stats.test.cjs。
+2. [DONE] formula.js / player.js / ui.js / css 實作。
+3. [DONE] npm run build＋npm test（不新增失敗）＋隔離埠實測（切頁面板數值即變、預覽提示出現、切回一致、主控台 0 錯誤）。
+4. [DONE] game_formula.md（§2 註記面板預覽語意）＋PATCH.md。

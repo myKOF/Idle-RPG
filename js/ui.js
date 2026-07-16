@@ -2,7 +2,7 @@
 /* ============ UI 渲染與互動 ============ */
 
 var UI = {
-  dirty: { header: true, battle: true, equip: true, inv: true, factory: true, forge: true, tower: true, gems: true, skills: true },
+  dirty: { header: true, battle: true, equip: true, inv: true, factory: true, newforge: true, forge: true, tower: true, gems: true, skills: true },
   sel: null,           // { id, source: 'inv' | 'equip' }
   tab: 'equip',
   saveNoticeId: null,
@@ -489,7 +489,8 @@ function renderHeader() {
   xpBar.setAttribute('data-tt-desc', '當前經驗值：' + fmt(p.xp) + ' / 升級經驗值：' + fmt(need));
   xpBar.removeAttribute('title');
 
-  renderAttrPanel(st);
+  // 屬性面板顯示「檢視中」裝備套的預覽屬性（切頁即變，不需確定切換）；header 其他區塊維持穿著中數值
+  renderAttrPanel(typeof getViewStats === 'function' ? getViewStats() : st);
 
   // 更新側欄硬編碼的屬性
   if ($id('s-hp')) {
@@ -514,7 +515,7 @@ function renderAttrPanel(st) {
   if (!panel) return;
   if (!_attrPanelBuilt) {
     // 首次建立骨架（前兩組預設展開）
-    var h = '';
+    var h = '<div id="attr-preview-note" class="attr-preview-note" hidden></div>';
     STAT_GROUPS.forEach(function (g, gi) {
       h += '<details class="attr-group"' + (gi < 2 ? ' open' : '') + '><summary>' + esc(g.title) + '</summary>';
       g.rows.forEach(function (row, ri) {
@@ -525,10 +526,21 @@ function renderAttrPanel(st) {
       h += '</details>';
     });
     h += '<div class="stat-divider"></div>' +
-      '<div id="active-buffs" class="active-buffs"></div>' +
-      '<div class="stat-row" title="近 10 秒 DPS"><span>📈 實時 DPS</span><b id="s-dps">0</b></div>';
+      '<div class="stat-row" title="近 10 秒 DPS"><span>📈 實時 DPS</span><b id="s-dps">0</b></div>' +
+      '<div id="active-buffs" class="active-buffs"></div>';
     panel.innerHTML = h;
     _attrPanelBuilt = true;
+  }
+  // 預覽提示：檢視非穿著中的裝備套時，標明面板為該套的預覽屬性
+  var previewNote = $id('attr-preview-note');
+  if (previewNote) {
+    var previewing = typeof isViewingActiveSet === 'function' && !isViewingActiveSet();
+    previewNote.hidden = !previewing;
+    if (previewing) {
+      previewNote.textContent = '👁 屬性預覽：' +
+        (typeof equipSetLabel === 'function' ? equipSetLabel(G.equipView) : '檢視中裝備套') +
+        '（尚未穿上，戰鬥仍用' + (typeof equipSetLabel === 'function' ? equipSetLabel(G.equipActive) : '穿著中那套') + '）';
+    }
   }
   // 更新數值
   STAT_GROUPS.forEach(function (g, gi) {
@@ -1469,6 +1481,292 @@ function syncFactoryInputs() {
   $id('up-cap').value = String(f.upgrade.cap);
 }
 
+/* ---- 新熔爐分頁（測試版 V2：熔爐大圖＋傳送帶）----
+   邏輯層 → js/newforge.js；資料表 → js/data.js。
+   熔爐清單以整段 innerHTML 重建，僅在內容變動時覆寫（避免下拉選單被週期重繪關閉）。 */
+function nfMatChipHTML(key) {
+  var m = NEW_FORGE_MATERIALS[key];
+  var n = (G.player.forgeMats && G.player.forgeMats[key]) || 0;
+  return '<span class="nf-mat" data-tt-title="' + esc(m.name) + '" data-tt-desc="持有 ' + fmtFull(n) + '">' +
+    '<span class="nf-mat-ico">' + m.emoji + '</span>' +
+    '<span class="nf-mat-name" style="color:' + m.color + '">' + esc(m.name) + '</span>' +
+    '<b>' + fmt(n) + '</b></span>';
+}
+
+// 配方成本顯示（足夠＝綠、不足＝紅）
+function nfCostHTML(mats) {
+  var parts = [];
+  for (var k in mats) {
+    var have = (G.player.forgeMats && G.player.forgeMats[k]) || 0;
+    parts.push('<span class="' + (have >= mats[k] ? 'nf-cost-ok' : 'nf-cost-lack') + '">' +
+      NEW_FORGE_MATERIALS[k].emoji + esc(NEW_FORGE_MATERIALS[k].name) + '×' + mats[k] + '</span>');
+  }
+  return parts.join('<span class="dim-text"> + </span>');
+}
+
+// 拆解品質設定格（每列：品質色字＋分解/保留＋等級條件）
+function nfSalvageRowsHTML(fu, line, li) {
+  var rows = '';
+  for (var r = 0; r < NEW_FORGE_SALVAGE_YIELD.length; r++) {
+    var cond = line.salvage.conds[r] || { op: 'any', lv: 200 };
+    var salv = line.salvage.actions[r] === 'salvage';
+    var ds = ' data-nf-fid="' + fu.id + '" data-nf-li="' + li + '"';
+    rows += '<div class="flt-row nf-row">' +
+      '<span class="rar-tag" style="color:' + RARITIES[r].color + '">' + RARITIES[r].name + '</span>' +
+      '<select class="flt-sel"' + ds + ' data-nf-act="' + r + '">' +
+        '<option value="salvage"' + (salv ? ' selected' : '') + '>分解</option>' +
+        '<option value="keep"' + (salv ? '' : ' selected') + '>保留</option>' +
+      '</select>' +
+      '<select class="flt-sel nf-cond-op"' + ds + ' data-nf-condop="' + r + '">' +
+        '<option value="any"' + (cond.op === 'any' ? ' selected' : '') + '>等級不限</option>' +
+        '<option value="lte"' + (cond.op === 'lte' ? ' selected' : '') + '>等級以下</option>' +
+        '<option value="gte"' + (cond.op === 'gte' ? ' selected' : '') + '>等級以上</option>' +
+      '</select>' +
+      '<input type="number" class="nf-cond-lv" min="1" step="1" value="' + (cond.lv || 200) + '"' +
+        ds + ' data-nf-condlv="' + r + '"' + (cond.op === 'any' ? ' disabled' : '') + '>' +
+      '</div>';
+  }
+  return rows;
+}
+
+// 拆解設定摘要（收合時顯示）
+function nfSalvageSummary(line) {
+  var salv = [];
+  for (var r = 0; r < NEW_FORGE_SALVAGE_YIELD.length; r++) {
+    if (line.salvage.actions[r] !== 'salvage') continue;
+    var cond = line.salvage.conds[r] || { op: 'any' };
+    var tail = cond.op === 'lte' ? '≤' + cond.lv : (cond.op === 'gte' ? '≥' + cond.lv : '');
+    salv.push('<span style="color:' + RARITIES[r].color + '">' + RARITIES[r].name + tail + '</span>');
+  }
+  return salv.length ? '分解：' + salv.join('、') + '（其餘保留）' : '全部保留';
+}
+
+// 傳送帶批次圖示（帶頭在左＝即將入爐；與原版輸送帶樣式一致）
+function nfBeltChipsHTML(line) {
+  var show = line.belt.slice(0, 12);
+  var chips = show.map(function (e) {
+    if (e.kind === 'smelt') {
+      var m = NEW_FORGE_MATERIALS[e.product];
+      return '<span class="conv-chip" data-tip="熔煉批次：' + esc(m.name) + '">' + m.emoji + '</span>';
+    }
+    var it = e.item, r = RARITIES[it.rarity];
+    var tip = (e.kind === 'craft' ? '鍛造素材：' : '') + rarityTag(it);
+    return '<span class="conv-chip" style="border-color:' + r.color + ';color:' + r.color + '" data-tip="' +
+      esc(tip) + '">' + SLOT_INFO[it.slot].emoji + '</span>';
+  }).join('');
+  if (line.belt.length > 12) chips += '<span class="conv-more">+' + (line.belt.length - 12) + '</span>';
+  return chips || '<span class="nf-belt-empty dim-text">（傳送帶空）</span>';
+}
+
+// 單條傳送帶（篩選器＋設定＋帶視覺）
+function nfLineHTML(fu, line, li) {
+  var ds = ' data-nf-fid="' + fu.id + '" data-nf-li="' + li + '"';
+  var filters = NEW_FORGE_FILTERS[fu.ftype] || [];
+  var filterOpts = filters.map(function (f) {
+    return '<option value="' + f.key + '"' + (line.filter === f.key ? ' selected' : '') + (f.wip ? ' disabled' : '') + '>' +
+      f.name + (f.wip ? '（尚未開放）' : '') + '</option>';
+  }).join('');
+  var head = '<div class="nf-line-head">' +
+    '<span class="nf-line-no">傳送帶' + (li + 1) + '</span>' +
+    '<select class="flt-sel"' + ds + ' data-nf-linefilter="1">' + filterOpts + '</select>' +
+    '<label class="chk"><input type="checkbox"' + ds + ' data-nf-lineon="1"' + (line.enabled ? ' checked' : '') + '> 啟用</label>' +
+    (line.filter === 'salvage' ? '<button class="btn sm"' + ds + ' data-nf-cfg="1">⚙ 品質設定</button>' : '') +
+    '<button class="btn sm warn nf-line-remove"' + ds + ' data-nf-removeline="1">✖ 移除</button>' +
+    '</div>';
+  var cfg = '';
+  if (line.filter === 'salvage') {
+    var open = UI.nfCfgOpen && UI.nfCfgOpen[fu.id + ':' + line.id]; // 以穩定 line.id 為鍵，移除線後不錯位
+    cfg = open
+      ? '<div class="flt-grid nf-grid">' + nfSalvageRowsHTML(fu, line, li) + '</div>' +
+        '<div class="hint">符合等級條件才會分解，不符一律保留；上鎖與神鑄創世永遠保留。分解上帶入爐、保留直接入包。</div>'
+      : '<div class="nf-line-sum">' + nfSalvageSummary(line) + '</div>';
+  } else if (line.filter === 'craft') {
+    var recipeOpts = NEW_FORGE_CRAFT_RECIPES.map(function (rc2, i) {
+      return '<option value="' + i + '"' + (line.craft.recipe === i ? ' selected' : '') + '>鍛造' + RARITIES[rc2.target].name + '</option>';
+    }).join('');
+    var rc = NEW_FORGE_CRAFT_RECIPES[line.craft.recipe] || NEW_FORGE_CRAFT_RECIPES[0];
+    cfg = '<div class="nf-line-cfg">產物：<select class="flt-sel"' + ds + ' data-nf-craftrecipe="1">' + recipeOpts + '</select>' +
+      '<span class="nf-line-cost">' + nfCostHTML(rc.mats) + '<span class="dim-text"> + 佇列中任1件</span>' +
+      '<span style="color:' + RARITIES[rc.inputRarity].color + '">' + RARITIES[rc.inputRarity].name + '</span><span class="dim-text">裝備（未上鎖）</span></span></div>' +
+      '<div class="hint">材料與素材足夠時自動上帶；產物品質+1、等級與部位與素材相同，素材寶石自動取回。</div>';
+  } else if (line.filter === 'smelt') {
+    var prodOpts = Object.keys(NEW_FORGE_SMELT_RECIPES).map(function (p2) {
+      return '<option value="' + p2 + '"' + (line.smelt.product === p2 ? ' selected' : '') + '>' +
+        NEW_FORGE_MATERIALS[p2].emoji + NEW_FORGE_MATERIALS[p2].name + '</option>';
+    }).join('');
+    var src = NEW_FORGE_SMELT_RECIPES[line.smelt.product];
+    cfg = '<div class="nf-line-cfg">產品：<select class="flt-sel"' + ds + ' data-nf-product="1">' + prodOpts + '</select>' +
+      '<span class="nf-line-cost">' + nfCostHTML(src) + '<span class="dim-text"> → </span>' +
+      NEW_FORGE_MATERIALS[line.smelt.product].emoji + NEW_FORGE_MATERIALS[line.smelt.product].name + '×1</span></div>' +
+      '<div class="hint">原材料足夠時自動送入輸送帶，每 ' + NEW_FORGE_INTERVAL + ' 秒入爐 1 批。</div>';
+  } else {
+    cfg = '<div class="hint">此篩選器尚未開放（企劃書尚未提供配方）。</div>';
+  }
+  // 帶視覺容器留空，由 nfUpdateBelts 每輪定點更新——批次流動不擊穿整段 HTML 快取
+  var belt = '<div class="nf-belt"><span class="nf-belt-mouth" data-tip="熔爐入口：帶頭批次由此入爐">' +
+    NEW_FORGE_TYPES[fu.ftype].emoji + '</span><span class="nf-belt-items" data-nf-belt="' + fu.id + ':' + li + '"></span>' +
+    '<span class="nf-belt-dir dim-text">← 由右至左</span></div>';
+  return '<div class="nf-line' + (line.enabled ? '' : ' nf-line-off') + '">' + head + cfg + belt + '</div>';
+}
+
+// 熔爐卡片：左側大圖＋右側傳送帶清單
+function nfFurnaceHTML(fu) {
+  var t = NEW_FORGE_TYPES[fu.ftype];
+  var head = '<div class="node-title">' + t.emoji + ' ' + esc(t.name) +
+    ' <span class="node-badge">#' + fu.id + '</span>' +
+    '<button class="btn sm warn nf-remove" data-nf-remove="' + fu.id + '">移除熔爐</button></div>';
+  var lines = fu.lines.map(function (line, li) { return nfLineHTML(fu, line, li); }).join('');
+  var addBtn = fu.lines.length < NEW_FORGE_LINES_MAX
+    ? '<button class="btn sm" data-nf-addline="' + fu.id + '">➕ 添加傳送帶（' + fu.lines.length + '/' + NEW_FORGE_LINES_MAX + '）</button>'
+    : '<span class="dim-text">傳送帶 ' + fu.lines.length + '/' + NEW_FORGE_LINES_MAX + '（已滿）</span>';
+  var wip = t.wip ? '<div class="hint">' + esc(t.desc) + '——篩選器尚未開放，敬請期待。</div>' : '';
+  return '<div class="panel node-card nf-furnace">' + head +
+    '<div class="nf-furnace-body">' +
+    '<div class="nf-furnace-left"><img class="nf-furnace-img" src="' + NEW_FORGE_IMAGES[fu.ftype] + '" alt="' + esc(t.name) + '">' +
+    '<div class="nf-furnace-caption dim-text">' + esc(t.desc) + '</div></div>' +
+    '<div class="nf-lines">' + wip + lines + '<div class="nf-line-add">' + addBtn + '</div></div>' +
+    '</div></div>';
+}
+
+function renderNewForge() {
+  var nf = G.newForge;
+  if (!nf) return;
+  var intake = $id('nf-intake');
+  if (intake) intake.checked = !!nf.intake;
+  var qc = $id('nf-queue-count');
+  if (qc) qc.textContent = fmt(nf.queue.length);
+  var matsBox = $id('nf-mats');
+  if (matsBox) matsBox.innerHTML = Object.keys(NEW_FORGE_MATERIALS).map(nfMatChipHTML).join('');
+  var cnt = $id('nf-count');
+  if (cnt) {
+    var lineCount = 0;
+    nf.furnaces.forEach(function (fu) { lineCount += (fu.lines || []).length; });
+    cnt.textContent = nf.furnaces.length + '/' + NEW_FORGE_MAX + ' 座（傳送帶 ' + lineCount + ' 條）｜已拆解 ' + fmt(nf.stats.salvaged) +
+      '・保留 ' + fmt(nf.stats.kept) + '・鍛造 ' + fmt(nf.stats.crafted) + '・熔煉 ' + fmt(nf.stats.smelted);
+  }
+  var list = $id('nf-furnaces');
+  if (list) {
+    var html = nf.furnaces.map(nfFurnaceHTML).join('') ||
+      '<div class="panel"><div class="hint">尚無熔爐——請於下方添加。</div></div>';
+    if (UI._nfFurnacesHTML !== html) {
+      // 焦點防衛：使用者正聚焦清單內的下拉/輸入框時延後整段重建，
+      // 避免打字中的等級門檻或展開中的下拉被銷毀（帶視覺另行定點更新，不受影響）。
+      var ae = document.activeElement;
+      var interacting = ae && list.contains(ae) && (ae.tagName === 'SELECT' || ae.tagName === 'INPUT');
+      if (!interacting) {
+        UI._nfFurnacesHTML = html;
+        list.innerHTML = html;
+      }
+    }
+    nfUpdateBelts(list);
+  }
+}
+
+// 傳送帶批次定點更新（每輪執行；容器內無互動元件，覆寫不影響操作）
+function nfUpdateBelts(list) {
+  var nodes = list.querySelectorAll('[data-nf-belt]');
+  for (var i = 0; i < nodes.length; i++) {
+    var node = nodes[i];
+    var parts = node.getAttribute('data-nf-belt').split(':');
+    var fu = findNewForgeFurnace(parseInt(parts[0], 10));
+    var line = fu && fu.lines[parseInt(parts[1], 10)];
+    if (!line) continue;
+    var html = nfBeltChipsHTML(line);
+    if (node._nfBeltHTML !== html) {
+      node._nfBeltHTML = html;
+      node.innerHTML = html;
+    }
+  }
+}
+
+// 新熔爐分頁事件委派（initUI 呼叫一次；清單 innerHTML 重建不影響委派）
+function bindNewForgeEvents() {
+  var tab = $id('tab-newforge');
+  if (!tab) return;
+  function lineOf(el) {
+    var fu = findNewForgeFurnace(parseInt(el.getAttribute('data-nf-fid'), 10));
+    if (!fu) return null;
+    var line = fu.lines[parseInt(el.getAttribute('data-nf-li'), 10)];
+    return line ? { fu: fu, line: line } : null;
+  }
+  tab.addEventListener('change', function (e) {
+    var el = e.target;
+    if (!el || !el.getAttribute) return;
+    if (el.id === 'nf-intake') {
+      G.newForge.intake = el.checked;
+      nflog(el.checked ? '📥 已開啟導入：新獲得的裝備將流入新熔爐佇列' : '📤 已關閉導入：新裝備恢復舊輸送帶流程', 'info');
+      UI.dirty.newforge = true;
+      return;
+    }
+    var ctx = lineOf(el);
+    if (!ctx) return;
+    var line = ctx.line, r;
+    if (el.hasAttribute('data-nf-linefilter')) {
+      setNewForgeLineFilter(ctx.fu, line, el.value);
+      UI.dirty.newforge = true;
+    } else if (el.hasAttribute('data-nf-lineon')) {
+      line.enabled = el.checked;
+      UI.dirty.newforge = true;
+    } else if (el.hasAttribute('data-nf-act')) {
+      r = parseInt(el.getAttribute('data-nf-act'), 10);
+      line.salvage.actions[r] = el.value === 'salvage' ? 'salvage' : 'keep';
+      UI.dirty.newforge = true;
+    } else if (el.hasAttribute('data-nf-condop')) {
+      r = parseInt(el.getAttribute('data-nf-condop'), 10);
+      line.salvage.conds[r].op = ['any', 'lte', 'gte'].indexOf(el.value) >= 0 ? el.value : 'any';
+      UI.dirty.newforge = true; // 重繪以啟用/停用等級輸入框
+    } else if (el.hasAttribute('data-nf-condlv')) {
+      r = parseInt(el.getAttribute('data-nf-condlv'), 10);
+      line.salvage.conds[r].lv = Math.max(1, Math.floor(Number(el.value) || 1));
+      UI.dirty.newforge = true;
+    } else if (el.hasAttribute('data-nf-craftrecipe')) {
+      line.craft.recipe = clamp(Math.floor(Number(el.value) || 0), 0, NEW_FORGE_CRAFT_RECIPES.length - 1);
+      UI.dirty.newforge = true;
+    } else if (el.hasAttribute('data-nf-product')) {
+      line.smelt.product = NEW_FORGE_SMELT_RECIPES[el.value] ? el.value : 'ironIngot';
+      UI.dirty.newforge = true;
+    }
+  });
+  tab.addEventListener('click', function (e) {
+    var el = e.target && e.target.closest ? e.target.closest('button') : null;
+    if (!el) return;
+    if (el.id === 'nf-return-queue') {
+      var n = newForgeReturnQueueToConveyor();
+      nflog(n > 0 ? '↩️ 已將 ' + fmt(n) + ' 件裝備退回舊輸送帶' : 'ℹ️ 佇列目前沒有待退回的裝備', 'info');
+      return;
+    }
+    if (el.hasAttribute('data-nf-add')) {
+      var err = addNewForgeFurnace(el.getAttribute('data-nf-add'));
+      if (err) nflog('⚠️ ' + err, 'warn');
+      else nflog('🏗️ 已添加 ' + NEW_FORGE_TYPES[el.getAttribute('data-nf-add')].name, 'good');
+      return;
+    }
+    if (el.hasAttribute('data-nf-remove')) {
+      var rid = parseInt(el.getAttribute('data-nf-remove'), 10);
+      if (removeNewForgeFurnace(rid)) nflog('🗑️ 已移除熔爐 #' + rid + '（傳送帶內容已退回）', 'info');
+      return;
+    }
+    if (el.hasAttribute('data-nf-addline')) {
+      var aerr = addNewForgeLine(parseInt(el.getAttribute('data-nf-addline'), 10));
+      if (aerr) nflog('⚠️ ' + aerr, 'warn');
+      return;
+    }
+    var ctx = lineOf(el);
+    if (!ctx) return;
+    if (el.hasAttribute('data-nf-removeline')) {
+      removeNewForgeLine(ctx.fu.id, parseInt(el.getAttribute('data-nf-li'), 10));
+      nflog('🗑️ 已移除傳送帶（在途批次已退回）', 'info');
+      return;
+    }
+    if (el.hasAttribute('data-nf-cfg')) {
+      if (!UI.nfCfgOpen) UI.nfCfgOpen = {};
+      var key = ctx.fu.id + ':' + ctx.line.id; // 穩定 line.id，移除其他線不錯位
+      UI.nfCfgOpen[key] = !UI.nfCfgOpen[key];
+      UI.dirty.newforge = true;
+    }
+  });
+}
+
 /* ---- 神鑄分頁 ----
    六芒星以 Hexagram.png 為底，槽位/魔塵符位以百分比座標絕對定位
   （座標對應法陣星角，順時針自頂點起）。邏輯層 → js/forge.js。 */
@@ -1831,9 +2129,14 @@ function renderTower() {
       var cleared = fl <= G.tower.highest;
       var bd = BOSS_LIST[(fl - 1) % BOSS_LIST.length];
       var hell = isHellTowerFloor(fl);
-      if (fl === 1 || fl === TOWER_TRIAL_MAX_FLOOR + 1) {
-        h += '<div class="tower-section-title ' + (hell ? 'hell' : 'trial') + '">🗼 ' +
-          (hell ? '地獄之塔' : '試煉之塔') + '<span>第 ' + (hell ? (TOWER_TRIAL_MAX_FLOOR + 1) + '～' + TOWER_HELL_MAX_FLOOR : '1～' + TOWER_TRIAL_MAX_FLOOR) + ' 層</span></div>';
+      var purgatory = isPurgatoryTowerFloor(fl);
+      var towerClass = purgatory ? 'purgatory' : (hell ? 'hell' : 'trial');
+      if (fl === 1 || fl === TOWER_TRIAL_MAX_FLOOR + 1 || fl === TOWER_HELL_MAX_FLOOR + 1) {
+        var sectionName = purgatory ? '煉獄之塔' : (hell ? '地獄之塔' : '試煉之塔');
+        var sectionStart = purgatory ? TOWER_HELL_MAX_FLOOR + 1 : (hell ? TOWER_TRIAL_MAX_FLOOR + 1 : 1);
+        var sectionEnd = purgatory ? TOWER_PURGATORY_MAX_FLOOR : (hell ? TOWER_HELL_MAX_FLOOR : TOWER_TRIAL_MAX_FLOOR);
+        h += '<div class="tower-section-title ' + towerClass + '">🗼 ' +
+          sectionName + '<span>第 ' + sectionStart + '～' + sectionEnd + ' 層</span></div>';
       }
 
       var bossIcon = (bd.img && !bd.imgFailed) ? 'images/' + bd.img : null;
@@ -1843,9 +2146,9 @@ function renderTower() {
         : '<span style="font-size:24px;vertical-align:middle;">' + (bd.emoji || '👾') + '</span>';
 
       var twCost = towerChallengeCost(fl);
-      h += '<div class="tower-floor' + (hell ? ' hell' : '') + (cleared ? ' cleared' : '') + (unlocked ? '' : ' locked') + '" data-tower-tip="' + fl + '">' +
+      h += '<div class="tower-floor ' + towerClass + (cleared ? ' cleared' : '') + (unlocked ? '' : ' locked') + '" data-tower-tip="' + fl + '">' +
         '<span class="tf-emoji" style="margin-right:12px;">' + iconHtml + '</span>' +
-        '<span class="tf-name" style="vertical-align:middle;">第 ' + fl + ' 層・' + bd.name + (cleared ? ' ✅' : '') + '</span>' +
+        '<span class="tf-name' + (purgatory ? ' purgatory-boss' : '') + '" style="vertical-align:middle;">第 ' + fl + ' 層・' + bd.name + (cleared ? ' ✅' : '') + '</span>' +
         '<span class="tf-hint" style="margin-left:auto; margin-right:10px;">建議野外階段 ' + (4 + fl * 5) + '+｜挑戰費 <span style="color:' + (G.player.gold >= twCost ? '#ffd700' : '#fca5a5') + '">💰' + fmt(twCost) + '</span></span>' +
         (unlocked
           ? '<button class="btn sm" data-tower-floor="' + fl + '">挑戰</button>' +
@@ -1963,8 +2266,12 @@ function renderTowerFight() {
   } else {
     $id('tb-emoji').innerHTML = '<span style="font-size:48px;">' + (b.emoji || '👾') + '</span>';
   }
+  $id('tb-name').className = 'cb-name' + (b.purgatory ? ' purgatory-boss' : '');
   $id('tb-name').innerHTML = b.name;
-  if ($id('tb-level')) $id('tb-level').textContent = 'Lv.' + b.level;
+  if ($id('tb-level')) {
+    $id('tb-level').className = 'cb-level' + (b.purgatory ? ' purgatory-boss' : '');
+    $id('tb-level').textContent = 'Lv.' + b.level;
+  }
   $id('tb-hp').style.width = clamp(b.hp / b.maxHp * 100, 0, 100) + '%';
   var bSh = (b.shield > 0.5) ? '<span style="color:var(--info)">+' + fmt(Math.max(0, b.shield)) + '</span>' : '';
   $id('tb-hptext').innerHTML = fmt(Math.max(0, b.hp)) + bSh + ' / ' + fmt(b.maxHp) + '（' + Math.round(b.hp / b.maxHp * 100) + '%）';
@@ -2001,6 +2308,7 @@ function uiTick() {
   if (d.equip && UI.tab === 'equip') { renderEquip(); d.equip = false; }
   if (d.inv && UI.tab === 'equip') { renderInventory(); d.inv = false; }
   if (d.factory && UI.tab === 'factory') { renderFactory(); d.factory = false; }
+  if ((d.newforge || d.inv) && UI.tab === 'newforge') { renderNewForge(); d.newforge = false; }
   if ((d.forge || d.inv) && UI.tab === 'forge') { renderForge(); d.forge = false; d.inv = false; }
   if (UI.tab === 'forge' && forgeIsBusy()) renderForgeProgress();
   // 神鑄頁籤運行中小圖標：鑄造進行時旋轉顯示（不論目前所在分頁）
@@ -3135,9 +3443,12 @@ function initUI() {
   document.querySelectorAll('.tab-btn').forEach(function (b) {
     b.addEventListener('click', function () {
       switchTab(b.getAttribute('data-tab'));
-      UI.dirty.equip = true; UI.dirty.inv = true; UI.dirty.factory = true; UI.dirty.forge = true; UI.dirty.tower = true; UI.dirty.gems = true; UI.dirty.skills = true;
+      UI.dirty.equip = true; UI.dirty.inv = true; UI.dirty.factory = true; UI.dirty.newforge = true; UI.dirty.forge = true; UI.dirty.tower = true; UI.dirty.gems = true; UI.dirty.skills = true;
     });
   });
+
+  // 新熔爐分頁事件（委派一次）
+  bindNewForgeEvents();
 
   // 轉生按鈕：先顯示效果確認，只有按下確認後才執行。
   var reincBtn = $id('btn-reincarnate');
