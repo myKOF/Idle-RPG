@@ -1,5 +1,11 @@
 # PATCH.md
 
+## 變更紀錄：恢復裝備切頁 CSS（三欄並排版面）
+
+- 問題：`css/style.css` 中整段 `.eqset-*` 樣式（`#equip-set-tabs`／`.eqset-tabrow` 三欄 grid／`.eqset-tabwrap`／`.eqset-name`／`.eqset-rename`／`.eqset-tab`／`.eqset-badge`／`.eqset-confirm`）被整段刪除 → 三個切頁失去 grid 版面、退回預設 block 上下堆疊。渲染碼（ui.js `renderEquipSetTabs`）本身完整。
+- 修正：於 `#equip-grid` 與 `.eq-slot` 之間補回完整 `.eqset-*` 樣式區塊（含名稱列與右上角改名鈕）。
+- 驗證：`npm run build`（93 檔過）；隔離埠 8124 實測——`.eqset-tabrow` `display:grid`、三欄各 96px、三切頁同一列並排（y 相同、x 遞增）、名稱正常顯示於上方；主控台 0 錯誤。
+
 ## 變更紀錄：改名彈窗改用遊戲通用樣式（取代原生 prompt）
 
 - 需求：裝備套改名原本用瀏覽器原生 `prompt()`，改為遊戲通用的確認彈窗。

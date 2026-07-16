@@ -311,7 +311,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
         var dmgStr = fmt(res.dmg);
         if (res.crit) dmgStr = '爆擊 ' + dmgStr;
         if (res.blocked) dmgStr = '格擋 ' + dmgStr;
-        floatEnemyEvent(mEnt, floatSel, dmgStr, (res.crit ? 'crit ' : 'dmg ') + 'enemy-attack');
+        floatEnemyEvent(mEnt, floatSel, dmgStr, (res.crit ? 'crit ' : 'dmg ') + 'enemy-attack', res.dmg);
         trackDps(res.dmg);
         recordRunDamage('普攻', res.dmg);
         logMsg += (res.crit ? '<span class="log-hl-good">爆擊</span> ' : '造成 ') + fmt(res.dmg) + ' 傷害。';
@@ -323,13 +323,13 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
         var healAmt = res.dmg * (st.lifesteal + omni) / 100 + (res.heal || 0);
         if (healAmt > 0) {
             healPlayerWithShieldEvent(pEnt, healAmt, st, playerFloatSel);
-            floatText(playerFloatSel, '+' + fmt(Math.round(healAmt)), 'heal');
+            floatText(playerFloatSel, '+' + fmt(Math.round(healAmt)), 'heal', Math.round(healAmt));
             if (st.lifesteal > 0 || omni > 0 || res.heal) logMsg += '<span class="log-hl-good">汲取回復 ' + fmt(healAmt) + '。</span>';
         }
         if (st.manaSteal + omni > 0) {
             var mpGain = res.dmg * (st.manaSteal + omni) / 100;
             pEnt.mp = Math.min(st.mp, pEnt.mp + mpGain);
-            floatText(playerFloatSel, '+' + fmt(Math.round(mpGain)) + ' MP', 'mp');
+            floatText(playerFloatSel, '+' + fmt(Math.round(mpGain)) + ' MP', 'mp', Math.round(mpGain));
         }
         // 被動：暈眩 / 減速
         if (!res.killed) {
@@ -347,7 +347,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
                 mEnt.hp -= smiteDmg;
                 trackDps(smiteDmg);
                 recordRunDamage('天罰', smiteDmg);
-                floatEnemyEvent(mEnt, floatSel, '⚡' + fmt(smiteDmg), 'crit enemy-attack');
+                floatEnemyEvent(mEnt, floatSel, '⚡' + fmt(smiteDmg), 'crit enemy-attack', smiteDmg);
                 logMsg += '<span class="log-hl-good">天罰降臨，追加 ' + fmt(smiteDmg) + ' 真實傷害！</span>';
                 if (mEnt.hp <= 0) { mEnt.hp = 0; res.killed = true; res.dmg += smiteDmg; }
             }

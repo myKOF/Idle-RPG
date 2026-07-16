@@ -99,7 +99,125 @@ function isEnemyHitFloat(elId, cls) {
     tokens.indexOf('crit') >= 0 || tokens.indexOf('skill') >= 0);
 }
 
-function floatText(elId, text, cls) {
+var FLOAT_TEXT_LIFETIME_MS = 2000;
+var ENEMY_DAMAGE_FLOAT_WINDOW_MS = 4000;
+var ENEMY_DAMAGE_FLOAT_MAX_HITS = 20;
+var PLAYER_RECOVERY_FLOAT_MAX_HITS = 20;
+
+function enemyDamageFloatKey(cls) {
+  var tokens = (cls || '').split(/\s+/);
+  var source = tokens.indexOf('enemy-skill') >= 0 ? 'skill' :
+    (tokens.indexOf('enemy-attack') >= 0 ? 'attack' : '');
+  if (!source) return '';
+  return source + ':' + (tokens.indexOf('crit') >= 0 ? 'crit' : 'normal');
+}
+
+function enemyDamageFloatInfo(text, value) {
+  if (typeof value !== 'number' || !isFinite(value) || value <= 0 || typeof fmt !== 'function') return null;
+  var formatted = fmt(value);
+  var numberAt = text.lastIndexOf(formatted);
+  if (numberAt < 0) return null;
+  return { prefix: text.slice(0, numberAt) };
+}
+
+function playerRecoveryFloatKey(elId, cls) {
+  if (elId !== 'pv-float' && elId !== 'tp-float') return '';
+  var tokens = (cls || '').split(/\s+/);
+  if (tokens.indexOf('heal') >= 0) return 'hp';
+  if (tokens.indexOf('mp') >= 0 || tokens.indexOf('mana') >= 0) return 'mp';
+  return '';
+}
+
+function playerRecoveryFloatInfo(elId, cls, text, value) {
+  var key = playerRecoveryFloatKey(elId, cls);
+  if (!key || typeof value !== 'number' || !isFinite(value) || value <= 0 || typeof fmt !== 'function') return null;
+  var formatted = fmt(value);
+  var numberAt = text.lastIndexOf(formatted);
+  if (numberAt < 0) return null;
+  return { key: key, prefix: text.slice(0, numberAt) };
+}
+
+function scheduleFloatTextRemoval(sp, lifetimeMs) {
+  if (sp._floatRemovalTimer) clearTimeout(sp._floatRemovalTimer);
+  sp._floatRemovalTimer = setTimeout(function () {
+    if (sp.parentNode) sp.parentNode.removeChild(sp);
+  }, lifetimeMs || FLOAT_TEXT_LIFETIME_MS);
+}
+
+/* 敵方傷害浮字優先找不與現有文字重疊的位置，真的沒有空間時才接受重疊。 */
+function placeFloatAvoidingOverlap(sp, layer, selector, randomTop, randomRange, gridRows, gridStep) {
+  var lr = layer.getBoundingClientRect();
+  if (!lr.width || !lr.height) return;
+
+  var existingRects = [];
+  var existingFloats = layer.querySelectorAll(selector);
+  for (var ei = 0; ei < existingFloats.length; ei++) {
+    var existing = existingFloats[ei];
+    if (existing === sp) continue;
+    var opacity = parseFloat(window.getComputedStyle(existing).opacity);
+    if (isFinite(opacity) && opacity <= 0.05) continue;
+    var existingRect = existing.getBoundingClientRect();
+    if (existingRect.width && existingRect.height) existingRects.push(existingRect);
+  }
+
+  var oldAnimation = sp.style.animation;
+  sp.style.animation = 'none';
+  var candidates = [{
+    left: 8 + Math.random() * 84,
+    top: randomTop + Math.random() * randomRange
+  }];
+  gridRows = gridRows || 6;
+  gridStep = gridStep || 10;
+  for (var ci = 0; ci < 48; ci++) {
+    var col = ci % 8;
+    var row = Math.floor(ci / 8) % gridRows;
+    candidates.push({
+      left: 10 + col * 11 + (row % 2 ? 3 : 0),
+      top: Math.max(10, randomTop - 4) + row * gridStep
+    });
+  }
+
+  var best = null;
+  var bestOverlap = Infinity;
+  for (var pi = 0; pi < candidates.length; pi++) {
+    var candidate = candidates[pi];
+    sp.style.left = candidate.left + '%';
+    sp.style.top = candidate.top + '%';
+    sp.style.marginTop = '0px';
+    var candidateRect = sp.getBoundingClientRect();
+    var overlap = 0;
+    for (var ri = 0; ri < existingRects.length; ri++) {
+      var occupied = existingRects[ri];
+      var horizontal = Math.max(0, Math.min(candidateRect.right, occupied.right + 4) -
+        Math.max(candidateRect.left, occupied.left - 4));
+      var vertical = Math.max(0, Math.min(candidateRect.bottom, occupied.bottom + 4) -
+        Math.max(candidateRect.top, occupied.top - 4));
+      overlap += horizontal * vertical;
+    }
+    if (overlap < bestOverlap) {
+      bestOverlap = overlap;
+      best = candidate;
+    }
+    if (overlap === 0) break;
+  }
+  if (best) {
+    sp.style.left = best.left + '%';
+    sp.style.top = best.top + '%';
+    sp.style.marginTop = '0px';
+  }
+  sp.style.animation = oldAnimation;
+}
+
+function placeEnemyDamageFloat(sp, layer) {
+  placeFloatAvoidingOverlap(sp, layer, '.float-txt.enemy-hit-float', 28, 44);
+}
+
+function placePlayerRecoveryFloat(sp, layer) {
+  // 回復值只在玩家血條／魔力條附近飄動，不跑到頭像、名稱或狀態列。
+  placeFloatAvoidingOverlap(sp, layer, '.float-txt', 48, 18, 3, 8);
+}
+
+function floatText(elId, text, cls, damageValue) {
   if (elId === 'tb-float' && text === 'MISS' && cls === 'miss') {
     elId = 'tp-float';
     text = '閃避!';
@@ -123,18 +241,62 @@ function floatText(elId, text, cls) {
       normalFloats[0].parentNode.removeChild(normalFloats[0]);
     }
   }
+  var enemyHitFloat = isEnemyHitFloat(elId, cls);
+  var damageInfo = enemyHitFloat ? enemyDamageFloatInfo(text, damageValue) : null;
+  var damageKey = damageInfo ? enemyDamageFloatKey(cls) : '';
+  var recoveryInfo = playerRecoveryFloatInfo(elId, cls, text, damageValue);
+  var recoveryKey = recoveryInfo ? recoveryInfo.key : '';
+  if (damageKey) {
+    var damageFloats = layer.querySelectorAll('.float-txt.enemy-hit-float');
+    for (var di = damageFloats.length - 1; di >= 0; di--) {
+      var existing = damageFloats[di];
+      if (existing._damageFloatKey !== damageKey || existing._damageFloatHits >= ENEMY_DAMAGE_FLOAT_MAX_HITS) continue;
+      existing._damageFloatTotal += damageValue;
+      existing._damageFloatHits++;
+      existing.textContent = existing._damageFloatPrefix + fmt(existing._damageFloatTotal);
+      return;
+    }
+  }
+  if (recoveryKey) {
+    var recoveryFloats = layer.querySelectorAll('.float-txt.player-recovery-float');
+    for (var ri = recoveryFloats.length - 1; ri >= 0; ri--) {
+      var recoveryExisting = recoveryFloats[ri];
+      if (recoveryExisting._recoveryFloatKey !== recoveryKey || recoveryExisting._recoveryFloatHits >= PLAYER_RECOVERY_FLOAT_MAX_HITS) continue;
+      recoveryExisting._recoveryFloatTotal += damageValue;
+      recoveryExisting._recoveryFloatHits++;
+      recoveryExisting.textContent = recoveryExisting._recoveryFloatPrefix + fmt(recoveryExisting._recoveryFloatTotal);
+      scheduleFloatTextRemoval(recoveryExisting, FLOAT_TEXT_LIFETIME_MS);
+      return;
+    }
+  }
   var sp = document.createElement('span');
   sp.className = 'float-txt ' + (cls || '');
-  var enemyHitFloat = isEnemyHitFloat(elId, cls);
   if (enemyHitFloat) sp.className += ' enemy-hit-float';
   sp.textContent = text;
   var pct = enemyHitFloat ? 8 + Math.random() * 84 : 15 + Math.random() * 70;
   sp.style.left = pct + '%';
   if (enemyHitFloat) sp.style.top = (28 + Math.random() * 44) + '%';
   sp.style.marginTop = (enemyHitFloat ? (Math.random() * 24 - 12) : (Math.random() * 30 - 15)) + 'px';
+  if (damageKey) {
+    sp.className += ' damage-aggregate';
+    sp._damageFloatKey = damageKey;
+    sp._damageFloatTotal = damageValue;
+    sp._damageFloatHits = 1;
+    sp._damageFloatPrefix = damageInfo.prefix;
+  }
+  if (recoveryKey) {
+    sp.className += ' player-recovery-float player-recovery-aggregate';
+    sp._recoveryFloatKey = recoveryKey;
+    sp._recoveryFloatTotal = damageValue;
+    sp._recoveryFloatHits = 1;
+    sp._recoveryFloatPrefix = recoveryInfo.prefix;
+  }
   layer.appendChild(sp);
+  if (enemyHitFloat) placeEnemyDamageFloat(sp, layer);
+  if (recoveryKey) placePlayerRecoveryFloat(sp, layer);
   var panel = layer.closest('.combatant');
-  if (panel) {
+  // 敵方傷害浮字允許超出敵方框線；玩家事件與其他浮字仍維持在面板範圍內。
+  if (panel && !enemyHitFloat) {
     var lr = layer.getBoundingClientRect();
     if (lr.width > 0) {
       var pr = panel.getBoundingClientRect();
@@ -152,7 +314,7 @@ function floatText(elId, text, cls) {
       }
     }
   }
-  setTimeout(function () { if (sp.parentNode) sp.parentNode.removeChild(sp); }, 2000);
+  if (!damageKey) scheduleFloatTextRemoval(sp, FLOAT_TEXT_LIFETIME_MS);
 }
 
 /* ---- 分頁 ---- */
@@ -674,6 +836,25 @@ function playerShieldText(entity) {
   var shield = entity ? Math.max(0, entity.shield || 0) : 0;
   return shield > 0.5 ? '<span style="color:var(--info)">+' + fmt(shield) + '</span>' : '';
 }
+
+// 多敵人時名稱維持單行，寬度不足就縮小字體，不使用省略號截斷。
+function fitEnemyNames(party) {
+  if (!party) return;
+  var names = party.querySelectorAll('.enemy-name');
+  for (var ni = 0; ni < names.length; ni++) {
+    var nameEl = names[ni];
+    var card = nameEl.closest ? nameEl.closest('.enemy-card') : null;
+    if (!card) continue;
+    nameEl.style.fontSize = '';
+    var available = Math.max(1, card.clientWidth - 6);
+    var baseSize = parseFloat(window.getComputedStyle(nameEl).fontSize) || 10;
+    var naturalWidth = nameEl.scrollWidth;
+    if (naturalWidth > available) {
+      nameEl.style.fontSize = Math.max(6, baseSize * available / naturalWidth) + 'px';
+    }
+  }
+}
+
 function renderBattle() {
   var st = getStats();
   renderZoneBar();
@@ -722,7 +903,7 @@ function renderBattle() {
     partyHtml += '<div class="enemy-card' + (enemy.elite ? ' elite' : '') + '">' +
       '<div class="float-layer" id="mv-float-' + ei + '"></div>' +
       '<div class="cb-level">Lv.' + enemy.level + '</div>' + icon +
-      '<div class="enemy-name">' + (enemies.length > 1 ? (ei + 1) + '. ' : '') + enemy.name + '</div>' +
+      '<div class="enemy-name">' + enemy.name + '</div>' +
       '<div class="enemy-hp hp-bar"><div class="hp-fill monster" style="width:' + enemyHp + '%"></div><span class="hp-text">' + fmt(Math.max(0, enemy.hp)) + enemyShield + ' / ' + fmt(enemy.maxHp) + '</span></div>' +
       '<div class="enemy-status" data-enemy-buff-tip data-enemy-index="' + ei + '">' + entStatus(enemy) + '</div></div>';
   }
@@ -731,6 +912,7 @@ function renderBattle() {
     party.innerHTML = partyHtml;
     party.setAttribute('data-enemy-signature', enemySignature);
   }
+  fitEnemyNames(party);
   var cards = party.querySelectorAll('.enemy-card');
   for (var ci = 0; ci < cards.length && ci < enemies.length; ci++) {
     var card = cards[ci];

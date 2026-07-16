@@ -15,10 +15,10 @@ function playerEventFloatTarget(floatSel) {
   return (floatSel === 'tp-float' || floatSel === 'tb-float') ? 'tp-float' : 'pv-float';
 }
 
-function floatPlayerEvent(floatSel, text, cls) {
+function floatPlayerEvent(floatSel, text, cls, value) {
   if (typeof floatText !== 'function') return;
   var extra = cls ? (' ' + cls) : '';
-  floatText(playerEventFloatTarget(floatSel), text, 'player-event' + extra);
+  floatText(playerEventFloatTarget(floatSel), text, 'player-event' + extra, value);
 }
 
 function enemyEventFloatTarget(ent, floatSel) {
@@ -28,9 +28,9 @@ function enemyEventFloatTarget(ent, floatSel) {
   return 'mv-float-0';
 }
 
-function floatEnemyEvent(ent, floatSel, text, cls) {
+function floatEnemyEvent(ent, floatSel, text, cls, damageValue) {
   if (typeof floatText !== 'function') return;
-  floatText(enemyEventFloatTarget(ent, floatSel), text, cls);
+  floatText(enemyEventFloatTarget(ent, floatSel), text, cls, damageValue);
 }
 
 var _uid = 0;

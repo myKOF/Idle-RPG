@@ -41,7 +41,7 @@ test('我方戰鬥區域寬度固定，多敵人只平移並擴大敵方區域',
   // 我方欄位全模式固定 202px（單敵標準版型實測值），不再使用 1fr 浮動寬度
   assert.match(css, /\.battle-scene\s*\{[\s\S]*grid-template-columns:\s*202px\s+auto\s+minmax\(0,\s*1fr\)/);
   // 多敵人版型只吃兩側內距平移，不得再改我方欄寬（240px 特例移除）
-  assert.match(css, /\.battle-scene\.multi-enemy-layout\s*\{[\s\S]*width:\s*calc\(100%\s*\+\s*32px\)[\s\S]*margin-left:\s*-16px/);
+  assert.match(css, /\.battle-scene\.multi-enemy-layout\s*\{[\s\S]*width:\s*100%[\s\S]*margin-left:\s*0/);
   assert.doesNotMatch(css, /grid-template-columns:\s*240px/);
   // 3 隻以上敵人就套用平移版型（原本 >3 只有 4 隻才觸發）
   assert.match(fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8'), /multi-enemy-layout',\s*enemies\.length\s*>\s*2/);

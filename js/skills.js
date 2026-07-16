@@ -566,7 +566,7 @@ function castSkill(pEnt, target, id, lv, floatSel) {
           var dmgStr = fmt(dmgRes.dmg);
           if (dmgRes.crit) dmgStr = '爆擊 ' + dmgStr;
           if (dmgRes.blocked) dmgStr = '格擋 ' + dmgStr;
-          floatEnemyEvent(targetEnt, floatSel, sk.emoji + dmgStr, (dmgRes.crit ? 'crit ' : 'dmg ') + 'enemy-skill');
+          floatEnemyEvent(targetEnt, floatSel, sk.emoji + dmgStr, (dmgRes.crit ? 'crit ' : 'dmg ') + 'enemy-skill', dmgRes.dmg);
           trackDps(dmgRes.dmg);
           if (typeof recordRunDamage === 'function') recordRunDamage(sk.name, dmgRes.dmg);
         } else {
@@ -583,7 +583,7 @@ function castSkill(pEnt, target, id, lv, floatSel) {
         var boom = Math.max(1, Math.round(baseVal * fx.comboDetonate / 100));
         comboTarget.hp -= boom;
         totalDmg += boom;
-        floatEnemyEvent(comboTarget, floatSel, '❄️🔥' + fmt(boom), 'crit enemy-skill');
+        floatEnemyEvent(comboTarget, floatSel, '❄️🔥' + fmt(boom), 'crit enemy-skill', boom);
         trackDps(boom);
         parts.push('<span class="log-hl-good">冰火引爆 ' + fmt(boom) + '！</span>');
         if (comboTarget.hp <= 0) { comboTarget.hp = 0; out.killed = true; }
@@ -636,7 +636,7 @@ function castSkill(pEnt, target, id, lv, floatSel) {
     var beforeHealShield = Math.max(0, pEnt.shield || 0);
     healPlayer(pEnt, hv, st);
     showPlayerShieldGainAfterHeal(floatSel, pEnt, beforeHealShield);
-    floatPlayerEvent(floatSel, '回復 +' + fmt(hv), 'heal');
+    floatPlayerEvent(floatSel, '回復 +' + fmt(hv), 'heal', hv);
     parts.push('<span class="log-hl-good">回復 ' + fmt(hv) + ' 生命</span>');
   }
   if (fx.hotPct) {
@@ -658,7 +658,7 @@ function castSkill(pEnt, target, id, lv, floatSel) {
     parts.push('<span class="log-hl-good">' + (gainedShield > 0 ? '獲得 ' + fmt(gainedShield) + ' 護盾' : '護盾維持 ' + fmt(beforeShield)) + '</span>');
   }
   if (fx.selfCleanse) { cleanse(pEnt); floatPlayerEvent(floatSel, '✨淨化', 'special'); parts.push('淨化負面狀態'); }
-  if (fx.mpRestore) { pEnt.mp = Math.min(st.mp, pEnt.mp + fx.mpRestore); floatPlayerEvent(floatSel, '法力 +' + fx.mpRestore, 'mana'); parts.push('回復 ' + fx.mpRestore + ' 法力'); }
+  if (fx.mpRestore) { pEnt.mp = Math.min(st.mp, pEnt.mp + fx.mpRestore); floatPlayerEvent(floatSel, '法力 +' + fmt(fx.mpRestore), 'mana', fx.mpRestore); parts.push('回復 ' + fx.mpRestore + ' 法力'); }
   if (fx.buff) {
     applyBuff(pEnt, fx.buff.key, scaleAt(fx.buff, lv), fx.buff.dur);
     showPlayerBuffFloat(floatSel, fx.buff, lv);
