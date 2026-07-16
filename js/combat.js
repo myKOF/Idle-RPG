@@ -250,7 +250,7 @@ function playerAtkCfg(pEnt) {
         sunder: st.passives.sunder || 0, pen: st.pPen, mPen: st.mPen,
         trueDmgPct: st.passives.trueDmg || 0, elemAtk: st.elemAtk, globalDmgRed: st.globalDmgRed,
         annihilate: st.passives.annihilate || 0,
-        eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, isPlayer: true
+        eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, normalDmg: st.normalDmg, isPlayer: true
     };
 }
 function playerDefCfg(pEnt) {
@@ -263,6 +263,8 @@ function playerDefCfg(pEnt) {
         pRes: st.pRes, mRes: st.mRes, resist: st.resist, ctrlRes: st.resist.ctrl,
         ccFactor: (1 - st.tenacity / 100) * (1 - st.ccRed / 100),
         dmgRed: st.passives.sanctuary || 0, globalDmgRed: st.globalDmgRed, undying: st.passives.undying || 0,
+        normalDmgRed: st.normalDmgRed, eliteDmgRed: st.eliteDmgRed, bossDmgRed: st.bossDmgRed, // 敵種傷害抗性 → formula.js §3
+
         thornsPct: (st.passives.thorns || 0) + buffVal(pEnt, 'thornsUp'), maxHp: st.hp, isPlayer: true
     };
 }
@@ -277,7 +279,8 @@ function monsterAtkCfg(m, mult) {
     return {
         atk: m.atk * mult * (1 - buffVal(m, 'atkDown') / 100),
         dmgType: m.magic ? 'magic' : 'phys', level: m.level,
-        critRate: 5, critDmg: 150, hit: m.hit || 100, elemAtk: ea, globalDmgRed: m.globalDmgRed || 0
+        critRate: 5, critDmg: 150, hit: m.hit || 100, elemAtk: ea, globalDmgRed: m.globalDmgRed || 0,
+        isElite: !!m.elite, isBoss: !!m.isBoss // 攻擊者敵種：供玩家的敵種傷害抗性選值
     };
 }
 function monsterDefCfg(m) {
@@ -693,22 +696,53 @@ function stageGoMax() {
 /* ---- 塔戰相關邏輯省略 ---- */
 
 window.RUN_STATS = { runCount: 1, maxStage: 1, skills: {} };
-function recordRunDamage(skillName, dmg) {
-    if (!RUN_STATS.skills[skillName]) RUN_STATS.skills[skillName] = { count: 0, damage: 0 };
-    RUN_STATS.skills[skillName].count++;
-    RUN_STATS.skills[skillName].damage += (dmg || 0);
+function recordRunDamage(skillName, dmg, statKey, skillLevel) {
+    var key = statKey || skillName;
+    if (!RUN_STATS.skills[key]) {
+        RUN_STATS.skills[key] = { count: 0, damage: 0 };
+    }
+    var stat = RUN_STATS.skills[key];
+    // Keep the display metadata on the bucket so same-name skills remain independent.
+    if (!stat.name) stat.name = skillName;
+    if (typeof skillLevel === 'number') stat.level = skillLevel;
+    stat.count++;
+    stat.damage += (dmg || 0);
     RUN_STATS.maxStage = Math.max(RUN_STATS.maxStage, G.stage.current);
 }
 
 function generateSummaryHtml(current) {
     var totalDmg = 0;
-    for (var k in RUN_STATS.skills) totalDmg += RUN_STATS.skills[k].damage;
+    var displayNames = {};
+    var nameCounts = {};
+    var nameSeen = {};
+    for (var key in RUN_STATS.skills) {
+        var stat = RUN_STATS.skills[key];
+        totalDmg += stat.damage;
+        if (typeof stat.level === 'number') {
+            var rawName = stat.name || key;
+            nameCounts[rawName] = (nameCounts[rawName] || 0) + 1;
+        }
+    }
+    for (var key in RUN_STATS.skills) {
+        var stat = RUN_STATS.skills[key];
+        var displayName = key;
+        if (typeof stat.level === 'number') {
+            var rawName = stat.name || key;
+            displayName = rawName + '(' + stat.level + '級)';
+            if (nameCounts[rawName] > 1) {
+                nameSeen[rawName] = (nameSeen[rawName] || 0) + 1;
+                displayName += nameSeen[rawName];
+            }
+        }
+        displayNames[key] = displayName;
+    }
     if (totalDmg === 0) return '';
     var html = '<div class="summary-card"' + (current ? ' data-summary-current="true"' : '') + '>';
     html += '<div class="summary-card-title">------------' + (current ? '目前戰鬥（即時統計）' : '第 ' + RUN_STATS.runCount + ' 場戰鬥') + '--------------</div>';
     html += '<div class="summary-card-row"><span style="color:var(--accent)">最高關數</span>：' + RUN_STATS.maxStage + '</div>';
     for (var k in RUN_STATS.skills) {
         var sk = RUN_STATS.skills[k];
+        k = displayNames[k] || k;
         var pct = totalDmg > 0 ? (sk.damage / totalDmg * 100).toFixed(1) : 0;
         html += '<div class="summary-card-row"><span style="color:var(--accent)">' + k + '</span>：' + fmt(sk.count) + '次，傷害 ' + Math.round(sk.damage).toLocaleString() + ' (' + pct + '%)</div>';
     }

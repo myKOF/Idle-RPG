@@ -374,7 +374,8 @@ arrayContent('formula', 'ESSENCE_SALVAGE_CHANCE_BY_RARITY',
     '生命值': 'hpFlat', '生命值%': 'hpPct', '生命恢復/秒': 'hpRegen', '物理防禦': 'defFlat', '物理防禦%': 'defPct', '魔法防禦': 'mdefFlat',
     '法力值': 'mpFlat', '法力恢復/秒': 'mpRegen', '力量': 'str', '敏捷': 'agi', '智力': 'int', '耐力': 'vit',
     '攻擊速度%': 'aspd', '暴擊率%': 'critRate', '暴擊傷害%': 'critDmg', '物理穿透%': 'pPen', '魔法穿透%': 'mPen', '命中率%': 'hit', '冷卻縮減%': 'cdr', '施法速度%': 'castSpeed',
-    '吸血%': 'lifesteal', '吸魔%': 'manaSteal', '對菁英傷害%': 'eliteDmg', '對BOSS傷害%': 'bossDmg', '範圍傷害%': 'aoeDmg', '全局減傷': 'globalDmgRed',
+    '吸血%': 'lifesteal', '吸魔%': 'manaSteal', '對菁英傷害%': 'eliteDmg', '對BOSS傷害%': 'bossDmg', '對普通敵人傷害%': 'normalDmg', '範圍傷害%': 'aoeDmg', '全局減傷': 'globalDmgRed',
+    '普通敵人傷害抗性': 'normalDmgRed', '普通菁英傷害抗性': 'eliteDmgRed', '普通BOSS傷害抗性': 'bossDmgRed',
     '格擋率%': 'blockRate', '格擋減傷%': 'blockDmgRed', '閃避率%': 'evasion', '韌性%': 'tenacity', '護盾效率%': 'shieldEff', '物理抗性%': 'pRes', '魔法抗性%': 'mRes',
     '火焰抗性%': 'resFire', '冰霜抗性%': 'resIce', '雷電抗性%': 'resLightning', '劇毒抗性%': 'resPoison', '聖光抗性%': 'resLight', '暗影抗性%': 'resDark',
     '控制時間縮減%': 'ccRed', '移動速度%': 'moveSpeed', '掉寶率%': 'loot', '經驗加成%': 'xpBonus', '金幣加成%': 'goldBonus',
@@ -481,6 +482,11 @@ objFieldML('data', 'STAT_CAPS = {', 'stun', '2-屬性上限', '被動-暈眩 上
 /* ---- §3 戰鬥核心 ---- */
 inline('formula', 'return def / (def + ', P('3-戰鬥核心', '防禦減傷率', 0), '防減-常數');
 inline('formula', 'return def / (def + 60 + ', P('3-戰鬥核心', '防禦減傷率', 1), '防減-每級');
+// 敵種傷害抗性（普通敵人/普通菁英/普通BOSS）：a/b；表列缺席時跳過（相容尚未含此列的舊參數表）
+if (index['3-戰鬥核心'] && index['3-戰鬥核心']['敵種傷害抗性']) {
+  scalar('formula', 'ENEMY_TYPE_DMG_RED_A', '3-戰鬥核心', '敵種傷害抗性', 0);
+  scalar('formula', 'ENEMY_TYPE_DMG_RED_B', '3-戰鬥核心', '敵種傷害抗性', 1);
+}
 inline('formula', 'dmg *= rnd(', P('3-戰鬥核心', '傷害浮動', 0), '浮動-下');
 inline('formula', 'dmg *= rnd(0.9, ', P('3-戰鬥核心', '傷害浮動', 1), '浮動-上');
 numCtx('formula', 'dmg = Math.max(', ', Math.round(dmg))', P('3-戰鬥核心', '最低傷害下限', 0), '最低傷害');

@@ -84,7 +84,8 @@ function computeStats() {
     defFlat: 0, defPct: 0, mdefFlat: 0, mpFlat: 0,
     hpRegen: 0, mpRegen: 0, aspdPct: 0, critRate: 0, critDmg: 0,
     pPen: 0, mPen: 0, hit: 0, cdr: 0, castSpeed: 0, lifesteal: 0, manaSteal: 0,
-    eliteDmg: 0, bossDmg: 0, aoeDmg: 0, globalDmgRed: 0,
+    eliteDmg: 0, bossDmg: 0, normalDmg: 0, aoeDmg: 0, globalDmgRed: 0,
+    normalDmgRed: 0, eliteDmgRed: 0, bossDmgRed: 0,
     blockRate: 0, blockDmgRed: 0, evasion: 0, tenacity: 0, shieldEff: 0, pRes: 0, mRes: 0,
     ccRed: 0, moveSpeed: 0, loot: 0, xpBonus: 0, goldBonus: 0, luck: 0, weight: 0,
     enhanceSuccess: 0, decomposeYield: 0, hybridMutation: 0, enrageThreshold: 0, affixCap: 0, gemEff: 0
@@ -222,8 +223,12 @@ function computeStats() {
   st.manaSteal = capValue(A.manaSteal, STAT_CAPS.manaSteal);                      // 吸魔上限（上限 0＝無上限）
   st.eliteDmg = A.eliteDmg;
   st.bossDmg = A.bossDmg;
+  st.normalDmg = A.normalDmg;
   st.aoeDmg = A.aoeDmg;
   st.globalDmgRed = A.globalDmgRed;
+  st.normalDmgRed = A.normalDmgRed;   // 敵種傷害抗性（定值；減傷公式 enemyTypeDamageReduction → §3）
+  st.eliteDmgRed = A.eliteDmgRed;
+  st.bossDmgRed = A.bossDmgRed;
   // 防禦：物防 = (4 + (等級-1)×1.0 + 耐力×0.9 + 定值) × (1 + 物防%)
   st.base.def = 4 + (lv - 1) * 1.0 + st.vit * PRIMARY_STAT_EFFECTS.vitDef;
   st.def = Math.round((st.base.def + A.defFlat) * (1 + A.defPct / 100));
@@ -296,6 +301,18 @@ function globalDamageMultiplier(total) {
   return 1 - globalDamageReduction(total);
 }
 
+/* ---- 敵種傷害抗性（普通敵人/普通菁英/普通BOSS，三屬性共用曲線）----
+   減傷率 = 抗性值總合 / (抗性值總合 + a + b × 攻擊者等級)，a/b 與防禦減傷曲線同基準。
+   於 resolveHit 全局減傷之後、最低傷害之前的最末端套用；
+   依攻擊者敵種（普通/菁英/BOSS）選用防守方對應的抗性總合。 */
+var ENEMY_TYPE_DMG_RED_A = 60;  // 常數 a
+var ENEMY_TYPE_DMG_RED_B = 8;   // 攻擊者每級係數 b
+function enemyTypeDamageReduction(total, attackerLevel) {
+  total = Number(total) || 0;
+  if (total <= 0) return 0;
+  return total / (total + ENEMY_TYPE_DMG_RED_A + ENEMY_TYPE_DMG_RED_B * (Number(attackerLevel) || 1));
+}
+
 var SLOW_ASPD_FACTOR = 0.7;   // 減速狀態：攻速 -30%（攻擊冷卻累積 ×0.7）
 var BASE_HP_REGEN_PCT = 1.5;  // 野外每秒基礎生命回復（最大生命 %；高塔內無此回復）
 var KILL_HEAL_PCT = 12;       // 野外擊殺回復（最大生命 %，溢出轉護盾）
@@ -327,12 +344,14 @@ function rollComboHits(st) {
 
 /* ---- 共用攻擊流程（傷害結算總公式） ----
    結算順序：命中 → 防禦減傷（含破甲/穿透）→ 物/魔抗性 → ±10% 浮動
-           → 暴擊 → 元素附加（含特效觸發）→ 真實傷害 → 對菁英/BOSS 加成
-           → 格擋 → 護盾吸收 → 扣血 → 反震
+           → 暴擊 → 元素附加（含特效觸發）→ 真實傷害 → 對普通/菁英/BOSS 加成
+           → 格擋 → 聖佑 → 全局減傷 → 敵種傷害抗性 → 護盾吸收 → 扣血 → 反震
    aCfg: { atk, dmgType('phys'|'magic'|'both'), level, critRate, critDmg, hit, sunder, pen,
-           trueDmgPct, elemAtk, eliteDmg, bossDmg, isPlayer }
+           trueDmgPct, elemAtk, eliteDmg, bossDmg, normalDmg, isElite, isBoss, isPlayer }
+         （isElite/isBoss = 攻擊者自身敵種，供防守方敵種傷害抗性選值）
    dCfg: { def, mdef, level, dodge, blockRate, blockDmgRed, pRes, mRes, resist{六元素+ctrl},
-           ctrlRes, ccFactor, thornsPct, maxHp, isElite, isBoss }
+           ctrlRes, ccFactor, thornsPct, maxHp, isElite, isBoss,
+           normalDmgRed, eliteDmgRed, bossDmgRed }
    回傳 { dmg, crit, miss, blocked, killed, thorns, heal, procs[] }        */
 function resolveHit(attacker, defender, aCfg, dCfg) {
   var out = { dmg: 0, crit: false, miss: false, blocked: false, killed: false, thorns: 0, heal: 0, absorbed: 0, procs: [] };
@@ -383,9 +402,10 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   }
   // 真實傷害（無視防禦與抗性）= 攻擊力 × 真傷%
   if (aCfg.trueDmgPct) dmg += aCfg.atk * aCfg.trueDmgPct / 100;
-  // 對菁英 / 對 BOSS 傷害加成
+  // 對菁英 / 對 BOSS / 對普通 傷害加成（普通 = 非菁英且非 BOSS 的敵人）
   if (dCfg.isElite && aCfg.eliteDmg) dmg *= 1 + aCfg.eliteDmg / 100;
   if (dCfg.isBoss && aCfg.bossDmg) dmg *= 1 + aCfg.bossDmg / 100;
+  if (!dCfg.isElite && !dCfg.isBoss && aCfg.normalDmg) dmg *= 1 + aCfg.normalDmg / 100;
   // 格擋（機率減傷）：機率與減傷上限共用 STAT_CAPS，0 代表不設上限。
   var blockChance = capValue(dCfg.blockRate || 0, STAT_CAPS.blockRate);
   if (blockChance > 0 && chance(blockChance)) {
@@ -396,6 +416,10 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   if (dCfg.dmgRed) dmg *= 1 - clamp(dCfg.dmgRed, 0, 50) / 100;
   // 全局減傷：所有既有傷害計算完成後才套用，之後才進入最低傷害與護盾結算。
   if (dCfg.globalDmgRed) dmg *= globalDamageMultiplier(dCfg.globalDmgRed);
+  // 敵種傷害抗性：依攻擊者敵種（普通/菁英/BOSS）選用對應抗性值，於全局減傷之後的最末端套用。
+  var typeRedTotal = aCfg.isBoss ? (dCfg.bossDmgRed || 0)
+    : (aCfg.isElite ? (dCfg.eliteDmgRed || 0) : (dCfg.normalDmgRed || 0));
+  if (typeRedTotal > 0) dmg *= 1 - enemyTypeDamageReduction(typeRedTotal, aCfg.level || 1);
   dmg = Math.max(1, Math.round(dmg));   // 最低傷害 1
   // 護盾吸收
   if (defender.shield && defender.shield > 0) {
@@ -783,7 +807,8 @@ var SCORE_WEIGHTS = {
   str: 1.8, agi: 1.8, int: 1.8, vit: 1.8,
   aspd: 2.8, critRate: 2.4, critDmg: 0.9,
   pPen: 2.2, mPen: 2.2, hit: 1.2, cdr: 2.0, castSpeed: 1.4,
-  lifesteal: 2.2, manaSteal: 1.4, eliteDmg: 1.2, bossDmg: 1.2, aoeDmg: 1.4, globalDmgRed: 1.0,
+  lifesteal: 2.2, manaSteal: 1.4, eliteDmg: 1.2, bossDmg: 1.2, normalDmg: 1.2, aoeDmg: 1.4, globalDmgRed: 1.0,
+  normalDmgRed: 1.0, eliteDmgRed: 1.0, bossDmgRed: 1.0,
   blockRate: 2.0, blockDmgRed: 1.2, evasion: 2.2, tenacity: 1.2, shieldEff: 1.0,
   pRes: 2.0, mRes: 2.0,
   resFire: 0.8, resIce: 0.8, resLightning: 0.8, resPoison: 0.8, resLight: 0.8, resDark: 0.8,

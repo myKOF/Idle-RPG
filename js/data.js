@@ -203,6 +203,10 @@ var AFFIX_POOL = {
   defPct: { name: '物理防禦%', base: 4, lv: 0.02, pct: true, weight: 6 },
   mdefFlat: { name: '魔法防禦', base: 3, lv: 0.35, pct: false, weight: 9 },
   globalDmgRed: { name: '全局減傷', base: 3, lv: 0.35, pct: false, weight: 9, minR: 4 },
+  // 敵種傷害抗性（定值減免）：放出量約為物理防禦（defFlat）的 2 倍；減傷公式 enemyTypeDamageReduction → formula.js §3
+  normalDmgRed: { name: '普通敵人傷害抗性', base: 6, lv: 0.35, pct: false, weight: 9, minR: 3 },
+  eliteDmgRed: { name: '普通菁英傷害抗性', base: 6, lv: 0.35, pct: false, weight: 9, minR: 3 },
+  bossDmgRed: { name: '普通BOSS傷害抗性', base: 6, lv: 0.35, pct: false, weight: 9, minR: 3 },
   aspd: { name: '攻擊速度%', base: 3, lv: 0.012, pct: true, weight: 6 },
   critRate: { name: '暴擊率%', base: 2.5, lv: 0.012, pct: true, weight: 6 },
   critDmg: { name: '暴擊傷害%', base: 8, lv: 0.05, pct: true, weight: 5 },
@@ -213,8 +217,9 @@ var AFFIX_POOL = {
   castSpeed: { name: '施法速度%', base: 3, lv: 0.012, pct: true, weight: 4, minR: 2 },
   lifesteal: { name: '吸血%', base: 1.5, lv: 0.008, pct: true, weight: 4 },
   manaSteal: { name: '吸魔%', base: 1.2, lv: 0.006, pct: true, weight: 3, minR: 2 },
-  eliteDmg: { name: '對菁英傷害%', base: 4, lv: 0.02, pct: true, weight: 4, minR: 2 },
-  bossDmg: { name: '對BOSS傷害%', base: 4, lv: 0.02, pct: true, weight: 4, minR: 2 },
+  eliteDmg: { name: '對菁英傷害%', base: 4, lv: 0.02, pct: true, weight: 4, minR: 3 },
+  bossDmg: { name: '對BOSS傷害%', base: 4, lv: 0.02, pct: true, weight: 4, minR: 3 },
+  normalDmg: { name: '對普通敵人傷害%', base: 3, lv: 0.35, pct: true, weight: 9, minR: 3 }, // 放出量同物理防禦（defFlat）；僅對非菁英且非 BOSS 敵人生效
   aoeDmg: { name: '範圍傷害%', base: 4, lv: 0.02, pct: true, weight: 4, minR: 2 },
   // === 防禦 ===
   blockRate: { name: '格擋率%', base: 2.5, lv: 0.012, pct: true, weight: 4 },
@@ -234,9 +239,9 @@ var AFFIX_POOL = {
   // === 特殊與機制（多為飾品專屬） ===
   ccRed: { name: '控制時間縮減%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 3 },
   moveSpeed: { name: '移動速度%', base: 3, lv: 0.012, pct: true, weight: 4 },
-  loot: { name: '掉寶率%', base: 3, lv: 0.015, pct: true, weight: 4 },
-  xpBonus: { name: '經驗加成%', base: 4, lv: 0.02, pct: true, weight: 4, slots: ACCESSORY_SLOTS },
-  goldBonus: { name: '金幣加成%', base: 5, lv: 0.025, pct: true, weight: 4, slots: ACCESSORY_SLOTS },
+  loot: { name: '掉寶率%', base: 3, lv: 0.015, pct: true, weight: 4, minR: 3 },
+  xpBonus: { name: '經驗加成%', base: 4, lv: 0.02, pct: true, weight: 4, minR: 3, slots: ACCESSORY_SLOTS },
+  goldBonus: { name: '金幣加成%', base: 5, lv: 0.025, pct: true, weight: 4, minR: 3, slots: ACCESSORY_SLOTS },
   luck: { name: '幸運值', base: 2, lv: 0.1, pct: false, weight: 3, minR: 3, slots: ACCESSORY_SLOTS },
   weight: { name: '負重上限', base: 2, lv: 0.3, pct: false, weight: 3, slots: ACCESSORY_SLOTS },
   enhanceSuccess: { name: '強化成功率%', base: 3, lv: 0.015, pct: true, weight: 3, minR: 3 },
@@ -251,8 +256,8 @@ var AFFIX_POOL = {
 var AFFIX_CATS = {
   base: ['hpFlat', 'hpPct', 'hpRegen', 'mpFlat', 'mpRegen', 'str', 'agi', 'int', 'vit'],
   off: ['atkFlat', 'atkPct', 'matkFlat', 'matkPct', 'aspd', 'critRate', 'critDmg', 'pPen', 'mPen',
-    'hit', 'cdr', 'castSpeed', 'lifesteal', 'manaSteal', 'eliteDmg', 'bossDmg', 'aoeDmg'],
-  def: ['defFlat', 'defPct', 'mdefFlat', 'globalDmgRed', 'blockRate', 'blockDmgRed', 'evasion',
+    'hit', 'cdr', 'castSpeed', 'lifesteal', 'manaSteal', 'eliteDmg', 'bossDmg', 'normalDmg', 'aoeDmg'],
+  def: ['defFlat', 'defPct', 'mdefFlat', 'globalDmgRed', 'normalDmgRed', 'eliteDmgRed', 'bossDmgRed', 'blockRate', 'blockDmgRed', 'evasion',
     'tenacity', 'shieldEff', 'pRes', 'mRes', 'resFire', 'resIce', 'resLightning',
     'resPoison', 'resLight', 'resDark', 'ccRed']
 };
@@ -697,6 +702,14 @@ function defenseStatDesc(st, baseDesc, label, keyBase, pctKey) {
   return statDesc(st, baseDesc, label, keyBase, pctKey) + defenseReductionDesc(st, keyBase);
 }
 
+// 敵種傷害抗性（普通敵人/普通菁英/普通BOSS）tips：黃字顯示以自身等級為攻擊者等級的目前減傷率（截斷至小數四位）
+function enemyTypeDmgRedDesc(st, key, label) {
+  var reduction = enemyTypeDamageReduction(st[key] || 0, st.level || 1) * 100;
+  return '受到' + label + '攻擊時，於全局減傷之後的最終階段按「減免值 ÷ (減免值 + ' +
+    ENEMY_TYPE_DMG_RED_A + ' + ' + ENEMY_TYPE_DMG_RED_B + '×攻擊者等級)」比例減傷；多件裝備直接加總。' +
+    '<br><br><span style="color:#ffd700">目前同級減傷率：' + pctStrFloor4(reduction) + '</span>';
+}
+
 var STAT_GROUPS = [
   {
     title: '基礎屬性', rows: [
@@ -727,6 +740,7 @@ var STAT_GROUPS = [
       ['🌊 吸魔', function (st) { return statFmt(st.manaSteal, STAT_CAPS.manaSteal, '%'); }, '造成傷害時，將部分傷害轉化為自身法力值。' + capText(STAT_CAPS.manaSteal, '%')],
       ['👑 對菁英傷害', function (st) { return statFmt(st.eliteDmg, null, '%', true); }, '對菁英怪或首領怪物造成的額外傷害加成。'],
       ['😈 對BOSS傷害', function (st) { return statFmt(st.bossDmg, null, '%', true); }, '專門對首領怪物造成的額外傷害加成。'],
+      ['👤 對普通敵人傷害', function (st) { return statFmt(st.normalDmg, null, '%', true); }, '對普通敵人（非菁英、非BOSS）造成的額外傷害加成，公式與對菁英/BOSS傷害相同。'],
       ['💫 範圍傷害', function (st) { return statFmt(st.aoeDmg, null, '%', true); }, '多目標或範圍技能的總體傷害加成。']
     ]
   },
@@ -739,6 +753,9 @@ var STAT_GROUPS = [
         var capNote = GLOBAL_DMG_RED_CAP > 0 ? '（減傷上限 ' + GLOBAL_DMG_RED_CAP + '%）' : '';
         return '在最終傷害階段降低受到的所有傷害' + capNote + '。<br><br><span style="color:#ffd700">目前實際減傷：' + pctStr(reduction) + '</span>';
       }],
+      ['👤 普通敵人傷害抗性', function (st) { return statFmt(st.normalDmgRed, null); }, function (st) { return enemyTypeDmgRedDesc(st, 'normalDmgRed', '普通敵人（非菁英、非BOSS）'); }],
+      ['👑 普通菁英傷害抗性', function (st) { return statFmt(st.eliteDmgRed, null); }, function (st) { return enemyTypeDmgRedDesc(st, 'eliteDmgRed', '菁英敵人'); }],
+      ['😈 普通BOSS傷害抗性', function (st) { return statFmt(st.bossDmgRed, null); }, function (st) { return enemyTypeDmgRedDesc(st, 'bossDmgRed', 'BOSS'); }],
       ['🧱 格擋率', function (st) { return statFmt(st.blockRate, STAT_CAPS.blockRate, '%'); }, '受到攻擊時，有機率觸發格擋來減輕部分傷害。' + capText(STAT_CAPS.blockRate, '%')],
       ['🧲 格擋減傷', function (st) { return statFmt(blockDmgReduction(st.blockDmgRed), blockDmgRedTotalCap(), '%'); }, function () { return '成功格擋時能減免的傷害比例（' + BLOCK_DMG_RED_BASE + '% 基礎 + 詞條）。' + capText(blockDmgRedTotalCap(), '%'); }],
       ['💨 閃避率', function (st) { return statFmt(st.evasion, STAT_CAPS.evasion, '%'); }, '完全避開敵人攻擊的機率（受敵方命中率影響）。' + capText(STAT_CAPS.evasion, '%')],

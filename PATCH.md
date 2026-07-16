@@ -1,5 +1,38 @@
 # PATCH.md
 
+## 變更紀錄：敵種屬性改名＋9 種詞條升獨特級（下方兩則紀錄中的舊名稱以本則為準）
+
+- 改名（`AFFIX_POOL` name／屬性面板列／參數表 表-詞條池與表-戰力權重 名稱欄／game_formula.md 全同步；內部 key 不變）：
+  - `normalDmg`：對普通傷害% → **對普通敵人傷害%**（面板「👤 對普通敵人傷害」）
+  - `normalDmgRed`：對普通傷害減免 → **普通敵人傷害抗性**
+  - `eliteDmgRed`：對菁英傷害減免 → **普通菁英傷害抗性**
+  - `bossDmgRed`：對BOSS傷害減免 → **普通BOSS傷害抗性**
+  - 參數表「3-戰鬥核心」公式列同步更名為「敵種傷害抗性」（apply_params 接線一併改）。
+- 獨特級門檻（`minR: 3`，僅獨特含以上裝備出現）：對普通敵人傷害%、對菁英傷害%、對BOSS傷害%、三種敵種傷害抗性、掉寶率%、經驗加成%、金幣加成% 共 9 種（對菁英/對BOSS 原為稀有級、其餘原無門檻）；參數表 表-詞條池 對應 5 列的參數d 同步改「獨特」、4 條新列直接標「獨特」。
+- 測試：enemy-type-damage.test.cjs 更新名稱斷言＋新增獨特級 minR 測試（6 測試全過；全套 218＝201 過/17 失敗＝既有基線）。
+- 驗證：`npm run build` 94 檔過；apply_params dry-run 693 參數一致/0 錨點問題；round-trip 逐列比對通過（含 5 列參數d 變更檢查）；隔離埠 8124 實測——稀有(2)裝備 400 次擲骰 0 洩漏、獨特(3) 9 種詞條全部可出現（金幣/經驗僅飾品部位）、面板 4 列新名稱正確、主控台 0 錯誤。
+- 註：xlsx 仍因 Excel 開啟中而待換入（監看中）；CSV 已為最新（含改名與獨特級）。
+
+## 變更紀錄：參數表加入敵種傷害屬性公式＋「刪除」標記處理
+
+- 參數表新列（CSV+xlsx 同步，共 9 列）：「3-戰鬥核心/敵種傷害減免」（a=60、b=8，接 `ENEMY_TYPE_DMG_RED_A/B`）；「表-詞條池」對普通傷害%（3/0.35/9）與對普通/菁英/BOSS傷害減免（各 6/0.35/9）；「表-戰力權重」對普通傷害% 1.2、三減免各 1。位置緊接各自的全局減傷／對BOSS傷害%／防禦減傷率之後。
+- 「刪除」標記（變動欄新語意，已寫入 AI_RULES.md）：移除 #58「2-屬性上限/全局減傷 上限」列（全局減傷已不設上限；該列原本即標注不生效、apply_params 無引用）。
+- `tools/apply_params.cjs`：wKeyByName 補 4 個新詞條名稱；新增 ENEMY_TYPE_DMG_RED_A/B scalar 接線（表列缺席時自動跳過，相容舊表）。詞條池／戰力權重迴圈本身通用、自動接上。
+- xlsx 編輯方式：純 Node 重壓 ZIP——sheet2（計算表）刪 1 插 9、全列重編號、A 欄重建為單段共用公式鏈 `A4:A458`（保留自動遞增；I11:I19 轉生 ×3 鏈原樣保留）；sheet1 全部資料列重生為同列 `=計算表!Xn` 鏡像＋快取值；刪 calcChain 並設 `fullCalcOnLoad` 讓 Excel 開檔重算。
+- 驗證：round-trip（新 xlsx → xlsx_to_csv → CSV）與基線逐列比對通過——既有 448 列逐欄保留（含使用者在途數值）、新 9 列內容正確、刪除列移除、編號 1..457 連續；`apply_params` dry-run 693 參數全數一致、0 錨點問題；`npm run build` 94 檔通過。
+- 註：套用當下 xlsx 正被 Excel 開啟（鎖檔存在），CSV 已先落地，xlsx 以監看器等 Excel 關閉後自動比對雜湊再換入（若期間使用者又存檔會改用重新套補丁流程，不會覆蓋使用者變更）。
+
+## 變更紀錄：新增敵種傷害屬性（對普通傷害% + 對普通/菁英/BOSS傷害減免）
+
+- 需求：新增 4 詞條——「對普通傷害%」（百分比，放出量同物理防禦詞條，公式同對菁英/BOSS加成、僅對非菁英非BOSS敵人生效）與「對普通/菁英/BOSS傷害減免」（定值，放出量約為物理防禦詞條 2 倍）；減免通用公式 `減免值總合/(減免值總合+a+b×攻擊者等級)`（a=60、b=8，同防禦減傷曲線基準），作用於傷害公式最末端（全局減傷之後、最低傷害之前）。
+- `js/data.js`：`AFFIX_POOL` +4（normalDmg base3/lv0.35/pct；normalDmgRed/eliteDmgRed/bossDmgRed base6/lv0.35/定值）；`AFFIX_CATS` 歸類（off/def）；`STAT_GROUPS` 進攻 +「👤 對普通傷害」、防禦 +三個減免列；新增 `enemyTypeDmgRedDesc` tips 助手（黃字顯示「目前同級減傷率」，`pctStrFloor4` 截斷至小數四位）。
+- `js/formula.js`：computeStats 聚合桶與 st 欄位 +4；§3 新增 `ENEMY_TYPE_DMG_RED_A/B` 與 `enemyTypeDamageReduction()`；`resolveHit` 加對普通傷害加成判定（非菁英且非BOSS）與末端敵種減免（依 aCfg.isElite/isBoss 選 dCfg 對應減免值）；`SCORE_WEIGHTS` +4（normalDmg 1.2、三減免 1.0）。
+- `js/combat.js`：`playerAtkCfg` 帶 normalDmg；`playerDefCfg` 帶三減免；`monsterAtkCfg` 帶 `isElite/isBoss`（野外 `m.elite`、高塔 BOSS `isBoss:true` 旗標既存）。
+- `js/skills.js`：`castSkill` 技能 aCfg 帶 normalDmg。
+- 文件：`game_formula.md` §2.5（兩列）、§3.2（步驟 7 擴充＋新步驟 11 敵種減免、重排 12/13）、§6.4（兩則詞綴說明）。
+- 測試：新增 `tests/enemy-type-damage.test.cjs`（5 測試：詞條放出量對照 defFlat、加成只打普通敵、減免公式、敵種選值與末端順序、面板 tips 黃字四位小數）。
+- 驗證：`npm run build`（94 檔過）；`npm test` 217 測試＝200 過/17 失敗（與改動前基線完全相同，皆為使用者調參後的既有失敗）；隔離埠 8124 實測——主控台 0 錯誤、主迴圈運轉、面板 4 新列渲染、沙盒 resolveHit 200 次命中平均值符合 BOSS 減免期望（正確選 bossDmgRed 而非 normalDmgRed）、詞條擲值上下限恰為物理防禦 2 倍。
+
 ## 變更紀錄：恢復裝備切頁 CSS（三欄並排版面）
 
 - 問題：`css/style.css` 中整段 `.eqset-*` 樣式（`#equip-set-tabs`／`.eqset-tabrow` 三欄 grid／`.eqset-tabwrap`／`.eqset-name`／`.eqset-rename`／`.eqset-tab`／`.eqset-badge`／`.eqset-confirm`）被整段刪除 → 三個切頁失去 grid 版面、退回預設 block 上下堆疊。渲染碼（ui.js `renderEquipSetTabs`）本身完整。

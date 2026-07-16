@@ -1418,3 +1418,46 @@ CSS transition，避免出現追趕式跳動。
 6. [ ] 修改 `index.html` 與 `js/ui.js`，在詳細日誌工具列新增暫停按鈕並與主界面暫停雙向同步。
 7. [ ] 執行單元測試 `node --test tests/active-buffs-panel.test.cjs` 驗證 `activePlayerBuffs` 行為。
 8. [ ] 執行所有測試 `node --test tests/` 確保遊戲核心與 UI 的完整性。
+
+## 當前任務（2026-07-16）：新增對普通/菁英/BOSS 敵種傷害屬性（1 加成 + 3 減免）
+
+### 需求
+- 新詞條「對普通傷害%」（百分比）：放出量與物理防禦詞條相同（base/lv 同 defFlat），公式同對菁英/BOSS 傷害加成、僅對非菁英且非 BOSS 的普通敵人生效。
+- 新詞條「對普通/菁英/BOSS傷害減免」（定值）：放出量約為物理防禦詞條的 2 倍（base×2、lv 係數同 defFlat）。
+- 減免通用公式：減傷率 = 減免值總合 / (減免值總合 + a + b×攻擊者等級)，a=60、b=8（同防禦減傷曲線基準），於 resolveHit 全局減傷之後、最低傷害之前的最末端套用；依攻擊者敵種（普通/菁英/BOSS）選用對應減免值。
+- 屬性面板：進攻加「對普通傷害」，防禦加三個減免列；tips 黃字顯示「目前同級減傷率」截斷至小數點後四位（pctStrFloor4）。
+
+### 設計
+- data.js：AFFIX_POOL +4 詞條、AFFIX_CATS 歸類（off/def）、STAT_GROUPS +4 列、enemyTypeDmgRedDesc tips 助手。
+- formula.js：computeStats 聚合桶與 st 欄位 +4；§3 新增 ENEMY_TYPE_DMG_RED_A/B 與 enemyTypeDamageReduction()；resolveHit 加「對普通傷害加成」判定與末端敵種減免；SCORE_WEIGHTS +4。
+- combat.js：playerAtkCfg 帶 normalDmg、playerDefCfg 帶三減免、monsterAtkCfg 帶 isElite/isBoss（高塔 BOSS 實體已有 isBoss 旗標）。
+- skills.js：castSkill 的 aCfg 帶 normalDmg。
+- 文件：game_formula.md §2.5／§3.2／§6.4 同步。
+
+### 微型任務
+1. [DONE] tests/enemy-type-damage.test.cjs（TDD：詞條定義、加成只打普通敵、減免公式與末端套用順序、面板 tips 黃字四位小數）。
+2. [DONE] data.js 詞條池／分類／面板／tips。
+3. [DONE] formula.js 聚合、公式、resolveHit、評分權重。
+4. [DONE] combat.js / skills.js 攻防組態接線。
+5. [DONE] game_formula.md 同步。
+6. [DONE] npm run build ＋ npm test（不新增失敗）＋ 隔離埠實測（頁面載入、主控台 0 錯誤、面板顯示）。
+
+## 當前任務（2026-07-16 續）：參數表加入敵種傷害屬性公式＋「刪除」標記處理
+
+### 需求
+- game_parameters.xlsx／CSV 加入上一任務的新公式列（敵種傷害減免 a/b、4 條新詞條放出量、4 條戰力權重）。
+- 變動欄新定義「刪除」＝把該列公式從參數表移除；本次：#58「2-屬性上限/全局減傷 上限」（全局減傷已不設上限、該列本就不生效）。
+
+### 設計
+- xlsx 現況：sheet1(game_parameters) 全表為 `=計算表!Xn` 同列鏡像；sheet2(計算表) 為實際值，A 欄多段共用公式遞增、I11:I19 為轉生經驗 ×3 鏈（列位不受本次變動影響、原樣保留）。CSV 與 xlsx 目前 100% 同步（已 round-trip 驗證）。
+- 編輯策略（純 Node 重壓 ZIP）：sheet2 刪 1 列、插 9 列（字面值、inlineStr）、全列重編號；A 欄重建為單一共用公式鏈 A4:A{end}（保留使用者的自動遞增行為）；sheet1 資料列全部重生為同列鏡像＋快取值；刪 calcChain 並在 calcPr 加 fullCalcOnLoad 讓 Excel 開檔重算。
+- 新列位置：3-戰鬥核心「敵種傷害減免」(a=60,b=8) 接在防禦減傷率後；表-詞條池 3 條減免接在全局減傷後、對普通傷害% 接在對BOSS傷害% 後；表-戰力權重同樣對位。
+- apply_params.cjs：scalar 接 ENEMY_TYPE_DMG_RED_A/B；wKeyByName 補 4 個新詞條名稱（詞條池迴圈本身通用、自動接上）。
+- AI_RULES.md 變動欄語意補「刪除」定義。
+
+### 微型任務
+1. [DONE] 轉換腳本（scratchpad）：讀 zip → sheet2 增刪列＋重編號＋A 鏈重建 → sheet1 鏡像重生 → 重壓 ZIP。
+2. [DONE] 驗證閘門：xlsx_to_csv round-trip，與「基線 CSV＋預期變更」逐列比對（忽略編號欄後全等）。
+3. [DONE-CSV / xlsx 待 Excel 關閉後換入（監看中）] 覆寫 config/Excel/xlsx 與 config/CSV（以重生輸出為準，保證兩者同步）。
+4. [DONE] apply_params.cjs 接線＋dry-run 無錯誤。
+5. [DONE] AI_RULES.md「刪除」定義；PLAN/PATCH/記憶同步。

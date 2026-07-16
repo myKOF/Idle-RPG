@@ -496,7 +496,7 @@ function showPlayerShieldGainAfterHeal(floatSel, pEnt, beforeShield) {
 }
 
 /* ---- 施放執行 ---- */
-function castSkill(pEnt, target, id, lv, floatSel) {
+function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
   var sk = skillDef(id);
   var fx = effectiveFx(id, sk, lv);
   var st = getStats();
@@ -553,7 +553,7 @@ function castSkill(pEnt, target, id, lv, floatSel) {
             critRate: st.critRate + (fx.critBonus || 0), critDmg: st.critDmg,
             hit: fx.neverMiss ? 999 : Math.max(100, st.hit), pen: fx.dmgType === 'magic' ? st.mPen : st.pPen, // 技能命中吃玩家命中率，保留 100 當地板（低命中不受影響、高命中能壓過高閃避敵人）
             annihilate: st.passives.annihilate || 0, // 神鑄特效【破滅】：技能暴擊同樣適用
-            elemAtk: elemAtk, eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, isPlayer: true
+            elemAtk: elemAtk, eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, normalDmg: st.normalDmg, isPlayer: true
           };
           // 處決：低血量加成
           if (fx.execBelow && targetEnt.hp / targetEnt.maxHp * 100 < fx.execBelow) aCfg.atk *= (fx.execMult || 2);
@@ -568,7 +568,10 @@ function castSkill(pEnt, target, id, lv, floatSel) {
           if (dmgRes.blocked) dmgStr = '格擋 ' + dmgStr;
           floatEnemyEvent(targetEnt, floatSel, sk.emoji + dmgStr, (dmgRes.crit ? 'crit ' : 'dmg ') + 'enemy-skill', dmgRes.dmg);
           trackDps(dmgRes.dmg);
-          if (typeof recordRunDamage === 'function') recordRunDamage(sk.name, dmgRes.dmg);
+          if (typeof recordRunDamage === 'function') {
+            var statKey = 'skill:' + (typeof statSlot === 'number' ? statSlot : id) + ':' + id + ':' + lv;
+            recordRunDamage(sk.name, dmgRes.dmg, statKey, lv);
+          }
         } else {
           floatEnemyEvent(targetEnt, floatSel, 'MISS', 'miss enemy-dodge');
         }
@@ -711,7 +714,7 @@ function pickAndCastSkill(pEnt, target, floatSel) {
     if ((pEnt.skillCds[id] || 0) > 0) continue;
     if (pEnt.mp < skillManaCost(sk, lv)) continue;
     if (!skillConditionOk(sk, effectiveFx(id, sk, lv), pEnt, target, st)) continue;
-    return castSkill(pEnt, target, id, lv, floatSel);
+    return castSkill(pEnt, target, id, lv, floatSel, i);
   }
   return null;
 }
