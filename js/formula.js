@@ -1184,7 +1184,7 @@ function fusionMutationChance() { return FUSION_MUTATION_CHANCE + getStats().luc
    §10 離線收益
    ============================================================ */
 
-var OFFLINE_MAX_HOURS = 8;        // 離線收益時間上限（小時）；1 分鐘內不計
+var OFFLINE_MAX_HOURS = 24;        // 離線收益時間上限（小時）；1 分鐘內不計
 var OFFLINE_LEVEL_REDUCE = 10;    // 計算等級扣減：目前地圖最高階段 − 此值，再捨去個位數（下限 1）
 var OFFLINE_KILL_INTERVAL = 20;   // 擊殺速率：每隔此秒數擊殺 1 隻菁英怪
 
