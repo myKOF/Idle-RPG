@@ -63,6 +63,7 @@ function newGameState() {
       level: 1, xp: 0,
       reincarnations: 0,
       reincarnationTalentPoints: 0,
+      talents: { levels: {}, potentialLevels: {} },
       gold: 50, scrap: 0, essence: 0, ancientEssence: 0, soulOrigin: 0,
       dust: 0,                // 魔塵（神鑄材料）
       forgeMats: forgeMats,   // 新熔爐 15 種礦石/材料計數（key → 數量）
@@ -172,7 +173,7 @@ function gainXp(n) {
     // 升級回滿血藍
     var st = getStats();
     if (FIELD.player) { FIELD.player.hp = st.hp; FIELD.player.mp = st.mp; }
-    UI.dirty.header = true; UI.dirty.skills = true;
+    UI.dirty.header = true; UI.dirty.skills = true; UI.dirty.talents = true;
   }
 }
 
@@ -204,6 +205,7 @@ function reincarnate() {
   }
   UI.dirty.header = true;
   UI.dirty.skills = true;
+  UI.dirty.talents = true;
   UI.dirty.battle = true;
   blog('🌟 轉生成功！成為【' + reincarnationRankName(p.reincarnations) + '】。等級重置為 1，生命、法力與四大屬性變為 ×' + reincarnationTotalMultiplier() + '，經驗需求 ×' + reincarnationExpMultiplier() + '。', 'good');
   return null;
@@ -323,7 +325,7 @@ function takeAutoSalvageCandidate(items) {
    若包內全為神話+，則與「未鎖定中評分最低者」捨弱留強交換，
    新物品較弱（或包內全上鎖）時分解新物品。上鎖裝備永不被動分解。 */
 function addToInventory(it) {
-  var cap = INVENTORY_CAP + (G.player.invUpgrades || 0);
+  var cap = typeof inventoryCapacityWithTalents === 'function' ? inventoryCapacityWithTalents() : INVENTORY_CAP + (G.player.invUpgrades || 0);
   if (G.inventory.length < cap) {
     G.inventory.push(it);
     UI.dirty.inv = true;

@@ -18,8 +18,18 @@ function nflog(msg, cls) {
 
 function newForgeState() { return G && G.newForge; }
 
+/* ---- 本地服限定：新熔爐僅在本機開放，外服沿用舊熔爐 ----
+   與 GM 指令相同安全邊界：不依賴可被前端覆寫的旗標，只接受本機 hostname。 */
+function newForgeHostAvailable() {
+  var loc = (typeof window !== 'undefined' && window.location) ||
+    (typeof location !== 'undefined' && location);
+  var host = loc && loc.hostname;
+  return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+}
+
 /* ---- 路由攔截（factory.js pushConveyor 呼叫）：收下回 true ---- */
 function newForgeTryIntake(item) {
+  if (!newForgeHostAvailable()) return false; // 外服：裝備引導維持舊輸送帶
   if (_nfBypass) return false;
   var nf = newForgeState();
   if (!nf || !nf.intake) return false;
@@ -51,6 +61,7 @@ function newForgeReturnQueueToConveyor() {
 
 /* ---- 主迴圈：每條傳送帶獨立計時，每 NEW_FORGE_INTERVAL 秒 tick 一次 ---- */
 function newForgeTick(dt) {
+  if (!newForgeHostAvailable()) return; // 外服：傳送帶全停
   var nf = newForgeState();
   if (!nf || !nf.furnaces || !nf.furnaces.length) return;
   for (var i = 0; i < nf.furnaces.length; i++) {
@@ -122,7 +133,7 @@ function newForgeLineLoad(line) {
   } else if (line.filter === 'craft') {
     var rc = NEW_FORGE_CRAFT_RECIPES[line.craft.recipe];
     if (!rc) return;
-    var cap = INVENTORY_CAP + (G.player.invUpgrades || 0);
+    var cap = typeof inventoryCapacityWithTalents === 'function' ? inventoryCapacityWithTalents() : INVENTORY_CAP + (G.player.invUpgrades || 0);
     while (loaded < NEW_FORGE_LINE_LOAD_PER_TICK && line.belt.length < NEW_FORGE_BELT_CAP) {
       if (G.inventory.length >= cap) break; // 背包滿載時停止裝載，避免產物擠爆背包
       if (!newForgeCanAfford(rc.mats)) break;
@@ -393,4 +404,29 @@ function sanitizeNewForge(data) {
   var clean = {};
   for (var mk in NEW_FORGE_MATERIALS) clean[mk] = Math.max(0, Math.floor(Number(srcMats[mk]) || 0));
   if (data.player) data.player.forgeMats = clean;
+  // 外服（非本地服）：新熔爐停用——滯留裝備歸還舊輸送帶、在途材料批次退回庫存；
+  // 熔爐配置/材料庫存/統計保留於存檔，回本地服自動恢復（裝備引導由 intake/tick 閘門切回舊版）。
+  if (!newForgeHostAvailable() && data.factory && Array.isArray(data.factory.conveyor)) {
+    var conv = data.factory.conveyor;
+    for (var fi = 0; fi < nf.furnaces.length; fi++) {
+      var flines = nf.furnaces[fi].lines || [];
+      for (var li = 0; li < flines.length; li++) {
+        var belt = flines[li].belt;
+        while (belt.length) {
+          var be = belt.shift();
+          if (be.kind === 'smelt') {
+            var sRc = NEW_FORGE_SMELT_RECIPES[be.product];
+            if (sRc) for (var sk in sRc) clean[sk] += sRc[sk];
+          } else if (be.item) {
+            if (be.kind === 'craft') {
+              var cRc = NEW_FORGE_CRAFT_RECIPES[be.recipe];
+              if (cRc) for (var ck in cRc.mats) clean[ck] += cRc.mats[ck];
+            }
+            conv.push(be.item);
+          }
+        }
+      }
+    }
+    while (nf.queue.length) conv.push(nf.queue.shift());
+  }
 }

@@ -117,3 +117,7 @@
   - UI 僅能讀取 `ui.config.cjs`
   - 動畫僅能讀取 `animations.json`
   - 嚴禁硬編碼或建立重複資料來源。
+
+- **正式 Tooltip 規範 (Official Tooltip Only)**：
+  - 遊戲內所有功能提示、物品提示、技能提示與天賦提示，必須使用遊戲正式版 tooltip 元件（例如 `#sk-tooltip`）。
+  - 禁止使用原生 HTML `title` 屬性作為遊戲提示；若既有介面使用 `title` 顯示遊戲資訊，修改時必須改接正式 tooltip。

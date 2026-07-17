@@ -248,7 +248,7 @@ function forgeToggleDust(idx) {
    不走 addToInventory——其滿載路徑會把未受保護品質（傳說）自動分解銷毀，
    玩家主動取回/鑄造失敗退回的裝備不得有銷毀風險。 */
 function forgeReturnItem(it) {
-  var cap = INVENTORY_CAP + (G.player.invUpgrades || 0);
+  var cap = typeof inventoryCapacityWithTalents === 'function' ? inventoryCapacityWithTalents() : INVENTORY_CAP + (G.player.invUpgrades || 0);
   G.inventory.push(it);
   if (G.inventory.length > cap) {
     flog('🛡️ 背包已滿，法陣退回的 ' + rarityTag(it) + ' 已保留（目前超出容量，請整理背包）', 'warn');

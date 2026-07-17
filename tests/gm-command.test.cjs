@@ -41,12 +41,18 @@ function loadGMContext(hostname) {
     TOWER_HELL_MAX_FLOOR: 100,
     TOWER_PURGATORY_MAX_FLOOR: 150,
     TOWER_MAX_FLOOR: 150,
+    REINCARNATION_MAX: 10,
     ENCHANTS: { fire: { name: '火焰附魔' } },
     GEM_TYPES: { ruby: {} },
     GEM_FORGE_MAX_LEVEL: 10,
     UI: { dirty: {} }
   };
   context.G.tower = { highest: 0, active: false };
+  context.markStatsDirty = () => { context.statsDirty = true; };
+  context.resetTalentsForReincarnationGM = (count) => {
+    context.resetTalentsCount = count;
+    context.G.player.reincarnationTalentPoints = 0;
+  };
   context.window = context;
   vm.createContext(context);
   vm.runInContext(fs.readFileSync(path.join(root, 'js/gm.js'), 'utf8'), context, { filename: 'js/gm.js' });
@@ -170,5 +176,28 @@ test('tower_jump 指定下一個高塔樓層，並將之前樓層視為通關', 
   input.value = 'tower_jump 151';
   input.listeners.keydown(event);
   assert.equal(context.G.tower.highest, 149);
+  assert.equal(body.children[0].children[1].className, 'gm-status bad');
+});
+
+test('reincarnation GM 指令可在 0～10 轉間切換並刷新狀態', () => {
+  const { context, body } = loadGMContext('localhost');
+  context.initGM();
+  const input = body.children[0].children[0];
+  const event = { key: 'Enter', preventDefault() {}, stopPropagation() {} };
+
+  input.value = 'reincarnation 7';
+  input.listeners.keydown(event);
+  assert.equal(context.G.player.reincarnations, 7);
+  assert.equal(context.resetTalentsCount, 7);
+  assert.equal(context.statsDirty, true);
+  assert.equal(context.UI.dirty.talents, true);
+
+  input.value = 'turn 0';
+  input.listeners.keydown(event);
+  assert.equal(context.G.player.reincarnations, 0);
+
+  input.value = 'reincarnation 11';
+  input.listeners.keydown(event);
+  assert.equal(context.G.player.reincarnations, 0);
   assert.equal(body.children[0].children[1].className, 'gm-status bad');
 });

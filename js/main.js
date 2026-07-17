@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function () {
       delete G._skillPointRepairNotice;
     }
     // 背包超量提示（修正超量收納漏洞前的遺留）
-    var invCapNow = INVENTORY_CAP + (G.player.invUpgrades || 0);
+    var invCapNow = typeof inventoryCapacityWithTalents === 'function' ? inventoryCapacityWithTalents() : INVENTORY_CAP + (G.player.invUpgrades || 0);
     if (G.inventory.length > invCapNow) {
       blog('⚠️ 背包超出容量（' + G.inventory.length + '/' + invCapNow + '）。今後滿載時將維持上限：新裝備與包內未鎖定最弱者「捨弱留強」擇一保留（上鎖裝備不受影響）。超出的部分可用「分解設定」批次清理。', 'warn');
     }

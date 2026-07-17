@@ -19,6 +19,10 @@ function isCombatPaused() {
 
 function setCombatPaused(paused) {
     COMBAT_PAUSED = !!paused;
+    if (COMBAT_PAUSED && typeof clearTowerFloatLayers === 'function' &&
+        typeof G !== 'undefined' && G && G.tower && G.tower.active) {
+        clearTowerFloatLayers();
+    }
     if (typeof UI !== 'undefined' && UI.dirty) UI.dirty.battle = true;
     return COMBAT_PAUSED;
 }
@@ -28,7 +32,7 @@ function toggleCombatPaused() {
 }
 
 function newPlayerEntity(st) {
-    return { hp: st.hp, mp: st.mp, shield: 0, shieldMax: 0, shieldMaxVersion: SHIELD_MAX_VERSION, shieldSkillBase: 0, shieldSkillPct: 0, atkCd: 1 / st.aspd, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {}, poisonUntil: 0, poisonDps: 0 };
+    return { hp: st.hp, mp: st.mp, shield: 0, shieldMax: 0, shieldMaxVersion: SHIELD_MAX_VERSION, shieldSkillBase: 0, shieldSkillPct: 0, atkCd: 1 / st.aspd, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {}, poisonUntil: 0, poisonDps: 0, _potentialRevived: false };
 }
 
 function initFieldPlayer() {
@@ -155,7 +159,11 @@ function switchZone(zoneKey) {
 }
 
 /* ---- 效果（暈眩/減速/中毒/淨化） ---- */
-function applyEffect(ent, key, dur) { ent.effects[key] = GT + dur; }
+function applyEffect(ent, key, dur) {
+    if (isBossControlImmune(ent) && isAttackFrequencyControlKey(key)) return false;
+    ent.effects[key] = GT + dur;
+    return true;
+}
 function effectActive(ent, key) { return (ent.effects[key] || 0) > GT; }
 // 減速攻速倍率公式 slowFactor → js/formula.js §3
 
@@ -179,8 +187,10 @@ function cleanse(ent) {
 
 /* ---- 增益 / 減益（技能系統用） ---- */
 function applyBuff(ent, key, val, dur) {
+    if (isBossControlImmune(ent) && isAttackFrequencyControlKey(key)) return false;
     if (!ent.buffs) ent.buffs = {};
     ent.buffs[key] = { val: val, until: GT + dur };
+    return true;
 }
 function buffVal(ent, key) {
     if (!ent || !ent.buffs) return 0;
@@ -248,9 +258,11 @@ function playerAtkCfg(pEnt) {
         atk: st.atk * atkMul, matk: st.matk * atkMul, dmgType: 'both', level: st.level,
         critRate: st.critRate, critDmg: st.critDmg + buffVal(pEnt, 'critDmgUp'), hit: st.hit,
         sunder: st.passives.sunder || 0, pen: st.pPen, mPen: st.mPen,
-        trueDmgPct: st.passives.trueDmg || 0, elemAtk: st.elemAtk, globalDmgRed: st.globalDmgRed,
+        trueDmgPct: st.passives.trueDmg || 0, elemAtk: st.elemAtk, elemDmgPct: st.elemDmgPct, globalDmgRed: st.globalDmgRed,
         annihilate: st.passives.annihilate || 0,
-        eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, normalDmg: st.normalDmg, isPlayer: true
+        eliteDmg: st.baseEliteDmg, bossDmg: st.baseBossDmg, normalDmg: st.baseNormalDmg,
+        talentEliteDmg: st.talentEliteDmg, talentBossDmg: st.talentBossDmg, talentNormalDmg: st.talentNormalDmg,
+        isPlayer: true
     };
 }
 function playerDefCfg(pEnt) {
@@ -262,7 +274,7 @@ function playerDefCfg(pEnt) {
         blockRate: st.blockRate + buffVal(pEnt, 'blockUp'), blockDmgRed: st.blockDmgRed,
         pRes: st.pRes, mRes: st.mRes, resist: st.resist, ctrlRes: st.resist.ctrl,
         ccFactor: (1 - st.tenacity / 100) * (1 - st.ccRed / 100),
-        dmgRed: st.passives.sanctuary || 0, globalDmgRed: st.globalDmgRed, undying: st.passives.undying || 0,
+        dmgRed: st.passives.sanctuary || 0, globalDmgRed: st.globalDmgRed, undying: st.passives.undying || 0, potentialRevive: st.potentialRevive || 0,
         normalDmgRed: st.normalDmgRed, eliteDmgRed: st.eliteDmgRed, bossDmgRed: st.bossDmgRed, // 敵種傷害抗性 → formula.js §3
 
         thornsPct: (st.passives.thorns || 0) + buffVal(pEnt, 'thornsUp'), maxHp: st.hp, isPlayer: true
@@ -336,11 +348,11 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
         }
         // 被動：暈眩 / 減速
         if (!res.killed) {
-            if ((st.passives.stun || 0) > 0 && chance(st.passives.stun) && !resistCtrl(monsterDefCfg(mEnt))) {
+            if ((st.passives.stun || 0) > 0 && !isBossControlImmune(mEnt) && chance(st.passives.stun) && !resistCtrl(monsterDefCfg(mEnt))) {
                 applyEffect(mEnt, 'stun', 1);
                 logMsg += '<span class="log-hl-good">將其擊暈！</span>';
             }
-            if ((st.passives.slowHit || 0) > 0 && chance(st.passives.slowHit) && !resistCtrl(monsterDefCfg(mEnt))) {
+            if ((st.passives.slowHit || 0) > 0 && !isBossControlImmune(mEnt) && chance(st.passives.slowHit) && !resistCtrl(monsterDefCfg(mEnt))) {
                 applyEffect(mEnt, 'slow', 3);
                 logMsg += '<span class="log-hl-good">附加減速！</span>';
             }
@@ -418,7 +430,8 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
     if (skillName) { cls = 'log-enemy-skill'; }
     var hasDebuff = res.procs && res.procs.length > 0;
     if (hasDebuff) { cls = 'log-enemy-buff'; }
-    blog('🛡️ ' + logMsg, cls, 'combat');
+    var logCat = mEnt && mEnt.isBoss ? 'boss' : 'combat';
+    blog('🛡️ ' + logMsg, cls, logCat);
     return res;
 }
 
@@ -604,10 +617,10 @@ function rollFieldDrops(m) {
     var lootBonus = st.loot + effectiveDropRateEffect(buffVal(FIELD.player, 'lootUp')); // 尋寶直覺增益已減半
     var drops = [];
     if (window.recordLootDrop) window.recordLootDrop('field');
-    // 菁英掉落：裝備與材料都在一般基礎上乘 1.5，不再使用舊版裝備 x2／零件 x3 特例。
+    // 菁英掉落：裝備與材料都在一般基礎上乘 ELITE_DROP_MULT（→ formula.js §5，與離線收益共用）。
     var rates = dropRatesFor(FIELD_DROP_TABLE, m.level);
-    var eliteDropMult = m.elite ? 1.3 : 1;
-    var dropMult = (1 + lootBonus / 100) * eliteDropMult;
+    var eliteDropMult = m.elite ? ELITE_DROP_MULT : 1;
+    var dropMult = (1 + (lootBonus + (st.potentialLootDup || 0)) / 100) * eliteDropMult;
     for (var r = 0; r < rates.length; r++) {
         if (!rates[r]) continue;
         var n = rollDropCount(rates[r] * dropMult);

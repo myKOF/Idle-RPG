@@ -244,13 +244,16 @@ function totalSkillPoints() {
   if (p.skillPointBudget === undefined || p.skillPointBudget === null || p.skillPointBudget < expected) {
     p.skillPointBudget = expected;
   }
-  return Math.max(0, Math.floor(Number(p.skillPointBudget) || 0));
+  var talentBonus = typeof talentSkillPointBonus === 'function' ? talentSkillPointBonus() : 0;
+  return Math.max(0, Math.floor(Number(p.skillPointBudget) || 0) + talentBonus);
 }
 function spentSkillPoints() {
   var spent = 0;
   if (G.player.skills) {
     for (var id in G.player.skills) spent += G.player.skills[id];
   }
+  // 潛力是技能分類，沿用同一份技能點預算，不建立額外點數。
+  if (typeof potentialSpentSkillPoints === 'function') spent += potentialSpentSkillPoints();
   return Math.max(0, Math.floor(spent));
 }
 function availableSkillPoints() {
@@ -469,8 +472,7 @@ function applySkillDebuffs(targets, fx, lv, parts) {
     var applied = false;
     targets.forEach(function (target) {
       if (target.hp <= 0) return;
-      applyBuff(target, debuff.key, scaleAt(debuff, lv), debuff.dur);
-      applied = true;
+      if (applyBuff(target, debuff.key, scaleAt(debuff, lv), debuff.dur)) applied = true;
     });
     if (applied) parts.push('<span class="log-hl-bad">敵方' + buffLabel(debuff.key) + ' -' + fmt1(scaleAt(debuff, lv)) + '%</span>');
   });
@@ -515,6 +517,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
   if (fx.dmgType) {
     var rawBaseVal = ((fx.base || 0) + (fx.per || 0) * (lv - 1)) / 100 * (st[fx.stat] || st.atk);
     var baseVal = skillDamageShare(rawBaseVal, st.aoeDmg || 0, targetCount);
+    if (typeof talentSkillEffectMultiplier === 'function') baseVal *= talentSkillEffectMultiplier(sk.cat);
     // 神鑄特效【神怒】：生命低於 30% 時技能傷害同步提高
     if ((st.passives.godWrath || 0) > 0 && pEnt.hp < st.hp * 0.3) baseVal *= 1 + st.passives.godWrath / 100;
     if (fx.gamble) baseVal *= rnd(0.33, 1.67); // 孤注一擲：50%~250% 相對波動
@@ -553,10 +556,14 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
             critRate: st.critRate + (fx.critBonus || 0), critDmg: st.critDmg,
             hit: fx.neverMiss ? 999 : Math.max(100, st.hit), pen: fx.dmgType === 'magic' ? st.mPen : st.pPen, // 技能命中吃玩家命中率，保留 100 當地板（低命中不受影響、高命中能壓過高閃避敵人）
             annihilate: st.passives.annihilate || 0, // 神鑄特效【破滅】：技能暴擊同樣適用
-            elemAtk: elemAtk, eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, normalDmg: st.normalDmg, isPlayer: true
+            elemAtk: elemAtk, elemDmgPct: st.elemDmgPct,
+            eliteDmg: st.baseEliteDmg, bossDmg: st.baseBossDmg, normalDmg: st.baseNormalDmg,
+            talentEliteDmg: st.talentEliteDmg, talentBossDmg: st.talentBossDmg, talentNormalDmg: st.talentNormalDmg,
+            isPlayer: true
           };
           // 處決：低血量加成
           if (fx.execBelow && targetEnt.hp / targetEnt.maxHp * 100 < fx.execBelow) aCfg.atk *= (fx.execMult || 2);
+          if (st.potentialExecute > 0 && targetEnt.hp / targetEnt.maxHp < 0.2) aCfg.atk *= 1 + st.potentialExecute / 100;
           dmgRes = resolveHit(pEnt, targetEnt, aCfg, monsterDefCfg(targetEnt));
         }
         if (!dmgRes.miss) {
@@ -616,8 +623,8 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
             parts.push('附加' + dd.name);
           }
         }
-        if (fx.stunDur && !resistCtrl(monsterDefCfg(effectTarget))) { applyEffect(effectTarget, 'stun', fx.stunDur); parts.push('<span class="log-hl-good">暈眩 ' + fx.stunDur + ' 秒</span>'); }
-        if (fx.slowDur && !resistCtrl(monsterDefCfg(effectTarget))) { applyEffect(effectTarget, 'slow', fx.slowDur); parts.push('減速'); }
+        if (fx.stunDur && !isBossControlImmune(effectTarget) && !resistCtrl(monsterDefCfg(effectTarget))) { applyEffect(effectTarget, 'stun', fx.stunDur); parts.push('<span class="log-hl-good">暈眩 ' + fx.stunDur + ' 秒</span>'); }
+        if (fx.slowDur && !isBossControlImmune(effectTarget) && !resistCtrl(monsterDefCfg(effectTarget))) { applyEffect(effectTarget, 'slow', fx.slowDur); parts.push('減速'); }
         if (fx.maxHpDotPct) {
           var cdps = Math.min(effectTarget.maxHp * scaleAt(fx.maxHpDotPct, lv) / 100, st.matk * 6);
           applyDot(effectTarget, cdps, fx.dotDur || 5, '詛咒');
@@ -626,6 +633,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
       }
       applySkillDebuffs(targets, fx, lv, parts);
       if (st.manaSteal > 0) pEnt.mp = Math.min(st.mp, pEnt.mp + totalDmg * st.manaSteal / 100);
+      if (st.potentialManaRefund > 0) pEnt.mp = Math.min(st.mp, pEnt.mp + skillManaCost(sk, lv) * st.potentialManaRefund / 100);
       if (st.lifesteal > 0) {
         var beforeSkillLifeShield = Math.max(0, pEnt.shield || 0);
         healPlayer(pEnt, totalDmg * st.lifesteal / 100, st);
@@ -635,7 +643,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
   }
   // === 非傷害效果 ===
   if (fx.healPctMax) {
-    var hv = st.hp * scaleAt(fx.healPctMax, lv) / 100;
+    var hv = st.hp * scaleAt(fx.healPctMax, lv) / 100 * (typeof talentSkillEffectMultiplier === 'function' ? talentSkillEffectMultiplier(sk.cat) : 1);
     var beforeHealShield = Math.max(0, pEnt.shield || 0);
     healPlayer(pEnt, hv, st);
     showPlayerShieldGainAfterHeal(floatSel, pEnt, beforeHealShield);
@@ -649,7 +657,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
   }
   if (fx.shieldPctMax) {
     var beforeShield = Math.max(0, pEnt.shield || 0);
-    var shieldPct = scaleAt(fx.shieldPctMax, lv) * (1 + st.shieldEff / 100);
+    var shieldPct = scaleAt(fx.shieldPctMax, lv) * (1 + st.shieldEff / 100) * (typeof talentSkillEffectMultiplier === 'function' ? talentSkillEffectMultiplier(sk.cat) : 1);
     var shieldBase = beforeShield > 0 ? Math.max(0, pEnt.shieldSkillBase || 0) || beforeShield : st.hp;
     var targetShield = shieldBase * (1 + shieldPct / 100);
     pEnt.shield = Math.max(beforeShield, targetShield);

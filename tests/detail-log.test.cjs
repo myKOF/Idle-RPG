@@ -23,7 +23,10 @@ test('詳細日誌保留時間、分類與較長歷史，且可清除', () => {
 });
 
 test('詳細日誌使用現有分類，不改變原本小型日誌篩選', () => {
+  const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
+  assert.match(ui, /bossLog\.style\.display = v === 'all' \? 'block' : 'none'/);
+  assert.match(ui, /applyLogFilter\(logFilter\.value \|\| 'all'\)/);
   assert.match(css, /\.detail-log-modal\s*\{/);
   assert.match(css, /\.detail-log-content\s*\{[\s\S]*overflow-y:\s*auto/);
   assert.match(css, /\.log-header-actions\s*\{/);

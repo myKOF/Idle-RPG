@@ -82,9 +82,10 @@
       <nav id="tabs">
         <button class="tab-btn active" data-tab="equip">🎒 裝備</button>
         <button class="tab-btn" data-tab="factory">🏭 熔爐</button>
-        <button class="tab-btn" data-tab="newforge">🧪 新熔爐</button>
+        <button class="tab-btn" data-tab="newforge" style="display:none">🧪 新熔爐</button>
         <button class="tab-btn" data-tab="gems">💎 寶石</button>
         <button class="tab-btn" data-tab="skills">🧠 技能</button>
+        <button class="tab-btn" data-tab="talents">🌟 天賦</button>
         <button class="tab-btn" data-tab="forge" style="display:none">🔯 神鑄<span id="forge-run-ind" class="forge-run-ind" style="display:none"></span></button>
         <button class="tab-btn" data-tab="tower">🗼 高塔</button>
         <button class="tab-btn" data-tab="settings">⚙️ 設定</button>
@@ -123,7 +124,7 @@
             <div class="inv-head">
               <span class="sec-title" style="display: flex; align-items: center; gap: 8px;">
                 背包 <span id="inv-count">0/60</span>
-                <button id="inv-expand" class="btn sm" title="擴充背包空間">➕ 擴充 (10000<img src="images/icon_gold.png" class="res-icon">)</button>
+                <button id="inv-expand" class="btn sm" data-tt-title="擴充背包空間" data-tt-desc="增加背包容量">➕ 擴充 (10000<img src="images/icon_gold.png" class="res-icon">)</button>
               </span>
               <div style="display: flex; gap: 6px; align-items: center;">
                 <select id="inv-rarity-filter" class="dropdown sm" style="background: #0b0f16; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 20px 2px 6px; font-size: 13px; cursor: pointer; height: 26px; outline: none;">
@@ -545,6 +546,10 @@
         </section>
 
         <!-- ============ 高塔 ============ -->
+        <section id="tab-talents" class="tab">
+          <div id="talent-root"></div>
+        </section>
+
         <section id="tab-tower" class="tab">
           <div id="tower-fight" style="display:none">
             <div class="tower-head">
@@ -558,7 +563,7 @@
             <div class="battle-scene">
               <div class="combatant">
                 <div class="float-layer" id="tp-float"></div>
-                <div class="info-btn buff-btn" data-buff-tip title="技能增益詳情">💪</div>
+                <div class="info-btn buff-btn" data-buff-tip>💪</div>
                 <div class="cb-level" id="tp-level"></div>
                 <img src="images/icon_avatar.png" class="cb-icon">
                 <div class="cb-name" id="tp-name">冒險者（你）</div>
@@ -668,28 +673,28 @@
       <div id="battle-area">
         <div id="zone-bar">
           <button class="zone-btn" data-zone="plains">🌿 草原<span class="zone-best" id="zb-plains"></span></button>
-          <button class="zone-btn" data-zone="desert" title="敵人更強；經驗/金幣/材料掉落 x2（裝備掉落不變）">🏜️ 荒漠<span class="zone-best"
+          <button class="zone-btn" data-zone="desert" data-tt-title="荒漠" data-tt-desc="敵人更強；經驗、金幣與材料掉落 ×2（裝備掉落不變）">🏜️ 荒漠<span class="zone-best"
               id="zb-desert"></span></button>
-          <button class="zone-btn" data-zone="swamp" title="敵人極強；經驗/金幣/材料掉落 x3（裝備掉落不變）">🦠 沼澤<span class="zone-best"
+          <button class="zone-btn" data-zone="swamp" data-tt-title="沼澤" data-tt-desc="敵人極強；經驗、金幣與材料掉落 ×3（裝備掉落不變）">🦠 沼澤<span class="zone-best"
               id="zb-swamp"></span></button>
         </div>
         <div id="stage-bar">
-          <button id="btn-combat-pause" class="btn sm warn" type="button" title="暫停野外與高塔戰鬥" aria-pressed="false">⏸ 暫停戰鬥</button>
-          <button id="st-prev" class="btn sm" type="button" aria-label="後退關卡" data-tip="後退關卡&lt;br&gt;鼠標按住可以快速後退" data-tip-placement="stage-left">◀</button>
+          <button id="btn-combat-pause" class="btn sm warn" type="button" data-tt-title="戰鬥控制" data-tt-desc="暫停野外與高塔戰鬥" aria-pressed="false">⏸ 暫停戰鬥</button>
+          <button id="st-prev" class="btn sm" type="button" aria-label="後退關卡" data-tt-title="後退關卡" data-tt-desc="滑鼠按住可以快速後退" data-tip-placement="stage-left">◀</button>
           <span id="stage-label">第 1 階段</span>
-          <button id="st-next" class="btn sm" type="button" aria-label="前進關卡" data-tip="前進關卡&lt;br&gt;鼠標按住可以快速前進" data-tip-placement="stage-right">▶</button>
-          <button id="st-max" class="btn sm" data-tip="直達目前最高階段" aria-label="直達目前最高階段">⏭</button>
+          <button id="st-next" class="btn sm" type="button" aria-label="前進關卡" data-tt-title="前進關卡" data-tt-desc="滑鼠按住可以快速前進" data-tip-placement="stage-right">▶</button>
+          <button id="st-max" class="btn sm" data-tt-title="最高階段" data-tt-desc="直達目前最高階段" aria-label="直達目前最高階段">⏭</button>
           <span id="stage-best" class="dim-text">最高 1</span>
           <label class="chk"><input type="checkbox" id="st-auto" checked> 自動推進</label>
-          <button id="btn-pip" class="btn sm" title="開啟永遠置頂的迷你監控視窗，背景掛機也能看到戰況">📺 迷你視窗</button>
-          <button id="btn-summary" class="btn sm" title="開啟統計面板">📊 統計面板</button>
+          <button id="btn-pip" class="btn sm" data-tt-title="迷你視窗" data-tt-desc="開啟永遠置頂的迷你監控視窗，背景掛機也能看到戰況">📺 迷你視窗</button>
+          <button id="btn-summary" class="btn sm" data-tt-title="統計面板" data-tt-desc="開啟統計面板">📊 統計面板</button>
         </div>
         <div class="battle-scene-wrapper" style="position: relative; width: 100%;">
           <div id="btn-enemy-tip" class="info-btn">!</div>
           <div class="battle-scene">
             <div class="combatant">
             <div class="float-layer" id="pv-float">
-            <div class="info-btn buff-btn" data-buff-tip title="技能增益詳情">💪</div></div>
+            <div class="info-btn buff-btn" data-buff-tip>💪</div></div>
             <div class="cb-level" id="pv-level"></div>
             <img src="images/icon_avatar.png" class="cb-icon">
             <div class="cb-name" id="pv-name">冒險者（你）</div>
@@ -712,7 +717,7 @@
         <div class="log-header">
           <div class="log-title">綜合紀錄</div>
           <div class="log-header-actions">
-            <button id="btn-detail-log" class="btn sm" type="button" title="開啟完整戰鬥日誌">📜 詳細日誌</button>
+            <button id="btn-detail-log" class="btn sm" type="button" data-tt-title="詳細日誌" data-tt-desc="開啟完整戰鬥日誌">📜 詳細日誌</button>
             <select id="log-filter" class="log-filter">
             <option value="all">全部</option>
             <option value="combat">戰鬥與進度</option>
@@ -733,7 +738,7 @@
     <div class="detail-log-box" role="dialog" aria-modal="true" aria-labelledby="detail-log-title">
       <div class="detail-log-head">
         <div id="detail-log-title" class="sec-title">詳細戰鬥日誌</div>
-        <button id="detail-log-close" class="modal-x" type="button" title="關閉">✕</button>
+        <button id="detail-log-close" class="modal-x" type="button" aria-label="關閉">✕</button>
       </div>
       <div class="detail-log-toolbar">
         <select id="detail-log-filter" class="log-filter" aria-label="詳細日誌分類">
@@ -744,7 +749,7 @@
           <option value="loot">掉落物</option>
           <option value="system">系統訊息</option>
         </select>
-        <button id="btn-detail-combat-pause" class="btn sm warn" type="button" title="暫停野外與高塔戰鬥" aria-pressed="false">⏸ 暫停戰鬥</button>
+        <button id="btn-detail-combat-pause" class="btn sm warn" type="button" data-tt-title="戰鬥控制" data-tt-desc="暫停野外與高塔戰鬥" aria-pressed="false">⏸ 暫停戰鬥</button>
         <button id="detail-log-clear" class="btn sm" type="button">清除詳細日誌</button>
       </div>
       <div id="detail-log-content" class="detail-log-content"></div>
@@ -753,15 +758,31 @@
   <!-- 技能升級彈窗 -->
   <div id="skill-modal" class="modal-overlay" style="display:none">
     <div class="modal-box">
-      <button id="skill-modal-close" class="modal-x" title="關閉">✕</button>
+      <button id="skill-modal-close" class="modal-x" aria-label="關閉">✕</button>
       <div id="skill-modal-body"></div>
+    </div>
+  </div>
+  <!-- 天賦／潛力升級彈窗 -->
+  <div id="talent-modal" class="modal-overlay" style="display:none">
+    <div class="modal-box">
+      <button id="talent-modal-close" class="modal-x" aria-label="關閉">✕</button>
+      <div id="talent-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- 離線收益確認彈窗 -->
+  <div id="offline-modal" class="modal-overlay" style="display:none">
+    <div class="modal-box offline-modal-box">
+      <button id="offline-modal-close" class="modal-x" aria-label="關閉">✕</button>
+      <div id="offline-modal-body"></div>
+      <div class="offline-modal-actions"><button id="offline-modal-confirm" class="btn">✅ 確認</button></div>
     </div>
   </div>
 
   <!-- 戰鬥結算日誌彈窗 -->
   <div id="summary-modal" class="modal-overlay" style="display:none; background: transparent; backdrop-filter: none;">
     <div class="modal-box" style="display:flex; flex-direction:column; max-height:85vh; width:min(440px, 92vw);">
-      <button id="summary-modal-close" class="modal-x" title="關閉">✕</button>
+      <button id="summary-modal-close" class="modal-x" aria-label="關閉">✕</button>
       <div class="sec-title" style="text-align:center; margin-bottom:12px;">統計面板</div>
       <div style="display:flex; justify-content:center; align-items:center; margin-bottom:8px; position:relative;">
         <div class="hint" style="text-shadow: 1px 1px 2px #000; margin:0;">(統計即時更新，按清理歸零重計)</div>
@@ -826,6 +847,7 @@
   <script src="js/stats.js"></script>
   <script src="js/item.js"></script>
   <script src="js/skills.js"></script>
+  <script src="js/talents.js"></script>
   <script src="js/player.js"></script>
   <script src="js/combat.js"></script>
   <script src="js/tower.js"></script>

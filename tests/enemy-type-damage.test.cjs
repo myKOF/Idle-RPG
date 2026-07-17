@@ -62,6 +62,25 @@ test('對普通傷害加成僅對非菁英且非 BOSS 的敵人生效', () => {
   assert.equal(vsBoss.dmg, 100000);   // BOSS 不吃對普通加成
 });
 
+test('敵種傷害天賦與既有敵種傷害加成為獨立乘區', () => {
+  const context = loadFormulaContext();
+  const baseDef = { def: 0, mdef: 0, dodge: 0, pRes: 0, mRes: 0, resist: {} };
+  const base = 100000;
+  const expected = Math.round(base * 1.10 * 1.01);
+  const cases = [
+    [{ normalDmg: 10, talentNormalDmg: 1 }, { ...baseDef }],
+    [{ eliteDmg: 10, talentEliteDmg: 1 }, { ...baseDef, isElite: true }],
+    [{ bossDmg: 10, talentBossDmg: 1 }, { ...baseDef, isBoss: true }]
+  ];
+
+  cases.forEach(([flags, defender]) => {
+    const actual = context.resolveHit({}, { hp: 1000000, shield: 0 }, {
+      atk: base, dmgType: 'phys', level: 1, hit: 100, critRate: 0, ...flags
+    }, defender).dmg;
+    assert.equal(actual, expected, '天賦應在既有敵種加成之外獨立相乘');
+  });
+});
+
 test('敵種傷害減免公式 = 減免值 / (減免值 + a + b×攻擊者等級)', () => {
   const context = loadFormulaContext();
   const a = context.ENEMY_TYPE_DMG_RED_A;

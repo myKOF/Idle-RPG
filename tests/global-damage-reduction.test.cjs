@@ -28,6 +28,7 @@ test('全局減傷詞綴為史詩以上且不限制裝備部位', () => {
 
 test('全局減傷在最終傷害階段套用指定公式，無詞綴時維持原傷害', () => {
   const context = loadFormulaContext();
+  context.GLOBAL_DMG_RED_DENOMINATOR = 20000;
   const baseCfg = { atk: 100000, dmgType: 'phys', level: 1, hit: 100, critRate: 0 };
   const baseDef = { def: 0, mdef: 0, dodge: 0, pRes: 0, mRes: 0, resist: {} };
   const plainTarget = { hp: 100000, shield: 0 };
@@ -63,4 +64,24 @@ test('全局減傷減傷率上限由 GLOBAL_DMG_RED_CAP 控制', () => {
   // 剩餘傷害倍率 = 1 − 0.85 = 0.15
   assert.equal(res.dmg, 15000);
   assert.equal(target.hp, 85000);
+});
+
+test('全局減傷黃色數值顯示格式化規則 (小數點四位，無條件捨去，不可能等於 100%)', () => {
+  const context = loadFormulaContext();
+  const pctStrFloor4GlobalDmgRed = context.pctStrFloor4GlobalDmgRed;
+
+  // 1. 正常小數無條件捨去
+  assert.equal(pctStrFloor4GlobalDmgRed(99.99999), '99.9999%');
+  assert.equal(pctStrFloor4GlobalDmgRed(99.99994), '99.9999%');
+  assert.equal(pctStrFloor4GlobalDmgRed(50.12345), '50.1234%');
+  
+  // 2. 剛好 100% 或是大於 100% 的情況，必須顯示 99.9999%
+  assert.equal(pctStrFloor4GlobalDmgRed(100), '99.9999%');
+  assert.equal(pctStrFloor4GlobalDmgRed(100.0001), '99.9999%');
+  assert.equal(pctStrFloor4GlobalDmgRed(105), '99.9999%');
+
+  // 3. 0% 與一般數值
+  assert.equal(pctStrFloor4GlobalDmgRed(0), '0.0000%');
+  assert.equal(pctStrFloor4GlobalDmgRed(0.00009), '0.0000%');
+  assert.equal(pctStrFloor4GlobalDmgRed(0.0001), '0.0001%');
 });

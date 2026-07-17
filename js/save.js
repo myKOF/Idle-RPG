@@ -341,6 +341,19 @@ function migrateSave(data) {
   // 轉生欄位相容：舊存檔視為 0 轉；等級上限為 MAX_LEVEL（超過者夾回）。
   data.player.reincarnations = clamp(data.player.reincarnations || 0, 0, REINCARNATION_MAX);
   data.player.reincarnationTalentPoints = Math.max(0, Math.floor(Number(data.player.reincarnationTalentPoints) || 0));
+  if (!data.player.talents || typeof data.player.talents !== 'object') data.player.talents = { levels: {}, potentialLevels: {} };
+  if (!data.player.talents.levels || typeof data.player.talents.levels !== 'object') data.player.talents.levels = {};
+  if (!data.player.talents.potentialLevels || typeof data.player.talents.potentialLevels !== 'object') data.player.talents.potentialLevels = {};
+  if (typeof talentList === 'function') {
+    talentList().forEach(function (entry) {
+      data.player.talents.levels[entry.def.id] = clamp(Math.floor(Number(data.player.talents.levels[entry.def.id]) || 0), 0, TALENT_MAX_LEVEL);
+    });
+  }
+  if (typeof POTENTIAL_TALENTS !== 'undefined') {
+    POTENTIAL_TALENTS.forEach(function (def) {
+      data.player.talents.potentialLevels[def.id] = clamp(Math.floor(Number(data.player.talents.potentialLevels[def.id]) || 0), 0, POTENTIAL_SKILL_BASE_MAX_LEVEL + data.player.reincarnations * 10);
+    });
+  }
   var expectedSkillBudget = data.player.reincarnations > 0 ? SKILL_POINT_BUDGET_CAP : Math.min(SKILL_POINT_BUDGET_CAP, Math.max(0, (data.player.level || 1) + 1));
   if (!hadSkillPointBudget || Number(data.player.skillPointBudget) < expectedSkillBudget) {
     data.player.skillPointBudget = expectedSkillBudget;
@@ -821,7 +834,9 @@ function downloadSingleSave(id, fname) {
   return Promise.resolve(false);
 }
 
-/* ---- 離線收益（時間上限與擊殺估算公式 → js/formula.js §10） ---- */
+/* ---- 離線收益（計算等級 / 擊殺速率公式 → js/formula.js §10） ----
+   以「目前地圖最高階段 −10 捨去個位數」等級的當前場景菁英怪、每 20 秒 1 隻計算擊殺數；
+   每一隻菁英怪及其掉落單獨擲骰（與野外擊殺同一套掉落表與倍率），完成後彈出離線收益確認界面。 */
 function applyOfflineProgress() {
   if (!G.savedAt) return;
   var elapsed = (Date.now() - G.savedAt) / 1000;
@@ -829,46 +844,96 @@ function applyOfflineProgress() {
   elapsed = Math.min(elapsed, OFFLINE_MAX_HOURS * 3600);
 
   var st = getStats();
-  var est = offlineKillEstimate(elapsed);
-  var kills = est.kills, m = est.monster, s = est.stage;
+  var kills = offlineKillCount(elapsed, st.potentialOffline || 0);
   if (kills < 1) return;
+  var stage = offlineStageFor(G.stage.best);
+  var m = monsterStatsFor(stage, true); // 菁英怪
+  var zn = currentZoneDef();
+  var rw = zn.rewardMult;
 
-  var gold = Math.round(m.gold * kills * (1 + st.goldBonus / 100));
-  var xp = Math.round(m.xp * kills * (1 + st.xpBonus / 100));
+  // 金幣 / 經驗：單殺值（含場景倍率與加成）× 擊殺數
+  var goldPer = Math.round(m.gold * rw * (1 + st.goldBonus / 100));
+  var xpPer = Math.round(m.xp * rw * (1 + st.xpBonus / 100));
+  var gold = goldPer * kills, xp = xpPer * kills;
   G.player.gold += gold;
   gainXp(xp);
-  // 掉落：依「物品掉落表」計算各品質期望件數（高品質優先實體化，最多 30 件，其餘折算碎片）
-  var rates = dropRatesFor(FIELD_DROP_TABLE, s);
-  var lootMult = 1 + st.loot / 100;
-  var realDrops = 0, scrapExtra = 0, slotsLeft = 30;
-  for (var r = rates.length - 1; r >= 0; r--) {
-    if (!rates[r]) continue;
-    var cnt = Math.floor(kills * rates[r] * lootMult / 100);
-    if (chance((kills * rates[r] * lootMult) % 100)) cnt++;
-    var real = Math.min(cnt, slotsLeft);
-    for (var i = 0; i < real; i++) pushConveyor(makeEquipment(s, {
-      rarity: r,
-      ancientRate: ancientAffixChanceForEnemy(m.level)
-    }));
-    slotsLeft -= real;
-    realDrops += real;
-    scrapExtra += Math.max(0, cnt - real) * Math.round(3 * RARITIES[r].salv);
+
+  // 掉落：與 rollFieldDrops 同一套表與倍率（無戰鬥中增益），逐殺單獨擲骰
+  var lootBonus = st.loot;
+  var dropMult = (1 + (lootBonus + (st.potentialLootDup || 0)) / 100) * ELITE_DROP_MULT;
+  var rates = dropRatesFor(FIELD_DROP_TABLE, m.level);
+  var gemRates = fieldGemDropRatesFor(m.level);
+  var bookRate = FIELD_BOOK_DROP_PCT * (1 + lootBonus / 100) * rw * ELITE_DROP_MULT;
+  var essenceRate = ancientEssenceDropChanceForEnemy(m.level) * ELITE_DROP_MULT;
+  var dustRate = fieldDustRate(m.level) * ELITE_DROP_MULT;
+  var partRate = FIELD_PART_DROP_PCT * (1 + lootBonus / 100) * rw * ELITE_DROP_MULT;
+
+  var sum = {
+    seconds: elapsed, stage: stage, zoneName: zn.name, zoneEmoji: zn.emoji, kills: kills,
+    gold: gold, xp: xp, equips: {}, scrap: 0, gems: {}, books: 0, essence: 0, dust: 0, parts: 0
+  };
+  var conveyorFull = false;
+  for (var k = 0; k < kills; k++) {
+    // 裝備（各品質獨立擲骰；輸送帶滿載時折算碎片，不丟失）
+    for (var r = 0; r < rates.length; r++) {
+      if (!rates[r]) continue;
+      var n = rollDropCount(rates[r] * dropMult);
+      for (var i = 0; i < n; i++) {
+        sum.equips[r] = (sum.equips[r] || 0) + 1;
+        if (!conveyorFull) {
+          if (!pushConveyor(makeEquipment(stage, { rarity: r, ancientRate: ancientAffixChanceForEnemy(m.level) }))) {
+            conveyorFull = true;
+            sum.scrap += Math.round(3 * RARITIES[r].salv);
+          }
+        } else {
+          sum.scrap += Math.round(3 * RARITIES[r].salv);
+        }
+      }
+    }
+    // 寶石（各階級獨立擲骰）
+    for (var glv = 0; glv < gemRates.length; glv++) {
+      if (!gemRates[glv]) continue;
+      var gemN = rollDropCount(gemRates[glv] * (1 + lootBonus / 100) * rw * ELITE_DROP_MULT);
+      for (var gi = 0; gi < gemN; gi++) {
+        addGem(randomGemType(), glv + 1, 1);
+        sum.gems[glv + 1] = (sum.gems[glv + 1] || 0) + 1;
+      }
+    }
+    // 附魔書（階段 8+）
+    if (stage >= 8) {
+      var bookN = rollDropCount(bookRate);
+      for (var bi = 0; bi < bookN; bi++) {
+        G.player.books[pick(Object.keys(ENCHANTS))]++;
+        sum.books++;
+      }
+    }
+    // 太古精華（250 級以上敵人）
+    if (essenceRate > 0 && chance(essenceRate)) { G.player.ancientEssence = (G.player.ancientEssence || 0) + 1; sum.essence++; }
+    // 魔塵（150 級起）
+    if (dustRate > 0 && chance(dustRate)) { G.player.dust = (G.player.dust || 0) + 1; sum.dust++; }
+    // 自動機組零件（階段 5+）
+    if (stage >= 5) {
+      var partN = rollDropCount(partRate);
+      for (var pn = 0; pn < partN; pn++) {
+        var np = makePart(fieldPartTierFor(stage, true));
+        if (!np) continue;
+        G.factory.parts.push(np);
+        sum.parts++;
+      }
+    }
   }
-  G.player.scrap += scrapExtra;
-  var ancientEssenceRate = ancientEssenceDropChanceForEnemy(m.level);
-  var ancientEssenceCount = 0;
-  if (ancientEssenceRate > 0) {
-    var ancientEssencePoints = ancientEssenceRate * kills;
-    ancientEssenceCount = Math.floor(ancientEssencePoints / 100);
-    if (chance(ancientEssencePoints % 100)) ancientEssenceCount++;
-    G.player.ancientEssence += ancientEssenceCount;
-  }
+  if (sum.scrap) G.player.scrap += sum.scrap;
+  if (sum.parts && typeof trimFactoryParts === 'function') trimFactoryParts(); // 收斂零件庫存
+  UI.dirty.header = true; UI.dirty.factory = true; UI.dirty.gems = true;
 
   var hrs = Math.floor(elapsed / 3600), mins = Math.floor((elapsed % 3600) / 60);
-  blog('🌙 離線收益（' + (hrs ? hrs + ' 小時 ' : '') + mins + ' 分鐘）：擊殺 ' + fmt(kills) +
-    '、金幣 +' + fmt(gold) + '、經驗 +' + fmt(xp) +
-    '、裝備 x' + realDrops + ' 已送入輸送帶' + (scrapExtra ? '、碎片 +' + fmt(scrapExtra) : '') +
-    (ancientEssenceCount ? '、<img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華">太古精華 +' + fmt(ancientEssenceCount) : ''), 'good');
+  var equipTotal = 0;
+  for (var er in sum.equips) equipTotal += sum.equips[er];
+  blog('🌙 離線收益（' + (hrs ? hrs + ' 小時 ' : '') + mins + ' 分鐘）：擊殺 Lv.' + stage + ' ' + zn.name + '菁英 ×' + fmt(kills) +
+    '、金幣 +' + fmt(gold) + '、經驗 +' + fmt(xp) + '、裝備 ×' + fmt(equipTotal) + ' 已送入輸送帶' +
+    (sum.scrap ? '、碎片 +' + fmt(sum.scrap) : ''), 'good');
+  if (typeof showOfflineSummary === 'function') showOfflineSummary(sum);
+  return sum;
 }
 
 /* ============ 存檔機制 V2：單一自動快取＋本地手動歷史 ============ */

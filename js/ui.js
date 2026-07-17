@@ -2,7 +2,7 @@
 /* ============ UI 渲染與互動 ============ */
 
 var UI = {
-  dirty: { header: true, battle: true, equip: true, inv: true, factory: true, newforge: true, forge: true, tower: true, gems: true, skills: true },
+  dirty: { header: true, battle: true, equip: true, inv: true, factory: true, newforge: true, forge: true, tower: true, gems: true, skills: true, talents: true },
   sel: null,           // { id, source: 'inv' | 'equip' }
   tab: 'equip',
   saveNoticeId: null,
@@ -144,6 +144,22 @@ function scheduleFloatTextRemoval(sp, lifetimeMs) {
   }, lifetimeMs || FLOAT_TEXT_LIFETIME_MS);
 }
 
+function clearFloatLayer(elId) {
+  var layer = $id(elId);
+  if (!layer) return;
+  var floats = layer.querySelectorAll('.float-txt');
+  for (var i = 0; i < floats.length; i++) {
+    if (floats[i]._floatRemovalTimer) clearTimeout(floats[i]._floatRemovalTimer);
+  }
+  layer.innerHTML = '';
+  layer.removeAttribute('data-last-miss-at');
+}
+
+function clearTowerFloatLayers() {
+  clearFloatLayer('tp-float');
+  clearFloatLayer('tb-float');
+}
+
 /* 敵方傷害浮字優先找不與現有文字重疊的位置，真的沒有空間時才接受重疊。 */
 function placeFloatAvoidingOverlap(sp, layer, selector, randomTop, randomRange, gridRows, gridStep) {
   var lr = layer.getBoundingClientRect();
@@ -254,6 +270,7 @@ function floatText(elId, text, cls, damageValue) {
       existing._damageFloatTotal += damageValue;
       existing._damageFloatHits++;
       existing.textContent = existing._damageFloatPrefix + fmt(existing._damageFloatTotal);
+      scheduleFloatTextRemoval(existing, FLOAT_TEXT_LIFETIME_MS);
       return;
     }
   }
@@ -314,7 +331,7 @@ function floatText(elId, text, cls, damageValue) {
       }
     }
   }
-  if (!damageKey) scheduleFloatTextRemoval(sp, FLOAT_TEXT_LIFETIME_MS);
+  scheduleFloatTextRemoval(sp, FLOAT_TEXT_LIFETIME_MS);
 }
 
 /* ---- 分頁 ---- */
@@ -526,7 +543,7 @@ function renderAttrPanel(st) {
       h += '</details>';
     });
     h += '<div class="stat-divider"></div>' +
-      '<div class="stat-row" title="近 10 秒 DPS"><span>📈 實時 DPS</span><b id="s-dps">0</b></div>' +
+      '<div class="stat-row" data-tt-title="實時 DPS" data-tt-desc="近 10 秒的平均每秒傷害"><span>📈 實時 DPS</span><b id="s-dps">0</b></div>' +
       '<div id="active-buffs" class="active-buffs"></div>';
     panel.innerHTML = h;
     _attrPanelBuilt = true;
@@ -786,7 +803,8 @@ function refreshCombatPauseButton() {
     if (!el) return;
     el.setAttribute('aria-pressed', paused ? 'true' : 'false');
     el.textContent = paused ? '▶ 繼續戰鬥' : '⏸ 暫停戰鬥';
-    el.title = paused ? '繼續野外與高塔戰鬥' : '暫停野外與高塔戰鬥';
+    el.setAttribute('data-tt-title', '戰鬥控制');
+    el.setAttribute('data-tt-desc', paused ? '繼續野外與高塔戰鬥' : '暫停野外與高塔戰鬥');
     el.classList.toggle('active', paused);
   });
 }
@@ -1045,7 +1063,7 @@ function renameEquipSet(idx) {
 }
 
 function renderInventory() {
-  var cap = INVENTORY_CAP + (G.player.invUpgrades || 0);
+  var cap = typeof inventoryCapacityWithTalents === 'function' ? inventoryCapacityWithTalents() : INVENTORY_CAP + (G.player.invUpgrades || 0);
   var btn = $id('inv-expand');
   if (btn) {
     if (cap >= INVENTORY_MAX) {
@@ -1268,7 +1286,7 @@ function detailAction(act, actBtn) {
     UI.sel = { id: it.id, source: 'equip' };
     UI.dirty.inv = true; UI.dirty.equip = true;
   } else if (act === 'unequip') {
-    var cap = INVENTORY_CAP + (G.player.invUpgrades || 0);
+    var cap = typeof inventoryCapacityWithTalents === 'function' ? inventoryCapacityWithTalents() : INVENTORY_CAP + (G.player.invUpgrades || 0);
     if (G.inventory.length >= cap) { blog('⚠️ 背包已滿，無法卸下', 'warn'); return; }
     // 依物品 id 找出實際佔用的欄位（武器/戒指有主副兩欄）
     for (var sk2 in panelEq) {
@@ -2098,7 +2116,7 @@ function renderForge() {
     }
     grid.innerHTML = gh || '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">尚無寶石。戰鬥掉落與寶石商店可取得寶石。</div>';
   } else {
-    var cap = INVENTORY_CAP + (G.player.invUpgrades || 0);
+    var cap = typeof inventoryCapacityWithTalents === 'function' ? inventoryCapacityWithTalents() : INVENTORY_CAP + (G.player.invUpgrades || 0);
     $id('forge-inv-count').textContent = G.inventory.length + '/' + cap;
     if (!G.inventory.length) {
       grid.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">背包是空的。戰鬥掉落的裝備會先進入生產線輸送帶，「保留」的會送到這裡。</div>';
@@ -2211,14 +2229,20 @@ function renderTowerTimerFrame() {
     stopTowerTimerAnimation();
     return;
   }
+  var paused = typeof isCombatPaused === 'function' && isCombatPaused();
+  if (paused) UI.towerTimerAnchor = null;
   var anchor = UI.towerTimerAnchor;
-  var remain = anchor
-    ? Math.max(0, TOWER_TIME_LIMIT - (anchor.elapsed + (towerTimerNow() - anchor.at) / 1000))
-    : Math.max(0, TOWER_TIME_LIMIT - TOWER.elapsed);
+  var remain = !paused && anchor
+    ? Math.max(0, towerTimeLimitWithTalents() - (anchor.elapsed + (towerTimerNow() - anchor.at) / 1000))
+    : Math.max(0, towerTimeLimitWithTalents() - TOWER.elapsed);
   var timerEl = $id('tw-timer');
   if (timerEl) {
     timerEl.textContent = formatTowerTimerSeconds(remain) + 's';
     timerEl.classList.toggle('urgent', remain < 15);
+  }
+  if (paused) {
+    UI.towerTimerRaf = 0;
+    return;
   }
   UI.towerTimerRaf = scheduleTowerTimerFrame();
 }
@@ -2235,8 +2259,16 @@ function renderTowerFight() {
     stopTowerTimerAnimation();
     return;
   }
-  UI.towerTimerAnchor = { elapsed: TOWER.elapsed, at: towerTimerNow() };
-  if (!UI.towerTimerRaf) renderTowerTimerFrame();
+  var paused = typeof isCombatPaused === 'function' && isCombatPaused();
+  if (paused) {
+    stopTowerTimerAnimation();
+    renderTowerTimerFrame();
+  } else {
+    if (!UI.towerTimerAnchor || UI.towerTimerAnchor.elapsed !== TOWER.elapsed) {
+      UI.towerTimerAnchor = { elapsed: TOWER.elapsed, at: towerTimerNow() };
+    }
+    if (!UI.towerTimerRaf) renderTowerTimerFrame();
+  }
   $id('tw-enrage').style.display = TOWER.enraged ? '' : 'none';
   // 連續挑戰進度（第 X/Y 場）
   var autoEl = $id('tw-auto-status');
@@ -2282,7 +2314,7 @@ function renderTowerFight() {
   $id('tp-status').textContent = entStatus(p);
   renderMpSkill(p, 'tp');
   $id('tw-dps').textContent = 'DPS ' + fmt(TOWER.elapsed > 1 ? TOWER.dmgDealt / TOWER.elapsed : 0) +
-    '（需求 ' + fmt(b.maxHp / TOWER_TIME_LIMIT) + '）';
+    '（需求 ' + fmt(b.maxHp / towerTimeLimitWithTalents()) + '）';
 }
 
 function uiTick() {
@@ -2323,10 +2355,210 @@ function uiTick() {
   if (d.gems && UI.tab === 'gems') { renderGems(); d.gems = false; }
   if (UI.tab === 'gems') updateShopCountdown(); // 商店重置倒數即時更新
   if (d.skills && UI.tab === 'skills') { renderSkills(); d.skills = false; }
+  if (d.talents && UI.tab === 'talents') { renderTalents(); d.talents = false; }
+}
+
+function talentNodeHTML(def, turn) {
+  var lv = talentLevel(def.id);
+  var unlocked = talentUnlocked(def.id);
+  var lockText = reincarnationCountSafe() < turn ? '需 ' + turn + ' 轉' : '尚未開放';
+  return '<button type="button" class="talent-icon' + (lv > 0 ? ' learned' : '') + (lv >= TALENT_MAX_LEVEL ? ' maxed' : '') + (!unlocked ? ' locked' : '') + '" data-talent-select="talent:' + def.id + '" data-talent-tip="' + def.id + '" aria-label="' + esc(def.name) + '">' +
+    '<span class="talent-icon-glyph">' + def.emoji + '</span>' +
+    '<span class="talent-icon-level">Lv.' + lv + '/' + TALENT_MAX_LEVEL + '</span>' +
+    (!unlocked ? '<span class="talent-icon-lock">🔒 ' + lockText + '</span>' : '') +
+    '</button>';
+}
+
+function potentialNodeHTML(def, index) {
+  var lv = potentialLevel(def.id);
+  var unlocked = potentialUnlocked(def.id);
+  var max = potentialSkillMaxLv();
+  var disabled = potentialTemporarilyDisabled(def.id);
+  var cls = 'tree-cell potential-icon' + (lv > 0 ? ' learned' : '') + (!unlocked || disabled ? ' locked' : '') + (disabled ? ' temporarily-disabled' : '');
+  var aria = def.name + (disabled ? '（' + (def.disabledReason || '目前暫不開放升級') + '）' : '');
+  return '<div class="' + cls + '" data-talent-select="potential:' + def.id + '" data-talent-tip="potential:' + def.id + '" aria-label="' + esc(aria) + '">' +
+    '<span class="tc-emoji">' + def.emoji + '</span>' +
+    (lv > 0 ? '<span class="tc-lv' + (lv >= max ? ' max-lv' : '') + '">' + lv + '</span>' : (!unlocked ? '<span class="tc-lock">🔒</span>' : '')) +
+    (disabled ? '<span class="tc-lock">🔒 暫不開放</span>' : '') +
+    '</div>';
+}
+
+function talentEffectLabel(def, value) {
+  if (def.stat === 'potentialUnlock') return fmt(value) + ' 個潛力節點';
+  var elementTalentNames = {
+    elemFire: '火焰', elemIce: '寒冰', elemLightning: '雷電',
+    elemPoison: '劇毒', elemLight: '聖光', elemDark: '暗影'
+  };
+  // 天賦每級可能是小數（元素附傷 0.25%、傷害偏折 0.5%），fmt 會捨去小數 → 一律保留至多 2 位小數
+  if (elementTalentNames[def.stat]) return String(Math.round(value * 100) / 100) + '%' + elementTalentNames[def.stat] + '傷害';
+  return String(Math.round(value * 100) / 100) + (def.stat.indexOf('Pct') >= 0 || /Dmg|Res|Rate|DmgRed|skill|evasion|hit|crit/.test(def.stat) ? '%' : '');
+}
+
+function talentEffectDescription(def, value) {
+  if (def.cat === 'potential') {
+    var current = Math.max(0, Number(value) || 0);
+    if (def.stat === 'potentialCdr') return '每級使所有技能冷卻時間額外縮短 1%；目前額外縮短：' + fmt(current) + '%';
+    if (def.stat === 'potentialRevive') return '每場戰鬥第一次受到致命傷害時復活，恢復最大生命值的 ' + fmt(Math.min(100, current * 20)) + '%';
+    if (def.stat === 'potentialLootDup') return '每級使掉落物數量額外增加 5%；目前額外掉落加成：' + fmt(current) + '%';
+    if (def.stat === 'potentialInvCap') return '每級增加 100 格背包容量；目前額外容量：' + fmt(current) + ' 格';
+    if (def.stat === 'potentialElemAtk') return '每級使所有元素附加傷害額外提高 2%；目前額外提高：' + fmt(current) + '%';
+    if (def.stat === 'potentialExecute') return '目標生命低於 20% 時，每級使造成的傷害額外提高 2%；目前額外提高：' + fmt(current) + '%';
+    if (def.stat === 'potentialShieldOverflow') return '每級將溢出護盾的 5% 轉換為生命回復；目前轉換比例：' + fmt(current) + '%';
+    if (def.stat === 'potentialManaRefund') return '技能命中敵人後，每級返還技能消耗法力的 2%；目前返還比例：' + fmt(current) + '%';
+    if (def.stat === 'potentialTowerTime') return '每級增加高塔挑戰限時 1 秒；目前額外時間：' + fmt(current) + ' 秒';
+    if (def.stat === 'potentialOffline') return '每級使離線收益額外提高 5%；目前額外提高：' + fmt(current) + '%';
+  }
+  if (def.id === 't4_potential') return '解鎖新類型技能「潛力」三個並給予' + fmt(value) + '點技能點。';
+  if (def.id === 't5_potential') return '解鎖新類型技能「潛力」兩個並給予' + fmt(value) + '點技能點。';
+  return esc(def.desc) + talentEffectLabel(def, value);
+}
+
+function talentDescriptionValue(def, level, turn) {
+  var lv = Math.max(1, Math.floor(Number(level) || 0));
+  if (def.id === 't4_potential' || def.id === 't5_potential') return talentLevelValue(def, lv);
+  return def.stat === 'potentialUnlock'
+    ? potentialCountForLevel(def, lv)
+    : talentLevelValue(def, lv) * talentCompleteMultiplier(turn);
+}
+
+function talentTreeLevelTotal(turn) {
+  return (TALENT_TREES[turn] || []).reduce(function (sum, def) { return sum + talentLevel(def.id); }, 0);
+}
+
+function openTalentModal(kind, id) {
+  if (kind === 'potential') {
+    UI.selTalent = null;
+    openSkillModal('potential:' + id);
+    return;
+  }
+  UI.selTalent = { kind: kind, id: id };
+  hideTooltip();
+  var overlay = $id('talent-modal');
+  if (overlay) overlay.style.display = 'flex';
+  renderTalentModal();
+}
+
+function closeTalentModal() {
+  var overlay = $id('talent-modal');
+  if (overlay) overlay.style.display = 'none';
+  UI.selTalent = null;
+}
+
+/* ---- 離線收益確認彈窗（applyOfflineProgress → save.js 呼叫；收益已入帳，此處為確認展示） ---- */
+function showOfflineSummary(sum) {
+  var overlay = $id('offline-modal'), body = $id('offline-modal-body');
+  if (!overlay || !body || !sum) return;
+  var hrs = Math.floor(sum.seconds / 3600), mins = Math.floor((sum.seconds % 3600) / 60);
+  var h = '<div class="talent-modal-head"><span class="talent-modal-icon">🌙</span><b>離線收益</b> ' +
+    '<span class="dim-text">離線 ' + (hrs ? hrs + ' 小時 ' : '') + mins + ' 分鐘</span></div>';
+  h += '<div class="offline-sum-row">⚔️ 擊殺：Lv.' + fmt(sum.stage) + ' ' + esc(sum.zoneName || '') + '菁英怪 ×' + fmt(sum.kills) + '</div>';
+  h += '<div class="offline-sum-row">💡 經驗 +' + fmt(sum.xp) + '　💰 金幣 +' + fmt(sum.gold) + '</div>';
+  var loot = [];
+  for (var r = 0; r < RARITIES.length; r++) {
+    if (sum.equips && sum.equips[r]) {
+      loot.push('<span style="color:' + RARITIES[r].color + '">' + esc(RARITIES[r].name) + '裝備</span>×' + fmt(sum.equips[r]));
+    }
+  }
+  if (sum.gems) {
+    for (var glv = 1; glv <= 5; glv++) {
+      if (sum.gems[glv]) loot.push('💎Lv.' + glv + ' 寶石×' + fmt(sum.gems[glv]));
+    }
+  }
+  if (sum.books) loot.push('📖附魔書×' + fmt(sum.books));
+  if (sum.essence) loot.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華">太古精華×' + fmt(sum.essence));
+  if (sum.dust) loot.push('💫魔塵×' + fmt(sum.dust));
+  if (sum.parts) loot.push('🔧自動機組零件×' + fmt(sum.parts));
+  if (sum.scrap) loot.push('🔩碎片×' + fmt(sum.scrap) + '（輸送帶滿載折算）');
+  h += '<div class="offline-sum-title">📦 掉落明細（裝備已送入輸送帶）</div>';
+  h += '<div class="offline-sum-loot">' + (loot.length ? loot.join('　') : '（無掉落）') + '</div>';
+  body.innerHTML = h;
+  overlay.style.display = 'flex';
+}
+
+function closeOfflineSummary() {
+  var overlay = $id('offline-modal');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function renderTalentModal() {
+  var body = $id('talent-modal-body');
+  var overlay = $id('talent-modal');
+  if (!body || !overlay || overlay.style.display === 'none') return;
+  var sel = UI.selTalent;
+  if (!sel) return;
+  var def = talentDef(sel.id);
+  if (!def) { closeTalentModal(); return; }
+  var turn = talentTurn(sel.id);
+  var lv = talentLevel(sel.id);
+  var maxLv = TALENT_MAX_LEVEL;
+  var unlocked = talentUnlocked(sel.id);
+  // 0 級尚未產生實際加成，但說明要先讓玩家看到升到 1 級後會得到的效果。
+  var descriptionLv = Math.max(1, lv);
+  var current = talentDescriptionValue(def, descriptionLv, turn);
+  var next = talentDescriptionValue(def, lv + 1, turn);
+  var points = G.player.reincarnationTalentPoints || 0;
+  var title = turn + ' 轉天賦';
+  var upgradeAttr = 'data-talent-up="' + def.id + '"';
+  var maxAttr = 'data-talent-max="' + def.id + '"';
+  var downAttr = 'data-talent-down="' + def.id + '"';
+  var deleteAttr = 'data-talent-delete="' + def.id + '"';
+  var cost = lv + 1;
+  var maxed = lv >= maxLv;
+  var h = '<div class="talent-modal-head"><span class="talent-modal-icon">' + def.emoji + '</span><b>' + esc(def.name) + '</b> <span class="dim-text">Lv.' + lv + '/' + maxLv + '｜' + title + '</span>' +
+    (maxed ? '<span class="talent-modal-complete">已滿級！</span>' : '') + '</div>';
+  h += '<div class="talent-modal-desc"><b>' + talentEffectDescription(def, current) + '</b></div>';
+  h += '<div class="talent-modal-copy' + (maxed ? ' talent-modal-copy-maxed' : '') + '">';
+  if (!maxed) {
+    h += '<div>下一級：<b>' + talentEffectDescription(def, next) + '</b></div>';
+    h += '<div>消耗天賦點：' + cost + '</div>';
+  }
+  if (talentCompleteMultiplier(turn) > 1) h += '<div class="talent-modal-complete">該轉 8 個天賦已全滿，效果 ×2</div>';
+  if (!unlocked) h += '<div class="hint">🔒 需要達到 ' + turn + ' 轉</div>';
+  h += '</div><div class="talent-modal-points">轉生天賦點：' + fmtFull(points) + '</div>';
+  h += '<div class="talent-modal-actions">';
+  if (unlocked && lv < maxLv) {
+    h += '<button class="btn sm" ' + upgradeAttr + '>⬆️ 升級</button>';
+    h += '<button class="btn sm" ' + maxAttr + '>⚡ 一鍵升滿</button>';
+  } else { h += '<div></div><div></div>'; }
+  if (lv > 0) h += '<button class="btn sm warn" ' + downAttr + '>⬇️ 降 1 級</button><button class="btn sm danger" ' + deleteAttr + '>清除</button>';
+  else h += '<div></div><div></div>';
+  h += '</div>';
+  body.innerHTML = h;
+}
+
+function renderTalents() {
+  var root = $id('talent-root');
+  if (!root) return;
+  var rc = reincarnationCountSafe();
+  var h = '<div class="panel talent-summary"><div class="sec-title">🌟 天賦系統</div>' +
+    '<div class="hint">1 轉後開放；天賦使用轉生天賦點，升級成本為目標等級。潛力是新的技能分類，與特殊、被動共用技能點，不另設潛力點。</div>' +
+    '<div class="talent-point-line">轉生天賦點：<b>' + fmtFull(G.player.reincarnationTalentPoints || 0) + '</b></div></div>';
+  if (rc < 1) h += '<div class="panel talent-locked-banner">🔒 天賦系統將於完成 1 轉後開放。</div>';
+  for (var turn = 1; turn <= REINCARNATION_MAX; turn++) {
+    var tree = TALENT_TREES[turn];
+    if (!tree) {
+      h += '<div class="panel talent-tree-panel locked"><div class="sec-title">' + turn + ' 轉天賦</div><div class="talent-locked-banner">🔒 本版本尚未開放</div></div>';
+      continue;
+    }
+    var treeTotal = talentTreeLevelTotal(turn);
+    var treeStatus = rc >= turn ? '已開啟' : '未開啟';
+    var treeMax = TALENT_MAX_LEVEL * 8;
+    var treeComplete = treeTotal >= treeMax;
+    var treeCount = treeComplete ? '<span class="talent-tree-count">' + treeTotal + '/' + treeMax + '</span>' : treeTotal + '/' + treeMax;
+    var treeNotice = treeComplete
+      ? '<span class="talent-tree-complete">' + turn + '轉天賦全滿效果已加倍！</span>'
+      : turn + '轉所有技能升至全滿時此列所有技能效果加倍';
+    h += '<div class="panel talent-tree-panel"><div class="sec-title">' + turn + '轉天賦 <span class="dim-text">' + treeStatus + '　(' + treeCount + ')　' + treeNotice + '</span></div><div class="talent-grid">';
+    h += tree.map(function (def) { return talentNodeHTML(def, turn); }).join('') + '</div></div>';
+  }
+  // 潛力屬於技能分類，天賦頁只保留轉生天賦點摘要。
+  root.innerHTML = h;
+  renderTalentModal();
 }
 
 /* ---- 技能分頁（技能樹 + 融合） ---- */
 UI.selSkill = null;      // 目前選取的技能 id
+UI.selTalent = null;     // { kind: 'talent'|'potential', id }
 UI.fuseSlots = [];       // 融合素材槽（最多 4）
 
 function skillCellHTML(id) {
@@ -2393,6 +2625,12 @@ function renderSkills() {
     h += '<div class="tree-panel"><div class="tree-title">' + SKILL_CATS[cat].emoji + ' ' + SKILL_CATS[cat].name +
       ' <span class="dim-text">已投入 ' + catSpentPoints(cat) + ' 點</span></div>' + rows + '</div>';
   }
+  var potentialCells = POTENTIAL_TALENTS.map(function (def, index) { return potentialNodeHTML(def, index); });
+  var potentialRows = '';
+  for (var pr = 0; pr < potentialCells.length; pr += 4) {
+    potentialRows += '<div class="tree-row">' + potentialCells.slice(pr, pr + 4).join('') + '</div>';
+  }
+  h += '<div class="tree-panel potential-skill-panel"><div class="tree-title">✨ 潛力 <span class="dim-text">技能分類；使用技能點與金幣　已解鎖 ' + potentialUnlockedCount() + '/' + POTENTIAL_NODE_COUNT + '</span></div>' + potentialRows + '</div>';
   treesBox.innerHTML = h;
 
   renderSkillModal();
@@ -2400,8 +2638,14 @@ function renderSkills() {
 }
 
 /* ---- 技能升級彈窗 ---- */
+function potentialSkillId(ref) {
+  if (typeof ref !== 'string' || ref.indexOf('potential:') !== 0) return null;
+  return ref.slice('potential:'.length);
+}
+
 function openSkillModal(id) {
   UI.selSkill = id;
+  UI.selTalent = null;
   hideTooltip();
   var overlay = $id('skill-modal');
   if (overlay) overlay.style.display = 'flex';
@@ -2416,20 +2660,29 @@ function renderSkillModal() {
   var body = $id('skill-modal-body');
   var overlay = $id('skill-modal');
   if (!body || !overlay || overlay.style.display === 'none') return;
-  var id = UI.selSkill;
-  var sk = id ? skillDef(id) : null;
+  var ref = UI.selSkill;
+  var potentialId = potentialSkillId(ref);
+  var isPotential = potentialId !== null;
+  var id = isPotential ? potentialId : ref;
+  var sk = id ? (isPotential ? potentialDef(id) : skillDef(id)) : null;
   if (!sk) { closeSkillModal(); return; }
-  var lv = skillLevel(id);
-  var maxLv = skillMaxLv(sk);
-  var lock = tierLockReason(id);
-  var inLoadout = (G.player.loadout || []).indexOf(id) >= 0;
-  var isFusion = sk.cat === 'fusion';
+  var lv = isPotential ? potentialLevel(id) : skillLevel(id);
+  var maxLv = isPotential ? potentialSkillMaxLv() : skillMaxLv(sk);
+  var lock = isPotential
+    ? (potentialTemporarilyDisabled(id) ? '此潛力技能目前暫不開放升級' : (potentialUnlocked(id) ? null : '潛力節點尚未解鎖'))
+    : tierLockReason(id);
+  var inLoadout = !isPotential && (G.player.loadout || []).indexOf(id) >= 0;
+  var isFusion = !isPotential && sk.cat === 'fusion';
+  var description = function (level) {
+    return isPotential ? talentEffectDescription(sk, level * sk.per) : describeSkill(id, level);
+  };
+  var category = isPotential ? '潛力' : (SKILL_CATS[sk.cat] ? SKILL_CATS[sk.cat].name : '融合技');
   var h = '<div class="skd-head"><span class="skd-emoji">' + sk.emoji + '</span><b>' + esc(sk.name) + '</b> ' +
-    '<span class="dim-text">Lv.' + lv + '/' + maxLv + '｜' + (SKILL_CATS[sk.cat] ? SKILL_CATS[sk.cat].name : '融合技') + '</span>' +
-    (sk.cat !== 'passive' ? '<span class="sk-meta">🔵 ' + skillManaCost(sk, Math.max(1, lv)) + ' MP　⏱️ ' + sk.cd + 's</span>' : '') + '</div>';
-  h += '<div class="sk-desc">' + describeSkill(id, Math.max(1, lv)) + '</div>';
+    '<span class="dim-text">Lv.' + lv + '/' + maxLv + '｜' + category + '</span>' +
+    (!isPotential && sk.cat !== 'passive' ? '<span class="sk-meta">🔵 ' + skillManaCost(sk, Math.max(1, lv)) + ' MP　⏱️ ' + sk.cd + 's</span>' : '') + '</div>';
+  h += '<div class="sk-desc">' + description(Math.max(1, lv)) + '</div>';
   if (lv > 0 && lv < maxLv) {
-    h += '<div class="skd-next dim-text">下一級：' + describeSkill(id, lv + 1) + '</div>';
+    h += '<div class="skd-next dim-text">下一級：' + description(lv + 1) + '</div>';
   }
   if (sk.flavor) h += '<div class="sk-flavor">' + esc(sk.flavor) + '</div>';
   if (lock) h += '<div class="hint">🔒 ' + esc(lock) + '</div>';
@@ -2438,9 +2691,10 @@ function renderSkillModal() {
   h += '<div class="detail-actions skill-modal-actions">';
   if (lv < maxLv && !lock) {
     var cost = skillUpgradeCost(lv);
-    h += '<button class="btn sm" data-skill-learn="' + id + '" data-tip="花費 ' + fmt(cost) + ' 金幣"' + (G.player.gold < cost ? ' disabled' : '') + '>' +
+    var skillRef = isPotential ? 'potential:' + id : id;
+    h += '<button class="btn sm" data-skill-learn="' + skillRef + '" data-tip="花費 ' + fmt(cost) + ' 金幣"' + (G.player.gold < cost ? ' disabled' : '') + '>' +
       (lv === 0 ? '📖 學習' : '⬆️ 升級') + '</button>';
-    h += '<button class="btn sm" data-skill-max="' + id + '" data-tip="自動消耗技能點與金幣，升到目前技能上限">⚡ 一鍵滿級</button>';
+    h += '<button class="btn sm" data-skill-max="' + skillRef + '" data-tip="自動消耗技能點與金幣，升到目前技能上限">⚡ 一鍵滿級</button>';
   } else if (lv >= maxLv) {
     h += '<div style="text-align:center; padding: 4px; color: var(--good); font-size: 12px;">已滿級</div>';
     h += '<div></div>'; // 保留一鍵滿級欄位，讓後方按鈕位置固定
@@ -2449,12 +2703,12 @@ function renderSkillModal() {
   }
 
   if (lv > 0) {
-    h += '<button class="btn sm warn" data-skill-downgrade="' + id + '" data-tip="退回 1 技能點（不退還金幣）">⬇️ 降級</button>';
+    h += '<button class="btn sm warn" data-skill-downgrade="' + (isPotential ? 'potential:' + id : id) + '" data-tip="退回 1 技能點（不退還金幣）">⬇️ 降級</button>';
   } else {
     h += '<div></div>'; // empty grid cell
   }
 
-  if (sk.cat !== 'passive' && lv > 0) {
+  if (!isPotential && sk.cat !== 'passive' && lv > 0) {
     h += inLoadout
       ? '<button class="btn sm warn" data-skill-unequip="' + id + '">卸下</button>'
       : '<button class="btn sm" data-skill-equip="' + id + '">⚔️ 裝備</button>';
@@ -2462,7 +2716,7 @@ function renderSkillModal() {
     h += '<div></div>'; // empty grid cell
   }
 
-  if (!isFusion && sk.cat !== 'passive' && lv > 0) {
+  if (!isPotential && !isFusion && sk.cat !== 'passive' && lv > 0) {
     h += '<button class="btn sm" data-skill-fuse-add="' + id + '">⚗️ 加入融合</button>';
   } else {
     h += '<div></div>';
@@ -2495,6 +2749,43 @@ function showSkillTooltip(id, anchorEl) {
   tip.innerHTML = h;
   tip.style.display = 'block';
   // 定位：優先顯示在圖示右側，貼邊時翻到左側/上方
+  var r = anchorEl.getBoundingClientRect();
+  var tw = tip.offsetWidth, th = tip.offsetHeight;
+  var x = r.right + 10, y = r.top;
+  if (x + tw > window.innerWidth - 8) x = r.left - tw - 10;
+  if (x < 8) x = 8;
+  if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
+  if (y < 8) y = 8;
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+}
+function showTalentTooltip(ref, anchorEl) {
+  var tip = $id('sk-tooltip');
+  if (!tip || !anchorEl || typeof ref !== 'string') return;
+  var isPotential = ref.indexOf('potential:') === 0;
+  var id = isPotential ? ref.slice('potential:'.length) : ref;
+  var def = isPotential ? potentialDef(id) : talentDef(id);
+  if (!def) return;
+  var lv = isPotential ? potentialLevel(id) : talentLevel(id);
+  var maxLv = isPotential ? potentialSkillMaxLv() : TALENT_MAX_LEVEL;
+  var turn = isPotential ? 0 : talentTurn(id);
+  var displayLv = Math.max(1, lv);
+  var current = isPotential ? displayLv * def.per : talentDescriptionValue(def, displayLv, turn);
+  var next = isPotential
+    ? (lv < maxLv ? (lv + 1) * def.per : current)
+    : talentDescriptionValue(def, lv + 1, turn);
+  var title = isPotential ? '潛力技能' : turn + ' 轉天賦';
+  var h = '<div class="skt-name">' + def.emoji + ' ' + esc(def.name) +
+    ' <span class="dim-text">Lv.' + lv + '/' + maxLv + '｜' + title + '</span></div>';
+  h += '<div class="skt-desc">' + (isPotential ? talentEffectDescription(def, current) : talentEffectDescription(def, current)) + '</div>';
+  if (lv < maxLv) h += '<div class="skt-desc">下一級：' + talentEffectDescription(def, next) + '</div>';
+  if (!isPotential && !talentUnlocked(id)) h += '<div class="skt-lock">🔒 需要達到 ' + turn + ' 轉</div>';
+  if (isPotential && potentialTemporarilyDisabled(id)) h += '<div class="skt-lock">🔒 此潛力技能目前暫不開放升級</div>';
+  else if (isPotential && !potentialUnlocked(id)) h += '<div class="skt-lock">🔒 潛力節點尚未解鎖</div>';
+  h += '<div class="skt-hint">點擊開啟升級面板</div>';
+  tip.innerHTML = h;
+  tip.style.display = 'block';
+  UI.tooltipAnchor = anchorEl;
   var r = anchorEl.getBoundingClientRect();
   var tw = tip.offsetWidth, th = tip.offsetHeight;
   var x = r.right + 10, y = r.top;
@@ -3175,7 +3466,7 @@ function miniSnapshot() {
   if (G.tower.active && TOWER.boss) {
     p = TOWER.player; enemy = TOWER.boss;
     s.stage = '🗼 高塔第 ' + TOWER.floor + ' 層';
-    s.info = '⏱️ 剩餘 ' + fmt1(Math.max(0, TOWER_TIME_LIMIT - TOWER.elapsed)) + 's' + (TOWER.enraged ? '　🔥狂暴中' : '');
+    s.info = '⏱️ 剩餘 ' + fmt1(Math.max(0, towerTimeLimitWithTalents() - TOWER.elapsed)) + 's' + (TOWER.enraged ? '　🔥狂暴中' : '');
   } else {
     p = FIELD.player; enemy = FIELD.monster;
     s.stage = currentZoneDef().emoji + currentZoneDef().name + ' 第 ' + G.stage.current + ' 階段';
@@ -3255,7 +3546,7 @@ function updateLiveTitle() {
   var t;
   if (G.tower.active && TOWER.boss) {
     t = '🗼' + TOWER.floor + '層 ' + Math.round(TOWER.boss.hp / TOWER.boss.maxHp * 100) + '%｜' +
-      Math.ceil(Math.max(0, TOWER_TIME_LIMIT - TOWER.elapsed)) + 's';
+      Math.ceil(Math.max(0, towerTimeLimitWithTalents() - TOWER.elapsed)) + 's';
   } else {
     var p = FIELD.player;
     var hpPct = p ? Math.round(p.hp / st.hp * 100) : 100;
@@ -3443,9 +3734,13 @@ function initUI() {
   document.querySelectorAll('.tab-btn').forEach(function (b) {
     b.addEventListener('click', function () {
       switchTab(b.getAttribute('data-tab'));
-      UI.dirty.equip = true; UI.dirty.inv = true; UI.dirty.factory = true; UI.dirty.newforge = true; UI.dirty.forge = true; UI.dirty.tower = true; UI.dirty.gems = true; UI.dirty.skills = true;
+      UI.dirty.equip = true; UI.dirty.inv = true; UI.dirty.factory = true; UI.dirty.newforge = true; UI.dirty.forge = true; UI.dirty.tower = true; UI.dirty.gems = true; UI.dirty.skills = true; UI.dirty.talents = true;
     });
   });
+
+  // 新熔爐＝本地服限定：外服隱藏頁籤（裝備引導由 newforge.js 的 intake/tick 閘門切回舊輸送帶）
+  var nfTabBtn = document.querySelector('.tab-btn[data-tab="newforge"]');
+  if (nfTabBtn) nfTabBtn.style.display = (typeof newForgeHostAvailable === 'function' && newForgeHostAvailable()) ? '' : 'none';
 
   // 新熔爐分頁事件（委派一次）
   bindNewForgeEvents();
@@ -3486,6 +3781,22 @@ function initUI() {
 
   // 技能：學習/升級/裝載/融合（事件委派）
   document.addEventListener('click', function (e) {
+    var talentSelect = e.target.closest('[data-talent-select]');
+    if (talentSelect) {
+      var talentParts = talentSelect.getAttribute('data-talent-select').split(':');
+      openTalentModal(talentParts[0], talentParts.slice(1).join(':'));
+      return;
+    }
+    var talentModalClose = e.target.closest('[data-talent-modal-close]');
+    if (talentModalClose) { closeTalentModal(); return; }
+    var talentUp = e.target.closest('[data-talent-up]');
+    if (talentUp) { var talentErr = talentUpgrade(talentUp.getAttribute('data-talent-up')); if (talentErr) blog('⚠️ ' + talentErr, 'warn'); renderTalents(); return; }
+    var talentMaxBtn = e.target.closest('[data-talent-max]');
+    if (talentMaxBtn) { var talentMaxErr = talentMax(talentMaxBtn.getAttribute('data-talent-max')); if (talentMaxErr) blog('⚠️ ' + talentMaxErr, 'warn'); renderTalents(); return; }
+    var talentDown = e.target.closest('[data-talent-down]');
+    if (talentDown) { var talentDownErr = talentDowngrade(talentDown.getAttribute('data-talent-down')); if (talentDownErr) blog('⚠️ ' + talentDownErr, 'warn'); renderTalents(); return; }
+    var talentDeleteBtn = e.target.closest('[data-talent-delete]');
+    if (talentDeleteBtn) { var talentDeleteErr = talentDelete(talentDeleteBtn.getAttribute('data-talent-delete')); if (talentDeleteErr) blog('⚠️ ' + talentDeleteErr, 'warn'); renderTalents(); return; }
     // 裝備三套切頁：改名按鈕須在切頁判斷之前處理（避免同時觸發切換檢視）
     var eqRename = e.target.closest('[data-eqset-rename]');
     if (eqRename) {
@@ -3510,14 +3821,18 @@ function initUI() {
     }
     var mx = e.target.closest('[data-skill-max]');
     if (mx) {
-      var merr = maxUpgradeSkill(mx.getAttribute('data-skill-max'));
+      var maxRef = mx.getAttribute('data-skill-max');
+      var maxPotentialId = potentialSkillId(maxRef);
+      var merr = maxPotentialId !== null ? potentialMax(maxPotentialId) : maxUpgradeSkill(maxRef);
       if (merr) blog('⚠️ ' + merr, 'warn');
       renderSkills();
       return;
     }
     var ln = e.target.closest('[data-skill-learn]');
     if (ln) {
-      var lerr = learnOrUpgradeSkill(ln.getAttribute('data-skill-learn'));
+      var learnRef = ln.getAttribute('data-skill-learn');
+      var learnPotentialId = potentialSkillId(learnRef);
+      var lerr = learnPotentialId !== null ? potentialUpgrade(learnPotentialId) : learnOrUpgradeSkill(learnRef);
       if (lerr) blog('⚠️ ' + lerr, 'warn');
       renderSkills();
       return;
@@ -3566,7 +3881,9 @@ function initUI() {
     // 降級
     var dg = e.target.closest('[data-skill-downgrade]');
     if (dg) {
-      var dgerr = downgradeSkill(dg.getAttribute('data-skill-downgrade'));
+      var downRef = dg.getAttribute('data-skill-downgrade');
+      var downPotentialId = potentialSkillId(downRef);
+      var dgerr = downPotentialId !== null ? potentialDowngrade(downPotentialId) : downgradeSkill(downRef);
       if (dgerr) blog('⚠️ ' + dgerr, 'warn');
       renderSkills();
       return;
@@ -3639,6 +3956,25 @@ function initUI() {
     $id('skill-modal-close').addEventListener('click', closeSkillModal);
   }
 
+  // 天賦彈窗：右上 X / 點擊遮罩關閉
+  var talentModal = $id('talent-modal');
+  if (talentModal) {
+    talentModal.addEventListener('click', function (e) {
+      if (e.target === talentModal) closeTalentModal();
+    });
+    $id('talent-modal-close').addEventListener('click', closeTalentModal);
+  }
+
+  // 離線收益彈窗：確認 / 右上 X / 點擊遮罩關閉
+  var offlineModal = $id('offline-modal');
+  if (offlineModal) {
+    offlineModal.addEventListener('click', function (e) {
+      if (e.target === offlineModal) closeOfflineSummary();
+    });
+    $id('offline-modal-close').addEventListener('click', closeOfflineSummary);
+    $id('offline-modal-confirm').addEventListener('click', closeOfflineSummary);
+  }
+
   // 技能拖曳排序
   var loBox = $id('skill-loadout');
   if (loBox) {
@@ -3696,6 +4032,8 @@ function initUI() {
     if (buffTipHover) { showBuffTooltip(buffTipHover); return; }
     var enemyBuffTipHover = e.target.closest('[data-enemy-buff-tip]');
     if (enemyBuffTipHover) { showEnemyBuffTooltip(enemyBuffTipHover); return; }
+    var talentTipHover = e.target.closest('[data-talent-tip]');
+    if (talentTipHover) { showTalentTooltip(talentTipHover.getAttribute('data-talent-tip'), talentTipHover); return; }
 
     // 神鑄法陣裝備槽：顯示完整裝備詳情（寶石槽走上方 data-tip 分支）
     var fSlotEl = e.target.closest('.forge-slot.filled[data-forge-slot]');
@@ -3735,6 +4073,7 @@ function initUI() {
   document.addEventListener('mouseout', function (e) {
     if (e.target.closest('[data-sk]') || e.target.closest('.stat-row[data-tt-title]') ||
       e.target.closest('[data-tt-title]') ||
+      e.target.closest('[data-talent-tip]') ||
       e.target.closest('[data-tower-tip]') || e.target.closest('#btn-enemy-tip') ||
       e.target.closest('#btn-boss-tip') || e.target.closest('#btn-tower-result-boss-tip') ||
       e.target.closest('[data-tip]') || e.target.closest('[data-buff-tip]') ||
@@ -3957,8 +4296,7 @@ function initUI() {
   // 日誌篩選
   var logFilter = $id('log-filter');
   if (logFilter) {
-    logFilter.addEventListener('change', function (e) {
-      var v = e.target.value;
+    function applyLogFilter(v) {
       var b = $id('battle-log');
       var bossLog = $id('boss-log');
       if (v === 'boss') {
@@ -3968,13 +4306,19 @@ function initUI() {
           bossLog.className = 'log';
         }
       } else {
-        if (bossLog) bossLog.style.display = 'none';
+        // 「全部」必須同時顯示一般戰鬥與BOSS戰紀錄；否則BOSS紀錄會被獨立容器隱藏。
+        if (bossLog) {
+          bossLog.style.display = v === 'all' ? 'block' : 'none';
+          bossLog.className = 'log' + (v === 'all' ? '' : ' filter-' + v);
+        }
         if (b) {
           b.style.display = 'block';
           b.className = 'log' + (v === 'all' ? '' : ' filter-' + v);
         }
       }
-    });
+    }
+    logFilter.addEventListener('change', function (e) { applyLogFilter(e.target.value); });
+    applyLogFilter(logFilter.value || 'all');
   }
 
   // 迷你監控視窗

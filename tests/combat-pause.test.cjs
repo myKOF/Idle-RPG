@@ -54,3 +54,19 @@ test('戰鬥控制列提供暫停按鈕與可辨識的繼續狀態', () => {
   assert.match(ui, /aria-pressed/);
   assert.match(ui, /繼續戰鬥/);
 });
+
+test('戰鬥關卡控制列使用正式 tooltip，不使用原生 title', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const combatStart = html.indexOf('<div id="combat-area">');
+  const combatEnd = html.indexOf('<div id="detail-log-modal"');
+  const combatBlock = html.slice(combatStart, combatEnd);
+  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+
+  assert.doesNotMatch(combatBlock, /\stitle=/);
+  assert.match(combatBlock, /data-tt-title="荒漠"/);
+  assert.match(combatBlock, /data-tt-title="戰鬥控制"/);
+  assert.match(combatBlock, /data-tt-title="迷你視窗"/);
+  assert.match(combatBlock, /data-tt-title="統計面板"/);
+  assert.match(ui, /el\.setAttribute\('data-tt-desc', paused \? '繼續野外與高塔戰鬥'/);
+  assert.doesNotMatch(ui, /el\.title\s*=/);
+});

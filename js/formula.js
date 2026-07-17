@@ -87,6 +87,8 @@ function computeStats(equipmentOverride) {
     hpRegen: 0, mpRegen: 0, aspdPct: 0, critRate: 0, critDmg: 0,
     pPen: 0, mPen: 0, hit: 0, cdr: 0, castSpeed: 0, lifesteal: 0, manaSteal: 0,
     eliteDmg: 0, bossDmg: 0, normalDmg: 0, aoeDmg: 0, globalDmgRed: 0,
+    // 4 轉敵種傷害天賦：與裝備／其他既有敵種傷害分開計算，保留獨立乘區。
+    talentEliteDmg: 0, talentBossDmg: 0, talentNormalDmg: 0,
     normalDmgRed: 0, eliteDmgRed: 0, bossDmgRed: 0,
     blockRate: 0, blockDmgRed: 0, evasion: 0, tenacity: 0, shieldEff: 0, pRes: 0, mRes: 0,
     ccRed: 0, moveSpeed: 0, loot: 0, xpBonus: 0, goldBonus: 0, luck: 0, weight: 0,
@@ -151,7 +153,8 @@ function computeStats(equipmentOverride) {
     });
   });
 
-  // 被動技能加成：每級效果 × 技能等級
+  // 被動技能加成：每級效果 × 技能等級；5 轉天賦的被動技能效果同步放大。
+  var talent = (typeof talentStatBonuses === 'function') ? talentStatBonuses() : {};
   if (G.player.skills) {
     for (var sid in G.player.skills) {
       var slv = G.player.skills[sid];
@@ -159,7 +162,7 @@ function computeStats(equipmentOverride) {
       if (!sdef || !sdef.fx || !sdef.fx.passive || !slv) continue;
       for (var pk in sdef.fx.passive) {
         if (A[pk] !== undefined) {
-          var passiveVal = sdef.fx.passive[pk] * slv;
+          var passiveVal = sdef.fx.passive[pk] * slv * (1 + (talent.skillPassive || 0) / 100);
           A[pk] += pk === 'loot' ? effectiveDropRateEffect(passiveVal) : passiveVal;
         }
       }
@@ -183,6 +186,29 @@ function computeStats(equipmentOverride) {
       applyGemStat(g.type, gemStatValue(g.type, g.level));
     }
   });
+
+  // 天賦效果在裝備、寶石與被動技能彙總後套用；潛力不另設點數，僅提供技能分類與戰鬥衍生加成。
+  A.str *= 1 + (talent.strPct || 0) / 100;
+  A.agi *= 1 + (talent.agiPct || 0) / 100;
+  A.int *= 1 + (talent.intPct || 0) / 100;
+  A.vit *= 1 + (talent.vitPct || 0) / 100;
+  A.hpPct += talent.hpPct || 0;
+  // 天賦「物防/魔防鍛體、重甲/魔鎧共鳴」＝獨立乘區（連乘），於派生段套用，不併入裝備物防%桶。
+  A.critRate += talent.critRate || 0;
+  A.critDmg += talent.critDmg || 0;
+  A.hit += talent.hit || 0;
+  A.evasion += talent.evasion || 0;
+  A.shieldEff += talent.shieldEff || 0;
+  // 天賦「傷害偏折/絕對偏折」＝全局減傷額外提高%（乘算），於派生段套用，不在此加定值。
+  // 敵種傷害天賦不併入裝備／詞條桶；戰鬥結算時另乘一次，避免變成同一個加總百分比。
+  A.talentNormalDmg += talent.normalDmg || 0;
+  A.talentEliteDmg += talent.eliteDmg || 0;
+  A.talentBossDmg += talent.bossDmg || 0;
+  A.normalDmgRed += talent.normalDmgRed || 0;
+  A.eliteDmgRed += talent.eliteDmgRed || 0;
+  A.pRes += (talent.pRes || 0) + (talent.allRes || 0);
+  A.mRes += (talent.mRes || 0) + (talent.allRes || 0);
+  ELEMENTS.forEach(function (e3) { resist[e3] += (talent.elemRes || 0) + (talent.allRes || 0); });
 
   /* ---- 派生公式（st.base = 純等級/四維的基礎值，供屬性面板拆解顯示） ---- */
   var lv = p.level;
@@ -219,24 +245,31 @@ function computeStats(equipmentOverride) {
   st.aspd = ASPD_CAP > 0
     ? clamp(ASPD_BASE * (1 + (A.aspdPct + st.agi * PRIMARY_STAT_EFFECTS.agiAspdPct) / 100), ASPD_MIN, ASPD_CAP)
     : Math.max(ASPD_MIN, ASPD_BASE * (1 + (A.aspdPct + st.agi * PRIMARY_STAT_EFFECTS.agiAspdPct) / 100)); // 攻速：基礎攻速、敏捷係數與上限皆由 data.js 控制
-  st.cdr = capValue(A.cdr, STAT_CAPS.cdr);                                  // 冷卻縮減上限（上限 0＝無上限）
+  st.cdr = capValue(A.cdr + (talent.potentialCdr || 0), STAT_CAPS.cdr);       // 潛力：時空折疊
   st.castSpeed = capValue(A.castSpeed, STAT_CAPS.castSpeed);                      // 施法速度上限（上限 0＝無上限）
   st.lifesteal = capValue(A.lifesteal, STAT_CAPS.lifesteal);                      // 吸血上限（上限 0＝無上限）
   st.manaSteal = capValue(A.manaSteal, STAT_CAPS.manaSteal);                      // 吸魔上限（上限 0＝無上限）
-  st.eliteDmg = A.eliteDmg;
-  st.bossDmg = A.bossDmg;
-  st.normalDmg = A.normalDmg;
+  // 面板仍顯示敵種傷害的合計值；戰鬥使用 base/talent 欄位，以保留兩個獨立乘區。
+  st.baseEliteDmg = A.eliteDmg;
+  st.baseBossDmg = A.bossDmg;
+  st.baseNormalDmg = A.normalDmg;
+  st.talentEliteDmg = A.talentEliteDmg;
+  st.talentBossDmg = A.talentBossDmg;
+  st.talentNormalDmg = A.talentNormalDmg;
+  st.eliteDmg = A.eliteDmg + A.talentEliteDmg;
+  st.bossDmg = A.bossDmg + A.talentBossDmg;
+  st.normalDmg = A.normalDmg + A.talentNormalDmg;
   st.aoeDmg = A.aoeDmg;
-  st.globalDmgRed = A.globalDmgRed;
+  st.globalDmgRed = A.globalDmgRed * (1 + (talent.globalDmgRed || 0) / 100); // 傷害偏折/絕對偏折：全局減傷總值 ×(1+天賦%)
   st.normalDmgRed = A.normalDmgRed;   // 敵種傷害抗性（定值；減傷公式 enemyTypeDamageReduction → §3）
   st.eliteDmgRed = A.eliteDmgRed;
   st.bossDmgRed = A.bossDmgRed;
-  // 防禦：物防 = (4 + (等級-1)×1.0 + 耐力×0.9 + 定值) × (1 + 物防%)
+  // 防禦：物防 = (4 + (等級-1)×1.0 + 耐力×0.9 + 定值) × (1 + 物防%) × (1 + 天賦物防%［獨立乘區］)
   st.base.def = 4 + (lv - 1) * 1.0 + st.vit * PRIMARY_STAT_EFFECTS.vitDef;
-  st.def = Math.round((st.base.def + A.defFlat) * (1 + A.defPct / 100));
-  // 魔防 = (3 + (等級-1)×0.8 + 智力×0.7 + 定值) × (1 + 物防%［共用］)
+  st.def = Math.round((st.base.def + A.defFlat) * (1 + A.defPct / 100) * (1 + (talent.defPct || 0) / 100));
+  // 魔防 = (3 + (等級-1)×0.8 + 智力×0.7 + 定值) × (1 + 物防%［共用］) × (1 + 天賦魔防%［獨立乘區］)
   st.base.mdef = 3 + (lv - 1) * 0.8 + st.int * PRIMARY_STAT_EFFECTS.intMdef;
-  st.mdef = Math.round((st.base.mdef + A.mdefFlat) * (1 + A.defPct / 100));
+  st.mdef = Math.round((st.base.mdef + A.mdefFlat) * (1 + A.defPct / 100) * (1 + (talent.mdefPct || 0) / 100));
   st.blockRate = capValue(A.blockRate, STAT_CAPS.blockRate);                      // 格擋率上限（上限 0＝無上限）
   st.blockDmgRed = capValue(A.blockDmgRed, STAT_CAPS.blockDmgRed);                  // 額外格擋減傷上限（總減傷 = 30% + 此值；上限 0＝不夾上限）
   st.evasion = capValue(st.agi * PRIMARY_STAT_EFFECTS.agiEvasion + A.evasion, STAT_CAPS.evasion);          // 閃避：敏捷係數（上限 0＝無上限）
@@ -266,6 +299,28 @@ function computeStats(equipmentOverride) {
   if (passives.doubleHit) passives.doubleHit = capValue(passives.doubleHit, STAT_CAPS.doubleHit);
   if (passives.stun) passives.stun = capValue(passives.stun, STAT_CAPS.stun);
   st.passives = passives;
+  st.talent = talent;
+  // 2 轉元素天賦：攻擊時附加「當次傷害 × 天賦%」的元素傷害（結算於 resolveHit 元素附加段）；
+  // 潛力「元素核心」把所有元素附加傷害（含裝備附魔的固定值元素攻擊）乘算提高。
+  var talentElemMap = {
+    fire: talent.elemFire || 0, ice: talent.elemIce || 0, lightning: talent.elemLightning || 0,
+    poison: talent.elemPoison || 0, light: talent.elemLight || 0, dark: talent.elemDark || 0
+  };
+  var elemBoost = 1 + (talent.potentialElemAtk || 0) / 100;
+  var elemDmgPct = {};
+  ELEMENTS.forEach(function (e4) {
+    elemAtk[e4] *= elemBoost;
+    elemDmgPct[e4] = talentElemMap[e4] * elemBoost;
+  });
+  st.elemDmgPct = elemDmgPct;
+  st.potentialRevive = talent.potentialRevive || 0;
+  st.potentialLootDup = talent.potentialLootDup || 0;
+  st.potentialInvCap = talent.potentialInvCap || 0;
+  st.potentialExecute = talent.potentialExecute || 0;
+  st.potentialShieldOverflow = talent.potentialShieldOverflow || 0;
+  st.potentialManaRefund = talent.potentialManaRefund || 0;
+  st.potentialTowerTime = talent.potentialTowerTime || 0;
+  st.potentialOffline = talent.potentialOffline || 0;
   st.elemAtk = elemAtk;
   st.A = A;
   return st;
@@ -291,7 +346,7 @@ function elementalResistanceMultiplier(resist, element) {
 // globalDamageReduction 回傳減傷率；globalDamageMultiplier 回傳套用後的
 // 剩餘傷害倍率 = 1 − 減傷率。只在有該詞綴（total>0）時啟用，否則維持原傷害（倍率 1）。
 var GLOBAL_DMG_RED_CAP = 100;   // 全局減傷上限（%）；設 0＝無上限（減傷率自然趨近 100%）
-var GLOBAL_DMG_RED_DENOMINATOR = 10000; // 全局減傷曲線分母；越大代表同數值減傷越低。
+var GLOBAL_DMG_RED_DENOMINATOR = 100; // 全局減傷曲線分母；越大代表同數值減傷越低。
 function globalDamageReduction(total) {
   total = Number(total) || 0;
   if (total <= 0) return 0;
@@ -321,6 +376,12 @@ var KILL_HEAL_PCT = 12;       // 野外擊殺回復（最大生命 %，溢出轉
 
 function slowFactor(ent) { return effectActive(ent, 'slow') ? SLOW_ASPD_FACTOR : 1; }
 
+// 高塔 BOSS 不受會改變攻擊頻率的控制效果影響。
+function isBossControlImmune(ent) { return !!(ent && ent.isBoss); }
+function isAttackFrequencyControlKey(key) {
+  return key === 'stun' || key === 'slow' || key === 'aspdDown' || key === 'attackSpeedDown';
+}
+
 /* ---- 連擊數（暴擊率破 100% 衍生的多段攻擊） ----
    語意：暴擊率 = 100% 為「完全爆擊」；超過 100% 才衍生額外攻擊次數。
    公式：連擊數 = a·ln(暴擊率%) + b·暴擊率% + c，取 max(0)。
@@ -349,7 +410,9 @@ function rollComboHits(st) {
            → 暴擊 → 元素附加（含特效觸發）→ 真實傷害 → 對普通/菁英/BOSS 加成
            → 格擋 → 聖佑 → 全局減傷 → 敵種傷害抗性 → 護盾吸收 → 扣血 → 反震
    aCfg: { atk, dmgType('phys'|'magic'|'both'), level, critRate, critDmg, hit, sunder, pen,
-           trueDmgPct, elemAtk, eliteDmg, bossDmg, normalDmg, isElite, isBoss, isPlayer }
+     trueDmgPct, elemAtk, elemDmgPct, eliteDmg, bossDmg, normalDmg,
+     talentEliteDmg, talentBossDmg, talentNormalDmg, isElite, isBoss, isPlayer }
+         （elemAtk = 固定值元素攻擊；elemDmgPct = 2 轉天賦附傷%，按當次傷害附加）
          （isElite/isBoss = 攻擊者自身敵種，供防守方敵種傷害抗性選值）
    dCfg: { def, mdef, level, dodge, blockRate, blockDmgRed, pRes, mRes, resist{六元素+ctrl},
            ctrlRes, ccFactor, thornsPct, maxHp, isElite, isBoss,
@@ -383,13 +446,16 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     if (aCfg.annihilate && chance(aCfg.annihilate)) { dmg *= 2; out.procs.push('破滅'); }
   }
   // 元素附加（各自受對應抗性影響，並觸發元素特效）
+  // 每系元素值 = 固定值元素攻擊 + 附傷基底 × 天賦附傷%；附傷基底 = 元素附加前的當次傷害（含防禦/抗性/浮動/暴擊）
   var elem = aCfg.elemAtk || null;
-  if (elem) {
+  var elemPct = aCfg.elemDmgPct || null;
+  if (elem || elemPct) {
     var res = dCfg.resist || {};
     var ccF = (dCfg.ccFactor === undefined) ? 1 : dCfg.ccFactor;
+    var attachBase = dmg;
     for (var i = 0; i < ELEMENTS.length; i++) {
       var ek = ELEMENTS[i];
-      var ev = elem[ek] || 0;
+      var ev = (elem && elem[ek] || 0) + attachBase * (elemPct && elemPct[ek] || 0) / 100;
       if (!ev) continue;
       var edmg = ev * elementalResistanceMultiplier(res, ek);
       dmg += edmg;
@@ -404,10 +470,14 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   }
   // 真實傷害（無視防禦與抗性）= 攻擊力 × 真傷%
   if (aCfg.trueDmgPct) dmg += aCfg.atk * aCfg.trueDmgPct / 100;
-  // 對菁英 / 對 BOSS / 對普通 傷害加成（普通 = 非菁英且非 BOSS 的敵人）
-  if (dCfg.isElite && aCfg.eliteDmg) dmg *= 1 + aCfg.eliteDmg / 100;
-  if (dCfg.isBoss && aCfg.bossDmg) dmg *= 1 + aCfg.bossDmg / 100;
-  if (!dCfg.isElite && !dCfg.isBoss && aCfg.normalDmg) dmg *= 1 + aCfg.normalDmg / 100;
+  // 對敵種傷害：裝備／詞條與 4 轉天賦分屬獨立乘區。
+  // 例：既有對菁英 +10%、天賦對菁英 +1% = 原始傷害 ×1.10×1.01，不是 ×1.11。
+  var typeDmg = dCfg.isBoss ? (aCfg.bossDmg || 0)
+    : (dCfg.isElite ? (aCfg.eliteDmg || 0) : (aCfg.normalDmg || 0));
+  var talentTypeDmg = dCfg.isBoss ? (aCfg.talentBossDmg || 0)
+    : (dCfg.isElite ? (aCfg.talentEliteDmg || 0) : (aCfg.talentNormalDmg || 0));
+  if (typeDmg) dmg *= 1 + typeDmg / 100;
+  if (talentTypeDmg) dmg *= 1 + talentTypeDmg / 100;
   // 格擋（機率減傷）：機率與減傷上限共用 STAT_CAPS，0 代表不設上限。
   var blockChance = capValue(dCfg.blockRate || 0, STAT_CAPS.blockRate);
   if (blockChance > 0 && chance(blockChance)) {
@@ -443,6 +513,10 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
       defender._undyingAt = GT;
       defender.hp = Math.max(1, Math.round((dCfg.maxHp || 1) * 0.3));
       out.procs.push('不朽');
+    } else if (dCfg.potentialRevive && !defender._potentialRevived) {
+      defender._potentialRevived = true;
+      defender.hp = Math.max(1, Math.round((dCfg.maxHp || 1) * Math.min(100, dCfg.potentialRevive * 20) / 100));
+      out.procs.push('第二命題');
     } else {
       defender.hp = 0; out.killed = true;
     }
@@ -553,12 +627,11 @@ function rollFieldEnemyCount() { return wpick(FIELD_ENEMY_COUNT_TABLE); }
 
 /* ---- 高塔 BOSS 數值 ----
    對應野外階段 = 4 + 樓層×5（以此為基準怪物再放大）
-   等級 = 對應階段+3｜生命 ×22｜攻擊 ×1.9｜物/魔防 ×1.5
-   攻速 2.0｜閃避 = min(20 + 樓層×20, 10000000)%｜控制抵抗 70%
-   命中率 = 200% + BOSS 階層×10%（BOSS 階層 = 樓層；於 resolveHit 減去玩家閃避後最低 5%）
-   元素 BOSS：元素附傷 = 基準攻擊 × 0.5（以魔法攻擊結算） */
+   等級 = 對應階段+3｜生命 = 基準生命×一般倍率，再依塔區套用地獄／煉獄倍率
+   攻擊 = 基準攻擊×一般倍率，再依塔區套用地獄／煉獄倍率
+   攻速、閃避、命中、控制抵抗與元素附傷皆由 data.js 高塔參數控制。 */
 function bossStatsFor(floor) {
-  var refStage = 4 + floor * 5;
+  var refStage = TOWER_BOSS_REF_STAGE_BASE + floor * TOWER_BOSS_REF_STAGE_PER_FLOOR;
   var base = monsterStatsFor(refStage, false);
   var hell = isHellTowerFloor(floor);
   var purgatory = isPurgatoryTowerFloor(floor);
@@ -568,19 +641,19 @@ function bossStatsFor(floor) {
     : (hell ? TOWER_HELL_ATK_MULT : 1);
   return {
     refStage: refStage,
-    level: refStage + 3,
+    level: refStage + TOWER_BOSS_LEVEL_BONUS,
     hell: hell,
     purgatory: purgatory,
-    hp: base.hp * 20 * hpMult,
-    atk: base.atk * 3 * atkMult,
-    def: base.def * 10,
-    mdef: base.mdef * 10,
-    aspd: 5,
-    dodge: Math.min(20 + floor * 40, 10000000),
-    hit: 200 + floor * 20,    // 命中率 = 200% + BOSS 階層×10%（BOSS 階層 = 樓層）
-    ctrlRes: 70,
-    elemAtkVal: base.atk * 3 * atkMult,
-    xp: base.xp * 2
+    hp: base.hp * TOWER_BASE_HP_MULT * hpMult,
+    atk: base.atk * TOWER_BASE_ATK_MULT * atkMult,
+    def: base.def * TOWER_BOSS_DEF_MULT,
+    mdef: base.mdef * TOWER_BOSS_DEF_MULT,
+    aspd: TOWER_BOSS_ASPD,
+    dodge: Math.min(TOWER_BOSS_DODGE_BASE + floor * TOWER_BOSS_DODGE_PER_FLOOR, TOWER_BOSS_DODGE_CAP),
+    hit: TOWER_BOSS_HIT_BASE + floor * TOWER_BOSS_HIT_PER_FLOOR,
+    ctrlRes: TOWER_BOSS_CTRL_RES,
+    elemAtkVal: base.atk * TOWER_BOSS_ELEM_ATK_BASE * (hell ? TOWER_BOSS_ELEM_HELL_MULT : 1),
+    xp: base.xp * TOWER_BOSS_XP_MULT
   };
 }
 
@@ -647,7 +720,8 @@ function rollRarity(stage, lootBonus) {
 /* ---- 野外材料掉落（基礎機率 %；實際機率 × (1+掉寶率) × 場景倍率，
        用 rollDropCount 結算 >100% 必掉規則）---- */
 var FIELD_BOOK_DROP_PCT = 4;     // 附魔書（階段 8+）
-var FIELD_PART_DROP_PCT = 0.5;   // 自動機組零件（階段 5+，機率低；菁英掉落率 ×1.5）
+var FIELD_PART_DROP_PCT = 0.5;   // 自動機組零件（階段 5+，機率低；菁英掉落率同乘菁英倍率）
+var ELITE_DROP_MULT = 1.3;       // 菁英掉落倍率：裝備與材料都在一般基礎上乘此值（野外與離線收益共用）
 
 /* ---- 太古詞條／太古精華機率 ---- */
 function ancientAffixChanceForEnemy(level) {
@@ -1011,7 +1085,7 @@ function enchantCapFor(it) {
    合成鏈：2 顆同種同級 → 1 顆同種下一級（消耗金幣 FUSE_GOLD_COST[素材等級]），
    故 1 顆 N 級寶石的合成總成本 = 2^(N-1) 顆 1 級（5 級 = 16 顆）。 */
 var GEM_CONVERT_SLOTS = 9;     // 寶石轉換九宮格格數
-var GEM_CONVERT_STACK = 1000;   // 每格同種同級寶石上限
+var GEM_CONVERT_STACK = 100;   // 每格同種同級寶石上限
 var GEM_DISMANTLE_KEEP = 0.7;  // 拆解保留比例（損失 30%）
 
 // 1 顆 lv 級寶石換算多少顆 1 級寶石
@@ -1110,22 +1184,19 @@ function fusionMutationChance() { return FUSION_MUTATION_CHANCE + getStats().luc
    §10 離線收益
    ============================================================ */
 
-var OFFLINE_MAX_HOURS = 8;      // 離線收益時間上限（小時）
-var OFFLINE_EFFICIENCY = 0.5;   // 離線效率（估算擊殺數 × 50%）
-var OFFLINE_MAX_KILLS = 20000;  // 單次離線擊殺上限
+var OFFLINE_MAX_HOURS = 8;        // 離線收益時間上限（小時）；1 分鐘內不計
+var OFFLINE_LEVEL_REDUCE = 10;    // 計算等級扣減：目前地圖最高階段 − 此值，再捨去個位數（下限 1）
+var OFFLINE_KILL_INTERVAL = 20;   // 擊殺速率：每隔此秒數擊殺 1 隻菁英怪
 
-/* 離線擊殺估算：
-   期望暴擊倍率 = 1 + 暴擊率 × (暴傷 - 1)
-   DPS = 物攻 × (1 - 怪物防禦減傷) × 攻速 × 期望暴擊倍率
-   單殺耗時 = 怪物血量 / DPS + 出怪間隔
-   擊殺數 = ⌊離線秒數 / 單殺耗時 × 效率⌋（上限 20000） */
-function offlineKillEstimate(elapsed) {
-  var st = getStats();
-  var s = Math.max(1, G.stage.current);
-  var m = monsterStatsFor(s, false);
-  var critMult = 1 + st.critRate / 100 * (st.critDmg / 100 - 1);
-  var dps = Math.max(1, st.atk * (1 - defReduction(m.def, st.level)) * st.aspd * critMult);
-  var killTime = m.hp / dps + RESPAWN_DELAY;
-  var kills = Math.floor(elapsed / killTime * OFFLINE_EFFICIENCY);
-  return { kills: Math.min(kills, OFFLINE_MAX_KILLS), monster: m, stage: s };
+// 離線計算等級 = max(1, ⌊(目前地圖最高階段 − OFFLINE_LEVEL_REDUCE) / 10⌋ × 10)
+// 例：沼澤最高 256 → 256 − 10 = 246 → 捨去個位數 → 240 級沼澤菁英怪
+function offlineStageFor(best) {
+  var s = Math.floor((Math.max(1, Math.floor(Number(best) || 1)) - OFFLINE_LEVEL_REDUCE) / 10) * 10;
+  return Math.max(1, s);
+}
+
+// 離線擊殺數 = ⌊有效離線秒數 / 擊殺間隔 × (1 + 離線預言%)⌋；每隻菁英怪掉落單獨擲骰（save.js）
+function offlineKillCount(elapsed, potentialOfflinePct) {
+  var interval = Math.max(1, Number(OFFLINE_KILL_INTERVAL) || 1);
+  return Math.max(0, Math.floor(elapsed / interval * (1 + (Number(potentialOfflinePct) || 0) / 100)));
 }

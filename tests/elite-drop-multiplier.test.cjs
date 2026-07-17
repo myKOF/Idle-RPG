@@ -15,8 +15,9 @@ function loadContext() {
   return context;
 }
 
-test('菁英裝備與材料掉落率均在一般基礎上乘以 1.5', () => {
+test('菁英裝備與材料掉落率均在一般基礎上乘以菁英掉落倍率（ELITE_DROP_MULT=1.3）', () => {
   const context = loadContext();
+  assert.equal(context.ELITE_DROP_MULT, 1.3); // 使用者確認以程式值 1.3 為準（2026-07-17）
   context.G = {
     stage: { current: 10 },
     player: { books: {}, ancientEssence: 0, dust: 0, essence: 0 },
@@ -43,12 +44,13 @@ test('菁英裝備與材料掉落率均在一般基礎上乘以 1.5', () => {
   };
   const normal = run(false);
   const elite = run(true);
+  const m = context.ELITE_DROP_MULT;
 
-  assert.deepEqual(elite.drops.slice(0, 1), [15]);
-  assert.deepEqual(elite.drops.slice(1, 4), [7.5, 1.5, 0.75]);
+  assert.deepEqual(elite.drops.slice(0, 1), [10 * m]);
+  assert.deepEqual(elite.drops.slice(1, 4), [5 * m, 1 * m, 0.5 * m]);
   assert.deepEqual(normal.drops.slice(0, 1), [10]);
   assert.deepEqual(normal.drops.slice(1, 4), [5, 1, 0.5]);
-  assert.deepEqual(elite.drops.slice(4), [6, 0.75]);
+  assert.deepEqual(elite.drops.slice(4), [4 * m, 0.5 * m]);
   assert.deepEqual(normal.drops.slice(4), [4, 0.5]);
   assert.deepEqual(elite.chances, []);
   assert.deepEqual(normal.chances, []);

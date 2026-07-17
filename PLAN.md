@@ -1,5 +1,58 @@
 # PLAN.md — 開發計畫
 
+## 當前任務：離線收益改造——固定速率獵殺菁英怪＋逐殺掉落＋上線確認彈窗
+
+### 需求（使用者指示）
+1. 計算基準＝「目前地圖最高階段 − 10 再捨去個位數（下限 1）」等級的**當前場景菁英怪**（例：沼澤最高 256 → 240 級沼澤菁英）。
+2. 擊殺速率固定：每 20 秒 1 隻菁英怪（不再依 DPS 估算）。
+3. 上線時依離線時間算出擊殺數，**每一隻菁英怪的掉落單獨擲骰**（裝備/寶石/附魔書/太古精華/魔塵/零件與野外擊殺同一套掉落表與倍率）。
+4. 參數表 10-離線段清理：刪除期望暴擊倍率/估算DPS/單殺耗時/擊殺數/裝備收益；保留有效離線時間（8 小時、1 分鐘內不計）；新增「計算等級（扣減 a=10）」「擊殺速率（每 a=20 秒 1 隻）」兩列，CSV/xlsx 同步。
+5. 上線彈出離線收益確認界面：離線時長、擊殺數、經驗、金幣、掉落詳細列表（裝備＝品質×數量，如 傳說裝備×100）。
+
+### 設計
+- **formula.js §10**：`OFFLINE_MAX_HOURS=8`（保留）、新增 `OFFLINE_LEVEL_REDUCE=10`、`OFFLINE_KILL_INTERVAL=20`；`offlineStageFor(best)=max(1,⌊(best−10)/10⌋×10)`、`offlineKillCount(elapsed,潛力%)=⌊有效秒數/20×(1+離線預言%/100)⌋`；刪除 OFFLINE_EFFICIENCY/OFFLINE_MAX_KILLS/offlineKillEstimate。菁英掉落倍率抽出 `ELITE_DROP_MULT=1.3`（rollFieldDrops 與離線共用 SSOT）。
+- **save.js applyOfflineProgress**：等級=offlineStageFor(G.stage.best)、怪=monsterStatsFor(stage,true)、場景=currentZoneDef()（金幣/經驗/材料 × rewardMult）；逐殺迴圈按野外掉落表單獨擲骰：裝備→pushConveyor（品質計數）、寶石 addGem、附魔書、太古精華、魔塵、零件（trimFactoryParts 收斂）；金幣/經驗＝單殺值×擊殺數；離線預言潛力乘在擊殺數。彙整 summary 後呼叫 `showOfflineSummary`（typeof 防衛）＋保留 blog 紀錄。
+- **UI**：index.html 新增 `#offline-modal`（仿現有 modal 樣式）；ui.js `showOfflineSummary(summary)` 渲染＋確認鈕關閉；css 微調。收益於計算時即入帳，彈窗為確認展示。
+- **參數表**：CSV 以 Node 腳本改寫（刪 5 列、插 2 列、編號重排）；xlsx 依記憶的純 Node ZIP 補丁流程同步（sheet2 增刪＋sheet1 同列鏡像重生＋驗證閘門）；apply_params.cjs 錨點刪 OFFLINE_EFFICIENCY/OFFLINE_MAX_KILLS、增 OFFLINE_LEVEL_REDUCE/OFFLINE_KILL_INTERVAL。
+- 舊存檔無格式變動，無需一次性遷移。
+
+### 微型任務
+1. [DONE] tests/offline-rewards.test.cjs（等級捨十位、每 20 秒擊殺、8h 上限、逐殺掉落計數、彈窗接線）。
+2. [DONE] formula.js §10 改寫＋ELITE_DROP_MULT 抽出（combat.js 同步引用；「野外菁英掉落倍率」參數列改錨此常數）。
+3. [DONE] save.js 逐殺結算＋summary。
+4. [DONE] index.html/ui.js/css 彈窗。
+5. [DONE] 參數表 CSV＋xlsx（Node ZIP 補丁，round-trip 100% 一致）＋apply_params 錨點（696 錨點 0 問題）。
+6. [DONE] build＋全套測試＋隔離埠 8124 實測（沙盒離線 2 小時：Lv.240 沼澤菁英 ×360、彈窗明細正確）；game_formula.md §11／PATCH.md／本檔同步。
+
+## 當前任務：2 轉元素天賦附傷改為「按當次傷害百分比」
+
+### 需求（使用者確認的正確行為）
+- 2 轉前六個天賦（烈焰/寒霜/雷霆/毒脈/聖輝/暗影共鳴）＝攻擊時附加「當次傷害 × 天賦%」的對應元素傷害（例：1% 火附傷、當次原始傷害 10000 → 額外 100 火傷）；六個都點＝一次攻擊附加六種屬性傷害。
+- 舊實作是「面板物攻 × 天賦%」換算成固定元素攻擊力，不吃當次傷害（防禦/暴擊/浮動/buff 都不影響）→ 廢除。
+- 潛力「元素核心」（potentialElemAtk）同步修正為說明寫的「使所有元素附加傷害額外提高 %」（乘算），不再對六系憑空附加固定值。
+
+### 設計
+- **computeStats（formula.js §2）**：`st.elemAtk` 只含裝備附魔固定值（× 元素核心倍率）；新增 `st.elemDmgPct[六系] = 天賦%（含全滿×2）× (1 + potentialElemAtk/100)`。
+- **resolveHit（formula.js §3）**：aCfg 新增 `elemDmgPct`；元素附加段每系元素值 = `固定附傷 + 附傷基底 × 附傷%/100`，附傷基底＝元素附加前的當次傷害（防禦/抗性/±10% 浮動/暴擊之後）；其後沿用既有流程（對應元素抗性減免＋元素特效）。
+- **接線**：`playerAtkCfg`（combat.js 普攻）與 `castSkill` 直接傷害段（skills.js）皆傳 `elemDmgPct: st.elemDmgPct`；怪物/高塔 BOSS 維持固定值 elemAtk 不變。真實傷害技能走直接扣血路徑，不吃附傷（既有行為）。
+
+### 微型任務
+1. [DONE] 新增 `tests/talent-elem-attach.test.cjs`（附傷按當次傷害、吃防禦/暴擊縮放、元素抗性減免、六系並存＋暗影汲取、與固定值附傷疊加、computeStats 派生、元素核心乘算、普攻/技能接線）。
+2. [DONE] formula.js：computeStats 派生 `elemDmgPct` ＋ resolveHit 元素附加段改版。
+3. [DONE] combat.js / skills.js 接線。
+4. [DONE] build＋全套測試＋隔離埠 8124 實測。
+5. [DONE] game_formula.md（§2 表、§3.2 步驟 5、§10）／PATCH.md／本檔同步。
+
+### 追加（使用者企劃表數值）
+6. [DONE] 六節點每級數值 1%/2% → 0.25%/0.5%（data.js），滿級 37.5%、全滿 ×2 → 75%；ui.js 天賦數值顯示保留至多 2 位小數（fmt 會把 0.25 捨成 0）；測試與 game_formula.md §10 同步。
+
+### 追加（傷害偏折語意修正）
+7. [DONE] 傷害偏折/絕對偏折（globalDmgRed 天賦）由「加定值」改為文字語意的「乘算提高%」：st.globalDmgRed = 來源加總 × (1 + 天賦%合計/100)；214k + 全滿 ×2（+300%）→ 856k。測試／game_formula.md／PATCH.md 同步。
+
+### 追加（平衡與防禦天賦乘區）
+8. [DONE] 傷害偏折/絕對偏折每級數值減半（0.5%/1%，滿級 75%、全滿 ×2 → 150%）。
+9. [DONE] 物防鍛體/魔防鍛體（含 4 轉重甲/魔鎧共鳴）改獨立乘區：與裝備物防%連乘、物魔分開；修復魔防天賦（mdefPct）從未被 computeStats 讀取的無作用 bug；talentEffectLabel 顯示保留小數。
+
 ## 當前任務：新熔爐改為本地服限定（外服沿用舊熔爐）
 
 ### 需求
@@ -15,10 +68,10 @@
 - 存檔結構不變；純資料層轉移，不動舊熔爐程式。
 
 ### 微型任務
-1. [ ] 測試：外服 intake 拒收/ tick 停用/滯留歸還；本地服行為不變；頁籤顯隱接線。
-2. [ ] newforge.js 閘門＋歸還；index.html/ui.js 頁籤顯隱。
-3. [ ] build＋全套測試＋隔離埠實測（本地）＋模擬外服驗證。
-4. [ ] game_formula.md／PATCH.md／本檔同步。
+1. [DONE] 測試：外服 intake 拒收/ tick 停用/滯留歸還；本地服行為不變；頁籤顯隱接線。
+2. [DONE] newforge.js 閘門＋歸還；index.html/ui.js 頁籤顯隱。
+3. [DONE] build＋全套測試＋隔離埠實測（本地）＋模擬外服驗證。
+4. [DONE] game_formula.md／PATCH.md／本檔同步。
 
 ## 當前任務：新熔爐 V2——熔爐大圖＋每爐最多三條傳送帶（企劃書：熔爐改造V2.xlsx）
 
@@ -1559,3 +1612,16 @@ CSS transition，避免出現追趕式跳動。
 2. [DONE] formula.js / player.js / ui.js / css 實作。
 3. [DONE] npm run build＋npm test（不新增失敗）＋隔離埠實測（切頁面板數值即變、預覽提示出現、切回一致、主控台 0 錯誤）。
 4. [DONE] game_formula.md（§2 註記面板預覽語意）＋PATCH.md。
+
+## 當前任務：新增 1 轉後開放的天賦系統
+
+### 需求
+- 依桌面企劃書《天賦.xlsx》新增天賦系統。
+- 天賦系統於玩家完成 1 轉後開放，包含企劃書定義的天賦樹、點數、解鎖條件與效果。
+
+### 微型任務拆解
+1. [ ] 解析《天賦.xlsx》並對照現有轉生、屬性、技能、存檔架構。
+2. [ ] TDD：先補天賦資料、解鎖條件、點數與效果計算測試。
+3. [ ] 實作天賦資料模型、公式、存檔遷移與解鎖流程。
+4. [ ] 接上天賦頁面 UI、互動、參數表與 `game_formula.md`。
+5. [ ] 完成 build、相關測試、隔離埠運行驗證與自我審查。

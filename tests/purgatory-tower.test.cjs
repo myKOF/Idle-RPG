@@ -15,7 +15,7 @@ function loadFormulaContext() {
   return context;
 }
 
-test('煉獄之塔開放 101～150 層，且 BOSS 為相對地獄倍率 10 倍', () => {
+test('煉獄之塔開放 101～150 層，且 BOSS 套用合併參數公式', () => {
   const context = loadFormulaContext();
   assert.equal(context.isPurgatoryTowerFloor(100), false);
   assert.equal(context.isPurgatoryTowerFloor(101), true);
@@ -30,9 +30,9 @@ test('煉獄之塔開放 101～150 層，且 BOSS 為相對地獄倍率 10 倍',
   };
   assert.equal(purgatory.purgatory, true);
   assert.equal(purgatory.hell, false);
-  assertClose(purgatory.hp, base.hp * 20 * context.TOWER_HELL_HP_MULT * context.TOWER_PURGATORY_HP_MULT);
-  assertClose(purgatory.atk, base.atk * 3 * context.TOWER_HELL_ATK_MULT * context.TOWER_PURGATORY_ATK_MULT);
-  assertClose(purgatory.elemAtkVal, base.atk * 3 * context.TOWER_HELL_ATK_MULT * context.TOWER_PURGATORY_ATK_MULT);
+  assertClose(purgatory.hp, base.hp * context.TOWER_BASE_HP_MULT * context.TOWER_HELL_HP_MULT * context.TOWER_PURGATORY_HP_MULT);
+  assertClose(purgatory.atk, base.atk * context.TOWER_BASE_ATK_MULT * context.TOWER_HELL_ATK_MULT * context.TOWER_PURGATORY_ATK_MULT);
+  assertClose(purgatory.elemAtkVal, base.atk * context.TOWER_BOSS_ELEM_ATK_BASE);
 });
 
 test('煉獄之塔 BOSS 名稱與等級使用橘色樣式', () => {
@@ -43,7 +43,7 @@ test('煉獄之塔 BOSS 名稱與等級使用橘色樣式', () => {
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
 
   assert.match(data, /TOWER_PURGATORY_MAX_FLOOR\s*=\s*150/);
-  assert.match(data, /TOWER_PURGATORY_ATK_MULT\s*=\s*10/);
+  assert.match(data, /TOWER_PURGATORY_ATK_MULT\s*=\s*5/);
   assert.match(data, /TOWER_PURGATORY_HP_MULT\s*=\s*10/);
   assert.match(formula, /function isPurgatoryTowerFloor\(floor\)/);
   assert.match(tower, /purgatory: !!bs\.purgatory/);
@@ -53,13 +53,16 @@ test('煉獄之塔 BOSS 名稱與等級使用橘色樣式', () => {
   assert.match(css, /#ff8c00/);
 });
 
-test('參數表包含煉獄之塔樓層與相對地獄攻擊/生命倍率', () => {
+test('參數表包含合併的高塔樓層與攻擊/生命倍率', () => {
   const csv = fs.readFileSync(path.join(root, 'config/CSV/game_parameters.csv'), 'utf8');
   const applyParams = fs.readFileSync(path.join(root, 'tools/apply_params.cjs'), 'utf8');
-  assert.match(csv, /煉獄之塔範圍/);
-  assert.match(csv, /煉獄之塔攻擊倍率/);
-  assert.match(csv, /煉獄之塔生命倍率/);
+  const applyLines = applyParams.split(/\r?\n/);
+  assert.match(csv, /試練之塔範圍.*\{煉獄之塔：第a~b層\}/);
+  assert.match(csv, /4-高塔BOSS,生命,.*?,20,20,10/);
+  assert.match(csv, /4-高塔BOSS,攻擊,.*?,3,5,5/);
   assert.match(applyParams, /TOWER_PURGATORY_MAX_FLOOR/);
   assert.match(applyParams, /TOWER_PURGATORY_ATK_MULT/);
   assert.match(applyParams, /TOWER_PURGATORY_HP_MULT/);
+  assert.ok(applyLines.some((line) => line.includes("TOWER_PURGATORY_ATK_MULT") && /'攻擊', 2\);/.test(line)));
+  assert.ok(applyLines.some((line) => line.includes("TOWER_PURGATORY_HP_MULT") && /'生命', 2\);/.test(line)));
 });

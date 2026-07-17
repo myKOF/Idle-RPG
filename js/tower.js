@@ -31,7 +31,7 @@ function makeBoss(floor) {
     maxHp: bs.hp, hp: bs.hp,
     atk: bs.atk, def: bs.def, mdef: bs.mdef,
     magic: !!bd.elem,                        // 元素 BOSS 以魔法攻擊（對玩家魔防）
-    aspd: bs.aspd, dodge: bs.dodge, hit: bs.hit, // 命中率 = 200% + 樓層×10% → formula.js §4
+    aspd: bs.aspd, dodge: bs.dodge, hit: bs.hit, // 命中率 = 基礎值 + 樓層×每層值 → formula.js §4
     atkCd: 1.5, effects: {}, ctrlRes: bs.ctrlRes,
     elite: false, isBoss: true, xp: bs.xp,
     elem: bd.elem, elemAtk: null, resist: {}, stunCount: 0,
@@ -75,6 +75,13 @@ function startTowerFight(floor) {
   TOWER.bossDmgDealt = 0;
   TOWER.result = null;
   TOWER.showingResult = false;
+  if (typeof clearTowerFloatLayers === 'function') clearTowerFloatLayers();
+  var bossElemName = TOWER.boss.elem && ENCHANTS[TOWER.boss.elem] ? ENCHANTS[TOWER.boss.elem].name : TOWER.boss.elem;
+  blog('👹 BOSS資訊：' + TOWER.boss.name + '｜Lv.' + TOWER.boss.level +
+    '｜生命 ' + fmt(TOWER.boss.maxHp) + '｜攻擊 ' + fmt(TOWER.boss.atk) +
+    '｜物防 ' + fmt(TOWER.boss.def) + '｜魔防 ' + fmt(TOWER.boss.mdef) +
+    '｜命中 ' + fmt1(TOWER.boss.hit) + '%｜閃避 ' + fmt1(TOWER.boss.dodge) + '%' +
+    (bossElemName ? '｜屬性 ' + bossElemName : '') + '｜控制免疫：暈眩、緩速', 'info', 'boss');
   var towerName = TOWER.boss.purgatory ? '煉獄之塔' : (TOWER.boss.hell ? '地獄之塔' : '試煉之塔');
   blog('🗼 挑戰' + towerName + '第 ' + floor + ' 層：' + TOWER.boss.name + '（限時 60 秒）', 'info');
   UI.dirty.tower = true; UI.dirty.battle = true;
@@ -116,7 +123,7 @@ function towerTick(dt) {
   TOWER.elapsed += dt;
 
   // 限時判定
-  if (TOWER.elapsed >= TOWER_TIME_LIMIT) { endTowerFight(false, 'timeout'); return; }
+  if (TOWER.elapsed >= towerTimeLimitWithTalents()) { endTowerFight(false, 'timeout'); return; }
 
   // 狂暴判定：40 秒時血量高於門檻（50% + 玩家「狂暴閾值」屬性）則狂暴
   if (!TOWER.enrageChecked && TOWER.elapsed >= TOWER_ENRAGE_TIME) {
@@ -188,7 +195,7 @@ function endTowerFight(win, reason) {
   var floor = TOWER.floor;
   var hpPct = b ? (b.hp / b.maxHp * 100) : 0;
   var myDps = TOWER.elapsed > 0.5 ? TOWER.dmgDealt / TOWER.elapsed : 0;
-  var needDps = b ? b.maxHp / TOWER_TIME_LIMIT : 0;
+  var needDps = b ? b.maxHp / towerTimeLimitWithTalents() : 0;
   TOWER.showingResult = true;
   if (window.recordLootBattle) window.recordLootBattle('tower'); // 每次高塔挑戰算一場戰鬥
   if (win && window.recordLootKill) window.recordLootKill(undefined, 'tower'); // 擊敗 BOSS 計入殺敵數

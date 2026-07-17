@@ -35,8 +35,8 @@ test('地獄之塔 51~100 層套用攻擊與生命倍率，並限制魔魂本源
   const normalHellBase = context.monsterStatsFor(hell.refStage, false);
   assert.equal(trial.hell, false);
   assert.equal(hell.hell, true);
-  assert.equal(hell.hp, normalHellBase.hp * 22 * context.TOWER_HELL_HP_MULT);
-  assert.equal(hell.atk, normalHellBase.atk * 1.9 * context.TOWER_HELL_ATK_MULT);
+  assert.equal(hell.hp, normalHellBase.hp * context.TOWER_BASE_HP_MULT * context.TOWER_HELL_HP_MULT);
+  assert.equal(hell.atk, normalHellBase.atk * context.TOWER_BASE_ATK_MULT * context.TOWER_HELL_ATK_MULT);
   assert.equal(context.hellSoulOriginDropChance(50), 0);
   assert.equal(context.hellSoulOriginDropChance(51), 5);
   assert.equal(context.hellSoulOriginDropChance(52), 6);
@@ -65,7 +65,7 @@ test('高塔戰鬥總結統計攻擊輸出，包含護盾與溢出傷害', () =>
   assert.match(tower, /TOWER\.dmgDealt \+= Math\.max\(0, \(res\.dmg \|\| 0\)\)/);
   assert.match(tower, /var bossHit = doMonsterAttack\(b, p, 'tp-float', mult\)/);
   assert.match(tower, /TOWER\.bossDmgDealt \+= Math\.max\(0, \(bossHit\.dmg \|\| 0\)\)/);
-  assert.match(tower, /var bossSpecialHit = doMonsterAttack\(b, p, 'tp-float', 2\.2 \* mult\)/);
+  assert.match(tower, /var bossSpecialHit = doMonsterAttack\(b, p, 'tp-float', 2\.2 \* mult, '蓄力重擊'\)/);
   assert.match(tower, /TOWER\.bossDmgDealt \+= Math\.max\(0, \(bossSpecialHit\.dmg \|\| 0\)\)/);
   assert.doesNotMatch(tower, /beforeHp - p\.hp/);
   assert.doesNotMatch(tower, /beforeHp2 - p\.hp/);

@@ -17,7 +17,7 @@ test('戰鬥日誌分類與色彩樣式規則驗證', () => {
   assert.match(ui, /else\s+if\s*\(msg\.includes\('📦\s*戰利品：'\)\s*\|\|\s*msg\.includes\('敵人掉落'\)\)\s*cat\s*=\s*'loot';/);
 
   // 2. 驗證戰鬥日誌有寫入敵人攻擊
-  assert.match(combat, /doMonsterAttack\([\s\S]*?blog\('🛡️\s*'\s*\+\s*logMsg,\s*cls,\s*'combat'\);/);
+  assert.match(combat, /doMonsterAttack\([\s\S]*?blog\('🛡️\s*'\s*\+\s*logMsg,\s*cls,\s*logCat\);/);
 
   // 3. 驗證戰鬥日誌的顏色類別宣告
   // 我方的普攻: log-player-attack (白色)

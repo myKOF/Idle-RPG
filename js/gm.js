@@ -34,6 +34,8 @@
     UI.dirty.factory = true;
     UI.dirty.gems = true;
     UI.dirty.skills = true;
+    UI.dirty.talents = true;
+    UI.dirty.battle = true;
   }
 
   function gmRarity(raw) {
@@ -116,6 +118,20 @@
     G.tower.highest = floor - 1;
     gmTowerDirty();
     return { ok: true, message: '已跳至高塔第 ' + floor + ' 層，之前的樓層視為已挑戰成功' };
+  }
+
+  function gmSetReincarnation(rawCount) {
+    var count = gmNumber(rawCount, 0, REINCARNATION_MAX);
+    if (count === null) return { ok: false, message: '格式：reincarnation 轉生次數（0~' + REINCARNATION_MAX + '）' };
+    if (G.tower && G.tower.active) return { ok: false, message: '高塔戰鬥進行中，請先結束目前戰鬥。' };
+    var before = Number(G.player.reincarnations) || 0;
+    G.player.reincarnations = count;
+    if (before !== count && typeof resetTalentsForReincarnationGM === 'function') {
+      resetTalentsForReincarnationGM(count);
+    }
+    if (typeof markStatsDirty === 'function') markStatsDirty();
+    gmDirty();
+    return { ok: true, message: '玩家轉生次數已由 ' + before + ' 轉切換為 ' + count + ' 轉' };
   }
 
   function executeGMCommand(raw) {
@@ -213,6 +229,9 @@
     }
     if (command === 'tower_jump') {
       return gmJumpTowerTo(args[0]);
+    }
+    if (command === 'reincarnation' || command === 'reincarnate' || command === 'turn') {
+      return gmSetReincarnation(args[0]);
     }
     if (command === 'level' || command === 'lv') {
       level = gmNumber(args[0], 1, 100000);

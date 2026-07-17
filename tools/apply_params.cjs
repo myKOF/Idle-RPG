@@ -72,8 +72,17 @@ function P(cat, name, i) {
 const edits = [];
 function esc(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 // 具名純量常數： var NAME = <num>;
+function scalarValue(file, varName, value, label) {
+  edits.push({ file, re: new RegExp('(\\b' + esc(varName) + '\\s*=\\s*)(-?[\\d.]+)'), grp: 2, value: String(value), label: label || varName });
+}
 function scalar(file, varName, cat, name, i) {
-  edits.push({ file, re: new RegExp('(\\b' + esc(varName) + '\\s*=\\s*)(-?[\\d.]+)'), grp: 2, value: P(cat, name, i), label: varName });
+  scalarValue(file, varName, P(cat, name, i), varName);
+}
+function rangeBound(file, varName, cat, name, i, bound) {
+  const raw = P(cat, name, i);
+  const match = raw.match(/^\{\s*(-?[\d.]+)\s*~\s*(-?[\d.]+)\s*\}$/);
+  if (!match) throw new Error('CSV 樓層範圍格式錯誤：' + cat + ' / ' + name + ' / ' + raw);
+  scalarValue(file, varName, match[bound], varName);
 }
 // 物件同行欄位： <keyAnchor> ... <field>: <num>（限制在同一行內）
 // 前綴（含 keyAnchor 到 field:）獨立成群組1、數字為群組2；如此定位時從前綴之後找數字，
@@ -212,13 +221,29 @@ scalar('data', 'DUST_BOSS_BASE', '4-高塔BOSS', '高塔 BOSS 魔塵', 1);
 scalar('data', 'DUST_BOSS_PER_LEVEL', '4-高塔BOSS', '高塔 BOSS 魔塵', 2);
 scalar('data', 'DUST_BOSS_CAP', '4-高塔BOSS', '高塔 BOSS 魔塵', 0);
 // 高塔
-scalar('data', 'TOWER_TRIAL_MAX_FLOOR', '4-高塔BOSS', '試煉之塔範圍', 1);
-scalar('data', 'TOWER_HELL_MAX_FLOOR', '4-高塔BOSS', '地獄之塔範圍', 1);
-scalar('data', 'TOWER_PURGATORY_MAX_FLOOR', '4-高塔BOSS', '煉獄之塔範圍', 1);
-scalar('data', 'TOWER_HELL_ATK_MULT', '4-高塔BOSS', '攻擊', 1);
+rangeBound('data', 'TOWER_TRIAL_MAX_FLOOR', '4-高塔BOSS', '試練之塔範圍', 0, 2);
+rangeBound('data', 'TOWER_HELL_MAX_FLOOR', '4-高塔BOSS', '試練之塔範圍', 1, 2);
+rangeBound('data', 'TOWER_PURGATORY_MAX_FLOOR', '4-高塔BOSS', '試練之塔範圍', 2, 2);
+scalar('data', 'TOWER_BOSS_REF_STAGE_BASE', '4-高塔BOSS', '對應野外階段', 0);
+scalar('data', 'TOWER_BOSS_REF_STAGE_PER_FLOOR', '4-高塔BOSS', '對應野外階段', 1);
+scalar('data', 'TOWER_BOSS_LEVEL_BONUS', '4-高塔BOSS', 'BOSS 等級', 0);
+scalar('data', 'TOWER_BOSS_HIT_BASE', '4-高塔BOSS', '命中率', 0);
+scalar('data', 'TOWER_BOSS_HIT_PER_FLOOR', '4-高塔BOSS', '命中率', 1);
+scalar('data', 'TOWER_BASE_HP_MULT', '4-高塔BOSS', '生命', 0);
 scalar('data', 'TOWER_HELL_HP_MULT', '4-高塔BOSS', '生命', 1);
-scalar('data', 'TOWER_PURGATORY_ATK_MULT', '4-高塔BOSS', '煉獄之塔攻擊倍率', 1);
-scalar('data', 'TOWER_PURGATORY_HP_MULT', '4-高塔BOSS', '煉獄之塔生命倍率', 1);
+scalar('data', 'TOWER_PURGATORY_HP_MULT', '4-高塔BOSS', '生命', 2);
+scalar('data', 'TOWER_BASE_ATK_MULT', '4-高塔BOSS', '攻擊', 0);
+scalar('data', 'TOWER_HELL_ATK_MULT', '4-高塔BOSS', '攻擊', 1);
+scalar('data', 'TOWER_PURGATORY_ATK_MULT', '4-高塔BOSS', '攻擊', 2);
+scalar('data', 'TOWER_BOSS_DEF_MULT', '4-高塔BOSS', '物/魔防', 0);
+scalar('data', 'TOWER_BOSS_ASPD', '4-高塔BOSS', '攻速 / 控制抵抗', 0);
+scalar('data', 'TOWER_BOSS_CTRL_RES', '4-高塔BOSS', '攻速 / 控制抵抗', 1);
+scalar('data', 'TOWER_BOSS_DODGE_BASE', '4-高塔BOSS', '閃避率', 0);
+scalar('data', 'TOWER_BOSS_DODGE_CAP', '4-高塔BOSS', '閃避率', 1);
+scalar('data', 'TOWER_BOSS_DODGE_PER_FLOOR', '4-高塔BOSS', '閃避率', 2);
+scalar('data', 'TOWER_BOSS_ELEM_ATK_BASE', '4-高塔BOSS', '元素附傷(元素 BOSS)', 0);
+scalar('data', 'TOWER_BOSS_ELEM_HELL_MULT', '4-高塔BOSS', '元素附傷(元素 BOSS)', 1);
+scalar('data', 'TOWER_BOSS_XP_MULT', '4-高塔BOSS', '經驗', 0);
 scalar('data', 'TOWER_HELL_SOUL_ORIGIN_BASE_RATE', '4-高塔BOSS', '魔魂本源(地獄之塔)', 0);
 scalar('data', 'TOWER_HELL_SOUL_ORIGIN_PER_FLOOR', '4-高塔BOSS', '魔魂本源(地獄之塔)', 1);
 scalar('data', 'TOWER_TIME_LIMIT', '4-高塔BOSS', '戰鬥規則', 0);
@@ -362,8 +387,8 @@ scalar('formula', 'FUSE_FACTOR', '9-融合', '素材繼承比例', 0);
 scalar('formula', 'FUSION_MUTATION_CHANCE', '9-融合', '變異觸發率', 0);
 scalar('formula', 'FUSION_CD_FACTOR', '9-融合', '融合冷卻', 0);
 scalar('formula', 'OFFLINE_MAX_HOURS', '10-離線', '有效離線時間', 0);
-scalar('formula', 'OFFLINE_EFFICIENCY', '10-離線', '擊殺數', 0);
-scalar('formula', 'OFFLINE_MAX_KILLS', '10-離線', '擊殺數', 1);
+scalar('formula', 'OFFLINE_LEVEL_REDUCE', '10-離線', '計算等級', 0);
+scalar('formula', 'OFFLINE_KILL_INTERVAL', '10-離線', '擊殺速率', 0);
 scalar('formula', 'TIER_GATE_POINTS', '9-技能', '技能樹門檻', 0);
 scalar('formula', 'SKILL_CAST_LOCK', '9-技能', '施放硬直', 0);
 scalar('formula', 'SKILL_GLOBAL_COOLDOWN', '9-技能', '技能共用冷卻(GCD)', 0);
@@ -501,25 +526,8 @@ numCtx('formula', 'clamp(dCfg.dmgRed, 0, ', ')', P('3-戰鬥核心', '聖佑(神
 inline('formula', 'GT - defender._undyingAt >= ', P('3-戰鬥核心', '不朽(神鑄)回復', 1), '不朽秒數');
 
 /* ---- §4 高塔 BOSS ---- */
-inline('formula', 'var refStage = ', P('4-高塔BOSS', '對應野外階段', 0), 'boss對應階段a');
-inline('formula', 'var refStage = 4 + floor * ', P('4-高塔BOSS', '對應野外階段', 1), 'boss對應階段b');
-inline('formula', 'level: refStage + ', P('4-高塔BOSS', 'BOSS 等級', 0), 'boss等級加');
 numCtx('formula', 'return Math.round(', ' * Math.pow(Math.max(1, Number(floor)', P('4-高塔BOSS', '挑戰金幣消耗', 0), 'boss金幣係數');
 numCtx('formula', 'Number(floor) || 1), ', '))', P('4-高塔BOSS', '挑戰金幣消耗', 1), 'boss金幣指數');
-inline('formula', 'hp: base.hp * ', P('4-高塔BOSS', '生命', 0), 'boss生命x');
-numCtx('formula', 'atk: base.atk * ', ' * atkMult', P('4-高塔BOSS', '攻擊', 0), 'boss攻擊x');
-inline('formula', 'def: base.def * ', P('4-高塔BOSS', '物/魔防', 0), 'boss物防x');
-inline('formula', 'mdef: base.mdef * ', P('4-高塔BOSS', '物/魔防', 0), 'boss魔防x');
-edits.push({ file: 'formula', re: /aspd: (-?[\d.]+),\s*dodge: Math\.min/, grp: 1, value: P('4-高塔BOSS', '攻速 / 控制抵抗', 0), label: 'boss攻速' });
-inline('formula', 'dodge: Math.min(', P('4-高塔BOSS', '閃避率', 0), 'boss閃避基');
-edits.push({ file: 'formula', re: /(dodge: Math\.min\([\d.]+ \+ floor \* )([\d.]+)/, grp: 2, value: P('4-高塔BOSS', '閃避率', 2), label: 'boss閃避加乘' });
-edits.push({ file: 'formula', re: /(dodge: Math\.min\([\d.]+ \+ floor \* [\d.]+, )([\d.]+)/, grp: 2, value: P('4-高塔BOSS', '閃避率', 1), label: 'boss閃避上' });
-// 高塔 BOSS 命中率：hit = a + BOSS 階層(=樓層)×b（bossStatsFor）
-edits.push({ file: 'formula', re: /(hit: )([\d.]+)( \+ floor)/, grp: 2, value: P('4-高塔BOSS', '命中率', 0), label: 'boss命中-a' });
-edits.push({ file: 'formula', re: /(hit: [\d.]+ \+ floor \* )([\d.]+)/, grp: 2, value: P('4-高塔BOSS', '命中率', 1), label: 'boss命中-b' });
-inline('formula', 'ctrlRes: ', P('4-高塔BOSS', '攻速 / 控制抵抗', 1), 'boss控抗');
-numCtx('formula', 'elemAtkVal: base.atk * ', ' * atkMult', P('4-高塔BOSS', '元素附傷(元素 BOSS)', 0), 'boss元素附傷x');
-inline('formula', 'xp: base.xp * ', P('4-高塔BOSS', '經驗', 0), 'boss經驗x');
 
 /* ---- §5 稀有度擲骰（rollRarity） ---- */
 inline('formula', 'effectiveDropRateEffect(lootBonus || 0) / ', P('5-稀有度擲骰', '權重加成 b', 0), '權重加成除數');
@@ -619,8 +627,8 @@ numCtx('combat', 'critRate: ', ',', P('3-戰鬥核心', '怪物固定戰鬥值',
 numCtx('combat', 'critDmg: ', ',', P('3-戰鬥核心', '怪物固定戰鬥值', 1), '怪物-暴傷');
 // 怪物命中 fallback（monsterAtkCfg：hit: m.hit || c；實際命中率由「4-野外怪物/命中率」與「4-高塔BOSS/命中率」的 m.hit 驅動，此處僅為保底預設值）
 numCtx('combat', 'hit: m.hit || ', ',', P('3-戰鬥核心', '怪物固定戰鬥值', 2), '怪物-命中');
-// 野外菁英掉落倍率（combat.js）
-numCtx('combat', 'm.elite ? ', ' : 1', P('4-野外怪物', '野外菁英掉落倍率', 0), '菁英掉落倍率');
+// 野外菁英掉落倍率（formula.js 常數 ELITE_DROP_MULT；野外 rollFieldDrops 與離線收益共用）
+scalar('formula', 'ELITE_DROP_MULT', '4-野外怪物', '野外菁英掉落倍率', 0);
 // 寶石商店刷新週期（item.js，單一常數）
 scalar('item', 'GEM_SHOP_REFRESH_HOURS', '8-寶石商店', '刷新週期', 0);
 // 技能點總預算：a=初始(player.js)、b=每級(player.js)、c=上限(data.js 常數 SKILL_POINT_BUDGET_CAP，skills/save 引用)

@@ -9,15 +9,15 @@ const root = path.resolve(__dirname, '..');
 // vm 沙箱物件與本 realm 原型不同，深度比較前先 JSON 正規化
 const plain = (v) => JSON.parse(JSON.stringify(v));
 
-/* ---- vm 沙箱：載入遊戲邏輯（依需求增減檔案） ---- */
-function loadContext(files) {
+/* ---- vm 沙箱：載入遊戲邏輯（依需求增減檔案；hostname 可模擬外服） ---- */
+function loadContext(files, hostname) {
   const context = {
     console,
     Math: Object.create(Math),
     UI: { dirty: {}, sel: null },
     document: { addEventListener() {}, getElementById() { return null; } },
     localStorage: { getItem() { return null; }, setItem() {}, removeItem() {}, key() { return null; }, length: 0 },
-    location: { hostname: '127.0.0.1', reload() {} },
+    location: { hostname: hostname || '127.0.0.1', reload() {} },
     setTimeout() {}, clearTimeout() {},
     Date, JSON,
   };
@@ -411,6 +411,71 @@ test('UI 抗重繪：帶視覺定點更新、焦點防衛、展開狀態以 line
   // 帶批次不應再內嵌於熔爐卡片快取字串（nfLineHTML 不得直接呼叫 nfBeltChipsHTML）
   const lineFn = ui.slice(ui.indexOf('function nfLineHTML'), ui.indexOf('function nfFurnaceHTML'));
   assert.ok(!lineFn.includes('nfBeltChipsHTML('), 'nfLineHTML 不應直接渲染帶批次');
+});
+
+/* ============ 9.7 本地服限定（外服沿用舊熔爐） ============ */
+
+test('本地服判定：localhost/127.0.0.1/::1 開放，外部主機關閉', () => {
+  const local = loadContext(LOGIC_FILES);
+  assert.equal(local.newForgeHostAvailable(), true);
+  ['example.com', 'mygame.github.io', '192.168.1.5'].forEach((host) => {
+    const ext = loadContext(LOGIC_FILES, host);
+    assert.equal(ext.newForgeHostAvailable(), false, host + ' 應判定為外服');
+  });
+});
+
+test('外服：導入開關即使開啟，裝備仍走舊輸送帶；傳送帶 tick 停用', () => {
+  const c = loadContext(LOGIC_FILES, 'mygame.github.io');
+  const G = freshG(c);
+  G.newForge.intake = true;
+  const it = c.makeEquipment(10, { rarity: 0, level: 10 });
+  assert.equal(c.pushConveyor(it), true);
+  assert.equal(G.factory.conveyor.length, 1, '外服新裝備應進舊輸送帶');
+  assert.equal(G.newForge.queue.length, 0);
+  // tick 停用：即使佇列被塞入內容也不處理
+  G.newForge.queue.push(c.makeEquipment(10, { rarity: 0, level: 10 }));
+  c.newForgeTick(10);
+  assert.equal(G.newForge.queue.length, 1, '外服 newForgeTick 不應處理佇列');
+  assert.equal(G.newForge.furnaces[0].lines[0].belt.length, 0);
+  assert.equal(G.newForge.stats.salvaged, 0);
+});
+
+test('外服載入存檔：滯留佇列/在途裝備歸還舊輸送帶、在途材料退回庫存；配置保留', () => {
+  const c = loadContext(LOGIC_FILES.concat(['js/save.js']), 'mygame.github.io');
+  const state = c.newGameState();
+  const qItem = c.makeEquipment(10, { rarity: 0, level: 10 });
+  const salvItem = c.makeEquipment(10, { rarity: 1, level: 10 });
+  const craftItem = c.makeEquipment(10, { rarity: 1, level: 10 });
+  state.newForge.queue.push(qItem);
+  const line = state.newForge.furnaces[0].lines[0];
+  line.belt.push({ kind: 'salv', item: salvItem });
+  line.belt.push({ kind: 'craft', item: craftItem, recipe: 0 });   // 秘銀×2 在途
+  line.belt.push({ kind: 'smelt', product: 'ironIngot' });          // 爐渣2＋碎鐵2 在途
+  line.salvage.actions[3] = 'keep'; // 自訂配置應保留
+  c.migrateSave(state);
+  assert.equal(state.newForge.queue.length, 0, '佇列應清空');
+  assert.equal(line.belt.length, 0, '傳送帶應清空');
+  const convIds = state.factory.conveyor.map((x) => x.id);
+  [qItem, salvItem, craftItem].forEach((x) => assert.ok(convIds.includes(x.id), '裝備應歸還舊輸送帶'));
+  assert.equal(state.player.forgeMats.mithril, 2, '鍛造在途材料應退回');
+  assert.equal(state.player.forgeMats.slag, 2, '熔煉在途材料應退回');
+  assert.equal(state.player.forgeMats.ironShard, 2);
+  assert.equal(line.salvage.actions[3], 'keep', '熔爐配置應保留（回本地服恢復）');
+  // 本地服載入：不歸還
+  const cl = loadContext(LOGIC_FILES.concat(['js/save.js']));
+  const s2 = cl.newGameState();
+  const q2 = cl.makeEquipment(10, { rarity: 0, level: 10 });
+  s2.newForge.queue.push(q2);
+  cl.migrateSave(s2);
+  assert.equal(s2.newForge.queue.length, 1, '本地服佇列應保留');
+  assert.equal(s2.factory.conveyor.length, 0);
+});
+
+test('頁籤顯隱接線：index.html 預設隱藏、initUI 依本地服判定顯示', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert.match(html, /data-tab="newforge" style="display:none"/, '新熔爐頁籤應預設隱藏');
+  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  assert.match(ui, /newForgeHostAvailable/, 'ui.js 應依本地服判定切換頁籤顯示');
 });
 
 /* ============ 10. 接線靜態檢查 ============ */
