@@ -642,8 +642,13 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
             parts.push('附加' + dd.name);
           }
         }
-        if (fx.stunDur && !isBossControlImmune(effectTarget) && !resistCtrl(monsterDefCfg(effectTarget))) { applyEffect(effectTarget, 'stun', fx.stunDur); parts.push('<span class="log-hl-good">暈眩 ' + fx.stunDur + ' 秒</span>'); }
-        if (fx.slowDur && !isBossControlImmune(effectTarget) && !resistCtrl(monsterDefCfg(effectTarget))) { applyEffect(effectTarget, 'slow', fx.slowDur); parts.push('減速'); }
+        if (fx.stunDur && !isBossControlImmune(effectTarget) && !resistCtrl(monsterDefCfg(effectTarget))) {
+          var stunApplied = applyEffect(effectTarget, 'stun', fx.stunDur); // 控場遞減 → 顯示實際秒數
+          parts.push(stunApplied ? '<span class="log-hl-good">暈眩 ' + fmt1(stunApplied) + ' 秒</span>' : '暈眩無效（控場遞減）');
+        }
+        if (fx.slowDur && !isBossControlImmune(effectTarget) && !resistCtrl(monsterDefCfg(effectTarget))) {
+          parts.push(applyEffect(effectTarget, 'slow', fx.slowDur) ? '減速' : '減速無效（控場遞減）');
+        }
         if (fx.maxHpDotPct) {
           var cdps = Math.min(effectTarget.maxHp * scaleAt(fx.maxHpDotPct, lv) / 100, st.matk * 6) * fxMult;
           applyDot(effectTarget, cdps, fx.dotDur || 5, '詛咒');

@@ -1,5 +1,21 @@
 # PLAN.md — 開發計畫
 
+## 當前任務：控場效果隨戰鬥時間遞減
+
+### 需求
+- 影響敵人攻擊頻率的控制（暈眩/減速/攻速降低）持續時間隨「該敵人存活時間」遞減：普通敵人每秒 −1%（例：8 秒暈眩在戰鬥 50 秒時施放 → 4 秒；100 秒後完全無效）、菁英每秒 −3%（約 33 秒歸零）、BOSS 維持既有完全免疫。玩家受控不遞減。
+
+### 設計
+- **formula.js §3**：`CONTROL_DECAY_PER_SEC_NORMAL=1`、`CONTROL_DECAY_PER_SEC_ELITE=3`；`controlDurationFactor(ent) = max(0, 1 − (GT − ent._spawnAt) × 每秒遞減%/100)`；無 `_spawnAt` 的實體（玩家等）回傳 1。
+- **combat.js**：`spawnFieldMonster` 敵人加 `_spawnAt: GT`；`applyEffect`/`applyBuff` 對 `isAttackFrequencyControlKey` 的效果統一乘遞減倍率，歸零回傳 false（所有來源——技能暈眩/減速、冰元素特效、暈眩被動、攻速類減益——自動吃到），成功時回傳實際秒數供顯示。
+- **顯示**：resolveHit 冰減速 proc、castSkill 暈眩/減速文字、暈眩被動 log 改依實際結果顯示（失效不再誤報）。
+- 高塔 BOSS 免疫規則不變；FIELD 不入存檔、無遷移。
+
+### 微型任務
+1. [DONE] tests/control-decay.test.cjs（倍率曲線、8→4 秒範例、100 秒歸零、菁英 3%、applyBuff 攻速類、玩家不遞減、BOSS 免疫、冰減速 proc 依實際結果）。
+2. [DONE] formula.js 常數＋公式；combat.js 接線＋顯示；skills.js 顯示（applyEffect/applyBuff 改回傳實際秒數，boss-control-immunity 斷言同步）。
+3. [DONE] build＋全套測試＋隔離埠 8124 實測（4/3.2/false/BOSS false/實戰 _spawnAt）；game_formula.md §3.4／PATCH.md／本檔同步。
+
 ## 當前任務：5 轉昇華天賦作用範圍補全
 
 ### 需求

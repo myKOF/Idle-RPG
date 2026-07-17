@@ -121,7 +121,7 @@ function spawnFieldMonster() {
             aspd: mAspd, dodge: base.dodge, hit: base.hit, // 命中率隨敵人等級成長 → formula.js §4
             elite: elite, isBoss: false,
             gold: base.gold * zn.rewardMult, xp: base.xp * zn.rewardMult, // 金幣/經驗 x場景倍率
-            atkCd: 1 / mAspd, effects: {}, ctrlRes: 0,
+            atkCd: 1 / mAspd, effects: {}, ctrlRes: 0, _spawnAt: GT, // 控場遞減計時起點 → formula.js §3
             poisonUntil: 0, poisonDps: 0, shield: 0, buffs: {}, dots: []
         });
     }
@@ -158,11 +158,17 @@ function switchZone(zoneKey) {
     UI.dirty.battle = true;
 }
 
-/* ---- 效果（暈眩/減速/中毒/淨化） ---- */
+/* ---- 效果（暈眩/減速/中毒/淨化） ----
+   攻擊頻率控制類套用「控場遞減」（controlDurationFactor → formula.js §3）；
+   成功回傳實際持續秒數（供顯示），遞減歸零或 BOSS 免疫回傳 false。 */
 function applyEffect(ent, key, dur) {
     if (isBossControlImmune(ent) && isAttackFrequencyControlKey(key)) return false;
+    if (isAttackFrequencyControlKey(key)) {
+        dur *= controlDurationFactor(ent);
+        if (dur <= 0) return false;
+    }
     ent.effects[key] = GT + dur;
-    return true;
+    return dur;
 }
 function effectActive(ent, key) { return (ent.effects[key] || 0) > GT; }
 // 減速攻速倍率公式 slowFactor → js/formula.js §3
@@ -185,12 +191,17 @@ function cleanse(ent) {
     ent.dots = [];
 }
 
-/* ---- 增益 / 減益（技能系統用） ---- */
+/* ---- 增益 / 減益（技能系統用） ----
+   攻速類減益同樣套用「控場遞減」；成功回傳實際持續秒數，歸零/免疫回傳 false。 */
 function applyBuff(ent, key, val, dur) {
     if (isBossControlImmune(ent) && isAttackFrequencyControlKey(key)) return false;
+    if (isAttackFrequencyControlKey(key)) {
+        dur *= controlDurationFactor(ent);
+        if (dur <= 0) return false;
+    }
     if (!ent.buffs) ent.buffs = {};
     ent.buffs[key] = { val: val, until: GT + dur };
-    return true;
+    return dur;
 }
 function buffVal(ent, key) {
     if (!ent || !ent.buffs) return 0;
@@ -349,8 +360,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth) {
         // 被動：暈眩 / 減速
         if (!res.killed) {
             if ((st.passives.stun || 0) > 0 && !isBossControlImmune(mEnt) && chance(st.passives.stun) && !resistCtrl(monsterDefCfg(mEnt))) {
-                applyEffect(mEnt, 'stun', 1);
-                logMsg += '<span class="log-hl-good">將其擊暈！</span>';
+                if (applyEffect(mEnt, 'stun', 1)) logMsg += '<span class="log-hl-good">將其擊暈！</span>'; // 控場遞減歸零時不誤報
             }
             if ((st.passives.slowHit || 0) > 0 && !isBossControlImmune(mEnt) && chance(st.passives.slowHit) && !resistCtrl(monsterDefCfg(mEnt))) {
                 applyEffect(mEnt, 'slow', 3);

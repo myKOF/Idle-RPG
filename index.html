@@ -679,15 +679,18 @@
               id="zb-swamp"></span></button>
         </div>
         <div id="stage-bar">
-          <button id="btn-combat-pause" class="btn sm warn" type="button" data-tt-title="戰鬥控制" data-tt-desc="暫停野外與高塔戰鬥" aria-pressed="false">⏸ 暫停戰鬥</button>
-          <button id="st-prev" class="btn sm" type="button" aria-label="後退關卡" data-tt-title="後退關卡" data-tt-desc="滑鼠按住可以快速後退" data-tip-placement="stage-left">◀</button>
-          <span id="stage-label">第 1 階段</span>
-          <button id="st-next" class="btn sm" type="button" aria-label="前進關卡" data-tt-title="前進關卡" data-tt-desc="滑鼠按住可以快速前進" data-tip-placement="stage-right">▶</button>
-          <button id="st-max" class="btn sm" data-tt-title="最高階段" data-tt-desc="直達目前最高階段" aria-label="直達目前最高階段">⏭</button>
-          <span id="stage-best" class="dim-text">最高 1</span>
-          <label class="chk"><input type="checkbox" id="st-auto" checked> 自動推進</label>
-          <button id="btn-pip" class="btn sm" data-tt-title="迷你視窗" data-tt-desc="開啟永遠置頂的迷你監控視窗，背景掛機也能看到戰況">📺 迷你視窗</button>
-          <button id="btn-summary" class="btn sm" data-tt-title="統計面板" data-tt-desc="開啟統計面板">📊 統計面板</button>
+          <div class="stage-main-controls">
+            <label class="chk"><input type="checkbox" id="st-auto" checked> 自動推進</label>
+            <button id="st-prev" class="btn sm" type="button" aria-label="後退關卡" data-tt-title="後退關卡" data-tt-desc="滑鼠按住可以快速後退" data-tip-placement="stage-left">◀</button>
+            <span id="stage-label">第 1 階段</span>
+            <button id="st-next" class="btn sm" type="button" aria-label="前進關卡" data-tt-title="前進關卡" data-tt-desc="滑鼠按住可以快速前進" data-tip-placement="stage-right">▶</button>
+            <button id="st-max" class="btn sm" data-tt-title="最高階段" data-tt-desc="直達目前最高階段" aria-label="直達目前最高階段">⏭</button>
+            <span id="stage-best" class="dim-text">最高1關</span>
+          </div>
+          <div class="stage-tools">
+            <button id="btn-pip" class="btn sm" data-tt-title="迷你視窗" data-tt-desc="開啟永遠置頂的迷你監控視窗，背景掛機也能看到戰況">📺 迷你視窗</button>
+            <button id="btn-summary" class="btn sm" data-tt-title="統計面板" data-tt-desc="開啟統計面板">📊 統計面板</button>
+          </div>
         </div>
         <div class="battle-scene-wrapper" style="position: relative; width: 100%;">
           <div id="btn-enemy-tip" class="info-btn">!</div>
@@ -717,6 +720,7 @@
         <div class="log-header">
           <div class="log-title">綜合紀錄</div>
           <div class="log-header-actions">
+            <button id="btn-combat-pause" class="btn sm warn" type="button" data-tt-title="戰鬥控制" data-tt-desc="暫停野外與高塔戰鬥" aria-pressed="false">⏸ 暫停戰鬥</button>
             <button id="btn-detail-log" class="btn sm" type="button" data-tt-title="詳細日誌" data-tt-desc="開啟完整戰鬥日誌">📜 詳細日誌</button>
             <select id="log-filter" class="log-filter">
             <option value="all">全部</option>

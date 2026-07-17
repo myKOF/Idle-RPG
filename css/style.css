@@ -215,9 +215,12 @@ body {
    ========================================================================== */
 #stats-sidebar {
   width: 236px;
+  flex: 0 0 236px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   padding: 16px;
+  overflow-x: hidden;
   flex-shrink: 0;
 }
 
@@ -818,11 +821,23 @@ textarea#save-io {
    ========================================================================== */
 #stage-bar {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 12px;
 }
+
+.stage-main-controls,
+.stage-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.stage-tools { gap: 6px; }
 
 #stage-label {
   font-size: 16px;
@@ -2964,17 +2979,25 @@ textarea#save-io {
 
 .attr-group .stat-row {
   display: grid;
-  grid-template-columns: max-content max-content;
+  grid-template-columns: minmax(0, 1fr) max-content;
   justify-content: space-between;
   column-gap: 8px;
   padding: 2px 0 2px 12px;
   font-size: 12px;
-  white-space: nowrap;
+  min-width: 0;
 }
 
 .attr-group .stat-row span,
 .attr-group .stat-row b {
-  min-width: max-content;
+  min-width: 0;
+  white-space: normal;
+}
+
+.attr-group .stat-row span {
+  overflow-wrap: anywhere;
+}
+
+.attr-group .stat-row b {
   white-space: nowrap;
 }
 
@@ -3613,6 +3636,8 @@ textarea#save-io {
   word-break: break-word;
   min-height: 44px;
 }
+
+.confirm-highlight { color: #facc15; font-weight: 700; margin-top: 8px; }
 
 .confirm-actions {
   display: grid;
@@ -5450,6 +5475,7 @@ textarea#save-io {
 .talent-icon.learned { border-color: #d3a72d; box-shadow: inset 0 0 12px rgba(245, 197, 66, .16); }
 .talent-icon.maxed { background: linear-gradient(145deg, rgba(255, 225, 110, .3), rgba(126, 96, 28, .24)); border-color: #f0cc56; box-shadow: inset 0 0 14px rgba(255, 226, 120, .28); }
 .talent-icon.locked { opacity: .42; filter: grayscale(.7); }
+.talent-icon.temporarily-disabled { cursor: not-allowed; }
 .talent-icon-glyph { display: grid; place-items: center; width: 42px; height: 42px; font-size: 29px; line-height: 1; }
 .talent-icon-level { color: #facc15; font-size: 10px; font-weight: 700; white-space: nowrap; text-shadow: -1px -1px 0 #3b2f12, 1px -1px 0 #3b2f12, -1px 1px 0 #3b2f12, 1px 1px 0 #3b2f12; }
 .talent-icon-lock { position: absolute; inset: auto 3px 3px; color: var(--dim); font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -5474,6 +5500,7 @@ textarea#save-io {
 .talent-modal-copy-maxed:empty { min-height: 0; padding: 0; }
 .talent-modal-current { color: #facc15; }
 .talent-modal-complete { color: var(--good); }
+.talent-modal-disabled { color: #facc15; font-weight: 700; }
 .talent-modal-points { align-self: end; text-align: right; color: #facc15; font-size: 14px; font-weight: 700; }
 .talent-modal-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
 .talent-modal-actions .btn, .talent-modal-actions>div { min-width: 0; min-height: 26px; }

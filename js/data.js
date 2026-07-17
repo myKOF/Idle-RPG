@@ -96,7 +96,7 @@ var TALENT_TREES = {
     { id: 't4_normal', name: '清場法則', emoji: '⚔️', stat: 'normalDmg', low: 1, high: 2, desc: '對普通敵人傷害額外提高' },
     { id: 't4_elite', name: '破菁法則', emoji: '🗡️', stat: 'eliteDmg', low: 1, high: 2, desc: '對菁英傷害額外提高' },
     { id: 't4_boss', name: '弒王法則', emoji: '👑', stat: 'bossDmg', low: 1, high: 1, desc: '對 BOSS 傷害額外提高' },
-    { id: 't4_potential', name: '潛力啟示', emoji: '🔓', stat: 'potentialUnlock', low: 2, high: 4, desc: '解鎖新類型技能「潛力」三個並給予技能點' },
+    { id: 't4_potential', name: '潛力啟示', emoji: '🔓', stat: 'potentialUnlock', low: 2, high: 4, desc: '解鎖新類型技能「潛力」三個並給予技能點', disabled: true, disabledReason: '目前暫不開放升級' },
     { id: 't4_resist', name: '全域適應', emoji: '🧿', stat: 'allRes', low: 1, high: 2, desc: '全屬性抗性額外提高' },
     { id: 't4_def', name: '重甲共鳴', emoji: '🛡️', stat: 'defPct', low: 1, high: 2, desc: '物理防禦額外提高' },
     { id: 't4_mdef', name: '魔鎧共鳴', emoji: '🔰', stat: 'mdefPct', low: 1, high: 2, desc: '魔法防禦額外提高' },
@@ -108,7 +108,7 @@ var TALENT_TREES = {
     { id: 't5_def', name: '守護昇華', emoji: '🛡️', stat: 'skillDef', low: 1, high: 2, desc: '防禦與治療類技能效果額外提高' },
     { id: 't5_special', name: '奇策昇華', emoji: '🎲', stat: 'skillSpecial', low: 1, high: 2, desc: '特殊類技能效果額外提高' },
     { id: 't5_passive', name: '被動昇華', emoji: '🧬', stat: 'skillPassive', low: 1, high: 2, desc: '被動類技能效果額外提高' },
-    { id: 't5_potential', name: '潛力覺醒', emoji: '🌠', stat: 'potentialUnlock', low: 2, high: 4, desc: '解鎖新類型技能「潛力」兩個並給予技能點' },
+    { id: 't5_potential', name: '潛力覺醒', emoji: '🌠', stat: 'potentialUnlock', low: 2, high: 4, desc: '解鎖新類型技能「潛力」兩個並給予技能點', disabled: true, disabledReason: '目前暫不開放升級' },
     { id: 't5_hp', name: '不滅血脈', emoji: '🩸', stat: 'hpPct', low: 2, high: 4, desc: '生命額外提高' },
     { id: 't5_shield', name: '永恆護壁', emoji: '🔷', stat: 'shieldEff', low: 2, high: 4, desc: '護盾額外提高' }
   ]
@@ -205,7 +205,7 @@ var PRIMARY_STAT_EFFECTS = {
   vitDef: 0.9
 };
 // 連擊數係數：連擊數 = a·ln(暴擊率−100) + b·(暴擊率−100) + c（暴擊率 ≤100% 時為 0；由參數表「2-屬性派生／連擊數」控制）
-var COMBO_HITS_COEF = { a: 0.875, b: 0.01387, c: 0.0861 };
+var COMBO_HITS_COEF = { a: 0.875, b: 0.008, c: 0.025 };
 var ASPD_BASE = 1.0;
 var ASPD_MIN = 0.2;
 var ASPD_CAP = 5;
@@ -292,7 +292,7 @@ var AFFIX_POOL = {
   manaSteal: { name: '吸魔%', base: 1.2, lv: 0.006, pct: true, weight: 3, minR: 2 },
   eliteDmg: { name: '對菁英傷害%', base: 4, lv: 0.02, pct: true, weight: 4, minR: 3 },
   bossDmg: { name: '對BOSS傷害%', base: 4, lv: 0.02, pct: true, weight: 4, minR: 3 },
-  normalDmg: { name: '對普通敵人傷害%', base: 3, lv: 0.35, pct: true, weight: 9, minR: 3 }, // 放出量同物理防禦（defFlat）；僅對非菁英且非 BOSS 敵人生效
+  normalDmg: { name: '對普通敵人傷害%', base: 0.3, lv: 0.035, pct: true, weight: 9, minR: 3 }, // 數值為原普通敵人傷害詞條的 1/10；僅對非菁英且非 BOSS 敵人生效
   aoeDmg: { name: '範圍傷害%', base: 4, lv: 0.02, pct: true, weight: 4, minR: 2 },
   // === 防禦 ===
   blockRate: { name: '格擋率%', base: 2.5, lv: 0.012, pct: true, weight: 4 },

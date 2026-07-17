@@ -91,13 +91,14 @@ test('離線收益採用玩家上線時的經驗/金幣/掉寶加成', () => {
   assert.equal(summary.equips[0], 360);
 });
 
-test('有效離線時間上限 8 小時，1 分鐘內不計', () => {
+test('有效離線時間上限（OFFLINE_MAX_HOURS），1 分鐘內不計', () => {
   const c = loadGameContext();
   c.FIELD_DROP_TABLE = [{ min: 1, rates: [] }];
   c.G.stage.best = 100;
-  c.G.savedAt = Date.now() - 10 * 3600 * 1000; // 離線 10 小時 → 以 8 小時計
+  // 超過上限 2 小時 → 以 OFFLINE_MAX_HOURS 計（上限值由參數表調整，不寫死）
+  c.G.savedAt = Date.now() - (c.OFFLINE_MAX_HOURS + 2) * 3600 * 1000;
   const summary = c.applyOfflineProgress();
-  assert.equal(summary.kills, 8 * 3600 / 20); // 1440
+  assert.equal(summary.kills, Math.floor(c.OFFLINE_MAX_HOURS * 3600 / c.OFFLINE_KILL_INTERVAL));
 
   const c2 = loadGameContext();
   const gold2 = c2.G.player.gold;

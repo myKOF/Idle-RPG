@@ -1,5 +1,16 @@
 # PATCH.md
 
+## 變更紀錄：控場效果隨戰鬥時間遞減（普通 1%/秒、菁英 3%/秒、BOSS 免疫不變）
+
+- 需求：影響敵人攻擊頻率的控制（暈眩/減速/攻速類減益）隨「該敵人存活時間」遞減——普通敵人每秒 −1%（8 秒暈眩在戰鬥 50 秒時施放 → 4 秒；100 秒後完全無效）、菁英每秒 −3%（約 33 秒歸零）、BOSS 維持既有完全免疫；玩家受控不遞減。
+- **`js/formula.js` §3**：新增 `CONTROL_DECAY_PER_SEC_NORMAL=1`、`CONTROL_DECAY_PER_SEC_ELITE=3` 與 `controlDurationFactor(ent) = max(0, 1 − (GT − ent._spawnAt) × 每秒遞減%/100)`（無 `_spawnAt` 的實體＝玩家 → 1）。
+- **`js/combat.js`**：`spawnFieldMonster` 敵人加 `_spawnAt: GT`；`applyEffect`/`applyBuff` 對 `isAttackFrequencyControlKey`（stun/slow/aspdDown/attackSpeedDown）統一乘遞減倍率、歸零回傳 false——技能暈眩/減速、冰元素特效、暈眩被動、攻速類減益所有來源自動生效；成功時回傳「實際持續秒數」供顯示（原回傳 true）。暈眩被動 log 依實際結果顯示。
+- **`js/formula.js` resolveHit**：冰元素減速 proc 改依 applyEffect 實際結果顯示（歸零/免疫不再誤報「減速」）。
+- **`js/skills.js`**：castSkill 暈眩顯示實際秒數（fmt1），遞減歸零顯示「暈眩無效（控場遞減）」；減速同理。
+- 文件：`game_formula.md` §3.4 新增控場遞減規則。
+- 測試：新增 `tests/control-decay.test.cjs`（7 測試：倍率曲線與 clamp、使用者範例 8→4 秒與 100 秒歸零、菁英 3.2 秒、applyBuff 攻速類遞減／非控制類與玩家不受影響、BOSS 免疫與非控制鍵不受影響、冰緩 proc 依實際結果、_spawnAt 接線）；`boss-control-immunity` 回傳值斷言同步（true → 實際秒數）；`offline-rewards` 上限測試改由 OFFLINE_MAX_HOURS 導出（使用者已調 24h，不再寫死）。
+- 驗證：`npm run build` 107 檔過；控場遞減 7/7；全套 310＝294 過（16 個既有基線＋使用者並行在途的敵種傷害數值測試，無本次回歸）；隔離埠 8124 實測——普通怪 50 秒 8→4 秒、菁英 20 秒 8→3.2 秒、100 秒 false、BOSS false、攻速減益 6→3 秒、實戰怪物 `_spawnAt` 正常計時，主控台 0 錯誤。
+
 ## 變更紀錄：5 轉昇華天賦作用範圍補全（增益/減益/再生/詛咒/資源類＋融合技）
 
 - 背景：五個昇華天賦（武技/法術/守護/奇策/被動）原本只作用於技能「直接傷害、治療、護盾、被動數值」；增益 buff、減益 debuff、持續再生 hot、死亡詛咒、金幣（點金手）、法力回復皆未吃倍率，且融合技（cat='fusion'）整類被排除——守護昇華 10 技中 4 個完全無效、奇策昇華 10 技中 6 個完全無效。
@@ -2142,3 +2153,18 @@
 - 套用無條件捨去（Floor）計算，並限制顯示的最高數值，防止其等於 100%（顯示上限為 99.9999%）。
 - 新增 `pctStrFloor4GlobalDmgRed` 格式化函數，並在 `tests/global-damage-reduction.test.cjs` 中加入對應的單元測試。
 
+# 本次變更摘要：降低普通敵人傷害詞條
+
+- 「對普通敵人傷害%」詞條的 `base` 與 `lv` 成長值各降低為原值的 1/10：`3 → 0.3`、`0.35 → 0.035`。
+- 僅調整普通敵人詞條數值；菁英、BOSS 詞條與敵種傷害計算公式不變。
+- 已同步 `js/data.js`、`config/CSV/game_parameters.csv` 與 `game_formula.md`，並更新對應測試。
+
+# 本次變更摘要：既有普通敵人傷害詞條一次性遷移與屬性側欄排版
+
+- 新增 `normalDmgAffixScaleV1` 一次性存檔遷移，將既有裝備及各暫存容器中的 `normalDmg` 固定值縮放為 1/10，避免舊裝備仍顯示原數值。
+- 屬性側欄佈局佔用寬度恢復為原本 236px，中央功能面板尺寸不受影響；屬性列改用可收縮欄位並隱藏橫向溢出，避免長數值產生底部橫向拉條。
+# 本次變更摘要：天賦系統 1 轉解鎖與潛力天賦暫停
+
+- 天賦頁籤與天賦系統改為完成 1 轉後才顯示／可進入。
+- 4 轉「潛力啟示」與 5 轉「潛力覺醒」目前置灰並禁止升級；原本兩個潛力技能的暫停狀態保留。
+- 完成第 1 次轉生的成功彈窗新增黃色提示：「已解鎖天賦系統！」。

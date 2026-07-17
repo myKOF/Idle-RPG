@@ -10,6 +10,8 @@ test('階段列提供直達最高按鈕並將最高資訊放在其右側', () =>
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   assert.match(html, /id="st-max"[^>]*>⏭/);
   assert.match(html, /id="st-max"[\s\S]*id="stage-best"/);
+  assert.match(html, /id="stage-best"[^>]*>最高1關<\/span>/);
+  assert.match(ui, /best\.textContent = '最高' \+ stg\.best \+ '關'/);
   assert.match(ui, /\$id\('st-max'\)\.addEventListener\('click',[\s\S]*stageGoMax\(\)/);
 });
 
@@ -17,8 +19,8 @@ test('階段前進與後退按鈕提供提示並支援長按快速切換', () =>
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
 
-  assert.match(html, /id="st-prev"[^>]*data-tip="後退關卡&lt;br&gt;鼠標按住可以快速後退"/);
-  assert.match(html, /id="st-next"[^>]*data-tip="前進關卡&lt;br&gt;鼠標按住可以快速前進"/);
+  assert.match(html, /id="st-prev"[^>]*data-tt-title="後退關卡"[^>]*data-tt-desc="滑鼠按住可以快速後退"/);
+  assert.match(html, /id="st-next"[^>]*data-tt-title="前進關卡"[^>]*data-tt-desc="滑鼠按住可以快速前進"/);
   assert.match(html, /id="st-prev"[^>]*data-tip-placement="stage-left"/);
   assert.match(html, /id="st-next"[^>]*data-tip-placement="stage-right"/);
   assert.match(ui, /var STAGE_HOLD_REPEAT_MS = 50;/);

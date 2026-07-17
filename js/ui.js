@@ -336,6 +336,7 @@ function floatText(elId, text, cls, damageValue) {
 
 /* ---- 分頁 ---- */
 function switchTab(name) {
+  if (name === 'talents' && typeof talentSystemUnlocked === 'function' && !talentSystemUnlocked()) name = 'equip';
   UI.tab = name;
   document.querySelectorAll('.tab-btn').forEach(function (b) {
     b.classList.toggle('active', b.getAttribute('data-tab') === name);
@@ -359,6 +360,15 @@ function switchTab(name) {
     }
   }
   if (name === 'tower') UI._scrollTower = true;
+}
+
+function updateTalentTabVisibility() {
+  var btn = document.querySelector('.tab-btn[data-tab="talents"]');
+  if (!btn) return;
+  var unlocked = typeof talentSystemUnlocked !== 'function' || talentSystemUnlocked();
+  btn.style.display = unlocked ? '' : 'none';
+  btn.setAttribute('aria-hidden', unlocked ? 'false' : 'true');
+  if (!unlocked && UI.tab === 'talents') switchTab('equip');
 }
 
 /* ---- 存檔記錄列表（設定分頁） ---- */
@@ -436,6 +446,7 @@ function applyReincarnationTitleClass(el, count) {
 
 function renderHeader() {
   var p = G.player, st = getStats();
+  updateTalentTabVisibility();
   function updateResourceTip(id, title, desc) {
     var valueEl = $id(id);
     if (!valueEl || !valueEl.parentNode) return;
@@ -792,7 +803,7 @@ function refreshStageDisplay() {
   var best = $id('stage-best');
   var auto = $id('st-auto');
   if (label) label.textContent = znd.emoji + ' 第 ' + stg.current + ' 階段';
-  if (best) best.textContent = '最高 ' + stg.best;
+  if (best) best.textContent = '最高' + stg.best + '關';
   if (auto) auto.checked = stg.autoAdvance;
 }
 function refreshCombatPauseButton() {
@@ -2361,11 +2372,14 @@ function uiTick() {
 function talentNodeHTML(def, turn) {
   var lv = talentLevel(def.id);
   var unlocked = talentUnlocked(def.id);
-  var lockText = reincarnationCountSafe() < turn ? '需 ' + turn + ' 轉' : '尚未開放';
-  return '<button type="button" class="talent-icon' + (lv > 0 ? ' learned' : '') + (lv >= TALENT_MAX_LEVEL ? ' maxed' : '') + (!unlocked ? ' locked' : '') + '" data-talent-select="talent:' + def.id + '" data-talent-tip="' + def.id + '" aria-label="' + esc(def.name) + '">' +
+  var disabled = !!def.disabled;
+  var lockText = disabled ? (def.disabledReason || '目前暫不開放升級') : (reincarnationCountSafe() < turn ? '需 ' + turn + ' 轉' : '尚未開放');
+  var locked = !unlocked || disabled;
+  var aria = def.name + (disabled ? '（' + lockText + '）' : '');
+  return '<button type="button" class="talent-icon' + (lv > 0 ? ' learned' : '') + (lv >= TALENT_MAX_LEVEL ? ' maxed' : '') + (locked ? ' locked' : '') + (disabled ? ' temporarily-disabled' : '') + '" data-talent-select="talent:' + def.id + '" data-talent-tip="' + def.id + '" aria-label="' + esc(aria) + '">' +
     '<span class="talent-icon-glyph">' + def.emoji + '</span>' +
     '<span class="talent-icon-level">Lv.' + lv + '/' + TALENT_MAX_LEVEL + '</span>' +
-    (!unlocked ? '<span class="talent-icon-lock">🔒 ' + lockText + '</span>' : '') +
+    (locked ? '<span class="talent-icon-lock">🔒 ' + lockText + '</span>' : '') +
     '</button>';
 }
 
@@ -2492,6 +2506,7 @@ function renderTalentModal() {
   var lv = talentLevel(sel.id);
   var maxLv = TALENT_MAX_LEVEL;
   var unlocked = talentUnlocked(sel.id);
+  var disabled = !!def.disabled;
   // 0 級尚未產生實際加成，但說明要先讓玩家看到升到 1 級後會得到的效果。
   var descriptionLv = Math.max(1, lv);
   var current = talentDescriptionValue(def, descriptionLv, turn);
@@ -2504,11 +2519,12 @@ function renderTalentModal() {
   var deleteAttr = 'data-talent-delete="' + def.id + '"';
   var cost = lv + 1;
   var maxed = lv >= maxLv;
+  var disabledNotice = disabled ? '<div class="hint">🔒 目前暫不開放升級</div>' : '';
   var h = '<div class="talent-modal-head"><span class="talent-modal-icon">' + def.emoji + '</span><b>' + esc(def.name) + '</b> <span class="dim-text">Lv.' + lv + '/' + maxLv + '｜' + title + '</span>' +
     (maxed ? '<span class="talent-modal-complete">已滿級！</span>' : '') + '</div>';
-  h += '<div class="talent-modal-desc"><b>' + talentEffectDescription(def, current) + '</b></div>';
+  h += '<div class="talent-modal-desc"><b>' + talentEffectDescription(def, current) + '</b></div>' + disabledNotice;
   h += '<div class="talent-modal-copy' + (maxed ? ' talent-modal-copy-maxed' : '') + '">';
-  if (!maxed) {
+  if (!maxed && !disabled) {
     h += '<div>下一級：<b>' + talentEffectDescription(def, next) + '</b></div>';
     h += '<div>消耗天賦點：' + cost + '</div>';
   }
@@ -2516,7 +2532,7 @@ function renderTalentModal() {
   if (!unlocked) h += '<div class="hint">🔒 需要達到 ' + turn + ' 轉</div>';
   h += '</div><div class="talent-modal-points">轉生天賦點：' + fmtFull(points) + '</div>';
   h += '<div class="talent-modal-actions">';
-  if (unlocked && lv < maxLv) {
+  if (!disabled && unlocked && lv < maxLv) {
     h += '<button class="btn sm" ' + upgradeAttr + '>⬆️ 升級</button>';
     h += '<button class="btn sm" ' + maxAttr + '>⚡ 一鍵升滿</button>';
   } else { h += '<div></div><div></div>'; }
@@ -3626,6 +3642,12 @@ function showConfirmDialog(message, onConfirm, options) {
 
   if (title) title.textContent = options.title || '操作確認';
   msg.textContent = message || '';
+  if (options.title === '轉生成功' && typeof reincarnationCount === 'function' && reincarnationCount() === 1) {
+    var talentUnlockNotice = document.createElement('div');
+    talentUnlockNotice.className = 'confirm-highlight';
+    talentUnlockNotice.textContent = '已解鎖天賦系統！';
+    msg.appendChild(talentUnlockNotice);
+  }
   ok.textContent = options.okText || '確定';
   cancel.textContent = options.cancelText || '取消';
   ok.className = 'btn' + (options.danger ? ' danger' : '');
@@ -3730,6 +3752,7 @@ function bindStageHoldButton(id, delta) {
 }
 
 function initUI() {
+  updateTalentTabVisibility();
   // 分頁
   document.querySelectorAll('.tab-btn').forEach(function (b) {
     b.addEventListener('click', function () {

@@ -282,6 +282,7 @@ function migrateSave(data) {
   var hadZone = data.stage && data.stage.zone !== undefined; // 需在 mergeDefaults 前判斷
   var hadSkillDmgV2 = !!data.skillDmgV2;                     // 需在 mergeDefaults 前判斷（merge 會補 true）
   var hadSpecialBuffTrimV1 = !!data.specialBuffTrimV1;        // 一次性移除特殊技能第二增益
+  var hadNormalDmgAffixScaleV1 = !!data.normalDmgAffixScaleV1; // 一次性降低既有普通敵人傷害詞條
   var hadForgeUnlockNotice = !!(data.forge && data.forge.unlockNotified);
   var hadSalvageSlots = !!(data.factory && data.factory.salvageSlots !== undefined);
   // 三套裝備遷移旗標：須在 mergeDefaults 前判斷（否則 mergeDefaults 會補上空的 equipmentSets 使舊存檔誤判）
@@ -404,6 +405,39 @@ function migrateSave(data) {
     }
     data.equipSetNames.length = data.equipmentSets.length;
   })();
+  /* ONE-TIME MIGRATION: normalDmgAffixScaleV1（登錄於 ONE_TIME_MIGRATIONS.md）
+     「對普通敵人傷害%」詞條的基礎值與成長值已調降為原值 1/10；
+     舊存檔的 affixes[].val 是已擲出的固定值，必須同步縮放一次，否則既有裝備仍顯示舊數值。
+     只處理 normalDmg，菁英／BOSS 詞條與裝備其它資料完全保留。 */
+  if (!hadNormalDmgAffixScaleV1) {
+    var scaleNormalDmgAffix = function (it) {
+      if (!it || !Array.isArray(it.affixes)) return;
+      it.affixes.forEach(function (affix) {
+        if (!affix || affix.key !== 'normalDmg') return;
+        var value = Number(affix.val);
+        if (isFinite(value)) affix.val = Math.round(value) / 10;
+      });
+    };
+    var scaleItemArray = function (items) {
+      if (Array.isArray(items)) items.forEach(scaleNormalDmgAffix);
+    };
+    Object.keys(data.equipmentSets || {}).forEach(function (setKey) {
+      var set = data.equipmentSets[setKey];
+      if (!set || typeof set !== 'object') return;
+      Object.keys(set).forEach(function (slotKey) { scaleNormalDmgAffix(set[slotKey]); });
+    });
+    scaleItemArray(data.inventory);
+    scaleItemArray(data.factory && data.factory.conveyor);
+    scaleItemArray(data.factory && data.factory.synthBuffer);
+    scaleItemArray(data.newForge && data.newForge.queue);
+    ((data.newForge && data.newForge.furnaces) || []).forEach(function (furnace) {
+      (furnace.lines || []).forEach(function (line) {
+        (line.belt || []).forEach(function (entry) { scaleNormalDmgAffix(entry && entry.item); });
+      });
+    });
+    ((data.forge && data.forge.slots) || []).forEach(scaleNormalDmgAffix);
+    data.normalDmgAffixScaleV1 = true;
+  }
   // 品質擴充至 8 階：篩選規則陣列補齊（新階預設保留）
   if (data.factory && data.factory.filter && data.factory.filter.actions) {
     while (data.factory.filter.actions.length < RARITIES.length) data.factory.filter.actions.push('keep');

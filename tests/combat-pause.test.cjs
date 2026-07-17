@@ -70,3 +70,17 @@ test('戰鬥關卡控制列使用正式 tooltip，不使用原生 title', () => 
   assert.match(ui, /el\.setAttribute\('data-tt-desc', paused \? '繼續野外與高塔戰鬥'/);
   assert.doesNotMatch(ui, /el\.title\s*=/);
 });
+
+test('戰鬥控制版面將自動推進放在原暫停位置，暫停移至綜合紀錄列', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const stageStart = html.indexOf('<div id="stage-bar">');
+  const stageEnd = html.indexOf('</div>', stageStart);
+  const stageBar = html.slice(stageStart, stageEnd);
+  const logStart = html.indexOf('<div class="log-header">');
+  const logEnd = html.indexOf('<div id="battle-log"', logStart);
+  const logHeader = html.slice(logStart, logEnd);
+
+  assert.match(stageBar, /id="st-auto"/);
+  assert.doesNotMatch(stageBar, /id="btn-combat-pause"/);
+  assert.match(logHeader, /id="btn-combat-pause"/);
+});

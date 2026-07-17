@@ -382,6 +382,19 @@ function isAttackFrequencyControlKey(key) {
   return key === 'stun' || key === 'slow' || key === 'aspdDown' || key === 'attackSpeedDown';
 }
 
+/* ---- 控場遞減 ----
+   對敵方施加會改變攻擊頻率的控制（暈眩/減速/攻速降低）時，
+   實際持續時間 = 原持續 × max(0, 1 − 敵人存活秒數 × 每秒遞減%/100)。
+   例：普通敵人 1%/秒 → 8 秒暈眩在戰鬥 50 秒時施放剩 4 秒、100 秒後完全無效。
+   套用點＝combat.js applyEffect / applyBuff；玩家實體無 _spawnAt → 不遞減；BOSS 由 isBossControlImmune 完全免疫。 */
+var CONTROL_DECAY_PER_SEC_NORMAL = 1; // 普通敵人每存活 1 秒，控制持續時間 −1%
+var CONTROL_DECAY_PER_SEC_ELITE = 3;  // 菁英每秒 −3%（約 33 秒後完全免疫）
+function controlDurationFactor(ent) {
+  if (!ent || ent._spawnAt === undefined || ent._spawnAt === null) return 1;
+  var decay = ent.elite ? CONTROL_DECAY_PER_SEC_ELITE : CONTROL_DECAY_PER_SEC_NORMAL;
+  return Math.max(0, 1 - (GT - ent._spawnAt) * decay / 100);
+}
+
 /* ---- 連擊數（暴擊率破 100% 衍生的多段攻擊） ----
    語意：暴擊率 = 100% 為「完全爆擊」；超過 100% 才衍生額外攻擊次數。
    公式：連擊數 = a·ln(暴擊率%) + b·暴擊率% + c，取 max(0)。
@@ -461,7 +474,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
       dmg += edmg;
       // 元素特效：冰 15% 減速 2 秒｜雷 10% 追加 80% 電擊｜毒 25% 中毒（50% 元傷/秒×4 秒）
       //          光 20% 淨化自身｜暗 汲取元傷 25% 回復
-      if (ek === 'ice' && chance(15) && !resistCtrl(dCfg)) { applyEffect(defender, 'slow', 2 * ccF); out.procs.push('減速'); }
+      if (ek === 'ice' && chance(15) && !resistCtrl(dCfg)) { if (applyEffect(defender, 'slow', 2 * ccF)) out.procs.push('減速'); } // 控場遞減歸零時不觸發
       else if (ek === 'lightning' && chance(10)) { dmg += edmg * 0.8; out.procs.push('連鎖電擊'); }
       else if (ek === 'poison' && chance(25)) { applyPoison(defender, edmg * 0.5, 4); out.procs.push('中毒'); }
       else if (ek === 'light' && chance(20)) { cleanse(attacker); out.procs.push('淨化'); }

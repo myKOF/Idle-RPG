@@ -58,6 +58,10 @@ function talentUnlocked(id) {
   return turn > 0 && turn <= TALENT_IMPLEMENTED_REINCARNATIONS && reincarnationCountSafe() >= turn;
 }
 
+function talentSystemUnlocked() {
+  return reincarnationCountSafe() >= 1;
+}
+
 function talentLevelValue(def, lv) {
   if (!def) return 0;
   lv = clamp(Math.floor(Number(lv) || 0), 0, TALENT_MAX_LEVEL);
@@ -188,6 +192,7 @@ function talentRefresh() {
 function talentUpgrade(id) {
   var def = talentDef(id);
   if (!def) return '找不到天賦';
+  if (def.disabled) return def.disabledReason || '此天賦目前暫不開放升級';
   if (!talentUnlocked(id)) return reincarnationCountSafe() < talentTurn(id) ? '尚未達到 ' + talentTurn(id) + ' 轉' : '此天賦尚未開放';
   var lv = talentLevel(id);
   if (lv >= TALENT_MAX_LEVEL) return '已達最高等級';
