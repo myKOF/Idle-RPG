@@ -1,5 +1,13 @@
 # PATCH.md
 
+## 變更紀錄：5 轉昇華天賦作用範圍補全（增益/減益/再生/詛咒/資源類＋融合技）
+
+- 背景：五個昇華天賦（武技/法術/守護/奇策/被動）原本只作用於技能「直接傷害、治療、護盾、被動數值」；增益 buff、減益 debuff、持續再生 hot、死亡詛咒、金幣（點金手）、法力回復皆未吃倍率，且融合技（cat='fusion'）整類被排除——守護昇華 10 技中 4 個完全無效、奇策昇華 10 技中 6 個完全無效。
+- **`js/skills.js`**：新增 `skillEffectTalentMultiplier(sk)`——一般類別直通 `talentSkillEffectMultiplier(sk.cat)`；**融合技 = 素材技能類別倍率的平均**（依 `components` 查素材現行定義；舊快照無素材記錄＝1）。`castSkill` 開頭統一計算 `fxMult` 並套用至：傷害基值（原有）、`goldPer`、`maxHpDotPct`（傷害/非傷害兩分支，維持 matk×6 上限後乘算）、`healPctMax`、`hotPct`、`shieldPctMax`、`mpRestore`（四捨五入）、`buff/buff2`、`applySkillDebuffs`（新增 mult 參數）。浮字與戰鬥日誌顯示同步套用倍率（`showPlayerBuffFloat`/`skillBuffDisplayValue` 增加 mult 參數）；技能面板說明維持顯示基礎值。
+- 文件：`game_formula.md` §10 新增昇華天賦公式與作用範圍完整說明。
+- 測試：新增 `tests/skill-talent-multiplier.test.cjs`（6 測試：增益（特殊/防禦）、減益、持續再生、死亡詛咒、法力回復＋金幣、融合技平均與舊快照=1）；`tests/player-event-float.test.cjs` 靜態簽名斷言同步新參數。
+- 驗證：`npm run build` 106 檔過；技能/天賦相關測試 40/40；全套 302＝285 過（16 個失敗皆既有基線，無新增回歸）；隔離埠 8124 實測——奇策昇華 Lv.100 → ×2.5、5 轉全滿 ×2 → ×4、融合技（物理＋魔法素材）全滿平均 ×4、無素材快照 ×1，主控台 0 錯誤。
+
 ## 變更紀錄：菁英掉落倍率以程式值 1.3 為準（測試與文件對齊）
 
 - 背景：程式實際值 1.3（現為 `ELITE_DROP_MULT`，參數表「野外菁英掉落倍率」列），但舊測試與文件仍寫 1.5，`elite-drop-multiplier` 測試長期失敗。使用者確認以程式 1.3 為準。

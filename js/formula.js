@@ -1085,7 +1085,7 @@ function enchantCapFor(it) {
    合成鏈：2 顆同種同級 → 1 顆同種下一級（消耗金幣 FUSE_GOLD_COST[素材等級]），
    故 1 顆 N 級寶石的合成總成本 = 2^(N-1) 顆 1 級（5 級 = 16 顆）。 */
 var GEM_CONVERT_SLOTS = 9;     // 寶石轉換九宮格格數
-var GEM_CONVERT_STACK = 100;   // 每格同種同級寶石上限
+var GEM_CONVERT_STACK = 1000;   // 每格同種同級寶石上限
 var GEM_DISMANTLE_KEEP = 0.7;  // 拆解保留比例（損失 30%）
 
 // 1 顆 lv 級寶石換算多少顆 1 級寶石

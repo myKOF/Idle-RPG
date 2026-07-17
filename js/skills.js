@@ -464,7 +464,24 @@ function trimLegacySpecialFusionBuff(fs) {
 }
 
 // 套用最多兩個減益；多目標時每個存活目標都套用一次。
-function applySkillDebuffs(targets, fx, lv, parts) {
+/* 技能效果天賦倍率（5 轉昇華天賦，talentSkillEffectMultiplier → talents.js）：
+   一般類別依 sk.cat 直接對應；融合技 = 素材類別倍率的平均（舊快照無素材記錄時視為 1）。 */
+function skillEffectTalentMultiplier(sk) {
+  if (typeof talentSkillEffectMultiplier !== 'function' || !sk) return 1;
+  if (sk.cat !== 'fusion') return talentSkillEffectMultiplier(sk.cat);
+  var ids = Array.isArray(sk.components) ? sk.components : [];
+  var sum = 0, n = 0;
+  for (var i = 0; i < ids.length; i++) {
+    var d = (typeof SKILLS !== 'undefined') ? SKILLS[ids[i]] : null;
+    if (!d) continue;
+    sum += talentSkillEffectMultiplier(d.cat);
+    n++;
+  }
+  return n ? sum / n : 1;
+}
+
+function applySkillDebuffs(targets, fx, lv, parts, mult) {
+  mult = mult || 1;
   var debuffs = [];
   if (fx.debuff) debuffs.push(fx.debuff);
   if (fx.debuff2) debuffs.push(fx.debuff2);
@@ -472,9 +489,9 @@ function applySkillDebuffs(targets, fx, lv, parts) {
     var applied = false;
     targets.forEach(function (target) {
       if (target.hp <= 0) return;
-      if (applyBuff(target, debuff.key, scaleAt(debuff, lv), debuff.dur)) applied = true;
+      if (applyBuff(target, debuff.key, scaleAt(debuff, lv) * mult, debuff.dur)) applied = true;
     });
-    if (applied) parts.push('<span class="log-hl-bad">敵方' + buffLabel(debuff.key) + ' -' + fmt1(scaleAt(debuff, lv)) + '%</span>');
+    if (applied) parts.push('<span class="log-hl-bad">敵方' + buffLabel(debuff.key) + ' -' + fmt1(scaleAt(debuff, lv) * mult) + '%</span>');
   });
 }
 
@@ -487,9 +504,9 @@ function playerBuffFloatClass(key) {
   return 'buff';
 }
 
-function showPlayerBuffFloat(floatSel, buff, lv) {
+function showPlayerBuffFloat(floatSel, buff, lv, mult) {
   if (!buff) return;
-  floatPlayerEvent(floatSel, buffLabel(buff.key) + ' +' + fmt1(skillBuffDisplayValue(buff, lv)) + '%', playerBuffFloatClass(buff.key));
+  floatPlayerEvent(floatSel, buffLabel(buff.key) + ' +' + fmt1(skillBuffDisplayValue(buff, lv, mult)) + '%', playerBuffFloatClass(buff.key));
 }
 
 function showPlayerShieldGainAfterHeal(floatSel, pEnt, beforeShield) {
@@ -512,12 +529,14 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
   var out = { killed: false, dmg: 0 };
   var logMsg = sk.emoji + ' 你施放【' + sk.name + ' Lv.' + lv + '】，';
   var parts = [];
+  // 5 轉昇華天賦：技能所有效果（傷害/治療/護盾/增益/減益/再生/詛咒/金幣/法力）共用此倍率；融合技=素材平均
+  var fxMult = skillEffectTalentMultiplier(sk);
 
   // === 傷害段 ===
   if (fx.dmgType) {
     var rawBaseVal = ((fx.base || 0) + (fx.per || 0) * (lv - 1)) / 100 * (st[fx.stat] || st.atk);
     var baseVal = skillDamageShare(rawBaseVal, st.aoeDmg || 0, targetCount);
-    if (typeof talentSkillEffectMultiplier === 'function') baseVal *= talentSkillEffectMultiplier(sk.cat);
+    baseVal *= fxMult;
     // 神鑄特效【神怒】：生命低於 30% 時技能傷害同步提高
     if ((st.passives.godWrath || 0) > 0 && pEnt.hp < st.hp * 0.3) baseVal *= 1 + st.passives.godWrath / 100;
     if (fx.gamble) baseVal *= rnd(0.33, 1.67); // 孤注一擲：50%~250% 相對波動
@@ -611,7 +630,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
         parts.push('<span class="log-hl-good">汲取 ' + fmt(totalDmg * fx.healPctOfDmg / 100) + ' 生命</span>');
       }
       if (fx.mpOnCrit && anyCrit) { pEnt.mp = Math.min(st.mp, pEnt.mp + fx.mpOnCrit); parts.push('返還 ' + fx.mpOnCrit + ' 法力'); }
-      if (fx.goldPer) { var gg = Math.round(fx.goldPer * lv * st.level); G.player.gold += gg; if (window.recordLootGold) window.recordLootGold(gg, 'skill'); parts.push('<span class="log-hl-good">獲得 ' + fmt(gg) + ' 金幣</span>'); UI.dirty.header = true; }
+      if (fx.goldPer) { var gg = Math.round(fx.goldPer * lv * st.level * fxMult); G.player.gold += gg; if (window.recordLootGold) window.recordLootGold(gg, 'skill'); parts.push('<span class="log-hl-good">獲得 ' + fmt(gg) + ' 金幣</span>'); UI.dirty.header = true; }
       for (var ei = 0; ei < targets.length; ei++) {
         var effectTarget = targets[ei];
         if (effectTarget.hp <= 0) continue;
@@ -626,12 +645,12 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
         if (fx.stunDur && !isBossControlImmune(effectTarget) && !resistCtrl(monsterDefCfg(effectTarget))) { applyEffect(effectTarget, 'stun', fx.stunDur); parts.push('<span class="log-hl-good">暈眩 ' + fx.stunDur + ' 秒</span>'); }
         if (fx.slowDur && !isBossControlImmune(effectTarget) && !resistCtrl(monsterDefCfg(effectTarget))) { applyEffect(effectTarget, 'slow', fx.slowDur); parts.push('減速'); }
         if (fx.maxHpDotPct) {
-          var cdps = Math.min(effectTarget.maxHp * scaleAt(fx.maxHpDotPct, lv) / 100, st.matk * 6);
+          var cdps = Math.min(effectTarget.maxHp * scaleAt(fx.maxHpDotPct, lv) / 100, st.matk * 6) * fxMult;
           applyDot(effectTarget, cdps, fx.dotDur || 5, '詛咒');
           parts.push('<span class="log-hl-bad">附加死亡詛咒</span>');
         }
       }
-      applySkillDebuffs(targets, fx, lv, parts);
+      applySkillDebuffs(targets, fx, lv, parts, fxMult);
       if (st.manaSteal > 0) pEnt.mp = Math.min(st.mp, pEnt.mp + totalDmg * st.manaSteal / 100);
       if (st.potentialManaRefund > 0) pEnt.mp = Math.min(st.mp, pEnt.mp + skillManaCost(sk, lv) * st.potentialManaRefund / 100);
       if (st.lifesteal > 0) {
@@ -643,7 +662,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
   }
   // === 非傷害效果 ===
   if (fx.healPctMax) {
-    var hv = st.hp * scaleAt(fx.healPctMax, lv) / 100 * (typeof talentSkillEffectMultiplier === 'function' ? talentSkillEffectMultiplier(sk.cat) : 1);
+    var hv = st.hp * scaleAt(fx.healPctMax, lv) / 100 * fxMult;
     var beforeHealShield = Math.max(0, pEnt.shield || 0);
     healPlayer(pEnt, hv, st);
     showPlayerShieldGainAfterHeal(floatSel, pEnt, beforeHealShield);
@@ -651,13 +670,13 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
     parts.push('<span class="log-hl-good">回復 ' + fmt(hv) + ' 生命</span>');
   }
   if (fx.hotPct) {
-    applyBuff(pEnt, 'hot', scaleAt(fx.hotPct, lv), fx.hotDur);
+    applyBuff(pEnt, 'hot', scaleAt(fx.hotPct, lv) * fxMult, fx.hotDur);
     floatPlayerEvent(floatSel, '再生 ' + fx.hotDur + '秒', 'heal');
     parts.push('<span class="log-hl-good">持續再生 ' + fx.hotDur + ' 秒</span>');
   }
   if (fx.shieldPctMax) {
     var beforeShield = Math.max(0, pEnt.shield || 0);
-    var shieldPct = scaleAt(fx.shieldPctMax, lv) * (1 + st.shieldEff / 100) * (typeof talentSkillEffectMultiplier === 'function' ? talentSkillEffectMultiplier(sk.cat) : 1);
+    var shieldPct = scaleAt(fx.shieldPctMax, lv) * (1 + st.shieldEff / 100) * fxMult;
     var shieldBase = beforeShield > 0 ? Math.max(0, pEnt.shieldSkillBase || 0) || beforeShield : st.hp;
     var targetShield = shieldBase * (1 + shieldPct / 100);
     pEnt.shield = Math.max(beforeShield, targetShield);
@@ -669,22 +688,22 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
     parts.push('<span class="log-hl-good">' + (gainedShield > 0 ? '獲得 ' + fmt(gainedShield) + ' 護盾' : '護盾維持 ' + fmt(beforeShield)) + '</span>');
   }
   if (fx.selfCleanse) { cleanse(pEnt); floatPlayerEvent(floatSel, '✨淨化', 'special'); parts.push('淨化負面狀態'); }
-  if (fx.mpRestore) { pEnt.mp = Math.min(st.mp, pEnt.mp + fx.mpRestore); floatPlayerEvent(floatSel, '法力 +' + fmt(fx.mpRestore), 'mana', fx.mpRestore); parts.push('回復 ' + fx.mpRestore + ' 法力'); }
+  if (fx.mpRestore) { var mpGain = Math.round(fx.mpRestore * fxMult); pEnt.mp = Math.min(st.mp, pEnt.mp + mpGain); floatPlayerEvent(floatSel, '法力 +' + fmt(mpGain), 'mana', mpGain); parts.push('回復 ' + mpGain + ' 法力'); }
   if (fx.buff) {
-    applyBuff(pEnt, fx.buff.key, scaleAt(fx.buff, lv), fx.buff.dur);
-    showPlayerBuffFloat(floatSel, fx.buff, lv);
-    parts.push('<span class="log-hl-good">' + buffLabel(fx.buff.key) + ' +' + fmt1(skillBuffDisplayValue(fx.buff, lv)) + '%（' + fx.buff.dur + '秒）</span>');
+    applyBuff(pEnt, fx.buff.key, scaleAt(fx.buff, lv) * fxMult, fx.buff.dur);
+    showPlayerBuffFloat(floatSel, fx.buff, lv, fxMult);
+    parts.push('<span class="log-hl-good">' + buffLabel(fx.buff.key) + ' +' + fmt1(skillBuffDisplayValue(fx.buff, lv, fxMult)) + '%（' + fx.buff.dur + '秒）</span>');
   }
   if (fx.buff2) {
-    applyBuff(pEnt, fx.buff2.key, scaleAt(fx.buff2, lv), fx.buff2.dur);
-    showPlayerBuffFloat(floatSel, fx.buff2, lv);
-    parts.push('<span class="log-hl-good">' + buffLabel(fx.buff2.key) + ' +' + fmt1(skillBuffDisplayValue(fx.buff2, lv)) + '%（' + fx.buff2.dur + '秒）</span>');
+    applyBuff(pEnt, fx.buff2.key, scaleAt(fx.buff2, lv) * fxMult, fx.buff2.dur);
+    showPlayerBuffFloat(floatSel, fx.buff2, lv, fxMult);
+    parts.push('<span class="log-hl-good">' + buffLabel(fx.buff2.key) + ' +' + fmt1(skillBuffDisplayValue(fx.buff2, lv, fxMult)) + '%（' + fx.buff2.dur + '秒）</span>');
   }
-  if (!fx.dmgType) applySkillDebuffs(targets, fx, lv, parts);
+  if (!fx.dmgType) applySkillDebuffs(targets, fx, lv, parts, fxMult);
   if (!fx.dmgType && fx.maxHpDotPct) {
     for (var nci = 0; nci < targets.length; nci++) {
       if (targets[nci].hp <= 0) continue;
-      var ncdps = Math.min(targets[nci].maxHp * scaleAt(fx.maxHpDotPct, lv) / 100, st.matk * 6);
+      var ncdps = Math.min(targets[nci].maxHp * scaleAt(fx.maxHpDotPct, lv) / 100, st.matk * 6) * fxMult;
       applyDot(targets[nci], ncdps, fx.dotDur || 5, '詛咒');
     }
     parts.push('<span class="log-hl-bad">附加死亡詛咒</span>');
@@ -1001,8 +1020,8 @@ function buffLabel(key) {
     lootUp: '掉寶', thornsUp: '反震', blockUp: '格擋', hot: '再生',
     atkDown: '攻擊', defDown: '防禦' })[key] || key;
 }
-function skillBuffDisplayValue(defObj, lvArg) {
-  var value = scaleAt(defObj, lvArg);
+function skillBuffDisplayValue(defObj, lvArg, mult) {
+  var value = scaleAt(defObj, lvArg) * (mult || 1);
   return defObj && defObj.key === 'lootUp' ? effectiveDropRateEffect(value) : value;
 }
 function describeSkill(id, lv) {

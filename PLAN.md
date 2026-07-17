@@ -1,5 +1,16 @@
 # PLAN.md — 開發計畫
 
+## 當前任務：5 轉昇華天賦作用範圍補全
+
+### 需求
+- 五個昇華天賦要真正作用於「本來的技能效果」全部：增益/減益/持續再生/死亡詛咒/金幣/法力回復補上倍率；融合技納入（＝素材類別倍率平均）。
+
+### 微型任務
+1. [DONE] tests/skill-talent-multiplier.test.cjs（增益/減益/hot/死亡詛咒/資源類/融合平均）。
+2. [DONE] skills.js：`skillEffectTalentMultiplier(sk)` ＋ castSkill 全效果套用 fxMult＋浮字/日誌顯示同步（applySkillDebuffs/showPlayerBuffFloat/skillBuffDisplayValue 增 mult 參數）。
+3. [DONE] build＋全套測試（player-event-float 簽名斷言同步）＋隔離埠 8124 實測（×2.5/×4/融合平均）。
+4. [DONE] game_formula.md §10／PATCH.md／本檔同步。
+
 ## 當前任務：離線收益改造——固定速率獵殺菁英怪＋逐殺掉落＋上線確認彈窗
 
 ### 需求（使用者指示）
