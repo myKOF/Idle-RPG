@@ -286,6 +286,7 @@ function migrateSave(data) {
   var hadNormalDmgAffixScaleV2 = !!data.normalDmgAffixScaleV2; // 一次性恢復先前被降低的普通敵人傷害詞條
   var hadNormalDmgAffixScaleV3 = !!data.normalDmgAffixScaleV3; // 一次性修復仍低於新基準的既有詞條
   var hadNormalDmgAffixScaleV4 = !!data.normalDmgAffixScaleV4; // 一次性縮回錯誤放大的普通敵人傷害詞條
+  var hadExternalGoldRecoveryV1 = !!data.externalGoldRecoveryV1;
   var hadForgeUnlockNotice = !!(data.forge && data.forge.unlockNotified);
   var hadSalvageSlots = !!(data.factory && data.factory.salvageSlots !== undefined);
   // 熔爐合併改版旗標：需在 mergeDefaults 前判斷（merge 會補 noticeShown/tabSeen 預設 true）。
@@ -303,6 +304,16 @@ function migrateSave(data) {
   }
   
   mergeDefaults(data, def);
+  /* ONE-TIME MIGRATION: externalGoldRecoveryV1（登錄於 ONE_TIME_MIGRATIONS.md）
+     只處理在本次版本前已存在、尚未帶旗標的帳號；新帳號由 newGameState 預先標記完成。
+     金幣超過 10^16 時，調整後金幣 = sqrt(現有金幣) * 10000；未超過則保留原值。 */
+  if (!hadExternalGoldRecoveryV1) {
+    var currentGold = Number(data.player.gold);
+    if (isFinite(currentGold) && currentGold > 1e16) {
+      data.player.gold = Math.sqrt(currentGold) * 10000;
+    }
+    data.externalGoldRecoveryV1 = true;
+  }
   // 輸送帶改為固定 20,000 件；舊存檔超出的尾端項目直接丟棄，避免載入後仍保留巨型積壓。
   var conveyorLimit = typeof CONVEYOR_CAP === 'number' ? CONVEYOR_CAP : 20000;
   if (data.factory && Array.isArray(data.factory.conveyor) && data.factory.conveyor.length > conveyorLimit) {

@@ -2293,3 +2293,9 @@
 - 天賦頁籤與天賦系統改為完成 1 轉後才顯示／可進入。
 - 4 轉「潛力啟示」與 5 轉「潛力覺醒」目前置灰並禁止升級；原本兩個潛力技能的暫停狀態保留。
 - 完成第 1 次轉生的成功彈窗新增黃色提示：「已解鎖天賦系統！」。
+## 2026-07-18 一次性外部金幣回收
+
+- `js/player.js`：新帳號預先寫入 `externalGoldRecoveryV1: true`，排除新帳號。
+- `js/save.js`：既有存檔首次刷新／讀取時，僅對 `gold > 10^16` 套用 `Math.sqrt(gold) * 10000`；其餘金額維持原值但仍寫入旗標，避免重複處理。
+- `tests/external-gold-migration.test.cjs`：覆蓋首次回收、冪等性與新帳號排除。
+- `ONE_TIME_MIGRATIONS.md`、`game_formula.md`、`PLAN.md`：同步記錄遷移規格與清理條件。

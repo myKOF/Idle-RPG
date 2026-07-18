@@ -47,6 +47,7 @@ function newGameState() {
     runId: 1,           // 第幾局（重新開局 +1；每局的自動存檔各自獨立，舊存檔以 mergeDefaults 補 1）
     skillDmgV2: true,   // 2026-07-09 技能傷害重調旗標（migrateSave 據此對舊存檔融合技做一次性加成）
     specialBuffTrimV1: true, // 特殊技能第二增益移除後的既有融合技能一次性清理旗標
+    externalGoldRecoveryV1: true,
     savedAt: Date.now(),
     player: {
       level: 1, xp: 0,
