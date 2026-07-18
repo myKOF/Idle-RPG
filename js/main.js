@@ -87,11 +87,13 @@ document.addEventListener('DOMContentLoaded', function () {
       blog('⚠️ 背包超出容量（' + G.inventory.length + '/' + invCapNow + '）。今後滿載時將維持上限：新裝備與包內未鎖定最弱者「捨弱留強」擇一保留（上鎖裝備不受影響）。超出的部分可用「分解設定」批次清理。', 'warn');
     }
     applyOfflineProgress();
+    // 熔爐系統合併改版：舊存檔第一次載入顯示公告彈窗＋熔爐頁籤閃爍（migrateSave 設旗標）
+    if (typeof showForgeRebuildNotice === 'function') showForgeRebuildNotice();
   } else {
     blog('⚔️ 歡迎來到《無限征途：合成之巔》！', 'good');
-    blog('你的角色會自動戰鬥。掉落的裝備會流進【生產線】，記得去設定篩選 / 分解 / 合成規則！', 'info');
-    blog('💡 提示：預設「普通」品質會自動分解成碎片，撿到更強的裝備會自動換上。', 'info');
-    flog('🏭 生產線已啟動。掉落裝備會依篩選規則自動保留或分解。', 'info');
+    blog('你的角色會自動戰鬥。掉落的裝備會流進【熔爐】，記得去勾選各熔爐要拆解的品質！', 'info');
+    blog('💡 提示：預設普通~傳說品質會自動拆解成碎片與精華，未勾選品質會保留入包。', 'info');
+    flog('🏭 熔爐已啟動。掉落裝備會依各熔爐勾選的品質自動拆解或保留。', 'info');
   }
 
   setInterval(gameTick, TICK_MS);

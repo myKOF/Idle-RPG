@@ -16,30 +16,20 @@ function equipSetLabel(i) {
   return n || equipSetName(i);
 }
 
-// 新熔爐：建立一條預設傳送帶（生產線）。拆解品質預設依企劃示意：普通~傳說＝分解、
-// 神話/創世＝保留（神鑄創世不在企劃表，一律保留）；等級條件預設「不限」。
-function newForgeDefaultLine(ftype, filterKey) {
-  var actions = [], conds = [];
-  for (var r = 0; r < RARITIES.length; r++) {
-    actions.push(r <= 5 ? 'salvage' : 'keep');
-    conds.push({ op: 'any', lv: 200 });
-  }
-  var filters = NEW_FORGE_FILTERS[ftype] || NEW_FORGE_FILTERS.smith;
-  var valid = filters.some(function (f) { return f.key === filterKey; });
+// 熔爐（正式版）：建立一座預設熔爐（單傳送帶）。品質勾選預設依企劃示意：
+// 普通~傳說＝勾選（自動入帶拆解）、神話/創世＝不勾（保留）；神鑄創世恆不入帶。
+function newForgeDefaultFurnace(id) {
+  var qualities = [];
+  for (var r = 0; r < RARITIES.length; r++) qualities.push(r <= 5);
   return {
-    id: uid(),                       // 穩定識別（UI 展開狀態等以此為鍵，不隨陣列索引位移）
-    filter: valid ? filterKey : filters[0].key,
+    id: id,
     enabled: true,
-    salvage: { actions: actions, conds: conds },
-    craft: { recipe: 0 },            // 鍛造配方索引（NEW_FORGE_CRAFT_RECIPES）
-    smelt: { product: 'ironIngot' },
-    belt: [],                        // 在途批次：{kind:'salv'|'craft', item, recipe?} | {kind:'smelt', product}
-    timer: 0
+    qualities: qualities,                        // index=品質，true=該品質裝備自動入帶拆解
+    belt: [],                                    // 傳送帶（純裝備陣列，帶頭先入爐）
+    timer: 0,
+    partSlots: NEW_FORGE_PART_SLOTS_INITIAL,     // 已解鎖零件格數（金幣逐格解鎖至 8）
+    parts: []                                    // 已置入零件快照（提供該爐拆解加成）
   };
-}
-function newForgeDefaultFurnace(id, ftype) {
-  var t = NEW_FORGE_TYPES[ftype] ? ftype : 'smith';
-  return { id: id, ftype: t, lines: [newForgeDefaultLine(t)] };
 }
 
 function newGameState() {
@@ -51,8 +41,6 @@ function newGameState() {
   for (var bk in ENCHANTS) books[bk] = 0;
   var gems = {};
   for (var gt in GEM_TYPES) gems[gt] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-  var forgeMats = {};
-  for (var fm in NEW_FORGE_MATERIALS) forgeMats[fm] = 0;
   return {
     version: 1,
     runId: 1,           // 第幾局（重新開局 +1；每局的自動存檔各自獨立，舊存檔以 mergeDefaults 補 1）
@@ -66,7 +54,6 @@ function newGameState() {
       talents: { levels: {}, potentialLevels: {} },
       gold: 50, scrap: 0, essence: 0, ancientEssence: 0, soulOrigin: 0,
       dust: 0,                // 魔塵（神鑄材料）
-      forgeMats: forgeMats,   // 新熔爐 15 種礦石/材料計數（key → 數量）
       gems: gems,
       fusedGems: [],          // 融合寶石（雙屬性，個別實體）
       gemShop: { level: 1, items: [], refreshCount: 0, hourStart: Date.now() },
@@ -107,12 +94,14 @@ function newGameState() {
       procTimer: 0, enchTimer: 0, upTimer: 0,
       stats: { salvaged: 0, extracted: 0, synthesized: 0, enchanted: 0, upgraded: 0, upgradeFailed: 0, mutated: 0 }
     },
-    newForge: {   // 新熔爐（測試版）：導入開關 / 待處理佇列 / 熔爐清單（最多 NEW_FORGE_MAX 座）
-      intake: true,
+    newForge: {   // 熔爐（正式版）：待處理佇列 / 熔爐清單（最多 NEW_FORGE_MAX 座）
       queue: [],
-      furnaces: [newForgeDefaultFurnace(1, 'smith')],
+      furnaces: [newForgeDefaultFurnace(1)],
       nextId: 2,
-      stats: { salvaged: 0, kept: 0, crafted: 0, smelted: 0 }
+      // 改版公告旗標：新局預設已讀；舊存檔載入時由 migrateSave 設為 false → 彈窗＋頁籤閃爍
+      noticeShown: true,
+      tabSeen: true,
+      stats: { salvaged: 0, kept: 0 }
     },
     tower: { highest: 0, active: false },
     forge: {  // 神鑄系統：六芒星槽位 / 六格魔塵符位 / 自動魔塵 / 自動鑄造 / 等待狀態 / 上次產物 / 法陣紀錄

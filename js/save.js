@@ -282,9 +282,15 @@ function migrateSave(data) {
   var hadZone = data.stage && data.stage.zone !== undefined; // 需在 mergeDefaults 前判斷
   var hadSkillDmgV2 = !!data.skillDmgV2;                     // 需在 mergeDefaults 前判斷（merge 會補 true）
   var hadSpecialBuffTrimV1 = !!data.specialBuffTrimV1;        // 一次性移除特殊技能第二增益
-  var hadNormalDmgAffixScaleV1 = !!data.normalDmgAffixScaleV1; // 一次性降低既有普通敵人傷害詞條
+  var hadNormalDmgAffixScaleV1 = !!data.normalDmgAffixScaleV1;
+  var hadNormalDmgAffixScaleV2 = !!data.normalDmgAffixScaleV2; // 一次性恢復先前被降低的普通敵人傷害詞條
+  var hadNormalDmgAffixScaleV3 = !!data.normalDmgAffixScaleV3; // 一次性修復仍低於新基準的既有詞條
+  var hadNormalDmgAffixScaleV4 = !!data.normalDmgAffixScaleV4; // 一次性縮回錯誤放大的普通敵人傷害詞條
   var hadForgeUnlockNotice = !!(data.forge && data.forge.unlockNotified);
   var hadSalvageSlots = !!(data.factory && data.factory.salvageSlots !== undefined);
+  // 熔爐合併改版旗標：需在 mergeDefaults 前判斷（merge 會補 noticeShown/tabSeen 預設 true）。
+  // 合併前的存檔（含外服舊熔爐玩家）→ 載入後顯示改版公告彈窗＋熔爐頁籤閃爍。
+  var hadForgeRebuildNotice = !!(data.newForge && data.newForge.noticeShown !== undefined);
   // 三套裝備遷移旗標：須在 mergeDefaults 前判斷（否則 mergeDefaults 會補上空的 equipmentSets 使舊存檔誤判）
   var hadEquipmentSets = Array.isArray(data.equipmentSets) && data.equipmentSets.length > 0;
   var originalEquipment = (data.equipment && typeof data.equipment === 'object') ? data.equipment : null; // 保留真正裝備參照
@@ -405,17 +411,19 @@ function migrateSave(data) {
     }
     data.equipSetNames.length = data.equipmentSets.length;
   })();
-  /* ONE-TIME MIGRATION: normalDmgAffixScaleV1（登錄於 ONE_TIME_MIGRATIONS.md）
-     「對普通敵人傷害%」詞條的基礎值與成長值已調降為原值 1/10；
-     舊存檔的 affixes[].val 是已擲出的固定值，必須同步縮放一次，否則既有裝備仍顯示舊數值。
+  /* ONE-TIME MIGRATION: normalDmgAffixScaleV2/V3/V4（登錄於 ONE_TIME_MIGRATIONS.md）
+     normalDmg 目前只恢復基礎值 10 倍，成長係數維持 0.035；V2/V3 回復歷史低值，V4 修正曾被錯誤放大的值。
      只處理 normalDmg，菁英／BOSS 詞條與裝備其它資料完全保留。 */
-  if (!hadNormalDmgAffixScaleV1) {
+  if (!hadNormalDmgAffixScaleV2) {
     var scaleNormalDmgAffix = function (it) {
+      if (!hadNormalDmgAffixScaleV1) return;
       if (!it || !Array.isArray(it.affixes)) return;
       it.affixes.forEach(function (affix) {
         if (!affix || affix.key !== 'normalDmg') return;
         var value = Number(affix.val);
-        if (isFinite(value)) affix.val = Math.round(value) / 10;
+        if (isFinite(value)) {
+          affix.val = Math.round(value * 10);
+        }
       });
     };
     var scaleItemArray = function (items) {
@@ -436,7 +444,85 @@ function migrateSave(data) {
       });
     });
     ((data.forge && data.forge.slots) || []).forEach(scaleNormalDmgAffix);
-    data.normalDmgAffixScaleV1 = true;
+    data.normalDmgAffixScaleV2 = true;
+  }
+  /* ONE-TIME MIGRATION: normalDmgAffixScaleV3
+     修復沒有 V1 標記、或 V2 執行前已留下的低值 normalDmg。
+     只將低於目前非太古最低擲值的詞條乘回 10；已正常或太古值不再變更。 */
+  if (!hadNormalDmgAffixScaleV3) {
+    var repairLowNormalDmgAffix = function (it) {
+      if (!it || !Array.isArray(it.affixes)) return;
+      var def = AFFIX_POOL.normalDmg;
+      var rarity = Number(it.rarity);
+      var level = Number(it.level);
+      var rarityDef = RARITIES[rarity];
+      if (!def || !rarityDef || !isFinite(level) || level < 1) return;
+      var restoredMin = (def.base + def.base * def.lv * (level - 1)) * rarityDef.mult * 0.8;
+      it.affixes.forEach(function (affix) {
+        if (!affix || affix.key !== 'normalDmg') return;
+        var value = Number(affix.val);
+        if (isFinite(value) && value > 0 && value < restoredMin) {
+          affix.val = Math.round(value * 10);
+        }
+      });
+    };
+    var repairItemArray = function (items) {
+      if (Array.isArray(items)) items.forEach(repairLowNormalDmgAffix);
+    };
+    Object.keys(data.equipmentSets || {}).forEach(function (setKey) {
+      var set = data.equipmentSets[setKey];
+      if (!set || typeof set !== 'object') return;
+      Object.keys(set).forEach(function (slotKey) { repairLowNormalDmgAffix(set[slotKey]); });
+    });
+    repairItemArray(data.inventory);
+    repairItemArray(data.factory && data.factory.conveyor);
+    repairItemArray(data.factory && data.factory.synthBuffer);
+    repairItemArray(data.newForge && data.newForge.queue);
+    ((data.newForge && data.newForge.furnaces) || []).forEach(function (furnace) {
+      (furnace.lines || []).forEach(function (line) {
+        (line.belt || []).forEach(function (entry) { repairLowNormalDmgAffix(entry && entry.item); });
+      });
+    });
+    ((data.forge && data.forge.slots) || []).forEach(repairLowNormalDmgAffix);
+    data.normalDmgAffixScaleV3 = true;
+  }
+  /* ONE-TIME MIGRATION: normalDmgAffixScaleV4
+     修復先前把 normalDmg 的成長係數也放大 10 倍所留下的過高值。
+     太古上限是目前基準值 × 1.2 × 1.35；超過此上限才縮回 1/10。 */
+  if (!hadNormalDmgAffixScaleV4) {
+    var repairOverScaledNormalDmgAffix = function (it) {
+      if (!it || !Array.isArray(it.affixes)) return;
+      var def = AFFIX_POOL.normalDmg;
+      var rarity = Number(it.rarity);
+      var level = Number(it.level);
+      var rarityDef = RARITIES[rarity];
+      if (!def || !rarityDef || !isFinite(level) || level < 1) return;
+      var ancientMax = Math.round((def.base + def.base * def.lv * (level - 1)) * rarityDef.mult * 1.2 * ANCIENT_AFFIX_VALUE_MULT * 10) / 10;
+      it.affixes.forEach(function (affix) {
+        if (!affix || affix.key !== 'normalDmg') return;
+        var value = Number(affix.val);
+        if (isFinite(value) && value > ancientMax) affix.val = Math.round(value / 10 * 10) / 10;
+      });
+    };
+    var repairOverScaledItemArray = function (items) {
+      if (Array.isArray(items)) items.forEach(repairOverScaledNormalDmgAffix);
+    };
+    Object.keys(data.equipmentSets || {}).forEach(function (setKey) {
+      var set = data.equipmentSets[setKey];
+      if (!set || typeof set !== 'object') return;
+      Object.keys(set).forEach(function (slotKey) { repairOverScaledNormalDmgAffix(set[slotKey]); });
+    });
+    repairOverScaledItemArray(data.inventory);
+    repairOverScaledItemArray(data.factory && data.factory.conveyor);
+    repairOverScaledItemArray(data.factory && data.factory.synthBuffer);
+    repairOverScaledItemArray(data.newForge && data.newForge.queue);
+    ((data.newForge && data.newForge.furnaces) || []).forEach(function (furnace) {
+      (furnace.lines || []).forEach(function (line) {
+        (line.belt || []).forEach(function (entry) { repairOverScaledNormalDmgAffix(entry && entry.item); });
+      });
+    });
+    ((data.forge && data.forge.slots) || []).forEach(repairOverScaledNormalDmgAffix);
+    data.normalDmgAffixScaleV4 = true;
   }
   // 品質擴充至 8 階：篩選規則陣列補齊（新階預設保留）
   if (data.factory && data.factory.filter && data.factory.filter.actions) {
@@ -447,8 +533,14 @@ function migrateSave(data) {
   }
   // 合成節點暫停期間，即使舊存檔曾開啟也不可重新啟動。
   if (data.factory && data.factory.synth) data.factory.synth.enabled = false;
-  // 新熔爐（測試版）：熔爐清單/佇列/材料計數淨化（newforge.js；未載入時跳過以相容部分測試環境）
-  if (typeof sanitizeNewForge === 'function') sanitizeNewForge(data);
+  // 熔爐（正式版）：熔爐清單/佇列淨化＋舊輸送帶滯留裝備併入（newforge.js；未載入時跳過以相容部分測試環境）
+  if (typeof sanitizeNewForge === 'function') {
+    sanitizeNewForge(data);
+    if (!hadForgeRebuildNotice && data.newForge) {
+      data.newForge.noticeShown = false; // 合併前存檔：熔爐改版公告未讀
+      data.newForge.tabSeen = false;     // 頁籤閃爍至玩家切到熔爐分頁
+    }
+  }
   // 舊版寶石（{1..5: 數量}）→ 轉換為隨機種類
   var gemTypeKeys = Object.keys(GEM_TYPES);
   for (var lv = 1; lv <= GEM_MAX_LEVEL; lv++) {

@@ -83,28 +83,7 @@ mat dust 數量
 
 GM 發放只會增加資源，不會覆蓋原有數量。
 
-### 新熔爐材料（測試版）
-
-```text
-nfmat 材料key 數量
-nfmat all 數量
-```
-
-材料 key（不分大小寫，共 15 種，定義於 `js/data.js` `NEW_FORGE_MATERIALS`）：
-`slag`（爐渣）、`ironShard`（碎鐵塊）、`silverShard`（碎銀）、`goldShard`（碎金塊）、
-`mithrilShard`（秘銀碎片）、`thoriumShard`（瑟銀碎片）、`arcaniteShard`（奧金碎片）、
-`magisteelShard`（魔鋼碎片）、`ironIngot`（鐵錠）、`silverIngot`（銀錠）、`goldIngot`（金錠）、
-`mithril`（秘銀）、`thorium`（瑟銀）、`arcanite`（奧金）、`magisteel`（魔鋼）。
-
-範例：
-
-```text
-nfmat mithril 50
-nfmat all 500
-nfmat slag -100
-```
-
-`all` 會對全部 15 種材料一起加減；支援負數扣除，扣除後最低為 0。
+（原「新熔爐材料」`nfmat` 指令已隨熔爐合併版移除：專屬材料系統刪除，拆解改回產出碎片/精華等既有資源。）
 
 ## 4. 寶石
 

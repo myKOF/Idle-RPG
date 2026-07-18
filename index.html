@@ -81,8 +81,7 @@
     <div id="workspace-area">
       <nav id="tabs">
         <button class="tab-btn active" data-tab="equip">🎒 裝備</button>
-        <button class="tab-btn" data-tab="factory">🏭 熔爐</button>
-        <button class="tab-btn" data-tab="newforge" style="display:none">🧪 新熔爐</button>
+        <button class="tab-btn" data-tab="newforge">🏭 熔爐</button>
         <button class="tab-btn" data-tab="gems">💎 寶石</button>
         <button class="tab-btn" data-tab="skills">🧠 技能</button>
         <button class="tab-btn" data-tab="talents">🌟 天賦</button>
@@ -160,147 +159,33 @@
           </div>
         </section>
 
-        <!-- ============ 熔爐 ============ -->
-        <section id="tab-factory" class="tab">
-          <div class="panel conveyor-panel">
-            <div class="sec-title">📦 輸送帶 <span id="conveyor-count" class="dim-text">0/40</span></div>
-            <div id="conveyor-items" class="chip-row"></div>
-            <div class="hint">戰鬥掉落的裝備依序進入輸送帶，由下方節點依規則自動處理。</div>
+        <!-- ============ 熔爐（正式版：品質勾選路由；原舊生產線已合併移除） ============ -->
+        <section id="tab-newforge" class="tab">
+          <div class="panel nf-top-panel">
+            <div class="sec-title">🏭 熔爐</div>
+            <div class="nf-controls">
+              <span class="dim-text">佇列 <b id="nf-queue-count">0</b> 件</span>
+              <label class="chk"><input type="checkbox" id="nf-autoequip"> 更強自動換裝</label>
+            </div>
+            <div class="hint">戰鬥掉落的裝備自動進入熔爐佇列，依各熔爐勾選的品質送入傳送帶拆解（由右至左入爐）；未勾選品質、上鎖與神鑄創世裝備保留入包。拆解產出裝備碎片、金幣與附魔精華等資源，不會產出寶石（鑲嵌寶石會自動取回）；為熔爐裝上零件可強化該爐的拆解速度與產出。</div>
+          </div>
+
+          <div id="nf-furnaces"></div>
+
+          <div class="panel">
+            <div class="sec-title">➕ 添加熔爐 <span id="nf-count" class="dim-text"></span></div>
+            <div class="nf-add-row">
+              <button class="btn sm" data-nf-add="1">🔥 添加鍛造熔爐</button>
+            </div>
+            <div class="hint">熔爐可設數量與轉生連動：0 轉 2 座、每 1 轉 +1 座、上限 12 座。每座熔爐勾選品質後，該品質裝備會自動進入傳送帶拆解。</div>
           </div>
 
           <div class="factory-flow">
-            <!-- 篩選節點 -->
-            <div class="panel node-card">
-              <div class="node-title">🔀 篩選節點 <span class="node-badge">Filter</span></div>
-              <div class="node-body">
-                <label class="chk"><input type="checkbox" id="flt-autoequip"> 更強自動換裝</label>
-                <div class="flt-grid">
-                  <div class="flt-row"><span class="rar-tag" style="color:#9aa5b1">普通</span>
-                    <select class="flt-sel" data-rarity="0">
-                      <option value="keep">保留</option>
-                      <option value="salvage">分解</option>
-                      <option value="smart">比已裝備弱則分解</option>
-                    </select>
-                  </div>
-                  <div class="flt-row"><span class="rar-tag" style="color:#4ade80">精良</span>
-                    <select class="flt-sel" data-rarity="1">
-                      <option value="keep">保留</option>
-                      <option value="salvage">分解</option>
-                      <option value="smart">比已裝備弱則分解</option>
-                    </select>
-                  </div>
-                  <div class="flt-row"><span class="rar-tag" style="color:#38bdf8">稀有</span>
-                    <select class="flt-sel" data-rarity="2">
-                      <option value="keep">保留</option>
-                      <option value="salvage">分解</option>
-                      <option value="smart">比已裝備弱則分解</option>
-                    </select>
-                  </div>
-                  <div class="flt-row"><span class="rar-tag" style="color:#ffd700">獨特</span>
-                    <select class="flt-sel" data-rarity="3">
-                      <option value="keep">保留</option>
-                      <option value="salvage">分解</option>
-                      <option value="smart">比已裝備弱則分解</option>
-                    </select>
-                  </div>
-                  <div class="flt-row"><span class="rar-tag" style="color:#c084fc">史詩</span>
-                    <select class="flt-sel" data-rarity="4">
-                      <option value="keep">保留</option>
-                      <option value="salvage">分解</option>
-                      <option value="smart">比已裝備弱則分解</option>
-                    </select>
-                  </div>
-                  <div class="flt-row"><span class="rar-tag" style="color:#fb923c">傳說</span>
-                    <select class="flt-sel" data-rarity="5">
-                      <option value="keep">保留</option>
-                      <option value="salvage">分解</option>
-                      <option value="smart">比已裝備弱則分解</option>
-                    </select>
-                  </div>
-                  <div class="flt-row"><span class="rar-tag" style="color:#f87171">神話</span>
-                    <select class="flt-sel" data-rarity="6">
-                      <option value="keep">保留</option>
-                      <option value="salvage">分解</option>
-                      <option value="smart">比已裝備弱則分解</option>
-                    </select>
-                  </div>
-                  <div class="flt-row"><span class="rar-tag" style="color:#b8860b">創世</span>
-                    <select class="flt-sel" data-rarity="7">
-                      <option value="keep">保留</option>
-                      <option value="salvage">分解</option>
-                      <option value="smart">比已裝備弱則分解</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 分解槽 -->
-            <div class="panel node-card">
-              <div class="node-title">⚒️ 分解槽 <span class="node-badge">Salvage</span></div>
-              <div class="node-body">
-                <div class="node-info" id="salv-info"></div>
-                <div class="hint">分解產出碎片與附魔精華，不會產出寶石。分解槽目前 10 格，可使用金幣逐格解鎖，最高 20 格；可安裝零件強化產出：加速齒輪、碎片熔煉爐、淘金濾網、精粹透鏡、太古精華萃取器、拓本回收臂、複製處理艙、知識回收器、探礦核心、幸運晶片（共 10 種）。</div>
-                <div class="sec-sub">已安裝零件 <span id="salv-slot-label" class="dim-text"></span></div>
-                <div id="salv-parts" class="chip-row"></div>
-                <div class="sec-sub">可用零件（點擊安裝）</div>
-                <div id="salv-avail-parts" class="chip-row"></div>
-              </div>
-            </div>
-
-            <!-- 合成節點 -->
-            <div id="synthesis-node" class="panel node-card" style="grid-column: 1 / -1;" hidden>
-              <div class="node-title">🔮 合成節點 <span class="node-badge">Synthesis</span></div>
-              <div class="node-body">
-                <label class="chk"><input type="checkbox" id="syn-hybrid"> 混合合成：裝備＋寶石＋附魔書 → 附魔裝備</label>
-                <div class="flt-row indent">
-                  <span>寶石等級下限</span>
-                  <select id="syn-mingem">
-                    <option value="1">1 級</option>
-                    <option value="2">2 級</option>
-                    <option value="3">3 級</option>
-                    <option value="4">4 級</option>
-                    <option value="5">5 級</option>
-                  </select>
-                </div>
-                <div class="flt-row indent">
-                  <span>指定附魔書</span>
-                  <select id="syn-book">
-                    <option value="any">任意</option>
-                    <option value="fire">🔥 火焰附魔</option>
-                    <option value="ice">❄️ 冰凍附魔</option>
-                    <option value="lightning">⚡ 閃電附魔</option>
-                    <option value="poison">🧪 毒液附魔</option>
-                    <option value="light">🌟 聖光附魔</option>
-                    <option value="dark">🌑 暗影附魔</option>
-                    <option value="fireRes">🧯 火焰抗性</option>
-                    <option value="iceRes">🧊 冰霜抗性</option>
-                    <option value="lightningRes">🔌 雷電抗性</option>
-                    <option value="poisonRes">💊 劇毒抗性</option>
-                    <option value="lightRes">🕶️ 聖光抗性</option>
-                    <option value="darkRes">🕯️ 暗影抗性</option>
-                    <option value="ctrlRes">🛡️ 控制抵抗</option>
-                    <option value="loot">💰 尋寶附魔</option>
-                    <option value="haste">🌀 疾行附魔</option>
-                  </select>
-                </div>
-                <label class="chk"><input type="checkbox" id="syn-merge"> 品質合成：同稀有度 x3 → 高一階裝備</label>
-                <label class="chk"><input type="checkbox" id="syn-gem"> 寶石升階：同種同級 x3 → 高一級寶石</label>
-                <div class="node-info" id="syn-info"></div>
-                <div class="sec-sub">合成暫存區</div>
-                <div id="synth-buffer" class="chip-row"></div>
-                <div class="sec-sub">已安裝零件</div>
-                <div id="syn-parts" class="chip-row"></div>
-                <div class="sec-sub">可用零件（點擊安裝）</div>
-                <div id="syn-avail-parts" class="chip-row"></div>
-              </div>
-            </div>
-
-            <!-- 附魔節點 -->
+            <!-- 附魔書庫存（自原生產線頁搬入） -->
             <div class="panel node-card">
               <div class="node-title">✨ 附魔書庫存 <span class="node-badge">Enchant</span></div>
               <div class="node-body">
-                <div class="hint">📌 附魔已改為手動操作：到「🎒 裝備」分頁點選裝備，即可用附魔書附魔（消耗書＋精華），點擊既有附魔可取下（返還書）。混合合成仍會自動消耗附魔書。</div>
+                <div class="hint">📌 附魔已改為手動操作：到「🎒 裝備」分頁點選裝備，即可用附魔書附魔（消耗書＋精華），點擊既有附魔可取下（返還書）。</div>
                 <div class="node-info" id="enc-info"></div>
                 <div class="sec-sub">附魔書庫存</div>
                 <div id="enc-books" class="chip-row"></div>
@@ -310,7 +195,7 @@
               </div>
             </div>
 
-            <!-- 強化節點 -->
+            <!-- 強化節點（自原生產線頁搬入） -->
             <div class="panel node-card">
               <div class="node-title">⬆️ 強化節點 <span class="node-badge">Upgrade</span></div>
               <div class="node-body">
@@ -320,41 +205,9 @@
                 <div class="node-info" id="up-info"></div>
               </div>
             </div>
-
-
           </div>
 
-          <div class="log-title">生產線紀錄</div>
-          <div id="factory-log" class="log"></div>
-        </section>
-
-        <!-- ============ 新熔爐（測試版） ============ -->
-        <section id="tab-newforge" class="tab">
-          <div class="panel nf-top-panel">
-            <div class="sec-title">🧪 新熔爐 <span class="node-badge">測試版</span></div>
-            <div class="nf-controls">
-              <label class="chk"><input type="checkbox" id="nf-intake"> 導入新獲得的裝備</label>
-              <span class="dim-text">佇列 <b id="nf-queue-count">0</b> 件</span>
-              <button class="btn sm" id="nf-return-queue">佇列退回舊輸送帶</button>
-            </div>
-            <div class="hint">開啟導入後，新掉落的裝備改流入新熔爐佇列，由下方各熔爐的傳送帶依篩選器自動處理（物品由右至左流入熔爐）；關閉即恢復舊輸送帶流程。舊熔爐機制完全不受影響。</div>
-            <div class="sec-title nf-mats-title">📦 材料庫存</div>
-            <div id="nf-mats" class="nf-mats"></div>
-          </div>
-
-          <div id="nf-furnaces"></div>
-
-          <div class="panel">
-            <div class="sec-title">➕ 添加熔爐 <span id="nf-count" class="dim-text"></span></div>
-            <div class="nf-add-row">
-              <button class="btn sm" data-nf-add="smith">🔥 鍛造熔爐</button>
-              <button class="btn sm" data-nf-add="rune">🔮 符文熔爐</button>
-              <button class="btn sm" data-nf-add="magic">✨ 魔法熔爐</button>
-            </div>
-            <div class="hint">鍛造熔爐：拆解裝備／鍛造裝備／熔煉礦石。符文熔爐（製作附魔卷軸、製作寶石）與魔法熔爐（製作裝備碎片、附魔精華、魔塵、太古精華）篩選器尚未開放。最多 10 座，每座最多 3 條傳送帶。</div>
-          </div>
-
-          <div class="log-title">新熔爐紀錄</div>
+          <div class="log-title">熔爐紀錄</div>
           <div id="newforge-log" class="log"></div>
         </section>
 
@@ -650,8 +503,7 @@
               <p><b>🔯 神鑄：</b>角色 1000 級開放。將 6 件相同品質（傳說/神話/創世）的裝備放入六芒星法陣，消耗金幣鑄造下一品質裝備；失敗隨機消耗 3 件、其餘退回。角尖符位可放💫魔塵（每個
                 +5% 成功率，等級 150+ 敵人與高塔 BOSS 掉落；神鑄失敗額外獲得 1 個魔塵）。6 件創世鑄造成功可得「神鑄創世」：屬性上限 1.5 倍、必帶 2 條專屬特效（龍血/神力/天罰/不朽…共 12
                 種），無法再入爐。</p>
-              <p><b>🏭 生產線：</b>掉落裝備進入輸送帶 → 篩選節點依品質決定「保留 / 分解」。分解會依裝備品質與精粹透鏡加成產出附魔精華，不會產出寶石。</p>
-              <p><b>🔮 混合合成：</b>[裝備] + [寶石] + [附魔書] = 附魔特殊裝備。開啟「更強自動換裝」讓系統自動把新合成的神裝穿上！</p>
+              <p><b>🏭 熔爐：</b>掉落裝備自動進入熔爐佇列，依各熔爐勾選的品質送入傳送帶拆解（未勾選＝保留入包）。拆解依裝備品質與零件加成產出碎片、金幣與附魔精華，不會產出寶石。熔爐數量與轉生連動（0 轉 2 座、每轉 +1、上限 12），每爐零件格可用金幣解鎖至 8 格。</p>
               <p><b>✨ 附魔：</b>攻擊類六元素（🔥高傷、❄️減速、⚡連鎖、🧪中毒、🌟淨化、🌑汲取）、防禦類（六元素抗性/控制抵抗）、功能類（掉寶/疾行）。在「裝備」分頁點選裝備 → 點附魔書即可附魔（消耗 1
                 書＋精華），點擊既有附魔可取下（返還書）。附魔欄位數依品質 1~3 欄；混合合成仍會自動賦予附魔。</p>
               <p><b>🧠 技能：</b>54 個技能以五系技能樹呈現（每階需在該系投入點數解鎖）。每升 1 級獲得 1 技能點，技能上限 Lv.10 — 前期升級加基礎數值，Lv.4 解鎖附加狀態、Lv.8
@@ -835,6 +687,20 @@
       <div style="text-align: center; display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
         <button id="trm-stop-auto" class="btn warn" style="display:none; padding: 8px 22px; font-size: 16px;">終止連續</button>
         <button id="trm-confirm" class="btn" style="padding: 8px 30px; font-size: 16px;">確定退出</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 熔爐系統改版公告（舊存檔載入時顯示一次） -->
+  <div id="forge-rebuild-modal" class="modal-overlay" style="display:none">
+    <div class="modal-box">
+      <div class="sec-title" style="margin-bottom:10px">🏭 熔爐系統全面改造</div>
+      <div style="line-height:1.7; font-size:14px">
+        <p style="color:#ffd700; font-size:18px; font-weight:bold; text-align:center; margin:8px 0 12px">熔爐系統已重新改造，請玩家重新佈置新熔爐！</p>
+        <p style="color:var(--accent)"><b>請前往「🏭 熔爐」分頁重新佈置品質勾選與零件。</b>你先前的輸送帶滯留裝備已併入熔爐佇列，不會遺失。</p>
+      </div>
+      <div class="btn-row" style="justify-content:center; margin-top:12px">
+        <button id="forge-rebuild-ok" class="btn">知道了</button>
       </div>
     </div>
   </div>

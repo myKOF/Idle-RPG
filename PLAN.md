@@ -1,5 +1,73 @@
 # PLAN.md — 開發計畫
 
+## 當前任務：熔爐專屬佇列——各爐獨立佇列取代共用計數
+
+### 需求（使用者指示）
+- 目前 +N 為「共用總佇列中符合該爐品質的件數」——同設定多爐會重複計數（10 爐各顯示 +9999，實際總量僅 1.4 萬）。
+- 正確設計：頂部「佇列」＝總佇列（真正剩餘總量），派發到各熔爐後遞減；**每座熔爐有自己的專屬佇列**，帶尾 +N＝該爐專屬佇列真實件數，各爐加總不超過總量。
+
+### 設計
+- 資料：熔爐新增 `queue: []`（專屬佇列，上限 `NEW_FORGE_FURNACE_QUEUE_CAP = 9999`/爐）；佇列總量上限改以「總佇列＋各爐專屬合計」計（`NEW_FORGE_QUEUE_CAP = 20000`，intake 超過即丟棄——避免存檔膨脹）。
+- 派發（每 2 秒一輪、每輪 30×爐數件）：總佇列逐件 → 符合品質中「帶＋專屬佇列負載最少」的熔爐**專屬佇列**；無符合→保留入包；符合者皆滿→留總佇列（FIFO）。傳送帶自該爐專屬佇列隨時補位。
+- 一致性：品質取消勾選/停用熔爐 → 專屬佇列中不符項退回總佇列重新派發（帶上裝備視為已承諾不回退）；移除熔爐/轉生裁減 → 專屬佇列回總佇列、帶上裝備退回背包。
+- UI：+N 直讀 `fu.queue.length`（顯示封頂 +9999、tooltip 精確）；刪除共用掃描 `newForgePendingCounts`。
+- sanitize：fu.queue 補建/驗證/超量回總佇列；帶超量入專屬佇列前端；總量上限裁減（先總佇列尾端）。
+
+### 微型任務
+1. [DONE] tests：派發進專屬佇列/補位/平均分流（負載=帶+佇列）/滿載留總佇列/健檢回退/總量 intake 上限/sanitize/移除熔爐回退。
+2. [DONE] data.js/player.js/newforge.js 邏輯層；ui.js +N 直讀＋品質變更健檢。
+3. [DONE] build＋全套測試；隔離埠 8125 實測（總佇列遞減、各爐 +N 獨立、加總守恆）。
+4. [DONE] game_formula.md §12.1／PATCH.md／本檔同步。
+
+## 當前任務：熔爐合併——新熔爐取代舊生產線（正式版）
+
+### 需求（使用者指示）
+1. 關閉舊版熔爐系統；新熔爐頁籤取代原「🏭 熔爐」頁籤（本地服限定解除，全服開放）。
+2. 界面調整：移除「導入新獲得的裝備」開關（一律導入、不可更改）；佇列顯示完整數字不簡寫；移除「佇列退回舊輸送帶」按鈕；說明文字重寫。
+3. 專屬材料（爐渣/碎鐵塊…15 種）全部清除、界面不再顯示；拆解規則改以舊版熔爐為主（裝備碎片、附魔精華…等既有資源）。
+4. 每熔爐零件格上限 6 → **8**。
+5. 更新後玩家 F5 載入需彈出「熔爐系統已重新改造，請重新佈置」公告；熔爐頁籤高亮閃爍，切到該頁後消失。
+
+### 設計
+- **factory.js**：`pushConveyor` 一律導入熔爐佇列（滿載丟棄，同舊輸送帶規則；newforge 未載入的測試環境保留舊路徑後備）。`doSalvage(it, silent, bonus)` 增加零件加成來源參數——熔爐拆解傳入該爐零件格快照加成（全部 10 種分解零件生效）；手動一鍵分解無零件加成。舊輸送帶處理迴圈保留但永遠空轉（遷移後無新件）。
+- **newforge.js**：移除本地服閘門（`newForgeHostAvailable`）、導入開關、退回輸送帶功能與專屬材料拆解；`newForgeSalvage(it, fu)` 改走 `doSalvage`＋`newForgePartBonus(fu, key)`。sanitize：舊輸送帶滯留裝備併入佇列、`forgeMats`/`intake` 欄位刪除、舊分解槽安裝解除、V1/V2 形狀轉換保留（不再退款材料）、公告旗標（`noticeShown`/`tabSeen`）正規化。
+- **save.js**：mergeDefaults 前偵測合併前存檔（`newForge.noticeShown` 不存在）→ sanitize 後設 `noticeShown=false`、`tabSeen=false`。
+- **index.html/ui.js**：舊 `#tab-factory` 區段刪除（附魔書庫存、強化節點兩面板搬入熔爐分頁）；熔爐頁頂部＝佇列完整數字（`fmtFull`）＋「更強自動換裝」開關（`G.factory.autoEquip`）；`flog` 統一寫入熔爐紀錄；改版公告彈窗 `#forge-rebuild-modal`＋頁籤 `.nf-glow` 閃爍（切頁清除）。
+- **data.js**：`NEW_FORGE_PART_SLOTS_MAX=8`；刪 `NEW_FORGE_MATERIALS`/`NEW_FORGE_SALVAGE_YIELD`/`NEW_FORGE_CRAFT_RECIPES`/`NEW_FORGE_SMELT_RECIPES`。gm.js 刪 `nfmat`。
+
+### 微型任務
+1. [DONE] tests/new-forge.test.cjs 改版（22 測試：全服導入/滿載丟棄、doSalvage 整合＋爐零件加成、8 格解鎖、遷移＋公告旗標、接線檢查）；factory-parts/synthesis-disabled 測試同步。
+2. [DONE] data.js/formula.js/player.js/factory.js/newforge.js/save.js 邏輯層。
+3. [DONE] index.html/ui.js/main.js/css 界面＋公告彈窗＋頁籤閃爍；gm.js 移除 nfmat。
+4. [DONE] build 109 檔過；全套 314＝295 過/19 失敗（既有基線，無新增）。
+5. [DONE] game_formula.md §7.3/§12／GM_command.md／PATCH.md／本檔同步。
+6. [DONE] 隔離埠 8125 實測（新局＋合併前舊存檔遷移）。
+
+## 當前任務：新熔爐 V3——單傳送帶品質勾選＋轉生熔爐數＋零件格（依圖1/圖2）
+
+### 需求
+1. 界面只保留圖1功能：熔爐卡（大圖＋移除）＋單一傳送帶（⚙品質設定/啟用/帶視覺）＋分解摘要＋零件置入格；其餘（多傳送帶、篩選器選擇、鍛造裝備、熔煉礦石、符文/魔法熔爐、等級條件、分解/保留下拉）全部刪除。
+2. 品質設定＝圖2 勾選清單（普通~創世 8 格）：勾選品質的裝備自動進入該熔爐傳送帶拆解；不勾選＝保留。神鑄創世不入帶。
+3. 熔爐數量＝轉生連動：0 轉可設 2 座、每 1 轉 +1 座、上限 12（`2+轉生`，cap 12）。
+4. 零件格：每爐初始 3 格、金幣逐格解鎖至 6 格；成本＝`50000×轉生²＋10000×(該爐已解鎖格數-1)^(4＋熔爐數量)`（公式進 formula.js、係數進 data.js）。零件效果企劃未定義→本次僅實作格位與解鎖，安裝待後續指示。
+5. 熔爐圖片統一 `images/furnace_LV1.png`（已存在）。
+
+### 設計
+- 資料：熔爐 `{id, enabled, qualities[9]（bool，idx8 恆 false）, belt[]（純裝備陣列）, timer, partSlots(3~6), parts[]}`；刪 lines/ftype。
+- 邏輯：全域路由（每 2 秒一輪、上限 5×熔爐數件）——佇列逐件：上鎖/神鑄創世/品質未勾→保留入包；勾選→第一座啟用且帶未滿的對應熔爐上帶；勾選但帶全滿→留佇列等待。每爐每 2 秒入爐 1 件產材料（沿用拆解產出表）。
+- 遷移（sanitizeNewForge）：V1（mode）/V2（lines）→ V3——qualities 取第一條拆解線 actions（salvage=勾）；V2 帶上裝備與佇列合併回佇列、craft/smelt 在途材料退回庫存；熔爐數依轉生上限裁減（帶回佇列）。本地服限定閘門與外服歸還維持。
+- data.js：`NEW_FORGE_MAX=12`、`NEW_FORGE_BASE_FURNACES=2`、`NEW_FORGE_FURNACE_PER_REINC=1`、`NEW_FORGE_PART_SLOTS_INITIAL=3`、`NEW_FORGE_PART_SLOTS_MAX=6`、`NEW_FORGE_SLOT_COST_REINC=50000`、`NEW_FORGE_SLOT_COST_BASE=10000`、`NEW_FORGE_SLOT_COST_EXP=4`、`NEW_FORGE_IMAGE`、`NEW_FORGE_ROUTE_PER_TICK=5`；刪 FILTERS/IMAGES/LINES_MAX/LINE_LOAD_PER_TICK 與 rune/magic 爐型；CRAFT/SMELT 配方表保留僅供遷移退款。
+- formula.js：`newForgeMaxFurnaces(reinc)`、`newForgePartSlotCost(reinc, unlocked, furnaceCount)`。
+- UI：熔爐卡＝左 furnace_LV1 大圖＋右「傳送帶＋⚙品質設定（圖2 勾選面板）＋啟用＋摘要＋帶視覺＋零件格列（6 格：空格/🔒解鎖含金額/🔒）」；頂部添加熔爐單一按鈕顯示 n/上限（含轉生說明）。
+
+### 微型任務
+1. [DONE] 重寫 tests（品質路由、轉生熔爐上限、零件格解鎖公式、V2→V3 遷移、外服維持）。
+2. [DONE] data.js/formula.js/player.js 資料層。
+3. [DONE] newforge.js 路由與零件格＋sanitize 遷移。
+4. [DONE] ui.js/index.html/css 界面。
+5. [DONE] build＋測試＋隔離埠實測（8125 全新存檔）。
+6. [DONE] game_formula.md §12／PATCH.md／本檔同步。
+
 ## 當前任務：控場效果隨戰鬥時間遞減
 
 ### 需求
@@ -15,6 +83,7 @@
 1. [DONE] tests/control-decay.test.cjs（倍率曲線、8→4 秒範例、100 秒歸零、菁英 3%、applyBuff 攻速類、玩家不遞減、BOSS 免疫、冰減速 proc 依實際結果）。
 2. [DONE] formula.js 常數＋公式；combat.js 接線＋顯示；skills.js 顯示（applyEffect/applyBuff 改回傳實際秒數，boss-control-immunity 斷言同步）。
 3. [DONE] build＋全套測試＋隔離埠 8124 實測（4/3.2/false/BOSS false/實戰 _spawnAt）；game_formula.md §3.4／PATCH.md／本檔同步。
+4. [DONE] 參數表寫入：CSV＋xlsx「3-戰鬥核心/控場遞減」（a=1、b=3）＋ apply_params 錨點（名稱定位補丁、等 Excel 關檔後執行、round-trip 驗證過）。
 
 ## 當前任務：5 轉昇華天賦作用範圍補全
 

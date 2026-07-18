@@ -105,3 +105,11 @@ test('野外敵人生成時標記 _spawnAt（原始碼接線）', () => {
   const combat = fs.readFileSync(path.join(root, 'js', 'combat.js'), 'utf8');
   assert.match(combat, /_spawnAt:\s*GT/);
 });
+
+test('控場遞減參數已入參數表並接上 apply_params 錨點', () => {
+  const csv = fs.readFileSync(path.join(root, 'config', 'CSV', 'game_parameters.csv'), 'utf8');
+  assert.match(csv, /3-戰鬥核心,控場遞減,/);
+  const ap = fs.readFileSync(path.join(root, 'tools', 'apply_params.cjs'), 'utf8');
+  assert.match(ap, /CONTROL_DECAY_PER_SEC_NORMAL.*3-戰鬥核心.*控場遞減/);
+  assert.match(ap, /CONTROL_DECAY_PER_SEC_ELITE.*3-戰鬥核心.*控場遞減/);
+});

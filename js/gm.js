@@ -157,23 +157,6 @@
       if (amount === null) return { ok: false, message: '格式：mat 材料 數量（可為正負整數）' };
       return { ok: true, message: gmAddCurrency(key, amount) };
     }
-    if (command === 'nfmat') {
-      // 新熔爐材料（js/data.js NEW_FORGE_MATERIALS）；key 不分大小寫，all＝全部材料一起加
-      var nfRaw = String(args[0] || '').toLowerCase();
-      amount = gmSignedAmount(args[1], 1000000000000);
-      if (amount === null) return { ok: false, message: '格式：nfmat 材料key|all 數量（可為正負整數）' };
-      if (!G.player.forgeMats) G.player.forgeMats = {};
-      var nfKeys = Object.keys(NEW_FORGE_MATERIALS).filter(function (k) {
-        return nfRaw === 'all' || k.toLowerCase() === nfRaw;
-      });
-      if (!nfKeys.length) return { ok: false, message: '未知材料：' + nfRaw + '（可用：all、' + Object.keys(NEW_FORGE_MATERIALS).join('、') + '）' };
-      nfKeys.forEach(function (k) {
-        G.player.forgeMats[k] = Math.max(0, (Number(G.player.forgeMats[k]) || 0) + amount);
-      });
-      gmDirty();
-      UI.dirty.newforge = true;
-      return { ok: true, message: (amount >= 0 ? '增加' : '扣除') + ' 新熔爐材料 ' + (nfRaw === 'all' ? '全部 15 種' : NEW_FORGE_MATERIALS[nfKeys[0]].name) + ' x' + Math.abs(amount).toLocaleString() };
-    }
     if (command === 'gem') {
       type = String(args[0] || '').toLowerCase();
       level = gmNumber(args[1], 1, GEM_FORGE_MAX_LEVEL);

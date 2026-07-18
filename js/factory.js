@@ -94,11 +94,16 @@ function trimFactoryParts() {
 
 /* ---- 容量公式（conveyorCap、synthBufCap）→ js/formula.js §7 ---- */
 
-/* ---- 輸送帶 ---- */
+/* ---- 裝備導入 ---- */
 function pushConveyor(item) {
-  // 新熔爐（測試版）路由切換：「導入新裝備」開啟時新掉落改流入新熔爐佇列（newforge.js）；
-  // 關閉或佇列滿載時走以下原有流程，舊機制不變。
-  if (typeof newForgeTryIntake === 'function' && newForgeTryIntake(item)) return true;
+  // 熔爐合併版：掉落裝備一律進入熔爐佇列（newforge.js），佇列滿載即丟棄（同舊輸送帶滿載規則）。
+  if (typeof newForgeTryIntake === 'function' && G.newForge) {
+    if (newForgeTryIntake(item)) return true;
+    flog('⚠️ 熔爐佇列已達 ' + fmt(NEW_FORGE_QUEUE_CAP) + ' 件上限，新裝備已丟棄', 'warn');
+    UI.dirty.newforge = true;
+    return false;
+  }
+  // 後備：熔爐模組未載入（部分測試環境）時維持舊輸送帶流程。
   var f = G.factory;
   if (f.conveyor.length >= conveyorCap()) {
     flog('⚠️ 輸送帶已達 ' + conveyorCap() + ' 件上限，新裝備已丟棄', 'warn');
@@ -130,8 +135,13 @@ function decideFilter(it) {
   return action;
 }
 
-/* ---- 分解槽（附魔精華與太古精華公式 → js/formula.js §7） ---- */
-function doSalvage(it, silent) {
+/* ---- 分解（附魔精華與太古精華公式 → js/formula.js §7）----
+   bonus：零件加成來源 function(key)→數值。熔爐拆解傳入該爐零件格加成（newforge.js
+   newForgePartBonus）；省略時沿用舊分解槽安裝表（partBonus，節點移除後恆為 0，
+   即手動「一鍵分解」不吃零件加成）。 */
+function doSalvage(it, silent, bonus) {
+  var raw = bonus || function (key) { return partBonus('salvage', key); };
+  var eff = function (key) { return effectivePartEffectValue(key, raw(key)); };
   // 鑲嵌的寶石先取回，不隨分解銷毀（含融合寶石）
   if (it.sockets) {
     for (var si = 0; si < it.sockets.length; si++) {
@@ -150,18 +160,18 @@ function doSalvage(it, silent) {
   }
   // 基礎分解產出（精粹透鏡：提高附魔精華產出率）
   var res = salvageResult(it,
-    effectivePartBonus('salvage', 'ancientEssenceRate'),
-    partBonus('salvage', 'extractLens'));
+    eff('ancientEssenceRate'),
+    raw('extractLens'));
 
   // 產量倍率：碎片熔煉爐 / 淘金濾網
-  res.scrap = Math.max(1, Math.round(res.scrap * (1 + partBonus('salvage', 'scrapForge') / 100)));
-  res.gold = Math.round(res.gold * (1 + partBonus('salvage', 'goldSluice') / 100));
+  res.scrap = Math.max(1, Math.round(res.scrap * (1 + raw('scrapForge') / 100)));
+  res.gold = Math.round(res.gold * (1 + raw('goldSluice') / 100));
   var extras = []; // 額外掉落 / 事件（記入日誌）
   // 複製處理艙：碎片＋金幣翻倍
-  var dupC = effectivePartBonus('salvage', 'duplicator');
+  var dupC = eff('duplicator');
   if (dupC > 0 && chance(dupC)) { res.scrap *= 2; res.gold *= 2; extras.push('♻️翻倍'); }
   // 幸運晶片：大豐收（碎片/金幣/精華 ×3）
-  var fc = effectivePartBonus('salvage', 'fortuneChip');
+  var fc = eff('fortuneChip');
   if (fc > 0 && chance(fc)) { res.scrap *= 3; res.gold *= 3; res.essence *= 3; extras.push('🎰大豐收×3'); }
 
   // 入帳
@@ -180,7 +190,7 @@ function doSalvage(it, silent) {
   }
 
   // 拓本回收臂：回收附魔書
-  var bookB = effectivePartBonus('salvage', 'bookScavenger');
+  var bookB = eff('bookScavenger');
   if (bookB > 0 && chance(bookB)) {
     var bk = pick(Object.keys(ENCHANTS));
     G.player.books[bk] = (G.player.books[bk] || 0) + 1;
@@ -188,14 +198,14 @@ function doSalvage(it, silent) {
     extras.push('📖' + ENCHANTS[bk].name);
   }
   // 知識回收器：分解取得經驗
-  var arch = partBonus('salvage', 'archivist');
+  var arch = raw('archivist');
   if (arch > 0 && chance(arch)) {
     var xpG = Math.max(1, Math.round(it.level * 25));
     gainXp(xpG);
     extras.push('📚經驗+' + fmt(xpG));
   }
   // 探礦核心：額外掉落自動機組零件
-  var pros = effectivePartBonus('salvage', 'prospector');
+  var pros = eff('prospector');
   if (pros > 0 && chance(pros)) {
     var np = makePart(clamp(1 + Math.floor(it.rarity / 2), 1, PART_MAX_TIER));
     G.factory.parts.push(np);

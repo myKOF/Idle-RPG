@@ -706,9 +706,16 @@ function rollDropCount(pct) {
   if (chance(pct - n * 100)) n++;
   return n;
 }
-// 新熔爐拆解擲量：期望件數 v → 實得件數（整數部分必得、小數部分為額外 1 件的機率）
-function newForgeRollAmount(v) {
-  return rollDropCount((Number(v) || 0) * 100);
+// 熔爐可設熔爐數：0 轉 2 座、每 1 轉 +1 座、上限 NEW_FORGE_MAX(12)
+function newForgeMaxFurnaces(reinc) {
+  var r = Math.max(0, Math.floor(Number(reinc) || 0));
+  return clamp(NEW_FORGE_BASE_FURNACES + NEW_FORGE_FURNACE_PER_REINC * r, NEW_FORGE_BASE_FURNACES, NEW_FORGE_MAX);
+}
+// 熔爐零件格解鎖金幣 = 50000×轉生² + 10000×(該爐已解鎖格數-1)^(4＋熔爐數量)；上限 8 格
+function newForgePartSlotCost(reinc, unlocked, furnaceCount) {
+  var r = Math.max(0, Math.floor(Number(reinc) || 0));
+  return NEW_FORGE_SLOT_COST_REINC * r * r +
+    NEW_FORGE_SLOT_COST_BASE * Math.pow(Math.max(1, unlocked - 1), NEW_FORGE_SLOT_COST_EXP + Math.max(0, furnaceCount));
 }
 
 /* ---- 稀有度擲骰（非掉落表路徑：合成產物等用）----

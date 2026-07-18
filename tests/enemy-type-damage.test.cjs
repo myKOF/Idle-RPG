@@ -15,15 +15,15 @@ function loadFormulaContext() {
   return context;
 }
 
-test('對普通敵人傷害% 數值為原值的 1/10，三種敵種傷害抗性為物理防禦的 2 倍', () => {
+test('對普通敵人傷害% 使用 base=3、lv=0.035，三種敵種傷害抗性為物理防禦的 2 倍', () => {
   const context = loadFormulaContext();
   const defFlat = context.AFFIX_POOL.defFlat;
   const normalDmg = context.AFFIX_POOL.normalDmg;
   assert.ok(normalDmg);
   assert.equal(normalDmg.name, '對普通敵人傷害%');
   assert.equal(normalDmg.pct, true);
-  assert.equal(normalDmg.base, defFlat.base / 10);
-  assert.ok(Math.abs(normalDmg.lv - defFlat.lv / 10) < 1e-12);
+  assert.equal(normalDmg.base, 3);
+  assert.equal(normalDmg.lv, 0.035);
   assert.equal(context.AFFIX_POOL.eliteDmg.base, 4);
   assert.equal(context.AFFIX_POOL.eliteDmg.lv, 0.02);
   assert.equal(context.AFFIX_POOL.bossDmg.base, 4);

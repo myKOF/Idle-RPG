@@ -2407,6 +2407,12 @@ textarea#save-io {
   min-width: 0;
 }
 
+/* 滑過右側洗煉按鈕時，明確標示它所對應的詞條。 */
+.it-affix-row:has(.affix-reroll-btn:hover) .it-affix-text {
+  outline: 1px solid #fef3c7;
+  outline-offset: -1px;
+}
+
 .it-affix-action {
   display: flex;
   align-items: center;
@@ -5254,7 +5260,7 @@ textarea#save-io {
   z-index: 10;
 }
 
-/* ============ 新熔爐（測試版 V2：熔爐大圖＋傳送帶）分頁 ============ */
+/* ============ 熔爐（正式版：熔爐大圖＋傳送帶）分頁 ============ */
 .nf-top-panel .nf-controls {
   display: flex;
   align-items: center;
@@ -5263,30 +5269,22 @@ textarea#save-io {
   margin: 6px 0;
 }
 
-.nf-mats-title {
-  margin-top: 10px;
+/* 熔爐改版公告：頁籤高亮閃爍（玩家切到熔爐分頁後移除） */
+@keyframes nfTabGlow {
+  from {
+    color: var(--accent);
+    border-color: var(--accent);
+    box-shadow: inset 0 5px 10px rgba(0, 0, 0, 0.5), 0 0 4px 1px rgba(245, 158, 11, 0.35);
+  }
+  to {
+    color: #ffd700;
+    border-color: #ffd700;
+    box-shadow: inset 0 5px 10px rgba(0, 0, 0, 0.5), 0 0 10px 3px rgba(255, 215, 0, 0.75);
+  }
 }
 
-.nf-mats {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
-  gap: 6px;
-  margin-top: 6px;
-}
-
-.nf-mat {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 4px 8px;
-  font-size: 13px;
-}
-
-.nf-mat b {
-  margin-left: auto;
+.tab-btn.nf-glow {
+  animation: nfTabGlow 0.8s ease-in-out infinite alternate;
 }
 
 .nf-furnace .node-title {
@@ -5366,21 +5364,7 @@ textarea#save-io {
   margin: 4px 0;
 }
 
-.nf-line-cfg {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin: 4px 0;
-  font-size: 13px;
-}
 
-.nf-line-cost {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  flex-wrap: wrap;
-}
 
 /* 傳送帶：爐口在左，批次由右至左流入（沿用原版 conv-chip） */
 .nf-belt {
@@ -5409,10 +5393,6 @@ textarea#save-io {
   overflow: hidden;
 }
 
-.nf-belt-dir {
-  font-size: 11px;
-  flex: 0 0 auto;
-}
 
 .nf-belt-empty {
   font-size: 12px;
@@ -5422,30 +5402,10 @@ textarea#save-io {
   margin-top: 2px;
 }
 
-.nf-row .rar-tag {
-  width: 64px;
-}
 
-.nf-cond-lv {
-  width: 72px;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  color: var(--text);
-  padding: 2px 6px;
-}
 
-.nf-cond-lv:disabled {
-  opacity: 0.4;
-}
 
-.nf-cost-ok {
-  color: var(--good, #4ade80);
-}
 
-.nf-cost-lack {
-  color: var(--bad, #f87171);
-}
 
 .nf-add-row {
   display: flex;
@@ -5507,3 +5467,136 @@ textarea#save-io {
 .talent-modal-actions .btn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 760px) { .talent-grid { grid-template-columns: repeat(8, minmax(49px, 1fr)); gap: 5px; } .talent-icon { padding: 4px; } .talent-icon-glyph { width: 34px; height: 34px; font-size: 24px; } }
 @media (max-width: 520px) { .talent-grid { overflow-x: auto; grid-template-columns: repeat(8, 56px); padding-bottom: 4px; } }
+
+/* V3：品質勾選面板（圖2）與零件置入格 */
+.nf-qual-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 4px 10px;
+  margin: 6px 0;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.nf-qual-panel .hint {
+  grid-column: 1 / -1;
+}
+
+.nf-qual-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.nf-parts-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.nf-part-slot {
+  min-width: 56px;
+  padding: 8px 6px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.nf-part-slot.nf-part-lock {
+  opacity: 0.75;
+  color: var(--dim);
+}
+
+button.nf-part-slot {
+  cursor: pointer;
+}
+
+button.nf-part-slot:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  opacity: 1;
+}
+
+button.nf-part-slot.nf-part-poor {
+  color: #f87171;
+}
+
+/* 零件安裝（V3）：已裝格與零件選擇列表 */
+button.nf-part-slot.nf-part-filled {
+  border-color: var(--good, #4ade80);
+  opacity: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nf-parts-list {
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px dashed var(--accent);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.nf-parts-list-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.nf-parts-list-head .btn {
+  margin-left: auto;
+}
+
+/* 帶晶片縮小（整帶 30 件約 8 成滿）；已裝零件＝正方形小圖示 */
+.nf-belt-items {
+  gap: 2px;
+}
+
+.nf-belt .conv-chip {
+  width: 20px;
+  height: 20px;
+  font-size: 11px;
+  border-radius: 5px;
+  flex: 0 0 auto;
+}
+
+button.nf-part-slot.nf-part-ico {
+  min-width: 34px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.nf-part-ico .part-material-icon {
+  margin-right: 0;
+}
+
+/* 帶尾固定 +N 區：預留 +999 寬度，數字增減不變動版面 */
+/* 帶尾 +N 固定區：寬度以最大值 +9999 預留，數字增減版面不動 */
+.nf-belt-more {
+  flex: 0 0 52px;
+  width: 52px;
+  min-width: 52px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--accent);
+  white-space: nowrap;
+}
