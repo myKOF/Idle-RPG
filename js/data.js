@@ -205,7 +205,7 @@ var PRIMARY_STAT_EFFECTS = {
   vitDef: 0.9
 };
 // 連擊數係數：連擊數 = a·ln(暴擊率−100) + b·(暴擊率−100) + c（暴擊率 ≤100% 時為 0；由參數表「2-屬性派生／連擊數」控制）
-var COMBO_HITS_COEF = { a: 0.875, b: 0.008, c: 0.025 };
+var COMBO_HITS_COEF = { a: 0.875, b: 0.0025, c: 0.05 };
 var ASPD_BASE = 1.0;
 var ASPD_MIN = 0.2;
 var ASPD_CAP = 5;

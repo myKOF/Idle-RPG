@@ -19,6 +19,8 @@ var STAGE_HOLD_REPEAT_MS = 50;
 /* ---- 日誌 ---- */
 var DETAIL_LOG_HISTORY = [];
 var DETAIL_LOG_CAP = 500;
+var NEWFORGE_LOG_HISTORY = [];
+window.newForgeLogPaused = false;
 
 function detailLogCategoryLabel(cat) {
   return ({ combat: '戰鬥', boss: '高塔', factory: '裝備', loot: '掉落', system: '系統' })[cat] || '其他';
@@ -45,7 +47,45 @@ function renderDetailLog() {
   }).join('');
 }
 
+function renderNewForgeDetailLog() {
+  var box = $id('newforge-detail-log-content');
+  if (!box) return;
+  var rows = NEWFORGE_LOG_HISTORY;
+  if (!rows.length) {
+    box.innerHTML = '<div class="detail-log-empty">目前沒有熔爐日誌</div>';
+    return;
+  }
+  box.innerHTML = rows.map(function (entry) {
+    return '<div class="detail-log-line ' + (entry.cls || '') + '">' +
+      '<span class="detail-log-time">' + esc(entry.time) + '</span>' + entry.msg + '</div>';
+  }).join('');
+}
+
+function refreshNewForgeMainLog() {
+  var box = $id('newforge-log');
+  if (!box) return;
+  box.innerHTML = '';
+  var displayLogs = NEWFORGE_LOG_HISTORY.slice(0, 50);
+  displayLogs.forEach(function (entry) {
+    var div = document.createElement('div');
+    div.className = 'log-line ' + (entry.cls || '');
+    div.innerHTML = entry.msg;
+    box.appendChild(div);
+  });
+}
+
 function addLog(elId, msg, cls, cap, cat) {
+  if (elId === 'newforge-log') {
+    var now = new Date();
+    NEWFORGE_LOG_HISTORY.unshift({
+      msg: msg,
+      cls: cls || '',
+      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    });
+    if (NEWFORGE_LOG_HISTORY.length > 250) NEWFORGE_LOG_HISTORY.pop();
+    if (window.newForgeLogPaused) return;
+  }
+
   var box = $id(elId);
   if (!box) return;
   var div = document.createElement('div');
@@ -65,6 +105,9 @@ function addLog(elId, msg, cls, cap, cat) {
     if (DETAIL_LOG_HISTORY.length > DETAIL_LOG_CAP) DETAIL_LOG_HISTORY.pop();
     var detailModal = $id('detail-log-modal');
     if (detailModal && detailModal.style.display !== 'none') renderDetailLog();
+  } else if (elId === 'newforge-log') {
+    var nfDetailModal = $id('newforge-detail-log-modal');
+    if (nfDetailModal && nfDetailModal.style.display !== 'none') renderNewForgeDetailLog();
   }
 }
 function blog(msg, cls, cat) {
@@ -2896,13 +2939,32 @@ function showEnemyTooltip(anchorEl) {
   if (isBossTip) {
     m = TOWER.boss || (TOWER.floor ? makeBoss(TOWER.floor) : null);
   } else if (G.tower.active) {
-    m = TOWER.boss;
+    m = TOWER.boss || (TOWER.floor ? makeBoss(TOWER.floor) : null);
   } else {
     m = (typeof FIELD !== 'undefined' && FIELD ? FIELD.monster : null);
+    if (!m) {
+      var s = G.stage.current;
+      var elite = isEliteStage(s);
+      var base = monsterStatsFor(s, elite);
+      var zn = currentZoneDef();
+      var mtype = (zn && zn.pool && zn.pool.length) ? zn.pool[0] : { name: '未知怪物', emoji: '👾' };
+      var mAspd = base.aspd * zn.aspdMult;
+      m = {
+        name: (elite ? '菁英・' : '') + mtype.name, emoji: mtype.emoji,
+        level: base.level,
+        maxHp: base.hp * zn.hpMult, hp: base.hp * zn.hpMult,
+        atk: base.atk * zn.atkMult,
+        def: base.def * zn.defMult, mdef: base.mdef * zn.defMult,
+        magic: !!mtype.magic,
+        aspd: mAspd, dodge: base.dodge, hit: base.hit,
+        elite: elite, isBoss: false,
+        gold: base.gold * zn.rewardMult, xp: base.xp * zn.rewardMult,
+        ctrlRes: 0, elem: mtype.elem
+      };
+    }
   }
 
   if (!m) return;
-  if (!isBossTip && m.hp <= 0) return;
 
   var title = isBossTip ? (m.name || '高塔 BOSS') : '敵人情報';
   var dropTip = '<div class="skt-name" style="margin-bottom:6px;">【' + title + '】</div>' +
@@ -4298,6 +4360,55 @@ function initUI() {
       DETAIL_LOG_HISTORY.length = 0;
       renderDetailLog();
     });
+  }
+
+  // 熔爐詳細日誌視窗
+  var nfDetailLogBtn = $id('btn-newforge-log-detail');
+  var nfDetailLogModal = $id('newforge-detail-log-modal');
+  var nfDetailLogClose = $id('newforge-detail-log-close');
+  var nfDetailLogClear = $id('newforge-detail-log-clear');
+  var nfDetailLogPause = $id('btn-newforge-log-pause');
+
+  function closeNfDetailLog() {
+    if (!nfDetailLogModal) return;
+    nfDetailLogModal.style.display = 'none';
+    nfDetailLogModal.setAttribute('aria-hidden', 'true');
+  }
+
+  if (nfDetailLogBtn && nfDetailLogModal) {
+    nfDetailLogBtn.addEventListener('click', function () {
+      renderNewForgeDetailLog();
+      nfDetailLogModal.style.display = 'flex';
+      nfDetailLogModal.setAttribute('aria-hidden', 'false');
+    });
+    if (nfDetailLogClose) nfDetailLogClose.addEventListener('click', closeNfDetailLog);
+    nfDetailLogModal.addEventListener('click', function (e) {
+      if (e.target === nfDetailLogModal) closeNfDetailLog();
+    });
+    if (nfDetailLogClear) {
+      nfDetailLogClear.addEventListener('click', function () {
+        NEWFORGE_LOG_HISTORY.length = 0;
+        var box = $id('newforge-log');
+        if (box) box.innerHTML = '';
+        renderNewForgeDetailLog();
+      });
+    }
+    if (nfDetailLogPause) {
+      nfDetailLogPause.addEventListener('click', function () {
+        window.newForgeLogPaused = !window.newForgeLogPaused;
+        if (window.newForgeLogPaused) {
+          nfDetailLogPause.textContent = '▶ 恢復日誌更新';
+          nfDetailLogPause.classList.remove('warn');
+          nfDetailLogPause.classList.add('good');
+        } else {
+          nfDetailLogPause.textContent = '⏸ 暫停日誌更新';
+          nfDetailLogPause.classList.remove('good');
+          nfDetailLogPause.classList.add('warn');
+          refreshNewForgeMainLog();
+          renderNewForgeDetailLog();
+        }
+      });
+    }
   }
 
   var pipBtn = $id('btn-pip');
