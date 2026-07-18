@@ -194,7 +194,7 @@ var STAT_CAPS = {
 var PRIMARY_STAT_EFFECTS = {
   strAtk: 2,
   strWeight: 0.5,
-  agiCritRate: 0.0001,
+  agiCritRate: 0.00005,
   agiAspdPct: 0,
   agiEvasion: 0.0001,
   intMp: 2,

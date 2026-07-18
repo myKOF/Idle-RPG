@@ -249,9 +249,14 @@ body {
   letter-spacing: 1px;
 }
 
+.reinc-title-0 {
+  color: #9ca3af !important;
+  text-shadow: 0 0 8px rgba(156, 163, 175, .65);
+}
+
 .reinc-title-1 {
-  color: #facc15 !important;
-  text-shadow: 0 0 8px rgba(250, 204, 21, .65);
+  color: #4ade80 !important;
+  text-shadow: 0 0 8px rgba(74, 222, 128, .65);
 }
 
 .reinc-title-2 {
@@ -260,18 +265,58 @@ body {
 }
 
 .reinc-title-3 {
+  color: #facc15 !important;
+  text-shadow: 0 0 8px rgba(250, 204, 21, .65);
+}
+
+.reinc-title-4 {
   color: #c084fc !important;
   text-shadow: 0 0 8px rgba(192, 132, 252, .65);
 }
 
-.reinc-title-4 {
-  color: #f87171 !important;
-  text-shadow: 0 0 8px rgba(248, 113, 113, .65);
+.reinc-title-5 {
+  color: #fb923c !important;
+  text-shadow: 0 0 8px rgba(251, 146, 60, .65);
 }
 
-.reinc-title-5 {
+.reinc-title-6 {
+  color: #c59b27 !important;
+  text-shadow: 0 0 8px rgba(197, 155, 39, .65);
+}
+
+.reinc-title-7 {
   color: transparent !important;
-  background: linear-gradient(90deg, #f87171, #facc15, #4ade80, #60a5fa, #c084fc, #f87171);
+  background: linear-gradient(135deg, #cbd5e1, #ffffff, #94a3b8, #ffffff, #cbd5e1);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: reincarnation-rainbow 4s linear infinite;
+  text-shadow: none;
+}
+
+.reinc-title-8 {
+  color: transparent !important;
+  background: linear-gradient(135deg, #a855f7, #60a5fa, #c084fc, #3b82f6, #a855f7);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: reincarnation-rainbow 4s linear infinite;
+  text-shadow: none;
+}
+
+.reinc-title-9 {
+  color: transparent !important;
+  background: linear-gradient(135deg, #ef4444, #fb923c, #f87171, #f97316, #ef4444);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: reincarnation-rainbow 4s linear infinite;
+  text-shadow: none;
+}
+
+.reinc-title-10 {
+  color: transparent !important;
+  background: linear-gradient(135deg, #4ade80, #60a5fa, #facc15, #c084fc, #fb923c, #4ade80);
   background-size: 300% 100%;
   -webkit-background-clip: text;
   background-clip: text;

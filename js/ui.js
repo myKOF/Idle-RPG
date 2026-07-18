@@ -460,8 +460,9 @@ function renderSaveList() {
 /* ---- 頂部資源 / 屬性 ---- */
 function applyReincarnationTitleClass(el, count) {
   if (!el) return;
-  for (var i = 1; i <= REINCARNATION_MAX; i++) el.classList.remove('reinc-title-' + i);
-  if (count > 0) el.classList.add('reinc-title-' + count);
+  for (var i = 0; i <= REINCARNATION_MAX; i++) el.classList.remove('reinc-title-' + i);
+  var c = Math.max(0, Math.min(Number(count) || 0, REINCARNATION_MAX));
+  el.classList.add('reinc-title-' + c);
 }
 
 function renderHeader() {

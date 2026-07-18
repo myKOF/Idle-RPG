@@ -241,7 +241,7 @@ function computeStats(equipmentOverride) {
   st.comboHits = comboHitsFor(st.critRate);                     // 連擊數：暴擊率破 100% 衍生的額外攻擊次數（僅普攻／技能直接傷害，持續傷害不計）
   st.pPen = capValue(A.pPen, STAT_CAPS.pPen);                                // 穿透上限（上限 0＝無上限）
   st.mPen = capValue(A.mPen, STAT_CAPS.mPen);
-  st.hit = st.agi * 0.0001 + A.hit;                                // 命中率：敏捷×a + 加成（無上限；戰鬥結算再 clamp 5~100）
+  st.hit = st.agi * 0 + A.hit;                                // 命中率：敏捷×a + 加成（無上限；戰鬥結算再 clamp 5~100）
   st.aspd = ASPD_CAP > 0
     ? clamp(ASPD_BASE * (1 + (A.aspdPct + st.agi * PRIMARY_STAT_EFFECTS.agiAspdPct) / 100), ASPD_MIN, ASPD_CAP)
     : Math.max(ASPD_MIN, ASPD_BASE * (1 + (A.aspdPct + st.agi * PRIMARY_STAT_EFFECTS.agiAspdPct) / 100)); // 攻速：基礎攻速、敏捷係數與上限皆由 data.js 控制
