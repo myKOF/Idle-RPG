@@ -244,9 +244,7 @@ function factoryTick(dt) {
   // 附魔節點（每 3 秒）
   f.enchTimer -= dt;
   if (f.enchTimer <= 0) { f.enchTimer = 3; /* 附魔已改為裝備介面手動操作 */ }
-  // 強化節點（每 2 秒）
-  f.upTimer -= dt;
-  if (f.upTimer <= 0) { f.upTimer = 2; if (f.upgrade.enabled) upgradeTick(); }
+
 }
 
 function processOneConveyorItem() {
@@ -459,25 +457,7 @@ function tryUpgrade(it) {
   return 'fail';
 }
 
-function upgradeTick() {
-  var f = G.factory;
-  var cap = f.upgrade.cap;
-  // 找強化等級最低且未達上限的已裝備裝備
-  var target = null;
-  SLOT_LIST.forEach(function (s) {
-    var it = G.equipment[s];
-    if (!it || (it.upgrade || 0) >= cap) return;
-    if (!target || (it.upgrade || 0) < (target.upgrade || 0)) target = it;
-  });
-  if (!target) return;
-  var cost = upgradeCost(target);
-  var r = tryUpgrade(target);
-  if (r === 'ok') {
-    flog('⬆️ 自動強化：' + rarityTag(target) + ' +' + target.upgrade + '（金幣-' + fmt(cost.gold) + ' 碎片-' + cost.scrap + '）', '');
-  } else if (r === 'fail') {
-    flog('💥 自動強化失敗：' + rarityTag(target) + '（成功率 ' + fmt1(upgradeSuccessChance(target)) + '%，損失半數材料）', 'warn');
-  }
-}
+
 
 /* ---- 手動強化（裝備詳情按鈕用），自行記錄日誌 ---- */
 function manualUpgrade(it) {

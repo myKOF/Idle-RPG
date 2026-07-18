@@ -497,7 +497,7 @@ test('index.html/ui.js/main.js/factory.js/gm.js 接線（合併版）', () => {
   assert.ok(!/flt-sel/.test(html), '舊篩選節點應移除');
   assert.match(html, /id="forge-rebuild-modal"/, '應有改版公告彈窗');
   assert.match(html, /id="forge-rebuild-ok"/);
-  assert.match(html, /id="up-enabled"/, '強化節點應搬入熔爐分頁保留');
+  assert.ok(!/id="up-enabled"/.test(html), '強化節點界面應被刪除');
   assert.match(html, /id="enc-books"/, '附魔書庫存應搬入熔爐分頁保留');
 
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');

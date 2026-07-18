@@ -104,10 +104,10 @@ function addLog(elId, msg, cls, cap, cat) {
     });
     if (DETAIL_LOG_HISTORY.length > DETAIL_LOG_CAP) DETAIL_LOG_HISTORY.pop();
     var detailModal = $id('detail-log-modal');
-    if (detailModal && detailModal.style.display !== 'none') renderDetailLog();
+    if (detailModal && detailModal.style && detailModal.style.display !== 'none') renderDetailLog();
   } else if (elId === 'newforge-log') {
     var nfDetailModal = $id('newforge-detail-log-modal');
-    if (nfDetailModal && nfDetailModal.style.display !== 'none') renderNewForgeDetailLog();
+    if (nfDetailModal && nfDetailModal.style && nfDetailModal.style.display !== 'none') renderNewForgeDetailLog();
   }
 }
 function blog(msg, cls, cat) {
@@ -1456,10 +1456,7 @@ function renderForgeExtras() {
   }
   var encInfo = $id('enc-info');
   if (encInfo) encInfo.textContent = '精華庫存 ' + fmt(G.player.essence) + '（每次消耗 ' + ENCHANT_ESSENCE_COST + '）｜已附魔 ' + fmt(f.stats.enchanted) + ' 次';
-  var upInfo = $id('up-info');
-  if (upInfo) upInfo.textContent = '已自動強化 ' + fmt(f.stats.upgraded) + ' 次' +
-    (f.stats.upgradeFailed ? '｜失敗 ' + fmt(f.stats.upgradeFailed) + ' 次' : '') +
-    '｜+5 後有失敗風險（可堆「強化成功率」屬性）';
+
 }
 
 function partIconHTML(key) {
@@ -1485,10 +1482,7 @@ function syncFactoryInputs() {
   var f = G.factory;
   var autoEq = $id('nf-autoequip');
   if (autoEq) autoEq.checked = !!f.autoEquip;
-  var upEn = $id('up-enabled');
-  if (upEn) upEn.checked = f.upgrade.enabled;
-  var upCap = $id('up-cap');
-  if (upCap) upCap.value = String(f.upgrade.cap);
+
 }
 
 /* ---- 熔爐分頁（正式版：品質勾選路由）----
@@ -1684,7 +1678,7 @@ function bindNewForgeEvents() {
       nflog(el.checked ? '🎽 已開啟更強自動換裝：路由時撿到更強裝備自動穿上' : '🎽 已關閉更強自動換裝', 'info');
       return;
     }
-    if (el.id === 'up-enabled') return; // 強化節點另於 initUI 綁定
+
     var fu = findNewForgeFurnace(parseInt(el.getAttribute('data-nf-fid'), 10));
     if (!fu) return;
     if (el.hasAttribute('data-nf-qual')) {
@@ -4839,11 +4833,7 @@ function initUI() {
       blog(this.checked ? '⚙️ 已開啟熔爐自動「寶石升階」（3 顆同種同級 → 高一級）' : '⚙️ 已關閉熔爐自動「寶石升階」，寶石庫存不會再被自動合成', 'info');
     });
   }
-  $id('up-enabled').addEventListener('change', function () { G.factory.upgrade.enabled = this.checked; });
-  $id('up-cap').addEventListener('change', function () {
-    G.factory.upgrade.cap = clamp(parseInt(this.value, 10) || 0, 0, 30);
-    this.value = String(G.factory.upgrade.cap);
-  });
+
 
   // 設定分頁：存檔管理
   $id('btn-save').addEventListener('click', function () {
