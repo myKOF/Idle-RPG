@@ -15,17 +15,26 @@ function nflog(msg, cls) {
 
 function newForgeState() { return G && G.newForge; }
 
-/* ---- 裝備導入（factory.js pushConveyor 呼叫）：收下回 true；佇列滿載回 false（丟棄） ---- */
+/* ---- 佇列總量＝總佇列＋各爐專屬佇列合計（intake 上限以此計，防存檔膨脹） ---- */
+function newForgeTotalQueued() {
+  var nf = newForgeState();
+  if (!nf) return 0;
+  var total = nf.queue.length;
+  for (var i = 0; i < nf.furnaces.length; i++) total += (nf.furnaces[i].queue || []).length;
+  return total;
+}
+
+/* ---- 裝備導入（factory.js pushConveyor 呼叫）：收下回 true；總量滿載回 false（丟棄） ---- */
 function newForgeTryIntake(item) {
   var nf = newForgeState();
   if (!nf) return false;
-  if (nf.queue.length >= NEW_FORGE_QUEUE_CAP) return false;
+  if (newForgeTotalQueued() >= NEW_FORGE_QUEUE_CAP) return false;
   nf.queue.push(item);
   UI.dirty.newforge = true;
   return true;
 }
 
-/* ---- 主迴圈：路由（分派佇列）＋各熔爐入爐，皆以 NEW_FORGE_INTERVAL 為週期 ---- */
+/* ---- 主迴圈：派發（總佇列→各爐專屬佇列）＋帶補位＋各熔爐入爐 ---- */
 function newForgeTick(dt) {
   var nf = newForgeState();
   if (!nf) return;
@@ -36,6 +45,7 @@ function newForgeTick(dt) {
   }
   for (var i = 0; i < nf.furnaces.length; i++) {
     var fu = nf.furnaces[i];
+    if (fu.enabled) newForgeRefillBelt(fu); // 專屬佇列 → 傳送帶隨時補位
     fu.timer -= dt * newForgeFurnaceSpeed(fu); // 加速齒輪：縮短入爐間隔
     if (fu.timer > 0) continue;
     fu.timer = NEW_FORGE_INTERVAL;
@@ -43,18 +53,19 @@ function newForgeTick(dt) {
   }
 }
 
-/* ---- 路由：佇列逐件分派——勾選品質→符合中「帶上件數最少」的熔爐上帶（平均分流）；
-   未勾/上鎖/神鑄創世→保留入包；勾選但全部帶滿→留佇列等待（保持順序）。
-   平均分流取代先前「第一座優先」：多爐同設定時前面的熔爐會吃光路由額度，
-   後面的熔爐長期空帶（佇列卻顯示 +999 大排長龍）。 ---- */
-function newForgeAcceptingFurnace(rarity) {
+/* ---- 派發：總佇列逐件分派到各爐「專屬佇列」——勾選品質→符合中（帶＋專屬佇列）
+   負載最少者（平均分流）；未勾/上鎖/神鑄創世→保留入包；符合者專屬佇列皆滿→
+   留總佇列等待（保持順序）。派發後總佇列數字隨之減少；帶尾 +N＝該爐專屬佇列
+   真實件數（各爐獨立、非共用計數）。 ---- */
+function newForgeDispatchTarget(rarity) {
   var nf = newForgeState();
-  var best = null, full = false;
+  var best = null, bestLoad = 0, full = false;
   for (var i = 0; i < nf.furnaces.length; i++) {
     var fu = nf.furnaces[i];
     if (!fu.enabled || !fu.qualities[rarity]) continue;
-    if (fu.belt.length >= NEW_FORGE_BELT_CAP) { full = true; continue; }
-    if (!best || fu.belt.length < best.belt.length) best = fu;
+    if (fu.queue.length >= NEW_FORGE_FURNACE_QUEUE_CAP) { full = true; continue; }
+    var load = fu.queue.length + fu.belt.length;
+    if (!best || load < bestLoad) { best = fu; bestLoad = load; }
   }
   if (best) return { furnace: best };
   return full ? { wait: true } : null;
@@ -70,33 +81,39 @@ function newForgeRouteQueue() {
     UI.dirty.newforge = true;
     if (G.factory && G.factory.autoEquip && tryAutoEquip(it)) continue; // 換下的舊裝經 pushConveyor 回流
     if (!it.locked && it.rarity < GODFORGED_IDX) {
-      var hit = newForgeAcceptingFurnace(it.rarity);
-      if (hit && hit.furnace) { hit.furnace.belt.push(it); continue; }
-      if (hit && hit.wait) { nf.queue.unshift(it); break; } // 帶滿等待，維持先進先出
+      var hit = newForgeDispatchTarget(it.rarity);
+      if (hit && hit.furnace) { hit.furnace.queue.push(it); continue; }
+      if (hit && hit.wait) { nf.queue.unshift(it); break; } // 專屬佇列皆滿，維持先進先出等待
     }
     // 未勾選/上鎖/神鑄創世 → 保留入包（滿載時 addToInventory 可能改走自動分解，不計入保留）
     if (addToInventory(it)) nf.stats.kept++;
   }
 }
 
-/* ---- 各熔爐「尚未進輸送帶」件數：各爐獨立計數——啟用且勾選該品質即計入
-  （同一件可同時計入多爐，語意＝排隊等著能進此爐的件數）。
-   全量精確計數：顯示端封頂 +9999、tooltip 恆為精確數；
-   最壞情況 20,000 件 × 12 爐的掃描遠低於 1ms，無需提前終止。 ---- */
-function newForgePendingCounts() {
-  var nf = newForgeState();
-  var counts = {};
-  if (!nf) return counts;
-  for (var i = 0; i < nf.queue.length; i++) {
-    var it = nf.queue[i];
-    if (!it || it.locked || it.rarity >= GODFORGED_IDX) continue;
-    for (var j = 0; j < nf.furnaces.length; j++) {
-      var fu = nf.furnaces[j];
-      if (!fu.enabled || !fu.qualities[it.rarity]) continue;
-      counts[fu.id] = (counts[fu.id] || 0) + 1;
-    }
+/* ---- 傳送帶補位：該爐專屬佇列 → 帶尾（帶頭在左＝先入爐） ---- */
+function newForgeRefillBelt(fu) {
+  var moved = false;
+  while (fu.belt.length < NEW_FORGE_BELT_CAP && fu.queue.length) {
+    fu.belt.push(fu.queue.shift());
+    moved = true;
   }
-  return counts;
+  if (moved) UI.dirty.newforge = true;
+}
+
+/* ---- 專屬佇列健檢：不再符合路由條件（停用/品質未勾/上鎖）者退回總佇列重新派發
+  （品質勾選變更與啟用開關切換時呼叫；帶上裝備視為已承諾、不回退） ---- */
+function newForgeReturnUnroutable(fu) {
+  var nf = newForgeState();
+  if (!nf || !fu || !Array.isArray(fu.queue) || !fu.queue.length) return;
+  var keep = [];
+  for (var i = 0; i < fu.queue.length; i++) {
+    var it = fu.queue[i];
+    if (!it) continue;
+    if (fu.enabled && !it.locked && it.rarity < GODFORGED_IDX && fu.qualities[it.rarity]) keep.push(it);
+    else nf.queue.push(it);
+  }
+  if (keep.length !== fu.queue.length) UI.dirty.newforge = true;
+  fu.queue = keep;
 }
 
 /* ---- 入爐：帶頭裝備拆解（舊分解槽規則＋該爐零件加成） ---- */
@@ -144,7 +161,10 @@ function removeNewForgeFurnace(id) {
   var nf = newForgeState();
   for (var i = 0; i < nf.furnaces.length; i++) {
     if (nf.furnaces[i].id === id) {
-      newForgeBeltRefund(nf.furnaces[i]);
+      var fu = nf.furnaces[i];
+      // 專屬佇列（未承諾）回總佇列重新派發；帶上裝備退回背包
+      while (fu.queue && fu.queue.length) nf.queue.push(fu.queue.shift());
+      newForgeBeltRefund(fu);
       nf.furnaces.splice(i, 1);
       UI.dirty.newforge = true;
       return true;
@@ -225,13 +245,14 @@ function unlockNewForgePartSlot(furnaceId) {
   return null;
 }
 
-/* ---- 存檔修正輔助：佇列＋各熔爐帶上裝備（save.js fixSockets/fixName 用） ---- */
+/* ---- 存檔修正輔助：總佇列＋各爐專屬佇列＋帶上裝備（save.js fixSockets/fixName 用） ---- */
 function newForgeAllQueuedItems(data) {
   var out = [];
   var nf = data && data.newForge;
   if (!nf) return out;
   (nf.queue || []).forEach(function (it) { if (it) out.push(it); });
   (nf.furnaces || []).forEach(function (fu) {
+    (fu && fu.queue || []).forEach(function (it) { if (it) out.push(it); });
     (fu && fu.belt || []).forEach(function (it) { if (it) out.push(it); });
   });
   return out;
@@ -293,11 +314,14 @@ function sanitizeNewForge(data) {
     for (var r = 0; r < RARITIES.length; r++) fu.qualities[r] = fu.qualities[r] === true;
     fu.qualities[RARITIES.length - 1] = false; // 神鑄創世恆不入帶
     fu.qualities.length = RARITIES.length;
+    var validItem = function (it) { return it && typeof it === 'object' && it.slot && it.rarity !== undefined; };
+    if (!Array.isArray(fu.queue)) fu.queue = []; // 專屬佇列（合併前存檔無此欄位）
+    fu.queue = fu.queue.filter(validItem);
     if (!Array.isArray(fu.belt)) fu.belt = [];
-    fu.belt = fu.belt.filter(function (it) { return it && typeof it === 'object' && it.slot && it.rarity !== undefined; });
-    if (fu.belt.length > NEW_FORGE_BELT_CAP) {
-      while (fu.belt.length > NEW_FORGE_BELT_CAP) nf.queue.push(fu.belt.pop());
-    }
+    fu.belt = fu.belt.filter(validItem);
+    // 帶超量 → 專屬佇列前端（原順序仍優先）；專屬佇列超量 → 尾端回總佇列
+    while (fu.belt.length > NEW_FORGE_BELT_CAP) fu.queue.unshift(fu.belt.pop());
+    while (fu.queue.length > NEW_FORGE_FURNACE_QUEUE_CAP) nf.queue.push(fu.queue.pop());
     fu.timer = Number(fu.timer) || 0;
     fu.partSlots = clamp(Math.floor(Number(fu.partSlots) || NEW_FORGE_PART_SLOTS_INITIAL), NEW_FORGE_PART_SLOTS_INITIAL, NEW_FORGE_PART_SLOTS_MAX);
     if (!Array.isArray(fu.parts)) fu.parts = [];
@@ -327,18 +351,32 @@ function sanitizeNewForge(data) {
       if (fu2.parts.length > fu2.partSlots) fu2.parts.length = fu2.partSlots;
     }
   })();
-  // 可設數量與轉生連動：超額熔爐（含硬上限）自尾端裁減，帶上裝備回佇列
+  // 可設數量與轉生連動：超額熔爐（含硬上限）自尾端裁減，專屬佇列與帶上裝備回總佇列
   var reinc = Math.max(0, Math.floor(Number(data.player && data.player.reincarnations) || 0));
   var allowed = newForgeMaxFurnaces(reinc);
   while (nf.furnaces.length > allowed) {
     var drop = nf.furnaces.pop();
+    (drop && drop.queue || []).forEach(function (it) { if (it) nf.queue.push(it); });
     (drop && drop.belt || []).forEach(function (it) { if (it) nf.queue.push(it); });
   }
-  // 舊輸送帶已關閉：滯留裝備併入熔爐佇列（超出佇列上限的尾端捨棄，同舊滿載規則）
+  // 舊輸送帶已關閉：滯留裝備併入熔爐佇列
   if (data.factory && Array.isArray(data.factory.conveyor)) {
     while (data.factory.conveyor.length) nf.queue.push(data.factory.conveyor.shift());
   }
-  if (nf.queue.length > NEW_FORGE_QUEUE_CAP) nf.queue.length = NEW_FORGE_QUEUE_CAP;
+  // 佇列總量上限（總佇列＋各爐專屬合計）：先自總佇列尾端捨棄，仍超量再自各爐專屬佇列尾端捨棄（防壞檔）
+  var total = nf.queue.length;
+  for (i = 0; i < nf.furnaces.length; i++) total += nf.furnaces[i].queue.length;
+  if (total > NEW_FORGE_QUEUE_CAP) {
+    var over = total - NEW_FORGE_QUEUE_CAP;
+    var cut = Math.min(over, nf.queue.length);
+    nf.queue.length -= cut;
+    over -= cut;
+    for (i = nf.furnaces.length - 1; i >= 0 && over > 0; i--) {
+      cut = Math.min(over, nf.furnaces[i].queue.length);
+      nf.furnaces[i].queue.length -= cut;
+      over -= cut;
+    }
+  }
   // 舊分解槽節點已移除：解除其上零件安裝（零件本就留在零件庫，改由各熔爐零件格提供加成）
   if (data.factory && data.factory.installed && Array.isArray(data.factory.installed.salvage)) {
     data.factory.installed.salvage.length = 0;

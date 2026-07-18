@@ -186,7 +186,7 @@ var ACCESSORY_SLOTS = ['ring', 'amulet'];
 var STAT_CAPS = {
   critRate: 0, pPen: 80, mPen: 80, cdr: 60, castSpeed: 50,
   lifesteal: 60, manaSteal: 30, blockRate: 50, blockDmgRed: 50,
-  evasion: 0, tenacity: 60, pRes: 95, mRes: 95, elemRes: 95, ctrlRes: 80,
+  evasion: 0, tenacity: 60, ctrlRes: 80,
   ccRed: 60, moveSpeed: 50, luck: 100, hybridMutation: 60, enrageThreshold: 30,
   affixCap: 100, doubleHit: 45, stun: 30
   // 註：全局減傷上限＝GLOBAL_DMG_RED_CAP（由「2-屬性派生/全局減傷」控制）；此處不重複。
@@ -563,7 +563,8 @@ var NEW_FORGE_MAX = 12;            // 熔爐座數硬上限（實際可設數量
 var NEW_FORGE_BASE_FURNACES = 2;   // 0 轉可設熔爐數
 var NEW_FORGE_FURNACE_PER_REINC = 1; // 每 1 轉再多可設熔爐數
 var NEW_FORGE_INTERVAL = 2.0;      // 每座熔爐入爐間隔（秒/件）
-var NEW_FORGE_QUEUE_CAP = 20000;   // 佇列上限；滿載時新裝備丟棄（同舊輸送帶滿載規則）
+var NEW_FORGE_QUEUE_CAP = 20000;   // 佇列「總量」上限＝總佇列＋各爐專屬佇列合計；滿載時新裝備丟棄（同舊輸送帶滿載規則，並防存檔膨脹）
+var NEW_FORGE_FURNACE_QUEUE_CAP = 9999; // 每座熔爐專屬佇列上限（帶尾 +N 顯示封頂同值）
 var NEW_FORGE_BELT_CAP = 30;       // 傳送帶在途件數上限（原 10 ×3）
 var NEW_FORGE_BELT_SHOW = 30;      // 傳送帶顯示件數上限（＝容量全顯；帶滿時以常見遊戲視窗寬約 8 成滿）
 var NEW_FORGE_ROUTE_PER_TICK = NEW_FORGE_BELT_CAP; // 每輪路由每座熔爐可分派件數＝帶容量：單輪足以補滿空帶，配合平均分流不餓死後面的熔爐（原 5 過低，加速齒輪快爐會吃光額度）
@@ -831,6 +832,11 @@ function defenseStatDesc(st, baseDesc, label, keyBase, pctKey) {
   return statDesc(st, baseDesc, label, keyBase, pctKey) + defenseReductionDesc(st, keyBase);
 }
 
+function resistanceReductionDesc(st, value, reductionFn) {
+  var reduction = reductionFn(value || 0, st.level || 1) * 100;
+  return '<br><br><span style="color:#ffd700">目前總減傷：' + pctStrFloor4(reduction) + '</span>';
+}
+
 // 敵種傷害抗性（普通敵人/普通菁英/普通BOSS）tips：黃字顯示以自身等級為攻擊者等級的目前減傷率（截斷至小數四位）
 function enemyTypeDmgRedDesc(st, key, label) {
   var reduction = enemyTypeDamageReduction(st[key] || 0, st.level || 1) * 100;
@@ -890,14 +896,14 @@ var STAT_GROUPS = [
       ['💨 閃避率', function (st) { return statFmt(st.evasion, STAT_CAPS.evasion, '%'); }, '完全避開敵人攻擊的機率（受敵方命中率影響）。' + capText(STAT_CAPS.evasion, '%')],
       ['🦾 韌性', function (st) { return statFmt(st.tenacity, STAT_CAPS.tenacity, '%'); }, '降低自身被施加暈眩、減速等控制狀態的機率。' + capText(STAT_CAPS.tenacity, '%')],
       ['🫧 護盾效率', function (st) { return statFmt(st.shieldEff, null, '%', true); }, '提升護盾的最大吸收上限與獲取量。'],
-      ['🗿 物理抗性', function (st) { return statFmt(st.pRes, STAT_CAPS.pRes, '%'); }, '結算防禦後，進一步按比例直接減免受到的物理傷害。' + capText(STAT_CAPS.pRes, '%')],
-      ['🌌 魔法抗性', function (st) { return statFmt(st.mRes, STAT_CAPS.mRes, '%'); }, '結算防禦後，進一步按比例直接減免受到的魔法傷害。' + capText(STAT_CAPS.mRes, '%')],
-      ['🔥 火焰抗性', function (st) { return statFmt(st.resist.fire, STAT_CAPS.elemRes, '%'); }, '按比例降低受到的火焰屬性傷害。' + capText(STAT_CAPS.elemRes, '%')],
-      ['❄️ 冰霜抗性', function (st) { return statFmt(st.resist.ice, STAT_CAPS.elemRes, '%'); }, '按比例降低受到的冰霜屬性傷害。' + capText(STAT_CAPS.elemRes, '%')],
-      ['⚡ 雷電抗性', function (st) { return statFmt(st.resist.lightning, STAT_CAPS.elemRes, '%'); }, '按比例降低受到的雷電屬性傷害。' + capText(STAT_CAPS.elemRes, '%')],
-      ['☠️ 劇毒抗性', function (st) { return statFmt(st.resist.poison, STAT_CAPS.elemRes, '%'); }, '按比例降低受到的劇毒屬性傷害。' + capText(STAT_CAPS.elemRes, '%')],
-      ['✨ 聖光抗性', function (st) { return statFmt(st.resist.light, STAT_CAPS.elemRes, '%'); }, '按比例降低受到的聖光屬性傷害。' + capText(STAT_CAPS.elemRes, '%')],
-      ['🌑 暗影抗性', function (st) { return statFmt(st.resist.dark, STAT_CAPS.elemRes, '%'); }, '按比例降低受到的暗影屬性傷害。' + capText(STAT_CAPS.elemRes, '%')],
+      ['🗿 物理抗性', function (st) { return statFmt(st.pRes, null, '%'); }, function (st) { return '降低受到的物理傷害，抗性值越高減傷效果越強。' + resistanceReductionDesc(st, st.pRes, physicalResistanceReduction); }],
+      ['🌌 魔法抗性', function (st) { return statFmt(st.mRes, null, '%'); }, function (st) { return '降低受到的魔法傷害，抗性值越高減傷效果越強。' + resistanceReductionDesc(st, st.mRes, magicResistanceReduction); }],
+      ['🔥 火焰抗性', function (st) { return statFmt(st.resist.fire, null, '%'); }, function (st) { return '降低受到的火焰屬性傷害，抗性值越高減傷效果越強。' + resistanceReductionDesc(st, st.resist.fire, elementalResistanceReduction); }],
+      ['❄️ 冰霜抗性', function (st) { return statFmt(st.resist.ice, null, '%'); }, function (st) { return '降低受到的冰霜屬性傷害，抗性值越高減傷效果越強。' + resistanceReductionDesc(st, st.resist.ice, elementalResistanceReduction); }],
+      ['⚡ 雷電抗性', function (st) { return statFmt(st.resist.lightning, null, '%'); }, function (st) { return '降低受到的雷電屬性傷害，抗性值越高減傷效果越強。' + resistanceReductionDesc(st, st.resist.lightning, elementalResistanceReduction); }],
+      ['☠️ 劇毒抗性', function (st) { return statFmt(st.resist.poison, null, '%'); }, function (st) { return '降低受到的劇毒屬性傷害，抗性值越高減傷效果越強。' + resistanceReductionDesc(st, st.resist.poison, elementalResistanceReduction); }],
+      ['✨ 聖光抗性', function (st) { return statFmt(st.resist.light, null, '%'); }, function (st) { return '降低受到的聖光屬性傷害，抗性值越高減傷效果越強。' + resistanceReductionDesc(st, st.resist.light, elementalResistanceReduction); }],
+      ['🌑 暗影抗性', function (st) { return statFmt(st.resist.dark, null, '%'); }, function (st) { return '降低受到的暗影屬性傷害，抗性值越高減傷效果越強。' + resistanceReductionDesc(st, st.resist.dark, elementalResistanceReduction); }],
       ['🛡️ 控制抵抗', function (st) { return statFmt(st.resist.ctrl, STAT_CAPS.ctrlRes, '%'); }, '全面降低所有負面異常狀態的命中率。' + capText(STAT_CAPS.ctrlRes, '%')]
     ]
   },

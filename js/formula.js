@@ -275,10 +275,10 @@ function computeStats(equipmentOverride) {
   st.evasion = capValue(st.agi * PRIMARY_STAT_EFFECTS.agiEvasion + A.evasion, STAT_CAPS.evasion);          // 閃避：敏捷係數（上限 0＝無上限）
   st.tenacity = capValue(A.tenacity, STAT_CAPS.tenacity);                        // 韌性上限（上限 0＝無上限）
   st.shieldEff = A.shieldEff;
-  st.pRes = capValue(A.pRes, STAT_CAPS.pRes);                                // 物理/魔法抗性上限（上限 0＝無上限）
-  st.mRes = capValue(A.mRes, STAT_CAPS.mRes);
-  // 元素抗性上限、控制抵抗上限（上限 0＝無上限）
-  ELEMENTS.forEach(function (e2) { resist[e2] = capValue(resist[e2], STAT_CAPS.elemRes); });
+  // 物理、魔法與元素抗性不設上限；仍保留下限 0，避免負抗性反向增傷。
+  st.pRes = Math.max(0, Number(A.pRes) || 0);
+  st.mRes = Math.max(0, Number(A.mRes) || 0);
+  ELEMENTS.forEach(function (e2) { resist[e2] = Math.max(0, Number(resist[e2]) || 0); });
   resist.ctrl = capValue(resist.ctrl, STAT_CAPS.ctrlRes);
   st.resist = resist;
   // 特殊與機制
@@ -337,9 +337,38 @@ function defReduction(def, attackerLevel) {
 }
 
 // 元素附傷減免：只套用對應元素抗性，不重複套用魔法抗性
-function elementalResistanceMultiplier(resist, element) {
+function resistanceReduction(total, enemyLevel, exponent, base, levelCoef) {
+  total = Math.max(0, Number(total) || 0);
+  if (total <= 0) return 0;
+  var power = Math.pow(total, Number(exponent));
+  var level = Number(enemyLevel) || 1;
+  var denominator = power + Number(base) + Number(levelCoef) * level;
+  return denominator > 0 ? power / denominator : 0;
+}
+
+var PHYSICAL_RESISTANCE_EXPONENT = 1.8;
+var PHYSICAL_RESISTANCE_BASE = 10;
+var PHYSICAL_RESISTANCE_LEVEL_COEF = 0.1;
+var MAGIC_RESISTANCE_EXPONENT = 1.8;
+var MAGIC_RESISTANCE_BASE = 10;
+var MAGIC_RESISTANCE_LEVEL_COEF = 0.1;
+var ELEMENTAL_RESISTANCE_EXPONENT = 1.8;
+var ELEMENTAL_RESISTANCE_BASE = 10;
+var ELEMENTAL_RESISTANCE_LEVEL_COEF = 0.1;
+
+function physicalResistanceReduction(total, enemyLevel) {
+  return resistanceReduction(total, enemyLevel, PHYSICAL_RESISTANCE_EXPONENT, PHYSICAL_RESISTANCE_BASE, PHYSICAL_RESISTANCE_LEVEL_COEF);
+}
+function magicResistanceReduction(total, enemyLevel) {
+  return resistanceReduction(total, enemyLevel, MAGIC_RESISTANCE_EXPONENT, MAGIC_RESISTANCE_BASE, MAGIC_RESISTANCE_LEVEL_COEF);
+}
+function elementalResistanceReduction(total, enemyLevel) {
+  return resistanceReduction(total, enemyLevel, ELEMENTAL_RESISTANCE_EXPONENT, ELEMENTAL_RESISTANCE_BASE, ELEMENTAL_RESISTANCE_LEVEL_COEF);
+}
+
+function elementalResistanceMultiplier(resist, element, enemyLevel) {
   var value = resist && resist[element] || 0;
-  return 1 - clamp(value, 0, 75) / 100;
+  return 1 - elementalResistanceReduction(value, enemyLevel);
 }
 
 // 全局減傷：減傷率 = min(GLOBAL_DMG_RED_CAP%, 全局減傷總合 /（全局減傷總合 + GLOBAL_DMG_RED_DENOMINATOR）)。
@@ -441,7 +470,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   if (aCfg.dmgType !== 'magic') {
     var pDef = (dCfg.def || 0) * (1 - (aCfg.sunder || 0) / 100) * (1 - (aCfg.pen || 0) / 100);
     var pDmg = (aCfg.atk || 0) * (1 - defReduction(pDef, aCfg.level || 1));
-    pDmg *= 1 - capValue(dCfg.pRes || 0, STAT_CAPS.pRes) / 100;   // 物理抗性：結算防禦後再按比例減免（上限 0＝無上限）
+    pDmg *= 1 - physicalResistanceReduction(dCfg.pRes, aCfg.level || 1);   // 物理抗性：結算防禦後套用抗性曲線
     dmg += pDmg;
   }
   if (aCfg.dmgType === 'magic' || aCfg.dmgType === 'both') {
@@ -449,7 +478,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     var baseMAtk = (aCfg.dmgType === 'both') ? (aCfg.matk || 0) : (aCfg.atk || 0);
     var mDef = (dCfg.mdef || 0) * (1 - (aCfg.sunder || 0) / 100) * (1 - mPen / 100);
     var mDmg = baseMAtk * (1 - defReduction(mDef, aCfg.level || 1));
-    mDmg *= 1 - capValue(dCfg.mRes || 0, STAT_CAPS.mRes) / 100;   // 魔法抗性（上限 0＝無上限）
+    mDmg *= 1 - magicResistanceReduction(dCfg.mRes, aCfg.level || 1);   // 魔法抗性：結算防禦後套用抗性曲線
     dmg += mDmg;
   }
   dmg *= rnd(0.9, 1.1);   // 傷害浮動 ±10%
@@ -470,7 +499,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
       var ek = ELEMENTS[i];
       var ev = (elem && elem[ek] || 0) + attachBase * (elemPct && elemPct[ek] || 0) / 100;
       if (!ev) continue;
-      var edmg = ev * elementalResistanceMultiplier(res, ek);
+      var edmg = ev * elementalResistanceMultiplier(res, ek, aCfg.level || 1);
       dmg += edmg;
       // 元素特效：冰 15% 減速 2 秒｜雷 10% 追加 80% 電擊｜毒 25% 中毒（50% 元傷/秒×4 秒）
       //          光 20% 淨化自身｜暗 汲取元傷 25% 回復

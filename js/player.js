@@ -25,7 +25,8 @@ function newForgeDefaultFurnace(id) {
     id: id,
     enabled: true,
     qualities: qualities,                        // index=品質，true=該品質裝備自動入帶拆解
-    belt: [],                                    // 傳送帶（純裝備陣列，帶頭先入爐）
+    queue: [],                                   // 專屬佇列（總佇列派發而來；帶尾 +N＝此佇列件數）
+    belt: [],                                    // 傳送帶（純裝備陣列，帶頭先入爐；自專屬佇列補位）
     timer: 0,
     partSlots: NEW_FORGE_PART_SLOTS_INITIAL,     // 已解鎖零件格數（金幣逐格解鎖至 8）
     parts: []                                    // 已置入零件快照（提供該爐拆解加成）

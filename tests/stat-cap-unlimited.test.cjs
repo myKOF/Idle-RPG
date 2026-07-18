@@ -50,10 +50,13 @@ test('globalDamageReduction：上限 0 代表無上限（減傷率趨近 100%）
   assert.ok(c.globalDamageReduction(1e12) > 0.99);         // 上限 0 → 無上限，趨近 1
 });
 
-test('formula.js：屬性上限一律經 capValue（不再直接 clamp(.,0,STAT_CAPS)）', () => {
+test('formula.js：抗性不再使用 STAT_CAPS 上限', () => {
   const formula = fs.readFileSync(path.join(root, 'js/formula.js'), 'utf8');
   assert.doesNotMatch(formula, /clamp\([^)]*,\s*0,\s*STAT_CAPS\./);
   assert.doesNotMatch(formula, /Math\.min\([^)]*STAT_CAPS\./);
   assert.match(formula, /st\.critRate = capValue\(/);
-  assert.match(formula, /resist\[e2\] = capValue\(resist\[e2\], STAT_CAPS\.elemRes\)/);
+  assert.doesNotMatch(formula, /STAT_CAPS\.(pRes|mRes|elemRes)/);
+  assert.match(formula, /physicalResistanceReduction/);
+  assert.match(formula, /magicResistanceReduction/);
+  assert.match(formula, /elementalResistanceReduction/);
 });

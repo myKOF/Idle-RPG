@@ -47,18 +47,226 @@ function renderDetailLog() {
   }).join('');
 }
 
+/* ---- 熔爐日誌統計狀態與函式 ---- */
+var newForgeLogStartTime = null;
+var newForgeLogStatsInterval = null;
+var newForgeCumulativeStats = {
+  logCount: 0,
+  scrap: 0,
+  essence: 0,
+  ancientEssence: 0,
+  books: {},
+  parts: {}
+};
+
+function accumulateNewForgeLog(msg) {
+  newForgeCumulativeStats.logCount++;
+
+  var scrapMatch = msg.match(/碎片x(\d+)/);
+  if (scrapMatch) newForgeCumulativeStats.scrap += parseInt(scrapMatch[1], 10);
+
+  var essenceMatch = msg.match(/附魔精華x(\d+)/);
+  if (essenceMatch) newForgeCumulativeStats.essence += parseInt(essenceMatch[1], 10);
+
+  var ancientMatch = msg.match(/太古精華x(\d+)/);
+  if (ancientMatch) newForgeCumulativeStats.ancientEssence += parseInt(ancientMatch[1], 10);
+
+  var bookRegex = /📖([^（）x、，\s\>]+)/g;
+  var bookMatch;
+  while ((bookMatch = bookRegex.exec(msg)) !== null) {
+    var bookName = bookMatch[1];
+    newForgeCumulativeStats.books[bookName] = (newForgeCumulativeStats.books[bookName] || 0) + 1;
+  }
+
+  var partRegex = /⛏️([^（）x、，\>]+)/g;
+  var partMatch;
+  while ((partMatch = partRegex.exec(msg)) !== null) {
+    var partName = partMatch[1].trim();
+    var foundKey = null;
+    var nameKeys = Object.keys(PART_TYPES);
+    for (var j = 0; j < nameKeys.length; j++) {
+      var k = nameKeys[j];
+      if (partName.indexOf(PART_TYPES[k].name) === 0) {
+        foundKey = k;
+        break;
+      }
+    }
+    newForgeCumulativeStats.parts[partName] = {
+      count: ((newForgeCumulativeStats.parts[partName] && newForgeCumulativeStats.parts[partName].count) || 0) + 1,
+      key: foundKey
+    };
+  }
+}
+
+function resetNewForgeCumulativeStats() {
+  newForgeCumulativeStats = {
+    logCount: 0,
+    scrap: 0,
+    essence: 0,
+    ancientEssence: 0,
+    books: {},
+    parts: {}
+  };
+}
+
+function getNewForgeLogStats() {
+  var stats = {
+    duration: 0,
+    mats: {
+      scrap: newForgeCumulativeStats.scrap,
+      essence: newForgeCumulativeStats.essence,
+      ancientEssence: newForgeCumulativeStats.ancientEssence,
+      books: newForgeCumulativeStats.books,
+      parts: newForgeCumulativeStats.parts
+    }
+  };
+
+  if (newForgeLogStartTime && newForgeCumulativeStats.logCount > 0) {
+    stats.duration = Math.floor((Date.now() - newForgeLogStartTime) / 1000);
+  }
+  return stats;
+}
+
+function getInstalledPartsStats() {
+  var counts = {};
+  var nf = typeof newForgeState === 'function' ? newForgeState() : (G && G.newForge);
+  if (nf && nf.furnaces) {
+    for (var i = 0; i < nf.furnaces.length; i++) {
+      var fu = nf.furnaces[i];
+      if (fu && fu.parts) {
+        for (var j = 0; j < fu.parts.length; j++) {
+          var p = fu.parts[j];
+          if (p && p.key) {
+            counts[p.key] = (counts[p.key] || 0) + 1;
+          }
+        }
+      }
+    }
+  }
+  return counts;
+}
+
+function formatDuration(sec) {
+  if (sec <= 0) return '0 秒';
+  var h = Math.floor(sec / 3600);
+  var m = Math.floor((sec % 3600) / 60);
+  var s = sec % 60;
+  var str = '';
+  if (h > 0) str += h + ' 小時 ';
+  if (m > 0 || h > 0) str += m + ' 分 ';
+  str += s + ' 秒';
+  return str;
+}
+
+function renderNewForgeLogStats() {
+  var container = $id('newforge-detail-log-stats');
+  if (!container) return;
+
+  var stats = getNewForgeLogStats();
+  var partCounts = getInstalledPartsStats();
+
+  var html = '';
+
+  // 1. 統計時長
+  html += '<div class="stats-sec">';
+  html += '  <div class="stats-sec-title">⏳ 統計資訊</div>';
+  html += '  <div class="stats-row">';
+  html += '    <span>統計時長</span>';
+  html += '    <span class="stats-value">' + formatDuration(stats.duration) + '</span>';
+  html += '  </div>';
+  html += '  <div class="stats-row">';
+  html += '    <span>累計日誌筆數</span>';
+  html += '    <span class="stats-value">' + newForgeCumulativeStats.logCount + ' 筆</span>';
+  html += '  </div>';
+  html += '</div>';
+
+  // 2. 當前所有熔爐零件類型裝置數量
+  html += '<div class="stats-sec">';
+  html += '  <div class="stats-sec-title">🔧 熔爐零件配置 (所有總值)</div>';
+  var partKeys = Object.keys(PART_TYPES).filter(function(k) { return PART_TYPES[k].node === 'salvage'; });
+  var hasParts = false;
+  for (var i = 0; i < partKeys.length; i++) {
+    var k = partKeys[i];
+    var pt = PART_TYPES[k];
+    var count = partCounts[k] || 0;
+    if (count > 0) {
+      hasParts = true;
+      html += '  <div class="stats-row">';
+      html += '    <span style="display:flex; align-items:center; gap:4px;">' + partIconHTML(k) + esc(pt.name) + '</span>';
+      html += '    <span class="stats-value">x ' + count + '</span>';
+      html += '  </div>';
+    }
+  }
+  if (!hasParts) {
+    html += '  <div class="hint" style="text-align:center; padding: 8px 0; color: var(--dim)">當前所有熔爐均未安裝零件</div>';
+  }
+  html += '</div>';
+
+  // 3. 各材料獲得數量
+  html += '<div class="stats-sec">';
+  html += '  <div class="stats-sec-title">📦 材料獲得統計</div>';
+  html += '  <div class="stats-mats-grid">';
+  
+  html += '    <div class="stats-mat-card">';
+  html += '      <span class="stats-mat-name"><img src="images/icon_scrap.png" class="res-icon" alt="">裝備碎片</span>';
+  html += '      <span class="stats-mat-val">' + fmt(stats.mats.scrap) + '</span>';
+  html += '    </div>';
+  
+  html += '    <div class="stats-mat-card">';
+  html += '      <span class="stats-mat-name"><img src="images/icon_essence.png" class="res-icon" alt="">附魔精華</span>';
+  html += '      <span class="stats-mat-val">' + fmt(stats.mats.essence) + '</span>';
+  html += '    </div>';
+  
+  html += '    <div class="stats-mat-card">';
+  html += '      <span class="stats-mat-name"><img src="images/icon_ancient_essence.png" class="res-icon" alt="">太古精華</span>';
+  html += '      <span class="stats-mat-val">' + fmt(stats.mats.ancientEssence) + '</span>';
+  html += '    </div>';
+
+  html += '  </div>';
+
+  var bookNames = Object.keys(stats.mats.books);
+  var partNames = Object.keys(stats.mats.parts);
+  
+  if (bookNames.length > 0 || partNames.length > 0) {
+    html += '  <div class="stats-sec-title" style="margin-top: 12px; font-size: 12px;">✨ 額外回收項目</div>';
+    
+    for (var b = 0; b < bookNames.length; b++) {
+      var bn = bookNames[b];
+      html += '  <div class="stats-row">';
+      html += '    <span style="display:flex; align-items:center; gap:4px;"><img src="images/icon_books.png" class="res-icon" alt="" style="margin-right:2px; width:18px; height:18px;">附魔書：' + esc(bn) + '</span>';
+      html += '    <span class="stats-value">x ' + stats.mats.books[bn] + '</span>';
+      html += '  </div>';
+    }
+    
+    for (var p = 0; p < partNames.length; p++) {
+      var pn = partNames[p];
+      var partData = stats.mats.parts[pn];
+      var iconHtml = partData.key ? partIconHTML(partData.key) : '';
+      html += '  <div class="stats-row">';
+      html += '    <span style="display:flex; align-items:center; gap:4px;">' + iconHtml + '零件：' + esc(pn) + '</span>';
+      html += '    <span class="stats-value">x ' + partData.count + '</span>';
+      html += '  </div>';
+    }
+  }
+
+  html += '</div>';
+
+  container.innerHTML = html;
+}
+
 function renderNewForgeDetailLog() {
   var box = $id('newforge-detail-log-content');
   if (!box) return;
   var rows = NEWFORGE_LOG_HISTORY;
   if (!rows.length) {
     box.innerHTML = '<div class="detail-log-empty">目前沒有熔爐日誌</div>';
-    return;
+  } else {
+    box.innerHTML = rows.map(function (entry) {
+      return '<div class="detail-log-line ' + (entry.cls || '') + '">' +
+        '<span class="detail-log-time">' + esc(entry.time) + '</span>' + entry.msg + '</div>';
+    }).join('');
   }
-  box.innerHTML = rows.map(function (entry) {
-    return '<div class="detail-log-line ' + (entry.cls || '') + '">' +
-      '<span class="detail-log-time">' + esc(entry.time) + '</span>' + entry.msg + '</div>';
-  }).join('');
+  renderNewForgeLogStats();
 }
 
 function refreshNewForgeMainLog() {
@@ -77,6 +285,10 @@ function refreshNewForgeMainLog() {
 function addLog(elId, msg, cls, cap, cat) {
   if (elId === 'newforge-log') {
     var now = new Date();
+    if (!newForgeLogStartTime) {
+      newForgeLogStartTime = Date.now();
+    }
+    accumulateNewForgeLog(msg);
     NEWFORGE_LOG_HISTORY.unshift({
       msg: msg,
       cls: cls || '',
@@ -1638,7 +1850,6 @@ function renderNewForge() {
 function nfUpdateBelts(list) {
   var nodes = list.querySelectorAll('[data-nf-belt]');
   if (!nodes.length) return;
-  var pending = newForgePendingCounts(); // 整條佇列單次掃描，各帶共用
   for (var i = 0; i < nodes.length; i++) {
     var node = nodes[i];
     var fu = findNewForgeFurnace(parseInt(node.getAttribute('data-nf-belt'), 10));
@@ -1649,19 +1860,21 @@ function nfUpdateBelts(list) {
       node.innerHTML = html;
     }
   }
-  // 帶尾固定 +N 區：只換文字，空間恆定不變動版面
+  // 帶尾固定 +N 區：只換文字，空間恆定不變動版面。
+  // +N＝該爐「專屬佇列」真實件數（各爐獨立，非共用計數；顯示封頂 +9999、tooltip 精確）。
   var mores = list.querySelectorAll('[data-nf-more]');
   for (var m = 0; m < mores.length; m++) {
     var moreNode = mores[m];
-    var wait = pending[parseInt(moreNode.getAttribute('data-nf-more'), 10)] || 0;
+    var moreFu = findNewForgeFurnace(parseInt(moreNode.getAttribute('data-nf-more'), 10));
+    var wait = (moreFu && moreFu.queue) ? moreFu.queue.length : 0;
     var text = wait > 0 ? '+' + (wait > 9999 ? '9999' : wait) : '';
     if (moreNode._nfMoreText !== text) {
       moreNode._nfMoreText = text;
       moreNode.textContent = text;
-      if (wait > 0) moreNode.setAttribute('data-tip', '尚未進入輸送帶的裝備：' + fmtFull(wait) + ' 件');
+      if (wait > 0) moreNode.setAttribute('data-tip', '此熔爐專屬佇列：' + fmtFull(wait) + ' 件（自總佇列派發，等待進入傳送帶）');
       else moreNode.removeAttribute('data-tip');
     } else if (wait > 0) {
-      moreNode.setAttribute('data-tip', '尚未進入輸送帶的裝備：' + fmtFull(wait) + ' 件');
+      moreNode.setAttribute('data-tip', '此熔爐專屬佇列：' + fmtFull(wait) + ' 件（自總佇列派發，等待進入傳送帶）');
     }
   }
 }
@@ -1684,9 +1897,11 @@ function bindNewForgeEvents() {
     if (el.hasAttribute('data-nf-qual')) {
       var r = parseInt(el.getAttribute('data-nf-qual'), 10);
       if (r >= 0 && r < GODFORGED_IDX) fu.qualities[r] = el.checked;
+      newForgeReturnUnroutable(fu); // 取消勾選的品質自專屬佇列退回總佇列重新派發
       UI.dirty.newforge = true;
     } else if (el.hasAttribute('data-nf-on')) {
       fu.enabled = el.checked;
+      newForgeReturnUnroutable(fu); // 停用：專屬佇列退回總佇列
       UI.dirty.newforge = true;
     }
   });
@@ -4367,13 +4582,25 @@ function initUI() {
     if (!nfDetailLogModal) return;
     nfDetailLogModal.style.display = 'none';
     nfDetailLogModal.setAttribute('aria-hidden', 'true');
+    if (newForgeLogStatsInterval) {
+      clearInterval(newForgeLogStatsInterval);
+      newForgeLogStatsInterval = null;
+    }
   }
 
   if (nfDetailLogBtn && nfDetailLogModal) {
     nfDetailLogBtn.addEventListener('click', function () {
+      if (!newForgeLogStartTime && NEWFORGE_LOG_HISTORY.length > 0) {
+        newForgeLogStartTime = Date.now();
+      }
       renderNewForgeDetailLog();
       nfDetailLogModal.style.display = 'flex';
       nfDetailLogModal.setAttribute('aria-hidden', 'false');
+
+      if (newForgeLogStatsInterval) clearInterval(newForgeLogStatsInterval);
+      newForgeLogStatsInterval = setInterval(function () {
+        renderNewForgeLogStats();
+      }, 1000);
     });
     if (nfDetailLogClose) nfDetailLogClose.addEventListener('click', closeNfDetailLog);
     nfDetailLogModal.addEventListener('click', function (e) {
@@ -4382,6 +4609,8 @@ function initUI() {
     if (nfDetailLogClear) {
       nfDetailLogClear.addEventListener('click', function () {
         NEWFORGE_LOG_HISTORY.length = 0;
+        newForgeLogStartTime = null;
+        resetNewForgeCumulativeStats();
         var box = $id('newforge-log');
         if (box) box.innerHTML = '';
         renderNewForgeDetailLog();
