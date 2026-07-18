@@ -83,7 +83,7 @@ function computeStats(equipmentOverride) {
   var A = {
     str: prim.str, agi: prim.agi, int: prim.int, vit: prim.vit,
     hpFlat: 0, hpPct: 0, atkFlat: 0, atkPct: 0, matkFlat: 0, matkPct: 0,
-    defFlat: 0, defPct: 0, mdefFlat: 0, mpFlat: 0,
+    defFlat: 0, defPct: 0, mdefFlat: 0, mdefPct: 0, mpFlat: 0,
     hpRegen: 0, mpRegen: 0, aspdPct: 0, critRate: 0, critDmg: 0,
     pPen: 0, mPen: 0, hit: 0, cdr: 0, castSpeed: 0, lifesteal: 0, manaSteal: 0,
     eliteDmg: 0, bossDmg: 0, normalDmg: 0, aoeDmg: 0, globalDmgRed: 0,
@@ -193,7 +193,7 @@ function computeStats(equipmentOverride) {
   A.int *= 1 + (talent.intPct || 0) / 100;
   A.vit *= 1 + (talent.vitPct || 0) / 100;
   A.hpPct += talent.hpPct || 0;
-  // 天賦「物防/魔防鍛體、重甲/魔鎧共鳴」＝獨立乘區（連乘），於派生段套用，不併入裝備物防%桶。
+  // 天賦「物防/魔防鍛體、重甲/魔鎧共鳴」＝獨立乘區（連乘），於派生段套用，不併入裝備物防%/魔防%桶。
   A.critRate += talent.critRate || 0;
   A.critDmg += talent.critDmg || 0;
   A.hit += talent.hit || 0;
@@ -230,12 +230,20 @@ function computeStats(equipmentOverride) {
   var rawMp = st.base.mp + A.mpFlat;
   st.mp = Math.round(rawMp * reincMult);
   st.mpRegen = 2 + st.int * PRIMARY_STAT_EFFECTS.intMpRegen + A.mpRegen;
-  // 進攻：物攻 = (8 + (等級-1)×1.6 + 力量×2 + 定值) × (1 + 物攻%)
-  st.base.atk = 8 + (lv - 1) * 1.6 + st.str * PRIMARY_STAT_EFFECTS.strAtk;
-  st.atk = Math.round((st.base.atk + A.atkFlat) * (1 + A.atkPct / 100) * godAttackMultiplier);
-  // 魔攻 = (6 + (等級-1)×1.2 + 智力×2 + 定值) × (1 + 魔攻%)
-  st.base.matk = 6 + (lv - 1) * 1.2 + st.int * PRIMARY_STAT_EFFECTS.intMatk;
-  st.matk = Math.round((st.base.matk + A.matkFlat) * (1 + A.matkPct / 100) * godAttackMultiplier);
+  // 進攻／防禦定值的轉生指數強化：flatMult × 定值 × reincBase^轉生次數（0 轉時 = flatMult×定值）
+  var reincN = reincarnationCount();
+  st.reincFlatBonus = {
+    atk: DERIVED_COEF.atkFlatMult * A.atkFlat * Math.pow(DERIVED_COEF.atkReincBase, reincN),
+    matk: DERIVED_COEF.matkFlatMult * A.matkFlat * Math.pow(DERIVED_COEF.matkReincBase, reincN),
+    def: DERIVED_COEF.defFlatMult * A.defFlat * Math.pow(DERIVED_COEF.defReincBase, reincN),
+    mdef: DERIVED_COEF.mdefFlatMult * A.mdefFlat * Math.pow(DERIVED_COEF.mdefReincBase, reincN)
+  };
+  // 進攻：物攻 = (8 + 物攻定值 + 1.2×物攻定值×2.8^轉生次數 + 力量×1) × (1 + 物攻%)
+  st.base.atk = DERIVED_COEF.atkBase + st.str * PRIMARY_STAT_EFFECTS.strAtk;
+  st.atk = Math.round((st.base.atk + A.atkFlat + st.reincFlatBonus.atk) * (1 + A.atkPct / 100) * godAttackMultiplier);
+  // 魔攻 = (6 + 魔攻定值 + 1.2×魔攻定值×2.8^轉生次數 + 智力×1) × (1 + 魔攻%)
+  st.base.matk = DERIVED_COEF.matkBase + st.int * PRIMARY_STAT_EFFECTS.intMatk;
+  st.matk = Math.round((st.base.matk + A.matkFlat + st.reincFlatBonus.matk) * (1 + A.matkPct / 100) * godAttackMultiplier);
   st.critRate = capValue(5 + st.agi * PRIMARY_STAT_EFFECTS.agiCritRate + A.critRate, STAT_CAPS.critRate);   // 暴擊率：基礎 5% + 敏捷係數
   st.critDmg = 150 + A.critDmg;                                  // 暴擊傷害：基礎 150%
   st.comboHits = comboHitsFor(st.critRate);                     // 連擊數：暴擊率破 100% 衍生的額外攻擊次數（僅普攻／技能直接傷害，持續傷害不計）
@@ -264,12 +272,12 @@ function computeStats(equipmentOverride) {
   st.normalDmgRed = A.normalDmgRed;   // 敵種傷害抗性（定值；減傷公式 enemyTypeDamageReduction → §3）
   st.eliteDmgRed = A.eliteDmgRed;
   st.bossDmgRed = A.bossDmgRed;
-  // 防禦：物防 = (4 + (等級-1)×1.0 + 耐力×0.9 + 定值) × (1 + 物防%) × (1 + 天賦物防%［獨立乘區］)
-  st.base.def = 4 + (lv - 1) * 1.0 + st.vit * PRIMARY_STAT_EFFECTS.vitDef;
-  st.def = Math.round((st.base.def + A.defFlat) * (1 + A.defPct / 100) * (1 + (talent.defPct || 0) / 100));
-  // 魔防 = (3 + (等級-1)×0.8 + 智力×0.7 + 定值) × (1 + 物防%［共用］) × (1 + 天賦魔防%［獨立乘區］)
-  st.base.mdef = 3 + (lv - 1) * 0.8 + st.int * PRIMARY_STAT_EFFECTS.intMdef;
-  st.mdef = Math.round((st.base.mdef + A.mdefFlat) * (1 + A.defPct / 100) * (1 + (talent.mdefPct || 0) / 100));
+  // 防禦：物防 = (3 + 物防定值 + 0.75×物防定值×2.7^轉生次數 + 力量×0.35 + 耐力×0.65) × (1 + 物防%) × (1 + 天賦物防%［獨立乘區］)
+  st.base.def = DERIVED_COEF.defBase + st.str * PRIMARY_STAT_EFFECTS.strDef + st.vit * PRIMARY_STAT_EFFECTS.vitDef;
+  st.def = Math.round((st.base.def + A.defFlat + st.reincFlatBonus.def) * (1 + A.defPct / 100) * (1 + (talent.defPct || 0) / 100));
+  // 魔防 = (2 + 魔防定值 + 0.75×魔防定值×2.7^轉生次數 + 智力×0.35 + 耐力×0.65) × (1 + 魔防%) × (1 + 天賦魔防%［獨立乘區］)
+  st.base.mdef = DERIVED_COEF.mdefBase + st.int * PRIMARY_STAT_EFFECTS.intMdef + st.vit * PRIMARY_STAT_EFFECTS.vitMdef;
+  st.mdef = Math.round((st.base.mdef + A.mdefFlat + st.reincFlatBonus.mdef) * (1 + A.mdefPct / 100) * (1 + (talent.mdefPct || 0) / 100));
   st.blockRate = capValue(A.blockRate, STAT_CAPS.blockRate);                      // 格擋率上限（上限 0＝無上限）
   st.blockDmgRed = capValue(A.blockDmgRed, STAT_CAPS.blockDmgRed);                  // 額外格擋減傷上限（總減傷 = 30% + 此值；上限 0＝不夾上限）
   st.evasion = capValue(st.agi * PRIMARY_STAT_EFFECTS.agiEvasion + A.evasion, STAT_CAPS.evasion);          // 閃避：敏捷係數（上限 0＝無上限）
@@ -582,6 +590,7 @@ function resistCtrl(dCfg) {
    護盾上限 = 最大生命 × SHIELD_HEAL_CAP_PCT% × (1 + 護盾效率%) */
 var SHIELD_HEAL_CAP_PCT = 10;   // 治療轉化護盾上限（占最大生命 %）
 var SHIELD_OVERFLOW_PCT = 1;    // 溢出治療轉護盾比例（%）
+var SHIELD_SKILL_CAP_PCT = 10000; // 技能直接給予的護盾上限（占最大生命 %；10000 = 100 倍生命）
 var SHIELD_MAX_VERSION = 2;
 function refreshShieldMaxAfterGain(ent, beforeShield) {
   if (!ent) return;
@@ -619,14 +628,14 @@ function healPlayer(pEnt, amount, st) {
    §4 敵方屬性
    ============================================================ */
 
-/* ---- 野外怪物成長曲線（指數 × 線性）----
-   生命 = (30 + 階段×8)   × 1.13^(階段-1)
-   攻擊 = (6 + 階段×1.2)  × 1.10^(階段-1)
+/* ---- 野外怪物成長曲線（指數 × 線性；數值以參數表「4-野外怪物」為準）----
+   生命 = (30 + 階段×8)   × 1.095^(階段-1)
+   攻擊 = (6 + 階段×1.2)  × 1.11^(階段-1)
    防禦 = (2 + 階段×0.5)  × 1.08^(階段-1)（魔防 = 物防×0.75）
-   金幣 = (5 + 階段)      × 1.07^(階段-1)
-   經驗 = (8 + 階段)      × 1.08^(階段-1)
-   命中率 = 100% + 敵人等級×1%（敵人等級 = 階段；於 resolveHit 減去玩家閃避後最低 5%）
-   菁英：生命×2.5、攻擊×1.5、金幣/經驗×3、閃避 5%、攻速 1.25
+   金幣 = (20 + 階段)     × 1.02^(階段-1)
+   經驗 = (8 + 階段)      × 1.06^(階段-1)
+   命中率 = 100% + 敵人等級×4%、閃避率 = 10% + 敵人等級×4%（敵人等級 = 階段；於 resolveHit 相減後最低 5%）
+   菁英：生命×3、攻擊×2、金幣/經驗×2、閃避 +5%、攻速 3
    ※ 場景倍率（ZONES 的 hpMult/atkMult/defMult/rewardMult）在
      spawnFieldMonster（combat.js）套用。 */
 function monsterStatsFor(stage, elite) {

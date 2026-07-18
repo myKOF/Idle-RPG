@@ -192,17 +192,28 @@ var STAT_CAPS = {
   // 註：全局減傷上限＝GLOBAL_DMG_RED_CAP（由「2-屬性派生/全局減傷」控制）；此處不重複。
 };
 var PRIMARY_STAT_EFFECTS = {
-  strAtk: 2,
+  strAtk: 1,
+  strDef: 0.35,
   strWeight: 0.5,
-  agiCritRate: 0.00005,
+  agiCritRate: 0.00001,
   agiAspdPct: 0,
-  agiEvasion: 0.0001,
+  agiEvasion: 0.0000035,
   intMp: 2,
   intMpRegen: 0.002,
-  intMatk: 2,
-  intMdef: 0.7,
+  intMatk: 1,
+  intMdef: 0.35,
   vitHp: 10,
-  vitDef: 0.9
+  vitDef: 0.65,
+  vitMdef: 0.65
+};
+// 攻防派生係數（參數表「2-屬性派生」22~25 列）：
+// 攻擊 = (base + 定值 + flatMult×定值×reincBase^轉生次數 + 主屬性×係數) × (1 + 對應攻擊%)
+// 防禦 = (base + 定值 + flatMult×定值×reincBase^轉生次數 + 主屬性×係數 + 耐力×係數) × (1 + 共用對應攻擊%)
+var DERIVED_COEF = {
+  atkBase: 8, atkFlatMult: 1.2, atkReincBase: 2.8,
+  matkBase: 6, matkFlatMult: 1.2, matkReincBase: 2.8,
+  defBase: 3, defFlatMult: 0.75, defReincBase: 2.7,
+  mdefBase: 2, mdefFlatMult: 0.75, mdefReincBase: 2.7
 };
 // 連擊數係數：連擊數 = a·ln(暴擊率−100) + b·(暴擊率−100) + c（暴擊率 ≤100% 時為 0；由參數表「2-屬性派生／連擊數」控制）
 var COMBO_HITS_COEF = { a: 0.875, b: 0.0025, c: 0.05 };
@@ -244,7 +255,7 @@ var GODFORGE_POOL = {
   godHaste: { name: '神速', desc: '攻擊速度提高 {v}%', base: 15, stats: ['aspdPct'] },
   godSlayer: { name: '屠神', desc: '對菁英與BOSS傷害提高 {v}%', base: 30, stats: ['eliteDmg', 'bossDmg'] },
   greed: { name: '貪婪', desc: '金幣加成與掉寶率提高 {v}%', base: 25, stats: ['goldBonus', 'loot'] },
-  godWall: { name: '神壁', desc: '物理與魔法防禦提高 {v}%', base: 25, stats: ['defPct'] },
+  godWall: { name: '神壁', desc: '物理與魔法防禦提高 {v}%', base: 25, stats: ['defPct', 'mdefPct'] },
   smite: { name: '天罰', desc: '攻擊時有 {v}% 機率降下神雷，造成 250% 物理攻擊的真實傷害', base: 12 },
   annihilate: { name: '破滅', desc: '暴擊時有 {v}% 機率使本次傷害翻倍', base: 15 },
   sanctuary: { name: '聖佑', desc: '受到的所有傷害降低 {v}%', base: 8 },
@@ -480,11 +491,11 @@ var TOWER_BOSS_REF_STAGE_BASE = 4;
 var TOWER_BOSS_REF_STAGE_PER_FLOOR = 5;
 var TOWER_BOSS_LEVEL_BONUS = 3;
 var TOWER_BOSS_HIT_BASE = 200;
-var TOWER_BOSS_HIT_PER_FLOOR = 20;
+var TOWER_BOSS_HIT_PER_FLOOR = 70;
 var TOWER_BASE_HP_MULT = 20;
 var TOWER_BASE_ATK_MULT = 3;
 var TOWER_BOSS_DEF_MULT = 10;
-var TOWER_BOSS_ASPD = 5;
+var TOWER_BOSS_ASPD = 3;
 var TOWER_BOSS_CTRL_RES = 70;
 var TOWER_BOSS_DODGE_BASE = 20;
 var TOWER_BOSS_DODGE_CAP = 10000000;
@@ -728,9 +739,9 @@ var BOSS_DROP_TABLE = [    // 高塔 BOSS：依樓層 7 檔（與掉落表加總
 function statFmt(val, cap, type, prefix) {
   var s = '';
   if (type === '%') s = pctStr(val);
-  else if (type === '/s') s = fmt(val) + '/秒';
+  else if (type === '/s') s = colorizeUnit(fmt(val)) + '/秒';
   else if (type === 'raw1') s = fmt1(val);
-  else s = fmt(val);
+  else s = colorizeUnit(fmt(val));
   if (prefix) s = '+' + s;
   // 上限 0（或 null）代表無上限，不做「達上限」金色標示。
   if (cap !== null && cap > 0 && val >= cap) return '<span style="color: #ffd700;">' + s + '</span>';
@@ -759,6 +770,7 @@ function primaryStatDesc(key) {
   var defs = {
     str: [
       { k: 'strAtk', unit: '點', label: '物理攻擊力' },
+      { k: 'strDef', unit: '點', label: '物理防禦' },
       { k: 'strWeight', unit: '點', label: '負重上限' }
     ],
     agi: [
@@ -774,7 +786,8 @@ function primaryStatDesc(key) {
     ],
     vit: [
       { k: 'vitHp', unit: '點', label: '生命上限' },
-      { k: 'vitDef', unit: '點', label: '物理防禦' }
+      { k: 'vitDef', unit: '點', label: '物理防禦' },
+      { k: 'vitMdef', unit: '點', label: '魔法防禦' }
     ]
   }[key] || [];
   var parts = [];
@@ -794,16 +807,18 @@ function blockDmgReduction(extra) {
   return capValue(BLOCK_DMG_RED_BASE + (extra || 0), blockDmgRedTotalCap());
 }
 
-function statDesc(st, baseDesc, label, keyBase, pctKey) {
+function statDesc(st, baseDesc, label, keyBase, pctKey, pctNote) {
   if (!st.A) return baseDesc;
   var flat = st.A[keyBase + 'Flat'] || 0;
   var pct = pctKey ? (st.A[pctKey] || 0) : 0;
   var base = (st.base && st.base[keyBase]) ? st.base[keyBase] : 0;
+  var reincBonus = (st.reincFlatBonus && st.reincFlatBonus[keyBase]) || 0;
   var s = baseDesc + '<br><br><span style="color:#aaa">';
   s += label + '總值：<span style="color:#fff">' + fmt(st[keyBase]) + '</span>';
   if (base !== 0) s += '<br>' + label + '基礎：<span style="color:#fff">' + fmt(base) + '</span>';
   if (flat !== 0) s += '<br>' + label + '定值加成：<span style="color:#fff">' + (flat > 0 ? '+' : '') + fmt(flat) + '</span>';
-  if (pct !== 0) s += '<br>' + label + '百分比加成：<span style="color:#fff">' + (pct > 0 ? '+' : '') + pctStr(pct) + '</span>';
+  if (reincBonus !== 0) s += '<br>' + label + '轉生強化（定值×係數×指數^轉生）：<span style="color:#fff">' + (reincBonus > 0 ? '+' : '') + fmt(reincBonus) + '</span>';
+  if (pct !== 0) s += '<br>' + label + '百分比加成' + (pctNote || '') + '：<span style="color:#fff">' + (pct > 0 ? '+' : '') + pctStr(pct) + '</span>';
   s += '</span>';
   return s;
 }
@@ -828,8 +843,8 @@ function defenseReductionDesc(st, keyBase) {
   return '<br><br><span style="color:#ffd700">目前同級減傷率：' + pctStrFloor4(reduction) + '</span>';
 }
 
-function defenseStatDesc(st, baseDesc, label, keyBase, pctKey) {
-  return statDesc(st, baseDesc, label, keyBase, pctKey) + defenseReductionDesc(st, keyBase);
+function defenseStatDesc(st, baseDesc, label, keyBase, pctKey, pctNote) {
+  return statDesc(st, baseDesc, label, keyBase, pctKey, pctNote) + defenseReductionDesc(st, keyBase);
 }
 
 function resistanceReductionDesc(st, value, reductionFn) {
@@ -860,8 +875,8 @@ var STAT_GROUPS = [
   },
   {
     title: '進攻屬性', rows: [
-      ['⚔️ 物理攻擊', function (st) { return statFmt(st.atk, null); }, function (st) { return statDesc(st, '影響普攻與多數物理技能的傷害基礎。', '物理攻擊', 'atk', 'atkPct'); }],
-      ['🔮 魔法攻擊', function (st) { return statFmt(st.matk, null); }, function (st) { return statDesc(st, '影響多數魔法技能的傷害基礎。', '魔法攻擊', 'matk', 'matkPct'); }],
+      ['⚔️ 物理攻擊', function (st) { return statFmt(st.atk, null); }, function (st) { return statDesc(st, '影響普攻與多數物理技能的傷害基礎。由力量派生；裝備等「定值加成」會依轉生次數獲得指數強化。', '物理攻擊', 'atk', 'atkPct'); }],
+      ['🔮 魔法攻擊', function (st) { return statFmt(st.matk, null); }, function (st) { return statDesc(st, '影響多數魔法技能的傷害基礎。由智力派生；裝備等「定值加成」會依轉生次數獲得指數強化。', '魔法攻擊', 'matk', 'matkPct'); }],
       ['💥 暴擊率', function (st) { return statFmt(st.critRate, STAT_CAPS.critRate, '%'); }, '攻擊時造成額外暴擊傷害的機率。暴擊率 100% 為完全爆擊，超過 100% 的部分會衍生「連擊數」。' + capText(STAT_CAPS.critRate, '%')],
       ['🔗 連擊數', function (st) { return (st.comboHits || 0) > 0 ? fmt1(st.comboHits) + ' 次' : '—'; }, '暴擊率超過 100% 後衍生：普攻與技能的「直接傷害」會額外追加的攻擊次數。持續傷害不受影響。'],
       ['🩸 暴擊傷害', function (st) { return Math.round(st.critDmg) + '%'; }, '觸發暴擊時的傷害倍率。'],
@@ -881,8 +896,8 @@ var STAT_GROUPS = [
   },
   {
     title: '防禦屬性', rows: [
-      ['🛡️ 物理防禦', function (st) { return statFmt(st.def, null); }, function (st) { return defenseStatDesc(st, '根據防禦公式降低受到的物理傷害。', '物理防禦', 'def', 'defPct'); }],
-      ['🔰 魔法防禦', function (st) { return statFmt(st.mdef, null); }, function (st) { return defenseStatDesc(st, '根據防禦公式降低受到的魔法傷害。', '魔法防禦', 'mdef', 'defPct'); }],
+      ['🛡️ 物理防禦', function (st) { return statFmt(st.def, null); }, function (st) { return defenseStatDesc(st, '根據防禦公式降低受到的物理傷害。由力量與耐力派生；定值加成依轉生次數指數強化，百分比加成取自物理防禦%。', '物理防禦', 'def', 'defPct'); }],
+      ['🔰 魔法防禦', function (st) { return statFmt(st.mdef, null); }, function (st) { return defenseStatDesc(st, '根據防禦公式降低受到的魔法傷害。由智力與耐力派生；定值加成依轉生次數指數強化，百分比加成取自魔法防禦%。', '魔法防禦', 'mdef', 'mdefPct'); }],
       ['🛡️ 全局減傷', function (st) { return statFmt(st.globalDmgRed, null); }, function (st) {
         var reduction = globalDamageReduction(st.globalDmgRed) * 100;
         var capNote = GLOBAL_DMG_RED_CAP > 0 ? '（減傷上限 ' + GLOBAL_DMG_RED_CAP + '%）' : '';

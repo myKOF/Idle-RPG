@@ -149,7 +149,7 @@ var SKILLS = {
   meditation:   { name: '冥想', emoji: '🧘', cat: 'passive', flavor: '法力上限與回復提升。',
     fx: { passive: { mpFlat: 20, mpRegen: 1 } } },
   ironSkin:     { name: '鋼鐵之膚', emoji: '🛡️', cat: 'passive', flavor: '物理與魔法防禦提升。',
-    fx: { passive: { defPct: 5 } } },
+    fx: { passive: { defPct: 5, mdefPct: 5 } } },
   fortuneFavor: { name: '財運亨通', emoji: '🍀', cat: 'passive', flavor: '金幣與經驗獲取提升。',
     fx: { passive: { goldBonus: 5, xpBonus: 5 } } }
 };
@@ -683,7 +683,8 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
     var beforeShield = Math.max(0, pEnt.shield || 0);
     var shieldPct = scaleAt(fx.shieldPctMax, lv) * (1 + st.shieldEff / 100) * fxMult;
     var shieldBase = beforeShield > 0 ? Math.max(0, pEnt.shieldSkillBase || 0) || beforeShield : st.hp;
-    var targetShield = shieldBase * (1 + shieldPct / 100);
+    // 技能護盾上限 = 最大生命 × SHIELD_SKILL_CAP_PCT%（→ formula.js §3；參數表「3-戰鬥核心/護盾上限(技能給予)」）
+    var targetShield = Math.min(shieldBase * (1 + shieldPct / 100), st.hp * (SHIELD_SKILL_CAP_PCT / 100));
     pEnt.shield = Math.max(beforeShield, targetShield);
     pEnt.shieldSkillBase = shieldBase;
     pEnt.shieldSkillPct = Math.max(pEnt.shieldSkillPct || 0, shieldPct);
@@ -1046,7 +1047,7 @@ function describeSkill(id, lv) {
   if (fx.passive) {
     var names = { hpPct: '生命上限', atkPct: '物理攻擊', matkPct: '魔法攻擊', aspdPct: '攻擊速度',
       critRate: '暴擊率', critDmg: '暴擊傷害', lifesteal: '吸血', mpFlat: '法力上限',
-      mpRegen: '法力恢復/秒', defPct: '物理/魔法防禦', goldBonus: '金幣獲取', xpBonus: '經驗獲取' };
+      mpRegen: '法力恢復/秒', defPct: '物理防禦', mdefPct: '魔法防禦', goldBonus: '金幣獲取', xpBonus: '經驗獲取' };
     for (var k in fx.passive) p.push((names[k] || k) + ' +' + growStr(fmt1(fx.passive[k] * lv)) + (k === 'mpFlat' || k === 'mpRegen' ? '' : '%'));
     return '被動：' + p.join('、');
   }

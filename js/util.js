@@ -54,7 +54,7 @@ function fmt(n) {
   n = Math.floor(n);
   if (n < 0) return '-' + fmt(-n);
   if (n < 1000) return String(n);
-  var units = ['k', 'M', 'B', 'T', 'Q', 'Qi', 'Sx', 'Sp', 'O', 'N', 'D', 'Ud'];
+  var units = ['K', 'M', 'B', 'T', 'P', 'E', 'Z', 'Y', 'R', 'Q'];
   var u = Math.floor(Math.log10(n) / 3) - 1;
   if (u < 0) u = 0;
   if (u > units.length - 1) u = units.length - 1;
@@ -81,3 +81,24 @@ function esc(s) {
 }
 
 function $id(id) { return document.getElementById(id); }
+
+// 為數值簡寫單位著色
+function colorizeUnit(s) {
+  if (typeof s !== 'string') return s;
+  return s.replace(/(\d+(?:\.\d+)?)(K|M|B|T|P|E|Z|Y|R|Q)\b/gi, function(match, num, unit) {
+    var upperUnit = unit.toUpperCase();
+    var cls = '';
+    if (upperUnit === 'K') {
+      cls = 'unit-k';
+    } else if (upperUnit === 'M') {
+      cls = 'unit-m';
+    } else if (upperUnit === 'B') {
+      cls = 'unit-b';
+    } else if (upperUnit === 'T') {
+      cls = 'unit-t';
+    } else {
+      cls = 'unit-p';
+    }
+    return num + '<span class="' + cls + '">' + upperUnit + '</span>';
+  });
+}
