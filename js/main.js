@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     // 天賦系統 V2 改版公告（migrateSave 一次性重置退點時設定）
     if (G._talentRespecNotice) {
-      blog('🌟 ' + G._talentRespecNotice + '，請至【天賦】頁重新配點（新制成本＝天賦轉數+1／級）。', 'warn');
+      blog('🌟 ' + G._talentRespecNotice + '，請至【天賦】頁重新配點（新制成本＝天賦轉數+1／級，Lv.51 起每級加倍）。', 'warn');
       delete G._talentRespecNotice;
     }
     /* ONE-TIME MIGRATION: talentTreesV2RespecV1（登錄於 ONE_TIME_MIGRATIONS.md）

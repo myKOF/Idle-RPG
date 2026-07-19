@@ -2793,7 +2793,7 @@ function renderTalentModal() {
   var maxAttr = 'data-talent-max="' + def.id + '"';
   var downAttr = 'data-talent-down="' + def.id + '"';
   var deleteAttr = 'data-talent-delete="' + def.id + '"';
-  var cost = (typeof talentUpgradeCost === 'function') ? talentUpgradeCost(def.id) : turn + 1;
+  var cost = (typeof talentUpgradeCost === 'function') ? talentUpgradeCost(def.id, lv + 1) : turn + 1;
   var maxed = lv >= maxLv;
   var disabledNotice = disabled ? '<div class="hint">🔒 目前暫不開放升級</div>' : '';
   var h = '<div class="talent-modal-head"><span class="talent-modal-icon">' + def.emoji + '</span><b>' + esc(def.name) + '</b> <span class="dim-text">Lv.' + lv + '/' + maxLv + '｜' + title + '</span>' +
@@ -2823,7 +2823,7 @@ function renderTalents() {
   if (!root) return;
   var rc = reincarnationCountSafe();
   var h = '<div class="panel talent-summary"><div class="sec-title">🌟 天賦系統</div>' +
-    '<div class="hint">1 轉後開放；天賦使用轉生天賦點，升 1 級消耗＝該天賦轉數+1（例：1 轉每級 2 點、10 轉每級 11 點）。潛力是新的技能分類，與特殊、被動共用技能點，不另設潛力點。</div>' +
+    '<div class="hint">1 轉後開放；天賦使用轉生天賦點，升 1 級消耗＝該天賦轉數+1、Lv.51 起每級加倍（例：1 轉前 50 級每級 2 點、51 級起每級 4 點）。潛力是新的技能分類，與特殊、被動共用技能點，不另設潛力點。</div>' +
     '<div class="talent-point-line">轉生天賦點：<b>' + fmtFull(G.player.reincarnationTalentPoints || 0) + '</b></div></div>';
   if (rc < 1) h += '<div class="panel talent-locked-banner">🔒 天賦系統將於完成 1 轉後開放。</div>';
   for (var turn = 1; turn <= REINCARNATION_MAX; turn++) {

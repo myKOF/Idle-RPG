@@ -111,5 +111,69 @@ test('新建立帳號預設帶有完成旗標，不觸發重置退點', () => {
   context.migrateSave(state);
 
   assert.equal(state.talentTreesV2RespecV1, true);
+  assert.equal(state.talentTreesV2RespecV2, true);
   assert.equal(state.player.reincarnationTalentPoints, 0);
+});
+
+/* ---- ONE-TIME MIGRATION: talentTreesV2RespecV2（升級消耗改制第二次重置） ---- */
+
+test('第二次重置：依前一版成本（每級 轉數+1）退點，條件與彈窗同 V1', () => {
+  const context = loadSaveContext();
+  const state = context.newGameState();
+  delete state.talentTreesV2RespecV2; // V1 已完成（旗標保留）
+  state.player.reincarnations = 5;
+  state.player.reincarnationTalentPoints = 10;
+  // 前一版成本：t1_str Lv.10 → 10×2 = 20、t5_fire Lv.4 → 4×6 = 24，合計 44
+  state.player.talents.levels = { t1_str: 10, t5_fire: 4 };
+
+  context.migrateSave(state);
+
+  assert.equal(state.talentTreesV2RespecV2, true);
+  assert.equal(state.player.reincarnationTalentPoints, 10 + 44);
+  assert.equal(state.player.talents.levels.t1_str, 0);
+  assert.equal(state.player.talents.levels.t5_fire, 0);
+  assert.match(state._talentRespecNotice || '', /退還 44 點/);
+  assert.equal(state._talentRespecConfirm, true);
+});
+
+test('第二次重置冪等：旗標存在不再退點；0 轉即使有等級也不彈窗', () => {
+  const context = loadSaveContext();
+  const state = context.newGameState();
+  delete state.talentTreesV2RespecV2;
+  state.player.reincarnations = 2;
+  state.player.talents.levels = { t1_str: 10 };
+
+  context.migrateSave(state);
+  const after = state.player.reincarnationTalentPoints;
+  assert.equal(after, 20);
+  delete state._talentRespecNotice;
+  delete state._talentRespecConfirm;
+  context.migrateSave(state);
+  assert.equal(state.player.reincarnationTalentPoints, after);
+  assert.equal(state._talentRespecConfirm, undefined);
+
+  // 0 轉（GM 邊界）：退點但不彈窗
+  const s0 = context.newGameState();
+  delete s0.talentTreesV2RespecV2;
+  s0.player.reincarnations = 0;
+  s0.player.talents.levels = { t1_str: 10 };
+  context.migrateSave(s0);
+  assert.equal(s0.player.reincarnationTalentPoints, 20);
+  assert.equal(s0._talentRespecConfirm, undefined);
+});
+
+test('跳版舊檔（V1/V2 旗標皆缺）：V1 退舊制點數後 V2 不重複退點，彈窗只設一次', () => {
+  const context = loadSaveContext();
+  const state = context.newGameState();
+  delete state.talentTreesV2RespecV1;
+  delete state.talentTreesV2RespecV2;
+  state.player.reincarnations = 3;
+  state.player.talents.levels = { t1_str: 8 }; // 舊制：8×9/2 = 36
+
+  context.migrateSave(state);
+
+  assert.equal(state.talentTreesV2RespecV1, true);
+  assert.equal(state.talentTreesV2RespecV2, true);
+  assert.equal(state.player.reincarnationTalentPoints, 36); // 只退一次（V2 看到空天賦）
+  assert.equal(state._talentRespecConfirm, true);
 });

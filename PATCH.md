@@ -1,5 +1,13 @@
 # PATCH.md
 
+## 變更紀錄：天賦升級消耗改制（Lv.51 起加倍）＋第二次一次性重置（2026-07-19）
+
+- **成本改制**（js/talents.js）：`talentUpgradeCost(id, targetLv)` —— Lv.1～50 每級 = 該天賦轉數+1、Lv.51～100 每級**加倍** = (轉數+1)×2（1 轉 2/4 點、2 轉 3/6 點…10 轉 11/22 點）；新增 `talentTotalCost` 累計成本；降級退當級成本、清除退累計成本、`talentSpentPoints` 同步。
+- **UI**（js/ui.js）：彈窗「消耗天賦點」依下一級目標等級顯示（跨 51 級自動加倍）；天賦頁提示文案更新。js/main.js 重置公告文案補「Lv.51 起每級加倍」。
+- **存檔遷移**（ONE-TIME MIGRATION `talentTreesV2RespecV2`，js/save.js＋js/player.js）：第二次一次性重置——依**前一版成本**（每級 轉數+1）退還天賦點；條件與二次確認窗訊息與上次相同（已 1 轉且曾升級任一天賦 → 「天賦系統已重新改造，請重新配置！」）；跳版舊檔 V1→V2 連跑不重複退點/彈窗；登錄於 ONE_TIME_MIGRATIONS.md。
+- 測試：talents.test.cjs 成本測試改寫（含 50→51 加倍邊界）＋ talent-respec-migration.test.cjs 新增 V2 重置 3 項；build 過、全套零新增失敗；隔離埠實測。
+- 文件：game_formula.md §1/§10、PLAN.md、ONE_TIME_MIGRATIONS.md 同步。
+
 ## 變更紀錄：天賦系統 V2——擴充至 10 轉（2026-07-19）
 
 - 依《天賦V2.xlsx》全面改版天賦系統：天賦樹重排並擴充為 **1～10 轉共 80 個節點**（`js/data.js` TALENT_TREES、`TALENT_IMPLEMENTED_REINCARNATIONS = 10`）；既有介面沿用（1～10 轉列表由既有迴圈渲染），未新增介面。

@@ -13,6 +13,29 @@
 
 ## 目前登錄與規劃中的遷移
 
+### `talentTreesV2RespecV2`：天賦升級消耗改制（Lv.51 起加倍）第二次重置退點
+
+**狀態：已實作（2026-07-19）。**
+
+**目的**：天賦升級消耗改制——Lv.1～50 每級 = 轉數+1、Lv.51～100 每級加倍 = (轉數+1)×2。已依前一版成本（每級 轉數+1 固定值）配點的外部玩家需重新配置，故再次重置天賦並依**前一版成本**退還天賦點。
+
+**執行時機**：
+
+- 在 `migrateSave(data)` 的 `talentTreesV2RespecV1` 區塊之後、依新天賦樹補齊等級之前執行。
+- 以 `data.talentTreesV2RespecV2` 作為一次性完成標記；新帳號由 `newGameState` 預先標記完成。
+
+**處理範圍**：
+
+- 依 `talentList()` 逐節點以 `等級 × (轉數 + 1)` 累計退點後，`levels` 與 `potentialLevels` 全數清空；退點加入 `data.player.reincarnationTalentPoints`。
+- 有退點時設定 `data._talentRespecNotice`（戰鬥日誌公告）；「已 1 轉且曾升級任一天賦」（退點 > 0 且 `reincarnations ≥ 1`）時另設 `data._talentRespecConfirm`，由 `main.js` 彈出與 V1 相同的一次性二次確認窗「天賦系統已重新改造，請重新配置！」。
+- 跳版舊檔（V1/V2 旗標皆缺）：V1 先清空天賦並退舊制點數，V2 此時看到空天賦 → 不重複退點、不重複彈窗。
+
+**保留資料／冪等條件**：同 `talentTreesV2RespecV1`；標記寫入後重複讀檔不再退點。
+
+**測試方式**：`tests/talent-respec-migration.test.cjs` 驗證前一版成本退點、彈窗條件、冪等、跳版舊檔不重複退點、新帳號不觸發。
+
+**日後清理**：與 `talentTreesV2RespecV1` 一同下線（兩塊 `ONE-TIME MIGRATION` 區塊、`js/player.js` 兩個旗標、`js/main.js` 公告與確認窗區塊）。
+
 ### `talentTreesV2RespecV1`：天賦系統 V2（1～10 轉）改版重置退點
 
 **狀態：已實作（2026-07-19）。**

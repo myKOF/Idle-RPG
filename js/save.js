@@ -288,6 +288,7 @@ function migrateSave(data) {
   var hadNormalDmgAffixScaleV4 = !!data.normalDmgAffixScaleV4; // 一次性縮回錯誤放大的普通敵人傷害詞條
   var hadExternalGoldRecoveryV1 = !!data.externalGoldRecoveryV1;
   var hadTalentTreesV2RespecV1 = !!data.talentTreesV2RespecV1;
+  var hadTalentTreesV2RespecV2 = !!data.talentTreesV2RespecV2;
   var hadForgeUnlockNotice = !!(data.forge && data.forge.unlockNotified);
   var hadSalvageSlots = !!(data.factory && data.factory.salvageSlots !== undefined);
   // 熔爐合併改版旗標：需在 mergeDefaults 前判斷（merge 會補 noticeShown/tabSeen 預設 true）。
@@ -382,6 +383,26 @@ function migrateSave(data) {
       if (data.player.reincarnations >= 1) data._talentRespecConfirm = true;
     }
     data.talentTreesV2RespecV1 = true;
+  }
+  /* ONE-TIME MIGRATION: talentTreesV2RespecV2（登錄於 ONE_TIME_MIGRATIONS.md）
+     天賦升級消耗改制（Lv.51 起每級加倍）：再次重置天賦，依「前一版成本」（每級 轉數+1 固定值）退還天賦點；
+     條件與二次確認窗與 V1 相同（已 1 轉且曾升級任一天賦才彈窗）。剛跑完 V1 的跳版舊檔此時天賦已空，不會重複退點。 */
+  if (!hadTalentTreesV2RespecV2) {
+    var talentRespec2Refund = 0;
+    if (typeof talentList === 'function') {
+      talentList().forEach(function (entry) {
+        var prevLv = clamp(Math.floor(Number(data.player.talents.levels[entry.def.id]) || 0), 0, TALENT_MAX_LEVEL);
+        talentRespec2Refund += prevLv * (entry.turn + 1);
+      });
+    }
+    data.player.talents.levels = {};
+    data.player.talents.potentialLevels = {};
+    if (talentRespec2Refund > 0) {
+      data.player.reincarnationTalentPoints += talentRespec2Refund;
+      data._talentRespecNotice = '天賦升級消耗已調整（Lv.51 起每級加倍）：原有天賦已重置，退還 ' + talentRespec2Refund + ' 點轉生天賦點';
+      if (data.player.reincarnations >= 1) data._talentRespecConfirm = true;
+    }
+    data.talentTreesV2RespecV2 = true;
   }
   if (typeof talentList === 'function') {
     talentList().forEach(function (entry) {

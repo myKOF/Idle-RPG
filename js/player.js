@@ -49,6 +49,7 @@ function newGameState() {
     specialBuffTrimV1: true, // 特殊技能第二增益移除後的既有融合技能一次性清理旗標
     externalGoldRecoveryV1: true,
     talentTreesV2RespecV1: true, // 天賦系統 V2（1~10 轉）改版：新帳號無需重置退點
+    talentTreesV2RespecV2: true, // 天賦升級消耗改制（Lv.51 起加倍）第二次重置：新帳號無需處理
 
     savedAt: Date.now(),
     player: {
