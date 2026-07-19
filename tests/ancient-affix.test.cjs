@@ -25,8 +25,10 @@ test('太古詞條與太古精華掉落機率符合規則與上限', () => {
   assert.equal(context.ancientBossAffixChanceForBoss(50), 10);
   assert.equal(context.ancientBossAffixChanceForBoss(56), 13);
   assert.equal(context.ancientBossAffixChanceForBoss(999), 100);
-  assert.equal(context.ancientEssenceDropChanceForEnemy(250), 2);
-  assert.equal(context.ancientEssenceDropChanceForEnemy(340), 20);
+  assert.equal(context.ancientEssenceDropChanceForEnemy(48), 0);
+  assert.equal(context.ancientEssenceDropChanceForEnemy(49), 2);
+  assert.equal(context.ancientEssenceDropChanceForEnemy(179), 15);
+  assert.equal(context.ancientEssenceDropChanceForEnemy(340), 15);
   assert.equal(context.ancientEssenceDropChanceForBoss(40), 10);
   assert.equal(context.ancientEssenceDropChanceForBoss(85), 100);
   assert.equal(context.ancientEssenceSalvageChanceForRarity(4), 0.5);

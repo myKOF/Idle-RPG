@@ -669,7 +669,7 @@ function rollFieldDrops(m) {
             drops.push('📖' + ENCHANTS[bk].name + '書');
         }
     }
-    // 太古精華（250 級以上敵人；獨立機率，不受掉寶率與場景倍率影響）
+    // 太古精華（依參數表設定的敵人等級門檻；獨立機率，不受掉寶率與場景倍率影響）
     var ancientEssenceRate = ancientEssenceDropChanceForEnemy(m.level) * eliteDropMult;
     if (ancientEssenceRate > 0 && chance(ancientEssenceRate)) {
         G.player.ancientEssence = (G.player.ancientEssence || 0) + 1;

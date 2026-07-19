@@ -820,9 +820,9 @@ function ancientBossAffixChanceForBoss(floor) {
 }
 function ancientEssenceDropChanceForEnemy(level) {
   level = Number(level) || 0;
-  if (level < ANCIENT_ENEMY_MIN_LEVEL) return 0;
+  if (level < ANCIENT_ESSENCE_ENEMY_MIN_LEVEL) return 0;
   return Math.min(ANCIENT_ESSENCE_ENEMY_RATE_CAP,
-    ANCIENT_ESSENCE_ENEMY_BASE_RATE + (level - ANCIENT_ENEMY_MIN_LEVEL) * ANCIENT_ESSENCE_ENEMY_LEVEL_RATE);
+    ANCIENT_ESSENCE_ENEMY_BASE_RATE + (level - ANCIENT_ESSENCE_ENEMY_MIN_LEVEL) * ANCIENT_ESSENCE_ENEMY_LEVEL_RATE);
 }
 function ancientEssenceDropChanceForBoss(floor) {
   floor = Number(floor) || 0;
