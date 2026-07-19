@@ -73,6 +73,12 @@ function affixResElem(key) {
   var e = key.slice(3);
   return e.charAt(0).toLowerCase() + e.slice(1); // fire / ice / lightning / poison / light / dark
 }
+// 對屬性敵人傷害詞條 key（dmgVsFire...）→ 元素 key
+function affixDmgVsElem(key) {
+  if (!/^dmgVs[A-Z]/.test(key)) return null;
+  var e = key.slice(5);
+  return e.charAt(0).toLowerCase() + e.slice(1);
+}
 
 function computeStats(equipmentOverride) {
   // equipmentOverride：計算指定裝備套的屬性（屬性面板預覽「檢視中」那套用）；省略＝穿著中 G.equipment。
@@ -98,6 +104,10 @@ function computeStats(equipmentOverride) {
   var passives = {};
   var godAttackMultiplier = 1;
   var elemAtk = { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0 };
+  // 附魔元素抗性獨立乘區：不併入 resist 加總桶，最後以 其他來源合計 × (1 + 同系附魔合計%) 套用
+  var enchantRes = { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0 };
+  // 對屬性敵人傷害（六大屬性；來源：詞條與寶石，加總後於 resolveHit 對帶該屬性的敵人乘 (1+%)）
+  var dmgVsElem = { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0 };
   var socketed = []; // 鑲嵌的寶石（gemEff 需在詞條聚合完成後才知道，先蒐集）
 
   SLOT_LIST.forEach(function (slot) {
@@ -111,8 +121,10 @@ function computeStats(equipmentOverride) {
       var v = a.val * um;
       var k = a.key;
       var re = affixResElem(k);
+      var dv = affixDmgVsElem(k);
       if (k === 'aspd') A.aspdPct += v;
       else if (re) resist[re] = (resist[re] || 0) + v;
+      else if (dv) dmgVsElem[dv] += v;
       else if (A[k] !== undefined) A[k] += v;
     });
     if (it.passive) {
@@ -141,7 +153,7 @@ function computeStats(equipmentOverride) {
       var e = ENCHANTS[ek];
       if (!e) return;
       if (e.cat === 'atk' && e.elem) elemAtk[e.elem] += ev;
-      else if (ENCHANT_RES_MAP[ek]) resist[ENCHANT_RES_MAP[ek]] += ev;
+      else if (ENCHANT_RES_MAP[ek]) enchantRes[ENCHANT_RES_MAP[ek]] += ev;
       else if (ek === 'ctrlRes') resist.ctrl += ev;
       else if (ek === 'loot') A.loot += ev;
       else if (ek === 'haste') A.moveSpeed += ev;
@@ -175,8 +187,10 @@ function computeStats(equipmentOverride) {
     var v = rawVal * gemMult;
     var key = GEM_TYPES[gemType].stat;
     var re = affixResElem(key);
+    var dv = affixDmgVsElem(key);
     if (key === 'aspd') A.aspdPct += v;
     else if (re) resist[re] = (resist[re] || 0) + v;
+    else if (dv) dmgVsElem[dv] += v;
     else if (A[key] !== undefined) A[key] += v;
   }
   socketed.forEach(function (g) {
@@ -286,9 +300,15 @@ function computeStats(equipmentOverride) {
   // 物理、魔法與元素抗性不設上限；仍保留下限 0，避免負抗性反向增傷。
   st.pRes = Math.max(0, Number(A.pRes) || 0);
   st.mRes = Math.max(0, Number(A.mRes) || 0);
-  ELEMENTS.forEach(function (e2) { resist[e2] = Math.max(0, Number(resist[e2]) || 0); });
+  // 六系元素抗性 = 其他來源（詞條/寶石/天賦）合計 × (1 + 同系附魔抗性合計%)；附魔為獨立乘區
+  ELEMENTS.forEach(function (e2) {
+    var resBase = Math.max(0, Number(resist[e2]) || 0);
+    resist[e2] = resBase * (1 + (enchantRes[e2] || 0) / 100);
+  });
   resist.ctrl = capValue(resist.ctrl, STAT_CAPS.ctrlRes);
   st.resist = resist;
+  st.enchantRes = enchantRes;
+  st.dmgVsElem = dmgVsElem;
   // 特殊與機制
   st.ccRed = capValue(A.ccRed, STAT_CAPS.ccRed);                              // 控制時間縮減上限（上限 0＝無上限）
   st.moveSpeed = capValue(A.moveSpeed, STAT_CAPS.moveSpeed);                      // 移動速度上限（縮短出怪間隔；上限 0＝無上限）
@@ -457,15 +477,16 @@ function rollComboHits(st) {
 
 /* ---- 共用攻擊流程（傷害結算總公式） ----
    結算順序：命中 → 防禦減傷（含破甲/穿透）→ 物/魔抗性 → ±10% 浮動
-           → 暴擊 → 元素附加（含特效觸發）→ 真實傷害 → 對普通/菁英/BOSS 加成
+           → 暴擊 → 元素附加（含特效觸發）→ 真實傷害 → 對普通/菁英/BOSS 加成 → 對屬性敵人加成
            → 格擋 → 聖佑 → 全局減傷 → 敵種傷害抗性 → 護盾吸收 → 扣血 → 反震
    aCfg: { atk, dmgType('phys'|'magic'|'both'), level, critRate, critDmg, hit, sunder, pen,
      trueDmgPct, elemAtk, elemDmgPct, eliteDmg, bossDmg, normalDmg,
-     talentEliteDmg, talentBossDmg, talentNormalDmg, isElite, isBoss, isPlayer }
+     talentEliteDmg, talentBossDmg, talentNormalDmg, dmgVsElem, isElite, isBoss, isPlayer }
          （elemAtk = 固定值元素攻擊；elemDmgPct = 2 轉天賦附傷%，按當次傷害附加）
          （isElite/isBoss = 攻擊者自身敵種，供防守方敵種傷害抗性選值）
+         （dmgVsElem = 對屬性敵人傷害%合計 {fire..dark}，對 dCfg.attr 對應屬性的敵人生效）
    dCfg: { def, mdef, level, dodge, blockRate, blockDmgRed, pRes, mRes, resist{六元素+ctrl},
-           ctrlRes, ccFactor, thornsPct, maxHp, isElite, isBoss,
+           ctrlRes, ccFactor, thornsPct, maxHp, isElite, isBoss, attr,
            normalDmgRed, eliteDmgRed, bossDmgRed }
    回傳 { dmg, crit, miss, blocked, killed, thorns, heal, procs[] }        */
 function resolveHit(attacker, defender, aCfg, dCfg) {
@@ -528,6 +549,9 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     : (dCfg.isElite ? (aCfg.talentEliteDmg || 0) : (aCfg.talentNormalDmg || 0));
   if (typeDmg) dmg *= 1 + typeDmg / 100;
   if (talentTypeDmg) dmg *= 1 + talentTypeDmg / 100;
+  // 對屬性敵人傷害：防守方帶屬性標籤（attr）時，乘 (1 + 對應「對X屬性傷害%」合計/100)
+  var attrDmg = (aCfg.dmgVsElem && dCfg.attr) ? (aCfg.dmgVsElem[dCfg.attr] || 0) : 0;
+  if (attrDmg) dmg *= 1 + attrDmg / 100;
   // 格擋（機率減傷）：機率與減傷上限共用 STAT_CAPS，0 代表不設上限。
   var blockChance = capValue(dCfg.blockRate || 0, STAT_CAPS.blockRate);
   if (blockChance > 0 && chance(blockChance)) {
@@ -822,7 +846,7 @@ function fieldGemDropRatesFor(level) {
 
 // 高塔挑戰金幣消耗 = 100000 × 樓層^2.6
 function towerChallengeCost(floor) {
-  return Math.round(100000 * Math.pow(Math.max(1, Number(floor) || 1), 2.6));
+  return Math.round(100000 * Math.pow(Math.max(1, Number(floor) || 1), 2.2));
 }
 
 // 高塔 BOSS 魔塵掉落率 = min(30%, 2% + 樓層 × 0.2%)
@@ -1120,9 +1144,15 @@ function salvageSlotUnlockCost(currentSlots) {
 
 /* 寶石能力數值：
    1~5 階（一般）= base × 等級 × (1 + 0.2 × (等級-1))
-   6~10 階（神鑄）= 五階數值 × 2^(階級-5)（每高 1 階能力 ×2） */
+   6~10 階（神鑄）= 五階數值 × 2^(階級-5)（每高 1 階能力 ×2）
+   linear 標記（對屬性傷害寶石）：1~5 階 = base × 等級（線性，無超線性放大）；6 階起同樣每階 ×2 */
 function gemStatValue(type, level) {
   var g = GEM_TYPES[type];
+  if (g.linear) {
+    var lin5 = g.base * GEM_MAX_LEVEL;
+    if (level > GEM_MAX_LEVEL) return Math.round(lin5 * Math.pow(2, level - GEM_MAX_LEVEL) * 100) / 100;
+    return Math.round(g.base * level * 100) / 100;
+  }
   if (level > GEM_MAX_LEVEL) {
     var base5 = g.base * GEM_MAX_LEVEL * (1 + 0.2 * (GEM_MAX_LEVEL - 1));
     return Math.round(base5 * Math.pow(2, level - GEM_MAX_LEVEL) * 10) / 10;

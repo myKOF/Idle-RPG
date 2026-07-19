@@ -3,7 +3,7 @@
 
 var UI = {
   dirty: { header: true, battle: true, equip: true, inv: true, factory: true, newforge: true, forge: true, tower: true, gems: true, skills: true, talents: true },
-  sel: null,           // { id, source: 'inv' | 'equip' }
+  sel: null,           // { id, source: 'inv' | 'equip' } 或 { source: 'equip-slot', slot }
   tab: 'equip',
   saveNoticeId: null,
   tooltipAnchor: null,
@@ -1220,7 +1220,7 @@ function renderBattle() {
     partyHtml += '<div class="enemy-card' + (enemy.elite ? ' elite' : '') + '">' +
       '<div class="float-layer" id="mv-float-' + ei + '"></div>' +
       '<div class="cb-level">Lv.' + enemy.level + '</div>' + icon +
-      '<div class="enemy-name">' + enemy.name + '</div>' +
+      '<div class="enemy-name">' + (enemy.attr && ELEM_INFO[enemy.attr] ? ELEM_INFO[enemy.attr].emoji : '') + enemy.name + '</div>' +
       '<div class="enemy-hp hp-bar"><div class="hp-fill monster" style="width:' + enemyHp + '%"></div><span class="hp-text">' + fmt(Math.max(0, enemy.hp)) + enemyShield + ' / ' + fmt(enemy.maxHp) + '</span></div>' +
       '<div class="enemy-status" data-enemy-buff-tip data-enemy-index="' + ei + '">' + entStatus(enemy) + '</div></div>';
   }
@@ -1505,17 +1505,33 @@ function renderDetail() {
   }
 }
 
+function equipSlotType(slot) {
+  return (typeof slotTypeOf === 'function') ? slotTypeOf(slot) : slot;
+}
+
+function equipSlotMatches(itemSlot, equipSlot) {
+  return !!itemSlot && !!equipSlot && equipSlotType(itemSlot) === equipSlotType(equipSlot);
+}
+
+function selectionSlotForItem(selItem) {
+  if (UI.sel && (UI.sel.source === 'equip-slot' || UI.sel.source === 'equip')) {
+    return UI.sel.slot || null;
+  }
+  if (selItem && UI.sel && UI.sel.source === 'inv') {
+    return equipTargetSlot(selItem);
+  }
+  return null;
+}
+
 function updateSelectionUI() {
   var selItem = findSelItem();
-  var targetSlot = null;
-  if (selItem && UI.sel.source === 'inv') {
-    targetSlot = equipTargetSlot(selItem);
-  }
+  var selectedSlot = selectionSlotForItem(selItem);
+  var highlightInventoryBySlot = !!(UI.sel && (UI.sel.source === 'equip-slot' || UI.sel.source === 'equip'));
 
   document.querySelectorAll('.item-cell, .eq-slot').forEach(function (el) {
     el.classList.remove('selected', 'dimmed');
 
-    if (targetSlot && el.classList.contains('eq-slot') && el.getAttribute('data-slot') === targetSlot) {
+    if (selectedSlot && el.classList.contains('eq-slot') && el.getAttribute('data-slot') === selectedSlot) {
       el.classList.add('selected');
     }
 
@@ -1529,6 +1545,16 @@ function updateSelectionUI() {
       if (elSlot !== selItem.slot) {
         el.classList.add('dimmed');
       }
+    }
+  });
+
+  if (!highlightInventoryBySlot || !selectedSlot) return;
+  document.querySelectorAll('.item-cell').forEach(function (el) {
+    var elSlot = el.getAttribute('data-slot');
+    if (equipSlotMatches(elSlot, selectedSlot)) {
+      el.classList.add('selected');
+    } else {
+      el.classList.add('dimmed');
     }
   });
 }
@@ -2489,7 +2515,7 @@ function renderTowerFight() {
   $id('tb-hp').style.width = clamp(b.hp / b.maxHp * 100, 0, 100) + '%';
   var bSh = (b.shield > 0.5) ? '<span style="color:var(--info)">+' + fmt(Math.max(0, b.shield)) + '</span>' : '';
   $id('tb-hptext').innerHTML = fmt(Math.max(0, b.hp)) + bSh + ' / ' + fmt(b.maxHp) + '（' + Math.round(b.hp / b.maxHp * 100) + '%）';
-  $id('tb-status').innerHTML = entStatus(b) + (b.elem ? ' 屬性:' + ENCHANTS[b.elem].emoji : '');
+  $id('tb-status').innerHTML = entStatus(b) + (b.attr && ELEM_INFO[b.attr] ? ' 屬性:' + ELEM_INFO[b.attr].emoji + ELEM_INFO[b.attr].name : (b.elem ? ' 屬性:' + ENCHANTS[b.elem].emoji : ''));
   $id('tp-hp').style.width = clamp(p.hp / st.hp * 100, 0, 100) + '%';
   renderPlayerShieldBar('tp', p, st);
   $id('tp-hptext').innerHTML = fmt(Math.max(0, p.hp)) + playerShieldText(p) + ' / ' + fmt(st.hp);
@@ -2538,6 +2564,86 @@ function uiTick() {
   if (UI.tab === 'gems') updateShopCountdown(); // 商店重置倒數即時更新
   if (d.skills && UI.tab === 'skills') { renderSkills(); d.skills = false; }
   if (d.talents && UI.tab === 'talents') { renderTalents(); d.talents = false; }
+
+  // 本地測試服承傷顯示實時更新
+  var host = window.location.hostname;
+  var isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+  if (isLocal) {
+    updateDmgAbsorb();
+  }
+}
+
+// 本地測試服：實時更新物理與魔法總承傷及明細提示 (Tooltip)
+function updateDmgAbsorb() {
+  var physEl = $id('r-phys-absorb');
+  var magicEl = $id('r-magic-absorb');
+  if (!physEl || !magicEl) return;
+
+  var p = G.player, st = getStats();
+  var pEnt = (typeof FIELD !== 'undefined' && FIELD) ? FIELD.player : null;
+  var hp = (pEnt && typeof pEnt.hp === 'number') ? pEnt.hp : st.hp;
+  var shield = (pEnt && typeof pEnt.shield === 'number') ? pEnt.shield : 0;
+  
+  var dCfg = playerDefCfg(pEnt);
+  var attackerLevel = st.level || 1;
+
+  // 各類減傷率
+  var rPhysDef = defReduction(dCfg.def || 0, attackerLevel);
+  var rMagicDef = defReduction(dCfg.mdef || 0, attackerLevel);
+  var rPhysRes = physicalResistanceReduction(dCfg.pRes || 0, attackerLevel);
+  var rMagicRes = magicResistanceReduction(dCfg.mRes || 0, attackerLevel);
+  var rSanctuary = dCfg.dmgRed ? (clamp(dCfg.dmgRed, 0, 50) / 100) : 0;
+  var rGlobal = globalDamageReduction(dCfg.globalDmgRed || 0);
+
+  var rNormal = enemyTypeDamageReduction(dCfg.normalDmgRed || 0, attackerLevel);
+  var rElite = enemyTypeDamageReduction(dCfg.eliteDmgRed || 0, attackerLevel);
+  var rBoss = enemyTypeDamageReduction(dCfg.bossDmgRed || 0, attackerLevel);
+  var rTypeMax = Math.max(rNormal, rElite, rBoss);
+
+  // 剩餘比例 (1 - 減傷)
+  var physMult = (1 - rPhysDef) * (1 - rPhysRes) * (1 - rSanctuary) * (1 - rGlobal) * (1 - rTypeMax);
+  var magicMult = (1 - rMagicDef) * (1 - rMagicRes) * (1 - rSanctuary) * (1 - rGlobal) * (1 - rTypeMax);
+
+  var physAbsorb = physMult > 0 ? (hp + shield) / physMult : Infinity;
+  var magicAbsorb = magicMult > 0 ? (hp + shield) / magicMult : Infinity;
+
+  // 更新 UI：顯示完整數值及簡寫，例如 999,999,999 (999M)
+  physEl.textContent = physAbsorb === Infinity ? '∞' : fmtFull(physAbsorb) + ' (' + fmt(physAbsorb) + ')';
+  magicEl.textContent = magicAbsorb === Infinity ? '∞' : fmtFull(magicAbsorb) + ' (' + fmt(magicAbsorb) + ')';
+
+  // 更新 tooltip
+  var physParent = physEl.parentNode;
+  var magicParent = magicEl.parentNode;
+  if (physParent) {
+    physParent.setAttribute('data-tt-title', '物理總承傷');
+    var physDesc = '角色能承受的一次性最大物理傷害值。<br>' +
+                   '公式：(血量+護盾)/(1-各類減傷)<br><br>' +
+                   '<span style="color:#4ade80">當前血量：</span>' + fmtFull(hp) + '<br>' +
+                   '<span style="color:#4ade80">當前護盾：</span>' + fmtFull(shield) + '<br>' +
+                   '<span style="color:#ffd700">物理防禦減傷：</span>' + (rPhysDef * 100).toFixed(4) + '%<br>' +
+                   '<span style="color:#ffd700">物理抗性減傷：</span>' + (rPhysRes * 100).toFixed(4) + '%<br>' +
+                   '<span style="color:#ffd700">聖佑被動減傷：</span>' + (rSanctuary * 100).toFixed(2) + '%<br>' +
+                   '<span style="color:#ffd700">全局減傷：</span>' + (rGlobal * 100).toFixed(4) + '%<br>' +
+                   '<span style="color:#ffd700">敵種最大減傷：</span>' + (rTypeMax * 100).toFixed(4) + '%<br><br>' +
+                   '<span style="color:#ffd700">物理承傷總值：</span>' + (physAbsorb === Infinity ? '無窮大' : fmtFull(physAbsorb));
+    physParent.setAttribute('data-tt-desc', physDesc);
+    physParent.removeAttribute('title');
+  }
+  if (magicParent) {
+    magicParent.setAttribute('data-tt-title', '魔法總承傷');
+    var magicDesc = '角色能承受的一次性最大魔法傷害值。<br>' +
+                    '公式：(血量+護盾)/(1-各類減傷)<br><br>' +
+                    '<span style="color:#4ade80">當前血量：</span>' + fmtFull(hp) + '<br>' +
+                    '<span style="color:#4ade80">當前護盾：</span>' + fmtFull(shield) + '<br>' +
+                    '<span style="color:#ffd700">魔法防禦減傷：</span>' + (rMagicDef * 100).toFixed(4) + '%<br>' +
+                    '<span style="color:#ffd700">魔法抗性減傷：</span>' + (rMagicRes * 100).toFixed(4) + '%<br>' +
+                    '<span style="color:#ffd700">聖佑被動減傷：</span>' + (rSanctuary * 100).toFixed(2) + '%<br>' +
+                    '<span style="color:#ffd700">全局減傷：</span>' + (rGlobal * 100).toFixed(4) + '%<br>' +
+                    '<span style="color:#ffd700">敵種最大減傷：</span>' + (rTypeMax * 100).toFixed(4) + '%<br><br>' +
+                    '<span style="color:#ffd700">魔法承傷總值：</span>' + (magicAbsorb === Infinity ? '無窮大' : fmtFull(magicAbsorb));
+    magicParent.setAttribute('data-tt-desc', magicDesc);
+    magicParent.removeAttribute('title');
+  }
 }
 
 function talentNodeHTML(def, turn) {
@@ -3168,7 +3274,7 @@ function showEnemyTooltip(anchorEl) {
         aspd: mAspd, dodge: base.dodge, hit: base.hit,
         elite: elite, isBoss: false,
         gold: base.gold * zn.rewardMult, xp: base.xp * zn.rewardMult,
-        ctrlRes: 0, elem: mtype.elem
+        ctrlRes: 0, elem: mtype.elem, attr: mtype.attr || null
       };
     }
   }
@@ -3178,7 +3284,7 @@ function showEnemyTooltip(anchorEl) {
   var title = isBossTip ? (m.name || '高塔 BOSS') : '敵人情報';
   var dropTip = '<div class="skt-name" style="margin-bottom:6px;">【' + title + '】</div>' +
     '<div class="skt-desc" style="text-align:left;">' +
-    '⚔️ 攻擊力：' + fmt(m.atk) + '<br>' +
+    (m.magic ? '🔮 魔法攻擊力：' : '⚔️ 物理攻擊力：') + fmt(m.atk) + '<br>' +
     '⚡ 攻擊速度：' + fmt1(m.aspd) + ' 次/秒<br>' +
     '🛡️ 物理防禦：' + fmt(m.def) + '<br>' +
     '🔮 魔法防禦：' + fmt(m.mdef || m.def * 0.75) + '<br>' +
@@ -3187,8 +3293,11 @@ function showEnemyTooltip(anchorEl) {
     '🌀 閃避率：' + (m.dodge || 0) + '%<br>' +
     '🧠 控制抵抗：' + (m.ctrlRes || 0) + '%';
 
-  if (m.elem) {
-    dropTip += '<br>🌌 屬性：' + (ENCHANTS[m.elem] ? ENCHANTS[m.elem].emoji + ' ' + ENCHANTS[m.elem].name : m.elem);
+  // 屬性標籤（每個敵人必有）：顯示六大屬性，並受玩家「對X屬性傷害」加成影響
+  var mAttr = m.attr || m.elem || null;
+  if (mAttr && ELEM_INFO[mAttr]) {
+    dropTip += '<br>🌌 屬性：' + ELEM_INFO[mAttr].emoji + ' ' + ELEM_INFO[mAttr].name +
+      '<span style="color:var(--dim)">（受「對' + ELEM_INFO[mAttr].name + '屬性傷害」加成影響）</span>';
   }
   dropTip += '</div>';
 
@@ -3943,6 +4052,28 @@ function bindStageHoldButton(id, delta) {
 
 function initUI() {
   updateTalentTabVisibility();
+  
+  // 本地測試服承傷顯示初始化：顯示在全螢幕按鈕右側
+  var host = window.location.hostname;
+  var isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+  if (isLocal) {
+    var fsBtn = $id('btn-fullscreen');
+    if (fsBtn && !$id('r-phys-absorb')) {
+      var wrap = document.createElement('span');
+      wrap.id = 'test-only-dmg-wrap';
+      wrap.style.marginLeft = '14px';
+      wrap.style.display = 'inline-flex';
+      wrap.style.gap = '10px';
+      wrap.style.verticalAlign = 'middle';
+      wrap.style.fontSize = '13px';
+      wrap.style.fontWeight = 'bold';
+      wrap.style.color = '#4ade80';
+      wrap.innerHTML = 
+        '<span id="r-phys-span" style="cursor: pointer;">🛡️ 物承: <b id="r-phys-absorb" style="color: #4ade80;">0</b></span>' +
+        '<span id="r-magic-span" style="cursor: pointer;">🔮 魔承: <b id="r-magic-absorb" style="color: #4ade80;">0</b></span>';
+      fsBtn.parentNode.insertBefore(wrap, fsBtn.nextSibling);
+    }
+  }
   // 分頁
   document.querySelectorAll('.tab-btn').forEach(function (b) {
     b.addEventListener('click', function () {
@@ -4752,8 +4883,13 @@ function initUI() {
         return;
       }
       if (cell.classList.contains('empty')) {
-        UI.sel = null;
-        UI.lastEquipSlot = cell.getAttribute('data-slot');
+        var emptySlot = cell.getAttribute('data-slot');
+        if (UI.sel && UI.sel.source === 'equip-slot' && UI.sel.slot === emptySlot) {
+          UI.sel = null;
+        } else {
+          UI.sel = { source: 'equip-slot', slot: emptySlot };
+        }
+        UI.lastEquipSlot = emptySlot;
       } else {
         var cid = cell.getAttribute('data-id');
         if (UI.sel && UI.sel.id === cid) {
@@ -4762,6 +4898,7 @@ function initUI() {
           UI.sel = { id: cid, source: cell.getAttribute('data-src') };
           if (UI.sel.source === 'equip') {
             UI.lastEquipSlot = cell.getAttribute('data-slot');
+            UI.sel.slot = cell.getAttribute('data-slot');
           }
         }
       }

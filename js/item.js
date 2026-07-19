@@ -575,6 +575,10 @@ function passiveLine(p) {
 function enchantLine(en) {
   var e = ENCHANTS[en.key];
   var val = en.key === 'loot' ? effectiveDropRateEffect(en.val) : en.val;
+  // 六系抗性附魔＝獨立乘區，顯示為「XX屬性抗性額外+N%」
+  if (ENCHANT_RES_MAP[en.key]) {
+    return e.emoji + ' ' + e.name.replace('抗性', '屬性抗性') + '額外+' + pctStr(val);
+  }
   var vs = (e.cat === 'atk') ? '+' + fmt(val) : '+' + pctStr(val);
   return e.emoji + ' ' + e.name + ' ' + vs;
 }

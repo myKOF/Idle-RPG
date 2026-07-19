@@ -150,7 +150,7 @@ const GOD_KEYS = { '龍血': 'dragonBlood', '神力': 'godMight', '神速': 'god
 Object.keys(GOD_KEYS).forEach(nm => objField('data', GOD_KEYS[nm] + ':', 'base', '表-神鑄特效', nm, 0, '神鑄-' + nm));
 
 // 寶石種類：base(0)
-const GEM_KEYS = { '紅寶石': 'ruby', '藍寶石': 'sapphire', '黃玉': 'topaz', '綠寶石': 'emerald', '鑽石': 'diamond', '青金石': 'lapis', '紫水晶': 'amethyst', '石榴石': 'garnet', '蛋白石': 'opal', '黑曜石': 'onyx', '月光石': 'moonstone', '太陽石': 'sunstone', '翡翠': 'jade', '綠松石': 'turquoise', '瑪瑙': 'agate', '珍珠': 'pearl', '孔雀石': 'malachite', '螢石': 'fluorite' };
+const GEM_KEYS = { '紅寶石': 'ruby', '藍寶石': 'sapphire', '黃玉': 'topaz', '綠寶石': 'emerald', '鑽石': 'diamond', '青金石': 'lapis', '紫水晶': 'amethyst', '石榴石': 'garnet', '蛋白石': 'opal', '黑曜石': 'onyx', '月光石': 'moonstone', '太陽石': 'sunstone', '翡翠': 'jade', '綠松石': 'turquoise', '瑪瑙': 'agate', '珍珠': 'pearl', '孔雀石': 'malachite', '螢石': 'fluorite', '尖晶石': 'spinel', '海藍寶石': 'aquamarine', '天河石': 'amazonite', '橄欖石': 'peridot', '黃水晶': 'citrine', '黑碧璽': 'tourmaline' };
 Object.keys(GEM_KEYS).forEach(nm => objField('data', GEM_KEYS[nm] + ':', 'base', '表-寶石種類', nm, 0, '寶石-' + nm));
 
 // 自動機組零件：perTier(0)

@@ -578,6 +578,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
             elemAtk: elemAtk, elemDmgPct: st.elemDmgPct,
             eliteDmg: st.baseEliteDmg, bossDmg: st.baseBossDmg, normalDmg: st.baseNormalDmg,
             talentEliteDmg: st.talentEliteDmg, talentBossDmg: st.talentBossDmg, talentNormalDmg: st.talentNormalDmg,
+            dmgVsElem: st.dmgVsElem,
             isPlayer: true
           };
           // 處決：低血量加成

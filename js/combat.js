@@ -118,6 +118,7 @@ function spawnFieldMonster() {
             atk: base.atk * zn.atkMult,
             def: base.def * zn.defMult, mdef: base.mdef * zn.defMult,
             magic: !!mtype.magic,          // 魔法系怪物：攻擊對玩家魔防
+            attr: mtype.attr || null,      // 屬性標籤（六大屬性；對X屬性傷害加成與 tips 顯示）
             aspd: mAspd, dodge: base.dodge, hit: base.hit, // 命中率隨敵人等級成長 → formula.js §4
             elite: elite, isBoss: false,
             gold: base.gold * zn.rewardMult, xp: base.xp * zn.rewardMult, // 金幣/經驗 x場景倍率
@@ -273,6 +274,7 @@ function playerAtkCfg(pEnt) {
         annihilate: st.passives.annihilate || 0,
         eliteDmg: st.baseEliteDmg, bossDmg: st.baseBossDmg, normalDmg: st.baseNormalDmg,
         talentEliteDmg: st.talentEliteDmg, talentBossDmg: st.talentBossDmg, talentNormalDmg: st.talentNormalDmg,
+        dmgVsElem: st.dmgVsElem,
         isPlayer: true
     };
 }
@@ -311,7 +313,7 @@ function monsterDefCfg(m) {
     return {
         def: m.def * defMul, mdef: (m.mdef || m.def * 0.75) * defMul, level: m.level, dodge: m.dodge || 0,
         resist: m.resist || {}, ctrlRes: m.ctrlRes || 0, maxHp: m.maxHp,
-        isElite: !!m.elite, isBoss: !!m.isBoss, globalDmgRed: m.globalDmgRed || 0
+        isElite: !!m.elite, isBoss: !!m.isBoss, attr: m.attr || null, globalDmgRed: m.globalDmgRed || 0
     };
 }
 

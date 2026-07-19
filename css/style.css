@@ -2027,6 +2027,10 @@ textarea#save-io {
   cursor: pointer;
 }
 
+.eq-slot.empty {
+  cursor: pointer;
+}
+
 /* 裝備頁右側的寶石／附魔小圖示區：固定高度，避免把背包往下推。 */
 .equip-material-panel {
   min-width: 0;
