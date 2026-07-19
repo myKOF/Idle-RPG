@@ -287,6 +287,7 @@ function migrateSave(data) {
   var hadNormalDmgAffixScaleV3 = !!data.normalDmgAffixScaleV3; // 一次性修復仍低於新基準的既有詞條
   var hadNormalDmgAffixScaleV4 = !!data.normalDmgAffixScaleV4; // 一次性縮回錯誤放大的普通敵人傷害詞條
   var hadExternalGoldRecoveryV1 = !!data.externalGoldRecoveryV1;
+  var hadTalentTreesV2RespecV1 = !!data.talentTreesV2RespecV1;
   var hadForgeUnlockNotice = !!(data.forge && data.forge.unlockNotified);
   var hadSalvageSlots = !!(data.factory && data.factory.salvageSlots !== undefined);
   // 熔爐合併改版旗標：需在 mergeDefaults 前判斷（merge 會補 noticeShown/tabSeen 預設 true）。
@@ -362,6 +363,26 @@ function migrateSave(data) {
   if (!data.player.talents || typeof data.player.talents !== 'object') data.player.talents = { levels: {}, potentialLevels: {} };
   if (!data.player.talents.levels || typeof data.player.talents.levels !== 'object') data.player.talents.levels = {};
   if (!data.player.talents.potentialLevels || typeof data.player.talents.potentialLevels !== 'object') data.player.talents.potentialLevels = {};
+  /* ONE-TIME MIGRATION: talentTreesV2RespecV1（登錄於 ONE_TIME_MIGRATIONS.md）
+     天賦系統 V2（1～10 轉、成本改為「轉數+1」）：天賦樹與成本結構全面改版，
+     舊配置無法對應 → 全數重置並依「舊制成本」退還天賦點（升到 Lv.L 共 L×(L+1)/2 點）；
+     潛力技能等級一併歸零（潛力目前鎖定，理論上皆為 0）。新帳號由 newGameState 預先標記完成。 */
+  if (!hadTalentTreesV2RespecV1) {
+    var talentRespecRefund = 0;
+    Object.keys(data.player.talents.levels).forEach(function (oldTalentId) {
+      var oldTalentLv = clamp(Math.floor(Number(data.player.talents.levels[oldTalentId]) || 0), 0, TALENT_MAX_LEVEL);
+      talentRespecRefund += oldTalentLv * (oldTalentLv + 1) / 2;
+    });
+    data.player.talents.levels = {};
+    data.player.talents.potentialLevels = {};
+    if (talentRespecRefund > 0) {
+      data.player.reincarnationTalentPoints += talentRespecRefund;
+      data._talentRespecNotice = '天賦系統已改版為 1～10 轉：原有天賦已重置，退還 ' + talentRespecRefund + ' 點轉生天賦點';
+      // 外部玩家已 1 轉且曾升級任一天賦 → 載入後彈出一次性改版二次確認窗（main.js 顯示後刪除旗標）
+      if (data.player.reincarnations >= 1) data._talentRespecConfirm = true;
+    }
+    data.talentTreesV2RespecV1 = true;
+  }
   if (typeof talentList === 'function') {
     talentList().forEach(function (entry) {
       data.player.talents.levels[entry.def.id] = clamp(Math.floor(Number(data.player.talents.levels[entry.def.id]) || 0), 0, TALENT_MAX_LEVEL);

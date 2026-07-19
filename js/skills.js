@@ -464,7 +464,7 @@ function trimLegacySpecialFusionBuff(fs) {
 }
 
 // 套用最多兩個減益；多目標時每個存活目標都套用一次。
-/* 技能效果天賦倍率（5 轉昇華天賦，talentSkillEffectMultiplier → talents.js）：
+/* 技能效果天賦倍率（4 轉昇華天賦，talentSkillEffectMultiplier → talents.js）：
    一般類別依 sk.cat 直接對應；融合技 = 素材類別倍率的平均（舊快照無素材記錄時視為 1）。 */
 function skillEffectTalentMultiplier(sk) {
   if (typeof talentSkillEffectMultiplier !== 'function' || !sk) return 1;
@@ -576,8 +576,8 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
             hit: fx.neverMiss ? 999 : Math.max(100, st.hit), pen: fx.dmgType === 'magic' ? st.mPen : st.pPen, // 技能命中吃玩家命中率，保留 100 當地板（低命中不受影響、高命中能壓過高閃避敵人）
             annihilate: st.passives.annihilate || 0, // 神鑄特效【破滅】：技能暴擊同樣適用
             elemAtk: elemAtk, elemDmgPct: st.elemDmgPct,
-            eliteDmg: st.baseEliteDmg, bossDmg: st.baseBossDmg, normalDmg: st.baseNormalDmg,
-            talentEliteDmg: st.talentEliteDmg, talentBossDmg: st.talentBossDmg, talentNormalDmg: st.talentNormalDmg,
+            eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, normalDmg: st.normalDmg,
+            totalDmgPct: st.totalDmgPct,
             dmgVsElem: st.dmgVsElem,
             isPlayer: true
           };

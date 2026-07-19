@@ -57,64 +57,117 @@ var REINCARNATION_EXP_BASE_ADD = [0, 100000, 300000, 900000, 2700000, 8100000, 2
 // 累積倍率 = 各轉倍數連乘（例：3 轉 = 10×10×10 = 1000）。
 var REINCARNATION_EXP_STEP_MULTS = [1, 10, 10, 10, 10, 10, 10, 10, 10, 10, 100];
 
-/* ---- 天賦系統（1 轉後開放；企劃書先實作至 5 轉） ----
+/* ---- 天賦系統（1 轉後開放；《天賦V2》實作 1～10 轉全部天賦） ----
    一般天賦每轉 8 個、每個最高 100 級；數值為每級增量，51 級起使用 high。
-   「潛力」為獨立技能點，先登錄 10 個節點，依 4/5 轉解鎖天賦逐批開放。 */
+   升級成本 = 該天賦轉數 + 1（固定值/級）；整轉 8 個全滿該轉效果 ×2。
+   「額外」字樣 = 於對應總值上乘算；沒寫「額外」= 與現有同類加成相加。
+   「潛力」為新的技能分類，登錄 10 個節點，依 3/4/7/10 轉解鎖天賦（unlocks 數）逐批開放；
+   潛力解鎖天賦目前整批鎖定置灰（disabled），待潛力技能完成後開放。 */
 var TALENT_MAX_LEVEL = 100;
 var TALENT_EFFECT_BREAK_LEVEL = 50;
-var TALENT_IMPLEMENTED_REINCARNATIONS = 5;
+var TALENT_IMPLEMENTED_REINCARNATIONS = 10;
 var POTENTIAL_NODE_COUNT = 10;
 var POTENTIAL_SKILL_BASE_MAX_LEVEL = 20;
 var TALENT_TREES = {
   1: [
-    { id: 't1_str', name: '力量淬鍊', emoji: '💪', stat: 'strPct', low: 1, high: 2, desc: '力量額外提高' },
-    { id: 't1_agi', name: '迅捷淬鍊', emoji: '🪽', stat: 'agiPct', low: 1, high: 2, desc: '敏捷額外提高' },
-    { id: 't1_int', name: '奧術淬鍊', emoji: '🔮', stat: 'intPct', low: 1, high: 2, desc: '智力額外提高' },
-    { id: 't1_vit', name: '鋼骨淬鍊', emoji: '🦴', stat: 'vitPct', low: 1, high: 2, desc: '耐力額外提高' },
-    { id: 't1_def', name: '物防鍛體', emoji: '🛡️', stat: 'defPct', low: 1, high: 2, desc: '物理防禦額外提高' },
-    { id: 't1_mdef', name: '魔防鍛體', emoji: '🔰', stat: 'mdefPct', low: 1, high: 2, desc: '魔法防禦額外提高' },
-    { id: 't1_pres', name: '物理抗性', emoji: '🪨', stat: 'pRes', low: 1, high: 2, desc: '物理抗性額外提高' },
-    { id: 't1_mres', name: '魔法抗性', emoji: '🌌', stat: 'mRes', low: 1, high: 2, desc: '魔法抗性額外提高' }
+    { id: 't1_str', name: '力量淬鍊', emoji: '💪', stat: 'strPct', low: 1, high: 2, desc: '力量總值額外提高' },
+    { id: 't1_agi', name: '迅捷淬鍊', emoji: '🪽', stat: 'agiPct', low: 1, high: 2, desc: '敏捷總值額外提高' },
+    { id: 't1_int', name: '奧術淬鍊', emoji: '🔮', stat: 'intPct', low: 1, high: 2, desc: '智力總值額外提高' },
+    { id: 't1_vit', name: '鋼骨淬鍊', emoji: '🦴', stat: 'vitPct', low: 1, high: 2, desc: '耐力總值額外提高' },
+    { id: 't1_def', name: '物防鍛體', emoji: '🛡️', stat: 'defPct', low: 1, high: 2, desc: '物理防禦總值額外提高' },
+    { id: 't1_mdef', name: '魔防鍛體', emoji: '🔰', stat: 'mdefPct', low: 1, high: 2, desc: '魔法防禦總值額外提高' },
+    { id: 't1_pres', name: '物理抗性', emoji: '🪨', stat: 'pRes', low: 1, high: 2, desc: '物理抗性總值額外提高' },
+    { id: 't1_mres', name: '魔法抗性', emoji: '🌌', stat: 'mRes', low: 1, high: 2, desc: '魔法抗性總值額外提高' }
   ],
   2: [
-    { id: 't2_fire', name: '烈焰共鳴', emoji: '🔥', stat: 'elemFire', low: 0.25, high: 0.5, desc: '攻擊時額外附加' },
-    { id: 't2_ice', name: '寒霜共鳴', emoji: '❄️', stat: 'elemIce', low: 0.25, high: 0.5, desc: '攻擊時額外附加' },
-    { id: 't2_lightning', name: '雷霆共鳴', emoji: '⚡', stat: 'elemLightning', low: 0.25, high: 0.5, desc: '攻擊時額外附加' },
-    { id: 't2_poison', name: '毒脈共鳴', emoji: '☠️', stat: 'elemPoison', low: 0.25, high: 0.5, desc: '攻擊時額外附加' },
-    { id: 't2_light', name: '聖輝共鳴', emoji: '🌟', stat: 'elemLight', low: 0.25, high: 0.5, desc: '攻擊時額外附加' },
-    { id: 't2_dark', name: '暗影共鳴', emoji: '🌑', stat: 'elemDark', low: 0.25, high: 0.5, desc: '攻擊時額外附加' },
-    { id: 't2_resist', name: '萬象抗性', emoji: '🌈', stat: 'elemRes', low: 1, high: 2, desc: '全元素抗性額外提高' },
-    { id: 't2_global', name: '傷害偏折', emoji: '🌀', stat: 'globalDmgRed', low: 0.5, high: 1, desc: '全局減傷額外提高' }
+    { id: 't2_crit', name: '致命直覺', emoji: '🎯', stat: 'critRate', low: 5, high: 10, desc: '爆擊率提高' },
+    { id: 't2_critdmg', name: '致命裂痕', emoji: '💥', stat: 'critDmg', low: 75, high: 150, desc: '爆擊傷害提高' },
+    { id: 't2_evasion', name: '幻影步', emoji: '👻', stat: 'evasion', low: 5, high: 10, desc: '閃避率提高' },
+    { id: 't2_hit', name: '洞察弱點', emoji: '👁️', stat: 'hit', low: 5, high: 10, desc: '命中率提高' },
+    { id: 't2_hp', name: '生命洪流', emoji: '❤️', stat: 'hpPct', low: 1, high: 2, desc: '生命總值額外提高' },
+    { id: 't2_shield', name: '護盾脈衝', emoji: '🔵', stat: 'shieldEff', low: 1, high: 2, desc: '護盾總值額外提高' },
+    { id: 't2_normalred', name: '獵人本能', emoji: '🐺', stat: 'normalDmgRed', low: 1, high: 2, desc: '對普通敵人抗性額外提高' },
+    { id: 't2_elitered', name: '鎮壓意志', emoji: '🦁', stat: 'eliteDmgRed', low: 1, high: 2, desc: '對菁英敵人抗性額外提高' }
   ],
   3: [
-    { id: 't3_crit', name: '致命直覺', emoji: '🎯', stat: 'critRate', low: 5, high: 10, desc: '暴擊率額外提高' },
-    { id: 't3_critdmg', name: '致命裂痕', emoji: '💥', stat: 'critDmg', low: 50, high: 100, desc: '暴擊傷害額外提高' },
-    { id: 't3_evasion', name: '幻影步', emoji: '👻', stat: 'evasion', low: 5, high: 10, desc: '閃避率額外提高' },
-    { id: 't3_hit', name: '洞察弱點', emoji: '👁️', stat: 'hit', low: 5, high: 10, desc: '命中率額外提高' },
-    { id: 't3_hp', name: '生命洪流', emoji: '❤️', stat: 'hpPct', low: 1, high: 2, desc: '生命額外提高' },
-    { id: 't3_shield', name: '護盾脈衝', emoji: '🔵', stat: 'shieldEff', low: 1, high: 2, desc: '護盾額外提高' },
-    { id: 't3_normalred', name: '獵人本能', emoji: '🐺', stat: 'normalDmgRed', low: 1, high: 2, desc: '普通敵人傷害抗性額外提高' },
-    { id: 't3_elitered', name: '鎮壓意志', emoji: '🦁', stat: 'eliteDmgRed', low: 1, high: 2, desc: '菁英敵人傷害抗性額外提高' }
+    { id: 't3_normal', name: '清場法則', emoji: '⚔️', stat: 'normalDmg', low: 1, high: 2, desc: '對普通敵人傷害額外提高' },
+    { id: 't3_elite', name: '破菁法則', emoji: '🗡️', stat: 'eliteDmg', low: 1, high: 2, desc: '對菁英傷害額外提高' },
+    { id: 't3_boss', name: '弒王法則', emoji: '👑', stat: 'bossDmg', low: 1, high: 2, desc: '對 BOSS 傷害額外提高' },
+    { id: 't3_potential', name: '潛力啟示', emoji: '🔓', stat: 'potentialUnlock', low: 2, high: 4, unlocks: 3, desc: '解鎖新類型技能「潛力」三個並給予技能點', disabled: true, disabledReason: '目前暫不開放升級' },
+    { id: 't3_allres', name: '全域適應', emoji: '🧿', stat: 'elemRes', low: 1, high: 2, desc: '全屬性抗性額外提高' },
+    { id: 't3_def', name: '重甲共鳴', emoji: '🛡️', stat: 'defPct', low: 1, high: 2, desc: '物理防禦總值額外提高' },
+    { id: 't3_mdef', name: '魔鎧共鳴', emoji: '🔰', stat: 'mdefPct', low: 1, high: 2, desc: '魔法防禦總值額外提高' },
+    { id: 't3_allres2', name: '萬象適應', emoji: '🌈', stat: 'elemRes', low: 1, high: 2, desc: '全屬性抗性額外提高' }
   ],
   4: [
-    { id: 't4_normal', name: '清場法則', emoji: '⚔️', stat: 'normalDmg', low: 1, high: 2, desc: '對普通敵人傷害額外提高' },
-    { id: 't4_elite', name: '破菁法則', emoji: '🗡️', stat: 'eliteDmg', low: 1, high: 2, desc: '對菁英傷害額外提高' },
-    { id: 't4_boss', name: '弒王法則', emoji: '👑', stat: 'bossDmg', low: 1, high: 1, desc: '對 BOSS 傷害額外提高' },
-    { id: 't4_potential', name: '潛力啟示', emoji: '🔓', stat: 'potentialUnlock', low: 2, high: 4, desc: '解鎖新類型技能「潛力」三個並給予技能點', disabled: true, disabledReason: '目前暫不開放升級' },
-    { id: 't4_resist', name: '全域適應', emoji: '🧿', stat: 'allRes', low: 1, high: 2, desc: '全屬性抗性額外提高' },
-    { id: 't4_def', name: '重甲共鳴', emoji: '🛡️', stat: 'defPct', low: 1, high: 2, desc: '物理防禦額外提高' },
-    { id: 't4_mdef', name: '魔鎧共鳴', emoji: '🔰', stat: 'mdefPct', low: 1, high: 2, desc: '魔法防禦額外提高' },
-    { id: 't4_global', name: '絕對偏折', emoji: '🕳️', stat: 'globalDmgRed', low: 0.5, high: 1, desc: '全局減傷額外提高' }
+    { id: 't4_phys', name: '武技昇華', emoji: '⚔️', stat: 'skillPhys', low: 1, high: 2, desc: '物理類技能效果額外提高' },
+    { id: 't4_magic', name: '法術昇華', emoji: '✨', stat: 'skillMagic', low: 1, high: 2, desc: '魔法類技能效果額外提高' },
+    { id: 't4_def', name: '守護昇華', emoji: '🛡️', stat: 'skillDef', low: 1, high: 2, desc: '防禦與治療類技能效果額外提高' },
+    { id: 't4_special', name: '奇策昇華', emoji: '🎲', stat: 'skillSpecial', low: 1, high: 2, desc: '特殊類技能效果額外提高' },
+    { id: 't4_passive', name: '被動昇華', emoji: '🧬', stat: 'skillPassive', low: 1, high: 2, desc: '被動類技能效果額外提高' },
+    { id: 't4_potential', name: '潛力覺醒', emoji: '🌠', stat: 'potentialUnlock', low: 2, high: 4, unlocks: 3, desc: '解鎖新類型技能「潛力」三個並給予技能點', disabled: true, disabledReason: '目前暫不開放升級' },
+    { id: 't4_normalred', name: '獵人壁壘', emoji: '🐺', stat: 'normalDmgRed', low: 2, high: 4, desc: '對普通敵人抗性額外提高' },
+    { id: 't4_elitered', name: '鎮壓壁壘', emoji: '🦁', stat: 'eliteDmgRed', low: 2, high: 4, desc: '對菁英敵人抗性額外提高' }
   ],
   5: [
-    { id: 't5_phys', name: '武技昇華', emoji: '⚔️', stat: 'skillPhys', low: 1, high: 2, desc: '物理類技能效果額外提高' },
-    { id: 't5_magic', name: '法術昇華', emoji: '✨', stat: 'skillMagic', low: 1, high: 2, desc: '魔法類技能效果額外提高' },
-    { id: 't5_def', name: '守護昇華', emoji: '🛡️', stat: 'skillDef', low: 1, high: 2, desc: '防禦與治療類技能效果額外提高' },
-    { id: 't5_special', name: '奇策昇華', emoji: '🎲', stat: 'skillSpecial', low: 1, high: 2, desc: '特殊類技能效果額外提高' },
-    { id: 't5_passive', name: '被動昇華', emoji: '🧬', stat: 'skillPassive', low: 1, high: 2, desc: '被動類技能效果額外提高' },
-    { id: 't5_potential', name: '潛力覺醒', emoji: '🌠', stat: 'potentialUnlock', low: 2, high: 4, desc: '解鎖新類型技能「潛力」兩個並給予技能點', disabled: true, disabledReason: '目前暫不開放升級' },
-    { id: 't5_hp', name: '不滅血脈', emoji: '🩸', stat: 'hpPct', low: 2, high: 4, desc: '生命額外提高' },
-    { id: 't5_shield', name: '永恆護壁', emoji: '🔷', stat: 'shieldEff', low: 2, high: 4, desc: '護盾額外提高' }
+    { id: 't5_fire', name: '烈焰共鳴', emoji: '🔥', stat: 'elemFire', low: 1, high: 2, desc: '攻擊時額外附加' },
+    { id: 't5_ice', name: '寒霜共鳴', emoji: '❄️', stat: 'elemIce', low: 1, high: 2, desc: '攻擊時額外附加' },
+    { id: 't5_lightning', name: '雷霆共鳴', emoji: '⚡', stat: 'elemLightning', low: 1, high: 2, desc: '攻擊時額外附加' },
+    { id: 't5_poison', name: '毒脈共鳴', emoji: '☠️', stat: 'elemPoison', low: 1, high: 2, desc: '攻擊時額外附加' },
+    { id: 't5_light', name: '聖輝共鳴', emoji: '🌟', stat: 'elemLight', low: 1, high: 2, desc: '攻擊時額外附加' },
+    { id: 't5_dark', name: '暗影共鳴', emoji: '🌑', stat: 'elemDark', low: 1, high: 2, desc: '攻擊時額外附加' },
+    { id: 't5_allres', name: '全域壁壘', emoji: '🧿', stat: 'elemRes', low: 1, high: 2, desc: '全屬性抗性額外提高' },
+    { id: 't5_global', name: '傷害偏折', emoji: '🌀', stat: 'globalDmgRed', low: 1, high: 2, desc: '全局減傷額外提高' }
+  ],
+  6: [
+    { id: 't6_vsfire', name: '滅焰打擊', emoji: '🔥', stat: 'dmgVsFire', low: 3, high: 6, desc: '對火屬性敵人傷害提高' },
+    { id: 't6_vsice', name: '碎冰打擊', emoji: '❄️', stat: 'dmgVsIce', low: 3, high: 6, desc: '對冰屬性敵人傷害提高' },
+    { id: 't6_vslightning', name: '斷雷打擊', emoji: '⚡', stat: 'dmgVsLightning', low: 3, high: 6, desc: '對電屬性敵人傷害提高' },
+    { id: 't6_vspoison', name: '淨毒打擊', emoji: '☠️', stat: 'dmgVsPoison', low: 3, high: 6, desc: '對毒屬性敵人傷害提高' },
+    { id: 't6_vsdark', name: '驅暗打擊', emoji: '🌑', stat: 'dmgVsDark', low: 3, high: 6, desc: '對暗屬性敵人傷害提高' },
+    { id: 't6_vslight', name: '蝕聖打擊', emoji: '🌟', stat: 'dmgVsLight', low: 3, high: 6, desc: '對聖屬性敵人傷害提高' },
+    { id: 't6_boss', name: '弒王進階', emoji: '👑', stat: 'bossDmg', low: 1, high: 2, desc: '對 BOSS 傷害額外提高' },
+    { id: 't6_bossred', name: '屠龍血鎧', emoji: '🐉', stat: 'bossDmgRed', low: 1, high: 2, desc: '對 BOSS 敵人抗性額外提高' }
+  ],
+  7: [
+    { id: 't7_patk', name: '武力賁張', emoji: '🗡️', stat: 'patkPct', low: 1, high: 2, desc: '物理攻擊總值額外提高' },
+    { id: 't7_matk', name: '奧能賁張', emoji: '🪄', stat: 'matkPct', low: 1, high: 2, desc: '魔法攻擊總值額外提高' },
+    { id: 't7_allres', name: '萬象壁壘', emoji: '🌈', stat: 'elemRes', low: 2, high: 4, desc: '全屬性抗性額外提高' },
+    { id: 't7_evasion', name: '無影迷蹤', emoji: '💨', stat: 'evasion', low: 10, high: 20, desc: '閃避率提高' },
+    { id: 't7_hit', name: '天眼鎖定', emoji: '🎯', stat: 'hit', low: 10, high: 20, desc: '命中率提高' },
+    { id: 't7_global', name: '絕對偏折', emoji: '🕳️', stat: 'globalDmgRed', low: 2, high: 4, desc: '全局減傷額外提高' },
+    { id: 't7_potential', name: '潛力爆發', emoji: '💥', stat: 'potentialUnlock', low: 2, high: 4, unlocks: 3, desc: '解鎖新類型技能「潛力」三個並給予技能點', disabled: true, disabledReason: '目前暫不開放升級' },
+    { id: 't7_totaldmg', name: '破壞本源', emoji: '☄️', stat: 'totalDmgPct', low: 0.5, high: 1, desc: '總傷害額外增加' }
+  ],
+  8: [
+    { id: 't8_rvsfire', name: '禦焰之心', emoji: '🔥', stat: 'resVsFire', low: 3, high: 6, desc: '對火屬性敵人抗性提高' },
+    { id: 't8_rvsice', name: '禦冰之心', emoji: '❄️', stat: 'resVsIce', low: 3, high: 6, desc: '對冰屬性敵人抗性提高' },
+    { id: 't8_rvslightning', name: '禦雷之心', emoji: '⚡', stat: 'resVsLightning', low: 3, high: 6, desc: '對電屬性敵人抗性提高' },
+    { id: 't8_rvspoison', name: '禦毒之心', emoji: '☠️', stat: 'resVsPoison', low: 3, high: 6, desc: '對毒屬性敵人抗性提高' },
+    { id: 't8_rvsdark', name: '禦暗之心', emoji: '🌑', stat: 'resVsDark', low: 3, high: 6, desc: '對暗屬性敵人抗性提高' },
+    { id: 't8_rvslight', name: '禦聖之心', emoji: '🌟', stat: 'resVsLight', low: 3, high: 6, desc: '對聖屬性敵人抗性提高' },
+    { id: 't8_boss', name: '弒王極意', emoji: '👑', stat: 'bossDmg', low: 5, high: 10, desc: '對 BOSS 傷害額外提高' },
+    { id: 't8_bossred', name: '屠龍聖鎧', emoji: '🐉', stat: 'bossDmgRed', low: 5, high: 10, desc: '對 BOSS 敵人抗性額外提高' }
+  ],
+  9: [
+    { id: 't9_fire', name: '烈焰霸體', emoji: '🔥', stat: 'elemFire', low: 2, high: 4, desc: '攻擊時額外附加' },
+    { id: 't9_ice', name: '寒霜霸體', emoji: '❄️', stat: 'elemIce', low: 2, high: 4, desc: '攻擊時額外附加' },
+    { id: 't9_lightning', name: '雷霆霸體', emoji: '⚡', stat: 'elemLightning', low: 2, high: 4, desc: '攻擊時額外附加' },
+    { id: 't9_poison', name: '毒脈霸體', emoji: '☠️', stat: 'elemPoison', low: 2, high: 4, desc: '攻擊時額外附加' },
+    { id: 't9_light', name: '聖輝霸體', emoji: '🌟', stat: 'elemLight', low: 2, high: 4, desc: '攻擊時額外附加' },
+    { id: 't9_dark', name: '暗影霸體', emoji: '🌑', stat: 'elemDark', low: 2, high: 4, desc: '攻擊時額外附加' },
+    { id: 't9_pres', name: '不壞金身', emoji: '🪨', stat: 'pRes', low: 3, high: 6, desc: '物理抗性總值額外提高' },
+    { id: 't9_mres', name: '不滅法身', emoji: '🌌', stat: 'mRes', low: 3, high: 6, desc: '魔法抗性總值額外提高' }
+  ],
+  10: [
+    { id: 't10_str', name: '力量超昇', emoji: '💪', stat: 'strPct', low: 2, high: 4, desc: '力量總值額外提高' },
+    { id: 't10_agi', name: '迅捷超昇', emoji: '🪽', stat: 'agiPct', low: 2, high: 4, desc: '敏捷總值額外提高' },
+    { id: 't10_int', name: '奧術超昇', emoji: '🔮', stat: 'intPct', low: 2, high: 4, desc: '智力總值額外提高' },
+    { id: 't10_vit', name: '鋼骨超昇', emoji: '🦴', stat: 'vitPct', low: 2, high: 4, desc: '耐力總值額外提高' },
+    { id: 't10_bossred', name: '屠龍神鎧', emoji: '🐉', stat: 'bossDmgRed', low: 10, high: 20, desc: '對 BOSS 敵人抗性額外提高' },
+    { id: 't10_gemeff', name: '寶石共鳴', emoji: '💎', stat: 'gemEff', low: 10, high: 20, desc: '寶石鑲嵌效率提高' },
+    { id: 't10_totaldmg', name: '毀滅本源', emoji: '☄️', stat: 'totalDmgPct', low: 1, high: 2, desc: '總傷害額外增幅' },
+    { id: 't10_potential', name: '潛力昇華', emoji: '🌌', stat: 'potentialUnlock', low: 2, high: 4, unlocks: 1, desc: '解鎖新類型技能「潛力」一個並給予技能點', disabled: true, disabledReason: '目前暫不開放升級' }
   ]
 };
 var POTENTIAL_TALENTS = [

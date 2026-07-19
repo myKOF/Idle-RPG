@@ -2680,9 +2680,10 @@ function talentEffectLabel(def, value) {
     elemFire: '火焰', elemIce: '寒冰', elemLightning: '雷電',
     elemPoison: '劇毒', elemLight: '聖光', elemDark: '暗影'
   };
-  // 天賦每級可能是小數（元素附傷 0.25%、傷害偏折 0.5%），fmt 會捨去小數 → 一律保留至多 2 位小數
+  // 天賦每級可能是小數（總傷害額外 0.5% 等），fmt 會捨去小數 → 一律保留至多 2 位小數
   if (elementTalentNames[def.stat]) return String(Math.round(value * 100) / 100) + '%' + elementTalentNames[def.stat] + '傷害';
-  return String(Math.round(value * 100) / 100) + (def.stat.indexOf('Pct') >= 0 || /Dmg|Res|Rate|DmgRed|skill|evasion|hit|crit/.test(def.stat) ? '%' : '');
+  // 除潛力解鎖外，所有一般天賦效果皆為百分比。
+  return String(Math.round(value * 100) / 100) + '%';
 }
 
 function talentEffectDescription(def, value) {
@@ -2699,17 +2700,15 @@ function talentEffectDescription(def, value) {
     if (def.stat === 'potentialTowerTime') return '每級增加高塔挑戰限時 1 秒；目前額外時間：' + fmt(current) + ' 秒';
     if (def.stat === 'potentialOffline') return '每級使離線收益額外提高 5%；目前額外提高：' + fmt(current) + '%';
   }
-  if (def.id === 't4_potential') return '解鎖新類型技能「潛力」三個並給予' + fmt(value) + '點技能點。';
-  if (def.id === 't5_potential') return '解鎖新類型技能「潛力」兩個並給予' + fmt(value) + '點技能點。';
+  if (def.stat === 'potentialUnlock') return '解鎖新類型技能「潛力」' + fmt(def.unlocks || 0) + ' 個並給予' + fmt(value) + '點技能點。';
   return esc(def.desc) + talentEffectLabel(def, value);
 }
 
 function talentDescriptionValue(def, level, turn) {
   var lv = Math.max(1, Math.floor(Number(level) || 0));
-  if (def.id === 't4_potential' || def.id === 't5_potential') return talentLevelValue(def, lv);
-  return def.stat === 'potentialUnlock'
-    ? potentialCountForLevel(def, lv)
-    : talentLevelValue(def, lv) * talentCompleteMultiplier(turn);
+  // 潛力解鎖天賦顯示的是技能點效果（解鎖數固定為 def.unlocks，寫在說明文字裡）
+  if (def.stat === 'potentialUnlock') return talentLevelValue(def, lv);
+  return talentLevelValue(def, lv) * talentCompleteMultiplier(turn);
 }
 
 function talentTreeLevelTotal(turn) {
@@ -2794,7 +2793,7 @@ function renderTalentModal() {
   var maxAttr = 'data-talent-max="' + def.id + '"';
   var downAttr = 'data-talent-down="' + def.id + '"';
   var deleteAttr = 'data-talent-delete="' + def.id + '"';
-  var cost = lv + 1;
+  var cost = (typeof talentUpgradeCost === 'function') ? talentUpgradeCost(def.id) : turn + 1;
   var maxed = lv >= maxLv;
   var disabledNotice = disabled ? '<div class="hint">🔒 目前暫不開放升級</div>' : '';
   var h = '<div class="talent-modal-head"><span class="talent-modal-icon">' + def.emoji + '</span><b>' + esc(def.name) + '</b> <span class="dim-text">Lv.' + lv + '/' + maxLv + '｜' + title + '</span>' +
@@ -2824,7 +2823,7 @@ function renderTalents() {
   if (!root) return;
   var rc = reincarnationCountSafe();
   var h = '<div class="panel talent-summary"><div class="sec-title">🌟 天賦系統</div>' +
-    '<div class="hint">1 轉後開放；天賦使用轉生天賦點，升級成本為目標等級。潛力是新的技能分類，與特殊、被動共用技能點，不另設潛力點。</div>' +
+    '<div class="hint">1 轉後開放；天賦使用轉生天賦點，升 1 級消耗＝該天賦轉數+1（例：1 轉每級 2 點、10 轉每級 11 點）。潛力是新的技能分類，與特殊、被動共用技能點，不另設潛力點。</div>' +
     '<div class="talent-point-line">轉生天賦點：<b>' + fmtFull(G.player.reincarnationTalentPoints || 0) + '</b></div></div>';
   if (rc < 1) h += '<div class="panel talent-locked-banner">🔒 天賦系統將於完成 1 轉後開放。</div>';
   for (var turn = 1; turn <= REINCARNATION_MAX; turn++) {

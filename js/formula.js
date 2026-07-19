@@ -96,8 +96,6 @@ function computeStats(equipmentOverride) {
     hpRegen: 0, mpRegen: 0, aspdPct: 0, critRate: 0, critDmg: 0,
     pPen: 0, mPen: 0, hit: 0, cdr: 0, castSpeed: 0, lifesteal: 0, manaSteal: 0,
     eliteDmg: 0, bossDmg: 0, normalDmg: 0, aoeDmg: 0, globalDmgRed: 0,
-    // 4 轉敵種傷害天賦：與裝備／其他既有敵種傷害分開計算，保留獨立乘區。
-    talentEliteDmg: 0, talentBossDmg: 0, talentNormalDmg: 0,
     normalDmgRed: 0, eliteDmgRed: 0, bossDmgRed: 0,
     blockRate: 0, blockDmgRed: 0, evasion: 0, tenacity: 0, shieldEff: 0, pRes: 0, mRes: 0,
     ccRed: 0, moveSpeed: 0, loot: 0, xpBonus: 0, goldBonus: 0, luck: 0, weight: 0,
@@ -168,7 +166,7 @@ function computeStats(equipmentOverride) {
     });
   });
 
-  // 被動技能加成：每級效果 × 技能等級；5 轉天賦的被動技能效果同步放大。
+  // 被動技能加成：每級效果 × 技能等級；4 轉天賦的被動技能效果同步放大。
   var talent = (typeof talentStatBonuses === 'function') ? talentStatBonuses() : {};
   if (G.player.skills) {
     for (var sid in G.player.skills) {
@@ -185,7 +183,9 @@ function computeStats(equipmentOverride) {
   }
 
   // 鑲嵌寶石加成（受「寶石鑲嵌效率」屬性放大；融合寶石逐屬性計入）
-  var gemMult = 1 + A.gemEff / 100;
+  // 10 轉「寶石共鳴」天賦與詞條等來源的寶石鑲嵌效率直接相加。
+  var gemEffTotal = A.gemEff + (talent.gemEff || 0);
+  var gemMult = 1 + gemEffTotal / 100;
   function applyGemStat(gemType, rawVal) {
     var v = rawVal * gemMult;
     var key = GEM_TYPES[gemType].stat;
@@ -204,28 +204,24 @@ function computeStats(equipmentOverride) {
     }
   });
 
-  // 天賦效果在裝備、寶石與被動技能彙總後套用；潛力不另設點數，僅提供技能分類與戰鬥衍生加成。
+  /* 天賦效果在裝備、寶石與被動技能彙總後套用；潛力不另設點數，僅提供技能分類與戰鬥衍生加成。
+     《天賦V2》語意：「額外」＝於對應總值上乘算（獨立乘區、無其他來源時不憑空提供定值）；
+     沒寫「額外」＝與現有同類加成直接相加。加總類在此處理，乘算類於派生段套用。 */
   A.str *= 1 + (talent.strPct || 0) / 100;
   A.agi *= 1 + (talent.agiPct || 0) / 100;
   A.int *= 1 + (talent.intPct || 0) / 100;
   A.vit *= 1 + (talent.vitPct || 0) / 100;
-  A.hpPct += talent.hpPct || 0;
   // 天賦「物防/魔防鍛體、重甲/魔鎧共鳴」＝獨立乘區（連乘），於派生段套用，不併入裝備物防%/魔防%桶。
   A.critRate += talent.critRate || 0;
   A.critDmg += talent.critDmg || 0;
   A.hit += talent.hit || 0;
   A.evasion += talent.evasion || 0;
-  A.shieldEff += talent.shieldEff || 0;
-  // 天賦「傷害偏折/絕對偏折」＝全局減傷額外提高%（乘算），於派生段套用，不在此加定值。
-  // 敵種傷害天賦不併入裝備／詞條桶；戰鬥結算時另乘一次，避免變成同一個加總百分比。
-  A.talentNormalDmg += talent.normalDmg || 0;
-  A.talentEliteDmg += talent.eliteDmg || 0;
-  A.talentBossDmg += talent.bossDmg || 0;
-  A.normalDmgRed += talent.normalDmgRed || 0;
-  A.eliteDmgRed += talent.eliteDmgRed || 0;
-  A.pRes += (talent.pRes || 0) + (talent.allRes || 0);
-  A.mRes += (talent.mRes || 0) + (talent.allRes || 0);
-  ELEMENTS.forEach(function (e3) { resist[e3] += (talent.elemRes || 0) + (talent.allRes || 0); });
+  // 6 轉「對Ｘ屬性敵人傷害」＝與詞條/寶石的同名加成直接相加。
+  ELEMENTS.forEach(function (e3) {
+    var dvKey = 'dmgVs' + e3.charAt(0).toUpperCase() + e3.slice(1);
+    dmgVsElem[e3] += talent[dvKey] || 0;
+  });
+  // 生命/護盾/物抗/魔抗/全屬性(六元素)抗性/敵種傷害/敵種抗性/全局減傷的「額外」天賦皆為乘算，於派生段套用。
 
   /* ---- 派生公式（st.base = 純等級/四維的基礎值，供屬性面板拆解顯示） ---- */
   var lv = p.level;
@@ -236,11 +232,11 @@ function computeStats(equipmentOverride) {
   // 四維主屬性：原始總值完成後，再套用轉生最終倍率。
   st.str = Math.round(rawStr * reincMult); st.agi = Math.round(rawAgi * reincMult);
   st.int = Math.round(rawInt * reincMult); st.vit = Math.round(rawVit * reincMult);
-  // 基礎：生命 = (120 + (等級-1)×22 + 耐力×10 + 定值) × (1 + 生命%)
+  // 基礎：生命 = (120 + (等級-1)×22 + 耐力×10 + 定值) × (1 + 生命%) × (1 + 天賦生命%［生命洪流，獨立乘區］)
   st.base = {};
   st.base.hp = 120 + (lv - 1) * 22 + rawVit * PRIMARY_STAT_EFFECTS.vitHp;
   var rawHp = (st.base.hp + A.hpFlat) * (1 + A.hpPct / 100);
-  st.hp = Math.round(rawHp * reincMult);
+  st.hp = Math.round(rawHp * reincMult * (1 + (talent.hpPct || 0) / 100));
   st.hpRegen = A.hpRegen;                                    // 額外生命恢復/秒（另有 BASE_HP_REGEN_PCT%/秒 基礎回復）
   // 法力 =（40 + 原始智力×4 + 定值）×轉生倍率；法力恢復另依原有公式計算
   st.base.mp = 40 + rawInt * PRIMARY_STAT_EFFECTS.intMp;
@@ -255,12 +251,12 @@ function computeStats(equipmentOverride) {
     def: DERIVED_COEF.defFlatMult * A.defFlat * Math.pow(DERIVED_COEF.defReincBase, reincN),
     mdef: DERIVED_COEF.mdefFlatMult * A.mdefFlat * Math.pow(DERIVED_COEF.mdefReincBase, reincN)
   };
-  // 進攻：物攻 = (8 + 物攻定值 + 1.2×物攻定值×2.8^轉生次數 + 力量×1) × (1 + 物攻%)
+  // 進攻：物攻 = (8 + 物攻定值 + 1.2×物攻定值×2.8^轉生次數 + 力量×1) × (1 + 物攻%) × (1 + 天賦物攻%［武力賁張，獨立乘區］)
   st.base.atk = DERIVED_COEF.atkBase + st.str * PRIMARY_STAT_EFFECTS.strAtk;
-  st.atk = Math.round((st.base.atk + A.atkFlat + st.reincFlatBonus.atk) * (1 + A.atkPct / 100) * godAttackMultiplier);
-  // 魔攻 = (6 + 魔攻定值 + 1.2×魔攻定值×2.8^轉生次數 + 智力×1) × (1 + 魔攻%)
+  st.atk = Math.round((st.base.atk + A.atkFlat + st.reincFlatBonus.atk) * (1 + A.atkPct / 100) * godAttackMultiplier * (1 + (talent.patkPct || 0) / 100));
+  // 魔攻 = (6 + 魔攻定值 + 1.2×魔攻定值×2.8^轉生次數 + 智力×1) × (1 + 魔攻%) × (1 + 天賦魔攻%［奧能賁張，獨立乘區］)
   st.base.matk = DERIVED_COEF.matkBase + st.int * PRIMARY_STAT_EFFECTS.intMatk;
-  st.matk = Math.round((st.base.matk + A.matkFlat + st.reincFlatBonus.matk) * (1 + A.matkPct / 100) * godAttackMultiplier);
+  st.matk = Math.round((st.base.matk + A.matkFlat + st.reincFlatBonus.matk) * (1 + A.matkPct / 100) * godAttackMultiplier * (1 + (talent.matkPct || 0) / 100));
   st.critRate = capValue(5 + st.agi * PRIMARY_STAT_EFFECTS.agiCritRate + A.critRate, STAT_CAPS.critRate);   // 暴擊率：基礎 5% + 敏捷係數
   st.critDmg = 150 + A.critDmg;                                  // 暴擊傷害：基礎 150%
   st.comboHits = comboHitsFor(st.critRate);                     // 連擊數：暴擊率破 100% 衍生的額外攻擊次數（僅普攻／技能直接傷害，持續傷害不計）
@@ -274,21 +270,18 @@ function computeStats(equipmentOverride) {
   st.castSpeed = capValue(A.castSpeed, STAT_CAPS.castSpeed);                      // 施法速度上限（上限 0＝無上限）
   st.lifesteal = capValue(A.lifesteal, STAT_CAPS.lifesteal);                      // 吸血上限（上限 0＝無上限）
   st.manaSteal = capValue(A.manaSteal, STAT_CAPS.manaSteal);                      // 吸魔上限（上限 0＝無上限）
-  // 面板仍顯示敵種傷害的合計值；戰鬥使用 base/talent 欄位，以保留兩個獨立乘區。
-  st.baseEliteDmg = A.eliteDmg;
-  st.baseBossDmg = A.bossDmg;
-  st.baseNormalDmg = A.normalDmg;
-  st.talentEliteDmg = A.talentEliteDmg;
-  st.talentBossDmg = A.talentBossDmg;
-  st.talentNormalDmg = A.talentNormalDmg;
-  st.eliteDmg = A.eliteDmg + A.talentEliteDmg;
-  st.bossDmg = A.bossDmg + A.talentBossDmg;
-  st.normalDmg = A.normalDmg + A.talentNormalDmg;
+  // 敵種傷害天賦（清場/破菁/弒王法則）＝「額外」乘算：對應傷害加成總合 ×(1+天賦%)；無其他來源時不憑空提供。
+  st.eliteDmg = A.eliteDmg * (1 + (talent.eliteDmg || 0) / 100);
+  st.bossDmg = A.bossDmg * (1 + (talent.bossDmg || 0) / 100);
+  st.normalDmg = A.normalDmg * (1 + (talent.normalDmg || 0) / 100);
   st.aoeDmg = A.aoeDmg;
   st.globalDmgRed = A.globalDmgRed * (1 + (talent.globalDmgRed || 0) / 100); // 傷害偏折/絕對偏折：全局減傷總值 ×(1+天賦%)
-  st.normalDmgRed = A.normalDmgRed;   // 敵種傷害抗性（定值；減傷公式 enemyTypeDamageReduction → §3）
-  st.eliteDmgRed = A.eliteDmgRed;
-  st.bossDmgRed = A.bossDmgRed;
+  // 敵種傷害抗性（定值；減傷公式 enemyTypeDamageReduction → §3）：天賦「額外」＝抗性總合 ×(1+天賦%)。
+  st.normalDmgRed = A.normalDmgRed * (1 + (talent.normalDmgRed || 0) / 100);
+  st.eliteDmgRed = A.eliteDmgRed * (1 + (talent.eliteDmgRed || 0) / 100);
+  st.bossDmgRed = A.bossDmgRed * (1 + (talent.bossDmgRed || 0) / 100);
+  // 7/10 轉「總傷害額外增加」＝攻擊端最終獨立乘區（resolveHit 於敵種/屬性加成後套用）。
+  st.totalDmgPct = talent.totalDmgPct || 0;
   // 防禦：物防 = (3 + 物防定值 + 0.75×物防定值×2.7^轉生次數 + 力量×0.35 + 耐力×0.65) × (1 + 物防%) × (1 + 天賦物防%［獨立乘區］)
   st.base.def = DERIVED_COEF.defBase + st.str * PRIMARY_STAT_EFFECTS.strDef + st.vit * PRIMARY_STAT_EFFECTS.vitDef;
   st.def = Math.round((st.base.def + A.defFlat + st.reincFlatBonus.def) * (1 + A.defPct / 100) * (1 + (talent.defPct || 0) / 100));
@@ -299,19 +292,27 @@ function computeStats(equipmentOverride) {
   st.blockDmgRed = capValue(A.blockDmgRed, STAT_CAPS.blockDmgRed);                  // 額外格擋減傷上限（總減傷 = 30% + 此值；上限 0＝不夾上限）
   st.evasion = capValue(st.agi * PRIMARY_STAT_EFFECTS.agiEvasion + A.evasion, STAT_CAPS.evasion);          // 閃避：敏捷係數（上限 0＝無上限）
   st.tenacity = capValue(A.tenacity, STAT_CAPS.tenacity);                        // 韌性上限（上限 0＝無上限）
-  st.shieldEff = A.shieldEff;
+  // 護盾總值額外（護盾脈衝）＝獨立乘區：與其他護盾效率% 連乘後折算回單一效率值，供既有護盾公式沿用。
+  st.shieldEff = ((1 + A.shieldEff / 100) * (1 + (talent.shieldEff || 0) / 100) - 1) * 100;
   // 物理、魔法與元素抗性不設上限；仍保留下限 0，避免負抗性反向增傷。
-  st.pRes = Math.max(0, Number(A.pRes) || 0);
-  st.mRes = Math.max(0, Number(A.mRes) || 0);
-  // 六系元素抗性 = 其他來源（詞條/寶石/天賦）合計 × (1 + 同系附魔抗性合計%)；附魔為獨立乘區
+  // 物抗/魔抗天賦「額外」＝抗性總值 ×(1+天賦%)。
+  st.pRes = Math.max(0, Number(A.pRes) || 0) * (1 + (talent.pRes || 0) / 100);
+  st.mRes = Math.max(0, Number(A.mRes) || 0) * (1 + (talent.mRes || 0) / 100);
+  // 六系元素抗性 = 其他來源（詞條/寶石）合計 × (1 + 天賦全屬性抗性額外%) × (1 + 同系附魔抗性合計%)；
+  // 天賦「全屬性抗性額外」對六大屬性各自乘算、附魔為獨立乘區。
   ELEMENTS.forEach(function (e2) {
     var resBase = Math.max(0, Number(resist[e2]) || 0);
-    resist[e2] = resBase * (1 + (enchantRes[e2] || 0) / 100);
+    resist[e2] = resBase * (1 + (talent.elemRes || 0) / 100) * (1 + (enchantRes[e2] || 0) / 100);
   });
   resist.ctrl = capValue(resist.ctrl, STAT_CAPS.ctrlRes);
   st.resist = resist;
   st.enchantRes = enchantRes;
   st.dmgVsElem = dmgVsElem;
+  // 8 轉「對Ｘ屬性敵人抗性」＝對帶該屬性標籤敵人的傷害抗性（定值；與敵種抗性共用減傷曲線）。
+  st.resVsElem = {
+    fire: talent.resVsFire || 0, ice: talent.resVsIce || 0, lightning: talent.resVsLightning || 0,
+    poison: talent.resVsPoison || 0, light: talent.resVsLight || 0, dark: talent.resVsDark || 0
+  };
   // 特殊與機制
   st.ccRed = capValue(A.ccRed, STAT_CAPS.ccRed);                              // 控制時間縮減上限（上限 0＝無上限）
   st.moveSpeed = capValue(A.moveSpeed, STAT_CAPS.moveSpeed);                      // 移動速度上限（縮短出怪間隔；上限 0＝無上限）
@@ -325,13 +326,13 @@ function computeStats(equipmentOverride) {
   st.hybridMutation = capValue(A.hybridMutation, STAT_CAPS.hybridMutation);            // 合成變異率上限（上限 0＝無上限）
   st.enrageThreshold = capValue(A.enrageThreshold, STAT_CAPS.enrageThreshold);          // 狂暴閾值上限（上限 0＝無上限）
   st.affixCap = capValue(A.affixCap, STAT_CAPS.affixCap);                             // 詞條上限率（上限 0＝無上限）
-  st.gemEff = A.gemEff;
+  st.gemEff = gemEffTotal;
   // 被動上限：連擊 45%、暈眩 30%（上限 0＝無上限）
   if (passives.doubleHit) passives.doubleHit = capValue(passives.doubleHit, STAT_CAPS.doubleHit);
   if (passives.stun) passives.stun = capValue(passives.stun, STAT_CAPS.stun);
   st.passives = passives;
   st.talent = talent;
-  // 2 轉元素天賦：攻擊時附加「當次傷害 × 天賦%」的元素傷害（結算於 resolveHit 元素附加段）；
+  // 5/9 轉元素天賦：攻擊時附加「當次傷害 × 天賦%」的元素傷害（結算於 resolveHit 元素附加段）；
   // 潛力「元素核心」把所有元素附加傷害（含裝備附魔的固定值元素攻擊）乘算提高。
   var talentElemMap = {
     fire: talent.elemFire || 0, ice: talent.elemIce || 0, lightning: talent.elemLightning || 0,
@@ -481,16 +482,19 @@ function rollComboHits(st) {
 /* ---- 共用攻擊流程（傷害結算總公式） ----
    結算順序：命中 → 防禦減傷（含破甲/穿透）→ 物/魔抗性 → ±10% 浮動
            → 暴擊 → 元素附加（含特效觸發）→ 真實傷害 → 對普通/菁英/BOSS 加成 → 對屬性敵人加成
-           → 格擋 → 聖佑 → 全局減傷 → 敵種傷害抗性 → 護盾吸收 → 扣血 → 反震
+           → 總傷害額外增幅 → 格擋 → 聖佑 → 全局減傷 → 敵種傷害抗性 → 對屬性敵人抗性
+           → 護盾吸收 → 扣血 → 反震
    aCfg: { atk, dmgType('phys'|'magic'|'both'), level, critRate, critDmg, hit, sunder, pen,
      trueDmgPct, elemAtk, elemDmgPct, eliteDmg, bossDmg, normalDmg,
-     talentEliteDmg, talentBossDmg, talentNormalDmg, dmgVsElem, isElite, isBoss, isPlayer }
-         （elemAtk = 固定值元素攻擊；elemDmgPct = 2 轉天賦附傷%，按當次傷害附加）
-         （isElite/isBoss = 攻擊者自身敵種，供防守方敵種傷害抗性選值）
+     totalDmgPct, dmgVsElem, attr, isElite, isBoss, isPlayer }
+         （elemAtk = 固定值元素攻擊；elemDmgPct = 5/9 轉天賦附傷%，按當次傷害附加）
+         （eliteDmg/bossDmg/normalDmg = 已含天賦「額外」乘算後的敵種傷害加成總合）
+         （totalDmgPct = 7/10 轉天賦「總傷害額外增加」%，攻擊端最終獨立乘區）
+         （isElite/isBoss = 攻擊者自身敵種，attr = 攻擊者屬性標籤，供防守方敵種/屬性抗性選值）
          （dmgVsElem = 對屬性敵人傷害%合計 {fire..dark}，對 dCfg.attr 對應屬性的敵人生效）
    dCfg: { def, mdef, level, dodge, blockRate, blockDmgRed, pRes, mRes, resist{六元素+ctrl},
            ctrlRes, ccFactor, thornsPct, maxHp, isElite, isBoss, attr,
-           normalDmgRed, eliteDmgRed, bossDmgRed }
+           normalDmgRed, eliteDmgRed, bossDmgRed, resVsElem{fire..dark} }
    回傳 { dmg, crit, miss, blocked, killed, thorns, heal, procs[] }        */
 function resolveHit(attacker, defender, aCfg, dCfg) {
   var out = { dmg: 0, crit: false, miss: false, blocked: false, killed: false, thorns: 0, heal: 0, absorbed: 0, procs: [] };
@@ -544,17 +548,15 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   }
   // 真實傷害（無視防禦與抗性）= 攻擊力 × 真傷%
   if (aCfg.trueDmgPct) dmg += aCfg.atk * aCfg.trueDmgPct / 100;
-  // 對敵種傷害：裝備／詞條與 4 轉天賦分屬獨立乘區。
-  // 例：既有對菁英 +10%、天賦對菁英 +1% = 原始傷害 ×1.10×1.01，不是 ×1.11。
+  // 對敵種傷害：加成總合已含 3/6/8 轉天賦的「額外」乘算（總合 ×(1+天賦%)，computeStats）。
   var typeDmg = dCfg.isBoss ? (aCfg.bossDmg || 0)
     : (dCfg.isElite ? (aCfg.eliteDmg || 0) : (aCfg.normalDmg || 0));
-  var talentTypeDmg = dCfg.isBoss ? (aCfg.talentBossDmg || 0)
-    : (dCfg.isElite ? (aCfg.talentEliteDmg || 0) : (aCfg.talentNormalDmg || 0));
   if (typeDmg) dmg *= 1 + typeDmg / 100;
-  if (talentTypeDmg) dmg *= 1 + talentTypeDmg / 100;
   // 對屬性敵人傷害：防守方帶屬性標籤（attr）時，乘 (1 + 對應「對X屬性傷害%」合計/100)
   var attrDmg = (aCfg.dmgVsElem && dCfg.attr) ? (aCfg.dmgVsElem[dCfg.attr] || 0) : 0;
   if (attrDmg) dmg *= 1 + attrDmg / 100;
+  // 總傷害額外增幅（7/10 轉天賦）：攻擊端最終獨立乘區。
+  if (aCfg.totalDmgPct) dmg *= 1 + aCfg.totalDmgPct / 100;
   // 格擋（機率減傷）：機率與減傷上限共用 STAT_CAPS，0 代表不設上限。
   var blockChance = capValue(dCfg.blockRate || 0, STAT_CAPS.blockRate);
   if (blockChance > 0 && chance(blockChance)) {
@@ -569,6 +571,9 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   var typeRedTotal = aCfg.isBoss ? (dCfg.bossDmgRed || 0)
     : (aCfg.isElite ? (dCfg.eliteDmgRed || 0) : (dCfg.normalDmgRed || 0));
   if (typeRedTotal > 0) dmg *= 1 - enemyTypeDamageReduction(typeRedTotal, aCfg.level || 1);
+  // 對屬性敵人抗性（8 轉天賦）：攻擊者帶屬性標籤時，依對應抗性值套用敵種抗性同曲線的減傷。
+  var attrRedTotal = (dCfg.resVsElem && aCfg.attr) ? (dCfg.resVsElem[aCfg.attr] || 0) : 0;
+  if (attrRedTotal > 0) dmg *= 1 - enemyTypeDamageReduction(attrRedTotal, aCfg.level || 1);
   dmg = Math.max(1, Math.round(dmg));   // 最低傷害 1
   // 護盾吸收
   if (defender.shield && defender.shield > 0) {
@@ -676,8 +681,8 @@ function monsterStatsFor(stage, elite) {
     def: def,                 // 物理防禦
     mdef: def * 0.75,         // 魔法防禦
     aspd: 2,
-    dodge: 10 + stage * 4,
-    hit: 100 + stage * 4,     // 命中率 = 100% + 敵人等級×1%（敵人等級 = 階段）
+    dodge: 5 + stage * 2.5,
+    hit: 100 + stage * 2.5,     // 命中率 = 100% + 敵人等級×1%（敵人等級 = 階段）
     gold: gold, xp: xp, elite: !!elite
   };
   if (elite) {

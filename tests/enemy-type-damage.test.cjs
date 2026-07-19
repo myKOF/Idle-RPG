@@ -66,23 +66,45 @@ test('對普通傷害加成僅對非菁英且非 BOSS 的敵人生效', () => {
   assert.equal(vsBoss.dmg, 100000);   // BOSS 不吃對普通加成
 });
 
-test('敵種傷害天賦與既有敵種傷害加成為獨立乘區', () => {
+test('總傷害額外增幅（7/10 轉天賦）為攻擊端最終獨立乘區', () => {
   const context = loadFormulaContext();
   const baseDef = { def: 0, mdef: 0, dodge: 0, pRes: 0, mRes: 0, resist: {} };
   const base = 100000;
-  const expected = Math.round(base * 1.10 * 1.01);
-  const cases = [
-    [{ normalDmg: 10, talentNormalDmg: 1 }, { ...baseDef }],
-    [{ eliteDmg: 10, talentEliteDmg: 1 }, { ...baseDef, isElite: true }],
-    [{ bossDmg: 10, talentBossDmg: 1 }, { ...baseDef, isBoss: true }]
-  ];
 
-  cases.forEach(([flags, defender]) => {
-    const actual = context.resolveHit({}, { hp: 1000000, shield: 0 }, {
-      atk: base, dmgType: 'phys', level: 1, hit: 100, critRate: 0, ...flags
-    }, defender).dmg;
-    assert.equal(actual, expected, '天賦應在既有敵種加成之外獨立相乘');
-  });
+  // 與敵種傷害加成連乘：×(1+50%)×(1+10%)
+  const withType = context.resolveHit({}, { hp: 1000000, shield: 0 }, {
+    atk: base, dmgType: 'phys', level: 1, hit: 100, critRate: 0, normalDmg: 50, totalDmgPct: 10
+  }, { ...baseDef }).dmg;
+  assert.equal(withType, Math.round(base * 1.5 * 1.1));
+
+  // 單獨存在也生效（不依賴其他加成來源）
+  const alone = context.resolveHit({}, { hp: 1000000, shield: 0 }, {
+    atk: base, dmgType: 'phys', level: 1, hit: 100, critRate: 0, totalDmgPct: 10
+  }, { ...baseDef }).dmg;
+  assert.equal(alone, Math.round(base * 1.1));
+});
+
+test('對屬性敵人抗性依攻擊者屬性標籤套用敵種抗性同曲線減傷', () => {
+  const context = loadFormulaContext();
+  const a = context.ENEMY_TYPE_DMG_RED_A;
+  const b = context.ENEMY_TYPE_DMG_RED_B;
+  const level = 30;
+  const red = (total) => total / (total + a + b * level);
+  const mkAtk = (attr) => ({ atk: 100000, dmgType: 'phys', level, hit: 100, critRate: 0, attr });
+  const defStats = {
+    def: 0, mdef: 0, dodge: 0, pRes: 0, mRes: 0, resist: {},
+    resVsElem: { fire: 450, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0 }
+  };
+
+  // 火屬性攻擊者 → 套用對火屬性敵人抗性
+  const byFire = context.resolveHit({}, { hp: 1000000, shield: 0 }, mkAtk('fire'), { ...defStats });
+  assert.equal(byFire.dmg, Math.round(100000 * (1 - red(450))));
+
+  // 無屬性標籤或無對應抗性 → 傷害不變
+  const byNone = context.resolveHit({}, { hp: 1000000, shield: 0 }, mkAtk(null), { ...defStats });
+  assert.equal(byNone.dmg, 100000);
+  const byIce = context.resolveHit({}, { hp: 1000000, shield: 0 }, mkAtk('ice'), { ...defStats });
+  assert.equal(byIce.dmg, 100000);
 });
 
 test('敵種傷害減免公式 = 減免值 / (減免值 + a + b×攻擊者等級)', () => {

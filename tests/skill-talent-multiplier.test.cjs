@@ -5,7 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 
-/* 5 轉昇華天賦（skillPhys/Magic/Def/Special/Passive）作用範圍：
+/* 4 轉昇華天賦（skillPhys/Magic/Def/Special/Passive）作用範圍：
    除既有的傷害/治療/護盾/被動外，增益、減益、持續再生、死亡詛咒、金幣、法力回復
    也要吃「該技能類別的天賦倍率」；融合技 = 素材類別倍率的平均。 */
 
@@ -94,7 +94,7 @@ test('法力回復與金幣類效果吃天賦倍率', () => {
 
 test('融合技倍率 = 素材類別倍率的平均；無素材記錄時為 1', () => {
   const c = loadCtx({ talents: true });
-  c.G.player.talents.levels.t5_phys = 10; // 物理類 +10%
+  c.G.player.talents.levels.t4_phys = 10; // 物理類 +10%
   const catA = c.SKILLS.powerSlash.cat, catB = c.SKILLS.arcaneBurst.cat;
   const expected = (c.talentSkillEffectMultiplier(catA) + c.talentSkillEffectMultiplier(catB)) / 2;
   assert.ok(expected > 1); // 至少一個素材是物理 → 平均 > 1

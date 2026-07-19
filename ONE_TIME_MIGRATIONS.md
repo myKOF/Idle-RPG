@@ -13,6 +13,31 @@
 
 ## 目前登錄與規劃中的遷移
 
+### `talentTreesV2RespecV1`：天賦系統 V2（1～10 轉）改版重置退點
+
+**狀態：已實作（2026-07-19）。**
+
+**目的**：天賦系統依《天賦V2.xlsx》全面改版——天賦樹由 1～5 轉重排並擴充為 1～10 轉、升級成本由「目標等級」改為「該天賦轉數 + 1（固定值/級）」。舊配置的節點 id 與成本結構皆無法對應新制，故將舊存檔的天賦全數重置，並依**舊制成本**退還天賦點。
+
+**執行時機**：
+
+- 在 `migrateSave(data)` 的天賦欄位健檢之後、依新天賦樹補齊等級之前執行。
+- 以 `data.talentTreesV2RespecV1` 作為一次性完成標記；新帳號由 `newGameState` 預先標記完成。
+
+**處理範圍**：
+
+- 逐一讀取 `data.player.talents.levels`（含已不存在的舊節點 id），每個節點依舊制成本 `L × (L + 1) / 2` 累計退點後，`levels` 與 `potentialLevels` 全數清空。
+- 退還點數加入 `data.player.reincarnationTalentPoints`；有退點時設定 `data._talentRespecNotice`，載入後由 `main.js` 以戰鬥日誌公告一次。
+- **一次性改版二次確認窗**：外部玩家「已 1 轉**且**曾升級任一天賦」（退點 > 0 且 `reincarnations ≥ 1`）時另設 `data._talentRespecConfirm`，載入後由 `main.js` 以共用確認窗（`showConfirmDialog`）彈出「天賦系統已重新改造，請重新配置！」，顯示後即刪除旗標；0 轉或未點過天賦的存檔不彈窗。
+
+**保留資料**：轉生次數、既有未花用天賦點、技能點與其他玩家資料完全保留；潛力技能目前鎖定中，等級理論上皆為 0，一併歸零不退技能點。
+
+**冪等條件**：標記寫入後重複讀檔不再退點（`tests/talent-respec-migration.test.cjs` 驗證）。
+
+**測試方式**：`tests/talent-respec-migration.test.cjs` 驗證舊節點退點（Lv.8 → 36 點、Lv.100 → 5050 點）、重複載入不重複退點、無天賦舊存檔僅標記不公告、新帳號不觸發。
+
+**日後清理**：所有外部存檔皆完成遷移後，可移除 `js/save.js` 的 `ONE-TIME MIGRATION: talentTreesV2RespecV1` 區塊、`js/player.js` 的旗標與 `js/main.js` 的 `_talentRespecNotice` 公告與 `_talentRespecConfirm` 確認窗區塊，並保留本紀錄註明已下線。
+
 ### `normalDmgAffixScaleV1`：既有普通敵人傷害詞條降為 1/10
 
 **狀態：已實作。**

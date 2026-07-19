@@ -1,5 +1,17 @@
 # PATCH.md
 
+## 變更紀錄：天賦系統 V2——擴充至 10 轉（2026-07-19）
+
+- 依《天賦V2.xlsx》全面改版天賦系統：天賦樹重排並擴充為 **1～10 轉共 80 個節點**（`js/data.js` TALENT_TREES、`TALENT_IMPLEMENTED_REINCARNATIONS = 10`）；既有介面沿用（1～10 轉列表由既有迴圈渲染），未新增介面。
+- **成本改制**（js/talents.js）：升 1 級消耗 = 該天賦轉數 + 1（固定值/級，`talentUpgradeCost`）；降級退 1 級成本、清除退 `等級 × (轉數+1)`；`talentSpentPoints` 同步。
+- **效果語意對齊 V2**（js/formula.js computeStats／resolveHit）：「額外」＝於總值上乘算（獨立乘區）、未寫「額外」＝與現有加成相加。生命/護盾/物抗/魔抗/全屬性(六元素)抗性/敵種傷害/敵種抗性由加總改為**乘算**；爆擊/爆傷/閃避/命中/對屬性敵人傷害維持**相加**（爆傷每級 75/150）。
+- **新效果**：對六屬性敵人傷害（6 轉，併入 dmgVsElem）、對六屬性敵人抗性（8 轉，新 `resVsElem`，敵種抗性同曲線、於其後套用）、對 BOSS 敵人抗性乘算（6/8/10 轉）、物攻/魔攻額外乘區（7 轉）、總傷害額外增幅（7/10 轉，攻擊端最終乘區 `totalDmgPct`）、寶石鑲嵌效率相加（10 轉）。resolveHit 移除舊 `talent*Dmg` 獨立乘區參數；combat.js/skills.js 攻防組態同步（怪物攻擊組態帶 `attr`、玩家防禦組態帶 `resVsElem`）。
+- **潛力解鎖節點**移至 3/4/7/10 轉（解鎖 3+3+3+1 = 10 個，def.unlocks 通用化，不再寫死 t4/t5），維持整批鎖定置灰。
+- **存檔遷移**（ONE-TIME MIGRATION `talentTreesV2RespecV1`，js/save.js＋js/player.js＋js/main.js）：舊存檔天賦全數重置、依舊制成本 `L×(L+1)/2` 退還天賦點並公告；外部玩家「已 1 轉且曾升級任一天賦」者另彈出一次性改版二次確認窗「天賦系統已重新改造，請重新配置！」（`_talentRespecConfirm` 旗標，顯示後即刪）；登錄於 ONE_TIME_MIGRATIONS.md。
+- 效果欄與公式欄不符處經使用者確認：4轉#1 物理類技能 51~100 級採每級 2%；7轉#6 全局減傷採乘算；6/8/10 轉對 BOSS 敵人抗性全部採乘算。
+- 測試：tests/talents.test.cjs 全面改寫（26 項）＋ tests/talent-respec-migration.test.cjs 新增（4 項）＋ talent-elem-attach／skill-talent-multiplier／enemy-type-damage 對齊；天賦相關 60/60 綠。build 113 檔過；全套測試與基線比對**零新增失敗**、另修復 5 項基線紅燈（ui.js 測試環境缺 window）。
+- 文件：game_formula.md §1/§2.2/§2.4/§2.5/§3.2/§10 同步、PLAN.md、ONE_TIME_MIGRATIONS.md。
+
 ## 變更紀錄：熔爐專屬佇列——各爐獨立佇列取代共用計數（2026-07-18）
 
 - 問題：帶尾 +N 原為「共用總佇列中符合該爐品質的件數」——同設定多爐重複計數，10 座爐各顯示 +9999 但實際總量僅 1.4 萬，數字無法對帳。

@@ -1,8 +1,13 @@
 'use strict';
 /* ============ 天賦與潛力 ============
-   天賦：1 轉後開放，使用轉生天賦點。
+   天賦：1 轉後開放，使用轉生天賦點；升 1 級消耗 = 該天賦轉數 + 1（固定值/級）。
    潛力：新的技能分類，使用既有技能點，沒有獨立的潛力點。
 */
+
+/* 天賦升 1 級的天賦點成本 = 該天賦轉數 + 1（例：1 轉天賦每級 2 點、10 轉天賦每級 11 點） */
+function talentUpgradeCost(id) {
+  return talentTurn(id) + 1;
+}
 
 function talentList() {
   var list = [];
@@ -85,13 +90,16 @@ function potentialUnlockedCount() {
   }).length;
 }
 
+/* 潛力解鎖天賦的節點 id 清單（3/4/7/10 轉，依 talentList 順序） */
+function potentialUnlockTalentIds() {
+  return talentList().filter(function (entry) { return entry.def.stat === 'potentialUnlock'; })
+    .map(function (entry) { return entry.def.id; });
+}
+
 function potentialCountForLevel(def, lv) {
   if (!def || def.stat !== 'potentialUnlock') return 0;
-  // 4 轉「潛力啟示」只負責固定解鎖前三個潛力技能；low/high 是技能點效果，不是解鎖數量。
-  if (def.id === 't4_potential') return lv > 0 ? 3 : 0;
-  // 5 轉「潛力覺醒」只負責固定再解鎖兩個潛力技能；low/high 同樣是技能點效果。
-  if (def.id === 't5_potential') return lv > 0 ? 2 : 0;
-  return (lv > 0 ? def.low : 0) + (lv > TALENT_EFFECT_BREAK_LEVEL ? def.high : 0);
+  // 潛力解鎖天賦投入 1 級即固定解鎖 def.unlocks 個潛力技能；low/high 是技能點效果，不是解鎖數量。
+  return lv > 0 ? Math.max(0, Math.floor(Number(def.unlocks) || 0)) : 0;
 }
 
 function potentialTemporarilyDisabled(id) {
@@ -101,7 +109,7 @@ function potentialTemporarilyDisabled(id) {
 
 function potentialUnlockLimit() {
   var count = 0;
-  ['t4_potential', 't5_potential'].forEach(function (id) {
+  potentialUnlockTalentIds().forEach(function (id) {
     var def = talentDef(id);
     if (def) count += potentialCountForLevel(def, talentLevel(id));
   });
@@ -109,7 +117,7 @@ function potentialUnlockLimit() {
 }
 
 function talentSkillPointBonus() {
-  return ['t4_potential', 't5_potential'].reduce(function (sum, id) {
+  return potentialUnlockTalentIds().reduce(function (sum, id) {
     var def = talentDef(id);
     return sum + (def ? talentLevelValue(def, talentLevel(def.id)) : 0);
   }, 0);
@@ -144,7 +152,7 @@ function talentSpentPoints() {
   var spent = 0;
   talentList().forEach(function (entry) {
     var lv = talentLevel(entry.def.id);
-    spent += lv * (lv + 1) / 2;
+    spent += lv * (entry.turn + 1);
   });
   return spent;
 }
@@ -158,10 +166,13 @@ function potentialSpentSkillPoints() {
 function talentBonusesTemplate() {
   return {
     strPct: 0, agiPct: 0, intPct: 0, vitPct: 0, defPct: 0, mdefPct: 0,
-    pRes: 0, mRes: 0, allRes: 0, elemRes: 0, elemFire: 0, elemIce: 0, elemLightning: 0,
+    pRes: 0, mRes: 0, elemRes: 0, elemFire: 0, elemIce: 0, elemLightning: 0,
     elemPoison: 0, elemLight: 0, elemDark: 0, globalDmgRed: 0, critRate: 0,
     critDmg: 0, evasion: 0, hit: 0, hpPct: 0, shieldEff: 0, normalDmg: 0,
-    eliteDmg: 0, bossDmg: 0, normalDmgRed: 0, eliteDmgRed: 0, skillPhys: 0,
+    eliteDmg: 0, bossDmg: 0, normalDmgRed: 0, eliteDmgRed: 0, bossDmgRed: 0,
+    dmgVsFire: 0, dmgVsIce: 0, dmgVsLightning: 0, dmgVsPoison: 0, dmgVsLight: 0, dmgVsDark: 0,
+    resVsFire: 0, resVsIce: 0, resVsLightning: 0, resVsPoison: 0, resVsLight: 0, resVsDark: 0,
+    patkPct: 0, matkPct: 0, totalDmgPct: 0, gemEff: 0, skillPhys: 0,
     skillMagic: 0, skillDef: 0, skillSpecial: 0, skillPassive: 0,
     potentialCdr: 0, potentialRevive: 0, potentialLootDup: 0, potentialInvCap: 0,
     potentialElemAtk: 0, potentialExecute: 0, potentialShieldOverflow: 0,
@@ -196,7 +207,7 @@ function talentUpgrade(id) {
   if (!talentUnlocked(id)) return reincarnationCountSafe() < talentTurn(id) ? '尚未達到 ' + talentTurn(id) + ' 轉' : '此天賦尚未開放';
   var lv = talentLevel(id);
   if (lv >= TALENT_MAX_LEVEL) return '已達最高等級';
-  var cost = lv + 1;
+  var cost = talentUpgradeCost(id);
   if ((G.player.reincarnationTalentPoints || 0) < cost) return '轉生天賦點不足，需要 ' + cost + ' 點';
   G.player.reincarnationTalentPoints -= cost;
   talentState().levels[id] = lv + 1;
@@ -219,7 +230,7 @@ function talentDowngrade(id) {
   var nextPotentialCount = potentialUnlockedCount() - potentialCountForLevel(def, lv) + potentialCountForLevel(def, lv - 1);
   if (def.stat === 'potentialUnlock' && potentialSpentSkillPoints() > Math.max(0, nextPotentialCount)) return '請先重置超出解鎖數量的潛力技能';
   talentState().levels[id] = lv - 1;
-  G.player.reincarnationTalentPoints = (G.player.reincarnationTalentPoints || 0) + lv;
+  G.player.reincarnationTalentPoints = (G.player.reincarnationTalentPoints || 0) + talentUpgradeCost(id);
   talentRefresh();
   return null;
 }
@@ -230,7 +241,7 @@ function talentDelete(id) {
   var lv = talentLevel(id);
   if (def.stat === 'potentialUnlock' && potentialSpentSkillPoints() > Math.max(0, potentialUnlockedCount() - potentialCountForLevel(def, lv))) return '請先重置超出解鎖數量的潛力技能';
   talentState().levels[id] = 0;
-  G.player.reincarnationTalentPoints = (G.player.reincarnationTalentPoints || 0) + lv * (lv + 1) / 2;
+  G.player.reincarnationTalentPoints = (G.player.reincarnationTalentPoints || 0) + lv * talentUpgradeCost(id);
   talentRefresh();
   return null;
 }

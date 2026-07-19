@@ -48,6 +48,8 @@ function newGameState() {
     skillDmgV2: true,   // 2026-07-09 技能傷害重調旗標（migrateSave 據此對舊存檔融合技做一次性加成）
     specialBuffTrimV1: true, // 特殊技能第二增益移除後的既有融合技能一次性清理旗標
     externalGoldRecoveryV1: true,
+    talentTreesV2RespecV1: true, // 天賦系統 V2（1~10 轉）改版：新帳號無需重置退點
+
     savedAt: Date.now(),
     player: {
       level: 1, xp: 0,

@@ -272,8 +272,8 @@ function playerAtkCfg(pEnt) {
         sunder: st.passives.sunder || 0, pen: st.pPen, mPen: st.mPen,
         trueDmgPct: st.passives.trueDmg || 0, elemAtk: st.elemAtk, elemDmgPct: st.elemDmgPct, globalDmgRed: st.globalDmgRed,
         annihilate: st.passives.annihilate || 0,
-        eliteDmg: st.baseEliteDmg, bossDmg: st.baseBossDmg, normalDmg: st.baseNormalDmg,
-        talentEliteDmg: st.talentEliteDmg, talentBossDmg: st.talentBossDmg, talentNormalDmg: st.talentNormalDmg,
+        eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, normalDmg: st.normalDmg,
+        totalDmgPct: st.totalDmgPct,
         dmgVsElem: st.dmgVsElem,
         isPlayer: true
     };
@@ -289,7 +289,7 @@ function playerDefCfg(pEnt) {
         ccFactor: (1 - st.tenacity / 100) * (1 - st.ccRed / 100),
         dmgRed: st.passives.sanctuary || 0, globalDmgRed: st.globalDmgRed, undying: st.passives.undying || 0, potentialRevive: st.potentialRevive || 0,
         normalDmgRed: st.normalDmgRed, eliteDmgRed: st.eliteDmgRed, bossDmgRed: st.bossDmgRed, // 敵種傷害抗性 → formula.js §3
-
+        resVsElem: st.resVsElem, // 對屬性敵人抗性（8 轉天賦）→ formula.js §3
         thornsPct: (st.passives.thorns || 0) + buffVal(pEnt, 'thornsUp'), maxHp: st.hp, isPlayer: true
     };
 }
@@ -305,7 +305,8 @@ function monsterAtkCfg(m, mult) {
         atk: m.atk * mult * (1 - buffVal(m, 'atkDown') / 100),
         dmgType: m.magic ? 'magic' : 'phys', level: m.level,
         critRate: 5, critDmg: 150, hit: m.hit || 100, elemAtk: ea, globalDmgRed: m.globalDmgRed || 0,
-        isElite: !!m.elite, isBoss: !!m.isBoss // 攻擊者敵種：供玩家的敵種傷害抗性選值
+        isElite: !!m.elite, isBoss: !!m.isBoss, // 攻擊者敵種：供玩家的敵種傷害抗性選值
+        attr: m.attr || null // 攻擊者屬性標籤：供玩家的對屬性敵人抗性選值
     };
 }
 function monsterDefCfg(m) {
