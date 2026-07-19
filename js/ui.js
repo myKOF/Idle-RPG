@@ -3192,7 +3192,7 @@ function showTowerTooltip(flStr, anchorEl) {
   if (!tip) return;
   var fl = parseInt(flStr, 10);
   if (!fl) return;
-  var hell = isHellTowerFloor(fl);
+  var hasSoul = isHellTowerFloor(fl) || isPurgatoryTowerFloor(fl);
   var bossStats = bossStatsFor(fl);
   var bossXp = bossStats.xp;
   var soulRate = hellSoulOriginDropChance(fl);
@@ -3210,7 +3210,7 @@ function showTowerTooltip(flStr, anchorEl) {
     '📖 隨機附魔書 x2 <span style="color:var(--dim)">(100%)</span><br>' +
     '💫 魔塵 <span style="color:var(--dim)">(' + fmt1(bossDustRate(fl)) + '%，神鑄材料)</span>' +
     '<br><img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華"> 太古精華 <span style="color:var(--dim)">(' + fmt1(ancientEssenceRate) + '%)</span>' +
-    (hell ? '<br>🧿 魔魂本源 <span style="color:var(--dim)">(' + fmt1(soulRate) + '%，地獄之塔限定)</span>' : '') + '<br>' +
+    (hasSoul ? '<br>🧿 魔魂本源 <span style="color:var(--dim)">(' + fmt1(soulRate) + '%，地獄/煉獄之塔限定)</span>' : '') + '<br>' +
     '🔩 機組零件 <span style="color:var(--dim)">(首通必掉 / 之後30%)</span>';
 
   var bossRates = dropRatesFor(BOSS_DROP_TABLE, fl);

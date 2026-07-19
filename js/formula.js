@@ -860,7 +860,7 @@ function bossDustRate(floor) {
 // 地獄之塔魔魂本源掉落率 = 5% +（樓層 - 51）× 1%；只在 51~100 樓生效。
 function hellSoulOriginDropChance(floor) {
   floor = Math.floor(Number(floor) || 0);
-  if (!isHellTowerFloor(floor)) return 0;
+  if (!isHellTowerFloor(floor) && !isPurgatoryTowerFloor(floor)) return 0;
   return Math.min(100, TOWER_HELL_SOUL_ORIGIN_BASE_RATE +
     (floor - TOWER_TRIAL_MAX_FLOOR - 1) * TOWER_HELL_SOUL_ORIGIN_PER_FLOOR);
 }
@@ -1026,7 +1026,7 @@ function itemScore(it) {
    附魔精華 = rollDropCount(稀有度基礎機率 × (1 + 精粹透鏡加成總合/100))
    鑲嵌寶石會在分解前取回，但分解本身不產出寶石。 */
 var ANCIENT_AFFIX_SALVAGE_CHANCE = 50;
-var ESSENCE_SALVAGE_CHANCE_BY_RARITY = [0.2, 1, 1.5, 2.5, 4, 8, 20, 100, 100];
+var ESSENCE_SALVAGE_CHANCE_BY_RARITY = [0.5, 1.5, 2.5, 4, 8, 15, 25, 100, 100];
 function essenceSalvageChanceForRarity(rarity) {
   var idx = clamp(Math.floor(Number(rarity) || 0), 0, ESSENCE_SALVAGE_CHANCE_BY_RARITY.length - 1);
   return ESSENCE_SALVAGE_CHANCE_BY_RARITY[idx];
