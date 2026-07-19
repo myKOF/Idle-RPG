@@ -1,19 +1,19 @@
 'use strict';
 /* ============ 天賦與潛力 ============
-   天賦：1 轉後開放，使用轉生天賦點；升 1 級消耗 = 該天賦轉數 + 1，Lv.51 起每級加倍。
+   天賦：1 轉後開放，使用轉生天賦點；升 1 級消耗 = 該天賦轉數 + 9，Lv.51 起每級加倍。
    潛力：新的技能分類，使用既有技能點，沒有獨立的潛力點。
 */
 
-/* 天賦升「到」targetLv 該一級的天賦點成本：Lv.1～50 每級 = 該天賦轉數 + 1；Lv.51～100 每級加倍 = (轉數+1)×2
-   （例：1 轉天賦前 50 級每級 2 點、51 級起每級 4 點；10 轉為 11 點／22 點） */
+/* 天賦升「到」targetLv 該一級的天賦點成本：Lv.1～50 每級 = 該天賦轉數 + 9；Lv.51～100 每級加倍 = (轉數+9)×2
+   （例：1 轉天賦前 50 級每級 10 點、51 級起每級 20 點；2 轉為 11 點／22 點；10 轉為 19 點／38 點） */
 function talentUpgradeCost(id, targetLv) {
-  var base = talentTurn(id) + 1;
+  var base = talentTurn(id) + 9;
   return Math.floor(Number(targetLv) || 0) > TALENT_EFFECT_BREAK_LEVEL ? base * 2 : base;
 }
 
 /* 升到 Lv.lv 的累計天賦點成本（清除退點與已投入點數計算用） */
 function talentTotalCost(id, lv) {
-  var base = talentTurn(id) + 1;
+  var base = talentTurn(id) + 9;
   lv = clamp(Math.floor(Number(lv) || 0), 0, TALENT_MAX_LEVEL);
   return Math.min(lv, TALENT_EFFECT_BREAK_LEVEL) * base + Math.max(0, lv - TALENT_EFFECT_BREAK_LEVEL) * base * 2;
 }
@@ -107,8 +107,8 @@ function potentialUnlockTalentIds() {
 
 function potentialCountForLevel(def, lv) {
   if (!def || def.stat !== 'potentialUnlock') return 0;
-  // 潛力解鎖天賦投入 1 級即固定解鎖 def.unlocks 個潛力技能；low/high 是技能點效果，不是解鎖數量。
-  return lv > 0 ? Math.max(0, Math.floor(Number(def.unlocks) || 0)) : 0;
+  // 潛力解鎖天賦升至 100 級（滿級）才固定解鎖 def.unlocks 個潛力技能；low/high 是技能點效果，不是解鎖數量。
+  return lv >= TALENT_MAX_LEVEL ? Math.max(0, Math.floor(Number(def.unlocks) || 0)) : 0;
 }
 
 function potentialTemporarilyDisabled(id) {

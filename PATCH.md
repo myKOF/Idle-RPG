@@ -1,5 +1,35 @@
 # PATCH.md
 
+## 變更紀錄：潛力解鎖天賦改為「升至 100 級才解鎖」（2026-07-19）
+
+- **解鎖條件**（js/talents.js `potentialCountForLevel`）：3／4／7／10 轉四個潛力解鎖天賦由「投入 1 級即解鎖」改為「**升至 Lv.100（滿級）才解鎖** `unlocks` 個潛力技能」（`lv >= TALENT_MAX_LEVEL`）；天賦本身仍整批 disabled、置灰不可升級，僅先改條件。
+- **tips 文案**（js/ui.js `talentEffectDescription`）：潛力解鎖天賦說明改為「升至 100 級才會解鎖新類型技能「潛力」N 個，並給予 X 點技能點。」，天賦頁 modal 與懸停 tooltip 皆套用。
+- 測試：talents.test.cjs 解鎖條件改測 99 級不解鎖／100 級解鎖，新增 tips 文案回歸；build 過、天賦測試 27/27 綠、全套零新增失敗。
+- 文件：game_formula.md §10 同步。
+
+## 變更紀錄：天賦數值調整（《天賦V3.xlsx》，攻擊類下修）（2026-07-19）
+
+- 依《天賦V3.xlsx》調整 TALENT_TREES 每級數值（js/data.js，低段/高段）：1 轉八節點 1/2→**0.5/1**；3 轉普通/菁英傷害、全屬性抗性 ×2、物防/魔防 1/2→**0.5/1**（BOSS 傷害 1/2 不變）；4 轉五類技能 1/2→**0.5/1**（物理類 51 級歧義由表確定為 1%）；5 轉六系附傷 1/2→**0.5/1**；6 轉對屬性敵人傷害 3/6→**2/4**；7 轉物攻/魔攻 1/2→**0.5/1**、破壞本源 0.5/1→**0.25/0.5**；8 轉對 BOSS 傷害 5/10→**4/8**；9 轉物抗/魔抗 3/6→**2/4**；10 轉四維 2/4→**0.75/1.5**。
+- 未變動：2 轉全部、3 轉 BOSS、5 轉全屬性抗性/傷害偏折、6 轉 BOSS 傷害/抗性、7 轉全屬性抗性/閃避/命中/全局減傷、8 轉對屬性抗性/BOSS 抗性、9 轉附傷、10 轉 BOSS 抗性/寶石鑲嵌/毀滅本源；成本與結構不動、無重置。
+- 測試：talents.test.cjs／talent-elem-attach.test.cjs 數值斷言同步；build 過、全套零新增失敗；隔離埠實測。
+- 文件：game_formula.md §10、PLAN.md 同步。
+
+## 變更紀錄：天賦升級消耗再調整（基礎改轉數+9）＋第四次一次性重置（2026-07-19）
+
+- **成本再調整**（js/talents.js）：`talentUpgradeCost`／`talentTotalCost` 基礎由「轉數+2」改為「**轉數+9**」，Lv.51 起每級加倍規則不變（1 轉 10/20 點、2 轉 11/22 點…10 轉 19/38 點）；升/降/清除/累計自動沿用。
+- **UI/公告**（js/ui.js＋js/main.js）：天賦頁提示與重置公告文案數字同步（轉數+9）。
+- **存檔遷移**（ONE-TIME MIGRATION `talentTreesV2RespecV4`，js/save.js＋js/player.js）：第四次一次性重置——依**前一版成本**（轉數+2、51 級起加倍）退還天賦點；條件與二次確認窗訊息與前次相同（已 1 轉且曾升級任一天賦 → 「天賦系統已重新改造，請重新配置！」）；跳版舊檔連跑不重複退點/彈窗；登錄於 ONE_TIME_MIGRATIONS.md。
+- 測試：talents.test.cjs 成本數值更新、talent-respec-migration.test.cjs 新增 V4 三項；build 過、全套零新增失敗；隔離埠實測。
+- 文件：game_formula.md §1/§10、PLAN.md、ONE_TIME_MIGRATIONS.md 同步。
+
+## 變更紀錄：天賦升級消耗再調整（基礎改轉數+2）＋第三次一次性重置（2026-07-19）
+
+- **成本再調整**（js/talents.js）：`talentUpgradeCost`／`talentTotalCost` 基礎由「轉數+1」改為「**轉數+2**」，Lv.51 起每級加倍規則不變（1 轉 3/6 點、2 轉 4/8 點…10 轉 12/24 點）；升/降/清除/累計自動沿用。
+- **UI/公告**（js/ui.js＋js/main.js）：天賦頁提示與重置公告文案數字同步（轉數+2）。
+- **存檔遷移**（ONE-TIME MIGRATION `talentTreesV2RespecV3`，js/save.js＋js/player.js）：第三次一次性重置——依**前一版成本**（轉數+1、51 級起加倍）退還天賦點；條件與二次確認窗訊息與前次相同（已 1 轉且曾升級任一天賦 → 「天賦系統已重新改造，請重新配置！」）；跳版舊檔連跑不重複退點/彈窗；登錄於 ONE_TIME_MIGRATIONS.md。
+- 測試：talents.test.cjs 成本數值更新、talent-respec-migration.test.cjs 新增 V3 三項；build 過、全套零新增失敗；隔離埠實測。
+- 文件：game_formula.md §1/§10、PLAN.md、ONE_TIME_MIGRATIONS.md 同步。
+
 ## 變更紀錄：天賦升級消耗改制（Lv.51 起加倍）＋第二次一次性重置（2026-07-19）
 
 - **成本改制**（js/talents.js）：`talentUpgradeCost(id, targetLv)` —— Lv.1～50 每級 = 該天賦轉數+1、Lv.51～100 每級**加倍** = (轉數+1)×2（1 轉 2/4 點、2 轉 3/6 點…10 轉 11/22 點）；新增 `talentTotalCost` 累計成本；降級退當級成本、清除退累計成本、`talentSpentPoints` 同步。

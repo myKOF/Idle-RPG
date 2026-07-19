@@ -50,6 +50,8 @@ function newGameState() {
     externalGoldRecoveryV1: true,
     talentTreesV2RespecV1: true, // 天賦系統 V2（1~10 轉）改版：新帳號無需重置退點
     talentTreesV2RespecV2: true, // 天賦升級消耗改制（Lv.51 起加倍）第二次重置：新帳號無需處理
+    talentTreesV2RespecV3: true, // 天賦升級消耗再調整（基礎改轉數+2）第三次重置：新帳號無需處理
+    talentTreesV2RespecV4: true, // 天賦升級消耗再調整（基礎改轉數+9）第四次重置：新帳號無需處理
 
     savedAt: Date.now(),
     player: {

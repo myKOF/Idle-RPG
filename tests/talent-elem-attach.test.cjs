@@ -77,20 +77,20 @@ function loadStatsContext() {
 
 test('computeStats 派生 elemDmgPct，天賦不再灌進固定值元素攻擊', () => {
   const c = loadStatsContext();
-  c.G.player.talents.levels.t5_fire = 10; // 5 轉：10 級 × 1% = 10%
+  c.G.player.talents.levels.t5_fire = 10; // 5 轉：10 級 × 0.5% = 5%（V3）
   c.G.player.talents.levels.t9_fire = 10; // 9 轉：10 級 × 2% = 20%（同元素相加）
   const st = c.computeStats();
-  assert.equal(st.elemDmgPct.fire, 30);
+  assert.equal(st.elemDmgPct.fire, 25);
   assert.equal(st.elemDmgPct.ice, 0);
   assert.equal(st.elemAtk.fire, 0); // 無裝備附魔 → 固定值附傷應為 0
 });
 
 test('元素核心改為乘算提高附傷%，未點的元素不再憑空附傷', () => {
   const c = loadStatsContext();
-  c.G.player.talents.levels.t5_fire = 10; // 10%
+  c.G.player.talents.levels.t5_fire = 10; // 5%
   c.G.player.talents.potentialLevels.p5_elementCore = 5; // 5 級 × 2% = +10%
   const st = c.computeStats();
-  assert.ok(Math.abs(st.elemDmgPct.fire - 11) < 1e-9); // 10% × 1.1
+  assert.ok(Math.abs(st.elemDmgPct.fire - 5.5) < 1e-9); // 5% × 1.1
   assert.equal(st.elemDmgPct.ice, 0);
   assert.equal(st.elemAtk.ice, 0);
 });

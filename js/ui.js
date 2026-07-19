@@ -2700,7 +2700,7 @@ function talentEffectDescription(def, value) {
     if (def.stat === 'potentialTowerTime') return '每級增加高塔挑戰限時 1 秒；目前額外時間：' + fmt(current) + ' 秒';
     if (def.stat === 'potentialOffline') return '每級使離線收益額外提高 5%；目前額外提高：' + fmt(current) + '%';
   }
-  if (def.stat === 'potentialUnlock') return '解鎖新類型技能「潛力」' + fmt(def.unlocks || 0) + ' 個並給予' + fmt(value) + '點技能點。';
+  if (def.stat === 'potentialUnlock') return '升至 100 級才會解鎖新類型技能「潛力」' + fmt(def.unlocks || 0) + ' 個，並給予' + fmt(value) + '點技能點。';
   return esc(def.desc) + talentEffectLabel(def, value);
 }
 
@@ -2793,7 +2793,7 @@ function renderTalentModal() {
   var maxAttr = 'data-talent-max="' + def.id + '"';
   var downAttr = 'data-talent-down="' + def.id + '"';
   var deleteAttr = 'data-talent-delete="' + def.id + '"';
-  var cost = (typeof talentUpgradeCost === 'function') ? talentUpgradeCost(def.id, lv + 1) : turn + 1;
+  var cost = (typeof talentUpgradeCost === 'function') ? talentUpgradeCost(def.id, lv + 1) : turn + 9;
   var maxed = lv >= maxLv;
   var disabledNotice = disabled ? '<div class="hint">🔒 目前暫不開放升級</div>' : '';
   var h = '<div class="talent-modal-head"><span class="talent-modal-icon">' + def.emoji + '</span><b>' + esc(def.name) + '</b> <span class="dim-text">Lv.' + lv + '/' + maxLv + '｜' + title + '</span>' +
@@ -2823,7 +2823,7 @@ function renderTalents() {
   if (!root) return;
   var rc = reincarnationCountSafe();
   var h = '<div class="panel talent-summary"><div class="sec-title">🌟 天賦系統</div>' +
-    '<div class="hint">1 轉後開放；天賦使用轉生天賦點，升 1 級消耗＝該天賦轉數+1、Lv.51 起每級加倍（例：1 轉前 50 級每級 2 點、51 級起每級 4 點）。潛力是新的技能分類，與特殊、被動共用技能點，不另設潛力點。</div>' +
+    '<div class="hint">1 轉後開放；天賦使用轉生天賦點，升 1 級消耗＝該天賦轉數+9、Lv.51 起每級加倍（例：1 轉前 50 級每級 10 點、51 級起每級 20 點）。潛力是新的技能分類，與特殊、被動共用技能點，不另設潛力點。</div>' +
     '<div class="talent-point-line">轉生天賦點：<b>' + fmtFull(G.player.reincarnationTalentPoints || 0) + '</b></div></div>';
   if (rc < 1) h += '<div class="panel talent-locked-banner">🔒 天賦系統將於完成 1 轉後開放。</div>';
   for (var turn = 1; turn <= REINCARNATION_MAX; turn++) {

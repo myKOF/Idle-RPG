@@ -1031,7 +1031,7 @@ function itemScore(it) {
    附魔精華 = rollDropCount(稀有度基礎機率 × (1 + 精粹透鏡加成總合/100))
    鑲嵌寶石會在分解前取回，但分解本身不產出寶石。 */
 var ANCIENT_AFFIX_SALVAGE_CHANCE = 50;
-var ESSENCE_SALVAGE_CHANCE_BY_RARITY = [0.5, 1.5, 2.5, 4, 8, 15, 25, 100, 100];
+var ESSENCE_SALVAGE_CHANCE_BY_RARITY = [5, 7.5, 10, 15, 20, 25, 30, 100, 100];
 function essenceSalvageChanceForRarity(rarity) {
   var idx = clamp(Math.floor(Number(rarity) || 0), 0, ESSENCE_SALVAGE_CHANCE_BY_RARITY.length - 1);
   return ESSENCE_SALVAGE_CHANCE_BY_RARITY[idx];

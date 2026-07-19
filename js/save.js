@@ -289,6 +289,8 @@ function migrateSave(data) {
   var hadExternalGoldRecoveryV1 = !!data.externalGoldRecoveryV1;
   var hadTalentTreesV2RespecV1 = !!data.talentTreesV2RespecV1;
   var hadTalentTreesV2RespecV2 = !!data.talentTreesV2RespecV2;
+  var hadTalentTreesV2RespecV3 = !!data.talentTreesV2RespecV3;
+  var hadTalentTreesV2RespecV4 = !!data.talentTreesV2RespecV4;
   var hadForgeUnlockNotice = !!(data.forge && data.forge.unlockNotified);
   var hadSalvageSlots = !!(data.factory && data.factory.salvageSlots !== undefined);
   // 熔爐合併改版旗標：需在 mergeDefaults 前判斷（merge 會補 noticeShown/tabSeen 預設 true）。
@@ -403,6 +405,52 @@ function migrateSave(data) {
       if (data.player.reincarnations >= 1) data._talentRespecConfirm = true;
     }
     data.talentTreesV2RespecV2 = true;
+  }
+  /* ONE-TIME MIGRATION: talentTreesV2RespecV3（登錄於 ONE_TIME_MIGRATIONS.md）
+     天賦升級消耗再調整（基礎由 轉數+1 改為 轉數+2）：再次重置天賦，依「前一版成本」
+     （Lv.1～50 每級 轉數+1、Lv.51 起每級 (轉數+1)×2）退還天賦點；
+     條件與二次確認窗與前次相同。剛跑完 V1/V2 的跳版舊檔此時天賦已空，不會重複退點。 */
+  if (!hadTalentTreesV2RespecV3) {
+    var talentRespec3Refund = 0;
+    if (typeof talentList === 'function') {
+      talentList().forEach(function (entry) {
+        var prevLv3 = clamp(Math.floor(Number(data.player.talents.levels[entry.def.id]) || 0), 0, TALENT_MAX_LEVEL);
+        var prevBase3 = entry.turn + 1;
+        talentRespec3Refund += Math.min(prevLv3, TALENT_EFFECT_BREAK_LEVEL) * prevBase3 +
+          Math.max(0, prevLv3 - TALENT_EFFECT_BREAK_LEVEL) * prevBase3 * 2;
+      });
+    }
+    data.player.talents.levels = {};
+    data.player.talents.potentialLevels = {};
+    if (talentRespec3Refund > 0) {
+      data.player.reincarnationTalentPoints += talentRespec3Refund;
+      data._talentRespecNotice = '天賦升級消耗已再次調整（基礎改為 轉數+2）：原有天賦已重置，退還 ' + talentRespec3Refund + ' 點轉生天賦點';
+      if (data.player.reincarnations >= 1) data._talentRespecConfirm = true;
+    }
+    data.talentTreesV2RespecV3 = true;
+  }
+  /* ONE-TIME MIGRATION: talentTreesV2RespecV4（登錄於 ONE_TIME_MIGRATIONS.md）
+     天賦升級消耗再調整（基礎由 轉數+2 改為 轉數+9）：再次重置天賦，依「前一版成本」
+     （Lv.1～50 每級 轉數+2、Lv.51 起每級 (轉數+2)×2）退還天賦點；
+     條件與二次確認窗與前次相同。剛跑完 V1～V3 的跳版舊檔此時天賦已空，不會重複退點。 */
+  if (!hadTalentTreesV2RespecV4) {
+    var talentRespec4Refund = 0;
+    if (typeof talentList === 'function') {
+      talentList().forEach(function (entry) {
+        var prevLv4 = clamp(Math.floor(Number(data.player.talents.levels[entry.def.id]) || 0), 0, TALENT_MAX_LEVEL);
+        var prevBase4 = entry.turn + 2;
+        talentRespec4Refund += Math.min(prevLv4, TALENT_EFFECT_BREAK_LEVEL) * prevBase4 +
+          Math.max(0, prevLv4 - TALENT_EFFECT_BREAK_LEVEL) * prevBase4 * 2;
+      });
+    }
+    data.player.talents.levels = {};
+    data.player.talents.potentialLevels = {};
+    if (talentRespec4Refund > 0) {
+      data.player.reincarnationTalentPoints += talentRespec4Refund;
+      data._talentRespecNotice = '天賦升級消耗已再次調整（基礎改為 轉數+9）：原有天賦已重置，退還 ' + talentRespec4Refund + ' 點轉生天賦點';
+      if (data.player.reincarnations >= 1) data._talentRespecConfirm = true;
+    }
+    data.talentTreesV2RespecV4 = true;
   }
   if (typeof talentList === 'function') {
     talentList().forEach(function (entry) {

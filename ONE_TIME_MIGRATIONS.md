@@ -13,6 +13,52 @@
 
 ## 目前登錄與規劃中的遷移
 
+### `talentTreesV2RespecV4`：天賦升級消耗再調整（基礎改轉數+9）第四次重置退點
+
+**狀態：已實作（2026-07-19）。**
+
+**目的**：天賦升級消耗基礎由「轉數+2」調整為「轉數+9」（Lv.51 起每級加倍規則不變）。已依前一版成本配點的外部玩家需重新配置，故再次重置天賦並依**前一版成本**（Lv.1～50 每級 轉數+2、Lv.51 起每級 (轉數+2)×2）退還天賦點。
+
+**執行時機**：
+
+- 在 `migrateSave(data)` 的 `talentTreesV2RespecV3` 區塊之後、依新天賦樹補齊等級之前執行。
+- 以 `data.talentTreesV2RespecV4` 作為一次性完成標記；新帳號由 `newGameState` 預先標記完成。
+
+**處理範圍**：
+
+- 依 `talentList()` 逐節點以 `min(L,50)×(轉數+2) + max(0,L−50)×(轉數+2)×2` 累計退點後，`levels` 與 `potentialLevels` 全數清空；退點加入 `data.player.reincarnationTalentPoints`。
+- 有退點時設定 `data._talentRespecNotice`（戰鬥日誌公告）；「已 1 轉且曾升級任一天賦」時另設 `data._talentRespecConfirm`，由 `main.js` 彈出與前次相同的一次性二次確認窗「天賦系統已重新改造，請重新配置！」。
+- 跳版舊檔（V1～V4 旗標皆缺）：前面的遷移先清空天賦，V4 看到空天賦 → 不重複退點、不重複彈窗。
+
+**保留資料／冪等條件**：同前三次；標記寫入後重複讀檔不再退點。
+
+**測試方式**：`tests/talent-respec-migration.test.cjs` 驗證前一版成本退點（含 51 級以上加倍段）、彈窗條件、冪等、跳版舊檔不重複退點、新帳號不觸發。
+
+**日後清理**：與 `talentTreesV2RespecV1`～`V3` 一同下線（四塊 `ONE-TIME MIGRATION` 區塊、`js/player.js` 四個旗標、`js/main.js` 公告與確認窗區塊）。
+
+### `talentTreesV2RespecV3`：天賦升級消耗再調整（基礎改轉數+2）第三次重置退點
+
+**狀態：已實作（2026-07-19）。**
+
+**目的**：天賦升級消耗基礎由「轉數+1」調整為「轉數+2」（Lv.51 起每級加倍規則不變）。已依前一版成本配點的外部玩家需重新配置，故再次重置天賦並依**前一版成本**（Lv.1～50 每級 轉數+1、Lv.51 起每級 (轉數+1)×2）退還天賦點。
+
+**執行時機**：
+
+- 在 `migrateSave(data)` 的 `talentTreesV2RespecV2` 區塊之後、依新天賦樹補齊等級之前執行。
+- 以 `data.talentTreesV2RespecV3` 作為一次性完成標記；新帳號由 `newGameState` 預先標記完成。
+
+**處理範圍**：
+
+- 依 `talentList()` 逐節點以 `min(L,50)×(轉數+1) + max(0,L−50)×(轉數+1)×2` 累計退點後，`levels` 與 `potentialLevels` 全數清空；退點加入 `data.player.reincarnationTalentPoints`。
+- 有退點時設定 `data._talentRespecNotice`（戰鬥日誌公告）；「已 1 轉且曾升級任一天賦」時另設 `data._talentRespecConfirm`，由 `main.js` 彈出與前次相同的一次性二次確認窗「天賦系統已重新改造，請重新配置！」。
+- 跳版舊檔（V1/V2/V3 旗標皆缺）：前面的遷移先清空天賦，V3 看到空天賦 → 不重複退點、不重複彈窗。
+
+**保留資料／冪等條件**：同前兩次；標記寫入後重複讀檔不再退點。
+
+**測試方式**：`tests/talent-respec-migration.test.cjs` 驗證前一版成本退點（含 51 級以上加倍段）、彈窗條件、冪等、跳版舊檔不重複退點、新帳號不觸發。
+
+**日後清理**：與 `talentTreesV2RespecV1`／`V2` 一同下線（三塊 `ONE-TIME MIGRATION` 區塊、`js/player.js` 三個旗標、`js/main.js` 公告與確認窗區塊）。
+
 ### `talentTreesV2RespecV2`：天賦升級消耗改制（Lv.51 起加倍）第二次重置退點
 
 **狀態：已實作（2026-07-19）。**
