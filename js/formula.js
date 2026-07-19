@@ -43,7 +43,10 @@ function reincarnationTotalMultiplier(count) {
 }
 function reincarnationExpMultiplier(count) {
   var n = clamp(Math.floor(count === undefined ? reincarnationCount() : count), 0, REINCARNATION_MAX);
-  return Math.pow(10, n);
+  // 各轉倍數連乘（REINCARNATION_EXP_STEP_MULTS[i] = 第 i 轉相對上一轉的倍數）
+  var m = 1;
+  for (var i = 1; i <= n; i++) m *= REINCARNATION_EXP_STEP_MULTS[i] || 1;
+  return m;
 }
 // 升級經驗基礎增加值（依轉生次數，於括號外相加；轉生 0 次為 0）
 function reincarnationExpBaseAdd(count) {
@@ -51,7 +54,7 @@ function reincarnationExpBaseAdd(count) {
   return REINCARNATION_EXP_BASE_ADD[n] || 0;
 }
 
-// 升到下一級所需經驗 =（30 × 等級^2 + 40）× 轉生經驗倍率（每轉 ×10）＋ 升級經驗基礎增加值（依轉生次數）
+// 升到下一級所需經驗 =（30 × 等級^2 + 40）× 轉生經驗倍率（各轉倍數由參數表 a~j 制定、累積連乘）＋ 升級經驗基礎增加值（依轉生次數）
 function xpForLevel(l) { return Math.floor((30 * Math.pow(l, 2.2) + 40) * reincarnationExpMultiplier() + reincarnationExpBaseAdd()); }
 
 /* 等級基礎四維主屬性（不含裝備）：力/敏/智/耐 相同
@@ -1023,7 +1026,7 @@ function itemScore(it) {
    附魔精華 = rollDropCount(稀有度基礎機率 × (1 + 精粹透鏡加成總合/100))
    鑲嵌寶石會在分解前取回，但分解本身不產出寶石。 */
 var ANCIENT_AFFIX_SALVAGE_CHANCE = 50;
-var ESSENCE_SALVAGE_CHANCE_BY_RARITY = [0.1, 0.5, 1, 2, 4, 8, 20, 100, 100];
+var ESSENCE_SALVAGE_CHANCE_BY_RARITY = [0.2, 1, 1.5, 2.5, 4, 8, 20, 100, 100];
 function essenceSalvageChanceForRarity(rarity) {
   var idx = clamp(Math.floor(Number(rarity) || 0), 0, ESSENCE_SALVAGE_CHANCE_BY_RARITY.length - 1);
   return ESSENCE_SALVAGE_CHANCE_BY_RARITY[idx];

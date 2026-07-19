@@ -53,6 +53,9 @@ var REINCARNATION_RANKS = ['冒險者', '勇者', '大劍師', '破世者', '不
 var REINCARNATION_EXTRA_MULTIPLIERS = [0, 10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120];
 // 升級經驗基礎增加值：升級所需經驗在括號外再加此值（依轉生次數；轉生 0 次為 0，1~10 次見轉生對照表 參數 c）。
 var REINCARNATION_EXP_BASE_ADD = [0, 100000, 300000, 900000, 2700000, 8100000, 24300000, 72900000, 218700000, 656100000, 1968300000];
+// 各轉經驗倍數（索引 1~10＝該轉升級經驗需求相對「上一轉」的倍數；參數表「1-成長經驗/轉生經驗倍率」a~j）
+// 累積倍率 = 各轉倍數連乘（例：3 轉 = 10×10×10 = 1000）。
+var REINCARNATION_EXP_STEP_MULTS = [1, 10, 10, 10, 10, 10, 10, 10, 10, 10, 100];
 
 /* ---- 天賦系統（1 轉後開放；企劃書先實作至 5 轉） ----
    一般天賦每轉 8 個、每個最高 100 級；數值為每級增量，51 級起使用 high。
@@ -211,10 +214,10 @@ var PRIMARY_STAT_EFFECTS = {
 // 攻擊 = (base + 定值 + flatMult×定值×reincBase^轉生次數 + 主屬性×係數) × (1 + 對應攻擊%)
 // 防禦 = (base + 定值 + flatMult×定值×reincBase^轉生次數 + 主屬性×係數 + 耐力×係數) × (1 + 共用對應攻擊%)
 var DERIVED_COEF = {
-  atkBase: 8, atkFlatMult: 1.2, atkReincBase: 2.8,
-  matkBase: 6, matkFlatMult: 1.2, matkReincBase: 2.8,
-  defBase: 3, defFlatMult: 0.75, defReincBase: 2.7,
-  mdefBase: 2, mdefFlatMult: 0.75, mdefReincBase: 2.7
+  atkBase: 8, atkFlatMult: 1.2, atkReincBase: 2.5,
+  matkBase: 6, matkFlatMult: 1.2, matkReincBase: 2.5,
+  defBase: 3, defFlatMult: 0.75, defReincBase: 2.4,
+  mdefBase: 2, mdefFlatMult: 0.75, mdefReincBase: 2.4
 };
 // 連擊數係數：連擊數 = a·ln(暴擊率−100) + b·(暴擊率−100) + c（暴擊率 ≤100% 時為 0；由參數表「2-屬性派生／連擊數」控制）
 var COMBO_HITS_COEF = { a: 0.875, b: 0.0025, c: 0.05 };

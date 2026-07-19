@@ -615,7 +615,12 @@ numCtx('formula', 'Math.max(', ', Math.floor(G.player.level', P('1-成長經驗'
 numCtx('formula', 'return Math.min(', ', Math.max(2', P('1-成長經驗', '技能裝載欄', 2), '裝載欄-上限');
 
 /* ---- Batch2a：補接 formula.js 內漏接的可調單值（多值行用正規式避免相依錨點失配） ---- */
-numCtx('formula', 'return Math.pow(', ', n)', P('1-成長經驗', '轉生經驗倍率', 0), '轉生經驗倍率');
+// REINCARNATION_EXP_STEP_MULTS = [1, a..j]（各轉相對上一轉的經驗倍數；索引 0 固定 1）
+{
+  const g = [];
+  for (let i = 0; i < 10; i++) g.push(P('1-成長經驗', '轉生經驗倍率', i));
+  arrayContent('data', 'REINCARNATION_EXP_STEP_MULTS', '1, ' + g.join(', '), 'REINCARNATION_EXP_STEP_MULTS');
+}
 inline('formula', 'FIELD_BOOK_DROP_PCT = ', P('5-野外材料', '附魔書', 0), 'FIELD_BOOK_DROP_PCT');
 inline('formula', 'FIELD_PART_DROP_PCT = ', P('5-野外材料', '自動機組零件', 0), 'FIELD_PART_DROP_PCT');
 numCtx('formula', 'Math.floor((floor - 1) / ', ')', P('5-高塔獎勵', '零件階級', 0), '高塔-零件階級');

@@ -3249,6 +3249,7 @@ function showEnemyTooltip(anchorEl) {
   var tip = $id('sk-tooltip');
   if (!tip) return;
 
+
   var isBossTip = (anchorEl.id === 'btn-boss-tip' || anchorEl.id === 'btn-tower-result-boss-tip');
   var m = null;
   if (isBossTip) {
@@ -3538,7 +3539,14 @@ function renderGemConvert() {
   // 庫存池（顯示尚可放入的數量）
   var pool = $id('gconv-pool');
   if (!pool) return;
-  var chips = [];
+
+  // 更新排序按鈕文字
+  var btnGemSort = $id('btn-gem-sort');
+  if (btnGemSort) {
+    btnGemSort.textContent = (UI.gemSortType === 'level') ? '排序：等級優先' : '排序：類型優先';
+  }
+
+  var gemItems = [];
   for (var t in GEM_TYPES) {
     for (var lv = 1; lv <= GEM_FORGE_MAX_LEVEL; lv++) {
       var have = gemCount(t, lv);
@@ -3548,13 +3556,33 @@ function renderGemConvert() {
         if (UI.convertSlots[ci].type === t && UI.convertSlots[ci].lv === lv) placed = UI.convertSlots[ci].n;
       }
       var left = have - placed;
-      var tip = esc(GEM_NAMES[lv] + GEM_TYPES[t].name + '｜' + gemAbilityText(t, lv) + '｜可放入 ' + left + ' 顆｜點擊放入九宮格');
-      chips.push('<span class="gem-chip gem-inventory-cell' + (left > 0 ? '' : ' dim') + '" data-gconv-pick="' + t + ':' + lv + '" data-tip="' + tip + '">' +
-        '<span class="gem-chip-count">×' + left + '</span>' +
-        '<span class="gem-chip-emoji">' + GEM_TYPES[t].emoji + '</span>' +
-        '<span class="gem-chip-level">' + lv + '</span></span>');
+      gemItems.push({ type: t, lv: lv, left: left, have: have });
     }
   }
+
+  // 寶石排序
+  var gemTypesKeys = Object.keys(GEM_TYPES);
+  gemItems.sort(function (a, b) {
+    if (UI.gemSortType === 'level') {
+      if (a.lv !== b.lv) return b.lv - a.lv;
+      return gemTypesKeys.indexOf(a.type) - gemTypesKeys.indexOf(b.type);
+    } else {
+      var idxA = gemTypesKeys.indexOf(a.type);
+      var idxB = gemTypesKeys.indexOf(b.type);
+      if (idxA !== idxB) return idxA - idxB;
+      return a.lv - b.lv;
+    }
+  });
+
+  var chips = gemItems.map(function (item) {
+    var t = item.type, lv = item.lv, left = item.left;
+    var tip = esc(GEM_NAMES[lv] + GEM_TYPES[t].name + '｜' + gemAbilityText(t, lv) + '｜可放入 ' + left + ' 顆｜點擊放入九宮格');
+    return '<span class="gem-chip gem-inventory-cell' + (left > 0 ? '' : ' dim') + '" data-gconv-pick="' + t + ':' + lv + '" data-tip="' + tip + '">' +
+      '<span class="gem-chip-count">×' + left + '</span>' +
+      '<span class="gem-chip-emoji">' + GEM_TYPES[t].emoji + '</span>' +
+      '<span class="gem-chip-level">' + lv + '</span></span>';
+  });
+
   pool.innerHTML = chips.length ? chips.join('') : '<span class="hint">沒有寶石庫存</span>';
 }
 
@@ -4477,6 +4505,13 @@ function initUI() {
   }
 
   // 寶石轉換（九宮格）
+  var btnGemSort = $id('btn-gem-sort');
+  if (btnGemSort) {
+    btnGemSort.addEventListener('click', function () {
+      UI.gemSortType = (UI.gemSortType === 'level') ? 'type' : 'level';
+      renderGemConvert();
+    });
+  }
   var gconvPool = $id('gconv-pool');
   if (gconvPool) {
     gconvPool.addEventListener('click', function (e) {
