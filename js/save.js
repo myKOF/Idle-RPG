@@ -310,13 +310,15 @@ function migrateSave(data) {
   
   mergeDefaults(data, def);
   /* ONE-TIME MIGRATION: equipSetPotentialLimitV1（登錄於 ONE_TIME_MIGRATIONS.md）
-     多套裝備 (Lv.2000) 與潛力 (3轉) 新開放門檻限制。
+     多套裝備分級門檻與潛力 (3轉) 新開放門檻限制。
      對於低於門檻卻已穿載多套裝備或點過潛力的舊存檔，載入時強制重置以防異常。 */
   if (!hadLimitMigration) {
     if (data.player) {
-      if (data.player.level < 2000) {
+      if (!equipmentSetUnlockedAtLevel(data.equipActive, data.player.level)) {
         data.equipActive = 0;
         data.equipView = 0;
+      } else if (!equipmentSetUnlockedAtLevel(data.equipView, data.player.level)) {
+        data.equipView = data.equipActive;
       }
       if (data.player.reincarnations < 3) {
         data.player.talents.potentialLevels = {};
@@ -521,13 +523,10 @@ function migrateSave(data) {
       for (var i = 0; i < data.equipmentSets.length; i++) data.equipmentSets[i] = ensureSlots(data.equipmentSets[i]);
       while (data.equipmentSets.length < COUNT) data.equipmentSets.push(ensureSlots(null));
       var last = data.equipmentSets.length - 1;
-      if (data.player && data.player.level < 2000) {
-        data.equipActive = 0;
-        data.equipView = 0;
-      } else {
-        data.equipActive = clamp(Math.floor(Number(data.equipActive) || 0), 0, last);
-        data.equipView = clamp(Math.floor(Number(data.equipView) || 0), 0, last);
-      }
+      data.equipActive = clamp(Math.floor(Number(data.equipActive) || 0), 0, last);
+      data.equipView = clamp(Math.floor(Number(data.equipView) || 0), 0, last);
+      if (!equipmentSetUnlockedAtLevel(data.equipActive, data.player && data.player.level)) data.equipActive = 0;
+      if (!equipmentSetUnlockedAtLevel(data.equipView, data.player && data.player.level)) data.equipView = data.equipActive;
     }
     data.equipment = data.equipmentSets[data.equipActive]; // 重導使用中那套（避免載入後參照脫鉤）
     // 每套自訂名稱：補齊為與套數等長的字串陣列（舊存檔無此欄 → 全空＝用預設）

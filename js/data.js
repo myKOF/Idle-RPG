@@ -302,7 +302,8 @@ var ASPD_MIN = 0.2;
 var ASPD_CAP = 5;
 var BLOCK_DMG_RED_BASE = 30;
 var GODFORGED_IDX = 8;                       // 神鑄創世稀有度索引
-var FORGE_UNLOCK_LEVEL = 1;                  // 神鑄系統解鎖等級（條件一：等級 ≥ 此值）；解鎖後永久保留
+var EQUIP_SET_UNLOCK_LEVELS = [1, 500, 2000]; // 第 1/2/3 套裝備的解鎖等級
+var FORGE_UNLOCK_LEVEL = 2000;               // 神鑄系統解鎖等級（條件一：等級 ≥ 此值）；解鎖後永久保留
 var FORGE_UNLOCK_REINCARNATION = 1;          // 神鑄系統解鎖所需轉生次數（條件二：轉生 ≥ 此值）；需與條件一同時滿足
 var FORGE_MIN_RARITY = 5;                    // 可入爐最低品質（傳說）
 var FORGE_SLOTS = 6;                         // 六芒星槽位數
@@ -851,7 +852,9 @@ var BOSS_DROP_TABLE = [    // 高塔 BOSS：依樓層 7 檔（與掉落表加總
 function statFmt(val, cap, type, prefix) {
   var s = '';
   if (type === '%') s = pctStr(val);
+  else if (type === '%.1f') s = Number(val).toFixed(1) + '%';
   else if (type === '/s') s = colorizeUnit(fmt(val)) + '/秒';
+  else if (type === '/s.1f') s = colorizeUnit(Number(val).toFixed(1)) + '/秒';
   else if (type === 'raw1') s = fmt1(val);
   else s = colorizeUnit(fmt(val));
   if (prefix) s = '+' + s;
@@ -1010,11 +1013,11 @@ var STAT_GROUPS = [
       ['🗡️ 物理穿透', function (st) { return statFmt(st.pPen, STAT_CAPS.pPen, '%'); }, '造成物理傷害時，無視敵方一定比例的物理防禦。' + capText(STAT_CAPS.pPen, '%')],
       ['🪄 魔法穿透', function (st) { return statFmt(st.mPen, STAT_CAPS.mPen, '%'); }, '造成魔法傷害時，無視敵方一定比例的魔法防禦。' + capText(STAT_CAPS.mPen, '%')],
       ['🎯 命中率', function (st) { return statFmt(st.hit, null, '%'); }, '直接抵消敵方的閃避機率。'],
-      ['⚡ 攻擊速度', function (st) { return statFmt(st.aspd, ASPD_CAP, '/s'); }, function () { return '每秒進行普通攻擊的次數。' + capText(ASPD_CAP, '/秒'); }],
-      ['⏱️ 冷卻縮減', function (st) { return statFmt(st.cdr, STAT_CAPS.cdr, '%'); }, '減少技能所需的冷卻時間。' + capText(STAT_CAPS.cdr, '%')],
-      ['🌀 施法速度', function (st) { return statFmt(st.castSpeed, STAT_CAPS.castSpeed, '%'); }, '縮短技能的施放延遲或詠唱時間。' + capText(STAT_CAPS.castSpeed, '%')],
-      ['🧛 吸血', function (st) { return statFmt(st.lifesteal, STAT_CAPS.lifesteal, '%'); }, '造成傷害時，將部分傷害轉化為自身生命值。' + capText(STAT_CAPS.lifesteal, '%')],
-      ['🌊 吸魔', function (st) { return statFmt(st.manaSteal, STAT_CAPS.manaSteal, '%'); }, '造成傷害時，將部分傷害轉化為自身法力值。' + capText(STAT_CAPS.manaSteal, '%')],
+      ['⚡ 攻擊速度', function (st) { return statFmt(st.aspd, ASPD_CAP, '/s.1f'); }, function () { return '每秒進行普通攻擊的次數。' + capText(ASPD_CAP, '/秒'); }],
+      ['⏱️ 冷卻縮減', function (st) { return statFmt(st.cdr, STAT_CAPS.cdr, '%.1f'); }, '減少技能所需的冷卻時間。' + capText(STAT_CAPS.cdr, '%')],
+      ['🌀 施法速度', function (st) { return statFmt(st.castSpeed, STAT_CAPS.castSpeed, '%.1f'); }, '縮短技能的施放延遲或詠唱時間。' + capText(STAT_CAPS.castSpeed, '%')],
+      ['🧛 吸血', function (st) { return statFmt(st.lifesteal, STAT_CAPS.lifesteal, '%.1f'); }, '造成傷害時，將部分傷害轉化為自身生命值。' + capText(STAT_CAPS.lifesteal, '%')],
+      ['🌊 吸魔', function (st) { return statFmt(st.manaSteal, STAT_CAPS.manaSteal, '%.1f'); }, '造成傷害時，將部分傷害轉化為自身法力值。' + capText(STAT_CAPS.manaSteal, '%')],
       ['👑 對菁英傷害', function (st) { return statFmt(st.eliteDmg, null, '%', true); }, '對菁英怪或首領怪物造成的額外傷害加成。'],
       ['😈 對BOSS傷害', function (st) { return statFmt(st.bossDmg, null, '%', true); }, '專門對首領怪物造成的額外傷害加成。'],
       ['👤 對普通敵人傷害', function (st) { return statFmt(st.normalDmg, null, '%', true); }, '對普通敵人（非菁英、非BOSS）造成的額外傷害加成，公式與對菁英/BOSS傷害相同。'],

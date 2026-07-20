@@ -15,6 +15,15 @@ function equipSetLabel(i) {
   var n = (typeof G !== 'undefined' && Array.isArray(G.equipSetNames) && G.equipSetNames[i]) ? String(G.equipSetNames[i]).trim() : '';
   return n || equipSetName(i);
 }
+function equipmentSetUnlockedAtLevel(i, level) {
+  var idx = Math.floor(Number(i));
+  if (!Number.isFinite(idx) || idx < 0 || idx >= EQUIP_SET_COUNT) return false;
+  return Number(level) >= EQUIP_SET_UNLOCK_LEVELS[idx];
+}
+function equipmentSetUnlocked(i) {
+  if (typeof G === 'undefined' || !G.player) return false;
+  return equipmentSetUnlockedAtLevel(i, G.player.level);
+}
 
 // 熔爐（正式版）：建立一座預設熔爐（單傳送帶）。品質勾選預設依企劃示意：
 // 普通~傳說＝勾選（自動入帶拆解）、神話/創世＝不勾（保留）；神鑄創世恆不入帶。
@@ -52,7 +61,7 @@ function newGameState() {
     talentTreesV2RespecV2: true, // 天賦升級消耗改制（Lv.51 起加倍）第二次重置：新帳號無需處理
     talentTreesV2RespecV3: true, // 天賦升級消耗再調整（基礎改轉數+2）第三次重置：新帳號無需處理
     talentTreesV2RespecV4: true, // 天賦升級消耗再調整（基礎改轉數+9）第四次重置：新帳號無需處理
-    equipSetPotentialLimitV1: true, // 多套裝備 (Lv.2000) 與潛力 (3轉) 新開放門檻限制：新帳號無需重置
+    equipSetPotentialLimitV1: true, // 多套裝備分級門檻與潛力 (3轉) 的相容旗標：新帳號無需重置
 
     savedAt: Date.now(),
     player: {
@@ -225,7 +234,7 @@ function isViewingActiveSet() { return (G.equipView || 0) === (G.equipActive || 
 function setEquipView(idx) {
   if (!Array.isArray(G.equipmentSets)) return;
   var i = clamp(Math.floor(Number(idx) || 0), 0, G.equipmentSets.length - 1);
-  if (G.player.level < 2000 && i > 0) return;
+  if (!equipmentSetUnlocked(i)) return;
   G.equipView = i;
   _viewStatsCache = null;           // 換檢視目標 → 重算預覽
   UI.sel = null;
@@ -236,7 +245,7 @@ function setEquipView(idx) {
 function switchToEquipSet(idx) {
   if (!Array.isArray(G.equipmentSets)) return;
   var i = clamp(Math.floor(Number(idx) || 0), 0, G.equipmentSets.length - 1);
-  if (G.player.level < 2000 && i > 0) return;
+  if (!equipmentSetUnlocked(i)) return;
   G.equipActive = i;
   G.equipView = i;
   G.equipment = G.equipmentSets[i]; // 重導使用中那套

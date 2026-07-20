@@ -1357,7 +1357,7 @@ function renderEquipSetTabs() {
   var view = (typeof G.equipView === 'number') ? G.equipView : active;
   var h = '<div class="eqset-tabrow">';
   for (var i = 0; i < G.equipmentSets.length; i++) {
-    if (G.player.level < 2000 && i > 0) continue;
+    if (!equipmentSetUnlocked(i)) continue;
     var cls = 'eqset-tab' + (i === view ? ' viewing' : '') + (i === active ? ' active' : '');
     var defName = (typeof equipSetName === 'function') ? equipSetName(i) : ('第' + (i + 1) + '套');
     var custom = (Array.isArray(G.equipSetNames) && G.equipSetNames[i]) ? String(G.equipSetNames[i]).trim() : '';
@@ -1369,7 +1369,7 @@ function renderEquipSetTabs() {
     '</div>';
   }
   h += '</div>';
-  if (G.player.level >= 2000) {
+  if (equipmentSetUnlocked(view)) {
     var same = view === active;
     var viewLabel = (typeof equipSetLabel === 'function') ? equipSetLabel(view) : ('第' + (view + 1) + '套');
     h += '<button id="eqset-confirm" class="btn eqset-confirm"' + (same ? ' disabled' : '') + '>' +
@@ -1382,7 +1382,7 @@ function renderEquipSetTabs() {
 function renameEquipSet(idx) {
   if (!Array.isArray(G.equipmentSets)) return;
   idx = clamp(Math.floor(Number(idx) || 0), 0, G.equipmentSets.length - 1);
-  if (G.player.level < 2000 && idx > 0) return;
+  if (!equipmentSetUnlocked(idx)) return;
   if (!Array.isArray(G.equipSetNames)) G.equipSetNames = [];
   var defName = (typeof equipSetName === 'function') ? equipSetName(idx) : ('第' + (idx + 1) + '套');
   var cur = G.equipSetNames[idx] || '';
@@ -2572,7 +2572,7 @@ function uiTick() {
   if (forgeUnlocked() && !forgeState().unlockNotified) {
     forgeState().unlockNotified = true;
     UI.dirty.header = true; // 立即顯示神鑄頁籤
-    blog('🔯 <span class="log-hl-good">神鑄系統已開啟！</span>角色達到 ' + FORGE_UNLOCK_LEVEL + ' 級，可於「神鑄」分頁鑄造更高品質的裝備。', 'good');
+    blog('🔯 <span class="log-hl-good">神鑄系統已開啟！</span>角色達到 ' + FORGE_UNLOCK_LEVEL + ' 級且完成 ' + FORGE_UNLOCK_REINCARNATION + ' 轉，可於「神鑄」分頁鑄造更高品質的裝備。', 'good');
     showConfirmDialog('神鑄系統已開啟！\n\n將 6 件相同品質的裝備（傳說/神話/創世）放入六芒星法陣，即可鑄造下一品質的裝備。是否前往查看？', function () {
       switchTab('forge');
       UI.dirty.forge = true;

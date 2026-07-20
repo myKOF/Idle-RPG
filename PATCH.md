@@ -2438,3 +2438,9 @@
 - `js/main.js` 改以實際頁面內容指紋判斷更新，不再使用 GitHub Pages 可能變動的 `Last-Modified`／`ETag`。
 - 更新請求改用 `cache: no-store` 並保留每 3 分鐘檢查週期；只有頁面內容真的變更才顯示更新通知。
 - `tests/update-check.test.cjs` 新增回歸測試，禁止恢復成 HTTP 標頭比對。
+
+# 本次變更摘要：調整裝備套與神鑄解鎖門檻
+
+- 裝備第 2 套改為 Lv.500 開放，第 3 套維持 Lv.2000 開放；檢視、命名與切換共用分級解鎖判定。
+- 神鑄改為同時達 Lv.2000 與 1 轉開放，開放後仍永久保留。
+- 同步更新遊戲內說明、`LV_upgrade_system.md`、`game_formula.md`，並新增 `tests/unlock-thresholds.test.cjs` 回歸測試。

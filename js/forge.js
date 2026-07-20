@@ -35,7 +35,7 @@ function forgeState() {
   return G.forge;
 }
 
-// 神鑄系統是否已開放：需同時滿足「等級 ≥ FORGE_UNLOCK_LEVEL」與「轉生次數 ≥ FORGE_UNLOCK_REINCARNATION」，解鎖後永久保留。
+// 神鑄系統是否已開放：需同時滿足等級與轉生門檻，解鎖後永久保留。
 function forgeUnlocked() {
   if (!G || !G.player) return false;
   var f = forgeState();
