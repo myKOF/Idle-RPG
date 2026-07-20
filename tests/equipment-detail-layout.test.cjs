@@ -22,3 +22,9 @@ test('裝備評分移到裝備等級列右側，避免遮住裝備名稱', () =>
   assert.match(css, /\.it-sub\s*\{[\s\S]*display:\s*flex[\s\S]*justify-content:\s*space-between/);
   assert.match(css, /\.it-score-sub\s*\{[\s\S]*white-space:\s*nowrap/);
 });
+
+test('空附魔欄以已使用欄位數顯示，第一個空欄為 0/1', () => {
+  const item = fs.readFileSync(path.join(root, 'js/item.js'), 'utf8');
+  assert.ok(item.includes("空附魔欄（' + enSlot + '/' + enCap + '）"));
+  assert.ok(!item.includes("空附魔欄（' + (enSlot + 1) + '/' + enCap + '）"));
+});

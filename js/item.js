@@ -495,6 +495,7 @@ function applyEnchantTo(item, bookKey, gemLevel) {
 /* ---- 手動附魔（裝備介面操作，比照寶石鑲嵌） ---- */
 // 物品種類 → 可用附魔類別
 function enchantCatForType(type) {
+  type = slotTypeOf(type);
   if (type === 'weapon' || type === 'ring' || type === 'gloves' || type === 'wrist') return 'atk';
   if (type === 'amulet' || type === 'boots') return 'util';
   return 'def'; // helmet / shoulder / chest / belt / legs
@@ -798,7 +799,7 @@ function itemDetailHTML(it, cmp, opts) {
     }
   });
   for (var enSlot = itEns.length; enSlot < enCap; enSlot++) {
-    h += '<div class="it-enchant" style="color: var(--dim)">◇ 空附魔欄（' + (enSlot + 1) + '/' + enCap + '）</div>';
+    h += '<div class="it-enchant" style="color: var(--dim)">◇ 空附魔欄（' + enSlot + '/' + enCap + '）</div>';
   }
 
   // 寶石插槽

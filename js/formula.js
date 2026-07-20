@@ -70,9 +70,9 @@ function basePrimaryFor(level) {
         → 派生出面板上的所有數值（含上限 clamp）
    ============================================================ */
 
-// 元素抗性詞條 key（resFire...）→ 元素 key
+// 元素抗性詞條 key（resFire...）→ 元素 key（resAll 為「全屬性抗性」，非單一元素，另行處理）
 function affixResElem(key) {
-  if (!/^res[A-Z]/.test(key)) return null;
+  if (!/^res[A-Z]/.test(key) || key === 'resAll') return null;
   var e = key.slice(3);
   return e.charAt(0).toLowerCase() + e.slice(1); // fire / ice / lightning / poison / light / dark
 }
@@ -124,6 +124,7 @@ function computeStats(equipmentOverride) {
       var re = affixResElem(k);
       var dv = affixDmgVsElem(k);
       if (k === 'aspd') A.aspdPct += v;
+      else if (k === 'resAll') ELEMENTS.forEach(function (e) { resist[e] += v; }); // 全屬性抗性：加到六大元素抗性
       else if (re) resist[re] = (resist[re] || 0) + v;
       else if (dv) dmgVsElem[dv] += v;
       else if (A[k] !== undefined) A[k] += v;
@@ -192,6 +193,7 @@ function computeStats(equipmentOverride) {
     var re = affixResElem(key);
     var dv = affixDmgVsElem(key);
     if (key === 'aspd') A.aspdPct += v;
+    else if (key === 'resAll') ELEMENTS.forEach(function (e) { resist[e] += v; }); // 全屬性抗性寶石：加到六大元素抗性
     else if (re) resist[re] = (resist[re] || 0) + v;
     else if (dv) dmgVsElem[dv] += v;
     else if (A[key] !== undefined) A[key] += v;
@@ -691,8 +693,8 @@ function monsterStatsFor(stage, elite) {
   var hp = (30 + stage * 8) * Math.pow(1.095, stage - 1);
   var atk = (6 + stage * 1.2) * Math.pow(1.11, stage - 1);
   var def = (2 + stage * 0.5) * Math.pow(1.08, stage - 1);
-  var gold = (20 + stage) * Math.pow(1.02, stage - 1);
-  var xp = (8 + stage) * Math.pow(1.06, stage - 1);
+  var gold = (125 + stage) * Math.pow(1.02, stage - 1);
+  var xp = (16 + stage) * Math.pow(1.06, stage - 1);
   var m = {
     level: stage, hp: hp, atk: atk,
     def: def,                 // 物理防禦

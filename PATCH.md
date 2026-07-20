@@ -1,5 +1,17 @@
 # PATCH.md
 
+## 變更紀錄：新增全屬性抗性詞條＋七種抗性寶石（2026-07-20）
+
+- 需求：(1) 裝備新增一個史詩詞條「全屬性抗性」，數值約單一屬性抗性詞條的 1/4；(2) 寶石新增七種——火/冰/電/毒/暗/聖抗（六系，每系 L1~5 +5%/級、L6~10 前級×2、L10 +800%）＋全屬性抗性（L1~5 +1%/級、L6~10 ×2、L10 +160%）。
+- **新機制** `resAll`（formula.js `computeStats`）：詞條迴圈與 `applyGemStat` 各加一分支，`resAll` 加到六大元素抗性桶（`ELEMENTS.forEach`）；`affixResElem` 排除 `resAll`（非單一元素）。六系抗性寶石沿用既有 `resFire…` 路由，無需改碼。
+- **詞條**（`AFFIX_POOL`/Equipment_Affix 表）：`resAll: { name:'全屬性抗性%', base:1, lv:0.005, pct:true, weight:3, minR:4 }`（＝resFire 的 1/4；史詩起）；併入 `AFFIX_CATS.def` 顯示分類。
+- **寶石**（`GEM_TYPES`/Gems 表，`linear` 曲線）：wardFire/Ice/Lightning/Poison/Dark/Light（base 5，stat resFire…）＋ wardAll（base 1，stat resAll）。掉落/商店/合成經 `randomGemType()=pick(Object.keys(GEM_TYPES))` 自動納入，無需改掉落表。
+- **後續調整**：六種單一元素抗性詞條（resFire/Ice/Lightning/Poison/Light/Dark）最低稀有度由史詩（minR 4）改為**獨特（minR 3）**；全屬性抗性 `resAll` 維持史詩（minR 4）。實測：稀有(2) 不可 roll、獨特(3)＝六種皆可、史詩(4) 皆可。
+- 四表已重新產生（Gems 24→31、Equipment_Affix 85→86 列），round-trip 語意 0 差異。
+- **無存檔遷移**（純新增，舊存檔自然開始掉落/出現）。
+- 驗證：`build_check` 全綠；隔離埠實測 `gemStatValue` 曲線精確（wardFire L10=800、wardAll L10=160）、`computeStats` 以測試裝備確認 resAll 詞條與 wardAll 寶石同時加到火/冰/暗六系抗性、單系 wardFire 只加火系；0 console 錯誤。
+- 文件：`game_formula.md` §8（寶石 24→31、新增抗性寶石與 resAll 詞條段）同步。
+
 ## 變更紀錄：檔案配置撥離——四系統獨立 Excel/CSV（2026-07-20）
 
 - 需求：把技能/寶石/天賦/裝備詞條四系統的數值配置撥離成獨立 xlsx+CSV，「套用參數.bat」一次處理。使用者定調：新四表為唯一來源、雙向回寫 JS、技能 fx 用單一 JSON 欄。

@@ -785,7 +785,16 @@ function renderHeader() {
 
   $id('toggle-compare').checked = !!G.settings.compareEq;
   var ancientToggle = $id('toggle-ancient-essence');
-  if (ancientToggle) ancientToggle.checked = !!G.settings.useAncientEssence;
+  if (ancientToggle) {
+    ancientToggle.checked = !!G.settings.useAncientEssence;
+    // 「使用太古精華」選項：與太古精華材料圖示同步解鎖顯示，並設定相同 tooltip
+    var ancientLbl = $id('lbl-ancient-essence-toggle');
+    if (ancientLbl) {
+      ancientLbl.style.display = p.shownRes && p.shownRes['r-ancient-essence'] ? '' : 'none';
+      var ancientTipDesc = '洗煉時依裝備品質消耗（品質越高消耗越多）；每個詞條有 ' + ANCIENT_REROLL_CHANCE + '% 機率成為太古詞條。｜目前持有：' + fmtFull(p.ancientEssence || 0);
+      ancientLbl.setAttribute('data-tt-desc', ancientTipDesc);
+    }
+  }
   $id('p-level').textContent = 'Lv.' + p.level;
   if ($id('pv-level')) $id('pv-level').textContent = 'Lv.' + p.level;
   if ($id('tp-level')) $id('tp-level').textContent = 'Lv.' + p.level;
@@ -808,10 +817,11 @@ function renderHeader() {
     reincBtn.removeAttribute('title');
   }
   var need = xpForLevel(p.level);
-  $id('xp-fill').style.width = clamp(p.xp / need * 100, 0, 100) + '%';
+  var isMaxedOut = (p.level >= MAX_LEVEL && reinc >= REINCARNATION_MAX);
+  $id('xp-fill').style.width = isMaxedOut ? '100%' : (clamp(p.xp / need * 100, 0, 100) + '%');
   var xpBar = $id('xp-bar');
   xpBar.setAttribute('data-tt-title', '角色經驗');
-  xpBar.setAttribute('data-tt-desc', '當前經驗值：' + fmt(p.xp) + ' / 升級經驗值：' + fmt(need));
+  xpBar.setAttribute('data-tt-desc', isMaxedOut ? '已升至最高等級。' : ('當前經驗值：' + fmt(p.xp) + ' / 升級經驗值：' + fmt(need)));
   xpBar.removeAttribute('title');
 
   // 屬性面板顯示「檢視中」裝備套的預覽屬性（切頁即變，不需確定切換）；header 其他區塊維持穿著中數值
