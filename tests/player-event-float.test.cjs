@@ -101,6 +101,9 @@ test('敵人傷害浮字字號較小且出現範圍更分散', () => {
   assert.match(ui, /function isEnemyHitFloat\(elId,\s*cls\)/);
   assert.match(ui, /var ENEMY_DAMAGE_FLOAT_WINDOW_MS = 4000/);
   assert.match(ui, /var ENEMY_DAMAGE_FLOAT_MAX_HITS = 20/);
+  assert.match(ui, /function enemyDamageFloatMergeLimit\(\)/);
+  assert.match(ui, /Math\.min\(ENEMY_DAMAGE_FLOAT_MAX_HITS, Math\.floor\(comboHits \* aspd \* 2\)\)/);
+  assert.match(ui, /existing\._damageFloatHits >= damageMergeLimit/);
   assert.match(ui, /var FLOAT_TEXT_LIFETIME_MS = 2000/);
   assert.match(ui, /damage-aggregate/);
   assert.match(ui, /function placeEnemyDamageFloat\(sp, layer\)/);
@@ -113,6 +116,21 @@ test('敵人傷害浮字字號較小且出現範圍更分散', () => {
   assert.match(ui, /sp\.style\.marginTop = \(enemyHitFloat \? \(Math\.random\(\) \* 24 - 12\) : \(Math\.random\(\) \* 30 - 15\)\) \+ 'px'/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.dmg,[\s\S]*?\.float-txt\.enemy-hit-float\.mdmg\s*\{[\s\S]*?font-size:\s*12px/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.crit,[\s\S]*?\.float-txt\.enemy-hit-float\.skill\s*\{[\s\S]*?font-size:\s*18px/);
+});
+
+test('傷害浮字合併上限依連擊數與攻速計算', () => {
+  const helperSource = ui.match(/function enemyDamageFloatMergeLimit\(\) \{[\s\S]*?\n\}/)[0];
+  let stats = { comboHits: 0, aspd: 2 };
+  const getLimit = vm.runInNewContext(
+    '(function () { ' + helperSource + '; return enemyDamageFloatMergeLimit; })()',
+    { getStats: () => stats, Math, Number, isFinite, ENEMY_DAMAGE_FLOAT_MAX_HITS: 20 }
+  );
+
+  assert.equal(getLimit(), 0);
+  stats = { comboHits: 0.9, aspd: 2 };
+  assert.equal(getLimit(), 3);
+  stats = { comboHits: 100, aspd: 5 };
+  assert.equal(getLimit(), 20);
 });
 
 test('敵方區普攻固定白色、技能固定黃色，爆擊不改變來源顏色', () => {

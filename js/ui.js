@@ -360,6 +360,14 @@ var ENEMY_DAMAGE_FLOAT_WINDOW_MS = 4000;
 var ENEMY_DAMAGE_FLOAT_MAX_HITS = 20;
 var PLAYER_RECOVERY_FLOAT_MAX_HITS = 20;
 
+function enemyDamageFloatMergeLimit() {
+  var st = (typeof getStats === 'function') ? getStats() : null;
+  var comboHits = st ? Number(st.comboHits) : 0;
+  var aspd = st ? Number(st.aspd) : 0;
+  if (!isFinite(comboHits) || !isFinite(aspd) || comboHits <= 0 || aspd <= 0) return 0;
+  return Math.min(ENEMY_DAMAGE_FLOAT_MAX_HITS, Math.floor(comboHits * aspd * 2));
+}
+
 function enemyDamageFloatKey(cls) {
   var tokens = (cls || '').split(/\s+/);
   var source = tokens.indexOf('enemy-skill') >= 0 ? 'skill' :
@@ -519,10 +527,11 @@ function floatText(elId, text, cls, damageValue) {
   var recoveryInfo = playerRecoveryFloatInfo(elId, cls, text, damageValue);
   var recoveryKey = recoveryInfo ? recoveryInfo.key : '';
   if (damageKey) {
+    var damageMergeLimit = enemyDamageFloatMergeLimit();
     var damageFloats = layer.querySelectorAll('.float-txt.enemy-hit-float');
     for (var di = damageFloats.length - 1; di >= 0; di--) {
       var existing = damageFloats[di];
-      if (existing._damageFloatKey !== damageKey || existing._damageFloatHits >= ENEMY_DAMAGE_FLOAT_MAX_HITS) continue;
+      if (existing._damageFloatKey !== damageKey || existing._damageFloatHits >= damageMergeLimit) continue;
       existing._damageFloatTotal += damageValue;
       existing._damageFloatHits++;
       existing.textContent = existing._damageFloatPrefix + fmt(existing._damageFloatTotal);
@@ -2919,11 +2928,11 @@ function renderSkills() {
   var p = G.player;
   $id('sp-count').textContent = availableSkillPoints() + '（等級 ' + p.level + ' 共 ' + totalSkillPoints() + ' 點，已用 ' + spentSkillPoints() + '）';
 
-  // 裝載欄（每 20 級 +1 格）
+  // 裝載欄（初始 2 格，每 20 級再 +1 格，最多 20 格）
   var loBox = $id('skill-loadout');
   var lo = p.loadout || [];
   var cap = loadoutSize();
-  $id('loadout-cap').textContent = lo.length + '/' + cap + ' 格（角色每 20 級 +1 格）';
+  $id('loadout-cap').textContent = lo.length + '/' + cap + ' 格（初始 2 格，每 20 級再 +1 格）';
   var lh = '';
   for (var i = 0; i < cap; i++) {
     var id0 = lo[i];

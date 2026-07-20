@@ -1,5 +1,19 @@
 # PATCH.md
 
+## 修正：apply_params「附魔攻-每級」錨點失配導致套用中止（2026-07-20）
+
+- 症狀：套用參數.bat [3/3] 報「錨點問題 1：formula 附魔攻-每級 錨點匹配 0 次」→ 為安全中止、整批不寫入（使用者的 ENCHANT_ESSENCE_COST 5→1、附魔攻-基 1→5 無法套用）。
+- 根因：`tools/apply_params.cjs` §6 兩個附魔攻錨點**互相硬編對方的值**——「附魔攻-每級」錨點寫死 `var v = (5 + item.level * `（假設 base=5），但 `js/formula.js` 目前 base=1（`var v = (1 + item.level * 1.2)`），故匹配 0 次。屬既有潛在 bug，與四表撥離無關。
+- 修法：改成互不硬編的正規式錨點——base：`(var v = \()([\d.]+)( \+ item\.level \* [\d.]+)`；per：`(var v = \([\d.]+ \+ item\.level \* )([\d.]+)`。以「+ item.level *」限定只中附魔攻那行，不誤中同檔 `var v = (def.base + ...`（詞條數值公式）。
+- 驗證：dry-run 錨點問題 1→**0**、對應參數 497（一致 495、將變更 2＝ENCHANT_ESSENCE_COST 5→1、附魔攻-基 1→5）；`build_check` 全綠。未替使用者執行 --write（由其雙擊 .bat 套用）。
+
+## 變更紀錄：技能裝載欄初始 2 格、每 20 級增加（2026-07-20）
+
+- 修正 `loadoutSize`：由 `max(2, floor(等級/20))` 改為 `min(20, max(2, 2 + floor(等級/20)))`。
+- Lv.1～19 為 2 格、Lv.20～39 為 3 格，Lv.360 起封頂 20 格。
+- 同步更新 `game_parameters.csv`、`apply_params.cjs`、技能頁提示與 `game_formula.md`。
+- 新增 `tests/skill-loadout.test.cjs` 覆蓋等級邊界與參數管線。
+
 ## 變更紀錄：新增全屬性抗性詞條＋七種抗性寶石（2026-07-20）
 
 - 需求：(1) 裝備新增一個史詩詞條「全屬性抗性」，數值約單一屬性抗性詞條的 1/4；(2) 寶石新增七種——火/冰/電/毒/暗/聖抗（六系，每系 L1~5 +5%/級、L6~10 前級×2、L10 +800%）＋全屬性抗性（L1~5 +1%/級、L6~10 ×2、L10 +160%）。

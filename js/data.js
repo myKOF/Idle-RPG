@@ -494,7 +494,7 @@ var ENCHANT_SLOTS = {
   def: ['helmet', 'shoulder', 'chest', 'belt', 'legs'],
   util: ['amulet', 'boots']
 };
-var ENCHANT_ESSENCE_COST = 5; // 每次附魔消耗附魔精華
+var ENCHANT_ESSENCE_COST = 1; // 每次附魔消耗附魔精華
 // 附魔抗性 → 元素對應
 var ENCHANT_RES_MAP = {
   fireRes: 'fire', iceRes: 'ice', lightningRes: 'lightning',

@@ -378,7 +378,7 @@ function equipSkillToLoadout(id) {
   if (!skillLevel(id)) return '尚未學習';
   var lo = G.player.loadout;
   if (lo.indexOf(id) >= 0) return '已在裝載欄';
-  if (lo.length >= loadoutSize()) return '裝載欄已滿（' + loadoutSize() + ' 格，每 20 級 +1 格）';
+  if (lo.length >= loadoutSize()) return '裝載欄已滿（' + loadoutSize() + ' 格，初始 2 格，每 20 級再 +1 格）';
   lo.push(id);
   UI.dirty.skills = true;
   return null;
