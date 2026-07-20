@@ -586,6 +586,8 @@ function onFieldKill(m) {
     var lootMsg = '📦 戰利品：💰' + fmt(goldGain) + ' 💡' + fmt(xpGain);
     if (drops.length) lootMsg += ' ' + drops.join('、');
     blog(lootMsg, 'good', 'loot');
+    // 進程一次性特規保底獎勵（30~33 級獨特、50~60 級史詩）；在 gainXp 之後呼叫，等級為最新。
+    if (typeof specialGrantsOnKill === 'function') specialGrantsOnKill();
     var enemies = fieldEnemyList();
     FIELD.monsters = enemies;
     markFieldEnemyFloatTargets(enemies);

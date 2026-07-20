@@ -1,5 +1,15 @@
 # PATCH.md
 
+## 新增：進程一次性特規模組 special_rules.js（保底裝備獎勵）（2026-07-20）
+
+- 需求：新建專責「玩家歷史進程一次性特規」的檔案；首兩條規則＝(1) 30~33 級必得 1 件任意部位獨特裝備、(2) 50~60 級必得 1 件任意部位史詩裝備；每殺 1 隻怪 +0.5% 累進機率直到掉落，一次性。
+- **新檔** `js/special_rules.js`：`SPECIAL_GRANT_MILESTONES`（規則集中定義）＋ `specialGrantsOnKill()`（每殺推進累進機率並判定）＋ `grantSpecialEquipment()`（`makeEquipment` 指定稀有度/隨機部位，保證進背包不自動分解）＋ `ensureSpecialGrantsState()`（惰性建立狀態，比照 talents，毋須改 save/newGameState）。
+- 機制：進入窗口後 `pity += 0.5`（%）、`chance(pity)` 判定；等級超過窗口上限則保底必得（既有存檔歷史上已過窗口者，首次擊殺補發）。狀態 `G.player.specialGrants[id]{done,pity}` 隨 `JSON.stringify(G)` 序列化。
+- 接線：`index.html` 於 player.js 後載入；`combat.js onFieldKill` 於 `gainXp` 後呼叫 `specialGrantsOnKill()`。離線不計、回線首殺補發。
+- 驗證（沙盒 clone G，未動真存檔）：等級25 不發/pity 0；等級32 於 14 殺內掉獨特(rarity3)隨機部位、再殺 100 次仍只 1 件（一次性）、史詩里程碑不受影響；等級81 既有存檔首殺補發[獨特,史詩]兩件；等級55 pity 累進 0.5%/殺且獨特里程碑回溯補發。`build_check` 全綠、0 console 錯誤。`game_formula.md` §5.5 同步。
+- **追加規則（同日）**：超出窗口上限的判定改為——先看玩家**穿戴中＋背包**是否已有稀有度 **≥ 該品質**的裝備（新函式 `playerHasEquipmentRarity`）：有→標記完成不發；沒有→本次擊殺直接掉落 1 件。窗口內仍維持原累進保底（不看既有裝備）。此改動取代原「過窗口一律補發」，避免對已有好裝的高等玩家重複發放。
+- 追加驗證：過窗口有傳說裝→0 發、過窗口只有稀有裝→補發[獨特,史詩]、Lv45 有獨特→里程碑1滿足不發且里程碑2待 Lv50、Lv45 僅精良→補發獨特、窗口內(32)即使有史詩仍走累進掉獨特；**真存檔 Lv82 已有獨特+/史詩+ → 不會補發**（原本會，現已排除）。`build_check` 全綠、0 console 錯誤。
+
 ## 調整：背包容量／擴充上限可自訂＋擴充費用改指數公式（2026-07-20）
 
 - 依使用者在 game_parameters「7-容量」標注「調整」的兩列實作：

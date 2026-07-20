@@ -1474,8 +1474,8 @@ function renderDetail() {
   }
   var h = '';
   if (compareItem) {
-    var mainCard = '<div class="equip-detail-card">' + itemDetailHTML(it, null) + '</div>';
-    var compCard = '<div class="equip-detail-card">' + itemDetailHTML(compareItem, null, { isEquipped: true, showAffixReroll: false }) + '</div>';
+    var mainCard = '<div class="equip-compare-col">' + itemDetailHTML(it, null) + '</div>';
+    var compCard = '<div class="equip-compare-col">' + itemDetailHTML(compareItem, null, { isEquipped: true, showAffixReroll: false }) + '</div>';
     h = '<div class="equip-compare-container">' + mainCard + compCard + '</div>';
   } else {
     h = itemDetailHTML(it, null);

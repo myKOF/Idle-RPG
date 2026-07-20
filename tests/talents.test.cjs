@@ -385,6 +385,8 @@ test('潛力技能沿用一般技能的升級彈窗與操作流程', () => {
   assert.match(ui, /openSkillModal\('potential:' \+ id\)/);
   assert.match(ui, /function potentialSkillId/);
   assert.match(skillModal, /class="skd-head"/);
+  assert.match(skillModal, /class="skill-modal-copy"/);
+  assert.match(skillModal, /class="skill-modal-points"/);
   assert.match(skillModal, /skill-modal-actions/);
   assert.match(skillModal, /data-skill-learn="' \+ skillRef/);
   assert.doesNotMatch(talentModal, /potential-modal|data-potential-/);
