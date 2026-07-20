@@ -43,3 +43,8 @@ test('skills.js 技能命中改吃玩家命中率、保留 100 地板', () => {
   const skills = fs.readFileSync(path.join(root, 'js/skills.js'), 'utf8');
   assert.match(skills, /hit:\s*fx\.neverMiss\s*\?\s*999\s*:\s*Math\.max\(100,\s*st\.hit\)/);
 });
+
+test('玩家命中派生值包含基礎 100%', () => {
+  const formula = fs.readFileSync(path.join(root, 'js/formula.js'), 'utf8');
+  assert.match(formula, /st\.hit\s*=\s*100\s*\+\s*st\.agi\s*\*\s*0\s*\+\s*A\.hit/);
+});

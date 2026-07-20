@@ -16,7 +16,7 @@ var RARITIES = [
   { key: 'genesis', name: '創世', color: '#b8860b', mult: 6.8, affix: [7, 7], sockets: 6, enchants: 3, salv: 30 },
   { key: 'godforged', name: '神鑄創世', color: '#f5c542', mult: 10.2, affix: [7, 7], sockets: 6, enchants: 3, salv: 45 }
 ];
-var RARE_IDX = 2; // 稀有級（含）以上附帶特殊被動
+var PASSIVE_MIN_RARITY = 5; // 傳說級（含）以上附帶特殊被動
 var MAX_AFFIXES = 8; // 詞條上限屬性可突破至此（創世 7 + 突破 1）
 var REROLL_ESSENCE_COST = { 6: 9, 7: 14, 8: 20 }; // 神話／創世／神鑄創世洗煉精華費用
 
@@ -100,7 +100,7 @@ var TALENT_TREES = {
     { id: 't3_allres', name: '全域適應', emoji: '🧿', stat: 'elemRes', low: 0.5, high: 1, desc: '全屬性抗性額外提高' },
     { id: 't3_def', name: '重甲共鳴', emoji: '🛡️', stat: 'defPct', low: 0.5, high: 1, desc: '物理防禦總值額外提高' },
     { id: 't3_mdef', name: '魔鎧共鳴', emoji: '🔰', stat: 'mdefPct', low: 0.5, high: 1, desc: '魔法防禦總值額外提高' },
-    { id: 't3_allres2', name: '萬象適應', emoji: '🌈', stat: 'elemRes', low: 0.5, high: 1, desc: '全屬性抗性額外提高' }
+    { id: 't3_allres2', name: '傷害緩衝', emoji: '🌫️', stat: 'globalDmgRed', low: 0.5, high: 1, desc: '全局減傷額外提高' }
   ],
   4: [
     { id: 't4_phys', name: '武技昇華', emoji: '⚔️', stat: 'skillPhys', low: 0.5, high: 1, desc: '物理類技能效果額外提高' },
@@ -368,19 +368,19 @@ var AFFIX_POOL = {
   mdefFlat: { name: '魔法防禦', base: 3, lv: 0.35, pct: false, weight: 9 },
   globalDmgRed: { name: '全局減傷', base: 3, lv: 0.35, pct: false, weight: 9, minR: 4 },
   // 敵種傷害抗性（定值減免）：放出量約為物理防禦（defFlat）的 2 倍；減傷公式 enemyTypeDamageReduction → formula.js §3
-  normalDmgRed: { name: '普通敵人傷害抗性', base: 6, lv: 0.35, pct: false, weight: 9, minR: 3 },
-  eliteDmgRed: { name: '菁英傷害抗性', base: 6, lv: 0.35, pct: false, weight: 9, minR: 3 },
-  bossDmgRed: { name: 'BOSS傷害抗性', base: 6, lv: 0.35, pct: false, weight: 9, minR: 3 },
+  normalDmgRed: { name: '普通敵人傷害抗性', base: 6, lv: 0.35, pct: false, weight: 9, minR: 4 },
+  eliteDmgRed: { name: '菁英傷害抗性', base: 6, lv: 0.35, pct: false, weight: 9, minR: 4 },
+  bossDmgRed: { name: 'BOSS傷害抗性', base: 6, lv: 0.35, pct: false, weight: 9, minR: 4 },
   aspd: { name: '攻擊速度%', base: 3, lv: 0.012, pct: true, weight: 6 },
   critRate: { name: '暴擊率%', base: 2.5, lv: 0.012, pct: true, weight: 6 },
   critDmg: { name: '暴擊傷害%', base: 8, lv: 0.05, pct: true, weight: 5 },
-  pPen: { name: '物理穿透%', base: 3, lv: 0.015, pct: true, weight: 4, minR: 1 },
-  mPen: { name: '魔法穿透%', base: 3, lv: 0.015, pct: true, weight: 4, minR: 1 },
+  pPen: { name: '物理穿透%', base: 3, lv: 0.015, pct: true, weight: 4, minR: 4 },
+  mPen: { name: '魔法穿透%', base: 3, lv: 0.015, pct: true, weight: 4, minR: 4 },
   hit: { name: '命中率%', base: 3, lv: 0.015, pct: true, weight: 5 },
-  cdr: { name: '冷卻縮減%', base: 2.5, lv: 0.01, pct: true, weight: 4, minR: 2 },
-  castSpeed: { name: '施法速度%', base: 3, lv: 0.012, pct: true, weight: 4, minR: 2 },
+  cdr: { name: '冷卻縮減%', base: 2.5, lv: 0.01, pct: true, weight: 4, minR: 4 },
+  castSpeed: { name: '施法速度%', base: 3, lv: 0.012, pct: true, weight: 4, minR: 4 },
   lifesteal: { name: '吸血%', base: 1.5, lv: 0.008, pct: true, weight: 4 },
-  manaSteal: { name: '吸魔%', base: 1.2, lv: 0.006, pct: true, weight: 3, minR: 2 },
+  manaSteal: { name: '吸魔%', base: 1.2, lv: 0.006, pct: true, weight: 3, minR: 4 },
   eliteDmg: { name: '對菁英傷害%', base: 4, lv: 0.02, pct: true, weight: 4, minR: 3 },
   bossDmg: { name: '對BOSS傷害%', base: 4, lv: 0.02, pct: true, weight: 4, minR: 3 },
   normalDmg: { name: '對普通敵人傷害%', base: 3, lv: 0.035, pct: true, weight: 9, minR: 3 }, // 基礎值恢復 10 倍；成長係數維持原值
@@ -391,32 +391,32 @@ var AFFIX_POOL = {
   dmgVsPoison: { name: '對毒屬性傷害%', base: 0.8, lv: 0.005, pct: true, weight: 3, minR: 3 },
   dmgVsLight: { name: '對光屬性傷害%', base: 0.8, lv: 0.005, pct: true, weight: 3, minR: 3 },
   dmgVsDark: { name: '對暗屬性傷害%', base: 0.8, lv: 0.005, pct: true, weight: 3, minR: 3 },
-  aoeDmg: { name: '範圍傷害%', base: 4, lv: 0.02, pct: true, weight: 4, minR: 2 },
+  aoeDmg: { name: '範圍傷害%', base: 4, lv: 0.02, pct: true, weight: 4, minR: 4 },
   // === 防禦 ===
   blockRate: { name: '格擋率%', base: 2.5, lv: 0.012, pct: true, weight: 4 },
-  blockDmgRed: { name: '格擋減傷%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 2 },
+  blockDmgRed: { name: '格擋減傷%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 4 },
   evasion: { name: '閃避率%', base: 2, lv: 0.01, pct: true, weight: 4 },
-  tenacity: { name: '韌性%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 2 },
+  tenacity: { name: '韌性%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 4 },
   shieldEff: { name: '護盾效率%', base: 5, lv: 0.025, pct: true, weight: 3, minR: 3 },
   pRes: { name: '物理抗性%', base: 2, lv: 0.008, pct: true, weight: 3, minR: 3 },
   mRes: { name: '魔法抗性%', base: 2, lv: 0.008, pct: true, weight: 3, minR: 3 },
   // === 元素抗性 ===
-  resFire: { name: '火焰抗性%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 1 },
-  resIce: { name: '冰霜抗性%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 1 },
-  resLightning: { name: '雷電抗性%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 1 },
-  resPoison: { name: '劇毒抗性%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 1 },
-  resLight: { name: '聖光抗性%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 1 },
-  resDark: { name: '暗影抗性%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 1 },
+  resFire: { name: '火焰抗性%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 4 },
+  resIce: { name: '冰霜抗性%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 4 },
+  resLightning: { name: '雷電抗性%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 4 },
+  resPoison: { name: '劇毒抗性%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 4 },
+  resLight: { name: '聖光抗性%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 4 },
+  resDark: { name: '暗影抗性%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 4 },
   // === 特殊與機制（多為飾品專屬） ===
-  ccRed: { name: '控制時間縮減%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 3 },
+  ccRed: { name: '控制時間縮減%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 4 },
   moveSpeed: { name: '移動速度%', base: 3, lv: 0.012, pct: true, weight: 4 },
-  loot: { name: '掉寶率%', base: 3, lv: 0.015, pct: true, weight: 4, minR: 3 },
-  xpBonus: { name: '經驗加成%', base: 4, lv: 0.02, pct: true, weight: 4, minR: 3, slots: ACCESSORY_SLOTS },
-  goldBonus: { name: '金幣加成%', base: 5, lv: 0.025, pct: true, weight: 4, minR: 3, slots: ACCESSORY_SLOTS },
-  luck: { name: '幸運值', base: 2, lv: 0.1, pct: false, weight: 3, minR: 3, slots: ACCESSORY_SLOTS },
-  weight: { name: '負重上限', base: 2, lv: 0.3, pct: false, weight: 3, slots: ACCESSORY_SLOTS },
-  enhanceSuccess: { name: '強化成功率%', base: 3, lv: 0.015, pct: true, weight: 3, minR: 3 },
-  decomposeYield: { name: '分解高產率%', base: 3, lv: 0.015, pct: true, weight: 3, minR: 3 },
+  loot: { name: '掉寶率%', base: 3, lv: 0.015, pct: true, weight: 4, minR: 4 },
+  xpBonus: { name: '經驗加成%', base: 4, lv: 0.02, pct: true, weight: 4, minR: 4, slots: ACCESSORY_SLOTS },
+  goldBonus: { name: '金幣加成%', base: 5, lv: 0.025, pct: true, weight: 4, minR: 4, slots: ACCESSORY_SLOTS },
+  luck: { name: '幸運值', base: 2, lv: 0.1, pct: false, weight: 3, minR: 4, slots: ACCESSORY_SLOTS },
+  weight: { name: '負重上限', base: 2, lv: 0.3, pct: false, weight: 3, minR: 4, slots: ACCESSORY_SLOTS },
+  enhanceSuccess: { name: '強化成功率%', base: 3, lv: 0.015, pct: true, weight: 3, minR: 4 },
+  decomposeYield: { name: '分解高產率%', base: 3, lv: 0.015, pct: true, weight: 3, minR: 4 },
   hybridMutation: { name: '合成變異率%', base: 2.5, lv: 0.012, pct: true, weight: 2, minR: 4 },
   enrageThreshold: { name: '狂暴閾值+', base: 2, lv: 0.08, pct: false, weight: 2, minR: 4 },
   affixCap: { name: '詞條上限率%', base: 3, lv: 0.015, pct: true, weight: 2, minR: 4, slots: ACCESSORY_SLOTS },

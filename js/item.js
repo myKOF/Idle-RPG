@@ -448,7 +448,7 @@ function makeEquipment(stage, opts) {
   };
   ensureSockets(it);
   // 稀有級以上附帶特殊被動（數值公式 passiveValueFor → js/formula.js §6）
-  if (rarity >= RARE_IDX) {
+  if (rarity >= PASSIVE_MIN_RARITY) {
     var pk = pick(Object.keys(PASSIVE_POOL));
     it.passive = { key: pk, val: passiveValueFor(pk, rarity) };
   }
@@ -585,6 +585,7 @@ function enchantLine(en) {
 
 // 物品完整說明 HTML
 function itemDetailHTML(it, cmp, opts) {
+  cmp = null; // 裝備比較改版：不再在單個 tips 中進行屬性差值比較
   opts = opts || {};
   var showAffixReroll = opts.showAffixReroll !== false;
   var r = RARITIES[it.rarity];
@@ -626,6 +627,7 @@ function itemDetailHTML(it, cmp, opts) {
     (it.synthesized ? ' <span class="it-syn">✦合成</span>' : '') +
     (it.locked ? ' 🔒' : '') +
     (showAffixReroll ? '<button type="button" class="btn-it-pool" data-affix-pool-toggle aria-label="查看可能詞條">!</button>' + poolHtml : '') +
+    ((opts && opts.isEquipped) ? '<span class="equipped-tag" style="position: absolute; right: 10px; top: 2px; color: #4ade80; font-size: 13px; font-weight: bold;">(現有裝備)</span>' : '') +
     '</div>';
   
   h += '<div class="it-sub"><span>' + r.name + '・' + SLOT_INFO[it.slot].name + '・等級 ' + it.level;

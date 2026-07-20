@@ -755,7 +755,7 @@ function migrateSave(data) {
   ((data.forge && data.forge.slots) || []).forEach(function (it) { if (it && it.kind !== 'gem') fixSockets(it); });
 
   data.tower.active = false; // 讀檔時不可能處於高塔戰鬥
-  if (!data.settings) data.settings = { compareEq: false };
+  if (!data.settings) data.settings = { compareEq: true };
   
   // 修正舊有裝備名稱前綴（「神鑄創世的」須排最前，避免被「神鑄的/創世的」截半）
   var fixName = function(it) {

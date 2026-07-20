@@ -44,6 +44,22 @@ test('普通敵人閃避率依 game_parameters 等級區間逐級累加', () => 
   assert.equal(context.monsterStatsFor(30, true).dodge, 25);
 });
 
+test('玩家命中率包含基礎 100%，額外命中再抵消敵方閃避', () => {
+  const context = loadFormulaContext();
+  let hitChance = null;
+  context.chance = (value) => {
+    if (hitChance === null) hitChance = value;
+    return true;
+  };
+  context.resolveHit(
+    {},
+    { hp: 100000, maxHp: 100000, shield: 0, effects: {}, dots: [] },
+    { atk: 100, dmgType: 'phys', level: 1, hit: 103, critRate: 0 },
+    { def: 0, mdef: 0, level: 1, dodge: 11, pRes: 0, mRes: 0, resist: {} }
+  );
+  assert.equal(hitChance, 92);
+});
+
 test('BOSS 命中率沿用目前高塔命中率參數', () => {
   const context = loadFormulaContext();
   [1, 10, 40, 51, 100].forEach((floor) => {

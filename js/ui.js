@@ -736,12 +736,14 @@ function renderHeader() {
   updateResourceTip('r-dust', '魔塵', '神鑄材料，可提升鑄造成功率。｜目前持有：' + fmtFull(p.dust || 0));
   updateResourceTip('r-ancient-essence', '太古精華', '洗煉時依裝備品質消耗（品質越高消耗越多）；每個詞條有 ' + ANCIENT_REROLL_CHANCE + '% 機率成為太古詞條。｜目前持有：' + fmtFull(p.ancientEssence || 0));
   updateResourceTip('r-soul-origin', '魔魂本源', '用於本源覺醒的道具。｜目前持有：' + fmtFull(p.soulOrigin || 0));
+  updateResourceTip('r-demon-seed', '魔種', '煉獄之塔 BOSS 額外掉落材料。煉獄之塔限定｜目前持有：' + fmtFull(p.demonSeed || 0));
   $id('r-gold').textContent = fmt(p.gold);
   $id('r-scrap').textContent = fmt(p.scrap);
   $id('r-essence').textContent = fmt(p.essence);
   if ($id('r-dust')) $id('r-dust').textContent = fmt(p.dust || 0);
   if ($id('r-ancient-essence')) $id('r-ancient-essence').textContent = fmt(p.ancientEssence || 0);
   if ($id('r-soul-origin')) $id('r-soul-origin').textContent = fmt(p.soulOrigin || 0);
+  if ($id('r-demon-seed')) $id('r-demon-seed').textContent = fmt(p.demonSeed || 0);
   // 神鑄頁籤：達到開放等級才顯示
   var forgeTabBtn = document.querySelector('.tab-btn[data-tab="forge"]');
   if (forgeTabBtn) forgeTabBtn.style.display = forgeUnlocked() ? '' : 'none';
@@ -760,6 +762,25 @@ function renderHeader() {
   }
   $id('r-books').textContent = fmt(bookTotal);
   updateResourceTip('r-books', '附魔書', bookTip.join('、') || '尚無附魔書');
+
+  // 材料動態顯示/隱藏：數量 > 0 時永久解鎖（記錄於 p.shownRes），隱藏材料包含圖示與數量
+  if (!p.shownRes) p.shownRes = {};
+  var resVisMap = [
+    { id: 'r-essence',         val: p.essence || 0 },
+    { id: 'r-dust',            val: p.dust || 0 },
+    { id: 'r-ancient-essence', val: p.ancientEssence || 0 },
+    { id: 'r-soul-origin',     val: p.soulOrigin || 0 },
+    { id: 'r-demon-seed',      val: p.demonSeed || 0 },
+    { id: 'r-gems',            val: totalGemsAll() },
+    { id: 'r-books',           val: bookTotal }
+  ];
+  resVisMap.forEach(function(item) {
+    if (item.val > 0) p.shownRes[item.id] = true;
+    var el = $id(item.id);
+    if (!el || !el.parentNode) return;
+    el.parentNode.style.display = p.shownRes[item.id] ? '' : 'none';
+  });
+
   refreshOpenResourceTooltip();
 
   $id('toggle-compare').checked = !!G.settings.compareEq;
@@ -1430,7 +1451,14 @@ function renderDetail() {
     var key = equipTargetSlot(it, cmpEq);
     compareItem = cmpEq[key];
   }
-  var h = itemDetailHTML(it, compareItem);
+  var h = '';
+  if (compareItem) {
+    var mainCard = '<div class="equip-detail-card">' + itemDetailHTML(it, null) + '</div>';
+    var compCard = '<div class="equip-detail-card">' + itemDetailHTML(compareItem, null, { isEquipped: true, showAffixReroll: false }) + '</div>';
+    h = '<div class="equip-compare-container">' + mainCard + compCard + '</div>';
+  } else {
+    h = itemDetailHTML(it, null);
+  }
   var actionsHtml = '';
   if (UI.sel.source === 'inv') {
     actionsHtml += '<button class="btn" data-act="equip">裝備</button>';
@@ -3177,10 +3205,30 @@ function refreshBuffTooltip() {
 function showItemTooltip(it, anchorEl, opts) {
   var tip = $id('sk-tooltip');
   if (!tip) return;
-  // 滑過提示為純資訊模式：不顯示洗煉與可能詞條說明按鈕（僅裝備詳情介面可操作）
-  var h = itemDetailHTML(it, null, { showAffixReroll: false });
-  if (opts && opts.hint) h += '<div class="skt-hint">' + opts.hint + '</div>';
-  tip.innerHTML = '<div style="padding: 6px; min-width: 220px;">' + h + '</div>';
+
+  var compareItem = null;
+  var tc = $id('toggle-compare');
+  if (tc && tc.checked) {
+    var cmpEq = (typeof viewedEquipment === 'function') ? viewedEquipment() : G.equipment;
+    var key = equipTargetSlot(it, cmpEq);
+    compareItem = cmpEq[key];
+  }
+
+  var detailHtml = itemDetailHTML(it, null, { showAffixReroll: false });
+  if (opts && opts.hint) {
+    detailHtml += '<div class="skt-hint">' + opts.hint + '</div>';
+  }
+
+  var h = '';
+  var mainCard = '<div class="equip-detail-card">' + detailHtml + '</div>';
+  if (compareItem && compareItem.id !== it.id) {
+    var compCard = '<div class="equip-detail-card">' + itemDetailHTML(compareItem, null, { isEquipped: true, showAffixReroll: false }) + '</div>';
+    h = '<div class="equip-compare-container">' + mainCard + compCard + '</div>';
+  } else {
+    h = mainCard;
+  }
+
+  tip.innerHTML = h;
   tip.style.display = 'block';
   var r = anchorEl.getBoundingClientRect();
   var tw = tip.offsetWidth, th = tip.offsetHeight;
@@ -3215,7 +3263,8 @@ function showTowerTooltip(flStr, anchorEl) {
     '📖 隨機附魔書 x2 <span style="color:var(--dim)">(100%)</span><br>' +
     '💫 魔塵 <span style="color:var(--dim)">(' + fmt1(bossDustRate(fl)) + '%，神鑄材料)</span>' +
     '<br><img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華"> 太古精華 <span style="color:var(--dim)">(' + fmt1(ancientEssenceRate) + '%)</span>' +
-    (hasSoul ? '<br>🧿 魔魂本源 <span style="color:var(--dim)">(' + fmt1(soulRate) + '%，地獄/煉獄之塔限定)</span>' : '') + '<br>' +
+    (hasSoul ? '<br>🧿 魔魂本源 <span style="color:var(--dim)">(' + fmt1(soulRate) + '%，地獄/煉獄之塔限定)</span>' : '') +
+    (isPurgatoryTowerFloor(fl) ? '<br>🌱 魔種 <span style="color:var(--dim)">(' + fmt1(demonSeedDropChanceForBoss(fl)) + '%，煉獄之塔限定)</span>' : '') + '<br>' +
     '🔩 機組零件 <span style="color:var(--dim)">(首通必掉 / 之後30%)</span>';
 
   var bossRates = dropRatesFor(BOSS_DROP_TABLE, fl);

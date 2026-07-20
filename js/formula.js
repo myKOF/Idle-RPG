@@ -262,7 +262,7 @@ function computeStats(equipmentOverride) {
   st.comboHits = comboHitsFor(st.critRate);                     // 連擊數：暴擊率破 100% 衍生的額外攻擊次數（僅普攻／技能直接傷害，持續傷害不計）
   st.pPen = capValue(A.pPen, STAT_CAPS.pPen);                                // 穿透上限（上限 0＝無上限）
   st.mPen = capValue(A.mPen, STAT_CAPS.mPen);
-  st.hit = st.agi * 0 + A.hit;                                // 命中率：敏捷×a + 加成（無上限；戰鬥結算再 clamp 5~100）
+  st.hit = 100 + st.agi * 0 + A.hit;                          // 命中率：基礎 100% + 敏捷×a + 額外加成（無上限；戰鬥結算再 clamp 5~100）
   st.aspd = ASPD_CAP > 0
     ? clamp(ASPD_BASE * (1 + (A.aspdPct + st.agi * PRIMARY_STAT_EFFECTS.agiAspdPct) / 100), ASPD_MIN, ASPD_CAP)
     : Math.max(ASPD_MIN, ASPD_BASE * (1 + (A.aspdPct + st.agi * PRIMARY_STAT_EFFECTS.agiAspdPct) / 100)); // 攻速：基礎攻速、敏捷係數與上限皆由 data.js 控制
@@ -498,8 +498,12 @@ function rollComboHits(st) {
    回傳 { dmg, crit, miss, blocked, killed, thorns, heal, procs[] }        */
 function resolveHit(attacker, defender, aCfg, dCfg) {
   var out = { dmg: 0, crit: false, miss: false, blocked: false, killed: false, thorns: 0, heal: 0, absorbed: 0, procs: [] };
-  // 命中率 = clamp(攻擊者命中 - 防守者閃避, 5%, 100%)
-  var hitChance = clamp((aCfg.hit || 100) - (dCfg.dodge || 0), 5, 100);
+  // 命中率 = clamp(攻擊者命中 - 防守者閃避, 5%, 100%)；玩家命中已含基礎 100%。
+  var attackerHit = Number(aCfg.hit);
+  if (!isFinite(attackerHit)) attackerHit = 100;
+  var defenderDodge = Number(dCfg.dodge);
+  if (!isFinite(defenderDodge)) defenderDodge = 0;
+  var hitChance = clamp(attackerHit - defenderDodge, 5, 100);
   if (!chance(hitChance)) { out.miss = true; return out; }
   // 防禦選型（物理/魔法）＋破甲＋穿透：有效防禦 = 防禦 × (1-破甲%) × (1-穿透%)
   var dmg = 0;
@@ -947,10 +951,10 @@ function getAffixLimits(key, itemLevel, rarityIdx) {
 // 強化倍率：每 +1 全詞條數值 +5%
 function upgradeMult(item) { return 1 + 0.05 * (item.upgrade || 0); }
 
-// 特殊被動數值 = base + perR × (稀有度 - 稀有級)
+// 特殊被動數值 = base + perR × (稀有度 - 傳說級)
 function passiveValueFor(key, rarity) {
   var pd = PASSIVE_POOL[key];
-  return Math.round((pd.base + pd.perR * (rarity - RARE_IDX)) * 10) / 10;
+  return Math.round((pd.base + pd.perR * (rarity - PASSIVE_MIN_RARITY)) * 10) / 10;
 }
 
 // 神鑄創世專屬特效數值 = base × rnd(0.8, 1.2)

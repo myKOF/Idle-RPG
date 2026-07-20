@@ -118,7 +118,7 @@ function newGameState() {
       autoDust: true, result: null, log: [], unlockNotified: false, unlocked: false,
       autoFill: null, autoForge: false, crafting: null
     },
-    settings: { compareEq: false, useAncientEssence: false },
+    settings: { compareEq: true, useAncientEssence: false },
     firstRunAt: Date.now()
   };
 }

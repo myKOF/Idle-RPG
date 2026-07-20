@@ -2345,7 +2345,7 @@ textarea#save-io {
 }
 
 /* 超過四顆時，所有相鄰星星平均小幅重疊，避免多出的星星集中壓在最後一顆。 */
-.ancient-star-badge.overlap .ancient-star+.ancient-star {
+.ancient-star-badge.overlap .ancient-star + .ancient-star {
   margin-left: -4px;
 }
 
@@ -4441,6 +4441,7 @@ textarea#save-io {
   min-height: 0 !important;
   height: 500px !important;
   overflow-y: auto !important;
+  overflow-x: hidden !important;
   border: 1px solid transparent !important;
   border-image: none !important;
   border-radius: 6px !important;
@@ -4454,6 +4455,41 @@ textarea#save-io {
   border: 1px solid var(--accent) !important;
   background: rgba(15, 10, 5, 0.85) !important;
   box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* 裝備詳情卡片：固定寬度與暗黑風格邊框背景 */
+.equip-detail-card {
+  width: 306px !important;
+  min-width: 306px !important;
+  max-width: 306px !important;
+  box-sizing: border-box !important;
+  border: 1px solid var(--accent) !important;
+  border-radius: 6px !important;
+  background: rgba(15, 10, 5, 0.92) !important;
+  background-image: url('../images/diablo_panel_tex.png') !important;
+  background-blend-mode: multiply !important;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9) !important;
+  padding: 12px !important;
+  flex-shrink: 0 !important;
+  position: relative !important;
+}
+
+/* 比較容器：雙 tips 並排 */
+.equip-compare-container {
+  display: flex !important;
+  gap: 12px !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  width: max-content !important;
+}
+
+/* 懸浮提示載入裝備卡片時，自適應寬度且去除雙重背景與邊框 */
+#sk-tooltip:has(.equip-detail-card) {
+  max-width: none !important;
+  padding: 6px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 #inv-section-box,

@@ -44,12 +44,24 @@ test('對普通敵人傷害% 使用 base=3、lv=0.035，三種敵種傷害抗性
   assert.equal(context.affixCat('bossDmgRed'), 'def');
 });
 
-test('敵種六屬性與金幣/經驗/掉寶率詞條均為獨特級（minR=3）', () => {
+test('獨特級只保留指定普通詞條，其餘特殊/高階詞條自史詩級出現', () => {
   const context = loadFormulaContext();
-  ['normalDmg', 'eliteDmg', 'bossDmg', 'normalDmgRed', 'eliteDmgRed', 'bossDmgRed',
-    'goldBonus', 'xpBonus', 'loot'].forEach((key) => {
-    assert.equal(context.AFFIX_POOL[key].minR, 3, key + ' 應為獨特級');
+  ['normalDmg', 'eliteDmg', 'bossDmg', 'dmgVsFire', 'dmgVsIce', 'dmgVsLightning',
+    'dmgVsPoison', 'dmgVsLight', 'dmgVsDark', 'shieldEff', 'pRes', 'mRes'].forEach((key) => {
+    assert.equal(context.AFFIX_POOL[key].minR, 3, key + ' 應保留為獨特級');
   });
+  ['normalDmgRed', 'eliteDmgRed', 'bossDmgRed', 'pPen', 'mPen', 'cdr', 'castSpeed',
+    'manaSteal', 'aoeDmg', 'blockDmgRed', 'tenacity', 'resFire', 'resIce',
+    'resLightning', 'resPoison', 'resLight', 'resDark', 'ccRed', 'loot', 'xpBonus',
+    'goldBonus', 'luck', 'weight', 'enhanceSuccess', 'decomposeYield'].forEach((key) => {
+    assert.equal(context.AFFIX_POOL[key].minR, 4, key + ' 應改為史詩級');
+  });
+});
+
+test('特殊被動僅從傳說級開始生成', () => {
+  const context = loadFormulaContext();
+  assert.equal(context.PASSIVE_MIN_RARITY, 5);
+  assert.equal(context.RARITIES[context.PASSIVE_MIN_RARITY].name, '傳說');
 });
 
 test('對普通傷害加成僅對非菁英且非 BOSS 的敵人生效', () => {

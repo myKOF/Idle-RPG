@@ -495,7 +495,7 @@ objFieldML('data', 'COMBO_HITS_COEF = {', 'b', '2-屬性派生', '連擊數', 1,
 objFieldML('data', 'COMBO_HITS_COEF = {', 'c', '2-屬性派生', '連擊數', 2, '連擊數-c');
 scalar('data', 'ASPD_BASE', '2-屬性派生', '攻擊速度', 0);
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'agiAspdPct', '2-屬性派生', '攻擊速度', 1, '攻速每敏');
-inline('formula', 'st.hit = st.agi * ', P('2-屬性派生', '命中率', 0), '命中每敏');
+inline('formula', 'st.hit = 100 + st.agi * ', P('2-屬性派生', '命中率', 0), '命中每敏');
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'agiEvasion', '2-屬性派生', '閃避率', 0, '閃避每敏');
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'strWeight', '2-屬性派生', '負重上限', 0, '負重每力');
 
