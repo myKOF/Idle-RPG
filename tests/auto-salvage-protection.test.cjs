@@ -4,8 +4,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
+const root = path.resolve(__dirname, '..');
+const indexHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const styleCss = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
+
 function loadGameContext() {
-  const root = path.resolve(__dirname, '..');
   const context = {
     console,
     setTimeout() {},
@@ -97,6 +100,32 @@ test('輸送帶達到固定上限後直接丟棄新裝備', () => {
   assert.equal(pushed, false);
   assert.deepEqual(salvaged, []);
   assert.deepEqual(Array.from(context.G.factory.conveyor, (it) => it.id), ['mythic', 'common']);
+});
+
+test('自動穿裝只填補空部位，不替換既有裝備', () => {
+  const context = loadGameContext();
+  baseState(context);
+
+  const first = item('first-weapon', 1);
+  assert.equal(context.tryAutoEquip(first), true);
+  assert.equal(context.G.equipment.weapon.id, 'first-weapon');
+
+  const second = item('second-weapon', 1);
+  assert.equal(context.tryAutoEquip(second), true);
+  assert.equal(context.G.equipment.weapon2.id, 'second-weapon');
+
+  const later = item('later-weapon', 6);
+  assert.equal(context.tryAutoEquip(later), false);
+  assert.equal(context.G.equipment.weapon.id, 'first-weapon');
+  assert.equal(context.G.equipment.weapon2.id, 'second-weapon');
+});
+
+test('自動穿裝勾選項位於裝備頁，熔爐頁不再顯示舊名稱', () => {
+  assert.match(indexHtml, /id="toggle-autoequip"[^>]*>自動穿裝/);
+  assert.doesNotMatch(indexHtml, /id="nf-autoequip"/);
+  assert.doesNotMatch(indexHtml, /更強自動換裝/);
+  assert.match(indexHtml, /class="sec-title equip-detail-head"[\s\S]*class="equip-detail-controls"/);
+  assert.match(styleCss, /\.equip-detail-controls label\s*\{[\s\S]*?white-space:\s*nowrap/);
 });
 
 test('關閉合成後不會再把掉落送進合成暫存區', () => {

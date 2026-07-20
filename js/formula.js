@@ -1001,7 +1001,7 @@ function enchantValueFor(item, bookKey, gemLevel) {
   return Math.min(val, 60);
 }
 
-/* ---- 裝備戰力評分（自動換裝比較用）----
+/* ---- 裝備戰力評分（裝備比較與其他評估用）----
    評分 = Σ(詞條值 × 權重 × 強化倍率) + Σ(寶石值 × 權重)
         → 有被動 ×1.15 → + Σ(附魔值 × 1.2攻/2防) → ×(1 + 稀有度×0.06)
    未列出的詞條權重以 1 計 */
@@ -1029,7 +1029,7 @@ function itemScore(it) {
     var a = it.affixes[i];
     s += (SCORE_WEIGHTS[a.key] || 1) * a.val * um;
   }
-  // 鑲嵌的寶石計入評分（避免自動換裝丟棄鑲嵌裝備；融合寶石逐屬性計）
+  // 鑲嵌的寶石計入評分；融合寶石逐屬性計
   if (it.sockets) {
     for (var j = 0; j < it.sockets.length; j++) {
       var g = it.sockets[j];
@@ -1137,10 +1137,11 @@ function synthGreatChanceNow() {
   return SYNTH_GREAT_BASE + partBonus('synth', 'luckCore') + getStats().luck / 2;
 }
 
-// 背包擴充費用：10000 × 購買次數²（購買次數 = 已擴充次數 + 1，即本次為第幾次擴充）
+// 背包擴充費用：a + b × c^購買次數（購買次數 = 已擴充次數 + 1，即本次為第幾次擴充）
+// a/b/c＝INVENTORY_EXPAND_COST_BASE/MULT/RATE（data.js，參數表「7-容量／背包擴充費用」）
 function inventoryExpandCost(upg) {
   var n = (upg || 0) + 1;
-  return 10000 * n * n;
+  return Math.round(INVENTORY_EXPAND_COST_BASE + INVENTORY_EXPAND_COST_MULT * Math.pow(INVENTORY_EXPAND_COST_RATE, n));
 }
 
 // 生產線容量（受「負重上限」屬性擴充）

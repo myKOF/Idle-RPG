@@ -79,7 +79,7 @@ function newForgeRouteQueue() {
     var it = nf.queue.shift();
     n++;
     UI.dirty.newforge = true;
-    if (G.factory && G.factory.autoEquip && tryAutoEquip(it)) continue; // 換下的舊裝經 pushConveyor 回流
+    if (G.factory && G.factory.autoEquip && tryAutoEquip(it)) continue; // 空部位穿上後即完成處理
     if (!it.locked && it.rarity < GODFORGED_IDX) {
       var hit = newForgeDispatchTarget(it.rarity);
       if (hit && hit.furnace) { hit.furnace.queue.push(it); continue; }

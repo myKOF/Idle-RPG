@@ -102,14 +102,17 @@
                 <div id="equip-set-tabs"></div>
               </div>
               <div>
-                <div class="sec-title" style="display: flex; align-items: center; justify-content: space-between;">
+                <div class="sec-title equip-detail-head">
                   <span>裝備詳情</span>
-                  <span style="display:flex; gap:12px; align-items:center;">
+                  <span class="equip-detail-controls">
                     <label id="lbl-ancient-essence-toggle" data-tt-title="太古精華" data-tt-desc="" style="font-size: 13px; font-weight: normal; cursor: pointer; color: var(--text);">
                       <input type="checkbox" id="toggle-ancient-essence" style="margin-right: 4px; cursor: pointer;">使用太古精華
                     </label>
                     <label style="font-size: 13px; font-weight: normal; cursor: pointer; color: var(--text);">
                       <input type="checkbox" id="toggle-compare" style="margin-right: 4px; cursor: pointer;">比較裝備
+                    </label>
+                    <label id="lbl-autoequip" style="font-size: 13px; font-weight: normal; cursor: pointer; color: var(--text);">
+                      <input type="checkbox" id="toggle-autoequip" style="margin-right: 4px; cursor: pointer;">自動穿裝
                     </label>
                   </span>
                 </div>
@@ -167,7 +170,6 @@
             <div class="sec-title">🏭 熔爐</div>
             <div class="nf-controls">
               <span class="dim-text">佇列 <b id="nf-queue-count">0</b> 件</span>
-              <label class="chk"><input type="checkbox" id="nf-autoequip"> 更強自動換裝</label>
             </div>
             <div class="hint">戰鬥掉落的裝備自動進入熔爐佇列，依各熔爐勾選的品質送入傳送帶拆解（由右至左入爐）；未勾選品質、上鎖與神鑄創世裝備保留入包。拆解產出裝備碎片、金幣與附魔精華等資源，不會產出寶石（鑲嵌寶石會自動取回）；為熔爐裝上零件可強化該爐的拆解速度與產出。</div>
           </div>

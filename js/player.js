@@ -274,17 +274,14 @@ function equipItem(it, slotKey, eq) {
   return old;
 }
 
-// 嘗試自動換裝：與（較弱的）現有裝備比較，較強則穿上，舊裝回輸送帶
+// 自動穿裝：只填補空的裝備部位；已有裝備後不再自動替換
 function tryAutoEquip(it) {
-  var key = equipTargetSlot(it);
-  var cur = G.equipment[key];
-  if (itemScore(it) > itemScore(cur) * 1.02) {
-    var old = equipItem(it, key);
-    blog('🔁 自動換裝：' + rarityTag(it) + '（' + SLOT_INFO[key].name + '）', 'info');
-    if (old) {
-      old.locked = false;
-      pushConveyor(old); // 舊裝備回到輸送帶，交給生產線處置
-    }
+  var cands = equipSlotsForType(it.slot);
+  for (var i = 0; i < cands.length; i++) {
+    var key = cands[i];
+    if (G.equipment[key]) continue;
+    equipItem(it, key);
+    blog('🎽 自動穿裝：' + rarityTag(it) + '（' + SLOT_INFO[key].name + '）', 'info');
     return true;
   }
   return false;

@@ -253,7 +253,7 @@ function processOneConveyorItem() {
   var it = f.conveyor.shift();
   UI.dirty.factory = true;
 
-  // 自動換裝優先（合成優先度概念：撿到就比較）
+  // 自動穿裝優先（只填補空的裝備部位）
   if (f.autoEquip && tryAutoEquip(it)) return;
 
   var act = decideFilter(it);

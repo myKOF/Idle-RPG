@@ -256,8 +256,8 @@ scalar('data', 'RESPAWN_DELAY', '表-固定參數', '出怪間隔', 0);
 scalar('data', 'REVIVE_DELAY', '表-固定參數', '死亡復活時間', 0);
 scalar('data', 'CONVEYOR_CAP', '7-容量', '輸送帶容量', 0);
 scalar('data', 'SYNTH_BUFFER_CAP', '7-容量', '合成暫存區', 0);
-scalar('data', 'INVENTORY_CAP', '7-容量', '背包容量', 0);
-inline('data', 'INVENTORY_MAX = ', 1000, 'INVENTORY_MAX');
+scalar('data', 'INVENTORY_CAP', '7-容量', '背包容量', 0);        // a＝初始格數
+scalar('data', 'INVENTORY_MAX', '7-容量', '背包容量', 1);        // b＝擴充上限（可自訂）
 scalar('data', 'FACTORY_BASE_INTERVAL', '7-容量', '生產線處理間隔', 0);
 scalar('data', 'SYNTH_GREAT_BASE', '7-合成', '大成功率', 0);
 // 奧術衝擊技能常數
@@ -637,7 +637,10 @@ edits.push({ file: 'formula', re: /(itemLevel: )([\d.]+)( \+ floor)/, grp: 2, va
 edits.push({ file: 'formula', re: /(itemLevel: [\d.]+ \+ floor \* )([\d.]+)/, grp: 2, value: P('5-高塔獎勵', '裝備戰利品等級', 1), label: '高塔-裝備等級係數' });
 numCtx('formula', 's *= 1 + ', ' * it.godPassives.length', P('6-裝備', '戰力評分', 0), '戰力-神鑄每條');
 numCtx('formula', 's *= 1 + it.rarity * ', ';', P('6-裝備', '戰力評分', 1), '戰力-稀有度');
-numCtx('formula', 'return ', ' * n * n', P('7-容量', '背包擴充費用', 0), '背包擴充費用');
+// 背包擴充費用：a + b × c^購買次數（具名常數；a/b/c＝參數 0/1/2）
+scalar('data', 'INVENTORY_EXPAND_COST_BASE', '7-容量', '背包擴充費用', 0);
+scalar('data', 'INVENTORY_EXPAND_COST_MULT', '7-容量', '背包擴充費用', 1);
+scalar('data', 'INVENTORY_EXPAND_COST_RATE', '7-容量', '背包擴充費用', 2);
 inline('formula', 'GEM_CONVERT_SLOTS = ', P('8-寶石', '寶石轉換(九宮格)', 0), 'GEM_CONVERT_SLOTS');
 inline('formula', 'GEM_CONVERT_STACK = ', P('8-寶石', '寶石轉換(九宮格)', 1), 'GEM_CONVERT_STACK');
 inline('formula', 'GEM_DISMANTLE_KEEP = ', P('8-寶石', '寶石拆解(一般)', 0), 'GEM_DISMANTLE_KEEP');

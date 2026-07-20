@@ -1,5 +1,16 @@
 # PATCH.md
 
+## 調整：背包容量／擴充上限可自訂＋擴充費用改指數公式（2026-07-20）
+
+- 依使用者在 game_parameters「7-容量」標注「調整」的兩列實作：
+  - **背包容量**（`a + 擴充次數`）：初始格數 `INVENTORY_CAP` 60→**100**（參數 a）；擴充上限 `INVENTORY_MAX` 由 apply_params 寫死 1000 改為**讀參數 b**（可自訂，值仍 1000）。
+  - **背包擴充費用**：由 `10000 × 購買次數²` 改為 **`a + b × c^購買次數`**＝`⌊10000 + 10000 × 1.02^購買次數⌋`（購買次數 = 已擴充次數+1）。
+- 新增具名常數（data.js，SSOT）：`INVENTORY_EXPAND_COST_BASE=10000`、`_MULT=10000`、`_RATE=1.02`；`inventoryExpandCost`（formula.js）改用之並 `Math.round`。
+- apply_params 接線：`INVENTORY_MAX` 改 `scalar(…背包容量,1)`；擴充費用改 3 個 `scalar` 具名常數（取代舊 `return … * n * n` 錨點）。
+- **無存檔遷移**（容量與費用皆即時計算）；base 60→100 使所有存檔背包即時 +40 基礎格。
+- 驗證：對現行 xlsx 跑 apply_params＝錨點問題 0、將變更 0（已對齊）；`build_check` 全綠；隔離埠實測 `INVENTORY_CAP=100`、`INVENTORY_MAX=1000`、費用 n1=20200/n10=22190/n100=82446、0 console 錯誤。`game_formula.md` §7 同步。
+- 提醒：c=1.02 下末段（第 ~900 次）費用達數千億金幣，屬指數成長本質；要調緩可在 xlsx 改 c（指數底）或 b（擴充倍數）。
+
 ## 修正：apply_params「附魔攻-每級」錨點失配導致套用中止（2026-07-20）
 
 - 症狀：套用參數.bat [3/3] 報「錨點問題 1：formula 附魔攻-每級 錨點匹配 0 次」→ 為安全中止、整批不寫入（使用者的 ENCHANT_ESSENCE_COST 5→1、附魔攻-基 1→5 無法套用）。

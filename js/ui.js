@@ -793,6 +793,8 @@ function renderHeader() {
   refreshOpenResourceTooltip();
 
   $id('toggle-compare').checked = !!G.settings.compareEq;
+  var autoEquipToggle = $id('toggle-autoequip');
+  if (autoEquipToggle) autoEquipToggle.checked = !!(G.factory && G.factory.autoEquip);
   var ancientToggle = $id('toggle-ancient-essence');
   if (ancientToggle) {
     ancientToggle.checked = !!G.settings.useAncientEssence;
@@ -1766,10 +1768,10 @@ function partIconHTML(key) {
 }
 
 // 將工廠設定同步到輸入元件（初始化 / 讀檔後）
-// 舊生產線頁的篩選/合成節點已移除；僅剩熔爐頁上的自動換裝與強化節點。
+// 舊生產線頁的篩選/合成節點已移除；自動穿裝控制位於裝備頁。
 function syncFactoryInputs() {
   var f = G.factory;
-  var autoEq = $id('nf-autoequip');
+  var autoEq = $id('toggle-autoequip');
   if (autoEq) autoEq.checked = !!f.autoEquip;
 
 }
@@ -1897,8 +1899,6 @@ function renderNewForge() {
   if (!nf) return;
   var qc = $id('nf-queue-count');
   if (qc) qc.textContent = fmtFull(nf.queue.length); // 佇列顯示完整數字，不用簡寫
-  var autoEq = $id('nf-autoequip');
-  if (autoEq && document.activeElement !== autoEq) autoEq.checked = !!(G.factory && G.factory.autoEquip);
   renderForgeExtras(); // 附魔書庫存＋強化節點（搬入本頁的面板）
   var cnt = $id('nf-count');
   if (cnt) {
@@ -1963,12 +1963,6 @@ function bindNewForgeEvents() {
   tab.addEventListener('change', function (e) {
     var el = e.target;
     if (!el || !el.getAttribute) return;
-    if (el.id === 'nf-autoequip') {
-      G.factory.autoEquip = el.checked;
-      nflog(el.checked ? '🎽 已開啟更強自動換裝：路由時撿到更強裝備自動穿上' : '🎽 已關閉更強自動換裝', 'info');
-      return;
-    }
-
     var fu = findNewForgeFurnace(parseInt(el.getAttribute('data-nf-fid'), 10));
     if (!fu) return;
     if (el.hasAttribute('data-nf-qual')) {
@@ -5250,6 +5244,13 @@ function initUI() {
   $id('toggle-compare').addEventListener('change', function () {
     G.settings.compareEq = this.checked;
     renderDetail();
+  });
+  var autoEquipToggle = $id('toggle-autoequip');
+  if (autoEquipToggle) autoEquipToggle.addEventListener('change', function () {
+    G.factory.autoEquip = this.checked;
+    blog(this.checked
+      ? '🎽 已開啟自動穿裝：空的裝備部位會自動穿上裝備，已穿戴部位不再替換'
+      : '🎽 已關閉自動穿裝', 'info');
   });
   var ancientToggle = $id('toggle-ancient-essence');
   if (ancientToggle) ancientToggle.addEventListener('change', function () {
