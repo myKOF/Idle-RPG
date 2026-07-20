@@ -22,12 +22,25 @@ function stepGame(dt) {
   if (_folderAutosaveTimer >= 600) { _folderAutosaveTimer = 0; syncSaveFolder(); }
 }
 
+function updateContentFingerprint(text) {
+  var hash = 2166136261;
+  for (var i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16) + ':' + text.length;
+}
+
 function checkForUpdates() {
   var url = location.href.split('#')[0];
   url += (url.indexOf('?') === -1 ? '?' : '&') + '_t=' + Date.now();
-  fetch(url, { method: 'HEAD' })
+  fetch(url, { cache: 'no-store' })
     .then(function(res) {
-      var hash = res.headers.get('Last-Modified') || res.headers.get('ETag');
+      return res.ok ? res.text() : null;
+    })
+    .then(function(body) {
+      if (body == null) return;
+      var hash = updateContentFingerprint(body);
       if (!hash) return;
       if (!window._appVersionHash) window._appVersionHash = hash;
       else if (window._appVersionHash !== hash) {

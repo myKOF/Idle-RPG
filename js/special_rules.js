@@ -43,11 +43,14 @@ function playerHasEquipmentRarity(minRarity) {
   return false;
 }
 
-/* 每次野外擊殺呼叫一次：推進各未完成里程碑的累進機率並判定發放 */
-function specialGrantsOnKill() {
+/* 每次野外擊殺呼叫一次（傳入被擊殺的怪物 m）：推進各未完成里程碑的累進機率並判定發放。
+   窗口門檻用「玩家等級」；發放的裝備等級用「當時擊殺的怪物等級」（比照一般掉落）。 */
+function specialGrantsOnKill(monster) {
   if (typeof G === 'undefined' || !G || !G.player) return;
   var state = ensureSpecialGrantsState();
-  var level = Math.floor(Number(G.player.level) || 1);
+  var level = Math.floor(Number(G.player.level) || 1);   // 玩家等級 → 判斷窗口
+  // 怪物等級 → 決定發放裝備的等級（無怪物時退回目前階段）
+  var monsterLevel = (monster && monster.level) ? Math.floor(Number(monster.level)) : ((G.stage && G.stage.current) || 1);
   for (var i = 0; i < SPECIAL_GRANT_MILESTONES.length; i++) {
     var ms = SPECIAL_GRANT_MILESTONES[i];
     var s = state[ms.id] || (state[ms.id] = { done: false, pity: 0 });
@@ -57,23 +60,22 @@ function specialGrantsOnKill() {
       // 已超出窗口上限：若玩家身上/背包「已有相應品質(含以上)裝備」則視為滿足、不發；
       // 否則本次擊殺直接掉落 1 件補上（歷史進程保底）。
       s.done = true;
-      if (!playerHasEquipmentRarity(ms.rarity)) grantSpecialEquipment(ms);
+      if (!playerHasEquipmentRarity(ms.rarity)) grantSpecialEquipment(ms, monsterLevel);
       continue;
     }
     // 窗口內（minLevel ≤ 等級 ≤ maxLevel）：每殺累進機率，保底於窗口內必得。
     s.pity += ms.perKillChance;                         // 累進機率（%）
     if (chance(s.pity)) {
       s.done = true;
-      grantSpecialEquipment(ms);
+      grantSpecialEquipment(ms, monsterLevel);
     }
   }
 }
 
-/* 強制發放一件「指定稀有度、隨機部位」裝備，保證進背包（滿載允許暫時超出、絕不自動分解） */
-function grantSpecialEquipment(ms) {
-  var stage = (G.stage && G.stage.current) || Math.max(1, Math.floor(Number(G.player.level) || 1));
-  var lvl = Math.max(1, Math.floor(Number(G.player.level) || stage));
-  var it = makeEquipment(stage, { rarity: ms.rarity, level: lvl }); // 省略 slot = 隨機部位
+/* 強制發放一件「指定稀有度、隨機部位」裝備（等級依當時怪物等級），保證進背包（滿載允許暫時超出、絕不自動分解） */
+function grantSpecialEquipment(ms, monsterLevel) {
+  var stage = Math.max(1, Math.floor(Number(monsterLevel) || (G.stage && G.stage.current) || 1));
+  var it = makeEquipment(stage, { rarity: ms.rarity }); // 省略 slot=隨機部位、省略 level=依怪物等級 stage±1（比照一般掉落）
   G.inventory.push(it);                                              // 比照 forgeReturnItem：保底放入
   UI.dirty.inv = true;
   var cap = (typeof inventoryCapacityWithTalents === 'function')

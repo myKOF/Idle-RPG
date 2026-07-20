@@ -1472,14 +1472,7 @@ function renderDetail() {
     var key = equipTargetSlot(it, cmpEq);
     compareItem = cmpEq[key];
   }
-  var h = '';
-  if (compareItem) {
-    var mainCard = '<div class="equip-compare-col">' + itemDetailHTML(it, null) + '</div>';
-    var compCard = '<div class="equip-compare-col">' + itemDetailHTML(compareItem, null, { isEquipped: true, showAffixReroll: false }) + '</div>';
-    h = '<div class="equip-compare-container">' + mainCard + compCard + '</div>';
-  } else {
-    h = itemDetailHTML(it, null);
-  }
+  var h = itemDetailHTML(it, null);
   var actionsHtml = '';
   if (UI.sel.source === 'inv') {
     actionsHtml += '<button class="btn" data-act="equip">裝備</button>';

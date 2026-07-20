@@ -1,0 +1,5 @@
+/* 背包物品區：避開外框左上緣的背景裁切 */
+#inventory-grid {
+  padding: 3px 0 0 3px;
+  transform: none;
+}

@@ -9,6 +9,7 @@
 - 驗證（沙盒 clone G，未動真存檔）：等級25 不發/pity 0；等級32 於 14 殺內掉獨特(rarity3)隨機部位、再殺 100 次仍只 1 件（一次性）、史詩里程碑不受影響；等級81 既有存檔首殺補發[獨特,史詩]兩件；等級55 pity 累進 0.5%/殺且獨特里程碑回溯補發。`build_check` 全綠、0 console 錯誤。`game_formula.md` §5.5 同步。
 - **追加規則（同日）**：超出窗口上限的判定改為——先看玩家**穿戴中＋背包**是否已有稀有度 **≥ 該品質**的裝備（新函式 `playerHasEquipmentRarity`）：有→標記完成不發；沒有→本次擊殺直接掉落 1 件。窗口內仍維持原累進保底（不看既有裝備）。此改動取代原「過窗口一律補發」，避免對已有好裝的高等玩家重複發放。
 - 追加驗證：過窗口有傳說裝→0 發、過窗口只有稀有裝→補發[獨特,史詩]、Lv45 有獨特→里程碑1滿足不發且里程碑2待 Lv50、Lv45 僅精良→補發獨特、窗口內(32)即使有史詩仍走累進掉獨特；**真存檔 Lv82 已有獨特+/史詩+ → 不會補發**（原本會，現已排除）。`build_check` 全綠、0 console 錯誤。
+- **修正（同日）**：發放裝備等級誤用「玩家等級」（造成 Lv9999 玩家拿到 Lv9999 裝）→ 改用「當時擊殺怪物等級」。`specialGrantsOnKill(m)` 由 `onFieldKill` 傳入怪物 `m`；`grantSpecialEquipment(ms, monsterLevel)` 以 `makeEquipment(monsterLevel,{rarity})`（省略 level＝怪物等級 stage±1，比照一般掉落）；無怪物時退回 `G.stage.current`。窗口門檻仍用玩家等級。驗證：玩家9999/怪物40→裝備[41,39]；窗口內玩家32/怪物25→Lv25；未傳怪物→退回 stage。既有已發的 2 件（Lv9999）為修正前產物，需由玩家自行處理（未動存檔）。
 
 ## 調整：背包容量／擴充上限可自訂＋擴充費用改指數公式（2026-07-20）
 
@@ -2426,3 +2427,14 @@
 - `js/save.js`：既有存檔首次刷新／讀取時，僅對 `gold > 10^16` 套用 `Math.sqrt(gold) * 10000`；其餘金額維持原值但仍寫入旗標，避免重複處理。
 - `tests/external-gold-migration.test.cjs`：覆蓋首次回收、冪等性與新帳號排除。
 - `ONE_TIME_MIGRATIONS.md`、`game_formula.md`、`PLAN.md`：同步記錄遷移規格與清理條件。
+
+# 本次變更摘要：背包物品區避開左上緣裁切
+
+- 新增 `css/inventory-offset.css`，在 `#inventory-grid` 內增加左側與上側各 3px 內距，讓第一格避開捲動區裁切邊界。
+- `index.html` 在主樣式後載入覆寫樣式，維持背包格數與捲動尺寸不變。
+
+# 本次變更摘要：修正更新通知誤判
+
+- `js/main.js` 改以實際頁面內容指紋判斷更新，不再使用 GitHub Pages 可能變動的 `Last-Modified`／`ETag`。
+- 更新請求改用 `cache: no-store` 並保留每 3 分鐘檢查週期；只有頁面內容真的變更才顯示更新通知。
+- `tests/update-check.test.cjs` 新增回歸測試，禁止恢復成 HTTP 標頭比對。
