@@ -255,6 +255,7 @@ function talentDelete(id) {
 }
 
 function potentialUpgrade(id) {
+  if (reincarnationCount() < 3) return '潛力技能需要在 3 轉後解鎖';
   var def = potentialDef(id);
   if (!def) return '找不到潛力技能';
   if (potentialTemporarilyDisabled(id)) return '此潛力技能目前暫不開放升級';
@@ -277,6 +278,7 @@ function potentialMax(id) {
 }
 
 function potentialDowngrade(id) {
+  if (reincarnationCount() < 3) return '潛力技能需要在 3 轉後解鎖';
   if (!potentialDef(id)) return '找不到潛力技能';
   var lv = potentialLevel(id);
   if (!lv) return '潛力技能目前是 0 級';

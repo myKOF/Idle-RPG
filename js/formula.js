@@ -666,10 +666,23 @@ function healPlayer(pEnt, amount, st) {
    防禦 = (2 + 階段×0.5)  × 1.08^(階段-1)（魔防 = 物防×0.75）
    金幣 = (20 + 階段)     × 1.02^(階段-1)
    經驗 = (8 + 階段)      × 1.06^(階段-1)
-   命中率 = 100% + 敵人等級×4%、閃避率 = 10% + 敵人等級×4%（敵人等級 = 階段；於 resolveHit 相減後最低 5%）
+   命中率／閃避率 = 基礎值 + 各等級區間的每級增加值累加（敵人等級 = 階段；於 resolveHit 相減後最低 5%）
    菁英：生命×3、攻擊×2、金幣/經驗×2、閃避 +5%、攻速 3
    ※ 場景倍率（ZONES 的 hpMult/atkMult/defMult/rewardMult）在
      spawnFieldMonster（combat.js）套用。 */
+function segmentedLevelGrowth(base, level, brackets) {
+  var lv = Math.max(0, Math.floor(Number(level) || 0));
+  var total = Number(base) || 0;
+  (brackets || []).forEach(function (bracket) {
+    var min = Math.max(1, Math.floor(Number(bracket.min) || 1));
+    var max = bracket.max == null ? Infinity : Math.floor(Number(bracket.max));
+    if (lv < min || max < min) return;
+    var count = Math.min(lv, max) - min + 1;
+    total += count * (Number(bracket.rate) || 0);
+  });
+  return total;
+}
+
 function monsterStatsFor(stage, elite) {
   var hp = (30 + stage * 8) * Math.pow(1.095, stage - 1);
   var atk = (6 + stage * 1.2) * Math.pow(1.11, stage - 1);
@@ -681,8 +694,8 @@ function monsterStatsFor(stage, elite) {
     def: def,                 // 物理防禦
     mdef: def * 0.75,         // 魔法防禦
     aspd: 2,
-    dodge: 5 + stage * 2.5,
-    hit: 100 + stage * 2.5,     // 命中率 = 100% + 敵人等級×1%（敵人等級 = 階段）
+    dodge: segmentedLevelGrowth(FIELD_MONSTER_DODGE_BASE, stage, FIELD_MONSTER_DODGE_GROWTH),
+    hit: segmentedLevelGrowth(FIELD_MONSTER_HIT_BASE, stage, FIELD_MONSTER_HIT_GROWTH),
     gold: gold, xp: xp, elite: !!elite
   };
   if (elite) {
@@ -781,7 +794,7 @@ function newForgeMaxFurnaces(reinc) {
   var r = Math.max(0, Math.floor(Number(reinc) || 0));
   return clamp(NEW_FORGE_BASE_FURNACES + NEW_FORGE_FURNACE_PER_REINC * r, NEW_FORGE_BASE_FURNACES, NEW_FORGE_MAX);
 }
-// 熔爐零件格解鎖金幣 = 50000×轉生² + 10000×(該爐已解鎖格數-1)^(4＋熔爐數量)；上限 8 格
+// 熔爐零件格解鎖金幣 = 50000×轉生² + 2000×(該爐已解鎖格數-1)^(熔爐數量)；上限 8 格
 function newForgePartSlotCost(reinc, unlocked, furnaceCount) {
   var r = Math.max(0, Math.floor(Number(reinc) || 0));
   return NEW_FORGE_SLOT_COST_REINC * r * r +
@@ -871,6 +884,14 @@ function hellSoulOriginDropChance(floor) {
 }
 
 // 野外魔塵掉落率 = min(5%, 0.1% + (敵人等級 - 150) × 0.1%)；150 級以下不掉落
+// 煉獄之塔 BOSS 魔種掉落率 = min(100%, 10% + (樓層-101) × 2%)
+function demonSeedDropChanceForBoss(floor) {
+  floor = Math.floor(Number(floor) || 0);
+  if (!isPurgatoryTowerFloor(floor)) return 0;
+  return Math.min(DEMON_SEED_BOSS_RATE_CAP,
+    DEMON_SEED_BOSS_BASE_RATE + (floor - TOWER_HELL_MAX_FLOOR - 1) * DEMON_SEED_BOSS_PER_FLOOR);
+}
+
 function fieldDustRate(level) {
   if (level < DUST_FIELD_MIN_LEVEL) return 0;
   return Math.min(DUST_FIELD_CAP, DUST_FIELD_BASE + (level - DUST_FIELD_MIN_LEVEL) * DUST_FIELD_PER_LEVEL);

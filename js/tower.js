@@ -284,6 +284,14 @@ function endTowerFight(win, reason) {
       result.rewards.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華"> 太古精華 x1');
       UI.dirty.header = true;
     }
+    // 魔種：僅煉獄之塔 BOSS，獨立判定 1 個
+    var demonSeedRate = demonSeedDropChanceForBoss(floor);
+    if (demonSeedRate > 0 && chance(demonSeedRate)) {
+      G.player.demonSeed = (G.player.demonSeed || 0) + 1;
+      if (window.recordLootMat) window.recordLootMat('demonSeed', 1, 'tower');
+      result.rewards.push('🌱 魔種 x1');
+      UI.dirty.header = true;
+    }
     // 魔塵（神鑄材料）：掉落率 = min(30%, 2% + 樓層 × 0.2%)（bossDustRate → formula.js §5）
     if (chance(bossDustRate(floor))) {
       G.player.dust = (G.player.dust || 0) + 1;

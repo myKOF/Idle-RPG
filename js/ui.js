@@ -1315,6 +1315,7 @@ function renderEquipSetTabs() {
   var view = (typeof G.equipView === 'number') ? G.equipView : active;
   var h = '<div class="eqset-tabrow">';
   for (var i = 0; i < G.equipmentSets.length; i++) {
+    if (G.player.level < 2000 && i > 0) continue;
     var cls = 'eqset-tab' + (i === view ? ' viewing' : '') + (i === active ? ' active' : '');
     var defName = (typeof equipSetName === 'function') ? equipSetName(i) : ('第' + (i + 1) + '套');
     var custom = (Array.isArray(G.equipSetNames) && G.equipSetNames[i]) ? String(G.equipSetNames[i]).trim() : '';
@@ -1326,10 +1327,12 @@ function renderEquipSetTabs() {
     '</div>';
   }
   h += '</div>';
-  var same = view === active;
-  var viewLabel = (typeof equipSetLabel === 'function') ? equipSetLabel(view) : ('第' + (view + 1) + '套');
-  h += '<button id="eqset-confirm" class="btn eqset-confirm"' + (same ? ' disabled' : '') + '>' +
-    (same ? '目前使用中' : ('確定切換到「' + esc(viewLabel) + '」')) + '</button>';
+  if (G.player.level >= 2000) {
+    var same = view === active;
+    var viewLabel = (typeof equipSetLabel === 'function') ? equipSetLabel(view) : ('第' + (view + 1) + '套');
+    h += '<button id="eqset-confirm" class="btn eqset-confirm"' + (same ? ' disabled' : '') + '>' +
+      (same ? '目前使用中' : ('確定切換到「' + esc(viewLabel) + '」')) + '</button>';
+  }
   box.innerHTML = h;
 }
 
@@ -1337,6 +1340,7 @@ function renderEquipSetTabs() {
 function renameEquipSet(idx) {
   if (!Array.isArray(G.equipmentSets)) return;
   idx = clamp(Math.floor(Number(idx) || 0), 0, G.equipmentSets.length - 1);
+  if (G.player.level < 2000 && idx > 0) return;
   if (!Array.isArray(G.equipSetNames)) G.equipSetNames = [];
   var defName = (typeof equipSetName === 'function') ? equipSetName(idx) : ('第' + (idx + 1) + '套');
   var cur = G.equipSetNames[idx] || '';
@@ -2917,12 +2921,14 @@ function renderSkills() {
     h += '<div class="tree-panel"><div class="tree-title">' + SKILL_CATS[cat].emoji + ' ' + SKILL_CATS[cat].name +
       ' <span class="dim-text">已投入 ' + catSpentPoints(cat) + ' 點</span></div>' + rows + '</div>';
   }
-  var potentialCells = POTENTIAL_TALENTS.map(function (def, index) { return potentialNodeHTML(def, index); });
-  var potentialRows = '';
-  for (var pr = 0; pr < potentialCells.length; pr += 4) {
-    potentialRows += '<div class="tree-row">' + potentialCells.slice(pr, pr + 4).join('') + '</div>';
+  if (reincarnationCount() >= 3) {
+    var potentialCells = POTENTIAL_TALENTS.map(function (def, index) { return potentialNodeHTML(def, index); });
+    var potentialRows = '';
+    for (var pr = 0; pr < potentialCells.length; pr += 4) {
+      potentialRows += '<div class="tree-row">' + potentialCells.slice(pr, pr + 4).join('') + '</div>';
+    }
+    h += '<div class="tree-panel potential-skill-panel"><div class="tree-title">✨ 潛力 <span class="dim-text">技能分類；使用技能點與金幣　已解鎖 ' + potentialUnlockedCount() + '/' + POTENTIAL_NODE_COUNT + '</span></div>' + potentialRows + '</div>';
   }
-  h += '<div class="tree-panel potential-skill-panel"><div class="tree-title">✨ 潛力 <span class="dim-text">技能分類；使用技能點與金幣　已解鎖 ' + potentialUnlockedCount() + '/' + POTENTIAL_NODE_COUNT + '</span></div>' + potentialRows + '</div>';
   treesBox.innerHTML = h;
 
   renderSkillModal();

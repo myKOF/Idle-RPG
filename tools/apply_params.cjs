@@ -129,29 +129,14 @@ Object.keys(RAR_KEYS).forEach(nm => {
   objField('data', anchor, 'salv', '表-稀有度', nm, 5, nm);
 });
 
-// 詞條池：base(0) lv(1) weight(2)  —— 以中文 name 為錨（唯一）
-Object.keys(index['表-詞條池'] || {}).forEach(nm => {
-  const anchor = "name: '" + nm + "'";
-  objField('data', anchor, 'base', '表-詞條池', nm, 0, '詞條-' + nm);
-  objField('data', anchor, 'lv', '表-詞條池', nm, 1, '詞條-' + nm);
-  objField('data', anchor, 'weight', '表-詞條池', nm, 2, '詞條-' + nm);
-});
-
-// 特殊被動：base(0) perR(1)
-const PASV_KEYS = { '破甲': 'sunder', '反震': 'thorns', '連擊': 'doubleHit', '暈眩': 'stun', '減速': 'slowHit', '真傷': 'trueDmg', '吸魂': 'soulEater' };
-Object.keys(PASV_KEYS).forEach(nm => {
-  const anchor = PASV_KEYS[nm] + ':';
-  objField('data', anchor, 'base', '表-特殊被動', nm, 0, '被動-' + nm);
-  objField('data', anchor, 'perR', '表-特殊被動', nm, 1, '被動-' + nm);
-});
-
-// 神鑄特效：base(0)
-const GOD_KEYS = { '龍血': 'dragonBlood', '神力': 'godMight', '神速': 'godHaste', '屠神': 'godSlayer', '貪婪': 'greed', '神壁': 'godWall', '天罰': 'smite', '破滅': 'annihilate', '聖佑': 'sanctuary', '不朽': 'undying', '萬象汲取': 'omniDrain', '神怒': 'godWrath' };
-Object.keys(GOD_KEYS).forEach(nm => objField('data', GOD_KEYS[nm] + ':', 'base', '表-神鑄特效', nm, 0, '神鑄-' + nm));
-
-// 寶石種類：base(0)
-const GEM_KEYS = { '紅寶石': 'ruby', '藍寶石': 'sapphire', '黃玉': 'topaz', '綠寶石': 'emerald', '鑽石': 'diamond', '青金石': 'lapis', '紫水晶': 'amethyst', '石榴石': 'garnet', '蛋白石': 'opal', '黑曜石': 'onyx', '月光石': 'moonstone', '太陽石': 'sunstone', '翡翠': 'jade', '綠松石': 'turquoise', '瑪瑙': 'agate', '珍珠': 'pearl', '孔雀石': 'malachite', '螢石': 'fluorite', '尖晶石': 'spinel', '海藍寶石': 'aquamarine', '天河石': 'amazonite', '橄欖石': 'peridot', '黃水晶': 'citrine', '黑碧璽': 'tourmaline' };
-Object.keys(GEM_KEYS).forEach(nm => objField('data', GEM_KEYS[nm] + ':', 'base', '表-寶石種類', nm, 0, '寶石-' + nm));
+/* ---- 【2026-07-20 配置撥離】以下四組已改由獨立表單管理，apply_params 不再接線 ----
+   詞條池 → config/CSV/Equipment_Affix.csv（AFFIX_POOL）
+   特殊被動 → config/CSV/Equipment_Affix.csv（PASSIVE_POOL）
+   神鑄特效 → config/CSV/Equipment_Affix.csv（GODFORGE_POOL）
+   寶石種類 → config/CSV/Gems.csv（GEM_TYPES）
+   由 tools/config_tables.cjs 雙向套用；此處刻意不再定義 表-詞條池/表-特殊被動/表-神鑄特效/表-寶石種類 的錨點。
+   game_parameters 內若仍殘留這四組的舊列，一律為「死列」（apply_params 忽略），
+   實際數值以上述四表為準（唯一來源）。 */
 
 // 自動機組零件：perTier(0)
 const PART_KEYS = { '加速齒輪': 'speedGear', '碎片熔煉爐': 'scrapForge', '淘金濾網': 'goldSluice', '精粹透鏡': 'extractLens', '拓本回收臂': 'bookScavenger', '複製處理艙': 'duplicator', '知識回收器': 'archivist', '探礦核心': 'prospector', '幸運晶片': 'fortuneChip', '太古精華萃取器': 'ancientEssenceRate', '幸運核心': 'luckCore', '重骰模組': 'rerollModule' };
@@ -247,6 +232,9 @@ scalar('data', 'TOWER_BOSS_ELEM_HELL_MULT', '4-高塔BOSS', '元素附傷(元素
 scalar('data', 'TOWER_BOSS_XP_MULT', '4-高塔BOSS', '經驗', 0);
 scalar('data', 'TOWER_HELL_SOUL_ORIGIN_BASE_RATE', '4-高塔BOSS', '魔魂本源(地獄之塔)', 0);
 scalar('data', 'TOWER_HELL_SOUL_ORIGIN_PER_FLOOR', '4-高塔BOSS', '魔魂本源(地獄之塔)', 1);
+scalar('data', 'DEMON_SEED_BOSS_RATE_CAP', '4-高塔BOSS', '魔種(煉獄之塔)', 0);
+scalar('data', 'DEMON_SEED_BOSS_BASE_RATE', '4-高塔BOSS', '魔種(煉獄之塔)', 1);
+scalar('data', 'DEMON_SEED_BOSS_PER_FLOOR', '4-高塔BOSS', '魔種(煉獄之塔)', 2);
 scalar('data', 'TOWER_TIME_LIMIT', '4-高塔BOSS', '戰鬥規則', 0);
 scalar('data', 'TOWER_ENRAGE_TIME', '4-高塔BOSS', '戰鬥規則', 1);
 inline('data', 'TOWER_ENRAGE_HP = ', 50, 'TOWER_ENRAGE_HP'); // 狂暴血量門檻（無對應可調 CSV 欄，固定內嵌）
@@ -318,6 +306,22 @@ function parseTuple(cell) {
   const m = /=(-?[\d.]+)\}/.exec(cell);
   if (!m || !isFinite(Number(m[1]))) throw new Error('CSV 元組無法解析為數字（可能被 Excel 破壞）：「' + cell + '」');
   return m[1];
+}
+// 命中／閃避：CSV 以 {下限~上限=每級增加值} 或 {下限+=每級增加值} 表示。
+function parseLevelGrowthBracket(cell) {
+  cell = (cell == null ? '' : String(cell)).trim();
+  const m = /^\{\s*(\d+)\s*(?:~\s*(\d+)|\+)\s*=\s*(-?[\d.]+)\s*\}$/.exec(cell);
+  if (!m || !isFinite(Number(m[3]))) {
+    throw new Error('CSV 等級區間無法解析為數字：「' + cell + '」');
+  }
+  return '{ min: ' + Number(m[1]) + (m[2] ? ', max: ' + Number(m[2]) : '') + ', rate: ' + Number(m[3]) + ' }';
+}
+function levelGrowthContent(cat, name) {
+  const params = index[cat] && index[cat][name];
+  if (!params) throw new Error('CSV 缺少等級區間參數：' + cat + ' / ' + name);
+  const brackets = params.filter(cell => /^\s*\{/.test(String(cell))).map(parseLevelGrowthBracket);
+  if (!brackets.length) throw new Error('CSV 缺少有效等級區間參數：' + cat + ' / ' + name);
+  return brackets.join(',\n  ');
 }
 // 野外裝備：CSV 每品質 4 個 bracket（1~49,50~99,100~149,150+）→ code min 1/50/100/150
 {
@@ -448,14 +452,13 @@ inline('formula', 'var gold = (', P('4-野外怪物', '金幣', 0), 'gold-a');
 edits.push({ file: 'formula', re: /(var gold = \([\d.]+ \+ stage\) \* Math\.pow\()([\d.]+)/, grp: 2, value: P('4-野外怪物', '金幣', 2), label: 'gold-c' });
 inline('formula', 'var xp = (', P('4-野外怪物', '經驗', 0), 'xp2-a');
 edits.push({ file: 'formula', re: /(var xp = \([\d.]+ \+ stage\) \* Math\.pow\()([\d.]+)/, grp: 2, value: P('4-野外怪物', '經驗', 2), label: 'xp2-c' });
-// 野外怪物攻速：以 dodge/gold 後綴確保唯一
-edits.push({ file: 'formula', re: /aspd: (-?[\d.]+),\s*\n\s*dodge: [\d.]+ \+ stage \* [\d.]+,/, grp: 1, value: P('4-野外怪物', '攻擊速度', 0), label: 'mob-aspd' });
-// 野外怪物閃避率：dodge = a + 敵人等級(=階段)×b（monsterStatsFor）
-edits.push({ file: 'formula', re: /(dodge: )([\d.]+)( \+ stage)/, grp: 2, value: P('4-野外怪物', '閃避率', 0), label: '怪物閃避-a' });
-edits.push({ file: 'formula', re: /(dodge: [\d.]+ \+ stage \* )([\d.]+)/, grp: 2, value: P('4-野外怪物', '閃避率', 1), label: '怪物閃避-b' });
-// 野外怪物命中率：hit = a + 敵人等級(=階段)×b（monsterStatsFor）
-edits.push({ file: 'formula', re: /(hit: )([\d.]+)( \+ stage)/, grp: 2, value: P('4-野外怪物', '命中率', 0), label: '怪物命中-a' });
-edits.push({ file: 'formula', re: /(hit: [\d.]+ \+ stage \* )([\d.]+)/, grp: 2, value: P('4-野外怪物', '命中率', 1), label: '怪物命中-b' });
+// 野外怪物攻速：只鎖定 monsterStatsFor 內的 aspd 欄位。
+edits.push({ file: 'formula', re: /(function monsterStatsFor[\s\S]*?aspd:\s*)(-?[\d.]+)(,)/, grp: 2, value: P('4-野外怪物', '攻擊速度', 0), label: 'mob-aspd' });
+// 野外怪物命中／閃避：基礎值 + 各等級區間的每級增加值累加。
+scalar('data', 'FIELD_MONSTER_DODGE_BASE', '4-野外怪物', '閃避率', 0);
+arrayContent('data', 'FIELD_MONSTER_DODGE_GROWTH', levelGrowthContent('4-野外怪物', '閃避率'), '怪物閃避分段成長');
+scalar('data', 'FIELD_MONSTER_HIT_BASE', '4-野外怪物', '命中率', 0);
+arrayContent('data', 'FIELD_MONSTER_HIT_GROWTH', levelGrowthContent('4-野外怪物', '命中率'), '怪物命中分段成長');
 
 /* ---- §2 玩家屬性派生（computeStats） ---- */
 inline('formula', 'st.base.hp = ', P('2-屬性派生', '生命上限', 0), 'hp基底');

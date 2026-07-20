@@ -1,5 +1,35 @@
 # PATCH.md
 
+## 變更紀錄：檔案配置撥離——四系統獨立 Excel/CSV（2026-07-20）
+
+- 需求：把技能/寶石/天賦/裝備詞條四系統的數值配置撥離成獨立 xlsx+CSV，「套用參數.bat」一次處理。使用者定調：新四表為唯一來源、雙向回寫 JS、技能 fx 用單一 JSON 欄。
+- **新工具** `tools/config_tables.cjs`：純 Node（zlib）自寫 xlsx 讀+寫、CSV、JS 字面值「字串感知括號配對」萃取 + 重建。三模式：
+  - `--gen`（由 JS 產生四表 CSV+xlsx）、`--sync`（xlsx→CSV，供 .bat 讀使用者編輯）、`--apply [--write]`（CSV→重建 JS 字面值區塊；只改「語意有變更」的區塊；備份→node --check→失敗還原）。
+- **新四表**（各 xlsx+CSV，`config/Excel/`＋`config/CSV/`）：
+  - `Skills` ← `SKILLS`+`UNLOCKS`（skills.js），fx/里程碑以 JSON 欄；`Gems` ← `GEM_TYPES`；`Talents` ← `TALENT_TREES`+`POTENTIAL_TALENTS`；`Equipment_Affix` ← `AFFIX_POOL`+`PASSIVE_POOL`+`GODFORGE_POOL`（data.js）。
+- **拆線** `tools/apply_params.cjs`：移除 表-詞條池/表-特殊被動/表-神鑄特效/表-寶石種類 四組錨點（對應參數 744→496），改由四表唯一驅動；主參數表殘留舊列成「死列」（忽略）。
+- **`套用參數.bat`**：改為三段——[1/3] config_tables sync+apply 四表 → [2/3] game_parameters xlsx→CSV → [3/3] apply_params。
+- **未做（使用者選「先不動 xlsx」）**：實體移除 game_parameters.xlsx 的四組重疊列（xlsx 現與 CSV 不同步、含使用者暫存編輯）。功能上已達單一來源（apply_params 不再碰那四組）。
+- **無遊戲數值變更**：四表由現行 JS 產生，round-trip 語意 0 差異；GEM_TYPES 六屬性寶石維持 base 0.2（使用者指定，與現行遊戲一致）。
+- 驗證：`build_check` 全綠；xlsx↔CSV 逐字 round-trip；隔離埠(8124) 載入 0 console 錯誤、執行期資料筆數全對（gems24/skills54/unlocks44/talents80+10/affix66+7+12）。
+- 文件同步：`game_formula.md`（來源指標）、`tools/參數表使用說明.md`（新增「撥離四表」章節）、`PLAN.md`。
+- ⚠️ 回報：`套用參數.bat` 現況會在 [3/3] 崩潰——xlsx 缺 `4-高塔BOSS/魔種(煉獄之塔)` 列（只在 CSV），需補進 xlsx。此為既有狀態，非本次造成。
+
+## 變更紀錄：六屬性傷害寶石數值下修（base 0.5→0.2）（2026-07-19）
+
+- 需求：六大「對屬性敵人傷害」寶石數值下調——Lv1 0.2%、每級 +0.2% 至 Lv5 1.0%，Lv6 起為前一級 ×2；現有存檔寶石也要套用。
+- **數值改動**（js/data.js GEM_TYPES）：spinel／aquamarine／amazonite／peridot／citrine／tourmaline 六種 `base` 0.5 → **0.2**（`linear` 曲線不變，故 Lv1~5＝0.2×等級、Lv6 起 ×2 → 2/4/8/16/32%）。鑲嵌與庫存的一般寶石以 `gemStatValue` 動態計算，改 base 即全部自動套用。
+- **存檔遷移**（ONE-TIME MIGRATION `gemAttrDmgBaseV1`，js/save.js＋js/player.js）：融合寶石的 `stats[].val` 是固定值快照，對這六種寶石的 stat 一次性 ×0.4（=0.2/0.5）；掃描融合寶石庫存與所有容器（三套裝備／背包／輸送帶／合成暫存／新熔爐佇列與帶／神鑄槽）中鑲嵌於插槽的融合寶石；雙屬性只縮放對應 stat、冪等、新帳號不觸發。登錄於 ONE_TIME_MIGRATIONS.md。
+- 測試：新增 tests/gem-attr-dmg-base.test.cjs（gemStatValue 新值＋融合快照縮放＋插槽掃描＋冪等）；build 過、全套零新增失敗；隔離埠實測。
+- 文件：game_formula.md §8、PLAN.md 同步。
+
+## 變更紀錄：對屬性敵人傷害 tips 補充來源與生效條件（2026-07-19）
+
+- 回報：面板「對火/冰/雷/毒/光/暗屬性傷害」疑似沒效果或 tips 沒顯示。
+- 實測結論：**戰鬥結算正常生效**（點滿 6 轉「滅焰打擊」dmgVsFire=300，對帶火屬性標籤的敵人傷害 ×(1+300%)≈4x，對非該屬性敵人不變）；面板值、`playerAtkCfg.dmgVsElem` 接線皆正確。觀感「沒效果」源自此加成**只對「帶對應屬性標籤」的敵人生效**，打其他屬性的怪不會套用。
+- 修正（js/data.js STAT_GROUPS）：六條「對X屬性傷害」面板 tips 由單句「對X屬性敵人造成的傷害提高。」補為明示「**只對帶該屬性標籤的敵人生效（打其他屬性不生效）**」（依使用者指示不列來源）。
+- 驗證：build 114 檔過；talents／enemy-type-damage 測試 35/35 綠；隔離埠 8125 實測 tips 文字更新、戰鬥倍率正確、主控台 0 錯誤。
+
 ## 變更紀錄：潛力解鎖天賦改為「升至 100 級才解鎖」（2026-07-19）
 
 - **解鎖條件**（js/talents.js `potentialCountForLevel`）：3／4／7／10 轉四個潛力解鎖天賦由「投入 1 級即解鎖」改為「**升至 Lv.100（滿級）才解鎖** `unlocks` 個潛力技能」（`lv >= TALENT_MAX_LEVEL`）；天賦本身仍整批 disabled、置灰不可升級，僅先改條件。

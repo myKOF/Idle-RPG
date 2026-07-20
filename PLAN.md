@@ -1,5 +1,16 @@
 # PLAN.md — 開發計畫
 
+## 當前任務：六屬性傷害寶石數值下修（base 0.5→0.2）（2026-07-19）
+
+### 需求（使用者指示）
+- 六大屬性寶石：Lv1 0.2%、每級 +0.2% 至 Lv5 1.0%，Lv6 起前一級 ×2；現有存檔寶石必須套用。
+
+### 執行項目
+1. [DONE] js/data.js：六種寶石 base 0.5→0.2（linear 曲線不變）。
+2. [DONE] js/save.js＋js/player.js：ONE-TIME MIGRATION `gemAttrDmgBaseV1` 縮放融合寶石快照（×0.4）。
+3. [DONE] 測試（gem-attr-dmg-base.test.cjs）＋build＋全套＋隔離埠實測。
+4. [DONE] game_formula.md §8／ONE_TIME_MIGRATIONS.md／PATCH.md 同步。
+
 ## 當前任務：天賦數值調整（《天賦V3.xlsx》，攻擊類下修）（2026-07-19）
 
 ### 需求（使用者指示）
@@ -1823,3 +1834,27 @@ CSS transition，避免出現追趕式跳動。
 1. [DONE] 在既有存檔讀取遷移中加入 `gold > 10^16 ? sqrt(gold) * 10000 : gold`，以 `externalGoldRecoveryV1` 保證只執行一次。
 2. [DONE] 新帳號預設帶完成旗標，並補上一次性遷移文件、公式文件與測試。
 3. [DONE] 執行專案例行測試與 build 驗證。
+
+## 2026-07-20 檔案配置撥離（四系統獨立 xlsx/CSV）
+
+需求：把 Skills / Gems / Talents / Equipment_Affix 四系統的數值配置撥離成獨立 Excel+CSV，
+「套用參數.bat」一次處理所有改動。使用者定調：**新四表為唯一來源（移出 game_parameters 重疊列）**、
+**雙向回寫 JS**、**技能 fx 以單一 JSON 欄呈現**。
+
+四表 ↔ JS 資料：
+- Skills（js/skills.js）：`SKILLS` + `UNLOCKS`（里程碑）。欄：id/系統分類/名稱/icon圖號/施法消耗/冷卻/施放AI/說明/基礎fx(JSON)/里程碑fx(JSON)。
+- Gems（js/data.js）：`GEM_TYPES`。欄：id/名稱/icon圖號/屬性桶/屬性名稱/基礎值/百分比/線性。
+- Talents（js/data.js）：`TALENT_TREES`(1~10 轉) + `POTENTIAL_TALENTS`。欄：類型/轉數/id/名稱/icon圖號/屬性桶/低階/高階/每級/解鎖數/停用/停用原因/說明。
+- Equipment_Affix（js/data.js）：`AFFIX_POOL` + `PASSIVE_POOL` + `GODFORGE_POOL`。欄：池/id/名稱/base/每級成長/百分比/權重/最低稀有度/出現部位/每階perR/屬性桶stats/說明。
+
+步驟：
+1. [DONE] 建 `tools/config_tables.cjs`：純 Node（zlib）xlsx 讀/寫 + CSV + JS 字面值萃取/回寫。三模式 --gen / --sync / --apply。
+2. [DONE] `--gen` 由現有 JS 產生四份 CSV + xlsx（bootstrap）。Skills 54、Gems 24、Talents 90、Equipment_Affix 85。
+3. [DONE] `--apply` 由 CSV 重建 JS 字面值區塊（只改「語意有變更」的區塊、node --check 安全閘門、失敗還原）。實測 round-trip 語意 0 差異、xlsx↔CSV 逐字相同。
+4. [DONE-部分] 拆掉 apply_params.cjs 對 表-詞條池/表-特殊被動/表-神鑄特效/表-寶石種類 的接線（參數數 744→496，四表成唯一驅動）。
+   [DEFER] 實體移除 game_parameters xlsx 重疊列——使用者選「先不動 xlsx」（xlsx 目前與 CSV 不同步、有 6 筆寶石 base 暫存編輯、且缺 魔種 列使 .bat 現況會崩）。待使用者整理 game_parameters 暫存編輯後再做。
+5. [DONE] 接進 `套用參數.bat`（[1/3] config_tables sync+apply 四表 → [2/3] xlsx→CSV → [3/3] apply_params）。
+6. [DONE] 驗證：build_check 全綠、round-trip 一致、隔離埠(8124)載入 0 console 錯誤、執行期資料結構筆數全對。
+7. [DONE] 同步 game_formula.md（來源指標）/ 參數表使用說明（撥離四表章節）/ PLAN / PATCH / 記憶。
+
+⚠️ 回報使用者的既有問題（非本次造成）：`套用參數.bat` 現況會在 [3/3] apply_params 崩潰——xlsx 缺 `4-高塔BOSS/魔種(煉獄之塔)` 列（只在 CSV）。需把該列補進 xlsx 才能跑完整條 .bat。

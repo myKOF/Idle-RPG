@@ -15,23 +15,40 @@ function loadFormulaContext() {
   return context;
 }
 
-test('普通敵人命中率 = 100% + 敵人等級×1%（等級 = 階段）', () => {
+test('普通敵人命中率依 game_parameters 等級區間逐級累加', () => {
   const context = loadFormulaContext();
-  [1, 10, 50, 137, 300].forEach((stage) => {
+  const expected = new Map([
+    [1, 100.5], [49, 124.5], [50, 125.25], [99, 162],
+    [100, 163], [149, 212], [150, 214], [199, 312],
+    [200, 314.5], [299, 562], [300, 565]
+  ]);
+  expected.forEach((value, stage) => {
     const m = context.monsterStatsFor(stage, false);
     assert.equal(m.level, stage);
-    assert.equal(m.hit, 100 + stage * 1);
+    assert.equal(m.hit, value);
   });
   // 菁英沿用同一命中率公式（不因菁英另加成）
   const elite = context.monsterStatsFor(30, true);
-  assert.equal(elite.hit, 100 + 30 * 1);
+  assert.equal(elite.hit, 115);
 });
 
-test('BOSS 命中率 = 200% + BOSS 階層×10%（階層 = 樓層）', () => {
+test('普通敵人閃避率依 game_parameters 等級區間逐級累加', () => {
+  const context = loadFormulaContext();
+  const expected = new Map([
+    [1, 5.5], [49, 29.5], [50, 30.25], [99, 67],
+    [100, 68], [149, 117], [150, 118.5], [199, 192], [200, 194]
+  ]);
+  expected.forEach((value, stage) => {
+    assert.equal(context.monsterStatsFor(stage, false).dodge, value);
+  });
+  assert.equal(context.monsterStatsFor(30, true).dodge, 25);
+});
+
+test('BOSS 命中率沿用目前高塔命中率參數', () => {
   const context = loadFormulaContext();
   [1, 10, 40, 51, 100].forEach((floor) => {
     const b = context.bossStatsFor(floor);
-    assert.equal(b.hit, 200 + floor * 10);
+    assert.equal(b.hit, 200 + floor * 70);
   });
 });
 

@@ -291,6 +291,7 @@ function migrateSave(data) {
   var hadTalentTreesV2RespecV2 = !!data.talentTreesV2RespecV2;
   var hadTalentTreesV2RespecV3 = !!data.talentTreesV2RespecV3;
   var hadTalentTreesV2RespecV4 = !!data.talentTreesV2RespecV4;
+  var hadLimitMigration = !!data.equipSetPotentialLimitV1;
   var hadForgeUnlockNotice = !!(data.forge && data.forge.unlockNotified);
   var hadSalvageSlots = !!(data.factory && data.factory.salvageSlots !== undefined);
   // 熔爐合併改版旗標：需在 mergeDefaults 前判斷（merge 會補 noticeShown/tabSeen 預設 true）。
@@ -308,6 +309,21 @@ function migrateSave(data) {
   }
   
   mergeDefaults(data, def);
+  /* ONE-TIME MIGRATION: equipSetPotentialLimitV1（登錄於 ONE_TIME_MIGRATIONS.md）
+     多套裝備 (Lv.2000) 與潛力 (3轉) 新開放門檻限制。
+     對於低於門檻卻已穿載多套裝備或點過潛力的舊存檔，載入時強制重置以防異常。 */
+  if (!hadLimitMigration) {
+    if (data.player) {
+      if (data.player.level < 2000) {
+        data.equipActive = 0;
+        data.equipView = 0;
+      }
+      if (data.player.reincarnations < 3) {
+        data.player.talents.potentialLevels = {};
+      }
+    }
+    data.equipSetPotentialLimitV1 = true;
+  }
   /* ONE-TIME MIGRATION: externalGoldRecoveryV1（登錄於 ONE_TIME_MIGRATIONS.md）
      只處理在本次版本前已存在、尚未帶旗標的帳號；新帳號由 newGameState 預先標記完成。
      金幣超過 10^16 時，調整後金幣 = sqrt(現有金幣) * 10000；未超過則保留原值。 */
@@ -458,9 +474,13 @@ function migrateSave(data) {
     });
   }
   if (typeof POTENTIAL_TALENTS !== 'undefined') {
-    POTENTIAL_TALENTS.forEach(function (def) {
-      data.player.talents.potentialLevels[def.id] = clamp(Math.floor(Number(data.player.talents.potentialLevels[def.id]) || 0), 0, POTENTIAL_SKILL_BASE_MAX_LEVEL + data.player.reincarnations * 10);
-    });
+    if (data.player && data.player.reincarnations < 3) {
+      data.player.talents.potentialLevels = {};
+    } else {
+      POTENTIAL_TALENTS.forEach(function (def) {
+        data.player.talents.potentialLevels[def.id] = clamp(Math.floor(Number(data.player.talents.potentialLevels[def.id]) || 0), 0, POTENTIAL_SKILL_BASE_MAX_LEVEL + data.player.reincarnations * 10);
+      });
+    }
   }
   var expectedSkillBudget = data.player.reincarnations > 0 ? SKILL_POINT_BUDGET_CAP : Math.min(SKILL_POINT_BUDGET_CAP, Math.max(0, (data.player.level || 1) + 1));
   if (!hadSkillPointBudget || Number(data.player.skillPointBudget) < expectedSkillBudget) {
@@ -501,8 +521,13 @@ function migrateSave(data) {
       for (var i = 0; i < data.equipmentSets.length; i++) data.equipmentSets[i] = ensureSlots(data.equipmentSets[i]);
       while (data.equipmentSets.length < COUNT) data.equipmentSets.push(ensureSlots(null));
       var last = data.equipmentSets.length - 1;
-      data.equipActive = clamp(Math.floor(Number(data.equipActive) || 0), 0, last);
-      data.equipView = clamp(Math.floor(Number(data.equipView) || 0), 0, last);
+      if (data.player && data.player.level < 2000) {
+        data.equipActive = 0;
+        data.equipView = 0;
+      } else {
+        data.equipActive = clamp(Math.floor(Number(data.equipActive) || 0), 0, last);
+        data.equipView = clamp(Math.floor(Number(data.equipView) || 0), 0, last);
+      }
     }
     data.equipment = data.equipmentSets[data.equipActive]; // 重導使用中那套（避免載入後參照脫鉤）
     // 每套自訂名稱：補齊為與套數等長的字串陣列（舊存檔無此欄 → 全空＝用預設）

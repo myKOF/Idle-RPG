@@ -153,7 +153,8 @@ function addNewForgeFurnace() {
       ? '熔爐數量已達上限（' + NEW_FORGE_MAX + ' 座）'
       : '目前轉生可設 ' + allowed + ' 座熔爐（每 1 轉 +1 座，上限 ' + NEW_FORGE_MAX + '）';
   }
-  nf.furnaces.push(newForgeDefaultFurnace(nf.nextId++));
+  var previousFurnace = nf.furnaces[nf.furnaces.length - 1];
+  nf.furnaces.push(newForgeDefaultFurnace(nf.nextId++, previousFurnace));
   UI.dirty.newforge = true;
   return null;
 }

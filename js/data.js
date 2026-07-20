@@ -41,6 +41,9 @@ var ANCIENT_ESSENCE_BOSS_LEVEL_RATE = 2;
 var ANCIENT_ESSENCE_BOSS_RATE_CAP = 100;
 var ANCIENT_ESSENCE_SALVAGE_CHANCE = { 4: 0.5, 5: 1, 6: 10, 7: 100, 8: 100 };
 var ANCIENT_AFFIX_VALUE_MULT = 1.35;
+var DEMON_SEED_BOSS_BASE_RATE = 10;
+var DEMON_SEED_BOSS_PER_FLOOR = 2;
+var DEMON_SEED_BOSS_RATE_CAP = 100;
 
 /* ---- 轉生系統 ----
    生命與四維在原始總值完成後套用最終倍率：
@@ -186,6 +189,26 @@ var POTENTIAL_TALENTS = [
 /* ---- 普通關卡敵人數量 ----
    僅普通敵人使用；菁英與高塔 BOSS 固定單一敵人。權重總和 = 100%。 */
 var FIELD_ENEMY_COUNT_TABLE = [[1, 60], [2, 25], [3, 10], [4, 5]];
+
+/* ---- 野外怪物命中／閃避分段成長 ----
+   rate 是該等級區間「每級增加值」；未填 max 代表從 min 起套用至無限。 */
+var FIELD_MONSTER_HIT_BASE = 100;
+var FIELD_MONSTER_HIT_GROWTH = [
+  { min: 1, max: 49, rate: 0.5 },
+  { min: 50, max: 99, rate: 0.75 },
+  { min: 100, max: 149, rate: 1 },
+  { min: 150, max: 199, rate: 2 },
+  { min: 200, max: 299, rate: 2.5 },
+  { min: 300, rate: 3 }
+];
+var FIELD_MONSTER_DODGE_BASE = 5;
+var FIELD_MONSTER_DODGE_GROWTH = [
+  { min: 1, max: 49, rate: 0.5 },
+  { min: 50, max: 99, rate: 0.75 },
+  { min: 100, max: 149, rate: 1 },
+  { min: 150, max: 199, rate: 1.5 },
+  { min: 200, rate: 2 }
+];
 
 /* ---- 裝備部位 ----
    SLOT_LIST = 裝備欄位（13 欄，含雙武器/雙戒指）；ITEM_TYPES = 物品種類（11 種）。
@@ -652,8 +675,8 @@ var NEW_FORGE_IMAGE = 'images/furnace_LV1.png'; // 熔爐大圖（統一）
 var NEW_FORGE_PART_SLOTS_INITIAL = 3;
 var NEW_FORGE_PART_SLOTS_MAX = 8;
 var NEW_FORGE_SLOT_COST_REINC = 50000; // 50000×轉生²
-var NEW_FORGE_SLOT_COST_BASE = 10000;  // 10000×(已解鎖-1)^(4＋熔爐數)
-var NEW_FORGE_SLOT_COST_EXP = 4;
+var NEW_FORGE_SLOT_COST_BASE = 2000;  // 2000×(已解鎖-1)^(熔爐數)
+var NEW_FORGE_SLOT_COST_EXP = 0;
 
 // ---- 寶石 ----
 /* GEM_MAX_LEVEL = 一般系統上限（掉落/商店/合成/轉換/拆解/融合皆以此為限）。
@@ -686,12 +709,13 @@ var GEM_TYPES = {
   malachite: { name: '孔雀石', emoji: '💚', stat: 'pRes', statName: '物理抗性%', base: 0.8, pct: true },
   fluorite: { name: '螢石', emoji: '💙', stat: 'mRes', statName: '魔法抗性%', base: 0.8, pct: true },
   // === 對屬性敵人傷害（六大屬性；linear：1~5 階＝base×等級 線性、6 階起每階 ×2）===
-  spinel: { name: '尖晶石', emoji: '🔥', stat: 'dmgVsFire', statName: '對火屬性傷害%', base: 0.5, pct: true, linear: true },
-  aquamarine: { name: '海藍寶石', emoji: '❄️', stat: 'dmgVsIce', statName: '對冰屬性傷害%', base: 0.5, pct: true, linear: true },
-  amazonite: { name: '天河石', emoji: '⚡', stat: 'dmgVsLightning', statName: '對雷屬性傷害%', base: 0.5, pct: true, linear: true },
-  peridot: { name: '橄欖石', emoji: '☠️', stat: 'dmgVsPoison', statName: '對毒屬性傷害%', base: 0.5, pct: true, linear: true },
-  citrine: { name: '黃水晶', emoji: '✨', stat: 'dmgVsLight', statName: '對光屬性傷害%', base: 0.5, pct: true, linear: true },
-  tourmaline: { name: '黑碧璽', emoji: '🌑', stat: 'dmgVsDark', statName: '對暗屬性傷害%', base: 0.5, pct: true, linear: true }
+  // base=0.2：Lv1 0.2%、每級 +0.2% 至 Lv5 1.0%，Lv6 起為前一級 ×2（2.0%、4.0%…）。
+  spinel: { name: '尖晶石', emoji: '🔥', stat: 'dmgVsFire', statName: '對火屬性傷害%', base: 0.2, pct: true, linear: true },
+  aquamarine: { name: '海藍寶石', emoji: '❄️', stat: 'dmgVsIce', statName: '對冰屬性傷害%', base: 0.2, pct: true, linear: true },
+  amazonite: { name: '天河石', emoji: '⚡', stat: 'dmgVsLightning', statName: '對雷屬性傷害%', base: 0.2, pct: true, linear: true },
+  peridot: { name: '橄欖石', emoji: '☠️', stat: 'dmgVsPoison', statName: '對毒屬性傷害%', base: 0.2, pct: true, linear: true },
+  citrine: { name: '黃水晶', emoji: '✨', stat: 'dmgVsLight', statName: '對光屬性傷害%', base: 0.2, pct: true, linear: true },
+  tourmaline: { name: '黑碧璽', emoji: '🌑', stat: 'dmgVsDark', statName: '對暗屬性傷害%', base: 0.2, pct: true, linear: true }
 };
 // 寶石數值/插槽/附魔欄位公式（gemStatValue、socketCountFor、enchantCapFor）→ js/formula.js §8
 // 寶石合成：2 顆「同種類、同等級」→ 1 顆同種類下一級；UI 另支援全部類型逐種類合成
@@ -889,7 +913,9 @@ function statDesc(st, baseDesc, label, keyBase, pctKey, pctNote) {
   s += label + '總值：<span style="color:#fff">' + fmt(st[keyBase]) + '</span>';
   if (base !== 0) s += '<br>' + label + '基礎：<span style="color:#fff">' + fmt(base) + '</span>';
   if (flat !== 0) s += '<br>' + label + '定值加成：<span style="color:#fff">' + (flat > 0 ? '+' : '') + fmt(flat) + '</span>';
-  if (reincBonus !== 0) s += '<br>' + label + '轉生強化（定值×係數×指數^轉生）：<span style="color:#fff">' + (reincBonus > 0 ? '+' : '') + fmt(reincBonus) + '</span>';
+  if (st.reincFlatBonus && st.reincFlatBonus[keyBase] !== undefined) {
+    s += '<br>' + label + '轉生強化：<span style="color:#fff">' + (reincBonus > 0 ? '+' : '') + fmt(reincBonus) + '</span>';
+  }
   if (pct !== 0) s += '<br>' + label + '百分比加成' + (pctNote || '') + '：<span style="color:#fff">' + (pct > 0 ? '+' : '') + pctStr(pct) + '</span>';
   s += '</span>';
   return s;
@@ -976,12 +1002,12 @@ var STAT_GROUPS = [
       ['👑 對菁英傷害', function (st) { return statFmt(st.eliteDmg, null, '%', true); }, '對菁英怪或首領怪物造成的額外傷害加成。'],
       ['😈 對BOSS傷害', function (st) { return statFmt(st.bossDmg, null, '%', true); }, '專門對首領怪物造成的額外傷害加成。'],
       ['👤 對普通敵人傷害', function (st) { return statFmt(st.normalDmg, null, '%', true); }, '對普通敵人（非菁英、非BOSS）造成的額外傷害加成，公式與對菁英/BOSS傷害相同。'],
-      ['🔥 對火屬性傷害', function (st) { return statFmt(st.dmgVsElem.fire, null, '%', true); }, '對火屬性敵人造成的傷害提高。來源：裝備詞條與寶石（尖晶石）。'],
-      ['❄️ 對冰屬性傷害', function (st) { return statFmt(st.dmgVsElem.ice, null, '%', true); }, '對冰屬性敵人造成的傷害提高。來源：裝備詞條與寶石（海藍寶石）。'],
-      ['⚡ 對雷屬性傷害', function (st) { return statFmt(st.dmgVsElem.lightning, null, '%', true); }, '對雷屬性敵人造成的傷害提高。來源：裝備詞條與寶石（天河石）。'],
-      ['☠️ 對毒屬性傷害', function (st) { return statFmt(st.dmgVsElem.poison, null, '%', true); }, '對毒屬性敵人造成的傷害提高。來源：裝備詞條與寶石（橄欖石）。'],
-      ['✨ 對光屬性傷害', function (st) { return statFmt(st.dmgVsElem.light, null, '%', true); }, '對光屬性敵人造成的傷害提高。來源：裝備詞條與寶石（黃水晶）。'],
-      ['🌑 對暗屬性傷害', function (st) { return statFmt(st.dmgVsElem.dark, null, '%', true); }, '對暗屬性敵人造成的傷害提高。來源：裝備詞條與寶石（黑碧璽）。'],
+      ['🔥 對火屬性傷害', function (st) { return statFmt(st.dmgVsElem.fire, null, '%', true); }, '對「帶火屬性標籤」的敵人造成的傷害提高（打其他屬性的敵人不生效）。'],
+      ['❄️ 對冰屬性傷害', function (st) { return statFmt(st.dmgVsElem.ice, null, '%', true); }, '對「帶冰屬性標籤」的敵人造成的傷害提高（打其他屬性的敵人不生效）。'],
+      ['⚡ 對雷屬性傷害', function (st) { return statFmt(st.dmgVsElem.lightning, null, '%', true); }, '對「帶雷屬性標籤」的敵人造成的傷害提高（打其他屬性的敵人不生效）。'],
+      ['☠️ 對毒屬性傷害', function (st) { return statFmt(st.dmgVsElem.poison, null, '%', true); }, '對「帶毒屬性標籤」的敵人造成的傷害提高（打其他屬性的敵人不生效）。'],
+      ['✨ 對光屬性傷害', function (st) { return statFmt(st.dmgVsElem.light, null, '%', true); }, '對「帶光屬性標籤」的敵人造成的傷害提高（打其他屬性的敵人不生效）。'],
+      ['🌑 對暗屬性傷害', function (st) { return statFmt(st.dmgVsElem.dark, null, '%', true); }, '對「帶暗屬性標籤」的敵人造成的傷害提高（打其他屬性的敵人不生效）。'],
       ['💫 範圍傷害', function (st) { return statFmt(st.aoeDmg, null, '%', true); }, '多目標或範圍技能的總體傷害加成。']
     ]
   },

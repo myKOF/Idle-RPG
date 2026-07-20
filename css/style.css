@@ -4243,6 +4243,11 @@ textarea#save-io {
   color: #fbbf24;
 }
 
+.gconv-shortcut {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
 .gconv-side {
   display: flex;
   flex-direction: column;

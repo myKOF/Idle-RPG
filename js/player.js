@@ -52,6 +52,7 @@ function newGameState() {
     talentTreesV2RespecV2: true, // 天賦升級消耗改制（Lv.51 起加倍）第二次重置：新帳號無需處理
     talentTreesV2RespecV3: true, // 天賦升級消耗再調整（基礎改轉數+2）第三次重置：新帳號無需處理
     talentTreesV2RespecV4: true, // 天賦升級消耗再調整（基礎改轉數+9）第四次重置：新帳號無需處理
+    equipSetPotentialLimitV1: true, // 多套裝備 (Lv.2000) 與潛力 (3轉) 新開放門檻限制：新帳號無需重置
 
     savedAt: Date.now(),
     player: {
@@ -184,6 +185,9 @@ function reincarnate() {
   p.reincarnations = count + 1;
   p.level = 1;
   p.xp = 0;
+  G.equipActive = 0;
+  G.equipView = 0;
+  G.equipment = G.equipmentSets[0];
   // 技能點總預算在轉生後保留；之後升級只增加轉生天賦點。
   p.skillPointBudget = skillBudgetBeforeReinc;
   markStatsDirty();
@@ -220,7 +224,9 @@ function isViewingActiveSet() { return (G.equipView || 0) === (G.equipActive || 
 // 面板檢視切頁（純 UI，不換穿；屬性面板改顯示檢視套的預覽屬性）
 function setEquipView(idx) {
   if (!Array.isArray(G.equipmentSets)) return;
-  G.equipView = clamp(Math.floor(Number(idx) || 0), 0, G.equipmentSets.length - 1);
+  var i = clamp(Math.floor(Number(idx) || 0), 0, G.equipmentSets.length - 1);
+  if (G.player.level < 2000 && i > 0) return;
+  G.equipView = i;
   _viewStatsCache = null;           // 換檢視目標 → 重算預覽
   UI.sel = null;
   UI.dirty.equip = true;
@@ -230,6 +236,7 @@ function setEquipView(idx) {
 function switchToEquipSet(idx) {
   if (!Array.isArray(G.equipmentSets)) return;
   var i = clamp(Math.floor(Number(idx) || 0), 0, G.equipmentSets.length - 1);
+  if (G.player.level < 2000 && i > 0) return;
   G.equipActive = i;
   G.equipView = i;
   G.equipment = G.equipmentSets[i]; // 重導使用中那套

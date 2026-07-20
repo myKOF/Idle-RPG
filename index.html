@@ -46,6 +46,7 @@
   <header id="topbar">
     <div class="brand">⚔️ 無限征途<span class="brand-sub">合成之巔</span><button id="btn-fullscreen" class="fs-btn" data-tip="進入網頁全螢幕">⛶</button></div>
     <div id="res-bar">
+      <span class="res" data-tt-title="魔種" data-tt-desc="煉獄之塔 BOSS 額外掉落材料。"><span class="res-emoji" aria-hidden="true">🌱</span> <b id="r-demon-seed">0</b></span>
       <span class="res" data-tt-title="金幣" data-tt-desc="目前持有的金幣"><img src="images/icon_gold.png" class="res-icon" alt="Gold"> <b
           id="r-gold">0</b></span>
       <span class="res" data-tt-title="裝備碎片" data-tt-desc="目前持有的裝備碎片"><img src="images/icon_scrap.png" class="res-icon" alt="Scrap"> <b
@@ -446,7 +447,7 @@
 
           <div id="tower-list-wrap">
             <div class="sec-title">🗼 BOSS 高塔</div>
-            <div class="hint">限時 60 秒擊敗 BOSS；目前開放試煉之塔 1～50 層、地獄之塔 51～100 層。地獄之塔可額外獲得「魔魂本源」。</div>
+            <div class="hint">限時 60 秒擊敗 BOSS；目前開放試煉之塔 1～50 層、地獄之塔 51～100 層、煉獄之塔 101～150 層。地獄之塔可額外獲得「魔魂本源」，煉獄之塔 BOSS 可額外獲得「魔種」。</div>
             <div class="tower-auto-bar">
               <span>🔁 連續挑戰次數：</span>
               <input type="number" id="tw-auto-count" value="5" min="1" max="999">
@@ -727,7 +728,7 @@
   <div id="affix-pool-overlay" aria-live="polite"></div>
 
   <script src="js/util.js"></script>
-  <script src="js/data.js"></script>
+  <script src="js/data.js?v=1.0.2"></script>
   <script src="js/formula.js"></script>
   <script src="js/stats.js"></script>
   <script src="js/item.js"></script>

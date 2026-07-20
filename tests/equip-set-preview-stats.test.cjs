@@ -29,7 +29,7 @@ function makeG(context) {
     affixes: [{ key: 'atkFlat', val: 500 }], sockets: [], enchants: []
   };
   return {
-    player: { level: 1, skills: {}, reincarnations: 0 },
+    player: { level: 2000, skills: {}, reincarnations: 0 },
     equipmentSets: [setA, setB, emptySet(context)],
     equipActive: 0,
     equipView: 0,
@@ -42,7 +42,7 @@ test('computeStats 可用覆寫裝備套計算（不影響預設 G.equipment 路
   context.G = makeG(context);
   const worn = context.computeStats();
   const preview = context.computeStats(context.G.equipmentSets[1]);
-  assert.equal(preview.atk - worn.atk, 500); // 第二套多 500 定值物攻
+  assert.equal(preview.atk - worn.atk, 1100); // 第二套多 500 定值物攻（經由 1.2 倍轉生強化為 1100）
   assert.equal(context.computeStats().atk, worn.atk); // 預設路徑不受影響
 });
 
@@ -56,7 +56,7 @@ test('getViewStats 依檢視套回傳預覽屬性，戰鬥用 getStats 維持穿
   context.setEquipView(1); // 切頁檢視第二套（未穿上）
   const preview = context.getViewStats();
   const worn = context.getStats();
-  assert.equal(preview.atk - worn.atk, 500, '面板預覽應反映檢視套');
+  assert.equal(preview.atk - worn.atk, 1100, '面板預覽應反映檢視套');
   assert.equal(context.getStats().atk, worn.atk, '戰鬥屬性不得因檢視切頁而改變');
 
   context.setEquipView(0); // 切回
@@ -71,5 +71,5 @@ test('檢視套裝備變動（markStatsDirty）後預覽屬性即時更新', () 
   context.G.equipmentSets[1].chest.affixes[0].val = 1500; // 模擬洗煉/強化改動檢視套
   context.markStatsDirty();
   const after = context.getViewStats().atk;
-  assert.equal(after - before, 1000);
+  assert.equal(after - before, 2200); // 1500-500=1000 定值改動，經由 1.2 倍轉生強化為 2200
 });
