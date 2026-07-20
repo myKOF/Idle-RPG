@@ -290,22 +290,6 @@ function processOneConveyorItem() {
 function synthTick() {
   if (!SYNTHESIS_ENABLED) return;
   var f = G.factory;
-  // 寶石合成：3 顆同種同級 → 1 顆同種下一級
-  if (f.synth.gemMerge) {
-    var merged = false;
-    for (var gt in GEM_TYPES) {
-      for (var lv = 1; lv < GEM_MAX_LEVEL; lv++) {
-        if (gemCount(gt, lv) >= 3) {
-          addGem(gt, lv, -3);
-          addGem(gt, lv + 1, 1);
-          flog('💎 寶石升階：' + gemLabel(gt, lv) + ' x3 → ' + gemLabel(gt, lv + 1), 'info');
-          merged = true;
-          break; // 每 tick 只合一次
-        }
-      }
-      if (merged) break;
-    }
-  }
   // 混合合成優先，其次品質合成
   if (f.synth.hybridEnabled && tryHybridSynthesis()) return;
   if (f.synth.mergeEnabled) tryRarityMerge();

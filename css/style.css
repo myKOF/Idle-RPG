@@ -2290,7 +2290,8 @@ textarea#save-io {
   grid-auto-rows: 58px;
   gap: 6px;
   align-content: start;
-  height: 186px;
+  height: var(--inventory-visible-height, 186px);
+  max-height: 570px;
   overflow-y: auto;
 }
 

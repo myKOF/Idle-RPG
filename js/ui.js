@@ -10,11 +10,16 @@ var UI = {
   affixPoolSource: null,
   towerTimerRaf: 0,
   towerTimerAnchor: null,
+  inventoryVisibleRows: 3,
   stageHold: { startTimer: null, repeatTimer: null, suppressClick: false, suppressTimer: null, pointerId: null }
 };
 
 var STAGE_HOLD_START_MS = 300;
 var STAGE_HOLD_REPEAT_MS = 50;
+var INVENTORY_VISIBLE_ROWS_DEFAULT = 3;
+var INVENTORY_VISIBLE_ROWS_MAX = 9;
+var INVENTORY_GRID_ROW_HEIGHT = 58;
+var INVENTORY_GRID_ROW_GAP = 6;
 
 /* ---- 日誌 ---- */
 var DETAIL_LOG_HISTORY = [];
@@ -1395,6 +1400,30 @@ function renameEquipSet(idx) {
        input: { value: cur, placeholder: '例：輸出套（留空恢復預設）', maxLength: 12 } });
 }
 
+function inventoryVisibleRows(totalRows, requestedRows) {
+  var total = Math.max(INVENTORY_VISIBLE_ROWS_DEFAULT, Math.floor(Number(totalRows) || 0));
+  var requested = Math.max(INVENTORY_VISIBLE_ROWS_DEFAULT, Math.floor(Number(requestedRows) || INVENTORY_VISIBLE_ROWS_DEFAULT));
+  return Math.min(INVENTORY_VISIBLE_ROWS_MAX, total, requested);
+}
+
+function inventoryGridRowCount(box) {
+  if (!box) return 0;
+  var cells = box.querySelectorAll('.item-cell');
+  if (!cells.length) return 0;
+  var rowTops = {};
+  for (var i = 0; i < cells.length; i++) rowTops[cells[i].offsetTop] = true;
+  return Object.keys(rowTops).length;
+}
+
+function applyInventoryVisibleRows(box) {
+  if (!box) return;
+  var totalRows = inventoryGridRowCount(box);
+  var rows = inventoryVisibleRows(totalRows, UI.inventoryVisibleRows);
+  UI.inventoryVisibleRows = Math.max(INVENTORY_VISIBLE_ROWS_DEFAULT, Math.min(INVENTORY_VISIBLE_ROWS_MAX, UI.inventoryVisibleRows || INVENTORY_VISIBLE_ROWS_DEFAULT));
+  box.style.setProperty('--inventory-visible-rows', rows);
+  box.style.setProperty('--inventory-visible-height', (rows * INVENTORY_GRID_ROW_HEIGHT + (rows - 1) * INVENTORY_GRID_ROW_GAP) + 'px');
+}
+
 function renderInventory() {
   var cap = typeof inventoryCapacityWithTalents === 'function' ? inventoryCapacityWithTalents() : INVENTORY_CAP + (G.player.invUpgrades || 0);
   var btn = $id('inv-expand');
@@ -1428,6 +1457,7 @@ function renderInventory() {
       box.innerHTML = displayedItems.map(function (it) { return itemCellHTML(it, 'inv'); }).join('');
     }
   }
+  applyInventoryVisibleRows(box);
   renderDetail();
 }
 
@@ -3508,8 +3538,6 @@ function renderGems() {
   }
   h += '</table>';
   box.innerHTML = h;
-  var gmToggle = $id('gem-merge-toggle');
-  if (gmToggle) gmToggle.checked = !!(G.factory.synth && G.factory.synth.gemMerge);
   fillGemTypeSelect($id('fuse-type'), true);
   fillGemTypeSelect($id('gconv-target'));
   fillGemTypeSelect($id('gdis-type'));
@@ -4386,6 +4414,20 @@ function initUI() {
     }, { passive: false });
   }
 
+  // 背包框外向下滾輪：物品超過目前可視排數時逐排展開，最多 9 排；框內仍由自身捲軸處理。
+  document.addEventListener('wheel', function (e) {
+    if (UI.tab !== 'equip' || e.deltaY <= 0) return;
+    var target = e.target;
+    if (target && target.closest && target.closest('#inv-section-box')) return;
+    var box = $id('inventory-grid');
+    if (!box) return;
+    var totalRows = inventoryGridRowCount(box);
+    var currentRows = inventoryVisibleRows(totalRows, UI.inventoryVisibleRows);
+    if (totalRows <= currentRows || currentRows >= INVENTORY_VISIBLE_ROWS_MAX) return;
+    UI.inventoryVisibleRows = Math.min(INVENTORY_VISIBLE_ROWS_MAX, currentRows + 1, totalRows);
+    applyInventoryVisibleRows(box);
+  }, { passive: true });
+
   // 技能彈窗：右上 X / 點擊遮罩關閉
   var skModal = $id('skill-modal');
   if (skModal) {
@@ -4617,9 +4659,7 @@ function initUI() {
         resBox.innerHTML = '<span class="gr-line">✅ 轉換完成，獲得：</span>' +
           lvKeys.map(function (lv) {
             return '<span class="gr-line">' + GEM_TYPES[target].emoji + ' ' + esc(GEM_NAMES[lv] + GEM_TYPES[target].name) + ' ×' + byLv[lv] + '</span>';
-          }).join('') +
-          (G.factory.synth && G.factory.synth.gemMerge
-            ? '<span class="gr-line" style="color:var(--dim)">⚙️ 寶石升階自動化開啟中，湊滿 3 顆會被自動升階</span>' : '');
+          }).join('');
       }
       blog('🔄 寶石轉換完成：獲得 ' + GEM_TYPES[target].emoji + detail + '（同階轉換）', 'good', 'factory');
       UI.convertSlots = [];
@@ -5293,15 +5333,6 @@ function initUI() {
   }
 
   // 熔爐頁設定（舊生產線的篩選/合成節點已移除）
-  // 寶石分頁的「寶石升階」快速開關
-  var gemMergeToggle = $id('gem-merge-toggle');
-  if (gemMergeToggle) {
-    gemMergeToggle.addEventListener('change', function () {
-      G.factory.synth.gemMerge = this.checked;
-      blog(this.checked ? '⚙️ 已開啟熔爐自動「寶石升階」（3 顆同種同級 → 高一級）' : '⚙️ 已關閉熔爐自動「寶石升階」，寶石庫存不會再被自動合成', 'info');
-    });
-  }
-
 
   // 設定分頁：存檔管理
   $id('btn-save').addEventListener('click', function () {
