@@ -1525,7 +1525,7 @@ function renderDetail() {
       var owned = itEns2.some(function (en2) { return en2.key === bk2; });
       bookIcons.push('<button class="equip-material-icon' + (owned ? ' dim-chip' : '') + '" data-book-enchant="' + bk2 + '" data-tip="' +
         esc(ENCHANTS[bk2].name + ' ×' + bn2 + '｜' + ENCHANTS[bk2].desc +
-          '｜消耗 1 書＋🔮' + ENCHANT_ESSENCE_COST + ' 精華（庫存 ' + fmt(G.player.essence) + '）' +
+          '｜消耗 1 書＋<img src="images/icon_essence.png" class="res-icon" alt="精華"> ' + ENCHANT_ESSENCE_COST + ' 精華（庫存 ' + fmt(G.player.essence) + '）' +
           (owned ? '｜已附魔，僅可升級數值' : '')) + '">' + ENCHANTS[bk2].emoji + '</button>');
     }
     var catNames2 = { atk: '攻擊', def: '防禦', util: '功能' };

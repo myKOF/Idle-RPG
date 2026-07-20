@@ -986,7 +986,7 @@ function forgeGemCost(level) {
    防禦/功能類 = 8 + 稀有度×4 + 寶石等級×3（%，上限 60） */
 function enchantPower(item, gemLevel) {
   var r = RARITIES[item.rarity];
-  var v = (5 + item.level * 1.2) * r.mult * (1 + 0.15 * (gemLevel || 0));
+  var v = (1 + item.level * 1.2) * r.mult * (1 + 0.15 * (gemLevel || 0));
   return Math.round(v);
 }
 function enchantValueFor(item, bookKey, gemLevel) {
