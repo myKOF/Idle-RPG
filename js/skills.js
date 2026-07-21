@@ -1058,7 +1058,7 @@ function skillBuffDisplayValue(defObj, lvArg, mult) {
   var value = scaleAt(defObj, lvArg) * (mult || 1);
   return defObj && defObj.key === 'lootUp' ? effectiveDropRateEffect(value) : value;
 }
-function describeSkill(id, lv) {
+function describeSkill(id, lv, skipFusionDetail) {
   var sk = skillDef(id);
   if (!sk) return '';
   lv = Math.max(1, lv || 1);
@@ -1119,10 +1119,12 @@ function describeSkill(id, lv) {
   var desc = p.join('；');
   // 融合技：附上變異與素材資訊
   if (sk.cat === 'fusion') {
-    if (sk.mutation) desc += '<div class="skt-mutation">【變異：' + sk.mutation.name + '】' + sk.mutation.desc + '</div>';
-    if (sk.components) {
-      var cn = sk.components.map(function (cid) { var d = SKILLS[cid]; return d ? d.name : cid; });
-      desc += '<div class="skt-components">（融合自：' + cn.join(' ＋ ') + '）</div>';
+    if (!skipFusionDetail) {
+      if (sk.mutation) desc += '<div class="skt-mutation">【變異：' + sk.mutation.name + '】' + sk.mutation.desc + '</div>';
+      if (sk.components) {
+        var cn = sk.components.map(function (cid) { var d = SKILLS[cid]; return d ? d.name : cid; });
+        desc += '<div class="skt-components">（融合自：' + cn.join(' ＋ ') + '）</div>';
+      }
     }
   } else {
     var nx = nextUnlockLv(id, lv);

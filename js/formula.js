@@ -537,11 +537,19 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     var res = dCfg.resist || {};
     var ccF = (dCfg.ccFactor === undefined) ? 1 : dCfg.ccFactor;
     var attachBase = dmg;
+    // 玩家承受元素攻擊時，先比照「魔法傷害」吃魔防＋魔抗（含破甲/穿透），最後才套對應屬性抗性；
+    // 怪物承受端維持原本設計（僅受對應屬性抗性影響），避免動到玩家的元素輸出。
+    var elemMagicMit = 1;
+    if (dCfg.isPlayer) {
+      var elemMPen = (aCfg.dmgType === 'both') ? (aCfg.mPen || 0) : (aCfg.pen || 0);
+      var elemMDef = (dCfg.mdef || 0) * (1 - (aCfg.sunder || 0) / 100) * (1 - elemMPen / 100);
+      elemMagicMit = (1 - defReduction(elemMDef, aCfg.level || 1)) * (1 - magicResistanceReduction(dCfg.mRes, aCfg.level || 1));
+    }
     for (var i = 0; i < ELEMENTS.length; i++) {
       var ek = ELEMENTS[i];
       var ev = (elem && elem[ek] || 0) + attachBase * (elemPct && elemPct[ek] || 0) / 100;
       if (!ev) continue;
-      var edmg = ev * elementalResistanceMultiplier(res, ek, aCfg.level || 1);
+      var edmg = ev * elemMagicMit * elementalResistanceMultiplier(res, ek, aCfg.level || 1);
       dmg += edmg;
       // 元素特效：冰 15% 減速 2 秒｜雷 10% 追加 80% 電擊｜毒 25% 中毒（50% 元傷/秒×4 秒）
       //          光 20% 淨化自身｜暗 汲取元傷 25% 回復
@@ -741,20 +749,22 @@ function bossStatsFor(floor) {
     : (hell ? TOWER_HELL_HP_MULT : 1);
   var atkMult = purgatory ? TOWER_HELL_ATK_MULT * TOWER_PURGATORY_ATK_MULT
     : (hell ? TOWER_HELL_ATK_MULT : 1);
+  var bossAtk = base.atk * TOWER_BASE_ATK_MULT * atkMult;   // BOSS 總魔攻（已含高塔一般／地獄／煉獄倍率）
   return {
     refStage: refStage,
     level: refStage + TOWER_BOSS_LEVEL_BONUS,
     hell: hell,
     purgatory: purgatory,
     hp: base.hp * TOWER_BASE_HP_MULT * hpMult,
-    atk: base.atk * TOWER_BASE_ATK_MULT * atkMult,
+    atk: bossAtk,
     def: base.def * TOWER_BOSS_DEF_MULT,
     mdef: base.mdef * TOWER_BOSS_DEF_MULT,
     aspd: TOWER_BOSS_ASPD,
     dodge: Math.min(TOWER_BOSS_DODGE_BASE + floor * TOWER_BOSS_DODGE_PER_FLOOR, TOWER_BOSS_DODGE_CAP),
     hit: TOWER_BOSS_HIT_BASE + floor * TOWER_BOSS_HIT_PER_FLOOR,
     ctrlRes: TOWER_BOSS_CTRL_RES,
-    elemAtkVal: base.atk * TOWER_BOSS_ELEM_ATK_BASE * (hell ? TOWER_BOSS_ELEM_HELL_MULT : 1),
+    // 元素附傷改以「總魔攻 bossAtk」為基準再乘元素倍率（原本乘未放大的 base.atk，導致元素遠低於顯示魔攻）
+    elemAtkVal: bossAtk * TOWER_BOSS_ELEM_ATK_BASE * (hell ? TOWER_BOSS_ELEM_HELL_MULT : 1),
     xp: base.xp * TOWER_BOSS_XP_MULT
   };
 }

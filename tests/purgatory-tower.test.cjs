@@ -32,7 +32,8 @@ test('煉獄之塔開放 101～150 層，且 BOSS 套用合併參數公式', () 
   assert.equal(purgatory.hell, false);
   assertClose(purgatory.hp, base.hp * context.TOWER_BASE_HP_MULT * context.TOWER_HELL_HP_MULT * context.TOWER_PURGATORY_HP_MULT);
   assertClose(purgatory.atk, base.atk * context.TOWER_BASE_ATK_MULT * context.TOWER_HELL_ATK_MULT * context.TOWER_PURGATORY_ATK_MULT);
-  assertClose(purgatory.elemAtkVal, base.atk * context.TOWER_BOSS_ELEM_ATK_BASE);
+  // 元素附傷以「總魔攻」為基準再乘元素倍率（煉獄層無地獄倍率）
+  assertClose(purgatory.elemAtkVal, purgatory.atk * context.TOWER_BOSS_ELEM_ATK_BASE);
 });
 
 test('煉獄之塔 BOSS 名稱與等級使用橘色樣式', () => {

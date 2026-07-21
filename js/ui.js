@@ -3067,22 +3067,25 @@ function renderSkillModal() {
     ? (potentialTemporarilyDisabled(id) ? '此潛力技能目前暫不開放升級' : (potentialUnlocked(id) ? null : '潛力節點尚未解鎖'))
     : tierLockReason(id);
   var inLoadout = !isPotential && (G.player.loadout || []).indexOf(id) >= 0;
-  var isFusion = !isPotential && sk.cat === 'fusion';
-  var description = function (level) {
-    return isPotential ? talentEffectDescription(sk, level * sk.per) : describeSkill(id, level);
+  var isFusion = !isPotential && sk.cat === 'fusion' && String(id).indexOf('fusion_') === 0;
+  var description = function (level, skipFusion) {
+    return isPotential ? talentEffectDescription(sk, level * sk.per) : describeSkill(id, level, skipFusion);
   };
   var category = isPotential ? '潛力' : (SKILL_CATS[sk.cat] ? SKILL_CATS[sk.cat].name : '融合技');
   var h = '<div class="skd-head"><span class="skd-emoji">' + sk.emoji + '</span><b>' + esc(sk.name) + '</b> ' +
     '<span class="dim-text">Lv.' + lv + '/' + maxLv + '｜' + category + '</span>' +
     (!isPotential && sk.cat !== 'passive' ? '<span class="sk-meta">🔵 ' + skillManaCost(sk, Math.max(1, lv)) + ' MP　⏱️ ' + sk.cd + 's</span>' : '') + '</div>';
+  
+  h += '<div class="skill-modal-copy">';
   h += '<div class="sk-desc">' + description(Math.max(1, lv)) + '</div>';
   if (lv > 0 && lv < maxLv) {
-    h += '<div class="skd-next dim-text">下一級：' + description(lv + 1) + '</div>';
+    h += '<div class="skd-next dim-text">下一級：' + description(lv + 1, true) + '</div>';
   }
-  if (sk.flavor) h += '<div class="sk-flavor">' + esc(sk.flavor) + '</div>';
+  if (sk.flavor && !isFusion) h += '<div class="sk-flavor">' + esc(sk.flavor) + '</div>';
   if (lock) h += '<div class="hint">🔒 ' + esc(lock) + '</div>';
+  h += '</div>';
 
-  h += '<div style="text-align: right; margin-top: 12px; color: #facc15; font-size: 14px; font-weight: bold;">技能點：' + availableSkillPoints() + '</div>';
+  h += '<div class="skill-modal-points">技能點：' + availableSkillPoints() + '</div>';
   h += '<div class="detail-actions skill-modal-actions">';
   if (lv < maxLv && !lock) {
     var cost = skillUpgradeCost(lv);
@@ -3422,6 +3425,16 @@ function showEnemyTooltip(anchorEl) {
   if (mAttr && ELEM_INFO[mAttr]) {
     dropTip += '<br>🌌 屬性：' + ELEM_INFO[mAttr].emoji + ' ' + ELEM_INFO[mAttr].name +
       '<span style="color:var(--dim)">（受「對' + ELEM_INFO[mAttr].name + '屬性傷害」加成影響）</span>';
+  }
+
+  // BOSS 特殊技·元素審判：元素 BOSS 每次攻擊都額外附帶一段元素傷害。
+  // 該段傷害先比照魔法傷害吃魔防／魔抗，最後再受玩家對應「屬性抗性」影響。
+  var mElem = m.elem || null;
+  var mElemAtk = (mElem && m.elemAtk && m.elemAtk[mElem]) ? m.elemAtk[mElem] : 0;
+  if (mElemAtk > 0 && ELEM_INFO[mElem]) {
+    dropTip += '<br>✨ 特殊技·元素審判：每次攻擊額外造成 ' + ELEM_INFO[mElem].emoji + ' ' +
+      fmt(mElemAtk) + ' ' + ELEM_INFO[mElem].name + '元素傷害' +
+      '<span style="color:var(--dim)">（先比照魔法傷害吃魔防／魔抗，再受你的「' + ELEM_INFO[mElem].name + '抗性」減免；蓄力重擊／狂暴倍率同樣生效）</span>';
   }
   dropTip += '</div>';
 
