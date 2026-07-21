@@ -48,3 +48,16 @@ test('same-name skills keep independent damage buckets and display level suffixe
   assert.match(html, /100/);
   assert.match(html, /50/);
 });
+
+test('傷害統計不限制技能筆數，超過 11 筆仍全部輸出', () => {
+  const context = loadCombatContext();
+  context.G = { stage: { current: 1 } };
+  context.RUN_STATS = { runCount: 1, maxStage: 1, skills: {} };
+
+  for (let i = 0; i < 20; i += 1) {
+    context.recordRunDamage('測試技能' + i, i + 1, 'skill:' + i, 1);
+  }
+
+  const html = context.generateSummaryHtml(true);
+  for (let i = 0; i < 20; i += 1) assert.match(html, new RegExp('測試技能' + i));
+});

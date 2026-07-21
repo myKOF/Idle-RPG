@@ -91,6 +91,35 @@ test('skill global cooldown prevents casting another skill for a fixed 0.4 secon
   assert.equal(player.skillCds.treasureSense, 12);
 });
 
+test('技能依冷卻歸零先後輪轉，前排短 CD 不會在首輪壟斷後排技能', () => {
+  const context = loadGameContext();
+  const ids = Object.keys(context.SKILLS)
+    .filter((id) => context.SKILLS[id].fx && context.SKILLS[id].fx.dmgType)
+    .slice(0, 16);
+  const calls = [];
+  context.G.player.skills = Object.fromEntries(ids.map((id) => [id, 1]));
+  context.G.player.loadout = ids;
+  context.getStats = () => ({
+    cdr: 0, castSpeed: 0, hp: 1000, mp: 100000, atk: 100, matk: 100,
+    aoeDmg: 0
+  });
+  context.castSkill = (player, target, id) => {
+    calls.push(id);
+    player.skillCds[id] = context.skillCdFor(context.skillDef(id));
+    player.skillGcd = 0.4;
+    return {};
+  };
+  const player = playerEntity();
+  const target = { hp: 1000 };
+
+  for (let i = 0; i < ids.length; i += 1) {
+    assert.ok(context.pickAndCastSkill(player, target, 'float-layer'));
+    context.tickSkillCds(player, 0.4);
+  }
+
+  assert.deepEqual(calls, ids);
+});
+
 test('多敵人技能傷害依範圍傷害與敵人數量分攤', () => {
   const context = loadGameContext();
   assert.equal(context.skillDamageShare(10000, 100, 4), 5000);

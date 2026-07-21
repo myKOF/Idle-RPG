@@ -3619,9 +3619,9 @@ function renderGemConvert() {
       var byLv = {};
       UI.convertSlots.forEach(function (s2) { byLv[s2.lv] = (byLv[s2.lv] || 0) + s2.n; });
       var parts = Object.keys(byLv).sort().map(function (lv2) { return esc(GEM_NAMES[lv2]) + ' ×' + byLv[lv2]; });
-      info.innerHTML = '轉換結果預覽：' + GEM_TYPES[target].emoji + esc(GEM_TYPES[target].name) + '（' + parts.join('、') + '）— 同階轉換、數量不變';
+      info.innerHTML = '轉換結果預覽：' + GEM_TYPES[target].emoji + esc(GEM_TYPES[target].name) + '（' + parts.join('、') + '）— 同階轉換、數量不變 <span style="color:#ef4444; margin-left: 8px;">(Shift+左鍵放入一顆)</span>';
     } else {
-      info.textContent = '點下方庫存寶石放入九宮格，選擇目標種類後按「一鍵轉換」。';
+      info.innerHTML = '點下方庫存寶石放入九宮格，選擇目標種類後按「一鍵轉換」。 <span style="color:#ef4444; margin-left: 8px;">(Shift+左鍵放入一顆)</span>';
     }
   }
   // 庫存池（顯示尚可放入的數量）
@@ -4626,6 +4626,7 @@ function initUI() {
       UI.convertSlots.forEach(function (s) { if (s.type === t && s.lv === lv) slot = s; });
       var placed = slot ? slot.n : 0;
       var can = Math.min(GEM_CONVERT_STACK - placed, gemCount(t, lv) - placed);
+      if (e.shiftKey && can > 0) can = 1;
       if (can <= 0) { blog('⚠️ 該格已達上限（' + GEM_CONVERT_STACK + ' 顆）或庫存已放完', 'warn'); return; }
       if (slot) slot.n += can;
       else {

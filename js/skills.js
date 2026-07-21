@@ -734,12 +734,32 @@ function targetHasDot(ent, name) {
   return false;
 }
 
-// 依裝載順序挑一個可施放的技能（每 tick 至多一個）
+/* 技能就緒順序（執行期狀態，不入存檔）：
+   技能冷卻歸零時加入尾端；施放後等下一次冷卻歸零再重新排隊。
+   這樣前排短 CD 技能不會因為固定掃描裝載欄而壟斷施放機會。 */
+function ensureSkillReadyOrder(pEnt) {
+  if (!pEnt._skillReadyOrder) pEnt._skillReadyOrder = {};
+  if (typeof pEnt._skillReadySeq !== 'number' || !isFinite(pEnt._skillReadySeq)) pEnt._skillReadySeq = 0;
+  var lo = G.player.loadout || [];
+  for (var i = 0; i < lo.length; i++) {
+    var id = lo[i];
+    if (pEnt._skillReadyOrder[id] === undefined) pEnt._skillReadyOrder[id] = pEnt._skillReadySeq++;
+  }
+}
+
+function markSkillReady(pEnt, id) {
+  ensureSkillReadyOrder(pEnt);
+  pEnt._skillReadyOrder[id] = pEnt._skillReadySeq++;
+}
+
+// 依冷卻歸零先後挑一個可施放的技能（每 tick 至多一個）；同時就緒時沿用裝載順序
 function pickAndCastSkill(pEnt, target, floatSel) {
   var st = getStats();
   if (!pEnt.skillCds) pEnt.skillCds = {};
   if ((pEnt.skillGcd || 0) > 0) return null;
+  ensureSkillReadyOrder(pEnt);
   var lo = G.player.loadout || [];
+  var candidates = [];
   for (var i = 0; i < lo.length; i++) {
     var id = lo[i];
     var sk = skillDef(id);
@@ -748,9 +768,12 @@ function pickAndCastSkill(pEnt, target, floatSel) {
     if ((pEnt.skillCds[id] || 0) > 0) continue;
     if (pEnt.mp < skillManaCost(sk, lv)) continue;
     if (!skillConditionOk(sk, effectiveFx(id, sk, lv), pEnt, target, st)) continue;
-    return castSkill(pEnt, target, id, lv, floatSel, i);
+    candidates.push({ id: id, lv: lv, slot: i, readyAt: pEnt._skillReadyOrder[id] });
   }
-  return null;
+  if (!candidates.length) return null;
+  candidates.sort(function (a, b) { return a.readyAt - b.readyAt || a.slot - b.slot; });
+  var choice = candidates[0];
+  return castSkill(pEnt, target, choice.id, choice.lv, floatSel, choice.slot);
 }
 function tickSkillCds(pEnt, dt) {
   if (pEnt.skillGcd > 0) {
@@ -759,7 +782,11 @@ function tickSkillCds(pEnt, dt) {
   }
   if (pEnt.skillCds) {
     for (var k in pEnt.skillCds) {
-      if (pEnt.skillCds[k] > 0) pEnt.skillCds[k] -= dt;
+      if (pEnt.skillCds[k] > 0) {
+        var before = pEnt.skillCds[k];
+        pEnt.skillCds[k] = Math.max(0, before - dt);
+        if (pEnt.skillCds[k] === 0) markSkillReady(pEnt, k);
+      }
     }
   }
 }
