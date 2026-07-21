@@ -598,6 +598,13 @@ var TOWER_TRIAL_MAX_FLOOR = 50;
 var TOWER_HELL_MAX_FLOOR = 100;
 var TOWER_PURGATORY_MAX_FLOOR = 150;
 var TOWER_MAX_FLOOR = TOWER_PURGATORY_MAX_FLOOR;
+// 高塔挑戰金幣消耗分層：cost = round(a × 樓層^b)，依樓層落在哪一段選用該段的 a/b。
+// 段落取自參數表「4-高塔BOSS／挑戰金幣消耗」（格式 {下限~上限,a=,b=}）；超過最高段的樓層沿用最後一段。
+var TOWER_CHALLENGE_COST_TIERS = [
+  { min: 1, max: 50, a: 10000, b: 1.8 },
+  { min: 51, max: 100, a: 50000, b: 2 },
+  { min: 101, max: 150, a: 100000, b: 2.2 }
+];
 var TOWER_HELL_ATK_MULT = 5;
 var TOWER_HELL_HP_MULT = 20;
 // 煉獄之塔相對於地獄之塔的 BOSS 攻擊／生命倍率

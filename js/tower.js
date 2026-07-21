@@ -52,7 +52,7 @@ function startTowerFight(floor) {
     return;
   }
   if (floor > G.tower.highest + 1) { blog('⚠️ 需先通過前面的樓層！', 'warn'); return; }
-  // 挑戰金幣消耗 = 100000 × 高塔樓層^2.6（towerChallengeCost → formula.js §5）
+  // 挑戰金幣消耗 = round(a × 高塔樓層^b)，a/b 依樓層分層（towerChallengeCost → formula.js §5）
   var cost = towerChallengeCost(floor);
   if (G.player.gold < cost) {
     blog('⚠️ 金幣不足！挑戰第 ' + floor + ' 層需要 ' + fmt(cost) + ' 金幣（持有 ' + fmt(G.player.gold) + '）。', 'warn');

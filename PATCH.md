@@ -1,5 +1,18 @@
 # PATCH.md
 
+## 調整：高塔BOSS挑戰金幣消耗改為依樓層分層（2026-07-21）
+
+- 需求（參數表 row 96「4-高塔BOSS／挑戰金幣消耗」標「調整」，公式 `round(a×樓層^b)`）：由原本全樓層單一 a=100000,b=2.2，改為依樓層分三段套用不同 a/b：
+  - 第 1~50 層：a=10000、b=1.8
+  - 第 51~100 層：a=50000、b=2
+  - 第 101~150 層：a=100000、b=2.2（超過最高段的樓層沿用最後一段）
+- 實作（SSOT）：`js/data.js` 新增資料表 `TOWER_CHALLENGE_COST_TIERS`（[{min,max,a,b}] 三段）；`js/formula.js` `towerChallengeCost()` 改為依樓層挑選對應段的 a/b 再 `round(a×樓層^b)`。
+- 管線接線：`tools/apply_params.cjs` §4 移除原本兩行 `numCtx`（單一 a/b 標量注入），改為解析 CSV `{下限~上限,a=,b=}` 逐段重建 `TOWER_CHALLENGE_COST_TIERS`（`arrayContent`）；未來 `套用參數.bat` 可正確套用分層值。
+- 文件/註解同步：`game_formula.md` §5 高塔表「挑戰金幣消耗」列改述分層公式（順手修正舊文件誤植的 `f^2.6`→實為分層）；`js/tower.js`、`js/formula.js` 註解同步。
+- CSV↔xlsx：以 `tools/xlsx_to_csv.cjs` 由使用者已編輯的 xlsx 同步出 CSV（僅 row 96 實質變動；rows 198/199 為前次任務殘留的「調整」標記被使用者清為 0，值不變）。**未執行 `套用參數.bat`**（避免套用使用者其他在調的值，例如 CSV 內 `FORGE_UNLOCK_LEVEL 1` vs 程式 2000 的在調差異）；改以手改程式只對齊 row 96。
+- 驗證：`npm run build` 全綠（123 檔）；`apply_params.cjs` 乾跑 exit 0、新分層錨點無誤（無多/零匹配中止）；實機（隔離埠 8124）載入確認 `TOWER_CHALLENGE_COST_TIERS` 正確、`towerChallengeCost` 各段邊界值正確（層1=1萬、層50=11.43M、層51=130.05M、層100=5億、層101=2.567B、層150=6.129B、層151 沿用末段）、主控台 0 錯誤。
+- 提醒：段落交界處會出現跳階（層50→51 由 11.43M 跳到 130.05M；層100→101 由 5億跳到 2.567B），此為使用者選定的分層參數本身特性，非程式問題。
+
 ## 修正：技能傷害統計因前排短 CD 壟斷而僅有 10～11 筆（2026-07-20）
 
 - **根因**：統計面板的 `generateSummaryHtml()` 會逐筆輸出 `RUN_STATS.skills`，沒有 10～11 筆上限；但 `pickAndCastSkill()` 原本每次固定從裝載欄第一格往後找，前排短冷卻技能一恢復便再次優先施放，後排技能沒有機會留下傷害統計。

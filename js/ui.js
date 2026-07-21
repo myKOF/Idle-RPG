@@ -2647,30 +2647,48 @@ function updateDmgAbsorb() {
   var magicEl = $id('r-magic-absorb');
   if (!physEl || !magicEl) return;
 
-  var p = G.player, st = getStats();
+  var p = G.player, st = typeof getViewStats === 'function' ? getViewStats() : getStats();
   var pEnt = (typeof FIELD !== 'undefined' && FIELD) ? FIELD.player : null;
-  var hp = (pEnt && typeof pEnt.hp === 'number') ? pEnt.hp : st.hp;
-  var shield = (pEnt && typeof pEnt.shield === 'number') ? pEnt.shield : 0;
+  var isActive = typeof isViewingActiveSet === 'function' ? isViewingActiveSet() : true;
+  var hp = (isActive && pEnt && typeof pEnt.hp === 'number') ? pEnt.hp : st.hp;
+  var shield = (isActive && pEnt && typeof pEnt.shield === 'number') ? pEnt.shield : 0;
   
-  var dCfg = playerDefCfg(pEnt);
   var attackerLevel = st.level || 1;
+  var defMul = 1 + (isActive && pEnt && typeof buffVal === 'function' ? buffVal(pEnt, 'defUp') : 0) / 100;
 
   // 各類減傷率
-  var rPhysDef = defReduction(dCfg.def || 0, attackerLevel);
-  var rMagicDef = defReduction(dCfg.mdef || 0, attackerLevel);
-  var rPhysRes = physicalResistanceReduction(dCfg.pRes || 0, attackerLevel);
-  var rMagicRes = magicResistanceReduction(dCfg.mRes || 0, attackerLevel);
-  var rSanctuary = dCfg.dmgRed ? (clamp(dCfg.dmgRed, 0, 50) / 100) : 0;
-  var rGlobal = globalDamageReduction(dCfg.globalDmgRed || 0);
+  var rPhysDef = defReduction((st.def * defMul) || 0, attackerLevel);
+  var rMagicDef = defReduction((st.mdef * defMul) || 0, attackerLevel);
+  var rPhysRes = physicalResistanceReduction(st.pRes || 0, attackerLevel);
+  var rMagicRes = magicResistanceReduction(st.mRes || 0, attackerLevel);
+  var dmgRedRaw = st.passives && st.passives.sanctuary ? st.passives.sanctuary : 0;
+  var rSanctuary = dmgRedRaw ? (clamp(dmgRedRaw, 0, 50) / 100) : 0;
+  var rGlobal = globalDamageReduction(st.globalDmgRed || 0);
 
-  var rNormal = enemyTypeDamageReduction(dCfg.normalDmgRed || 0, attackerLevel);
-  var rElite = enemyTypeDamageReduction(dCfg.eliteDmgRed || 0, attackerLevel);
-  var rBoss = enemyTypeDamageReduction(dCfg.bossDmgRed || 0, attackerLevel);
+  var rNormal = enemyTypeDamageReduction(st.normalDmgRed || 0, attackerLevel);
+  var rElite = enemyTypeDamageReduction(st.eliteDmgRed || 0, attackerLevel);
+  var rBoss = enemyTypeDamageReduction(st.bossDmgRed || 0, attackerLevel);
   var rTypeMax = Math.max(rNormal, rElite, rBoss);
 
+  var typeMaxLabel = '';
+  if (rTypeMax > 0) {
+    if (rTypeMax === rBoss) typeMaxLabel = ' (BOSS傷害抗性)';
+    else if (rTypeMax === rElite) typeMaxLabel = ' (菁英傷害抗性)';
+    else typeMaxLabel = ' (普通敵人傷害抗性)';
+  }
+
+  // 元素抗性減傷（六大元素取平均）
+  var elems = ['fire', 'ice', 'lightning', 'poison', 'light', 'dark'];
+  var elemRedSum = 0;
+  for (var i = 0; i < elems.length; i++) {
+    var resVal = (st.resist && st.resist[elems[i]]) || 0;
+    elemRedSum += typeof elementalResistanceReduction === 'function' ? elementalResistanceReduction(resVal, attackerLevel) : 0;
+  }
+  var rElemAvg = elemRedSum / 6;
+
   // 剩餘比例 (1 - 減傷)
-  var physMult = (1 - rPhysDef) * (1 - rPhysRes) * (1 - rSanctuary) * (1 - rGlobal) * (1 - rTypeMax);
-  var magicMult = (1 - rMagicDef) * (1 - rMagicRes) * (1 - rSanctuary) * (1 - rGlobal) * (1 - rTypeMax);
+  var physMult = (1 - rPhysDef) * (1 - rPhysRes) * (1 - rSanctuary) * (1 - rGlobal) * (1 - rTypeMax) * (1 - rElemAvg);
+  var magicMult = (1 - rMagicDef) * (1 - rMagicRes) * (1 - rSanctuary) * (1 - rGlobal) * (1 - rTypeMax) * (1 - rElemAvg);
 
   var physAbsorb = physMult > 0 ? (hp + shield) / physMult : Infinity;
   var magicAbsorb = magicMult > 0 ? (hp + shield) / magicMult : Infinity;
@@ -2678,6 +2696,19 @@ function updateDmgAbsorb() {
   // 更新 UI：顯示完整數值及簡寫，例如 999,999,999 (999M)
   physEl.textContent = physAbsorb === Infinity ? '∞' : fmtFull(physAbsorb) + ' (' + fmt(physAbsorb) + ')';
   magicEl.textContent = magicAbsorb === Infinity ? '∞' : fmtFull(magicAbsorb) + ' (' + fmt(magicAbsorb) + ')';
+
+  var formatRed = function (v, startDec) {
+    var dec = startDec || 4;
+    if (v >= 1) return '100%';
+    if (v <= 0) return (0).toFixed(dec) + '%';
+    var pct = v * 100;
+    var s = pct.toFixed(dec);
+    while (((parseFloat(s) >= 100 && v < 1) || /^99\.9+$/.test(s)) && dec < 15) {
+      dec++;
+      s = pct.toFixed(dec);
+    }
+    return s + '%';
+  };
 
   // 更新 tooltip
   var physParent = physEl.parentNode;
@@ -2688,11 +2719,12 @@ function updateDmgAbsorb() {
                    '公式：(血量+護盾)/(1-各類減傷)<br><br>' +
                    '<span style="color:#4ade80">當前血量：</span>' + fmtFull(hp) + '<br>' +
                    '<span style="color:#4ade80">當前護盾：</span>' + fmtFull(shield) + '<br>' +
-                   '<span style="color:#ffd700">物理防禦減傷：</span>' + (rPhysDef * 100).toFixed(4) + '%<br>' +
-                   '<span style="color:#ffd700">物理抗性減傷：</span>' + (rPhysRes * 100).toFixed(4) + '%<br>' +
-                   '<span style="color:#ffd700">聖佑被動減傷：</span>' + (rSanctuary * 100).toFixed(2) + '%<br>' +
-                   '<span style="color:#ffd700">全局減傷：</span>' + (rGlobal * 100).toFixed(4) + '%<br>' +
-                   '<span style="color:#ffd700">敵種最大減傷：</span>' + (rTypeMax * 100).toFixed(4) + '%<br><br>' +
+                   '<span style="color:#ffd700">物理防禦減傷：</span>' + formatRed(rPhysDef) + '<br>' +
+                   '<span style="color:#ffd700">物理抗性減傷：</span>' + formatRed(rPhysRes) + '<br>' +
+                   '<span style="color:#ffd700">聖佑被動減傷：</span>' + formatRed(rSanctuary, 2) + '<br>' +
+                   '<span style="color:#ffd700">全局減傷：</span>' + formatRed(rGlobal) + '<br>' +
+                   '<span style="color:#ffd700">元素抗性減傷：</span>' + formatRed(rElemAvg) + '<br>' +
+                   '<span style="color:#ffd700">敵種最大減傷：</span>' + formatRed(rTypeMax) + typeMaxLabel + '<br><br>' +
                    '<span style="color:#ffd700">物理承傷總值：</span>' + (physAbsorb === Infinity ? '無窮大' : fmtFull(physAbsorb));
     physParent.setAttribute('data-tt-desc', physDesc);
     physParent.removeAttribute('title');
@@ -2703,11 +2735,12 @@ function updateDmgAbsorb() {
                     '公式：(血量+護盾)/(1-各類減傷)<br><br>' +
                     '<span style="color:#4ade80">當前血量：</span>' + fmtFull(hp) + '<br>' +
                     '<span style="color:#4ade80">當前護盾：</span>' + fmtFull(shield) + '<br>' +
-                    '<span style="color:#ffd700">魔法防禦減傷：</span>' + (rMagicDef * 100).toFixed(4) + '%<br>' +
-                    '<span style="color:#ffd700">魔法抗性減傷：</span>' + (rMagicRes * 100).toFixed(4) + '%<br>' +
-                    '<span style="color:#ffd700">聖佑被動減傷：</span>' + (rSanctuary * 100).toFixed(2) + '%<br>' +
-                    '<span style="color:#ffd700">全局減傷：</span>' + (rGlobal * 100).toFixed(4) + '%<br>' +
-                    '<span style="color:#ffd700">敵種最大減傷：</span>' + (rTypeMax * 100).toFixed(4) + '%<br><br>' +
+                    '<span style="color:#ffd700">魔法防禦減傷：</span>' + formatRed(rMagicDef) + '<br>' +
+                    '<span style="color:#ffd700">魔法抗性減傷：</span>' + formatRed(rMagicRes) + '<br>' +
+                    '<span style="color:#ffd700">聖佑被動減傷：</span>' + formatRed(rSanctuary, 2) + '<br>' +
+                    '<span style="color:#ffd700">全局減傷：</span>' + formatRed(rGlobal) + '<br>' +
+                    '<span style="color:#ffd700">元素抗性減傷：</span>' + formatRed(rElemAvg) + '<br>' +
+                    '<span style="color:#ffd700">敵種最大減傷：</span>' + formatRed(rTypeMax) + typeMaxLabel + '<br><br>' +
                     '<span style="color:#ffd700">魔法承傷總值：</span>' + (magicAbsorb === Infinity ? '無窮大' : fmtFull(magicAbsorb));
     magicParent.setAttribute('data-tt-desc', magicDesc);
     magicParent.removeAttribute('title');

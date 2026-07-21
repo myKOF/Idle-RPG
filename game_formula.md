@@ -284,7 +284,7 @@
 |---|---|
 | 對應野外階段 | `4 + f×5`（以此階段的野外怪為基準） |
 | 等級 | `對應階段 + 3` |
-| 挑戰金幣消耗 | `round(100,000 × f^2.6)`；開始挑戰前扣除，失敗或撤退不退回 |
+| 挑戰金幣消耗 | `round(a × f^b)`，a/b 依樓層分層（`TOWER_CHALLENGE_COST_TIERS`）：第 1~50 層 a=10,000 b=1.8；第 51~100 層 a=50,000 b=2；第 101~150 層 a=100,000 b=2.2（超過最高段沿用最後一段）。開始挑戰前扣除，失敗或撤退不退回 |
 | 生命 | `基準生命 × TOWER_BASE_HP_MULT`；地獄之塔再 ×`TOWER_HELL_HP_MULT`；煉獄之塔再 ×`TOWER_PURGATORY_HP_MULT` |
 | 攻擊 | `基準攻擊 × TOWER_BASE_ATK_MULT`；地獄之塔再 ×`TOWER_HELL_ATK_MULT`；煉獄之塔再 ×`TOWER_PURGATORY_ATK_MULT` |
 | 物/魔防 | `基準物/魔防 × TOWER_BOSS_DEF_MULT` |

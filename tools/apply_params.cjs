@@ -549,8 +549,18 @@ numCtx('formula', 'clamp(dCfg.dmgRed, 0, ', ')', P('3-戰鬥核心', '聖佑(神
 inline('formula', 'GT - defender._undyingAt >= ', P('3-戰鬥核心', '不朽(神鑄)回復', 1), '不朽秒數');
 
 /* ---- §4 高塔 BOSS ---- */
-numCtx('formula', 'return Math.round(', ' * Math.pow(Math.max(1, Number(floor)', P('4-高塔BOSS', '挑戰金幣消耗', 0), 'boss金幣係數');
-numCtx('formula', 'Number(floor) || 1), ', '))', P('4-高塔BOSS', '挑戰金幣消耗', 1), 'boss金幣指數');
+// 挑戰金幣消耗分層：CSV 以 {下限~上限,a=係數,b=指數} 逐段表示 → 重建 TOWER_CHALLENGE_COST_TIERS。
+{
+  const segCells = ((index['4-高塔BOSS'] && index['4-高塔BOSS']['挑戰金幣消耗']) || [])
+    .filter(c => /^\s*\{/.test(String(c)));
+  if (!segCells.length) throw new Error('CSV 缺少高塔挑戰金幣消耗分層參數（需 {下限~上限,a=,b=}）');
+  const tiers = segCells.map(cell => {
+    const m = /^\{\s*(-?[\d.]+)\s*~\s*(-?[\d.]+)\s*,\s*a\s*=\s*(-?[\d.]+)\s*,\s*b\s*=\s*(-?[\d.]+)\s*\}$/.exec(String(cell).trim());
+    if (!m) throw new Error('高塔挑戰金幣消耗分層格式錯誤：「' + cell + '」（需 {下限~上限,a=,b=}）');
+    return '{ min: ' + Number(m[1]) + ', max: ' + Number(m[2]) + ', a: ' + Number(m[3]) + ', b: ' + Number(m[4]) + ' }';
+  });
+  arrayContent('data', 'TOWER_CHALLENGE_COST_TIERS', '\n  ' + tiers.join(',\n  ') + '\n', 'TOWER_CHALLENGE_COST_TIERS');
+}
 
 /* ---- §5 稀有度擲骰（rollRarity） ---- */
 inline('formula', 'effectiveDropRateEffect(lootBonus || 0) / ', P('5-稀有度擲骰', '權重加成 b', 0), '權重加成除數');

@@ -871,9 +871,15 @@ function fieldGemDropRatesFor(level) {
   return dropRatesFor(FIELD_GEM_DROP_TABLE, level);
 }
 
-// 高塔挑戰金幣消耗 = 100000 × 樓層^2.6
+// 高塔挑戰金幣消耗 = round(a × 樓層^b)，a/b 依樓層分層（TOWER_CHALLENGE_COST_TIERS → data.js）
 function towerChallengeCost(floor) {
-  return Math.round(100000 * Math.pow(Math.max(1, Number(floor) || 1), 2.2));
+  var f = Math.max(1, Number(floor) || 1);
+  var tiers = TOWER_CHALLENGE_COST_TIERS;
+  var t = tiers[tiers.length - 1]; // 預設：超過最高段的樓層沿用最後一段
+  for (var i = 0; i < tiers.length; i++) {
+    if (f <= tiers[i].max) { t = tiers[i]; break; }
+  }
+  return Math.round(t.a * Math.pow(f, t.b));
 }
 
 // 高塔 BOSS 魔塵掉落率 = min(30%, 2% + 樓層 × 0.2%)
