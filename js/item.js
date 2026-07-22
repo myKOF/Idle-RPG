@@ -44,12 +44,12 @@ function gemLabel(type, lv) {
 function fuseableGemTypesAtLevel(lv) {
   var types = [];
   for (var type in GEM_TYPES) {
-    if (gemCount(type, lv) >= 2) types.push(type);
+    if (gemCount(type, lv) >= GEM_COMPOSE_INPUT_COUNT) types.push(type);
   }
   return types;
 }
 
-// 寶石合成：2 顆同種同級 → 1 顆同種下一級（消耗金幣）。回傳 null=成功
+// 寶石合成：3 顆同種同級 → 1 顆同種下一級（消耗金幣）。回傳 null=成功
 // 選擇全部類型時，每次挑選一種目前足夠的寶石，絕不混合種類。
 function composeGems(type, lv) {
   if (lv < 1 || lv >= GEM_MAX_LEVEL) return '五級寶石已是最高階';
@@ -59,11 +59,11 @@ function composeGems(type, lv) {
     return composeGems(availableTypes[0], lv);
   }
   if (!GEM_TYPES[type]) return '未知寶石種類';
-  if (gemCount(type, lv) < 2) return '「' + GEM_NAMES[lv] + GEM_TYPES[type].name + '」不足 2 顆';
+  if (gemCount(type, lv) < GEM_COMPOSE_INPUT_COUNT) return '「' + GEM_NAMES[lv] + GEM_TYPES[type].name + '」不足 ' + GEM_COMPOSE_INPUT_COUNT + ' 顆';
   var cost = FUSE_GOLD_COST[lv];
   if (G.player.gold < cost) return '金幣不足（需要 ' + fmt(cost) + '）';
   G.player.gold -= cost;
-  addGem(type, lv, -2);
+  addGem(type, lv, -GEM_COMPOSE_INPUT_COUNT);
   addGem(type, lv + 1, 1);
   UI.dirty.header = true; UI.dirty.gems = true;
   return null;

@@ -413,7 +413,7 @@ function tryRarityMerge() {
   return false;
 }
 
-/* ---- 寶石合成已改版（2 顆同種同級 → 下一級）：composeGems → item.js ---- */
+/* ---- 寶石合成已改版（3 顆同種同級 → 下一級）：composeGems → item.js ---- */
 
 /* （附魔節點已移除：附魔改為裝備介面手動操作，見 item.js manualEnchant） */
 

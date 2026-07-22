@@ -537,7 +537,9 @@ function fieldTick(dt) {
             return;
         }
         if (p.hp <= 0) { onPlayerFieldDeath(); return; } // 狂暴打擊等自傷技能
-        p.atkCd -= dt * slowFactor(p) * (1 + buffVal(p, 'aspdUp') / 100);
+        // 潛力【極速之力】：施放期間以倍率放大攻擊頻率（突破 5 次/秒上限）
+        p.atkCd -= dt * slowFactor(p) * (1 + buffVal(p, 'aspdUp') / 100) *
+            (typeof potentialVelocityFactor === 'function' ? potentialVelocityFactor(p, st) : 1);
         if (p.atkCd <= 0) {
             // 普攻固定鎖定第一名存活敵人，直到其死亡才切換下一名。
             var primary = liveFieldEnemies()[0];
@@ -814,21 +816,29 @@ function flushRunSummary(nextMaxStage) {
 }
 
 /* ---- 玩家技能增益取得 ---- */
-var PLAYER_BUFF_ORDER = ['atkUp', 'defUp', 'aspdUp', 'evasionUp', 'critDmgUp', 'blockUp', 'thornsUp', 'lootUp', 'hot'];
+var PLAYER_BUFF_ORDER = ['atkUp', 'defUp', 'aspdUp', 'evasionUp', 'critDmgUp', 'blockUp', 'thornsUp', 'lootUp', 'hot',
+    // 潛力技能增益（極速之力/雷霆過載/時間坍縮/聖療逆轉/時空凝滯）
+    'velocitySurge', 'lightningOverload', 'chronoCdr', 'sacredInvert', 'allDmgUp'];
 
 function activePlayerBuffs(ent) {
-    if (!ent || !ent.buffs) return [];
+    if (!ent) return [];
     var list = [];
-    for (var i = 0; i < PLAYER_BUFF_ORDER.length; i++) {
-        var key = PLAYER_BUFF_ORDER[i];
-        var b = ent.buffs[key];
-        if (b && typeof b.until === 'number' && b.until > GT) {
-            list.push({
-                key: key,
-                val: b.val || 0,
-                remain: Math.ceil(b.until - GT)
-            });
+    if (ent.buffs) {
+        for (var i = 0; i < PLAYER_BUFF_ORDER.length; i++) {
+            var key = PLAYER_BUFF_ORDER[i];
+            var b = ent.buffs[key];
+            if (b && typeof b.until === 'number' && b.until > GT) {
+                list.push({
+                    key: key,
+                    val: b.val || 0,
+                    remain: Math.ceil(b.until - GT)
+                });
+            }
         }
+    }
+    // 無敵（絕對領域／不屈意志）存於 effects.invuln 時戳而非 buffs，補列為無數值狀態
+    if (ent.effects && typeof ent.effects.invuln === 'number' && ent.effects.invuln > GT) {
+        list.push({ key: 'invuln', val: 0, noVal: true, remain: Math.ceil(ent.effects.invuln - GT) });
     }
     return list;
 }

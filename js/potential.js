@@ -2,18 +2,20 @@
 /* ============ 潛力技能（戰鬥效果模組 V3）============
    主動潛力技能：與一般技能相同，需裝入「裝載欄」（鍵值 'potential:<id>'）才會施放；
                 冷卻共用 pEnt.skillCds、施放共用 pickAndCastSkill（skills.js）與 GCD/硬直節奏。
-   被動潛力技能：極速之力（攻速＋解除上限）與混沌雙修（crossCore）於 computeStats 併入；
+   被動潛力技能：混沌雙修（crossCore）於 computeStats 併入；
                 不屈意志（免死）於 resolveHit 致命段處理。皆學會即常駐、無需裝備。
    數值 potentialSkillValue / 上限 potentialSkillMaxLv / 是否生效 potentialSkillActive → js/talents.js
    資料表 POTENTIAL_TALENTS → js/data.js（含 type/cd/base/per/dmgType/dur/mech）。
 
    ── 詮釋備註（天賦V3.xlsx 第 2 頁為設計草案，以下為實作取捨；細節見 game_formula.md）──
-   ・極速之力：因無持續時間、效果為攻速加成＋解除 5 次/秒上限，實作為「被動常駐」。
+   ・極速之力：主動 buff——施放後 6 秒內攻速 +值% 且突破 5 次/秒上限
+     （potentialVelocityFactor 於戰鬥迴圈放大攻擊頻率；2026-07-21 使用者補上持續時間定調）。
    ・時間坍縮：施放時對「一般技能」冷卻額外提供 CDR 並突破 60% 上限（總 CDR 於施放時夾 90%）；不影響潛力技能自身冷卻。
    ・混沌雙修：所有技能傷害段套用物↔魔互補加成（skills.js castSkill）。
    ・雷霆過載：期間雷電系技能傷害 +值%，並於命中後追加 (3＋連擊數) 次、各 10% 該擊傷害的連鎖。
    ・聖療逆轉：期間生命/法力回復額外 +值%，溢出的回復量 ×值% 對主要敵人造成真實傷害。
-   ・時空凝滯：期間所有敵人靜止（stun，遵守 BOSS 控場免疫）＋玩家所有直接傷害 +值%。 */
+   ・時空凝滯：期間所有敵人靜止＋玩家所有直接傷害 +值%。時間靜止為最終大絕，
+     直接寫入 stun 時戳「不可被免疫」（無視 BOSS 控場免疫與控場遞減）。 */
 
 // 不屈意志內部冷卻（秒）＝ 90 − 值（下限 1）；不受冷卻縮減影響。
 function potentialUndyingCd() {
@@ -26,10 +28,19 @@ function potentialActiveCd(def) {
   return Math.max(0.1, (def.cd || 0) * (1 - cdr / 100));
 }
 
-// 可施放（可裝入裝載欄）的潛力機制；被動 aspd/crossCore 與被動觸發 undyingGuard 不在此列。
+// 可施放（可裝入裝載欄）的潛力機制；被動 crossCore 與被動觸發 undyingGuard 不在此列。
 var POTENTIAL_CASTABLE_MECHS = {
-  chainLightning: 1, cdrUncap: 1, invuln: 1, enemySlow: 1, omega: 1, sacredInvert: 1, timeStop: 1
+  aspd: 1, chainLightning: 1, cdrUncap: 1, invuln: 1, enemySlow: 1, omega: 1, sacredInvert: 1, timeStop: 1
 };
+
+/* 極速之力施放期間的攻速倍率：以「未夾上限的總攻速 ÷ 目前(夾 5 次/秒)攻速」放大攻擊頻率，
+   等效於 6 秒內攻速 = ASPD_BASE × (1 + (玩家原始攻速% + 技能值%) / 100)，突破 5 次/秒上限。 */
+function potentialVelocityFactor(pEnt, st) {
+  var v = buffVal(pEnt, 'velocitySurge');
+  if (v <= 0) return 1;
+  var uncapped = ASPD_BASE * (1 + ((st.aspdBonusBase || 0) + v) / 100);
+  return Math.max(1, uncapped / Math.max(0.0001, st.aspd || 1));
+}
 
 // 此潛力技能是否可裝入裝載欄（主動且有施放效果）。
 function potentialEquippable(def) {
@@ -58,6 +69,11 @@ function firePotentialActive(pEnt, def, live, floatSel, st) {
   var val = potentialSkillValue(def.id);
   var dur = def.dur || 0;
   switch (def.mech) {
+    case 'aspd':                     // 極速之力：6 秒內攻速+值% 且突破 5 次/秒上限
+      applyBuff(pEnt, 'velocitySurge', val, dur);
+      floatPlayerEvent(floatSel, def.emoji + ' 攻速+' + fmt1(val) + '%', 'attack');
+      blog(def.emoji + ' 你施放潛力【' + def.name + '】：' + dur + ' 秒內突破攻速極限，攻速加成 +' + fmt1(val) + '%！', 'log-player-buff', 'combat');
+      return { killed: false, dmg: 0 };
     case 'cdrUncap':                 // 時間坍縮
       applyBuff(pEnt, 'chronoCdr', val, dur);
       floatPlayerEvent(floatSel, def.emoji + ' CDR+' + fmt1(val) + '%', 'special');
@@ -85,12 +101,19 @@ function firePotentialActive(pEnt, def, live, floatSel, st) {
       floatPlayerEvent(floatSel, def.emoji + ' 回復/溢傷+' + fmt1(val) + '%', 'heal');
       blog(def.emoji + ' 你施放潛力【' + def.name + '】：生命與法力回復、溢出傷害 +' + fmt1(val) + '%（' + dur + '秒）。', 'log-player-buff', 'combat');
       return { killed: false, dmg: 0 };
-    case 'timeStop':                 // 時空凝滯
+    case 'timeStop':                 // 時空凝滯：最終大絕——時間靜止「不可被免疫」
       applyBuff(pEnt, 'allDmgUp', val, dur);
       var frozen = 0;
-      for (var b = 0; b < live.length; b++) { if (applyEffect(live[b], 'stun', dur)) frozen++; }
+      for (var b = 0; b < live.length; b++) {
+        // 直接寫入 stun 時戳，繞過 applyEffect 的 BOSS 控場免疫與控場遞減：
+        // 時空凝滯為時間靜止大絕，設計上任何敵人（含 BOSS）皆無法免疫、每次都是完整持續時間。
+        var frozenEnt = live[b];
+        frozenEnt.effects = frozenEnt.effects || {};
+        frozenEnt.effects.stun = Math.max(frozenEnt.effects.stun || 0, GT + dur);
+        frozen++;
+      }
       floatPlayerEvent(floatSel, def.emoji + ' 全傷+' + fmt1(val) + '%', 'attack');
-      blog(def.emoji + ' 你施放潛力【' + def.name + '】：' + frozen + ' 名敵人靜止 ' + dur + ' 秒，所有傷害 +' + fmt1(val) + '%。', 'log-player-buff', 'combat');
+      blog(def.emoji + ' 你施放潛力【' + def.name + '】：時空靜止！' + frozen + ' 名敵人動彈不得 ' + dur + ' 秒（無視控制免疫），所有傷害 +' + fmt1(val) + '%。', 'log-player-buff', 'combat');
       return { killed: false, dmg: 0 };
     case 'omega':                    // 必殺一擊
       return firePotentialOmega(pEnt, def, live, floatSel, st, val);

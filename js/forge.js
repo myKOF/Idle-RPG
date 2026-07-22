@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 /* ============ 神鑄系統（Divine Forge，邏輯層） ============
    六芒星法陣放入 6 件「同品質」裝備（限傳說/神話/創世），消耗金幣鑄造：
      成功 → 消耗全部 6 件，獲得下一品質隨機部位裝備 1 件（6 件創世 → 神鑄創世）
@@ -513,4 +513,17 @@ function forgeTick(now) {
     }
   }
   if (catchUpRounds > 0) UI.dirty.forge = true;
+}
+
+// 中斷當前神鑄鑄造進度
+function cancelForge() {
+  var f = forgeState();
+  if (f.crafting) {
+    f.crafting = null;
+    f.autoForge = false;
+    forgeLog('鑄造已取消', 'info');
+    blog('⏹️ 鑄造進度已由玩家手動取消', 'warn', 'factory');
+    UI.dirty.forge = true;
+    UI.dirty.inv = true;
+  }
 }

@@ -1,5 +1,30 @@
 # PATCH.md
 
+## 修正：主參數表 xlsx 轉換失敗「找不到任何工作表」（2026-07-22）
+
+- 問題：套用參數.bat 第 2 段（xlsx→CSV）報「xlsx 內找不到任何工作表」，主參數表無法套用。
+- 原因：`game_parameters.xlsx` 被外部工具（OpenXML SDK 系，非 Excel）重寫成三種不相容格式——①元素帶 `x:` 命名空間前綴（`<x:sheet>`）；②rels 屬性順序 Target 在 Id 前；③主表全部鏡像公式（=計算表!同座標）的快取值被蓋成 `#NAME?` 錯誤。
+- 修正 `tools/xlsx_to_csv.cjs`：解析前剝除元素命名空間前綴；rels/儲存格屬性改順序無關比對；自閉合空儲存格先剝除（避免與下一格黏連錯位）；列解析尊重 `r=` 列號；錯誤快取＋單純跨表參照公式時自動回填參照目標（計算表）的值（空儲存格沿用 Excel 語意得 0）。
+- 同步強化 `tools/config_tables.cjs` 四表讀取器（命名空間前綴／屬性順序／自閉合儲存格／列號），防同類工具重寫 Skills.xlsx 等時 sync 爆掉。
+- 驗證：新格式轉出與現行 CSV 0 差異；HEAD 版標準格式 xlsx 回歸轉換 0 差異；四表 `--sync` 冪等、dry `--apply` 語意變更 0；`apply_params` 試跑找到待套用變更 1 筆（神鑄解鎖等級 2000→1，即本次 bat 失敗未套進的那筆）。
+
+## 修正：潛力技能增益未顯示於「目前技能增益」（2026-07-22）
+
+- 問題：施放絕對領域等潛力技能後，屬性面板／戰鬥增益提示顯示「目前沒有技能增益」——效果實際有生效，純顯示問題。
+- 原因一：`activePlayerBuffs()` 只讀白名單 `PLAYER_BUFF_ORDER`，潛力 buff 鍵值（velocitySurge／lightningOverload／chronoCdr／sacredInvert／allDmgUp）全數不在名單內。
+- 原因二：絕對領域與不屈意志的無敵存於 `effects.invuln` 時戳而非 `buffs`，任何 buff 清單都撈不到。
+- 修正：白名單補入 5 個潛力 buff 鍵值；`activePlayerBuffs()` 追加無敵狀態列（`noVal` 無百分比、僅顯示剩餘秒數），`buffLabel` 增「無敵結界」、面板／提示渲染支援無數值列。
+- 順帶：時間結界的 `enemyAspdDown` 在敵方狀態列原顯示為「💪…↑」綠色增益，改為「📉…↓」紅色減益樣式，標籤改「時間結界·攻速」。
+- 驗證：Node 測試 14/14（五種潛力 buff＋無敵可見、過期不顯示、空實體安全）；建置 125 檔通過；隔離瀏覽器（8124）20 支腳本全 200、主控台 0 錯誤。
+
+## 調整：寶石合成改為 3 合 1（2026-07-22）
+
+- 手動寶石合成由 2 顆同種類、同等級素材改為 3 顆產出 1 顆下一階；金幣費用與最高五階維持不變。
+- 新增共用參數 `GEM_COMPOSE_INPUT_COUNT=3`；單次合成、全部合成、可合成次數、錯誤訊息與戰鬥日誌均讀取同一參數。
+- 拆解換算同步改採 3:1 合成鏈：1～5 階的一級寶石成本為 1／3／9／27／81，拆解七折後 2～5 階分別返還 2／6／18／56 顆。
+- 同步寶石頁提示、`game_formula.md`、CSV／Excel 參數表及參數套用管線；既有庫存不需遷移。
+- 驗證：寶石合成與日誌專項 7/7 通過，建置 125 檔通過；隔離瀏覽器確認合成／拆解顯示正確、主控台 0 錯誤。較廣的既有寶石回歸共 31 項中 23 項通過，8 項失敗皆位於本次未修改的掉落表、舊遷移、Shift 轉換與商店價格測試基線。
+
 ## 變更紀錄：戰鬥 DOM 性能優化收尾（2026-07-22）
 
 - `renderBattle()` 與 `renderTowerFight()` 將已取得的屬性傳給 `renderMpSkill()`，每次刷新不再重複執行 `getStats()`。
@@ -2578,3 +2603,28 @@
 - ui.js：升級面板為主動潛力加「⚔️ 裝備／卸下」、被動潛力顯「🌀 常駐」；裝載欄格與戰鬥技能列支援潛力顯示（emoji/名稱/等級/冷卻、法力 0）。
 - talents.js：潛力降至 0 級或刪除時自動卸下裝載。data.js：極速之力型別改 passive（效果本為常駐攻速）。
 - 驗證：build 綠（125 檔）、config round-trip 語意 0 差；Node 實測：裝備/拒絕/重複判斷正確，三潛力技依 GCD 輪流施放（必殺 3.2 億、無敵 3.0s＝Lv100、時空凝滯全場定身 8s＋allDmgUp），冷卻 60% CDR 且由共用 tickSkillCds 遞減。
+
+### 【2026-07-21】時空凝滯修正：時間靜止不可被免疫（使用者回報 BOSS 免疫控場導致無效）
+- 原因：時空凝滯用通用 `applyEffect(敵,'stun')`，被 `isBossControlImmune`（所有 BOSS 免疫攻頻控場）擋下，僅 allDmgUp 生效。
+- 修正（potential.js）：改為直接寫入 `effects.stun = max(現值, GT+8)`——**無視 BOSS 控場免疫與控場遞減**，每次施放都是完整 8 秒；經使用者裁定此為最終大絕例外。一般技能的暈眩仍走 applyEffect、照舊被 BOSS 免疫。
+- 同步：describePotentialSkill 效果文字加「（不可被免疫，含 BOSS）」；game_formula.md 表列更新。
+- 驗證：build 綠；Node 實測 isBoss 實體——applyEffect 回 false（免疫照舊）、時空凝滯施放後 `effectActive(boss,'stun')=true`（高塔迴圈會跳過 BOSS 普攻與蓄力重擊）。
+
+### 【2026-07-21】潛力技能改由 Skills.xlsx 調適
+- `POTENTIAL_TALENTS` 定義由 js/data.js **移至 js/skills.js**（全部引用皆為執行期查找，載入順序安全；data.js 留指標註解）。
+- config 管線：Skills schema 接手潛力（vars 加 `POTENTIAL_TALENTS`；新欄 潛力類型/基礎值/每級值/持續秒/傷害類型/機制/英文名/質變說明；`系統分類=potential`、冷卻共用既有欄、說明文字=風味、列順序=解鎖順序）；Talents schema 回歸純天賦（遇舊潛力殘留列會略過並提示）。
+- 重生四表：Skills 64 列（54 技能＋10 潛力）、Talents 80 列；`--apply` 乾跑語意 0 差。
+- 文件：tools/參數表使用說明.md、game_formula.md 對應表更新。
+- 驗證：build 綠（125 檔）；裝載施放與 BOSS 時停 Node 測試重跑全過。
+
+### 【2026-07-21】極速之力補上持續時間（使用者定調：6 秒內突破攻速極限）
+- skills.js：velocityForce 改回主動（type active、cd 60、dur 6、質變說明更新為使用者版本）。
+- potential.js：mech 'aspd' 納入可裝載施放；施放上 buff `velocitySurge`（+值% 攻速、6 秒）；新增 `potentialVelocityFactor`＝未夾上限總攻速 ÷ 夾上限攻速，於 combat.js/tower.js 玩家攻擊頻率乘入 → 期間攻速 = 1×(1+(原始攻速%+技能值%)/100)，突破 5 次/秒。
+- formula.js：computeStats 移除常駐攻速/解上限整合（保留 st.aspdBonusBase 供倍率與提示）。
+- ui.js/skills.js：描述改「6 秒內…期間攻速總加成 X%（約 Y 次/秒）」；BUFF_TIP_EMOJI 與 buffLabel 補潛力 buff 鍵中文（velocitySurge/lightningOverload/chronoCdr/sacredInvert/allDmgUp/enemyAspdDown，修掉 allDmgUp↑ 原文顯示）。
+- 驗證：build 綠、四表重生 round-trip 語意 0 差；Node 實測——裝備成功、施放 buff 60%/6s/CD24s、期間攻速 320%→4.8 次/秒、900%→10.6 次/秒（突破 5 上限）。
+
+### 【2026-07-21】Skills.xlsx 新增第 2 工作表「變量定義」
+- config_tables.cjs：writeXlsx 支援多工作表（extraSheets；[Content_Types]/workbook/rels/sheetN 動態產生）；Skills schema 掛 `變量定義` 分頁（FX_GLOSSARY_ROWS，一行一個變量的中文定義，含基礎fx 9 大類＋里程碑fx 格式說明）。
+- 標題格還原為簡潔欄名（先前塞在標題格的長篇定義移到第 2 分頁）；rowGetter 的「標題取第一行」相容保留。
+- 讀取端不變：sync/apply 只讀第 1 表，第 2 分頁純供人閱讀。驗證：build 綠、gen 後 workbook 含 Skills＋變量定義兩表、sync+apply round-trip 語意 0 差。

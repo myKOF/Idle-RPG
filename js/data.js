@@ -173,52 +173,7 @@ var TALENT_TREES = {
     { id: 't10_potential', name: '潛力昇華', emoji: '🌌', stat: 'potentialUnlock', low: 2, high: 4, unlocks: 1, desc: '解鎖新類型技能「潛力」一個並給予技能點' }
   ]
 };
-/* ---- 潛力技能（V3；主動＝學會即自動施放、被動＝學會即常駐；經 3/4/7/10 轉「潛力」天賦節點解鎖）----
-   欄位：type active/passive/passiveTrigger；cd 冷卻秒；base 起始值；per 每級增量（無數值上限，等級上限比照一般技能＝20＋轉生×10）；
-   dmgType 傷害類型；dur 主動增益持續秒；mech 對應戰鬥機制（js/potential.js / formula.js / skills.js 依此分派）。
-   數值來源＝天賦V3.xlsx 第 2 頁；戰鬥公式與詮釋見 game_formula.md §潛力技能。 */
-var POTENTIAL_TALENTS = [
-  { id: 'velocityForce', name: '極速之力', en: 'Velocity Force', emoji: '⚡', cat: 'potential',
-    type: 'passive', base: 0, per: 5, mech: 'aspd',
-    desc: '突破速度的極限——你的攻速自此掙脫 5 次/秒的枷鎖，直抵無限，能登臨何等境界，端看你的領悟。每級 +5% 攻速加成。',
-    flavor: '突破速度極限，攻速掙脫 5 次/秒的枷鎖，能達到什麼程度端看你的領悟。' },
-  { id: 'lightningOverdrive', name: '雷霆過載', en: 'Lightning Overdrive', emoji: '🌩️', cat: 'potential',
-    type: 'active', cd: 45, base: 0, per: 0.4, dmgType: 'magic', dur: 8, mech: 'chainLightning',
-    desc: '雷霆過載，化為狂亂的連鎖閃電——雷電技能 100% 引動雷鏈，於敵群間肆意躍動（最多 3＋連擊數 次彈跳、每次撕裂 10% 該擊傷害），愈戰愈烈、生生不息，持續 8 秒。每級 +0.4% 雷電傷害。',
-    flavor: '過載的雷能在敵群間肆意跳躍，愈是激烈愈難止息。' },
-  { id: 'chronoCollapse', name: '時間坍縮', en: 'Chronostasis', emoji: '🕳️', cat: 'potential',
-    type: 'active', cd: 75, base: 0, per: 0.2, dur: 3, mech: 'cdrUncap',
-    desc: '打破時空的禁錮——冷卻縮減自此突破 60% 的天塹，所有技能的冷卻如坍縮的星辰般急速消融，持續 3 秒。每級額外 −0.2% 冷卻。（不縮減自身冷卻，但仍受一般冷卻縮減加成）',
-    flavor: '此技能對自身冷卻不生效，但冷卻縮減仍可作用於它。' },
-  { id: 'absoluteSanctuary', name: '絕對領域', en: 'Absolute Sanctuary', emoji: '🛡️', cat: 'potential',
-    type: 'active', cd: 75, base: 0.5, per: 0.025, mech: 'invuln',
-    desc: '降臨絕對的領域，展開無敵結界——其間免疫一切傷害與負面效果，任何攻擊都無法觸及你分毫。基礎 0.5 秒，每級 +0.025 秒。',
-    flavor: '在絕對的領域中，任何傷害都無法觸及你分毫。' },
-  { id: 'lastStandUndying', name: '不屈意志', en: 'Last Undying Stand', emoji: '💀', cat: 'potential',
-    type: 'passiveTrigger', cd: 90, base: 0, per: 0.4, mech: 'undyingGuard',
-    desc: '意志不屈者，縱使命懸一線亦絕不倒下——受到致命傷害時免除死亡，並獲得 1 秒無敵。觸發後進入冷卻，每級 −0.4 秒。（不受冷卻縮減影響）',
-    flavor: '意志不屈者，縱使命懸一線也絕不倒下。（此技能不受冷卻縮減影響）' },
-  { id: 'timeBarrier', name: '時間結界', en: 'Time Barrier', emoji: '⏱️', cat: 'potential',
-    type: 'active', cd: 45, base: 0, per: 1, dur: 8, mech: 'enemySlow',
-    desc: '編織拖曳時光的結界，敵人的動作被無情延緩，攻速大幅降低，持續 8 秒。每級敵人攻速 −1%。（敵降低後攻速 = 原攻速 /(1+降低%)）',
-    flavor: '結界之內，敵人的時間被無情拖曳。' },
-  { id: 'dualCoreFusion', name: '混沌雙修', en: 'Dual-Core Fusion', emoji: '☯️', cat: 'potential',
-    type: 'passive', base: 0, per: 0.6, mech: 'crossCore',
-    desc: '雙核交融，物理與魔法的界限就此崩解——所有物理技能汲取魔攻之力、所有魔法技能承載物攻之威。每級 +0.6%。',
-    flavor: '雙核交融，物理與魔法在你手中不再涇渭分明。' },
-  { id: 'omegaImpact', name: '必殺一擊', en: 'Omega Impact', emoji: '🎯', cat: 'potential',
-    type: 'active', cd: 60, base: 100, per: 3, dmgType: 'phys', mech: 'omega',
-    desc: '凝聚全身之力於一擊，依你的爆擊率轟出毀天滅地的必殺——造成「爆擊率% × 必殺傷害加成%」的物理傷害；爆擊率愈高，此擊愈是無可匹敵。必殺傷害加成 = 100% + 每級 +3%。',
-    flavor: '爆擊率愈高，這一擊便愈是毀天滅地。' },
-  { id: 'sacredInversion', name: '聖療逆轉', en: 'Sacred Inversion', emoji: '✨', cat: 'potential',
-    type: 'active', cd: 45, base: 0, per: 0.5, dur: 6, mech: 'sacredInvert',
-    desc: '聖療之光賜福於身，生命與法力回復大幅提升；滿溢的療癒之力逆轉為裁決，化作同等傷害傾瀉於敵，持續 6 秒。每級 +0.5%。',
-    flavor: '滿溢的聖光既能療癒自身，亦能化為裁決敵人的利刃。' },
-  { id: 'chronosStasis', name: '時空凝滯', en: 'Chronos Stasis', emoji: '🌀', cat: 'potential',
-    type: 'active', cd: 120, base: 0, per: 0.5, dur: 8, mech: 'timeStop',
-    desc: '封鎖周遭的時空，令萬物靜止——唯有承神之賜福者能自由行動；凝滯之間你的所有傷害大幅提升，敵人動彈不得，持續 8 秒。每級 +0.5% 所有傷害。',
-    flavor: '唯有獲得神之賜福者，方能在凝滯的時空中行動自如。' }
-];
+/* ---- 潛力技能定義已移至 js/skills.js（隨 Skills.xlsx 調適；解鎖/等級/施放邏輯不變） ---- */
 
 /* ---- 普通關卡敵人數量 ----
    僅普通敵人使用；菁英與高塔 BOSS 固定單一敵人。權重總和 = 100%。 */
@@ -337,7 +292,7 @@ var ASPD_CAP = 5;
 var BLOCK_DMG_RED_BASE = 30;
 var GODFORGED_IDX = 8;                       // 神鑄創世稀有度索引
 var EQUIP_SET_UNLOCK_LEVELS = [1, 500, 2000]; // 第 1/2/3 套裝備的解鎖等級
-var FORGE_UNLOCK_LEVEL = 2000;               // 神鑄系統解鎖等級（條件一：等級 ≥ 此值）；解鎖後永久保留
+var FORGE_UNLOCK_LEVEL = 1;               // 神鑄系統解鎖等級（條件一：等級 ≥ 此值）；解鎖後永久保留
 var FORGE_UNLOCK_REINCARNATION = 1;          // 神鑄系統解鎖所需轉生次數（條件二：轉生 ≥ 此值）；需與條件一同時滿足
 var FORGE_MIN_RARITY = 5;                    // 可入爐最低品質（傳說）
 var FORGE_SLOTS = 6;                         // 六芒星槽位數
@@ -776,8 +731,9 @@ var GEM_TYPES = {
   wardAll: { name: '全屬性抗性寶石', emoji: '🌈', stat: 'resAll', statName: '全屬性抗性%', base: 1, pct: true, linear: true }
 };
 // 寶石數值/插槽/附魔欄位公式（gemStatValue、socketCountFor、enchantCapFor）→ js/formula.js §8
-// 寶石合成：2 顆「同種類、同等級」→ 1 顆同種類下一級；UI 另支援全部類型逐種類合成
+// 寶石合成：3 顆「同種類、同等級」→ 1 顆同種類下一級；UI 另支援全部類型逐種類合成
 var GEM_TYPE_ALL = '__all__';
+var GEM_COMPOSE_INPUT_COUNT = 3; // 每次手動合成所需的同種同級寶石數量
 var FUSE_GOLD_COST = [0, 100, 300, 900, 2700, 8100]; // 金幣費用，依素材等級
 
 /* ---- 寶石融合 v2（僅限 5 階）----

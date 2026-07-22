@@ -43,6 +43,13 @@ function readZipEntries(buf) {
   return entries;
 }
 
+/* ---------- 命名空間正規化：<x:sheet>/<x:row>… → <sheet>/<row>…
+   某些工具（OpenXML SDK 系）存的 xlsx 元素帶前綴，Excel 本身則不帶；
+   統一剝掉「元素名」的前綴後再解析（屬性如 xml:space、r:id 不受影響）。 ---------- */
+function stripNsPrefix(xml) {
+  return xml.replace(/<(\/?)[A-Za-z_][\w.-]*:/g, '<$1');
+}
+
 /* ---------- XML 實體解碼（&amp; 最後解，避免二次解碼） ---------- */
 function decodeXml(s) {
   return s
@@ -78,6 +85,7 @@ function colIndex(ref) {
 /* ---------- 解析 sharedStrings：每個 <si> 內所有 <t> 串接 ---------- */
 function parseSharedStrings(xml) {
   if (!xml) return [];
+  xml = stripNsPrefix(xml);
   const out = [];
   xml.replace(/<si>([\s\S]*?)<\/si>/g, (m, inner) => {
     let t = '';
@@ -88,15 +96,25 @@ function parseSharedStrings(xml) {
   return out;
 }
 
-/* ---------- 解析工作表 XML -> 二維陣列 ---------- */
-function parseSheet(xml, shared) {
+/* ---------- 解析工作表 XML -> 二維儲存格陣列（保留型別與公式，供跨表鏡像回填） ---------- */
+function parseSheetCells(xml, shared) {
+  xml = stripNsPrefix(xml);
   const rows = [];
-  xml.replace(/<row\b[^>]*>([\s\S]*?)<\/row>/g, (m, inner) => {
+  xml.replace(/<row\b([^>]*)>([\s\S]*?)<\/row>/g, (m, rowAttr, inner) => {
+    // 尊重列號 r=（缺列的 xlsx 才不會整段上移）；沒有 r 就接續排
+    const rm = /\br="(\d+)"/.exec(rowAttr);
+    const rowIdx = rm ? parseInt(rm[1], 10) - 1 : rows.length;
+    while (rows.length < rowIdx) rows.push([]);
     const cells = [];
-    // 一般儲存格：<c r="A1" t="s"> ... </c>
-    inner.replace(/<c\s+r="([A-Z]+\d+)"([^>]*)>([\s\S]*?)<\/c>/g, (mm, ref, attr, body) => {
+    // 先剝掉自閉合空儲存格 <c r="B98" s="5" />（無值），避免配對式匹配把它與下一格黏在一起
+    inner = inner.replace(/<c\b[^>]*\/>/g, '');
+    // 一般儲存格：<c r="A1" t="s"> ... </c>（屬性順序不限）
+    inner.replace(/<c\b([^>]*)>([\s\S]*?)<\/c>/g, (mm, attr, body) => {
+      const refM = /\br="([A-Z]+\d+)"/.exec(attr);
+      if (!refM) return '';
       const tm = /t="([^"]+)"/.exec(attr);
       const t = tm ? tm[1] : '';
+      const fm = /<f[^>]*>([\s\S]*?)<\/f>/.exec(body);
       let val = '';
       const vm = /<v>([\s\S]*?)<\/v>/.exec(body);
       if (t === 's') {
@@ -107,28 +125,57 @@ function parseSheet(xml, shared) {
         val = decodeXml(s);
       } else if (t === 'str') {
         if (vm) val = decodeXml(vm[1]); // 公式回傳字串
+      } else if (t === 'e') {
+        if (vm) val = vm[1]; // 錯誤快取（如 #NAME?），後續嘗試由公式參照回填
       } else {
         if (vm) val = cleanNum(vm[1]); // 數字（含公式的快取數值）
       }
-      cells[colIndex(ref)] = val;
+      cells[colIndex(refM[1])] = { t: t, v: val, f: fm ? decodeXml(fm[1]) : null };
       return '';
     });
-    rows.push(cells);
+    rows[rowIdx] = cells;
     return '';
   });
+  // 填補跳號留下的空洞，維持二維陣列完整
+  for (let r = 0; r < rows.length; r++) if (!rows[r]) rows[r] = [];
   return rows;
+}
+
+/* ---------- 儲存格取值：錯誤快取＋單純跨表參照（=計算表!A2）時，改讀參照目標 ----------
+   背景：主表為「同列鏡像」——每格都是 =計算表!同座標 的公式。若 xlsx 由不會算公式的
+   工具寫出（快取被蓋成 #NAME? 等錯誤值），改為直接追蹤參照去計算表取值。
+   Excel 參照空儲存格會得 0，這裡沿用同一語意以維持 CSV 輸出一致。 */
+const SIMPLE_REF = /^(?:'([^']+)'|([^!']+))!\$?([A-Z]+)\$?(\d+)$/;
+function cellOut(grids, cell, depth) {
+  if (!cell) return '';
+  if (cell.t === 'e' && cell.f && (depth || 0) < 4) {
+    const m = SIMPLE_REF.exec(cell.f.trim());
+    if (m) {
+      const grid = grids[m[1] || m[2]];
+      if (grid) {
+        const target = (grid[parseInt(m[4], 10) - 1] || [])[colIndex(m[3] + '1')];
+        const v = cellOut(grids, target, (depth || 0) + 1);
+        return v === '' ? '0' : v; // Excel 語意：參照空儲存格 → 0
+      }
+    }
+  }
+  return cell.v;
 }
 
 /* ---------- 找目標工作表檔名（以名稱定位） ---------- */
 function resolveSheetPath(entries) {
-  const wb = entries['xl/workbook.xml'] ? entries['xl/workbook.xml'].toString('utf8') : '';
-  const rels = entries['xl/_rels/workbook.xml.rels'] ? entries['xl/_rels/workbook.xml.rels'].toString('utf8') : '';
+  const wb = stripNsPrefix(entries['xl/workbook.xml'] ? entries['xl/workbook.xml'].toString('utf8') : '');
+  const rels = stripNsPrefix(entries['xl/_rels/workbook.xml.rels'] ? entries['xl/_rels/workbook.xml.rels'].toString('utf8') : '');
   const relMap = {};
-  rels.replace(/<Relationship\b[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"[^>]*\/?>/g, (m, id, target) => {
-    relMap[id] = target; return '';
+  // 屬性順序不限（Excel 寫 Id 在前、OpenXML SDK 系寫 Target 在前）
+  rels.replace(/<Relationship\b[^>]*>/g, (tag) => {
+    const id = (/\bId="([^"]+)"/.exec(tag) || [])[1];
+    const target = (/\bTarget="([^"]+)"/.exec(tag) || [])[1];
+    if (id && target) relMap[id] = target;
+    return '';
   });
   const sheets = [];
-  wb.replace(/<sheet\b[^>]*\/>/g, (tag) => {
+  wb.replace(/<sheet\b[^>]*\/?>/g, (tag) => {
     const name = decodeXml((/name="([^"]*)"/.exec(tag) || [])[1] || '');
     const rid = (/r:id="([^"]+)"/.exec(tag) || [])[1] || '';
     sheets.push({ name, rid });
@@ -136,10 +183,14 @@ function resolveSheetPath(entries) {
   });
   let chosen = sheets.find(s => s.name === SHEET_NAME) || sheets[0];
   if (!chosen) throw new Error('xlsx 內找不到任何工作表');
-  let target = relMap[chosen.rid];
-  if (!target) throw new Error('找不到工作表 ' + chosen.name + ' 的關聯檔');
-  target = target.replace(/^\/?xl\//, '').replace(/^\//, '');
-  return { path: 'xl/' + target, name: chosen.name };
+  const all = [];
+  for (const s of sheets) {
+    let target = relMap[s.rid];
+    if (!target) { if (s === chosen) throw new Error('找不到工作表 ' + s.name + ' 的關聯檔'); continue; }
+    target = target.replace(/^\/?xl\//, '').replace(/^\//, '');
+    all.push({ path: 'xl/' + target, name: s.name });
+  }
+  return { path: all.find(s => s.name === chosen.name).path, name: chosen.name, all };
 }
 
 /* ---------- CSV 欄位引號（RFC-4180） ---------- */
@@ -166,7 +217,23 @@ function main() {
   const info = resolveSheetPath(entries);
   const sheetBuf = entries[info.path];
   if (!sheetBuf) throw new Error('xlsx 內缺少工作表檔：' + info.path);
-  const rows = parseSheet(sheetBuf.toString('utf8'), shared);
+  // 解析全部工作表為儲存格網格：主表鏡像公式的錯誤快取可回填參照目標（計算表）的值
+  const grids = {};
+  for (const s of info.all) {
+    if (entries[s.path]) grids[s.name] = parseSheetCells(entries[s.path].toString('utf8'), shared);
+  }
+  const cellGrid = grids[info.name];
+  let resolved = 0, unresolved = 0;
+  const rows = cellGrid.map(r => r.map(cell => {
+    if (cell && cell.t === 'e') {
+      const v = cellOut(grids, cell, 0);
+      if (v !== cell.v) resolved++; else unresolved++;
+      return v;
+    }
+    return cell ? cell.v : '';
+  }));
+  if (resolved) console.log('[xlsx_to_csv] 主表 ' + resolved + ' 格為鏡像公式錯誤快取，已由參照目標工作表回填數值。');
+  if (unresolved) console.warn('[xlsx_to_csv] ⚠ ' + unresolved + ' 格錯誤快取無法回填（非單純跨表參照），將原樣輸出錯誤值。');
 
   // 欄寬：至少對齊表頭欄數，含所有實際內容欄
   let width = 0;

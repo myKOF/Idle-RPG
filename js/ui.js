@@ -1068,7 +1068,15 @@ var BUFF_TIP_EMOJI = {
   lootUp: '🎁',
   hot: '💚',
   atkDown: '⚔️',
-  defDown: '🛡️'
+  defDown: '🛡️',
+  // 潛力技能增益
+  velocitySurge: '⚡',
+  lightningOverload: '🌩️',
+  chronoCdr: '🕳️',
+  sacredInvert: '✨',
+  allDmgUp: '🌀',
+  enemyAspdDown: '⏱️',
+  invuln: '🛡️'
 };
 
 function currentCombatPlayerEntity() {
@@ -1096,7 +1104,7 @@ function activeBuffsHtml() {
     var label = buffLabel(b.key);
     h += '<div class="active-buff-row"><span class="active-buff-main">' +
       (BUFF_TIP_EMOJI[b.key] || '💪') + ' ' + esc(label) + '</span><span class="active-buff-side">' +
-      buffSignedValueHtml(b.val) + ' ' + buffRemainHtml(b.remain) + '</span></div>';
+      (b.noVal ? '' : buffSignedValueHtml(b.val) + ' ') + buffRemainHtml(b.remain) + '</span></div>';
   }
   return h;
 }
@@ -1108,7 +1116,7 @@ function buffTooltipDesc() {
   for (var i = 0; i < buffs.length; i++) {
     var b = buffs[i];
     rows.push('<div class="buff-tip-row"><span>' + (BUFF_TIP_EMOJI[b.key] || '💪') + ' ' +
-      esc(buffLabel(b.key)) + '</span><span>' + buffSignedValueHtml(b.val) + ' ' +
+      esc(buffLabel(b.key)) + '</span><span>' + (b.noVal ? '' : buffSignedValueHtml(b.val) + ' ') +
       buffRemainHtml(b.remain) + '</span></div>');
   }
   return rows.join('');
@@ -1164,7 +1172,7 @@ function enemyBuffTooltipDesc(anchorEl) {
     var key = keys[k];
     var buff = ent.buffs && ent.buffs[key];
     if (!buff || buff.until <= GT) continue;
-    var down = key === 'atkDown' || key === 'defDown';
+    var down = key === 'atkDown' || key === 'defDown' || key === 'enemyAspdDown';
     rows.push(combatStatusRow(BUFF_TIP_EMOJI[key] || (down ? '📉' : '💪'), buffLabel(key) + (down ? '↓' : '↑'),
       buffSignedValueHtml(buff.val, down ? 'var(--danger)' : 'var(--good)'), combatStatusRemain(buff.until)));
   }
@@ -1186,7 +1194,7 @@ function entStatus(ent) {
   var bks = activeBuffKeys(ent);
   for (var b = 0; b < bks.length; b++) {
     var k = bks[b];
-    if (k === 'atkDown' || k === 'defDown') s.push('📉' + buffLabel(k) + '↓');
+    if (k === 'atkDown' || k === 'defDown' || k === 'enemyAspdDown') s.push('📉' + buffLabel(k) + '↓');
     else s.push('💪' + buffLabel(k) + '↑');
   }
   return s.join(' ');
@@ -2989,7 +2997,7 @@ function describePotentialSkill(def, lv) {
       var base = (typeof getStats === 'function' ? (getStats().aspdBonusBase || 0) : 0);
       var total = base + v;
       var perSec = (typeof ASPD_BASE !== 'undefined' ? ASPD_BASE : 1) * (1 + total / 100); // 突破上限後的實際攻速（次/秒）
-      return '攻速加成 +' + g(v) + '%，並突破 ' + s(5) + ' 次/秒攻速上限；含玩家原始攻速，當前攻速總加成 ' + g(total) + '%（約 ' + g(perSec) + ' 次/秒）';
+      return s(def.dur || 6) + ' 秒內突破 ' + s(5) + ' 次/秒攻速上限：攻速加成 +' + g(v) + '%，期間攻速總加成 ' + g(total) + '%（含玩家原始攻速，約 ' + g(perSec) + ' 次/秒）';
     }
     case 'chainLightning':
       return '使雷電系技能的雷電傷害額外提高 ' + g(v) + '%（' + s('魔法傷害') + '），並 ' + s(100) + '% 觸發連鎖閃電，於 ' + s(3) + '＋連擊數 名敵人間彈跳、每次造成 ' + s(10) + '% 該擊傷害，持續 ' + s(def.dur || 8) + ' 秒';
@@ -3008,7 +3016,7 @@ function describePotentialSkill(def, lv) {
     case 'sacredInvert':
       return '生命與法力回復額外提高 ' + g(v) + '%，且溢出的回復量有 ' + g(v) + '% 轉為對敵造成真實傷害，持續 ' + s(def.dur || 6) + ' 秒';
     case 'timeStop':
-      return '令所有敵人靜止行動，期間你的所有傷害提高 ' + g(v) + '%，持續 ' + s(def.dur || 8) + ' 秒';
+      return '令所有敵人靜止行動（' + s('不可被免疫') + '，含 BOSS），期間你的所有傷害提高 ' + g(v) + '%，持續 ' + s(def.dur || 8) + ' 秒';
   }
   return esc(def.desc || '');
 }
@@ -3880,7 +3888,7 @@ function fillGemTypeSelect(sel, includeAll) {
   }
   sel.innerHTML = h;
 }
-/* ---- 寶石合成（2 顆同種同級 → 下一階） ---- */
+/* ---- 寶石合成（3 顆同種同級 → 下一階） ---- */
 function renderFuseInfo() {
   var selT = $id('fuse-type'), selL = $id('fuse-level');
   var info = $id('fuse-info');
@@ -3891,18 +3899,18 @@ function renderFuseInfo() {
     for (var allType in GEM_TYPES) {
       var allCount = gemCount(allType, lv);
       total += allCount;
-      available += Math.floor(allCount / 2);
+      available += Math.floor(allCount / GEM_COMPOSE_INPUT_COUNT);
     }
     info.innerHTML = '「💎 全部類型寶石」' + GEM_NAMES[lv] + '庫存總計 ' + fmt(total) +
-      ' 顆｜每次消耗同種類 2 顆＋<img src="images/icon_gold.png" class="res-icon">' + fmt(FUSE_GOLD_COST[lv]) +
+      ' 顆｜每次消耗同種類 ' + GEM_COMPOSE_INPUT_COUNT + ' 顆＋<img src="images/icon_gold.png" class="res-icon">' + fmt(FUSE_GOLD_COST[lv]) +
       ' → 1 顆下一階寶石｜目前可合成 ' + available + ' 次';
     return;
   }
   if (!GEM_TYPES[t]) return;
   var n = gemCount(t, lv);
   info.innerHTML = '「' + GEM_TYPES[t].emoji + esc(GEM_NAMES[lv] + GEM_TYPES[t].name) + '」庫存 ' + fmt(n) +
-    ' 顆｜每次消耗 2 顆＋<img src="images/icon_gold.png" class="res-icon">' + fmt(FUSE_GOLD_COST[lv]) +
-    ' → 1 顆' + esc(GEM_NAMES[lv + 1] + GEM_TYPES[t].name) + '｜目前可合成 ' + Math.floor(n / 2) + ' 次';
+    ' 顆｜每次消耗 ' + GEM_COMPOSE_INPUT_COUNT + ' 顆＋<img src="images/icon_gold.png" class="res-icon">' + fmt(FUSE_GOLD_COST[lv]) +
+    ' → 1 顆' + esc(GEM_NAMES[lv + 1] + GEM_TYPES[t].name) + '｜目前可合成 ' + Math.floor(n / GEM_COMPOSE_INPUT_COUNT) + ' 次';
 }
 
 /* ---- 寶石轉換（九宮格；UI.convertSlots = [{type,lv,n}]，轉換時才實際扣庫存） ---- */
@@ -4969,7 +4977,7 @@ function initUI() {
     });
   }
 
-  // 寶石合成（2 顆同種同級 → 同種下一階）
+  // 寶石合成（3 顆同種同級 → 同種下一階）
   var fuseBtn = $id('fuse-btn');
   if (fuseBtn) {
     fuseBtn.addEventListener('click', function () {
@@ -4977,7 +4985,7 @@ function initUI() {
       var lv = parseInt($id('fuse-level').value, 10) || 1;
       var err = composeGems(t, lv);
       if (err) blog('⚠️ 合成失敗：' + err, 'warn');
-      else blog('🔀 寶石合成：' + (t === GEM_TYPE_ALL ? '全部類型寶石' : gemLabel(t, lv)) + ' ×2 → ' +
+      else blog('🔀 寶石合成：' + (t === GEM_TYPE_ALL ? '全部類型寶石' : gemLabel(t, lv)) + ' ×' + GEM_COMPOSE_INPUT_COUNT + ' → ' +
         (t === GEM_TYPE_ALL ? GEM_NAMES[lv + 1] + '下一階寶石' : gemLabel(t, lv + 1)), 'info', 'factory');
       renderGems();
     });
@@ -4986,7 +4994,7 @@ function initUI() {
       var lv = parseInt($id('fuse-level').value, 10) || 1;
       var made = 0, err = null;
       while (made < 2500 && !(err = composeGems(t, lv))) made++;
-      if (made > 0) blog('♻️ 全部合成：' + (t === GEM_TYPE_ALL ? '全部類型寶石' : gemLabel(t, lv)) + ' ×' + (made * 2) +
+      if (made > 0) blog('♻️ 全部合成：' + (t === GEM_TYPE_ALL ? '全部類型寶石' : gemLabel(t, lv)) + ' ×' + (made * GEM_COMPOSE_INPUT_COUNT) +
         ' → ' + (t === GEM_TYPE_ALL ? GEM_NAMES[lv + 1] + '下一階寶石' : gemLabel(t, lv + 1)) + ' ×' + made, 'good', 'factory');
       else blog('⚠️ 合成失敗：' + err, 'warn');
       renderGems();
@@ -5656,6 +5664,11 @@ function initUI() {
       else blog('⏹️ 自動鑄造已停用', 'info');
       UI.dirty.forge = true;
       UI.dirty.inv = true;
+    });
+    $id('forge-cancel').addEventListener('click', function () {
+      if (typeof cancelForge === 'function') {
+        cancelForge();
+      }
     });
     // 背包 / 寶石切頁
     $id('forge-invtab-items').addEventListener('click', function () {

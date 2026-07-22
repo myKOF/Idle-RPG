@@ -265,14 +265,12 @@ function computeStats(equipmentOverride) {
   st.pPen = capValue(A.pPen, STAT_CAPS.pPen);                                // 穿透上限（上限 0＝無上限）
   st.mPen = capValue(A.mPen, STAT_CAPS.mPen);
   st.hit = 100 + st.agi * 0 + A.hit;                          // 命中率：基礎 100% + 敏捷×a + 額外加成（無上限；戰鬥結算再 clamp 5~100）
-  // 潛力技能【極速之力】：攻速額外 +值%，且解除 ASPD_CAP（5 次/秒）上限（被動常駐，學會即生效）。
-  var potVelocity = (typeof potentialSkillActive === 'function' && potentialSkillActive('velocityForce')) ? potentialSkillValue('velocityForce') : 0;
-  st.aspdBonusBase = A.aspdPct + st.agi * PRIMARY_STAT_EFFECTS.agiAspdPct; // 玩家原始攻速加成%（未含極速之力、未夾 5 次/秒上限）
-  var aspdPctTotal = st.aspdBonusBase + potVelocity;
-  st.aspdUncapped = potVelocity > 0;
-  st.aspd = (ASPD_CAP > 0 && !st.aspdUncapped)
-    ? clamp(ASPD_BASE * (1 + aspdPctTotal / 100), ASPD_MIN, ASPD_CAP)
-    : Math.max(ASPD_MIN, ASPD_BASE * (1 + aspdPctTotal / 100)); // 攻速：基礎攻速、敏捷係數與上限皆由 data.js 控制；極速之力解除上限
+  // 攻速：基礎攻速、敏捷係數與上限皆由 data.js 控制。
+  // 潛力技能【極速之力】＝主動 buff：施放後 6 秒內由戰鬥端以 potentialVelocityFactor 解除 5 次/秒上限（js/potential.js）。
+  st.aspdBonusBase = A.aspdPct + st.agi * PRIMARY_STAT_EFFECTS.agiAspdPct; // 玩家原始攻速加成%（未夾 5 次/秒上限；供極速之力倍率與提示）
+  st.aspd = ASPD_CAP > 0
+    ? clamp(ASPD_BASE * (1 + st.aspdBonusBase / 100), ASPD_MIN, ASPD_CAP)
+    : Math.max(ASPD_MIN, ASPD_BASE * (1 + st.aspdBonusBase / 100));
   st.cdr = capValue(A.cdr, STAT_CAPS.cdr);       // 冷卻縮減上限（潛力【時間坍縮】於施放時另行突破，見 skills.js castSkill）
   st.castSpeed = capValue(A.castSpeed, STAT_CAPS.castSpeed);                      // 施法速度上限（上限 0＝無上限）
   st.lifesteal = capValue(A.lifesteal, STAT_CAPS.lifesteal);                      // 吸血上限（上限 0＝無上限）
@@ -1226,19 +1224,19 @@ function enchantCapFor(it) {
 }
 
 /* ---- 寶石合成 / 轉換 / 拆解換算（2026-07-09 改版）----
-   合成鏈：2 顆同種同級 → 1 顆同種下一級（消耗金幣 FUSE_GOLD_COST[素材等級]），
-   故 1 顆 N 級寶石的合成總成本 = 2^(N-1) 顆 1 級（5 級 = 16 顆）。 */
+   合成鏈：GEM_COMPOSE_INPUT_COUNT 顆同種同級 → 1 顆同種下一級（消耗金幣 FUSE_GOLD_COST[素材等級]），
+   故 1 顆 N 級寶石的合成總成本 = GEM_COMPOSE_INPUT_COUNT^(N-1) 顆 1 級（3 合 1 時，5 級 = 81 顆）。 */
 var GEM_CONVERT_SLOTS = 9;     // 寶石轉換九宮格格數
 var GEM_CONVERT_STACK = 1000;   // 每格同種同級寶石上限
 var GEM_DISMANTLE_KEEP = 0.7;  // 拆解保留比例（損失 30%）
 
 // 1 顆 lv 級寶石換算多少顆 1 級寶石
-function gemL1Worth(lv) { return Math.pow(2, lv - 1); }
-// 一般寶石拆解產出（同種 1 級寶石）= ⌊2^(等級-1) × 0.7⌋（例：5 級 → ⌊16×0.7⌋ = 11 顆）
+function gemL1Worth(lv) { return Math.pow(GEM_COMPOSE_INPUT_COUNT, lv - 1); }
+// 一般寶石拆解產出（同種 1 級寶石）= ⌊合成比例^(等級-1) × 0.7⌋（3 合 1 時，5 級 → ⌊81×0.7⌋ = 56 顆）
 function gemDismantleYield(lv) { return Math.floor(gemL1Worth(lv) * GEM_DISMANTLE_KEEP); }
-/* 融合寶石拆解：融合素材樹的葉子都是 5 階寶石（各值 16 顆 1 級）。
+/* 融合寶石拆解：融合素材樹的葉子都是 5 階寶石（3 合 1 時各值 81 顆 1 級）。
    fg.leaves 記錄素材 5 階總數（融合時雙方相加；不計成功率，一律視為 100%）
-   → 總成本 = 16 × leaves 顆 1 級，拆解產出 = ⌊總成本 × 0.7⌋（依屬性種類均分）。
+   → 總成本 = gemL1Worth(5) × leaves 顆 1 級，拆解產出 = ⌊總成本 × 0.7⌋（依屬性種類均分）。
    ※ fg.fusions 為「融合世代」（max+1，見 item.js），僅用於顯示與成功率遞減；
      舊存檔無 leaves 欄位時以 (fusions+1) 後備（migrateSave 會補）。 */
 function fusedGemL1Worth(fg) { return gemL1Worth(GEM_MAX_LEVEL) * (fg.leaves || ((fg.fusions || 0) + 1)); }

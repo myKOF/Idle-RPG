@@ -168,8 +168,11 @@ function decodeXml(s) {
     .replace(/&amp;/g, '&');
 }
 function colIndex(ref) { const m = /^([A-Z]+)/.exec(ref); let n = 0; for (const ch of m[1]) n = n * 26 + (ch.charCodeAt(0) - 64); return n - 1; }
+/* 命名空間正規化：OpenXML SDK 系工具存的 <x:row>/<x:c>… 剝成 <row>/<c>…（屬性如 r:id 不受影響） */
+function stripNsPrefix(xml) { return xml.replace(/<(\/?)[A-Za-z_][\w.-]*:/g, '<$1'); }
 function parseSharedStrings(xml) {
   if (!xml) return [];
+  xml = stripNsPrefix(xml);
   const out = [];
   xml.replace(/<si>([\s\S]*?)<\/si>/g, (m, inner) => {
     let t = ''; inner.replace(/<t[^>]*>([\s\S]*?)<\/t>/g, (mm, x) => { t += x; return ''; }); out.push(decodeXml(t)); return '';
@@ -177,29 +180,44 @@ function parseSharedStrings(xml) {
   return out;
 }
 function parseSheet(xml, shared) {
+  xml = stripNsPrefix(xml);
   const rows = [];
-  xml.replace(/<row\b[^>]*>([\s\S]*?)<\/row>/g, (m, inner) => {
+  xml.replace(/<row\b([^>]*)>([\s\S]*?)<\/row>/g, (m, rowAttr, inner) => {
+    const rm = /\br="(\d+)"/.exec(rowAttr);
+    const rowIdx = rm ? parseInt(rm[1], 10) - 1 : rows.length;
+    while (rows.length < rowIdx) rows.push([]);
     const cells = [];
-    inner.replace(/<c\s+r="([A-Z]+\d+)"([^>]*)>([\s\S]*?)<\/c>/g, (mm, ref, attr, body) => {
+    // 剝掉自閉合空儲存格（無值），避免配對式匹配把它與下一格黏在一起
+    inner = inner.replace(/<c\b[^>]*\/>/g, '');
+    inner.replace(/<c\b([^>]*)>([\s\S]*?)<\/c>/g, (mm, attr, body) => {
+      const refM = /\br="([A-Z]+\d+)"/.exec(attr);
+      if (!refM) return '';
       const tm = /t="([^"]+)"/.exec(attr); const t = tm ? tm[1] : '';
       let val = ''; const vm = /<v>([\s\S]*?)<\/v>/.exec(body);
       if (t === 's') { if (vm) val = shared[parseInt(vm[1], 10)] || ''; }
       else if (t === 'inlineStr') { let s = ''; body.replace(/<t[^>]*>([\s\S]*?)<\/t>/g, (x, y) => { s += y; return ''; }); val = decodeXml(s); }
       else if (t === 'str') { if (vm) val = decodeXml(vm[1]); }
       else { if (vm) val = vm[1]; }
-      cells[colIndex(ref)] = val; return '';
+      cells[colIndex(refM[1])] = val; return '';
     });
-    rows.push(cells); return '';
+    rows[rowIdx] = cells; return '';
   });
+  for (let r = 0; r < rows.length; r++) if (!rows[r]) rows[r] = [];
   return rows;
 }
 function resolveFirstSheetPath(entries) {
-  const wb = entries['xl/workbook.xml'] ? entries['xl/workbook.xml'].toString('utf8') : '';
-  const rels = entries['xl/_rels/workbook.xml.rels'] ? entries['xl/_rels/workbook.xml.rels'].toString('utf8') : '';
+  const wb = stripNsPrefix(entries['xl/workbook.xml'] ? entries['xl/workbook.xml'].toString('utf8') : '');
+  const rels = stripNsPrefix(entries['xl/_rels/workbook.xml.rels'] ? entries['xl/_rels/workbook.xml.rels'].toString('utf8') : '');
   const relMap = {};
-  rels.replace(/<Relationship\b[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"[^>]*\/?>/g, (m, id, target) => { relMap[id] = target; return ''; });
+  // 屬性順序不限（Excel 寫 Id 在前、OpenXML SDK 系寫 Target 在前）
+  rels.replace(/<Relationship\b[^>]*>/g, (tag) => {
+    const id = (/\bId="([^"]+)"/.exec(tag) || [])[1];
+    const target = (/\bTarget="([^"]+)"/.exec(tag) || [])[1];
+    if (id && target) relMap[id] = target;
+    return '';
+  });
   const sheets = [];
-  wb.replace(/<sheet\b[^>]*\/>/g, (tag) => {
+  wb.replace(/<sheet\b[^>]*\/?>/g, (tag) => {
     const rid = (/r:id="([^"]+)"/.exec(tag) || [])[1] || ''; sheets.push({ rid }); return '';
   });
   const chosen = sheets[0]; if (!chosen) throw new Error('xlsx 無工作表');
@@ -270,13 +288,16 @@ function zipStore(files) {
   eocd.writeUInt32LE(centralBuf.length, 12); eocd.writeUInt32LE(localBuf.length, 16); eocd.writeUInt16LE(0, 20);
   return Buffer.concat([localBuf, centralBuf, eocd]);
 }
-function writeXlsx(xlsxPath, sheetName, rows) {
+function writeXlsx(xlsxPath, sheetName, rows, extraSheets) {
+  // extraSheets（選填）：[{ name, rows }] 追加工作表（第 2 頁起）；讀取端（readXlsxRows/sync）只讀第一張表，
+  // 追加表僅供人閱讀（例如 Skills 的「變量定義」說明頁）。
+  const sheets = [{ name: sheetName, rows: rows }].concat(extraSheets || []);
   const contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
     '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
     '<Default Extension="xml" ContentType="application/xml"/>' +
     '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
-    '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
+    sheets.map((s, i) => '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('') +
     '</Types>';
   const rootRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
@@ -284,18 +305,18 @@ function writeXlsx(xlsxPath, sheetName, rows) {
     '</Relationships>';
   const workbook = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
-    '<sheets><sheet name="' + xmlEsc(sheetName) + '" sheetId="1" r:id="rId1"/></sheets></workbook>';
+    '<sheets>' + sheets.map((s, i) => '<sheet name="' + xmlEsc(s.name) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>').join('') + '</sheets></workbook>';
   const wbRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
-    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' +
+    sheets.map((s, i) => '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>').join('') +
     '</Relationships>';
   const files = [
     { name: '[Content_Types].xml', data: Buffer.from(contentTypes, 'utf8') },
     { name: '_rels/.rels', data: Buffer.from(rootRels, 'utf8') },
     { name: 'xl/workbook.xml', data: Buffer.from(workbook, 'utf8') },
-    { name: 'xl/_rels/workbook.xml.rels', data: Buffer.from(wbRels, 'utf8') },
-    { name: 'xl/worksheets/sheet1.xml', data: sheetXml(rows) }
+    { name: 'xl/_rels/workbook.xml.rels', data: Buffer.from(wbRels, 'utf8') }
   ];
+  sheets.forEach((s, i) => files.push({ name: 'xl/worksheets/sheet' + (i + 1) + '.xml', data: sheetXml(s.rows) }));
   fs.mkdirSync(path.dirname(xlsxPath), { recursive: true });
   fs.writeFileSync(xlsxPath, zipStore(files));
 }
@@ -306,7 +327,8 @@ function writeXlsx(xlsxPath, sheetName, rows) {
    dataRows 不含表頭；rows() 皆以表頭名稱定位欄位（容忍使用者調欄序）。
    =========================================================================== */
 function rowGetter(header) {
-  const idx = {}; header.forEach((h, i) => { idx[h] = i; });
+  // 標題格允許「第一行=欄名、換行後=中文說明」；欄位對應一律取第一行。
+  const idx = {}; header.forEach((h, i) => { idx[String(h).split('\n')[0].trim()] = i; });
   return (row, name) => { const i = idx[name]; return i == null ? '' : (row[i] == null ? '' : String(row[i])); };
 }
 
@@ -338,53 +360,31 @@ SCHEMAS.Gems = {
 
 /* ---- Talents ← TALENT_TREES + POTENTIAL_TALENTS ---- */
 SCHEMAS.Talents = {
-  name: 'Talents', jsFile: 'data', sheet: 'Talents', vars: ['TALENT_TREES', 'POTENTIAL_TALENTS'],
-  header: ['類型', '轉數', 'id', '名稱', 'icon圖號', '屬性桶', '低階值', '高階值', '每級值', '解鎖數', '停用', '停用原因', '說明',
-    '潛力類型', '冷卻', '基礎值', '傷害類型', '持續秒', '機制', '英文名', '風味'],
+  name: 'Talents', jsFile: 'data', sheet: 'Talents', vars: ['TALENT_TREES'],
+  header: ['類型', '轉數', 'id', '名稱', 'icon圖號', '屬性桶', '低階值', '高階值', '每級值', '解鎖數', '停用', '停用原因', '說明'],
   extract(src) {
     const TALENT_TREES = evalLiteral(extractLiteral(src, 'TALENT_TREES').literal);
-    const POTENTIAL_TALENTS = evalLiteral(extractLiteral(src, 'POTENTIAL_TALENTS').literal);
     const rows = [];
     Object.keys(TALENT_TREES).map(Number).sort((a, b) => a - b).forEach(turn => {
       TALENT_TREES[turn].forEach(t => {
         rows.push(['轉生天賦', String(turn), t.id, t.name, t.emoji, t.stat,
           numStr(t.low), numStr(t.high), '', t.unlocks == null ? '' : numStr(t.unlocks),
-          t.disabled ? 'TRUE' : '', t.disabledReason || '', t.desc,
-          '', '', '', '', '', '', '', '']);
+          t.disabled ? 'TRUE' : '', t.disabledReason || '', t.desc]);
       });
     });
-    // 潛力技能 V3：主動/被動技能（type/cd/base/per/dmgType/dur/mech/en/flavor；無數值/等級上限，等級比照一般技能）。
-    const numOpt = v => (v == null ? '' : numStr(v));
-    POTENTIAL_TALENTS.forEach(t => {
-      rows.push(['潛力天賦', '', t.id, t.name, t.emoji, '',
-        '', '', numOpt(t.per), '', t.disabled ? 'TRUE' : '', t.disabledReason || '', t.desc,
-        t.type || '', numOpt(t.cd), numOpt(t.base),
-        t.dmgType || '', numOpt(t.dur), t.mech || '', t.en || '', t.flavor || '']);
-    });
+    // 潛力技能 V3 已移至 Skills 表（js/skills.js 的 POTENTIAL_TALENTS）。
     return rows;
   },
   rebuild(dataRows, header) {
     const get = rowGetter(header);
-    const trees = {}; const potentials = [];
+    const trees = {};
     dataRows.forEach(r => {
       const kind = get(r, '類型').trim(); const id = get(r, 'id').trim();
       if (id === '') return;
       if (kind === '潛力天賦') {
-        // 依 data.js 潛力技能欄位順序組裝：id,name,en,emoji,cat,type,cd,base,per,[dmgType],[dur],mech,[disabled],desc,flavor
-        const o = { id: id, name: get(r, '名稱') };
-        const en = get(r, '英文名'); if (en !== '') o.en = en;
-        o.emoji = get(r, 'icon圖號'); o.cat = 'potential';
-        o.type = get(r, '潛力類型') || 'active';
-        const cd = get(r, '冷卻'); if (String(cd).trim() !== '') o.cd = toNum(cd);
-        o.base = toNum(get(r, '基礎值') || '0');
-        o.per = toNum(get(r, '每級值') || '0');
-        const dmgType = get(r, '傷害類型'); if (dmgType !== '') o.dmgType = dmgType;
-        const dur = get(r, '持續秒'); if (String(dur).trim() !== '') o.dur = toNum(dur);
-        o.mech = get(r, '機制');
-        if (toBool(get(r, '停用'))) { o.disabled = true; o.disabledReason = get(r, '停用原因'); }
-        o.desc = get(r, '說明');
-        const flavor = get(r, '風味'); if (flavor !== '') o.flavor = flavor;
-        potentials.push(o);
+        // 舊版殘留列（潛力已移至 Skills 表）：略過，避免誤併入天賦樹。
+        console.log('  – Talents：略過舊潛力列 ' + id + '（潛力已移至 Skills 表）');
+        return;
       } else {
         const turn = String(toNum(get(r, '轉數')));
         const o = { id: id, name: get(r, '名稱'), emoji: get(r, 'icon圖號'), stat: get(r, '屬性桶'),
@@ -400,8 +400,7 @@ SCHEMAS.Talents = {
       const items = trees[turn].map(o => '    ' + jsLit(o)).join(',\n');
       return '  ' + turn + ': [\n' + items + '\n  ]';
     }).join(',\n') + '\n};';
-    const potText = 'var POTENTIAL_TALENTS = [\n' + potentials.map(o => '  ' + jsLit(o)).join(',\n') + '\n];';
-    return { TALENT_TREES: treeText, POTENTIAL_TALENTS: potText };
+    return { TALENT_TREES: treeText };
   }
 };
 
@@ -459,25 +458,124 @@ SCHEMAS.Equipment_Affix = {
 };
 
 /* ---- Skills ← SKILLS + UNLOCKS ---- */
+/* Skills.xlsx 第 2 工作表「變量定義」：基礎/里程碑 fx 全部變量的中文定義（一行一個變量；僅供人閱讀，sync/apply 只讀第 1 表）。 */
+const FX_GLOSSARY_ROWS = [
+  ['基礎fx(JSON)'],
+  ['【傷害】'],
+  ['dmgType=傷害類型(phys=物理/magic=魔法/true=真實·無視防禦抗性)；'],
+  ['stat=傷害參照屬性(atk=物攻/matk=魔攻)；'],
+  ['base=Lv.1傷害%(占物攻/魔攻)；'],
+  ['per=每級傷害%增量；'],
+  ['hits=攻擊段數；'],
+  ['critBonus=此技能額外爆擊率%；'],
+  ['neverMiss=必定命中(true)；'],
+  ['gamble=傷害隨機50%~250%(true)；'],
+  ['selfDmgPct=自傷(損失自身最大生命%)；'],
+  ['【元素】'],
+  ['elem={type:元素種類,portion:元素占比0~1}；'],
+  ['elems={元素:占比,…}(融合技多元素)；'],
+  ['元素種類：fire=火/ice=冰/lightning=雷/poison=毒/light=聖/dark=暗；'],
+  ['【持續傷害】'],
+  ['dot={pct:每秒跳傷(占技能傷害%),dur:持續秒,name:顯示名}；'],
+  ['dotList=[多條dot](融合技)；'],
+  ['maxHpDotPct={base,per}=詛咒跳傷(占敵最大生命%/秒)；'],
+  ['dotDur=詛咒持續秒；'],
+  ['【控場】'],
+  ['stunDur=暈眩秒數；'],
+  ['slowDur=減速秒數；'],
+  ['【回復/護盾】'],
+  ['healPctMax={base,per}=回復最大生命%；'],
+  ['hotPct={base,per}=每秒再生最大生命%；'],
+  ['hotDur=再生持續秒；'],
+  ['shieldPctMax={base,per}=護盾(占最大生命%)；'],
+  ['healPctOfDmg=傷害轉生命回復%；'],
+  ['mpRestore=回復法力點數；'],
+  ['mpOnCrit=爆擊返還法力點數；'],
+  ['selfCleanse=淨化自身負面(true)；'],
+  ['【增益/減益】'],
+  ['buff/buff2={key,base,per,dur}=自身增益；'],
+  ['debuff/debuff2={key,base,per,dur}=敵方減益；'],
+  ['（其中 base=Lv.1數值%、per=每級增量、dur=持續秒）'],
+  ['key種類：atkUp=攻擊/defUp=防禦/aspdUp=攻速/evasionUp=閃避/critDmgUp=爆傷/lootUp=掉寶/thornsUp=反震/blockUp=格擋/hot=再生/atkDown=降敵攻/defDown=降敵防；'],
+  ['【處決/其他】'],
+  ['execBelow=處決閾值(敵血量%以下觸發)；'],
+  ['execMult=處決傷害倍率；'],
+  ['goldPer=金幣掠奪係數(×技能等級×角色等級)；'],
+  ['doubleCastPct=雙重施法機率%；'],
+  ['comboDetonate=冰火引爆追加傷害%(融合變異)；'],
+  ['【被動技】'],
+  ['passive={屬性:每級數值}；'],
+  ['屬性種類：hpPct=生命上限%/atkPct=物攻%/matkPct=魔攻%/aspdPct=攻速%/critRate=爆擊率/critDmg=爆擊傷害/lifesteal=吸血/mpFlat=法力上限/mpRegen=法力回復每秒/defPct=物防%/mdefPct=魔防%/goldBonus=金幣獲取%/xpBonus=經驗獲取%；'],
+  ['【潛力技能(系統分類=potential)】'],
+  ['type=類型(active=主動/passive=被動/passiveTrigger=被動觸發)；'],
+  ['base=效果基準值；'],
+  ['per=每級效果增量；'],
+  ['dur=增益持續秒；'],
+  ['dmgType=傷害類型(phys=物理/magic=魔法)；'],
+  ['mech=戰鬥機制代號(接線鍵勿改)；'],
+  ['en=英文名；'],
+  ['desc=質變說明(面板顯示的完整敘述)；'],
+  [''],
+  ['里程碑fx(JSON)'],
+  ['格式：{"等級":{覆蓋欄位},…}，例 {"4":{…},"8":{…}}；'],
+  ['＝技能升到該等級後，用其中欄位「覆蓋」基礎fx的同名欄位(淺層覆蓋、達標的高等級優先)；'],
+  ['可用變量與定義同上「基礎fx(JSON)」；'],
+  ['潛力技能不使用此欄；']
+];
+
 SCHEMAS.Skills = {
-  name: 'Skills', jsFile: 'skills', sheet: 'Skills', vars: ['SKILLS', 'UNLOCKS'],
+  name: 'Skills', jsFile: 'skills', sheet: 'Skills', vars: ['SKILLS', 'UNLOCKS', 'POTENTIAL_TALENTS'],
+  extraSheets: [{ name: '變量定義', rows: FX_GLOSSARY_ROWS }],
   header: ['id', '系統分類', '名稱', 'icon圖號', '施法消耗', '冷卻', '施放AI', '說明文字', '基礎fx(JSON)', '里程碑fx(JSON)'],
   extract(src) {
     const SKILLS = evalLiteral(extractLiteral(src, 'SKILLS').literal);
     const UNLOCKS = evalLiteral(extractLiteral(src, 'UNLOCKS').literal);
-    return Object.keys(SKILLS).map(id => {
+    const POTENTIAL_TALENTS = evalLiteral(extractLiteral(src, 'POTENTIAL_TALENTS').literal);
+    const rows = Object.keys(SKILLS).map(id => {
       const s = SKILLS[id];
       const un = UNLOCKS[id];
       return [id, s.cat, s.name, s.emoji,
         s.cost == null ? '' : numStr(s.cost), s.cd == null ? '' : numStr(s.cd),
         s.ai || '', s.flavor || '', JSON.stringify(s.fx), un ? JSON.stringify(un) : ''];
     });
+    // 潛力技能 V3（系統分類=potential；列順序＝解鎖順序）：與一般技能同格式——
+    // 共用欄放 名稱/icon/冷卻/說明文字(風味)，其餘機制參數（type/base/per/dur/dmgType/mech/en/desc）收進「基礎fx(JSON)」。
+    POTENTIAL_TALENTS.forEach(t => {
+      const fx = { type: t.type || 'active', base: t.base == null ? 0 : t.base, per: t.per == null ? 0 : t.per };
+      if (t.dur != null) fx.dur = t.dur;
+      if (t.dmgType) fx.dmgType = t.dmgType;
+      fx.mech = t.mech || '';
+      if (t.en) fx.en = t.en;
+      if (t.desc) fx.desc = t.desc;
+      rows.push([t.id, 'potential', t.name, t.emoji, '', t.cd == null ? '' : numStr(t.cd), '', t.flavor || '', JSON.stringify(fx), '']);
+    });
+    return rows;
   },
   rebuild(dataRows, header) {
     const get = rowGetter(header);
-    const skillEntries = []; const unlockEntries = [];
+    const skillEntries = []; const unlockEntries = []; const potentials = [];
     dataRows.forEach(r => {
       const id = get(r, 'id').trim(); if (id === '') return;
+      if (get(r, '系統分類').trim() === 'potential') {
+        // 潛力 fx JSON → 依 js/skills.js 欄位順序組裝：id,name,[en],emoji,cat,type,[cd],base,per,[dmgType],[dur],mech,desc,flavor
+        const fxRaw = get(r, '基礎fx(JSON)').trim();
+        if (fxRaw === '') throw new Error('潛力列「' + id + '」缺基礎fx(JSON)——可能是舊格式（獨立欄位版）的 xlsx/CSV，請先重生表格再套用');
+        const fx = parseJsonCell(fxRaw, id + ' 潛力fx');
+        const o = { id: id, name: get(r, '名稱') };
+        if (fx.en) o.en = String(fx.en);
+        o.emoji = get(r, 'icon圖號'); o.cat = 'potential';
+        o.type = fx.type || 'active';
+        const cd = get(r, '冷卻'); if (String(cd).trim() !== '') o.cd = toNum(cd);
+        o.base = toNum(fx.base == null ? '0' : fx.base);
+        o.per = toNum(fx.per == null ? '0' : fx.per);
+        if (fx.dmgType) o.dmgType = String(fx.dmgType);
+        if (fx.dur != null) o.dur = toNum(fx.dur);
+        o.mech = fx.mech == null ? '' : String(fx.mech);
+        o.desc = fx.desc == null ? '' : String(fx.desc);
+        const flavor = get(r, '說明文字'); if (flavor !== '') o.flavor = flavor;
+        potentials.push(o);
+        return;
+      }
       const o = { name: get(r, '名稱'), emoji: get(r, 'icon圖號'), cat: get(r, '系統分類') };
       const cost = get(r, '施法消耗').trim(), cd = get(r, '冷卻').trim(), ai = get(r, '施放AI').trim();
       if (cost !== '') o.cost = toNum(cost);
@@ -495,7 +593,8 @@ SCHEMAS.Skills = {
     });
     return {
       SKILLS: 'var SKILLS = {\n' + skillEntries.join(',\n') + '\n};',
-      UNLOCKS: 'var UNLOCKS = {\n' + unlockEntries.join(',\n') + '\n};'
+      UNLOCKS: 'var UNLOCKS = {\n' + unlockEntries.join(',\n') + '\n};',
+      POTENTIAL_TALENTS: 'var POTENTIAL_TALENTS = [\n' + potentials.map(o => '  ' + jsLit(o)).join(',\n') + '\n];'
     };
   }
 };
@@ -519,7 +618,7 @@ function cmdGen() {
     const dataRows = sc.extract(srcMap[sc.jsFile]);
     const rows = [sc.header].concat(dataRows);
     writeUtf8(csvPathOf(name), csvStringify(rows));
-    writeXlsx(xlsxPathOf(name), sc.sheet, rows);
+    writeXlsx(xlsxPathOf(name), sc.sheet, rows, sc.extraSheets);
     console.log('  ✔ ' + name + '：' + dataRows.length + ' 列 → CSV + xlsx');
   });
   console.log('[gen] 已由 JS 產生四表。');

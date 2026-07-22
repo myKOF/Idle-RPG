@@ -158,7 +158,9 @@ function towerTick(dt) {
       if (sres.killed) { endTowerFight(true); return; }
       if (p.hp <= 0) { endTowerFight(false, 'death'); return; } // 自傷技能
     }
-    p.atkCd -= dt * slowFactor(p) * (1 + buffVal(p, 'aspdUp') / 100);
+    // 潛力【極速之力】：施放期間以倍率放大攻擊頻率（突破 5 次/秒上限）
+    p.atkCd -= dt * slowFactor(p) * (1 + buffVal(p, 'aspdUp') / 100) *
+      (typeof potentialVelocityFactor === 'function' ? potentialVelocityFactor(p, st) : 1);
     if (p.atkCd <= 0) {
       var res = doPlayerAttack(p, b, 'tb-float');
       TOWER.dmgDealt += Math.max(0, (res.dmg || 0));
