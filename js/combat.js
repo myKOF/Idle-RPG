@@ -32,7 +32,7 @@ function toggleCombatPaused() {
 }
 
 function newPlayerEntity(st) {
-    return { hp: st.hp, mp: st.mp, shield: 0, shieldMax: 0, shieldMaxVersion: SHIELD_MAX_VERSION, shieldSkillBase: 0, shieldSkillPct: 0, atkCd: 1 / st.aspd, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {}, poisonUntil: 0, poisonDps: 0, _potentialRevived: false };
+    return { hp: st.hp, mp: st.mp, shield: 0, shieldMax: 0, shieldMaxVersion: SHIELD_MAX_VERSION, shieldSkillBase: 0, shieldSkillPct: 0, atkCd: 1 / st.aspd, skillCds: {}, skillGcd: 0, potentialCds: {}, buffs: {}, dots: [], effects: {}, poisonUntil: 0, poisonDps: 0, _lastStandAt: 0 };
 }
 
 function initFieldPlayer() {
@@ -163,6 +163,7 @@ function switchZone(zoneKey) {
    攻擊頻率控制類套用「控場遞減」（controlDurationFactor → formula.js §3）；
    成功回傳實際持續秒數（供顯示），遞減歸零或 BOSS 免疫回傳 false。 */
 function applyEffect(ent, key, dur) {
+    if (key !== 'invuln' && effectActive(ent, 'invuln')) return false; // 無敵：免疫負面效果（暈眩/減速等）
     if (isBossControlImmune(ent) && isAttackFrequencyControlKey(key)) return false;
     if (isAttackFrequencyControlKey(key)) {
         dur *= controlDurationFactor(ent);
@@ -175,12 +176,14 @@ function effectActive(ent, key) { return (ent.effects[key] || 0) > GT; }
 // 減速攻速倍率公式 slowFactor → js/formula.js §3
 
 function applyPoison(ent, dps, dur) {
+    if (effectActive(ent, 'invuln')) return; // 無敵：免疫中毒
     ent.poisonDps = Math.max(ent.poisonDps || 0, dps);
     ent.poisonUntil = GT + dur;
 }
 function poisonActive(ent) { return (ent.poisonUntil || 0) > GT; }
 // 中毒跳傷（無視防禦）；回傳是否致死
 function tickPoison(ent, dt) {
+    if (effectActive(ent, 'invuln')) return false; // 無敵：持續傷害不生效
     if (!poisonActive(ent)) return false;
     ent.hp -= ent.poisonDps * dt * globalDamageMultiplierForEntity(ent);
     if (ent.hp <= 0) { ent.hp = 0; return true; }
@@ -195,6 +198,7 @@ function cleanse(ent) {
 /* ---- 增益 / 減益（技能系統用） ----
    攻速類減益同樣套用「控場遞減」；成功回傳實際持續秒數，歸零/免疫回傳 false。 */
 function applyBuff(ent, key, val, dur) {
+    if ((key === 'atkDown' || key === 'defDown') && effectActive(ent, 'invuln')) return false; // 無敵：免疫敵方減益
     if (isBossControlImmune(ent) && isAttackFrequencyControlKey(key)) return false;
     if (isAttackFrequencyControlKey(key)) {
         dur *= controlDurationFactor(ent);
@@ -217,6 +221,7 @@ function activeBuffKeys(ent) {
 
 /* ---- 通用持續傷害（流血/燃燒/詛咒…；同名疊加取高） ---- */
 function applyDot(ent, dps, dur, name) {
+    if (effectActive(ent, 'invuln')) return; // 無敵：免疫持續傷害
     if (!ent.dots) ent.dots = [];
     for (var i = 0; i < ent.dots.length; i++) {
         if (ent.dots[i].name === name) {
@@ -235,6 +240,7 @@ function hasDots(ent) {
 }
 // 回傳是否致死
 function tickDots(ent, dt) {
+    if (effectActive(ent, 'invuln')) return false; // 無敵：持續傷害不生效
     if (!ent.dots || !ent.dots.length) return false;
     var total = 0;
     ent.dots = ent.dots.filter(function (d) { return d.until > GT; });
@@ -273,7 +279,7 @@ function playerAtkCfg(pEnt) {
         trueDmgPct: st.passives.trueDmg || 0, elemAtk: st.elemAtk, elemDmgPct: st.elemDmgPct, globalDmgRed: st.globalDmgRed,
         annihilate: st.passives.annihilate || 0,
         eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, normalDmg: st.normalDmg,
-        totalDmgPct: st.totalDmgPct,
+        totalDmgPct: (st.totalDmgPct || 0) + buffVal(pEnt, 'allDmgUp'), // 潛力【時空凝滯】：所有傷害提高
         dmgVsElem: st.dmgVsElem,
         isPlayer: true
     };
@@ -287,7 +293,10 @@ function playerDefCfg(pEnt) {
         blockRate: st.blockRate + buffVal(pEnt, 'blockUp'), blockDmgRed: st.blockDmgRed,
         pRes: st.pRes, mRes: st.mRes, resist: st.resist, ctrlRes: st.resist.ctrl,
         ccFactor: (1 - st.tenacity / 100) * (1 - st.ccRed / 100),
-        dmgRed: st.passives.sanctuary || 0, globalDmgRed: st.globalDmgRed, undying: st.passives.undying || 0, potentialRevive: st.potentialRevive || 0,
+        dmgRed: st.passives.sanctuary || 0, globalDmgRed: st.globalDmgRed, undying: st.passives.undying || 0,
+        invuln: !!effectActive(pEnt, 'invuln'), // 潛力【絕對領域】／【不屈意志】無敵
+        undyingGuard: (typeof potentialSkillActive === 'function' && potentialSkillActive('lastStandUndying')),
+        undyingGuardCd: (typeof potentialUndyingCd === 'function' ? potentialUndyingCd() : 90),
         normalDmgRed: st.normalDmgRed, eliteDmgRed: st.eliteDmgRed, bossDmgRed: st.bossDmgRed, // 敵種傷害抗性 → formula.js §3
         resVsElem: st.resVsElem, // 對屬性敵人抗性（8 轉天賦）→ formula.js §3
         thornsPct: (st.passives.thorns || 0) + buffVal(pEnt, 'thornsUp'), maxHp: st.hp, isPlayer: true
@@ -411,7 +420,10 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
     var skillLabel = skillName ? ' 使用【' + skillName + '】' : '';
     var logMsg = (mEnt.name || '怪物') + skillLabel + (mult && mult > 1 ? ' <span class="log-hl-bad">重擊</span>你，' : ' 攻擊你，');
     var playerFloatSel = playerEventFloatTarget(floatSel);
-    if (res.miss) {
+    if (res.invuln) {
+        floatPlayerEvent(playerFloatSel, '無敵!', 'defend');
+        logMsg += '<span class="log-hl-good">你處於無敵狀態，免疫了傷害！</span>';
+    } else if (res.miss) {
         floatPlayerEvent(playerFloatSel, '閃避!', 'dodge defend');
         logMsg += '<span class="log-hl-good">被你閃避了！</span>';
     } else {
@@ -483,6 +495,7 @@ function fieldTick(dt) {
     if (p.hp < st.hp) p.hp = Math.min(st.hp, p.hp + (st.hp * (BASE_HP_REGEN_PCT / 100 + hot / 100) + st.hpRegen) * dt);
     p.mp = Math.min(st.mp, p.mp + st.mpRegen * dt);
     tickSkillCds(p, dt);
+    if (typeof tickPotentialCds === 'function') tickPotentialCds(p, dt);
 
     // 持續傷害（玩家：中毒 / 詛咒等）
     if (tickPoison(p, dt) || tickDots(p, dt)) { onPlayerFieldDeath(); return; }
@@ -510,8 +523,17 @@ function fieldTick(dt) {
     enemies = liveFieldEnemies();
     if (!enemies.length) return;
 
+    // 潛力【聖療逆轉】溢出傷害（持續效果，不受暈眩影響）
+    if (typeof tickPotentialRegen === 'function' && tickPotentialRegen(p, st, dt, enemies, 'mv-float')) {
+        onFieldDeaths(); enemies = liveFieldEnemies(); if (!enemies.length) return;
+    }
     // 玩家行動（減速 -30%；時間扭曲等攻速增益加速）
     if (!effectActive(p, 'stun')) {
+        // 潛力主動技能自動施放（不佔裝載欄）
+        if (typeof castPotentialActives === 'function') {
+            var pres = castPotentialActives(p, enemies, 'mv-float');
+            if (pres && pres.killed) { onFieldDeaths(); enemies = liveFieldEnemies(); if (!enemies.length) return; }
+        }
         // 技能優先（依裝載順序）
         var sres = pickAndCastSkill(p, enemies, 'mv-float');
         if (sres && sres.killed) {
@@ -539,7 +561,8 @@ function fieldTick(dt) {
             m.atkCd -= dt * slowFactor(m);
             if (m.atkCd <= 0) {
                 doMonsterAttack(m, p, 'pv-float');
-                m.atkCd += 1 / m.aspd;
+                // 潛力【時間結界】：敵攻速降低 → 拉長攻擊間隔（降低後攻速 = 原攻速/(1+降低%)）
+                m.atkCd += (1 / m.aspd) * (1 + buffVal(m, 'enemyAspdDown') / 100);
                 if (p.hp <= 0) { onPlayerFieldDeath(); return; }
                 if (m.hp <= 0) onFieldKill(m); // 反震擊殺
             }
@@ -636,7 +659,7 @@ function rollFieldDrops(m) {
     // 菁英掉落：裝備與材料都在一般基礎上乘 ELITE_DROP_MULT（→ formula.js §5，與離線收益共用）。
     var rates = dropRatesFor(FIELD_DROP_TABLE, m.level);
     var eliteDropMult = m.elite ? ELITE_DROP_MULT : 1;
-    var dropMult = (1 + (lootBonus + (st.potentialLootDup || 0)) / 100) * eliteDropMult;
+    var dropMult = (1 + lootBonus / 100) * eliteDropMult;
     for (var r = 0; r < rates.length; r++) {
         if (!rates[r]) continue;
         var n = rollDropCount(rates[r] * dropMult);

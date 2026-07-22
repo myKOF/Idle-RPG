@@ -444,7 +444,8 @@ function makeEquipment(stage, opts) {
     sockets: [],     // 寶石插槽 [{type, level}|null, ...]
     upgrade: 0,
     synthesized: false,
-    locked: false
+    locked: false,
+    useAncientEssence: false
   };
   ensureSockets(it);
   // 稀有級以上附帶特殊被動（數值公式 passiveValueFor → js/formula.js §6）
@@ -548,12 +549,15 @@ function affixLine(a) {
   return def.name.replace('%', '') + ' +' + (def.pct ? pctStr(val) : fmt(val));
 }
 
-function rerollUsesAncientEssence() {
-  return typeof G !== 'undefined' && G && G.settings && !!G.settings.useAncientEssence;
+function ancientRerollEligible(it) {
+  return !!it && Number(it.level) >= ANCIENT_EQUIP_MIN_LEVEL && Number(it.rarity) >= ANCIENT_EQUIP_MIN_RARITY;
+}
+function rerollUsesAncientEssence(it) {
+  return ancientRerollEligible(it) && !!it.useAncientEssence;
 }
 // 開啟太古精華模式時，消耗量依裝備品質（rerollAncientEssenceCostFor → formula.js §7）
 function rerollAncientEssenceCost(it) {
-  return rerollUsesAncientEssence() ? rerollAncientEssenceCostFor(it.rarity) : 0;
+  return rerollUsesAncientEssence(it) ? rerollAncientEssenceCostFor(it.rarity) : 0;
 }
 function rerollResourceError(cost, ancientCost) {
   var missing = [];
@@ -685,7 +689,7 @@ function itemDetailHTML(it, cmp, opts) {
       var rrGoldHtml = '<span' + (G.player.gold >= rrCost.gold ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_gold.png" class="res-icon">' + fmt(rrCost.gold) + '</span>';
       var rrEssenceHtml = '<span' + (G.player.essence >= rrCost.essence ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_essence.png" class="res-icon">' + fmt(rrCost.essence) + '</span>';
       var rrAncientHtml = '';
-      if (rerollUsesAncientEssence()) {
+      if (rerollUsesAncientEssence(it)) {
         var rrAncientCost = rerollAncientEssenceCostFor(it.rarity);
         rrAncientHtml = ' &nbsp;<span' + ((G.player.ancientEssence || 0) >= rrAncientCost ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_ancient_essence.png" class="res-icon">' + rrAncientCost + '</span>';
       }
@@ -874,7 +878,7 @@ function rerollSingleAffix(it, affixKey) {
   
   var luck = getStats().luck;
   var newKey = wpick(pool);
-  var newAncient = it.level >= ANCIENT_EQUIP_MIN_LEVEL && it.rarity >= ANCIENT_EQUIP_MIN_RARITY && ancientCost > 0 && chance(ANCIENT_REROLL_CHANCE);
+  var newAncient = ancientRerollEligible(it) && ancientCost > 0 && chance(ANCIENT_REROLL_CHANCE);
   var newVal = newAncient ? ancientAffixValue(newKey, it.level, it.rarity) : rollAffixValue(newKey, it.level, it.rarity);
   if (!newAncient && luck && chance(luck / 2)) {
     newVal = Math.max(newVal, rollAffixValue(newKey, it.level, it.rarity));

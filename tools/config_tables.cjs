@@ -339,7 +339,8 @@ SCHEMAS.Gems = {
 /* ---- Talents ← TALENT_TREES + POTENTIAL_TALENTS ---- */
 SCHEMAS.Talents = {
   name: 'Talents', jsFile: 'data', sheet: 'Talents', vars: ['TALENT_TREES', 'POTENTIAL_TALENTS'],
-  header: ['類型', '轉數', 'id', '名稱', 'icon圖號', '屬性桶', '低階值', '高階值', '每級值', '解鎖數', '停用', '停用原因', '說明'],
+  header: ['類型', '轉數', 'id', '名稱', 'icon圖號', '屬性桶', '低階值', '高階值', '每級值', '解鎖數', '停用', '停用原因', '說明',
+    '潛力類型', '冷卻', '基礎值', '傷害類型', '持續秒', '機制', '英文名', '風味'],
   extract(src) {
     const TALENT_TREES = evalLiteral(extractLiteral(src, 'TALENT_TREES').literal);
     const POTENTIAL_TALENTS = evalLiteral(extractLiteral(src, 'POTENTIAL_TALENTS').literal);
@@ -348,12 +349,17 @@ SCHEMAS.Talents = {
       TALENT_TREES[turn].forEach(t => {
         rows.push(['轉生天賦', String(turn), t.id, t.name, t.emoji, t.stat,
           numStr(t.low), numStr(t.high), '', t.unlocks == null ? '' : numStr(t.unlocks),
-          t.disabled ? 'TRUE' : '', t.disabledReason || '', t.desc]);
+          t.disabled ? 'TRUE' : '', t.disabledReason || '', t.desc,
+          '', '', '', '', '', '', '', '']);
       });
     });
+    // 潛力技能 V3：主動/被動技能（type/cd/base/per/dmgType/dur/mech/en/flavor；無數值/等級上限，等級比照一般技能）。
+    const numOpt = v => (v == null ? '' : numStr(v));
     POTENTIAL_TALENTS.forEach(t => {
-      rows.push(['潛力天賦', '', t.id, t.name, t.emoji, t.stat,
-        '', '', numStr(t.per), '', t.disabled ? 'TRUE' : '', t.disabledReason || '', t.desc]);
+      rows.push(['潛力天賦', '', t.id, t.name, t.emoji, '',
+        '', '', numOpt(t.per), '', t.disabled ? 'TRUE' : '', t.disabledReason || '', t.desc,
+        t.type || '', numOpt(t.cd), numOpt(t.base),
+        t.dmgType || '', numOpt(t.dur), t.mech || '', t.en || '', t.flavor || '']);
     });
     return rows;
   },
@@ -364,10 +370,20 @@ SCHEMAS.Talents = {
       const kind = get(r, '類型').trim(); const id = get(r, 'id').trim();
       if (id === '') return;
       if (kind === '潛力天賦') {
-        const o = { id: id, name: get(r, '名稱'), emoji: get(r, 'icon圖號'), cat: 'potential',
-          stat: get(r, '屬性桶'), per: toNum(get(r, '每級值')) };
+        // 依 data.js 潛力技能欄位順序組裝：id,name,en,emoji,cat,type,cd,base,per,[dmgType],[dur],mech,[disabled],desc,flavor
+        const o = { id: id, name: get(r, '名稱') };
+        const en = get(r, '英文名'); if (en !== '') o.en = en;
+        o.emoji = get(r, 'icon圖號'); o.cat = 'potential';
+        o.type = get(r, '潛力類型') || 'active';
+        const cd = get(r, '冷卻'); if (String(cd).trim() !== '') o.cd = toNum(cd);
+        o.base = toNum(get(r, '基礎值') || '0');
+        o.per = toNum(get(r, '每級值') || '0');
+        const dmgType = get(r, '傷害類型'); if (dmgType !== '') o.dmgType = dmgType;
+        const dur = get(r, '持續秒'); if (String(dur).trim() !== '') o.dur = toNum(dur);
+        o.mech = get(r, '機制');
         if (toBool(get(r, '停用'))) { o.disabled = true; o.disabledReason = get(r, '停用原因'); }
         o.desc = get(r, '說明');
+        const flavor = get(r, '風味'); if (flavor !== '') o.flavor = flavor;
         potentials.push(o);
       } else {
         const turn = String(toNum(get(r, '轉數')));

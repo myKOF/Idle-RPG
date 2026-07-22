@@ -375,7 +375,34 @@ function migrateSave(data) {
   }
   data.player.ancientEssence = Math.max(0, Math.floor(Number(data.player.ancientEssence) || 0));
   data.player.soulOrigin = Math.max(0, Math.floor(Number(data.player.soulOrigin) || 0));
-  data.settings.useAncientEssence = !!data.settings.useAncientEssence;
+  // 太古精華由全局設定改為逐件裝備記錄；舊存檔的全局值只作為既有裝備的初始值。
+  var legacyAncientEssenceEnabled = !!data.settings.useAncientEssence;
+  var migrateAncientEssenceFlag = function (it) {
+    if (!it || typeof it !== 'object' || (it.kind !== 'equip' && !it.slot)) return;
+    if (typeof it.useAncientEssence !== 'boolean') it.useAncientEssence = legacyAncientEssenceEnabled;
+  };
+  Object.keys(data.equipment || {}).forEach(function (slot) { migrateAncientEssenceFlag(data.equipment[slot]); });
+  Object.keys(data.equipmentSets || {}).forEach(function (setKey) {
+    var set = data.equipmentSets[setKey];
+    if (set) Object.keys(set).forEach(function (slot) { migrateAncientEssenceFlag(set[slot]); });
+  });
+  [
+    data.inventory,
+    data.factory && data.factory.conveyor,
+    data.factory && data.factory.synthBuffer,
+    data.newForge && data.newForge.queue,
+    data.forge && data.forge.slots
+  ].forEach(function (items) {
+    if (Array.isArray(items)) items.forEach(migrateAncientEssenceFlag);
+  });
+  if (data.newForge && Array.isArray(data.newForge.furnaces)) {
+    data.newForge.furnaces.forEach(function (fu) {
+      if (!fu) return;
+      if (Array.isArray(fu.queue)) fu.queue.forEach(migrateAncientEssenceFlag);
+      if (Array.isArray(fu.belt)) fu.belt.forEach(migrateAncientEssenceFlag);
+    });
+  }
+  delete data.settings.useAncientEssence;
   // 神鑄永久開放相容：舊存檔只有 unlockNotified，合併預設後補回永久解鎖旗標。
   if (hadForgeUnlockNotice && data.forge) data.forge.unlocked = true;
   // 轉生欄位相容：舊存檔視為 0 轉；等級上限為 MAX_LEVEL（超過者夾回）。
@@ -479,9 +506,13 @@ function migrateSave(data) {
     if (data.player && data.player.reincarnations < 3) {
       data.player.talents.potentialLevels = {};
     } else {
+      // 潛力技能 V3：只保留現有潛力技能鍵並依等級上限（20＋轉生×10）夾限；舊版潛力（p1_time…）鍵一律清除。
+      var potMaxLv = POTENTIAL_SKILL_BASE_MAX_LEVEL + (Number(data.player.reincarnations) || 0) * 10;
+      var cleaned = {};
       POTENTIAL_TALENTS.forEach(function (def) {
-        data.player.talents.potentialLevels[def.id] = clamp(Math.floor(Number(data.player.talents.potentialLevels[def.id]) || 0), 0, POTENTIAL_SKILL_BASE_MAX_LEVEL + data.player.reincarnations * 10);
+        cleaned[def.id] = clamp(Math.floor(Number(data.player.talents.potentialLevels[def.id]) || 0), 0, potMaxLv);
       });
+      data.player.talents.potentialLevels = cleaned;
     }
   }
   var expectedSkillBudget = data.player.reincarnations > 0 ? SKILL_POINT_BUDGET_CAP : Math.min(SKILL_POINT_BUDGET_CAP, Math.max(0, (data.player.level || 1) + 1));
@@ -1095,7 +1126,7 @@ function applyOfflineProgress() {
   elapsed = Math.min(elapsed, OFFLINE_MAX_HOURS * 3600);
 
   var st = getStats();
-  var kills = offlineKillCount(elapsed, st.potentialOffline || 0);
+  var kills = offlineKillCount(elapsed, 0); // 潛力技能 V3 起無離線收益加成（舊 potentialOffline 已移除）
   if (kills < 1) return;
   var stage = offlineStageFor(G.stage.best);
   var m = monsterStatsFor(stage, true); // 菁英怪
@@ -1111,7 +1142,7 @@ function applyOfflineProgress() {
 
   // 掉落：與 rollFieldDrops 同一套表與倍率（無戰鬥中增益），逐殺單獨擲骰
   var lootBonus = st.loot;
-  var dropMult = (1 + (lootBonus + (st.potentialLootDup || 0)) / 100) * ELITE_DROP_MULT;
+  var dropMult = (1 + lootBonus / 100) * ELITE_DROP_MULT;
   var rates = dropRatesFor(FIELD_DROP_TABLE, m.level);
   var gemRates = fieldGemDropRatesFor(m.level);
   var bookRate = FIELD_BOOK_DROP_PCT * (1 + lootBonus / 100) * rw * ELITE_DROP_MULT;

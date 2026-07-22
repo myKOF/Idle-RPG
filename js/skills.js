@@ -372,6 +372,24 @@ function downgradeSkill(id) {
   return null;
 }
 
+// 刪除/重置技能：等級直接歸零並退還所有已花費技能點
+function deleteSkill(id) {
+  var sk = skillDef(id);
+  if (!sk) return '未知技能';
+  var lv = skillLevel(id);
+  if (!lv) return '尚未學習';
+  delete G.player.skills[id];
+  unequipSkillFromLoadout(id);
+  if (UI.fuseSlots) {
+    var fi = UI.fuseSlots.indexOf(id);
+    if (fi >= 0) UI.fuseSlots.splice(fi, 1);
+  }
+  blog('↩️ 已一鍵刪除（重置）技能：' + sk.emoji + sk.name + '，已全額退還 ' + lv + ' 技能點。', 'info');
+  if (sk.cat === 'passive') markStatsDirty();
+  UI.dirty.skills = true; UI.dirty.header = true;
+  return null;
+}
+
 function equipSkillToLoadout(id) {
   var sk = skillDef(id);
   if (!sk || sk.cat === 'passive') return '被動技能無需裝備';
@@ -523,7 +541,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
   var targetCount = Math.max(1, targets.length);
   pEnt.mp -= skillManaCost(sk, lv);
   if (!pEnt.skillCds) pEnt.skillCds = {};
-  pEnt.skillCds[id] = skillCdFor(sk);
+  pEnt.skillCds[id] = skillCdFor(sk, buffVal(pEnt, 'chronoCdr')); // 潛力【時間坍縮】：施放時額外 CDR
   pEnt.skillGcd = SKILL_GLOBAL_COOLDOWN;
   pEnt.atkCd += SKILL_CAST_LOCK * (1 - st.castSpeed / 100); // 施放硬直
   var out = { killed: false, dmg: 0 };
@@ -534,7 +552,13 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
 
   // === 傷害段 ===
   if (fx.dmgType) {
-    var rawBaseVal = ((fx.base || 0) + (fx.per || 0) * (lv - 1)) / 100 * (st[fx.stat] || st.atk);
+    // 潛力【混沌雙修】：物理技能額外獲得魔攻加成、魔法技能額外獲得物攻加成（互補加成）。
+    var atkStat = (st[fx.stat] || st.atk);
+    if ((st.crossCore || 0) > 0) {
+      var crossStat = (fx.stat === 'atk') ? (st.matk || 0) : (st.atk || 0);
+      atkStat += crossStat * st.crossCore / 100;
+    }
+    var rawBaseVal = ((fx.base || 0) + (fx.per || 0) * (lv - 1)) / 100 * atkStat;
     var baseVal = skillDamageShare(rawBaseVal, st.aoeDmg || 0, targetCount);
     baseVal *= fxMult;
     // 神鑄特效【神怒】：生命低於 30% 時技能傷害同步提高
@@ -570,6 +594,11 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
             elemAtk[fx.elem.type] = baseVal * portion;
           }
           portion = Math.min(portion, 0.8);
+          // 潛力【雷霆過載】：期間雷電系傷害額外提高（僅加成雷電占比部分）。
+          if (elemAtk && elemAtk.lightning) {
+            var loBoost = buffVal(pEnt, 'lightningOverload');
+            if (loBoost > 0) elemAtk.lightning *= 1 + loBoost / 100;
+          }
           var aCfg = {
             atk: baseVal * (1 - portion), dmgType: fx.dmgType, level: st.level,
             critRate: st.critRate + (fx.critBonus || 0), critDmg: st.critDmg,
@@ -577,13 +606,12 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
             annihilate: st.passives.annihilate || 0, // 神鑄特效【破滅】：技能暴擊同樣適用
             elemAtk: elemAtk, elemDmgPct: st.elemDmgPct,
             eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, normalDmg: st.normalDmg,
-            totalDmgPct: st.totalDmgPct,
+            totalDmgPct: (st.totalDmgPct || 0) + buffVal(pEnt, 'allDmgUp'), // 潛力【時空凝滯】：所有傷害提高
             dmgVsElem: st.dmgVsElem,
             isPlayer: true
           };
           // 處決：低血量加成
           if (fx.execBelow && targetEnt.hp / targetEnt.maxHp * 100 < fx.execBelow) aCfg.atk *= (fx.execMult || 2);
-          if (st.potentialExecute > 0 && targetEnt.hp / targetEnt.maxHp < 0.2) aCfg.atk *= 1 + st.potentialExecute / 100;
           dmgRes = resolveHit(pEnt, targetEnt, aCfg, monsterDefCfg(targetEnt));
         }
         if (!dmgRes.miss) {
@@ -620,6 +648,11 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
       }
     }
     out.dmg = totalDmg;
+    // 潛力【雷霆過載】：雷電系技能命中後觸發連鎖閃電。
+    if (typeof applyPotentialChainLightning === 'function') {
+      var chainRes = applyPotentialChainLightning(pEnt, fx, targets, totalDmg, comboReps, floatSel);
+      if (chainRes && chainRes.killed) out.killed = true;
+    }
     if (allMiss) parts.push('<span class="log-hl-bad">被閃避了！</span>');
     else parts.push((anyCrit ? '<span class="log-hl-good">爆擊</span>' : '') + '造成 ' + fmt(totalDmg) + (hits > 1 ? '（' + hits + ' 段）' : '') + (comboReps > 0 ? '<span class="log-hl-good">（連擊數 ×' + comboReps + '）</span>' : '') + ' 傷害');
     // 命中後效果
@@ -658,7 +691,6 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot) {
       }
       applySkillDebuffs(targets, fx, lv, parts, fxMult);
       if (st.manaSteal > 0) pEnt.mp = Math.min(st.mp, pEnt.mp + totalDmg * st.manaSteal / 100);
-      if (st.potentialManaRefund > 0) pEnt.mp = Math.min(st.mp, pEnt.mp + skillManaCost(sk, lv) * st.potentialManaRefund / 100);
       if (st.lifesteal > 0) {
         var beforeSkillLifeShield = Math.max(0, pEnt.shield || 0);
         healPlayer(pEnt, totalDmg * st.lifesteal / 100, st);
@@ -1059,6 +1091,11 @@ function skillBuffDisplayValue(defObj, lvArg, mult) {
   return defObj && defObj.key === 'lootUp' ? effectiveDropRateEffect(value) : value;
 }
 function describeSkill(id, lv, skipFusionDetail) {
+  // 潛力技能沿用同一份技能描述入口（供技能提示與升級面板共用，不另寫一套）。
+  if (typeof potentialDef === 'function' && typeof describePotentialSkill === 'function') {
+    var _pd = potentialDef(id);
+    if (_pd) return describePotentialSkill(_pd, Math.max(1, lv || 1), skipFusionDetail);
+  }
   var sk = skillDef(id);
   if (!sk) return '';
   lv = Math.max(1, lv || 1);

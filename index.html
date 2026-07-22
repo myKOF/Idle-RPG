@@ -106,9 +106,12 @@
                 <div class="sec-title equip-detail-head">
                   <span>裝備詳情</span>
                   <span class="equip-detail-controls">
-                    <label id="lbl-ancient-essence-toggle" data-tt-title="太古精華" data-tt-desc="" style="font-size: 13px; font-weight: normal; cursor: pointer; color: var(--text);">
-                      <input type="checkbox" id="toggle-ancient-essence" style="margin-right: 4px; cursor: pointer;">使用太古精華
-                    </label>
+                    <span id="ancient-essence-control" class="ancient-essence-control">
+                      <span id="ancient-essence-warning" class="ancient-essence-warning" style="display:none;"></span>
+                      <label id="lbl-ancient-essence-toggle" data-tt-title="太古精華" data-tt-desc="" style="font-size: 13px; font-weight: normal; cursor: pointer; color: var(--text);">
+                        <input type="checkbox" id="toggle-ancient-essence" style="margin-right: 4px; cursor: pointer;">使用太古精華
+                      </label>
+                    </span>
                     <label style="font-size: 13px; font-weight: normal; cursor: pointer; color: var(--text);">
                       <input type="checkbox" id="toggle-compare" style="margin-right: 4px; cursor: pointer;">比較裝備
                     </label>
@@ -738,6 +741,7 @@
   <script src="js/player.js"></script>
   <script src="js/special_rules.js"></script>
   <script src="js/combat.js"></script>
+  <script src="js/potential.js"></script>
   <script src="js/tower.js"></script>
   <script src="js/factory.js"></script>
   <script src="js/newforge.js"></script>

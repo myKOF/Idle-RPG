@@ -280,9 +280,15 @@ function sanitizeNewForge(data) {
   }
   for (i = 0; i < nf.furnaces.length; i++) {
     var fu = nf.furnaces[i];
-    if (!fu || typeof fu !== 'object') { nf.furnaces[i] = newForgeDefaultFurnace(i + 1); continue; }
+    if (!fu || typeof fu !== 'object') {
+      nf.furnaces[i] = newForgeDefaultFurnace(i + 1, i > 0 ? nf.furnaces[i - 1] : null);
+      continue;
+    }
     if (!Array.isArray(fu.qualities)) {
-      var v3 = newForgeDefaultFurnace(Math.max(1, Math.floor(Number(fu.id) || (i + 1))));
+      var v3 = newForgeDefaultFurnace(
+        Math.max(1, Math.floor(Number(fu.id) || (i + 1))),
+        i > 0 ? nf.furnaces[i - 1] : null
+      );
       var oldBelt = [];
       if (Array.isArray(fu.lines)) {
         // V2：多傳送帶 → 取第一條拆解線設定；各線帶上裝備拆包回佇列
@@ -311,7 +317,9 @@ function sanitizeNewForge(data) {
     // V3 淨化
     fu.id = Math.max(1, Math.floor(Number(fu.id) || (i + 1)));
     fu.enabled = fu.enabled !== false;
-    if (!Array.isArray(fu.qualities)) fu.qualities = newForgeDefaultFurnace(fu.id).qualities;
+    if (!Array.isArray(fu.qualities)) {
+      fu.qualities = newForgeDefaultFurnace(fu.id, i > 0 ? nf.furnaces[i - 1] : null).qualities;
+    }
     for (var r = 0; r < RARITIES.length; r++) fu.qualities[r] = fu.qualities[r] === true;
     fu.qualities[RARITIES.length - 1] = false; // 神鑄創世恆不入帶
     fu.qualities.length = RARITIES.length;

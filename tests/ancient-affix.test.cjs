@@ -113,28 +113,51 @@ test('勾選太古精華後洗煉會消耗 1 個，並以 30% 機率逐詞條判
   const context = loadGameContext();
   context.G = {
     player: { gold: 999999999, essence: 999, ancientEssence: 1 },
-    settings: { useAncientEssence: true }
+    settings: {}
   };
   context.getStats = () => ({ luck: 0 });
   context.markStatsDirty = () => {};
   context.chance = () => true;
   const item = context.makeEquipment(200, { rarity: 5, level: 200 });
+  item.useAncientEssence = true;
   item.affixes = item.affixes.map((affix) => ({ key: affix.key, val: affix.val, ancient: false }));
   assert.equal(context.rerollItemAffixes(item), null);
   assert.equal(context.G.player.ancientEssence, 0);
   assert.ok(item.affixes.every((affix) => affix.ancient));
 });
 
+test('太古精華開關逐件記錄，未達 Lv.200 的裝備不消耗也不產生太古詞條', () => {
+  const context = loadGameContext();
+  context.G = {
+    player: { gold: 999999999, essence: 999, ancientEssence: 1 },
+    settings: {}
+  };
+  context.getStats = () => ({ luck: 0 });
+  context.markStatsDirty = () => {};
+  context.chance = () => true;
+  const low = context.makeEquipment(199, { rarity: 5, level: 199 });
+  low.useAncientEssence = true;
+  assert.equal(context.rerollUsesAncientEssence(low), false);
+  assert.equal(context.rerollItemAffixes(low), null);
+  assert.equal(context.G.player.ancientEssence, 1);
+  assert.ok(low.affixes.every((affix) => !affix.ancient));
+});
+
 test('太古資源與裝備詳情 UI 已註冊', () => {
   const root = path.resolve(__dirname, '..');
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   const data = fs.readFileSync(path.join(root, 'js/data.js'), 'utf8');
+  const item = fs.readFileSync(path.join(root, 'js/item.js'), 'utf8');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
   assert.match(data, /ANCIENT_REROLL_CHANCE\s*=\s*30/);
+  assert.match(item, /useAncientEssence:\s*false/);
   assert.match(html, /id="r-ancient-essence"/);
   assert.match(html, /id="toggle-ancient-essence"/);
   assert.match(ui, /ancientEssence/);
+  assert.match(ui, /需裝備 Lv\.200 以上且史詩以上/);
+  assert.match(ui, /ancientRerollEligible\(it\)/);
+  assert.doesNotMatch(ui, /G\.settings\.useAncientEssence/);
   assert.match(ui, /ancient-affix/);
   assert.match(ui, /function ancientStarBadgeHTML/);
   assert.match(ui, /Math\.min\(7, count\)/);

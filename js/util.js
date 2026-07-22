@@ -30,7 +30,7 @@ function enemyEventFloatTarget(ent, floatSel) {
 
 function floatEnemyEvent(ent, floatSel, text, cls, damageValue) {
   if (typeof floatText !== 'function') return;
-  floatText(enemyEventFloatTarget(ent, floatSel), text, cls, damageValue);
+  floatText(enemyEventFloatTarget(ent, floatSel), text, cls, damageValue, ent);
 }
 
 var _uid = 0;

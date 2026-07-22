@@ -58,7 +58,7 @@ function talentLevel(id) {
 }
 
 function potentialLevel(id) {
-  var max = potentialSkillMaxLv();
+  var max = potentialSkillMaxLv(id);
   var v = talentState().potentialLevels[id];
   return clamp(Math.floor(Number(v) || 0), 0, max);
 }
@@ -137,8 +137,22 @@ function potentialUnlocked(id) {
   return idx >= 0 && idx < potentialUnlockLimit() && !potentialTemporarilyDisabled(id);
 }
 
+/* 潛力技能 V3：等級上限比照一般技能＝初始 20 級，每轉生 +10（無各自數值上限）。 */
 function potentialSkillMaxLv() {
   return POTENTIAL_SKILL_BASE_MAX_LEVEL + reincarnationCountSafe() * 10;
+}
+
+/* 潛力技能當前生效數值 = base + per × 等級（等級已夾在 0~上限；不再另設數值上限）。 */
+function potentialSkillValue(idOrDef, lvArg) {
+  var def = (idOrDef && typeof idOrDef === 'object') ? idOrDef : potentialDef(idOrDef);
+  if (!def) return 0;
+  var lv = (lvArg === undefined) ? potentialLevel(def.id) : clamp(Math.floor(Number(lvArg) || 0), 0, potentialSkillMaxLv());
+  return (Number(def.base) || 0) + (Number(def.per) || 0) * lv;
+}
+
+/* 潛力技能是否已學會且已解鎖（供戰鬥模組與 computeStats 判定被動效果生效）。 */
+function potentialSkillActive(id) {
+  return potentialLevel(id) > 0 && potentialUnlocked(id) && !potentialTemporarilyDisabled(id);
 }
 
 /* GM 直接切換轉生次數時沒有完整的歷史升級紀錄，
@@ -181,10 +195,7 @@ function talentBonusesTemplate() {
     dmgVsFire: 0, dmgVsIce: 0, dmgVsLightning: 0, dmgVsPoison: 0, dmgVsLight: 0, dmgVsDark: 0,
     resVsFire: 0, resVsIce: 0, resVsLightning: 0, resVsPoison: 0, resVsLight: 0, resVsDark: 0,
     patkPct: 0, matkPct: 0, totalDmgPct: 0, gemEff: 0, skillPhys: 0,
-    skillMagic: 0, skillDef: 0, skillSpecial: 0, skillPassive: 0,
-    potentialCdr: 0, potentialRevive: 0, potentialLootDup: 0, potentialInvCap: 0,
-    potentialElemAtk: 0, potentialExecute: 0, potentialShieldOverflow: 0,
-    potentialManaRefund: 0, potentialTowerTime: 0, potentialOffline: 0
+    skillMagic: 0, skillDef: 0, skillSpecial: 0, skillPassive: 0
   };
 }
 
@@ -195,9 +206,8 @@ function talentStatBonuses() {
     var value = talentLevelValue(def, talentLevel(def.id)) * talentCompleteMultiplier(entry.turn);
     if (def.stat !== 'potentialUnlock' && out[def.stat] !== undefined) out[def.stat] += value;
   });
-  POTENTIAL_TALENTS.forEach(function (def) {
-    if (out[def.stat] !== undefined) out[def.stat] += potentialLevel(def.id) * def.per;
-  });
+  // 潛力技能 V3 不再透過 talentStatBonuses 提供被動數值；
+  // 其被動效果（極速之力攻速／混沌雙修）於 computeStats 直接併入，主動效果由 js/potential.js 於戰鬥中施放。
   return out;
 }
 
@@ -261,7 +271,7 @@ function potentialUpgrade(id) {
   if (potentialTemporarilyDisabled(id)) return '此潛力技能目前暫不開放升級';
   if (!potentialUnlocked(id)) return '潛力節點尚未解鎖';
   var lv = potentialLevel(id);
-  if (lv >= potentialSkillMaxLv()) return '已達最高等級';
+  if (lv >= potentialSkillMaxLv(id)) return '已達最高等級';
   if (typeof availableSkillPoints !== 'function' || availableSkillPoints() <= 0) return '技能點不足';
   var cost = typeof skillUpgradeCost === 'function' ? skillUpgradeCost(lv) : 0;
   if ((G.player.gold || 0) < cost) return '金幣不足，需要 ' + cost + ' 金幣';
@@ -273,8 +283,8 @@ function potentialUpgrade(id) {
 
 function potentialMax(id) {
   var start = potentialLevel(id), changed = false;
-  while (potentialLevel(id) < potentialSkillMaxLv() && potentialUpgrade(id) === null) changed = true;
-  return changed ? null : (start >= potentialSkillMaxLv() ? '已達最高等級' : '技能點或金幣不足');
+  while (potentialLevel(id) < potentialSkillMaxLv(id) && potentialUpgrade(id) === null) changed = true;
+  return changed ? null : (start >= potentialSkillMaxLv(id) ? '已達最高等級' : '技能點或金幣不足');
 }
 
 function potentialDowngrade(id) {
@@ -301,6 +311,6 @@ function talentSkillEffectMultiplier(cat) {
 }
 
 function inventoryCapacityWithTalents(base) {
-  var b = talentStatBonuses();
-  return (base === undefined ? INVENTORY_CAP + (G.player.invUpgrades || 0) : base) + b.potentialInvCap;
+  // 潛力技能 V3 起，潛力不再提供背包容量加成（舊 potentialInvCap 已移除）。
+  return (base === undefined ? INVENTORY_CAP + (G.player.invUpgrades || 0) : base);
 }

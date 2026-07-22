@@ -25,11 +25,18 @@ function equipmentSetUnlocked(i) {
   return equipmentSetUnlockedAtLevel(i, G.player.level);
 }
 
-// 熔爐（正式版）：建立一座預設熔爐（單傳送帶）。品質勾選預設依企劃示意：
-// 普通~傳說＝勾選（自動入帶拆解）、神話/創世＝不勾（保留）；神鑄創世恆不入帶。
-function newForgeDefaultFurnace(id) {
+// 熔爐（正式版）：建立一座預設熔爐。第一座只勾選普通，後續熔爐沿用上一座設定。
+// 神鑄創世永遠不入帶。
+function newForgeDefaultFurnace(id, previousFurnace) {
   var qualities = [];
-  for (var r = 0; r < RARITIES.length; r++) qualities.push(r <= 5);
+  if (previousFurnace && Array.isArray(previousFurnace.qualities)) {
+    qualities = previousFurnace.qualities.slice(0, RARITIES.length);
+  } else {
+    for (var r = 0; r < RARITIES.length; r++) qualities.push(r === 0);
+  }
+  while (qualities.length < RARITIES.length) qualities.push(false);
+  qualities.length = RARITIES.length;
+  qualities[GODFORGED_IDX] = false;
   return {
     id: id,
     enabled: true,
@@ -127,7 +134,7 @@ function newGameState() {
       autoDust: true, result: null, log: [], unlockNotified: false, unlocked: false,
       autoFill: null, autoForge: false, crafting: null
     },
-    settings: { compareEq: true, useAncientEssence: false },
+    settings: { compareEq: true },
     firstRunAt: Date.now()
   };
 }

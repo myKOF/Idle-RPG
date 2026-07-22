@@ -1,5 +1,42 @@
 # PLAN.md — 開發計畫
 
+## 熔爐品質預設值（2026-07-22）
+
+### 需求
+
+- 第一座熔爐預設只勾選普通品質。
+- 新增第二座起，品質勾選沿用上一座，且各座使用獨立陣列。
+
+### 任務
+
+1. [DONE] 修正 `newForgeDefaultFurnace()` 的首座預設與上一座設定複製。
+2. [DONE] 讓舊存檔淨化時，缺少品質設定的熔爐依序套用相同預設規則。
+3. [DONE] 通過熔爐專項測試與建置驗證。
+
+## 太古精華改為逐件裝備設定（2026-07-22）
+
+### 任務
+
+1. [DONE] 每件裝備新增獨立太古精華開關，舊存檔完成相容遷移。
+2. [DONE] 裝備切換時同步開關；未達 Lv.200 或低於史詩時自動關閉並顯示淺紅提示。
+3. [DONE] 更新開關 tooltip，通過太古測試與建置驗證。
+
+## 當前任務：修正敵人生成後瞬殺時傷害浮字遺失（2026-07-21）
+
+### 根因
+
+- 戰鬥每 100ms 更新、介面每 200ms 重繪；敵人生成後可能在敵卡片與 `mv-float-*` 浮字層建立前被一擊擊殺。
+- `floatText()` 找不到浮字層時直接略過，造成畫面只看到死亡敵人 `0 / maxHP`，但經驗與掉落仍已正常結算。
+
+### 執行項目
+
+1. [DONE] `tests/player-event-float.test.cjs`：補上新敵人尚未建立卡片時，傷害浮字需延後補顯示的回歸檢查。
+2. [DONE] `js/util.js`＋`js/ui.js`：浮字事件帶上敵人實體；找不到浮層時暫存，`renderBattle()` 建立敵卡後補送，且丟棄已離開目前敵人集合的舊事件。
+3. [DONE] 瞬殺浮字補顯示時，敵人紅色血條先顯示 100%，再以 100ms 線性動畫降至 0%。
+4. [DONE] 執行專屬測試、build、完整測試與自我審查；完整測試僅有既有基線失敗。
+
+---
+
 ## 當前任務：技能統計筆數不足——依冷卻歸零順序輪轉（2026-07-20）
 
 ### 需求（使用者指示）
@@ -1875,3 +1912,42 @@ CSS transition，避免出現追趕式跳動。
 7. [DONE] 同步 game_formula.md（來源指標）/ 參數表使用說明（撥離四表章節）/ PLAN / PATCH / 記憶。
 
 ⚠️ 回報使用者的既有問題（非本次造成）：`套用參數.bat` 現況會在 [3/3] apply_params 崩潰——xlsx 缺 `4-高塔BOSS/魔種(煉獄之塔)` 列（只在 CSV）。需把該列補進 xlsx 才能跑完整條 .bat。
+
+---
+
+# 【2026-07-21】潛力技能 V3：換版並完整功能實作
+
+## 需求
+- 來源：`天賦V3.xlsx` 第 2 頁「潛力技能」。刪除當前所有潛力技能（舊 `POTENTIAL_TALENTS` 10 個被動數值天賦），換成新版 10 個「主動/被動技能」，並完整功能實作＋開放。
+- 使用者裁示：
+  1. 實作深度＝**完整功能實作並開放**。
+  2. 主動潛力技能＝**學會即自動施放**（不佔一般技能裝載欄）；被動潛力技能學會即常駐。
+  3. 開放方式＝**沿用 3/4/7/10 轉「潛力」天賦節點解鎖**（un-disable 那些節點，滿級各解鎖 3+3+3+1＝10 個）。
+
+## 新資料表（POTENTIAL_TALENTS 重新定義；每技能有各自 maxLv＝ceil((max-base)/per)）
+| id | 名稱 | 類型 | cd(s) | base | per | max | maxLv | 機制 |
+|---|---|---|---|---|---|---|---|---|
+| velocityForce | 極速之力 | 被動效果(顯示主動) | 60 | 0 | 5 | 60(攻速%) | 12 | 攻速+值%，且解除 5 次/秒(ASPD_CAP)上限（常駐；無持續時間故實作為學會即常駐，主動/CD 視為旗標） |
+| lightningOverdrive | 雷霆過載 | 主動 | 45 | 0 | 0.4 | 60(雷電傷%) | 150 | 8s buff：雷電傷害+值%；雷電系技能命中觸發連鎖閃電，向最多 (3+連擊數) 名敵人各追加 10% 該次傷害 |
+| chronoCollapse | 時間坍縮 | 主動 | 75 | 0 | 0.2 | 85(CDR%) | 425 | 3s buff：所有技能 CDR+值%（突破 60% 上限，施放時 CD 計算用之總 CDR 夾 90%）；不影響自身 CD |
+| absoluteSanctuary | 絕對領域 | 主動 | 75 | 0.5 | 0.025 | 3.5(秒) | 120 | 施放獲無敵 (base+lv×per) 秒：免疫所有傷害與負面效果 |
+| lastStandUndying | 不屈意志 | 被動觸發 | 90 | 0 | 0.4 | 50(秒) | 125 | 受致命傷免死+無敵 1s；內部 CD＝90−值 秒（不吃 CDR） |
+| timeBarrier | 時間結界 | 主動 | 45 | 0 | 1 | 150(%) | 150 | 8s：敵人攻速降低值%（敵 atkCd ×(1+值/100)） |
+| dualCoreFusion | 混沌雙修 | 被動 | — | 0 | 0.6 | 80(%) | 134 | 物理技能額外+值%魔攻加成、魔法技能額外+值%物攻加成（castSkill 傷害段） |
+| omegaImpact | 必殺一擊 | 主動 | 60 | 100 | 3 | 460(bonus%) | 154 | 必殺 nuke：物理傷害 = 爆擊率% × (100+min(lv×3,460))% × 物攻（經 resolveHit，不再吃暴擊） |
+| sacredInversion | 聖療逆轉 | 主動 | 45 | 0 | 0.5 | 100(%) | 200 | 6s：生命/法力回復+值%；溢出的回復量 ×值% 對敵造成真實傷害 |
+| chronosStasis | 時空凝滯 | 主動 | 120 | 0 | 0.5 | 100(%) | 200 | 8s：所有敵人靜止(stun，遵守 BOSS 控場免疫)＋玩家所有傷害+值% |
+
+## 架構
+- 主動潛力技能：`js/potential.js` 新模組，`tickPotentialCds` + `castPotentialActives`；於 `fieldTick`(combat.js) 與 `towerTick`(tower.js) 呼叫；獨立 `pEnt.potentialCds`，不佔 loadout。
+- 被動：velocityForce（攻速+解除上限）與 dualCoreFusion（crossCore）於 `computeStats` 併入 `st`。lastStandUndying 於 `resolveHit` 致命段處理（取代舊 potentialRevive）。
+- 無敵：新增 `pEnt.effects.invuln`；`resolveHit` 對玩家：invuln 期間傷害歸 0、且擋下負面效果套用（cleanse 由 castSkill 觸發）。
+- CDR 突破：`skillCdFor(sk, extraCdr)` 增選參；castSkill 傳入 chrono buff 值，總 CDR 夾 90%。
+
+## 移除的舊接線（潛力被動數值全部拆除，效果歸 0）
+potentialCdr / potentialRevive / potentialLootDup / potentialInvCap / potentialElemAtk / potentialExecute / potentialShieldOverflow / potentialManaRefund / potentialTowerTime / potentialOffline —— 於 data.js、formula.js、combat.js、skills.js、save.js、talents.js、ui.js 全數移除。
+
+## 同步
+- config：Talents.csv/xlsx 潛力列換新 shape、un-disable 節點；config_tables.cjs 潛力欄位映射更新（避免 套用參數.bat 覆蓋）。
+- 文件：game_formula.md（潛力技能公式）、LV_upgrade_system.md（潛力經 3/4/7/10 轉節點開放）、PATCH.md。
+- 驗證：npm run build 綠、隔離埠 5501 冒煙 0 錯。

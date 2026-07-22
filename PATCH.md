@@ -1,5 +1,26 @@
 # PATCH.md
 
+## 變更紀錄：熔爐品質勾選預設（2026-07-22）
+
+- 第一座熔爐的 `qualities` 預設只勾選普通品質，其餘品質不勾選；神鑄創世維持永遠保留。
+- `addNewForgeFurnace()` 新增熔爐時複製上一座的品質陣列內容，但不共用陣列參照，因此後續修改各座設定互不影響。
+- `sanitizeNewForge()` 對缺少品質設定的舊熔爐依序套用首座預設／上一座設定，保留已有設定不變。
+- 驗證：`node --test tests/new-forge.test.cjs`，24/24 通過。
+
+## 變更紀錄：太古精華改為逐件裝備設定（2026-07-22）
+
+- 裝備新增 `useAncientEssence`，不再使用全局 `G.settings.useAncientEssence`。
+- 太古精華僅對裝備等級 200 以上、史詩以上裝備有效；不符合條件時開關自動關閉，並在開關上方顯示淺紅提示。
+- 開關 tooltip 補充等級與品質限制；舊存檔的全局開關值會遷移為各裝備的初始值。
+- 驗證：太古相關測試 12/12 通過，`npm.cmd run build` 通過。
+
+## 修正：敵人生成後瞬殺時傷害浮字遺失（2026-07-21）
+
+- **根因**：戰鬥 tick 為 100ms、UI tick 為 200ms；新敵人在第一個 UI frame 前被一擊擊殺時，`mv-float-*` 尚未存在，原本 `floatText()` 直接略過該次傷害字。死亡結算仍會正常執行，因此經驗與掉落不受影響；截圖中的 `0 / maxHP` 是真實死亡狀態。
+- **修正**：`floatEnemyEvent()` 將敵人實體一併傳給 UI；`js/ui.js` 找不到敵方浮層時暫存事件，`renderBattle()` 建立敵卡後補顯示，並驗證敵人仍屬於當前集合，避免跨波次顯示舊傷害。
+- **血條呈現**：若補顯示的浮字對應敵人已死亡，敵卡建立後先顯示 100% 紅色血條，再以 100ms 線性動畫降至 0%，讓瞬殺過程可見。
+- **測試**：`tests/player-event-float.test.cjs` 新增新敵人卡片尚未建立時的浮字延後顯示回歸檢查。
+
 ## 調整：高塔BOSS挑戰金幣消耗改為依樓層分層（2026-07-21）
 
 - 需求（參數表 row 96「4-高塔BOSS／挑戰金幣消耗」標「調整」，公式 `round(a×樓層^b)`）：由原本全樓層單一 a=100000,b=2.2，改為依樓層分三段套用不同 a/b：
@@ -2484,3 +2505,36 @@
 - 背包由固定三排改為依目前顯示排數調整高度；背包外向下滾輪每次最多增加一排，最多顯示九排。
 - 物品超過九排後仍保留背包框內的垂直捲軸；背包框內滾輪行為不變。
 - `tests/inventory-visible-rows.test.cjs` 新增排數計算與滾輪觸發回歸測試。
+
+---
+
+## 【2026-07-21】潛力技能 V3：換版並完整功能實作＋開放
+
+**需求**：以《天賦V3.xlsx》第 2 頁「潛力技能」取代舊版全部潛力技能，完整功能實作並開放。使用者裁示：完整實作、主動＝學會即自動施放（不佔裝載欄）、沿用 3/4/7/10 轉天賦節點解鎖。
+
+**資料換版**
+- `js/data.js`：`POTENTIAL_TALENTS` 由 10 個被動數值天賦 → 10 個主動/被動潛力技能（極速之力/雷霆過載/時間坍縮/絕對領域/不屈意志/時間結界/混沌雙修/必殺一擊/聖療逆轉/時空凝滯；欄位 type/cd/base/per/max/maxLv/dmgType/dur/mech）。
+- un-disable 3/4/7/10 轉 `potentialUnlock` 天賦節點；移除 `potentialTowerTime`（高塔限時加成歸零）。
+
+**接線移除（舊被動數值潛力全拆）**：`potentialCdr/Revive/LootDup/InvCap/ElemAtk/Execute/ShieldOverflow/ManaRefund/TowerTime/Offline` 於 data/formula/combat/skills/save/talents/ui 全數移除。
+
+**新機制**
+- `js/potential.js`（新檔，載於 combat.js 後）：`tickPotentialCds`／`castPotentialActives`／`firePotentialActive`／`firePotentialOmega`／`applyPotentialChainLightning`／`tickPotentialRegen`／`potentialUndyingCd`／`potentialActiveCd`。
+- `js/talents.js`：per-skill `potentialSkillMaxLv(id)`／`potentialSkillValue`／`potentialSkillActive`；移除舊潛力屬性聚合與 `potentialInvCap`。
+- `js/formula.js`：極速之力攻速+解除 `ASPD_CAP`（`st.aspdUncapped`）、混沌雙修 `st.crossCore`；`resolveHit` 加無敵免傷（`dCfg.invuln`）與不屈意志免死（`undyingGuard` 取代 `potentialRevive`）；`skillCdFor(sk, extraCdr)` 支援時間坍縮突破 CDR。
+- `js/skills.js`：castSkill 加 crossCore 互補加成、雷電過載雷電傷+連鎖、`allDmgUp`（時空凝滯）、chrono CDR；移除 potentialExecute/ManaRefund。
+- `js/combat.js`／`js/tower.js`：野外/高塔迴圈接 `tickPotentialCds`＋`castPotentialActives`＋`tickPotentialRegen`；敵攻速降低（`enemyAspdDown`）；無敵免疫 applyEffect/applyBuff/applyDot/applyPoison/tickDots/tickPoison。
+- `js/save.js`：潛力等級改依各自 maxLv 夾限並清除舊版鍵；離線/掉落移除潛力加成。
+- `js/ui.js`：潛力面板/彈窗/提示改用 `potentialValueLine`＋per-skill maxLv＋主動被動/冷卻顯示；清掉舊潛力描述死碼。
+
+**config 管線**：`tools/config_tables.cjs` Talents schema 擴充潛力欄位（潛力類型/冷卻/基礎值/數值上限/等級上限/傷害類型/持續秒/機制/英文名/風味）；重生 `config/CSV|Excel/Talents.*`；`--apply` 乾跑語意變更 0（不會被 套用參數.bat 覆蓋）。
+
+**文件**：`game_formula.md` §10 新增潛力技能 V3 表；`LV_upgrade_system.md` 潛力解鎖已開放；`PLAN.md` 設計定案。
+
+**驗證**：`npm run build` 綠（124 檔）；config round-trip 語意 0 差；隔離埠 5501 載入主控台 0 錯；Node харness 實跑潛力戰鬥路徑（7 主動自動施放、buff/無敵=2.0s、必殺 271M、時間結界/時空凝滯 AoE、連鎖、聖療溢傷、無敵免傷 dmg=0）皆通過。
+
+### 【2026-07-21】潛力技能 V3 調整（依使用者回饋）
+1. **移除數值上限**：刪除各技能 `max`/`maxLv` 設定，`potentialSkillMaxLv` 改為比照一般技能＝`20 + 轉生×10`；`potentialSkillValue = base + per×Lv`（不再夾上限）。data.js 移除 max/maxLv 欄與 desc 的「（上限…）」；save.js 依統一上限夾限；config Talents schema 移除數值上限/等級上限兩欄並重生（round-trip 0 差）。
+2. **極速之力顯示總攻速**：formula.js 新增 `st.aspdBonusBase`（玩家原始攻速%，未夾 5 次/秒）；面板顯示「當前攻速總加成 = 此技能% + 玩家原始%」。
+3. **不再重造輪子（tooltip）**：潛力技能改用一般技能的提示/升級介面——節點改 `data-sk="potential:id"`（→ `showSkillTooltip`／`openSkillModal`）；`describeSkill` 於開頭委派 `describePotentialSkill`；移除 `showTalentTooltip` 的潛力分支與 renderSkillModal 的潛力特例。
+驗證：build 綠、config `--apply` 語意 0 差、Node 測試（maxLv=50、極速之力總攻速 180%＝60+120、omega 無上限、describe 完整/brief）全通過。

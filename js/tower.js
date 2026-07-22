@@ -141,13 +141,22 @@ function towerTick(dt) {
     p.hp = Math.min(st.hp, p.hp + (st.hpRegen + st.hp * hot / 100) * dt);
   }
   tickSkillCds(p, dt);
+  if (typeof tickPotentialCds === 'function') tickPotentialCds(p, dt);
 
   // 持續傷害
   if (tickPoison(p, dt) || tickDots(p, dt)) { endTowerFight(false, 'death'); return; }
   if (tickPoison(b, dt) || tickDots(b, dt)) { endTowerFight(true); return; }
 
+  // 潛力【聖療逆轉】溢出傷害（持續效果）
+  if (typeof tickPotentialRegen === 'function' && tickPotentialRegen(p, st, dt, [b], 'tb-float')) { endTowerFight(true); return; }
+
   // 玩家行動（減速 -30%；攻速增益加速）
   if (!effectActive(p, 'stun')) {
+    // 潛力主動技能自動施放（不佔裝載欄）
+    if (typeof castPotentialActives === 'function') {
+      var pres = castPotentialActives(p, [b], 'tb-float');
+      if (pres && pres.killed) { endTowerFight(true); return; }
+    }
     var sres = pickAndCastSkill(p, b, 'tb-float');
     if (sres) {
       // 使用攻擊結果的實際輸出，包含護盾吸收與擊殺時超出生命的溢出傷害。
@@ -173,7 +182,8 @@ function towerTick(dt) {
       var bossHit = doMonsterAttack(b, p, 'tp-float', mult);
       // 使用攻擊結果的實際輸出，包含護盾吸收與擊殺時超出生命的溢出傷害。
       TOWER.bossDmgDealt += Math.max(0, (bossHit.dmg || 0));
-      b.atkCd += 1 / b.aspd;
+      // 潛力【時間結界】：敵攻速降低 → 拉長攻擊間隔。
+      b.atkCd += (1 / b.aspd) * (1 + buffVal(b, 'enemyAspdDown') / 100);
       if (p.hp <= 0) { endTowerFight(false, 'death'); return; }
       if (b.hp <= 0) { endTowerFight(true); return; } // 反震擊殺
     }

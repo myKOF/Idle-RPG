@@ -265,10 +265,15 @@ function computeStats(equipmentOverride) {
   st.pPen = capValue(A.pPen, STAT_CAPS.pPen);                                // 穿透上限（上限 0＝無上限）
   st.mPen = capValue(A.mPen, STAT_CAPS.mPen);
   st.hit = 100 + st.agi * 0 + A.hit;                          // 命中率：基礎 100% + 敏捷×a + 額外加成（無上限；戰鬥結算再 clamp 5~100）
-  st.aspd = ASPD_CAP > 0
-    ? clamp(ASPD_BASE * (1 + (A.aspdPct + st.agi * PRIMARY_STAT_EFFECTS.agiAspdPct) / 100), ASPD_MIN, ASPD_CAP)
-    : Math.max(ASPD_MIN, ASPD_BASE * (1 + (A.aspdPct + st.agi * PRIMARY_STAT_EFFECTS.agiAspdPct) / 100)); // 攻速：基礎攻速、敏捷係數與上限皆由 data.js 控制
-  st.cdr = capValue(A.cdr + (talent.potentialCdr || 0), STAT_CAPS.cdr);       // 潛力：時空折疊
+  // 潛力技能【極速之力】：攻速額外 +值%，且解除 ASPD_CAP（5 次/秒）上限（被動常駐，學會即生效）。
+  var potVelocity = (typeof potentialSkillActive === 'function' && potentialSkillActive('velocityForce')) ? potentialSkillValue('velocityForce') : 0;
+  st.aspdBonusBase = A.aspdPct + st.agi * PRIMARY_STAT_EFFECTS.agiAspdPct; // 玩家原始攻速加成%（未含極速之力、未夾 5 次/秒上限）
+  var aspdPctTotal = st.aspdBonusBase + potVelocity;
+  st.aspdUncapped = potVelocity > 0;
+  st.aspd = (ASPD_CAP > 0 && !st.aspdUncapped)
+    ? clamp(ASPD_BASE * (1 + aspdPctTotal / 100), ASPD_MIN, ASPD_CAP)
+    : Math.max(ASPD_MIN, ASPD_BASE * (1 + aspdPctTotal / 100)); // 攻速：基礎攻速、敏捷係數與上限皆由 data.js 控制；極速之力解除上限
+  st.cdr = capValue(A.cdr, STAT_CAPS.cdr);       // 冷卻縮減上限（潛力【時間坍縮】於施放時另行突破，見 skills.js castSkill）
   st.castSpeed = capValue(A.castSpeed, STAT_CAPS.castSpeed);                      // 施法速度上限（上限 0＝無上限）
   st.lifesteal = capValue(A.lifesteal, STAT_CAPS.lifesteal);                      // 吸血上限（上限 0＝無上限）
   st.manaSteal = capValue(A.manaSteal, STAT_CAPS.manaSteal);                      // 吸魔上限（上限 0＝無上限）
@@ -340,21 +345,15 @@ function computeStats(equipmentOverride) {
     fire: talent.elemFire || 0, ice: talent.elemIce || 0, lightning: talent.elemLightning || 0,
     poison: talent.elemPoison || 0, light: talent.elemLight || 0, dark: talent.elemDark || 0
   };
-  var elemBoost = 1 + (talent.potentialElemAtk || 0) / 100;
+  var elemBoost = 1; // 潛力技能 V3 起，舊 potentialElemAtk 已移除。
   var elemDmgPct = {};
   ELEMENTS.forEach(function (e4) {
     elemAtk[e4] *= elemBoost;
     elemDmgPct[e4] = talentElemMap[e4] * elemBoost;
   });
   st.elemDmgPct = elemDmgPct;
-  st.potentialRevive = talent.potentialRevive || 0;
-  st.potentialLootDup = talent.potentialLootDup || 0;
-  st.potentialInvCap = talent.potentialInvCap || 0;
-  st.potentialExecute = talent.potentialExecute || 0;
-  st.potentialShieldOverflow = talent.potentialShieldOverflow || 0;
-  st.potentialManaRefund = talent.potentialManaRefund || 0;
-  st.potentialTowerTime = talent.potentialTowerTime || 0;
-  st.potentialOffline = talent.potentialOffline || 0;
+  // 潛力技能【混沌雙修】：物理技能額外獲得魔攻加成、魔法技能額外獲得物攻加成（被動常駐；castSkill 傷害段引用）。
+  st.crossCore = (typeof potentialSkillActive === 'function' && potentialSkillActive('dualCoreFusion')) ? potentialSkillValue('dualCoreFusion') : 0;
   st.elemAtk = elemAtk;
   st.A = A;
   return st;
@@ -507,6 +506,8 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   if (!isFinite(defenderDodge)) defenderDodge = 0;
   var hitChance = clamp(attackerHit - defenderDodge, 5, 100);
   if (!chance(hitChance)) { out.miss = true; return out; }
+  // 潛力技能【絕對領域】／【不屈意志】無敵：免疫本次所有傷害。
+  if (dCfg.invuln) { out.invuln = true; return out; }
   // 防禦選型（物理/魔法）＋破甲＋穿透：有效防禦 = 防禦 × (1-破甲%) × (1-穿透%)
   var dmg = 0;
   if (aCfg.dmgType !== 'magic') {
@@ -609,10 +610,13 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
       defender._undyingAt = GT;
       defender.hp = Math.max(1, Math.round((dCfg.maxHp || 1) * 0.3));
       out.procs.push('不朽');
-    } else if (dCfg.potentialRevive && !defender._potentialRevived) {
-      defender._potentialRevived = true;
-      defender.hp = Math.max(1, Math.round((dCfg.maxHp || 1) * Math.min(100, dCfg.potentialRevive * 20) / 100));
-      out.procs.push('第二命題');
+    } else if (dCfg.undyingGuard && (!defender._lastStandAt || GT - defender._lastStandAt >= (dCfg.undyingGuardCd || 90))) {
+      // 潛力技能【不屈意志】：致命傷害免死，保留 1 點生命並獲得 1 秒無敵；觸發後進入冷卻。
+      defender._lastStandAt = GT;
+      defender.hp = 1;
+      if (!defender.effects) defender.effects = {};
+      defender.effects.invuln = Math.max(defender.effects.invuln || 0, GT + 1);
+      out.procs.push('不屈意志');
     } else {
       defender.hp = 0; out.killed = true;
     }
@@ -1287,7 +1291,11 @@ function skillMaxLv(def) {
 // 技能傷害倍率（%）= base + per × (等級-1)
 function skillValue(sk, lv) { return (sk.fx.base || 0) + (sk.fx.per || 0) * (lv - 1); }
 // 實際冷卻 = 技能冷卻 × (1 - 冷卻縮減%)
-function skillCdFor(sk) { return sk.cd * (1 - getStats().cdr / 100); }
+// 實際冷卻 = 技能冷卻 × (1 - 冷卻縮減%)；extraCdr 為潛力【時間坍縮】施放時的額外 CDR（突破 60%，總 CDR 夾 90%）。
+function skillCdFor(sk, extraCdr) {
+  var cdr = Math.min(90, (getStats().cdr || 0) + (Number(extraCdr) || 0));
+  return sk.cd * (1 - cdr / 100);
+}
 // 技能基礎法力消耗：融合技能取所有素材技能的原始消耗總和。
 function skillBaseManaCost(def) {
   if (!def) return 0;
