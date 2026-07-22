@@ -1,5 +1,37 @@
 # PATCH.md
 
+## 變更紀錄：戰鬥 DOM 性能優化收尾（2026-07-22）
+
+- `renderBattle()` 與 `renderTowerFight()` 將已取得的屬性傳給 `renderMpSkill()`，每次刷新不再重複執行 `getStats()`。
+- 場景按鈕列加入目前場景與各場景最高進度簽章；簽章不變時直接略過整排按鈕的 class、disabled、style 與文字更新。
+- 新增 DOM 差異寫入輔助函式，戰鬥／高塔的血量、魔力、狀態、技能列、關卡文字與 checkbox 只在值改變時寫入。
+- 戰鬥與熔爐詳細日誌改為 dirty 驅動，每個 `uiTick` 最多完整重建一次，避免高頻事件連續重建 250～500 筆內容。
+- `ui.js` 快取版號更新至 `v1.0.7`。
+- 驗證：性能、關卡與快取防護專項 24/24；含戰鬥增益、高塔、統計與熔爐周邊回歸 54/54；建置 125 檔通過。
+- 隔離瀏覽器最終量測：戰鬥頁平均約 6.7ms、P95 16ms、最大 18ms；熔爐頁平均約 12.2ms、P95 21ms、最大 46ms。熔爐詳細日誌 25 筆正常顯示，主控台 0 錯誤。
+
+## 變更紀錄：關卡長按性能優化第二階段（2026-07-22）
+
+- 恢復先前被外部未提交變更覆蓋的時間型長按：長按依實際經過時間預覽，放開才提交一次關卡。
+- 敵人名稱的 `clientWidth`／`scrollWidth` 版面量測只在敵人結構改變或視窗縮放後執行，不再每 200ms 強制讀取版面。
+- 戰鬥與熔爐主日誌先進入有上限佇列，由 `uiTick` 使用 `DocumentFragment` 批次寫入；清除或重建熔爐日誌時同步清空待寫佇列。
+- 背景分頁跳過所有純 UI 重繪；遊戲邏輯照常運作，返回前景時將各區標為 dirty 並立即補一次完整刷新。
+- 修正熔爐頁消費 `dirty.inv` 後未清除、造成每 200ms 永久完整重建的問題；切換分頁時改為定向補上該頁 dirty 標記。
+- `ui.js` 快取版號更新至 `v1.0.6`。
+- 驗證：性能、關卡與快取防護專項 20/20 通過；相關周邊回歸 70 項中 69 項通過，唯一失敗為既存多敵人測試資料缺少 `invuln`；建置 125 檔通過。
+- 隔離瀏覽器：80 次跨戰鬥週期量測平均計時延遲約 10.0ms、P95 17ms、最大 20ms；第一階段基準為 38.5ms／82ms／127ms。戰鬥日誌維持 150 筆上限，主控台 0 錯誤。
+- 熔爐分頁另做 80 次量測：平均約 9.4ms、P95 18ms、最大 47ms，主控台 0 錯誤。
+
+## 變更紀錄：關卡長按性能優化第一階段（2026-07-22）
+
+- 性能基準：一般戰鬥平均延遲約 38.5ms、P95 約 82ms；暫停戰鬥後平均約 28.8ms、P95 約 38ms。
+- 長按不再使用固定 `setInterval(50ms)` 逐次推進，改為依實際經過時間計算應到達的關卡。
+- 長按期間僅更新關卡預覽文字，不再每 50ms 清除敵人與設定重生；放開後才一次提交關卡。
+- 新增延遲追趕、單次提交與重複停止防護測試。
+- 瀏覽器回歸時發現固定 `ui.js?v=1.0.3` 仍會命中舊快取並反覆觸發太古提示錯誤；改為 `v1.0.4`，並恢復提示節點的空值防護。
+- 驗證：關卡與太古 UI 專項測試 15/15、`node --check js/ui.js`、`npm.cmd run build` 均通過；全新測試分頁持續觀察後主控台 0 錯誤，關卡前進／後退控制均存在。
+- 完整 `npm.cmd test` 尚有屬性、天賦、掉落及公式等既存失敗，與本次關卡長按變更無關。
+
 ## 變更紀錄：熔爐品質勾選預設（2026-07-22）
 
 - 第一座熔爐的 `qualities` 預設只勾選普通品質，其餘品質不勾選；神鑄創世維持永遠保留。
@@ -2538,3 +2570,11 @@
 2. **極速之力顯示總攻速**：formula.js 新增 `st.aspdBonusBase`（玩家原始攻速%，未夾 5 次/秒）；面板顯示「當前攻速總加成 = 此技能% + 玩家原始%」。
 3. **不再重造輪子（tooltip）**：潛力技能改用一般技能的提示/升級介面——節點改 `data-sk="potential:id"`（→ `showSkillTooltip`／`openSkillModal`）；`describeSkill` 於開頭委派 `describePotentialSkill`；移除 `showTalentTooltip` 的潛力分支與 renderSkillModal 的潛力特例。
 驗證：build 綠、config `--apply` 語意 0 差、Node 測試（maxLv=50、極速之力總攻速 180%＝60+120、omega 無上限、describe 完整/brief）全通過。
+
+### 【2026-07-21】潛力技能改為裝載欄施放（依使用者回饋「潛力技能無法裝配」）
+- **施放模型換裝**：主動潛力技能不再學會即自動施放，改與一般技能相同——裝入「裝載欄」（鍵 `potential:<id>`）才施放；共用 pickAndCastSkill 排序、GCD、施放硬直與 `pEnt.skillCds` 冷卻（吃 60% CDR）。無法力消耗、需存活目標。
+- potential.js：移除 castPotentialActives/tickPotentialCds，新增 `castPotentialSkill`（回傳 {killed,dmg}）與 `potentialEquippable`；firePotentialActive/Omega 改回傳 {killed,dmg}。combat.js/tower.js 拆自動施放掛勾。
+- skills.js：pickAndCastSkill 支援 `potential:` 項目；equipSkillToLoadout 支援潛力（被動潛力拒絕並提示常駐）。
+- ui.js：升級面板為主動潛力加「⚔️ 裝備／卸下」、被動潛力顯「🌀 常駐」；裝載欄格與戰鬥技能列支援潛力顯示（emoji/名稱/等級/冷卻、法力 0）。
+- talents.js：潛力降至 0 級或刪除時自動卸下裝載。data.js：極速之力型別改 passive（效果本為常駐攻速）。
+- 驗證：build 綠（125 檔）、config round-trip 語意 0 差；Node 實測：裝備/拒絕/重複判斷正確，三潛力技依 GCD 輪流施放（必殺 3.2 億、無敵 3.0s＝Lv100、時空凝滯全場定身 8s＋allDmgUp），冷卻 60% CDR 且由共用 tickSkillCds 遞減。

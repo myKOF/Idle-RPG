@@ -179,7 +179,7 @@ var TALENT_TREES = {
    數值來源＝天賦V3.xlsx 第 2 頁；戰鬥公式與詮釋見 game_formula.md §潛力技能。 */
 var POTENTIAL_TALENTS = [
   { id: 'velocityForce', name: '極速之力', en: 'Velocity Force', emoji: '⚡', cat: 'potential',
-    type: 'active', cd: 60, base: 0, per: 5, mech: 'aspd',
+    type: 'passive', base: 0, per: 5, mech: 'aspd',
     desc: '突破速度的極限——你的攻速自此掙脫 5 次/秒的枷鎖，直抵無限，能登臨何等境界，端看你的領悟。每級 +5% 攻速加成。',
     flavor: '突破速度極限，攻速掙脫 5 次/秒的枷鎖，能達到什麼程度端看你的領悟。' },
   { id: 'lightningOverdrive', name: '雷霆過載', en: 'Lightning Overdrive', emoji: '🌩️', cat: 'potential',

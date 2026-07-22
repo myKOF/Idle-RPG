@@ -391,6 +391,21 @@ function deleteSkill(id) {
 }
 
 function equipSkillToLoadout(id) {
+  // 潛力技能（'potential:<id>'）：僅主動可施放型可裝載；被動潛力學會即常駐、無需裝備。
+  if (typeof id === 'string' && id.indexOf('potential:') === 0) {
+    var pid = id.slice(10);
+    var pdef = (typeof potentialDef === 'function') ? potentialDef(pid) : null;
+    if (!pdef) return '未知技能';
+    if (typeof potentialEquippable !== 'function' || !potentialEquippable(pdef)) return '被動潛力技能學會即常駐，無需裝備';
+    if (!potentialLevel(pid)) return '尚未學習';
+    if (typeof potentialSkillActive === 'function' && !potentialSkillActive(pid)) return '潛力節點尚未解鎖';
+    var plo = G.player.loadout;
+    if (plo.indexOf(id) >= 0) return '已在裝載欄';
+    if (plo.length >= loadoutSize()) return '裝載欄已滿（' + loadoutSize() + ' 格，初始 2 格，每 20 級再 +1 格）';
+    plo.push(id);
+    UI.dirty.skills = true;
+    return null;
+  }
   var sk = skillDef(id);
   if (!sk || sk.cat === 'passive') return '被動技能無需裝備';
   if (!skillLevel(id)) return '尚未學習';
@@ -794,6 +809,18 @@ function pickAndCastSkill(pEnt, target, floatSel) {
   var candidates = [];
   for (var i = 0; i < lo.length; i++) {
     var id = lo[i];
+    // 潛力技能（裝載欄鍵 'potential:<id>'）：無法力消耗，依冷卻與存活目標施放，其餘沿用同一套排序。
+    if (typeof id === 'string' && id.indexOf('potential:') === 0) {
+      if ((pEnt.skillCds[id] || 0) > 0) continue;
+      var pDef = (typeof potentialDef === 'function') ? potentialDef(id.slice(10)) : null;
+      if (!pDef || typeof potentialSkillActive !== 'function' || !potentialSkillActive(pDef.id)) continue;
+      var hasLiveTarget = Array.isArray(target)
+        ? target.some(function (ent) { return ent && ent.hp > 0; })
+        : !!(target && target.hp > 0);
+      if (!hasLiveTarget) continue;
+      candidates.push({ id: id, potentialDef: pDef, slot: i, readyAt: pEnt._skillReadyOrder[id] });
+      continue;
+    }
     var sk = skillDef(id);
     var lv = skillLevel(id);
     if (!sk || !lv) continue;
@@ -805,6 +832,9 @@ function pickAndCastSkill(pEnt, target, floatSel) {
   if (!candidates.length) return null;
   candidates.sort(function (a, b) { return a.readyAt - b.readyAt || a.slot - b.slot; });
   var choice = candidates[0];
+  if (choice.potentialDef && typeof castPotentialSkill === 'function') {
+    return castPotentialSkill(pEnt, target, choice.potentialDef, floatSel, choice.id);
+  }
   return castSkill(pEnt, target, choice.id, choice.lv, floatSel, choice.slot);
 }
 function tickSkillCds(pEnt, dt) {

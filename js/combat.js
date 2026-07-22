@@ -32,7 +32,7 @@ function toggleCombatPaused() {
 }
 
 function newPlayerEntity(st) {
-    return { hp: st.hp, mp: st.mp, shield: 0, shieldMax: 0, shieldMaxVersion: SHIELD_MAX_VERSION, shieldSkillBase: 0, shieldSkillPct: 0, atkCd: 1 / st.aspd, skillCds: {}, skillGcd: 0, potentialCds: {}, buffs: {}, dots: [], effects: {}, poisonUntil: 0, poisonDps: 0, _lastStandAt: 0 };
+    return { hp: st.hp, mp: st.mp, shield: 0, shieldMax: 0, shieldMaxVersion: SHIELD_MAX_VERSION, shieldSkillBase: 0, shieldSkillPct: 0, atkCd: 1 / st.aspd, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {}, poisonUntil: 0, poisonDps: 0, _lastStandAt: 0 };
 }
 
 function initFieldPlayer() {
@@ -494,8 +494,7 @@ function fieldTick(dt) {
     var hot = buffVal(p, 'hot');
     if (p.hp < st.hp) p.hp = Math.min(st.hp, p.hp + (st.hp * (BASE_HP_REGEN_PCT / 100 + hot / 100) + st.hpRegen) * dt);
     p.mp = Math.min(st.mp, p.mp + st.mpRegen * dt);
-    tickSkillCds(p, dt);
-    if (typeof tickPotentialCds === 'function') tickPotentialCds(p, dt);
+    tickSkillCds(p, dt); // 潛力技能冷卻共用 skillCds（鍵 'potential:<id>'），一併在此遞減
 
     // 持續傷害（玩家：中毒 / 詛咒等）
     if (tickPoison(p, dt) || tickDots(p, dt)) { onPlayerFieldDeath(); return; }
@@ -529,12 +528,7 @@ function fieldTick(dt) {
     }
     // 玩家行動（減速 -30%；時間扭曲等攻速增益加速）
     if (!effectActive(p, 'stun')) {
-        // 潛力主動技能自動施放（不佔裝載欄）
-        if (typeof castPotentialActives === 'function') {
-            var pres = castPotentialActives(p, enemies, 'mv-float');
-            if (pres && pres.killed) { onFieldDeaths(); enemies = liveFieldEnemies(); if (!enemies.length) return; }
-        }
-        // 技能優先（依裝載順序）
+        // 技能優先（依裝載順序；含裝載的潛力技能）
         var sres = pickAndCastSkill(p, enemies, 'mv-float');
         if (sres && sres.killed) {
             onFieldDeaths();

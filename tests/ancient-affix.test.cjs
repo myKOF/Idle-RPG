@@ -174,3 +174,13 @@ test('太古資源與裝備詳情 UI 已註冊', () => {
   assert.match(ui, /function hideAffixPool\(\)/);
   assert.match(css, /#affix-pool-overlay[\s\S]*position:\s*fixed[\s\S]*z-index:\s*10050/);
 });
+
+test('太古精華提示節點存在，UI 同步函式具備空值防護且載入新版腳本', () => {
+  const root = path.resolve(__dirname, '..');
+  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert.match(html, /id="ancient-essence-warning"/);
+  assert.match(html, /js\/ui\.js\?v=1\.0\.7/);
+  assert.match(ui, /var warning = \$id\('ancient-essence-warning'\)/);
+  assert.match(ui, /if \(warning\) \{/);
+});

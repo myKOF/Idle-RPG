@@ -36,7 +36,8 @@ GM 指令只會在以下 hostname 初始化：
 ### 增加或扣除金幣
 
 ```text
-gold 數量
+【指令格式】
+gold 數量 （金幣 / 增加或扣除的數量）
 ```
 
 別名：`g 數量`
@@ -44,9 +45,9 @@ gold 數量
 範例：
 
 ```text
-gold 1000000
-g 50000
-gold -10000
+gold 1000000 （增加 1,000,000 金幣）
+g 50000 （增加 50,000 金幣，使用別名 g）
+gold -10000 （扣除 10,000 金幣）
 ```
 
 輸入負數會扣除金幣；扣除後最低為 0，不會變成負數。
@@ -54,18 +55,19 @@ gold -10000
 ### 增加或扣除碎片、附魔精華、魔塵
 
 ```text
-scrap 數量
-essence 數量
-dust 數量
+【指令格式】
+scrap 數量 （裝備碎片 / 增加或扣除的數量）
+essence 數量 （附魔精華 / 增加或扣除的數量）
+dust 數量 （魔塵 / 增加或扣除的數量）
 ```
 
 範例：
 
 ```text
-scrap 5000
-essence 100
-dust 20
-dust -5
+scrap 5000 （增加 5,000 裝備碎片）
+essence 100 （增加 100 附魔精華）
+dust 20 （增加 20 魔塵）
+dust -5 （扣除 5 魔塵）
 ```
 
 `scrap`、`essence`、`dust` 同樣支援負數扣除，扣除後最低為 0。
@@ -73,10 +75,14 @@ dust -5
 也可以使用統一材料格式：
 
 ```text
-mat gold 數量
-mat scrap 數量
-mat essence 數量
-mat dust 數量
+【指令格式】
+mat 材料key 數量 （統一材料 / 材料名稱 / 數量）
+
+範例：
+mat gold 50000 （發放 50,000 金幣）
+mat scrap 10000 （發放 10,000 裝備碎片）
+mat essence 500 （發放 500 附魔精華）
+mat dust 100 （發放 100 魔塵）
 ```
 
 `mat` 的數量也可輸入負數，例如 `mat essence -10`。
@@ -90,7 +96,8 @@ GM 發放只會增加資源，不會覆蓋原有數量。
 ### 指令格式
 
 ```text
-gem 寶石key 等級 數量
+【指令格式】
+gem 寶石key 等級 數量 （加寶石 / 寶石 key / 寶石等級 1~10 / 數量）
 ```
 
 等級可輸入 `1`～`10`，包含一般寶石與神鑄寶石。
@@ -121,9 +128,9 @@ fluorite   = 螢石
 範例：
 
 ```text
-gem garnet 6 10
-gem ruby 5 100
-gem fluorite 10 1
+gem garnet 6 10 （發放 10 顆 6 級石榴石）
+gem ruby 5 100 （發放 100 顆 5 級紅寶石）
+gem fluorite 10 1 （發放 1 顆 10 級螢石）
 ```
 
 ## 5. 附魔書
@@ -131,7 +138,8 @@ gem fluorite 10 1
 ### 指令格式
 
 ```text
-book 附魔key 數量
+【指令格式】
+book 附魔key 數量 （加附魔書 / 附魔 key / 數量）
 ```
 
 可用附魔 key（請逐行查看 key 與中文名稱）：
@@ -162,9 +170,9 @@ wisdom       = 智慧附魔
 範例：
 
 ```text
-book fire 10
-book fireRes 5
-book loot 20
+book fire 10 （發放 10 本火焰附魔書）
+book fireRes 5 （發放 5 本火焰抗性附魔書）
+book loot 20 （發放 20 本尋寶附魔書）
 ```
 
 ## 6. 裝備
@@ -172,7 +180,11 @@ book loot 20
 ### 指令格式
 
 ```text
-equip 稀有度 等級 [部位] [數量]
+【指令格式】
+equip 裝備品質 等級 [部位] [數量] （加裝備 / 品質 key 或數字 / 裝備等級 / 部位 key，可選 / 數量，可選）
+
+例如：
+- 加裝備/裝備品質/等級/部位/數量：equip legendary 100 weapon 3
 ```
 
 稀有度可以輸入數字索引或英文 key：
@@ -207,12 +219,44 @@ ring2    = 戒指Ⅱ
 amulet   = 項鍊
 ```
 
+各種品質的指令對照範例：
+
+```text
+- 普通品質 (common / 0)：
+  equip common 100 weapon 3 （發放 3 件 100 級普通品質主武器）
+  或：equip 0 100 weapon 3
+- 精良品質 (uncommon / 1)：
+  equip uncommon 100 weapon 3 （發放 3 件 100 級精良品質主武器）
+  或：equip 1 100 weapon 3
+- 稀有品質 (rare / 2)：
+  equip rare 100 weapon 3 （發放 3 件 100 級稀有品質主武器）
+  或：equip 2 100 weapon 3
+- 獨特品質 (unique / 3)：
+  equip unique 100 weapon 3 （發放 3 件 100 級獨特品質主武器）
+  或：equip 3 100 weapon 3
+- 史詩品質 (epic / 4)：
+  equip epic 100 weapon 3 （發放 3 件 100 級史詩品質主武器）
+  或：equip 4 100 weapon 3
+- 傳說品質 (legendary / 5)：
+  equip legendary 100 weapon 3 （發放 3 件 100 級傳說品質主武器）
+  或：equip 5 100 weapon 3
+- 神話品質 (mythic / 6)：
+  equip mythic 100 weapon 3 （發放 3 件 100 級神話品質主武器）
+  或：equip 6 100 weapon 3
+- 創世品質 (genesis / 7)：
+  equip genesis 100 weapon 3 （發放 3 件 100 級創世品質主武器）
+  或：equip 7 100 weapon 3
+- 神鑄創世品質 (godforged / 8)：
+  equip godforged 100 weapon 3 （發放 3 件 100 級神鑄創世品質主武器）
+  或：equip 8 100 weapon 3
+```
+
 範例：
 
 ```text
-equip legendary 100 weapon
-equip 6 200 helmet 3
-equip godforged 1000 ring 2
+equip legendary 100 weapon （發放 1 件 100 級傳說品質主武器，數量省略預設為 1）
+equip 6 200 helmet 3 （發放 3 件 200 級神話品質頭盔，6 代表神話品質）
+equip godforged 1000 ring 2 （發放 2 件 1000 級神鑄創世品質戒指）
 ```
 
 裝備會直接加入背包，不走一般背包滿載時的自動分解流程；因此測試時若超過背包容量，背包可能暫時超出容量，請自行整理。
@@ -222,7 +266,8 @@ equip godforged 1000 ring 2
 ### 指令格式
 
 ```text
-part 階級 [節點] [數量]
+【指令格式】
+part 階級 [節點] [數量] （加自動零件 / 零件階級 1~5 / 節點 key，可選 / 數量，可選）
 ```
 
 階級為 `1`～`5`。節點可省略，或指定：
@@ -233,8 +278,8 @@ part 階級 [節點] [數量]
 範例：
 
 ```text
-part 5 salvage 3
-part 3 5
+part 5 salvage 3 （發放 3 個 5 階分解槽零件）
+part 3 5 （發放 5 個 3 階隨機零件，省略節點）
 ```
 
 第二個範例省略節點，會依目前啟用的節點隨機產生零件。
@@ -246,7 +291,8 @@ part 3 5
 ### 設定玩家等級
 
 ```text
-level 等級
+【指令格式】
+level 等級 （設定等級 / 目標等級數字）
 ```
 
 別名：`lv 等級`
@@ -254,29 +300,31 @@ level 等級
 這是「直接設定」而不是增加等級。範例：
 
 ```text
-level 1000
+level 1000 （直接設定玩家等級為 1000 級）
 ```
 
 ### 增加經驗值
 
 ```text
-xp 數量
+【指令格式】
+xp 數量 （加經驗值 / 增加的經驗數量）
 ```
 
 範例：
 
 ```text
-xp 5000000
+xp 5000000 （增加 5,000,000 經驗值）
 ```
 
-若增加經驗觸發升級，會沿用遊戲原本的升級流程。
+若增加經驗觸發升級，會沿用遊戲原本的升級流程.
 
 ## 9. 寶石商店
 
 ### 直接設定商店等級
 
 ```text
-shop 等級
+【指令格式】
+shop 等級 （設定商店等級 / 商店目標等級 1~20）
 ```
 
 等級限制為 `1`～`20`。設定後會立即依新等級重新刷出商品，不會扣除升級金幣。
@@ -284,13 +332,14 @@ shop 等級
 範例：
 
 ```text
-shop 20
+shop 20 （將寶石商店等級設定為 20 級）
 ```
 
 ## 10. 立即存檔
 
 ```text
-save
+【指令格式】
+save （立即存檔指令）
 ```
 
 這會呼叫遊戲目前的存檔函式。一般情況下遊戲仍會依原本的自動存檔機制保存進度。
@@ -312,9 +361,10 @@ save
 以下指令會把高塔最高通關層推進到指定塔區的最後一層，方便測試後續內容；不會補發歷層通關獎勵。若目前正在高塔戰鬥中，指令會拒絕執行。
 
 ```text
-tower_trial_clear
-tower_hell_clear
-tower_purgatory_clear
+【指令格式】
+tower_trial_clear （通關試煉之塔）
+tower_hell_clear （通關煉獄之塔）
+tower_purgatory_clear （通關無盡深淵/地獄高塔等後續塔區）
 ```
 
 ### 清除指定塔區的已挑戰標記
@@ -322,15 +372,17 @@ tower_purgatory_clear
 這三個指令會重設指定塔區的通關進度，但保留前一塔區的進度：
 
 ```text
-tower_trial_reset
-tower_hell_reset
-tower_purgatory_reset
+【指令格式】
+tower_trial_reset （重設試煉之塔進度）
+tower_hell_reset （重設煉獄之塔進度）
+tower_purgatory_reset （重設後續塔區進度）
 ```
 
 ### 指定下一個可挑戰的高塔樓層
 
 ```text
-tower_jump 樓層
+【指令格式】
+tower_jump 樓層 （跳轉至指定高塔樓層 / 目標樓層數字）
 ```
 
 例如 `tower_jump 101` 會把第 1～100 層視為已挑戰成功，下一個可挑戰樓層為第 101 層。樓層限制為 `1`～`150`。
@@ -338,7 +390,8 @@ tower_jump 樓層
 ## 10.7 任意切換轉生次數
 
 ```text
-reincarnation 轉生次數
+【指令格式】
+reincarnation 轉生次數 （設定轉生次數 / 目標轉生次數 0~10）
 ```
 
 轉生次數可輸入 `0`～`10`。別名：`reincarnate`、`turn`。此指令只切換轉生次數，不重置等級、經驗或資源；會立即刷新天賦解鎖、技能上限與屬性。高塔戰鬥中不可執行。
@@ -346,9 +399,9 @@ reincarnation 轉生次數
 範例：
 
 ```text
-reincarnation 0
-reincarnation 5
-turn 10
+reincarnation 0 （設定為 0 轉）
+reincarnation 5 （設定為 5 轉）
+turn 10 （使用別名 turn，設定為 10 轉）
 ```
 
 ## 11. 常用測試流程範例
@@ -356,32 +409,32 @@ turn 10
 ### 測試高階寶石與神鑄
 
 ```text
-gem garnet 6 10
-gem garnet 7 6
-dust 100
+gem garnet 6 10 （發放 10 顆 6 級石榴石）
+gem garnet 7 6 （發放 6 顆 7 級石榴石）
+dust 100 （發放 100 魔塵）
 ```
 
 ### 測試高品質裝備
 
 ```text
-equip legendary 100 weapon 3
-equip mythic 200 helmet 3
-equip godforged 1000 ring
+equip legendary 100 weapon 3 （發放 3 件 100 級傳說品質主武器）
+equip mythic 200 helmet 3 （發放 3 件 200 級神話品質頭盔）
+equip godforged 1000 ring （發放 1 件 1000 級神鑄創世品質戒指，數量省略預設為 1）
 ```
 
 ### 測試高塔生存能力
 
 ```text
-level 1000
-gold 100000000000
-gem fluorite 10 20
-gem malachite 10 20
+level 1000 （設定玩家等級為 1000 級）
+gold 100000000000 （發放 100,000,000,000 金幣）
+gem fluorite 10 20 （發放 20 顆 10 級螢石）
+gem malachite 10 20 （發放 20 顆 10 級孔雀石）
 ```
 
 ### 測試商店高等級商品
 
 ```text
-shop 20
+shop 20 （將寶石商店等級直接設定為 20 級）
 ```
 
 ## 12. 不支援的情況

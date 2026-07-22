@@ -140,8 +140,7 @@ function towerTick(dt) {
   if ((st.hpRegen > 0 || hot > 0) && p.hp < st.hp) {
     p.hp = Math.min(st.hp, p.hp + (st.hpRegen + st.hp * hot / 100) * dt);
   }
-  tickSkillCds(p, dt);
-  if (typeof tickPotentialCds === 'function') tickPotentialCds(p, dt);
+  tickSkillCds(p, dt); // 潛力技能冷卻共用 skillCds（鍵 'potential:<id>'），一併在此遞減
 
   // 持續傷害
   if (tickPoison(p, dt) || tickDots(p, dt)) { endTowerFight(false, 'death'); return; }
@@ -152,11 +151,6 @@ function towerTick(dt) {
 
   // 玩家行動（減速 -30%；攻速增益加速）
   if (!effectActive(p, 'stun')) {
-    // 潛力主動技能自動施放（不佔裝載欄）
-    if (typeof castPotentialActives === 'function') {
-      var pres = castPotentialActives(p, [b], 'tb-float');
-      if (pres && pres.killed) { endTowerFight(true); return; }
-    }
     var sres = pickAndCastSkill(p, b, 'tb-float');
     if (sres) {
       // 使用攻擊結果的實際輸出，包含護盾吸收與擊殺時超出生命的溢出傷害。

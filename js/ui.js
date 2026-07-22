@@ -11,7 +11,21 @@ var UI = {
   towerTimerRaf: 0,
   towerTimerAnchor: null,
   inventoryVisibleRows: 3,
-  stageHold: { startTimer: null, repeatTimer: null, suppressClick: false, suppressTimer: null, pointerId: null }
+  battleLayoutDirty: true,
+  zoneBarSignature: null,
+  performanceEventsBound: false,
+  stageHold: {
+    startTimer: null,
+    repeatTimer: null,
+    suppressClick: false,
+    suppressTimer: null,
+    pointerId: null,
+    active: false,
+    startedAt: 0,
+    startStage: 0,
+    targetStage: null,
+    delta: 0
+  }
 };
 
 var STAGE_HOLD_START_MS = 300;
@@ -25,6 +39,9 @@ var INVENTORY_GRID_ROW_GAP = 6;
 var DETAIL_LOG_HISTORY = [];
 var DETAIL_LOG_CAP = 500;
 var NEWFORGE_LOG_HISTORY = [];
+var PENDING_LOG_DOM = {};
+var DETAIL_LOG_RENDER_DIRTY = false;
+var NEWFORGE_DETAIL_LOG_RENDER_DIRTY = false;
 window.newForgeLogPaused = false;
 
 function detailLogCategoryLabel(cat) {
@@ -277,6 +294,7 @@ function renderNewForgeDetailLog() {
 function refreshNewForgeMainLog() {
   var box = $id('newforge-log');
   if (!box) return;
+  clearPendingLogDom('newforge-log');
   box.innerHTML = '';
   var displayLogs = NEWFORGE_LOG_HISTORY.slice(0, 50);
   displayLogs.forEach(function (entry) {
@@ -285,6 +303,77 @@ function refreshNewForgeMainLog() {
     div.innerHTML = entry.msg;
     box.appendChild(div);
   });
+}
+
+function enqueueLogDom(elId, msg, cls, cat, cap) {
+  var queue = PENDING_LOG_DOM[elId] || (PENDING_LOG_DOM[elId] = []);
+  var limit = cap || 150;
+  queue.push({ msg: msg, cls: cls || '', cat: cat || '', cap: limit });
+  if (queue.length > limit) queue.splice(0, queue.length - limit);
+}
+
+function clearPendingLogDom(elId) {
+  var queue = PENDING_LOG_DOM[elId];
+  if (queue) queue.length = 0;
+}
+
+function setTextIfChanged(el, value) {
+  if (!el) return;
+  value = String(value);
+  if (el.textContent !== value) el.textContent = value;
+}
+
+function setHtmlIfChanged(el, value) {
+  if (!el) return;
+  value = String(value);
+  if (el.innerHTML !== value) el.innerHTML = value;
+}
+
+function setStyleIfChanged(el, prop, value) {
+  if (!el || !el.style) return;
+  value = String(value);
+  if (el.style[prop] !== value) el.style[prop] = value;
+}
+
+function setCheckedIfChanged(el, value) {
+  if (!el) return;
+  value = !!value;
+  if (el.checked !== value) el.checked = value;
+}
+
+function flushPendingLogDom() {
+  Object.keys(PENDING_LOG_DOM).forEach(function (elId) {
+    var queue = PENDING_LOG_DOM[elId];
+    if (!queue || !queue.length) return;
+    var box = $id(elId);
+    if (!box) return;
+    var fragment = document.createDocumentFragment();
+    for (var i = queue.length - 1; i >= 0; i--) {
+      var entry = queue[i];
+      var div = document.createElement('div');
+      div.className = 'log-line ' + entry.cls;
+      if (entry.cat) div.setAttribute('data-cat', entry.cat);
+      div.innerHTML = entry.msg;
+      fragment.appendChild(div);
+    }
+    box.insertBefore(fragment, box.firstChild);
+    var cap = queue[queue.length - 1].cap || 150;
+    while (box.children.length > cap) box.removeChild(box.lastChild);
+    queue.length = 0;
+  });
+}
+
+function flushDirtyDetailLogs() {
+  if (DETAIL_LOG_RENDER_DIRTY) {
+    var detailModal = $id('detail-log-modal');
+    if (detailModal && detailModal.style && detailModal.style.display !== 'none') renderDetailLog();
+    DETAIL_LOG_RENDER_DIRTY = false;
+  }
+  if (NEWFORGE_DETAIL_LOG_RENDER_DIRTY) {
+    var nfDetailModal = $id('newforge-detail-log-modal');
+    if (nfDetailModal && nfDetailModal.style && nfDetailModal.style.display !== 'none') renderNewForgeDetailLog();
+    NEWFORGE_DETAIL_LOG_RENDER_DIRTY = false;
+  }
 }
 
 function addLog(elId, msg, cls, cap, cat) {
@@ -305,12 +394,7 @@ function addLog(elId, msg, cls, cap, cat) {
 
   var box = $id(elId);
   if (!box) return;
-  var div = document.createElement('div');
-  div.className = 'log-line ' + (cls || '');
-  if (cat) div.setAttribute('data-cat', cat);
-  div.innerHTML = msg;
-  box.insertBefore(div, box.firstChild);
-  while (box.children.length > (cap || 150)) box.removeChild(box.lastChild);
+  enqueueLogDom(elId, msg, cls, cat, cap);
   if (elId === 'battle-log' || elId === 'boss-log') {
     var now = new Date();
     DETAIL_LOG_HISTORY.unshift({
@@ -320,11 +404,9 @@ function addLog(elId, msg, cls, cap, cat) {
       time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     });
     if (DETAIL_LOG_HISTORY.length > DETAIL_LOG_CAP) DETAIL_LOG_HISTORY.pop();
-    var detailModal = $id('detail-log-modal');
-    if (detailModal && detailModal.style && detailModal.style.display !== 'none') renderDetailLog();
+    DETAIL_LOG_RENDER_DIRTY = true;
   } else if (elId === 'newforge-log') {
-    var nfDetailModal = $id('newforge-detail-log-modal');
-    if (nfDetailModal && nfDetailModal.style && nfDetailModal.style.display !== 'none') renderNewForgeDetailLog();
+    NEWFORGE_DETAIL_LOG_RENDER_DIRTY = true;
   }
 }
 function blog(msg, cls, cat) {
@@ -654,9 +736,24 @@ function floatText(elId, text, cls, damageValue, ent) {
 }
 
 /* ---- 分頁 ---- */
+function markTabDirty(name) {
+  if (name === 'equip') {
+    UI.dirty.equip = true;
+    UI.dirty.inv = true;
+  } else if (name === 'newforge') {
+    UI.dirty.newforge = true;
+    UI.dirty.factory = true;
+  } else if (name === 'forge') UI.dirty.forge = true;
+  else if (name === 'tower') UI.dirty.tower = true;
+  else if (name === 'gems') UI.dirty.gems = true;
+  else if (name === 'skills') UI.dirty.skills = true;
+  else if (name === 'talents') UI.dirty.talents = true;
+}
+
 function switchTab(name) {
   if (name === 'talents' && typeof talentSystemUnlocked === 'function' && !talentSystemUnlocked()) name = 'equip';
   UI.tab = name;
+  markTabDirty(name);
   document.querySelectorAll('.tab-btn').forEach(function (b) {
     b.classList.toggle('active', b.getAttribute('data-tab') === name);
   });
@@ -1094,25 +1191,27 @@ function entStatus(ent) {
   }
   return s.join(' ');
 }
-function renderMpSkill(pEnt, prefix) {
-  var st = getStats();
+function renderMpSkill(pEnt, prefix, stats) {
+  var st = stats || getStats();
   var mpFill = $id(prefix + '-mp'), mpText = $id(prefix + '-mptext'), skillEl = $id(prefix + '-skill');
-  if (mpFill) mpFill.style.width = clamp(pEnt.mp / st.mp * 100, 0, 100) + '%';
-  if (mpText) mpText.textContent = fmt(Math.floor(pEnt.mp)) + ' / ' + fmt(st.mp);
+  setStyleIfChanged(mpFill, 'width', clamp(pEnt.mp / st.mp * 100, 0, 100) + '%');
+  setTextIfChanged(mpText, fmt(Math.floor(pEnt.mp)) + ' / ' + fmt(st.mp));
   if (skillEl) {
     var lo = G.player.loadout || [];
     if (!lo.length) {
-      skillEl.innerHTML = '<div style="grid-column:1/-1;color:var(--dim);text-align:center;font-size:12px;margin-top:4px;">（未裝備）</div>';
+      setHtmlIfChanged(skillEl, '<div style="grid-column:1/-1;color:var(--dim);text-align:center;font-size:12px;margin-top:4px;">（未裝備）</div>');
       return;
     }
 
     var arr = [];
     for (var i = 0; i < lo.length; i++) {
-      var sk = skillDef(lo[i]);
+      var entry = lo[i];
+      var isPotE = typeof entry === 'string' && entry.indexOf('potential:') === 0;
+      var sk = isPotE ? (typeof potentialDef === 'function' ? potentialDef(entry.slice(10)) : null) : skillDef(entry);
       if (!sk) continue;
-      var cd = (pEnt.skillCds && pEnt.skillCds[lo[i]]) || 0;
-      var lv = skillLevel(lo[i]);
-      arr.push({ sk: sk, lv: lv, cd: cd, cost: skillManaCost(sk, lv) });
+      var cd = (pEnt.skillCds && pEnt.skillCds[entry]) || 0;
+      var lv = isPotE ? potentialLevel(sk.id) : skillLevel(entry);
+      arr.push({ sk: sk, lv: lv, cd: cd, cost: isPotE ? 0 : skillManaCost(sk, lv) });
     }
 
     arr.sort(function (a, b) {
@@ -1131,7 +1230,7 @@ function renderMpSkill(pEnt, prefix) {
       else { txt = '✓'; cls = 'ready'; }
       h += '<div class="sk-run-item ' + cls + '">' + it.sk.emoji + ' <span>' + txt + '</span></div>';
     }
-    skillEl.innerHTML = h;
+    setHtmlIfChanged(skillEl, h);
   }
 }
 // 場景最高階段（當前場景以即時值為準）
@@ -1139,7 +1238,15 @@ function zoneBestOf(z) {
   if (G.stage.zone === z) return G.stage.best;
   return (G.zoneProgress && G.zoneProgress[z] && G.zoneProgress[z].best) || 1;
 }
+function currentZoneBarSignature() {
+  var parts = [G.stage.zone || 'plains'];
+  Object.keys(ZONES).forEach(function (z) { parts.push(z + ':' + zoneBestOf(z)); });
+  return parts.join('|');
+}
 function renderZoneBar() {
+  var signature = currentZoneBarSignature();
+  if (UI.zoneBarSignature === signature) return;
+  UI.zoneBarSignature = signature;
   var cur = G.stage.zone || 'plains';
   document.querySelectorAll('.zone-btn').forEach(function (b) {
     var z = b.getAttribute('data-zone');
@@ -1168,16 +1275,21 @@ function renderZoneBar() {
     }
   });
 }
-function refreshStageDisplay() {
+function refreshStageDisplay(stageOverride) {
   if (!G || !G.stage) return;
   var stg = G.stage;
   var znd = currentZoneDef();
   var label = $id('stage-label');
   var best = $id('stage-best');
   var auto = $id('st-auto');
-  if (label) label.textContent = znd.emoji + ' 第 ' + stg.current + ' 階段';
-  if (best) best.textContent = '最高' + stg.best + '關';
-  if (auto) auto.checked = stg.autoAdvance;
+  var displayStage = typeof stageOverride === 'number'
+    ? stageOverride
+    : (UI.stageHold.active && typeof UI.stageHold.targetStage === 'number'
+      ? UI.stageHold.targetStage
+      : stg.current);
+  setTextIfChanged(label, znd.emoji + ' 第 ' + displayStage + ' 階段');
+  setTextIfChanged(best, '最高' + stg.best + '關');
+  setCheckedIfChanged(auto, stg.autoAdvance);
 }
 function refreshCombatPauseButton() {
   var btn = $id('btn-combat-pause');
@@ -1185,8 +1297,10 @@ function refreshCombatPauseButton() {
   var paused = typeof isCombatPaused === 'function' && isCombatPaused();
   [btn, detailBtn].forEach(function (el) {
     if (!el) return;
-    el.setAttribute('aria-pressed', paused ? 'true' : 'false');
-    el.textContent = paused ? '▶ 繼續戰鬥' : '⏸ 暫停戰鬥';
+    var pressed = paused ? 'true' : 'false';
+    if (el.getAttribute('aria-pressed') === pressed) return;
+    el.setAttribute('aria-pressed', pressed);
+    setTextIfChanged(el, paused ? '▶ 繼續戰鬥' : '⏸ 暫停戰鬥');
     el.setAttribute('data-tt-title', '戰鬥控制');
     el.setAttribute('data-tt-desc', paused ? '繼續野外與高塔戰鬥' : '暫停野外與高塔戰鬥');
     el.classList.toggle('active', paused);
@@ -1239,11 +1353,11 @@ function renderPlayerShieldBar(prefix, entity, stats) {
   var shield = Math.max(0, entity.shield || 0);
   var shieldMax = playerShieldMax(entity, stats);
   if (shield > 0.5 && shieldMax > 0) {
-    shieldBar.style.display = 'block';
-    shieldBar.style.width = clamp(shield / shieldMax * 100, 0, 100) + '%';
+    setStyleIfChanged(shieldBar, 'display', 'block');
+    setStyleIfChanged(shieldBar, 'width', clamp(shield / shieldMax * 100, 0, 100) + '%');
   } else {
-    shieldBar.style.display = 'none';
-    shieldBar.style.width = '0%';
+    setStyleIfChanged(shieldBar, 'display', 'none');
+    setStyleIfChanged(shieldBar, 'width', '0%');
   }
 }
 function playerShieldText(entity) {
@@ -1278,11 +1392,11 @@ function renderBattle() {
   var p = FIELD.player;
   if (p) {
     var php = clamp(p.hp / st.hp * 100, 0, 100);
-    $id('pv-hp').style.width = php + '%';
+    setStyleIfChanged($id('pv-hp'), 'width', php + '%');
     renderPlayerShieldBar('pv', p, st);
-    $id('pv-hptext').innerHTML = fmt(Math.max(0, p.hp)) + playerShieldText(p) + ' / ' + fmt(st.hp);
-    $id('pv-status').textContent = FIELD.reviveCd > 0 ? ('💀 復活中 ' + fmt1(FIELD.reviveCd) + 's') : entStatus(p);
-    renderMpSkill(p, 'pv');
+    setHtmlIfChanged($id('pv-hptext'), fmt(Math.max(0, p.hp)) + playerShieldText(p) + ' / ' + fmt(st.hp));
+    setTextIfChanged($id('pv-status'), FIELD.reviveCd > 0 ? ('💀 復活中 ' + fmt1(FIELD.reviveCd) + 's') : entStatus(p));
+    renderMpSkill(p, 'pv', st);
   }
   // 與戰鬥引擎共用敵人集合，避免相容欄位仍有目標時畫面誤判為空。
   var enemies = (typeof visibleFieldEnemies === 'function')
@@ -1326,8 +1440,12 @@ function renderBattle() {
   if (party.getAttribute('data-enemy-signature') !== enemySignature) {
     party.innerHTML = partyHtml;
     party.setAttribute('data-enemy-signature', enemySignature);
+    UI.battleLayoutDirty = true;
   }
-  fitEnemyNames(party);
+  if (UI.battleLayoutDirty) {
+    fitEnemyNames(party);
+    UI.battleLayoutDirty = false;
+  }
   var cards = party.querySelectorAll('.enemy-card');
   for (var ci = 0; ci < cards.length && ci < enemies.length; ci++) {
     var card = cards[ci];
@@ -1335,11 +1453,11 @@ function renderBattle() {
     var fill = card.querySelector('.enemy-hp .hp-fill');
     var hpText = card.querySelector('.enemy-hp .hp-text');
     var status = card.querySelector('.enemy-status');
-    if (fill) fill.style.width = clamp(liveEnemy.hp / liveEnemy.maxHp * 100, 0, 100) + '%';
-    if (hpText) hpText.innerHTML = fmt(Math.max(0, liveEnemy.hp)) + (liveEnemy.shield > 0.5 ? '<span class="enemy-shield">+' + fmt(Math.max(0, liveEnemy.shield)) + '</span>' : '') + ' / ' + fmt(liveEnemy.maxHp);
+    setStyleIfChanged(fill, 'width', clamp(liveEnemy.hp / liveEnemy.maxHp * 100, 0, 100) + '%');
+    setHtmlIfChanged(hpText, fmt(Math.max(0, liveEnemy.hp)) + (liveEnemy.shield > 0.5 ? '<span class="enemy-shield">+' + fmt(Math.max(0, liveEnemy.shield)) + '</span>' : '') + ' / ' + fmt(liveEnemy.maxHp));
     if (status) {
-      status.setAttribute('data-enemy-index', String(ci));
-      status.innerHTML = entStatus(liveEnemy);
+      if (status.getAttribute('data-enemy-index') !== String(ci)) status.setAttribute('data-enemy-index', String(ci));
+      setHtmlIfChanged(status, entStatus(liveEnemy));
     }
     // 死亡清除延遲期間：頭像與血條在 FIELD_ENEMY_DEATH_CLEAR_DELAY 秒內由不透明線性淡出至約 10%
     var deathDelay = (typeof FIELD_ENEMY_DEATH_CLEAR_DELAY === 'number' && FIELD_ENEMY_DEATH_CLEAR_DELAY > 0) ? FIELD_ENEMY_DEATH_CLEAR_DELAY : 1;
@@ -1347,7 +1465,7 @@ function renderBattle() {
       ? (0.1 + 0.9 * clamp((liveEnemy._deathClearCd || 0) / deathDelay, 0, 1))
       : 1;
     var fadeEls = card.querySelectorAll('.cb-icon, .enemy-emoji-fallback, .enemy-hp');
-    for (var di = 0; di < fadeEls.length; di++) fadeEls[di].style.opacity = (fadeOpacity < 1 ? String(fadeOpacity) : '');
+    for (var di = 0; di < fadeEls.length; di++) setStyleIfChanged(fadeEls[di], 'opacity', fadeOpacity < 1 ? String(fadeOpacity) : '');
   }
   flushPendingEnemyFloats();
 }
@@ -1539,10 +1657,9 @@ function syncAncientEssenceToggle(it) {
   toggle.checked = eligible && !!it.useAncientEssence;
   toggle.disabled = !hasItem;
   if (warning) {
-    warning.textContent = hasItem && !eligible
-      ? '需裝備 Lv.200 以上且史詩以上'
-      : '';
-    warning.style.display = hasItem && !eligible ? '' : 'none';
+    // 提示文字改為點擊開關時上浮顯示，此處不再常態顯示，防備擠亂佈局
+    warning.textContent = '';
+    warning.style.display = 'none';
   }
 }
 
@@ -2646,25 +2763,43 @@ function renderTowerFight() {
     $id('tb-emoji').innerHTML = '<span style="font-size:48px;">' + (b.emoji || '👾') + '</span>';
   }
   $id('tb-name').className = 'cb-name' + (b.purgatory ? ' purgatory-boss' : '');
-  $id('tb-name').innerHTML = b.name;
+  setHtmlIfChanged($id('tb-name'), b.name);
   if ($id('tb-level')) {
     $id('tb-level').className = 'cb-level' + (b.purgatory ? ' purgatory-boss' : '');
-    $id('tb-level').textContent = 'Lv.' + b.level;
+    setTextIfChanged($id('tb-level'), 'Lv.' + b.level);
   }
-  $id('tb-hp').style.width = clamp(b.hp / b.maxHp * 100, 0, 100) + '%';
+  setStyleIfChanged($id('tb-hp'), 'width', clamp(b.hp / b.maxHp * 100, 0, 100) + '%');
   var bSh = (b.shield > 0.5) ? '<span style="color:var(--info)">+' + fmt(Math.max(0, b.shield)) + '</span>' : '';
-  $id('tb-hptext').innerHTML = fmt(Math.max(0, b.hp)) + bSh + ' / ' + fmt(b.maxHp) + '（' + Math.round(b.hp / b.maxHp * 100) + '%）';
-  $id('tb-status').innerHTML = entStatus(b) + (b.attr && ELEM_INFO[b.attr] ? ' 屬性:' + ELEM_INFO[b.attr].emoji + ELEM_INFO[b.attr].name : (b.elem ? ' 屬性:' + ENCHANTS[b.elem].emoji : ''));
-  $id('tp-hp').style.width = clamp(p.hp / st.hp * 100, 0, 100) + '%';
+  setHtmlIfChanged($id('tb-hptext'), fmt(Math.max(0, b.hp)) + bSh + ' / ' + fmt(b.maxHp) + '（' + Math.round(b.hp / b.maxHp * 100) + '%）');
+  setHtmlIfChanged($id('tb-status'), entStatus(b) + (b.attr && ELEM_INFO[b.attr] ? ' 屬性:' + ELEM_INFO[b.attr].emoji + ELEM_INFO[b.attr].name : (b.elem ? ' 屬性:' + ENCHANTS[b.elem].emoji : '')));
+  setStyleIfChanged($id('tp-hp'), 'width', clamp(p.hp / st.hp * 100, 0, 100) + '%');
   renderPlayerShieldBar('tp', p, st);
-  $id('tp-hptext').innerHTML = fmt(Math.max(0, p.hp)) + playerShieldText(p) + ' / ' + fmt(st.hp);
-  $id('tp-status').textContent = entStatus(p);
-  renderMpSkill(p, 'tp');
-  $id('tw-dps').textContent = 'DPS ' + fmt(TOWER.elapsed > 1 ? TOWER.dmgDealt / TOWER.elapsed : 0) +
-    '（需求 ' + fmt(b.maxHp / towerTimeLimitWithTalents()) + '）';
+  setHtmlIfChanged($id('tp-hptext'), fmt(Math.max(0, p.hp)) + playerShieldText(p) + ' / ' + fmt(st.hp));
+  setTextIfChanged($id('tp-status'), entStatus(p));
+  renderMpSkill(p, 'tp', st);
+  setTextIfChanged($id('tw-dps'), 'DPS ' + fmt(TOWER.elapsed > 1 ? TOWER.dmgDealt / TOWER.elapsed : 0) +
+    '（需求 ' + fmt(b.maxHp / towerTimeLimitWithTalents()) + '）');
+}
+
+function uiRenderingSuspended() {
+  return typeof document !== 'undefined' && document.hidden;
+}
+
+function markVisibleUiDirty() {
+  Object.keys(UI.dirty).forEach(function (key) { UI.dirty[key] = true; });
+  UI.battleLayoutDirty = true;
+}
+
+function handleVisibilityChange() {
+  if (uiRenderingSuspended()) return;
+  markVisibleUiDirty();
+  uiTick();
 }
 
 function uiTick() {
+  if (uiRenderingSuspended()) return;
+  flushPendingLogDom();
+  flushDirtyDetailLogs();
   var d = UI.dirty;
   // 分頁標題戰況（每秒更新一次即可）
   _titleTimer += 0.2;
@@ -2687,7 +2822,7 @@ function uiTick() {
   if (d.equip && UI.tab === 'equip') { renderEquip(); d.equip = false; }
   if (d.inv && UI.tab === 'equip') { renderInventory(); d.inv = false; }
   // 舊生產線頁已移除；零件庫/附魔書/強化統計變動（dirty.factory）一併驅動熔爐頁重繪
-  if ((d.newforge || d.inv || d.factory) && UI.tab === 'newforge') { renderNewForge(); d.newforge = false; d.factory = false; }
+  if ((d.newforge || d.inv || d.factory) && UI.tab === 'newforge') { renderNewForge(); d.newforge = false; d.factory = false; d.inv = false; }
   if ((d.forge || d.inv) && UI.tab === 'forge') { renderForge(); d.forge = false; d.inv = false; }
   if (UI.tab === 'forge' && forgeIsBusy()) renderForgeProgress();
   // 神鑄頁籤運行中小圖標：鑄造進行時旋轉顯示（不論目前所在分頁）
@@ -3092,10 +3227,11 @@ function renderSkills() {
   var lh = '';
   for (var i = 0; i < cap; i++) {
     var id0 = lo[i];
-    var d0 = id0 ? skillDef(id0) : null;
+    var isPot0 = typeof id0 === 'string' && id0.indexOf('potential:') === 0;
+    var d0 = id0 ? (isPot0 ? potentialDef(id0.slice(10)) : skillDef(id0)) : null;
     if (d0) {
       lh += '<span class="loadout-slot filled" draggable="true" data-index="' + i + '" data-skill-unequip="' + id0 + '" data-sk="' + id0 + '">' +
-        d0.emoji + ' ' + esc(d0.name) + ' Lv.' + skillLevel(id0) + '</span>';
+        d0.emoji + ' ' + esc(d0.name) + ' Lv.' + (isPot0 ? potentialLevel(d0.id) : skillLevel(id0)) + '</span>';
     } else {
       lh += '<span class="loadout-slot" data-index="' + i + '">空欄位</span>';
     }
@@ -3172,7 +3308,12 @@ function renderSkillModal() {
   var lock = isPotential
     ? (potentialTemporarilyDisabled(id) ? '此潛力技能目前暫不開放升級' : (potentialUnlocked(id) ? null : '潛力節點尚未解鎖'))
     : tierLockReason(id);
-  var inLoadout = !isPotential && (G.player.loadout || []).indexOf(id) >= 0;
+  // 裝載欄鍵：一般技能＝id、潛力技能＝'potential:<id>'；主動潛力技能與一般技能一樣可裝載施放。
+  var loadoutRef = isPotential ? 'potential:' + id : id;
+  var canEquip = isPotential
+    ? (typeof potentialEquippable === 'function' && potentialEquippable(sk))
+    : (sk.cat !== 'passive');
+  var inLoadout = (G.player.loadout || []).indexOf(loadoutRef) >= 0;
   var isFusion = !isPotential && sk.cat === 'fusion' && String(id).indexOf('fusion_') === 0;
   var description = function (level, skipFusion) {
     return describeSkill(id, level, skipFusion);
@@ -3215,10 +3356,12 @@ function renderSkillModal() {
     h += '<div style="visibility: hidden;"></div>'; // empty grid cell
   }
 
-  if (!isPotential && sk.cat !== 'passive' && lv > 0) {
+  if (canEquip && lv > 0) {
     h += inLoadout
-      ? '<button class="btn sm warn" data-skill-unequip="' + id + '">卸下</button>'
-      : '<button class="btn sm" data-skill-equip="' + id + '">⚔️ 裝備</button>';
+      ? '<button class="btn sm warn" data-skill-unequip="' + loadoutRef + '">卸下</button>'
+      : '<button class="btn sm" data-skill-equip="' + loadoutRef + '">⚔️ 裝備</button>';
+  } else if (isPotential && !canEquip && lv > 0) {
+    h += '<button class="btn sm" disabled data-tip="被動潛力技能學會即常駐生效">🌀 常駐</button>';
   } else {
     h += '<div style="visibility: hidden;"></div>'; // empty grid cell
   }
@@ -4282,15 +4425,61 @@ function showConfirmDialog(message, onConfirm, options) {
   }
 }
 
-function stopStageHoldRepeat(btn) {
+function stageHoldNow() {
+  return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+}
+
+function stageHoldStepCount(now, startedAt) {
+  var elapsed = Math.max(0, now - startedAt - STAGE_HOLD_START_MS);
+  return 1 + Math.floor(elapsed / STAGE_HOLD_REPEAT_MS);
+}
+
+function updateStageHoldPreview(now) {
+  if (!UI.stageHold.active || !G || !G.stage) return;
+  var steps = stageHoldStepCount(now, UI.stageHold.startedAt);
+  var targetStage = UI.stageHold.startStage + UI.stageHold.delta * steps;
+  targetStage = Math.max(1, Math.min(G.stage.best, targetStage));
+  if (targetStage === UI.stageHold.targetStage) return;
+  UI.stageHold.targetStage = targetStage;
+  refreshStageDisplay(targetStage);
+}
+
+function tickStageHold() {
+  if (!UI.stageHold.active) return;
+  var now = stageHoldNow();
+  updateStageHoldPreview(now);
+  var atBoundary = UI.stageHold.targetStage === 1 || UI.stageHold.targetStage === G.stage.best;
+  if (atBoundary) {
+    UI.stageHold.repeatTimer = null;
+    return;
+  }
+  var steps = stageHoldStepCount(now, UI.stageHold.startedAt);
+  var nextAt = UI.stageHold.startedAt + STAGE_HOLD_START_MS + steps * STAGE_HOLD_REPEAT_MS;
+  var delay = Math.max(0, nextAt - stageHoldNow());
+  UI.stageHold.repeatTimer = setTimeout(tickStageHold, delay);
+}
+
+function finishStageHold(btn) {
   clearTimeout(UI.stageHold.startTimer);
-  clearInterval(UI.stageHold.repeatTimer);
+  clearTimeout(UI.stageHold.repeatTimer);
   UI.stageHold.startTimer = null;
   UI.stageHold.repeatTimer = null;
-  if (btn && UI.stageHold.pointerId !== null && btn.hasPointerCapture && btn.hasPointerCapture(UI.stageHold.pointerId)) {
-    btn.releasePointerCapture(UI.stageHold.pointerId);
-  }
+  var wasActive = UI.stageHold.active;
+  var targetStage = UI.stageHold.targetStage;
+  var pointerId = UI.stageHold.pointerId;
+  UI.stageHold.active = false;
+  UI.stageHold.startedAt = 0;
+  UI.stageHold.startStage = 0;
+  UI.stageHold.targetStage = null;
+  UI.stageHold.delta = 0;
   UI.stageHold.pointerId = null;
+  if (wasActive && typeof targetStage === 'number' && targetStage !== G.stage.current) {
+    stageGo(targetStage - G.stage.current);
+  }
+  if (wasActive) refreshStageDisplay();
+  if (btn && pointerId !== null && btn.hasPointerCapture && btn.hasPointerCapture(pointerId)) {
+    btn.releasePointerCapture(pointerId);
+  }
   if (UI.stageHold.suppressClick) {
     clearTimeout(UI.stageHold.suppressTimer);
     UI.stageHold.suppressTimer = setTimeout(function () {
@@ -4317,27 +4506,38 @@ function bindStageHoldButton(id, delta) {
   });
   btn.addEventListener('pointerdown', function (e) {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
-    stopStageHoldRepeat(btn);
+    finishStageHold(btn);
     clearTimeout(UI.stageHold.suppressTimer);
     UI.stageHold.suppressTimer = null;
     UI.stageHold.suppressClick = false;
     UI.stageHold.pointerId = e.pointerId;
+    UI.stageHold.startedAt = stageHoldNow();
+    UI.stageHold.startStage = G.stage.current;
+    UI.stageHold.targetStage = G.stage.current;
+    UI.stageHold.delta = delta;
     if (btn.setPointerCapture) btn.setPointerCapture(e.pointerId);
     UI.stageHold.startTimer = setTimeout(function () {
+      UI.stageHold.startTimer = null;
+      UI.stageHold.active = true;
       UI.stageHold.suppressClick = true;
-      stepStageButton(delta);
-      UI.stageHold.repeatTimer = setInterval(function () {
-        stepStageButton(delta);
-      }, STAGE_HOLD_REPEAT_MS);
+      tickStageHold();
     }, STAGE_HOLD_START_MS);
   });
-  btn.addEventListener('pointerup', function () { stopStageHoldRepeat(btn); });
-  btn.addEventListener('pointercancel', function () { stopStageHoldRepeat(btn); });
-  btn.addEventListener('lostpointercapture', function () { stopStageHoldRepeat(btn); });
+  btn.addEventListener('pointerup', function () { finishStageHold(btn); });
+  btn.addEventListener('pointercancel', function () { finishStageHold(btn); });
+  btn.addEventListener('lostpointercapture', function () { finishStageHold(btn); });
 }
 
 function initUI() {
   updateTalentTabVisibility();
+  if (!UI.performanceEventsBound) {
+    window.addEventListener('resize', function () {
+      UI.battleLayoutDirty = true;
+      UI.dirty.battle = true;
+    });
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    UI.performanceEventsBound = true;
+  }
   
   // 本地測試服承傷顯示初始化：顯示在全螢幕按鈕右側
   var host = window.location.hostname;
@@ -5065,6 +5265,7 @@ function initUI() {
     if (nfDetailLogClear) {
       nfDetailLogClear.addEventListener('click', function () {
         NEWFORGE_LOG_HISTORY.length = 0;
+        clearPendingLogDom('newforge-log');
         newForgeLogStartTime = null;
         resetNewForgeCumulativeStats();
         var box = $id('newforge-log');
@@ -5484,6 +5685,10 @@ function initUI() {
       if (it) it.useAncientEssence = false;
       syncAncientEssenceToggle(it);
       renderDetail();
+      if (it && !ancientRerollEligible(it)) {
+        var anchor = $id('lbl-ancient-essence-toggle') || this;
+        showFloatingText(anchor, '需裝備 Lv.200 以上且史詩以上', '#fca5a5');
+      }
       return;
     }
     it.useAncientEssence = this.checked;

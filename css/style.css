@@ -765,18 +765,22 @@ body {
 }
 
 .ancient-essence-control {
-  display: inline-flex !important;
+  display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
+  line-height: 1.2;
 }
 
 .ancient-essence-warning {
   color: #fca5a5;
-  font-size: 11px;
-  line-height: 1.2;
-  white-space: nowrap;
+  font-size: 12px;
+  font-weight: normal;
+  margin-bottom: 2px;
 }
+
+
+
+
 
 .sec-sub {
   color: var(--dim);

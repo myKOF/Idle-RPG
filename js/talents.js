@@ -293,6 +293,7 @@ function potentialDowngrade(id) {
   var lv = potentialLevel(id);
   if (!lv) return '潛力技能目前是 0 級';
   talentState().potentialLevels[id] = lv - 1;
+  if (lv - 1 <= 0 && typeof unequipSkillFromLoadout === 'function') unequipSkillFromLoadout('potential:' + id); // 遺忘 → 卸下裝載
   talentRefresh();
   return null;
 }
@@ -300,6 +301,7 @@ function potentialDowngrade(id) {
 function potentialDelete(id) {
   if (!potentialDef(id)) return '找不到潛力技能';
   talentState().potentialLevels[id] = 0;
+  if (typeof unequipSkillFromLoadout === 'function') unequipSkillFromLoadout('potential:' + id); // 刪除 → 卸下裝載
   talentRefresh();
   return null;
 }
