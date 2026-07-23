@@ -1929,12 +1929,14 @@ function detailAction(act, actBtn) {
   renderDetail();
 }
 
-function salvageAllUnlocked(maxRarity) {
+function salvageAllUnlocked(maxRarity, maxLevel) {
   var kept = [], targets = [], count = 0, scrap = 0;
-  var hasRarityLimit = typeof maxRarity === 'number' && !isNaN(maxRarity);
+  var hasRarityLimit = typeof maxRarity === 'number' && !isNaN(maxRarity) && maxRarity >= 0;
+  var hasLevelLimit = typeof maxLevel === 'number' && !isNaN(maxLevel) && maxLevel > 0;
   G.inventory.forEach(function (it) {
     if (it.locked) { kept.push(it); return; }
     if (hasRarityLimit && it.rarity > maxRarity) { kept.push(it); return; }
+    if (hasLevelLimit && it.level > maxLevel) { kept.push(it); return; }
     targets.push(it);
   });
   if (targets.length && typeof manualSave === 'function') {
@@ -5562,7 +5564,20 @@ function initUI() {
   if (btnSalvageSettings && salvagePanel) {
     btnSalvageSettings.addEventListener('click', function (e) {
       e.stopPropagation();
-      salvagePanel.style.display = (salvagePanel.style.display === 'none' || !salvagePanel.style.display) ? 'flex' : 'none';
+      var isOpening = salvagePanel.style.display === 'none' || !salvagePanel.style.display;
+      if (isOpening) {
+        if (typeof G !== 'undefined' && G && G.player && G.player.salvageSettings) {
+          if (G.player.salvageSettings.maxRarity !== undefined && $id('salvage-rarity-select')) {
+            $id('salvage-rarity-select').value = String(G.player.salvageSettings.maxRarity);
+          }
+          if ($id('salvage-level-input')) {
+            $id('salvage-level-input').value = (G.player.salvageSettings.maxLevel !== null && G.player.salvageSettings.maxLevel !== undefined) ? G.player.salvageSettings.maxLevel : '';
+          }
+        }
+        salvagePanel.style.display = 'flex';
+      } else {
+        salvagePanel.style.display = 'none';
+      }
     });
 
     document.addEventListener('click', function (e) {
@@ -5573,16 +5588,43 @@ function initUI() {
 
     $id('btn-salvage-confirm').addEventListener('click', function (e) {
       e.stopPropagation();
-      var maxRarity = parseInt($id('salvage-rarity-select').value, 10);
-      var rName = RARITIES[maxRarity].name;
+      var rVal = parseInt($id('salvage-rarity-select').value, 10);
+      var maxRarity = isNaN(rVal) ? -1 : rVal;
+      var lvlInput = $id('salvage-level-input') ? $id('salvage-level-input').value.trim() : '';
+      var maxLevel = lvlInput ? parseInt(lvlInput, 10) : null;
+      if (isNaN(maxLevel) || maxLevel <= 0) maxLevel = null;
 
-      if (maxRarity >= 5) {
-        showConfirmDialog('確定要分解所有「' + rName + '及以下」的未鎖定裝備嗎？\n此操作無法復原。', function () {
-          salvageAllUnlocked(maxRarity);
+      // 記憶設定至存檔
+      if (typeof G !== 'undefined' && G && G.player) {
+        G.player.salvageSettings = G.player.salvageSettings || {};
+        G.player.salvageSettings.maxRarity = maxRarity;
+        G.player.salvageSettings.maxLevel = maxLevel;
+      }
+
+      var conds = [];
+      if (maxLevel !== null) {
+        conds.push('「' + maxLevel + ' 級及以下」');
+      }
+      if (maxRarity >= 0 && RARITIES[maxRarity]) {
+        conds.push('「' + RARITIES[maxRarity].name + '及以下品質」');
+      } else if (maxRarity < 0) {
+        conds.push('「不限品質」');
+      }
+
+      if (maxLevel === null && maxRarity < 0) {
+        conds.push('「所有等級與品質」');
+      }
+
+      var condText = conds.join(' 且 ');
+      var isHighRisk = (maxRarity >= 5 || maxRarity < 0 || maxLevel === null);
+
+      if (isHighRisk) {
+        showConfirmDialog('確定要分解符合 ' + condText + ' 的未鎖定裝備嗎？\n此操作無法復原。', function () {
+          salvageAllUnlocked(maxRarity, maxLevel);
           salvagePanel.style.display = 'none';
         }, { title: '裝備拆解確認', danger: true });
       } else {
-        salvageAllUnlocked(maxRarity);
+        salvageAllUnlocked(maxRarity, maxLevel);
         salvagePanel.style.display = 'none';
       }
     });

@@ -151,15 +151,29 @@
                 <div style="position: relative; display: inline-block;" id="salvage-settings-container">
                   <button id="btn-salvage-settings" class="btn sm warn">⚒️ 分解設定</button>
                   <div id="salvage-settings-panel"
-                    style="display: none; position: absolute; top: 100%; right: 0; background: #0b0f16; border: 1px solid #1b2230; padding: 10px; border-radius: 8px; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.8); width: max-content; margin-top: 5px; flex-direction: column; gap: 8px;">
-                    <select id="salvage-rarity-select" class="dropdown" style="width: 100%;">
-                      <option value="2">分解全部稀有品質及以下裝備</option>
-                      <option value="3">分解全部獨特品質及以下裝備</option>
-                      <option value="4">分解全部史詩品質及以下裝備</option>
-                      <option value="5">分解全部傳說品質及以下裝備</option>
-                      <option value="6">分解全部神話品質及以下裝備</option>
-                    </select>
-                    <button id="btn-salvage-confirm" class="btn sm warn" style="width: 100%;">確定</button>
+                    style="display: none; position: absolute; top: 100%; right: 0; background: #0b0f16; border: 1px solid #1b2230; padding: 12px; border-radius: 8px; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.8); width: max-content; min-width: 250px; margin-top: 5px; flex-direction: column; gap: 10px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: #94a3b8; width: 100%;">
+                      <span>品質門檻：</span>
+                      <select id="salvage-rarity-select" class="dropdown" style="flex: 1; font-size: 12px; padding: 4px 6px;">
+                        <option value="-1">不限品質</option>
+                        <option value="0">普通及以下品質</option>
+                        <option value="1">精良及以下品質</option>
+                        <option value="2">稀有及以下品質</option>
+                        <option value="3">獨特及以下品質</option>
+                        <option value="4">史詩及以下品質</option>
+                        <option value="5">傳說及以下品質</option>
+                        <option value="6">神話及以下品質</option>
+                        <option value="7">創世及以下品質</option>
+                      </select>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: #94a3b8; width: 100%;">
+                      <span>等級上限：</span>
+                      <div style="display: flex; align-items: center; gap: 4px;">
+                        <input type="number" id="salvage-level-input" min="1" max="9999" placeholder="不限等級" class="input sm" style="width: 85px; text-align: center; background: #111827; border: 1px solid #1b2230; color: #fff; border-radius: 4px; padding: 3px 6px; font-size: 12px;">
+                        <span style="font-size: 12px; color: #94a3b8;">級及以下</span>
+                      </div>
+                    </div>
+                    <button id="btn-salvage-confirm" class="btn sm warn" style="width: 100%; margin-top: 2px;">確定分解</button>
                   </div>
                 </div>
               </div>
