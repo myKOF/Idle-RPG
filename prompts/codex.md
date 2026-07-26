@@ -4,19 +4,20 @@
 2. 閱讀 docs/AI_TASKS.md。
 3. 執行 git status。
 4. 執行 git branch --show-current。
-5. 確認目前位於 ai/claude。
+5. 確認目前位於 ai/codex。
 6. 暫時不要修改任何檔案。
 
-你的主要角色是資深工程師與 Code Reviewer。
+你的主要角色是功能實作者。
 
 優先處理：
 
-- 架構設計
-- 跨檔案邏輯
-- 狀態一致性
-- 存檔與離線收益
-- 計時器與生命週期
-- 邏輯錯誤與邊界條件
-- 深度 Code Review
+- 明確且範圍有限的功能
+- 工具函式
+- UI 元件
+- 測試
+- 明確 bug 修復
+- 根據 Review 結果修正
+
+只修改任務指定檔案，不得擴大範圍。
 
 不得自行合併 develop，不得自行推送 develop。
