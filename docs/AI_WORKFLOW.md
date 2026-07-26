@@ -1,133 +1,449 @@
-# Idle-RPG 多 AI 開發規則
+# AI_WORKFLOW.md
 
-## 1. 工作區與分支
+本文件定義 Idle-RPG 專案中多 AI 的 Git、Worktree、分支、提交、審查與合併流程。
 
-- 主工作區：D:\MyGame\Idle-RPG\main
-- 主整合分支：develop
-- Claude Code 工作區：D:\MyGame\Idle-RPG\claude
-- Claude Code 分支：ai/claude
-- Codex 工作區：D:\MyGame\Idle-RPG\codex
-- Codex 分支：ai/codex
-- Antigravity 工作區：D:\MyGame\Idle-RPG\antigravity
-- Antigravity 分支：ai/antigravity
+程式架構與開發規則請參考：
 
-任何 AI 都不得直接在主工作區工作。
+AI_RULES.md
 
-## 2. Git 安全規則
+AI 角色分工請參考：
+
+AGENTS.md
+
+目前任務分配請參考：
+
+docs/AI_TASKS.md
+
+---
+
+# 1. 工作區與分支
+
+主整合工作區：
+
+D:\MyGame\Idle-RPG\main
+
+分支：
+
+develop
+
+用途：
+
+- 合併各 AI 的修改
+- 執行最終測試
+- 處理衝突
+- 推送遠端
+- 建立正式版本
+
+---
+
+Claude Code 工作區：
+
+D:\MyGame\Idle-RPG\claude
+
+分支：
+
+ai/claude
+
+---
+
+Codex 工作區：
+
+D:\MyGame\Idle-RPG\codex
+
+分支：
+
+ai/codex
+
+---
+
+Antigravity 工作區：
+
+D:\MyGame\Idle-RPG\antigravity
+
+分支：
+
+ai/antigravity
+
+---
+
+# 2. 基本原則
 
 所有 AI 必須遵守：
 
-1. 只能在自己的工作區與分支工作。
-2. 禁止切換到 develop、main 或其他 AI 的分支。
-3. 禁止自行合併 develop。
-4. 禁止自行推送 develop。
-5. 禁止執行 git push --force。
-6. 禁止執行 git reset --hard。
-7. 禁止執行 git clean。
-8. 禁止刪除其他 AI 建立的分支。
-9. 禁止修改任務範圍外的檔案。
-10. 如需修改任務範圍外檔案，必須停止並回報原因。
-11. 每個獨立功能必須建立獨立 commit。
-12. 不得把多個無關修改放入同一個 commit。
+- 只能在自己的 Worktree 工作
+- 只能在自己的分支修改
+- 不得直接修改 develop
+- 不得自行合併 develop
+- 不得自行推送 develop
+- 不得修改其他 AI 正在處理的檔案
+- 不得覆蓋來源不明的修改
 
-## 3. 開始任務前
+主工作區只用於：
 
-每個 AI 開始工作前必須：
+- 合併
+- 測試
+- 衝突處理
+- 正式提交
+- 推送遠端
 
-1. 閱讀本文件。
-2. 執行 git status。
-3. 執行 git branch --show-current。
-4. 確認目前分支不是 develop 或 main。
-5. 檢查工作區是否已有未提交修改。
-6. 確認本次允許修改與禁止修改的範圍。
+---
 
-如果工作區已有不明修改，必須停止，不得覆蓋。
+# 3. 開始任務前
 
-## 4. 修改規則
-
-1. 優先使用既有架構與工具。
-2. 禁止建立重複系統。
-3. 禁止在多處保存相同狀態。
-4. 禁止無理由重寫整個檔案。
-5. 禁止順手修改與任務無關的程式碼。
-6. 不得刪除既有測試來讓測試通過。
-7. 不得關閉錯誤檢查或降低測試標準來隱藏問題。
-8. 新功能應盡量附帶測試。
-9. 修復 bug 時應記錄重現條件與修正原因。
-10. 共用設定應維持單一資料來源。
-
-## 5. Idle-RPG 專案重點
-
-審查或修改時應特別注意：
-
-- 遊戲狀態是否只有單一權威來源。
-- 計時器是否重複建立。
-- setInterval、setTimeout 是否正確清理。
-- DOM 事件監聽器是否重複註冊或未移除。
-- 存檔格式是否向後相容。
-- 離線收益是否可能重複領取。
-- 大數值計算是否出現 Infinity、NaN 或精度問題。
-- 戰鬥循環是否可能重複執行。
-- 暫停、切頁、重新整理後狀態是否一致。
-- UI 是否直接修改核心遊戲狀態。
-- 配置表內容是否被硬編碼到程式碼。
-- 自動戰鬥與手動操作是否可能互相競爭。
-- 測試是否依賴不穩定的時間或執行順序。
-
-## 6. 提交前檢查
-
-完成任務後必須執行：
+每個 AI 開始工作前必須執行：
 
 git status
-git diff --stat
-git diff
+
+git branch --show-current
 
 並確認：
 
-- 沒有任務範圍外的修改。
-- 沒有提交 node_modules、tmp、日誌或其他產物。
-- 沒有留下除錯輸出。
-- 沒有未處理的 TODO 或暫時方案。
-- 測試結果已記錄。
+- 目前位於正確 Worktree
+- 目前位於自己的分支
+- 沒有來源不明的修改
+- 已讀取 AI_RULES.md
+- 已讀取 AGENTS.md
+- 已讀取 docs/AI_TASKS.md
+- 本次允許修改範圍明確
 
-## 7. Commit 規則
+如果工作區或分支錯誤，禁止開始修改。
 
-Commit 訊息使用以下格式：
+---
 
-- feat: 新增功能
-- fix: 修復問題
-- refactor: 重構但不改變行為
-- test: 新增或修改測試
-- docs: 文件修改
-- chore: 工具或維護修改
+# 4. 任務分配
+
+使用者不需要事先正確選擇 AI。
+
+如果任務被交給不適合的 AI，收到任務的 AI 必須：
+
+1. 先分析任務
+2. 說明不適合直接執行的原因
+3. 建議適合的 AI
+4. 提供可直接轉交的任務摘要
+5. 說明自己仍可承接的部分
+
+不得在未分析前只回覆「請改交給另一個 AI」。
+
+正式修改程式前，必須先記錄在 docs/AI_TASKS.md。
+
+純討論、需求釐清、架構分析或 Code Review，可以先不建立正式任務；一旦確定要修改檔案，就必須更新任務記錄。
+
+至少必須寫明：
+
+- 負責 AI
+- 任務名稱
+- 任務內容
+- 允許修改的檔案
+- 禁止修改的檔案
+- 測試要求
+- 前置依賴
+- 後續接手者
+
+同一時間，同一個正式檔案只能由一個 AI 修改。
+
+如果兩個 AI 都需要修改同一檔案，必須改成依序處理。
+
+---
+
+# 5. 修改流程
+
+標準修改流程：
+
+1. 確認任務內容
+2. 確認允許修改範圍
+3. 分析現有架構
+4. 說明預計修改方式
+5. 進行修改
+6. 執行 Build 或測試
+7. 檢查 Git Diff
+8. 建立 Commit
+9. 回報結果
+10. 等待 Review 或合併
+
+禁止在任務進行中自行擴大範圍。
+
+---
+
+# 6. Commit 規則
+
+每個 Commit 只處理一個明確目的。
+
+Commit 格式：
+
+類型: 簡短描述
+
+允許類型：
+
+feat:
+
+fix:
+
+refactor:
+
+test:
+
+docs:
+
+chore:
 
 範例：
 
-feat: add offline reward calculation
-fix: prevent duplicate combat timers
-test: cover save migration edge cases
+feat: add skill fusion system
 
-## 8. 完成回報格式
+fix: prevent duplicate combat timer
 
-每次完成任務後必須回報：
+test: add formula calculation tests
 
-### 完成內容
-簡述完成了什麼。
+docs: update AI workflow
 
-### 修改檔案
-列出所有修改檔案。
+禁止使用過於模糊的訊息，例如：
 
-### Commit
-提供 commit 編號與訊息。
+update
 
-### 測試
-列出執行的測試指令。
+changes
 
-### 測試結果
-說明通過、失敗或未執行。
+fix stuff
 
-### 已知風險
-列出尚未解決或需要注意的問題。
+修改
 
-### 後續工作
-說明是否需要其他 AI 審查、修正或驗證。
+完成
+
+---
+
+# 7. Commit 前檢查
+
+建立 Commit 前必須執行：
+
+git status
+
+git diff --stat
+
+git diff
+
+git diff --check
+
+確認：
+
+- 沒有任務外修改
+- 沒有意外刪除
+- 沒有 node_modules
+- 沒有 tmp
+- 沒有測試產物
+- 沒有除錯輸出
+- 文件已同步
+- Build 或測試已完成
+
+---
+
+# 8. Code Review 流程
+
+建議流程：
+
+實作者完成 Commit
+→ Claude Code Review
+→ 實作者修正
+→ Claude 再次確認
+→ Antigravity 實際驗證
+→ 使用者合併
+
+Claude Code Review 預設只讀，不修改檔案。
+
+Review 應檢查：
+
+- 邏輯錯誤
+- 架構一致性
+- 技能與公式正確性
+- 存檔相容性
+- Timer 與 Event 問題
+- 效能與記憶體
+- 測試是否足夠
+- 是否有任務外修改
+
+Critical 或 High 問題未修復前，不應合併。
+
+---
+
+# 9. 合併流程
+
+合併只能在主工作區進行：
+
+D:\MyGame\Idle-RPG\main
+
+合併前必須執行：
+
+git branch --show-current
+
+git status
+
+必須確認：
+
+- 目前分支是 develop
+- 工作區沒有未提交修改
+- 要合併的 Agent 分支已完成 Review
+- 必要測試已通過
+
+每次只合併一個 Agent 分支。
+
+例如：
+
+git merge --no-ff ai/codex -m "merge: integrate Codex changes"
+
+合併後必須立即：
+
+1. 執行 Build
+2. 執行相關測試
+3. 驗證功能
+4. 檢查 Console
+5. 再次執行 git status
+
+通過後才能合併下一個分支。
+
+---
+
+# 10. 建議合併順序
+
+一般建議順序：
+
+1. 共用工具
+2. 核心架構
+3. 技能、公式與遊戲邏輯
+4. UI
+5. 測試
+6. 文件
+7. 瀏覽器驗證
+
+如果分支之間有依賴，應依照實際依賴順序合併。
+
+---
+
+# 11. 衝突處理
+
+發生衝突時，先執行：
+
+git status
+
+不得：
+
+- 直接接受全部其中一方
+- 直接覆蓋整份檔案
+- 未理解內容就刪除其中一側
+- 為了快速合併而移除功能
+
+處理衝突時必須：
+
+1. 理解 develop 的修改目的
+2. 理解 Agent 分支的修改目的
+3. 保留雙方必要內容
+4. 檢查是否產生重複系統
+5. 執行完整相關測試
+
+如果無法安全處理，可以執行：
+
+git merge --abort
+
+然後重新規劃。
+
+---
+
+# 12. 分支同步
+
+develop 更新後，不應在 Agent 任務進行中立即同步。
+
+只有在：
+
+- Agent 任務已完成
+- Agent 工作區乾淨
+- 下一輪任務尚未開始
+
+才適合同步 develop。
+
+同步前必須執行：
+
+git status
+
+如果工作區不是乾淨狀態，禁止同步。
+
+---
+
+# 13. 回退原則
+
+優先使用：
+
+git revert <commit>
+
+保留完整歷史。
+
+禁止預設使用：
+
+git reset --hard
+
+如果合併後發現問題：
+
+1. 停止合併其他分支
+2. 記錄失敗內容
+3. 找出問題 Commit
+4. 使用 Revert 或新的修正 Commit
+5. 重新測試
+
+---
+
+# 14. 推送遠端
+
+只有主整合工作區可以推送 develop。
+
+推送前確認：
+
+- 工作區乾淨
+- Build 通過
+- 測試通過
+- 沒有測試產物
+- 沒有敏感資料
+- Commit 訊息清楚
+
+AI 預設不得自行推送 develop。
+
+---
+
+# 15. 標準協作流程
+
+一般功能：
+
+1. 使用者描述功能、問題或預期結果
+2. 收到任務的 AI 進行任務分類與風險判斷
+3. AI 建議負責者、拆分方式與驗證流程
+4. 正式修改程式前，更新 docs/AI_TASKS.md
+5. 對應 AI 開始規劃或實作
+6. Claude Code Review
+7. 實作者修正
+8. Antigravity 實際驗證
+9. 使用者在 main 合併
+10. 執行最終測試
+11. 推送 develop
+
+---
+
+# 16. 完成交接
+
+每個 AI 完成後必須回報：
+
+1. 完成內容
+2. 修改檔案
+3. Commit 編號
+4. Build 或測試指令
+5. 測試結果
+6. 已知風險
+7. 後續接手者
+
+# 17. 任務完成定義（Definition of Done）
+
+任務只有在下列條件全部成立時才算完成：
+
+- 功能符合需求。
+- 已完成必要驗證。
+- Code Review 已完成（若需要）。
+- Regression Test 已完成（若需要）。
+- docs/AI_TASKS.md 已更新。
+- 已知風險已記錄。
+- 建議下一步已提供。
+
+未符合以上條件，不得標示為「完成」。
