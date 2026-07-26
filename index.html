@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>無限征途：合成之巔</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/inventory-offset.css">
+</head>
+
+<body>
+  <div id="loading-screen" class="loading-screen" role="status" aria-live="polite" aria-hidden="false">
+    <div id="loading-screen-label" class="loading-screen-label">Loading.</div>
+  </div>
+  <script>
+    (function () {
+      var timer = 0;
+      var dots = 1;
+      function updateLoadingText() {
+        var label = document.getElementById('loading-screen-label');
+        if (label) label.textContent = 'Loading' + '.'.repeat(dots);
+        dots = dots >= 3 ? 1 : dots + 1;
+      }
+      window.showLoadingScreen = function () {
+        var screen = document.getElementById('loading-screen');
+        if (!screen) return;
+        screen.classList.remove('is-hidden');
+        screen.setAttribute('aria-hidden', 'false');
+        clearInterval(timer);
+        dots = 1;
+        updateLoadingText();
+        timer = setInterval(updateLoadingText, 350);
+      };
+      window.hideLoadingScreen = function () {
+        clearInterval(timer);
+        var screen = document.getElementById('loading-screen');
+        if (!screen) return;
+        screen.classList.add('is-hidden');
+        screen.setAttribute('aria-hidden', 'true');
+      };
+      window.showLoadingScreen();
+    })();
+  </script>
+  <div id="update-banner" onclick="showLoadingScreen(); location.reload()">🔄 發現遊戲新版本！點擊此處或按 F5 重新整理以載入最新內容。</div>
+
+  <header id="topbar">
+    <div class="brand">⚔️ 無限征途<span class="brand-sub">合成之巔</span><button id="btn-fullscreen" class="fs-btn" data-tip="進入網頁全螢幕">⛶</button></div>
+    <div id="res-bar">
+
+      <span class="res" data-tt-title="金幣" data-tt-desc="目前持有的金幣"><img src="images/icon_gold.png" class="res-icon" alt="Gold"> <b
+          id="r-gold">0</b></span>
+      <span class="res" data-tt-title="裝備碎片" data-tt-desc="目前持有的裝備碎片"><img src="images/icon_scrap.png" class="res-icon" alt="Scrap"> <b
+          id="r-scrap">0</b></span>
+      <span class="res" data-tt-title="附魔精華" data-tt-desc="目前持有的附魔精華"><img src="images/icon_essence.png" class="res-icon" alt="Essence"> <b
+          id="r-essence">0</b></span>
+      <span class="res" data-tt-title="魔塵" data-tt-desc="神鑄材料，可提升鑄造成功率">💫 <b id="r-dust">0</b></span>
+      <span class="res" data-tt-title="太古精華" data-tt-desc="太古機制改版：太古詞條於裝備產出時決定，此資源暫保留、用途待定"><img src="images/icon_ancient_essence.png" class="res-icon" alt="Ancient Essence"> <b id="r-ancient-essence">0</b></span>
+      <span class="res" data-tt-title="魔魂本源" data-tt-desc="用於本源覺醒的道具"><span class="res-emoji" aria-hidden="true">🧿</span> <b id="r-soul-origin">0</b></span>
+      <span class="res" data-tt-title="魔種" data-tt-desc="煉獄之塔 BOSS 額外掉落材料。"><span class="res-emoji" aria-hidden="true">🌱</span> <b id="r-demon-seed">0</b></span>
+      <span class="res" data-tt-title="寶石" data-tt-desc="目前持有的寶石"><img src="images/icon_gems.png" class="res-icon" alt="Gems"> <b
+          id="r-gems">0</b></span>
+      <span class="res" data-tt-title="附魔書" data-tt-desc="目前持有的附魔書"><img src="images/icon_books.png" class="res-icon" alt="Books"> <b
+          id="r-books">0</b></span>
+    </div>
+  </header>
+
+  <div id="game-layout">
+    <div id="stats-sidebar" class="panel">
+      <div class="sidebar-avatar"><img src="images/icon_avatar.png" alt="Avatar"></div>
+      <div class="sidebar-title" id="p-class">冒險者</div>
+      <div class="sidebar-level">
+        <span id="p-level" class="plevel">Lv.1</span>
+        <div id="xp-bar">
+          <div id="xp-fill"></div>
+        </div>
+        <div id="p-reincarnation" class="reincarnation-info">轉生：0/10</div>
+        <button id="btn-reincarnate" class="btn sm reincarnate-btn" data-tip="等級達到9999級可使用">🔄 轉生</button>
+      </div>
+
+      <div class="sidebar-stats" id="attr-panel"></div>
+    </div>
+
+    <div id="workspace-area">
+      <nav id="tabs">
+        <button class="tab-btn active" data-tab="equip">🎒 裝備</button>
+        <button class="tab-btn" data-tab="newforge">🏭 熔爐</button>
+        <button class="tab-btn" data-tab="gems">💎 寶石</button>
+        <button class="tab-btn" data-tab="skills">🧠 技能</button>
+        <button class="tab-btn" data-tab="talents">🌟 天賦</button>
+        <button class="tab-btn" data-tab="forge" style="display:none">🔯 神鑄<span id="forge-run-ind" class="forge-run-ind" style="display:none"></span></button>
+        <button class="tab-btn" data-tab="tower">🗼 高塔</button>
+        <button class="tab-btn" data-tab="settings">⚙️ 設定</button>
+      </nav>
+
+      <main>
+
+        <section id="tab-equip" class="tab active">
+          <div class="equip-top-layout">
+            <div class="equip-layout">
+              <div>
+                <div id="equip-grid"></div>
+                <div id="equip-set-tabs"></div>
+              </div>
+              <div>
+                <div class="sec-title equip-detail-head">
+                  <span>裝備詳情</span>
+                  <span class="equip-detail-controls">
+                    <label style="font-size: 13px; font-weight: normal; cursor: pointer; color: var(--text);">
+                      <input type="checkbox" id="toggle-compare" style="margin-right: 4px; cursor: pointer;">比較裝備
+                    </label>
+                    <label id="lbl-autoequip" style="font-size: 13px; font-weight: normal; cursor: pointer; color: var(--text);">
+                      <input type="checkbox" id="toggle-autoequip" style="margin-right: 4px; cursor: pointer;">自動穿裝
+                    </label>
+                  </span>
+                </div>
+                <div id="detail-pane" class="panel">
+                  <div class="hint">點選裝備查看詳情</div>
+                </div>
+                <div id="equip-action-bar" class="detail-actions equip-action-bar"></div>
+              </div>
+            </div>
+            <div id="equip-material-panel" class="equip-material-panel" aria-live="polite"></div>
+          </div>
+          <div id="inv-section-box" class="equip-section-box">
+            <div class="inv-head">
+              <span class="sec-title" style="display: flex; align-items: center; gap: 8px;">
+                背包 <span id="inv-count">0/60</span>
+                <button id="inv-expand" class="btn sm" data-tt-title="擴充背包空間" data-tt-desc="增加背包容量">➕ 擴充 (10000<img src="images/icon_gold.png" class="res-icon">)</button>
+              </span>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <input type="text" id="inv-keyword-filter" class="input sm" placeholder="關鍵字篩選" style="display: none; background: #0b0f16; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; font-size: 13px; height: 26px; width: 90px; outline: none;" data-tt-title="關鍵字篩選" data-tt-desc="輸入裝備詞條或傳奇特效關鍵字，符合者亮起、其餘置灰（僅限內測服）">
+                <select id="inv-ancient-filter" class="dropdown sm" style="background: #0b0f16; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 20px 2px 6px; font-size: 13px; cursor: pointer; height: 26px; outline: none;">
+                  <option value="" style="color: var(--text);">不限太古</option>
+                  <option value="0" style="color: var(--text); background: #000;">0 太古</option>
+                  <option value="1" style="color: #fb923c; background: #000;">1 太古</option>
+                  <option value="2" style="color: #fb923c; background: #000;">2 太古</option>
+                  <option value="3" style="color: #fb923c; background: #000;">3 太古</option>
+                  <option value="4" style="color: #fb923c; background: #000;">4 太古</option>
+                  <option value="5" style="color: #fb923c; background: #000;">5 太古</option>
+                  <option value="6" style="color: #fb923c; background: #000;">6 太古</option>
+                  <option value="7" style="color: #fb923c; background: #000;">7+ 太古</option>
+                </select>
+                <select id="inv-rarity-filter" class="dropdown sm" style="background: #0b0f16; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 20px 2px 6px; font-size: 13px; cursor: pointer; height: 26px; outline: none;">
+                  <option value="" style="color: var(--text);">取消篩選</option>
+                  <option value="0" style="color: #9aa5b1; background: #000;">普通</option>
+                  <option value="1" style="color: #4ade80; background: #000;">精良</option>
+                  <option value="2" style="color: #38bdf8; background: #000;">稀有</option>
+                  <option value="3" style="color: #ffd700; background: #000;">獨特</option>
+                  <option value="4" style="color: #c084fc; background: #000;">史詩</option>
+                  <option value="5" style="color: #fb923c; background: #000;">傳說</option>
+                  <option value="6" style="color: #f87171; background: #000;">神話</option>
+                  <option value="7" style="color: #b8860b; background: #000;">創世</option>
+                  <option value="8" style="color: #f5c542; background: #000;">神鑄創世</option>
+                </select>
+                <button id="inv-sort" class="btn sm">🔄 排序 (等級)</button>
+                <div style="position: relative; display: inline-block;" id="salvage-settings-container">
+                  <button id="btn-salvage-settings" class="btn sm warn">⚒️ 分解設定</button>
+                  <div id="salvage-settings-panel"
+                    style="display: none; position: absolute; top: 100%; right: 0; background: #0b0f16; border: 1px solid #1b2230; padding: 12px; border-radius: 8px; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.8); width: max-content; min-width: 250px; margin-top: 5px; flex-direction: column; gap: 10px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: #94a3b8; width: 100%;">
+                      <span>品質門檻：</span>
+                      <select id="salvage-rarity-select" class="dropdown" style="flex: 1; font-size: 12px; padding: 4px 6px;">
+                        <option value="-1">不限品質</option>
+                        <option value="0">普通及以下品質</option>
+                        <option value="1">精良及以下品質</option>
+                        <option value="2">稀有及以下品質</option>
+                        <option value="3">獨特及以下品質</option>
+                        <option value="4">史詩及以下品質</option>
+                        <option value="5">傳說及以下品質</option>
+                        <option value="6">神話及以下品質</option>
+                        <option value="7">創世及以下品質</option>
+                      </select>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: #94a3b8; width: 100%;">
+                      <span>太古門檻：</span>
+                      <select id="salvage-ancient-select" class="dropdown" style="flex: 1; font-size: 12px; padding: 4px 6px;">
+                        <option value="-1">不限太古</option>
+                        <option value="0">0 太古及以下</option>
+                        <option value="1">1 太古及以下</option>
+                        <option value="2">2 太古及以下</option>
+                        <option value="3">3 太古及以下</option>
+                        <option value="4">4 太古及以下</option>
+                        <option value="5">5 太古及以下</option>
+                        <option value="6">6 太古及以下</option>
+                        <option value="7">7 太古及以下</option>
+                      </select>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: #94a3b8; width: 100%;">
+                      <span>等級上限：</span>
+                      <div style="display: flex; align-items: center; gap: 4px;">
+                        <input type="number" id="salvage-level-input" min="1" max="9999" placeholder="不限等級" class="input sm" style="width: 85px; text-align: center; background: #111827; border: 1px solid #1b2230; color: #fff; border-radius: 4px; padding: 3px 6px; font-size: 12px;">
+                        <span style="font-size: 12px; color: #94a3b8;">級及以下</span>
+                      </div>
+                    </div>
+                    <button id="btn-salvage-confirm" class="btn sm warn" style="width: 100%; margin-top: 2px;">確定分解</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="inventory-grid"></div>
+          </div>
+        </section>
+
+        <!-- ============ 熔爐（正式版：品質勾選路由；原舊生產線已合併移除） ============ -->
+        <section id="tab-newforge" class="tab">
+          <div class="panel nf-top-panel">
+            <div class="sec-title">🏭 熔爐</div>
+            <div class="nf-controls">
+              <span class="dim-text">佇列 <b id="nf-queue-count">0</b> 件</span>
+            </div>
+            <div class="hint">戰鬥掉落的裝備自動進入熔爐佇列，依各熔爐勾選的品質送入傳送帶拆解（由右至左入爐）；未勾選品質、上鎖與神鑄創世裝備保留入包。拆解產出裝備碎片、金幣與附魔精華等資源，不會產出寶石（鑲嵌寶石會自動取回）；為熔爐裝上零件可強化該爐的拆解速度與產出。</div>
+          </div>
+
+          <div id="nf-furnaces"></div>
+
+          <div class="panel">
+            <div class="sec-title">➕ 添加熔爐 <span id="nf-count" class="dim-text"></span></div>
+            <div class="nf-add-row">
+              <button class="btn sm" data-nf-add="1">🔥 添加鍛造熔爐</button>
+            </div>
+            <div class="hint">熔爐可設數量與轉生連動：0 轉 2 座、每 1 轉 +1 座、上限 12 座。每座熔爐勾選品質後，該品質裝備會自動進入傳送帶拆解。</div>
+          </div>
+
+          <div class="factory-flow">
+            <!-- 附魔書庫存（自原生產線頁搬入） -->
+            <div class="panel node-card">
+              <div class="node-title">✨ 附魔書庫存 <span class="node-badge">Enchant</span></div>
+              <div class="node-body">
+                <div class="hint">📌 附魔已改為手動操作：到「🎒 裝備」分頁點選裝備，即可用附魔書附魔（消耗書＋精華），點擊既有附魔可取下（返還書）。</div>
+                <div class="node-info" id="enc-info"></div>
+                <div class="sec-sub">附魔書庫存</div>
+                <div id="enc-books" class="chip-row"></div>
+                <div class="hint">攻擊類（六元素）→ 武器/戒指/護手/手腕｜防禦類（抗性）→ 頭盔/肩甲/胸甲/腰帶/護腿｜功能類 → 項鍊/靴子。附魔欄位數依品質：普~稀有 1、獨特~傳說
+                  2、神話/創世
+                  3。</div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="log-header">
+            <div class="log-title">熔爐紀錄</div>
+            <div class="log-header-actions">
+              <button id="btn-newforge-log-detail" class="btn sm" type="button" data-tt-title="熔爐詳情" data-tt-desc="開啟完整熔爐日誌">📜 詳情</button>
+            </div>
+          </div>
+          <div id="newforge-log" class="log"></div>
+        </section>
+
+        <!-- ============ 神鑄 ============ -->
+        <section id="tab-forge" class="tab">
+          <div class="panel forge-panel">
+            <div class="forge-head">
+              <span class="sec-title">🔯 神鑄法陣</span>
+              <span id="forge-rate" class="forge-rate"></span>
+            </div>
+            <div id="forge-stage">
+              <div class="forge-info-btn"
+                data-tip="將 6 件&lt;b&gt;相同品質&lt;/b&gt;的裝備（僅限 &lt;span style=&quot;color:#fb923c&quot;&gt;傳說&lt;/span&gt; / &lt;span style=&quot;color:#f87171&quot;&gt;神話&lt;/span&gt; / &lt;span style=&quot;color:#b8860b&quot;&gt;創世&lt;/span&gt;）放入六芒星，點「鑄造」有機會獲得&lt;b&gt;下一品質&lt;/b&gt;隨機部位裝備 1 件；失敗將隨機消耗 3 件、其餘退回背包。&lt;br&gt;點擊六個角尖的圓形符位可放置 💫 魔塵，每個 +5% 成功率（最多 6 個）。&lt;br&gt;6 件創世鑄造成功將獲得&lt;b style=&quot;color:#f5c542&quot;&gt;神鑄創世&lt;/b&gt;暗金裝備：屬性與上限為創世的 1.5 倍、必帶 2 條專屬特效，且無法再放入法陣。&lt;br&gt;基礎成功率：傳說 55%｜神話 40%｜創世 25%。金幣消耗：傳說 500 萬｜神話 2000 萬｜創世 1 億。&lt;br&gt;&lt;br&gt;💎 &lt;b&gt;寶石神鑄&lt;/b&gt;：切換下方「寶石」頁籤，放入 6 顆&lt;b&gt;相同種類與階級&lt;/b&gt;（五階以上）的寶石，成功合成&lt;b&gt;高一階&lt;/b&gt;寶石（最高十階，每高一階能力 ×2）；失敗損失 3 顆、其餘退回。魔塵對寶石鑄造每個 +3% 成功率。&lt;br&gt;基礎成功率：五階 45%｜六階 35%｜七階 25%｜八階 15%｜九階 5%。金幣消耗：100 萬 +（階級 − 5）× 100 萬。&lt;br&gt;&lt;b&gt;融合寶石無法用於神鑄&lt;/b&gt;（可至寶石分頁進行融合）。">
+                !</div>
+              <div id="forge-log" class="forge-log"></div>
+              <div id="forge-hex"></div>
+              <div class="forge-actions">
+                <button id="forge-unload" class="btn forge-btn">全卸下</button>
+                <div class="forge-auto-wrap">
+                  <button id="forge-autofill" class="btn forge-btn forge-auto-btn">自動放入</button>
+                  <div id="forge-auto-menu" class="forge-auto-menu" style="display:none"></div>
+                </div>
+                <button id="forge-go" class="btn forge-btn">鑄造</button>
+              </div>
+            </div>
+            <div class="forge-foot">
+              <label class="chk"><input type="checkbox" id="forge-autodust"> 自動使用魔塵</label>
+              <label class="chk"><input type="checkbox" id="forge-autoforge"> 自動鑄造</label>
+              <span id="forge-dust-own" class="dim-text"></span>
+            </div>
+            <div id="forge-progress" class="forge-progress" style="display:none">
+              <div class="forge-progress-head">
+                <span id="forge-progress-status">鑄造中....</span>
+                <span id="forge-progress-remain" class="forge-progress-remain"></span>
+                <button id="forge-cancel" class="btn sm warn" style="margin-right: 12px; padding: 2px 8px; font-size: 11px; height: auto; line-height: 1.2;">取消</button>
+                <span id="forge-progress-countdown">0.0 秒</span>
+              </div>
+              <div class="forge-progress-track"><div id="forge-progress-fill"></div></div>
+            </div>
+          </div>
+          <div id="forge-inv-box" class="equip-section-box">
+            <div class="inv-head">
+              <span class="sec-title">背包 <span id="forge-inv-count">0/60</span></span>
+              <div class="forge-inv-tabs">
+                <button id="forge-invtab-items" class="btn sm active">🎒 裝備</button>
+                <button id="forge-invtab-gems" class="btn sm">💎 寶石</button>
+              </div>
+              <span class="dim-text" style="font-size:12px">點擊放入法陣；點擊法陣上的物件取回</span>
+            </div>
+            <div id="forge-inventory-grid"></div>
+          </div>
+        </section>
+
+        <!-- ============ 寶石 ============ -->
+        <section id="tab-gems" class="tab">
+          <div class="panel" style="margin-bottom:12px">
+            <div class="sec-title">💎 寶石圖鑑與庫存（18 種能力：12 攻擊/功能 + 6 防禦）</div>
+            <div class="hint">寶石可鑲嵌到裝備的插槽。到「裝備」分頁點選裝備，即可鑲嵌或點擊已鑲寶石取下；「寶石鑲嵌效率」屬性會放大鑲嵌加成。分解裝備時鑲嵌的寶石會自動取回。</div>
+            <div id="gem-table"></div>
+          </div>
+          <div class="panel" style="margin-bottom:12px">
+            <div class="sec-title">🔀 寶石合成</div>
+            <div class="hint">消耗 2 顆「同種類、同等級」寶石＋金幣 → 1 顆同種類的<b>下一階</b>寶石；可選擇「全部類型寶石」逐種類合成。</div>
+            <div class="flt-row" style="margin-top:8px; flex-wrap:wrap">
+              <span>寶石種類</span>
+              <select id="fuse-type"></select>
+              <span>等級</span>
+              <select id="fuse-level">
+                <option value="1">一級 → 二級</option>
+                <option value="2">二級 → 三級</option>
+                <option value="3">三級 → 四級</option>
+                <option value="4">四級 → 五級</option>
+              </select>
+              <button id="fuse-btn" class="btn">🔀 合成一次</button>
+              <button id="fuse-all-btn" class="btn sm">♻️ 全部合成</button>
+            </div>
+            <div class="node-info" id="fuse-info"></div>
+          </div>
+
+          <div class="panel" style="margin-bottom:12px">
+            <div class="sec-title">🔄 寶石轉換</div>
+            <div class="hint">把九宮格中的寶石一次性轉換為右側選擇的種類（<b>同階轉換</b>、數量不變）。每格放一種「同種類同等級」寶石、每格上限 1000
+              顆；點下方庫存寶石放入（一次放滿可放數量），點格子取出。<b>融合寶石無法轉換</b>。</div>
+            <div class="gconv-layout">
+              <div id="gconv-grid" class="gconv-grid"></div>
+              <div class="gconv-side">
+                <div class="gconv-arrow">➡️</div>
+                <div class="sec-sub">轉換為</div>
+                <select id="gconv-target"></select>
+                <button id="gconv-btn" class="btn">🔄 一鍵轉換</button>
+                <button id="gconv-clear" class="btn sm">清空</button>
+                <div id="gconv-result" class="gem-result">尚未進行轉換</div>
+              </div>
+            </div>
+            <div class="node-info" id="gconv-info"></div>
+            <div class="sec-sub" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <span>庫存寶石（點擊放入九宮格）</span>
+              <button id="btn-gem-sort" class="btn sm">排序：類型優先</button>
+            </div>
+            <div id="gconv-pool" class="chip-row"></div>
+          </div>
+
+          <div class="panel" style="margin-bottom:12px">
+            <div class="sec-title">⛏️ 寶石拆解</div>
+            <div class="hint">將 2 階以上的寶石拆解為同種類 1 階寶石，數量<b>損失 30%</b>（例：5 階寶石合成需 16 顆 1 階，拆解獲得 ⌊16×0.7⌋ = 11
+              顆）。融合寶石依「融合次數」推算 1 階總成本（視為 100% 成功）再打 7 折，並依其屬性種類均分。</div>
+            <div class="flt-row" style="margin-top:8px; flex-wrap:wrap">
+              <span>寶石種類</span>
+              <select id="gdis-type"></select>
+              <span>等級</span>
+              <select id="gdis-level">
+                <option value="2">二級</option>
+                <option value="3">三級</option>
+                <option value="4">四級</option>
+                <option value="5">五級</option>
+                <option value="6">六級</option>
+                <option value="7">七級</option>
+                <option value="8">八級</option>
+                <option value="9">九級</option>
+                <option value="10">十級</option>
+              </select>
+              <button id="gdis-btn" class="btn sm">⛏️ 拆解一顆</button>
+              <button id="gdis-all-btn" class="btn sm warn">⛏️ 全部拆解</button>
+            </div>
+            <div class="node-info" id="gdis-info" style="margin:4px 0 2px"></div>
+            <div class="sec-sub" style="margin-top:4px">融合寶石拆解（點擊拆解，會先確認）</div>
+            <div id="gdis-fused" class="chip-row"></div>
+            <div id="gdis-result" class="gem-result gem-result-3">尚未進行拆解</div>
+          </div>
+
+          <div class="panel" style="margin-bottom:12px">
+            <div class="sec-title">🧬 寶石融合 <span class="dim-text">（5 階以上寶石均可，含神鑄寶石）</span></div>
+            <div class="hint">兩顆不同屬性 → 雙屬性融合寶石（數值隨機，不一定更高）；兩顆同屬性 → 數值介於兩者之間、上限 2 倍。雙屬性寶石只能與相同雙屬性、或含其屬性的單一寶石融合。基礎成功率
+              60%，成品每成功融合一次 -10%（最低 10%）。<b>失敗時較弱的寶石會降解</b>為 4~8 顆 1 級或 2~4 顆 2 級同屬性寶石。<b>融合寶石無法用於神鑄法陣</b>。</div>
+            <div id="gfuse-slots" class="chip-row" style="margin:8px 0"></div>
+            <div class="btn-row">
+              <button id="gfuse-btn" class="btn">🧬 執行融合</button>
+              <button id="gfuse-clear" class="btn sm">清空</button>
+            </div>
+            <div class="node-info" id="gfuse-info"></div>
+            <div class="sec-sub">可用素材（點擊放入融合槽）</div>
+            <div id="gfuse-pool" class="chip-row" style="margin-bottom:8px"></div>
+            <div id="gfuse-result" class="gem-result gem-result-3">尚未進行融合</div>
+          </div>
+
+          <div class="panel">
+            <div class="shop-title-row">
+              <div class="sec-title">🏪 寶石商店 <span class="dim-text" id="shop-reset-cd"></span></div>
+              <div class="shop-upgrade-box">
+                <span id="gem-shop-level" class="shop-level-label">商店 Lv.1</span>
+                <button id="shop-upgrade" class="btn sm">⬆️ 升級</button>
+              </div>
+            </div>
+            <div id="gem-shop-grid"></div>
+            <div class="btn-row" style="margin-top:8px">
+              <button id="shop-buy-all" class="btn">🛒 一鍵全購買</button>
+              <button id="shop-refresh" class="btn warn">🔄 手動刷新</button>
+            </div>
+            <div class="hint">商店等級越高，刷出數量與高階寶石機率越高。手動刷新費用 = 50,000 + 刷新次數 × 10,000，刷新次數每小時重置。
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ 技能 ============ -->
+        <section id="tab-skills" class="tab">
+          <div class="panel" style="margin-bottom:12px">
+            <div class="sec-title">🧠 技能 <span class="dim-text">可用技能點：<b id="sp-count"
+                  style="color:var(--accent)">0</b>（每升 1 級 +1 點，一般技能上限 Lv.10）</span></div>
+            <div class="sec-sub">⚔️ 裝載欄 <span id="loadout-cap" class="dim-text"></span>（依順序自動施放；點擊卸下）</div>
+            <div id="skill-loadout" class="chip-row"></div>
+          </div>
+          <div class="hint" style="margin-bottom:12px">💡 滑鼠移到技能圖示上顯示說明；左鍵點擊開啟升級面板（升級/降級/裝備/加入融合）。</div>
+          <div class="panel" style="margin-bottom:12px">
+            <div class="sec-title">🧬 融合技 <span class="dim-text">你的專屬奧義（初始等級＝素材加總，可再升 20 級）</span></div>
+            <div id="fusion-skill-list" class="tree-row"></div>
+          </div>
+          <div id="skill-trees"></div>
+          <div class="panel" style="margin-top:12px">
+            <div class="sec-title">⚗️ 技能融合</div>
+            <div class="hint">放入 2~4
+              個已學習的主動技能：融合技繼承素材的部分效果（以素材當前等級計算，等級越高繼承越強），並有機率覺醒「變異效果」（每次只會出現一種，與融合內容相關）。素材技能等級歸零（可重新學習）；融合技可刪除並歸還所有投入點數。
+            </div>
+            <div id="fusion-slots" class="chip-row" style="margin:8px 0"></div>
+            <div class="btn-row">
+              <button id="btn-fuse" class="btn">⚗️ 執行融合</button>
+              <button id="btn-fuse-clear" class="btn sm">清空素材槽</button>
+            </div>
+            <div class="node-info" id="fusion-preview"></div>
+          </div>
+        </section>
+
+        <!-- ============ 高塔 ============ -->
+        <section id="tab-talents" class="tab">
+          <div id="talent-root"></div>
+        </section>
+
+        <section id="tab-tower" class="tab">
+          <div id="tower-fight" style="display:none">
+            <div class="tower-head">
+              <span class="tw-title">🗼 BOSS 高塔挑戰</span>
+              <span id="tw-timer" class="tw-timer">60s</span>
+              <span id="tw-auto-status" style="display:none"></span>
+              <span id="tw-enrage" class="tw-enrage" style="display:none">🔥 狂暴中 +200%</span>
+              <span id="tw-dps" class="dim-text"></span>
+              <button id="tw-flee" class="btn sm warn">撤退</button>
+            </div>
+            <div class="battle-scene">
+              <div class="combatant">
+                <div class="float-layer" id="tp-float"></div>
+                <div class="info-btn buff-btn" data-buff-tip>💪</div>
+                <div class="cb-level" id="tp-level"></div>
+                <img src="images/icon_avatar.png" class="cb-icon">
+                <div class="cb-name" id="tp-name">冒險者（你）</div>
+                <div class="hp-bar">
+                  <div class="shield-bar" id="tp-shield"></div>
+                  <div class="hp-fill player" id="tp-hp"></div><span class="hp-text" id="tp-hptext"></span>
+                </div>
+                <div class="mp-bar">
+                  <div class="mp-fill" id="tp-mp"></div><span class="hp-text" id="tp-mptext"></span>
+                </div>
+                <div class="cb-skill" id="tp-skill"></div>
+                <div class="cb-status" id="tp-status" data-buff-tip></div>
+              </div>
+              <div class="vs">VS</div>
+              <div class="combatant boss">
+                <div id="btn-boss-tip" class="info-btn">!</div>
+                <div class="float-layer" id="tb-float"></div>
+                <div class="cb-level" id="tb-level"></div>
+                <div id="tb-emoji"></div>
+                <div class="cb-name" id="tb-name">BOSS</div>
+                <div class="hp-bar">
+                  <div class="hp-fill boss" id="tb-hp"></div><span class="hp-text" id="tb-hptext"></span>
+                </div>
+                <div class="cb-status" id="tb-status" data-enemy-buff-tip></div>
+              </div>
+            </div>
+            <div class="hint">限時 60 秒；40 秒時若 BOSS 血量仍高於 50%，將進入狂暴（傷害 +200%）！</div>
+          </div>
+
+          <div id="tower-list-wrap">
+            <div class="sec-title">🗼 BOSS 高塔</div>
+            <div class="hint">限時 60 秒擊敗 BOSS；目前開放試煉之塔 1～50 層、地獄之塔 51～100 層、煉獄之塔 101～150 層。地獄之塔可額外獲得「魔魂本源」，煉獄之塔 BOSS 可額外獲得「魔種」。</div>
+            <div class="tower-auto-bar">
+              <span>🔁 連續挑戰次數：</span>
+              <input type="number" id="tw-auto-count" value="5" min="1" max="999">
+              <span class="dim-text" style="font-size:12.5px">按各樓層「連挑」啟動：自動重複挑戰該層，金幣不足或次數用完自動停止並回到野外（戰鬥中按「撤退」可中止）</span>
+            </div>
+            <div id="tower-result" class="panel" style="display:none"></div>
+            <div id="tower-floors"></div>
+          </div>
+        </section>
+
+        <!-- ============ 設定 ============ -->
+        <section id="tab-settings" class="tab">
+          <div class="panel">
+            <div class="sec-title">💾 存檔管理</div>
+            <div id="save-folder-banner"
+              style="display:none; background:rgba(251,191,36,0.12); border:1px solid #f59e0b; border-radius:8px; padding:12px 16px; margin-bottom:12px;">
+              <div style="font-weight:bold; color:#f59e0b; margin-bottom:6px;">📂 設定本機存檔資料夾（僅需一次）</div>
+              <div style="font-size:13px; color:var(--dim); margin-bottom:10px;">選擇後，遊戲每 10
+                分鐘會把最新自動存檔同步到你選擇的資料夾，再也不用手動操作。瀏覽器安全限制需要你授權一次。</div>
+              <button id="btn-folder-banner" class="btn"
+                style="background:linear-gradient(135deg,#f59e0b,#d97706); color:#000; border:none;">📂 選擇存檔資料夾</button>
+            </div>
+            <div class="btn-row">
+              <button id="btn-save" class="btn">💾 立即存檔</button>
+              <button id="btn-folder" class="btn">📂 選擇／更新存檔資料夾</button>
+              <button id="btn-folder-refresh" class="btn">🔄 重新掃描</button>
+              <button id="btn-restart" class="btn danger">🔄 重新開局</button>
+            </div>
+            <div class="hint">手動存檔必須寫入本地資料夾；首次請先選擇並授權資料夾。授權後，自動存檔每 10 分鐘同步為
+              <code>IC_autosave.json</code>。選定資料夾後，下方會唯讀列出資料夾內所有檔案；瀏覽器安全限制不允許網頁直接啟動 Windows 檔案總管。
+            </div>
+            <div id="save-folder-files" class="save-folder-files" hidden>
+              <div class="save-folder-files-title">📁 存檔資料夾內容（唯讀）</div>
+              <div id="save-folder-files-list"></div>
+            </div>
+            <div class="sec-sub">存檔記錄</div>
+            <div id="save-list"></div>
+            <div class="node-info" id="save-msg"></div>
+          </div>
+          <div class="panel">
+            <div class="sec-title">📖 玩法指南</div>
+            <div class="help">
+              <p><b>核心循環：</b>戰鬥收集材料 → 生產線自動處理 → 資源配比養成 → 挑戰更高層 BOSS。</p>
+              <p><b>📊 屬性系統（50+）：</b>四維主屬性（💪力量→物攻/負重、🏃敏捷→閃避/暴擊/攻速、🧠智力→魔攻/法力、🪨耐力→生命/物防）每級 +2，並可由裝備詞條累加。完整屬性見左側面板。</p>
+              <p><b>⚔️ 戰鬥：</b>角色全自動攻防（基礎 1
+                次/秒，受攻速影響）。法力充足時自動施放【🌠奧術衝擊】造成魔法傷害（對魔防，受冷卻縮減/施法速度/範圍傷害/吸魔影響）。魔法系怪物（幽靈、樹妖等）的攻擊對你的魔防。格擋、閃避、韌性、護盾（治療溢出轉化）皆會生效。每階段擊殺
+                10 隻怪（第 10 隻為菁英）後推進，死亡會退回上一階段。</p>
+              <p><b>🎒 裝備：</b>13 欄位（武器 x2、戒指 x2、頭盔、肩甲、胸甲、腰帶、護手、手腕、護腿、靴子、項鍊）。品質 9
+                階：普通（灰）→精良（綠）→稀有（藍）→獨特（紫）→史詩（金）→傳說（橘）→神話（紅）→創世（暗金）→神鑄創世（耀金，僅能鑄造取得）；品質決定詞條數（1~7，「詞條上限率」影響洗煉數值偏向
+                +1）、寶石鑲孔（1~6）與附魔欄位（1~3）。神話 25
+                階起、創世 40 階起掉落。傳說級以上附帶傳奇特效；附有武器類型限制的特效只會出現在對應武器上。武器/戒指優先裝入空欄、再替換較弱者。</p>
+              <p><b>🔯 神鑄：</b>角色達 2000 級且 1 轉後開放。將 6 件相同品質（傳說/神話/創世）的裝備放入六芒星法陣，消耗金幣鑄造下一品質裝備；失敗隨機消耗 3 件、其餘退回。角尖符位可放💫魔塵（每個
+                +5% 成功率，等級 150+ 敵人與高塔 BOSS 掉落；神鑄失敗額外獲得 1 個魔塵）。6 件創世鑄造成功可得「神鑄創世」：屬性上限 1.5 倍、必帶 2 條專屬特效（龍血/神力/天罰/不朽…共 12
+                種），無法再入爐。</p>
+              <p><b>🏭 熔爐：</b>掉落裝備自動進入熔爐佇列，依各熔爐勾選的品質送入傳送帶拆解（未勾選＝保留入包）。拆解依裝備品質與零件加成產出碎片、金幣與附魔精華，不會產出寶石。熔爐數量與轉生連動（0 轉 2 座、每轉 +1、上限 12），每爐零件格可用金幣解鎖至 8 格。</p>
+              <p><b>✨ 附魔：</b>攻擊類六元素（🔥高傷、❄️減速、⚡連鎖、🧪中毒、🌟淨化、🌑汲取）、防禦類（六元素抗性/控制抵抗）、功能類（掉寶/疾行）。在「裝備」分頁點選裝備 → 點附魔書即可附魔（消耗 1
+                書＋精華），點擊既有附魔可取下（返還書）。附魔欄位數依品質 1~3 欄；混合合成仍會自動賦予附魔。</p>
+              <p><b>🧠 技能：</b>54 個技能以五系技能樹呈現（每階需在該系投入點數解鎖）。每升 1 級獲得 1 技能點，技能上限 Lv.10 — 前期升級加基礎數值，Lv.4 解鎖附加狀態、Lv.8
+                強化該狀態。裝載欄初始 2 格，每 20 級再 +1 格，最多 20 格；戰鬥中依順序自動施放；治療/護盾類會等血量偏低才施放；被動學會即永久生效。</p>
+              <p><b>⚗️ 技能融合：</b>放入 2~4
+                個已學主動技能融合成專屬奧義：繼承素材部分效果（以素材當前等級計，等級越高繼承越強），並有機率覺醒變異效果（冰與火之歌、雷鳴回響、劇毒綻放…每次僅一種）。融合技初始等級＝素材加總、可再升 20
+                級；素材歸零可重學；刪除融合技會歸還所有投入點數。</p>
+              <p><b>🔨 強化與機制：</b>+5 內必定成功，之後成功率遞減（失敗損失半數材料），可堆「強化成功率」。「幸運值」影響詞條品質/大成功；「負重上限」擴充輸送帶與合成區容量；「狂暴閾值」提高
+                BOSS 狂暴門檻；「合成變異率」讓混合合成有機率產出強化附魔＋額外詞條。</p>
+              <p><b>🗼 BOSS 高塔：</b>60 秒限時戰。40 秒時 BOSS 血量 &gt; 50% 會狂暴（傷害
+                +200%）。通關獲得自動機組零件：加速齒輪、幸運核心、重骰模組。失敗會有分析報告，照著調整生產線配比吧！</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="combat-area">
+      <div id="battle-area">
+        <div id="zone-bar">
+          <button class="zone-btn" data-zone="plains">🌿 草原<span class="zone-best" id="zb-plains"></span></button>
+          <button class="zone-btn" data-zone="desert" data-tt-title="荒漠" data-tt-desc="敵人更強；經驗、金幣與材料掉落 ×2（裝備掉落不變）">🏜️ 荒漠<span class="zone-best"
+              id="zb-desert"></span></button>
+          <button class="zone-btn" data-zone="swamp" data-tt-title="沼澤" data-tt-desc="敵人極強；經驗、金幣與材料掉落 ×3（裝備掉落不變）">🦠 沼澤<span class="zone-best"
+              id="zb-swamp"></span></button>
+        </div>
+        <div id="stage-bar">
+          <div class="stage-main-controls">
+            <label class="chk"><input type="checkbox" id="st-auto" checked> 自動推進</label>
+            <button id="st-prev" class="btn sm" type="button" aria-label="後退關卡" data-tt-title="後退關卡" data-tt-desc="滑鼠按住可以快速後退" data-tip-placement="stage-left">◀</button>
+            <span id="stage-label">第 1 階段</span>
+            <button id="st-next" class="btn sm" type="button" aria-label="前進關卡" data-tt-title="前進關卡" data-tt-desc="滑鼠按住可以快速前進" data-tip-placement="stage-right">▶</button>
+            <button id="st-max" class="btn sm" data-tt-title="最高階段" data-tt-desc="直達目前最高階段" aria-label="直達目前最高階段">⏭</button>
+            <span id="stage-best" class="dim-text">最高1關</span>
+          </div>
+          <div class="stage-tools">
+            <button id="btn-pip" class="btn sm" data-tt-title="迷你視窗" data-tt-desc="開啟永遠置頂的迷你監控視窗，背景掛機也能看到戰況">📺 迷你視窗</button>
+            <button id="btn-summary" class="btn sm" data-tt-title="統計面板" data-tt-desc="開啟統計面板">📊 統計面板</button>
+            <button id="btn-realm-toggle" class="btn sm" style="display:none;" data-tt-title="切換地圖" data-tt-desc="切換凡人界與神界練功地圖">✨ 神界地圖</button>
+          </div>
+        </div>
+        <div class="battle-scene-wrapper" style="position: relative; width: 100%;">
+          <div id="btn-enemy-tip" class="info-btn">!</div>
+          <div class="battle-scene">
+            <div class="combatant">
+              <div class="float-layer" id="pv-float"></div>
+              <div class="info-btn buff-btn" data-buff-tip>💪</div>
+            <div class="cb-level" id="pv-level"></div>
+            <img src="images/icon_avatar.png" class="cb-icon">
+            <div class="cb-name" id="pv-name">冒險者（你）</div>
+            <div class="hp-bar">
+              <div class="shield-bar" id="pv-shield"></div>
+              <div class="hp-fill player" id="pv-hp"></div><span class="hp-text" id="pv-hptext"></span>
+            </div>
+            <div class="mp-bar">
+              <div class="mp-fill" id="pv-mp"></div><span class="hp-text" id="pv-mptext"></span>
+            </div>
+            <div class="cb-skill" id="pv-skill"></div>
+            <div class="cb-status" id="pv-status" data-buff-tip></div>
+          </div>
+          <div class="vs">VS</div>
+          <div class="combatant enemy-combatant" style="position:relative;">
+            <div class="enemy-party enemy-count-0" id="mv-party"></div>
+          </div>
+        </div>
+      </div>
+        <div class="log-header">
+          <div class="log-title">綜合紀錄</div>
+          <div class="log-header-actions">
+            <button id="btn-combat-pause" class="btn sm warn" type="button" data-tt-title="戰鬥控制" data-tt-desc="暫停野外與高塔戰鬥" aria-pressed="false">⏸ 暫停戰鬥</button>
+            <button id="btn-detail-log" class="btn sm" type="button" data-tt-title="詳細日誌" data-tt-desc="開啟完整戰鬥日誌">📜 詳細日誌</button>
+            <select id="log-filter" class="log-filter">
+            <option value="all">全部</option>
+            <option value="combat">戰鬥與進度</option>
+            <option value="boss">高塔BOSS戰</option>
+            <option value="factory">裝備與強化</option>
+            <option value="loot">掉落物</option>
+            <option value="system">系統訊息</option>
+            </select>
+          </div>
+        </div>
+        <div id="battle-log" class="log"></div>
+        <div id="boss-log" class="log" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+  <!-- 完整戰鬥日誌視窗 -->
+  <div id="detail-log-modal" class="detail-log-modal" style="display:none" aria-hidden="true">
+    <div class="detail-log-box" role="dialog" aria-modal="true" aria-labelledby="detail-log-title">
+      <div class="detail-log-head">
+        <div id="detail-log-title" class="sec-title">詳細戰鬥日誌</div>
+        <button id="detail-log-close" class="modal-x" type="button" aria-label="關閉">✕</button>
+      </div>
+      <div class="detail-log-toolbar">
+        <select id="detail-log-filter" class="log-filter" aria-label="詳細日誌分類">
+          <option value="all">全部</option>
+          <option value="combat">戰鬥與進度</option>
+          <option value="boss">高塔BOSS戰</option>
+          <option value="factory">裝備與強化</option>
+          <option value="loot">掉落物</option>
+          <option value="system">系統訊息</option>
+        </select>
+        <button id="btn-detail-combat-pause" class="btn sm warn" type="button" data-tt-title="戰鬥控制" data-tt-desc="暫停野外與高塔戰鬥" aria-pressed="false">⏸ 暫停戰鬥</button>
+        <button id="detail-log-clear" class="btn sm" type="button">清除詳細日誌</button>
+      </div>
+      <div id="detail-log-content" class="detail-log-content"></div>
+    </div>
+  </div>
+  <!-- 完整熔爐日誌視窗 -->
+  <div id="newforge-detail-log-modal" class="detail-log-modal" style="display:none" aria-hidden="true">
+    <div class="detail-log-box" role="dialog" aria-modal="true" aria-labelledby="newforge-detail-log-title">
+      <div class="detail-log-head">
+        <div id="newforge-detail-log-title" class="sec-title">詳細熔爐日誌</div>
+        <button id="newforge-detail-log-close" class="modal-x" type="button" aria-label="關閉">✕</button>
+      </div>
+      <div class="detail-log-toolbar">
+        <button id="btn-newforge-log-pause" class="btn sm warn" type="button" aria-pressed="false">⏸ 暫停日誌更新</button>
+        <button id="newforge-detail-log-clear" class="btn sm" type="button">清除詳細日誌</button>
+      </div>
+      <div class="newforge-detail-log-body">
+        <div id="newforge-detail-log-content" class="detail-log-content"></div>
+        <div id="newforge-detail-log-stats" class="detail-log-stats"></div>
+      </div>
+    </div>
+  </div>
+  <!-- 技能升級彈窗 -->
+  <div id="skill-modal" class="modal-overlay" style="display:none">
+    <div class="modal-box">
+      <button id="skill-modal-close" class="modal-x" aria-label="關閉">✕</button>
+      <div id="skill-modal-body"></div>
+    </div>
+  </div>
+  <!-- 天賦／潛力升級彈窗 -->
+  <div id="talent-modal" class="modal-overlay" style="display:none">
+    <div class="modal-box">
+      <button id="talent-modal-close" class="modal-x" aria-label="關閉">✕</button>
+      <div id="talent-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- 離線收益確認彈窗 -->
+  <div id="offline-modal" class="modal-overlay" style="display:none">
+    <div class="modal-box offline-modal-box">
+      <button id="offline-modal-close" class="modal-x" aria-label="關閉">✕</button>
+      <div id="offline-modal-body"></div>
+      <div class="offline-modal-actions"><button id="offline-modal-confirm" class="btn">✅ 確認</button></div>
+    </div>
+  </div>
+
+  <!-- 戰鬥結算日誌彈窗 -->
+  <div id="summary-modal" class="modal-overlay" style="display:none; background: transparent; backdrop-filter: none;">
+    <div class="modal-box" style="display:flex; flex-direction:column; max-height:85vh; width:min(440px, 92vw);">
+      <button id="summary-modal-close" class="modal-x" aria-label="關閉">✕</button>
+      <div class="sec-title" style="text-align:center; margin-bottom:12px;">統計面板</div>
+      <div style="display:flex; justify-content:center; align-items:center; margin-bottom:8px; position:relative;">
+        <div class="hint" style="text-shadow: 1px 1px 2px #000; margin:0;">(統計即時更新，按清理歸零重計)</div>
+        <button id="btn-summary-clear" class="btn sm"
+          style="position:absolute; right:10px; padding:2px 8px;">清理</button>
+      </div>
+      <div id="stats-scroll"
+        style="overflow-y:auto; display:flex; flex-direction:column; gap:8px; flex:1; max-height:60vh;">
+        <div class="summary-card" id="stats-basic-card"></div>
+        <div class="summary-card" id="stats-source-card"></div>
+        <div id="battle-summary-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+        <div class="summary-card" id="stats-loot-card"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 挑戰BOSS結算彈窗 -->
+  <div id="confirm-modal" class="modal-overlay confirm-modal" style="display:none">
+    <div class="modal-box confirm-box">
+      <div id="confirm-title" class="confirm-title">操作確認</div>
+      <div id="confirm-message" class="confirm-message"></div>
+      <input id="confirm-input" class="confirm-input" type="text" autocomplete="off" style="display:none">
+      <div class="confirm-actions">
+        <button id="confirm-cancel" class="btn" type="button">取消</button>
+        <button id="confirm-ok" class="btn danger" type="button">確定</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="tower-result-modal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+    <div
+      style="background:#1a140f; border:1px solid var(--border); border-radius:4px; padding:20px; width:400px; max-width:90%; box-shadow:0 0 20px rgba(0,0,0,0.8); position:relative;">
+      <div id="btn-tower-result-boss-tip" class="info-btn">!</div>
+      <div id="trm-title" class="tr-title" style="text-align:center; font-size: 20px; margin-bottom: 16px;"></div>
+
+      <div class="tr-sub" style="color:var(--text); margin-bottom:4px; font-weight:bold;">【雙方剩餘血量】</div>
+      <div id="trm-hp-stats" class="tr-line" style="margin-bottom: 12px;"></div>
+
+      <div class="tr-sub" style="color:var(--text); margin-bottom:4px; font-weight:bold;">【雙方造成總傷害】</div>
+      <div id="trm-dmg-stats" class="tr-line" style="margin-bottom: 12px;"></div>
+
+      <div class="tr-sub" style="color:var(--text); margin-bottom:4px; font-weight:bold;">【掉落物品獎勵】</div>
+      <div id="trm-rewards" class="tr-line" style="min-height: 40px; margin-bottom: 20px;"></div>
+
+      <div style="text-align: center; display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+        <button id="trm-stop-auto" class="btn warn" style="display:none; padding: 8px 22px; font-size: 16px;">終止連續</button>
+        <button id="trm-confirm" class="btn" style="padding: 8px 30px; font-size: 16px;">確定退出</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 熔爐系統改版公告（舊存檔載入時顯示一次） -->
+  <div id="forge-rebuild-modal" class="modal-overlay" style="display:none">
+    <div class="modal-box">
+      <div class="sec-title" style="margin-bottom:10px">🏭 熔爐系統全面改造</div>
+      <div style="line-height:1.7; font-size:14px">
+        <p style="color:#ffd700; font-size:18px; font-weight:bold; text-align:center; margin:8px 0 12px">熔爐系統已重新改造，請玩家重新佈置新熔爐！</p>
+        <p style="color:var(--accent)"><b>請前往「🏭 熔爐」分頁重新佈置品質勾選與零件。</b>你先前的輸送帶滯留裝備已併入熔爐佇列，不會遺失。</p>
+      </div>
+      <div class="btn-row" style="justify-content:center; margin-top:12px">
+        <button id="forge-rebuild-ok" class="btn">知道了</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 技能懸停提示 -->
+  <div id="sk-tooltip" style="display:none"></div>
+
+  <!-- 裝備可能詞條獨立浮層：避免被裝備詳情捲軸裁切 -->
+  <div id="affix-pool-overlay" aria-live="polite"></div>
+
+  <script src="js/util.js"></script>
+  <script src="js/data.js?v=1.0.3"></script>
+  <script src="js/formula.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/item.js"></script>
+  <script src="js/skills.js?v=1.0.3"></script>
+  <script src="js/talents.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/special_rules.js"></script>
+  <script src="js/combat.js"></script>
+  <script src="js/legendary.js?v=1.0.1"></script>
+  <script src="js/potential.js"></script>
+  <script src="js/tower.js"></script>
+  <script src="js/factory.js"></script>
+  <script src="js/newforge.js"></script>
+  <script src="js/forge.js"></script>
+  <script src="js/save.js"></script>
+  <script src="js/ui.js?v=1.0.8"></script>
+  <script src="js/param_autoreload.js"></script>
+  <script src="js/gm.js"></script>
+  <script src="js/main.js"></script>
+</body>
+
+</html>

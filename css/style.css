@@ -1,0 +1,5976 @@
+/* ==========================================================================
+   ?��?案主標�??�無?��??��??��?之�? (Infinite Journey: Peak of Synthesis)
+   說�?：這是一?��?黑破壞�?風格??Idle-RPG 網�??�戲�??表�?案�?
+   ========================================================================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #0a0a0a;
+  --bg2: #121010;
+  --panel: rgba(20, 16, 12, 0.85);
+  --panel2: rgba(30, 24, 18, 0.9);
+  --border: #52402a;
+  --border-light: #7a6344;
+  --text: #e0d0b0;
+  --dim: #9c8a70;
+  --accent: #c4a464;
+  --good: #5f9e53;
+  --bad: #b22222;
+  --warn: #d49a37;
+  --info: #4682b4;
+  /* ==========================================================================
+     ?�全局變數?�基礎樣式】Global Variables & Base Styling
+     說�?：�?義全站�?主色彩主題�??��?系深?�調）、�??�設定、�??��??�色?��?距�??��?
+     ========================================================================== */
+  /* ?��?主�??��?微�??��??��?（�??��??�考�??��?粗壯黑�?）�?繁�?�??/?�方?��???*/
+  --font-main: "Microsoft YaHei", "微�??��?", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", "Segoe UI", sans-serif;
+  /* 詞�??��??��?裝�?詳�?/滑�??�示）�??��?�??�攻�??�禦???�能�?*/
+  --afx-base: #c9a0ff;
+  --afx-off: #ff8fb8;
+  --afx-def: #7fdcf5;
+  --afx-util: #9ae6a0;
+
+  /* 裝�?詳�??�板?��?設�? (?��?/px) */
+  --it-affix-gap: 4px;
+  /* 1. ?�屬??詞�?)?��?距顯�?*/
+  --it-enchant-gap: 4px;
+  /* 2. ?��??��??��?距顯�?*/
+  --it-socket-gap: 4px;
+  /* 3. 寶石?��??��?距顯�?*/
+  --it-godpassive-gap: 2px;
+  /* 4. 神�??��??�性�??��?顯示 */
+}
+
+html,
+body {
+  height: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ?�戲?�面不�?許�??��??��??�輸?��?欄�?仍�??��?字選?��?游�???*/
+input,
+textarea,
+select,
+[contenteditable="true"] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+button,
+summary {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+button:focus,
+select:focus {
+  outline: none;
+}
+
+body {
+  background: url('../images/diablo_main_bg.png') no-repeat center center fixed, #0a0a0a;
+  background-size: cover;
+  color: var(--text);
+  font-family: var(--font-main);
+  font-size: 15px;
+  line-height: 1.55;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  color: #fff;
+  font-family: var(--font-main);
+  font-size: 18px;
+  pointer-events: auto;
+}
+
+.loading-screen.is-hidden {
+  display: none;
+}
+
+.loading-screen-label {
+  min-width: 88px;
+  text-align: center;
+  letter-spacing: 0;
+}
+
+/* ==========================================================================
+   ?��??��?訊�??�Top Header Info Bar
+   說�?：控?��??�網?��??��?塊�??�括?�戲 Logo?��?�?經�?/精華/魔塵?��??�全?��??��??��???
+   ========================================================================== */
+#topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 16px;
+  background: url('../images/diablo_panel_tex.png') repeat, linear-gradient(180deg, #241c14, #120e0a);
+  background-blend-mode: overlay;
+  border-bottom: 2px solid var(--border);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.8);
+}
+
+/* ?�戲主�?題�??��?Diablo風格?�色字�?�?*/
+.brand {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--accent);
+  letter-spacing: 1px;
+}
+
+/* ?�戲?��?題�??��?如�??��?，�??�主標�??�側，�?距�?寬�? */
+.brand-sub {
+  font-size: 12px;
+  color: var(--dim);
+  margin-left: 8px;
+  letter-spacing: 4px;
+}
+
+/* ?��?網�??�螢幕�??��???*/
+.fs-btn {
+  margin-left: 14px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  vertical-align: middle;
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  background: linear-gradient(180deg, #3a2b1f, #1f150e);
+  color: var(--accent);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.8);
+}
+
+/* ?�螢幕�??�懸?��??��?亮度增�??��?框�?�?*/
+.fs-btn:hover {
+  border-color: var(--accent);
+  filter: brightness(1.25);
+}
+
+/* ?�螢幕�??��??��??��?字�?變�?，�??�發??*/
+.fs-btn.active {
+  border-color: var(--accent);
+  color: #ffe45c;
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
+}
+
+/* 資�?欄容?��??�幣?��?驗�?橫�??��?�?*/
+#res-bar {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ?��?資�?（�?：�?�?���?驗�??��?裹容??*/
+.res {
+  color: var(--dim);
+  cursor: default;
+  display: flex;
+  align-items: center;
+}
+
+/* 資�??�目?��?標樣式�?帶�??�影?��? */
+.res-icon {
+  width: 22px;
+  height: 22px;
+  margin-right: 6px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+}
+
+/* 資�??�值�?字�?等寬?��?，避?��??�隨?�值�??��??��? */
+.res b {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 資�??�用 Emoji ?��?示大小�?對�? */
+.res-emoji {
+  display: inline-block;
+  width: 22px;
+  margin-right: 6px;
+  text-align: center;
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* ==========================================================================
+   ?�左?�屬?�面?�】Left Stats Sidebar Panel
+   說�?：控?�左?��??�詳細屬?�數?�面?��??�括等�??�戰?��??�、攻?�、防禦�??��??��??�屬?��???
+   ========================================================================== */
+#stats-sidebar {
+  width: 236px;
+  flex: 0 0 236px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  overflow-x: hidden;
+  flex-shrink: 0;
+}
+
+.sidebar-avatar {
+  text-align: center;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .8));
+}
+
+.sidebar-avatar img {
+  width: 80px;
+  height: 80px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+  object-fit: cover;
+}
+
+.sidebar-title {
+  text-align: center;
+  font-weight: bold;
+  font-size: 18px;
+  color: var(--accent);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.reinc-title-0 {
+  color: #9ca3af !important;
+  text-shadow: 0 0 8px rgba(156, 163, 175, .65);
+}
+
+.reinc-title-1 {
+  color: #4ade80 !important;
+  text-shadow: 0 0 8px rgba(74, 222, 128, .65);
+}
+
+.reinc-title-2 {
+  color: #60a5fa !important;
+  text-shadow: 0 0 8px rgba(96, 165, 250, .65);
+}
+
+.reinc-title-3 {
+  color: #facc15 !important;
+  text-shadow: 0 0 8px rgba(250, 204, 21, .65);
+}
+
+.reinc-title-4 {
+  color: #c084fc !important;
+  text-shadow: 0 0 8px rgba(192, 132, 252, .65);
+}
+
+.reinc-title-5 {
+  color: #fb923c !important;
+  text-shadow: 0 0 8px rgba(251, 146, 60, .65);
+}
+
+.reinc-title-6 {
+  color: #c59b27 !important;
+  text-shadow: 0 0 8px rgba(197, 155, 39, .65);
+}
+
+.reinc-title-7 {
+  color: transparent !important;
+  background: linear-gradient(135deg, #cbd5e1, #ffffff, #94a3b8, #ffffff, #cbd5e1);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: reincarnation-rainbow 4s linear infinite;
+  text-shadow: none;
+}
+
+.reinc-title-8 {
+  color: transparent !important;
+  background: linear-gradient(135deg, #a855f7, #60a5fa, #c084fc, #3b82f6, #a855f7);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: reincarnation-rainbow 4s linear infinite;
+  text-shadow: none;
+}
+
+.reinc-title-9 {
+  color: transparent !important;
+  background: linear-gradient(135deg, #ef4444, #fb923c, #f87171, #f97316, #ef4444);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: reincarnation-rainbow 4s linear infinite;
+  text-shadow: none;
+}
+
+.reinc-title-10 {
+  color: transparent !important;
+  background: linear-gradient(135deg, #4ade80, #60a5fa, #facc15, #c084fc, #fb923c, #4ade80);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: reincarnation-rainbow 3s linear infinite;
+  text-shadow: none;
+}
+
+@keyframes reincarnation-rainbow {
+  from {
+    background-position: 0% 50%;
+  }
+
+  to {
+    background-position: 300% 50%;
+  }
+}
+
+.sidebar-level {
+  text-align: center;
+  margin-bottom: 16px;
+  font-weight: bold;
+}
+
+.sidebar-level .plevel {
+  color: var(--text);
+  font-weight: bold;
+}
+
+.reincarnation-info {
+  margin-top: 7px;
+  color: var(--dim);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.reincarnate-btn {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  width: 100%;
+  margin-top: 7px;
+  color: var(--accent);
+}
+
+.reincarnate-btn:not(.reincarnate-ready) {
+  opacity: .55;
+}
+
+.reincarnate-btn.reincarnate-ready {
+  border-color: transparent;
+  color: #fff7a8;
+  background: linear-gradient(90deg, #7f1d1d, #b45309, #854d0e, #166534, #0e7490, #7c2d12, #7f1d1d);
+  background-size: 260% 100%;
+  text-shadow: 0 0 4px #000, 0 0 8px rgba(255, 242, 0, 0.95), 0 0 16px rgba(255, 23, 68, 0.85);
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.92),
+    0 0 10px 4px rgba(255, 242, 0, 0.95),
+    0 0 22px 8px rgba(255, 23, 68, 0.85),
+    0 0 36px 12px rgba(0, 245, 255, 0.65),
+    inset 0 0 12px rgba(255, 255, 255, 0.35);
+  animation: reincReadyBgFlow 0.75s linear infinite, reincReadyButtonPulse 0.55s ease-in-out infinite alternate;
+}
+
+.reincarnate-btn.reincarnate-ready::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  z-index: 1;
+  border-radius: 5px;
+  background: linear-gradient(115deg,
+      transparent 0%,
+      transparent 28%,
+      rgba(255, 255, 255, 0.95) 43%,
+      rgba(255, 242, 0, 0.85) 50%,
+      rgba(255, 255, 255, 0.95) 57%,
+      transparent 72%,
+      transparent 100%);
+  background-size: 240% 100%;
+  mix-blend-mode: screen;
+  opacity: 0.72;
+  pointer-events: none;
+  animation: reincReadySweep 0.9s linear infinite;
+}
+
+@keyframes reincReadyBgFlow {
+  from {
+    background-position: 0% 50%;
+  }
+
+  to {
+    background-position: 260% 50%;
+  }
+}
+
+@keyframes reincReadyButtonPulse {
+  from {
+    filter: brightness(1.2) saturate(1.15);
+    box-shadow:
+      0 0 0 2px rgba(255, 255, 255, 0.92),
+      0 0 10px 4px rgba(255, 242, 0, 0.95),
+      0 0 22px 8px rgba(255, 23, 68, 0.85),
+      0 0 36px 12px rgba(0, 245, 255, 0.65),
+      inset 0 0 12px rgba(255, 255, 255, 0.35);
+  }
+
+  to {
+    filter: brightness(1.65) saturate(1.5);
+    box-shadow:
+      0 0 0 3px rgba(255, 255, 255, 1),
+      0 0 16px 7px rgba(255, 242, 0, 1),
+      0 0 32px 13px rgba(255, 23, 68, 0.95),
+      0 0 52px 19px rgba(0, 245, 255, 0.82),
+      inset 0 0 16px rgba(255, 255, 255, 0.5);
+  }
+}
+
+@keyframes reincReadySweep {
+  from {
+    background-position: 160% 50%;
+  }
+
+  to {
+    background-position: -90% 50%;
+  }
+}
+
+#stats-sidebar #xp-bar {
+  width: 100%;
+  height: 8px;
+  background: #000;
+  border-radius: 2px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  margin-top: 6px;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);
+}
+
+#stats-sidebar #xp-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #5c2900, #c4a464);
+  transition: width .3s;
+}
+
+.sidebar-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-left: -10px;
+}
+
+/* 屬性面?�「檢視�??�覽?��?示�?檢�??�穿?�中?��??��??�顯示�? */
+.attr-preview-note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--accent);
+  border: 1px dashed var(--accent);
+  border-radius: 6px;
+  padding: 4px 8px;
+  text-align: center;
+}
+.attr-preview-note[hidden] { display: none; }
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--dim);
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: 4px;
+}
+
+.stat-row b {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.res-icon {
+  height: 1.2em;
+  vertical-align: text-bottom;
+  margin-right: 2px;
+}
+
+/* 太古詞�?：固定�??�並以�?大�??��??��?記�??��?被�??��?條�?類色覆�???*/
+.ancient-affix,
+.ancient-affix .act-btn-tooltip {
+  color: #fb923c !important;
+  font-weight: bold;
+}
+
+.ancient-star {
+  display: inline-block;
+  color: #fb923c;
+  font-size: 1.22em;
+  line-height: 0.8;
+  text-shadow: 0 0 5px rgba(251, 146, 60, 0.8);
+}
+
+.stat-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 6px 0;
+  border: none;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.8);
+}
+
+/* ==========================================================================
+   ?�主?�籤?��??��??�Main Tab Navigation
+   說�?：控?��??�中主�??�能?�籤（�??�、�??��??��?塔、設定�??��??��??��?觀?��??��?
+   ========================================================================== */
+#tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px 0;
+  background: transparent;
+  border-bottom: 2px solid var(--border);
+}
+
+.tab-btn {
+  position: relative;
+  padding: 8px 18px;
+  border: 2px solid var(--border);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  background: url('../images/diablo_panel_tex.png') repeat, #16120e;
+  background-blend-mode: multiply;
+  color: var(--dim);
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  box-shadow: inset 0 5px 10px rgba(0, 0, 0, 0.5);
+  font-weight: bold;
+}
+
+/* 神�??�籤?��?角「�???�造�?行中?��?轉�??��?（淺?��? */
+.forge-run-ind {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 11px;
+  height: 11px;
+  border: 2px solid #7dd3fc;
+  border-top-color: transparent;
+  border-radius: 50%;
+  box-sizing: border-box;
+  animation: forgeRunSpin 1s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes forgeRunSpin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.tab-btn:hover {
+  color: var(--text);
+  filter: brightness(1.2);
+}
+
+.tab-btn.active {
+  background: url('../images/diablo_panel_tex.png') repeat, #241c14;
+  background-blend-mode: multiply;
+  color: var(--accent);
+  box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.1);
+  border-color: var(--accent);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+
+/* ==========================================================================
+   ?��??�主?�面佈�??�Main Game Screen Layout
+   說�?：控?��?欄�??�適?�主佈�?結�?（左?�屬?�、中?�戰鬥�?/?��??�?�右?�日誌�?）�?
+   ========================================================================== */
+#game-layout {
+  display: flex;
+  max-width: 1720px;
+  margin: 0 auto;
+  gap: 16px;
+  padding: 14px 0 40px 16px;
+  height: calc(100vh - 70px);
+}
+
+#workspace-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 12px solid var(--border);
+  border-image: url('../images/diablo_frame_9slice.png') 30 stretch;
+  border-radius: 0;
+  background: url('../images/diablo_panel_tex.png') repeat, rgba(10, 8, 6, 0.9);
+  background-blend-mode: multiply;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.9), 0 0 15px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+
+#workspace-area #tabs {
+  border-bottom: 2px solid var(--border);
+  padding: 8px 16px 0;
+}
+
+#workspace-area main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+#combat-area {
+  flex: 0 0 500px;
+  width: 500px;
+  min-width: 500px;
+  max-width: 500px;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  min-width: 0;
+  border: 12px solid var(--border);
+  border-image: url('../images/diablo_frame_9slice.png') 30 stretch;
+  border-radius: 0;
+  background: url('../images/diablo_panel_tex.png') repeat, rgba(10, 8, 6, 0.9);
+  background-blend-mode: multiply;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.9);
+  padding: 14px 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* ?�鬥?�保�?滾�??��?，�?不顯示右?��?底部?��???*/
+  scrollbar-width: none;
+}
+
+#combat-area::-webkit-scrollbar {
+  display: none;
+}
+
+#battle-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tab {
+  display: none;
+  width: 100%;
+}
+
+.tab.active {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+#summary-area {
+  width: 230px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-card {
+  background: url('../images/diablo_panel_tex.png') repeat, var(--panel2);
+  background-blend-mode: multiply;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 13px;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
+}
+
+.summary-card-title {
+  color: var(--accent);
+  font-weight: bold;
+  margin-bottom: 6px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+}
+
+.summary-card-row {
+  color: var(--dim);
+  line-height: 1.5;
+}
+
+.summary-card-row b {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   ?�全?�通用組件?�Global Common UI Components
+   說�?：控?�通用?��?�?btn）、輸?��??��??��?話�??�以?�基礎數?�微調�??�用類別??
+   ========================================================================== */
+.panel {
+  background: url('../images/diablo_panel_tex.png') repeat, var(--panel);
+  background-blend-mode: multiply;
+  border: 12px solid var(--border);
+  border-image: url('../images/diablo_frame_9slice.png') 30 stretch;
+  border-radius: 0;
+  padding: 12px;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.9), 0 0 8px rgba(0, 0, 0, 0.5);
+}
+
+.sec-title {
+  font-weight: bold;
+  color: var(--accent);
+  margin-bottom: 8px;
+  font-size: 16px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+  text-shadow: 1px 1px 2px #000;
+}
+
+.equip-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.equip-detail-head > span:first-child,
+.equip-detail-controls,
+.equip-detail-controls label {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.equip-detail-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.equip-detail-controls label {
+  display: inline-flex;
+  align-items: center;
+}
+
+.ancient-essence-control {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+
+.ancient-essence-warning {
+  color: #fca5a5;
+  font-size: 12px;
+  font-weight: normal;
+  margin-bottom: 2px;
+}
+
+
+
+
+
+.sec-sub {
+  color: var(--dim);
+  font-size: 12px;
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+.hint {
+  color: var(--dim);
+  font-size: 13.5px;
+  margin-top: 6px;
+  /* 中�??��?體模糊難讀，�?消�?�?*/
+  font-style: normal;
+}
+
+/* 技能未解鎖提醒：用淡紅色強調門檻，但維持深色背景上的可讀性。 */
+.skill-unlock-hint {
+  color: #f87171;
+  font-weight: 600;
+}
+
+.dim-text {
+  color: var(--dim);
+  font-size: 13px;
+}
+
+.btn {
+  padding: 6px 14px;
+  border: 1px solid var(--border-light);
+  border-radius: 2px;
+  background: linear-gradient(180deg, #3a2b1f, #1f150e);
+  color: var(--text);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: bold;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8), 0 2px 5px rgba(0, 0, 0, 0.5);
+  text-shadow: 1px 1px 1px #000;
+}
+
+.btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: linear-gradient(180deg, #4a382a, #2a1e16);
+}
+
+.btn:active {
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.9);
+  transform: translateY(1px);
+}
+
+.btn.sm {
+  padding: 3px 10px;
+  font-size: 13px;
+}
+
+.btn.warn {
+  border-color: #8b6b22;
+  background: linear-gradient(180deg, #4a3a1f, #2a2016);
+  color: var(--warn);
+}
+
+.btn.warn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn.danger {
+  border-color: #7a2929;
+  color: #f0a0a0;
+  background: linear-gradient(180deg, #4a1f1f, #2a1616);
+}
+
+.btn.danger:hover {
+  border-color: var(--bad);
+  color: var(--bad);
+}
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.chk {
+  display: block;
+  color: var(--text);
+  margin: 4px 0;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.chk input {
+  margin-right: 6px;
+  accent-color: var(--accent);
+}
+
+select,
+input[type="number"] {
+  background: #000;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 3px 8px;
+  font-family: inherit;
+  font-size: 14px;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);
+}
+
+input[type="number"] {
+  width: 70px;
+}
+
+textarea#save-io {
+  width: 100%;
+  height: 80px;
+  background: #000;
+  color: var(--dim);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 8px;
+  font-size: 12px;
+  resize: vertical;
+  margin-top: 4px;
+  font-family: monospace;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);
+}
+
+/* ==========================================================================
+   ?�主?�鬥對決?�景?�Combat Scene Arena
+   說�?：控?�戰鬥中央�??��?VS 對決?��??�頭?�、敵?��??�獸?��??��??��?法�??��??��??��?示�???
+   ========================================================================== */
+#stage-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.stage-main-controls,
+.stage-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.stage-tools { gap: 6px; }
+
+#stage-label {
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--accent);
+  min-width: 90px;
+  text-align: center;
+}
+
+#kill-count {
+  color: var(--info);
+}
+
+.battle-scene {
+  display: grid;
+  /* ?�方欄�??��?寬度（單?��?準�??�實測值�?，�??�敵人數?��??��??�方?�剩餘空?��?*/
+  grid-template-columns: 202px auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 14px;
+}
+
+.battle-scene.multi-enemy-layout {
+  /* ?�人?��??�改變內?��??��?不改變整?�戰鬥場?��?尺寸??*/
+  width: 100%;
+  margin-left: 0;
+}
+
+/* ?�方?��?絕�?定�?填滿?�板：敵人數?��??��?高戰鬥�?，�??�面?��?度是?��??��?�?
+   ?��?多敵人�? #combat-area ?�容超�??�出?��??�捲軸。inset 對�? .combatant ?��???*/
+.enemy-combatant .enemy-party {
+  position: absolute;
+  top: 18px;
+  right: 14px;
+  bottom: 14px;
+  left: 14px;
+}
+
+/* 2 ?�以上敵人�?縮�??�方?�板?��?，�?空�?讓給?�人?��???*/
+.battle-scene.multi-enemy .enemy-combatant .enemy-party {
+  top: 8px;
+  right: 6px;
+  bottom: 8px;
+  left: 6px;
+}
+
+.combatant {
+  position: relative;
+  background: url('../images/diablo_panel_tex.png') repeat, var(--panel);
+  background-blend-mode: multiply;
+  border: 12px solid var(--border);
+  border-image: url('../images/diablo_frame_9slice.png') 30 stretch;
+  border-radius: 0;
+  padding: 18px 14px 14px;
+  text-align: center;
+  overflow: hidden;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.9), 0 5px 15px rgba(0, 0, 0, 0.7);
+}
+
+.combatant.boss {
+  border-color: #8b0000;
+  box-shadow: inset 0 0 40px rgba(139, 0, 0, 0.4), 0 5px 15px rgba(0, 0, 0, 0.7);
+}
+
+.info-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid #f97316;
+  color: #f97316;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: bold;
+  z-index: 10;
+  box-shadow: 0 0 5px rgba(249, 115, 22, 0.5);
+  transition: all 0.2s;
+}
+
+.info-btn:hover {
+  background: #f97316;
+  color: #10141f;
+}
+
+/* ?�家增�?詳�??��?（左上�?綠色，�??�人?�報???��?稱�? */
+.combatant .buff-btn {
+  top: 6px;
+  left: 6px;
+  right: auto;
+  border-color: var(--good);
+  color: var(--good);
+  box-shadow: 0 0 5px rgba(74, 222, 128, 0.5);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.combatant .buff-btn:hover {
+  background: var(--good);
+  color: #10141f;
+}
+
+.cb-status[data-buff-tip],
+.enemy-status[data-enemy-buff-tip],
+#tb-status[data-enemy-buff-tip] {
+  cursor: pointer;
+}
+
+.buff-tip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 1px 0;
+}
+
+.buff-remain {
+  color: var(--dim);
+  font-size: 0.9em;
+}
+
+.active-buffs {
+  border-bottom: 1px dashed var(--border);
+  padding: 2px 0 5px 12px;
+  font-size: 12px;
+}
+
+.active-buffs-title {
+  color: var(--accent);
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.active-buffs-empty {
+  color: var(--dim);
+}
+
+.active-buff-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.active-buff-main,
+.active-buff-side {
+  min-width: max-content;
+}
+
+
+.vs {
+  align-self: center;
+  color: var(--dim);
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.cb-emoji {
+  font-size: 54px;
+  line-height: 1.2;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .5));
+}
+
+.cb-icon {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.8));
+  margin-bottom: 4px;
+}
+
+.cb-icon.monster {
+  filter: hue-rotate(180deg) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.8));
+  opacity: 0.9;
+}
+
+.cb-icon.boss {
+  width: 84px;
+  height: 84px;
+  filter: hue-rotate(-45deg) contrast(1.2) drop-shadow(0 0 15px rgba(255, 0, 0, 0.6));
+}
+
+.cb-name {
+  font-weight: bold;
+  margin-top: 4px;
+}
+
+.cb-name.elite {
+  color: var(--warn);
+}
+
+.cb-status {
+  height: 80px;
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--warn);
+  margin-top: 4px;
+}
+
+.cb-skill {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  height: 62px;
+  margin-top: 6px;
+  align-content: start;
+}
+
+.sk-run-item {
+  font-size: 10.5px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  white-space: nowrap;
+}
+
+.sk-run-item span {
+  font-variant-numeric: tabular-nums;
+  min-width: 20px;
+  text-align: left;
+}
+
+.sk-run-item.ready span {
+  color: var(--good);
+}
+
+.sk-run-item.on-cd span {
+  color: var(--accent);
+}
+
+.sk-run-item.no-mp span {
+  color: var(--bad);
+  opacity: 0.8;
+}
+
+.hp-bar {
+  position: relative;
+  height: 22px;
+  background: #050505;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+  overflow: visible;
+  margin-top: 6px;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.9);
+}
+
+.shield-bar {
+  position: absolute;
+  left: 0;
+  top: -5px;
+  height: 3px;
+  width: 0;
+  min-width: 10px;
+  display: none;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #dff8ff, #b9f2ff 46%, #8de7ff);
+  box-shadow: 0 0 5px rgba(190, 245, 255, 0.78);
+  pointer-events: none;
+  z-index: 2;
+  transition: width .16s linear;
+}
+
+.hp-fill {
+  height: 100%;
+  width: 100%;
+  transition: width .2s;
+}
+
+.hp-fill.player {
+  background: linear-gradient(180deg, #b22222, #5e1111);
+  box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.2);
+}
+
+.hp-fill.monster {
+  background: linear-gradient(180deg, #8b0000, #3a0000);
+  box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.1);
+}
+
+.hp-fill.boss {
+  background: linear-gradient(180deg, #4b0082, #1a0033);
+  box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.2);
+}
+
+.hp-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 1px 1px 2px #000, 0 0 4px #000;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   ?�戰鬥�?浮�?字特?�】Combat Damage Float Texts
+   說�?：控?�戰鬥中飄浮?�傷害數字、暴?�、治?�、�??�、�??��?player-event）�?位移?�漸?��??��?
+   ========================================================================== */
+.float-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.float-txt {
+  position: absolute;
+  top: 55%;
+  font-weight: bold;
+  font-size: 14px;
+  animation: floatUp .80s ease-out forwards;
+  text-shadow: 0 1px 3px #000;
+}
+
+.float-txt.dmg {
+  color: #ffffff;
+}
+
+.float-txt.crit {
+  color: #ffd700;
+  font-size: 20px;
+}
+
+.float-txt.mdmg {
+  color: #ffffff;
+}
+
+.float-txt.enemy-hit-float.dmg,
+.float-txt.enemy-hit-float.mdmg {
+  font-size: 12px;
+}
+
+.float-txt.enemy-hit-float.crit,
+.float-txt.enemy-hit-float.skill {
+  font-size: 18px;
+}
+
+/* ?�方?�?�害顏色依�?源判定�??�攻?�色?��??��??��??��??�影?��?體大小�?*/
+.float-txt.enemy-hit-float.enemy-attack {
+  color: #ffffff;
+  font-size: 10px;
+  z-index: 10 !important;
+}
+
+.float-txt.enemy-hit-float.enemy-attack.crit {
+  font-size: 16px;
+}
+
+.float-txt.enemy-hit-float.enemy-skill {
+  color: #ffd700;
+  z-index: 20 !important;
+}
+
+/* 累�??�害條�???1.5 秒�??��??��?，�?�?0.5 秒淡??0%，並?��?上浮??*/
+.float-txt.enemy-hit-float.damage-aggregate {
+  animation: enemyDamageFloatUp 2s ease-out forwards, enemyDamageFloatFade 2s linear forwards;
+}
+
+.float-txt.heal {
+  color: #4ade80;
+}
+
+.float-txt.mp {
+  color: #3b82f6;
+}
+
+.float-txt.defend {
+  color: #e6b88a;
+  font-size: 16px;
+}
+
+.float-txt.miss {
+  color: #dc2626;
+  text-shadow: 0 1px 3px #000, 0 0 6px rgba(127, 29, 29, 0.9);
+}
+
+.float-txt.thorn {
+  color: #e6b88a;
+  font-size: 14px;
+}
+
+.float-txt.player-event {
+  top: 20%;
+  z-index: 7;
+  color: #facc15;
+  font-size: 15px;
+  letter-spacing: 0;
+  white-space: nowrap;
+  text-shadow: 0 1px 3px #000, 0 0 8px rgba(0, 0, 0, 0.95);
+  /* 顯示?��??�倍�?上浮距離不�?，�?此�?浮速度?�然減�???*/
+  animation: playerEventFloat 2s ease-out forwards;
+}
+
+.float-txt.player-event.shield,
+.float-txt.player-event.mana {
+  color: #7dd3fc;
+}
+
+.float-txt.player-event.attack {
+  color: #fb923c;
+}
+
+.float-txt.player-event.special {
+  color: #facc15;
+}
+
+.float-txt.player-event.defense,
+.float-txt.player-event.heal {
+  color: #4ade80;
+}
+
+.float-txt.player-event.debuff {
+  color: #fb7185;
+}
+
+.float-txt.player-event.buff {
+  color: #c4b5fd;
+}
+
+.float-txt.player-event.defend {
+  color: #facc15;
+  font-size: 16px;
+}
+
+/* ?�避事件?��?顯示?��??�、MP?�護?��??�家事件上方，避?��??�速�?被�??��?*/
+.float-txt.player-event.dodge {
+  z-index: 8;
+  color: #fde047;
+  font-size: 17px;
+}
+
+/* ?�命／�??��?復累計浮字�??�敵?�傷害相?��???1.5 秒�??��??��??��?0.5 秒淡?��?*/
+.float-txt.player-recovery-float {
+  z-index: 7;
+  white-space: nowrap;
+}
+
+.float-txt.player-recovery-aggregate {
+  animation: playerRecoveryFloatUp 2s ease-out forwards, playerRecoveryFloatFade 2s linear forwards;
+}
+
+@keyframes floatUp {
+  0% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(-50%, -46px);
+    opacity: 0;
+  }
+}
+
+@keyframes enemyDamageFloatFade {
+  0% {
+    opacity: 1;
+  }
+
+  75% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes enemyDamageFloatUp {
+  0% {
+    transform: translate(-50%, 0);
+  }
+
+  100% {
+    transform: translate(-50%, -80px);
+  }
+}
+
+@keyframes playerRecoveryFloatFade {
+  0% {
+    opacity: 1;
+  }
+
+  75% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes playerRecoveryFloatUp {
+  0% {
+    transform: translate(-50%, 0);
+  }
+
+  100% {
+    transform: translate(-50%, -60px);
+  }
+}
+
+@keyframes playerEventFloat {
+  0% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(-50%, -28px);
+    opacity: 0;
+  }
+}
+
+/* ==========================================================================
+   ?�右?�戰鬥日誌】Combat & System Logs Panel
+   說�?：控?�右?�日誌面?�、日誌篩?��??��??�以?��?種�??��?類日誌�??�鬥?��??�、�??�、系統�??��?體色調�?
+   ========================================================================== */
+.log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 6px 0 4px;
+}
+
+.log-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.log-title {
+  color: var(--dim);
+  font-size: 13px;
+  margin: 0;
+}
+
+.log-filter {
+  background: url('../images/diablo_panel_tex.png') repeat, var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);
+}
+
+.log {
+  background: #080605;
+  border: 12px solid var(--border);
+  border-image: url('../images/diablo_frame_9slice.png') 30 stretch;
+  border-radius: 0;
+  flex: 1;
+  min-height: 190px;
+  overflow-y: auto;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-family: var(--font-main);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.9);
+}
+
+.log-line {
+  padding: 1px 0;
+  color: var(--dim);
+  border-bottom: 1px dashed #1b2236;
+}
+
+.log-line.good {
+  color: var(--good);
+}
+
+.log-line.bad {
+  color: var(--bad);
+}
+
+.log-line.warn {
+  color: var(--warn);
+}
+
+.log-line.info {
+  color: var(--info);
+}
+
+.log-line.log-kill {
+  color: #ff3131;
+  background: rgba(0, 0, 0, 0);
+  border-bottom-color: rgba(220, 150, 80, 0.90);
+  font-weight: 600;
+}
+
+.log-line.log-player-attack {
+  color: #ffffff;
+}
+
+.log-line.log-player-skill {
+  color: #fde047;
+}
+
+.log-line.log-player-buff {
+  color: #86efac;
+}
+
+.log-line.log-enemy-attack {
+  color: #fca5a5;
+  background: rgba(210, 56, 56, 0.12);
+  border-bottom-color: rgba(210, 56, 56, 0.18);
+}
+
+
+.log-line.log-enemy-damage {
+  color: #fca5a5;
+  background: rgba(210, 56, 56, 0.12);
+  border-bottom-color: rgba(210, 56, 56, 0.18);
+}
+
+.log-line.log-enemy-skill {
+  color: #fff59d;
+  background: rgba(210, 56, 56, 0.12);
+  border-bottom-color: rgba(210, 56, 56, 0.18);
+}
+
+.log-line.log-enemy-buff {
+  color: #d7ccc8;
+  background: rgba(210, 56, 56, 0.08);
+  border-bottom-color: rgba(210, 56, 56, 0.12);
+}
+
+.detail-log-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(8px, 2vh, 20px) clamp(8px, 2vw, 20px);
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, .72);
+  backdrop-filter: blur(2px);
+}
+
+.detail-log-box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(1200px, 96vw);
+  height: calc(100vh - clamp(16px, 4vh, 40px));
+  min-height: 300px;
+  padding: 14px 14px 12px;
+  box-sizing: border-box;
+  background: url('../images/diablo_panel_tex.png') repeat, rgba(15, 10, 5, .97);
+  background-blend-mode: multiply;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .95), inset 0 0 18px rgba(0, 0, 0, .85);
+}
+
+.detail-log-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding-right: 34px;
+  border-bottom: 1px solid var(--border);
+}
+
+.detail-log-head .sec-title {
+  margin: 0;
+  text-align: center;
+}
+
+.detail-log-head .modal-x {
+  top: 2px;
+}
+
+.detail-log-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.detail-log-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, .55);
+  border: 1px solid #3a2d1d;
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, .9);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.newforge-detail-log-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+#newforge-detail-log-content {
+  flex: 1;
+  min-height: 0;
+}
+
+.detail-log-stats {
+  width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, .55);
+  border: 1px solid #3a2d1d;
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, .9);
+  overflow-y: auto;
+  font-size: 13px;
+  color: var(--dim);
+}
+
+.stats-sec {
+  border-bottom: 1px solid #3a2d1d;
+  padding-bottom: 12px;
+}
+
+.stats-sec:last-child {
+  border-bottom: none;
+}
+
+.stats-sec-title {
+  font-size: 14px;
+  color: var(--accent, #e5a93b);
+  font-weight: bold;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stats-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px dashed rgba(58, 45, 29, 0.5);
+}
+
+.stats-row:last-child {
+  border-bottom: none;
+}
+
+.stats-value {
+  color: var(--light, #f5f5f5);
+  font-weight: bold;
+}
+
+.stats-mats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.stats-mat-card {
+  background: rgba(25, 20, 15, 0.6);
+  border: 1px solid #2d2417;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: 3px;
+}
+
+.stats-mat-name {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.stats-mat-val {
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--good);
+}
+
+
+.detail-log-line {
+  padding: 3px 0;
+  color: var(--dim);
+  border-bottom: 1px dashed #282116;
+  word-break: break-word;
+}
+
+.detail-log-line.good {
+  color: var(--good);
+}
+
+.detail-log-line.bad {
+  color: var(--bad);
+}
+
+.detail-log-line.warn {
+  color: var(--warn);
+}
+
+.detail-log-line.info {
+  color: var(--info);
+}
+
+.detail-log-line.log-kill {
+  color: #fd3b00;
+  background: rgba(255, 162, 162, 0);
+  border-bottom-color: rgba(220, 150, 80, 0.90);
+  font-weight: 600;
+}
+
+.detail-log-line.loot {
+  color: #c084fc;
+}
+
+.detail-log-line.log-player-attack {
+  color: #ffffff;
+  background: rgba(56, 130, 210, 0.10);
+  border-bottom-color: rgba(56, 130, 210, 0.15);
+}
+
+.detail-log-line.log-enemy-attack {
+  color: #fca5a5;
+  background: rgba(210, 56, 56, 0.12);
+  border-bottom-color: rgba(210, 56, 56, 0.18);
+}
+
+
+.detail-log-line.log-player-skill {
+  color: #fde047;
+  background: rgba(56, 130, 210, 0.10);
+  border-bottom-color: rgba(56, 130, 210, 0.15);
+}
+
+.detail-log-line.log-player-buff {
+  color: #86efac;
+  background: rgba(56, 130, 210, 0.07);
+  border-bottom-color: rgba(56, 130, 210, 0.12);
+}
+
+.detail-log-line.log-enemy-damage {
+  color: #fca5a5;
+  background: rgba(210, 56, 56, 0.10);
+  border-bottom-color: rgba(210, 56, 56, 0.15);
+}
+
+.detail-log-line.log-enemy-skill {
+  color: #fff59d;
+  background: rgba(210, 56, 56, 0.10);
+  border-bottom-color: rgba(210, 56, 56, 0.15);
+}
+
+.detail-log-line.log-enemy-buff {
+  color: #d7ccc8;
+  background: rgba(210, 56, 56, 0.07);
+  border-bottom-color: rgba(210, 56, 56, 0.12);
+}
+
+.detail-log-time {
+  display: inline-block;
+  min-width: 58px;
+  margin-right: 8px;
+  color: #8f7856;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.detail-log-empty {
+  padding: 18px 4px;
+  color: var(--dim);
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .log-header-actions {
+    gap: 4px;
+  }
+
+  .log-header-actions .btn {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .detail-log-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .detail-log-toolbar .log-filter,
+  .detail-log-toolbar .btn {
+    width: 100%;
+  }
+}
+
+.log-line.loot {
+  color: #c084fc;
+}
+
+.log-hl-good {
+  color: var(--info);
+}
+
+.log-hl-bad {
+  color: var(--bad);
+}
+
+#battle-log.filter-combat .log-line:not([data-cat="combat"]) {
+  display: none;
+}
+
+#battle-log.filter-factory .log-line:not([data-cat="factory"]) {
+  display: none;
+}
+
+#battle-log.filter-loot .log-line:not([data-cat="loot"]) {
+  display: none;
+}
+
+#battle-log.filter-system .log-line:not([data-cat="system"]) {
+  display: none;
+}
+
+#update-banner {
+  display: none;
+  background: var(--panel2);
+  color: #fde047;
+  text-align: center;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 9999;
+  position: sticky;
+  top: 0;
+  border-bottom: 2px solid #eab308;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  animation: textPulse 2.5s infinite ease-in-out;
+}
+
+#update-banner:hover {
+  filter: brightness(1.2);
+}
+
+@keyframes textPulse {
+  0% {
+    opacity: 0.7;
+    text-shadow: 0 0 2px rgba(253, 224, 71, 0.2);
+  }
+
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 15px rgba(253, 224, 71, 0.9), 0 0 5px rgba(253, 224, 71, 1);
+  }
+
+  100% {
+    opacity: 0.7;
+    text-shadow: 0 0 2px rgba(253, 224, 71, 0.2);
+  }
+}
+
+/* ==========================================================================
+   ?��??��??��?系統?�Equipment & Inventory System
+   說�?：控?�玩家�??�槽?��??�格子�?4x5?�自?��??�網）、物?��?質�?稀???�詩/?��?/神話）�?框�??�發?��??��?
+   ========================================================================== */
+.equip-section-box {
+  background: url('../images/diablo_panel_tex.png') repeat, rgba(20, 15, 10, 0.8);
+  background-blend-mode: multiply;
+  border: 12px solid var(--border);
+  border-image: url('../images/diablo_frame_9slice.png') 30 stretch;
+  border-radius: 0;
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+#tab-equip .equip-section-box:nth-child(2) {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.equip-top-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 796px) minmax(200px, 210px);
+  gap: 10px;
+  align-items: start;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin-bottom: 8px !important;
+}
+
+
+
+/* 裝�??��?位優?��?滿�??��?詳�?欄為 fr 彈性�?，�??��?空�?）�?
+   ?��??��??��?例�??��?裝�??�永?�到不�??�大後�?尺寸??*/
+.equip-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 400px) minmax(290px, 1fr);
+  gap: 8px;
+  margin-bottom: 0;
+}
+
+#equip-grid {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 780 / 1024;
+  background-image: url('../images/character_UI .png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  margin: 0 auto;
+  align-self: start;
+}
+
+/* 裝�?三�??��? */
+#equip-set-tabs {
+  max-width: 400px;
+  margin: 8px auto 0;
+}
+.eqset-tabrow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.eqset-tabwrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+/* ?��?上方?�自訂�?稱�?空�?仍�??��?度以對�?�?*/
+.eqset-name {
+  min-height: 15px;
+  line-height: 15px;
+  margin-bottom: 2px;
+  font-size: 11px;
+  font-weight: bold;
+  text-align: center;
+  color: var(--accent);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* ?��?角改?��??��? */
+.eqset-rename {
+  position: absolute;
+  top: 17px;
+  right: 3px;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px;
+  cursor: pointer;
+  opacity: 0.5;
+  z-index: 2;
+  transition: opacity 0.15s;
+}
+.eqset-rename:hover { opacity: 1; }
+.eqset-tab {
+  position: relative;
+  width: 100%;
+  padding: 7px 4px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--dim);
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.eqset-tab:hover { color: var(--text); border-color: var(--accent); }
+.eqset-tab.viewing {
+  color: var(--text);
+  border-color: var(--accent);
+  background: rgba(255, 200, 80, 0.12);
+  box-shadow: inset 0 0 8px rgba(255, 200, 80, 0.25);
+}
+.eqset-tab.active { color: var(--good); }
+.eqset-badge {
+  display: block;
+  font-size: 10px;
+  font-weight: normal;
+  color: var(--good);
+  margin-top: 1px;
+}
+.eqset-confirm {
+  width: 100%;
+  margin-top: 6px;
+}
+.eqset-confirm:disabled { opacity: 0.5; cursor: default; }
+
+.eq-slot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  padding: 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: all 0.2s;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.eq-slot .eq-icon,
+.eq-slot .eq-emoji {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+}
+
+.eq-slot.filled {
+  background: rgba(7, 6, 5, 0.90);
+  cursor: pointer;
+}
+
+.eq-slot.empty {
+  cursor: pointer;
+}
+
+/* 裝�??�右?��?寶石／�?魔�??�示?�：固定�?度�??��??��??��?下推??*/
+.equip-material-panel {
+  min-width: 0;
+  margin-left: 14px;
+  width: calc(100% - 14px);
+  height: 465px;
+  max-height: 465px;
+  margin-top: 30px;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: rgba(10, 7, 4, 0.82);
+  box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.85);
+  box-sizing: border-box;
+}
+
+.equip-material-panel:empty {
+  display: none;
+}
+
+.equip-material-section+.equip-material-section {
+  margin-top: 9px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(184, 134, 11, 0.45);
+}
+
+.equip-material-title {
+  color: var(--accent);
+  font-size: 13.5px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.equip-material-subtitle {
+  color: var(--dim);
+  font-size: 12.5px;
+  margin: 7px 0 4px;
+}
+
+.equip-material-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 32px);
+  gap: 5px;
+  align-items: center;
+}
+
+.equip-material-icon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid #7c6df2;
+  border-radius: 4px;
+  background: rgba(20, 16, 12, 0.95);
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  transition: filter .15s, border-color .15s, transform .15s;
+}
+
+.equip-material-icon:hover {
+  border-color: var(--accent);
+  filter: brightness(1.25);
+  transform: translateY(-1px);
+}
+
+.equip-material-icon.installed {
+  border-color: #fbbf24;
+  box-shadow: 0 0 5px rgba(251, 191, 36, 0.4);
+}
+
+.equip-material-icon.empty {
+  border-style: dashed;
+  border-color: var(--border);
+  color: var(--dim);
+  cursor: default;
+}
+
+.equip-material-icon.dim-chip {
+  opacity: .45;
+}
+
+.equip-material-empty {
+  color: var(--dim);
+  font-size: 12.5px;
+}
+
+/* ?��?底�??�內襯�?淺�?已�??��?位�?深並?�放大�?示�??��?淺色底�??�示?�周?�出??*/
+.eq-slot.filled .eq-icon,
+.eq-slot.filled .eq-emoji {
+  width: 84%;
+  height: 84%;
+}
+
+.eq-slot.filled:hover {
+  background: rgba(0, 0, 0, 0.7);
+  filter: brightness(1.2);
+}
+
+.eq-emoji {
+  font-size: 26px;
+}
+
+/* 座�?實測??character_UI .png ?��?�?80x1024）�??��??��??��??��?素�??��?*/
+.slot-shoulder {
+  left: 26.15%;
+  top: 19.34%;
+  width: 17.05%;
+  height: 17.87%;
+}
+
+.slot-gloves {
+  left: 18.72%;
+  top: 41.70%;
+  width: 17.05%;
+  height: 17.68%;
+}
+
+.slot-ring {
+  left: 18.85%;
+  top: 59.23%;
+  width: 10.90%;
+  height: 8.20%;
+}
+
+.slot-weapon {
+  left: 18.78%;
+  top: 81.64%;
+  width: 17.18%;
+  height: 27.44%;
+}
+
+.slot-helmet {
+  left: 50.45%;
+  top: 11.33%;
+  width: 17.18%;
+  height: 13.38%;
+}
+
+.slot-chest {
+  left: 50.51%;
+  top: 33.50%;
+  width: 17.05%;
+  height: 22.17%;
+}
+
+.slot-belt {
+  left: 51.15%;
+  top: 50.63%;
+  width: 22.44%;
+  height: 6.25%;
+}
+
+.slot-boots {
+  left: 51.15%;
+  top: 86.38%;
+  width: 17.31%;
+  height: 18.16%;
+}
+
+.slot-amulet {
+  left: 73.46%;
+  top: 20.21%;
+  width: 14.49%;
+  height: 11.04%;
+}
+
+.slot-wrist {
+  left: 82.18%;
+  top: 41.70%;
+  width: 17.05%;
+  height: 17.68%;
+}
+
+.slot-legs {
+  left: 51.09%;
+  top: 65.33%;
+  width: 17.18%;
+  height: 17.87%;
+  z-index: 3;
+}
+
+.slot-ring2 {
+  left: 83.27%;
+  top: 59.23%;
+  width: 11.03%;
+  height: 8.20%;
+}
+
+.slot-weapon2 {
+  left: 83.40%;
+  top: 81.64%;
+  width: 17.18%;
+  height: 27.44%;
+}
+
+/* 副手欄被主手雙手武器連帶佔用 */
+.eq-slot.twohand-occupied {
+  opacity: .8;
+}
+
+.eq-slot .th-occupied-mark {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  font-size: 13px;
+  opacity: .85;
+  pointer-events: none;
+  text-shadow: 0 0 4px #000;
+}
+
+.eq-emoji.dim {
+  opacity: .3;
+}
+
+.eq-name {
+  font-size: 11.5px;
+  font-weight: bold;
+  margin-top: 2px;
+  line-height: 1.2;
+}
+
+.eq-sub {
+  font-size: 10px;
+  color: var(--dim);
+}
+
+.inv-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+#inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 58px);
+  grid-auto-rows: 58px;
+  gap: 6px;
+  align-content: start;
+  height: var(--inventory-visible-height, 186px);
+  max-height: 570px;
+  overflow-y: auto;
+}
+
+.item-cell {
+  position: relative;
+  aspect-ratio: 1;
+  background: var(--panel);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s, filter 0.2s, box-shadow 0.2s;
+}
+
+.item-cell:hover {
+  filter: brightness(1.3);
+}
+
+.eq-slot.filled,
+.item-cell {
+  transition: opacity 0.2s, filter 0.2s, box-shadow 0.2s, outline 0.2s;
+}
+
+/* ?�中標示：在裝�?框「�??�」�??��??�白框�??��?之�??�出?��?）�?
+   ?��?�??��?/神�??��??��?框�?顯�??��?不�??��??��?框�???*/
+.eq-slot.selected {
+  outline: 3px solid #fff;
+  outline-offset: 5px;
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.45) !important;
+}
+
+.item-cell.selected {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.4) !important;
+}
+
+.eq-slot.filled.dimmed,
+.item-cell.dimmed,
+.item-cell.item-cell-dimmed {
+  opacity: 0.25 !important;
+  filter: grayscale(100%) brightness(0.4) !important;
+  box-shadow: none !important;
+}
+
+.item-cell.item-cell-dimmed::before,
+.item-cell.item-cell-dimmed::after {
+  opacity: 0 !important;
+  animation: none !important;
+}
+
+.ic-emoji {
+  font-size: 24px;
+}
+
+/* 裝�??�示上緣?�太?��?條數?��??�多容�?7 顆六角�???*/
+.ancient-star-badge {
+  position: absolute;
+  z-index: 2;
+  top: 1px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: none;
+  padding: 0;
+  overflow: visible;
+  white-space: nowrap;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.ancient-star-badge .ancient-star {
+  color: #ffe45c !important;
+  font-size: 18px;
+  line-height: 1;
+  margin-left: 0;
+  -webkit-text-stroke: 1px #fff8bd;
+  text-shadow: -1px -1px 0 #263b4c, 1px -1px 0 #263b4c,
+    -1px 1px 0 #263b4c, 1px 1px 0 #263b4c,
+    0 0 3px #000;
+}
+
+.ancient-star-badge .ancient-star:first-child {
+  margin-left: 0;
+}
+
+/* 超�??��??��??�?�相?��??�平?��?幅�??��??��?多出?��??��?中�??��?後�?顆�?*/
+.ancient-star-badge.overlap .ancient-star + .ancient-star {
+  margin-left: -4px;
+}
+
+.eq-slot .ancient-star-badge {
+  top: 3px;
+}
+
+.forge-slot .ancient-star-badge {
+  top: 2px;
+}
+
+.ic-up {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.ic-enc {
+  position: absolute;
+  bottom: 1px;
+  right: 3px;
+  font-size: 10px;
+}
+
+.ic-lock {
+  position: absolute;
+  top: 1px;
+  left: 3px;
+  font-size: 9px;
+}
+
+.ic-syn {
+  position: absolute;
+  bottom: 1px;
+  left: 3px;
+  font-size: 10px;
+  color: #c084fc;
+}
+
+.ic-lv {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text);
+  background: rgba(0, 0, 0, .35);
+  border-radius: 0 0 6px 6px;
+}
+
+/* ==========================================================================
+   ?��??��??��?轉�??��?框】High Rarity Stacking Border Glow
+   說�?：�?話�??��?等�??��??�度裝�??��??��??��?轉�??��?漸層外�??��???
+   ========================================================================== */
+@keyframes borderSpin {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.eff-mythic,
+.eff-genesis {
+  position: relative;
+  overflow: hidden;
+  border: none !important;
+  isolation: isolate;
+  /* Create stacking context */
+}
+
+.eq-slot.eff-mythic,
+.eq-slot.eff-genesis {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+/* 外層?��?漸層 */
+.eff-mythic::before,
+.eff-genesis::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 400%;
+  height: 400%;
+  z-index: -2;
+}
+
+.eff-mythic::before {
+  background: conic-gradient(from 0deg, #ef4444, #fcd34d, #ef4444, #fcd34d, #ef4444);
+  animation: borderSpin 2s linear infinite;
+}
+
+.eff-genesis::before {
+  background: conic-gradient(from 0deg, #b8860b, #e6c229, #8b6508, #e6c229, #b8860b);
+  animation: borderSpin 2s linear infinite;
+}
+
+/* ?�層?�罩?��?中�?，只?��?�?*/
+.eff-mythic::after,
+.eff-genesis::after {
+  content: "";
+  position: absolute;
+  border-radius: 6px;
+  z-index: -1;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.eff-mythic::after,
+.eq-slot.eff-mythic::after {
+  inset: 2px;
+  /* ?��?粗細 */
+  background: linear-gradient(to bottom, rgba(160, 20, 20, 0.9) 0%, rgba(80, 10, 10, 0.95) 45%, var(--panel) 80%);
+}
+
+.eff-genesis::after,
+.eq-slot.eff-genesis::after {
+  inset: 2px;
+  background: linear-gradient(to bottom, rgba(184, 134, 11, 0.9) 0%, rgba(139, 101, 8, 0.95) 45%, var(--panel) 80%);
+}
+
+/* ==========================================================================
+   ?��??�詳細�?�?Tooltip ?�浮窗】Equipment Detail Tooltip Pane
+   說�?：Hover 裝�??�物?��?顯示?�浮?��??��?窗樣式�??�含?��??�值、�?條屬?�、寶?�鑲嵌�??��??�屬?��?
+   ========================================================================== */
+.it-name {
+  font-size: 16px;
+  font-weight: bold;
+  position: relative;
+}
+
+.it-up {
+  color: var(--accent);
+}
+
+.it-syn {
+  color: #c084fc;
+  font-size: 13px;
+}
+
+.it-sub {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--dim);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.it-affix {
+  font-size: 15px;
+  font-weight: bold;
+  /* 比照?�考�??��?詞�?行�?�?*/
+  color: var(--text);
+  line-height: 1;
+}
+
+/* 詞�??��??�色（�??��??��??��?類別一?�可辨�??�值�??��? */
+.it-affix.afx-base {
+  color: var(--afx-base);
+}
+
+.it-affix.afx-off {
+  color: var(--afx-off);
+}
+
+.it-affix.afx-def {
+  color: var(--afx-def);
+}
+
+.it-affix.afx-util {
+  color: var(--afx-util);
+}
+
+.it-affixes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--it-affix-gap);
+  width: 100%;
+}
+
+.it-affix-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px;
+  align-items: center;
+  column-gap: 8px;
+  min-height: 15px;
+  height: 15px;
+  width: 100%;
+}
+
+.it-affix-text {
+  min-width: 0;
+}
+
+/* 滑�??�側洗�??��??��??�確標示它�?對�??��?條�?*/
+.it-affix-row:has(.affix-reroll-btn:hover) .it-affix-text {
+  outline: 1px solid #fef3c7;
+  outline-offset: -1px;
+}
+
+.it-affix-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 15px;
+  height: 15px;
+}
+
+.affix-reroll-btn {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  font-size: 11px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.affix-reroll-tip {
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: normal;
+}
+
+/* ?��?被�?（【破?�】�?）�?橘色粗�?段落，�??��??��??��??��??��? */
+.it-passive {
+  margin-top: 8px;
+  color: #ffa940;
+  font-size: 15px;
+  font-weight: bold;
+  line-height: 1.45;
+}
+
+.it-enchant {
+  margin-top: var(--it-enchant-gap);
+  color: #6fb5e8;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.it-score {
+  margin-top: 6px;
+  color: var(--dim);
+  font-size: 13px;
+}
+
+.it-score-sub {
+  margin-top: 0;
+  margin-left: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+/* 裝�?詳�?下方?��??�常駐�??��?度�??�選?��??��?不�??��??��??�位置?��?不跳?��?*/
+.equip-action-bar {
+  min-height: 33px;
+}
+
+.btn-it-pool {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--text);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: bold;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.btn-it-pool:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.it-pool-box {
+  display: none !important;
+}
+
+/* ?��?詞�??�內容搬??body 層�??��?被�??�詳?�面?��? overflow ?�軸裁�???*/
+#affix-pool-overlay {
+  position: fixed;
+  display: none;
+  z-index: 10050;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 13.5px;
+  color: var(--text);
+  font-weight: normal;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  max-width: min(520px, calc(100vw - 16px));
+  max-height: min(500px, calc(100vh - 16px));
+  overflow-y: auto;
+  text-align: left;
+  white-space: nowrap;
+  min-width: 140px;
+}
+
+.it-pool-title {
+  color: var(--accent);
+  margin-bottom: 6px;
+  font-weight: bold;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+}
+
+.it-pool-item {
+  margin: 3px 0;
+  color: #a1a1aa;
+}
+
+/* ==========================================================================
+   ?��??��??��??��??�系統】Production & Crafting Line System
+   說�?：控?��??��??��??�置，�??��??��?點、進度條、暫存庫存�??�以?��??�相?��??��?
+   ========================================================================== */
+.conveyor-panel {
+  margin-bottom: 12px;
+}
+
+.chip-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  min-height: 30px;
+  align-items: center;
+}
+
+.conv-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid;
+  border-radius: 6px;
+  background: var(--bg2);
+  font-size: 14px;
+}
+
+.conv-more {
+  color: var(--dim);
+  font-size: 12px;
+}
+
+.factory-flow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+  gap: 12px;
+}
+
+.node-card {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ?��?節點目?�整段�??��??�到?��??�確?�新?�放??*/
+#synthesis-node {
+  display: none !important;
+}
+
+.node-title {
+  font-weight: bold;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.node-badge {
+  font-size: 10px;
+  color: var(--dim);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.node-body {
+  flex: 1;
+}
+
+.node-info {
+  color: var(--info);
+  font-size: 12px;
+  margin: 6px 0;
+}
+
+.flt-grid {
+  margin-top: 6px;
+}
+
+.flt-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 3px 0;
+  font-size: 13px;
+}
+
+.flt-row.indent {
+  margin-left: 22px;
+  color: var(--dim);
+}
+
+.rar-tag {
+  width: 34px;
+  font-weight: bold;
+}
+
+.book-chip {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 2px 8px;
+  font-size: 12px;
+  margin: 2px;
+}
+
+.part-chip {
+  background: var(--bg2);
+  border: 1px solid var(--accent);
+  border-radius: 5px;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.part-material-icon {
+  width: 1.15em;
+  height: 1.15em;
+  object-fit: contain;
+  vertical-align: -0.2em;
+  margin-right: 2px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
+}
+
+.part-chip.empty {
+  border-color: var(--border);
+  color: var(--dim);
+  border-style: dashed;
+}
+
+.part-expand-chip {
+  cursor: pointer;
+  color: #111827;
+  background: #d9f99d;
+  border-color: #84cc16;
+  font-weight: bold;
+  min-width: 34px;
+}
+
+.part-expand-chip:hover {
+  background: #bef264;
+  box-shadow: 0 0 8px rgba(132, 204, 22, 0.55);
+}
+
+.part-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border-bottom: 1px dashed #1b2236;
+  font-size: 12.5px;
+}
+
+.part-row.installed {
+  opacity: .75;
+}
+
+.part-name {
+  color: var(--accent);
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.part-desc {
+  color: var(--dim);
+  flex: 1;
+}
+
+/* ==========================================================================
+   ?�大?��?塔�??��??�】Great Wild Tower Challenge
+   說�?：控?��??��?塔�??��?�??，�??�層?�選?�、�?塔戰鬥數?�、倒�??�、�?塔�??��?表�? BOSS 專屬資�???
+   ========================================================================== */
+.tower-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.tw-title {
+  font-weight: bold;
+  color: var(--accent);
+  font-size: 16px;
+}
+
+.tw-timer {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--info);
+  font-variant-numeric: tabular-nums;
+  flex: 0 0 72px;
+  text-align: right;
+}
+
+.tw-timer.urgent {
+  color: var(--bad);
+  animation: blink 1s infinite;
+}
+
+.tw-enrage {
+  color: var(--bad);
+  font-weight: bold;
+  animation: blink .8s infinite;
+}
+
+/* DPS 資�??��??�倒數計�??�側，避?��??��?字長?�造�?水平跳�???*/
+.tower-head #tw-dps {
+  margin-left: 16px;
+  flex: 0 0 auto;
+}
+
+@keyframes blink {
+  50% {
+    opacity: .4;
+  }
+}
+
+.tower-floor {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+}
+
+.tower-floor.cleared {
+  border-color: #2d5b3e;
+  background-color: rgba(45, 91, 62, 0.35);
+}
+
+.tower-floor.locked {
+  opacity: .45;
+}
+
+.tower-section-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 16px 0 8px;
+  padding: 0 8px 6px;
+  border-bottom: 1px solid var(--border);
+  color: var(--accent);
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.tower-section-title span {
+  color: var(--dim);
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.tower-section-title.hell,
+.tower-floor.hell .tf-name {
+  color: #ffd700;
+}
+
+.tower-section-title.purgatory,
+.tower-floor.purgatory .tf-name,
+.purgatory-boss {
+  color: #ff8c00;
+}
+
+.tf-emoji {
+  font-size: 22px;
+}
+
+.tf-name {
+  font-weight: bold;
+  flex: 1;
+}
+
+.tf-hint {
+  color: var(--dim);
+  font-size: 12px;
+}
+
+.tr-title {
+  font-weight: bold;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.tr-title.good {
+  color: var(--good);
+}
+
+.tr-title.bad {
+  color: var(--bad);
+}
+
+.tr-sub {
+  color: var(--dim);
+  font-size: 12.5px;
+  margin-top: 4px;
+}
+
+.tr-line {
+  font-size: 12.5px;
+  padding: 1px 0;
+}
+
+#tower-result {
+  margin-bottom: 10px;
+}
+
+/* ==========================================================================
+   ?�系統�?存�?設�??�System & Save Game Settings
+   說�?：控?�設定�??��??�含存�??�出/?�入?��??�GM ?�令?�制?�、玩法�??��?字說?��??��???
+   ========================================================================== */
+#tab-settings .panel {
+  margin-bottom: 12px;
+}
+
+.help p {
+  margin: 5px 0;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.help b {
+  color: var(--accent);
+}
+
+/* ==========================================================================
+   ?��??�端?��?式�??�修�?��Responsive Mobile Adaptations
+   說�?：使??@media ?�詢，�?對寬�?900px 以�??��?機�?小螢幕�?將�??��??�為?��??��??��???
+   ========================================================================== */
+@media (max-width: 900px) {
+  #game-layout {
+    flex-direction: column;
+    height: auto;
+  }
+
+  #combat-area {
+    flex: 0 0 max(500px, calc(100vh - 70px));
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    height: max(500px, calc(100vh - 70px));
+    min-height: 500px;
+    max-height: none;
+  }
+
+  #stats-sidebar {
+    width: 100%;
+  }
+
+  .equip-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .battle-scene {
+    grid-template-columns: 1fr;
+  }
+
+  .battle-scene.multi-enemy-layout {
+    width: 100%;
+    margin-left: 0;
+    grid-template-columns: 1fr;
+  }
+
+  .vs {
+    display: none;
+  }
+
+  .factory-flow {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   ?��??��??��??��???UI?�Mana Bar & Skill Trigger Indicators
+   說�?：控?�戰鬥中角色?��??��??��??��??�冷?�進度?��??�觸?��??��?字樣式�?
+   ========================================================================== */
+.mp-bar {
+  position: relative;
+  height: 12px;
+  background: #0a0d14;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.mp-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #1d4ed8, #38bdf8);
+  transition: width .2s;
+}
+
+.mp-bar .hp-text {
+  font-size: 9.5px;
+}
+
+.cb-skill {
+  min-height: 16px;
+  font-size: 11px;
+  color: var(--info);
+  margin-top: 4px;
+}
+
+.float-txt.skill {
+  color: #7dd3fc;
+  font-size: 20px;
+}
+
+/* ==========================================================================
+   ?�屬?�側欄�?組摺?��??�】Collapsible Sidebar Stat Groups
+   說�?：支?�屬?�側?��?中�? <details> ?��??��??�板，�??��????�起?�畫?�屬?��?（stat-row）�??��?
+   ========================================================================== */
+.attr-group {
+  margin-bottom: 6px;
+}
+
+.attr-group summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 13px;
+  padding: 4px 0;
+  user-select: none;
+  list-style: none;
+}
+
+
+
+
+
+.attr-group .stat-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  justify-content: space-between;
+  column-gap: 8px;
+  padding: 2px 0 2px 0;
+  font-size: 12px;
+  min-width: 0;
+}
+
+.attr-group .stat-row span,
+.attr-group .stat-row b {
+  min-width: 0;
+  white-space: normal;
+}
+
+.attr-group .stat-row span {
+  overflow-wrap: anywhere;
+}
+
+.attr-group .stat-row b {
+  white-space: nowrap;
+}
+
+.attr-group .stat-row b {
+  justify-self: end;
+  overflow: visible;
+}
+
+#stats-sidebar {
+  overflow-y: auto;
+}
+
+/* ==========================================================================
+   ?�寶?�鑲嵌�??��?系統?�Gem Socketing & Inventory System
+   說�?：控?��??�詳?�中?�鑲嵌�?（Dashed Sockets）樣式、寶?�選?�器浮�??�板?�寶?�獨立倉庫?�形?��?
+   ========================================================================== */
+.it-sockets {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--it-socket-gap);
+}
+
+.socket {
+  display: inline-block;
+  font-size: 13.5px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  border: 1px dashed var(--border);
+  color: var(--dim);
+  width: fit-content;
+  line-height: 1;
+}
+
+.it-sockets .socket {
+  white-space: nowrap;
+}
+
+.socket.filled {
+  border-style: solid;
+  border-color: #7c6df2;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.socket.filled:hover {
+  border-color: var(--bad);
+  text-decoration: line-through;
+}
+
+.gem-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.gem-chip {
+  background: var(--bg2);
+  border: 1px solid #7c6df2;
+  border-radius: 5px;
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.gem-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* 寶石庫�?：�?神�??��??�縮小�? 30%，改?�方形�?示便?�辨識�??�寶??*/
+#gconv-pool,
+#gfuse-pool,
+#gdis-fused {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 48px);
+  grid-auto-rows: 48px;
+  gap: 6px;
+  align-items: start;
+}
+
+#gconv-pool .gem-inventory-cell,
+#gfuse-pool .gem-inventory-cell,
+#gdis-fused .gem-inventory-cell,
+#gfuse-slots .gem-inventory-cell {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  box-sizing: border-box;
+  padding: 3px 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  text-align: center;
+  line-height: 1.05;
+  overflow: hidden;
+}
+
+#gconv-pool .gem-chip-emoji,
+#gfuse-pool .gem-chip-emoji,
+#gdis-fused .gem-chip-emoji {
+  font-size: 17px;
+  line-height: 1;
+}
+
+#gconv-pool .gem-chip-count,
+#gfuse-pool .gem-chip-count,
+#gdis-fused .gem-chip-count {
+  position: absolute;
+  left: 3px;
+  top: 2px;
+  color: #fbbf24;
+  font-size: 9px;
+  font-weight: bold;
+  text-shadow: 0 0 3px #000, 1px 1px 2px #000;
+}
+
+#gconv-pool .gem-chip-level,
+#gfuse-pool .gem-chip-level,
+#gdis-fused .gem-chip-level {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2px;
+  color: var(--dim);
+  font-size: 10px;
+  text-align: center;
+  text-shadow: 0 0 3px #000;
+}
+
+.gem-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 12.5px;
+}
+
+.gem-tbl th {
+  text-align: left;
+  color: var(--dim);
+  font-weight: normal;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+  padding: 4px 6px;
+}
+
+.gem-tbl td {
+  padding: 4px 6px;
+  border-bottom: 1px dashed #1b2236;
+}
+
+.gem-tbl .gem-name {
+  white-space: nowrap;
+  font-weight: bold;
+}
+
+.gem-tbl .gem-cnt {
+  text-align: center;
+  color: var(--dim);
+  min-width: 34px;
+}
+
+.gem-tbl .gem-cnt.has {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+/* ==========================================================================
+   ?��??�系統�?置】Skill System Configurations
+   說�?：控?�戰鬥快?��??��?位、�??�可?�曳?�?�、�??��?表�?（�??��??��?級�?點、�?述、�?級�??��???
+   ========================================================================== */
+.loadout-slot {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  color: var(--dim);
+  font-size: 13px;
+}
+
+.loadout-slot.filled {
+  border-style: solid;
+  border-color: var(--accent);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.loadout-slot.filled:hover {
+  color: var(--bad);
+  border-color: var(--bad);
+}
+
+.loadout-slot.dragging {
+  opacity: 0.5;
+  border-style: dashed;
+  cursor: grab;
+}
+
+.loadout-slot.drag-over {
+  background: rgba(130, 85, 0, 0.55);
+  border-color: var(--accent);
+  border-style: solid;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.65), 0 0 6px rgba(250, 204, 21, 0.35);
+}
+
+.skill-cat-title {
+  font-weight: bold;
+  color: var(--accent);
+  margin: 14px 0 6px;
+  font-size: 15px;
+}
+
+.skill-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  opacity: .72;
+}
+
+.skill-row.learned {
+  opacity: 1;
+  border-color: #3d4a75;
+}
+
+.sk-emoji {
+  font-size: 24px;
+  line-height: 1.3;
+}
+
+.sk-main {
+  flex: 1;
+  font-size: 13px;
+}
+
+.sk-pips {
+  margin-left: 6px;
+}
+
+.pip {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #232c47;
+  border: 1px solid var(--border);
+  margin-right: 2px;
+}
+
+.pip.on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.sk-meta {
+  color: var(--info);
+  font-size: 12px;
+  margin-left: 10px;
+}
+
+.skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 0 6px;
+  line-height: 1;
+}
+
+.skill-tag {
+  display: inline-block;
+  padding: 2px 5px;
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.skill-tag-category {
+  color: #e8edf7;
+  border-color: rgba(190, 205, 230, .38);
+  background: rgba(125, 145, 180, .18);
+}
+
+.skill-tag-element {
+  color: #fff;
+}
+
+.skill-tag-fire {
+  color: #ffd2ad;
+  border-color: rgba(255, 145, 70, .48);
+  background: rgba(255, 125, 45, .18);
+}
+
+.skill-tag-ice {
+  color: #c7e9ff;
+  border-color: rgba(90, 180, 255, .48);
+  background: rgba(65, 160, 235, .18);
+}
+
+.skill-tag-lightning {
+  color: #fff0a8;
+  border-color: rgba(255, 220, 80, .48);
+  background: rgba(245, 205, 45, .18);
+}
+
+.skill-tag-poison {
+  color: #d5f5b1;
+  border-color: rgba(130, 205, 80, .48);
+  background: rgba(105, 180, 55, .18);
+}
+
+.skill-tag-light {
+  color: #ffeab0;
+  border-color: rgba(255, 205, 85, .5);
+  background: rgba(255, 195, 65, .18);
+}
+
+.skill-tag-dark {
+  color: #e2caff;
+  border-color: rgba(180, 125, 255, .48);
+  background: rgba(145, 90, 220, .18);
+}
+
+.sk-desc {
+  color: var(--text);
+  font-size: 12.5px;
+}
+
+.sk-flavor {
+  display: block;
+  color: var(--dim);
+  font-size: 11.5px;
+  font-style: italic;
+}
+
+.sk-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+}
+
+.sk-max {
+  color: var(--good);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.btn[disabled] {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   ?�天賦�??�?�樹?�板?�Skill Talent Tree Panel
+   說�?：控?�天賦樹底�?（�?黑�??��?法陣）、解?��?置�?級�?檻、天賦網?�、學習�?裝�??�?��?
+   ========================================================================== */
+#skill-trees {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 10px;
+}
+
+.tree-panel {
+  background: url('../images/diablo_panel_tex.png') repeat, rgba(10, 5, 2, 0.8);
+  background-blend-mode: multiply;
+  border: 12px solid var(--border);
+  border-image: url('../images/diablo_frame_9slice.png') 30 stretch;
+  border-radius: 0;
+  padding: 12px;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.9);
+}
+
+.tree-title {
+  font-weight: bold;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.tree-row {
+  display: grid;
+  grid-template-columns: repeat(6, 52px);
+  gap: 8px;
+  margin-bottom: 4px;
+  min-height: 30px;
+  align-items: center;
+  justify-content: start;
+}
+
+#fusion-skill-list.tree-row {
+  display: grid;
+  grid-template-columns: repeat(12, 52px);
+  gap: 8px;
+  align-items: center;
+  justify-content: start;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+#fusion-skill-list .hint {
+  grid-column: 1 / -1;
+}
+
+.tree-gate {
+  color: var(--dim);
+  font-size: 10.5px;
+  text-align: center;
+  margin: 2px 0 6px;
+}
+
+.tree-cell {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  background: var(--bg2);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: .5;
+  transition: transform .1s;
+}
+
+.tree-cell:hover {
+  transform: scale(1.08);
+  opacity: .9;
+}
+
+.tree-cell.learned {
+  opacity: 1;
+  border-color: #b98a2d;
+  box-shadow: 0 0 8px #b98a2d55, inset 0 0 8px #b98a2d22;
+}
+
+.tree-cell.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+  opacity: 1;
+}
+
+.tree-cell.locked {
+  cursor: not-allowed;
+}
+
+.tree-cell.equipped {
+  background: rgba(250, 204, 21, 0.25);
+  border-color: #facc15;
+}
+
+.tc-emoji {
+  font-size: 26px;
+}
+
+.tc-lv {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  background: #0a0d14;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 5px;
+  font-size: 10.5px;
+  font-weight: bold;
+  padding: 0 4px;
+  line-height: 1.4;
+}
+
+.tc-lv.max-lv {
+  background: #fef08a;
+  /* 淺�???*/
+  color: #78350f;
+  /* 淺�??�色 */
+  border-color: #facc15;
+}
+
+.tc-lock {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  font-size: 11px;
+}
+
+.tc-eq {
+  position: absolute;
+  top: -6px;
+  left: -5px;
+  color: var(--info);
+  font-size: 11px;
+}
+
+.skd-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 15px;
+}
+
+.skd-emoji {
+  font-size: 26px;
+  border: 2px solid var(--border);
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+  padding: 4px;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.skd-next {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+#skill-modal .modal-box {
+  width: min(460px, 92vw);
+}
+
+#skill-modal-body {
+  display: grid;
+  grid-template-rows: 48px 24px 140px 28px 66px;
+  min-height: 306px;
+}
+
+#skill-modal-body .skd-head {
+  min-height: 48px;
+  max-height: 48px;
+  margin-bottom: 0;
+  overflow: hidden;
+}
+
+#skill-modal-body .skd-head>b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#skill-modal-body .skill-modal-copy {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px 4px 0 0;
+  scrollbar-width: thin;
+}
+
+#skill-modal-body .skill-modal-points {
+  align-self: end;
+  text-align: right;
+  color: #facc15;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+#skill-modal-body .skill-modal-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: 26px;
+  align-content: start;
+  gap: 8px;
+  height: 60px;
+  margin-top: 8px;
+}
+
+#skill-modal-body .skill-modal-actions .btn,
+#skill-modal-body .skill-modal-actions>div {
+  min-width: 0;
+  min-height: 26px;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   ?�系統通用 Modal 彈�???Tooltip?�System Modal Overlays & Hover Tooltips
+   說�?：�??�在?�戲?�面中央?��??��??��?彈�??��?次確認�?（�?轉�?確�?彩虹?��??��?）、�??�懸?��?示�???
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(0, 0, 0, .85);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-box {
+  position: relative;
+  width: min(440px, 92vw);
+  background: url('../images/diablo_panel_tex.png') repeat, rgba(15, 10, 5, 0.95);
+  background-blend-mode: multiply;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  padding: 18px 16px 14px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .9), inset 0 0 15px rgba(0, 0, 0, 0.8);
+}
+
+.confirm-modal {
+  z-index: 10000;
+}
+
+.confirm-box {
+  width: min(460px, 92vw);
+}
+
+.confirm-modal.reincarnation-confirm .confirm-box {
+  isolation: isolate;
+  overflow: visible;
+  border-color: rgba(255, 226, 132, 0.85);
+  background:
+    linear-gradient(112deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 218, 105, 0.10) 38%,
+      rgba(125, 249, 255, 0.12) 50%,
+      rgba(255, 121, 198, 0.09) 62%,
+      rgba(255, 255, 255, 0) 78%),
+    url('../images/diablo_panel_tex.png') repeat,
+    rgba(15, 10, 5, 0.95);
+  background-size: 260% 100%, auto, auto;
+  background-blend-mode: screen, multiply, normal;
+  box-shadow:
+    0 0 0 1px rgba(255, 244, 180, 0.85),
+    0 0 14px rgba(255, 214, 10, 0.45),
+    0 0 26px rgba(14, 165, 233, 0.28),
+    0 0 34px rgba(236, 72, 153, 0.22),
+    0 12px 40px rgba(0, 0, 0, .9),
+    inset 0 0 18px rgba(255, 235, 150, 0.10);
+  animation: reincConfirmBgFlow 5.5s linear infinite;
+}
+
+.confirm-modal.reincarnation-confirm .confirm-box::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  z-index: -1;
+  border-radius: 7px;
+  padding: 3px;
+  background: linear-gradient(90deg,
+      #fff2a8 0%,
+      #f59e0b 16%,
+      #22d3ee 34%,
+      #a78bfa 52%,
+      #fb7185 70%,
+      #fef08a 86%,
+      #fff2a8 100%);
+  background-size: 280% 100%;
+  filter: saturate(1.2) brightness(1.12);
+  pointer-events: none;
+  animation: reincConfirmBorderFlow 1.8s linear infinite;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+@keyframes reincConfirmBorderFlow {
+  from {
+    background-position: 0% 50%;
+  }
+
+  to {
+    background-position: 280% 50%;
+  }
+}
+
+@keyframes reincConfirmBgFlow {
+  from {
+    background-position: 160% 50%, 0 0, 0 0;
+  }
+
+  to {
+    background-position: -100% 50%, 0 0, 0 0;
+  }
+}
+
+.confirm-title {
+  color: var(--accent);
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.confirm-message {
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-line;
+  word-break: break-word;
+  min-height: 44px;
+}
+
+.confirm-highlight { color: #facc15; font-weight: 700; margin-top: 8px; }
+
+.confirm-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(72px, 96px));
+  justify-content: center;
+  column-gap: 80px;
+  margin-top: 18px;
+}
+
+.confirm-actions .btn {
+  width: 100%;
+  min-width: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.modal-x {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 2px;
+  background: #000;
+  border: 1px solid var(--border);
+  color: var(--dim);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);
+}
+
+.modal-x:hover {
+  color: var(--bad);
+  border-color: var(--bad);
+}
+
+#sk-tooltip {
+  position: fixed;
+  z-index: 10005;
+  max-width: 400px;
+  pointer-events: none;
+  background: url('../images/diablo_panel_tex.png') repeat, rgba(0, 0, 0, 0.92);
+  background-blend-mode: multiply;
+  border: 2px solid var(--accent);
+  border-radius: 2px;
+  padding: 12px 14px;
+  font-size: 14.5px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .9);
+  font-family: var(--font-main);
+}
+
+.skt-name {
+  font-weight: bold;
+  color: var(--accent);
+  font-size: 15px;
+}
+
+.skt-meta {
+  color: var(--info);
+  font-size: 12.5px;
+  margin: 2px 0;
+}
+
+.skt-desc {
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.txt-grow {
+  color: #38bdf8;
+  font-weight: 500;
+}
+
+.txt-static {
+  color: #fb923c;
+  font-weight: 500;
+}
+
+.skt-mutation {
+  color: #facc15;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.skt-components {
+  color: var(--dim);
+  margin-top: 6px;
+  font-size: 11px;
+}
+
+.skt-lock {
+  color: var(--warn);
+  margin-top: 4px;
+}
+
+.skt-hint {
+  color: var(--dim);
+  font-size: 12px;
+  margin-top: 4px;
+  border-top: 1px dashed var(--border);
+  padding-top: 3px;
+}
+
+.act-btn-tooltip {
+  position: relative;
+  overflow: visible !important;
+}
+
+.act-btn-tooltip .btn-tip {
+  display: none;
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+  color: var(--text);
+  z-index: 100;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  line-height: 1.4;
+  font-weight: normal;
+}
+
+.act-btn-tooltip:hover .btn-tip {
+  display: block;
+}
+
+
+/* ==========================================================================
+   ?��??��?魔面?�】Equipment Enchantment Settings
+   說�?：控?��??�詳?�面?�中?��??��??�目?��?觀?�可移除?�?��??��??�刪?��?�????
+   ========================================================================== */
+.it-enchant.removable {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+
+.it-enchant.removable:hover {
+  background: #2a1e2e;
+  text-decoration: line-through;
+  color: var(--bad) !important;
+}
+
+.gem-chip.dim-chip {
+  opacity: .55;
+  border-style: dashed;
+}
+
+/* ==========================================================================
+   ?�寶?��??��??��?系統?�Gem Synthesis & Shop Grid
+   說�?：控?�寶?��?店網?�卡?�、售罄�??�遮罩、已?��?寶石?��?粉紫?�景?��???
+   ========================================================================== */
+.gem-chip.fused-chip {
+  border-color: #e879f9;
+  color: #f0abfc;
+  background: rgba(232, 121, 249, 0.35);
+}
+
+.socket.fused-socket {
+  border-color: #e879f9;
+}
+
+#gem-shop-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  grid-auto-rows: 1fr;
+  gap: 4px;
+  margin-top: 12px;
+  border: 2px solid var(--border);
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--bg1);
+}
+
+.shop-card {
+  background: var(--bg2);
+  border: 2px solid var(--border);
+  border-radius: 7px;
+  min-width: 0;
+  padding: 6px 3px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+
+.shop-card.sold {
+  opacity: .4;
+}
+
+.shop-card.empty {
+  visibility: hidden;
+}
+
+.shop-emoji {
+  font-size: 22px;
+}
+
+.shop-name {
+  font-weight: bold;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.shop-stat {
+  color: var(--dim);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.shop-card .btn {
+  max-width: 100%;
+  padding: 0 4px;
+  font-size: 9px;
+  white-space: nowrap;
+  height: 24px;
+  line-height: 24px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 0;
+}
+
+.shop-sold {
+  color: var(--dim);
+  font-size: 11px;
+  height: 24px;
+  line-height: 24px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  width: 100%;
+}
+
+/* ==========================================================================
+   ?��?外�??�地?��??��??�Adventure Battle Zone Tabs
+   說�?：控?��?外戰鬥�??��?平�??�森?�、�?漠�?）�?籤�??�、當?��??��?高�??��?
+   ========================================================================== */
+#zone-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.zone-btn {
+  flex: 1;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--dim);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.zone-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.zone-btn.active {
+  background: var(--panel2);
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 8px #f5b94233;
+}
+
+.zone-best {
+  font-size: 10.5px;
+  font-weight: normal;
+  color: var(--dim);
+  background: var(--bg2);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.zone-btn.active .zone-best {
+  color: var(--accent);
+}
+
+/* ==========================================================================
+   ?�自訂捲軸風?�】Custom Webkit Scrollbars
+   說�?：�??�網?��??��?overflow ?�板?��?設捲軸�??�為?��??�屬質�??�細?��??�軸??
+   ========================================================================== */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080605;
+  border-left: 1px solid var(--border);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border: 1px solid #1a140f;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+::-webkit-scrollbar-corner {
+  background: #080605;
+}
+
+/* ==========================================================================
+   ?��??��??��??�示?�Equipment & Material Icon Renders
+   說�?：設�?34px/28px ?��??��?小�?示�??�影?�灰?�未?��??�??filter??
+   ========================================================================== */
+.eq-icon {
+  width: 34px;
+  height: 34px;
+  margin-bottom: 4px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+  object-fit: contain;
+}
+
+.eq-icon.dim {
+  opacity: 0.3;
+  filter: grayscale(1) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+}
+
+.item-icon {
+  width: 28px;
+  height: 28px;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.8));
+  object-fit: contain;
+}
+
+/* ==========================================================================
+   ?�戰鬥�?級顯示】Combatant Levels
+   說�?：�?決�??�頭?�正上方?��?級�?體大小�?高亮黃�??�彩設�???
+   ========================================================================== */
+.cb-level {
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 2px;
+  min-height: 18px;
+}
+
+/* ==========================================================================
+   ?�戰鬥日誌�?類�?濾�??�】Combat Log Category Filters
+   說�?：當?��??�板?�中?�個�?類�?，自?�以 display: none ?��??��??��??��???
+   ========================================================================== */
+.log:not(.filter-factory) .log-line[data-cat="factory"] {
+  display: none;
+}
+
+.log.filter-combat .log-line:not([data-cat="combat"]) {
+  display: none;
+}
+
+.log.filter-boss .log-line:not([data-cat="boss"]) {
+  display: none;
+}
+
+.log.filter-factory .log-line:not([data-cat="factory"]) {
+  display: none;
+}
+
+.log.filter-loot .log-line:not([data-cat="loot"]) {
+  display: none;
+}
+
+.log.filter-system .log-line:not([data-cat="system"]) {
+  display: none;
+}
+
+/* ==========================================================================
+   ?�寶?��??��?宮格轉�??�板?�Gem Synthesis Matrix Grid
+   說�?：控??3x3 ?�寶?��??�矩??��?�、填?��??�、�??�寶?�種類選?��?箭頭導�???
+   ========================================================================== */
+.gconv-layout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  /* ?�側?�制?�件?��?對�? */
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.gconv-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 80px);
+  grid-template-rows: repeat(3, 80px);
+  gap: 6px;
+  padding: 10px;
+  background: #05070b;
+  border: 3px solid #1b2230;
+  border-radius: 10px;
+  flex: 0 0 auto;
+}
+
+.gconv-slot {
+  border: 1px solid #2a3345;
+  border-radius: 8px;
+  background: linear-gradient(160deg, #16202e, #0e141d);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.gconv-slot.filled {
+  border-color: #7dd3fc;
+  background: linear-gradient(160deg, #1c2c40, #12203a);
+  cursor: pointer;
+}
+
+.gconv-slot.filled:hover {
+  border-color: #f87171;
+  filter: brightness(1.15);
+}
+
+.gconv-emoji {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.gconv-label {
+  font-size: 11px;
+  color: var(--dim);
+  text-align: center;
+  padding: 0 2px;
+}
+
+.gconv-n {
+  font-size: 13px;
+  font-weight: bold;
+  color: #fbbf24;
+}
+
+.gconv-shortcut {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.gconv-side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+  flex: 1 1 190px;
+  /* ?��?宮格?��?，寬度�?夠�??�容?��??�縮 */
+  min-width: 0;
+  max-width: 240px;
+}
+
+.gconv-side select {
+  width: 100%;
+  min-width: 0;
+}
+
+.gconv-arrow {
+  font-size: 22px;
+  text-align: center;
+  margin-top: 2px;
+}
+
+.gem-chip.dim {
+  opacity: 0.45;
+}
+
+/* ==========================================================================
+   ?�寶?��?工�?作日誌顯示�??�Gem Modification Status Feed
+   說�?：當?��?轉�??��?�??，顯示在?�工?�制?��??��??��??��??�?��??��?/警�??��???
+   ========================================================================== */
+.gem-result {
+  border: 1px dashed #2a3345;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--dim);
+  min-height: 42px;
+  margin-top: 2px;
+  word-break: break-all;
+}
+
+.gem-result.gem-result-3 {
+  min-height: 64px;
+  /* 約�?�?*/
+  margin-top: 8px;
+}
+
+.gem-result .gr-line {
+  display: block;
+  color: var(--text);
+}
+
+.gem-result .gr-line.warn {
+  color: #fca5a5;
+}
+
+.gem-result .gr-line.yellow {
+  color: #fbbf24;
+}
+
+/* ?�解?��??�縮種�?下�?寬度，�??��?�??顆�??�部?�解?��??�單?��? */
+#gdis-type {
+  max-width: 148px;
+}
+
+/* ==========================================================================
+   ?��?檔�?表�??�份管�??�】Saved Game Management List
+   說�?：控?�系統設定�?下�?存�?歷史記�??�、自?��?檔�?亮發?��?框、物?��?份�??�夾檔�?清單表格??
+   ========================================================================== */
+.save-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin-bottom: 6px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.save-row.auto {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 8px rgba(196, 164, 100, 0.12);
+}
+
+.save-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.save-name {
+  font-weight: bold;
+  color: var(--text);
+}
+
+.save-cur {
+  font-size: 11px;
+  color: #0d0a06;
+  background: var(--accent);
+  border-radius: 3px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.save-file {
+  color: var(--dim);
+  font-size: 12px;
+  font-family: Consolas, monospace;
+  word-break: break-all;
+}
+
+.save-time {
+  font-family: inherit;
+}
+
+.save-meta {
+  color: var(--dim);
+  font-size: 12px;
+}
+
+.save-new-notice {
+  color: #39ff88;
+  font-size: 15px;
+  font-weight: bold;
+  text-shadow: 0 0 6px rgba(57, 255, 136, 0.8);
+  margin-top: 3px;
+}
+
+.save-row .btn {
+  flex-shrink: 0;
+}
+
+.save-folder-files {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(184, 134, 11, 0.65);
+  border-radius: 5px;
+  background: rgba(10, 7, 4, 0.72);
+}
+
+.save-folder-files-title {
+  color: var(--accent);
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+#save-folder-files-list {
+  max-height: 180px;
+  overflow-y: auto;
+  color: var(--dim);
+  font-size: 11px;
+}
+
+.save-folder-file-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 70px 130px;
+  gap: 8px;
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(184, 134, 11, 0.14);
+}
+
+.save-folder-file-row:last-child {
+  border-bottom: none;
+}
+
+.save-folder-file-name {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.save-folder-file-size,
+.save-folder-file-time {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ---- 主畫?�改?�第三�?段新增樣�?---- */
+.equip-layout>div:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 詳�?框固定�?度�??�容?��??��??�出?�卷軸�?不�??�長?�面?��??��?下推??*/
+#detail-pane {
+  width: 100% !important;
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  height: 500px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  border: 1px solid transparent !important;
+  border-image: none !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 12px !important;
+  box-sizing: border-box !important;
+}
+
+#detail-pane.has-detail {
+  border: 1px solid var(--accent) !important;
+  background: rgba(15, 10, 5, 0.85) !important;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* 裝�?詳�??��?：固定寬度�??��?風格?��??�景 */
+.equip-detail-card {
+  width: 306px !important;
+  min-width: 306px !important;
+  max-width: 306px !important;
+  box-sizing: border-box !important;
+  border: 1px solid var(--accent) !important;
+  border-radius: 6px !important;
+  background: rgba(15, 10, 5, 0.92) !important;
+  background-image: url('../images/diablo_panel_tex.png') !important;
+  background-blend-mode: multiply !important;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9) !important;
+  padding: 12px !important;
+  flex-shrink: 0 !important;
+  position: relative !important;
+}
+
+/* 比�?容器：�? tips 並�? */
+.equip-compare-container {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+}
+
+/* ?�浮?�示載入裝�??��??��??�適?�寬度�??�除?��??�景?��?�?*/
+#sk-tooltip:has(.equip-detail-card) {
+  max-width: none !important;
+  padding: 6px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+#inv-section-box,
+#forge-inv-box {
+  border: 1px solid var(--accent) !important;
+  border-image: none !important;
+  border-radius: 6px !important;
+  background: rgba(15, 10, 5, 0.85) !important;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9) !important;
+  padding: 12px !important;
+  margin-top: 10px !important;
+}
+
+/* ==========================================================================
+   ?�大?��??�系統控?�台?�Divine Forge Core UI
+   說�?：主神�??�景大�????（Hexagram）、周?�六?�槽位、中央創世主?�槽?��????塵�??�特?��?
+   ========================================================================== */
+#forge-stage {
+  position: relative;
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  aspect-ratio: 2816 / 1536;
+  background: url('../images/Hexagram.png') center / contain no-repeat;
+  background-color: #0a0806;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.forge-info-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(245, 185, 66, 0.7);
+  color: #f5b942;
+  font-weight: bold;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.4);
+  text-shadow: 0 0 4px #000;
+  transition: all 0.2s;
+}
+
+.forge-info-btn:hover {
+  background: rgba(245, 185, 66, 0.2);
+  border-color: #f5b942;
+}
+
+.forge-slot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 9.5%;
+  aspect-ratio: 1;
+  border: 2px solid rgba(255, 215, 0, 0.35);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.forge-slot.empty {
+  border-style: dashed;
+}
+
+.forge-slot.empty:hover {
+  border-color: #ffd700;
+  background: rgba(255, 215, 0, 0.12);
+}
+
+.forge-slot.filled:hover {
+  filter: brightness(1.3);
+}
+
+.forge-slot .item-icon {
+  width: 82%;
+  height: 82%;
+  object-fit: contain;
+}
+
+.forge-slot .ic-lv {
+  position: absolute;
+  right: 2px;
+  bottom: 1px;
+  font-size: 10.5px;
+  color: #eee;
+  text-shadow: 0 0 3px #000;
+}
+
+.forge-dust {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 4.8%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 2px solid #b8860b;
+  background: radial-gradient(circle, #3a2c05, #1a1405);
+  color: rgba(255, 255, 255, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(10px, 1.6vw, 15px);
+  cursor: pointer;
+  z-index: 2;
+  user-select: none;
+}
+
+.forge-dust:hover {
+  border-color: #ffd700;
+  filter: brightness(1.25);
+}
+
+.forge-dust.lit {
+  background: radial-gradient(circle, #ffd700, #b8860b);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(255, 215, 0, 0.8);
+}
+
+.forge-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 13%;
+  aspect-ratio: 1;
+  border: 2px solid rgba(255, 215, 0, 0.5);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.forge-center.empty {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.forge-center .item-icon {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+}
+
+.forge-center-name {
+  position: absolute;
+  top: 103%;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 12.5px;
+  font-weight: bold;
+  text-shadow: 0 0 4px #000, 1px 1px 2px #000;
+}
+
+.forge-log {
+  position: absolute;
+  left: 1.5%;
+  top: 4%;
+  max-width: 26%;
+  z-index: 3;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.forge-log-line {
+  font-size: 13px;
+  font-weight: bold;
+  color: #eee;
+  text-shadow: 0 0 4px #000, 1px 1px 2px #000;
+}
+
+.forge-log-line.good {
+  color: #ffd700;
+}
+
+.forge-log-line.bad {
+  color: #f87171;
+}
+
+.forge-actions {
+  position: absolute;
+  right: 3%;
+  bottom: 14%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 3;
+}
+
+.forge-btn {
+  background: linear-gradient(180deg, #ffe45c, #ffd700);
+  color: #1a1405;
+  border: 1px solid #a07800;
+  font-weight: bold;
+  font-size: 15px;
+  padding: 8px 26px;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.35);
+}
+
+.forge-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* ==========================================================================
+   ?��??�自?��??�篩?�選?�】Divine Forge Auto-Selector Dropdown
+   說�?：�??�自?��??��?彈出?�側?�控?�面?��??��?篩選?��??�質?�屬?��??��??�放?��?快速�??��?表�?
+   ========================================================================== */
+.forge-auto-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.forge-auto-btn.afk-on {
+  background: linear-gradient(180deg, #7df9a8, #34d399);
+  border-color: #0f7a4d;
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.5);
+}
+
+.forge-auto-menu {
+  position: absolute;
+  right: calc(100% + 10px);
+  bottom: 0;
+  /* 底部對�??��??��?上�??��??��?超出法陣下緣被�???*/
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  width: 400px;
+  max-width: calc(100vw - 32px);
+  max-height: 400px;
+  overflow: hidden;
+  /* ?��?素�?清單?��?，�??��?作�??��?常�? */
+  box-sizing: border-box;
+  background: url('../images/diablo_panel_tex.png') repeat, rgba(10, 7, 4, 0.96);
+  background-blend-mode: multiply;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  padding: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .9);
+}
+
+.fam-title {
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 14.5px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+}
+
+.fam-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: scroll;
+  /* ?��?保�??�軸欄�?，避?��??��?度�???*/
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-right: 2px;
+}
+
+/* 寶石模�?：以?��?度為 flex ?��?，只?�用標�??�固定�?作�?之�??�剩餘空?��?*/
+.forge-auto-menu.fam-gem-mode .fam-list {
+  flex: 0 0 auto;
+}
+
+.fam-opt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14.5px;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.fam-opt>span:first-child {
+  flex: 0 0 auto;
+}
+
+.fam-opt>span:nth-child(2):not(.fam-cnt) {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.fam-opt>span:nth-child(2):not(.fam-cnt)+.fam-cnt {
+  margin-left: auto;
+}
+
+.fam-opt:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.fam-opt.picked {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ?��?不足仍整行可點選（�?確�??��??�示不足）�??�以?�透�??�示 */
+.fam-opt.fam-dim {
+  opacity: .55;
+}
+
+.fam-cnt {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--dim);
+  font-size: 12.5px;
+  font-weight: normal;
+  white-space: nowrap;
+}
+
+.fam-foot {
+  display: flex;
+  flex: 0 0 auto;
+  min-height: 38px;
+  gap: 6px;
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.fam-empty {
+  color: var(--dim);
+  font-size: 13px;
+  padding: 6px 2px;
+}
+
+.forge-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.forge-rate {
+  font-size: 14.5px;
+}
+
+.forge-foot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 8px 0 4px;
+  flex-wrap: wrap;
+}
+
+/* 神�??�制?�使?�可見�??��? checkbox，避?�以?��??��?�?emoji 模擬?�選??*/
+.forge-foot .chk {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.forge-foot .chk input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  opacity: 1;
+  cursor: pointer;
+  border: 1px solid #9b7b30;
+  border-radius: 3px;
+  background: rgba(10, 8, 4, 0.9);
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.8);
+}
+
+.forge-foot .chk input:checked {
+  border-color: #0f7a4d;
+  background: #34d399;
+  box-shadow: 0 0 6px rgba(52, 211, 153, 0.55);
+}
+
+.forge-foot .chk input:checked::after {
+  content: '??;
+  display: block;
+  color: #082516;
+  font-size: 15px;
+  font-weight: bold;
+  line-height: 16px;
+  text-align: center;
+}
+
+.forge-foot .chk input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.forge-foot .chk:focus-within {
+  color: var(--accent);
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.forge-foot .chk.is-active {
+  color: var(--good);
+}
+
+.forge-progress {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: rgba(20, 12, 5, 0.88);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7);
+}
+
+.forge-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #ffd84d;
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+/* ?�度?��??��??�剩餘數?��?緊接?�「�??�中....?��?後�??�數秒數維�??�右 */
+.forge-progress-remain {
+  flex: 1;
+  margin-left: 16px;
+  text-align: left;
+  color: var(--text);
+  font-weight: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.forge-progress-track {
+  height: 12px;
+  overflow: hidden;
+  border: 1px solid #7a5b20;
+  border-radius: 3px;
+  background: #170e08;
+}
+
+#forge-progress-fill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #fde047);
+  box-shadow: 0 0 8px rgba(253, 224, 71, 0.8);
+  transform: scaleX(0);
+  transform-origin: left center;
+  will-change: transform;
+}
+
+@keyframes forge-progress-fill {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+#forge-inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 58px);
+  grid-auto-rows: 58px;
+  gap: 6px;
+  align-content: start;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.item-cell.forge-na {
+  opacity: 0.35;
+  filter: grayscale(75%);
+}
+
+@property --godforged-inner-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* ==========================================================================
+   ?�創世�??�彩?��??��?框特?�】Creation Tier Conic Rainbow Glow
+   說�?：�??��?終極?��?級別裝�???conic-gradient 360度彩?��?馬�?流�??��??��???
+   ========================================================================== */
+.eff-godforged {
+  position: relative;
+  overflow: hidden;
+  border: none !important;
+  isolation: isolate;
+  box-shadow: 0 0 8px rgba(255, 75, 190, 0.7), 0 0 16px rgba(70, 160, 255, 0.45);
+}
+
+.eq-slot.eff-godforged {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+.eff-godforged::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 400%;
+  height: 400%;
+  z-index: -2;
+  background: conic-gradient(from 0deg,
+      #ff3b30 0deg,
+      #ff9f0a 42deg,
+      #ffd60a 78deg,
+      #30d158 125deg,
+      #0a84ff 180deg,
+      #5e5ce6 225deg,
+      #bf5af2 275deg,
+      #ff375f 325deg,
+      #ff3b30 360deg);
+  filter: saturate(1.35) blur(0.2px);
+  animation: godforgedRainbowSpin 2.0s linear infinite;
+}
+
+.eff-godforged::after {
+  content: "";
+  position: absolute;
+  border-radius: 6px;
+  z-index: -1;
+  --godforged-inner-angle: 0deg;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.65), 0 0 7px rgba(255, 255, 255, 0.18);
+  inset: 3px;
+  background:
+    conic-gradient(from var(--godforged-inner-angle),
+      rgba(0, 0, 0, 0.18) 0deg,
+      rgba(0, 0, 0, 0) 42deg,
+      rgba(0, 0, 0, 0.22) 85deg,
+      rgba(0, 0, 0, 0) 130deg,
+      rgba(0, 0, 0, 0.18) 180deg,
+      rgba(0, 0, 0, 0) 230deg,
+      rgba(0, 0, 0, 0.22) 280deg,
+      rgba(0, 0, 0, 0) 330deg),
+    linear-gradient(to bottom, rgba(184, 134, 11, 0.9) 0%, rgba(139, 101, 8, 0.95) 45%, var(--panel) 80%);
+  animation: godforgedInnerFlow 10.0s linear infinite;
+}
+
+@keyframes godforgedRainbowSpin {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes godforgedInnerFlow {
+  from {
+    --godforged-inner-angle: 0deg;
+  }
+
+  to {
+    --godforged-inner-angle: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .eff-godforged::before,
+  .eff-godforged::after {
+    animation-duration: 8s;
+  }
+}
+
+/* 神�??��?專屬?��?（�??�詳???��??�示�?*/
+.it-godpassive {
+  margin-top: var(--it-godpassive-gap);
+  padding: 3px 8px;
+  border: 1px solid #b8860b;
+  border-radius: 6px;
+  background: rgba(184, 134, 11, 0.12);
+  color: #ffd700;
+  font-size: 14.5px;
+  line-height: 1.25;
+  box-shadow: inset 0 0 8px rgba(255, 215, 0, 0.15);
+}
+
+/* ==========================================================================
+   ?��??��?屬�??��??��??�Divine Forge Inventory Sub-navigation
+   說�?：�??��??��??��?裝�?/寶石?��??�籤?�以?��??�特定�??��?寶石?��?佈�???
+   ========================================================================== */
+.forge-inv-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.forge-inv-tabs .btn.active {
+  background: linear-gradient(180deg, #ffe45c, #ffd700);
+  color: #1a1405;
+  border-color: #a07800;
+  font-weight: bold;
+}
+
+.forge-gem-cell .ic-emoji {
+  font-size: 22px;
+}
+
+.forge-gem-cell .gem-cnt {
+  position: absolute;
+  left: 3px;
+  top: 1px;
+  font-size: 10px;
+  color: #ffd700;
+  text-shadow: 0 0 3px #000, 1px 1px 2px #000;
+}
+
+.enemy-combatant {
+  min-width: 0;
+  /* ?�方?�害浮�??�許超出?�鬥框�?顯示??*/
+  overflow: visible;
+}
+
+.enemy-party {
+  /* ?�人?��??�用?��??��?，只�?--ec-scale 等�?縮放�? ?�為標�?�?.0）�?*/
+  --ec-scale: 1;
+  min-height: 220px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* ?��??�固定�??��?高度?��??��??��?不�??��?伍�?高�?*/
+  grid-auto-rows: minmax(0, 1fr);
+  gap: 8px;
+  align-items: stretch;
+  justify-items: stretch;
+}
+
+.enemy-party.enemy-count-0 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dim);
+}
+
+.enemy-party.enemy-count-1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.enemy-party.enemy-count-2 {
+  --ec-scale: 0.75;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.enemy-party.enemy-count-3,
+.enemy-party.enemy-count-4 {
+  --ec-scale: 0.7;
+}
+
+.enemy-party.enemy-count-3 .enemy-card:first-child {
+  grid-column: 1 / -1;
+  width: calc(50% - 4px);
+  justify-self: center;
+}
+
+.enemy-card {
+  position: relative;
+  min-width: 0;
+  /* ?��??�縱??flex：空?��?足�??��??��??�縮?�收，卡?��??�永不�??��?*/
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 3px 2px;
+  text-align: center;
+  /* 不�??��?多人?�鬥?�傷害浮字可超出?��??��?範�?，避?�被?��???*/
+  overflow: visible;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.enemy-card>* {
+  flex-shrink: 0;
+}
+
+.enemy-card .enemy-name,
+.enemy-card .enemy-status {
+  width: 100%;
+}
+
+.enemy-card.elite {
+  border: none;
+}
+
+/* ?��??�容一律以?�敵標�?尺寸 ? --ec-scale 等�?縮放；�?級以 max() 保�??��?下�???*/
+.enemy-card .cb-level {
+  color: #f5b942;
+  font-size: max(calc(12px * var(--ec-scale)), 9px);
+  margin-bottom: calc(3px * var(--ec-scale));
+}
+
+.enemy-card .cb-icon {
+  width: calc(72px * var(--ec-scale));
+  height: calc(72px * var(--ec-scale));
+  margin-bottom: calc(4px * var(--ec-scale));
+}
+
+.enemy-emoji-fallback {
+  display: inline-block;
+  height: calc(54px * var(--ec-scale));
+  line-height: calc(54px * var(--ec-scale));
+  font-size: calc(54px * var(--ec-scale));
+}
+
+.enemy-name {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+  color: var(--text);
+  font-size: max(calc(15px * var(--ec-scale)), 6px);
+  font-weight: bold;
+  margin-top: calc(4px * var(--ec-scale));
+}
+
+.enemy-card .enemy-hp {
+  height: calc(22px * var(--ec-scale));
+  margin-top: calc(6px * var(--ec-scale));
+  /* 血條寬度隨?��?等�?縮放並置中�?永�?超出?��???*/
+  width: min(100%, calc(200px * var(--ec-scale)));
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 死亡清除延遲淡出：頭?��?血條�??��?度用??transition 平�? renderBattle �?tick ?�逐�??�新 */
+.enemy-card .cb-icon,
+.enemy-card .enemy-emoji-fallback,
+.enemy-card .enemy-hp {
+  transition: opacity 0.2s linear;
+}
+
+.enemy-hp .hp-text {
+  font-size: max(calc(12px * var(--ec-scale)), 8px);
+}
+
+.enemy-shield {
+  color: var(--info);
+}
+
+.enemy-card .enemy-status {
+  /* ?��?標�?高度但�?許收縮�?空�?不足?�優?�縮小�??��???*/
+  flex: 0 1 calc(80px * var(--ec-scale));
+  min-height: 0;
+  max-height: calc(80px * var(--ec-scale));
+  overflow: hidden;
+  color: var(--warn);
+  font-size: max(calc(12px * var(--ec-scale)), 9px);
+  line-height: 1.25;
+  margin-top: calc(4px * var(--ec-scale));
+}
+
+.enemy-card .float-layer {
+  z-index: 3;
+  overflow: visible;
+}
+
+/* 多人?�鬥：傷害浮字�?比縮小�?並�?許�??�頭?�卡?��?被�??��??��?不�?行避?�被?�斷??*/
+.float-txt {
+  white-space: nowrap;
+}
+
+.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .enemy-card {
+  z-index: 1;
+}
+
+.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-layer {
+  z-index: 20;
+}
+
+.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt {
+  font-size: 11px;
+}
+
+.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.dmg,
+.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.mdmg {
+  font-size: 9px;
+}
+
+.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.crit,
+.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.skill {
+  font-size: 15px;
+}
+
+.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.crit,
+.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.skill {
+  font-size: 13px;
+}
+
+.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.enemy-attack {
+  font-size: 7px;
+}
+
+.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.enemy-attack.crit {
+  font-size: 11px;
+}
+
+.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.defend,
+.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.thorn {
+  font-size: 12px;
+}
+
+/* ?�敵人�??��??�滿?�方欄�?置中顯示，內容尺寸即?��?準�?--ec-scale: 1）�?*/
+.enemy-count-1 .enemy-card {
+  width: 100%;
+  padding: 0;
+}
+
+/* ==========================================================================
+   ?��??��?GM ?�令後台?�Developer GM Console Overlay
+   說�?：�??�本機�??��??�發?��?中顯示�? GM ?�令輸入?�板（懸浮於?�面左�?角�???
+   ========================================================================== */
+#gm-command-panel {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 10000;
+  width: min(420px, calc(100vw - 24px));
+  padding: 8px;
+  border: 1px solid #b8860b;
+  border-radius: 5px;
+  background: rgba(10, 8, 6, 0.96);
+  box-shadow: 0 0 14px rgba(0, 0, 0, 0.8), inset 0 0 10px rgba(184, 134, 11, 0.15);
+}
+
+#gm-command-panel input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #7a6344;
+  border-radius: 3px;
+  padding: 6px 8px;
+  background: #0d0b09;
+  color: var(--text);
+  font: 13px Consolas, monospace;
+  outline: none;
+}
+
+#gm-command-panel input:focus {
+  border-color: #ffd700;
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.35);
+}
+
+#gm-command-panel .gm-status {
+  min-height: 16px;
+  margin-top: 4px;
+  color: var(--dim);
+  font-size: 11px;
+}
+
+#gm-command-panel .gm-status.good {
+  color: var(--good);
+}
+
+#gm-command-panel .gm-status.bad {
+  color: var(--bad);
+}
+
+/* ==========================================================================
+   ?��?塔�???��??��?機制?�Wild Tower Auto-Climber UI
+   說�?：控?��?塔面?��?端�??��??��??��??��?定次?�輸?��??�以?�當?�自?�執行�??��??�示??
+   ========================================================================== */
+.tower-auto-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 8px 0 10px;
+  font-size: 13.5px;
+}
+
+#tw-auto-count {
+  width: 72px;
+  background: #0b0f16;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 13.5px;
+}
+
+#tw-auto-status {
+  color: #7dd3fc;
+  font-weight: bold;
+  font-size: 13.5px;
+  white-space: nowrap;
+}
+
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes fusionRotate {
+  to {
+    --angle: 360deg;
+  }
+}
+
+.tree-cell.fusion-selected {
+  border: 3px solid transparent !important;
+  background: linear-gradient(var(--bg2), var(--bg2)) padding-box,
+    conic-gradient(from var(--angle, 0deg), #c084fc, #4c1d95, #e879f9, #4c1d95, #c084fc) border-box !important;
+  animation: fusionRotate 2s linear infinite;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.7), inset 0 0 8px rgba(168, 85, 247, 0.4);
+  opacity: 1 !important;
+}
+
+/* 確�? .battle-scene ?�相對�?位�?以便 #btn-enemy-tip 以其?�基準�?�?*/
+.battle-scene {
+  position: relative !important;
+}
+
+/* ?��??��??�人詳�??��??��?置�?不�? multi-enemy-layout 影響 */
+.battle-scene-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+#btn-enemy-tip {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 10;
+}
+
+/* ============ ?��?（正式�?：�??�大?��??�送帶）�???============ */
+.nf-top-panel .nf-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 6px 0;
+}
+
+/* ?��??��??��?：�?籤�?亮�??��??�家?�到?��??��?後移?��? */
+@keyframes nfTabGlow {
+  from {
+    color: var(--accent);
+    border-color: var(--accent);
+    box-shadow: inset 0 5px 10px rgba(0, 0, 0, 0.5), 0 0 4px 1px rgba(245, 158, 11, 0.35);
+  }
+  to {
+    color: #ffd700;
+    border-color: #ffd700;
+    box-shadow: inset 0 5px 10px rgba(0, 0, 0, 0.5), 0 0 10px 3px rgba(255, 215, 0, 0.75);
+  }
+}
+
+.tab-btn.nf-glow {
+  animation: nfTabGlow 0.8s ease-in-out infinite alternate;
+}
+
+.nf-furnace .node-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nf-furnace .nf-remove {
+  margin-left: auto;
+}
+
+/* ?��??��?：左大�?＋右?�送帶清單 */
+.nf-furnace-body {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.nf-furnace-left {
+  flex: 0 0 148px;
+  text-align: center;
+}
+
+.nf-furnace-img {
+  width: 100%;
+  max-width: 148px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg2);
+  display: block;
+}
+
+.nf-furnace-caption {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.nf-lines {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ?��??�送帶 */
+.nf-line {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.nf-line-off {
+  opacity: 0.55;
+}
+
+.nf-line-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nf-line-no {
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.nf-line-head .nf-line-remove {
+  margin-left: auto;
+}
+
+.nf-line-sum {
+  font-size: 12px;
+  margin: 4px 0;
+}
+
+
+
+/* ?�送帶：�???��左�??�次?�右?�左流入（沿?��???conv-chip�?*/
+.nf-belt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 4px 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.nf-belt-mouth {
+  font-size: 18px;
+  flex: 0 0 auto;
+}
+
+.nf-belt-items {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+
+.nf-belt-empty {
+  font-size: 12px;
+}
+
+.nf-line-add {
+  margin-top: 2px;
+}
+
+
+
+
+
+
+.nf-add-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 6px 0;
+}
+
+/* 窄螢幕�?大�?移到上方 */
+@media (max-width: 720px) {
+  .nf-furnace-body {
+    flex-direction: column;
+  }
+
+  .nf-furnace-left {
+    flex: none;
+    align-self: center;
+  }
+}
+/* 天賦?��??��?每�??��? 8 ?�大?��???icon，細節?��?作�?中在點�?後�?彈�???*/
+.talent-summary, .talent-tree-panel { margin-bottom: 12px; }
+.talent-point-line { margin-top: 8px; color: var(--accent); }
+.talent-locked-banner { color: var(--dim); padding: 12px; }
+.talent-grid { display: grid; grid-template-columns: repeat(8, minmax(58px, 1fr)); gap: 10px; }
+.talent-icon { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 0; aspect-ratio: 1; padding: 7px; border: 1px solid var(--border); border-radius: 9px; background: linear-gradient(145deg, rgba(24, 27, 36, .98), rgba(10, 13, 20, .96)); color: var(--text); cursor: pointer; }
+.talent-icon:hover { border-color: var(--accent); box-shadow: 0 0 10px rgba(196, 164, 100, .28); transform: translateY(-1px); }
+.talent-icon.learned { border-color: #d3a72d; box-shadow: inset 0 0 12px rgba(245, 197, 66, .16); }
+.talent-icon.maxed { background: linear-gradient(145deg, rgba(255, 225, 110, .3), rgba(126, 96, 28, .24)); border-color: #f0cc56; box-shadow: inset 0 0 14px rgba(255, 226, 120, .28); }
+.talent-icon.locked { opacity: .42; filter: grayscale(.7); }
+.talent-icon.temporarily-disabled { cursor: not-allowed; }
+.talent-icon-glyph { display: grid; place-items: center; width: 42px; height: 42px; font-size: 29px; line-height: 1; }
+.talent-icon-level { color: #facc15; font-size: 10px; font-weight: 700; white-space: nowrap; text-shadow: -1px -1px 0 #3b2f12, 1px -1px 0 #3b2f12, -1px 1px 0 #3b2f12, 1px 1px 0 #3b2f12; }
+.talent-icon-lock { position: absolute; inset: auto 3px 3px; color: var(--dim); font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.talent-tree-count { color: #facc15; font-weight: 700; }
+.talent-tree-complete { color: #86efac; font-weight: 700; }
+.potential-icon { background: linear-gradient(145deg, rgba(44, 30, 15, .98), rgba(15, 12, 10, .96)); border-color: rgba(245, 158, 11, .42); }
+#talent-modal .modal-box { width: min(460px, 92vw); }
+
+/* ---- ?��??��?確�?彈�? ---- */
+.offline-modal-box { width: min(520px, 94vw); }
+.offline-sum-row { color: var(--text); line-height: 1.7; padding: 3px 2px; }
+.offline-sum-title { color: var(--dim); margin-top: 10px; padding: 3px 2px; border-bottom: 1px solid var(--border); }
+.offline-sum-loot { color: var(--text); line-height: 2; padding: 6px 2px; max-height: 40vh; overflow-y: auto; }
+.offline-modal-actions { display: flex; justify-content: center; margin-top: 12px; }
+.offline-modal-actions .btn { min-width: 120px; }
+#talent-modal-body { min-height: 282px; display: grid; grid-template-rows: 48px auto 1fr 28px 66px; }
+.talent-modal-head { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.talent-modal-head>b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.talent-modal-icon { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--border-light); background: rgba(10, 12, 18, .8); font-size: 27px; }
+.talent-modal-desc { color: var(--text); line-height: 1.55; padding: 4px 2px; }
+.talent-modal-copy { min-height: 80px; color: var(--dim); line-height: 1.8; padding: 8px 2px; }
+.talent-modal-copy-maxed:empty { min-height: 0; padding: 0; }
+.talent-modal-current { color: #facc15; }
+.talent-modal-complete { color: var(--good); }
+.talent-modal-disabled { color: #facc15; font-weight: 700; }
+.talent-modal-points { align-self: end; text-align: right; color: #facc15; font-size: 14px; font-weight: 700; }
+.talent-modal-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+.talent-modal-actions .btn, .talent-modal-actions>div { min-width: 0; min-height: 26px; }
+.talent-modal-actions .btn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 760px) { .talent-grid { grid-template-columns: repeat(8, minmax(49px, 1fr)); gap: 5px; } .talent-icon { padding: 4px; } .talent-icon-glyph { width: 34px; height: 34px; font-size: 24px; } }
+@media (max-width: 520px) { .talent-grid { overflow-x: auto; grid-template-columns: repeat(8, 56px); padding-bottom: 4px; } }
+
+/* V3：�?質勾?�面?��???）�??�件置入??*/
+.nf-qual-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 4px 10px;
+  margin: 6px 0;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.nf-qual-panel .hint {
+  grid-column: 1 / -1;
+}
+
+.nf-qual-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.nf-parts-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.nf-part-slot {
+  min-width: 56px;
+  padding: 8px 6px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.nf-part-slot.nf-part-lock {
+  opacity: 0.75;
+  color: var(--dim);
+}
+
+button.nf-part-slot {
+  cursor: pointer;
+}
+
+button.nf-part-slot:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  opacity: 1;
+}
+
+button.nf-part-slot.nf-part-poor {
+  color: #f87171;
+}
+
+/* ?�件安�?（V3）�?已�??��??�件?��??�表 */
+button.nf-part-slot.nf-part-filled {
+  border-color: var(--good, #4ade80);
+  opacity: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nf-parts-list {
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px dashed var(--accent);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.nf-parts-list-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.nf-parts-list-head .btn {
+  margin-left: auto;
+}
+
+/* 帶晶?�縮小�??�帶 30 件�? 8 ?�滿）�?已�??�件＝正?�形小�?�?*/
+.nf-belt-items {
+  gap: 2px;
+}
+
+.nf-belt .conv-chip {
+  width: 20px;
+  height: 20px;
+  font-size: 11px;
+  border-radius: 5px;
+  flex: 0 0 auto;
+}
+
+button.nf-part-slot.nf-part-ico {
+  min-width: 34px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.nf-part-ico .part-material-icon {
+  margin-right: 0;
+}
+
+/* 帶尾?��? +N ?�：�???+999 寬度，數字�?減�?變�??�面 */
+/* 帶尾 +N ?��??�：寬度以?�大�?+9999 ?��?，數字�?減�??��???*/
+.nf-belt-more {
+  flex: 0 0 52px;
+  width: 52px;
+  min-width: 52px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+/* 屬性數?�簡寫單位�???*/
+.unit-k { color: #4ade80 !important; font-weight: bold; } /* K = 綠色�?*/
+.unit-m { color: #60a5fa !important; font-weight: bold; } /* M = ?�色�?*/
+.unit-b { color: #facc15 !important; font-weight: bold; } /* B = 黃色�?*/
+.unit-t { color: #c084fc !important; font-weight: bold; } /* T = 紫色�?*/
+.unit-p { color: #fb923c !important; font-weight: bold; } /* P?�以�?= 橘色�?*/
+
+. e q u i p - c o m p a r e - c o l   {   f l e x :   1 ;   m i n - w i d t h :   0 ;   }  
+ 
+
+
+/* 修正屬性面板折疊箭頭亂碼 */
+
+
+
+
+.attr-group summary {
+  padding-left: 4px;
+}
+.attr-group summary::before {
+  content: '\25bc';
+  display: inline-block;
+  width: 16px;
+  color: var(--dim);
+  text-align: center;
+  margin-right: 2px;
+}
+
+.attr-group[open] summary::before {
+  content: '-';
+}
+
+/* 神界與凡人界地圖切換按鈕 */
+.realm-btn {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--dim);
+  border-radius: 6px;
+  padding: 4px 14px;
+  font-size: 12.5px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.realm-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.realm-btn.active {
+  background: linear-gradient(135deg, rgba(245, 185, 66, 0.25), rgba(192, 132, 252, 0.25));
+  color: #f5c542;
+  border-color: #f5c542;
+  box-shadow: 0 0 10px rgba(245, 185, 66, 0.4);
+}

@@ -1,0 +1,10 @@
+{
+  "name": "idle-rpg",
+  "version": "1.0.0",
+  "private": true,
+  "description": "無限征途：合成之巔（零建置網頁遊戲）— build 為全檔語法/編譯檢查",
+  "scripts": {
+    "build": "node tools/build_check.cjs",
+    "test": "node --test \"tests/*.test.cjs\""
+  }
+}

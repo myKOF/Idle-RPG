@@ -1,0 +1,1 @@
+Always refer to `/AI_RULES.md` for project architecture, coding standards, and refactoring protocols.
