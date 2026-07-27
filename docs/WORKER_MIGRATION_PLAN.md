@@ -238,6 +238,32 @@ Codex 已完成診斷分類，見 `docs/TEST_FAILURE_TRIAGE.md`（A 類 32／B �
 
 **已裁決：**
 
+- 2026-07-27　**Codex 盤點的 10 項缺口裁決**（`docs/UI_STATE_INVENTORY.md` 第 15 節）。
+  分成三類處理，協議升 **v4**：
+
+  **甲、UI 在 render 中改狀態 → 全部移回 Worker，不開指令**（Claude 做）
+  1. `player.shownRes`（`ui.js:928,939`）：資源首次大於 0 的顯示旗標。
+     Worker 在 tick 內維護，UI 只讀。渲染函式不該有副作用。
+  2. 護盾正規化（`ui.js:1372-1384`）：render 直接改戰鬥實體。移回 Worker 的戰鬥／派生計算。
+  3. `ensureSockets()`（`ui.js:1900`）：render 補鑲孔。改在 Worker 的 migrate 完成後一次性補齊。
+  4. `forgeState().unlockNotified`（`ui.js:3007-3009`）：神鑄開放公告旗標。
+     改由 Worker 在解鎖當下設旗標並送一次 `notice` 事件，UI 只反應事件。
+
+  **乙、缺原子指令 → 協議 v4 新增**（Claude 做）
+  5. `gem.composeAll`：現行 UI 同步 while 最多 2500 次，逐筆跨執行緒不可行。
+  6. `gem.dismantleAll`：同上，最多 999 次。
+  7. `tower.confirmResult`：`tower.finish → finishTowerFight()` 語意不足，
+     沒涵蓋連挑續場（`ui.js:6299-6300`）。
+  8. `stats.reset`：`RUN_STATS` 與 `LOOT_STATS` 現在都在 Worker 內，
+     UI 不可能直接清除（`ui.js:6269-6272`）。
+  9. `tower.start` 語意擴充：必須吸收「手動挑戰時取消等待中的連挑」
+     （`ui.js:5837`），改為 Worker 端原子完成，簽章不變。
+
+  **丙、暫不處理**
+  10. `item.toSynth`（`ui.js:2081-2087`）：合成暫存區功能目前被 `SYNTHESIS_ENABLED = false`
+      關閉。**不新增指令**——為一個關閉中的功能開跨執行緒通道，等於維護一條沒人走的路。
+      P3 請保留該段程式碼原樣（仍在 flag 保護下），日後若重新啟用再補原子指令。
+
 - 2026-07-27　**數值權威順序**（使用者裁決）：
   `config/CSV/game_parameters.csv` ＞ 程式碼寫死值 ＞ 公式文檔說明。
   有 CSV 就以 CSV 為準，沒有 CSV 就以程式碼為準；代碼未讀 CSV 則補進參數套用流程，

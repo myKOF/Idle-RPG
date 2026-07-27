@@ -377,11 +377,73 @@ Claude Review
 
 Claude Review
 
-## 3.2 Codex 平行任務（可與上述測試修復同時進行）
+## 3.3 Codex 主線任務：P3 UI 去狀態化（`js/ui.js` 專屬）
 
 狀態：
 
-可立即開工
+等待 Claude 交付協議 v4（甲、乙兩類）後開工；下述準備工作可先做
+
+任務名稱：
+
+P3：把 `js/ui.js` 從「直接讀寫遊戲狀態」改成「讀快照、送指令」
+
+前置依賴：
+
+Claude 的協議 v4 + Worker 端配套（新增 `gem.composeAll`、`gem.dismantleAll`、
+`tower.confirmResult`、`stats.reset`；`shownRes`、護盾正規化、`ensureSockets`、
+`unlockNotified` 移回 Worker）。交付後本欄會更新為「可開工」。
+
+### 你現在就可以做的準備
+
+1. 依你自己的 `docs/UI_STATE_INVENTORY.md` 排出改造順序。建議由**依賴最少**的面板開始
+   （天賦 → 技能 → 寶石 → 高塔 → 熔爐 → 神鑄 → 背包裝備 → 頂欄），
+   背包與裝備留到最後，它同時牽動 `inv`/`equip`/`gems`/`header` 四個面板。
+2. 先寫一層薄的 UI 側存取層（例如 `viewState()` / `panelData(key)`），
+   讓渲染函式改讀它而不是 `G`。有這層之後，後續 6000 行的改造才有統一的替換目標。
+3. 把你第 14 節列的單飛鎖（single-flight lock）機制先寫好：
+   以 `itemId` / `furnaceId` / 節點 id 為 key 的 pending 集合，送出即鎖、ack 或 panel 到才解。
+   這是 P3 最容易出錯的地方，先有機制再逐頁套用。
+
+### 改造規則
+
+- **`G` 在主執行緒退化為唯讀鏡像。** 任何 `G.x = ...` 或改遊戲物件屬性一律換成 `send(cmd)`。
+  改完之後，`ui.js` 內不應再有對 `G`／`FIELD`／`TOWER`／`RUN_STATS`／`forgeState()` 的**寫入**。
+- **不得在主執行緒重算派生值**：`getStats()`、`currentDps()`、減傷等一律取自 Worker 快照。
+- **渲染函式不得有副作用**。你盤點出的 `shownRes`、護盾正規化、`ensureSockets`、
+  `unlockNotified` 四處由 Claude 移回 Worker；你只要把 `ui.js` 那幾段刪掉即可。
+- **`getItemAncientCount`（`ui.js:1512`）請搬進 `js/item.js`**，
+  並通知 Claude 刪掉 `sim.worker.js` 裡的守衛後備——目前是兩份實作。
+- **`BOSS_LIST[*].imgFailed`（`ui.js:2826`）改成 UI 本地集合**，
+  不要寫入共載的設定資料表。
+- **`item.toSynth` 維持原樣**：合成暫存區被 `SYNTHESIS_ENABLED = false` 關閉，
+  Claude 裁決不為關閉中的功能開跨執行緒通道。該段保留在 flag 保護下即可。
+- 每個面板改完就是一個 commit，不要 6000 行一次交付。
+
+### 驗收
+
+- `npm test` 不得新增失敗（基準線見下方測試要求）
+- Antigravity 的 `docs/REGRESSION_CHECKLIST.md` 全 21 項通過
+- `?worker=1` 下遊戲可正常遊玩；不帶參數的舊路徑在 P5 前仍須可用
+
+允許修改：
+
+- `js/ui.js`（P3 起專屬 Codex，Claude 全程不得直接修改）
+- `js/item.js`（僅搬入 `getItemAncientCount`）
+
+禁止修改：
+
+- `js/worker/*`、`js/bridge.js`、`js/storage.js`、`js/main.js`、`js/gm.js`、`index.html`（Claude 所有）
+- 其他模擬層檔案
+
+完成後交給：
+
+Claude Review → Antigravity 迴歸驗證
+
+## 3.2 Codex 平行任務（已完成）
+
+狀態：
+
+已完成（commit 94a6d1a）
 
 任務名稱：
 
@@ -539,6 +601,26 @@ P0 效能與存檔基準線（commit 2104314）
 8. **不帶參數**重開，確認舊路徑完全正常：Console 無錯誤、戰鬥推進、存檔正常、
    各頁籤可切換。這項最重要——P1/P2 若動到舊路徑就是失敗
 9. 對照 P0 基準線，確認舊路徑效能沒有因為多載入 3 支 script 而變差
+
+**四、P3 期間任務（Codex 開工後）**
+
+P2 驗證與迴歸清單都已完成（`2b4f38b`），品質很好，尤其 800 件背包 623KB 落地
+< 16ms 與資料夾模式那兩項——後者我無法自測，只能靠你。
+
+P3 是整個遷移最容易出現行為退化的階段，Codex 會分面板逐個交付，請**每個面板交付就驗一次**，
+不要等全部做完才一起驗。理由：6000 行的改造若累積到最後才發現問題，很難歸因到哪一次改動。
+
+每次驗證：
+
+1. 跑 `docs/REGRESSION_CHECKLIST.md` 中該面板的項目
+2. 特別針對「非同步風險」加測（`docs/UI_STATE_INVENTORY.md` 第 14 節列了 18 處）：
+   - **連點**：升級、購買、分解、鑄造按鈕快速連按 5 次，確認資源只扣一次、
+     不會出現負值或超額
+   - **雙擊不可逆操作**：寶石融合、拆解、重新開局，確認第二次點擊不會造成
+     「找不到素材」的錯誤或重複消耗
+   - **拖放**：技能配置在指令未回應前再次拖曳，確認順序不會錯亂
+   - **切頁競態**：送出指令後立刻切換頁籤，確認回應到達時不會渲染到錯的面板
+3. 回報時附上重現步驟與 `WorkerBridge.status()` 的 `pendingCommands`／`errors`
 
 **三、P3 前置：迴歸測試清單（可與上述並行）**
 
