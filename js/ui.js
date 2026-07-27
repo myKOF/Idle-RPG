@@ -974,10 +974,10 @@ function classifyUiLogCategory(msg, cat) {
 }
 
 function workerTowerActiveForLog() {
-  var towerPanel = peekUiPanelData('tower');
-  if (towerPanel && towerPanel.tower) return !!towerPanel.tower.active;
   var view = UI_WORKER_STATE.view;
-  return !!(view && view.towerActive);
+  if (view && typeof view.towerActive === 'boolean') return view.towerActive;
+  var towerPanel = peekUiPanelData('tower');
+  return !!(towerPanel && towerPanel.tower && towerPanel.tower.active);
 }
 
 function routeUiLog(msg, cls, cat, towerActive) {
@@ -1044,9 +1044,11 @@ function animatePendingEnemyKill(ent, elId, cls) {
 
 function flushPendingEnemyFloats() {
   if (!PENDING_ENEMY_FLOATS.length) return;
+  var activeEnemies = (typeof fieldEnemyList === 'function') ? fieldEnemyList() : null;
   var keep = [];
   for (var i = 0; i < PENDING_ENEMY_FLOATS.length; i++) {
     var item = PENDING_ENEMY_FLOATS[i];
+    if (item.ent && activeEnemies && activeEnemies.indexOf(item.ent) < 0) continue;
     var layer = $id(item.elId);
     if (!layer || layer.offsetParent === null) {
       keep.push(item);
@@ -8441,16 +8443,7 @@ function initUI() {
     }
     var btnSummaryClear = $id('btn-summary-clear');
     if (btnSummaryClear) {
-      btnSummaryClear.addEventListener('click', function () {
-        if (window.RUN_STATS) {
-          window.RUN_STATS.skills = {};
-          window.RUN_STATS.maxStage = typeof G !== 'undefined' && G.stage ? G.stage.current : 1;
-        }
-        if (typeof resetLootStats === 'function') resetLootStats(); // 掉落統計歸零重計
-        var list = $id('battle-summary-list');
-        if (list) list.innerHTML = '';
-        renderStatsPanel();
-      });
+      btnSummaryClear.addEventListener('click', resetStatsFromUi);
     }
   }
 }
@@ -8603,6 +8596,40 @@ if ($id('trm-stop-auto')) {
 }
 /* ---- 統計面板：基本統計與掉落物統計（HTML 由 js/stats.js 產生） ---- */
 var statsPanelTimer = null;
+function clearStatsSummaryDom() {
+  var list = $id('battle-summary-list');
+  if (list) list.innerHTML = '';
+}
+
+function resetStatsFromUi() {
+  if (workerUiStateEnabled()) {
+    return sendUiCommand('stats.reset', {}, {
+      keys: [nodePendingKey('stats')],
+      panels: ['battle']
+    }).then(function (result) {
+      var error = uiCommandResultError(result);
+      if (error) {
+        reportUiCommandFailure('統計清除失敗', error, ['battle']);
+        return false;
+      }
+      clearStatsSummaryDom();
+      // battle panel 回來時由 PANEL handler 以 Worker Snapshot 重繪。
+      return true;
+    }).catch(function (error) {
+      reportUiCommandFailure('統計清除失敗', error, ['battle']);
+      return false;
+    });
+  }
+  if (window.RUN_STATS) {
+    window.RUN_STATS.skills = {};
+    window.RUN_STATS.maxStage = typeof G !== 'undefined' && G.stage ? G.stage.current : 1;
+  }
+  if (typeof resetLootStats === 'function') resetLootStats(); // 掉落統計歸零重計
+  clearStatsSummaryDom();
+  renderStatsPanel();
+  return true;
+}
+
 function withWorkerBattleStats(render) {
   if (!workerUiStateEnabled()) {
     render();
