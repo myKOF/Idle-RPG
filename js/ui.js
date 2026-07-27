@@ -2379,9 +2379,34 @@ function inventoryGridRowCount(box) {
   return Object.keys(rowTops).length;
 }
 
+function inventoryGridColumnCount(box) {
+  if (!box) return 1;
+  var computed = (typeof window !== 'undefined' && window.getComputedStyle)
+    ? window.getComputedStyle(box) : null;
+  var template = computed && computed.gridTemplateColumns;
+  if (template && template !== 'none') {
+    var columns = template.match(/\d+(?:\.\d+)?px/g);
+    if (columns && columns.length) return columns.length;
+  }
+  var width = Number(box.clientWidth) || 0;
+  var gap = computed ? (parseFloat(computed.columnGap) || INVENTORY_GRID_ROW_GAP) : INVENTORY_GRID_ROW_GAP;
+  return Math.max(1, Math.floor((width + gap) / (58 + gap)));
+}
+
+function inventoryGridTotalRowCount(box) {
+  if (!box) return 0;
+  var stored = parseInt(box.getAttribute('data-inventory-total-rows') || '', 10);
+  return isNaN(stored) ? inventoryGridRowCount(box) : stored;
+}
+
+function inventoryVirtualSpacerHTML(height) {
+  if (!(height > 0)) return '';
+  return '<div aria-hidden="true" style="grid-column: 1 / -1; height: ' + Math.ceil(height) + 'px; pointer-events: none;"></div>';
+}
+
 function applyInventoryVisibleRows(box) {
   if (!box) return;
-  var totalRows = inventoryGridRowCount(box);
+  var totalRows = inventoryGridTotalRowCount(box);
   var rows = inventoryVisibleRows(totalRows, UI.inventoryVisibleRows);
   UI.inventoryVisibleRows = Math.max(INVENTORY_VISIBLE_ROWS_DEFAULT, Math.min(INVENTORY_VISIBLE_ROWS_MAX, UI.inventoryVisibleRows || INVENTORY_VISIBLE_ROWS_DEFAULT));
   box.style.setProperty('--inventory-visible-rows', rows);
@@ -2417,6 +2442,7 @@ function renderInventory() {
 
   var inventoryItems = inventoryViewItems(invSnapshot);
   if (!inventoryItems.length) {
+    box.removeAttribute('data-inventory-total-rows');
     box.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">背包是空的。戰鬥掉落的裝備會先進入生產線輸送帶，「保留」的會送到這裡。</div>';
   } else {
     var ancientFilterSelect = $id('inv-ancient-filter');
@@ -2443,9 +2469,22 @@ function renderInventory() {
       });
     }
     if (!displayedItems.length) {
+      box.removeAttribute('data-inventory-total-rows');
       box.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">沒有符合篩選條件的裝備。</div>';
     } else {
-      box.innerHTML = displayedItems.map(function (it) {
+      var virtualize = workerUiStateEnabled();
+      var columns = virtualize ? inventoryGridColumnCount(box) : displayedItems.length;
+      var totalRows = Math.max(1, Math.ceil(displayedItems.length / columns));
+      var rows = inventoryVisibleRows(totalRows, UI.inventoryVisibleRows);
+      var startRow = 0;
+      var previousScrollTop = box.scrollTop;
+      if (virtualize && totalRows > rows) {
+        var rowHeight = INVENTORY_GRID_ROW_HEIGHT + INVENTORY_GRID_ROW_GAP;
+        startRow = Math.min(Math.max(0, Math.floor(previousScrollTop / rowHeight)), totalRows - rows);
+      }
+      var firstItem = virtualize ? startRow * columns : 0;
+      var lastItem = virtualize ? Math.min(displayedItems.length, (startRow + rows) * columns) : displayedItems.length;
+      var cellsHtml = displayedItems.slice(firstItem, lastItem).map(function (it) {
         var renderedItem = filterKeyword
           ? inventoryViewItem(invSnapshot, it.id, true)
           : it;
@@ -2457,6 +2496,18 @@ function renderInventory() {
         }
         return itemCellHTML(it, 'inv', extraClass, itemPendingKey(it.id));
       }).join('');
+      if (virtualize) box.setAttribute('data-inventory-total-rows', String(totalRows));
+      else box.removeAttribute('data-inventory-total-rows');
+      if (virtualize) {
+        var virtualRowHeight = INVENTORY_GRID_ROW_HEIGHT + INVENTORY_GRID_ROW_GAP;
+        var topHeight = startRow * virtualRowHeight - INVENTORY_GRID_ROW_GAP;
+        var remainingRows = totalRows - startRow - rows;
+        var bottomHeight = remainingRows * virtualRowHeight - (remainingRows > 0 ? INVENTORY_GRID_ROW_GAP : 0);
+        box.innerHTML = inventoryVirtualSpacerHTML(topHeight) + cellsHtml + inventoryVirtualSpacerHTML(bottomHeight);
+        box.scrollTop = previousScrollTop;
+      } else {
+        box.innerHTML = cellsHtml;
+      }
     }
   }
   applyInventoryVisibleRows(box);
@@ -6761,12 +6812,26 @@ function initUI() {
     if (target && target.closest && target.closest('#inv-section-box')) return;
     var box = $id('inventory-grid');
     if (!box) return;
-    var totalRows = inventoryGridRowCount(box);
+    var totalRows = inventoryGridTotalRowCount(box);
     var currentRows = inventoryVisibleRows(totalRows, UI.inventoryVisibleRows);
     if (totalRows <= currentRows || currentRows >= INVENTORY_VISIBLE_ROWS_MAX) return;
     UI.inventoryVisibleRows = Math.min(INVENTORY_VISIBLE_ROWS_MAX, currentRows + 1, totalRows);
-    applyInventoryVisibleRows(box);
+    renderInventory();
   }, { passive: true });
+
+  var inventoryGrid = $id('inventory-grid');
+  if (inventoryGrid && !inventoryGrid.__virtualScrollBound) {
+    inventoryGrid.__virtualScrollBound = true;
+    inventoryGrid.addEventListener('scroll', function () {
+      if (!workerUiStateEnabled() || UI.tab !== 'equip') return;
+      if (inventoryGrid.__virtualScrollFrame) return;
+      var schedule = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : function (fn) { return setTimeout(fn, 0); };
+      inventoryGrid.__virtualScrollFrame = schedule(function () {
+        inventoryGrid.__virtualScrollFrame = 0;
+        renderInventory();
+      });
+    }, { passive: true });
+  }
 
   // 技能彈窗：右上 X / 點擊遮罩關閉
   var skModal = $id('skill-modal');
