@@ -1,6 +1,6 @@
-# Worker 協議 v4（已凍結）
+# Worker 協議 v5（已凍結）
 
-> 凍結日期：2026-07-27　凍結者：Claude Code　協議版本：`WORKER_PROTOCOL_VERSION = 4`
+> 凍結日期：2026-07-27　凍結者：Claude Code　協議版本：`WORKER_PROTOCOL_VERSION = 5`
 > **單一資料來源是 `js/worker/protocol.js`。** 本文件是說明；兩者衝突時以程式碼為準。
 > 修改協議必須經 `docs/WORKER_MIGRATION_PLAN.md` 第 7 節流程，由 Claude 統一改 `protocol.js` 並同步本文件、遞增版本號。
 
@@ -31,7 +31,7 @@
 | `boot` | `{ save, now, maxRunId }` | 開機。`save` 由主執行緒讀出且**未經 migrate**，可為 `null`（新遊戲）。`maxRunId` 供重新開局編號 |
 | `load` | `{ save }` | **v2 新增**。執行中讀檔：替換整份狀態，不需要 reload |
 | `cmd` | `{ id, name, args }` | 執行指令。`id` 由主執行緒遞增，用於配對 `ack` |
-| `panel` | `{ name }` | 索取面板完整資料，`name` 必須是 `PANEL_KEYS` 之一 |
+| `panel` | `{ name, params? }` | 索取面板資料，`name` 必須是 `PANEL_KEYS` 之一。`params` 由各面板自行定義（v5 新增），目前只有 `inv` 使用 |
 | `visibility` | `{ hidden, at }` | 分頁顯示狀態變更 |
 | `saveResult` | `{ token, ok, error }` | 回報 `persist` 的落地結果，`token` 來自 `persist` |
 | `ping` | `{ t }` | 存活探測 |
@@ -60,6 +60,24 @@
 | `tick.view` | 5 Hz | 只有 `TICK_VIEW_KEYS` 列出的純量：資源、等級、血魔、關卡、暫停狀態等 |
 | `tick.dirty` | 5 Hz | 髒面板鍵陣列，來自模擬層既有的 `UI.dirty.*` 標記 |
 | `panel` | 需要時 | 主執行緒看到 `dirty` 且該面板正在顯示時才索取 |
+
+### `inv` 面板（v5 起為投影）
+
+背包預設**只回傳格子需要的欄位**，不含 `affixes` / `sockets` / `passive`：
+
+```
+panel { name:'inv', params:{ detailIds?: [id, ...] } }
+  → { items: [{ id, rarity, slot, level, upgrade, synthesized, locked,
+                name, weaponType, enchant, enchants, kind, ancientCount }],
+      details: { <id>: <完整裝備> } | null,
+      count, cap }
+```
+
+實測後期存檔 800 件：完整資料 305 KB，投影後 **133 KB（少 56%）**。
+保留 `affixes` 只能少 17%——詞條就是主體，所以它必須排除。
+
+詳情面板與格子 tooltip 需要完整資料，改用 `detailIds` 按需索取（單次上限 200 件）。
+建議 UI 一次索取「目前可見範圍 + 選取項」，避免每次 hover 都往返。
 | `full` | 罕見 | 開檔、讀檔、GM 指令、重開遊戲 |
 
 **髒區來源沿用既有機制**：模擬層現有 158 處 `UI.dirty.*` 標記與 `markStatsDirty()` 直接就是髒區訊號，Worker 端只需在每個 tick 結尾收集並清空，不需要新設一套。`PANEL_KEYS` 因此與 `UI.dirty` 的鍵名完全一致，**不得新增別名**。
@@ -262,6 +280,7 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 |---|---|---|
 | 1 | 2026-07-27 | 初版凍結：6 種入向訊息、8 種出向訊息、11 個面板鍵、67 條指令 |
 | 2 | 2026-07-27 | P2 存檔搬遷：新增 `load` 訊息與 `restart` 落地種類；`persist` payload 加 `meta`；`boot` 加 `maxRunId`；`save.*` 三條改為 `fn:null` 並由 Worker 端實作（原宣告會呼叫碰 I/O 的函式，與設計衝突） |
+| 5 | 2026-07-27 | P4 背包裁切：`panel` 訊息新增 `params`；`inv` 改為欄位投影 + `detailIds` 按需索取明細。實測後期存檔 305 KB → 133 KB（少 56%），主執行緒分派 3.2 ms → 2.5 ms。趁 Codex 尚未轉換背包頁時定案，避免他們照舊結構寫完再改一次 |
 | 4 | 2026-07-27 | 收斂 Codex `UI_STATE_INVENTORY.md` 盤點的 10 項缺口。<br>新增 `gem.composeAll`、`gem.dismantleAll`（現行 UI 是最多 2500／999 次的同步迴圈，逐次跨執行緒不可行）、`tower.confirmResult`（含連挑續場，語意大於 `finish`）、`stats.reset`（`RUN_STATS`／`LOOT_STATS` 都在 Worker 內）。<br>`tower.start` 改 `fn:null`：手動挑戰同時代表取消等待中的連挑，兩步必須同一原子操作。<br>四項「渲染函式在改狀態」改為搬回 Worker 而非開指令：資源顯示旗標、鑲孔補齊、神鑄開放公告已完成；**護盾正規化經查證不需要搬**——模擬層的 `refreshShieldMaxAfterGain` 已在每一條護盾寫入路徑維護該欄位，`ui.js` 的 `playerShieldMax` 是冗餘，其「版本號遷移」分支永遠不會執行（戰鬥實體是純執行期物件，存檔不含實體）。改為請 Codex 縮成純讀取。<br>`item.toSynth` 不新增：功能被 `SYNTHESIS_ENABLED = false` 關閉。<br>指令總數 81 → **85** |
 | 3.1 | 2026-07-27 | 新增 `PERSIST_KINDS.MANUAL_FOLDER`。P2 把 `manualSave` 與 `createManualSaveToFolderV2` 併成同一條資料夾路徑，導致未連接資料夾時「一鍵分解前的保護存檔」靜靜失敗——多數玩家沒接資料夾，那份保護存檔等於不存在。現在 `save.manual` 寫瀏覽器存檔記錄（空間不足才退回資料夾），`save.toFolder` 沒接資料夾就明確失敗 |
 | 3 | 2026-07-27 | P3 前置：收斂 Codex 審查提出的指令形狀缺口，逐條比對過實際函式簽章後修正。<br>①**物件識別**：一般寶石改傳 `type`+`level`（沒有 id）、融合寶石用 `fusedId`、熔爐 id 改 `int`、零件改 `partKey`。<br>②**簽章對齊**：`rerollSingleAffix` 改 `affixKey`、`forgePlaceItem` 不解析成物件、`forgePlaceGem` 改 `type`+`level`、`forgeToggleDust` 補 `index`、`convertGems` 改 `slots`+`targetType`、`fuseGemsV2` 改 `ref` 結構。<br>③**補 14 條遺漏指令**（見上）。<br>④**解析改逐指令白名單** `resolve`，同 id 歧義一律拒絕。<br>⑤**參數約束** `limit`（enum/min/max）與**拒絕多餘參數**。<br>⑥ `item.equip`/`unequip`/`salvage` 改為 `fn:null` 原子操作（只呼叫既有函式會複製出第二件物品）。<br>⑦ 補齊 `dirty` metadata（分解鑲寶石裝備會髒 `header`/`gems` 等） |

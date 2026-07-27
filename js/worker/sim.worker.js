@@ -254,7 +254,48 @@ function emitTick() {
 
 /* ---- 面板資料 ----
    P4 會依實測結果再裁切；目前先給該面板需要的狀態切片，不整份丟。 */
-function buildPanel(name) {
+/* ---- 背包投影 ----
+   背包格子只用到 7 個直接欄位，加上 itemEnchants() 的 enchant/enchants
+   與 ancientStarBadgeHTML() 需要的太古詞條數。詞條本身不送：
+   實測後期存檔 800 件完整資料 305 KB，投影後 122 KB（少 60%），
+   而保留 affixes 只能少 17%——詞條就是主體。
+
+   需要完整資料的地方（詳情面板、格子 tooltip）改用 params.detailIds 按需索取。 */
+var INV_CELL_FIELDS = ['id', 'rarity', 'slot', 'level', 'upgrade', 'synthesized',
+                       'locked', 'name', 'weaponType', 'enchant', 'enchants', 'kind'];
+var INV_DETAIL_MAX = 200; // 單次索取明細的上限，避免一次要回整包
+
+function inventoryCellView(it) {
+  var out = {};
+  for (var i = 0; i < INV_CELL_FIELDS.length; i++) {
+    var f = INV_CELL_FIELDS[i];
+    if (it[f] !== undefined) out[f] = it[f];
+  }
+  out.ancientCount = (typeof getItemAncientCount === 'function') ? getItemAncientCount(it) : 0;
+  return out;
+}
+
+function buildInventoryPanel(params) {
+  var items = Array.isArray(G.inventory) ? G.inventory : [];
+  var details = null;
+  var ids = params && params.detailIds;
+  if (Array.isArray(ids) && ids.length) {
+    details = {};
+    var wanted = {};
+    for (var i = 0; i < ids.length && i < INV_DETAIL_MAX; i++) wanted[ids[i]] = true;
+    for (var j = 0; j < items.length; j++) {
+      if (items[j] && wanted[items[j].id]) details[items[j].id] = items[j];
+    }
+  }
+  return {
+    items: items.map(inventoryCellView),
+    details: details,
+    count: items.length,
+    cap: inventoryCapacityNow()
+  };
+}
+
+function buildPanel(name, params) {
   if (!G) return null;
   var p = G.player || {};
   switch (name) {
@@ -273,7 +314,7 @@ function buildPanel(name) {
         equipActive: G.equipActive, equipView: G.equipView
       };
     case 'inv':
-      return { inventory: G.inventory, invUpgrades: p.invUpgrades };
+      return buildInventoryPanel(params);
     case 'forge':
       return { forge: (typeof forgeState === 'function') ? forgeState() : G.forge };
     case 'newforge':
@@ -899,7 +940,7 @@ self.onmessage = function (e) {
         break;
       case MSG_IN.PANEL:
         if (!isPanelKey(msg.name)) { reportError('panel', new Error('unknown panel: ' + msg.name)); break; }
-        post(MSG_OUT.PANEL, { name: msg.name, data: buildPanel(msg.name) });
+        post(MSG_OUT.PANEL, { name: msg.name, data: buildPanel(msg.name, msg.params) });
         break;
       case MSG_IN.VISIBILITY:
         onVisibility(msg);

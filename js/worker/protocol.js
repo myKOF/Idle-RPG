@@ -11,14 +11,20 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-var WORKER_PROTOCOL_VERSION = 4;
+var WORKER_PROTOCOL_VERSION = 5;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
   BOOT: 'boot',              // { save: <存檔物件|null>, now, maxRunId }  maxRunId 供重新開局編號用
   LOAD: 'load',              // { save }  執行中讀檔：替換整份狀態（v2 新增）
   CMD: 'cmd',                // { id, name, args }
-  PANEL: 'panel',            // { name }  索取面板完整資料
+  /* { name, params? }  索取面板資料。
+     params 由各面板自行定義，目前只有 inv 使用（v5 新增）：
+       inv: { detailIds?: [id, ...] }
+     背包預設只回傳格子需要的欄位投影，不含 affixes——實測後期存檔 800 件，
+     完整資料 305 KB，其中詞條就佔了六成。明細改為按 id 索取，
+     由 UI 決定要哪幾件（例如可見範圍或選取項）。 */
+  PANEL: 'panel',
   VISIBILITY: 'visibility',  // { hidden, at }
   SAVE_RESULT: 'saveResult', // { token, ok, error }
   PING: 'ping'               // { t }  存活探測
