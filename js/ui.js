@@ -13,6 +13,8 @@ var UI = {
   inventoryVisibleRows: 3,
   inventorySortIndex: 0,
   inventoryKeywordQuery: '',
+  inventoryFilterCacheKey: null,
+  inventoryFilterCacheItems: null,
   pendingItemTooltip: null,
   statsPanelOpen: false,
   battleLayoutDirty: true,
@@ -2441,6 +2443,7 @@ function renderInventory() {
   var filterKeyword = (kwInput && isInternal && kwInput.style.display !== 'none') ? kwInput.value.trim() : '';
 
   var inventoryItems = inventoryViewItems(invSnapshot);
+  var virtualize = workerUiStateEnabled();
   if (!inventoryItems.length) {
     box.removeAttribute('data-inventory-total-rows');
     box.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">背包是空的。戰鬥掉落的裝備會先進入生產線輸送帶，「保留」的會送到這裡。</div>';
@@ -2449,30 +2452,45 @@ function renderInventory() {
     var filterAncient = ancientFilterSelect ? ancientFilterSelect.value : '';
     var filterSelect = $id('inv-rarity-filter');
     var filterRarity = filterSelect ? filterSelect.value : '';
-    var displayedItems = inventoryItems;
-    if (filterAncient !== '' || filterRarity !== '') {
-      displayedItems = inventoryItems.filter(function (it) {
-        if (filterAncient !== '') {
-          var aCount = getItemAncientCount(it);
-          var reqCount = parseInt(filterAncient, 10);
-          if (filterAncient === '7') {
-            if (aCount < 7) return false;
-          } else {
-            if (aCount !== reqCount) return false;
+    var filterCacheKey = virtualize
+      ? [UI_WORKER_STATE.panelVersions.inv || 0, filterKeyword, filterAncient, filterRarity, UI.inventorySortIndex].join('\u001f')
+      : null;
+    var displayedItems = null;
+    if (virtualize && UI.inventoryFilterCacheKey === filterCacheKey && UI.inventoryFilterCacheItems !== null) {
+      displayedItems = UI.inventoryFilterCacheItems;
+    } else {
+      displayedItems = inventoryItems;
+      if (filterAncient !== '' || filterRarity !== '') {
+        displayedItems = inventoryItems.filter(function (it) {
+          if (filterAncient !== '') {
+            var aCount = getItemAncientCount(it);
+            var reqCount = parseInt(filterAncient, 10);
+            if (filterAncient === '7') {
+              if (aCount < 7) return false;
+            } else {
+              if (aCount !== reqCount) return false;
+            }
           }
-        }
-        if (filterRarity !== '') {
-          var rVal = parseInt(filterRarity, 10);
-          if (it.rarity !== rVal) return false;
-        }
-        return true;
-      });
+          if (filterRarity !== '') {
+            var rVal = parseInt(filterRarity, 10);
+            if (it.rarity !== rVal) return false;
+          }
+          return true;
+        });
+      }
+      if (virtualize) {
+        UI.inventoryFilterCacheKey = filterCacheKey;
+        UI.inventoryFilterCacheItems = displayedItems;
+      }
     }
     if (!displayedItems.length) {
       box.removeAttribute('data-inventory-total-rows');
       box.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">沒有符合篩選條件的裝備。</div>';
     } else {
-      var virtualize = workerUiStateEnabled();
+      if (virtualize && (!box.clientWidth || !box.offsetParent)) {
+        applyInventoryVisibleRows(box);
+        return;
+      }
       var columns = virtualize ? inventoryGridColumnCount(box) : displayedItems.length;
       var totalRows = Math.max(1, Math.ceil(displayedItems.length / columns));
       var rows = inventoryVisibleRows(totalRows, UI.inventoryVisibleRows);
