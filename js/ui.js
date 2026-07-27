@@ -44,6 +44,17 @@ var UI_PANEL_MIGRATION_ORDER = [
 ];
 
 /*
+ * Only migrated panels belong here.  A visible tab keeps its panel slices
+ * subscribed; switching tabs drops those subscriptions unless a pending
+ * command still needs an authoritative response.
+ */
+var UI_PANEL_SUBSCRIPTIONS_BY_TAB = {
+  skills: ['skills', 'talents', 'header'],
+  talents: ['talents', 'header']
+};
+var UI_PERSISTENT_PANEL_SUBSCRIPTIONS = ['talents']; // controls talent-tab visibility
+
+/*
  * Worker-backed UI state.  Renderers migrate to viewState()/panelData() one
  * panel at a time; these caches deliberately have no G fallback.
  */
@@ -85,6 +96,34 @@ function validUiPanelKey(key) {
   return PANEL_KEYS.indexOf(key) >= 0;
 }
 
+function desiredUiPanelSubscriptions() {
+  var desired = Object.create(null);
+  function include(keys) {
+    (keys || []).forEach(function (key) {
+      if (validUiPanelKey(key)) desired[key] = true;
+    });
+  }
+
+  include(UI_PERSISTENT_PANEL_SUBSCRIPTIONS);
+  include(UI_PANEL_SUBSCRIPTIONS_BY_TAB[UI.tab]);
+  if (typeof UI_COMMAND_PENDING !== 'undefined' && UI_COMMAND_PENDING) {
+    Object.keys(UI_COMMAND_PENDING.byToken).forEach(function (token) {
+      include(Object.keys(UI_COMMAND_PENDING.byToken[token].waitPanels));
+    });
+  }
+  return desired;
+}
+
+function refreshUiPanelSubscriptions() {
+  var desired = desiredUiPanelSubscriptions();
+  Object.keys(UI_WORKER_STATE.panelSubscriptions).forEach(function (key) {
+    if (!desired[key]) delete UI_WORKER_STATE.panelSubscriptions[key];
+  });
+  Object.keys(desired).forEach(function (key) {
+    UI_WORKER_STATE.panelSubscriptions[key] = true;
+  });
+}
+
 function viewState() {
   UI_WORKER_STATE.viewSubscribed = true;
   return UI_WORKER_STATE.view;
@@ -97,7 +136,6 @@ function requestPanelData(key, force) {
     return false;
   }
 
-  UI_WORKER_STATE.panelSubscriptions[key] = true;
   if (!force && hasOwnUiState(UI_WORKER_STATE.panels, key)) return true;
   if (UI_WORKER_STATE.panelRequests[key]) return true;
 
@@ -111,6 +149,7 @@ function requestPanelData(key, force) {
 
 function panelData(key) {
   if (!validUiPanelKey(key)) return null;
+  // First access subscribes and may return null until the PANEL response arrives.
   UI_WORKER_STATE.panelSubscriptions[key] = true;
   if (!hasOwnUiState(UI_WORKER_STATE.panels, key)) {
     requestPanelData(key, false);
@@ -122,16 +161,6 @@ function panelData(key) {
 function applyUiSnapshot(snapshot) {
   if (!snapshot) return;
   if (snapshot.view) UI_WORKER_STATE.view = snapshot.view;
-  if (!snapshot.panels) return;
-
-  Object.keys(snapshot.panels).forEach(function (key) {
-    if (!validUiPanelKey(key)) return;
-    UI_WORKER_STATE.panels[key] = snapshot.panels[key];
-    UI_WORKER_STATE.panelVersions[key] =
-      (UI_WORKER_STATE.panelVersions[key] || 0) + 1;
-    delete UI_WORKER_STATE.panelRequests[key];
-    releaseUiPendingByPanel(key);
-  });
 }
 
 function uiPendingKey(kind, id) {
@@ -219,16 +248,20 @@ function releaseUiPendingToken(token) {
       syncUiPendingControls(key);
     }
   }
+  refreshUiPanelSubscriptions();
   return true;
 }
 
 function releaseUiPendingByPanel(panelKey) {
-  var version = UI_WORKER_STATE.panelVersions[panelKey] || 0;
   Object.keys(UI_COMMAND_PENDING.byToken).forEach(function (token) {
     var entry = UI_COMMAND_PENDING.byToken[token];
-    var requiredVersion = entry.waitPanels[panelKey];
-    if (requiredVersion && version >= requiredVersion) {
-      releaseUiPendingToken(token);
+    if (!entry.acknowledged || !entry.waitPanels[panelKey]) return;
+    var waitKeys = Object.keys(entry.waitPanels);
+    var ready = waitKeys.every(function (key) {
+      return (UI_WORKER_STATE.panelVersions[key] || 0) >= entry.waitPanels[key];
+    });
+    if (ready) {
+      releaseUiPendingToken(entry.token);
     }
   });
 }
@@ -246,6 +279,7 @@ function acquireUiPending(commandName, options) {
   var entry = {
     token: token,
     keys: keys,
+    acknowledged: false,
     waitPanels: Object.create(null)
   };
 
@@ -261,6 +295,7 @@ function acquireUiPending(commandName, options) {
     UI_COMMAND_PENDING.byKey[keys[k]] = entry;
     syncUiPendingControls(keys[k]);
   }
+  refreshUiPanelSubscriptions();
 
   return { entry: entry };
 }
@@ -284,7 +319,19 @@ function sendUiCommand(commandName, args, options) {
   }
 
   return sent.then(function (result) {
-    releaseUiPendingToken(token);
+    var entry = UI_COMMAND_PENDING.byToken[token];
+    if (!entry) return result;
+    var resultError = typeof uiCommandResultError === 'function'
+      ? uiCommandResultError(result)
+      : null;
+    if (resultError || !Object.keys(entry.waitPanels).length) {
+      releaseUiPendingToken(token);
+      return result;
+    }
+    entry.acknowledged = true;
+    Object.keys(entry.waitPanels).forEach(function (key) {
+      entry.waitPanels[key] = (UI_WORKER_STATE.panelVersions[key] || 0) + 1;
+    });
     return result;
   }, function (err) {
     releaseUiPendingToken(token);
@@ -1069,6 +1116,7 @@ function markTabDirty(name) {
 function switchTab(name) {
   if (name === 'talents' && typeof talentSystemUnlocked === 'function' && !talentSystemUnlocked()) name = 'equip';
   UI.tab = name;
+  refreshUiPanelSubscriptions();
   markTabDirty(name);
   document.querySelectorAll('.tab-btn').forEach(function (b) {
     b.classList.toggle('active', b.getAttribute('data-tab') === name);
