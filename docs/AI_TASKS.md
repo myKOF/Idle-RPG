@@ -180,6 +180,70 @@ Claude 完成 P0 協議凍結（已完成，可立即開工）；`shim.js` 測�
 
 Claude Review
 
+## 3.1 Codex 後續任務（P1 交付後接續，與 Web Worker 遷移分開）
+
+狀態：
+
+排隊中
+
+任務名稱：
+
+既有測試失敗清理（95 fail / 32 檔）
+
+任務內容：
+
+此批失敗在 Web Worker 遷移開工前就存在，**不得併入遷移的 commit**，必須獨立成 commit。
+分兩步交付，第一步完成後停下來等 Claude 裁決，不要直接進第二步。
+
+**第一步：診斷（唯讀，不改任何檔案）**
+
+逐一分類 95 個失敗，產出報告 `docs/TEST_FAILURE_TRIAGE.md`，每筆標註：
+
+- A 類：測試斷言已過時，原始碼是對的 → 改 `tests/`
+- B 類：原始碼有問題，測試是對的 → 改 `js/`（**遷移期間鎖定，不得動**）
+- C 類：環境／編碼問題 → 個案處理
+
+Claude 已完成的預先分類，可直接沿用：
+
+- **C 類根因（已確認）**：`css/style.css` 不是 UTF-8（2248 個無效位元組，應為 Big5/ANSI），
+  但 `index.html` 宣告 `charset=UTF-8`。CSS 規則本身正常，亂碼只在中文註解，
+  但比對中文字串的測試必定失敗。影響 6 支失敗檔案：
+  `attribute-tooltip`、`combat-log`、`forge-duration`、`godforged-border-effect`、
+  `player-shield-bar`（另 `rarity-colors` 為整檔失敗）。
+  修法：把 `css/style.css` 轉成 UTF-8（不加 BOM），保留原內容不動。
+- 其餘 26 支為數值／邏輯落差（如 `4 !== 0`、`3 !== 4`、公式近似值不符），需逐一判定 A 或 B。
+
+**第二步：修復（需 Claude 核可後才開始）**
+
+- 只做 A 類與 C 類（只動 `tests/` 與 `css/style.css`）。
+- B 類**一律不動**，列清單交 Claude 裁決；要改 `js/` 必須排在遷移的階段間隙並走檔案鎖定流程。
+- 不得刪除測試或放寬斷言來讓測試通過（`AI_WORKFLOW.md` 第 4 節第 6、7 條）。
+  若某個測試確實應該報廢，寫進報告說明理由，由 Claude 決定，不要自行刪。
+
+允許修改：
+
+- 第一步：無（唯讀），僅新增 `docs/TEST_FAILURE_TRIAGE.md`
+- 第二步（核可後）：A 類涉及的 `tests/*.test.cjs`、`css/style.css`
+
+禁止修改：
+
+- `js/` 底下任何檔案（含 `js/worker/*`、`js/ui.js`）
+- `tests/worker-*.test.cjs`（本人 P1 任務所有，不要混進來）
+- 其他 AI 正在處理的檔案
+- develop 分支
+
+前置依賴：
+
+P1 協議測試交付後開始
+
+測試要求：
+
+每修一批就跑 `npm test`，記錄失敗數變化；失敗數只能下降，不得上升
+
+完成後交給：
+
+Claude 裁決 B 類清單
+
 ---
 
 # 4. Antigravity 任務
