@@ -70,11 +70,30 @@ P1 Worker 骨架（P0 協議凍結已完成）
 
 狀態：
 
-進行中
+等待測試（P1 已交付，待 Antigravity 驗證）
 
 任務名稱：
 
 Web Worker 遷移 P1：Worker 骨架
+
+P1 交付內容：
+
+- `js/worker/sim.worker.js`：主迴圈與 G 的所在地，importScripts 載入 17 支模擬層（未改動任何一支）
+- `js/worker/shim.js`：window / document / UI.dirty / blog / flog / recordLoot* 替身，並統計相依次數
+- `js/bridge.js`：主執行緒橋接，指令 Promise 配對、面板索取、分頁狀態轉發
+- `index.html`：僅新增 protocol.js 與 bridge.js 兩個 script 標籤（見下方範圍調整）
+
+範圍調整（需知悉）：
+
+原計劃把 `index.html` 排在 P5，但 feature flag 必須在 P1 就能接線，
+故 Claude 於 P1 提前接手該檔（僅加 2 個 script 標籤，未動其他內容）。
+`index.html` 自即日起由 Claude 持有至 P5，其他 AI 不得修改。
+
+實測結果（localhost:8125）：
+
+- `?worker=1`：Worker 開機、模擬推進（10 秒推進到 stage 2~3）、tick 5Hz、persist 往返正常、0 錯誤
+- 不帶參數：舊單執行緒路徑完全不受影響，Console 無錯誤
+- `npm test`：417 pass / 95 fail，與基準線**完全相同**（同一份失敗清單）
 
 任務內容：
 
@@ -98,6 +117,7 @@ ai/claude
 - js/worker/shim.js（新增）
 - js/bridge.js（新增）
 - js/worker/protocol.js（協議唯一維護者）
+- index.html（僅 feature flag 接線；P1 起由 Claude 持有至 P5）
 - docs/WORKER_PROTOCOL.md
 - docs/WORKER_MIGRATION_PLAN.md
 
@@ -320,6 +340,12 @@ Claude（效能數據作為 P4 依據）
 任務：Web Worker 遷移 P1
 鎖定時間：2026-07-27
 解除條件：P1 合併後
+
+檔案：index.html
+負責 AI：Claude
+任務：Web Worker 遷移 P1 feature flag 接線、P5 移除舊路徑
+鎖定時間：2026-07-27
+解除條件：P5 完成
 
 檔案：js/ui.js
 負責 AI：Codex（P3 起）

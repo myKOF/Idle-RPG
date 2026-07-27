@@ -787,6 +787,10 @@
   <script src="js/ui.js?v=1.0.8"></script>
   <script src="js/param_autoreload.js"></script>
   <script src="js/gm.js"></script>
+  <!-- Web Worker 遷移：協議與橋接。bridge.js 只在網址帶 ?worker=1 時才啟動 Worker，
+       未帶參數時完全不作用，單執行緒路徑照舊。 -->
+  <script src="js/worker/protocol.js"></script>
+  <script src="js/bridge.js"></script>
   <script src="js/main.js"></script>
 </body>
 
