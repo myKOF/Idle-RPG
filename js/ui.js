@@ -15,6 +15,14 @@ var UI = {
   inventoryKeywordQuery: '',
   inventoryFilterCacheKey: null,
   inventoryFilterCacheItems: null,
+  inventoryRenderCache: {
+    filterKey: null,
+    startRow: null,
+    totalRows: null,
+    columns: null,
+    displayedLength: null,
+    detailKey: null
+  },
   pendingItemTooltip: null,
   statsPanelOpen: false,
   battleLayoutDirty: true,
@@ -2383,6 +2391,10 @@ function inventoryGridRowCount(box) {
 
 function inventoryGridColumnCount(box) {
   if (!box) return 1;
+  var width = Number(box.clientWidth) || 0;
+  var storedColumns = parseInt(box.getAttribute('data-inventory-columns') || '', 10);
+  var storedWidth = parseInt(box.getAttribute('data-inventory-layout-width') || '', 10);
+  if (storedColumns > 0 && storedWidth === width) return storedColumns;
   var computed = (typeof window !== 'undefined' && window.getComputedStyle)
     ? window.getComputedStyle(box) : null;
   var template = computed && computed.gridTemplateColumns;
@@ -2390,7 +2402,6 @@ function inventoryGridColumnCount(box) {
     var columns = template.match(/\d+(?:\.\d+)?px/g);
     if (columns && columns.length) return columns.length;
   }
-  var width = Number(box.clientWidth) || 0;
   var gap = computed ? (parseFloat(computed.columnGap) || INVENTORY_GRID_ROW_GAP) : INVENTORY_GRID_ROW_GAP;
   return Math.max(1, Math.floor((width + gap) / (58 + gap)));
 }
@@ -2403,7 +2414,7 @@ function inventoryGridTotalRowCount(box) {
 
 function inventoryVirtualSpacerHTML(height) {
   if (!(height > 0)) return '';
-  return '<div aria-hidden="true" style="grid-column: 1 / -1; height: ' + Math.ceil(height) + 'px; pointer-events: none;"></div>';
+  return '<div aria-hidden="true" style="height: ' + Math.ceil(height) + 'px; pointer-events: none;"></div>';
 }
 
 function applyInventoryVisibleRows(box) {
@@ -2445,6 +2456,12 @@ function renderInventory() {
   var inventoryItems = inventoryViewItems(invSnapshot);
   var virtualize = workerUiStateEnabled();
   if (!inventoryItems.length) {
+    if (virtualize) {
+      box.style.display = '';
+      box.style.position = '';
+      box.removeAttribute('data-inventory-columns');
+      box.removeAttribute('data-inventory-layout-width');
+    }
     box.removeAttribute('data-inventory-total-rows');
     box.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">背包是空的。戰鬥掉落的裝備會先進入生產線輸送帶，「保留」的會送到這裡。</div>';
   } else {
@@ -2484,6 +2501,12 @@ function renderInventory() {
       }
     }
     if (!displayedItems.length) {
+      if (virtualize) {
+        box.style.display = '';
+        box.style.position = '';
+        box.removeAttribute('data-inventory-columns');
+        box.removeAttribute('data-inventory-layout-width');
+      }
       box.removeAttribute('data-inventory-total-rows');
       box.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">沒有符合篩選條件的裝備。</div>';
     } else {
@@ -2492,6 +2515,7 @@ function renderInventory() {
         return;
       }
       var columns = virtualize ? inventoryGridColumnCount(box) : displayedItems.length;
+      var layoutWidth = virtualize ? Number(box.clientWidth) || 0 : 0;
       var totalRows = Math.max(1, Math.ceil(displayedItems.length / columns));
       var rows = inventoryVisibleRows(totalRows, UI.inventoryVisibleRows);
       var startRow = 0;
@@ -2500,6 +2524,32 @@ function renderInventory() {
         var rowHeight = INVENTORY_GRID_ROW_HEIGHT + INVENTORY_GRID_ROW_GAP;
         startRow = Math.min(Math.max(0, Math.floor(previousScrollTop / rowHeight)), totalRows - rows);
       }
+      var renderCache = UI.inventoryRenderCache;
+      var selectionKey = UI.sel
+        ? [UI.sel.id || '', UI.sel.source || '', UI.sel.slot || ''].join('\u001f')
+        : '';
+      var detailKey = virtualize
+        ? [UI_WORKER_STATE.panelVersions.inv || 0,
+          UI_WORKER_STATE.panelVersions.equip || 0,
+          UI_WORKER_STATE.panelVersions.gems || 0,
+          UI_WORKER_STATE.panelVersions.header || 0,
+          selectionKey].join('\u001f')
+        : null;
+      if (virtualize && renderCache &&
+          renderCache.filterKey === filterCacheKey &&
+          renderCache.startRow === startRow &&
+          renderCache.totalRows === totalRows &&
+          renderCache.columns === columns &&
+          renderCache.displayedLength === displayedItems.length &&
+          renderCache.detailKey === detailKey) {
+        return;
+      }
+      var shouldRestoreScrollTop = virtualize && !!renderCache &&
+        (renderCache.filterKey !== filterCacheKey ||
+          renderCache.totalRows !== totalRows ||
+          renderCache.columns !== columns ||
+          renderCache.displayedLength !== displayedItems.length);
+      if (!shouldRestoreScrollTop) previousScrollTop = 0;
       var firstItem = virtualize ? startRow * columns : 0;
       var lastItem = virtualize ? Math.min(displayedItems.length, (startRow + rows) * columns) : displayedItems.length;
       var cellsHtml = displayedItems.slice(firstItem, lastItem).map(function (it) {
@@ -2515,21 +2565,51 @@ function renderInventory() {
         return itemCellHTML(it, 'inv', extraClass, itemPendingKey(it.id));
       }).join('');
       if (virtualize) box.setAttribute('data-inventory-total-rows', String(totalRows));
-      else box.removeAttribute('data-inventory-total-rows');
+      else {
+        box.removeAttribute('data-inventory-total-rows');
+        box.removeAttribute('data-inventory-columns');
+        box.removeAttribute('data-inventory-layout-width');
+      }
       if (virtualize) {
         var virtualRowHeight = INVENTORY_GRID_ROW_HEIGHT + INVENTORY_GRID_ROW_GAP;
-        var topHeight = startRow * virtualRowHeight - INVENTORY_GRID_ROW_GAP;
-        var remainingRows = totalRows - startRow - rows;
-        var bottomHeight = remainingRows * virtualRowHeight - (remainingRows > 0 ? INVENTORY_GRID_ROW_GAP : 0);
-        box.innerHTML = inventoryVirtualSpacerHTML(topHeight) + cellsHtml + inventoryVirtualSpacerHTML(bottomHeight);
-        box.scrollTop = previousScrollTop;
+        var totalHeight = totalRows * virtualRowHeight - INVENTORY_GRID_ROW_GAP;
+        var topHeight = startRow * virtualRowHeight;
+        box.style.display = 'block';
+        box.style.position = 'relative';
+        box.innerHTML = inventoryVirtualSpacerHTML(totalHeight) +
+          '<div style="position: absolute; left: 0; right: 0; top: ' + Math.ceil(topHeight) +
+          'px; display: grid; grid-template-columns: repeat(' + columns + ', 58px); grid-auto-rows: 58px; gap: ' +
+          INVENTORY_GRID_ROW_GAP + 'px; align-content: start;">' + cellsHtml + '</div>';
+        box.setAttribute('data-inventory-columns', String(columns));
+        box.setAttribute('data-inventory-layout-width', String(layoutWidth));
+        if (shouldRestoreScrollTop) box.scrollTop = previousScrollTop;
+        renderCache.filterKey = filterCacheKey;
+        renderCache.startRow = startRow;
+        renderCache.totalRows = totalRows;
+        renderCache.columns = columns;
+        renderCache.displayedLength = displayedItems.length;
       } else {
+        box.style.display = '';
+        box.style.position = '';
         box.innerHTML = cellsHtml;
       }
     }
   }
   applyInventoryVisibleRows(box);
-  renderDetail();
+  var detailSelectionKey = UI.sel
+    ? [UI.sel.id || '', UI.sel.source || '', UI.sel.slot || ''].join('\u001f')
+    : '';
+  var detailRenderKey = virtualize
+    ? [UI_WORKER_STATE.panelVersions.inv || 0,
+      UI_WORKER_STATE.panelVersions.equip || 0,
+      UI_WORKER_STATE.panelVersions.gems || 0,
+      UI_WORKER_STATE.panelVersions.header || 0,
+      detailSelectionKey].join('\u001f')
+    : null;
+  if (!virtualize || !UI.inventoryRenderCache || UI.inventoryRenderCache.detailKey !== detailRenderKey) {
+    renderDetail();
+    if (virtualize && UI.inventoryRenderCache) UI.inventoryRenderCache.detailKey = detailRenderKey;
+  }
 }
 
 /* 僅搜尋背包與裝備欄。刻意不含神鑄法陣槽位：detailAction 的操作（裝備/強化/洗煉）
