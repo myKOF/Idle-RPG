@@ -19,17 +19,18 @@ function loadContext() {
 
 test('野外寶石掉落表依怪物等級與寶石階級套用', () => {
   const context = loadContext();
+  // CSV: config/CSV/game_parameters.csv:147-153。
   assert.deepEqual(JSON.parse(JSON.stringify(context.FIELD_GEM_DROP_TABLE)), [
-    { min: 301, rates: [40, 6, 3, 1, 0.5] },
-    { min: 251, rates: [30, 4, 2, 0.75, 0.25] },
-    { min: 201, rates: [20, 3, 1.5, 0.5, 0] },
-    { min: 151, rates: [15, 2, 1, 0, 0] },
-    { min: 101, rates: [10, 1.25, 0.75, 0, 0] },
-    { min: 51, rates: [7.5, 1, 0.5, 0, 0] },
-    { min: 1, rates: [5, 1, 0.5, 0, 0] }
+    { min: 301, rates: [14, 2.3, 0.8, 0.4, 0.3] },
+    { min: 251, rates: [12, 2, 0.7, 0.3, 0.2] },
+    { min: 201, rates: [10, 1.7, 0.6, 0.2, 0] },
+    { min: 151, rates: [8, 1.4, 0.5, 0.1, 0] },
+    { min: 101, rates: [6, 1.1, 0.4, 0, 0] },
+    { min: 51, rates: [4, 0.8, 0.3, 0, 0] },
+    { min: 1, rates: [2, 0.5, 0.2, 0, 0] }
   ]);
-  assert.deepEqual(JSON.parse(JSON.stringify(context.fieldGemDropRatesFor(300))), [30, 4, 2, 0.75, 0.25]);
-  assert.deepEqual(JSON.parse(JSON.stringify(context.fieldGemDropRatesFor(999))), [40, 6, 3, 1, 0.5]);
+  assert.deepEqual(JSON.parse(JSON.stringify(context.fieldGemDropRatesFor(300))), [12, 2, 0.7, 0.3, 0.2]);
+  assert.deepEqual(JSON.parse(JSON.stringify(context.fieldGemDropRatesFor(999))), [14, 2.3, 0.8, 0.4, 0.3]);
 });
 
 test('寶石掉落改為使用怪物等級表，不再使用固定總機率', () => {

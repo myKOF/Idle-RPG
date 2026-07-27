@@ -35,9 +35,10 @@ test('神力改為物理與魔法攻擊的額外乘區', () => {
   };
 
   const stats = context.computeStats();
-  // Lv1 基礎魔攻 16：16 × (1 + 100%) × (1 + 20%) = 38.4 → 38
-  assert.equal(stats.base.matk, 16);
-  assert.equal(stats.matk, 38);
+  // CSV: config/CSV/game_parameters.csv:33，魔攻基礎 a=6、每點智力 d=1。
+  // Lv1 智力 5：基礎魔攻 11；11 × (1 + 100%) × (1 + 20%) = 26.4 → 26。
+  assert.equal(stats.base.matk, 11);
+  assert.equal(stats.matk, 26);
   assert.equal(stats.A.matkPct, 100);
 });
 

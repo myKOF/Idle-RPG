@@ -33,20 +33,23 @@ test('comboHitsFor：暴擊率 ≤ 100% 時連擊數為 0', () => {
 test('comboHitsFor：恰 100% 為 0、超過即為正（閘門）', () => {
   const c = loadFormula();
   assert.equal(c.comboHitsFor(100), 0);                 // 完全爆擊，無連擊
-  // 101% → x=1.01：0.875*ln(1.01)+0.01387*1.01+0.0861 ≈ 0.1088
-  approx(c.comboHitsFor(101), 0.1088, 0.001, '暴擊 101%');
+  // CSV: config/CSV/game_parameters.csv:37，a=0.875、b=0.0025、c=0.05。
+  // 101% → x=1.01：0.875*ln(1.01)+0.0025*1.01+0.05 ≈ 0.06123
+  approx(c.comboHitsFor(101), 0.06123, 0.001, '暴擊 101%');
 });
 
-test('comboHitsFor：暴擊率% 直接代入（÷100），範例 1380% ≈ 2.57', () => {
+test('comboHitsFor：暴擊率% 直接代入（÷100），範例 1380% ≈ 2.38', () => {
   const c = loadFormula();
-  // x=13.8：0.875*ln(13.8)+0.01387*13.8+0.0861 ≈ 2.574
-  approx(c.comboHitsFor(1380), 2.574, 0.01, '連擊數 2.57 範例（暴擊 1380%）');
+  // CSV: config/CSV/game_parameters.csv:37。
+  // x=13.8：0.875*ln(13.8)+0.0025*13.8+0.05 ≈ 2.38109
+  approx(c.comboHitsFor(1380), 2.38109, 0.01, '連擊數 2.38 範例（暴擊 1380%）');
 });
 
 test('comboHitsFor：更高暴擊率單調成長（比值代入）', () => {
   const c = loadFormula();
-  approx(c.comboHitsFor(200), 0.7203, 0.01, '暴擊 200% → x=2');
-  approx(c.comboHitsFor(5000), 4.2026, 0.01, '暴擊 5000% → x=50');
+  // CSV: config/CSV/game_parameters.csv:37。
+  approx(c.comboHitsFor(200), 0.6615, 0.01, '暴擊 200% → x=2');
+  approx(c.comboHitsFor(5000), 3.59802, 0.01, '暴擊 5000% → x=50');
   assert.ok(c.comboHitsFor(300) > c.comboHitsFor(200));
   assert.ok(c.comboHitsFor(5000) > c.comboHitsFor(1380));
 });

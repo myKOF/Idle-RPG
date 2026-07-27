@@ -16,10 +16,11 @@ function loadDataContext() {
 
 test('野外裝備掉落表依怪物等級套用新機率', () => {
   const context = loadDataContext();
+  // CSV: config/CSV/game_parameters.csv:139-146；目前程式表使用各品質前四個等級區間。
   assert.deepEqual(JSON.parse(JSON.stringify(context.FIELD_DROP_TABLE)), [
-    { min: 150, rates: [0, 0, 0, 20, 6, 3, 0.25, 0] },
-    { min: 100, rates: [0, 10, 8, 6, 4, 2, 0, 0] },
-    { min: 50, rates: [25, 10, 5, 2, 0, 0, 0, 0] },
-    { min: 1, rates: [25, 10, 5, 0, 0, 0, 0, 0] }
+    { min: 150, rates: [50, 40, 30, 10, 5, 2, 0.05, 0] },
+    { min: 100, rates: [40, 30, 15, 10, 2.5, 1, 0, 0] },
+    { min: 50, rates: [35, 20, 8, 4, 0.5, 0, 0, 0] },
+    { min: 1, rates: [15, 10, 5, 0, 0, 0, 0, 0] }
   ]);
 });
