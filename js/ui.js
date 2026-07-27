@@ -327,6 +327,11 @@ function bindWorkerUiState() {
   });
   WorkerBridge.on(MSG_OUT.PANEL, function (msg) {
     if (!validUiPanelKey(msg.name)) return;
+    if (msg.name === 'skills' &&
+        UI.optimisticSkillLoadout &&
+        UI.optimisticSkillLoadout.acknowledged) {
+      UI.optimisticSkillLoadout = null;
+    }
     UI_WORKER_STATE.panels[msg.name] = msg.data;
     UI_WORKER_STATE.panelVersions[msg.name] =
       (UI_WORKER_STATE.panelVersions[msg.name] || 0) + 1;
@@ -3622,7 +3627,11 @@ function describePotentialSkill(def, lv) {
   function s(x) { return '<span class="txt-static">' + x + '</span>'; }          // 橘：固定值
   switch (def.mech) {
     case 'aspd': {
-      var base = (typeof getStats === 'function' ? (getStats().aspdBonusBase || 0) : 0);
+      var headerSnapshot = workerUiStateEnabled() ? uiHeaderPanelSnapshot() : null;
+      var stats = headerSnapshot && headerSnapshot.stats
+        ? headerSnapshot.stats
+        : (!workerUiStateEnabled() && typeof getStats === 'function' ? getStats() : null);
+      var base = stats ? (stats.aspdBonusBase || 0) : 0;
       var total = base + v;
       var perSec = (typeof ASPD_BASE !== 'undefined' ? ASPD_BASE : 1) * (1 + total / 100); // 突破上限後的實際攻速（次/秒）
       return s(def.dur || 6) + ' 秒內突破 ' + s(5) + ' 次/秒攻速上限：攻速加成 +' + g(v) + '%，期間攻速總加成 ' + g(total) + '%（含玩家原始攻速，約 ' + g(perSec) + ' 次/秒）';
@@ -3651,11 +3660,21 @@ function describePotentialSkill(def, lv) {
   return esc(def.desc || '');
 }
 
-function potentialNodeHTML(def, index) {
+function potentialNodeHTML(def, index, talentSnapshot, headerSnapshot) {
   if (!def) return '';
-  var lv = potentialLevel(def.id);
-  var unlocked = potentialUnlocked(def.id);
-  var max = potentialSkillMaxLv(def.id);
+  var usingSnapshot = !!talentSnapshot;
+  var reincarnations = usingSnapshot
+    ? skillViewReincarnations(headerSnapshot, talentSnapshot)
+    : reincarnationCountSafe();
+  var max = usingSnapshot
+    ? skillViewPotentialMaxLevel(reincarnations)
+    : potentialSkillMaxLv(def.id);
+  var lv = usingSnapshot
+    ? talentViewPotentialLevel(talentSnapshot, def.id, max)
+    : potentialLevel(def.id);
+  var unlocked = usingSnapshot
+    ? talentViewPotentialUnlocked(talentSnapshot, def.id)
+    : potentialUnlocked(def.id);
   var disabled = potentialTemporarilyDisabled(def.id);
   var cls = 'tree-cell potential-icon' + (lv > 0 ? ' learned' : '') + (!unlocked || disabled ? ' locked' : '') + (disabled ? ' temporarily-disabled' : '');
   var aria = def.name + (disabled ? '（' + (def.disabledReason || '目前暫不開放升級') + '）' : '');
@@ -3755,11 +3774,11 @@ function closeOfflineSummary() {
   if (overlay) overlay.style.display = 'none';
 }
 
-function renderTalentModal(snapshot) {
+function renderTalentModal() {
   var body = $id('talent-modal-body');
   var overlay = $id('talent-modal');
   if (!body || !overlay || overlay.style.display === 'none') return;
-  snapshot = snapshot || uiTalentPanelSnapshot();
+  var snapshot = arguments[0] || uiTalentPanelSnapshot();
   if (!snapshot) return;
   var sel = UI.selTalent;
   if (!sel) return;
@@ -3847,14 +3866,169 @@ function renderTalents() {
 UI.selSkill = null;      // 目前選取的技能 id
 UI.selTalent = null;     // { kind: 'talent'|'potential', id }
 UI.fuseSlots = [];       // 融合素材槽（最多 4）
+UI.optimisticSkillLoadout = null; // { values: [], acknowledged: bool }
 
-function skillCellHTML(id) {
-  var sk = skillDef(id);
+function uiSkillsPanelSnapshot() {
+  if (workerUiStateEnabled()) return panelData('skills');
+  if (typeof G === 'undefined' || !G.player) return null;
+  return {
+    skills: G.player.skills || {},
+    unlocks: G.player.skillUnlocks || {},
+    loadout: G.player.loadout || [],
+    fusions: G.player.fusions || [],
+    points: typeof availableSkillPoints === 'function' ? availableSkillPoints() : (G.player.skillPoints || 0),
+    budget: G.player.skillPointBudget || 0
+  };
+}
+
+function skillViewReincarnations(headerSnapshot, talentSnapshot) {
+  if (talentSnapshot) return talentViewReincarnations(talentSnapshot);
+  var player = headerSnapshot && headerSnapshot.player;
+  return Math.max(0, Math.floor(Number(player && player.reincarnations) || 0));
+}
+
+function skillViewLevel(snapshot, id) {
+  return Math.max(0, Math.floor(Number(snapshot && snapshot.skills && snapshot.skills[id]) || 0));
+}
+
+function skillViewDef(snapshot, id) {
+  if (SKILLS[id]) return SKILLS[id];
+  var fusions = snapshot && Array.isArray(snapshot.fusions) ? snapshot.fusions : [];
+  for (var i = 0; i < fusions.length; i++) {
+    if (fusions[i] && fusions[i].id === id) {
+      return typeof resolveFusionRecord === 'function'
+        ? resolveFusionRecord(fusions[i])
+        : fusions[i];
+    }
+  }
+  return null;
+}
+
+function skillViewMaxLevel(def, reincarnations) {
+  var rc = Math.max(0, Math.floor(Number(reincarnations) || 0));
+  if (def && def.cat === 'fusion') {
+    var fusionAdd = typeof REINCARNATION_FUSION_MAX_LEVELS !== 'undefined' &&
+      REINCARNATION_FUSION_MAX_LEVELS[rc] !== undefined
+      ? REINCARNATION_FUSION_MAX_LEVELS[rc]
+      : rc * 20;
+    return (def.maxLv || 40) + fusionAdd;
+  }
+  if (typeof REINCARNATION_SKILL_MAX_LEVELS !== 'undefined' &&
+      REINCARNATION_SKILL_MAX_LEVELS[rc] !== undefined) {
+    return REINCARNATION_SKILL_MAX_LEVELS[rc];
+  }
+  if (def && def.cat === 'passive') return 30 + Math.min(10, rc) * 10;
+  return 20 + Math.min(10, rc) * 10;
+}
+
+function skillViewPotentialMaxLevel(reincarnations) {
+  var rc = Math.max(0, Math.floor(Number(reincarnations) || 0));
+  if (typeof REINCARNATION_SKILL_MAX_LEVELS !== 'undefined' &&
+      REINCARNATION_SKILL_MAX_LEVELS[rc] !== undefined) {
+    return REINCARNATION_SKILL_MAX_LEVELS[rc];
+  }
+  return POTENTIAL_SKILL_BASE_MAX_LEVEL + Math.min(10, rc) * 10;
+}
+
+function skillViewUnlockReason(snapshot, headerSnapshot, id, def) {
+  var level = skillViewLevel(snapshot, id);
+  var playerLevel = Math.max(1, Math.floor(Number(
+    headerSnapshot && headerSnapshot.player && headerSnapshot.player.level
+  ) || 1));
+  var unlockLevel = Math.max(0, Math.floor(Number(def && def.unlockLv) || 0));
+  var unlocked = !!(snapshot && snapshot.unlocks && snapshot.unlocks[id]) ||
+    level > 0 ||
+    unlockLevel <= 0 ||
+    playerLevel >= unlockLevel;
+  return unlocked ? null : '需人物達到 Lv.' + unlockLevel + ' 才解鎖';
+}
+
+function skillViewCatSpentPoints(snapshot, cat) {
+  var sum = 0;
+  var levels = snapshot && snapshot.skills ? snapshot.skills : {};
+  for (var id in levels) {
+    var def = SKILLS[id];
+    if (def && def.cat === cat) sum += Math.max(0, Math.floor(Number(levels[id]) || 0));
+  }
+  return sum;
+}
+
+function skillViewSpentPoints(skillsSnapshot, talentSnapshot, reincarnations) {
+  var spent = 0;
+  var levels = skillsSnapshot && skillsSnapshot.skills ? skillsSnapshot.skills : {};
+  for (var id in levels) spent += Math.max(0, Math.floor(Number(levels[id]) || 0));
+  var potentialMax = skillViewPotentialMaxLevel(reincarnations);
+  POTENTIAL_TALENTS.forEach(function (def) {
+    spent += talentViewPotentialLevel(talentSnapshot, def.id, potentialMax);
+  });
+  return spent;
+}
+
+function skillViewLoadoutSize(headerSnapshot, reincarnations) {
+  if (reincarnations >= 1) return 20;
+  var level = Math.max(1, Math.floor(Number(
+    headerSnapshot && headerSnapshot.player && headerSnapshot.player.level
+  ) || 1));
+  return Math.min(20, Math.max(2, 2 + Math.floor(level / 50)));
+}
+
+function skillViewLoadout(snapshot) {
+  if (workerUiStateEnabled() && UI.optimisticSkillLoadout) {
+    return UI.optimisticSkillLoadout.values;
+  }
+  return snapshot && Array.isArray(snapshot.loadout) ? snapshot.loadout : [];
+}
+
+function skillViewDescription(id, def, level, skipFusionDetail, isPotential) {
+  if (isPotential) return describePotentialSkill(def, level);
+  if (def && def.cat === 'fusion' && !SKILLS[id]) {
+    if (!workerUiStateEnabled()) return describeSkill(id, level, skipFusionDetail);
+    var componentNames = (def.components || []).map(function (componentId) {
+      return SKILLS[componentId] ? SKILLS[componentId].name : componentId;
+    });
+    return esc(def.flavor || '融合技能') +
+      (skipFusionDetail || !componentNames.length
+        ? ''
+        : '<div class="skt-components">（融合自：' + componentNames.map(esc).join(' ＋ ') + '）</div>');
+  }
+  return describeSkill(id, level, skipFusionDetail);
+}
+
+function runSkillUiAction(commandName, id, pendingRef, legacyAction, panels, onSuccess) {
+  if (!workerUiStateEnabled()) {
+    var legacyError = legacyAction(id);
+    if (legacyError) blog('⚠️ ' + legacyError, 'warn');
+    else if (onSuccess) onSuccess();
+    renderSkills();
+    return;
+  }
+
+  sendUiCommand(commandName, { id: id }, {
+    keys: nodePendingKey(pendingRef),
+    panels: panels
+  }).then(function (result) {
+    var error = uiCommandResultError(result);
+    if (error) reportUiCommandFailure('技能操作失敗', error, panels);
+    else if (onSuccess) onSuccess();
+  }, function (error) {
+    reportUiCommandFailure('技能操作失敗', error, panels);
+  });
+}
+
+function skillCellHTML(id, skillsSnapshot, talentSnapshot, headerSnapshot) {
+  var usingSnapshot = !!skillsSnapshot;
+  var sk = usingSnapshot ? skillViewDef(skillsSnapshot, id) : skillDef(id);
   if (!sk) return '';
-  var lv = skillLevel(id);
-  var lock = skillUnlockReason(id) || tierLockReason(id);
-  var inLoadout = (G.player.loadout || []).indexOf(id) >= 0;
-  var maxLv = skillMaxLv(sk);
+  var reincarnations = usingSnapshot
+    ? skillViewReincarnations(headerSnapshot, talentSnapshot)
+    : reincarnationCountSafe();
+  var lv = usingSnapshot ? skillViewLevel(skillsSnapshot, id) : skillLevel(id);
+  var lock = usingSnapshot
+    ? skillViewUnlockReason(skillsSnapshot, headerSnapshot, id, sk)
+    : (skillUnlockReason(id) || tierLockReason(id));
+  var loadout = usingSnapshot ? skillViewLoadout(skillsSnapshot) : (G.player.loadout || []);
+  var inLoadout = loadout.indexOf(id) >= 0;
+  var maxLv = usingSnapshot ? skillViewMaxLevel(sk, reincarnations) : skillMaxLv(sk);
   var inFusion = (UI.fuseSlots || []).indexOf(id) >= 0;
   var cls = 'tree-cell' + (lv > 0 ? ' learned' : '') + (lock ? ' locked' : '') +
     (UI.selSkill === id ? ' selected' : '') + (inLoadout ? ' equipped' : '') +
@@ -3869,23 +4043,42 @@ function skillCellHTML(id) {
 function renderSkills() {
   var treesBox = $id('skill-trees');
   if (!treesBox) return;
-  var p = G.player;
-  $id('sp-count').textContent = availableSkillPoints() + '（等級 ' + p.level + ' 共 ' + totalSkillPoints() + ' 點，已用 ' + spentSkillPoints() + '）';
+  var skillsSnapshot = uiSkillsPanelSnapshot();
+  var talentSnapshot = uiTalentPanelSnapshot();
+  var headerSnapshot = uiHeaderPanelSnapshot();
+  if (!skillsSnapshot || !talentSnapshot || !headerSnapshot) {
+    treesBox.innerHTML = '<div class="panel hint">正在載入技能 Snapshot…</div>';
+    return;
+  }
+  var player = headerSnapshot.player || {};
+  var reincarnations = skillViewReincarnations(headerSnapshot, talentSnapshot);
+  var spentPoints = skillViewSpentPoints(skillsSnapshot, talentSnapshot, reincarnations);
+  var availablePoints = Math.max(0, Math.floor(Number(skillsSnapshot.points) || 0));
+  var totalPoints = Math.max(
+    Math.floor(Number(skillsSnapshot.budget) || 0),
+    availablePoints + spentPoints
+  );
+  $id('sp-count').textContent = availablePoints + '（等級 ' + (player.level || 1) +
+    ' 共 ' + totalPoints + ' 點，已用 ' + spentPoints + '）';
 
   // 裝載欄（初始 2 格，每 20 級再 +1 格，最多 20 格）
   var loBox = $id('skill-loadout');
-  var lo = p.loadout || [];
-  var cap = loadoutSize();
-  var reinc = typeof reincarnationCount === 'function' ? reincarnationCount() : 0;
-  $id('loadout-cap').textContent = lo.length + '/' + cap + ' 格' + (reinc >= 1 ? '（1 轉已解鎖全部 20 格）' : '（初始 2 格，每 20 級再 +1 格）');
+  var lo = skillViewLoadout(skillsSnapshot);
+  var cap = skillViewLoadoutSize(headerSnapshot, reincarnations);
+  var loadoutPendingKey = nodePendingKey('skill-loadout');
+  var loadoutPending = isUiCommandPending(loadoutPendingKey);
+  $id('loadout-cap').textContent = lo.length + '/' + cap + ' 格' + (reincarnations >= 1 ? '（1 轉已解鎖全部 20 格）' : '（初始 2 格，每 20 級再 +1 格）');
   var lh = '';
   for (var i = 0; i < cap; i++) {
     var id0 = lo[i];
     var isPot0 = typeof id0 === 'string' && id0.indexOf('potential:') === 0;
-    var d0 = id0 ? (isPot0 ? potentialDef(id0.slice(10)) : skillDef(id0)) : null;
+    var d0 = id0 ? (isPot0 ? potentialDef(id0.slice(10)) : skillViewDef(skillsSnapshot, id0)) : null;
     if (d0) {
-      lh += '<span class="loadout-slot filled" draggable="true" data-index="' + i + '" data-skill-unequip="' + id0 + '" data-sk="' + id0 + '">' +
-        d0.emoji + ' ' + esc(d0.name) + ' Lv.' + (isPot0 ? potentialLevel(d0.id) : skillLevel(id0)) + '</span>';
+      var loadoutLevel = isPot0
+        ? talentViewPotentialLevel(talentSnapshot, d0.id, skillViewPotentialMaxLevel(reincarnations))
+        : skillViewLevel(skillsSnapshot, id0);
+      lh += '<span class="loadout-slot filled" draggable="' + (loadoutPending ? 'false' : 'true') + '" data-index="' + i + '" data-skill-unequip="' + id0 + '" data-sk="' + id0 + '" data-ui-pending-key="' + loadoutPendingKey + '"' + (loadoutPending ? ' aria-disabled="true"' : '') + '>' +
+        d0.emoji + ' ' + esc(d0.name) + ' Lv.' + loadoutLevel + '</span>';
     } else {
       lh += '<span class="loadout-slot" data-index="' + i + '">空欄位</span>';
     }
@@ -3894,9 +4087,11 @@ function renderSkills() {
 
   // 融合技（置頂區）
   var fuList = $id('fusion-skill-list');
-  var fusions = p.fusions || [];
+  var fusions = skillsSnapshot.fusions || [];
   fuList.innerHTML = fusions.length
-    ? fusions.map(function (f) { return skillCellHTML(f.id); }).join('')
+    ? fusions.map(function (f) {
+      return skillCellHTML(f.id, skillsSnapshot, talentSnapshot, headerSnapshot);
+    }).join('')
     : '<span class="hint">尚無融合技 — 使用下方「技能融合」創造你的專屬奧義！</span>';
 
   // 技能樹（每系一棵，技能不受前置投入點數限制）
@@ -3904,27 +4099,31 @@ function renderSkills() {
   for (var cat in SKILL_CATS) {
     var cells = [];
     for (var id in SKILLS) {
-      if (SKILLS[id].cat === cat) cells.push(skillCellHTML(id));
+      if (SKILLS[id].cat === cat) {
+        cells.push(skillCellHTML(id, skillsSnapshot, talentSnapshot, headerSnapshot));
+      }
     }
     var rows = '';
     for (var r = 0; r < cells.length; r += 6) {
       rows += '<div class="tree-row">' + cells.slice(r, r + 6).join('') + '</div>';
     }
     h += '<div class="tree-panel"><div class="tree-title">' + SKILL_CATS[cat].emoji + ' ' + SKILL_CATS[cat].name +
-      ' <span class="dim-text">已投入 ' + catSpentPoints(cat) + ' 點</span></div>' + rows + '</div>';
+      ' <span class="dim-text">已投入 ' + skillViewCatSpentPoints(skillsSnapshot, cat) + ' 點</span></div>' + rows + '</div>';
   }
-  if (reincarnationCount() >= 3) {
-    var potentialCells = POTENTIAL_TALENTS.map(function (def, index) { return potentialNodeHTML(def, index); });
+  if (reincarnations >= 3) {
+    var potentialCells = POTENTIAL_TALENTS.map(function (def, index) {
+      return potentialNodeHTML(def, index, talentSnapshot, headerSnapshot);
+    });
     var potentialRows = '';
     for (var pr = 0; pr < potentialCells.length; pr += 6) {
       potentialRows += '<div class="tree-row">' + potentialCells.slice(pr, pr + 6).join('') + '</div>';
     }
-    h += '<div class="tree-panel potential-skill-panel"><div class="tree-title">✨ 潛力 <span class="dim-text">技能分類；使用技能點與金幣　已解鎖 ' + potentialUnlockedCount() + '/' + POTENTIAL_NODE_COUNT + '</span></div>' + potentialRows + '</div>';
+    h += '<div class="tree-panel potential-skill-panel"><div class="tree-title">✨ 潛力 <span class="dim-text">技能分類；使用技能點與金幣　已解鎖 ' + talentViewPotentialUnlockedCount(talentSnapshot) + '/' + POTENTIAL_NODE_COUNT + '</span></div>' + potentialRows + '</div>';
   }
   treesBox.innerHTML = h;
 
-  renderSkillModal();
-  renderFusionPanel();
+  renderSkillModal(skillsSnapshot, talentSnapshot, headerSnapshot);
+  renderFusionPanel(skillsSnapshot);
 }
 
 /* ---- 技能升級彈窗 ---- */
@@ -3986,27 +4185,38 @@ function renderSkillModal() {
   var body = $id('skill-modal-body');
   var overlay = $id('skill-modal');
   if (!body || !overlay || overlay.style.display === 'none') return;
+  var skillsSnapshot = arguments[0] || uiSkillsPanelSnapshot();
+  var talentSnapshot = arguments[1] || uiTalentPanelSnapshot();
+  var headerSnapshot = arguments[2] || uiHeaderPanelSnapshot();
+  if (!skillsSnapshot || !talentSnapshot || !headerSnapshot) return;
   var ref = UI.selSkill;
   var potentialId = potentialSkillId(ref);
   var isPotential = potentialId !== null;
   var id = isPotential ? potentialId : ref;
-  var sk = id ? (isPotential ? potentialDef(id) : skillDef(id)) : null;
+  var sk = id ? (isPotential ? potentialDef(id) : skillViewDef(skillsSnapshot, id)) : null;
   if (!sk) { closeSkillModal(); return; }
-  var lv = isPotential ? potentialLevel(id) : skillLevel(id);
-  var maxLv = isPotential ? potentialSkillMaxLv(id) : skillMaxLv(sk);
+  var reincarnations = skillViewReincarnations(headerSnapshot, talentSnapshot);
+  var maxLv = isPotential
+    ? skillViewPotentialMaxLevel(reincarnations)
+    : skillViewMaxLevel(sk, reincarnations);
+  var lv = isPotential
+    ? talentViewPotentialLevel(talentSnapshot, id, maxLv)
+    : skillViewLevel(skillsSnapshot, id);
   var lock = isPotential
-    ? (potentialTemporarilyDisabled(id) ? '此潛力技能目前暫不開放升級' : (potentialUnlocked(id) ? null : '潛力節點尚未解鎖'))
-    : (skillUnlockReason(id) || tierLockReason(id));
+    ? (potentialTemporarilyDisabled(id) ? '此潛力技能目前暫不開放升級' : (talentViewPotentialUnlocked(talentSnapshot, id) ? null : '潛力節點尚未解鎖'))
+    : skillViewUnlockReason(skillsSnapshot, headerSnapshot, id, sk);
   // 裝載欄鍵：一般技能＝id、潛力技能＝'potential:<id>'；主動潛力技能與一般技能一樣可裝載施放。
   var loadoutRef = isPotential ? 'potential:' + id : id;
   var canEquip = isPotential
     ? (typeof potentialEquippable === 'function' && potentialEquippable(sk))
     : (sk.cat !== 'passive');
-  var inLoadout = (G.player.loadout || []).indexOf(loadoutRef) >= 0;
+  var inLoadout = skillViewLoadout(skillsSnapshot).indexOf(loadoutRef) >= 0;
   var isFusion = !isPotential && sk.cat === 'fusion' && String(id).indexOf('fusion_') === 0;
   var description = function (level, skipFusion) {
-    return describeSkill(id, level, skipFusion);
+    return skillViewDescription(id, sk, level, skipFusion, isPotential);
   };
+  var pendingRef = isPotential ? 'potential:' + id : 'skill:' + id;
+  var pendingAttrs = pendingUiButtonAttributes(nodePendingKey(pendingRef));
   var category = isPotential ? ('潛力·' + potentialTypeLabel(sk) + potentialDmgLabel(sk)) : (SKILL_CATS[sk.cat] ? SKILL_CATS[sk.cat].name : '融合技');
   var potentialMeta = isPotential
     ? (sk.type === 'active' ? '<span class="sk-meta">⏱️ ' + sk.cd + 's</span>'
@@ -4025,14 +4235,15 @@ function renderSkillModal() {
   if (lock) h += '<div class="hint skill-unlock-hint">🔒 ' + esc(lock) + '</div>';
   h += '</div>';
 
-  h += '<div class="skill-modal-points">技能點：' + availableSkillPoints() + '</div>';
+  h += '<div class="skill-modal-points">技能點：' + Math.max(0, Math.floor(Number(skillsSnapshot.points) || 0)) + '</div>';
   h += '<div class="detail-actions skill-modal-actions">';
   if (lv < maxLv && !lock) {
     var cost = skillUpgradeCost(lv);
     var skillRef = isPotential ? 'potential:' + id : id;
-    h += '<button class="btn sm" data-skill-learn="' + skillRef + '" data-tip="花費 ' + fmt(cost) + ' 金幣"' + (G.player.gold < cost ? ' disabled' : '') + '>' +
+    var insufficientGold = (Number(headerSnapshot.player && headerSnapshot.player.gold) || 0) < cost;
+    h += '<button class="btn sm" data-skill-learn="' + skillRef + '" data-tip="花費 ' + fmt(cost) + ' 金幣"' + pendingAttrs + (insufficientGold ? ' disabled' : '') + '>' +
       (lv === 0 ? '📖 學習' : '⬆️ 升級') + '</button>';
-    h += '<button class="btn sm" data-skill-max="' + skillRef + '" data-tip="自動消耗技能點與金幣，升到目前技能上限">⚡ 一鍵滿級</button>';
+    h += '<button class="btn sm" data-skill-max="' + skillRef + '" data-tip="自動消耗技能點與金幣，升到目前技能上限"' + pendingAttrs + '>⚡ 一鍵滿級</button>';
   } else if (lv >= maxLv) {
     h += '<div style="text-align:center; padding: 4px; color: var(--good); font-size: 12px;">已滿級</div>';
     h += '<div style="visibility: hidden;"></div>'; // 保留一鍵滿級欄位，讓後方按鈕位置固定
@@ -4041,15 +4252,15 @@ function renderSkillModal() {
   }
 
   if (lv > 0) {
-    h += '<button class="btn sm warn" data-skill-downgrade="' + (isPotential ? 'potential:' + id : id) + '" data-tip="退回 1 技能點（不退還金幣）">⬇️ 降級</button>';
+    h += '<button class="btn sm warn" data-skill-downgrade="' + (isPotential ? 'potential:' + id : id) + '" data-tip="退回 1 技能點（不退還金幣）"' + pendingAttrs + '>⬇️ 降級</button>';
   } else {
     h += '<div style="visibility: hidden;"></div>'; // empty grid cell
   }
 
   if (canEquip && lv > 0) {
     h += inLoadout
-      ? '<button class="btn sm warn" data-skill-unequip="' + loadoutRef + '">卸下</button>'
-      : '<button class="btn sm" data-skill-equip="' + loadoutRef + '">⚔️ 裝備</button>';
+      ? '<button class="btn sm warn" data-skill-unequip="' + loadoutRef + '"' + pendingAttrs + '>卸下</button>'
+      : '<button class="btn sm" data-skill-equip="' + loadoutRef + '"' + pendingAttrs + '>⚔️ 裝備</button>';
   } else if (isPotential && !canEquip && lv > 0) {
     h += '<button class="btn sm" disabled data-tip="被動潛力技能學會即常駐生效">🌀 常駐</button>';
   } else {
@@ -4069,7 +4280,7 @@ function renderSkillModal() {
 
   if (lv > 0) {
     var deleteRef = isPotential ? 'potential:' + id : id;
-    h += '<button class="btn sm danger" data-skill-delete="' + deleteRef + '">🗑️ 刪除</button>';
+    h += '<button class="btn sm danger" data-skill-delete="' + deleteRef + '"' + pendingAttrs + '>🗑️ 刪除</button>';
   } else {
     h += '<div style="visibility: hidden;"></div>';
   }
@@ -4082,18 +4293,27 @@ function renderSkillModal() {
 function showSkillTooltip(ref, anchorEl) {
   var tip = $id('sk-tooltip');
   if (!tip) return;
+  var skillsSnapshot = uiSkillsPanelSnapshot();
+  var talentSnapshot = uiTalentPanelSnapshot();
+  var headerSnapshot = uiHeaderPanelSnapshot();
+  if (!skillsSnapshot || !talentSnapshot || !headerSnapshot) return;
   // 潛力技能沿用同一個技能提示元件（data-sk="potential:id"）。
   var potId = (typeof potentialSkillId === 'function') ? potentialSkillId(ref) : null;
   var isPotential = potId !== null;
   var id = isPotential ? potId : ref;
-  var sk = isPotential ? potentialDef(id) : skillDef(id);
+  var sk = isPotential ? potentialDef(id) : skillViewDef(skillsSnapshot, id);
   if (!sk) return;
-  var lv = isPotential ? potentialLevel(id) : skillLevel(id);
-  var maxLv = isPotential ? potentialSkillMaxLv(id) : skillMaxLv(sk);
+  var reincarnations = skillViewReincarnations(headerSnapshot, talentSnapshot);
+  var maxLv = isPotential
+    ? skillViewPotentialMaxLevel(reincarnations)
+    : skillViewMaxLevel(sk, reincarnations);
+  var lv = isPotential
+    ? talentViewPotentialLevel(talentSnapshot, id, maxLv)
+    : skillViewLevel(skillsSnapshot, id);
   var lock = isPotential
     ? (potentialTemporarilyDisabled(id) ? '此潛力技能目前暫不開放升級'
-       : (potentialUnlocked(id) ? null : (reincarnationCountSafe() < 3 ? '潛力技能需在 3 轉後解鎖' : '潛力節點尚未解鎖')))
-    : (skillUnlockReason(id) || tierLockReason(id));
+       : (talentViewPotentialUnlocked(talentSnapshot, id) ? null : (reincarnations < 3 ? '潛力技能需在 3 轉後解鎖' : '潛力節點尚未解鎖')))
+    : skillViewUnlockReason(skillsSnapshot, headerSnapshot, id, sk);
   var h = '<div class="skt-name">' + sk.emoji + ' ' + esc(sk.name) +
     ' <span class="dim-text">Lv.' + lv + '/' + maxLv + (isPotential ? '｜潛力·' + potentialTypeLabel(sk) + potentialDmgLabel(sk) : '') + '</span></div>';
   h += skillTagsHTML(id, sk, lv, isPotential);
@@ -4103,7 +4323,7 @@ function showSkillTooltip(ref, anchorEl) {
   } else if (sk.cat !== 'passive') {
     h += '<div class="skt-meta">🔵 ' + skillManaCost(sk, Math.max(1, lv)) + ' MP　⏱️ ' + sk.cd + 's</div>';
   }
-  h += '<div class="skt-desc">' + describeSkill(id, Math.max(1, lv)) + '</div>';
+  h += '<div class="skt-desc">' + skillViewDescription(id, sk, Math.max(1, lv), false, isPotential) + '</div>';
   if (lock) h += '<div class="skt-lock skill-unlock-hint">🔒 ' + esc(lock) + '</div>';
   h += '<div class="skt-hint">點擊開啟升級面板</div>';
   tip.innerHTML = h;
@@ -4496,15 +4716,17 @@ function toggleAffixPool(anchorEl) {
 }
 
 // 融合面板
-function renderFusionPanel() {
+function renderFusionPanel(skillsSnapshot) {
   var slotBox = $id('fusion-slots');
   if (!slotBox) return;
+  skillsSnapshot = skillsSnapshot || uiSkillsPanelSnapshot();
+  if (!skillsSnapshot) return;
   var h = '';
   for (var i = 0; i < 4; i++) {
     var id = UI.fuseSlots[i];
     var d = id ? SKILLS[id] : null;
     if (d) {
-      var lv = skillLevel(id);
+      var lv = skillViewLevel(skillsSnapshot, id);
       h += '<div class="tree-cell fusion-selected" data-fuse-remove="' + id + '" data-tip="點擊移出" style="margin:0 4px; cursor:pointer;">' +
         '<span class="tc-emoji">' + d.emoji + '</span>' +
         '<span class="tc-lv">' + lv + '</span>' +
@@ -4517,7 +4739,7 @@ function renderFusionPanel() {
   var info = $id('fusion-preview');
   if (UI.fuseSlots.length >= 2) {
     var sum = 0;
-    UI.fuseSlots.forEach(function (id2) { sum += skillLevel(id2); });
+    UI.fuseSlots.forEach(function (id2) { sum += skillViewLevel(skillsSnapshot, id2); });
     info.textContent = '融合後初始等級 Lv.' + sum + '（上限 Lv.' + (sum + 20) + '）｜變異機率 ' +
       fmt1(Math.min(100, FUSION_MUTATION_CHANCE)) + '%｜素材技能將歸零（點數轉移至融合技）';
   } else {
@@ -5401,31 +5623,54 @@ function initUI() {
     if (mx) {
       var maxRef = mx.getAttribute('data-skill-max');
       var maxPotentialId = potentialSkillId(maxRef);
-      var merr = maxPotentialId !== null ? potentialMax(maxPotentialId) : maxUpgradeSkill(maxRef);
-      if (merr) blog('⚠️ ' + merr, 'warn');
-      renderSkills();
+      if (maxPotentialId !== null) {
+        runSkillUiAction(
+          'talent.potentialMax', maxPotentialId, maxRef, potentialMax,
+          ['skills', 'talents', 'header']
+        );
+      } else {
+        runSkillUiAction(
+          'skill.maxUpgrade', maxRef, 'skill:' + maxRef, maxUpgradeSkill,
+          ['skills', 'header']
+        );
+      }
       return;
     }
     var ln = e.target.closest('[data-skill-learn]');
     if (ln) {
       var learnRef = ln.getAttribute('data-skill-learn');
       var learnPotentialId = potentialSkillId(learnRef);
-      var lerr = learnPotentialId !== null ? potentialUpgrade(learnPotentialId) : learnOrUpgradeSkill(learnRef);
-      if (lerr) blog('⚠️ ' + lerr, 'warn');
-      renderSkills();
+      if (learnPotentialId !== null) {
+        runSkillUiAction(
+          'talent.potentialUpgrade', learnPotentialId, learnRef, potentialUpgrade,
+          ['skills', 'talents', 'header']
+        );
+      } else {
+        runSkillUiAction(
+          'skill.learn', learnRef, 'skill:' + learnRef, learnOrUpgradeSkill,
+          ['skills', 'header']
+        );
+      }
       return;
     }
     var eq = e.target.closest('[data-skill-equip]');
     if (eq) {
-      var eerr = equipSkillToLoadout(eq.getAttribute('data-skill-equip'));
-      if (eerr) blog('⚠️ ' + eerr, 'warn');
-      renderSkills();
+      var equipRef = eq.getAttribute('data-skill-equip');
+      runSkillUiAction(
+        'skill.equipLoadout', equipRef,
+        potentialSkillId(equipRef) !== null ? equipRef : 'skill:' + equipRef,
+        equipSkillToLoadout, ['skills']
+      );
       return;
     }
     var uq = e.target.closest('[data-skill-unequip]');
     if (uq) {
-      unequipSkillFromLoadout(uq.getAttribute('data-skill-unequip'));
-      renderSkills();
+      var unequipRef = uq.getAttribute('data-skill-unequip');
+      runSkillUiAction(
+        'skill.unequipLoadout', unequipRef,
+        potentialSkillId(unequipRef) !== null ? unequipRef : 'skill:' + unequipRef,
+        unequipSkillFromLoadout, ['skills']
+      );
       return;
     }
     // 點擊技能樹節點 → 開啟升級彈窗
@@ -5461,9 +5706,17 @@ function initUI() {
     if (dg) {
       var downRef = dg.getAttribute('data-skill-downgrade');
       var downPotentialId = potentialSkillId(downRef);
-      var dgerr = downPotentialId !== null ? potentialDowngrade(downPotentialId) : downgradeSkill(downRef);
-      if (dgerr) blog('⚠️ ' + dgerr, 'warn');
-      renderSkills();
+      if (downPotentialId !== null) {
+        runSkillUiAction(
+          'talent.potentialDowngrade', downPotentialId, downRef, potentialDowngrade,
+          ['skills', 'talents', 'header']
+        );
+      } else {
+        runSkillUiAction(
+          'skill.downgrade', downRef, 'skill:' + downRef, downgradeSkill,
+          ['skills', 'header']
+        );
+      }
       return;
     }
     // 融合素材：加入 / 移出
@@ -5490,7 +5743,9 @@ function initUI() {
       var deleteRef = fd.getAttribute('data-skill-delete');
       var isPotential = deleteRef.indexOf('potential:') === 0;
       var actualId = isPotential ? deleteRef.slice('potential:'.length) : deleteRef;
-      var skDefObj = isPotential ? potentialDef(actualId) : skillDef(actualId);
+      var skDefObj = isPotential
+        ? potentialDef(actualId)
+        : skillViewDef(uiSkillsPanelSnapshot(), actualId);
       if (skDefObj) {
         var isFusionSkill = !isPotential && skDefObj.cat === 'fusion';
         var confirmMsg = isFusionSkill 
@@ -5499,17 +5754,22 @@ function initUI() {
         var confirmTitle = isFusionSkill ? '融合技刪除確認' : '技能重置確認';
         
         showConfirmDialog(confirmMsg, function () {
-          var err = null;
           if (isFusionSkill) {
-            err = deleteFusion(actualId);
+            runSkillUiAction(
+              'skill.deleteFusion', actualId, 'skill:' + actualId, deleteFusion,
+              ['skills'], function () { UI.selSkill = null; }
+            );
           } else if (isPotential) {
-            err = potentialDelete(actualId);
+            runSkillUiAction(
+              'talent.potentialDelete', actualId, deleteRef, potentialDelete,
+              ['skills', 'talents', 'header'], function () { UI.selSkill = null; }
+            );
           } else {
-            err = deleteSkill(actualId);
+            runSkillUiAction(
+              'skill.delete', actualId, 'skill:' + actualId, deleteSkill,
+              ['skills'], function () { UI.selSkill = null; }
+            );
           }
-          if (err) blog('⚠️ ' + err, 'warn');
-          UI.selSkill = null;
-          renderSkills();
         }, { title: confirmTitle, danger: true });
       }
       return;
@@ -5613,17 +5873,57 @@ function initUI() {
         var fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
         var toIndex = parseInt(target.getAttribute('data-index'), 10);
         if (!isNaN(fromIndex) && !isNaN(toIndex) && fromIndex !== toIndex) {
-          var lo = G.player.loadout || [];
-          if (fromIndex >= 0 && fromIndex < lo.length) {
-            if (toIndex >= lo.length) {
-              var id = lo.splice(fromIndex, 1)[0];
-              lo.push(id);
-            } else {
-              var item = lo.splice(fromIndex, 1)[0];
-              lo.splice(toIndex, 0, item);
-            }
-            G.player.loadout = lo;
+          if (workerUiStateEnabled()) {
+            var pendingKey = nodePendingKey('skill-loadout');
+            if (isUiCommandPending(pendingKey)) return;
+            var skillsSnapshot = uiSkillsPanelSnapshot();
+            var currentLoadout = skillViewLoadout(skillsSnapshot).slice();
+            if (fromIndex < 0 || fromIndex >= currentLoadout.length) return;
+            var moved = currentLoadout.splice(fromIndex, 1)[0];
+            if (toIndex >= currentLoadout.length) currentLoadout.push(moved);
+            else currentLoadout.splice(toIndex, 0, moved);
+
+            UI.optimisticSkillLoadout = {
+              values: currentLoadout,
+              acknowledged: false
+            };
             renderSkills();
+            sendUiCommand('skill.reorderLoadout', {
+              from: fromIndex,
+              to: toIndex
+            }, {
+              keys: pendingKey,
+              panels: []
+            }).then(function (result) {
+              var error = uiCommandResultError(result);
+              if (error) {
+                UI.optimisticSkillLoadout = null;
+                reportUiCommandFailure('技能排序失敗', error, ['skills']);
+                renderSkills();
+                return;
+              }
+              if (UI.optimisticSkillLoadout) {
+                UI.optimisticSkillLoadout.acknowledged = true;
+              }
+              requestPanelData('skills', true);
+            }, function (error) {
+              UI.optimisticSkillLoadout = null;
+              reportUiCommandFailure('技能排序失敗', error, ['skills']);
+              renderSkills();
+            });
+          } else {
+            var lo = G.player.loadout || [];
+            if (fromIndex >= 0 && fromIndex < lo.length) {
+              if (toIndex >= lo.length) {
+                var id = lo.splice(fromIndex, 1)[0];
+                lo.push(id);
+              } else {
+                var item = lo.splice(fromIndex, 1)[0];
+                lo.splice(toIndex, 0, item);
+              }
+              G.player.loadout = lo;
+              renderSkills();
+            }
           }
         }
       }
@@ -5699,10 +5999,28 @@ function initUI() {
   var fuseBtn2 = $id('btn-fuse');
   if (fuseBtn2) {
     fuseBtn2.addEventListener('click', function () {
-      var ferr = fuseSkills(UI.fuseSlots.slice());
-      if (ferr) blog('⚠️ 融合失敗：' + ferr, 'warn');
-      else UI.fuseSlots = [];
-      renderSkills();
+      var fusionIds = UI.fuseSlots.slice();
+      if (!workerUiStateEnabled()) {
+        var ferr = fuseSkills(fusionIds);
+        if (ferr) blog('⚠️ 融合失敗：' + ferr, 'warn');
+        else UI.fuseSlots = [];
+        renderSkills();
+        return;
+      }
+
+      var fusionKeys = fusionIds.map(function (id) {
+        return nodePendingKey('skill:' + id);
+      });
+      sendUiCommand('skill.fuse', { ids: fusionIds }, {
+        keys: fusionKeys,
+        panels: ['skills']
+      }).then(function (result) {
+        var error = uiCommandResultError(result);
+        if (error) reportUiCommandFailure('技能融合失敗', error, ['skills']);
+        else UI.fuseSlots = [];
+      }, function (error) {
+        reportUiCommandFailure('技能融合失敗', error, ['skills']);
+      });
     });
     $id('btn-fuse-clear').addEventListener('click', function () {
       UI.fuseSlots = [];
