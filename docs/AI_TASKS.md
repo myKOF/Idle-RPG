@@ -433,13 +433,32 @@ Claude 的協議 v4 + Worker 端配套（新增 `gem.composeAll`、`gem.dismantl
 
 ### P3 追加搬遷項（協議 v4 裁決）
 
-除了原本列的四項渲染副作用，**護盾正規化**要一起處理，因為它相依的
-`mergedSkillFx` 也只存在於 `ui.js`——那是技能效果合併，本來就屬模擬層：
+1. ~~把 `mergedSkillFx` 與 `currentShieldSkillCap` 從 `ui.js` 搬進 `js/skills.js`~~
+   ✅ 已完成（commit `f24a816`）
+2. ~~`playerShieldMax` 的變更狀態部分交給 Claude 放進 Worker~~
+   **❌ 撤銷此項——查證後確認不需要做。**
 
-1. 把 `mergedSkillFx` 與 `currentShieldSkillCap` 從 `ui.js` 搬進 `js/skills.js`
-2. `playerShieldMax`（`ui.js:1673`）拆成兩半：**變更狀態的部分**
-   （寫 `entity.shield` / `shieldMax` / `shieldMaxVersion`）交給 Claude 放進 Worker，
-   `ui.js` 只保留讀取顯示。搬好後通知 Claude 接上。
+   2026-07-27 Claude 稽核模擬層每一條寫入 `.shield` 的路徑，結論是
+   **模擬層已完整維護護盾欄位**，`ui.js` 那份是冗餘不是缺口：
+
+   | 位置 | 行為 | 維護 shieldMax |
+   |---|---|---|
+   | `formula.js:719` | 吸收扣除 | ✅ 721-724 |
+   | `formula.js:792` | 治療溢出轉護盾 | ✅ 797（`refreshShieldMaxAfterGain`）|
+   | `skills.js:574` | 消耗護盾 | ✅ 575 |
+   | `skills.js:729`／`1190`／`2534` | 技能給護盾 | ✅ 730／1191／2537 |
+   | `combat.js:558`／`player.js:215` | 重生／轉生歸零 | ✅ 同行設好全部欄位 |
+
+   `playerShieldMax` 內「版本號不符就遷移」那條分支**永遠不會執行**：
+   戰鬥實體是純執行期物件（存檔不含 `FIELD`／`TOWER` 實體，已實測確認），
+   每次開機由 `newPlayerEntity`（`combat.js:34`）建立時就蓋上當前版本號，
+   之後由 `refreshShieldMaxAfterGain` 維護。實測 60 次取樣，版本號從未過期。
+
+   **給 Codex 的動作**：把 `playerShieldMax`（`ui.js:1670`）縮成純讀取
+   （回傳 `entity.shieldMax`，不要再寫 `entity.shield` / `shieldMax` /
+   `shieldMaxVersion` / `shieldSkillBase` / `shieldSkillPct`），
+   並刪掉 `ui.js:1667` 那層同名的 `currentShieldSkillCap` 委派
+   （它遮蔽了 `js/skills.js` 的本尊，且依賴載入順序）。
 
 其餘三項（資源顯示旗標、鑲孔補齊、神鑄開放公告）Claude 已搬完，
 你只要刪掉 `ui.js` 對應的那幾段：
