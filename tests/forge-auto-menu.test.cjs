@@ -36,9 +36,18 @@ test('神鑄自動放入選單的操作列固定且清單獨立捲動', () => {
 test('神鑄切回頁面時依目前鑄造模式選擇素材分頁', () => {
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
 
-  assert.match(ui, /function forgeInventoryTab\(\)[\s\S]*c\.mode === 'gem'[\s\S]*return 'gems'[\s\S]*c\.mode === 'equip'[\s\S]*return 'items'/);
-  assert.match(ui, /function renderForgeAutoMenu\(\)[\s\S]*var invTab = forgeInventoryTab\(\)/);
-  assert.match(ui, /function renderForge\(\)[\s\S]*var invTab = forgeInventoryTab\(\)/);
+  assert.match(ui, /forge: \['forge', 'inv', 'gems', 'header'\]/, '神鑄頁應訂閱四份 Worker panel');
+  assert.match(ui, /var forgeSnapshot = uiForgePanelSnapshot\(\);[\s\S]*var inventorySnapshot = uiInventoryPanelSnapshot\(\);[\s\S]*var gemsSnapshot = uiGemsPanelSnapshot\(\);[\s\S]*var headerSnapshot = uiHeaderPanelSnapshot\(\);/);
+  assert.match(ui, /function forgeInventoryTab\(forge\)[\s\S]*c\.mode === 'gem'[\s\S]*return 'gems'[\s\S]*c\.mode === 'equip'[\s\S]*return 'items'/);
+  assert.match(ui, /function renderForgeAutoMenu\(forge, inventorySnapshot, gemsSnapshot\)[\s\S]*var invTab = forgeInventoryTab\(forge\)/);
+  assert.match(ui, /function renderForge\(\)[\s\S]*var invTab = forgeInventoryTab\(f\)/);
+  [
+    'placeItem', 'removeItem', 'placeGem', 'unloadAll', 'toggleDust',
+    'autoFillDust', 'start', 'cancel', 'setAuto', 'setAutoFill'
+  ].forEach((name) => {
+    assert.match(ui, new RegExp(`sendUiCommand\\('forge\\.${name}'`), `應送出 forge.${name}`);
+  });
+  assert.doesNotMatch(ui, /forgeState\(\)\.unlockNotified\s*=\s*true/, 'UI 不得再寫神鑄解鎖旗標');
 });
 
 test('寶石自動放入選單會設定明確高度並隔離滑鼠滾輪', () => {

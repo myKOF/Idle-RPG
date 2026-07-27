@@ -69,7 +69,10 @@ test('戰鬥與高塔技能列共用外層已取得的屬性，不重複呼叫 g
   assert.match(ui, /function renderMpSkill\(pEnt, prefix, stats\)/);
   assert.match(ui, /var st = stats \|\| getStats\(\);/);
   assert.match(ui, /function renderBattle\(\)[\s\S]*var st = getStats\(\);[\s\S]*renderMpSkill\(p, 'pv', st\);/);
-  assert.match(ui, /function renderTowerFight\(\)[\s\S]*var st = getStats\(\);[\s\S]*renderMpSkill\(p, 'tp', st\);/);
+  assert.match(ui, /function renderTowerFight\(\)[\s\S]*var st = headerSnapshot\.stats;[\s\S]*renderMpSkill\(p, 'tp', st\);/);
+  const towerFight = ui.match(/function renderTowerFight\(\) \{[\s\S]*?\n\}/);
+  assert.ok(towerFight);
+  assert.doesNotMatch(towerFight[0], /getStats\(\)/);
 });
 
 test('場景列以狀態簽章避免每個 UI tick 重寫', () => {

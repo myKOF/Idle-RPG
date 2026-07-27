@@ -50,7 +50,10 @@ var UI_PANEL_MIGRATION_ORDER = [
  */
 var UI_PANEL_SUBSCRIPTIONS_BY_TAB = {
   skills: ['skills', 'talents', 'header'],
-  talents: ['talents', 'header']
+  talents: ['talents', 'header'],
+  tower: ['tower', 'header'],
+  newforge: ['newforge', 'factory', 'header'],
+  forge: ['forge', 'inv', 'gems', 'header']
 };
 var UI_PERSISTENT_PANEL_SUBSCRIPTIONS = ['talents']; // controls talent-tab visibility
 
@@ -68,10 +71,20 @@ var UI_WORKER_STATE = {
   panelVersions: Object.create(null)
 };
 
+var UI_WORKER_HEALTH = {
+  startedAt: 0,
+  lastHeartbeatAt: 0,
+  lastTicks: 0,
+  alertShown: false,
+  errorSignature: ''
+};
+var UI_WORKER_BOOT_TIMEOUT_MS = 10000;
+var UI_WORKER_HEARTBEAT_TIMEOUT_MS = 5000;
+
 /*
  * A command can own several keys (for example an item and a furnace).  The
- * whole entry is released by its ACK or by the first authoritative panel
- * response requested after the command was sent.
+ * whole entry is released after a successful ACK and every authoritative
+ * panel response requested after that ACK; errors release it immediately.
  */
 var UI_COMMAND_PENDING = {
   seq: 0,
@@ -88,6 +101,90 @@ function workerUiStateEnabled() {
     WorkerBridge &&
     typeof WorkerBridge.enabled === 'function' &&
     WorkerBridge.enabled();
+}
+
+function noteWorkerHeartbeat(now) {
+  UI_WORKER_HEALTH.lastHeartbeatAt = now || Date.now();
+  UI_WORKER_HEALTH.startedAt = UI_WORKER_HEALTH.lastHeartbeatAt;
+}
+
+function workerErrorSignature(error) {
+  if (!error) return '';
+  return [error.where || '', error.message || '', error.stack || ''].join('|');
+}
+
+function showWorkerDeadNotice(error) {
+  if (typeof document === 'undefined' || $id('worker-dead-notice')) return;
+  var overlay = document.createElement('div');
+  overlay.id = 'worker-dead-notice';
+  overlay.setAttribute('role', 'alertdialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;' +
+    'justify-content:center;padding:24px;background:rgba(3,7,18,.88);';
+
+  var card = document.createElement('div');
+  card.style.cssText = 'width:min(520px,100%);padding:24px;border:1px solid #ef4444;border-radius:14px;' +
+    'background:#111827;color:#f9fafb;box-shadow:0 20px 60px rgba(0,0,0,.55);text-align:center;';
+  var title = document.createElement('h2');
+  title.textContent = '⚠️ 遊戲模擬已停止';
+  title.style.cssText = 'margin:0 0 12px;color:#fca5a5;';
+  var desc = document.createElement('p');
+  desc.textContent = 'Worker 已停止回應，畫面資料可能不再更新。請重新載入遊戲以恢復模擬。';
+  desc.style.cssText = 'margin:0 0 12px;line-height:1.65;';
+  var detail = document.createElement('pre');
+  detail.textContent = error && error.message ? String(error.message) : 'Worker heartbeat timeout';
+  detail.style.cssText = 'margin:0 0 18px;padding:10px;max-height:120px;overflow:auto;border-radius:8px;' +
+    'background:#030712;color:#d1d5db;text-align:left;white-space:pre-wrap;';
+  var reload = document.createElement('button');
+  reload.type = 'button';
+  reload.className = 'btn';
+  reload.textContent = '重新載入';
+  reload.addEventListener('click', function () { location.reload(); });
+
+  card.appendChild(title);
+  card.appendChild(desc);
+  card.appendChild(detail);
+  card.appendChild(reload);
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+  reload.focus();
+}
+
+function handleWorkerDead(error) {
+  if (!workerUiStateEnabled() || UI_WORKER_HEALTH.alertShown) return;
+  UI_WORKER_HEALTH.alertShown = true;
+  UI_WORKER_HEALTH.errorSignature = workerErrorSignature(error);
+  showWorkerDeadNotice(error);
+}
+
+function checkWorkerHealth() {
+  if (!workerUiStateEnabled() ||
+      typeof WorkerBridge.status !== 'function' ||
+      typeof document === 'undefined' ||
+      document.hidden) {
+    return;
+  }
+  var status = WorkerBridge.status();
+  var now = Date.now();
+  if (!UI_WORKER_HEALTH.startedAt) UI_WORKER_HEALTH.startedAt = now;
+  if (status.ticks !== UI_WORKER_HEALTH.lastTicks) {
+    UI_WORKER_HEALTH.lastTicks = status.ticks;
+    noteWorkerHeartbeat(now);
+  }
+  if (status.lastError && status.lastError.where === 'worker-onerror') {
+    var signature = workerErrorSignature(status.lastError);
+    if (signature && signature !== UI_WORKER_HEALTH.errorSignature) handleWorkerDead(status.lastError);
+    return;
+  }
+  if (status.started && !status.booted &&
+      now - UI_WORKER_HEALTH.startedAt >= UI_WORKER_BOOT_TIMEOUT_MS) {
+    handleWorkerDead({ message: 'Worker 啟動逾時' });
+    return;
+  }
+  if (status.booted && UI_WORKER_HEALTH.lastHeartbeatAt &&
+      now - UI_WORKER_HEALTH.lastHeartbeatAt >= UI_WORKER_HEARTBEAT_TIMEOUT_MS) {
+    handleWorkerDead({ message: 'Worker 超過 5 秒沒有回傳 TICK' });
+  }
 }
 
 function validUiPanelKey(key) {
@@ -158,9 +255,32 @@ function panelData(key) {
   return UI_WORKER_STATE.panels[key];
 }
 
+function peekUiPanelData(key) {
+  if (!validUiPanelKey(key) || !hasOwnUiState(UI_WORKER_STATE.panels, key)) return null;
+  return UI_WORKER_STATE.panels[key];
+}
+
 function applyUiSnapshot(snapshot) {
   if (!snapshot) return;
   if (snapshot.view) UI_WORKER_STATE.view = snapshot.view;
+}
+
+function handleWorkerUiEvents(events) {
+  (events || []).forEach(function (event) {
+    if (!event || event.kind !== 'notice') return;
+    if (event.key === 'towerResult') {
+      UI.pendingTowerResult = event.data || null;
+      requestPanelData('tower', true);
+      requestPanelData('header', true);
+    } else if (event.key === 'forgeUnlocked') {
+      requestPanelData('forge', true);
+      requestPanelData('header', true);
+      showConfirmDialog('神鑄系統已開啟！\n\n將 6 件相同品質的裝備（傳說/神話/創世）放入六芒星法陣，即可鑄造下一品質的裝備。是否前往查看？', function () {
+        switchTab('forge');
+        UI.dirty.forge = true;
+      }, { title: '🔯 神鑄系統', okText: '前往神鑄', cancelText: '稍後再說' });
+    }
+  });
 }
 
 function uiPendingKey(kind, id) {
@@ -189,12 +309,14 @@ function isUiCommandPending(key, id) {
 
 function syncUiPendingControls(key) {
   if (typeof document === 'undefined') return;
-  var controls = document.querySelectorAll('[data-ui-pending-key]');
+  var rawKey = String(key);
+  var selectorKey = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+    ? CSS.escape(rawKey)
+    : rawKey.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  var controls = document.querySelectorAll('[data-ui-pending-key="' + selectorKey + '"]');
   var pending = isUiCommandPending(key);
   for (var i = 0; i < controls.length; i++) {
-    if (controls[i].getAttribute('data-ui-pending-key') === key) {
-      controls[i].disabled = pending;
-    }
+    controls[i].disabled = pending;
   }
 }
 
@@ -331,6 +453,7 @@ function sendUiCommand(commandName, args, options) {
     entry.acknowledged = true;
     Object.keys(entry.waitPanels).forEach(function (key) {
       entry.waitPanels[key] = (UI_WORKER_STATE.panelVersions[key] || 0) + 1;
+      requestPanelData(key, true);
     });
     return result;
   }, function (err) {
@@ -349,16 +472,23 @@ function bindWorkerUiState() {
   UI_WORKER_STATE.bridgeBound = true;
 
   WorkerBridge.on(MSG_OUT.BOOTED, function (msg) {
+    noteWorkerHeartbeat();
     applyUiSnapshot(msg.snapshot);
   });
   WorkerBridge.on(MSG_OUT.FULL, function (msg) {
     applyUiSnapshot(msg.snapshot);
   });
   WorkerBridge.on(MSG_OUT.TICK, function (msg) {
+    noteWorkerHeartbeat();
     if (msg.view) UI_WORKER_STATE.view = msg.view;
+    handleWorkerUiEvents(msg.events);
     if (UI_WORKER_STATE.viewSubscribed) {
       UI.dirty.header = true;
       UI.dirty.battle = true;
+    }
+
+    if (UI.tab === 'tower' && msg.view && msg.view.towerActive) {
+      requestPanelData('tower', true);
     }
 
     var dirty = msg.dirty || [];
@@ -386,7 +516,20 @@ function bindWorkerUiState() {
     UI.dirty[msg.name] = true;
     releaseUiPendingByPanel(msg.name);
     if (msg.name === 'talents') updateTalentTabVisibility();
+    if (msg.name === 'tower' || msg.name === 'header') showPendingTowerResultModalIfReady();
+    if (msg.name === 'newforge') {
+      updateForgeTabGlow();
+      showForgeRebuildNotice();
+      markNewForgeTabSeenIfNeeded();
+    }
   });
+  WorkerBridge.on(MSG_OUT.ERROR, function (msg) {
+    if (msg && msg.where === 'worker') handleWorkerDead(msg);
+  });
+  // newforge carries the one-time rebuild notice and tab badge.  Fetch it once
+  // without keeping the large queue projection subscribed while another tab is open.
+  requestPanelData('newforge', false);
+  requestPanelData('forge', false);
   return true;
 }
 
@@ -513,7 +656,8 @@ function getNewForgeLogStats() {
 
 function getInstalledPartsStats() {
   var counts = {};
-  var nf = typeof newForgeState === 'function' ? newForgeState() : (G && G.newForge);
+  var snapshot = uiNewForgePanelSnapshot();
+  var nf = snapshot && snapshot.newForge;
   if (nf && nf.furnaces) {
     for (var i = 0; i < nf.furnaces.length; i++) {
       var fu = nf.furnaces[i];
@@ -1126,9 +1270,13 @@ function switchTab(name) {
   });
   if (name !== 'settings') UI.saveNoticeId = null;
   // 熔爐改版公告：玩家切到熔爐分頁後停止頁籤閃爍
-  if (name === 'newforge' && window.G && G.newForge && G.newForge.tabSeen === false) {
-    G.newForge.tabSeen = true;
-    updateForgeTabGlow();
+  if (name === 'newforge') {
+    if (workerUiStateEnabled()) {
+      markNewForgeTabSeenIfNeeded();
+    } else if (window.G && G.newForge && G.newForge.tabSeen === false) {
+      G.newForge.tabSeen = true;
+      updateForgeTabGlow();
+    }
   }
   if (name === 'settings') {
     if (typeof scanManualMetadataV2 === 'function' && typeof _saveDir !== 'undefined' && _saveDir) {
@@ -1151,14 +1299,31 @@ function switchTab(name) {
 function updateForgeTabGlow() {
   var btn = document.querySelector('.tab-btn[data-tab="newforge"]');
   if (!btn) return;
-  btn.classList.toggle('nf-glow', !!(window.G && G.newForge && G.newForge.tabSeen === false));
+  var snapshot = workerUiStateEnabled() ? peekUiPanelData('newforge') : uiNewForgePanelSnapshot();
+  var nf = snapshot && snapshot.newForge;
+  btn.classList.toggle('nf-glow', !!(nf && nf.tabSeen === false));
 }
 function showForgeRebuildNotice() {
-  if (!window.G || !G.newForge || G.newForge.noticeShown !== false) return;
+  var snapshot = workerUiStateEnabled() ? peekUiPanelData('newforge') : uiNewForgePanelSnapshot();
+  var nf = snapshot && snapshot.newForge;
+  if (!nf || nf.noticeShown !== false) return;
   var modal = $id('forge-rebuild-modal');
   if (!modal) return;
   modal.style.display = 'flex';
   updateForgeTabGlow();
+}
+
+function markNewForgeTabSeenIfNeeded() {
+  if (!workerUiStateEnabled() || UI.tab !== 'newforge') return;
+  var snapshot = uiNewForgePanelSnapshot();
+  var nf = snapshot && snapshot.newForge;
+  if (!nf || nf.tabSeen !== false || isUiCommandPending(nodePendingKey('newforge-tab'))) return;
+  sendUiCommand('newforge.markTabSeen', {}, {
+    keys: [nodePendingKey('newforge-tab')],
+    panels: ['newforge']
+  }).catch(function (error) {
+    reportUiCommandFailure('熔爐頁籤已讀', error, ['newforge']);
+  });
 }
 
 function updateTalentTabVisibility() {
@@ -1274,7 +1439,11 @@ function renderHeader() {
   if ($id('r-demon-seed')) $id('r-demon-seed').textContent = fmt(p.demonSeed || 0);
   // 神鑄頁籤：達到開放等級才顯示
   var forgeTabBtn = document.querySelector('.tab-btn[data-tab="forge"]');
-  if (forgeTabBtn) forgeTabBtn.style.display = forgeUnlocked() ? '' : 'none';
+  var forgeSnapshot = workerUiStateEnabled() ? peekUiPanelData('forge') : uiForgePanelSnapshot();
+  var forgeUnlockedView = forgeSnapshot && forgeSnapshot.forge
+    ? !!forgeSnapshot.forge.unlocked
+    : (!workerUiStateEnabled() && forgeUnlocked());
+  if (forgeTabBtn) forgeTabBtn.style.display = forgeUnlockedView ? '' : 'none';
   var gemTip = [];
   for (var gt in GEM_TYPES) {
     var tn = 0;
@@ -1291,8 +1460,8 @@ function renderHeader() {
   $id('r-books').textContent = fmt(bookTotal);
   updateResourceTip('r-books', '附魔書', bookTip.join('、') || '尚無附魔書');
 
-  // 材料動態顯示/隱藏：數量 > 0 時永久解鎖（記錄於 p.shownRes），隱藏材料包含圖示與數量
-  if (!p.shownRes) p.shownRes = {};
+  // shownRes 由模擬層在資源首次取得時更新；渲染只讀快照。
+  var shownRes = p.shownRes || {};
   var resVisMap = [
     { id: 'r-essence',         val: p.essence || 0 },
     { id: 'r-dust',            val: p.dust || 0 },
@@ -1303,10 +1472,9 @@ function renderHeader() {
     { id: 'r-books',           val: bookTotal }
   ];
   resVisMap.forEach(function(item) {
-    if (item.val > 0) p.shownRes[item.id] = true;
     var el = $id(item.id);
     if (!el || !el.parentNode) return;
-    el.parentNode.style.display = p.shownRes[item.id] ? '' : 'none';
+    el.parentNode.style.display = shownRes[item.id] ? '' : 'none';
   });
 
   refreshOpenResourceTooltip();
@@ -1712,39 +1880,15 @@ function refreshCombatPauseButton() {
     el.classList.toggle('active', paused);
   });
 }
-function currentShieldSkillCap(stats) {
-  return simulationCurrentShieldSkillCap(stats);
-}
-function playerShieldMax(entity, stats) {
+function playerShieldMax(entity) {
   if (!entity) return 0;
-  var shield = Math.max(0, entity.shield || 0);
-  if (shield <= 0) return 0;
-  var version = (typeof SHIELD_MAX_VERSION === 'number') ? SHIELD_MAX_VERSION : 2;
-  if (entity.shieldMaxVersion !== version) {
-    var cap = currentShieldSkillCap(stats);
-    if (cap > 0 && shield > cap) {
-      entity.shield = cap;
-      shield = cap;
-    }
-    entity.shieldMax = shield;
-    entity.shieldMaxVersion = version;
-    entity.shieldSkillBase = 0;
-    entity.shieldSkillPct = 0;
-    return shield;
-  }
-  var shieldMax = Math.max(0, entity.shieldMax || 0);
-  if (!(shieldMax > 0) || shieldMax < shield) {
-    entity.shieldMax = shield;
-    entity.shieldMaxVersion = version;
-    return shield;
-  }
-  return shieldMax;
+  return Math.max(0, entity.shieldMax || 0);
 }
 function renderPlayerShieldBar(prefix, entity, stats) {
   var shieldBar = $id(prefix + '-shield');
   if (!shieldBar || !entity || !stats) return;
   var shield = Math.max(0, entity.shield || 0);
-  var shieldMax = playerShieldMax(entity, stats);
+  var shieldMax = playerShieldMax(entity);
   if (shield > 0.5 && shieldMax > 0) {
     setStyleIfChanged(shieldBar, 'display', 'block');
     setStyleIfChanged(shieldBar, 'width', clamp(shield / shieldMax * 100, 0, 100) + '%');
@@ -2007,14 +2151,15 @@ function ancientStarBadgeHTML(it) {
   var overlapClass = shown > 4 ? ' overlap' : '';
   return '<span class="ancient-star-badge' + overlapClass + '" aria-label="太古詞條 ' + count + ' 條">' + stars + '</span>';
 }
-function itemCellHTML(it, source, extraClass) {
+function itemCellHTML(it, source, extraClass, pendingKey) {
   var r = RARITIES[it.rarity];
   var effClass = (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= GODFORGED_IDX ? ' eff-godforged' : (it.rarity === 7 ? ' eff-genesis' : ''));
   var info = SLOT_INFO[it.slot];
   var iconHtml = info.icon ? '<img src="images/' + info.icon + '" class="item-icon">' : '<span class="ic-emoji">' + info.emoji + '</span>';
   // data-eqslots：此「實例」可裝入的欄位（武器依類型而異），供選取比對用
   var eqSlots = (typeof equipSlotsForItem === 'function') ? equipSlotsForItem(it).join(',') : it.slot;
-  return '<div class="item-cell' + effClass + (extraClass || '') + '" data-id="' + it.id + '" data-src="' + source + '" data-slot="' + it.slot + '" data-eqslots="' + eqSlots + '" ' +
+  return '<div class="item-cell' + effClass + (extraClass || '') + '" data-id="' + it.id + '" data-src="' + source + '" data-slot="' + it.slot + '" data-eqslots="' + eqSlots + '"' +
+    (pendingKey ? pendingUiButtonAttributes(pendingKey) : '') + ' ' +
     'style="border-color:' + r.color + ';box-shadow:inset 0 0 12px ' + r.color + '33">' +
     iconHtml +
     ancientStarBadgeHTML(it) +
@@ -2251,7 +2396,6 @@ function renderDetail() {
   actionsHtml += '<button class="btn" data-act="lock">' + (it.locked ? '解鎖' : '鎖定') + '</button>';
   // 右側素材面板：可用寶石／附魔書改為小圖示，完整名稱、數值與持有量由滑鼠提示顯示
   var matHtml = '';
-  ensureSockets(it);
   if (it.sockets.indexOf(null) >= 0) {
     var gemIcons = [];
     for (var gt in GEM_TYPES) {
@@ -2499,18 +2643,20 @@ function salvageAllUnlocked(maxRarity, maxLevel, maxAncient) {
 
 /* ---- 生產線分頁 ---- */
 /* 附魔書庫存＋強化節點（原生產線頁面板，已搬入熔爐分頁；renderNewForge 呼叫） */
-function renderForgeExtras() {
-  var f = G.factory;
+function renderForgeExtras(factorySnapshot, headerSnapshot) {
+  var f = factorySnapshot && factorySnapshot.factory;
+  var player = headerSnapshot && headerSnapshot.player;
+  if (!f || !player) return;
   var encBooks = $id('enc-books');
   if (encBooks) {
     var bookChips = [];
-    for (var bk in G.player.books) {
-      if (G.player.books[bk] > 0) bookChips.push('<span class="book-chip">' + ENCHANTS[bk].emoji + esc(ENCHANTS[bk].name) + ' x' + G.player.books[bk] + '</span>');
+    for (var bk in player.books) {
+      if (player.books[bk] > 0) bookChips.push('<span class="book-chip">' + ENCHANTS[bk].emoji + esc(ENCHANTS[bk].name) + ' x' + player.books[bk] + '</span>');
     }
     encBooks.innerHTML = bookChips.length ? bookChips.join('') : '<span class="hint">尚無附魔書（階段 8+ 掉落 / 高塔獎勵）</span>';
   }
   var encInfo = $id('enc-info');
-  if (encInfo) encInfo.textContent = '精華庫存 ' + fmt(G.player.essence) + '（每次消耗 ' + ENCHANT_ESSENCE_COST + '）｜已附魔 ' + fmt(f.stats.enchanted) + ' 次';
+  if (encInfo) encInfo.textContent = '精華庫存 ' + fmt(player.essence) + '（每次消耗 ' + ENCHANT_ESSENCE_COST + '）｜已附魔 ' + fmt(f.stats.enchanted) + ' 次';
 
 }
 
@@ -2559,6 +2705,7 @@ function nfQualityPanelHTML(fu) {
   var rows = '';
   for (var r = 0; r < GODFORGED_IDX; r++) {
     rows += '<label class="nf-qual-row"><input type="checkbox" data-nf-fid="' + fu.id + '" data-nf-qual="' + r + '"' +
+      pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
       (fu.qualities[r] ? ' checked' : '') + '> <span style="color:' + RARITIES[r].color + '">' + RARITIES[r].name + '</span></label>';
   }
   return '<div class="nf-qual-panel">' + rows +
@@ -2579,8 +2726,7 @@ function nfBeltChipsHTML(fu) {
 
 // 零件置入格列：已裝＝零件晶片（點擊卸下）、空格＝零件N（點擊開啟零件列表）、
 // 下一格＝🔒解鎖（顯示金幣成本）、其餘＝🔒
-function nfPartSlotsHTML(fu) {
-  var nf = G.newForge;
+function nfPartSlotsHTML(fu, nf, player) {
   var cells = '';
   for (var s = 0; s < NEW_FORGE_PART_SLOTS_MAX; s++) {
     if (s < fu.partSlots) {
@@ -2588,15 +2734,18 @@ function nfPartSlotsHTML(fu) {
       if (p && PART_TYPES[p.key]) {
         // 已裝＝正方形小圖示（全稱在 tooltip；點擊依格位索引卸下）
         cells += '<button class="nf-part-slot nf-part-filled nf-part-ico" data-nf-fid="' + fu.id + '" data-nf-partun="' + s + '"' +
+          pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
           ' data-tip="【點擊卸下】' + esc(partDesc(p)) + '">' + partIconHTML(p.key) + '</button>';
       } else {
         cells += '<button class="nf-part-slot" data-nf-fid="' + fu.id + '" data-nf-partsopen="1"' +
           ' data-tip="【點擊選擇零件】開啟零件列表，可連續安裝">零件' + (s + 1) + '</button>';
       }
     } else if (s === fu.partSlots) {
-      var cost = newForgePartSlotCost(reincarnationCount(), fu.partSlots, nf.furnaces.length);
-      var ok = G.player.gold >= cost;
+      var reincarnations = Math.max(0, Math.floor(Number(player.reincarnations) || 0));
+      var cost = newForgePartSlotCost(reincarnations, fu.partSlots, nf.furnaces.length);
+      var ok = (player.gold || 0) >= cost;
       cells += '<button class="nf-part-slot nf-part-lock' + (ok ? '' : ' nf-part-poor') + '" data-nf-fid="' + fu.id + '" data-nf-unlockslot="1"' +
+        pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
         ' data-tip="解鎖第 ' + (s + 1) + ' 格零件格：金幣 ' + fmtFull(cost) + '">🔒 ' + fmt(cost) + '</button>';
     } else {
       cells += '<span class="nf-part-slot nf-part-lock">🔒</span>';
@@ -2607,9 +2756,14 @@ function nfPartSlotsHTML(fu) {
 
 // 零件選擇列表（點擊零件格開啟；出現在該熔爐卡片下方）：
 // 與舊分解槽相同操作——依種類分組、點擊安裝最高階數值者，列表保持開啟可連續裝滿。
-function nfPartsListHTML(fu) {
+function nfPartsListHTML(fu, factory) {
+  if (!factory) {
+    var factorySnapshot = uiFactoryPanelSnapshot();
+    factory = factorySnapshot && factorySnapshot.factory;
+  }
+  if (!factory || !Array.isArray(factory.parts)) return '';
   // 自由裝配：列出持有的所有分解槽零件類型（不論是否已裝於他處），安裝為最高階數值快照
-  var owned = G.factory.parts.filter(function (p) {
+  var owned = factory.parts.filter(function (p) {
     var pt = p && PART_TYPES[p.key];
     return pt && pt.node === 'salvage';
   });
@@ -2623,7 +2777,8 @@ function nfPartsListHTML(fu) {
       var group = byKey[key];
       var best = group.slice().sort(function (a, b) { return (b.tier - a.tier) || (b.val - a.val); })[0];
       return '<span class="part-chip" style="cursor:pointer; border-color:var(--accent);" data-nf-fid="' + fu.id +
-        '" data-nf-partinstall-key="' + key + '" data-tip="【點擊裝配】取最高階數值：' + esc(partDesc(best)) +
+        '" data-nf-partinstall-key="' + key + '"' + pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
+        ' data-tip="【點擊裝配】取最高階數值：' + esc(partDesc(best)) +
         '｜同類型可重複裝配、不佔用零件庫">' + partIconHTML(key) + esc(best.name) + '</span>';
     }).join('');
   }
@@ -2634,22 +2789,24 @@ function nfPartsListHTML(fu) {
 }
 
 // 熔爐卡片（圖1）：左側大圖＋右側傳送帶（品質設定/啟用/摘要/帶視覺）＋零件格
-function nfFurnaceHTML(fu) {
+function nfFurnaceHTML(fu, nf, factory, player) {
   var head = '<div class="node-title">' + NEW_FORGE_EMOJI + ' ' + esc(NEW_FORGE_NAME) +
     ' <span class="node-badge">#' + fu.id + '</span>' +
-    '<button class="btn sm warn nf-remove" data-nf-remove="' + fu.id + '">移除熔爐</button></div>';
+    '<button class="btn sm warn nf-remove" data-nf-remove="' + fu.id + '"' +
+    pendingUiButtonAttributes(furnacePendingKey(fu.id)) + '>移除熔爐</button></div>';
   var open = UI.nfCfgOpen && UI.nfCfgOpen[fu.id];
   var beltRow = '<div class="nf-line-head">' +
     '<span class="nf-line-no">傳送帶</span>' +
     '<button class="btn sm" data-nf-fid="' + fu.id + '" data-nf-cfg="1">⚙ 品質設定</button>' +
-    '<label class="chk"><input type="checkbox" data-nf-fid="' + fu.id + '" data-nf-on="1"' + (fu.enabled ? ' checked' : '') + '> 啟用</label>' +
+    '<label class="chk"><input type="checkbox" data-nf-fid="' + fu.id + '" data-nf-on="1"' +
+    pendingUiButtonAttributes(furnacePendingKey(fu.id)) + (fu.enabled ? ' checked' : '') + '> 啟用</label>' +
     '</div>' +
     (open ? nfQualityPanelHTML(fu) : '<div class="nf-line-sum">' + nfQualitySummary(fu) + '</div>') +
     '<div class="nf-belt"><span class="nf-belt-mouth" data-tip="熔爐入口：帶頭裝備由此入爐拆解">' + NEW_FORGE_EMOJI + '</span>' +
     '<span class="nf-belt-items" data-nf-belt="' + fu.id + '"></span>' +
     '<span class="nf-belt-more" data-nf-more="' + fu.id + '"></span></div>' +
-    nfPartSlotsHTML(fu) +
-    (UI.nfPartsOpen && UI.nfPartsOpen[fu.id] ? nfPartsListHTML(fu) : '');
+    nfPartSlotsHTML(fu, nf, player) +
+    (UI.nfPartsOpen && UI.nfPartsOpen[fu.id] ? nfPartsListHTML(fu, factory) : '');
   return '<div class="panel node-card nf-furnace' + (fu.enabled ? '' : ' nf-line-off') + '">' + head +
     '<div class="nf-furnace-body">' +
     '<div class="nf-furnace-left"><img class="nf-furnace-img" src="' + NEW_FORGE_IMAGE + '" alt="' + esc(NEW_FORGE_NAME) + '">' +
@@ -2659,20 +2816,27 @@ function nfFurnaceHTML(fu) {
 }
 
 function renderNewForge() {
-  var nf = G.newForge;
-  if (!nf) return;
+  var newForgeSnapshot = uiNewForgePanelSnapshot();
+  var factorySnapshot = uiFactoryPanelSnapshot();
+  var headerSnapshot = uiHeaderPanelSnapshot();
+  var nf = newForgeSnapshot && newForgeSnapshot.newForge;
+  var factory = factorySnapshot && factorySnapshot.factory;
+  var player = headerSnapshot && headerSnapshot.player;
+  if (!nf || !factory || !player) return;
   var qc = $id('nf-queue-count');
   if (qc) qc.textContent = fmtFull(nf.queue.length); // 佇列顯示完整數字，不用簡寫
-  renderForgeExtras(); // 附魔書庫存＋強化節點（搬入本頁的面板）
+  renderForgeExtras(factorySnapshot, headerSnapshot); // 附魔書庫存＋強化節點（搬入本頁的面板）
   var cnt = $id('nf-count');
   if (cnt) {
-    var allowed = newForgeMaxFurnaces(reincarnationCount());
+    var allowed = newForgeMaxFurnaces(Math.max(0, Math.floor(Number(player.reincarnations) || 0)));
     cnt.textContent = nf.furnaces.length + '/' + allowed + ' 座（轉生+1 座，上限 ' + NEW_FORGE_MAX + '）｜已拆解 ' + fmt(nf.stats.salvaged) +
       '・保留 ' + fmt(nf.stats.kept);
   }
   var list = $id('nf-furnaces');
   if (list) {
-    var html = nf.furnaces.map(nfFurnaceHTML).join('') ||
+    var html = nf.furnaces.map(function (fu) {
+      return nfFurnaceHTML(fu, nf, factory, player);
+    }).join('') ||
       '<div class="panel"><div class="hint">尚無熔爐——請於下方添加。</div></div>';
     if (UI._nfFurnacesHTML !== html) {
       // 焦點防衛：使用者正聚焦清單內的下拉/輸入框時延後整段重建（帶視覺另行定點更新）
@@ -2683,17 +2847,17 @@ function renderNewForge() {
         list.innerHTML = html;
       }
     }
-    nfUpdateBelts(list);
+    nfUpdateBelts(list, newForgeSnapshot);
   }
 }
 
 // 傳送帶批次定點更新（每輪執行；容器內無互動元件，覆寫不影響操作）
-function nfUpdateBelts(list) {
+function nfUpdateBelts(list, snapshot) {
   var nodes = list.querySelectorAll('[data-nf-belt]');
   if (!nodes.length) return;
   for (var i = 0; i < nodes.length; i++) {
     var node = nodes[i];
-    var fu = findNewForgeFurnace(parseInt(node.getAttribute('data-nf-belt'), 10));
+    var fu = newForgeViewFurnace(snapshot, parseInt(node.getAttribute('data-nf-belt'), 10));
     if (!fu) continue;
     var html = nfBeltChipsHTML(fu);
     if (node._nfBeltHTML !== html) {
@@ -2706,7 +2870,7 @@ function nfUpdateBelts(list) {
   var mores = list.querySelectorAll('[data-nf-more]');
   for (var m = 0; m < mores.length; m++) {
     var moreNode = mores[m];
-    var moreFu = findNewForgeFurnace(parseInt(moreNode.getAttribute('data-nf-more'), 10));
+    var moreFu = newForgeViewFurnace(snapshot, parseInt(moreNode.getAttribute('data-nf-more'), 10));
     var wait = (moreFu && moreFu.queue) ? moreFu.queue.length : 0;
     var text = wait > 0 ? '+' + (wait > 9999 ? '9999' : wait) : '';
     if (moreNode._nfMoreText !== text) {
@@ -2724,47 +2888,122 @@ function nfUpdateBelts(list) {
 function bindNewForgeEvents() {
   var tab = $id('tab-newforge');
   if (!tab) return;
+  var addButton = tab.querySelector('[data-nf-add]');
+  if (addButton) addButton.setAttribute('data-ui-pending-key', nodePendingKey('newforge-add'));
   tab.addEventListener('change', function (e) {
     var el = e.target;
     if (!el || !el.getAttribute) return;
-    var fu = findNewForgeFurnace(parseInt(el.getAttribute('data-nf-fid'), 10));
+    var furnaceId = parseInt(el.getAttribute('data-nf-fid'), 10);
+    var fu = workerUiStateEnabled()
+      ? newForgeViewFurnace(uiNewForgePanelSnapshot(), furnaceId)
+      : findNewForgeFurnace(furnaceId);
     if (!fu) return;
     if (el.hasAttribute('data-nf-qual')) {
       var r = parseInt(el.getAttribute('data-nf-qual'), 10);
-      if (r >= 0 && r < GODFORGED_IDX) fu.qualities[r] = el.checked;
-      newForgeReturnUnroutable(fu); // 取消勾選的品質自專屬佇列退回總佇列重新派發
-      UI.dirty.newforge = true;
+      if (workerUiStateEnabled()) {
+        if (isUiCommandPending(furnacePendingKey(furnaceId))) {
+          el.checked = !!fu.qualities[r];
+          return;
+        }
+        sendUiCommand('newforge.setQuality', {
+          furnaceId: furnaceId,
+          rarity: r,
+          on: !!el.checked
+        }, {
+          keys: [furnacePendingKey(furnaceId)],
+          panels: ['newforge']
+        }).catch(function (error) {
+          reportUiCommandFailure('熔爐品質設定', error, ['newforge']);
+        });
+      } else {
+        if (r >= 0 && r < GODFORGED_IDX) fu.qualities[r] = el.checked;
+        newForgeReturnUnroutable(fu); // 取消勾選的品質自專屬佇列退回總佇列重新派發
+        UI.dirty.newforge = true;
+      }
     } else if (el.hasAttribute('data-nf-on')) {
-      fu.enabled = el.checked;
-      newForgeReturnUnroutable(fu); // 停用：專屬佇列退回總佇列
-      UI.dirty.newforge = true;
+      if (workerUiStateEnabled()) {
+        if (isUiCommandPending(furnacePendingKey(furnaceId))) {
+          el.checked = !!fu.enabled;
+          return;
+        }
+        sendUiCommand('newforge.setEnabled', {
+          furnaceId: furnaceId,
+          on: !!el.checked
+        }, {
+          keys: [furnacePendingKey(furnaceId)],
+          panels: ['newforge']
+        }).catch(function (error) {
+          reportUiCommandFailure('熔爐啟用設定', error, ['newforge']);
+        });
+      } else {
+        fu.enabled = el.checked;
+        newForgeReturnUnroutable(fu); // 停用：專屬佇列退回總佇列
+        UI.dirty.newforge = true;
+      }
     }
   });
   tab.addEventListener('click', function (e) {
     // 零件裝配晶片（span）：點擊依類型裝配最高階數值快照，列表保持開啟可連續裝滿
     var chip = e.target && e.target.closest ? e.target.closest('[data-nf-partinstall-key]') : null;
     if (chip) {
-      var cfu = findNewForgeFurnace(parseInt(chip.getAttribute('data-nf-fid'), 10));
+      var chipFurnaceId = parseInt(chip.getAttribute('data-nf-fid'), 10);
+      var cfu = workerUiStateEnabled()
+        ? newForgeViewFurnace(uiNewForgePanelSnapshot(), chipFurnaceId)
+        : findNewForgeFurnace(chipFurnaceId);
       if (cfu) {
-        var ierr = newForgeInstallPart(cfu.id, chip.getAttribute('data-nf-partinstall-key'));
-        if (ierr) nflog('⚠️ ' + ierr, 'warn');
+        if (workerUiStateEnabled()) {
+          if (isUiCommandPending(furnacePendingKey(chipFurnaceId))) return;
+          sendUiCommand('newforge.installPart', {
+            furnaceId: chipFurnaceId,
+            partKey: chip.getAttribute('data-nf-partinstall-key')
+          }, {
+            keys: [furnacePendingKey(chipFurnaceId)],
+            panels: ['newforge', 'factory']
+          }).catch(function (error) {
+            reportUiCommandFailure('熔爐安裝零件', error, ['newforge', 'factory']);
+          });
+        } else {
+          var ierr = newForgeInstallPart(cfu.id, chip.getAttribute('data-nf-partinstall-key'));
+          if (ierr) nflog('⚠️ ' + ierr, 'warn');
+        }
       }
       return;
     }
     var el = e.target && e.target.closest ? e.target.closest('button') : null;
     if (!el) return;
     if (el.hasAttribute('data-nf-add')) {
-      var err = addNewForgeFurnace();
-      if (err) nflog('⚠️ ' + err, 'warn');
-      else nflog('🏗️ 已添加' + NEW_FORGE_NAME, 'good');
+      if (workerUiStateEnabled()) {
+        sendUiCommand('newforge.addFurnace', {}, {
+          keys: [nodePendingKey('newforge-add')],
+          panels: ['newforge']
+        }).catch(function (error) {
+          reportUiCommandFailure('新增熔爐', error, ['newforge']);
+        });
+      } else {
+        var err = addNewForgeFurnace();
+        if (err) nflog('⚠️ ' + err, 'warn');
+        else nflog('🏗️ 已添加' + NEW_FORGE_NAME, 'good');
+      }
       return;
     }
     if (el.hasAttribute('data-nf-remove')) {
       var rid = parseInt(el.getAttribute('data-nf-remove'), 10);
-      if (removeNewForgeFurnace(rid)) nflog('🗑️ 已移除熔爐 #' + rid + '（傳送帶裝備已退回背包）', 'info');
+      if (workerUiStateEnabled()) {
+        sendUiCommand('newforge.removeFurnace', { furnaceId: rid }, {
+          keys: [furnacePendingKey(rid)],
+          panels: ['newforge', 'inv']
+        }).catch(function (error) {
+          reportUiCommandFailure('移除熔爐', error, ['newforge', 'inv']);
+        });
+      } else if (removeNewForgeFurnace(rid)) {
+        nflog('🗑️ 已移除熔爐 #' + rid + '（傳送帶裝備已退回背包）', 'info');
+      }
       return;
     }
-    var fu = findNewForgeFurnace(parseInt(el.getAttribute('data-nf-fid'), 10));
+    var clickedFurnaceId = parseInt(el.getAttribute('data-nf-fid'), 10);
+    var fu = workerUiStateEnabled()
+      ? newForgeViewFurnace(uiNewForgePanelSnapshot(), clickedFurnaceId)
+      : findNewForgeFurnace(clickedFurnaceId);
     if (!fu) return;
     if (el.hasAttribute('data-nf-cfg')) {
       if (!UI.nfCfgOpen) UI.nfCfgOpen = {};
@@ -2773,8 +3012,17 @@ function bindNewForgeEvents() {
       return;
     }
     if (el.hasAttribute('data-nf-unlockslot')) {
-      var uerr = unlockNewForgePartSlot(fu.id);
-      if (uerr) nflog('⚠️ ' + uerr, 'warn');
+      if (workerUiStateEnabled()) {
+        sendUiCommand('newforge.unlockPartSlot', { furnaceId: fu.id }, {
+          keys: [furnacePendingKey(fu.id)],
+          panels: ['newforge', 'header']
+        }).catch(function (error) {
+          reportUiCommandFailure('熔爐解鎖零件格', error, ['newforge', 'header']);
+        });
+      } else {
+        var uerr = unlockNewForgePartSlot(fu.id);
+        if (uerr) nflog('⚠️ ' + uerr, 'warn');
+      }
       return;
     }
     if (el.hasAttribute('data-nf-partsopen')) {
@@ -2784,7 +3032,20 @@ function bindNewForgeEvents() {
       return;
     }
     if (el.hasAttribute('data-nf-partun')) {
-      newForgeUninstallPart(fu.id, parseInt(el.getAttribute('data-nf-partun'), 10));
+      var slotIndex = parseInt(el.getAttribute('data-nf-partun'), 10);
+      if (workerUiStateEnabled()) {
+        sendUiCommand('newforge.uninstallPart', {
+          furnaceId: fu.id,
+          slotIndex: slotIndex
+        }, {
+          keys: [furnacePendingKey(fu.id)],
+          panels: ['newforge', 'factory']
+        }).catch(function (error) {
+          reportUiCommandFailure('熔爐卸下零件', error, ['newforge', 'factory']);
+        });
+      } else {
+        newForgeUninstallPart(fu.id, slotIndex);
+      }
       return;
     }
   });
@@ -2814,8 +3075,8 @@ var FORGE_DUST_POS = [
   { x: 50, y: 93 }, { x: 29.5, y: 71.5 }, { x: 29.5, y: 28.5 }
 ];
 
-function forgeInventoryTab() {
-  var c = forgeState().crafting;
+function forgeInventoryTab(forge) {
+  var c = forge && forge.crafting;
   if (c && c.mode === 'gem') return 'gems';
   if (c && c.mode === 'equip') return 'items';
   return UI.forgeInvTab || 'items';
@@ -2824,13 +3085,14 @@ function forgeInventoryTab() {
 /* 神鑄「自動放入」選單：依目前背包切頁列出可選素材。
    裝備頁＝三種品質（品質色字）；寶石頁＝所有持有的五～九階寶石（emoji 小圖示＋屬性）。
    持有不足 6 者半透明不可選；UI.forgeAutoPick 為選單中的暫選項。 */
-function renderForgeAutoMenu() {
+function renderForgeAutoMenu(forge, inventorySnapshot, gemsSnapshot) {
   var menu = $id('forge-auto-menu');
   if (!menu) return;
   // 重建前記住素材清單卷軸位置：自動鑄造運行中觸發的同步重繪不可把清單刷回頂部
   var prevList = menu.querySelector('.fam-list');
   var prevScrollTop = prevList ? prevList.scrollTop : 0;
-  var invTab = forgeInventoryTab();
+  if (!forge || !inventorySnapshot || !gemsSnapshot) return;
+  var invTab = forgeInventoryTab(forge);
   menu.classList.toggle('fam-gem-mode', invTab === 'gems');
   var pick = UI.forgeAutoPick;
   var title = '';
@@ -2840,7 +3102,7 @@ function renderForgeAutoMenu() {
     var gemOptions = [];
     for (var lv = GEM_FORGE_MAX_LEVEL - 1; lv >= GEM_MAX_LEVEL; lv--) {
       for (var t in GEM_TYPES) {
-        var n = gemCount(t, lv);
+        var n = forgeViewGemCount(gemsSnapshot, t, lv);
         if (!n) continue;
         gemOptions.push({ type: t, level: lv, count: n, canForge: n >= FORGE_SLOTS });
       }
@@ -2866,8 +3128,9 @@ function renderForgeAutoMenu() {
     title = '🎒 自動放入裝備（取未上鎖、評分最低 6 件）';
     for (var r = FORGE_MIN_RARITY; r < GODFORGED_IDX; r++) {
       var cnt = 0;
-      for (var i = 0; i < G.inventory.length; i++) {
-        var it = G.inventory[i];
+      var inventoryItems = inventorySnapshot.items || [];
+      for (var i = 0; i < inventoryItems.length; i++) {
+        var it = inventoryItems[i];
         if (it && it.rarity === r && !it.locked) cnt++;
       }
       var rok = cnt >= FORGE_SLOTS;
@@ -2885,8 +3148,10 @@ function renderForgeAutoMenu() {
   menu.innerHTML = '<div class="fam-title">' + title + '</div>' +
     '<div class="fam-list">' + (rows || '<div class="fam-empty">' + emptyText + '</div>') + '</div>' +
     '<div class="fam-foot">' +
-    '<button id="fam-confirm" class="btn sm"' + (pick ? '' : ' disabled') + '>確定</button>' +
-    (forgeState().autoFill ? '<button id="fam-stop" class="btn sm warn">取消自動放入</button>' : '') +
+    '<button id="fam-confirm" class="btn sm"' + pendingUiButtonAttributes(nodePendingKey('forge')) +
+    (pick ? '' : ' disabled') + '>確定</button>' +
+    (forge.autoFill ? '<button id="fam-stop" class="btn sm warn"' +
+      pendingUiButtonAttributes(nodePendingKey('forge')) + '>取消自動放入</button>' : '') +
     '<button id="fam-close" class="btn sm">關閉</button></div>';
   // 法陣區為 overflow:hidden：選單往上展開的最大高度以「按鈕底～法陣頂」為限，
   // 超出改由素材清單內卷軸承接，標題與操作列不隨清單移動。
@@ -2942,10 +3207,10 @@ function famApplyPickHighlight(menu) {
   if (confirmBtn) confirmBtn.disabled = !pick;
 }
 
-function renderForgeProgress() {
+function renderForgeProgress(forge, inventorySnapshot, gemsSnapshot) {
   var box = $id('forge-progress');
   if (!box) return;
-  var c = forgeState().crafting;
+  var c = forge && forge.crafting;
   var fill = $id('forge-progress-fill');
   if (!c) {
     box.style.display = 'none';
@@ -2964,7 +3229,7 @@ function renderForgeProgress() {
   // 目前素材可再鑄造次數 = 剩餘庫存 ÷ 6 取整（內容無變化時不觸碰 DOM）
   var remainEl = $id('forge-progress-remain');
   if (remainEl) {
-    var ri = forgeRemainInfo();
+    var ri = forgeViewRemainInfo(forge, inventorySnapshot, gemsSnapshot);
     var remainText = ri ? ri.label + ' 可再鑄造 ' + fmt(Math.floor(ri.count / FORGE_SLOTS)) + ' 次' : '';
     if (remainEl.textContent !== remainText) remainEl.textContent = remainText;
   }
@@ -2989,8 +3254,14 @@ function renderForgeProgress() {
 function renderForge() {
   var hex = $id('forge-hex');
   if (!hex) return;
-  var f = forgeState();
-  var forgeBusy = forgeIsBusy();
+  var forgeSnapshot = uiForgePanelSnapshot();
+  var inventorySnapshot = uiInventoryPanelSnapshot();
+  var gemsSnapshot = uiGemsPanelSnapshot();
+  var headerSnapshot = uiHeaderPanelSnapshot();
+  var f = forgeViewState(forgeSnapshot);
+  var player = headerSnapshot && headerSnapshot.player;
+  if (!f || !inventorySnapshot || !gemsSnapshot || !player) return;
+  var forgeBusy = !!f.crafting;
   var h = '';
   // 六個素材槽（裝備或寶石，二擇一模式）
   for (var i = 0; i < FORGE_SLOTS; i++) {
@@ -3003,7 +3274,8 @@ function renderForge() {
       var gvalS = gdefS.pct ? pctStr(gemStatValue(it.type, it.level)) : fmt(gemStatValue(it.type, it.level));
       h += '<div class="forge-slot filled" data-forge-slot="' + i + '" data-tip="' +
         esc(gemLabel(it.type, it.level) + '｜' + gdefS.statName.replace('%', '') + ' +' + gvalS + '｜點擊取回') + '" ' +
-        'style="' + style + 'border-color:' + gcol + ';box-shadow:0 0 14px ' + gcol + 'aa, inset 0 0 10px ' + gcol + '55">' +
+        pendingUiButtonAttributes(nodePendingKey('forge')) +
+        ' style="' + style + 'border-color:' + gcol + ';box-shadow:0 0 14px ' + gcol + 'aa, inset 0 0 10px ' + gcol + '55">' +
         '<span class="ic-emoji">' + GEM_TYPES[it.type].emoji + '</span><span class="ic-lv">' + it.level + '</span></div>';
     } else if (it) {
       var r = RARITIES[it.rarity];
@@ -3011,19 +3283,21 @@ function renderForge() {
       var iconHtml = info.icon ? '<img src="images/' + info.icon + '" class="item-icon">' : '<span class="ic-emoji">' + info.emoji + '</span>';
       // 裝備槽不掛 data-tip：滑過改由 mouseover 委派顯示完整裝備詳情 tooltip
       h += '<div class="forge-slot filled" data-forge-slot="' + i + '" data-id="' + it.id + '" ' +
-        'style="' + style + 'border-color:' + r.color + ';box-shadow:0 0 14px ' + r.color + 'aa, inset 0 0 10px ' + r.color + '55">' +
+        pendingUiButtonAttributes(nodePendingKey('forge')) +
+        ' style="' + style + 'border-color:' + r.color + ';box-shadow:0 0 14px ' + r.color + 'aa, inset 0 0 10px ' + r.color + '55">' +
         iconHtml + ancientStarBadgeHTML(it) + '<span class="ic-lv">' + it.level + '</span></div>';
     } else {
       h += '<div class="forge-slot empty" data-forge-slot="' + i + '" data-tip="點擊下方背包中的裝備（傳說/神話/創世）或寶石（五階以上）放入" style="' + style + '"></div>';
     }
   }
   // 六個魔塵符位（各自獨立：點哪格亮哪格）
-  var dustN = forgeDustCount();
+  var dustN = forgeViewDustCount(f, player);
   for (var di = 0; di < FORGE_SLOTS; di++) {
     var dp = FORGE_DUST_POS[di];
     var lit = !!f.dustSlots[di];
     h += '<div class="forge-dust' + (lit ? ' lit' : '') + '" data-forge-dust="' + di + '" data-tip="' +
-      (lit ? '點擊取下魔塵' : '點擊放入魔塵（+' + FORGE_DUST_RATE + '% 成功率）') + '" style="left:' + dp.x + '%;top:' + dp.y + '%;">💫</div>';
+      (lit ? '點擊取下魔塵' : '點擊放入魔塵（+' + FORGE_DUST_RATE + '% 成功率）') + '"' +
+      pendingUiButtonAttributes(nodePendingKey('forge')) + ' style="left:' + dp.x + '%;top:' + dp.y + '%;">💫</div>';
   }
   // 中央產物（上次鑄造成功的裝備或寶石）
   if (f.result && f.result.kind === 'gem' && GEM_TYPES[f.result.type]) {
@@ -3045,7 +3319,7 @@ function renderForge() {
   }
   hex.innerHTML = h;
   // 成功率與金幣消耗（依模式：裝備 / 寶石）
-  var rate = forgeRateInfo();
+  var rate = forgeViewRateInfo(f, player);
   var rateEl = $id('forge-rate');
   if (rate) {
     rateEl.innerHTML = (rate.mode === 'gem' ? '💎 寶石' : '') + '鑄造成功率：<b style="color:#ffd700">' + fmt1(rate.base) + '%</b>' +
@@ -3065,13 +3339,13 @@ function renderForge() {
   autoForgeInput.checked = !!f.autoForge;
   autoDustInput.parentElement.classList.toggle('is-active', autoDustInput.checked);
   autoForgeInput.parentElement.classList.toggle('is-active', autoForgeInput.checked);
-  $id('forge-dust-own').textContent = '持有魔塵 ' + fmt(G.player.dust || 0) + ' 個｜已放置 ' + dustN + '/' + FORGE_SLOTS;
-  renderForgeProgress();
+  $id('forge-dust-own').textContent = '持有魔塵 ' + fmt(player.dust || 0) + ' 個｜已放置 ' + dustN + '/' + FORGE_SLOTS;
+  renderForgeProgress(f, inventorySnapshot, gemsSnapshot);
   $id('forge-unload').disabled = forgeBusy;
   $id('forge-autodust').disabled = forgeBusy;
   var goBtn = $id('forge-go');
   if (goBtn) {
-    if (forgeBusy || forgeItemCount() < FORGE_SLOTS) {
+    if (forgeBusy || forgeViewItemCount(f) < FORGE_SLOTS) {
       goBtn.disabled = true;
       goBtn.style.background = '#4b5563';
       goBtn.style.color = '#d1d5db';
@@ -3091,7 +3365,7 @@ function renderForge() {
   var afBtn = $id('forge-autofill');
   if (afBtn) {
     afBtn.disabled = forgeBusy;
-    var afLabel = forgeAutoFillLabel();
+    var afLabel = forgeViewAutoFillLabel(f);
     afBtn.classList.toggle('afk-on', !!afLabel);
     afBtn.setAttribute('data-tip', afLabel
       ? '自動放入中：' + afLabel + '（每次鑄造後自動補放 6 件，數量不足自動停止；點擊變更）'
@@ -3101,9 +3375,11 @@ function renderForge() {
   if (forgeBusy && famMenuSync) {
     famMenuSync.style.display = 'none';
     UI.forgeAutoPick = null;
-  } else if (famMenuSync && famMenuSync.style.display !== 'none') renderForgeAutoMenu();
+  } else if (famMenuSync && famMenuSync.style.display !== 'none') {
+    renderForgeAutoMenu(f, inventorySnapshot, gemsSnapshot);
+  }
   // 背包（裝備 / 寶石切頁；不符資格者以灰階顯示）
-  var invTab = forgeInventoryTab();
+  var invTab = forgeInventoryTab(f);
   UI.forgeInvTab = invTab;
   var tabItemsBtn = $id('forge-invtab-items'), tabGemsBtn = $id('forge-invtab-gems');
   if (tabItemsBtn) tabItemsBtn.classList.toggle('active', invTab === 'items');
@@ -3112,18 +3388,19 @@ function renderForge() {
   if (tabGemsBtn) tabGemsBtn.disabled = forgeBusy;
   var grid = $id('forge-inventory-grid');
   if (invTab === 'gems') {
-    $id('forge-inv-count').textContent = fmt(totalGemsAll());
+    $id('forge-inv-count').textContent = fmt(forgeViewTotalGems(gemsSnapshot));
     var gh = '';
     for (var glv = GEM_FORGE_MAX_LEVEL; glv >= 1; glv--) {
       for (var gt2 in GEM_TYPES) {
-        var gn = gemCount(gt2, glv);
+        var gn = forgeViewGemCount(gemsSnapshot, gt2, glv);
         if (!gn) continue;
         var gok = glv >= GEM_MAX_LEVEL && glv < GEM_FORGE_MAX_LEVEL;
         var gcol2 = GEM_TIER_COLORS[glv] || '#f5c542';
         var gdef = GEM_TYPES[gt2];
         var gval = gdef.pct ? pctStr(gemStatValue(gt2, glv)) : fmt(gemStatValue(gt2, glv));
         gh += '<div class="item-cell forge-gem-cell' + (gok ? '' : ' forge-na') + '" data-forge-gem="' + gt2 + ':' + glv + '" ' +
-          'data-tip="' + esc(gemLabel(gt2, glv) + '｜' + gdef.statName.replace('%', '') + ' +' + gval + '｜持有 ' + gn + ' 顆' +
+          pendingUiButtonAttributes(nodePendingKey('forge')) +
+          ' data-tip="' + esc(gemLabel(gt2, glv) + '｜' + gdef.statName.replace('%', '') + ' +' + gval + '｜持有 ' + gn + ' 顆' +
             (gok ? '（點擊放入法陣）' : (glv < GEM_MAX_LEVEL ? '（五階以上才可鑄造）' : '（十階已是最高階級）'))) + '" ' +
           'style="border-color:' + gcol2 + ';box-shadow:inset 0 0 12px ' + gcol2 + '33">' +
           '<span class="ic-emoji">' + gdef.emoji + '</span>' +
@@ -3133,14 +3410,14 @@ function renderForge() {
     }
     grid.innerHTML = gh || '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">尚無寶石。戰鬥掉落與寶石商店可取得寶石。</div>';
   } else {
-    var cap = typeof inventoryCapacityWithTalents === 'function' ? inventoryCapacityWithTalents() : INVENTORY_CAP + (G.player.invUpgrades || 0);
-    $id('forge-inv-count').textContent = G.inventory.length + '/' + cap;
-    if (!G.inventory.length) {
+    var inventoryItems = inventorySnapshot.items || [];
+    $id('forge-inv-count').textContent = inventorySnapshot.count + '/' + inventorySnapshot.cap;
+    if (!inventoryItems.length) {
       grid.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">背包是空的。戰鬥掉落的裝備會先進入生產線輸送帶，「保留」的會送到這裡。</div>';
     } else {
-      grid.innerHTML = G.inventory.map(function (it2) {
+      grid.innerHTML = inventoryItems.map(function (it2) {
         var ok = it2.rarity >= FORGE_MIN_RARITY && it2.rarity < GODFORGED_IDX;
-        return itemCellHTML(it2, 'forgeinv', ok ? '' : ' forge-na');
+        return itemCellHTML(it2, 'forgeinv', ok ? '' : ' forge-na', nodePendingKey('forge'));
       }).join('');
     }
   }
@@ -3150,7 +3427,13 @@ function renderForge() {
 function renderTower() {
   var fightBox = $id('tower-fight');
   var listBox = $id('tower-list-wrap');
-  if (G.tower.active) {
+  var snapshot = uiTowerPanelSnapshot();
+  var headerSnapshot = uiHeaderPanelSnapshot();
+  if (!snapshot || !headerSnapshot) return;
+  var towerState = snapshot.tower || {};
+  var runtime = snapshot.runtime || {};
+  var player = headerSnapshot.player || {};
+  if (towerState.active) {
     fightBox.style.display = '';
     listBox.style.display = 'none';
     // 動態部分由 renderTowerFight 處理
@@ -3158,10 +3441,11 @@ function renderTower() {
     fightBox.style.display = 'none';
     listBox.style.display = '';
     var h = '';
-    var maxShow = Math.min(TOWER_MAX_FLOOR, G.tower.highest + 3);
+    var highest = Math.max(0, towerState.highest || 0);
+    var maxShow = Math.min(TOWER_MAX_FLOOR, highest + 3);
     for (var fl = 1; fl <= maxShow; fl++) {
-      var unlocked = fl <= G.tower.highest + 1;
-      var cleared = fl <= G.tower.highest;
+      var unlocked = fl <= highest + 1;
+      var cleared = fl <= highest;
       var bd = BOSS_LIST[(fl - 1) % BOSS_LIST.length];
       var hell = isHellTowerFloor(fl);
       var purgatory = isPurgatoryTowerFloor(fl);
@@ -3174,27 +3458,38 @@ function renderTower() {
           sectionName + '<span>第 ' + sectionStart + '～' + sectionEnd + ' 層</span></div>';
       }
 
-      var bossIcon = (bd.img && !bd.imgFailed) ? 'images/' + bd.img : null;
-      var bossIdx = (fl - 1) % BOSS_LIST.length;
+      var bossIcon = (bd.img && !towerBossImageFailed(bd.img)) ? 'images/' + bd.img : null;
       var iconHtml = bossIcon
-        ? '<img src="' + bossIcon + '" style="width:32px;height:32px;vertical-align:middle;border-radius:4px;box-shadow:0 0 5px #000;" onerror="BOSS_LIST[' + bossIdx + '].imgFailed=true; this.outerHTML=\'<span style=&quot;font-size:24px;vertical-align:middle;&quot;>\' + (bd.emoji || \'👾\') + \'</span>\';">'
+        ? '<img src="' + bossIcon + '" data-tower-boss-image="' + esc(bd.img) + '" data-tower-boss-fallback="' + esc(bd.emoji || '👾') + '" style="width:32px;height:32px;vertical-align:middle;border-radius:4px;box-shadow:0 0 5px #000;">'
         : '<span style="font-size:24px;vertical-align:middle;">' + (bd.emoji || '👾') + '</span>';
 
       var twCost = towerChallengeCost(fl);
       h += '<div class="tower-floor ' + towerClass + (cleared ? ' cleared' : '') + (unlocked ? '' : ' locked') + '" data-tower-tip="' + fl + '">' +
         '<span class="tf-emoji" style="margin-right:12px;">' + iconHtml + '</span>' +
         '<span class="tf-name' + (purgatory ? ' purgatory-boss' : '') + '" style="vertical-align:middle;">第 ' + fl + ' 層・' + bd.name + (cleared ? ' ✅' : '') + '</span>' +
-        '<span class="tf-hint" style="margin-left:auto; margin-right:10px;">建議野外階段 ' + (4 + fl * 5) + '+｜挑戰費 <span style="color:' + (G.player.gold >= twCost ? '#ffd700' : '#fca5a5') + '">💰' + fmt(twCost) + '</span></span>' +
+        '<span class="tf-hint" style="margin-left:auto; margin-right:10px;">建議野外階段 ' + (4 + fl * 5) + '+｜挑戰費 <span style="color:' + ((player.gold || 0) >= twCost ? '#ffd700' : '#fca5a5') + '">💰' + fmt(twCost) + '</span></span>' +
         (unlocked
-          ? '<button class="btn sm" data-tower-floor="' + fl + '">挑戰</button>' +
-          '<button class="btn sm" data-tower-auto="' + fl + '" data-tip="連續挑戰此層（次數見上方設定）：金幣不足或次數用完自動停止並回到野外">🔁 連挑</button>'
+          ? '<button class="btn sm" data-tower-floor="' + fl + '"' + pendingUiButtonAttributes(nodePendingKey('tower')) + '>挑戰</button>' +
+          '<button class="btn sm" data-tower-auto="' + fl + '"' + pendingUiButtonAttributes(nodePendingKey('tower')) + ' data-tip="連續挑戰此層（次數見上方設定）：金幣不足或次數用完自動停止並回到野外">🔁 連挑</button>'
           : '<span class="tf-lock">🔒</span>') +
         '</div>';
     }
     $id('tower-floors').innerHTML = h;
+    var towerBossImages = $id('tower-floors').querySelectorAll('[data-tower-boss-image]');
+    for (var ti = 0; ti < towerBossImages.length; ti++) {
+      towerBossImages[ti].onerror = function () {
+        var imageName = this.getAttribute('data-tower-boss-image');
+        var fallbackEmoji = this.getAttribute('data-tower-boss-fallback') || '👾';
+        markTowerBossImageFailed(imageName);
+        var fallback = document.createElement('span');
+        fallback.style.cssText = 'font-size:24px;vertical-align:middle;';
+        fallback.textContent = fallbackEmoji;
+        this.parentNode.replaceChild(fallback, this);
+      };
+    }
     // 上次結果
     var rbox = $id('tower-result');
-    var r = TOWER.result;
+    var r = runtime.result;
     if (r) {
       var rh = '<div class="tr-title ' + (r.win ? 'good' : 'bad') + '">' +
         (r.win ? '🏆 通關第 ' + r.floor + ' 層！' : '💀 第 ' + r.floor + ' 層挑戰失敗') + '</div>';
@@ -3212,7 +3507,7 @@ function renderTower() {
     if (UI._scrollTower) {
       UI._scrollTower = false;
       setTimeout(function () {
-        var el = document.querySelector('.tower-floor[data-tower-tip="' + (G.tower.highest + 1) + '"]');
+        var el = document.querySelector('.tower-floor[data-tower-tip="' + (highest + 1) + '"]');
         if (el) el.scrollIntoView({ behavior: 'auto', block: 'center' });
       }, 10);
     }
@@ -3242,16 +3537,21 @@ function formatTowerTimerSeconds(seconds) {
 }
 
 function renderTowerTimerFrame() {
-  if (!G.tower.active || UI.tab !== 'tower' || !TOWER.boss) {
+  var snapshot = uiTowerPanelSnapshot();
+  var runtime = snapshot && snapshot.runtime;
+  if (!towerViewActive(snapshot) || UI.tab !== 'tower' || !runtime || !runtime.boss) {
     stopTowerTimerAnimation();
     return;
   }
-  var paused = typeof isCombatPaused === 'function' && isCombatPaused();
+  var view = workerUiStateEnabled() ? viewState() : null;
+  var paused = workerUiStateEnabled()
+    ? !!(view && view.paused)
+    : (typeof isCombatPaused === 'function' && isCombatPaused());
   if (paused) UI.towerTimerAnchor = null;
   var anchor = UI.towerTimerAnchor;
   var remain = !paused && anchor
-    ? Math.max(0, towerTimeLimitWithTalents(TOWER.floor) - (anchor.elapsed + (towerTimerNow() - anchor.at) / 1000))
-    : Math.max(0, towerTimeLimitWithTalents(TOWER.floor) - TOWER.elapsed);
+    ? Math.max(0, towerTimeLimitWithTalents(runtime.floor) - (anchor.elapsed + (towerTimerNow() - anchor.at) / 1000))
+    : Math.max(0, towerTimeLimitWithTalents(runtime.floor) - runtime.elapsed);
   var timerEl = $id('tw-timer');
   if (timerEl) {
     timerEl.textContent = formatTowerTimerSeconds(remain) + 's';
@@ -3266,49 +3566,61 @@ function renderTowerTimerFrame() {
 
 // 高塔戰鬥動態渲染（每 tick）；倒數文字另外以逐幀動畫更新
 function renderTowerFight() {
-  if (!G.tower.active || UI.tab !== 'tower') {
+  var snapshot = uiTowerPanelSnapshot();
+  var headerSnapshot = uiHeaderPanelSnapshot();
+  if (!towerViewActive(snapshot) || UI.tab !== 'tower' || !headerSnapshot) {
     stopTowerTimerAnimation();
     return;
   }
-  var st = getStats();
-  var b = TOWER.boss, p = TOWER.player;
-  if (!b || !p) {
+  var runtime = snapshot.runtime || {};
+  var st = headerSnapshot.stats;
+  var b = runtime.boss, p = runtime.player;
+  if (!b || !p || !st) {
     stopTowerTimerAnimation();
     return;
   }
-  var paused = typeof isCombatPaused === 'function' && isCombatPaused();
+  var view = workerUiStateEnabled() ? viewState() : null;
+  var paused = workerUiStateEnabled()
+    ? !!(view && view.paused)
+    : (typeof isCombatPaused === 'function' && isCombatPaused());
   if (paused) {
     stopTowerTimerAnimation();
     renderTowerTimerFrame();
   } else {
-    if (!UI.towerTimerAnchor || UI.towerTimerAnchor.elapsed !== TOWER.elapsed) {
-      UI.towerTimerAnchor = { elapsed: TOWER.elapsed, at: towerTimerNow() };
+    if (!UI.towerTimerAnchor || UI.towerTimerAnchor.elapsed !== runtime.elapsed) {
+      UI.towerTimerAnchor = { elapsed: runtime.elapsed, at: towerTimerNow() };
     }
     if (!UI.towerTimerRaf) renderTowerTimerFrame();
   }
-  $id('tw-enrage').style.display = TOWER.enraged ? '' : 'none';
+  $id('tw-enrage').style.display = runtime.enraged ? '' : 'none';
   // 連續挑戰進度（第 X/Y 場）
   var autoEl = $id('tw-auto-status');
   if (autoEl) {
-    if (TOWER.auto) {
+    if (runtime.auto) {
       autoEl.style.display = '';
-      autoEl.textContent = '🔁 連挑 第 ' + (TOWER.auto.done + 1) + '/' + TOWER.auto.total + ' 場（勝 ' + TOWER.auto.wins + '）';
+      autoEl.textContent = '🔁 連挑 第 ' + (runtime.auto.done + 1) + '/' + runtime.auto.total + ' 場（勝 ' + runtime.auto.wins + '）';
     } else {
       autoEl.style.display = 'none';
     }
   }
-  if (b.img && !b.imgFailed) {
+  if (b.img && !towerBossImageFailed(b.img)) {
     var bossImgSrc = 'images/' + b.img;
     var tbImg = $id('tb-emoji').querySelector('img');
     if (!tbImg) {
       $id('tb-emoji').innerHTML = '<img src="' + bossImgSrc + '" class="cb-icon boss" data-src="' + bossImgSrc + '">';
       tbImg = $id('tb-emoji').querySelector('img');
-      if (tbImg) tbImg.onerror = function () { b.imgFailed = true; };
+      if (tbImg) tbImg.onerror = function () {
+        markTowerBossImageFailed(b.img);
+        UI.dirty.tower = true;
+      };
     } else {
       if (tbImg.getAttribute('data-src') !== bossImgSrc) {
         tbImg.setAttribute('data-src', bossImgSrc);
         tbImg.setAttribute('src', bossImgSrc);
-        tbImg.onerror = function () { b.imgFailed = true; };
+        tbImg.onerror = function () {
+          markTowerBossImageFailed(b.img);
+          UI.dirty.tower = true;
+        };
       }
       if (tbImg.className !== 'cb-icon boss') tbImg.className = 'cb-icon boss';
     }
@@ -3330,8 +3642,8 @@ function renderTowerFight() {
   setHtmlIfChanged($id('tp-hptext'), fmt(Math.max(0, p.hp)) + playerShieldText(p) + ' / ' + fmt(st.hp));
   setTextIfChanged($id('tp-status'), entStatus(p));
   renderMpSkill(p, 'tp', st);
-  setTextIfChanged($id('tw-dps'), 'DPS ' + fmt(TOWER.elapsed > 1 ? TOWER.dmgDealt / TOWER.elapsed : 0) +
-    '（需求 ' + fmt(b.maxHp / towerTimeLimitWithTalents(TOWER.floor)) + '）');
+  setTextIfChanged($id('tw-dps'), 'DPS ' + fmt(runtime.elapsed > 1 ? runtime.dmgDealt / runtime.elapsed : 0) +
+    '（需求 ' + fmt(b.maxHp / towerTimeLimitWithTalents(runtime.floor)) + '）');
 }
 
 function uiRenderingSuspended() {
@@ -3345,43 +3657,50 @@ function markVisibleUiDirty() {
 
 function handleVisibilityChange() {
   if (uiRenderingSuspended()) return;
+  noteWorkerHeartbeat();
   markVisibleUiDirty();
   uiTick();
 }
 
 function uiTick() {
   if (uiRenderingSuspended()) return;
+  checkWorkerHealth();
   flushPendingLogDom();
   flushDirtyDetailLogs();
   var d = UI.dirty;
   // 分頁標題戰況（每秒更新一次即可）
   _titleTimer += 0.2;
   if (_titleTimer >= 1) { _titleTimer = 0; updateLiveTitle(); }
-  // 神鑄系統開放通知（達標後僅提示一次，涵蓋升級當下與讀檔已達標兩種情況）
-  if (forgeUnlocked() && !forgeState().unlockNotified) {
-    forgeState().unlockNotified = true;
-    UI.dirty.header = true; // 立即顯示神鑄頁籤
-    blog('🔯 <span class="log-hl-good">神鑄系統已開啟！</span>角色達到 ' + FORGE_UNLOCK_LEVEL + ' 級且完成 ' + FORGE_UNLOCK_REINCARNATION + ' 轉，可於「神鑄」分頁鑄造更高品質的裝備。', 'good');
-    showConfirmDialog('神鑄系統已開啟！\n\n將 6 件相同品質的裝備（傳說/神話/創世）放入六芒星法陣，即可鑄造下一品質的裝備。是否前往查看？', function () {
-      switchTab('forge');
-      UI.dirty.forge = true;
-    }, { title: '🔯 神鑄系統', okText: '前往神鑄', cancelText: '稍後再說' });
-  }
   if (d.header) { renderHeader(); d.header = false; }
   renderBattle(); // Battle is always visible
   refreshBuffTooltip();
-  if (UI.tab === 'tower' && G.tower.active) renderTowerFight();
+  var towerSnapshot = UI.tab === 'tower' ? uiTowerPanelSnapshot() : null;
+  if (UI.tab === 'tower' && towerViewActive(towerSnapshot)) renderTowerFight();
   d.battle = false;
   if (d.equip && UI.tab === 'equip') { renderEquip(); d.equip = false; }
   if (d.inv && UI.tab === 'equip') { renderInventory(); d.inv = false; }
   // 舊生產線頁已移除；零件庫/附魔書/強化統計變動（dirty.factory）一併驅動熔爐頁重繪
   if ((d.newforge || d.inv || d.factory) && UI.tab === 'newforge') { renderNewForge(); d.newforge = false; d.factory = false; d.inv = false; }
-  if ((d.forge || d.inv) && UI.tab === 'forge') { renderForge(); d.forge = false; d.inv = false; }
-  if (UI.tab === 'forge' && forgeIsBusy()) renderForgeProgress();
+  if ((d.forge || d.inv || d.gems) && UI.tab === 'forge') {
+    renderForge();
+    d.forge = false;
+    d.inv = false;
+    d.gems = false;
+  }
+  var forgeSnapshot = UI.tab === 'forge' ? uiForgePanelSnapshot() : null;
+  var forgeView = forgeViewState(forgeSnapshot);
+  if (UI.tab === 'forge' && forgeView && forgeView.crafting) {
+    renderForgeProgress(forgeView, uiInventoryPanelSnapshot(), uiGemsPanelSnapshot());
+  }
   // 神鑄頁籤運行中小圖標：鑄造進行時旋轉顯示（不論目前所在分頁）
   var runInd = $id('forge-run-ind');
   if (runInd) {
-    var forgeRunning = forgeIsBusy();
+    var indicatorSnapshot = forgeSnapshot ||
+      (workerUiStateEnabled() ? peekUiPanelData('forge') : uiForgePanelSnapshot());
+    var workerView = workerUiStateEnabled() ? viewState() : null;
+    var forgeRunning = workerView
+      ? !!workerView.forgeBusy
+      : !!(indicatorSnapshot && indicatorSnapshot.forge && indicatorSnapshot.forge.crafting);
     if (forgeRunning !== (runInd.style.display !== 'none')) {
       runInd.style.display = forgeRunning ? '' : 'none';
     }
@@ -3524,6 +3843,178 @@ function uiHeaderPanelSnapshot() {
     stage: G.stage,
     stats: typeof getStats === 'function' ? getStats() : null
   };
+}
+
+function uiTowerPanelSnapshot() {
+  if (workerUiStateEnabled()) return panelData('tower');
+  if (typeof G === 'undefined' || !G.tower || typeof TOWER === 'undefined') return null;
+  return { tower: G.tower, runtime: TOWER };
+}
+
+function uiNewForgePanelSnapshot() {
+  if (workerUiStateEnabled()) return panelData('newforge');
+  if (typeof G === 'undefined' || !G.newForge) return null;
+  return { newForge: G.newForge };
+}
+
+function uiFactoryPanelSnapshot() {
+  if (workerUiStateEnabled()) return panelData('factory');
+  if (typeof G === 'undefined' || !G.factory) return null;
+  return {
+    factory: G.factory,
+    salvageSettings: G.player && G.player.salvageSettings
+  };
+}
+
+function uiForgePanelSnapshot() {
+  if (workerUiStateEnabled()) return panelData('forge');
+  if (typeof G === 'undefined') return null;
+  return { forge: forgeState() };
+}
+
+function uiInventoryPanelSnapshot() {
+  if (workerUiStateEnabled()) return panelData('inv');
+  if (typeof G === 'undefined' || !Array.isArray(G.inventory)) return null;
+  return {
+    items: G.inventory,
+    details: null,
+    count: G.inventory.length,
+    cap: typeof inventoryCapacityWithTalents === 'function'
+      ? inventoryCapacityWithTalents()
+      : INVENTORY_CAP + ((G.player && G.player.invUpgrades) || 0)
+  };
+}
+
+function uiGemsPanelSnapshot() {
+  if (workerUiStateEnabled()) return panelData('gems');
+  if (typeof G === 'undefined' || !G.player) return null;
+  return {
+    gems: G.player.gems || {},
+    fusedGems: G.player.fusedGems || [],
+    shop: G.player.gemShop || null
+  };
+}
+
+function forgeViewState(snapshot) {
+  return snapshot && snapshot.forge;
+}
+
+function forgeViewSlots(forge) {
+  return forge && Array.isArray(forge.slots) ? forge.slots : [];
+}
+
+function forgeViewItemCount(forge) {
+  return forgeViewSlots(forge).filter(function (item) { return !!item; }).length;
+}
+
+function forgeViewMode(forge) {
+  var slots = forgeViewSlots(forge);
+  for (var i = 0; i < slots.length; i++) {
+    if (slots[i]) return slots[i].kind === 'gem' ? 'gem' : 'equip';
+  }
+  return null;
+}
+
+function forgeViewDustCount(forge, player) {
+  var slots = forge && Array.isArray(forge.dustSlots) ? forge.dustSlots : [];
+  var placed = slots.filter(function (on) { return !!on; }).length;
+  return Math.min(placed, Math.max(0, Number(player && player.dust) || 0));
+}
+
+function forgeViewGemCount(gemsSnapshot, type, level) {
+  var byType = gemsSnapshot && gemsSnapshot.gems && gemsSnapshot.gems[type];
+  return Math.max(0, Number(byType && byType[level]) || 0);
+}
+
+function forgeViewTotalGems(gemsSnapshot) {
+  var total = 0;
+  for (var type in GEM_TYPES) {
+    for (var level = 1; level <= GEM_FORGE_MAX_LEVEL; level++) {
+      total += forgeViewGemCount(gemsSnapshot, type, level);
+    }
+  }
+  return total;
+}
+
+function forgeViewRateInfo(forge, player) {
+  var mode = forgeViewMode(forge);
+  if (!mode) return null;
+  var slots = forgeViewSlots(forge);
+  var first = slots.filter(function (item) { return !!item; })[0];
+  if (!first) return null;
+  var dustN = forgeViewDustCount(forge, player);
+  if (mode === 'gem') {
+    return {
+      mode: 'gem',
+      base: FORGE_GEM_BASE_RATE[first.level] || 0,
+      dust: dustN * FORGE_GEM_DUST_RATE,
+      total: forgeGemSuccessRateFor(first.level, dustN),
+      cost: forgeGemCost(first.level)
+    };
+  }
+  return {
+    mode: 'equip',
+    base: FORGE_BASE_RATE[first.rarity] || 0,
+    dust: dustN * FORGE_DUST_RATE,
+    total: forgeSuccessRateFor(first.rarity, dustN),
+    cost: FORGE_GOLD_COST[first.rarity] || 0
+  };
+}
+
+function forgeViewAutoFillLabel(forge) {
+  var autoFill = forge && forge.autoFill;
+  if (!autoFill) return null;
+  if (autoFill.kind === 'gem') return gemLabel(autoFill.type, autoFill.level);
+  return (RARITIES[autoFill.rarity] ? RARITIES[autoFill.rarity].name : '') + '裝備';
+}
+
+function forgeViewRemainInfo(forge, inventorySnapshot, gemsSnapshot) {
+  var slots = forgeViewSlots(forge);
+  var first = slots.filter(function (item) { return !!item; })[0];
+  var spec = forge && forge.autoFill;
+  if (!spec && first) {
+    spec = first.kind === 'gem'
+      ? { kind: 'gem', type: first.type, level: first.level }
+      : { kind: 'equip', rarity: first.rarity };
+  }
+  if (!spec) return null;
+  if (spec.kind === 'gem') {
+    return {
+      label: gemLabel(spec.type, spec.level),
+      count: forgeViewGemCount(gemsSnapshot, spec.type, spec.level)
+    };
+  }
+  var items = inventorySnapshot && inventorySnapshot.items || [];
+  var count = items.filter(function (item) {
+    return item && item.rarity === spec.rarity && !item.locked && item.kind !== 'gem';
+  }).length;
+  return {
+    label: (RARITIES[spec.rarity] ? RARITIES[spec.rarity].name : '') + '裝備',
+    count: count
+  };
+}
+
+function newForgeViewFurnace(snapshot, furnaceId) {
+  var furnaces = snapshot && snapshot.newForge && snapshot.newForge.furnaces;
+  if (!Array.isArray(furnaces)) return null;
+  for (var i = 0; i < furnaces.length; i++) {
+    if (furnaces[i] && furnaces[i].id === furnaceId) return furnaces[i];
+  }
+  return null;
+}
+
+function towerViewActive(snapshot) {
+  return !!(snapshot && snapshot.tower && snapshot.tower.active);
+}
+
+var UI_FAILED_BOSS_IMAGES = Object.create(null);
+
+function towerBossImageFailed(imageName) {
+  return !!(imageName && UI_FAILED_BOSS_IMAGES[imageName]);
+}
+
+function markTowerBossImageFailed(imageName) {
+  if (imageName) UI_FAILED_BOSS_IMAGES[imageName] = true;
 }
 
 function talentViewReincarnations(snapshot) {
@@ -4603,13 +5094,21 @@ function showEnemyTooltip(anchorEl) {
   var tip = $id('sk-tooltip');
   if (!tip) return;
 
-
   var isBossTip = (anchorEl.id === 'btn-boss-tip' || anchorEl.id === 'btn-tower-result-boss-tip');
+  var workerView = workerUiStateEnabled() ? viewState() : null;
+  var mayUseTower = isBossTip || (workerUiStateEnabled()
+    ? !!(workerView && workerView.towerActive)
+    : !!(typeof G !== 'undefined' && G.tower && G.tower.active));
+  var towerSnapshot = mayUseTower ? uiTowerPanelSnapshot() : null;
+  var towerRuntime = towerSnapshot && towerSnapshot.runtime;
+  var towerActive = towerViewActive(towerSnapshot);
   var m = null;
   if (isBossTip) {
-    m = TOWER.boss || (TOWER.floor ? makeBoss(TOWER.floor) : null);
-  } else if (G.tower.active) {
-    m = TOWER.boss || (TOWER.floor ? makeBoss(TOWER.floor) : null);
+    m = towerRuntime && (towerRuntime.boss ||
+      (!workerUiStateEnabled() && towerRuntime.floor ? makeBoss(towerRuntime.floor) : null));
+  } else if (towerActive) {
+    m = towerRuntime && (towerRuntime.boss ||
+      (!workerUiStateEnabled() && towerRuntime.floor ? makeBoss(towerRuntime.floor) : null));
   } else {
     m = (typeof FIELD !== 'undefined' && FIELD ? FIELD.monster : null);
     if (!m) {
@@ -4669,7 +5168,7 @@ function showEnemyTooltip(anchorEl) {
   dropTip += '</div>';
 
   if (isBossTip) {
-    var floor = TOWER.floor || 1;
+    var floor = (towerRuntime && towerRuntime.floor) || 1;
     var rw = towerRewardFor(floor, false);
     var dustRate = bossDustRate(floor);
     var soulOriginRate = hellSoulOriginDropChance(floor);
@@ -4699,7 +5198,7 @@ function showEnemyTooltip(anchorEl) {
     }
 
     var dustLine = '';
-    if (!G.tower.active) {
+    if (!towerActive) {
       var dustRate = fieldDustRate(m.level);
       if (dustRate > 0) dustLine = '💫 魔塵 <span style="color:var(--dim)">(' + fmt1(dustRate) + '%，神鑄材料)</span>';
     }
@@ -5545,7 +6044,16 @@ function initUI() {
     forgeRebuildOk.addEventListener('click', function () {
       var modal = $id('forge-rebuild-modal');
       if (modal) modal.style.display = 'none';
-      if (window.G && G.newForge) G.newForge.noticeShown = true;
+      if (workerUiStateEnabled()) {
+        sendUiCommand('newforge.markNoticeShown', {}, {
+          keys: [nodePendingKey('newforge-notice')],
+          panels: ['newforge']
+        }).catch(function (error) {
+          reportUiCommandFailure('熔爐公告已讀', error, ['newforge']);
+        });
+      } else if (window.G && G.newForge) {
+        G.newForge.noticeShown = true;
+      }
     });
   }
 
@@ -5997,7 +6505,9 @@ function initUI() {
     // 神鑄法陣裝備槽：顯示完整裝備詳情（寶石槽走上方 data-tip 分支）
     var fSlotEl = e.target.closest('.forge-slot.filled[data-forge-slot]');
     if (fSlotEl) {
-      var fSlotIt = forgeState().slots[parseInt(fSlotEl.getAttribute('data-forge-slot'), 10)];
+      var forgeTooltipSnapshot = uiForgePanelSnapshot();
+      var forgeTooltipState = forgeViewState(forgeTooltipSnapshot);
+      var fSlotIt = forgeViewSlots(forgeTooltipState)[parseInt(fSlotEl.getAttribute('data-forge-slot'), 10)];
       if (fSlotIt && fSlotIt.kind !== 'gem') {
         showItemTooltip(fSlotIt, fSlotEl, { hint: '點擊取回背包' });
         return;
@@ -6459,15 +6969,37 @@ function initUI() {
     // 神鑄：法陣槽位（點擊取回）/ 魔塵符位（點擊放入或取下）
     var fslot = e.target.closest('[data-forge-slot]');
     if (fslot) {
+      if (workerUiStateEnabled() && isUiCommandPending(nodePendingKey('forge'))) return;
       if (fslot.classList.contains('filled')) {
-        forgeRemoveItem(parseInt(fslot.getAttribute('data-forge-slot'), 10));
+        var forgeSlotIndex = parseInt(fslot.getAttribute('data-forge-slot'), 10);
+        if (workerUiStateEnabled()) {
+          sendUiCommand('forge.removeItem', { slotIndex: forgeSlotIndex }, {
+            keys: [nodePendingKey('forge')],
+            panels: ['forge', 'inv', 'gems']
+          }).catch(function (error) {
+            reportUiCommandFailure('神鑄取回素材', error, ['forge', 'inv', 'gems']);
+          });
+        } else {
+          forgeRemoveItem(forgeSlotIndex);
+        }
       }
       return;
     }
     var fdust = e.target.closest('[data-forge-dust]');
     if (fdust) {
-      var derr = forgeToggleDust(parseInt(fdust.getAttribute('data-forge-dust'), 10));
-      if (derr) blog('⚠️ 神鑄：' + derr, 'warn');
+      if (workerUiStateEnabled() && isUiCommandPending(nodePendingKey('forge'))) return;
+      var forgeDustIndex = parseInt(fdust.getAttribute('data-forge-dust'), 10);
+      if (workerUiStateEnabled()) {
+        sendUiCommand('forge.toggleDust', { index: forgeDustIndex }, {
+          keys: [nodePendingKey('forge')],
+          panels: ['forge']
+        }).catch(function (error) {
+          reportUiCommandFailure('神鑄魔塵', error, ['forge']);
+        });
+      } else {
+        var derr = forgeToggleDust(forgeDustIndex);
+        if (derr) blog('⚠️ 神鑄：' + derr, 'warn');
+      }
       return;
     }
     // 神鑄自動放入選單（選取 / 確定 / 取消 / 外點關閉）
@@ -6487,17 +7019,34 @@ function initUI() {
         return;
       }
       if (e.target.closest('#fam-confirm')) {
+        if (workerUiStateEnabled() && isUiCommandPending(nodePendingKey('forge'))) return;
         if (UI.forgeAutoPick) {
-          var fst = forgeState();
-          if (forgeItemCount() > 0) forgeUnloadAll();  // 先清空法陣，再放入指定素材
-          fst.autoFill = UI.forgeAutoPick;
-          var famErr = forgeAutoFillApply();
-          if (famErr) {
-            fst.autoFill = null;
-            blog('⚠️ 神鑄自動放入：' + famErr, 'warn');
+          if (workerUiStateEnabled()) {
+            var autoPickArgs = UI.forgeAutoPick.kind === 'gem'
+              ? {
+                kind: 'gem',
+                gemType: UI.forgeAutoPick.type,
+                gemLevel: UI.forgeAutoPick.level
+              }
+              : { kind: 'equip', rarity: UI.forgeAutoPick.rarity };
+            sendUiCommand('forge.setAutoFill', autoPickArgs, {
+              keys: [nodePendingKey('forge')],
+              panels: ['forge', 'inv', 'gems']
+            }).catch(function (error) {
+              reportUiCommandFailure('神鑄自動放入', error, ['forge', 'inv', 'gems']);
+            });
           } else {
-            blog('🔁 神鑄自動放入已啟用：' + forgeAutoFillLabel() +
-              '（每次鑄造後自動補放 6 件，數量不足自動停止）', 'good');
+            var fst = forgeState();
+            if (forgeItemCount() > 0) forgeUnloadAll();  // 先清空法陣，再放入指定素材
+            fst.autoFill = UI.forgeAutoPick;
+            var famErr = forgeAutoFillApply();
+            if (famErr) {
+              fst.autoFill = null;
+              blog('⚠️ 神鑄自動放入：' + famErr, 'warn');
+            } else {
+              blog('🔁 神鑄自動放入已啟用：' + forgeAutoFillLabel() +
+                '（每次鑄造後自動補放 6 件，數量不足自動停止）', 'good');
+            }
           }
           famMenu.style.display = 'none';
           UI.forgeAutoPick = null;
@@ -6506,8 +7055,18 @@ function initUI() {
         return;
       }
       if (e.target.closest('#fam-stop')) {
-        forgeState().autoFill = null;
-        blog('🔁 神鑄自動放入已取消', 'info');
+        if (workerUiStateEnabled() && isUiCommandPending(nodePendingKey('forge'))) return;
+        if (workerUiStateEnabled()) {
+          sendUiCommand('forge.setAutoFill', { kind: 'clear' }, {
+            keys: [nodePendingKey('forge')],
+            panels: ['forge']
+          }).catch(function (error) {
+            reportUiCommandFailure('取消神鑄自動放入', error, ['forge']);
+          });
+        } else {
+          forgeState().autoFill = null;
+          blog('🔁 神鑄自動放入已取消', 'info');
+        }
         famMenu.style.display = 'none';
         UI.forgeAutoPick = null;
         UI.dirty.forge = true;
@@ -6525,19 +7084,40 @@ function initUI() {
     // 神鑄寶石頁：點擊寶石放入法陣
     var fgem = e.target.closest('[data-forge-gem]');
     if (fgem) {
+      if (workerUiStateEnabled() && isUiCommandPending(nodePendingKey('forge'))) return;
       var gp = fgem.getAttribute('data-forge-gem').split(':');
-      var gperr = forgePlaceGem(gp[0], parseInt(gp[1], 10));
-      if (gperr) blog('⚠️ 神鑄：' + gperr, 'warn');
+      var forgeGemLevel = parseInt(gp[1], 10);
+      if (workerUiStateEnabled()) {
+        sendUiCommand('forge.placeGem', { type: gp[0], level: forgeGemLevel }, {
+          keys: [nodePendingKey('forge')],
+          panels: ['forge', 'gems']
+        }).catch(function (error) {
+          reportUiCommandFailure('神鑄放入寶石', error, ['forge', 'gems']);
+        });
+      } else {
+        var gperr = forgePlaceGem(gp[0], forgeGemLevel);
+        if (gperr) blog('⚠️ 神鑄：' + gperr, 'warn');
+      }
       return;
     }
     var cell = e.target.closest('.item-cell, .eq-slot');
     if (cell) {
       // 神鑄背包：點擊裝備直接放入法陣（成功後清除殘留選取，防止跨分頁誤操作）
       if (cell.getAttribute('data-src') === 'forgeinv') {
+        if (workerUiStateEnabled() && isUiCommandPending(nodePendingKey('forge'))) return;
         var fid = cell.getAttribute('data-id');
-        var perr = forgePlaceItem(fid);
-        if (perr) blog('⚠️ 神鑄：' + perr, 'warn');
-        else if (UI.sel && UI.sel.id === fid) UI.sel = null;
+        if (workerUiStateEnabled()) {
+          sendUiCommand('forge.placeItem', { itemId: fid }, {
+            keys: [nodePendingKey('forge'), itemPendingKey(fid)],
+            panels: ['forge', 'inv']
+          }).catch(function (error) {
+            reportUiCommandFailure('神鑄放入裝備', error, ['forge', 'inv']);
+          });
+        } else {
+          var perr = forgePlaceItem(fid);
+          if (perr) blog('⚠️ 神鑄：' + perr, 'warn');
+          else if (UI.sel && UI.sel.id === fid) UI.sel = null;
+        }
         return;
       }
       if (cell.classList.contains('empty')) {
@@ -6666,8 +7246,18 @@ function initUI() {
     }
     var tf = e.target.closest('[data-tower-floor]');
     if (tf) {
-      TOWER.auto = null; TOWER.autoNextCd = 0; // 手動挑戰視為取消等待中的連挑
-      startTowerFight(parseInt(tf.getAttribute('data-tower-floor'), 10));
+      var towerFloor = parseInt(tf.getAttribute('data-tower-floor'), 10);
+      if (workerUiStateEnabled()) {
+        sendUiCommand('tower.start', { floor: towerFloor }, {
+          keys: [nodePendingKey('tower')],
+          panels: ['tower', 'battle', 'header']
+        }).catch(function (error) {
+          reportUiCommandFailure('高塔挑戰', error, ['tower', 'header']);
+        });
+      } else {
+        TOWER.auto = null; TOWER.autoNextCd = 0; // 手動挑戰視為取消等待中的連挑
+        startTowerFight(towerFloor);
+      }
       switchTab('tower');
       return;
     }
@@ -6675,7 +7265,18 @@ function initUI() {
     var ta = e.target.closest('[data-tower-auto]');
     if (ta) {
       var taInput = $id('tw-auto-count');
-      startTowerAuto(parseInt(ta.getAttribute('data-tower-auto'), 10), taInput ? parseInt(taInput.value, 10) : 0);
+      var autoFloor = parseInt(ta.getAttribute('data-tower-auto'), 10);
+      var autoCount = taInput ? parseInt(taInput.value, 10) : 0;
+      if (workerUiStateEnabled()) {
+        sendUiCommand('tower.startAuto', { floor: autoFloor, count: autoCount }, {
+          keys: [nodePendingKey('tower')],
+          panels: ['tower', 'battle', 'header']
+        }).catch(function (error) {
+          reportUiCommandFailure('高塔連挑', error, ['tower', 'header']);
+        });
+      } else {
+        startTowerAuto(autoFloor, autoCount);
+      }
       switchTab('tower');
       return;
     }
@@ -6852,21 +7453,56 @@ function initUI() {
       updateInventoryKeywordFilter();
     });
   }
-  $id('tw-flee').addEventListener('click', fleeTower);
+  $id('tw-flee').setAttribute('data-ui-pending-key', nodePendingKey('tower'));
+  $id('tw-flee').addEventListener('click', function () {
+    if (workerUiStateEnabled()) {
+      sendUiCommand('tower.flee', {}, {
+        keys: [nodePendingKey('tower')],
+        panels: ['tower']
+      }).catch(function (error) {
+        reportUiCommandFailure('高塔撤退', error, ['tower']);
+      });
+    } else {
+      fleeTower();
+    }
+  });
 
   // 神鑄：鑄造 / 全卸下 / 自動使用魔塵
   var forgeGoBtn = $id('forge-go');
   if (forgeGoBtn) {
+    [forgeGoBtn, $id('forge-unload'), $id('forge-cancel')].forEach(function (control) {
+      if (control) control.setAttribute('data-ui-pending-key', nodePendingKey('forge'));
+    });
+    $id('forge-autodust').setAttribute('data-ui-pending-key', nodePendingKey('forge-autoDust'));
+    $id('forge-autoforge').setAttribute('data-ui-pending-key', nodePendingKey('forge-autoForge'));
     forgeGoBtn.addEventListener('click', function () {
-      var err = doForge();
-      if (err) {
-        forgeLog(err, 'bad');
-        blog('⚠️ 神鑄：' + err, 'warn');
+      if (workerUiStateEnabled()) {
+        sendUiCommand('forge.start', {}, {
+          keys: [nodePendingKey('forge')],
+          panels: ['forge', 'inv', 'gems']
+        }).catch(function (error) {
+          reportUiCommandFailure('開始神鑄', error, ['forge', 'inv', 'gems']);
+        });
+      } else {
+        var err = doForge();
+        if (err) {
+          forgeLog(err, 'bad');
+          blog('⚠️ 神鑄：' + err, 'warn');
+        }
       }
     });
     $id('forge-unload').addEventListener('click', function () {
-      var n = forgeUnloadAll();
-      if (n) blog('↩️ 神鑄：已取回 ' + n + ' 件裝備', 'info');
+      if (workerUiStateEnabled()) {
+        sendUiCommand('forge.unloadAll', {}, {
+          keys: [nodePendingKey('forge')],
+          panels: ['forge', 'inv', 'gems']
+        }).catch(function (error) {
+          reportUiCommandFailure('神鑄全部取回', error, ['forge', 'inv', 'gems']);
+        });
+      } else {
+        var n = forgeUnloadAll();
+        if (n) blog('↩️ 神鑄：已取回 ' + n + ' 件裝備', 'info');
+      }
     });
     // 自動放入：開關選單（點擊時依目前切頁重建內容）
     var afToggleBtn = $id('forge-autofill');
@@ -6877,7 +7513,12 @@ function initUI() {
         if (menu.style.display === 'none') {
           UI.forgeAutoPick = null;
           menu.style.display = 'block';
-          renderForgeAutoMenu();
+          var forgeMenuSnapshot = uiForgePanelSnapshot();
+          renderForgeAutoMenu(
+            forgeViewState(forgeMenuSnapshot),
+            uiInventoryPanelSnapshot(),
+            uiGemsPanelSnapshot()
+          );
         } else {
           menu.style.display = 'none';
           UI.forgeAutoPick = null;
@@ -6886,21 +7527,56 @@ function initUI() {
       });
     }
     $id('forge-autodust').addEventListener('change', function () {
-      var f = forgeState();
-      f.autoDust = this.checked;
-      if (f.autoDust && forgeItemCount() > 0) forgeAutoFillDust();
-      UI.dirty.forge = true;
+      if (workerUiStateEnabled()) {
+        var autoDustOn = !!this.checked;
+        var forgeAutoDustSnapshot = forgeViewState(uiForgePanelSnapshot());
+        if (autoDustOn && forgeViewItemCount(forgeAutoDustSnapshot) > 0) {
+          sendUiCommand('forge.autoFillDust', {}, {
+            keys: [nodePendingKey('forge-dust-fill')],
+            panels: ['forge']
+          }).catch(function (error) {
+            reportUiCommandFailure('神鑄自動補魔塵', error, ['forge']);
+          });
+        }
+        sendUiCommand('forge.setAuto', { key: 'autoDust', on: autoDustOn }, {
+          keys: [nodePendingKey('forge-autoDust')],
+          panels: ['forge']
+        }).catch(function (error) {
+          reportUiCommandFailure('神鑄自動魔塵設定', error, ['forge']);
+        });
+      } else {
+        var f = forgeState();
+        f.autoDust = this.checked;
+        if (f.autoDust && forgeItemCount() > 0) forgeAutoFillDust();
+        UI.dirty.forge = true;
+      }
     });
     $id('forge-autoforge').addEventListener('change', function () {
-      var f = forgeState();
-      f.autoForge = this.checked;
-      if (this.checked) blog('🔁 自動鑄造已啟用，請先按一次「鑄造」開始', 'info');
-      else blog('⏹️ 自動鑄造已停用', 'info');
-      UI.dirty.forge = true;
-      UI.dirty.inv = true;
+      if (workerUiStateEnabled()) {
+        sendUiCommand('forge.setAuto', { key: 'autoForge', on: !!this.checked }, {
+          keys: [nodePendingKey('forge-autoForge')],
+          panels: ['forge']
+        }).catch(function (error) {
+          reportUiCommandFailure('神鑄自動鑄造設定', error, ['forge']);
+        });
+      } else {
+        var f = forgeState();
+        f.autoForge = this.checked;
+        if (this.checked) blog('🔁 自動鑄造已啟用，請先按一次「鑄造」開始', 'info');
+        else blog('⏹️ 自動鑄造已停用', 'info');
+        UI.dirty.forge = true;
+        UI.dirty.inv = true;
+      }
     });
     $id('forge-cancel').addEventListener('click', function () {
-      if (typeof cancelForge === 'function') {
+      if (workerUiStateEnabled()) {
+        sendUiCommand('forge.cancel', {}, {
+          keys: [nodePendingKey('forge')],
+          panels: ['forge', 'inv', 'gems']
+        }).catch(function (error) {
+          reportUiCommandFailure('取消神鑄', error, ['forge', 'inv', 'gems']);
+        });
+      } else if (typeof cancelForge === 'function') {
         cancelForge();
       }
     });
@@ -7128,12 +7804,31 @@ function confirmTowerResultModal() {
     stopAutoBtn.style.display = 'none';
   }
   if (modal) modal.style.display = 'none';
-  if (typeof confirmTowerResult === 'function') confirmTowerResult();
-  else if (typeof finishTowerFight === 'function') finishTowerFight();
+  if (workerUiStateEnabled()) {
+    sendUiCommand('tower.confirmResult', {}, {
+      keys: [nodePendingKey('tower')],
+      panels: ['tower', 'battle', 'header']
+    }).catch(function (error) {
+      reportUiCommandFailure('高塔結算', error, ['tower', 'header']);
+    });
+  } else if (typeof confirmTowerResult === 'function') {
+    confirmTowerResult();
+  } else if (typeof finishTowerFight === 'function') {
+    finishTowerFight();
+  }
 }
 function stopTowerAutoFromResultModal() {
   clearTowerResultCountdown();
-  if (typeof stopTowerAutoFromResult === 'function') stopTowerAutoFromResult();
+  if (workerUiStateEnabled()) {
+    sendUiCommand('tower.stopAuto', {}, {
+      keys: [nodePendingKey('tower')],
+      panels: ['tower']
+    }).catch(function (error) {
+      reportUiCommandFailure('停止高塔連挑', error, ['tower']);
+    });
+  } else if (typeof stopTowerAutoFromResult === 'function') {
+    stopTowerAutoFromResult();
+  }
   var confirmBtn = $id('trm-confirm');
   var stopAutoBtn = $id('trm-stop-auto');
   if (confirmBtn) {
@@ -7145,6 +7840,27 @@ function stopTowerAutoFromResultModal() {
     stopAutoBtn.style.display = 'none';
   }
 }
+
+function showPendingTowerResultModalIfReady() {
+  if (!workerUiStateEnabled() || !UI.pendingTowerResult) return;
+  var towerSnapshot = uiTowerPanelSnapshot();
+  var headerSnapshot = uiHeaderPanelSnapshot();
+  var runtime = towerSnapshot && towerSnapshot.runtime;
+  if (!runtime || !headerSnapshot || !headerSnapshot.stats) return;
+  var result = UI.pendingTowerResult;
+  UI.pendingTowerResult = null;
+  showTowerResultModal(
+    result,
+    runtime.player,
+    runtime.boss,
+    runtime.dmgDealt || 0,
+    runtime.bossDmgDealt || 0,
+    result.autoCountdown
+      ? { autoCountdown: true, countdown: TOWER_AUTO_RESULT_DELAY }
+      : null
+  );
+}
+
 function showTowerResultModal(r, p, b, myDmg, bDmg, options) {
   var modal = $id('tower-result-modal');
   var title = $id('trm-title');
@@ -7160,7 +7876,9 @@ function showTowerResultModal(r, p, b, myDmg, bDmg, options) {
     title.className = 'tr-title bad';
   }
 
-  var st = getStats();
+  var headerSnapshot = uiHeaderPanelSnapshot();
+  var st = headerSnapshot && headerSnapshot.stats;
+  if (!st) return;
   var pMax = st.hp;
   var pHp = p ? p.hp : 0;
   var bMax = b ? b.maxHp : 1;
