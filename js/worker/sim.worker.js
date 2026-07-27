@@ -288,7 +288,10 @@ function inventoryCellView(it) {
     var f = INV_CELL_FIELDS[i];
     if (it[f] !== undefined) out[f] = it[f];
   }
-  out.ancientCount = (typeof getItemAncientCount === 'function') ? getItemAncientCount(it) : 0;
+  /* getItemAncientCount 住在 item.js（importScripts 順序在本檔之前），直接呼叫。
+     這裡傳的是真實物品（有 affixes、沒有 ancientCount），走的是逐條計數那條路徑；
+     item.js 裡的 ancientCount 短路分支是給主執行緒讀投影用的。 */
+  out.ancientCount = getItemAncientCount(it);
   return out;
 }
 
@@ -545,20 +548,6 @@ function inventoryCapacityNow() {
   return (typeof inventoryCapacityWithTalents === 'function')
     ? inventoryCapacityWithTalents()
     : INVENTORY_CAP + (G.player.invUpgrades || 0);
-}
-
-/* ⚠️ P3 待搬遷：getItemAncientCount 是純粹的狀態查詢，卻住在 ui.js:1512，
-   Worker 載不到它。ui.js 從 P3 起屬 Codex，所以這裡先放一份有守衛的後備。
-   P3 請把 ui.js 那份搬進 js/item.js，然後**刪掉這個區塊**——留著就是兩份實作。 */
-if (typeof getItemAncientCount !== 'function') {
-  self.getItemAncientCount = function (it) {
-    if (!it || !Array.isArray(it.affixes)) return 0;
-    var c = 0;
-    for (var i = 0; i < it.affixes.length; i++) {
-      if (it.affixes[i] && it.affixes[i].ancient) c++;
-    }
-    return c;
-  };
 }
 
 var COMMAND_IMPL = {

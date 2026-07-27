@@ -411,8 +411,9 @@ Claude 的協議 v4 + Worker 端配套（新增 `gem.composeAll`、`gem.dismantl
 - **不得在主執行緒重算派生值**：`getStats()`、`currentDps()`、減傷等一律取自 Worker 快照。
 - **渲染函式不得有副作用**。你盤點出的 `shownRes`、護盾正規化、`ensureSockets`、
   `unlockNotified` 四處由 Claude 移回 Worker；你只要把 `ui.js` 那幾段刪掉即可。
-- **`getItemAncientCount`（`ui.js:1512`）請搬進 `js/item.js`**，
-  並通知 Claude 刪掉 `sim.worker.js` 裡的守衛後備——目前是兩份實作。
+- ~~**`getItemAncientCount`（`ui.js:1512`）請搬進 `js/item.js`**，
+  並通知 Claude 刪掉 `sim.worker.js` 裡的守衛後備——目前是兩份實作。~~
+  ✅ 已完成（Codex `1ae85ed` 搬入 `js/item.js:342`，Claude 同步刪除 Worker 後備）。
 - **`BOSS_LIST[*].imgFailed`（`ui.js:2826`）改成 UI 本地集合**，
   不要寫入共載的設定資料表。
 - **`item.toSynth` 維持原樣**：合成暫存區被 `SYNTHESIS_ENABLED = false` 關閉，

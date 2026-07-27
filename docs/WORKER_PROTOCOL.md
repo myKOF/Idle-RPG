@@ -154,9 +154,8 @@ v1 用「參數名叫 `itemId` 就自動解析」的慣例會出事——`forgeP
 > **實作進度**：19 條已於 P3 前置全部實作在 `sim.worker.js` 的 `COMMAND_IMPL`，
 > 加上存檔三條與 `gm.exec`（待 `js/gm.js` 拆分）。UI 端接線是 P3 的工作。
 >
-> ⚠️ P3 待搬遷：`getItemAncientCount`（`ui.js:1512`）是純狀態查詢卻住在 `ui.js`，
-> Worker 載不到，目前在 `sim.worker.js` 有一份有守衛的後備。
-> P3 請把它搬進 `js/item.js` 並**刪掉** Worker 那份，否則就是兩份實作。
+> ✅ 已完成：`getItemAncientCount` 已於 `1ae85ed` 收斂至 `js/item.js`，
+> `sim.worker.js` 的守衛後備已刪除，全專案僅此一份實作。
 
 - **19 條**邏輯還寫在 `ui.js`，P3 搬進 Worker（下表，另加 v3 新增的
   `item.unequip`、`forge.setAutoFill`、`newforge.setQuality`、`newforge.setEnabled`，
