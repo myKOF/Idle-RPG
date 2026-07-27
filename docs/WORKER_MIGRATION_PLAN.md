@@ -33,13 +33,15 @@
 | 模擬層碰 UI | `blog/flog` 約 88 處；`window.recordLoot*` 11 處（皆在 combat.js）；`window.` 存在性檢查 73 處 |
 | 存檔層 | `save.js` 內 `localStorage` 53 處，另有 `indexedDB` 與 File System Access |
 | UI 讀狀態 | `ui.js` 使用 `G` 共 226 處，其中**寫入僅 16 處** |
-| UI→模擬呼叫 | 216 個函式 / 1073 個呼叫點，其中**會變更狀態的只有 32 個** |
-| 測試 | 116 支 `tests/*.test.cjs`，以 `vm.createContext` + `context.window = context` 直接載入 js 原始檔 |
+| UI→模擬呼叫 | 216 個函式 / 1073 個呼叫點，其中**會變更狀態的 60 個**（含間接改物件、標記 `UI.dirty`、呼叫 `markStatsDirty` 者） |
+| UI 直接改物件 | `ui.js` 另有 7 處直接改遊戲物件屬性（`it.locked`、`f.autoDust`、`f.autoForge` 等） |
+| 測試 | 116 支 `tests/*.test.cjs`／512 個案例，以 `vm.createContext` + `context.window = context` 直接載入 js 原始檔 |
+| ⚠️ 測試基準線 | **開工前即有 95 個案例失敗（散在 32 支檔案）**，417 通過。與本次遷移無關，屬既有狀態 |
 
 **兩個決定性結論**
 
 1. 模擬層幾乎不碰 DOM → 用 `importScripts()` 原封不動載入 Worker 即可，**不需要改寫成 ESM**。
-2. 指令介面只有約 32 個變更點 → 協議可一次凍結，這是三方並行的前提。
+2. 指令介面規模有限（凍結後為 67 條指令） → 協議可一次凍結，這是三方並行的前提。
 
 ---
 
@@ -82,8 +84,9 @@
 
 ## 4. 訊息協議草案
 
-> 正式版由 Claude 於 P0 凍結於 `docs/WORKER_PROTOCOL.md` 與 `js/worker/protocol.js`（單一資料來源）。
-> 以下為草案，供三方建立共同語彙。**任何人不得自行擴充協議**，見第 7 節。
+> **已於 2026-07-27 凍結為 v1。** 正式定義在 `js/worker/protocol.js`（單一資料來源），
+> 說明在 `docs/WORKER_PROTOCOL.md`。以下僅保留摘要，細節一律以 `protocol.js` 為準。
+> **任何人不得自行擴充協議**，見第 7 節。
 
 ### 主執行緒 → Worker
 
@@ -106,22 +109,16 @@
 | `persist` | 要求主執行緒寫入存檔 | `{ json, kind }` |
 | `ack` | 指令完成／失敗 | `{ id, ok, error? }` |
 
-### 指令介面基準線（32 個變更點）
+### 指令介面（v1 凍結結果）
 
-P0 凍結時以此清單為起點，經整併後定案：
+67 條指令，分為 `stage`(3)、`combat`(2)、`item`(7)、`gem`(12)、`player`(5)、`skill`(9)、
+`talent`(4)、`tower`(2)、`forge`(9)、`newforge`(7)、`factory`(2)、`settings`(1)、`save`(3)、`gm`(1)。
 
-- `combat`：`stageGo`、`switchZone`
-- `factory`：`doSalvage`
-- `forge`：`forgeState`（惰性初始化，待確認是否需列為指令）
-- `item`：`buyShopGem`、`buyAllShopGems`、`composeGems`、`fuseGemsV2`、`gemShop`、`manualEnchant`、`refreshGemShop`、`removeEnchantAt`、`unsocketGem`、`upgradeGemShop`
-- `newforge`：`unlockNewForgePartSlot`
-- `player`：`reincarnate`、`switchToEquipSet`
-- `save`：`manualSave`、`createManualSaveToFolderV2`、`restartGame`
-- `skills`：`learnOrUpgradeSkill`、`maxUpgradeSkill`、`downgradeSkill`、`fuseSkills`、`availableSkillPoints`、`skillLevel`（後兩者為查詢，待確認）
-- `talents`：`talentUpgrade`、`talentDowngrade`、`talentDelete`、`potentialUpgrade`
-- `tower`：`startTowerFight`、`finishTowerFight`
+三個必讀重點（細節見 `docs/WORKER_PROTOCOL.md` 第 4 節）：
 
-另有 `ui.js` 內 16 處直接寫入 `G`（背包整理、裝備組命名、分解設定、背包擴充、載入配置、設定開關等），一併轉為指令。
+1. **不能傳物件參考。** 既有吃 item 物件的函式一律改傳 `itemId`；Worker 端解析後呼叫原函式，不得另寫平行實作。
+2. **`fn: null` 的 13 條指令**表示該段邏輯目前寫在 `ui.js` 裡，P3 必須搬進 Worker（含 `salvageAllUnlocked` 整段批次分解邏輯）。
+3. **`INTERNAL_ONLY` 的 5 個函式**（`addToInventory`、`rollGemShop`、`shopHourlyReset`、`forgeLog`、`newForgeReturnUnroutable`）目前被 `ui.js` 直接呼叫，屬 UI 越界驅動模擬內部，P3 必須移除這些呼叫點，不得為它們開指令通道。
 
 ---
 
@@ -149,6 +146,25 @@ P0 凍結時以此清單為起點，經整併後定案：
 ### Feature flag
 
 P1 起以 `?worker=1` 切換新舊路徑，舊單執行緒路徑在 P5 前保持可用。任何階段若新路徑失敗，移除 query 參數即可回到舊路徑。
+
+---
+
+## 5.5 測試基準線（重要）
+
+`npm test` 在**遷移開工前**就已經有失敗案例：
+
+```
+417 pass / 95 fail（32 支檔案）
+```
+
+原因與本次遷移無關（多數是斷言 `ui.js` 原始碼片段、數值公式已調整等既有落差）。因此：
+
+- **驗收標準不是「全綠」，而是「不得新增失敗案例」。**
+- 每階段開始與結束都要跑一次 `npm test`，比對失敗數與失敗清單。
+- 失敗數只要上升，或既有失敗清單出現新名字，該階段不得交付。
+- 重跑基準線：`npm test`，統計方式見本節數字。
+
+既有 95 個失敗應另開任務處理，**不併入本次遷移**（見第 9 節待決事項）。
 
 ---
 
@@ -190,7 +206,8 @@ P1 起以 `?worker=1` 切換新舊路徑，舊單執行緒路徑在 P5 前保持
 
 （三方在此追加，由 Claude 裁決；裁決後移除該條並更新協議）
 
-- 尚無。
+- **既有 95 個測試失敗如何處理？** 開工前即存在，與遷移無關。建議另開任務、指派 Codex 分批修復，
+  不併入本次遷移，以免與 Worker 改動混在同一批 diff 裡難以歸因。待使用者決定。
 
 ---
 
@@ -198,7 +215,7 @@ P1 起以 `?worker=1` 切換新舊路徑，舊單執行緒路徑在 P5 前保持
 
 | 階段 | 狀態 | 完成日 |
 |---|---|---|
-| P0 協議凍結 | 未開始 | |
+| P0 協議凍結 | ✅ 完成（v1，67 條指令） | 2026-07-27 |
 | P1 Worker 骨架 | 未開始 | |
 | P2 存檔搬遷 | 未開始 | |
 | P3 UI 去狀態化 | 未開始 | |
