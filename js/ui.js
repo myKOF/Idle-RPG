@@ -101,6 +101,8 @@ var UI_COMMAND_PENDING = {
   byToken: Object.create(null)
 };
 
+var WORKER_RESTART_NOTICE_TIMER = 0;
+
 function hasOwnUiState(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
@@ -128,8 +130,14 @@ function showWorkerDeadNotice(event) {
   title.textContent = '⚠️ 遊戲模擬已停止';
   title.style.cssText = 'margin:0 0 12px;color:#fca5a5;';
   var desc = document.createElement('p');
-  desc.textContent = 'Worker 已停止回應，畫面資料可能不再更新。請重新載入遊戲以恢復模擬。';
   desc.style.cssText = 'margin:0 0 12px;line-height:1.65;';
+  var restartCount = Number(event && event.restarts);
+  if (!isFinite(restartCount) || restartCount < 0) {
+    restartCount = typeof WorkerBridge.status === 'function'
+      ? Number(WorkerBridge.status().restarts) || 0
+      : 0;
+  }
+  desc.textContent = '已自動嘗試恢復 ' + restartCount + ' 次仍失敗，可能是存檔資料有問題。';
   var detail = document.createElement('pre');
   detail.textContent = event && event.reason ? String(event.reason) : 'Worker 已失去回應';
   detail.style.cssText = 'margin:0 0 18px;padding:10px;max-height:120px;overflow:auto;border-radius:8px;' +
@@ -140,10 +148,22 @@ function showWorkerDeadNotice(event) {
   reload.textContent = '重新載入';
   reload.addEventListener('click', function () { location.reload(); });
 
+  var safeReload = document.createElement('button');
+  safeReload.type = 'button';
+  safeReload.className = 'btn';
+  safeReload.textContent = '安全模式重新載入';
+  safeReload.style.marginLeft = '8px';
+  safeReload.addEventListener('click', function () {
+    var next = new URL(location.href);
+    next.searchParams.set('safe', '1');
+    location.assign(next.toString());
+  });
+
   card.appendChild(title);
   card.appendChild(desc);
   card.appendChild(detail);
   card.appendChild(reload);
+  card.appendChild(safeReload);
   overlay.appendChild(card);
   document.body.appendChild(overlay);
   reload.focus();
@@ -154,8 +174,101 @@ function hideWorkerDeadNotice() {
   if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
 }
 
+function hideWorkerRestartNotice() {
+  if (WORKER_RESTART_NOTICE_TIMER) {
+    clearTimeout(WORKER_RESTART_NOTICE_TIMER);
+    WORKER_RESTART_NOTICE_TIMER = 0;
+  }
+  var notice = $id('worker-restart-notice');
+  if (notice && notice.parentNode) notice.parentNode.removeChild(notice);
+}
+
+function showWorkerRestartNotice(text, recovered) {
+  if (typeof document === 'undefined' || !document.body) return;
+  if (WORKER_RESTART_NOTICE_TIMER) {
+    clearTimeout(WORKER_RESTART_NOTICE_TIMER);
+    WORKER_RESTART_NOTICE_TIMER = 0;
+  }
+  var notice = $id('worker-restart-notice');
+  if (!notice) {
+    notice = document.createElement('div');
+    notice.id = 'worker-restart-notice';
+    notice.setAttribute('role', 'status');
+    notice.setAttribute('aria-live', 'polite');
+    notice.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);' +
+      'z-index:100001;padding:10px 18px;border-radius:999px;background:rgba(17,24,39,.94);' +
+      'color:#f9fafb;box-shadow:0 6px 24px rgba(0,0,0,.3);pointer-events:none;transition:opacity .35s ease;';
+    document.body.appendChild(notice);
+  }
+  notice.style.opacity = '1';
+  notice.textContent = text;
+  if (recovered) {
+    WORKER_RESTART_NOTICE_TIMER = setTimeout(function () {
+      notice.style.opacity = '0';
+      WORKER_RESTART_NOTICE_TIMER = setTimeout(function () {
+        if (notice.parentNode) notice.parentNode.removeChild(notice);
+        WORKER_RESTART_NOTICE_TIMER = 0;
+      }, 400);
+    }, 2200);
+  }
+}
+
+function handleWorkerRestarting(event) {
+  if (!workerUiStateEnabled()) return;
+  var attempt = Number(event && event.attempt) || 1;
+  var max = Number(event && event.max) || 3;
+  hideWorkerDeadNotice();
+  showWorkerRestartNotice('模擬中斷，正在自動恢復…（第 ' + attempt + '/' + max + ' 次）', false);
+}
+
+function resetUiWorkerPanelState() {
+  UI_WORKER_STATE.panelRequests = Object.create(null);
+  UI_WORKER_STATE.panelQueued = Object.create(null);
+  UI_WORKER_STATE.panelRequestSeq = Object.create(null);
+  UI_WORKER_STATE.panelResponseSeq = Object.create(null);
+  UI_WORKER_STATE.panels = Object.create(null);
+  UI_WORKER_STATE.panelVersions = Object.create(null);
+  UI.inventoryFilterCacheKey = null;
+  UI.inventoryFilterCacheItems = null;
+  if (UI.inventoryRenderCache) {
+    UI.inventoryRenderCache.filterKey = null;
+    UI.inventoryRenderCache.startRow = null;
+    UI.inventoryRenderCache.totalRows = null;
+    UI.inventoryRenderCache.columns = null;
+    UI.inventoryRenderCache.displayedLength = null;
+    UI.inventoryRenderCache.detailKey = null;
+  }
+}
+
+function handleWorkerRestarted(event) {
+  if (!workerUiStateEnabled()) return;
+  resetUiWorkerPanelState();
+  showWorkerRestartNotice('已自動恢復，進度回到最近一次自動存檔', true);
+  refreshUiPanelSubscriptions();
+}
+
+function updateWorkerSafeModeMarker() {
+  if (!workerUiStateEnabled() || typeof document === 'undefined' || !document.body) return;
+  var safe = typeof WorkerBridge.safeMode === 'function' && WorkerBridge.safeMode();
+  var marker = $id('worker-safe-mode-marker');
+  if (!safe) {
+    if (marker && marker.parentNode) marker.parentNode.removeChild(marker);
+    return;
+  }
+  if (!marker) {
+    marker = document.createElement('div');
+    marker.id = 'worker-safe-mode-marker';
+    marker.setAttribute('role', 'status');
+    marker.textContent = '安全模式';
+    marker.style.cssText = 'position:fixed;top:8px;right:8px;z-index:99999;padding:4px 9px;' +
+      'border-radius:5px;background:#92400e;color:#fffbeb;font-size:12px;pointer-events:none;';
+    document.body.appendChild(marker);
+  }
+}
+
 function handleWorkerDead(event) {
   if (!workerUiStateEnabled()) return;
+  hideWorkerRestartNotice();
   showWorkerDeadNotice(event);
 }
 
@@ -311,6 +424,14 @@ function handleWorkerUiEvents(events) {
       return;
     }
     if (event.kind !== 'notice') return;
+    if (event.key === 'offlineSummary') {
+      showOfflineSummary(event.data);
+      return;
+    }
+    if (event.text) {
+      blog(event.text, 'info', 'system');
+      return;
+    }
     if (event.key === 'towerResult') {
       UI.pendingTowerResult = event.data || null;
       requestPanelData('tower', true);
@@ -323,6 +444,19 @@ function handleWorkerUiEvents(events) {
         UI.dirty.forge = true;
       }, { title: '🔯 神鑄系統', okText: '前往神鑄', cancelText: '稍後再說' });
     }
+  });
+}
+
+function handleWorkerBootNotices(notices) {
+  (notices || []).forEach(function (notice) {
+    if (!notice) return;
+    handleWorkerUiEvents([{
+      kind: 'notice',
+      key: notice.key,
+      data: notice.data,
+      text: notice.text,
+      modal: notice.modal
+    }]);
   });
 }
 
@@ -513,6 +647,8 @@ function bindWorkerUiState() {
 
   WorkerBridge.on(MSG_OUT.BOOTED, function (msg) {
     applyUiSnapshot(msg.snapshot);
+    updateWorkerSafeModeMarker();
+    handleWorkerBootNotices(msg.notices);
   });
   WorkerBridge.on(MSG_OUT.FULL, function (msg) {
     applyUiSnapshot(msg.snapshot);
@@ -580,7 +716,10 @@ function bindWorkerUiState() {
     }
   });
   WorkerBridge.on('workerDead', handleWorkerDead);
+  WorkerBridge.on('workerRestarting', handleWorkerRestarting);
+  WorkerBridge.on('workerRestarted', handleWorkerRestarted);
   WorkerBridge.on('workerRecovered', hideWorkerDeadNotice);
+  updateWorkerSafeModeMarker();
   refreshUiPanelSubscriptions();
   // newforge carries the one-time rebuild notice and tab badge.  Fetch it once
   // without keeping the large queue projection subscribed while another tab is open.
@@ -4583,6 +4722,8 @@ function requestUiPanels(keys) {
 }
 
 function reportUiCommandFailure(prefix, error, panels) {
+  var restartMessage = error && error.message ? String(error.message) : String(error || '');
+  if (restartMessage.indexOf('worker-restart:') === 0) return;
   var message = error && error.message ? error.message : String(error || '未知錯誤');
   blog('⚠️ ' + prefix + '：' + message, 'warn');
   requestUiPanels(panels);
