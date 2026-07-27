@@ -127,13 +127,37 @@ var SaveStorage = (function () {
     restart: writeRestart
   };
 
+  /* ---- 落地時機 ----
+     實測（後期存檔 800 件、JSON 約 400 KB）：一次自動存檔在主執行緒佔用約 5.9 ms，
+     其中約 2.5 ms 是 gzip 前的 Blob 建立、2.7 ms 是 IndexedDB 寫入的同步部分。
+     每 15 秒一次，落在 16.7 ms 的畫格預算裡是三分之一格。
+
+     這些成本本身無法在主執行緒消除（壓縮與 IndexedDB API 都只能在這裡做），
+     但可以不要卡在畫格中間——自動存檔沒有時效性，晚幾毫秒落地沒有任何差別。
+
+     ⚠️ 只有 auto 與 folder 可以延後。shutdown 是分頁要關了、restart 會接著 reload、
+     manual 是使用者按下去等結果——這三種延後就等於可能不會發生。 */
+  var DEFERRABLE = { auto: true, folder: true };
+
+  function runWhenIdle(fn) {
+    if (typeof requestIdleCallback === 'function') {
+      requestIdleCallback(fn, { timeout: 2000 }); // 逾時強制執行，不能無限延後
+      return;
+    }
+    setTimeout(fn, 0);
+  }
+
   /* Worker 送來的 persist 一律走這裡。done(err) 的結果會回報成 saveResult，
      Worker 靠它決定 savedAt 要不要退回——寫入失敗卻回報成功，會讓離線收益漏算。 */
   function persist(kind, json, meta, done) {
     var writer = WRITERS[kind];
     if (!writer) { done(new Error('unknown persist kind: ' + kind)); return; }
-    try { writer(json, meta, done); }
-    catch (e) { done(e); }
+    var run = function () {
+      try { writer(json, meta, done); }
+      catch (e) { done(e); }
+    };
+    if (DEFERRABLE[kind]) runWhenIdle(run);
+    else run();
   }
 
   return {

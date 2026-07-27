@@ -194,8 +194,26 @@ Codex 已完成診斷分類，見 `docs/TEST_FAILURE_TRIAGE.md`（A 類 32／B �
 
 **結論與 P4 優先序：**
 
-1. **`persist` 是主執行緒最大單筆成本**：每 15 秒一次、每次約 5.9 ms。
-   在 16.7 ms 的畫格預算裡佔掉三分之一。可考慮改以 ArrayBuffer 傳輸（transferable，零複製）。
+1. ~~**`persist` 是主執行緒最大單筆成本**~~ **已處理（2026-07-27）**。
+   拆解 5.9 ms 的組成後，原本設想的「改用 transferable ArrayBuffer」是錯的方向：
+
+   | 項目 | 耗時 |
+   |---|---|
+   | `new Blob([raw])`（gzip 前置） | 2.5 ms |
+   | `idbSetAutoV2` 同步部分 | 2.7 ms |
+   | `localStorage.removeItem` | 0.1 ms |
+   | 其餘（推論為 structured clone 反序列化） | 約 3 ms |
+
+   ArrayBuffer 只能省掉最後一項，而且要把 bytes 還原成字串才能餵給既有的
+   `idbSetAutoV2`，光 TextDecoder 就要 3 ms 以上，等於白做。真正能拿掉的部分
+   需要改 `js/save.js` 的儲存路徑——存檔相容性風險最高的檔案，在 P3 進行中不值得動。
+
+   改採**把自動存檔挪到空閒時間**（`requestIdleCallback`，逾時 2 秒強制執行）：
+   壓縮與 IndexedDB 的成本無法消除，但自動存檔沒有時效性，不需要卡在畫格中間。
+   實測主執行緒佔用由 **5.85 ms 降至 1.325 ms**（最大 5.9 → 3.4 ms）。
+
+   ⚠️ 只有 `auto` 與 `folder` 延後。`shutdown` 是分頁要關了、`restart` 會接著 reload、
+   `manual` 是使用者按下去等結果——這三種延後就等於可能不會發生。
 2. **`panel` 的 `inv` 是第二大**：後期存檔單次 305 KB、接收端 3.2 ms。需要裁切或分頁。
 3. **`tick` 可以不用管**：0.047 ms，分層設計在這層是有效的。
 
