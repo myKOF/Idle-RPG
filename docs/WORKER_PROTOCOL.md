@@ -126,6 +126,13 @@ v1 用「參數名叫 `itemId` 就自動解析」的慣例會出事——`forgeP
 
 `fn` 欄位是 Worker 內要呼叫的既有函式名。`fn: null` 共 **23 條**，分三類：
 
+> **實作進度**：19 條已於 P3 前置全部實作在 `sim.worker.js` 的 `COMMAND_IMPL`，
+> 加上存檔三條與 `gm.exec`（待 `js/gm.js` 拆分）。UI 端接線是 P3 的工作。
+>
+> ⚠️ P3 待搬遷：`getItemAncientCount`（`ui.js:1512`）是純狀態查詢卻住在 `ui.js`，
+> Worker 載不到，目前在 `sim.worker.js` 有一份有守衛的後備。
+> P3 請把它搬進 `js/item.js` 並**刪掉** Worker 那份，否則就是兩份實作。
+
 - **19 條**邏輯還寫在 `ui.js`，P3 搬進 Worker（下表，另加 v3 新增的
   `item.unequip`、`forge.setAutoFill`、`newforge.setQuality`、`newforge.setEnabled`，
   以及改為原子操作的 `item.equip`、`item.salvage`）
@@ -253,4 +260,5 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 |---|---|---|
 | 1 | 2026-07-27 | 初版凍結：6 種入向訊息、8 種出向訊息、11 個面板鍵、67 條指令 |
 | 2 | 2026-07-27 | P2 存檔搬遷：新增 `load` 訊息與 `restart` 落地種類；`persist` payload 加 `meta`；`boot` 加 `maxRunId`；`save.*` 三條改為 `fn:null` 並由 Worker 端實作（原宣告會呼叫碰 I/O 的函式，與設計衝突） |
+| 3.1 | 2026-07-27 | 新增 `PERSIST_KINDS.MANUAL_FOLDER`。P2 把 `manualSave` 與 `createManualSaveToFolderV2` 併成同一條資料夾路徑，導致未連接資料夾時「一鍵分解前的保護存檔」靜靜失敗——多數玩家沒接資料夾，那份保護存檔等於不存在。現在 `save.manual` 寫瀏覽器存檔記錄（空間不足才退回資料夾），`save.toFolder` 沒接資料夾就明確失敗 |
 | 3 | 2026-07-27 | P3 前置：收斂 Codex 審查提出的指令形狀缺口，逐條比對過實際函式簽章後修正。<br>①**物件識別**：一般寶石改傳 `type`+`level`（沒有 id）、融合寶石用 `fusedId`、熔爐 id 改 `int`、零件改 `partKey`。<br>②**簽章對齊**：`rerollSingleAffix` 改 `affixKey`、`forgePlaceItem` 不解析成物件、`forgePlaceGem` 改 `type`+`level`、`forgeToggleDust` 補 `index`、`convertGems` 改 `slots`+`targetType`、`fuseGemsV2` 改 `ref` 結構。<br>③**補 14 條遺漏指令**（見上）。<br>④**解析改逐指令白名單** `resolve`，同 id 歧義一律拒絕。<br>⑤**參數約束** `limit`（enum/min/max）與**拒絕多餘參數**。<br>⑥ `item.equip`/`unequip`/`salvage` 改為 `fn:null` 原子操作（只呼叫既有函式會複製出第二件物品）。<br>⑦ 補齊 `dirty` metadata（分解鑲寶石裝備會髒 `header`/`gems` 等） |
