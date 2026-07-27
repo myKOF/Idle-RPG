@@ -331,8 +331,20 @@ Codex 已完成診斷分類，見 `docs/TEST_FAILURE_TRIAGE.md`（A 類 32／B �
 | 階段 | 狀態 | 完成日 |
 |---|---|---|
 | P0 協議凍結 | ✅ 完成（v1，67 條指令） | 2026-07-27 |
-| P1 Worker 骨架 | ✅ 完成（待 Antigravity 驗證） | 2026-07-27 |
-| P2 存檔搬遷 | ✅ 完成（待 Antigravity 驗證） | 2026-07-27 |
-| P3 UI 去狀態化 | 未開始 | |
+| P1 Worker 骨架 | ✅ 完成 | 2026-07-27 |
+| P2 存檔搬遷 | ✅ 完成 | 2026-07-27 |
+| P3 UI 去狀態化 | ✅ 完成 | 2026-07-27 |
 | P4 效能收斂 | 未開始 | |
 | P5 移除 flag | 未開始 | |
+
+P3 收尾內容（供 P5 追溯）：
+
+- 11 個 `PANEL_KEYS` 面板全數改讀 Worker Snapshot 與 Command（Codex）
+- 事件管線 `log` / `flog` / `float` / `notice` 接上既有呈現函式（Codex `1a58323`）；
+  `loot` 通道確認不需要消費——`RUN_STATS` / `LOOT_STATS` 已由 `battle` 面板投影，
+  重播 recorder 會雙重計數
+- `getItemAncientCount` 收斂至 `js/item.js`（Codex `1ae85ed`），
+  Worker 守衛後備移除（Claude `0b93329`）
+- Review 三項必須修正已修（Codex `e0e4e7e`）：`workerTowerActiveForLog` 改 view 優先、
+  `stats.reset` 指令接線、還原 `flushPendingEnemyFloats` 的敵人存活檢查
+- 迴歸驗證：`docs/P3_FULL_REGRESSION_REPORT.md`（Antigravity）
