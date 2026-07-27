@@ -11,7 +11,7 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-var WORKER_PROTOCOL_VERSION = 2;
+var WORKER_PROTOCOL_VERSION = 3;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -72,40 +72,64 @@ var TICK_VIEW_KEYS = ['gold', 'scrap', 'essence', 'dust', 'ancientEssence', 'sou
                       'towerActive', 'forgeBusy'];
 
 /* ---- 指令表 ----
-   fn    ：Worker 內實際呼叫的既有函式（沿用現有實作，禁止另寫平行版本）
-   args  ：參數型別。'?' 結尾表示可省略。
-           int/num/bool/str/id（物件識別字串）/ids（字串陣列）/obj/any
-   dirty ：執行後預期會髒的面板（僅供 P4 驗證與除錯，實際仍以 UI.dirty 為準）
+   fn      ：Worker 內實際呼叫的既有函式（沿用現有實作，禁止另寫平行版本）
+             null 表示沒有可直接呼叫的既有函式，由 Worker 的 COMMAND_IMPL 實作
+   args    ：參數型別。'?' 結尾表示可省略。
+             int/num/bool/str/id/ids/ref（寶石素材參考）/slots（寶石轉換槽陣列）/obj/any
+   resolve ：需要由 id 解析成**物件**再傳給 fn 的參數名清單。
+             v3 起改為逐指令白名單——v1「參數名叫 itemId 就自動解析」的慣例是錯的：
+             forgePlaceItem(id) 收的是字串 id，自動解析會傳錯型別進去。
+   limit   ：參數約束（enum / min / max）。型別檢查擋不住 settings key 這種列舉值，
+             也擋不住負數樓層。
+   dirty   ：執行後預期會髒的面板（僅供 P4 驗證與除錯，實際仍以 UI.dirty 為準）
 
-   注意：跨執行緒不能傳物件參考。既有實作中吃 item 物件的函式
-   （doSalvage / manualEnchant / removeEnchantAt / unsocketGem / equipItem ...），
-   一律改為傳 item.id，由 Worker 端解析成物件後再呼叫原函式。 */
+   ---- 物件識別（v3 修正）----
+   跨執行緒不能傳物件參考，對象一律用識別字串表達。但**識別方式因物件而異**，
+   v1 把「一律傳 item.id」套到所有東西上是錯的：
+     - 裝備、零件、融合寶石：有實例 id（`uid()` 產生）
+     - 一般寶石：是 { type, level } 的計數，**根本沒有 id** → 必須傳 type + level
+     - 技能、天賦、附魔書：用定義鍵（definition key），不是實例 id
+     - 熔爐：id 由 nf.nextId++ 產生，是**數字**不是字串
+   寶石融合素材（fuseGemsV2 的 ref）另有結構：
+     { kind:'plain', type, lv } 或 { kind:'fused', id } */
 var COMMANDS = {
   /* -- 關卡與戰鬥 -- */
   'stage.go':              { fn: 'stageGo',          args: { delta: 'int' },                      dirty: ['battle', 'header'] },
+  /* 一鍵衝到最高關：必須由 Worker 端判定。主執行緒用可能落後的鏡像算 best-current
+     再送 delta 會有競態，玩家連點時尤其容易算錯。 */
+  'stage.goMax':           { fn: 'stageGoMax',       args: {},                                    dirty: ['battle', 'header'] },
   'stage.switchZone':      { fn: 'switchZone',       args: { zoneKey: 'str' },                    dirty: ['battle', 'header'] },
   'stage.setAutoAdvance':  { fn: null,               args: { on: 'bool' },                        dirty: ['battle'] },
   'combat.setPaused':      { fn: 'setCombatPaused',  args: { paused: 'bool' },                    dirty: ['battle'] },
   'combat.togglePaused':   { fn: 'toggleCombatPaused', args: {},                                  dirty: ['battle'] },
 
-  /* -- 背包與裝備 -- */
-  'item.equip':            { fn: 'equipItem',        args: { itemId: 'id', slotKey: 'str?', setIndex: 'int?' }, dirty: ['equip', 'inv'] },
-  'item.setLock':          { fn: null,               args: { itemId: 'id', locked: 'bool' },      dirty: ['inv'] },
-  'item.salvage':          { fn: 'doSalvage',        args: { itemId: 'id' },                      dirty: ['inv', 'factory'] },
-  'item.salvageBulk':      { fn: null,               args: { maxRarity: 'int?', maxLevel: 'int?', maxAncient: 'int?' }, dirty: ['inv', 'factory'] },
-  'item.enchant':          { fn: 'manualEnchant',    args: { itemId: 'id', bookKey: 'str' },      dirty: ['inv', 'equip'] },
-  'item.removeEnchant':    { fn: 'removeEnchantAt',  args: { itemId: 'id', index: 'int' },        dirty: ['inv', 'equip'] },
-  'item.rerollAffix':      { fn: 'rerollSingleAffix', args: { itemId: 'id', index: 'int' },       dirty: ['inv', 'equip'] },
+  /* -- 背包與裝備 --
+     equip / unequip / salvage 都是 fn:null：UI 現行流程除了呼叫模擬層函式，還包含
+     「從背包移除、替換下來的裝備退回背包」等狀態轉移。只呼叫 equipItem / doSalvage
+     會複製出第二件物品。P3 必須在 Worker 端實作成單一原子操作。 */
+  'item.equip':            { fn: null,               args: { itemId: 'id', slotKey: 'str?', setIndex: 'int?' }, dirty: ['equip', 'inv', 'header'] },
+  'item.unequip':          { fn: null,               args: { itemId: 'id', slotKey: 'str?' },     dirty: ['equip', 'inv', 'header'] },
+  'item.setLock':          { fn: null,               args: { itemId: 'id', locked: 'bool' },      dirty: ['inv', 'equip'] },
+  'item.salvage':          { fn: null,               args: { itemId: 'id' },                      dirty: ['inv', 'factory', 'header', 'gems'] },
+  'item.salvageBulk':      { fn: null,               args: { maxRarity: 'int?', maxLevel: 'int?', maxAncient: 'int?' }, dirty: ['inv', 'factory', 'header', 'gems'] },
+  'item.upgrade':          { fn: 'manualUpgrade',    args: { itemId: 'id' }, resolve: ['itemId'],  dirty: ['inv', 'equip', 'header'] },
+  'item.enchant':          { fn: 'manualEnchant',    args: { itemId: 'id', bookKey: 'str' }, resolve: ['itemId'], dirty: ['inv', 'equip', 'header'] },
+  'item.removeEnchant':    { fn: 'removeEnchantAt',  args: { itemId: 'id', index: 'int' }, resolve: ['itemId'], dirty: ['inv', 'equip'] },
+  /* rerollSingleAffix(it, affixKey) 是用詞條鍵定位，不是索引。
+     用索引會在詞條順序變動時洗到別條。 */
+  'item.rerollAffix':      { fn: 'rerollSingleAffix', args: { itemId: 'id', affixKey: 'str' }, resolve: ['itemId'], dirty: ['inv', 'equip', 'header'] },
 
-  /* -- 寶石 -- */
-  'gem.socket':            { fn: 'socketGem',        args: { itemId: 'id', gemId: 'id', socketIndex: 'int' }, dirty: ['inv', 'equip', 'gems'] },
-  'gem.socketFused':       { fn: 'socketFusedGem',   args: { itemId: 'id', gemId: 'id', socketIndex: 'int' }, dirty: ['inv', 'equip', 'gems'] },
-  'gem.unsocket':          { fn: 'unsocketGem',      args: { itemId: 'id', index: 'int' },        dirty: ['inv', 'equip', 'gems'] },
-  'gem.dismantle':         { fn: 'dismantleGem',     args: { gemId: 'id' },                       dirty: ['gems'] },
-  'gem.dismantleFused':    { fn: 'dismantleFusedGem', args: { gemId: 'id' },                      dirty: ['gems'] },
-  'gem.convert':           { fn: 'convertGems',      args: { type: 'str', level: 'int', count: 'int?' }, dirty: ['gems'] },
+  /* -- 寶石 --
+     一般寶石沒有實例 id（是 { type, level } 計數），只有融合寶石有 id。
+     v1 對所有寶石指令都要求 gemId 是錯的，這裡依實際函式簽章修正。 */
+  'gem.socket':            { fn: 'socketGem',        args: { itemId: 'id', type: 'str' }, resolve: ['itemId'], dirty: ['inv', 'equip', 'gems', 'header'] },
+  'gem.socketFused':       { fn: 'socketFusedGem',   args: { itemId: 'id', fusedId: 'id' }, resolve: ['itemId'], dirty: ['inv', 'equip', 'gems', 'header'] },
+  'gem.unsocket':          { fn: 'unsocketGem',      args: { itemId: 'id', index: 'int' }, resolve: ['itemId'], dirty: ['inv', 'equip', 'gems', 'header'] },
+  'gem.dismantle':         { fn: 'dismantleGem',     args: { type: 'str', level: 'int' },         dirty: ['gems', 'header'] },
+  'gem.dismantleFused':    { fn: 'dismantleFusedGem', args: { fusedId: 'id' },                    dirty: ['gems', 'header'] },
+  'gem.convert':           { fn: 'convertGems',      args: { slots: 'slots', targetType: 'str' }, dirty: ['gems'] },
   'gem.compose':           { fn: 'composeGems',      args: { type: 'str', level: 'int' },         dirty: ['gems'] },
-  'gem.fuse':              { fn: 'fuseGemsV2',       args: { gemId1: 'id', gemId2: 'id' },        dirty: ['gems'] },
+  'gem.fuse':              { fn: 'fuseGemsV2',       args: { ref1: 'ref', ref2: 'ref' },          dirty: ['gems'] },
   'gem.shopBuy':           { fn: 'buyShopGem',       args: { index: 'int' },                      dirty: ['gems', 'header'] },
   'gem.shopBuyAll':        { fn: 'buyAllShopGems',   args: {},                                    dirty: ['gems', 'header'] },
   'gem.shopRefresh':       { fn: 'refreshGemShop',   args: {},                                    dirty: ['gems', 'header'] },
@@ -113,7 +137,10 @@ var COMMANDS = {
 
   /* -- 角色 -- */
   'player.reincarnate':      { fn: 'reincarnate',       args: {},                                 dirty: ['header', 'equip', 'inv', 'skills', 'talents'] },
-  'player.switchEquipSet':   { fn: 'switchToEquipSet',  args: { index: 'int' },                   dirty: ['equip', 'inv'] },
+  'player.switchEquipSet':   { fn: 'switchToEquipSet',  args: { index: 'int' },                   dirty: ['equip', 'inv', 'header'] },
+  /* 只換「檢視中」的套組，不換穿。與 switchEquipSet 是兩件事，v1 漏了這條，
+     導致預覽屬性只能靠實際換穿才做得到。 */
+  'player.setEquipView':     { fn: 'setEquipView',      args: { index: 'int' },                   dirty: ['equip', 'inv'] },
   'player.renameEquipSet':   { fn: null,                args: { index: 'int', name: 'str' },      dirty: ['equip'] },
   'player.buyInvUpgrade':    { fn: null,                args: {},                                 dirty: ['inv', 'header'] },
   'player.setInvSort':       { fn: null,                args: { index: 'int' },                   dirty: ['inv'] },
@@ -129,33 +156,56 @@ var COMMANDS = {
   'skill.unequipLoadout':  { fn: 'unequipSkillFromLoadout', args: { id: 'str' },                  dirty: ['skills', 'battle'] },
   'skill.reorderLoadout':  { fn: null,                  args: { from: 'int', to: 'int' },         dirty: ['skills', 'battle'] },
 
-  /* -- 天賦與潛能 -- */
+  /* -- 天賦與潛能 --
+     id 是天賦定義鍵（def.id），不是實例 id，不需要解析成物件。 */
   'talent.upgrade':        { fn: 'talentUpgrade',    args: { id: 'str' },                         dirty: ['talents', 'header'] },
+  'talent.max':            { fn: 'talentMax',        args: { id: 'str' },                         dirty: ['talents', 'header'] },
   'talent.downgrade':      { fn: 'talentDowngrade',  args: { id: 'str' },                         dirty: ['talents', 'header'] },
   'talent.delete':         { fn: 'talentDelete',     args: { id: 'str' },                         dirty: ['talents', 'header'] },
-  'talent.potentialUpgrade': { fn: 'potentialUpgrade', args: { id: 'str' },                       dirty: ['talents', 'header'] },
+  'talent.potentialUpgrade':   { fn: 'potentialUpgrade',   args: { id: 'str' },                   dirty: ['talents', 'header'] },
+  'talent.potentialMax':       { fn: 'potentialMax',       args: { id: 'str' },                   dirty: ['talents', 'header'] },
+  'talent.potentialDowngrade': { fn: 'potentialDowngrade', args: { id: 'str' },                   dirty: ['talents', 'header'] },
+  'talent.potentialDelete':    { fn: 'potentialDelete',    args: { id: 'str' },                   dirty: ['talents', 'header'] },
 
   /* -- 煉獄之塔 -- */
-  'tower.start':           { fn: 'startTowerFight',  args: { floor: 'int' },                      dirty: ['tower', 'battle'] },
+  'tower.start':           { fn: 'startTowerFight',  args: { floor: 'int' }, limit: { floor: { min: 1 } }, dirty: ['tower', 'battle'] },
+  'tower.startAuto':       { fn: 'startTowerAuto',   args: { floor: 'int', count: 'int' }, limit: { floor: { min: 1 }, count: { min: 1 } }, dirty: ['tower', 'battle'] },
   'tower.finish':          { fn: 'finishTowerFight', args: {},                                    dirty: ['tower', 'battle'] },
+  'tower.flee':            { fn: 'fleeTower',        args: {},                                    dirty: ['tower', 'battle'] },
+  'tower.stopAuto':        { fn: 'stopTowerAutoFromResult', args: {},                             dirty: ['tower'] },
 
-  /* -- 神鑄（forge）-- */
-  'forge.placeItem':       { fn: 'forgePlaceItem',   args: { itemId: 'id', slotIndex: 'int?' },   dirty: ['forge', 'inv'] },
-  'forge.removeItem':      { fn: 'forgeRemoveItem',  args: { slotIndex: 'int' },                  dirty: ['forge', 'inv'] },
-  'forge.placeGem':        { fn: 'forgePlaceGem',    args: { gemId: 'id' },                       dirty: ['forge', 'gems'] },
+  /* -- 神鑄（forge）--
+     forgePlaceItem(id) 收字串 id，所以沒有 resolve；forgePlaceGem(type, level)
+     收一般寶石的 type+level；forgeToggleDust(idx) 需要索引，v1 宣告成無參數是錯的。 */
+  'forge.placeItem':       { fn: 'forgePlaceItem',   args: { itemId: 'id' },                      dirty: ['forge', 'inv'] },
+  'forge.removeItem':      { fn: 'forgeRemoveItem',  args: { slotIndex: 'int' }, limit: { slotIndex: { min: 0 } }, dirty: ['forge', 'inv'] },
+  'forge.placeGem':        { fn: 'forgePlaceGem',    args: { type: 'str', level: 'int' },         dirty: ['forge', 'gems'] },
   'forge.unloadAll':       { fn: 'forgeUnloadAll',   args: {},                                    dirty: ['forge', 'inv', 'gems'] },
-  'forge.toggleDust':      { fn: 'forgeToggleDust',  args: {},                                    dirty: ['forge'] },
+  'forge.toggleDust':      { fn: 'forgeToggleDust',  args: { index: 'int' }, limit: { index: { min: 0 } }, dirty: ['forge'] },
   'forge.autoFillDust':    { fn: 'forgeAutoFillDust', args: {},                                   dirty: ['forge'] },
-  'forge.start':           { fn: 'doForge',          args: {},                                    dirty: ['forge'] },
-  'forge.cancel':          { fn: 'cancelForge',      args: {},                                    dirty: ['forge', 'inv'] },
-  'forge.setAuto':         { fn: null,               args: { key: 'str', on: 'bool' },            dirty: ['forge'] },
+  'forge.start':           { fn: 'doForge',          args: {},                                    dirty: ['forge', 'inv', 'gems'] },
+  'forge.cancel':          { fn: 'cancelForge',      args: {},                                    dirty: ['forge', 'inv', 'gems'] },
+  'forge.setAuto':         { fn: null,               args: { key: 'str', on: 'bool' },
+                             limit: { key: { enum: ['autoDust', 'autoForge'] } },                 dirty: ['forge'] },
+  /* 自動放入設定：kind='equip' 帶 rarity，kind='gem' 帶 gemType+gemLevel，
+     兩者皆省略表示清除該設定。 */
+  'forge.setAutoFill':     { fn: null,               args: { kind: 'str', rarity: 'int?', gemType: 'str?', gemLevel: 'int?' },
+                             limit: { kind: { enum: ['equip', 'gem', 'clear'] } },                dirty: ['forge'] },
 
-  /* -- 熔爐（newforge）-- */
+  /* -- 熔爐（newforge）--
+     furnaceId 由 nf.nextId++ 產生，是數字。
+     newForgeInstallPart(furnaceId, partKey) 收零件「種類鍵」並自動挑同類最高階，
+     不是零件實例 id——沿用現行選料規則，不在遷移期間改變行為。 */
   'newforge.addFurnace':      { fn: 'addNewForgeFurnace',      args: {},                          dirty: ['newforge'] },
-  'newforge.removeFurnace':   { fn: 'removeNewForgeFurnace',   args: { furnaceId: 'str' },        dirty: ['newforge'] },
-  'newforge.installPart':     { fn: 'newForgeInstallPart',     args: { furnaceId: 'str', partId: 'id', slotIndex: 'int?' }, dirty: ['newforge'] },
-  'newforge.uninstallPart':   { fn: 'newForgeUninstallPart',   args: { furnaceId: 'str', slotIndex: 'int' }, dirty: ['newforge'] },
-  'newforge.unlockPartSlot':  { fn: 'unlockNewForgePartSlot',  args: { furnaceId: 'str' },        dirty: ['newforge', 'header'] },
+  'newforge.removeFurnace':   { fn: 'removeNewForgeFurnace',   args: { furnaceId: 'int' },        dirty: ['newforge', 'inv'] },
+  'newforge.installPart':     { fn: 'newForgeInstallPart',     args: { furnaceId: 'int', partKey: 'str' }, dirty: ['newforge', 'factory'] },
+  'newforge.uninstallPart':   { fn: 'newForgeUninstallPart',   args: { furnaceId: 'int', slotIndex: 'int' }, limit: { slotIndex: { min: 0 } }, dirty: ['newforge', 'factory'] },
+  'newforge.unlockPartSlot':  { fn: 'unlockNewForgePartSlot',  args: { furnaceId: 'int' },        dirty: ['newforge', 'header'] },
+  /* 品質勾選與啟用開關：UI 現行做法是直接改 fu.qualities[] / fu.enabled 再呼叫
+     內部函式 newForgeReturnUnroutable。改成指令後由 Worker 內部完成退回佇列，
+     INTERNAL_ONLY 不對外開放。 */
+  'newforge.setQuality':      { fn: null,  args: { furnaceId: 'int', rarity: 'int', on: 'bool' }, limit: { rarity: { min: 0 } }, dirty: ['newforge'] },
+  'newforge.setEnabled':      { fn: null,  args: { furnaceId: 'int', on: 'bool' },                dirty: ['newforge'] },
   'newforge.markTabSeen':     { fn: null,                      args: {},                          dirty: ['header'] },
   'newforge.markNoticeShown': { fn: null,                      args: {},                          dirty: [] },
 
@@ -163,8 +213,10 @@ var COMMANDS = {
   'factory.setSalvageSettings': { fn: null, args: { maxRarity: 'int?', maxLevel: 'int?', maxAncient: 'int?' }, dirty: ['factory'] },
   'factory.setAutoEquip':       { fn: null, args: { on: 'bool' },                                 dirty: ['factory'] },
 
-  /* -- 設定 -- */
-  'settings.set':          { fn: null,               args: { key: 'str', value: 'any' },          dirty: ['header'] },
+  /* -- 設定 --
+     任意 key/value 等於開一個可以寫進任何狀態的後門，改為白名單。 */
+  'settings.set':          { fn: null,               args: { key: 'str', value: 'bool' },
+                             limit: { key: { enum: ['compareEq'] } },                             dirty: ['header', 'inv', 'equip'] },
 
   /* -- 存檔 --
      v2 修正：這三條原本宣告直接呼叫 manualSave / createManualSaveToFolderV2 / restartGame，
@@ -198,38 +250,83 @@ function isValidCommand(name) {
   return !!commandSpec(name);
 }
 
+function _isInt(v) { return typeof v === 'number' && isFinite(v) && Math.floor(v) === v; }
+
+/* 寶石融合素材：{ kind:'plain', type, lv } 或 { kind:'fused', id } */
+function _isGemRef(v) {
+  if (!v || typeof v !== 'object') return false;
+  if (v.kind === 'plain') return typeof v.type === 'string' && (v.lv === undefined || _isInt(v.lv));
+  if (v.kind === 'fused') return typeof v.id === 'string' && v.id.length > 0;
+  return false;
+}
+
+/* 寶石轉換槽：[{ type, lv, n }, ...] */
+function _isGemSlots(v) {
+  return Array.isArray(v) && v.length > 0 && v.every(function (s) {
+    return s && typeof s === 'object' && typeof s.type === 'string' && _isInt(s.lv) && _isInt(s.n) && s.n > 0;
+  });
+}
+
 function _typeOk(type, v) {
   switch (type) {
-    case 'int': return typeof v === 'number' && isFinite(v) && Math.floor(v) === v;
+    case 'int': return _isInt(v);
     case 'num': return typeof v === 'number' && isFinite(v);
     case 'bool': return typeof v === 'boolean';
     case 'str': return typeof v === 'string';
     case 'id': return typeof v === 'string' && v.length > 0;
     case 'ids': return Array.isArray(v) && v.every(function (x) { return typeof x === 'string' && x.length > 0; });
+    case 'ref': return _isGemRef(v);
+    case 'slots': return _isGemSlots(v);
     case 'obj': return !!v && typeof v === 'object' && !Array.isArray(v);
     case 'any': return true;
     default: return false;
   }
 }
 
-/* 驗證指令參數。通過回傳 null，否則回傳錯誤字串（供 ACK.error 使用）。 */
+/* 驗證指令參數。通過回傳 null，否則回傳錯誤字串（供 ACK.error 使用）。
+   v3 起：多餘欄位一律拒絕。放行未宣告的欄位會讓「主執行緒與 Worker 版本不一致」
+   靜靜通過——指令看起來成功了，但多送的參數根本沒被讀取。 */
 function validateCommand(name, args) {
   var spec = commandSpec(name);
   if (!spec) return 'unknown command: ' + name;
   var a = args || {};
-  for (var key in spec.args) {
+  var key, v;
+
+  for (key in a) {
+    if (!Object.prototype.hasOwnProperty.call(a, key)) continue;
+    if (!Object.prototype.hasOwnProperty.call(spec.args, key)) {
+      return 'unexpected arg: ' + name + '.' + key;
+    }
+  }
+
+  for (key in spec.args) {
     if (!Object.prototype.hasOwnProperty.call(spec.args, key)) continue;
     var type = spec.args[key];
     var optional = type.charAt(type.length - 1) === '?';
     if (optional) type = type.slice(0, -1);
-    var v = a[key];
+    v = a[key];
     if (v === undefined || v === null) {
       if (optional) continue;
       return 'missing arg: ' + name + '.' + key;
     }
     if (!_typeOk(type, v)) return 'bad arg type: ' + name + '.' + key + ' expected ' + type;
+
+    var lim = spec.limit && spec.limit[key];
+    if (lim) {
+      if (lim.enum && lim.enum.indexOf(v) === -1) {
+        return 'bad arg value: ' + name + '.' + key + ' must be one of ' + lim.enum.join('/');
+      }
+      if (lim.min !== undefined && v < lim.min) return 'bad arg value: ' + name + '.' + key + ' < ' + lim.min;
+      if (lim.max !== undefined && v > lim.max) return 'bad arg value: ' + name + '.' + key + ' > ' + lim.max;
+    }
   }
   return null;
+}
+
+/* 這條指令有哪些參數要由 id 解析成物件再傳給 fn */
+function resolveKeys(name) {
+  var spec = commandSpec(name);
+  return (spec && spec.resolve) ? spec.resolve : [];
 }
 
 function isPanelKey(name) {
@@ -252,6 +349,7 @@ if (typeof module !== 'undefined' && module.exports) {
     commandSpec: commandSpec,
     isValidCommand: isValidCommand,
     validateCommand: validateCommand,
+    resolveKeys: resolveKeys,
     isPanelKey: isPanelKey
   };
 }
