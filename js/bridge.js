@@ -58,6 +58,8 @@ var WorkerBridge = (function () {
 
   var stats = {
     booted: false,
+    alive: true,
+    deadReason: null,
     ticks: 0,
     events: 0,
     errors: 0,
@@ -111,6 +113,16 @@ var WorkerBridge = (function () {
   }
 
   function onMessage(e) {
+    _lastMessageAt = Date.now();
+    _probeAt = 0; // 有回應就代表還活著，不必等 PONG
+    if (!stats.alive) {
+      // 誤判自我修復：Worker 若只是被長時間同步操作卡住（大量分解、巨型存檔序列化），
+      // 解開後仍會回訊息。偵測門檻刻意保守，但寧可誤判後恢復，也不要漏報真正的死亡。
+      stats.alive = true;
+      stats.deadReason = null;
+      console.info('[bridge] Worker 恢復回應，先前的失效判定為誤判。');
+      emit('workerRecovered', { at: Date.now() });
+    }
     if (!MEASURE) { dispatch(e.data || {}); return; }
     var t0 = performance.now();
     var msg = e.data || {};
@@ -164,6 +176,45 @@ var WorkerBridge = (function () {
     emit(msg.type, msg);
   }
 
+  /* ---- 存活監測 ----
+     worker 模式下主執行緒的舊迴圈是關閉的（見 main.js 的 WORKER_MODE），
+     所以 Worker 一旦死掉，遊戲會靜靜凍結而且**停止存檔**——玩家不會看到任何錯誤，
+     只會在下次開啟時發現進度回到十幾秒前。所以死亡必須被偵測並說出來。
+
+     判定方式：一段時間沒收到任何訊息就送 PING，等不到 PONG 才算死。
+     不直接用「沒有 tick」判定，因為背景分頁節流與 60 秒後的模擬休眠都會讓 tick 停止，
+     那是正常行為；分頁隱藏期間一律不判定，切回前景時重置計時。 */
+  var STALL_CHECK_MS = 3000;   // 監測間隔
+  var STALL_AFTER_MS = 5000;   // 靜默多久才開始探測
+  var PONG_TIMEOUT_MS = 4000;  // 探測後等 PONG 的上限
+  var _lastMessageAt = 0;
+  var _probeAt = 0;
+  var _watchdogTimer = 0;
+
+  function markWorkerDead(reason) {
+    if (!stats.alive) return; // 只報一次
+    stats.alive = false;
+    stats.deadReason = reason;
+    console.error('[bridge] Worker 已失去回應（' + reason + '）。' +
+      '模擬與自動存檔已停止，請重新整理頁面；未存檔的進度最多會回到上一次自動存檔。');
+    emit('workerDead', { reason: reason, at: Date.now() });
+  }
+
+  function watchdog() {
+    if (!_worker || !stats.booted || !stats.alive) return;
+    // 背景分頁：節流與模擬休眠都會讓訊息停止，不能當成死亡
+    if (typeof document !== 'undefined' && document.hidden) { _lastMessageAt = Date.now(); return; }
+    var now = Date.now();
+    if (_probeAt) {
+      if (now - _probeAt > PONG_TIMEOUT_MS) markWorkerDead('PING 逾時未回應');
+      return;
+    }
+    if (now - _lastMessageAt > STALL_AFTER_MS) {
+      _probeAt = now;
+      post(MSG_IN.PING, { t: now });
+    }
+  }
+
   function start(opts) {
     if (_started) return true;
     opts = opts || {};
@@ -180,22 +231,30 @@ var WorkerBridge = (function () {
       stats.errors++;
       stats.lastError = { where: 'worker-onerror', message: err.message, stack: err.filename + ':' + err.lineno };
       console.error('[bridge] worker error:', err.message, err.filename + ':' + err.lineno);
+      // 開機前就出錯代表 Worker 根本沒起來（載入失敗、語法錯誤），直接判定失效
+      if (!stats.booted) markWorkerDead('Worker 載入失敗：' + err.message);
     };
 
+    _lastMessageAt = Date.now();
     post(MSG_IN.BOOT, { save: opts.save || null, now: Date.now(), maxRunId: opts.maxRunId || 1 });
 
     // 初始狀態也要送：分頁若在隱藏狀態下被載入，visibilitychange 不會觸發，
     // Worker 會以為自己在前景而持續全速模擬（main.js 的 _hiddenAt 初始化同理）
     post(MSG_IN.VISIBILITY, { hidden: !!document.hidden, at: Date.now() });
     document.addEventListener('visibilitychange', function () {
+      // 切回前景時重置靜默計時：隱藏期間沒有訊息是正常的，不能算進去
+      if (!document.hidden) { _lastMessageAt = Date.now(); _probeAt = 0; }
       post(MSG_IN.VISIBILITY, { hidden: !!document.hidden, at: Date.now() });
     });
+
+    _watchdogTimer = setInterval(watchdog, STALL_CHECK_MS);
     console.info('[bridge] Worker 已啟動' + (opts.save ? '' : '（拋棄式狀態，不讀寫玩家存檔）') +
       '。輸入 WorkerBridge.status() 查看狀態。');
     return true;
   }
 
   function stop() {
+    if (_watchdogTimer) { clearInterval(_watchdogTimer); _watchdogTimer = 0; }
     if (_worker) { _worker.terminate(); _worker = null; }
     _started = false;
     stats.booted = false;
@@ -205,6 +264,9 @@ var WorkerBridge = (function () {
     return {
       started: _started,
       booted: stats.booted,
+      alive: stats.alive,
+      deadReason: stats.deadReason,
+      silentMs: _lastMessageAt ? (Date.now() - _lastMessageAt) : null,
       upTimeSec: stats.bootedAt ? Math.round((Date.now() - stats.bootedAt) / 1000) : 0,
       ticks: stats.ticks,
       events: stats.events,
