@@ -251,20 +251,30 @@ function onSaveResult(msg) {
    多數指令成立，但吃 eq、ref 等特殊參數的（equipItem、fuseGemsV2、
    forgePlaceItem、newForgeInstallPart…）必須逐一核對簽章後補上專屬轉接，
    不要假設通用路徑一定對。 */
-var OBJECT_ARG_KEYS = { itemId: 1, gemId: 1, gemId1: 1, gemId2: 1, partId: 1 };
+/* 由 id 找出物件。搜尋範圍刻意限定「背包 + 目前穿戴的裝備欄」，與 ui.js 的
+   findItemById 一致（不含神鑄法陣槽位——那邊要用 slotIndex 取回）。
 
+   存檔會同時序列化 G.equipment 與 active 的 G.equipmentSets，同一件裝備可能有兩份
+   同 id 的複本。命中多個代表兩端指的不是同一個物件，這種情況一律拒絕執行，
+   不猜——猜錯會複製或吃掉玩家的裝備。 */
 function resolveItem(id) {
-  if (!id || !G) return null;
+  if (!id || !G) return { err: 'bad item id' };
+  var hits = [];
   var i;
   if (Array.isArray(G.inventory)) {
-    for (i = 0; i < G.inventory.length; i++) if (G.inventory[i] && G.inventory[i].id === id) return G.inventory[i];
+    for (i = 0; i < G.inventory.length; i++) {
+      if (G.inventory[i] && G.inventory[i].id === id) hits.push(G.inventory[i]);
+    }
   }
   var eq = G.equipment || {};
-  for (var s in eq) if (eq[s] && eq[s].id === id) return eq[s];
-  if (Array.isArray(G.gems)) {
-    for (i = 0; i < G.gems.length; i++) if (G.gems[i] && G.gems[i].id === id) return G.gems[i];
+  for (var s in eq) if (eq[s] && eq[s].id === id) hits.push(eq[s]);
+
+  if (!hits.length) return { err: 'item not found: ' + id };
+  for (i = 1; i < hits.length; i++) {
+    // 同一個物件被兩處參考（背包與裝備欄指向同一份）不算歧義
+    if (hits[i] !== hits[0]) return { err: 'ambiguous item id: ' + id + '（命中 ' + hits.length + ' 個）' };
   }
-  return null;
+  return { item: hits[0] };
 }
 
 /* 協議中 fn 為 null 的指令，由 Worker 這邊自行實作。
@@ -294,14 +304,15 @@ function runCommand(name, args) {
   var fn = self[spec.fn];
   if (typeof fn !== 'function') return { ok: false, error: 'missing sim function: ' + spec.fn };
 
+  var needResolve = resolveKeys(name);
   var params = [];
   for (var key in spec.args) {
     if (!Object.prototype.hasOwnProperty.call(spec.args, key)) continue;
     var v = args ? args[key] : undefined;
-    if (OBJECT_ARG_KEYS[key] && typeof v === 'string') {
-      var obj = resolveItem(v);
-      if (!obj) return { ok: false, error: 'item not found: ' + v };
-      v = obj;
+    if (needResolve.indexOf(key) !== -1) {
+      var r = resolveItem(v);
+      if (r.err) return { ok: false, error: r.err };
+      v = r.item;
     }
     params.push(v);
   }
