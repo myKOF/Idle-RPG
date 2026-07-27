@@ -550,6 +550,16 @@ test('index.html/ui.js/main.js/factory.js/gm.js 接線（合併版）', () => {
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   assert.match(ui, /UI\.tab === 'newforge'/);
   assert.match(ui, /function renderNewForge/);
+  assert.match(ui, /newforge: \['newforge', 'factory', 'header'\]/, '熔爐頁應訂閱三份 Worker panel');
+  assert.match(ui, /var newForgeSnapshot = uiNewForgePanelSnapshot\(\);[\s\S]*var factorySnapshot = uiFactoryPanelSnapshot\(\);[\s\S]*var headerSnapshot = uiHeaderPanelSnapshot\(\);/);
+  assert.doesNotMatch(ui, /function renderNewForge\(\) \{\s*var nf = G\.newForge;/, '熔爐渲染不得直接讀 G.newForge');
+  [
+    'addFurnace', 'removeFurnace', 'installPart', 'uninstallPart', 'unlockPartSlot',
+    'setQuality', 'setEnabled', 'markTabSeen', 'markNoticeShown'
+  ].forEach((name) => {
+    assert.match(ui, new RegExp(`sendUiCommand\\('newforge\\.${name}'`), `應送出 newforge.${name}`);
+  });
+  assert.match(ui, /keys: \[furnacePendingKey\(/, '每座熔爐應以 furnaceId 單飛');
   assert.match(ui, /fmtFull\(nf\.queue\.length\)/, '佇列應顯示完整數字');
   assert.ok(!/newForgeHostAvailable/.test(ui), '本地服閘門應移除');
   assert.ok(!/renderFactory/.test(ui), '舊生產線渲染應移除');

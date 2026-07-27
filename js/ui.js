@@ -51,7 +51,8 @@ var UI_PANEL_MIGRATION_ORDER = [
 var UI_PANEL_SUBSCRIPTIONS_BY_TAB = {
   skills: ['skills', 'talents', 'header'],
   talents: ['talents', 'header'],
-  tower: ['tower', 'header']
+  tower: ['tower', 'header'],
+  newforge: ['newforge', 'factory', 'header']
 };
 var UI_PERSISTENT_PANEL_SUBSCRIPTIONS = ['talents']; // controls talent-tab visibility
 
@@ -156,6 +157,11 @@ function panelData(key) {
     requestPanelData(key, false);
     return null;
   }
+  return UI_WORKER_STATE.panels[key];
+}
+
+function peekUiPanelData(key) {
+  if (!validUiPanelKey(key) || !hasOwnUiState(UI_WORKER_STATE.panels, key)) return null;
   return UI_WORKER_STATE.panels[key];
 }
 
@@ -405,7 +411,15 @@ function bindWorkerUiState() {
     releaseUiPendingByPanel(msg.name);
     if (msg.name === 'talents') updateTalentTabVisibility();
     if (msg.name === 'tower' || msg.name === 'header') showPendingTowerResultModalIfReady();
+    if (msg.name === 'newforge') {
+      updateForgeTabGlow();
+      showForgeRebuildNotice();
+      markNewForgeTabSeenIfNeeded();
+    }
   });
+  // newforge carries the one-time rebuild notice and tab badge.  Fetch it once
+  // without keeping the large queue projection subscribed while another tab is open.
+  requestPanelData('newforge', false);
   return true;
 }
 
@@ -532,7 +546,8 @@ function getNewForgeLogStats() {
 
 function getInstalledPartsStats() {
   var counts = {};
-  var nf = typeof newForgeState === 'function' ? newForgeState() : (G && G.newForge);
+  var snapshot = uiNewForgePanelSnapshot();
+  var nf = snapshot && snapshot.newForge;
   if (nf && nf.furnaces) {
     for (var i = 0; i < nf.furnaces.length; i++) {
       var fu = nf.furnaces[i];
@@ -1145,9 +1160,13 @@ function switchTab(name) {
   });
   if (name !== 'settings') UI.saveNoticeId = null;
   // 熔爐改版公告：玩家切到熔爐分頁後停止頁籤閃爍
-  if (name === 'newforge' && window.G && G.newForge && G.newForge.tabSeen === false) {
-    G.newForge.tabSeen = true;
-    updateForgeTabGlow();
+  if (name === 'newforge') {
+    if (workerUiStateEnabled()) {
+      markNewForgeTabSeenIfNeeded();
+    } else if (window.G && G.newForge && G.newForge.tabSeen === false) {
+      G.newForge.tabSeen = true;
+      updateForgeTabGlow();
+    }
   }
   if (name === 'settings') {
     if (typeof scanManualMetadataV2 === 'function' && typeof _saveDir !== 'undefined' && _saveDir) {
@@ -1170,14 +1189,31 @@ function switchTab(name) {
 function updateForgeTabGlow() {
   var btn = document.querySelector('.tab-btn[data-tab="newforge"]');
   if (!btn) return;
-  btn.classList.toggle('nf-glow', !!(window.G && G.newForge && G.newForge.tabSeen === false));
+  var snapshot = workerUiStateEnabled() ? peekUiPanelData('newforge') : uiNewForgePanelSnapshot();
+  var nf = snapshot && snapshot.newForge;
+  btn.classList.toggle('nf-glow', !!(nf && nf.tabSeen === false));
 }
 function showForgeRebuildNotice() {
-  if (!window.G || !G.newForge || G.newForge.noticeShown !== false) return;
+  var snapshot = workerUiStateEnabled() ? peekUiPanelData('newforge') : uiNewForgePanelSnapshot();
+  var nf = snapshot && snapshot.newForge;
+  if (!nf || nf.noticeShown !== false) return;
   var modal = $id('forge-rebuild-modal');
   if (!modal) return;
   modal.style.display = 'flex';
   updateForgeTabGlow();
+}
+
+function markNewForgeTabSeenIfNeeded() {
+  if (!workerUiStateEnabled() || UI.tab !== 'newforge') return;
+  var snapshot = uiNewForgePanelSnapshot();
+  var nf = snapshot && snapshot.newForge;
+  if (!nf || nf.tabSeen !== false || isUiCommandPending(nodePendingKey('newforge-tab'))) return;
+  sendUiCommand('newforge.markTabSeen', {}, {
+    keys: [nodePendingKey('newforge-tab')],
+    panels: ['newforge']
+  }).catch(function (error) {
+    reportUiCommandFailure('熔爐頁籤已讀', error, ['newforge']);
+  });
 }
 
 function updateTalentTabVisibility() {
@@ -2494,18 +2530,20 @@ function salvageAllUnlocked(maxRarity, maxLevel, maxAncient) {
 
 /* ---- 生產線分頁 ---- */
 /* 附魔書庫存＋強化節點（原生產線頁面板，已搬入熔爐分頁；renderNewForge 呼叫） */
-function renderForgeExtras() {
-  var f = G.factory;
+function renderForgeExtras(factorySnapshot, headerSnapshot) {
+  var f = factorySnapshot && factorySnapshot.factory;
+  var player = headerSnapshot && headerSnapshot.player;
+  if (!f || !player) return;
   var encBooks = $id('enc-books');
   if (encBooks) {
     var bookChips = [];
-    for (var bk in G.player.books) {
-      if (G.player.books[bk] > 0) bookChips.push('<span class="book-chip">' + ENCHANTS[bk].emoji + esc(ENCHANTS[bk].name) + ' x' + G.player.books[bk] + '</span>');
+    for (var bk in player.books) {
+      if (player.books[bk] > 0) bookChips.push('<span class="book-chip">' + ENCHANTS[bk].emoji + esc(ENCHANTS[bk].name) + ' x' + player.books[bk] + '</span>');
     }
     encBooks.innerHTML = bookChips.length ? bookChips.join('') : '<span class="hint">尚無附魔書（階段 8+ 掉落 / 高塔獎勵）</span>';
   }
   var encInfo = $id('enc-info');
-  if (encInfo) encInfo.textContent = '精華庫存 ' + fmt(G.player.essence) + '（每次消耗 ' + ENCHANT_ESSENCE_COST + '）｜已附魔 ' + fmt(f.stats.enchanted) + ' 次';
+  if (encInfo) encInfo.textContent = '精華庫存 ' + fmt(player.essence) + '（每次消耗 ' + ENCHANT_ESSENCE_COST + '）｜已附魔 ' + fmt(f.stats.enchanted) + ' 次';
 
 }
 
@@ -2554,6 +2592,7 @@ function nfQualityPanelHTML(fu) {
   var rows = '';
   for (var r = 0; r < GODFORGED_IDX; r++) {
     rows += '<label class="nf-qual-row"><input type="checkbox" data-nf-fid="' + fu.id + '" data-nf-qual="' + r + '"' +
+      pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
       (fu.qualities[r] ? ' checked' : '') + '> <span style="color:' + RARITIES[r].color + '">' + RARITIES[r].name + '</span></label>';
   }
   return '<div class="nf-qual-panel">' + rows +
@@ -2574,8 +2613,7 @@ function nfBeltChipsHTML(fu) {
 
 // 零件置入格列：已裝＝零件晶片（點擊卸下）、空格＝零件N（點擊開啟零件列表）、
 // 下一格＝🔒解鎖（顯示金幣成本）、其餘＝🔒
-function nfPartSlotsHTML(fu) {
-  var nf = G.newForge;
+function nfPartSlotsHTML(fu, nf, player) {
   var cells = '';
   for (var s = 0; s < NEW_FORGE_PART_SLOTS_MAX; s++) {
     if (s < fu.partSlots) {
@@ -2583,15 +2621,18 @@ function nfPartSlotsHTML(fu) {
       if (p && PART_TYPES[p.key]) {
         // 已裝＝正方形小圖示（全稱在 tooltip；點擊依格位索引卸下）
         cells += '<button class="nf-part-slot nf-part-filled nf-part-ico" data-nf-fid="' + fu.id + '" data-nf-partun="' + s + '"' +
+          pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
           ' data-tip="【點擊卸下】' + esc(partDesc(p)) + '">' + partIconHTML(p.key) + '</button>';
       } else {
         cells += '<button class="nf-part-slot" data-nf-fid="' + fu.id + '" data-nf-partsopen="1"' +
           ' data-tip="【點擊選擇零件】開啟零件列表，可連續安裝">零件' + (s + 1) + '</button>';
       }
     } else if (s === fu.partSlots) {
-      var cost = newForgePartSlotCost(reincarnationCount(), fu.partSlots, nf.furnaces.length);
-      var ok = G.player.gold >= cost;
+      var reincarnations = Math.max(0, Math.floor(Number(player.reincarnations) || 0));
+      var cost = newForgePartSlotCost(reincarnations, fu.partSlots, nf.furnaces.length);
+      var ok = (player.gold || 0) >= cost;
       cells += '<button class="nf-part-slot nf-part-lock' + (ok ? '' : ' nf-part-poor') + '" data-nf-fid="' + fu.id + '" data-nf-unlockslot="1"' +
+        pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
         ' data-tip="解鎖第 ' + (s + 1) + ' 格零件格：金幣 ' + fmtFull(cost) + '">🔒 ' + fmt(cost) + '</button>';
     } else {
       cells += '<span class="nf-part-slot nf-part-lock">🔒</span>';
@@ -2602,9 +2643,14 @@ function nfPartSlotsHTML(fu) {
 
 // 零件選擇列表（點擊零件格開啟；出現在該熔爐卡片下方）：
 // 與舊分解槽相同操作——依種類分組、點擊安裝最高階數值者，列表保持開啟可連續裝滿。
-function nfPartsListHTML(fu) {
+function nfPartsListHTML(fu, factory) {
+  if (!factory) {
+    var factorySnapshot = uiFactoryPanelSnapshot();
+    factory = factorySnapshot && factorySnapshot.factory;
+  }
+  if (!factory || !Array.isArray(factory.parts)) return '';
   // 自由裝配：列出持有的所有分解槽零件類型（不論是否已裝於他處），安裝為最高階數值快照
-  var owned = G.factory.parts.filter(function (p) {
+  var owned = factory.parts.filter(function (p) {
     var pt = p && PART_TYPES[p.key];
     return pt && pt.node === 'salvage';
   });
@@ -2618,7 +2664,8 @@ function nfPartsListHTML(fu) {
       var group = byKey[key];
       var best = group.slice().sort(function (a, b) { return (b.tier - a.tier) || (b.val - a.val); })[0];
       return '<span class="part-chip" style="cursor:pointer; border-color:var(--accent);" data-nf-fid="' + fu.id +
-        '" data-nf-partinstall-key="' + key + '" data-tip="【點擊裝配】取最高階數值：' + esc(partDesc(best)) +
+        '" data-nf-partinstall-key="' + key + '"' + pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
+        ' data-tip="【點擊裝配】取最高階數值：' + esc(partDesc(best)) +
         '｜同類型可重複裝配、不佔用零件庫">' + partIconHTML(key) + esc(best.name) + '</span>';
     }).join('');
   }
@@ -2629,22 +2676,24 @@ function nfPartsListHTML(fu) {
 }
 
 // 熔爐卡片（圖1）：左側大圖＋右側傳送帶（品質設定/啟用/摘要/帶視覺）＋零件格
-function nfFurnaceHTML(fu) {
+function nfFurnaceHTML(fu, nf, factory, player) {
   var head = '<div class="node-title">' + NEW_FORGE_EMOJI + ' ' + esc(NEW_FORGE_NAME) +
     ' <span class="node-badge">#' + fu.id + '</span>' +
-    '<button class="btn sm warn nf-remove" data-nf-remove="' + fu.id + '">移除熔爐</button></div>';
+    '<button class="btn sm warn nf-remove" data-nf-remove="' + fu.id + '"' +
+    pendingUiButtonAttributes(furnacePendingKey(fu.id)) + '>移除熔爐</button></div>';
   var open = UI.nfCfgOpen && UI.nfCfgOpen[fu.id];
   var beltRow = '<div class="nf-line-head">' +
     '<span class="nf-line-no">傳送帶</span>' +
     '<button class="btn sm" data-nf-fid="' + fu.id + '" data-nf-cfg="1">⚙ 品質設定</button>' +
-    '<label class="chk"><input type="checkbox" data-nf-fid="' + fu.id + '" data-nf-on="1"' + (fu.enabled ? ' checked' : '') + '> 啟用</label>' +
+    '<label class="chk"><input type="checkbox" data-nf-fid="' + fu.id + '" data-nf-on="1"' +
+    pendingUiButtonAttributes(furnacePendingKey(fu.id)) + (fu.enabled ? ' checked' : '') + '> 啟用</label>' +
     '</div>' +
     (open ? nfQualityPanelHTML(fu) : '<div class="nf-line-sum">' + nfQualitySummary(fu) + '</div>') +
     '<div class="nf-belt"><span class="nf-belt-mouth" data-tip="熔爐入口：帶頭裝備由此入爐拆解">' + NEW_FORGE_EMOJI + '</span>' +
     '<span class="nf-belt-items" data-nf-belt="' + fu.id + '"></span>' +
     '<span class="nf-belt-more" data-nf-more="' + fu.id + '"></span></div>' +
-    nfPartSlotsHTML(fu) +
-    (UI.nfPartsOpen && UI.nfPartsOpen[fu.id] ? nfPartsListHTML(fu) : '');
+    nfPartSlotsHTML(fu, nf, player) +
+    (UI.nfPartsOpen && UI.nfPartsOpen[fu.id] ? nfPartsListHTML(fu, factory) : '');
   return '<div class="panel node-card nf-furnace' + (fu.enabled ? '' : ' nf-line-off') + '">' + head +
     '<div class="nf-furnace-body">' +
     '<div class="nf-furnace-left"><img class="nf-furnace-img" src="' + NEW_FORGE_IMAGE + '" alt="' + esc(NEW_FORGE_NAME) + '">' +
@@ -2654,20 +2703,27 @@ function nfFurnaceHTML(fu) {
 }
 
 function renderNewForge() {
-  var nf = G.newForge;
-  if (!nf) return;
+  var newForgeSnapshot = uiNewForgePanelSnapshot();
+  var factorySnapshot = uiFactoryPanelSnapshot();
+  var headerSnapshot = uiHeaderPanelSnapshot();
+  var nf = newForgeSnapshot && newForgeSnapshot.newForge;
+  var factory = factorySnapshot && factorySnapshot.factory;
+  var player = headerSnapshot && headerSnapshot.player;
+  if (!nf || !factory || !player) return;
   var qc = $id('nf-queue-count');
   if (qc) qc.textContent = fmtFull(nf.queue.length); // 佇列顯示完整數字，不用簡寫
-  renderForgeExtras(); // 附魔書庫存＋強化節點（搬入本頁的面板）
+  renderForgeExtras(factorySnapshot, headerSnapshot); // 附魔書庫存＋強化節點（搬入本頁的面板）
   var cnt = $id('nf-count');
   if (cnt) {
-    var allowed = newForgeMaxFurnaces(reincarnationCount());
+    var allowed = newForgeMaxFurnaces(Math.max(0, Math.floor(Number(player.reincarnations) || 0)));
     cnt.textContent = nf.furnaces.length + '/' + allowed + ' 座（轉生+1 座，上限 ' + NEW_FORGE_MAX + '）｜已拆解 ' + fmt(nf.stats.salvaged) +
       '・保留 ' + fmt(nf.stats.kept);
   }
   var list = $id('nf-furnaces');
   if (list) {
-    var html = nf.furnaces.map(nfFurnaceHTML).join('') ||
+    var html = nf.furnaces.map(function (fu) {
+      return nfFurnaceHTML(fu, nf, factory, player);
+    }).join('') ||
       '<div class="panel"><div class="hint">尚無熔爐——請於下方添加。</div></div>';
     if (UI._nfFurnacesHTML !== html) {
       // 焦點防衛：使用者正聚焦清單內的下拉/輸入框時延後整段重建（帶視覺另行定點更新）
@@ -2678,17 +2734,17 @@ function renderNewForge() {
         list.innerHTML = html;
       }
     }
-    nfUpdateBelts(list);
+    nfUpdateBelts(list, newForgeSnapshot);
   }
 }
 
 // 傳送帶批次定點更新（每輪執行；容器內無互動元件，覆寫不影響操作）
-function nfUpdateBelts(list) {
+function nfUpdateBelts(list, snapshot) {
   var nodes = list.querySelectorAll('[data-nf-belt]');
   if (!nodes.length) return;
   for (var i = 0; i < nodes.length; i++) {
     var node = nodes[i];
-    var fu = findNewForgeFurnace(parseInt(node.getAttribute('data-nf-belt'), 10));
+    var fu = newForgeViewFurnace(snapshot, parseInt(node.getAttribute('data-nf-belt'), 10));
     if (!fu) continue;
     var html = nfBeltChipsHTML(fu);
     if (node._nfBeltHTML !== html) {
@@ -2701,7 +2757,7 @@ function nfUpdateBelts(list) {
   var mores = list.querySelectorAll('[data-nf-more]');
   for (var m = 0; m < mores.length; m++) {
     var moreNode = mores[m];
-    var moreFu = findNewForgeFurnace(parseInt(moreNode.getAttribute('data-nf-more'), 10));
+    var moreFu = newForgeViewFurnace(snapshot, parseInt(moreNode.getAttribute('data-nf-more'), 10));
     var wait = (moreFu && moreFu.queue) ? moreFu.queue.length : 0;
     var text = wait > 0 ? '+' + (wait > 9999 ? '9999' : wait) : '';
     if (moreNode._nfMoreText !== text) {
@@ -2719,47 +2775,122 @@ function nfUpdateBelts(list) {
 function bindNewForgeEvents() {
   var tab = $id('tab-newforge');
   if (!tab) return;
+  var addButton = tab.querySelector('[data-nf-add]');
+  if (addButton) addButton.setAttribute('data-ui-pending-key', nodePendingKey('newforge-add'));
   tab.addEventListener('change', function (e) {
     var el = e.target;
     if (!el || !el.getAttribute) return;
-    var fu = findNewForgeFurnace(parseInt(el.getAttribute('data-nf-fid'), 10));
+    var furnaceId = parseInt(el.getAttribute('data-nf-fid'), 10);
+    var fu = workerUiStateEnabled()
+      ? newForgeViewFurnace(uiNewForgePanelSnapshot(), furnaceId)
+      : findNewForgeFurnace(furnaceId);
     if (!fu) return;
     if (el.hasAttribute('data-nf-qual')) {
       var r = parseInt(el.getAttribute('data-nf-qual'), 10);
-      if (r >= 0 && r < GODFORGED_IDX) fu.qualities[r] = el.checked;
-      newForgeReturnUnroutable(fu); // 取消勾選的品質自專屬佇列退回總佇列重新派發
-      UI.dirty.newforge = true;
+      if (workerUiStateEnabled()) {
+        if (isUiCommandPending(furnacePendingKey(furnaceId))) {
+          el.checked = !!fu.qualities[r];
+          return;
+        }
+        sendUiCommand('newforge.setQuality', {
+          furnaceId: furnaceId,
+          rarity: r,
+          on: !!el.checked
+        }, {
+          keys: [furnacePendingKey(furnaceId)],
+          panels: ['newforge']
+        }).catch(function (error) {
+          reportUiCommandFailure('熔爐品質設定', error, ['newforge']);
+        });
+      } else {
+        if (r >= 0 && r < GODFORGED_IDX) fu.qualities[r] = el.checked;
+        newForgeReturnUnroutable(fu); // 取消勾選的品質自專屬佇列退回總佇列重新派發
+        UI.dirty.newforge = true;
+      }
     } else if (el.hasAttribute('data-nf-on')) {
-      fu.enabled = el.checked;
-      newForgeReturnUnroutable(fu); // 停用：專屬佇列退回總佇列
-      UI.dirty.newforge = true;
+      if (workerUiStateEnabled()) {
+        if (isUiCommandPending(furnacePendingKey(furnaceId))) {
+          el.checked = !!fu.enabled;
+          return;
+        }
+        sendUiCommand('newforge.setEnabled', {
+          furnaceId: furnaceId,
+          on: !!el.checked
+        }, {
+          keys: [furnacePendingKey(furnaceId)],
+          panels: ['newforge']
+        }).catch(function (error) {
+          reportUiCommandFailure('熔爐啟用設定', error, ['newforge']);
+        });
+      } else {
+        fu.enabled = el.checked;
+        newForgeReturnUnroutable(fu); // 停用：專屬佇列退回總佇列
+        UI.dirty.newforge = true;
+      }
     }
   });
   tab.addEventListener('click', function (e) {
     // 零件裝配晶片（span）：點擊依類型裝配最高階數值快照，列表保持開啟可連續裝滿
     var chip = e.target && e.target.closest ? e.target.closest('[data-nf-partinstall-key]') : null;
     if (chip) {
-      var cfu = findNewForgeFurnace(parseInt(chip.getAttribute('data-nf-fid'), 10));
+      var chipFurnaceId = parseInt(chip.getAttribute('data-nf-fid'), 10);
+      var cfu = workerUiStateEnabled()
+        ? newForgeViewFurnace(uiNewForgePanelSnapshot(), chipFurnaceId)
+        : findNewForgeFurnace(chipFurnaceId);
       if (cfu) {
-        var ierr = newForgeInstallPart(cfu.id, chip.getAttribute('data-nf-partinstall-key'));
-        if (ierr) nflog('⚠️ ' + ierr, 'warn');
+        if (workerUiStateEnabled()) {
+          if (isUiCommandPending(furnacePendingKey(chipFurnaceId))) return;
+          sendUiCommand('newforge.installPart', {
+            furnaceId: chipFurnaceId,
+            partKey: chip.getAttribute('data-nf-partinstall-key')
+          }, {
+            keys: [furnacePendingKey(chipFurnaceId)],
+            panels: ['newforge', 'factory']
+          }).catch(function (error) {
+            reportUiCommandFailure('熔爐安裝零件', error, ['newforge', 'factory']);
+          });
+        } else {
+          var ierr = newForgeInstallPart(cfu.id, chip.getAttribute('data-nf-partinstall-key'));
+          if (ierr) nflog('⚠️ ' + ierr, 'warn');
+        }
       }
       return;
     }
     var el = e.target && e.target.closest ? e.target.closest('button') : null;
     if (!el) return;
     if (el.hasAttribute('data-nf-add')) {
-      var err = addNewForgeFurnace();
-      if (err) nflog('⚠️ ' + err, 'warn');
-      else nflog('🏗️ 已添加' + NEW_FORGE_NAME, 'good');
+      if (workerUiStateEnabled()) {
+        sendUiCommand('newforge.addFurnace', {}, {
+          keys: [nodePendingKey('newforge-add')],
+          panels: ['newforge']
+        }).catch(function (error) {
+          reportUiCommandFailure('新增熔爐', error, ['newforge']);
+        });
+      } else {
+        var err = addNewForgeFurnace();
+        if (err) nflog('⚠️ ' + err, 'warn');
+        else nflog('🏗️ 已添加' + NEW_FORGE_NAME, 'good');
+      }
       return;
     }
     if (el.hasAttribute('data-nf-remove')) {
       var rid = parseInt(el.getAttribute('data-nf-remove'), 10);
-      if (removeNewForgeFurnace(rid)) nflog('🗑️ 已移除熔爐 #' + rid + '（傳送帶裝備已退回背包）', 'info');
+      if (workerUiStateEnabled()) {
+        sendUiCommand('newforge.removeFurnace', { furnaceId: rid }, {
+          keys: [furnacePendingKey(rid)],
+          panels: ['newforge', 'inv']
+        }).catch(function (error) {
+          reportUiCommandFailure('移除熔爐', error, ['newforge', 'inv']);
+        });
+      } else if (removeNewForgeFurnace(rid)) {
+        nflog('🗑️ 已移除熔爐 #' + rid + '（傳送帶裝備已退回背包）', 'info');
+      }
       return;
     }
-    var fu = findNewForgeFurnace(parseInt(el.getAttribute('data-nf-fid'), 10));
+    var clickedFurnaceId = parseInt(el.getAttribute('data-nf-fid'), 10);
+    var fu = workerUiStateEnabled()
+      ? newForgeViewFurnace(uiNewForgePanelSnapshot(), clickedFurnaceId)
+      : findNewForgeFurnace(clickedFurnaceId);
     if (!fu) return;
     if (el.hasAttribute('data-nf-cfg')) {
       if (!UI.nfCfgOpen) UI.nfCfgOpen = {};
@@ -2768,8 +2899,17 @@ function bindNewForgeEvents() {
       return;
     }
     if (el.hasAttribute('data-nf-unlockslot')) {
-      var uerr = unlockNewForgePartSlot(fu.id);
-      if (uerr) nflog('⚠️ ' + uerr, 'warn');
+      if (workerUiStateEnabled()) {
+        sendUiCommand('newforge.unlockPartSlot', { furnaceId: fu.id }, {
+          keys: [furnacePendingKey(fu.id)],
+          panels: ['newforge', 'header']
+        }).catch(function (error) {
+          reportUiCommandFailure('熔爐解鎖零件格', error, ['newforge', 'header']);
+        });
+      } else {
+        var uerr = unlockNewForgePartSlot(fu.id);
+        if (uerr) nflog('⚠️ ' + uerr, 'warn');
+      }
       return;
     }
     if (el.hasAttribute('data-nf-partsopen')) {
@@ -2779,7 +2919,20 @@ function bindNewForgeEvents() {
       return;
     }
     if (el.hasAttribute('data-nf-partun')) {
-      newForgeUninstallPart(fu.id, parseInt(el.getAttribute('data-nf-partun'), 10));
+      var slotIndex = parseInt(el.getAttribute('data-nf-partun'), 10);
+      if (workerUiStateEnabled()) {
+        sendUiCommand('newforge.uninstallPart', {
+          furnaceId: fu.id,
+          slotIndex: slotIndex
+        }, {
+          keys: [furnacePendingKey(fu.id)],
+          panels: ['newforge', 'factory']
+        }).catch(function (error) {
+          reportUiCommandFailure('熔爐卸下零件', error, ['newforge', 'factory']);
+        });
+      } else {
+        newForgeUninstallPart(fu.id, slotIndex);
+      }
       return;
     }
   });
@@ -3561,6 +3714,30 @@ function uiTowerPanelSnapshot() {
   if (workerUiStateEnabled()) return panelData('tower');
   if (typeof G === 'undefined' || !G.tower || typeof TOWER === 'undefined') return null;
   return { tower: G.tower, runtime: TOWER };
+}
+
+function uiNewForgePanelSnapshot() {
+  if (workerUiStateEnabled()) return panelData('newforge');
+  if (typeof G === 'undefined' || !G.newForge) return null;
+  return { newForge: G.newForge };
+}
+
+function uiFactoryPanelSnapshot() {
+  if (workerUiStateEnabled()) return panelData('factory');
+  if (typeof G === 'undefined' || !G.factory) return null;
+  return {
+    factory: G.factory,
+    salvageSettings: G.player && G.player.salvageSettings
+  };
+}
+
+function newForgeViewFurnace(snapshot, furnaceId) {
+  var furnaces = snapshot && snapshot.newForge && snapshot.newForge.furnaces;
+  if (!Array.isArray(furnaces)) return null;
+  for (var i = 0; i < furnaces.length; i++) {
+    if (furnaces[i] && furnaces[i].id === furnaceId) return furnaces[i];
+  }
+  return null;
 }
 
 function towerViewActive(snapshot) {
@@ -5604,7 +5781,16 @@ function initUI() {
     forgeRebuildOk.addEventListener('click', function () {
       var modal = $id('forge-rebuild-modal');
       if (modal) modal.style.display = 'none';
-      if (window.G && G.newForge) G.newForge.noticeShown = true;
+      if (workerUiStateEnabled()) {
+        sendUiCommand('newforge.markNoticeShown', {}, {
+          keys: [nodePendingKey('newforge-notice')],
+          panels: ['newforge']
+        }).catch(function (error) {
+          reportUiCommandFailure('熔爐公告已讀', error, ['newforge']);
+        });
+      } else if (window.G && G.newForge) {
+        G.newForge.noticeShown = true;
+      }
     });
   }
 
