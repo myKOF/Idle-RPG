@@ -75,3 +75,24 @@ test('裝備與背包頁由 Worker panel 投影渲染並以 Command 修改狀態
   assert.match(ui, /sendUiCommand\('settings\.set', \{ key: 'compareEq'/);
   assert.match(ui, /sendUiCommand\('factory\.setAutoEquip'/);
 });
+
+test('頂欄只讀 Worker header Snapshot 的資源、屬性與 DPS', () => {
+  const renderHeader = functionBody('renderHeader');
+  const renderAttrPanel = functionBody('renderAttrPanel');
+
+  assert.match(ui, /UI_PERSISTENT_PANEL_SUBSCRIPTIONS\s*=\s*\['talents', 'header'\]/);
+  assert.match(renderHeader, /uiHeaderPanelSnapshot\(\)/);
+  assert.match(renderHeader, /headerSnapshot\.stats/);
+  assert.match(renderHeader, /headerSnapshot\.viewStats \|\| st/);
+  assert.match(renderHeader, /headerSnapshot\.dps/);
+  assert.match(renderHeader, /headerSnapshot\.settings/);
+  assert.match(renderHeader, /headerSnapshot\.autoEquip/);
+  assert.doesNotMatch(renderHeader, /\bgetStats\(/);
+  assert.doesNotMatch(renderHeader, /\bgetViewStats\(/);
+  assert.doesNotMatch(renderHeader, /\bcurrentDps\(/);
+  assert.doesNotMatch(renderHeader, /\bG\./);
+
+  assert.match(renderAttrPanel, /headerSnapshot\.equipView/);
+  assert.match(renderAttrPanel, /headerSnapshot\.equipActive/);
+  assert.doesNotMatch(renderAttrPanel, /\bG\.(?:equipView|equipActive)\b/);
+});
