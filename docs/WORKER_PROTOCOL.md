@@ -140,7 +140,9 @@ v1 用「參數名叫 `itemId` 就自動解析」的慣例會出事——`forgeP
   由 Worker 的 `COMMAND_IMPL` 實作成「產生 payload → 發 persist」。原本宣告直接呼叫
   `manualSave` / `createManualSaveToFolderV2` / `restartGame` 是錯的——那些函式會碰
   localStorage、IndexedDB、File System Access 與 `location.reload`，Worker 一律不能碰
-- **1 條 `gm.exec`**，邏輯在 `gm.js`，P3 處理
+- ~~**1 條 `gm.exec`**~~ 已完成：`js/gm.js` 拆成執行層 `js/gm_exec.js`（無 DOM 相依，
+  主執行緒與 Worker 共用同一份實作）與面板 `js/gm.js`。面板依 `WorkerBridge.enabled()`
+  決定送指令或直接呼叫
 
 P3 待搬遷的 13 條：
 
