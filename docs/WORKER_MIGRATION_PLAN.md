@@ -220,6 +220,38 @@ Codex 已完成診斷分類，見 `docs/TEST_FAILURE_TRIAGE.md`（A 類 32／B �
 量測到的 `tick` 平均 929 bytes 高於先前量到的 330 bytes，是因為量測模式下 tick 會多帶
 `measure` 與 `diag` 區塊；正式模式沒有這兩塊。
 
+### 5.6.1 P3 完成後複測（2026-07-27，`docs/fixtures/save_lategame.json`）
+
+同樣以 `?worker=1&measure=1` 取得。**注意：此輪 fixture 為 665 KB，與上表的 317 KB
+不是同一份存檔，`persist` 的數字不可直接對照**；`panel` 與 `tick` 可比。
+
+| 訊息 | 次數 | 平均 bytes | 最大 bytes | 主執行緒分派 ms（平均／最大） |
+|---|---|---|---|---|
+| `tick` | 235 | 1,029 | 2,596 | 1.68 / 248.1 |
+| `panel` | 34 | 21,144 | **143,974** | 0.147 / **0.7** |
+| `persist` | 4 | — | — | 2.13 / 7.2 |
+
+**訊息傳輸已經不是瓶頸了。** `panel` 最大值由 312,824 → 143,974 bytes（背包欄位投影的成果，
+−54%），接收端分派由 3.2 ms 降到 0.7 ms。`tick` 的 248.1 ms 最大值是開機後第一次
+渲染 800 格背包，不是穩態成本。
+
+**瓶頸已移到 `ui.js` 的渲染計算。** 以 PerformanceObserver 量 longtask：
+
+- 穩態（停在裝備頁 20 秒、85 個 tick）：**超過 50 ms 的長工作 0 次**。遊戲操作是順的。
+- 切頁時每次都會卡：
+
+  | 頁籤 | longtask | 面板 payload | 該頁 DOM 節點 |
+  |---|---|---|---|
+  | 技能 | **135 ms** | **0 KB** | 283 |
+  | 天賦 | 81 ms | 1 KB | 1 |
+  | 裝備／背包 | 71～81 ms | 140 KB（`inv`） | 3,029 |
+
+技能頁最值得看：payload 幾乎是空的、DOM 節點也最少，卻是最慢的一頁——**成本不在傳輸
+也不在 DOM，而在 `ui.js` 每次渲染時重算的東西**。裝備頁那 71～81 ms 則與 3,029 個節點
+相稱，屬於單純的 DOM 量體問題，虛擬捲動或分頁可解。
+
+P4 的工作因此落在 Codex 的 `ui.js` 渲染節流那一欄，Worker 端暫時沒有可收斂的空間。
+
 ---
 
 ## 6. 合流節奏
@@ -331,8 +363,20 @@ Codex 已完成診斷分類，見 `docs/TEST_FAILURE_TRIAGE.md`（A 類 32／B �
 | 階段 | 狀態 | 完成日 |
 |---|---|---|
 | P0 協議凍結 | ✅ 完成（v1，67 條指令） | 2026-07-27 |
-| P1 Worker 骨架 | ✅ 完成（待 Antigravity 驗證） | 2026-07-27 |
-| P2 存檔搬遷 | ✅ 完成（待 Antigravity 驗證） | 2026-07-27 |
-| P3 UI 去狀態化 | 未開始 | |
+| P1 Worker 骨架 | ✅ 完成 | 2026-07-27 |
+| P2 存檔搬遷 | ✅ 完成 | 2026-07-27 |
+| P3 UI 去狀態化 | ✅ 完成 | 2026-07-27 |
 | P4 效能收斂 | 未開始 | |
 | P5 移除 flag | 未開始 | |
+
+P3 收尾內容（供 P5 追溯）：
+
+- 11 個 `PANEL_KEYS` 面板全數改讀 Worker Snapshot 與 Command（Codex）
+- 事件管線 `log` / `flog` / `float` / `notice` 接上既有呈現函式（Codex `1a58323`）；
+  `loot` 通道確認不需要消費——`RUN_STATS` / `LOOT_STATS` 已由 `battle` 面板投影，
+  重播 recorder 會雙重計數
+- `getItemAncientCount` 收斂至 `js/item.js`（Codex `1ae85ed`），
+  Worker 守衛後備移除（Claude `0b93329`）
+- Review 三項必須修正已修（Codex `e0e4e7e`）：`workerTowerActiveForLog` 改 view 優先、
+  `stats.reset` 指令接線、還原 `flushPendingEnemyFloats` 的敵人存活檢查
+- 迴歸驗證：`docs/P3_FULL_REGRESSION_REPORT.md`（Antigravity）
