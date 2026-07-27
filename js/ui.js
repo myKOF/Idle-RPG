@@ -60,7 +60,7 @@ var UI_PANEL_SUBSCRIPTIONS_BY_TAB = {
   newforge: ['newforge', 'factory', 'header'],
   forge: ['forge', 'inv', 'gems', 'header']
 };
-var UI_PERSISTENT_PANEL_SUBSCRIPTIONS = ['talents']; // controls talent-tab visibility
+var UI_PERSISTENT_PANEL_SUBSCRIPTIONS = ['talents', 'header']; // talent visibility + always-visible header
 
 /*
  * Worker-backed UI state.  Renderers migrate to viewState()/panelData() one
@@ -1434,8 +1434,26 @@ function applyReincarnationTitleClass(el, count) {
   el.classList.add('reinc-title-' + c);
 }
 
+function headerViewGemCount(player, type, level) {
+  var byType = player && player.gems && player.gems[type];
+  return Math.max(0, Number(byType && byType[level]) || 0);
+}
+
+function headerViewTotalGems(player) {
+  var total = 0;
+  for (var type in GEM_TYPES) {
+    for (var level = 1; level <= GEM_FORGE_MAX_LEVEL; level++) {
+      total += headerViewGemCount(player, type, level);
+    }
+  }
+  return total;
+}
+
 function renderHeader() {
-  var p = G.player, st = getStats();
+  var headerSnapshot = uiHeaderPanelSnapshot();
+  if (!headerSnapshot || !headerSnapshot.player || !headerSnapshot.stats) return;
+  var p = headerSnapshot.player;
+  var st = headerSnapshot.stats;
   updateTalentTabVisibility();
   function updateResourceTip(id, title, desc) {
     var valueEl = $id(id);
@@ -1468,10 +1486,11 @@ function renderHeader() {
   var gemTip = [];
   for (var gt in GEM_TYPES) {
     var tn = 0;
-    for (var lv = 1; lv <= GEM_FORGE_MAX_LEVEL; lv++) tn += gemCount(gt, lv);
+    for (var lv = 1; lv <= GEM_FORGE_MAX_LEVEL; lv++) tn += headerViewGemCount(p, gt, lv);
     if (tn) gemTip.push(GEM_TYPES[gt].emoji + GEM_TYPES[gt].name + ' x' + tn);
   }
-  $id('r-gems').textContent = fmt(totalGemsAll());
+  var totalGems = headerViewTotalGems(p);
+  $id('r-gems').textContent = fmt(totalGems);
   updateResourceTip('r-gems', '寶石', gemTip.join('、') || '尚無寶石');
   var bookTotal = 0, bookTip = [];
   for (var bk in p.books) {
@@ -1489,7 +1508,7 @@ function renderHeader() {
     { id: 'r-ancient-essence', val: p.ancientEssence || 0 },
     { id: 'r-soul-origin',     val: p.soulOrigin || 0 },
     { id: 'r-demon-seed',      val: p.demonSeed || 0 },
-    { id: 'r-gems',            val: totalGemsAll() },
+    { id: 'r-gems',            val: totalGems },
     { id: 'r-books',           val: bookTotal }
   ];
   resVisMap.forEach(function(item) {
@@ -1500,13 +1519,13 @@ function renderHeader() {
 
   refreshOpenResourceTooltip();
 
-  $id('toggle-compare').checked = !!G.settings.compareEq;
+  $id('toggle-compare').checked = !!(headerSnapshot.settings && headerSnapshot.settings.compareEq);
   var autoEquipToggle = $id('toggle-autoequip');
-  if (autoEquipToggle) autoEquipToggle.checked = !!(G.factory && G.factory.autoEquip);
+  if (autoEquipToggle) autoEquipToggle.checked = !!headerSnapshot.autoEquip;
   $id('p-level').textContent = 'Lv.' + p.level;
   if ($id('pv-level')) $id('pv-level').textContent = 'Lv.' + p.level;
   if ($id('tp-level')) $id('tp-level').textContent = 'Lv.' + p.level;
-  var reinc = reincarnationCount();
+  var reinc = clamp(Math.floor(Number(p.reincarnations) || 0), 0, REINCARNATION_MAX);
   var rank = reincarnationRankName(reinc);
   var classEl = $id('p-class');
   if (classEl) { classEl.textContent = rank; applyReincarnationTitleClass(classEl, reinc); }
@@ -1539,7 +1558,7 @@ function renderHeader() {
   xpBar.removeAttribute('title');
 
   // 屬性面板顯示「檢視中」裝備套的預覽屬性（切頁即變，不需確定切換）；header 其他區塊維持穿著中數值
-  renderAttrPanel(typeof getViewStats === 'function' ? getViewStats() : st);
+  renderAttrPanel(headerSnapshot.viewStats || st, headerSnapshot);
 
   // 更新側欄硬編碼的屬性
   if ($id('s-hp')) {
@@ -1554,12 +1573,12 @@ function renderHeader() {
   }
 
   var dpsEl = $id('s-dps');
-  if (dpsEl) dpsEl.textContent = fmt(currentDps());
+  if (dpsEl) dpsEl.textContent = fmt(Number(headerSnapshot.dps) || 0);
 }
 
 /* ---- 側欄 50+ 屬性面板（分組摺疊） ---- */
 var _attrPanelBuilt = false;
-function renderAttrPanel(st) {
+function renderAttrPanel(st, headerSnapshot) {
   var panel = $id('attr-panel');
   if (!panel) return;
   if (!_attrPanelBuilt) {
@@ -1584,12 +1603,20 @@ function renderAttrPanel(st) {
   // 預覽提示：檢視非穿著中的裝備套時，標明面板為該套的預覽屬性
   var previewNote = $id('attr-preview-note');
   if (previewNote) {
-    var previewing = typeof isViewingActiveSet === 'function' && !isViewingActiveSet();
+    var equipView = headerSnapshot && typeof headerSnapshot.equipView === 'number'
+      ? headerSnapshot.equipView
+      : 0;
+    var equipActive = headerSnapshot && typeof headerSnapshot.equipActive === 'number'
+      ? headerSnapshot.equipActive
+      : 0;
+    var previewing = equipView !== equipActive;
     previewNote.hidden = !previewing;
     if (previewing) {
+      var previewEquipSnapshot = peekUiPanelData('equip');
       previewNote.textContent = '👁 屬性預覽：' +
-        (typeof equipSetLabel === 'function' ? equipSetLabel(G.equipView) : '檢視中裝備套') +
-        '（尚未穿上，戰鬥仍用' + (typeof equipSetLabel === 'function' ? equipSetLabel(G.equipActive) : '穿著中那套') + '）';
+        (previewEquipSnapshot ? equipSetViewLabel(previewEquipSnapshot, equipView) : '檢視中裝備套') +
+        '（尚未穿上，戰鬥仍用' +
+        (previewEquipSnapshot ? equipSetViewLabel(previewEquipSnapshot, equipActive) : '穿著中那套') + '）';
     }
   }
   // 更新數值
