@@ -54,4 +54,7 @@ test('背景分頁跳過純視覺與輪詢工作', () => {
   assert.match(uiSrc, /function renderStatsPanel\(\) \{\s*if \(uiRenderingSuspended\(\)\) return;/);
   assert.match(mainSrc, /function checkForUpdates\(\) \{\s*if \(typeof document !== 'undefined' && document\.hidden\) return;/);
   assert.match(autoreloadSrc, /function poll\(\) \{\s*if \(document\.hidden\) return;/);
+  assert.match(uiSrc, /function checkWorkerHealth\(\)[\s\S]*document\.hidden[\s\S]*UI_WORKER_HEARTBEAT_TIMEOUT_MS/);
+  assert.match(uiSrc, /WorkerBridge\.on\(MSG_OUT\.ERROR,[\s\S]*handleWorkerDead\(msg\)/);
+  assert.match(uiSrc, /id = 'worker-dead-notice'[\s\S]*location\.reload\(\)/);
 });

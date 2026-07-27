@@ -71,6 +71,16 @@ var UI_WORKER_STATE = {
   panelVersions: Object.create(null)
 };
 
+var UI_WORKER_HEALTH = {
+  startedAt: 0,
+  lastHeartbeatAt: 0,
+  lastTicks: 0,
+  alertShown: false,
+  errorSignature: ''
+};
+var UI_WORKER_BOOT_TIMEOUT_MS = 10000;
+var UI_WORKER_HEARTBEAT_TIMEOUT_MS = 5000;
+
 /*
  * A command can own several keys (for example an item and a furnace).  The
  * whole entry is released after a successful ACK and every authoritative
@@ -91,6 +101,90 @@ function workerUiStateEnabled() {
     WorkerBridge &&
     typeof WorkerBridge.enabled === 'function' &&
     WorkerBridge.enabled();
+}
+
+function noteWorkerHeartbeat(now) {
+  UI_WORKER_HEALTH.lastHeartbeatAt = now || Date.now();
+  UI_WORKER_HEALTH.startedAt = UI_WORKER_HEALTH.lastHeartbeatAt;
+}
+
+function workerErrorSignature(error) {
+  if (!error) return '';
+  return [error.where || '', error.message || '', error.stack || ''].join('|');
+}
+
+function showWorkerDeadNotice(error) {
+  if (typeof document === 'undefined' || $id('worker-dead-notice')) return;
+  var overlay = document.createElement('div');
+  overlay.id = 'worker-dead-notice';
+  overlay.setAttribute('role', 'alertdialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;' +
+    'justify-content:center;padding:24px;background:rgba(3,7,18,.88);';
+
+  var card = document.createElement('div');
+  card.style.cssText = 'width:min(520px,100%);padding:24px;border:1px solid #ef4444;border-radius:14px;' +
+    'background:#111827;color:#f9fafb;box-shadow:0 20px 60px rgba(0,0,0,.55);text-align:center;';
+  var title = document.createElement('h2');
+  title.textContent = '⚠️ 遊戲模擬已停止';
+  title.style.cssText = 'margin:0 0 12px;color:#fca5a5;';
+  var desc = document.createElement('p');
+  desc.textContent = 'Worker 已停止回應，畫面資料可能不再更新。請重新載入遊戲以恢復模擬。';
+  desc.style.cssText = 'margin:0 0 12px;line-height:1.65;';
+  var detail = document.createElement('pre');
+  detail.textContent = error && error.message ? String(error.message) : 'Worker heartbeat timeout';
+  detail.style.cssText = 'margin:0 0 18px;padding:10px;max-height:120px;overflow:auto;border-radius:8px;' +
+    'background:#030712;color:#d1d5db;text-align:left;white-space:pre-wrap;';
+  var reload = document.createElement('button');
+  reload.type = 'button';
+  reload.className = 'btn';
+  reload.textContent = '重新載入';
+  reload.addEventListener('click', function () { location.reload(); });
+
+  card.appendChild(title);
+  card.appendChild(desc);
+  card.appendChild(detail);
+  card.appendChild(reload);
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+  reload.focus();
+}
+
+function handleWorkerDead(error) {
+  if (!workerUiStateEnabled() || UI_WORKER_HEALTH.alertShown) return;
+  UI_WORKER_HEALTH.alertShown = true;
+  UI_WORKER_HEALTH.errorSignature = workerErrorSignature(error);
+  showWorkerDeadNotice(error);
+}
+
+function checkWorkerHealth() {
+  if (!workerUiStateEnabled() ||
+      typeof WorkerBridge.status !== 'function' ||
+      typeof document === 'undefined' ||
+      document.hidden) {
+    return;
+  }
+  var status = WorkerBridge.status();
+  var now = Date.now();
+  if (!UI_WORKER_HEALTH.startedAt) UI_WORKER_HEALTH.startedAt = now;
+  if (status.ticks !== UI_WORKER_HEALTH.lastTicks) {
+    UI_WORKER_HEALTH.lastTicks = status.ticks;
+    noteWorkerHeartbeat(now);
+  }
+  if (status.lastError && status.lastError.where === 'worker-onerror') {
+    var signature = workerErrorSignature(status.lastError);
+    if (signature && signature !== UI_WORKER_HEALTH.errorSignature) handleWorkerDead(status.lastError);
+    return;
+  }
+  if (status.started && !status.booted &&
+      now - UI_WORKER_HEALTH.startedAt >= UI_WORKER_BOOT_TIMEOUT_MS) {
+    handleWorkerDead({ message: 'Worker 啟動逾時' });
+    return;
+  }
+  if (status.booted && UI_WORKER_HEALTH.lastHeartbeatAt &&
+      now - UI_WORKER_HEALTH.lastHeartbeatAt >= UI_WORKER_HEARTBEAT_TIMEOUT_MS) {
+    handleWorkerDead({ message: 'Worker 超過 5 秒沒有回傳 TICK' });
+  }
 }
 
 function validUiPanelKey(key) {
@@ -378,12 +472,14 @@ function bindWorkerUiState() {
   UI_WORKER_STATE.bridgeBound = true;
 
   WorkerBridge.on(MSG_OUT.BOOTED, function (msg) {
+    noteWorkerHeartbeat();
     applyUiSnapshot(msg.snapshot);
   });
   WorkerBridge.on(MSG_OUT.FULL, function (msg) {
     applyUiSnapshot(msg.snapshot);
   });
   WorkerBridge.on(MSG_OUT.TICK, function (msg) {
+    noteWorkerHeartbeat();
     if (msg.view) UI_WORKER_STATE.view = msg.view;
     handleWorkerUiEvents(msg.events);
     if (UI_WORKER_STATE.viewSubscribed) {
@@ -426,6 +522,9 @@ function bindWorkerUiState() {
       showForgeRebuildNotice();
       markNewForgeTabSeenIfNeeded();
     }
+  });
+  WorkerBridge.on(MSG_OUT.ERROR, function (msg) {
+    if (msg && msg.where === 'worker') handleWorkerDead(msg);
   });
   // newforge carries the one-time rebuild notice and tab badge.  Fetch it once
   // without keeping the large queue projection subscribed while another tab is open.
@@ -3558,12 +3657,14 @@ function markVisibleUiDirty() {
 
 function handleVisibilityChange() {
   if (uiRenderingSuspended()) return;
+  noteWorkerHeartbeat();
   markVisibleUiDirty();
   uiTick();
 }
 
 function uiTick() {
   if (uiRenderingSuspended()) return;
+  checkWorkerHealth();
   flushPendingLogDom();
   flushDirtyDetailLogs();
   var d = UI.dirty;
