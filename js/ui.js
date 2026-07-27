@@ -1361,8 +1361,8 @@ function renderHeader() {
   $id('r-books').textContent = fmt(bookTotal);
   updateResourceTip('r-books', '附魔書', bookTip.join('、') || '尚無附魔書');
 
-  // 材料動態顯示/隱藏：數量 > 0 時永久解鎖（記錄於 p.shownRes），隱藏材料包含圖示與數量
-  if (!p.shownRes) p.shownRes = {};
+  // shownRes 由模擬層在資源首次取得時更新；渲染只讀快照。
+  var shownRes = p.shownRes || {};
   var resVisMap = [
     { id: 'r-essence',         val: p.essence || 0 },
     { id: 'r-dust',            val: p.dust || 0 },
@@ -1373,10 +1373,9 @@ function renderHeader() {
     { id: 'r-books',           val: bookTotal }
   ];
   resVisMap.forEach(function(item) {
-    if (item.val > 0) p.shownRes[item.id] = true;
     var el = $id(item.id);
     if (!el || !el.parentNode) return;
-    el.parentNode.style.display = p.shownRes[item.id] ? '' : 'none';
+    el.parentNode.style.display = shownRes[item.id] ? '' : 'none';
   });
 
   refreshOpenResourceTooltip();
@@ -2298,7 +2297,6 @@ function renderDetail() {
   actionsHtml += '<button class="btn" data-act="lock">' + (it.locked ? '解鎖' : '鎖定') + '</button>';
   // 右側素材面板：可用寶石／附魔書改為小圖示，完整名稱、數值與持有量由滑鼠提示顯示
   var matHtml = '';
-  ensureSockets(it);
   if (it.sockets.indexOf(null) >= 0) {
     var gemIcons = [];
     for (var gt in GEM_TYPES) {
