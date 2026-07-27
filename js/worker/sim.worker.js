@@ -17,6 +17,9 @@ importScripts(
   '../combat.js', '../legendary.js', '../potential.js', '../tower.js',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js'
 );
+/* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
+   它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
+importScripts('../gm_exec.js');
 
 /* ---- 節奏參數（語意同 main.js，不得擅改）---- */
 var TICK_MS = 100;          // 模擬步長
@@ -705,9 +708,13 @@ var COMMAND_IMPL = {
   'save.restart': function () { return restartGame(); },
 
   /* ---- GM ----
-     gm.js 是主執行緒的 IIFE，面板與指令解析綁在一起。拆分屬 P3（js/gm.js 由 Claude 持有）。 */
-  'gm.exec': function () {
-    throw new Error('gm.exec 尚未搬入 Worker（P3 處理 js/gm.js 拆分）');
+     執行層在 js/gm_exec.js（主執行緒與 Worker 共用同一份實作）。
+     回傳 { ok, message }，面板依此顯示結果。 */
+  'gm.exec': function (a) {
+    if (typeof executeGMCommand !== 'function') {
+      return { ok: false, message: 'GM 執行層未載入' };
+    }
+    return executeGMCommand(a.line);
   }
 };
 

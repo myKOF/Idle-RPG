@@ -83,7 +83,8 @@ test('Skills 表含解鎖等級欄與可編輯說明，Tooltip 使用同一解�
   const config = fs.readFileSync(path.join(root, 'tools', 'config_tables.cjs'), 'utf8');
   const csv = fs.readFileSync(path.join(root, 'config', 'CSV', 'Skills.csv'), 'utf8');
   const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
-  const gm = fs.readFileSync(path.join(root, 'js', 'gm.js'), 'utf8');
+  // GM 指令拆分後，指令執行邏輯在 gm_exec.js，gm.js 只剩面板
+  const gm = fs.readFileSync(path.join(root, 'js', 'gm_exec.js'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
 
   assert.match(config, /'解鎖等級'/);

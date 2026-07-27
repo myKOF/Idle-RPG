@@ -57,6 +57,8 @@ function loadGMContext(hostname) {
   };
   context.window = context;
   vm.createContext(context);
+  // GM 指令拆成執行層與面板兩檔：執行層同時被主執行緒與 Worker 載入，面板只在主執行緒。
+  vm.runInContext(fs.readFileSync(path.join(root, 'js/gm_exec.js'), 'utf8'), context, { filename: 'js/gm_exec.js' });
   vm.runInContext(fs.readFileSync(path.join(root, 'js/gm.js'), 'utf8'), context, { filename: 'js/gm.js' });
   return { context, document, body };
 }

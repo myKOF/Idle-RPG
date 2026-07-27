@@ -786,6 +786,8 @@
   <script src="js/save.js"></script>
   <script src="js/ui.js?v=1.0.8"></script>
   <script src="js/param_autoreload.js"></script>
+  <!-- GM 指令：執行層與面板分離，執行層同時被 Worker importScripts 載入 -->
+  <script src="js/gm_exec.js"></script>
   <script src="js/gm.js"></script>
   <!-- Web Worker 遷移：協議與橋接。bridge.js 只在網址帶 ?worker=1 時才啟動 Worker，
        未帶參數時完全不作用，單執行緒路徑照舊。 -->
