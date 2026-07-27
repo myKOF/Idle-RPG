@@ -88,7 +88,7 @@ function validArgs(spec) {
 }
 
 test('凍結的 Worker 指令表有 85 條且分類數量固定', () => {
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 4);
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 5);
   const names = Object.keys(protocol.COMMANDS);
   assert.equal(names.length, 85);
 

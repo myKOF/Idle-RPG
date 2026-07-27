@@ -104,8 +104,10 @@ var WorkerBridge = (function () {
     });
   }
 
-  function requestPanel(name) {
-    return post(MSG_IN.PANEL, { name: name });
+  /* params 由各面板自行定義；目前只有 inv 使用（{ detailIds:[...] } 索取完整裝備資料）。
+     不帶 params 時背包只回傳格子欄位的投影，不含詞條。 */
+  function requestPanel(name, params) {
+    return post(MSG_IN.PANEL, { name: name, params: params });
   }
 
   function onMessage(e) {
