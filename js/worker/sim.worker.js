@@ -207,14 +207,26 @@ function installStorageGuards() {
     return Promise.resolve(true);
   };
 
-  self.manualSave = function (label) {
+  function buildManualMeta(label) {
     var prefix = label ? String(label).replace(/[^a-z0-9_-]+/ig, '_') : 'manual';
-    var meta = saveRecMeta('manual', 'manual_' + Date.now().toString(36) + '_' + ri(100, 999),
+    return saveRecMeta('manual', 'manual_' + Date.now().toString(36) + '_' + ri(100, 999),
       'IC_' + prefix + '_' + saveStamp(Date.now()) + '.json');
+  }
+
+  /* 一般手動存檔：未連接資料夾時仍要落地（舊路徑是寫進瀏覽器存檔記錄）。
+     一鍵分解前的保護存檔走的就是這條，不能因為沒接資料夾就靜靜消失。 */
+  self.manualSave = function (label) {
+    var meta = buildManualMeta(label);
     requestPersist(PERSIST_KINDS.MANUAL, { meta: meta });
     return meta;
   };
-  self.createManualSaveToFolderV2 = self.manualSave;
+
+  /* 明確「另存到資料夾」：沒接資料夾就該失敗，不要偷偷存到別的地方 */
+  self.createManualSaveToFolderV2 = function (label) {
+    var meta = buildManualMeta(label);
+    requestPersist(PERSIST_KINDS.MANUAL_FOLDER, { meta: meta });
+    return meta;
+  };
 
   self.restartGame = function () {
     requestPersist(PERSIST_KINDS.AUTO); // 舊局進度先保底
@@ -277,12 +289,286 @@ function resolveItem(id) {
   return { item: hits[0] };
 }
 
-/* 協議中 fn 為 null 的指令，由 Worker 這邊自行實作。
-   P2 先補齊存檔三條（原本錯誤地宣告直接呼叫會碰 I/O 的函式），其餘 UI 搬遷項目在 P3。 */
+/* ============ fn:null 指令的 Worker 端實作 ============
+   協議裡 fn 為 null 的指令，代表沒有一個既有函式可以直接呼叫：邏輯目前散在 ui.js 裡，
+   而且多半不只一步（裝備要先從背包移除、換下來的要退回背包）。這些必須搬進 Worker
+   成為單一原子操作，否則指令中途的狀態會被下一個 tick 看見。
+
+   實作原則：
+   - 行為與 ui.js 現況**逐行對齊**，這是遷移不是改版；發現可疑之處記錄下來，不順手改
+   - 只做狀態轉移，畫面回饋（浮動文字、彈窗）留給主執行緒依 ack 與事件處理
+   - 領域層面的拒絕（背包滿、金幣不足）回傳 { err }，不丟例外；
+     丟例外保留給協議層面的錯誤（找不到物件、參數非法） */
+
+/* 操作對象是「檢視中那套」裝備，與 ui.js 的 viewedEquipment() 同語意。
+   G.equipView 存在狀態裡，所以 Worker 這邊有完整保真度。 */
+function targetEquipment(setIndex) {
+  if (typeof setIndex === 'number' && typeof equipmentSetAt === 'function') {
+    return equipmentSetAt(setIndex);
+  }
+  return (typeof viewedEquipment === 'function') ? viewedEquipment() : G.equipment;
+}
+
+function mustResolve(id) {
+  var r = resolveItem(id);
+  if (r.err) throw new Error(r.err);
+  return r.item;
+}
+
+function inventoryCapacityNow() {
+  return (typeof inventoryCapacityWithTalents === 'function')
+    ? inventoryCapacityWithTalents()
+    : INVENTORY_CAP + (G.player.invUpgrades || 0);
+}
+
+/* ⚠️ P3 待搬遷：getItemAncientCount 是純粹的狀態查詢，卻住在 ui.js:1512，
+   Worker 載不到它。ui.js 從 P3 起屬 Codex，所以這裡先放一份有守衛的後備。
+   P3 請把 ui.js 那份搬進 js/item.js，然後**刪掉這個區塊**——留著就是兩份實作。 */
+if (typeof getItemAncientCount !== 'function') {
+  self.getItemAncientCount = function (it) {
+    if (!it || !Array.isArray(it.affixes)) return 0;
+    var c = 0;
+    for (var i = 0; i < it.affixes.length; i++) {
+      if (it.affixes[i] && it.affixes[i].ancient) c++;
+    }
+    return c;
+  };
+}
+
 var COMMAND_IMPL = {
-  'save.manual': function (args) { return manualSave(args && args.label); },
-  'save.toFolder': function (args) { return manualSave(args && args.label); },
-  'save.restart': function () { return restartGame(); }
+  /* ---- 關卡 ---- */
+  'stage.setAutoAdvance': function (a) {
+    G.stage.autoAdvance = !!a.on;
+    UI.dirty.battle = true;
+    return true;
+  },
+
+  /* ---- 裝備、背包 ---- */
+  'item.equip': function (a) {
+    var it = mustResolve(a.itemId);
+    var eq = targetEquipment(a.setIndex);
+    var idx = G.inventory.indexOf(it);
+    if (idx >= 0) G.inventory.splice(idx, 1);
+    var old = equipItem(it, a.slotKey || null, eq);
+    if (old) { old.locked = false; addToInventory(old); } // 換下來的解鎖後退回背包
+    UI.dirty.inv = true; UI.dirty.equip = true; UI.dirty.header = true;
+    return { equipped: it.id, replaced: old ? old.id : null };
+  },
+
+  'item.unequip': function (a) {
+    var it = mustResolve(a.itemId);
+    if (G.inventory.length >= inventoryCapacityNow()) {
+      blog('⚠️ 背包已滿，無法卸下', 'warn');
+      return { err: '背包已滿' };
+    }
+    var eq = targetEquipment();
+    // 依 id 找出實際佔用的欄位：武器與戒指有主副兩欄，不能只看 slotKey
+    for (var sk in eq) {
+      if (eq[sk] && eq[sk].id === it.id) { eq[sk] = null; break; }
+    }
+    if (eq === G.equipment) markStatsDirty(); // 只有動到使用中那套才需要重算
+    addToInventory(it);
+    UI.dirty.inv = true; UI.dirty.equip = true; UI.dirty.header = true;
+    return { unequipped: it.id };
+  },
+
+  'item.setLock': function (a) {
+    var it = mustResolve(a.itemId);
+    it.locked = !!a.locked;
+    UI.dirty.inv = true; UI.dirty.equip = true;
+    return { id: it.id, locked: it.locked };
+  },
+
+  'item.salvage': function (a) {
+    var it = mustResolve(a.itemId);
+    var idx = G.inventory.indexOf(it);
+    if (idx < 0) return { err: '該裝備不在背包中' };
+    G.inventory.splice(idx, 1);
+    var res = doSalvage(it);
+    UI.dirty.inv = true;
+    return res;
+  },
+
+  /* 一鍵分解。整段邏輯原本寫在 ui.js:2119 salvageAllUnlocked，含分解前自動存檔。
+     分解前存檔是刻意的保護，搬過來時必須保留。 */
+  'item.salvageBulk': function (a) {
+    var maxRarity = a.maxRarity, maxLevel = a.maxLevel, maxAncient = a.maxAncient;
+    var hasRarityLimit = typeof maxRarity === 'number' && !isNaN(maxRarity) && maxRarity >= 0;
+    var hasLevelLimit = typeof maxLevel === 'number' && !isNaN(maxLevel) && maxLevel > 0;
+    var hasAncientLimit = typeof maxAncient === 'number' && !isNaN(maxAncient) && maxAncient >= 0;
+    var kept = [], targets = [], count = 0, scrap = 0;
+
+    G.inventory.forEach(function (it) {
+      if (it.locked) { kept.push(it); return; }
+      if (hasRarityLimit && it.rarity > maxRarity) { kept.push(it); return; }
+      if (hasLevelLimit && it.level > maxLevel) { kept.push(it); return; }
+      if (hasAncientLimit && getItemAncientCount(it) > maxAncient) { kept.push(it); return; }
+      targets.push(it);
+    });
+
+    if (targets.length) {
+      var rec = manualSave('before_bulk_salvage'); // 已被 installStorageGuards 導向 persist
+      if (rec) flog('💾 已建立拆解前存檔：' + rec.fname, 'info');
+    }
+    targets.forEach(function (it) {
+      var res = doSalvage(it, true);
+      scrap += res.scrap;
+      count++;
+    });
+    G.inventory = kept;
+    if (count) flog('⚒️ 一鍵分解 ' + count + ' 件 → 碎片x' + fmt(scrap), 'info');
+    UI.dirty.inv = true;
+    return { count: count, scrap: scrap };
+  },
+
+  /* ---- 角色 ---- */
+  'player.renameEquipSet': function (a) {
+    if (!Array.isArray(G.equipmentSets)) return { err: '沒有裝備套資料' };
+    var idx = clamp(Math.floor(Number(a.index) || 0), 0, G.equipmentSets.length - 1);
+    if (!equipmentSetUnlocked(idx)) return { err: '該裝備套尚未解鎖' };
+    if (!Array.isArray(G.equipSetNames)) G.equipSetNames = [];
+    G.equipSetNames[idx] = String(a.name == null ? '' : a.name).trim().slice(0, 12); // 上限 12 字
+    UI.dirty.equip = true;
+    return { index: idx, name: G.equipSetNames[idx] };
+  },
+
+  'player.buyInvUpgrade': function () {
+    var upg = G.player.invUpgrades || 0;
+    if (INVENTORY_CAP + upg >= INVENTORY_MAX) {
+      blog('❌ 背包已達最大容量 ' + INVENTORY_MAX + ' 格，無法再擴充', 'warn', 'system');
+      return { err: '已達最大容量' };
+    }
+    var cost = inventoryExpandCost(upg);
+    if (G.player.gold < cost) {
+      blog('❌ 金幣不足，擴充需要 ' + fmt(cost) + ' 金幣', 'warn', 'system');
+      return { err: '金幣不足' };
+    }
+    G.player.gold -= cost;
+    G.player.invUpgrades = upg + 1;
+    blog('✅ 背包容量已擴充至 ' + (INVENTORY_CAP + G.player.invUpgrades), 'good', 'system');
+    UI.dirty.inv = true; UI.dirty.header = true;
+    return { cap: INVENTORY_CAP + G.player.invUpgrades, cost: cost };
+  },
+
+  /* 排序模式索引存在存檔裡，但模式清單是 UI 的知識，所以由主執行緒指定索引 */
+  'player.setInvSort': function (a) {
+    G._invSortIdx = Math.max(0, Math.floor(a.index));
+    UI.dirty.inv = true;
+    return { index: G._invSortIdx };
+  },
+
+  /* ---- 技能 ---- */
+  'skill.reorderLoadout': function (a) {
+    var lo = G.player.loadout || [];
+    var from = a.from, to = a.to;
+    if (from < 0 || from >= lo.length || from === to) return { err: '位置無效' };
+    var moved = lo.splice(from, 1)[0];
+    if (to >= lo.length) lo.push(moved);
+    else lo.splice(to, 0, moved);
+    G.player.loadout = lo;
+    UI.dirty.skills = true; UI.dirty.battle = true;
+    return { loadout: lo.slice() };
+  },
+
+  /* ---- 神鑄 ---- */
+  'forge.setAuto': function (a) {
+    forgeState()[a.key] = !!a.on; // key 已由協議的 enum 白名單擋過
+    UI.dirty.forge = true;
+    return true;
+  },
+
+  'forge.setAutoFill': function (a) {
+    var fst = forgeState();
+    if (a.kind === 'clear') {
+      fst.autoFill = null;
+      blog('🔁 神鑄自動放入已取消', 'info');
+      UI.dirty.forge = true;
+      return { autoFill: null };
+    }
+    var pick = (a.kind === 'gem')
+      ? { kind: 'gem', type: a.gemType, level: a.gemLevel }
+      : { kind: 'equip', rarity: a.rarity };
+    if (forgeItemCount() > 0) forgeUnloadAll(); // 先清空法陣再放入指定素材
+    fst.autoFill = pick;
+    var err = forgeAutoFillApply();
+    if (err) {
+      fst.autoFill = null;
+      blog('⚠️ 神鑄自動放入：' + err, 'warn');
+      UI.dirty.forge = true;
+      return { err: err };
+    }
+    blog('🔁 神鑄自動放入已啟用：' + forgeAutoFillLabel() +
+      '（每次鑄造後自動補放 6 件，數量不足自動停止）', 'good');
+    UI.dirty.forge = true;
+    return { autoFill: pick };
+  },
+
+  /* ---- 熔爐 ---- */
+  'newforge.setQuality': function (a) {
+    var fu = findNewForgeFurnace(a.furnaceId);
+    if (!fu) return { err: '找不到熔爐 ' + a.furnaceId };
+    if (a.rarity < 0 || a.rarity >= GODFORGED_IDX) return { err: '品質索引超出範圍' };
+    fu.qualities[a.rarity] = !!a.on;
+    newForgeReturnUnroutable(fu); // 取消勾選的品質自專屬佇列退回總佇列重新派發
+    UI.dirty.newforge = true;
+    return true;
+  },
+
+  'newforge.setEnabled': function (a) {
+    var fu = findNewForgeFurnace(a.furnaceId);
+    if (!fu) return { err: '找不到熔爐 ' + a.furnaceId };
+    fu.enabled = !!a.on;
+    newForgeReturnUnroutable(fu); // 停用：專屬佇列退回總佇列
+    UI.dirty.newforge = true;
+    return true;
+  },
+
+  'newforge.markTabSeen': function () {
+    var nf = newForgeState();
+    nf.tabSeen = true;
+    UI.dirty.header = true;
+    return true;
+  },
+
+  'newforge.markNoticeShown': function () {
+    newForgeState().noticeShown = true;
+    return true;
+  },
+
+  /* ---- 分解設定 ---- */
+  'factory.setSalvageSettings': function (a) {
+    G.player.salvageSettings = G.player.salvageSettings || {};
+    G.player.salvageSettings.maxRarity = (typeof a.maxRarity === 'number') ? a.maxRarity : -1;
+    G.player.salvageSettings.maxLevel = (typeof a.maxLevel === 'number' && a.maxLevel > 0) ? a.maxLevel : null;
+    G.player.salvageSettings.maxAncient = (typeof a.maxAncient === 'number') ? a.maxAncient : -1;
+    UI.dirty.factory = true;
+    return G.player.salvageSettings;
+  },
+
+  'factory.setAutoEquip': function (a) {
+    G.factory.autoEquip = !!a.on;
+    UI.dirty.factory = true;
+    return true;
+  },
+
+  /* ---- 設定 ---- */
+  'settings.set': function (a) {
+    G.settings = G.settings || {};
+    G.settings[a.key] = a.value; // key 已由協議的 enum 白名單擋過
+    UI.dirty.header = true; UI.dirty.inv = true; UI.dirty.equip = true;
+    return true;
+  },
+
+  /* ---- 存檔 ---- */
+  'save.manual': function (a) { return manualSave(a && a.label); },
+  'save.toFolder': function (a) { return createManualSaveToFolderV2(a && a.label); },
+  'save.restart': function () { return restartGame(); },
+
+  /* ---- GM ----
+     gm.js 是主執行緒的 IIFE，面板與指令解析綁在一起。拆分屬 P3（js/gm.js 由 Claude 持有）。 */
+  'gm.exec': function () {
+    throw new Error('gm.exec 尚未搬入 Worker（P3 處理 js/gm.js 拆分）');
+  }
 };
 
 function runCommand(name, args) {

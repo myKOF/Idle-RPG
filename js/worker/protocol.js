@@ -58,7 +58,8 @@ var EVENT_KINDS = {
 /* ---- 存檔落地種類（PERSIST.kind）---- */
 var PERSIST_KINDS = {
   AUTO: 'auto',        // 自動存檔（每 15 秒）
-  MANUAL: 'manual',    // 手動存檔（寫入存檔資料夾並更新索引）
+  MANUAL: 'manual',    // 手動存檔：優先寫瀏覽器存檔記錄，未連接資料夾時仍會落地
+  MANUAL_FOLDER: 'manualFolder', // 明確「另存到資料夾」：未連接資料夾即視為失敗
   FOLDER: 'folder',    // 存檔資料夾同步（每 10 分鐘）
   SHUTDOWN: 'shutdown',// beforeunload / 分頁隱藏
   RESTART: 'restart'   // 重新開局：主執行緒寫入新局狀態後 reload（v2 新增）

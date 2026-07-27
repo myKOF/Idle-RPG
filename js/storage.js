@@ -81,8 +81,9 @@ var SaveStorage = (function () {
     }).catch(function (e) { done(e); });
   }
 
-  /* 手動存檔：寫檔 + 更新索引（索引只放 metadata，不放快照） */
-  function writeManual(json, meta, done) {
+  /* 明確「另存到資料夾」：寫檔 + 更新索引（索引只放 metadata，不放快照）。
+     沒接資料夾就該失敗——使用者按的是「存到資料夾」，偷偷存到別處等於騙人。 */
+  function writeManualFolder(json, meta, done) {
     if (!_saveDir) { done(new Error('尚未選擇本地存檔資料夾')); return; }
     writeRawToFolder(meta.fname, json).then(function (info) {
       var m = {};
@@ -91,6 +92,19 @@ var SaveStorage = (function () {
       saveFolderMetaV2(m);
       done(null);
     }).catch(function (e) { done(e); });
+  }
+
+  /* 一般手動存檔：與舊路徑的 manualSave 同語意——先寫瀏覽器存檔記錄，
+     寫不進去（配額不足）且已連接資料夾時才落地資料夾。
+
+     這條路徑不能要求資料夾：一鍵分解前的保護存檔走的就是它，
+     多數玩家沒有連接資料夾，若在此失敗，那份保護存檔就等於不存在。 */
+  function writeManual(json, meta, done) {
+    var stored = false;
+    try { stored = putSaveRecord(meta, json); } catch (e) { stored = false; }
+    if (stored) { done(null); return; }
+    if (!_saveDir) { done(new Error('瀏覽器儲存空間不足，且未連接存檔資料夾')); return; }
+    writeManualFolder(json, meta, done);
   }
 
   /* 重新開局：先把新局狀態落地，再重新載入頁面 */
@@ -109,6 +123,7 @@ var SaveStorage = (function () {
     shutdown: writeAuto,
     folder: writeFolderAuto,
     manual: writeManual,
+    manualFolder: writeManualFolder,
     restart: writeRestart
   };
 
