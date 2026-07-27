@@ -429,6 +429,24 @@ Claude 的協議 v4 + Worker 端配套（新增 `gem.composeAll`、`gem.dismantl
 
 - `js/ui.js`（P3 起專屬 Codex，Claude 全程不得直接修改）
 - `js/item.js`（僅搬入 `getItemAncientCount`）
+- `js/skills.js`（僅搬入 `mergedSkillFx`，見下）
+
+### P3 追加搬遷項（協議 v4 裁決）
+
+除了原本列的四項渲染副作用，**護盾正規化**要一起處理，因為它相依的
+`mergedSkillFx` 也只存在於 `ui.js`——那是技能效果合併，本來就屬模擬層：
+
+1. 把 `mergedSkillFx` 與 `currentShieldSkillCap` 從 `ui.js` 搬進 `js/skills.js`
+2. `playerShieldMax`（`ui.js:1673`）拆成兩半：**變更狀態的部分**
+   （寫 `entity.shield` / `shieldMax` / `shieldMaxVersion`）交給 Claude 放進 Worker，
+   `ui.js` 只保留讀取顯示。搬好後通知 Claude 接上。
+
+其餘三項（資源顯示旗標、鑲孔補齊、神鑄開放公告）Claude 已搬完，
+你只要刪掉 `ui.js` 對應的那幾段：
+
+- `ui.js:1237,1248`（`p.shownRes` 的建立與寫入，只保留讀取來決定顯示與否）
+- `ui.js:2209`（`ensureSockets(it)` 呼叫）
+- `ui.js:3316-3317`（`unlockNotified` 偵測與寫入，改為接收 `notice` 事件 `key:'forgeUnlocked'`）
 
 禁止修改：
 
