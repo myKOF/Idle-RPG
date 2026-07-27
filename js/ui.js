@@ -333,6 +333,7 @@ function bindWorkerUiState() {
     delete UI_WORKER_STATE.panelRequests[msg.name];
     UI.dirty[msg.name] = true;
     releaseUiPendingByPanel(msg.name);
+    if (msg.name === 'talents') updateTalentTabVisibility();
   });
   return true;
 }
@@ -1110,7 +1111,11 @@ function showForgeRebuildNotice() {
 function updateTalentTabVisibility() {
   var btn = document.querySelector('.tab-btn[data-tab="talents"]');
   if (!btn) return;
-  var unlocked = typeof talentSystemUnlocked !== 'function' || talentSystemUnlocked();
+  var snapshot = uiTalentPanelSnapshot();
+  if (workerUiStateEnabled() && !snapshot) return;
+  var unlocked = snapshot
+    ? talentViewReincarnations(snapshot) >= 1
+    : (typeof talentSystemUnlocked !== 'function' || talentSystemUnlocked());
   btn.style.display = unlocked ? '' : 'none';
   btn.setAttribute('aria-hidden', unlocked ? 'false' : 'true');
   if (!unlocked && UI.tab === 'talents') switchTab('equip');
@@ -3448,11 +3453,147 @@ function updateDmgAbsorb() {
   }
 }
 
-function talentNodeHTML(def, turn) {
-  var lv = talentLevel(def.id);
-  var unlocked = talentUnlocked(def.id);
+function uiTalentPanelSnapshot() {
+  if (workerUiStateEnabled()) return panelData('talents');
+  if (typeof G === 'undefined' || !G.player) return null;
+  return {
+    talents: G.player.talents || { levels: {}, potentialLevels: {} },
+    reincarnations: G.player.reincarnations || 0,
+    talentPoints: G.player.reincarnationTalentPoints || 0
+  };
+}
+
+function uiHeaderPanelSnapshot() {
+  if (workerUiStateEnabled()) return panelData('header');
+  if (typeof G === 'undefined' || !G.player) return null;
+  return {
+    player: G.player,
+    stage: G.stage,
+    stats: typeof getStats === 'function' ? getStats() : null
+  };
+}
+
+function talentViewReincarnations(snapshot) {
+  return Math.max(0, Math.floor(Number(snapshot && snapshot.reincarnations) || 0));
+}
+
+function talentViewLevels(snapshot) {
+  return snapshot && snapshot.talents && snapshot.talents.levels
+    ? snapshot.talents.levels
+    : {};
+}
+
+function talentViewPotentialLevels(snapshot) {
+  return snapshot && snapshot.talents && snapshot.talents.potentialLevels
+    ? snapshot.talents.potentialLevels
+    : {};
+}
+
+function talentViewLevel(snapshot, id) {
+  var value = talentViewLevels(snapshot)[id];
+  return clamp(Math.floor(Number(value) || 0), 0, TALENT_MAX_LEVEL);
+}
+
+function talentViewPotentialLevel(snapshot, id, maxLv) {
+  var value = talentViewPotentialLevels(snapshot)[id];
+  return clamp(Math.floor(Number(value) || 0), 0, Math.max(0, maxLv || 0));
+}
+
+function talentViewUnlocked(snapshot, id) {
+  var turn = talentTurn(id);
+  return turn > 0 &&
+    turn <= TALENT_IMPLEMENTED_REINCARNATIONS &&
+    talentViewReincarnations(snapshot) >= turn;
+}
+
+function talentViewTreeLevelTotal(snapshot, turn) {
+  return (TALENT_TREES[turn] || []).reduce(function (sum, def) {
+    return sum + talentViewLevel(snapshot, def.id);
+  }, 0);
+}
+
+function talentViewTreeComplete(snapshot, turn) {
+  var tree = TALENT_TREES[turn] || [];
+  return tree.length === 8 && tree.every(function (def) {
+    return talentViewLevel(snapshot, def.id) >= TALENT_MAX_LEVEL;
+  });
+}
+
+function talentViewCompleteMultiplier(snapshot, turn) {
+  return talentViewTreeComplete(snapshot, turn) ? 2 : 1;
+}
+
+function talentViewPotentialUnlockLimit(snapshot) {
+  var count = 0;
+  potentialUnlockTalentIds().forEach(function (id) {
+    var def = talentDef(id);
+    if (def) count += potentialCountForLevel(def, talentViewLevel(snapshot, id));
+  });
+  return clamp(count, 0, POTENTIAL_NODE_COUNT);
+}
+
+function talentViewPotentialUnlocked(snapshot, id) {
+  var index = POTENTIAL_TALENTS.map(function (def) { return def.id; }).indexOf(id);
+  return index >= 0 &&
+    index < talentViewPotentialUnlockLimit(snapshot) &&
+    !potentialTemporarilyDisabled(id);
+}
+
+function talentViewPotentialUnlockedCount(snapshot) {
+  var limit = talentViewPotentialUnlockLimit(snapshot);
+  return POTENTIAL_TALENTS.slice(0, limit).filter(function (def) {
+    return !potentialTemporarilyDisabled(def.id);
+  }).length;
+}
+
+function pendingUiButtonAttributes(key) {
+  return ' data-ui-pending-key="' + esc(key) + '"' +
+    (isUiCommandPending(key) ? ' disabled' : '');
+}
+
+function uiCommandResultError(result) {
+  if (typeof result === 'string') return result || null;
+  return result && result.err ? result.err : null;
+}
+
+function requestUiPanels(keys) {
+  (keys || []).forEach(function (key) {
+    requestPanelData(key, true);
+  });
+}
+
+function reportUiCommandFailure(prefix, error, panels) {
+  var message = error && error.message ? error.message : String(error || '未知錯誤');
+  blog('⚠️ ' + prefix + '：' + message, 'warn');
+  requestUiPanels(panels);
+}
+
+function runTalentUiAction(commandName, id, legacyAction) {
+  if (!workerUiStateEnabled()) {
+    var legacyError = legacyAction(id);
+    if (legacyError) blog('⚠️ ' + legacyError, 'warn');
+    renderTalents();
+    return;
+  }
+
+  var panels = ['talents', 'header'];
+  sendUiCommand(commandName, { id: id }, {
+    keys: nodePendingKey('talent:' + id),
+    panels: panels
+  }).then(function (result) {
+    var error = uiCommandResultError(result);
+    if (error) reportUiCommandFailure('天賦操作失敗', error, panels);
+  }, function (error) {
+    reportUiCommandFailure('天賦操作失敗', error, panels);
+  });
+}
+
+function talentNodeHTML(def, turn, snapshot) {
+  var lv = snapshot ? talentViewLevel(snapshot, def.id) : talentLevel(def.id);
+  var unlocked = snapshot ? talentViewUnlocked(snapshot, def.id) : talentUnlocked(def.id);
   var disabled = !!def.disabled;
-  var lockText = disabled ? (def.disabledReason || '目前暫不開放升級') : (reincarnationCountSafe() < turn ? '需 ' + turn + ' 轉' : '尚未開放');
+  var reincarnations = snapshot ? talentViewReincarnations(snapshot) : reincarnationCountSafe();
+  var lockText = disabled ? (def.disabledReason || '目前暫不開放升級') : (reincarnations < turn ? '需 ' + turn + ' 轉' : '尚未開放');
   var locked = !unlocked || disabled;
   var aria = def.name + (disabled ? '（' + lockText + '）' : '');
   return '<button type="button" class="talent-icon' + (lv > 0 ? ' learned' : '') + (lv >= TALENT_MAX_LEVEL ? ' maxed' : '') + (locked ? ' locked' : '') + (disabled ? ' temporarily-disabled' : '') + '" data-talent-select="talent:' + def.id + '" data-talent-tip="' + def.id + '" aria-label="' + esc(aria) + '">' +
@@ -3544,14 +3685,18 @@ function talentEffectDescription(def, value) {
   return esc(def.desc) + talentEffectLabel(def, value);
 }
 
-function talentDescriptionValue(def, level, turn) {
+function talentDescriptionValue(def, level, turn, snapshot) {
   var lv = Math.max(1, Math.floor(Number(level) || 0));
   // 潛力解鎖天賦顯示的是技能點效果（解鎖數固定為 def.unlocks，寫在說明文字裡）
   if (def.stat === 'potentialUnlock') return talentLevelValue(def, lv);
-  return talentLevelValue(def, lv) * talentCompleteMultiplier(turn);
+  var multiplier = snapshot
+    ? talentViewCompleteMultiplier(snapshot, turn)
+    : talentCompleteMultiplier(turn);
+  return talentLevelValue(def, lv) * multiplier;
 }
 
-function talentTreeLevelTotal(turn) {
+function talentTreeLevelTotal(turn, snapshot) {
+  if (snapshot) return talentViewTreeLevelTotal(snapshot, turn);
   return (TALENT_TREES[turn] || []).reduce(function (sum, def) { return sum + talentLevel(def.id); }, 0);
 }
 
@@ -3610,24 +3755,26 @@ function closeOfflineSummary() {
   if (overlay) overlay.style.display = 'none';
 }
 
-function renderTalentModal() {
+function renderTalentModal(snapshot) {
   var body = $id('talent-modal-body');
   var overlay = $id('talent-modal');
   if (!body || !overlay || overlay.style.display === 'none') return;
+  snapshot = snapshot || uiTalentPanelSnapshot();
+  if (!snapshot) return;
   var sel = UI.selTalent;
   if (!sel) return;
   var def = talentDef(sel.id);
   if (!def) { closeTalentModal(); return; }
   var turn = talentTurn(sel.id);
-  var lv = talentLevel(sel.id);
+  var lv = talentViewLevel(snapshot, sel.id);
   var maxLv = TALENT_MAX_LEVEL;
-  var unlocked = talentUnlocked(sel.id);
+  var unlocked = talentViewUnlocked(snapshot, sel.id);
   var disabled = !!def.disabled;
   // 0 級尚未產生實際加成，但說明要先讓玩家看到升到 1 級後會得到的效果。
   var descriptionLv = Math.max(1, lv);
-  var current = talentDescriptionValue(def, descriptionLv, turn);
-  var next = talentDescriptionValue(def, lv + 1, turn);
-  var points = G.player.reincarnationTalentPoints || 0;
+  var current = talentDescriptionValue(def, descriptionLv, turn, snapshot);
+  var next = talentDescriptionValue(def, lv + 1, turn, snapshot);
+  var points = snapshot.talentPoints || 0;
   var title = turn + ' 轉天賦';
   var upgradeAttr = 'data-talent-up="' + def.id + '"';
   var maxAttr = 'data-talent-max="' + def.id + '"';
@@ -3635,6 +3782,8 @@ function renderTalentModal() {
   var deleteAttr = 'data-talent-delete="' + def.id + '"';
   var cost = (typeof talentUpgradeCost === 'function') ? talentUpgradeCost(def.id, lv + 1) : turn + 9;
   var maxed = lv >= maxLv;
+  var pendingKey = nodePendingKey('talent:' + def.id);
+  var pendingAttrs = pendingUiButtonAttributes(pendingKey);
   var disabledNotice = disabled ? '<div class="hint">🔒 目前暫不開放升級</div>' : '';
   var h = '<div class="talent-modal-head"><span class="talent-modal-icon">' + def.emoji + '</span><b>' + esc(def.name) + '</b> <span class="dim-text">Lv.' + lv + '/' + maxLv + '｜' + title + '</span>' +
     (maxed ? '<span class="talent-modal-complete">已滿級！</span>' : '') + '</div>';
@@ -3644,15 +3793,15 @@ function renderTalentModal() {
     h += '<div>下一級：<b>' + talentEffectDescription(def, next) + '</b></div>';
     h += '<div>消耗天賦點：' + cost + '</div>';
   }
-  if (talentCompleteMultiplier(turn) > 1) h += '<div class="talent-modal-complete">該轉 8 個天賦已全滿，效果 ×2</div>';
+  if (talentViewCompleteMultiplier(snapshot, turn) > 1) h += '<div class="talent-modal-complete">該轉 8 個天賦已全滿，效果 ×2</div>';
   if (!unlocked) h += '<div class="hint">🔒 需要達到 ' + turn + ' 轉</div>';
   h += '</div><div class="talent-modal-points">轉生天賦點：' + fmtFull(points) + '</div>';
   h += '<div class="talent-modal-actions">';
   if (!disabled && unlocked && lv < maxLv) {
-    h += '<button class="btn sm" ' + upgradeAttr + '>⬆️ 升級</button>';
-    h += '<button class="btn sm" ' + maxAttr + '>⚡ 一鍵升滿</button>';
+    h += '<button class="btn sm" ' + upgradeAttr + pendingAttrs + '>⬆️ 升級</button>';
+    h += '<button class="btn sm" ' + maxAttr + pendingAttrs + '>⚡ 一鍵升滿</button>';
   } else { h += '<div></div><div></div>'; }
-  if (lv > 0) h += '<button class="btn sm warn" ' + downAttr + '>⬇️ 降 1 級</button><button class="btn sm danger" ' + deleteAttr + '>清除</button>';
+  if (lv > 0) h += '<button class="btn sm warn" ' + downAttr + pendingAttrs + '>⬇️ 降 1 級</button><button class="btn sm danger" ' + deleteAttr + pendingAttrs + '>清除</button>';
   else h += '<div></div><div></div>';
   h += '</div>';
   body.innerHTML = h;
@@ -3661,10 +3810,16 @@ function renderTalentModal() {
 function renderTalents() {
   var root = $id('talent-root');
   if (!root) return;
-  var rc = reincarnationCountSafe();
+  var snapshot = uiTalentPanelSnapshot();
+  uiHeaderPanelSnapshot();
+  if (!snapshot) {
+    root.innerHTML = '<div class="panel hint">正在載入天賦 Snapshot…</div>';
+    return;
+  }
+  var rc = talentViewReincarnations(snapshot);
   var h = '<div class="panel talent-summary"><div class="sec-title">🌟 天賦系統</div>' +
     '<div class="hint">1 轉後開放；天賦使用轉生天賦點，升 1 級消耗＝該天賦轉數+9、Lv.51 起每級加倍（例：1 轉前 50 級每級 10 點、51 級起每級 20 點）。潛力是新的技能分類，與特殊、被動共用技能點，不另設潛力點。</div>' +
-    '<div class="talent-point-line">轉生天賦點：<b>' + fmtFull(G.player.reincarnationTalentPoints || 0) + '</b></div></div>';
+    '<div class="talent-point-line">轉生天賦點：<b>' + fmtFull(snapshot.talentPoints || 0) + '</b></div></div>';
   if (rc < 1) h += '<div class="panel talent-locked-banner">🔒 天賦系統將於完成 1 轉後開放。</div>';
   for (var turn = 1; turn <= REINCARNATION_MAX; turn++) {
     var tree = TALENT_TREES[turn];
@@ -3672,7 +3827,7 @@ function renderTalents() {
       h += '<div class="panel talent-tree-panel locked"><div class="sec-title">' + turn + ' 轉天賦</div><div class="talent-locked-banner">🔒 本版本尚未開放</div></div>';
       continue;
     }
-    var treeTotal = talentTreeLevelTotal(turn);
+    var treeTotal = talentTreeLevelTotal(turn, snapshot);
     var treeStatus = rc >= turn ? '已開啟' : '未開啟';
     var treeMax = TALENT_MAX_LEVEL * 8;
     var treeComplete = treeTotal >= treeMax;
@@ -3681,11 +3836,11 @@ function renderTalents() {
       ? '<span class="talent-tree-complete">' + turn + '轉天賦全滿效果已加倍！</span>'
       : turn + '轉所有技能升至全滿時此列所有技能效果加倍';
     h += '<div class="panel talent-tree-panel"><div class="sec-title">' + turn + '轉天賦 <span class="dim-text">' + treeStatus + '　(' + treeCount + ')　' + treeNotice + '</span></div><div class="talent-grid">';
-    h += tree.map(function (def) { return talentNodeHTML(def, turn); }).join('') + '</div></div>';
+    h += tree.map(function (def) { return talentNodeHTML(def, turn, snapshot); }).join('') + '</div></div>';
   }
   // 潛力屬於技能分類，天賦頁只保留轉生天賦點摘要。
   root.innerHTML = h;
-  renderTalentModal();
+  renderTalentModal(snapshot);
 }
 
 /* ---- 技能分頁（技能樹 + 融合） ---- */
@@ -3971,18 +4126,20 @@ function showTalentTooltip(ref, anchorEl) {
   if (ref.indexOf('potential:') === 0) { showSkillTooltip(ref, anchorEl); return; }
   var def = talentDef(ref);
   if (!def) return;
+  var snapshot = uiTalentPanelSnapshot();
+  if (!snapshot) return;
   var id = ref;
-  var lv = talentLevel(id);
+  var lv = talentViewLevel(snapshot, id);
   var maxLv = TALENT_MAX_LEVEL;
   var turn = talentTurn(id);
   var displayLv = Math.max(1, lv);
   var title = turn + ' 轉天賦';
   var h = '<div class="skt-name">' + def.emoji + ' ' + esc(def.name) +
     ' <span class="dim-text">Lv.' + lv + '/' + maxLv + '｜' + title + '</span></div>';
-  var current = talentDescriptionValue(def, displayLv, turn);
+  var current = talentDescriptionValue(def, displayLv, turn, snapshot);
   h += '<div class="skt-desc">' + talentEffectDescription(def, current) + '</div>';
-  if (lv < maxLv) h += '<div class="skt-desc">下一級：' + talentEffectDescription(def, talentDescriptionValue(def, lv + 1, turn)) + '</div>';
-  if (!talentUnlocked(id)) h += '<div class="skt-lock">🔒 需要達到 ' + turn + ' 轉</div>';
+  if (lv < maxLv) h += '<div class="skt-desc">下一級：' + talentEffectDescription(def, talentDescriptionValue(def, lv + 1, turn, snapshot)) + '</div>';
+  if (!talentViewUnlocked(snapshot, id)) h += '<div class="skt-lock">🔒 需要達到 ' + turn + ' 轉</div>';
   h += '<div class="skt-hint">點擊開啟升級面板</div>';
   tip.innerHTML = h;
   tip.style.display = 'block';
@@ -5199,13 +5356,25 @@ function initUI() {
     var talentModalClose = e.target.closest('[data-talent-modal-close]');
     if (talentModalClose) { closeTalentModal(); return; }
     var talentUp = e.target.closest('[data-talent-up]');
-    if (talentUp) { var talentErr = talentUpgrade(talentUp.getAttribute('data-talent-up')); if (talentErr) blog('⚠️ ' + talentErr, 'warn'); renderTalents(); return; }
+    if (talentUp) {
+      runTalentUiAction('talent.upgrade', talentUp.getAttribute('data-talent-up'), talentUpgrade);
+      return;
+    }
     var talentMaxBtn = e.target.closest('[data-talent-max]');
-    if (talentMaxBtn) { var talentMaxErr = talentMax(talentMaxBtn.getAttribute('data-talent-max')); if (talentMaxErr) blog('⚠️ ' + talentMaxErr, 'warn'); renderTalents(); return; }
+    if (talentMaxBtn) {
+      runTalentUiAction('talent.max', talentMaxBtn.getAttribute('data-talent-max'), talentMax);
+      return;
+    }
     var talentDown = e.target.closest('[data-talent-down]');
-    if (talentDown) { var talentDownErr = talentDowngrade(talentDown.getAttribute('data-talent-down')); if (talentDownErr) blog('⚠️ ' + talentDownErr, 'warn'); renderTalents(); return; }
+    if (talentDown) {
+      runTalentUiAction('talent.downgrade', talentDown.getAttribute('data-talent-down'), talentDowngrade);
+      return;
+    }
     var talentDeleteBtn = e.target.closest('[data-talent-delete]');
-    if (talentDeleteBtn) { var talentDeleteErr = talentDelete(talentDeleteBtn.getAttribute('data-talent-delete')); if (talentDeleteErr) blog('⚠️ ' + talentDeleteErr, 'warn'); renderTalents(); return; }
+    if (talentDeleteBtn) {
+      runTalentUiAction('talent.delete', talentDeleteBtn.getAttribute('data-talent-delete'), talentDelete);
+      return;
+    }
     // 裝備三套切頁：改名按鈕須在切頁判斷之前處理（避免同時觸發切換檢視）
     var eqRename = e.target.closest('[data-eqset-rename]');
     if (eqRename) {
