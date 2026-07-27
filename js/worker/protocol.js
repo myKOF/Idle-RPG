@@ -11,11 +11,12 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-var WORKER_PROTOCOL_VERSION = 1;
+var WORKER_PROTOCOL_VERSION = 2;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
-  BOOT: 'boot',              // { save: <存檔物件|null>, now: <Date.now()> }
+  BOOT: 'boot',              // { save: <存檔物件|null>, now, maxRunId }  maxRunId 供重新開局編號用
+  LOAD: 'load',              // { save }  執行中讀檔：替換整份狀態（v2 新增）
   CMD: 'cmd',                // { id, name, args }
   PANEL: 'panel',            // { name }  索取面板完整資料
   VISIBILITY: 'visibility',  // { hidden, at }
@@ -29,7 +30,10 @@ var MSG_OUT = {
   TICK: 'tick',       // { view, dirty, events }
   PANEL: 'panel',     // { name, data }
   FULL: 'full',       // { snapshot }
-  PERSIST: 'persist', // { token, kind, payload }  請主執行緒落地存檔
+  /* { token, kind, payload: { json, meta } }  請主執行緒落地存檔。
+     meta 由 Worker 端以既有的 saveRecMeta() 產生（它只讀 G、不碰儲存），
+     主執行緒因此不需要、也不應該再去讀自己那份可能過期的 G。 */
+  PERSIST: 'persist',
   ACK: 'ack',         // { id, ok, result, error }
   ERROR: 'error',     // { where, message, stack }
   PONG: 'pong'        // { t }
@@ -53,10 +57,11 @@ var EVENT_KINDS = {
 
 /* ---- 存檔落地種類（PERSIST.kind）---- */
 var PERSIST_KINDS = {
-  AUTO: 'auto',       // 自動存檔（每 15 秒）
-  MANUAL: 'manual',   // 手動存檔
-  FOLDER: 'folder',   // 存檔資料夾同步（每 10 分鐘）
-  SHUTDOWN: 'shutdown' // beforeunload / 分頁隱藏
+  AUTO: 'auto',        // 自動存檔（每 15 秒）
+  MANUAL: 'manual',    // 手動存檔（寫入存檔資料夾並更新索引）
+  FOLDER: 'folder',    // 存檔資料夾同步（每 10 分鐘）
+  SHUTDOWN: 'shutdown',// beforeunload / 分頁隱藏
+  RESTART: 'restart'   // 重新開局：主執行緒寫入新局狀態後 reload（v2 新增）
 };
 
 /* ---- tick 高頻視圖欄位 ----
@@ -161,10 +166,14 @@ var COMMANDS = {
   /* -- 設定 -- */
   'settings.set':          { fn: null,               args: { key: 'str', value: 'any' },          dirty: ['header'] },
 
-  /* -- 存檔 -- */
-  'save.manual':           { fn: 'manualSave',       args: { label: 'str?' },                     dirty: [] },
-  'save.toFolder':         { fn: 'createManualSaveToFolderV2', args: { label: 'str?' },           dirty: [] },
-  'save.restart':          { fn: 'restartGame',      args: {},                                    dirty: PANEL_KEYS },
+  /* -- 存檔 --
+     v2 修正：這三條原本宣告直接呼叫 manualSave / createManualSaveToFolderV2 / restartGame，
+     但那些函式會碰 localStorage、IndexedDB、File System Access 與 location.reload，
+     Worker 一律不能碰，與「I/O 留主執行緒」的決策衝突。
+     改為 fn:null，由 Worker 端產生 payload 後發 persist，主執行緒完成落地與 reload。 */
+  'save.manual':           { fn: null,               args: { label: 'str?' },                     dirty: [] },
+  'save.toFolder':         { fn: null,               args: { label: 'str?' },                     dirty: [] },
+  'save.restart':          { fn: null,               args: {},                                    dirty: PANEL_KEYS },
 
   /* -- GM（僅本機測試服可用，Worker 端仍需自行檢查 host）-- */
   'gm.exec':               { fn: null,               args: { line: 'str' },                       dirty: PANEL_KEYS }

@@ -25,6 +25,7 @@ var WorkerBridge = (function () {
     events: 0,
     errors: 0,
     persists: 0,
+    persistErrors: 0,
     lastView: null,
     lastDirty: [],
     lastDiag: null,
@@ -97,8 +98,14 @@ var WorkerBridge = (function () {
         break;
       case MSG_OUT.PERSIST:
         stats.persists++;
-        // P1：不落地，直接回報成功。P2 改為實際寫入 localStorage / IndexedDB / 存檔資料夾。
-        post(MSG_IN.SAVE_RESULT, { token: msg.token, ok: true });
+        SaveStorage.persist(msg.kind, msg.payload.json, msg.payload.meta, function (err) {
+          if (err) {
+            stats.persistErrors++;
+            stats.lastError = { where: 'persist:' + msg.kind, message: err.message || String(err) };
+            console.error('[bridge] 存檔寫入失敗（' + msg.kind + '）:', err);
+          }
+          post(MSG_IN.SAVE_RESULT, { token: msg.token, ok: !err, error: err ? (err.message || String(err)) : undefined });
+        });
         break;
       case MSG_OUT.ERROR:
         stats.errors++;
@@ -126,8 +133,11 @@ var WorkerBridge = (function () {
       console.error('[bridge] worker error:', err.message, err.filename + ':' + err.lineno);
     };
 
-    post(MSG_IN.BOOT, { save: opts.save || null, now: Date.now() });
+    post(MSG_IN.BOOT, { save: opts.save || null, now: Date.now(), maxRunId: opts.maxRunId || 1 });
 
+    // 初始狀態也要送：分頁若在隱藏狀態下被載入，visibilitychange 不會觸發，
+    // Worker 會以為自己在前景而持續全速模擬（main.js 的 _hiddenAt 初始化同理）
+    post(MSG_IN.VISIBILITY, { hidden: !!document.hidden, at: Date.now() });
     document.addEventListener('visibilitychange', function () {
       post(MSG_IN.VISIBILITY, { hidden: !!document.hidden, at: Date.now() });
     });
@@ -152,6 +162,7 @@ var WorkerBridge = (function () {
       errors: stats.errors,
       persists: stats.persists,
       pendingCommands: Object.keys(_pending).length,
+      persistErrors: stats.persistErrors,
       lastDirty: stats.lastDirty,
       lastView: stats.lastView,
       shimDiag: stats.lastDiag,
@@ -159,19 +170,32 @@ var WorkerBridge = (function () {
     };
   }
 
+  /* 執行中讀檔：主執行緒讀出存檔內容後交 Worker 替換整份狀態，不需要 reload */
+  function loadSave(save) {
+    return post(MSG_IN.LOAD, { save: save });
+  }
+
+  function enabled() {
+    return typeof location !== 'undefined' && /[?&]worker=1(&|$)/.test(location.search);
+  }
+
   return {
-    start: start, stop: stop, send: send, on: on,
-    requestPanel: requestPanel, status: status
+    start: start, stop: stop, send: send, on: on, loadSave: loadSave,
+    requestPanel: requestPanel, status: status, enabled: enabled
   };
 })();
 
-/* ---- P1 驗證模式 ----
-   ?worker=1 時自動啟動。舊的單執行緒路徑完全不受影響，照常運作。
-   在 Console 輸入 WorkerBridge.status() 可看即時狀態。 */
+/* ---- ?worker=1 驗證模式 ----
+   P2 起 Worker 成為模擬與存檔的權威：以玩家的真實存檔開機，並負責之後所有存檔寫入。
+   為避免兩個權威同時寫入，main.js 在此模式下會關掉舊迴圈並設 _saveSuppressed。
+
+   ⚠️ P3 之前 UI 尚未接上 Worker，所以此模式下畫面不會更新（等同凍結），這是預期中的
+   中間狀態。要玩遊戲請拿掉網址參數走舊路徑。 */
 (function () {
-  if (typeof location === 'undefined') return;
-  if (!/[?&]worker=1(&|$)/.test(location.search)) return;
+  if (!WorkerBridge.enabled()) return;
   window.addEventListener('DOMContentLoaded', function () {
-    WorkerBridge.start({ save: null });
+    SaveStorage.readBootSave(function (save) {
+      WorkerBridge.start({ save: save, maxRunId: SaveStorage.maxRunId() });
+    });
   });
 })();
