@@ -203,20 +203,86 @@ Antigravity 驗證 `?worker=1` 空跑；Codex 依協議撰寫協議測試
 `#9 enemy-type-damage`、`#26 loot-event-accounting`、`#27 multi-enemy`、
 `#30 player-shield-bar`、`#31 rarity-colors`，以及 `#2 boss-display-state`（C 類，換行字元）。
 
-批次二 — 涉及數值平衡，**改測試前必須先列表對照**：
-`#5 #6 #7 combo-hits`、`#10 #11 essence-salvage`、`#12 field-equipment-drop-table`、
-`#13 field-gem-drop-table`、`#14 forge-duration`、`#22 gem-shop`、`#24 god-might` 等。
+批次二 — 數值爭議。**使用者已裁決（2026-07-27），可以動手了。**
 
-這批的共同型態是「測試寫死的數值 ≠ `config/CSV/game_parameters.csv` 現值」。
-把測試改成符合 CSV 等於默認 CSV 是對的，但 CSV 也可能是被誤改的一方——
-**這是遊戲設計問題，不是工程問題**。因此：
+### 權威順序（使用者裁決）
 
-1. 先在 `docs/TEST_FAILURE_TRIAGE.md` 補一張對照表：
-   `測試期望值 | CSV 現值 | 差異 | 出處（CSV 行號／設計文件）`
-2. 停下來等使用者確認哪一邊才是想要的數值
-3. 確認後才改。使用者若指定以測試為準，則屬 B 類，改 `js/` 或 CSV 要走檔案鎖定流程
+```
+1. config/CSV/game_parameters.csv          ← 最高
+2. 程式碼寫死值（公式／常數）
+3. 公式文檔說明（game_formula.md / PLAN.md / PATCH.md）  ← 最低
+```
+
+- 有 CSV 就以 CSV 為準
+- 沒有 CSV 就以程式碼為準
+- 代碼未讀 CSV → 補進參數套用流程
+- 文檔沒寫或寫錯 → 修正文檔
+
+### Claude 執行裁決後的實況（已查證，可直接用）
+
+跑過 `node tools/apply_params.cjs`（試跑）：
+
+```
+對應參數總數：496（一致 492、將變更 0、錨點問題 4）
+（無數值變更：CSV 與程式目前一致）
+```
+
+意思是——**程式碼已經完全符合 CSV，這批爭議一行 `js/` 都不用改。**
+你的對照表裡「CSV 現值」就是程式現值，測試才是落後的那一方。
+
+所以批次二的工作簡化成兩件事：
+
+**一、把測試斷言改成 CSV 值**（`#5 #6 #7 combo-hits`、`#10 #11 essence-salvage`、
+`#12 field-equipment-drop-table`、`#13 field-gem-drop-table`、`#14 forge-duration`、
+`#22 gem-shop`、`#24 god-might` 等）。
+
+改的時候**不要直接抄程式碼的數字**，要抄 CSV 的值並在測試註解標出 CSV 行號——
+這樣下次 CSV 改動時，測試失敗才會指向正確的原因。
+
+**二、修正與 CSV 衝突的文檔**（權威順序最低的那一層）。
+你對照表裡標了「`game_formula.md` 仍支持測試值」的項目，例如附魔精華拆解基礎率
+（`game_formula.md:617-619`）、連擊係數（`PLAN.md:872`、`PATCH.md:791`），
+這些都要改成 CSV 現值。`PATCH.md` 與 `PLAN.md` 屬歷史紀錄性質，
+若不宜直接改寫，就在該段補一行「⚠️ 已由 CSV 第 N 行取代，現值為 X」。
+
+### ⚠️ 裁決的適用邊界（重要）
+
+這個裁決是給**數值爭議**用的：「同一個數值，CSV／程式／文檔說法不同」。
+
+**不適用於「功能缺失或行為錯誤」。** 你 B 類清單裡這幾項不是數值問題：
+
+- `#15~17 gemAttrDmgBaseV1`：文檔登記過的存檔遷移，`js/player.js` 找不到實作
+- `#19~21 gem-convert Shift`：`js/ui.js:5293` 未綁 Shift 事件、`adjustGemConvertPool` 行為不符
+- `#32 save-folder-ui`：`rescanSaveFolderView` 的 focus handler 未實作
+
+這些若套用「沒有 CSV 就以代碼為準」去改測試，等於用改測試的方式把缺失的功能合理化。
+**一律不動，維持 B 類**，continue 等個別裁決。
 
 不得刪除測試或放寬斷言來讓測試通過。
+
+### 批次三 — 修復失效的參數錨點（新增，優先度高於批次二）
+
+`apply_params` 試跑回報 4 個錨點問題：
+
+```
+✗ formula 元素-冰：錨點匹配 0 次（需剛好 1 次）
+✗ formula 元素-雷：錨點匹配 0 次
+✗ formula 元素-毒：錨點匹配 0 次
+✗ formula 元素-光：錨點匹配 0 次
+```
+
+原因：`tools/apply_params.cjs:591-594` 的錨點還在找舊寫法
+`"ek === 'ice' && chance("`，但 `js/formula.js` 已重構成具名常數表
+`ELEM_PROC.iceSlowChance`（定義在 `js/formula.js:531`）。
+
+目前四個值剛好與 CSV 一致（15／10／25／20），所以看不出問題——但**這代表
+日後有人改 CSV 的元素特效機率，改動會靜靜地套不進程式碼**。這正是使用者裁決
+講的「代碼未讀 CSV 則應加上」。
+
+修法：把錨點改指向具名常數（例如 `iceSlowChance:`），改完跑
+`node tools/apply_params.cjs` 確認 496 個參數全部一致、錨點問題 0 個。
+
+允許修改：`tools/apply_params.cjs`（本項專用，獨立 commit）
 
 工作區：
 
@@ -229,9 +295,15 @@ ai/codex
 允許修改：
 
 - A 類與 C 類涉及的 `tests/*.test.cjs`
-- `css/style.css`（僅編碼轉 UTF-8，不改內容；獨立 commit）
+- 批次二涉及的 `tests/*.test.cjs`（改成 CSV 值，註解標 CSV 行號）
+- `game_formula.md`、`PLAN.md`、`PATCH.md`（僅修正與 CSV 衝突的數值說明）
+- `tools/apply_params.cjs`（批次三：修復失效錨點，獨立 commit）
+- `css/style.css`（僅編碼轉 UTF-8，不改內容；獨立 commit — 已完成 98ecf79）
 - `docs/TEST_FAILURE_TRIAGE.md`（補數值對照表）
 - `docs/WORKER_MIGRATION_PLAN.md` 第 9 節「待決事項」（僅追加）
+
+⚠️ 仍禁止修改 `config/CSV/*` 與 `config/Excel/*`：CSV 是最高權威，
+不因測試或文檔而改。要調整數值請走參數表流程由使用者決定。
 
 禁止修改：
 
