@@ -108,3 +108,16 @@ test('詳細日誌視窗每個 UI tick 最多完整重建一次', () => {
   assert.doesNotMatch(addLogBody, /renderDetailLog\(\)/);
   assert.doesNotMatch(addLogBody, /renderNewForgeDetailLog\(\)/);
 });
+
+test('Worker panel subscriptions clear and Commands wait for post-ACK panel generations', () => {
+  const ui = uiSource();
+  const panelData = ui.match(/function panelData\(key\) \{[\s\S]*?\n\}/);
+  assert.ok(panelData);
+  assert.doesNotMatch(panelData[0], /panelSubscriptions\[key\]\s*=/);
+  assert.match(ui, /function refreshUiPanelSubscriptions\(\)[\s\S]*delete UI_WORKER_STATE\.panelSubscriptions\[key\]/);
+  assert.match(ui, /panelRequestSeq:\s*Object\.create\(null\)/);
+  assert.match(ui, /panelResponseSeq:\s*Object\.create\(null\)/);
+  assert.match(ui, /if \(force\) UI_WORKER_STATE\.panelQueued\[key\] = true;/);
+  assert.match(ui, /entry\.acknowledged = true;[\s\S]*entry\.waitPanels\[key\] = requestPanelData\(key, true\)/);
+  assert.match(ui, /UI_WORKER_STATE\.panelResponseSeq\[key\][\s\S]*>= entry\.waitPanels\[key\]/);
+});

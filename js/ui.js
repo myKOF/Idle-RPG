@@ -68,18 +68,11 @@ var UI_WORKER_STATE = {
   panels: Object.create(null),
   panelSubscriptions: Object.create(null),
   panelRequests: Object.create(null),
+  panelRequestSeq: Object.create(null),
+  panelResponseSeq: Object.create(null),
+  panelQueued: Object.create(null),
   panelVersions: Object.create(null)
 };
-
-var UI_WORKER_HEALTH = {
-  startedAt: 0,
-  lastHeartbeatAt: 0,
-  lastTicks: 0,
-  alertShown: false,
-  errorSignature: ''
-};
-var UI_WORKER_BOOT_TIMEOUT_MS = 10000;
-var UI_WORKER_HEARTBEAT_TIMEOUT_MS = 5000;
 
 /*
  * A command can own several keys (for example an item and a furnace).  The
@@ -103,17 +96,7 @@ function workerUiStateEnabled() {
     WorkerBridge.enabled();
 }
 
-function noteWorkerHeartbeat(now) {
-  UI_WORKER_HEALTH.lastHeartbeatAt = now || Date.now();
-  UI_WORKER_HEALTH.startedAt = UI_WORKER_HEALTH.lastHeartbeatAt;
-}
-
-function workerErrorSignature(error) {
-  if (!error) return '';
-  return [error.where || '', error.message || '', error.stack || ''].join('|');
-}
-
-function showWorkerDeadNotice(error) {
+function showWorkerDeadNotice(event) {
   if (typeof document === 'undefined' || $id('worker-dead-notice')) return;
   var overlay = document.createElement('div');
   overlay.id = 'worker-dead-notice';
@@ -132,7 +115,7 @@ function showWorkerDeadNotice(error) {
   desc.textContent = 'Worker 已停止回應，畫面資料可能不再更新。請重新載入遊戲以恢復模擬。';
   desc.style.cssText = 'margin:0 0 12px;line-height:1.65;';
   var detail = document.createElement('pre');
-  detail.textContent = error && error.message ? String(error.message) : 'Worker heartbeat timeout';
+  detail.textContent = event && event.reason ? String(event.reason) : 'Worker 已失去回應';
   detail.style.cssText = 'margin:0 0 18px;padding:10px;max-height:120px;overflow:auto;border-radius:8px;' +
     'background:#030712;color:#d1d5db;text-align:left;white-space:pre-wrap;';
   var reload = document.createElement('button');
@@ -150,41 +133,14 @@ function showWorkerDeadNotice(error) {
   reload.focus();
 }
 
-function handleWorkerDead(error) {
-  if (!workerUiStateEnabled() || UI_WORKER_HEALTH.alertShown) return;
-  UI_WORKER_HEALTH.alertShown = true;
-  UI_WORKER_HEALTH.errorSignature = workerErrorSignature(error);
-  showWorkerDeadNotice(error);
+function hideWorkerDeadNotice() {
+  var overlay = $id('worker-dead-notice');
+  if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
 }
 
-function checkWorkerHealth() {
-  if (!workerUiStateEnabled() ||
-      typeof WorkerBridge.status !== 'function' ||
-      typeof document === 'undefined' ||
-      document.hidden) {
-    return;
-  }
-  var status = WorkerBridge.status();
-  var now = Date.now();
-  if (!UI_WORKER_HEALTH.startedAt) UI_WORKER_HEALTH.startedAt = now;
-  if (status.ticks !== UI_WORKER_HEALTH.lastTicks) {
-    UI_WORKER_HEALTH.lastTicks = status.ticks;
-    noteWorkerHeartbeat(now);
-  }
-  if (status.lastError && status.lastError.where === 'worker-onerror') {
-    var signature = workerErrorSignature(status.lastError);
-    if (signature && signature !== UI_WORKER_HEALTH.errorSignature) handleWorkerDead(status.lastError);
-    return;
-  }
-  if (status.started && !status.booted &&
-      now - UI_WORKER_HEALTH.startedAt >= UI_WORKER_BOOT_TIMEOUT_MS) {
-    handleWorkerDead({ message: 'Worker 啟動逾時' });
-    return;
-  }
-  if (status.booted && UI_WORKER_HEALTH.lastHeartbeatAt &&
-      now - UI_WORKER_HEALTH.lastHeartbeatAt >= UI_WORKER_HEARTBEAT_TIMEOUT_MS) {
-    handleWorkerDead({ message: 'Worker 超過 5 秒沒有回傳 TICK' });
-  }
+function handleWorkerDead(event) {
+  if (!workerUiStateEnabled()) return;
+  showWorkerDeadNotice(event);
 }
 
 function validUiPanelKey(key) {
@@ -233,21 +189,29 @@ function requestPanelData(key, force) {
     return false;
   }
 
-  if (!force && hasOwnUiState(UI_WORKER_STATE.panels, key)) return true;
-  if (UI_WORKER_STATE.panelRequests[key]) return true;
+  if (!force && hasOwnUiState(UI_WORKER_STATE.panels, key)) {
+    return UI_WORKER_STATE.panelResponseSeq[key] || 1;
+  }
+  if (UI_WORKER_STATE.panelRequests[key]) {
+    if (force) UI_WORKER_STATE.panelQueued[key] = true;
+    return force
+      ? UI_WORKER_STATE.panelRequests[key] + 1
+      : UI_WORKER_STATE.panelRequests[key];
+  }
 
-  UI_WORKER_STATE.panelRequests[key] = true;
+  var requestSeq = (UI_WORKER_STATE.panelRequestSeq[key] || 0) + 1;
+  UI_WORKER_STATE.panelRequestSeq[key] = requestSeq;
+  UI_WORKER_STATE.panelRequests[key] = requestSeq;
   if (!WorkerBridge.requestPanel(key)) {
     delete UI_WORKER_STATE.panelRequests[key];
     return false;
   }
-  return true;
+  return requestSeq;
 }
 
 function panelData(key) {
   if (!validUiPanelKey(key)) return null;
-  // First access subscribes and may return null until the PANEL response arrives.
-  UI_WORKER_STATE.panelSubscriptions[key] = true;
+  // Subscription lifetime is derived from the visible tab and pending commands.
   if (!hasOwnUiState(UI_WORKER_STATE.panels, key)) {
     requestPanelData(key, false);
     return null;
@@ -380,7 +344,7 @@ function releaseUiPendingByPanel(panelKey) {
     if (!entry.acknowledged || !entry.waitPanels[panelKey]) return;
     var waitKeys = Object.keys(entry.waitPanels);
     var ready = waitKeys.every(function (key) {
-      return (UI_WORKER_STATE.panelVersions[key] || 0) >= entry.waitPanels[key];
+      return (UI_WORKER_STATE.panelResponseSeq[key] || 0) >= entry.waitPanels[key];
     });
     if (ready) {
       releaseUiPendingToken(entry.token);
@@ -407,9 +371,7 @@ function acquireUiPending(commandName, options) {
 
   for (var p = 0; p < panels.length; p++) {
     var panelKey = panels[p];
-    entry.waitPanels[panelKey] =
-      (UI_WORKER_STATE.panelVersions[panelKey] || 0) + 1;
-    UI_WORKER_STATE.panelSubscriptions[panelKey] = true;
+    entry.waitPanels[panelKey] = 0;
   }
 
   UI_COMMAND_PENDING.byToken[token] = entry;
@@ -452,8 +414,7 @@ function sendUiCommand(commandName, args, options) {
     }
     entry.acknowledged = true;
     Object.keys(entry.waitPanels).forEach(function (key) {
-      entry.waitPanels[key] = (UI_WORKER_STATE.panelVersions[key] || 0) + 1;
-      requestPanelData(key, true);
+      entry.waitPanels[key] = requestPanelData(key, true);
     });
     return result;
   }, function (err) {
@@ -472,14 +433,12 @@ function bindWorkerUiState() {
   UI_WORKER_STATE.bridgeBound = true;
 
   WorkerBridge.on(MSG_OUT.BOOTED, function (msg) {
-    noteWorkerHeartbeat();
     applyUiSnapshot(msg.snapshot);
   });
   WorkerBridge.on(MSG_OUT.FULL, function (msg) {
     applyUiSnapshot(msg.snapshot);
   });
   WorkerBridge.on(MSG_OUT.TICK, function (msg) {
-    noteWorkerHeartbeat();
     if (msg.view) UI_WORKER_STATE.view = msg.view;
     handleWorkerUiEvents(msg.events);
     if (UI_WORKER_STATE.viewSubscribed) {
@@ -504,6 +463,8 @@ function bindWorkerUiState() {
   });
   WorkerBridge.on(MSG_OUT.PANEL, function (msg) {
     if (!validUiPanelKey(msg.name)) return;
+    var responseSeq = UI_WORKER_STATE.panelRequests[msg.name] ||
+      UI_WORKER_STATE.panelResponseSeq[msg.name] || 0;
     if (msg.name === 'skills' &&
         UI.optimisticSkillLoadout &&
         UI.optimisticSkillLoadout.acknowledged) {
@@ -512,9 +473,14 @@ function bindWorkerUiState() {
     UI_WORKER_STATE.panels[msg.name] = msg.data;
     UI_WORKER_STATE.panelVersions[msg.name] =
       (UI_WORKER_STATE.panelVersions[msg.name] || 0) + 1;
+    UI_WORKER_STATE.panelResponseSeq[msg.name] = responseSeq;
     delete UI_WORKER_STATE.panelRequests[msg.name];
     UI.dirty[msg.name] = true;
     releaseUiPendingByPanel(msg.name);
+    if (UI_WORKER_STATE.panelQueued[msg.name]) {
+      delete UI_WORKER_STATE.panelQueued[msg.name];
+      requestPanelData(msg.name, true);
+    }
     if (msg.name === 'talents') updateTalentTabVisibility();
     if (msg.name === 'tower' || msg.name === 'header') showPendingTowerResultModalIfReady();
     if (msg.name === 'newforge') {
@@ -523,9 +489,9 @@ function bindWorkerUiState() {
       markNewForgeTabSeenIfNeeded();
     }
   });
-  WorkerBridge.on(MSG_OUT.ERROR, function (msg) {
-    if (msg && msg.where === 'worker') handleWorkerDead(msg);
-  });
+  WorkerBridge.on('workerDead', handleWorkerDead);
+  WorkerBridge.on('workerRecovered', hideWorkerDeadNotice);
+  refreshUiPanelSubscriptions();
   // newforge carries the one-time rebuild notice and tab badge.  Fetch it once
   // without keeping the large queue projection subscribed while another tab is open.
   requestPanelData('newforge', false);
@@ -3657,14 +3623,12 @@ function markVisibleUiDirty() {
 
 function handleVisibilityChange() {
   if (uiRenderingSuspended()) return;
-  noteWorkerHeartbeat();
   markVisibleUiDirty();
   uiTick();
 }
 
 function uiTick() {
   if (uiRenderingSuspended()) return;
-  checkWorkerHealth();
   flushPendingLogDom();
   flushDirtyDetailLogs();
   var d = UI.dirty;
