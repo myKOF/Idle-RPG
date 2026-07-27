@@ -5927,8 +5927,8 @@ button.nf-part-slot.nf-part-ico {
 .unit-t { color: #c084fc !important; font-weight: bold; } /* T = 紫色�?*/
 .unit-p { color: #fb923c !important; font-weight: bold; } /* P?�以�?= 橘色�?*/
 
-. e q u i p - c o m p a r e - c o l   {   f l e x :   1 ;   m i n - w i d t h :   0 ;   }  
- 
+.equip-compare-col { flex: 1; min-width: 0; }
+
 
 
 /* 修正屬性面板折疊箭頭亂碼 */

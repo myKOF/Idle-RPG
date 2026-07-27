@@ -13,6 +13,6 @@ assert.equal(context.RARITIES[3].key, 'unique');
 assert.equal(context.RARITIES[3].color, '#ffd700');
 assert.equal(context.RARITIES[4].key, 'epic');
 assert.equal(context.RARITIES[4].color, '#c084fc');
-assert.match(html, /style="color:#ffd700">獨特/);
-assert.match(html, /style="color:#c084fc">史詩/);
+assert.match(html, /<option value="3" style="color: #ffd700; background: #000;">獨特<\/option>/);
+assert.match(html, /<option value="4" style="color: #c084fc; background: #000;">史詩<\/option>/);
 console.log('✔ 獨特與史詩品質文字顏色已互換');

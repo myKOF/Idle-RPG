@@ -74,7 +74,7 @@
 | 46 | `tests/ui-performance.test.cjs:75` | B | 簽章 guard 存在於 `js/ui.js:1275-1277`，但 `renderZoneBar()` 在 guard 前已寫入 realm toggle 的 display/text/tooltip（`1259-1271`），未達「狀態未變就不重寫 DOM」目的。應把完整簽章判斷移到所有 DOM 寫入前，測試保留語意。 |
 | 47 | `tests/unlock-thresholds.test.cjs:40` | A | 測試與 `game_formula.md:55` 還寫 Lv.2000；目前 `FORGE_UNLOCK_LEVEL=1` 與 `config/CSV/game_parameters.csv:7` 一致，來源在 1 轉 Lv.1 解鎖是當前參數結果。更新測試，並同步修正過時公式文件。 |
 
-## 3. CSS 編碼異常（獨立 C 類風險）
+## 3. CSS 編碼異常（C 類，已處理）
 
 `AI_TASKS.md:206-214` 記錄 `css/style.css` 有 2248 個無效 UTF-8 位元組，並預先列出 6 個受影響測試檔。以目前工作樹重新檢查：
 
@@ -82,9 +82,36 @@
 - 檔案仍含 NUL byte，且部分中文註解已呈現亂碼；
 - `index.html` 仍宣告 UTF-8。
 
-因此目前版本仍有編碼污染，第二步應依既定方案把 CSS 正規化成無 BOM UTF-8。不過目前 6 個檔案的實際紅燈分別是欄寬、程式結構、神鑄時間、動畫速度、DOM helper 與 inline-style 正規式落差；單純轉碼不會讓這 6 筆全部通過。上表依「目前直接失敗根因」分類，另把 CSS 編碼列為跨案例 C 類工作，避免轉碼後誤以為其餘斷言自然會綠。
+已於獨立 commit `98ecf79` 將混合編碼片段正規化為無 BOM UTF-8；轉換後 fatal decode 通過、NUL byte 為 0。轉碼前後完整測試皆為 37 fail，證實目前 6 個關聯檔案的直接紅燈分別是欄寬、程式結構、神鑄時間、動畫速度、DOM helper 與 inline-style 斷言落差，不能把它們全部歸因於轉碼。
 
-## 4. Claude 裁決清單
+## 4. 批次二數值裁決對照表
+
+下表只整理差異，不代表接受 CSV 或測試任一方。部分 `game_formula.md` 仍支持測試值，另一些已支持 CSV 值，必須由使用者依遊戲設計裁決後才能修改。
+
+| 失敗編號／項目 | 測試期望值 | CSV 現值 | 差異 | 出處 |
+|---|---|---|---|---|
+| #5 combo-hits（101%） | 係數 `a=0.875, b=0.01387, c=0.0861`；結果約 `0.1088` | `a=0.875, b=0.0025, c=0.05`；目前結果約 `0.06123` | `b` 減少 `0.01137`、`c` 減少 `0.0361` | 測試：`tests/combo-hits.test.cjs:36-37`；CSV：`config/CSV/game_parameters.csv:37`；現行公式文件支持 CSV：`game_formula.md:108`；舊設計支持測試：`PLAN.md:872`、`PATCH.md:791` |
+| #6 combo-hits（1380%） | 約 `2.574` | 依 CSV 係數約 `2.38109` | 約 `-0.19291` | 測試：`tests/combo-hits.test.cjs:42-43`；CSV：`config/CSV/game_parameters.csv:37`；公式文件：`game_formula.md:108` |
+| #7 combo-hits（200%／5000%） | 約 `0.7203`／`4.2026` | 依 CSV 係數約 `0.66150`／`3.59802` | 約 `-0.05880`／`-0.60458` | 測試：`tests/combo-hits.test.cjs:48-49`；CSV：`config/CSV/game_parameters.csv:37`；公式文件：`game_formula.md:108` |
+| #10 附魔精華拆解基礎率 | `[0.1, 0.5, 1, 2, 4, 8, 20, 100, 100]%` | `[5, 7.5, 10, 15, 20, 25, 30, 100, 100]%` | 普通～神話分別增加 `+4.9/+7/+9/+13/+16/+17/+10` 個百分點 | 測試：`tests/essence-salvage.test.cjs:39-44`；CSV：`config/CSV/game_parameters.csv:195`；公式文件仍支持測試：`game_formula.md:617-619` |
+| #11 傳說＋1400% 精粹透鏡 | 傳說基礎 `8% × 15 = 120%`；必得 1、20% 再得 1 | 傳說基礎 `25% × 15 = 375%`；必得 3、75% 再得 1 | 總判定率 `+255` 個百分點；最大產量由 2 變 4 | 測試：`tests/essence-salvage.test.cjs:57-68`；CSV：`config/CSV/game_parameters.csv:195`、透鏡 `:308`；公式／透鏡效果：`game_formula.md:617-619`、`:630` |
+| #12 野外裝備掉落表 | `Lv150+ [0,0,0,20,6,3,0.25,0]`；`Lv100+ [0,10,8,6,4,2,0,0]`；`Lv50+ [25,10,5,2,0,0,0,0]`；`Lv1+ [25,10,5,0,0,0,0,0]` | `Lv150+ [50,40,30,10,5,2,0.05,0]`；`Lv100+ [40,30,15,10,2.5,1,0,0]`；`Lv50+ [35,20,8,4,0.5,0,0,0]`；`Lv1+ [15,10,5,0,0,0,0,0]` | 品質分布全面改變；測試偏向壓低低品質，CSV 保留大量普通～稀有掉落 | 測試：`tests/field-equipment-drop-table.test.cjs:19-24`；CSV 各品質：`config/CSV/game_parameters.csv:139-146`；設計表：`game_formula.md:330-339`（內容亦未與測試／CSV 完全一致） |
+| #13 野外寶石掉落表 | 七段由高至低：`[40,6,3,1,0.5] / [30,4,2,0.75,0.25] / [20,3,1.5,0.5,0] / [15,2,1,0,0] / [10,1.25,0.75,0,0] / [7.5,1,0.5,0,0] / [5,1,0.5,0,0]` | `[14,2.3,0.8,0.4,0.3] / [12,2,0.7,0.3,0.2] / [10,1.7,0.6,0.2,0] / [8,1.4,0.5,0.1,0] / [6,1.1,0.4,0,0] / [4,0.8,0.3,0,0] / [2,0.5,0.2,0,0]` | CSV 全段顯著低於測試，且 151～200 級新增 `0.1%` 四階機率 | 測試：`tests/field-gem-drop-table.test.cjs:22-32`；CSV：`config/CSV/game_parameters.csv:147-153`；現行設計表支持 CSV：`game_formula.md:352-362` |
+| #14 寶石神鑄時間 | 5～9 階為 `[2,3,4,5,6]` 秒 | `[1,2,3,4,6]` 秒 | 5～8 階各縮短 1 秒；9 階不變 | 測試：`tests/forge-duration.test.cjs:9-24`；CSV：`config/CSV/game_parameters.csv:204`；公式文件仍支持測試：`game_formula.md:580-581` |
+| #22 寶石商店標價 | Lv1 `5,000`；Lv6 `800,000`；Lv10 `8,000,000,000` | Lv1 `10,000`；Lv6 `50,000,000`；Lv10 `1,000,000,000,000` | 分別為測試的 `2× / 62.5× / 125×` | 測試：`tests/gem-shop.test.cjs:28-30`；CSV：`config/CSV/game_parameters.csv:238`；公式文件支持 CSV：`game_formula.md:725-734` |
+| #24 神力案例的 Lv1 基礎魔攻 | `stats.base.matk=16`，套 `+100%` 魔攻與 `+20%` 神力後為 `38` | 魔攻公式基礎 `a=6`、每點智力 `d=1`；測試角色 Lv1 智力 5，故 `base.matk=11`、最終 `26` | 基礎魔攻少 5，案例最終值少 12 | 測試：`tests/god-might.test.cjs:37-41`；CSV：`config/CSV/game_parameters.csv:33`；公式文件支持 CSV 基礎值：`game_formula.md:84`；神力乘區：`:528` |
+| #44 高塔挑戰費用 | 全樓層 `round(100000 × floor^2.6)` | 1～50 層 `a=10000,b=1.8`；51～100 `a=50000,b=2`；101～150 `a=100000,b=2.2` | 公式由單段改三段；第 1 層由 100,000 降至 10,000 | 測試：`tests/tower-cost.test.cjs:9-17`；CSV：`config/CSV/game_parameters.csv:112`；公式文件支持 CSV：`game_formula.md:299`；變更記錄：`PATCH.md:221-230` |
+| #47 神鑄解鎖門檻 | Lv.2000 且 1 轉 | Lv.1 且 1 轉 | 等級門檻降低 1999 級 | 測試：`tests/unlock-thresholds.test.cjs:40-50`；CSV：`config/CSV/game_parameters.csv:7`；公式文件仍支持測試：`game_formula.md:55`；`PATCH.md:230` 亦明載 CSV 1 與程式 2000 曾是「在調差異」 |
+
+### 使用者需確認
+
+請逐項或整批指定：
+
+- **以測試／設計文件為準**：重新分類為 B 類；需修改 `config/CSV/*` 或 `js/`，另走檔案鎖定流程。
+- **以 CSV 為準**：維持 A 類；下一批只更新對應測試及已過時的設計文件。
+- **另給新數值**：先同步權威參數與文件，再更新測試。
+
+## 5. Claude 裁決清單
 
 第二步開始前需先裁決：
 
