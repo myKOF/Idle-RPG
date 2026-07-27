@@ -128,9 +128,11 @@ Antigravity
 
 # 6. Commit 原則
 
-每個 Commit 僅包含一個明確目的。
+每個 Commit 僅包含一個明確目的，避免混合多項不相關的修改。
 
-Commit 類型：
+## Commit 類型
+
+使用以下英文前綴：
 
 - feat:
 - fix:
@@ -139,12 +141,45 @@ Commit 類型：
 - test:
 - chore:
 
-Commit 前至少確認：
+## Commit 說明
 
-- git status
-- git diff
-- git diff --stat
-- git diff --check
+除通用技術術語外，Commit 說明一律使用繁體中文。
+
+例如：
+
+```
+feat: 新增工人升級系統
+fix: 修正離線收益重複計算
+refactor: 重構 Worker 狀態同步流程
+docs: 更新 Git 工作流程
+test: 新增 Web Worker 壓力測試
+chore: 更新開發工具設定
+```
+
+保留英文的常用術語包含但不限於：
+
+- Worker
+- Web Worker
+- API
+- UI
+- DOM
+- JSON
+- CSV
+- Timer
+- Tick
+- Thread
+- Snapshot
+- Event
+- Command
+- Context
+- Token
+
+## Commit 前至少確認
+
+- `git status`
+- `git diff`
+- `git diff --stat`
+- `git diff --check`
 
 ---
 
