@@ -35,8 +35,8 @@
 | UI 讀狀態 | `ui.js` 使用 `G` 共 226 處，其中**寫入僅 16 處** |
 | UI→模擬呼叫 | 216 個函式 / 1073 個呼叫點，其中**會變更狀態的 60 個**（含間接改物件、標記 `UI.dirty`、呼叫 `markStatsDirty` 者） |
 | UI 直接改物件 | `ui.js` 另有 7 處直接改遊戲物件屬性（`it.locked`、`f.autoDust`、`f.autoForge` 等） |
-| 測試 | 116 支 `tests/*.test.cjs`／512 個案例，以 `vm.createContext` + `context.window = context` 直接載入 js 原始檔 |
-| ⚠️ 測試基準線 | **開工前即有 95 個案例失敗（散在 32 支檔案）**，417 通過。與本次遷移無關，屬既有狀態 |
+| 測試 | 118 支 `tests/*.test.cjs`／473 個案例，以 `vm.createContext` + `context.window = context` 直接載入 js 原始檔 |
+| ⚠️ 測試基準線 | **開工前即有 47 個案例失敗（散在 32 支檔案）**，426 通過。與本次遷移無關，屬既有狀態 |
 
 **兩個決定性結論**
 
@@ -130,7 +130,7 @@
 |---|---|---|---|
 | **P0 協議凍結** | `docs/WORKER_PROTOCOL.md`、`js/worker/protocol.js` | 待命：讀協議並回報疑義（不改檔） | 建立**基準線**：現版效能、存檔、離線收益的實測數據與錄影 |
 | **P1 Worker 骨架** | `js/worker/sim.worker.js`、`js/worker/shim.js`、`js/bridge.js`、`index.html`（僅 feature flag 接線）| `tests/worker-protocol.test.cjs`、`tests/worker-shim.test.cjs`（自有新檔） | `?worker=1` 空跑驗證、Console 錯誤檢查 |
-| **P2 存檔搬遷** | `js/save.js` 拆分、`js/storage.js` | `tools/`、參數表、既有測試修補（禁止碰 `js/worker/*`、`js/save.js`） | 存檔相容性驗證：舊存檔讀入、離線收益、重整、切頁 |
+| **P2 存檔搬遷** | `js/storage.js`（新增）、`js/worker/*`、`js/bridge.js`、`js/main.js`（worker 模式讓出存檔權）| 既有測試失敗清理（A/C 類，禁止碰 `js/`） | 存檔相容性驗證：舊存檔讀入、離線收益、重整、切頁 |
 | **P3 UI 去狀態化** | `js/main.js`、`js/worker/*`、`js/gm.js` | **獨占 `js/ui.js`**：依協議把 16 處寫入＋32 個變更呼叫改為 `send(cmd)`，`G` 改讀 snapshot | 全頁籤互動迴歸測試、產出重現步驟 |
 | **P4 效能收斂** | snapshot 分層策略、`js/worker/*` | `js/ui.js` 渲染節流配合 | 效能量測，對照 P0 基準線 |
 | **P5 移除 flag** | `index.html`、移除舊單執行緒路徑 | 清理死碼（需 Claude review 後才動手） | 全流程驗收 |
@@ -151,23 +151,27 @@ P1 起以 `?worker=1` 切換新舊路徑，舊單執行緒路徑在 P5 前保持
 
 ## 5.5 測試基準線（重要）
 
-`npm test` 在**遷移開工前**就已經有失敗案例：
+`npm test` 在**遷移開工前**就已經有失敗案例（含 Codex P1 測試後的現值）：
 
 ```
-417 pass / 95 fail（32 支檔案）
+473 tests / 426 pass / 47 fail（32 支檔案）
 ```
 
-原因與本次遷移無關（多數是斷言 `ui.js` 原始碼片段、數值公式已調整等既有落差）。因此：
+⚠️ **統計方式**：node test runner 會在結尾的「failing tests:」摘要區把每筆失敗再列一次，
+用 `grep -c '^✖'` 會得到兩倍數字（曾誤記為 95）。請一律以結尾的 `ℹ fail N` 為準：
+
+```bash
+npm test 2>&1 | grep -E "^ℹ (tests|pass|fail)"
+```
+
+原因與本次遷移無關（測試斷言過時、CSV 參數與測試不同步等既有落差）。因此：
 
 - **驗收標準不是「全綠」，而是「不得新增失敗案例」。**
 - 每階段開始與結束都要跑一次 `npm test`，比對失敗數與失敗清單。
 - 失敗數只要上升，或既有失敗清單出現新名字，該階段不得交付。
-- 重跑基準線：`npm test`，統計方式見本節數字。
 
-既有 95 個失敗已另開任務處理，**不併入本次遷移**（`docs/AI_TASKS.md` 第 3.1 節）。
-
-已確認的根因之一：`css/style.css` 不是 UTF-8（2248 個無效位元組），導致 6 支比對中文字串的測試必定失敗。
-其餘 26 支為數值／邏輯落差，需逐一診斷。
+既有 47 個失敗已另開任務處理，**不併入本次遷移**（`docs/AI_TASKS.md` 第 3.1 節）。
+Codex 已完成診斷分類，見 `docs/TEST_FAILURE_TRIAGE.md`（A 類 32／B 類 14／C 類 1）。
 
 ---
 
@@ -234,7 +238,7 @@ P1 起以 `?worker=1` 切換新舊路徑，舊單執行緒路徑在 P5 前保持
 
 **已裁決：**
 
-- 2026-07-27　既有 95 個測試失敗 → 另開獨立任務交 Codex，**不併入本次遷移**。
+- 2026-07-27　既有 47 個測試失敗（原誤記為 95，係統計時把結尾摘要重複計算）→ 另開獨立任務交 Codex，**不併入本次遷移**。
   兩步交付（診斷 → 只修 A/C 類），B 類要動 `js/` 者須經 Claude 裁決並走檔案鎖定流程。
   詳見 `docs/AI_TASKS.md` 第 3.1 節。遷移期間的驗收門檻維持「不得新增失敗案例」。
 
@@ -246,7 +250,7 @@ P1 起以 `?worker=1` 切換新舊路徑，舊單執行緒路徑在 P5 前保持
 |---|---|---|
 | P0 協議凍結 | ✅ 完成（v1，67 條指令） | 2026-07-27 |
 | P1 Worker 骨架 | ✅ 完成（待 Antigravity 驗證） | 2026-07-27 |
-| P2 存檔搬遷 | 未開始 | |
+| P2 存檔搬遷 | ✅ 完成（待 Antigravity 驗證） | 2026-07-27 |
 | P3 UI 去狀態化 | 未開始 | |
 | P4 效能收斂 | 未開始 | |
 | P5 移除 flag | 未開始 | |

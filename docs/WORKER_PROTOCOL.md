@@ -1,6 +1,6 @@
-# Worker 協議 v1（已凍結）
+# Worker 協議 v2（已凍結）
 
-> 凍結日期：2026-07-27　凍結者：Claude Code　協議版本：`WORKER_PROTOCOL_VERSION = 1`
+> 凍結日期：2026-07-27　凍結者：Claude Code　協議版本：`WORKER_PROTOCOL_VERSION = 2`
 > **單一資料來源是 `js/worker/protocol.js`。** 本文件是說明；兩者衝突時以程式碼為準。
 > 修改協議必須經 `docs/WORKER_MIGRATION_PLAN.md` 第 7 節流程，由 Claude 統一改 `protocol.js` 並同步本文件、遞增版本號。
 
@@ -28,7 +28,8 @@
 
 | type | payload | 說明 |
 |---|---|---|
-| `boot` | `{ save, now }` | 開機。`save` 由主執行緒從 localStorage／資料夾讀出，可為 `null`（新遊戲） |
+| `boot` | `{ save, now, maxRunId }` | 開機。`save` 由主執行緒讀出且**未經 migrate**，可為 `null`（新遊戲）。`maxRunId` 供重新開局編號 |
+| `load` | `{ save }` | **v2 新增**。執行中讀檔：替換整份狀態，不需要 reload |
 | `cmd` | `{ id, name, args }` | 執行指令。`id` 由主執行緒遞增，用於配對 `ack` |
 | `panel` | `{ name }` | 索取面板完整資料，`name` 必須是 `PANEL_KEYS` 之一 |
 | `visibility` | `{ hidden, at }` | 分頁顯示狀態變更 |
@@ -43,7 +44,7 @@
 | `tick` | `{ view, dirty, events }` | 高頻。`view` 為小量純量、`dirty` 為髒面板鍵陣列、`events` 為合批事件 |
 | `panel` | `{ name, data }` | 面板完整資料 |
 | `full` | `{ snapshot }` | 完整狀態（開檔、讀檔、GM 指令、重開遊戲後） |
-| `persist` | `{ token, kind, payload }` | 請主執行緒落地存檔，`kind` 見 `PERSIST_KINDS` |
+| `persist` | `{ token, kind, payload: { json, meta } }` | 請主執行緒落地存檔，`kind` 見 `PERSIST_KINDS`。**v2 起附 `meta`**（由 Worker 以 `saveRecMeta()` 產生），主執行緒不得改用自己那份過期的 `G` 推算 |
 | `ack` | `{ id, ok, result, error }` | 指令結果 |
 | `error` | `{ where, message, stack }` | Worker 內未捕捉錯誤 |
 | `pong` | `{ t }` | |
@@ -91,7 +92,16 @@
 完整清單見 `js/worker/protocol.js` 的 `COMMANDS`，共 67 條，分為：
 `stage`(3)、`combat`(2)、`item`(7)、`gem`(12)、`player`(5)、`skill`(9)、`talent`(4)、`tower`(2)、`forge`(9)、`newforge`(7)、`factory`(2)、`settings`(1)、`save`(3)、`gm`(1)。
 
-`fn` 欄位是 Worker 內要呼叫的既有函式名。`fn: null` 表示目前這段邏輯還寫在 `ui.js` 裡，P3 必須搬進 Worker，包括：
+`fn` 欄位是 Worker 內要呼叫的既有函式名。`fn: null` 共 **17 條**，分三類：
+
+- **13 條**邏輯還寫在 `ui.js`，P3 搬進 Worker（下表）
+- **3 條存檔指令**（`save.manual` / `save.toFolder` / `save.restart`）v2 起改為 `fn: null`，
+  由 Worker 的 `COMMAND_IMPL` 實作成「產生 payload → 發 persist」。原本宣告直接呼叫
+  `manualSave` / `createManualSaveToFolderV2` / `restartGame` 是錯的——那些函式會碰
+  localStorage、IndexedDB、File System Access 與 `location.reload`，Worker 一律不能碰
+- **1 條 `gm.exec`**，邏輯在 `gm.js`，P3 處理
+
+P3 待搬遷的 13 條：
 
 | 指令 | 目前位置 | 說明 |
 |---|---|---|
@@ -107,7 +117,8 @@
 | `factory.setAutoEquip` | `ui.js:6089` | 直接改 `G.factory.autoEquip` |
 | `settings.set` | `ui.js:6084` | 直接改 `G.settings.compareEq` |
 | `newforge.markTabSeen` / `markNoticeShown` | `ui.js:767, 4824` | 直接改 `G.newForge` 旗標 |
-| `gm.exec` | `js/gm.js` | GM 面板留主執行緒，指令解析與執行搬進 Worker |
+
+另有 `gm.exec`（`js/gm.js`）：GM 面板留主執行緒，指令解析與執行搬進 Worker。
 
 ### 4.5 不開放為指令的函式
 
@@ -123,24 +134,51 @@
 
 存檔格式**完全不變**，向後相容既有存檔。改變的只有「誰負責寫入」。
 
+實作分工（v2 起）：
+
+- 主執行緒 `js/storage.js`：唯一落地端。底層重用 save.js 既有的
+  `idbSetAutoV2` / `writeRawToFolder` / `writeAutoMetaV2` / `saveFolderMetaV2`，
+  所以檔名規則與存檔格式完全不變。
+- Worker `installStorageGuards()`：載入後就地換掉 `saveGame` / `syncSaveFolder` /
+  `manualSave` / `createManualSaveToFolderV2` / `restartGame` / `loadGame` /
+  `loadLatestFolderSave`，讓模擬層照常呼叫、落地端換人。**不修改 save.js 本身**
+  （那 17 支是既有測試的受測對象）。
+- Worker `shim.js`：`localStorage` 是會拋錯的陷阱。漏網路徑會大聲失敗，
+  不會靜靜寫進一個不會落地的地方。`SHIM_DIAG.storage` 恆為空才算乾淨。
+
 ### 開機
 
 ```
-主：讀 localStorage → 讀存檔資料夾 → 取較新者
-主 → boot { save, now }
+主：讀存檔資料夾 + IndexedDB 快取 → 取較新者（不 migrate）
+主 → boot { save, now, maxRunId }
 Worker：migrateSave → applyOfflineProgress → 收集公告
 Worker → booted { snapshot, offlineSummary, notices }
 主：渲染、關閉 Loading
 ```
 
+**主執行緒不得 migrate。** 遷移是 Worker 的職責；兩邊都做會讓一次性遷移跑兩次。
+
 ### 自動存檔
 
 ```
-Worker（每 15 秒）：序列化 → persist { token, kind:'auto', payload }
-主：寫 localStorage（配額不足時退回資料夾，沿用 save.js 既有策略）
+Worker（每 15 秒）：序列化 + saveRecMeta → persist { token, kind:'auto', payload:{json,meta} }
+主：完整快照寫 IndexedDB，localStorage 只留小型 metadata（沿用 saveGameV2 策略）
 主 → saveResult { token, ok, error }
-Worker：更新 savedAt 基準
+Worker：更新 savedAt 基準；失敗則退回上一次成功值
 ```
+
+### 重新開局 / 執行中讀檔
+
+```
+save.restart：Worker 先 persist 舊局 → 產生 newGameState（runId = max(maxRunId, G.runId)+1）
+              → persist { kind:'restart' } → 主執行緒寫入後 location.reload()
+
+load 訊息：  主執行緒讀出存檔 → load { save }
+              → Worker 先 persist 目前進度 → 替換 G → migrate → 離線結算
+              → full → 再 persist 鎖定 savedAt 基準
+```
+
+執行中讀檔不需要 reload——舊路徑靠 `location.reload()` 換狀態，Worker 架構下直接替換 `G` 即可。
 
 **`savedAt` 只能在收到 `saveResult{ok:true}` 後更新。** 若在送出 `persist` 當下就更新，寫入失敗時會讓離線結算基準錯位，導致收益漏算或重複結算。
 
@@ -180,3 +218,4 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 | 版本 | 日期 | 變更 |
 |---|---|---|
 | 1 | 2026-07-27 | 初版凍結：6 種入向訊息、8 種出向訊息、11 個面板鍵、67 條指令 |
+| 2 | 2026-07-27 | P2 存檔搬遷：新增 `load` 訊息與 `restart` 落地種類；`persist` payload 加 `meta`；`boot` 加 `maxRunId`；`save.*` 三條改為 `fn:null` 並由 Worker 端實作（原宣告會呼叫碰 I/O 的函式，與設計衝突）。<br>指令形狀類的缺口（寶石識別、`forge.*` 簽章、缺 `item.unequip` / `tower.flee` 等）由 Codex 於審查提出，屬 P3 範圍，將於 P3 開工前發 v3 |

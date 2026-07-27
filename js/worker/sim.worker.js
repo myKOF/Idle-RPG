@@ -35,6 +35,7 @@ var _folderAcc = 0;
 var _hiddenAt = 0;
 var _persistSeq = 0;
 var _pendingPersist = {};   // token -> kind，等主執行緒回 saveResult
+var _maxRunId = 1;          // 由 boot 帶入；重新開局時用來決定新局編號
 
 function post(type, payload) {
   payload = payload || {};
@@ -167,25 +168,75 @@ function buildPanel(name) {
 /* ---- 存檔 ----
    序列化在 Worker，落地在主執行緒。savedAt 只能在收到 saveResult{ok:true} 後才算數，
    否則寫入失敗時離線結算的基準會錯位，造成收益漏算或重複結算。 */
-function requestPersist(kind) {
-  if (!G) return;
+function requestPersist(kind, opts) {
+  if (!G) return null;
+  opts = opts || {};
   try {
     var token = 'p' + (++_persistSeq);
     var prevSavedAt = G.savedAt;
-    G.savedAt = Date.now();
-    var json = JSON.stringify(G);
-    _pendingPersist[token] = { kind: kind, savedAt: G.savedAt, prevSavedAt: prevSavedAt };
-    post(MSG_OUT.PERSIST, { token: token, kind: kind, payload: { json: json } });
+    var state = opts.state || G;
+    if (state === G) G.savedAt = Date.now();
+    var json = JSON.stringify(state);
+    // meta 用模擬層既有的 saveRecMeta 產生（只讀 G、不碰儲存），主執行緒不必再自行推算
+    var meta = opts.meta || saveRecMeta('auto', 'auto_current', AUTO_FOLDER_FILE_V2);
+    _pendingPersist[token] = { kind: kind, savedAt: G.savedAt, prevSavedAt: prevSavedAt, rollback: state === G };
+    post(MSG_OUT.PERSIST, { token: token, kind: kind, payload: { json: json, meta: meta } });
+    return meta;
   } catch (e) {
     reportError('requestPersist', e);
+    return null;
   }
+}
+
+/* ---- 儲存 I/O 攔截 ----
+   模擬層有 53 處 localStorage 呼叫，全部集中在 save.js 這幾個函式裡。
+   Worker 不能碰儲存，但也不該去改 save.js（那 17 支是 116 支既有測試的受測對象）。
+   作法：載入後就地換掉這幾個全域函式，讓它們改發 persist 訊息。
+   模擬層其他地方照常呼叫 saveGame()，行為維持不變，只是落地端換人。
+
+   沒被攔截到的漏網路徑會撞上 shim.js 的 localStorage 陷阱並拋出明確錯誤，
+   不會靜靜寫進一個不會落地的地方。 */
+function installStorageGuards() {
+  self.saveGame = function () {
+    requestPersist(PERSIST_KINDS.AUTO);
+    return true;
+  };
+
+  self.syncSaveFolder = function () {
+    requestPersist(PERSIST_KINDS.FOLDER);
+    return Promise.resolve(true);
+  };
+
+  self.manualSave = function (label) {
+    var prefix = label ? String(label).replace(/[^a-z0-9_-]+/ig, '_') : 'manual';
+    var meta = saveRecMeta('manual', 'manual_' + Date.now().toString(36) + '_' + ri(100, 999),
+      'IC_' + prefix + '_' + saveStamp(Date.now()) + '.json');
+    requestPersist(PERSIST_KINDS.MANUAL, { meta: meta });
+    return meta;
+  };
+  self.createManualSaveToFolderV2 = self.manualSave;
+
+  self.restartGame = function () {
+    requestPersist(PERSIST_KINDS.AUTO); // 舊局進度先保底
+    var fresh = newGameState();
+    fresh.runId = Math.max(_maxRunId, G.runId || 1) + 1; // 新局另一個檔，不蓋掉舊局
+    fresh.savedAt = Date.now();
+    var meta = saveRecMeta('auto', 'auto_current', AUTO_FOLDER_FILE_V2);
+    meta.runId = fresh.runId;
+    requestPersist(PERSIST_KINDS.RESTART, { state: fresh, meta: meta });
+    return true;
+  };
+
+  // 讀檔一律由主執行緒讀出後以 boot / load 訊息送進來
+  self.loadGame = function () { return null; };
+  self.loadLatestFolderSave = function (cb) { if (cb) cb(null); };
 }
 
 function onSaveResult(msg) {
   var rec = _pendingPersist[msg.token];
   if (!rec) return;
   delete _pendingPersist[msg.token];
-  if (!msg.ok && G) {
+  if (!msg.ok && G && rec.rollback) {
     // 落地失敗：把 savedAt 退回上一次成功的值，讓下次離線結算仍以真正落地的時間點為準
     G.savedAt = rec.prevSavedAt;
     shimPushEvent('log', { msg: '⚠️ 存檔寫入失敗：' + (msg.error || '未知原因'), cls: 'warn' });
@@ -216,11 +267,26 @@ function resolveItem(id) {
   return null;
 }
 
+/* 協議中 fn 為 null 的指令，由 Worker 這邊自行實作。
+   P2 先補齊存檔三條（原本錯誤地宣告直接呼叫會碰 I/O 的函式），其餘 UI 搬遷項目在 P3。 */
+var COMMAND_IMPL = {
+  'save.manual': function (args) { return manualSave(args && args.label); },
+  'save.toFolder': function (args) { return manualSave(args && args.label); },
+  'save.restart': function () { return restartGame(); }
+};
+
 function runCommand(name, args) {
   var spec = commandSpec(name);
   if (!spec) return { ok: false, error: 'unknown command: ' + name };
   var invalid = validateCommand(name, args);
   if (invalid) return { ok: false, error: invalid };
+  if (COMMAND_IMPL[name]) {
+    try {
+      return { ok: true, result: COMMAND_IMPL[name](args) };
+    } catch (e) {
+      return { ok: false, error: (e && e.message) ? e.message : String(e) };
+    }
+  }
   if (!spec.fn) {
     // 協議中 fn 為 null 的 13 條：邏輯目前仍在 ui.js，P3 搬進 Worker 後才實作
     return { ok: false, error: 'not implemented until P3: ' + name };
@@ -251,6 +317,9 @@ function boot(msg) {
   var loaded = null;
   var notices = [];
   var offlineSummary = null;
+
+  installStorageGuards();
+  _maxRunId = msg.maxRunId || 1;
 
   if (msg.save) {
     loaded = (typeof migrateSave === 'function') ? migrateSave(msg.save) : msg.save;
@@ -283,6 +352,24 @@ function boot(msg) {
   });
 }
 
+/* ---- 執行中讀檔（v2 新增）----
+   舊路徑的做法是寫進 localStorage 後 location.reload()，靠重新載入換掉整份狀態。
+   Worker 架構下不需要重載：主執行緒讀出存檔內容送進來，這裡直接替換 G。
+   讀檔前先把目前進度落地，避免玩家切換存檔時弄丟當前這局。 */
+function loadIntoRunningSim(msg) {
+  if (!msg.save) { reportError('load', new Error('load 訊息沒有帶存檔內容')); return; }
+  requestPersist(PERSIST_KINDS.AUTO); // 目前進度先保底
+  G = (typeof migrateSave === 'function') ? migrateSave(msg.save) : msg.save;
+  if (typeof markStatsDirty === 'function') markStatsDirty();
+  if (typeof initFieldPlayer === 'function') initFieldPlayer();
+  if (typeof applyOfflineProgress === 'function') applyOfflineProgress();
+  _lastTickAt = Date.now();
+  _autosaveAcc = _folderAcc = 0;
+  PANEL_KEYS.forEach(function (k) { UI.dirty[k] = true; });
+  post(MSG_OUT.FULL, { snapshot: { view: buildView() }, events: shimDrainEvents() });
+  requestPersist(PERSIST_KINDS.AUTO); // 換檔後立刻鎖定 savedAt 基準
+}
+
 /* ---- 分頁顯示狀態 ----
    判定與結算一律在 Worker；主執行緒只負責通知，不得自行決定要不要結算，
    否則兩邊各判一次就會重複領取離線收益。 */
@@ -308,6 +395,9 @@ self.onmessage = function (e) {
     switch (msg.type) {
       case MSG_IN.BOOT:
         boot(msg);
+        break;
+      case MSG_IN.LOAD:
+        loadIntoRunningSim(msg);
         break;
       case MSG_IN.CMD:
         var r = runCommand(msg.name, msg.args);

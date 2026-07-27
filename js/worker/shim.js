@@ -157,21 +157,28 @@ self.document = {
   removeEventListener: function () { _diag(SHIM_DIAG.dom, 'removeEventListener'); }
 };
 
-/* ---- localStorage 替身（僅 P1 有效，P2 必須移除）----
-   Worker 沒有 localStorage。save.js 有 53 處呼叫，P2 會把儲存 I/O 全部改走
-   persist / saveResult 訊息交給主執行緒。
+/* ---- localStorage 攔截器（P2 起改為「會爆」的版本）----
+   Worker 沒有 localStorage。P1 時這裡是記憶體替身，讓空跑不中斷；
+   P2 已把儲存 I/O 全部改走 persist / saveResult 交給主執行緒
+   （見 sim.worker.js 的 installStorageGuards），Worker 內不該再有任何一次呼叫。
 
-   在那之前先給一個記憶體版替身，讓 P1 空跑不會因為 ReferenceError 中斷。
-   ⚠️ 這個替身寫進去的東西不會落地。P2 完成後**必須刪掉**本區塊，
-   並確認 SHIM_DIAG.storage 全為 0，否則代表還有存檔路徑偷走記憶體版。 */
-var _memStore = {};
+   所以改成呼叫即拋錯：寧可在驗證期大聲失敗，也不要靜靜寫進一個不會落地的記憶體物件
+   ——那種錯誤要等玩家存檔消失才會被發現。
+   錯誤會被 loop / onmessage 的 try-catch 接住並回報 ERROR，不會讓 Worker 死掉。 */
+function _storageTrap(op) {
+  return function () {
+    _diag(SHIM_DIAG.storage, op);
+    throw new Error('Worker 內不得直接使用 localStorage.' + op +
+      '（儲存 I/O 必須經由 persist 訊息交主執行緒；見 docs/WORKER_PROTOCOL.md 第 5 節）');
+  };
+}
 self.localStorage = {
-  getItem: function (k) { _diag(SHIM_DIAG.storage, 'getItem'); return Object.prototype.hasOwnProperty.call(_memStore, k) ? _memStore[k] : null; },
-  setItem: function (k, v) { _diag(SHIM_DIAG.storage, 'setItem'); _memStore[k] = String(v); },
-  removeItem: function (k) { _diag(SHIM_DIAG.storage, 'removeItem'); delete _memStore[k]; },
-  key: function (i) { _diag(SHIM_DIAG.storage, 'key'); return Object.keys(_memStore)[i] || null; },
-  clear: function () { _diag(SHIM_DIAG.storage, 'clear'); _memStore = {}; }
+  getItem: _storageTrap('getItem'),
+  setItem: _storageTrap('setItem'),
+  removeItem: _storageTrap('removeItem'),
+  key: _storageTrap('key'),
+  clear: _storageTrap('clear')
 };
 Object.defineProperty(self.localStorage, 'length', {
-  get: function () { return Object.keys(_memStore).length; }
+  get: function () { _diag(SHIM_DIAG.storage, 'length'); return 0; }
 });

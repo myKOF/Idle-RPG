@@ -13,6 +13,15 @@ var _lastTickAt = Date.now();
 var BG_SUSPEND_AFTER_MS = 60000;
 var _hiddenAt = (typeof document !== 'undefined' && document.hidden) ? Date.now() : 0;
 
+/* ---- Web Worker 模式（?worker=1）----
+   模擬與存檔的權威改由 Worker 持有。這裡必須讓出兩件事，否則會有兩個權威同時寫存檔，
+   互相覆蓋成回檔：
+     1. 不再跑本執行緒的主迴圈
+     2. _saveSuppressed 讓 save.js 的所有寫入路徑直接短路（含 beforeunload 與切頁存檔）
+   P3 之前 UI 尚未接上 Worker，所以此模式下畫面不會更新，屬預期中的中間狀態。 */
+var WORKER_MODE = (typeof WorkerBridge !== 'undefined') && WorkerBridge.enabled();
+if (WORKER_MODE) _saveSuppressed = true;
+
 function miniMonitorActive() {
   return typeof MINI !== 'undefined' && MINI && !!(MINI.win || MINI.timer);
 }
@@ -163,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function () {
     flog('🏭 熔爐已啟動。掉落裝備會依各熔爐勾選的品質自動拆解或保留。', 'info');
   }
 
-  setInterval(gameTick, TICK_MS);
+  if (!WORKER_MODE) setInterval(gameTick, TICK_MS); // worker 模式下由 Worker 跑主迴圈
   setInterval(uiTick, 200);
   window.addEventListener('beforeunload', function () {
     if (typeof showLoadingScreen === 'function') showLoadingScreen();
