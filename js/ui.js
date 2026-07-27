@@ -1655,20 +1655,7 @@ function refreshCombatPauseButton() {
   });
 }
 function currentShieldSkillCap(stats) {
-  if (!stats || !(stats.hp > 0)) return 0;
-  var cap = stats.hp * 20;
-  if (typeof G === 'undefined' || !G.player || !Array.isArray(G.player.loadout)) return cap;
-  if (typeof mergedSkillFx !== 'function' || typeof scaleAt !== 'function') return cap;
-  for (var i = 0; i < G.player.loadout.length; i++) {
-    var id = G.player.loadout[i];
-    var lv = (G.player.skills && G.player.skills[id]) || 0;
-    if (!id || lv <= 0) continue;
-    var fx = mergedSkillFx(id);
-    if (!fx || !fx.shieldPctMax) continue;
-    var pct = scaleAt(fx.shieldPctMax, lv) * (1 + (stats.shieldEff || 0) / 100);
-    cap = Math.max(cap, stats.hp * (1 + pct / 100));
-  }
-  return cap;
+  return simulationCurrentShieldSkillCap(stats);
 }
 function playerShieldMax(entity, stats) {
   if (!entity) return 0;
