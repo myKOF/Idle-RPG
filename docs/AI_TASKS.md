@@ -50,7 +50,19 @@ D:\MyGame\Idle-RPG\main
 
 目前鎖定中的核心檔案：
 
-無
+- js/worker/*（Claude）
+- js/bridge.js（Claude）
+- js/ui.js（P3 起 Codex 專屬，目前尚未開放修改）
+
+進行中的大型工程：
+
+Web Worker 架構遷移。計劃書 `docs/WORKER_MIGRATION_PLAN.md`（暫時文件，P5 完成後刪除）。
+協議 `docs/WORKER_PROTOCOL.md` + `js/worker/protocol.js`（v1 已凍結，唯一資料來源）。
+三方開工前必須先讀這兩份文件。
+
+目前階段：
+
+P1 Worker 骨架（P0 協議凍結已完成）
 
 ---
 
@@ -58,15 +70,19 @@ D:\MyGame\Idle-RPG\main
 
 狀態：
 
-待命
+進行中
 
 任務名稱：
 
-無
+Web Worker 遷移 P1：Worker 骨架
 
 任務內容：
 
-無
+- 建立 `js/worker/sim.worker.js`，以 `importScripts` 載入 17 支模擬層檔案（不改寫模擬層）
+- 建立 `js/worker/shim.js`：`blog` / `flog` / `nflog` / `window.recordLoot*` 改為事件佇列，隨 tick 合批送出
+- 建立 `js/bridge.js`：主執行緒側 send / on，含指令 id 配對與 ack 處理
+- 主迴圈搬進 Worker，保留 `_lastTickAt` 經過時間補償與背景休眠語意
+- 以 `?worker=1` feature flag 與舊單執行緒路徑並存，舊路徑維持可用
 
 工作區：
 
@@ -78,25 +94,33 @@ ai/claude
 
 允許修改：
 
-無
+- js/worker/sim.worker.js（新增）
+- js/worker/shim.js（新增）
+- js/bridge.js（新增）
+- js/worker/protocol.js（協議唯一維護者）
+- docs/WORKER_PROTOCOL.md
+- docs/WORKER_MIGRATION_PLAN.md
 
 禁止修改：
 
+- js/ui.js（P3 起專屬 Codex；需要改動一律以 Code Review 意見交付）
+- tests/worker-*.test.cjs（Codex 所有）
 - 其他 AI 正在處理的檔案
 - 任務範圍外檔案
 - develop 分支
 
 前置依賴：
 
-無
+P0 協議凍結（已完成）
 
 測試要求：
 
-無
+- `npm test` **不得新增失敗案例**。開工前基準線：417 pass / 95 fail（既有問題，與遷移無關）
+- Worker 空跑不得出現 Console 錯誤
 
 完成後交給：
 
-無
+Antigravity 驗證 `?worker=1` 空跑；Codex 依協議撰寫協議測試
 
 ---
 
@@ -104,15 +128,21 @@ ai/claude
 
 狀態：
 
-待命
+進行中
 
 任務名稱：
 
-無
+Web Worker 遷移 P1：協議測試
 
 任務內容：
 
-無
+- 先讀 `docs/WORKER_MIGRATION_PLAN.md` 與 `docs/WORKER_PROTOCOL.md`
+- 新增 `tests/worker-protocol.test.cjs`：驗證 `js/worker/protocol.js` 的指令表完整性
+  （指令名稱格式、args 型別合法、`validateCommand` 對缺參數／型別錯誤／未知指令的行為、
+  `PANEL_KEYS` 與模擬層實際使用的 `UI.dirty` 鍵完全一致）
+- 新增 `tests/worker-shim.test.cjs`：驗證日誌 shim 會把 `blog` / `flog` 推入事件佇列而非呼叫 DOM
+- 對協議有疑義一律寫入 `docs/WORKER_MIGRATION_PLAN.md` 第 9 節「待決事項」，
+  不得自行修改 `js/worker/protocol.js`
 
 工作區：
 
@@ -124,25 +154,31 @@ ai/codex
 
 允許修改：
 
-無
+- tests/worker-protocol.test.cjs（新增）
+- tests/worker-shim.test.cjs（新增）
+- docs/WORKER_MIGRATION_PLAN.md 第 9 節「待決事項」（僅追加）
 
 禁止修改：
 
+- js/worker/*（Claude 所有）
+- js/bridge.js（Claude 所有）
+- js/ui.js（P3 才開放）
+- js/ 模擬層任何檔案
 - 其他 AI 正在處理的檔案
 - 任務範圍外檔案
 - develop 分支
 
 前置依賴：
 
-無
+Claude 完成 P0 協議凍結（已完成，可立即開工）；`shim.js` 測試需等 Claude 產出檔案
 
 測試要求：
 
-無
+`npm test` 不得新增失敗案例。開工前基準線：417 pass / 95 fail（既有問題，與遷移無關，不要順手修）
 
 完成後交給：
 
-無
+Claude Review
 
 ---
 
@@ -150,15 +186,24 @@ ai/codex
 
 狀態：
 
-待命
+進行中
 
 任務名稱：
 
-無
+Web Worker 遷移 P0/P1：效能基準線與空跑驗證
 
 任務內容：
 
-無
+- 先讀 `docs/WORKER_MIGRATION_PLAN.md` 與 `docs/WORKER_PROTOCOL.md`
+- 建立**現版（單執行緒）基準線**，作為 P4 效能收斂的對照：
+  - 主執行緒 FPS 與長任務（long task）分佈
+  - 一鍵分解大量背包裝備時的畫面凍結時長
+  - 開檔含離線結算的耗時
+  - 切換各頁籤的渲染耗時
+  - 記憶體佔用
+- 存檔基準線：記錄現版存檔內容與離線收益結果，供 P2 相容性比對
+- Claude 交付 P1 後，驗證 `?worker=1` 空跑：Console 無錯誤、舊路徑（不帶參數）不受影響
+- 產出測試報告與可重現步驟
 
 工作區：
 
@@ -170,25 +215,26 @@ ai/antigravity
 
 允許修改：
 
-無
+原則上只做驗證，不修改程式碼。測試報告請放在自己的分支。
 
 禁止修改：
 
+- js/ 任何檔案（含 js/worker/*、js/ui.js）
+- 核心遊戲架構、存檔格式、戰鬥公式、數值平衡
 - 其他 AI 正在處理的檔案
-- 任務範圍外檔案
 - develop 分支
 
 前置依賴：
 
-無
+基準線可立即開始；空跑驗證需等 Claude 交付 P1
 
 測試要求：
 
-無
+基準線數據需可重現，記錄瀏覽器版本、硬體、存檔規模（背包件數）
 
 完成後交給：
 
-無
+Claude（效能數據作為 P4 依據）
 
 ---
 
@@ -198,7 +244,29 @@ ai/antigravity
 
 目前鎖定檔案：
 
-無
+檔案：js/worker/*（含 protocol.js、sim.worker.js、shim.js）
+負責 AI：Claude
+任務：Web Worker 遷移 P0–P5
+鎖定時間：2026-07-27
+解除條件：P5 完成
+
+檔案：js/bridge.js
+負責 AI：Claude
+任務：Web Worker 遷移 P1
+鎖定時間：2026-07-27
+解除條件：P1 合併後
+
+檔案：js/ui.js
+負責 AI：Codex（P3 起）
+任務：Web Worker 遷移 P3 UI 去狀態化
+鎖定時間：P3 開始時生效
+解除條件：P5 完成。Claude 全程不得直接修改，僅能以 Code Review 意見交付
+
+檔案：tests/worker-*.test.cjs
+負責 AI：Codex
+任務：Web Worker 遷移 P1
+鎖定時間：2026-07-27
+解除條件：P1 合併後
 
 記錄格式：
 
