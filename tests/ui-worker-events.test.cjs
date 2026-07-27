@@ -50,8 +50,8 @@ test('Worker Event 將 flog、log 與 float 接到既有 UI 呈現函式', () =>
 test('Worker log 分類優先採用 cat，並依 tower Snapshot 導向 boss log', () => {
   const calls = [];
   const context = {
-    UI_WORKER_STATE: { view: { towerActive: false } },
-    peekUiPanelData: () => ({ tower: { active: true } }),
+    UI_WORKER_STATE: { view: { towerActive: true } },
+    peekUiPanelData: () => ({ tower: { active: false } }),
     addLog: (...args) => calls.push(args)
   };
   vm.runInNewContext([
@@ -61,14 +61,63 @@ test('Worker log 分類優先採用 cat，並依 tower Snapshot 導向 boss log'
   ].join('\n'), context);
 
   assert.equal(context.workerTowerActiveForLog(), true);
+  context.UI_WORKER_STATE.view = null;
+  assert.equal(context.workerTowerActiveForLog(), false);
+  context.UI_WORKER_STATE.view = { towerActive: true };
   context.routeUiLog('任意文字', 'hit', 'combat', context.workerTowerActiveForLog());
   assert.deepEqual(calls, [['boss-log', '任意文字', 'hit', 150, 'boss']]);
 });
 
-test('待顯示敵人飄字以 elId 圖層存在性判斷，不再比較跨執行緒物件', () => {
-  const flush = functionBody('flushPendingEnemyFloats');
-  assert.match(flush, /\$id\(item\.elId\)/);
-  assert.doesNotMatch(flush, /fieldEnemyList|activeEnemies|indexOf\(item\.ent\)/);
+test('Worker 飄字以 elId 呈現，舊路徑仍排除已離場的敵人物件', () => {
+  const staleEnemy = { id: 'stale' };
+  const calls = [];
+  const context = {
+    PENDING_ENEMY_FLOATS: [
+      { elId: 'mv-float-0', text: '10', cls: 'dmg', damageValue: 10, ent: null },
+      { elId: 'mv-float-1', text: '20', cls: 'dmg', damageValue: 20, ent: staleEnemy }
+    ],
+    fieldEnemyList: () => [{ id: 'current' }],
+    $id: () => ({ offsetParent: {} }),
+    animatePendingEnemyKill: (...args) => calls.push(['animate', ...args]),
+    floatText: (...args) => calls.push(['float', ...args])
+  };
+  vm.runInNewContext(functionBody('flushPendingEnemyFloats'), context);
+  context.flushPendingEnemyFloats();
+
+  assert.deepEqual(calls, [
+    ['animate', null, 'mv-float-0', 'dmg'],
+    ['float', 'mv-float-0', '10', 'dmg', 10, null]
+  ]);
+  assert.equal(context.PENDING_ENEMY_FLOATS.length, 0);
+});
+
+test('統計清除在 Worker 模式送 stats.reset 並等待 battle Snapshot 重繪', async () => {
+  const calls = [];
+  const list = { innerHTML: 'old summary' };
+  const context = {
+    workerUiStateEnabled: () => true,
+    nodePendingKey: id => 'node:' + id,
+    sendUiCommand: (name, args, options) => {
+      calls.push({ name, args, options });
+      return Promise.resolve(true);
+    },
+    uiCommandResultError: () => null,
+    reportUiCommandFailure: error => assert.fail(String(error)),
+    $id: id => id === 'battle-summary-list' ? list : null,
+    renderStatsPanel: () => assert.fail('ACK 時不應直接用舊 Snapshot 重繪')
+  };
+  vm.runInNewContext([
+    functionBody('clearStatsSummaryDom'),
+    functionBody('resetStatsFromUi')
+  ].join('\n'), context);
+
+  assert.equal(await context.resetStatsFromUi(), true);
+  assert.deepEqual(JSON.parse(JSON.stringify(calls)), [{
+    name: 'stats.reset',
+    args: {},
+    options: { keys: ['node:stats'], panels: ['battle'] }
+  }]);
+  assert.equal(list.innerHTML, '');
 });
 
 test('掉落統計由 battle Snapshot 暫時供既有 renderer 讀取且渲染後還原', () => {
