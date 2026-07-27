@@ -1877,6 +1877,35 @@ function effectiveFx(id, def, lv) {
   }
   return fx;
 }
+
+/* 取得技能在目前等級套用解鎖效果後的完整效果；融合技由 skillDef 即時重建。 */
+function mergedSkillFx(id) {
+  var def = skillDef(id);
+  if (!def || !def.fx) return null;
+  return effectiveFx(id, def, skillLevel(id));
+}
+
+/* 護盾舊資料正規化所需上限。狀態修正由 Worker 執行，UI 只讀取結果。 */
+function currentShieldSkillCap(stats) {
+  if (!stats || !(stats.hp > 0)) return 0;
+  var cap = stats.hp * 20;
+  if (typeof G === 'undefined' || !G.player || !Array.isArray(G.player.loadout)) return cap;
+  if (typeof scaleAt !== 'function') return cap;
+  for (var i = 0; i < G.player.loadout.length; i++) {
+    var id = G.player.loadout[i];
+    var lv = (G.player.skills && G.player.skills[id]) || 0;
+    if (!id || lv <= 0) continue;
+    var fx = mergedSkillFx(id);
+    if (!fx || !fx.shieldPctMax) continue;
+    var pct = scaleAt(fx.shieldPctMax, lv) * (1 + (stats.shieldEff || 0) / 100);
+    cap = Math.max(cap, stats.hp * (1 + pct / 100));
+  }
+  return cap;
+}
+
+/* ui.js 的舊路徑在 Claude 移除護盾正規化前仍需委派到模擬層實作。 */
+var simulationCurrentShieldSkillCap = currentShieldSkillCap;
+
 // 下一個里程碑等級（無則回傳 0）
 function nextUnlockLv(id, lv) {
   var patches = UNLOCKS[id];
