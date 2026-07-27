@@ -588,10 +588,10 @@ if (index['3-戰鬥核心'] && index['3-戰鬥核心']['敵種傷害抗性']) {
 inline('formula', 'dmg *= rnd(', P('3-戰鬥核心', '傷害浮動', 0), '浮動-下');
 inline('formula', 'dmg *= rnd(0.9, ', P('3-戰鬥核心', '傷害浮動', 1), '浮動-上');
 numCtx('formula', 'dmg = Math.max(', ', Math.round(dmg))', P('3-戰鬥核心', '最低傷害下限', 0), '最低傷害');
-inline('formula', "ek === 'ice' && chance(", P('3-元素特效', '冰霜 特效', 0), '元素-冰');
-inline('formula', "ek === 'lightning' && chance(", P('3-元素特效', '雷電 特效', 0), '元素-雷');
-inline('formula', "ek === 'poison' && chance(", P('3-元素特效', '劇毒 特效', 0), '元素-毒');
-inline('formula', "ek === 'light' && chance(", P('3-元素特效', '聖光 特效', 0), '元素-光');
+inline('formula', 'iceSlowChance: ', P('3-元素特效', '冰霜 特效', 0), '元素-冰');
+inline('formula', 'lightningChance: ', P('3-元素特效', '雷電 特效', 0), '元素-雷');
+inline('formula', 'poisonChance: ', P('3-元素特效', '劇毒 特效', 0), '元素-毒');
+inline('formula', 'lightCleanseChance: ', P('3-元素特效', '聖光 特效', 0), '元素-光');
 numCtx('formula', 'clamp(dCfg.dmgRed, 0, ', ')', P('3-戰鬥核心', '聖佑(神鑄)減傷上限', 0), '聖佑上限');
 inline('formula', 'GT - defender._undyingAt >= ', P('3-戰鬥核心', '不朽(神鑄)回復', 1), '不朽秒數');
 

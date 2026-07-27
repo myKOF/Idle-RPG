@@ -8,19 +8,20 @@ const root = path.resolve(__dirname, '..');
 
 test('神鑄時間依裝備品質與寶石階級符合規格', () => {
   const dataJs = fs.readFileSync(path.join(root, 'js/data.js'), 'utf8');
+  // CSV: config/CSV/game_parameters.csv:200（裝備）、:204（寶石）。
   const context = {
     FORGE_EQUIP_DURATION: { 5: 3, 6: 5, 7: 8 },
-    FORGE_GEM_DURATION: { 5: 2, 6: 3, 7: 4, 8: 5, 9: 6 }
+    FORGE_GEM_DURATION: { 5: 1, 6: 2, 7: 3, 8: 4, 9: 6 }
   };
   assert.match(dataJs, /FORGE_EQUIP_DURATION\s*=\s*\{\s*5:\s*3,\s*6:\s*5,\s*7:\s*8\s*\}/);
-  assert.match(dataJs, /FORGE_GEM_DURATION\s*=\s*\{\s*5:\s*2,\s*6:\s*3,\s*7:\s*4,\s*8:\s*5,\s*9:\s*6\s*\}/);
+  assert.match(dataJs, /FORGE_GEM_DURATION\s*=\s*\{\s*5:\s*1,\s*6:\s*2,\s*7:\s*3,\s*8:\s*4,\s*9:\s*6\s*\}/);
   vm.createContext(context);
   vm.runInContext(fs.readFileSync(path.join(root, 'js/forge.js'), 'utf8'), context, { filename: 'js/forge.js' });
 
   assert.equal(context.forgeDurationSeconds('equip', 5), 3);
   assert.equal(context.forgeDurationSeconds('equip', 6), 5);
   assert.equal(context.forgeDurationSeconds('equip', 7), 8);
-  assert.equal(context.forgeDurationSeconds('gem', 5), 2);
+  assert.equal(context.forgeDurationSeconds('gem', 5), 1);
   assert.equal(context.forgeDurationSeconds('gem', 9), 6);
 });
 

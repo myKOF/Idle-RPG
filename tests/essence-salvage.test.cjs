@@ -38,9 +38,10 @@ function loadSaveContext() {
 
 test('附魔精華拆解基礎機率依裝備品質表計算', () => {
   const context = loadFormulaContext();
+  // CSV: config/CSV/game_parameters.csv:195（普通至神鑄創世）。
   assert.deepEqual(
     [0, 1, 2, 3, 4, 5, 6, 7, 8].map(context.essenceSalvageChanceForRarity),
-    [0.1, 0.5, 1, 2, 4, 8, 20, 100, 100]
+    [5, 7.5, 10, 15, 20, 25, 30, 100, 100]
   );
 });
 
@@ -54,18 +55,20 @@ test('T7 精粹透鏡每個提供 140% 附魔精華加成，且不再被掉寶�
   assert.equal(context.PART_TYPES.gemPurifier, undefined);
 });
 
-test('傳奇裝備配 1400% 精粹透鏡加成時，拆解精華為 120% 件數判定', () => {
+test('傳奇裝備配 1400% 精粹透鏡加成時，拆解精華為 375% 件數判定', () => {
   const context = loadFormulaContext();
   const calls = [];
   context.chance = (pct) => {
     calls.push(pct);
-    return pct === 20;
+    return pct === 75;
   };
   context.itemEnchants = () => [];
   const result = context.salvageResult({ rarity: 5, level: 100, affixes: [] }, 0, 1400);
 
-  assert.equal(calls[0], 20);
-  assert.equal(result.essence, 2);
+  // CSV: config/CSV/game_parameters.csv:195 傳說 25%；:308 精粹透鏡每階 +20%。
+  // 25% × (1 + 1400/100) = 375%：必得 3 顆，另以 75% 判定第 4 顆。
+  assert.equal(calls[0], 75);
+  assert.equal(result.essence, 4);
 });
 
 test('裝備分解不再觸發精粹提取或產出寶石', () => {

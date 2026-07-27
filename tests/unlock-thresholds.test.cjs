@@ -37,12 +37,13 @@ test('裝備套裝依序在 Lv.1、Lv.500、Lv.2000 開放', () => {
   assert.doesNotMatch(saveSource, /data\.player\.level\s*<\s*2000/);
 });
 
-test('神鑄需達 Lv.2000 且 1 轉，開放後永久保留', () => {
+test('神鑄需達 Lv.1 且 1 轉，開放後永久保留', () => {
   const context = loadContext();
-  context.G = { player: { level: 1, reincarnations: 1 }, forge: { unlocked: false } };
+  // CSV: config/CSV/game_parameters.csv:7，解鎖等級 1、轉生次數 1。
+  context.G = { player: { level: 1, reincarnations: 0 }, forge: { unlocked: false } };
   assert.equal(context.forgeUnlocked(), false);
 
-  context.G.player.level = 2000;
+  context.G.player.reincarnations = 1;
   assert.equal(context.forgeUnlocked(), true);
 
   context.G.player.level = 1;

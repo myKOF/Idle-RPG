@@ -25,9 +25,10 @@ test('寶石商店機率表與價格符合 20 級規格', () => {
   assert.equal(context.GEM_SHOP_TIER_TABLE.length, 20);
   context.GEM_SHOP_COUNT_TABLE.forEach((pairs) => assert.equal(pairs.reduce((sum, pair) => sum + pair[1], 0), 100));
   context.GEM_SHOP_TIER_TABLE.forEach((pairs) => assert.equal(pairs.reduce((sum, pair) => sum + pair[1], 0), 100));
-  assert.equal(context.gemShopPrice(1), 5000);
-  assert.equal(context.gemShopPrice(6), 800000);
-  assert.equal(context.gemShopPrice(10), 8000000000);
+  // CSV: config/CSV/game_parameters.csv:238。
+  assert.equal(context.gemShopPrice(1), 10000);
+  assert.equal(context.gemShopPrice(6), 50000000);
+  assert.equal(context.gemShopPrice(10), 1000000000000);
 });
 
 test('商店升級費用與等級上限正確', () => {
