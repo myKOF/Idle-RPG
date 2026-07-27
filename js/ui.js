@@ -1323,12 +1323,14 @@ function switchTab(name) {
   UI.tab = name;
   refreshUiPanelSubscriptions();
   markTabDirty(name);
-  document.querySelectorAll('.tab-btn').forEach(function (b) {
-    b.classList.toggle('active', b.getAttribute('data-tab') === name);
-  });
-  document.querySelectorAll('.tab').forEach(function (s) {
-    s.classList.toggle('active', s.id === 'tab-' + name);
-  });
+  var activeTabButton = document.querySelector('.tab-btn.active');
+  var nextTabButton = document.querySelector('.tab-btn[data-tab="' + name + '"]');
+  if (activeTabButton && activeTabButton !== nextTabButton) activeTabButton.classList.remove('active');
+  if (nextTabButton) nextTabButton.classList.add('active');
+  var activeTabSection = document.querySelector('.tab.active');
+  var nextTabSection = document.getElementById('tab-' + name);
+  if (activeTabSection && activeTabSection !== nextTabSection) activeTabSection.classList.remove('active');
+  if (nextTabSection) nextTabSection.classList.add('active');
   if (name !== 'settings') UI.saveNoticeId = null;
   // 熔爐改版公告：玩家切到熔爐分頁後停止頁籤閃爍
   if (name === 'newforge') {
