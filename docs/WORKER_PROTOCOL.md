@@ -1,6 +1,6 @@
-# Worker 協議 v2（已凍結）
+# Worker 協議 v3（已凍結）
 
-> 凍結日期：2026-07-27　凍結者：Claude Code　協議版本：`WORKER_PROTOCOL_VERSION = 2`
+> 凍結日期：2026-07-27　凍結者：Claude Code　協議版本：`WORKER_PROTOCOL_VERSION = 3`
 > **單一資料來源是 `js/worker/protocol.js`。** 本文件是說明；兩者衝突時以程式碼為準。
 > 修改協議必須經 `docs/WORKER_MIGRATION_PLAN.md` 第 7 節流程，由 Claude 統一改 `protocol.js` 並同步本文件、遞增版本號。
 
@@ -68,13 +68,39 @@
 
 ## 4. 指令規則
 
-### 4.1 不能傳物件參考
+### 4.1 物件識別（v3 修正）
 
-`postMessage` 是 structured clone，傳過去的是複本，改複本不會影響 Worker 內的真實狀態。因此：
+`postMessage` 是 structured clone，傳過去的是複本，改複本不會影響 Worker 內的真實狀態，所以對象一律用識別字串表達。
 
-- 既有吃 item 物件的函式（`doSalvage(it)`、`manualEnchant(it, key)`、`removeEnchantAt(it, i)`、`unsocketGem(it, i)`、`equipItem(it, slot, eq)`…）在協議中一律改為傳 **`itemId`**。
-- 裝備與寶石本來就有 `id: uid()`（`js/item.js`），`ui.js` 也已有 `findItemById()`，直接沿用即可。
-- Worker 端由 id 解析出物件後**呼叫原本的函式**，不得另寫一份平行實作。
+但 **v1 說的「一律傳 item.id」是錯的**——識別方式因物件而異：
+
+| 物件 | 識別方式 | 說明 |
+|---|---|---|
+| 裝備、零件 | 實例 `id`（`uid()`） | 有唯一實例 |
+| 融合寶石 | 實例 `id` | `socketFusedGem(it, fusedId)` |
+| **一般寶石** | `type` + `level` | **沒有 id**，是計數。`socketGem(it, type)`、`dismantleGem(type, lv)` |
+| 技能、天賦、附魔書 | 定義鍵（definition key） | 不是實例 id |
+| 熔爐 | 數字 `id` | `nf.nextId++` 產生，型別是 `int` 不是 `str` |
+| 寶石融合素材 | `{ kind:'plain', type, lv }` 或 `{ kind:'fused', id }` | `fuseGemsV2(ref1, ref2)` |
+
+**解析改為逐指令白名單**：指令的 `resolve` 欄位列出哪些參數要由 id 解析成物件。
+v1 用「參數名叫 `itemId` 就自動解析」的慣例會出事——`forgePlaceItem(id)` 收的是字串 id，
+自動解析會把物件傳進去。
+
+**同 id 歧義一律拒絕**：存檔會同時序列化 `G.equipment` 與 active 的 `G.equipmentSets`，
+同一件裝備可能有兩份同 id 的複本。Worker 的 `resolveItem` 命中多個不同物件時直接回錯，
+不猜——猜錯會複製或吃掉玩家的裝備。
+
+### 4.1.1 參數約束
+
+型別檢查擋不住列舉值與範圍，所以指令可宣告 `limit`：
+
+- `enum`：`settings.set.key` 只允許 `compareEq`、`forge.setAuto.key` 只允許 `autoDust`/`autoForge`。
+  任意 key/value 等於開一個能寫進任何狀態的後門。
+- `min` / `max`：例如 `tower.start.floor >= 1`。
+
+**多餘參數一律拒絕**（v3）。放行未宣告的欄位，會讓「主執行緒與 Worker 版本不一致」靜靜通過：
+指令看起來成功了，但多送的那個參數根本沒被讀取。
 
 ### 4.2 指令是非同步的
 
@@ -89,12 +115,20 @@
 
 ### 4.4 指令清單
 
-完整清單見 `js/worker/protocol.js` 的 `COMMANDS`，共 67 條，分為：
-`stage`(3)、`combat`(2)、`item`(7)、`gem`(12)、`player`(5)、`skill`(9)、`talent`(4)、`tower`(2)、`forge`(9)、`newforge`(7)、`factory`(2)、`settings`(1)、`save`(3)、`gm`(1)。
+完整清單見 `js/worker/protocol.js` 的 `COMMANDS`，v3 起共 **81 條**：
+`stage`(4)、`combat`(2)、`item`(9)、`gem`(12)、`player`(6)、`skill`(9)、`talent`(8)、
+`tower`(5)、`forge`(10)、`newforge`(9)、`factory`(2)、`settings`(1)、`save`(3)、`gm`(1)。
 
-`fn` 欄位是 Worker 內要呼叫的既有函式名。`fn: null` 共 **17 條**，分三類：
+（v1 為 67 條，v3 補上
+`item.unequip`、`item.upgrade`、`stage.goMax`、`player.setEquipView`、`talent.max`、
+`talent.potentialMax/Downgrade/Delete`、`tower.startAuto/flee/stopAuto`、
+`forge.setAutoFill`、`newforge.setQuality/setEnabled` 等 14 條 v1 遺漏的操作。）
 
-- **13 條**邏輯還寫在 `ui.js`，P3 搬進 Worker（下表）
+`fn` 欄位是 Worker 內要呼叫的既有函式名。`fn: null` 共 **23 條**，分三類：
+
+- **19 條**邏輯還寫在 `ui.js`，P3 搬進 Worker（下表，另加 v3 新增的
+  `item.unequip`、`forge.setAutoFill`、`newforge.setQuality`、`newforge.setEnabled`，
+  以及改為原子操作的 `item.equip`、`item.salvage`）
 - **3 條存檔指令**（`save.manual` / `save.toFolder` / `save.restart`）v2 起改為 `fn: null`，
   由 Worker 的 `COMMAND_IMPL` 實作成「產生 payload → 發 persist」。原本宣告直接呼叫
   `manualSave` / `createManualSaveToFolderV2` / `restartGame` 是錯的——那些函式會碰
@@ -218,4 +252,5 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 | 版本 | 日期 | 變更 |
 |---|---|---|
 | 1 | 2026-07-27 | 初版凍結：6 種入向訊息、8 種出向訊息、11 個面板鍵、67 條指令 |
-| 2 | 2026-07-27 | P2 存檔搬遷：新增 `load` 訊息與 `restart` 落地種類；`persist` payload 加 `meta`；`boot` 加 `maxRunId`；`save.*` 三條改為 `fn:null` 並由 Worker 端實作（原宣告會呼叫碰 I/O 的函式，與設計衝突）。<br>指令形狀類的缺口（寶石識別、`forge.*` 簽章、缺 `item.unequip` / `tower.flee` 等）由 Codex 於審查提出，屬 P3 範圍，將於 P3 開工前發 v3 |
+| 2 | 2026-07-27 | P2 存檔搬遷：新增 `load` 訊息與 `restart` 落地種類；`persist` payload 加 `meta`；`boot` 加 `maxRunId`；`save.*` 三條改為 `fn:null` 並由 Worker 端實作（原宣告會呼叫碰 I/O 的函式，與設計衝突） |
+| 3 | 2026-07-27 | P3 前置：收斂 Codex 審查提出的指令形狀缺口，逐條比對過實際函式簽章後修正。<br>①**物件識別**：一般寶石改傳 `type`+`level`（沒有 id）、融合寶石用 `fusedId`、熔爐 id 改 `int`、零件改 `partKey`。<br>②**簽章對齊**：`rerollSingleAffix` 改 `affixKey`、`forgePlaceItem` 不解析成物件、`forgePlaceGem` 改 `type`+`level`、`forgeToggleDust` 補 `index`、`convertGems` 改 `slots`+`targetType`、`fuseGemsV2` 改 `ref` 結構。<br>③**補 14 條遺漏指令**（見上）。<br>④**解析改逐指令白名單** `resolve`，同 id 歧義一律拒絕。<br>⑤**參數約束** `limit`（enum/min/max）與**拒絕多餘參數**。<br>⑥ `item.equip`/`unequip`/`salvage` 改為 `fn:null` 原子操作（只呼叫既有函式會複製出第二件物品）。<br>⑦ 補齊 `dirty` metadata（分解鑲寶石裝備會髒 `header`/`gems` 等） |

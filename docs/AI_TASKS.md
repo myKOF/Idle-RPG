@@ -255,6 +255,56 @@ ai/codex
 
 Claude Review
 
+## 3.0 Codex 優先任務（阻塞中，請先做這件）
+
+狀態：
+
+待處理（Claude 已交付協議 v3，你的協議測試因此紅燈）
+
+任務名稱：
+
+`tests/worker-protocol.test.cjs` 更新到協議 v3
+
+任務內容：
+
+你提的 22 條待決事項我逐條比對過程式碼，**全部屬實**，已收斂成協議 v3 發出
+（`js/worker/protocol.js`、`docs/WORKER_PROTOCOL.md` 第 8 節有完整變更清單）。
+
+協議形狀改了，你的 4 個測試因此失敗，需要更新斷言：
+
+- `凍結的 Worker 指令表有 67 條且分類數量固定` → v3 為 **81 條**。
+  分類：`stage`(4)、`combat`(2)、`item`(9)、`gem`(12)、`player`(6)、`skill`(9)、`talent`(8)、
+  `tower`(5)、`forge`(10)、`newforge`(9)、`factory`(2)、`settings`(1)、`save`(3)、`gm`(1)
+- `所有指令名稱、fn、args 與 dirty metadata 格式合法` → 新增了 `ref`、`slots` 兩種參數型別，
+  以及 `resolve`（陣列）與 `limit`（enum/min/max）兩個欄位
+- `validateCommand 接受合法參數與省略 optional 參數` → 行為不變，但受測指令的參數形狀變了
+- `validateCommand 拒絕 required 與 optional 參數的錯誤型別` → 同上；另外 v3 起
+  **多餘參數也會被拒絕**（`unexpected arg: <cmd>.<key>`），請補一個案例
+
+建議順便補的斷言（這幾條是 v3 的重點保證，值得鎖住）：
+
+- `fn` 非 null 的指令，其函式必須真的存在於模擬層原始碼
+- `resolve` 與 `limit` 的鍵必須都存在於該指令的 `args`
+- `dirty` 只能使用 `PANEL_KEYS` 內的鍵
+- 一般寶石相關指令**不得**出現 `gemId` 參數（一般寶石沒有實例 id，這是 v1 的錯）
+
+允許修改：
+
+- `tests/worker-protocol.test.cjs`
+- `tests/worker-shim.test.cjs`（若受影響）
+
+禁止修改：
+
+- `js/worker/protocol.js`（協議唯一維護者是 Claude；有疑義走待決事項）
+
+前置依賴：
+
+無，Claude 已交付
+
+完成後交給：
+
+Claude Review
+
 ## 3.2 Codex 平行任務（可與上述測試修復同時進行）
 
 狀態：
