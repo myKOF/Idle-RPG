@@ -1,4 +1,4 @@
-# AI_TASKS.md
+﻿# AI_TASKS.md
 
 本文件記錄 Idle-RPG 專案目前的 AI 任務分配。
 
@@ -93,7 +93,7 @@ P1 交付內容：
 
 - `?worker=1`：Worker 開機、模擬推進（10 秒推進到 stage 2~3）、tick 5Hz、persist 往返正常、0 錯誤
 - 不帶參數：舊單執行緒路徑完全不受影響，Console 無錯誤
-- `npm test`：417 pass / 95 fail，與基準線**完全相同**（同一份失敗清單）
+- `npm test`：失敗清單與基準線**完全相同**（47 fail，未新增任何失敗）
 
 任務內容：
 
@@ -135,7 +135,7 @@ P0 協議凍結（已完成）
 
 測試要求：
 
-- `npm test` **不得新增失敗案例**。開工前基準線：417 pass / 95 fail（既有問題，與遷移無關）
+- `npm test` **不得新增失敗案例**。開工前基準線：426 pass / 47 fail（既有問題，與遷移無關）
 - Worker 空跑不得出現 Console 錯誤
 
 完成後交給：
@@ -148,21 +148,43 @@ Antigravity 驗證 `?worker=1` 空跑；Codex 依協議撰寫協議測試
 
 狀態：
 
-進行中
+進行中（P1 協議測試已交付並合併；下列為 P2 期間任務）
 
 任務名稱：
 
-Web Worker 遷移 P1：協議測試
+既有測試失敗修復（A 類與 C 類）
 
-任務內容：
+已完成：
 
-- 先讀 `docs/WORKER_MIGRATION_PLAN.md` 與 `docs/WORKER_PROTOCOL.md`
-- 新增 `tests/worker-protocol.test.cjs`：驗證 `js/worker/protocol.js` 的指令表完整性
-  （指令名稱格式、args 型別合法、`validateCommand` 對缺參數／型別錯誤／未知指令的行為、
-  `PANEL_KEYS` 與模擬層實際使用的 `UI.dirty` 鍵完全一致）
-- 新增 `tests/worker-shim.test.cjs`：驗證日誌 shim 會把 `blog` / `flog` 推入事件佇列而非呼叫 DOM
-- 對協議有疑義一律寫入 `docs/WORKER_MIGRATION_PLAN.md` 第 9 節「待決事項」，
-  不得自行修改 `js/worker/protocol.js`
+- `tests/worker-protocol.test.cjs`、`tests/worker-shim.test.cjs`（commit 67938fe）
+- `docs/TEST_FAILURE_TRIAGE.md` 診斷報告（commit 48b4ca9），分類 A 32／B 14／C 1
+- 協議審查：22 條待決事項（commit fcb3a6a），品質高，已由 Claude 接手裁決
+
+任務內容（Claude 裁決結果）：
+
+**核可：A 類與 C 類，即刻可動手。B 類 14 條一律不動。**
+
+分兩批 commit，不得混在一起：
+
+批次一 — 純測試斷言過時（低風險，直接改測試）：
+`#1 attribute-tooltip`、`#3 boss-tooltip`、`#4 combat-log`、`#8 enchant-slot`、
+`#9 enemy-type-damage`、`#26 loot-event-accounting`、`#27 multi-enemy`、
+`#30 player-shield-bar`、`#31 rarity-colors`，以及 `#2 boss-display-state`（C 類，換行字元）。
+
+批次二 — 涉及數值平衡，**改測試前必須先列表對照**：
+`#5 #6 #7 combo-hits`、`#10 #11 essence-salvage`、`#12 field-equipment-drop-table`、
+`#13 field-gem-drop-table`、`#14 forge-duration`、`#22 gem-shop`、`#24 god-might` 等。
+
+這批的共同型態是「測試寫死的數值 ≠ `config/CSV/game_parameters.csv` 現值」。
+把測試改成符合 CSV 等於默認 CSV 是對的，但 CSV 也可能是被誤改的一方——
+**這是遊戲設計問題，不是工程問題**。因此：
+
+1. 先在 `docs/TEST_FAILURE_TRIAGE.md` 補一張對照表：
+   `測試期望值 | CSV 現值 | 差異 | 出處（CSV 行號／設計文件）`
+2. 停下來等使用者確認哪一邊才是想要的數值
+3. 確認後才改。使用者若指定以測試為準，則屬 B 類，改 `js/` 或 CSV 要走檔案鎖定流程
+
+不得刪除測試或放寬斷言來讓測試通過。
 
 工作區：
 
@@ -174,27 +196,28 @@ ai/codex
 
 允許修改：
 
-- tests/worker-protocol.test.cjs（新增）
-- tests/worker-shim.test.cjs（新增）
-- docs/WORKER_MIGRATION_PLAN.md 第 9 節「待決事項」（僅追加）
+- A 類與 C 類涉及的 `tests/*.test.cjs`
+- `css/style.css`（僅編碼轉 UTF-8，不改內容；獨立 commit）
+- `docs/TEST_FAILURE_TRIAGE.md`（補數值對照表）
+- `docs/WORKER_MIGRATION_PLAN.md` 第 9 節「待決事項」（僅追加）
 
 禁止修改：
 
-- js/worker/*（Claude 所有）
-- js/bridge.js（Claude 所有）
+- js/worker/*、js/bridge.js、index.html（Claude 所有）
+- js/save.js、js/storage.js（Claude P2 進行中）
 - js/ui.js（P3 才開放）
-- js/ 模擬層任何檔案
+- js/ 模擬層任何檔案、config/CSV/*（B 類與數值爭議未裁決前不得動）
+- tests/worker-*.test.cjs（已交付，勿混入本批）
 - 其他 AI 正在處理的檔案
-- 任務範圍外檔案
 - develop 分支
 
 前置依賴：
 
-Claude 完成 P0 協議凍結（已完成，可立即開工）；`shim.js` 測試需等 Claude 產出檔案
+無，可立即開工（批次二需等使用者確認數值）
 
 測試要求：
 
-`npm test` 不得新增失敗案例。開工前基準線：417 pass / 95 fail（既有問題，與遷移無關，不要順手修）
+`npm test` 不得新增失敗案例。開工前基準線：426 pass / 47 fail（既有問題，與遷移無關，不要順手修）
 
 完成後交給：
 
@@ -208,7 +231,7 @@ Claude Review
 
 任務名稱：
 
-既有測試失敗清理（95 fail / 32 檔）
+既有測試失敗清理（47 fail / 32 檔）
 
 任務內容：
 
@@ -217,7 +240,7 @@ Claude Review
 
 **第一步：診斷（唯讀，不改任何檔案）**
 
-逐一分類 95 個失敗，產出報告 `docs/TEST_FAILURE_TRIAGE.md`，每筆標註：
+逐一分類 47 個失敗，產出報告 `docs/TEST_FAILURE_TRIAGE.md`，每筆標註：
 
 - A 類：測試斷言已過時，原始碼是對的 → 改 `tests/`
 - B 類：原始碼有問題，測試是對的 → 改 `js/`（**遷移期間鎖定，不得動**）
@@ -275,20 +298,44 @@ Claude 裁決 B 類清單
 
 任務名稱：
 
-Web Worker 遷移 P0/P1：效能基準線與空跑驗證
+Web Worker 遷移 P1 驗證＋P2 存檔測試素材準備
+
+已完成：
+
+P0 效能與存檔基準線（commit 2104314）
 
 任務內容：
 
-- 先讀 `docs/WORKER_MIGRATION_PLAN.md` 與 `docs/WORKER_PROTOCOL.md`
-- 建立**現版（單執行緒）基準線**，作為 P4 效能收斂的對照：
-  - 主執行緒 FPS 與長任務（long task）分佈
-  - 一鍵分解大量背包裝備時的畫面凍結時長
-  - 開檔含離線結算的耗時
-  - 切換各頁籤的渲染耗時
-  - 記憶體佔用
-- 存檔基準線：記錄現版存檔內容與離線收益結果，供 P2 相容性比對
-- Claude 交付 P1 後，驗證 `?worker=1` 空跑：Console 無錯誤、舊路徑（不帶參數）不受影響
-- 產出測試報告與可重現步驟
+**一、P1 空跑驗證（現在可做，Claude 已交付並合併）**
+
+`?worker=1` 為驗證模式：Worker 以拋棄式全新狀態開機，**不讀也不寫玩家存檔**，
+所以此模式下畫面上的遊戲仍是舊路徑在跑，兩者互不影響。驗證重點是 Worker 本身活著、
+且舊路徑毫髮無傷。
+
+1. 開 `?worker=1`，Console 執行 `WorkerBridge.status()`，確認：
+   - `booted: true`、`errors: 0`、`pendingCommands: 0`
+   - `ticks` 隨時間增加（約 5 次／秒）
+   - `persists` 每 15 秒 +1（P1 只往返不落地，屬預期）
+   - `lastView` 的 stage / level / hp 會變動（代表模擬真的在跑）
+   - `shimDiag.storage` 必須恆為空物件。**若出現任何數字請立即回報**，
+     代表有存檔路徑誤用 Worker 內的記憶體替身
+2. 掛機 10 分鐘，記錄 `errors` 是否仍為 0、記憶體是否持續攀升（Worker 洩漏）
+3. 切到背景分頁 2 分鐘再切回，確認 `errors` 仍為 0
+4. **不帶參數**重開，確認舊路徑完全正常：Console 無錯誤、戰鬥推進、存檔正常、
+   各頁籤可切換。這項最重要——P1 若動到舊路徑就是失敗
+5. 對照 P0 基準線，確認舊路徑效能沒有因為多載入兩支 script 而變差
+
+**二、P2 存檔測試素材準備（Claude 進行中，先備料）**
+
+P2 是整個遷移風險最高的一段（存檔 I/O 從模擬層剝離）。請先備妥測試素材：
+
+- 匯出至少 3 份不同規模的存檔：新手（背包 <10 件）、中期、後期（背包接近上限、
+  多轉生、高塔進度、熔爐與神鑄運行中）
+- 每份存檔記錄關鍵數值快照：金幣、碎片、精華、等級、轉生數、最高關卡、背包件數
+- 記錄一次完整的離線收益結果（離線時數 + 結算後各項增量）
+- 準備「存檔資料夾」模式的測試環境（已授權的資料夾 + 現有檔案清單）
+
+這些素材 Claude 交付 P2 後會用來比對「舊路徑存檔 → 新路徑讀入 → 數值完全一致」。
 
 工作區：
 
@@ -311,15 +358,16 @@ ai/antigravity
 
 前置依賴：
 
-基準線可立即開始；空跑驗證需等 Claude 交付 P1
+無，兩項都可立即開始
 
 測試要求：
 
-基準線數據需可重現，記錄瀏覽器版本、硬體、存檔規模（背包件數）
+- 數據需可重現，記錄瀏覽器版本、硬體、存檔規模（背包件數）
+- 存檔素材請保留原始檔，不要只留數值摘要
 
 完成後交給：
 
-Claude（效能數據作為 P4 依據）
+Claude（P1 驗證結果 + P2 存檔素材）
 
 ---
 
