@@ -148,6 +148,22 @@ function backfillItemSockets() {
   if (Array.isArray(G.equipmentSets)) G.equipmentSets.forEach(walk);
 }
 
+/* 寶石商店維護：首次鋪貨與 8 小時定時重置。
+   原本由 UI 呼叫 rollGemShop / shopHourlyReset（兩者都在 INTERNAL_ONLY 名單上），
+   等於「有沒有打開寶石頁」決定商店會不會刷新。移到這裡由模擬層自己維護。
+
+   首次鋪貨的條件是 items 為空。買光不會讓它變空——buyShopGem 是設 item.sold = true
+   而非移除項目（item.js:318），所以不會出現免費重刷。 */
+function maintainGemShop() {
+  if (typeof gemShop !== 'function') return;
+  if (typeof shopHourlyReset === 'function') shopHourlyReset();
+  var s = gemShop();
+  if (typeof rollGemShop === 'function' && (!s.items || !s.items.length)) {
+    rollGemShop();
+    UI.dirty.gems = true;
+  }
+}
+
 /* 神鑄開放公告：原本由 uiTick 偵測並寫旗標。改由 Worker 在解鎖當下設旗標並送一次事件，
    UI 只負責顯示。旗標寫在存檔裡，所以只會提示一次。 */
 function checkForgeUnlockNotice() {
@@ -191,6 +207,7 @@ function loop() {
     if (_emitAcc >= TICK_EMIT_MS / 1000) {
       _emitAcc = 0;
       updateShownRes();
+      maintainGemShop();
       checkForgeUnlockNotice();
       emitTick();
     }
@@ -278,20 +295,36 @@ function inventoryCellView(it) {
 function buildInventoryPanel(params) {
   var items = Array.isArray(G.inventory) ? G.inventory : [];
   var details = null;
-  var ids = params && params.detailIds;
-  if (Array.isArray(ids) && ids.length) {
+  var i, j;
+
+  /* params.full：一次要回全部裝備的完整資料。
+     這是給關鍵字搜尋用的——它要比對詞條、傳奇特效、太古詞條，就是投影裁掉的那些。
+     關鍵字篩選只在內網／本機出現（ui.js 的 isInternalServer()），正式環境的玩家
+     看不到那個輸入框，所以這條路徑不會落到玩家身上。
+     ⚠️ 不要為了搜尋把這些欄位加回投影：實測加回 affixes 後裁切效益從 56% 掉到 17%。 */
+  if (params && params.full === true) {
     details = {};
-    var wanted = {};
-    for (var i = 0; i < ids.length && i < INV_DETAIL_MAX; i++) wanted[ids[i]] = true;
-    for (var j = 0; j < items.length; j++) {
-      if (items[j] && wanted[items[j].id]) details[items[j].id] = items[j];
+    for (j = 0; j < items.length; j++) if (items[j]) details[items[j].id] = items[j];
+  } else {
+    var ids = params && params.detailIds;
+    if (Array.isArray(ids) && ids.length) {
+      details = {};
+      var wanted = {};
+      for (i = 0; i < ids.length && i < INV_DETAIL_MAX; i++) wanted[ids[i]] = true;
+      for (j = 0; j < items.length; j++) {
+        if (items[j] && wanted[items[j].id]) details[items[j].id] = items[j];
+      }
     }
   }
+
   return {
     items: items.map(inventoryCellView),
     details: details,
     count: items.length,
-    cap: inventoryCapacityNow()
+    cap: inventoryCapacityNow(),
+    settings: G.settings,                     // compareEq：詳情是否顯示與現有裝備的比較
+    equipment: G.equipment,                   // 比較對象＝目前穿戴那套
+    viewEquipment: (typeof viewedEquipment === 'function') ? viewedEquipment() : G.equipment
   };
 }
 
@@ -300,7 +333,18 @@ function buildPanel(name, params) {
   var p = G.player || {};
   switch (name) {
     case 'header':
-      return { player: p, stage: G.stage, stats: (typeof getStats === 'function') ? getStats() : null };
+      /* stats 是使用中那套的屬性；viewStats 是面板檢視中那套（未穿上時的預覽）。
+         兩者在檢視使用中那套時是同一份，getViewStats 內部會直接回 getStats。
+         dps 取自 FIELD.dpsWindow（最多 10 筆），成本可忽略。 */
+      return {
+        player: p, stage: G.stage,
+        stats: (typeof getStats === 'function') ? getStats() : null,
+        viewStats: (typeof getViewStats === 'function') ? getViewStats() : null,
+        dps: (typeof currentDps === 'function') ? currentDps() : 0,
+        settings: G.settings,
+        autoEquip: !!(G.factory && G.factory.autoEquip),
+        equipView: G.equipView, equipActive: G.equipActive
+      };
     case 'battle':
       return {
         field: (typeof FIELD !== 'undefined') ? FIELD : null,
@@ -311,7 +355,10 @@ function buildPanel(name, params) {
     case 'equip':
       return {
         equipment: G.equipment, sets: G.equipmentSets, equipSetNames: G.equipSetNames,
-        equipActive: G.equipActive, equipView: G.equipView
+        equipActive: G.equipActive, equipView: G.equipView,
+        settings: G.settings,
+        stats: (typeof getStats === 'function') ? getStats() : null,
+        viewStats: (typeof getViewStats === 'function') ? getViewStats() : null
       };
     case 'inv':
       return buildInventoryPanel(params);

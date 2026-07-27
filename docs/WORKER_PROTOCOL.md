@@ -66,12 +66,19 @@
 背包預設**只回傳格子需要的欄位**，不含 `affixes` / `sockets` / `passive`：
 
 ```
-panel { name:'inv', params:{ detailIds?: [id, ...] } }
+panel { name:'inv', params:{ detailIds?: [id, ...], full?: true } }
   → { items: [{ id, rarity, slot, level, upgrade, synthesized, locked,
                 name, weaponType, enchant, enchants, kind, ancientCount }],
       details: { <id>: <完整裝備> } | null,
-      count, cap }
+      count, cap, settings, equipment, viewEquipment }
 ```
+
+`params.full = true` 一次回全部裝備的完整資料，給**關鍵字搜尋**用——它要比對詞條、
+傳奇特效、太古詞條，正是投影裁掉的那些。關鍵字篩選只在內網／本機出現
+（`ui.js` 的 `isInternalServer()`），正式環境玩家看不到該輸入框，這條路徑不會落到玩家身上。
+實測 800 件時 full 模式為 468 KB、主執行緒分派 10.5 ms，因此**只在搜尋時使用**。
+
+⚠️ 不要為了搜尋把詞條加回投影：實測加回 `affixes` 後裁切效益從 56% 掉到 17%。
 
 實測後期存檔 800 件：完整資料 305 KB，投影後 **133 KB（少 56%）**。
 保留 `affixes` 只能少 17%——詞條就是主體，所以它必須排除。
@@ -280,6 +287,7 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 |---|---|---|
 | 1 | 2026-07-27 | 初版凍結：6 種入向訊息、8 種出向訊息、11 個面板鍵、67 條指令 |
 | 2 | 2026-07-27 | P2 存檔搬遷：新增 `load` 訊息與 `restart` 落地種類；`persist` payload 加 `meta`；`boot` 加 `maxRunId`；`save.*` 三條改為 `fn:null` 並由 Worker 端實作（原宣告會呼叫碰 I/O 的函式，與設計衝突） |
+| 5.1 | 2026-07-27 | 補齊 P3 剩餘三個面板所需的投影：`header` 加 `viewStats`／`dps`／`settings`／`autoEquip`／`equipView`／`equipActive`；`equip` 加 `settings`／`stats`／`viewStats`；`inv` 加 `settings`／`equipment`／`viewEquipment` 與 `params.full`（dev 關鍵字搜尋用）。<br>寶石商店的首次鋪貨與 8 小時定時重置移入 Worker tick——原本由 UI 呼叫 `rollGemShop`／`shopHourlyReset`（兩者都在 `INTERNAL_ONLY` 名單），等於「有沒有打開寶石頁」決定商店會不會刷新 |
 | 5 | 2026-07-27 | P4 背包裁切：`panel` 訊息新增 `params`；`inv` 改為欄位投影 + `detailIds` 按需索取明細。實測後期存檔 305 KB → 133 KB（少 56%），主執行緒分派 3.2 ms → 2.5 ms。趁 Codex 尚未轉換背包頁時定案，避免他們照舊結構寫完再改一次 |
 | 4 | 2026-07-27 | 收斂 Codex `UI_STATE_INVENTORY.md` 盤點的 10 項缺口。<br>新增 `gem.composeAll`、`gem.dismantleAll`（現行 UI 是最多 2500／999 次的同步迴圈，逐次跨執行緒不可行）、`tower.confirmResult`（含連挑續場，語意大於 `finish`）、`stats.reset`（`RUN_STATS`／`LOOT_STATS` 都在 Worker 內）。<br>`tower.start` 改 `fn:null`：手動挑戰同時代表取消等待中的連挑，兩步必須同一原子操作。<br>四項「渲染函式在改狀態」改為搬回 Worker 而非開指令：資源顯示旗標、鑲孔補齊、神鑄開放公告已完成；**護盾正規化經查證不需要搬**——模擬層的 `refreshShieldMaxAfterGain` 已在每一條護盾寫入路徑維護該欄位，`ui.js` 的 `playerShieldMax` 是冗餘，其「版本號遷移」分支永遠不會執行（戰鬥實體是純執行期物件，存檔不含實體）。改為請 Codex 縮成純讀取。<br>`item.toSynth` 不新增：功能被 `SYNTHESIS_ENABLED = false` 關閉。<br>指令總數 81 → **85** |
 | 3.1 | 2026-07-27 | 新增 `PERSIST_KINDS.MANUAL_FOLDER`。P2 把 `manualSave` 與 `createManualSaveToFolderV2` 併成同一條資料夾路徑，導致未連接資料夾時「一鍵分解前的保護存檔」靜靜失敗——多數玩家沒接資料夾，那份保護存檔等於不存在。現在 `save.manual` 寫瀏覽器存檔記錄（空間不足才退回資料夾），`save.toFolder` 沒接資料夾就明確失敗 |
