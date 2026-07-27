@@ -39,3 +39,39 @@ test('寶石頁由 Worker panel 投影渲染並以 Command 修改狀態', () => 
     assert.match(ui, new RegExp("sendGemUiCommand\\(\\s*'" + command.replace('.', '\\.') + "'"));
   }
 });
+
+test('裝備與背包頁由 Worker panel 投影渲染並以 Command 修改狀態', () => {
+  const renderEquip = functionBody('renderEquip');
+  const renderInventory = functionBody('renderInventory');
+  const keywordFilter = functionBody('updateInventoryKeywordFilter');
+  const detailAction = functionBody('detailAction');
+
+  assert.match(ui, /equip:\s*\['equip', 'inv', 'gems', 'header'\]/);
+  assert.match(renderEquip, /uiEquipPanelSnapshot\(\)/);
+  assert.match(renderEquip, /equipViewEquipment\(equipSnapshot\)/);
+  assert.doesNotMatch(renderEquip, /\bviewedEquipment\(/);
+  assert.match(renderInventory, /uiInventoryPanelSnapshot\(\)/);
+  assert.doesNotMatch(renderInventory, /\bG\.inventory\b/);
+
+  assert.match(keywordFilter, /filterKeyword[\s\S]*requestPanelData\('inv', true, \{ full: true \}\)/);
+  assert.match(ui, /WorkerBridge\.requestPanel\(key, requestParams\)/);
+  assert.match(ui, /requestPanelData\('inv', true, \{ detailIds: \[/);
+
+  for (const command of [
+    'item.equip', 'item.unequip', 'item.setLock', 'item.salvage',
+    'item.salvageBulk', 'item.upgrade', 'item.enchant',
+    'item.removeEnchant', 'item.rerollAffix', 'gem.socket',
+    'gem.socketFused', 'gem.unsocket', 'player.switchEquipSet',
+    'player.setEquipView', 'player.renameEquipSet', 'player.buyInvUpgrade',
+    'player.setInvSort', 'factory.setSalvageSettings'
+  ]) {
+    assert.match(
+      ui,
+      new RegExp("(?:sendUiCommand\\(\\s*|commandName\\s*=\\s*)'" + command.replace('.', '\\.') + "'")
+    );
+  }
+
+  assert.match(detailAction, /if \(workerUiStateEnabled\(\) && act !== 'tosynth'\)/);
+  assert.match(ui, /sendUiCommand\('settings\.set', \{ key: 'compareEq'/);
+  assert.match(ui, /sendUiCommand\('factory\.setAutoEquip'/);
+});

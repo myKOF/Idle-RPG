@@ -25,7 +25,7 @@ test('背包品質篩選功能介面與邏輯驗證', () => {
   // 2. 驗證 js/ui.js 中有讀取篩選下拉選單並過濾裝備顯示的邏輯
   assert.match(ui, /var\s+filterSelect\s*=\s*\$id\('inv-rarity-filter'\);/);
   assert.match(ui, /var\s+filterRarity\s*=\s*filterSelect\s*\?\s*filterSelect\.value\s*:\s*'';/);
-  assert.match(ui, /G\.inventory\.filter/);
+  assert.match(ui, /displayedItems\s*=\s*inventoryItems\.filter/);
 
   // 3. 驗證 js/ui.js 中有監聽篩選變更並重繪背包的事件監聽器
   assert.match(ui, /var\s+rarityFilter\s*=\s*\$id\('inv-rarity-filter'\);/);
