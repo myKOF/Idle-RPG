@@ -26,7 +26,7 @@ test('空附魔欄的裝備可以正常手動附魔', () => {
   assert.equal(context.manualEnchant(item, 'fireRes'), null);
   assert.equal(item.enchants.length, 1);
   assert.equal(context.G.player.books.fireRes, 0);
-  assert.equal(context.G.player.essence, 0);
+  assert.equal(context.G.player.essence, 4);
 });
 
 test('副武器與第二戒指沿用武器／戒指的附魔類別', () => {

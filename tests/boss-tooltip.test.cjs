@@ -26,11 +26,11 @@ test('野外怪物閃避率公式串接驗證', () => {
   const applyParams = fs.readFileSync(path.join(root, 'tools/apply_params.cjs'), 'utf8');
 
   // 確保 monsterStatsFor 內部的 dodge 使用公式並與 params 對接
-  assert.match(formula, /dodge:\s*\d+\s*\+\s*stage\s*\*\s*\d+/);
+  assert.match(formula, /dodge:\s*segmentedLevelGrowth\(FIELD_MONSTER_DODGE_BASE,\s*stage,\s*FIELD_MONSTER_DODGE_GROWTH\)/);
   assert.match(formula, /m\.dodge\s*\+=\s*\d+/);
 
   // 確保 apply_params.cjs 有對接 4-野外怪物 閃避率 及 菁英閃避累加 規則
-  assert.match(applyParams, /怪物閃避-a/);
-  assert.match(applyParams, /怪物閃避-b/);
-  assert.match(applyParams, /m\.dodge \+=/);
+  assert.match(applyParams, /scalar\('data',\s*'FIELD_MONSTER_DODGE_BASE',\s*'4-野外怪物',\s*'閃避率',\s*0\)/);
+  assert.match(applyParams, /arrayContent\('data',\s*'FIELD_MONSTER_DODGE_GROWTH',\s*levelGrowthContent\('4-野外怪物',\s*'閃避率'\)/);
+  assert.match(applyParams, /numCtx\('formula',\s*'m\.dodge \+= ',\s*';',\s*P\('4-野外怪物',\s*'菁英倍率',\s*3\),\s*'菁英-閃避'\)/);
 });

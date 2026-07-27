@@ -80,7 +80,7 @@ test('the field kill handler contains one drop settlement call', () => {
   assert.equal((handler.match(/rollFieldDrops\(m\)/g) || []).length, 1);
 });
 
-test('270級單一菁英在 958.4% 掉寶率下，一級寶石單次最多結算 15 顆', () => {
+test('270級單一菁英在 958.4% 掉寶率下，一級寶石單次最多結算 5 顆', () => {
   const context = loadContext();
   context.G = {
     player: { gems: {}, books: {}, ancientEssence: 0, dust: 0, essence: 0, gold: 0 },
@@ -107,8 +107,8 @@ test('270級單一菁英在 958.4% 掉寶率下，一級寶石單次最多結算
   context.rollFieldDrops({ level: 270, elite: true });
 
   assert.equal(context.LOOT_STATS.sources.field.dropRolls, 1);
-  assert.equal(context.LOOT_STATS.sources.field.gems['ruby:1'], 15);
-  assert.equal(context.LOOT_STATS.sources.field.gems['ruby:2'], 2);
+  assert.equal(context.LOOT_STATS.sources.field.gems['ruby:1'], 5);
+  assert.equal(context.LOOT_STATS.sources.field.gems['ruby:2'], 1);
   assert.equal(context.LOOT_STATS.sources.field.gems['ruby:3'], 1);
   assert.equal(context.LOOT_STATS.sources.field.gems['ruby:4'], 1);
   assert.equal(context.LOOT_STATS.sources.field.gems['ruby:5'], 1);

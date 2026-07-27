@@ -77,7 +77,7 @@ test('多敵人逐一擊殺時各自結算經驗與掉落，全部擊殺後才�
     stage: { current: 1, best: 1, kills: 0, autoAdvance: true },
     tower: { active: false }
   };
-  context.FIELD.player = { hp: 100, maxHp: 100 };
+  context.FIELD.player = context.newPlayerEntity({ hp: 100, mp: 0, aspd: 1 });
   context.getStats = () => ({ hp: 100, goldBonus: 0, xpBonus: 0, moveSpeed: 0, passives: {} });
   context.healPlayer = () => {};
   context.gainXp = (amount) => xp.push(amount);
