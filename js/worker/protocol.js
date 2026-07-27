@@ -11,7 +11,7 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-var WORKER_PROTOCOL_VERSION = 3;
+var WORKER_PROTOCOL_VERSION = 4;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -130,6 +130,10 @@ var COMMANDS = {
   'gem.dismantleFused':    { fn: 'dismantleFusedGem', args: { fusedId: 'id' },                    dirty: ['gems', 'header'] },
   'gem.convert':           { fn: 'convertGems',      args: { slots: 'slots', targetType: 'str' }, dirty: ['gems'] },
   'gem.compose':           { fn: 'composeGems',      args: { type: 'str', level: 'int' },         dirty: ['gems'] },
+  /* 全部合成／全部拆解：現行 UI 是同步 while 迴圈（最多 2500 與 999 次）。
+     逐次跨執行緒往返不可行，必須在 Worker 內一次跑完再回報結果。 */
+  'gem.composeAll':        { fn: null,               args: { type: 'str', level: 'int' },         dirty: ['gems', 'header'] },
+  'gem.dismantleAll':      { fn: null,               args: { type: 'str', level: 'int' },         dirty: ['gems', 'header'] },
   'gem.fuse':              { fn: 'fuseGemsV2',       args: { ref1: 'ref', ref2: 'ref' },          dirty: ['gems'] },
   'gem.shopBuy':           { fn: 'buyShopGem',       args: { index: 'int' },                      dirty: ['gems', 'header'] },
   'gem.shopBuyAll':        { fn: 'buyAllShopGems',   args: {},                                    dirty: ['gems', 'header'] },
@@ -169,9 +173,13 @@ var COMMANDS = {
   'talent.potentialDelete':    { fn: 'potentialDelete',    args: { id: 'str' },                   dirty: ['talents', 'header'] },
 
   /* -- 煉獄之塔 -- */
-  'tower.start':           { fn: 'startTowerFight',  args: { floor: 'int' }, limit: { floor: { min: 1 } }, dirty: ['tower', 'battle'] },
+  /* fn:null：手動挑戰同時代表「取消等待中的連挑」（ui.js 現行是先清 TOWER.auto 再開打）。
+     這個狀態轉移必須與開打同一個原子操作，否則清除與開打之間的 tick 會看到中間狀態。 */
+  'tower.start':           { fn: null,               args: { floor: 'int' }, limit: { floor: { min: 1 } }, dirty: ['tower', 'battle'] },
   'tower.startAuto':       { fn: 'startTowerAuto',   args: { floor: 'int', count: 'int' }, limit: { floor: { min: 1 }, count: { min: 1 } }, dirty: ['tower', 'battle'] },
   'tower.finish':          { fn: 'finishTowerFight', args: {},                                    dirty: ['tower', 'battle'] },
+  /* 結算確認：含連挑續場判定，語意比 finish 大，不能用 finish 取代 */
+  'tower.confirmResult':   { fn: 'confirmTowerResult', args: {},                                  dirty: ['tower', 'battle', 'header'] },
   'tower.flee':            { fn: 'fleeTower',        args: {},                                    dirty: ['tower', 'battle'] },
   'tower.stopAuto':        { fn: 'stopTowerAutoFromResult', args: {},                             dirty: ['tower'] },
 
@@ -213,6 +221,11 @@ var COMMANDS = {
   /* -- 熔爐設定 / 拆解設定 -- */
   'factory.setSalvageSettings': { fn: null, args: { maxRarity: 'int?', maxLevel: 'int?', maxAncient: 'int?' }, dirty: ['factory'] },
   'factory.setAutoEquip':       { fn: null, args: { on: 'bool' },                                 dirty: ['factory'] },
+
+  /* -- 統計 --
+     RUN_STATS 與 LOOT_STATS 都建立在 Worker 內（combat.js / stats.js），
+     主執行緒拿到的只是投影，清除必須由 Worker 執行。 */
+  'stats.reset':           { fn: null,               args: {},                                    dirty: ['battle'] },
 
   /* -- 設定 --
      任意 key/value 等於開一個可以寫進任何狀態的後門，改為白名單。 */

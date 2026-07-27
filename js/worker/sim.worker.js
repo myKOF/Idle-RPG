@@ -58,6 +58,60 @@ function backgroundSuspended() {
   return _hiddenAt > 0 && (Date.now() - _hiddenAt) >= BG_SUSPEND_AFTER_MS;
 }
 
+/* ---- 由 ui.js 搬回 Worker 的狀態維護 ----
+   這三段原本寫在渲染函式裡，等於「畫面更新時順便改存檔」。渲染有副作用本身就是問題：
+   切到別的頁籤就不會發生，開了 PiP 又會重複發生。狀態維護屬於模擬層，搬回這裡。
+   P3 請把 ui.js 對應的那幾段刪掉，只保留讀取。 */
+
+/* 資源列首次顯示旗標：數量大於 0 就永久解鎖（原 ui.js renderHeader 內）。
+   鍵名沿用 DOM id（r-essence…），因為既有存檔就是這樣存的，不能為了好看而破壞相容。 */
+var SHOWN_RES_KEYS = [
+  ['r-essence', 'essence'], ['r-dust', 'dust'], ['r-ancient-essence', 'ancientEssence'],
+  ['r-soul-origin', 'soulOrigin'], ['r-demon-seed', 'demonSeed']
+];
+
+function updateShownRes() {
+  var p = G && G.player;
+  if (!p) return;
+  if (!p.shownRes) p.shownRes = {};
+  for (var i = 0; i < SHOWN_RES_KEYS.length; i++) {
+    if ((p[SHOWN_RES_KEYS[i][1]] || 0) > 0) p.shownRes[SHOWN_RES_KEYS[i][0]] = true;
+  }
+  if (typeof totalGemsAll === 'function' && totalGemsAll() > 0) p.shownRes['r-gems'] = true;
+  var books = 0;
+  for (var bk in p.books) books += p.books[bk] || 0;
+  if (books > 0) p.shownRes['r-books'] = true;
+}
+
+/* 鑲孔補齊：舊存檔的裝備可能缺 sockets 欄位。原本靠 ui.js 渲染詳情時才補
+   （`ensureSockets(it)`），代表沒點開過的裝備永遠不會被補到，鑲孔數也就時有時無。
+   改在讀檔後一次補齊全部裝備。 */
+function backfillItemSockets() {
+  if (typeof ensureSockets !== 'function' || !G) return;
+  var seen = [];
+  function walk(list) {
+    if (!list) return;
+    for (var k in list) {
+      var it = list[k];
+      if (it && it.id && seen.indexOf(it) === -1) { seen.push(it); ensureSockets(it); }
+    }
+  }
+  walk(G.inventory);
+  walk(G.equipment);
+  if (Array.isArray(G.equipmentSets)) G.equipmentSets.forEach(walk);
+}
+
+/* 神鑄開放公告：原本由 uiTick 偵測並寫旗標。改由 Worker 在解鎖當下設旗標並送一次事件，
+   UI 只負責顯示。旗標寫在存檔裡，所以只會提示一次。 */
+function checkForgeUnlockNotice() {
+  if (typeof forgeUnlocked !== 'function' || !forgeUnlocked()) return;
+  var fs = forgeState();
+  if (fs.unlockNotified) return;
+  fs.unlockNotified = true;
+  UI.dirty.header = true;
+  shimPushEvent('notice', { key: 'forgeUnlocked', modal: true });
+}
+
 function simStep(dt) {
   var combatPaused = typeof isCombatPaused === 'function' && isCombatPaused();
   if (!combatPaused) GT += dt;
@@ -87,7 +141,12 @@ function loop() {
     }
 
     _emitAcc += stepped;
-    if (_emitAcc >= TICK_EMIT_MS / 1000) { _emitAcc = 0; emitTick(); }
+    if (_emitAcc >= TICK_EMIT_MS / 1000) {
+      _emitAcc = 0;
+      updateShownRes();
+      checkForgeUnlockNotice();
+      emitTick();
+    }
 
     _autosaveAcc += stepped;
     if (_autosaveAcc >= AUTOSAVE_SEC) { _autosaveAcc = 0; requestPersist(PERSIST_KINDS.AUTO); }
@@ -149,18 +208,49 @@ function emitTick() {
    P4 會依實測結果再裁切；目前先給該面板需要的狀態切片，不整份丟。 */
 function buildPanel(name) {
   if (!G) return null;
+  var p = G.player || {};
   switch (name) {
-    case 'header': return { player: G.player, stage: G.stage };
-    case 'battle': return { field: typeof FIELD !== 'undefined' ? FIELD : null, stage: G.stage };
-    case 'equip': return { equipment: G.equipment, equipSetNames: G.equipSetNames, sets: G.equipmentSets };
-    case 'inv': return { inventory: G.inventory };
-    case 'forge': return { forge: typeof forgeState === 'function' ? forgeState() : G.forge };
-    case 'newforge': return { newForge: G.newForge };
-    case 'factory': return { factory: G.factory, salvageSettings: G.player && G.player.salvageSettings };
-    case 'tower': return { tower: G.tower };
-    case 'gems': return { gems: G.gems, shop: typeof gemShop === 'function' ? gemShop() : null };
-    case 'skills': return { skills: G.player && G.player.skills, loadout: G.player && G.player.loadout, fusions: G.fusions };
-    case 'talents': return { talents: G.talents, potentials: G.potentials };
+    case 'header':
+      return { player: p, stage: G.stage, stats: (typeof getStats === 'function') ? getStats() : null };
+    case 'battle':
+      return {
+        field: (typeof FIELD !== 'undefined') ? FIELD : null,
+        tower: (typeof TOWER !== 'undefined') ? TOWER : null,
+        stage: G.stage, zoneProgress: G.zoneProgress,
+        runStats: self.RUN_STATS || null, lootStats: self.LOOT_STATS || null
+      };
+    case 'equip':
+      return {
+        equipment: G.equipment, sets: G.equipmentSets, equipSetNames: G.equipSetNames,
+        equipActive: G.equipActive, equipView: G.equipView
+      };
+    case 'inv':
+      return { inventory: G.inventory, invUpgrades: p.invUpgrades };
+    case 'forge':
+      return { forge: (typeof forgeState === 'function') ? forgeState() : G.forge };
+    case 'newforge':
+      return { newForge: G.newForge };
+    case 'factory':
+      return { factory: G.factory, salvageSettings: p.salvageSettings };
+    case 'tower':
+      return { tower: G.tower, runtime: (typeof TOWER !== 'undefined') ? TOWER : null };
+    case 'gems':
+      // 一般寶石是 { type: { lv: n } } 計數；融合寶石才是個別實體
+      return {
+        gems: p.gems, fusedGems: p.fusedGems,
+        shop: (typeof gemShop === 'function') ? gemShop() : p.gemShop
+      };
+    case 'skills':
+      return {
+        skills: p.skills, unlocks: p.skillUnlocks, loadout: p.loadout,
+        fusions: p.fusions, points: p.skillPoints, budget: p.skillPointBudget
+      };
+    case 'talents':
+      // 天賦與潛能等級都在 player.talents 底下（levels / potentialLevels）
+      return {
+        talents: p.talents, reincarnations: p.reincarnations,
+        talentPoints: p.reincarnationTalentPoints
+      };
     default: return null;
   }
 }
@@ -551,6 +641,56 @@ var COMMAND_IMPL = {
     return true;
   },
 
+  /* ---- 寶石批次 ----
+     行為對齊 ui.js 的同步迴圈，上限也照抄：跨執行緒逐次往返不可行，一次跑完再回報。 */
+  'gem.composeAll': function (a) {
+    var made = 0, err = null;
+    while (made < 2500 && !(err = composeGems(a.type, a.level))) made++;
+    if (made > 0) {
+      blog('♻️ 全部合成：' + gemLabel(a.type, a.level) + ' ×' + (made * GEM_COMPOSE_INPUT_COUNT) +
+        ' → ' + gemLabel(a.type, a.level + 1) + ' ×' + made, 'good', 'factory');
+    }
+    UI.dirty.gems = true;
+    return { made: made, err: made > 0 ? null : err };
+  },
+
+  'gem.dismantleAll': function (a) {
+    var count = 0, gain = 0, r = null;
+    while (count < 999) {
+      r = dismantleGem(a.type, a.level);
+      if (r.err) break;
+      count++; gain += r.n;
+    }
+    if (count > 0) {
+      blog('⛏️ 全部拆解：' + gemLabel(a.type, a.level) + ' ×' + count + ' → ' +
+        gemLabel(a.type, 1) + ' ×' + gain, 'good', 'factory');
+    }
+    UI.dirty.gems = true;
+    return { count: count, gain: gain, err: count > 0 ? null : (r && r.err) };
+  },
+
+  /* ---- 高塔 ----
+     手動挑戰同時代表「取消等待中的連挑」；ui.js 現行是先清 TOWER.auto 再開打，
+     兩步必須在同一個指令內完成。 */
+  'tower.start': function (a) {
+    TOWER.auto = null;
+    TOWER.autoNextCd = 0;
+    startTowerFight(a.floor);
+    UI.dirty.tower = true; UI.dirty.battle = true;
+    return { active: !!(G.tower && G.tower.active) };
+  },
+
+  /* ---- 統計 ---- */
+  'stats.reset': function () {
+    if (self.RUN_STATS) {
+      RUN_STATS.skills = {};
+      RUN_STATS.maxStage = (G && G.stage) ? G.stage.current : 1;
+    }
+    if (typeof resetLootStats === 'function') resetLootStats();
+    UI.dirty.battle = true;
+    return true;
+  },
+
   /* ---- 設定 ---- */
   'settings.set': function (a) {
     G.settings = G.settings || {};
@@ -622,6 +762,8 @@ function boot(msg) {
     loaded = (typeof migrateSave === 'function') ? migrateSave(msg.save) : msg.save;
   }
   G = loaded || newGameState();
+  backfillItemSockets();
+  updateShownRes();
   if (typeof markStatsDirty === 'function') markStatsDirty();
   if (typeof initFieldPlayer === 'function') initFieldPlayer();
 
@@ -657,6 +799,8 @@ function loadIntoRunningSim(msg) {
   if (!msg.save) { reportError('load', new Error('load 訊息沒有帶存檔內容')); return; }
   requestPersist(PERSIST_KINDS.AUTO); // 目前進度先保底
   G = (typeof migrateSave === 'function') ? migrateSave(msg.save) : msg.save;
+  backfillItemSockets();
+  updateShownRes();
   if (typeof markStatsDirty === 'function') markStatsDirty();
   if (typeof initFieldPlayer === 'function') initFieldPlayer();
   if (typeof applyOfflineProgress === 'function') applyOfflineProgress();

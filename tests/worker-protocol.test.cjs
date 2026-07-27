@@ -17,14 +17,15 @@ const EXPECTED_COMMAND_COUNTS = {
   stage: 4,
   combat: 2,
   item: 9,
-  gem: 12,
+  gem: 14,
   player: 6,
   skill: 9,
   talent: 8,
-  tower: 5,
+  tower: 6,
   forge: 10,
   newforge: 9,
   factory: 2,
+  stats: 1,
   settings: 1,
   save: 3,
   gm: 1
@@ -86,10 +87,10 @@ function validArgs(spec) {
   return args;
 }
 
-test('凍結的 Worker 指令表有 81 條且分類數量固定', () => {
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 3);
+test('凍結的 Worker 指令表有 85 條且分類數量固定', () => {
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 4);
   const names = Object.keys(protocol.COMMANDS);
-  assert.equal(names.length, 81);
+  assert.equal(names.length, 85);
 
   const counts = {};
   for (const name of names) {
