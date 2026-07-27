@@ -84,9 +84,18 @@ function addLog(boxId, msg, cls, cap) {
   shimPushEvent('log', { msg: msg, cls: cls, box: boxId, cap: cap });
 }
 
-function floatText(target, text, cls) {
+/* 戰鬥飄字。實際簽章是 floatText(elId, text, cls, damageValue, ent)。
+
+   elId 已經是元素 id 字串——util.js 的 playerEventFloatTarget / enemyEventFloatTarget
+   會先從 ent.floatSel 解析出來，而那兩支就在模擬層，Worker 內可正常執行。
+
+   ⚠️ 刻意不傳 ent：主執行緒是用 activeEnemies.indexOf(item.ent) 做**物件識別比對**
+   （ui.js 的 flushPendingEnemyFloats），而 structured clone 過來的是複本，
+   indexOf 永遠不會相等，傳過去只會讓飄字被靜靜丟棄。識別資訊已經在 elId 裡
+   （mv-float-N 對應敵人槽位），UI 端請改用 elId 判斷目標是否仍存在。 */
+function floatText(elId, text, cls, damageValue) {
   _diag(SHIM_DIAG.ui, 'floatText');
-  shimPushEvent('float', { target: target, text: text, cls: cls });
+  shimPushEvent('float', { elId: elId, text: text, cls: cls, damageValue: damageValue });
 }
 
 /* ---- 其餘 ui.js 函式替身 ----

@@ -58,7 +58,11 @@ var EVENT_KINDS = {
   NFLOG: 'nflog',   // { msg, cls }             對應 nflog()
   LOOT: 'loot',     // { kind, ...}             對應 window.recordLoot*
   NOTICE: 'notice', // { key, text, modal }     一次性公告／改版提示
-  FLOAT: 'float'    // { target, text, cls }    戰鬥飄字
+  /* { elId, text, cls, damageValue }  戰鬥飄字。
+     elId 是目標圖層的元素 id（player 事件為 tp-float／tb-float，敵人為 mv-float-N），
+     由 util.js 的 playerEventFloatTarget／enemyEventFloatTarget 在 Worker 內解析完成。
+     ⚠️ 不帶 ent：主執行緒原本用物件識別比對，複本永遠不相等，請改以 elId 判斷目標。 */
+  FLOAT: 'float'
 };
 
 /* ---- 存檔落地種類（PERSIST.kind）---- */

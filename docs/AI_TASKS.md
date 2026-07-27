@@ -784,6 +784,26 @@ Claude（P1 驗證結果 + P2 存檔素材）
 
 目前等待修正：
 
+**Codex — worker 模式下的事件目前只處理 `notice`，其餘全部丟棄**
+
+`handleWorkerUiEvents`（`js/ui.js:443`）只處理 `kind === 'notice'`，
+以下事件送到主執行緒後被靜靜丟掉（12 秒取樣實測）：
+
+| 事件 | 12 秒內筆數 | 影響 |
+|---|---|---|
+| `flog` | 142 | 熔爐日誌全空 |
+| `log` | 11 | **戰鬥日誌全空**（最明顯） |
+| `float` | 6 | 戰鬥飄字消失 |
+| `loot` | 視掉落而定 | 掉落統計（若不改讀 `battle` panel 的 `lootStats`）|
+
+這是 P3 尚未做到的部分、不是 bug，但 P5 移除舊路徑前必須完成，
+否則玩家會看到一個沒有戰鬥日誌的遊戲。
+
+`float` 事件的形狀已於 2026-07-27 修正為 `{ elId, text, cls, damageValue }`，
+**刻意不帶 `ent`**：主執行緒原本用 `activeEnemies.indexOf(item.ent)` 做物件識別比對，
+structured clone 的複本永遠不會相等，傳過去只會讓飄字被丟棄。
+識別資訊已在 `elId`（`mv-float-N` 對應敵人槽位），請改以 `elId` 判斷目標是否仍存在。
+
 **Codex — `ui.js` 存取層 Code Review（commit 8fc5a63）**
 
 Claude 於 2026-07-27 唯讀檢查，2 項 Medium、2 項 Low、1 項建議。
