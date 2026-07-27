@@ -28,6 +28,315 @@ var UI = {
   }
 };
 
+/*
+ * P3 migration order.  Keep the coupled equipment/inventory pair together:
+ * both panels also invalidate gems and header data.
+ */
+var UI_PANEL_MIGRATION_ORDER = [
+  ['talents'],
+  ['skills'],
+  ['gems'],
+  ['tower'],
+  ['newforge'],
+  ['forge'],
+  ['equip', 'inv'],
+  ['header']
+];
+
+/*
+ * Worker-backed UI state.  Renderers migrate to viewState()/panelData() one
+ * panel at a time; these caches deliberately have no G fallback.
+ */
+var UI_WORKER_STATE = {
+  bridgeBound: false,
+  view: null,
+  viewSubscribed: false,
+  panels: Object.create(null),
+  panelSubscriptions: Object.create(null),
+  panelRequests: Object.create(null),
+  panelVersions: Object.create(null)
+};
+
+/*
+ * A command can own several keys (for example an item and a furnace).  The
+ * whole entry is released by its ACK or by the first authoritative panel
+ * response requested after the command was sent.
+ */
+var UI_COMMAND_PENDING = {
+  seq: 0,
+  byKey: Object.create(null),
+  byToken: Object.create(null)
+};
+
+function hasOwnUiState(obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}
+
+function workerUiStateEnabled() {
+  return typeof WorkerBridge !== 'undefined' &&
+    WorkerBridge &&
+    typeof WorkerBridge.enabled === 'function' &&
+    WorkerBridge.enabled();
+}
+
+function validUiPanelKey(key) {
+  if (typeof isPanelKey === 'function') return isPanelKey(key);
+  if (typeof PANEL_KEYS === 'undefined') return false;
+  return PANEL_KEYS.indexOf(key) >= 0;
+}
+
+function viewState() {
+  UI_WORKER_STATE.viewSubscribed = true;
+  return UI_WORKER_STATE.view;
+}
+
+function requestPanelData(key, force) {
+  if (!workerUiStateEnabled() ||
+      typeof WorkerBridge.requestPanel !== 'function' ||
+      !validUiPanelKey(key)) {
+    return false;
+  }
+
+  UI_WORKER_STATE.panelSubscriptions[key] = true;
+  if (!force && hasOwnUiState(UI_WORKER_STATE.panels, key)) return true;
+  if (UI_WORKER_STATE.panelRequests[key]) return true;
+
+  UI_WORKER_STATE.panelRequests[key] = true;
+  if (!WorkerBridge.requestPanel(key)) {
+    delete UI_WORKER_STATE.panelRequests[key];
+    return false;
+  }
+  return true;
+}
+
+function panelData(key) {
+  if (!validUiPanelKey(key)) return null;
+  UI_WORKER_STATE.panelSubscriptions[key] = true;
+  if (!hasOwnUiState(UI_WORKER_STATE.panels, key)) {
+    requestPanelData(key, false);
+    return null;
+  }
+  return UI_WORKER_STATE.panels[key];
+}
+
+function applyUiSnapshot(snapshot) {
+  if (!snapshot) return;
+  if (snapshot.view) UI_WORKER_STATE.view = snapshot.view;
+  if (!snapshot.panels) return;
+
+  Object.keys(snapshot.panels).forEach(function (key) {
+    if (!validUiPanelKey(key)) return;
+    UI_WORKER_STATE.panels[key] = snapshot.panels[key];
+    UI_WORKER_STATE.panelVersions[key] =
+      (UI_WORKER_STATE.panelVersions[key] || 0) + 1;
+    delete UI_WORKER_STATE.panelRequests[key];
+    releaseUiPendingByPanel(key);
+  });
+}
+
+function uiPendingKey(kind, id) {
+  var prefix = String(kind || 'command');
+  return (id === undefined || id === null || id === '')
+    ? prefix
+    : prefix + ':' + String(id);
+}
+
+function itemPendingKey(itemId) {
+  return uiPendingKey('item', itemId);
+}
+
+function furnacePendingKey(furnaceId) {
+  return uiPendingKey('furnace', furnaceId);
+}
+
+function nodePendingKey(nodeId) {
+  return uiPendingKey('node', nodeId);
+}
+
+function isUiCommandPending(key, id) {
+  var normalized = arguments.length > 1 ? uiPendingKey(key, id) : String(key);
+  return !!UI_COMMAND_PENDING.byKey[normalized];
+}
+
+function syncUiPendingControls(key) {
+  if (typeof document === 'undefined') return;
+  var controls = document.querySelectorAll('[data-ui-pending-key]');
+  var pending = isUiCommandPending(key);
+  for (var i = 0; i < controls.length; i++) {
+    if (controls[i].getAttribute('data-ui-pending-key') === key) {
+      controls[i].disabled = pending;
+    }
+  }
+}
+
+function normalizeUiPendingKeys(commandName, options) {
+  var raw = options && options.keys;
+  if (raw === undefined || raw === null) raw = [];
+  if (!Array.isArray(raw)) raw = [raw];
+  if (!raw.length) raw.push(uiPendingKey('command', commandName));
+
+  var unique = [];
+  var seen = Object.create(null);
+  for (var i = 0; i < raw.length; i++) {
+    var key = String(raw[i]);
+    if (!key || seen[key]) continue;
+    seen[key] = true;
+    unique.push(key);
+  }
+  return unique;
+}
+
+function normalizeUiPendingPanels(commandName, options) {
+  var raw = options && options.panels;
+  if (raw === undefined || raw === null) {
+    var spec = typeof commandSpec === 'function'
+      ? commandSpec(commandName)
+      : null;
+    raw = spec && spec.dirty ? spec.dirty : [];
+  }
+  if (!Array.isArray(raw)) raw = [raw];
+
+  var unique = [];
+  var seen = Object.create(null);
+  for (var i = 0; i < raw.length; i++) {
+    var key = String(raw[i]);
+    if (!validUiPanelKey(key) || seen[key]) continue;
+    seen[key] = true;
+    unique.push(key);
+  }
+  return unique;
+}
+
+function releaseUiPendingToken(token) {
+  var entry = UI_COMMAND_PENDING.byToken[token];
+  if (!entry) return false;
+
+  delete UI_COMMAND_PENDING.byToken[token];
+  for (var i = 0; i < entry.keys.length; i++) {
+    var key = entry.keys[i];
+    if (UI_COMMAND_PENDING.byKey[key] === entry) {
+      delete UI_COMMAND_PENDING.byKey[key];
+      syncUiPendingControls(key);
+    }
+  }
+  return true;
+}
+
+function releaseUiPendingByPanel(panelKey) {
+  var version = UI_WORKER_STATE.panelVersions[panelKey] || 0;
+  Object.keys(UI_COMMAND_PENDING.byToken).forEach(function (token) {
+    var entry = UI_COMMAND_PENDING.byToken[token];
+    var requiredVersion = entry.waitPanels[panelKey];
+    if (requiredVersion && version >= requiredVersion) {
+      releaseUiPendingToken(token);
+    }
+  });
+}
+
+function acquireUiPending(commandName, options) {
+  var keys = normalizeUiPendingKeys(commandName, options);
+  for (var i = 0; i < keys.length; i++) {
+    if (UI_COMMAND_PENDING.byKey[keys[i]]) {
+      return { error: new Error('command pending: ' + keys[i]) };
+    }
+  }
+
+  var token = 'ui-command-' + (++UI_COMMAND_PENDING.seq);
+  var panels = normalizeUiPendingPanels(commandName, options);
+  var entry = {
+    token: token,
+    keys: keys,
+    waitPanels: Object.create(null)
+  };
+
+  for (var p = 0; p < panels.length; p++) {
+    var panelKey = panels[p];
+    entry.waitPanels[panelKey] =
+      (UI_WORKER_STATE.panelVersions[panelKey] || 0) + 1;
+    UI_WORKER_STATE.panelSubscriptions[panelKey] = true;
+  }
+
+  UI_COMMAND_PENDING.byToken[token] = entry;
+  for (var k = 0; k < keys.length; k++) {
+    UI_COMMAND_PENDING.byKey[keys[k]] = entry;
+    syncUiPendingControls(keys[k]);
+  }
+
+  return { entry: entry };
+}
+
+function sendUiCommand(commandName, args, options) {
+  if (!workerUiStateEnabled() ||
+      typeof WorkerBridge.send !== 'function') {
+    return Promise.reject(new Error('worker UI state is not enabled'));
+  }
+
+  var acquired = acquireUiPending(commandName, options);
+  if (acquired.error) return Promise.reject(acquired.error);
+
+  var token = acquired.entry.token;
+  var sent;
+  try {
+    sent = WorkerBridge.send(commandName, args || {});
+  } catch (err) {
+    releaseUiPendingToken(token);
+    return Promise.reject(err);
+  }
+
+  return sent.then(function (result) {
+    releaseUiPendingToken(token);
+    return result;
+  }, function (err) {
+    releaseUiPendingToken(token);
+    throw err;
+  });
+}
+
+function bindWorkerUiState() {
+  if (!workerUiStateEnabled() ||
+      UI_WORKER_STATE.bridgeBound ||
+      typeof WorkerBridge.on !== 'function' ||
+      typeof MSG_OUT === 'undefined') {
+    return false;
+  }
+  UI_WORKER_STATE.bridgeBound = true;
+
+  WorkerBridge.on(MSG_OUT.BOOTED, function (msg) {
+    applyUiSnapshot(msg.snapshot);
+  });
+  WorkerBridge.on(MSG_OUT.FULL, function (msg) {
+    applyUiSnapshot(msg.snapshot);
+  });
+  WorkerBridge.on(MSG_OUT.TICK, function (msg) {
+    if (msg.view) UI_WORKER_STATE.view = msg.view;
+    if (UI_WORKER_STATE.viewSubscribed) {
+      UI.dirty.header = true;
+      UI.dirty.battle = true;
+    }
+
+    var dirty = msg.dirty || [];
+    for (var i = 0; i < dirty.length; i++) {
+      var key = dirty[i];
+      if (!validUiPanelKey(key) ||
+          !UI_WORKER_STATE.panelSubscriptions[key]) {
+        continue;
+      }
+      UI.dirty[key] = true;
+      requestPanelData(key, true);
+    }
+  });
+  WorkerBridge.on(MSG_OUT.PANEL, function (msg) {
+    if (!validUiPanelKey(msg.name)) return;
+    UI_WORKER_STATE.panels[msg.name] = msg.data;
+    UI_WORKER_STATE.panelVersions[msg.name] =
+      (UI_WORKER_STATE.panelVersions[msg.name] || 0) + 1;
+    delete UI_WORKER_STATE.panelRequests[msg.name];
+    UI.dirty[msg.name] = true;
+    releaseUiPendingByPanel(msg.name);
+  });
+  return true;
+}
+
 var STAGE_HOLD_START_MS = 300;
 var STAGE_HOLD_REPEAT_MS = 50;
 var INVENTORY_VISIBLE_ROWS_DEFAULT = 3;
@@ -4772,6 +5081,7 @@ function bindStageHoldButton(id, delta) {
 }
 
 function initUI() {
+  bindWorkerUiState();
   updateTalentTabVisibility();
   if (!UI.performanceEventsBound) {
     window.addEventListener('resize', function () {
