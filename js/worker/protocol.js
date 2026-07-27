@@ -11,11 +11,15 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-var WORKER_PROTOCOL_VERSION = 5;
+var WORKER_PROTOCOL_VERSION = 6;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
-  BOOT: 'boot',              // { save: <存檔物件|null>, now, maxRunId }  maxRunId 供重新開局編號用
+  /* { save: <存檔物件|null>, now, maxRunId, safeMode? }
+     maxRunId 供重新開局編號用。
+     safeMode（v6 新增）：跳過離線結算直接開機。離線結算是開機流程裡最容易因為
+     異常存檔資料而拋錯的一段，安全模式讓玩家至少能進到遊戲裡把存檔匯出。 */
+  BOOT: 'boot',
   LOAD: 'load',              // { save }  執行中讀檔：替換整份狀態（v2 新增）
   CMD: 'cmd',                // { id, name, args }
   /* { name, params? }  索取面板資料。

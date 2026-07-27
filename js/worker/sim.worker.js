@@ -896,7 +896,12 @@ function boot(msg) {
   if (typeof markStatsDirty === 'function') markStatsDirty();
   if (typeof initFieldPlayer === 'function') initFieldPlayer();
 
-  if (loaded && typeof applyOfflineProgress === 'function') {
+  /* 安全模式跳過離線結算。這是開機流程裡最會爆的一段——它要讀存檔裡的時間戳、
+     重跑一段模擬、再結算獎勵，任何一環碰到異常資料都會拋錯，而拋錯就等於開不了機。
+     跳過它的代價只是「這次不補離線收益」，換來的是玩家進得去、匯得出存檔。 */
+  if (loaded && msg.safeMode) {
+    notices.push({ key: '_safeModeNotice', text: '已以安全模式開機：本次略過離線結算，離線期間的收益不會補發。建議先匯出存檔備份。' });
+  } else if (loaded && typeof applyOfflineProgress === 'function') {
     offlineSummary = applyOfflineProgress() || null;
   }
 
@@ -904,6 +909,10 @@ function boot(msg) {
   ['_skillResetNotice', '_skillPointRepairNotice', '_talentRespecNotice', '_talentRespecConfirm'].forEach(function (k) {
     if (G[k]) { notices.push({ key: k, text: G[k] }); delete G[k]; }
   });
+
+  /* 開機時把所有面板標記為髒。正常開機這是多餘的（UI 本來就會索取），
+     但自動重啟後主執行緒手上是上一個 Worker 的快取，必須全部換掉。 */
+  for (var pi = 0; pi < PANEL_KEYS.length; pi++) UI.dirty[PANEL_KEYS[pi]] = true;
 
   _booted = true;
   _lastTickAt = Date.now();

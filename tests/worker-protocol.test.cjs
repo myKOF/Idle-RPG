@@ -88,7 +88,8 @@ function validArgs(spec) {
 }
 
 test('凍結的 Worker 指令表有 85 條且分類數量固定', () => {
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 5);
+  // v6：BOOT 新增 safeMode（跳過離線結算開機），指令表未變動
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 6);
   const names = Object.keys(protocol.COMMANDS);
   assert.equal(names.length, 85);
 

@@ -190,18 +190,116 @@ var WorkerBridge = (function () {
   var _lastMessageAt = 0;
   var _probeAt = 0;
   var _watchdogTimer = 0;
+  var _visibilityBound = false;
+
+  /* ---- 失效後自動重啟 ----
+     這是掛機遊戲，玩家多半把分頁丟在背景。Worker 死掉時畫面看起來還在，但時間停了：
+     不打怪、不掉東西、不存檔。若只顯示遮罩等玩家按重新載入，背景掛機那幾小時就整段作廢。
+
+     所以偶發性失效一律自動重啟，玩家無感，最多損失一次自動存檔的間隔（15 秒）。
+
+     但不能無限重啟：若崩潰是存檔資料本身造成的，就會變成掛掉→重啟→掛掉的迴圈，
+     玩家看到的是「遊戲好像在跑但進度一直不動」，比直接報錯更難查。所以設連續上限，
+     超過就停手、顯示遮罩讓玩家知道要處理存檔。
+
+     連續計數只在「撐過 HEALTHY_UPTIME_MS 都沒事」時歸零——玩很久之後偶爾各壞一次，
+     不該累積成放棄。 */
+  var MAX_RESTARTS = 3;
+  var HEALTHY_UPTIME_MS = 120000;
+  var RESTART_DELAY_MS = 500;
+  var _restartCount = 0;
+  var _restartTimer = 0;
+  var _bootOpts = null;
+
+  /* 安全模式：跳過離線結算開機。玩家是從遮罩上主動選進來的，代表前面已經失敗過，
+     這時再自動重啟只會蓋掉他想看的錯誤，所以安全模式下不自動重啟。 */
+  function safeMode() {
+    return typeof location !== 'undefined' && /[?&]safe=1(&|$)/.test(location.search);
+  }
+
+  /* Worker 沒了，等在 Promise 上的指令永遠不會有 ACK。不主動 reject 的話，
+     UI 那邊的單飛鎖會一直卡著，重啟後對應的按鈕全部按不動。 */
+  function rejectPendingCommands(reason) {
+    var ids = Object.keys(_pending);
+    for (var i = 0; i < ids.length; i++) {
+      var p = _pending[ids[i]];
+      delete _pending[ids[i]];
+      try { p.reject(new Error('worker-restart: ' + reason)); } catch (e) {}
+    }
+    return ids.length;
+  }
+
+  function giveUp(reason) {
+    stats.deadReason = reason;
+    console.error('[bridge] Worker 已失去回應（' + reason + '）且自動重啟 ' + MAX_RESTARTS +
+      ' 次仍失敗。模擬與自動存檔已停止，請重新載入頁面；' +
+      '若重複發生，請用安全模式（網址加 &safe=1）開機並匯出存檔。');
+    emit('workerDead', { reason: reason, at: Date.now(), restarts: _restartCount, gaveUp: true });
+  }
+
+  function restartWorker(reason) {
+    if (_watchdogTimer) { clearInterval(_watchdogTimer); _watchdogTimer = 0; }
+    if (_worker) {
+      _worker.onmessage = null;
+      _worker.onerror = null;
+      try { _worker.terminate(); } catch (e) {}
+      _worker = null;
+    }
+    _started = false;
+    stats.booted = false;
+    stats.bootedAt = 0;
+    _probeAt = 0;
+
+    /* 重新從儲存讀出存檔，而不是沿用開機時那份：Worker 死掉前可能已經存過好幾次，
+       用開機那份會把中間的進度全部丟掉。讀不到就退回開機那份。 */
+    var fallback = _bootOpts || {};
+    var relaunch = function (save, maxRunId) {
+      if (!start({ save: save || fallback.save || null,
+                   maxRunId: maxRunId || fallback.maxRunId || 1,
+                   _isRestart: true })) {
+        giveUp(reason + '（重啟時無法建立 Worker）');
+      }
+    };
+    if (typeof SaveStorage !== 'undefined' && typeof SaveStorage.readBootSave === 'function') {
+      try {
+        SaveStorage.readBootSave(function (save) {
+          relaunch(save, (typeof SaveStorage.maxRunId === 'function') ? SaveStorage.maxRunId() : 0);
+        });
+        return;
+      } catch (e) {}
+    }
+    relaunch(null, 0);
+  }
 
   function markWorkerDead(reason) {
     if (!stats.alive) return; // 只報一次
     stats.alive = false;
     stats.deadReason = reason;
-    console.error('[bridge] Worker 已失去回應（' + reason + '）。' +
-      '模擬與自動存檔已停止，請重新整理頁面；未存檔的進度最多會回到上一次自動存檔。');
-    emit('workerDead', { reason: reason, at: Date.now() });
+
+    var dropped = rejectPendingCommands(reason);
+
+    if (safeMode() || _restartCount >= MAX_RESTARTS) {
+      giveUp(reason);
+      return;
+    }
+
+    _restartCount++;
+    console.warn('[bridge] Worker 失去回應（' + reason + '），自動重啟第 ' + _restartCount +
+      '／' + MAX_RESTARTS + ' 次' + (dropped ? '，已取消 ' + dropped + ' 筆進行中的指令' : '') + '。');
+    emit('workerRestarting', { reason: reason, at: Date.now(), attempt: _restartCount, max: MAX_RESTARTS });
+    if (_restartTimer) clearTimeout(_restartTimer);
+    _restartTimer = setTimeout(function () { _restartTimer = 0; restartWorker(reason); }, RESTART_DELAY_MS);
   }
 
   function watchdog() {
     if (!_worker || !stats.booted || !stats.alive) return;
+    /* 撐過這段時間就把連續失敗計數歸零。玩很久之後偶爾各壞一次，不該累積成放棄；
+       真正的存檔問題會在開機後很快連續復發，撐不到這個門檻。 */
+    if (_restartCount > 0 && stats.bootedAt && Date.now() - stats.bootedAt > HEALTHY_UPTIME_MS) {
+      console.info('[bridge] Worker 已穩定運作 ' + Math.round(HEALTHY_UPTIME_MS / 1000) +
+        ' 秒，重啟計數歸零。');
+      _restartCount = 0;
+    }
     // 背景分頁：節流與模擬休眠都會讓訊息停止，不能當成死亡
     if (typeof document !== 'undefined' && document.hidden) { _lastMessageAt = Date.now(); return; }
     var now = Date.now();
@@ -218,6 +316,11 @@ var WorkerBridge = (function () {
   function start(opts) {
     if (_started) return true;
     opts = opts || {};
+    var isRestart = !!opts._isRestart;
+    if (!isRestart) { _bootOpts = { save: opts.save || null, maxRunId: opts.maxRunId || 1 }; }
+    /* 重啟時先把 alive 拉回來，否則新 Worker 的第一則訊息會走進 onMessage 的
+       誤判自我修復分支，對玩家喊「先前的失效判定為誤判」——這次不是誤判。 */
+    if (isRestart) { stats.alive = true; stats.deadReason = null; }
     try {
       // 量測模式要讓 Worker 那側也知道，透過 Worker URL 的 query 傳遞（免動協議）
       _worker = new Worker(MEASURE ? (WORKER_URL + '?measure=1') : WORKER_URL);
@@ -236,25 +339,39 @@ var WorkerBridge = (function () {
     };
 
     _lastMessageAt = Date.now();
-    post(MSG_IN.BOOT, { save: opts.save || null, now: Date.now(), maxRunId: opts.maxRunId || 1 });
+    post(MSG_IN.BOOT, {
+      save: opts.save || null, now: Date.now(),
+      maxRunId: opts.maxRunId || 1, safeMode: safeMode()
+    });
 
     // 初始狀態也要送：分頁若在隱藏狀態下被載入，visibilitychange 不會觸發，
     // Worker 會以為自己在前景而持續全速模擬（main.js 的 _hiddenAt 初始化同理）
     post(MSG_IN.VISIBILITY, { hidden: !!document.hidden, at: Date.now() });
-    document.addEventListener('visibilitychange', function () {
-      // 切回前景時重置靜默計時：隱藏期間沒有訊息是正常的，不能算進去
-      if (!document.hidden) { _lastMessageAt = Date.now(); _probeAt = 0; }
-      post(MSG_IN.VISIBILITY, { hidden: !!document.hidden, at: Date.now() });
-    });
+    // 重啟時不重複註冊：監聽器掛在 document 上，不隨 Worker 消滅
+    if (!_visibilityBound) {
+      _visibilityBound = true;
+      document.addEventListener('visibilitychange', function () {
+        // 切回前景時重置靜默計時：隱藏期間沒有訊息是正常的，不能算進去
+        if (!document.hidden) { _lastMessageAt = Date.now(); _probeAt = 0; }
+        post(MSG_IN.VISIBILITY, { hidden: !!document.hidden, at: Date.now() });
+      });
+    }
 
     _watchdogTimer = setInterval(watchdog, STALL_CHECK_MS);
-    console.info('[bridge] Worker 已啟動' + (opts.save ? '' : '（拋棄式狀態，不讀寫玩家存檔）') +
-      '。輸入 WorkerBridge.status() 查看狀態。');
+    if (isRestart) {
+      console.info('[bridge] Worker 已重啟（第 ' + _restartCount + '／' + MAX_RESTARTS + ' 次）。');
+      emit('workerRestarted', { at: Date.now(), attempt: _restartCount, max: MAX_RESTARTS });
+    } else {
+      console.info('[bridge] Worker 已啟動' + (opts.save ? '' : '（拋棄式狀態，不讀寫玩家存檔）') +
+        (safeMode() ? '｜安全模式：略過離線結算' : '') +
+        '。輸入 WorkerBridge.status() 查看狀態。');
+    }
     return true;
   }
 
   function stop() {
     if (_watchdogTimer) { clearInterval(_watchdogTimer); _watchdogTimer = 0; }
+    if (_restartTimer) { clearTimeout(_restartTimer); _restartTimer = 0; }
     if (_worker) { _worker.terminate(); _worker = null; }
     _started = false;
     stats.booted = false;
@@ -266,6 +383,9 @@ var WorkerBridge = (function () {
       booted: stats.booted,
       alive: stats.alive,
       deadReason: stats.deadReason,
+      safeMode: safeMode(),
+      restarts: _restartCount,
+      maxRestarts: MAX_RESTARTS,
       silentMs: _lastMessageAt ? (Date.now() - _lastMessageAt) : null,
       upTimeSec: stats.bootedAt ? Math.round((Date.now() - stats.bootedAt) / 1000) : 0,
       ticks: stats.ticks,
@@ -295,7 +415,7 @@ var WorkerBridge = (function () {
 
   return {
     start: start, stop: stop, send: send, on: on, loadSave: loadSave,
-    requestPanel: requestPanel, status: status, enabled: enabled
+    requestPanel: requestPanel, status: status, enabled: enabled, safeMode: safeMode
   };
 })();
 

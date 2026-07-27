@@ -28,7 +28,7 @@
 
 | type | payload | 說明 |
 |---|---|---|
-| `boot` | `{ save, now, maxRunId }` | 開機。`save` 由主執行緒讀出且**未經 migrate**，可為 `null`（新遊戲）。`maxRunId` 供重新開局編號 |
+| `boot` | `{ save, now, maxRunId, safeMode? }` | 開機。`save` 由主執行緒讀出且**未經 migrate**，可為 `null`（新遊戲）。`maxRunId` 供重新開局編號。`safeMode`（v6 新增）為 `true` 時跳過離線結算 |
 | `load` | `{ save }` | **v2 新增**。執行中讀檔：替換整份狀態，不需要 reload |
 | `cmd` | `{ id, name, args }` | 執行指令。`id` 由主執行緒遞增，用於配對 `ack` |
 | `panel` | `{ name, params? }` | 索取面板資料，`name` 必須是 `PANEL_KEYS` 之一。`params` 由各面板自行定義（v5 新增），目前只有 `inv` 使用 |
@@ -284,6 +284,7 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 
 | 版本 | 日期 | 變更 |
 |---|---|---|
+| 6 | 2026-07-27 | `boot` 新增 `safeMode`：為 `true` 時跳過離線結算。<br>搭配 Bridge 的失效自動重啟（連續 3 次為上限）。離線結算是開機流程裡最會爆的一段——要讀存檔時間戳、重跑一段模擬、再結算獎勵，任何一環碰到異常資料都會拋錯，而拋錯就等於開不了機。安全模式讓玩家至少進得去、匯得出存檔。<br>指令表未變動（仍 85 條） |
 | 1 | 2026-07-27 | 初版凍結：6 種入向訊息、8 種出向訊息、11 個面板鍵、67 條指令 |
 | 2 | 2026-07-27 | P2 存檔搬遷：新增 `load` 訊息與 `restart` 落地種類；`persist` payload 加 `meta`；`boot` 加 `maxRunId`；`save.*` 三條改為 `fn:null` 並由 Worker 端實作（原宣告會呼叫碰 I/O 的函式，與設計衝突） |
 | 5.1 | 2026-07-27 | 補齊 P3 剩餘三個面板所需的投影：`header` 加 `viewStats`／`dps`／`settings`／`autoEquip`／`equipView`／`equipActive`；`equip` 加 `settings`／`stats`／`viewStats`；`inv` 加 `settings`／`equipment`／`viewEquipment` 與 `params.full`（dev 關鍵字搜尋用）。<br>寶石商店的首次鋪貨與 8 小時定時重置移入 Worker tick——原本由 UI 呼叫 `rollGemShop`／`shopHourlyReset`（兩者都在 `INTERNAL_ONLY` 名單），等於「有沒有打開寶石頁」決定商店會不會刷新 |
