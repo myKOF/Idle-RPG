@@ -55,7 +55,8 @@ var PANEL_KEYS = ['header', 'battle', 'equip', 'inv', 'forge', 'newforge',
 var EVENT_KINDS = {
   LOG: 'log',       // { msg, cls, cat }        對應 blog()
   FLOG: 'flog',     // { msg, cls }             對應 flog()
-  NFLOG: 'nflog',   // { msg, cls }             對應 nflog()
+  /* nflog() 不另設種類：它在模擬層是直接呼叫 addLog('newforge-log', ...)，
+     shim 已統一歸到 FLOG，UI 端只需處理一種熔爐日誌事件。 */
   LOOT: 'loot',     // { kind, ...}             對應 window.recordLoot*
   NOTICE: 'notice', // { key, text, modal }     一次性公告／改版提示
   /* { elId, text, cls, damageValue }  戰鬥飄字。

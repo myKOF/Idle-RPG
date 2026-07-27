@@ -79,8 +79,12 @@ function flog(msg, cls) {
   shimPushEvent('flog', { msg: msg, cls: cls });
 }
 
+/* 模擬層的 nflog（newforge.js:12）是直接呼叫 addLog('newforge-log', ...) 而不是 flog，
+   若照原樣轉成 log 事件，熔爐日誌會依呼叫者不同落在兩種事件種類，UI 端得判斷兩次。
+   統一歸到 flog。 */
 function addLog(boxId, msg, cls, cap) {
   _diag(SHIM_DIAG.ui, 'addLog');
+  if (boxId === 'newforge-log') { shimPushEvent('flog', { msg: msg, cls: cls }); return; }
   shimPushEvent('log', { msg: msg, cls: cls, box: boxId, cap: cap });
 }
 
