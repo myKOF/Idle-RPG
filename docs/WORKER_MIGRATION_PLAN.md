@@ -209,7 +209,28 @@ P1 起以 `?worker=1` 切換新舊路徑，舊單執行緒路徑在 P5 前保持
 
 （三方在此追加，由 Claude 裁決；裁決後移除該條並更新協議）
 
-- 尚無。
+- `item.equip`／`item.salvage`（`js/ui.js:2048-2077`；`js/worker/protocol.js:87,89`）：UI 現行流程還包含「先從背包移除、替換品退回背包／從裝備欄卸下」等狀態轉移，直接把 `itemId` 解析後呼叫 `equipItem`／`doSalvage` 會複製物品，且協議沒有 `item.unequip`；建議把裝備／卸裝／分解定義成 Worker 端原子操作並補 `item.unequip`。
+- `item.upgrade`（`js/ui.js:2091-2099`、`js/factory.js:450`）：手動強化會消耗資源並改裝備，但 67 條指令沒有對應項；建議新增 `item.upgrade { itemId }`，Worker 解析後呼叫 `manualUpgrade`。
+- 天賦批次與潛能操作（`js/ui.js:4906-4911,4934-4940,4993-5001,5039-5041`；`js/worker/protocol.js:128-131`）：缺少 `talentMax`、`potentialMax`、`potentialDowngrade`、`potentialDelete` 對應指令；建議各補正式指令，不能只靠現有 `talent.potentialUpgrade`。
+- 裝備套檢視（`js/ui.js:4919-4923`、`js/player.js:243-253`）：`setEquipView` 會改 `G.equipView` 並決定預覽屬性，但協議只有 `player.switchEquipSet`，而 `panel {name}` 也無法帶檢視套索引；建議將檢視索引移為主執行緒 UI 狀態並讓 panel query 帶 `setIndex`，或新增不換穿的 `player.setEquipView`。
+- `stageGoMax`（`js/ui.js:5616`、`js/combat.js:851-853`）：目前只有 `stage.go {delta}`；主執行緒用可能落後的 snapshot 計算 `best-current` 會有競態；建議新增 Worker 端判定的 `stage.goMax`，或明文規定 `stage.go` 可接受絕對目標而非鏡像算出的 delta。
+- 高塔連挑／撤退／停止連挑（`js/ui.js:5835-5847,6023,6302-6305`、`js/tower.js:95-105,435-460`）：協議只有 `tower.start`／`tower.finish`，無法表達 `startTowerAuto`、`fleeTower`、`stopTowerAutoFromResult`；建議補 `tower.startAuto {floor,count}`、`tower.flee`、`tower.stopAuto`。
+- 熔爐品質與啟用設定（`js/ui.js:2373-2387`）：UI 直接改 `fu.qualities[]`／`fu.enabled` 後呼叫內部函式 `newForgeReturnUnroutable`，但協議沒有對應指令；建議新增 `newforge.setQuality {furnaceId,rarity,on}` 與 `newforge.setEnabled {furnaceId,on}`，由 Worker 內部完成退回佇列，不開放 INTERNAL_ONLY。
+- 神鑄自動放入設定（`js/ui.js:5657-5681`、`js/forge.js:276-316`）：UI 直接改 `G.forge.autoFill` 並呼叫 `forgeAutoFillApply`，協議只涵蓋自動魔塵；建議新增可設定／清除 `{kind:'equip',rarity}` 或 `{kind:'gem',type,level}` 的 `forge.setAutoFill` 原子指令。
+- 讀取既有存檔（`js/ui.js:6216-6224`、`js/save.js:244-265`）：讀檔會替換整份遊戲狀態，但入向協議只有初次 `boot`，沒有執行中載入存檔的語意；建議定義主執行緒讀出 payload 後交 Worker migrate/apply 的 `load` 訊息或正式指令及其 persist/ack 順序。
+- `save.manual`／`save.toFolder`／`save.restart`（`js/worker/protocol.js:165-167`；`js/save.js:168-191,833-842,1538-1554`）：`fn` 指向的現有函式直接使用 localStorage、IndexedDB、File System Access、`location.reload`，Worker 不能呼叫，與「I/O 留主執行緒」衝突；建議改成 Worker 產生 payload／新局狀態並發 `persist`，由主執行緒完成 I/O 與 reload 的明確握手，不應宣告為直接呼叫既有 `fn`。
+- 一般寶石識別（`js/item.js:72-102,150-179`；`js/worker/protocol.js:96,99,101,103,140`）：一般寶石是 `{type,level}` 計數，沒有 `id`，因此 `gem.socket.gemId`、`gem.dismantle.gemId`、`gem.fuse.gemId1/2`、`forge.placeGem.gemId` 無法表示實際對象；建議一般寶石統一傳 `type + level`，只有 `fusedGems[].id` 使用 `id`，融合素材另定義可辨識 plain/fused 的結構。
+- 寶石指令參數形狀（`js/ui.js:5250-5267,5308-5332,5337-5413,5737-5756`；`js/worker/protocol.js:96-103`）：`gem.convert` 實際需要 `slots:[{type,lv,n}] + targetType`、`gem.fuse` 需要兩個素材 ref、`gem.dismantle` 需要 `type + lv`，且 `gem.socket.socketIndex` 現有函式會忽略並永遠選第一個空槽；建議依現行操作重定義 args 與巢狀 schema，或先擴充原函式使指定槽位語意真實成立。
+- `item.rerollAffix`（`js/ui.js:2100-2110`、`js/item.js:861-896`；`js/worker/protocol.js:93`）：實際函式以 `affixKey` 字串定位，協議卻宣告 `index:int`；建議改成 `affixKey` 列舉字串，或先明確新增 index→key 轉換且檢查 snapshot 版本避免索引漂移。
+- 神鑄參數（`js/ui.js:5627-5639,5693-5709`、`js/forge.js:153-243`；`js/worker/protocol.js:138-143`）：`forge.placeItem.slotIndex` 現有函式不接受、`forge.placeGem` 實際要 `type,level`、`forge.toggleDust` 實際必須要 `idx` 但協議無參數；建議讓協議與現有函式簽名一致，或明確定義 Worker adapter 的槽位行為。
+- 熔爐與零件 ID（`js/player.js:30-43`、`js/item.js:903-925`、`js/newforge.js:148-245`；`js/worker/protocol.js:149-153`）：furnace `id` 是數字卻宣告 `str`，零件雖有 `id`，現行 `newForgeInstallPart` 接收 `partKey` 並自動挑同類最高階，協議的 `partId`／`slotIndex` 無法直接呼叫原函式且可能改變選料語意；建議 furnaceId 改 `int`，並在 `partId` 精準選料與 `partKey` 保留最高階規則間擇一後同步函式契約。
+- itemId 搜尋範圍與歧義（`js/ui.js:1840-1847`、`js/save.js:551-575`）：UI 刻意只搜背包＋目前檢視裝備套且排除法陣槽，存檔又會同時序列化 `equipment` 與 active `equipmentSets` 的同 ID 複本；協議只說「由 id 解析」不足以保證兩端選到同一物件，建議定義 command-scoped resolver（item 指令只允許 inventory/指定 set，forge 以 slotIndex 取回），migrate 後先 canonicalize alias，0 筆或多個邏輯命中一律拒絕。
+- 物件識別現況（`js/item.js:450-463,903-925`、`js/talents.js:32-43`、`js/ui.js:1931-1939`）：裝備與零件有 `id`、天賦節點有穩定 `def.id`，附魔書以 `bookKey` 計數而非物件；協議應明文區分 instance id 與 definition key，避免把「跨執行緒一律 item.id」誤套到無實例 ID 的書、天賦及一般寶石。
+- 參數約束（`js/worker/protocol.js:71-73,192-224`）：`str/int/obj/any` 只能驗基本型別，無法限制 zone/slot/book/gem/setting/auto key 列舉、floor/level/rarity/index/count 範圍，也無法驗證 gem convert/fuse 巢狀結構；建議保留基本型別但為每條 command 增加 enum/range/schema（或 validator）並讓錯誤在執行函式前回 ACK。
+- `settings.set`／`forge.setAuto`（`js/worker/protocol.js:146,162`、`js/ui.js:6056-6068,6083-6093`）：任意 `key:str,value:any` 或未限制的 auto key 可寫入非預期狀態，且目前實際只允許 `compareEq:boolean`、`autoDust:boolean`、`autoForge:boolean`；建議列舉白名單並綁定每個 key 的 value 型別。
+- `validateCommand`（`js/worker/protocol.js:207-224`）：目前只檢查規格內欄位，拼錯或多餘 args 仍會通過，會掩蓋主執行緒／Worker 版本不一致；建議拒絕 spec 未宣告的額外欄位（若需向前相容則明確做版本協商後再放行）。
+- `fn:null` 數量（`js/worker/protocol.js:78-170`、`docs/WORKER_PROTOCOL.md:4.4`）：實際共有 14 條，當中 13 條位於 `ui.js`、另 1 條是 `gm.exec` 位於 `gm.js`；`item.salvageBulk` 已列入且確實涵蓋 `js/ui.js:2119-2144` 的分解前 `manualSave`，建議文件統一寫成「13 條 UI 搬遷＋1 條 GM」，避免把總數誤讀為 13。
+- dirty metadata（`js/worker/protocol.js:87-103`、`js/factory.js:142-229`、`js/item.js:350-388`）：例如 `item.setLock` 可作用於裝備卻只列 `inv`，分解鑲寶石裝備會髒 `header/gems`，鑲嵌／卸寶石也會影響 `header`；雖實際傳送以 `UI.dirty` 為準，P4 驗證用 metadata 仍會誤報，建議逐指令依所有成功分支補齊。
 
 **已裁決：**
 
