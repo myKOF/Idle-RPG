@@ -50,7 +50,8 @@ var UI_PANEL_MIGRATION_ORDER = [
  */
 var UI_PANEL_SUBSCRIPTIONS_BY_TAB = {
   skills: ['skills', 'talents', 'header'],
-  talents: ['talents', 'header']
+  talents: ['talents', 'header'],
+  tower: ['tower', 'header']
 };
 var UI_PERSISTENT_PANEL_SUBSCRIPTIONS = ['talents']; // controls talent-tab visibility
 
@@ -161,6 +162,15 @@ function panelData(key) {
 function applyUiSnapshot(snapshot) {
   if (!snapshot) return;
   if (snapshot.view) UI_WORKER_STATE.view = snapshot.view;
+}
+
+function handleWorkerUiEvents(events) {
+  (events || []).forEach(function (event) {
+    if (!event || event.kind !== 'notice' || event.key !== 'towerResult') return;
+    UI.pendingTowerResult = event.data || null;
+    requestPanelData('tower', true);
+    requestPanelData('header', true);
+  });
 }
 
 function uiPendingKey(kind, id) {
@@ -333,6 +343,7 @@ function sendUiCommand(commandName, args, options) {
     entry.acknowledged = true;
     Object.keys(entry.waitPanels).forEach(function (key) {
       entry.waitPanels[key] = (UI_WORKER_STATE.panelVersions[key] || 0) + 1;
+      requestPanelData(key, true);
     });
     return result;
   }, function (err) {
@@ -358,9 +369,14 @@ function bindWorkerUiState() {
   });
   WorkerBridge.on(MSG_OUT.TICK, function (msg) {
     if (msg.view) UI_WORKER_STATE.view = msg.view;
+    handleWorkerUiEvents(msg.events);
     if (UI_WORKER_STATE.viewSubscribed) {
       UI.dirty.header = true;
       UI.dirty.battle = true;
+    }
+
+    if (UI.tab === 'tower' && msg.view && msg.view.towerActive) {
+      requestPanelData('tower', true);
     }
 
     var dirty = msg.dirty || [];
@@ -388,6 +404,7 @@ function bindWorkerUiState() {
     UI.dirty[msg.name] = true;
     releaseUiPendingByPanel(msg.name);
     if (msg.name === 'talents') updateTalentTabVisibility();
+    if (msg.name === 'tower' || msg.name === 'header') showPendingTowerResultModalIfReady();
   });
   return true;
 }
@@ -3128,7 +3145,13 @@ function renderForge() {
 function renderTower() {
   var fightBox = $id('tower-fight');
   var listBox = $id('tower-list-wrap');
-  if (G.tower.active) {
+  var snapshot = uiTowerPanelSnapshot();
+  var headerSnapshot = uiHeaderPanelSnapshot();
+  if (!snapshot || !headerSnapshot) return;
+  var towerState = snapshot.tower || {};
+  var runtime = snapshot.runtime || {};
+  var player = headerSnapshot.player || {};
+  if (towerState.active) {
     fightBox.style.display = '';
     listBox.style.display = 'none';
     // 動態部分由 renderTowerFight 處理
@@ -3136,10 +3159,11 @@ function renderTower() {
     fightBox.style.display = 'none';
     listBox.style.display = '';
     var h = '';
-    var maxShow = Math.min(TOWER_MAX_FLOOR, G.tower.highest + 3);
+    var highest = Math.max(0, towerState.highest || 0);
+    var maxShow = Math.min(TOWER_MAX_FLOOR, highest + 3);
     for (var fl = 1; fl <= maxShow; fl++) {
-      var unlocked = fl <= G.tower.highest + 1;
-      var cleared = fl <= G.tower.highest;
+      var unlocked = fl <= highest + 1;
+      var cleared = fl <= highest;
       var bd = BOSS_LIST[(fl - 1) % BOSS_LIST.length];
       var hell = isHellTowerFloor(fl);
       var purgatory = isPurgatoryTowerFloor(fl);
@@ -3152,27 +3176,38 @@ function renderTower() {
           sectionName + '<span>第 ' + sectionStart + '～' + sectionEnd + ' 層</span></div>';
       }
 
-      var bossIcon = (bd.img && !bd.imgFailed) ? 'images/' + bd.img : null;
-      var bossIdx = (fl - 1) % BOSS_LIST.length;
+      var bossIcon = (bd.img && !towerBossImageFailed(bd.img)) ? 'images/' + bd.img : null;
       var iconHtml = bossIcon
-        ? '<img src="' + bossIcon + '" style="width:32px;height:32px;vertical-align:middle;border-radius:4px;box-shadow:0 0 5px #000;" onerror="BOSS_LIST[' + bossIdx + '].imgFailed=true; this.outerHTML=\'<span style=&quot;font-size:24px;vertical-align:middle;&quot;>\' + (bd.emoji || \'👾\') + \'</span>\';">'
+        ? '<img src="' + bossIcon + '" data-tower-boss-image="' + esc(bd.img) + '" data-tower-boss-fallback="' + esc(bd.emoji || '👾') + '" style="width:32px;height:32px;vertical-align:middle;border-radius:4px;box-shadow:0 0 5px #000;">'
         : '<span style="font-size:24px;vertical-align:middle;">' + (bd.emoji || '👾') + '</span>';
 
       var twCost = towerChallengeCost(fl);
       h += '<div class="tower-floor ' + towerClass + (cleared ? ' cleared' : '') + (unlocked ? '' : ' locked') + '" data-tower-tip="' + fl + '">' +
         '<span class="tf-emoji" style="margin-right:12px;">' + iconHtml + '</span>' +
         '<span class="tf-name' + (purgatory ? ' purgatory-boss' : '') + '" style="vertical-align:middle;">第 ' + fl + ' 層・' + bd.name + (cleared ? ' ✅' : '') + '</span>' +
-        '<span class="tf-hint" style="margin-left:auto; margin-right:10px;">建議野外階段 ' + (4 + fl * 5) + '+｜挑戰費 <span style="color:' + (G.player.gold >= twCost ? '#ffd700' : '#fca5a5') + '">💰' + fmt(twCost) + '</span></span>' +
+        '<span class="tf-hint" style="margin-left:auto; margin-right:10px;">建議野外階段 ' + (4 + fl * 5) + '+｜挑戰費 <span style="color:' + ((player.gold || 0) >= twCost ? '#ffd700' : '#fca5a5') + '">💰' + fmt(twCost) + '</span></span>' +
         (unlocked
-          ? '<button class="btn sm" data-tower-floor="' + fl + '">挑戰</button>' +
-          '<button class="btn sm" data-tower-auto="' + fl + '" data-tip="連續挑戰此層（次數見上方設定）：金幣不足或次數用完自動停止並回到野外">🔁 連挑</button>'
+          ? '<button class="btn sm" data-tower-floor="' + fl + '"' + pendingUiButtonAttributes(nodePendingKey('tower')) + '>挑戰</button>' +
+          '<button class="btn sm" data-tower-auto="' + fl + '"' + pendingUiButtonAttributes(nodePendingKey('tower')) + ' data-tip="連續挑戰此層（次數見上方設定）：金幣不足或次數用完自動停止並回到野外">🔁 連挑</button>'
           : '<span class="tf-lock">🔒</span>') +
         '</div>';
     }
     $id('tower-floors').innerHTML = h;
+    var towerBossImages = $id('tower-floors').querySelectorAll('[data-tower-boss-image]');
+    for (var ti = 0; ti < towerBossImages.length; ti++) {
+      towerBossImages[ti].onerror = function () {
+        var imageName = this.getAttribute('data-tower-boss-image');
+        var fallbackEmoji = this.getAttribute('data-tower-boss-fallback') || '👾';
+        markTowerBossImageFailed(imageName);
+        var fallback = document.createElement('span');
+        fallback.style.cssText = 'font-size:24px;vertical-align:middle;';
+        fallback.textContent = fallbackEmoji;
+        this.parentNode.replaceChild(fallback, this);
+      };
+    }
     // 上次結果
     var rbox = $id('tower-result');
-    var r = TOWER.result;
+    var r = runtime.result;
     if (r) {
       var rh = '<div class="tr-title ' + (r.win ? 'good' : 'bad') + '">' +
         (r.win ? '🏆 通關第 ' + r.floor + ' 層！' : '💀 第 ' + r.floor + ' 層挑戰失敗') + '</div>';
@@ -3190,7 +3225,7 @@ function renderTower() {
     if (UI._scrollTower) {
       UI._scrollTower = false;
       setTimeout(function () {
-        var el = document.querySelector('.tower-floor[data-tower-tip="' + (G.tower.highest + 1) + '"]');
+        var el = document.querySelector('.tower-floor[data-tower-tip="' + (highest + 1) + '"]');
         if (el) el.scrollIntoView({ behavior: 'auto', block: 'center' });
       }, 10);
     }
@@ -3220,16 +3255,21 @@ function formatTowerTimerSeconds(seconds) {
 }
 
 function renderTowerTimerFrame() {
-  if (!G.tower.active || UI.tab !== 'tower' || !TOWER.boss) {
+  var snapshot = uiTowerPanelSnapshot();
+  var runtime = snapshot && snapshot.runtime;
+  if (!towerViewActive(snapshot) || UI.tab !== 'tower' || !runtime || !runtime.boss) {
     stopTowerTimerAnimation();
     return;
   }
-  var paused = typeof isCombatPaused === 'function' && isCombatPaused();
+  var view = workerUiStateEnabled() ? viewState() : null;
+  var paused = workerUiStateEnabled()
+    ? !!(view && view.paused)
+    : (typeof isCombatPaused === 'function' && isCombatPaused());
   if (paused) UI.towerTimerAnchor = null;
   var anchor = UI.towerTimerAnchor;
   var remain = !paused && anchor
-    ? Math.max(0, towerTimeLimitWithTalents(TOWER.floor) - (anchor.elapsed + (towerTimerNow() - anchor.at) / 1000))
-    : Math.max(0, towerTimeLimitWithTalents(TOWER.floor) - TOWER.elapsed);
+    ? Math.max(0, towerTimeLimitWithTalents(runtime.floor) - (anchor.elapsed + (towerTimerNow() - anchor.at) / 1000))
+    : Math.max(0, towerTimeLimitWithTalents(runtime.floor) - runtime.elapsed);
   var timerEl = $id('tw-timer');
   if (timerEl) {
     timerEl.textContent = formatTowerTimerSeconds(remain) + 's';
@@ -3244,49 +3284,61 @@ function renderTowerTimerFrame() {
 
 // 高塔戰鬥動態渲染（每 tick）；倒數文字另外以逐幀動畫更新
 function renderTowerFight() {
-  if (!G.tower.active || UI.tab !== 'tower') {
+  var snapshot = uiTowerPanelSnapshot();
+  var headerSnapshot = uiHeaderPanelSnapshot();
+  if (!towerViewActive(snapshot) || UI.tab !== 'tower' || !headerSnapshot) {
     stopTowerTimerAnimation();
     return;
   }
-  var st = getStats();
-  var b = TOWER.boss, p = TOWER.player;
-  if (!b || !p) {
+  var runtime = snapshot.runtime || {};
+  var st = headerSnapshot.stats;
+  var b = runtime.boss, p = runtime.player;
+  if (!b || !p || !st) {
     stopTowerTimerAnimation();
     return;
   }
-  var paused = typeof isCombatPaused === 'function' && isCombatPaused();
+  var view = workerUiStateEnabled() ? viewState() : null;
+  var paused = workerUiStateEnabled()
+    ? !!(view && view.paused)
+    : (typeof isCombatPaused === 'function' && isCombatPaused());
   if (paused) {
     stopTowerTimerAnimation();
     renderTowerTimerFrame();
   } else {
-    if (!UI.towerTimerAnchor || UI.towerTimerAnchor.elapsed !== TOWER.elapsed) {
-      UI.towerTimerAnchor = { elapsed: TOWER.elapsed, at: towerTimerNow() };
+    if (!UI.towerTimerAnchor || UI.towerTimerAnchor.elapsed !== runtime.elapsed) {
+      UI.towerTimerAnchor = { elapsed: runtime.elapsed, at: towerTimerNow() };
     }
     if (!UI.towerTimerRaf) renderTowerTimerFrame();
   }
-  $id('tw-enrage').style.display = TOWER.enraged ? '' : 'none';
+  $id('tw-enrage').style.display = runtime.enraged ? '' : 'none';
   // 連續挑戰進度（第 X/Y 場）
   var autoEl = $id('tw-auto-status');
   if (autoEl) {
-    if (TOWER.auto) {
+    if (runtime.auto) {
       autoEl.style.display = '';
-      autoEl.textContent = '🔁 連挑 第 ' + (TOWER.auto.done + 1) + '/' + TOWER.auto.total + ' 場（勝 ' + TOWER.auto.wins + '）';
+      autoEl.textContent = '🔁 連挑 第 ' + (runtime.auto.done + 1) + '/' + runtime.auto.total + ' 場（勝 ' + runtime.auto.wins + '）';
     } else {
       autoEl.style.display = 'none';
     }
   }
-  if (b.img && !b.imgFailed) {
+  if (b.img && !towerBossImageFailed(b.img)) {
     var bossImgSrc = 'images/' + b.img;
     var tbImg = $id('tb-emoji').querySelector('img');
     if (!tbImg) {
       $id('tb-emoji').innerHTML = '<img src="' + bossImgSrc + '" class="cb-icon boss" data-src="' + bossImgSrc + '">';
       tbImg = $id('tb-emoji').querySelector('img');
-      if (tbImg) tbImg.onerror = function () { b.imgFailed = true; };
+      if (tbImg) tbImg.onerror = function () {
+        markTowerBossImageFailed(b.img);
+        UI.dirty.tower = true;
+      };
     } else {
       if (tbImg.getAttribute('data-src') !== bossImgSrc) {
         tbImg.setAttribute('data-src', bossImgSrc);
         tbImg.setAttribute('src', bossImgSrc);
-        tbImg.onerror = function () { b.imgFailed = true; };
+        tbImg.onerror = function () {
+          markTowerBossImageFailed(b.img);
+          UI.dirty.tower = true;
+        };
       }
       if (tbImg.className !== 'cb-icon boss') tbImg.className = 'cb-icon boss';
     }
@@ -3308,8 +3360,8 @@ function renderTowerFight() {
   setHtmlIfChanged($id('tp-hptext'), fmt(Math.max(0, p.hp)) + playerShieldText(p) + ' / ' + fmt(st.hp));
   setTextIfChanged($id('tp-status'), entStatus(p));
   renderMpSkill(p, 'tp', st);
-  setTextIfChanged($id('tw-dps'), 'DPS ' + fmt(TOWER.elapsed > 1 ? TOWER.dmgDealt / TOWER.elapsed : 0) +
-    '（需求 ' + fmt(b.maxHp / towerTimeLimitWithTalents(TOWER.floor)) + '）');
+  setTextIfChanged($id('tw-dps'), 'DPS ' + fmt(runtime.elapsed > 1 ? runtime.dmgDealt / runtime.elapsed : 0) +
+    '（需求 ' + fmt(b.maxHp / towerTimeLimitWithTalents(runtime.floor)) + '）');
 }
 
 function uiRenderingSuspended() {
@@ -3348,7 +3400,8 @@ function uiTick() {
   if (d.header) { renderHeader(); d.header = false; }
   renderBattle(); // Battle is always visible
   refreshBuffTooltip();
-  if (UI.tab === 'tower' && G.tower.active) renderTowerFight();
+  var towerSnapshot = UI.tab === 'tower' ? uiTowerPanelSnapshot() : null;
+  if (UI.tab === 'tower' && towerViewActive(towerSnapshot)) renderTowerFight();
   d.battle = false;
   if (d.equip && UI.tab === 'equip') { renderEquip(); d.equip = false; }
   if (d.inv && UI.tab === 'equip') { renderInventory(); d.inv = false; }
@@ -3502,6 +3555,26 @@ function uiHeaderPanelSnapshot() {
     stage: G.stage,
     stats: typeof getStats === 'function' ? getStats() : null
   };
+}
+
+function uiTowerPanelSnapshot() {
+  if (workerUiStateEnabled()) return panelData('tower');
+  if (typeof G === 'undefined' || !G.tower || typeof TOWER === 'undefined') return null;
+  return { tower: G.tower, runtime: TOWER };
+}
+
+function towerViewActive(snapshot) {
+  return !!(snapshot && snapshot.tower && snapshot.tower.active);
+}
+
+var UI_FAILED_BOSS_IMAGES = Object.create(null);
+
+function towerBossImageFailed(imageName) {
+  return !!(imageName && UI_FAILED_BOSS_IMAGES[imageName]);
+}
+
+function markTowerBossImageFailed(imageName) {
+  if (imageName) UI_FAILED_BOSS_IMAGES[imageName] = true;
 }
 
 function talentViewReincarnations(snapshot) {
@@ -4581,13 +4654,21 @@ function showEnemyTooltip(anchorEl) {
   var tip = $id('sk-tooltip');
   if (!tip) return;
 
-
   var isBossTip = (anchorEl.id === 'btn-boss-tip' || anchorEl.id === 'btn-tower-result-boss-tip');
+  var workerView = workerUiStateEnabled() ? viewState() : null;
+  var mayUseTower = isBossTip || (workerUiStateEnabled()
+    ? !!(workerView && workerView.towerActive)
+    : !!(typeof G !== 'undefined' && G.tower && G.tower.active));
+  var towerSnapshot = mayUseTower ? uiTowerPanelSnapshot() : null;
+  var towerRuntime = towerSnapshot && towerSnapshot.runtime;
+  var towerActive = towerViewActive(towerSnapshot);
   var m = null;
   if (isBossTip) {
-    m = TOWER.boss || (TOWER.floor ? makeBoss(TOWER.floor) : null);
-  } else if (G.tower.active) {
-    m = TOWER.boss || (TOWER.floor ? makeBoss(TOWER.floor) : null);
+    m = towerRuntime && (towerRuntime.boss ||
+      (!workerUiStateEnabled() && towerRuntime.floor ? makeBoss(towerRuntime.floor) : null));
+  } else if (towerActive) {
+    m = towerRuntime && (towerRuntime.boss ||
+      (!workerUiStateEnabled() && towerRuntime.floor ? makeBoss(towerRuntime.floor) : null));
   } else {
     m = (typeof FIELD !== 'undefined' && FIELD ? FIELD.monster : null);
     if (!m) {
@@ -4647,7 +4728,7 @@ function showEnemyTooltip(anchorEl) {
   dropTip += '</div>';
 
   if (isBossTip) {
-    var floor = TOWER.floor || 1;
+    var floor = (towerRuntime && towerRuntime.floor) || 1;
     var rw = towerRewardFor(floor, false);
     var dustRate = bossDustRate(floor);
     var soulOriginRate = hellSoulOriginDropChance(floor);
@@ -4677,7 +4758,7 @@ function showEnemyTooltip(anchorEl) {
     }
 
     var dustLine = '';
-    if (!G.tower.active) {
+    if (!towerActive) {
       var dustRate = fieldDustRate(m.level);
       if (dustRate > 0) dustLine = '💫 魔塵 <span style="color:var(--dim)">(' + fmt1(dustRate) + '%，神鑄材料)</span>';
     }
@@ -6644,8 +6725,18 @@ function initUI() {
     }
     var tf = e.target.closest('[data-tower-floor]');
     if (tf) {
-      TOWER.auto = null; TOWER.autoNextCd = 0; // 手動挑戰視為取消等待中的連挑
-      startTowerFight(parseInt(tf.getAttribute('data-tower-floor'), 10));
+      var towerFloor = parseInt(tf.getAttribute('data-tower-floor'), 10);
+      if (workerUiStateEnabled()) {
+        sendUiCommand('tower.start', { floor: towerFloor }, {
+          keys: [nodePendingKey('tower')],
+          panels: ['tower', 'battle', 'header']
+        }).catch(function (error) {
+          reportUiCommandFailure('高塔挑戰', error, ['tower', 'header']);
+        });
+      } else {
+        TOWER.auto = null; TOWER.autoNextCd = 0; // 手動挑戰視為取消等待中的連挑
+        startTowerFight(towerFloor);
+      }
       switchTab('tower');
       return;
     }
@@ -6653,7 +6744,18 @@ function initUI() {
     var ta = e.target.closest('[data-tower-auto]');
     if (ta) {
       var taInput = $id('tw-auto-count');
-      startTowerAuto(parseInt(ta.getAttribute('data-tower-auto'), 10), taInput ? parseInt(taInput.value, 10) : 0);
+      var autoFloor = parseInt(ta.getAttribute('data-tower-auto'), 10);
+      var autoCount = taInput ? parseInt(taInput.value, 10) : 0;
+      if (workerUiStateEnabled()) {
+        sendUiCommand('tower.startAuto', { floor: autoFloor, count: autoCount }, {
+          keys: [nodePendingKey('tower')],
+          panels: ['tower', 'battle', 'header']
+        }).catch(function (error) {
+          reportUiCommandFailure('高塔連挑', error, ['tower', 'header']);
+        });
+      } else {
+        startTowerAuto(autoFloor, autoCount);
+      }
       switchTab('tower');
       return;
     }
@@ -6830,7 +6932,19 @@ function initUI() {
       updateInventoryKeywordFilter();
     });
   }
-  $id('tw-flee').addEventListener('click', fleeTower);
+  $id('tw-flee').setAttribute('data-ui-pending-key', nodePendingKey('tower'));
+  $id('tw-flee').addEventListener('click', function () {
+    if (workerUiStateEnabled()) {
+      sendUiCommand('tower.flee', {}, {
+        keys: [nodePendingKey('tower')],
+        panels: ['tower']
+      }).catch(function (error) {
+        reportUiCommandFailure('高塔撤退', error, ['tower']);
+      });
+    } else {
+      fleeTower();
+    }
+  });
 
   // 神鑄：鑄造 / 全卸下 / 自動使用魔塵
   var forgeGoBtn = $id('forge-go');
@@ -7106,12 +7220,31 @@ function confirmTowerResultModal() {
     stopAutoBtn.style.display = 'none';
   }
   if (modal) modal.style.display = 'none';
-  if (typeof confirmTowerResult === 'function') confirmTowerResult();
-  else if (typeof finishTowerFight === 'function') finishTowerFight();
+  if (workerUiStateEnabled()) {
+    sendUiCommand('tower.confirmResult', {}, {
+      keys: [nodePendingKey('tower')],
+      panels: ['tower', 'battle', 'header']
+    }).catch(function (error) {
+      reportUiCommandFailure('高塔結算', error, ['tower', 'header']);
+    });
+  } else if (typeof confirmTowerResult === 'function') {
+    confirmTowerResult();
+  } else if (typeof finishTowerFight === 'function') {
+    finishTowerFight();
+  }
 }
 function stopTowerAutoFromResultModal() {
   clearTowerResultCountdown();
-  if (typeof stopTowerAutoFromResult === 'function') stopTowerAutoFromResult();
+  if (workerUiStateEnabled()) {
+    sendUiCommand('tower.stopAuto', {}, {
+      keys: [nodePendingKey('tower')],
+      panels: ['tower']
+    }).catch(function (error) {
+      reportUiCommandFailure('停止高塔連挑', error, ['tower']);
+    });
+  } else if (typeof stopTowerAutoFromResult === 'function') {
+    stopTowerAutoFromResult();
+  }
   var confirmBtn = $id('trm-confirm');
   var stopAutoBtn = $id('trm-stop-auto');
   if (confirmBtn) {
@@ -7123,6 +7256,27 @@ function stopTowerAutoFromResultModal() {
     stopAutoBtn.style.display = 'none';
   }
 }
+
+function showPendingTowerResultModalIfReady() {
+  if (!workerUiStateEnabled() || !UI.pendingTowerResult) return;
+  var towerSnapshot = uiTowerPanelSnapshot();
+  var headerSnapshot = uiHeaderPanelSnapshot();
+  var runtime = towerSnapshot && towerSnapshot.runtime;
+  if (!runtime || !headerSnapshot || !headerSnapshot.stats) return;
+  var result = UI.pendingTowerResult;
+  UI.pendingTowerResult = null;
+  showTowerResultModal(
+    result,
+    runtime.player,
+    runtime.boss,
+    runtime.dmgDealt || 0,
+    runtime.bossDmgDealt || 0,
+    result.autoCountdown
+      ? { autoCountdown: true, countdown: TOWER_AUTO_RESULT_DELAY }
+      : null
+  );
+}
+
 function showTowerResultModal(r, p, b, myDmg, bDmg, options) {
   var modal = $id('tower-result-modal');
   var title = $id('trm-title');
@@ -7138,7 +7292,9 @@ function showTowerResultModal(r, p, b, myDmg, bDmg, options) {
     title.className = 'tr-title bad';
   }
 
-  var st = getStats();
+  var headerSnapshot = uiHeaderPanelSnapshot();
+  var st = headerSnapshot && headerSnapshot.stats;
+  if (!st) return;
   var pMax = st.hp;
   var pHp = p ? p.hp : 0;
   var bMax = b ? b.maxHp : 1;
