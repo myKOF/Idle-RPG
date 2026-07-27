@@ -70,8 +70,8 @@ var UI_WORKER_STATE = {
 
 /*
  * A command can own several keys (for example an item and a furnace).  The
- * whole entry is released by its ACK or by the first authoritative panel
- * response requested after the command was sent.
+ * whole entry is released after a successful ACK and every authoritative
+ * panel response requested after that ACK; errors release it immediately.
  */
 var UI_COMMAND_PENDING = {
   seq: 0,
@@ -189,12 +189,14 @@ function isUiCommandPending(key, id) {
 
 function syncUiPendingControls(key) {
   if (typeof document === 'undefined') return;
-  var controls = document.querySelectorAll('[data-ui-pending-key]');
+  var rawKey = String(key);
+  var selectorKey = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+    ? CSS.escape(rawKey)
+    : rawKey.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  var controls = document.querySelectorAll('[data-ui-pending-key="' + selectorKey + '"]');
   var pending = isUiCommandPending(key);
   for (var i = 0; i < controls.length; i++) {
-    if (controls[i].getAttribute('data-ui-pending-key') === key) {
-      controls[i].disabled = pending;
-    }
+    controls[i].disabled = pending;
   }
 }
 
@@ -1712,39 +1714,15 @@ function refreshCombatPauseButton() {
     el.classList.toggle('active', paused);
   });
 }
-function currentShieldSkillCap(stats) {
-  return simulationCurrentShieldSkillCap(stats);
-}
-function playerShieldMax(entity, stats) {
+function playerShieldMax(entity) {
   if (!entity) return 0;
-  var shield = Math.max(0, entity.shield || 0);
-  if (shield <= 0) return 0;
-  var version = (typeof SHIELD_MAX_VERSION === 'number') ? SHIELD_MAX_VERSION : 2;
-  if (entity.shieldMaxVersion !== version) {
-    var cap = currentShieldSkillCap(stats);
-    if (cap > 0 && shield > cap) {
-      entity.shield = cap;
-      shield = cap;
-    }
-    entity.shieldMax = shield;
-    entity.shieldMaxVersion = version;
-    entity.shieldSkillBase = 0;
-    entity.shieldSkillPct = 0;
-    return shield;
-  }
-  var shieldMax = Math.max(0, entity.shieldMax || 0);
-  if (!(shieldMax > 0) || shieldMax < shield) {
-    entity.shieldMax = shield;
-    entity.shieldMaxVersion = version;
-    return shield;
-  }
-  return shieldMax;
+  return Math.max(0, entity.shieldMax || 0);
 }
 function renderPlayerShieldBar(prefix, entity, stats) {
   var shieldBar = $id(prefix + '-shield');
   if (!shieldBar || !entity || !stats) return;
   var shield = Math.max(0, entity.shield || 0);
-  var shieldMax = playerShieldMax(entity, stats);
+  var shieldMax = playerShieldMax(entity);
   if (shield > 0.5 && shieldMax > 0) {
     setStyleIfChanged(shieldBar, 'display', 'block');
     setStyleIfChanged(shieldBar, 'width', clamp(shield / shieldMax * 100, 0, 100) + '%');
