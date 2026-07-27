@@ -14,6 +14,7 @@ var UI = {
   inventorySortIndex: 0,
   inventoryKeywordQuery: '',
   pendingItemTooltip: null,
+  statsPanelOpen: false,
   battleLayoutDirty: true,
   zoneBarSignature: null,
   performanceEventsBound: false,
@@ -164,6 +165,7 @@ function desiredUiPanelSubscriptions() {
 
   include(UI_PERSISTENT_PANEL_SUBSCRIPTIONS);
   include(UI_PANEL_SUBSCRIPTIONS_BY_TAB[UI.tab]);
+  if (UI.statsPanelOpen) include(['battle']);
   if (typeof UI_COMMAND_PENDING !== 'undefined' && UI_COMMAND_PENDING) {
     Object.keys(UI_COMMAND_PENDING.byToken).forEach(function (token) {
       include(Object.keys(UI_COMMAND_PENDING.byToken[token].waitPanels));
@@ -276,7 +278,29 @@ function applyUiSnapshot(snapshot) {
 
 function handleWorkerUiEvents(events) {
   (events || []).forEach(function (event) {
-    if (!event || event.kind !== 'notice') return;
+    if (!event) return;
+    if (event.kind === 'flog') {
+      addLog('newforge-log', event.msg, event.cls, 50);
+      return;
+    }
+    if (event.kind === 'log') {
+      if (event.box) {
+        addLog(event.box, event.msg, event.cls, event.cap);
+      } else {
+        routeUiLog(event.msg, event.cls, event.cat, workerTowerActiveForLog());
+      }
+      return;
+    }
+    if (event.kind === 'float') {
+      floatText(event.elId, event.text, event.cls, event.damageValue);
+      return;
+    }
+    if (event.kind === 'loot') {
+      // RUN_STATS / LOOT_STATS are authoritative Worker state projected by
+      // panel('battle'). Replaying recorder calls here would double-count.
+      return;
+    }
+    if (event.kind !== 'notice') return;
     if (event.key === 'towerResult') {
       UI.pendingTowerResult = event.data || null;
       requestPanelData('tower', true);
@@ -538,6 +562,7 @@ function bindWorkerUiState() {
       UI.pendingItemTooltip = null;
     }
     if (msg.name === 'tower' || msg.name === 'header') showPendingTowerResultModalIfReady();
+    if (msg.name === 'battle' && UI.statsPanelOpen) renderStatsPanel();
     if (msg.name === 'newforge') {
       updateForgeTabGlow();
       showForgeRebuildNotice();
@@ -936,7 +961,8 @@ function addLog(elId, msg, cls, cap, cat) {
     NEWFORGE_DETAIL_LOG_RENDER_DIRTY = true;
   }
 }
-function blog(msg, cls, cat) {
+function classifyUiLogCategory(msg, cat) {
+  msg = String(msg || '');
   if (!cat) {
     if (msg.includes('高塔') || msg.includes('狂暴') || msg.includes('重擊') || msg.includes('撤出')) cat = 'boss';
     else if (msg.includes('📦 戰利品：') || msg.includes('敵人掉落')) cat = 'loot';
@@ -944,17 +970,31 @@ function blog(msg, cls, cat) {
     else if (msg.includes('推進') || msg.includes('退回') || msg.includes('復活') || msg.includes('擊倒') || msg.includes('遭遇')) cat = 'combat';
     else cat = 'system';
   }
+  return cat;
+}
 
-  // 若處於高塔BOSS戰期間，將戰鬥與掉落日誌轉向到 boss 分類
-  if (window.G && G.tower && G.tower.active && (cat === 'combat' || cat === 'loot')) {
-    cat = 'boss';
-  }
+function workerTowerActiveForLog() {
+  var towerPanel = peekUiPanelData('tower');
+  if (towerPanel && towerPanel.tower) return !!towerPanel.tower.active;
+  var view = UI_WORKER_STATE.view;
+  return !!(view && view.towerActive);
+}
 
+function routeUiLog(msg, cls, cat, towerActive) {
+  cat = classifyUiLogCategory(msg, cat);
+  if (towerActive && (cat === 'combat' || cat === 'loot')) cat = 'boss';
   if (cat === 'boss') {
     addLog('boss-log', msg, cls, 150, cat);
   } else {
     addLog('battle-log', msg, cls, 150, cat);
   }
+}
+
+function blog(msg, cls, cat) {
+  var towerActive = workerUiStateEnabled()
+    ? workerTowerActiveForLog()
+    : !!(window.G && G.tower && G.tower.active);
+  routeUiLog(msg, cls, cat, towerActive);
 }
 // 舊生產線頁已併入熔爐頁：flog 統一寫入熔爐紀錄（與 nflog 同一面板）
 function flog(msg, cls) { addLog('newforge-log', msg, cls, 50); }
@@ -1004,11 +1044,9 @@ function animatePendingEnemyKill(ent, elId, cls) {
 
 function flushPendingEnemyFloats() {
   if (!PENDING_ENEMY_FLOATS.length) return;
-  var activeEnemies = (typeof fieldEnemyList === 'function') ? fieldEnemyList() : null;
   var keep = [];
   for (var i = 0; i < PENDING_ENEMY_FLOATS.length; i++) {
     var item = PENDING_ENEMY_FLOATS[i];
-    if (item.ent && activeEnemies && activeEnemies.indexOf(item.ent) < 0) continue;
     var layer = $id(item.elId);
     if (!layer || layer.offsetParent === null) {
       keep.push(item);
@@ -8577,23 +8615,55 @@ if ($id('trm-stop-auto')) {
 }
 /* ---- 統計面板：基本統計與掉落物統計（HTML 由 js/stats.js 產生） ---- */
 var statsPanelTimer = null;
+function withWorkerBattleStats(render) {
+  if (!workerUiStateEnabled()) {
+    render();
+    return true;
+  }
+  var battle = peekUiPanelData('battle');
+  if (!battle || !battle.runStats || !battle.lootStats) {
+    requestPanelData('battle', false);
+    return false;
+  }
+  var previousRunStats = window.RUN_STATS;
+  var previousLootStats = window.LOOT_STATS;
+  window.RUN_STATS = battle.runStats;
+  window.LOOT_STATS = battle.lootStats;
+  try {
+    render();
+  } finally {
+    window.RUN_STATS = previousRunStats;
+    window.LOOT_STATS = previousLootStats;
+  }
+  return true;
+}
+
 function renderStatsPanel() {
   if (uiRenderingSuspended()) return; // 背景分頁不重建統計面板
-  var basic = $id('stats-basic-card');
-  var source = $id('stats-source-card');
-  var loot = $id('stats-loot-card');
-  if (basic && typeof statsBasicHtml === 'function') basic.innerHTML = statsBasicHtml();
-  if (source && typeof statsSourceHtml === 'function') source.innerHTML = statsSourceHtml();
-  if (loot && typeof statsLootHtml === 'function') loot.innerHTML = statsLootHtml();
-  if (typeof renderCurrentSummary === 'function') renderCurrentSummary(); // 目前戰鬥傷害卡片同步刷新
+  withWorkerBattleStats(function () {
+    var basic = $id('stats-basic-card');
+    var source = $id('stats-source-card');
+    var loot = $id('stats-loot-card');
+    if (basic && typeof statsBasicHtml === 'function') basic.innerHTML = statsBasicHtml();
+    if (source && typeof statsSourceHtml === 'function') source.innerHTML = statsSourceHtml();
+    if (loot && typeof statsLootHtml === 'function') loot.innerHTML = statsLootHtml();
+    if (typeof renderCurrentSummary === 'function') renderCurrentSummary(); // 目前戰鬥傷害卡片同步刷新
+  });
 }
 // 面板開啟期間每秒重繪，統計時間與掉落數量即時更新；關閉即停止，避免閒置耗損。
 function startStatsPanelTimer() {
   stopStatsPanelTimer();
+  UI.statsPanelOpen = true;
+  refreshUiPanelSubscriptions();
+  requestPanelData('battle', true);
   statsPanelTimer = setInterval(renderStatsPanel, 1000);
 }
 function stopStatsPanelTimer() {
   if (statsPanelTimer) { clearInterval(statsPanelTimer); statsPanelTimer = null; }
+  if (UI.statsPanelOpen) {
+    UI.statsPanelOpen = false;
+    refreshUiPanelSubscriptions();
+  }
 }
 
 // 開啟結算彈窗時，將目前尚未死亡結算的戰鬥統計更新到最上方。
