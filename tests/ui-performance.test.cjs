@@ -117,7 +117,8 @@ test('Worker panel subscriptions clear and Commands wait for post-ACK panel gene
   assert.match(ui, /function refreshUiPanelSubscriptions\(\)[\s\S]*delete UI_WORKER_STATE\.panelSubscriptions\[key\]/);
   assert.match(ui, /panelRequestSeq:\s*Object\.create\(null\)/);
   assert.match(ui, /panelResponseSeq:\s*Object\.create\(null\)/);
-  assert.match(ui, /if \(force\) UI_WORKER_STATE\.panelQueued\[key\] = true;/);
+  assert.match(ui, /UI_WORKER_STATE\.panelQueued\[key\]\s*=\s*[\s\S]*mergeUiPanelParams\(UI_WORKER_STATE\.panelQueued\[key\], requestParams\)/);
+  assert.match(ui, /WorkerBridge\.requestPanel\(key, requestParams\)/);
   assert.match(ui, /entry\.acknowledged = true;[\s\S]*entry\.waitPanels\[key\] = requestPanelData\(key, true\)/);
   assert.match(ui, /UI_WORKER_STATE\.panelResponseSeq\[key\][\s\S]*>= entry\.waitPanels\[key\]/);
 });
