@@ -70,11 +70,41 @@ P1 Worker 骨架（P0 協議凍結已完成）
 
 狀態：
 
-等待測試（P1 已交付，待 Antigravity 驗證）
+等待測試（P1、P2 已交付，待 Antigravity 驗證）
 
 任務名稱：
 
-Web Worker 遷移 P1：Worker 骨架
+Web Worker 遷移 P2：存檔搬遷（P1 Worker 骨架已完成）
+
+P2 交付內容：
+
+- `js/storage.js`（新增）：主執行緒唯一落地端。接收 Worker 給的 json 與 meta，
+  底層重用 save.js 既有的 `idbSetAutoV2` / `writeRawToFolder` / `writeAutoMetaV2` /
+  `saveFolderMetaV2`，**存檔格式與檔名規則完全不變**
+- `js/worker/sim.worker.js`：新增 `installStorageGuards()`，載入後就地換掉
+  `saveGame` / `syncSaveFolder` / `manualSave` / `createManualSaveToFolderV2` /
+  `restartGame` / `loadGame` / `loadLatestFolderSave`，讓模擬層照常呼叫、落地端換人。
+  **未修改 save.js**（那 17 支是既有測試的受測對象）
+- `js/worker/shim.js`：localStorage 由記憶體替身改為**會拋錯的陷阱**，漏網路徑大聲失敗
+- `js/worker/protocol.js`：協議升 v2（`load` 訊息、`restart` 落地種類、
+  `persist` 帶 `meta`、`boot` 帶 `maxRunId`、`save.*` 三條改 `fn:null`）
+- `js/bridge.js`：接上真實存檔讀寫；補送初始 visibility 狀態
+- `js/main.js`：worker 模式下關閉舊迴圈並設 `_saveSuppressed`，讓出存檔權
+
+⚠️ 行為變更：`?worker=1` 現在以**玩家真實存檔**開機，且 Worker 是存檔權威。
+P3 之前 UI 尚未接上 Worker，所以此模式下**畫面不會更新（等同凍結）**，屬預期中的中間狀態。
+要正常玩遊戲請拿掉網址參數走舊路徑。
+
+實測結果（localhost:8125）：
+
+- 以真實存檔開機：等級 6、金幣 21130，migrate 與離線結算正常，0 錯誤
+- 自動存檔實際落地 IndexedDB，Worker 與落地內容一致（15 秒差值符合節奏）
+- **跨路徑相容**：Worker 寫的存檔，舊路徑重開後正確讀入（金幣 18154、背包 13 件、runId 1）
+- `save.manual` 未連接資料夾時**誠實回報失敗**（persistErrors +1，訊息「尚未選擇本地存檔資料夾」），
+  不會假裝成功
+- 執行中讀檔：帶標記值的存檔送進去後狀態確實被替換
+- `SHIM_DIAG.storage` 全程為空 → Worker 內沒有任何一次 localStorage 呼叫
+- `npm test`：473 tests / 426 pass / 47 fail，失敗清單與基準線**逐條相同**
 
 P1 交付內容：
 
@@ -306,24 +336,36 @@ P0 效能與存檔基準線（commit 2104314）
 
 任務內容：
 
-**一、P1 空跑驗證（現在可做，Claude 已交付並合併）**
+⚠️ **P2 已交付，`?worker=1` 的語意已改變，以下步驟以 P2 版本為準。**
 
-`?worker=1` 為驗證模式：Worker 以拋棄式全新狀態開機，**不讀也不寫玩家存檔**，
-所以此模式下畫面上的遊戲仍是舊路徑在跑，兩者互不影響。驗證重點是 Worker 本身活著、
-且舊路徑毫髮無傷。
+`?worker=1` 現在以**玩家真實存檔**開機，且 Worker 是模擬與存檔的權威；
+舊迴圈會被關閉、`_saveSuppressed = true`。P3 之前 UI 尚未接上 Worker，
+所以**畫面不會更新（等同凍結）**，這是預期中的中間狀態，不是 bug。
+
+⚠️ **驗證前請先備份存檔**（匯出一份），因為此模式會真的寫入你的存檔。
+
+**一、Worker 存活與存檔往返驗證**
 
 1. 開 `?worker=1`，Console 執行 `WorkerBridge.status()`，確認：
-   - `booted: true`、`errors: 0`、`pendingCommands: 0`
+   - `booted: true`、`errors: 0`、`persistErrors: 0`、`pendingCommands: 0`
+   - `lastView` 的等級／金幣／關卡**與你原本的存檔進度相符**（代表真的讀到存檔，
+     不是開了新遊戲）
    - `ticks` 隨時間增加（約 5 次／秒）
-   - `persists` 每 15 秒 +1（P1 只往返不落地，屬預期）
-   - `lastView` 的 stage / level / hp 會變動（代表模擬真的在跑）
+   - `persists` 每 15 秒 +1
    - `shimDiag.storage` 必須恆為空物件。**若出現任何數字請立即回報**，
-     代表有存檔路徑誤用 Worker 內的記憶體替身
-2. 掛機 10 分鐘，記錄 `errors` 是否仍為 0、記憶體是否持續攀升（Worker 洩漏）
-3. 切到背景分頁 2 分鐘再切回，確認 `errors` 仍為 0
-4. **不帶參數**重開，確認舊路徑完全正常：Console 無錯誤、戰鬥推進、存檔正常、
-   各頁籤可切換。這項最重要——P1 若動到舊路徑就是失敗
-5. 對照 P0 基準線，確認舊路徑效能沒有因為多載入兩支 script 而變差
+     代表有存檔路徑在 Worker 內誤用 localStorage
+2. **存檔往返（P2 最關鍵）**：在 `?worker=1` 掛機 1 分鐘後關掉參數重開舊路徑，
+   確認舊路徑讀到的進度就是 Worker 剛才推進到的進度（金幣、等級、關卡、背包件數）。
+   這證明 Worker 寫的存檔舊路徑讀得懂，存檔格式沒有被改壞
+3. 反向驗證：舊路徑玩一段時間後開 `?worker=1`，確認 Worker 讀到的是舊路徑的最新進度
+4. 三份不同規模存檔（新手／中期／後期）各做一次步驟 2、3，特別注意後期存檔
+   （背包接近上限）的落地耗時
+5. 已連接存檔資料夾的情況：確認資料夾內的 `.json` 檔案有被更新，內容可被舊路徑讀回
+6. 掛機 10 分鐘：`errors` 與 `persistErrors` 是否仍為 0、記憶體是否持續攀升
+7. 切到背景分頁 2 分鐘再切回，確認 `errors` 仍為 0，且離線收益**沒有重複結算**
+8. **不帶參數**重開，確認舊路徑完全正常：Console 無錯誤、戰鬥推進、存檔正常、
+   各頁籤可切換。這項最重要——P1/P2 若動到舊路徑就是失敗
+9. 對照 P0 基準線，確認舊路徑效能沒有因為多載入 3 支 script 而變差
 
 **二、P2 存檔測試素材準備（Claude 進行中，先備料）**
 

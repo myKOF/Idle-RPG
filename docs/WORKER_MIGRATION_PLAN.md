@@ -130,7 +130,7 @@
 |---|---|---|---|
 | **P0 協議凍結** | `docs/WORKER_PROTOCOL.md`、`js/worker/protocol.js` | 待命：讀協議並回報疑義（不改檔） | 建立**基準線**：現版效能、存檔、離線收益的實測數據與錄影 |
 | **P1 Worker 骨架** | `js/worker/sim.worker.js`、`js/worker/shim.js`、`js/bridge.js`、`index.html`（僅 feature flag 接線）| `tests/worker-protocol.test.cjs`、`tests/worker-shim.test.cjs`（自有新檔） | `?worker=1` 空跑驗證、Console 錯誤檢查 |
-| **P2 存檔搬遷** | `js/save.js` 拆分、`js/storage.js` | `tools/`、參數表、既有測試修補（禁止碰 `js/worker/*`、`js/save.js`） | 存檔相容性驗證：舊存檔讀入、離線收益、重整、切頁 |
+| **P2 存檔搬遷** | `js/storage.js`（新增）、`js/worker/*`、`js/bridge.js`、`js/main.js`（worker 模式讓出存檔權）| 既有測試失敗清理（A/C 類，禁止碰 `js/`） | 存檔相容性驗證：舊存檔讀入、離線收益、重整、切頁 |
 | **P3 UI 去狀態化** | `js/main.js`、`js/worker/*`、`js/gm.js` | **獨占 `js/ui.js`**：依協議把 16 處寫入＋32 個變更呼叫改為 `send(cmd)`，`G` 改讀 snapshot | 全頁籤互動迴歸測試、產出重現步驟 |
 | **P4 效能收斂** | snapshot 分層策略、`js/worker/*` | `js/ui.js` 渲染節流配合 | 效能量測，對照 P0 基準線 |
 | **P5 移除 flag** | `index.html`、移除舊單執行緒路徑 | 清理死碼（需 Claude review 後才動手） | 全流程驗收 |
@@ -250,7 +250,7 @@ Codex 已完成診斷分類，見 `docs/TEST_FAILURE_TRIAGE.md`（A 類 32／B �
 |---|---|---|
 | P0 協議凍結 | ✅ 完成（v1，67 條指令） | 2026-07-27 |
 | P1 Worker 骨架 | ✅ 完成（待 Antigravity 驗證） | 2026-07-27 |
-| P2 存檔搬遷 | 未開始 | |
+| P2 存檔搬遷 | ✅ 完成（待 Antigravity 驗證） | 2026-07-27 |
 | P3 UI 去狀態化 | 未開始 | |
 | P4 效能收斂 | 未開始 | |
 | P5 移除 flag | 未開始 | |
