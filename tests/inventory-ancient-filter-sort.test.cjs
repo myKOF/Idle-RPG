@@ -8,6 +8,7 @@ const root = path.resolve(__dirname, '..');
 test('背包太古數量篩選與排序功能驗證', () => {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const item = fs.readFileSync(path.join(root, 'js/item.js'), 'utf8');
 
   // 1. 驗證 index.html 包含 #inv-ancient-filter 且位於 #inv-rarity-filter 左側
   assert.match(html, /id="inv-ancient-filter"/);
@@ -29,8 +30,9 @@ test('背包太古數量篩選與排序功能驗證', () => {
   // 3. 驗證排序按鈕包含預設文字且為 button 元素
   assert.match(html, /<button[^>]*id="inv-sort"[^>]*>🔄 排序 \(等級\)<\/button>/);
 
-  // 4. 驗證 js/ui.js 輔助函式 getItemAncientCount 與雙重篩選邏輯
-  assert.match(ui, /function\s+getItemAncientCount\s*\(/);
+  // 4. 驗證 getItemAncientCount 已收斂至 js/item.js（唯一實作），篩選邏輯仍在 ui.js
+  assert.match(item, /function\s+getItemAncientCount\s*\(/);
+  assert.doesNotMatch(ui, /function\s+getItemAncientCount\s*\(/);
   assert.match(ui, /var\s+ancientFilterSelect\s*=\s*\$id\('inv-ancient-filter'\);/);
   assert.match(ui, /filterAncient\s*!==\s*''/);
 

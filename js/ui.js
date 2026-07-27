@@ -2093,18 +2093,6 @@ function renderBattle() {
   flushPendingEnemyFloats();
 }
 
-function getItemAncientCount(it) {
-  if (it && Number.isFinite(Number(it.ancientCount))) {
-    return Math.max(0, Math.floor(Number(it.ancientCount)));
-  }
-  if (!it || !Array.isArray(it.affixes)) return 0;
-  var c = 0;
-  for (var i = 0; i < it.affixes.length; i++) {
-    if (it.affixes[i] && it.affixes[i].ancient) c++;
-  }
-  return c;
-}
-
 function isInternalServer() {
   var loc = (typeof window !== 'undefined' && window.location) || (typeof location !== 'undefined' && location);
   if (!loc) return false;
