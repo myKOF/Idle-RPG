@@ -1,4 +1,4 @@
-﻿# AI_TASKS.md
+# AI_TASKS.md
 
 本文件記錄 Idle-RPG 專案目前的 AI 任務分配。
 
@@ -62,7 +62,8 @@ Web Worker 架構遷移。計劃書 `docs/WORKER_MIGRATION_PLAN.md`（暫時文�
 
 目前階段：
 
-P1 Worker 骨架（P0 協議凍結已完成）
+P3 UI 去狀態化（P0-P2 已驗證通過，Codex 開工）
+
 
 ---
 
