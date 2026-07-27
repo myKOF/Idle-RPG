@@ -40,10 +40,54 @@ var _persistSeq = 0;
 var _pendingPersist = {};   // token -> kind，等主執行緒回 saveResult
 var _maxRunId = 1;          // 由 boot 帶入；重新開局時用來決定新局編號
 
+/* ---- 訊息量測（P4 用，預設關閉）----
+   量測本身會扭曲被量測的對象：為了算 payload 大小而做一次 JSON.stringify，
+   成本可能比訊息本身還高。所以只在 Worker URL 帶 ?measure=1 時才啟用，
+   平常完全不付這個代價。
+
+   兩個數字量的是不同東西，不要混用：
+   - bytes：JSON 位元組數，只是**規模的代理指標**。postMessage 走的是 structured
+     clone，不是 JSON，實際成本與此不成正比。
+   - postMs：postMessage 呼叫本身的耗時，包含 structured clone，這才是真實成本。 */
+var MEASURE = (typeof location !== 'undefined') && /[?&]measure=1(&|$)/.test(location.search || '');
+var MEASURE_STATS = Object.create(null);
+
+function measureRecord(type, payload, postMs) {
+  var s = MEASURE_STATS[type];
+  if (!s) s = MEASURE_STATS[type] = { count: 0, bytes: 0, maxBytes: 0, postMs: 0, maxPostMs: 0 };
+  s.count++;
+  s.postMs += postMs;
+  if (postMs > s.maxPostMs) s.maxPostMs = postMs;
+  try {
+    var bytes = JSON.stringify(payload).length;
+    s.bytes += bytes;
+    if (bytes > s.maxBytes) s.maxBytes = bytes;
+  } catch (e) { /* 無法序列化就只記時間 */ }
+}
+
+function measureSnapshot() {
+  if (!MEASURE) return null;
+  var out = Object.create(null);
+  for (var type in MEASURE_STATS) {
+    var s = MEASURE_STATS[type];
+    out[type] = {
+      count: s.count,
+      avgBytes: Math.round(s.bytes / s.count),
+      maxBytes: s.maxBytes,
+      avgPostMs: +(s.postMs / s.count).toFixed(3),
+      maxPostMs: +s.maxPostMs.toFixed(3)
+    };
+  }
+  return out;
+}
+
 function post(type, payload) {
   payload = payload || {};
   payload.type = type;
+  if (!MEASURE) { self.postMessage(payload); return; }
+  var t0 = performance.now();
   self.postMessage(payload);
+  measureRecord(type, payload, performance.now() - t0);
 }
 
 function reportError(where, err) {
@@ -203,7 +247,8 @@ function emitTick() {
     view: buildView(),
     dirty: shimDrainDirty(),
     events: shimDrainEvents(),
-    diag: shimDiagSnapshot()
+    diag: shimDiagSnapshot(),
+    measure: measureSnapshot()
   });
 }
 

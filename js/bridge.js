@@ -13,6 +13,43 @@
 var WorkerBridge = (function () {
   var WORKER_URL = 'js/worker/sim.worker.js';
 
+  /* ---- 量測模式（P4 用，預設關閉）----
+     網址帶 ?measure=1 時，Worker 與主執行緒兩側都會統計訊息規模與耗時。
+     平常不啟用，因為算 payload 大小要多做一次序列化，會扭曲被量測的對象。 */
+  var MEASURE = typeof location !== 'undefined' && /[?&]measure=1(&|$)/.test(location.search);
+  var recvStats = Object.create(null);
+
+  /* 量的是「收到訊息到分派完成」的主執行緒耗時。這是 Worker 架構真正要保護的東西：
+     即使模擬在另一條執行緒，訊息處理仍發生在主執行緒上，過大的 payload 一樣會卡畫面。 */
+  function recordRecv(type, msg, ms) {
+    var s = recvStats[type];
+    if (!s) s = recvStats[type] = { count: 0, bytes: 0, maxBytes: 0, ms: 0, maxMs: 0 };
+    s.count++;
+    s.ms += ms;
+    if (ms > s.maxMs) s.maxMs = ms;
+    try {
+      var bytes = JSON.stringify(msg).length;
+      s.bytes += bytes;
+      if (bytes > s.maxBytes) s.maxBytes = bytes;
+    } catch (e) {}
+  }
+
+  function recvSnapshot() {
+    if (!MEASURE) return null;
+    var out = Object.create(null);
+    for (var type in recvStats) {
+      var s = recvStats[type];
+      out[type] = {
+        count: s.count,
+        avgBytes: Math.round(s.bytes / s.count),
+        maxBytes: s.maxBytes,
+        avgMs: +(s.ms / s.count).toFixed(3),
+        maxMs: +s.maxMs.toFixed(3)
+      };
+    }
+    return out;
+  }
+
   var _worker = null;
   var _seq = 0;
   var _pending = {};      // cmd id -> { resolve, reject, name, at }
@@ -29,6 +66,7 @@ var WorkerBridge = (function () {
     lastView: null,
     lastDirty: [],
     lastDiag: null,
+    lastMeasure: null,
     lastError: null,
     bootedAt: 0
   };
@@ -71,7 +109,14 @@ var WorkerBridge = (function () {
   }
 
   function onMessage(e) {
+    if (!MEASURE) { dispatch(e.data || {}); return; }
+    var t0 = performance.now();
     var msg = e.data || {};
+    dispatch(msg);
+    recordRecv(msg.type, msg, performance.now() - t0);
+  }
+
+  function dispatch(msg) {
     switch (msg.type) {
       case MSG_OUT.BOOTED:
         stats.booted = true;
@@ -86,6 +131,7 @@ var WorkerBridge = (function () {
         stats.lastView = msg.view;
         stats.lastDirty = msg.dirty || [];
         stats.lastDiag = msg.diag || null;
+        if (msg.measure) stats.lastMeasure = msg.measure;
         stats.events += (msg.events || []).length;
         break;
       case MSG_OUT.ACK:
@@ -120,7 +166,8 @@ var WorkerBridge = (function () {
     if (_started) return true;
     opts = opts || {};
     try {
-      _worker = new Worker(WORKER_URL);
+      // 量測模式要讓 Worker 那側也知道，透過 Worker URL 的 query 傳遞（免動協議）
+      _worker = new Worker(MEASURE ? (WORKER_URL + '?measure=1') : WORKER_URL);
     } catch (e) {
       console.error('[bridge] 無法建立 Worker（以 file:// 開啟時瀏覽器會封鎖，請用開發伺服器）：', e);
       return false;
@@ -166,6 +213,9 @@ var WorkerBridge = (function () {
       lastDirty: stats.lastDirty,
       lastView: stats.lastView,
       shimDiag: stats.lastDiag,
+      /* ?measure=1 才有值。worker 是送出端（structured clone 成本），
+         main 是接收端（主執行緒分派耗時），兩者要分開看。 */
+      measure: MEASURE ? { worker: stats.lastMeasure, main: recvSnapshot() } : null,
       lastError: stats.lastError
     };
   }
