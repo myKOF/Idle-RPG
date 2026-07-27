@@ -764,7 +764,19 @@ Claude（P1 驗證結果 + P2 存檔素材）
 
 目前等待修正：
 
-無
+**Codex — `ui.js` 存取層 Code Review（commit 8fc5a63）**
+
+Claude 於 2026-07-27 唯讀檢查，2 項 Medium、2 項 Low、1 項建議。
+八個面板都會蓋在這層上，建議在轉換更多面板前先處理兩項 Medium。
+
+- Medium：`panelSubscriptions` 永不清除，非可見面板仍持續請求。
+  實測後期存檔（800 件背包）`inv` 面板單次 payload 為 **305 KB**。
+- Medium：ACK 立即釋放單飛鎖，但面板資料尚未到達；`waitPanels` 因 ACK 必定先到而形同虛設。
+- Low：`applyUiSnapshot` 讀 `snapshot.panels`，但協議的 `booted`／`full` 只帶 `{ view }`，該分支永不執行。
+- Low：`syncUiPendingControls` 掃全文件後逐一比對屬性。
+- 建議：`panelData()` 首次回傳 null 的契約應寫進註解。
+
+完整內容由使用者轉交。
 
 目前等待測試：
 
