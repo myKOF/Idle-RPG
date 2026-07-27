@@ -279,15 +279,41 @@ P4 的工作落在 Codex 的 `ui.js` 渲染節流那一欄，Worker 端暫時沒
 尚未收斂的兩點：
 
 1. **每個捲動動畫格重跑整條管線**。`renderInventory()` 單次 3.3～6.8 ms（中位數 4.3），
-   而 60fps 的預算是 16.7 ms——等於捲動時吃掉 26～41% 的畫格。成本在 800 件的
-   篩選與排序每次重算，切片只是最後一步。把篩選排序結果快取起來、捲動時只重切，
-   可以把它壓到接近 0。
+   而 60fps 的預算是 16.7 ms——等於捲動時吃掉 26～41% 的畫格。
 2. **隱藏狀態下算出來的欄數是錯的**。`#inventory-grid` 隱藏時
    `getComputedStyle` 回傳未解析的 `repeat(auto-fill, 58px)`，
    `inventoryGridColumnCount` 的正規表示式只抓到一個 `58px` → 欄數 1 →
    134 列變成 800 列、spacer 變成 51,002 px。神鑄頁也訂閱 `inv`，
    會實際觸發這條路徑。切回裝備頁時會自我修復，所以目前不影響畫面，
    但這是在 `clientWidth === 0` 的元素上算版面，不該留著。
+   → **`b4cbeed` 已修**：`clientWidth === 0` 或無 `offsetParent` 時沿用既有切片。
+   實測切到神鑄頁後 `data-inventory-total-rows` 維持 134、spacer 維持 8,378 px。
+
+#### 那 4.3 ms 到底花在哪（2026-07-27 分段量測）
+
+`b4cbeed` 為第 1 點加了篩選結果快取，但**實測沒有效果**：無篩選時
+4.38 ms → 4.36 ms，有太古篩選時快取命中與否的差距是 −0.6 ms（在雜訊範圍內）。
+原因是排序在 Worker 端做（`player.setInvSort`），`snapshot.items` 到手就已排好，
+而未套用篩選時原本的程式碼根本沒有濾——快取起來的是一個不存在的成本。
+
+實際分段（總計 4.36 ms）：
+
+| 區段 | 耗時 |
+|---|---|
+| `box.scrollTop = previousScrollTop`（緊接在 `innerHTML` 之後） | **約 2.3 ms** |
+| `renderDetail()` | 0.85 ms |
+| `box.innerHTML = ...` 本身 | 0.51 ms |
+| `itemCellHTML` × 18 格 | 0.045 ms |
+| `inventoryGridColumnCount` | 0.005 ms |
+| `applyInventoryVisibleRows` | 0.01 ms |
+
+最大一塊是**強制同步版面計算**：寫完 `innerHTML` 立刻碰 `scrollTop`，瀏覽器必須
+當場把新內容排版完才能回答。單獨寫 `innerHTML` 是 0.51 ms，後面加一個 `scrollTop`
+讀取變 2.10 ms、加一個寫入變 2.80 ms。
+
+而且那行**是多餘的**：spacer 讓總高度在重繪前後保持一致，實測不還原 `scrollTop`
+（設 3200 → 重寫 `innerHTML` → 讀回）仍然精確是 3200。真正需要還原的只有
+總高度改變的情況（篩選條件變動、件數變動）。
 
 ---
 
