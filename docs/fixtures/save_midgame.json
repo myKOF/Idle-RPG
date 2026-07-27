@@ -1,0 +1,5796 @@
+{
+  "version": 1,
+  "runId": 1,
+  "skillDmgV2": true,
+  "specialBuffTrimV1": true,
+  "externalGoldRecoveryV1": true,
+  "talentTreesV2RespecV1": true,
+  "talentTreesV2RespecV2": true,
+  "talentTreesV2RespecV3": true,
+  "talentTreesV2RespecV4": true,
+  "equipSetPotentialLimitV1": true,
+  "savedAt": 1785123962231,
+  "player": {
+    "level": 1,
+    "xp": 150000,
+    "reincarnations": 0,
+    "reincarnationTalentPoints": 0,
+    "talents": {
+      "levels": {},
+      "potentialLevels": {}
+    },
+    "gold": 5000000,
+    "scrap": 0,
+    "essence": 0,
+    "ancientEssence": 0,
+    "soulOrigin": 0,
+    "dust": 0,
+    "gems": {
+      "ruby": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "sapphire": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "topaz": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "emerald": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "diamond": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "lapis": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "amethyst": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "garnet": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "opal": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "onyx": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "moonstone": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "sunstone": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "jade": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "turquoise": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "agate": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "pearl": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "malachite": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "fluorite": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "spinel": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "aquamarine": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "amazonite": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "peridot": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "citrine": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "tourmaline": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "coreFire": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "coreIce": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "coreLightning": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "corePoison": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "coreLight": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "coreDark": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "wardFire": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "wardIce": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "wardLightning": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "wardPoison": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "wardDark": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "wardLight": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "wardAll": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      }
+    },
+    "fusedGems": [],
+    "gemShop": {
+      "level": 1,
+      "items": [],
+      "refreshCount": 0,
+      "hourStart": 1785123958142
+    },
+    "books": {
+      "fire": 0,
+      "ice": 0,
+      "lightning": 0,
+      "poison": 0,
+      "light": 0,
+      "dark": 0,
+      "fireRes": 0,
+      "iceRes": 0,
+      "lightningRes": 0,
+      "poisonRes": 0,
+      "lightRes": 0,
+      "darkRes": 0,
+      "ctrlRes": 0,
+      "loot": 0,
+      "haste": 0,
+      "vigor": 0,
+      "clarity": 0,
+      "focus": 0,
+      "fortune": 0,
+      "wisdom": 0
+    },
+    "invUpgrades": 0,
+    "skills": {
+      "powerSlash": 1,
+      "arcaneBurst": 1
+    },
+    "skillUnlocks": {
+      "powerSlash": true,
+      "arcaneBurst": true
+    },
+    "skillPoints": 0,
+    "skillPointBudget": 2,
+    "loadout": [
+      "powerSlash",
+      "arcaneBurst"
+    ],
+    "fusions": [],
+    "specialGrants": {
+      "guaranteedUniqueLv30": {
+        "done": false,
+        "pity": 0
+      },
+      "guaranteedEpicLv50": {
+        "done": false,
+        "pity": 0
+      }
+    },
+    "shownRes": {}
+  },
+  "equipmentSets": [
+    {
+      "weapon": null,
+      "weapon2": null,
+      "helmet": null,
+      "shoulder": null,
+      "chest": null,
+      "belt": null,
+      "gloves": null,
+      "wrist": null,
+      "legs": null,
+      "boots": null,
+      "ring": null,
+      "ring2": null,
+      "amulet": null
+    },
+    {
+      "weapon": null,
+      "weapon2": null,
+      "helmet": null,
+      "shoulder": null,
+      "chest": null,
+      "belt": null,
+      "gloves": null,
+      "wrist": null,
+      "legs": null,
+      "boots": null,
+      "ring": null,
+      "ring2": null,
+      "amulet": null
+    },
+    {
+      "weapon": null,
+      "weapon2": null,
+      "helmet": null,
+      "shoulder": null,
+      "chest": null,
+      "belt": null,
+      "gloves": null,
+      "wrist": null,
+      "legs": null,
+      "boots": null,
+      "ring": null,
+      "ring2": null,
+      "amulet": null
+    }
+  ],
+  "equipActive": 0,
+  "equipView": 0,
+  "equipSetNames": [
+    "",
+    "",
+    ""
+  ],
+  "equipment": {
+    "weapon": null,
+    "weapon2": null,
+    "helmet": null,
+    "shoulder": null,
+    "chest": null,
+    "belt": null,
+    "gloves": null,
+    "wrist": null,
+    "legs": null,
+    "boots": null,
+    "ring": null,
+    "ring2": null,
+    "amulet": null
+  },
+  "inventory": [
+    {
+      "id": "ims2opsoi5",
+      "kind": "equip",
+      "slot": "amulet",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的星辰項鍊",
+      "affixes": [
+        {
+          "key": "hpFlat",
+          "val": 11676,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": true
+    },
+    {
+      "id": "ims2opsoi6",
+      "kind": "equip",
+      "slot": "belt",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的麻繩腰帶",
+      "affixes": [
+        {
+          "key": "critRate",
+          "val": 7.9,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoi7",
+      "kind": "equip",
+      "slot": "belt",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的麻繩腰帶",
+      "affixes": [
+        {
+          "key": "int",
+          "val": 278,
+          "ancient": false
+        },
+        {
+          "key": "agi",
+          "val": 347,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoi8",
+      "kind": "equip",
+      "slot": "gloves",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的布手套",
+      "affixes": [
+        {
+          "key": "matkFlat",
+          "val": 680,
+          "ancient": false
+        },
+        {
+          "key": "matkPct",
+          "val": 29.6,
+          "ancient": false
+        },
+        {
+          "key": "mpFlat",
+          "val": 4544,
+          "ancient": false
+        },
+        {
+          "key": "defFlat",
+          "val": 336,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoi9",
+      "kind": "equip",
+      "slot": "ring",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的銅戒",
+      "affixes": [
+        {
+          "key": "mRes",
+          "val": 21.3,
+          "ancient": true
+        },
+        {
+          "key": "resDark",
+          "val": 51,
+          "ancient": false
+        },
+        {
+          "key": "str",
+          "val": 477,
+          "ancient": false
+        },
+        {
+          "key": "atkFlat",
+          "val": 1613,
+          "ancient": true
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoia",
+      "kind": "equip",
+      "slot": "amulet",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的木墜",
+      "affixes": [
+        {
+          "key": "mdefPct",
+          "val": 70.5,
+          "ancient": false
+        },
+        {
+          "key": "globalDmgRed",
+          "val": 677,
+          "ancient": false
+        },
+        {
+          "key": "normalDmg",
+          "val": 63.8,
+          "ancient": false
+        },
+        {
+          "key": "dmgVsIce",
+          "val": 5.4,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "stun",
+        "val": 6
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoib",
+      "kind": "equip",
+      "slot": "weapon",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的騎士劍",
+      "affixes": [
+        {
+          "key": "matkFlat",
+          "val": 538,
+          "ancient": true
+        },
+        {
+          "key": "vit",
+          "val": 197,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false,
+      "weaponType": "sword1h",
+      "weaponAbility": null
+    },
+    {
+      "id": "ims2opsoic",
+      "kind": "equip",
+      "slot": "belt",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的皮革腰帶",
+      "affixes": [
+        {
+          "key": "int",
+          "val": 398,
+          "ancient": true
+        },
+        {
+          "key": "vit",
+          "val": 276,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoid",
+      "kind": "equip",
+      "slot": "ring",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的銅戒",
+      "affixes": [
+        {
+          "key": "atkPct",
+          "val": 31.5,
+          "ancient": false
+        },
+        {
+          "key": "int",
+          "val": 376,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoie",
+      "kind": "equip",
+      "slot": "belt",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的巨龍束帶",
+      "affixes": [
+        {
+          "key": "int",
+          "val": 384,
+          "ancient": false
+        },
+        {
+          "key": "resDark",
+          "val": 42.5,
+          "ancient": false
+        },
+        {
+          "key": "matkPct",
+          "val": 39.4,
+          "ancient": false
+        },
+        {
+          "key": "resLight",
+          "val": 32.8,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoif",
+      "kind": "equip",
+      "slot": "belt",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的麻繩腰帶",
+      "affixes": [
+        {
+          "key": "matkPct",
+          "val": 49.7,
+          "ancient": false
+        },
+        {
+          "key": "matkFlat",
+          "val": 967,
+          "ancient": false
+        },
+        {
+          "key": "int",
+          "val": 543,
+          "ancient": false
+        },
+        {
+          "key": "str",
+          "val": 611,
+          "ancient": false
+        },
+        {
+          "key": "mRes",
+          "val": 14.3,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": true
+    },
+    {
+      "id": "ims2opsoig",
+      "kind": "equip",
+      "slot": "helmet",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的鐵盔",
+      "affixes": [
+        {
+          "key": "agi",
+          "val": 634,
+          "ancient": false
+        },
+        {
+          "key": "resDark",
+          "val": 59,
+          "ancient": false
+        },
+        {
+          "key": "hpFlat",
+          "val": 32780,
+          "ancient": false
+        },
+        {
+          "key": "resLight",
+          "val": 70.9,
+          "ancient": false
+        },
+        {
+          "key": "str",
+          "val": 722,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "stun",
+        "val": 6
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoih",
+      "kind": "equip",
+      "slot": "belt",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的巨龍束帶",
+      "affixes": [
+        {
+          "key": "matkPct",
+          "val": 14.4,
+          "ancient": false
+        },
+        {
+          "key": "vit",
+          "val": 171,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoii",
+      "kind": "equip",
+      "slot": "weapon",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的鐵壁盾",
+      "affixes": [
+        {
+          "key": "matkPct",
+          "val": 25.4,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false,
+      "weaponType": "shield",
+      "weaponAbility": null
+    },
+    {
+      "id": "ims2opsojj",
+      "kind": "equip",
+      "slot": "legs",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的重甲腿鎧",
+      "affixes": [
+        {
+          "key": "hpPct",
+          "val": 41.7,
+          "ancient": false
+        },
+        {
+          "key": "str",
+          "val": 380,
+          "ancient": false
+        },
+        {
+          "key": "mpRegen",
+          "val": 23,
+          "ancient": true
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsojk",
+      "kind": "equip",
+      "slot": "shoulder",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的鐵肩甲",
+      "affixes": [
+        {
+          "key": "hpPct",
+          "val": 50.4,
+          "ancient": false
+        },
+        {
+          "key": "agi",
+          "val": 429,
+          "ancient": false
+        },
+        {
+          "key": "shieldEff",
+          "val": 49.5,
+          "ancient": false
+        },
+        {
+          "key": "str",
+          "val": 440,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsojl",
+      "kind": "equip",
+      "slot": "boots",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的草鞋",
+      "affixes": [
+        {
+          "key": "int",
+          "val": 477,
+          "ancient": false
+        },
+        {
+          "key": "vit",
+          "val": 594,
+          "ancient": false
+        },
+        {
+          "key": "mpFlat",
+          "val": 6108,
+          "ancient": false
+        },
+        {
+          "key": "defFlat",
+          "val": 394,
+          "ancient": false
+        },
+        {
+          "key": "str",
+          "val": 446,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsojm",
+      "kind": "equip",
+      "slot": "amulet",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的銀鍊",
+      "affixes": [
+        {
+          "key": "mpRegen",
+          "val": 27,
+          "ancient": false
+        },
+        {
+          "key": "int",
+          "val": 1178,
+          "ancient": true
+        },
+        {
+          "key": "manaSteal",
+          "val": 10.8,
+          "ancient": false
+        },
+        {
+          "key": "bossDmgRed",
+          "val": 1409,
+          "ancient": false
+        },
+        {
+          "key": "cdr",
+          "val": 28.2,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "trueDmg",
+        "val": 6
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsojn",
+      "kind": "equip",
+      "slot": "legs",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的布褲",
+      "affixes": [
+        {
+          "key": "mdefFlat",
+          "val": 258,
+          "ancient": true
+        },
+        {
+          "key": "hpPct",
+          "val": 17.9,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsojo",
+      "kind": "equip",
+      "slot": "helmet",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的皮帽",
+      "affixes": [
+        {
+          "key": "mdefPct",
+          "val": 19.9,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsojp",
+      "kind": "equip",
+      "slot": "gloves",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的皮護手",
+      "affixes": [
+        {
+          "key": "defPct",
+          "val": 26.2,
+          "ancient": false
+        },
+        {
+          "key": "atkFlat",
+          "val": 686,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": true
+    },
+    {
+      "id": "ims2opsojq",
+      "kind": "equip",
+      "slot": "legs",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的重甲腿鎧",
+      "affixes": [
+        {
+          "key": "resIce",
+          "val": 41.3,
+          "ancient": false
+        },
+        {
+          "key": "int",
+          "val": 365,
+          "ancient": false
+        },
+        {
+          "key": "hpFlat",
+          "val": 26542,
+          "ancient": false
+        },
+        {
+          "key": "mpFlat",
+          "val": 4842,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsojr",
+      "kind": "equip",
+      "slot": "helmet",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的戰盔",
+      "affixes": [
+        {
+          "key": "tenacity",
+          "val": 41,
+          "ancient": false
+        },
+        {
+          "key": "mdefPct",
+          "val": 47.6,
+          "ancient": false
+        },
+        {
+          "key": "normalDmg",
+          "val": 59.1,
+          "ancient": false
+        },
+        {
+          "key": "globalDmgRed",
+          "val": 549,
+          "ancient": false
+        },
+        {
+          "key": "evasion",
+          "val": 12.9,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsojs",
+      "kind": "equip",
+      "slot": "belt",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的皮革腰帶",
+      "affixes": [
+        {
+          "key": "resLight",
+          "val": 60.1,
+          "ancient": false
+        },
+        {
+          "key": "matkFlat",
+          "val": 1316,
+          "ancient": false
+        },
+        {
+          "key": "atkFlat",
+          "val": 1458,
+          "ancient": false
+        },
+        {
+          "key": "resLightning",
+          "val": 51.1,
+          "ancient": false
+        },
+        {
+          "key": "ccRed",
+          "val": 75.7,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "soulEater",
+        "val": 5
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsojt",
+      "kind": "equip",
+      "slot": "gloves",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的鐵護手",
+      "affixes": [
+        {
+          "key": "matkPct",
+          "val": 15.1,
+          "ancient": false
+        },
+        {
+          "key": "atkPct",
+          "val": 13.9,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoju",
+      "kind": "equip",
+      "slot": "legs",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的布褲",
+      "affixes": [
+        {
+          "key": "vit",
+          "val": 236,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsojv",
+      "kind": "equip",
+      "slot": "ring",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的銀戒",
+      "affixes": [
+        {
+          "key": "atkFlat",
+          "val": 597,
+          "ancient": false
+        },
+        {
+          "key": "matkFlat",
+          "val": 466,
+          "ancient": false
+        },
+        {
+          "key": "critDmg",
+          "val": 128.2,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsojw",
+      "kind": "equip",
+      "slot": "wrist",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的布腕帶",
+      "affixes": [
+        {
+          "key": "resDark",
+          "val": 42.5,
+          "ancient": false
+        },
+        {
+          "key": "resFire",
+          "val": 33.1,
+          "ancient": false
+        },
+        {
+          "key": "mdefPct",
+          "val": 59.3,
+          "ancient": true
+        },
+        {
+          "key": "hpFlat",
+          "val": 23286,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsojx",
+      "kind": "equip",
+      "slot": "weapon",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的巨劍",
+      "affixes": [
+        {
+          "key": "str",
+          "val": 461,
+          "ancient": false
+        },
+        {
+          "key": "elemDmgFire",
+          "val": 17.6,
+          "ancient": false
+        },
+        {
+          "key": "aspd",
+          "val": 26.3,
+          "ancient": false
+        },
+        {
+          "key": "atkPct",
+          "val": 41.4,
+          "ancient": false
+        },
+        {
+          "key": "critRate",
+          "val": 33.9,
+          "ancient": true
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false,
+      "weaponType": "greatsword2h",
+      "weaponAbility": null
+    },
+    {
+      "id": "ims2opsojy",
+      "kind": "equip",
+      "slot": "gloves",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的皮護手",
+      "affixes": [
+        {
+          "key": "cdr",
+          "val": 22,
+          "ancient": false
+        },
+        {
+          "key": "mdefPct",
+          "val": 54.4,
+          "ancient": false
+        },
+        {
+          "key": "matkFlat",
+          "val": 1293,
+          "ancient": false
+        },
+        {
+          "key": "matkPct",
+          "val": 103.2,
+          "ancient": true
+        }
+      ],
+      "passive": {
+        "key": "stun",
+        "val": 6
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsojz",
+      "kind": "equip",
+      "slot": "weapon",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的彎刃匕首",
+      "affixes": [
+        {
+          "key": "vit",
+          "val": 213,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": true,
+      "weaponType": "dagger1h",
+      "weaponAbility": null
+    },
+    {
+      "id": "ims2opsoj10",
+      "kind": "equip",
+      "slot": "ring",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的銅戒",
+      "affixes": [
+        {
+          "key": "vit",
+          "val": 256,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoj11",
+      "kind": "equip",
+      "slot": "gloves",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的布手套",
+      "affixes": [
+        {
+          "key": "atkFlat",
+          "val": 535,
+          "ancient": false
+        },
+        {
+          "key": "hpFlat",
+          "val": 17922,
+          "ancient": false
+        },
+        {
+          "key": "int",
+          "val": 515,
+          "ancient": true
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoj12",
+      "kind": "equip",
+      "slot": "weapon",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的水晶球",
+      "affixes": [
+        {
+          "key": "matkFlat",
+          "val": 711,
+          "ancient": false
+        },
+        {
+          "key": "aspd",
+          "val": 22.6,
+          "ancient": false
+        },
+        {
+          "key": "elemDmgLight",
+          "val": 11.4,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false,
+      "weaponType": "orb",
+      "weaponAbility": null
+    },
+    {
+      "id": "ims2opsoj13",
+      "kind": "equip",
+      "slot": "wrist",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的鐵護腕",
+      "affixes": [
+        {
+          "key": "resDark",
+          "val": 48.6,
+          "ancient": false
+        },
+        {
+          "key": "defFlat",
+          "val": 563,
+          "ancient": false
+        },
+        {
+          "key": "resPoison",
+          "val": 53.3,
+          "ancient": false
+        },
+        {
+          "key": "resAll",
+          "val": 4.4,
+          "ancient": false
+        },
+        {
+          "key": "eliteDmgRed",
+          "val": 835,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoj14",
+      "kind": "equip",
+      "slot": "legs",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的布褲",
+      "affixes": [
+        {
+          "key": "eliteDmgRed",
+          "val": 1270,
+          "ancient": false
+        },
+        {
+          "key": "ccRed",
+          "val": 66.4,
+          "ancient": false
+        },
+        {
+          "key": "defPct",
+          "val": 65.1,
+          "ancient": false
+        },
+        {
+          "key": "int",
+          "val": 731,
+          "ancient": false
+        },
+        {
+          "key": "mpFlat",
+          "val": 7895,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "doubleHit",
+        "val": 10
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoj15",
+      "kind": "equip",
+      "slot": "amulet",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的星辰項鍊",
+      "affixes": [
+        {
+          "key": "vit",
+          "val": 166,
+          "ancient": false
+        },
+        {
+          "key": "atkPct",
+          "val": 17.5,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoj16",
+      "kind": "equip",
+      "slot": "shoulder",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的鐵肩甲",
+      "affixes": [
+        {
+          "key": "mdefFlat",
+          "val": 251,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoj17",
+      "kind": "equip",
+      "slot": "amulet",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的木墜",
+      "affixes": [
+        {
+          "key": "defPct",
+          "val": 33.4,
+          "ancient": false
+        },
+        {
+          "key": "mdefFlat",
+          "val": 248,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoj18",
+      "kind": "equip",
+      "slot": "belt",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的鎖鏈腰帶",
+      "affixes": [
+        {
+          "key": "atkFlat",
+          "val": 756,
+          "ancient": false
+        },
+        {
+          "key": "str",
+          "val": 416,
+          "ancient": false
+        },
+        {
+          "key": "agi",
+          "val": 453,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoj19",
+      "kind": "equip",
+      "slot": "shoulder",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的戰場護肩",
+      "affixes": [
+        {
+          "key": "globalDmgRed",
+          "val": 418,
+          "ancient": false
+        },
+        {
+          "key": "hpFlat",
+          "val": 26534,
+          "ancient": false
+        },
+        {
+          "key": "mpFlat",
+          "val": 5330,
+          "ancient": false
+        },
+        {
+          "key": "agi",
+          "val": 459,
+          "ancient": false
+        },
+        {
+          "key": "str",
+          "val": 590,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": true
+    },
+    {
+      "id": "ims2opsoj1a",
+      "kind": "equip",
+      "slot": "gloves",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的鐵護手",
+      "affixes": [
+        {
+          "key": "mdefFlat",
+          "val": 667,
+          "ancient": false
+        },
+        {
+          "key": "blockRate",
+          "val": 25.7,
+          "ancient": false
+        },
+        {
+          "key": "atkPct",
+          "val": 103.2,
+          "ancient": true
+        },
+        {
+          "key": "agi",
+          "val": 593,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "slowHit",
+        "val": 12
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoj1b",
+      "kind": "equip",
+      "slot": "belt",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的鎖鏈腰帶",
+      "affixes": [
+        {
+          "key": "atkFlat",
+          "val": 353,
+          "ancient": false
+        },
+        {
+          "key": "matkPct",
+          "val": 16.3,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoj1c",
+      "kind": "equip",
+      "slot": "legs",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的鐵護腿",
+      "affixes": [
+        {
+          "key": "mpRegen",
+          "val": 10,
+          "ancient": false
+        },
+        {
+          "key": "hpPct",
+          "val": 30.5,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoj1d",
+      "kind": "equip",
+      "slot": "chest",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的鎖甲",
+      "affixes": [
+        {
+          "key": "hpFlat",
+          "val": 18060,
+          "ancient": false
+        },
+        {
+          "key": "int",
+          "val": 358,
+          "ancient": false
+        },
+        {
+          "key": "defPct",
+          "val": 32.8,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoj1e",
+      "kind": "equip",
+      "slot": "ring",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的秘紋戒指",
+      "affixes": [
+        {
+          "key": "elemDmgPoison",
+          "val": 12.7,
+          "ancient": false
+        },
+        {
+          "key": "matkFlat",
+          "val": 881,
+          "ancient": false
+        },
+        {
+          "key": "vit",
+          "val": 414,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoj1f",
+      "kind": "equip",
+      "slot": "chest",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的龍鱗甲",
+      "affixes": [
+        {
+          "key": "resDark",
+          "val": 41.2,
+          "ancient": false
+        },
+        {
+          "key": "normalDmgRed",
+          "val": 1000,
+          "ancient": false
+        },
+        {
+          "key": "shieldEff",
+          "val": 81.7,
+          "ancient": false
+        },
+        {
+          "key": "mdefFlat",
+          "val": 539,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoj1g",
+      "kind": "equip",
+      "slot": "helmet",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的龍首盔",
+      "affixes": [
+        {
+          "key": "luck",
+          "val": 145,
+          "ancient": false
+        },
+        {
+          "key": "agi",
+          "val": 599,
+          "ancient": false
+        },
+        {
+          "key": "defFlat",
+          "val": 675,
+          "ancient": false
+        },
+        {
+          "key": "hit",
+          "val": 36,
+          "ancient": false
+        },
+        {
+          "key": "mpFlat",
+          "val": 7899,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "soulEater",
+        "val": 5
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoj1h",
+      "kind": "equip",
+      "slot": "gloves",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的布手套",
+      "affixes": [
+        {
+          "key": "hpFlat",
+          "val": 9448,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsoj1i",
+      "kind": "equip",
+      "slot": "wrist",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的布腕帶",
+      "affixes": [
+        {
+          "key": "hpPct",
+          "val": 23.9,
+          "ancient": false
+        },
+        {
+          "key": "defFlat",
+          "val": 181,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok1j",
+      "kind": "equip",
+      "slot": "helmet",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的皮帽",
+      "affixes": [
+        {
+          "key": "defPct",
+          "val": 27.5,
+          "ancient": false
+        },
+        {
+          "key": "mdefFlat",
+          "val": 328,
+          "ancient": false
+        },
+        {
+          "key": "hpPct",
+          "val": 36.1,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": true
+    },
+    {
+      "id": "ims2opsok1k",
+      "kind": "equip",
+      "slot": "gloves",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的鐵護手",
+      "affixes": [
+        {
+          "key": "hpPct",
+          "val": 49.2,
+          "ancient": false
+        },
+        {
+          "key": "atkFlat",
+          "val": 865,
+          "ancient": false
+        },
+        {
+          "key": "resFire",
+          "val": 41.2,
+          "ancient": false
+        },
+        {
+          "key": "atkPct",
+          "val": 32.3,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok1l",
+      "kind": "equip",
+      "slot": "ring",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的秘紋戒指",
+      "affixes": [
+        {
+          "key": "elemDmgLightning",
+          "val": 15.1,
+          "ancient": false
+        },
+        {
+          "key": "critDmg",
+          "val": 180.9,
+          "ancient": false
+        },
+        {
+          "key": "resAll",
+          "val": 5.4,
+          "ancient": false
+        },
+        {
+          "key": "evasion",
+          "val": 12.8,
+          "ancient": false
+        },
+        {
+          "key": "vit",
+          "val": 566,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok1m",
+      "kind": "equip",
+      "slot": "legs",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的布褲",
+      "affixes": [
+        {
+          "key": "defFlat",
+          "val": 526,
+          "ancient": false
+        },
+        {
+          "key": "normalDmgRed",
+          "val": 1422,
+          "ancient": false
+        },
+        {
+          "key": "bossDmgRed",
+          "val": 1351,
+          "ancient": false
+        },
+        {
+          "key": "resPoison",
+          "val": 57.7,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "doubleHit",
+        "val": 10
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok1n",
+      "kind": "equip",
+      "slot": "legs",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的布褲",
+      "affixes": [
+        {
+          "key": "hpFlat",
+          "val": 11296,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok1o",
+      "kind": "equip",
+      "slot": "helmet",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的皮帽",
+      "affixes": [
+        {
+          "key": "hpFlat",
+          "val": 13167,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok1p",
+      "kind": "equip",
+      "slot": "legs",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的重甲腿鎧",
+      "affixes": [
+        {
+          "key": "hpFlat",
+          "val": 17460,
+          "ancient": false
+        },
+        {
+          "key": "mdefFlat",
+          "val": 224,
+          "ancient": false
+        },
+        {
+          "key": "defFlat",
+          "val": 234,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok1q",
+      "kind": "equip",
+      "slot": "boots",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的草鞋",
+      "affixes": [
+        {
+          "key": "mpFlat",
+          "val": 4910,
+          "ancient": false
+        },
+        {
+          "key": "int",
+          "val": 356,
+          "ancient": false
+        },
+        {
+          "key": "hpFlat",
+          "val": 21673,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok1r",
+      "kind": "equip",
+      "slot": "belt",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的皮革腰帶",
+      "affixes": [
+        {
+          "key": "matkFlat",
+          "val": 958,
+          "ancient": false
+        },
+        {
+          "key": "resIce",
+          "val": 48,
+          "ancient": false
+        },
+        {
+          "key": "vit",
+          "val": 501,
+          "ancient": false
+        },
+        {
+          "key": "matkPct",
+          "val": 39.4,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok1s",
+      "kind": "equip",
+      "slot": "gloves",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的皮護手",
+      "affixes": [
+        {
+          "key": "str",
+          "val": 599,
+          "ancient": false
+        },
+        {
+          "key": "resAll",
+          "val": 7.7,
+          "ancient": false
+        },
+        {
+          "key": "agi",
+          "val": 771,
+          "ancient": false
+        },
+        {
+          "key": "mRes",
+          "val": 19.2,
+          "ancient": false
+        },
+        {
+          "key": "matkFlat",
+          "val": 1069,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "sunder",
+        "val": 10
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok1t",
+      "kind": "equip",
+      "slot": "legs",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的鐵護腿",
+      "affixes": [
+        {
+          "key": "hpPct",
+          "val": 19.3,
+          "ancient": false
+        },
+        {
+          "key": "defFlat",
+          "val": 184,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": true
+    },
+    {
+      "id": "ims2opsok1u",
+      "kind": "equip",
+      "slot": "chest",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的鎖甲",
+      "affixes": [
+        {
+          "key": "int",
+          "val": 203,
+          "ancient": false
+        },
+        {
+          "key": "mdefFlat",
+          "val": 233,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok1v",
+      "kind": "equip",
+      "slot": "chest",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的鎖甲",
+      "affixes": [
+        {
+          "key": "hpFlat",
+          "val": 16598,
+          "ancient": false
+        },
+        {
+          "key": "agi",
+          "val": 319,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok1w",
+      "kind": "equip",
+      "slot": "amulet",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的星辰項鍊",
+      "affixes": [
+        {
+          "key": "matkPct",
+          "val": 39.1,
+          "ancient": false
+        },
+        {
+          "key": "defFlat",
+          "val": 326,
+          "ancient": false
+        },
+        {
+          "key": "mdefPct",
+          "val": 35.9,
+          "ancient": false
+        },
+        {
+          "key": "bossDmg",
+          "val": 36.2,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok1x",
+      "kind": "equip",
+      "slot": "chest",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的鎖甲",
+      "affixes": [
+        {
+          "key": "mdefFlat",
+          "val": 486,
+          "ancient": false
+        },
+        {
+          "key": "normalDmgRed",
+          "val": 971,
+          "ancient": false
+        },
+        {
+          "key": "blockDmgRed",
+          "val": 40.7,
+          "ancient": false
+        },
+        {
+          "key": "eliteDmgRed",
+          "val": 811,
+          "ancient": false
+        },
+        {
+          "key": "weight",
+          "val": 279,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok1y",
+      "kind": "equip",
+      "slot": "ring",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的秘紋戒指",
+      "affixes": [
+        {
+          "key": "bossDmgRed",
+          "val": 1408,
+          "ancient": false
+        },
+        {
+          "key": "xpBonus",
+          "val": 58.5,
+          "ancient": false
+        },
+        {
+          "key": "affixCap",
+          "val": 62.9,
+          "ancient": true
+        },
+        {
+          "key": "aspd",
+          "val": 34.3,
+          "ancient": false
+        },
+        {
+          "key": "resLight",
+          "val": 66,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "doubleHit",
+        "val": 10
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok1z",
+      "kind": "equip",
+      "slot": "helmet",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的戰盔",
+      "affixes": [
+        {
+          "key": "vit",
+          "val": 200,
+          "ancient": false
+        },
+        {
+          "key": "mpRegen",
+          "val": 8,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok20",
+      "kind": "equip",
+      "slot": "shoulder",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的龍骨肩鎧",
+      "affixes": [
+        {
+          "key": "str",
+          "val": 282,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok21",
+      "kind": "equip",
+      "slot": "belt",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的巨龍束帶",
+      "affixes": [
+        {
+          "key": "critRate",
+          "val": 12.6,
+          "ancient": false
+        },
+        {
+          "key": "atkPct",
+          "val": 24.1,
+          "ancient": false
+        },
+        {
+          "key": "str",
+          "val": 333,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok22",
+      "kind": "equip",
+      "slot": "wrist",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的鐵護腕",
+      "affixes": [
+        {
+          "key": "hpRegen",
+          "val": 312,
+          "ancient": false
+        },
+        {
+          "key": "str",
+          "val": 389,
+          "ancient": false
+        },
+        {
+          "key": "hit",
+          "val": 20.6,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok23",
+      "kind": "equip",
+      "slot": "shoulder",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的龍骨肩鎧",
+      "affixes": [
+        {
+          "key": "mpRegen",
+          "val": 26,
+          "ancient": false
+        },
+        {
+          "key": "mpFlat",
+          "val": 4918,
+          "ancient": false
+        },
+        {
+          "key": "mdefFlat",
+          "val": 775,
+          "ancient": true
+        },
+        {
+          "key": "mdefPct",
+          "val": 53.8,
+          "ancient": false
+        },
+        {
+          "key": "str",
+          "val": 884,
+          "ancient": true
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": true
+    },
+    {
+      "id": "ims2opsok24",
+      "kind": "equip",
+      "slot": "boots",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的皮靴",
+      "affixes": [
+        {
+          "key": "vit",
+          "val": 614,
+          "ancient": false
+        },
+        {
+          "key": "normalDmgRed",
+          "val": 1122,
+          "ancient": false
+        },
+        {
+          "key": "agi",
+          "val": 720,
+          "ancient": false
+        },
+        {
+          "key": "pRes",
+          "val": 19.9,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "slowHit",
+        "val": 12
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok25",
+      "kind": "equip",
+      "slot": "chest",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的布衣",
+      "affixes": [
+        {
+          "key": "vit",
+          "val": 188,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok26",
+      "kind": "equip",
+      "slot": "ring",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的銀戒",
+      "affixes": [
+        {
+          "key": "vit",
+          "val": 202,
+          "ancient": false
+        },
+        {
+          "key": "evasion",
+          "val": 6.9,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok27",
+      "kind": "equip",
+      "slot": "ring",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的銀戒",
+      "affixes": [
+        {
+          "key": "atkFlat",
+          "val": 591,
+          "ancient": false
+        },
+        {
+          "key": "matkFlat",
+          "val": 636,
+          "ancient": false
+        },
+        {
+          "key": "vit",
+          "val": 300,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok28",
+      "kind": "equip",
+      "slot": "wrist",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的鐵護腕",
+      "affixes": [
+        {
+          "key": "defFlat",
+          "val": 371,
+          "ancient": false
+        },
+        {
+          "key": "hit",
+          "val": 20.8,
+          "ancient": false
+        },
+        {
+          "key": "evasion",
+          "val": 9.5,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok29",
+      "kind": "equip",
+      "slot": "boots",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的疾風之靴",
+      "affixes": [
+        {
+          "key": "mpFlat",
+          "val": 4871,
+          "ancient": false
+        },
+        {
+          "key": "evasion",
+          "val": 16.3,
+          "ancient": false
+        },
+        {
+          "key": "pRes",
+          "val": 14.2,
+          "ancient": false
+        },
+        {
+          "key": "normalDmgRed",
+          "val": 1550,
+          "ancient": true
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok2a",
+      "kind": "equip",
+      "slot": "belt",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的鎖鏈腰帶",
+      "affixes": [
+        {
+          "key": "resLight",
+          "val": 75.9,
+          "ancient": false
+        },
+        {
+          "key": "tenacity",
+          "val": 62,
+          "ancient": false
+        },
+        {
+          "key": "resFire",
+          "val": 75.2,
+          "ancient": false
+        },
+        {
+          "key": "matkFlat",
+          "val": 1095,
+          "ancient": false
+        },
+        {
+          "key": "str",
+          "val": 681,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "doubleHit",
+        "val": 10
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok2b",
+      "kind": "equip",
+      "slot": "amulet",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的星辰項鍊",
+      "affixes": [
+        {
+          "key": "int",
+          "val": 183,
+          "ancient": false
+        },
+        {
+          "key": "defFlat",
+          "val": 188,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok2c",
+      "kind": "equip",
+      "slot": "legs",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的鐵護腿",
+      "affixes": [
+        {
+          "key": "mdefPct",
+          "val": 19.9,
+          "ancient": false
+        },
+        {
+          "key": "vit",
+          "val": 245,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsok2d",
+      "kind": "equip",
+      "slot": "belt",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的麻繩腰帶",
+      "affixes": [
+        {
+          "key": "atkFlat",
+          "val": 556,
+          "ancient": false
+        },
+        {
+          "key": "matkFlat",
+          "val": 619,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": true
+    },
+    {
+      "id": "ims2opsok2e",
+      "kind": "equip",
+      "slot": "ring",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的秘紋戒指",
+      "affixes": [
+        {
+          "key": "hit",
+          "val": 24.7,
+          "ancient": false
+        },
+        {
+          "key": "elemDmgFire",
+          "val": 11.4,
+          "ancient": false
+        },
+        {
+          "key": "elemDmgIce",
+          "val": 11,
+          "ancient": false
+        },
+        {
+          "key": "evasion",
+          "val": 9.6,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol2f",
+      "kind": "equip",
+      "slot": "ring",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的銀戒",
+      "affixes": [
+        {
+          "key": "matkFlat",
+          "val": 1169,
+          "ancient": false
+        },
+        {
+          "key": "globalDmgRed",
+          "val": 454,
+          "ancient": false
+        },
+        {
+          "key": "enhanceSuccess",
+          "val": 32.8,
+          "ancient": false
+        },
+        {
+          "key": "mPen",
+          "val": 31.7,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol2g",
+      "kind": "equip",
+      "slot": "chest",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的龍鱗甲",
+      "affixes": [
+        {
+          "key": "hpRegen",
+          "val": 694,
+          "ancient": false
+        },
+        {
+          "key": "eliteDmgRed",
+          "val": 1273,
+          "ancient": false
+        },
+        {
+          "key": "globalDmgRed",
+          "val": 761,
+          "ancient": false
+        },
+        {
+          "key": "int",
+          "val": 719,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "stun",
+        "val": 6
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol2h",
+      "kind": "equip",
+      "slot": "shoulder",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的戰場護肩",
+      "affixes": [
+        {
+          "key": "mdefFlat",
+          "val": 133,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol2i",
+      "kind": "equip",
+      "slot": "legs",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的布褲",
+      "affixes": [
+        {
+          "key": "mdefFlat",
+          "val": 180,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol2j",
+      "kind": "equip",
+      "slot": "ring",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的銀戒",
+      "affixes": [
+        {
+          "key": "evasion",
+          "val": 9.5,
+          "ancient": false
+        },
+        {
+          "key": "atkPct",
+          "val": 30.8,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol2k",
+      "kind": "equip",
+      "slot": "wrist",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的龍鱗護腕",
+      "affixes": [
+        {
+          "key": "agi",
+          "val": 389,
+          "ancient": false
+        },
+        {
+          "key": "hpFlat",
+          "val": 23923,
+          "ancient": false
+        },
+        {
+          "key": "mdefPct",
+          "val": 39.2,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol2l",
+      "kind": "equip",
+      "slot": "shoulder",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的鐵肩甲",
+      "affixes": [
+        {
+          "key": "mpRegen",
+          "val": 27,
+          "ancient": false
+        },
+        {
+          "key": "bossDmgRed",
+          "val": 997,
+          "ancient": false
+        },
+        {
+          "key": "globalDmgRed",
+          "val": 424,
+          "ancient": false
+        },
+        {
+          "key": "eliteDmgRed",
+          "val": 927,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol2m",
+      "kind": "equip",
+      "slot": "shoulder",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的鐵肩甲",
+      "affixes": [
+        {
+          "key": "eliteDmgRed",
+          "val": 1124,
+          "ancient": false
+        },
+        {
+          "key": "agi",
+          "val": 806,
+          "ancient": false
+        },
+        {
+          "key": "defPct",
+          "val": 103.2,
+          "ancient": true
+        },
+        {
+          "key": "mdefPct",
+          "val": 72.9,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "doubleHit",
+        "val": 10
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol2n",
+      "kind": "equip",
+      "slot": "chest",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的鎖甲",
+      "affixes": [
+        {
+          "key": "mdefFlat",
+          "val": 158,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": true
+    },
+    {
+      "id": "ims2opsol2o",
+      "kind": "equip",
+      "slot": "legs",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的布褲",
+      "affixes": [
+        {
+          "key": "defFlat",
+          "val": 234,
+          "ancient": false
+        },
+        {
+          "key": "mdefPct",
+          "val": 17.7,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol2p",
+      "kind": "equip",
+      "slot": "legs",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的重甲腿鎧",
+      "affixes": [
+        {
+          "key": "mpFlat",
+          "val": 2806,
+          "ancient": false
+        },
+        {
+          "key": "agi",
+          "val": 354,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol2q",
+      "kind": "equip",
+      "slot": "belt",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的鎖鏈腰帶",
+      "affixes": [
+        {
+          "key": "resLight",
+          "val": 34.5,
+          "ancient": false
+        },
+        {
+          "key": "atkFlat",
+          "val": 862,
+          "ancient": false
+        },
+        {
+          "key": "agi",
+          "val": 337,
+          "ancient": false
+        },
+        {
+          "key": "resPoison",
+          "val": 35,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol2r",
+      "kind": "equip",
+      "slot": "chest",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的龍鱗甲",
+      "affixes": [
+        {
+          "key": "resLight",
+          "val": 47.3,
+          "ancient": false
+        },
+        {
+          "key": "blockRate",
+          "val": 20.8,
+          "ancient": false
+        },
+        {
+          "key": "resLightning",
+          "val": 52.9,
+          "ancient": false
+        },
+        {
+          "key": "resAll",
+          "val": 5,
+          "ancient": false
+        },
+        {
+          "key": "mdefFlat",
+          "val": 568,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol2s",
+      "kind": "equip",
+      "slot": "chest",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的布衣",
+      "affixes": [
+        {
+          "key": "hpPct",
+          "val": 71.1,
+          "ancient": false
+        },
+        {
+          "key": "hpFlat",
+          "val": 36178,
+          "ancient": false
+        },
+        {
+          "key": "resFire",
+          "val": 70.6,
+          "ancient": false
+        },
+        {
+          "key": "weight",
+          "val": 592,
+          "ancient": true
+        }
+      ],
+      "passive": {
+        "key": "stun",
+        "val": 6
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol2t",
+      "kind": "equip",
+      "slot": "chest",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的鎖甲",
+      "affixes": [
+        {
+          "key": "vit",
+          "val": 155,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol2u",
+      "kind": "equip",
+      "slot": "legs",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的布褲",
+      "affixes": [
+        {
+          "key": "vit",
+          "val": 226,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol2v",
+      "kind": "equip",
+      "slot": "gloves",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的鐵護手",
+      "affixes": [
+        {
+          "key": "matkFlat",
+          "val": 620,
+          "ancient": false
+        },
+        {
+          "key": "atkFlat",
+          "val": 687,
+          "ancient": false
+        },
+        {
+          "key": "str",
+          "val": 319,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol2w",
+      "kind": "equip",
+      "slot": "shoulder",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的龍骨肩鎧",
+      "affixes": [
+        {
+          "key": "shieldEff",
+          "val": 54.8,
+          "ancient": false
+        },
+        {
+          "key": "vit",
+          "val": 677,
+          "ancient": true
+        },
+        {
+          "key": "mdefFlat",
+          "val": 388,
+          "ancient": false
+        },
+        {
+          "key": "mRes",
+          "val": 8.9,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol2x",
+      "kind": "equip",
+      "slot": "amulet",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的星辰項鍊",
+      "affixes": [
+        {
+          "key": "xpBonus",
+          "val": 39.1,
+          "ancient": false
+        },
+        {
+          "key": "hpPct",
+          "val": 54.1,
+          "ancient": false
+        },
+        {
+          "key": "eliteDmgRed",
+          "val": 992,
+          "ancient": false
+        },
+        {
+          "key": "blockRate",
+          "val": 23.6,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": true
+    },
+    {
+      "id": "ims2opsol2y",
+      "kind": "equip",
+      "slot": "belt",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的皮革腰帶",
+      "affixes": [
+        {
+          "key": "atkPct",
+          "val": 68.5,
+          "ancient": false
+        },
+        {
+          "key": "vit",
+          "val": 856,
+          "ancient": false
+        },
+        {
+          "key": "critRate",
+          "val": 24.2,
+          "ancient": false
+        },
+        {
+          "key": "atkFlat",
+          "val": 1351,
+          "ancient": false
+        },
+        {
+          "key": "critDmg",
+          "val": 316.7,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "soulEater",
+        "val": 5
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol2z",
+      "kind": "equip",
+      "slot": "shoulder",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的布肩墊",
+      "affixes": [
+        {
+          "key": "hpPct",
+          "val": 22.9,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol30",
+      "kind": "equip",
+      "slot": "wrist",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的龍鱗護腕",
+      "affixes": [
+        {
+          "key": "hit",
+          "val": 12.1,
+          "ancient": false
+        },
+        {
+          "key": "vit",
+          "val": 211,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol31",
+      "kind": "equip",
+      "slot": "amulet",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的星辰項鍊",
+      "affixes": [
+        {
+          "key": "int",
+          "val": 309,
+          "ancient": false
+        },
+        {
+          "key": "str",
+          "val": 337,
+          "ancient": false
+        },
+        {
+          "key": "matkPct",
+          "val": 29.1,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol32",
+      "kind": "equip",
+      "slot": "chest",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的板甲",
+      "affixes": [
+        {
+          "key": "hpFlat",
+          "val": 21568,
+          "ancient": false
+        },
+        {
+          "key": "str",
+          "val": 478,
+          "ancient": false
+        },
+        {
+          "key": "defFlat",
+          "val": 351,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol33",
+      "kind": "equip",
+      "slot": "gloves",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的鐵護手",
+      "affixes": [
+        {
+          "key": "matkPct",
+          "val": 54.5,
+          "ancient": false
+        },
+        {
+          "key": "blockRate",
+          "val": 22.4,
+          "ancient": false
+        },
+        {
+          "key": "atkPct",
+          "val": 46.9,
+          "ancient": false
+        },
+        {
+          "key": "str",
+          "val": 546,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsol34",
+      "kind": "equip",
+      "slot": "helmet",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的鐵盔",
+      "affixes": [
+        {
+          "key": "normalDmg",
+          "val": 63.4,
+          "ancient": false
+        },
+        {
+          "key": "resIce",
+          "val": 57.9,
+          "ancient": false
+        },
+        {
+          "key": "str",
+          "val": 662,
+          "ancient": false
+        },
+        {
+          "key": "hpRegen",
+          "val": 542,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "thorns",
+        "val": 5
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom35",
+      "kind": "equip",
+      "slot": "belt",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的皮革腰帶",
+      "affixes": [
+        {
+          "key": "vit",
+          "val": 195,
+          "ancient": false
+        },
+        {
+          "key": "int",
+          "val": 202,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom36",
+      "kind": "equip",
+      "slot": "wrist",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的皮護腕",
+      "affixes": [
+        {
+          "key": "str",
+          "val": 249,
+          "ancient": false
+        },
+        {
+          "key": "hit",
+          "val": 10.9,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom37",
+      "kind": "equip",
+      "slot": "shoulder",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的鐵肩甲",
+      "affixes": [
+        {
+          "key": "int",
+          "val": 255,
+          "ancient": false
+        },
+        {
+          "key": "mdefFlat",
+          "val": 298,
+          "ancient": false
+        },
+        {
+          "key": "defPct",
+          "val": 25,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": true
+    },
+    {
+      "id": "ims2opsom38",
+      "kind": "equip",
+      "slot": "wrist",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的皮護腕",
+      "affixes": [
+        {
+          "key": "mpFlat",
+          "val": 4810,
+          "ancient": false
+        },
+        {
+          "key": "hpPct",
+          "val": 50.7,
+          "ancient": false
+        },
+        {
+          "key": "agi",
+          "val": 344,
+          "ancient": false
+        },
+        {
+          "key": "blockRate",
+          "val": 15.3,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom39",
+      "kind": "equip",
+      "slot": "boots",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的疾風之靴",
+      "affixes": [
+        {
+          "key": "bossDmgRed",
+          "val": 965,
+          "ancient": false
+        },
+        {
+          "key": "eliteDmgRed",
+          "val": 895,
+          "ancient": false
+        },
+        {
+          "key": "pRes",
+          "val": 12.5,
+          "ancient": false
+        },
+        {
+          "key": "hpRegen",
+          "val": 396,
+          "ancient": false
+        },
+        {
+          "key": "vit",
+          "val": 613,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3a",
+      "kind": "equip",
+      "slot": "belt",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的麻繩腰帶",
+      "affixes": [
+        {
+          "key": "agi",
+          "val": 1178,
+          "ancient": true
+        },
+        {
+          "key": "ccRed",
+          "val": 103.2,
+          "ancient": true
+        },
+        {
+          "key": "atkFlat",
+          "val": 2150,
+          "ancient": true
+        },
+        {
+          "key": "resDark",
+          "val": 62.5,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "stun",
+        "val": 6
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3b",
+      "kind": "equip",
+      "slot": "chest",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的龍鱗甲",
+      "affixes": [
+        {
+          "key": "agi",
+          "val": 156,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3c",
+      "kind": "equip",
+      "slot": "helmet",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的龍首盔",
+      "affixes": [
+        {
+          "key": "defFlat",
+          "val": 177,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3d",
+      "kind": "equip",
+      "slot": "wrist",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的鐵護腕",
+      "affixes": [
+        {
+          "key": "int",
+          "val": 335,
+          "ancient": false
+        },
+        {
+          "key": "hpFlat",
+          "val": 16947,
+          "ancient": false
+        },
+        {
+          "key": "mdefFlat",
+          "val": 324,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3e",
+      "kind": "equip",
+      "slot": "wrist",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的鐵護腕",
+      "affixes": [
+        {
+          "key": "agi",
+          "val": 471,
+          "ancient": false
+        },
+        {
+          "key": "vit",
+          "val": 354,
+          "ancient": false
+        },
+        {
+          "key": "mpFlat",
+          "val": 4334,
+          "ancient": false
+        },
+        {
+          "key": "defPct",
+          "val": 31.9,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3f",
+      "kind": "equip",
+      "slot": "weapon",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的木盾",
+      "affixes": [
+        {
+          "key": "aoeDmg",
+          "val": 44.9,
+          "ancient": false
+        },
+        {
+          "key": "atkFlat",
+          "val": 798,
+          "ancient": false
+        },
+        {
+          "key": "agi",
+          "val": 446,
+          "ancient": false
+        },
+        {
+          "key": "pPen",
+          "val": 25.7,
+          "ancient": false
+        },
+        {
+          "key": "mPen",
+          "val": 28.6,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false,
+      "weaponType": "shield",
+      "weaponAbility": null
+    },
+    {
+      "id": "ims2opsom3g",
+      "kind": "equip",
+      "slot": "chest",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的布衣",
+      "affixes": [
+        {
+          "key": "mdefFlat",
+          "val": 1033,
+          "ancient": true
+        },
+        {
+          "key": "pRes",
+          "val": 20.7,
+          "ancient": false
+        },
+        {
+          "key": "hpFlat",
+          "val": 45437,
+          "ancient": false
+        },
+        {
+          "key": "resAll",
+          "val": 6,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "doubleHit",
+        "val": 10
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3h",
+      "kind": "equip",
+      "slot": "ring",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的銀戒",
+      "affixes": [
+        {
+          "key": "evasion",
+          "val": 4.2,
+          "ancient": false
+        },
+        {
+          "key": "vit",
+          "val": 185,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": true
+    },
+    {
+      "id": "ims2opsom3i",
+      "kind": "equip",
+      "slot": "ring",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的秘紋戒指",
+      "affixes": [
+        {
+          "key": "hit",
+          "val": 12,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3j",
+      "kind": "equip",
+      "slot": "weapon",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的修行法杖",
+      "affixes": [
+        {
+          "key": "atkFlat",
+          "val": 520,
+          "ancient": false
+        },
+        {
+          "key": "matkFlat",
+          "val": 690,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false,
+      "weaponType": "staff2h",
+      "weaponAbility": null
+    },
+    {
+      "id": "ims2opsom3k",
+      "kind": "equip",
+      "slot": "ring",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的銅戒",
+      "affixes": [
+        {
+          "key": "dmgVsLight",
+          "val": 3,
+          "ancient": false
+        },
+        {
+          "key": "eliteDmg",
+          "val": 32.3,
+          "ancient": false
+        },
+        {
+          "key": "resIce",
+          "val": 59.3,
+          "ancient": true
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3l",
+      "kind": "equip",
+      "slot": "shoulder",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的鐵肩甲",
+      "affixes": [
+        {
+          "key": "weight",
+          "val": 293,
+          "ancient": false
+        },
+        {
+          "key": "tenacity",
+          "val": 39.7,
+          "ancient": false
+        },
+        {
+          "key": "mpRegen",
+          "val": 28,
+          "ancient": false
+        },
+        {
+          "key": "resLight",
+          "val": 43.3,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3m",
+      "kind": "equip",
+      "slot": "ring",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的銅戒",
+      "affixes": [
+        {
+          "key": "dmgVsLight",
+          "val": 5.7,
+          "ancient": false
+        },
+        {
+          "key": "aspd",
+          "val": 30.7,
+          "ancient": false
+        },
+        {
+          "key": "hit",
+          "val": 33,
+          "ancient": false
+        },
+        {
+          "key": "globalDmgRed",
+          "val": 761,
+          "ancient": false
+        },
+        {
+          "key": "int",
+          "val": 639,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "sunder",
+        "val": 10
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3n",
+      "kind": "equip",
+      "slot": "boots",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的草鞋",
+      "affixes": [
+        {
+          "key": "defPct",
+          "val": 16.4,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3o",
+      "kind": "equip",
+      "slot": "weapon",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的巨劍",
+      "affixes": [
+        {
+          "key": "int",
+          "val": 203,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false,
+      "weaponType": "greatsword2h",
+      "weaponAbility": null
+    },
+    {
+      "id": "ims2opsom3p",
+      "kind": "equip",
+      "slot": "wrist",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的布腕帶",
+      "affixes": [
+        {
+          "key": "vit",
+          "val": 515,
+          "ancient": true
+        },
+        {
+          "key": "str",
+          "val": 326,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3q",
+      "kind": "equip",
+      "slot": "shoulder",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的鐵肩甲",
+      "affixes": [
+        {
+          "key": "agi",
+          "val": 422,
+          "ancient": false
+        },
+        {
+          "key": "resLightning",
+          "val": 41.9,
+          "ancient": false
+        },
+        {
+          "key": "mdefPct",
+          "val": 41.5,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3r",
+      "kind": "equip",
+      "slot": "weapon",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的大法師法杖",
+      "affixes": [
+        {
+          "key": "aspd",
+          "val": 24,
+          "ancient": false
+        },
+        {
+          "key": "bossDmg",
+          "val": 54.5,
+          "ancient": false
+        },
+        {
+          "key": "critRate",
+          "val": 18.4,
+          "ancient": false
+        },
+        {
+          "key": "elemDmgLightning",
+          "val": 17.3,
+          "ancient": false
+        },
+        {
+          "key": "aoeDmg",
+          "val": 56.7,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": true,
+      "weaponType": "staff2h",
+      "weaponAbility": null
+    },
+    {
+      "id": "ims2opsom3s",
+      "kind": "equip",
+      "slot": "shoulder",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的鐵肩甲",
+      "affixes": [
+        {
+          "key": "normalDmgRed",
+          "val": 1452,
+          "ancient": false
+        },
+        {
+          "key": "tenacity",
+          "val": 53.4,
+          "ancient": false
+        },
+        {
+          "key": "eliteDmgRed",
+          "val": 1193,
+          "ancient": false
+        },
+        {
+          "key": "hpRegen",
+          "val": 532,
+          "ancient": false
+        },
+        {
+          "key": "resAll",
+          "val": 5.9,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "slowHit",
+        "val": 12
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3t",
+      "kind": "equip",
+      "slot": "wrist",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的布腕帶",
+      "affixes": [
+        {
+          "key": "mdefPct",
+          "val": 17,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3u",
+      "kind": "equip",
+      "slot": "legs",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的鐵護腿",
+      "affixes": [
+        {
+          "key": "hpRegen",
+          "val": 201,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3v",
+      "kind": "equip",
+      "slot": "shoulder",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的布肩墊",
+      "affixes": [
+        {
+          "key": "hpRegen",
+          "val": 303,
+          "ancient": false
+        },
+        {
+          "key": "hpFlat",
+          "val": 16697,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3w",
+      "kind": "equip",
+      "slot": "boots",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的草鞋",
+      "affixes": [
+        {
+          "key": "hpFlat",
+          "val": 24699,
+          "ancient": false
+        },
+        {
+          "key": "resDark",
+          "val": 33.1,
+          "ancient": false
+        },
+        {
+          "key": "resIce",
+          "val": 30,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3x",
+      "kind": "equip",
+      "slot": "amulet",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的木墜",
+      "affixes": [
+        {
+          "key": "elemDmgDark",
+          "val": 16.3,
+          "ancient": false
+        },
+        {
+          "key": "normalDmg",
+          "val": 56.4,
+          "ancient": false
+        },
+        {
+          "key": "mPen",
+          "val": 30,
+          "ancient": false
+        },
+        {
+          "key": "resDark",
+          "val": 43.5,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3y",
+      "kind": "equip",
+      "slot": "ring",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的銅戒",
+      "affixes": [
+        {
+          "key": "eliteDmgRed",
+          "val": 1515,
+          "ancient": false
+        },
+        {
+          "key": "mRes",
+          "val": 20.7,
+          "ancient": false
+        },
+        {
+          "key": "aspd",
+          "val": 30.5,
+          "ancient": false
+        },
+        {
+          "key": "affixCap",
+          "val": 40.6,
+          "ancient": false
+        },
+        {
+          "key": "normalDmg",
+          "val": 86.8,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "sunder",
+        "val": 10
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom3z",
+      "kind": "equip",
+      "slot": "ring",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的銅戒",
+      "affixes": [
+        {
+          "key": "critDmg",
+          "val": 61.4,
+          "ancient": false
+        },
+        {
+          "key": "critRate",
+          "val": 7.8,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom40",
+      "kind": "equip",
+      "slot": "chest",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的鎖甲",
+      "affixes": [
+        {
+          "key": "vit",
+          "val": 267,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom41",
+      "kind": "equip",
+      "slot": "legs",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的重甲腿鎧",
+      "affixes": [
+        {
+          "key": "defFlat",
+          "val": 300,
+          "ancient": false
+        },
+        {
+          "key": "int",
+          "val": 342,
+          "ancient": false
+        },
+        {
+          "key": "mpRegen",
+          "val": 23,
+          "ancient": true
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": true
+    },
+    {
+      "id": "ims2opsom42",
+      "kind": "equip",
+      "slot": "shoulder",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的布肩墊",
+      "affixes": [
+        {
+          "key": "resDark",
+          "val": 29.8,
+          "ancient": false
+        },
+        {
+          "key": "resPoison",
+          "val": 31.2,
+          "ancient": false
+        },
+        {
+          "key": "str",
+          "val": 427,
+          "ancient": false
+        },
+        {
+          "key": "agi",
+          "val": 344,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom43",
+      "kind": "equip",
+      "slot": "wrist",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的布腕帶",
+      "affixes": [
+        {
+          "key": "hpPct",
+          "val": 64.1,
+          "ancient": false
+        },
+        {
+          "key": "vit",
+          "val": 614,
+          "ancient": false
+        },
+        {
+          "key": "evasion",
+          "val": 16.2,
+          "ancient": false
+        },
+        {
+          "key": "str",
+          "val": 600,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom44",
+      "kind": "equip",
+      "slot": "chest",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的龍鱗甲",
+      "affixes": [
+        {
+          "key": "hpRegen",
+          "val": 634,
+          "ancient": false
+        },
+        {
+          "key": "str",
+          "val": 650,
+          "ancient": false
+        },
+        {
+          "key": "normalDmgRed",
+          "val": 1386,
+          "ancient": false
+        },
+        {
+          "key": "globalDmgRed",
+          "val": 511,
+          "ancient": false
+        },
+        {
+          "key": "mdefPct",
+          "val": 66.2,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "doubleHit",
+        "val": 10
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom45",
+      "kind": "equip",
+      "slot": "helmet",
+      "rarity": 0,
+      "level": 150,
+      "name": "普通的鐵盔",
+      "affixes": [
+        {
+          "key": "vit",
+          "val": 205,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom46",
+      "kind": "equip",
+      "slot": "helmet",
+      "rarity": 1,
+      "level": 150,
+      "name": "精良的龍首盔",
+      "affixes": [
+        {
+          "key": "mdefFlat",
+          "val": 229,
+          "ancient": false
+        },
+        {
+          "key": "int",
+          "val": 282,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opsom47",
+      "kind": "equip",
+      "slot": "amulet",
+      "rarity": 2,
+      "level": 150,
+      "name": "稀有的銀鍊",
+      "affixes": [
+        {
+          "key": "hpPct",
+          "val": 30,
+          "ancient": false
+        },
+        {
+          "key": "atkPct",
+          "val": 32.7,
+          "ancient": false
+        },
+        {
+          "key": "mdefFlat",
+          "val": 312,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opson48",
+      "kind": "equip",
+      "slot": "legs",
+      "rarity": 3,
+      "level": 150,
+      "name": "獨特的鐵護腿",
+      "affixes": [
+        {
+          "key": "mdefPct",
+          "val": 42.7,
+          "ancient": false
+        },
+        {
+          "key": "resFire",
+          "val": 43.4,
+          "ancient": false
+        },
+        {
+          "key": "resDark",
+          "val": 43.7,
+          "ancient": false
+        },
+        {
+          "key": "hpRegen",
+          "val": 390,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opson49",
+      "kind": "equip",
+      "slot": "chest",
+      "rarity": 4,
+      "level": 150,
+      "name": "史詩的板甲",
+      "affixes": [
+        {
+          "key": "agi",
+          "val": 605,
+          "ancient": false
+        },
+        {
+          "key": "resPoison",
+          "val": 48.7,
+          "ancient": false
+        },
+        {
+          "key": "normalDmgRed",
+          "val": 1078,
+          "ancient": false
+        },
+        {
+          "key": "defFlat",
+          "val": 469,
+          "ancient": false
+        },
+        {
+          "key": "blockDmgRed",
+          "val": 56.1,
+          "ancient": false
+        }
+      ],
+      "passive": null,
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    },
+    {
+      "id": "ims2opson4a",
+      "kind": "equip",
+      "slot": "wrist",
+      "rarity": 5,
+      "level": 150,
+      "name": "傳說的龍鱗護腕",
+      "affixes": [
+        {
+          "key": "vit",
+          "val": 1178,
+          "ancient": true
+        },
+        {
+          "key": "mPen",
+          "val": 62.9,
+          "ancient": true
+        },
+        {
+          "key": "evasion",
+          "val": 21,
+          "ancient": false
+        },
+        {
+          "key": "hpFlat",
+          "val": 37964,
+          "ancient": false
+        },
+        {
+          "key": "blockDmgRed",
+          "val": 72.2,
+          "ancient": false
+        }
+      ],
+      "passive": {
+        "key": "slowHit",
+        "val": 12
+      },
+      "enchant": null,
+      "sockets": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "upgrade": 0,
+      "synthesized": false,
+      "locked": false
+    }
+  ],
+  "stage": {
+    "current": 150,
+    "best": 150
+  },
+  "zoneProgress": {
+    "plains": {
+      "current": 1,
+      "best": 1
+    },
+    "desert": {
+      "current": 1,
+      "best": 1
+    },
+    "swamp": {
+      "current": 1,
+      "best": 1
+    }
+  },
+  "factory": {
+    "filter": {
+      "actions": [
+        "salvage",
+        "keep",
+        "keep",
+        "keep",
+        "keep",
+        "keep",
+        "keep",
+        "keep",
+        "keep"
+      ],
+      "smartSalvage": false
+    },
+    "autoEquip": true,
+    "salvage": {},
+    "synth": {
+      "enabled": false,
+      "mergeEnabled": true,
+      "hybridEnabled": true,
+      "minGemLevel": 1,
+      "bookChoice": "any"
+    },
+    "enchant": {
+      "enabled": false,
+      "overwrite": false
+    },
+    "upgrade": {
+      "enabled": false,
+      "cap": 5
+    },
+    "conveyor": [],
+    "synthBuffer": [],
+    "parts": [],
+    "installed": {
+      "salvage": [],
+      "synth": []
+    },
+    "salvageSlots": 10,
+    "procTimer": 1.996,
+    "enchTimer": 1.992999999999999,
+    "upTimer": 0,
+    "stats": {
+      "salvaged": 0,
+      "extracted": 0,
+      "synthesized": 0,
+      "enchanted": 0,
+      "upgraded": 0,
+      "upgradeFailed": 0,
+      "mutated": 0
+    }
+  },
+  "newForge": {
+    "queue": [],
+    "furnaces": [
+      {
+        "id": 1,
+        "enabled": true,
+        "qualities": [
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "queue": [],
+        "belt": [],
+        "timer": 1.996,
+        "partSlots": 3,
+        "parts": []
+      }
+    ],
+    "nextId": 2,
+    "noticeShown": true,
+    "tabSeen": true,
+    "stats": {
+      "salvaged": 0,
+      "kept": 0
+    },
+    "routeTimer": 1.996
+  },
+  "tower": {
+    "highest": 0,
+    "active": false
+  },
+  "forge": {
+    "slots": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "dustSlots": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "autoDust": true,
+    "result": null,
+    "log": [],
+    "unlockNotified": false,
+    "unlocked": false,
+    "autoFill": null,
+    "autoForge": false,
+    "crafting": null
+  },
+  "settings": {
+    "compareEq": true
+  },
+  "firstRunAt": 1785123958142,
+  "level": 250,
+  "stats": {
+    "rebirth": 2
+  },
+  "highestStage": 150,
+  "inventoryMax": 300,
+  "rebirthCount": 2,
+  "forgeUnlocked": true
+}
