@@ -507,6 +507,81 @@ Claude Review
 
 使用者執行；發生衝突時交由整合者人工處理
 
+## 3.8 Codex：裝備詳情統一使用 itemDetailHTML
+
+狀態：
+
+等待 Review（實作與主要驗收完成）
+
+任務名稱：
+
+刪除 `uiItemDetailHTML` 重複實作，三個裝備詳情呼叫點統一使用 `itemDetailHTML`
+
+前置依賴：
+
+- `ba11ca9 refactor: itemDetailHTML 改為純函式，供主執行緒直接呼叫`
+- 開工前 `git pull --ff-only` 已完成，並以 `git merge-base --is-ancestor ba11ca9 HEAD`
+  確認依賴存在
+
+完成內容：
+
+- `renderDetail()` 改呼叫 `itemDetailHTML(it, null, opts)`
+- 裝備格 tooltip 的目前裝備與比較裝備兩張卡片改呼叫 `itemDetailHTML`
+- 三個呼叫點皆由 header Snapshot 傳入 `gold`、`essence`
+- 保留 `showAffixReroll`、`isEquipped` 原有語意
+- 刪除 `uiItemDetailHTML` 簡化重寫
+- 將原本的 todo 接線測試改成正式回歸測試，鎖定三個呼叫點、`cmp = null`
+  及資源欄位
+
+修改檔案：
+
+- `js/ui.js`
+- `tests/item-detail-html.test.cjs`
+- `docs/AI_TASKS.md`
+
+禁止修改且未修改：
+
+- `js/item.js`、`js/formula.js`、`js/data.js`
+- `js/worker/*`、`js/bridge.js`、`js/main.js`
+- `index.html`、`develop` 分支
+
+測試結果：
+
+- `node --test tests/item-detail-html.test.cjs`：7/7 通過，todo 0
+- `npm.cmd test`：504/504 通過，結尾 `ℹ fail 0`
+- `npm.cmd run build`：154 個檔案全數通過
+- `git diff --check`：通過
+
+實機驗收：
+
+- 使用 `codex` 工作副本的獨立 preview server 與
+  `docs/fixtures/save_lategame.json`，未使用 develop 的 5500 服務
+- 詳情實際顯示詞條池按鈕、分類色、評分、洗煉區間資料、空附魔欄及寶石數值
+- 詞條池浮層：`display:block`、父層為 `BODY`、不在 `#detail-pane` 內且完整位於 viewport
+- 掉寶率實例：原值 `176.5`、強化 `0`、預期／顯示 `88.25`，
+  `displayedExpected:true`、`displayedRaw:false`
+- fixture 不含同 key 重複詞條；以 fixture 裝備複本建立 `10 + 5` 測例，
+  實際輸出一行且顯示 `15`
+- 太古滿值實例：金色 `#fbbf24`、粗體及太古專屬洗煉文案皆存在
+- 金幣歸零後，洗煉花費 tooltip 的金幣 span 實際帶 `#fca5a5`
+- 透過正式 UI 鑲入四級紅寶石、附上火焰抗性附魔後，六項檢查全為 `true`
+- 實際點擊詳情內寶石與附魔後均成功取下，面板恢復空插槽／空附魔欄
+- Console：0 error、0 warning
+- `WorkerBridge.status()`：`errors:0`、`persistErrors:0`、`pendingCommands:0`
+
+已知驗收素材限制：
+
+- fixture 原始第一件裝備是空插槽、空附魔欄，因此未先鑲嵌／附魔時，
+  原提示詞六項指令的 `socketRm`、`enchantRm` 必然為 `false`
+- fixture 800 件裝備中沒有同 key 重複詞條，故該項使用同一 fixture 裝備複本
+  建立確定性測例
+- in-app browser 的指標移動未觸發 `mouseover`；已在實際 DOM 驗證詞條與 🎲
+  的 `data-tip` 內容、太古專屬文案及不足資源紅色樣式，人工滑過浮層仍建議 Review 時補看
+
+完成後交給：
+
+Claude Review
+
 任務名稱：
 
 既有測試失敗修復（A 類與 C 類）
