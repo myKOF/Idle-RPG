@@ -85,6 +85,57 @@ P5 之後的檔案所有權慣例（沿用即可，非硬性）：
 
 # 2. Claude Code 任務
 
+## 2.0 多分頁互斥（Web Worker 重構收尾）
+
+狀態：等待測試
+
+任務名稱：多分頁同時開啟時互相覆蓋存檔
+
+問題：全專案沒有任何多分頁防護。開兩個分頁就是兩顆 Worker 各自模擬、各自每 15 秒
+把整份狀態寫進同一個 `auto_current`，後寫的整份蓋掉先寫的。實測兩個分頁跑 50 秒後
+分別是 Lv.3／金 3,445／第 1 關與 Lv.4／金 4,935／第 7 關，關掉一個再重載另一個，
+那幾十秒的進度就沒了。
+
+決策（使用者選定）：擋下後開的分頁，並提供「在此分頁接管」。
+
+交付內容：
+
+- `js/tablock.js`（新增）：`navigator.locks` 具名獨佔鎖為唯一權威，
+  `BroadcastChannel` 只負責通知讓位。拿不到鎖的分頁**完全不初始化遊戲**
+- `js/worker/protocol.js`：協議升 v8，新增 `app.handoff`（落地 + 停模擬），85 → 86 條
+- `js/worker/sim.worker.js`：`app.handoff` 實作
+- `js/bridge.js`：`handoff()`——等 `persist` 真的落地完成才放手；開機改由 TabLock 觸發
+- `js/main.js`：`initUI` 改由 TabLock 觸發
+- `index.html`：載入 `js/tablock.js`（早於 bridge 與 main）
+- `docs/WORKER_PROTOCOL.md`：v8 版本列與關鍵設計決策第 7 條
+- `tests/tab-lock.test.cjs`（新增，10 項）
+
+允許修改：`js/tablock.js`、`js/bridge.js`、`js/main.js`、`js/worker/`、`index.html`、`docs/`、`tests/`
+
+禁止修改：`js/ui.js`（Codex 持有）
+
+實測結果（localhost:8330，指向 claude 工作副本）：
+
+- 單分頁正常開機；第二分頁被擋下且 `WorkerBridge.status().started === false`（沒有第二顆 Worker）
+- 接管來回三次，金幣單調遞增 1606 → 2004 → 2572 → 3350 → 5460 → 5605 → 5750，無回檔
+- 持有者分頁直接關閉（模擬當掉）→ 鎖由瀏覽器自動釋出，其他分頁接管成功
+- `errors` / `persistErrors` 全程 0，兩個分頁 console 皆無錯誤
+- 渲染實測：解除 `uiRenderingSuspended` 閘門後 `#r-gold` 顯示 5.46K，與 view 的 5460 一致
+- `npm test`：487 tests / 487 pass / 0 fail（基準線 477／477／0，未新增失敗）
+
+已知限制：
+
+- 遮罩底下的遊戲按鈕仍在 DOM 中可被鍵盤 focus（視覺上完全被蓋住）
+- 若持有者分頁被瀏覽器凍結（bfcache）而收不到讓位廣播，接管會在 10 秒後
+  顯示「另一個分頁沒有回應」，需玩家自行關閉該分頁
+
+建議 Antigravity 驗證：多分頁接管、關閉持有者分頁、存檔資料夾模式下的接管、
+高塔挑戰進行中接管、離線結算與接管的交互
+
+---
+
+## 2.1 Web Worker 遷移 P1／P2（歷史記錄）
+
 狀態：
 
 等待測試（P1、P2 已交付，待 Antigravity 驗證）

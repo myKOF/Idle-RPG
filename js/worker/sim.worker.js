@@ -857,6 +857,17 @@ var COMMAND_IMPL = {
   'save.toFolder': function (a) { return createManualSaveToFolderV2(a && a.label); },
   'save.restart': function () { return restartGame(); },
 
+  /* ---- 分頁交接（v8）----
+     另一個分頁要接管，這顆 Worker 從此不再是權威。先停迴圈再落地，順序不能反：
+     反過來的話，落地與停迴圈之間仍可能插進一次自動存檔，而那正是要避免的多寫入。
+     落地用 SHUTDOWN（語意就是「這個分頁要收工了」），主執行緒等它寫完才放開鎖。 */
+  'app.handoff': function () {
+    if (_loopTimer) { clearInterval(_loopTimer); _loopTimer = 0; }
+    _booted = false;
+    requestPersist(PERSIST_KINDS.SHUTDOWN);
+    return true;
+  },
+
   /* ---- GM ----
      執行層在 js/gm_exec.js（主執行緒與 Worker 共用同一份實作）。
      回傳 { ok, message }，面板依此顯示結果。 */

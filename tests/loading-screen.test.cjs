@@ -20,6 +20,7 @@ test('頁面初始載入會先顯示全黑 Loading 覆蓋層', () => {
 test('初始化完成後隱藏 Loading', () => {
   // P5 起存檔與關閉流程由 Worker 的 visibilitychange → SHUTDOWN 負責；
   // 主執行緒不再有 beforeunload，也不再於重新整理前主動顯示 Loading。
+  // 初始化改由 TabLock 觸發（沒拿到多分頁鎖的分頁完全不初始化，見 js/tablock.js）。
   let ready;
   const calls = { initUI: 0, initGM: 0, hide: 0 };
   const context = {
@@ -27,11 +28,10 @@ test('初始化完成後隱藏 Loading', () => {
     _saveSuppressed: false,
     window: { showDirectoryPicker: null },
     location: { href: 'http://localhost/' },
+    TabLock: { onGranted(fn) { ready = fn; } },
     document: {
       hidden: false,
-      addEventListener(type, handler) {
-        if (type === 'DOMContentLoaded') ready = handler;
-      },
+      addEventListener() {},
       getElementById() { return null; }
     },
     initUI() { calls.initUI++; },

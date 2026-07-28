@@ -28,6 +28,7 @@ const EXPECTED_COMMAND_COUNTS = {
   stats: 1,
   settings: 1,
   save: 3,
+  app: 1,
   gm: 1
 };
 const SIMULATION_FILES = [
@@ -87,11 +88,11 @@ function validArgs(spec) {
   return args;
 }
 
-test('凍結的 Worker 指令表有 85 條且分類數量固定', () => {
-  // v7：visibility 新增 pip（迷你視窗豁免背景休眠），指令表未變動
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 7);
+test('凍結的 Worker 指令表有 86 條且分類數量固定', () => {
+  // v8：新增 app.handoff（多分頁交接前先落地並停止模擬），85 → 86
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 8);
   const names = Object.keys(protocol.COMMANDS);
-  assert.equal(names.length, 85);
+  assert.equal(names.length, 86);
 
   const counts = {};
   for (const name of names) {

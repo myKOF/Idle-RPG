@@ -11,7 +11,7 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-var WORKER_PROTOCOL_VERSION = 7;
+var WORKER_PROTOCOL_VERSION = 8;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -258,6 +258,15 @@ var COMMANDS = {
   'save.manual':           { fn: null,               args: { label: 'str?' },                     dirty: [] },
   'save.toFolder':         { fn: null,               args: { label: 'str?' },                     dirty: [] },
   'save.restart':          { fn: null,               args: {},                                    dirty: PANEL_KEYS },
+
+  /* -- 分頁交接（v8 新增）--
+     多分頁互斥（js/tablock.js）用：另一個分頁按下「在此接管」時，正在遊玩的分頁必須
+     先把進度落地再交出控制權，否則玩家會掉最多一次自動存檔間隔（15 秒）的進度。
+
+     同時停止模擬迴圈：交接後這顆 Worker 通常會隨著 reload 一起消失，但「通常」不夠——
+     只要落地與 reload 之間任何一步出錯，一顆不再持有鎖卻還在跑、還在存檔的 Worker
+     就是這套鎖要防的多寫入問題本身。停迴圈是那條路徑的保險，不是效能考量。 */
+  'app.handoff':           { fn: null,               args: {},                                    dirty: [] },
 
   /* -- GM（僅本機測試服可用，Worker 端仍需自行檢查 host）-- */
   'gm.exec':               { fn: null,               args: { line: 'str' },                       dirty: PANEL_KEYS }

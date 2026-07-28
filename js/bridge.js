@@ -55,6 +55,9 @@ var WorkerBridge = (function () {
   var _pending = {};      // cmd id -> { resolve, reject, name, at }
   var _handlers = {};     // type -> [fn]
   var _started = false;
+  /* 尚未落地完成的 persist 筆數。分頁交接時要等它歸零才能放開多分頁鎖——
+     主執行緒自己就是落地端，所以這裡是唯一知道「真的寫完了沒」的地方。 */
+  var _pendingWrites = 0;
 
   var stats = {
     booted: false,
@@ -158,7 +161,9 @@ var WorkerBridge = (function () {
         break;
       case MSG_OUT.PERSIST:
         stats.persists++;
+        _pendingWrites++;
         SaveStorage.persist(msg.kind, msg.payload.json, msg.payload.meta, function (err) {
+          _pendingWrites--;
           if (err) {
             stats.persistErrors++;
             stats.lastError = { where: 'persist:' + msg.kind, message: err.message || String(err) };
@@ -426,6 +431,39 @@ var WorkerBridge = (function () {
     };
   }
 
+  /* ---- 分頁交接 ----
+     另一個分頁要接管時，這顆 Worker 必須先把進度落地再停止。順序是硬要求：
+     接管方是在拿到鎖之後才去讀存檔的，若這裡放手在先、落地在後，舊資料會在新分頁
+     讀完之後才寫進去，直接蓋掉——e85ff42 修掉的就是這個形狀的競態。
+
+     done() 代表「可以放手了」。逾時仍然放手：接管方最多只等 10 秒，卡在這裡不放
+     只會讓玩家兩個分頁都動不了，而最壞情況也不過是損失一次自動存檔間隔的進度。 */
+  var HANDOFF_TIMEOUT_MS = 3000;
+  var HANDOFF_DRAIN_MS = 50;
+
+  function handoff(done) {
+    var finished = false;
+    var finish = function () {
+      if (finished) return;
+      finished = true;
+      stop();
+      done();
+    };
+    if (!_worker || !stats.booted) { finish(); return; }
+    var timer = setTimeout(function () {
+      console.warn('[bridge] 分頁交接的存檔落地逾時，仍交出控制權。');
+      finish();
+    }, HANDOFF_TIMEOUT_MS);
+    var drain = function () {
+      if (finished) return;
+      if (_pendingWrites <= 0) { clearTimeout(timer); finish(); return; }
+      setTimeout(drain, HANDOFF_DRAIN_MS);
+    };
+    send('app.handoff').then(null, function (err) {
+      console.warn('[bridge] 交接指令失敗，仍嘗試等待既有寫入完成：', err && err.message);
+    }).then(drain);
+  }
+
   /* 執行中讀檔：主執行緒讀出存檔內容後交 Worker 替換整份狀態，不需要 reload */
   function loadSave(save) {
     return post(MSG_IN.LOAD, { save: save });
@@ -438,7 +476,7 @@ var WorkerBridge = (function () {
   }
 
   return {
-    start: start, stop: stop, send: send, on: on, loadSave: loadSave,
+    start: start, stop: stop, send: send, on: on, loadSave: loadSave, handoff: handoff,
     requestPanel: requestPanel, status: status, enabled: enabled, safeMode: safeMode
   };
 })();
@@ -447,10 +485,13 @@ var WorkerBridge = (function () {
    Worker 是模擬與存檔的唯一權威：以玩家的真實存檔開機，並負責之後所有存檔寫入。
    主執行緒只把存檔讀出來交過去，自己不 migrate、不結算、不持有 G（見 main.js）。
 
-   刻意先於 main.js 的 DOMContentLoaded 監聽器註冊：Worker 越早開機，
-   面板越早抵達，initUI() 之後畫面空白的時間就越短。 */
+   刻意先於 main.js 註冊：Worker 越早開機，面板越早抵達，initUI() 之後畫面空白的時間就越短。
+
+   改掛在 TabLock 上而非 DOMContentLoaded：沒有取得多分頁鎖的分頁一律不開機——
+   兩顆 Worker 對同一份存檔各寫各的，後寫的會整份蓋掉先寫的（見 js/tablock.js）。
+   TabLock 保證回呼在 DOM 就緒之後才執行。 */
 (function () {
-  window.addEventListener('DOMContentLoaded', function () {
+  TabLock.onGranted(function () {
     SaveStorage.readBootSave(function (save) {
       WorkerBridge.start({ save: save, maxRunId: SaveStorage.maxRunId() });
     });
