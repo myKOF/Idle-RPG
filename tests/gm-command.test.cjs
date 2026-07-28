@@ -4,6 +4,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
+const root = path.resolve(__dirname, '..');
+const { executeGMCommand } = require(path.join(root, 'js/gm_exec.js'));
+
 function makeElement(tagName) {
   return {
     tagName: tagName.toUpperCase(),
@@ -22,7 +25,6 @@ function makeElement(tagName) {
 }
 
 function loadGMContext(hostname) {
-  const root = path.resolve(__dirname, '..');
   const body = makeElement('body');
   const document = {
     body,
@@ -63,6 +65,86 @@ function loadGMContext(hostname) {
   return { context, document, body };
 }
 
+function withGMExecContext(configure, run) {
+  if (run === undefined) {
+    run = configure;
+    configure = null;
+  }
+  const context = {
+    console,
+    location: { hostname: 'localhost' },
+    G: {
+      player: { gold: 100, scrap: 10, essence: 10, dust: 10, books: { fire: 3 } },
+      inventory: [],
+      factory: { parts: [] },
+      tower: { highest: 0, active: false }
+    },
+    TOWER_TRIAL_MAX_FLOOR: 50,
+    TOWER_HELL_MAX_FLOOR: 100,
+    TOWER_PURGATORY_MAX_FLOOR: 150,
+    TOWER_MAX_FLOOR: 150,
+    REINCARNATION_MAX: 10,
+    ENCHANTS: { fire: { name: '火焰附魔' } },
+    GEM_TYPES: { ruby: {} },
+    GEM_FORGE_MAX_LEVEL: 10,
+    UI: { dirty: {} }
+  };
+  context.markStatsDirty = () => { context.statsDirty = true; };
+  context.resetTalentsForReincarnationGM = (count) => {
+    context.resetTalentsCount = count;
+    context.G.player.reincarnationTalentPoints = 0;
+  };
+  if (configure) configure(context);
+  context.window = context;
+
+  const saved = new Map();
+  for (const [key, value] of Object.entries(context)) {
+    saved.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
+    globalThis[key] = value;
+  }
+  try {
+    return run(context, executeGMCommand);
+  } finally {
+    for (const [key, descriptor] of saved) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else delete globalThis[key];
+    }
+  }
+}
+
+function configureMultiKill(context) {
+  context.ZONES = { plains: { name: '草原', emoji: '🌿', pool: [{ name: '史萊姆' }], rewardMult: 1 } };
+  context.RARITIES = [
+    { key: 'common', name: '普通' },
+    { key: 'uncommon', name: '精良' },
+    { key: 'rare', name: '稀有' },
+    { key: 'unique', name: '獨特' },
+    { key: 'epic', name: '史詩' },
+    { key: 'legendary', name: '傳說' },
+    { key: 'mythic', name: '神話' },
+    { key: 'genesis', name: '創世' },
+    { key: 'godforged', name: '神鑄創世' }
+  ];
+  context.isEliteStage = () => false;
+  context.monsterStatsFor = () => ({ level: 500, gold: 10, xp: 10 });
+  context.getStats = () => ({ goldBonus: 0, xpBonus: 0 });
+  context.inventoryCapacityWithTalents = () => 10;
+  context.doSalvage = () => {
+    context.G.player.scrap = (context.G.player.scrap || 0) + 5;
+    return { scrap: 5 };
+  };
+  context.pushConveyor = () => false;
+  context.multiKillDrops = [
+    { rarity: 6 }, { rarity: 4 }, { rarity: 6 }, { rarity: 2 }
+  ];
+  context.rollFieldDrops = () => {
+    context.multiKillDrops.forEach((item) => {
+      if (typeof context.window.pushConveyor === 'function') context.window.pushConveyor({ ...item });
+    });
+    return ['裝備'];
+  };
+}
+
 test('外部環境不會初始化 GM 輸入框或鍵盤事件', () => {
   const { context, document, body } = loadGMContext('game.example.com');
   context.initGM();
@@ -94,111 +176,81 @@ test('本機 GM Enter/Escape 行為符合需求', () => {
 });
 
 test('金幣與材料允許負數扣減，但物品負數不會發放', () => {
-  const { context, body } = loadGMContext('localhost');
-  context.initGM();
-  const input = body.children[0].children[0];
-  const event = { key: 'Enter', preventDefault() {}, stopPropagation() {} };
+  withGMExecContext((context, execute) => {
+    assert.equal(execute('gold -40').ok, true);
+    assert.equal(context.G.player.gold, 60);
 
-  input.value = 'gold -40';
-  input.listeners.keydown(event);
-  assert.equal(context.G.player.gold, 60);
+    assert.equal(execute('mat scrap -5').ok, true);
+    assert.equal(context.G.player.scrap, 5);
 
-  input.value = 'mat scrap -5';
-  input.listeners.keydown(event);
-  assert.equal(context.G.player.scrap, 5);
-
-  input.value = 'book fire -2';
-  input.listeners.keydown(event);
-  assert.equal(context.G.player.books.fire, 3);
-  assert.equal(body.children[0].children[1].className, 'gm-status bad');
+    const result = execute('book fire -2');
+    assert.equal(result.ok, false);
+    assert.equal(context.G.player.books.fire, 3);
+  });
 });
 
 test('GM 金幣與材料指令支援 10^20 以上的大數字與科學記號', () => {
-  const { context, body } = loadGMContext('localhost');
-  context.initGM();
-  const input = body.children[0].children[0];
-  const event = { key: 'Enter', preventDefault() {}, stopPropagation() {} };
+  withGMExecContext((context, execute) => {
+    assert.equal(execute('gold 100000000000000000000').ok, true); // 10^20
+    assert.equal(context.G.player.gold, 1e20 + 100);
 
-  input.value = 'gold 100000000000000000000'; // 10^20
-  input.listeners.keydown(event);
-  assert.equal(context.G.player.gold, 1e20 + 100);
-
-  input.value = 'scrap 1e20';
-  input.listeners.keydown(event);
-  assert.equal(context.G.player.scrap, 1e20 + 10);
+    assert.equal(execute('scrap 1e20').ok, true);
+    assert.equal(context.G.player.scrap, 1e20 + 10);
+  });
 });
 
 test('三個高塔 GM 指令可一鍵推進到各塔區終點', () => {
-  const { context, body } = loadGMContext('localhost');
-  context.initGM();
-  const input = body.children[0].children[0];
-  const event = { key: 'Enter', preventDefault() {}, stopPropagation() {} };
+  withGMExecContext((context, execute) => {
+    assert.equal(execute('tower_trial_clear').ok, true);
+    assert.equal(context.G.tower.highest, 50);
 
-  input.value = 'tower_trial_clear';
-  input.listeners.keydown(event);
-  assert.equal(context.G.tower.highest, 50);
+    assert.equal(execute('tower_hell_clear').ok, true);
+    assert.equal(context.G.tower.highest, 100);
 
-  input.value = 'tower_hell_clear';
-  input.listeners.keydown(event);
-  assert.equal(context.G.tower.highest, 100);
-
-  input.value = 'tower_purgatory_clear';
-  input.listeners.keydown(event);
-  assert.equal(context.G.tower.highest, 150);
-  assert.equal(context.UI.dirty.tower, true);
-  assert.equal(context.UI.dirty.header, true);
+    assert.equal(execute('tower_purgatory_clear').ok, true);
+    assert.equal(context.G.tower.highest, 150);
+    assert.equal(context.UI.dirty.tower, true);
+    assert.equal(context.UI.dirty.header, true);
+  });
 });
 
 test('高塔戰鬥中不允許執行一鍵通關', () => {
-  const { context, body } = loadGMContext('localhost');
-  context.initGM();
-  context.G.tower.highest = 20;
-  context.G.tower.active = true;
-  const input = body.children[0].children[0];
-  input.value = 'tower_purgatory_clear';
-  input.listeners.keydown({ key: 'Enter', preventDefault() {}, stopPropagation() {} });
-  assert.equal(context.G.tower.highest, 20);
-  assert.equal(body.children[0].children[1].className, 'gm-status bad');
+  withGMExecContext((context, execute) => {
+    context.G.tower.highest = 20;
+    context.G.tower.active = true;
+    const result = execute('tower_purgatory_clear');
+    assert.equal(result.ok, false);
+    assert.match(result.message, /高塔戰鬥進行中/);
+    assert.equal(context.G.tower.highest, 20);
+  });
 });
 
 test('三個高塔 reset GM 指令只清除指定塔區進度', () => {
-  const { context, body } = loadGMContext('localhost');
-  context.initGM();
-  const input = body.children[0].children[0];
-  const event = { key: 'Enter', preventDefault() {}, stopPropagation() {} };
+  withGMExecContext((context, execute) => {
+    context.G.tower.highest = 150;
+    assert.equal(execute('tower_purgatory_reset').ok, true);
+    assert.equal(context.G.tower.highest, 100);
 
-  context.G.tower.highest = 150;
-  input.value = 'tower_purgatory_reset';
-  input.listeners.keydown(event);
-  assert.equal(context.G.tower.highest, 100);
+    assert.equal(execute('tower_hell_reset').ok, true);
+    assert.equal(context.G.tower.highest, 50);
 
-  input.value = 'tower_hell_reset';
-  input.listeners.keydown(event);
-  assert.equal(context.G.tower.highest, 50);
-
-  input.value = 'tower_trial_reset';
-  input.listeners.keydown(event);
-  assert.equal(context.G.tower.highest, 0);
+    assert.equal(execute('tower_trial_reset').ok, true);
+    assert.equal(context.G.tower.highest, 0);
+  });
 });
 
 test('tower_jump 指定下一個高塔樓層，並將之前樓層視為通關', () => {
-  const { context, body } = loadGMContext('localhost');
-  context.initGM();
-  const input = body.children[0].children[0];
-  const event = { key: 'Enter', preventDefault() {}, stopPropagation() {} };
+  withGMExecContext((context, execute) => {
+    assert.equal(execute('tower_jump 101').ok, true);
+    assert.equal(context.G.tower.highest, 100);
 
-  input.value = 'tower_jump 101';
-  input.listeners.keydown(event);
-  assert.equal(context.G.tower.highest, 100);
+    assert.equal(execute('tower_jump 150').ok, true);
+    assert.equal(context.G.tower.highest, 149);
 
-  input.value = 'tower_jump 150';
-  input.listeners.keydown(event);
-  assert.equal(context.G.tower.highest, 149);
-
-  input.value = 'tower_jump 151';
-  input.listeners.keydown(event);
-  assert.equal(context.G.tower.highest, 149);
-  assert.equal(body.children[0].children[1].className, 'gm-status bad');
+    const result = execute('tower_jump 151');
+    assert.equal(result.ok, false);
+    assert.equal(context.G.tower.highest, 149);
+  });
 });
 
 test('reincarnation GM 指令可在 0～10 轉間切換並刷新狀態', () => {
