@@ -127,15 +127,17 @@ test('Worker 產生 modal 改版 notice 並由 UI 以共用確認窗顯示', () 
   const uiSource = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   const dialogs = [];
   const logs = [];
+  const offlineSummaries = [];
+  const panelRequests = [];
   const ui = {
     UI: { dirty: {} },
     addLog() {},
     routeUiLog() {},
     workerTowerActiveForLog() { return false; },
     floatText() {},
-    showOfflineSummary() {},
+    showOfflineSummary(data) { offlineSummaries.push(data); },
     blog(...args) { logs.push(args); },
-    requestPanelData() {},
+    requestPanelData(...args) { panelRequests.push(args); },
     switchTab() {},
     showConfirmDialog(...args) { dialogs.push(args); }
   };
@@ -147,6 +149,15 @@ test('Worker 產生 modal 改版 notice 並由 UI 以共用確認窗顯示', () 
   assert.equal(dialogs.length, 1, 'modal notice 必須彈出共用確認窗');
   assert.equal(dialogs[0][0], notice.text);
   assert.deepEqual(logs, [], 'modal notice 不得退化成一般戰鬥日誌');
+
+  const offlineData = { elapsed: 60 };
+  ui.handleWorkerUiEvents([{ kind: 'notice', key: 'offlineSummary', data: offlineData, modal: true }]);
+  assert.equal(offlineSummaries[0], offlineData, 'offlineSummary 必須維持專用摘要分支');
+
+  const towerData = { win: true };
+  ui.handleWorkerUiEvents([{ kind: 'notice', key: 'towerResult', data: towerData, modal: true }]);
+  assert.equal(ui.UI.pendingTowerResult, towerData, 'towerResult 必須維持專用結算分支');
+  assert.deepEqual(panelRequests, [['tower', true], ['header', true]]);
 });
 
 test('遷移旗標使重複載入不會再次退點', () => {

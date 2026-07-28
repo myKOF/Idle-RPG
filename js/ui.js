@@ -409,6 +409,10 @@ function handleWorkerUiEvents(events) {
       showOfflineSummary(event.data);
       return;
     }
+    if (event.modal && event.text) {
+      showConfirmDialog(event.text);
+      return;
+    }
     if (event.text) {
       blog(event.text, 'info', 'system');
       return;
