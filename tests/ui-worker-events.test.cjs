@@ -104,7 +104,7 @@ test('Worker log 分類優先採用 cat，並依 tower Snapshot 導向 boss log'
   assert.equal(context.workerTowerActiveForLog(), false);
   context.UI_WORKER_STATE.view = { towerActive: true };
   context.routeUiLog('任意文字', 'hit', 'combat', context.workerTowerActiveForLog());
-  assert.deepEqual(calls, [['boss-log', '任意文字', 'hit', 150, 'boss']]);
+  assert.deepEqual(calls, [['battle-log', '任意文字', 'hit', 150, 'boss']]);
 });
 
 test('Worker 飄字以 elId 呈現，舊路徑仍排除已離場的敵人物件', () => {
