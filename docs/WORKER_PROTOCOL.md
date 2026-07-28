@@ -269,7 +269,6 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 
 | 版本 | 日期 | 變更 |
 |---|---|---|
-| 8 | 2026-07-28 | `battle` 面板新增 `stats`。<br>戰鬥區是唯一「不論在哪個分頁都一直在畫的東西」，但它需要的 `comboHits`／`aspd`／`mp` 在協議裡完全沒有出口——`ui.js` 因此仍在呼叫 `getStats()`，而主執行緒沒有 `G`，`computeStats(null)` 直接拋 `Cannot read properties of null (reading 'equipment')`。<br>該呼叫位在 `uiTick` 的第 5 行（`renderBattle`）內，一拋就把後面的 `renderEquip`／`renderInventory`／`renderForge` 全部跳過，症狀是敵人傷害飄字消失、裝備要等好幾拍才出現、操作像卡住；同一個拋錯也會從 `handleWorkerUiEvents` 竄出去，讓該批 Worker 事件整包被丟掉。<br>`equip` 面板雖已有 `stats`，但它是隨點隨取的，戰鬥區不能依賴。相對於同一包裡的 `FIELD`（全體怪物完整狀態），這個純量物件的成本可忽略。<br>指令表未變動（仍 85 條） |
 | 7 | 2026-07-28 | `visibility` 新增 `pip`：迷你監控視窗（PiP）開著時豁免背景休眠，也不落地 `shutdown`。<br>P5 把主執行緒的模擬迴圈整個移除時，`main.js` 的 `miniMonitorActive()` 一併消失，這條語意就斷了——玩家開 PiP 正是為了邊做別的事邊看戰鬥，分頁雖然隱藏但畫面確實在被觀看。<br>PiP 狀態在 `ui.js` 的 `MINI`，Worker 看不到，由 Bridge 隨 `visibility` 轉發；PiP 只能在分頁可見時開啟，所以後續的 `visibilitychange` 必然帶對狀態。Bridge 另在 watchdog 輪詢變化補送，但隱藏分頁的計時器會被瀏覽器降頻，那條路徑只當保險。<br>指令表未變動（仍 85 條） |
 | 6 | 2026-07-27 | `boot` 新增 `safeMode`：為 `true` 時跳過離線結算。<br>搭配 Bridge 的失效自動重啟（連續 3 次為上限）。離線結算是開機流程裡最會爆的一段——要讀存檔時間戳、重跑一段模擬、再結算獎勵，任何一環碰到異常資料都會拋錯，而拋錯就等於開不了機。安全模式讓玩家至少進得去、匯得出存檔。<br>指令表未變動（仍 85 條） |
 | 1 | 2026-07-27 | 初版凍結：6 種入向訊息、8 種出向訊息、11 個面板鍵、67 條指令 |
