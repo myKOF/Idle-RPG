@@ -11,7 +11,7 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-var WORKER_PROTOCOL_VERSION = 7;
+var WORKER_PROTOCOL_VERSION = 8;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
