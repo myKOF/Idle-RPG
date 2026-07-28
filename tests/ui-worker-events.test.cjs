@@ -23,10 +23,12 @@ function functionBody(name) {
 
 test('Worker Event 將 flog、log 與 float 接到既有 UI 呈現函式', () => {
   const calls = [];
+  const battleSnapshot = { stats: { comboHits: 2, aspd: 3 } };
   const context = {
     addLog: (...args) => calls.push(['addLog', ...args]),
     routeUiLog: (...args) => calls.push(['routeUiLog', ...args]),
     workerTowerActiveForLog: () => true,
+    uiBattlePanelSnapshot: () => battleSnapshot,
     floatText: (...args) => calls.push(['floatText', ...args])
   };
   vm.runInNewContext(functionBody('handleWorkerUiEvents'), context);
@@ -43,7 +45,7 @@ test('Worker Event 將 flog、log 與 float 接到既有 UI 呈現函式', () =>
     ['addLog', 'newforge-log', '熔爐', 'ok', 50],
     ['addLog', 'custom-log', '直接', 'warn', 12],
     ['routeUiLog', '戰鬥', 'dmg', 'combat', true],
-    ['floatText', 'mv-float-0', '10', 'dmg', 10]
+    ['floatText', 'mv-float-0', '10', 'dmg', 10, null, battleSnapshot]
   ]);
 });
 
@@ -119,11 +121,12 @@ test('Worker 飄字以 elId 呈現，舊路徑仍排除已離場的敵人物件'
     floatText: (...args) => calls.push(['float', ...args])
   };
   vm.runInNewContext(functionBody('flushPendingEnemyFloats'), context);
-  context.flushPendingEnemyFloats();
+  const battleSnapshot = { stats: { comboHits: 2, aspd: 3 } };
+  context.flushPendingEnemyFloats(battleSnapshot);
 
   assert.deepEqual(calls, [
     ['animate', null, 'mv-float-0', 'dmg'],
-    ['float', 'mv-float-0', '10', 'dmg', 10, null]
+    ['float', 'mv-float-0', '10', 'dmg', 10, null, battleSnapshot]
   ]);
   assert.equal(context.PENDING_ENEMY_FLOATS.length, 0);
 });

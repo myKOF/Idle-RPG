@@ -196,6 +196,63 @@ Antigravity 驗證 `?worker=1` 空跑；Codex 依協議撰寫協議測試
 
 進行中（P1 協議測試已交付並合併；下列為 P2 期間任務）
 
+## 3.4 Codex P0：uiTick 移除主執行緒模擬層屬性計算
+
+狀態：
+
+等待 Review（實作與驗收完成）
+
+任務名稱：
+
+修正 `ui.js` 呼叫 `getStats()`／`talentLevel()` 打斷 `uiTick`，恢復戰鬥飄字與面板即時渲染
+
+任務內容：
+
+- 敵人傷害飄字合併上限只讀協議 v8 的 `battle.stats.comboHits`／`battle.stats.aspd`
+- Worker float 事件與待處理飄字路徑都把 battle snapshot 傳入 `floatText`
+- `renderMpSkill` 缺少 stats 時安全返回，不在主執行緒重算屬性
+- 天賦與潛能渲染缺少 snapshot 時使用安全預設值，不呼叫會讀取 `G` 的模擬層後備
+- 全檔確認 `ui.js` 不含 `getStats(`／`computeStats(` 呼叫
+
+允許修改：
+
+- `js/ui.js`
+- `docs/AI_TASKS.md`
+- 與本問題直接相關的 `tests/*.test.cjs`（如需補回歸測試）
+
+禁止修改：
+
+- `js/worker/*`（協議層由 Claude 維護）
+- 任務範圍外檔案
+- `develop` 分支
+
+前置依賴：
+
+協議 v8（已於開工前 merge `origin/develop`，`battle` 面板已含 `stats`）
+
+測試要求：
+
+- `npm test` 不得新增失敗
+- 使用 `docs/fixtures/save_midgame.json` 實機戰鬥至少 60 秒，Console 0 error／0 warning
+- 敵人傷害飄字可見且連擊會合併；戰鬥中切裝備頁立即渲染
+- 完整展開天賦頁（含潛能節點）不得拋錯
+- 記錄 Console 截圖與 `WorkerBridge.status()` 的 `errors`／`restarts`／`pendingCommands`
+
+驗收結果：
+
+- 定向測試 34/34 通過；`npm.cmd test` 471/471 通過
+- Lv.514／10 轉實機：天賦 1～10 轉共 80 個節點完整展開，技能頁 10 個潛能節點全部可見
+- 連擊數 1.9 的第 20 層高塔戰鬥完整跑滿 60 秒，敵方傷害飄字持續可見
+- 戰鬥中切換裝備頁 361ms 完成，背包計數 56/100、DOM 已渲染 25 個可視格
+- Browser Console 程式化擷取：0 error、0 warning
+- 驗收工具限制：IAB 的隔離執行環境無法存取頁面主世界的 `WorkerBridge`，
+  因此未直接取得 `WorkerBridge.status()` 三項值；未觀察到 Worker restart 訊息，
+  UI pending 狀態亦已清除，不以此推定結果取代實測值
+
+完成後交給：
+
+Claude Review
+
 任務名稱：
 
 既有測試失敗修復（A 類與 C 類）

@@ -69,7 +69,8 @@ test('戰鬥與高塔技能列共用外層已取得的屬性，不重複呼叫 g
   assert.match(ui, /function renderMpSkill\(pEnt, prefix, stats\)/);
   const renderMpSkill = ui.match(/function renderMpSkill\(pEnt, prefix, stats\) \{[\s\S]*?\n\}/);
   assert.ok(renderMpSkill);
-  assert.match(renderMpSkill[0], /var maxMp = Math\.max\(1, Number\(stats && stats\.mp\) \|\| 1\);/);
+  assert.match(renderMpSkill[0], /if \(!stats\) return;/);
+  assert.match(renderMpSkill[0], /var maxMp = Math\.max\(1, Number\(stats\.mp\) \|\| 1\);/);
   assert.doesNotMatch(renderMpSkill[0], /getStats\(\)/);
   assert.match(ui, /function renderBattle\(\)[\s\S]*var st = headerSnapshot\.stats[\s\S]*renderMpSkill\(p, 'pv', st\);/);
   assert.match(ui, /function renderTowerFight\(\)[\s\S]*var st = headerSnapshot\.stats;[\s\S]*renderMpSkill\(p, 'tp', st\);/);

@@ -50,9 +50,9 @@ test('敵人尚未建立卡片就被擊殺時，傷害浮字會等卡片建立�
   assert.match(ui, /function queuePendingEnemyFloat\(elId, text, cls, damageValue, ent\)/);
   assert.match(ui, /function animatePendingEnemyKill\(ent, elId, cls\)/);
   assert.match(ui, /fill\.style\.width = '100%';[\s\S]*?fill\.style\.transition = 'width ' \+ INSTANT_KILL_HP_ANIMATION_MS \+ 'ms linear';[\s\S]*?fill\.style\.width = '0%';/);
-  assert.match(ui, /function flushPendingEnemyFloats\(\)/);
+  assert.match(ui, /function flushPendingEnemyFloats\(battleSnapshot\)/);
   assert.match(ui, /if \(!layer \|\| layer\.offsetParent === null\) \{[\s\S]*?queuePendingEnemyFloat\(elId, text, cls, damageValue, ent\)/);
-  assert.match(ui, /flushPendingEnemyFloats\(\);/);
+  assert.match(ui, /flushPendingEnemyFloats\(battleSnapshot\);/);
 });
 
 test('我方攻擊被敵方閃避時，MISS 顯示在敵方浮層', () => {
@@ -113,7 +113,7 @@ test('敵人傷害浮字字號較小且出現範圍更分散', () => {
   assert.match(ui, /function isEnemyHitFloat\(elId,\s*cls\)/);
   assert.match(ui, /var ENEMY_DAMAGE_FLOAT_WINDOW_MS = 4000/);
   assert.match(ui, /var ENEMY_DAMAGE_FLOAT_MAX_HITS = 20/);
-  assert.match(ui, /function enemyDamageFloatMergeLimit\(\)/);
+  assert.match(ui, /function enemyDamageFloatMergeLimit\(battleSnapshot\)/);
   assert.match(ui, /Math\.min\(ENEMY_DAMAGE_FLOAT_MAX_HITS, Math\.floor\(comboHits \* aspd \* 2\)\)/);
   assert.match(ui, /existing\._damageFloatHits >= damageMergeLimit/);
   assert.match(ui, /var FLOAT_TEXT_LIFETIME_MS = 2000/);
@@ -131,12 +131,11 @@ test('敵人傷害浮字字號較小且出現範圍更分散', () => {
 });
 
 test('傷害浮字合併上限依連擊數與攻速計算', () => {
-  const helperSource = ui.match(/function enemyDamageFloatMergeLimit\(\) \{[\s\S]*?\n\}/)[0];
+  const helperSource = ui.match(/function enemyDamageFloatMergeLimit\(battleSnapshot\) \{[\s\S]*?\n\}/)[0];
   let stats = { comboHits: 0, aspd: 2 };
   const getLimit = vm.runInNewContext(
     '(function () { ' + helperSource + '; return enemyDamageFloatMergeLimit; })()',
     {
-      uiHeaderPanelSnapshot: () => ({ stats }),
       Math,
       Number,
       isFinite,
@@ -145,10 +144,11 @@ test('傷害浮字合併上限依連擊數與攻速計算', () => {
   );
 
   assert.equal(getLimit(), 0);
+  assert.equal(getLimit(null), 0);
   stats = { comboHits: 0.9, aspd: 2 };
-  assert.equal(getLimit(), 3);
+  assert.equal(getLimit({ stats }), 3);
   stats = { comboHits: 100, aspd: 5 };
-  assert.equal(getLimit(), 20);
+  assert.equal(getLimit({ stats }), 20);
 });
 
 test('敵方區普攻固定白色、技能固定黃色，爆擊不改變來源顏色', () => {

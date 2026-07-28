@@ -396,7 +396,7 @@ function handleWorkerUiEvents(events) {
       return;
     }
     if (event.kind === 'float') {
-      floatText(event.elId, event.text, event.cls, event.damageValue);
+      floatText(event.elId, event.text, event.cls, event.damageValue, null, uiBattlePanelSnapshot());
       return;
     }
     if (event.kind === 'loot') {
@@ -1174,7 +1174,7 @@ function animatePendingEnemyKill(ent, elId, cls) {
   }, INSTANT_KILL_HP_ANIMATION_MS + 50);
 }
 
-function flushPendingEnemyFloats() {
+function flushPendingEnemyFloats(battleSnapshot) {
   if (!PENDING_ENEMY_FLOATS.length) return;
   var activeEnemies = (typeof fieldEnemyList === 'function') ? fieldEnemyList() : null;
   var keep = [];
@@ -1187,14 +1187,13 @@ function flushPendingEnemyFloats() {
       continue;
     }
     animatePendingEnemyKill(item.ent, item.elId, item.cls);
-    floatText(item.elId, item.text, item.cls, item.damageValue, item.ent);
+    floatText(item.elId, item.text, item.cls, item.damageValue, item.ent, battleSnapshot);
   }
   PENDING_ENEMY_FLOATS = keep;
 }
 
-function enemyDamageFloatMergeLimit() {
-  var headerSnapshot = uiHeaderPanelSnapshot();
-  var st = headerSnapshot && headerSnapshot.stats;
+function enemyDamageFloatMergeLimit(battleSnapshot) {
+  var st = battleSnapshot && battleSnapshot.stats;
   var comboHits = st ? Number(st.comboHits) : 0;
   var aspd = st ? Number(st.aspd) : 0;
   if (!isFinite(comboHits) || !isFinite(aspd) || comboHits <= 0 || aspd <= 0) return 0;
@@ -1330,7 +1329,7 @@ function placePlayerRecoveryFloat(sp, layer) {
   placeFloatAvoidingOverlap(sp, layer, '.float-txt', 48, 18, 3, 8);
 }
 
-function floatText(elId, text, cls, damageValue, ent) {
+function floatText(elId, text, cls, damageValue, ent, battleSnapshot) {
   if (uiRenderingSuspended()) return; // 背景分頁：純視覺浮字直接略過，不建 DOM 也不量測排版
   if (elId === 'tb-float' && text === 'MISS' && cls === 'miss') {
     elId = 'tp-float';
@@ -1364,7 +1363,7 @@ function floatText(elId, text, cls, damageValue, ent) {
   var recoveryInfo = playerRecoveryFloatInfo(elId, cls, text, damageValue);
   var recoveryKey = recoveryInfo ? recoveryInfo.key : '';
   if (damageKey) {
-    var damageMergeLimit = enemyDamageFloatMergeLimit();
+    var damageMergeLimit = enemyDamageFloatMergeLimit(battleSnapshot);
     var damageFloats = layer.querySelectorAll('.float-txt.enemy-hit-float');
     for (var di = damageFloats.length - 1; di >= 0; di--) {
       var existing = damageFloats[di];
@@ -1996,7 +1995,8 @@ function entStatus(ent) {
   return s.join(' ');
 }
 function renderMpSkill(pEnt, prefix, stats) {
-  var maxMp = Math.max(1, Number(stats && stats.mp) || 1);
+  if (!stats) return;
+  var maxMp = Math.max(1, Number(stats.mp) || 1);
   var mpFill = $id(prefix + '-mp'), mpText = $id(prefix + '-mptext'), skillEl = $id(prefix + '-skill');
   setStyleIfChanged(mpFill, 'width', clamp(pEnt.mp / maxMp * 100, 0, 100) + '%');
   setTextIfChanged(mpText, fmt(Math.floor(pEnt.mp)) + ' / ' + fmt(maxMp));
@@ -2240,7 +2240,7 @@ function renderBattle() {
       party.innerHTML = '<div class="enemy-empty">' + (view.towerActive ? '（高塔戰鬥中…）' : '🔍 搜索敵人中…') + '</div>';
       party.setAttribute('data-enemy-signature', 'empty');
     }
-    flushPendingEnemyFloats();
+    flushPendingEnemyFloats(battleSnapshot);
     return;
   }
   var enemySignature = enemies.map(function (enemy, index) {
@@ -2293,7 +2293,7 @@ function renderBattle() {
     var fadeEls = card.querySelectorAll('.cb-icon, .enemy-emoji-fallback, .enemy-hp');
     for (var di = 0; di < fadeEls.length; di++) setStyleIfChanged(fadeEls[di], 'opacity', fadeOpacity < 1 ? String(fadeOpacity) : '');
   }
-  flushPendingEnemyFloats();
+  flushPendingEnemyFloats(battleSnapshot);
 }
 
 
@@ -4682,9 +4682,9 @@ function runTalentUiAction(commandName, id, legacyAction) {
 
 function talentNodeHTML(def, turn, snapshot) {
   var lv = snapshot ? talentViewLevel(snapshot, def.id) : 0;
-  var unlocked = snapshot ? talentViewUnlocked(snapshot, def.id) : talentUnlocked(def.id);
+  var unlocked = snapshot ? talentViewUnlocked(snapshot, def.id) : false;
   var disabled = !!def.disabled;
-  var reincarnations = snapshot ? talentViewReincarnations(snapshot) : uiReincarnationCount();
+  var reincarnations = snapshot ? talentViewReincarnations(snapshot) : 0;
   var lockText = disabled ? (def.disabledReason || '目前暫不開放升級') : (reincarnations < turn ? '需 ' + turn + ' 轉' : '尚未開放');
   var locked = !unlocked || disabled;
   var aria = def.name + (disabled ? '（' + lockText + '）' : '');
@@ -4750,13 +4750,13 @@ function potentialNodeHTML(def, index, talentSnapshot, headerSnapshot) {
   var usingSnapshot = !!talentSnapshot;
   var reincarnations = usingSnapshot
     ? skillViewReincarnations(headerSnapshot, talentSnapshot)
-    : uiReincarnationCount(headerSnapshot);
+    : 0;
   var max = usingSnapshot
     ? skillViewPotentialMaxLevel(reincarnations)
-    : potentialSkillMaxLv(def.id);
+    : 0;
   var lv = usingSnapshot
     ? talentViewPotentialLevel(talentSnapshot, def.id, max)
-    : uiPotentialLevelFromSnapshot(talentSnapshot, def.id, max);
+    : 0;
   var unlocked = usingSnapshot
     ? talentViewPotentialUnlocked(talentSnapshot, def.id)
     : false;
