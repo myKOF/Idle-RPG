@@ -7793,6 +7793,10 @@ function initUI() {
     }
     var cell = e.target.closest('.item-cell, .eq-slot');
     if (cell) {
+      // Clicking selects the item for the detail pane; do not keep the
+      // pre-click hover card alive and compete with the next hover target.
+      hideTooltip();
+      UI.pendingItemTooltip = null;
       // 神鑄背包：點擊裝備直接放入法陣（成功後清除殘留選取，防止跨分頁誤操作）
       if (cell.getAttribute('data-src') === 'forgeinv') {
         if (isUiCommandPending(nodePendingKey('forge'))) return;
