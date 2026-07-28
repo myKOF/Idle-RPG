@@ -47,6 +47,43 @@ test('Worker Event 將 flog、log 與 float 接到既有 UI 呈現函式', () =>
   ]);
 });
 
+test('BOOTED 在套用 Snapshot 後轉送開機期間累積的 Worker Events', () => {
+  const calls = [];
+  const handlers = {};
+  const context = {
+    UI_WORKER_STATE: { bridgeBound: false },
+    WorkerBridge: {
+      on: (name, handler) => { handlers[name] = handler; }
+    },
+    MSG_OUT: { BOOTED: 'BOOTED', FULL: 'FULL', TICK: 'TICK', PANEL: 'PANEL' },
+    applyUiSnapshot: snapshot => calls.push(['snapshot', snapshot]),
+    updateWorkerSafeModeMarker: () => calls.push(['safe-mode']),
+    handleWorkerUiEvents: events => calls.push(['events', events]),
+    handleWorkerBootNotices: notices => calls.push(['notices', notices]),
+    handleWorkerDead: () => {},
+    handleWorkerRestarting: () => {},
+    handleWorkerRestarted: () => {},
+    hideWorkerDeadNotice: () => {},
+    refreshUiPanelSubscriptions: () => {},
+    requestPanelData: () => {}
+  };
+  vm.runInNewContext(functionBody('bindWorkerUiState'), context);
+
+  assert.equal(context.bindWorkerUiState(), true);
+  calls.length = 0;
+  const snapshot = { view: { towerActive: false } };
+  const events = [{ kind: 'flog', msg: '🏭 熔爐已啟動' }];
+  const notices = [{ key: 'welcome' }];
+  handlers.BOOTED({ snapshot, events, notices });
+
+  assert.deepEqual(calls, [
+    ['snapshot', snapshot],
+    ['safe-mode'],
+    ['events', events],
+    ['notices', notices]
+  ]);
+});
+
 test('Worker log 分類優先採用 cat，並依 tower Snapshot 導向 boss log', () => {
   const calls = [];
   const context = {
