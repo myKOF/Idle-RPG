@@ -1981,7 +1981,7 @@ textarea#save-io {
 /* 裝�?三�??��? */
 #equip-set-tabs {
   max-width: 400px;
-  margin: 8px auto 0;
+  margin: 2px auto 0;
 }
 .eqset-tabrow {
   display: grid;
@@ -1994,6 +1994,10 @@ textarea#save-io {
   flex-direction: column;
 }
 /* ?��?上方?�自訂�?稱�?空�?仍�??��?度以對�?�?*/
+.eqset-name[data-empty="1"] {
+  display: none;
+}
+
 .eqset-name {
   min-height: 15px;
   line-height: 15px;
@@ -2050,7 +2054,7 @@ textarea#save-io {
 }
 .eqset-confirm {
   width: 100%;
-  margin-top: 6px;
+  margin-top: 4px;
 }
 .eqset-confirm:disabled { opacity: 0.5; cursor: default; }
 
@@ -2337,7 +2341,7 @@ textarea#save-io {
   grid-auto-rows: 58px;
   gap: 6px;
   align-content: start;
-  height: var(--inventory-visible-height, 186px);
+  height: var(--inventory-visible-height, 378px);
   max-height: 570px;
   overflow-y: auto;
 }
@@ -4589,7 +4593,7 @@ textarea#save-io {
   width: 100% !important;
   flex: 0 0 auto !important;
   min-height: 0 !important;
-  height: 500px !important;
+  height: 388px !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   border: 1px solid transparent !important;
