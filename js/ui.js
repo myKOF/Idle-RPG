@@ -63,7 +63,7 @@ var UI_PANEL_SUBSCRIPTIONS_BY_TAB = {
   newforge: ['newforge', 'factory', 'header'],
   forge: ['forge', 'inv', 'gems', 'header']
 };
-var UI_PERSISTENT_PANEL_SUBSCRIPTIONS = ['talents', 'header']; // talent visibility + always-visible header
+var UI_PERSISTENT_PANEL_SUBSCRIPTIONS = ['talents', 'header', 'battle']; // talent visibility + always-visible header/battle
 
 /*
  * Worker-backed UI state.  Renderers migrate to viewState()/panelData() one
@@ -8427,4 +8427,3 @@ function renderCurrentSummary() {
   holder.innerHTML = html;
   list.insertBefore(holder.firstChild, list.firstChild);
 }
-
