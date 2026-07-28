@@ -42,6 +42,6 @@ test('tower auto challenge shows result modal with countdown before next fight',
   assert.match(ui, /if \(countdown <= 0\) \{/);
   assert.match(ui, /confirmTowerResultModal\(\);/);
   assert.match(ui, /function confirmTowerResultModal\(\)/);
-  assert.match(ui, /confirmTowerResult\(\)/);
+  assert.match(ui, /sendUiCommand\('tower\.confirmResult'/);
   assert.match(ui, /\$id\('trm-stop-auto'\)\.onclick = stopTowerAutoFromResultModal/);
 });

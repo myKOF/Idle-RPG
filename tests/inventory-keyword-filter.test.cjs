@@ -27,7 +27,7 @@ test('背包關鍵字篩選 UI 與 DOM 結構驗證', () => {
   assert.match(ui, /function\s+onKeywordFilterInput\s*\(/);
   assert.match(ui, /compositionstart/);
   assert.match(ui, /compositionend/);
-  assert.match(ui, /classList\.toggle\s*\(\s*'item-cell-dimmed'/);
+  assert.match(ui, /item-cell-dimmed/);
 });
 
 test('isInternalServer 內測服與本機環境判定驗證', () => {

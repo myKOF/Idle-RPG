@@ -50,7 +50,7 @@ test('戰鬥控制列提供暫停按鈕與可辨識的繼續狀態', () => {
 
   assert.match(html, /id="btn-combat-pause"/);
   assert.match(html, /暫停戰鬥/);
-  assert.match(ui, /toggleCombatPaused\(\)/);
+  assert.match(ui, /sendUiCommand\('combat\.togglePaused'/);
   assert.match(ui, /aria-pressed/);
   assert.match(ui, /繼續戰鬥/);
 });

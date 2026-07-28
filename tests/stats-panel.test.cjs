@@ -214,5 +214,5 @@ test('統計面板 UI：標題、三區塊與每秒即時更新', () => {
   assert.match(ui, /renderStatsPanel/);
   assert.match(ui, /statsSourceHtml/);
   assert.match(ui, /setInterval\(renderStatsPanel, 1000\)/);
-  assert.match(ui, /resetLootStats/);
+  assert.match(ui, /sendUiCommand\('stats\.reset'/);
 });

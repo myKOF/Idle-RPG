@@ -13,7 +13,7 @@ test('階段列提供直達最高按鈕並將最高資訊放在其右側', () =>
   assert.match(html, /id="st-max"[\s\S]*id="stage-best"/);
   assert.match(html, /id="stage-best"[^>]*>最高1關<\/span>/);
   assert.match(ui, /setTextIfChanged\(best, '最高' \+ stg\.best \+ '關'\)/);
-  assert.match(ui, /\$id\('st-max'\)\.addEventListener\('click',[\s\S]*stageGoMax\(\)/);
+  assert.match(ui, /\$id\('st-max'\)\.addEventListener\('click',[\s\S]*sendUiCommand\('stage\.goMax'/);
 });
 
 test('階段前進與後退按鈕提供提示並支援長按快速切換', () => {
@@ -26,7 +26,7 @@ test('階段前進與後退按鈕提供提示並支援長按快速切換', () =>
   assert.match(html, /id="st-next"[^>]*data-tip-placement="stage-right"/);
   assert.match(ui, /var STAGE_HOLD_REPEAT_MS = 50;/);
   assert.match(ui, /function refreshStageDisplay\(stageOverride\)/);
-  assert.match(ui, /function stepStageButton\(delta\)[\s\S]*stageGo\(delta\);[\s\S]*refreshStageDisplay\(\);/);
+  assert.match(ui, /function stepStageButton\(delta\)[\s\S]*sendUiCommand\('stage\.go'/);
   assert.match(ui, /btn\.addEventListener\('click',[\s\S]*stepStageButton\(delta\);/);
   assert.match(ui, /function bindStageHoldButton\(id, delta\)/);
   assert.match(ui, /bindStageHoldButton\('st-prev', -1\);/);
@@ -61,8 +61,8 @@ test('長按期間只預覽關卡，停止後才提交一次戰鬥狀態', () =>
 
   assert.ok(previewStart >= 0 && previewEnd > previewStart);
   assert.doesNotMatch(previewBody, /stageGo\(/);
-  assert.match(ui, /function finishStageHold\(btn\)[\s\S]*stageGo\(targetStage - G\.stage\.current\);/);
-  assert.match(ui, /function finishStageHold\(btn\)[\s\S]*refreshStageDisplay\(\);/);
+  assert.match(ui, /function finishStageHold\(btn\)[\s\S]*sendUiCommand\('stage\.go'/);
+  assert.match(ui, /function finishStageHold\(btn\)[\s\S]*panels: \['battle', 'header'\]/);
   assert.match(ui, /UI\.stageHold\.active && typeof UI\.stageHold\.targetStage === 'number'/);
 
   const finishStart = ui.indexOf('function finishStageHold(btn)');
@@ -71,17 +71,17 @@ test('長按期間只預覽關卡，停止後才提交一次戰鬥狀態', () =>
   let refreshCount = 0;
   const context = {
     UI: { stageHold: { startTimer: 1, repeatTimer: 2, suppressClick: true, suppressTimer: null, pointerId: 9, active: true, startedAt: 100, startStage: 10, targetStage: 25, delta: 1 } },
-    G: { stage: { current: 15 } },
+    uiHeaderPanelSnapshot() { return { stage: { current: 15 } }; },
+    sendUiCommand(name, args) { stageGoCalls.push({ name, args }); return Promise.resolve(); },
     clearTimeout() {},
     setTimeout() { return 3; },
-    stageGo(delta) { stageGoCalls.push(delta); },
     refreshStageDisplay() { refreshCount++; }
   };
   vm.runInNewContext(ui.slice(finishStart, finishEnd), context);
   context.finishStageHold(null);
   context.finishStageHold(null);
-  assert.deepEqual(stageGoCalls, [10]);
-  assert.equal(refreshCount, 1);
+  assert.deepEqual(stageGoCalls, [{ name: 'stage.go', args: { delta: 10 } }]);
+  assert.equal(refreshCount, 0);
 });
 
 test('階段按鈕提示支援外側定位，避免蓋住階段文字', () => {

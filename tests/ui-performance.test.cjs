@@ -68,7 +68,7 @@ test('戰鬥與高塔技能列共用外層已取得的屬性，不重複呼叫 g
   const ui = uiSource();
   assert.match(ui, /function renderMpSkill\(pEnt, prefix, stats\)/);
   assert.match(ui, /var st = stats \|\| getStats\(\);/);
-  assert.match(ui, /function renderBattle\(\)[\s\S]*var st = getStats\(\);[\s\S]*renderMpSkill\(p, 'pv', st\);/);
+  assert.match(ui, /function renderBattle\(\)[\s\S]*var st = headerSnapshot\.stats[\s\S]*renderMpSkill\(p, 'pv', st\);/);
   assert.match(ui, /function renderTowerFight\(\)[\s\S]*var st = headerSnapshot\.stats;[\s\S]*renderMpSkill\(p, 'tp', st\);/);
   const towerFight = ui.match(/function renderTowerFight\(\) \{[\s\S]*?\n\}/);
   assert.ok(towerFight);
@@ -79,7 +79,7 @@ test('場景列以狀態簽章避免每個 UI tick 重寫', () => {
   const ui = uiSource();
   assert.match(ui, /zoneBarSignature:\s*null/);
   assert.match(ui, /function currentZoneBarSignature\(\)/);
-  assert.match(ui, /function renderZoneBar\(\)[\s\S]*var signature = currentZoneBarSignature\(\);[\s\S]*if \(UI\.zoneBarSignature === signature\) return;[\s\S]*UI\.zoneBarSignature = signature;/);
+  assert.match(ui, /function renderZoneBar\(\)[\s\S]*var signature = currentZoneBarSignature\(\)[\s\S]*if \(UI\.zoneBarSignature === signature\) return;[\s\S]*UI\.zoneBarSignature = signature;/);
 });
 
 test('高頻戰鬥欄位使用值變更才寫入的 DOM 輔助函式', () => {

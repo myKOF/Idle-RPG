@@ -126,9 +126,8 @@ test('多敵人逐一擊殺時各自結算經驗與掉落，全部擊殺後才�
 test('戰鬥畫面與敵方 tooltip 使用可見敵人列表，保留死亡待清除敵人資訊', () => {
   const root = path.resolve(__dirname, '..');
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
-  assert.match(ui, /visibleFieldEnemies\(\)/);
-  assert.match(ui, /currentCombatEnemyEntity[\s\S]*visibleFieldEnemies\(\)/);
-  assert.match(ui, /renderBattle[\s\S]*visibleFieldEnemies\(\)/);
+  assert.match(ui, /currentCombatEnemyEntity[\s\S]*battle && battle\.field/);
+  assert.match(ui, /renderBattle[\s\S]*battleSnapshot\.field/);
 });
 
 test('可直接前進到目前場景最高階段', () => {

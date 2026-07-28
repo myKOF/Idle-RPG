@@ -41,5 +41,5 @@ test('背包太古數量篩選與排序功能驗證', () => {
   assert.match(ui, /key:\s*'level'/);
   assert.match(ui, /key:\s*'ancient'/);
   assert.match(ui, /key:\s*'rarity'/);
-  assert.match(ui, /bAncient\s*-\s*aAncient/);
+  assert.match(ui, /sendUiCommand\('player\.setInvSort'/);
 });
