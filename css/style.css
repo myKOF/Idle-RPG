@@ -5378,11 +5378,19 @@ textarea#save-io {
   margin-right: auto;
 }
 
-/* 死亡清除延遲淡出：頭?��?血條�??��?度用??transition 平�? renderBattle �?tick ?�逐�??�新 */
-.enemy-card .cb-icon,
-.enemy-card .enemy-emoji-fallback,
-.enemy-card .enemy-hp {
-  transition: opacity 0.2s linear;
+/* 死亡敵人本體淡出；float-layer 保持不透明，讓最後一筆傷害字完整播完。 */
+.enemy-card.is-dead > :not(.float-layer) {
+  animation: enemyDeathFade 2s linear forwards;
+}
+
+@keyframes enemyDeathFade {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0.1;
+  }
 }
 
 .enemy-hp .hp-text {

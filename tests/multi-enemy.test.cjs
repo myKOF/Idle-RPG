@@ -99,7 +99,7 @@ test('多敵人逐一擊殺時各自結算經驗與掉落，全部擊殺後才�
   assert.equal(context.G.stage.current, 1);
   assert.equal(context.G.stage.kills, 0);
 
-  context.tickFieldDeathClears(1.49);
+  context.tickFieldDeathClears(context.FIELD_ENEMY_DEATH_CLEAR_DELAY - 0.01);
   assert.equal(context.FIELD.monsters.length, 2);
   context.tickFieldDeathClears(0.02);
   assert.equal(context.FIELD.monsters.length, 1);
@@ -114,7 +114,7 @@ test('多敵人逐一擊殺時各自結算經驗與掉落，全部擊殺後才�
   assert.equal(context.G.stage.current, 1);
   assert.equal(context.G.stage.kills, 0);
 
-  context.fieldTick(1.49);
+  context.fieldTick(context.FIELD_ENEMY_DEATH_CLEAR_DELAY - 0.01);
   assert.equal(context.FIELD.monsters.length, 1);
   assert.equal(context.G.stage.current, 1);
   context.fieldTick(0.02);
@@ -126,8 +126,20 @@ test('多敵人逐一擊殺時各自結算經驗與掉落，全部擊殺後才�
 test('戰鬥畫面與敵方 tooltip 使用可見敵人列表，保留死亡待清除敵人資訊', () => {
   const root = path.resolve(__dirname, '..');
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const data = fs.readFileSync(path.join(root, 'js/data.js'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
   assert.match(ui, /currentCombatEnemyEntity[\s\S]*battle && battle\.field/);
   assert.match(ui, /renderBattle[\s\S]*battleSnapshot\.field/);
+  assert.match(ui, /enemy\.hp > 0 \|\| \(enemy\._rewarded && Number\(enemy\._deathClearCd\) > 0\)/);
+  assert.match(ui, /card\.classList\.toggle\('is-dead', liveEnemy\.hp <= 0\)/);
+  assert.match(css, /\.enemy-card\.is-dead > :not\(\.float-layer\)\s*\{[\s\S]*animation:\s*enemyDeathFade 2s linear forwards/);
+  assert.match(css, /@keyframes enemyDeathFade\s*\{[\s\S]*opacity:\s*1[\s\S]*opacity:\s*0\.1/);
+
+  const floatLifetime = Number(ui.match(/var FLOAT_TEXT_LIFETIME_MS = (\d+)/)?.[1]);
+  const deathDelaySeconds = Number(data.match(/var FIELD_ENEMY_DEATH_CLEAR_DELAY = ([\d.]+)/)?.[1]);
+  assert.ok(Number.isFinite(floatLifetime));
+  assert.ok(Number.isFinite(deathDelaySeconds));
+  assert.ok(deathDelaySeconds * 1000 > floatLifetime, '死亡保留時間必須長於傷害飄字動畫');
 });
 
 test('可直接前進到目前場景最高階段', () => {

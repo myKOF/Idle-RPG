@@ -955,7 +955,7 @@ function currentZoneDef() {
 }
 
 var RESPAWN_DELAY = 0.8;       // 出怪間隔（秒）
-var FIELD_ENEMY_DEATH_CLEAR_DELAY = 1.5; // 野外敵人死亡後保留戰鬥資訊時間（秒）
+var FIELD_ENEMY_DEATH_CLEAR_DELAY = 2.1; // 野外敵人死亡後保留戰鬥資訊時間（秒）；須長於 2 秒傷害飄字動畫
 var REVIVE_DELAY = 3.0;        // 死亡復活時間（秒）
 var FIELD_DEATH_STAGE_RETREAT = 10; // 野外死亡退回階段數
 

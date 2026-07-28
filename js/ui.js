@@ -2228,7 +2228,9 @@ function renderBattle() {
   }
   // 與戰鬥引擎共用敵人集合，避免相容欄位仍有目標時畫面誤判為空。
   var enemies = Array.isArray(field.monsters) ? field.monsters.slice() : (field.monster ? [field.monster] : []);
-  enemies = enemies.filter(function (enemy) { return enemy && enemy.hp > 0; });
+  enemies = enemies.filter(function (enemy) {
+    return enemy && (enemy.hp > 0 || (enemy._rewarded && Number(enemy._deathClearCd) > 0));
+  });
   var party = $id('mv-party');
   if (!party) return;
   var scene = party.closest ? party.closest('.battle-scene') : null;
@@ -2285,13 +2287,9 @@ function renderBattle() {
       if (status.getAttribute('data-enemy-index') !== String(ci)) status.setAttribute('data-enemy-index', String(ci));
       setHtmlIfChanged(status, entStatus(liveEnemy));
     }
-    // 死亡清除延遲期間：頭像與血條在 FIELD_ENEMY_DEATH_CLEAR_DELAY 秒內由不透明線性淡出至約 10%
-    var deathDelay = (typeof FIELD_ENEMY_DEATH_CLEAR_DELAY === 'number' && FIELD_ENEMY_DEATH_CLEAR_DELAY > 0) ? FIELD_ENEMY_DEATH_CLEAR_DELAY : 1;
-    var fadeOpacity = (liveEnemy.hp <= 0)
-      ? (0.1 + 0.9 * clamp((liveEnemy._deathClearCd || 0) / deathDelay, 0, 1))
-      : 1;
-    var fadeEls = card.querySelectorAll('.cb-icon, .enemy-emoji-fallback, .enemy-hp');
-    for (var di = 0; di < fadeEls.length; di++) setStyleIfChanged(fadeEls[di], 'opacity', fadeOpacity < 1 ? String(fadeOpacity) : '');
+    // Worker 不會為死亡倒數的每個 tick 都送 Snapshot；只切一次 class，交由 CSS 連續淡出。
+    // float-layer 不參與動畫，讓擊殺傷害字在敵人本體淡出期間完整播完。
+    card.classList.toggle('is-dead', liveEnemy.hp <= 0);
   }
   flushPendingEnemyFloats(battleSnapshot);
 }
