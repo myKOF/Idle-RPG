@@ -56,15 +56,30 @@ D:\MyGame\Idle-RPG\main
 
 進行中的大型工程：
 
-Web Worker 架構遷移。計劃書 `docs/WORKER_MIGRATION_PLAN.md`（暫時文件，P5 完成後刪除）。
-協議 `docs/WORKER_PROTOCOL.md` + `js/worker/protocol.js`（**v2 已凍結**，唯一資料來源）。
-三方開工前必須先讀這兩份文件。
+~~Web Worker 架構遷移~~ **✅ P0～P5 已完成（2026-07-28）**。
+
+Worker 是模擬與存檔的唯一權威，主執行緒不再持有 `G`，舊單執行緒路徑已移除。
+遷移期的計劃書 `docs/WORKER_MIGRATION_PLAN.md` 已刪除——關鍵設計決策與效能基準
+已移入 `docs/WORKER_PROTOCOL.md` 第 9、10 節。
+
+長期文件：`docs/WORKER_PROTOCOL.md` + `js/worker/protocol.js`（v7，唯一資料來源）。
+**動到 Worker、bridge、面板投影或指令之前必須先讀。**
+
+驗收記錄：`docs/P3_FULL_REGRESSION_REPORT.md`、`docs/P4_BACKPACK_VIRTUAL_SCROLL_REPORT.md`、
+`docs/P4_WORKER_AUTO_RESTART_REPORT.md`、`docs/P5_FINAL_ACCEPTANCE_REPORT.md`。
 
 目前階段：
 
-P0～P2 已完成（協議凍結、Worker 骨架、存檔搬遷）。
-下一步：Claude 發協議 v3（收斂 Codex 提出的 22 條指令形狀缺口），完成後才進 P3 UI 去狀態化。
-P3 期間 `js/ui.js` 專屬 Codex，Claude 只出規格與 Review。
+Web Worker 遷移全部完成，無進行中的大型工程。
+
+P5 之後的檔案所有權慣例（沿用即可，非硬性）：
+- `js/worker/*`、`js/bridge.js`、`js/storage.js`、`js/main.js`、`js/worker/protocol.js`：Claude
+- `js/ui.js`：Codex
+- 協議變更一律由 Claude 改 `protocol.js` 並同步 `docs/WORKER_PROTOCOL.md`、遞增版本號
+
+`npm test` 現況 491 項／456 通過／**35 失敗**。這 35 條是遷移前就存在的既有落差
+（測試斷言過時、CSV 與測試不同步等），與 Worker 無關，見 `docs/TEST_FAILURE_TRIAGE.md`。
+往後的驗收標準仍是「不得新增失敗」，並以結尾的 `ℹ fail N` 為準。
 
 ---
 
@@ -151,7 +166,6 @@ ai/claude
 - js/worker/protocol.js（協議唯一維護者）
 - index.html（僅 feature flag 接線；P1 起由 Claude 持有至 P5）
 - docs/WORKER_PROTOCOL.md
-- docs/WORKER_MIGRATION_PLAN.md
 
 禁止修改：
 
@@ -300,7 +314,6 @@ ai/codex
 - `tools/apply_params.cjs`（批次三：修復失效錨點，獨立 commit）
 - `css/style.css`（僅編碼轉 UTF-8，不改內容；獨立 commit — 已完成 98ecf79）
 - `docs/TEST_FAILURE_TRIAGE.md`（補數值對照表）
-- `docs/WORKER_MIGRATION_PLAN.md` 第 9 節「待決事項」（僅追加）
 
 ⚠️ 仍禁止修改 `config/CSV/*` 與 `config/Excel/*`：CSV 是最高權威，
 不因測試或文檔而改。要調整數值請走參數表流程由使用者決定。

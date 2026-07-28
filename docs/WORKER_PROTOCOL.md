@@ -1,8 +1,11 @@
-# Worker 協議 v5（已凍結）
+# Worker 協議 v7
 
-> 凍結日期：2026-07-27　凍結者：Claude Code　協議版本：`WORKER_PROTOCOL_VERSION = 5`
+> 協議版本：`WORKER_PROTOCOL_VERSION = 7`　最後更新：2026-07-28
 > **單一資料來源是 `js/worker/protocol.js`。** 本文件是說明；兩者衝突時以程式碼為準。
-> 修改協議必須經 `docs/WORKER_MIGRATION_PLAN.md` 第 7 節流程，由 Claude 統一改 `protocol.js` 並同步本文件、遞增版本號。
+>
+> 遷移（P0～P5）已於 2026-07-28 完成，Worker 是模擬與存檔的唯一權威，舊單執行緒路徑已移除。
+> 修改協議請由 Claude 統一改 `protocol.js`、同步本文件、遞增版本號，並在第 8 節記下**為什麼**改——
+> 那張表的價值在於理由，不在於流水帳。
 
 ---
 
@@ -140,58 +143,40 @@ v1 用「參數名叫 `itemId` 就自動解析」的慣例會出事——`forgeP
 
 ### 4.4 指令清單
 
-完整清單見 `js/worker/protocol.js` 的 `COMMANDS`，v3 起共 **81 條**：
-`stage`(4)、`combat`(2)、`item`(9)、`gem`(12)、`player`(6)、`skill`(9)、`talent`(8)、
-`tower`(5)、`forge`(10)、`newforge`(9)、`factory`(2)、`settings`(1)、`save`(3)、`gm`(1)。
+完整清單見 `js/worker/protocol.js` 的 `COMMANDS`，v4 起共 **85 條**
+（v1 凍結時 67 條，v3 補 14 條、v4 再補 4 條）。
 
-（v1 為 67 條，v3 補上
-`item.unequip`、`item.upgrade`、`stage.goMax`、`player.setEquipView`、`talent.max`、
-`talent.potentialMax/Downgrade/Delete`、`tower.startAuto/flee/stopAuto`、
-`forge.setAutoFill`、`newforge.setQuality/setEnabled` 等 14 條 v1 遺漏的操作。）
+⚠️ **指令名請以 `protocol.js` 為準，不要憑印象寫。** `WorkerBridge.send()` 會在送出前用
+`validateCommand` 擋掉未知名稱，所以寫錯的名字根本送不出去。實際踩過：驗收報告引用了
+`item.salvageAllUnlocked`、`gem.buy`、`skill.equip`、`forge.setSlot` 等 9 個不存在的名稱
+（真實名稱是 `item.salvageBulk`、`gem.shopBuy`、`skill.equipLoadout`、`forge.placeItem`），
+導致整份報告的證據欄失去支撐。要確認實際送出什麼，攔 `WorkerBridge.send` 最可靠。
 
-`fn` 欄位是 Worker 內要呼叫的既有函式名。`fn: null` 共 **23 條**，分三類：
+`fn` 欄位是 Worker 內要呼叫的既有函式名。`fn: null` 共 **23 條**，表示沒有可直接呼叫的
+既有函式，由 `sim.worker.js` 的 `COMMAND_IMPL` 實作，分三類：
 
-> **實作進度**：19 條已於 P3 前置全部實作在 `sim.worker.js` 的 `COMMAND_IMPL`，
-> 加上存檔三條與 `gm.exec`（待 `js/gm.js` 拆分）。UI 端接線是 P3 的工作。
->
-> ✅ 已完成：`getItemAncientCount` 已於 `1ae85ed` 收斂至 `js/item.js`，
-> `sim.worker.js` 的守衛後備已刪除，全專案僅此一份實作。
+- **原子操作**：`item.equip` / `item.unequip` / `item.salvage` / `item.salvageBulk` 等。
+  這些在舊 UI 裡除了呼叫模擬層函式，還包含「從背包移除、替換下來的裝備退回背包」等
+  狀態轉移，只呼叫既有函式會複製出第二件物品。
+- **存檔三條**（`save.manual` / `save.toFolder` / `save.restart`）：原本宣告直接呼叫
+  `manualSave` / `createManualSaveToFolderV2` / `restartGame` 是錯的——那些會碰
+  localStorage、IndexedDB、File System Access 與 `location.reload`，Worker 一律不能碰。
+  改為「產生 payload → 發 persist」。
+- **純狀態寫入**：`item.setLock`、`settings.set`、`stage.setAutoAdvance`、
+  `newforge.markTabSeen` 等，舊 UI 是直接改 `G` 的欄位。
 
-- **19 條**邏輯還寫在 `ui.js`，P3 搬進 Worker（下表，另加 v3 新增的
-  `item.unequip`、`forge.setAutoFill`、`newforge.setQuality`、`newforge.setEnabled`，
-  以及改為原子操作的 `item.equip`、`item.salvage`）
-- **3 條存檔指令**（`save.manual` / `save.toFolder` / `save.restart`）v2 起改為 `fn: null`，
-  由 Worker 的 `COMMAND_IMPL` 實作成「產生 payload → 發 persist」。原本宣告直接呼叫
-  `manualSave` / `createManualSaveToFolderV2` / `restartGame` 是錯的——那些函式會碰
-  localStorage、IndexedDB、File System Access 與 `location.reload`，Worker 一律不能碰
-- ~~**1 條 `gm.exec`**~~ 已完成：`js/gm.js` 拆成執行層 `js/gm_exec.js`（無 DOM 相依，
-  主執行緒與 Worker 共用同一份實作）與面板 `js/gm.js`。面板依 `WorkerBridge.enabled()`
-  決定送指令或直接呼叫
-
-P3 待搬遷的 13 條：
-
-| 指令 | 目前位置 | 說明 |
-|---|---|---|
-| `item.salvageBulk` | `ui.js:2119 salvageAllUnlocked` | 整段批次分解邏輯（含分解前自動存檔）在 UI 內，必須搬進 Worker |
-| `item.setLock` | `ui.js:2085, 2113` | 直接改 `it.locked` |
-| `forge.setAuto` | `ui.js:6058, 6064` | 直接改 `f.autoDust` / `f.autoForge` |
-| `skill.reorderLoadout` | `ui.js:5150-5159` | 直接 splice `G.player.loadout` |
-| `player.renameEquipSet` | `ui.js:1737, 1742` | 直接改 `G.equipSetNames` |
-| `player.buyInvUpgrade` | `ui.js:5944, 5945` | 直接扣金幣、加 `invUpgrades` |
-| `player.setInvSort` | `ui.js:5958` | 直接改 `G._invSortIdx` |
-| `stage.setAutoAdvance` | `ui.js:5617` | 直接改 `G.stage.autoAdvance` |
-| `factory.setSalvageSettings` | `ui.js:5894-5897` | 直接改 `G.player.salvageSettings` |
-| `factory.setAutoEquip` | `ui.js:6089` | 直接改 `G.factory.autoEquip` |
-| `settings.set` | `ui.js:6084` | 直接改 `G.settings.compareEq` |
-| `newforge.markTabSeen` / `markNoticeShown` | `ui.js:767, 4824` | 直接改 `G.newForge` 旗標 |
-
-另有 `gm.exec`（`js/gm.js`）：GM 面板留主執行緒，指令解析與執行搬進 Worker。
+> ✅ P5 已完成：`ui.js` 不再讀寫 `G` / `FIELD` / `TOWER` / `forgeState()`，
+> 也不再直接呼叫任何協議表裡有指令的模擬層函式。主執行緒的重複 `G` 已移除，
+> `index.html` 不再載入 `special_rules` / `legendary` / `factory` / `newforge` /
+> `forge` / `gm_exec`——那六支只在 Worker 內執行。
 
 ### 4.5 不開放為指令的函式
 
 `INTERNAL_ONLY`：`addToInventory`、`rollGemShop`、`shopHourlyReset`、`forgeLog`、`newForgeReturnUnroutable`。
 
-這些是模擬層內部流程，目前被 `ui.js` 直接呼叫，屬於 UI 越界驅動模擬內部。**P3 必須移除這些呼叫點**，不得為它們開指令通道。
+這些是模擬層內部流程，不得為它們開指令通道。P3 已移除 `ui.js` 的所有呼叫點；
+其中 `rollGemShop` / `shopHourlyReset` 改由 Worker 每 tick 自行維護（見 `maintainGemShop`）——
+原本由 UI 呼叫等於「有沒有打開寶石頁」決定商店會不會刷新。
 
 `LAZY_QUERIES`：`forgeState`、`gemShop`、`skillLevel`、`availableSkillPoints` 是查詢（前兩者會惰性建立子狀態），只能在 Worker 端執行，主執行緒改由 snapshot／panel 取得結果。
 
@@ -293,3 +278,67 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 | 4 | 2026-07-27 | 收斂 Codex `UI_STATE_INVENTORY.md` 盤點的 10 項缺口。<br>新增 `gem.composeAll`、`gem.dismantleAll`（現行 UI 是最多 2500／999 次的同步迴圈，逐次跨執行緒不可行）、`tower.confirmResult`（含連挑續場，語意大於 `finish`）、`stats.reset`（`RUN_STATS`／`LOOT_STATS` 都在 Worker 內）。<br>`tower.start` 改 `fn:null`：手動挑戰同時代表取消等待中的連挑，兩步必須同一原子操作。<br>四項「渲染函式在改狀態」改為搬回 Worker 而非開指令：資源顯示旗標、鑲孔補齊、神鑄開放公告已完成；**護盾正規化經查證不需要搬**——模擬層的 `refreshShieldMaxAfterGain` 已在每一條護盾寫入路徑維護該欄位，`ui.js` 的 `playerShieldMax` 是冗餘，其「版本號遷移」分支永遠不會執行（戰鬥實體是純執行期物件，存檔不含實體）。改為請 Codex 縮成純讀取。<br>`item.toSynth` 不新增：功能被 `SYNTHESIS_ENABLED = false` 關閉。<br>指令總數 81 → **85** |
 | 3.1 | 2026-07-27 | 新增 `PERSIST_KINDS.MANUAL_FOLDER`。P2 把 `manualSave` 與 `createManualSaveToFolderV2` 併成同一條資料夾路徑，導致未連接資料夾時「一鍵分解前的保護存檔」靜靜失敗——多數玩家沒接資料夾，那份保護存檔等於不存在。現在 `save.manual` 寫瀏覽器存檔記錄（空間不足才退回資料夾），`save.toFolder` 沒接資料夾就明確失敗 |
 | 3 | 2026-07-27 | P3 前置：收斂 Codex 審查提出的指令形狀缺口，逐條比對過實際函式簽章後修正。<br>①**物件識別**：一般寶石改傳 `type`+`level`（沒有 id）、融合寶石用 `fusedId`、熔爐 id 改 `int`、零件改 `partKey`。<br>②**簽章對齊**：`rerollSingleAffix` 改 `affixKey`、`forgePlaceItem` 不解析成物件、`forgePlaceGem` 改 `type`+`level`、`forgeToggleDust` 補 `index`、`convertGems` 改 `slots`+`targetType`、`fuseGemsV2` 改 `ref` 結構。<br>③**補 14 條遺漏指令**（見上）。<br>④**解析改逐指令白名單** `resolve`，同 id 歧義一律拒絕。<br>⑤**參數約束** `limit`（enum/min/max）與**拒絕多餘參數**。<br>⑥ `item.equip`/`unequip`/`salvage` 改為 `fn:null` 原子操作（只呼叫既有函式會複製出第二件物品）。<br>⑦ 補齊 `dirty` metadata（分解鑲寶石裝備會髒 `header`/`gems` 等） |
+
+---
+
+## 9. 關鍵設計決策（不得擅自變更）
+
+由 `docs/WORKER_MIGRATION_PLAN.md` 移入。那份是遷移期的暫時文件，P5 完成後已刪除，
+但這幾條是長期約束，改動前請先確認理由仍然成立。
+
+1. **不使用 SharedArrayBuffer。** SAB 需要 COOP/COEP 跨源隔離標頭，而 `.claude/serve.ps1`
+   是簡易靜態伺服器、部署環境亦未必可設。一律使用 `postMessage` structured clone。
+2. **模擬層維持傳統全域腳本寫法。** 禁止把模擬層改為 ESM 或 `export`——一旦改成 ESM，
+   既有測試會全數失效，而那些測試正是模擬層行為的唯一保障。此為硬規則。
+3. **存檔 I/O 留在主執行緒。** Worker 沒有 `localStorage`，`showDirectoryPicker` 也只有
+   主執行緒可用。Worker 負責 `newGameState` / `migrateSave` / `applyOfflineProgress` /
+   序列化；主執行緒負責實際讀寫 localStorage、IndexedDB、存檔資料夾。
+   **存檔格式不得改變**，必須向後相容既有存檔。
+4. **日誌與掉落統計事件化。** Worker 內的 `blog` / `flog` / `window.recordLoot*` 推入事件佇列，
+   隨 tick 合批回主執行緒渲染。禁止每則日誌一次 `postMessage`。
+5. **Snapshot 分層，禁止每 200 ms 傳送整份 `G`。** 詳見第 3 節。
+6. **保留背景休眠與離線結算語意。** Worker 不能豁免瀏覽器背景節流，所以隱藏未滿 60 秒
+   維持即時模擬、逾時停止推進、回前景改由離線收益結算這套補償必須原樣保留。
+   迷你監控視窗（PiP）開著時豁免休眠（v7）。
+
+---
+
+## 10. 效能基準（改動前後請以同口徑複測）
+
+量測方式：`?measure=1` 取訊息規模與分派耗時；`PerformanceObserver` 的 `longtask`
+取主執行緒卡頓。fixture 為 `docs/fixtures/save_lategame.json`（背包 800 件、等級 9999）。
+
+⚠️ 兩份 fixture 大小不同（317 KB → 665 KB），`persist` 的數字不可跨期對照，`panel` 與 `tick` 可比。
+
+| 指標 | 遷移期最差 | 目前（P5 完成） |
+|---|---|---|
+| `panel` 最大 payload | 312,824 bytes | **143,974 bytes**（背包欄位投影，−54%） |
+| `panel` 主執行緒分派 | 3.2 ms | **0.7 ms** |
+| `persist` 主執行緒佔用 | 5.85 ms | **1.325 ms**（自動存檔改走 `requestIdleCallback`） |
+| 切到裝備頁的 longtask | 66～88 ms，每次必現 | **0**（背包格位虛擬捲動） |
+| 穩態 20 秒 longtask | — | **0 次**（>50 ms） |
+| 800 件背包捲動 | — | **60.78 FPS**，平均畫格 16.45 ms |
+| 開機至可操作 | — | **1,288 ms**（P5 前無同口徑基準） |
+
+兩個踩過的坑，日後最佳化時值得先想起來：
+
+1. **`persist` 不要改用 transferable ArrayBuffer。** 拆解 5.9 ms 後發現組成是
+   `new Blob` 2.5 ms + `idbSetAutoV2` 同步部分 2.7 ms + 反序列化約 3 ms。
+   ArrayBuffer 只省得到最後一項，而且要把 bytes 還原成字串才能餵給既有儲存函式，
+   光 TextDecoder 就要 3 ms 以上，等於白做。真正有效的是「自動存檔沒有時效性，
+   不必卡在畫格中間」。
+2. **`renderInventory` 的成本不在篩選，在強制同步版面計算。** 分段量測 4.36 ms 的組成：
+   寫完 `innerHTML` 立刻碰 `scrollTop` 就佔約 2.3 ms（單獨寫 `innerHTML` 只要 0.51 ms）。
+   而且那次 `scrollTop` 還原是多餘的——spacer 讓總高度前後一致，不還原也精確保持原位。
+
+### 測試基準線的統計方式
+
+`npm test` 在遷移開工前就有既有失敗（與遷移無關的斷言過時、CSV 與測試不同步等）。
+驗收標準是**不得新增失敗**，不是全綠。
+
+⚠️ node test runner 會在結尾的「failing tests:」摘要區把每筆失敗再列一次，
+用 `grep -c '^✖'` 會得到兩倍數字。一律以結尾的 `ℹ fail N` 為準：
+
+```bash
+npm test 2>&1 | grep -E "^ℹ (tests|pass|fail)"
+```
