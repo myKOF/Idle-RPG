@@ -2755,6 +2755,9 @@ function renderDetail() {
   var invSnapshot = uiInventoryPanelSnapshot();
   var gemsSnapshot = uiGemsPanelSnapshot();
   var player = headerSnapshot && headerSnapshot.player;
+  if (UI.sel && UI.sel.source === 'inv' && UI.sel.id && (!invSnapshot || !invSnapshot.details || !invSnapshot.details[UI.sel.id])) {
+    requestPanelData('inv', true, { detailIds: [UI.sel.id] });
+  }
   updateSelectionUI();
   if (!it) {
     if (UI.sel && UI.sel.source === 'inv' && UI.sel.id) {
@@ -4372,7 +4375,6 @@ function inventoryViewHasFullDetails(snapshot) {
 function inventoryViewItem(snapshot, id, detailed) {
   if (!snapshot || !id) return null;
   if (snapshot.details && snapshot.details[id]) return snapshot.details[id];
-  if (detailed) return null;
   var items = inventoryViewItems(snapshot);
   for (var i = 0; i < items.length; i++) if (items[i] && items[i].id === id) return items[i];
   return null;
