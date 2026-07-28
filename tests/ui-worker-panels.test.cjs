@@ -76,6 +76,9 @@ test('裝備與背包頁由 Worker panel 投影渲染並以 Command 修改狀態
   assert.match(ui, /sendUiCommand\('settings\.set', \{ key: 'compareEq'/);
   assert.match(ui, /sendUiCommand\('factory\.setAutoEquip'/);
   assert.match(ui, /var cell = e\.target\.closest\('\.item-cell, \.eq-slot'\);[\s\S]*?hideTooltip\(\);[\s\S]*?UI\.pendingItemTooltip = null;/);
+  assert.match(ui, /var it = findItemById\(tooltipId, needsInventoryDetail\);[\s\S]*?if \(it\) \{ showItemTooltip\(it, eqCell\); return; \}/);
+  assert.match(ui, /var inventoryGridUnchanged = msg\.name === 'inv'[\s\S]*?UI\.dirty\.inv = false[\s\S]*?renderDetail\(\);/);
+  assert.match(ui, /var stillHoveringPending = UI\.hoveredItemTooltip[\s\S]*?stillHoveringPending/);
 });
 
 test('頂欄只讀 Worker header Snapshot 的資源、屬性與 DPS', () => {

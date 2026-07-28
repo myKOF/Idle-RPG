@@ -16,6 +16,7 @@ var UI = {
   inventoryFilterCacheKey: null,
   inventoryFilterCacheItems: null,
   pendingItemTooltip: null,
+  hoveredItemTooltip: null,
   statsPanelOpen: false,
   battleLayoutDirty: true,
   zoneBarSignature: null,
@@ -662,6 +663,9 @@ function bindWorkerUiState() {
   });
   WorkerBridge.on(MSG_OUT.PANEL, function (msg) {
     if (!validUiPanelKey(msg.name)) return;
+    var previousPanel = UI_WORKER_STATE.panels[msg.name];
+    var inventoryGridUnchanged = msg.name === 'inv' &&
+      inventoryGridSnapshotEqual(previousPanel, msg.data);
     var responseSeq = UI_WORKER_STATE.panelRequests[msg.name] ||
       UI_WORKER_STATE.panelResponseSeq[msg.name] || 0;
     if (msg.name === 'skills' &&
@@ -675,6 +679,19 @@ function bindWorkerUiState() {
     UI_WORKER_STATE.panelResponseSeq[msg.name] = responseSeq;
     delete UI_WORKER_STATE.panelRequests[msg.name];
     UI.dirty[msg.name] = true;
+    // detailIds responses contain the same inventory cell summaries but add
+    // one full item in `details`.  Rebuilding the whole grid here replaces
+    // the cell under the mouse, which emits mouseout/mouseover again and can
+    // start an endless tooltip request/repaint loop.
+    if (inventoryGridUnchanged && UI.tab === 'equip') {
+      UI.dirty.inv = false;
+      // A hover-only detail response must not refresh selection classes.  The
+      // selected pane needs a refresh only when its own full item arrived.
+      if (UI.sel && UI.sel.source === 'inv' && UI.sel.id &&
+        msg.data && msg.data.details && msg.data.details[UI.sel.id]) {
+        renderDetail();
+      }
+    }
     releaseUiPendingByPanel(msg.name);
     if (UI_WORKER_STATE.panelQueued[msg.name]) {
       var queuedParams = UI_WORKER_STATE.panelQueued[msg.name];
@@ -685,7 +702,10 @@ function bindWorkerUiState() {
     if (msg.name === 'inv' && UI.pendingItemTooltip) {
       var pendingTooltip = UI.pendingItemTooltip;
       var pendingTooltipItem = findItemById(pendingTooltip.id, true);
-      if (pendingTooltipItem && pendingTooltip.anchor &&
+      var stillHoveringPending = UI.hoveredItemTooltip &&
+        UI.hoveredItemTooltip.id === pendingTooltip.id &&
+        UI.hoveredItemTooltip.anchor === pendingTooltip.anchor;
+      if (pendingTooltipItem && pendingTooltip.anchor && stillHoveringPending &&
         document.documentElement.contains(pendingTooltip.anchor)) {
         showItemTooltip(pendingTooltipItem, pendingTooltip.anchor);
       }
@@ -4339,6 +4359,31 @@ function inventoryViewItems(snapshot) {
   return snapshot && Array.isArray(snapshot.items) ? snapshot.items : [];
 }
 
+// Compare only fields used by itemCellHTML.  Inventory detail responses keep
+// these summaries unchanged, so the existing grid can remain mounted while
+// the requested full item is added to `details`.
+function inventoryGridSnapshotEqual(previous, next) {
+  if (!previous || !next || Number(previous.count) !== Number(next.count) ||
+    Number(previous.cap) !== Number(next.cap)) return false;
+  var a = inventoryViewItems(previous);
+  var b = inventoryViewItems(next);
+  if (a.length !== b.length) return false;
+  var fields = ['id', 'rarity', 'slot', 'level', 'upgrade', 'synthesized',
+    'locked', 'name', 'weaponType', 'enchant', 'enchants', 'kind', 'ancientCount'];
+  for (var i = 0; i < a.length; i++) {
+    if (!a[i] || !b[i]) return false;
+    for (var j = 0; j < fields.length; j++) {
+      var field = fields[j];
+      var av = a[i][field], bv = b[i][field];
+      if (av === bv) continue;
+      if (((av && typeof av === 'object') || (bv && typeof bv === 'object')) &&
+        JSON.stringify(av) === JSON.stringify(bv)) continue;
+      return false;
+    }
+  }
+  return true;
+}
+
 function inventoryViewHasFullDetails(snapshot) {
   return !!(snapshot && snapshot.details &&
     Object.keys(snapshot.details).length >= Number(snapshot.count || 0));
@@ -5542,7 +5587,6 @@ function refreshBuffTooltip() {
 function showItemTooltip(it, anchorEl, opts) {
   var tip = $id('sk-tooltip');
   if (!tip) return;
-
   var compareItem = null;
   var tc = $id('toggle-compare');
   if (tc && tc.checked) {
@@ -7172,8 +7216,12 @@ function initUI() {
 
     var eqCell = e.target.closest('.item-cell[data-id]') || e.target.closest('.eq-slot.filled[data-id]');
     if (eqCell) {
+      // mouseover bubbles through the cell's icon/labels; do not restart the
+      // tooltip while moving between descendants of the same cell.
+      if (e.relatedTarget && eqCell.contains && eqCell.contains(e.relatedTarget)) return;
       var tooltipId = eqCell.getAttribute('data-id');
       var needsInventoryDetail = eqCell.getAttribute('data-src') === 'inv';
+      UI.hoveredItemTooltip = { id: tooltipId, anchor: eqCell };
       var it = findItemById(tooltipId, needsInventoryDetail);
       if (it) { showItemTooltip(it, eqCell); return; }
       if (needsInventoryDetail) {
@@ -7206,6 +7254,15 @@ function initUI() {
     if (etip) { showEnemyTooltip(etip); return; }
   });
   document.addEventListener('mouseout', function (e) {
+    var outCell = e.target.closest('.item-cell[data-id]') || e.target.closest('.eq-slot.filled[data-id]');
+    if (outCell) {
+      // Leaving a child element (icon, level, badge) is not leaving the item
+      // cell; keep its tooltip alive until the whole cell is exited.
+      if (e.relatedTarget && outCell.contains && outCell.contains(e.relatedTarget)) return;
+      if (UI.hoveredItemTooltip && UI.hoveredItemTooltip.anchor === outCell) {
+        UI.hoveredItemTooltip = null;
+      }
+    }
     if (e.target.closest('[data-sk]') || e.target.closest('.stat-row[data-tt-title]') ||
       e.target.closest('[data-tt-title]') ||
       e.target.closest('[data-talent-tip]') ||
