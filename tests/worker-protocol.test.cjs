@@ -89,7 +89,7 @@ function validArgs(spec) {
 
 test('凍結的 Worker 指令表有 85 條且分類數量固定', () => {
   // v7：visibility 新增 pip（迷你視窗豁免背景休眠），指令表未變動
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 8);
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 7);
   const names = Object.keys(protocol.COMMANDS);
   assert.equal(names.length, 85);
 

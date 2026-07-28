@@ -359,17 +359,10 @@ function buildPanel(name, params) {
         equipView: G.equipView, equipActive: G.equipActive
       };
     case 'battle':
-      /* stats 是給「一直都在畫面上」的戰鬥區用的：血條／魔力條、技能列，
-         以及敵人傷害飄字的合併上限（需要 comboHits 與 aspd）。
-         這些在主執行緒沒有 G，不能改呼叫 getStats()——那會拋 null.equipment
-         並把整個 uiTick 打斷。equip 面板是隨點隨取的，戰鬥區不能依賴它。
-         成本實測：stats 為 70 個純量欄位、2,842 bytes，battle 面板的實際重取頻率
-         是 0.75 次／秒（不是每 tick），換算多出約 2.1 KB/s。 */
       return {
         field: (typeof FIELD !== 'undefined') ? FIELD : null,
         tower: (typeof TOWER !== 'undefined') ? TOWER : null,
         stage: G.stage, zoneProgress: G.zoneProgress,
-        stats: (typeof getStats === 'function') ? getStats() : null,
         runStats: self.RUN_STATS || null, lootStats: self.LOOT_STATS || null
       };
     case 'equip':
