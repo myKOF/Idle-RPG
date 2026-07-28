@@ -50,9 +50,10 @@ D:\MyGame\Idle-RPG\main
 
 目前鎖定中的核心檔案：
 
-- js/worker/*（Claude）
-- js/bridge.js、js/storage.js、js/main.js、index.html（Claude）
-- js/ui.js（P3 起 Codex 專屬，目前尚未開放修改）
+無。P0～P5 遷移期的鎖定條件都是「P5 完成」，已全部依其自身條件解除（見第 5 節）。
+
+下方第 5 節與 AGENTS.md 的所有權慣例只用來降低同時修改的機率，
+**不是承接任務的門檻**——使用者指派給誰就由誰做完整件事（`AI_RULES.md` 第 3.1 節）。
 
 進行中的大型工程：
 
@@ -62,7 +63,7 @@ Worker 是模擬與存檔的唯一權威，主執行緒不再持有 `G`，舊單
 遷移期的計劃書 `docs/WORKER_MIGRATION_PLAN.md` 已刪除——關鍵設計決策與效能基準
 已移入 `docs/WORKER_PROTOCOL.md` 第 9、10 節。
 
-長期文件：`docs/WORKER_PROTOCOL.md` + `js/worker/protocol.js`（v7，唯一資料來源）。
+長期文件：`docs/WORKER_PROTOCOL.md` + `js/worker/protocol.js`（v9，唯一資料來源）。
 **動到 Worker、bridge、面板投影或指令之前必須先讀。**
 
 驗收記錄：`docs/P3_FULL_REGRESSION_REPORT.md`、`docs/P4_BACKPACK_VIRTUAL_SCROLL_REPORT.md`、
@@ -77,13 +78,68 @@ P5 之後的檔案所有權慣例（沿用即可，非硬性）：
 - `js/ui.js`：Codex
 - 協議變更一律由 Claude 改 `protocol.js` 並同步 `docs/WORKER_PROTOCOL.md`、遞增版本號
 
-`npm test` 現況 491 項／456 通過／**35 失敗**。這 35 條是遷移前就存在的既有落差
-（測試斷言過時、CSV 與測試不同步等），與 Worker 無關，見 `docs/TEST_FAILURE_TRIAGE.md`。
-往後的驗收標準仍是「不得新增失敗」，並以結尾的 `ℹ fail N` 為準。
+`npm test` 現況 **509 項／509 通過／0 失敗**（2026-07-28）。
+先前記錄的 35 條既有失敗（`docs/TEST_FAILURE_TRIAGE.md`）已全部清掉。
+
+驗收標準仍是「不得新增失敗」，並以結尾的 `ℹ fail N` 為準——
+⚠️ 不要用 `grep -c '^✖'`，node test runner 會在結尾的失敗摘要區把每筆再列一次，
+得到的是兩倍數字。
 
 ---
 
 # 2. Claude Code 任務
+
+## 2.-2 技能提示退化成風味文字（回報：技能的正確 tips 消失）
+
+狀態：已完成，等待驗證
+
+本次由 Claude 直接修改 `js/ui.js`。**使用者指派給誰就由誰改，優先於檔案歸屬慣例**——
+第 1 節的所有權清單是基本原則，不是分工的門檻；為了遵守它把一個小功能拆成多個協作者，
+成本高於收益。
+
+現象：技能卡與技能面板都只顯示一行風味文字（例：強力斬顯示「蓄力揮出沉重的一擊。」），
+傷害數值、成長與附加效果全部消失；「下一級」顯示的字串與本級完全相同。
+
+根因：`ui.js` 的 `skillViewDescription` 回傳 `def.flavor || def.desc`，並註明
+「不要呼叫 describeSkill，該模擬層查詢會再回讀主執行緒 `G.player.fusions`」。
+那個顧慮只對**融合技**成立——`skillDef(id)` 僅在靜態 `SKILLS` 表查不到時才讀 G
+（`js/skills.js:1573`），而主執行緒的 `G` 是 `null`，所以當時確實會拋 TypeError。
+結果是為了一種技能，讓**所有技能**的說明都退化。與 `itemDetailHTML` 是同一類問題。
+
+已完成（Claude，模擬層）：
+
+- `skillDef(id, fusions)`：融合技記錄可由呼叫端傳入，省略才回頭讀 G（保留後備，
+  模擬層既有呼叫點與既有測試不受影響）
+- `describeSkill(id, lv, skipFusionDetail, fusions)`：透傳
+- `tests/skill-description-pure.test.cjs`（新增 4 項，含一條標 todo 的 ui.js 接線檢查）
+
+實機驗證（localhost:8330）：主執行緒呼叫 `describeSkill('powerSlash', 1)` 回傳
+「造成 360% 物攻 的物理傷害。⭐ Lv.4 解鎖／強化附加效果」，Lv.2 為 440%，未拋錯；
+`panelData('skills')` 確認含 `fusions` 欄位。
+
+已完成（`js/ui.js`）：`skillViewDescription` 改呼叫
+`describeSkill(id, level, skipFusionDetail, fusions)`，兩個呼叫端（技能面板與 tooltip）
+都傳入 `skillsSnapshot.fusions`；融合技的「（融合自：…）」附註改為疊加在完整說明之後。
+`describeSkill` 回傳的是 HTML，呼叫端不得再 `esc`。
+
+`tests/ui-worker-g-dependency.test.cjs` 的已審核名單新增 `describeSkill`，
+並註明它唯一的 G 路徑已由 `fusions` 參數與 `typeof G` 守衛處理。
+那支測試是審核閘門，新增交集必須附證據，不得只改數字。
+
+實測（localhost:8330，技能面板與樹狀 tooltip 皆檢查渲染後的 DOM）：
+
+| 位置 | 修復前 | 修復後 |
+|---|---|---|
+| 說明 | 蓄力揮出沉重的一擊。 | 造成 360% 物攻 的物理傷害。⭐ Lv.4 解鎖／強化附加效果 |
+| 下一級 | 蓄力揮出沉重的一擊。 | 造成 440% 物攻 的物理傷害。⭐ Lv.4 解鎖／強化附加效果 |
+| 風味（斜體） | 蓄力揮出沉重的一擊。 | 不變（本來就該在這行） |
+
+Console 無錯誤。`npm test` 509 項全通過。
+
+建議 Antigravity 驗證：融合技的說明與「（融合自：…）」附註、潛力技能說明、
+高等級技能的附加效果段落、以及各技能的「下一級」是否確實顯示差異。
+
+---
 
 ## 2.-1 背景掛機、404 噪音、itemDetailHTML 純函式化
 
@@ -1153,39 +1209,20 @@ Claude（P1 驗證結果 + P2 存檔素材）
 
 # 5. 檔案鎖定
 
-同一時間，同一個正式檔案只能由一個 AI 修改。
+鎖定的用途是避免**兩個進行中的任務同時改同一支檔案**，不是宣告長期所有權。
+使用者指派給誰就由誰做完整件事，鎖定不構成承接任務的門檻
+（`AI_RULES.md` 第 3.1 節）。
+
+只有在「另一個 AI 正在進行的任務會動到同一支檔案」時才登記鎖定，
+任務結束即解除。長期的檔案負責慣例寫在第 1 節，不在這裡。
 
 目前鎖定檔案：
 
-檔案：js/worker/*（含 protocol.js、sim.worker.js、shim.js）
-負責 AI：Claude
-任務：Web Worker 遷移 P0–P5
-鎖定時間：2026-07-27
-解除條件：P5 完成
+無。
 
-檔案：js/bridge.js
-負責 AI：Claude
-任務：Web Worker 遷移 P1
-鎖定時間：2026-07-27
-解除條件：P1 合併後
-
-檔案：index.html
-負責 AI：Claude
-任務：Web Worker 遷移 P1 feature flag 接線、P5 移除舊路徑
-鎖定時間：2026-07-27
-解除條件：P5 完成
-
-檔案：js/ui.js
-負責 AI：Codex（P3 起）
-任務：Web Worker 遷移 P3 UI 去狀態化
-鎖定時間：P3 開始時生效
-解除條件：P5 完成。Claude 全程不得直接修改，僅能以 Code Review 意見交付
-
-檔案：tests/worker-*.test.cjs
-負責 AI：Codex
-任務：Web Worker 遷移 P1
-鎖定時間：2026-07-27
-解除條件：P1 合併後
+> 2026-07-28：P0～P5 遷移期登記的五項鎖定（`js/worker/*`、`js/bridge.js`、
+> `index.html`、`js/ui.js`、`tests/worker-*.test.cjs`）解除條件均為「P1 合併後」
+> 或「P5 完成」，兩者皆已達成，依其自身條件解除。
 
 記錄格式：
 
@@ -1307,7 +1344,7 @@ Commit：
 
 任務分類：
 
-建議負責 AI：
+負責 AI：（使用者指派者；未指派時由收到任務的 AI 自行完成）
 
 任務內容：
 

@@ -186,8 +186,15 @@ test('遞迴掃描 UI 呼叫的模擬層 G 相依，無未守衛路徑', () => {
   // 這些交集已逐一在 G=null 下驗證過：存檔路徑由 _saveSuppressed／typeof G
   // 保護，天賦查詢則傳入明確等級或經 reincarnationCount 的 typeof G 保護。
   // 新增任何未審核交集都會讓測試失敗，不能靠更新數量掩蓋。
+  //
+  // describeSkill：唯一的 G 路徑是 skillDef(id) 在靜態 SKILLS 表查不到時去找融合技
+  // 記錄，該處已改為 `fusions || (typeof G !== 'undefined' && G && G.player ? ... )`，
+  // 且 ui.js 兩個呼叫端都傳入技能面板快照的 fusions。
+  // 證據：tests/skill-description-pure.test.cjs 在**完全沒有 G** 的 context 跑遍
+  // 每一個 SKILLS 條目；主執行緒實測（G === null）亦正常回傳完整說明。
   const reviewedSafeUiDependencies = new Set([
     'autoSaveMetaV2',
+    'describeSkill',
     'findSaveRecordV2',
     'loadSaveRecord',
     'openSaveFolder',

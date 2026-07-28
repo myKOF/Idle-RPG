@@ -5042,20 +5042,35 @@ function skillViewLoadout(snapshot) {
   return snapshot && Array.isArray(snapshot.loadout) ? snapshot.loadout : [];
 }
 
-function skillViewDescription(id, def, level, skipFusionDetail, isPotential) {
+/* 技能說明一律由模擬層的 describeSkill 產生，不得在此另寫簡化版。
+
+   這裡曾經只回傳 `def.flavor || def.desc`，理由是「describeSkill 會回讀主執行緒的
+   G.player.fusions」。那個顧慮只對**融合技**成立——`skillDef(id)` 僅在靜態 SKILLS
+   表查不到時才讀 G，而主執行緒的 G 是 null，當時確實會拋 TypeError。
+   但代價是**所有技能**的傷害數值、成長與附加效果全部消失，連「下一級」都顯示與本級
+   一模一樣的字串。現在 describeSkill 收 fusions 參數（技能面板快照就有這欄），
+   主執行緒可以直接呼叫，不必再退化。
+
+   ⚠️ 回傳值是 HTML（含 txt-grow／txt-static 標記），呼叫端不得再 esc。 */
+function skillViewDescription(id, def, level, skipFusionDetail, isPotential, fusions) {
   if (isPotential) return describePotentialSkill(def, level);
-  if (def && def.cat === 'fusion' && !SKILLS[id]) {
+
+  var text = (typeof describeSkill === 'function')
+    ? describeSkill(id, Math.max(1, level || 1), skipFusionDetail, fusions)
+    : '';
+  // 查不到定義時才退回風味文字，至少不要整格空白
+  if (!text) text = esc((def && (def.flavor || def.desc)) || '');
+
+  if (def && def.cat === 'fusion' && !SKILLS[id] && !skipFusionDetail) {
     var componentNames = (def.components || []).map(function (componentId) {
       return SKILLS[componentId] ? SKILLS[componentId].name : componentId;
     });
-    return esc(def.flavor || '融合技能') +
-      (skipFusionDetail || !componentNames.length
-        ? ''
-        : '<div class="skt-components">（融合自：' + componentNames.map(esc).join(' ＋ ') + '）</div>');
+    if (componentNames.length) {
+      text += '<div class="skt-components">（融合自：' +
+        componentNames.map(esc).join(' ＋ ') + '）</div>';
+    }
   }
-  // 技能定義已來自 skills Snapshot／靜態 SKILLS 表；不要呼叫
-  // describeSkill，該模擬層查詢會再回讀主執行緒 G.player.fusions。
-  return esc((def && (def.flavor || def.desc)) || '');
+  return text;
 }
 
 
@@ -5267,7 +5282,8 @@ function renderSkillModal() {
   var inLoadout = skillViewLoadout(skillsSnapshot).indexOf(loadoutRef) >= 0;
   var isFusion = !isPotential && sk.cat === 'fusion' && String(id).indexOf('fusion_') === 0;
   var description = function (level, skipFusion) {
-    return skillViewDescription(id, sk, level, skipFusion, isPotential);
+    return skillViewDescription(id, sk, level, skipFusion, isPotential,
+      skillsSnapshot && skillsSnapshot.fusions);
   };
   var pendingRef = isPotential ? 'potential:' + id : 'skill:' + id;
   var pendingAttrs = pendingUiButtonAttributes(nodePendingKey(pendingRef));
@@ -5377,7 +5393,8 @@ function showSkillTooltip(ref, anchorEl) {
   } else if (sk.cat !== 'passive') {
     h += '<div class="skt-meta">🔵 ' + skillManaCost(sk, Math.max(1, lv)) + ' MP　⏱️ ' + sk.cd + 's</div>';
   }
-  h += '<div class="skt-desc">' + skillViewDescription(id, sk, Math.max(1, lv), false, isPotential) + '</div>';
+  h += '<div class="skt-desc">' + skillViewDescription(id, sk, Math.max(1, lv), false, isPotential,
+    skillsSnapshot && skillsSnapshot.fusions) + '</div>';
   if (lock) h += '<div class="skt-lock skill-unlock-hint">🔒 ' + esc(lock) + '</div>';
   h += '<div class="skt-hint">點擊開啟升級面板</div>';
   tip.innerHTML = h;
