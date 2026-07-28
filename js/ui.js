@@ -693,6 +693,7 @@ function bindWorkerUiState() {
       showForgeRebuildNotice();
       markNewForgeTabSeenIfNeeded();
     }
+    if (msg.name === 'factory') syncFactoryInputs();
   });
   WorkerBridge.on('workerDead', handleWorkerDead);
   WorkerBridge.on('workerRestarting', handleWorkerRestarting);
@@ -2982,7 +2983,7 @@ function syncFactoryInputs() {
   var factorySnapshot = uiFactoryPanelSnapshot();
   var f = factorySnapshot && factorySnapshot.factory;
   var autoEq = $id('toggle-autoequip');
-  if (autoEq) autoEq.checked = !!f.autoEquip;
+  if (autoEq) autoEq.checked = !!(f && f.autoEquip);
 
 }
 
