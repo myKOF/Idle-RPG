@@ -54,6 +54,14 @@ function loadContext() {
   return context;
 }
 
+function talentPanelSnapshot(context) {
+  return {
+    talents: context.G.player.talents,
+    reincarnations: context.G.player.reincarnations,
+    talentPoints: context.G.player.reincarnationTalentPoints
+  };
+}
+
 test('天賦資料包含 1～10 轉各 8 個節點與 10 個潛力節點', () => {
   const c = loadContext();
   assert.deepEqual(Object.keys(c.TALENT_TREES).map(Number), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
@@ -364,14 +372,25 @@ test('GM 變更轉生次數會清空天賦並依新轉生次數重算天賦點',
 });
 
 test('全部潛力技能的效果文字清楚標示數值意義', () => {
-  const data = fs.readFileSync(path.join(root, 'js', 'data.js'), 'utf8');
+  const c = loadContext();
   const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
-  assert.match(data, /受到致命傷害時復活，並恢復最大生命值的 20%（最高 100%）/);
-  assert.match(data, /每級使掉落物數量額外增加 5%/);
-  assert.match(ui, /def\.stat === 'potentialRevive'[\s\S]*current \* 20/);
-  assert.match(ui, /def\.stat === 'potentialLootDup'[\s\S]*目前額外掉落加成/);
-  for (const stat of ['potentialCdr', 'potentialInvCap', 'potentialElemAtk', 'potentialExecute', 'potentialShieldOverflow', 'potentialManaRefund', 'potentialTowerTime', 'potentialOffline']) {
-    assert.match(ui, new RegExp("def\\.stat === '" + stat + "'"));
+  c.document = { getElementById: () => null };
+  vm.runInContext(ui, c, { filename: 'js/ui.js' });
+
+  const expectedByMechanic = {
+    aspd: /攻速加成/,
+    chainLightning: /魔攻/,
+    cdrUncap: /冷卻縮減/,
+    invuln: /無敵結界/,
+    undyingGuard: /免除死亡/,
+    enemySlow: /敵人攻速降低/,
+    crossCore: /所有物理技能/,
+    omega: /爆擊率%/,
+    sacredInvert: /生命與法力回復/,
+    timeStop: /所有敵人靜止/
+  };
+  for (const def of c.POTENTIAL_TALENTS) {
+    assert.match(c.describePotentialSkill(def, 1), expectedByMechanic[def.mech], def.id);
   }
 });
 
@@ -446,7 +465,7 @@ test('所有一般天賦在 0 級時的目前效果改顯示 1 級效果', () =>
     for (const def of tree) {
       c.G.player.talents.levels[def.id] = 0;
       c.UI.selTalent = { kind: 'talent', id: def.id };
-      c.renderTalentModal();
+      c.renderTalentModal(talentPanelSnapshot(c));
       const expectedValue = c.talentDescriptionValue(def, 1, Number(turn));
       const expected = c.talentEffectDescription(def, expectedValue);
       assert.match(body.innerHTML, new RegExp('<div class="talent-modal-desc"><b>' + expected.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '</b>'));
@@ -459,14 +478,14 @@ test('天賦與潛力圖示使用正式 tooltip，不再使用原生 title 提�
   const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
   c.document = { getElementById: () => null };
   vm.runInContext(ui, c, { filename: 'js/ui.js' });
-  const talentHtml = c.talentNodeHTML(c.talentDef('t5_fire'), 5);
-  const potentialHtml = c.potentialNodeHTML(c.potentialDef('p1_time'), 0);
+  c.G.player.reincarnations = 10;
+  const snapshot = talentPanelSnapshot(c);
+  const headerSnapshot = { player: { level: 9999, reincarnations: 10 } };
+  const talentHtml = c.talentNodeHTML(c.talentDef('t5_fire'), 5, snapshot);
+  const potentialHtml = c.potentialNodeHTML(c.potentialDef('velocityForce'), 0, snapshot, headerSnapshot);
 
   assert.match(talentHtml, /data-talent-tip="t5_fire"/);
-  assert.match(potentialHtml, /data-talent-tip="potential:p1_time"/);
-  const disabledPotentialHtml = c.potentialNodeHTML(c.potentialDef('p4_voidBag'), 3);
-  assert.match(disabledPotentialHtml, /temporarily-disabled/);
-  assert.match(disabledPotentialHtml, /暫不開放/);
+  assert.match(potentialHtml, /data-sk="potential:velocityForce"/);
   assert.doesNotMatch(talentHtml, /\stitle=/);
   assert.doesNotMatch(potentialHtml, /\stitle=/);
   assert.match(ui, /function showTalentTooltip\(ref, anchorEl\)/);
@@ -484,7 +503,7 @@ test('天賦滿級時標示完成並隱藏下一級與升級消耗', () => {
   c.G.player.reincarnations = 2;
   c.G.player.talents.levels.t2_crit = 100;
   c.UI.selTalent = { kind: 'talent', id: 't2_crit' };
-  c.renderTalentModal();
+  c.renderTalentModal(talentPanelSnapshot(c));
 
   assert.match(body.innerHTML, /talent-modal-complete">已滿級！/);
   assert.doesNotMatch(body.innerHTML, /下一級：/);
@@ -586,11 +605,11 @@ test('天賦升級成本顯示為「轉數+9」，51 級起顯示加倍', () => 
   vm.runInContext(fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8'), c, { filename: 'js/ui.js' });
   c.G.player.reincarnations = 6;
   c.UI.selTalent = { kind: 'talent', id: 't6_boss' };
-  c.renderTalentModal();
+  c.renderTalentModal(talentPanelSnapshot(c));
   assert.match(body.innerHTML, /消耗天賦點：15/);
 
   // Lv.50 → 下一級 51 → 顯示加倍成本 30
   c.G.player.talents.levels.t6_boss = 50;
-  c.renderTalentModal();
+  c.renderTalentModal(talentPanelSnapshot(c));
   assert.match(body.innerHTML, /消耗天賦點：30/);
 });
