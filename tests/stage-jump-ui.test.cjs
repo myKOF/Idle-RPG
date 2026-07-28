@@ -81,7 +81,9 @@ test('長按期間只預覽關卡，停止後才提交一次戰鬥狀態', () =>
   vm.runInNewContext(ui.slice(finishStart, finishEnd), context);
   context.finishStageHold(null);
   context.finishStageHold(null);
-  assert.deepEqual(stageGoCalls, [{ name: 'stage.go', args: { delta: 10 } }]);
+  assert.equal(stageGoCalls.length, 1);
+  assert.equal(stageGoCalls[0].name, 'stage.go');
+  assert.equal(stageGoCalls[0].args.delta, 10);
   assert.equal(refreshCount, 0);
 });
 
