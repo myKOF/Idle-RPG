@@ -77,10 +77,23 @@ test('融合技的定義可由參數傳入，不必存在 G', () => {
   assert.match(text, /\d/, '融合技說明同樣要含數值');
 });
 
-test('ui.js 的技能說明改用 describeSkill，不再回退成風味文字', { todo: '待 Codex 修改 ui.js 的 skillViewDescription' }, () => {
+test('ui.js 的技能說明改用 describeSkill，不再回退成風味文字', () => {
   const uiSrc = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   const fn = uiSrc.slice(uiSrc.indexOf('function skillViewDescription'));
-  const body = fn.slice(0, fn.indexOf('\n}'));
-  assert.match(body, /describeSkill\s*\(/,
-    'skillViewDescription 應呼叫 describeSkill 並傳入快照的 fusions');
+  const body = fn.slice(0, fn.indexOf('\n}\n'));
+  assert.match(body, /describeSkill\s*\(\s*id\s*,/,
+    'skillViewDescription 應呼叫 describeSkill');
+
+  /* 兩個呼叫端都要把快照的 fusions 傳進來，否則融合技又會查不到定義。
+     用切割而非正規表示式比對參數列：呼叫跨行且含巢狀括號，非貪婪比對會在第一個
+     右括號就停住，把 fusions 切掉而誤判。 */
+  const parts = uiSrc.split(/skillViewDescription\s*\(/).slice(1);
+  const signature = parts.shift(); // 第一個出現處是函式定義本身
+  assert.match(signature.slice(0, signature.indexOf(')')), /fusions/,
+    '函式簽章應有 fusions 參數');
+  assert.equal(parts.length, 2, '應有兩個呼叫端（技能面板與 tooltip）');
+  parts.forEach((chunk, i) => {
+    const call = chunk.slice(0, chunk.indexOf(';'));
+    assert.match(call, /fusions/, `第 ${i + 1} 個呼叫端必須傳入 skillsSnapshot.fusions`);
+  });
 });

@@ -87,7 +87,10 @@ P5 之後的檔案所有權慣例（沿用即可，非硬性）：
 
 ## 2.-2 技能提示退化成風味文字（回報：技能的正確 tips 消失）
 
-狀態：模擬層已修，等 Codex 改 `ui.js` 一行
+狀態：已完成，等待驗證
+
+⚠️ 本次由 Claude 直接修改 `js/ui.js`（慣例上屬 Codex）——**使用者指示 Codex 已無額度**。
+這是單次授權，`js/ui.js` 的歸屬慣例不變。
 
 現象：技能卡與技能面板都只顯示一行風味文字（例：強力斬顯示「蓄力揮出沉重的一擊。」），
 傷害數值、成長與附加效果全部消失；「下一級」顯示的字串與本級完全相同。
@@ -109,9 +112,27 @@ P5 之後的檔案所有權慣例（沿用即可，非硬性）：
 「造成 360% 物攻 的物理傷害。⭐ Lv.4 解鎖／強化附加效果」，Lv.2 為 440%，未拋錯；
 `panelData('skills')` 確認含 `fusions` 欄位。
 
-待 Codex（`js/ui.js`）：`skillViewDescription` 改呼叫
-`describeSkill(id, level, skipFusionDetail, <skills 快照的 fusions>)`，
-並移除那段已不成立的註解。融合技分支若要保留「（融合自：…）」附註可疊加在後面。
+已完成（`js/ui.js`）：`skillViewDescription` 改呼叫
+`describeSkill(id, level, skipFusionDetail, fusions)`，兩個呼叫端（技能面板與 tooltip）
+都傳入 `skillsSnapshot.fusions`；融合技的「（融合自：…）」附註改為疊加在完整說明之後。
+`describeSkill` 回傳的是 HTML，呼叫端不得再 `esc`。
+
+`tests/ui-worker-g-dependency.test.cjs` 的已審核名單新增 `describeSkill`，
+並註明它唯一的 G 路徑已由 `fusions` 參數與 `typeof G` 守衛處理。
+那支測試是審核閘門，新增交集必須附證據，不得只改數字。
+
+實測（localhost:8330，技能面板與樹狀 tooltip 皆檢查渲染後的 DOM）：
+
+| 位置 | 修復前 | 修復後 |
+|---|---|---|
+| 說明 | 蓄力揮出沉重的一擊。 | 造成 360% 物攻 的物理傷害。⭐ Lv.4 解鎖／強化附加效果 |
+| 下一級 | 蓄力揮出沉重的一擊。 | 造成 440% 物攻 的物理傷害。⭐ Lv.4 解鎖／強化附加效果 |
+| 風味（斜體） | 蓄力揮出沉重的一擊。 | 不變（本來就該在這行） |
+
+Console 無錯誤。`npm test` 509 項全通過。
+
+建議 Antigravity 驗證：融合技的說明與「（融合自：…）」附註、潛力技能說明、
+高等級技能的附加效果段落、以及各技能的「下一級」是否確實顯示差異。
 
 ---
 
