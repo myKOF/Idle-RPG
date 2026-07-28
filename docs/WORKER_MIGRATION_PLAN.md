@@ -377,9 +377,46 @@ workerGold:           121,381,733,964   ← 真正在跑的
 | 階段 | 負責 | 內容 | 為何是這個順序 |
 |---|---|---|---|
 | P5a | Codex | 收斂 `js/ui.js` 的 114 處 `workerUiStateEnabled()` 分支，刪除舊路徑側 | 這是閘門。舊分支還在，`ui.js` 就還引用 `tower.js`／`forge.js` 等，script 標籤動不了 |
-| P5b | Claude | `main.js` 停止建立主執行緒 `G`；`bridge.enabled()` 恆真；`gm.js` 收斂分支 | 要等 P5a，否則 `ui.js` 的舊分支會讀到 `undefined` 的 `G` |
+| P5a′ | Codex | 移除 `ui.js` 對「內部會讀 `G`」的模擬層函式的呼叫（見 5.7.1） | P5b 試做時發現的新閘門 |
+| P5b | Claude | `main.js` 停止建立主執行緒 `G`；`bridge.enabled()` 恆真；`gm.js` 收斂分支 | 要等 P5a′，否則畫面在第一個 tick 就拋例外 |
 | P5c | Claude | 依重跑後的引用分析移除 `index.html` 的 script 標籤 | 要等 P5b，否則 `main.js` 自己還在呼叫模擬層 |
 | P5d | Antigravity | 全流程驗收 | 最後 |
+
+### 5.7.1 P5b 試做的發現：`ui.js` 仍間接相依主執行緒的 `G`
+
+P5b 已在本地完整實作過一次（`main.js` 不再建 `G`、`bridge.enabled()` 恆真、
+`gm.js` 收斂、開機訊息移進 Worker 的 BOOTED notices），實測**開不起來**：
+
+```
+renderBattle → currentZoneDef (data.js:954)
+TypeError: Cannot read properties of null (reading 'stage')
+```
+
+`uiTick` 的第 3949 行就是 `renderBattle()`，一拋之後同一個 tick 裡的裝備、背包、
+熔爐、神鑄全部不會渲染。畫面看起來是「標題會動、背包永遠 0/60」。
+
+原因是 P5a 的驗收條件只管 `ui.js` **直接**讀 `G`，而 `ui.js` 呼叫的模擬層顯示函式
+**內部**會讀 `G`。P5a 之前主執行緒那份 `G` 是滿的（雖然凍結），所以看不出來。
+
+靜態掃描「`ui.js` 呼叫、且函式內部有 `G.` 存取」的結果是 **10 個**：
+
+| 檔案 | 函式 | 性質 |
+|---|---|---|
+| `data.js` | `currentZoneDef` | 顯示（目前的爆點） |
+| `formula.js` | `reincarnationCount` | 顯示 |
+| `item.js` | `itemDetailHTML` | 顯示 |
+| `skills.js` | `skillLevel`、`skillDef` | 顯示 |
+| `talents.js` | `reincarnationCountSafe` | 顯示 |
+| `player.js` | `equipTargetSlot` | 顯示 |
+| `save.js` | `autoSaveMetaV2` | 唯讀中繼資料，可留 |
+| `save.js` | `restartGame`、`createManualSaveToFolderV2` | 應改走 `save.*` 指令 |
+
+數量不大，但這是 P5b 的硬閘門——主執行緒沒有 `G`，這 7 個顯示函式就不能再用。
+每一個都要改成從 Worker 投影取值（面板已有對應欄位，例如 `header.stage.zone`、
+`header.player.reincarnations`、`inv.details[id]`、`skills` 面板的等級），
+或改成接受狀態參數的純函式。
+
+**P5b 的完整修改已存成 patch，等 P5a′ 完成後可直接重放。**
 
 ---
 
