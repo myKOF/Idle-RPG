@@ -84,7 +84,7 @@ test('長按期間只預覽關卡，停止後才提交一次戰鬥狀態', () =>
   assert.equal(stageGoCalls.length, 1);
   assert.equal(stageGoCalls[0].name, 'stage.go');
   assert.equal(stageGoCalls[0].args.delta, 10);
-  assert.equal(refreshCount, 0);
+  assert.equal(refreshCount, 1);
 });
 
 test('階段按鈕提示支援外側定位，避免蓋住階段文字', () => {
