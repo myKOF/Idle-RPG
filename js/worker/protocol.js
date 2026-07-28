@@ -1,7 +1,7 @@
 'use strict';
 /* ============ Worker 協議（單一資料來源） ============
    主執行緒與模擬 Worker 之間的唯一契約。三方協作期間，任何人不得在此檔以外
-   自行定義訊息型別或指令名稱；需要新增請走 docs/WORKER_MIGRATION_PLAN.md 第 7 節。
+   自行定義訊息型別或指令名稱；需要新增一律由 Claude 改本檔並同步 docs/WORKER_PROTOCOL.md。
 
    本檔必須能在三種環境載入且行為一致：
      1. 主執行緒 <script src="js/worker/protocol.js">
