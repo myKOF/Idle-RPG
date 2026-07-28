@@ -323,6 +323,10 @@
 - **存檔遷移**（ONE-TIME MIGRATION `gemAttrDmgBaseV1`，js/save.js＋js/player.js）：融合寶石的 `stats[].val` 是固定值快照，對這六種寶石的 stat 一次性 ×0.4（=0.2/0.5）；掃描融合寶石庫存與所有容器（三套裝備／背包／輸送帶／合成暫存／新熔爐佇列與帶／神鑄槽）中鑲嵌於插槽的融合寶石；雙屬性只縮放對應 stat、冪等、新帳號不觸發。登錄於 ONE_TIME_MIGRATIONS.md。
 - 測試：新增 tests/gem-attr-dmg-base.test.cjs（gemStatValue 新值＋融合快照縮放＋插槽掃描＋冪等）；build 過、全套零新增失敗；隔離埠實測。
 - 文件：game_formula.md §8、PLAN.md 同步。
+- ⚠️ **事後更正（2026-07-28）**：上述「存檔遷移」該次**並未實際實作**——`js/save.js` 與
+  `js/player.js` 從未有過對應程式碼，測試也因此一直是失敗狀態。數值改動（base 0.5→0.2）
+  確實上線了，所以這段期間產生的屬性傷害融合寶石快照停在舊值（現行標準的 2.5 倍），
+  並會透過後續融合傳遞。2026-07-28 補上實作，測試六條全過。詳見 ONE_TIME_MIGRATIONS.md。
 
 ## 變更紀錄：對屬性敵人傷害 tips 補充來源與生效條件（2026-07-19）
 

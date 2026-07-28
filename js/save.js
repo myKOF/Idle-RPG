@@ -282,6 +282,9 @@ function migrateSave(data) {
   var hadZone = data.stage && data.stage.zone !== undefined; // 需在 mergeDefaults 前判斷
   var hadSkillDmgV2 = !!data.skillDmgV2;                     // 需在 mergeDefaults 前判斷（merge 會補 true）
   var hadSpecialBuffTrimV1 = !!data.specialBuffTrimV1;        // 一次性移除特殊技能第二增益
+  /* 需在 mergeDefaults 前判斷：newGameState 帶 gemAttrDmgBaseV1: true，
+     merge 會把它補進舊存檔，遷移就永遠不會執行。 */
+  var hadGemAttrDmgBaseV1 = !!data.gemAttrDmgBaseV1;
   var hadNormalDmgAffixScaleV1 = !!data.normalDmgAffixScaleV1;
   var hadNormalDmgAffixScaleV2 = !!data.normalDmgAffixScaleV2; // 一次性恢復先前被降低的普通敵人傷害詞條
   var hadNormalDmgAffixScaleV3 = !!data.normalDmgAffixScaleV3; // 一次性修復仍低於新基準的既有詞條
@@ -580,6 +583,54 @@ function migrateSave(data) {
     }
     data.equipSetNames.length = data.equipmentSets.length;
   })();
+  /* ONE-TIME MIGRATION: gemAttrDmgBaseV1（登錄於 ONE_TIME_MIGRATIONS.md）
+     六種「對屬性敵人傷害」寶石的 base 由 0.5 下修為 0.2。一般寶石以 gemStatValue
+     動態計算，改 base 就自動生效；但融合寶石的 stats[].val 是融合當下的固定值快照
+     （item.js 在寶石成為素材時寫死，之後每次再融合都沿用），不縮放就會永遠停在舊值——
+     同一種寶石，融合過的比沒融合的強 2.5 倍。
+
+     linear 曲線下縮放 base 等價於整體乘上 0.2/0.5 = 0.4，與階級無關。
+     只動這六種的 val：雙屬性融合寶石的另一個 stat、等級、融合次數、leaves 全部保留。 */
+  if (!hadGemAttrDmgBaseV1) {
+    var attrDmgGemTypes = Object.keys(GEM_TYPES).filter(function (t) {
+      var g = GEM_TYPES[t];
+      return g && g.linear && typeof g.stat === 'string' && g.stat.indexOf('dmgVs') === 0;
+    });
+    var scaleFusedGem = function (fg) {
+      if (!fg || !Array.isArray(fg.stats)) return;
+      fg.stats.forEach(function (st) {
+        if (!st || attrDmgGemTypes.indexOf(st.type) < 0) return;
+        var v = Number(st.val);
+        if (isFinite(v)) st.val = Math.round(v * 0.4 * 100) / 100;
+      });
+    };
+    /* 融合寶石有兩種存在位置：庫存，以及鑲嵌在裝備插槽裡（socket.fused）。
+       只掃庫存會漏掉玩家已經鑲上去的那些——而那正是實際生效中的。 */
+    var scaleSocketedFused = function (it) {
+      if (!it || !Array.isArray(it.sockets)) return;
+      it.sockets.forEach(function (sk) { if (sk && sk.fused) scaleFusedGem(sk.fused); });
+    };
+    var scaleFusedInArray = function (items) {
+      if (Array.isArray(items)) items.forEach(scaleSocketedFused);
+    };
+    (data.player && data.player.fusedGems || []).forEach(scaleFusedGem);
+    Object.keys(data.equipmentSets || {}).forEach(function (setKey) {
+      var set = data.equipmentSets[setKey];
+      if (!set || typeof set !== 'object') return;
+      Object.keys(set).forEach(function (slotKey) { scaleSocketedFused(set[slotKey]); });
+    });
+    scaleFusedInArray(data.inventory);
+    scaleFusedInArray(data.factory && data.factory.conveyor);
+    scaleFusedInArray(data.factory && data.factory.synthBuffer);
+    scaleFusedInArray(data.newForge && data.newForge.queue);
+    ((data.newForge && data.newForge.furnaces) || []).forEach(function (furnace) {
+      (furnace.lines || []).forEach(function (line) {
+        (line.belt || []).forEach(function (entry) { scaleSocketedFused(entry && entry.item); });
+      });
+    });
+    ((data.forge && data.forge.slots) || []).forEach(scaleSocketedFused);
+    data.gemAttrDmgBaseV1 = true;
+  }
   /* ONE-TIME MIGRATION: normalDmgAffixScaleV2/V3/V4（登錄於 ONE_TIME_MIGRATIONS.md）
      normalDmg 目前只恢復基礎值 10 倍，成長係數維持 0.035；V2/V3 回復歷史低值，V4 修正曾被錯誤放大的值。
      只處理 normalDmg，菁英／BOSS 詞條與裝備其它資料完全保留。 */

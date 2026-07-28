@@ -426,6 +426,7 @@
 ### 執行項目
 1. [DONE] js/data.js：六種寶石 base 0.5→0.2（linear 曲線不變）。
 2. [DONE] js/save.js＋js/player.js：ONE-TIME MIGRATION `gemAttrDmgBaseV1` 縮放融合寶石快照（×0.4）。
+   ⚠️ 更正：本項當時標為 DONE 但**實際未實作**，2026-07-28 才補上。詳見 ONE_TIME_MIGRATIONS.md。
 3. [DONE] 測試（gem-attr-dmg-base.test.cjs）＋build＋全套＋隔離埠實測。
 4. [DONE] game_formula.md §8／ONE_TIME_MIGRATIONS.md／PATCH.md 同步。
 

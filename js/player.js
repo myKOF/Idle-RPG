@@ -69,6 +69,7 @@ function newGameState() {
     talentTreesV2RespecV3: true, // 天賦升級消耗再調整（基礎改轉數+2）第三次重置：新帳號無需處理
     talentTreesV2RespecV4: true, // 天賦升級消耗再調整（基礎改轉數+9）第四次重置：新帳號無需處理
     equipSetPotentialLimitV1: true, // 多套裝備分級門檻與潛力 (3轉) 的相容旗標：新帳號無需重置
+    gemAttrDmgBaseV1: true, // 六屬性傷害寶石 base 0.5→0.2：新帳號的融合寶石快照本來就是新值
 
     savedAt: Date.now(),
     player: {
