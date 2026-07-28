@@ -715,7 +715,7 @@ function bindWorkerUiState() {
 
 var STAGE_HOLD_START_MS = 300;
 var STAGE_HOLD_REPEAT_MS = 50;
-var INVENTORY_VISIBLE_ROWS_DEFAULT = 3;
+var INVENTORY_VISIBLE_ROWS_DEFAULT = 6;
 var INVENTORY_VISIBLE_ROWS_MAX = 9;
 var INVENTORY_GRID_ROW_HEIGHT = 58;
 var INVENTORY_GRID_ROW_GAP = 6;
@@ -2755,6 +2755,9 @@ function renderDetail() {
   var invSnapshot = uiInventoryPanelSnapshot();
   var gemsSnapshot = uiGemsPanelSnapshot();
   var player = headerSnapshot && headerSnapshot.player;
+  if (UI.sel && UI.sel.source === 'inv' && UI.sel.id && (!invSnapshot || !invSnapshot.details || !invSnapshot.details[UI.sel.id])) {
+    requestPanelData('inv', true, { detailIds: [UI.sel.id] });
+  }
   updateSelectionUI();
   if (!it) {
     if (UI.sel && UI.sel.source === 'inv' && UI.sel.id) {
@@ -4372,7 +4375,6 @@ function inventoryViewHasFullDetails(snapshot) {
 function inventoryViewItem(snapshot, id, detailed) {
   if (!snapshot || !id) return null;
   if (snapshot.details && snapshot.details[id]) return snapshot.details[id];
-  if (detailed) return null;
   var items = inventoryViewItems(snapshot);
   for (var i = 0; i < items.length; i++) if (items[i] && items[i].id === id) return items[i];
   return null;
