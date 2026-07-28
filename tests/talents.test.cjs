@@ -8,9 +8,14 @@ const root = path.resolve(__dirname, '..');
 /* 天賦系統 V2（1～10 轉）：
    - 每轉 8 個節點、每個上限 100 級；升 1 級成本 = 該天賦轉數 + 1（固定值/級）。
    - 「額外」＝於對應總值上乘算（獨立乘區）；沒寫「額外」＝與現有加成相加。
-   - 潛力解鎖節點位於 3/4/7/10 轉（解鎖 3+3+3+1 = 10 個），目前整批鎖定置灰。 */
+   - 潛力解鎖節點位於 3/4/7/10 轉（解鎖 3+3+3+1 = 10 個）。
 
-test('潛力解鎖天賦（3/4/7/10 轉）暫時置灰且禁止升級', () => {
+   ⚠️ 2026-07-22 `3fdf419 潛力技能實裝` 起，潛力解鎖天賦**已開放升級**
+   （`js/data.js` 移除了 `disabled: true` / `disabledReason`），潛力技能本身
+   也從「聚合到 talentStatBonuses 的被動加成」改為 `js/potential.js` 的主動技能。
+   本檔原本斷言的是改版前的暫時停用狀態，2026-07-28 依程式現況更新。 */
+
+test('潛力解鎖天賦（3/4/7/10 轉）已開放升級，不再置灰', () => {
   const c = loadContext();
   c.G.player.reincarnations = 0;
   assert.equal(c.talentSystemUnlocked(), false);
@@ -20,16 +25,11 @@ test('潛力解鎖天賦（3/4/7/10 轉）暫時置灰且禁止升級', () => {
   c.G.player.reincarnationTalentPoints = 999;
 
   for (const id of ['t3_potential', 't4_potential', 't7_potential', 't10_potential']) {
-    assert.equal(c.talentDef(id).disabled, true);
-    assert.match(c.talentUpgrade(id), /暫不開放升級/);
-    assert.equal(c.talentLevel(id), 0);
+    assert.ok(!c.talentDef(id).disabled, id + ' 不應再帶 disabled 旗標');
+    assert.equal(c.potentialTemporarilyDisabled(id), false);
+    assert.equal(c.talentUpgrade(id), null, id + ' 應可升級');
+    assert.equal(c.talentLevel(id), 1);
   }
-
-  c.document = { getElementById: () => null };
-  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8'), c, { filename: 'js/ui.js' });
-  const html = c.talentNodeHTML(c.talentDef('t3_potential'), 3);
-  assert.match(html, /temporarily-disabled/);
-  assert.match(html, /暫不開放升級/);
 });
 
 function loadContext() {
@@ -139,23 +139,21 @@ test('未達轉生次數的天賦鎖定；潛力解鎖節點需升至 100 級才
   assert.match(c.talentUpgrade('t2_crit'), /尚未達到 2 轉/);
   c.G.player.reincarnations = 3;
   c.G.player.reincarnationTalentPoints = 10;
-  assert.match(c.talentUpgrade('t3_potential'), /暫不開放升級/);
-  assert.equal(c.talentLevel('t3_potential'), 0);
+  // 尚未解鎖任何潛力：解鎖數為 0，潛力技能不可升級
   assert.equal(c.potentialUnlockedCount(), 0);
-  assert.match(c.potentialUpgrade('p1_time'), /尚未解鎖/);
-  assert.equal(c.potentialLevel('p1_time'), 0);
+  const [pot1, , pot3, pot4] = c.POTENTIAL_TALENTS.map((p) => p.id);
+  assert.match(c.potentialUpgrade(pot1), /尚未解鎖/);
+  assert.equal(c.potentialLevel(pot1), 0);
   assert.equal(c.availableSkillPoints(), c.totalSkillPoints());
-  assert.match(c.potentialUpgrade('p4_voidBag'), /暫不開放升級/);
 
-  // 直接寫入等級模擬解鎖（潛力解鎖天賦目前 disabled，無法用 talentUpgrade 升級）
-  // 99 級（未滿）不解鎖，需升至 100 級才生效
+  // 解鎖門檻是「升至 100 級（滿級）」，99 級不算（PATCH.md 2026-07-19）
   c.G.player.talents.levels.t3_potential = 99;
   assert.equal(c.potentialUnlockLimit(), 0);
   c.G.player.talents.levels.t3_potential = 100;
-  assert.equal(c.potentialUnlockedCount(), 3); // 前 3 個潛力（p1~p3）皆未停用
+  assert.equal(c.potentialUnlockedCount(), 3); // 依 POTENTIAL_TALENTS 順序解鎖前 3 個
   assert.equal(c.potentialUnlockLimit(), 3);
-  assert.equal(c.potentialUnlocked('p3_lootEcho'), true);
-  assert.equal(c.potentialUnlocked('p4_voidBag'), false);
+  assert.equal(c.potentialUnlocked(pot3), true);
+  assert.equal(c.potentialUnlocked(pot4), false);
   c.G.player.talents.levels.t4_potential = 100;
   assert.equal(c.potentialUnlockLimit(), 6);
   c.G.player.talents.levels.t7_potential = 100;
@@ -193,14 +191,31 @@ test('潛力解鎖天賦的 tips 明確標示「升至 100 級才會解鎖」', 
   }
 });
 
-test('潛力效果會彙總到衍生加成', () => {
+/* 改版前潛力是「聚合到 talentStatBonuses 的被動加成」（b.potentialCdr / b.potentialInvCap）。
+   3fdf419 實裝後改為主動技能：有冷卻、持續時間與機制鍵，效果在施放時生效，
+   不再有任何 potential* 的衍生加成鍵。本測試改為鎖住現行模型。 */
+test('潛力技能為主動技能，不再彙總為衍生加成', () => {
   const c = loadContext();
   c.G.player.reincarnations = 5;
-  c.G.player.talents.potentialLevels.p1_time = 3;
-  c.G.player.talents.potentialLevels.p4_voidBag = 2;
+  const [pot1] = c.POTENTIAL_TALENTS.map((p) => p.id);
+  c.G.player.talents.potentialLevels[pot1] = 3;
+
   const b = c.talentStatBonuses();
-  assert.equal(b.potentialCdr, 3);
-  assert.equal(b.potentialInvCap, 200);
+  const potentialKeys = Object.keys(b).filter((k) => /^potential/.test(k));
+  assert.deepEqual(potentialKeys, [], 'talentStatBonuses 不應再有 potential* 鍵');
+
+  /* 10 個潛力技能分三種型別：active（8）、passiveTrigger（1）、passive（1）。
+     共通點是都掛在 potential 分類、都有機制鍵；只有非純被動才有冷卻。 */
+  const byType = {};
+  for (const def of c.POTENTIAL_TALENTS) {
+    assert.equal(def.cat, 'potential');
+    assert.ok(typeof def.mech === 'string' && def.mech, def.id + ' 應有機制鍵');
+    if (def.type !== 'passive') {
+      assert.ok(Number(def.cd) > 0, def.id + '（' + def.type + '）應有冷卻時間');
+    }
+    byType[def.type] = (byType[def.type] || 0) + 1;
+  }
+  assert.deepEqual(byType, { active: 8, passiveTrigger: 1, passive: 1 });
 });
 
 /* ---- computeStats 接線（V2 乘算/加總語意） ---- */
