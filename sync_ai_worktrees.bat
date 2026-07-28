@@ -1,6 +1,6 @@
 @echo off
+chcp 65001 >nul
 setlocal
-title Idle RPG - Sync AI Worktrees
 
 set "REPO_ROOT=%~dp0"
 set "SYNC_SCRIPT=%REPO_ROOT%tools\sync_ai_worktrees.ps1"
@@ -16,14 +16,6 @@ pushd "%REPO_ROOT%" >nul
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%SYNC_SCRIPT%" %*
 set "SYNC_EXIT=%ERRORLEVEL%"
 popd
-
-echo.
-if "%SYNC_EXIT%"=="0" (
-    echo Sync completed successfully.
-) else (
-    echo Sync stopped with exit code %SYNC_EXIT%.
-    echo Read the message above, resolve the problem, and run this file again.
-)
 
 :finish
 echo.

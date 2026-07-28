@@ -461,6 +461,7 @@ Claude Review
 
 - 自動探索 `ai/antigravity`、`ai/claude`、`ai/codex`、`develop` 所在 Worktree
 - 提供專案根目錄 `sync_ai_worktrees.bat`，可直接雙擊執行完整流程
+- BAT 與 PowerShell 腳本的步驟、結果及錯誤提示使用繁體中文
 - 執行前確認所有 Worktree 分支正確且工作區乾淨
 - 提供 `-ValidateOnly` 唯讀預檢模式
 - 先 fast-forward 同步並推送三個 AI 分支
@@ -487,6 +488,7 @@ Claude Review
 
 - PowerShell Parser 語法檢查通過
 - BAT 可正確找到並啟動 PowerShell 腳本，結束後保留執行結果
+- Windows PowerShell 5.1 與 BAT 顯示繁體中文時不得出現亂碼
 - 唯讀驗證目前 Worktree 探索結果包含四個目標分支
 - 不對實際專案執行 push 或 merge
 - 使用本機臨時 bare remote 完整演練 push、merge 與三分支回灌
@@ -495,6 +497,7 @@ Claude Review
 
 - PowerShell Parser 語法檢查通過
 - BAT 以 `-ValidateOnly` 實測可正確啟動 PowerShell 腳本並回傳其結束碼
+- BAT 與 PowerShell 腳本的繁體中文訊息實測顯示正常
 - 實際專案 `-ValidateOnly` 找到四個目標 Worktree，並因 Claude Worktree
   的 `.claude/launch.json` 未提交而依預期安全停止
 - 本機臨時 remote 完整流程通過，`develop` 與三個 AI 遠端分支最終收斂至同一 commit

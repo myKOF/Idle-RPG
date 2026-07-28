@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [string]$RepositoryPath,
     [ValidateNotNullOrEmpty()]
@@ -12,6 +12,10 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+if ($Host.Name -eq 'ConsoleHost') {
+    $Host.UI.RawUI.WindowTitle = 'Idle RPG - 同步 AI Worktree'
+}
 
 if ([string]::IsNullOrWhiteSpace($RepositoryPath)) {
     $RepositoryPath = Split-Path -Parent $PSScriptRoot
@@ -40,7 +44,7 @@ function Invoke-Git {
     Write-Host ('git -C "{0}" {1}' -f $Worktree, ($GitArguments -join ' ')) -ForegroundColor DarkGray
     & git -C $Worktree @GitArguments
     if ($LASTEXITCODE -ne 0) {
-        throw ('Git command failed (exit {0}): git -C "{1}" {2}' -f $LASTEXITCODE, $Worktree, ($GitArguments -join ' '))
+        throw ('Git 指令執行失敗（結束碼 {0}）：git -C "{1}" {2}' -f $LASTEXITCODE, $Worktree, ($GitArguments -join ' '))
     }
 }
 
@@ -54,7 +58,7 @@ function Get-GitText {
 
     $output = & git -C $Worktree @GitArguments 2>&1
     if ($LASTEXITCODE -ne 0) {
-        throw ('Git command failed (exit {0}): git -C "{1}" {2}`n{3}' -f
+        throw ('Git 指令執行失敗（結束碼 {0}）：git -C "{1}" {2}`n{3}' -f
             $LASTEXITCODE, $Worktree, ($GitArguments -join ' '), ($output -join "`n"))
     }
     return (($output | ForEach-Object { $_.ToString() }) -join "`n").Trim()
@@ -76,7 +80,7 @@ function Get-WorktreeMap {
         } elseif ([string]::IsNullOrWhiteSpace($line)) {
             if ($path -and $branch) {
                 if ($map.ContainsKey($branch)) {
-                    throw "Branch $branch is checked out in multiple worktrees."
+                    throw "分支 $branch 同時簽出於多個 Worktree。"
                 }
                 $map[$branch] = $path
             }
@@ -96,12 +100,12 @@ function Assert-CleanWorktree {
 
     $actualBranch = Get-GitText -Worktree $Worktree -GitArguments @('branch', '--show-current')
     if ($actualBranch -ne $ExpectedBranch) {
-        throw "Wrong branch in $Worktree. Expected $ExpectedBranch, found $actualBranch."
+        throw "$Worktree 的分支不正確。應為 $ExpectedBranch，目前為 $actualBranch。"
     }
 
     $status = Get-GitText -Worktree $Worktree -GitArguments @('status', '--porcelain=v1', '--untracked-files=normal')
     if ($status) {
-        throw "Worktree is not clean. Commit or resolve these changes first:`n$Worktree`n$status"
+        throw "Worktree 尚有未提交變更。請先提交或處理下列內容：`n$Worktree`n$status"
     }
 }
 
@@ -110,33 +114,33 @@ try {
     $worktrees = Get-WorktreeMap -AnyWorktree $repository
     $requiredBranches = @($developBranch) + $agentBranches
 
-    Write-Step 'Discover required worktrees'
+    Write-Step '探索必要的 Worktree'
     foreach ($branch in $requiredBranches) {
         if (-not $worktrees.ContainsKey($branch)) {
-            throw "No worktree is checked out for $branch. Check git worktree list."
+            throw "找不到已簽出 $branch 的 Worktree。請檢查 git worktree list。"
         }
-        Write-Host ('[FOUND] {0} -> {1}' -f $branch, $worktrees[$branch]) -ForegroundColor Green
+        Write-Host ('[找到] {0} -> {1}' -f $branch, $worktrees[$branch]) -ForegroundColor Green
     }
 
-    Write-Step 'Validate branches and clean status'
+    Write-Step '檢查分支與工作區狀態'
     foreach ($branch in $requiredBranches) {
         Assert-CleanWorktree -Worktree $worktrees[$branch] -ExpectedBranch $branch
-        Write-Host ('[OK] {0}' -f $branch) -ForegroundColor Green
+        Write-Host ('[正常] {0}' -f $branch) -ForegroundColor Green
     }
 
     $developWorktree = $worktrees[$developBranch]
     $remoteUrl = Get-GitText -Worktree $developWorktree -GitArguments @('remote', 'get-url', $Remote)
-    Write-Host ('Remote: {0} ({1})' -f $Remote, $remoteUrl)
+    Write-Host ('遠端：{0}（{1}）' -f $Remote, $remoteUrl)
 
     if ($ValidateOnly) {
-        Write-Step 'Validation complete; no pull, push, or merge was run'
+        Write-Step '預檢完成；未執行 pull、push 或 merge'
         return
     }
 
-    Write-Step "Fetch $Remote"
+    Write-Step "更新遠端 $Remote"
     Invoke-Git -Worktree $developWorktree -GitArguments @('fetch', '--prune', $Remote)
 
-    Write-Step 'Fast-forward and push all AI branches'
+    Write-Step 'Fast-forward 並推送所有 AI 分支'
     $pushedHeads = @{}
     foreach ($branch in $agentBranches) {
         $worktree = $worktrees[$branch]
@@ -149,11 +153,11 @@ try {
     foreach ($branch in $agentBranches) {
         $remoteHead = Get-GitText -Worktree $developWorktree -GitArguments @('rev-parse', "$Remote/$branch")
         if ($remoteHead -ne $pushedHeads[$branch]) {
-            throw "$Remote/$branch changed after it was pushed. Stopping to protect concurrent work."
+            throw "$Remote/$branch 在推送後又有新變更。為保護並行工作，已停止同步。"
         }
     }
 
-    Write-Step 'Merge all AI branches in the develop worktree'
+    Write-Step '在 develop Worktree 合併所有 AI 分支'
     Invoke-Git -Worktree $developWorktree -GitArguments @('pull', '--ff-only', $Remote, $developBranch)
     foreach ($branch in $agentBranches) {
         Invoke-Git -Worktree $developWorktree -GitArguments @(
@@ -169,26 +173,26 @@ try {
     Invoke-Git -Worktree $developWorktree -GitArguments @('push', $Remote, "${developBranch}:${developBranch}")
     Invoke-Git -Worktree $developWorktree -GitArguments @('fetch', '--prune', $Remote)
 
-    Write-Step 'Fast-forward develop back into all AI branches and push'
+    Write-Step '將 develop fast-forward 回所有 AI 分支並推送'
     foreach ($branch in $agentBranches) {
         $worktree = $worktrees[$branch]
         Assert-CleanWorktree -Worktree $worktree -ExpectedBranch $branch
 
         $currentHead = Get-GitText -Worktree $worktree -GitArguments @('rev-parse', 'HEAD')
         if ($currentHead -ne $pushedHeads[$branch]) {
-            throw "$branch received a new commit during integration. Stopping to protect concurrent work."
+            throw "$branch 在整合期間收到新的 commit。為保護並行工作，已停止同步。"
         }
 
         Invoke-Git -Worktree $worktree -GitArguments @('merge', '--ff-only', "$Remote/$developBranch")
         Invoke-Git -Worktree $worktree -GitArguments @('push', $Remote, "${branch}:${branch}")
     }
 
-    Write-Step 'Completed'
+    Write-Step '同步完成'
     $finalHead = Get-GitText -Worktree $developWorktree -GitArguments @('rev-parse', '--short', 'HEAD')
-    Write-Host "develop and all AI branches now point to $finalHead." -ForegroundColor Green
+    Write-Host "develop 與所有 AI 分支目前都指向 $finalHead。" -ForegroundColor Green
 } catch {
-    Write-Host "`nSync stopped:" -ForegroundColor Red
+    Write-Host "`n同步已停止：" -ForegroundColor Red
     Write-Host $_.Exception.Message -ForegroundColor Red
-    Write-Host 'No automatic reset or merge --abort was run. Inspect the last worktree shown above.' -ForegroundColor Yellow
+    Write-Host '未自動執行 reset 或 merge --abort。請檢查上方最後顯示的 Worktree。' -ForegroundColor Yellow
     exit 1
 }
