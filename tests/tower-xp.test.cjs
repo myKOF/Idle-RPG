@@ -64,9 +64,12 @@ test('高塔戰鬥總結統計攻擊輸出，包含護盾與溢出傷害', () =>
   const tower = fs.readFileSync(path.join(root, 'js/tower.js'), 'utf8');
   assert.match(tower, /TOWER\.dmgDealt \+= Math\.max\(0, \(sres\.dmg \|\| 0\)\)/);
   assert.match(tower, /TOWER\.dmgDealt \+= Math\.max\(0, \(res\.dmg \|\| 0\)\)/);
-  assert.match(tower, /var bossHit = doMonsterAttack\(b, p, 'tp-float', mult\)/);
+  /* 攻擊目標的區域變數已由 p 改名為 bossTarget／bossSpecialTarget（多敵人目標選擇）。
+     這裡要守的是「傷害統計取自 doMonsterAttack 的回傳值」，不是變數叫什麼，
+     所以目標參數放寬為識別字。 */
+  assert.match(tower, /var bossHit = doMonsterAttack\(b, \w+, 'tp-float', mult\)/);
   assert.match(tower, /TOWER\.bossDmgDealt \+= Math\.max\(0, \(bossHit\.dmg \|\| 0\)\)/);
-  assert.match(tower, /var bossSpecialHit = doMonsterAttack\(b, p, 'tp-float', 2\.2 \* mult, '蓄力重擊'\)/);
+  assert.match(tower, /var bossSpecialHit = doMonsterAttack\(b, \w+, 'tp-float', 2\.2 \* mult, '蓄力重擊'\)/);
   assert.match(tower, /TOWER\.bossDmgDealt \+= Math\.max\(0, \(bossSpecialHit\.dmg \|\| 0\)\)/);
   assert.doesNotMatch(tower, /beforeHp - p\.hp/);
   assert.doesNotMatch(tower, /beforeHp2 - p\.hp/);

@@ -85,12 +85,15 @@ test('computeStats 派生 elemDmgPct，天賦不再灌進固定值元素攻擊',
   assert.equal(st.elemAtk.fire, 0); // 無裝備附魔 → 固定值附傷應為 0
 });
 
-test('元素核心改為乘算提高附傷%，未點的元素不再憑空附傷', () => {
+/* 原測試還斷言潛力「元素核心」(p5_elementCore) 對附傷% 乘算 ×1.1。
+   3fdf419（2026-07-22）潛力技能實裝時整組重新設計，元素核心已不存在
+   （現行 10 個潛力見 POTENTIAL_TALENTS，無任何一個涉及 elemDmgPct），
+   該段斷言已移除。保留的是不依賴特定潛力的部分：未點的元素不憑空附傷。 */
+test('未點的元素不再憑空附傷', () => {
   const c = loadStatsContext();
   c.G.player.talents.levels.t5_fire = 10; // 5%
-  c.G.player.talents.potentialLevels.p5_elementCore = 5; // 5 級 × 2% = +10%
   const st = c.computeStats();
-  assert.ok(Math.abs(st.elemDmgPct.fire - 5.5) < 1e-9); // 5% × 1.1
+  assert.equal(st.elemDmgPct.fire, 5);
   assert.equal(st.elemDmgPct.ice, 0);
   assert.equal(st.elemAtk.ice, 0);
 });

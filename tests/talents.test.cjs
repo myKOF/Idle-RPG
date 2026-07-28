@@ -351,13 +351,15 @@ test('GM 變更轉生次數會清空天賦並依新轉生次數重算天賦點',
   const c = loadContext();
   c.G.player.level = 1234;
   c.G.player.reincarnationTalentPoints = 999999;
+  // 潛力 id 以 POTENTIAL_TALENTS 為準：清除只走真實存在的鍵，塞假 id 不會被清
+  const [pot1] = c.POTENTIAL_TALENTS.map((p) => p.id);
   c.G.player.talents.levels.t1_str = 8;
-  c.G.player.talents.potentialLevels.p1_time = 4;
+  c.G.player.talents.potentialLevels[pot1] = 4;
 
   c.resetTalentsForReincarnationGM(3);
 
   assert.equal(c.G.player.talents.levels.t1_str, 0);
-  assert.equal(c.G.player.talents.potentialLevels.p1_time, 0);
+  assert.equal(c.G.player.talents.potentialLevels[pot1], 0);
   assert.equal(c.G.player.reincarnationTalentPoints, (3 - 1) * (c.REINCARNATION_LEVEL - 1) + (1234 - 1));
 
   c.G.player.level = 9999;

@@ -25,6 +25,10 @@ function loadGameContext() {
 
 function baseState(context) {
   context.G = context.newGameState();
+  /* 自動穿裝預設為 true，且新帳號所有裝備欄都是空的——不關掉的話
+     processOneConveyorItem 會在 tryAutoEquip 就把物品穿上並提前 return，
+     根本走不到路由邏輯。與 new-forge.test.cjs 的 freshG 一致。 */
+  context.G.factory.autoEquip = false;
   context.G.factory.filter.actions = Array(8).fill('keep');
   context.G.factory.installed = { salvage: [], synth: [] };
   context.G.factory.parts = [];
