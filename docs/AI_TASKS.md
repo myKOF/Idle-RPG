@@ -447,6 +447,59 @@ Claude Review
 
 Claude Review
 
+## 3.7 Codex：多 Worktree 分支整合腳本
+
+狀態：
+
+等待 Review（實作與驗證完成）
+
+任務名稱：
+
+自動推送三個 AI 分支、整合至 develop，再將 develop 同步回三個 AI 分支
+
+任務內容：
+
+- 自動探索 `ai/antigravity`、`ai/claude`、`ai/codex`、`develop` 所在 Worktree
+- 執行前確認所有 Worktree 分支正確且工作區乾淨
+- 提供 `-ValidateOnly` 唯讀預檢模式
+- 先 fast-forward 同步並推送三個 AI 分支
+- 在 develop Worktree 依序合併三個遠端 AI 分支並推送 develop
+- 將遠端 develop fast-forward 回三個 AI 分支並推送
+- 任一步驟失敗立即停止，不自動 reset、abort 或覆蓋衝突
+
+允許修改：
+
+- `tools/sync_ai_worktrees.ps1`
+- `docs/AI_TASKS.md`
+
+禁止修改：
+
+- 遊戲程式、資料、公式與測試
+- `develop` 分支
+
+前置依賴：
+
+無
+
+測試要求：
+
+- PowerShell Parser 語法檢查通過
+- 唯讀驗證目前 Worktree 探索結果包含四個目標分支
+- 不對實際專案執行 push 或 merge
+- 使用本機臨時 bare remote 完整演練 push、merge 與三分支回灌
+
+驗收結果：
+
+- PowerShell Parser 語法檢查通過
+- 實際專案 `-ValidateOnly` 找到四個目標 Worktree，並因 Claude Worktree
+  的 `.claude/launch.json` 未提交而依預期安全停止
+- 本機臨時 remote 完整流程通過，`develop` 與三個 AI 遠端分支最終收斂至同一 commit
+- 未對實際專案執行 pull、push 或 merge
+
+完成後交給：
+
+使用者執行；發生衝突時交由整合者人工處理
+
 任務名稱：
 
 既有測試失敗修復（A 類與 C 類）
