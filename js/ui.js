@@ -2955,6 +2955,25 @@ function showFloatingText(btn, text, color) {
 function detailAction(act, actBtn) {
   var it = findSelItem();
   if (!it || act === 'tosynth') return;
+
+  var headerSnapshot = uiHeaderPanelSnapshot();
+  var player = headerSnapshot && headerSnapshot.player;
+  if (player) {
+    if (act === 'upgrade') {
+      var upCost = typeof upgradeCost === 'function' ? upgradeCost(it) : null;
+      if (upCost && ((player.gold || 0) < (upCost.gold || 0) || (player.scrap || 0) < (upCost.scrap || 0))) {
+        if (actBtn) showFloatingText(actBtn, '材料不足', '#fca5a5');
+        return;
+      }
+    } else if (act === 'reroll-affix') {
+      var rrCost = typeof rerollCost === 'function' ? rerollCost(it) : null;
+      if (rrCost && ((player.gold || 0) < (rrCost.gold || 0) || (player.essence || 0) < (rrCost.essence || 0))) {
+        if (actBtn) showFloatingText(actBtn, '材料不足', '#fca5a5');
+        return;
+      }
+    }
+  }
+
   var commandName = null;
   var args = { itemId: it.id };
   var panels = ['inv', 'equip', 'header'];
@@ -2986,7 +3005,11 @@ function detailAction(act, actBtn) {
   }).then(function (result) {
     var resultError = typeof uiCommandResultError === 'function' ? uiCommandResultError(result) : null;
     if (resultError) {
-      reportUiCommandFailure('裝備操作', resultError, panels);
+      if (actBtn && (String(resultError).indexOf('資源不足') >= 0 || String(resultError).indexOf('不足') >= 0 || resultError === 'poor')) {
+        showFloatingText(actBtn, '材料不足', '#fca5a5');
+      } else {
+        reportUiCommandFailure('裝備操作', resultError, panels);
+      }
       return;
     }
     if (act === 'equip') UI.sel = { id: it.id, source: 'equip' };
@@ -2996,10 +3019,14 @@ function detailAction(act, actBtn) {
       var upgradeResult = result && hasOwnUiState(result, 'result') ? result.result : result;
       if (upgradeResult === 'ok') showFloatingText(actBtn, '升級成功', '#7dd3fc');
       else if (upgradeResult === 'fail') showFloatingText(actBtn, '升級失敗', '#fca5a5');
-      else if (upgradeResult === 'poor') showFloatingText(actBtn, '品質不佳', '#fbbf24');
+      else if (upgradeResult === 'poor') showFloatingText(actBtn, '材料不足', '#fca5a5');
     }
   }).catch(function (error) {
-    reportUiCommandFailure('裝備操作', error, panels);
+    if (actBtn && error && (String(error).indexOf('資源不足') >= 0 || String(error).indexOf('不足') >= 0)) {
+      showFloatingText(actBtn, '材料不足', '#fca5a5');
+    } else {
+      reportUiCommandFailure('裝備操作', error, panels);
+    }
   });
 }
 function salvageAllUnlocked(maxRarity, maxLevel, maxAncient) {
