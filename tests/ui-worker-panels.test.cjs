@@ -71,7 +71,7 @@ test('裝備與背包頁由 Worker panel 投影渲染並以 Command 修改狀態
     );
   }
 
-  assert.match(detailAction, /if \(workerUiStateEnabled\(\) && act !== 'tosynth'\)/);
+  assert.match(detailAction, /if \(!it \|\| act === 'tosynth'\) return/);
   assert.match(ui, /sendUiCommand\('settings\.set', \{ key: 'compareEq'/);
   assert.match(ui, /sendUiCommand\('factory\.setAutoEquip'/);
 });
