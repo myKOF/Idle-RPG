@@ -192,6 +192,26 @@ var WorkerBridge = (function () {
   var _watchdogTimer = 0;
   var _visibilityBound = false;
 
+  /* ---- 迷你監控視窗（PiP）----
+     玩家開 PiP 是為了邊做別的事邊看戰鬥，這時分頁雖然隱藏但畫面確實在被觀看，
+     所以不能休眠。判定狀態在 ui.js 的 MINI，Worker 看不到，必須由這裡轉發。
+
+     ⚠️ PiP 可能在分頁已經隱藏之後才開啟或關閉，那時不會有 visibilitychange，
+     所以除了隨 visibility 送，還要在 watchdog 裡輪詢變化並補送。
+     3 秒的偵測間隔對 60 秒的休眠門檻綽綽有餘。 */
+  var _pipLast = false;
+
+  function miniMonitorActive() {
+    return typeof MINI !== 'undefined' && MINI && !!(MINI.win || MINI.timer);
+  }
+
+  function postVisibility() {
+    _pipLast = miniMonitorActive();
+    return post(MSG_IN.VISIBILITY, {
+      hidden: !!document.hidden, pip: _pipLast, at: Date.now()
+    });
+  }
+
   /* ---- 失效後自動重啟 ----
      這是掛機遊戲，玩家多半把分頁丟在背景。Worker 死掉時畫面看起來還在，但時間停了：
      不打怪、不掉東西、不存檔。若只顯示遮罩等玩家按重新載入，背景掛機那幾小時就整段作廢。
@@ -293,6 +313,8 @@ var WorkerBridge = (function () {
 
   function watchdog() {
     if (!_worker || !stats.booted || !stats.alive) return;
+    // PiP 在隱藏期間開關不會觸發 visibilitychange，這裡補送
+    if (miniMonitorActive() !== _pipLast) postVisibility();
     /* 撐過這段時間就把連續失敗計數歸零。玩很久之後偶爾各壞一次，不該累積成放棄；
        真正的存檔問題會在開機後很快連續復發，撐不到這個門檻。 */
     if (_restartCount > 0 && stats.bootedAt && Date.now() - stats.bootedAt > HEALTHY_UPTIME_MS) {
@@ -346,14 +368,14 @@ var WorkerBridge = (function () {
 
     // 初始狀態也要送：分頁若在隱藏狀態下被載入，visibilitychange 不會觸發，
     // Worker 會以為自己在前景而持續全速模擬（main.js 的 _hiddenAt 初始化同理）
-    post(MSG_IN.VISIBILITY, { hidden: !!document.hidden, at: Date.now() });
+    postVisibility();
     // 重啟時不重複註冊：監聽器掛在 document 上，不隨 Worker 消滅
     if (!_visibilityBound) {
       _visibilityBound = true;
       document.addEventListener('visibilitychange', function () {
         // 切回前景時重置靜默計時：隱藏期間沒有訊息是正常的，不能算進去
         if (!document.hidden) { _lastMessageAt = Date.now(); _probeAt = 0; }
-        post(MSG_IN.VISIBILITY, { hidden: !!document.hidden, at: Date.now() });
+        postVisibility();
       });
     }
 

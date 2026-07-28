@@ -100,8 +100,15 @@ function reportError(where, err) {
 
 /* ---- 背景休眠 ----
    Web Worker 不能豁免瀏覽器背景節流，所以 main.js 的補償語意必須原樣保留：
-   隱藏未滿 60 秒維持即時模擬，逾時停止推進，回前景改由離線收益結算。 */
+   隱藏未滿 60 秒維持即時模擬，逾時停止推進，回前景改由離線收益結算。
+
+   迷你監控視窗（PiP）開著時不休眠——玩家是刻意開它來邊做別的事邊看戰鬥的，
+   這時分頁雖然隱藏，但畫面確實在被觀看。PiP 是主執行緒狀態，由 bridge 隨
+   visibility 訊息傳進來（見 js/bridge.js 的 miniMonitorActive）。 */
+var _pipActive = false;
+
 function backgroundSuspended() {
+  if (_pipActive) return false; // PiP 觀戰中，維持即時模擬
   return _hiddenAt > 0 && (Date.now() - _hiddenAt) >= BG_SUSPEND_AFTER_MS;
 }
 
@@ -995,9 +1002,12 @@ function loadIntoRunningSim(msg) {
    判定與結算一律在 Worker；主執行緒只負責通知，不得自行決定要不要結算，
    否則兩邊各判一次就會重複領取離線收益。 */
 function onVisibility(msg) {
+  _pipActive = !!msg.pip;
   if (msg.hidden) {
+    /* PiP 開著時不落地 SHUTDOWN：那是「分頁要關了」的語意，
+       而 PiP 觀戰期間模擬照跑，15 秒一次的自動存檔就夠了。 */
     _hiddenAt = msg.at || Date.now();
-    requestPersist(PERSIST_KINDS.SHUTDOWN);
+    if (!_pipActive) requestPersist(PERSIST_KINDS.SHUTDOWN);
     return;
   }
   var settle = _hiddenAt > 0 && (Date.now() - _hiddenAt) >= BG_SUSPEND_AFTER_MS;
