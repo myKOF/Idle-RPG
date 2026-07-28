@@ -860,6 +860,28 @@ Claude 裁決 B 類清單
 
 狀態：
 
+已完成 (修復背包排序按鈕失效與鼠標掃過 Icon 亮起置灰問題)
+
+任務名稱：
+
+修復背包排序按鈕失效與懸停閃爍問題
+
+任務內容：
+
+1. 修正 `js/worker/sim.worker.js` 中的 `player.setInvSort` 指令處理函式，補上 `G.inventory` 在 Worker 端的實體陣列排序（支援等級/太古/品質排序）。
+2. 修正 `js/ui.js` 中的 `renderInventory`，在 DOM HTML 生成階段直接帶入 `.selected` 與 `.dimmed` 置灰 Class，解決鼠標掃過 Icon 索取詳情時，全 DOM 重建導至的全亮再置灰閃爍瑕疵。
+
+驗證：
+
+- 定向單元測試 `tests/inventory-ancient-filter-sort.test.cjs` 2/2 通過。
+- `cmd /c npm test` 全量測試 503/504 通過（0 新增失敗）。
+
+---
+
+## 4.0 歷史任務：大重構後內測全流程驗收
+
+狀態：
+
 已完成 (大重構後內測：全流程驗收 100% 通過，全流程體驗、長時間掛機、存檔完整性、Worker 韌性、新功能與效能複測驗收完成)
 
 任務名稱：

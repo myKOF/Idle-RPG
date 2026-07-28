@@ -720,7 +720,31 @@ var COMMAND_IMPL = {
 
   /* 排序模式索引存在存檔裡，但模式清單是 UI 的知識，所以由主執行緒指定索引 */
   'player.setInvSort': function (a) {
-    G._invSortIdx = Math.max(0, Math.floor(a.index));
+    var mode = Math.max(0, Math.floor(Number(a.index) || 0));
+    G._invSortIdx = mode;
+    if (Array.isArray(G.inventory)) {
+      G.inventory.sort(function (itemA, itemB) {
+        if (!itemA) return 1;
+        if (!itemB) return -1;
+        var ancientA = typeof getItemAncientCount === 'function' ? getItemAncientCount(itemA) : 0;
+        var ancientB = typeof getItemAncientCount === 'function' ? getItemAncientCount(itemB) : 0;
+        var lvA = Number(itemA.level) || 0;
+        var lvB = Number(itemB.level) || 0;
+        var rarA = Number(itemA.rarity) || 0;
+        var rarB = Number(itemB.rarity) || 0;
+        var idA = Number(itemA.id) || 0;
+        var idB = Number(itemB.id) || 0;
+
+        if (mode === 0) { // 等級優先
+          return (lvB - lvA) || (rarB - rarA) || (ancientB - ancientA) || (idA - idB);
+        } else if (mode === 1) { // 太古優先
+          return (ancientB - ancientA) || (lvB - lvA) || (rarB - rarA) || (idA - idB);
+        } else if (mode === 2) { // 品質優先
+          return (rarB - rarA) || (lvB - lvA) || (ancientB - ancientA) || (idA - idB);
+        }
+        return 0;
+      });
+    }
     UI.dirty.inv = true;
     return { index: G._invSortIdx };
   },

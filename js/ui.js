@@ -2587,6 +2587,13 @@ function applyInventoryVisibleRows(box) {
   box.style.setProperty('--inventory-visible-height', (rows * INVENTORY_GRID_ROW_HEIGHT + (rows - 1) * INVENTORY_GRID_ROW_GAP) + 'px');
 }
 
+function itemMatchesEquipSlot(it, equipSlot) {
+  if (!it || !equipSlot) return false;
+  var list = typeof equipSlotsForItem === 'function' ? equipSlotsForItem(it) : null;
+  if (Array.isArray(list) && list.length) return list.indexOf(equipSlot) >= 0;
+  return equipSlotMatches(it.slot, equipSlot);
+}
+
 function renderInventory() {
   var invSnapshot = uiInventoryPanelSnapshot();
   var headerSnapshot = uiHeaderPanelSnapshot();
@@ -2674,6 +2681,10 @@ function renderInventory() {
       }
       var firstItem = virtualize ? startRow * columns : 0;
       var lastItem = virtualize ? Math.min(displayedItems.length, (startRow + rows) * columns) : displayedItems.length;
+      var selItem = findSelItem();
+      var selectedSlot = selectionSlotForItem(selItem);
+      var highlightInventoryBySlot = !!(UI.sel && (UI.sel.source === 'equip-slot' || UI.sel.source === 'equip'));
+
       var cellsHtml = displayedItems.slice(firstItem, lastItem).map(function (it) {
         var renderedItem = filterKeyword
           ? inventoryViewItem(invSnapshot, it.id, true)
@@ -2681,7 +2692,20 @@ function renderInventory() {
         var extraClass = '';
         if (filterKeyword !== '') {
           if (!renderedItem || !itemMatchesKeyword(renderedItem, filterKeyword)) {
-            extraClass = ' item-cell-dimmed';
+            extraClass += ' item-cell-dimmed';
+          }
+        }
+        if (selItem) {
+          if (it.id === selItem.id) {
+            extraClass += ' selected';
+          } else if (highlightInventoryBySlot && selectedSlot) {
+            if (itemMatchesEquipSlot(it, selectedSlot)) {
+              extraClass += ' selected';
+            } else {
+              extraClass += ' dimmed';
+            }
+          } else if (it.slot !== selItem.slot) {
+            extraClass += ' dimmed';
           }
         }
         return itemCellHTML(it, 'inv', extraClass, itemPendingKey(it.id));

@@ -43,3 +43,33 @@ test('背包太古數量篩選與排序功能驗證', () => {
   assert.match(ui, /key:\s*'rarity'/);
   assert.match(ui, /sendUiCommand\('player\.setInvSort'/);
 });
+
+test('sim.worker.js 的 player.setInvSort 能正確對 G.inventory 執行排序', () => {
+  const workerSrc = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
+  assert.match(workerSrc, /'player\.setInvSort':\s*function/);
+  assert.match(workerSrc, /G\.inventory\.sort\(/);
+
+  const getItemAncientCount = (it) => it.ancientCount || 0;
+  const items = [
+    { id: 1, level: 10, rarity: 3, ancientCount: 1 },
+    { id: 2, level: 50, rarity: 2, ancientCount: 0 },
+    { id: 3, level: 20, rarity: 5, ancientCount: 4 }
+  ];
+
+  const sortItems = (mode, list) => {
+    return list.slice().sort((itemA, itemB) => {
+      const ancientA = getItemAncientCount(itemA), ancientB = getItemAncientCount(itemB);
+      const lvA = itemA.level, lvB = itemB.level;
+      const rarA = itemA.rarity, rarB = itemB.rarity;
+      const idA = itemA.id, idB = itemB.id;
+      if (mode === 0) return (lvB - lvA) || (rarB - rarA) || (ancientB - ancientA) || (idA - idB);
+      if (mode === 1) return (ancientB - ancientA) || (lvB - lvA) || (rarB - rarA) || (idA - idB);
+      if (mode === 2) return (rarB - rarA) || (lvB - lvA) || (ancientB - ancientA) || (idA - idB);
+      return 0;
+    });
+  };
+
+  assert.deepEqual(sortItems(0, items).map(i => i.id), [2, 3, 1]);
+  assert.deepEqual(sortItems(1, items).map(i => i.id), [3, 1, 2]);
+  assert.deepEqual(sortItems(2, items).map(i => i.id), [3, 1, 2]);
+});
