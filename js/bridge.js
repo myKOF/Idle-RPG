@@ -177,7 +177,7 @@ var WorkerBridge = (function () {
   }
 
   /* ---- 存活監測 ----
-     worker 模式下主執行緒的舊迴圈是關閉的（見 main.js 的 WORKER_MODE），
+     主執行緒沒有自己的模擬迴圈（P5 起舊路徑已移除），
      所以 Worker 一旦死掉，遊戲會靜靜凍結而且**停止存檔**——玩家不會看到任何錯誤，
      只會在下次開啟時發現進度回到十幾秒前。所以死亡必須被偵測並說出來。
 
@@ -409,8 +409,10 @@ var WorkerBridge = (function () {
     return post(MSG_IN.LOAD, { save: save });
   }
 
+  /* P5 起 Worker 是唯一路徑，舊單執行緒路徑已移除。
+     保留這支函式是因為 gm.js 等處還在問，恆真即可；日後可一併清掉。 */
   function enabled() {
-    return typeof location !== 'undefined' && /[?&]worker=1(&|$)/.test(location.search);
+    return true;
   }
 
   return {
@@ -419,14 +421,13 @@ var WorkerBridge = (function () {
   };
 })();
 
-/* ---- ?worker=1 驗證模式 ----
-   P2 起 Worker 成為模擬與存檔的權威：以玩家的真實存檔開機，並負責之後所有存檔寫入。
-   為避免兩個權威同時寫入，main.js 在此模式下會關掉舊迴圈並設 _saveSuppressed。
+/* ---- 開機 ----
+   Worker 是模擬與存檔的唯一權威：以玩家的真實存檔開機，並負責之後所有存檔寫入。
+   主執行緒只把存檔讀出來交過去，自己不 migrate、不結算、不持有 G（見 main.js）。
 
-   ⚠️ P3 之前 UI 尚未接上 Worker，所以此模式下畫面不會更新（等同凍結），這是預期中的
-   中間狀態。要玩遊戲請拿掉網址參數走舊路徑。 */
+   刻意先於 main.js 的 DOMContentLoaded 監聽器註冊：Worker 越早開機，
+   面板越早抵達，initUI() 之後畫面空白的時間就越短。 */
 (function () {
-  if (!WorkerBridge.enabled()) return;
   window.addEventListener('DOMContentLoaded', function () {
     SaveStorage.readBootSave(function (save) {
       WorkerBridge.start({ save: save, maxRunId: SaveStorage.maxRunId() });

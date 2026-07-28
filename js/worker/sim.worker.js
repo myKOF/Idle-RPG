@@ -905,10 +905,52 @@ function boot(msg) {
     offlineSummary = applyOfflineProgress() || null;
   }
 
-  // migrateSave 會把改版公告掛在 G 上，交給主執行緒顯示後刪除旗標
-  ['_skillResetNotice', '_skillPointRepairNotice', '_talentRespecNotice', '_talentRespecConfirm'].forEach(function (k) {
-    if (G[k]) { notices.push({ key: k, text: G[k] }); delete G[k]; }
-  });
+  /* migrateSave 會把改版公告掛在 G 上，交給主執行緒顯示後刪除旗標。
+     P5 起文案在這裡組完整：那些「可用 N 點」之類的補充值只有 Worker 算得出來，
+     主執行緒沒有 G，不可能自己接上去。 */
+  if (G._skillResetNotice) {
+    notices.push({ key: '_skillResetNotice', text: '🛠️ 偵測到技能點異常：已使用 ' + G._skillResetNotice +
+      '，已重置所有技能並發還初始技能。技能點已依等級全額退還（可用 ' +
+      (typeof availableSkillPoints === 'function' ? availableSkillPoints() : 0) +
+      ' 點），請重新配點；之後升級將正常獲得技能點。', cls: 'warn' });
+    delete G._skillResetNotice;
+  }
+  if (G._skillPointRepairNotice) {
+    notices.push({ key: '_skillPointRepairNotice', text: '🧮 ' + G._skillPointRepairNotice + '；目前可用技能點 ' +
+      (typeof availableSkillPoints === 'function' ? availableSkillPoints() : 0) + ' 點。', cls: 'info' });
+    delete G._skillPointRepairNotice;
+  }
+  if (G._talentRespecNotice) {
+    notices.push({ key: '_talentRespecNotice', text: '🌟 ' + G._talentRespecNotice +
+      '，請至【天賦】頁重新配點（新制成本＝天賦轉數+9／級，Lv.51 起每級加倍）。', cls: 'warn' });
+    delete G._talentRespecNotice;
+  }
+  /* ONE-TIME MIGRATION: talentTreesV2RespecV1（登錄於 ONE_TIME_MIGRATIONS.md）
+     這一則要彈窗，不是寫進日誌，所以帶 modal 讓 UI 端分辨。 */
+  if (G._talentRespecConfirm) {
+    notices.push({ key: '_talentRespecConfirm', text: '天賦系統已重新改造，請重新配置！', modal: true });
+    delete G._talentRespecConfirm;
+  }
+
+  /* 開機提示。P5 之前這幾則寫在 main.js，靠主執行緒自己那份 G 產生；
+     主執行緒不再持有 G 之後，只有這裡算得出來。 */
+  if (loaded) {
+    notices.push({ key: 'welcomeBack', text: '📖 歡迎回來，冒險者！讀取存檔成功。', cls: 'good' });
+    var invCapNow = (typeof inventoryCapacityWithTalents === 'function')
+      ? inventoryCapacityWithTalents()
+      : INVENTORY_CAP + (G.player.invUpgrades || 0);
+    if (G.inventory.length > invCapNow) {
+      notices.push({ key: 'inventoryOverCap', cls: 'warn',
+        text: '⚠️ 背包超出容量（' + G.inventory.length + '/' + invCapNow +
+          '）。今後滿載時將維持上限：新裝備與包內未鎖定最弱者「捨弱留強」擇一保留（上鎖裝備不受影響）。' +
+          '超出的部分可用「分解設定」批次清理。' });
+    }
+  } else {
+    notices.push({ key: 'welcomeNew', cls: 'good', text: '⚔️ 歡迎來到《無限征途：合成之巔》！' });
+    notices.push({ key: 'welcomeNew2', cls: 'info', text: '你的角色會自動戰鬥。掉落的裝備會流進【熔爐】，記得去勾選各熔爐要拆解的品質！' });
+    notices.push({ key: 'welcomeNew3', cls: 'info', text: '💡 提示：預設普通~傳說品質會自動拆解成碎片與精華，未勾選品質會保留入包。' });
+    flog('🏭 熔爐已啟動。掉落裝備會依各熔爐勾選的品質自動拆解或保留。', 'info');
+  }
 
   /* 開機時把所有面板標記為髒。正常開機這是多餘的（UI 本來就會索取），
      但自動重啟後主執行緒手上是上一個 Worker 的快取，必須全部換掉。 */

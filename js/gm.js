@@ -1,19 +1,13 @@
 'use strict';
 /* ============ 本機 GM 指令面板（僅供開發環境） ============
-   只負責面板與鍵盤事件。指令解析與執行在 js/gm_exec.js，兩邊都會載入它。
-   Worker 模式下改送 gm.exec 指令，不在主執行緒直接執行——狀態的權威在 Worker。 */
+   只負責面板與鍵盤事件。指令解析與執行在 js/gm_exec.js，由 Worker 載入。
+   一律送 gm.exec 指令，不在主執行緒直接執行——狀態的權威在 Worker。 */
 
 (function () {
   var gmUi = null;
 
-  /* 送出指令。worker 模式是非同步的，回覆到達前先顯示執行中。 */
+  /* 送出指令。狀態的權威在 Worker，所以一律送過去；回覆到達前先顯示執行中。 */
   function submitGMCommand(text) {
-    var workerMode = (typeof WorkerBridge !== 'undefined') && WorkerBridge.enabled();
-    if (!workerMode) {
-      var res = executeGMCommand(text);
-      setGMStatus(res.message, res.ok);
-      return;
-    }
     setGMStatus('執行中…', true);
     WorkerBridge.send('gm.exec', { line: text }).then(function (res) {
       setGMStatus(res && res.message ? res.message : '已執行', !!(res && res.ok));
