@@ -125,10 +125,28 @@ test('Worker 飄字以 elId 呈現，舊路徑仍排除已離場的敵人物件'
   context.flushPendingEnemyFloats(battleSnapshot);
 
   assert.deepEqual(calls, [
-    ['animate', null, 'mv-float-0', 'dmg'],
+    ['animate', null, 'mv-float-0', 'dmg', battleSnapshot],
     ['float', 'mv-float-0', '10', 'dmg', 10, null, battleSnapshot]
   ]);
   assert.equal(context.PENDING_ENEMY_FLOATS.length, 0);
+});
+
+test('Worker delayed lethal float animates a dead enemy bar from full to empty', () => {
+  const fill = { style: {}, offsetWidth: 0 };
+  const card = { querySelector: () => fill };
+  const layer = { closest: () => card };
+  const context = {
+    isEnemyHitFloat: () => true,
+    $id: () => layer,
+    setTimeout: () => 0,
+    INSTANT_KILL_HP_ANIMATION_MS: 100
+  };
+  vm.runInNewContext(functionBody('animatePendingEnemyKill'), context);
+  context.animatePendingEnemyKill(null, 'mv-float-0', 'dmg enemy-attack', {
+    field: { monsters: [{ hp: 0, maxHp: 100 }] }
+  });
+  assert.equal(fill.style.width, '0%');
+  assert.equal(fill.style.transition, 'width 100ms linear');
 });
 
 test('統計清除在 Worker 模式送 stats.reset 並等待 battle Snapshot 重繪', async () => {

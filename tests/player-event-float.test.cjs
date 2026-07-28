@@ -48,7 +48,7 @@ test('敵人尚未建立卡片就被擊殺時，傷害浮字會等卡片建立�
   assert.match(ui, /var PENDING_ENEMY_FLOATS = \[\];/);
   assert.match(ui, /var INSTANT_KILL_HP_ANIMATION_MS = 100;/);
   assert.match(ui, /function queuePendingEnemyFloat\(elId, text, cls, damageValue, ent\)/);
-  assert.match(ui, /function animatePendingEnemyKill\(ent, elId, cls\)/);
+  assert.match(ui, /function animatePendingEnemyKill\(ent, elId, cls, battleSnapshot\)/);
   assert.match(ui, /fill\.style\.width = '100%';[\s\S]*?fill\.style\.transition = 'width ' \+ INSTANT_KILL_HP_ANIMATION_MS \+ 'ms linear';[\s\S]*?fill\.style\.width = '0%';/);
   assert.match(ui, /function flushPendingEnemyFloats\(battleSnapshot\)/);
   assert.match(ui, /if \(!layer \|\| layer\.offsetParent === null\) \{[\s\S]*?queuePendingEnemyFloat\(elId, text, cls, damageValue, ent\)/);

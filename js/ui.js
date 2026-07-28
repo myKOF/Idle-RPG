@@ -1153,8 +1153,18 @@ function queuePendingEnemyFloat(elId, text, cls, damageValue, ent) {
   return true;
 }
 
-function animatePendingEnemyKill(ent, elId, cls) {
-  if (!ent || ent.hp > 0 || !ent._rewarded || !isEnemyHitFloat(elId, cls)) return;
+function animatePendingEnemyKill(ent, elId, cls, battleSnapshot) {
+  var target = ent;
+  // Worker float events intentionally omit entity references; recover the
+  // dead target from the latest battle snapshot before playing the bar tween.
+  if (!target && battleSnapshot && battleSnapshot.field) {
+    var field = battleSnapshot.field;
+    var enemies = Array.isArray(field.monsters) ? field.monsters : (field.monster ? [field.monster] : []);
+    var match = /^mv-float-(\d+)$/.exec(String(elId || ''));
+    var index = match ? parseInt(match[1], 10) : -1;
+    if (index >= 0 && enemies[index]) target = enemies[index];
+  }
+  if (!target || target.hp > 0 || !isEnemyHitFloat(elId, cls)) return;
   var layer = $id(elId);
   var card = layer && layer.closest ? layer.closest('.enemy-card') : null;
   var fill = card && card.querySelector ? card.querySelector('.enemy-hp .hp-fill') : null;
@@ -1184,7 +1194,7 @@ function flushPendingEnemyFloats(battleSnapshot) {
       keep.push(item);
       continue;
     }
-    animatePendingEnemyKill(item.ent, item.elId, item.cls);
+    animatePendingEnemyKill(item.ent, item.elId, item.cls, battleSnapshot);
     floatText(item.elId, item.text, item.cls, item.damageValue, item.ent, battleSnapshot);
   }
   PENDING_ENEMY_FLOATS = keep;
