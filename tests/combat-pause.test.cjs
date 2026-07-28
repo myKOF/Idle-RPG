@@ -5,6 +5,23 @@ const vm = require('node:vm');
 const test = require('node:test');
 
 const root = path.resolve(__dirname, '..');
+const workerSrc = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
+
+function loadWorkerContext(now = 42000) {
+  const context = {
+    console,
+    location: { search: '' },
+    performance: { now: () => 0 },
+    importScripts() {},
+    self: { postMessage() {} },
+    setInterval() { return 1; },
+    clearInterval() {},
+    Date: { now: () => now }
+  };
+  vm.createContext(context);
+  vm.runInContext(workerSrc, context, { filename: 'js/worker/sim.worker.js' });
+  return context;
+}
 
 test('戰鬥暫停狀態可切換並標記戰鬥畫面需要更新', () => {
   const context = vm.createContext({
@@ -23,25 +40,32 @@ test('戰鬥暫停狀態可切換並標記戰鬥畫面需要更新', () => {
 });
 
 test('主迴圈暫停時凍結戰鬥時間，但不停止工廠與鑄造計時', () => {
-  const calls = { forge: 0, field: 0, tower: 0, factory: 0 };
-  const context = vm.createContext({
-    GT: 0,
-    document: { addEventListener() {} },
-    isCombatPaused: () => true,
-    forgeTick: () => { calls.forge++; },
-    fieldTick: () => { calls.field++; },
-    towerTick: () => { calls.tower++; },
-    factoryTick: (dt) => { calls.factory += dt; }
-  });
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/main.js'), 'utf8'), context);
+  const calls = { forge: [], field: 0, tower: 0, factory: 0, newForge: 0 };
+  const context = loadWorkerContext();
+  context.GT = 0;
+  context.isCombatPaused = () => true;
+  context.forgeTick = (now) => { calls.forge.push(now); };
+  context.fieldTick = () => { calls.field++; };
+  context.towerTick = () => { calls.tower++; };
+  context.factoryTick = (dt) => { calls.factory += dt; };
+  context.newForgeTick = (dt) => { calls.newForge += dt; };
 
-  context.stepGame(1);
+  context.simStep(1);
 
   assert.equal(context.GT, 0);
-  assert.equal(calls.forge, 1);
+  assert.deepEqual(calls.forge, [42000]);
   assert.equal(calls.field, 0);
   assert.equal(calls.tower, 0);
   assert.equal(calls.factory, 1);
+  assert.equal(calls.newForge, 1);
+
+  context.isCombatPaused = () => false;
+  context.simStep(0.5);
+  assert.equal(context.GT, 0.5);
+  assert.equal(calls.field, 1);
+  assert.equal(calls.tower, 1);
+  assert.equal(calls.factory, 1.5);
+  assert.equal(calls.newForge, 1.5);
 });
 
 test('戰鬥控制列提供暫停按鈕與可辨識的繼續狀態', () => {
