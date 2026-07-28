@@ -906,6 +906,32 @@ function runCommand(name, args) {
   }
 }
 
+/* 由 1 號熔爐實際勾選的品質產生新手提示文案。
+   連續區間縮寫成「普通~史詩」，不連續則逐項列出，一個都沒勾則改寫成另一句。 */
+function defaultSalvageHintText() {
+  var furnace = G && G.player && G.player.newForge &&
+    Array.isArray(G.player.newForge.furnaces) ? G.player.newForge.furnaces[0] : null;
+  var flags = furnace && Array.isArray(furnace.qualities) ? furnace.qualities : [];
+  var picked = [];
+  for (var r = 0; r < RARITIES.length; r++) {
+    if (flags[r] && RARITIES[r]) picked.push(r);
+  }
+  if (!picked.length) {
+    return '💡 提示：預設不自動拆解任何品質，掉落裝備會全部保留入包。' +
+      '到【熔爐】勾選品質後，該品質才會自動拆解成碎片與精華。';
+  }
+  var contiguous = picked[picked.length - 1] - picked[0] === picked.length - 1;
+  var label;
+  if (picked.length === 1) {
+    label = RARITIES[picked[0]].name;
+  } else if (contiguous) {
+    label = RARITIES[picked[0]].name + '~' + RARITIES[picked[picked.length - 1]].name;
+  } else {
+    label = picked.map(function (r) { return RARITIES[r].name; }).join('、');
+  }
+  return '💡 提示：預設「' + label + '」品質會自動拆解成碎片與精華，未勾選品質會保留入包。';
+}
+
 /* ---- 開機 ---- */
 function boot(msg) {
   var loaded = null;
@@ -964,6 +990,10 @@ function boot(msg) {
 
   /* 開機提示。P5 之前這幾則寫在 main.js，靠主執行緒自己那份 G 產生；
      主執行緒不再持有 G 之後，只有這裡算得出來。 */
+  /* 新手提示的品質範圍必須跟著實際預設走，不能寫死。
+     原文寫「預設普通~傳說品質會自動拆解」，但 newForgeDefaultFurnace 只勾普通
+     （player.js 的 `qualities.push(r === 0)`），玩家照著訊息做就會滿包。
+     文案與預設值分屬兩個檔案，寫死等於保證日後再次不同步。 */
   if (loaded) {
     notices.push({ key: 'welcomeBack', text: '📖 歡迎回來，冒險者！讀取存檔成功。', cls: 'good' });
     var invCapNow = (typeof inventoryCapacityWithTalents === 'function')
@@ -978,7 +1008,7 @@ function boot(msg) {
   } else {
     notices.push({ key: 'welcomeNew', cls: 'good', text: '⚔️ 歡迎來到《無限征途：合成之巔》！' });
     notices.push({ key: 'welcomeNew2', cls: 'info', text: '你的角色會自動戰鬥。掉落的裝備會流進【熔爐】，記得去勾選各熔爐要拆解的品質！' });
-    notices.push({ key: 'welcomeNew3', cls: 'info', text: '💡 提示：預設普通~傳說品質會自動拆解成碎片與精華，未勾選品質會保留入包。' });
+    notices.push({ key: 'welcomeNew3', cls: 'info', text: defaultSalvageHintText() });
     flog('🏭 熔爐已啟動。掉落裝備會依各熔爐勾選的品質自動拆解或保留。', 'info');
   }
 
