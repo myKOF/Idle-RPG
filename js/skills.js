@@ -1570,9 +1570,18 @@ var SKILL_CATS = {
 };
 
 // 技能定義查詢（含玩家自創的融合技）
-function skillDef(id) {
+/* fusions 可由呼叫端傳入（技能面板快照就有），省略才回頭讀 G。
+
+   為什麼要能傳入：靜態的 SKILLS 表查不到時才需要融合技記錄，而那份記錄只在 G 裡。
+   Worker 架構下主執行緒沒有 G，於是 `ui.js` 整個放棄呼叫 describeSkill，改用一行風味
+   文字充當技能說明——**所有技能**的傷害數值、加成與「下一級」全部消失，而真正需要 G
+   的其實只有融合技這一種。傳入 fusions 之後，主執行緒也能產生完整說明。
+
+   保留 G 後備是為了不動模擬層既有呼叫點與那 116 支測試。 */
+function skillDef(id, fusions) {
   if (SKILLS[id]) return SKILLS[id];
-  var fs = G.player.fusions || [];
+  var fs = fusions ||
+    ((typeof G !== 'undefined' && G && G.player) ? G.player.fusions : null) || [];
   for (var i = 0; i < fs.length; i++) if (fs[i].id === id) return resolveFusionRecord(fs[i]);
   return null;
 }
@@ -2944,13 +2953,16 @@ function skillBuffDisplayValue(defObj, lvArg, mult) {
   var value = scaleAt(defObj, lvArg) * (mult || 1);
   return defObj && defObj.key === 'lootUp' ? effectiveDropRateEffect(value) : value;
 }
-function describeSkill(id, lv, skipFusionDetail) {
+/* 技能完整說明（傷害數值、成長、附加效果）。**純函式，不讀 G**——
+   融合技的定義由 fusions 傳入（技能面板快照就有），省略才回頭讀 G。
+   主執行緒必須能呼叫它，否則 UI 只剩風味文字可用（見 skillDef 的註解）。 */
+function describeSkill(id, lv, skipFusionDetail, fusions) {
   // 潛力技能沿用同一份技能描述入口（供技能提示與升級面板共用，不另寫一套）。
   if (typeof potentialDef === 'function' && typeof describePotentialSkill === 'function') {
     var _pd = potentialDef(id);
     if (_pd) return describePotentialSkill(_pd, Math.max(1, lv || 1), skipFusionDetail);
   }
-  var sk = skillDef(id);
+  var sk = skillDef(id, fusions);
   if (!sk) return '';
   lv = Math.max(1, lv || 1);
   var fx = effectiveFx(id, sk, lv);

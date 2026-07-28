@@ -85,6 +85,36 @@ P5 之後的檔案所有權慣例（沿用即可，非硬性）：
 
 # 2. Claude Code 任務
 
+## 2.-2 技能提示退化成風味文字（回報：技能的正確 tips 消失）
+
+狀態：模擬層已修，等 Codex 改 `ui.js` 一行
+
+現象：技能卡與技能面板都只顯示一行風味文字（例：強力斬顯示「蓄力揮出沉重的一擊。」），
+傷害數值、成長與附加效果全部消失；「下一級」顯示的字串與本級完全相同。
+
+根因：`ui.js` 的 `skillViewDescription` 回傳 `def.flavor || def.desc`，並註明
+「不要呼叫 describeSkill，該模擬層查詢會再回讀主執行緒 `G.player.fusions`」。
+那個顧慮只對**融合技**成立——`skillDef(id)` 僅在靜態 `SKILLS` 表查不到時才讀 G
+（`js/skills.js:1573`），而主執行緒的 `G` 是 `null`，所以當時確實會拋 TypeError。
+結果是為了一種技能，讓**所有技能**的說明都退化。與 `itemDetailHTML` 是同一類問題。
+
+已完成（Claude，模擬層）：
+
+- `skillDef(id, fusions)`：融合技記錄可由呼叫端傳入，省略才回頭讀 G（保留後備，
+  模擬層既有呼叫點與既有測試不受影響）
+- `describeSkill(id, lv, skipFusionDetail, fusions)`：透傳
+- `tests/skill-description-pure.test.cjs`（新增 4 項，含一條標 todo 的 ui.js 接線檢查）
+
+實機驗證（localhost:8330）：主執行緒呼叫 `describeSkill('powerSlash', 1)` 回傳
+「造成 360% 物攻 的物理傷害。⭐ Lv.4 解鎖／強化附加效果」，Lv.2 為 440%，未拋錯；
+`panelData('skills')` 確認含 `fusions` 欄位。
+
+待 Codex（`js/ui.js`）：`skillViewDescription` 改呼叫
+`describeSkill(id, level, skipFusionDetail, <skills 快照的 fusions>)`，
+並移除那段已不成立的註解。融合技分支若要保留「（融合自：…）」附註可疊加在後面。
+
+---
+
 ## 2.-1 背景掛機、404 噪音、itemDetailHTML 純函式化
 
 狀態：等待測試
