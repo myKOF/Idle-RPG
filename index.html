@@ -767,6 +767,15 @@
   <!-- 裝備可能詞條獨立浮層：避免被裝備詳情捲軸裁切 -->
   <div id="affix-pool-overlay" aria-live="polite"></div>
 
+  <!-- P5：模擬層只在 Worker 內執行（見 js/worker/sim.worker.js 的 importScripts）。
+       主執行緒這裡只留渲染還用得到的部分：
+         util / data / formula  文字格式化與敘述表
+         item / skills / talents / player / combat / potential / tower
+                                 產生顯示字串與衍生值的輔助函式
+         stats                  統計面板 HTML
+         save                   SaveStorage 重用其 I/O 與存檔索引
+       已移除（主執行緒零呼叫，只在 Worker 內跑）：
+         special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js"></script>
   <script src="js/data.js?v=1.0.3"></script>
   <script src="js/formula.js"></script>
@@ -775,22 +784,15 @@
   <script src="js/skills.js?v=1.0.3"></script>
   <script src="js/talents.js"></script>
   <script src="js/player.js"></script>
-  <script src="js/special_rules.js"></script>
   <script src="js/combat.js"></script>
-  <script src="js/legendary.js?v=1.0.1"></script>
   <script src="js/potential.js"></script>
   <script src="js/tower.js"></script>
-  <script src="js/factory.js"></script>
-  <script src="js/newforge.js"></script>
-  <script src="js/forge.js"></script>
   <script src="js/save.js"></script>
   <script src="js/ui.js?v=1.0.8"></script>
   <script src="js/param_autoreload.js"></script>
-  <!-- GM 指令：執行層與面板分離，執行層同時被 Worker importScripts 載入 -->
-  <script src="js/gm_exec.js"></script>
+  <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js"></script>
-  <!-- Web Worker 遷移：協議與橋接。bridge.js 只在網址帶 ?worker=1 時才啟動 Worker，
-       未帶參數時完全不作用，單執行緒路徑照舊。 -->
+  <!-- 模擬 Worker 的協議與橋接。bridge.js 於 DOMContentLoaded 開機 -->
   <script src="js/worker/protocol.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/bridge.js"></script>

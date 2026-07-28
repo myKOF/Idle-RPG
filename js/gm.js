@@ -6,6 +6,14 @@
 (function () {
   var gmUi = null;
 
+  /* 本機判定。gm_exec.js 也有同名函式，但 P5 起那支只由 Worker 載入，
+     主執行緒拿不到——這裡是純環境檢查、沒有狀態，複製一份比為了它把
+     577 行的指令實作載進主執行緒划算。兩邊的判定條件必須一致。 */
+  function isGMHost() {
+    var host = (typeof location !== 'undefined' && location.hostname) || '';
+    return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+  }
+
   /* 送出指令。狀態的權威在 Worker，所以一律送過去；回覆到達前先顯示執行中。 */
   function submitGMCommand(text) {
     setGMStatus('執行中…', true);
