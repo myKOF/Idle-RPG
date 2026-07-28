@@ -11,7 +11,10 @@ function loadSelectionHelpers() {
   const context = {
     UI: { sel: null },
     slotTypeOf: (slot) => slot === 'weapon2' ? 'weapon' : slot,
-    equipTargetSlot: () => 'weapon2'
+    uiEquipTargetSlotFromSnapshot: () => 'weapon2',
+    uiInventoryPanelSnapshot: () => null,
+    uiEquipPanelSnapshot: () => null,
+    equipViewEquipment: () => ({})
   };
   vm.createContext(context);
   const start = uiSource.indexOf('function equipSlotType');

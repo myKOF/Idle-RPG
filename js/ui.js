@@ -1960,10 +1960,14 @@ function renderMpSkill(pEnt, prefix, stats) {
     for (var i = 0; i < lo.length; i++) {
       var entry = lo[i];
       var isPotE = typeof entry === 'string' && entry.indexOf('potential:') === 0;
-      var sk = isPotE ? (typeof potentialDef === 'function' ? potentialDef(entry.slice(10)) : null) : skillDef(entry);
+      var skillsSnapshot = uiSkillsPanelSnapshot();
+      var talentSnapshot = uiTalentPanelSnapshot();
+      var sk = isPotE ? (typeof potentialDef === 'function' ? potentialDef(entry.slice(10)) : null) : skillViewDef(skillsSnapshot, entry);
       if (!sk) continue;
       var cd = (pEnt.skillCds && pEnt.skillCds[entry]) || 0;
-      var lv = isPotE ? potentialLevel(sk.id) : skillLevel(entry);
+      var lv = isPotE
+        ? uiPotentialLevelFromSnapshot(talentSnapshot, sk.id)
+        : skillViewLevel(skillsSnapshot, entry);
       arr.push({ sk: sk, lv: lv, cd: cd, cost: isPotE ? 0 : skillManaCost(sk, lv) });
     }
 
@@ -2076,7 +2080,7 @@ function refreshStageDisplay(stageOverride) {
   var header = peekUiPanelData('header') || {};
   var stg = header.stage;
   if (!stg) return;
-  var znd = currentZoneDef();
+  var znd = uiCurrentZoneDef(header);
   var label = $id('stage-label');
   var best = $id('stage-best');
   var auto = $id('st-auto');
@@ -2700,10 +2704,10 @@ function renderDetail() {
   var tc = $id('toggle-compare');
   if (tc && tc.checked && UI.sel.source === 'inv') {
     var cmpEq = invSnapshot && invSnapshot.viewEquipment ? invSnapshot.viewEquipment : {};
-    var key = equipTargetSlot(it, cmpEq);
+    var key = uiEquipTargetSlotFromSnapshot(it, cmpEq);
     compareItem = cmpEq[key];
   }
-  var h = itemDetailHTML(it, null);
+  var h = uiItemDetailHTML(it, {}, headerSnapshot);
   var actionsHtml = '';
   var pendingKey = itemPendingKey(it.id);
   if (UI.sel.source === 'inv') {
@@ -2804,7 +2808,10 @@ function selectionSlotForItem(selItem) {
     return UI.sel.slot || null;
   }
   if (selItem && UI.sel && UI.sel.source === 'inv') {
-    return equipTargetSlot(selItem);
+    var invSnapshot = uiInventoryPanelSnapshot();
+    var equipSnapshot = uiEquipPanelSnapshot();
+    return uiEquipTargetSlotFromSnapshot(selItem,
+      (invSnapshot && invSnapshot.viewEquipment) || equipViewEquipment(equipSnapshot));
   }
   return null;
 }
@@ -4127,6 +4134,137 @@ function uiFactoryPanelSnapshot() {
   return panelData('factory');
 }
 
+/* Worker-only UI helpers.  These deliberately consume Snapshot data instead
+ * of calling simulation queries whose implementations read the main-thread G.
+ */
+function uiReincarnationCount(headerSnapshot) {
+  var header = headerSnapshot || uiHeaderPanelSnapshot();
+  var player = header && header.player;
+  var max = typeof REINCARNATION_MAX === 'number' ? REINCARNATION_MAX : 20;
+  return clamp(Math.floor(Number(player && player.reincarnations) || 0), 0, max);
+}
+
+function uiCurrentZoneDef(headerSnapshot) {
+  var header = headerSnapshot || uiHeaderPanelSnapshot();
+  var zone = header && header.stage && header.stage.zone || 'plains';
+  return ZONES[zone] || ZONES.plains || { name: zone, emoji: '' };
+}
+
+function uiPotentialLevelFromSnapshot(talentSnapshot, id, maxLv) {
+  return talentViewPotentialLevel(talentSnapshot, id,
+    maxLv === undefined ? skillViewPotentialMaxLevel(uiReincarnationCount()) : maxLv);
+}
+
+function uiProjectedItemScore(item) {
+  if (!item) return 0;
+  var score = 0;
+  var multiplier = typeof upgradeMult === 'function' ? upgradeMult(item) : 1;
+  (item.affixes || []).forEach(function (affix) {
+    score += (SCORE_WEIGHTS[affix.key] || 1) * (Number(affix.val) || 0) * multiplier;
+  });
+  (item.sockets || []).forEach(function (socket) {
+    if (!socket) return;
+    if (socket.fused && Array.isArray(socket.fused.stats)) {
+      socket.fused.stats.forEach(function (stat) {
+        var gemDef = GEM_TYPES[stat.type];
+        score += (Number(stat.val) || 0) * (SCORE_WEIGHTS[gemDef && gemDef.stat] || 1);
+      });
+    } else if (GEM_TYPES[socket.type]) {
+      var plainGem = GEM_TYPES[socket.type];
+      score += gemStatValue(socket.type, socket.level) * (SCORE_WEIGHTS[plainGem.stat] || 1);
+    }
+  });
+  if (item.passive) score *= 1.15;
+  if (item.godPassives) score *= 1 + 0.15 * item.godPassives.length;
+  var enchants = item.enchants || item.enchant ? (typeof itemEnchants === 'function' ? itemEnchants(item) : []) : [];
+  enchants.forEach(function (enchant) {
+    var def = ENCHANTS[enchant.key];
+    if (def) score += (def.cat === 'atk' ? 1.2 : 2) * (Number(enchant.val) || 0);
+  });
+  return score;
+}
+
+function uiEquipTargetSlotFromSnapshot(item, equipment) {
+  if (!item) return null;
+  var candidates = typeof equipSlotsForItem === 'function'
+    ? equipSlotsForItem(item).slice()
+    : [item.slot];
+  if (!candidates.length) return null;
+  if (UI.lastEquipSlot && candidates.indexOf(UI.lastEquipSlot) >= 0) return UI.lastEquipSlot;
+  var eq = equipment || {};
+  for (var i = 0; i < candidates.length; i++) {
+    if (!eq[candidates[i]]) return candidates[i];
+  }
+  var best = candidates[0];
+  var bestScore = Infinity;
+  candidates.forEach(function (slot) {
+    var score = uiProjectedItemScore(eq[slot]);
+    if (score < bestScore) { bestScore = score; best = slot; }
+  });
+  return best;
+}
+
+function uiItemDetailHTML(item, opts, headerSnapshot) {
+  if (!item) return '';
+  opts = opts || {};
+  var rarity = RARITIES[item.rarity] || { name: '未知', color: 'inherit', enchants: 0 };
+  var weapon = typeof weaponDef === 'function' ? weaponDef(item) : null;
+  var slotInfo = SLOT_INFO[item.slot] || { emoji: '⚔️', name: item.slot || '' };
+  var label = typeof itemTypeLabel === 'function' ? itemTypeLabel(item) : slotInfo.name;
+  var multiplier = typeof upgradeMult === 'function' ? upgradeMult(item) : 1;
+  var html = '<div class="it-name" style="position:relative;color:' + rarity.color + '">' +
+    (weapon ? weapon.emoji : slotInfo.emoji) + ' ' + esc(item.name || label) +
+    (item.upgrade ? ' <span class="it-up">+' + item.upgrade + '</span>' : '') +
+    (item.synthesized ? ' <span class="it-syn">✦合成</span>' : '') +
+    (item.locked ? ' 🔒' : '') +
+    (opts.isEquipped ? '<span class="equipped-tag">(現有裝備)</span>' : '') + '</div>';
+  html += '<div class="it-sub"><span>' + rarity.name + '・' + esc(label) + '・等級 ' +
+    fmt(item.level || 0) + '</span></div>';
+  html += '<div class="it-affixes">';
+  var affixes = Array.isArray(item.affixes) ? item.affixes : [];
+  affixes.forEach(function (affix) {
+    var def = AFFIX_POOL[affix.key];
+    if (!def) return;
+    var value = (Number(affix.val) || 0) * multiplier;
+    var valueText = def.pct ? pctStr(value) : fmt(value);
+    var marker = affix.ancient ? '<span class="ancient-star" aria-label="太古詞條">✡</span>' : '◆';
+    html += '<div class="it-affix-row it-affix' + (affix.ancient ? ' ancient-affix' : '') + '">' +
+      '<div class="it-affix-text">' + marker + ' ' + esc(def.name.replace('%', '')) + ' +' + valueText + '</div>' +
+      (opts.showAffixReroll === false ? '' : '<div class="it-affix-action"><button class="btn affix-reroll-btn" data-act="reroll-affix" data-affix="' + esc(affix.key) + '" aria-label="洗煉詞條">🎲</button></div>') +
+      '</div>';
+  });
+  html += '</div>';
+  if (item.passive && typeof passiveLine === 'function') {
+    html += '<div class="it-passive">' + esc(passiveLine(item.passive)) + '</div>';
+  }
+  if (Array.isArray(item.godPassives)) {
+    item.godPassives.forEach(function (passive) {
+      var def = GODFORGE_POOL[passive.key];
+      if (def) html += '<div class="it-godpassive">【' + esc(def.name) + '】' + esc(def.desc).replace('{v}', fmt1(passive.val)) + '</div>';
+    });
+  }
+  var enchants = typeof itemEnchants === 'function' ? itemEnchants(item) : (item.enchants || []);
+  enchants.forEach(function (enchant) {
+    if (typeof enchantLine === 'function') html += '<div class="it-enchant">' + esc(enchantLine(enchant)) + '</div>';
+  });
+  var sockets = Array.isArray(item.sockets) ? item.sockets : [];
+  if (sockets.length) {
+    html += '<div class="it-sockets">';
+    sockets.forEach(function (socket) {
+      if (socket && socket.fused && typeof fusedGemLabel === 'function') {
+        html += '<span class="socket filled fused-socket">' + esc(fusedGemLabel(socket.fused)) + '</span>';
+      } else if (socket && GEM_TYPES[socket.type]) {
+        var gem = GEM_TYPES[socket.type];
+        html += '<span class="socket filled">' + gem.emoji + ' ' + esc(GEM_NAMES[socket.level] + gem.name) + '</span>';
+      } else {
+        html += '<span class="socket empty">空插槽</span>';
+      }
+    });
+    html += '</div>';
+  }
+  return html;
+}
+
 function uiForgePanelSnapshot() {
   return panelData('forge');
 }
@@ -4493,7 +4631,7 @@ function talentNodeHTML(def, turn, snapshot) {
   var lv = snapshot ? talentViewLevel(snapshot, def.id) : talentLevel(def.id);
   var unlocked = snapshot ? talentViewUnlocked(snapshot, def.id) : talentUnlocked(def.id);
   var disabled = !!def.disabled;
-  var reincarnations = snapshot ? talentViewReincarnations(snapshot) : reincarnationCountSafe();
+  var reincarnations = snapshot ? talentViewReincarnations(snapshot) : uiReincarnationCount();
   var lockText = disabled ? (def.disabledReason || '目前暫不開放升級') : (reincarnations < turn ? '需 ' + turn + ' 轉' : '尚未開放');
   var locked = !unlocked || disabled;
   var aria = def.name + (disabled ? '（' + lockText + '）' : '');
@@ -4559,13 +4697,13 @@ function potentialNodeHTML(def, index, talentSnapshot, headerSnapshot) {
   var usingSnapshot = !!talentSnapshot;
   var reincarnations = usingSnapshot
     ? skillViewReincarnations(headerSnapshot, talentSnapshot)
-    : reincarnationCountSafe();
+    : uiReincarnationCount(headerSnapshot);
   var max = usingSnapshot
     ? skillViewPotentialMaxLevel(reincarnations)
     : potentialSkillMaxLv(def.id);
   var lv = usingSnapshot
     ? talentViewPotentialLevel(talentSnapshot, def.id, max)
-    : potentialLevel(def.id);
+    : uiPotentialLevelFromSnapshot(talentSnapshot, def.id, max);
   var unlocked = usingSnapshot
     ? talentViewPotentialUnlocked(talentSnapshot, def.id)
     : potentialUnlocked(def.id);
@@ -4876,7 +5014,9 @@ function skillViewDescription(id, def, level, skipFusionDetail, isPotential) {
         ? ''
         : '<div class="skt-components">（融合自：' + componentNames.map(esc).join(' ＋ ') + '）</div>');
   }
-  return describeSkill(id, level, skipFusionDetail);
+  // 技能定義已來自 skills Snapshot／靜態 SKILLS 表；不要呼叫
+  // describeSkill，該模擬層查詢會再回讀主執行緒 G.player.fusions。
+  return esc((def && (def.flavor || def.desc)) || '');
 }
 
 
@@ -5340,11 +5480,11 @@ function showItemTooltip(it, anchorEl, opts) {
     var cmpEq = tooltipInvSnapshot && tooltipInvSnapshot.viewEquipment
       ? tooltipInvSnapshot.viewEquipment
       : {};
-    var key = equipTargetSlot(it, cmpEq);
+    var key = uiEquipTargetSlotFromSnapshot(it, cmpEq);
     compareItem = cmpEq[key];
   }
 
-  var detailHtml = itemDetailHTML(it, null, { showAffixReroll: false });
+  var detailHtml = uiItemDetailHTML(it, { showAffixReroll: false }, uiHeaderPanelSnapshot());
   if (opts && opts.hint) {
     detailHtml += '<div class="skt-hint">' + opts.hint + '</div>';
   }
@@ -5352,7 +5492,7 @@ function showItemTooltip(it, anchorEl, opts) {
   var h = '';
   var mainCard = '<div class="equip-detail-card">' + detailHtml + '</div>';
   if (compareItem && compareItem.id !== it.id) {
-    var compCard = '<div class="equip-detail-card">' + itemDetailHTML(compareItem, null, { isEquipped: true, showAffixReroll: false }) + '</div>';
+    var compCard = '<div class="equip-detail-card">' + uiItemDetailHTML(compareItem, { isEquipped: true, showAffixReroll: false }, uiHeaderPanelSnapshot()) + '</div>';
     h = '<div class="equip-compare-container">' + mainCard + compCard + '</div>';
   } else {
     h = mainCard;
@@ -5452,7 +5592,7 @@ function showEnemyTooltip(anchorEl) {
       var s = 1;
       var elite = isEliteStage(s);
       var base = monsterStatsFor(s, elite);
-      var zn = currentZoneDef();
+      var zn = uiCurrentZoneDef(uiHeaderPanelSnapshot());
       var mtype = (zn && zn.pool && zn.pool.length) ? zn.pool[0] : { name: '未知怪物', emoji: '👾' };
       var mAspd = base.aspd * zn.aspdMult;
       m = {
@@ -6212,7 +6352,7 @@ function showConfirmDialog(message, onConfirm, options) {
   if (title) title.textContent = options.title || '操作確認';
   modal.className = 'modal-overlay confirm-modal' + (options.dialogClass ? ' ' + options.dialogClass : '');
   msg.textContent = message || '';
-  if (options.title === '轉生成功' && typeof reincarnationCount === 'function' && reincarnationCount() === 1) {
+  if (options.title === '轉生成功' && uiReincarnationCount() === 1) {
     var talentUnlockNotice = document.createElement('div');
     talentUnlockNotice.className = 'confirm-highlight';
     talentUnlockNotice.textContent = '已解鎖天賦系統！';
@@ -8071,9 +8211,16 @@ function initUI() {
         blog(reason, 'warn');
         return;
       }
-      createManualSaveToFolderV2().then(function (rec) {
-        UI.saveNoticeId = rec.id;
-        var text = '✅ 手動存檔已寫入本地資料夾「' + folderRes.dirName + '」：' + rec.fname;
+      sendUiCommand('save.toFolder', { label: folderRes.dirName || '' }, {
+        keys: [nodePendingKey('save-folder')],
+        panels: []
+      }).then(function (result) {
+        var error = uiCommandResultError(result);
+        if (error) throw new Error(error);
+        var rec = result && result.result ? result.result : result;
+        UI.saveNoticeId = rec && rec.id;
+        var text = '✅ 手動存檔已寫入本地資料夾「' + folderRes.dirName + '」' +
+          (rec && rec.fname ? '：' + rec.fname : '');
         if (m) m.textContent = text;
         blog(text, 'good');
         renderSaveList();
@@ -8130,7 +8277,11 @@ function initUI() {
   $id('btn-restart').addEventListener('click', function () {
     var restartAuto = autoSaveMetaV2();
     showConfirmDialog('確定要重新開局嗎？將開一個全新角色從頭重玩。\n目前進度已保留在「⚡ 即時自動存檔（第 ' + (restartAuto.runId || 1) + ' 局）」，所有存檔記錄都不會刪除，隨時可以讀回來。', function () {
-      restartGame();
+      sendUiCommand('save.restart', {}, {
+        keys: [nodePendingKey('save-restart')]
+      }).catch(function (error) {
+        reportUiCommandFailure('重新開局', error);
+      });
     }, { title: '重新開局確認', okText: '重新開局', danger: true });
   });
   // 讀取/刪除本地存檔（每列右側按鈕，需二次確認）
