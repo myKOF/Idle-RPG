@@ -286,5 +286,12 @@ test('Worker Snapshot 完整但主執行緒 G 為空時 initUI 與 uiTick 不拋
   // 直接覆蓋曾經讀取 G 的顯示查詢，確認投影路徑在 G={} 下可用。
   assert.doesNotThrow(() => context.refreshStageDisplay());
   assert.doesNotThrow(() => context.renderDetail());
+  assert.doesNotThrow(() => context.renderMpSkill({ mp: 0, skillCds: {} }, 'tp', null));
   assert.doesNotThrow(() => context.renderMpSkill({ mp: 0, skillCds: {} }, 'tp', { mp: 1 }));
+  assert.doesNotThrow(() => context.talentNodeHTML({
+    id: 'missing-talent', name: '缺少 Snapshot', emoji: '🔒', disabled: false
+  }, 1, null));
+  assert.doesNotThrow(() => context.potentialNodeHTML({
+    id: 'missing-potential', name: '缺少 Snapshot', emoji: '🔒'
+  }, 0, null, null));
 });

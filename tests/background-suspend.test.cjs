@@ -95,7 +95,7 @@ test('回到前景時以離線收益結算並鎖定 savedAt 基準', () => {
 });
 
 test('背景分頁跳過純視覺與輪詢工作', () => {
-  assert.match(uiSrc, /function floatText\(elId, text, cls, damageValue, ent\) \{\s*if \(uiRenderingSuspended\(\)\) return;/);
+  assert.match(uiSrc, /function floatText\(elId, text, cls, damageValue, ent, battleSnapshot\) \{\s*if \(uiRenderingSuspended\(\)\) return;/);
   assert.match(uiSrc, /function renderStatsPanel\(\) \{\s*if \(uiRenderingSuspended\(\)\) return;/);
   assert.match(mainSrc, /function checkForUpdates\(\) \{\s*if \(typeof document !== 'undefined' && document\.hidden\) return;/);
   assert.match(autoreloadSrc, /function poll\(\) \{\s*if \(document\.hidden\) return;/);
