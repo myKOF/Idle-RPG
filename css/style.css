@@ -73,6 +73,10 @@ select:focus {
 }
 
 body {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
   background: url('../images/diablo_main_bg.png') no-repeat center center fixed, #0a0a0a;
   background-size: cover;
   color: var(--text);
@@ -111,6 +115,7 @@ body {
    說�?：控?��??�網?��??��?塊�??�括?�戲 Logo?��?�?經�?/精華/魔塵?��??�全?��??��??��???
    ========================================================================== */
 #topbar {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -596,12 +601,14 @@ body {
    說�?：控?��?欄�??�適?�主佈�?結�?（左?�屬?�、中?�戰鬥�?/?��??�?�右?�日誌�?）�?
    ========================================================================== */
 #game-layout {
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   max-width: 1720px;
+  width: 100%;
   margin: 0 auto;
   gap: 16px;
-  padding: 14px 0 40px 16px;
-  height: calc(100vh - 70px);
+  padding: 14px 16px;
 }
 
 #workspace-area {
@@ -3097,9 +3104,16 @@ textarea#save-io {
    說�?：使??@media ?�詢，�?對寬�?900px 以�??��?機�?小螢幕�?將�??��??�為?��??��??��???
    ========================================================================== */
 @media (max-width: 900px) {
+  body {
+    height: auto;
+    overflow-y: auto;
+  }
+
   #game-layout {
+    flex: none;
     flex-direction: column;
     height: auto;
+    padding: 14px 16px 40px 16px;
   }
 
   #combat-area {
