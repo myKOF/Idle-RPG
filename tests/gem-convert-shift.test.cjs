@@ -83,10 +83,34 @@ test('Shift+left grid action removes exactly one gem and removes an empty slot',
 
 test('gem conversion info displays the Shift+left shortcut', () => {
   const { context, elements } = loadUi();
-  context.G = { player: { gems: { ruby: { 1: 1 } }, fusedGems: [] } };
   context.UI.convertSlots = [];
-  context.renderGemConvert();
+  context.renderGemConvert({ gems: { ruby: { 1: 1 } }, fusedGems: [] });
 
   const info = elements.get('gconv-info');
   assert.match(info.textContent + info.innerHTML, /Shift\+左鍵：單顆放入／取下/);
+});
+
+test('Shift conversion sends the exact gem.convert Worker command', async () => {
+  const { context } = loadUi();
+  let sent = null;
+  context.WorkerBridge = {
+    send(name, args) {
+      sent = { name, args: JSON.parse(JSON.stringify(args)) };
+      return Promise.resolve({ ok: true });
+    }
+  };
+  const adjusted = context.adjustGemConvertPool([], 'sapphire', 1, 3, true, 1000, 9);
+
+  await context.sendUiCommand('gem.convert', {
+    slots: adjusted.slots,
+    targetType: 'ruby'
+  }, { keys: [], panels: [] });
+
+  assert.deepEqual(sent, {
+    name: 'gem.convert',
+    args: {
+      slots: [{ type: 'sapphire', lv: 1, n: 1 }],
+      targetType: 'ruby'
+    }
+  });
 });

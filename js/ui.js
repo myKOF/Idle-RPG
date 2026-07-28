@@ -5858,6 +5858,50 @@ function renderFuseInfo(gemsSnapshot) {
 }
 
 /* ---- 寶石轉換（九宮格；UI.convertSlots = [{type,lv,n}]，轉換時才實際扣庫存） ---- */
+function copyGemConvertSlots(slots) {
+  return (slots || []).map(function (slot) {
+    return { type: slot.type, lv: slot.lv, n: slot.n };
+  });
+}
+
+function adjustGemConvertPool(slots, type, lv, available, single, stackLimit, slotLimit) {
+  var next = copyGemConvertSlots(slots);
+  var index = -1;
+  for (var i = 0; i < next.length; i++) {
+    if (next[i].type === type && next[i].lv === lv) {
+      index = i;
+      break;
+    }
+  }
+  var placed = index >= 0 ? next[index].n : 0;
+  var amount = Math.min(
+    Math.max(0, Number(stackLimit) - placed),
+    Math.max(0, Number(available) - placed)
+  );
+  if (single) amount = Math.min(1, amount);
+  if (amount <= 0) return { ok: false, reason: 'limit', amount: 0, slots: next };
+  if (index >= 0) {
+    next[index].n += amount;
+  } else {
+    if (next.length >= Number(slotLimit)) {
+      return { ok: false, reason: 'slots', amount: 0, slots: next };
+    }
+    next.push({ type: type, lv: lv, n: amount });
+  }
+  return { ok: true, amount: amount, slots: next };
+}
+
+function removeGemConvertSlot(slots, index, single) {
+  var next = copyGemConvertSlots(slots);
+  if (index < 0 || index >= next.length) {
+    return { ok: false, reason: 'missing', amount: 0, slots: next };
+  }
+  var amount = single ? 1 : next[index].n;
+  if (next[index].n <= amount) next.splice(index, 1);
+  else next[index].n -= amount;
+  return { ok: true, amount: amount, slots: next };
+}
+
 function renderGemConvert(gemsSnapshot) {
   var grid = $id('gconv-grid');
   if (!grid) return;
@@ -5886,9 +5930,9 @@ function renderGemConvert(gemsSnapshot) {
       var byLv = {};
       UI.convertSlots.forEach(function (s2) { byLv[s2.lv] = (byLv[s2.lv] || 0) + s2.n; });
       var parts = Object.keys(byLv).sort().map(function (lv2) { return esc(GEM_NAMES[lv2]) + ' ×' + byLv[lv2]; });
-      info.innerHTML = '轉換結果預覽：' + GEM_TYPES[target].emoji + esc(GEM_TYPES[target].name) + '（' + parts.join('、') + '）— 同階轉換、數量不變 <span style="color:#ef4444; margin-left: 8px;">(Shift+左鍵放入一顆)</span>';
+      info.innerHTML = '轉換結果預覽：' + GEM_TYPES[target].emoji + esc(GEM_TYPES[target].name) + '（' + parts.join('、') + '）— 同階轉換、數量不變 <span style="color:#ef4444; margin-left: 8px;">Shift+左鍵：單顆放入／取下</span>';
     } else {
-      info.innerHTML = '點下方庫存寶石放入九宮格，選擇目標種類後按「一鍵轉換」。 <span style="color:#ef4444; margin-left: 8px;">(Shift+左鍵放入一顆)</span>';
+      info.innerHTML = '點下方庫存寶石放入九宮格，選擇目標種類後按「一鍵轉換」。 <span style="color:#ef4444; margin-left: 8px;">Shift+左鍵：單顆放入／取下</span>';
     }
   }
   // 庫存池（顯示尚可放入的數量）
@@ -7174,26 +7218,37 @@ function initUI() {
       var pk = chip.getAttribute('data-gconv-pick').split(':');
       var t = pk[0], lv = parseInt(pk[1], 10);
       if (!UI.convertSlots) UI.convertSlots = [];
-      var slot = null;
-      UI.convertSlots.forEach(function (s) { if (s.type === t && s.lv === lv) slot = s; });
-      var placed = slot ? slot.n : 0;
-      var can = Math.min(
-        GEM_CONVERT_STACK - placed,
-        gemsViewCount(uiGemsPanelSnapshot(), t, lv) - placed
+      var gemsSnapshot = uiGemsPanelSnapshot();
+      var adjusted = adjustGemConvertPool(
+        UI.convertSlots,
+        t,
+        lv,
+        gemsViewCount(gemsSnapshot, t, lv),
+        e.shiftKey,
+        GEM_CONVERT_STACK,
+        GEM_CONVERT_SLOTS
       );
-      if (e.shiftKey && can > 0) can = 1;
-      if (can <= 0) { blog('⚠️ 該格已達上限（' + GEM_CONVERT_STACK + ' 顆）或庫存已放完', 'warn'); return; }
-      if (slot) slot.n += can;
-      else {
-        if (UI.convertSlots.length >= GEM_CONVERT_SLOTS) { blog('⚠️ 九宮格已滿（最多 ' + GEM_CONVERT_SLOTS + ' 種）', 'warn'); return; }
-        UI.convertSlots.push({ type: t, lv: lv, n: can });
+      if (!adjusted.ok) {
+        if (adjusted.reason === 'slots') {
+          blog('⚠️ 九宮格已滿（最多 ' + GEM_CONVERT_SLOTS + ' 種）', 'warn');
+        } else {
+          blog('⚠️ 該格已達上限（' + GEM_CONVERT_STACK + ' 顆）或庫存已放完', 'warn');
+        }
+        return;
       }
-      renderGemConvert();
+      UI.convertSlots = adjusted.slots;
+      renderGemConvert(gemsSnapshot);
     });
     $id('gconv-grid').addEventListener('click', function (e) {
       var el = e.target.closest('[data-gconv-slot]');
       if (!el) return;
-      UI.convertSlots.splice(parseInt(el.getAttribute('data-gconv-slot'), 10), 1);
+      var removed = removeGemConvertSlot(
+        UI.convertSlots,
+        parseInt(el.getAttribute('data-gconv-slot'), 10),
+        e.shiftKey
+      );
+      if (!removed.ok) return;
+      UI.convertSlots = removed.slots;
       renderGemConvert();
     });
     $id('gconv-btn').addEventListener('click', function () {
