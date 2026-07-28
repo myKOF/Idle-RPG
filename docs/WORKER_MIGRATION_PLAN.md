@@ -317,6 +317,72 @@ P4 的工作落在 Codex 的 `ui.js` 渲染節流那一欄，Worker 端暫時沒
 
 ---
 
+## 5.7 P5 拆除盤點（2026-07-28 實測）
+
+### 現況：主執行緒還揹著一整份遊戲狀態
+
+`?worker=1` 下實測（`save_lategame.json`）：
+
+```
+mainThreadGExists:    true
+mainThreadLevel:      9999
+mainThreadInventory:  800
+mainThreadGold:       121,381,729,507   ← 凍結不動
+workerGold:           121,381,733,964   ← 真正在跑的
+```
+
+因為 `main.js` 的 DOMContentLoaded 處理器（`main.js:118`）不分模式一律
+`loadGame()` → `G = loaded` → `applyOfflineProgress()` → `saveGame()`。
+`WORKER_MODE` 只擋掉了主迴圈（`main.js:175`）與存檔落地（`_saveSuppressed`），
+沒擋掉開機那一整套。所以目前每次開機：存檔讀兩次、migrate 跑兩次、
+離線結算算兩次（其中一次算完就丟）、800 件背包在記憶體裡有兩份。
+
+這是 P5 的實際收益，不只是「刪掉死碼」。
+
+### 主執行緒實際還用到哪些模擬層檔案
+
+以執行期探針量測：包住 17 支模擬層檔案的全部 660 個具名函式，
+在 `?worker=1` 下走完 9 個頁籤 + 統計面板 + 點裝備看詳情，記錄誰真的被呼叫。
+
+| 檔案 | 定義函式 | 主執行緒呼叫 | 判定 |
+|---|---|---|---|
+| `legendary.js` | 50 | **0** | 候選移除 |
+| `forge.js` | 30 | **0** | 候選移除 |
+| `newforge.js` | 23 | **0** | 候選移除 |
+| `factory.js` | 19 | **0** | 候選移除 |
+| `potential.js` | 11 | **0** | 候選移除 |
+| `tower.js` | 9 | **0** | 候選移除 |
+| `special_rules.js` | 4 | **0** | 候選移除 |
+| `formula.js` | 110 | 31 | 保留（衍生值格式化） |
+| `data.js` | 33 | 27 | 保留（敘述文字表） |
+| `util.js` | 19 | 9 | 保留（`fmt`／`esc`／`$id`） |
+| `combat.js` | 50 | 9 | 保留（buff 顯示、戰報 HTML） |
+| `save.js` | 73 | 8 | 保留（`SaveStorage` 重用其 I/O） |
+| `stats.js` | 19 | 7 | 保留（統計面板 HTML） |
+| `item.js` | 52 | 6 | 保留（`itemDetailHTML` 等） |
+| `player.js` | 27 | 5 | 保留（`getStats` 等） |
+| `skills.js` | 90 | 2 | 幾乎可清 |
+| `talents.js` | 41 | 2 | 幾乎可清 |
+
+⚠️ **「0 呼叫」不等於可以直接刪。** 這是動態覆蓋，沒有跑到的路徑不會出現。
+第一輪沒開統計面板時 `stats.js` 也是 0，補測後變成 7——正好說明這個方法的極限。
+真正的判定閘門是靜態的：Codex 收斂掉 `ui.js` 的 114 處 `workerUiStateEnabled()`
+分支之後重跑引用分析，引用歸零才刪。
+
+殘留相依集中在**顯示用的衍生計算與敘述文字**（`formula.js`／`data.js`／`util.js`），
+不是模擬邏輯——這代表 P3 的去狀態化是成功的。
+
+### 拆除順序（有先後相依，不可並行）
+
+| 階段 | 負責 | 內容 | 為何是這個順序 |
+|---|---|---|---|
+| P5a | Codex | 收斂 `js/ui.js` 的 114 處 `workerUiStateEnabled()` 分支，刪除舊路徑側 | 這是閘門。舊分支還在，`ui.js` 就還引用 `tower.js`／`forge.js` 等，script 標籤動不了 |
+| P5b | Claude | `main.js` 停止建立主執行緒 `G`；`bridge.enabled()` 恆真；`gm.js` 收斂分支 | 要等 P5a，否則 `ui.js` 的舊分支會讀到 `undefined` 的 `G` |
+| P5c | Claude | 依重跑後的引用分析移除 `index.html` 的 script 標籤 | 要等 P5b，否則 `main.js` 自己還在呼叫模擬層 |
+| P5d | Antigravity | 全流程驗收 | 最後 |
+
+---
+
 ## 6. 合流節奏
 
 1. 階段開始：三方各自對自己的分支執行 `git pull --ff-only`（與 develop 同步）。
