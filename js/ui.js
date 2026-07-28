@@ -4102,6 +4102,10 @@ function updateDmgAbsorb() {
 }
 
 
+function uiBattlePanelSnapshot() {
+  return panelData('battle');
+}
+
 function uiTalentPanelSnapshot() {
   return panelData('talents');
 }
