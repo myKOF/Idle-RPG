@@ -280,21 +280,6 @@ function migrateSave(data) {
   // 技能點總預算遷移：舊存檔沒有此欄位時，依轉生狀態補建。
   var hadSkillPointBudget = !!(data.player && data.player.skillPointBudget !== undefined);
   var hadZone = data.stage && data.stage.zone !== undefined; // 需在 mergeDefaults 前判斷
-  var hadSkillDmgV2 = !!data.skillDmgV2;                     // 需在 mergeDefaults 前判斷（merge 會補 true）
-  var hadSpecialBuffTrimV1 = !!data.specialBuffTrimV1;        // 一次性移除特殊技能第二增益
-  /* 需在 mergeDefaults 前判斷：newGameState 帶 gemAttrDmgBaseV1: true，
-     merge 會把它補進舊存檔，遷移就永遠不會執行。 */
-  var hadGemAttrDmgBaseV1 = !!data.gemAttrDmgBaseV1;
-  var hadNormalDmgAffixScaleV1 = !!data.normalDmgAffixScaleV1;
-  var hadNormalDmgAffixScaleV2 = !!data.normalDmgAffixScaleV2; // 一次性恢復先前被降低的普通敵人傷害詞條
-  var hadNormalDmgAffixScaleV3 = !!data.normalDmgAffixScaleV3; // 一次性修復仍低於新基準的既有詞條
-  var hadNormalDmgAffixScaleV4 = !!data.normalDmgAffixScaleV4; // 一次性縮回錯誤放大的普通敵人傷害詞條
-  var hadExternalGoldRecoveryV1 = !!data.externalGoldRecoveryV1;
-  var hadTalentTreesV2RespecV1 = !!data.talentTreesV2RespecV1;
-  var hadTalentTreesV2RespecV2 = !!data.talentTreesV2RespecV2;
-  var hadTalentTreesV2RespecV3 = !!data.talentTreesV2RespecV3;
-  var hadTalentTreesV2RespecV4 = !!data.talentTreesV2RespecV4;
-  var hadLimitMigration = !!data.equipSetPotentialLimitV1;
   var hadForgeUnlockNotice = !!(data.forge && data.forge.unlockNotified);
   var hadSalvageSlots = !!(data.factory && data.factory.salvageSlots !== undefined);
   // 熔爐合併改版旗標：需在 mergeDefaults 前判斷（merge 會補 noticeShown/tabSeen 預設 true）。
@@ -312,33 +297,6 @@ function migrateSave(data) {
   }
   
   mergeDefaults(data, def);
-  /* ONE-TIME MIGRATION: equipSetPotentialLimitV1（登錄於 ONE_TIME_MIGRATIONS.md）
-     多套裝備分級門檻與潛力 (3轉) 新開放門檻限制。
-     對於低於門檻卻已穿載多套裝備或點過潛力的舊存檔，載入時強制重置以防異常。 */
-  if (!hadLimitMigration) {
-    if (data.player) {
-      if (!equipmentSetUnlockedAtLevel(data.equipActive, data.player.level)) {
-        data.equipActive = 0;
-        data.equipView = 0;
-      } else if (!equipmentSetUnlockedAtLevel(data.equipView, data.player.level)) {
-        data.equipView = data.equipActive;
-      }
-      if (data.player.reincarnations < 3) {
-        data.player.talents.potentialLevels = {};
-      }
-    }
-    data.equipSetPotentialLimitV1 = true;
-  }
-  /* ONE-TIME MIGRATION: externalGoldRecoveryV1（登錄於 ONE_TIME_MIGRATIONS.md）
-     只處理在本次版本前已存在、尚未帶旗標的帳號；新帳號由 newGameState 預先標記完成。
-     金幣超過 10^16 時，調整後金幣 = sqrt(現有金幣) * 10000；未超過則保留原值。 */
-  if (!hadExternalGoldRecoveryV1) {
-    var currentGold = Number(data.player.gold);
-    if (isFinite(currentGold) && currentGold > 1e16) {
-      data.player.gold = Math.sqrt(currentGold) * 10000;
-    }
-    data.externalGoldRecoveryV1 = true;
-  }
   // 輸送帶改為固定 20,000 件；舊存檔超出的尾端項目直接丟棄，避免載入後仍保留巨型積壓。
   var conveyorLimit = typeof CONVEYOR_CAP === 'number' ? CONVEYOR_CAP : 20000;
   if (data.factory && Array.isArray(data.factory.conveyor) && data.factory.conveyor.length > conveyorLimit) {
@@ -427,92 +385,6 @@ function migrateSave(data) {
   if (!data.player.talents || typeof data.player.talents !== 'object') data.player.talents = { levels: {}, potentialLevels: {} };
   if (!data.player.talents.levels || typeof data.player.talents.levels !== 'object') data.player.talents.levels = {};
   if (!data.player.talents.potentialLevels || typeof data.player.talents.potentialLevels !== 'object') data.player.talents.potentialLevels = {};
-  /* ONE-TIME MIGRATION: talentTreesV2RespecV1（登錄於 ONE_TIME_MIGRATIONS.md）
-     天賦系統 V2（1～10 轉、成本改為「轉數+1」）：天賦樹與成本結構全面改版，
-     舊配置無法對應 → 全數重置並依「舊制成本」退還天賦點（升到 Lv.L 共 L×(L+1)/2 點）；
-     潛力技能等級一併歸零（潛力目前鎖定，理論上皆為 0）。新帳號由 newGameState 預先標記完成。 */
-  if (!hadTalentTreesV2RespecV1) {
-    var talentRespecRefund = 0;
-    Object.keys(data.player.talents.levels).forEach(function (oldTalentId) {
-      var oldTalentLv = clamp(Math.floor(Number(data.player.talents.levels[oldTalentId]) || 0), 0, TALENT_MAX_LEVEL);
-      talentRespecRefund += oldTalentLv * (oldTalentLv + 1) / 2;
-    });
-    data.player.talents.levels = {};
-    data.player.talents.potentialLevels = {};
-    if (talentRespecRefund > 0) {
-      data.player.reincarnationTalentPoints += talentRespecRefund;
-      data._talentRespecNotice = '天賦系統已改版為 1～10 轉：原有天賦已重置，退還 ' + talentRespecRefund + ' 點轉生天賦點';
-      // 外部玩家已 1 轉且曾升級任一天賦 → 載入後彈出一次性改版二次確認窗（main.js 顯示後刪除旗標）
-      if (data.player.reincarnations >= 1) data._talentRespecConfirm = true;
-    }
-    data.talentTreesV2RespecV1 = true;
-  }
-  /* ONE-TIME MIGRATION: talentTreesV2RespecV2（登錄於 ONE_TIME_MIGRATIONS.md）
-     天賦升級消耗改制（Lv.51 起每級加倍）：再次重置天賦，依「前一版成本」（每級 轉數+1 固定值）退還天賦點；
-     條件與二次確認窗與 V1 相同（已 1 轉且曾升級任一天賦才彈窗）。剛跑完 V1 的跳版舊檔此時天賦已空，不會重複退點。 */
-  if (!hadTalentTreesV2RespecV2) {
-    var talentRespec2Refund = 0;
-    if (typeof talentList === 'function') {
-      talentList().forEach(function (entry) {
-        var prevLv = clamp(Math.floor(Number(data.player.talents.levels[entry.def.id]) || 0), 0, TALENT_MAX_LEVEL);
-        talentRespec2Refund += prevLv * (entry.turn + 1);
-      });
-    }
-    data.player.talents.levels = {};
-    data.player.talents.potentialLevels = {};
-    if (talentRespec2Refund > 0) {
-      data.player.reincarnationTalentPoints += talentRespec2Refund;
-      data._talentRespecNotice = '天賦升級消耗已調整（Lv.51 起每級加倍）：原有天賦已重置，退還 ' + talentRespec2Refund + ' 點轉生天賦點';
-      if (data.player.reincarnations >= 1) data._talentRespecConfirm = true;
-    }
-    data.talentTreesV2RespecV2 = true;
-  }
-  /* ONE-TIME MIGRATION: talentTreesV2RespecV3（登錄於 ONE_TIME_MIGRATIONS.md）
-     天賦升級消耗再調整（基礎由 轉數+1 改為 轉數+2）：再次重置天賦，依「前一版成本」
-     （Lv.1～50 每級 轉數+1、Lv.51 起每級 (轉數+1)×2）退還天賦點；
-     條件與二次確認窗與前次相同。剛跑完 V1/V2 的跳版舊檔此時天賦已空，不會重複退點。 */
-  if (!hadTalentTreesV2RespecV3) {
-    var talentRespec3Refund = 0;
-    if (typeof talentList === 'function') {
-      talentList().forEach(function (entry) {
-        var prevLv3 = clamp(Math.floor(Number(data.player.talents.levels[entry.def.id]) || 0), 0, TALENT_MAX_LEVEL);
-        var prevBase3 = entry.turn + 1;
-        talentRespec3Refund += Math.min(prevLv3, TALENT_EFFECT_BREAK_LEVEL) * prevBase3 +
-          Math.max(0, prevLv3 - TALENT_EFFECT_BREAK_LEVEL) * prevBase3 * 2;
-      });
-    }
-    data.player.talents.levels = {};
-    data.player.talents.potentialLevels = {};
-    if (talentRespec3Refund > 0) {
-      data.player.reincarnationTalentPoints += talentRespec3Refund;
-      data._talentRespecNotice = '天賦升級消耗已再次調整（基礎改為 轉數+2）：原有天賦已重置，退還 ' + talentRespec3Refund + ' 點轉生天賦點';
-      if (data.player.reincarnations >= 1) data._talentRespecConfirm = true;
-    }
-    data.talentTreesV2RespecV3 = true;
-  }
-  /* ONE-TIME MIGRATION: talentTreesV2RespecV4（登錄於 ONE_TIME_MIGRATIONS.md）
-     天賦升級消耗再調整（基礎由 轉數+2 改為 轉數+9）：再次重置天賦，依「前一版成本」
-     （Lv.1～50 每級 轉數+2、Lv.51 起每級 (轉數+2)×2）退還天賦點；
-     條件與二次確認窗與前次相同。剛跑完 V1～V3 的跳版舊檔此時天賦已空，不會重複退點。 */
-  if (!hadTalentTreesV2RespecV4) {
-    var talentRespec4Refund = 0;
-    if (typeof talentList === 'function') {
-      talentList().forEach(function (entry) {
-        var prevLv4 = clamp(Math.floor(Number(data.player.talents.levels[entry.def.id]) || 0), 0, TALENT_MAX_LEVEL);
-        var prevBase4 = entry.turn + 2;
-        talentRespec4Refund += Math.min(prevLv4, TALENT_EFFECT_BREAK_LEVEL) * prevBase4 +
-          Math.max(0, prevLv4 - TALENT_EFFECT_BREAK_LEVEL) * prevBase4 * 2;
-      });
-    }
-    data.player.talents.levels = {};
-    data.player.talents.potentialLevels = {};
-    if (talentRespec4Refund > 0) {
-      data.player.reincarnationTalentPoints += talentRespec4Refund;
-      data._talentRespecNotice = '天賦升級消耗已再次調整（基礎改為 轉數+9）：原有天賦已重置，退還 ' + talentRespec4Refund + ' 點轉生天賦點';
-      if (data.player.reincarnations >= 1) data._talentRespecConfirm = true;
-    }
-    data.talentTreesV2RespecV4 = true;
-  }
   if (typeof talentList === 'function') {
     talentList().forEach(function (entry) {
       data.player.talents.levels[entry.def.id] = clamp(Math.floor(Number(data.player.talents.levels[entry.def.id]) || 0), 0, TALENT_MAX_LEVEL);
@@ -583,167 +455,6 @@ function migrateSave(data) {
     }
     data.equipSetNames.length = data.equipmentSets.length;
   })();
-  /* ONE-TIME MIGRATION: gemAttrDmgBaseV1（登錄於 ONE_TIME_MIGRATIONS.md）
-     六種「對屬性敵人傷害」寶石的 base 由 0.5 下修為 0.2。一般寶石以 gemStatValue
-     動態計算，改 base 就自動生效；但融合寶石的 stats[].val 是融合當下的固定值快照
-     （item.js 在寶石成為素材時寫死，之後每次再融合都沿用），不縮放就會永遠停在舊值——
-     同一種寶石，融合過的比沒融合的強 2.5 倍。
-
-     linear 曲線下縮放 base 等價於整體乘上 0.2/0.5 = 0.4，與階級無關。
-     只動這六種的 val：雙屬性融合寶石的另一個 stat、等級、融合次數、leaves 全部保留。 */
-  if (!hadGemAttrDmgBaseV1) {
-    var attrDmgGemTypes = Object.keys(GEM_TYPES).filter(function (t) {
-      var g = GEM_TYPES[t];
-      return g && g.linear && typeof g.stat === 'string' && g.stat.indexOf('dmgVs') === 0;
-    });
-    var scaleFusedGem = function (fg) {
-      if (!fg || !Array.isArray(fg.stats)) return;
-      fg.stats.forEach(function (st) {
-        if (!st || attrDmgGemTypes.indexOf(st.type) < 0) return;
-        var v = Number(st.val);
-        if (isFinite(v)) st.val = Math.round(v * 0.4 * 100) / 100;
-      });
-    };
-    /* 融合寶石有兩種存在位置：庫存，以及鑲嵌在裝備插槽裡（socket.fused）。
-       只掃庫存會漏掉玩家已經鑲上去的那些——而那正是實際生效中的。 */
-    var scaleSocketedFused = function (it) {
-      if (!it || !Array.isArray(it.sockets)) return;
-      it.sockets.forEach(function (sk) { if (sk && sk.fused) scaleFusedGem(sk.fused); });
-    };
-    var scaleFusedInArray = function (items) {
-      if (Array.isArray(items)) items.forEach(scaleSocketedFused);
-    };
-    (data.player && data.player.fusedGems || []).forEach(scaleFusedGem);
-    Object.keys(data.equipmentSets || {}).forEach(function (setKey) {
-      var set = data.equipmentSets[setKey];
-      if (!set || typeof set !== 'object') return;
-      Object.keys(set).forEach(function (slotKey) { scaleSocketedFused(set[slotKey]); });
-    });
-    scaleFusedInArray(data.inventory);
-    scaleFusedInArray(data.factory && data.factory.conveyor);
-    scaleFusedInArray(data.factory && data.factory.synthBuffer);
-    scaleFusedInArray(data.newForge && data.newForge.queue);
-    ((data.newForge && data.newForge.furnaces) || []).forEach(function (furnace) {
-      (furnace.lines || []).forEach(function (line) {
-        (line.belt || []).forEach(function (entry) { scaleSocketedFused(entry && entry.item); });
-      });
-    });
-    ((data.forge && data.forge.slots) || []).forEach(scaleSocketedFused);
-    data.gemAttrDmgBaseV1 = true;
-  }
-  /* ONE-TIME MIGRATION: normalDmgAffixScaleV2/V3/V4（登錄於 ONE_TIME_MIGRATIONS.md）
-     normalDmg 目前只恢復基礎值 10 倍，成長係數維持 0.035；V2/V3 回復歷史低值，V4 修正曾被錯誤放大的值。
-     只處理 normalDmg，菁英／BOSS 詞條與裝備其它資料完全保留。 */
-  if (!hadNormalDmgAffixScaleV2) {
-    var scaleNormalDmgAffix = function (it) {
-      if (!hadNormalDmgAffixScaleV1) return;
-      if (!it || !Array.isArray(it.affixes)) return;
-      it.affixes.forEach(function (affix) {
-        if (!affix || affix.key !== 'normalDmg') return;
-        var value = Number(affix.val);
-        if (isFinite(value)) {
-          affix.val = Math.round(value * 10);
-        }
-      });
-    };
-    var scaleItemArray = function (items) {
-      if (Array.isArray(items)) items.forEach(scaleNormalDmgAffix);
-    };
-    Object.keys(data.equipmentSets || {}).forEach(function (setKey) {
-      var set = data.equipmentSets[setKey];
-      if (!set || typeof set !== 'object') return;
-      Object.keys(set).forEach(function (slotKey) { scaleNormalDmgAffix(set[slotKey]); });
-    });
-    scaleItemArray(data.inventory);
-    scaleItemArray(data.factory && data.factory.conveyor);
-    scaleItemArray(data.factory && data.factory.synthBuffer);
-    scaleItemArray(data.newForge && data.newForge.queue);
-    ((data.newForge && data.newForge.furnaces) || []).forEach(function (furnace) {
-      (furnace.lines || []).forEach(function (line) {
-        (line.belt || []).forEach(function (entry) { scaleNormalDmgAffix(entry && entry.item); });
-      });
-    });
-    ((data.forge && data.forge.slots) || []).forEach(scaleNormalDmgAffix);
-    data.normalDmgAffixScaleV2 = true;
-  }
-  /* ONE-TIME MIGRATION: normalDmgAffixScaleV3
-     修復沒有 V1 標記、或 V2 執行前已留下的低值 normalDmg。
-     只將低於目前非太古最低擲值的詞條乘回 10；已正常或太古值不再變更。 */
-  if (!hadNormalDmgAffixScaleV3) {
-    var repairLowNormalDmgAffix = function (it) {
-      if (!it || !Array.isArray(it.affixes)) return;
-      var def = AFFIX_POOL.normalDmg;
-      var rarity = Number(it.rarity);
-      var level = Number(it.level);
-      var rarityDef = RARITIES[rarity];
-      if (!def || !rarityDef || !isFinite(level) || level < 1) return;
-      var restoredMin = (def.base + def.base * def.lv * (level - 1)) * rarityDef.mult * 0.8;
-      it.affixes.forEach(function (affix) {
-        if (!affix || affix.key !== 'normalDmg') return;
-        var value = Number(affix.val);
-        if (isFinite(value) && value > 0 && value < restoredMin) {
-          affix.val = Math.round(value * 10);
-        }
-      });
-    };
-    var repairItemArray = function (items) {
-      if (Array.isArray(items)) items.forEach(repairLowNormalDmgAffix);
-    };
-    Object.keys(data.equipmentSets || {}).forEach(function (setKey) {
-      var set = data.equipmentSets[setKey];
-      if (!set || typeof set !== 'object') return;
-      Object.keys(set).forEach(function (slotKey) { repairLowNormalDmgAffix(set[slotKey]); });
-    });
-    repairItemArray(data.inventory);
-    repairItemArray(data.factory && data.factory.conveyor);
-    repairItemArray(data.factory && data.factory.synthBuffer);
-    repairItemArray(data.newForge && data.newForge.queue);
-    ((data.newForge && data.newForge.furnaces) || []).forEach(function (furnace) {
-      (furnace.lines || []).forEach(function (line) {
-        (line.belt || []).forEach(function (entry) { repairLowNormalDmgAffix(entry && entry.item); });
-      });
-    });
-    ((data.forge && data.forge.slots) || []).forEach(repairLowNormalDmgAffix);
-    data.normalDmgAffixScaleV3 = true;
-  }
-  /* ONE-TIME MIGRATION: normalDmgAffixScaleV4
-     修復先前把 normalDmg 的成長係數也放大 10 倍所留下的過高值。
-     太古上限是目前基準值 × 1.2 × 1.35；超過此上限才縮回 1/10。 */
-  if (!hadNormalDmgAffixScaleV4) {
-    var repairOverScaledNormalDmgAffix = function (it) {
-      if (!it || !Array.isArray(it.affixes)) return;
-      var def = AFFIX_POOL.normalDmg;
-      var rarity = Number(it.rarity);
-      var level = Number(it.level);
-      var rarityDef = RARITIES[rarity];
-      if (!def || !rarityDef || !isFinite(level) || level < 1) return;
-      var ancientMax = Math.round((def.base + def.base * def.lv * (level - 1)) * rarityDef.mult * 1.2 * ANCIENT_AFFIX_VALUE_MULT * 10) / 10;
-      it.affixes.forEach(function (affix) {
-        if (!affix || affix.key !== 'normalDmg') return;
-        var value = Number(affix.val);
-        if (isFinite(value) && value > ancientMax) affix.val = Math.round(value / 10 * 10) / 10;
-      });
-    };
-    var repairOverScaledItemArray = function (items) {
-      if (Array.isArray(items)) items.forEach(repairOverScaledNormalDmgAffix);
-    };
-    Object.keys(data.equipmentSets || {}).forEach(function (setKey) {
-      var set = data.equipmentSets[setKey];
-      if (!set || typeof set !== 'object') return;
-      Object.keys(set).forEach(function (slotKey) { repairOverScaledNormalDmgAffix(set[slotKey]); });
-    });
-    repairOverScaledItemArray(data.inventory);
-    repairOverScaledItemArray(data.factory && data.factory.conveyor);
-    repairOverScaledItemArray(data.factory && data.factory.synthBuffer);
-    repairOverScaledItemArray(data.newForge && data.newForge.queue);
-    ((data.newForge && data.newForge.furnaces) || []).forEach(function (furnace) {
-      (furnace.lines || []).forEach(function (line) {
-        (line.belt || []).forEach(function (entry) { repairOverScaledNormalDmgAffix(entry && entry.item); });
-      });
-    });
-    ((data.forge && data.forge.slots) || []).forEach(repairOverScaledNormalDmgAffix);
-    data.normalDmgAffixScaleV4 = true;
-  }
   // 品質擴充至 8 階：篩選規則陣列補齊（新階預設保留）
   if (data.factory && data.factory.filter && data.factory.filter.actions) {
     while (data.factory.filter.actions.length < RARITIES.length) data.factory.filter.actions.push('keep');
@@ -779,16 +490,6 @@ function migrateSave(data) {
     data.stage.zone = 'plains';
     data.zoneProgress.plains = { current: data.stage.current || 1, best: data.stage.best || 1 };
   }
-  /* 2026-07-09 技能傷害全面重調：一般技能定義（SKILLS）已直接改數值，
-     但玩家自創融合技的 fx 是存檔快照 → 一次性等比加成（越強加越多，最高 +300%）。 */
-  if (!hadSkillDmgV2 && data.player.fusions && data.player.fusions.length) {
-    data.player.fusions.forEach(function (fs) {
-      if (!fs.fx || !fs.fx.base) return;
-      var mult = fs.fx.base >= 700 ? 4 : (fs.fx.base >= 400 ? 3.5 : 3);
-      fs.fx.base = Math.round(fs.fx.base * mult);
-      if (fs.fx.per) fs.fx.per = Math.round(fs.fx.per * mult * 10) / 10;
-    });
-  }
   /* ---- 技能點回溯修復（每次讀檔檢查）----
      已使用點數以所有技能等級總和計算；轉生玩家總預算固定 10000。
      若舊存檔曾因 bug 超支，保留玩家技能資料，不再破壞性清除；可用點數會安全封頂為 0。 */
@@ -798,19 +499,6 @@ function migrateSave(data) {
   var spTotal = Math.max(0, Math.floor(Number(data.player.skillPointBudget) || 0));
   if (spSpent > spTotal) {
     data._skillPointRepairNotice = '技能投入 ' + spSpent + ' 點超過總預算 ' + spTotal + ' 點，可用技能點已保護為 0；既有技能未刪除';
-  }
-  /* ONE-TIME MIGRATION: specialBuffTrimV1
-     特殊技能已移除第二個增益效果；既有融合技的 fx 是存檔快照，
-     只清理由這些特殊技能帶入的 buff2，不要求玩家重新消耗素材。 */
-  if (!hadSpecialBuffTrimV1 && data.player.fusions && data.player.fusions.length) {
-    var trimmedSpecialBuffs = 0;
-    data.player.fusions.forEach(function (fs) {
-      if (typeof trimLegacySpecialFusionBuff === 'function' && trimLegacySpecialFusionBuff(fs)) trimmedSpecialBuffs++;
-    });
-    data.specialBuffTrimV1 = true;
-    if (trimmedSpecialBuffs) {
-      data._specialBuffTrimNotice = '已清理 ' + trimmedSpecialBuffs + ' 個融合技能的特殊第二增益效果';
-    }
   }
   /* ONE-TIME MIGRATION: fusionFxDynamicV1（登錄於 ONE_TIME_MIGRATIONS.md）
      融合技效果改為動態重算：不再保存 fx 快照。能以現行素材定義重建者移除 fx；

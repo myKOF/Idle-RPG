@@ -8,7 +8,8 @@ const root = path.resolve(__dirname, '..');
 
 /* 六屬性傷害寶石 base 0.5→0.2：
    gemStatValue（linear）Lv1~5 = 0.2×等級（0.2/0.4/0.6/0.8/1.0）、Lv6 起前一級 ×2（2/4/8/16/32）。
-   融合寶石快照由 ONE-TIME MIGRATION gemAttrDmgBaseV1 一次性 ×0.4 縮放。 */
+   融合寶石的快照曾有一次性遷移 gemAttrDmgBaseV1，2026-07-28 隨全部一次性遷移一併移除
+   （改版後會刪檔，不再需要相容舊存檔）。 */
 
 function loadFormulaContext() {
   const context = { console, UI: { dirty: {} } };
@@ -66,56 +67,4 @@ test('鑲嵌一般屬性寶石以新 base 動態計算（無需遷移）', () =>
   c.G.equipment.helmet = { affixes: [], sockets: [{ type: 'spinel', level: 5 }] };
   const st = c.computeStats();
   assert.equal(st.dmgVsElem.fire, 1.0); // Lv5 = 0.2×5
-});
-
-test('遷移 gemAttrDmgBaseV1：融合寶石屬性傷害快照 ×0.4，其他屬性保留', () => {
-  const c = loadSaveContext();
-  const state = c.newGameState();
-  delete state.gemAttrDmgBaseV1;
-  // 單屬性融合寶石（5 階等值：舊 0.5×5=2.5 → 新 1.0）
-  state.player.fusedGems = [
-    { id: 'fg1', stats: [{ type: 'spinel', val: 2.5 }], level: 5, fusions: 0, leaves: 1 },
-    // 雙屬性：對火（縮放）＋物攻寶石 ruby（非屬性傷害，不動）
-    { id: 'fg2', stats: [{ type: 'aquamarine', val: 5.0 }, { type: 'ruby', val: 30 }], level: 6, fusions: 1, leaves: 2 }
-  ];
-
-  c.migrateSave(state);
-
-  assert.equal(state.gemAttrDmgBaseV1, true);
-  assert.equal(state.player.fusedGems[0].stats[0].val, 1.0);  // 2.5 × 0.4
-  assert.equal(state.player.fusedGems[1].stats[0].val, 2.0);  // 5.0 × 0.4（對冰）
-  assert.equal(state.player.fusedGems[1].stats[1].val, 30);   // ruby 不動
-});
-
-test('遷移掃描鑲嵌於裝備插槽內的融合寶石', () => {
-  const c = loadSaveContext();
-  const state = c.newGameState();
-  delete state.gemAttrDmgBaseV1;
-  // 使用中裝備套的頭盔插槽鑲了一顆對火融合寶石
-  state.equipmentSets[0].helmet = {
-    name: '頭盔', type: 'helmet', rarity: 5, level: 100, affixes: [], enchants: [],
-    sockets: [{ fused: { id: 'fgS', stats: [{ type: 'spinel', val: 2.5 }], level: 5, fusions: 0, leaves: 1 } }]
-  };
-
-  c.migrateSave(state);
-
-  const socket = state.equipmentSets[state.equipActive].helmet.sockets[0];
-  assert.equal(socket.fused.stats[0].val, 1.0); // 2.5 × 0.4
-});
-
-test('遷移冪等：旗標存在不再縮放；新帳號預帶旗標不觸發', () => {
-  const c = loadSaveContext();
-  const state = c.newGameState();
-  delete state.gemAttrDmgBaseV1;
-  state.player.fusedGems = [{ id: 'fg1', stats: [{ type: 'spinel', val: 2.5 }], level: 5, fusions: 0, leaves: 1 }];
-
-  c.migrateSave(state);
-  assert.equal(state.player.fusedGems[0].stats[0].val, 1.0);
-  c.migrateSave(state); // 第二次讀檔
-  assert.equal(state.player.fusedGems[0].stats[0].val, 1.0); // 不再縮放
-
-  const fresh = c.newGameState();
-  assert.equal(fresh.gemAttrDmgBaseV1, true);
-  c.migrateSave(fresh);
-  assert.equal(fresh.gemAttrDmgBaseV1, true);
 });
