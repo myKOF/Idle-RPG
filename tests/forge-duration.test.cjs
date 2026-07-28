@@ -27,16 +27,56 @@ test('神鑄時間依裝備品質與寶石階級符合規格', () => {
 
 test('神鑄使用可保存的鑄造狀態並由主迴圈完成結算', () => {
   const forgeJs = fs.readFileSync(path.join(root, 'js/forge.js'), 'utf8');
-  const mainJs = fs.readFileSync(path.join(root, 'js/main.js'), 'utf8');
+  const workerJs = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
   const uiJs = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const savedState = JSON.stringify({
+    forge: {
+      slots: [null, null, null, null, null, null],
+      dustSlots: [false, false, false, false, false, false],
+      crafting: { mode: 'equip', key: 5, startedAt: 1000, durationMs: 3000, rate: 100, cost: 0, dustCount: 0 },
+      result: null,
+      log: [],
+      unlocked: true,
+      unlockNotified: true,
+      autoFill: null,
+      autoForge: false
+    }
+  });
+  const context = {
+    console,
+    G: JSON.parse(savedState),
+    GT: 0,
+    UI: { dirty: {} },
+    FORGE_SLOTS: 6,
+    location: { search: '' },
+    performance: { now: () => 0 },
+    importScripts() {},
+    self: { postMessage() {} },
+    setInterval() { return 1; },
+    clearInterval() {},
+    Date: { now: () => 5000 }
+  };
+  vm.createContext(context);
+  vm.runInContext(forgeJs, context, { filename: 'js/forge.js' });
+  vm.runInContext(workerJs, context, { filename: 'js/worker/sim.worker.js' });
+  const resolved = [];
+  context.resolveForge = (crafting) => {
+    resolved.push({ ...crafting });
+    context.G.forge.result = { name: '測試結算產物' };
+    return null;
+  };
+  context.isCombatPaused = () => true;
+
+  context.simStep(1);
 
   assert.match(forgeJs, /f\.crafting\s*=/);
-  assert.match(forgeJs, /function forgeTick\(/);
-  assert.match(forgeJs, /function doForge\(startedAt\)/);
-  assert.match(forgeJs, /while \(f\.crafting && catchUpRounds < 200\)/);
-  assert.match(forgeJs, /doForge\(endAt\)/);
-  assert.match(mainJs, /forgeTick\(/);
+  assert.equal(context.G.forge.crafting, null);
+  assert.deepEqual(JSON.parse(JSON.stringify(resolved)), [{
+    mode: 'equip', key: 5, startedAt: 1000, durationMs: 3000, rate: 100, cost: 0, dustCount: 0
+  }]);
+  assert.deepEqual(context.G.forge.result, { name: '測試結算產物' });
+  assert.equal(context.GT, 0, '戰鬥暫停時戰鬥時間仍須凍結');
   assert.match(uiJs, /function renderForgeProgress\(/);
   assert.match(uiJs, /forge-progress-countdown/);
   assert.match(html, /id="forge-autoforge"/);
