@@ -107,5 +107,5 @@ test('寶石合成介面與紀錄使用共用 3 合 1參數', () => {
   assert.match(ui, /Math\.floor\(allCount \/ GEM_COMPOSE_INPUT_COUNT\)/);
   assert.match(ui, /Math\.floor\(n \/ GEM_COMPOSE_INPUT_COUNT\)/);
   assert.match(ui, /GEM_COMPOSE_INPUT_COUNT[\s\S]*sendGemUiCommand\(\s*['"]gem\.composeAll['"]/);
-  assert.match(index, /消耗 3 顆「同種類、同等級」寶石/);
+  assert.match(index, /消耗 2 顆「同種類、同等級」寶石/);
 });

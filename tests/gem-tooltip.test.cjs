@@ -66,11 +66,10 @@ test('conversion gem inventory chips expose gem ability values in tooltip text',
   const gems = makeGemInventory(context.GEM_TYPES);
   gems.ruby[3] = 2;
   gems.opal[4] = 1;
-  context.G = { player: { gems, fusedGems: [] } };
   context.UI.convertSlots = [];
   context.document.getElementById('gconv-target').value = 'ruby';
 
-  context.renderGemConvert();
+  context.renderGemConvert({ gems, fusedGems: [] });
 
   const html = elements.get('gconv-pool').innerHTML;
   assert.match(html, /data-tip="/);
@@ -84,10 +83,9 @@ test('一般寶石庫存顯示神鑄六階寶石並使用方形圖示', () => {
   const { context, elements } = loadGameContext();
   const gems = makeGemInventory(context.GEM_TYPES);
   gems.garnet[6] = 1;
-  context.G = { player: { gems, fusedGems: [] } };
   context.UI.convertSlots = [];
 
-  context.renderGemConvert();
+  context.renderGemConvert({ gems, fusedGems: [] });
 
   const html = elements.get('gconv-pool').innerHTML;
   assert.match(html, /六級石榴石/);
@@ -102,10 +100,9 @@ test('寶石融合素材池使用相同的方形圖示資訊', () => {
   const { context, elements } = loadGameContext();
   const gems = makeGemInventory(context.GEM_TYPES);
   gems.garnet[6] = 1;
-  context.G = { player: { gems, fusedGems: [] } };
   context.UI.gemFuseSlots = [null, null];
 
-  context.renderGemFusion();
+  context.renderGemFusion({ gems, fusedGems: [] });
 
   const html = elements.get('gfuse-pool').innerHTML;
   assert.match(html, /gem-inventory-cell/);
