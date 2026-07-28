@@ -368,9 +368,9 @@ test('GM 變更轉生次數會清空天賦並依新轉生次數重算天賦點',
 
   assert.equal(c.G.player.talents.levels.t1_str, 0);
   assert.equal(c.G.player.talents.potentialLevels[pot1], 0);
-  assert.equal(c.G.player.reincarnationTalentPoints, (3 - 1) * (c.REINCARNATION_LEVEL - 1) + (1234 - 1));
+  assert.equal(c.G.player.reincarnationTalentPoints, (3 - 1) * (c.REINCARNATION_LEVEL - 1) + (Math.min(1234, c.REINCARNATION_LEVEL) - 1));
 
-  c.G.player.level = 9999;
+  c.G.player.level = c.REINCARNATION_LEVEL;
   c.resetTalentsForReincarnationGM(0);
   assert.equal(c.G.player.reincarnationTalentPoints, 0);
 });
@@ -484,7 +484,7 @@ test('天賦與潛力圖示使用正式 tooltip，不再使用原生 title 提�
   vm.runInContext(ui, c, { filename: 'js/ui.js' });
   c.G.player.reincarnations = 10;
   const snapshot = talentPanelSnapshot(c);
-  const headerSnapshot = { player: { level: 9999, reincarnations: 10 } };
+  const headerSnapshot = { player: { level: c.REINCARNATION_LEVEL || 9999, reincarnations: 10 } };
   const talentHtml = c.talentNodeHTML(c.talentDef('t5_fire'), 5, snapshot);
   const potentialHtml = c.potentialNodeHTML(c.potentialDef('velocityForce'), 0, snapshot, headerSnapshot);
 
