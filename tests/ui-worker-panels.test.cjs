@@ -80,7 +80,7 @@ test('頂欄只讀 Worker header Snapshot 的資源、屬性與 DPS', () => {
   const renderHeader = functionBody('renderHeader');
   const renderAttrPanel = functionBody('renderAttrPanel');
 
-  assert.match(ui, /UI_PERSISTENT_PANEL_SUBSCRIPTIONS\s*=\s*\['talents', 'header'\]/);
+  assert.match(ui, /UI_PERSISTENT_PANEL_SUBSCRIPTIONS\s*=\s*\['talents', 'header', 'battle'\]/);
   assert.match(renderHeader, /uiHeaderPanelSnapshot\(\)/);
   assert.match(renderHeader, /headerSnapshot\.stats/);
   assert.match(renderHeader, /headerSnapshot\.viewStats \|\| st/);
