@@ -58,7 +58,7 @@ test('戰鬥日誌分類與色彩樣式規則驗證', () => {
   assert.match(forge, /blog\('🔯 鑄造失敗！損失 '[\s\S]*?,\s*'warn',\s*'factory'\);/);
   assert.match(forge, /blog\('🔯 神鑄成功！獲得 '[\s\S]*?,\s*'good',\s*'factory'\);/);
   assert.match(forge, /blog\('🔯 鑄造失敗！損失 '[\s\S]*?,\s*'warn',\s*'factory'\);/);
-  assert.match(ui, /blog\('🔀 寶石合成：'[\s\S]*?,\s*'info',\s*'factory'\);/);
+  assert.match(ui, /blog\('💎 寶石合成：'[\s\S]*?,\s*'info',\s*'factory'\);/);
   assert.match(ui, /blog\('♻️ 全部合成：'[\s\S]*?,\s*'good',\s*'factory'\);/);
   assert.match(ui, /blog\('🔄 寶石轉換完成：獲得 '[\s\S]*?,\s*'good',\s*'factory'\);/);
   assert.match(ui, /blog\('⛏️ 拆解 '[\s\S]*?,\s*'info',\s*'factory'\);/);
