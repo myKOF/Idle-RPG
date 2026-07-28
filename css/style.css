@@ -1276,23 +1276,23 @@ textarea#save-io {
 
 .float-txt.enemy-hit-float.dmg,
 .float-txt.enemy-hit-float.mdmg {
-  font-size: 14px;
+  font-size: 18px;
 }
 
 .float-txt.enemy-hit-float.crit,
 .float-txt.enemy-hit-float.skill {
-  font-size: 20px;
+  font-size: 22px;
 }
 
 /* ?�方?�?�害顏色依�?源判定�??�攻?�色?��??��??��??��??�影?��?體大小�?*/
 .float-txt.enemy-hit-float.enemy-attack {
   color: #ffffff;
-  font-size: 14px;
+  font-size: 18px;
   z-index: 10 !important;
 }
 
 .float-txt.enemy-hit-float.enemy-attack.crit {
-  font-size: 20px;
+  font-size: 22px;
 }
 
 .float-txt.enemy-hit-float.enemy-skill {
@@ -5424,30 +5424,30 @@ textarea#save-io {
 }
 
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt {
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.dmg,
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.mdmg {
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.crit,
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.skill {
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.crit,
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.skill {
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.enemy-attack {
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.enemy-attack.crit {
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.defend,
