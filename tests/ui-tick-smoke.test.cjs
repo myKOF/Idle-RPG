@@ -29,7 +29,11 @@ test('uiTick 可在 Worker Snapshot 存在時完成一次渲染派發', () => {
   vm.runInContext(fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8'), context, { filename: 'js/ui.js' });
 
   const battle = { field: { player: null, monsters: [] }, tower: null };
-  context.panelData = (key) => key === 'battle' ? battle : {};
+  let battleReads = 0;
+  context.panelData = (key) => {
+    if (key === 'battle') battleReads++;
+    return key === 'battle' ? battle : {};
+  };
   context.viewState = () => ({ hp: 1, hpMax: 1, mp: 1, mpMax: 1, towerActive: false });
   context.$id = () => null;
   context.flushPendingLogDom = () => {};
@@ -43,4 +47,5 @@ test('uiTick 可在 Worker Snapshot 存在時完成一次渲染派發', () => {
   context.entStatus = () => '';
 
   assert.doesNotThrow(() => context.uiTick());
+  assert.ok(battleReads > 0, 'uiTick 應讀取 battle Snapshot');
 });
