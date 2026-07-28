@@ -194,8 +194,8 @@ function fuseGemsV2(ref1, ref2) {
   var m2 = normalizeFuseMaterial(ref2);
   if (!m1 || !m2) return { err: '素材不足（僅限 5 階以上寶石）' };
   if (ref1.kind === 'plain' && ref2.kind === 'plain' && ref1.type === ref2.type &&
-      (ref1.lv || GEM_MAX_LEVEL) === (ref2.lv || GEM_MAX_LEVEL) &&
-      gemCount(ref1.type, ref1.lv || GEM_MAX_LEVEL) < 2) {
+    (ref1.lv || GEM_MAX_LEVEL) === (ref2.lv || GEM_MAX_LEVEL) &&
+    gemCount(ref1.type, ref1.lv || GEM_MAX_LEVEL) < 2) {
     return { err: '同種同階寶石需要 2 顆' };
   }
   if (ref1.kind === 'fused' && ref2.kind === 'fused' && ref1.id === ref2.id) return { err: '不能與自己融合' };
@@ -635,7 +635,7 @@ function itemDetailHTML(it, cmp, opts) {
       else sdiffStr = ' <span style="color: #f87171">↓' + fmt(-diffScore) + '</span>';
     }
   }
-  
+
   // 詞條池內容保留為隱藏模板，點擊按鈕時會搬到 body 層的獨立浮層，避免被詳情捲軸裁切。
   var poolHtml = '<div class="it-pool-box" aria-hidden="true">';
   poolHtml += '<div class="it-pool-title">可能出現的詞條：</div>';
@@ -643,16 +643,16 @@ function itemDetailHTML(it, cmp, opts) {
     var d = AFFIX_POOL[k];
     if (typeof affixIsAllLocked === 'function' && affixIsAllLocked(k)) continue;
     if (d.slots && d.slots.indexOf(it.slot) < 0 && d.slots.indexOf('all') < 0) continue;
-    var reqRarity = d.minR ? ' <span style="font-size:10.5px;color:'+RARITIES[d.minR].color+'">('+RARITIES[d.minR].name+'+)</span>' : '';
-    
+    var reqRarity = d.minR ? ' <span style="font-size:10.5px;color:' + RARITIES[d.minR].color + '">(' + RARITIES[d.minR].name + '+)</span>' : '';
+
     var baseVal = (d.base + d.base * d.lv * (it.level - 1)) * r.mult;
     var vMin = baseVal * 0.8;
     var vMax = baseVal * 1.2;
-    var strMin = d.pct ? Math.round(vMin * 10)/10 + '%' : Math.round(vMin);
-    var strMax = d.pct ? Math.round(vMax * 10)/10 + '%' : Math.round(vMax);
+    var strMin = d.pct ? Math.round(vMin * 10) / 10 + '%' : Math.round(vMin);
+    var strMax = d.pct ? Math.round(vMax * 10) / 10 + '%' : Math.round(vMax);
 
     poolHtml += '<div class="it-pool-item" style="display:flex; justify-content:space-between; gap:12px;">' +
-      '<span>• ' + d.name + reqRarity + '</span>' + 
+      '<span>• ' + d.name + reqRarity + '</span>' +
       '<span style="color:#71717a; font-size:11.5px; font-family:monospace;">[' + strMin + ' ~ ' + strMax + ']</span>' +
       '</div>';
   }
@@ -667,7 +667,7 @@ function itemDetailHTML(it, cmp, opts) {
     (showAffixReroll ? '<button type="button" class="btn-it-pool" data-affix-pool-toggle aria-label="查看可能詞條">!</button>' + poolHtml : '') +
     ((opts && opts.isEquipped) ? '<span class="equipped-tag" style="position: absolute; right: 10px; top: 2px; color: #4ade80; font-size: 13px; font-weight: bold;">(現有裝備)</span>' : '') +
     '</div>';
-  
+
   h += '<div class="it-sub"><span>' + r.name + '・' +
     ((typeof itemTypeLabel === 'function') ? itemTypeLabel(it) : SLOT_INFO[it.slot].name) + '・等級 ' + it.level;
   if (cmp && cmp.level !== it.level) {
@@ -692,7 +692,7 @@ function itemDetailHTML(it, cmp, opts) {
       cmpMap[a.key] = (cmpMap[a.key] || 0) + (a.key === 'loot' ? effectiveDropRateEffect(a.val) : a.val) * cum;
     }
   }
-  
+
   var processedKeys = {};
   for (var i = 0; i < it.affixes.length; i++) {
     var k = it.affixes[i].key;
@@ -703,7 +703,7 @@ function itemDetailHTML(it, cmp, opts) {
     var vCmp = cmpMap[k] || 0;
     var def = AFFIX_POOL[k];
     var name = esc(def.name.replace('%', ''));
-    
+
     var limits = getAffixLimits(k, it.level, it.rarity);
     var isMax = baseVal >= limits.max - 0.01;
     var limitMult = k === 'loot' ? DROP_RATE_EFFECT_MULT : 1;
@@ -713,10 +713,10 @@ function itemDetailHTML(it, cmp, opts) {
     var limitTip = isAncient
       ? '太古詞條：位置產出時決定、永久固定；數值必為滿值（上限 ×1.35），洗煉只變換詞條種類'
       : '洗煉區間：' + minDisplay + ' ~ ' + maxDisplay;
-    
+
     var valColor = isMax ? '#fbbf24' : '';
     var valHtml = '<span' + (valColor ? ' style="color:' + valColor + ';font-weight:bold"' : '') + '>' + (def.pct ? pctStr(vCur) : fmt(vCur)) + '</span>';
-    
+
     var rrBtn = '';
     if (showAffixReroll) {
       var rrCost = rerollCost(it);
@@ -726,7 +726,7 @@ function itemDetailHTML(it, cmp, opts) {
       var rrTip = '<div style="color:var(--dim);margin-bottom:4px">' + rrTipDesc + '</div>需要：' + rrGoldHtml + ' &nbsp;' + rrEssenceHtml;
       rrBtn = '<button class="btn affix-reroll-btn act-btn-tooltip" data-act="reroll-affix" data-affix="' + k + '" aria-label="洗煉詞條" data-tip="' + esc(rrTip) + '">🎲</button>';
     }
-    
+
     var diffStr = '';
     if (vCmp !== 0) {
       var diff = vCur - vCmp;
@@ -735,18 +735,18 @@ function itemDetailHTML(it, cmp, opts) {
         else diffStr = ' <span style="color: #fca5a5">↓' + (def.pct ? pctStr(-diff) : fmt(-diff)) + '</span>';
       }
     }
-    
+
     var lineStyle = (vCmp === 0 && cmp && !isAncient) ? 'color: #4ade80;' : '';
     var catClass = ' afx-' + affixCat(k);   // 詞條分類分色（基礎紫/進攻粉/防禦青/功能綠）
     if (isAncient) catClass += ' ancient-affix';
     var marker = isAncient ? '<span class="ancient-star" aria-label="太古詞條">✡</span>' : '◆';
     if (showAffixReroll) {
       h += '<div class="it-affix-row it-affix' + catClass + '" style="' + lineStyle + '">' +
-           '<div class="it-affix-text"><span class="act-btn-tooltip" style="cursor:help;" data-tip="' + esc(limitTip) + '">' + marker + ' ' + name + ' +' + valHtml + '</span>' +
-           diffStr + '</div><div class="it-affix-action">' + rrBtn + '</div></div>';
+        '<div class="it-affix-text"><span class="act-btn-tooltip" style="cursor:help;" data-tip="' + esc(limitTip) + '">' + marker + ' ' + name + ' +' + valHtml + '</span>' +
+        diffStr + '</div><div class="it-affix-action">' + rrBtn + '</div></div>';
     } else {
       h += '<div class="it-affix' + catClass + '" style="' + lineStyle + '"><span class="act-btn-tooltip" style="cursor:help;" data-tip="' + esc(limitTip) + '">' + marker + ' ' + name + ' +' + valHtml + '</span>' +
-           diffStr + '</div>';
+        diffStr + '</div>';
     }
   }
   if (cmp) {
@@ -798,67 +798,67 @@ function itemDetailHTML(it, cmp, opts) {
 
   // 附魔與寶石區塊可移至裝備頁右側；懸停提示仍保留完整效果。
   if (opts.showEnhancements !== false) {
-  // 附魔（多欄位，數量依稀有度）
-  var itEns = itemEnchants(it);
-  var cmpEns = cmp ? itemEnchants(cmp) : [];
-  var enCap = enchantCapFor(it);
-  var cmpEnMap = {};
-  cmpEns.forEach(function (ce) { cmpEnMap[ce.key] = ce.val; });
-  var itEnKeys = {};
-  itEns.forEach(function (en2) { itEnKeys[en2.key] = true; });
-  // 對方有而自己沒有的附魔（劃線顯示）
-  cmpEns.forEach(function (ce) {
-    if (!itEnKeys[ce.key] && ENCHANTS[ce.key]) {
-      h += '<div class="it-enchant" style="color: #f87171; text-decoration: line-through;">' + esc(enchantLine(ce)) + '</div>';
-    }
-  });
-  itEns.forEach(function (en, enIdx) {
-    var e = ENCHANTS[en.key];
-    if (!e) return;
-    if (!cmp) {
-      h += '<div class="it-enchant removable" data-enchant-remove="' + enIdx + '" data-tip="點擊取下（返還附魔書，精華不退）">' + esc(enchantLine(en)) + '</div>';
-    } else if (!(en.key in cmpEnMap)) {
-      h += '<div class="it-enchant" style="color: #4ade80">' + esc(enchantLine(en)) + '</div>';
-    } else {
-      var ediff = en.val - cmpEnMap[en.key];
-      var ediffStr = '';
-      if (Math.abs(ediff) > 0.05) {
-        var dfStr = (e.cat === 'atk') ? fmt(Math.abs(ediff)) : pctStr(Math.abs(ediff));
-        ediffStr = ediff > 0
-          ? ' <span style="color: #4ade80">↑' + dfStr + '</span>'
-          : ' <span style="color: #f87171">↓' + dfStr + '</span>';
+    // 附魔（多欄位，數量依稀有度）
+    var itEns = itemEnchants(it);
+    var cmpEns = cmp ? itemEnchants(cmp) : [];
+    var enCap = enchantCapFor(it);
+    var cmpEnMap = {};
+    cmpEns.forEach(function (ce) { cmpEnMap[ce.key] = ce.val; });
+    var itEnKeys = {};
+    itEns.forEach(function (en2) { itEnKeys[en2.key] = true; });
+    // 對方有而自己沒有的附魔（劃線顯示）
+    cmpEns.forEach(function (ce) {
+      if (!itEnKeys[ce.key] && ENCHANTS[ce.key]) {
+        h += '<div class="it-enchant" style="color: #f87171; text-decoration: line-through;">' + esc(enchantLine(ce)) + '</div>';
       }
-      var vs = (e.cat === 'atk') ? '+' + fmt(en.val) : '+' + pctStr(en.val);
-      h += '<div class="it-enchant">' + e.emoji + ' ' + esc(e.name) + ' ' + vs + ediffStr + '</div>';
-    }
-  });
-  for (var enSlot = itEns.length; enSlot < enCap; enSlot++) {
-    h += '<div class="it-enchant" style="color: var(--dim)">◇ 空附魔欄（' + enSlot + '/' + enCap + '）</div>';
-  }
-
-  /* 寶石插槽。
-     這裡刻意不呼叫 ensureSockets(it)——渲染函式不該改狀態。鑲孔補齊已由 Worker 在
-     開機與讀檔時統一處理（sim.worker.js 的 backfillItemSockets），在這裡再補一次，
-     碰到的還是 UI 端的快照複本，改了也不會回到權威狀態，只是白費而且誤導。 */
-  var sockets = Array.isArray(it.sockets) ? it.sockets : [];
-  if (sockets.length) {
-    h += '<div class="it-sockets">';
-    for (var si = 0; si < sockets.length; si++) {
-      var g = sockets[si];
-      if (g && g.fused) {
-        h += '<span class="socket filled fused-socket" data-socket-remove="' + si + '" data-tip="點擊取下">' +
-          esc(fusedGemLabel(g.fused)) + '</span>';
-      } else if (g && GEM_TYPES[g.type]) {
-        var gt = GEM_TYPES[g.type];
-        h += '<span class="socket filled" data-socket-remove="' + si + '" data-tip="點擊取下">' +
-          gt.emoji + ' ' + esc(GEM_NAMES[g.level] + gt.name) + '（' + esc(gt.statName.replace('%', '')) + ' +' +
-          (gt.pct ? pctStr(gemStatValue(g.type, g.level)) : fmt(gemStatValue(g.type, g.level))) + '）</span>';
+    });
+    itEns.forEach(function (en, enIdx) {
+      var e = ENCHANTS[en.key];
+      if (!e) return;
+      if (!cmp) {
+        h += '<div class="it-enchant removable" data-enchant-remove="' + enIdx + '" data-tip="點擊取下（返還附魔書，精華不退）">' + esc(enchantLine(en)) + '</div>';
+      } else if (!(en.key in cmpEnMap)) {
+        h += '<div class="it-enchant" style="color: #4ade80">' + esc(enchantLine(en)) + '</div>';
       } else {
-        h += '<span class="socket empty">◇ 空插槽</span>';
+        var ediff = en.val - cmpEnMap[en.key];
+        var ediffStr = '';
+        if (Math.abs(ediff) > 0.05) {
+          var dfStr = (e.cat === 'atk') ? fmt(Math.abs(ediff)) : pctStr(Math.abs(ediff));
+          ediffStr = ediff > 0
+            ? ' <span style="color: #4ade80">↑' + dfStr + '</span>'
+            : ' <span style="color: #f87171">↓' + dfStr + '</span>';
+        }
+        var vs = (e.cat === 'atk') ? '+' + fmt(en.val) : '+' + pctStr(en.val);
+        h += '<div class="it-enchant">' + e.emoji + ' ' + esc(e.name) + ' ' + vs + ediffStr + '</div>';
       }
+    });
+    for (var enSlot = itEns.length; enSlot < enCap; enSlot++) {
+      h += '<div class="it-enchant" style="color: var(--dim)">◇ 空附魔欄（' + enSlot + '/' + enCap + '）</div>';
     }
-    h += '</div>';
-  }
+
+    /* 寶石插槽。
+       這裡刻意不呼叫 ensureSockets(it)——渲染函式不該改狀態。鑲孔補齊已由 Worker 在
+       開機與讀檔時統一處理（sim.worker.js 的 backfillItemSockets），在這裡再補一次，
+       碰到的還是 UI 端的快照複本，改了也不會回到權威狀態，只是白費而且誤導。 */
+    var sockets = Array.isArray(it.sockets) ? it.sockets : [];
+    if (sockets.length) {
+      h += '<div class="it-sockets">';
+      for (var si = 0; si < sockets.length; si++) {
+        var g = sockets[si];
+        if (g && g.fused) {
+          h += '<span class="socket filled fused-socket" data-socket-remove="' + si + '" data-tip="點擊取下">' +
+            esc(fusedGemLabel(g.fused)) + '</span>';
+        } else if (g && GEM_TYPES[g.type]) {
+          var gt = GEM_TYPES[g.type];
+          h += '<span class="socket filled" data-socket-remove="' + si + '" data-tip="點擊取下">' +
+            gt.emoji + ' ' + esc(GEM_NAMES[g.level] + gt.name) + '（' + esc(gt.statName.replace('%', '')) + ' +' +
+            (gt.pct ? pctStr(gemStatValue(g.type, g.level)) : fmt(gemStatValue(g.type, g.level))) + '）</span>';
+        } else {
+          h += '<span class="socket empty">◇ 空插槽</span>';
+        }
+      }
+      h += '</div>';
+    }
   }
   return h;
 }
@@ -892,13 +892,13 @@ function rerollSingleAffix(it, affixKey) {
   var used = {};
   for (var i = 0; i < it.affixes.length; i++) {
     if (it.affixes[i].key === affixKey) {
-      targetIdx = i; 
+      targetIdx = i;
     } else {
       used[it.affixes[i].key] = true;
     }
   }
   if (targetIdx < 0) return '找不到指定的屬性';
-  
+
   var pool = [];
   for (var k in AFFIX_POOL) {
     var d = AFFIX_POOL[k];
@@ -908,7 +908,7 @@ function rerollSingleAffix(it, affixKey) {
     if (used[k]) continue;
     pool.push([k, d.weight]);
   }
-  
+
   if (pool.length === 0) return '沒有其他可用的屬性';
 
   consumeRerollResources(cost);
@@ -919,7 +919,7 @@ function rerollSingleAffix(it, affixKey) {
   var isAncient = !!it.affixes[targetIdx].ancient;
   var newVal = isAncient ? ancientAffixValue(newKey, it.level, it.rarity) : rollAffixValue(newKey, it.level, it.rarity, affixCap);
   it.affixes[targetIdx] = { key: newKey, val: newVal, ancient: isAncient };
-  
+
   markStatsDirty();
   UI.dirty.header = true; UI.dirty.equip = true; UI.dirty.inv = true;
   return null;
