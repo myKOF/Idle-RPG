@@ -17,7 +17,7 @@ test('BOSS對戰及高塔結果結算界面具備屬性提示按鈕', () => {
 
   // 確保 UI 邏輯有綁定對應的事件處理
   assert.match(ui, /id === 'btn-boss-tip' \|\| anchorEl\.id === 'btn-tower-result-boss-tip'/);
-  assert.match(ui, /towerRuntime && \(towerRuntime\.boss \|\|[\s\S]*towerRuntime\.floor \? makeBoss\(towerRuntime\.floor\) : null\)/);
+  assert.match(ui, /var towerRuntime = towerSnapshot && towerSnapshot\.runtime[\s\S]*towerRuntime && towerRuntime\.boss/);
   assert.match(ui, /e\.target\.closest\('#btn-enemy-tip'\) \|\| e\.target\.closest\('#btn-boss-tip'\) \|\| e\.target\.closest\('#btn-tower-result-boss-tip'\)/);
 });
 

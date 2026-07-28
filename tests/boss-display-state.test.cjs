@@ -21,7 +21,7 @@ test('高塔傷害飄字會在沒有新傷害後清理，且進場會清除上�
 test('停止戰鬥時高塔倒數固定，不再由逐幀動畫反覆重設', () => {
   const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
 
-  assert.match(ui, /var paused = workerUiStateEnabled\(\)[\s\S]*?\?\s*!!\(view && view\.paused\)[\s\S]*?if \(paused\) UI\.towerTimerAnchor = null;/);
+  assert.match(ui, /var paused = !!\(view && view\.paused\)[\s\S]*?if \(paused\) UI\.towerTimerAnchor = null;/);
   assert.match(ui, /if \(paused\) \{[\s\S]*?UI\.towerTimerRaf = 0;[\s\S]*?return;[\s\S]*?\}\r?\n  UI\.towerTimerRaf = scheduleTowerTimerFrame\(\);/);
   assert.match(ui, /if \(paused\) \{[\s\S]*?stopTowerTimerAnimation\(\);[\s\S]*?renderTowerTimerFrame\(\);/);
   assert.match(ui, /if \(!UI\.towerTimerAnchor \|\| UI\.towerTimerAnchor\.elapsed !== runtime\.elapsed\)/);
