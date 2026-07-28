@@ -15,15 +15,21 @@ function loadFormulaContext() {
   return context;
 }
 
-test('全局減傷詞綴為史詩以上且不限制裝備部位', () => {
+/* 部位限制以 config/CSV/Equipment_Affix.csv 第 26 列為準（CSV 為最高權威）：
+   helmet;shoulder;chest;wrist;legs;boots;ring;amulet——即防具與飾品，不含武器與副手。
+   本測試原本斷言「不限制部位」（slots === undefined），與 CSV 不符，2026-07-28 更正。 */
+test('全局減傷詞綴為史詩以上，且只出現在防具與飾品', () => {
   const context = loadFormulaContext();
   const def = context.AFFIX_POOL.globalDmgRed;
   assert.ok(def);
   assert.equal(def.name, '全局減傷');
   assert.equal(def.pct, false);
   assert.equal(def.minR, 4);
-  assert.equal(def.slots, undefined);
-  assert.equal(context.SLOT_LIST.every((slot) => !def.slots || def.slots.includes(slot)), true);
+  // def.slots 來自 vm 沙箱，跨 realm 的 Array 原型不同，deepStrictEqual 會誤判，改比內容
+  assert.equal(Array.from(def.slots).join(','),
+    'helmet,shoulder,chest,wrist,legs,boots,ring,amulet');
+  // 列出的部位都必須是合法槽位
+  assert.equal(def.slots.every((slot) => context.SLOT_LIST.includes(slot)), true);
 });
 
 test('全局減傷在最終傷害階段套用指定公式，無詞綴時維持原傷害', () => {
