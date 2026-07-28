@@ -43,7 +43,10 @@ function checkForUpdates() {
     .catch(function(e){});
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+/* 掛在 TabLock 而非 DOMContentLoaded：沒有取得多分頁鎖的分頁完全不初始化遊戲——
+   不建 Worker、不 initUI、不讀存檔，只留一層遮罩。這樣「取得控制權的分頁」永遠是
+   一個剛載入、還沒跑過任何東西的頁面，不必處理半初始化狀態（見 js/tablock.js）。 */
+TabLock.onGranted(function () {
   initUI();
   if (typeof initGM === 'function') initGM();
 
