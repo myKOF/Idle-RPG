@@ -55,7 +55,7 @@ function reincarnationExpBaseAdd(count) {
 }
 
 // 升到下一級所需經驗 =（30 × 等級^2 + 40）× 轉生經驗倍率（各轉倍數由參數表 a~j 制定、累積連乘）＋ 升級經驗基礎增加值（依轉生次數）
-function xpForLevel(l) { return Math.floor((30 * Math.pow(l, 2.2) + 40) * reincarnationExpMultiplier() + reincarnationExpBaseAdd()); }
+function xpForLevel(l) { return Math.floor((30 * Math.pow(l, 3) + 40) * reincarnationExpMultiplier() + reincarnationExpBaseAdd()); }
 
 /* 等級基礎四維主屬性（不含裝備）：力/敏/智/耐 相同
    = 5 + (等級 - 1) × 2 */
@@ -825,10 +825,10 @@ function segmentedLevelGrowth(base, level, brackets) {
 }
 
 function monsterStatsFor(stage, elite) {
-  var hp = (30 + stage * 8) * Math.pow(1.095, stage - 1);
-  var atk = (6 + stage * 1.2) * Math.pow(1.11, stage - 1);
-  var def = (2 + stage * 0.5) * Math.pow(1.08, stage - 1);
-  var gold = (125 + stage) * Math.pow(1.02, stage - 1);
+  var hp = (30 + stage * 20) * Math.pow(1.06, stage - 1);
+  var atk = (3 + stage * 5) * Math.pow(1.055, stage - 1);
+  var def = (2 + stage * 0.5) * Math.pow(1.06, stage - 1);
+  var gold = (125 + stage) * Math.pow(1.018, stage - 1);
   var xp = (16 + stage) * Math.pow(1.06, stage - 1);
   var m = {
     level: stage, hp: hp, atk: atk,
@@ -840,7 +840,7 @@ function monsterStatsFor(stage, elite) {
     gold: gold, xp: xp, elite: !!elite
   };
   if (elite) {
-    m.hp *= 3; m.atk *= 2; m.gold *= 2; m.xp *= 2; m.dodge += 5; m.aspd = 3;
+    m.hp *= 4; m.atk *= 2.5; m.gold *= 2; m.xp *= 2; m.dodge += 3; m.aspd = 1.5;
   }
   return m;
 }

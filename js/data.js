@@ -54,14 +54,14 @@ var DEMON_SEED_BOSS_RATE_CAP = 100;
 /* ---- 轉生系統 ----
    生命與四維在原始總值完成後套用最終倍率：
    1～10 轉分別為 ×10、×20、×40、×80、×160、×320、×640、×1280、×2560、×5120。 */
-var MAX_LEVEL = 9999;             // 角色等級上限（升級所需經驗 參數 d）
+var MAX_LEVEL = 1000;             // 角色等級上限（升級所需經驗 參數 d）
 var SKILL_POINT_BUDGET_CAP = 10000; // 技能點總預算上限（技能點總預算 參數 c）
 var REINCARNATION_LEVEL = 9999;   // 可轉生等級：達此級可轉生（可轉生等級 參數 a）
 var REINCARNATION_MAX = 20;
 var REINCARNATION_RANKS = ['冒險者', '勇者', '大劍師', '破世者', '不朽者', '王者', '大主宰', '神聖尊者', '大聖王', '至高主宰', '位面創世神', '神位1階', '神位2階', '神位3階', '神位4階', '神位5階', '神位6階', '神位7階', '神位8階', '神位9階', '神位終階'];
-var REINCARNATION_EXTRA_MULTIPLIERS = [0, 10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 8000, 11200, 15680, 21952, 30732.8, 43025.92, 60236.288, 84330.8032, 118063.12448, 165288.374272];
+var REINCARNATION_EXTRA_MULTIPLIERS = [0, 1.5, 2.5, 3.5, 5, 7, 10, 14, 18, 24, 30, 60, 100, 150, 200, 300, 450, 650, 800, 1200, 2500];
 // 升級經驗基礎增加值：升級所需經驗在括號外再加此值（依轉生次數；轉生 0 次為 0，1~10 次見轉生對照表 參數 c）。
-var REINCARNATION_EXP_BASE_ADD = [0, 100000, 300000, 900000, 2700000, 8100000, 24300000, 72900000, 218700000, 656100000, 1968300000, 9841500000, 49207500000, 246037500000, 1230187500000, 6150937500000, 30754687500000, 153773437500000, 768867187500000, 3844335937500000, 19221679687500000];
+var REINCARNATION_EXP_BASE_ADD = [0, 500000, 1500000, 3000000, 6000000, 12000000, 24000000, 48000000, 96000000, 192000000, 384000000, 768000000, 1536000000, 3072000000, 6144000000, 12288000000, 24576000000, 49152000000, 98304000000, 196608000000, 393216000000];
 var REINCARNATION_EXP_MULTIPLIERS = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 1e11, 1e13, 1e15, 1e17, 1e19, 1e21, 1e23, 1e25, 1e27, 1e29, 1e33];
 var REINCARNATION_SKILL_MAX_LEVELS = [20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120];
 var REINCARNATION_FUSION_MAX_LEVELS = [0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240];
@@ -188,22 +188,19 @@ var FIELD_ENEMY_COUNT_TABLE = [[1, 60], [2, 25], [3, 10], [4, 5]];
 /* ---- 野外怪物命中／閃避分段成長 ----
    rate 是該等級區間「每級增加值」；未填 max 代表從 min 起套用至無限。 */
 var FIELD_MONSTER_HIT_BASE = 100;
-var FIELD_MONSTER_HIT_GROWTH = [
-  { min: 1, max: 49, rate: 0.5 },
-  { min: 50, max: 99, rate: 0.75 },
+var FIELD_MONSTER_HIT_GROWTH = [{ min: 1, max: 49, rate: 0.5 },
+  { min: 50, max: 99, rate: 0.7 },
   { min: 100, max: 149, rate: 1 },
-  { min: 150, max: 199, rate: 2 },
-  { min: 200, max: 299, rate: 2.5 },
-  { min: 300, rate: 3 }
-];
+  { min: 150, max: 199, rate: 1.4 },
+  { min: 200, max: 299, rate: 1.8 },
+  { min: 300, rate: 2 }];
 var FIELD_MONSTER_DODGE_BASE = 5;
-var FIELD_MONSTER_DODGE_GROWTH = [
-  { min: 1, max: 49, rate: 0.5 },
-  { min: 50, max: 99, rate: 0.75 },
-  { min: 100, max: 149, rate: 1 },
-  { min: 150, max: 199, rate: 1.5 },
-  { min: 200, rate: 2 }
-];
+var FIELD_MONSTER_DODGE_GROWTH = [{ min: 1, max: 49, rate: 0.5 },
+  { min: 50, max: 99, rate: 0.65 },
+  { min: 100, max: 149, rate: 0.8 },
+  { min: 150, max: 199, rate: 1 },
+  { min: 200, max: 299, rate: 1.2 },
+  { min: 300, rate: 1.5 }];
 
 /* ---- 裝備部位 ----
    SLOT_LIST = 裝備欄位（13 欄，含雙武器/雙戒指）；ITEM_TYPES = 物品種類（11 種）。
@@ -444,9 +441,9 @@ var GODFORGE_POOL = {
    base: 一級基準值, lv: 每裝備等級成長係數, pct: 是否百分比顯示,
    weight: 出現權重, minR: 最低稀有度, slots: 限定部位（省略=全部）      */
 var AFFIX_POOL = {
-  atkFlat: { name: '物理攻擊', base: 4, lv: 0.55, pct: false, weight: 11, slots: ['weapon', 'belt', 'gloves', 'ring', 'amulet'] },
+  atkFlat: { name: '物理攻擊', base: 4, lv: 0.55, pct: false, weight: 11, slots: ['weapon', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   atkPct: { name: '物理攻擊%', base: 4, lv: 0.02, pct: true, weight: 7, slots: ['weapon', 'belt', 'gloves', 'ring', 'amulet'] },
-  matkFlat: { name: '魔法攻擊', base: 4, lv: 0.55, pct: false, weight: 11, slots: ['weapon', 'belt', 'gloves', 'ring', 'amulet'] },
+  matkFlat: { name: '魔法攻擊', base: 4, lv: 0.55, pct: false, weight: 11, slots: ['weapon', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   matkPct: { name: '魔法攻擊%', base: 4, lv: 0.02, pct: true, weight: 7, slots: ['weapon', 'belt', 'gloves', 'ring', 'amulet'] },
   hpFlat: { name: '生命值', base: 22, lv: 3, pct: false, weight: 11, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
   hpPct: { name: '生命值%', base: 5, lv: 0.02, pct: true, weight: 7, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
@@ -465,7 +462,7 @@ var AFFIX_POOL = {
   normalDmgRed: { name: '普通敵人傷害抗性', base: 6, lv: 0.35, pct: false, weight: 9, minR: 4, slots: ['shoulder', 'chest', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   eliteDmgRed: { name: '菁英傷害抗性', base: 6, lv: 0.35, pct: false, weight: 9, minR: 4, slots: ['shoulder', 'chest', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   bossDmgRed: { name: 'BOSS傷害抗性', base: 6, lv: 0.35, pct: false, weight: 9, minR: 4, slots: ['shoulder', 'chest', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
-  aspd: { name: '攻擊速度%', base: 3, lv: 0.012, pct: true, weight: 6, slots: ['weapon', 'ring', 'amulet'] },
+  aspd: { name: '攻擊速度%', base: 3, lv: 0.012, pct: true, weight: 6, slots: ['weapon', 'gloves', 'ring', 'amulet'] },
   critRate: { name: '暴擊率%', base: 2.5, lv: 0.012, pct: true, weight: 6, slots: ['weapon', 'belt', 'ring', 'amulet'] },
   critDmg: { name: '暴擊傷害%', base: 8, lv: 0.05, pct: true, weight: 5, slots: ['weapon', 'belt', 'ring', 'amulet'] },
   pPen: { name: '物理穿透%', base: 3, lv: 0.015, pct: true, weight: 4, minR: 4, slots: ['weapon', 'gloves', 'wrist', 'ring', 'amulet'] },
@@ -473,26 +470,25 @@ var AFFIX_POOL = {
   hit: { name: '命中率%', base: 3, lv: 0.015, pct: true, weight: 5, slots: ['helmet', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   cdr: { name: '冷卻縮減%', base: 2.5, lv: 0.01, pct: true, weight: 4, minR: 4, slots: ['helmet', 'belt', 'gloves', 'ring', 'amulet'] },
   castSpeed: { name: '施法速度%', base: 3, lv: 0.012, pct: true, weight: 4, minR: 4, slots: ['all_lock'] },
-  lifesteal: { name: '吸血%', base: 1.5, lv: 0.008, pct: true, weight: 4, slots: ['gloves', 'ring', 'amulet'] },
-  manaSteal: { name: '吸魔%', base: 1.2, lv: 0.006, pct: true, weight: 3, minR: 4, slots: ['gloves', 'ring', 'amulet'] },
-  eliteDmg: { name: '對菁英傷害%', base: 4, lv: 0.02, pct: true, weight: 4, minR: 3, slots: ['weapon', 'helmet', 'ring', 'amulet'] },
-  bossDmg: { name: '對BOSS傷害%', base: 4, lv: 0.02, pct: true, weight: 4, minR: 3, slots: ['weapon', 'helmet', 'ring', 'amulet'] },
-  normalDmg: { name: '對普通敵人傷害%', base: 3, lv: 0.035, pct: true, weight: 9, minR: 3, slots: ['weapon', 'helmet', 'ring', 'amulet'] },
+  lifesteal: { name: '吸血%', base: 1.5, lv: 0.008, pct: true, weight: 4, slots: ['chest', 'wrist', 'ring', 'amulet'] },
+  manaSteal: { name: '吸魔%', base: 1.2, lv: 0.006, pct: true, weight: 3, minR: 4, slots: ['chest', 'wrist', 'ring', 'amulet'] },
+  eliteDmg: { name: '對菁英傷害%', base: 4, lv: 0.02, pct: true, weight: 4, minR: 3, slots: ['weapon', 'helmet', 'shoulder', 'ring', 'amulet'] },
+  bossDmg: { name: '對BOSS傷害%', base: 4, lv: 0.02, pct: true, weight: 4, minR: 3, slots: ['weapon', 'helmet', 'shoulder', 'ring', 'amulet'] },
+  normalDmg: { name: '對普通敵人傷害%', base: 3, lv: 0.035, pct: true, weight: 9, minR: 3, slots: ['weapon', 'helmet', 'shoulder', 'ring', 'amulet'] },
   dmgVsFire: { name: '對火屬性敵人傷害%', base: 0.8, lv: 0.005, pct: true, weight: 3, minR: 3, slots: ['weapon', 'ring', 'amulet'] },
   dmgVsIce: { name: '對冰屬性敵人傷害%', base: 0.8, lv: 0.005, pct: true, weight: 3, minR: 3, slots: ['weapon', 'ring', 'amulet'] },
   dmgVsLightning: { name: '對雷屬性敵人傷害%', base: 0.8, lv: 0.005, pct: true, weight: 3, minR: 3, slots: ['weapon', 'ring', 'amulet'] },
   dmgVsPoison: { name: '對毒屬性敵人傷害%', base: 0.8, lv: 0.005, pct: true, weight: 3, minR: 3, slots: ['weapon', 'ring', 'amulet'] },
   dmgVsLight: { name: '對聖屬性敵人傷害%', base: 0.8, lv: 0.005, pct: true, weight: 3, minR: 3, slots: ['weapon', 'ring', 'amulet'] },
   dmgVsDark: { name: '對暗屬性敵人傷害%', base: 0.8, lv: 0.005, pct: true, weight: 3, minR: 3, slots: ['weapon', 'ring', 'amulet'] },
-  // 屬性傷害提升（六大屬性，2026-07-23 新增）：提升「自身」該屬性元素傷害輸出（§3.2 步驟 5 乘區；formula.js affixElemDmgUp 聚合）
-  elemDmgFire: { name: '火屬性傷害提升%', base: 2, lv: 0.01, pct: true, weight: 3, minR: 3, slots: ['weapon', 'ring', 'amulet'] },
-  elemDmgIce: { name: '冰屬性傷害提升%', base: 2, lv: 0.01, pct: true, weight: 3, minR: 3, slots: ['weapon', 'ring', 'amulet'] },
-  elemDmgLightning: { name: '雷屬性傷害提升%', base: 2, lv: 0.01, pct: true, weight: 3, minR: 3, slots: ['weapon', 'ring', 'amulet'] },
-  elemDmgPoison: { name: '毒屬性傷害提升%', base: 2, lv: 0.01, pct: true, weight: 3, minR: 3, slots: ['weapon', 'ring', 'amulet'] },
-  elemDmgLight: { name: '聖屬性傷害提升%', base: 2, lv: 0.01, pct: true, weight: 3, minR: 3, slots: ['weapon', 'ring', 'amulet'] },
-  elemDmgDark: { name: '暗屬性傷害提升%', base: 2, lv: 0.01, pct: true, weight: 3, minR: 3, slots: ['weapon', 'ring', 'amulet'] },
+  elemDmgFire: { name: '火屬性傷害提升%', base: 2, lv: 0.01, pct: true, weight: 3, minR: 3, slots: ['weapon', 'belt', 'gloves', 'wrist', 'ring', 'amulet'] },
+  elemDmgIce: { name: '冰屬性傷害提升%', base: 2, lv: 0.01, pct: true, weight: 3, minR: 3, slots: ['weapon', 'belt', 'gloves', 'wrist', 'ring', 'amulet'] },
+  elemDmgLightning: { name: '雷屬性傷害提升%', base: 2, lv: 0.01, pct: true, weight: 3, minR: 3, slots: ['weapon', 'belt', 'gloves', 'wrist', 'ring', 'amulet'] },
+  elemDmgPoison: { name: '毒屬性傷害提升%', base: 2, lv: 0.01, pct: true, weight: 3, minR: 3, slots: ['weapon', 'belt', 'gloves', 'wrist', 'ring', 'amulet'] },
+  elemDmgLight: { name: '聖屬性傷害提升%', base: 2, lv: 0.01, pct: true, weight: 3, minR: 3, slots: ['weapon', 'belt', 'gloves', 'wrist', 'ring', 'amulet'] },
+  elemDmgDark: { name: '暗屬性傷害提升%', base: 2, lv: 0.01, pct: true, weight: 3, minR: 3, slots: ['weapon', 'belt', 'gloves', 'wrist', 'ring', 'amulet'] },
   aoeDmg: { name: '範圍傷害%', base: 4, lv: 0.02, pct: true, weight: 4, minR: 4, slots: ['weapon', 'amulet'] },
-  blockRate: { name: '格擋率%', base: 2.5, lv: 0.012, pct: true, weight: 4, slots: ['shoulder', 'chest', 'gloves', 'wrist', 'legs', 'amulet'] },
+  blockRate: { name: '格擋率%', base: 2.5, lv: 0.012, pct: true, weight: 4, slots: ['weapon', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'amulet'] },
   blockDmgRed: { name: '格擋減傷%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 4, slots: ['shoulder', 'chest', 'gloves', 'wrist', 'legs', 'amulet'] },
   evasion: { name: '閃避率%', base: 2, lv: 0.01, pct: true, weight: 4, slots: ['helmet', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   tenacity: { name: '韌性%', base: 4, lv: 0.02, pct: true, weight: 3, minR: 4, slots: ['helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
@@ -939,15 +935,15 @@ var ZONES = {
   },
   god_battlefield: {
     name: '太古戰場', emoji: '⚔️', pool: GOD_BATTLEFIELD_POOL, realm: 'god',
-    hpMult: 10, atkMult: 5, defMult: 4, aspdMult: 2.2, rewardMult: 2.5
+    hpMult: 10, atkMult: 5, defMult: 4, aspdMult: 1.75, rewardMult: 5
   },
   god_chaos: {
     name: '混沌界', emoji: '🌀', pool: GOD_CHAOS_POOL, realm: 'god',
-    hpMult: 25, atkMult: 10, defMult: 8, aspdMult: 2.5, rewardMult: 3.5, reqZone: 'god_battlefield', reqStage: 100
+    hpMult: 25, atkMult: 10, defMult: 8, aspdMult: 2, rewardMult: 12, reqZone: 'god_battlefield', reqStage: 100
   },
   god_sanctuary: {
     name: '永恒神域', emoji: '✨', pool: GOD_SANCTUARY_POOL, realm: 'god',
-    hpMult: 60, atkMult: 20, defMult: 15, aspdMult: 3.0, rewardMult: 5.0, reqZone: 'god_chaos', reqStage: 100
+    hpMult: 60, atkMult: 20, defMult: 15, aspdMult: 2.25, rewardMult: 25, reqZone: 'god_chaos', reqStage: 100
   }
 };
 function currentZoneDef() {
