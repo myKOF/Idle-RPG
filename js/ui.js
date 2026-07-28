@@ -631,6 +631,7 @@ function bindWorkerUiState() {
   WorkerBridge.on(MSG_OUT.BOOTED, function (msg) {
     applyUiSnapshot(msg.snapshot);
     updateWorkerSafeModeMarker();
+    handleWorkerUiEvents(msg.events);
     handleWorkerBootNotices(msg.notices);
   });
   WorkerBridge.on(MSG_OUT.FULL, function (msg) {
