@@ -50,9 +50,10 @@ D:\MyGame\Idle-RPG\main
 
 目前鎖定中的核心檔案：
 
-- js/worker/*（Claude）
-- js/bridge.js、js/storage.js、js/main.js、index.html（Claude）
-- js/ui.js（P3 起 Codex 專屬，目前尚未開放修改）
+無。P0～P5 遷移期的鎖定條件都是「P5 完成」，已全部依其自身條件解除（見第 5 節）。
+
+下方第 5 節與 AGENTS.md 的所有權慣例只用來降低同時修改的機率，
+**不是承接任務的門檻**——使用者指派給誰就由誰做完整件事（`AI_RULES.md` 第 3.1 節）。
 
 進行中的大型工程：
 
@@ -62,7 +63,7 @@ Worker 是模擬與存檔的唯一權威，主執行緒不再持有 `G`，舊單
 遷移期的計劃書 `docs/WORKER_MIGRATION_PLAN.md` 已刪除——關鍵設計決策與效能基準
 已移入 `docs/WORKER_PROTOCOL.md` 第 9、10 節。
 
-長期文件：`docs/WORKER_PROTOCOL.md` + `js/worker/protocol.js`（v7，唯一資料來源）。
+長期文件：`docs/WORKER_PROTOCOL.md` + `js/worker/protocol.js`（v9，唯一資料來源）。
 **動到 Worker、bridge、面板投影或指令之前必須先讀。**
 
 驗收記錄：`docs/P3_FULL_REGRESSION_REPORT.md`、`docs/P4_BACKPACK_VIRTUAL_SCROLL_REPORT.md`、
@@ -77,9 +78,12 @@ P5 之後的檔案所有權慣例（沿用即可，非硬性）：
 - `js/ui.js`：Codex
 - 協議變更一律由 Claude 改 `protocol.js` 並同步 `docs/WORKER_PROTOCOL.md`、遞增版本號
 
-`npm test` 現況 491 項／456 通過／**35 失敗**。這 35 條是遷移前就存在的既有落差
-（測試斷言過時、CSV 與測試不同步等），與 Worker 無關，見 `docs/TEST_FAILURE_TRIAGE.md`。
-往後的驗收標準仍是「不得新增失敗」，並以結尾的 `ℹ fail N` 為準。
+`npm test` 現況 **509 項／509 通過／0 失敗**（2026-07-28）。
+先前記錄的 35 條既有失敗（`docs/TEST_FAILURE_TRIAGE.md`）已全部清掉。
+
+驗收標準仍是「不得新增失敗」，並以結尾的 `ℹ fail N` 為準——
+⚠️ 不要用 `grep -c '^✖'`，node test runner 會在結尾的失敗摘要區把每筆再列一次，
+得到的是兩倍數字。
 
 ---
 
@@ -1205,39 +1209,20 @@ Claude（P1 驗證結果 + P2 存檔素材）
 
 # 5. 檔案鎖定
 
-同一時間，同一個正式檔案只能由一個 AI 修改。
+鎖定的用途是避免**兩個進行中的任務同時改同一支檔案**，不是宣告長期所有權。
+使用者指派給誰就由誰做完整件事，鎖定不構成承接任務的門檻
+（`AI_RULES.md` 第 3.1 節）。
+
+只有在「另一個 AI 正在進行的任務會動到同一支檔案」時才登記鎖定，
+任務結束即解除。長期的檔案負責慣例寫在第 1 節，不在這裡。
 
 目前鎖定檔案：
 
-檔案：js/worker/*（含 protocol.js、sim.worker.js、shim.js）
-負責 AI：Claude
-任務：Web Worker 遷移 P0–P5
-鎖定時間：2026-07-27
-解除條件：P5 完成
+無。
 
-檔案：js/bridge.js
-負責 AI：Claude
-任務：Web Worker 遷移 P1
-鎖定時間：2026-07-27
-解除條件：P1 合併後
-
-檔案：index.html
-負責 AI：Claude
-任務：Web Worker 遷移 P1 feature flag 接線、P5 移除舊路徑
-鎖定時間：2026-07-27
-解除條件：P5 完成
-
-檔案：js/ui.js
-負責 AI：Codex（P3 起）
-任務：Web Worker 遷移 P3 UI 去狀態化
-鎖定時間：P3 開始時生效
-解除條件：P5 完成。Claude 全程不得直接修改，僅能以 Code Review 意見交付
-
-檔案：tests/worker-*.test.cjs
-負責 AI：Codex
-任務：Web Worker 遷移 P1
-鎖定時間：2026-07-27
-解除條件：P1 合併後
+> 2026-07-28：P0～P5 遷移期登記的五項鎖定（`js/worker/*`、`js/bridge.js`、
+> `index.html`、`js/ui.js`、`tests/worker-*.test.cjs`）解除條件均為「P1 合併後」
+> 或「P5 完成」，兩者皆已達成，依其自身條件解除。
 
 記錄格式：
 
@@ -1359,7 +1344,7 @@ Commit：
 
 任務分類：
 
-建議負責 AI：
+負責 AI：（使用者指派者；未指派時由收到任務的 AI 自行完成）
 
 任務內容：
 
