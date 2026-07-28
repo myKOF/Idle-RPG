@@ -9,7 +9,9 @@ test('神鑄創世使用彩色流動外框，且不擴散到其他品質', () =>
   const block = css.match(/\.eff-godforged\s*\{[\s\S]*?\n\}/)?.[0] || '';
   assert.match(block, /border:\s*none\s*!important/);
   assert.match(css, /\.eff-godforged::before\s*\{[\s\S]*conic-gradient\([\s\S]*#ff3b30[\s\S]*#0a84ff[\s\S]*#bf5af2/);
-  assert.match(css, /\.eff-godforged::before\s*\{[\s\S]*animation:\s*godforgedRainbowSpin\s+0\.3s\s+linear\s+infinite/);
+  /* 轉速 2.0s：6f45893（2026-07-11）首版是 0.3s，dc767e0（07-13）刻意調慢。
+     0.3 秒轉一圈過於閃爍，這是視覺上的取捨，不是回歸。 */
+  assert.match(css, /\.eff-godforged::before\s*\{[\s\S]*animation:\s*godforgedRainbowSpin\s+2\.0s\s+linear\s+infinite/);
   assert.match(css, /\.eff-godforged::after\s*\{[\s\S]*rgba\(184,\s*134,\s*11,\s*0\.9\)[\s\S]*rgba\(139,\s*101,\s*8,\s*0\.95\)/);
   assert.match(css, /\.eff-godforged::after\s*\{[\s\S]*conic-gradient\([\s\S]*rgba\(0,\s*0,\s*0,\s*0\.22\)/);
   assert.match(css, /\.eff-godforged::after\s*\{[\s\S]*animation:\s*godforgedInnerFlow\s+[\d.]+s\s+linear\s+infinite/);

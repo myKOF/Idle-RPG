@@ -61,15 +61,6 @@ function newGameState() {
   return {
     version: 1,
     runId: 1,           // 第幾局（重新開局 +1；每局的自動存檔各自獨立，舊存檔以 mergeDefaults 補 1）
-    skillDmgV2: true,   // 2026-07-09 技能傷害重調旗標（migrateSave 據此對舊存檔融合技做一次性加成）
-    specialBuffTrimV1: true, // 特殊技能第二增益移除後的既有融合技能一次性清理旗標
-    externalGoldRecoveryV1: true,
-    talentTreesV2RespecV1: true, // 天賦系統 V2（1~10 轉）改版：新帳號無需重置退點
-    talentTreesV2RespecV2: true, // 天賦升級消耗改制（Lv.51 起加倍）第二次重置：新帳號無需處理
-    talentTreesV2RespecV3: true, // 天賦升級消耗再調整（基礎改轉數+2）第三次重置：新帳號無需處理
-    talentTreesV2RespecV4: true, // 天賦升級消耗再調整（基礎改轉數+9）第四次重置：新帳號無需處理
-    equipSetPotentialLimitV1: true, // 多套裝備分級門檻與潛力 (3轉) 的相容旗標：新帳號無需重置
-    gemAttrDmgBaseV1: true, // 六屬性傷害寶石 base 0.5→0.2：新帳號的融合寶石快照本來就是新值
 
     savedAt: Date.now(),
     player: {

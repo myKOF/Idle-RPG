@@ -932,8 +932,10 @@ function boot(msg) {
       '，請至【天賦】頁重新配點（新制成本＝天賦轉數+9／級，Lv.51 起每級加倍）。', cls: 'warn' });
     delete G._talentRespecNotice;
   }
-  /* ONE-TIME MIGRATION: talentTreesV2RespecV1（登錄於 ONE_TIME_MIGRATIONS.md）
-     這一則要彈窗，不是寫進日誌，所以帶 modal 讓 UI 端分辨。 */
+  /* 帶 modal 的公告要彈窗，不是寫進日誌，UI 端據此分辨。
+     ⚠️ 2026-07-28 移除全部一次性遷移後，目前只有 _skillPointRepairNotice 還有產生者；
+     其餘三個旗標暫時沒有人設定。這段傳輸機制刻意保留——日後若再需要開機公告，
+     直接在 migrateSave 設旗標即可，不必重接一次管線。 */
   if (G._talentRespecConfirm) {
     notices.push({ key: '_talentRespecConfirm', text: '天賦系統已重新改造，請重新配置！', modal: true });
     delete G._talentRespecConfirm;

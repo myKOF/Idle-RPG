@@ -296,15 +296,17 @@ test('物抗/魔抗天賦為「額外」乘算；全屬性抗性天賦對六大�
   c.G.player.talents.levels.t1_pres = 10;  // +5%（V3 每級 0.5%）
   c.G.player.talents.levels.t9_pres = 10;  // +20%（V3 每級 2%）
   c.G.player.talents.levels.t1_mres = 10;  // +5%
-  // 全屬性抗性：3 轉兩個節點 + 5/7 轉，百分比相加後對每個元素乘一次
+  /* 全屬性抗性只有 t3_allres 與 t7_allres 兩個節點，百分比相加後對每個元素乘一次。
+     ⚠️ t3_allres2「傷害緩衝」的 stat 是 globalDmgRed 不是 elemRes
+     （config/CSV/Talents.csv:25，2a273a5 於 2026-07-20 改），
+     原測試把它算進全屬性抗性才會期望 130，實際 125 才對。 */
   c.G.player.talents.levels.t3_allres = 10;   // +5%（V3 每級 0.5%）
-  c.G.player.talents.levels.t3_allres2 = 10;  // +5%
   c.G.player.talents.levels.t7_allres = 10;   // +20%
 
   const st = c.computeStats();
   assert.equal(st.pRes, 100 * 1.25);
   assert.equal(st.mRes, 100 * 1.05);
-  assert.equal(st.resist.fire, 100 * 1.3);
+  assert.equal(st.resist.fire, 100 * 1.25);
   assert.equal(st.resist.ice, 0); // 無來源的元素不憑空提供
 });
 
@@ -349,13 +351,15 @@ test('GM 變更轉生次數會清空天賦並依新轉生次數重算天賦點',
   const c = loadContext();
   c.G.player.level = 1234;
   c.G.player.reincarnationTalentPoints = 999999;
+  // 潛力 id 以 POTENTIAL_TALENTS 為準：清除只走真實存在的鍵，塞假 id 不會被清
+  const [pot1] = c.POTENTIAL_TALENTS.map((p) => p.id);
   c.G.player.talents.levels.t1_str = 8;
-  c.G.player.talents.potentialLevels.p1_time = 4;
+  c.G.player.talents.potentialLevels[pot1] = 4;
 
   c.resetTalentsForReincarnationGM(3);
 
   assert.equal(c.G.player.talents.levels.t1_str, 0);
-  assert.equal(c.G.player.talents.potentialLevels.p1_time, 0);
+  assert.equal(c.G.player.talents.potentialLevels[pot1], 0);
   assert.equal(c.G.player.reincarnationTalentPoints, (3 - 1) * (c.REINCARNATION_LEVEL - 1) + (1234 - 1));
 
   c.G.player.level = 9999;
