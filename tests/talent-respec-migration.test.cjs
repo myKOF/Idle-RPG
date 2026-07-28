@@ -29,6 +29,48 @@ function loadSaveContext() {
   return context;
 }
 
+function extractNamedFunction(source, name) {
+  const start = source.indexOf(`function ${name}(`);
+  assert.notEqual(start, -1, `找不到 ${name}`);
+  const bodyStart = source.indexOf('{', start);
+  let depth = 0;
+  for (let i = bodyStart; i < source.length; i++) {
+    if (source[i] === '{') depth++;
+    else if (source[i] === '}' && --depth === 0) return source.slice(start, i + 1);
+  }
+  throw new Error(`${name} 函式括號不完整`);
+}
+
+function bootWorkerWithSave(save) {
+  const messages = [];
+  const context = {
+    console,
+    location: { search: '' },
+    performance: { now: () => 0 },
+    importScripts() {},
+    self: { postMessage(message) { messages.push(message); } },
+    setInterval() { return 1; },
+    clearInterval() {},
+    Date,
+    G: null,
+    GT: 0,
+    UI: { dirty: {} },
+    PANEL_KEYS: [],
+    MSG_OUT: { BOOTED: 'booted' },
+    WORKER_PROTOCOL_VERSION: 6,
+    INVENTORY_CAP: 100,
+    installStorageGuards() {},
+    migrateSave(state) { return state; },
+    shimDrainEvents() { return []; }
+  };
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8'), context, {
+    filename: 'js/worker/sim.worker.js'
+  });
+  context.boot({ save, maxRunId: 1, safeMode: false });
+  return { context, messages: JSON.parse(JSON.stringify(messages)) };
+}
+
 test('舊存檔首次載入：天賦重置並依舊制成本退還天賦點（含已不存在的舊節點 id）', () => {
   const context = loadSaveContext();
   const state = context.newGameState();
@@ -64,11 +106,47 @@ test('已 1 轉且曾升級天賦才彈改版確認窗；0 轉（GM 邊界）即
   assert.equal(state._talentRespecConfirm, undefined);     // 但不彈確認窗
 });
 
-test('main.js 以共用確認窗顯示改版訊息，顯示後刪除旗標', () => {
-  const main = fs.readFileSync(path.join(root, 'js', 'main.js'), 'utf8');
-  assert.match(main, /G\._talentRespecConfirm/);
-  assert.match(main, /showConfirmDialog\('天賦系統已重新改造，請重新配置！'/);
-  assert.match(main, /delete G\._talentRespecConfirm/);
+test('Worker 產生 modal 改版 notice 並由 UI 以共用確認窗顯示', () => {
+  const save = {
+    player: { books: {}, gold: 0, level: 1, invUpgrades: 0 },
+    stage: { current: 1, best: 1, zone: 'plains' },
+    inventory: [],
+    _talentRespecConfirm: true
+  };
+  const { context: worker, messages } = bootWorkerWithSave(save);
+  const booted = messages.find((message) => message.type === 'booted');
+  const notice = booted.notices.find((item) => item.key === '_talentRespecConfirm');
+
+  assert.deepEqual(notice, {
+    key: '_talentRespecConfirm',
+    text: '天賦系統已重新改造，請重新配置！',
+    modal: true
+  });
+  assert.equal(worker.G._talentRespecConfirm, undefined, 'Worker 送出一次性 notice 後須刪除旗標');
+
+  const uiSource = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const dialogs = [];
+  const logs = [];
+  const ui = {
+    UI: { dirty: {} },
+    addLog() {},
+    routeUiLog() {},
+    workerTowerActiveForLog() { return false; },
+    floatText() {},
+    showOfflineSummary() {},
+    blog(...args) { logs.push(args); },
+    requestPanelData() {},
+    switchTab() {},
+    showConfirmDialog(...args) { dialogs.push(args); }
+  };
+  vm.createContext(ui);
+  vm.runInContext(extractNamedFunction(uiSource, 'handleWorkerUiEvents'), ui);
+  vm.runInContext(extractNamedFunction(uiSource, 'handleWorkerBootNotices'), ui);
+  ui.handleWorkerBootNotices([notice]);
+
+  assert.equal(dialogs.length, 1, 'modal notice 必須彈出共用確認窗');
+  assert.equal(dialogs[0][0], notice.text);
+  assert.deepEqual(logs, [], 'modal notice 不得退化成一般戰鬥日誌');
 });
 
 test('遷移旗標使重複載入不會再次退點', () => {
