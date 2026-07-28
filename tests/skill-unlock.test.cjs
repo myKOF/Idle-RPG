@@ -80,6 +80,7 @@ test('GM 降低人物等級時會重新判斷未學技能的解鎖狀態', () =>
 });
 
 test('Skills 表含解鎖等級欄與可編輯說明，Tooltip 使用同一解鎖原因', () => {
+  const c = loadContext();
   const config = fs.readFileSync(path.join(root, 'tools', 'config_tables.cjs'), 'utf8');
   const csv = fs.readFileSync(path.join(root, 'config', 'CSV', 'Skills.csv'), 'utf8');
   const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
@@ -93,9 +94,18 @@ test('Skills 表含解鎖等級欄與可編輯說明，Tooltip 使用同一解�
   const venomRow = csv.split(/\r?\n/).find((row) => row.startsWith('venomCloud,'));
   assert.ok(venomRow, 'Skills 表應包含 venomCloud');
   assert.match(venomRow, /^venomCloud,magic,poison,\d+,/);
-  assert.match(ui, /: \(skillUnlockReason\(id\) \|\| tierLockReason\(id\)\);/);
+  assert.match(ui, /var lock = skillViewUnlockReason\(skillsSnapshot, headerSnapshot, id, sk\);/);
   assert.match(ui, /skt-lock/);
   assert.match(ui, /skill-unlock-hint/);
   assert.match(css, /\.skill-unlock-hint\s*\{[\s\S]*color:\s*#f87171/);
   assert.match(gm, /recheckSkillUnlocksForGMLevelChange\(beforeLevel, level\)/);
+
+  c.document = { getElementById: () => null };
+  vm.runInContext(ui, c, { filename: 'js/ui.js' });
+  const skillSnapshot = { skills: {}, unlocks: {} };
+  const def = c.SKILLS.venomCloud;
+  assert.equal(
+    c.skillViewUnlockReason(skillSnapshot, { player: { level: 1 } }, 'venomCloud', def),
+    '需人物達到 Lv.' + def.unlockLv + ' 才解鎖'
+  );
 });
