@@ -537,7 +537,13 @@ test('index.html/ui.js/main.js/factory.js/gm.js 接線（合併版）', () => {
   assert.ok(!/data-tab="factory"/.test(html), '舊熔爐頁籤應移除');
   assert.ok(!/id="tab-factory"/.test(html), '舊熔爐分頁區段應移除');
   assert.match(html, /<section id="tab-newforge" class="tab">/);
-  assert.match(html, /<script src="js\/newforge\.js"><\/script>/);
+  /* P5c（c67753b）起 newforge.js 只由 Worker 的 importScripts 載入，
+     index.html 不再載入——主執行緒對它零呼叫。改為驗證兩件事：
+     主執行緒不載、Worker 有載。 */
+  assert.ok(!/<script src="js\/newforge\.js"><\/script>/.test(html),
+    'newforge.js 屬模擬層，主執行緒不應載入');
+  const worker = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
+  assert.match(worker, /importScripts\([\s\S]*'\.\.\/newforge\.js'/);
   assert.ok(!/nf-intake/.test(html), '導入開關應移除');
   assert.ok(!/nf-return-queue/.test(html), '佇列退回按鈕應移除');
   assert.ok(!/nf-mats/.test(html), '材料庫存區應移除');
@@ -573,15 +579,23 @@ test('index.html/ui.js/main.js/factory.js/gm.js 接線（合併版）', () => {
   assert.match(ui, /belt\.slice\(0, NEW_FORGE_BELT_SHOW\)/, '帶顯示上限應用顯示常數');
   assert.ok(!/由右至左/.test(ui), '「由右至左」文字應移除');
   assert.ok(!/newForgePendingCounts/.test(ui), '共用計數已移除，+N 直讀各爐專屬佇列');
-  assert.match(ui, /newForgeReturnUnroutable/, '品質變更/停用應健檢專屬佇列退回總佇列');
+  /* P5 起品質變更／停用改送指令，退回總佇列的健檢在 Worker 的 COMMAND_IMPL 內執行
+     （newForgeReturnUnroutable 屬 INTERNAL_ONLY，ui.js 不得直接呼叫）。 */
+  assert.match(ui, /sendUiCommand\('newforge\.setQuality'/, '品質變更應送指令');
+  assert.match(ui, /sendUiCommand\('newforge\.setEnabled'/, '啟用切換應送指令');
+  const workerSrc = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
+  assert.match(workerSrc, /newForgeReturnUnroutable/, '退回總佇列的健檢應在 Worker 端');
   assert.match(ui, /data-nf-more/, '帶尾應有固定 +N 區');
 
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
   assert.match(css, /\.tab-btn\.nf-glow/, '應有頁籤閃爍樣式');
 
+  /* P5b（c568008）起主執行緒沒有模擬迴圈，newForgeTick 由 Worker 的 simStep 驅動；
+     改版公告也改由 Worker 隨 BOOTED 的 notices 送出，不再由 main.js 觸發。 */
   const main = fs.readFileSync(path.join(root, 'js/main.js'), 'utf8');
-  assert.match(main, /newForgeTick/);
-  assert.match(main, /showForgeRebuildNotice/, '載入後應觸發改版公告');
+  assert.ok(!/newForgeTick/.test(main), '主執行緒不應再跑模擬 tick');
+  assert.match(workerSrc, /newForgeTick/, '熔爐 tick 應由 Worker 驅動');
+  assert.match(ui, /showForgeRebuildNotice/, '改版公告由 UI 依 Worker 通知顯示');
 
   const factory = fs.readFileSync(path.join(root, 'js/factory.js'), 'utf8');
   assert.match(factory, /newForgeTryIntake/);
