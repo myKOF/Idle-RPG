@@ -6581,6 +6581,7 @@ function initUI() {
     window.addEventListener('resize', function () {
       UI.battleLayoutDirty = true;
       UI.dirty.battle = true;
+      if (workerUiStateEnabled()) UI.dirty.inv = true;
     });
     document.addEventListener('visibilitychange', handleVisibilityChange);
     UI.performanceEventsBound = true;
