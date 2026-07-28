@@ -403,7 +403,61 @@ git status
 
 ---
 
-# 13. 回退原則
+# 13. Git 自動操作權限
+
+各 AI 可以在自己的 Worktree 與專屬分支內自行執行：
+
+- `git status`
+- `git branch --show-current`
+- `git fetch origin`
+- `git pull --ff-only`
+- 將 `origin/develop` 合併到自己的 Agent 分支
+- `git add`
+- `git commit`
+- 推送自己的 Agent 分支
+
+各 AI 不得：
+
+- 直接修改 `develop` 或 `main`
+- 將自己的分支自行合併至 `develop`
+- 推送 `develop` 或 `main`
+- 合併其他 AI 的分支
+- 使用 `git reset --hard`
+- 使用 `git push --force`
+- 在工作區不乾淨時同步分支
+- 未處理衝突就繼續工作
+- 未經授權修改其他 AI 的 Worktree
+
+`develop` 與 `main` 的合併、衝突處理、最終測試及推送，統一由指定整合者負責。
+
+預設整合者為 Claude Code；使用者可依當前任務指定其他整合者。
+
+整合者執行開發任務時，必須使用自己的 Agent Worktree。
+
+整合者執行合併任務時，必須切換至主整合 Worktree，不得直接在 Agent Worktree 操作 `develop`。
+
+## 13.1 個別 AI 同步規則
+
+個別 AI 同步 `develop` 前必須確認：
+
+1. 位於自己的 Worktree。
+2. 位於自己的 Agent 分支。
+3. `git status` 顯示工作區乾淨。
+4. 上一個任務已完成並建立 Commit。
+5. 下一個任務尚未開始。
+6. 沒有來源不明的修改。
+
+標準同步方式：
+
+```bash
+git status
+git branch --show-current
+git fetch origin
+git merge origin/develop
+
+---
+
+# 14. 回退原則
 
 優先使用：
 
@@ -425,7 +479,7 @@ git reset --hard
 
 ---
 
-# 14. 推送遠端
+# 15. 推送遠端
 
 只有主整合工作區可以推送 develop。
 
@@ -442,7 +496,7 @@ AI 預設不得自行推送 develop。
 
 ---
 
-# 15. 標準協作流程
+# 16. 標準協作流程
 
 一般功能：
 
@@ -462,7 +516,7 @@ AI 預設不得自行推送 develop。
 
 ---
 
-# 16. 完成交接
+# 17. 完成交接
 
 每個 AI 完成後必須回報：
 
@@ -474,7 +528,7 @@ AI 預設不得自行推送 develop。
 6. 已知風險
 7. 後續接手者
 
-# 17. 任務完成定義（Definition of Done）
+# 18. 任務完成定義（Definition of Done）
 
 任務只有在下列條件全部成立時才算完成：
 
