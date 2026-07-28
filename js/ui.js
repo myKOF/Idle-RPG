@@ -1063,6 +1063,8 @@ function flushDirtyDetailLogs() {
 }
 
 function addLog(elId, msg, cls, cap, cat) {
+  // 戰鬥與高塔 BOSS 共用同一個日誌視窗；保留舊事件 box 名稱的相容轉送。
+  if (elId === 'boss-log') elId = 'battle-log';
   if (elId === 'newforge-log') {
     var now = new Date();
     if (!newForgeLogStartTime) {
@@ -1081,7 +1083,7 @@ function addLog(elId, msg, cls, cap, cat) {
   var box = $id(elId);
   if (!box) return;
   enqueueLogDom(elId, msg, cls, cat, cap);
-  if (elId === 'battle-log' || elId === 'boss-log') {
+  if (elId === 'battle-log') {
     var now = new Date();
     DETAIL_LOG_HISTORY.unshift({
       msg: msg,
@@ -1117,11 +1119,7 @@ function workerTowerActiveForLog() {
 function routeUiLog(msg, cls, cat, towerActive) {
   cat = classifyUiLogCategory(msg, cat);
   if (towerActive && (cat === 'combat' || cat === 'loot')) cat = 'boss';
-  if (cat === 'boss') {
-    addLog('boss-log', msg, cls, 150, cat);
-  } else {
-    addLog('battle-log', msg, cls, 150, cat);
-  }
+  addLog('battle-log', msg, cls, 150, cat);
 }
 
 function blog(msg, cls, cat) {
@@ -6312,10 +6310,7 @@ function miniSnapshot() {
   } else {
     s.eName = '⏳ 搜索敵人中…';
   }
-  var activeLogId = 'battle-log';
-  var bossLog = $id('boss-log');
-  if (bossLog && bossLog.style.display === 'block') activeLogId = 'boss-log';
-  var lines = document.querySelectorAll('#' + activeLogId + ' .log-line');
+  var lines = document.querySelectorAll('#battle-log .log-line');
   for (var i = 0; i < Math.min(2, lines.length); i++) s.logs.push(lines[i].textContent);
   return s;
 }
@@ -7489,24 +7484,9 @@ function initUI() {
   if (logFilter) {
     function applyLogFilter(v) {
       var b = $id('battle-log');
-      var bossLog = $id('boss-log');
-      if (v === 'boss') {
-        if (b) b.style.display = 'none';
-        if (bossLog) {
-          bossLog.style.display = 'block';
-          bossLog.className = 'log';
-        }
-      } else {
-        // 「全部」必須同時顯示一般戰鬥與BOSS戰紀錄；否則BOSS紀錄會被獨立容器隱藏。
-        if (bossLog) {
-          bossLog.style.display = v === 'all' ? 'block' : 'none';
-          bossLog.className = 'log' + (v === 'all' ? '' : ' filter-' + v);
-        }
-        if (b) {
-          b.style.display = 'block';
-          b.className = 'log' + (v === 'all' ? '' : ' filter-' + v);
-        }
-      }
+      if (!b) return;
+      b.style.display = 'block';
+      b.className = 'log' + (v === 'all' ? '' : ' filter-' + v);
     }
     logFilter.addEventListener('change', function (e) { applyLogFilter(e.target.value); });
     applyLogFilter(logFilter.value || 'all');

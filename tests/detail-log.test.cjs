@@ -11,6 +11,8 @@ test('綜合紀錄提供詳細日誌按鈕與獨立長條視窗', () => {
   assert.match(html, /id="detail-log-modal"/);
   assert.match(html, /id="detail-log-content"/);
   assert.match(html, /id="detail-log-filter"/);
+  assert.match(html, /id="battle-log" class="log"/);
+  assert.doesNotMatch(html, /id="boss-log"/);
 });
 
 test('詳細日誌保留時間、分類與較長歷史，且可清除', () => {
@@ -25,7 +27,7 @@ test('詳細日誌保留時間、分類與較長歷史，且可清除', () => {
 test('詳細日誌使用現有分類，不改變原本小型日誌篩選', () => {
   const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
-  assert.match(ui, /bossLog\.style\.display = v === 'all' \? 'block' : 'none'/);
+  assert.match(ui, /b\.className = 'log' \+ \(v === 'all' \? '' : ' filter-' \+ v\)/);
   assert.match(ui, /applyLogFilter\(logFilter\.value \|\| 'all'\)/);
   assert.match(css, /\.detail-log-modal\s*\{/);
   assert.match(css, /\.detail-log-content\s*\{[\s\S]*overflow-y:\s*auto/);
