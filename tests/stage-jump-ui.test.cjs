@@ -72,6 +72,7 @@ test('長按期間只預覽關卡，停止後才提交一次戰鬥狀態', () =>
   const context = {
     UI: { stageHold: { startTimer: 1, repeatTimer: 2, suppressClick: true, suppressTimer: null, pointerId: 9, active: true, startedAt: 100, startStage: 10, targetStage: 25, delta: 1 } },
     uiHeaderPanelSnapshot() { return { stage: { current: 15 } }; },
+    nodePendingKey(key) { return key; },
     sendUiCommand(name, args) { stageGoCalls.push({ name, args }); return Promise.resolve(); },
     clearTimeout() {},
     setTimeout() { return 3; },
