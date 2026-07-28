@@ -135,7 +135,13 @@ test('傷害浮字合併上限依連擊數與攻速計算', () => {
   let stats = { comboHits: 0, aspd: 2 };
   const getLimit = vm.runInNewContext(
     '(function () { ' + helperSource + '; return enemyDamageFloatMergeLimit; })()',
-    { getStats: () => stats, Math, Number, isFinite, ENEMY_DAMAGE_FLOAT_MAX_HITS: 20 }
+    {
+      uiHeaderPanelSnapshot: () => ({ stats }),
+      Math,
+      Number,
+      isFinite,
+      ENEMY_DAMAGE_FLOAT_MAX_HITS: 20
+    }
   );
 
   assert.equal(getLimit(), 0);

@@ -67,7 +67,10 @@ test('熔爐消費背包 dirty 後會清旗標，切回裝備頁時再定向補�
 test('戰鬥與高塔技能列共用外層已取得的屬性，不重複呼叫 getStats', () => {
   const ui = uiSource();
   assert.match(ui, /function renderMpSkill\(pEnt, prefix, stats\)/);
-  assert.match(ui, /var st = stats \|\| getStats\(\);/);
+  const renderMpSkill = ui.match(/function renderMpSkill\(pEnt, prefix, stats\) \{[\s\S]*?\n\}/);
+  assert.ok(renderMpSkill);
+  assert.match(renderMpSkill[0], /var maxMp = Math\.max\(1, Number\(stats && stats\.mp\) \|\| 1\);/);
+  assert.doesNotMatch(renderMpSkill[0], /getStats\(\)/);
   assert.match(ui, /function renderBattle\(\)[\s\S]*var st = headerSnapshot\.stats[\s\S]*renderMpSkill\(p, 'pv', st\);/);
   assert.match(ui, /function renderTowerFight\(\)[\s\S]*var st = headerSnapshot\.stats;[\s\S]*renderMpSkill\(p, 'tp', st\);/);
   const towerFight = ui.match(/function renderTowerFight\(\) \{[\s\S]*?\n\}/);

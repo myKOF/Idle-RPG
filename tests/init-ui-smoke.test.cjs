@@ -9,9 +9,19 @@ const root = path.resolve(__dirname, '..');
 function fakeElement() {
   const listeners = Object.create(null);
   const classNames = new Set();
+  const style = {
+    display: 'none',
+    setProperty: (name, value) => { style[name] = String(value); },
+    removeProperty: (name) => { delete style[name]; }
+  };
   const element = {
-    style: {},
+    style,
     className: '',
+    value: '',
+    checked: false,
+    textContent: '',
+    innerHTML: '',
+    dataset: {},
     classList: {
       add: (...names) => names.forEach((name) => classNames.add(name)),
       remove: (...names) => names.forEach((name) => classNames.delete(name)),
@@ -24,9 +34,19 @@ function fakeElement() {
     },
     children: [],
     childNodes: [],
+    options: [],
     parentNode: {
+      style: {
+        setProperty: () => {},
+        removeProperty: () => {}
+      },
       insertBefore: () => {},
-      removeChild: () => {}
+      removeChild: () => {},
+      setAttribute: () => {},
+      removeAttribute: () => {}
+    },
+    parentElement: {
+      classList: { add: () => {}, remove: () => {}, toggle: () => false }
     },
     addEventListener: (type, fn) => { (listeners[type] || (listeners[type] = [])).push(fn); },
     removeEventListener: () => {},
@@ -36,6 +56,7 @@ function fakeElement() {
     querySelector: () => null,
     querySelectorAll: () => [],
     setAttribute: (name, value) => { element[name] = String(value); },
+    removeAttribute: (name) => { delete element[name]; },
     getAttribute: (name) => element[name] === undefined ? null : element[name],
     hasAttribute: (name) => element[name] !== undefined,
     closest: () => null,
@@ -159,7 +180,7 @@ test('Worker Snapshot 完整但主執行緒 G 為空時 initUI 與 uiTick 不拋
     SKILLS: {},
     PANEL_KEYS: ['header', 'battle', 'equip', 'inv', 'factory', 'newforge', 'forge', 'tower', 'gems', 'skills', 'talents'],
     MSG_OUT: { BOOTED: 'BOOTED', FULL: 'FULL', TICK: 'TICK', PANEL: 'PANEL' },
-    G: {},
+    G: null,
     UI: {
       dirty: { header: false, battle: false, equip: false, inv: false, factory: false,
         newforge: false, forge: false, tower: false, gems: false, skills: false, talents: false },
@@ -177,20 +198,75 @@ test('Worker Snapshot 完整但主執行緒 G 為空時 initUI 與 uiTick 不拋
   };
   context.window.window = context.window;
   vm.createContext(context);
+  for (const file of [
+    'util.js', 'data.js', 'formula.js', 'stats.js', 'item.js', 'skills.js',
+    'talents.js', 'player.js', 'special_rules.js', 'combat.js', 'legendary.js',
+    'potential.js', 'tower.js', 'factory.js', 'newforge.js', 'forge.js', 'save.js'
+  ]) {
+    vm.runInContext(fs.readFileSync(path.join(root, 'js', file), 'utf8'), context, { filename: 'js/' + file });
+  }
   vm.runInContext(fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8'), context, { filename: 'js/ui.js' });
   context.UI_WORKER_STATE.panels = {
-    header: { player: { level: 1, reincarnations: 0, loadout: [] }, stage: { zone: 'plains', current: 1, best: 1, autoAdvance: false }, stats: {} },
-    battle: { field: { player: null, monsters: [] }, tower: null, stage: { zone: 'plains' }, zoneProgress: {} },
+    header: {
+      player: {
+        level: 1, xp: 0, reincarnations: 0, loadout: [], gold: 0, scrap: 0,
+        essence: 0, dust: 0, ancientEssence: 0, soulOrigin: 0, demonSeed: 0,
+        gems: {}, books: {}, shownRes: {}
+      },
+      stage: { zone: 'plains', current: 1, best: 1, autoAdvance: false },
+      stats: { hp: 1, mp: 1, atk: 0, def: 0, aspd: 1, critRate: 0, lifesteal: 0, hit: 1, loot: 0 },
+      viewStats: { hp: 1, mp: 1, atk: 0, def: 0, aspd: 1, critRate: 0, lifesteal: 0, hit: 1, loot: 0 },
+      dps: 0, settings: {}, autoEquip: false, equipView: 0, equipActive: 0
+    },
+    battle: {
+      field: {
+        player: {
+          hp: 1, maxHp: 1, mp: 0, maxMp: 1, shield: 0, reviveCd: 0,
+          effects: {}, buffs: {}, dots: [], skillCds: {}
+        },
+        monsters: []
+      },
+      tower: null, stage: { zone: 'plains' }, zoneProgress: {}
+    },
     equip: { equipment: {}, sets: [{}], equipActive: 0, equipView: 0, settings: {}, stats: {}, viewStats: {} },
     inv: { items: [], details: {}, count: 0, cap: 100, settings: {}, equipment: {}, viewEquipment: {} },
-    factory: { factory: { autoEquip: false } }, newforge: { newForge: {} },
-    forge: { forge: {} }, gems: { gems: {}, fusedGems: [], shop: {} },
+    factory: { factory: { autoEquip: false, stats: { enchanted: 0 } } },
+    newforge: { newForge: { queue: [], furnaces: [], stats: { salvaged: 0, kept: 0 } } },
+    forge: {
+      forge: {
+        slots: [null, null, null, null, null, null],
+        dustSlots: [false, false, false, false, false, false],
+        crafting: false, result: null, autoFill: null, log: [],
+        autoDust: false, autoForge: false
+      }
+    },
+    gems: {
+      gems: {}, fusedGems: [],
+      shop: { level: 1, items: [], refreshes: 0, hourStart: Date.now() }
+    },
     skills: { skills: {}, unlocks: {}, loadout: [], fusions: [], points: 0, budget: 0 },
-    talents: { talents: { levels: {}, potentialLevels: {} }, reincarnations: 0, talentPoints: 0 }
+    talents: { talents: { levels: {}, potentialLevels: {} }, reincarnations: 0, talentPoints: 0 },
+    tower: { tower: { active: false }, player: null, monsters: [] }
   };
   assert.doesNotThrow(() => context.initUI());
 
-  // uiTick 的派發路徑保持實際執行；各頁渲染器在此煙霧測試中只隔離 DOM fixture。
+  for (const renderer of [
+    'renderHeader', 'renderBattle', 'renderEquip', 'renderInventory',
+    'renderNewForge', 'renderForge', 'renderTower', 'renderGems',
+    'renderSkills', 'renderTalents'
+  ]) {
+    assert.doesNotThrow(() => context[renderer](), renderer + ' 不得讀取主執行緒 G');
+  }
+
+  assert.equal(context.G, null);
+  for (const tab of ['equip', 'newforge', 'gems', 'skills', 'talents', 'forge', 'tower', 'settings']) {
+    context.UI.tab = tab;
+    context.markVisibleUiDirty();
+    assert.doesNotThrow(() => context.uiTick(), 'uiTick 應能派發 ' + tab + ' 頁');
+  }
+
+  // 各頁與實際 uiTick 派發已在上方執行；最後再隔離 DOM fixture，
+  // 確認最小派發路徑也能獨立運作。
   context.renderBattle = () => {};
   context.renderHeader = () => {};
   context.renderEquip = () => {};

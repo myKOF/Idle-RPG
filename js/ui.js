@@ -1193,7 +1193,8 @@ function flushPendingEnemyFloats() {
 }
 
 function enemyDamageFloatMergeLimit() {
-  var st = (typeof getStats === 'function') ? getStats() : null;
+  var headerSnapshot = uiHeaderPanelSnapshot();
+  var st = headerSnapshot && headerSnapshot.stats;
   var comboHits = st ? Number(st.comboHits) : 0;
   var aspd = st ? Number(st.aspd) : 0;
   if (!isFinite(comboHits) || !isFinite(aspd) || comboHits <= 0 || aspd <= 0) return 0;
@@ -1451,7 +1452,10 @@ function markTabDirty(name) {
 }
 
 function switchTab(name) {
-  if (name === 'talents' && typeof talentSystemUnlocked === 'function' && !talentSystemUnlocked()) name = 'equip';
+  if (name === 'talents') {
+    var talentSnapshot = uiTalentPanelSnapshot();
+    if (!talentSnapshot || talentViewReincarnations(talentSnapshot) < 1) name = 'equip';
+  }
   UI.tab = name;
   refreshUiPanelSubscriptions();
   markTabDirty(name);
@@ -1521,9 +1525,7 @@ function updateTalentTabVisibility() {
   if (!btn) return;
   var snapshot = uiTalentPanelSnapshot();
   if (!snapshot) return;
-  var unlocked = snapshot
-    ? talentViewReincarnations(snapshot) >= 1
-    : (typeof talentSystemUnlocked !== 'function' || talentSystemUnlocked());
+  var unlocked = talentViewReincarnations(snapshot) >= 1;
   btn.style.display = unlocked ? '' : 'none';
   btn.setAttribute('aria-hidden', unlocked ? 'false' : 'true');
   if (!unlocked && UI.tab === 'talents') switchTab('equip');
@@ -1692,7 +1694,8 @@ function renderHeader() {
   var forgeSnapshot = peekUiPanelData('forge');
   var forgeUnlockedView = forgeSnapshot && forgeSnapshot.forge
     ? !!forgeSnapshot.forge.unlocked
-    : false;
+    : (Number(p.level) >= FORGE_UNLOCK_LEVEL &&
+      Number(p.reincarnations) >= FORGE_UNLOCK_REINCARNATION);
   if (forgeTabBtn) forgeTabBtn.style.display = forgeUnlockedView ? '' : 'none';
   var gemTip = [];
   for (var gt in GEM_TYPES) {
@@ -1993,10 +1996,10 @@ function entStatus(ent) {
   return s.join(' ');
 }
 function renderMpSkill(pEnt, prefix, stats) {
-  var st = stats || getStats();
+  var maxMp = Math.max(1, Number(stats && stats.mp) || 1);
   var mpFill = $id(prefix + '-mp'), mpText = $id(prefix + '-mptext'), skillEl = $id(prefix + '-skill');
-  setStyleIfChanged(mpFill, 'width', clamp(pEnt.mp / st.mp * 100, 0, 100) + '%');
-  setTextIfChanged(mpText, fmt(Math.floor(pEnt.mp)) + ' / ' + fmt(st.mp));
+  setStyleIfChanged(mpFill, 'width', clamp(pEnt.mp / maxMp * 100, 0, 100) + '%');
+  setTextIfChanged(mpText, fmt(Math.floor(pEnt.mp)) + ' / ' + fmt(maxMp));
   if (skillEl) {
     var headerSnapshot = uiHeaderPanelSnapshot();
     var lo = headerSnapshot && headerSnapshot.player && headerSnapshot.player.loadout || [];
@@ -2212,7 +2215,8 @@ function renderBattle() {
   var p = field.player || {
     hp: view.hp || 0, maxHp: view.hpMax || 1,
     mp: view.mp || 0, maxMp: view.mpMax || 1,
-    shield: view.shield || 0
+    shield: view.shield || 0,
+    effects: {}, buffs: {}, dots: [], skillCds: {}
   };
   if (p) {
     var php = clamp(p.hp / st.hp * 100, 0, 100);
@@ -4677,7 +4681,7 @@ function runTalentUiAction(commandName, id, legacyAction) {
 
 
 function talentNodeHTML(def, turn, snapshot) {
-  var lv = snapshot ? talentViewLevel(snapshot, def.id) : talentLevel(def.id);
+  var lv = snapshot ? talentViewLevel(snapshot, def.id) : 0;
   var unlocked = snapshot ? talentViewUnlocked(snapshot, def.id) : talentUnlocked(def.id);
   var disabled = !!def.disabled;
   var reincarnations = snapshot ? talentViewReincarnations(snapshot) : uiReincarnationCount();
@@ -4755,7 +4759,7 @@ function potentialNodeHTML(def, index, talentSnapshot, headerSnapshot) {
     : uiPotentialLevelFromSnapshot(talentSnapshot, def.id, max);
   var unlocked = usingSnapshot
     ? talentViewPotentialUnlocked(talentSnapshot, def.id)
-    : potentialUnlocked(def.id);
+    : false;
   var disabled = potentialTemporarilyDisabled(def.id);
   var cls = 'tree-cell potential-icon' + (lv > 0 ? ' learned' : '') + (!unlocked || disabled ? ' locked' : '') + (disabled ? ' temporarily-disabled' : '');
   var aria = def.name + (disabled ? '（' + (def.disabledReason || '目前暫不開放升級') + '）' : '');
@@ -4791,13 +4795,13 @@ function talentDescriptionValue(def, level, turn, snapshot) {
   if (def.stat === 'potentialUnlock') return talentLevelValue(def, lv);
   var multiplier = snapshot
     ? talentViewCompleteMultiplier(snapshot, turn)
-    : talentCompleteMultiplier(turn);
+    : 1;
   return talentLevelValue(def, lv) * multiplier;
 }
 
 function talentTreeLevelTotal(turn, snapshot) {
   if (snapshot) return talentViewTreeLevelTotal(snapshot, turn);
-  return (TALENT_TREES[turn] || []).reduce(function (sum, def) { return sum + talentLevel(def.id); }, 0);
+  return 0;
 }
 
 function openTalentModal(kind, id) {
