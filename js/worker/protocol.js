@@ -11,7 +11,7 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-var WORKER_PROTOCOL_VERSION = 8;
+var WORKER_PROTOCOL_VERSION = 9;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -29,9 +29,11 @@ var MSG_IN = {
      完整資料 305 KB，其中詞條就佔了六成。明細改為按 id 索取，
      由 UI 決定要哪幾件（例如可見範圍或選取項）。 */
   PANEL: 'panel',
-  /* { hidden, pip, at }
-     pip（v7 新增）：迷你監控視窗是否開著。開著時 Worker 不休眠也不落地 SHUTDOWN——
-     玩家是刻意開它來邊做別的事邊看戰鬥的，分頁雖然隱藏但畫面確實在被觀看。 */
+  /* { hidden, at }
+     v9 起隱藏不再改變模擬行為——分頁在背景就是在線掛機，只有整個遊戲被關掉才算離線。
+     這則訊息剩下的唯一作用是讓 Worker 在切走時落地一次存檔。
+     `pip`（v7 加入）已移除：它存在的唯一理由是「觀戰中要豁免背景休眠」，
+     休眠機制沒了就沒有接收端；PiP 功能本身不受影響。 */
   VISIBILITY: 'visibility',
   SAVE_RESULT: 'saveResult', // { token, ok, error }
   PING: 'ping'               // { t }  存活探測

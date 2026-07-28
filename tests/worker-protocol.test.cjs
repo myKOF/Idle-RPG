@@ -90,7 +90,8 @@ function validArgs(spec) {
 
 test('凍結的 Worker 指令表有 86 條且分類數量固定', () => {
   // v8：新增 app.handoff（多分頁交接前先落地並停止模擬），85 → 86
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 8);
+  // v9：移除 visibility 的 pip 欄位（背景休眠機制取消），指令表未變動
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 9);
   const names = Object.keys(protocol.COMMANDS);
   assert.equal(names.length, 86);
 

@@ -21,13 +21,11 @@ importScripts(
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
 importScripts('../gm_exec.js');
 
-/* ---- 節奏參數（語意同 main.js，不得擅改）---- */
+/* ---- 節奏參數 ---- */
 var TICK_MS = 100;          // 模擬步長
 var TICK_EMIT_MS = 200;     // 對主執行緒送 tick 的間隔（5Hz）
 var AUTOSAVE_SEC = 15;      // 自動存檔
 var FOLDER_AUTOSAVE_SEC = 600;
-var BG_SUSPEND_AFTER_MS = 60000;
-var MAX_CATCHUP_SEC = 10;   // 單次最多補 10 秒，更長交給離線收益
 
 var _booted = false;
 var _loopTimer = 0;
@@ -35,7 +33,6 @@ var _lastTickAt = 0;
 var _emitAcc = 0;
 var _autosaveAcc = 0;
 var _folderAcc = 0;
-var _hiddenAt = 0;
 var _persistSeq = 0;
 var _pendingPersist = {};   // token -> kind，等主執行緒回 saveResult
 /* 重新開局送出後到頁面真的重載之間，這顆 Worker 的 G 仍是「舊局」。
@@ -101,18 +98,37 @@ function reportError(where, err) {
   });
 }
 
-/* ---- 背景休眠 ----
-   Web Worker 不能豁免瀏覽器背景節流，所以 main.js 的補償語意必須原樣保留：
-   隱藏未滿 60 秒維持即時模擬，逾時停止推進，回前景改由離線收益結算。
+/* ---- 背景掛機（v9 起）----
+   遊戲規則：**分頁在背景＝仍在線上掛機，只有整個遊戲被關掉才算離線。**
+   所以隱藏分頁一律維持即時模擬，離線結算只在開機時發生（見 boot）。
 
-   迷你監控視窗（PiP）開著時不休眠——玩家是刻意開它來邊做別的事邊看戰鬥的，
-   這時分頁雖然隱藏，但畫面確實在被觀看。PiP 是主執行緒狀態，由 bridge 隨
-   visibility 訊息傳進來（見 js/bridge.js 的 miniMonitorActive）。 */
-var _pipActive = false;
+   舊版在隱藏 60 秒後停止推進、回前景改用離線收益補，那是從單執行緒 main.js
+   繼承來的。它有兩個問題：離線收益是**另一套固定費率模型**（每 20 秒殺一隻
+   best−10 的菁英怪，與玩家實際 DPS 與所在關卡無關），拿它替代即時模擬等於
+   在背景換一套玩法；而且休眠門檻用 `_hiddenAt` 起算、離線結算的 60 秒下限卻用
+   `savedAt` 起算，兩個基準不同——背景約 60～120 秒這段會兩邊都不給，收益是 0。
 
-function backgroundSuspended() {
-  if (_pipActive) return false; // PiP 觀戰中，維持即時模擬
-  return _hiddenAt > 0 && (Date.now() - _hiddenAt) >= BG_SUSPEND_AFTER_MS;
+   真正要解決的是瀏覽器對背景分頁計時器的降頻：計時器晚回來時，
+   `elapsed` 會一次很大，舊碼直接截斷成 10 秒，等於把降頻期間的時間丟掉。
+   改為「欠帳 + 每次 loop 花固定 CPU 預算補」，時間不丟，也不會為了補進度
+   把 Worker 卡住不回訊息。
+
+   量測（Node，V8）：模擬 1 小時遊戲時間＝新手 1.5 秒、後期存檔（Lv.260、背包 800）
+   2.4 秒 CPU。所以補一小時只要兩秒多——舊的 10 秒上限是主執行緒才需要的限制
+   （在那裡補 10 秒以上會凍畫面），Worker 裡沒有這個約束。 */
+var _catchupDebt = 0;          // 尚未補完的遊戲時間（秒）
+// 與離線收益同上限：背景掛機不該比關掉遊戲更優待。typeof 保護是因為既有測試會以
+// importScripts 空實作載入本檔（模擬層未載入），不能讓模組載入期就炸掉。
+var MAX_CATCHUP_DEBT_SEC = (typeof OFFLINE_MAX_HOURS === 'number' ? OFFLINE_MAX_HOURS : 24) * 3600;
+var CATCHUP_BUDGET_MS = 30;    // 單次 loop 最多花在補進度的 CPU 時間
+var MAX_CATCHUP_STEPS = 2000;  // 保險絲：單次 loop 的步數硬上限（200 秒遊戲時間）
+
+/* 補進度的計時來源要與遊戲時間分開：Date.now() 在測試裡是可控的假時鐘，
+   拿它當預算計時會失效。performance.now() 是單調時鐘，正是這裡要的。 */
+function catchupClock() {
+  return (typeof performance !== 'undefined' && performance && typeof performance.now === 'function')
+    ? performance.now()
+    : Date.now();
 }
 
 /* ---- 由 ui.js 搬回 Worker 的狀態維護 ----
@@ -201,16 +217,25 @@ function loop() {
   if (!_booted) return;
   try {
     var now = Date.now();
-    if (backgroundSuspended()) { _lastTickAt = now; return; }
-    var elapsed = (now - _lastTickAt) / 1000;
+    /* 經過時間一律進欠帳，不截斷——截斷等於把背景降頻期間的時間送給瀏覽器。
+       上限只擋「分頁被凍結好幾天」這種極端值。 */
+    _catchupDebt = Math.min(_catchupDebt + (now - _lastTickAt) / 1000, MAX_CATCHUP_DEBT_SEC);
     _lastTickAt = now;
-    elapsed = Math.min(elapsed, MAX_CATCHUP_SEC);
+
+    /* 用 CPU 預算而非固定秒數收斂：不同裝置與不同存檔大小的每步成本差很多，
+       固定秒數要嘛在慢機器上卡住 Worker、要嘛在快機器上補得沒必要地慢。
+       預算用完就把剩下的留到下一次 loop，期間 Worker 仍能回應面板與指令。 */
+    var budgetUntil = catchupClock() + CATCHUP_BUDGET_MS;
     var stepped = 0;
-    while (elapsed > 0.0001) {
-      var dt = Math.min(elapsed, TICK_MS / 1000);
+    var steps = 0;
+    while (_catchupDebt > 0.0001) {
+      var dt = Math.min(_catchupDebt, TICK_MS / 1000);
       simStep(dt);
-      elapsed -= dt;
+      _catchupDebt -= dt;
       stepped += dt;
+      /* 步數上限是保險絲：計時來源若被替換成不會前進的假時鐘（既有測試就是這樣），
+         只靠 CPU 預算會一路把欠帳跑完，變成一次很長的同步工作。 */
+      if (++steps >= MAX_CATCHUP_STEPS || catchupClock() >= budgetUntil) break;
     }
 
     _emitAcc += stepped;
@@ -1062,26 +1087,14 @@ function loadIntoRunningSim(msg) {
   requestPersist(PERSIST_KINDS.AUTO); // 換檔後立刻鎖定 savedAt 基準
 }
 
-/* ---- 分頁顯示狀態 ----
-   判定與結算一律在 Worker；主執行緒只負責通知，不得自行決定要不要結算，
-   否則兩邊各判一次就會重複領取離線收益。 */
+/* ---- 分頁顯示狀態（v9 起）----
+   隱藏不再改變模擬行為——背景就是在線掛機。這裡只剩一件事：切走時落地一次，
+   讓「分頁後來被瀏覽器丟棄」的情況至少有個新的存檔點。
+
+   **切回前景時刻意不重設 `_lastTickAt`。** 那正是背景期間累積的時間，
+   要讓 loop 把它當成欠帳補完；重設等於把玩家掛機的時間丟掉。 */
 function onVisibility(msg) {
-  _pipActive = !!msg.pip;
-  if (msg.hidden) {
-    /* PiP 開著時不落地 SHUTDOWN：那是「分頁要關了」的語意，
-       而 PiP 觀戰期間模擬照跑，15 秒一次的自動存檔就夠了。 */
-    _hiddenAt = msg.at || Date.now();
-    if (!_pipActive) requestPersist(PERSIST_KINDS.SHUTDOWN);
-    return;
-  }
-  var settle = _hiddenAt > 0 && (Date.now() - _hiddenAt) >= BG_SUSPEND_AFTER_MS;
-  _hiddenAt = 0;
-  _lastTickAt = Date.now();
-  if (settle && typeof applyOfflineProgress === 'function') {
-    var summary = applyOfflineProgress();
-    if (summary) shimPushEvent('notice', { key: 'offlineSummary', data: summary });
-    requestPersist(PERSIST_KINDS.AUTO);
-  }
+  if (msg.hidden) requestPersist(PERSIST_KINDS.SHUTDOWN);
 }
 
 self.onmessage = function (e) {

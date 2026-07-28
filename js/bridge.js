@@ -187,8 +187,8 @@ var WorkerBridge = (function () {
      只會在下次開啟時發現進度回到十幾秒前。所以死亡必須被偵測並說出來。
 
      判定方式：一段時間沒收到任何訊息就送 PING，等不到 PONG 才算死。
-     不直接用「沒有 tick」判定，因為背景分頁節流與 60 秒後的模擬休眠都會讓 tick 停止，
-     那是正常行為；分頁隱藏期間一律不判定，切回前景時重置計時。 */
+     不直接用「沒有 tick」判定，因為瀏覽器對背景分頁的計時器降頻會讓 tick 變稀疏，
+     那是正常行為（v9 起模擬本身不會停）；分頁隱藏期間一律不判定，切回前景時重置計時。 */
   var STALL_CHECK_MS = 3000;   // 監測間隔
   var STALL_AFTER_MS = 5000;   // 靜默多久才開始探測
   var PONG_TIMEOUT_MS = 4000;  // 探測後等 PONG 的上限
@@ -197,24 +197,13 @@ var WorkerBridge = (function () {
   var _watchdogTimer = 0;
   var _visibilityBound = false;
 
-  /* ---- 迷你監控視窗（PiP）----
-     玩家開 PiP 是為了邊做別的事邊看戰鬥，這時分頁雖然隱藏但畫面確實在被觀看，
-     所以不能休眠。判定狀態在 ui.js 的 MINI，Worker 看不到，必須由這裡轉發。
+  /* 分頁顯示狀態。v9 起 Worker 不因隱藏而改變模擬行為（背景＝在線掛機），
+     這則訊息只用來讓 Worker 在切走時落地一次存檔。
 
-     ⚠️ PiP 可能在分頁已經隱藏之後才開啟或關閉，那時不會有 visibilitychange，
-     所以除了隨 visibility 送，還要在 watchdog 裡輪詢變化並補送。
-     3 秒的偵測間隔對 60 秒的休眠門檻綽綽有餘。 */
-  var _pipLast = false;
-
-  function miniMonitorActive() {
-    return typeof MINI !== 'undefined' && MINI && !!(MINI.win || MINI.timer);
-  }
-
+     PiP（迷你監控視窗）狀態不再轉發：它當初存在的唯一理由是「觀戰中要豁免背景休眠」，
+     休眠機制移除後就沒有接收端了。PiP 功能本身不受影響（狀態在 ui.js 的 MINI）。 */
   function postVisibility() {
-    _pipLast = miniMonitorActive();
-    return post(MSG_IN.VISIBILITY, {
-      hidden: !!document.hidden, pip: _pipLast, at: Date.now()
-    });
+    return post(MSG_IN.VISIBILITY, { hidden: !!document.hidden, at: Date.now() });
   }
 
   /* ---- 失效後自動重啟 ----
@@ -318,8 +307,6 @@ var WorkerBridge = (function () {
 
   function watchdog() {
     if (!_worker || !stats.booted || !stats.alive) return;
-    // PiP 在隱藏期間開關不會觸發 visibilitychange，這裡補送
-    if (miniMonitorActive() !== _pipLast) postVisibility();
     /* 撐過這段時間就把連續失敗計數歸零。玩很久之後偶爾各壞一次，不該累積成放棄；
        真正的存檔問題會在開機後很快連續復發，撐不到這個門檻。 */
     if (_restartCount > 0 && stats.bootedAt && Date.now() - stats.bootedAt > HEALTHY_UPTIME_MS) {
@@ -371,8 +358,8 @@ var WorkerBridge = (function () {
       maxRunId: opts.maxRunId || 1, safeMode: safeMode()
     });
 
-    // 初始狀態也要送：分頁若在隱藏狀態下被載入，visibilitychange 不會觸發，
-    // Worker 會以為自己在前景而持續全速模擬（main.js 的 _hiddenAt 初始化同理）
+    // 初始狀態也要送：分頁若在隱藏狀態下被載入就不會有 visibilitychange，
+    // Worker 也就永遠等不到第一次「切走時落地」的觸發點
     postVisibility();
     // 重啟時不重複註冊：監聽器掛在 document 上，不隨 Worker 消滅
     if (!_visibilityBound) {
