@@ -609,11 +609,21 @@ function enchantLine(en) {
   return e.emoji + ' ' + e.name + ' ' + vs;
 }
 
-// 物品完整說明 HTML
+/* 物品完整說明 HTML。
+
+   ⚠️ 這是**純函式**：不得讀取 G，也不得改動傳入的物品。
+   主執行緒（Worker 架構下沒有 G）與 Worker 兩邊都要能呼叫，讀 G 會讓 ui.js 用不了它，
+   而 ui.js 用不了它的結果，就是那邊再長出一份簡化重寫的第二套實作，然後兩份慢慢分歧。
+
+   洗煉花費要標示「資源不足」，所以需要知道玩家身上有多少金幣與精華：
+   由 opts.gold / opts.essence 傳入（UI 端取自 header 面板快照）。
+   沒傳就不標紅——不知道餘額時假設不足，會對玩家謊報買不起。 */
 function itemDetailHTML(it, cmp, opts) {
   cmp = null; // 裝備比較改版：不再在單個 tips 中進行屬性差值比較
   opts = opts || {};
   var showAffixReroll = opts.showAffixReroll !== false;
+  var ownedGold = (opts.gold === undefined || opts.gold === null) ? Infinity : (Number(opts.gold) || 0);
+  var ownedEssence = (opts.essence === undefined || opts.essence === null) ? Infinity : (Number(opts.essence) || 0);
   var r = RARITIES[it.rarity];
   var curScore = itemScore(it);
   var cmpScore = cmp ? itemScore(cmp) : 0;
@@ -710,8 +720,8 @@ function itemDetailHTML(it, cmp, opts) {
     var rrBtn = '';
     if (showAffixReroll) {
       var rrCost = rerollCost(it);
-      var rrGoldHtml = '<span' + (G.player.gold >= rrCost.gold ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_gold.png" class="res-icon">' + fmt(rrCost.gold) + '</span>';
-      var rrEssenceHtml = '<span' + (G.player.essence >= rrCost.essence ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_essence.png" class="res-icon">' + fmt(rrCost.essence) + '</span>';
+      var rrGoldHtml = '<span' + (ownedGold >= rrCost.gold ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_gold.png" class="res-icon">' + fmt(rrCost.gold) + '</span>';
+      var rrEssenceHtml = '<span' + (ownedEssence >= rrCost.essence ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_essence.png" class="res-icon">' + fmt(rrCost.essence) + '</span>';
       var rrTipDesc = isAncient ? '單獨洗煉此太古屬性（只變換種類，必為滿值）' : '單獨洗煉此屬性（改變種類與數值）';
       var rrTip = '<div style="color:var(--dim);margin-bottom:4px">' + rrTipDesc + '</div>需要：' + rrGoldHtml + ' &nbsp;' + rrEssenceHtml;
       rrBtn = '<button class="btn affix-reroll-btn act-btn-tooltip" data-act="reroll-affix" data-affix="' + k + '" aria-label="洗煉詞條" data-tip="' + esc(rrTip) + '">🎲</button>';
@@ -826,12 +836,15 @@ function itemDetailHTML(it, cmp, opts) {
     h += '<div class="it-enchant" style="color: var(--dim)">◇ 空附魔欄（' + enSlot + '/' + enCap + '）</div>';
   }
 
-  // 寶石插槽
-  ensureSockets(it);
-  if (it.sockets.length) {
+  /* 寶石插槽。
+     這裡刻意不呼叫 ensureSockets(it)——渲染函式不該改狀態。鑲孔補齊已由 Worker 在
+     開機與讀檔時統一處理（sim.worker.js 的 backfillItemSockets），在這裡再補一次，
+     碰到的還是 UI 端的快照複本，改了也不會回到權威狀態，只是白費而且誤導。 */
+  var sockets = Array.isArray(it.sockets) ? it.sockets : [];
+  if (sockets.length) {
     h += '<div class="it-sockets">';
-    for (var si = 0; si < it.sockets.length; si++) {
-      var g = it.sockets[si];
+    for (var si = 0; si < sockets.length; si++) {
+      var g = sockets[si];
       if (g && g.fused) {
         h += '<span class="socket filled fused-socket" data-socket-remove="' + si + '" data-tip="點擊取下">' +
           esc(fusedGemLabel(g.fused)) + '</span>';
