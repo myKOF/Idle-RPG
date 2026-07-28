@@ -38,6 +38,9 @@ var _folderAcc = 0;
 var _hiddenAt = 0;
 var _persistSeq = 0;
 var _pendingPersist = {};   // token -> kind，等主執行緒回 saveResult
+/* 重新開局送出後到頁面真的重載之間，這顆 Worker 的 G 仍是「舊局」。
+   期間任何一次自動存檔／關閉落地都會把舊局寫回同一個 auto_current，蓋掉新局。 */
+var _restarting = false;
 var _maxRunId = 1;          // 由 boot 帶入；重新開局時用來決定新局編號
 
 /* ---- 訊息量測（P4 用，預設關閉）----
@@ -406,6 +409,7 @@ function buildPanel(name, params) {
    否則寫入失敗時離線結算的基準會錯位，造成收益漏算或重複結算。 */
 function requestPersist(kind, opts) {
   if (!G) return null;
+  if (_restarting && kind !== PERSIST_KINDS.RESTART) return null;
   opts = opts || {};
   try {
     var token = 'p' + (++_persistSeq);
@@ -464,13 +468,24 @@ function installStorageGuards() {
     return meta;
   };
 
+  /* 重新開局。
+     ⚠️ 這裡刻意「不」先存一次舊局：舊局與新局的落地目標是同一個 auto_current
+     （IndexedDB 同一個 key、資料夾同一個 IC_autosave.json），先存舊局並不會保住它，
+     只會和新局的寫入賽跑——實測舊局的非同步寫入在新局完成後 7ms 才落地，直接蓋掉新局，
+     玩家按下重新開局後重載回來看到的仍是舊存檔。 */
   self.restartGame = function () {
-    requestPersist(PERSIST_KINDS.AUTO); // 舊局進度先保底
+    _restarting = true;
     var fresh = newGameState();
-    fresh.runId = Math.max(_maxRunId, G.runId || 1) + 1; // 新局另一個檔，不蓋掉舊局
+    fresh.runId = Math.max(_maxRunId, G.runId || 1) + 1; // 新局換一個局號，舊局的手動存檔不受影響
     fresh.savedAt = Date.now();
+    /* saveRecMeta 是從 G 現場取值，而此刻 G 仍是舊局——直接沿用會讓存檔索引
+       標成「等級 13、第 7 關」卻配著一份全新存檔。meta 必須描述 fresh。 */
     var meta = saveRecMeta('auto', 'auto_current', AUTO_FOLDER_FILE_V2);
     meta.runId = fresh.runId;
+    meta.savedAt = fresh.savedAt;
+    meta.level = fresh.player.level;
+    meta.stage = (fresh.stage && fresh.stage.current) || 1;
+    meta.zone = (fresh.stage && fresh.stage.zone) || 'plains';
     requestPersist(PERSIST_KINDS.RESTART, { state: fresh, meta: meta });
     return true;
   };
@@ -484,6 +499,12 @@ function onSaveResult(msg) {
   var rec = _pendingPersist[msg.token];
   if (!rec) return;
   delete _pendingPersist[msg.token];
+  /* 重新開局寫入失敗時不會 reload，這顆 Worker 得繼續活下去——
+     若不解除 _restarting，之後的自動存檔會全部被靜靜丟掉。 */
+  if (rec.kind === PERSIST_KINDS.RESTART && !msg.ok) {
+    _restarting = false;
+    shimPushEvent('log', { msg: '⚠️ 重新開局失敗：' + (msg.error || '未知原因'), cls: 'warn' });
+  }
   if (!msg.ok && G && rec.rollback) {
     // 落地失敗：把 savedAt 退回上一次成功的值，讓下次離線結算仍以真正落地的時間點為準
     G.savedAt = rec.prevSavedAt;
