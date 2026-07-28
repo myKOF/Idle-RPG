@@ -1557,14 +1557,58 @@ function renderSaveFolderFilesV2(files) {
 }
 
 function refreshSaveFolderFilesV2(files) {
-  if (files) { renderSaveFolderFilesV2(files); return; }
+  if (files !== undefined) {
+    renderSaveFolderFilesV2(files);
+    return Promise.resolve(files);
+  }
   var box = $id('save-folder-files');
-  if (!box) return;
+  if (!box) return Promise.resolve([]);
   if (typeof listSaveFolderFilesV2 !== 'function' || typeof _saveDir === 'undefined' || !_saveDir) {
     box.hidden = true;
-    return;
+    return Promise.resolve([]);
   }
-  listSaveFolderFilesV2().then(renderSaveFolderFilesV2).catch(function () { box.hidden = true; });
+  return listSaveFolderFilesV2().then(function (freshFiles) {
+    renderSaveFolderFilesV2(freshFiles);
+    return freshFiles;
+  }).catch(function () {
+    box.hidden = true;
+    return [];
+  });
+}
+
+function rescanSaveFolderView(showMessage) {
+  var messageBox = $id('save-msg');
+  if (typeof _saveDir === 'undefined' || !_saveDir) {
+    if (showMessage) {
+      var hint = '⚠️ 尚未連接存檔資料夾，請先按「選擇／更新存檔資料夾」授權。';
+      if (messageBox) messageBox.textContent = hint;
+      blog(hint, 'warn');
+    }
+    return Promise.resolve([]);
+  }
+  if (showMessage && messageBox) messageBox.textContent = '⏳ 重新掃描存檔資料夾…';
+  var scan = typeof scanManualMetadataV2 === 'function'
+    ? scanManualMetadataV2()
+    : Promise.resolve();
+  return Promise.resolve(scan).then(function () {
+    renderSaveList();
+    return refreshSaveFolderFilesV2();
+  }).then(function (files) {
+    if (showMessage) {
+      var text = '✅ 已重新掃描「' + _saveDir.name + '」，目前共有 ' + files.length + ' 個檔案。';
+      if (messageBox) messageBox.textContent = text;
+      blog(text, 'good');
+    }
+    return files;
+  }).catch(function (error) {
+    if (showMessage) {
+      var reason = error && error.message ? error.message : String(error || '無法讀取資料夾');
+      var text = '⚠️ 重新掃描失敗：' + reason;
+      if (messageBox) messageBox.textContent = text;
+      blog(text, 'warn');
+    }
+    return [];
+  });
 }
 
 function renderSaveList() {
@@ -8312,26 +8356,12 @@ function initUI() {
   });
   var bannerFolderBtn = $id('btn-folder-banner');
   if (bannerFolderBtn) bannerFolderBtn.addEventListener('click', function () { $id('btn-folder').click(); });
-  // 重新掃描：用「已授權」的資料夾重新同步＋匯入新存檔並刷新清單，不重新彈出資料夾選擇器（原本漏綁 handler → 點了沒反應）
-  var folderRefreshBtn = $id('btn-folder-refresh');
-  if (folderRefreshBtn) folderRefreshBtn.addEventListener('click', function () {
-    var m = $id('save-msg');
-    if (typeof _saveDir === 'undefined' || !_saveDir) {
-      var hint = '⚠️ 尚未連接存檔資料夾，請先按「選擇 / 更新存檔資料夾」授權。';
-      if (m) m.textContent = hint;
-      blog(hint, 'warn');
-      return;
-    }
-    if (m) m.textContent = '⏳ 重新掃描存檔資料夾…';
-    openSaveFolder(function (err, res) {
-      var text = err ? ('⚠️ 重新掃描失敗：' + err)
-        : ('✅ 已重新掃描' + (res && res.dirName ? '「' + res.dirName + '」' : '') +
-          (res && res.imported ? '，新匯入 ' + res.imported + ' 筆存檔' : '，沒有新存檔'));
-      if (m) m.textContent = text;
-      blog(text, err ? 'warn' : 'good');
-      refreshSaveFolderFilesV2(); // 無參數 → 從已授權資料夾重新列出檔案
-      renderSaveList();
-    }, false); // false = 使用已授權資料夾、不重新彈選擇器
+  var btnFolderRefresh = $id('btn-folder-refresh');
+  if (btnFolderRefresh) btnFolderRefresh.addEventListener('click', function () {
+    rescanSaveFolderView(true);
+  });
+  window.addEventListener('focus', function () {
+    if (UI.tab === 'settings') rescanSaveFolderView(false);
   });
   $id('btn-restart').addEventListener('click', function () {
     var restartAuto = autoSaveMetaV2();
