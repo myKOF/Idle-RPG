@@ -12,7 +12,9 @@ function makeElement() {
     style: {},
     options: [],
     parentNode: null,
+    children: [],
     onclick: null,
+    appendChild(child) { this.children.push(child); },
     addEventListener() {},
     querySelector() { return null; },
     querySelectorAll() { return []; },
@@ -43,6 +45,7 @@ function loadGameContext() {
     },
     location: { reload() {} }
   };
+  context.PANEL_KEYS = ['header'];
   context.window = context;
   vm.createContext(context);
 
@@ -109,9 +112,15 @@ test('shared confirm modal shows message and runs callback only on confirm', () 
   assert.equal(confirmed, 1);
 });
 
-test('轉生成功彈窗於 11 轉與 12 轉以上採用專屬提示說明', () => {
-  const ui = fs.readFileSync(path.resolve(__dirname, '..', 'js/ui.js'), 'utf8');
+test('首次轉生成功彈窗依 Worker header Snapshot 顯示天賦解鎖提示', () => {
+  const { context, elements } = loadGameContext();
+  context.UI_WORKER_STATE.panels.header = {
+    player: { reincarnations: 1 }
+  };
 
-  assert.match(ui, /經歷10次重生，你終於又回到神界了，目前為神位1階。/);
-  assert.match(ui, /恭喜您晉升為神位' \+ \(reincCount - 10\) \+ '階/);
+  context.showConfirmDialog('轉生成功', () => {}, { title: '轉生成功' });
+
+  const message = elements.get('confirm-message');
+  assert.equal(message.children.length, 1);
+  assert.equal(message.children[0].textContent, '已解鎖天賦系統！');
 });

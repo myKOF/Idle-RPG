@@ -11,6 +11,7 @@ test('戰鬥日誌分類與色彩樣式規則驗證', () => {
   const skills = fs.readFileSync(path.join(root, 'js/skills.js'), 'utf8');
   const tower = fs.readFileSync(path.join(root, 'js/tower.js'), 'utf8');
   const forge = fs.readFileSync(path.join(root, 'js/forge.js'), 'utf8');
+  const worker = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
 
   // 1. 驗證掉落物僅分類「打敗敵人的掉落物」與「敵人掉落」，其餘獲得途徑不屬於 loot 分類
@@ -53,20 +54,21 @@ test('戰鬥日誌分類與色彩樣式規則驗證', () => {
   assert.match(combat, /if\s*\(hasDebuff\)\s*\{\s*cls\s*=\s*'log-enemy-buff';\s*\}/);
   assert.match(css, /\.log-line\.log-enemy-buff\s*\{[\s\S]*?color:\s*#d7ccc8;[\s\S]*?\}/);
 
-  // 4. 驗證神鑄日誌類別與其他獲得途徑已被歸類到 'factory' (裝備與強化)，不屬於 'loot' (掉落物)
+  // 4. 驗證神鑄日誌與 Worker 寶石批次日誌歸類到 factory，不屬於 loot
   assert.match(forge, /blog\('🔯 神鑄成功！6 顆'[\s\S]*?,\s*'good',\s*'factory'\);/);
   assert.match(forge, /blog\('🔯 鑄造失敗！損失 '[\s\S]*?,\s*'warn',\s*'factory'\);/);
   assert.match(forge, /blog\('🔯 神鑄成功！獲得 '[\s\S]*?,\s*'good',\s*'factory'\);/);
   assert.match(forge, /blog\('🔯 鑄造失敗！損失 '[\s\S]*?,\s*'warn',\s*'factory'\);/);
-  assert.match(ui, /blog\('💎 寶石合成：'[\s\S]*?,\s*'info',\s*'factory'\);/);
-  assert.match(ui, /blog\('♻️ 全部合成：'[\s\S]*?,\s*'good',\s*'factory'\);/);
-  assert.match(ui, /blog\('🔄 寶石轉換完成：獲得 '[\s\S]*?,\s*'good',\s*'factory'\);/);
-  assert.match(ui, /blog\('⛏️ 拆解 '[\s\S]*?,\s*'info',\s*'factory'\);/);
-  assert.match(ui, /blog\('⛏️ 全部拆解：'[\s\S]*?,\s*'good',\s*'factory'\);/);
-  assert.match(ui, /blog\('⛏️ 融合寶石拆解 → '[\s\S]*?,\s*'good',\s*'factory'\);/);
-  assert.match(ui, /blog\('🧬 <span class="log-hl-good">寶石融合成功！<\/span>獲得 '[\s\S]*?,\s*'good',\s*'factory'\);/);
-  assert.match(ui, /blog\('💥 寶石融合失敗（成功率 '[\s\S]*?,\s*'warn',\s*'factory'\);/);
-  assert.match(ui, /blog\('🛒 一鍵購買 '[\s\S]*?,\s*'good',\s*'factory'\);/);
-  assert.match(ui, /blog\('🔄 寶石商店已刷新（本週期第 '[\s\S]*?,\s*'info',\s*'factory'\);/);
-  assert.match(ui, /blog\('⬆️ 寶石商店升級至 Lv\.'[\s\S]*?,\s*'good',\s*'factory'\);/);
+  assert.match(worker, /'gem\.composeAll'[\s\S]*blog\('♻️ 全部合成：'[\s\S]*'good',\s*'factory'\);/);
+  assert.match(worker, /'gem\.dismantleAll'[\s\S]*blog\('⛏️ 全部拆解：'[\s\S]*'good',\s*'factory'\);/);
+
+  // 寶石 UI 只送協議指令；Worker 產生的 log Event 再由主執行緒分類與渲染
+  for (const command of [
+    'gem.compose', 'gem.composeAll', 'gem.convert', 'gem.dismantle',
+    'gem.dismantleAll', 'gem.dismantleFused', 'gem.fuse',
+    'gem.shopBuyAll', 'gem.shopRefresh', 'gem.shopUpgrade'
+  ]) {
+    assert.match(ui, new RegExp("sendGemUiCommand\\(\\s*['\"]" + command.replace('.', '\\.') + "['\"]"));
+  }
+  assert.match(ui, /event\.kind === 'log'[\s\S]*routeUiLog\(event\.msg, event\.cls, event\.cat/);
 });

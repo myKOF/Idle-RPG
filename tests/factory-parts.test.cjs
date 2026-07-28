@@ -86,7 +86,7 @@ test('熔爐零件列表每種類只顯示一行，安裝取最高階級與數�
 
   // 舊分解槽零件列表已移除；同一「每種類一行、取最高階」行為改由熔爐卡片零件列表提供
   const fu = { id: 1, parts: [], partSlots: 3 };
-  const html = context.nfPartsListHTML(fu);
+  const html = context.nfPartsListHTML(fu, context.G.factory);
   assert.match(html, /data-nf-partinstall-key="speedGear"/);
   assert.match(html, /T7 加速齒輪/, '應顯示最高階零件名稱');
   assert.equal((html.match(/data-nf-partinstall-key="speedGear"/g) || []).length, 1, '每種類只一行');
