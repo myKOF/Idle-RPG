@@ -2752,6 +2752,7 @@ function renderDetail() {
   var pane = $id('detail-pane');
   var it = findSelItem();
   var headerSnapshot = uiHeaderPanelSnapshot();
+  var invSnapshot = uiInventoryPanelSnapshot();
   var gemsSnapshot = uiGemsPanelSnapshot();
   var player = headerSnapshot && headerSnapshot.player;
   if (UI.sel && UI.sel.source === 'inv' && UI.sel.id && (!invSnapshot || !invSnapshot.details || !invSnapshot.details[UI.sel.id])) {
