@@ -85,6 +85,48 @@ P5 之後的檔案所有權慣例（沿用即可，非硬性）：
 
 # 2. Claude Code 任務
 
+## 2.-1 背景掛機、404 噪音、itemDetailHTML 純函式化
+
+狀態：等待測試
+
+### 背景分頁改為在線掛機（`118764e`，協議 v9）
+
+遊戲規則（使用者定案）：**分頁在背景＝仍在線上掛機，只有整個遊戲被關掉才算離線。**
+
+移除 `BG_SUSPEND_AFTER_MS` 與 `backgroundSuspended()`；`onVisibility` 只剩「切走時落地
+一次」，切回前景不再重設 `_lastTickAt`；`applyOfflineProgress` 只在 `boot` 執行。
+降頻補償改為「欠帳 `_catchupDebt` + 每次 loop 花 30ms CPU 分次補完」，上限取
+`OFFLINE_MAX_HOURS`。協議移除 `visibility.pip`（休眠沒了就沒有接收端）。
+
+移除舊機制的理由（三項，見 `docs/WORKER_PROTOCOL.md` 第 8 節 v9 列）：離線收益是另一套
+固定費率模型；休眠門檻與離線結算門檻的基準不同，背景 60～120 秒收益是 0；與掛機遊戲直覺相反。
+
+量測：模擬 1 小時遊戲時間＝新手 1.5 秒、後期存檔（Lv.260／背包 800）2.4 秒 CPU。
+實測（localhost:8330）：隱藏 5.9 分鐘，遊戲時間推進率 100.0%、tick 4.08/秒、0 錯誤。
+
+⚠️ 待補驗證：內嵌瀏覽器的 hidden 狀態未必等同「真正被切到背景的作業系統視窗」，
+Chrome 的 intensive throttling 可能沒被觸發。**請在真實瀏覽器把視窗切到背景 10 分鐘以上**
+再確認一次推進率。設計本身不依賴「沒有降頻」（欠帳機制就是為降頻而設，且有單元測試），
+但這條實測值目前只涵蓋內嵌瀏覽器。
+
+### 參數自動重載退避（`e1e3bd9`）
+
+`params_version.txt` 被 `.gitignore` 排除，只有跑過「套用參數.bat」的副本才有
+（codex／antigravity／production 三個副本目前都沒有），固定 2 秒輪詢會讓 console
+每 2 秒被記一筆 404。改為讀不到時退避成 30 秒探測並提示一次，檔案出現後自動恢復。
+
+### `itemDetailHTML` 純函式化（`ba11ca9`）
+
+該函式是裝備詳情的完整實作卻**零呼叫者**——因為它讀 `G`，主執行緒用不了；`ui.js` 因此
+另寫了簡化版 `uiItemDetailHTML`，兩套分歧後產生數值顯示錯誤（掉寶率未換算，20% 的詞條
+顯示 20%、實際生效 10%）。改為餘額由 `opts.gold`／`opts.essence` 傳入，並移除渲染路徑裡的
+`ensureSockets` 副作用。
+
+後續交給 Codex：把 `ui.js` 的 4 處呼叫改回 `itemDetailHTML` 並刪除 `uiItemDetailHTML`
+（`tests/item-detail-html.test.cjs` 有一條 todo 標記此事）。提示詞已備妥，**待使用者指示才發出**。
+
+---
+
 ## 2.0 多分頁互斥（Web Worker 重構收尾）
 
 狀態：等待測試
