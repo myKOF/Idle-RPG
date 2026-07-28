@@ -109,7 +109,7 @@ test('高塔 BOSS 敵方閃避 MISS 會節流，避免畫面被連擊 MISS 洗�
   assert.match(ui, /now - lastMissAt < 300/);
 });
 
-test('敵人傷害浮字字號較小且出現範圍更分散', () => {
+test('敵人傷害浮字維持可讀字號且出現範圍更分散', () => {
   assert.match(ui, /function isEnemyHitFloat\(elId,\s*cls\)/);
   assert.match(ui, /var ENEMY_DAMAGE_FLOAT_WINDOW_MS = 4000/);
   assert.match(ui, /var ENEMY_DAMAGE_FLOAT_MAX_HITS = 20/);
@@ -126,8 +126,10 @@ test('敵人傷害浮字字號較小且出現範圍更分散', () => {
   assert.match(ui, /var pct = enemyHitFloat \? 8 \+ Math\.random\(\) \* 84 : 15 \+ Math\.random\(\) \* 70/);
   assert.match(ui, /sp\.style\.top = \(28 \+ Math\.random\(\) \* 44\) \+ '%'/);
   assert.match(ui, /sp\.style\.marginTop = \(enemyHitFloat \? \(Math\.random\(\) \* 24 - 12\) : \(Math\.random\(\) \* 30 - 15\)\) \+ 'px'/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.dmg,[\s\S]*?\.float-txt\.enemy-hit-float\.mdmg\s*\{[\s\S]*?font-size:\s*12px/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.crit,[\s\S]*?\.float-txt\.enemy-hit-float\.skill\s*\{[\s\S]*?font-size:\s*18px/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.dmg,[\s\S]*?\.float-txt\.enemy-hit-float\.mdmg\s*\{[\s\S]*?font-size:\s*14px/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.crit,[\s\S]*?\.float-txt\.enemy-hit-float\.skill\s*\{[\s\S]*?font-size:\s*20px/);
+  assert.match(css, /\.enemy-party:not\(\.enemy-count-0\):not\(\.enemy-count-1\) \.float-txt\.enemy-hit-float\.dmg,[\s\S]*?font-size:\s*12px/);
+  assert.match(css, /\.enemy-party:not\(\.enemy-count-0\):not\(\.enemy-count-1\) \.float-txt\.enemy-hit-float\.crit,[\s\S]*?font-size:\s*16px/);
 });
 
 test('傷害浮字合併上限依連擊數與攻速計算', () => {
@@ -158,8 +160,10 @@ test('敵方區普攻固定白色、技能固定黃色，爆擊不改變來源�
   assert.match(skills, /'crit enemy-skill'/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-attack\s*\{[\s\S]*?color:\s*#ffffff/);
   assert.match(css, /\.enemy-combatant\s*\{[\s\S]*?overflow:\s*visible/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-attack\s*\{[\s\S]*?font-size:\s*10px/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-attack\.crit\s*\{[\s\S]*?font-size:\s*16px/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-attack\s*\{[\s\S]*?font-size:\s*14px/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-attack\.crit\s*\{[\s\S]*?font-size:\s*20px/);
+  assert.match(css, /\.enemy-party:not\(\.enemy-count-0\):not\(\.enemy-count-1\) \.float-txt\.enemy-hit-float\.enemy-attack\s*\{[\s\S]*?font-size:\s*12px/);
+  assert.match(css, /\.enemy-party:not\(\.enemy-count-0\):not\(\.enemy-count-1\) \.float-txt\.enemy-hit-float\.enemy-attack\.crit\s*\{[\s\S]*?font-size:\s*16px/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-skill\s*\{[\s\S]*?color:\s*#ffd700/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-attack\s*\{[\s\S]*?z-index:\s*10\s*!important/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-skill\s*\{[\s\S]*?z-index:\s*20\s*!important/);
