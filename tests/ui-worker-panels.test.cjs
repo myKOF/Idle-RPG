@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
@@ -95,4 +96,21 @@ test('頂欄只讀 Worker header Snapshot 的資源、屬性與 DPS', () => {
   assert.match(renderAttrPanel, /headerSnapshot\.equipView/);
   assert.match(renderAttrPanel, /headerSnapshot\.equipActive/);
   assert.doesNotMatch(renderAttrPanel, /\bG\.(?:equipView|equipActive)\b/);
+});
+
+test('背包只有摘要時，其他裝備 tooltip 會等待完整 detailIds', () => {
+  const body = functionBody('inventoryViewItem');
+  const context = { inventoryViewItems: (snapshot) => snapshot.items || [] };
+  vm.createContext(context);
+  vm.runInContext(body + '\nthis.inventoryViewItem = inventoryViewItem;', context);
+  const summary = { id: 'other', slot: 'helmet', level: 10 };
+  const detailed = { id: 'selected', slot: 'weapon', level: 20, affixes: [] };
+  const snapshot = {
+    items: [summary, detailed],
+    details: { selected: detailed }
+  };
+
+  assert.equal(context.inventoryViewItem(snapshot, 'selected', true), detailed);
+  assert.equal(context.inventoryViewItem(snapshot, 'other', true), null);
+  assert.equal(context.inventoryViewItem(snapshot, 'other', false), summary);
 });

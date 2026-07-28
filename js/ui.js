@@ -4347,6 +4347,10 @@ function inventoryViewHasFullDetails(snapshot) {
 function inventoryViewItem(snapshot, id, detailed) {
   if (!snapshot || !id) return null;
   if (snapshot.details && snapshot.details[id]) return snapshot.details[id];
+  // Summary cells do not contain affixes.  Detailed callers (the item pane
+  // and item tooltip) must wait for the requested detailIds response instead
+  // of handing an incomplete item to itemDetailHTML.
+  if (detailed) return null;
   var items = inventoryViewItems(snapshot);
   for (var i = 0; i < items.length; i++) if (items[i] && items[i].id === id) return items[i];
   return null;
@@ -7173,6 +7177,9 @@ function initUI() {
       var it = findItemById(tooltipId, needsInventoryDetail);
       if (it) { showItemTooltip(it, eqCell); return; }
       if (needsInventoryDetail) {
+        // Do not leave the previous item's card visible while the requested
+        // inventory detail is being fetched for this anchor.
+        hideTooltip();
         UI.pendingItemTooltip = { id: tooltipId, anchor: eqCell };
         requestPanelData('inv', true, { detailIds: [tooltipId] });
         return;
