@@ -90,13 +90,21 @@ test('滿值詞條金色高亮', () => {
   assert.match(c.itemDetailHTML(it, null, {}), /fbbf24/);
 });
 
-/* 標成 todo 而非 fail：專案的驗收標準是「不得新增失敗」，
-   為了留待辦而讓所有人的 npm test 變紅，只會讓真正的失敗被忽略。
-   Codex 完成接線後把 todo 拿掉即可。 */
-test('ui.js 不得再自行重寫一套裝備詳情', { todo: '待 Codex 把三個呼叫點改回 itemDetailHTML 並刪除 uiItemDetailHTML' }, () => {
+test('ui.js 三個裝備詳情呼叫點共用 itemDetailHTML', () => {
   const uiSrc = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
-  const callers = (uiSrc.match(/uiItemDetailHTML\(/g) || []).length;
-  assert.equal(callers, 0,
-    'ui.js 仍有 ' + callers + ' 處使用簡化重寫的 uiItemDetailHTML；' +
-    '應改呼叫 itemDetailHTML(it, null, { gold, essence, ... }) 並刪除該函式');
+  assert.doesNotMatch(uiSrc, /\buiItemDetailHTML\b/,
+    'ui.js 不得保留或呼叫簡化重寫的 uiItemDetailHTML');
+
+  const callers = uiSrc.match(/\bitemDetailHTML\s*\(/g) || [];
+  assert.equal(callers.length, 3, '裝備面板與兩張 tooltip 卡片應共用三個 itemDetailHTML 呼叫點');
+
+  const nullCmpCallers = uiSrc.match(/\bitemDetailHTML\s*\([^,]+,\s*null,\s*\{/g) || [];
+  assert.equal(nullCmpCallers.length, 3, '三個呼叫點的 cmp 第二參數都必須是 null');
+
+  const detailCallBlocks = uiSrc.match(/\bitemDetailHTML\s*\([^;]+?\}\)/gs) || [];
+  assert.equal(detailCallBlocks.length, 3);
+  detailCallBlocks.forEach((call, index) => {
+    assert.match(call, /\bgold\s*:/, `第 ${index + 1} 個呼叫點必須傳入 headerSnapshot.player.gold`);
+    assert.match(call, /\bessence\s*:/, `第 ${index + 1} 個呼叫點必須傳入 headerSnapshot.player.essence`);
+  });
 });

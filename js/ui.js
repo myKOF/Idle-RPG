@@ -2752,7 +2752,6 @@ function renderDetail() {
   var pane = $id('detail-pane');
   var it = findSelItem();
   var headerSnapshot = uiHeaderPanelSnapshot();
-  var invSnapshot = uiInventoryPanelSnapshot();
   var gemsSnapshot = uiGemsPanelSnapshot();
   var player = headerSnapshot && headerSnapshot.player;
   if (UI.sel && UI.sel.source === 'inv' && UI.sel.id && (!invSnapshot || !invSnapshot.details || !invSnapshot.details[UI.sel.id])) {
@@ -2778,14 +2777,10 @@ function renderDetail() {
     return;
   }
   var cost = upgradeCost(it);
-  var compareItem = null;
-  var tc = $id('toggle-compare');
-  if (tc && tc.checked && UI.sel.source === 'inv') {
-    var cmpEq = invSnapshot && invSnapshot.viewEquipment ? invSnapshot.viewEquipment : {};
-    var key = uiEquipTargetSlotFromSnapshot(it, cmpEq);
-    compareItem = cmpEq[key];
-  }
-  var h = uiItemDetailHTML(it, {}, headerSnapshot);
+  var h = itemDetailHTML(it, null, {
+    gold: player && player.gold,
+    essence: player && player.essence
+  });
   var actionsHtml = '';
   var pendingKey = itemPendingKey(it.id);
   if (UI.sel.source === 'inv') {
@@ -4282,67 +4277,6 @@ function uiEquipTargetSlotFromSnapshot(item, equipment) {
   return best;
 }
 
-function uiItemDetailHTML(item, opts, headerSnapshot) {
-  if (!item) return '';
-  opts = opts || {};
-  var rarity = RARITIES[item.rarity] || { name: '未知', color: 'inherit', enchants: 0 };
-  var weapon = typeof weaponDef === 'function' ? weaponDef(item) : null;
-  var slotInfo = SLOT_INFO[item.slot] || { emoji: '⚔️', name: item.slot || '' };
-  var label = typeof itemTypeLabel === 'function' ? itemTypeLabel(item) : slotInfo.name;
-  var multiplier = typeof upgradeMult === 'function' ? upgradeMult(item) : 1;
-  var html = '<div class="it-name" style="position:relative;color:' + rarity.color + '">' +
-    (weapon ? weapon.emoji : slotInfo.emoji) + ' ' + esc(item.name || label) +
-    (item.upgrade ? ' <span class="it-up">+' + item.upgrade + '</span>' : '') +
-    (item.synthesized ? ' <span class="it-syn">✦合成</span>' : '') +
-    (item.locked ? ' 🔒' : '') +
-    (opts.isEquipped ? '<span class="equipped-tag">(現有裝備)</span>' : '') + '</div>';
-  html += '<div class="it-sub"><span>' + rarity.name + '・' + esc(label) + '・等級 ' +
-    fmt(item.level || 0) + '</span></div>';
-  html += '<div class="it-affixes">';
-  var affixes = Array.isArray(item.affixes) ? item.affixes : [];
-  affixes.forEach(function (affix) {
-    var def = AFFIX_POOL[affix.key];
-    if (!def) return;
-    var value = (Number(affix.val) || 0) * multiplier;
-    var valueText = def.pct ? pctStr(value) : fmt(value);
-    var marker = affix.ancient ? '<span class="ancient-star" aria-label="太古詞條">✡</span>' : '◆';
-    html += '<div class="it-affix-row it-affix' + (affix.ancient ? ' ancient-affix' : '') + '">' +
-      '<div class="it-affix-text">' + marker + ' ' + esc(def.name.replace('%', '')) + ' +' + valueText + '</div>' +
-      (opts.showAffixReroll === false ? '' : '<div class="it-affix-action"><button class="btn affix-reroll-btn" data-act="reroll-affix" data-affix="' + esc(affix.key) + '" aria-label="洗煉詞條">🎲</button></div>') +
-      '</div>';
-  });
-  html += '</div>';
-  if (item.passive && typeof passiveLine === 'function') {
-    html += '<div class="it-passive">' + esc(passiveLine(item.passive)) + '</div>';
-  }
-  if (Array.isArray(item.godPassives)) {
-    item.godPassives.forEach(function (passive) {
-      var def = GODFORGE_POOL[passive.key];
-      if (def) html += '<div class="it-godpassive">【' + esc(def.name) + '】' + esc(def.desc).replace('{v}', fmt1(passive.val)) + '</div>';
-    });
-  }
-  var enchants = typeof itemEnchants === 'function' ? itemEnchants(item) : (item.enchants || []);
-  enchants.forEach(function (enchant) {
-    if (typeof enchantLine === 'function') html += '<div class="it-enchant">' + esc(enchantLine(enchant)) + '</div>';
-  });
-  var sockets = Array.isArray(item.sockets) ? item.sockets : [];
-  if (sockets.length) {
-    html += '<div class="it-sockets">';
-    sockets.forEach(function (socket) {
-      if (socket && socket.fused && typeof fusedGemLabel === 'function') {
-        html += '<span class="socket filled fused-socket">' + esc(fusedGemLabel(socket.fused)) + '</span>';
-      } else if (socket && GEM_TYPES[socket.type]) {
-        var gem = GEM_TYPES[socket.type];
-        html += '<span class="socket filled">' + gem.emoji + ' ' + esc(GEM_NAMES[socket.level] + gem.name) + '</span>';
-      } else {
-        html += '<span class="socket empty">空插槽</span>';
-      }
-    });
-    html += '</div>';
-  }
-  return html;
-}
-
 function uiForgePanelSnapshot() {
   return panelData('forge');
 }
@@ -5561,7 +5495,13 @@ function showItemTooltip(it, anchorEl, opts) {
     compareItem = cmpEq[key];
   }
 
-  var detailHtml = uiItemDetailHTML(it, { showAffixReroll: false }, uiHeaderPanelSnapshot());
+  var tooltipHeaderSnapshot = uiHeaderPanelSnapshot();
+  var tooltipPlayer = tooltipHeaderSnapshot && tooltipHeaderSnapshot.player;
+  var detailHtml = itemDetailHTML(it, null, {
+    showAffixReroll: false,
+    gold: tooltipPlayer && tooltipPlayer.gold,
+    essence: tooltipPlayer && tooltipPlayer.essence
+  });
   if (opts && opts.hint) {
     detailHtml += '<div class="skt-hint">' + opts.hint + '</div>';
   }
@@ -5569,7 +5509,12 @@ function showItemTooltip(it, anchorEl, opts) {
   var h = '';
   var mainCard = '<div class="equip-detail-card">' + detailHtml + '</div>';
   if (compareItem && compareItem.id !== it.id) {
-    var compCard = '<div class="equip-detail-card">' + uiItemDetailHTML(compareItem, { isEquipped: true, showAffixReroll: false }, uiHeaderPanelSnapshot()) + '</div>';
+    var compCard = '<div class="equip-detail-card">' + itemDetailHTML(compareItem, null, {
+      isEquipped: true,
+      showAffixReroll: false,
+      gold: tooltipPlayer && tooltipPlayer.gold,
+      essence: tooltipPlayer && tooltipPlayer.essence
+    }) + '</div>';
     h = '<div class="equip-compare-container">' + mainCard + compCard + '</div>';
   } else {
     h = mainCard;

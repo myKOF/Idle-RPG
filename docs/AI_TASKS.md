@@ -449,6 +449,141 @@ Claude Review
 
 Claude Review
 
+## 3.7 Codex：多 Worktree 分支整合腳本
+
+狀態：
+
+等待 Review（實作與驗證完成）
+
+任務名稱：
+
+自動推送三個 AI 分支、整合至 develop，再將 develop 同步回三個 AI 分支
+
+任務內容：
+
+- 自動探索 `ai/antigravity`、`ai/claude`、`ai/codex`、`develop` 所在 Worktree
+- 提供專案根目錄 `sync_ai_worktrees.bat`，可直接雙擊執行完整流程
+- BAT 與 PowerShell 腳本的步驟、結果及錯誤提示使用繁體中文
+- 執行前確認所有 Worktree 分支正確且工作區乾淨
+- 提供 `-ValidateOnly` 唯讀預檢模式
+- 先 fast-forward 同步並推送三個 AI 分支
+- 在 develop Worktree 依序合併三個遠端 AI 分支並推送 develop
+- 將遠端 develop fast-forward 回三個 AI 分支並推送
+- 任一步驟失敗立即停止，不自動 reset、abort 或覆蓋衝突
+
+允許修改：
+
+- `sync_ai_worktrees.bat`
+- `tools/sync_ai_worktrees.ps1`
+- `docs/AI_TASKS.md`
+
+禁止修改：
+
+- 遊戲程式、資料、公式與測試
+- `develop` 分支
+
+前置依賴：
+
+無
+
+測試要求：
+
+- PowerShell Parser 語法檢查通過
+- BAT 可正確找到並啟動 PowerShell 腳本，結束後保留執行結果
+- Windows PowerShell 5.1 與 BAT 顯示繁體中文時不得出現亂碼
+- 唯讀驗證目前 Worktree 探索結果包含四個目標分支
+- 不對實際專案執行 push 或 merge
+- 使用本機臨時 bare remote 完整演練 push、merge 與三分支回灌
+
+驗收結果：
+
+- PowerShell Parser 語法檢查通過
+- BAT 以 `-ValidateOnly` 實測可正確啟動 PowerShell 腳本並回傳其結束碼
+- BAT 與 PowerShell 腳本的繁體中文訊息實測顯示正常
+- 實際專案 `-ValidateOnly` 找到四個目標 Worktree，並因 Claude Worktree
+  的 `.claude/launch.json` 未提交而依預期安全停止
+- 本機臨時 remote 完整流程通過，`develop` 與三個 AI 遠端分支最終收斂至同一 commit
+- 未對實際專案執行 pull、push 或 merge
+
+完成後交給：
+
+使用者執行；發生衝突時交由整合者人工處理
+
+## 3.8 Codex：裝備詳情統一使用 itemDetailHTML
+
+狀態：
+
+等待 Review（實作與主要驗收完成）
+
+任務名稱：
+
+刪除 `uiItemDetailHTML` 重複實作，三個裝備詳情呼叫點統一使用 `itemDetailHTML`
+
+前置依賴：
+
+- `ba11ca9 refactor: itemDetailHTML 改為純函式，供主執行緒直接呼叫`
+- 開工前 `git pull --ff-only` 已完成，並以 `git merge-base --is-ancestor ba11ca9 HEAD`
+  確認依賴存在
+
+完成內容：
+
+- `renderDetail()` 改呼叫 `itemDetailHTML(it, null, opts)`
+- 裝備格 tooltip 的目前裝備與比較裝備兩張卡片改呼叫 `itemDetailHTML`
+- 三個呼叫點皆由 header Snapshot 傳入 `gold`、`essence`
+- 保留 `showAffixReroll`、`isEquipped` 原有語意
+- 刪除 `uiItemDetailHTML` 簡化重寫
+- 將原本的 todo 接線測試改成正式回歸測試，鎖定三個呼叫點、`cmp = null`
+  及資源欄位
+
+修改檔案：
+
+- `js/ui.js`
+- `tests/item-detail-html.test.cjs`
+- `docs/AI_TASKS.md`
+
+禁止修改且未修改：
+
+- `js/item.js`、`js/formula.js`、`js/data.js`
+- `js/worker/*`、`js/bridge.js`、`js/main.js`
+- `index.html`、`develop` 分支
+
+測試結果：
+
+- `node --test tests/item-detail-html.test.cjs`：7/7 通過，todo 0
+- `npm.cmd test`：504/504 通過，結尾 `ℹ fail 0`
+- `npm.cmd run build`：154 個檔案全數通過
+- `git diff --check`：通過
+
+實機驗收：
+
+- 使用 `codex` 工作副本的獨立 preview server 與
+  `docs/fixtures/save_lategame.json`，未使用 develop 的 5500 服務
+- 詳情實際顯示詞條池按鈕、分類色、評分、洗煉區間資料、空附魔欄及寶石數值
+- 詞條池浮層：`display:block`、父層為 `BODY`、不在 `#detail-pane` 內且完整位於 viewport
+- 掉寶率實例：原值 `176.5`、強化 `0`、預期／顯示 `88.25`，
+  `displayedExpected:true`、`displayedRaw:false`
+- fixture 不含同 key 重複詞條；以 fixture 裝備複本建立 `10 + 5` 測例，
+  實際輸出一行且顯示 `15`
+- 太古滿值實例：金色 `#fbbf24`、粗體及太古專屬洗煉文案皆存在
+- 金幣歸零後，洗煉花費 tooltip 的金幣 span 實際帶 `#fca5a5`
+- 透過正式 UI 鑲入四級紅寶石、附上火焰抗性附魔後，六項檢查全為 `true`
+- 實際點擊詳情內寶石與附魔後均成功取下，面板恢復空插槽／空附魔欄
+- Console：0 error、0 warning
+- `WorkerBridge.status()`：`errors:0`、`persistErrors:0`、`pendingCommands:0`
+
+已知驗收素材限制：
+
+- fixture 原始第一件裝備是空插槽、空附魔欄，因此未先鑲嵌／附魔時，
+  原提示詞六項指令的 `socketRm`、`enchantRm` 必然為 `false`
+- fixture 800 件裝備中沒有同 key 重複詞條，故該項使用同一 fixture 裝備複本
+  建立確定性測例
+- in-app browser 的指標移動未觸發 `mouseover`；已在實際 DOM 驗證詞條與 🎲
+  的 `data-tip` 內容、太古專屬文案及不足資源紅色樣式，人工滑過浮層仍建議 Review 時補看
+
+完成後交給：
+
+Claude Review
+
 任務名稱：
 
 既有測試失敗修復（A 類與 C 類）
