@@ -50,7 +50,7 @@ function loadMigrationContext() {
   };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/item.js', 'js/skills.js', 'js/player.js', 'js/save.js'].forEach((file) => {
+  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/item.js', 'js/skills.js', 'js/player.js', 'js/save.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   return context;

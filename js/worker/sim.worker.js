@@ -12,7 +12,7 @@
 
 importScripts('protocol.js', 'shim.js');
 importScripts(
-  '../util.js', '../data.js', '../formula.js', '../stats.js', '../item.js',
+  '../util.js', '../data.js', '../formula.js', '../battlefield.js', '../stats.js', '../item.js',
   '../skills.js', '../talents.js', '../player.js', '../special_rules.js',
   '../combat.js', '../legendary.js', '../potential.js', '../tower.js',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js'
@@ -506,10 +506,18 @@ function installStorageGuards() {
     return Promise.resolve(true);
   };
 
+  /* 檔名一律以 `IC_manual_` 開頭，標籤接在後面。
+     這不是美觀問題：存檔資料夾的手動存檔掃描只認 `IC_manual_` 與 `IC_before_bulk_salvage_`
+     兩種開頭（save.js 的 scanManualMetadataV2），檔名一旦不符就整個被跳過——檔案確實寫進
+     資料夾，卻永遠不會出現在「存檔記錄」清單裡。
+
+     舊版把標籤直接當成前綴，而 ui.js 的「立即存檔」傳的標籤是**存檔資料夾的名稱**，
+     於是資料夾叫 Saves 的玩家產生的是 `IC_Saves_<時間戳>.json`，全部掃不到。
+     實測某位使用者 7/28 之後按的 8 次立即存檔都在資料夾裡躺著，清單上一筆都沒有。 */
   function buildManualMeta(label) {
-    var prefix = label ? String(label).replace(/[^a-z0-9_-]+/ig, '_') : 'manual';
+    var tag = label ? String(label).replace(/[^a-z0-9_-]+/ig, '_').replace(/^_+|_+$/g, '') : '';
     return saveRecMeta('manual', 'manual_' + Date.now().toString(36) + '_' + ri(100, 999),
-      'IC_' + prefix + '_' + saveStamp(Date.now()) + '.json');
+      'IC_manual_' + (tag ? tag + '_' : '') + saveStamp(Date.now()) + '.json');
   }
 
   /* 一般手動存檔：未連接資料夾時仍要落地（舊路徑是寫進瀏覽器存檔記錄）。

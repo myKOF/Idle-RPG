@@ -583,6 +583,15 @@ const FX_GLOSSARY_ROWS = [
   ['en=英文名；'],
   ['desc=質變說明(面板顯示的完整敘述)；'],
   [''],
+  ['傷害範圍'],
+  ['空白＝單體(1*1)，一次只打 1 個敵人；'],
+  ['A*B＝直向 A 格 × 橫向 B 格，以主目標為準取該大小的方框，框內敵人全部命中；'],
+  ['　例：3*3 方框、2*2 方框、1*3 由左往右貫穿的直線、3*1 擋在面前的橫牆；'],
+  ['all＝全體：對敵方 4×4 棋盤內所有敵人造成傷害；'],
+  ['主目標的挑法與普攻相同（最近優先、同距離隨機、鎖定不換）；'],
+  ['佔多格的單位(BOSS)被範圍蓋到時仍只算命中 1 次；'],
+  ['額外觸發的傷害(引爆／濺射／連鎖)不受此欄影響，也不算進單體/群體判定；'],
+  [''],
   ['里程碑fx(JSON)'],
   ['格式：{"等級":{覆蓋欄位},…}，例 {"4":{…},"8":{…}}；'],
   ['＝技能升到該等級後，用其中欄位「覆蓋」基礎fx的同名欄位(淺層覆蓋、達標的高等級優先)；'],
@@ -593,7 +602,7 @@ const FX_GLOSSARY_ROWS = [
 SCHEMAS.Skills = {
   name: 'Skills', jsFile: 'skills', sheet: 'Skills', vars: ['SKILLS', 'UNLOCKS', 'POTENTIAL_TALENTS'],
   extraSheets: [{ name: '變量定義', rows: FX_GLOSSARY_ROWS }],
-  header: ['id', '系統分類', '標籤', '解鎖等級', '名稱', 'icon圖號', '施法消耗', '冷卻', '施放AI', '說明文字', '基礎fx(JSON)', '里程碑fx(JSON)'],
+  header: ['id', '系統分類', '標籤', '解鎖等級', '名稱', 'icon圖號', '施法消耗', '冷卻', '施放AI', '傷害範圍', '說明文字', '基礎fx(JSON)', '里程碑fx(JSON)'],
   extract(src) {
     const SKILLS = evalLiteral(extractLiteral(src, 'SKILLS').literal);
     const UNLOCKS = evalLiteral(extractLiteral(src, 'UNLOCKS').literal);
@@ -603,7 +612,7 @@ SCHEMAS.Skills = {
       const un = UNLOCKS[id];
         return [id, s.cat, joinList(skillTagsForConfig(s, id)), skillUnlockLevelForConfig(s, id), s.name, s.emoji,
         s.cost == null ? '' : numStr(s.cost), s.cd == null ? '' : numStr(s.cd),
-        s.ai || '', s.flavor || '', JSON.stringify(s.fx), un ? JSON.stringify(un) : ''];
+        s.ai || '', s.shape || '', s.flavor || '', JSON.stringify(s.fx), un ? JSON.stringify(un) : ''];
     });
     // 潛力技能 V3（系統分類=potential；列順序＝解鎖順序）：與一般技能同格式——
     // 共用欄放 名稱/icon/冷卻/說明文字(風味)，其餘機制參數（type/base/per/dur/dmgType/mech/en/desc）收進「基礎fx(JSON)」。
@@ -617,7 +626,7 @@ SCHEMAS.Skills = {
       fx.mech = t.mech || '';
       if (t.en) fx.en = t.en;
       if (t.desc) fx.desc = t.desc;
-       rows.push([t.id, 'potential', joinList(skillTagsForConfig(t)), skillUnlockLevelForConfig(t, t.id), t.name, t.emoji, '', t.cd == null ? '' : numStr(t.cd), '', t.flavor || '', JSON.stringify(fx), '']);
+       rows.push([t.id, 'potential', joinList(skillTagsForConfig(t)), skillUnlockLevelForConfig(t, t.id), t.name, t.emoji, '', t.cd == null ? '' : numStr(t.cd), '', t.shape || '', t.flavor || '', JSON.stringify(fx), '']);
     });
     return rows;
   },
@@ -646,6 +655,8 @@ SCHEMAS.Skills = {
         if (fx.dur != null) o.dur = toNum(fx.dur);
         o.mech = fx.mech == null ? '' : String(fx.mech);
         o.desc = fx.desc == null ? '' : String(fx.desc);
+        const pShape = get(r, '傷害範圍').trim();
+        if (pShape !== '') o.shape = pShape;
         const flavor = get(r, '說明文字'); if (flavor !== '') o.flavor = flavor;
         potentials.push(o);
         return;
@@ -656,6 +667,9 @@ SCHEMAS.Skills = {
       if (cost !== '') o.cost = toNum(cost);
       if (cd !== '') o.cd = toNum(cd);
       if (ai !== '') o.ai = ai;
+      // 傷害範圍：空白＝單體（1x1）；可填 2x2／3x3／all（全場）。解析 → js/battlefield.js bfParseShape
+      const shape = get(r, '傷害範圍').trim();
+      if (shape !== '') o.shape = shape;
       o.flavor = get(r, '說明文字');
       const fxRaw = get(r, '基礎fx(JSON)').trim();
       o.fx = fxRaw === '' ? {} : parseJsonCell(fxRaw, id + ' 基礎fx');

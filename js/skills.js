@@ -19,7 +19,7 @@ function resetSkillRT() {
     amps: [],         // skillAmp 族：{scope,pct,until,uses,refundPct,perCdSec,cap,cdrPct,srcId} 待消耗增幅清單
     charges: {},      // stackCharge 族：name → {stacks,max,until,burst,srcId} 疊層狀態
     echoQueue: [],    // echo/procCast 族：{at,resolve} 延遲結算佇列（at=GT 時戳，到期由 tickSkillSchedulers 出列）
-    fields: [],       // periodicField 族：{name,until,tickSec,nextAt,onTick,onExpire,elem,takenAmpPct,snapshot} 領域清單
+    fields: [],       // periodicField 族：{name,until,tickSec,nextAt,onTick,onExpire,elem,takenAmpPct,cellSet,snapshot} 領域清單
     dmgWindows: [],   // echo 傷害快照窗：{until,pct,acc,resolve}（窗內玩家全部傷害累計、期滿一次轟出）
     healWindows: [],  // healEcho 治療回響窗：{until,pct,acc,resolve}（窗內所受傷害累計、期滿回療）
     nthCastCount: 0,  // freeCast 族（零式節律/passiveNthFree）：技能施放計數
@@ -787,9 +787,12 @@ function skillRtOnEnemyDeath(deadEnt, liveEnemies) {
     if (e && e !== deadEnt && e.hp > 0) pool.push(e);
   }
   if (!pool.length) return;
+  // 接收者一律取「離死者最近」的敵人（同距離隨機）：印記轉移與 DoT 濺射都是往旁邊擴散，
+  // 不再從全場隨機挑一隻 → js/battlefield.js bfNearestOther
+  var nearestRecv = (typeof bfNearestOther === 'function') ? bfNearestOther(deadEnt, pool) : null;
   // brand 族：印記死亡轉移（獵殺烙印 M8）——同名印記儲能/層數併入接收者
   if (trig.passiveBrandAmp && trig.passiveBrandAmp.transferOnKill && deadEnt.brands && deadEnt.brands.length) {
-    var recv = pick(pool);
+    var recv = nearestRecv || pick(pool);
     if (!recv.brands) recv.brands = [];
     for (var b = 0; b < deadEnt.brands.length; b++) {
       var be = deadEnt.brands[b];
@@ -814,7 +817,7 @@ function skillRtOnEnemyDeath(deadEnt, liveEnemies) {
   for (var d = 0; d < deadEnt.dots.length; d++) {
     var dd = deadEnt.dots[d];
     if (dd.until <= GT) continue;
-    applyDot(pick(pool), dd.dps * pct / 100, Math.max(0.5, dd.until - GT), dd.name);
+    applyDot(nearestRecv || pick(pool), dd.dps * pct / 100, Math.max(0.5, dd.until - GT), dd.name);
   }
 }
 
@@ -918,11 +921,13 @@ function skillRtAccWindowDamage(dmg) {
    領域為全場快照，所有存活敵人皆視為域內。套用端：castSkill 傷害段／doPlayerAttack／
    skillRtSimpleCast／領域跳傷四處共用同一函式，野外與高塔自然鏡射。
    注意：aCfg.elemAtk 可能直接引用 getStats() 快取（playerAtkCfg），放大前先淺拷貝防污染。 */
-function skillRtFieldAmpACfg(aCfg) {
+function skillRtFieldAmpACfg(aCfg, target) {
   if (!SKILL_RT || !SKILL_RT.fields.length || !aCfg || !aCfg.isPlayer) return aCfg;
   for (var i = 0; i < SKILL_RT.fields.length; i++) {
     var f = SKILL_RT.fields[i];
     if (!f || !(f.takenAmpPct > 0) || f.until <= GT) continue;
+    // 增幅只對「站在領域裡」的敵人生效；未帶目標（呼叫端沒有單一受擊者）時維持原本的無條件增幅
+    if (target && f.cellSet && typeof bfEntityInCells === 'function' && !bfEntityInCells(target, f.cellSet)) continue;
     var m = 1 + f.takenAmpPct / 100;
     var k = f.ampKey;
     if (k === 'phys' || k === 'magic') {
@@ -960,7 +965,8 @@ function skillRtSimpleCast(pEnt, sk, fx, lv, powerPct, targets, floatSel, opts) 
   opts = opts || {};
   if ((opts.depth || 0) > SKILL_PROC_DEPTH_MAX) return out; // 遞迴深度封頂（防連鎖引動）
   if (!sk || !fx || !fx.dmgType || !(powerPct > 0)) return out;
-  var live = (targets || []).filter(function (m) { return m && m.hp > 0; });
+  // 回響／重放／引動：重放的是同一支技能，命中範圍比照該技能的傷害範圍設定
+  var live = skillResolveTargets(pEnt, targets, sk, fx, opts);
   if (!live.length) return out;
   var st = getStats();
   // 攻擊基準：比照 castSkill——互補加成（混沌雙修）→ AOE 分攤 → 技能效果天賦倍率 → 神怒 → 雷霆過載 → 威力%
@@ -1016,7 +1022,7 @@ function skillRtSimpleCast(pEnt, sk, fx, lv, powerPct, targets, floatSel, opts) 
         skillElemApplyACfg(aCfg, sk, fx); // 技能屬性化：本體傷害段整段歸屬技能屬性
         // 處決：低血量加成（重放/引動同樣適用）
         if (fx.execBelow && t.hp / t.maxHp * 100 < fx.execBelow) aCfg.atk *= (fx.execMult || 2);
-        aCfg = skillRtFieldAmpACfg(aCfg); // periodicField 族：領域增幅
+        aCfg = skillRtFieldAmpACfg(aCfg, t); // periodicField 族：領域增幅（只對站在領域裡的目標）
         res = resolveHit(pEnt, t, aCfg, monsterDefCfg(t));
       }
       if (!res.miss) {
@@ -1087,20 +1093,25 @@ function skillRtApplyBrandOps(pEnt, sk, fx, lv, st, targets, floatSel, parts, ou
       if (dcfg.stunDur && t.hp > 0 && !isBossControlImmune(t) && !resistCtrl(monsterDefCfg(t))) {
         applyEffect(t, 'stun', dcfg.stunDur);
       }
-      // chainPct 儲能餘波：每層以（該印記儲能÷層數）×N% 彈向隨機另一存活敵（真傷直扣）
+      // chainPct 儲能餘波：每層以（該印記儲能÷層數）×N% 由近而遠彈向其他存活敵（真傷直扣）。
+      // 彈跳對象取自整個戰場而不是本次技能的 targets——技能改成單體之後，
+      // 若只在 targets 裡找，餘波會因為沒有第二個目標而完全打不出去。
       if (dcfg.chainPct > 0) {
         for (var mi = 0; mi < matched.length; mi++) {
           var me = matched[mi];
           var wave = Math.round((me.stacks > 0 ? me.stored / me.stacks : 0) * dcfg.chainPct / 100);
           if (!(wave > 0)) continue;
+          var field = skillRtActiveEnemies(targets);
+          var pool = [];
+          for (var pi = 0; pi < field.length; pi++) {
+            var pe = field[pi];
+            if (pe && pe !== t && pe.hp > 0 && !effectActive(pe, 'invuln')) pool.push(pe);
+          }
+          if (!pool.length) continue; // 塔內單體 BOSS：無彈跳對象時略過
+          var chain = (typeof bfChainOrder === 'function') ? bfChainOrder(t, pool, me.stacks) : [];
           for (var sw = 0; sw < me.stacks; sw++) {
-            var pool = [];
-            for (var pi = 0; pi < targets.length; pi++) {
-              var pe = targets[pi];
-              if (pe && pe !== t && pe.hp > 0 && !effectActive(pe, 'invuln')) pool.push(pe);
-            }
-            if (!pool.length) break; // 塔內單體 BOSS：無彈跳對象時略過
-            var recvT = pick(pool);
+            var recvT = chain[sw] || pool[sw % pool.length];
+            if (!recvT || recvT.hp <= 0) continue;
             recvT.hp -= wave;
             extra += wave;
             floatEnemyEvent(recvT, floatSel, '🌊' + fmt(wave), 'dmg enemy-skill', wave);
@@ -1167,10 +1178,13 @@ function skillRtStigmaDetonate(pEnt, sg, enemies, floatSel, parts, out, ctx) {
   if (!sg || !(sg.stored > 0)) return;
   var st = getStats();
   var dmg = Math.max(1, Math.round(sg.stored * (sg.multPct || 0) / 100));
-  var t = null;
+  // 引爆對象改挑「離我方最近」的敵人（原本是取陣列第一個，等同看出怪順序）
+  var stigmaPool = [];
   for (var i = 0; i < (enemies ? enemies.length : 0); i++) {
-    if (enemies[i] && enemies[i].hp > 0 && !effectActive(enemies[i], 'invuln')) { t = enemies[i]; break; }
+    if (enemies[i] && enemies[i].hp > 0 && !effectActive(enemies[i], 'invuln')) stigmaPool.push(enemies[i]);
   }
+  var t = (typeof bfPickPrimary === 'function') ? bfPickPrimary(stigmaPool, pEnt && pEnt._lockTarget)
+    : (stigmaPool.length ? stigmaPool[0] : null);
   var killed = false;
   if (t) {
     t.hp -= dmg;
@@ -1307,7 +1321,8 @@ function skillRtRollProc(pEnt, sk, fx, id, lv, st, out, targets, floatSel, parts
 
 /* ---- periodicField 族：開領域（同名領域重新施放＝取代刷新，不疊多份）----
    快照＝施放當下的每跳攻擊值（本次施放最終 baseVal × tickPct%）與攻擊組態（爆擊/穿透/元素等定格）；
-   之後每 tickSec 由 tickSkillSchedulers 以快照對全場存活敵各結算一次 resolveHit（真傷技能直扣）。
+   之後每 tickSec 由 tickSkillSchedulers 以快照對「站在領域覆蓋格子裡」的存活敵各結算一次
+   resolveHit（真傷技能直扣）；覆蓋格子取自 out.areaCells（castSkill 的範圍落點）。
    takenAmpPct 由 skillRtFieldAmpACfg 於各傷害端套用；ampKey＝field.elem（元素領域）或技能 dmgType。 */
 function skillRtOpenField(pEnt, sk, fx, id, lv, st, out) {
   var fcfg = fx.field;
@@ -1345,10 +1360,16 @@ function skillRtOpenField(pEnt, sk, fx, id, lv, st, out) {
     elem: fcfg.elem || null,
     takenAmpPct: fcfg.takenAmpPct || 0,
     ampKey: fcfg.elem || fx.dmgType, // takenAmpPct 增幅的傷害類型鍵（元素鍵或 phys/magic）
+    // 領域是「打在地上的一塊區域」：施放當下記住覆蓋的格子，之後每跳打站在那些格子裡的敵人。
+    // 沒有格位資訊（高塔單體 BOSS、未載入格位模組）時 cellSet 為 null＝不設限，維持原本的全場語意。
+    cellSet: (out && out.areaCells && typeof bfCellSet === 'function') ? bfCellSet(out.areaCells) : null,
     snapshot: { aCfg: snapACfg, elemAtk: snapElem, emoji: sk.emoji, tag: sk.name + '·領域', dmgType: fx.dmgType, trueTick: fx.dmgType === 'true' ? tickAtk : 0 }
   };
   entry.onTick = function (ctx) {
-    var live = ctx.getEnemies ? ctx.getEnemies() : [];
+    var all = ctx.getEnemies ? ctx.getEnemies() : [];
+    var live = entry.cellSet
+      ? all.filter(function (e) { return bfEntityInCells(e, entry.cellSet); })
+      : all;
     if (!live.length) return;
     var total = 0, killed = false;
     for (var i = 0; i < live.length; i++) {
@@ -1370,7 +1391,7 @@ function skillRtOpenField(pEnt, sk, fx, id, lv, st, out) {
           for (var e3 in entry.snapshot.elemAtk) em[e3] = entry.snapshot.elemAtk[e3];
           aCfg.elemAtk = em;
         }
-        aCfg = skillRtFieldAmpACfg(aCfg); // 領域增幅對領域跳傷同樣生效
+        aCfg = skillRtFieldAmpACfg(aCfg, t); // 領域增幅對領域跳傷同樣生效
         res = resolveHit(ctx.pEnt, t, aCfg, monsterDefCfg(t));
       }
       if (!res.miss) {
@@ -1515,10 +1536,14 @@ function skillRtOnCastMechB(pEnt, sk, fx, id, lv, st, out, targets, floatSel, pa
         var boom = Math.round((entry.acc || 0) * entry.pct / 100);
         if (!(boom > 0)) return;
         var live2 = ctx.getEnemies ? ctx.getEnemies() : [];
-        var tgt = null;
+        var winPool = [];
         for (var j = 0; j < live2.length; j++) {
-          if (live2[j] && live2[j].hp > 0 && !effectActive(live2[j], 'invuln')) { tgt = live2[j]; break; }
+          if (live2[j] && live2[j].hp > 0 && !effectActive(live2[j], 'invuln')) winPool.push(live2[j]);
         }
+        // 轟出對象改挑最近的敵人（原本取陣列第一個）
+        var tgt = (typeof bfPickPrimary === 'function')
+          ? bfPickPrimary(winPool, ctx.pEnt && ctx.pEnt._lockTarget)
+          : (winPool.length ? winPool[0] : null);
         if (!tgt) return;
         tgt.hp -= boom;
         floatEnemyEvent(tgt, ctx.floatSel, wEmoji + '🌒' + fmt(boom), 'crit enemy-skill', boom);
@@ -1600,7 +1625,7 @@ function skillDef(id, fusions) {
 var SKILLS = {
   powerSlash: { name: '強力斬', emoji: '🗡️', cat: 'phys', tags: [], unlockLv: 1, cost: 15, cd: 6, flavor: '蓄力揮出沉重的一擊。', fx: { dmgType: 'phys', stat: 'atk', base: 360, per: 80 } },
   doubleStrike: { name: '二連擊', emoji: '⚔️', cat: 'phys', tags: [], unlockLv: 1, cost: 20, cd: 8, flavor: '快速的兩段斬擊。', fx: { dmgType: 'phys', stat: 'atk', base: 210, per: 44, hits: 2 } },
-  whirlwind: { name: '旋風斬', emoji: '🌪️', cat: 'phys', tags: [], unlockLv: 1, cost: 25, cd: 10, flavor: '旋轉身軀橫掃周遭。', fx: { dmgType: 'phys', stat: 'atk', base: 505, per: 110 } },
+  whirlwind: { name: '旋風斬', emoji: '🌪️', cat: 'phys', tags: [], unlockLv: 1, cost: 25, cd: 10, shape: '3*3', flavor: '旋轉身軀橫掃周遭。', fx: { dmgType: 'phys', stat: 'atk', base: 505, per: 110 } },
   armorBreak: { name: '破甲擊', emoji: '🔨', cat: 'phys', tags: [], unlockLv: 1, cost: 20, cd: 12, flavor: '重擊敵人的護甲弱點。', fx: { dmgType: 'phys', stat: 'atk', base: 300, per: 60, debuff: { key: 'defDown', base: 25, per: 5, dur: 5 } } },
   executeStrike: { name: '處決', emoji: '💀', cat: 'phys', tags: [], unlockLv: 20, cost: 30, cd: 15, flavor: '對瀕死敵人給予終結。', fx: { dmgType: 'phys', stat: 'atk', base: 500, per: 110, execBelow: 30, execMult: 2 } },
   rendWound: { name: '撕裂', emoji: '🩸', cat: 'phys', tags: [], unlockLv: 20, cost: 18, cd: 10, flavor: '造成難以癒合的傷口。', fx: { dmgType: 'phys', stat: 'atk', base: 240, per: 50, dot: { pct: 25, dur: 5, name: '流血' } } },
@@ -1608,11 +1633,11 @@ var SKILLS = {
   berserkStrike: { name: '狂暴打擊', emoji: '😤', cat: 'phys', tags: [], unlockLv: 20, cost: 20, cd: 12, flavor: '不顧自身安危的猛攻。', fx: { dmgType: 'phys', stat: 'atk', base: 840, per: 170, selfDmgPct: 5 } },
   preciseThrust: { name: '精準突刺', emoji: '🎯', cat: 'phys', tags: [], unlockLv: 50, cost: 15, cd: 8, flavor: '絕不落空的致命突刺。', fx: { dmgType: 'phys', stat: 'atk', base: 300, per: 65, neverMiss: true, critBonus: 30 } },
   heavySmash: { name: '泰山壓頂', emoji: '🪨', cat: 'phys', tags: [], unlockLv: 50, cost: 28, cd: 13, flavor: '沉重的壓制性打擊。', fx: { dmgType: 'phys', stat: 'atk', base: 600, per: 130, slowDur: 3 } },
-  swiftCuts: { name: '疾風連斬', emoji: '🍃', cat: 'phys', tags: [], unlockLv: 50, cost: 32, cd: 16, flavor: '化作疾風的三段斬。', fx: { dmgType: 'phys', stat: 'atk', base: 165, per: 35, hits: 3 } },
+  swiftCuts: { name: '疾風連斬', emoji: '🍃', cat: 'phys', tags: [], unlockLv: 50, cost: 32, cd: 16, shape: '3*3', flavor: '化作疾風的三段斬。', fx: { dmgType: 'phys', stat: 'atk', base: 165, per: 35, hits: 3 } },
   counterStance: { name: '反擊架勢', emoji: '🔄', cat: 'phys', tags: [], unlockLv: 100, cost: 22, cd: 18, flavor: '擺出以牙還牙的架勢。', fx: { buff: { key: 'thornsUp', base: 12, per: 4, dur: 6 } } },
   soulBrandFlurry: { name: '烙魂連斬', emoji: '🪓', cat: 'phys', tags: [], unlockLv: 100, cost: 28, cd: 12, flavor: '三連斬光落下，將敵人的魂魄烙上戰印。', fx: { dmgType: 'phys', stat: 'atk', base: 145, per: 32, hits: 3, brand: { name: '魂痕', storePct: 30, dur: 8, maxStacks: 3 } } },
   sinDetonate: { name: '斷罪引爆', emoji: '🧨', cat: 'phys', tags: [], unlockLv: 100, cost: 36, cd: 16, flavor: '一擊定罪，引爆所有烙印的宿命。', fx: { dmgType: 'phys', stat: 'atk', base: 560, per: 110, detonate: { brand: 'any', multPct: { base: 120, per: 3 }, resetCd: { id: 'soulBrandFlurry', pct: 25 } } } },
-  echoBlade: { name: '殘影迴斬', emoji: '🌒', cat: 'phys', tags: [], unlockLv: 150, cost: 32, cd: 15, flavor: '斬擊的殘影在剎那之後追上真實。', fx: { dmgType: 'phys', stat: 'atk', base: 520, per: 100, dmgWindow: { dur: 2, pct: 35 } } },
+  echoBlade: { name: '殘影迴斬', emoji: '🌒', cat: 'phys', tags: [], unlockLv: 150, cost: 32, cd: 15, shape: '2*2', flavor: '斬擊的殘影在剎那之後追上真實。', fx: { dmgType: 'phys', stat: 'atk', base: 520, per: 100, dmgWindow: { dur: 2, pct: 35 } } },
   warSpiritEngine: { name: '鬥氣輪轉', emoji: '🥊', cat: 'phys', tags: [], unlockLv: 150, cost: 12, cd: 5, flavor: '鬥氣隨戰意輪轉，蓄滿之刻便是爆發之時。', fx: { charge: { name: '鬥氣', add: 1, max: 3, dur: 15, source: 'attackHit', burst: { multPct: { base: 120, per: 5 }, scope: 'next' } } } },
   pursuitDecree: { name: '追擊號令', emoji: '📯', cat: 'phys', tags: [], unlockLv: 150, cost: 18, cd: 14, flavor: '號令一出，萬刃爭先。', fx: { cdShift: { scope: 'cat:phys', sec: { base: 1.5, per: 0.1 } } } },
   warOverture: { name: '破軍先聲', emoji: '⚜️', cat: 'phys', tags: [], unlockLv: 200, cost: 22, cd: 16, flavor: '先聲奪人，為最沉重的一擊鋪路。', fx: { skillAmp: { scope: 'next', dur: 8, uses: 1, perCdSec: { base: 4, per: 0.1 }, cap: 120 } } },
@@ -1621,19 +1646,19 @@ var SKILLS = {
   swordDomain: { name: '劍域千鋒', emoji: '🗡️', cat: 'phys', tags: [], unlockLv: 300, cost: 30, cd: 18, flavor: '千鋒出鞘，方圓皆為劍之領域。', fx: { dmgType: 'phys', stat: 'atk', base: 220, per: 45, field: { name: '劍域', dur: 6, tickSec: 1, tickPct: 25 } } },
   arcaneBurst: { name: '奧術衝擊', emoji: '🌠', cat: 'magic', tags: ['light'], unlockLv: 1, cost: 30, cd: 10, flavor: '釋放純粹的奧術能量。', fx: { dmgType: 'magic', stat: 'matk', base: 330, per: 75 } },
   fireball: { name: '火球術', emoji: '🔥', cat: 'magic', tags: ['fire'], unlockLv: 1, cost: 25, cd: 9, flavor: '投出灼熱的火球並點燃敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 360, per: 80, dot: { pct: 20, dur: 4, name: '燃燒' } } },
-  iceLance: { name: '寒冰槍', emoji: '❄️', cat: 'magic', tags: ['ice'], unlockLv: 1, cost: 25, cd: 9, flavor: '冰冷的長槍刺穿敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 330, per: 70, slowDur: 3 } },
+  iceLance: { name: '寒冰槍', emoji: '❄️', cat: 'magic', tags: ['ice'], unlockLv: 1, cost: 25, cd: 9, shape: '1*3', flavor: '冰冷的長槍刺穿敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 330, per: 70, slowDur: 3 } },
   chainLightning: { name: '連鎖閃電', emoji: '⚡', cat: 'magic', tags: ['lightning'], unlockLv: 1, cost: 28, cd: 11, flavor: '躍動的閃電連續劈落。', fx: { dmgType: 'magic', stat: 'matk', base: 190, per: 40, hits: 2 } },
   venomCloud: { name: '劇毒雲霧', emoji: '☠️', cat: 'magic', tags: ['poison'], unlockLv: 20, cost: 26, cd: 12, flavor: '瀰漫的毒霧侵蝕敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 200, per: 40, dot: { pct: 40, dur: 6, name: '中毒' } } },
   holySmite: { name: '聖光審判', emoji: '🌟', cat: 'magic', tags: ['light'], unlockLv: 20, cost: 25, cd: 10, flavor: '聖光降下裁決並潔淨己身。', fx: { dmgType: 'magic', stat: 'matk', base: 340, per: 70, selfCleanse: true } },
   shadowBolt: { name: '暗影箭', emoji: '🌑', cat: 'magic', tags: ['dark'], unlockLv: 20, cost: 25, cd: 10, flavor: '汲取生命的暗影之矢。', fx: { dmgType: 'magic', stat: 'matk', base: 320, per: 70, healPctOfDmg: 30 } },
   arcaneBarrage: { name: '奧術彈幕', emoji: '💫', cat: 'magic', tags: ['light'], unlockLv: 20, cost: 40, cd: 15, flavor: '傾瀉四發奧術飛彈。', fx: { dmgType: 'magic', stat: 'matk', base: 135, per: 30, hits: 4 } },
-  meteor: { name: '隕石術', emoji: '☄️', cat: 'magic', tags: ['fire'], unlockLv: 50, cost: 60, cd: 25, flavor: '呼喚天降隕石毀滅一切。', fx: { dmgType: 'magic', stat: 'matk', base: 1260, per: 255 } },
+  meteor: { name: '隕石術', emoji: '☄️', cat: 'magic', tags: ['fire'], unlockLv: 50, cost: 60, cd: 25, shape: 'all', flavor: '呼喚天降隕石毀滅一切。', fx: { dmgType: 'magic', stat: 'matk', base: 1260, per: 255 } },
   manaBurn: { name: '法力灼燒', emoji: '🔮', cat: 'magic', tags: ['light'], unlockLv: 50, cost: 20, cd: 8, flavor: '以法力引發劇烈爆燃，爆擊時返還法力。', fx: { dmgType: 'magic', stat: 'matk', base: 320, per: 70, mpOnCrit: 20 } },
   frostNova: { name: '霜之新星', emoji: '🧊', cat: 'magic', tags: ['ice'], unlockLv: 50, cost: 30, cd: 14, flavor: '迸發的冰環凍結敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 260, per: 55, stunDur: 1 } },
   voidRift: { name: '虛空裂隙', emoji: '🕳️', cat: 'magic', tags: ['dark'], unlockLv: 100, cost: 45, cd: 18, flavor: '撕開無視一切防禦的虛空。', fx: { dmgType: 'true', stat: 'matk', base: 325, per: 70 } },
   stormSigil: { name: '雷紋刻印', emoji: '⛈️', cat: 'magic', tags: ['lightning'], unlockLv: 100, cost: 24, cd: 9, flavor: '雷紋入體，蓄勢待鳴。', fx: { dmgType: 'magic', stat: 'matk', base: 260, per: 55, brand: { name: '雷印', storePct: 35, dur: 8, maxStacks: 1 } } },
   runeShatter: { name: '碎印湮滅', emoji: '💥', cat: 'magic', tags: ['dark'], unlockLv: 100, cost: 30, cd: 12, flavor: '碎印之刻，湮滅隨行。', fx: { dmgType: 'magic', stat: 'matk', base: 300, per: 65, detonate: { brand: 'any', multPct: { base: 150, per: 3 }, chainPct: 60 } } },
-  emberEcho: { name: '燼焰回響', emoji: '🎆', cat: 'magic', tags: ['fire'], unlockLv: 150, cost: 32, cd: 13, flavor: '燼焰未熄，烈火再臨。', fx: { dmgType: 'magic', stat: 'matk', base: 330, per: 70, echo: { delay: 2, powerPct: 40, repeat: 1 } } },
+  emberEcho: { name: '燼焰回響', emoji: '🎆', cat: 'magic', tags: ['fire'], unlockLv: 150, cost: 32, cd: 13, shape: '3*3', flavor: '燼焰未熄，烈火再臨。', fx: { dmgType: 'magic', stat: 'matk', base: 330, per: 70, echo: { delay: 2, powerPct: 40, repeat: 1 } } },
   infernoDomain: { name: '焚世領域', emoji: '🌋', cat: 'magic', tags: ['fire'], unlockLv: 150, cost: 45, cd: 20, flavor: '焚世之火，燎盡八荒。', fx: { dmgType: 'magic', stat: 'matk', base: 240, per: 50, field: { name: '焚世領域', dur: 6, tickSec: 1, tickPct: 25, elem: 'fire', takenAmpPct: 15 } } },
   plagueBurst: { name: '疫爆術', emoji: '🦠', cat: 'magic', tags: ['poison'], unlockLv: 150, cost: 28, cd: 14, flavor: '讓蔓延的疫病在一瞬間齊聲炸裂。', fx: { dmgType: 'magic', stat: 'matk', base: 200, per: 42, dotDetonate: { pct: { base: 80, per: 1 }, cap: 100 }, dot: { pct: 40, dur: 6, name: '瘟疫' }, requiresTargetDot: true } },
   frostResonance: { name: '霜晶共鳴', emoji: '🌨️', cat: 'magic', tags: ['ice'], unlockLv: 200, cost: 22, cd: 8, flavor: '霜晶共鳴，凜冬將至。', fx: { dmgType: 'magic', stat: 'matk', base: 240, per: 50, charge: { name: '霜晶', add: 1, max: 4, dur: 20, source: 'cast', burst: { multPct: 180, scope: 'self' } } } },
@@ -2291,11 +2316,51 @@ function showPlayerShieldGainAfterHeal(floatSel, pEnt, beforeShield) {
 }
 
 /* ---- 施放執行 ---- */
+/* 技能目標解析（規格「技能均需要指定目標與範圍」）——
+   把「候選敵人池」收斂成本次實際命中的目標：
+     單體（預設，未填傷害範圍）：最近的一個；挑法與普攻相同（同距離隨機、鎖定後不換）
+     2x2 / 3x3                ：以主目標為準的方框，框內敵人全部命中（BOSS 佔多格仍只算 1 次）
+     all                      ：全場（規格：以棋盤中心為目標施放，對所有敵人造成傷害）
+   額外觸發的傷害（引爆／濺射／連鎖／回響）不經過這裡，因此不影響單體／群體的判定。
+   傳入單一實體（高塔 BOSS 等）時原樣使用；opts.exactTargets 供呼叫端自行選定目標時略過收斂。
+   範圍展開規則 → js/battlefield.js */
+function skillResolvePlacement(pEnt, target, sk, fx, opts) {
+  if (!Array.isArray(target)) {
+    var one = (target && target.hp > 0) ? [target] : [];
+    return { targets: one, cells: null };
+  }
+  var pool = target.filter(function (ent) { return ent && ent.hp > 0; });
+  if (!pool.length) return { targets: [], cells: null };
+  if ((opts && opts.exactTargets) || typeof bfAreaPlacement !== 'function') return { targets: pool, cells: null };
+  var shape = (fx && fx.shape) || (sk && sk.shape) || 'single';
+  var primary = bfPickPrimary(pool, pEnt && pEnt._lockTarget);
+  if (!primary) return { targets: [], cells: null };
+  return bfAreaPlacement(primary, pool, shape);
+}
+function skillResolveTargets(pEnt, target, sk, fx, opts) {
+  return skillResolvePlacement(pEnt, target, sk, fx, opts).targets;
+}
+
+/* 場上目前的敵人（連鎖／濺射／餘波等「往旁邊擴散」的效果用）——
+   這類效果的範圍不是技能的傷害範圍，而是整個戰場：技能改成單體之後，
+   若沿用技能自己的 targets，場上還有別的敵人也會彈不出去。
+   比照 legendary.js 的 legendaryActiveEnemies：高塔戰用 BOSS，野外用存活敵人清單。 */
+function skillRtActiveEnemies(fallback) {
+  if (typeof G !== 'undefined' && G && G.tower && G.tower.active &&
+      typeof TOWER !== 'undefined' && TOWER.boss && TOWER.boss.hp > 0) return [TOWER.boss];
+  if (typeof liveFieldEnemies === 'function') {
+    var live = liveFieldEnemies();
+    if (live && live.length) return live;
+  }
+  return (fallback || []).filter(function (e) { return e && e.hp > 0; });
+}
+
 function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
   var sk = skillDef(id);
   var fx = effectiveFx(id, sk, lv);
   var st = getStats();
-  var targets = Array.isArray(target) ? target.filter(function (ent) { return ent && ent.hp > 0; }) : (target ? [target] : []);
+  var placement = skillResolvePlacement(pEnt, target, sk, fx, opts);
+  var targets = placement.targets;
   var targetCount = Math.max(1, targets.length);
   var legendaryPrep = (typeof legendaryPrepareSkillCast === 'function')
     ? legendaryPrepareSkillCast(pEnt, targets, id, sk, fx, lv, st, opts)
@@ -2318,7 +2383,8 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
   }
   pEnt.skillGcd = (rtPre.noGcd || (opts && opts.noGcd)) ? 0 : SKILL_GLOBAL_COOLDOWN; // 45 新技能（freeCast 族）：免 GCD 施放
   if (!(opts && opts.noCastLock)) pEnt.atkCd += SKILL_CAST_LOCK * (1 - st.castSpeed / 100); // 施放硬直
-  var out = { killed: false, dmg: 0 };
+  // areaCells＝本次施放打在地上的那塊區域（領域類效果據此決定之後每跳打哪些格）
+  var out = { killed: false, dmg: 0, areaCells: placement.cells };
   var logMsg = sk.emoji + ' 你施放【' + sk.name + ' Lv.' + lv + '】，';
   var parts = [];
   // 5 轉昇華天賦：技能所有效果（傷害/治療/護盾/增益/減益/再生/詛咒/金幣/法力）共用此倍率；融合技=素材平均
@@ -2402,8 +2468,8 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
           skillElemApplyACfg(aCfg, sk, fx); // 技能屬性化：本體傷害段整段歸屬技能屬性（tags／elemOverride／融合 elems）
           // 處決：低血量加成
           if (fx.execBelow && targetEnt.hp / targetEnt.maxHp * 100 < fx.execBelow) aCfg.atk *= (fx.execMult || 2);
-          // 45 新技能（periodicField 族）：領域內敵人受指定類型傷害增幅（技能傷害端）
-          aCfg = skillRtFieldAmpACfg(aCfg);
+          // 45 新技能（periodicField 族）：領域內敵人受指定類型傷害增幅（技能傷害端；只對站在領域裡的目標）
+          aCfg = skillRtFieldAmpACfg(aCfg, targetEnt);
           dmgRes = resolveHit(pEnt, targetEnt, aCfg, monsterDefCfg(targetEnt));
         }
         if (!dmgRes.miss) {

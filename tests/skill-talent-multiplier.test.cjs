@@ -18,7 +18,7 @@ function loadCtx(opts) {
   };
   context.window = context;
   vm.createContext(context);
-  const files = ['js/util.js', 'js/data.js', 'js/formula.js', 'js/combat.js', 'js/skills.js'];
+  const files = ['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js'];
   if (opts.talents) files.push('js/talents.js');
   files.forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });

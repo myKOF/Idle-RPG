@@ -359,11 +359,29 @@ function getReincarnationCell(n, paramIdx) {
   for (let n = 0; n <= 20; n++) g.push(Number(getReincarnationCell(n, 5)));
   arrayContent('data', 'REINCARNATION_FUSION_MAX_LEVELS', g.join(', '), 'REINCARNATION_FUSION_MAX_LEVELS');
 }
-// FIELD_ENEMY_COUNT_TABLE = [[1,60],[2,25],[3,10],[4,5]]
+// FIELD_ENEMY_COUNT_TABLE = [[1,60],[2,25],...,[16,0]]（權重 0 者不會被抽中）
 {
-  const c = ['1 隻', '2 隻', '3 隻', '4 隻'].map((nm, i) => '[' + (i + 1) + ', ' + P('4-敵人數量', nm, 0) + ']');
+  const c = [];
+  for (let n = 1; n <= 16; n++) c.push('[' + n + ', ' + P('4-敵人數量', n + ' 隻', 0) + ']');
   arrayContent('data', 'FIELD_ENEMY_COUNT_TABLE', c.join(', '), 'FIELD_ENEMY_COUNT_TABLE');
 }
+// 戰場站位（敵方棋盤）：格數、距離係數、BOSS 佔格 → js/battlefield.js 讀這些常數
+scalar('data', 'BF_COLS', '4-戰場站位', '棋盤格數', 0);
+scalar('data', 'BF_ROWS', '4-戰場站位', '棋盤格數', 1);
+scalar('data', 'BF_DIST_PER_COL', '4-戰場站位', '距離規則', 0);
+scalar('data', 'BF_DIST_CENTER_ROW', '4-戰場站位', '距離規則', 1);
+scalar('data', 'BF_DIST_OUTER_ROW', '4-戰場站位', '距離規則', 2);
+scalar('data', 'BF_BOSS_W', '4-戰場站位', 'BOSS 佔格', 0);
+scalar('data', 'BF_BOSS_H', '4-戰場站位', 'BOSS 佔格', 1);
+// 野外 BOSS：出現階段、數值倍率、掉落倍率
+scalar('data', 'FIELD_BOSS_STAGE_INTERVAL', '4-野外BOSS', '出現階段', 0);
+scalar('data', 'FIELD_BOSS_HP_MULT', '4-野外BOSS', '數值倍率', 0);
+scalar('data', 'FIELD_BOSS_ATK_MULT', '4-野外BOSS', '數值倍率', 1);
+scalar('data', 'FIELD_BOSS_DEF_MULT', '4-野外BOSS', '數值倍率', 2);
+scalar('data', 'FIELD_BOSS_REWARD_MULT', '4-野外BOSS', '數值倍率', 3);
+scalar('data', 'FIELD_BOSS_DODGE_ADD', '4-野外BOSS', '數值倍率', 4);
+scalar('data', 'FIELD_BOSS_ASPD', '4-野外BOSS', '數值倍率', 5);
+scalar('data', 'FIELD_BOSS_DROP_MULT', '4-野外BOSS', '掉落倍率', 0);
 // 掉落表：重建每個 min 檔的 rates
 // 從 {下限~上限=值} 取出「值」；解析不出有效數字則中止（防 Excel 破壞後寫入垃圾）。
 function parseTuple(cell) {

@@ -10,7 +10,9 @@ test('UI uses a fixed reference canvas instead of responsive reflow', () => {
   assert.match(css, /#ui-shell\s*\{[\s\S]*width:\s*1920px[\s\S]*height:\s*900px/);
   assert.match(css, /#ui-shell #game-layout\s*\{[\s\S]*flex-direction:\s*row\s*!important/);
   assert.match(css, /#ui-shell #combat-area\s*\{[\s\S]*width:\s*500px\s*!important/);
-  assert.match(css, /#ui-shell \.battle-scene,[\s\S]*grid-template-columns:\s*202px auto minmax\(0, 1fr\)\s*!important/);
+  // 高塔沿用三欄；野外的 4×4 棋盤版型（.multi-enemy-layout）另有一組固定欄寬
+  assert.match(css, /#ui-shell \.battle-scene\s*\{[\s\S]*grid-template-columns:\s*202px auto minmax\(0, 1fr\)\s*!important/);
+  assert.match(css, /#ui-shell \.battle-scene\.multi-enemy-layout\s*\{[\s\S]*grid-template-columns:\s*132px minmax\(0, 1fr\)\s*!important/);
 });
 
 test('UI scaler preserves the 1920x900 aspect ratio', () => {

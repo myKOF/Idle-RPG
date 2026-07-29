@@ -2264,6 +2264,36 @@ function fitEnemyNames(party) {
   }
 }
 
+/* ---- 敵人階級與站位（新版戰鬥）----
+   階級只影響「顯示」：圖示、名稱顏色、血條顏色與外框；數值差異在模擬層決定。
+   格位由 js/battlefield.js 在出怪時寫入 enemy.cell = { col, row, w, h }；
+   主執行緒不重算站位，只照著擺——BF_COLS/BF_ROWS 由 data.js 提供（參數表可調）。 */
+var ENEMY_RANK_ICONS = { normal: '', elite: '💀', boss: '👑' };
+
+function enemyRankOf(enemy) {
+  if (!enemy) return 'normal';
+  if (enemy.isBoss) return 'boss';
+  return enemy.elite ? 'elite' : 'normal';
+}
+function battlefieldCols() {
+  return (typeof BF_COLS === 'number' && BF_COLS > 0) ? BF_COLS : 4;
+}
+function battlefieldRows() {
+  return (typeof BF_ROWS === 'number' && BF_ROWS > 0) ? BF_ROWS : 4;
+}
+function enemyCellSignature(enemy) {
+  var cell = enemy && enemy.cell;
+  if (!cell) return '-';
+  return cell.col + ',' + cell.row + ',' + (cell.w || 1) + ',' + (cell.h || 1);
+}
+/* 卡片的 grid 定位；沒有格位資訊（舊存檔的殘留敵人、高塔）時不寫 style，交由自動流排。 */
+function enemyCellStyle(enemy) {
+  var cell = enemy && enemy.cell;
+  if (!cell || !(cell.col > 0) || !(cell.row > 0)) return '';
+  return ' style="grid-column:' + cell.col + ' / span ' + (cell.w || 1) +
+    ';grid-row:' + cell.row + ' / span ' + (cell.h || 1) + '"';
+}
+
 function renderBattle() {
   var headerSnapshot = uiHeaderPanelSnapshot() || {};
   var battleSnapshot = uiBattlePanelSnapshot() || {};
@@ -2296,9 +2326,12 @@ function renderBattle() {
   var party = $id('mv-party');
   if (!party) return;
   var scene = party.closest ? party.closest('.battle-scene') : null;
-  if (scene) scene.classList.toggle('multi-enemy', enemies.length > 1);
-  if (scene) scene.classList.toggle('multi-enemy-layout', enemies.length > 2); // 3 隻以上才左移我方、加寬敵方
-  party.className = 'enemy-party enemy-count-' + enemies.length;
+  // 新版戰鬥：敵方固定 4×4 棋盤，版面不再隨敵人數量變動——我方永遠靠左，棋盤永遠佔滿右側。
+  if (scene) scene.classList.add('multi-enemy');
+  if (scene) scene.classList.add('multi-enemy-layout');
+  party.className = 'enemy-party enemy-count-' + enemies.length + (enemies.length ? ' enemy-grid' : '');
+  party.style.setProperty('--bf-cols', battlefieldCols());
+  party.style.setProperty('--bf-rows', battlefieldRows());
   if (!enemies.length) {
     if (party.getAttribute('data-enemy-signature') !== 'empty') {
       party.innerHTML = '<div class="enemy-empty">' + (view.towerActive ? '（高塔戰鬥中…）' : '🔍 搜索敵人中…') + '</div>';
@@ -2307,8 +2340,9 @@ function renderBattle() {
     flushPendingEnemyFloats(battleSnapshot);
     return;
   }
+  // 站位也要納入簽章：敵人身分沒變但格位變了（例如新一波剛好同名同級）仍須重建 DOM。
   var enemySignature = enemies.map(function (enemy, index) {
-    return index + ':' + enemy.name + ':' + enemy.level;
+    return index + ':' + enemy.name + ':' + enemy.level + ':' + enemyRankOf(enemy) + ':' + enemyCellSignature(enemy);
   }).join('|');
   var partyHtml = '';
   for (var ei = 0; ei < enemies.length; ei++) {
@@ -2319,9 +2353,11 @@ function renderBattle() {
       : '<span class="enemy-emoji-fallback">' + (enemy.emoji || '👾') + '</span>';
     var enemyHp = clamp(enemy.hp / enemy.maxHp * 100, 0, 100);
     var enemyShield = enemy.shield > 0.5 ? '<span class="enemy-shield">+' + fmt(Math.max(0, enemy.shield)) + '</span>' : '';
-    partyHtml += '<div class="enemy-card' + (enemy.elite ? ' elite' : '') + '">' +
+    var rank = enemyRankOf(enemy);                       // normal / elite / boss
+    var rankIcon = ENEMY_RANK_ICONS[rank] || '';         // 小怪無圖示、菁英骷髏頭、BOSS 專屬圖標
+    partyHtml += '<div class="enemy-card enemy-rank-' + rank + '"' + enemyCellStyle(enemy) + '>' +
       '<div class="float-layer" id="mv-float-' + ei + '"></div>' +
-      '<div class="cb-level">Lv.' + enemy.level + '</div>' + icon +
+      '<div class="cb-level">' + (rankIcon ? '<span class="enemy-rank-icon">' + rankIcon + '</span>' : '') + 'Lv.' + enemy.level + '</div>' + icon +
       '<div class="enemy-name">' + (enemy.attr && ELEM_INFO[enemy.attr] ? ELEM_INFO[enemy.attr].emoji : '') + enemy.name + '</div>' +
       '<div class="enemy-hp hp-bar"><div class="hp-fill monster" style="width:' + enemyHp + '%"></div><span class="hp-text">' + fmt(Math.max(0, enemy.hp)) + enemyShield + ' / ' + fmt(enemy.maxHp) + '</span></div>' +
       '<div class="enemy-status" data-enemy-buff-tip data-enemy-index="' + ei + '">' + entStatus(enemy) + '</div></div>';

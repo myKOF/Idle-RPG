@@ -86,6 +86,15 @@ function legendaryCurrentPlayer() {
   return null;
 }
 
+/* 自動攻擊類特效的目標：離我方最近的敵人（同距離隨機、沿用普攻鎖定）→ js/battlefield.js
+   未載入格位模組時退回陣列第一個，行為與改造前一致。 */
+function legendaryNearestEnemy(enemies, pEnt) {
+  if (typeof bfPickPrimary === 'function') {
+    return bfPickPrimary(enemies, pEnt && pEnt._lockTarget) || enemies[0];
+  }
+  return enemies[0];
+}
+
 function legendaryActiveEnemies() {
   if (typeof G !== 'undefined' && G && G.tower && G.tower.active &&
       typeof TOWER !== 'undefined' && TOWER.boss && TOWER.boss.hp > 0) return [TOWER.boss];
@@ -379,12 +388,17 @@ function legendaryQueue(at, resolve) {
 }
 
 function legendaryScheduleChain(pEnt, spec, floatSel) {
+  // 連鎖不再每跳全場亂數挑：記住上一跳打到誰，下一跳跳到離它最近的鄰居 → js/battlefield.js
+  var chainState = { last: null };
   for (var i = 0; i < spec.bounces; i++) {
     (function (delayIndex) {
       legendaryQueue(GT + spec.tickSec * (delayIndex + 1), function (ctx) {
         var enemies = ctx && ctx.getEnemies ? ctx.getEnemies() : legendaryActiveEnemies();
         if (!enemies.length) return;
-        var target = enemies[Math.floor(Math.random() * enemies.length)];
+        var target = (typeof bfChainNext === 'function')
+          ? (bfChainNext(chainState.last, enemies) || enemies[0])
+          : enemies[Math.floor(Math.random() * enemies.length)];
+        chainState.last = target;
         legendaryDealDamage(pEnt, target, spec.powerPct, 'magic', spec.elem, floatSel, '閃電飛越', ctx);
         if (target.hp <= 0 && ctx && typeof ctx.onDeaths === 'function') ctx.onDeaths();
       });
@@ -699,7 +713,7 @@ function legendaryTickKnives(ctx, pEnt, st) {
     while (knife.nextAt <= GT && knife.nextAt <= knife.until) {
       var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
       if (!enemies.length) break;
-      var target = enemies[0];
+      var target = legendaryNearestEnemy(enemies, pEnt); // 自動攻擊打最近的敵人（原本取陣列第一個）
       var res = legendaryDealDamage(pEnt, target, spec.powerPct, 'phys', null, ctx.floatSel, '影襲追蹤者', ctx);
       knife.nextAt += spec.tickSec;
       if (res && res.killed) {
@@ -720,7 +734,7 @@ function legendaryTickDolls(ctx, pEnt, st) {
     var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
     if (!enemies.length) continue;
     var powerPct = (doll.atk / Math.max(1, st.atk || st.matk || 1)) * 100;
-    var res = legendaryDealDamage(pEnt, enemies[0], powerPct, 'phys', null, ctx.floatSel, '幽冥鬼娃', ctx);
+    var res = legendaryDealDamage(pEnt, legendaryNearestEnemy(enemies, pEnt), powerPct, 'phys', null, ctx.floatSel, '幽冥鬼娃', ctx);
     doll.nextAt += 1;
     if (res && res.killed && ctx.onDeaths) ctx.onDeaths();
   }
@@ -770,7 +784,7 @@ function legendaryTickAutomaticSkills(ctx, pEnt, st) {
       rt.nextLightAt += light.sec;
       var enemies = ctx.getEnemies();
       if (enemies.length) {
-        var lightRes = legendaryDealDamage(pEnt, enemies[0], light.powerPct, 'magic', light.elem,
+        var lightRes = legendaryDealDamage(pEnt, legendaryNearestEnemy(enemies, pEnt), light.powerPct, 'magic', light.elem,
           ctx.floatSel, '光之碰撞', ctx);
         if (lightRes && lightRes.killed && ctx.onDeaths) ctx.onDeaths();
       }

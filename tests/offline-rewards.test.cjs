@@ -13,7 +13,7 @@ function loadGameContext() {
   const context = { console, UI: { dirty: {} }, GT: 0 };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/item.js', 'js/skills.js',
+  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/item.js', 'js/skills.js',
    'js/talents.js', 'js/player.js', 'js/factory.js', 'js/save.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });

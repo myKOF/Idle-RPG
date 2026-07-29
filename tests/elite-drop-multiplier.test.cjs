@@ -9,7 +9,7 @@ function loadContext() {
   const context = { console, Math: Object.create(Math), UI: { dirty: {} }, blog() {} };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/combat.js'].forEach((file) => {
+  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   return context;

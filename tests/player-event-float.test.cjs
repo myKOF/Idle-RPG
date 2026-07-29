@@ -128,8 +128,8 @@ test('敵人傷害浮字維持可讀字號且出現範圍更分散', () => {
   assert.match(ui, /sp\.style\.marginTop = \(enemyHitFloat \? \(Math\.random\(\) \* 24 - 12\) : \(Math\.random\(\) \* 30 - 15\)\) \+ 'px'/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.dmg,[\s\S]*?\.float-txt\.enemy-hit-float\.mdmg\s*\{[\s\S]*?font-size:\s*18px/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.crit,[\s\S]*?\.float-txt\.enemy-hit-float\.skill\s*\{[\s\S]*?font-size:\s*22px/);
-  assert.match(css, /\.enemy-party:not\(\.enemy-count-0\):not\(\.enemy-count-1\) \.float-txt\.enemy-hit-float\.dmg,[\s\S]*?font-size:\s*14px/);
-  assert.match(css, /\.enemy-party:not\(\.enemy-count-0\):not\(\.enemy-count-1\) \.float-txt\.enemy-hit-float\.crit,[\s\S]*?font-size:\s*18px/);
+  assert.match(css, /\.enemy-party\.enemy-grid \.float-txt\.enemy-hit-float\.dmg,[\s\S]*?font-size:\s*14px/);
+  assert.match(css, /\.enemy-party\.enemy-grid \.float-txt\.enemy-hit-float\.crit,[\s\S]*?font-size:\s*18px/);
 });
 
 test('傷害浮字合併上限依連擊數與攻速計算', () => {
@@ -162,8 +162,8 @@ test('敵方區普攻固定白色、技能固定黃色，爆擊不改變來源�
   assert.match(css, /\.enemy-combatant\s*\{[\s\S]*?overflow:\s*visible/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-attack\s*\{[\s\S]*?font-size:\s*18px/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-attack\.crit\s*\{[\s\S]*?font-size:\s*22px/);
-  assert.match(css, /\.enemy-party:not\(\.enemy-count-0\):not\(\.enemy-count-1\) \.float-txt\.enemy-hit-float\.enemy-attack\s*\{[\s\S]*?font-size:\s*14px/);
-  assert.match(css, /\.enemy-party:not\(\.enemy-count-0\):not\(\.enemy-count-1\) \.float-txt\.enemy-hit-float\.enemy-attack\.crit\s*\{[\s\S]*?font-size:\s*18px/);
+  assert.match(css, /\.enemy-party\.enemy-grid \.float-txt\.enemy-hit-float\.enemy-attack\s*\{[\s\S]*?font-size:\s*14px/);
+  assert.match(css, /\.enemy-party\.enemy-grid \.float-txt\.enemy-hit-float\.enemy-attack\.crit\s*\{[\s\S]*?font-size:\s*18px/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-skill\s*\{[\s\S]*?color:\s*#ffd700/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-attack\s*\{[\s\S]*?z-index:\s*10\s*!important/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-skill\s*\{[\s\S]*?z-index:\s*20\s*!important/);

@@ -105,16 +105,18 @@ function markFieldEnemyFloatTargets(enemies) {
 function spawnFieldMonster() {
     FIELD._waveClearPending = false;
     var s = G.stage.current;
-    var elite = isEliteStage(s); // 菁英規則 → formula.js §4
-    var base = monsterStatsFor(s, elite);
+    var boss = isFieldBossStage(s);       // 野外 BOSS 規則 → formula.js §4（優先於菁英）
+    var elite = !boss && isEliteStage(s); // 菁英規則 → formula.js §4
+    var base = monsterStatsFor(s, elite, boss);
     var zn = currentZoneDef();
-    var count = rollFieldEnemyCount();
+    var count = boss ? 1 : rollFieldEnemyCount(); // BOSS 固定單一敵人
     var enemies = [];
     for (var i = 0; i < count; i++) {
         var mtype = pick(zn.pool);
         var mAspd = base.aspd * zn.aspdMult; // 攻速 × 場景攻速倍率（與原始攻速相乘）
         enemies.push({
-            name: (elite ? '菁英・' : '') + mtype.name, emoji: mtype.emoji,
+            // 名稱一律用 NPC 原名，不加「菁英・」前綴；階級改由圖示、名稱顏色與血條樣式表示。
+            name: mtype.name, emoji: mtype.emoji,
             level: base.level,
             maxHp: base.hp * zn.hpMult, hp: base.hp * zn.hpMult,
             atk: base.atk * zn.atkMult,
@@ -122,14 +124,16 @@ function spawnFieldMonster() {
             magic: !!mtype.magic,          // 魔法系怪物：攻擊對玩家魔防
             attr: mtype.attr || null,      // 屬性標籤（六大屬性；對X屬性傷害加成與 tips 顯示）
             aspd: mAspd, dodge: base.dodge, hit: base.hit, // 命中率隨敵人等級成長 → formula.js §4
-            elite: elite, isBoss: false,
+            elite: elite, isBoss: boss,
             gold: base.gold * zn.rewardMult, xp: base.xp * zn.rewardMult, // 金幣/經驗 x場景倍率
             atkCd: 1 / mAspd, effects: {}, ctrlRes: 0, _spawnAt: GT, // 控場遞減計時起點 → formula.js §3
             poisonUntil: 0, poisonDps: 0, shield: 0, buffs: {}, dots: []
         });
     }
-    FIELD.monsters = enemies;
-    markFieldEnemyFloatTargets(enemies);
+    // 站位：隨機配到 4×4 棋盤的空格（BOSS 佔 2×2）；棋盤放不下的敵人直接捨棄 → js/battlefield.js
+    FIELD.monsters = bfPlaceEnemies(enemies);
+    if (FIELD.player) FIELD.player._lockTarget = null; // 新一波＝重新選目標，順便釋放上一波的實體參照
+    markFieldEnemyFloatTargets(FIELD.monsters);
     syncFieldPrimary();
     UI.dirty.battle = true;
 }
@@ -379,7 +383,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
     var st = getStats();
     var aCfg = playerAtkCfg(pEnt);
     // 45 新技能（periodicField 族）：領域內敵人受指定類型傷害增幅（普攻端；elemAtk 於函式內先淺拷貝防污染）
-    if (typeof skillRtFieldAmpACfg === 'function') aCfg = skillRtFieldAmpACfg(aCfg);
+    if (typeof skillRtFieldAmpACfg === 'function') aCfg = skillRtFieldAmpACfg(aCfg, mEnt);
     if (opts && opts.forceCrit) aCfg.critRate = Math.max(100, aCfg.critRate || 0); // 必定暴擊
     var res = resolveHit(pEnt, mEnt, aCfg, monsterDefCfg(mEnt));
     var mName = mEnt.name || '怪物';
@@ -638,12 +642,15 @@ function fieldTick(dt) {
             (typeof potentialVelocityFactor === 'function' ? potentialVelocityFactor(p, st) : 1) *
             (typeof legendaryAttackSpeedMultiplier === 'function' ? legendaryAttackSpeedMultiplier(p, st) : 1);
         if (p.atkCd <= 0) {
-            // 普攻固定鎖定第一名存活敵人，直到其死亡才切換下一名。
-            var primary = liveFieldEnemies()[0];
-            var res = doPlayerAttack(p, primary, primary.floatSel || 'mv-float');
+            // 普攻打離我方最近的敵人（同距離隨機挑一個）；鎖定後直到該目標死亡才換 → js/battlefield.js
+            var primary = bfPickPrimary(liveFieldEnemies(), p._lockTarget);
             p.atkCd += 1 / st.aspd;
-            if (res.killed) onFieldDeaths();
-            if (!liveFieldEnemies().length) return;
+            if (primary) {
+                p._lockTarget = primary;
+                var res = doPlayerAttack(p, primary, primary.floatSel || 'mv-float');
+                if (res.killed) onFieldDeaths();
+                if (!liveFieldEnemies().length) return;
+            }
         }
     }
     // 怪物攻擊
@@ -691,6 +698,8 @@ function onFieldKill(m) {
     if (typeof skillRtOnEnemyDeath === 'function') skillRtOnEnemyDeath(m, liveFieldEnemies());
     m.hp = 0;
     m._rewarded = true;
+    // 普攻鎖定的目標死了就解鎖，下一次出手重新挑最近的（順便別把死掉的實體參照留在快照裡）
+    if (FIELD.player && FIELD.player._lockTarget === m) FIELD.player._lockTarget = null;
     if (typeof legendaryOnEnemyKill === 'function') legendaryOnEnemyKill(FIELD.player);
     m._deathClearCd = FIELD_ENEMY_DEATH_CLEAR_DELAY;
     var st = getStats();
@@ -764,7 +773,8 @@ function rollFieldDrops(m) {
     if (window.recordLootDrop) window.recordLootDrop('field');
     // 菁英掉落：裝備與材料都在一般基礎上乘 ELITE_DROP_MULT（→ formula.js §5，與離線收益共用）。
     var rates = dropRatesFor(FIELD_DROP_TABLE, m.level);
-    var eliteDropMult = m.elite ? ELITE_DROP_MULT : 1;
+    // 敵種掉落倍率：BOSS ＞ 菁英 ＞ 普通（BOSS 倍率 → data.js FIELD_BOSS_DROP_MULT）
+    var eliteDropMult = m.isBoss ? FIELD_BOSS_DROP_MULT : (m.elite ? ELITE_DROP_MULT : 1);
     var dropMult = (1 + lootBonus / 100) * eliteDropMult;
     for (var r = 0; r < rates.length; r++) {
         if (!rates[r]) continue;

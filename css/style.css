@@ -976,6 +976,34 @@ textarea#save-io {
   /* ?�人?��??�改變內?��??��?不改變整?�戰鬥場?��?尺寸??*/
   width: 100%;
   margin-left: 0;
+  /* 新版戰鬥：我方縮成左側一小塊，其餘空間全部讓給 4×4 敵方棋盤（比照規格圖）。
+     中間的 VS 在棋盤版面裡沒有位置，改為不顯示。 */
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.battle-scene.multi-enemy-layout > .vs {
+  display: none;
+}
+
+/* 我方卡片同步縮小，讓出寬度給棋盤 */
+.battle-scene.multi-enemy-layout > .combatant:not(.enemy-combatant) {
+  padding: 12px 6px 8px;
+  border-width: 8px;
+  align-self: center;
+}
+
+.battle-scene.multi-enemy-layout > .combatant:not(.enemy-combatant) .cb-icon {
+  width: 46px;
+  height: 46px;
+}
+
+.battle-scene.multi-enemy-layout > .combatant:not(.enemy-combatant) .cb-name {
+  font-size: 12px;
+}
+
+.battle-scene.multi-enemy-layout > .combatant:not(.enemy-combatant) .cb-level {
+  font-size: 11px;
 }
 
 /* ?�方?��?絕�?定�?填滿?�板：敵人數?��??��?高戰鬥�?，�??�面?��?度是?��??��?�?
@@ -994,6 +1022,12 @@ textarea#save-io {
   right: 6px;
   bottom: 8px;
   left: 6px;
+}
+
+/* 新版戰鬥：敵方是固定 4×4 棋盤，需要比我方單張卡片更高的空間，
+   否則四列擠在我方卡片的高度裡會小到看不清楚。 */
+.battle-scene.multi-enemy-layout .enemy-combatant {
+  min-height: 460px;
 }
 
 .combatant {
@@ -5339,28 +5373,31 @@ textarea#save-io {
   color: var(--dim);
 }
 
-.enemy-party.enemy-count-1 {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* 新版戰鬥：敵方固定棋盤（預設 4×4，格數由參數表的 BF_COLS/BF_ROWS 帶入）。
+   卡片的落點由 js/ui.js 依 enemy.cell 寫成 grid-column / grid-row，BOSS 直接跨 2×2。
+   版面不再隨敵人數量變動，因此舊的 enemy-count-1~4 專用排版已移除。 */
+.enemy-party.enemy-grid {
+  --ec-scale: 0.72;
+  display: grid;
+  grid-template-columns: repeat(var(--bf-cols, 4), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--bf-rows, 4), minmax(0, 1fr));
+  gap: 2px;
+  align-items: stretch;
+  justify-items: stretch;
 }
 
-.enemy-party.enemy-count-2 {
-  --ec-scale: 0.75;
-  grid-template-columns: 1fr;
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  gap: 4px;
+/* BOSS 佔 2×2：卡片內容跟著放大，避免大格子裡塞一個小圖 */
+.enemy-party.enemy-grid .enemy-card.enemy-rank-boss {
+  --ec-scale: 1.1;
 }
 
-.enemy-party.enemy-count-3,
-.enemy-party.enemy-count-4 {
-  --ec-scale: 0.7;
-}
-
-.enemy-party.enemy-count-3 .enemy-card:first-child {
-  grid-column: 1 / -1;
-  width: calc(50% - 4px);
-  justify-self: center;
+/* 棋盤格高度有限：狀態列改成「有多少長多少、並且可被壓縮」，
+   否則 .enemy-card>* 的 flex-shrink:0 會讓空狀態列硬吃掉固定高度而把卡片撐爆。 */
+.enemy-party.enemy-grid .enemy-card .enemy-status {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: calc(26px * var(--ec-scale));
+  margin-top: calc(2px * var(--ec-scale));
 }
 
 .enemy-card {
@@ -5391,6 +5428,59 @@ textarea#save-io {
 
 .enemy-card.elite {
   border: none;
+}
+
+/* ---- 敵人階級表現（新版戰鬥）----
+   小怪：淺黃名稱、淺紅血條、無圖示（維持既有外觀）
+   菁英：淺藍名稱、鮮紅血條＋外框、骷髏頭圖示
+   BOSS：深紫名稱、深紫血條＋高階外框、專屬圖標
+   階級圖示與名稱由 js/ui.js 的 ENEMY_RANK_ICONS / enemyRankOf 產生。 */
+.enemy-rank-icon {
+  margin-right: 2px;
+}
+
+.enemy-card.enemy-rank-normal .enemy-name {
+  color: #f5e6a8;
+}
+
+.enemy-card.enemy-rank-elite .enemy-name {
+  color: #7fd4ff;
+  text-shadow: 0 0 6px rgba(56, 160, 220, 0.55);
+}
+
+.enemy-card.enemy-rank-elite .enemy-rank-icon {
+  color: #7fd4ff;
+}
+
+.enemy-card.enemy-rank-elite .enemy-hp {
+  border: 1px solid #ff4d4d;
+  box-shadow: 0 0 6px rgba(255, 77, 77, 0.5);
+}
+
+.enemy-card.enemy-rank-elite .hp-fill.monster {
+  background: linear-gradient(180deg, #ff2d2d, #7a0000);
+}
+
+.enemy-card.enemy-rank-boss .enemy-name {
+  color: #c084fc;
+  text-shadow: 0 0 8px rgba(147, 51, 234, 0.7);
+}
+
+.enemy-card.enemy-rank-boss .enemy-rank-icon {
+  color: #e9d5ff;
+  text-shadow: 0 0 8px rgba(147, 51, 234, 0.9);
+}
+
+/* BOSS 高階血條外框：雙層邊框＋紫光，與菁英的單層紅框明顯區隔 */
+.enemy-card.enemy-rank-boss .enemy-hp {
+  border: 2px solid #a855f7;
+  outline: 1px solid rgba(233, 213, 255, 0.55);
+  outline-offset: 1px;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.75), inset 0 0 6px rgba(88, 28, 135, 0.9);
+}
+
+.enemy-card.enemy-rank-boss .hp-fill.monster {
+  background: linear-gradient(180deg, #7e22ce, #2e1065);
 }
 
 /* ?��??�容一律以?�敵標�?尺寸 ? --ec-scale 等�?縮放；�?級以 max() 保�??��?下�???*/
@@ -5477,50 +5567,50 @@ textarea#save-io {
   white-space: nowrap;
 }
 
-.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .enemy-card {
+.enemy-party.enemy-grid .enemy-card {
   z-index: 1;
 }
 
-.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-layer {
+.enemy-party.enemy-grid .float-layer {
   z-index: 20;
 }
 
-.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt {
+.enemy-party.enemy-grid .float-txt {
   font-size: 14px;
 }
 
-.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.dmg,
-.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.mdmg {
+.enemy-party.enemy-grid .float-txt.enemy-hit-float.dmg,
+.enemy-party.enemy-grid .float-txt.enemy-hit-float.mdmg {
   font-size: 14px;
 }
 
-.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.crit,
-.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.skill {
+.enemy-party.enemy-grid .float-txt.crit,
+.enemy-party.enemy-grid .float-txt.skill {
   font-size: 18px;
 }
 
-.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.crit,
-.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.skill {
+.enemy-party.enemy-grid .float-txt.enemy-hit-float.crit,
+.enemy-party.enemy-grid .float-txt.enemy-hit-float.skill {
   font-size: 18px;
 }
 
-.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.enemy-attack {
+.enemy-party.enemy-grid .float-txt.enemy-hit-float.enemy-attack {
   font-size: 14px;
 }
 
-.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.enemy-hit-float.enemy-attack.crit {
+.enemy-party.enemy-grid .float-txt.enemy-hit-float.enemy-attack.crit {
   font-size: 18px;
 }
 
-.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.defend,
-.enemy-party:not(.enemy-count-0):not(.enemy-count-1) .float-txt.thorn {
+.enemy-party.enemy-grid .float-txt.defend,
+.enemy-party.enemy-grid .float-txt.thorn {
   font-size: 12px;
 }
 
-/* ?�敵人�??��??�滿?�方欄�?置中顯示，內容尺寸即?��?準�?--ec-scale: 1）�?*/
-.enemy-count-1 .enemy-card {
+/* 棋盤格內的卡片填滿自己那一格；內容尺寸一律由 --ec-scale 決定。 */
+.enemy-party.enemy-grid .enemy-card {
   width: 100%;
-  padding: 0;
+  padding: 2px 1px 0;
 }
 
 /* ==========================================================================
@@ -6366,13 +6456,22 @@ button.nf-part-slot.nf-part-ico {
   grid-template-columns: minmax(0, 796px) minmax(200px, 210px) !important;
 }
 
-#ui-shell .battle-scene,
-#ui-shell .battle-scene.multi-enemy-layout {
+#ui-shell .battle-scene {
   grid-template-columns: 202px auto minmax(0, 1fr) !important;
+}
+
+/* 新版戰鬥的野外場景（.multi-enemy-layout）：我方縮到左側一小塊，其餘全部給 4×4 棋盤。
+   高塔的 .battle-scene 沒有這個 class，維持原本的 202px／VS／BOSS 三欄。 */
+#ui-shell .battle-scene.multi-enemy-layout {
+  grid-template-columns: 132px minmax(0, 1fr) !important;
 }
 
 #ui-shell .vs {
   display: block !important;
+}
+
+#ui-shell .battle-scene.multi-enemy-layout > .vs {
+  display: none !important;
 }
 
 #ui-shell .factory-flow {
