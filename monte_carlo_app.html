@@ -1739,7 +1739,7 @@
             const killedPerHour = (baseKillSpeed * 3600.0) * effMult;
             const killsThisTick = killedPerHour * tickHours;
 
-            const isAdvancing = (timeToKill <= 30.0 and timeToDie > timeToKill);
+            const isAdvancing = (timeToKill <= 30.0 && timeToDie > timeToKill);
 
             if (isAdvancing) {
                 char.totalKills += killsThisTick;
