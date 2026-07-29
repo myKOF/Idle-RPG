@@ -1507,7 +1507,16 @@
             if (shouldReplace) {
                 newEq.level = oldEq.level;
                 this.equipments[targetSlot] = newEq;
-                this.logAction(currentTime, 'equip', '📦', `野外掉落更佳【${targetSlot}】裝備！`, `換上 Rarity ${newEq.rarity} 裝備 (帶 ${newEq.affixes.length} 條詞條，含 ${newAnc} 條固定太古)。`);
+                const slotName = SLOT_CHINESE_NAMES[targetSlot] || targetSlot;
+                const rInfo = RARITY_INFO[newEq.rarity] || RARITY_INFO[1];
+                const eventTime = currentTime + (Math.random() * 0.045);
+                this.logAction(
+                    eventTime, 
+                    'equip', 
+                    '📦', 
+                    `野外擊殺爆出【${rInfo.name}的${slotName}】並自動穿上！`, 
+                    `替換舊裝備！新裝備品質: ${rInfo.name} (Rarity ${newEq.rarity})，強化 +${newEq.level}，包含 ${newEq.affixes.length} 條完整詞條（含 ${newAnc} 條太古滿數值詞條）。`
+                );
             }
         }
 
@@ -1734,6 +1743,10 @@
         const totalSteps = Math.ceil(hours / tickHours);
         let stepCount = 0;
 
+        // 100% 實機開局紀錄 (第1秒創角、第5秒揮刀)
+        char.logAction(0.0003, 'combat', '🎮', '角色開局進入無限征途世界', '創立角色 Lv.1，配戴冒險者初始全身 13 件基礎裝備。');
+        char.logAction(0.0014, 'combat', '⚔️', '開局第 5 秒揮刀發動第一波攻擊', '進入 Stage 1 關卡，開始持續擊殺野外普通怪物。');
+
         while (currentTime < hours) {
             if (isSimCancelled) break;
 
@@ -1787,8 +1800,9 @@
             if (currentTime - lastCombatLogTime >= 1.0) {
                 lastCombatLogTime = currentTime;
                 const statusText = isAdvancing ? '關卡推進中' : '最高關卡掛機刷怪中';
+                const logTime = (currentTime === 0) ? 0.0014 : (currentTime + Math.random() * 0.045);
                 char.logAction(
-                    currentTime, 
+                    logTime, 
                     'combat', 
                     '⚔️', 
                     `一般戰鬥 (${statusText}) Stage ${Math.floor(char.stage)} 關`, 
