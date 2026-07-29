@@ -17,6 +17,9 @@ var UI = {
   inventoryFilterCacheItems: null,
   pendingItemTooltip: null,
   hoveredItemTooltip: null,
+  inventoryScrolling: false,
+  inventoryScrollTimer: null,
+  inventoryDetailRefreshPending: false,
   statsPanelOpen: false,
   battleLayoutDirty: true,
   zoneBarSignature: null,
@@ -689,7 +692,8 @@ function bindWorkerUiState() {
       // selected pane needs a refresh only when its own full item arrived.
       if (UI.sel && UI.sel.source === 'inv' && UI.sel.id &&
         msg.data && msg.data.details && msg.data.details[UI.sel.id]) {
-        renderDetail();
+        if (UI.inventoryScrolling) UI.inventoryDetailRefreshPending = true;
+        else renderDetail();
       }
     }
     releaseUiPendingByPanel(msg.name);
@@ -2705,13 +2709,17 @@ function renderInventory() {
       var rows = inventoryVisibleRows(totalRows, UI.inventoryVisibleRows);
       var startRow = 0;
       var previousScrollTop = box.scrollTop;
+      var maxScrollTop = Math.max(0, box.scrollHeight - box.clientHeight);
+      var wasAtScrollEnd = previousScrollTop >= maxScrollTop - 1;
       if (virtualize && totalRows > rows) {
         var rowHeight = INVENTORY_GRID_ROW_HEIGHT + INVENTORY_GRID_ROW_GAP;
-        startRow = Math.min(Math.max(0, Math.floor(previousScrollTop / rowHeight)), totalRows - rows);
+        startRow = wasAtScrollEnd
+          ? totalRows - rows
+          : Math.min(Math.max(0, Math.floor(previousScrollTop / rowHeight)), totalRows - rows);
       }
       var firstItem = virtualize ? startRow * columns : 0;
       var lastItem = virtualize ? Math.min(displayedItems.length, (startRow + rows) * columns) : displayedItems.length;
-      var selItem = findSelItem();
+      var selItem = selectionItemForGrid(invSnapshot);
       var selectedSlot = selectionSlotForItem(selItem);
       var highlightInventoryBySlot = !!(UI.sel && (UI.sel.source === 'equip-slot' || UI.sel.source === 'equip'));
 
@@ -2748,14 +2756,15 @@ function renderInventory() {
         var remainingRows = totalRows - startRow - rows;
         var bottomHeight = remainingRows * virtualRowHeight - (remainingRows > 0 ? INVENTORY_GRID_ROW_GAP : 0);
         box.innerHTML = inventoryVirtualSpacerHTML(topHeight) + cellsHtml + inventoryVirtualSpacerHTML(bottomHeight);
-        box.scrollTop = previousScrollTop;
+        box.scrollTop = wasAtScrollEnd ? box.scrollHeight : previousScrollTop;
       } else {
         box.innerHTML = cellsHtml;
       }
     }
   }
   applyInventoryVisibleRows(box);
-  renderDetail();
+  if (UI.inventoryScrolling) updateSelectionUI();
+  else renderDetail();
 }
 
 /* 僅搜尋背包與裝備欄。刻意不含神鑄法陣槽位：detailAction 的操作（裝備/強化/洗煉）
@@ -2920,8 +2929,20 @@ function selectionSlotForItem(selItem) {
   return null;
 }
 
+// An inventory panel detailIds response may contain only the item currently
+// hovered, so the selected item's full object can be temporarily absent from
+// `details`.  Grid highlighting only needs the summary (id/slot), not affixes.
+function selectionItemForGrid(invSnapshot) {
+  var item = findSelItem();
+  if (item) return item;
+  if (UI.sel && UI.sel.source === 'inv') {
+    return inventoryViewItem(invSnapshot || uiInventoryPanelSnapshot(), UI.sel.id, false);
+  }
+  return null;
+}
+
 function updateSelectionUI() {
-  var selItem = findSelItem();
+  var selItem = selectionItemForGrid();
   var selectedSlot = selectionSlotForItem(selItem);
   var highlightInventoryBySlot = !!(UI.sel && (UI.sel.source === 'equip-slot' || UI.sel.source === 'equip'));
 
@@ -7078,6 +7099,19 @@ function initUI() {
     inventoryGrid.__virtualScrollBound = true;
     inventoryGrid.addEventListener('scroll', function () {
       if (UI.tab !== 'equip') return;
+      UI.inventoryScrolling = true;
+      if (UI.inventoryScrollTimer) clearTimeout(UI.inventoryScrollTimer);
+      UI.inventoryScrollTimer = setTimeout(function () {
+        UI.inventoryScrollTimer = null;
+        UI.inventoryScrolling = false;
+        if (UI.inventoryDetailRefreshPending) {
+          UI.inventoryDetailRefreshPending = false;
+          renderDetail();
+        }
+      }, 120);
+      UI.pendingItemTooltip = null;
+      UI.hoveredItemTooltip = null;
+      hideTooltip();
       if (inventoryGrid.__virtualScrollFrame) return;
       var schedule = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : function (fn) { return setTimeout(fn, 0); };
       inventoryGrid.__virtualScrollFrame = schedule(function () {
@@ -7216,6 +7250,7 @@ function initUI() {
 
     var eqCell = e.target.closest('.item-cell[data-id]') || e.target.closest('.eq-slot.filled[data-id]');
     if (eqCell) {
+      if (UI.inventoryScrolling && eqCell.classList.contains('item-cell')) return;
       // mouseover bubbles through the cell's icon/labels; do not restart the
       // tooltip while moving between descendants of the same cell.
       if (e.relatedTarget && eqCell.contains && eqCell.contains(e.relatedTarget)) return;
@@ -7256,6 +7291,7 @@ function initUI() {
   document.addEventListener('mouseout', function (e) {
     var outCell = e.target.closest('.item-cell[data-id]') || e.target.closest('.eq-slot.filled[data-id]');
     if (outCell) {
+      if (UI.inventoryScrolling && outCell.classList.contains('item-cell')) return;
       // Leaving a child element (icon, level, badge) is not leaving the item
       // cell; keep its tooltip alive until the whole cell is exited.
       if (e.relatedTarget && outCell.contains && outCell.contains(e.relatedTarget)) return;
