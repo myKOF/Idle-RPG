@@ -5,8 +5,8 @@
 
 功能說明：
 1. 100% 對齊官方權威高塔 BOSS 試煉/地獄/煉獄三座塔倍率公式 (js/data.js §TOWER_BOSS_*)
-   - 第 150 層高塔對應野外 Stage 754，擁有 4000x HP 與 75x ATK！
 2. 100% 對齊技能升級融合 (Skill Fusion 2.8x 傷害倍率) 與 轉生天賦 (Reincarnation Talents 40%~400% 全屬性加成)。
+3. 100% 對齊官方掉寶率加成 (loot / itemFindBonus 17.8x) 與 太古詞條數量權重表 (ANCIENT_COUNT_WEIGHTS)。
 """
 
 import sys
@@ -24,6 +24,64 @@ OFFICIAL_SLOTS = [
 ]
 
 RARITY_AFFIX_COUNTS = { 1: 2, 2: 3, 3: 4, 4: 5, 5: 5, 6: 6, 7: 7, 8: 7 }
+
+OFFICIAL_AFFIX_POOL = {
+    'atkPct':    {'name': '物理攻擊%',     'base': 4,   'lv': 0.02,  'pct': True},
+    'hpPct':     {'name': '生命值%',       'base': 5,   'lv': 0.02,  'pct': True},
+    'defPct':    {'name': '物理防禦%',     'base': 4,   'lv': 0.02,  'pct': True},
+    'aspd':      {'name': '攻擊速度%',     'base': 3,   'lv': 0.012, 'pct': True},
+    'critRate':  {'name': '暴擊率%',       'base': 2.5, 'lv': 0.012, 'pct': True},
+    'critDmg':   {'name': '暴擊傷害%',     'base': 8,   'lv': 0.05,  'pct': True},
+    'loot':      {'name': '掉寶率%',       'base': 3,   'lv': 0.015, 'pct': True},
+    'xpBonus':   {'name': '經驗加成%',     'base': 4,   'lv': 0.02,  'pct': True},
+    'gemEff':    {'name': '寶石鑲嵌效率%', 'base': 5,   'lv': 0.025, 'pct': True},
+    'bossDmg':   {'name': '對BOSS傷害%',   'base': 4,   'lv': 0.02,  'pct': True},
+    'lifesteal': {'name': '吸血%',         'base': 1.5, 'lv': 0.008, 'pct': True},
+    'atkFlat':   {'name': '物理攻擊',      'base': 4,   'lv': 0.55,  'pct': False},
+    'hpFlat':    {'name': '生命值',        'base': 22,  'lv': 3,     'pct': False},
+    'defFlat':   {'name': '物理防禦',      'base': 3,   'lv': 0.35,  'pct': False},
+    'str':       {'name': '力量',          'base': 3,   'lv': 0.4,   'pct': False},
+    'agi':       {'name': '敏捷',          'base': 3,   'lv': 0.4,   'pct': False},
+    'vit':       {'name': '耐力',          'base': 3,   'lv': 0.4,   'pct': False}
+}
+
+OFFICIAL_AFFIX_KEYS = list(OFFICIAL_AFFIX_POOL.keys())
+RARITY_MULTS = { 1: 1.0, 2: 1.35, 3: 1.75, 4: 2.3, 5: 3.0, 6: 4.0, 7: 6.8, 8: 10.2 }
+ANCIENT_AFFIX_VALUE_MULT = 1.35
+
+ANCIENT_COUNT_WEIGHTS = {
+    2: [92, 7.5, 0.5],
+    3: [78.1, 19.2, 2.4, 0.3],
+    4: [72.11, 22.12, 4.61, 0.96, 0.2],
+    5: [74.35, 18.74, 5.07, 1.37, 0.37, 0.1],
+    6: [76.87, 15.04, 5.28, 1.85, 0.65, 0.23, 0.08],
+    7: [69.92, 18.53, 7.13, 2.74, 1.05, 0.41, 0.16, 0.06]
+}
+
+def roll_official_ancient_count(affix_count):
+    weights = ANCIENT_COUNT_WEIGHTS.get(affix_count, [100])
+    total_weight = sum(weights)
+    rnd = random.random() * total_weight
+    for i, w in enumerate(weights):
+        if rnd < w: return i
+        rnd -= w
+    return 0
+
+def official_roll_affix_value(key, item_level, rarity_idx):
+    def_info = OFFICIAL_AFFIX_POOL.get(key)
+    if not def_info: return 0
+    r_mult = RARITY_MULTS.get(rarity_idx, 1.0)
+    unit = random.random()
+    v = (def_info['base'] + def_info['base'] * def_info['lv'] * (item_level - 1)) * r_mult * (0.8 + unit * 0.4)
+    return round(v, 1) if def_info['pct'] else round(v)
+
+def official_ancient_affix_value(key, item_level, rarity_idx):
+    def_info = OFFICIAL_AFFIX_POOL.get(key)
+    if not def_info: return 0
+    r_mult = RARITY_MULTS.get(rarity_idx, 1.0)
+    base_v = (def_info['base'] + def_info['base'] * def_info['lv'] * (item_level - 1)) * r_mult
+    v = base_v * 1.2 * ANCIENT_AFFIX_VALUE_MULT
+    return round(v, 1) if def_info['pct'] else round(v)
 
 def safe_pow(base, exp, max_val=1e300):
     try:
@@ -122,24 +180,19 @@ PLAYER_PROFILES = {
     }
 }
 
-def generate_dropped_equipment(rarity, ancient_target_ratio=0.0):
+def generate_dropped_equipment(rarity, ancient_target_ratio=0.0, item_level=500):
     slots_count = RARITY_AFFIX_COUNTS.get(rarity, min(7, rarity))
     affixes = []
-    possible_keys = ['patkPct', 'critRate', 'critDmg', 'aspdPct', 'xpBonus', 'gemEff', 'itemFind', 'pdefPct', 'hpPct']
     
-    ancient_chance_per_slot = 0.08
-    if ancient_target_ratio >= 1.0: ancient_chance_per_slot = 0.95
-    elif ancient_target_ratio >= 0.5: ancient_chance_per_slot = 0.50
+    ancient_count = roll_official_ancient_count(slots_count)
+    ancient_indices = set(random.sample(range(slots_count), min(ancient_count, slots_count)))
 
-    for _ in range(slots_count):
-        k = random.choice(possible_keys)
-        is_ancient = (random.random() < ancient_chance_per_slot)
-        if k == 'itemFind':
-            val = (0.25 + random.random() * 0.20) if is_ancient else (0.10 + random.random() * 0.15)
-        else:
-            val = (0.20 + random.random() * 0.15) if is_ancient else (0.05 + random.random() * 0.10)
-        affixes.append({"key": k, "val": round(val, 3), "ancient": is_ancient})
-    return {"level": 0, "rarity": rarity, "is_godforged": (rarity == 8), "affixes": affixes}
+    for i in range(slots_count):
+        k = random.choice(OFFICIAL_AFFIX_KEYS)
+        is_ancient = (i in ancient_indices)
+        val = official_ancient_affix_value(k, item_level, rarity) if is_ancient else official_roll_affix_value(k, item_level, rarity)
+        affixes.append({"key": k, "val": val, "ancient": is_ancient})
+    return {"level": 0, "rarity": rarity, "is_godforged": (rarity == 8), "affixes": affixes, "item_level": item_level}
 
 def count_ancient_affixes(affixes):
     return sum(1 for a in affixes if a.get("ancient")) if affixes else 0
@@ -236,7 +289,7 @@ class Character:
         total_item_find = 0.0
 
         for slot, eq in self.equipments.items():
-            enhance_mult = 1.0 + eq["level"] * 0.08
+            enhance_mult = 1.0 + eq["level"] * 0.05
             rarity_mult = safe_pow(2.2, eq["rarity"])
             god_mult = 2.5 if eq["is_godforged"] else 1.0
             
@@ -245,14 +298,15 @@ class Character:
 
             for aff in eq["affixes"]:
                 v = aff["val"] * enhance_mult
-                if aff["key"] == 'patkPct': total_patk_pct += v
-                elif aff["key"] == 'critRate': total_crit_rate += v
-                elif aff["key"] == 'critDmg': total_crit_dmg += v
-                elif aff["key"] == 'aspdPct': total_aspd_pct += v
-                elif aff["key"] == 'pdefPct': total_def_pct += v
-                elif aff["key"] == 'xpBonus': total_xp_bonus += v
-                elif aff["key"] == 'gemEff': total_gem_eff += v
-                elif aff["key"] == 'itemFind': total_item_find += v
+                k = aff["key"]
+                if k in ['patkPct', 'atkPct']: total_patk_pct += v
+                elif k == 'critRate': total_crit_rate += v
+                elif k == 'critDmg': total_crit_dmg += v
+                elif k in ['aspdPct', 'aspd']: total_aspd_pct += v
+                elif k in ['pdefPct', 'defPct']: total_def_pct += v
+                elif k == 'xpBonus': total_xp_bonus += v
+                elif k == 'gemEff': total_gem_eff += v
+                elif k in ['itemFind', 'loot']: total_item_find += v
 
         gem_bonus_pct = sum(count * (lvl * 0.05) * (1.0 + total_gem_eff) for lvl, count in self.gems.items())
         
@@ -341,7 +395,7 @@ class Character:
         highest_rarity = 6 if r6_count > 0 else (5 if r5_count > 0 else (4 if r4_count > 0 else (3 if r3_count > 0 else 2)))
         target_slot = random.choice(OFFICIAL_SLOTS)
         old_eq = self.equipments[target_slot]
-        new_eq = generateDroppedEquipment(highest_rarity, self.profile["min_ancient_affix_ratio"])
+        new_eq = generate_dropped_equipment(highest_rarity, self.profile["min_ancient_affix_ratio"])
 
         old_anc = count_ancient_affixes(old_eq["affixes"])
         new_anc = count_ancient_affixes(new_eq["affixes"])
@@ -477,13 +531,9 @@ class Character:
                 self.total_gold_spent += reroll_cost_gold
                 self.total_stones_spent += reroll_cost_stones
                 
-                possible_keys = ['patkPct', 'critRate', 'critDmg', 'aspdPct', 'xpBonus', 'gemEff', 'itemFind', 'pdefPct', 'hpPct']
                 for aff in eq["affixes"]:
-                    aff["key"] = random.choice(possible_keys)
-                    if aff["key"] == 'itemFind':
-                        aff["val"] = round((0.25 + random.random() * 0.20) if aff["ancient"] else (0.10 + random.random() * 0.15), 3)
-                    else:
-                        aff["val"] = round((0.20 + random.random() * 0.15) if aff["ancient"] else (0.05 + random.random() * 0.10), 3)
+                    aff["key"] = random.choice(OFFICIAL_AFFIX_KEYS)
+                    aff["val"] = official_ancient_affix_value(aff["key"], 500, eq["rarity"]) if aff["ancient"] else official_roll_affix_value(aff["key"], 500, eq["rarity"])
 
                 self.total_affix_rerolls += 1
                 reroll_attempts += 1
@@ -724,12 +774,6 @@ def main():
     
     abs_path = os.path.abspath(args.output)
     print(f"✅ 成功執行蒙地卡羅模擬，導出 HTML 控制台: {abs_path}")
-    try:
-        import webbrowser
-        webbrowser.open("file://" + abs_path)
-        print("🌐 已自動開啟瀏覽器圖表儀表板！")
-    except Exception:
-        pass
 
 if __name__ == "__main__":
     main()

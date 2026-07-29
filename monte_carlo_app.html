@@ -1214,19 +1214,45 @@
         }
     }
 
-    // 100% 對齊官方 item.js §rollItem + formula.js §rollAffixValue / §ancientAffixValue
+    // 官方太古詞條數量權重表 (data.js §ANCIENT_COUNT_WEIGHTS)
+    const ANCIENT_COUNT_WEIGHTS = {
+        2: [92, 7.5, 0.5],
+        3: [78.1, 19.2, 2.4, 0.3],
+        4: [72.11, 22.12, 4.61, 0.96, 0.2],
+        5: [74.35, 18.74, 5.07, 1.37, 0.37, 0.1],
+        6: [76.87, 15.04, 5.28, 1.85, 0.65, 0.23, 0.08],
+        7: [69.92, 18.53, 7.13, 2.74, 1.05, 0.41, 0.16, 0.06]
+    };
+
+    function rollOfficialAncientCount(affixCount) {
+        const weights = ANCIENT_COUNT_WEIGHTS[affixCount] || [100];
+        const totalWeight = weights.reduce((a, b) => a + b, 0);
+        let rnd = Math.random() * totalWeight;
+        for (let i = 0; i < weights.length; i++) {
+            if (rnd < weights[i]) return i;
+            rnd -= weights[i];
+        }
+        return 0;
+    }
+
+    // 100% 對齊官方 item.js §rollItem + formula.js §rollAffixValue / §ancientAffixValue / §rollAncientAffixCount
     function generateDroppedEquipment(rarity, ancientTargetRatio, itemLevel) {
         itemLevel = itemLevel || 500; // 預設裝備等級 500
         const slotsCount = RARITY_AFFIX_COUNTS[rarity] || Math.min(7, rarity);
         const affixes = [];
         
-        let ancientChancePerSlot = 0.08;
-        if (ancientTargetRatio >= 1.0) ancientChancePerSlot = 0.95;
-        else if (ancientTargetRatio >= 0.5) ancientChancePerSlot = 0.50;
+        // 依官方權重表擲骰太古條數
+        const ancientCount = rollOfficialAncientCount(slotsCount);
+
+        // 隨機選定哪些位置為太古
+        const ancientIndices = new Set();
+        while (ancientIndices.size < ancientCount && ancientIndices.size < slotsCount) {
+            ancientIndices.add(Math.floor(Math.random() * slotsCount));
+        }
 
         for (let i = 0; i < slotsCount; i++) {
             const k = OFFICIAL_AFFIX_KEYS[Math.floor(Math.random() * OFFICIAL_AFFIX_KEYS.length)];
-            const isAncient = (Math.random() < ancientChancePerSlot);
+            const isAncient = ancientIndices.has(i);
             const val = isAncient
                 ? officialAncientAffixValue(k, itemLevel, rarity)
                 : officialRollAffixValue(k, itemLevel, rarity);
@@ -1330,14 +1356,14 @@
 
                 eq.affixes.forEach(aff => {
                     const v = aff.val * enhanceMult;
-                    if (aff.key === 'patkPct') totalPatkPct += v;
+                    if (aff.key === 'patkPct' || aff.key === 'atkPct') totalPatkPct += v;
                     if (aff.key === 'critRate') totalCritRate += v;
                     if (aff.key === 'critDmg') totalCritDmg += v;
-                    if (aff.key === 'aspdPct') totalAspdPct += v;
-                    if (aff.key === 'pdefPct') totalDefPct += v;
+                    if (aff.key === 'aspdPct' || aff.key === 'aspd') totalAspdPct += v;
+                    if (aff.key === 'pdefPct' || aff.key === 'defPct') totalDefPct += v;
                     if (aff.key === 'xpBonus') totalXpBonus += v;
                     if (aff.key === 'gemEff') totalGemEff += v;
-                    if (aff.key === 'itemFind') totalItemFind += v;
+                    if (aff.key === 'itemFind' || aff.key === 'loot') totalItemFind += v;
                 });
             }
 
