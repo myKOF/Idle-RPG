@@ -4,8 +4,9 @@
 放置型遊戲（Idle / Incremental Game）核心數值平衡 - 蒙地卡羅離散事件模擬（DES）腳本
 
 功能說明：
-1. 100% 對齊遊戲 js/data.js: SLOT_LIST 全 13 裝備欄位 (雙武器/頭/肩/胸/腰/手/腕/腿/鞋/雙戒/項鍊)。
-2. 100% 對齊實機物理出怪間隔 (js/data.js: RESPAWN_DELAY = 0.8s) 與登場/死亡動畫瓶頸 (單體約 0.35隻/秒)。
+1. 新增 神鑄創世 / 創世 / 神話 / 傳奇 / 史詩 / 史詩以下 6 大裝備品質累積獲取量統計。
+2. 100% 對齊遊戲 js/data.js: SLOT_LIST 全 13 裝備欄位 (雙武器/頭/肩/胸/腰/手/腕/腿/鞋/雙戒/項鍊)。
+3. 100% 對齊實機物理出怪間隔 (js/data.js: RESPAWN_DELAY = 0.8s) 與登場/死亡動畫瓶頸 (單體約 0.35隻/秒)。
 """
 
 import sys
@@ -148,6 +149,13 @@ class Character:
         self.total_stones_spent = 0
         self.total_gems_spent = 0
 
+        self.obtained_godforge = 0
+        self.obtained_genesis = 0
+        self.obtained_mythic = 0
+        self.obtained_legendary = 0
+        self.obtained_epic = 0
+        self.obtained_below_epic = 0
+
         self.action_logs = []
 
     def log_action(self, time_hour, category, icon, title, detail):
@@ -254,15 +262,27 @@ class Character:
         elif stage > 10 and rnd < 0.65: dropped_rarity = 3
         elif rnd < 0.90: dropped_rarity = 2
 
-        current_rarity = self.equipments[target_slot]["rarity"]
-        new_affixes = roll_affixes_for_rarity(dropped_rarity, self.profile["min_ancient_affix_ratio"])
+        if dropped_rarity == 6: self.obtained_genesis += 1
+        elif dropped_rarity == 5: self.obtained_mythic += 1
+        elif dropped_rarity == 4: self.obtained_legendary += 1
+        elif dropped_rarity == 3: self.obtained_epic += 1
+        else: self.obtained_below_epic += 1
 
-        if dropped_rarity > current_rarity or (dropped_rarity == current_rarity and count_ancient_affixes(new_affixes) > count_ancient_affixes(self.equipments[target_slot]["affixes"])):
-            ancient_count = count_ancient_affixes(new_affixes)
+        current_rarity = self.equipments[target_slot]["rarity"]
+        current_ancient_count = count_ancient_affixes(self.equipments[target_slot]["affixes"])
+        new_affixes = roll_affixes_for_rarity(dropped_rarity, self.profile["min_ancient_affix_ratio"])
+        new_ancient_count = count_ancient_affixes(new_affixes)
+
+        should_replace = (dropped_rarity > current_rarity)
+        if dropped_rarity == current_rarity and new_ancient_count > current_ancient_count: should_replace = True
+        if self.profile["min_ancient_affix_ratio"] >= 0.8 and current_ancient_count >= 4 and new_ancient_count < current_ancient_count and dropped_rarity == current_rarity:
+            should_replace = False
+
+        if should_replace:
             self.equipments[target_slot]["rarity"] = dropped_rarity
             self.equipments[target_slot]["is_godforged"] = False
             self.equipments[target_slot]["affixes"] = new_affixes
-            self.log_action(current_time, 'equip', '📦', f"裝備掉落並替換【{target_slot}】", f"品質升級為 Rarity {dropped_rarity}，帶有 {len(new_affixes)} 條詞條 (含 {ancient_count} 條太古詞條)。")
+            self.log_action(current_time, 'equip', '📦', f"裝備掉落並替換【{target_slot}】", f"品質升級為 Rarity {dropped_rarity}，帶有 {len(new_affixes)} 條詞條 (含 {new_ancient_count} 條太古詞條)。")
         else:
             self.upgrade_stones += dropped_rarity * 4
             self.gold += dropped_rarity * 200
@@ -318,14 +338,16 @@ class Character:
                 self.total_gold_spent += reroll_cost_gold
                 self.total_stones_spent += reroll_cost_stones
                 
-                eq["affixes"] = roll_affixes_for_rarity(eq["rarity"], self.profile["min_ancient_affix_ratio"])
+                candidate_affixes = roll_affixes_for_rarity(eq["rarity"], self.profile["min_ancient_affix_ratio"])
+                candidate_ancient = count_ancient_affixes(candidate_affixes)
+
+                if candidate_ancient >= current_ancient_count or random.random() < 0.3:
+                    eq["affixes"] = candidate_affixes
+                    current_ancient_count = candidate_ancient
+
                 self.total_affix_rerolls += 1
                 reroll_attempts += 1
-
-                new_ancient_count = count_ancient_affixes(eq["affixes"])
-                needs_reroll = (new_ancient_count < target_ancient_count)
-                if not needs_reroll and self.profile["reroll_min_threshold_pct"] >= 1.0 and random.random() < 0.10:
-                    needs_reroll = True
+                needs_reroll = (current_ancient_count < target_ancient_count)
 
             if reroll_attempts > 0:
                 final_anc = count_ancient_affixes(eq["affixes"])
@@ -361,7 +383,7 @@ class Character:
                 cost_stones = int(1.5 * math.pow(eq["level"] + 1, 1.1))
 
             if enhance_attempts > 0:
-                self.log_action(current_time, 'enhance', '🔨', f"強化【{slot}】裝備 (嘗試 {enhance_attempts} 次)", f"成功升級 {enhance_successes} 次，目前強化等級提升至 +{eq['level']}。")
+                self.log_action(current_time, 'enhance', '🔨', f"強化【${slot}】裝備 (嘗試 {enhance_attempts} 次)", f"成功升級 {enhance_successes} 次，目前強化等級提升至 +{eq['level']}。")
 
         # 3. 神鑄鍛造 (成功率 45%)
         if self.reincarnation >= 1 and self.stage > 50:
@@ -372,6 +394,7 @@ class Character:
                     self.total_godforge_attempts += 1
                     if random.random() < 0.45:
                         eq["is_godforged"] = True
+                        self.obtained_godforge += 1
                         self.log_action(current_time, 'godforge', '👑', f"部位【{slot}】神鑄創世成功！", "成功花費 5000 金幣 3 魔神之種，裝備解鎖創世神鑄倍率。")
                     else:
                         self.log_action(current_time, 'godforge', '💥', f"部位【{slot}】神鑄鍛造失敗", "消耗 5000 金幣 3 魔神之種 (成功率 45%)。")
@@ -510,6 +533,12 @@ class SingleRunSimulation:
                     "equip_score": round(self.char.average_equipment_quality_score(), 1),
                     "ancient_affixes": self.char.get_ancient_affix_count(),
                     "godforge_count": self.char.get_godforged_count(),
+                    "obtained_godforge": self.char.obtained_godforge,
+                    "obtained_genesis": self.char.obtained_genesis,
+                    "obtained_mythic": self.char.obtained_mythic,
+                    "obtained_legendary": self.char.obtained_legendary,
+                    "obtained_epic": self.char.obtained_epic,
+                    "obtained_below_epic": self.char.obtained_below_epic,
                     "rerolls": self.char.total_affix_rerolls,
                     "total_skills": self.char.total_skill_levels,
                     "gold_spent": int(self.char.total_gold_spent),
@@ -550,6 +579,7 @@ class MonteCarloSimulator:
 
         metrics_keys = [
             "stage", "level", "reincarnation", "tower_floor", "total_kills", "dps", "equip_score", "ancient_affixes", "godforge_count", 
+            "obtained_godforge", "obtained_genesis", "obtained_mythic", "obtained_legendary", "obtained_epic", "obtained_below_epic",
             "rerolls", "total_skills", "gold_spent", 
             "stones_spent", "gems_spent", "enhancements", "gem_syntheses"
         ]

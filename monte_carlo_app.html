@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>放置型 RPG 蒙地卡羅數值模擬驗證工具 (全 13 裝備欄位完整對齊版)</title>
+    <title>放置型 RPG 蒙地卡羅數值模擬驗證工具 (全品質裝備獲取與滿太古AI修正版)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -236,7 +236,7 @@
         .card {
             background: var(--panel-bg);
             border: 1px solid var(--panel-border);
-            padding: 18px;
+            padding: 16px;
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
@@ -249,7 +249,7 @@
         }
 
         .card-val {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
             color: var(--accent-blue);
         }
@@ -458,8 +458,8 @@
 <div class="container">
     <div class="app-header">
         <div class="app-title">
-            <h1>🎮 放置型 RPG 蒙地卡羅數值模擬驗證工具 (全 13 裝備欄位完整對齊版)</h1>
-            <p>Monte Carlo Discrete Event Simulation Engine (100% 對齊遊戲 js/data.js: 完整 13 裝備欄位與實機物理間隔)</p>
+            <h1>🎮 放置型 RPG 蒙地卡羅數值模擬驗證工具 (全品質裝備獲取與滿太古AI修正版)</h1>
+            <p>Monte Carlo Discrete Event Simulation Engine (包含 6 大品質裝備獲取量統計與極限玩家優先洗滿太古AI邏輯)</p>
         </div>
     </div>
 
@@ -579,7 +579,7 @@
         </div>
     </div>
 
-    <!-- 關鍵指標摘要卡片 -->
+    <!-- 關鍵指標摘要卡片 (含 6 大裝備品質獲取量) -->
     <div class="stats-cards" id="statsCards" style="display: none;">
         <div class="card">
             <div class="card-label">模擬玩家型態</div>
@@ -617,6 +617,32 @@
             <div class="card-label">⚡ 500h 全身 13 裝備太古詞條總數均值</div>
             <div class="card-val" id="cardAncientAffixes" style="color: #818cf8;">-</div>
         </div>
+
+        <!-- 6 大裝備品質累積獲取量卡片 -->
+        <div class="card" style="border-color: #f59e0b;">
+            <div class="card-label">👑 平均獲得【神鑄創世】裝備</div>
+            <div class="card-val" id="cardObtainedGodforge" style="color: #f59e0b;">-</div>
+        </div>
+        <div class="card" style="border-color: #ec4899;">
+            <div class="card-label">✨ 平均獲得【創世】裝備 (R6)</div>
+            <div class="card-val" id="cardObtainedGenesis" style="color: #ec4899;">-</div>
+        </div>
+        <div class="card" style="border-color: #a855f7;">
+            <div class="card-label">🟣 平均獲得【神話】裝備 (R5)</div>
+            <div class="card-val" id="cardObtainedMythic" style="color: #a855f7;">-</div>
+        </div>
+        <div class="card" style="border-color: #f97316;">
+            <div class="card-label">🟠 平均獲得【傳奇】裝備 (R4)</div>
+            <div class="card-val" id="cardObtainedLegendary" style="color: #f97316;">-</div>
+        </div>
+        <div class="card" style="border-color: #3b82f6;">
+            <div class="card-label">🔵 平均獲得【史詩】裝備 (R3)</div>
+            <div class="card-val" id="cardObtainedEpic" style="color: #3b82f6;">-</div>
+        </div>
+        <div class="card" style="border-color: #94a3b8;">
+            <div class="card-label">⚪ 平均獲得【史詩以下】裝備 (R1~R2)</div>
+            <div class="card-val" id="cardObtainedBelowEpic" style="color: #94a3b8;">-</div>
+        </div>
     </div>
 
     <!-- 圖表展示區 -->
@@ -641,6 +667,12 @@
                     <option value="rerolls">🎲 裝備洗詞條總次數 (Affix Rerolls)</option>
                     <option value="gem_syntheses">💎 寶石合成總次數 (Gem Syntheses)</option>
                     <option value="ancient_affixes">⚡ 全身 13 裝備太古詞條總數</option>
+                    <option value="obtained_godforge">👑 獲得【神鑄創世】裝備數量</option>
+                    <option value="obtained_genesis">✨ 獲得【創世】裝備數量</option>
+                    <option value="obtained_mythic">🟣 獲得【神話】裝備數量</option>
+                    <option value="obtained_legendary">🟠 獲得【傳奇】裝備數量</option>
+                    <option value="obtained_epic">🔵 獲得【史詩】裝備數量</option>
+                    <option value="obtained_below_epic">⚪ 獲得【史詩以下】裝備數量</option>
                     <option value="level">📈 玩家等級 (Player Level)</option>
                     <option value="equip_score">🛡️ 裝備綜合戰力分數</option>
                     <option value="enhancements">🔨 裝備強化總次數</option>
@@ -701,7 +733,7 @@
         <div class="empty-hint">
             <div>👥</div>
             <h3>點擊上方「選擇玩家型態」並啟動蒙地卡羅模擬</h3>
-            <p>100% 對齊遊戲 js/data.js: 完整 13 裝備欄位 (雙武器/頭/肩/胸/腰/手/腕/腿/鞋/雙戒/項鍊)。</p>
+            <p>已實裝 神鑄創世 / 創世 / 神話 / 傳奇 / 史詩 / 史詩以下 6 大裝備獲取量統計與極限玩家洗滿太古AI邏輯。</p>
         </div>
     </div>
 </div>
@@ -849,7 +881,7 @@
             this.int_attr = 5;
             this.sta_attr = 5;
 
-            // 完全對齊遊戲官方 13 裝備欄位 (SLOT_LIST = 13 欄)
+            // 完全對齊遊戲官方 13 裝備欄位
             this.equipments = {};
             OFFICIAL_SLOTS.forEach(s => {
                 this.equipments[s] = { level: 0, rarity: 1, isGodforged: false, affixes: rollAffixesForRarity(1, 0) };
@@ -870,6 +902,14 @@
             this.total_gold_spent = 0;
             this.total_stones_spent = 0;
             this.total_gems_spent = 0;
+
+            // 6 大品質裝備累積獲取計數器
+            this.obtained_godforge = 0;
+            this.obtained_genesis = 0;
+            this.obtained_mythic = 0;
+            this.obtained_legendary = 0;
+            this.obtained_epic = 0;
+            this.obtained_below_epic = 0;
 
             this.actionLogs = [];
         }
@@ -981,16 +1021,30 @@
             else if (stage > 10 && rnd < 0.65) droppedRarity = 3;
             else if (rnd < 0.90) droppedRarity = 2;
 
+            // 統計 6 大品質獲取量
+            if (droppedRarity === 6) this.obtained_genesis++;
+            else if (droppedRarity === 5) this.obtained_mythic++;
+            else if (droppedRarity === 4) this.obtained_legendary++;
+            else if (droppedRarity === 3) this.obtained_epic++;
+            else this.obtained_below_epic++;
+
             const currentRarity = this.equipments[targetSlot].rarity;
+            const currentAncientCount = countAncientAffixes(this.equipments[targetSlot].affixes);
             const newAffixes = rollAffixesForRarity(droppedRarity, this.profile.ancientRatio);
+            const newAncientCount = countAncientAffixes(newAffixes);
+
+            // 智能替換邏輯：若玩家追求太古 (ancientRatio > 0.5)，且新裝備太古數較少且玩家無法立即洗滿，不輕易降太古數
+            let shouldReplace = (droppedRarity > currentRarity);
+            if (droppedRarity === currentRarity && newAncientCount > currentAncientCount) shouldReplace = true;
+            if (this.profile.ancientRatio >= 0.8 && currentAncientCount >= 4 && newAncientCount < currentAncientCount && droppedRarity === currentRarity) {
+                shouldReplace = false;
+            }
             
-            if (droppedRarity > currentRarity || 
-               (droppedRarity === currentRarity && countAncientAffixes(newAffixes) > countAncientAffixes(this.equipments[targetSlot].affixes))) {
-                const ancientCount = countAncientAffixes(newAffixes);
+            if (shouldReplace) {
                 this.equipments[targetSlot].rarity = droppedRarity;
                 this.equipments[targetSlot].isGodforged = false;
                 this.equipments[targetSlot].affixes = newAffixes;
-                this.logAction(currentTime, 'equip', '📦', `裝備掉落並替換【${targetSlot}】`, `品質升級為 Rarity ${droppedRarity}，帶有 ${newAffixes.length} 條詞條 (含 ${ancientCount} 條太古詞條)。`);
+                this.logAction(currentTime, 'equip', '📦', `裝備掉落並替換【${targetSlot}】`, `品質升級為 Rarity ${droppedRarity}，帶有 ${newAffixes.length} 條詞條 (含 ${newAncientCount} 條太古詞條)。`);
             } else {
                 this.upgrade_stones += droppedRarity * 4;
                 this.gold += droppedRarity * 200;
@@ -1030,14 +1084,14 @@
 
             this.challengeTowerBoss(currentTime);
 
-            // 1. 全 13 欄位洗詞條 AI
+            // 1. 全 13 欄位洗詞條 AI (極限/重度玩家優先將裝備洗滿太古詞條)
             for (let slot in this.equipments) {
                 const eq = this.equipments[slot];
                 const rerollCostGold = Math.floor(200 * Math.pow(eq.rarity, 1.3));
                 const rerollCostStones = Math.floor(3 * eq.rarity);
 
-                const currentAncientCount = countAncientAffixes(eq.affixes);
-                const targetAncientCount = Math.floor(eq.affixes.length * this.profile.ancientRatio);
+                let currentAncientCount = countAncientAffixes(eq.affixes);
+                let targetAncientCount = Math.floor(eq.affixes.length * this.profile.ancientRatio);
 
                 let needsReroll = (currentAncientCount < targetAncientCount);
 
@@ -1055,15 +1109,19 @@
                     this.total_gold_spent += rerollCostGold;
                     this.total_stones_spent += rerollCostStones;
 
-                    eq.affixes = rollAffixesForRarity(eq.rarity, this.profile.ancientRatio);
+                    // 極限玩家洗詞條升級：只保留更高太古數量的結果
+                    const candidateAffixes = rollAffixesForRarity(eq.rarity, this.profile.ancientRatio);
+                    const candidateAncient = countAncientAffixes(candidateAffixes);
+
+                    if (candidateAncient >= currentAncientCount || Math.random() < 0.3) {
+                        eq.affixes = candidateAffixes;
+                        currentAncientCount = candidateAncient;
+                    }
+
                     this.total_affix_rerolls++;
                     rerollAttemptsThisBatch++;
 
-                    const newAncientCount = countAncientAffixes(eq.affixes);
-                    needsReroll = (newAncientCount < targetAncientCount);
-                    if (!needsReroll && this.profile.rerollThreshold >= 1.0 && Math.random() < 0.10) {
-                        needsReroll = true;
-                    }
+                    needsReroll = (currentAncientCount < targetAncientCount);
                 }
 
                 if (rerollAttemptsThisBatch > 0) {
@@ -1120,6 +1178,7 @@
                         this.total_godforge_attempts++;
                         if (Math.random() < 0.45) {
                             eq.isGodforged = true;
+                            this.obtained_godforge++;
                             this.logAction(currentTime, 'godforge', '👑', `部位【${slot}】神鑄創世成功！`, `成功花費 5000 金幣 3 魔神之種，裝備解鎖創世神鑄倍率。`);
                         } else {
                             this.logAction(currentTime, 'godforge', '💥', `部位【${slot}】神鑄鍛造失敗`, `消耗 5000 金幣 3 魔神之種 (成功率 45%)。`);
@@ -1267,6 +1326,12 @@
                     equip_score: Math.round(char.getEquipScore()),
                     ancient_affixes: char.getAncientAffixCount(),
                     godforge_count: char.getGodforgedCount(),
+                    obtained_godforge: char.obtained_godforge,
+                    obtained_genesis: char.obtained_genesis,
+                    obtained_mythic: char.obtained_mythic,
+                    obtained_legendary: char.obtained_legendary,
+                    obtained_epic: char.obtained_epic,
+                    obtained_below_epic: char.obtained_below_epic,
                     rerolls: char.total_affix_rerolls,
                     total_skills: char.total_skill_levels,
                     gold_spent: char.total_gold_spent,
@@ -1326,14 +1391,14 @@
                 const pct = Math.round((i / runs) * 100);
                 document.getElementById('progressPct').innerText = pct + '%';
                 document.getElementById('progressBarFill').style.width = pct + '%';
-                document.getElementById('progressStatus').innerText = `正在為【${activeProfile.name}】進行全 13 裝備欄位蒙地卡羅模擬 (${i}/${runs})...`;
+                document.getElementById('progressStatus').innerText = `正在為【${activeProfile.name}】進行 6 大品質裝備獲取量與滿太古AI模擬 (${i}/${runs})...`;
                 await new Promise(r => setTimeout(r, 5));
             }
         }
 
         const timeStepsCount = Math.min(...allHistories.map(h => h.length));
         const aggregatedSeries = [];
-        const metrics = ["stage", "level", "reincarnation", "tower_floor", "total_kills", "dps", "equip_score", "ancient_affixes", "godforge_count", "rerolls", "total_skills", "gold_spent", "stones_spent", "gems_spent", "enhancements", "gem_syntheses"];
+        const metrics = ["stage", "level", "reincarnation", "tower_floor", "total_kills", "dps", "equip_score", "ancient_affixes", "godforge_count", "obtained_godforge", "obtained_genesis", "obtained_mythic", "obtained_legendary", "obtained_epic", "obtained_below_epic", "rerolls", "total_skills", "gold_spent", "stones_spent", "gems_spent", "enhancements", "gem_syntheses"];
 
         for (let stepIdx = 0; stepIdx < timeStepsCount; stepIdx++) {
             const stepHour = allHistories[0][stepIdx].hour;
@@ -1381,8 +1446,16 @@
         setCardVal('cardRerolls', formatGameNumber(lastStep.rerolls.mean));
         setCardVal('cardGems', formatGameNumber(lastStep.gem_syntheses.mean));
         
-        // 500 小時全 13 裝備欄位太古詞條總數算術平均值
+        // 500 小時全身裝備太古詞條總數算術平均值
         setCardVal('cardAncientAffixes', (lastStep.ancient_affixes.mean).toFixed(1) + ' 條');
+
+        // 6 大品質裝備獲取量卡片
+        setCardVal('cardObtainedGodforge', formatGameNumber(lastStep.obtained_godforge.mean) + ' 件');
+        setCardVal('cardObtainedGenesis', formatGameNumber(lastStep.obtained_genesis.mean) + ' 件');
+        setCardVal('cardObtainedMythic', formatGameNumber(lastStep.obtained_mythic.mean) + ' 件');
+        setCardVal('cardObtainedLegendary', formatGameNumber(lastStep.obtained_legendary.mean) + ' 件');
+        setCardVal('cardObtainedEpic', formatGameNumber(lastStep.obtained_epic.mean) + ' 件');
+        setCardVal('cardObtainedBelowEpic', formatGameNumber(lastStep.obtained_below_epic.mean) + ' 件');
 
         currentLogPage = 1;
         renderTopRunActionLogs();
@@ -1515,6 +1588,12 @@
             rerolls: '🎲 裝備洗詞條總次數',
             gem_syntheses: '💎 寶石合成總次數',
             ancient_affixes: '⚡ 全身 13 裝備太古詞條總數 (50名玩家於 500h 之平均值)',
+            obtained_godforge: '👑 獲得【神鑄創世】裝備數量',
+            obtained_genesis: '✨ 獲得【創世】裝備數量',
+            obtained_mythic: '🟣 獲得【神話】裝備數量',
+            obtained_legendary: '🟠 獲得【傳奇】裝備數量',
+            obtained_epic: '🔵 獲得【史詩】裝備數量',
+            obtained_below_epic: '⚪ 獲得【史詩以下】裝備數量',
             stage: '🚩 到達關卡數',
             level: '📈 玩家等級',
             equip_score: '🛡️ 裝備綜合戰力分數',
