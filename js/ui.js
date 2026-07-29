@@ -329,9 +329,22 @@ function mergeUiPanelParams(first, second) {
 }
 
 function activeUiPanelParams(key) {
-  if (key !== 'inv' || typeof document === 'undefined' || !isInternalServer()) return undefined;
-  var input = $id('inv-keyword-filter');
-  if (input && String(input.value || '').trim()) return { full: true };
+  if (key !== 'inv' || typeof document === 'undefined') return undefined;
+  /* 兩個參數的適用範圍不同，守衛不能共用：
+
+     `full` 是關鍵字篩選要的，而那個輸入框只在內測服顯示，所以它留在 isInternalServer() 內。
+
+     `detailIds` 與環境無關——它是「選取中的背包物品要能被解析出來」的必要條件。背包格子
+     只送 12 個欄位的投影，完整物品資料只存在於 details；面板一旦在不帶 detailIds 的情況下
+     刷新，details 就被洗成 null，findSelItem() 回 null，detailAction() 第一行直接 return，
+     裝備／分解／強化／鎖定四顆按鈕全部靜靜失效（點了完全沒反應，不是變灰）。
+
+     兩者原本共用同一個 isInternalServer() 守衛，等於外部玩家永遠拿不到 detailIds——
+     內測環境測不出來，因為在 localhost 上守衛恆真。 */
+  if (isInternalServer()) {
+    var input = $id('inv-keyword-filter');
+    if (input && String(input.value || '').trim()) return { full: true };
+  }
   if (UI.sel && UI.sel.source === 'inv' && UI.sel.id) {
     return { detailIds: [UI.sel.id] };
   }
