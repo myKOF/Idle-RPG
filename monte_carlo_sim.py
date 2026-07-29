@@ -4,10 +4,9 @@
 放置型遊戲（Idle / Incremental Game）核心數值平衡 - 蒙地卡羅離散事件模擬（DES）腳本
 
 功能說明：
-1. 100% 對齊遊戲官方權威 js/data.js: 創世 (R7) 與神鑄創世 (R8) 擁有 7 條詞條。
-2. 100% 對齊遊戲官方權威 js/data.js (ANCIENT_COUNT_WEIGHTS) & js/item.js:
-   太古詞條於裝備產出/掉落時決定，位置永久固定，洗煉絕不改變太古條數。
-3. 裝備替換策略：1. 品質最高優先 > 2. 品質相同時太古詞條數越多越優先。
+1. 100% 對齊遊戲官方權威 js/forge.js 神鑄六芒星法陣 (Divine Forge) 6 合 1 升階機制。
+2. 實裝 5 級寶石大量合成積攢魔塵 (Dust)，魔塵放入法陣防爆（+30% 成功率加成達 100% 必定成功）。
+3. 極限玩家強化目標調降為 +60 高CP值強化，釋放大量金幣與石料進行數萬次狂洗詞條。
 """
 
 import sys
@@ -24,7 +23,6 @@ OFFICIAL_SLOTS = [
     'ring', 'ring2', 'amulet'
 ]
 
-# 對齊 js/data.js RARITIES 表
 RARITY_AFFIX_COUNTS = { 1: 2, 2: 3, 3: 4, 4: 5, 5: 5, 6: 6, 7: 7, 8: 7 }
 
 def safe_pow(base, exp, max_val=1e300):
@@ -76,7 +74,7 @@ PLAYER_PROFILES = {
     "HEAVY": {
         "name": "🔥 重度玩家",
         "daily_online_hours": 8.0,
-        "target_enhance_level": 50,
+        "target_enhance_level": 45,
         "reroll_min_threshold_pct": 0.80,
         "required_loot_affixes": 2,
         "required_xp_bonus_affixes": 2,
@@ -88,7 +86,7 @@ PLAYER_PROFILES = {
     "EXTREME": {
         "name": "👑 極限玩家",
         "daily_online_hours": 24.0,
-        "target_enhance_level": 70,
+        "target_enhance_level": 60,
         "reroll_min_threshold_pct": 1.00,
         "required_loot_affixes": 3,
         "required_xp_bonus_affixes": 2,
@@ -152,7 +150,9 @@ class Character:
         self.gold = 0
         self.upgrade_stones = 0
         self.demon_seeds = 0
+        self.dust = 0
         self.gems = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0}
+        self.genesis_gear_pool = 0
         
         self.skill_points = 2
         self.total_skill_levels = 2
@@ -273,11 +273,20 @@ class Character:
         stats = self.calculate_stats()
         loot_mult = stats["itemFindBonus"]
 
-        r6_chance = 0.0005 if (self.reincarnation >= 1 or self.stage > 150) else 0.0001
-        r5_chance = 0.02 if self.stage > 80 else 0.005
-        r4_chance = 0.05 if self.stage > 30 else 0.01
-        r3_chance = 0.10 if self.stage > 10 else 0.05
-        r12_chance = 0.70
+        dropped_gems_count = roll_drop_count(kills_count * 0.20 * loot_mult)
+        if dropped_gems_count > 0:
+            g1 = roll_drop_count(dropped_gems_count * 0.60)
+            g2 = roll_drop_count(dropped_gems_count * 0.30)
+            g3 = roll_drop_count(dropped_gems_count * 0.10)
+            self.gems[1] = self.gems.get(1, 0) + g1
+            self.gems[2] = self.gems.get(2, 0) + g2
+            self.gems[3] = self.gems.get(3, 0) + g3
+
+        r6_chance = 0.0025 if (self.reincarnation >= 1 or self.stage > 150) else 0.0005
+        r5_chance = 0.08 if self.stage > 80 else 0.02
+        r4_chance = 0.18 if self.stage > 30 else 0.05
+        r3_chance = 0.35 if self.stage > 10 else 0.15
+        r12_chance = 2.50
 
         r6_count = roll_drop_count(kills_count * r6_chance * loot_mult)
         r5_count = roll_drop_count(kills_count * r5_chance * loot_mult)
@@ -285,21 +294,21 @@ class Character:
         r3_count = roll_drop_count(kills_count * r3_chance * loot_mult)
         r12_count = roll_drop_count(kills_count * r12_chance * loot_mult)
 
-        self.obtained_genesis += r6_count
-        self.obtained_mythic += r5_count
-        self.obtained_legendary += r4_count
-        self.obtained_epic += r3_count
+        gen_drop = roll_drop_count(r6_count * 0.15)
+        self.obtained_genesis += gen_drop
+        self.genesis_gear_pool += gen_drop
+        self.obtained_mythic += r6_count
+        self.obtained_legendary += r5_count
+        self.obtained_epic += r3_count + r4_count
         self.obtained_below_epic += r12_count
 
         total_dropped = r6_count + r5_count + r4_count + r3_count + r12_count
-        self.upgrade_stones += total_dropped * 4
-        self.gold += total_dropped * 200
+        self.upgrade_stones += total_dropped * 6
+        self.gold += total_dropped * 350
 
         highest_rarity = 6 if r6_count > 0 else (5 if r5_count > 0 else (4 if r4_count > 0 else (3 if r3_count > 0 else 2)))
         target_slot = random.choice(OFFICIAL_SLOTS)
         old_eq = self.equipments[target_slot]
-
-        # 掉落當下生成新裝備
         new_eq = generate_dropped_equipment(highest_rarity, self.profile["min_ancient_affix_ratio"])
 
         old_anc = count_ancient_affixes(old_eq["affixes"])
@@ -333,23 +342,26 @@ class Character:
             self.gold -= cost_gold
             self.tower_floor = target_floor
             self.gold += int(cost_gold * 3.0)
-            self.upgrade_stones += target_floor * 50
+            self.upgrade_stones += target_floor * 80
             self.demon_seeds += int(target_floor / 10) + 1
+
+            self.gems[2] = self.gems.get(2, 0) + roll_drop_count(target_floor * 0.5)
+            self.gems[3] = self.gems.get(3, 0) + roll_drop_count(target_floor * 0.3)
+            self.gems[4] = self.gems.get(4, 0) + roll_drop_count(target_floor * 0.1)
 
             loot_mult = stats["itemFindBonus"]
             if target_floor >= 30:
-                self.obtained_genesis += roll_drop_count(0.5 * loot_mult)
-                self.obtained_mythic += roll_drop_count(1.5 * loot_mult)
-                self.obtained_legendary += roll_drop_count(2.0 * loot_mult)
-                if random.random() < 0.15 * loot_mult:
-                    self.obtained_godforge += 1
-                    self.log_action(current_time, 'boss', '👑', f"高塔 BOSS 第 {target_floor} 層掉落【神鑄創世】裝備！", f"擊敗 BOSS 觸發神鑄掉落率，獲得創世神鑄裝備！")
+                gen_drop = roll_drop_count(2.0 * loot_mult)
+                self.obtained_genesis += gen_drop
+                self.genesis_gear_pool += gen_drop
+                self.obtained_mythic += roll_drop_count(5.0 * loot_mult)
+                self.obtained_legendary += roll_drop_count(10.0 * loot_mult)
             else:
-                self.obtained_mythic += roll_drop_count(1.0 * loot_mult)
-                self.obtained_legendary += roll_drop_count(1.5 * loot_mult)
-                self.obtained_epic += roll_drop_count(2.0 * loot_mult)
+                self.obtained_mythic += roll_drop_count(3.0 * loot_mult)
+                self.obtained_legendary += roll_drop_count(5.0 * loot_mult)
+                self.obtained_epic += roll_drop_count(8.0 * loot_mult)
 
-            self.log_action(current_time, 'boss', '👹', f"挑戰並擊敗高塔 BOSS 第 {self.tower_floor} 層！", f"BOSS HP: {format_game_number(boss_hp)} | 戰鬥耗時 {time_to_kill:.1f} 秒，獲得裝備爆落獎勵、金幣與魔神之種。")
+            self.log_action(current_time, 'boss', '👹', f"挑戰並擊敗高塔 BOSS 第 {self.tower_floor} 層！", f"BOSS HP: {format_game_number(boss_hp)} | 戰鬥耗時 {time_to_kill:.1f} 秒，爆落高階寶石、創世裝備與魔神之種。")
 
     def auto_upgrade_and_manage(self, current_time):
         if self.skill_points > 0:
@@ -358,17 +370,86 @@ class Character:
 
         self.challenge_tower_boss(current_time)
 
-        # 1. 洗詞條 AI：太古條數與位置於產出時永久固定！洗煉僅洗屬性 key 與 val
+        # 1. 寶石大量合成與魔塵 (Dust) 產生機制
+        has_synthesized = True
+        synth_summary = []
+        while has_synthesized:
+            has_synthesized = False
+            for lvl in range(1, 10):
+                if self.gems.get(lvl, 0) >= 3:
+                    count = self.gems[lvl] // 3
+                    self.gems[lvl] -= count * 3
+                    
+                    success_rate = 1.0 if lvl <= 4 else (0.70 if lvl == 5 else 0.50)
+                    successes = 0
+                    failures = 0
+                    for _ in range(count):
+                        if random.random() < success_rate: successes += 1
+                        else: failures += 1
+
+                    self.gems[lvl + 1] = self.gems.get(lvl + 1, 0) + successes
+                    self.dust += failures
+                    self.total_gems_spent += count * 3
+                    self.total_gem_syntheses += count
+                    has_synthesized = True
+                    if count >= 5: synth_summary.append(f"合成 {count*3} 顆 Lv.{lvl} 寶石 -> 成功 {successes} 顆, 失敗產生 {failures} 魔塵")
+
+        if synth_summary:
+            self.log_action(current_time, 'gem', '💎', "進行 5 級寶石大量合成與魔塵積攢", "； ".join(synth_summary[:3]))
+
+        # 2. 實裝神鑄法陣 6 合 1 (Divine Forge System) 加魔塵防爆必過
+        while self.genesis_gear_pool >= 6 and self.gold >= 5000:
+            self.genesis_gear_pool -= 6
+            self.gold -= 5000
+            self.total_godforge_attempts += 1
+            
+            used_dust = min(6, self.dust)
+            self.dust -= used_dust
+            forge_chance = 0.70 + (used_dust * 0.05)
+
+            if random.random() < forge_chance:
+                self.obtained_godforge += 1
+                slot = random.choice(OFFICIAL_SLOTS)
+                old_eq = self.equipments[slot]
+                if not old_eq["is_godforged"]:
+                    god_eq = generate_dropped_equipment(8, 1.0)
+                    god_eq["level"] = old_eq["level"]
+                    self.equipments[slot] = god_eq
+                    self.log_action(current_time, 'godforge', '👑', f"神鑄六芒星法陣 6 合 1 成功！(消耗 {used_dust} 魔塵)", f"將【{slot}】裝備解鎖升階為【神鑄創世 R8】(7 滿太古詞條)。")
+            else:
+                self.dust += 1
+
+        # 3. 高CP值 +60 強化
         for slot, eq in self.equipments.items():
-            reroll_cost_gold = int(200 * math.pow(eq["rarity"], 1.3))
-            reroll_cost_stones = int(3 * eq["rarity"])
+            if eq["level"] >= self.profile["target_enhance_level"]: continue
+            cost_gold = int(80 * math.pow(eq["level"] + 1, 1.4))
+            cost_stones = int(1.5 * math.pow(eq["level"] + 1, 1.05))
 
-            loot_count = sum(1 for a in eq["affixes"] if a["key"] == 'itemFind')
-            req_loot = self.profile.get("required_loot_affixes", 0)
-            needs_reroll = (req_loot > 0 and loot_count < req_loot and slot in ['amulet', 'ring', 'ring2'])
+            success_rate = 0.40 if eq["level"] >= 50 else 0.75
+            enhance_attempts = 0
 
+            while eq["level"] < self.profile["target_enhance_level"] and self.gold >= cost_gold and self.upgrade_stones >= cost_stones:
+                self.gold -= cost_gold
+                self.upgrade_stones -= cost_stones
+                self.total_gold_spent += cost_gold
+                self.total_stones_spent += cost_stones
+                enhance_attempts += 1
+
+                if random.random() < success_rate: eq["level"] += 1
+                self.total_enhancements += 1
+
+                cost_gold = int(80 * math.pow(eq["level"] + 1, 1.4))
+                cost_stones = int(1.5 * math.pow(eq["level"] + 1, 1.05))
+
+        # 4. 瘋狂洗詞條 AI (將節省下來的金幣與石料投入數萬次洗煉)
+        for slot, eq in self.equipments.items():
+            reroll_cost_gold = int(150 * math.pow(eq["rarity"], 1.2))
+            reroll_cost_stones = int(2 * eq["rarity"])
+
+            reroll_limit = 800 if self.profile["daily_online_hours"] >= 24 else 150
             reroll_attempts = 0
-            while needs_reroll and self.gold >= reroll_cost_gold and self.upgrade_stones >= reroll_cost_stones:
+
+            while reroll_attempts < reroll_limit and self.gold >= reroll_cost_gold and self.upgrade_stones >= reroll_cost_stones:
                 self.gold -= reroll_cost_gold
                 self.upgrade_stones -= reroll_cost_stones
                 self.total_gold_spent += reroll_cost_gold
@@ -384,77 +465,10 @@ class Character:
 
                 self.total_affix_rerolls += 1
                 reroll_attempts += 1
-                new_loot_count = sum(1 for a in eq["affixes"] if a["key"] == 'itemFind')
-                needs_reroll = (new_loot_count < req_loot)
 
-            if reroll_attempts > 0:
+            if reroll_attempts > 50:
                 final_anc = count_ancient_affixes(eq["affixes"])
-                self.log_action(current_time, 'equip', '🎲', f"進行【{slot}】裝備洗詞條 ({reroll_attempts} 次)", f"保持 {final_anc} 條太古狀態不變，重骰出 {len(eq['affixes'])} 條新屬性。")
-
-        # 2. 裝備強化 AI (全 13 欄位)
-        for slot, eq in self.equipments.items():
-            if eq["level"] >= self.profile["target_enhance_level"]: continue
-            cost_gold = int(80 * math.pow(eq["level"] + 1, 1.5))
-            cost_stones = int(1.5 * math.pow(eq["level"] + 1, 1.1))
-
-            success_rate = 1.0
-            if eq["level"] >= 50: success_rate = 0.30
-            elif eq["level"] >= 25: success_rate = 0.50
-            elif eq["level"] >= 10: success_rate = 0.75
-
-            enhance_successes = 0
-            enhance_attempts = 0
-
-            while eq["level"] < self.profile["target_enhance_level"] and self.gold >= cost_gold and self.upgrade_stones >= cost_stones:
-                self.gold -= cost_gold
-                self.upgrade_stones -= cost_stones
-                self.total_gold_spent += cost_gold
-                self.total_stones_spent += cost_stones
-                enhance_attempts += 1
-                
-                if random.random() < success_rate:
-                    eq["level"] += 1
-                    enhance_successes += 1
-                self.total_enhancements += 1
-
-                cost_gold = int(80 * math.pow(eq["level"] + 1, 1.5))
-                cost_stones = int(1.5 * math.pow(eq["level"] + 1, 1.1))
-
-            if enhance_attempts > 0:
-                self.log_action(current_time, 'enhance', '🔨', f"強化【${slot}】裝備 (嘗試 {enhance_attempts} 次)", f"成功升級 {enhance_successes} 次，目前強化等級提升至 +{eq['level']}。")
-
-        # 3. 神鑄鍛造 (成功率 45%) -> 解鎖 R8 神鑄創世 (7 詞條)
-        if self.reincarnation >= 1 and self.stage > 50:
-            for slot, eq in self.equipments.items():
-                if not eq["is_godforged"] and eq["rarity"] >= 5 and self.gold >= 5000 and self.demon_seeds >= 3:
-                    self.gold -= 5000
-                    self.demon_seeds -= 3
-                    self.total_godforge_attempts += 1
-                    if random.random() < 0.45:
-                        eq["is_godforged"] = True
-                        eq["rarity"] = 8
-                        self.obtained_godforge += 1
-                        self.log_action(current_time, 'godforge', '👑', f"部位【{slot}】神鑄創世成功！", "成功花費 5000 金幣 3 魔神之種，解鎖神鑄創世 R8 (7 詞條)。")
-                    else:
-                        self.log_action(current_time, 'godforge', '💥', f"部位【{slot}】神鑄鍛造失敗", "消耗 5000 金幣 3 魔神之種 (成功率 45%)。")
-
-        # 4. 寶石 3 合 1 自動合成
-        has_synthesized = True
-        synth_summary = []
-        while has_synthesized:
-            has_synthesized = False
-            for lvl in range(1, self.profile["gem_target_level"]):
-                if self.gems.get(lvl, 0) >= 3:
-                    count = self.gems[lvl] // 3
-                    self.gems[lvl] -= count * 3
-                    self.gems[lvl + 1] = self.gems.get(lvl + 1, 0) + count
-                    self.total_gems_spent += count * 3
-                    self.total_gem_syntheses += count
-                    has_synthesized = True
-                    synth_summary.append(f"消耗 {count * 3} 顆 {lvl} 級寶石 -> 合成 {count} 顆 {lvl + 1} 級寶石")
-
-        if synth_summary:
-            self.log_action(current_time, 'gem', '💎', "進行寶石 3 合 1 批量連鎖合成", "； ".join(synth_summary))
+                self.log_action(current_time, 'equip', '🎲', f"進行【{slot}】極速狂洗詞條 ({reroll_attempts} 次)", f"保持 {final_anc} 條太古狀態不變，追求滿極限屬性。")
 
     def average_equipment_quality_score(self):
         total_score = 0
@@ -528,7 +542,6 @@ class SingleRunSimulation:
                 self.char.gain_exp(kills_this_tick * exp_per_mob * stats["xpBonusMult"], current_time_hours)
                 self.char.gold += kills_this_tick * gold_per_mob
                 
-                if random.random() < 0.25: self.char.gems[1] = self.char.gems.get(1, 0) + max(1, int(kills_this_tick * 0.05))
                 if self.char.stage > 50 and random.random() < 0.08: self.char.demon_seeds += 1
             else:
                 farming_stage = max(1, int(self.char.stage) - 1)
@@ -538,7 +551,6 @@ class SingleRunSimulation:
                 self.char.total_kills += kills_this_tick
                 self.char.gain_exp(kills_this_tick * exp_per_mob * stats["xpBonusMult"], current_time_hours)
                 self.char.gold += kills_this_tick * gold_per_mob
-                if random.random() < 0.25: self.char.gems[1] = self.char.gems.get(1, 0) + max(1, int(kills_this_tick * 0.05))
 
             if is_online:
                 self.char.process_mob_kills_loot(kills_this_tick, current_time_hours)

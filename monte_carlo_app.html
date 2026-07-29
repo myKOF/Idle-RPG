@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>放置型 RPG 蒙地卡羅數值模擬驗證工具 (7詞條與品質太古優先對齊版)</title>
+    <title>放置型 RPG 蒙地卡羅數值模擬驗證工具 (神鑄法陣與魔塵對齊版)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -457,8 +457,8 @@
 <div class="container">
     <div class="app-header">
         <div class="app-title">
-            <h1>🎮 放置型 RPG 蒙地卡羅數值模擬驗證工具 (7詞條與品質太古優先對齊版)</h1>
-            <p>Monte Carlo Discrete Event Simulation Engine (創世/神鑄創世 7 詞條，掉落當下決定不可變太古數，品質優先 > 太古條數)</p>
+            <h1>🎮 放置型 RPG 蒙地卡羅數值模擬驗證工具 (神鑄法陣與魔塵對齊版)</h1>
+            <p>Monte Carlo DES Engine (高頻寶石掉落、5級寶石合成積攢魔塵、神鑄法陣6合1+魔塵必過、高CP值+60強化)</p>
         </div>
     </div>
 
@@ -477,13 +477,13 @@
             </div>
 
             <div class="profile-tab-btn" id="tab-HEAVY" onclick="selectProfile('HEAVY')">
-                <div class="tab-title">🔥 重度玩家 <span>8h線上 / +50強化</span></div>
-                <div class="tab-desc">每日8小時。至少2條掉寶率詞條，衝等級轉生，飾品必出2經驗2鑲嵌，半數太古，+50強化，+10寶石。</div>
+                <div class="tab-title">🔥 重度玩家 <span>8h線上 / +45強化</span></div>
+                <div class="tab-desc">每日8小時。至少2條掉寶率詞條，衝等級轉生，飾品必出2經驗2鑲嵌，半數太古，+45強化，+10寶石。</div>
             </div>
 
             <div class="profile-tab-btn" id="tab-EXTREME" onclick="selectProfile('EXTREME')">
-                <div class="tab-title">👑 極限玩家 <span>24h不間斷 / +70強化 / 通關150層高塔</span></div>
-                <div class="tab-desc">24h全天不離線。至少3條掉寶率詞條，衝刺10轉生，通關150層高塔，全身神鑄創世 7 詞條，100%太古滿數值詞條。</div>
+                <div class="tab-title">👑 極限玩家 <span>24h不間斷 / +60高CP強化 / 通關150層高塔</span></div>
+                <div class="tab-desc">24h全天不離線。至少3條掉寶率詞條，衝刺10轉生，通關150層高塔，+60高CP值強化，魔塵防爆法陣6合1，瘋狂洗詞條。</div>
             </div>
         </div>
 
@@ -505,8 +505,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="targetEnhanceInput">🔨 裝備平均強化目標 <span>(+10 / +25 / +50 / +70)</span></label>
-                    <input type="number" id="targetEnhanceInput" min="0" max="100" value="70" required>
+                    <label for="targetEnhanceInput">🔨 裝備平均強化目標 <span>(+10 / +25 / +45 / +60高CP)</span></label>
+                    <input type="number" id="targetEnhanceInput" min="0" max="100" value="60" required>
                 </div>
             </div>
 
@@ -616,11 +616,11 @@
         </div>
         <div class="card">
             <div class="card-label">🎲 500h 累積平均洗詞條數</div>
-            <div class="card-val" id="cardRerolls" style="color: #fbbf24;">-</div>
+            <div class="card-val" id="cardRerolls" style="color: #fbbf24; font-size: 19px;">-</div>
         </div>
         <div class="card">
-            <div class="card-label">💎 500h 累積平均寶石合成數</div>
-            <div class="card-val" id="cardGems" style="color: #34d399;">-</div>
+            <div class="card-label">💎 500h 累積平均寶石獲得/合成數</div>
+            <div class="card-val" id="cardGems" style="color: #34d399; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #818cf8;">
             <div class="card-label">⚡ 500h 全身 13 裝備太古詞條總數 (玩家全身加總)</div>
@@ -629,24 +629,24 @@
 
         <!-- 6 大裝備品質累積獲取量卡片 -->
         <div class="card" style="border-color: #f59e0b;">
-            <div class="card-label">👑 平均獲得【神鑄創世】裝備</div>
-            <div class="card-val" id="cardObtainedGodforge" style="color: #f59e0b;">-</div>
+            <div class="card-label">👑 平均獲得【神鑄創世】裝備 (法陣6合1+魔塵)</div>
+            <div class="card-val" id="cardObtainedGodforge" style="color: #f59e0b; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #ec4899;">
-            <div class="card-label">✨ 平均獲得【創世】裝備 (R6/R7)</div>
-            <div class="card-val" id="cardObtainedGenesis" style="color: #ec4899;">-</div>
+            <div class="card-label">✨ 平均獲得【創世】裝備 (R7)</div>
+            <div class="card-val" id="cardObtainedGenesis" style="color: #ec4899; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #a855f7;">
-            <div class="card-label">🟣 平均獲得【神話】裝備 (R5)</div>
-            <div class="card-val" id="cardObtainedMythic" style="color: #a855f7;">-</div>
+            <div class="card-label">🟣 平均獲得【神話】裝備 (R6)</div>
+            <div class="card-val" id="cardObtainedMythic" style="color: #a855f7; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #f97316;">
-            <div class="card-label">🟠 平均獲得【傳奇】裝備 (R4)</div>
-            <div class="card-val" id="cardObtainedLegendary" style="color: #f97316;">-</div>
+            <div class="card-label">🟠 平均獲得【傳奇】裝備 (R4/R5)</div>
+            <div class="card-val" id="cardObtainedLegendary" style="color: #f97316; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #3b82f6;">
             <div class="card-label">🔵 平均獲得【史詩】裝備 (R3)</div>
-            <div class="card-val" id="cardObtainedEpic" style="color: #3b82f6;">-</div>
+            <div class="card-val" id="cardObtainedEpic" style="color: #3b82f6; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #94a3b8;">
             <div class="card-label">⚪ 平均獲得【史詩以下】裝備 (R1~R2)</div>
@@ -742,7 +742,7 @@
         <div class="empty-hint">
             <div>👥</div>
             <h3>點擊上方「選擇玩家型態」並啟動蒙地卡羅模擬</h3>
-            <p>已100%對齊創世/神鑄創世 7 詞條與品質第一、太古條數第二之不可變掉落替換規則。</p>
+            <p>已實裝 5級寶石大量合成獲取魔塵、神鑄法陣6合1+魔塵防爆、高CP值+60強化與瘋狂洗詞條機制。</p>
         </div>
     </div>
 </div>
@@ -770,7 +770,6 @@
         'ring', 'ring2', 'amulet'
     ];
 
-    // 對齊 js/data.js 稀有度對應詞條數：R6(神話)=6條，R7(創世)=7條，R8(神鑄創世)=7條
     const RARITY_AFFIX_COUNTS = { 1: 2, 2: 3, 3: 4, 4: 5, 5: 5, 6: 6, 7: 7, 8: 7 };
 
     const ARCHETYPE_PROFILES = {
@@ -801,7 +800,7 @@
         HEAVY: {
             name: "🔥 重度玩家",
             dailyOnlineHours: 8.0,
-            targetEnhance: 50,
+            targetEnhance: 45,
             rerollThreshold: 0.8,
             requiredLootAffixes: 2,
             xpAffixCount: 2,
@@ -813,7 +812,7 @@
         EXTREME: {
             name: "👑 極限玩家",
             dailyOnlineHours: 24.0,
-            targetEnhance: 70,
+            targetEnhance: 60, // 依製作人指示：調降為+60高CP值強化，釋放大量金幣與石料瘋狂洗詞條
             rerollThreshold: 1.0,
             requiredLootAffixes: 3,
             xpAffixCount: 2,
@@ -867,7 +866,6 @@
         }
     }
 
-    // 掉落當下生成裝備 (創世/神鑄 7 詞條，太古位置在掉落時永久固定)
     function generateDroppedEquipment(rarity, ancientTargetRatio) {
         const slotsCount = RARITY_AFFIX_COUNTS[rarity] || Math.min(7, rarity);
         const affixes = [];
@@ -910,7 +908,6 @@
             this.int_attr = 5;
             this.sta_attr = 5;
 
-            // 完全對齊遊戲官方 13 裝備欄位
             this.equipments = {};
             OFFICIAL_SLOTS.forEach(s => {
                 this.equipments[s] = generateDroppedEquipment(1, 0);
@@ -919,7 +916,9 @@
             this.gold = 0;
             this.upgrade_stones = 0;
             this.demon_seeds = 0;
+            this.dust = 0; // 魔塵庫存
             this.gems = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0 };
+            this.genesisGearPool = 0; // 背包累積的創世裝備數量 (用於法陣6合1)
 
             this.skill_points = 2;
             this.total_skill_levels = 2;
@@ -1042,11 +1041,23 @@
             const stats = this.calculateStats();
             const lootMult = stats.itemFindBonus;
 
-            let r6Chance = (this.reincarnation >= 1 || this.stage > 150) ? 0.0005 : 0.0001;
-            let r5Chance = (this.stage > 80) ? 0.02 : 0.005;
-            let r4Chance = (this.stage > 30) ? 0.05 : 0.01;
-            let r3Chance = (this.stage > 10) ? 0.10 : 0.05;
-            let r12Chance = 0.70;
+            // 1. 高頻真實寶石掉落 (野外小怪掉落 Lv.1~Lv.3 寶石，每殺 1 隻 20% 掉寶率)
+            const droppedGemsCount = rollDropCount(killsCount * 0.20 * lootMult);
+            if (droppedGemsCount > 0) {
+                const g1 = rollDropCount(droppedGemsCount * 0.60);
+                const g2 = rollDropCount(droppedGemsCount * 0.30);
+                const g3 = rollDropCount(droppedGemsCount * 0.10);
+                this.gems[1] = (this.gems[1] || 0) + g1;
+                this.gems[2] = (this.gems[2] || 0) + g2;
+                this.gems[3] = (this.gems[3] || 0) + g3;
+            }
+
+            // 2. 真實野外裝備掉率 (受 掉寶率詞條堆疊 與 熔爐拆解爆落 影響)
+            let r6Chance = (this.reincarnation >= 1 || this.stage > 150) ? 0.0025 : 0.0005;
+            let r5Chance = (this.stage > 80) ? 0.08 : 0.02;
+            let r4Chance = (this.stage > 30) ? 0.18 : 0.05;
+            let r3Chance = (this.stage > 10) ? 0.35 : 0.15;
+            let r12Chance = 2.50;
 
             const r6Count = rollDropCount(killsCount * r6Chance * lootMult);
             const r5Count = rollDropCount(killsCount * r5Chance * lootMult);
@@ -1054,24 +1065,22 @@
             const r3Count = rollDropCount(killsCount * r3Chance * lootMult);
             const r12Count = rollDropCount(killsCount * r12Chance * lootMult);
 
-            this.obtained_genesis += r6Count;
-            this.obtained_mythic += r5Count;
-            this.obtained_legendary += r4Count;
-            this.obtained_epic += r3Count;
+            this.obtained_genesis += rollDropCount(r6Count * 0.15); // 創世 (R7) 由高級掉落與神話合成
+            this.genesisGearPool += rollDropCount(r6Count * 0.15);
+            this.obtained_mythic += r6Count;
+            this.obtained_legendary += r5Count;
+            this.obtained_epic += r3Count + r4Count;
             this.obtained_below_epic += r12Count;
 
             const totalDropped = r6Count + r5Count + r4Count + r3Count + r12Count;
-            this.upgrade_stones += totalDropped * 4;
-            this.gold += totalDropped * 200;
+            this.upgrade_stones += totalDropped * 6;
+            this.gold += totalDropped * 350;
 
             const highestRarityDropped = r6Count > 0 ? 6 : (r5Count > 0 ? 5 : (r4Count > 0 ? 4 : (r3Count > 0 ? 3 : 2)));
             const targetSlot = OFFICIAL_SLOTS[Math.floor(Math.random() * OFFICIAL_SLOTS.length)];
             const oldEq = this.equipments[targetSlot];
-
-            // 掉落當下生成新裝備（包含 7 詞條與固定太古位置）
             const newEq = generateDroppedEquipment(highestRarityDropped, this.profile.ancientRatio);
 
-            // 正確裝備策略：1. 品質最高優先  2. 品質相同時太古詞條數越多越優先！
             const oldAnc = countAncientAffixes(oldEq.affixes);
             const newAnc = countAncientAffixes(newEq.affixes);
 
@@ -1083,7 +1092,7 @@
             }
 
             if (shouldReplace) {
-                newEq.level = oldEq.level; // 繼承強化等級
+                newEq.level = oldEq.level;
                 this.equipments[targetSlot] = newEq;
                 this.logAction(currentTime, 'equip', '📦', `野外掉落更佳【${targetSlot}】裝備！`, `換上 Rarity ${newEq.rarity} 裝備 (帶 ${newEq.affixes.length} 條詞條，含 ${newAnc} 條固定太古)。`);
             }
@@ -1108,25 +1117,28 @@
                 this.gold -= costGold;
                 this.towerFloor = targetFloor;
                 this.gold += costGold * 3.0;
-                this.upgrade_stones += targetFloor * 50;
+                this.upgrade_stones += targetFloor * 80;
                 this.demon_seeds += Math.floor(targetFloor / 10) + 1;
+
+                // 高塔 BOSS 爆落大批高階寶石 (Lv.2 ~ Lv.5)
+                this.gems[2] = (this.gems[2] || 0) + rollDropCount(targetFloor * 0.5);
+                this.gems[3] = (this.gems[3] || 0) + rollDropCount(targetFloor * 0.3);
+                this.gems[4] = (this.gems[4] || 0) + rollDropCount(targetFloor * 0.1);
 
                 const lootMult = stats.itemFindBonus;
                 if (targetFloor >= 30) {
-                    this.obtained_genesis += rollDropCount(0.5 * lootMult);
-                    this.obtained_mythic += rollDropCount(1.5 * lootMult);
-                    this.obtained_legendary += rollDropCount(2.0 * lootMult);
-                    if (Math.random() < 0.15 * lootMult) {
-                        this.obtained_godforge += 1;
-                        this.logAction(currentTime, 'boss', '👑', `高塔 BOSS 第 ${targetFloor} 層掉落【神鑄創世】裝備！`, `擊敗 BOSS 觸發神鑄掉落率，獲得創世神鑄裝備！`);
-                    }
+                    const genDrop = rollDropCount(2.0 * lootMult);
+                    this.obtained_genesis += genDrop;
+                    this.genesisGearPool += genDrop;
+                    this.obtained_mythic += rollDropCount(5.0 * lootMult);
+                    this.obtained_legendary += rollDropCount(10.0 * lootMult);
                 } else {
-                    this.obtained_mythic += rollDropCount(1.0 * lootMult);
-                    this.obtained_legendary += rollDropCount(1.5 * lootMult);
-                    this.obtained_epic += rollDropCount(2.0 * lootMult);
+                    this.obtained_mythic += rollDropCount(3.0 * lootMult);
+                    this.obtained_legendary += rollDropCount(5.0 * lootMult);
+                    this.obtained_epic += rollDropCount(8.0 * lootMult);
                 }
 
-                this.logAction(currentTime, 'boss', '👹', `挑戰並擊敗高塔 BOSS 第 ${this.towerFloor} 層！`, `BOSS HP: ${formatGameNumber(bossHp)} | 戰鬥耗時 ${timeToKill.toFixed(1)} 秒，獲得裝備爆落獎勵、金幣與魔神之種。`);
+                this.logAction(currentTime, 'boss', '👹', `挑戰並擊敗高塔 BOSS 第 ${this.towerFloor} 層！`, `BOSS HP: ${formatGameNumber(bossHp)} | 戰鬥耗時 ${timeToKill.toFixed(1)} 秒，爆落高階寶石、創世裝備與魔神之種。`);
             }
         }
 
@@ -1138,24 +1150,110 @@
 
             this.challengeTowerBoss(currentTime);
 
-            // 1. 正確洗詞條 AI：太古條數與位置於產出時永久固定！洗煉僅洗「屬性種類 key 與數值 val」，絕不改變太古狀態！
+            // 1. 寶石大量合成與魔塵 (Dust) 產生機制 (5級寶石大量合成獲得魔塵，合成失敗固定 +1 魔塵)
+            let hasSynthesized = true;
+            let synthSummary = [];
+            while (hasSynthesized) {
+                hasSynthesized = false;
+                for (let lvl = 1; lvl < 10; lvl++) {
+                    if (this.gems[lvl] >= 3) {
+                        const count = Math.floor(this.gems[lvl] / 3);
+                        this.gems[lvl] -= count * 3;
+                        
+                        // 寶石合成成功率 (Lv.1~Lv.4 100%, Lv.5+ 有概率失敗並爆出魔塵)
+                        let successRate = (lvl <= 4) ? 1.0 : (lvl === 5 ? 0.70 : 0.50);
+                        let successes = 0;
+                        let failures = 0;
+                        for (let c = 0; c < count; c++) {
+                            if (Math.random() < successRate) {
+                                successes++;
+                            } else {
+                                failures++;
+                            }
+                        }
+
+                        this.gems[lvl + 1] = (this.gems[lvl + 1] || 0) + successes;
+                        this.dust += failures; // 寶石合成失敗 100% 積攢 1 個魔塵！
+                        this.total_gems_spent += count * 3;
+                        this.total_gem_syntheses += count;
+                        hasSynthesized = true;
+                        if (count >= 5) synthSummary.push(`合成 ${count*3} 顆 Lv.${lvl} 寶石 -> 成功 ${successes} 顆, 失敗產生 ${failures} 魔塵`);
+                    }
+                }
+            }
+            if (synthSummary.length > 0) {
+                this.logAction(currentTime, 'gem', '💎', `進行 5 級寶石大量合成與魔塵積攢`, synthSummary.slice(0, 3).join('； '));
+            }
+
+            // 2. 實裝「神鑄法陣 6 合 1 (Divine Forge System)」：6 創世裝備 + 6 魔塵 (+30% 成功率) -> 100% 必定解鎖【神鑄創世】(R8)
+            while (this.genesisGearPool >= 6 && this.gold >= 5000) {
+                this.genesisGearPool -= 6;
+                this.gold -= 5000;
+                this.total_godforge_attempts++;
+                
+                // 放滿 6 個魔塵 (+30% 成功率加成，達到 100% 必過防爆)
+                let usedDust = Math.min(6, this.dust);
+                this.dust -= usedDust;
+                let forgeSuccessChance = 0.70 + (usedDust * 0.05); // 放滿 6 魔塵 100% 成功
+
+                if (Math.random() < forgeSuccessChance) {
+                    this.obtained_godforge++;
+                    // 隨機將全身一個部位升階為神鑄創世 R8 (7 詞條)
+                    const slotToUpgrade = OFFICIAL_SLOTS[Math.floor(Math.random() * OFFICIAL_SLOTS.length)];
+                    const oldSlotEq = this.equipments[slotToUpgrade];
+                    if (!oldSlotEq.isGodforged) {
+                        const godEq = generateDroppedEquipment(8, 1.0);
+                        godEq.level = oldSlotEq.level;
+                        this.equipments[slotToUpgrade] = godEq;
+                        this.logAction(currentTime, 'godforge', '👑', `神鑄六芒星法陣 6 合 1 成功！(消耗 ${usedDust} 魔塵)`, `將【${slotToUpgrade}】裝備解鎖升階為【神鑄創世 R8】(7 滿太古詞條)。`);
+                    }
+                } else {
+                    this.dust += 1; // 法陣失敗固定給予 1 魔塵
+                }
+            }
+
+            // 3. 高CP值 +60 強化與狂洗詞條 AI (將 +70 節省下來的天量金幣與石料全部投入狂洗詞條，洗數萬次)
+            for (let slot in this.equipments) {
+                let eq = this.equipments[slot];
+                if (eq.level >= this.profile.targetEnhance) continue;
+
+                let costGold = Math.floor(80 * Math.pow(eq.level + 1, 1.4));
+                let costStones = Math.floor(1.5 * Math.pow(eq.level + 1, 1.05));
+
+                let successRate = (eq.level >= 50) ? 0.40 : 0.75;
+                let enhanceAttempts = 0;
+
+                while (eq.level < this.profile.targetEnhance && this.gold >= costGold && this.upgrade_stones >= costStones) {
+                    this.gold -= costGold;
+                    this.upgrade_stones -= costStones;
+                    this.total_gold_spent += costGold;
+                    this.total_stones_spent += costStones;
+                    enhanceAttempts++;
+
+                    if (Math.random() < successRate) eq.level++;
+                    this.total_enhancements++;
+
+                    costGold = Math.floor(80 * Math.pow(eq.level + 1, 1.4));
+                    costStones = Math.floor(1.5 * Math.pow(eq.level + 1, 1.05));
+                }
+            }
+
+            // 4. 剩餘天量金幣與石料用於瘋狂洗詞條 (達成數萬次洗煉與追求極限滿數值)
             for (let slot in this.equipments) {
                 const eq = this.equipments[slot];
-                const rerollCostGold = Math.floor(200 * Math.pow(eq.rarity, 1.3));
-                const rerollCostStones = Math.floor(3 * eq.rarity);
+                const rerollCostGold = Math.floor(150 * Math.pow(eq.rarity, 1.2));
+                const rerollCostStones = Math.floor(2 * eq.rarity);
 
-                // 檢查是否需要洗出特定目標屬性 (如掉寶率 itemFind)
-                const lootCount = eq.affixes.filter(a => a.key === 'itemFind').length;
-                let needsReroll = (this.profile.requiredLootAffixes > 0 && lootCount < this.profile.requiredLootAffixes && (slot === 'amulet' || slot === 'ring' || slot === 'ring2'));
-
+                let rerollLimit = (this.profile.dailyOnlineHours >= 24) ? 800 : 150;
                 let rerollAttemptsThisBatch = 0;
-                while (needsReroll && this.gold >= rerollCostGold && this.upgrade_stones >= rerollCostStones) {
+
+                while (rerollAttemptsThisBatch < rerollLimit && this.gold >= rerollCostGold && this.upgrade_stones >= rerollCostStones) {
                     this.gold -= rerollCostGold;
                     this.upgrade_stones -= rerollCostStones;
                     this.total_gold_spent += rerollCostGold;
                     this.total_stones_spent += rerollCostStones;
 
-                    // 保持原本的 isAncient 太古標記不變，僅重骰屬性 key 與 val！
+                    // 保持太古標記不變，狂洗屬性 key 與 val
                     const possibleKeys = ['patkPct', 'critRate', 'critDmg', 'aspdPct', 'xpBonus', 'gemEff', 'itemFind', 'pdefPct', 'hpPct'];
                     eq.affixes.forEach(aff => {
                         aff.key = possibleKeys[Math.floor(Math.random() * possibleKeys.length)];
@@ -1168,93 +1266,12 @@
 
                     this.total_affix_rerolls++;
                     rerollAttemptsThisBatch++;
-                    const newLootCount = eq.affixes.filter(a => a.key === 'itemFind').length;
-                    needsReroll = (newLootCount < this.profile.requiredLootAffixes);
                 }
 
-                if (rerollAttemptsThisBatch > 0) {
+                if (rerollAttemptsThisBatch > 50) {
                     const finalAnc = countAncientAffixes(eq.affixes);
-                    this.logAction(currentTime, 'equip', '🎲', `進行【${slot}】裝備洗詞條 (${rerollAttemptsThisBatch} 次)`, `保持 ${finalAnc} 條太古狀態不變，重骰出 ${eq.affixes.length} 條新屬性。`);
+                    this.logAction(currentTime, 'equip', '🎲', `進行【${slot}】極速狂洗詞條 (${rerollAttemptsThisBatch} 次)`, `保持 ${finalAnc} 條太古狀態不變，追求滿極限屬性。`);
                 }
-            }
-
-            // 2. 全 13 欄位裝備強化 AI
-            for (let slot in this.equipments) {
-                let eq = this.equipments[slot];
-                if (eq.level >= this.profile.targetEnhance) continue;
-
-                let costGold = Math.floor(80 * Math.pow(eq.level + 1, 1.5));
-                let costStones = Math.floor(1.5 * Math.pow(eq.level + 1, 1.1));
-
-                let successRate = 1.0;
-                if (eq.level >= 50) successRate = 0.30;
-                else if (eq.level >= 25) successRate = 0.50;
-                else if (eq.level >= 10) successRate = 0.75;
-
-                let enhanceSuccesses = 0;
-                let enhanceAttempts = 0;
-
-                while (eq.level < this.profile.targetEnhance && this.gold >= costGold && this.upgrade_stones >= costStones) {
-                    this.gold -= costGold;
-                    this.upgrade_stones -= costStones;
-                    this.total_gold_spent += costGold;
-                    this.total_stones_spent += costStones;
-                    enhanceAttempts++;
-
-                    if (Math.random() < successRate) {
-                        eq.level++;
-                        enhanceSuccesses++;
-                    }
-                    this.total_enhancements++;
-
-                    costGold = Math.floor(80 * Math.pow(eq.level + 1, 1.5));
-                    costStones = Math.floor(1.5 * Math.pow(eq.level + 1, 1.1));
-                }
-
-                if (enhanceAttempts > 0) {
-                    this.logAction(currentTime, 'enhance', '🔨', `強化【${slot}】裝備 (嘗試 ${enhanceAttempts} 次)`, `成功升級 ${enhanceSuccesses} 次，目前強化等級提升至 +${eq.level}。`);
-                }
-            }
-
-            // 3. 神鑄鍛造 AI
-            if (this.reincarnation >= 1 && this.stage > 50) {
-                for (let slot in this.equipments) {
-                    let eq = this.equipments[slot];
-                    if (!eq.isGodforged && eq.rarity >= 5 && this.gold >= 5000 && this.demon_seeds >= 3) {
-                        this.gold -= 5000;
-                        this.demon_seeds -= 3;
-                        this.total_godforge_attempts++;
-                        if (Math.random() < 0.45) {
-                            eq.isGodforged = true;
-                            eq.rarity = 8; // 解鎖神鑄創世 R8 (7 詞條)
-                            this.obtained_godforge++;
-                            this.logAction(currentTime, 'godforge', '👑', `部位【${slot}】神鑄創世成功！`, `成功花費 5000 金幣 3 魔神之種，裝備升階為神鑄創世 R8 (7 詞條)。`);
-                        } else {
-                            this.logAction(currentTime, 'godforge', '💥', `部位【${slot}】神鑄鍛造失敗`, `消耗 5000 金幣 3 魔神之種 (成功率 45%)。`);
-                        }
-                    }
-                }
-            }
-
-            // 4. 寶石 3 合 1 自動合成
-            let hasSynthesized = true;
-            let synthSummary = [];
-            while (hasSynthesized) {
-                hasSynthesized = false;
-                for (let lvl = 1; lvl < this.profile.gemTargetLvl; lvl++) {
-                    if (this.gems[lvl] >= 3) {
-                        const count = Math.floor(this.gems[lvl] / 3);
-                        this.gems[lvl] -= count * 3;
-                        this.gems[lvl + 1] = (this.gems[lvl + 1] || 0) + count;
-                        this.total_gems_spent += count * 3;
-                        this.total_gem_syntheses += count;
-                        hasSynthesized = true;
-                        synthSummary.push(`消耗 ${count * 3} 顆 ${lvl} 級寶石 -> 合成 ${count} 顆 ${lvl + 1} 級寶石`);
-                    }
-                }
-            }
-            if (synthSummary.length > 0) {
-                this.logAction(currentTime, 'gem', '💎', `進行寶石 3 合 1 批量連鎖合成`, synthSummary.join('； '));
             }
         }
 
@@ -1328,7 +1345,6 @@
                 char.gainExp(killsThisTick * expPerMob * stats.xpBonusMult, currentTime);
                 char.gold += killsThisTick * goldPerMob;
                 
-                if (Math.random() < 0.25) char.gems[1] = (char.gems[1] || 0) + Math.max(1, Math.floor(killsThisTick * 0.05));
                 if (char.stage > 50 && Math.random() < 0.08) char.demon_seeds += 1;
             } else {
                 const farmStage = Math.max(1, Math.floor(char.stage) - 1);
@@ -1338,7 +1354,6 @@
                 char.totalKills += killsThisTick;
                 char.gainExp(killsThisTick * expPerMob * stats.xpBonusMult, currentTime);
                 char.gold += killsThisTick * goldPerMob;
-                if (Math.random() < 0.25) char.gems[1] = (char.gems[1] || 0) + Math.max(1, Math.floor(killsThisTick * 0.05));
             }
 
             if (isOnline) {
@@ -1441,7 +1456,7 @@
                 const pct = Math.round((i / runs) * 100);
                 document.getElementById('progressPct').innerText = pct + '%';
                 document.getElementById('progressBarFill').style.width = pct + '%';
-                document.getElementById('progressStatus').innerText = `正在為【${activeProfile.name}】進行創世7詞條與品質太古優先模擬 (${i}/${runs})...`;
+                document.getElementById('progressStatus').innerText = `正在為【${activeProfile.name}】進行神鑄法陣6合1與魔塵防爆模擬 (${i}/${runs})...`;
                 await new Promise(r => setTimeout(r, 5));
             }
         }
@@ -1496,7 +1511,6 @@
         setCardVal('cardRerolls', formatGameNumber(lastStep.rerolls.mean));
         setCardVal('cardGems', formatGameNumber(lastStep.gem_syntheses.mean));
         
-        // 明確標示為：玩家全身 13 裝備太古詞條總數均值 (每名玩家全身加總)
         const totalAncientMean = lastStep.ancient_affixes.mean;
         const perEquipMean = (totalAncientMean / 13.0).toFixed(1);
         setCardVal('cardAncientAffixes', `${totalAncientMean.toFixed(1)} 條 (均 ${perEquipMean} 條/件)`);
