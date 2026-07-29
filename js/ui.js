@@ -694,7 +694,14 @@ function bindWorkerUiState() {
         !UI_WORKER_STATE.panelSubscriptions[key]) {
         continue;
       }
+      /* 背包的被動請求節流，見 inventoryPassiveRequestAllowed。
+         擋下時連 dirty 都不標記：沒有新資料，標了只會讓 uiTick 拿舊快照白重畫一次。 */
+      if (key === 'inv' && !inventoryPassiveRequestAllowed()) {
+        _invReqPending = true;
+        continue;
+      }
       UI.dirty[key] = true;
+      if (key === 'inv') noteInventoryPanelRequested();
       requestPanelData(key, true);
     }
   });
@@ -4197,10 +4204,73 @@ function handleVisibilityChange() {
   uiTick();
 }
 
+/* ---- 背包面板請求節流 ----
+   掛機時掉落頻繁，Worker 幾乎每個 tick 都把 inv 標記為髒，主執行緒於是每秒向它索取 5 次
+   背包面板。每一次的代價是一整條鏈：Worker 重建 427 件的投影（實測 122 KB）→ structured
+   clone 跨執行緒 → 主執行緒比對格線 → renderInventory() 整份重建 DOM。實測 20 秒內重建
+   60 次、累計 829 ms，佔全部渲染時間的 84%，其餘所有渲染函式加起來才 162 ms。
+
+   節流放在**請求端**而不是重繪端：不要資料就不會有回應，上面四段成本一次全省。
+   （前一版放在 uiTick 的重繪處，那時背包只由 dirty tick 驅動；現在面板回應會直接觸發
+   重繪，放在重繪端會被整個繞過。）
+
+   代價不只是 CPU：整份重建會把游標底下那一格換掉，於是 hover 掉、tooltip 閃、點擊有時
+   沒中。所以指標停在格線上時要拉得更長——那時重建的代價最高，而玩家在看的是某一格的
+   細節，不是清單有沒有新東西。
+
+   ⚠️ 只節流「被動」請求，也就是 tick 回報髒區那條路徑。指令送出時自己要的那次請求絕對
+   不能擋：sendUiCommand 會把該次請求的序號記進 waitPanels，等對應回應才放開單飛鎖。
+   請求被吞掉，鎖永遠不會釋放，玩家的按鈕會全部失效——那是實際發生過的事故。
+
+   被擋下的請求記在 _invReqPending，由 uiTick 補送。節流是延後，不是丟棄。 */
+var INV_REQ_IDLE_MS = 1000;      // 純掛機時的最短請求間隔
+var INV_REQ_HOVER_MS = 4000;     // 指標停在背包格線上時的最短間隔
+var INV_REQ_INTERACT_MS = 800;   // 玩家操作後多久內完全不節流
+var _invReqAt = 0;
+var _invReqInteractAt = 0;
+var _invReqPointerInGrid = false;
+var _invReqPending = false;
+var _invReqBound = false;
+
+function bindInventoryRequestThrottle() {
+  if (_invReqBound || typeof document === 'undefined') return;
+  var box = $id('inventory-grid');
+  if (!box) return;
+  _invReqBound = true;
+  // 頁面剛載入視同互動中：開機那幾百毫秒面板才陸續抵達，這段節流會讓玩家看到空背包
+  _invReqInteractAt = Date.now();
+  box.addEventListener('mouseenter', function () { _invReqPointerInGrid = true; });
+  box.addEventListener('mouseleave', function () { _invReqPointerInGrid = false; });
+  /* 捕獲階段收所有點擊與按鍵：不必逐一列舉哪些控制項會影響背包，
+     漏列一個就會變成「某個按鈕按了要等一秒才有反應」這種很難查的問題。 */
+  document.addEventListener('pointerdown', function () { _invReqInteractAt = Date.now(); }, true);
+  document.addEventListener('keydown', function () { _invReqInteractAt = Date.now(); }, true);
+}
+
+function inventoryPassiveRequestAllowed() {
+  bindInventoryRequestThrottle();
+  var now = Date.now();
+  if (now - _invReqInteractAt < INV_REQ_INTERACT_MS) return true;
+  return now - _invReqAt >= (_invReqPointerInGrid ? INV_REQ_HOVER_MS : INV_REQ_IDLE_MS);
+}
+
+function noteInventoryPanelRequested() {
+  _invReqAt = Date.now();
+  _invReqPending = false;
+}
+
 function uiTick() {
   if (uiRenderingSuspended()) return;
   flushPendingLogDom();
   flushDirtyDetailLogs();
+  /* 補送被節流擋下的背包面板請求。不補的話，掉落一旦停下來（暫停戰鬥、切場景），
+     背包會一直停在最後一次請求時的內容。 */
+  if (_invReqPending && inventoryPassiveRequestAllowed()) {
+    /* 刻意不在這裡標記 UI.dirty.inv：資料還沒回來，標了只會讓同一輪 uiTick 立刻拿舊
+       快照重畫一次，白花力氣。面板回應抵達時本來就會標記並直接重繪（見 MSG_OUT.PANEL）。 */
+    noteInventoryPanelRequested();
+    requestPanelData('inv', true);
+  }
   var d = UI.dirty;
   // 分頁標題戰況（每秒更新一次即可）
   _titleTimer += 0.2;
