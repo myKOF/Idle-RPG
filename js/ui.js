@@ -298,6 +298,53 @@ function viewState() {
   return UI_WORKER_STATE.view;
 }
 
+/* ---- 主執行緒的遊戲時鐘 ----
+   GT 的權威在 Worker，但畫面上所有「還剩幾秒」的顯示都要跟它比對：
+   狀態圖示（effectActive／dots.until／buffs.until 都是絕對到期時刻）、技能冷卻、復活倒數。
+
+   在此之前主執行緒的 GT **從開機到關機都是 0**（util.js 宣告後沒有任何一處更新），
+   於是 `until > GT` 恆為真——暈眩、減速、中毒、增益圖示一旦出現就再也不會消失。
+
+   tick 只有 5Hz，直接拿 view.gt 當時鐘會一格一格跳；所以在兩次 tick 之間用真實時間
+   補間，倒數才是平順的碼錶。暫停時不推進（GT 在 Worker 那側也不會動）。
+   補間只是估計值，每次 tick 抵達就重新對時，誤差不會累積。 */
+var _uiGtBase = 0;
+var _uiGtBaseAt = 0;
+
+function uiNowMs() {
+  return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+}
+
+function uiSyncGameTime(view) {
+  if (!view || typeof view.gt !== 'number' || !isFinite(view.gt)) return;
+  _uiGtBase = view.gt;
+  _uiGtBaseAt = uiNowMs();
+}
+
+/* 目前的遊戲時間（估計值）。沒有任何 tick 抵達過就回傳 0。 */
+function uiGameTime() {
+  if (!_uiGtBaseAt) return _uiGtBase;
+  var view = UI_WORKER_STATE.view || {};
+  if (view.paused) return _uiGtBase;
+  return _uiGtBase + Math.max(0, uiNowMs() - _uiGtBaseAt) / 1000;
+}
+
+/* 讓共載的 effectActive／activeBuffKeys／entStatus 等函式看到現在的時間。
+   它們直接讀全域 GT，所以每次重繪前對一次時就好，不必逐一改寫那些函式。 */
+function uiApplyGameTime() {
+  GT = uiGameTime();
+  return GT;
+}
+
+/* 面板快照裡的「還剩幾秒」欄位（技能冷卻、復活倒數）是拍照當下的值。
+   扣掉拍照到現在經過的時間才是真正的剩餘秒數，否則會卡住到下一次面板更新才跳。 */
+function uiCountdownRemain(value, snapshotGt) {
+  var v = Number(value) || 0;
+  if (v <= 0) return 0;
+  if (typeof snapshotGt !== 'number' || !isFinite(snapshotGt)) return v;
+  return Math.max(0, v - Math.max(0, uiGameTime() - snapshotGt));
+}
+
 function mergeUiPanelParams(first, second) {
   var merged = {};
   var hasParams = false;
@@ -399,6 +446,7 @@ function peekUiPanelData(key) {
 function applyUiSnapshot(snapshot) {
   if (!snapshot) return;
   if (snapshot.view) UI_WORKER_STATE.view = snapshot.view;
+  uiSyncGameTime(snapshot.view);
 }
 
 function handleWorkerUiEvents(events) {
@@ -682,6 +730,7 @@ function bindWorkerUiState() {
   });
   WorkerBridge.on(MSG_OUT.TICK, function (msg) {
     if (msg.view) UI_WORKER_STATE.view = msg.view;
+    uiSyncGameTime(msg.view); // 對時：讓畫面上的倒數與狀態到期判定有正確基準
     handleWorkerUiEvents(msg.events);
     if (UI_WORKER_STATE.viewSubscribed) {
       UI.dirty.header = true;
@@ -2099,7 +2148,10 @@ function entStatus(ent) {
   }
   return s.join(' ');
 }
-function renderMpSkill(pEnt, prefix, stats) {
+/* snapshotGt：這份戰鬥快照是什麼時候拍的（battle 面板的 gt）。
+   技能冷卻存的是「還剩幾秒」，面板又只在髒區時才更新，所以必須扣掉拍照到現在的時間，
+   否則 4 秒的冷卻會卡在 4.0 好幾秒然後突然可以放。 */
+function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
   if (!stats) return;
   var maxMp = Math.max(1, Number(stats.mp) || 1);
   var mpFill = $id(prefix + '-mp'), mpText = $id(prefix + '-mptext'), skillEl = $id(prefix + '-skill');
@@ -2121,7 +2173,7 @@ function renderMpSkill(pEnt, prefix, stats) {
       var talentSnapshot = uiTalentPanelSnapshot();
       var sk = isPotE ? (typeof potentialDef === 'function' ? potentialDef(entry.slice(10)) : null) : skillViewDef(skillsSnapshot, entry);
       if (!sk) continue;
-      var cd = (pEnt.skillCds && pEnt.skillCds[entry]) || 0;
+      var cd = uiCountdownRemain((pEnt.skillCds && pEnt.skillCds[entry]) || 0, snapshotGt);
       var lv = isPotE
         ? uiPotentialLevelFromSnapshot(talentSnapshot, sk.id)
         : skillViewLevel(skillsSnapshot, entry);
@@ -2389,8 +2441,10 @@ function renderBattle() {
     setStyleIfChanged($id('pv-hp'), 'width', php + '%');
     renderPlayerShieldBar('pv', p, st);
     setHtmlIfChanged($id('pv-hptext'), fmt(Math.max(0, p.hp)) + playerShieldText(p) + ' / ' + fmt(st.hp));
-    setTextIfChanged($id('pv-status'), p.reviveCd > 0 ? ('💀 復活中 ' + fmt1(p.reviveCd) + 's') : entStatus(p));
-    renderMpSkill(p, 'pv', st);
+    // 倒數一律扣掉「快照拍照到現在」經過的時間，才會是逐幀前進的碼錶
+    var reviveLeft = uiCountdownRemain(p.reviveCd, battleSnapshot.gt);
+    setTextIfChanged($id('pv-status'), reviveLeft > 0 ? ('💀 復活中 ' + fmt1(reviveLeft) + 's') : entStatus(p));
+    renderMpSkill(p, 'pv', st, battleSnapshot.gt);
   }
   // 與戰鬥引擎共用敵人集合，避免相容欄位仍有目標時畫面誤判為空。
   var enemies = Array.isArray(field.monsters) ? field.monsters.slice() : (field.monster ? [field.monster] : []);
@@ -4225,7 +4279,7 @@ function renderTowerFight() {
   renderPlayerShieldBar('tp', p, st);
   setHtmlIfChanged($id('tp-hptext'), fmt(Math.max(0, p.hp)) + playerShieldText(p) + ' / ' + fmt(st.hp));
   setTextIfChanged($id('tp-status'), entStatus(p));
-  renderMpSkill(p, 'tp', st);
+  renderMpSkill(p, 'tp', st, snapshot.gt);
   setTextIfChanged($id('tw-dps'), 'DPS ' + fmt(runtime.elapsed > 1 ? runtime.dmgDealt / runtime.elapsed : 0) +
     '（需求 ' + fmt(b.maxHp / towerTimeLimitWithTalents(runtime.floor)) + '）');
 }
@@ -4302,6 +4356,7 @@ function noteInventoryPanelRequested() {
 
 function uiTick() {
   if (uiRenderingSuspended()) return;
+  uiApplyGameTime(); // 先對時，之後這一輪所有到期判定與倒數都以同一個時間為準
   flushPendingLogDom();
   flushDirtyDetailLogs();
   /* 補送被節流擋下的背包面板請求。不補的話，掉落一旦停下來（暫停戰鬥、切場景），

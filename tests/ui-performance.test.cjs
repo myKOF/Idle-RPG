@@ -66,14 +66,16 @@ test('熔爐消費背包 dirty 後會清旗標，切回裝備頁時再定向補�
 
 test('戰鬥與高塔技能列共用外層已取得的屬性，不重複呼叫 getStats', () => {
   const ui = uiSource();
-  assert.match(ui, /function renderMpSkill\(pEnt, prefix, stats\)/);
-  const renderMpSkill = ui.match(/function renderMpSkill\(pEnt, prefix, stats\) \{[\s\S]*?\n\}/);
+  assert.match(ui, /function renderMpSkill\(pEnt, prefix, stats, snapshotGt\)/);
+  const renderMpSkill = ui.match(/function renderMpSkill\(pEnt, prefix, stats, snapshotGt\) \{[\s\S]*?\n\}/);
   assert.ok(renderMpSkill);
   assert.match(renderMpSkill[0], /if \(!stats\) return;/);
   assert.match(renderMpSkill[0], /var maxMp = Math\.max\(1, Number\(stats\.mp\) \|\| 1\);/);
   assert.doesNotMatch(renderMpSkill[0], /getStats\(\)/);
-  assert.match(ui, /function renderBattle\(\)[\s\S]*var st = headerSnapshot\.stats[\s\S]*renderMpSkill\(p, 'pv', st\);/);
-  assert.match(ui, /function renderTowerFight\(\)[\s\S]*var st = headerSnapshot\.stats;[\s\S]*renderMpSkill\(p, 'tp', st\);/);
+  /* 第 4 個參數是快照時間：技能冷卻要扣掉「拍照到現在」才會是即時倒數，
+     少傳就會退回顯示拍照當下的值，也就是使用者回報的「卡住幾秒再突然可放」。 */
+  assert.match(ui, /function renderBattle\(\)[\s\S]*var st = headerSnapshot\.stats[\s\S]*renderMpSkill\(p, 'pv', st, battleSnapshot\.gt\);/);
+  assert.match(ui, /function renderTowerFight\(\)[\s\S]*var st = headerSnapshot\.stats;[\s\S]*renderMpSkill\(p, 'tp', st, snapshot\.gt\);/);
   const towerFight = ui.match(/function renderTowerFight\(\) \{[\s\S]*?\n\}/);
   assert.ok(towerFight);
   assert.doesNotMatch(towerFight[0], /getStats\(\)/);
