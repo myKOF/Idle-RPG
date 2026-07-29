@@ -128,6 +128,7 @@ function reportError(where, err) {
    2.4 秒 CPU。所以補一小時只要兩秒多——舊的 10 秒上限是主執行緒才需要的限制
    （在那裡補 10 秒以上會凍畫面），Worker 裡沒有這個約束。 */
 var _catchupDebt = 0;          // 尚未補完的遊戲時間（秒）
+var _offlineBootTimer = 0;
 // 與離線收益同上限：背景掛機不該比關掉遊戲更優待。typeof 保護是因為既有測試會以
 // importScripts 空實作載入本檔（模擬層未載入），不能讓模組載入期就炸掉。
 var MAX_CATCHUP_DEBT_SEC = (typeof OFFLINE_MAX_HOURS === 'number' ? OFFLINE_MAX_HOURS : 24) * 3600;
@@ -1037,7 +1038,7 @@ function defaultSalvageHintText() {
 function boot(msg) {
   var loaded = null;
   var notices = [];
-  var offlineSummary = null;
+  var deferOfflineProgress = false;
 
   installStorageGuards();
   _maxRunId = msg.maxRunId || 1;
@@ -1057,7 +1058,9 @@ function boot(msg) {
   if (loaded && msg.safeMode) {
     notices.push({ key: '_safeModeNotice', text: '已以安全模式開機：本次略過離線結算，離線期間的收益不會補發。建議先匯出存檔備份。' });
   } else if (loaded && typeof applyOfflineProgress === 'function') {
-    offlineSummary = applyOfflineProgress() || null;
+    /* 離線收益可能要逐筆處理數千次掉落。不要在 BOOTED 前同步執行，
+       否則主執行緒只能顯示 HTML 的預設 0/60，直到整段計算結束才拿到面板。 */
+    deferOfflineProgress = true;
   }
 
   /* migrateSave 會把改版公告掛在 G 上，交給主執行緒顯示後刪除旗標。
@@ -1126,10 +1129,25 @@ function boot(msg) {
   post(MSG_OUT.BOOTED, {
     protocolVersion: WORKER_PROTOCOL_VERSION,
     snapshot: { view: buildView(), fresh: !loaded },
-    offlineSummary: offlineSummary,
+    offlineSummary: null,
     notices: notices,
     events: shimDrainEvents()
   });
+
+  if (deferOfflineProgress) {
+    _offlineBootTimer = setTimeout(function () {
+      _offlineBootTimer = 0;
+      if (!_booted) return;
+      applyOfflineProgress({ chunkSize: 24, done: function (offlineSummary) {
+        if (!offlineSummary) return;
+        /* applyOfflineProgress() 會透過 shim 累積 dirty/events；立即送出，
+           不必等下一個 tick 才讓資源、輸送帶與離線收益摘要出現在 UI。 */
+        emitTick();
+        G.savedAt = Date.now();
+        requestPersist(PERSIST_KINDS.AUTO);
+      }});
+    }, 0);
+  }
 }
 
 /* ---- 執行中讀檔（v2 新增）----

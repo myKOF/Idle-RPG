@@ -51,9 +51,13 @@ var SaveStorage = (function () {
       stored.requestPermission({ mode: 'readwrite' }).then(function (perm) {
         if (perm !== 'granted') { finish(null); return; }
         _saveDir = stored;
-        scanManualMetadataV2()
-          .then(function () { readFolderAutoV2(finish); })
-          .catch(function () { readFolderAutoV2(finish); });
+        /* 開機只需要目前自動存檔；逐一讀取所有手動存檔 metadata 會把
+           Worker 啟動與第一個背包面板一起阻塞數秒。手動存檔索引不影響
+           本次要載入的 auto save，改在回呼交回控制權後背景同步。 */
+        readFolderAutoV2(function (folderBest) {
+          finish(folderBest);
+          scanManualMetadataV2().catch(function () {});
+        });
       }).catch(function () { finish(null); });
     });
   }
