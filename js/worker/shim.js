@@ -102,6 +102,18 @@ function floatText(elId, text, cls, damageValue) {
   shimPushEvent('float', { elId: elId, text: text, cls: cls, damageValue: damageValue });
 }
 
+/* 技能／增益特效（協議 v10）。模擬層送的是純資料（原型/顏色/目標圖層/格子），
+   實際畫法在主執行緒的 js/vfx.js——Worker 這側不知道也不需要知道怎麼畫。 */
+function playCombatVfx(spec) {
+  _diag(SHIM_DIAG.ui, 'playCombatVfx');
+  if (!spec) return;
+  shimPushEvent('vfx', {
+    fxKind: spec.fxKind, glyph: spec.glyph, color: spec.color,
+    targets: spec.targets || [], cells: spec.cells || null,
+    dur: spec.dur, count: spec.count
+  });
+}
+
 /* ---- 其餘 ui.js 函式替身 ----
    模擬層對 UI 的呼叫共 10 個函式，上面 4 個有語意可轉成事件，
    以下 6 個是純畫面操作，在 Worker 內只記錄不作用，P3 必須從模擬層移除。 */

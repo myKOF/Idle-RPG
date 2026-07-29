@@ -5386,6 +5386,241 @@ textarea#save-io {
   justify-items: stretch;
 }
 
+/* ==========================================================================
+   戰鬥特效（js/vfx.js）
+   規格：所有技能與 buff 都要有簡易特效。原型由技能資料推導，這裡只負責畫。
+   一律只動 transform / opacity，不碰 layout，避免 16 格滿場時掉幀。
+   ========================================================================== */
+.bf-vfx-layer {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 4;
+  /* 特效壓在傷害浮字之下（浮字是資訊，特效是氣氛），但高於敵人卡片 */
+}
+
+.vfx {
+  position: absolute;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+/* 投射物：從我方飛向目標，尾端一縮 */
+.vfx-projectile {
+  left: 0;
+  top: 0;
+  font-size: 18px;
+  line-height: 1;
+  filter: drop-shadow(0 0 6px currentColor);
+  animation-name: vfxFly;
+  animation-timing-function: cubic-bezier(0.3, 0.1, 0.2, 1);
+  animation-fill-mode: both;
+}
+
+@keyframes vfxFly {
+  from {
+    transform: translate(var(--vfx-x0), var(--vfx-y0)) translate(-50%, -50%) scale(0.7);
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  to {
+    transform: translate(var(--vfx-x1), var(--vfx-y1)) translate(-50%, -50%) scale(1.15);
+    opacity: 0;
+  }
+}
+
+/* 斬擊：目標身上劃過的一道刀光 */
+.vfx-slash {
+  width: 54px;
+  height: 54px;
+  margin: -27px 0 0 -27px;
+  border-top: 3px solid var(--vfx-color, #fff);
+  border-right: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+  border-left: 3px solid transparent;
+  border-radius: 50%;
+  filter: drop-shadow(0 0 5px var(--vfx-color, #fff));
+  animation-name: vfxSlash;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+}
+
+@keyframes vfxSlash {
+  from {
+    transform: rotate(-70deg) scale(0.6);
+    opacity: 0;
+  }
+
+  30% {
+    opacity: 1;
+  }
+
+  to {
+    transform: rotate(115deg) scale(1.25);
+    opacity: 0;
+  }
+}
+
+/* 爆發：以目標為中心擴散的圓環 */
+.vfx-burst {
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid var(--vfx-color, #fff);
+  border-radius: 50%;
+  box-shadow: 0 0 12px var(--vfx-color, #fff), inset 0 0 8px var(--vfx-color, #fff);
+  animation-name: vfxBurst;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+}
+
+@keyframes vfxBurst {
+  from {
+    transform: scale(0.3);
+    opacity: 0.95;
+  }
+
+  to {
+    transform: scale(4.2);
+    opacity: 0;
+  }
+}
+
+/* 貫穿：從我方拉向目標方向的一道光束 */
+.vfx-beam {
+  height: 4px;
+  transform-origin: 0 50%;
+  margin-top: -2px;
+  background: linear-gradient(90deg, transparent, var(--vfx-color, #fff) 25%, #fff 55%, var(--vfx-color, #fff) 75%, transparent);
+  box-shadow: 0 0 10px var(--vfx-color, #fff);
+  animation-name: vfxBeam;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+}
+
+@keyframes vfxBeam {
+  from {
+    opacity: 0;
+    filter: brightness(2);
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+/* 天降：由上而下落進範圍內 */
+.vfx-rain {
+  font-size: 20px;
+  line-height: 1;
+  margin-left: -10px;
+  filter: drop-shadow(0 0 6px currentColor);
+  animation-name: vfxRain;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.9, 0.6);
+  animation-fill-mode: both;
+}
+
+@keyframes vfxRain {
+  from {
+    transform: translateY(calc(var(--vfx-size, 80px) * -1)) scale(0.8);
+    opacity: 0;
+  }
+
+  25% {
+    opacity: 1;
+  }
+
+  to {
+    transform: translateY(calc(var(--vfx-size, 80px) * 0.5)) scale(1.2);
+    opacity: 0;
+  }
+}
+
+/* 領域：蓋在格子上的呼吸光暈，持續到領域結束 */
+.vfx-aura {
+  border: 1px solid var(--vfx-color, #fff);
+  border-radius: 4px;
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--vfx-color, #fff) 22%, transparent), transparent 70%);
+  box-shadow: inset 0 0 18px color-mix(in srgb, var(--vfx-color, #fff) 35%, transparent);
+  animation: vfxAuraPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes vfxAuraPulse {
+  0%, 100% {
+    opacity: 0.45;
+  }
+
+  50% {
+    opacity: 0.9;
+  }
+}
+
+/* 我方增益：卡片上的一圈光 */
+.vfx-selfbuff {
+  width: 64px;
+  height: 64px;
+  margin: -32px 0 0 -32px;
+  border: 2px solid var(--vfx-color, #fff);
+  border-radius: 50%;
+  box-shadow: 0 0 14px var(--vfx-color, #fff);
+  animation-name: vfxSelfBuff;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+}
+
+@keyframes vfxSelfBuff {
+  from {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+
+  35% {
+    opacity: 0.95;
+  }
+
+  to {
+    transform: scale(0.75);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vfx {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* 格線：每格一個虛線淡色方框，讓玩家看得出敵人站在哪一格。
+   純視覺底圖——不接受點擊、不參與命中判定，z-index 壓在敵人卡片與浮字之下。 */
+.bf-cell-guide {
+  border: 1px dashed rgba(190, 170, 140, 0.16);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 空場（搜索敵人中）時訊息蓋滿整個棋盤，格線照樣顯示 */
+.enemy-party.enemy-grid .enemy-empty {
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dim);
+  pointer-events: none;
+  z-index: 1;
+}
+
 /* BOSS 佔 2×2：卡片內容跟著放大，避免大格子裡塞一個小圖 */
 .enemy-party.enemy-grid .enemy-card.enemy-rank-boss {
   --ec-scale: 1.1;

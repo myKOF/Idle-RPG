@@ -329,9 +329,22 @@ function mergeUiPanelParams(first, second) {
 }
 
 function activeUiPanelParams(key) {
-  if (key !== 'inv' || typeof document === 'undefined' || !isInternalServer()) return undefined;
-  var input = $id('inv-keyword-filter');
-  if (input && String(input.value || '').trim()) return { full: true };
+  if (key !== 'inv' || typeof document === 'undefined') return undefined;
+  /* 兩個參數的適用範圍不同，守衛不能共用：
+
+     `full` 是關鍵字篩選要的，而那個輸入框只在內測服顯示，所以它留在 isInternalServer() 內。
+
+     `detailIds` 與環境無關——它是「選取中的背包物品要能被解析出來」的必要條件。背包格子
+     只送 12 個欄位的投影，完整物品資料只存在於 details；面板一旦在不帶 detailIds 的情況下
+     刷新，details 就被洗成 null，findSelItem() 回 null，detailAction() 第一行直接 return，
+     裝備／分解／強化／鎖定四顆按鈕全部靜靜失效（點了完全沒反應，不是變灰）。
+
+     兩者原本共用同一個 isInternalServer() 守衛，等於外部玩家永遠拿不到 detailIds——
+     內測環境測不出來，因為在 localhost 上守衛恆真。 */
+  if (isInternalServer()) {
+    var input = $id('inv-keyword-filter');
+    if (input && String(input.value || '').trim()) return { full: true };
+  }
   if (UI.sel && UI.sel.source === 'inv' && UI.sel.id) {
     return { detailIds: [UI.sel.id] };
   }
@@ -405,6 +418,11 @@ function handleWorkerUiEvents(events) {
     }
     if (event.kind === 'float') {
       floatText(event.elId, event.text, event.cls, event.damageValue, null, uiBattlePanelSnapshot());
+      return;
+    }
+    // 技能／增益特效（協議 v10）：實際畫法在 js/vfx.js，這裡只轉交
+    if (event.kind === 'vfx') {
+      if (typeof playCombatVfx === 'function') playCombatVfx(event);
       return;
     }
     if (event.kind === 'loot') {
@@ -681,7 +699,14 @@ function bindWorkerUiState() {
         !UI_WORKER_STATE.panelSubscriptions[key]) {
         continue;
       }
+      /* 背包的被動請求節流，見 inventoryPassiveRequestAllowed。
+         擋下時連 dirty 都不標記：沒有新資料，標了只會讓 uiTick 拿舊快照白重畫一次。 */
+      if (key === 'inv' && !inventoryPassiveRequestAllowed()) {
+        _invReqPending = true;
+        continue;
+      }
       UI.dirty[key] = true;
+      if (key === 'inv') noteInventoryPanelRequested();
       requestPanelData(key, true);
     }
   });
@@ -2286,6 +2311,19 @@ function enemyCellSignature(enemy) {
   if (!cell) return '-';
   return cell.col + ',' + cell.row + ',' + (cell.w || 1) + ',' + (cell.h || 1);
 }
+/* 棋盤格線：每一格放一個空的虛線方框當底圖，讓玩家看得出敵人站在哪一格。
+   純視覺，不參與命中判定；擺在敵人卡片之前，z-index 低於卡片與浮字。 */
+function battlefieldGuideHtml() {
+  var cols = battlefieldCols(), rows = battlefieldRows();
+  var html = '';
+  for (var r = 1; r <= rows; r++) {
+    for (var c = 1; c <= cols; c++) {
+      html += '<div class="bf-cell-guide" aria-hidden="true" style="grid-column:' + c + ';grid-row:' + r + '"></div>';
+    }
+  }
+  return html;
+}
+
 /* 卡片的 grid 定位；沒有格位資訊（舊存檔的殘留敵人、高塔）時不寫 style，交由自動流排。 */
 function enemyCellStyle(enemy) {
   var cell = enemy && enemy.cell;
@@ -2329,12 +2367,14 @@ function renderBattle() {
   // 新版戰鬥：敵方固定 4×4 棋盤，版面不再隨敵人數量變動——我方永遠靠左，棋盤永遠佔滿右側。
   if (scene) scene.classList.add('multi-enemy');
   if (scene) scene.classList.add('multi-enemy-layout');
-  party.className = 'enemy-party enemy-count-' + enemies.length + (enemies.length ? ' enemy-grid' : '');
+  // 棋盤永遠存在（空場也是），所以格線與 grid 版型不隨敵人數量開關，避免波次之間閃動。
+  party.className = 'enemy-party enemy-grid enemy-count-' + enemies.length;
   party.style.setProperty('--bf-cols', battlefieldCols());
   party.style.setProperty('--bf-rows', battlefieldRows());
+  var guideHtml = battlefieldGuideHtml();
   if (!enemies.length) {
     if (party.getAttribute('data-enemy-signature') !== 'empty') {
-      party.innerHTML = '<div class="enemy-empty">' + (view.towerActive ? '（高塔戰鬥中…）' : '🔍 搜索敵人中…') + '</div>';
+      party.innerHTML = guideHtml + '<div class="enemy-empty">' + (view.towerActive ? '（高塔戰鬥中…）' : '🔍 搜索敵人中…') + '</div>';
       party.setAttribute('data-enemy-signature', 'empty');
     }
     flushPendingEnemyFloats(battleSnapshot);
@@ -2344,7 +2384,7 @@ function renderBattle() {
   var enemySignature = enemies.map(function (enemy, index) {
     return index + ':' + enemy.name + ':' + enemy.level + ':' + enemyRankOf(enemy) + ':' + enemyCellSignature(enemy);
   }).join('|');
-  var partyHtml = '';
+  var partyHtml = guideHtml;
   for (var ei = 0; ei < enemies.length; ei++) {
     var enemy = enemies[ei];
     var icon = (enemy.img && !enemy.imgFailed)
@@ -4169,10 +4209,73 @@ function handleVisibilityChange() {
   uiTick();
 }
 
+/* ---- 背包面板請求節流 ----
+   掛機時掉落頻繁，Worker 幾乎每個 tick 都把 inv 標記為髒，主執行緒於是每秒向它索取 5 次
+   背包面板。每一次的代價是一整條鏈：Worker 重建 427 件的投影（實測 122 KB）→ structured
+   clone 跨執行緒 → 主執行緒比對格線 → renderInventory() 整份重建 DOM。實測 20 秒內重建
+   60 次、累計 829 ms，佔全部渲染時間的 84%，其餘所有渲染函式加起來才 162 ms。
+
+   節流放在**請求端**而不是重繪端：不要資料就不會有回應，上面四段成本一次全省。
+   （前一版放在 uiTick 的重繪處，那時背包只由 dirty tick 驅動；現在面板回應會直接觸發
+   重繪，放在重繪端會被整個繞過。）
+
+   代價不只是 CPU：整份重建會把游標底下那一格換掉，於是 hover 掉、tooltip 閃、點擊有時
+   沒中。所以指標停在格線上時要拉得更長——那時重建的代價最高，而玩家在看的是某一格的
+   細節，不是清單有沒有新東西。
+
+   ⚠️ 只節流「被動」請求，也就是 tick 回報髒區那條路徑。指令送出時自己要的那次請求絕對
+   不能擋：sendUiCommand 會把該次請求的序號記進 waitPanels，等對應回應才放開單飛鎖。
+   請求被吞掉，鎖永遠不會釋放，玩家的按鈕會全部失效——那是實際發生過的事故。
+
+   被擋下的請求記在 _invReqPending，由 uiTick 補送。節流是延後，不是丟棄。 */
+var INV_REQ_IDLE_MS = 1000;      // 純掛機時的最短請求間隔
+var INV_REQ_HOVER_MS = 4000;     // 指標停在背包格線上時的最短間隔
+var INV_REQ_INTERACT_MS = 800;   // 玩家操作後多久內完全不節流
+var _invReqAt = 0;
+var _invReqInteractAt = 0;
+var _invReqPointerInGrid = false;
+var _invReqPending = false;
+var _invReqBound = false;
+
+function bindInventoryRequestThrottle() {
+  if (_invReqBound || typeof document === 'undefined') return;
+  var box = $id('inventory-grid');
+  if (!box) return;
+  _invReqBound = true;
+  // 頁面剛載入視同互動中：開機那幾百毫秒面板才陸續抵達，這段節流會讓玩家看到空背包
+  _invReqInteractAt = Date.now();
+  box.addEventListener('mouseenter', function () { _invReqPointerInGrid = true; });
+  box.addEventListener('mouseleave', function () { _invReqPointerInGrid = false; });
+  /* 捕獲階段收所有點擊與按鍵：不必逐一列舉哪些控制項會影響背包，
+     漏列一個就會變成「某個按鈕按了要等一秒才有反應」這種很難查的問題。 */
+  document.addEventListener('pointerdown', function () { _invReqInteractAt = Date.now(); }, true);
+  document.addEventListener('keydown', function () { _invReqInteractAt = Date.now(); }, true);
+}
+
+function inventoryPassiveRequestAllowed() {
+  bindInventoryRequestThrottle();
+  var now = Date.now();
+  if (now - _invReqInteractAt < INV_REQ_INTERACT_MS) return true;
+  return now - _invReqAt >= (_invReqPointerInGrid ? INV_REQ_HOVER_MS : INV_REQ_IDLE_MS);
+}
+
+function noteInventoryPanelRequested() {
+  _invReqAt = Date.now();
+  _invReqPending = false;
+}
+
 function uiTick() {
   if (uiRenderingSuspended()) return;
   flushPendingLogDom();
   flushDirtyDetailLogs();
+  /* 補送被節流擋下的背包面板請求。不補的話，掉落一旦停下來（暫停戰鬥、切場景），
+     背包會一直停在最後一次請求時的內容。 */
+  if (_invReqPending && inventoryPassiveRequestAllowed()) {
+    /* 刻意不在這裡標記 UI.dirty.inv：資料還沒回來，標了只會讓同一輪 uiTick 立刻拿舊
+       快照重畫一次，白花力氣。面板回應抵達時本來就會標記並直接重繪（見 MSG_OUT.PANEL）。 */
+    noteInventoryPanelRequested();
+    requestPanelData('inv', true);
+  }
   var d = UI.dirty;
   // 分頁標題戰況（每秒更新一次即可）
   _titleTimer += 0.2;
@@ -8518,8 +8621,13 @@ function initUI() {
           (rec && rec.fname ? '：' + rec.fname : '');
         if (m) m.textContent = text;
         blog(text, 'good');
-        renderSaveList();
-        refreshSaveFolderFilesV2();
+        /* 指令 resolve 只代表 Worker 收下並發出了 persist，檔案還沒寫進磁碟。
+           直接刷新會掃到還沒有新檔案的資料夾，玩家得自己再按一次「重新掃描」。 */
+        WorkerBridge.whenWritesDrained(function (drainErr) {
+          if (drainErr) blog('⚠️ 存檔落地確認逾時，下方清單可能不是最新的，可按「重新掃描」。', 'warn');
+          renderSaveList();
+          refreshSaveFolderFilesV2();
+        });
       }).catch(function (e) {
         var detail = e && e.message ? e.message : String(e);
         var text = '⚠️ 手動存檔寫入失敗：' + detail;

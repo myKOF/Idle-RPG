@@ -839,13 +839,24 @@ var SCORE_WEIGHTS = {
 // ---- 元素 ----
 // short = 「X屬性」語境用單字（火/冰/雷/毒/聖/暗；light 屬性統一稱「聖」，不再稱「光」）
 var ELEMENTS = ['fire', 'ice', 'lightning', 'poison', 'light', 'dark'];
+/* color：戰鬥特效用的主色（js/vfx.js）。與 tips 的文字色分開，特效要的是在暗底上夠亮的顏色。 */
 var ELEM_INFO = {
-  fire: { name: '火焰', short: '火', emoji: '🔥' },
-  ice: { name: '冰霜', short: '冰', emoji: '❄️' },
-  lightning: { name: '雷電', short: '雷', emoji: '⚡' },
-  poison: { name: '劇毒', short: '毒', emoji: '☠️' },
-  light: { name: '聖光', short: '聖', emoji: '✨' },
-  dark: { name: '暗影', short: '暗', emoji: '🌑' }
+  fire: { name: '火焰', short: '火', emoji: '🔥', color: '#fb7233' },
+  ice: { name: '冰霜', short: '冰', emoji: '❄️', color: '#54c7fc' },
+  lightning: { name: '雷電', short: '雷', emoji: '⚡', color: '#ffd93d' },
+  poison: { name: '劇毒', short: '毒', emoji: '☠️', color: '#9ee34a' },
+  light: { name: '聖光', short: '聖', emoji: '✨', color: '#ffe9a8' },
+  dark: { name: '暗影', short: '暗', emoji: '🌑', color: '#b76cff' }
+};
+
+/* 無屬性技能的特效主色：依技能系統分類取色（js/vfx.js 與 skillVfxSpec 共用）。 */
+var VFX_CAT_COLORS = {
+  phys: '#e6ddc8',      // 物理：刀光的冷白
+  magic: '#8ea2ff',     // 魔法：秘能藍紫
+  def: '#7ff0c0',       // 防禦與治療：生命綠
+  special: '#ffc773',   // 特殊
+  passive: '#c9c9c9',
+  potential: '#ff9de2'  // 潛力技能
 };
 
 // ---- 附魔 ----

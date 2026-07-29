@@ -438,6 +438,36 @@ var WorkerBridge = (function () {
     };
   }
 
+  /* ---- 等待寫入落地 ----
+     指令的 Promise 在 Worker 回 ACK 時就 resolve，但那時檔案**還沒寫進磁碟**：Worker 只是
+     序列化完並發出 persist 訊息，實際落地在主執行緒非同步進行。所以「存檔完成後刷新資料夾
+     清單」若直接接在 ACK 後面，掃到的是還沒有那個新檔案的資料夾——玩家會以為存檔失敗，
+     得自己按一次「重新掃描」才看得到。
+
+     訊息順序是可靠的：Worker 先 post persist 再 post ack，postMessage 保證投遞順序，
+     因此 ACK 的處理程序執行時 _pendingWrites 必定已經加上去了，不會發生「還沒開始寫就
+     判定已排空」。
+
+     逾時仍然回呼（帶錯誤）：呼叫端多半是要刷新畫面，永遠不回呼會讓畫面卡在等待狀態，
+     比晚一點刷新更糟。
+
+     ⚠️ 分頁交接（handoff）另有一份自己的排空迴圈，刻意不共用：它必須連「ACK 永遠不回來」
+     都能脫身，所以逾時計時器是獨立於指令 Promise 起算的。合併兩者會弄丟那個保護。 */
+  var DRAIN_POLL_MS = 50;
+  var DRAIN_TIMEOUT_MS = 8000;
+
+  function whenWritesDrained(done, timeoutMs) {
+    if (typeof done !== 'function') return;
+    var limit = timeoutMs > 0 ? timeoutMs : DRAIN_TIMEOUT_MS;
+    var deadline = Date.now() + limit;
+    var poll = function () {
+      if (_pendingWrites <= 0) { done(null); return; }
+      if (Date.now() >= deadline) { done(new Error('存檔落地逾時')); return; }
+      setTimeout(poll, DRAIN_POLL_MS);
+    };
+    poll();
+  }
+
   /* ---- 分頁交接 ----
      另一個分頁要接管時，這顆 Worker 必須先把進度落地再停止。順序是硬要求：
      接管方是在拿到鎖之後才去讀存檔的，若這裡放手在先、落地在後，舊資料會在新分頁
@@ -484,7 +514,8 @@ var WorkerBridge = (function () {
 
   return {
     start: start, stop: stop, send: send, on: on, loadSave: loadSave, handoff: handoff,
-    requestPanel: requestPanel, status: status, enabled: enabled, safeMode: safeMode
+    requestPanel: requestPanel, status: status, enabled: enabled, safeMode: safeMode,
+    whenWritesDrained: whenWritesDrained
   };
 })();
 
