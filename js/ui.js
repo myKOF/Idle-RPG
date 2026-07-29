@@ -2709,9 +2709,13 @@ function renderInventory() {
       var rows = inventoryVisibleRows(totalRows, UI.inventoryVisibleRows);
       var startRow = 0;
       var previousScrollTop = box.scrollTop;
+      var maxScrollTop = Math.max(0, box.scrollHeight - box.clientHeight);
+      var wasAtScrollEnd = previousScrollTop >= maxScrollTop - 1;
       if (virtualize && totalRows > rows) {
         var rowHeight = INVENTORY_GRID_ROW_HEIGHT + INVENTORY_GRID_ROW_GAP;
-        startRow = Math.min(Math.max(0, Math.floor(previousScrollTop / rowHeight)), totalRows - rows);
+        startRow = wasAtScrollEnd
+          ? totalRows - rows
+          : Math.min(Math.max(0, Math.floor(previousScrollTop / rowHeight)), totalRows - rows);
       }
       var firstItem = virtualize ? startRow * columns : 0;
       var lastItem = virtualize ? Math.min(displayedItems.length, (startRow + rows) * columns) : displayedItems.length;
@@ -2752,7 +2756,7 @@ function renderInventory() {
         var remainingRows = totalRows - startRow - rows;
         var bottomHeight = remainingRows * virtualRowHeight - (remainingRows > 0 ? INVENTORY_GRID_ROW_GAP : 0);
         box.innerHTML = inventoryVirtualSpacerHTML(topHeight) + cellsHtml + inventoryVirtualSpacerHTML(bottomHeight);
-        box.scrollTop = previousScrollTop;
+        box.scrollTop = wasAtScrollEnd ? box.scrollHeight : previousScrollTop;
       } else {
         box.innerHTML = cellsHtml;
       }

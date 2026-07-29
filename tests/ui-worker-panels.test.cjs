@@ -82,6 +82,7 @@ test('裝備與背包頁由 Worker panel 投影渲染並以 Command 修改狀態
   assert.match(ui, /function selectionItemForGrid\(invSnapshot\)[\s\S]*?inventoryViewItem\(invSnapshot \|\| uiInventoryPanelSnapshot\(\), UI\.sel\.id, false\)/);
   assert.match(ui, /function updateSelectionUI\(\) \{\s*var selItem = selectionItemForGrid\(\);/);
   assert.match(ui, /if \(UI\.inventoryScrolling\) updateSelectionUI\(\);\s*else renderDetail\(\);/);
+  assert.match(ui, /var wasAtScrollEnd = previousScrollTop >= maxScrollTop - 1[\s\S]*?startRow = wasAtScrollEnd[\s\S]*?box\.scrollTop = wasAtScrollEnd \? box\.scrollHeight/);
 });
 
 test('頂欄只讀 Worker header Snapshot 的資源、屬性與 DPS', () => {
