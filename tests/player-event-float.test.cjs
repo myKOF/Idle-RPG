@@ -15,7 +15,7 @@ test('玩家事件浮字使用頭像區專用位置，不和傷害數字共用�
   assert.match(util, /function playerEventFloatTarget\(floatSel\)/);
   assert.match(util, /function floatPlayerEvent\(floatSel,\s*text,\s*cls,\s*value\)/);
   assert.match(util, /function enemyEventFloatTarget\(ent,\s*floatSel\)/);
-  assert.match(util, /function floatEnemyEvent\(ent,\s*floatSel,\s*text,\s*cls,\s*damageValue\)/);
+  assert.match(util, /function floatEnemyEvent\(ent,\s*floatSel,\s*text,\s*cls,\s*damageValue,\s*delayMs\)/);
 
   const block = css.match(/\.float-txt\.player-event\s*\{([\s\S]*?)\}/);
   assert.ok(block, '找不到玩家事件浮字樣式');
@@ -44,7 +44,7 @@ test('怪物攻擊玩家時，閃避、格擋、護盾吸收與附加效果會�
 });
 
 test('敵人尚未建立卡片就被擊殺時，傷害浮字會等卡片建立後補顯示', () => {
-  assert.match(util, /floatText\(enemyEventFloatTarget\(ent, floatSel\), text, cls, damageValue, ent\)/);
+  assert.match(util, /floatText\(enemyEventFloatTarget\(ent, floatSel\), text, cls, damageValue, ent, undefined, delayMs\)/);
   assert.match(ui, /var PENDING_ENEMY_FLOATS = \[\];/);
   assert.match(ui, /var INSTANT_KILL_HP_ANIMATION_MS = 100;/);
   assert.match(ui, /function queuePendingEnemyFloat\(elId, text, cls, damageValue, ent\)/);
@@ -58,7 +58,8 @@ test('敵人尚未建立卡片就被擊殺時，傷害浮字會等卡片建立�
 test('我方攻擊被敵方閃避時，MISS 顯示在敵方浮層', () => {
   assert.match(combat, /floatEnemyEvent\(mEnt,\s*floatSel,\s*'MISS',\s*'miss enemy-dodge'\)/);
   assert.doesNotMatch(combat, /floatText\(mEnt\.floatSel \|\| floatSel,\s*'MISS'/);
-  assert.match(skills, /floatEnemyEvent\(targetEnt,\s*floatSel,\s*'MISS',\s*'miss enemy-dodge'\)/);
+  // 技能的 MISS 與傷害數字一樣要等「打到人」才跳（多段技逐段錯開）
+  assert.match(skills, /floatEnemyEvent\(targetEnt,\s*floatSel,\s*'MISS',\s*'miss enemy-dodge',\s*undefined,\s*hitDelayMs\)/);
   assert.doesNotMatch(skills, /floatText\(targetEnt\.floatSel \|\| floatSel,\s*'MISS'/);
   const missBlock = css.match(/\.float-txt\.miss\s*\{([\s\S]*?)\}/);
   assert.ok(missBlock, '找不到 MISS 浮字樣式');
@@ -172,7 +173,7 @@ test('傷害浮字合併目前為關閉狀態（暫時設定）', () => {
 test('敵方區普攻固定白色、技能固定黃色，爆擊不改變來源顏色', () => {
   assert.match(combat, /floatEnemyEvent\(mEnt,\s*floatSel,\s*dmgStr,\s*\(res\.crit \? 'crit ' : 'dmg '\) \+ 'enemy-attack',\s*res\.dmg\)/);
   assert.match(combat, /'crit enemy-attack'/);
-  assert.match(skills, /floatEnemyEvent\(targetEnt,\s*floatSel,\s*sk\.emoji \+ dmgStr,\s*\(dmgRes\.crit \? 'crit ' : 'dmg '\) \+ 'enemy-skill',\s*dmgRes\.dmg\)/);
+  assert.match(skills, /floatEnemyEvent\(targetEnt,\s*floatSel,\s*sk\.emoji \+ dmgStr,\s*\(dmgRes\.crit \? 'crit ' : 'dmg '\) \+ 'enemy-skill',\s*dmgRes\.dmg,\s*hitDelayMs\)/);
   assert.match(skills, /'crit enemy-skill'/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-attack\s*\{[\s\S]*?color:\s*#ffffff/);
   assert.match(css, /\.enemy-combatant\s*\{[\s\S]*?overflow:\s*visible/);

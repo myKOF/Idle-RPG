@@ -2423,6 +2423,31 @@ function emitSkillVfx(spec) {
   if (spec && typeof playCombatVfx === 'function') playCombatVfx(spec);
 }
 
+/* 每個目標的投射物飛行時間（毫秒），與 targets 同順序。
+   等速飛行：距離 ÷ 速度 → js/battlefield.js bfTravelSeconds。
+   純數字陣列，可以安全地送過協議（不含任何實體參照）。 */
+function skillVfxTravelMs(targetEnts) {
+  if (typeof bfTravelSeconds !== 'function') return null;
+  return (targetEnts || []).map(function (ent) { return Math.round(bfTravelSeconds(ent) * 1000); });
+}
+
+/* 傷害數字要等「打到人」才跳出來，不是技能一放就跳。
+   模擬層在一瞬間把整段傷害結算完（含多段與連擊），但畫面上：
+     ・投射物要飛 → 依「該目標」的距離往後推（站第 4 行的比第 1 行晚）
+     ・多段技（例：奧術彈幕 4 段）是一發一發打 → 每段再往後錯開一點
+   斬擊／爆發／貫穿是當場發生，不需要飛行時間。
+   回傳毫秒；顯示端據此延後浮字，戰鬥結果完全不受影響。 */
+function skillVfxImpactDelayMs(spec, hitIndex, targetIndex) {
+  var stagger = (typeof VFX_HIT_STAGGER_SEC === 'number') ? VFX_HIT_STAGGER_SEC : 0.09;
+  var travelSec = 0;
+  if (spec && (spec.fxKind === 'projectile' || spec.fxKind === 'rain')) {
+    var list = spec.travelMs;
+    var per = (list && list[targetIndex || 0] >= 0) ? list[targetIndex || 0] / 1000 : null;
+    travelSec = (per === null) ? (spec.dur || 0) : per;
+  }
+  return Math.round((travelSec + Math.max(0, hitIndex || 0) * stagger) * 1000);
+}
+
 function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
   var sk = skillDef(id);
   var fx = effectiveFx(id, sk, lv);
@@ -2455,10 +2480,12 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
   var out = { killed: false, dmg: 0, areaCells: placement.cells };
   // 特效：施放當下就發（不等結算），因為玩家看到的是「技能放出去了」，
   // 全部被閃避也一樣要有畫面。目標一律轉成浮字圖層 id，不帶實體參照。
-  emitSkillVfx(skillVfxSpec(sk, fx, (fx && fx.shape) || (sk && sk.shape),
+  var vfxExtra = { travelMs: skillVfxTravelMs(targets) };
+  if (!targets.length) vfxExtra.targets = [playerEventFloatTarget(floatSel)];
+  var vfxSpec = skillVfxSpec(sk, fx, (fx && fx.shape) || (sk && sk.shape),
     targets.map(function (t) { return enemyEventFloatTarget(t, floatSel); }),
-    placement.cells,
-    targets.length ? null : { targets: [playerEventFloatTarget(floatSel)] }));
+    placement.cells, vfxExtra);
+  emitSkillVfx(vfxSpec);
   var logMsg = sk.emoji + ' 你施放【' + sk.name + ' Lv.' + lv + '】，';
   var parts = [];
   // 5 轉昇華天賦：技能所有效果（傷害/治療/護盾/增益/減益/再生/詛咒/金幣/法力）共用此倍率；融合技=素材平均
@@ -2505,6 +2532,9 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
       for (var ti = 0; ti < targets.length; ti++) {
         var targetEnt = targets[ti];
         if (targetEnt.hp <= 0) continue;
+        /* 這一段對「這個目標」的數字要延後多久：飛行時間依該目標的距離算，
+           所以同一次群體技，站得遠的敵人數字會比近的晚跳出來。 */
+        var hitDelayMs = skillVfxImpactDelayMs(vfxSpec, rep * hits + h, ti);
         var dmgRes;
         if (fx.dmgType === 'true') {
           // 真實傷害：無視防禦/抗性/格擋
@@ -2553,14 +2583,14 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
           var dmgStr = fmt(dmgRes.dmg);
           if (dmgRes.crit) dmgStr = '爆擊 ' + dmgStr;
           if (dmgRes.blocked) dmgStr = '格擋 ' + dmgStr;
-          floatEnemyEvent(targetEnt, floatSel, sk.emoji + dmgStr, (dmgRes.crit ? 'crit ' : 'dmg ') + 'enemy-skill', dmgRes.dmg);
+          floatEnemyEvent(targetEnt, floatSel, sk.emoji + dmgStr, (dmgRes.crit ? 'crit ' : 'dmg ') + 'enemy-skill', dmgRes.dmg, hitDelayMs);
           trackDps(dmgRes.dmg);
           if (typeof recordRunDamage === 'function') {
             var statKey = 'skill:' + (typeof statSlot === 'number' ? statSlot : id) + ':' + id + ':' + lv;
             recordRunDamage(sk.name, dmgRes.dmg, statKey, lv);
           }
         } else {
-          floatEnemyEvent(targetEnt, floatSel, 'MISS', 'miss enemy-dodge');
+          floatEnemyEvent(targetEnt, floatSel, 'MISS', 'miss enemy-dodge', undefined, hitDelayMs);
         }
         if (dmgRes.killed) out.killed = true;
       }

@@ -417,7 +417,7 @@ function handleWorkerUiEvents(events) {
       return;
     }
     if (event.kind === 'float') {
-      floatText(event.elId, event.text, event.cls, event.damageValue, null, uiBattlePanelSnapshot());
+      floatText(event.elId, event.text, event.cls, event.damageValue, null, uiBattlePanelSnapshot(), event.delayMs);
       return;
     }
     // 技能／增益特效（協議 v10）：實際畫法在 js/vfx.js，這裡只轉交
@@ -1424,8 +1424,18 @@ function placePlayerRecoveryFloat(sp, layer) {
   placeFloatAvoidingOverlap(sp, layer, '.float-txt', 48, 18, 3, 8);
 }
 
-function floatText(elId, text, cls, damageValue, ent, battleSnapshot) {
+function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
   if (uiRenderingSuspended()) return; // 背景分頁：純視覺浮字直接略過，不建 DOM 也不量測排版
+  /* 顯示延遲（協議 v11）：讓數字對齊「打到人」那一刻——投射物要飛、多段技一段一段打，
+     但模擬層是一瞬間把整段結算完的。純顯示時序，戰鬥結果早就定了。
+     延遲期間敵人可能已死，但卡片還會留 FIELD_ENEMY_DEATH_CLEAR_DELAY（2.1 秒）才移除，
+     遠長於這裡的延遲；真的來不及也只是走 queuePendingEnemyFloat 的既有路徑。 */
+  if (delayMs > 0) {
+    setTimeout(function () {
+      floatText(elId, text, cls, damageValue, ent, battleSnapshot, 0);
+    }, delayMs);
+    return;
+  }
   if (elId === 'tb-float' && text === 'MISS' && cls === 'miss') {
     elId = 'tp-float';
     text = '閃避!';

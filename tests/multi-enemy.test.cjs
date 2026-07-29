@@ -36,37 +36,72 @@ function loadCombatContext() {
   return context;
 }
 
-test('普通與菁英敵人數量依 60/25/10/5 機率區間選出 1～4 隻', () => {
+/* 數量由權重表決定，期望值一律由表推導——寫死數字的話，
+   每次在參數表調權重就會誤報成測試失敗（詳見 tests/enemy-hit.test.cjs 的同款教訓）。 */
+function weightedRange(table) {
+  const live = table.filter(([, w]) => w > 0).map(([n]) => n);
+  return { min: Math.min(...live), max: Math.max(...live) };
+}
+
+test('每波數量依權重表擲骰：權重 0 不會被抽中，且不超過棋盤格數', () => {
   const context = loadFormulaContext();
-  [
-    [0.00, 1],
-    [0.5999, 1],
-    [0.6001, 2],
-    [0.8499, 2],
-    [0.8501, 3],
-    [0.9499, 3],
-    [0.9501, 4],
-    [0.9999, 4]
-  ].forEach(([randomValue, expected]) => {
-    context.Math.random = () => randomValue;
-    assert.equal(context.rollFieldEnemyCount(), expected);
+  const range = weightedRange(context.FIELD_ENEMY_COUNT_TABLE);
+  const seen = new Set();
+  for (let i = 0; i < 5000; i++) seen.add(context.rollFieldEnemyCount('normal'));
+  seen.forEach((n) => {
+    assert.ok(n >= range.min && n <= range.max, n + ' 不在權重表的有效範圍內');
+    assert.ok(n <= context.bfCellCount(), '不得超過棋盤格數');
+    const w = context.FIELD_ENEMY_COUNT_TABLE.find(([c]) => c === n);
+    assert.ok(w && w[1] > 0, n + ' 的權重是 0，不該被抽中');
   });
 });
 
-test('普通與菁英關卡都可依數量表生成多敵人', () => {
+test('小怪／菁英／BOSS 各用自己的權重表（菁英不會跟著小怪出一大群）', () => {
+  const context = loadFormulaContext();
+  // 三張表必須是各自獨立的來源
+  assert.notEqual(context.FIELD_ELITE_COUNT_TABLE, context.FIELD_ENEMY_COUNT_TABLE);
+  assert.notEqual(context.FIELD_BOSS_COUNT_TABLE, context.FIELD_ENEMY_COUNT_TABLE);
+
+  const eliteMax = weightedRange(context.FIELD_ELITE_COUNT_TABLE).max;
+  const normalMax = weightedRange(context.FIELD_ENEMY_COUNT_TABLE).max;
+  assert.ok(eliteMax < normalMax, '菁英上限應低於小怪——菁英出一大群根本打不動');
+
+  for (let i = 0; i < 3000; i++) {
+    assert.ok(context.rollFieldEnemyCount('elite') <= eliteMax, '菁英數量超出自己的表');
+    assert.ok(context.rollFieldEnemyCount('boss') <= weightedRange(context.FIELD_BOSS_COUNT_TABLE).max,
+      'BOSS 數量超出自己的表');
+  }
+  // 未指定敵種時沿用小怪表（既有呼叫端不受影響）
+  assert.equal(context.fieldCountTableFor(), context.FIELD_ENEMY_COUNT_TABLE);
+  assert.equal(context.fieldCountTableFor('elite'), context.FIELD_ELITE_COUNT_TABLE);
+  assert.equal(context.fieldCountTableFor('boss'), context.FIELD_BOSS_COUNT_TABLE);
+});
+
+test('出怪依階段敵種選用對應的數量表', () => {
   const context = loadCombatContext();
-  context.Math.random = () => 0.999;
+  const eliteMax = weightedRange(context.FIELD_ELITE_COUNT_TABLE).max;
 
-  context.G.stage.current = 1;
-  context.spawnFieldMonster();
-  assert.equal(context.FIELD.monsters.length, 4);
-  assert.equal(context.FIELD.monster, context.FIELD.monsters[0]);
-  assert.equal(context.FIELD.monsters.every((enemy) => !enemy.elite), true);
+  context.G.stage.current = 1;   // 小怪
+  for (let i = 0; i < 60; i++) {
+    context.spawnFieldMonster();
+    assert.ok(context.FIELD.monsters.every((e) => !e.elite && !e.isBoss));
+    assert.ok(context.FIELD.monsters.length >= 1);
+  }
 
-  context.G.stage.current = 10;
-  context.spawnFieldMonster();
-  assert.equal(context.FIELD.monsters.length, 4);
-  assert.equal(context.FIELD.monsters.every((enemy) => enemy.elite), true);
+  context.G.stage.current = 10;  // 菁英（10 的倍數）
+  for (let i = 0; i < 60; i++) {
+    context.spawnFieldMonster();
+    assert.ok(context.FIELD.monsters.every((e) => e.elite), '第 10 階應為菁英');
+    assert.ok(context.FIELD.monsters.length <= eliteMax,
+      '菁英數量應受菁英表限制，實際 ' + context.FIELD.monsters.length);
+  }
+
+  context.G.stage.current = 50;  // BOSS（50 的倍數，優先於菁英）
+  for (let i = 0; i < 30; i++) {
+    context.spawnFieldMonster();
+    assert.ok(context.FIELD.monsters.every((e) => e.isBoss), '第 50 階應為 BOSS');
+    assert.ok(context.FIELD.monsters.length <= weightedRange(context.FIELD_BOSS_COUNT_TABLE).max);
+  }
 });
 
 test('多敵人逐一擊殺時各自結算經驗與掉落，全部擊殺後才推進', () => {

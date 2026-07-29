@@ -181,10 +181,15 @@ var TALENT_TREES = {
 };
 /* ---- 潛力技能定義已移至 js/skills.js（隨 Skills.xlsx 調適；解鎖/等級/施放邏輯不變） ---- */
 
-/* ---- 普通關卡敵人數量 ----
-   普通與菁英每波獨立擲骰；野外 BOSS 與高塔 BOSS 固定單一敵人。
-   權重 0 的數量不會被抽中；上限為棋盤總格數（BF_COLS×BF_ROWS）。 */
-var FIELD_ENEMY_COUNT_TABLE = [[1, 60], [2, 25], [3, 10], [4, 5], [5, 0], [6, 0], [7, 0], [8, 0], [9, 0], [10, 0], [11, 0], [12, 0], [13, 0], [14, 0], [15, 0], [16, 0]];
+/* ---- 每波敵人數量（依敵種各自擲骰）----
+   小怪／菁英／BOSS 三種**分開**設定：同樣出 16 隻，小怪還打得動，菁英根本打不了，
+   BOSS 又佔 2×2 格、棋盤放不下。所以三者各有一張權重表。
+   [數量, 權重]；權重只看相對大小，總和不必湊 100，權重 0 不會被抽中。
+   數量上限為棋盤總格數（BF_COLS×BF_ROWS）。
+   參數表：4-敵人數量 的三列，寫法為 {數量,權重} 或 {下限~上限,權重}。 */
+var FIELD_ENEMY_COUNT_TABLE = [[1, 5], [2, 5], [3, 5], [4, 8], [5, 10], [6, 20], [7, 10], [8, 10], [9, 10], [10, 5], [11, 5], [12, 4], [13, 3], [14, 2], [15, 1], [16, 0.5]];
+var FIELD_ELITE_COUNT_TABLE = [[1, 60], [2, 30], [3, 10]];
+var FIELD_BOSS_COUNT_TABLE = [[1, 100]];
 
 /* ---- 戰場站位（敵方棋盤）----
    敵方固定 BF_COLS 行 × BF_ROWS 列，我方是棋盤左側的單一單位。
@@ -849,6 +854,20 @@ var ELEM_INFO = {
   dark: { name: '暗影', short: '暗', emoji: '🌑', color: '#b76cff' }
 };
 
+/* 特效時間軸（模擬層與 js/vfx.js 共用）——傷害數字必須跟畫面對得上：
+   模擬層是一瞬間把傷害全部結算完的，但畫面上子彈要飛、多段要一段一段打。
+   所以浮字的顯示時間由這兩個常數往後推，讓「數字跳出來」對齊「打到人」那一刻。
+   改這裡會同時改變特效節奏與數字節奏，兩者不會走鐘。 */
+var VFX_HIT_STAGGER_SEC = 0.09;   // 多段傷害每一段之間的間隔
+
+/* 投射物是「等速飛行」而不是「固定飛行時間」：飛行秒數 = 我方到敵人中心的距離 ÷ 速度。
+   固定時間的話，打第 1 行的子彈會慢吞吞、打第 4 行的又太快，數字跟命中永遠對不上。
+   單位是「格/秒」——棋盤 4 格寬，所以最近約 0.07 秒、最遠（右上/右下角）約 0.3 秒。
+   上下限用來避免貼臉時瞬間到、以及極端棋盤設定下拖太久。 */
+var VFX_PROJECTILE_SPEED_CELLS = 14;
+var VFX_TRAVEL_MIN_SEC = 0.06;
+var VFX_TRAVEL_MAX_SEC = 0.45;
+
 /* 無屬性技能的特效主色：依技能系統分類取色（js/vfx.js 與 skillVfxSpec 共用）。 */
 var VFX_CAT_COLORS = {
   phys: '#e6ddc8',      // 物理：刀光的冷白
@@ -1164,6 +1183,10 @@ var GEM_TYPES = {
   opal: { name: '蛋白石', emoji: '🩵', stat: 'aspd', statName: '攻擊速度%', base: 1.5, pct: true },
   onyx: { name: '黑曜石', emoji: '⚫', stat: 'lifesteal', statName: '吸血%', base: 1, pct: true },
   moonstone: { name: '月光石', emoji: '🌙', stat: 'evasion', statName: '閃避率%', base: 1, pct: true },
+  /* 命中（月光石的對位）：命中與閃避是 1:1 相抵的一對（resolveHit 取 clamp(命中−閃避, 5, 100)），
+     但玩家命中基礎已有 100%、敵人閃避從 5% 起隨等級成長，所以同樣 1 點的命中價值低於閃避。
+     base 取 1.5＝月光石的 1.5 倍，與詞條池同一對的比例一致（命中 base 3 / 閃避 base 2）。 */
+  catseye: { name: '貓眼石', emoji: '👁️', stat: 'hit', statName: '命中率%', base: 1.5, pct: true },
   sunstone: { name: '太陽石', emoji: '☀️', stat: 'luck', statName: '幸運值', base: 1.5, pct: false },
   // === 防禦類（2026-07-09 新增 6 種）===
   jade: { name: '翡翠', emoji: '🟩', stat: 'tenacity', statName: '韌性%', base: 1.5, pct: true },

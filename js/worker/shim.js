@@ -97,9 +97,13 @@ function addLog(boxId, msg, cls, cap) {
    （ui.js 的 flushPendingEnemyFloats），而 structured clone 過來的是複本，
    indexOf 永遠不會相等，傳過去只會讓飄字被靜靜丟棄。識別資訊已經在 elId 裡
    （mv-float-N 對應敵人槽位），UI 端請改用 elId 判斷目標是否仍存在。 */
-function floatText(elId, text, cls, damageValue) {
+function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
   _diag(SHIM_DIAG.ui, 'floatText');
-  shimPushEvent('float', { elId: elId, text: text, cls: cls, damageValue: damageValue });
+  shimPushEvent('float', {
+    elId: elId, text: text, cls: cls, damageValue: damageValue,
+    // 顯示延遲（協議 v11）：讓數字對齊子彈命中與多段節奏，不影響任何戰鬥結算
+    delayMs: (delayMs > 0) ? delayMs : 0
+  });
 }
 
 /* 技能／增益特效（協議 v10）。模擬層送的是純資料（原型/顏色/目標圖層/格子），
@@ -110,7 +114,10 @@ function playCombatVfx(spec) {
   shimPushEvent('vfx', {
     fxKind: spec.fxKind, glyph: spec.glyph, color: spec.color,
     targets: spec.targets || [], cells: spec.cells || null,
-    dur: spec.dur, count: spec.count
+    dur: spec.dur, count: spec.count,
+    // travelMs 必須一起送：傷害數字的延遲用的是這組數字，投射物動畫沒拿到就會用
+    // 預設長度，變成「數字到了子彈還在飛」——與 v11 反過來的走鐘。
+    travelMs: spec.travelMs || null
   });
 }
 

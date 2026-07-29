@@ -120,8 +120,12 @@ function vfxNode(cls, layer) {
 }
 
 /* ---- 各原型 ---- */
-function vfxProjectile(spec, layer, from, to, delayMs) {
+/* travelMs：這一發飛到該目標所需的時間（由模擬層依距離算好，見 skillVfxTravelMs）。
+   用它當動畫長度，投射物才是等速飛行——打近的快、打遠的慢，
+   而且與傷害數字的延遲用的是同一個數，兩者必定同時到。 */
+function vfxProjectile(spec, layer, from, to, delayMs, travelMs) {
   var d = vfxNode('vfx-projectile', layer);
+  var flight = travelMs > 0 ? travelMs : Math.round((spec.dur || 0.5) * 1000);
   d.textContent = spec.glyph;
   d.style.color = spec.color;
   d.style.setProperty('--vfx-x0', from.x + 'px');
@@ -129,8 +133,8 @@ function vfxProjectile(spec, layer, from, to, delayMs) {
   d.style.setProperty('--vfx-x1', to.x + 'px');
   d.style.setProperty('--vfx-y1', to.y + 'px');
   d.style.animationDelay = delayMs + 'ms';
-  d.style.animationDuration = Math.round(spec.dur * 1000) + 'ms';
-  vfxTrack(d, delayMs + spec.dur * 1000 + 120);
+  d.style.animationDuration = flight + 'ms';
+  vfxTrack(d, delayMs + flight + 120);
 }
 
 function vfxAtPoint(cls, spec, layer, pt, delayMs, sizePx) {
@@ -189,6 +193,7 @@ function playCombatVfx(spec) {
   var dur = spec.dur > 0 ? spec.dur : 0.5;
   var count = Math.max(1, Math.min(5, spec.count || 1));
   var s = { fxKind: kind, glyph: spec.glyph || '✨', color: spec.color || '#fff', dur: dur };
+  var travelMs = spec.travelMs || null;   // 每個目標各自的飛行時間（毫秒）
 
   if (kind === 'aura' || kind === 'rain') {
     var rect = vfxCellsRect(spec.cells, layer);
@@ -211,8 +216,10 @@ function playCombatVfx(spec) {
     if (!pt) continue;
     if (kind === 'beam') { vfxBeam(s, layer, from, pt); continue; }
     for (var c = 0; c < count; c++) {
-      var delay = c * 90 + t * 40;
-      if (kind === 'projectile') vfxProjectile(s, layer, from, pt, delay);
+      // 每一段之間的間隔與傷害數字共用同一個常數（data.js），否則畫面與數字會走鐘
+      var stagger = (typeof VFX_HIT_STAGGER_SEC === 'number') ? VFX_HIT_STAGGER_SEC * 1000 : 90;
+      var delay = c * stagger + t * 40;
+      if (kind === 'projectile') vfxProjectile(s, layer, from, pt, delay, travelMs ? travelMs[t] : 0);
       else if (kind === 'slash') vfxAtPoint('vfx-slash', s, layer, pt, delay);
       else vfxAtPoint('vfx-burst', s, layer, pt, delay);
     }

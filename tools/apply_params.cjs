@@ -359,12 +359,31 @@ function getReincarnationCell(n, paramIdx) {
   for (let n = 0; n <= 20; n++) g.push(Number(getReincarnationCell(n, 5)));
   arrayContent('data', 'REINCARNATION_FUSION_MAX_LEVELS', g.join(', '), 'REINCARNATION_FUSION_MAX_LEVELS');
 }
-// FIELD_ENEMY_COUNT_TABLE = [[1,60],[2,25],...,[16,0]]（權重 0 者不會被抽中）
-{
-  const c = [];
-  for (let n = 1; n <= 16; n++) c.push('[' + n + ', ' + P('4-敵人數量', n + ' 隻', 0) + ']');
-  arrayContent('data', 'FIELD_ENEMY_COUNT_TABLE', c.join(', '), 'FIELD_ENEMY_COUNT_TABLE');
+/* 每波敵人數量：小怪／菁英／BOSS 三張獨立權重表。
+   欄位寫法 {數量,權重} 或 {下限~上限,權重}（也接受 = 當分隔，與本表其他區間欄位一致）。
+   例：{1~4,10} 代表 1~4 隻的權重都是 10。留空或 0 的欄位略過。 */
+function parseCountTuples(cat, name) {
+  const params = index[cat] && index[cat][name];
+  if (!params) throw new Error('CSV 缺少列：' + cat + ' / ' + name);
+  const out = [];
+  params.forEach(cell => {
+    const raw = (cell == null ? '' : String(cell)).trim();
+    if (raw === '' || raw === '0') return;               // Excel 會把留空欄填成 0
+    const m = /^\{\s*(\d+)\s*(?:~\s*(\d+)\s*)?[,=]\s*(-?[\d.]+)\s*\}$/.exec(raw);
+    if (!m) throw new Error('數量權重格式無法解析：' + cat + ' / ' + name + ' →「' + raw + '」' +
+      '（應為 {數量,權重} 或 {下限~上限,權重}）');
+    const lo = Number(m[1]);
+    const hi = m[2] === undefined ? lo : Number(m[2]);
+    const w = Number(m[3]);
+    if (!(hi >= lo)) throw new Error('數量區間上下界顛倒：' + cat + ' / ' + name + ' →「' + raw + '」');
+    for (let n = lo; n <= hi; n++) out.push('[' + n + ', ' + w + ']');
+  });
+  if (!out.length) throw new Error('數量權重全空：' + cat + ' / ' + name);
+  return out.join(', ');
 }
+arrayContent('data', 'FIELD_ENEMY_COUNT_TABLE', parseCountTuples('4-敵人數量', '小怪 數量權重'), 'FIELD_ENEMY_COUNT_TABLE');
+arrayContent('data', 'FIELD_ELITE_COUNT_TABLE', parseCountTuples('4-敵人數量', '菁英 數量權重'), 'FIELD_ELITE_COUNT_TABLE');
+arrayContent('data', 'FIELD_BOSS_COUNT_TABLE', parseCountTuples('4-敵人數量', 'BOSS 數量權重'), 'FIELD_BOSS_COUNT_TABLE');
 // 戰場站位（敵方棋盤）：格數、距離係數、BOSS 佔格 → js/battlefield.js 讀這些常數
 scalar('data', 'BF_COLS', '4-戰場站位', '棋盤格數', 0);
 scalar('data', 'BF_ROWS', '4-戰場站位', '棋盤格數', 1);
