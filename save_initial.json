@@ -1,7 +1,7 @@
 {
   "version": 1,
   "runId": 1,
-  "savedAt": 1785337905855,
+  "savedAt": 1785339356095,
   "player": {
     "level": 1,
     "xp": 0,
@@ -290,7 +290,7 @@
       "level": 1,
       "items": [],
       "refreshCount": 0,
-      "hourStart": 1785337905855
+      "hourStart": 1785339356095
     },
     "books": {
       "fire": 0,
@@ -540,5 +540,5 @@
   "settings": {
     "compareEq": true
   },
-  "firstRunAt": 1785337905855
+  "firstRunAt": 1785339356095
 }
