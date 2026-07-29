@@ -68,6 +68,9 @@ var WorkerBridge = (function () {
     errors: 0,
     persists: 0,
     persistErrors: 0,
+    /* Worker 最近一次回報的補進度欠帳（秒）。0 代表跟得上進度。
+       只有存活監測會讀它——正在補進度的 Worker 是「忙」不是「死」。 */
+    catchupSec: 0,
     lastView: null,
     lastDirty: [],
     lastDiag: null,
@@ -145,6 +148,7 @@ var WorkerBridge = (function () {
         break;
       case MSG_OUT.TICK:
         stats.ticks++;
+        stats.catchupSec = msg.catchup || 0;
         stats.lastView = msg.view;
         stats.lastDirty = msg.dirty || [];
         stats.lastDiag = msg.diag || null;
@@ -192,6 +196,14 @@ var WorkerBridge = (function () {
   var STALL_CHECK_MS = 3000;   // 監測間隔
   var STALL_AFTER_MS = 5000;   // 靜默多久才開始探測
   var PONG_TIMEOUT_MS = 4000;  // 探測後等 PONG 的上限
+
+  /* 補進度期間放寬門檻。分頁被瀏覽器凍結數小時後回到前景，Worker 會有一大筆欠帳要補，
+     那段期間它與主執行緒都比平常忙，訊息的往返會變慢——但它是在工作，不是死了。
+     用平常的門檻判死，代價是 restartWorker 會終止它、重新讀檔開機，
+     已經補完的那段進度直接丟掉，改用固定費率的離線收益結算（收益模型完全不同）。
+     寧可晚二十秒才發現真正的死亡，也不要殺掉一顆正在工作的 Worker。 */
+  var CATCHUP_STALL_AFTER_MS = 30000;
+  var CATCHUP_PONG_TIMEOUT_MS = 20000;
   var _lastMessageAt = 0;
   var _probeAt = 0;
   var _watchdogTimer = 0;
@@ -317,11 +329,16 @@ var WorkerBridge = (function () {
     // 背景分頁：節流與模擬休眠都會讓訊息停止，不能當成死亡
     if (typeof document !== 'undefined' && document.hidden) { _lastMessageAt = Date.now(); return; }
     var now = Date.now();
+    var catchingUp = stats.catchupSec > 0;
+    var stallAfter = catchingUp ? CATCHUP_STALL_AFTER_MS : STALL_AFTER_MS;
+    var pongTimeout = catchingUp ? CATCHUP_PONG_TIMEOUT_MS : PONG_TIMEOUT_MS;
     if (_probeAt) {
-      if (now - _probeAt > PONG_TIMEOUT_MS) markWorkerDead('PING 逾時未回應');
+      if (now - _probeAt > pongTimeout) {
+        markWorkerDead('PING 逾時未回應' + (catchingUp ? '（補進度中，已放寬門檻）' : ''));
+      }
       return;
     }
-    if (now - _lastMessageAt > STALL_AFTER_MS) {
+    if (now - _lastMessageAt > stallAfter) {
       _probeAt = now;
       post(MSG_IN.PING, { t: now });
     }
@@ -353,6 +370,8 @@ var WorkerBridge = (function () {
     };
 
     _lastMessageAt = Date.now();
+    // 新起的 Worker 沒有欠帳；不歸零的話，死在補進度中途會讓放寬過的門檻一直留著
+    stats.catchupSec = 0;
     post(MSG_IN.BOOT, {
       save: opts.save || null, now: Date.now(),
       maxRunId: opts.maxRunId || 1, safeMode: safeMode()
@@ -406,6 +425,7 @@ var WorkerBridge = (function () {
       events: stats.events,
       errors: stats.errors,
       persists: stats.persists,
+      catchupSec: stats.catchupSec,
       pendingCommands: Object.keys(_pending).length,
       persistErrors: stats.persistErrors,
       lastDirty: stats.lastDirty,
@@ -479,8 +499,12 @@ var WorkerBridge = (function () {
    TabLock 保證回呼在 DOM 就緒之後才執行。 */
 (function () {
   TabLock.onGranted(function () {
-    SaveStorage.readBootSave(function (save) {
-      WorkerBridge.start({ save: save, maxRunId: SaveStorage.maxRunId() });
+    /* 讀出來的存檔若是「回退讀到的舊檔名」或「標記著別的 origin」，SaveOrigin 會先問過玩家
+       才開機；其餘情況直接放行（見 js/save_origin.js）。存檔覆蓋不可逆，不該由時間戳自己決定。 */
+    SaveStorage.readBootSave(function (save, info) {
+      SaveOrigin.gate(save, info, function (approved) {
+        WorkerBridge.start({ save: approved, maxRunId: SaveStorage.maxRunId() });
+      });
     });
   });
 })();

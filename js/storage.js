@@ -12,6 +12,27 @@
 
 var SaveStorage = (function () {
 
+  /* 開機存檔的來歷。開機流程用它決定要不要先問過玩家（見 js/save_origin.js）：
+       own     這個 origin 自己的自動存檔，或瀏覽器本機快取 → 直接用
+       legacy  資料夾裡的舊檔名或更舊的保底檔 → 可能是別的網址留下的，要確認
+       foreign 檔名是自己的，但內容標記著別的 origin → 要確認
+     fallback 是玩家拒絕接手時的替代品：瀏覽器本機快取那一份（null 代表只能開新遊戲）。
+     本機快取（IndexedDB）永遠不必確認——它的作用域就是 origin，不可能是別人寫的。 */
+  function bootSaveInfo(best, folderBest, cacheBest) {
+    var info = {
+      source: 'none', fname: null, savedBy: null, fallback: null,
+      originTag: (typeof SAVE_ORIGIN_TAG_V2 === 'string') ? SAVE_ORIGIN_TAG_V2 : ''
+    };
+    if (!best) return info;
+    info.savedBy = (best.data && best.data.savedBy) || null;
+    if (best !== folderBest) { info.source = 'own'; return info; }
+    info.fname = folderBest.fname || null;
+    info.fallback = cacheBest ? cacheBest.data : null;
+    info.source = (folderBest.source === 'legacy') ? 'legacy' : 'own';
+    if (info.source === 'own' && info.savedBy && info.savedBy !== info.originTag) info.source = 'foreign';
+    return info;
+  }
+
   /* 讀出開機用的存檔：資料夾與 IndexedDB 快取取較新者。
      刻意**不呼叫 migrateSave**——遷移是 Worker 的職責，兩邊都做會讓一次性遷移跑兩次。 */
   function readBootSave(cb) {
@@ -21,7 +42,7 @@ var SaveStorage = (function () {
         var data = parseSaveTextV2(raw);
         if (data) cacheBest = { data: data, savedAt: Number(data.savedAt) || 0 };
         var best = chooseNewestSaveV2(folderBest, cacheBest);
-        cb(best ? best.data : null);
+        cb(best ? best.data : null, bootSaveInfo(best, folderBest, cacheBest));
       });
     };
     if (!window.showDirectoryPicker) { finish(null); return; }
@@ -147,17 +168,60 @@ var SaveStorage = (function () {
     setTimeout(fn, 0);
   }
 
+  /* ---- 同種類寫入的合併 ----
+     auto 與 folder 都是「最新狀態整份覆蓋前一份」的寫入，排隊把舊的依序寫完沒有任何意義：
+     每一份都會被下一份蓋掉，中間那些純粹是白花的 gzip 與磁碟 I/O。
+
+     原本這裡沒有任何合併，Worker 送一則就寫一次。平常 15 秒才一則，看不出問題；
+     一旦上游短時間內連送多則（補進度時曾放大到每 0.1 秒一則），requestIdleCallback 的
+     2 秒 timeout 一定逾時，於是全部擠成連續寫入，主執行緒被塞滿。
+     這裡是第二道保險：即使上游又出問題，落地端也只會寫最新的一份。
+
+     被合併掉的請求仍然要回報結果，不能靜靜丟掉——bridge.js 靠這個回呼遞減 _pendingWrites
+     （分頁交接要等它歸零），Worker 靠 saveResult 決定 savedAt 要不要退回。
+     回報的是「取代它的那次寫入」的真實結果：若那次也失敗就一起退回，
+     savedAt 才不會停在一個從未落地的時間點上。
+
+     ⚠️ shutdown 走的雖然也是 writeAuto，但它不可延後、也不進這個佇列（見 DEFERRABLE）。
+     它與已在飛行中的 auto 寫入之間的先後順序不受此處保護，維持既有行為。 */
+  var _writeSlots = {};   // kind -> { running, next:{json,meta}, waiters:[done] }
+
+  function coalescedPersist(kind, writer, json, meta, done) {
+    var slot = _writeSlots[kind];
+    if (!slot) slot = _writeSlots[kind] = { running: false, next: null, waiters: [] };
+    slot.next = { json: json, meta: meta };   // 後到的直接取代待寫那筆
+    slot.waiters.push(done);
+    if (slot.running) return;                 // 飛行中：等它寫完後由 pump 接續最新的一筆
+    slot.running = true;
+
+    var pump = function () {
+      var job = slot.next;
+      var waiters = slot.waiters;
+      slot.next = null;
+      slot.waiters = [];
+      if (!job) { slot.running = false; return; }
+      var finish = function (err) {
+        for (var i = 0; i < waiters.length; i++) {
+          try { waiters[i](err); } catch (e) {}
+        }
+        pump();   // 寫入期間若又有新的請求進來，這裡接著寫最新那份
+      };
+      runWhenIdle(function () {
+        try { writer(job.json, job.meta, finish); }
+        catch (e) { finish(e); }
+      });
+    };
+    pump();
+  }
+
   /* Worker 送來的 persist 一律走這裡。done(err) 的結果會回報成 saveResult，
      Worker 靠它決定 savedAt 要不要退回——寫入失敗卻回報成功，會讓離線收益漏算。 */
   function persist(kind, json, meta, done) {
     var writer = WRITERS[kind];
     if (!writer) { done(new Error('unknown persist kind: ' + kind)); return; }
-    var run = function () {
-      try { writer(json, meta, done); }
-      catch (e) { done(e); }
-    };
-    if (DEFERRABLE[kind]) runWhenIdle(run);
-    else run();
+    if (DEFERRABLE[kind]) { coalescedPersist(kind, writer, json, meta, done); return; }
+    try { writer(json, meta, done); }
+    catch (e) { done(e); }
   }
 
   return {

@@ -199,7 +199,8 @@ test('auto folder sync records the folder modified time in auto metadata', async
   await context.syncAutoSaveToFolderV2();
 
   const autoMeta = JSON.parse(context.localStorage.getItem(context.AUTO_META_KEY_V2));
-  assert.equal(context._saveDir.getFile('IC_autosave.json').lastModified, 12000);
+  // 自動存檔的檔名依 origin 決定（js/save.js），這裡不得寫死
+  assert.equal(context._saveDir.getFile(context.AUTO_FOLDER_FILE_V2).lastModified, 12000);
   assert.equal(autoMeta.savedAt, 12000);
   assert.equal(autoMeta.level, 18);
   assert.equal(autoMeta.stage, 45);
