@@ -1415,6 +1415,9 @@ function skillRtOpenField(pEnt, sk, fx, id, lv, st, out) {
   }
   keep.push(entry);
   SKILL_RT.fields = keep;
+  // 領域特效：蓋在覆蓋到的格子上，持續時間與領域本身一致（同名重放＝重新開一次）
+  emitSkillVfx(skillVfxSpec(sk, fx, null, [], (out && out.areaCells) || null,
+    { fxKind: 'aura', dur: fDur }));
 }
 
 /* ---- B 組：施放後統一結算（skillRtOnSkillCast 內、擊殺觸發前呼叫）----
@@ -2355,6 +2358,71 @@ function skillRtActiveEnemies(fallback) {
   return (fallback || []).filter(function (e) { return e && e.hp > 0; });
 }
 
+/* ---- 技能特效（新版戰鬥「每個技能與 buff 都要有簡易特效」）----
+   模擬層只負責「發生了什麼」，畫法在 js/vfx.js。特效種類**不逐一手寫**，而是由技能既有的
+   資料推導：範圍決定形狀、系統分類與屬性決定顏色、技能自己的 emoji 當投射物圖案。
+   這樣新增技能不必補特效表，改了傷害範圍特效也會跟著變。
+
+   個別技能要特規時再於 SKILL_VFX_OVERRIDE 覆寫，不必動這裡的推導規則。 */
+var SKILL_VFX_OVERRIDE = {
+  // 多刀類：投射物打散成多發，看起來才像「射出一排飛刀」
+  shadowStrike: { fxKind: 'projectile', count: 3 },
+  swiftCuts: { fxKind: 'slash', count: 3 },
+  // 天降類：即使不是全場技，表現上也是從天而降
+  meteor: { fxKind: 'rain' },
+  holySmite: { fxKind: 'rain' }
+};
+
+function skillVfxColor(sk, fx) {
+  var elem = (typeof skillElemOf === 'function') ? skillElemOf(sk, fx) : null;
+  if (elem && typeof ELEM_INFO !== 'undefined' && ELEM_INFO[elem]) return ELEM_INFO[elem].color;
+  var cat = (sk && sk.cat) || 'phys';
+  if (typeof VFX_CAT_COLORS !== 'undefined' && VFX_CAT_COLORS[cat]) return VFX_CAT_COLORS[cat];
+  return '#ffffff';
+}
+
+/* 由技能資料推導特效原型：
+     沒有傷害段（純增益／治療／護盾）          → selfBuff（我方身上的光暈）
+     全場                                      → rain（天降）
+     一直線（1*N 或 N*1）                      → beam（貫穿）
+     方框（N*M 皆 >1）                         → burst（爆發）
+     單體：物理系 → slash（斬擊）、其餘 → projectile（投射物） */
+function skillVfxKind(sk, fx, shape) {
+  if (!fx || !fx.dmgType) return 'selfBuff';
+  var sp = (typeof bfParseShape === 'function') ? bfParseShape(shape) : { kind: 'single', w: 1, h: 1 };
+  if (sp.kind === 'all') return 'rain';
+  if (sp.kind === 'box') {
+    if (sp.w > 1 && sp.h > 1) return 'burst';
+    return 'beam';
+  }
+  return (sk && sk.cat === 'phys') ? 'slash' : 'projectile';
+}
+
+/* 回傳可直接送上協議的特效事件內容（純資料，不含實體參照）。
+   targetIds 由呼叫端以 enemyEventFloatTarget 解析完成；cells 為範圍落點（非區域類傳 null）。 */
+function skillVfxSpec(sk, fx, shape, targetIds, cells, extra) {
+  var spec = {
+    fxKind: skillVfxKind(sk, fx, shape),
+    glyph: (sk && sk.emoji) || '✨',
+    color: skillVfxColor(sk, fx),
+    targets: targetIds || [],
+    cells: cells || null,
+    dur: 0.5,
+    count: Math.max(1, Math.min(5, (fx && fx.hits) || 1))
+  };
+  var ov = sk && SKILL_VFX_OVERRIDE[sk.id];
+  if (ov) for (var k in ov) spec[k] = ov[k];
+  if (extra) for (var k2 in extra) spec[k2] = extra[k2];
+  if (spec.fxKind === 'rain') spec.dur = 0.75;
+  if (spec.fxKind === 'aura') spec.count = 1;
+  return spec;
+}
+
+/* 送出特效事件；Worker 端由 shim 轉成協議事件，Node 測試環境沒有這支就靜靜略過。 */
+function emitSkillVfx(spec) {
+  if (spec && typeof playCombatVfx === 'function') playCombatVfx(spec);
+}
+
 function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
   var sk = skillDef(id);
   var fx = effectiveFx(id, sk, lv);
@@ -2385,6 +2453,12 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
   if (!(opts && opts.noCastLock)) pEnt.atkCd += SKILL_CAST_LOCK * (1 - st.castSpeed / 100); // 施放硬直
   // areaCells＝本次施放打在地上的那塊區域（領域類效果據此決定之後每跳打哪些格）
   var out = { killed: false, dmg: 0, areaCells: placement.cells };
+  // 特效：施放當下就發（不等結算），因為玩家看到的是「技能放出去了」，
+  // 全部被閃避也一樣要有畫面。目標一律轉成浮字圖層 id，不帶實體參照。
+  emitSkillVfx(skillVfxSpec(sk, fx, (fx && fx.shape) || (sk && sk.shape),
+    targets.map(function (t) { return enemyEventFloatTarget(t, floatSel); }),
+    placement.cells,
+    targets.length ? null : { targets: [playerEventFloatTarget(floatSel)] }));
   var logMsg = sk.emoji + ' 你施放【' + sk.name + ' Lv.' + lv + '】，';
   var parts = [];
   // 5 轉昇華天賦：技能所有效果（傷害/治療/護盾/增益/減益/再生/詛咒/金幣/法力）共用此倍率；融合技=素材平均

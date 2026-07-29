@@ -420,6 +420,11 @@ function handleWorkerUiEvents(events) {
       floatText(event.elId, event.text, event.cls, event.damageValue, null, uiBattlePanelSnapshot());
       return;
     }
+    // 技能／增益特效（協議 v10）：實際畫法在 js/vfx.js，這裡只轉交
+    if (event.kind === 'vfx') {
+      if (typeof playCombatVfx === 'function') playCombatVfx(event);
+      return;
+    }
     if (event.kind === 'loot') {
       // Battle statistics are authoritative Worker state projected by
       // panel('battle'). Replaying recorder calls here would double-count.

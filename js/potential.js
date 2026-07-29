@@ -63,6 +63,16 @@ function castPotentialSkill(pEnt, target, def, floatSel, loadoutKey) {
   pEnt.skillCds[loadoutKey || ('potential:' + def.id)] = potentialActiveCd(def);
   pEnt.skillGcd = SKILL_GLOBAL_COOLDOWN;
   pEnt.atkCd += SKILL_CAST_LOCK * (1 - st.castSpeed / 100); // 施放硬直（與一般技能一致）
+  /* 特效：潛力技不經 castSkill，於此自行送一則。有傷害段（dmgType）的走一般推導，
+     純增益的走 selfBuff；顏色沿用潛力系的專屬色（VFX_CAT_COLORS.potential）。 */
+  if (typeof emitSkillVfx === 'function' && typeof skillVfxSpec === 'function') {
+    var pSk = { id: def.id, name: def.name, emoji: def.emoji, cat: 'potential', tags: def.tags || [] };
+    var pFx = { dmgType: def.dmgType || null };
+    emitSkillVfx(skillVfxSpec(pSk, pFx, null,
+      targets.map(function (t) { return enemyEventFloatTarget(t, floatSel); }),
+      null,
+      targets.length && def.dmgType ? null : { targets: [playerEventFloatTarget(floatSel)] }));
+  }
   var res = firePotentialActive(pEnt, def, targets, floatSel, st);
   // 45 新技能（echo 族）：dmgWindow「窗內玩家全部傷害」——潛力主動技傷害計入快照窗
   //（潛力施放不經 castSkill，於此統一寫入；typeof 守衛防載入順序問題）

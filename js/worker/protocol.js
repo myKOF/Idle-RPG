@@ -11,7 +11,7 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-var WORKER_PROTOCOL_VERSION = 9;
+var WORKER_PROTOCOL_VERSION = 10;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -72,7 +72,19 @@ var EVENT_KINDS = {
      elId 是目標圖層的元素 id（player 事件為 tp-float／tb-float，敵人為 mv-float-N），
      由 util.js 的 playerEventFloatTarget／enemyEventFloatTarget 在 Worker 內解析完成。
      ⚠️ 不帶 ent：主執行緒原本用物件識別比對，複本永遠不相等，請改以 elId 判斷目標。 */
-  FLOAT: 'float'
+  FLOAT: 'float',
+  /* { fxKind, glyph, color, targets, cells, dur, count }  技能／增益特效（v10 新增）。
+     模擬層只描述「發生了什麼」，不碰任何 DOM——實際畫法完全由主執行緒的 js/vfx.js 決定。
+
+     fxKind  特效原型：projectile 投射物／slash 斬擊／burst 爆發／beam 貫穿／
+             rain 天降／aura 領域／selfBuff 我方增益。由 skillVfxSpec() 依技能資料推導。
+             （欄位不能叫 kind——shim 會把事件種類寫進 event.kind，會被蓋掉。）
+     targets 目標圖層 id 陣列（mv-float-N／tb-float），定址方式與 FLOAT 一致——
+             同樣不得帶實體參照，理由見上。
+     cells   區域類特效覆蓋的棋盤格 [{col,row}]，供 aura／rain 定位；非區域類為 null。
+     dur     持續秒數（aura 用實際領域持續時間，其餘為動畫長度）。
+     count   投射物／斬擊段數（僅視覺，與實際命中次數無關，上限由 UI 端夾）。 */
+  VFX: 'vfx'
 };
 
 /* ---- 存檔落地種類（PERSIST.kind）---- */
