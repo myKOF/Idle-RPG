@@ -158,10 +158,13 @@ function getResourceSnapshot() {
 
 // 建立日誌紀錄器
 const actionLogs = [];
+let lastLogTimeHour = 0.0;
 
 function logAction(timeHour, icon, category, title, detail) {
     const res = getResourceSnapshot();
-    const timeStr = formatGameTime(timeHour);
+    const safeTime = Math.max(lastLogTimeHour + 0.0001, timeHour);
+    lastLogTimeHour = safeTime;
+    const timeStr = formatGameTime(safeTime);
     const logLine = `${timeStr} ${icon} [${category.toUpperCase()}] ${title} -- ${detail} | 【頂欄資源: 💰金幣:${fmtNum(res.gold)}, 🧩裝備碎片:${fmtNum(res.scrap)}, ✨魔塵:${fmtNum(res.dust)}, ✡️太古精華:${fmtNum(res.ancientEssence)}, 🌱魔神之種:${fmtNum(res.seeds)}, 📜附魔書:${fmtNum(res.books)}】`;
     actionLogs.push(logLine);
 }

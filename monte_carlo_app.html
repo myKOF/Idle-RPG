@@ -1341,8 +1341,10 @@
         }
 
         logAction(timeHour, category, icon, title, detail) {
+            const lastTime = (this.actionLogs && this.actionLogs.length > 0) ? this.actionLogs[this.actionLogs.length - 1].hour : 0.0;
+            const safeTime = Math.max(lastTime + 0.0001, timeHour);
             this.actionLogs.push({
-                hour: timeHour,
+                hour: safeTime,
                 category: category,
                 icon: icon,
                 title: title,
@@ -1745,7 +1747,7 @@
         const actionInterval = (profile.dailyOnlineHours >= 24) ? 0.25 : 1.0;
 
         let currentTime = 0.0;
-        let nextActionTime = 0.0;
+        let nextActionTime = 0.05;
         let nextSampleTime = 0.0;
         let lastCombatLogTime = 0.001;
         const tickHours = 0.05; // 3 分鐘精細步長
