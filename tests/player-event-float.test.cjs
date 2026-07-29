@@ -135,13 +135,16 @@ test('敵人傷害浮字維持可讀字號且出現範圍更分散', () => {
 test('傷害浮字合併上限依連擊數與攻速計算', () => {
   const helperSource = ui.match(/function enemyDamageFloatMergeLimit\(battleSnapshot\) \{[\s\S]*?\n\}/)[0];
   let stats = { comboHits: 0, aspd: 2 };
+  // 合併目前被使用者暫時關閉（見 ENEMY_DAMAGE_FLOAT_MERGE_ENABLED），
+  // 這裡明確開啟以驗證公式本身沒被改壞；關閉狀態另有一支測試。
   const getLimit = vm.runInNewContext(
     '(function () { ' + helperSource + '; return enemyDamageFloatMergeLimit; })()',
     {
       Math,
       Number,
       isFinite,
-      ENEMY_DAMAGE_FLOAT_MAX_HITS: 20
+      ENEMY_DAMAGE_FLOAT_MAX_HITS: 20,
+      ENEMY_DAMAGE_FLOAT_MERGE_ENABLED: true
     }
   );
 
@@ -151,6 +154,19 @@ test('傷害浮字合併上限依連擊數與攻速計算', () => {
   assert.equal(getLimit({ stats }), 3);
   stats = { comboHits: 100, aspd: 5 };
   assert.equal(getLimit({ stats }), 20);
+});
+
+/* 使用者要求暫時關閉合併，以便觀察實際的多段受擊。
+   這支測試釘住「目前是關的」這個事實——恢復時會失敗，提醒把這段一併改掉。 */
+test('傷害浮字合併目前為關閉狀態（暫時設定）', () => {
+  assert.match(ui, /var ENEMY_DAMAGE_FLOAT_MERGE_ENABLED = false;/);
+  const helperSource = ui.match(/function enemyDamageFloatMergeLimit\(battleSnapshot\) \{[\s\S]*?\n\}/)[0];
+  const getLimit = vm.runInNewContext(
+    '(function () { ' + helperSource + '; return enemyDamageFloatMergeLimit; })()',
+    { Math, Number, isFinite, ENEMY_DAMAGE_FLOAT_MAX_HITS: 20, ENEMY_DAMAGE_FLOAT_MERGE_ENABLED: false }
+  );
+  // 0 = 不合併：合併迴圈的 hits >= limit 恆成立，每一段都會各自飄字
+  assert.equal(getLimit({ stats: { comboHits: 100, aspd: 5 } }), 0);
 });
 
 test('敵方區普攻固定白色、技能固定黃色，爆擊不改變來源顏色', () => {
