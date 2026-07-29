@@ -4,8 +4,10 @@
 放置型遊戲（Idle / Incremental Game）核心數值平衡 - 蒙地卡羅離散事件模擬（DES）腳本
 
 功能說明：
-1. 解開飾品詞條數不可能重疊的邏輯矛盾，禁止洗煉降級太古。
-2. 極限玩家 500h 穩健達成全身 78 條滿太古目標。
+1. 100% 對齊遊戲官方權威 js/data.js: 創世 (R7) 與神鑄創世 (R8) 擁有 7 條詞條。
+2. 100% 對齊遊戲官方權威 js/data.js (ANCIENT_COUNT_WEIGHTS) & js/item.js:
+   太古詞條於裝備產出/掉落時決定，位置永久固定，洗煉絕不改變太古條數。
+3. 裝備替換策略：1. 品質最高優先 > 2. 品質相同時太古詞條數越多越優先。
 """
 
 import sys
@@ -21,6 +23,9 @@ OFFICIAL_SLOTS = [
     'belt', 'gloves', 'wrist', 'legs', 'boots', 
     'ring', 'ring2', 'amulet'
 ]
+
+# 對齊 js/data.js RARITIES 表
+RARITY_AFFIX_COUNTS = { 1: 2, 2: 3, 3: 4, 4: 5, 5: 5, 6: 6, 7: 7, 8: 7 }
 
 def safe_pow(base, exp, max_val=1e300):
     try:
@@ -94,8 +99,8 @@ PLAYER_PROFILES = {
     }
 }
 
-def roll_affixes_for_rarity(rarity, ancient_target_ratio=0.0):
-    slots_count = min(6, rarity)
+def generate_dropped_equipment(rarity, ancient_target_ratio=0.0):
+    slots_count = RARITY_AFFIX_COUNTS.get(rarity, min(7, rarity))
     affixes = []
     possible_keys = ['patkPct', 'critRate', 'critDmg', 'aspdPct', 'xpBonus', 'gemEff', 'itemFind', 'pdefPct', 'hpPct']
     
@@ -111,10 +116,10 @@ def roll_affixes_for_rarity(rarity, ancient_target_ratio=0.0):
         else:
             val = (0.20 + random.random() * 0.15) if is_ancient else (0.05 + random.random() * 0.10)
         affixes.append({"key": k, "val": round(val, 3), "ancient": is_ancient})
-    return affixes
+    return {"level": 0, "rarity": rarity, "is_godforged": (rarity == 8), "affixes": affixes}
 
 def count_ancient_affixes(affixes):
-    return sum(1 for a in affixes if a.get("ancient"))
+    return sum(1 for a in affixes if a.get("ancient")) if affixes else 0
 
 class GameConfig:
     BASE_EXP_POWER = 2.0
@@ -142,7 +147,7 @@ class Character:
         
         self.equipments = {}
         for s in OFFICIAL_SLOTS:
-            self.equipments[s] = {"level": 0, "rarity": 1, "is_godforged": False, "affixes": roll_affixes_for_rarity(1)}
+            self.equipments[s] = generate_dropped_equipment(1, 0)
         
         self.gold = 0
         self.upgrade_stones = 0
@@ -292,21 +297,24 @@ class Character:
 
         highest_rarity = 6 if r6_count > 0 else (5 if r5_count > 0 else (4 if r4_count > 0 else (3 if r3_count > 0 else 2)))
         target_slot = random.choice(OFFICIAL_SLOTS)
-        eq = self.equipments[target_slot]
+        old_eq = self.equipments[target_slot]
 
-        current_ancient = count_ancient_affixes(eq["affixes"])
-        should_replace = (highest_rarity > eq["rarity"])
-        if highest_rarity == eq["rarity"] and current_ancient < math.floor(eq["rarity"] * self.profile["min_ancient_affix_ratio"]):
+        # 掉落當下生成新裝備
+        new_eq = generate_dropped_equipment(highest_rarity, self.profile["min_ancient_affix_ratio"])
+
+        old_anc = count_ancient_affixes(old_eq["affixes"])
+        new_anc = count_ancient_affixes(new_eq["affixes"])
+
+        should_replace = False
+        if new_eq["rarity"] > old_eq["rarity"]:
             should_replace = True
-        if self.profile["min_ancient_affix_ratio"] >= 0.8 and current_ancient >= math.floor(eq["rarity"] * 0.8) and highest_rarity == eq["rarity"]:
-            should_replace = False
+        elif new_eq["rarity"] == old_eq["rarity"] and new_anc > old_anc:
+            should_replace = True
 
         if should_replace:
-            new_affixes = roll_affixes_for_rarity(highest_rarity, self.profile["min_ancient_affix_ratio"])
-            eq["rarity"] = highest_rarity
-            eq["is_godforged"] = False
-            eq["affixes"] = new_affixes
-            self.log_action(current_time, 'equip', '📦', f"野外殺敵掉落高品質【{target_slot}】裝備！", f"裝備成功升級為 Rarity {highest_rarity}，帶有 {len(new_affixes)} 條屬性詞條。")
+            new_eq["level"] = old_eq["level"]
+            self.equipments[target_slot] = new_eq
+            self.log_action(current_time, 'equip', '📦', f"野外掉落更佳【{target_slot}】裝備！", f"換上 Rarity {new_eq['rarity']} 裝備 (帶 {len(new_eq['affixes'])} 條詞條，含 {new_anc} 條固定太古)。")
 
     def challenge_tower_boss(self, current_time):
         if self.tower_floor >= GameConfig.MAX_TOWER_FLOOR: return
@@ -350,15 +358,14 @@ class Character:
 
         self.challenge_tower_boss(current_time)
 
-        # 1. 洗詞條 AI (只接受太古數量上升或相等，絕不降級)
+        # 1. 洗詞條 AI：太古條數與位置於產出時永久固定！洗煉僅洗屬性 key 與 val
         for slot, eq in self.equipments.items():
             reroll_cost_gold = int(200 * math.pow(eq["rarity"], 1.3))
             reroll_cost_stones = int(3 * eq["rarity"])
 
-            current_ancient_count = count_ancient_affixes(eq["affixes"])
-            target_ancient_count = int(len(eq["affixes"]) * self.profile["min_ancient_affix_ratio"])
-
-            needs_reroll = (current_ancient_count < target_ancient_count)
+            loot_count = sum(1 for a in eq["affixes"] if a["key"] == 'itemFind')
+            req_loot = self.profile.get("required_loot_affixes", 0)
+            needs_reroll = (req_loot > 0 and loot_count < req_loot and slot in ['amulet', 'ring', 'ring2'])
 
             reroll_attempts = 0
             while needs_reroll and self.gold >= reroll_cost_gold and self.upgrade_stones >= reroll_cost_stones:
@@ -367,20 +374,22 @@ class Character:
                 self.total_gold_spent += reroll_cost_gold
                 self.total_stones_spent += reroll_cost_stones
                 
-                candidate_affixes = roll_affixes_for_rarity(eq["rarity"], self.profile["min_ancient_affix_ratio"])
-                candidate_ancient = count_ancient_affixes(candidate_affixes)
-
-                if candidate_ancient >= current_ancient_count:
-                    eq["affixes"] = candidate_affixes
-                    current_ancient_count = candidate_ancient
+                possible_keys = ['patkPct', 'critRate', 'critDmg', 'aspdPct', 'xpBonus', 'gemEff', 'itemFind', 'pdefPct', 'hpPct']
+                for aff in eq["affixes"]:
+                    aff["key"] = random.choice(possible_keys)
+                    if aff["key"] == 'itemFind':
+                        aff["val"] = round((0.25 + random.random() * 0.20) if aff["ancient"] else (0.10 + random.random() * 0.15), 3)
+                    else:
+                        aff["val"] = round((0.20 + random.random() * 0.15) if aff["ancient"] else (0.05 + random.random() * 0.10), 3)
 
                 self.total_affix_rerolls += 1
                 reroll_attempts += 1
-                needs_reroll = (current_ancient_count < target_ancient_count)
+                new_loot_count = sum(1 for a in eq["affixes"] if a["key"] == 'itemFind')
+                needs_reroll = (new_loot_count < req_loot)
 
             if reroll_attempts > 0:
                 final_anc = count_ancient_affixes(eq["affixes"])
-                self.log_action(current_time, 'equip', '🎲', f"進行【{slot}】裝備洗詞條 ({reroll_attempts} 次)", f"洗出 {len(eq['affixes'])} 條新詞條 (含 {final_anc} 條太古詞條)，消耗 {format_game_number(reroll_cost_gold * reroll_attempts)} 金幣。")
+                self.log_action(current_time, 'equip', '🎲', f"進行【{slot}】裝備洗詞條 ({reroll_attempts} 次)", f"保持 {final_anc} 條太古狀態不變，重骰出 {len(eq['affixes'])} 條新屬性。")
 
         # 2. 裝備強化 AI (全 13 欄位)
         for slot, eq in self.equipments.items():
@@ -414,7 +423,7 @@ class Character:
             if enhance_attempts > 0:
                 self.log_action(current_time, 'enhance', '🔨', f"強化【${slot}】裝備 (嘗試 {enhance_attempts} 次)", f"成功升級 {enhance_successes} 次，目前強化等級提升至 +{eq['level']}。")
 
-        # 3. 神鑄鍛造 (成功率 45%)
+        # 3. 神鑄鍛造 (成功率 45%) -> 解鎖 R8 神鑄創世 (7 詞條)
         if self.reincarnation >= 1 and self.stage > 50:
             for slot, eq in self.equipments.items():
                 if not eq["is_godforged"] and eq["rarity"] >= 5 and self.gold >= 5000 and self.demon_seeds >= 3:
@@ -423,8 +432,9 @@ class Character:
                     self.total_godforge_attempts += 1
                     if random.random() < 0.45:
                         eq["is_godforged"] = True
+                        eq["rarity"] = 8
                         self.obtained_godforge += 1
-                        self.log_action(current_time, 'godforge', '👑', f"部位【{slot}】神鑄創世成功！", "成功花費 5000 金幣 3 魔神之種，裝備解鎖創世神鑄倍率。")
+                        self.log_action(current_time, 'godforge', '👑', f"部位【{slot}】神鑄創世成功！", "成功花費 5000 金幣 3 魔神之種，解鎖神鑄創世 R8 (7 詞條)。")
                     else:
                         self.log_action(current_time, 'godforge', '💥', f"部位【{slot}】神鑄鍛造失敗", "消耗 5000 金幣 3 魔神之種 (成功率 45%)。")
 
@@ -453,7 +463,7 @@ class Character:
         return total_score / len(self.equipments)
 
     def get_ancient_affix_count(self):
-        return sum(sum(1 for a in eq["affixes"] if a.get("ancient")) for eq in self.equipments.values())
+        return sum(count_ancient_affixes(eq["affixes"]) for eq in self.equipments.values())
 
     def get_godforged_count(self):
         return sum(1 for eq in self.equipments.values() if eq["is_godforged"])
@@ -557,7 +567,7 @@ class SingleRunSimulation:
                     "reincarnation": self.char.reincarnation,
                     "tower_floor": self.char.tower_floor,
                     "total_kills": int(self.char.total_kills),
-                    "dps": currentStats["dps"],
+                    "dps": current_stats["dps"],
                     "equip_score": round(self.char.average_equipment_quality_score(), 1),
                     "ancient_affixes": self.char.get_ancient_affix_count(),
                     "godforge_count": self.char.get_godforged_count(),
