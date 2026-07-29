@@ -812,7 +812,7 @@
         EXTREME: {
             name: "👑 極限玩家",
             dailyOnlineHours: 24.0,
-            targetEnhance: 60, // 依製作人指示：調降為+60高CP值強化，釋放大量金幣與石料瘋狂洗詞條
+            targetEnhance: 60,
             rerollThreshold: 1.0,
             requiredLootAffixes: 3,
             xpAffixCount: 2,
@@ -916,9 +916,9 @@
             this.gold = 0;
             this.upgrade_stones = 0;
             this.demon_seeds = 0;
-            this.dust = 0; // 魔塵庫存
+            this.dust = 0;
             this.gems = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0 };
-            this.genesisGearPool = 0; // 背包累積的創世裝備數量 (用於法陣6合1)
+            this.genesisGearPool = 0;
 
             this.skill_points = 2;
             this.total_skill_levels = 2;
@@ -1041,7 +1041,6 @@
             const stats = this.calculateStats();
             const lootMult = stats.itemFindBonus;
 
-            // 1. 高頻真實寶石掉落 (野外小怪掉落 Lv.1~Lv.3 寶石，每殺 1 隻 20% 掉寶率)
             const droppedGemsCount = rollDropCount(killsCount * 0.20 * lootMult);
             if (droppedGemsCount > 0) {
                 const g1 = rollDropCount(droppedGemsCount * 0.60);
@@ -1052,7 +1051,6 @@
                 this.gems[3] = (this.gems[3] || 0) + g3;
             }
 
-            // 2. 真實野外裝備掉率 (受 掉寶率詞條堆疊 與 熔爐拆解爆落 影響)
             let r6Chance = (this.reincarnation >= 1 || this.stage > 150) ? 0.0025 : 0.0005;
             let r5Chance = (this.stage > 80) ? 0.08 : 0.02;
             let r4Chance = (this.stage > 30) ? 0.18 : 0.05;
@@ -1065,8 +1063,9 @@
             const r3Count = rollDropCount(killsCount * r3Chance * lootMult);
             const r12Count = rollDropCount(killsCount * r12Chance * lootMult);
 
-            this.obtained_genesis += rollDropCount(r6Count * 0.15); // 創世 (R7) 由高級掉落與神話合成
-            this.genesisGearPool += rollDropCount(r6Count * 0.15);
+            const genDrop = rollDropCount(r6Count * 0.15);
+            this.obtained_genesis += genDrop;
+            this.genesisGearPool += genDrop;
             this.obtained_mythic += r6Count;
             this.obtained_legendary += r5Count;
             this.obtained_epic += r3Count + r4Count;
@@ -1120,7 +1119,6 @@
                 this.upgrade_stones += targetFloor * 80;
                 this.demon_seeds += Math.floor(targetFloor / 10) + 1;
 
-                // 高塔 BOSS 爆落大批高階寶石 (Lv.2 ~ Lv.5)
                 this.gems[2] = (this.gems[2] || 0) + rollDropCount(targetFloor * 0.5);
                 this.gems[3] = (this.gems[3] || 0) + rollDropCount(targetFloor * 0.3);
                 this.gems[4] = (this.gems[4] || 0) + rollDropCount(targetFloor * 0.1);
@@ -1150,55 +1148,43 @@
 
             this.challengeTowerBoss(currentTime);
 
-            // 1. 寶石大量合成與魔塵 (Dust) 產生機制 (5級寶石大量合成獲得魔塵，合成失敗固定 +1 魔塵)
-            let hasSynthesized = true;
+            // 1. 高效二項分佈/期望值 寶石批量合成 (避免 CPU 陷入無窮 while 循環)
             let synthSummary = [];
-            while (hasSynthesized) {
-                hasSynthesized = false;
-                for (let lvl = 1; lvl < 10; lvl++) {
-                    if (this.gems[lvl] >= 3) {
-                        const count = Math.floor(this.gems[lvl] / 3);
-                        this.gems[lvl] -= count * 3;
-                        
-                        // 寶石合成成功率 (Lv.1~Lv.4 100%, Lv.5+ 有概率失敗並爆出魔塵)
-                        let successRate = (lvl <= 4) ? 1.0 : (lvl === 5 ? 0.70 : 0.50);
-                        let successes = 0;
-                        let failures = 0;
-                        for (let c = 0; c < count; c++) {
-                            if (Math.random() < successRate) {
-                                successes++;
-                            } else {
-                                failures++;
-                            }
-                        }
+            for (let lvl = 1; lvl < 10; lvl++) {
+                if (this.gems[lvl] >= 3) {
+                    const count = Math.floor(this.gems[lvl] / 3);
+                    this.gems[lvl] -= count * 3;
 
-                        this.gems[lvl + 1] = (this.gems[lvl + 1] || 0) + successes;
-                        this.dust += failures; // 寶石合成失敗 100% 積攢 1 個魔塵！
-                        this.total_gems_spent += count * 3;
-                        this.total_gem_syntheses += count;
-                        hasSynthesized = true;
-                        if (count >= 5) synthSummary.push(`合成 ${count*3} 顆 Lv.${lvl} 寶石 -> 成功 ${successes} 顆, 失敗產生 ${failures} 魔塵`);
-                    }
+                    let successRate = (lvl <= 4) ? 1.0 : (lvl === 5 ? 0.70 : 0.50);
+                    let successes = Math.round(count * successRate);
+                    let failures = count - successes;
+
+                    this.gems[lvl + 1] = (this.gems[lvl + 1] || 0) + successes;
+                    this.dust += failures;
+                    this.total_gems_spent += count * 3;
+                    this.total_gem_syntheses += count;
+
+                    if (count >= 5) synthSummary.push(`合成 ${count*3} 顆 Lv.${lvl} 寶石 -> 成功 ${successes} 顆, 失敗產生 ${failures} 魔塵`);
                 }
             }
             if (synthSummary.length > 0) {
-                this.logAction(currentTime, 'gem', '💎', `進行 5 級寶石大量合成與魔塵積攢`, synthSummary.slice(0, 3).join('； '));
+                this.logAction(currentTime, 'gem', '💎', `進行寶石批量合成與魔塵積攢`, synthSummary.slice(0, 3).join('； '));
             }
 
-            // 2. 實裝「神鑄法陣 6 合 1 (Divine Forge System)」：6 創世裝備 + 6 魔塵 (+30% 成功率) -> 100% 必定解鎖【神鑄創世】(R8)
-            while (this.genesisGearPool >= 6 && this.gold >= 5000) {
+            // 2. 限制單次管理頻率的神鑄法陣 6 合 1 (最多 5 次/次)
+            let forgeAttempts = 0;
+            while (this.genesisGearPool >= 6 && this.gold >= 5000 && forgeAttempts < 5) {
+                forgeAttempts++;
                 this.genesisGearPool -= 6;
                 this.gold -= 5000;
                 this.total_godforge_attempts++;
-                
-                // 放滿 6 個魔塵 (+30% 成功率加成，達到 100% 必過防爆)
+
                 let usedDust = Math.min(6, this.dust);
                 this.dust -= usedDust;
-                let forgeSuccessChance = 0.70 + (usedDust * 0.05); // 放滿 6 魔塵 100% 成功
+                let forgeSuccessChance = 0.70 + (usedDust * 0.05);
 
                 if (Math.random() < forgeSuccessChance) {
                     this.obtained_godforge++;
-                    // 隨機將全身一個部位升階為神鑄創世 R8 (7 詞條)
                     const slotToUpgrade = OFFICIAL_SLOTS[Math.floor(Math.random() * OFFICIAL_SLOTS.length)];
                     const oldSlotEq = this.equipments[slotToUpgrade];
                     if (!oldSlotEq.isGodforged) {
@@ -1208,11 +1194,11 @@
                         this.logAction(currentTime, 'godforge', '👑', `神鑄六芒星法陣 6 合 1 成功！(消耗 ${usedDust} 魔塵)`, `將【${slotToUpgrade}】裝備解鎖升階為【神鑄創世 R8】(7 滿太古詞條)。`);
                     }
                 } else {
-                    this.dust += 1; // 法陣失敗固定給予 1 魔塵
+                    this.dust += 1;
                 }
             }
 
-            // 3. 高CP值 +60 強化與狂洗詞條 AI (將 +70 節省下來的天量金幣與石料全部投入狂洗詞條，洗數萬次)
+            // 3. 高CP值 +60 強化
             for (let slot in this.equipments) {
                 let eq = this.equipments[slot];
                 if (eq.level >= this.profile.targetEnhance) continue;
@@ -1223,7 +1209,7 @@
                 let successRate = (eq.level >= 50) ? 0.40 : 0.75;
                 let enhanceAttempts = 0;
 
-                while (eq.level < this.profile.targetEnhance && this.gold >= costGold && this.upgrade_stones >= costStones) {
+                while (eq.level < this.profile.targetEnhance && this.gold >= costGold && this.upgrade_stones >= costStones && enhanceAttempts < 20) {
                     this.gold -= costGold;
                     this.upgrade_stones -= costStones;
                     this.total_gold_spent += costGold;
@@ -1238,13 +1224,13 @@
                 }
             }
 
-            // 4. 剩餘天量金幣與石料用於瘋狂洗詞條 (達成數萬次洗煉與追求極限滿數值)
+            // 4. 洗詞條 (單次 Tick 限制 50 次)
             for (let slot in this.equipments) {
                 const eq = this.equipments[slot];
                 const rerollCostGold = Math.floor(150 * Math.pow(eq.rarity, 1.2));
                 const rerollCostStones = Math.floor(2 * eq.rarity);
 
-                let rerollLimit = (this.profile.dailyOnlineHours >= 24) ? 800 : 150;
+                let rerollLimit = (this.profile.dailyOnlineHours >= 24) ? 50 : 15;
                 let rerollAttemptsThisBatch = 0;
 
                 while (rerollAttemptsThisBatch < rerollLimit && this.gold >= rerollCostGold && this.upgrade_stones >= rerollCostStones) {
@@ -1253,7 +1239,6 @@
                     this.total_gold_spent += rerollCostGold;
                     this.total_stones_spent += rerollCostStones;
 
-                    // 保持太古標記不變，狂洗屬性 key 與 val
                     const possibleKeys = ['patkPct', 'critRate', 'critDmg', 'aspdPct', 'xpBonus', 'gemEff', 'itemFind', 'pdefPct', 'hpPct'];
                     eq.affixes.forEach(aff => {
                         aff.key = possibleKeys[Math.floor(Math.random() * possibleKeys.length)];
@@ -1268,9 +1253,9 @@
                     rerollAttemptsThisBatch++;
                 }
 
-                if (rerollAttemptsThisBatch > 50) {
+                if (rerollAttemptsThisBatch > 30) {
                     const finalAnc = countAncientAffixes(eq.affixes);
-                    this.logAction(currentTime, 'equip', '🎲', `進行【${slot}】極速狂洗詞條 (${rerollAttemptsThisBatch} 次)`, `保持 ${finalAnc} 條太古狀態不變，追求滿極限屬性。`);
+                    this.logAction(currentTime, 'equip', '🎲', `進行【${slot}】狂洗詞條 (${rerollAttemptsThisBatch} 次)`, `保持 ${finalAnc} 條太古狀態不變，追求滿極限屬性。`);
                 }
             }
         }
@@ -1303,13 +1288,13 @@
     function runSingleSimulation(runId, totalHours, profile) {
         const char = new Character(profile);
         const onlineRatio = Math.min(1.0, profile.dailyOnlineHours / 24.0);
-        const actionInterval = (profile.dailyOnlineHours >= 24) ? 0.083 : (profile.dailyOnlineHours >= 8 ? 0.25 : 1.0);
+        const actionInterval = (profile.dailyOnlineHours >= 24) ? 0.25 : 1.0;
 
         let currentTime = 0.0;
         let nextActionTime = 0.0;
         let nextSampleTime = 0.0;
         let lastCombatLogTime = -1.0;
-        const tickHours = 0.01;
+        const tickHours = 0.05; // 適度微調 tick 時間為 0.05 小時，確保計算超極速
         const history = [];
 
         while (currentTime < totalHours) {
@@ -1368,7 +1353,7 @@
                     'combat', 
                     '⚔️', 
                     `一般戰鬥 (${statusText}) Stage ${Math.floor(char.stage)} 關`, 
-                    `目前 DPS: ${formatGameNumber(stats.dps)} | 擊殺速度: ${baseKillSpeed.toFixed(2)} 隻/秒 (週期 ${(1.0/baseKillSpeed).toFixed(1)}s/隻) | 本小時擊殺: ${formatGameNumber(killedPerHour)} 隻 | 累積總殺敵數: ${formatGameNumber(char.totalKills)}`
+                    `目前 DPS: ${formatGameNumber(stats.dps)} | 擊殺速度: ${baseKillSpeed.toFixed(2)} 隻/秒 | 本小時擊殺: ${formatGameNumber(killedPerHour)} 隻 | 累積總殺敵數: ${formatGameNumber(char.totalKills)}`
                 );
             }
 
@@ -1452,13 +1437,13 @@
                 topRun = runRes;
             }
 
-            if (i % 2 === 0 || i === runs) {
-                const pct = Math.round((i / runs) * 100);
-                document.getElementById('progressPct').innerText = pct + '%';
-                document.getElementById('progressBarFill').style.width = pct + '%';
-                document.getElementById('progressStatus').innerText = `正在為【${activeProfile.name}】進行神鑄法陣6合1與魔塵防爆模擬 (${i}/${runs})...`;
-                await new Promise(r => setTimeout(r, 5));
-            }
+            const pct = Math.round((i / runs) * 100);
+            document.getElementById('progressPct').innerText = pct + '%';
+            document.getElementById('progressBarFill').style.width = pct + '%';
+            document.getElementById('progressStatus').innerText = `正在為【${activeProfile.name}】進行極速模擬 (${i}/${runs})...`;
+
+            // 讓出 CPU 主執行緒，防範瀏覽器畫面凍結
+            await new Promise(r => setTimeout(r, 0));
         }
 
         const timeStepsCount = Math.min(...allHistories.map(h => h.length));
