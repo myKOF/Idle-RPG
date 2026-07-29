@@ -197,6 +197,50 @@ Antigravity
 
 每個 Commit 僅包含一個明確目的，避免混合多項不相關的修改。
 
+## 提交者前綴（必要）
+
+Commit 標題一律以提交者前綴開頭，格式為：
+
+```
+[提交者] 類型: 說明
+```
+
+提交者為以下三者之一：
+
+- `[Claude]`
+- `[Codex]`
+- `[Antigravity]`
+
+例如：
+
+```
+[Claude] fix: 修正離線收益重複計算
+[Codex] feat: 新增背包關鍵字篩選
+[Antigravity] test: 補上存檔隔離的回歸測試
+```
+
+Merge commit 同樣要加。前綴是**實際執行合併的一方**，不是被合併分支的擁有者：
+
+```
+[Claude] merge: integrate ai/codex
+```
+
+### 為什麼需要
+
+本專案所有 commit 的 git author 都是同一個帳號（由使用者代為提交），單看 log 分不出某次
+改動出自哪個 AI。日後回溯「這段是誰寫的、當時基於什麼判斷」時，前綴是唯一線索。
+
+有了前綴也可以直接篩選：
+
+```
+git log --grep "^\[Claude\]"
+```
+
+### 適用範圍
+
+- 三個 AI 的所有 commit 一律加，包含 merge、docs、chore。
+- 使用者本人直接提交時不受此規範限制。
+
 ## Commit 類型
 
 使用以下英文前綴：
@@ -215,12 +259,12 @@ Antigravity
 例如：
 
 ```
-feat: 新增工人升級系統
-fix: 修正離線收益重複計算
-refactor: 重構 Worker 狀態同步流程
-docs: 更新 Git 工作流程
-test: 新增 Web Worker 壓力測試
-chore: 更新開發工具設定
+[Claude] feat: 新增工人升級系統
+[Codex] fix: 修正離線收益重複計算
+[Claude] refactor: 重構 Worker 狀態同步流程
+[Antigravity] docs: 更新 Git 工作流程
+[Antigravity] test: 新增 Web Worker 壓力測試
+[Codex] chore: 更新開發工具設定
 ```
 
 保留英文的常用術語包含但不限於：
