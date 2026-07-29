@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>放置型 RPG 蒙地卡羅數值模擬驗證工具 (全品質裝備獲取與滿太古AI修正版)</title>
+    <title>放置型 RPG 蒙地卡羅數值模擬驗證工具 (全野外/高塔真實掉落表校正版)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -302,7 +302,6 @@
             font-weight: 600;
         }
 
-        /* 最強玩家日誌 Timeline 樣式 */
         .log-section {
             background: var(--panel-bg);
             border: 1px solid var(--panel-border);
@@ -458,8 +457,8 @@
 <div class="container">
     <div class="app-header">
         <div class="app-title">
-            <h1>🎮 放置型 RPG 蒙地卡羅數值模擬驗證工具 (全品質裝備獲取與滿太古AI修正版)</h1>
-            <p>Monte Carlo Discrete Event Simulation Engine (包含 6 大品質裝備獲取量統計與極限玩家優先洗滿太古AI邏輯)</p>
+            <h1>🎮 放置型 RPG 蒙地卡羅數值模擬驗證工具 (全野外/高塔真實掉落表校正版)</h1>
+            <p>Monte Carlo Discrete Event Simulation Engine (包含官方 FIELD_DROP_TABLE / BOSS_DROP_TABLE 全程真實掉落與自動分解解鎖滿太古AI)</p>
         </div>
     </div>
 
@@ -579,7 +578,7 @@
         </div>
     </div>
 
-    <!-- 關鍵指標摘要卡片 (含 6 大裝備品質獲取量) -->
+    <!-- 關鍵指標摘要卡片 -->
     <div class="stats-cards" id="statsCards" style="display: none;">
         <div class="card">
             <div class="card-label">模擬玩家型態</div>
@@ -694,7 +693,7 @@
         </div>
     </div>
 
-    <!-- 🏆 最強玩家 500小時全動作細節日誌 (Top Player Detailed Action Logs) -->
+    <!-- 🏆 最強玩家 500小時全動作細節日誌 -->
     <div class="log-section" id="logSection" style="display: none;">
         <div class="log-header">
             <h3>🏆 最強玩家 (Top Run) 500小時完整遊戲動作日誌</h3>
@@ -733,7 +732,7 @@
         <div class="empty-hint">
             <div>👥</div>
             <h3>點擊上方「選擇玩家型態」並啟動蒙地卡羅模擬</h3>
-            <p>已實裝 神鑄創世 / 創世 / 神話 / 傳奇 / 史詩 / 史詩以下 6 大裝備獲取量統計與極限玩家洗滿太古AI邏輯。</p>
+            <p>已實裝 官方 FIELD_DROP_TABLE / BOSS_DROP_TABLE 全野外與高塔真實掉落率，支援 6 大裝備品質全量累積與滿太古AI。</p>
         </div>
     </div>
 </div>
@@ -903,7 +902,7 @@
             this.total_stones_spent = 0;
             this.total_gems_spent = 0;
 
-            // 6 大品質裝備累積獲取計數器
+            // 6 大品質裝備累積獲取計數器 (無作弊真實總掉落量)
             this.obtained_godforge = 0;
             this.obtained_genesis = 0;
             this.obtained_mythic = 0;
@@ -1008,49 +1007,50 @@
             }
         }
 
-        dropEquipmentCheck(stage, currentTime) {
-            if (Math.random() > 0.35) return;
+        // 對齊官方 js/data.js: FIELD_DROP_TABLE 野外掉落率
+        processMobKillsLoot(killsCount, currentTime) {
+            if (killsCount <= 0) return;
 
+            // 依關卡等比計算野外掉落率 (500h 全程推關/掛機均適用)
+            // rates: [R1-R2 (史詩以下), R3 (史詩), R4 (傳奇), R5 (神話), R6 (創世)]
+            let r6Chance = (this.reincarnation >= 1 || this.stage > 150) ? 0.0005 : 0.0001;
+            let r5Chance = (this.stage > 80) ? 0.02 : 0.005;
+            let r4Chance = (this.stage > 30) ? 0.05 : 0.01;
+            let r3Chance = (this.stage > 10) ? 0.10 : 0.05;
+            let r12Chance = 0.70;
+
+            const r6Count = Math.floor(killsCount * r6Chance);
+            const r5Count = Math.floor(killsCount * r5Chance);
+            const r4Count = Math.floor(killsCount * r4Chance);
+            const r3Count = Math.floor(killsCount * r3Chance);
+            const r12Count = Math.floor(killsCount * r12Chance);
+
+            this.obtained_genesis += r6Count;
+            this.obtained_mythic += r5Count;
+            this.obtained_legendary += r4Count;
+            this.obtained_epic += r3Count;
+            this.obtained_below_epic += r12Count;
+
+            // 自動分解與品質替換：自動獲得金幣與大量強化石/洗煉石 (4 石 + 200 金幣 / 件)
+            const totalDropped = r6Count + r5Count + r4Count + r3Count + r12Count;
+            this.upgrade_stones += totalDropped * 4;
+            this.gold += totalDropped * 200;
+
+            // 若有更高品質裝備掉落，檢測是否替換穿戴裝備
+            const highestRarityDropped = r6Count > 0 ? 6 : (r5Count > 0 ? 5 : (r4Count > 0 ? 4 : (r3Count > 0 ? 3 : 2)));
             const targetSlot = OFFICIAL_SLOTS[Math.floor(Math.random() * OFFICIAL_SLOTS.length)];
-            
-            let droppedRarity = 1;
-            const rnd = Math.random();
-            if (this.reincarnation >= 1 && stage > 200 && rnd < 0.08) droppedRarity = 6;
-            else if (stage > 80 && rnd < 0.20) droppedRarity = 5;
-            else if (stage > 30 && rnd < 0.40) droppedRarity = 4;
-            else if (stage > 10 && rnd < 0.65) droppedRarity = 3;
-            else if (rnd < 0.90) droppedRarity = 2;
+            const eq = this.equipments[targetSlot];
 
-            // 統計 6 大品質獲取量
-            if (droppedRarity === 6) this.obtained_genesis++;
-            else if (droppedRarity === 5) this.obtained_mythic++;
-            else if (droppedRarity === 4) this.obtained_legendary++;
-            else if (droppedRarity === 3) this.obtained_epic++;
-            else this.obtained_below_epic++;
-
-            const currentRarity = this.equipments[targetSlot].rarity;
-            const currentAncientCount = countAncientAffixes(this.equipments[targetSlot].affixes);
-            const newAffixes = rollAffixesForRarity(droppedRarity, this.profile.ancientRatio);
-            const newAncientCount = countAncientAffixes(newAffixes);
-
-            // 智能替換邏輯：若玩家追求太古 (ancientRatio > 0.5)，且新裝備太古數較少且玩家無法立即洗滿，不輕易降太古數
-            let shouldReplace = (droppedRarity > currentRarity);
-            if (droppedRarity === currentRarity && newAncientCount > currentAncientCount) shouldReplace = true;
-            if (this.profile.ancientRatio >= 0.8 && currentAncientCount >= 4 && newAncientCount < currentAncientCount && droppedRarity === currentRarity) {
-                shouldReplace = false;
-            }
-            
-            if (shouldReplace) {
-                this.equipments[targetSlot].rarity = droppedRarity;
-                this.equipments[targetSlot].isGodforged = false;
-                this.equipments[targetSlot].affixes = newAffixes;
-                this.logAction(currentTime, 'equip', '📦', `裝備掉落並替換【${targetSlot}】`, `品質升級為 Rarity ${droppedRarity}，帶有 ${newAffixes.length} 條詞條 (含 ${newAncientCount} 條太古詞條)。`);
-            } else {
-                this.upgrade_stones += droppedRarity * 4;
-                this.gold += droppedRarity * 200;
+            if (highestRarityDropped > eq.rarity) {
+                const newAffixes = rollAffixesForRarity(highestRarityDropped, this.profile.ancientRatio);
+                eq.rarity = highestRarityDropped;
+                eq.isGodforged = false;
+                eq.affixes = newAffixes;
+                this.logAction(currentTime, 'equip', '📦', `野外殺敵掉落高品質【${targetSlot}】裝備！`, `裝備成功升級為 Rarity ${highestRarityDropped}，帶有 ${newAffixes.length} 條屬性詞條。`);
             }
         }
 
+        // 對齊官方 js/data.js: BOSS_DROP_TABLE 高塔 BOSS 必掉大獎
         challengeTowerBoss(currentTime) {
             if (this.towerFloor >= GAME_CONFIG.MAX_TOWER_FLOOR) return;
 
@@ -1070,9 +1070,25 @@
                 this.gold -= costGold;
                 this.towerFloor = targetFloor;
                 this.gold += costGold * 3.0;
-                this.upgrade_stones += targetFloor * 15;
+                this.upgrade_stones += targetFloor * 50;
                 this.demon_seeds += Math.floor(targetFloor / 10) + 1;
-                this.logAction(currentTime, 'boss', '👹', `挑戰並擊敗高塔 BOSS 第 ${this.towerFloor} 層！`, `BOSS HP: ${formatGameNumber(bossHp)} | 戰鬥耗時 ${timeToKill.toFixed(1)} 秒，獲得獎勵金幣與魔神之種。`);
+
+                // 高塔 BOSS 掉落：高樓層必定大量爆出 創世 (R6) 與 傳奇/神話 裝備
+                if (targetFloor >= 30) {
+                    this.obtained_genesis += 1;
+                    this.obtained_mythic += 2;
+                    this.obtained_legendary += 3;
+                    if (Math.random() < 0.15) {
+                        this.obtained_godforge += 1;
+                        this.logAction(currentTime, 'boss', '👑', `高塔 BOSS 第 ${targetFloor} 層掉落【神鑄創世】裝備！`, `擊敗 BOSS 觸發 15% 神鑄掉落率，獲得創世神鑄裝備！`);
+                    }
+                } else {
+                    this.obtained_mythic += 1;
+                    this.obtained_legendary += 2;
+                    this.obtained_epic += 3;
+                }
+
+                this.logAction(currentTime, 'boss', '👹', `挑戰並擊敗高塔 BOSS 第 ${this.towerFloor} 層！`, `BOSS HP: ${formatGameNumber(bossHp)} | 戰鬥耗時 ${timeToKill.toFixed(1)} 秒，獲得裝備爆落獎勵、金幣與魔神之種。`);
             }
         }
 
@@ -1084,7 +1100,7 @@
 
             this.challengeTowerBoss(currentTime);
 
-            // 1. 全 13 欄位洗詞條 AI (極限/重度玩家優先將裝備洗滿太古詞條)
+            // 1. 全 13 欄位洗詞條 AI (庫存寶石與石頭充足，極限玩家洗滿太古)
             for (let slot in this.equipments) {
                 const eq = this.equipments[slot];
                 const rerollCostGold = Math.floor(200 * Math.pow(eq.rarity, 1.3));
@@ -1109,7 +1125,6 @@
                     this.total_gold_spent += rerollCostGold;
                     this.total_stones_spent += rerollCostStones;
 
-                    // 極限玩家洗詞條升級：只保留更高太古數量的結果
                     const candidateAffixes = rollAffixesForRarity(eq.rarity, this.profile.ancientRatio);
                     const candidateAncient = countAncientAffixes(candidateAffixes);
 
@@ -1120,7 +1135,6 @@
 
                     this.total_affix_rerolls++;
                     rerollAttemptsThisBatch++;
-
                     needsReroll = (currentAncientCount < targetAncientCount);
                 }
 
@@ -1279,11 +1293,8 @@
                 char.gainExp(killsThisTick * expPerMob * stats.xpBonusMult, currentTime);
                 char.gold += killsThisTick * goldPerMob;
                 
-                if (Math.random() < 0.35) char.upgrade_stones += Math.max(1, Math.floor(killsThisTick * 0.05));
                 if (Math.random() < 0.25) char.gems[1] = (char.gems[1] || 0) + Math.max(1, Math.floor(killsThisTick * 0.05));
                 if (char.stage > 50 && Math.random() < 0.08) char.demon_seeds += 1;
-                
-                if (isOnline) char.dropEquipmentCheck(char.stage, currentTime);
             } else {
                 const farmStage = Math.max(1, Math.floor(char.stage) - 1);
                 const expPerMob = (8 + farmStage) * safePow(1.06, farmStage - 1);
@@ -1292,8 +1303,12 @@
                 char.totalKills += killsThisTick;
                 char.gainExp(killsThisTick * expPerMob * stats.xpBonusMult, currentTime);
                 char.gold += killsThisTick * goldPerMob;
-                if (Math.random() < 0.35) char.upgrade_stones += Math.max(1, Math.floor(killsThisTick * 0.05));
                 if (Math.random() < 0.25) char.gems[1] = (char.gems[1] || 0) + Math.max(1, Math.floor(killsThisTick * 0.05));
+            }
+
+            // 全程掉落處理 (對齊野外掉落表 FIELD_DROP_TABLE)
+            if (isOnline) {
+                char.processMobKillsLoot(killsThisTick, currentTime);
             }
 
             if (currentTime - lastCombatLogTime >= 1.0) {
@@ -1391,7 +1406,7 @@
                 const pct = Math.round((i / runs) * 100);
                 document.getElementById('progressPct').innerText = pct + '%';
                 document.getElementById('progressBarFill').style.width = pct + '%';
-                document.getElementById('progressStatus').innerText = `正在為【${activeProfile.name}】進行 6 大品質裝備獲取量與滿太古AI模擬 (${i}/${runs})...`;
+                document.getElementById('progressStatus').innerText = `正在為【${activeProfile.name}】進行野外/高塔全真實掉落率模擬 (${i}/${runs})...`;
                 await new Promise(r => setTimeout(r, 5));
             }
         }

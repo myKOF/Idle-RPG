@@ -4,7 +4,7 @@
 放置型遊戲（Idle / Incremental Game）核心數值平衡 - 蒙地卡羅離散事件模擬（DES）腳本
 
 功能說明：
-1. 新增 神鑄創世 / 創世 / 神話 / 傳奇 / 史詩 / 史詩以下 6 大裝備品質累積獲取量統計。
+1. 100% 對齊遊戲 js/data.js: FIELD_DROP_TABLE 與 BOSS_DROP_TABLE 真實掉落率與自動分解。
 2. 100% 對齊遊戲 js/data.js: SLOT_LIST 全 13 裝備欄位 (雙武器/頭/肩/胸/腰/手/腕/腿/鞋/雙戒/項鍊)。
 3. 100% 對齊實機物理出怪間隔 (js/data.js: RESPAWN_DELAY = 0.8s) 與登場/死亡動畫瓶頸 (單體約 0.35隻/秒)。
 """
@@ -249,43 +249,41 @@ class Character:
                 xp_needed = self.get_xp_for_next_level()
                 self.log_action(current_time, 'reinc', '🌀', f"角色達成第 {self.reincarnation} 轉生！", f"等級重置為 Lv.1，獲取轉生經驗與全屬性 {math.pow(2.8, self.reincarnation):.1f} 倍加成！")
 
-    def drop_equipment_check(self, stage, current_time):
-        if random.random() > 0.35: return
+    def process_mob_kills_loot(self, kills_count, current_time):
+        if kills_count <= 0: return
 
+        r6_chance = 0.0005 if (self.reincarnation >= 1 or self.stage > 150) else 0.0001
+        r5_chance = 0.02 if self.stage > 80 else 0.005
+        r4_chance = 0.05 if self.stage > 30 else 0.01
+        r3_chance = 0.10 if self.stage > 10 else 0.05
+        r12_chance = 0.70
+
+        r6_count = int(kills_count * r6_chance)
+        r5_count = int(kills_count * r5_chance)
+        r4_count = int(kills_count * r4_chance)
+        r3_count = int(kills_count * r3_chance)
+        r12_count = int(kills_count * r12_chance)
+
+        self.obtained_genesis += r6_count
+        self.obtained_mythic += r5_count
+        self.obtained_legendary += r4_count
+        self.obtained_epic += r3_count
+        self.obtained_below_epic += r12_count
+
+        total_dropped = r6_count + r5_count + r4_count + r3_count + r12_count
+        self.upgrade_stones += total_dropped * 4
+        self.gold += total_dropped * 200
+
+        highest_rarity = 6 if r6_count > 0 else (5 if r5_count > 0 else (4 if r4_count > 0 else (3 if r3_count > 0 else 2)))
         target_slot = random.choice(OFFICIAL_SLOTS)
-        
-        rnd = random.random()
-        dropped_rarity = 1
-        if self.reincarnation >= 1 and stage > 200 and rnd < 0.08: dropped_rarity = 6
-        elif stage > 80 and rnd < 0.20: dropped_rarity = 5
-        elif stage > 30 and rnd < 0.40: dropped_rarity = 4
-        elif stage > 10 and rnd < 0.65: dropped_rarity = 3
-        elif rnd < 0.90: dropped_rarity = 2
+        eq = self.equipments[target_slot]
 
-        if dropped_rarity == 6: self.obtained_genesis += 1
-        elif dropped_rarity == 5: self.obtained_mythic += 1
-        elif dropped_rarity == 4: self.obtained_legendary += 1
-        elif dropped_rarity == 3: self.obtained_epic += 1
-        else: self.obtained_below_epic += 1
-
-        current_rarity = self.equipments[target_slot]["rarity"]
-        current_ancient_count = count_ancient_affixes(self.equipments[target_slot]["affixes"])
-        new_affixes = roll_affixes_for_rarity(dropped_rarity, self.profile["min_ancient_affix_ratio"])
-        new_ancient_count = count_ancient_affixes(new_affixes)
-
-        should_replace = (dropped_rarity > current_rarity)
-        if dropped_rarity == current_rarity and new_ancient_count > current_ancient_count: should_replace = True
-        if self.profile["min_ancient_affix_ratio"] >= 0.8 and current_ancient_count >= 4 and new_ancient_count < current_ancient_count and dropped_rarity == current_rarity:
-            should_replace = False
-
-        if should_replace:
-            self.equipments[target_slot]["rarity"] = dropped_rarity
-            self.equipments[target_slot]["is_godforged"] = False
-            self.equipments[target_slot]["affixes"] = new_affixes
-            self.log_action(current_time, 'equip', '📦', f"裝備掉落並替換【{target_slot}】", f"品質升級為 Rarity {dropped_rarity}，帶有 {len(new_affixes)} 條詞條 (含 {new_ancient_count} 條太古詞條)。")
-        else:
-            self.upgrade_stones += dropped_rarity * 4
-            self.gold += dropped_rarity * 200
+        if highest_rarity > eq["rarity"]:
+            new_affixes = roll_affixes_for_rarity(highest_rarity, self.profile["min_ancient_affix_ratio"])
+            eq["rarity"] = highest_rarity
+            eq["is_godforged"] = False
+            eq["affixes"] = new_affixes
+            self.log_action(current_time, 'equip', '📦', f"野外殺敵掉落高品質【{target_slot}】裝備！", f"裝備成功升級為 Rarity {highest_rarity}，帶有 {len(new_affixes)} 條屬性詞條。")
 
     def challenge_tower_boss(self, current_time):
         if self.tower_floor >= GameConfig.MAX_TOWER_FLOOR: return
@@ -304,9 +302,22 @@ class Character:
             self.gold -= cost_gold
             self.tower_floor = target_floor
             self.gold += int(cost_gold * 3.0)
-            self.upgrade_stones += target_floor * 15
+            self.upgrade_stones += target_floor * 50
             self.demon_seeds += int(target_floor / 10) + 1
-            self.log_action(current_time, 'boss', '👹', f"挑戰並擊敗高塔 BOSS 第 {self.tower_floor} 層！", f"BOSS HP: {format_game_number(boss_hp)} | 戰鬥耗時 {time_to_kill:.1f} 秒，獲得獎勵金幣與魔神之種。")
+
+            if target_floor >= 30:
+                self.obtained_genesis += 1
+                self.obtained_mythic += 2
+                self.obtained_legendary += 3
+                if random.random() < 0.15:
+                    self.obtained_godforge += 1
+                    self.log_action(current_time, 'boss', '👑', f"高塔 BOSS 第 {target_floor} 層掉落【神鑄創世】裝備！", f"擊敗 BOSS 觸發 15% 神鑄掉落率，獲得創世神鑄裝備！")
+            else:
+                self.obtained_mythic += 1
+                self.obtained_legendary += 2
+                self.obtained_epic += 3
+
+            self.log_action(current_time, 'boss', '👹', f"挑戰並擊敗高塔 BOSS 第 {self.tower_floor} 層！", f"BOSS HP: {format_game_number(boss_hp)} | 戰鬥耗時 {time_to_kill:.1f} 秒，獲得裝備爆落獎勵、金幣與魔神之種。")
 
     def auto_upgrade_and_manage(self, current_time):
         if self.skill_points > 0:
@@ -477,7 +488,7 @@ class SingleRunSimulation:
             killed_per_hour = (base_kill_speed * 3600.0) * eff_mult
             kills_this_tick = killed_per_hour * tick_hours
 
-            is_advancing = (time_to_kill <= 30.0 and time_to_kill < time_to_die)
+            is_advancing = (time_to_kill <= 30.0 and time_to_die > time_to_kill)
 
             if is_advancing:
                 self.char.total_kills += kills_this_tick
@@ -489,11 +500,8 @@ class SingleRunSimulation:
                 self.char.gain_exp(kills_this_tick * exp_per_mob * stats["xpBonusMult"], current_time_hours)
                 self.char.gold += kills_this_tick * gold_per_mob
                 
-                if random.random() < 0.35: self.char.upgrade_stones += max(1, int(kills_this_tick * 0.05))
                 if random.random() < 0.25: self.char.gems[1] = self.char.gems.get(1, 0) + max(1, int(kills_this_tick * 0.05))
                 if self.char.stage > 50 and random.random() < 0.08: self.char.demon_seeds += 1
-                
-                if is_online: self.char.drop_equipment_check(self.char.stage, current_time_hours)
             else:
                 farming_stage = max(1, int(self.char.stage) - 1)
                 exp_per_mob = (8 + farming_stage) * safe_pow(1.06, farming_stage - 1)
@@ -502,8 +510,10 @@ class SingleRunSimulation:
                 self.char.total_kills += kills_this_tick
                 self.char.gain_exp(kills_this_tick * exp_per_mob * stats["xpBonusMult"], current_time_hours)
                 self.char.gold += kills_this_tick * gold_per_mob
-                if random.random() < 0.35: self.char.upgrade_stones += max(1, int(kills_this_tick * 0.05))
                 if random.random() < 0.25: self.char.gems[1] = self.char.gems.get(1, 0) + max(1, int(kills_this_tick * 0.05))
+
+            if is_online:
+                self.char.process_mob_kills_loot(kills_this_tick, current_time_hours)
 
             if current_time_hours - last_combat_log_time >= 1.0:
                 last_combat_log_time = current_time_hours
