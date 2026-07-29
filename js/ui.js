@@ -8518,8 +8518,13 @@ function initUI() {
           (rec && rec.fname ? '：' + rec.fname : '');
         if (m) m.textContent = text;
         blog(text, 'good');
-        renderSaveList();
-        refreshSaveFolderFilesV2();
+        /* 指令 resolve 只代表 Worker 收下並發出了 persist，檔案還沒寫進磁碟。
+           直接刷新會掃到還沒有新檔案的資料夾，玩家得自己再按一次「重新掃描」。 */
+        WorkerBridge.whenWritesDrained(function (drainErr) {
+          if (drainErr) blog('⚠️ 存檔落地確認逾時，下方清單可能不是最新的，可按「重新掃描」。', 'warn');
+          renderSaveList();
+          refreshSaveFolderFilesV2();
+        });
       }).catch(function (e) {
         var detail = e && e.message ? e.message : String(e);
         var text = '⚠️ 手動存檔寫入失敗：' + detail;
