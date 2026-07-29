@@ -871,7 +871,8 @@ function downloadSingleSave(id, fname) {
 /* ---- 離線收益（計算等級 / 擊殺速率公式 → js/formula.js §10） ----
    以「目前地圖最高階段 −10 捨去個位數」等級的當前場景菁英怪、每 20 秒 1 隻計算擊殺數；
    每一隻菁英怪及其掉落單獨擲骰（與野外擊殺同一套掉落表與倍率），完成後彈出離線收益確認界面。 */
-function applyOfflineProgress() {
+function applyOfflineProgress(options) {
+  options = options || {};
   if (!G.savedAt) return;
   var elapsed = (Date.now() - G.savedAt) / 1000;
   if (elapsed < 60) return; // 一分鐘內不計
@@ -907,7 +908,7 @@ function applyOfflineProgress() {
     gold: gold, xp: xp, equips: {}, scrap: 0, gems: {}, books: 0, essence: 0, dust: 0, parts: 0
   };
   var conveyorFull = false;
-  for (var k = 0; k < kills; k++) {
+  function processOfflineKill() {
     // 裝備（各品質獨立擲骰；輸送帶滿載時折算碎片，不丟失）
     for (var r = 0; r < rates.length; r++) {
       if (!rates[r]) continue;
@@ -956,7 +957,9 @@ function applyOfflineProgress() {
       }
     }
   }
-  if (sum.scrap) G.player.scrap += sum.scrap;
+
+  function finishOfflineProgress() {
+    if (sum.scrap) G.player.scrap += sum.scrap;
   if (sum.parts && typeof trimFactoryParts === 'function') trimFactoryParts(); // 收斂零件庫存
   UI.dirty.header = true; UI.dirty.factory = true; UI.dirty.gems = true;
 
@@ -966,8 +969,31 @@ function applyOfflineProgress() {
   blog('🌙 離線收益（' + (hrs ? hrs + ' 小時 ' : '') + mins + ' 分鐘）：擊殺 Lv.' + stage + ' ' + zn.name + '菁英 ×' + fmt(kills) +
     '、金幣 +' + fmt(gold) + '、經驗 +' + fmt(xp) + '、裝備 ×' + fmt(equipTotal) + ' 已送入輸送帶' +
     (sum.scrap ? '、碎片 +' + fmt(sum.scrap) : ''), 'good');
-  if (typeof showOfflineSummary === 'function') showOfflineSummary(sum);
-  return sum;
+    if (typeof showOfflineSummary === 'function') showOfflineSummary(sum);
+    if (typeof options.done === 'function') options.done(sum);
+    return sum;
+  }
+
+  var onDone = typeof options.done === 'function' ? options.done : null;
+  if (onDone) {
+    var chunkSize = Math.max(1, Math.floor(Number(options.chunkSize) || 24));
+    var cursor = 0;
+    var processChunk = function () {
+      if (typeof _booted !== 'undefined' && !_booted) return;
+      var end = Math.min(kills, cursor + chunkSize);
+      while (cursor < end) {
+        processOfflineKill();
+        cursor++;
+      }
+      if (cursor < kills) setTimeout(processChunk, 0);
+      else finishOfflineProgress();
+    };
+    setTimeout(processChunk, 0);
+    return null;
+  }
+
+  for (var k = 0; k < kills; k++) processOfflineKill();
+  return finishOfflineProgress();
 }
 
 /* ============ 存檔機制 V2：單一自動快取＋本地手動歷史 ============ */

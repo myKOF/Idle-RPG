@@ -647,6 +647,17 @@ function bindWorkerUiState() {
     updateWorkerSafeModeMarker();
     handleWorkerUiEvents(msg.events);
     handleWorkerBootNotices(msg.notices);
+    /* initUI() 可能早於 IndexedDB 存檔讀取完成；那時 requestPanelData()
+       還送不到 Worker，不能只等待下一次 dirty tick 才重新要求初始面板。 */
+    if (typeof refreshUiPanelSubscriptions === 'function' &&
+      typeof desiredUiPanelSubscriptions === 'function') {
+      refreshUiPanelSubscriptions();
+      var bootPanels = desiredUiPanelSubscriptions();
+      Object.keys(bootPanels).forEach(function (key) {
+        UI.dirty[key] = true;
+        requestPanelData(key, false);
+      });
+    }
   });
   WorkerBridge.on(MSG_OUT.FULL, function (msg) {
     applyUiSnapshot(msg.snapshot);
@@ -705,6 +716,15 @@ function bindWorkerUiState() {
         if (UI.inventoryScrolling) UI.inventoryDetailRefreshPending = true;
         else renderDetail();
       }
+    }
+    /* 指令造成格線內容、數量或容量變更時，不能等下一輪 dirty tick 才
+       重建背包；否則舊 item-cell 會暫留，且 pending 控制可能被重繪覆蓋。 */
+    if (msg.name === 'inv' && UI.tab === 'equip' && !inventoryGridUnchanged) {
+      renderInventory();
+      UI.dirty.inv = false;
+    } else if (msg.name === 'equip' && UI.tab === 'equip') {
+      renderEquip();
+      UI.dirty.equip = false;
     }
     releaseUiPendingByPanel(msg.name);
     if (UI_WORKER_STATE.panelQueued[msg.name]) {
@@ -2645,13 +2665,15 @@ function renderInventory() {
   var cap = Number(invSnapshot.cap) || 0;
   var player = headerSnapshot.player;
   var btn = $id('inv-expand');
+  var expandPending = typeof isUiCommandPending === 'function' &&
+    isUiCommandPending(nodePendingKey('inv-expand'));
   if (btn) {
     if (cap >= INVENTORY_MAX) {
       btn.textContent = '➕ 已達上限 (' + INVENTORY_MAX + ')';
       btn.disabled = true;
     } else {
       btn.innerHTML = '➕ 擴充 (' + fmt(inventoryExpandCost(player.invUpgrades || 0)) + '<img src="images/icon_gold.png" class="res-icon">)';
-      btn.disabled = false;
+      btn.disabled = expandPending;
     }
   }
 
