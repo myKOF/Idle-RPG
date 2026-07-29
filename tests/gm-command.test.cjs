@@ -351,22 +351,30 @@ test('連殺 GM 指令支援裝備部位篩選 (kill 1 500 100 mythic helmet / k
   });
 });
 
-test('inv_cap GM 指令可任意擴充背包容量並超越正常上限', () => {
+test('bag GM 指令（及 inv_cap 別名）可任意擴充背包容量並超越正常上限', () => {
   withGMExecContext((context) => {
     context.INVENTORY_CAP = 100;
     context.G.player.invUpgrades = 0;
     context.inventoryCapacityWithTalents = () => context.INVENTORY_CAP + (context.G.player.invUpgrades || 0);
   }, (context, execute) => {
-    assert.equal(execute('inv_cap 2000').ok, true);
+    assert.equal(execute('bag 1000').ok, true);
+    assert.equal(context.G.player.invUpgrades, 900); // 100 + 900 = 1000
+    assert.equal(context.inventoryCapacityWithTalents(), 1000);
+
+    assert.equal(execute('bag 2000').ok, true);
     assert.equal(context.G.player.invUpgrades, 1900); // 100 + 1900 = 2000
     assert.equal(context.inventoryCapacityWithTalents(), 2000);
 
-    assert.equal(execute('inv_cap +500').ok, true);
+    assert.equal(execute('bag +500').ok, true);
     assert.equal(context.G.player.invUpgrades, 2400); // 2000 + 500 = 2500
     assert.equal(context.inventoryCapacityWithTalents(), 2500);
 
+    assert.equal(execute('inv_cap 3000').ok, true);
+    assert.equal(context.G.player.invUpgrades, 2900); // 100 + 2900 = 3000
+    assert.equal(context.inventoryCapacityWithTalents(), 3000);
+
     assert.equal(execute('inv_expand 1000').ok, true);
-    assert.equal(context.G.player.invUpgrades, 3400); // 2500 + 1000 = 3500
-    assert.equal(context.inventoryCapacityWithTalents(), 3500);
+    assert.equal(context.G.player.invUpgrades, 3900); // 3000 + 1000 = 4000
+    assert.equal(context.inventoryCapacityWithTalents(), 4000);
   });
 });
