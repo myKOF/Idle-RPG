@@ -11,7 +11,7 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-var WORKER_PROTOCOL_VERSION = 11;
+var WORKER_PROTOCOL_VERSION = 12;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -87,7 +87,11 @@ var EVENT_KINDS = {
              同樣不得帶實體參照，理由見上。
      cells   區域類特效覆蓋的棋盤格 [{col,row}]，供 aura／rain 定位；非區域類為 null。
      dur     持續秒數（aura 用實際領域持續時間，其餘為動畫長度）。
-     count   投射物／斬擊段數（僅視覺，與實際命中次數無關，上限由 UI 端夾）。 */
+     count   投射物／斬擊段數（僅視覺，與實際命中次數無關，上限由 UI 端夾）。
+     travelMs（v12 新增）：與 targets 同順序的飛行時間陣列（毫秒）。
+             投射物是**等速**飛行，時間＝我方到該目標中心的距離÷速度，所以打第 4 行
+             比打第 1 行慢。固定飛行時間會讓近的子彈慢吞吞、遠的又太快。
+             同一組數字也拿去當 FLOAT 的 delayMs，子彈與傷害數字因此必定同時到。 */
   VFX: 'vfx'
 };
 

@@ -70,6 +70,33 @@ function bfEntityDistance(ent) {
   return best;
 }
 
+/* 我方到某個敵人「中心」的直線距離，單位是格。
+   投射物的飛行時間＝這個距離 ÷ 速度，所以打第 1 行的敵人比打第 4 行快得多——
+   固定飛行時間會讓近的子彈慢吞吞、遠的又太快，傷害數字自然對不上命中的那一刻。
+   我方視為棋盤左側外一格、對齊中央列（與距離表的設定一致）。 */
+function bfPlayerAnchor() {
+  return { col: 0, row: (bfRows() + 1) / 2 };
+}
+function bfTravelDistance(ent) {
+  if (!ent || !ent.cell) return bfCols();      // 無格位資訊（高塔 BOSS）：以整個棋盤寬度當距離
+  var size = bfEntitySize(ent);
+  var center = { col: ent.cell.col + (size.w - 1) / 2, row: ent.cell.row + (size.h - 1) / 2 };
+  var me = bfPlayerAnchor();
+  var dc = center.col - me.col;
+  var dr = center.row - me.row;
+  return Math.sqrt(dc * dc + dr * dr);
+}
+
+/* 投射物飛到該敵人所需的秒數（夾在上下限之間，避免太近瞬間到、太遠拖太久）。 */
+function bfTravelSeconds(ent) {
+  var speed = (typeof VFX_PROJECTILE_SPEED_CELLS === 'number' && VFX_PROJECTILE_SPEED_CELLS > 0)
+    ? VFX_PROJECTILE_SPEED_CELLS : 14;
+  var min = (typeof VFX_TRAVEL_MIN_SEC === 'number') ? VFX_TRAVEL_MIN_SEC : 0.06;
+  var max = (typeof VFX_TRAVEL_MAX_SEC === 'number') ? VFX_TRAVEL_MAX_SEC : 0.45;
+  var sec = bfTravelDistance(ent) / speed;
+  return Math.min(max, Math.max(min, sec));
+}
+
 /* 格位序號（0-based，左上到右下逐列）；供顯示層對位與除錯用。 */
 function bfCellIndex(cell) {
   if (!cell) return -1;
