@@ -319,7 +319,8 @@ test('接線：tablock 早於 bridge 載入，且 bridge 與 main 都改由 TabL
   const mainAt = html.indexOf('js/main.js');
   assert.ok(tabLockAt > 0, 'index.html 必須載入 js/tablock.js');
   assert.ok(tabLockAt < bridgeAt && tabLockAt < mainAt, 'tablock 必須早於 bridge 與 main');
-  assert.match(bridgeSrc, /TabLock\.onGranted\(function \(\) \{\s*SaveStorage\.readBootSave/);
+  // 允許中間有註解：這裡要驗的是「開機掛在 TabLock 上、進去第一件事就是讀存檔」
+  assert.match(bridgeSrc, /TabLock\.onGranted\(function \(\) \{[\s\S]*?SaveStorage\.readBootSave/);
   assert.match(mainSrc, /TabLock\.onGranted\(function \(\) \{\s*initUI\(\);/);
   assert.doesNotMatch(mainSrc, /addEventListener\('DOMContentLoaded'/);
 });

@@ -12,6 +12,27 @@
 
 var SaveStorage = (function () {
 
+  /* 開機存檔的來歷。開機流程用它決定要不要先問過玩家（見 js/save_origin.js）：
+       own     這個 origin 自己的自動存檔，或瀏覽器本機快取 → 直接用
+       legacy  資料夾裡的舊檔名或更舊的保底檔 → 可能是別的網址留下的，要確認
+       foreign 檔名是自己的，但內容標記著別的 origin → 要確認
+     fallback 是玩家拒絕接手時的替代品：瀏覽器本機快取那一份（null 代表只能開新遊戲）。
+     本機快取（IndexedDB）永遠不必確認——它的作用域就是 origin，不可能是別人寫的。 */
+  function bootSaveInfo(best, folderBest, cacheBest) {
+    var info = {
+      source: 'none', fname: null, savedBy: null, fallback: null,
+      originTag: (typeof SAVE_ORIGIN_TAG_V2 === 'string') ? SAVE_ORIGIN_TAG_V2 : ''
+    };
+    if (!best) return info;
+    info.savedBy = (best.data && best.data.savedBy) || null;
+    if (best !== folderBest) { info.source = 'own'; return info; }
+    info.fname = folderBest.fname || null;
+    info.fallback = cacheBest ? cacheBest.data : null;
+    info.source = (folderBest.source === 'legacy') ? 'legacy' : 'own';
+    if (info.source === 'own' && info.savedBy && info.savedBy !== info.originTag) info.source = 'foreign';
+    return info;
+  }
+
   /* 讀出開機用的存檔：資料夾與 IndexedDB 快取取較新者。
      刻意**不呼叫 migrateSave**——遷移是 Worker 的職責，兩邊都做會讓一次性遷移跑兩次。 */
   function readBootSave(cb) {
@@ -21,7 +42,7 @@ var SaveStorage = (function () {
         var data = parseSaveTextV2(raw);
         if (data) cacheBest = { data: data, savedAt: Number(data.savedAt) || 0 };
         var best = chooseNewestSaveV2(folderBest, cacheBest);
-        cb(best ? best.data : null);
+        cb(best ? best.data : null, bootSaveInfo(best, folderBest, cacheBest));
       });
     };
     if (!window.showDirectoryPicker) { finish(null); return; }

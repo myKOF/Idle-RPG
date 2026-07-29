@@ -973,7 +973,33 @@ function applyOfflineProgress() {
 /* ============ 存檔機制 V2：單一自動快取＋本地手動歷史 ============ */
 var AUTO_CACHE_KEY_V2 = 'ic_auto_cache_v2';
 var AUTO_META_KEY_V2 = 'ic_auto_meta_v2';
-var AUTO_FOLDER_FILE_V2 = 'IC_autosave.json';
+/* ---- 自動存檔的檔名帶 origin ----
+   自動存檔的檔名原本是寫死的 `IC_autosave.json`，而存檔資料夾是實體目錄、不分 origin。
+   於是「同一個資料夾被兩個 origin 連上」時，兩邊會整份覆寫同一個檔案，後寫的贏；
+   下次開機誰的時間戳新誰就被採用，一個網址的遊戲會靜靜接手另一個網址的角色。
+
+   TabLock 的 navigator.locks 擋不住這件事——它的作用域是同源，而 port 是 origin 的一部分。
+   2026-07-29 的事故就是 127.0.0.1:5500 與 localhost:8341 共用同一個 Saves 資料夾整夜互相覆寫。
+
+   改成一個 origin 一個檔名，兩邊天然不再互相覆蓋。正式環境的玩家只有一個 origin，
+   完全無感；開發時多副本並行也各寫各的。檔名刻意用可讀的 origin 而非雜湊，
+   因為出事時第一件事就是要在檔案總管裡分辨哪個檔案是哪個網址寫的。
+
+   ⚠️ 舊檔名保留為**讀取回退**，不再寫入：既有玩家升級後第一次開機會讀不到自己的檔案，
+   必須能接回 `IC_autosave.json`，否則等同存檔消失。接手時會先問過玩家（js/save_origin.js）。 */
+function saveOriginTagV2() {
+  var origin = '';
+  try {
+    if (typeof location !== 'undefined' && location && location.origin) origin = String(location.origin);
+  } catch (e) { origin = ''; }
+  // file:// 的 origin 是 "null"；Worker 在 file:// 下本來就起不來，這裡只求不產生怪檔名
+  if (!origin || origin === 'null') return 'local';
+  return origin.replace(/^([a-z]+):\/\//i, '$1-').replace(/[^A-Za-z0-9._-]+/g, '-');
+}
+
+var SAVE_ORIGIN_TAG_V2 = saveOriginTagV2();
+var AUTO_FOLDER_FILE_LEGACY_V2 = 'IC_autosave.json';
+var AUTO_FOLDER_FILE_V2 = 'IC_autosave_' + SAVE_ORIGIN_TAG_V2 + '.json';
 var MAX_MANUAL_SAVES_V2 = 10;
 var _legacyPayloadsCompactedV2 = false;
 var _autoRawV2 = null;
@@ -1145,45 +1171,69 @@ function parseSaveTextV2(raw) {
   } catch (e) { return null; }
 }
 
+/* 讀出一個指定檔名的自動存檔。找不到或內容不是本遊戲存檔一律回 null（不 reject），
+   讓呼叫端可以直接串接下一個候選檔名。 */
+function readFolderAutoFileV2(fname) {
+  return _saveDir.getFileHandle(fname, { create: false })
+    .then(function (fh) { return fh.getFile(); })
+    .then(function (file) {
+      return readSaveFilePayloadV2(file).then(function (raw) {
+        var data = parseSaveTextV2(raw);
+        if (!data) return null;
+        return {
+          data: data, fname: fname,
+          savedAt: Number(file.lastModified) || Number(data.savedAt) || 0
+        };
+      });
+    })
+    .catch(function () { return null; });
+}
+
+/* 回呼帶的 `source` 供開機流程判斷要不要先問過玩家（js/save_origin.js）：
+     own    自己這個 origin 寫的檔案，直接用
+     legacy 舊檔名或更舊的保底檔——可能是別的 origin 留下的，必須先確認 */
 function readFolderAutoV2(cb) {
   if (!_saveDir) { cb(null); return; }
-  _saveDir.getFileHandle(AUTO_FOLDER_FILE_V2, { create: false })
-    .then(function (fh) {
-      return fh.getFile().then(function (file) {
-        return readSaveFilePayloadV2(file).then(function (raw) { return { file: file, raw: raw }; });
+  readFolderAutoFileV2(AUTO_FOLDER_FILE_V2)
+    .then(function (own) {
+      if (own) { own.source = 'own'; return own; }
+      // 找不到自己的檔案：回退舊檔名（升級後第一次開機走這條）
+      return readFolderAutoFileV2(AUTO_FOLDER_FILE_LEGACY_V2).then(function (legacy) {
+        if (legacy) { legacy.source = 'legacy'; return legacy; }
+        // 再退一步相容更舊的保底檔，但只接受自動存檔命名，不把手動存檔當成目前進度
+        return (async function () {
+          var best = null;
+          for await (var ent of _saveDir.values()) {
+            if (ent.kind !== 'file' || !/^(IC_current|IC_autosave_run[^.]*)[^/]*\.json$/i.test(ent.name)) continue;
+            try {
+              var file = await ent.getFile();
+              var data = parseSaveTextV2(await readSaveFilePayloadV2(file));
+              if (!data) continue;
+              var ts = Number(file.lastModified) || Number(data.savedAt) || 0;
+              if (!best || ts > best.savedAt) {
+                best = { data: data, savedAt: ts, fname: ent.name, source: 'legacy' };
+              }
+            } catch (e) {}
+          }
+          return best;
+        })().catch(function () { return null; });
       });
-    }).then(function (res) {
-      var raw = res.raw;
-      var file = res.file;
-      var data = parseSaveTextV2(raw);
-      if (!data) { cb(null); return; }
+    })
+    .then(function (res) {
+      if (!res) { cb(null); return; }
+      var data = res.data;
       var meta = {
         id: 'auto_current', kind: 'auto', runId: data.runId || 1,
-        savedAt: Number(file.lastModified) || Number(data.savedAt) || 0,
-        fname: AUTO_FOLDER_FILE_V2,
+        savedAt: res.savedAt,
+        fname: res.fname,
         level: data.player && data.player.level || 1,
         stage: data.stage && data.stage.current || 1,
         zone: data.stage && data.stage.zone || 'plains'
       };
       writeAutoMetaV2(meta);
-      cb({ data: data, savedAt: meta.savedAt });
-    }).catch(function () {
-      // 相容舊版保底檔，但只接受自動存檔命名，不把手動存檔當成目前進度。
-      (async function () {
-        var best = null;
-        for await (var ent of _saveDir.values()) {
-          if (ent.kind !== 'file' || !/^(IC_current|IC_autosave_run[^.]*)[^/]*\.json$/i.test(ent.name)) continue;
-          try {
-            var file = await ent.getFile();
-            var data = parseSaveTextV2(await readSaveFilePayloadV2(file));
-            if (!data) continue;
-            var ts = Number(file.lastModified) || Number(data.savedAt) || 0;
-            if (!best || ts > best.savedAt) best = { data: data, savedAt: ts };
-          } catch (e) {}
-        }
-        cb(best);
-      })().catch(function () { cb(null); });
-    });
+      cb({ data: data, savedAt: meta.savedAt, fname: res.fname, source: res.source });
+    })
+    .catch(function () { cb(null); });
 }
 
 function folderNameHashV2(name) {
@@ -1382,7 +1432,17 @@ function openSaveFolderV2(cb, forceOpen) {
 
 function readSaveRawV2(rec) {
   if (rec && rec.kind === 'auto') {
-    if (_saveDir) return _saveDir.getFileHandle(AUTO_FOLDER_FILE_V2, { create: false }).then(readRawTextV2);
+    /* 自動存檔的檔名依 origin 而定，開機時還可能是從舊檔名回退讀來的，
+       所以以 meta 記下的實際檔名優先；那個檔案不在了才退回本 origin 的檔名
+       （第一次資料夾同步後 meta 就會被更正成本 origin 的檔名）。 */
+    var fname = (rec.fname) || AUTO_FOLDER_FILE_V2;
+    if (_saveDir) {
+      return _saveDir.getFileHandle(fname, { create: false }).then(readRawTextV2)
+        .catch(function (e) {
+          if (fname === AUTO_FOLDER_FILE_V2) throw e;
+          return _saveDir.getFileHandle(AUTO_FOLDER_FILE_V2, { create: false }).then(readRawTextV2);
+        });
+    }
     return new Promise(function (resolve) { idbGetAutoV2(function (raw) { resolve(raw || localStorage.getItem(SAVE_KEY)); }); });
   }
   if (rec && rec.fname && _saveDir) return _saveDir.getFileHandle(rec.fname, { create: false }).then(readRawTextV2);

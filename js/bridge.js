@@ -499,8 +499,12 @@ var WorkerBridge = (function () {
    TabLock 保證回呼在 DOM 就緒之後才執行。 */
 (function () {
   TabLock.onGranted(function () {
-    SaveStorage.readBootSave(function (save) {
-      WorkerBridge.start({ save: save, maxRunId: SaveStorage.maxRunId() });
+    /* 讀出來的存檔若是「回退讀到的舊檔名」或「標記著別的 origin」，SaveOrigin 會先問過玩家
+       才開機；其餘情況直接放行（見 js/save_origin.js）。存檔覆蓋不可逆，不該由時間戳自己決定。 */
+    SaveStorage.readBootSave(function (save, info) {
+      SaveOrigin.gate(save, info, function (approved) {
+        WorkerBridge.start({ save: approved, maxRunId: SaveStorage.maxRunId() });
+      });
     });
   });
 })();
