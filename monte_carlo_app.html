@@ -1493,7 +1493,14 @@
             this.upgrade_stones += totalDropped * 6;
             this.gold += totalDropped * 350;
 
-            const highestRarityDropped = r6Count > 0 ? 6 : (r5Count > 0 ? 5 : (r4Count > 0 ? 4 : (r3Count > 0 ? 3 : 2)));
+            let highestRarityDropped = 2;
+            if (this.stage <= 5) {
+                highestRarityDropped = Math.random() < 0.4 ? 2 : 1; // 普通/精良
+            } else if (this.stage <= 15) {
+                highestRarityDropped = Math.random() < 0.5 ? 3 : 2; // 精良/稀有
+            } else {
+                highestRarityDropped = r6Count > 0 ? 6 : (r5Count > 0 ? 5 : (r4Count > 0 ? 4 : (r3Count > 0 ? 3 : 2)));
+            }
             const targetSlot = OFFICIAL_SLOTS[Math.floor(Math.random() * OFFICIAL_SLOTS.length)];
             const oldEq = this.equipments[targetSlot];
             const newEq = generateDroppedEquipment(highestRarityDropped, this.profile.ancientRatio);
@@ -1740,7 +1747,7 @@
         let currentTime = 0.0;
         let nextActionTime = 0.0;
         let nextSampleTime = 0.0;
-        let lastCombatLogTime = -1.0;
+        let lastCombatLogTime = 0.001;
         const tickHours = 0.05; // 3 分鐘精細步長
         const history = [];
 
