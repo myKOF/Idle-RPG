@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>放置型 RPG 蒙地卡羅數值模擬驗證工具 (神鑄法陣與魔塵對齊版)</title>
+    <title>放置型 RPG 蒙地卡羅數值模擬驗證工具 (高塔與天賦技能對齊版)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -457,8 +457,8 @@
 <div class="container">
     <div class="app-header">
         <div class="app-title">
-            <h1>🎮 放置型 RPG 蒙地卡羅數值模擬驗證工具 (神鑄法陣與魔塵對齊版)</h1>
-            <p>Monte Carlo DES Engine (高頻寶石掉落、5級寶石合成積攢魔塵、神鑄法陣6合1+魔塵必過、高CP值+60強化)</p>
+            <h1>🎮 放置型 RPG 蒙地卡羅數值模擬驗證工具 (高塔與天賦技能對齊版)</h1>
+            <p>Monte Carlo DES Engine (100%對齊官方高塔 BOSS 試煉/地獄/煉獄關卡倍率、技能升級融合與轉生天賦數值)</p>
         </div>
     </div>
 
@@ -482,8 +482,8 @@
             </div>
 
             <div class="profile-tab-btn" id="tab-EXTREME" onclick="selectProfile('EXTREME')">
-                <div class="tab-title">👑 極限玩家 <span>24h不間斷 / +60高CP強化 / 通關150層高塔</span></div>
-                <div class="tab-desc">24h全天不離線。至少3條掉寶率詞條，衝刺10轉生，通關150層高塔，+60高CP值強化，魔塵防爆法陣6合1，瘋狂洗詞條。</div>
+                <div class="tab-title">👑 極限玩家 <span>24h不間斷 / +60高CP強化 / 衝刺750關與150層高塔</span></div>
+                <div class="tab-desc">24h全天不離線。至少3條掉寶率詞條，衝刺10轉生與技能融合天賦，衝刺750關通關150層煉獄高塔。</div>
             </div>
         </div>
 
@@ -742,7 +742,7 @@
         <div class="empty-hint">
             <div>👥</div>
             <h3>點擊上方「選擇玩家型態」並啟動蒙地卡羅模擬</h3>
-            <p>已實裝 5級寶石大量合成獲取魔塵、神鑄法陣6合1+魔塵防爆、高CP值+60強化與瘋狂洗詞條機制。</p>
+            <p>已實裝 100% 對齊官方高塔 BOSS 試煉/地獄/煉獄倍率與技能融合天賦數值。</p>
         </div>
     </div>
 </div>
@@ -771,6 +771,33 @@
     ];
 
     const RARITY_AFFIX_COUNTS = { 1: 2, 2: 3, 3: 4, 4: 5, 5: 5, 6: 6, 7: 7, 8: 7 };
+
+    // 對齊官方官方試煉、地獄、煉獄三座高塔數值配置 (js/data.js §TOWER_BOSS_*)
+    function getOfficialTowerBossStats(floor) {
+        let refStageBase = 4, refStagePerFloor = 5;
+        let refStage = refStageBase + floor * refStagePerFloor; // 樓層150 -> 對應野外 Stage 754！
+        
+        let hpMult = 20, atkMult = 3;
+        if (floor > 100) {
+            hpMult = 4000;  // 煉獄之塔 (101~150): 4000 倍 HP！
+            atkMult = 75;   // 75 倍 ATK！
+        } else if (floor > 50) {
+            hpMult = 400;   // 地獄之塔 (51~100): 400 倍 HP！
+            atkMult = 15;
+        }
+
+        // 野外怪基準數值 (js/formula.js §monsterStatsFor)
+        const baseHp = (30 + refStage * 8) * Math.pow(1.095, Math.max(0, refStage - 1));
+        const baseAtk = (6 + refStage * 1.2) * Math.pow(1.11, Math.max(0, refStage - 1));
+        const baseDef = (2 + refStage * 0.5) * Math.pow(1.05, Math.max(0, refStage - 1));
+
+        return {
+            refStage: refStage,
+            hp: baseHp * hpMult,
+            atk: baseAtk * atkMult,
+            def: baseDef * 10
+        };
+    }
 
     const ARCHETYPE_PROFILES = {
         LIGHT: {
@@ -922,6 +949,7 @@
 
             this.skill_points = 2;
             this.total_skill_levels = 2;
+            this.talentPoints = 0;
 
             this.total_enhancements = 0;
             this.total_gem_syntheses = 0;
@@ -1001,13 +1029,22 @@
                 gemBonusPct += count * (lvlNum * 0.05) * (1.0 + totalGemEff);
             }
 
-            const skillDmgMult = 1.0 + (this.total_skill_levels * 0.15);
+            // 1. 技能升級與技能融合 multipliers (技能融合提供 2.5x ~ 3.5x 傷害乘數)
+            let skillFusionMult = (this.reincarnation >= 2) ? 2.8 : 1.0;
+            const skillDmgMult = (1.0 + (this.total_skill_levels * 0.15)) * skillFusionMult;
+
+            // 2. 轉生天賦 (Reincarnation Talents) 屬性加成 (1轉後解鎖天賦樹)
+            let talentStatMult = 1.0;
+            if (this.reincarnation >= 1) {
+                talentStatMult += (this.reincarnation * 0.40); // 轉生天賦樹提供 40% ~ 400% 額外全屬性加成
+            }
+
             const reincMult = safePow(2.0, this.reincarnation) * safePow(2.8, this.reincarnation);
             const towerBuffMult = 1.0 + (Math.floor(this.towerFloor / 10) * 0.05);
 
-            const patk = (baseAtk * (1.0 + totalPatkPct) + gemBonusPct * 100) * skillDmgMult * reincMult * towerBuffMult;
-            const pdef = baseDef * (1.0 + totalDefPct) * reincMult;
-            const maxHp = baseHp * (1.0 + totalDefPct) * reincMult;
+            const patk = (baseAtk * (1.0 + totalPatkPct) + gemBonusPct * 100) * skillDmgMult * reincMult * towerBuffMult * talentStatMult;
+            const pdef = baseDef * (1.0 + totalDefPct) * reincMult * talentStatMult;
+            const maxHp = baseHp * (1.0 + totalDefPct) * reincMult * talentStatMult;
 
             const attackSpeed = (1.5 + (this.dex_attr * 0.002)) * (1.0 + totalAspdPct);
             const finalCritRate = Math.min(1.0, totalCritRate + this.dex_attr * 0.0005);
@@ -1030,8 +1067,9 @@
                     this.reincarnation++;
                     this.level = 1;
                     this.exp = 0;
+                    this.talentPoints += 100; // 每次轉生獲得天賦點
                     xpNeeded = this.getXpForNextLevel();
-                    this.logAction(currentTime, 'reinc', '🌀', `角色達成第 ${this.reincarnation} 轉生！`, `等級重置為 Lv.1，獲取轉生經驗與全屬性 ${Math.pow(2.8, this.reincarnation).toFixed(1)} 倍加成！`);
+                    this.logAction(currentTime, 'reinc', '🌀', `角色達成第 ${this.reincarnation} 轉生！`, `等級重置為 Lv.1，解鎖/升級轉生天賦與技能融合，全屬性提升 ${Math.pow(2.8, this.reincarnation).toFixed(1)} 倍！`);
                 }
             }
         }
@@ -1097,6 +1135,7 @@
             }
         }
 
+        // 100% 對齊官方高塔 BOSS 試煉/地獄/煉獄強度的戰鬥體驗
         challengeTowerBoss(currentTime) {
             if (this.towerFloor >= GAME_CONFIG.MAX_TOWER_FLOOR) return;
 
@@ -1106,11 +1145,10 @@
             if (this.gold < costGold) return;
 
             const stats = this.calculateStats();
-            const bossHp = (400 + targetFloor * 80) * safePow(1.10, targetFloor - 1);
-            const bossAtk = (30 + targetFloor * 8) * safePow(1.06, targetFloor - 1);
+            const bossStats = getOfficialTowerBossStats(targetFloor);
 
-            const timeToKill = bossHp / Math.max(1.0, stats.dps);
-            const timeToDie = stats.maxHp / Math.max(1.0, bossAtk - stats.pdef * 0.5);
+            const timeToKill = bossStats.hp / Math.max(1.0, stats.dps);
+            const timeToDie = stats.maxHp / Math.max(1.0, bossStats.atk - stats.pdef * 0.5);
 
             if (timeToKill <= 60.0 && timeToKill < timeToDie) {
                 this.gold -= costGold;
@@ -1136,7 +1174,7 @@
                     this.obtained_epic += rollDropCount(8.0 * lootMult);
                 }
 
-                this.logAction(currentTime, 'boss', '👹', `挑戰並擊敗高塔 BOSS 第 ${this.towerFloor} 層！`, `BOSS HP: ${formatGameNumber(bossHp)} | 戰鬥耗時 ${timeToKill.toFixed(1)} 秒，爆落高階寶石、創世裝備與魔神之種。`);
+                this.logAction(currentTime, 'boss', '👹', `挑戰並擊敗高塔 BOSS 第 ${this.towerFloor} 層！`, `BOSS HP: ${formatGameNumber(bossStats.hp)} | 戰鬥耗時 ${timeToKill.toFixed(1)} 秒，爆落高階寶石、創世裝備與魔神之種。`);
             }
         }
 
@@ -1148,7 +1186,6 @@
 
             this.challengeTowerBoss(currentTime);
 
-            // 1. 高效二項分佈/期望值 寶石批量合成 (避免 CPU 陷入無窮 while 循環)
             let synthSummary = [];
             for (let lvl = 1; lvl < 10; lvl++) {
                 if (this.gems[lvl] >= 3) {
@@ -1171,7 +1208,6 @@
                 this.logAction(currentTime, 'gem', '💎', `進行寶石批量合成與魔塵積攢`, synthSummary.slice(0, 3).join('； '));
             }
 
-            // 2. 限制單次管理頻率的神鑄法陣 6 合 1 (最多 5 次/次)
             let forgeAttempts = 0;
             while (this.genesisGearPool >= 6 && this.gold >= 5000 && forgeAttempts < 5) {
                 forgeAttempts++;
@@ -1198,7 +1234,6 @@
                 }
             }
 
-            // 3. 高CP值 +60 強化
             for (let slot in this.equipments) {
                 let eq = this.equipments[slot];
                 if (eq.level >= this.profile.targetEnhance) continue;
@@ -1224,7 +1259,6 @@
                 }
             }
 
-            // 4. 洗詞條 (單次 Tick 限制 50 次)
             for (let slot in this.equipments) {
                 const eq = this.equipments[slot];
                 const rerollCostGold = Math.floor(150 * Math.pow(eq.rarity, 1.2));
@@ -1294,7 +1328,7 @@
         let nextActionTime = 0.0;
         let nextSampleTime = 0.0;
         let lastCombatLogTime = -1.0;
-        const tickHours = 0.05; // 適度微調 tick 時間為 0.05 小時，確保計算超極速
+        const tickHours = 0.05;
         const history = [];
 
         while (currentTime < totalHours) {
@@ -1440,9 +1474,8 @@
             const pct = Math.round((i / runs) * 100);
             document.getElementById('progressPct').innerText = pct + '%';
             document.getElementById('progressBarFill').style.width = pct + '%';
-            document.getElementById('progressStatus').innerText = `正在為【${activeProfile.name}】進行極速模擬 (${i}/${runs})...`;
+            document.getElementById('progressStatus').innerText = `正在為【${activeProfile.name}】進行高塔與天賦對齊模擬 (${i}/${runs})...`;
 
-            // 讓出 CPU 主執行緒，防範瀏覽器畫面凍結
             await new Promise(r => setTimeout(r, 0));
         }
 

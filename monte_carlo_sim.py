@@ -4,9 +4,9 @@
 放置型遊戲（Idle / Incremental Game）核心數值平衡 - 蒙地卡羅離散事件模擬（DES）腳本
 
 功能說明：
-1. 100% 對齊遊戲官方權威 js/forge.js 神鑄六芒星法陣 (Divine Forge) 6 合 1 升階機制。
-2. 實裝 5 級寶石大量合成積攢魔塵 (Dust)，魔塵放入法陣防爆（+30% 成功率加成達 100% 必定成功）。
-3. 極限玩家強化目標調降為 +60 高CP值強化，釋放大量金幣與石料進行數萬次狂洗詞條。
+1. 100% 對齊官方權威高塔 BOSS 試煉/地獄/煉獄三座塔倍率公式 (js/data.js §TOWER_BOSS_*)
+   - 第 150 層高塔對應野外 Stage 754，擁有 4000x HP 與 75x ATK！
+2. 100% 對齊技能升級融合 (Skill Fusion 2.8x 傷害倍率) 與 轉生天賦 (Reincarnation Talents 40%~400% 全屬性加成)。
 """
 
 import sys
@@ -45,6 +45,31 @@ def roll_drop_count(expected_value):
     base = math.floor(expected_value)
     remainder = expected_value - base
     return base + (1 if random.random() < remainder else 0)
+
+def get_official_tower_boss_stats(floor):
+    ref_stage_base = 4
+    ref_stage_per_floor = 5
+    ref_stage = ref_stage_base + floor * ref_stage_per_floor
+    
+    hp_mult = 20
+    atk_mult = 3
+    if floor > 100:
+        hp_mult = 4000
+        atk_mult = 75
+    elif floor > 50:
+        hp_mult = 400
+        atk_mult = 15
+
+    base_hp = (30 + ref_stage * 8) * math.pow(1.095, max(0, ref_stage - 1))
+    base_atk = (6 + ref_stage * 1.2) * math.pow(1.11, max(0, ref_stage - 1))
+    base_def = (2 + ref_stage * 0.5) * math.pow(1.05, max(0, ref_stage - 1))
+
+    return {
+        "ref_stage": ref_stage,
+        "hp": base_hp * hp_mult,
+        "atk": base_atk * atk_mult,
+        "def": base_def * 10
+    }
 
 PLAYER_PROFILES = {
     "LIGHT": {
@@ -156,6 +181,7 @@ class Character:
         
         self.skill_points = 2
         self.total_skill_levels = 2
+        self.talent_points = 0
         
         self.total_enhancements = 0
         self.total_gem_syntheses = 0
@@ -229,13 +255,18 @@ class Character:
                 elif aff["key"] == 'itemFind': total_item_find += v
 
         gem_bonus_pct = sum(count * (lvl * 0.05) * (1.0 + total_gem_eff) for lvl, count in self.gems.items())
-        skill_dmg_mult = 1.0 + (self.total_skill_levels * 0.15)
+        
+        skill_fusion_mult = 2.8 if self.reincarnation >= 2 else 1.0
+        skill_dmg_mult = (1.0 + (self.total_skill_levels * 0.15)) * skill_fusion_mult
+        
+        talent_stat_mult = 1.0 + (self.reincarnation * 0.40) if self.reincarnation >= 1 else 1.0
+
         reinc_mult = safe_pow(2.0, self.reincarnation) * safe_pow(2.8, self.reincarnation)
         tower_buff_mult = 1.0 + (math.floor(self.tower_floor / 10) * 0.05)
         
-        patk = (base_atk * (1.0 + total_patk_pct) + gem_bonus_pct * 100) * skill_dmg_mult * reinc_mult * tower_buff_mult
-        pdef = base_def * (1.0 + total_def_pct) * reinc_mult
-        max_hp = base_hp * (1.0 + total_def_pct) * reinc_mult
+        patk = (base_atk * (1.0 + total_patk_pct) + gem_bonus_pct * 100) * skill_dmg_mult * reinc_mult * tower_buff_mult * talent_stat_mult
+        pdef = base_def * (1.0 + total_def_pct) * reinc_mult * talent_stat_mult
+        max_hp = base_hp * (1.0 + total_def_pct) * reinc_mult * talent_stat_mult
         
         attack_speed = (1.5 + (self.dex_attr * 0.002)) * (1.0 + total_aspd_pct)
         crit_rate = min(1.0, total_crit_rate + self.dex_attr * 0.0005)
@@ -265,8 +296,9 @@ class Character:
                 self.reincarnation += 1
                 self.level = 1
                 self.exp = 0
+                self.talent_points += 100
                 xp_needed = self.get_xp_for_next_level()
-                self.log_action(current_time, 'reinc', '🌀', f"角色達成第 {self.reincarnation} 轉生！", f"等級重置為 Lv.1，獲取轉生經驗與全屬性 {math.pow(2.8, self.reincarnation):.1f} 倍加成！")
+                self.log_action(current_time, 'reinc', '🌀', f"角色達成第 {self.reincarnation} 轉生！", f"等級重置為 Lv.1，解鎖/升級轉生天賦與技能融合，全屬性提升 {math.pow(2.8, self.reincarnation):.1f} 倍！")
 
     def process_mob_kills_loot(self, kills_count, current_time):
         if kills_count <= 0: return
@@ -309,7 +341,7 @@ class Character:
         highest_rarity = 6 if r6_count > 0 else (5 if r5_count > 0 else (4 if r4_count > 0 else (3 if r3_count > 0 else 2)))
         target_slot = random.choice(OFFICIAL_SLOTS)
         old_eq = self.equipments[target_slot]
-        new_eq = generate_dropped_equipment(highest_rarity, self.profile["min_ancient_affix_ratio"])
+        new_eq = generateDroppedEquipment(highest_rarity, self.profile["min_ancient_affix_ratio"])
 
         old_anc = count_ancient_affixes(old_eq["affixes"])
         new_anc = count_ancient_affixes(new_eq["affixes"])
@@ -332,11 +364,10 @@ class Character:
         if self.gold < cost_gold: return
 
         stats = self.calculate_stats()
-        boss_hp = (400 + target_floor * 80) * safe_pow(1.10, target_floor - 1)
-        boss_atk = (30 + target_floor * 8) * safe_pow(1.06, target_floor - 1)
+        boss_stats = get_official_tower_boss_stats(target_floor)
 
-        time_to_kill = boss_hp / max(1.0, stats["dps"])
-        time_to_die = stats["max_hp"] / max(1.0, boss_atk - stats["pdef"] * 0.5)
+        time_to_kill = boss_stats["hp"] / max(1.0, stats["dps"])
+        time_to_die = stats["max_hp"] / max(1.0, boss_stats["atk"] - stats["pdef"] * 0.5)
 
         if time_to_kill <= 60.0 and time_to_kill < time_to_die:
             self.gold -= cost_gold
@@ -361,7 +392,7 @@ class Character:
                 self.obtained_legendary += roll_drop_count(5.0 * loot_mult)
                 self.obtained_epic += roll_drop_count(8.0 * loot_mult)
 
-            self.log_action(current_time, 'boss', '👹', f"挑戰並擊敗高塔 BOSS 第 {self.tower_floor} 層！", f"BOSS HP: {format_game_number(boss_hp)} | 戰鬥耗時 {time_to_kill:.1f} 秒，爆落高階寶石、創世裝備與魔神之種。")
+            self.log_action(current_time, 'boss', '👹', f"挑戰並擊敗高塔 BOSS 第 {self.tower_floor} 層！", f"BOSS HP: {format_game_number(boss_stats['hp'])} | 戰鬥耗時 {time_to_kill:.1f} 秒，爆落高階寶石、創世裝備與魔神之種。")
 
     def auto_upgrade_and_manage(self, current_time):
         if self.skill_points > 0:
@@ -370,35 +401,28 @@ class Character:
 
         self.challenge_tower_boss(current_time)
 
-        # 1. 寶石大量合成與魔塵 (Dust) 產生機制
-        has_synthesized = True
         synth_summary = []
-        while has_synthesized:
-            has_synthesized = False
-            for lvl in range(1, 10):
-                if self.gems.get(lvl, 0) >= 3:
-                    count = self.gems[lvl] // 3
-                    self.gems[lvl] -= count * 3
-                    
-                    success_rate = 1.0 if lvl <= 4 else (0.70 if lvl == 5 else 0.50)
-                    successes = 0
-                    failures = 0
-                    for _ in range(count):
-                        if random.random() < success_rate: successes += 1
-                        else: failures += 1
+        for lvl in range(1, 10):
+            if self.gems.get(lvl, 0) >= 3:
+                count = self.gems[lvl] // 3
+                self.gems[lvl] -= count * 3
+                
+                success_rate = 1.0 if lvl <= 4 else (0.70 if lvl == 5 else 0.50)
+                successes = round(count * success_rate)
+                failures = count - successes
 
-                    self.gems[lvl + 1] = self.gems.get(lvl + 1, 0) + successes
-                    self.dust += failures
-                    self.total_gems_spent += count * 3
-                    self.total_gem_syntheses += count
-                    has_synthesized = True
-                    if count >= 5: synth_summary.append(f"合成 {count*3} 顆 Lv.{lvl} 寶石 -> 成功 {successes} 顆, 失敗產生 {failures} 魔塵")
+                self.gems[lvl + 1] = self.gems.get(lvl + 1, 0) + successes
+                self.dust += failures
+                self.total_gems_spent += count * 3
+                self.total_gem_syntheses += count
+                if count >= 5: synth_summary.append(f"合成 {count*3} 顆 Lv.{lvl} 寶石 -> 成功 {successes} 顆, 失敗產生 {failures} 魔塵")
 
         if synth_summary:
-            self.log_action(current_time, 'gem', '💎', "進行 5 級寶石大量合成與魔塵積攢", "； ".join(synth_summary[:3]))
+            self.log_action(current_time, 'gem', '💎', "進行寶石批量合成與魔塵積攢", "； ".join(synth_summary[:3]))
 
-        # 2. 實裝神鑄法陣 6 合 1 (Divine Forge System) 加魔塵防爆必過
-        while self.genesis_gear_pool >= 6 and self.gold >= 5000:
+        forge_attempts = 0
+        while self.genesis_gear_pool >= 6 and self.gold >= 5000 and forge_attempts < 5:
+            forge_attempts += 1
             self.genesis_gear_pool -= 6
             self.gold -= 5000
             self.total_godforge_attempts += 1
@@ -419,7 +443,6 @@ class Character:
             else:
                 self.dust += 1
 
-        # 3. 高CP值 +60 強化
         for slot, eq in self.equipments.items():
             if eq["level"] >= self.profile["target_enhance_level"]: continue
             cost_gold = int(80 * math.pow(eq["level"] + 1, 1.4))
@@ -428,7 +451,7 @@ class Character:
             success_rate = 0.40 if eq["level"] >= 50 else 0.75
             enhance_attempts = 0
 
-            while eq["level"] < self.profile["target_enhance_level"] and self.gold >= cost_gold and self.upgrade_stones >= cost_stones:
+            while eq["level"] < self.profile["target_enhance_level"] and self.gold >= cost_gold and self.upgrade_stones >= cost_stones and enhance_attempts < 20:
                 self.gold -= cost_gold
                 self.upgrade_stones -= cost_stones
                 self.total_gold_spent += cost_gold
@@ -441,12 +464,11 @@ class Character:
                 cost_gold = int(80 * math.pow(eq["level"] + 1, 1.4))
                 cost_stones = int(1.5 * math.pow(eq["level"] + 1, 1.05))
 
-        # 4. 瘋狂洗詞條 AI (將節省下來的金幣與石料投入數萬次洗煉)
         for slot, eq in self.equipments.items():
             reroll_cost_gold = int(150 * math.pow(eq["rarity"], 1.2))
             reroll_cost_stones = int(2 * eq["rarity"])
 
-            reroll_limit = 800 if self.profile["daily_online_hours"] >= 24 else 150
+            reroll_limit = 50 if self.profile["daily_online_hours"] >= 24 else 15
             reroll_attempts = 0
 
             while reroll_attempts < reroll_limit and self.gold >= reroll_cost_gold and self.upgrade_stones >= reroll_cost_stones:
@@ -466,9 +488,9 @@ class Character:
                 self.total_affix_rerolls += 1
                 reroll_attempts += 1
 
-            if reroll_attempts > 50:
+            if reroll_attempts > 30:
                 final_anc = count_ancient_affixes(eq["affixes"])
-                self.log_action(current_time, 'equip', '🎲', f"進行【{slot}】極速狂洗詞條 ({reroll_attempts} 次)", f"保持 {final_anc} 條太古狀態不變，追求滿極限屬性。")
+                self.log_action(current_time, 'equip', '🎲', f"進行【{slot}】狂洗詞條 ({reroll_attempts} 次)", f"保持 {final_anc} 條太古狀態不變，追求滿極限屬性。")
 
     def average_equipment_quality_score(self):
         total_score = 0
@@ -497,13 +519,13 @@ class SingleRunSimulation:
 
     def run(self):
         online_ratio = min(1.0, self.profile["daily_online_hours"] / 24.0)
-        action_interval = 0.083 if self.profile["daily_online_hours"] >= 24 else (0.25 if self.profile["daily_online_hours"] >= 8 else 1.0)
+        action_interval = 0.25 if self.profile["daily_online_hours"] >= 24 else 1.0
 
         current_time_hours = 0.0
         next_action_time = 0.0
         next_sample_time = 0.0
         last_combat_log_time = -1.0
-        tick_hours = 0.01
+        tick_hours = 0.05
 
         while current_time_hours < self.total_hours:
             stats = self.char.calculate_stats()
@@ -563,7 +585,7 @@ class SingleRunSimulation:
                     'combat',
                     '⚔️',
                     f"一般戰鬥 ({status_text}) Stage {int(self.char.stage)} 關",
-                    f"目前 DPS: {format_game_number(stats['dps'])} | 擊殺速度: {base_kill_speed:.2f} 隻/秒 (週期 {1.0/base_kill_speed:.1f}s/隻) | 本小時擊殺: {format_game_number(killed_per_hour)} 隻 | 累積總殺敵數: {format_game_number(self.char.total_kills)}"
+                    f"目前 DPS: {format_game_number(stats['dps'])} | 擊殺速度: {base_kill_speed:.2f} 隻/秒 | 本小時擊殺: {format_game_number(killed_per_hour)} 隻 | 累積總殺敵數: {format_game_number(self.char.total_kills)}"
                 )
 
             if is_online and current_time_hours >= next_action_time:
