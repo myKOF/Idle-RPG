@@ -6285,3 +6285,135 @@ button.nf-part-slot.nf-part-ico {
   border-color: #f5c542;
   box-shadow: 0 0 10px rgba(245, 185, 66, 0.4);
 }
+
+/* ==========================================================================
+   Fixed reference canvas
+
+   The game is authored for one 1920x900 surface. Browser resizing changes
+   only the complete canvas transform; it must never reflow individual panels.
+   These rules override the legacy mobile media queries above, which otherwise
+   make controls and text move or collapse in narrow windows.
+   ========================================================================== */
+#ui-stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+#ui-shell {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1920px;
+  height: 900px;
+  transform-origin: center center;
+}
+
+#ui-shell #topbar {
+  height: 50px !important;
+  min-height: 50px !important;
+  flex-wrap: nowrap !important;
+  overflow: hidden;
+}
+
+#ui-shell #res-bar {
+  flex-wrap: nowrap !important;
+  white-space: nowrap;
+}
+
+#ui-shell #game-layout {
+  width: 100% !important;
+  max-width: 1720px !important;
+  height: 850px !important;
+  min-height: 850px !important;
+  flex: none !important;
+  flex-direction: row !important;
+  padding: 0 0 0 16px !important;
+  gap: 16px !important;
+}
+
+#ui-shell #stats-sidebar {
+  width: 236px !important;
+  min-width: 236px !important;
+  flex: 0 0 236px !important;
+}
+
+#ui-shell #workspace-area {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  height: 100% !important;
+}
+
+#ui-shell #combat-area {
+  flex: 0 0 500px !important;
+  width: 500px !important;
+  min-width: 500px !important;
+  max-width: 500px !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  flex-direction: row !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+#ui-shell .equip-layout {
+  grid-template-columns: minmax(300px, 400px) minmax(290px, 1fr) !important;
+}
+
+#ui-shell .equip-top-layout {
+  grid-template-columns: minmax(0, 796px) minmax(200px, 210px) !important;
+}
+
+#ui-shell .battle-scene,
+#ui-shell .battle-scene.multi-enemy-layout {
+  grid-template-columns: 202px auto minmax(0, 1fr) !important;
+}
+
+#ui-shell .vs {
+  display: block !important;
+}
+
+#ui-shell .factory-flow {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+#ui-shell .nf-furnace-body {
+  flex-direction: row !important;
+}
+
+#ui-shell .talent-grid {
+  overflow-x: visible !important;
+  grid-template-columns: repeat(8, minmax(58px, 1fr)) !important;
+  gap: 10px !important;
+}
+
+#ui-shell .talent-icon {
+  padding: 7px !important;
+}
+
+#ui-shell .talent-icon-glyph {
+  width: 42px !important;
+  height: 42px !important;
+  font-size: 29px !important;
+}
+
+#ui-shell .detail-log-toolbar {
+  align-items: center !important;
+  flex-direction: row !important;
+}
+
+#ui-shell .detail-log-toolbar .log-filter,
+#ui-shell .detail-log-toolbar .btn {
+  width: auto !important;
+}
+
+#ui-shell .log-header-actions {
+  gap: 6px !important;
+}
+
+#ui-shell .log-header-actions .btn {
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+}
