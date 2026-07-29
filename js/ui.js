@@ -4101,66 +4101,6 @@ function handleVisibilityChange() {
   uiTick();
 }
 
-/* ---- 背包重繪節流 ----
-   掛機時掉落頻繁，`UI.dirty.inv` 幾乎每個 tick 都被標記，於是 uiTick 每 200ms 就把整個
-   背包格線重建一次。實測後期存檔（427 件）20 秒內重建 60 次、累計 829ms，佔全部渲染
-   時間的 84%——其餘所有渲染函式加起來才 162ms。
-
-   成本不只是 CPU。整份重建會把游標底下那一格換掉，於是 hover 掉、tooltip 閃、點擊
-   有時沒中。panel 回應那一側已經有一道「格線內容沒變就不要重畫」的防線（見
-   bindWorkerUiState 裡的 inventoryGridUnchanged），但掉落是真的改變了內容，那道防線
-   攔不住——只能從「多久畫一次」下手。
-
-   三段規則：
-     玩家剛操作過   → 完全不節流。按下去要馬上看到，這點不能妥協。
-     指標停在格線上 → 拉長間隔。此時重建的代價最高（換掉游標底下的格子），
-                      而玩家正在看的是某一格的細節，不是清單有沒有新東西。
-     其餘（純掛機） → 每秒最多一次。背包晚一秒反映掉落，玩家感受不到。
-
-   兩個間隔都是**上限而非停用**：最壞情況也就是 INV_HOVER_MIN_MS 不更新，不會無限延後。
-   被跳過時刻意不清掉 `UI.dirty.inv`，讓它留到下一個允許的 tick——節流是延後，不是丟棄。 */
-var INV_IDLE_MIN_MS = 1000;    // 純掛機時的最短重繪間隔
-var INV_HOVER_MIN_MS = 4000;   // 指標停在格線上時的最短重繪間隔
-/* 互動視窗只需要蓋住「按下去 → 指令送到 Worker → 面板回來 → 重繪」這一趟。
-   實測該往返約 10ms（指令）＋1ms（背包面板），800ms 是八十倍的餘裕。
-   刻意設成小於 INV_IDLE_MIN_MS：視窗一過就由閒置間隔接手，語意單純；
-   設得比它長的話，視窗後半段其實從來不會發揮作用，只是白白多畫幾次。 */
-var INV_INTERACT_MS = 800;     // 玩家操作後多久內視為「互動中」，完全不節流
-var _invRenderedAt = 0;
-var _invInteractAt = 0;
-var _invPointerInGrid = false;
-var _invThrottleBound = false;
-/* 被節流延後的重繪記在這裡，**不能**只靠 UI.dirty.inv 記著。
-   那個旗標會被 panel 回應那一側清掉（見 bindWorkerUiState 的 inventoryGridUnchanged
-   分支），於是「延後」會變成「消失」：F5 之後背包顯示 0/60 且一直空白，要切到別的
-   瀏覽器分頁再切回來才出現——因為那時才會重新標記所有面板。 */
-var _invRenderPending = false;
-
-/* 監聽器延到第一次判定時才掛，initUI 因此完全不必改動——那支函式由 Codex 維護，
-   而且同時段還在處理背包格線的其他問題，能不動就不動。 */
-function bindInventoryRenderThrottle() {
-  if (_invThrottleBound || typeof document === 'undefined') return;
-  var box = $id('inventory-grid');
-  if (!box) return;
-  _invThrottleBound = true;
-  /* 頁面剛載入視同互動中。開機那幾百毫秒面板資料才陸續抵達，這段期間若節流生效，
-     玩家會看到空背包（0/60）閃一下才被補上。 */
-  _invInteractAt = Date.now();
-  box.addEventListener('mouseenter', function () { _invPointerInGrid = true; });
-  box.addEventListener('mouseleave', function () { _invPointerInGrid = false; });
-  /* 捕獲階段收所有點擊與按鍵：不必逐一列舉哪些控制項會影響背包，
-     漏列一個就會變成「某個按鈕按了要等一秒才有反應」這種很難查的問題。 */
-  document.addEventListener('pointerdown', function () { _invInteractAt = Date.now(); }, true);
-  document.addEventListener('keydown', function () { _invInteractAt = Date.now(); }, true);
-}
-
-function inventoryRenderAllowed() {
-  bindInventoryRenderThrottle();
-  var now = Date.now();
-  if (now - _invInteractAt < INV_INTERACT_MS) return true;
-  return now - _invRenderedAt >= (_invPointerInGrid ? INV_HOVER_MIN_MS : INV_IDLE_MIN_MS);
-}
-
 function uiTick() {
   if (uiRenderingSuspended()) return;
   flushPendingLogDom();
@@ -4176,21 +4116,7 @@ function uiTick() {
   if (UI.tab === 'tower' && towerViewActive(towerSnapshot)) renderTowerFight();
   d.battle = false;
   if (d.equip && UI.tab === 'equip') { renderEquip(); d.equip = false; }
-  /* 節流只套用在裝備頁的背包格線：它是唯一會重建數百個節點的渲染。
-     下面熔爐／神鑄兩頁也吃 d.inv，但那兩處畫的是零件與素材清單，規模小得多，不動。
-
-     觸發條件同時看 `_invRenderPending`：被節流跳過的那次必須自己記著，不能只留在
-     d.inv 上等下一個 tick——那個旗標隨時可能被 panel 回應清掉，延後就變成丟失。 */
-  if (UI.tab === 'equip' && (d.inv || _invRenderPending)) {
-    if (inventoryRenderAllowed()) {
-      renderInventory();
-      _invRenderedAt = Date.now();
-      _invRenderPending = false;
-      d.inv = false;
-    } else {
-      _invRenderPending = true;
-    }
-  }
+  if (d.inv && UI.tab === 'equip') { renderInventory(); d.inv = false; }
   // 舊生產線頁已移除；零件庫/附魔書/強化統計變動（dirty.factory）一併驅動熔爐頁重繪
   if ((d.newforge || d.inv || d.factory) && UI.tab === 'newforge') { renderNewForge(); d.newforge = false; d.factory = false; d.inv = false; }
   if ((d.forge || d.inv || d.gems) && UI.tab === 'forge') {
