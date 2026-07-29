@@ -2423,6 +2423,19 @@ function emitSkillVfx(spec) {
   if (spec && typeof playCombatVfx === 'function') playCombatVfx(spec);
 }
 
+/* 傷害數字要等「打到人」才跳出來，不是技能一放就跳。
+   模擬層在一瞬間把整段傷害結算完（含多段與連擊），但畫面上：
+     ・投射物／天降要飛一段距離才命中 → 整段往後推一個飛行時間
+     ・多段技（例：奧術彈幕 4 段）是一發一發打 → 每段再往後錯開一點
+   斬擊／爆發／貫穿是當場發生，不需要飛行時間。
+   回傳毫秒；顯示端據此延後浮字，戰鬥結果完全不受影響。 */
+function skillVfxImpactDelayMs(spec, hitIndex) {
+  var stagger = (typeof VFX_HIT_STAGGER_SEC === 'number') ? VFX_HIT_STAGGER_SEC : 0.09;
+  var travel = 0;
+  if (spec && (spec.fxKind === 'projectile' || spec.fxKind === 'rain')) travel = spec.dur || 0;
+  return Math.round((travel + Math.max(0, hitIndex || 0) * stagger) * 1000);
+}
+
 function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
   var sk = skillDef(id);
   var fx = effectiveFx(id, sk, lv);
@@ -2455,10 +2468,11 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
   var out = { killed: false, dmg: 0, areaCells: placement.cells };
   // 特效：施放當下就發（不等結算），因為玩家看到的是「技能放出去了」，
   // 全部被閃避也一樣要有畫面。目標一律轉成浮字圖層 id，不帶實體參照。
-  emitSkillVfx(skillVfxSpec(sk, fx, (fx && fx.shape) || (sk && sk.shape),
+  var vfxSpec = skillVfxSpec(sk, fx, (fx && fx.shape) || (sk && sk.shape),
     targets.map(function (t) { return enemyEventFloatTarget(t, floatSel); }),
     placement.cells,
-    targets.length ? null : { targets: [playerEventFloatTarget(floatSel)] }));
+    targets.length ? null : { targets: [playerEventFloatTarget(floatSel)] });
+  emitSkillVfx(vfxSpec);
   var logMsg = sk.emoji + ' 你施放【' + sk.name + ' Lv.' + lv + '】，';
   var parts = [];
   // 5 轉昇華天賦：技能所有效果（傷害/治療/護盾/增益/減益/再生/詛咒/金幣/法力）共用此倍率；融合技=素材平均
@@ -2502,6 +2516,8 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
     var comboReps = rollComboHits(st);
     for (var rep = 0; rep <= comboReps; rep++) {
     for (var h = 0; h < hits; h++) {
+      // 這一段在畫面上是第幾次命中（含連擊數重複的段）→ 決定傷害數字延後多久跳出
+      var hitDelayMs = skillVfxImpactDelayMs(vfxSpec, rep * hits + h);
       for (var ti = 0; ti < targets.length; ti++) {
         var targetEnt = targets[ti];
         if (targetEnt.hp <= 0) continue;
@@ -2553,14 +2569,14 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
           var dmgStr = fmt(dmgRes.dmg);
           if (dmgRes.crit) dmgStr = '爆擊 ' + dmgStr;
           if (dmgRes.blocked) dmgStr = '格擋 ' + dmgStr;
-          floatEnemyEvent(targetEnt, floatSel, sk.emoji + dmgStr, (dmgRes.crit ? 'crit ' : 'dmg ') + 'enemy-skill', dmgRes.dmg);
+          floatEnemyEvent(targetEnt, floatSel, sk.emoji + dmgStr, (dmgRes.crit ? 'crit ' : 'dmg ') + 'enemy-skill', dmgRes.dmg, hitDelayMs);
           trackDps(dmgRes.dmg);
           if (typeof recordRunDamage === 'function') {
             var statKey = 'skill:' + (typeof statSlot === 'number' ? statSlot : id) + ':' + id + ':' + lv;
             recordRunDamage(sk.name, dmgRes.dmg, statKey, lv);
           }
         } else {
-          floatEnemyEvent(targetEnt, floatSel, 'MISS', 'miss enemy-dodge');
+          floatEnemyEvent(targetEnt, floatSel, 'MISS', 'miss enemy-dodge', undefined, hitDelayMs);
         }
         if (dmgRes.killed) out.killed = true;
       }

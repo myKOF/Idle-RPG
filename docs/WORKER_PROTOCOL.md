@@ -1,6 +1,6 @@
-# Worker 協議 v10
+# Worker 協議 v11
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 10`　最後更新：2026-07-29
+> 協議版本：`WORKER_PROTOCOL_VERSION = 11`　最後更新：2026-07-29
 > **單一資料來源是 `js/worker/protocol.js`。** 本文件是說明；兩者衝突時以程式碼為準。
 >
 > 遷移（P0～P5）已於 2026-07-28 完成，Worker 是模擬與存檔的唯一權威，舊單執行緒路徑已移除。

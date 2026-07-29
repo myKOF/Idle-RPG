@@ -211,7 +211,9 @@ function playCombatVfx(spec) {
     if (!pt) continue;
     if (kind === 'beam') { vfxBeam(s, layer, from, pt); continue; }
     for (var c = 0; c < count; c++) {
-      var delay = c * 90 + t * 40;
+      // 每一段之間的間隔與傷害數字共用同一個常數（data.js），否則畫面與數字會走鐘
+      var stagger = (typeof VFX_HIT_STAGGER_SEC === 'number') ? VFX_HIT_STAGGER_SEC * 1000 : 90;
+      var delay = c * stagger + t * 40;
       if (kind === 'projectile') vfxProjectile(s, layer, from, pt, delay);
       else if (kind === 'slash') vfxAtPoint('vfx-slash', s, layer, pt, delay);
       else vfxAtPoint('vfx-burst', s, layer, pt, delay);

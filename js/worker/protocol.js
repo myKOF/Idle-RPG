@@ -11,7 +11,7 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-var WORKER_PROTOCOL_VERSION = 10;
+var WORKER_PROTOCOL_VERSION = 11;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -68,10 +68,14 @@ var EVENT_KINDS = {
      shim 已統一歸到 FLOG，UI 端只需處理一種熔爐日誌事件。 */
   LOOT: 'loot',     // { kind, ...}             對應 window.recordLoot*
   NOTICE: 'notice', // { key, text, modal }     一次性公告／改版提示
-  /* { elId, text, cls, damageValue }  戰鬥飄字。
+  /* { elId, text, cls, damageValue, delayMs }  戰鬥飄字。
      elId 是目標圖層的元素 id（player 事件為 tp-float／tb-float，敵人為 mv-float-N），
      由 util.js 的 playerEventFloatTarget／enemyEventFloatTarget 在 Worker 內解析完成。
-     ⚠️ 不帶 ent：主執行緒原本用物件識別比對，複本永遠不相等，請改以 elId 判斷目標。 */
+     ⚠️ 不帶 ent：主執行緒原本用物件識別比對，複本永遠不相等，請改以 elId 判斷目標。
+     delayMs（v11 新增，可選）：顯示端延後多久才把這則浮字畫出來。
+     模擬層是一瞬間把整段傷害結算完的，但畫面上投射物要飛、多段技一段一段打——
+     不延後的話數字會在子彈還沒飛到時就跳出來，多段技也會擠成一團看起來像只打一下。
+     這是純顯示時序，戰鬥結算（傷害、擊殺、觸發）完全不受影響。 */
   FLOAT: 'float',
   /* { fxKind, glyph, color, targets, cells, dur, count }  技能／增益特效（v10 新增）。
      模擬層只描述「發生了什麼」，不碰任何 DOM——實際畫法完全由主執行緒的 js/vfx.js 決定。
