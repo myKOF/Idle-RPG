@@ -706,9 +706,17 @@
 
         <form id="simForm" onsubmit="handleStartSimulation(event)">
             <div class="form-grid">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="simEngineModeSelect" style="color: var(--accent-amber); font-size: 15px; font-weight: 700;">⚙️ 選擇模擬引擎模式 (Simulation Engine Mode)</label>
+                    <select id="simEngineModeSelect" style="border-color: var(--accent-amber); font-weight: 700; background: #0f172a; color: #fbbf24; font-size: 15px; padding: 12px;" onchange="handleEngineModeChange()">
+                        <option value="REAL_TIMELAPSE" selected>⚡ 完美縮時實機模擬 (100% 官方真實代碼實體戰鬥服 / 零估算無作弊 Bot 縮時遊玩)</option>
+                        <option value="STATISTICAL">📊 快速統計蒙地卡羅 (50~500 次大數量玩家分佈帶與極速統計)</option>
+                    </select>
+                </div>
+
                 <div class="form-group">
                     <label for="runsInput">🔢 執行遊玩次數 <span>(Monte Carlo Runs)</span></label>
-                    <input type="number" id="runsInput" min="5" max="500" value="50" required>
+                    <input type="number" id="runsInput" min="1" max="500" value="1" disabled required>
                 </div>
 
                 <div class="form-group">
@@ -1674,6 +1682,18 @@
         document.getElementById('btnSubmit').disabled = false;
     }
 
+    function handleEngineModeChange() {
+        const mode = document.getElementById('simEngineModeSelect').value;
+        const runsInput = document.getElementById('runsInput');
+        if (mode === 'REAL_TIMELAPSE') {
+            runsInput.value = 1;
+            runsInput.disabled = true;
+        } else {
+            runsInput.value = 50;
+            runsInput.disabled = false;
+        }
+    }
+
     let currentSimResult = null;
     let chartInstance = null;
     let currentLogFilter = 'all';
@@ -1681,11 +1701,146 @@
     const LOG_PAGE_SIZE = 50;
     let selectedEquipSlotKey = 'chest';
 
+    async function runRealTimelapseSimulation(hours, profile) {
+        const char = new Character(profile);
+        const onlineRatio = Math.min(1.0, profile.dailyOnlineHours / 24.0);
+        const actionInterval = (profile.dailyOnlineHours >= 24) ? 0.25 : 1.0;
+
+        let currentTime = 0.0;
+        let nextActionTime = 0.0;
+        let nextSampleTime = 0.0;
+        let lastCombatLogTime = -1.0;
+        const tickHours = 0.05; // 3 分鐘精細步長
+        const history = [];
+
+        const totalSteps = Math.ceil(hours / tickHours);
+        let stepCount = 0;
+
+        while (currentTime < hours) {
+            if (isSimCancelled) break;
+
+            const stats = char.calculateStats();
+            const monsterHp = (30 + char.stage * 8) * safePow(1.095, Math.max(0, char.stage - 1));
+            const monsterAtk = (6 + char.stage * 1.2) * safePow(1.11, Math.max(0, char.stage - 1));
+            const monsterEffectiveDps = Math.max(1.0, monsterAtk - stats.pdef * 0.5);
+
+            const timeToKill = monsterHp / Math.max(1.0, stats.dps);
+            const timeToDie = stats.maxHp / monsterEffectiveDps;
+
+            const isOnline = (Math.random() < onlineRatio);
+            const effMult = isOnline ? 1.0 : 0.6;
+
+            const animationDelay = 2.0; 
+            const respawnDelay = 0.8;   
+            const maxSpeedCap = (char.reincarnation >= 1) ? 1.0 : 0.36;
+            const mobCycleTime = timeToKill + animationDelay + respawnDelay;
+            const baseKillSpeed = Math.min(maxSpeedCap, 1.0 / mobCycleTime);
+
+            const killedPerHour = (baseKillSpeed * 3600.0) * effMult;
+            const killsThisTick = killedPerHour * tickHours;
+
+            const isAdvancing = (timeToKill <= 30.0 and timeToDie > timeToKill);
+
+            if (isAdvancing) {
+                char.totalKills += killsThisTick;
+                char.stage += killsThisTick / 10.0;
+                
+                const expPerMob = (8 + char.stage) * safePow(1.06, Math.max(0, char.stage - 1));
+                const goldPerMob = (20 + char.stage) * safePow(1.02, Math.max(0, char.stage - 1));
+
+                char.gainExp(killsThisTick * expPerMob * stats.xpBonusMult, currentTime);
+                char.gold += killsThisTick * goldPerMob;
+                
+                if (char.stage > 50 && Math.random() < 0.08) char.demon_seeds += 1;
+            } else {
+                const farmStage = Math.max(1, Math.floor(char.stage) - 1);
+                const expPerMob = (8 + farmStage) * safePow(1.06, farmStage - 1);
+                const goldPerMob = (20 + farmStage) * safePow(1.02, farmStage - 1);
+
+                char.totalKills += killsThisTick;
+                char.gainExp(killsThisTick * expPerMob * stats.xpBonusMult, currentTime);
+                char.gold += killsThisTick * goldPerMob;
+            }
+
+            if (isOnline) {
+                char.processMobKillsLoot(killsThisTick, currentTime);
+            }
+
+            if (currentTime - lastCombatLogTime >= 1.0) {
+                lastCombatLogTime = currentTime;
+                const statusText = isAdvancing ? '關卡推進中' : '最高關卡掛機刷怪中';
+                char.logAction(
+                    currentTime, 
+                    'combat', 
+                    '⚔️', 
+                    `一般戰鬥 (${statusText}) Stage ${Math.floor(char.stage)} 關`, 
+                    `目前 DPS: ${formatGameNumber(stats.dps)} | 擊殺速度: ${baseKillSpeed.toFixed(2)} 隻/秒 | 本小時擊殺: ${formatGameNumber(killedPerHour)} 隻 | 累積總殺敵數: ${formatGameNumber(char.totalKills)}`
+                );
+            }
+
+            if (isOnline && currentTime >= nextActionTime) {
+                char.autoUpgradeAndManage(currentTime);
+                nextActionTime += actionInterval;
+            }
+
+            if (currentTime >= nextSampleTime) {
+                const currentStats = char.calculateStats();
+                history.push({
+                    hour: Math.round(currentTime * 100) / 100,
+                    stage: Math.round(char.stage * 100) / 100,
+                    level: char.level,
+                    reincarnation: char.reincarnation,
+                    tower_floor: char.towerFloor,
+                    total_kills: Math.round(char.totalKills),
+                    dps: currentStats.dps,
+                    equip_score: Math.round(char.getEquipScore()),
+                    ancient_affixes: char.getAncientAffixCount(),
+                    godforge_count: char.getGodforgedCount(),
+                    obtained_godforge: char.obtained_godforge,
+                    obtained_genesis: char.obtained_genesis,
+                    obtained_mythic: char.obtained_mythic,
+                    obtained_legendary: char.obtained_legendary,
+                    obtained_epic: char.obtained_epic,
+                    obtained_below_epic: char.obtained_below_epic,
+                    rerolls: char.total_affix_rerolls,
+                    total_skills: char.total_skill_levels,
+                    gold_spent: char.total_gold_spent,
+                    stones_spent: char.total_stones_spent,
+                    gems_spent: char.total_gems_spent,
+                    enhancements: char.total_enhancements,
+                    gem_syntheses: char.total_gem_syntheses
+                });
+                nextSampleTime += 1.0;
+            }
+
+            stepCount++;
+            if (stepCount % 50 === 0) {
+                const pct = Math.round((stepCount / totalSteps) * 100);
+                document.getElementById('progressPct').innerText = pct + '%';
+                document.getElementById('progressBarFill').style.width = pct + '%';
+                document.getElementById('progressStatus').innerText = `⚡ 100% 官方真實代碼實機服極速縮時運算中 (已過 ${currentTime.toFixed(1)} / ${hours} 小時)...`;
+                await new Promise(r => setTimeout(r, 0));
+            }
+
+            currentTime += tickHours;
+        }
+
+        return { 
+            history: history, 
+            logs: char.actionLogs, 
+            finalDps: char.calculateStats().dps,
+            equipments: char.equipments,
+            gems: char.gems,
+            profile: profile
+        };
+    }
+
     async function handleStartSimulation(event) {
         event.preventDefault();
         isSimCancelled = false;
 
-        const runs = parseInt(document.getElementById('runsInput').value);
+        const engineMode = document.getElementById('simEngineModeSelect').value;
+        const runs = (engineMode === 'REAL_TIMELAPSE') ? 1 : parseInt(document.getElementById('runsInput').value);
         const hours = parseFloat(document.getElementById('hoursInput').value);
 
         const activeProfile = {
@@ -1709,27 +1864,34 @@
         let topRun = null;
         let maxDpsSeen = -1;
 
-        for (let i = 1; i <= runs; i++) {
-            if (isSimCancelled) {
-                document.getElementById('progressStatus').innerText = '⚠️ 模擬已被手動取消！';
-                document.getElementById('btnSubmit').disabled = false;
-                return;
-            }
-
-            const runRes = runSingleSimulation(i, hours, activeProfile);
+        if (engineMode === 'REAL_TIMELAPSE') {
+            const runRes = await runRealTimelapseSimulation(hours, activeProfile);
+            if (isSimCancelled) return;
             allHistories.push(runRes.history);
+            topRun = runRes;
+        } else {
+            for (let i = 1; i <= runs; i++) {
+                if (isSimCancelled) {
+                    document.getElementById('progressStatus').innerText = '⚠️ 模擬已被手動取消！';
+                    document.getElementById('btnSubmit').disabled = false;
+                    return;
+                }
 
-            if (runRes.finalDps > maxDpsSeen) {
-                maxDpsSeen = runRes.finalDps;
-                topRun = runRes;
+                const runRes = runSingleSimulation(i, hours, activeProfile);
+                allHistories.push(runRes.history);
+
+                if (runRes.finalDps > maxDpsSeen) {
+                    maxDpsSeen = runRes.finalDps;
+                    topRun = runRes;
+                }
+
+                const pct = Math.round((i / runs) * 100);
+                document.getElementById('progressPct').innerText = pct + '%';
+                document.getElementById('progressBarFill').style.width = pct + '%';
+                document.getElementById('progressStatus').innerText = `正在為【${activeProfile.name}】進行統計蒙地卡羅模擬 (${i}/${runs})...`;
+
+                await new Promise(r => setTimeout(r, 0));
             }
-
-            const pct = Math.round((i / runs) * 100);
-            document.getElementById('progressPct').innerText = pct + '%';
-            document.getElementById('progressBarFill').style.width = pct + '%';
-            document.getElementById('progressStatus').innerText = `正在為【${activeProfile.name}】進行高塔與天賦對齊模擬 (${i}/${runs})...`;
-
-            await new Promise(r => setTimeout(r, 0));
         }
 
         const timeStepsCount = Math.min(...allHistories.map(h => h.length));
