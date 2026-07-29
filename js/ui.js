@@ -4130,6 +4130,11 @@ var _invRenderedAt = 0;
 var _invInteractAt = 0;
 var _invPointerInGrid = false;
 var _invThrottleBound = false;
+/* 被節流延後的重繪記在這裡，**不能**只靠 UI.dirty.inv 記著。
+   那個旗標會被 panel 回應那一側清掉（見 bindWorkerUiState 的 inventoryGridUnchanged
+   分支），於是「延後」會變成「消失」：F5 之後背包顯示 0/60 且一直空白，要切到別的
+   瀏覽器分頁再切回來才出現——因為那時才會重新標記所有面板。 */
+var _invRenderPending = false;
 
 /* 監聽器延到第一次判定時才掛，initUI 因此完全不必改動——那支函式由 Codex 維護，
    而且同時段還在處理背包格線的其他問題，能不動就不動。 */
@@ -4138,6 +4143,9 @@ function bindInventoryRenderThrottle() {
   var box = $id('inventory-grid');
   if (!box) return;
   _invThrottleBound = true;
+  /* 頁面剛載入視同互動中。開機那幾百毫秒面板資料才陸續抵達，這段期間若節流生效，
+     玩家會看到空背包（0/60）閃一下才被補上。 */
+  _invInteractAt = Date.now();
   box.addEventListener('mouseenter', function () { _invPointerInGrid = true; });
   box.addEventListener('mouseleave', function () { _invPointerInGrid = false; });
   /* 捕獲階段收所有點擊與按鍵：不必逐一列舉哪些控制項會影響背包，
@@ -4169,11 +4177,19 @@ function uiTick() {
   d.battle = false;
   if (d.equip && UI.tab === 'equip') { renderEquip(); d.equip = false; }
   /* 節流只套用在裝備頁的背包格線：它是唯一會重建數百個節點的渲染。
-     下面熔爐／神鑄兩頁也吃 d.inv，但那兩處畫的是零件與素材清單，規模小得多，不動。 */
-  if (d.inv && UI.tab === 'equip' && inventoryRenderAllowed()) {
-    renderInventory();
-    _invRenderedAt = Date.now();
-    d.inv = false;   // 只有真的畫了才清；被節流跳過時留著，下一個允許的 tick 補畫
+     下面熔爐／神鑄兩頁也吃 d.inv，但那兩處畫的是零件與素材清單，規模小得多，不動。
+
+     觸發條件同時看 `_invRenderPending`：被節流跳過的那次必須自己記著，不能只留在
+     d.inv 上等下一個 tick——那個旗標隨時可能被 panel 回應清掉，延後就變成丟失。 */
+  if (UI.tab === 'equip' && (d.inv || _invRenderPending)) {
+    if (inventoryRenderAllowed()) {
+      renderInventory();
+      _invRenderedAt = Date.now();
+      _invRenderPending = false;
+      d.inv = false;
+    } else {
+      _invRenderPending = true;
+    }
   }
   // 舊生產線頁已移除；零件庫/附魔書/強化統計變動（dirty.factory）一併驅動熔爐頁重繪
   if ((d.newforge || d.inv || d.factory) && UI.tab === 'newforge') { renderNewForge(); d.newforge = false; d.factory = false; d.inv = false; }
