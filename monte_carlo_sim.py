@@ -318,15 +318,15 @@ class Character:
         reinc_mult = safe_pow(2.0, self.reincarnation) * safe_pow(2.8, self.reincarnation)
         tower_buff_mult = 1.0 + (math.floor(self.tower_floor / 10) * 0.05)
         
-        patk = (base_atk * (1.0 + total_patk_pct) + gem_bonus_pct * 100) * skill_dmg_mult * reinc_mult * tower_buff_mult * talent_stat_mult
-        pdef = base_def * (1.0 + total_def_pct) * reinc_mult * talent_stat_mult
-        max_hp = base_hp * (1.0 + total_def_pct) * reinc_mult * talent_stat_mult
+        patk = (base_atk * (1.0 + total_patk_pct / 100.0) + gem_bonus_pct) * skill_dmg_mult * reinc_mult * tower_buff_mult * talent_stat_mult
+        pdef = base_def * (1.0 + total_def_pct / 100.0) * reinc_mult * talent_stat_mult
+        max_hp = base_hp * (1.0 + total_def_pct / 100.0) * reinc_mult * talent_stat_mult
         
-        attack_speed = (1.5 + (self.dex_attr * 0.002)) * (1.0 + total_aspd_pct)
-        crit_rate = min(1.0, total_crit_rate + self.dex_attr * 0.0005)
-        crit_dmg = total_crit_dmg + (self.dex_attr * 0.001)
+        attack_speed = (1.5 + (self.dex_attr * 0.002)) * (1.0 + total_aspd_pct / 100.0)
+        crit_rate = min(1.0, (total_crit_rate / 100.0) + self.dex_attr * 0.0005)
+        crit_dmg = (total_crit_dmg / 100.0) + (self.dex_attr * 0.001)
         
-        dps = patk * attack_speed * (1.0 + crit_rate * (crit_dmg - 1.0))
+        dps = patk * attack_speed * (1.0 + crit_rate * max(0.0, crit_dmg - 1.0))
         return {
             "dps": dps,
             "patk": patk,

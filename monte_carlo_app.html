@@ -1385,16 +1385,23 @@
             const reincMult = safePow(2.0, this.reincarnation) * safePow(2.8, this.reincarnation);
             const towerBuffMult = 1.0 + (Math.floor(this.towerFloor / 10) * 0.05);
 
-            const patk = (baseAtk * (1.0 + totalPatkPct) + gemBonusPct * 100) * skillDmgMult * reincMult * towerBuffMult * talentStatMult;
-            const pdef = baseDef * (1.0 + totalDefPct) * reincMult * talentStatMult;
-            const maxHp = baseHp * (1.0 + totalDefPct) * reincMult * talentStatMult;
+            const patk = (baseAtk * (1.0 + totalPatkPct / 100.0) + gemBonusPct) * skillDmgMult * reincMult * towerBuffMult * talentStatMult;
+            const pdef = baseDef * (1.0 + totalDefPct / 100.0) * reincMult * talentStatMult;
+            const maxHp = baseHp * (1.0 + totalDefPct / 100.0) * reincMult * talentStatMult;
 
-            const attackSpeed = (1.5 + (this.dex_attr * 0.002)) * (1.0 + totalAspdPct);
-            const finalCritRate = Math.min(1.0, totalCritRate + this.dex_attr * 0.0005);
-            const finalCritDmg = totalCritDmg + (this.dex_attr * 0.001);
+            const attackSpeed = (1.5 + (this.dex_attr * 0.002)) * (1.0 + totalAspdPct / 100.0);
+            const finalCritRate = Math.min(1.0, (totalCritRate / 100.0) + this.dex_attr * 0.0005);
+            const finalCritDmg = (totalCritDmg / 100.0) + (this.dex_attr * 0.001);
 
-            const dps = patk * attackSpeed * (1.0 + finalCritRate * (finalCritDmg - 1.0));
-            return { dps, patk, pdef, maxHp, xpBonusMult: (1.0 + totalXpBonus), itemFindBonus: (1.0 + totalItemFind) };
+            const dps = patk * attackSpeed * (1.0 + finalCritRate * Math.max(0, finalCritDmg - 1.0));
+            return { 
+                dps, 
+                patk, 
+                pdef, 
+                maxHp, 
+                xpBonusMult: (1.0 + totalXpBonus / 100.0), 
+                itemFindBonus: (1.0 + totalItemFind / 100.0) 
+            };
         }
 
         gainExp(amount, currentTime) {
