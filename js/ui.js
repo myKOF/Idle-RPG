@@ -2656,7 +2656,10 @@ function renderInventory() {
   var filterKeyword = (kwInput && isInternal && kwInput.style.display !== 'none') ? kwInput.value.trim() : '';
 
   var inventoryItems = inventoryViewItems(invSnapshot);
-  var virtualize = true;
+    // The inventory cap is 1000 cells; keeping the complete grid mounted is
+    // both small enough for the UI and avoids virtual-window reordering when
+    // the user drags the scrollbar to the bottom.
+    var virtualize = false;
   if (!inventoryItems.length) {
     box.removeAttribute('data-inventory-total-rows');
     box.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">背包是空的。戰鬥掉落的裝備會先進入生產線輸送帶，「保留」的會送到這裡。</div>';
@@ -2704,7 +2707,7 @@ function renderInventory() {
         applyInventoryVisibleRows(box);
         return;
       }
-      var columns = virtualize ? inventoryGridColumnCount(box) : displayedItems.length;
+      var columns = inventoryGridColumnCount(box);
       var totalRows = Math.max(1, Math.ceil(displayedItems.length / columns));
       var rows = inventoryVisibleRows(totalRows, UI.inventoryVisibleRows);
       var startRow = 0;
@@ -2759,6 +2762,7 @@ function renderInventory() {
         box.scrollTop = wasAtScrollEnd ? box.scrollHeight : previousScrollTop;
       } else {
         box.innerHTML = cellsHtml;
+        box.scrollTop = previousScrollTop;
       }
     }
   }
@@ -7087,6 +7091,7 @@ function initUI() {
     if (target && target.closest && target.closest('#inv-section-box')) return;
     var box = $id('inventory-grid');
     if (!box) return;
+    if (!box.hasAttribute('data-inventory-total-rows')) return;
     var totalRows = inventoryGridTotalRowCount(box);
     var currentRows = inventoryVisibleRows(totalRows, UI.inventoryVisibleRows);
     if (totalRows <= currentRows || currentRows >= INVENTORY_VISIBLE_ROWS_MAX) return;
@@ -7099,6 +7104,7 @@ function initUI() {
     inventoryGrid.__virtualScrollBound = true;
     inventoryGrid.addEventListener('scroll', function () {
       if (UI.tab !== 'equip') return;
+      if (!inventoryGrid.hasAttribute('data-inventory-total-rows')) return;
       UI.inventoryScrolling = true;
       if (UI.inventoryScrollTimer) clearTimeout(UI.inventoryScrollTimer);
       UI.inventoryScrollTimer = setTimeout(function () {
