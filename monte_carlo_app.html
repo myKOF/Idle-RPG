@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>放置型 RPG 蒙地卡羅數值模擬驗證工具 (高塔與天賦技能對齊版)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/util.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/formula.js"></script>
+    <script src="js/item.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -1200,7 +1205,7 @@
 
     // 官方稀有度倍率 (data.js §RARITIES .mult)
     const RARITY_MULTS = { 1: 1.0, 2: 1.35, 3: 1.75, 4: 2.3, 5: 3.0, 6: 4.0, 7: 6.8, 8: 10.2 };
-    const ANCIENT_AFFIX_VALUE_MULT = 1.35;
+    var ANCIENT_AFFIX_VALUE_MULT = (typeof window !== 'undefined' && window.ANCIENT_AFFIX_VALUE_MULT) || 1.35;
 
     // 官方公式：rollAffixValue(key, itemLevel, rarityIdx)
     function officialRollAffixValue(key, itemLevel, rarityIdx) {
@@ -1241,7 +1246,7 @@
     }
 
     // 官方太古詞條數量權重表 (data.js §ANCIENT_COUNT_WEIGHTS)
-    const ANCIENT_COUNT_WEIGHTS = {
+    var ANCIENT_COUNT_WEIGHTS = (typeof window !== 'undefined' && window.ANCIENT_COUNT_WEIGHTS) || {
         2: [92, 7.5, 0.5],
         3: [78.1, 19.2, 2.4, 0.3],
         4: [72.11, 22.12, 4.61, 0.96, 0.2],
@@ -2209,14 +2214,26 @@
         selectedEquipSlotKey = slot;
         renderPaperdollGrid();
 
+        const detailPanel = document.getElementById('itemDetailPanel');
+        if (!detailPanel) return;
+
+        if (!currentSimResult || !currentSimResult.topRun || !currentSimResult.topRun.equipments) {
+            detailPanel.innerHTML = '<div style="color:var(--dim); padding:20px; text-align:center;">請先點擊【啟動極速模擬運算】生成裝備數據！</div>';
+            return;
+        }
+
         const eqMap = currentSimResult.topRun.equipments;
         const eq = eqMap[slot];
-        const rInfo = RARITY_INFO[eq.rarity] || RARITY_INFO[8];
-        const detailPanel = document.getElementById('itemDetailPanel');
+        if (!eq) {
+            detailPanel.innerHTML = '<div style="color:var(--dim); padding:20px; text-align:center;">此部位無裝備</div>';
+            return;
+        }
+
+        const rInfo = (typeof RARITY_INFO !== 'undefined' && RARITY_INFO[eq.rarity]) || (typeof RARITIES !== 'undefined' && RARITIES[eq.rarity]) || { name: '神鑄創世', color: '#f5c542' };
         detailPanel.style.borderColor = rInfo.color;
 
-        const slotName = SLOT_CHINESE_NAMES[slot] || slot;
-        const socketCount = (typeof socketCountFor === 'function') ? socketCountFor(eq.rarity) : (RARITIES[eq.rarity] ? RARITIES[eq.rarity].sockets : 6);
+        const slotName = (typeof SLOT_CHINESE_NAMES !== 'undefined' && SLOT_CHINESE_NAMES[slot]) || (typeof SLOT_INFO !== 'undefined' && SLOT_INFO[slot] && SLOT_INFO[slot].name) || slot;
+        const socketCount = (typeof socketCountFor === 'function') ? socketCountFor(eq.rarity) : (typeof RARITIES !== 'undefined' && RARITIES[eq.rarity] ? RARITIES[eq.rarity].sockets : 6);
         const gemLvl = (currentSimResult.config && currentSimResult.config.profile && currentSimResult.config.profile.gemTargetLvl) || 10;
 
         const officialGemTypes = ['garnet', 'amethyst', 'ruby', 'topaz', 'emerald', 'sunstone', 'diamond', 'onyx', 'lapis', 'opal'];
@@ -2242,7 +2259,7 @@
             detailPanel.innerHTML = `<div class="equip-detail-card" style="background: transparent; border: none; box-shadow: none; padding: 0;">${itemDetailHTML(itemObj, null, { showAffixReroll: false })}</div>`;
         } else {
             const gemHtml = sockets.map(g => {
-                const gt = GEM_TYPES[g.type];
+                const gt = (typeof GEM_TYPES !== 'undefined' && GEM_TYPES[g.type]) || { emoji: '💎', name: '寶石', statName: '屬性', pct: true };
                 const val = typeof gemStatValue === 'function' ? gemStatValue(g.type, g.level) : (g.level * 10);
                 const valStr = gt.pct ? (val + '%') : val;
                 return `<div>${gt.emoji} ${gt.name} (${gt.statName} +${valStr})</div>`;
