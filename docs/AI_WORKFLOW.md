@@ -222,15 +222,18 @@ docs:
 
 chore:
 
+標題一律以提交者前綴開頭（`[Claude]` / `[Codex]` / `[Antigravity]`），
+格式為 `[提交者] 類型: 說明`，規則見 AI_RULES.md 第 6 節。
+
 範例：
 
-feat: add skill fusion system
+[Codex] feat: 新增技能融合系統
 
-fix: prevent duplicate combat timer
+[Claude] fix: 修正重複觸發的戰鬥計時器
 
-test: add formula calculation tests
+[Antigravity] test: 新增公式計算測試
 
-docs: update AI workflow
+[Claude] docs: 更新 AI 工作流程
 
 禁止使用過於模糊的訊息，例如：
 

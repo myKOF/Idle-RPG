@@ -227,7 +227,19 @@ git switch main
 
 Commit 保持小且單一目的。
 
-建議格式：
+標題格式：
+
+```
+[提交者] 類型: 說明
+```
+
+提交者為 `[Claude]`、`[Codex]`、`[Antigravity]` 三者之一，AI 的所有 commit 一律加上
+（包含 merge、docs、chore）；使用者本人直接提交時不受此限。
+
+原因與篩選方式見 AI_RULES.md 第 6 節——本專案所有 commit 的 git author 都是同一個帳號，
+沒有前綴就分不出某次改動出自哪個 AI。
+
+類型：
 
 ```
 feat:
@@ -241,16 +253,18 @@ chore:
 例如：
 
 ```
-feat: add worker level system
+[Claude] feat: 新增工人升級系統
 
-fix: fix production queue bug
+[Codex] fix: 修正生產佇列錯誤
 
-refactor: simplify worker manager
+[Antigravity] test: 新增 Worker 壓力測試
 
-docs: update AI workflow
+[Claude] refactor: 重構 Worker 狀態同步流程
 
-test: add worker tests
+[Codex] docs: 更新 AI 工作流程
 ```
+
+說明一律使用繁體中文（保留的英文術語清單見 AI_RULES.md 第 6 節）。
 
 ---
 
