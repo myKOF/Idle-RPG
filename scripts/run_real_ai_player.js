@@ -2,14 +2,7 @@
 /**
  * scripts/run_real_ai_player.js
  * 
- * 100% 官方正版遊戲內核 AI 玩家無頭 (Headless) 實機運行腳本
- * 
- * - 直接載入原版 18 支遊戲核心檔案 (無任何修改與簡化)
- * - 創建獨立全權遊戲狀態 G (Single Source of Truth)
- * - 落地導出開局存檔 save_initial.json
- * - 由 AI 玩家策略進行實機操控 (打怪、爆裝換裝、強化、神鑄、洗條、合寶石、通關高塔)
- * - 導出完整動作細節日誌 ai_player_action_log.txt
- * - 導出 500 小時實體存檔 save_ai_player_500h.json (可直接匯入 http://localhost:8341/ 登入遊戲!)
+ * 100% 官方正版遊戲內核無頭實機運行腳本 (完全移除自訂日誌與自算估算，100% 使用遊戲本體內建 blog/flog 原生日誌)
  */
 
 const fs = require('fs');
@@ -17,10 +10,70 @@ const path = require('path');
 const vm = require('vm');
 
 console.log('========================================================================');
-console.log(' 🚀 啟動 Idle-RPG 官方正版無頭伺服器 (Headless Real Game Worker Engine)');
+console.log(' 🚀 啟動 Idle-RPG 官方正版無頭伺服器 (100% 官方內建原生日誌引擎)');
 console.log('========================================================================\n');
 
-// 準備 Node.js VM 虛擬機全域環境 (對齊 Worker/Window 環境)
+// 建立官方原生日誌監聽池
+const officialActionLogs = [];
+let lastLogTimeHour = 0.0;
+
+function stripHtml(html) {
+    if (!html) return '';
+    return String(html).replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim();
+}
+
+function getCategoryIcon(cat, cls) {
+    if (cat === 'combat' || cat === 'battle') return '⚔️';
+    if (cat === 'loot' || cat === 'equip') return '📦';
+    if (cat === 'tower' || cat === 'boss') return '👹';
+    if (cat === 'forge' || cat === 'newforge') return '👑';
+    if (cat === 'gem' || cat === 'gems') return '💎';
+    if (cat === 'reinc') return '🌀';
+    if (cls === 'good') return '✨';
+    return '📜';
+}
+
+function formatGameTime(hours) {
+    const totalSec = Math.floor(hours * 3600);
+    const days = Math.floor(totalSec / 86400) + 1;
+    const remSec = totalSec % 86400;
+    const h = Math.floor(remSec / 3600);
+    const m = Math.floor((remSec % 3600) / 60);
+    const s = remSec % 60;
+    const pad = (n) => String(n).padStart(2, '0');
+    return `[第${days}天 ${pad(h)}:${pad(m)}:${pad(s)}]`;
+}
+
+function fmtNum(val) {
+    if (val === null || val === undefined || isNaN(val)) return '0';
+    if (val < 10000) return Number(val).toLocaleString('en-US', { maximumFractionDigits: 1 });
+    const units = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
+    let uIdx = 0;
+    let num = val;
+    while (num >= 1000 && uIdx < units.length - 1) {
+        num /= 1000;
+        uIdx++;
+    }
+    if (uIdx < units.length) return num.toFixed(2) + units[uIdx];
+    return val.toExponential(2);
+}
+
+function getResourceSnapshot(p) {
+    p = p || {};
+    return {
+        gold: p.gold || 0,
+        scrap: p.scrap || 0,
+        dust: p.dust || 0,
+        ancientEssence: p.ancientEssence || 0,
+        seeds: p.demonSeed || 0,
+        books: (function() {
+            let b = 0;
+            if (p.books) { for (let k in p.books) b += p.books[k] || 0; }
+            return b;
+        })()
+    };
+}
+
 const sandbox = {
     console: console,
     Math: Math,
@@ -43,7 +96,32 @@ const sandbox = {
     performance: { now: () => Date.now() },
     location: { search: '' },
     UI: { dirty: {} },
-    shimPushEvent: () => {},
+    // 捕獲遊戲本體 100% 原生 blog / flog / addLog 事件
+    shimPushEvent: (type, payload) => {
+        if (type === 'log' || type === 'flog') {
+            const rawMsg = payload.msg || payload;
+            const cls = payload.cls || 'info';
+            const cat = payload.cat || 'system';
+            const cleanText = stripHtml(rawMsg);
+            if (!cleanText) return;
+
+            const curHour = sandbox.currentTime || 0;
+            // 節流普通打怪戰鬥日誌 (每 3 分鐘保留一筆)，避免產生百萬筆重複資料
+            if (cat === 'combat' && (curHour - lastLogTimeHour < 0.05)) return;
+
+            const safeTime = Math.max(lastLogTimeHour + 0.0001, curHour);
+            lastLogTimeHour = safeTime;
+
+            const icon = getCategoryIcon(cat, cls);
+            const p = (sandbox.G && sandbox.G.player) || {};
+            const res = getResourceSnapshot(p);
+
+            const timeStr = formatGameTime(safeTime);
+            const logLine = `${timeStr} ${icon} [${cat.toUpperCase()}] ${cleanText} | 【頂欄資源: 💰金幣:${fmtNum(res.gold)}, 🧩裝備碎片:${fmtNum(res.scrap)}, ✨魔塵:${fmtNum(res.dust)}, ✡️太古精華:${fmtNum(res.ancientEssence)}, 🌱魔神之種:${fmtNum(res.seeds)}, 📜附魔書:${fmtNum(res.books)}】`;
+            
+            officialActionLogs.push(logLine);
+        }
+    },
     window: null,
     self: null
 };
@@ -53,7 +131,7 @@ sandbox.self = sandbox;
 
 const context = vm.createContext(sandbox);
 
-// 依照 sim.worker.js 官方權威載入順序載入 18 支核心檔案
+// 載入 20 支官方原版核心程式碼
 const GAME_SCRIPTS = [
     'js/worker/protocol.js',
     'js/worker/shim.js',
@@ -77,7 +155,7 @@ const GAME_SCRIPTS = [
     'js/save.js'
 ];
 
-console.log('📦 正在載入官方 18 支核心遊戲程式碼...');
+console.log('📦 正在載入官方 20 支核心遊戲程式碼...');
 GAME_SCRIPTS.forEach(relPath => {
     const absPath = path.join(__dirname, '..', relPath);
     const code = fs.readFileSync(absPath, 'utf-8');
@@ -85,7 +163,6 @@ GAME_SCRIPTS.forEach(relPath => {
 });
 console.log('✅ 官方遊戲核心載入完成！\n');
 
-// 初始化官方狀態 G = newGameState();
 console.log('🎮 創立角色 Lv.1 並寫入初始實體存檔...');
 vm.runInContext(`
     if (typeof newGameState === 'function') {
@@ -102,97 +179,29 @@ vm.runInContext(`
     if (typeof getStats === 'function') getStats();
 `, context);
 
-// 將開局存檔寫到硬碟 save_initial.json
+// 落地開局存檔
 const initialSaveJson = vm.runInContext('JSON.stringify(G, null, 2)', context);
 const initialSavePath = path.join(__dirname, '..', 'save_initial.json');
 fs.writeFileSync(initialSavePath, initialSaveJson, 'utf-8');
 console.log(`💾 [開局存檔落地成功] -> ${initialSavePath}\n`);
 
-// 時間格式化工具 [第X天 HH:MM:SS]
-function formatGameTime(hours) {
-    const totalSec = Math.floor(hours * 3600);
-    const days = Math.floor(totalSec / 86400) + 1;
-    const remSec = totalSec % 86400;
-    const h = Math.floor(remSec / 3600);
-    const m = Math.floor((remSec % 3600) / 60);
-    const s = remSec % 60;
-    const pad = (n) => String(n).padStart(2, '0');
-    return `[第${days}天 ${pad(h)}:${pad(m)}:${pad(s)}]`;
-}
-
-// 格式化數字 (K, M, B, T, eN)
-function fmtNum(val) {
-    if (val === null || val === undefined || isNaN(val)) return '0';
-    if (val < 10000) return Number(val).toLocaleString('en-US', { maximumFractionDigits: 1 });
-    const units = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
-    let uIdx = 0;
-    let num = val;
-    while (num >= 1000 && uIdx < units.length - 1) {
-        num /= 1000;
-        uIdx++;
-    }
-    if (uIdx < units.length) return num.toFixed(2) + units[uIdx];
-    return val.toExponential(2);
-}
-
-// 獲取當前頂欄 6 大素材快照
-function getResourceSnapshot() {
-    return vm.runInContext(`
-        (function() {
-            const p = G.player || {};
-            return {
-                gold: p.gold || 0,
-                scrap: p.scrap || 0,
-                dust: p.dust || 0,
-                ancientEssence: p.ancientEssence || 0,
-                seeds: p.demonSeed || 0,
-                books: (function() {
-                    let b = 0;
-                    if (p.books) { for (let k in p.books) b += p.books[k] || 0; }
-                    return b;
-                })()
-            };
-        })()
-    `, context);
-}
-
-// 建立日誌紀錄器
-const actionLogs = [];
-let lastLogTimeHour = 0.0;
-
-function logAction(timeHour, icon, category, title, detail) {
-    const res = getResourceSnapshot();
-    const safeTime = Math.max(lastLogTimeHour + 0.0001, timeHour);
-    lastLogTimeHour = safeTime;
-    const timeStr = formatGameTime(safeTime);
-    const logLine = `${timeStr} ${icon} [${category.toUpperCase()}] ${title} -- ${detail} | 【頂欄資源: 💰金幣:${fmtNum(res.gold)}, 🧩裝備碎片:${fmtNum(res.scrap)}, ✨魔塵:${fmtNum(res.dust)}, ✡️太古精華:${fmtNum(res.ancientEssence)}, 🌱魔神之種:${fmtNum(res.seeds)}, 📜附魔書:${fmtNum(res.books)}】`;
-    actionLogs.push(logLine);
-}
-
-// 開始 500 小時實機運算
 const TOTAL_HOURS = 500;
-console.log(`⚔️ 開始執行 ${TOTAL_HOURS} 小時 AI 玩家無頭實機遊玩...`);
+console.log(`⚔️ 開始執行 ${TOTAL_HOURS} 小時遊戲原生日誌實機遊玩...`);
 const startTimeMs = Date.now();
 
-logAction(0.0003, '🎮', 'combat', 'AI 玩家進入無限征途世界', '創建全新角色 Lv.1，穿著初始基礎裝備進入 Stage 1 關卡。');
-logAction(0.0014, '⚔️', 'combat', '揮刀發動第一波普通打怪戰鬥', '對 Stage 1 野外小怪進行持續打怪與經驗/金幣積攢。');
-
-// 驅動 500 小時實體戰鬥主迴圈
 let currentTime = 0.0;
-let lastLogHour = 0;
 
 while (currentTime < TOTAL_HOURS) {
-    // 依據時間動態微步進
-    const dtHours = (currentTime < 1.0) ? 0.002 : 0.05; // 初期 7.2 秒微步，後期 3 分鐘步長
+    const dtHours = (currentTime < 1.0) ? 0.002 : 0.05;
     
     context.dtSec = dtHours * 3600;
     context.currentTime = currentTime;
     
+    // 全權驅動遊戲內核
     vm.runInContext(`
         (function() {
-            // 依照實機步進 0.2 秒分步推進全套戰鬥核心
             let remSec = dtSec;
-            const stepDt = 0.2;
+            const stepDt = 1.0;
             while (remSec > 0.0001) {
                 const curStep = Math.min(remSec, stepDt);
                 if (typeof fieldTick === 'function') fieldTick(curStep);
@@ -200,7 +209,7 @@ while (currentTime < TOTAL_HOURS) {
                 remSec -= curStep;
             }
             
-            // AI 策略升級：裝備比較、自動換裝與狀態更新
+            // 自動換裝
             if (G.player && G.player.inv && G.player.inv.items) {
                 const items = G.player.inv.items;
                 for (let i = items.length - 1; i >= 0; i--) {
@@ -213,24 +222,7 @@ while (currentTime < TOTAL_HOURS) {
             if (typeof getStats === 'function') getStats();
         })()
     `, context);
-    
-    // 定期上記錄
-    const currentHourFloor = Math.floor(currentTime);
-    if (currentHourFloor > lastLogHour) {
-        lastLogHour = currentHourFloor;
-        const curStage = vm.runInContext('(G.stage && G.stage.current) || 1', context);
-        const curLevel = vm.runInContext('G.player.level || 1', context);
-        const curStats = vm.runInContext('(typeof getStats === "function") ? getStats() : {}', context);
-        
-        logAction(
-            currentTime,
-            '⚔️',
-            'combat',
-            `實機戰鬥進行中 (Stage ${Math.floor(curStage)} 關)`,
-            `角色 Lv.${curLevel} | 目前面板 DPS: ${fmtNum(curStats.dps || 1000)} | 金幣總額: ${fmtNum(getResourceSnapshot().gold)}`
-        );
-    }
-    
+
     currentTime += dtHours;
 }
 
@@ -238,8 +230,8 @@ const elapsedSec = ((Date.now() - startTimeMs) / 1000).toFixed(2);
 const speedupMult = ((TOTAL_HOURS * 3600) / elapsedSec).toFixed(0);
 
 console.log(`\n🎉 ${TOTAL_HOURS} 小時實機遊玩成功完成！耗時 ${elapsedSec} 秒 (時間加速比: ${Number(speedupMult).toLocaleString()}x 倍加速)`);
+console.log(`📝 共擷取到官方內建原生日誌: ${officialActionLogs.length} 筆\n`);
 
-// 獲取最終角色資訊
 const finalPlayerSummary = vm.runInContext(`
     (function() {
         const p = G.player || {};
@@ -248,6 +240,7 @@ const finalPlayerSummary = vm.runInContext(`
             level: p.level || 1,
             reincarnation: p.reincarnations || 0,
             stage: (G.stage && G.stage.current) || 1,
+            tower: (G.tower && G.tower.floor) || 1,
             dps: stats.dps || p.dps || 0,
             gold: p.gold || 0,
             scrap: p.scrap || 0
@@ -255,35 +248,29 @@ const finalPlayerSummary = vm.runInContext(`
     })()
 `, context);
 
-console.log(`📊 最終 AI 玩家狀態:`);
-console.log(`   - 角色等級: Lv.${finalPlayerSummary.level} (轉生: ${finalPlayerSummary.reincarnation})`);
-console.log(`   - 最高關卡: Stage ${Math.floor(finalPlayerSummary.stage)}`);
-console.log(`   - 最終面板 DPS: ${fmtNum(finalPlayerSummary.dps)}`);
-console.log(`   - 持有金幣: ${fmtNum(finalPlayerSummary.gold)}`);
-console.log(`   - 持有裝備碎片: ${fmtNum(finalPlayerSummary.scrap)}\n`);
-
-// 1. 寫出 500 小時完整細節日誌文字檔
+// 寫出 500 小時官方原生細節日誌
 const logHeader = `========================================================================
- Idle-RPG 100% 官方正版實機 AI 玩家 500 小時真實遊玩細節日誌 (.TXT Dump)
+ Idle-RPG 100% 官方內建原生遊戲日誌 500 小時真實遊玩履歷 (.TXT Dump)
  生成時間: ${new Date().toLocaleString()}
  時間加速倍率: ${Number(speedupMult).toLocaleString()}x
+ 總擷取官方原生日誌數: ${officialActionLogs.length} 筆
  最終角色等級: Lv.${finalPlayerSummary.level} (轉生 ${finalPlayerSummary.reincarnation})
  最終最高關卡: Stage ${Math.floor(finalPlayerSummary.stage)}
  最終面板 DPS: ${fmtNum(finalPlayerSummary.dps)}
 ========================================================================\n\n`;
 
-const txtContent = logHeader + actionLogs.join('\n');
+const txtContent = logHeader + officialActionLogs.join('\n');
 const logTxtPath = path.join(__dirname, '..', 'ai_player_action_log.txt');
 fs.writeFileSync(logTxtPath, txtContent, 'utf-8');
-console.log(`📝 [500h 實機動作日誌檔落地成功] -> ${logTxtPath}`);
+console.log(`📝 [500h 官方原生動作日誌檔落地成功] -> ${logTxtPath}`);
 
-// 2. 寫出 500 小時實體存檔 save_ai_player_500h.json (可用於遊戲直接匯入登入!)
+// 寫出 500 小時實體存檔
 const finalSaveJson = vm.runInContext('JSON.stringify(G, null, 2)', context);
 const save500hPath = path.join(__dirname, '..', 'save_ai_player_500h.json');
 fs.writeFileSync(save500hPath, finalSaveJson, 'utf-8');
 console.log(`💾 [500h 實體遊戲存檔落地成功] -> ${save500hPath}`);
 
 console.log('\n========================================================================');
-console.log(' ✅ 全套 500 小時實體存檔與動作日誌全部生成完成！');
+console.log(' ✅ 已徹底移除所有自訂日誌與自算估算！100% 採用遊戲本體原生 blog/flog 日誌！');
 console.log(' 💡 您可以直接在 http://localhost:8341/ 點擊【匯入存檔】選擇 save_ai_player_500h.json');
 console.log('========================================================================');
