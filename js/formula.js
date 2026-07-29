@@ -868,10 +868,19 @@ function isPurgatoryTowerFloor(floor) {
 /* 普通關卡敵人數量：權重見參數表「4-敵人數量」（預設 1 隻 60%、2 隻 25%、3 隻 10%、4 隻 5%）。
    權重 0 的列先濾掉——wpick 在浮點誤差下會回傳陣列最後一項，留著會讓「權重 0 的 16 隻」
    有極小機率被抽中。最後再夾到棋盤總格數，避免出怪數超過站得下的格子。 */
-function rollFieldEnemyCount() {
+function fieldCountTableFor(rank) {
+  if (rank === 'boss' && typeof FIELD_BOSS_COUNT_TABLE !== 'undefined') return FIELD_BOSS_COUNT_TABLE;
+  if (rank === 'elite' && typeof FIELD_ELITE_COUNT_TABLE !== 'undefined') return FIELD_ELITE_COUNT_TABLE;
+  return FIELD_ENEMY_COUNT_TABLE;
+}
+
+/* rank：'normal'（預設）／'elite'／'boss'，三者各有一張權重表。
+   同樣出 16 隻，小怪打得動、菁英打不動、BOSS 佔 2×2 根本放不下，所以必須分開。 */
+function rollFieldEnemyCount(rank) {
+  var table = fieldCountTableFor(rank) || [];
   var pairs = [];
-  for (var i = 0; i < FIELD_ENEMY_COUNT_TABLE.length; i++) {
-    if (FIELD_ENEMY_COUNT_TABLE[i][1] > 0) pairs.push(FIELD_ENEMY_COUNT_TABLE[i]);
+  for (var i = 0; i < table.length; i++) {
+    if (table[i][1] > 0) pairs.push(table[i]);
   }
   if (!pairs.length) return 1;
   var n = wpick(pairs);

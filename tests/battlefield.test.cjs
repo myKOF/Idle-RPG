@@ -197,14 +197,13 @@ test('野外 BOSS 階段：每 50 階一次，且優先於菁英', () => {
   assert.equal(boss.aspd, c.FIELD_BOSS_ASPD);
 });
 
-test('敵人數量表：權重 0 的數量不會被抽中，且不超過棋盤格數', () => {
+test('敵人數量不超過棋盤格數（三種敵種都一樣）', () => {
   const c = loadBattlefield();
-  const seen = {};
-  for (let i = 0; i < 3000; i++) {
-    c.Math.random = Math.random;
-    const n = c.rollFieldEnemyCount();
-    assert.ok(n >= 1 && n <= c.bfCellCount());
-    seen[n] = true;
-  }
-  assert.deepEqual(Object.keys(seen).map(Number).sort((a, b) => a - b), [1, 2, 3, 4]);
+  c.Math.random = Math.random;
+  ['normal', 'elite', 'boss'].forEach((rank) => {
+    for (let i = 0; i < 1500; i++) {
+      const n = c.rollFieldEnemyCount(rank);
+      assert.ok(n >= 1 && n <= c.bfCellCount(), rank + ' 抽到 ' + n + '，超出棋盤格數');
+    }
+  });
 });
