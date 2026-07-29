@@ -408,7 +408,12 @@ function buildPanel(name, params) {
         equipView: G.equipView, equipActive: G.equipActive
       };
     case 'battle':
+      /* gt：這份快照是在哪一刻拍的。
+         技能冷卻、復活倒數這些欄位存的是「還剩幾秒」而不是絕對時刻，
+         而面板只在髒區時才更新——主執行緒若照著舊快照直接顯示，倒數會卡住好幾秒
+         再突然歸零。有了 gt 就能扣掉「拍照到現在」經過的時間，變成真正的碼錶。 */
       return {
+        gt: GT,
         field: (typeof FIELD !== 'undefined') ? FIELD : null,
         tower: (typeof TOWER !== 'undefined') ? TOWER : null,
         stage: G.stage, zoneProgress: G.zoneProgress,
@@ -431,7 +436,8 @@ function buildPanel(name, params) {
     case 'factory':
       return { factory: G.factory, salvageSettings: p.salvageSettings };
     case 'tower':
-      return { tower: G.tower, runtime: (typeof TOWER !== 'undefined') ? TOWER : null };
+      // gt 同 battle：塔內技能冷卻也是「還剩幾秒」，主執行緒要據此把倒數補到現在
+      return { gt: GT, tower: G.tower, runtime: (typeof TOWER !== 'undefined') ? TOWER : null };
     case 'gems':
       // 一般寶石是 { type: { lv: n } } 計數；融合寶石才是個別實體
       return {
