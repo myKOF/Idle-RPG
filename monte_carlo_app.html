@@ -1571,7 +1571,16 @@
                     this.obtained_epic += rollDropCount(8.0 * lootMult);
                 }
 
-                this.logAction(currentTime, 'boss', '👹', `挑戰並擊敗高塔 BOSS 第 ${this.towerFloor} 層！`, `BOSS HP: ${formatGameNumber(bossStats.hp)} | 戰鬥耗時 ${timeToKill.toFixed(1)} 秒，爆落高階寶石、創世裝備與魔神之種。`);
+                let dropRewardDesc = "爆落高階寶石、精良/稀有裝備與金幣。";
+                if (targetFloor >= 100) {
+                    dropRewardDesc = "爆落高階寶石、創世裝備、魔神之種與太古精華。";
+                } else if (targetFloor >= 30) {
+                    dropRewardDesc = "爆落高階寶石、神話/傳說裝備與魔塵。";
+                } else if (targetFloor >= 10) {
+                    dropRewardDesc = "爆落高階寶石、史詩裝備與金幣。";
+                }
+
+                this.logAction(currentTime, 'boss', '👹', `挑戰並擊敗高塔 BOSS 第 ${this.towerFloor} 層！`, `BOSS HP: ${formatGameNumber(bossStats.hp)} | 戰鬥耗時 ${timeToKill.toFixed(1)} 秒，${dropRewardDesc}`);
             }
         }
 
