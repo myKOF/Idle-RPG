@@ -1321,7 +1321,7 @@
 
             for (let slot in this.equipments) {
                 const eq = this.equipments[slot];
-                const enhanceMult = 1.0 + eq.level * 0.08;
+                const enhanceMult = 1.0 + eq.level * 0.05; // 官方 upgradeMult: 每 +1 強化全詞條 +5%
                 const rarityMult = safePow(2.2, eq.rarity);
                 const godMult = eq.isGodforged ? 2.5 : 1.0;
 
@@ -1955,19 +1955,22 @@
         const ancCount = countAncientAffixes(eq.affixes);
 
         let affixRowsHtml = '';
+        const enhanceMult = 1 + 0.05 * (eq.level || 0);
+
         eq.affixes.forEach(aff => {
             // 使用官方 AFFIX_POOL 名稱，回退到 AFFIX_CHINESE
             const poolDef = OFFICIAL_AFFIX_POOL[aff.key];
             const affName = poolDef ? poolDef.name : (AFFIX_CHINESE[aff.key] || aff.key);
             const isPct = poolDef ? poolDef.pct : true;
-            const valStr = isPct ? `+${aff.val.toFixed(1)}%` : `+${formatGameNumber(aff.val)}`;
+            const finalVal = aff.val * enhanceMult;
+            const valStr = isPct ? `+${finalVal.toFixed(1)}%` : `+${formatGameNumber(finalVal)}`;
 
             if (aff.ancient) {
                 affixRowsHtml += `
                     <div class="affix-row ancient">
                         <span>✡</span>
                         <span>${affName} ${valStr}</span>
-                        <span style="font-size: 11px; opacity: 0.9; margin-left: auto;">(太古滿數值)</span>
+                        <span style="font-size: 11px; opacity: 0.9; margin-left: auto;">(太古+${eq.level}滿數值)</span>
                     </div>
                 `;
             } else {
