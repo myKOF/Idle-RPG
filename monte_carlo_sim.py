@@ -4,9 +4,9 @@
 放置型遊戲（Idle / Incremental Game）核心數值平衡 - 蒙地卡羅離散事件模擬（DES）腳本
 
 功能說明：
-1. 100% 對齊遊戲 js/data.js: FIELD_DROP_TABLE 與 BOSS_DROP_TABLE 真實掉落率與自動分解。
-2. 100% 對齊遊戲 js/data.js: SLOT_LIST 全 13 裝備欄位 (雙武器/頭/肩/胸/腰/手/腕/腿/鞋/雙戒/項鍊)。
-3. 100% 對齊實機物理出怪間隔 (js/data.js: RESPAWN_DELAY = 0.8s) 與登場/死亡動畫瓶頸 (單體約 0.35隻/秒)。
+1. 100% 對齊遊戲 js/formula.js: roll_drop_count 機率餘數隨機判定，修復浮點被 Math.floor 截斷問題。
+2. 100% 對齊遊戲 js/data.js: FIELD_DROP_TABLE 與 BOSS_DROP_TABLE 真實掉落率與自動分解。
+3. 100% 對齊遊戲 js/data.js: SLOT_LIST 全 13 裝備欄位 (雙武器/頭/肩/胸/腰/手/腕/腿/鞋/雙戒/項鍊)。
 """
 
 import sys
@@ -38,6 +38,11 @@ def format_game_number(num):
     if num < 1e12: return f"{num/1e9:.2f}B"
     if num < 1e15: return f"{num/1e12:.2f}T"
     return f"{num:.2e}".replace('e+', ' × 10^')
+
+def roll_drop_count(expected_value):
+    base = math.floor(expected_value)
+    remainder = expected_value - base
+    return base + (1 if random.random() < remainder else 0)
 
 PLAYER_PROFILES = {
     "LIGHT": {
@@ -258,11 +263,11 @@ class Character:
         r3_chance = 0.10 if self.stage > 10 else 0.05
         r12_chance = 0.70
 
-        r6_count = int(kills_count * r6_chance)
-        r5_count = int(kills_count * r5_chance)
-        r4_count = int(kills_count * r4_chance)
-        r3_count = int(kills_count * r3_chance)
-        r12_count = int(kills_count * r12_chance)
+        r6_count = roll_drop_count(kills_count * r6_chance)
+        r5_count = roll_drop_count(kills_count * r5_chance)
+        r4_count = roll_drop_count(kills_count * r4_chance)
+        r3_count = roll_drop_count(kills_count * r3_chance)
+        r12_count = roll_drop_count(kills_count * r12_chance)
 
         self.obtained_genesis += r6_count
         self.obtained_mythic += r5_count
@@ -306,16 +311,16 @@ class Character:
             self.demon_seeds += int(target_floor / 10) + 1
 
             if target_floor >= 30:
-                self.obtained_genesis += 1
-                self.obtained_mythic += 2
-                self.obtained_legendary += 3
+                self.obtained_genesis += roll_drop_count(0.5)
+                self.obtained_mythic += roll_drop_count(1.5)
+                self.obtained_legendary += roll_drop_count(2.0)
                 if random.random() < 0.15:
                     self.obtained_godforge += 1
                     self.log_action(current_time, 'boss', '👑', f"高塔 BOSS 第 {target_floor} 層掉落【神鑄創世】裝備！", f"擊敗 BOSS 觸發 15% 神鑄掉落率，獲得創世神鑄裝備！")
             else:
-                self.obtained_mythic += 1
-                self.obtained_legendary += 2
-                self.obtained_epic += 3
+                self.obtained_mythic += roll_drop_count(1.0)
+                self.obtained_legendary += roll_drop_count(1.5)
+                self.obtained_epic += roll_drop_count(2.0)
 
             self.log_action(current_time, 'boss', '👹', f"挑戰並擊敗高塔 BOSS 第 {self.tower_floor} 層！", f"BOSS HP: {format_game_number(boss_hp)} | 戰鬥耗時 {time_to_kill:.1f} 秒，獲得裝備爆落獎勵、金幣與魔神之種。")
 
