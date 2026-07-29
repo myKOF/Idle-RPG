@@ -1009,6 +1009,24 @@
         return num.toExponential(2).replace('e+', ' × 10^');
     }
 
+    // 將浮點數遊戲小時精確轉換為 [第X天 HH:MM:SS] 或 [HH小時 MM分 SS秒]
+    function formatGameTimeExact(totalHours) {
+        const hoursNum = parseFloat(totalHours);
+        if (isNaN(hoursNum) || hoursNum < 0) return '00小時 00分 00秒';
+        
+        const totalSeconds = Math.round(hoursNum * 3600);
+        const d = Math.floor(totalSeconds / 86400);
+        const h = Math.floor((totalSeconds % 86400) / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = totalSeconds % 60;
+
+        const pad = (n) => String(n).padStart(2, '0');
+        if (d > 0) {
+            return `第${d}天 ${pad(h)}:${pad(m)}:${pad(s)}`;
+        }
+        return `${pad(h)}小時 ${pad(m)}分 ${pad(s)}秒`;
+    }
+
     function rollDropCount(expectedValue) {
         const base = Math.floor(expectedValue);
         const remainder = expectedValue - base;
@@ -1324,7 +1342,7 @@
 
         logAction(timeHour, category, icon, title, detail) {
             this.actionLogs.push({
-                hour: timeHour.toFixed(2),
+                hour: timeHour,
                 category: category,
                 icon: icon,
                 title: title,
@@ -2264,7 +2282,7 @@
                 const item = document.createElement('div');
                 item.className = `timeline-item ${log.category}`;
                 item.innerHTML = `
-                    <div class="timeline-time">[${log.hour}h]</div>
+                    <div class="timeline-time">[${formatGameTimeExact(log.hour)}]</div>
                     <div class="timeline-icon">${log.icon}</div>
                     <div class="timeline-content">
                         <strong>${log.title}</strong> — ${log.detail}
@@ -2288,7 +2306,7 @@
         txt += `========================================================================\n\n`;
 
         logs.forEach(l => {
-            txt += `[${l.hour.padStart(6, ' ')}h] ${l.icon} [${l.category.toUpperCase()}] ${l.title} -- ${l.detail}\n`;
+            txt += `[${formatGameTimeExact(l.hour).padStart(14, ' ')}] ${l.icon} [${l.category.toUpperCase()}] ${l.title} -- ${l.detail}\n`;
         });
 
         const blob = new Blob([txt], { type: 'text/plain;charset=utf-8;' });
