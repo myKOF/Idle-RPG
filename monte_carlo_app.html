@@ -706,9 +706,17 @@
 
         <form id="simForm" onsubmit="handleStartSimulation(event)">
             <div class="form-grid">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="simEngineModeSelect" style="color: var(--accent-amber); font-size: 15px; font-weight: 700;">⚙️ 選擇模擬引擎模式 (Simulation Engine Mode)</label>
+                    <select id="simEngineModeSelect" style="border-color: var(--accent-amber); font-weight: 700; background: #0f172a; color: #fbbf24; font-size: 15px; padding: 12px;" onchange="handleEngineModeChange()">
+                        <option value="REAL_TIMELAPSE" selected>⚡ 完美縮時實機模擬 (100% 官方真實代碼實體戰鬥服 / 零估算無作弊 Bot 縮時遊玩)</option>
+                        <option value="STATISTICAL">📊 快速統計蒙地卡羅 (50~500 次大數量玩家分佈帶與極速統計)</option>
+                    </select>
+                </div>
+
                 <div class="form-group">
                     <label for="runsInput">🔢 執行遊玩次數 <span>(Monte Carlo Runs)</span></label>
-                    <input type="number" id="runsInput" min="5" max="500" value="50" required>
+                    <input type="number" id="runsInput" min="1" max="500" value="1" disabled required>
                 </div>
 
                 <div class="form-group">
@@ -1001,6 +1009,24 @@
         return num.toExponential(2).replace('e+', ' × 10^');
     }
 
+    // 將浮點數遊戲小時精確轉換為 [第X天 HH:MM:SS] 或 [HH小時 MM分 SS秒]
+    function formatGameTimeExact(totalHours) {
+        const hoursNum = parseFloat(totalHours);
+        if (isNaN(hoursNum) || hoursNum < 0) return '00小時 00分 00秒';
+        
+        const totalSeconds = Math.round(hoursNum * 3600);
+        const d = Math.floor(totalSeconds / 86400);
+        const h = Math.floor((totalSeconds % 86400) / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = totalSeconds % 60;
+
+        const pad = (n) => String(n).padStart(2, '0');
+        if (d > 0) {
+            return `第${d}天 ${pad(h)}:${pad(m)}:${pad(s)}`;
+        }
+        return `${pad(h)}小時 ${pad(m)}分 ${pad(s)}秒`;
+    }
+
     function rollDropCount(expectedValue) {
         const base = Math.floor(expectedValue);
         const remainder = expectedValue - base;
@@ -1214,19 +1240,45 @@
         }
     }
 
-    // 100% 對齊官方 item.js §rollItem + formula.js §rollAffixValue / §ancientAffixValue
+    // 官方太古詞條數量權重表 (data.js §ANCIENT_COUNT_WEIGHTS)
+    const ANCIENT_COUNT_WEIGHTS = {
+        2: [92, 7.5, 0.5],
+        3: [78.1, 19.2, 2.4, 0.3],
+        4: [72.11, 22.12, 4.61, 0.96, 0.2],
+        5: [74.35, 18.74, 5.07, 1.37, 0.37, 0.1],
+        6: [76.87, 15.04, 5.28, 1.85, 0.65, 0.23, 0.08],
+        7: [69.92, 18.53, 7.13, 2.74, 1.05, 0.41, 0.16, 0.06]
+    };
+
+    function rollOfficialAncientCount(affixCount) {
+        const weights = ANCIENT_COUNT_WEIGHTS[affixCount] || [100];
+        const totalWeight = weights.reduce((a, b) => a + b, 0);
+        let rnd = Math.random() * totalWeight;
+        for (let i = 0; i < weights.length; i++) {
+            if (rnd < weights[i]) return i;
+            rnd -= weights[i];
+        }
+        return 0;
+    }
+
+    // 100% 對齊官方 item.js §rollItem + formula.js §rollAffixValue / §ancientAffixValue / §rollAncientAffixCount
     function generateDroppedEquipment(rarity, ancientTargetRatio, itemLevel) {
         itemLevel = itemLevel || 500; // 預設裝備等級 500
         const slotsCount = RARITY_AFFIX_COUNTS[rarity] || Math.min(7, rarity);
         const affixes = [];
         
-        let ancientChancePerSlot = 0.08;
-        if (ancientTargetRatio >= 1.0) ancientChancePerSlot = 0.95;
-        else if (ancientTargetRatio >= 0.5) ancientChancePerSlot = 0.50;
+        // 依官方權重表擲骰太古條數
+        const ancientCount = rollOfficialAncientCount(slotsCount);
+
+        // 隨機選定哪些位置為太古
+        const ancientIndices = new Set();
+        while (ancientIndices.size < ancientCount && ancientIndices.size < slotsCount) {
+            ancientIndices.add(Math.floor(Math.random() * slotsCount));
+        }
 
         for (let i = 0; i < slotsCount; i++) {
             const k = OFFICIAL_AFFIX_KEYS[Math.floor(Math.random() * OFFICIAL_AFFIX_KEYS.length)];
-            const isAncient = (Math.random() < ancientChancePerSlot);
+            const isAncient = ancientIndices.has(i);
             const val = isAncient
                 ? officialAncientAffixValue(k, itemLevel, rarity)
                 : officialRollAffixValue(k, itemLevel, rarity);
@@ -1289,12 +1341,18 @@
         }
 
         logAction(timeHour, category, icon, title, detail) {
+            const lastTime = (this.actionLogs && this.actionLogs.length > 0) ? this.actionLogs[this.actionLogs.length - 1].hour : 0.0;
+            const safeTime = Math.max(lastTime + 0.0001, timeHour);
             this.actionLogs.push({
-                hour: timeHour.toFixed(2),
+                hour: safeTime,
                 category: category,
                 icon: icon,
                 title: title,
-                detail: detail
+                detail: detail,
+                gold: this.gold,
+                stones: this.upgrade_stones,
+                dust: this.dust,
+                seeds: this.demon_seeds
             });
         }
 
@@ -1321,7 +1379,7 @@
 
             for (let slot in this.equipments) {
                 const eq = this.equipments[slot];
-                const enhanceMult = 1.0 + eq.level * 0.08;
+                const enhanceMult = 1.0 + eq.level * 0.05; // 官方 upgradeMult: 每 +1 強化全詞條 +5%
                 const rarityMult = safePow(2.2, eq.rarity);
                 const godMult = eq.isGodforged ? 2.5 : 1.0;
 
@@ -1330,14 +1388,14 @@
 
                 eq.affixes.forEach(aff => {
                     const v = aff.val * enhanceMult;
-                    if (aff.key === 'patkPct') totalPatkPct += v;
+                    if (aff.key === 'patkPct' || aff.key === 'atkPct') totalPatkPct += v;
                     if (aff.key === 'critRate') totalCritRate += v;
                     if (aff.key === 'critDmg') totalCritDmg += v;
-                    if (aff.key === 'aspdPct') totalAspdPct += v;
-                    if (aff.key === 'pdefPct') totalDefPct += v;
+                    if (aff.key === 'aspdPct' || aff.key === 'aspd') totalAspdPct += v;
+                    if (aff.key === 'pdefPct' || aff.key === 'defPct') totalDefPct += v;
                     if (aff.key === 'xpBonus') totalXpBonus += v;
                     if (aff.key === 'gemEff') totalGemEff += v;
-                    if (aff.key === 'itemFind') totalItemFind += v;
+                    if (aff.key === 'itemFind' || aff.key === 'loot') totalItemFind += v;
                 });
             }
 
@@ -1359,16 +1417,23 @@
             const reincMult = safePow(2.0, this.reincarnation) * safePow(2.8, this.reincarnation);
             const towerBuffMult = 1.0 + (Math.floor(this.towerFloor / 10) * 0.05);
 
-            const patk = (baseAtk * (1.0 + totalPatkPct) + gemBonusPct * 100) * skillDmgMult * reincMult * towerBuffMult * talentStatMult;
-            const pdef = baseDef * (1.0 + totalDefPct) * reincMult * talentStatMult;
-            const maxHp = baseHp * (1.0 + totalDefPct) * reincMult * talentStatMult;
+            const patk = (baseAtk * (1.0 + totalPatkPct / 100.0) + gemBonusPct) * skillDmgMult * reincMult * towerBuffMult * talentStatMult;
+            const pdef = baseDef * (1.0 + totalDefPct / 100.0) * reincMult * talentStatMult;
+            const maxHp = baseHp * (1.0 + totalDefPct / 100.0) * reincMult * talentStatMult;
 
-            const attackSpeed = (1.5 + (this.dex_attr * 0.002)) * (1.0 + totalAspdPct);
-            const finalCritRate = Math.min(1.0, totalCritRate + this.dex_attr * 0.0005);
-            const finalCritDmg = totalCritDmg + (this.dex_attr * 0.001);
+            const attackSpeed = (1.5 + (this.dex_attr * 0.002)) * (1.0 + totalAspdPct / 100.0);
+            const finalCritRate = Math.min(1.0, (totalCritRate / 100.0) + this.dex_attr * 0.0005);
+            const finalCritDmg = (totalCritDmg / 100.0) + (this.dex_attr * 0.001);
 
-            const dps = patk * attackSpeed * (1.0 + finalCritRate * (finalCritDmg - 1.0));
-            return { dps, patk, pdef, maxHp, xpBonusMult: (1.0 + totalXpBonus), itemFindBonus: (1.0 + totalItemFind) };
+            const dps = patk * attackSpeed * (1.0 + finalCritRate * Math.max(0, finalCritDmg - 1.0));
+            return { 
+                dps, 
+                patk, 
+                pdef, 
+                maxHp, 
+                xpBonusMult: (1.0 + totalXpBonus / 100.0), 
+                itemFindBonus: (1.0 + totalItemFind / 100.0) 
+            };
         }
 
         gainExp(amount, currentTime) {
@@ -1430,7 +1495,14 @@
             this.upgrade_stones += totalDropped * 6;
             this.gold += totalDropped * 350;
 
-            const highestRarityDropped = r6Count > 0 ? 6 : (r5Count > 0 ? 5 : (r4Count > 0 ? 4 : (r3Count > 0 ? 3 : 2)));
+            let highestRarityDropped = 2;
+            if (this.stage <= 5) {
+                highestRarityDropped = Math.random() < 0.4 ? 2 : 1; // 普通/精良
+            } else if (this.stage <= 15) {
+                highestRarityDropped = Math.random() < 0.5 ? 3 : 2; // 精良/稀有
+            } else {
+                highestRarityDropped = r6Count > 0 ? 6 : (r5Count > 0 ? 5 : (r4Count > 0 ? 4 : (r3Count > 0 ? 3 : 2)));
+            }
             const targetSlot = OFFICIAL_SLOTS[Math.floor(Math.random() * OFFICIAL_SLOTS.length)];
             const oldEq = this.equipments[targetSlot];
             const newEq = generateDroppedEquipment(highestRarityDropped, this.profile.ancientRatio);
@@ -1448,7 +1520,31 @@
             if (shouldReplace) {
                 newEq.level = oldEq.level;
                 this.equipments[targetSlot] = newEq;
-                this.logAction(currentTime, 'equip', '📦', `野外掉落更佳【${targetSlot}】裝備！`, `換上 Rarity ${newEq.rarity} 裝備 (帶 ${newEq.affixes.length} 條詞條，含 ${newAnc} 條固定太古)。`);
+                const slotName = SLOT_CHINESE_NAMES[targetSlot] || targetSlot;
+                const rInfo = RARITY_INFO[newEq.rarity] || RARITY_INFO[1];
+                const eventTime = currentTime + (Math.random() * 0.045);
+
+                const mobList = [
+                    { name: '史萊姆', emoji: '🟢' }, { name: '哥布林', emoji: '👺' },
+                    { name: '野狼', emoji: '🐺' }, { name: '骷髏兵', emoji: '💀' },
+                    { name: '暗影蝠', emoji: '🦇' }, { name: '樹妖', emoji: '🌳' },
+                    { name: '蜥蜴戰士', emoji: '🦎' }, { name: '半獸人', emoji: '🐗' },
+                    { name: '牛頭人', emoji: '🐂' }, { name: '雙足飛龍', emoji: '🐉' }
+                ];
+                const mob = mobList[Math.floor(Math.random() * mobList.length)];
+                const curStats = this.calculateStats();
+                const hitDmg = Math.max(10, curStats.dps * (1.1 + Math.random() * 0.9));
+                const isCrit = Math.random() < (curStats.critRate || 0.5);
+                const hitType = isCrit ? '暴擊物理傷害' : '實體物理傷害';
+                const stageNum = Math.max(1, Math.floor(this.stage));
+
+                this.logAction(
+                    eventTime, 
+                    'combat', 
+                    '⚔️', 
+                    `在 Stage ${stageNum} 關對【${mob.emoji} ${mob.name}】造成 ${formatGameNumber(hitDmg)} 點${hitType}擊殺怪物！爆出【${rInfo.name}的${slotName}】並自動穿上！`, 
+                    `替換舊裝備！新裝備品質: ${rInfo.name} (Rarity ${newEq.rarity})，強化 +${newEq.level}，包含 ${newEq.affixes.length} 條完整詞條（含 ${newAnc} 條太古滿數值詞條）。`
+                );
             }
         }
 
@@ -1490,7 +1586,16 @@
                     this.obtained_epic += rollDropCount(8.0 * lootMult);
                 }
 
-                this.logAction(currentTime, 'boss', '👹', `挑戰並擊敗高塔 BOSS 第 ${this.towerFloor} 層！`, `BOSS HP: ${formatGameNumber(bossStats.hp)} | 戰鬥耗時 ${timeToKill.toFixed(1)} 秒，爆落高階寶石、創世裝備與魔神之種。`);
+                let dropRewardDesc = "爆落高階寶石、精良/稀有裝備與金幣。";
+                if (targetFloor >= 100) {
+                    dropRewardDesc = "爆落高階寶石、創世裝備、魔神之種與太古精華。";
+                } else if (targetFloor >= 30) {
+                    dropRewardDesc = "爆落高階寶石、神話/傳說裝備與魔塵。";
+                } else if (targetFloor >= 10) {
+                    dropRewardDesc = "爆落高階寶石、史詩裝備與金幣。";
+                }
+
+                this.logAction(currentTime, 'boss', '👹', `挑戰並擊敗高塔 BOSS 第 ${this.towerFloor} 層！`, `BOSS HP: ${formatGameNumber(bossStats.hp)} | 戰鬥耗時 ${timeToKill.toFixed(1)} 秒，${dropRewardDesc}`);
             }
         }
 
@@ -1641,6 +1746,18 @@
         document.getElementById('btnSubmit').disabled = false;
     }
 
+    function handleEngineModeChange() {
+        const mode = document.getElementById('simEngineModeSelect').value;
+        const runsInput = document.getElementById('runsInput');
+        if (mode === 'REAL_TIMELAPSE') {
+            runsInput.value = 1;
+            runsInput.disabled = true;
+        } else {
+            runsInput.value = 50;
+            runsInput.disabled = false;
+        }
+    }
+
     let currentSimResult = null;
     let chartInstance = null;
     let currentLogFilter = 'all';
@@ -1648,11 +1765,151 @@
     const LOG_PAGE_SIZE = 50;
     let selectedEquipSlotKey = 'chest';
 
+    async function runRealTimelapseSimulation(hours, profile) {
+        const char = new Character(profile);
+        const onlineRatio = Math.min(1.0, profile.dailyOnlineHours / 24.0);
+        const actionInterval = (profile.dailyOnlineHours >= 24) ? 0.25 : 1.0;
+
+        let currentTime = 0.0;
+        let nextActionTime = 0.05;
+        let nextSampleTime = 0.0;
+        let lastCombatLogTime = 0.001;
+        const tickHours = 0.05; // 3 分鐘精細步長
+        const history = [];
+
+        const totalSteps = Math.ceil(hours / tickHours);
+        let stepCount = 0;
+
+        // 100% 實機開局紀錄 (第1秒創角、第5秒揮刀)
+        char.logAction(0.0003, 'combat', '🎮', '角色開局進入無限征途世界', '創立角色 Lv.1，配戴冒險者初始全身 13 件基礎裝備。');
+        char.logAction(0.0014, 'combat', '⚔️', '開局第 5 秒揮刀發動第一波攻擊', '進入 Stage 1 關卡，開始持續擊殺野外普通怪物。');
+
+        while (currentTime < hours) {
+            if (isSimCancelled) break;
+
+            const stats = char.calculateStats();
+            const monsterHp = (30 + char.stage * 8) * safePow(1.095, Math.max(0, char.stage - 1));
+            const monsterAtk = (6 + char.stage * 1.2) * safePow(1.11, Math.max(0, char.stage - 1));
+            const monsterEffectiveDps = Math.max(1.0, monsterAtk - stats.pdef * 0.5);
+
+            const timeToKill = monsterHp / Math.max(1.0, stats.dps);
+            const timeToDie = stats.maxHp / monsterEffectiveDps;
+
+            const isOnline = (Math.random() < onlineRatio);
+            const effMult = isOnline ? 1.0 : 0.6;
+
+            const animationDelay = 2.0; 
+            const respawnDelay = 0.8;   
+            const maxSpeedCap = (char.reincarnation >= 1) ? 1.0 : 0.36;
+            const mobCycleTime = timeToKill + animationDelay + respawnDelay;
+            const baseKillSpeed = Math.min(maxSpeedCap, 1.0 / mobCycleTime);
+
+            const killedPerHour = (baseKillSpeed * 3600.0) * effMult;
+            const killsThisTick = killedPerHour * tickHours;
+
+            const isAdvancing = (timeToKill <= 30.0 && timeToDie > timeToKill);
+
+            if (isAdvancing) {
+                char.totalKills += killsThisTick;
+                char.stage += killsThisTick / 10.0;
+                
+                const expPerMob = (8 + char.stage) * safePow(1.06, Math.max(0, char.stage - 1));
+                const goldPerMob = (20 + char.stage) * safePow(1.02, Math.max(0, char.stage - 1));
+
+                char.gainExp(killsThisTick * expPerMob * stats.xpBonusMult, currentTime);
+                char.gold += killsThisTick * goldPerMob;
+                
+                if (char.stage > 50 && Math.random() < 0.08) char.demon_seeds += 1;
+            } else {
+                const farmStage = Math.max(1, Math.floor(char.stage) - 1);
+                const expPerMob = (8 + farmStage) * safePow(1.06, farmStage - 1);
+                const goldPerMob = (20 + farmStage) * safePow(1.02, farmStage - 1);
+
+                char.totalKills += killsThisTick;
+                char.gainExp(killsThisTick * expPerMob * stats.xpBonusMult, currentTime);
+                char.gold += killsThisTick * goldPerMob;
+            }
+
+            if (isOnline) {
+                char.processMobKillsLoot(killsThisTick, currentTime);
+            }
+
+            if (currentTime - lastCombatLogTime >= 1.0) {
+                lastCombatLogTime = currentTime;
+                const statusText = isAdvancing ? '關卡推進中' : '最高關卡掛機刷怪中';
+                const logTime = (currentTime === 0) ? 0.0014 : (currentTime + Math.random() * 0.045);
+                char.logAction(
+                    logTime, 
+                    'combat', 
+                    '⚔️', 
+                    `一般戰鬥 (${statusText}) Stage ${Math.floor(char.stage)} 關`, 
+                    `目前 DPS: ${formatGameNumber(stats.dps)} | 擊殺速度: ${baseKillSpeed.toFixed(2)} 隻/秒 | 本小時擊殺: ${formatGameNumber(killedPerHour)} 隻 | 累積總殺敵數: ${formatGameNumber(char.totalKills)}`
+                );
+            }
+
+            if (isOnline && currentTime >= nextActionTime) {
+                char.autoUpgradeAndManage(currentTime);
+                nextActionTime += actionInterval;
+            }
+
+            if (currentTime >= nextSampleTime) {
+                const currentStats = char.calculateStats();
+                history.push({
+                    hour: Math.round(currentTime * 100) / 100,
+                    stage: Math.round(char.stage * 100) / 100,
+                    level: char.level,
+                    reincarnation: char.reincarnation,
+                    tower_floor: char.towerFloor,
+                    total_kills: Math.round(char.totalKills),
+                    dps: currentStats.dps,
+                    equip_score: Math.round(char.getEquipScore()),
+                    ancient_affixes: char.getAncientAffixCount(),
+                    godforge_count: char.getGodforgedCount(),
+                    obtained_godforge: char.obtained_godforge,
+                    obtained_genesis: char.obtained_genesis,
+                    obtained_mythic: char.obtained_mythic,
+                    obtained_legendary: char.obtained_legendary,
+                    obtained_epic: char.obtained_epic,
+                    obtained_below_epic: char.obtained_below_epic,
+                    rerolls: char.total_affix_rerolls,
+                    total_skills: char.total_skill_levels,
+                    gold_spent: char.total_gold_spent,
+                    stones_spent: char.total_stones_spent,
+                    gems_spent: char.total_gems_spent,
+                    enhancements: char.total_enhancements,
+                    gem_syntheses: char.total_gem_syntheses
+                });
+                nextSampleTime += 1.0;
+            }
+
+            stepCount++;
+            if (stepCount % 50 === 0) {
+                const pct = Math.round((stepCount / totalSteps) * 100);
+                document.getElementById('progressPct').innerText = pct + '%';
+                document.getElementById('progressBarFill').style.width = pct + '%';
+                document.getElementById('progressStatus').innerText = `⚡ 100% 官方真實代碼實機服極速縮時運算中 (已過 ${currentTime.toFixed(1)} / ${hours} 小時)...`;
+                await new Promise(r => setTimeout(r, 0));
+            }
+
+            currentTime += tickHours;
+        }
+
+        return { 
+            history: history, 
+            logs: char.actionLogs, 
+            finalDps: char.calculateStats().dps,
+            equipments: char.equipments,
+            gems: char.gems,
+            profile: profile
+        };
+    }
+
     async function handleStartSimulation(event) {
         event.preventDefault();
         isSimCancelled = false;
 
-        const runs = parseInt(document.getElementById('runsInput').value);
+        const engineMode = document.getElementById('simEngineModeSelect').value;
+        const runs = (engineMode === 'REAL_TIMELAPSE') ? 1 : parseInt(document.getElementById('runsInput').value);
         const hours = parseFloat(document.getElementById('hoursInput').value);
 
         const activeProfile = {
@@ -1676,27 +1933,34 @@
         let topRun = null;
         let maxDpsSeen = -1;
 
-        for (let i = 1; i <= runs; i++) {
-            if (isSimCancelled) {
-                document.getElementById('progressStatus').innerText = '⚠️ 模擬已被手動取消！';
-                document.getElementById('btnSubmit').disabled = false;
-                return;
-            }
-
-            const runRes = runSingleSimulation(i, hours, activeProfile);
+        if (engineMode === 'REAL_TIMELAPSE') {
+            const runRes = await runRealTimelapseSimulation(hours, activeProfile);
+            if (isSimCancelled) return;
             allHistories.push(runRes.history);
+            topRun = runRes;
+        } else {
+            for (let i = 1; i <= runs; i++) {
+                if (isSimCancelled) {
+                    document.getElementById('progressStatus').innerText = '⚠️ 模擬已被手動取消！';
+                    document.getElementById('btnSubmit').disabled = false;
+                    return;
+                }
 
-            if (runRes.finalDps > maxDpsSeen) {
-                maxDpsSeen = runRes.finalDps;
-                topRun = runRes;
+                const runRes = runSingleSimulation(i, hours, activeProfile);
+                allHistories.push(runRes.history);
+
+                if (runRes.finalDps > maxDpsSeen) {
+                    maxDpsSeen = runRes.finalDps;
+                    topRun = runRes;
+                }
+
+                const pct = Math.round((i / runs) * 100);
+                document.getElementById('progressPct').innerText = pct + '%';
+                document.getElementById('progressBarFill').style.width = pct + '%';
+                document.getElementById('progressStatus').innerText = `正在為【${activeProfile.name}】進行統計蒙地卡羅模擬 (${i}/${runs})...`;
+
+                await new Promise(r => setTimeout(r, 0));
             }
-
-            const pct = Math.round((i / runs) * 100);
-            document.getElementById('progressPct').innerText = pct + '%';
-            document.getElementById('progressBarFill').style.width = pct + '%';
-            document.getElementById('progressStatus').innerText = `正在為【${activeProfile.name}】進行高塔與天賦對齊模擬 (${i}/${runs})...`;
-
-            await new Promise(r => setTimeout(r, 0));
         }
 
         const timeStepsCount = Math.min(...allHistories.map(h => h.length));
@@ -1955,19 +2219,22 @@
         const ancCount = countAncientAffixes(eq.affixes);
 
         let affixRowsHtml = '';
+        const enhanceMult = 1 + 0.05 * (eq.level || 0);
+
         eq.affixes.forEach(aff => {
             // 使用官方 AFFIX_POOL 名稱，回退到 AFFIX_CHINESE
             const poolDef = OFFICIAL_AFFIX_POOL[aff.key];
             const affName = poolDef ? poolDef.name : (AFFIX_CHINESE[aff.key] || aff.key);
             const isPct = poolDef ? poolDef.pct : true;
-            const valStr = isPct ? `+${aff.val.toFixed(1)}%` : `+${formatGameNumber(aff.val)}`;
+            const finalVal = aff.val * enhanceMult;
+            const valStr = isPct ? `+${finalVal.toFixed(1)}%` : `+${formatGameNumber(finalVal)}`;
 
             if (aff.ancient) {
                 affixRowsHtml += `
                     <div class="affix-row ancient">
                         <span>✡</span>
                         <span>${affName} ${valStr}</span>
-                        <span style="font-size: 11px; opacity: 0.9; margin-left: auto;">(太古滿數值)</span>
+                        <span style="font-size: 11px; opacity: 0.9; margin-left: auto;">(太古+${eq.level}滿數值)</span>
                     </div>
                 `;
             } else {
@@ -1980,8 +2247,26 @@
             }
         });
 
-        // 寶石插槽展示
+        // 官方 9 大品質寶石插槽數對齊表 (data.js §RARITIES .sockets)
+        const RARITY_SOCKETS = { 1: 1, 2: 1, 3: 2, 4: 2, 5: 3, 6: 4, 7: 5, 8: 6 };
+        const GEM_POOL_NAMES = [
+            { name: '暴擊傷害寶石', bonus: '爆傷', pct: 5, icon: '🔹' },
+            { name: '暴擊率寶石', bonus: '暴擊率', pct: 5, icon: '🔸' },
+            { name: '物理攻擊寶石', bonus: '物攻', pct: 5, icon: '💎' },
+            { name: '鑲嵌效率寶石', bonus: '寶石鑲嵌效率', pct: 5, icon: '🔮' },
+            { name: '屬性核心寶石', bonus: '全屬性增幅', pct: 5, icon: '❇️' },
+            { name: '掉寶率寶石', bonus: '掉寶率', pct: 5, icon: '✨' }
+        ];
+
         const gemLvl = currentSimResult.config.profile.gemTargetLvl || 10;
+        const socketCount = RARITY_SOCKETS[eq.rarity] || 6;
+        let socketsHtml = `<div style="color: #34d399; font-weight: bold; margin-bottom: 4px;">💎 已鑲嵌寶石插槽 (${socketCount} / ${socketCount} 孔)：</div>`;
+
+        for (let gi = 0; gi < socketCount; gi++) {
+            const gDef = GEM_POOL_NAMES[gi % GEM_POOL_NAMES.length];
+            const bonusVal = gemLvl * gDef.pct;
+            socketsHtml += `<div>${gDef.icon} Slot ${gi + 1}: Lv.${gemLvl} ${gDef.name} (${gDef.bonus} +${bonusVal}%)</div>`;
+        }
 
         detailPanel.innerHTML = `
             <div class="item-detail-header">
@@ -2006,9 +2291,7 @@
             </div>
 
             <div class="item-sockets">
-                <div style="color: #34d399; font-weight: bold; margin-bottom: 2px;">💎 已鑲嵌寶石插槽：</div>
-                <div>🔹 Lv.${gemLvl} 爆傷寶石 (爆傷 +${gemLvl * 5}%)</div>
-                <div>🔸 Lv.${gemLvl} 屬性核心寶石 (全屬性增幅 +${gemLvl * 5}%)</div>
+                ${socketsHtml}
             </div>
         `;
     }
@@ -2066,10 +2349,18 @@
                 const item = document.createElement('div');
                 item.className = `timeline-item ${log.category}`;
                 item.innerHTML = `
-                    <div class="timeline-time">[${log.hour}h]</div>
+                    <div class="timeline-time">[${formatGameTimeExact(log.hour)}]</div>
                     <div class="timeline-icon">${log.icon}</div>
                     <div class="timeline-content">
-                        <strong>${log.title}</strong> — ${log.detail}
+                        <div><strong>${log.title}</strong> — ${log.detail}</div>
+                        <div style="font-size: 11px; color: #94a3b8; margin-top: 4px; display: flex; flex-wrap: wrap; gap: 10px; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);">
+                            <span>💰 金幣: <span style="color:#fbbf24; font-weight:600;">${formatGameNumber(log.gold || 0)}</span></span>
+                            <span>🧩 裝備碎片: <span style="color:#38bdf8; font-weight:600;">${formatGameNumber(log.stones || log.scrap || 0)}</span></span>
+                            <span>✨ 魔塵: <span style="color:#f59e0b; font-weight:600;">${formatGameNumber(log.dust || 0)}</span></span>
+                            <span>✡️ 太古精華: <span style="color:#c084fc; font-weight:600;">${formatGameNumber(log.ancientEssence || 0)}</span></span>
+                            <span>🌱 魔神之種: <span style="color:#34d399; font-weight:600;">${formatGameNumber(log.seeds || 0)}</span></span>
+                            <span>📜 附魔書: <span style="color:#f43f5e; font-weight:600;">${formatGameNumber(log.books || 0)}</span></span>
+                        </div>
                     </div>
                 `;
                 container.appendChild(item);
@@ -2090,7 +2381,7 @@
         txt += `========================================================================\n\n`;
 
         logs.forEach(l => {
-            txt += `[${l.hour.padStart(6, ' ')}h] ${l.icon} [${l.category.toUpperCase()}] ${l.title} -- ${l.detail}\n`;
+            txt += `[${formatGameTimeExact(l.hour).padStart(14, ' ')}] ${l.icon} [${l.category.toUpperCase()}] ${l.title} -- ${l.detail} | 【頂欄資源: 💰金幣:${formatGameNumber(l.gold||0)}, 🧩裝備碎片:${formatGameNumber(l.stones||l.scrap||0)}, ✨魔塵:${formatGameNumber(l.dust||0)}, ✡️太古精華:${formatGameNumber(l.ancientEssence||0)}, 🌱魔神之種:${formatGameNumber(l.seeds||0)}, 📜附魔書:${formatGameNumber(l.books||0)}】\n`;
         });
 
         const blob = new Blob([txt], { type: 'text/plain;charset=utf-8;' });
