@@ -1006,6 +1006,7 @@ textarea#save-io {
   font-size: 11px;
 }
 
+
 /* ?�方?��?絕�?定�?填滿?�板：敵人數?��??��?高戰鬥�?，�??�面?��?度是?��??��?�?
    ?��?多敵人�? #combat-area ?�容超�??�出?��??�捲軸。inset 對�? .combatant ?��???*/
 .enemy-combatant .enemy-party {
@@ -1286,6 +1287,8 @@ textarea#save-io {
   color: #fff;
   text-shadow: 1px 1px 2px #000, 0 0 4px #000;
   font-variant-numeric: tabular-nums;
+  /* 數字一律不折行：血條很窄時折行會直接疊到下一列去 */
+  white-space: nowrap;
 }
 
 /* ==========================================================================
@@ -3246,6 +3249,26 @@ textarea#save-io {
 
 .mp-bar .hp-text {
   font-size: 9.5px;
+}
+
+/* 我方欄在棋盤版型下只有 132px 寬，原本 12px 的血量數字（例「2.47M+5.94K / 2.47M」）
+   會整段撐出血條外，所以血條與數字一起縮。
+   （這組覆寫刻意放在 .hp-bar／.hp-text 基準定義之後，讀起來才是「基準 → 版型覆寫」。） */
+.battle-scene.multi-enemy-layout > .combatant:not(.enemy-combatant) .hp-bar {
+  height: 16px;
+  margin-top: 4px;
+}
+
+.battle-scene.multi-enemy-layout > .combatant:not(.enemy-combatant) .hp-text {
+  font-size: 9px;
+}
+
+.battle-scene.multi-enemy-layout > .combatant:not(.enemy-combatant) .mp-bar {
+  height: 10px;
+}
+
+.battle-scene.multi-enemy-layout > .combatant:not(.enemy-combatant) .mp-bar .hp-text {
+  font-size: 8px;
 }
 
 .cb-skill {
@@ -5846,6 +5869,41 @@ textarea#save-io {
 .enemy-party.enemy-grid .enemy-card {
   width: 100%;
   padding: 2px 1px 0;
+}
+
+/* 棋盤格窄，血條改細、數字改小，避免「1.19M / 1.19M」折成兩行疊到狀態列上 */
+.enemy-party.enemy-grid .enemy-card .enemy-hp {
+  height: calc(15px * var(--ec-scale));
+  margin-top: calc(4px * var(--ec-scale));
+}
+
+.enemy-party.enemy-grid .enemy-hp .hp-text {
+  font-size: max(calc(10px * var(--ec-scale)), 7px);
+  text-shadow: 1px 1px 1px #000;
+}
+
+/* 敵方血條顏色整體調淡：棋盤上同時有十幾條，原本的濃紅太搶戲，
+   蓋過階級與屬性這些真正要看的資訊。階級的深淺差距仍然保留。 */
+.enemy-party.enemy-grid .hp-fill.monster {
+  background: linear-gradient(180deg, #a8524c, #4d1f1d);
+}
+
+.enemy-party.enemy-grid .enemy-card.enemy-rank-elite .hp-fill.monster {
+  background: linear-gradient(180deg, #d95a54, #6b2320);
+}
+
+.enemy-party.enemy-grid .enemy-card.enemy-rank-elite .enemy-hp {
+  border-color: rgba(255, 120, 110, 0.65);
+  box-shadow: 0 0 4px rgba(255, 100, 90, 0.35);
+}
+
+.enemy-party.enemy-grid .enemy-card.enemy-rank-boss .hp-fill.monster {
+  background: linear-gradient(180deg, #8f5bc4, #3a2158);
+}
+
+.enemy-party.enemy-grid .enemy-card.enemy-rank-boss .enemy-hp {
+  border-color: rgba(190, 140, 245, 0.8);
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.45), inset 0 0 4px rgba(88, 28, 135, 0.7);
 }
 
 /* ==========================================================================

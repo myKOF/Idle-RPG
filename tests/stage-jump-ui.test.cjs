@@ -68,6 +68,7 @@ test('長按期間只預覽關卡，停止後才提交一次戰鬥狀態', () =>
   const finishStart = ui.indexOf('function finishStageHold(btn)');
   const finishEnd = ui.indexOf('\nfunction stepStageButton', finishStart);
   const stageGoCalls = [];
+  const pendingStages = [];
   let refreshCount = 0;
   const context = {
     UI: { stageHold: { startTimer: 1, repeatTimer: 2, suppressClick: true, suppressTimer: null, pointerId: 9, active: true, startedAt: 100, startStage: 10, targetStage: 25, delta: 1 } },
@@ -76,7 +77,8 @@ test('長按期間只預覽關卡，停止後才提交一次戰鬥狀態', () =>
     sendUiCommand(name, args) { stageGoCalls.push({ name, args }); return Promise.resolve(); },
     clearTimeout() {},
     setTimeout() { return 3; },
-    refreshStageDisplay() { refreshCount++; }
+    refreshStageDisplay() { refreshCount++; },
+    setStagePendingStage(stage) { pendingStages.push(stage); refreshCount++; }
   };
   vm.runInNewContext(ui.slice(finishStart, finishEnd), context);
   context.finishStageHold(null);
@@ -85,6 +87,10 @@ test('長按期間只預覽關卡，停止後才提交一次戰鬥狀態', () =>
   assert.equal(stageGoCalls[0].name, 'stage.go');
   assert.equal(stageGoCalls[0].args.delta, 10);
   assert.equal(refreshCount, 1);
+  /* 放手後畫面必須停在玩家選定的關卡，等新的 header 面板回來才換。
+     少了這一步，refreshStageDisplay 會用還沒更新的快照重畫，玩家看到的是
+     「85 → 110 → 85」這種閃回舊值再跳回來的畫面。 */
+  assert.deepEqual(pendingStages, [25]);
 });
 
 test('階段按鈕提示支援外側定位，避免蓋住階段文字', () => {

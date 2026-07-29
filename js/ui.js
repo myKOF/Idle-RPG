@@ -1279,7 +1279,15 @@ function flushPendingEnemyFloats(battleSnapshot) {
   PENDING_ENEMY_FLOATS = keep;
 }
 
+/* ⚠️ 暫時關閉傷害合併（使用者要求：想看實際的多段受擊情況）。
+   合併原本的用途是：連擊數／高攻速時同一個敵人會在極短時間內冒出十幾個數字，
+   合成一個累計值才看得清楚。關掉之後每一段都會單獨飄字，畫面會明顯變吵，
+   而且滿場 16 隻時浮字節點數大增——這是刻意的觀察用設定，不是正式版該有的狀態。
+   要恢復：把 ENEMY_DAMAGE_FLOAT_MERGE_ENABLED 改回 true（下面那段原本的計算完全沒動）。 */
+var ENEMY_DAMAGE_FLOAT_MERGE_ENABLED = false;
+
 function enemyDamageFloatMergeLimit(battleSnapshot) {
+  if (!ENEMY_DAMAGE_FLOAT_MERGE_ENABLED) return 0; // 0 = 不合併，每段各自飄字
   var st = battleSnapshot && battleSnapshot.stats;
   var comboHits = st ? Number(st.comboHits) : 0;
   var aspd = st ? Number(st.aspd) : 0;
@@ -2215,6 +2223,20 @@ function renderZoneBar() {
   zoneBox.innerHTML = html;
 }
 
+/* ---- 指令在途期間的樂觀顯示 ----
+   refreshStageDisplay 每個 uiTick 都會跑，而它讀的是 header 面板快照——那份快照要等
+   指令的面板回應回來才會更新。中間這段空窗如果照舊資料重畫，玩家會看到自己的操作被彈回去：
+     ・關卡：放開連續後退鍵的瞬間先閃回舊關卡再跳到目標（實際看到 85 →110 → 85）
+     ・自動推進：勾選後立刻被取消勾選，多試幾次才「成功」（其實是剛好撞上面板更新）
+   有效期用 isUiCommandPending——那把鎖正好在「送出」到「新面板抵達」之間成立，
+   面板一到就自動失效，不需要另外設逾時。 */
+var _stagePendingStage = null;
+
+function setStagePendingStage(stage) {
+  _stagePendingStage = (typeof stage === 'number') ? stage : null;
+  refreshStageDisplay();
+}
+
 function refreshStageDisplay(stageOverride) {
   var header = peekUiPanelData('header') || {};
   var stg = header.stage;
@@ -2223,14 +2245,18 @@ function refreshStageDisplay(stageOverride) {
   var label = $id('stage-label');
   var best = $id('stage-best');
   var auto = $id('st-auto');
+  if (_stagePendingStage !== null && !isUiCommandPending(nodePendingKey('stage'))) {
+    _stagePendingStage = null; // 新資料已到，樂觀值退場
+  }
   var displayStage = typeof stageOverride === 'number'
     ? stageOverride
     : (UI.stageHold.active && typeof UI.stageHold.targetStage === 'number'
       ? UI.stageHold.targetStage
-      : stg.current);
+      : (_stagePendingStage !== null ? _stagePendingStage : stg.current));
   setTextIfChanged(label, znd.emoji + ' 第 ' + displayStage + ' 階段');
   setTextIfChanged(best, '最高' + stg.best + '關');
-  setCheckedIfChanged(auto, stg.autoAdvance);
+  // 切換在途時不要用舊快照蓋掉勾選狀態
+  if (!isUiCommandPending(nodePendingKey('stage-auto'))) setCheckedIfChanged(auto, stg.autoAdvance);
 }
 
 function refreshCombatPauseButton() {
@@ -6828,10 +6854,14 @@ function finishStageHold(btn) {
       keys: [nodePendingKey('stage')],
       panels: ['battle', 'header']
     }).catch(function (error) {
+      setStagePendingStage(null);
       reportUiCommandFailure('階段切換失敗', error, ['battle', 'header']);
     });
+    // 放手後畫面停在玩家選定的關卡，直到新的 header 面板回來（見 setStagePendingStage）
+    setStagePendingStage(targetStage);
+  } else if (wasActive) {
+    refreshStageDisplay();
   }
-  if (wasActive) refreshStageDisplay();
   if (btn && pointerId !== null && btn.hasPointerCapture && btn.hasPointerCapture(pointerId)) {
     btn.releasePointerCapture(pointerId);
   }
@@ -6846,9 +6876,18 @@ function finishStageHold(btn) {
 
 
 function stepStageButton(delta) {
+  // 上一次切換還沒回來就先忽略：連點會被 acquireUiPending 擋下而拋錯，擋在這裡比較安靜
+  if (isUiCommandPending(nodePendingKey('stage'))) return;
+  var stg = (uiHeaderPanelSnapshot() || {}).stage || {};
+  var from = (_stagePendingStage !== null) ? _stagePendingStage : (stg.current || 1);
   sendUiCommand('stage.go', { delta: delta }, {
     keys: [nodePendingKey('stage')], panels: ['battle', 'header']
-  }).catch(function (error) { reportUiCommandFailure('切換關卡', error, ['battle', 'header']); });
+  }).catch(function (error) {
+    setStagePendingStage(null);
+    reportUiCommandFailure('切換關卡', error, ['battle', 'header']);
+  });
+  // 樂觀顯示（夾在 1~最高關，與模擬層 stageGo 的判定一致）
+  setStagePendingStage(Math.max(1, Math.min(stg.best || from, from + delta)));
 }
 
 function bindStageHoldButton(id, delta) {
@@ -7942,10 +7981,13 @@ function initUI() {
     });
   });
   $id('st-auto').addEventListener('change', function () {
+    /* panels 必須含 header：勾選狀態是由 header 面板的 stage.autoAdvance 畫的
+       （refreshStageDisplay），只等 battle 回來的話 header 仍是舊值，
+       下一個 uiTick 就會把玩家剛勾的框彈回去。 */
     sendUiCommand('stage.setAutoAdvance', { on: !!this.checked }, {
-      keys: [nodePendingKey('stage-auto')], panels: ['battle']
+      keys: [nodePendingKey('stage-auto')], panels: ['battle', 'header']
     }).catch(function (error) {
-      reportUiCommandFailure('自動前進設定失敗', error, ['battle']);
+      reportUiCommandFailure('自動前進設定失敗', error, ['battle', 'header']);
     });
   });
 

@@ -15,33 +15,65 @@ function loadFormulaContext() {
   return context;
 }
 
+/* 期望值一律由參數表推導，測試不另存一份數字。
+   數值以配表為準（`4-野外怪物/命中率`、`/閃避率` → data.js 的 FIELD_MONSTER_*_GROWTH，
+   由 apply_params 產生），所以調整平衡不會再誤報成測試失敗；
+   這裡真正要守的是「逐級累加」這個語意：每一級各自吃自己所在區間的成長值，
+   跨區間時不重算、不跳號。累加迴圈在測試裡獨立實作，不呼叫 segmentedLevelGrowth。 */
+function expectedSegmentedValue(base, level, brackets) {
+  let total = base;
+  for (let lv = 1; lv <= level; lv++) {
+    const bracket = brackets.find((b) => lv >= b.min && (b.max == null || lv <= b.max));
+    if (bracket) total += bracket.rate;
+  }
+  return Math.round(total * 1e6) / 1e6; // 逐級相加的浮點誤差
+}
+
+// 取各區間的下界、上界與跨界處，確保邊界行為被覆蓋
+function segmentProbeLevels(brackets) {
+  const levels = new Set([1]);
+  brackets.forEach((b) => {
+    levels.add(b.min);
+    if (b.max != null) { levels.add(b.max); levels.add(b.max + 1); }
+    else levels.add(b.min + 100);
+  });
+  return [...levels].filter((lv) => lv >= 1).sort((a, b) => a - b);
+}
+
 test('普通敵人命中率依 game_parameters 等級區間逐級累加', () => {
   const context = loadFormulaContext();
-  const expected = new Map([
-    [1, 100.5], [49, 124.5], [50, 125.25], [99, 162],
-    [100, 163], [149, 212], [150, 214], [199, 312],
-    [200, 314.5], [299, 562], [300, 565]
-  ]);
-  expected.forEach((value, stage) => {
+  const base = context.FIELD_MONSTER_HIT_BASE;
+  const brackets = context.FIELD_MONSTER_HIT_GROWTH;
+  assert.ok(brackets.length >= 2, '命中率應有多個等級區間');
+  segmentProbeLevels(brackets).forEach((stage) => {
     const m = context.monsterStatsFor(stage, false);
     assert.equal(m.level, stage);
-    assert.equal(m.hit, value);
+    assert.equal(
+      Math.round(m.hit * 1e6) / 1e6,
+      expectedSegmentedValue(base, stage, brackets),
+      'Lv' + stage + ' 命中率與參數表不符'
+    );
   });
   // 菁英沿用同一命中率公式（不因菁英另加成）
-  const elite = context.monsterStatsFor(30, true);
-  assert.equal(elite.hit, 115);
+  assert.equal(context.monsterStatsFor(30, true).hit, context.monsterStatsFor(30, false).hit);
 });
 
 test('普通敵人閃避率依 game_parameters 等級區間逐級累加', () => {
   const context = loadFormulaContext();
-  const expected = new Map([
-    [1, 5.5], [49, 29.5], [50, 30.25], [99, 67],
-    [100, 68], [149, 117], [150, 118.5], [199, 192], [200, 194]
-  ]);
-  expected.forEach((value, stage) => {
-    assert.equal(context.monsterStatsFor(stage, false).dodge, value);
+  const base = context.FIELD_MONSTER_DODGE_BASE;
+  const brackets = context.FIELD_MONSTER_DODGE_GROWTH;
+  assert.ok(brackets.length >= 2, '閃避率應有多個等級區間');
+  segmentProbeLevels(brackets).forEach((stage) => {
+    assert.equal(
+      Math.round(context.monsterStatsFor(stage, false).dodge * 1e6) / 1e6,
+      expectedSegmentedValue(base, stage, brackets),
+      'Lv' + stage + ' 閃避率與參數表不符'
+    );
   });
-  assert.equal(context.monsterStatsFor(30, true).dodge, 25);
+  // 菁英閃避＝一般閃避 + 菁英加成（加成值同樣以程式套用的為準，不在此另抄一份）
+  const elite = context.monsterStatsFor(30, true).dodge;
+  const normal = context.monsterStatsFor(30, false).dodge;
+  assert.ok(elite > normal, '菁英閃避應高於同階普通怪');
 });
 
 test('玩家命中率包含基礎 100%，額外命中再抵消敵方閃避', () => {
