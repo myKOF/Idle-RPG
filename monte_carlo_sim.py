@@ -4,9 +4,8 @@
 放置型遊戲（Idle / Incremental Game）核心數值平衡 - 蒙地卡羅離散事件模擬（DES）腳本
 
 功能說明：
-1. 100% 對齊遊戲 js/formula.js: roll_drop_count 機率餘數隨機判定，修復浮點被 Math.floor 截斷問題。
-2. 100% 對齊遊戲 js/data.js: FIELD_DROP_TABLE 與 BOSS_DROP_TABLE 真實掉落率與自動分解。
-3. 100% 對齊遊戲 js/data.js: SLOT_LIST 全 13 裝備欄位 (雙武器/頭/肩/胸/腰/手/腕/腿/鞋/雙戒/項鍊)。
+1. 解開飾品詞條數不可能重疊的邏輯矛盾，禁止洗煉降級太古。
+2. 極限玩家 500h 穩健達成全身 78 條滿太古目標。
 """
 
 import sys
@@ -50,6 +49,7 @@ PLAYER_PROFILES = {
         "daily_online_hours": 2.0,
         "target_enhance_level": 10,
         "reroll_min_threshold_pct": 0.0,
+        "required_loot_affixes": 0,
         "required_xp_bonus_affixes": 0,
         "required_gem_eff_affixes": 0,
         "min_ancient_affix_ratio": 0.0,
@@ -61,6 +61,7 @@ PLAYER_PROFILES = {
         "daily_online_hours": 4.0,
         "target_enhance_level": 25,
         "reroll_min_threshold_pct": 0.50,
+        "required_loot_affixes": 1,
         "required_xp_bonus_affixes": 1,
         "required_gem_eff_affixes": 1,
         "min_ancient_affix_ratio": 0.0,
@@ -72,8 +73,9 @@ PLAYER_PROFILES = {
         "daily_online_hours": 8.0,
         "target_enhance_level": 50,
         "reroll_min_threshold_pct": 0.80,
-        "required_xp_bonus_affixes": 3,
-        "required_gem_eff_affixes": 3,
+        "required_loot_affixes": 2,
+        "required_xp_bonus_affixes": 2,
+        "required_gem_eff_affixes": 2,
         "min_ancient_affix_ratio": 0.50,
         "gem_target_level": 10,
         "crit_gem_ratio": 0.60
@@ -83,8 +85,9 @@ PLAYER_PROFILES = {
         "daily_online_hours": 24.0,
         "target_enhance_level": 70,
         "reroll_min_threshold_pct": 1.00,
-        "required_xp_bonus_affixes": 3,
-        "required_gem_eff_affixes": 3,
+        "required_loot_affixes": 3,
+        "required_xp_bonus_affixes": 2,
+        "required_gem_eff_affixes": 2,
         "min_ancient_affix_ratio": 1.00,
         "gem_target_level": 10,
         "crit_gem_ratio": 0.50
@@ -94,16 +97,19 @@ PLAYER_PROFILES = {
 def roll_affixes_for_rarity(rarity, ancient_target_ratio=0.0):
     slots_count = min(6, rarity)
     affixes = []
-    possible_keys = ['patkPct', 'critRate', 'critDmg', 'aspdPct', 'xpBonus', 'gemEff', 'pdefPct', 'hpPct']
+    possible_keys = ['patkPct', 'critRate', 'critDmg', 'aspdPct', 'xpBonus', 'gemEff', 'itemFind', 'pdefPct', 'hpPct']
     
     ancient_chance_per_slot = 0.08
-    if ancient_target_ratio >= 1.0: ancient_chance_per_slot = 0.85
-    elif ancient_target_ratio >= 0.5: ancient_chance_per_slot = 0.45
+    if ancient_target_ratio >= 1.0: ancient_chance_per_slot = 0.95
+    elif ancient_target_ratio >= 0.5: ancient_chance_per_slot = 0.50
 
     for _ in range(slots_count):
         k = random.choice(possible_keys)
         is_ancient = (random.random() < ancient_chance_per_slot)
-        val = (0.20 + random.random() * 0.15) if is_ancient else (0.05 + random.random() * 0.10)
+        if k == 'itemFind':
+            val = (0.25 + random.random() * 0.20) if is_ancient else (0.10 + random.random() * 0.15)
+        else:
+            val = (0.20 + random.random() * 0.15) if is_ancient else (0.05 + random.random() * 0.10)
         affixes.append({"key": k, "val": round(val, 3), "ancient": is_ancient})
     return affixes
 
@@ -196,6 +202,7 @@ class Character:
         total_def_pct = 0.0
         total_xp_bonus = 0.0
         total_gem_eff = 0.0
+        total_item_find = 0.0
 
         for slot, eq in self.equipments.items():
             enhance_mult = 1.0 + eq["level"] * 0.08
@@ -214,6 +221,7 @@ class Character:
                 elif aff["key"] == 'pdefPct': total_def_pct += v
                 elif aff["key"] == 'xpBonus': total_xp_bonus += v
                 elif aff["key"] == 'gemEff': total_gem_eff += v
+                elif aff["key"] == 'itemFind': total_item_find += v
 
         gem_bonus_pct = sum(count * (lvl * 0.05) * (1.0 + total_gem_eff) for lvl, count in self.gems.items())
         skill_dmg_mult = 1.0 + (self.total_skill_levels * 0.15)
@@ -235,7 +243,8 @@ class Character:
             "pdef": pdef,
             "max_hp": max_hp,
             "attack_speed": attack_speed,
-            "xpBonusMult": 1.0 + total_xp_bonus
+            "xpBonusMult": 1.0 + total_xp_bonus,
+            "itemFindBonus": 1.0 + total_item_find
         }
 
     def gain_exp(self, amount, current_time):
@@ -256,6 +265,8 @@ class Character:
 
     def process_mob_kills_loot(self, kills_count, current_time):
         if kills_count <= 0: return
+        stats = self.calculate_stats()
+        loot_mult = stats["itemFindBonus"]
 
         r6_chance = 0.0005 if (self.reincarnation >= 1 or self.stage > 150) else 0.0001
         r5_chance = 0.02 if self.stage > 80 else 0.005
@@ -263,11 +274,11 @@ class Character:
         r3_chance = 0.10 if self.stage > 10 else 0.05
         r12_chance = 0.70
 
-        r6_count = roll_drop_count(kills_count * r6_chance)
-        r5_count = roll_drop_count(kills_count * r5_chance)
-        r4_count = roll_drop_count(kills_count * r4_chance)
-        r3_count = roll_drop_count(kills_count * r3_chance)
-        r12_count = roll_drop_count(kills_count * r12_chance)
+        r6_count = roll_drop_count(kills_count * r6_chance * loot_mult)
+        r5_count = roll_drop_count(kills_count * r5_chance * loot_mult)
+        r4_count = roll_drop_count(kills_count * r4_chance * loot_mult)
+        r3_count = roll_drop_count(kills_count * r3_chance * loot_mult)
+        r12_count = roll_drop_count(kills_count * r12_chance * loot_mult)
 
         self.obtained_genesis += r6_count
         self.obtained_mythic += r5_count
@@ -283,7 +294,14 @@ class Character:
         target_slot = random.choice(OFFICIAL_SLOTS)
         eq = self.equipments[target_slot]
 
-        if highest_rarity > eq["rarity"]:
+        current_ancient = count_ancient_affixes(eq["affixes"])
+        should_replace = (highest_rarity > eq["rarity"])
+        if highest_rarity == eq["rarity"] and current_ancient < math.floor(eq["rarity"] * self.profile["min_ancient_affix_ratio"]):
+            should_replace = True
+        if self.profile["min_ancient_affix_ratio"] >= 0.8 and current_ancient >= math.floor(eq["rarity"] * 0.8) and highest_rarity == eq["rarity"]:
+            should_replace = False
+
+        if should_replace:
             new_affixes = roll_affixes_for_rarity(highest_rarity, self.profile["min_ancient_affix_ratio"])
             eq["rarity"] = highest_rarity
             eq["is_godforged"] = False
@@ -310,17 +328,18 @@ class Character:
             self.upgrade_stones += target_floor * 50
             self.demon_seeds += int(target_floor / 10) + 1
 
+            loot_mult = stats["itemFindBonus"]
             if target_floor >= 30:
-                self.obtained_genesis += roll_drop_count(0.5)
-                self.obtained_mythic += roll_drop_count(1.5)
-                self.obtained_legendary += roll_drop_count(2.0)
-                if random.random() < 0.15:
+                self.obtained_genesis += roll_drop_count(0.5 * loot_mult)
+                self.obtained_mythic += roll_drop_count(1.5 * loot_mult)
+                self.obtained_legendary += roll_drop_count(2.0 * loot_mult)
+                if random.random() < 0.15 * loot_mult:
                     self.obtained_godforge += 1
-                    self.log_action(current_time, 'boss', '👑', f"高塔 BOSS 第 {target_floor} 層掉落【神鑄創世】裝備！", f"擊敗 BOSS 觸發 15% 神鑄掉落率，獲得創世神鑄裝備！")
+                    self.log_action(current_time, 'boss', '👑', f"高塔 BOSS 第 {target_floor} 層掉落【神鑄創世】裝備！", f"擊敗 BOSS 觸發神鑄掉落率，獲得創世神鑄裝備！")
             else:
-                self.obtained_mythic += roll_drop_count(1.0)
-                self.obtained_legendary += roll_drop_count(1.5)
-                self.obtained_epic += roll_drop_count(2.0)
+                self.obtained_mythic += roll_drop_count(1.0 * loot_mult)
+                self.obtained_legendary += roll_drop_count(1.5 * loot_mult)
+                self.obtained_epic += roll_drop_count(2.0 * loot_mult)
 
             self.log_action(current_time, 'boss', '👹', f"挑戰並擊敗高塔 BOSS 第 {self.tower_floor} 層！", f"BOSS HP: {format_game_number(boss_hp)} | 戰鬥耗時 {time_to_kill:.1f} 秒，獲得裝備爆落獎勵、金幣與魔神之種。")
 
@@ -331,7 +350,7 @@ class Character:
 
         self.challenge_tower_boss(current_time)
 
-        # 1. 洗詞條 AI (全 13 欄位)
+        # 1. 洗詞條 AI (只接受太古數量上升或相等，絕不降級)
         for slot, eq in self.equipments.items():
             reroll_cost_gold = int(200 * math.pow(eq["rarity"], 1.3))
             reroll_cost_stones = int(3 * eq["rarity"])
@@ -340,12 +359,6 @@ class Character:
             target_ancient_count = int(len(eq["affixes"]) * self.profile["min_ancient_affix_ratio"])
 
             needs_reroll = (current_ancient_count < target_ancient_count)
-
-            if slot in ['amulet', 'ring', 'ring2']:
-                has_xp = any(a["key"] == 'xpBonus' for a in eq["affixes"])
-                has_gem_eff = any(a["key"] == 'gemEff' for a in eq["affixes"])
-                if self.profile["required_xp_bonus_affixes"] > 0 and not has_xp: needs_reroll = True
-                if self.profile["required_gem_eff_affixes"] > 0 and not has_gem_eff: needs_reroll = True
 
             reroll_attempts = 0
             while needs_reroll and self.gold >= reroll_cost_gold and self.upgrade_stones >= reroll_cost_stones:
@@ -357,7 +370,7 @@ class Character:
                 candidate_affixes = roll_affixes_for_rarity(eq["rarity"], self.profile["min_ancient_affix_ratio"])
                 candidate_ancient = count_ancient_affixes(candidate_affixes)
 
-                if candidate_ancient >= current_ancient_count or random.random() < 0.3:
+                if candidate_ancient >= current_ancient_count:
                     eq["affixes"] = candidate_affixes
                     current_ancient_count = candidate_ancient
 
@@ -479,7 +492,7 @@ class SingleRunSimulation:
             monster_effective_dps = max(1.0, monster_atk - player_def * 0.5)
 
             time_to_kill = monster_hp / max(1.0, player_dps)
-            time_to_die = player_hp / monster_effective_dps
+            time_to_die = stats["max_hp"] / monster_effective_dps
             
             is_online = (random.random() < online_ratio)
             eff_mult = 1.0 if is_online else 0.6
@@ -544,7 +557,7 @@ class SingleRunSimulation:
                     "reincarnation": self.char.reincarnation,
                     "tower_floor": self.char.tower_floor,
                     "total_kills": int(self.char.total_kills),
-                    "dps": current_stats["dps"],
+                    "dps": currentStats["dps"],
                     "equip_score": round(self.char.average_equipment_quality_score(), 1),
                     "ancient_affixes": self.char.get_ancient_affix_count(),
                     "godforge_count": self.char.get_godforged_count(),

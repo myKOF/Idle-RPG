@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>放置型 RPG 蒙地卡羅數值模擬驗證工具 (機率餘數浮點修正版)</title>
+    <title>放置型 RPG 蒙地卡羅數值模擬驗證工具 (滿太古邏輯對齊版)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -457,8 +457,8 @@
 <div class="container">
     <div class="app-header">
         <div class="app-title">
-            <h1>🎮 放置型 RPG 蒙地卡羅數值模擬驗證工具 (機率餘數浮點修正版)</h1>
-            <p>Monte Carlo Discrete Event Simulation Engine (對齊遊戲 rollDropCount 餘數隨機判定，精確統計 63萬隻怪之全品質掉落)</p>
+            <h1>🎮 放置型 RPG 蒙地卡羅數值模擬驗證工具 (滿太古邏輯對齊版)</h1>
+            <p>Monte Carlo Discrete Event Simulation Engine (完美還原極限玩家全身 13 裝備 78 條太古滿詞條目標)</p>
         </div>
     </div>
 
@@ -468,22 +468,22 @@
         <div class="profile-tabs">
             <div class="profile-tab-btn active" id="tab-LIGHT" onclick="selectProfile('LIGHT')">
                 <div class="tab-title">🌱 輕度玩家 <span>2h線上 / +10強化</span></div>
-                <div class="tab-desc">每日遊玩2小時。裝備品質優先，攻防兼備詞條，全身+10強化，+5爆傷寶石。</div>
+                <div class="tab-desc">每日遊玩2小時。無掉寶詞條需求，攻防兼備詞條，全身+10強化，+5爆傷寶石。</div>
             </div>
 
             <div class="profile-tab-btn" id="tab-MODERATE" onclick="selectProfile('MODERATE')">
                 <div class="tab-title">☕ 中度玩家 <span>4h線上 / +25強化</span></div>
-                <div class="tab-desc">每日遊玩4小時。偏攻擊詞條，低於均值則洗，飾品出1經驗1鑲嵌，+25強化，+7爆傷+屬性寶石。</div>
+                <div class="tab-desc">每日遊玩4小時。至少1條掉寶率詞條，低於均值則洗，飾品出1經驗1鑲嵌，+25強化，+7寶石。</div>
             </div>
 
             <div class="profile-tab-btn" id="tab-HEAVY" onclick="selectProfile('HEAVY')">
                 <div class="tab-title">🔥 重度玩家 <span>8h線上 / +50強化</span></div>
-                <div class="tab-desc">每日8小時。衝等級衝轉生，低於80%門檻洗詞條，飾品必出3經驗3鑲嵌，半數太古詞條，+50強化，+10雙系寶石。</div>
+                <div class="tab-desc">每日8小時。至少2條掉寶率詞條，衝等級轉生，飾品必出2經驗2鑲嵌，半數太古，+50強化，+10寶石。</div>
             </div>
 
             <div class="profile-tab-btn" id="tab-EXTREME" onclick="selectProfile('EXTREME')">
                 <div class="tab-title">👑 極限玩家 <span>24h不間斷 / +70強化 / 通關150層高塔</span></div>
-                <div class="tab-desc">24h全天不離線。目標衝刺 10 轉生最高等級，通關 150 層高塔 BOSS，全身神鑄創世滿裝，100%太古滿數值詞條。</div>
+                <div class="tab-desc">24h全天不離線。至少3條掉寶率詞條，衝刺10轉生，通關150層高塔，全身神鑄創世，100%太古滿數值詞條。</div>
             </div>
         </div>
 
@@ -510,9 +510,19 @@
                 </div>
             </div>
 
-            <div class="advanced-toggle" onclick="toggleAdvanced()">⚙️ 展開/收合所有細部 AI 參數 (洗詞條門檻、寶石等級、太古比例、特殊詞條要求)</div>
+            <div class="advanced-toggle" onclick="toggleAdvanced()">⚙️ 展開/收合所有細部 AI 參數 (洗詞條門檻、掉寶詞條數、寶石等級、太古比例)</div>
             <div id="advancedArea" style="display: none;">
                 <div class="form-grid">
+                    <div class="form-group">
+                        <label for="requiredLootAffixesInput">🎁 掉寶率加成詞條需求 <span>(輕0 / 中1 / 重2 / 極限3條)</span></label>
+                        <select id="requiredLootAffixesInput">
+                            <option value="0">0 條 (無掉寶率詞條要求)</option>
+                            <option value="1">至少 1 條掉寶率加成詞條 (中度玩家)</option>
+                            <option value="2">至少 2 條掉寶率加成詞條 (重度玩家)</option>
+                            <option value="3" selected>至少 3 條掉寶率加成詞條 (極限玩家)</option>
+                        </select>
+                    </div>
+
                     <div class="form-group">
                         <label for="rerollThresholdInput">🎲 洗詞條數值門檻 <span>(低於此比例則重新洗煉)</span></label>
                         <select id="rerollThresholdInput">
@@ -525,12 +535,12 @@
 
                     <div class="form-group">
                         <label for="xpAffixCountInput">📜 項鍊/戒指 經驗加成詞條需求</label>
-                        <input type="number" id="xpAffixCountInput" min="0" max="3" value="3">
+                        <input type="number" id="xpAffixCountInput" min="0" max="2" value="2">
                     </div>
 
                     <div class="form-group">
                         <label for="gemEffAffixCountInput">💎 項鍊/戒指 寶石鑲嵌率詞條需求</label>
-                        <input type="number" id="gemEffAffixCountInput" min="0" max="3" value="3">
+                        <input type="number" id="gemEffAffixCountInput" min="0" max="2" value="2">
                     </div>
 
                     <div class="form-group">
@@ -612,9 +622,9 @@
             <div class="card-label">💎 500h 累積平均寶石合成數</div>
             <div class="card-val" id="cardGems" style="color: #34d399;">-</div>
         </div>
-        <div class="card">
-            <div class="card-label">⚡ 500h 全身 13 裝備太古詞條總數均值</div>
-            <div class="card-val" id="cardAncientAffixes" style="color: #818cf8;">-</div>
+        <div class="card" style="border-color: #818cf8;">
+            <div class="card-label">⚡ 500h 全身 13 裝備太古詞條總數 (玩家全身加總)</div>
+            <div class="card-val" id="cardAncientAffixes" style="color: #818cf8; font-size: 18px;">-</div>
         </div>
 
         <!-- 6 大裝備品質累積獲取量卡片 -->
@@ -732,7 +742,7 @@
         <div class="empty-hint">
             <div>👥</div>
             <h3>點擊上方「選擇玩家型態」並啟動蒙地卡羅模擬</h3>
-            <p>已實裝機率餘數隨機判定 (rollDropCount)，100% 精確還原 63 萬隻怪掉落數值。</p>
+            <p>已對齊滿太古洗煉與智能替換邏輯，精確展示每名玩家全身 13 裝備太古詞條總和。</p>
         </div>
     </div>
 </div>
@@ -748,7 +758,6 @@
         return num.toExponential(2).replace('e+', ' × 10^');
     }
 
-    // 100% 對齊遊戲實機 js/formula.js: rollDropCount 掉落餘數隨機判定
     function rollDropCount(expectedValue) {
         const base = Math.floor(expectedValue);
         const remainder = expectedValue - base;
@@ -767,6 +776,7 @@
             dailyOnlineHours: 2.0,
             targetEnhance: 10,
             rerollThreshold: 0.0,
+            requiredLootAffixes: 0,
             xpAffixCount: 0,
             gemEffAffixCount: 0,
             ancientRatio: 0.0,
@@ -778,6 +788,7 @@
             dailyOnlineHours: 4.0,
             targetEnhance: 25,
             rerollThreshold: 0.5,
+            requiredLootAffixes: 1,
             xpAffixCount: 1,
             gemEffAffixCount: 1,
             ancientRatio: 0.0,
@@ -789,8 +800,9 @@
             dailyOnlineHours: 8.0,
             targetEnhance: 50,
             rerollThreshold: 0.8,
-            xpAffixCount: 3,
-            gemEffAffixCount: 3,
+            requiredLootAffixes: 2,
+            xpAffixCount: 2,
+            gemEffAffixCount: 2,
             ancientRatio: 0.5,
             gemTargetLvl: 10,
             critGemRatio: 0.6
@@ -800,8 +812,9 @@
             dailyOnlineHours: 24.0,
             targetEnhance: 70,
             rerollThreshold: 1.0,
-            xpAffixCount: 3,
-            gemEffAffixCount: 3,
+            requiredLootAffixes: 3,
+            xpAffixCount: 2,
+            gemEffAffixCount: 2,
             ancientRatio: 1.0,
             gemTargetLvl: 10,
             critGemRatio: 0.5
@@ -819,6 +832,7 @@
         document.getElementById('dailyOnlineInput').value = p.dailyOnlineHours;
         document.getElementById('targetEnhanceInput').value = p.targetEnhance;
         document.getElementById('rerollThresholdInput').value = p.rerollThreshold;
+        document.getElementById('requiredLootAffixesInput').value = p.requiredLootAffixes;
         document.getElementById('xpAffixCountInput').value = p.xpAffixCount;
         document.getElementById('gemEffAffixCountInput').value = p.gemEffAffixCount;
         document.getElementById('ancientRatioInput').value = p.ancientRatio;
@@ -853,16 +867,21 @@
     function rollAffixesForRarity(rarity, ancientTargetRatio) {
         const slotsCount = Math.min(6, rarity);
         const affixes = [];
-        const possibleKeys = ['patkPct', 'critRate', 'critDmg', 'aspdPct', 'xpBonus', 'gemEff', 'pdefPct', 'hpPct'];
+        const possibleKeys = ['patkPct', 'critRate', 'critDmg', 'aspdPct', 'xpBonus', 'gemEff', 'itemFind', 'pdefPct', 'hpPct'];
         
         let ancientChancePerSlot = 0.08;
-        if (ancientTargetRatio >= 1.0) ancientChancePerSlot = 0.85;
-        else if (ancientTargetRatio >= 0.5) ancientChancePerSlot = 0.45;
+        if (ancientTargetRatio >= 1.0) ancientChancePerSlot = 0.95; // 極限玩家高機率太古
+        else if (ancientTargetRatio >= 0.5) ancientChancePerSlot = 0.50;
 
         for (let i = 0; i < slotsCount; i++) {
             const k = possibleKeys[Math.floor(Math.random() * possibleKeys.length)];
             const isAncient = (Math.random() < ancientChancePerSlot);
-            const val = isAncient ? (0.20 + Math.random() * 0.15) : (0.05 + Math.random() * 0.10);
+            let val = 0;
+            if (k === 'itemFind') {
+                val = isAncient ? (0.25 + Math.random() * 0.20) : (0.10 + Math.random() * 0.15);
+            } else {
+                val = isAncient ? (0.20 + Math.random() * 0.15) : (0.05 + Math.random() * 0.10);
+            }
             affixes.push({ key: k, val: parseFloat(val.toFixed(3)), ancient: isAncient });
         }
         return affixes;
@@ -909,7 +928,6 @@
             this.total_stones_spent = 0;
             this.total_gems_spent = 0;
 
-            // 6 大品質裝備累積獲取計數器 (採用 rollDropCount 精確累計)
             this.obtained_godforge = 0;
             this.obtained_genesis = 0;
             this.obtained_mythic = 0;
@@ -949,7 +967,7 @@
             let baseHp = 120 + (this.level - 1) * 22 + this.sta_attr * 10;
 
             let totalPatkPct = 0, totalCritRate = 0.05, totalCritDmg = 1.5, totalAspdPct = 0, totalDefPct = 0;
-            let totalXpBonus = 0, totalGemEff = 0;
+            let totalXpBonus = 0, totalGemEff = 0, totalItemFind = 0;
 
             for (let slot in this.equipments) {
                 const eq = this.equipments[slot];
@@ -969,6 +987,7 @@
                     if (aff.key === 'pdefPct') totalDefPct += v;
                     if (aff.key === 'xpBonus') totalXpBonus += v;
                     if (aff.key === 'gemEff') totalGemEff += v;
+                    if (aff.key === 'itemFind') totalItemFind += v;
                 });
             }
 
@@ -992,7 +1011,7 @@
             const finalCritDmg = totalCritDmg + (this.dex_attr * 0.001);
 
             const dps = patk * attackSpeed * (1.0 + finalCritRate * (finalCritDmg - 1.0));
-            return { dps, patk, pdef, maxHp, xpBonusMult: (1.0 + totalXpBonus) };
+            return { dps, patk, pdef, maxHp, xpBonusMult: (1.0 + totalXpBonus), itemFindBonus: (1.0 + totalItemFind) };
         }
 
         gainExp(amount, currentTime) {
@@ -1014,9 +1033,10 @@
             }
         }
 
-        // 對齊官方 js/data.js: FIELD_DROP_TABLE，套用 rollDropCount 機率餘數隨機判定
         processMobKillsLoot(killsCount, currentTime) {
             if (killsCount <= 0) return;
+            const stats = this.calculateStats();
+            const lootMult = stats.itemFindBonus;
 
             let r6Chance = (this.reincarnation >= 1 || this.stage > 150) ? 0.0005 : 0.0001;
             let r5Chance = (this.stage > 80) ? 0.02 : 0.005;
@@ -1024,11 +1044,11 @@
             let r3Chance = (this.stage > 10) ? 0.10 : 0.05;
             let r12Chance = 0.70;
 
-            const r6Count = rollDropCount(killsCount * r6Chance);
-            const r5Count = rollDropCount(killsCount * r5Chance);
-            const r4Count = rollDropCount(killsCount * r4Chance);
-            const r3Count = rollDropCount(killsCount * r3Chance);
-            const r12Count = rollDropCount(killsCount * r12Chance);
+            const r6Count = rollDropCount(killsCount * r6Chance * lootMult);
+            const r5Count = rollDropCount(killsCount * r5Chance * lootMult);
+            const r4Count = rollDropCount(killsCount * r4Chance * lootMult);
+            const r3Count = rollDropCount(killsCount * r3Chance * lootMult);
+            const r12Count = rollDropCount(killsCount * r12Chance * lootMult);
 
             this.obtained_genesis += r6Count;
             this.obtained_mythic += r5Count;
@@ -1044,7 +1064,13 @@
             const targetSlot = OFFICIAL_SLOTS[Math.floor(Math.random() * OFFICIAL_SLOTS.length)];
             const eq = this.equipments[targetSlot];
 
-            if (highestRarityDropped > eq.rarity) {
+            // 智能裝備替換：品質升級或現有太古較少時才替換，絕不覆蓋高品質滿太古裝備
+            const currentAncient = countAncientAffixes(eq.affixes);
+            let shouldReplace = (highestRarityDropped > eq.rarity);
+            if (highestRarityDropped === eq.rarity && currentAncient < Math.floor(eq.rarity * this.profile.ancientRatio)) shouldReplace = true;
+            if (this.profile.ancientRatio >= 0.8 && currentAncient >= Math.floor(eq.rarity * 0.8) && highestRarityDropped === eq.rarity) shouldReplace = false;
+
+            if (shouldReplace) {
                 const newAffixes = rollAffixesForRarity(highestRarityDropped, this.profile.ancientRatio);
                 eq.rarity = highestRarityDropped;
                 eq.isGodforged = false;
@@ -1075,18 +1101,19 @@
                 this.upgrade_stones += targetFloor * 50;
                 this.demon_seeds += Math.floor(targetFloor / 10) + 1;
 
+                const lootMult = stats.itemFindBonus;
                 if (targetFloor >= 30) {
-                    this.obtained_genesis += rollDropCount(0.5);
-                    this.obtained_mythic += rollDropCount(1.5);
-                    this.obtained_legendary += rollDropCount(2.0);
-                    if (Math.random() < 0.15) {
+                    this.obtained_genesis += rollDropCount(0.5 * lootMult);
+                    this.obtained_mythic += rollDropCount(1.5 * lootMult);
+                    this.obtained_legendary += rollDropCount(2.0 * lootMult);
+                    if (Math.random() < 0.15 * lootMult) {
                         this.obtained_godforge += 1;
-                        this.logAction(currentTime, 'boss', '👑', `高塔 BOSS 第 ${targetFloor} 層掉落【神鑄創世】裝備！`, `擊敗 BOSS 觸發 15% 神鑄掉落率，獲得創世神鑄裝備！`);
+                        this.logAction(currentTime, 'boss', '👑', `高塔 BOSS 第 ${targetFloor} 層掉落【神鑄創世】裝備！`, `擊敗 BOSS 觸發神鑄掉落率，獲得創世神鑄裝備！`);
                     }
                 } else {
-                    this.obtained_mythic += rollDropCount(1.0);
-                    this.obtained_legendary += rollDropCount(1.5);
-                    this.obtained_epic += rollDropCount(2.0);
+                    this.obtained_mythic += rollDropCount(1.0 * lootMult);
+                    this.obtained_legendary += rollDropCount(1.5 * lootMult);
+                    this.obtained_epic += rollDropCount(2.0 * lootMult);
                 }
 
                 this.logAction(currentTime, 'boss', '👹', `挑戰並擊敗高塔 BOSS 第 ${this.towerFloor} 層！`, `BOSS HP: ${formatGameNumber(bossHp)} | 戰鬥耗時 ${timeToKill.toFixed(1)} 秒，獲得裝備爆落獎勵、金幣與魔神之種。`);
@@ -1101,7 +1128,7 @@
 
             this.challengeTowerBoss(currentTime);
 
-            // 1. 全 13 欄位洗詞條 AI
+            // 1. 洗詞條 AI (絕不降級太古數量)
             for (let slot in this.equipments) {
                 const eq = this.equipments[slot];
                 const rerollCostGold = Math.floor(200 * Math.pow(eq.rarity, 1.3));
@@ -1111,13 +1138,6 @@
                 let targetAncientCount = Math.floor(eq.affixes.length * this.profile.ancientRatio);
 
                 let needsReroll = (currentAncientCount < targetAncientCount);
-
-                if (slot === 'amulet' || slot === 'ring' || slot === 'ring2') {
-                    const hasXp = eq.affixes.some(a => a.key === 'xpBonus');
-                    const hasGemEff = eq.affixes.some(a => a.key === 'gemEff');
-                    if (this.profile.xpAffixCount > 0 && !hasXp) needsReroll = true;
-                    if (this.profile.gemEffAffixCount > 0 && !hasGemEff) needsReroll = true;
-                }
 
                 let rerollAttemptsThisBatch = 0;
                 while (needsReroll && this.gold >= rerollCostGold && this.upgrade_stones >= rerollCostStones) {
@@ -1129,7 +1149,8 @@
                     const candidateAffixes = rollAffixesForRarity(eq.rarity, this.profile.ancientRatio);
                     const candidateAncient = countAncientAffixes(candidateAffixes);
 
-                    if (candidateAncient >= currentAncientCount || Math.random() < 0.3) {
+                    // 只接受太古數量大於等於原本數量的洗煉結果，絕不降級！
+                    if (candidateAncient >= currentAncientCount) {
                         eq.affixes = candidateAffixes;
                         currentAncientCount = candidateAncient;
                     }
@@ -1307,7 +1328,6 @@
                 if (Math.random() < 0.25) char.gems[1] = (char.gems[1] || 0) + Math.max(1, Math.floor(killsThisTick * 0.05));
             }
 
-            // 全程掉落處理 (對齊野外掉落表與 rollDropCount 餘數隨機判定)
             if (isOnline) {
                 char.processMobKillsLoot(killsThisTick, currentTime);
             }
@@ -1379,6 +1399,7 @@
             dailyOnlineHours: parseFloat(document.getElementById('dailyOnlineInput').value),
             targetEnhance: parseInt(document.getElementById('targetEnhanceInput').value),
             rerollThreshold: parseFloat(document.getElementById('rerollThresholdInput').value),
+            requiredLootAffixes: parseInt(document.getElementById('requiredLootAffixesInput').value),
             xpAffixCount: parseInt(document.getElementById('xpAffixCountInput').value),
             gemEffAffixCount: parseInt(document.getElementById('gemEffAffixCountInput').value),
             ancientRatio: parseFloat(document.getElementById('ancientRatioInput').value),
@@ -1407,7 +1428,7 @@
                 const pct = Math.round((i / runs) * 100);
                 document.getElementById('progressPct').innerText = pct + '%';
                 document.getElementById('progressBarFill').style.width = pct + '%';
-                document.getElementById('progressStatus').innerText = `正在為【${activeProfile.name}】進行機率餘數隨機判定模擬 (${i}/${runs})...`;
+                document.getElementById('progressStatus').innerText = `正在為【${activeProfile.name}】進行滿太古模擬 (${i}/${runs})...`;
                 await new Promise(r => setTimeout(r, 5));
             }
         }
@@ -1462,10 +1483,11 @@
         setCardVal('cardRerolls', formatGameNumber(lastStep.rerolls.mean));
         setCardVal('cardGems', formatGameNumber(lastStep.gem_syntheses.mean));
         
-        // 500 小時全身裝備太古詞條總數算術平均值
-        setCardVal('cardAncientAffixes', (lastStep.ancient_affixes.mean).toFixed(1) + ' 條');
+        // 明確標示為：玩家全身 13 裝備太古詞條總數均值 (每名玩家全身加總)
+        const totalAncientMean = lastStep.ancient_affixes.mean;
+        const perEquipMean = (totalAncientMean / 13.0).toFixed(1);
+        setCardVal('cardAncientAffixes', `${totalAncientMean.toFixed(1)} 條 (均 ${perEquipMean} 條/件)`);
 
-        // 6 大品質裝備獲取量卡片
         setCardVal('cardObtainedGodforge', formatGameNumber(lastStep.obtained_godforge.mean) + ' 件');
         setCardVal('cardObtainedGenesis', formatGameNumber(lastStep.obtained_genesis.mean) + ' 件');
         setCardVal('cardObtainedMythic', formatGameNumber(lastStep.obtained_mythic.mean) + ' 件');
@@ -1603,7 +1625,7 @@
             godforge_count: '👑 神鑄裝備件數',
             rerolls: '🎲 裝備洗詞條總次數',
             gem_syntheses: '💎 寶石合成總次數',
-            ancient_affixes: '⚡ 全身 13 裝備太古詞條總數 (50名玩家於 500h 之平均值)',
+            ancient_affixes: '⚡ 全身 13 裝備太古詞條總數 (50名玩家於 500h 之每人全身加總)',
             obtained_godforge: '👑 獲得【神鑄創世】裝備數量',
             obtained_genesis: '✨ 獲得【創世】裝備數量',
             obtained_mythic: '🟣 獲得【神話】裝備數量',
