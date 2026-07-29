@@ -331,7 +331,11 @@ function mergeUiPanelParams(first, second) {
 function activeUiPanelParams(key) {
   if (key !== 'inv' || typeof document === 'undefined' || !isInternalServer()) return undefined;
   var input = $id('inv-keyword-filter');
-  return input && String(input.value || '').trim() ? { full: true } : undefined;
+  if (input && String(input.value || '').trim()) return { full: true };
+  if (UI.sel && UI.sel.source === 'inv' && UI.sel.id) {
+    return { detailIds: [UI.sel.id] };
+  }
+  return undefined;
 }
 
 function requestPanelData(key, force, params) {
@@ -483,6 +487,12 @@ function syncUiPendingControls(key) {
   var pending = isUiCommandPending(key);
   for (var i = 0; i < controls.length; i++) {
     controls[i].disabled = pending;
+  }
+}
+
+function bindUiPendingControl(control, key) {
+  if (control && typeof control.setAttribute === 'function') {
+    control.setAttribute('data-ui-pending-key', key);
   }
 }
 
@@ -8181,7 +8191,9 @@ function initUI() {
       }
     });
   }
-  $id('inv-expand').addEventListener('click', function () {
+  var invExpand = $id('inv-expand');
+  bindUiPendingControl(invExpand, nodePendingKey('inv-expand'));
+  if (invExpand) invExpand.addEventListener('click', function () {
     sendUiCommand('player.buyInvUpgrade', {}, {
       keys: [nodePendingKey('inv-expand')],
       panels: ['inv', 'header']
@@ -8217,6 +8229,7 @@ function initUI() {
 
   var sortEl = $id('inv-sort');
   if (sortEl) {
+    bindUiPendingControl(sortEl, nodePendingKey('inv-sort'));
     sortEl.addEventListener('click', sortInventory);
   }
 
