@@ -5386,6 +5386,27 @@ textarea#save-io {
   justify-items: stretch;
 }
 
+/* 格線：每格一個虛線淡色方框，讓玩家看得出敵人站在哪一格。
+   純視覺底圖——不接受點擊、不參與命中判定，z-index 壓在敵人卡片與浮字之下。 */
+.bf-cell-guide {
+  border: 1px dashed rgba(190, 170, 140, 0.16);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 空場（搜索敵人中）時訊息蓋滿整個棋盤，格線照樣顯示 */
+.enemy-party.enemy-grid .enemy-empty {
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dim);
+  pointer-events: none;
+  z-index: 1;
+}
+
 /* BOSS 佔 2×2：卡片內容跟著放大，避免大格子裡塞一個小圖 */
 .enemy-party.enemy-grid .enemy-card.enemy-rank-boss {
   --ec-scale: 1.1;

@@ -2299,6 +2299,19 @@ function enemyCellSignature(enemy) {
   if (!cell) return '-';
   return cell.col + ',' + cell.row + ',' + (cell.w || 1) + ',' + (cell.h || 1);
 }
+/* 棋盤格線：每一格放一個空的虛線方框當底圖，讓玩家看得出敵人站在哪一格。
+   純視覺，不參與命中判定；擺在敵人卡片之前，z-index 低於卡片與浮字。 */
+function battlefieldGuideHtml() {
+  var cols = battlefieldCols(), rows = battlefieldRows();
+  var html = '';
+  for (var r = 1; r <= rows; r++) {
+    for (var c = 1; c <= cols; c++) {
+      html += '<div class="bf-cell-guide" aria-hidden="true" style="grid-column:' + c + ';grid-row:' + r + '"></div>';
+    }
+  }
+  return html;
+}
+
 /* 卡片的 grid 定位；沒有格位資訊（舊存檔的殘留敵人、高塔）時不寫 style，交由自動流排。 */
 function enemyCellStyle(enemy) {
   var cell = enemy && enemy.cell;
@@ -2342,12 +2355,14 @@ function renderBattle() {
   // 新版戰鬥：敵方固定 4×4 棋盤，版面不再隨敵人數量變動——我方永遠靠左，棋盤永遠佔滿右側。
   if (scene) scene.classList.add('multi-enemy');
   if (scene) scene.classList.add('multi-enemy-layout');
-  party.className = 'enemy-party enemy-count-' + enemies.length + (enemies.length ? ' enemy-grid' : '');
+  // 棋盤永遠存在（空場也是），所以格線與 grid 版型不隨敵人數量開關，避免波次之間閃動。
+  party.className = 'enemy-party enemy-grid enemy-count-' + enemies.length;
   party.style.setProperty('--bf-cols', battlefieldCols());
   party.style.setProperty('--bf-rows', battlefieldRows());
+  var guideHtml = battlefieldGuideHtml();
   if (!enemies.length) {
     if (party.getAttribute('data-enemy-signature') !== 'empty') {
-      party.innerHTML = '<div class="enemy-empty">' + (view.towerActive ? '（高塔戰鬥中…）' : '🔍 搜索敵人中…') + '</div>';
+      party.innerHTML = guideHtml + '<div class="enemy-empty">' + (view.towerActive ? '（高塔戰鬥中…）' : '🔍 搜索敵人中…') + '</div>';
       party.setAttribute('data-enemy-signature', 'empty');
     }
     flushPendingEnemyFloats(battleSnapshot);
@@ -2357,7 +2372,7 @@ function renderBattle() {
   var enemySignature = enemies.map(function (enemy, index) {
     return index + ':' + enemy.name + ':' + enemy.level + ':' + enemyRankOf(enemy) + ':' + enemyCellSignature(enemy);
   }).join('|');
-  var partyHtml = '';
+  var partyHtml = guideHtml;
   for (var ei = 0; ei < enemies.length; ei++) {
     var enemy = enemies[ei];
     var icon = (enemy.img && !enemy.imgFailed)
