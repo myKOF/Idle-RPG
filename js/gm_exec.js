@@ -347,7 +347,7 @@
 
   function gmSetInventoryCap(rawArg, relativeAddOnly) {
     var str = String(rawArg || '').trim();
-    if (!str) return { ok: false, message: '格式：inv_cap 容量（例：inv_cap 2000 或 inv_cap +500）' };
+    if (!str) return { ok: false, message: '格式：bag 容量（例：bag 2000 或 bag +500）' };
     
     var currentCap = typeof inventoryCapacityWithTalents === 'function' ? inventoryCapacityWithTalents() : ((typeof INVENTORY_CAP !== 'undefined' ? INVENTORY_CAP : 100) + (G.player.invUpgrades || 0));
     var baseCap = typeof INVENTORY_CAP !== 'undefined' ? INVENTORY_CAP : 100;
@@ -359,11 +359,11 @@
       targetCap = currentCap + delta;
     } else if (str.charAt(0) === '+' || str.charAt(0) === '-') {
       var delta = gmSignedAmount(str, 1e6);
-      if (delta === null) return { ok: false, message: '格式：inv_cap +增加量 或 -減少量' };
+      if (delta === null) return { ok: false, message: '格式：bag +增加量 或 -減少量' };
       targetCap = currentCap + delta;
     } else {
       var val = gmNumber(str, 1, 1000000);
-      if (val === null) return { ok: false, message: '格式：inv_cap 目標容量（如 2000）' };
+      if (val === null) return { ok: false, message: '格式：bag 目標容量（如 2000）' };
       targetCap = val;
     }
 
@@ -388,7 +388,7 @@
       return { ok: true, message: '指令說明請查看根目錄 GM_command.md' };
     }
 
-    if (command === 'inv_cap' || command === 'invcap' || command === 'inv_size' || command === 'invsize' || command === 'bag_cap' || command === 'bagcap' || command === 'capacity') {
+    if (command === 'bag' || command === 'inv_cap' || command === 'invcap' || command === 'inv_size' || command === 'invsize' || command === 'bag_cap' || command === 'bagcap' || command === 'capacity') {
       return gmSetInventoryCap(args[0], false);
     }
     if (command === 'inv_expand' || command === 'bag_expand' || command === 'expand_inv') {
