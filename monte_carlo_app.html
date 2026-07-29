@@ -478,6 +478,195 @@
             padding: 6px 10px;
             font-size: 12px;
         }
+
+        /* 🛡️ 裝備快照 Modal 樣式 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-card {
+            background: #111827;
+            border: 1px solid #374151;
+            border-radius: 14px;
+            width: 92%;
+            max-width: 980px;
+            padding: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+            position: relative;
+            max-height: 92vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #374151;
+            padding-bottom: 14px;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f59e0b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-close-modal {
+            background: transparent;
+            border: none;
+            color: #9ca3af;
+            font-size: 26px;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .btn-close-modal:hover { color: #fff; }
+
+        .paperdoll-layout {
+            display: grid;
+            grid-template-columns: minmax(320px, 400px) 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .paperdoll-grid {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 780 / 1024;
+            background: #0b0f19 url('images/character_UI .png') center/contain no-repeat;
+            border: 1px solid #374151;
+            border-radius: 10px;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.9);
+        }
+
+        .pd-slot {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            background: rgba(15, 23, 42, 0.95);
+            border: 2px solid #334155;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+            box-sizing: border-box;
+        }
+
+        .pd-slot:hover, .pd-slot.selected {
+            transform: translate(-50%, -50%) scale(1.06);
+            z-index: 10;
+            box-shadow: 0 0 16px rgba(245, 158, 11, 0.8) !important;
+        }
+
+        .pd-slot .slot-emoji {
+            font-size: 26px;
+        }
+
+        .pd-slot .anc-stars {
+            position: absolute;
+            top: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fbbf24;
+            font-size: 11px;
+            text-shadow: 0 0 4px #000;
+            letter-spacing: 1px;
+        }
+
+        /* 裝備詳情卡片 (對齊遊戲原版) */
+        .item-detail-card {
+            background: #0f172a;
+            border: 2px solid #b8860b;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+            color: #f8fafc;
+        }
+
+        .item-detail-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .item-title-name {
+            font-size: 19px;
+            font-weight: 700;
+        }
+
+        .item-sub-info {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 10px;
+        }
+
+        .item-affix-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .affix-row {
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .affix-row.ancient {
+            color: #fbbf24;
+            font-weight: 700;
+            text-shadow: 0 0 8px rgba(251, 191, 36, 0.3);
+        }
+
+        .affix-row.normal {
+            color: #e2e8f0;
+        }
+
+        .item-sockets {
+            border-top: 1px dashed #334155;
+            padding-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        /* 13 個部位定位 (對齊 style.css) */
+        .slot-shoulder { left: 26.15%; top: 19.34%; width: 17.05%; height: 17.87%; }
+        .slot-gloves { left: 18.72%; top: 41.70%; width: 17.05%; height: 17.68%; }
+        .slot-ring { left: 18.85%; top: 59.23%; width: 11.00%; height: 8.20%; }
+        .slot-weapon { left: 18.78%; top: 81.64%; width: 17.18%; height: 27.44%; }
+        .slot-helmet { left: 50.45%; top: 11.33%; width: 17.18%; height: 13.38%; }
+        .slot-chest { left: 50.51%; top: 33.50%; width: 17.05%; height: 22.17%; }
+        .slot-belt { left: 51.15%; top: 50.63%; width: 22.44%; height: 6.25%; }
+        .slot-boots { left: 51.15%; top: 86.38%; width: 17.31%; height: 18.16%; }
+        .slot-amulet { left: 73.46%; top: 20.21%; width: 14.49%; height: 11.04%; }
+        .slot-wrist { left: 82.18%; top: 41.70%; width: 17.05%; height: 17.68%; }
+        .slot-legs { left: 51.09%; top: 65.33%; width: 17.18%; height: 17.87%; z-index: 3; }
+        .slot-ring2 { left: 83.27%; top: 59.23%; width: 11.03%; height: 8.20%; }
+        .slot-weapon2 { left: 83.40%; top: 81.64%; width: 17.18%; height: 27.44%; }
     </style>
 </head>
 <body>
@@ -749,6 +938,7 @@
                 <button class="log-filter-btn" id="filter-godforge" onclick="setLogFilter('godforge')">👑 神鑄鍛造</button>
                 <button class="log-filter-btn" id="filter-gem" onclick="setLogFilter('gem')">💎 寶石合成</button>
                 <button class="log-filter-btn" id="filter-reinc" onclick="setLogFilter('reinc')">🌀 轉生與升級</button>
+                <button class="btn-download-log" style="background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%);" onclick="openEquipmentSnapshotModal()">🛡️ 裝備快照 (500h)</button>
                 <button class="btn-download-log" onclick="downloadTopRunLogs()">📥 下載完整日誌 (.txt)</button>
             </div>
         </div>
@@ -780,6 +970,26 @@
     </div>
 </div>
 
+<!-- 🛡️ 裝備快照 Modal 彈窗 (對齊遊戲紙娃娃介面) -->
+<div class="modal-overlay" id="equipModalOverlay" onclick="closeEquipmentModalOnBackdrop(event)">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div class="modal-title">🛡️ 最強玩家 500小時全身裝備快照 (Character Paperdoll Snapshot)</div>
+            <button type="button" class="btn-close-modal" onclick="closeEquipmentModal()">&times;</button>
+        </div>
+        <div class="paperdoll-layout">
+            <div class="paperdoll-grid" id="paperdollGrid">
+                <!-- 13 個部位按經典紙娃娃座標動態生成 -->
+            </div>
+            <div class="item-detail-card" id="itemDetailPanel">
+                <div style="color: var(--text-muted); text-align: center; padding: 40px 0;">
+                    👈 點擊左側紙娃娃上的裝備部位，查看 500 小時後頂級裝備的詳細太古詞條與數值
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     function formatGameNumber(num) {
         if (num === null || num === undefined || isNaN(num)) return '0';
@@ -802,6 +1012,41 @@
         'belt', 'gloves', 'wrist', 'legs', 'boots', 
         'ring', 'ring2', 'amulet'
     ];
+
+    const SLOT_CHINESE_NAMES = {
+        weapon: '主手武器', weapon2: '副手武器', helmet: '頭盔', shoulder: '肩甲',
+        chest: '胸甲', belt: '腰帶', gloves: '手套', wrist: '護腕',
+        legs: '腿甲', boots: '鞋子', ring: '戒指 1', ring2: '戒指 2', amulet: '項鍊'
+    };
+
+    const SLOT_EMOJIS = {
+        weapon: '⚔️', weapon2: '🛡️', helmet: '🪖', shoulder: '🥋',
+        chest: '🦺', belt: '🩲', gloves: '🧤', wrist: '⌚',
+        legs: '👖', boots: '🥾', ring: '💍', ring2: '💍', amulet: '📿'
+    };
+
+    const RARITY_INFO = {
+        1: { name: '普通', color: '#9aa5b1' },
+        2: { name: '精良', color: '#4ade80' },
+        3: { name: '稀有', color: '#38bdf8' },
+        4: { name: '獨特', color: '#ffd700' },
+        5: { name: '史詩', color: '#c084fc' },
+        6: { name: '傳說', color: '#fb923c' },
+        7: { name: '創世', color: '#b8860b' },
+        8: { name: '神鑄創世', color: '#f5c542' }
+    };
+
+    const AFFIX_CHINESE = {
+        patkPct: '物理攻擊加成',
+        critRate: '暴擊率加成',
+        critDmg: '暴擊傷害加成',
+        aspdPct: '攻擊速度加成',
+        xpBonus: '經驗值獲取加成',
+        gemEff: '寶石效果增幅',
+        itemFind: '掉寶率加成',
+        pdefPct: '物理防禦加成',
+        hpPct: '生命值上限加成'
+    };
 
     const RARITY_AFFIX_COUNTS = { 1: 2, 2: 3, 3: 4, 4: 5, 5: 5, 6: 6, 7: 7, 8: 7 };
 
@@ -1360,6 +1605,7 @@
     let currentLogFilter = 'all';
     let currentLogPage = 1;
     const LOG_PAGE_SIZE = 50;
+    let selectedEquipSlotKey = 'chest';
 
     async function handleStartSimulation(event) {
         event.preventDefault();
@@ -1481,6 +1727,247 @@
         } catch(e) {
             console.error("renderChart Exception:", e);
         }
+    }
+
+    function runSingleSimulation(runId, totalHours, profile) {
+        const char = new Character(profile);
+        const onlineRatio = Math.min(1.0, profile.dailyOnlineHours / 24.0);
+        const actionInterval = (profile.dailyOnlineHours >= 24) ? 0.25 : 1.0;
+
+        let currentTime = 0.0;
+        let nextActionTime = 0.0;
+        let nextSampleTime = 0.0;
+        let lastCombatLogTime = -1.0;
+        const tickHours = 0.05;
+        const history = [];
+
+        while (currentTime < totalHours) {
+            const stats = char.calculateStats();
+            const monsterHp = (30 + char.stage * 8) * safePow(1.095, Math.max(0, char.stage - 1));
+            const monsterAtk = (6 + char.stage * 1.2) * safePow(1.11, Math.max(0, char.stage - 1));
+            const monsterEffectiveDps = Math.max(1.0, monsterAtk - stats.pdef * 0.5);
+
+            const timeToKill = monsterHp / Math.max(1.0, stats.dps);
+            const timeToDie = stats.maxHp / monsterEffectiveDps;
+
+            const isOnline = (Math.random() < onlineRatio);
+            const effMult = isOnline ? 1.0 : 0.6;
+
+            const animationDelay = 2.0; 
+            const respawnDelay = 0.8;   
+            const maxSpeedCap = (char.reincarnation >= 1) ? 1.0 : 0.36;
+            const mobCycleTime = timeToKill + animationDelay + respawnDelay;
+            const baseKillSpeed = Math.min(maxSpeedCap, 1.0 / mobCycleTime);
+
+            const killedPerHour = (baseKillSpeed * 3600.0) * effMult;
+            const killsThisTick = killedPerHour * tickHours;
+
+            const isAdvancing = (timeToKill <= 30.0 && timeToDie > timeToKill);
+
+            if (isAdvancing) {
+                char.totalKills += killsThisTick;
+                char.stage += killsThisTick / 10.0;
+                
+                const expPerMob = (8 + char.stage) * safePow(1.06, Math.max(0, char.stage - 1));
+                const goldPerMob = (20 + char.stage) * safePow(1.02, Math.max(0, char.stage - 1));
+
+                char.gainExp(killsThisTick * expPerMob * stats.xpBonusMult, currentTime);
+                char.gold += killsThisTick * goldPerMob;
+                
+                if (char.stage > 50 && Math.random() < 0.08) char.demon_seeds += 1;
+            } else {
+                const farmStage = Math.max(1, Math.floor(char.stage) - 1);
+                const expPerMob = (8 + farmStage) * safePow(1.06, farmStage - 1);
+                const goldPerMob = (20 + farmStage) * safePow(1.02, farmStage - 1);
+
+                char.totalKills += killsThisTick;
+                char.gainExp(killsThisTick * expPerMob * stats.xpBonusMult, currentTime);
+                char.gold += killsThisTick * goldPerMob;
+            }
+
+            if (isOnline) {
+                char.processMobKillsLoot(killsThisTick, currentTime);
+            }
+
+            if (currentTime - lastCombatLogTime >= 1.0) {
+                lastCombatLogTime = currentTime;
+                const statusText = isAdvancing ? '關卡推進中' : '最高關卡掛機刷怪中';
+                char.logAction(
+                    currentTime, 
+                    'combat', 
+                    '⚔️', 
+                    `一般戰鬥 (${statusText}) Stage ${Math.floor(char.stage)} 關`, 
+                    `目前 DPS: ${formatGameNumber(stats.dps)} | 擊殺速度: ${baseKillSpeed.toFixed(2)} 隻/秒 | 本小時擊殺: ${formatGameNumber(killedPerHour)} 隻 | 累積總殺敵數: ${formatGameNumber(char.totalKills)}`
+                );
+            }
+
+            if (isOnline && currentTime >= nextActionTime) {
+                char.autoUpgradeAndManage(currentTime);
+                nextActionTime += actionInterval;
+            }
+
+            if (currentTime >= nextSampleTime) {
+                const currentStats = char.calculateStats();
+                history.push({
+                    hour: Math.round(currentTime * 100) / 100,
+                    stage: Math.round(char.stage * 100) / 100,
+                    level: char.level,
+                    reincarnation: char.reincarnation,
+                    tower_floor: char.towerFloor,
+                    total_kills: Math.round(char.totalKills),
+                    dps: currentStats.dps,
+                    equip_score: Math.round(char.getEquipScore()),
+                    ancient_affixes: char.getAncientAffixCount(),
+                    godforge_count: char.getGodforgedCount(),
+                    obtained_godforge: char.obtained_godforge,
+                    obtained_genesis: char.obtained_genesis,
+                    obtained_mythic: char.obtained_mythic,
+                    obtained_legendary: char.obtained_legendary,
+                    obtained_epic: char.obtained_epic,
+                    obtained_below_epic: char.obtained_below_epic,
+                    rerolls: char.total_affix_rerolls,
+                    total_skills: char.total_skill_levels,
+                    gold_spent: char.total_gold_spent,
+                    stones_spent: char.total_stones_spent,
+                    gems_spent: char.total_gems_spent,
+                    enhancements: char.total_enhancements,
+                    gem_syntheses: char.total_gem_syntheses
+                });
+                nextSampleTime += 1.0;
+            }
+            currentTime += tickHours;
+        }
+        return { 
+            history: history, 
+            logs: char.actionLogs, 
+            finalDps: char.calculateStats().dps,
+            equipments: char.equipments,
+            gems: char.gems,
+            profile: profile
+        };
+    }
+
+    // 🛡️ 打開裝備快照 Modal
+    function openEquipmentSnapshotModal() {
+        if (!currentSimResult || !currentSimResult.topRun) {
+            alert('請先啟動蒙地卡羅模擬運算！');
+            return;
+        }
+        const modal = document.getElementById('equipModalOverlay');
+        modal.style.display = 'flex';
+        renderPaperdollGrid();
+        selectPaperdollSlot('chest'); // 預設展示胸甲
+    }
+
+    function closeEquipmentModal() {
+        document.getElementById('equipModalOverlay').style.display = 'none';
+    }
+
+    function closeEquipmentModalOnBackdrop(event) {
+        if (event.target.id === 'equipModalOverlay') {
+            closeEquipmentModal();
+        }
+    }
+
+    // 渲染紙娃娃網格 13 個部位 (對齊官方紙娃娃)
+    function renderPaperdollGrid() {
+        const grid = document.getElementById('paperdollGrid');
+        const eqMap = currentSimResult.topRun.equipments;
+
+        grid.innerHTML = '';
+        OFFICIAL_SLOTS.forEach(slot => {
+            const eq = eqMap[slot];
+            const rInfo = RARITY_INFO[eq.rarity] || RARITY_INFO[8];
+            const ancCount = countAncientAffixes(eq.affixes);
+
+            let starsStr = '';
+            if (ancCount > 0) {
+                starsStr = '✡'.repeat(Math.min(7, ancCount));
+            }
+
+            const slotEl = document.createElement('div');
+            slotEl.className = `pd-slot slot-${slot} ${selectedEquipSlotKey === slot ? 'selected' : ''}`;
+            slotEl.style.borderColor = rInfo.color;
+            slotEl.style.boxShadow = `inset 0 0 14px ${rInfo.color}40`;
+            slotEl.onclick = () => selectPaperdollSlot(slot);
+
+            slotEl.innerHTML = `
+                ${starsStr ? `<div class="anc-stars">${starsStr}</div>` : ''}
+                <div class="slot-emoji">${SLOT_EMOJIS[slot] || '🛡️'}</div>
+                <div style="font-size: 10px; color: ${rInfo.color}; font-weight: bold; margin-top: 2px;">+${eq.level}</div>
+            `;
+            grid.appendChild(slotEl);
+        });
+    }
+
+    function selectPaperdollSlot(slot) {
+        selectedEquipSlotKey = slot;
+        renderPaperdollGrid();
+
+        const eqMap = currentSimResult.topRun.equipments;
+        const eq = eqMap[slot];
+        const rInfo = RARITY_INFO[eq.rarity] || RARITY_INFO[8];
+        const detailPanel = document.getElementById('itemDetailPanel');
+        detailPanel.style.borderColor = rInfo.color;
+
+        const slotName = SLOT_CHINESE_NAMES[slot] || slot;
+        const ancCount = countAncientAffixes(eq.affixes);
+
+        let affixRowsHtml = '';
+        eq.affixes.forEach(aff => {
+            const affName = AFFIX_CHINESE[aff.key] || aff.key;
+            const isPct = aff.key.includes('Pct') || aff.key === 'critRate' || aff.key === 'critDmg' || aff.key === 'xpBonus' || aff.key === 'gemEff' || aff.key === 'itemFind';
+            const valStr = isPct ? `+${(aff.val * 100).toFixed(1)}%` : `+${formatGameNumber(aff.val * 1000)}`;
+
+            if (aff.ancient) {
+                affixRowsHtml += `
+                    <div class="affix-row ancient">
+                        <span>✡</span>
+                        <span>${affName} ${valStr}</span>
+                        <span style="font-size: 11px; opacity: 0.9; margin-left: auto;">(太古滿數值)</span>
+                    </div>
+                `;
+            } else {
+                affixRowsHtml += `
+                    <div class="affix-row normal">
+                        <span>◇</span>
+                        <span>${affName} ${valStr}</span>
+                    </div>
+                `;
+            }
+        });
+
+        // 寶石插槽展示
+        const gemLvl = currentSimResult.config.profile.gemTargetLvl || 10;
+
+        detailPanel.innerHTML = `
+            <div class="item-detail-header">
+                <span style="font-size: 32px;">${SLOT_EMOJIS[slot]}</span>
+                <div>
+                    <div class="item-title-name" style="color: ${rInfo.color}">
+                        ${rInfo.name}的${slotName} +${eq.level}
+                    </div>
+                    <div style="font-size: 13px; color: ${rInfo.color}; font-weight: 600;">
+                        ${rInfo.name} ・ ${slotName} ・ 裝備等級 500
+                    </div>
+                </div>
+            </div>
+
+            <div class="item-sub-info">
+                <span>全身太古條數: ${ancCount} / ${eq.affixes.length} 條</span>
+                <span style="color: #fbbf24; font-weight: bold;">裝備評分 ${(eq.level * 10 + eq.rarity * 400).toLocaleString()}</span>
+            </div>
+
+            <div class="item-affix-list">
+                ${affixRowsHtml}
+            </div>
+
+            <div class="item-sockets">
+                <div style="color: #34d399; font-weight: bold; margin-bottom: 2px;">💎 已鑲嵌寶石插槽：</div>
+                <div>🔹 Lv.${gemLvl} 爆傷寶石 (爆傷 +${gemLvl * 5}%)</div>
+                <div>🔸 Lv.${gemLvl} 屬性核心寶石 (全屬性增幅 +${gemLvl * 5}%)</div>
+            </div>
+        `;
     }
 
     function setLogFilter(cat) {
