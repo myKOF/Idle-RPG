@@ -30,9 +30,20 @@ var FOLDER_AUTOSAVE_SEC = 600;
 var _booted = false;
 var _loopTimer = 0;
 var _lastTickAt = 0;
-var _emitAcc = 0;
-var _autosaveAcc = 0;
-var _folderAcc = 0;
+/* ---- 節流基準是真實時間，不是模擬出的遊戲時間 ----
+   這三個原本是累加器，加的是「這次 loop 模擬掉的遊戲秒數」。正常運行時一次 loop
+   就是一步 TICK_MS，遊戲時間等於真實時間，看不出差別；但補欠帳時一次 loop 會模擬掉
+   數十秒遊戲時間（CPU 預算 30ms ÷ 每遊戲秒約 0.67ms），門檻立刻被跨過：
+   自動存檔從 15 秒一次變成每個 loop（0.1 秒）一次、資料夾同步從 10 分鐘一次變成約
+   1.3 秒一次，各放大約 150 與 450 倍。
+
+   一次自動存檔的實際成本是「整份存檔序列化 → 跨執行緒複製 → 主執行緒 gzip 與
+   IndexedDB／檔案寫入」，後期存檔約 400 KB。放大幾百倍後主執行緒會被寫入塞滿，
+   玩家的指令要等十秒才有反應，watchdog 也會因為收不到訊息而誤判 Worker 已死並重啟，
+   重啟又會丟掉還沒補完的欠帳、改用固定費率的離線收益結算。整條鏈的源頭就是這裡。 */
+var _lastEmitAt = 0;
+var _lastAutoAt = 0;
+var _lastFolderAt = 0;
 var _persistSeq = 0;
 var _pendingPersist = {};   // token -> kind，等主執行緒回 saveResult
 /* 重新開局送出後到頁面真的重載之間，這顆 Worker 的 G 仍是「舊局」。
@@ -122,6 +133,11 @@ var _catchupDebt = 0;          // 尚未補完的遊戲時間（秒）
 var MAX_CATCHUP_DEBT_SEC = (typeof OFFLINE_MAX_HOURS === 'number' ? OFFLINE_MAX_HOURS : 24) * 3600;
 var CATCHUP_BUDGET_MS = 30;    // 單次 loop 最多花在補進度的 CPU 時間
 var MAX_CATCHUP_STEPS = 2000;  // 保險絲：單次 loop 的步數硬上限（200 秒遊戲時間）
+
+/* 回報給主執行緒的「正在補進度」門檻。每次 loop 進來時 _catchupDebt 本來就有一個
+   TICK_MS，那是正常節奏不是欠帳；超過一秒才代表真的落後了。
+   主執行緒拿它放寬 watchdog 的判定門檻（見 bridge.js 的存活監測）。 */
+var CATCHUP_REPORT_MIN_SEC = 1;
 
 /* 補進度的計時來源要與遊戲時間分開：Date.now() 在測試裡是可控的假時鐘，
    拿它當預算計時會失效。performance.now() 是單調時鐘，正是這裡要的。 */
@@ -238,20 +254,25 @@ function loop() {
       if (++steps >= MAX_CATCHUP_STEPS || catchupClock() >= budgetUntil) break;
     }
 
-    _emitAcc += stepped;
-    if (_emitAcc >= TICK_EMIT_MS / 1000) {
-      _emitAcc = 0;
+    /* 一律以 now（真實時間）判斷，`stepped` 只用來推進模擬，不參與節流——見宣告處的說明。
+       補進度期間 UI 照樣 5Hz 更新、自動存檔照樣 15 秒一次，與正常遊玩完全相同。 */
+    if (now - _lastEmitAt >= TICK_EMIT_MS) {
+      _lastEmitAt = now;
       updateShownRes();
       maintainGemShop();
       checkForgeUnlockNotice();
       emitTick();
     }
 
-    _autosaveAcc += stepped;
-    if (_autosaveAcc >= AUTOSAVE_SEC) { _autosaveAcc = 0; requestPersist(PERSIST_KINDS.AUTO); }
+    if (now - _lastAutoAt >= AUTOSAVE_SEC * 1000) {
+      _lastAutoAt = now;
+      requestPersist(PERSIST_KINDS.AUTO);
+    }
 
-    _folderAcc += stepped;
-    if (_folderAcc >= FOLDER_AUTOSAVE_SEC) { _folderAcc = 0; requestPersist(PERSIST_KINDS.FOLDER); }
+    if (now - _lastFolderAt >= FOLDER_AUTOSAVE_SEC * 1000) {
+      _lastFolderAt = now;
+      requestPersist(PERSIST_KINDS.FOLDER);
+    }
   } catch (e) {
     reportError('loop', e);
   }
@@ -300,7 +321,9 @@ function emitTick() {
     dirty: shimDrainDirty(),
     events: shimDrainEvents(),
     diag: shimDiagSnapshot(),
-    measure: measureSnapshot()
+    measure: measureSnapshot(),
+    // 一個數字，成本可忽略；主執行緒靠它判斷 Worker 是「忙著補進度」還是「死了」
+    catchup: _catchupDebt > CATCHUP_REPORT_MIN_SEC ? Math.round(_catchupDebt) : 0
   });
 }
 
@@ -440,7 +463,17 @@ function requestPersist(kind, opts) {
     var token = 'p' + (++_persistSeq);
     var prevSavedAt = G.savedAt;
     var state = opts.state || G;
-    if (state === G) G.savedAt = Date.now();
+    /* savedAt 的語意是「模擬已經推進到哪個時刻」，不是「這份檔案什麼時候寫的」。
+       平常兩者只差一個 tick，但補欠帳時可能差好幾小時——那段時間已經進了 _catchupDebt，
+       卻還沒被模擬掉。若照實寫成 Date.now()，玩家在補完之前關掉分頁或 Worker 被重啟，
+       下次開機的離線結算會以為那幾小時已經結算過，整段掛機時間就此蒸發。
+       往回扣掉欠帳，剩下的部分自然會由離線結算補回，不重複也不漏。
+       （寫入時間本身仍記在 meta.savedAt 與檔案的 lastModified 上，存檔清單顯示不受影響。） */
+    if (state === G) G.savedAt = Date.now() - Math.round(_catchupDebt * 1000);
+    /* 記下是哪個 origin 寫的。存檔資料夾是實體目錄、不分 origin，這個欄位讓開機流程
+       能認出「這份不是我寫的」並先問過玩家，出事時也查得出檔案的來歷。
+       typeof 保護的理由同 MAX_CATCHUP_DEBT_SEC：既有測試會以空的 importScripts 載入本檔。 */
+    if (typeof SAVE_ORIGIN_TAG_V2 === 'string') state.savedBy = SAVE_ORIGIN_TAG_V2;
     var json = JSON.stringify(state);
     // meta 用模擬層既有的 saveRecMeta 產生（只讀 G、不碰儲存），主執行緒不必再自行推算
     var meta = opts.meta || saveRecMeta('auto', 'auto_current', AUTO_FOLDER_FILE_V2);
@@ -1078,7 +1111,7 @@ function boot(msg) {
 
   _booted = true;
   _lastTickAt = Date.now();
-  _emitAcc = _autosaveAcc = _folderAcc = 0;
+  _lastEmitAt = _lastAutoAt = _lastFolderAt = _lastTickAt;
   if (_loopTimer) clearInterval(_loopTimer);
   _loopTimer = setInterval(loop, TICK_MS);
 
@@ -1105,7 +1138,7 @@ function loadIntoRunningSim(msg) {
   if (typeof initFieldPlayer === 'function') initFieldPlayer();
   if (typeof applyOfflineProgress === 'function') applyOfflineProgress();
   _lastTickAt = Date.now();
-  _autosaveAcc = _folderAcc = 0;
+  _lastEmitAt = _lastAutoAt = _lastFolderAt = _lastTickAt;
   PANEL_KEYS.forEach(function (k) { UI.dirty[k] = true; });
   post(MSG_OUT.FULL, { snapshot: { view: buildView() }, events: shimDrainEvents() });
   requestPersist(PERSIST_KINDS.AUTO); // 換檔後立刻鎖定 savedAt 基準
