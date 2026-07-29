@@ -824,7 +824,7 @@ function segmentedLevelGrowth(base, level, brackets) {
   return total;
 }
 
-function monsterStatsFor(stage, elite) {
+function monsterStatsFor(stage, elite, boss) {
   var hp = (30 + stage * 20) * Math.pow(1.06, stage - 1);
   var atk = (3 + stage * 5) * Math.pow(1.055, stage - 1);
   var def = (2 + stage * 0.5) * Math.pow(1.06, stage - 1);
@@ -837,9 +837,15 @@ function monsterStatsFor(stage, elite) {
     aspd: 2,
     dodge: segmentedLevelGrowth(FIELD_MONSTER_DODGE_BASE, stage, FIELD_MONSTER_DODGE_GROWTH),
     hit: segmentedLevelGrowth(FIELD_MONSTER_HIT_BASE, stage, FIELD_MONSTER_HIT_GROWTH),
-    gold: gold, xp: xp, elite: !!elite
+    gold: gold, xp: xp, elite: !!elite && !boss, isBoss: !!boss
   };
-  if (elite) {
+  // 野外 BOSS 優先於菁英（第 50 階同時符合兩者時出 BOSS）；倍率 → data.js FIELD_BOSS_*
+  if (boss) {
+    m.hp *= FIELD_BOSS_HP_MULT; m.atk *= FIELD_BOSS_ATK_MULT;
+    m.def *= FIELD_BOSS_DEF_MULT; m.mdef *= FIELD_BOSS_DEF_MULT;
+    m.gold *= FIELD_BOSS_REWARD_MULT; m.xp *= FIELD_BOSS_REWARD_MULT;
+    m.dodge += FIELD_BOSS_DODGE_ADD; m.aspd = FIELD_BOSS_ASPD;
+  } else if (elite) {
     m.hp *= 4; m.atk *= 2.5; m.gold *= 2; m.xp *= 2; m.dodge += 3; m.aspd = 1.5;
   }
   return m;
@@ -859,8 +865,26 @@ function isPurgatoryTowerFloor(floor) {
   return floor > TOWER_HELL_MAX_FLOOR && floor <= TOWER_PURGATORY_MAX_FLOOR;
 }
 
-// 普通關卡敵人數量：1 隻 78%、2 隻 15%、3 隻 5%、4 隻 2%。
-function rollFieldEnemyCount() { return wpick(FIELD_ENEMY_COUNT_TABLE); }
+/* 普通關卡敵人數量：權重見參數表「4-敵人數量」（預設 1 隻 60%、2 隻 25%、3 隻 10%、4 隻 5%）。
+   權重 0 的列先濾掉——wpick 在浮點誤差下會回傳陣列最後一項，留著會讓「權重 0 的 16 隻」
+   有極小機率被抽中。最後再夾到棋盤總格數，避免出怪數超過站得下的格子。 */
+function rollFieldEnemyCount() {
+  var pairs = [];
+  for (var i = 0; i < FIELD_ENEMY_COUNT_TABLE.length; i++) {
+    if (FIELD_ENEMY_COUNT_TABLE[i][1] > 0) pairs.push(FIELD_ENEMY_COUNT_TABLE[i]);
+  }
+  if (!pairs.length) return 1;
+  var n = wpick(pairs);
+  var cap = (typeof bfCellCount === 'function') ? bfCellCount() : n;
+  return Math.max(1, Math.min(n, cap));
+}
+
+// 野外 BOSS 階段：階段為 FIELD_BOSS_STAGE_INTERVAL 的倍數；與菁英階段重疊時 BOSS 優先。
+function isFieldBossStage(stage) {
+  var iv = Math.floor(Number(FIELD_BOSS_STAGE_INTERVAL) || 0);
+  var s = Math.floor(Number(stage) || 0);
+  return iv > 0 && s > 0 && s % iv === 0;
+}
 
 /* ---- 高塔 BOSS 數值（三塔獨立參數） ----
    依樓層選用 TOWER_BOSS_TRIAL / TOWER_BOSS_HELL / TOWER_BOSS_PURGATORY（data.js）；

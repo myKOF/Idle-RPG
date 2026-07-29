@@ -12,7 +12,7 @@
 
 importScripts('protocol.js', 'shim.js');
 importScripts(
-  '../util.js', '../data.js', '../formula.js', '../stats.js', '../item.js',
+  '../util.js', '../data.js', '../formula.js', '../battlefield.js', '../stats.js', '../item.js',
   '../skills.js', '../talents.js', '../player.js', '../special_rules.js',
   '../combat.js', '../legendary.js', '../potential.js', '../tower.js',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js'

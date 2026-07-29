@@ -8,7 +8,7 @@ function loadFormulaContext() {
   const root = path.resolve(__dirname, '..');
   const context = { console, Math: Object.create(Math) };
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/formula.js'].forEach((file) => {
+  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   return context;
@@ -25,7 +25,7 @@ function loadCombatContext() {
   };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/combat.js'].forEach((file) => {
+  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   context.G = { stage: { current: 1 }, tower: { active: false } };

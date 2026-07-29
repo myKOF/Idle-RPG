@@ -145,10 +145,14 @@ function firePotentialLightning(pEnt, def, live, floatSel, st, boostVal) {
   if (boostVal > 0) baseVal *= 1 + boostVal / 100;
   var bounces = def.bounces || 5;
   var out = { killed: false, dmg: 0 };
+  // 由近而遠連鎖：第一跳打最近的敵人，之後每跳跳到離上一個目標最近的鄰居 → js/battlefield.js
+  var chainOrder = (typeof bfChainOrder === 'function')
+    ? bfChainOrder(pEnt && pEnt._lockTarget, live, bounces) : [];
   for (var i = 0; i < bounces; i++) {
     live = live.filter(function (m) { return m && m.hp > 0; });
     if (!live.length) break;
-    var t = live[i % live.length];
+    var t = chainOrder[i] || live[i % live.length];
+    if (!t || t.hp <= 0) continue;
     // 技能屬性化：本體傷害段整段即為電屬性傷害（skillElem，與一般技能同規格）
     var elemAtk = null;
     if (st.elemAtk) {
@@ -213,7 +217,8 @@ function firePotentialOmega(pEnt, def, live, floatSel, st, mult) {
 }
 
 /* 雷霆過載連鎖：由 skills.js castSkill 在雷電系技能命中後呼叫。
-   追加 (3＋連擊數) 次、各 chainPortion(10%) 該擊總傷害的連鎖，隨機分配給存活敵人。
+   追加 (3＋連擊數) 次、各 chainPortion(10%) 該擊總傷害的連鎖：
+   第一跳打主目標，之後每跳跳到離上一個目標最近的鄰居（→ js/battlefield.js bfChainOrder）。
    sourceCrit＝本擊是否爆擊：連鎖傷害本就內含爆擊倍率，浮字樣式沿用一般技能爆擊（黃字）。
    skDef＝技能定義（可選末參）：§3.5 系別判定統一走 skillElemOf（帶 lightning 標籤即算雷電系）。 */
 function applyPotentialChainLightning(pEnt, fx, targets, totalDmg, comboReps, floatSel, sourceCrit, skDef) {
@@ -222,17 +227,21 @@ function applyPotentialChainLightning(pEnt, fx, targets, totalDmg, comboReps, fl
     ? (skillElemOf(skDef, fx) === 'lightning' || (fx.elems && fx.elems.lightning))
     : !!(fx.elems && fx.elems.lightning);
   if (!isLightning || totalDmg <= 0) return { killed: false };
-  var live = (targets || []).filter(function (m) { return m && m.hp > 0; });
   var out = { killed: false, dmg: 0 };
   var bounces = 3 + Math.max(0, comboReps || 0);
   var per = totalDmg * 0.10;
   var floatCls = (sourceCrit ? 'crit ' : 'dmg ') + 'enemy-skill'; // 與一般技能浮字同規則
   // 前綴用 🌩️（雷霆過載 emoji）：與「⚡天罰（神鑄特效，吃物攻）」及連鎖閃電技能本體的 ⚡ 區隔，避免誤判傷害來源
   var floatPrefix = '🌩️' + (sourceCrit ? '爆擊 ' : '');
+  /* 彈跳對象取自整個戰場而不是技能自己的 targets：技能改成單體之後，
+     沿用 targets 會讓所有彈跳都落在同一隻身上。第一跳打主目標，之後由近而遠往鄰居擴散。 */
+  var field = (typeof skillRtActiveEnemies === 'function')
+    ? skillRtActiveEnemies(targets) : (targets || []).filter(function (m) { return m && m.hp > 0; });
+  var first = (targets || []).filter(function (m) { return m && m.hp > 0; })[0] || null;
+  var chain = (typeof bfChainOrder === 'function') ? bfChainOrder(first, field, bounces) : [];
   for (var i = 0; i < bounces; i++) {
-    live = live.filter(function (m) { return m && m.hp > 0; });
-    if (!live.length) { if (!targets || !targets.length) break; live = [targets[0]]; if (live[0].hp <= 0) break; }
-    var t = live[i % live.length];
+    var t = chain[i] || field[i % Math.max(1, field.length)];
+    if (!t || t.hp <= 0) continue;
     var d = Math.max(1, Math.round(per));
     t.hp -= d;
     out.dmg += d;

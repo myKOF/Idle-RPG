@@ -27,7 +27,7 @@ function loadGameContext() {
   context.window = context;
   vm.createContext(context);
 
-  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/combat.js', 'js/skills.js'].forEach((file) => {
+  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
 
@@ -127,7 +127,9 @@ test('多敵人技能傷害依範圍傷害與敵人數量分攤', () => {
   assert.equal(context.skillDamageShare(10000, 100, 1), 10000);
 });
 
-test('傷害技能會命中全部存活敵人，普攻規則不由技能流程取代', () => {
+/* 新版戰鬥：技能一律要指定範圍，未填＝單體。
+   單體技只打一個目標，且目標挑法與普攻相同（最近優先），不再對全場平攤傷害。 */
+function skillTargetingContext() {
   const context = loadGameContext();
   context.Math.random = () => 0.5;
   context.G.player.skills = { powerSlash: 1 };
@@ -137,17 +139,61 @@ test('傷害技能會命中全部存活敵人，普攻規則不由技能流程�
     aoeDmg: 100, critRate: 0, critDmg: 150, pPen: 0, mPen: 0,
     passives: {}, lifesteal: 0, manaSteal: 0, shieldEff: 0
   });
-  const makeEnemy = () => ({
+  return context;
+}
+function targetingEnemy(col, row, extra) {
+  const e = {
     hp: 10000, maxHp: 10000, def: 0, mdef: 0, dodge: 0, resist: {},
-    ctrlRes: 0, elite: false, isBoss: false, buffs: {}, dots: [], effects: {}, shield: 0
-  });
-  const player = { hp: 1000, mp: 1000, atkCd: 0, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {} };
-  const enemies = [makeEnemy(), makeEnemy()];
+    ctrlRes: 0, elite: false, isBoss: false, buffs: {}, dots: [], effects: {}, shield: 0,
+    cell: { col, row, w: 1, h: 1 }
+  };
+  return Object.assign(e, extra || {});
+}
+function targetingPlayer() {
+  return { hp: 1000, mp: 1000, atkCd: 0, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {} };
+}
 
-  const result = context.castSkill(player, enemies, 'powerSlash', 1, 'float-layer');
+test('未指定傷害範圍的技能只打一個目標，且挑最近的敵人', () => {
+  const context = skillTargetingContext();
+  const far = targetingEnemy(4, 1);
+  const near = targetingEnemy(1, 2);
+  const enemies = [far, near]; // 陣列順序刻意放反：確認依距離挑目標，不是取第一隻
+
+  const result = context.castSkill(targetingPlayer(), enemies, 'powerSlash', 1, 'float-layer');
   assert.equal(result.killed, false);
+  assert.equal(far.hp, 10000, '較遠的敵人不該被單體技打到');
+  assert.ok(near.hp < 10000, '最近的敵人才是單體技的目標');
+});
+
+test('傷害範圍 3x3 的技能命中方框內全部敵人，BOSS 佔多格仍只算一次', () => {
+  const context = skillTargetingContext();
+  context.SKILLS.powerSlash.shape = '3x3';
+  const a = targetingEnemy(1, 2);
+  const b = targetingEnemy(2, 3);
+  const boss = targetingEnemy(2, 1, { isBoss: true, cell: { col: 2, row: 1, w: 2, h: 2 } });
+  const outside = targetingEnemy(4, 4);
+  const enemies = [a, b, boss, outside];
+
+  context.castSkill(targetingPlayer(), enemies, 'powerSlash', 1, 'float-layer');
+
+  assert.ok(a.hp < 10000);
+  assert.ok(b.hp < 10000);
+  assert.ok(boss.hp < 10000);
+  assert.equal(outside.hp, 10000, '方框外的敵人不該被打到');
+  // 三名目標平攤：每名受到的傷害相同，且 BOSS 沒有因為佔 4 格而被打 4 次
+  assert.equal(Math.round(10000 - a.hp), Math.round(10000 - boss.hp));
+});
+
+test('傷害範圍 all 的技能命中場上全部敵人', () => {
+  const context = skillTargetingContext();
+  context.SKILLS.powerSlash.shape = 'all';
+  const enemies = [targetingEnemy(1, 2), targetingEnemy(4, 1), targetingEnemy(3, 4)];
+
+  context.castSkill(targetingPlayer(), enemies, 'powerSlash', 1, 'float-layer');
+
+  enemies.forEach((e) => assert.ok(e.hp < 10000));
   assert.equal(enemies[0].hp, enemies[1].hp);
-  assert.ok(enemies[0].hp < 10000);
+  assert.equal(enemies[1].hp, enemies[2].hp);
 });
 
 test('護盾技能依目前護盾做額外乘法加成', () => {

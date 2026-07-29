@@ -11,7 +11,7 @@ function loadCombatContext() {
   const context = { console, Math: Object.create(Math), UI: { dirty: {} } };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/stats.js', 'js/combat.js']
+  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/stats.js', 'js/combat.js']
     .forEach((file) => vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file }));
   return context;
 }

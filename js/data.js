@@ -182,8 +182,41 @@ var TALENT_TREES = {
 /* ---- 潛力技能定義已移至 js/skills.js（隨 Skills.xlsx 調適；解鎖/等級/施放邏輯不變） ---- */
 
 /* ---- 普通關卡敵人數量 ----
-   僅普通敵人使用；菁英與高塔 BOSS 固定單一敵人。權重總和 = 100%。 */
-var FIELD_ENEMY_COUNT_TABLE = [[1, 60], [2, 25], [3, 10], [4, 5]];
+   普通與菁英每波獨立擲骰；野外 BOSS 與高塔 BOSS 固定單一敵人。
+   權重 0 的數量不會被抽中；上限為棋盤總格數（BF_COLS×BF_ROWS）。 */
+var FIELD_ENEMY_COUNT_TABLE = [[1, 60], [2, 25], [3, 10], [4, 5], [5, 0], [6, 0], [7, 0], [8, 0], [9, 0], [10, 0], [11, 0], [12, 0], [13, 0], [14, 0], [15, 0], [16, 0]];
+
+/* ---- 戰場站位（敵方棋盤）----
+   敵方固定 BF_COLS 行 × BF_ROWS 列，我方是棋盤左側的單一單位。
+   距離＝普攻與技能的選敵依據，數字越小越近：
+     距離 = BF_DIST_PER_COL×(行-1) + (中央列 ? BF_DIST_CENTER_ROW : BF_DIST_OUTER_ROW)
+   4×4 的結果即規格表：
+          c1 c2 c3 c4
+       r1  2  4  6  8
+       r2  1  3  5  7      ← 我方在左側，對齊中央兩列
+       r3  1  3  5  7
+       r4  2  4  6  8
+   格位判定與選敵邏輯 → js/battlefield.js */
+var BF_COLS = 4;               // 敵方棋盤行數（由左至右，越右越遠）
+var BF_ROWS = 4;               // 敵方棋盤列數
+var BF_DIST_PER_COL = 2;       // 每往右一行增加的距離
+var BF_DIST_CENTER_ROW = 1;    // 中央列的基礎距離
+var BF_DIST_OUTER_ROW = 2;     // 外側列的基礎距離
+var BF_BOSS_W = 2;             // BOSS 佔格寬（行）
+var BF_BOSS_H = 2;             // BOSS 佔格高（列）
+
+/* ---- 野外 BOSS ----
+   每 FIELD_BOSS_STAGE_INTERVAL 階出現一次，優先於菁英階段（第 50 階出 BOSS 而非菁英）；
+   固定單一敵人、佔 BF_BOSS_W×BF_BOSS_H 格、免疫控場（isBoss → formula.js §3）。
+   倍率語意比照菁英：相對於同階段普通怪；攻速為絕對值不是倍率。 */
+var FIELD_BOSS_STAGE_INTERVAL = 50;
+var FIELD_BOSS_HP_MULT = 20;      // 生命倍率
+var FIELD_BOSS_ATK_MULT = 6;      // 攻擊倍率
+var FIELD_BOSS_DEF_MULT = 4;      // 物理／魔法防禦倍率
+var FIELD_BOSS_REWARD_MULT = 12;  // 金幣與經驗倍率
+var FIELD_BOSS_DODGE_ADD = 5;     // 閃避加成（百分點）
+var FIELD_BOSS_ASPD = 1.2;        // 攻速（次/秒，絕對值）
+var FIELD_BOSS_DROP_MULT = 3;     // 掉落倍率：裝備與材料統一乘此值（比照 ELITE_DROP_MULT）
 
 /* ---- 野外怪物命中／閃避分段成長 ----
    rate 是該等級區間「每級增加值」；未填 max 代表從 min 起套用至無限。 */
