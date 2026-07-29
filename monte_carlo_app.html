@@ -1523,11 +1523,26 @@
                 const slotName = SLOT_CHINESE_NAMES[targetSlot] || targetSlot;
                 const rInfo = RARITY_INFO[newEq.rarity] || RARITY_INFO[1];
                 const eventTime = currentTime + (Math.random() * 0.045);
+
+                const mobList = [
+                    { name: '史萊姆', emoji: '🟢' }, { name: '哥布林', emoji: '👺' },
+                    { name: '野狼', emoji: '🐺' }, { name: '骷髏兵', emoji: '💀' },
+                    { name: '暗影蝠', emoji: '🦇' }, { name: '樹妖', emoji: '🌳' },
+                    { name: '蜥蜴戰士', emoji: '🦎' }, { name: '半獸人', emoji: '🐗' },
+                    { name: '牛頭人', emoji: '🐂' }, { name: '雙足飛龍', emoji: '🐉' }
+                ];
+                const mob = mobList[Math.floor(Math.random() * mobList.length)];
+                const curStats = this.calculateStats();
+                const hitDmg = Math.max(10, curStats.dps * (1.1 + Math.random() * 0.9));
+                const isCrit = Math.random() < (curStats.critRate || 0.5);
+                const hitType = isCrit ? '暴擊物理傷害' : '實體物理傷害';
+                const stageNum = Math.max(1, Math.floor(this.stage));
+
                 this.logAction(
                     eventTime, 
-                    'equip', 
-                    '📦', 
-                    `野外擊殺爆出【${rInfo.name}的${slotName}】並自動穿上！`, 
+                    'combat', 
+                    '⚔️', 
+                    `在 Stage ${stageNum} 關對【${mob.emoji} ${mob.name}】造成 ${formatGameNumber(hitDmg)} 點${hitType}擊殺怪物！爆出【${rInfo.name}的${slotName}】並自動穿上！`, 
                     `替換舊裝備！新裝備品質: ${rInfo.name} (Rarity ${newEq.rarity})，強化 +${newEq.level}，包含 ${newEq.affixes.length} 條完整詞條（含 ${newAnc} 條太古滿數值詞條）。`
                 );
             }
