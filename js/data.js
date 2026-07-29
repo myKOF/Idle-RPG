@@ -1164,6 +1164,10 @@ var GEM_TYPES = {
   opal: { name: '蛋白石', emoji: '🩵', stat: 'aspd', statName: '攻擊速度%', base: 1.5, pct: true },
   onyx: { name: '黑曜石', emoji: '⚫', stat: 'lifesteal', statName: '吸血%', base: 1, pct: true },
   moonstone: { name: '月光石', emoji: '🌙', stat: 'evasion', statName: '閃避率%', base: 1, pct: true },
+  /* 命中（月光石的對位）：命中與閃避是 1:1 相抵的一對（resolveHit 取 clamp(命中−閃避, 5, 100)），
+     但玩家命中基礎已有 100%、敵人閃避從 5% 起隨等級成長，所以同樣 1 點的命中價值低於閃避。
+     base 取 1.5＝月光石的 1.5 倍，與詞條池同一對的比例一致（命中 base 3 / 閃避 base 2）。 */
+  catseye: { name: '貓眼石', emoji: '👁️', stat: 'hit', statName: '命中率%', base: 1.5, pct: true },
   sunstone: { name: '太陽石', emoji: '☀️', stat: 'luck', statName: '幸運值', base: 1.5, pct: false },
   // === 防禦類（2026-07-09 新增 6 種）===
   jade: { name: '翡翠', emoji: '🟩', stat: 'tenacity', statName: '韌性%', base: 1.5, pct: true },
