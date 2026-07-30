@@ -901,6 +901,9 @@
             <button type="submit" id="btnSubmit" class="btn-submit">
                 🚀 開始全系統無作弊蒙地卡羅模擬 (Start Full System DES Simulation)
             </button>
+            <button type="button" onclick="loadNativeCsvSnapshotsToApp()" class="btn-submit" style="margin-top: 12px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: 1px solid #fbbf24; color: #fff;">
+                📂 載入與閱讀原生實機紀錄 (sim_snapshots.csv 數據快照)
+            </button>
         </form>
 
         <div class="progress-box" id="progressBox">
@@ -3041,7 +3044,131 @@
             }
         });
     }
+
+    // 🚀 自動載入 100% 官方原生內核實機模擬快照 (sim_snapshots.csv)
+    async function loadNativeCsvSnapshotsToApp() {
+        try {
+            const resp = await fetch('./sim_snapshots.csv?t=' + Date.now());
+            if (!resp.ok) {
+                alert('找不到本機 sim_snapshots.csv 檔案');
+                return;
+            }
+            const csvText = await resp.text();
+            const lines = csvText.trim().split('\n');
+            if (lines.length <= 1) {
+                alert('sim_snapshots.csv 檔案內容為空');
+                return;
+            }
+
+            const headers = lines[0].split(',').map(h => h.trim());
+            const snapshots = [];
+            for (let i = 1; i < lines.length; i++) {
+                const parts = lines[i].split(',').map(p => p.trim());
+                if (parts.length < headers.length) continue;
+                const row = {};
+                headers.forEach((h, idx) => { row[h] = parts[idx]; });
+                snapshots.push(row);
+            }
+
+            // 轉換為 Monte Carlo App 的相容結構
+            const timeSeries = snapshots.map(s => {
+                const h = parseFloat(s.timeHour || 0);
+                const dpsVal = parseFloat(s.dps || 0);
+                const st = parseFloat(s.stage || 1);
+                const lv = parseFloat(s.level || 1);
+                const hp = parseFloat(s.hpMax || 170);
+                const kills = parseFloat(s.totalKills || 0);
+                const gold = parseFloat(s.gold || 0);
+                const stones = parseFloat(s.scrap || 0);
+                const essence = parseFloat(s.essence || 0);
+                const dust = parseFloat(s.dust || 0);
+                const ancientEssence = parseFloat(s.ancientEssence || 0);
+
+                const wrap = (val) => ({ mean: val, median: val, p10: val, p90: val });
+
+                return {
+                    hour: h,
+                    stage: wrap(st),
+                    level: wrap(lv),
+                    reincarnation: wrap(0),
+                    tower_floor: wrap(1),
+                    total_kills: wrap(kills),
+                    dps: wrap(dpsVal),
+                    equip_score: wrap(parseFloat(s.atk || 10)),
+                    ancient_affixes: wrap(0),
+                    godforge_count: wrap(0),
+                    obtained_godforge: wrap(0),
+                    obtained_genesis: wrap(0),
+                    obtained_mythic: wrap(0),
+                    obtained_legendary: wrap(0),
+                    obtained_epic: wrap(0),
+                    obtained_below_epic: wrap(0),
+                    rerolls: wrap(0),
+                    total_skills: wrap(0),
+                    gold_spent: wrap(gold),
+                    stones_spent: wrap(stones),
+                    gems_spent: wrap(0),
+                    enhancements: wrap(0),
+                    gem_syntheses: wrap(0),
+                    obtained_gems: wrap(0),
+                    total_gold_earned: wrap(gold),
+                    total_stones_earned: wrap(stones),
+                    total_essence_earned: wrap(essence),
+                    total_dust_earned: wrap(dust),
+                    total_ancient_essence_earned: wrap(ancientEssence)
+                };
+            });
+
+            currentSimResult = {
+                config: { runs: 1, hours: timeSeries[timeSeries.length - 1].hour, profile: { name: '⚔️ 原生實機模擬器' } },
+                time_series: timeSeries,
+                topRun: {
+                    history: timeSeries,
+                    finalDps: timeSeries[timeSeries.length - 1].dps.mean,
+                    logs: [
+                        { time: 0, hour: 0, category: 'info', icon: '⚔️', title: '100% 官方原生內核實機模擬數據', desc: '成功讀取本機 sim_snapshots.csv 檔案！共有 ' + snapshots.length + ' 筆實戰時間序列快照。' }
+                    ]
+                }
+            };
+
+            // 顯示圖表區塊與卡片，隱藏空提示
+            const emptySec = document.getElementById('emptySection');
+            if (emptySec) emptySec.style.display = 'none';
+            const statsCards = document.getElementById('statsCards');
+            if (statsCards) statsCards.style.display = 'grid';
+            const chartSec = document.getElementById('chartSection');
+            if (chartSec) chartSec.style.display = 'block';
+            const logSec = document.getElementById('logSection');
+            if (logSec) logSec.style.display = 'block';
+
+            // 更新頂部卡片數據
+            const lastStep = timeSeries[timeSeries.length - 1];
+            function setCardVal(id, val) {
+                const el = document.getElementById(id);
+                if (el) el.innerText = val;
+            }
+            setCardVal('cardProfileName', '⚔️ 原生內核實機');
+            setCardVal('cardDps', formatGameNumber(lastStep.dps.mean));
+            setCardVal('cardKills', formatGameNumber(lastStep.total_kills.mean));
+            setCardVal('cardStage', Math.round(lastStep.stage.mean).toLocaleString());
+            setCardVal('cardReinc', '0 轉');
+            setCardVal('cardTowerFloor', '1 層');
+
+            // 繪製 Chart.js
+            if (typeof renderChart === 'function') renderChart();
+            if (typeof renderTopRunActionLogs === 'function') renderTopRunActionLogs();
+
+        } catch (e) {
+            console.error('載入 CSV 快照失敗:', e);
+            alert('載入 CSV 快照失敗: ' + e.message);
+        }
+    }
 </script>
+
+<!-- 浮動按鈕：快速載入原生實機模擬數據 -->
+<button onclick="loadNativeCsvSnapshotsToApp()" style="position: fixed; bottom: 20px; right: 20px; z-index: 99999; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border: 1px solid #34d399; padding: 12px 20px; border-radius: 30px; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.4);">
+    📂 載入原生實機紀錄 (sim_snapshots.csv)
+</button>
 
 </body>
 </html>

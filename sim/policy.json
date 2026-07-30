@@ -1,0 +1,46 @@
+{
+  "name": "DefaultNativeSimPolicy",
+  "version": "1.1.0",
+  "rules": [
+    {
+      "name": "ConfirmTowerResult",
+      "trigger": "towerActive == true",
+      "command": "tower.confirmResult",
+      "args": {},
+      "priority": 1,
+      "cooldownSec": 2
+    },
+    {
+      "name": "AutoAdvanceStage",
+      "trigger": "stage.autoAdvance == false",
+      "command": "stage.setAutoAdvance",
+      "args": { "on": true },
+      "priority": 10,
+      "cooldownSec": 5
+    },
+    {
+      "name": "BuyInventoryUpgradeIfGoldAllows",
+      "trigger": "gold > 10000 && inventory.count >= inventory.cap - 2",
+      "command": "player.buyInvUpgrade",
+      "args": {},
+      "priority": 20,
+      "cooldownSec": 10
+    },
+    {
+      "name": "SalvageBulkCommonGear",
+      "trigger": "inventory.count >= inventory.cap - 5",
+      "command": "item.salvageBulk",
+      "args": { "maxRarity": 2, "maxLevel": 100, "maxAncient": 0 },
+      "priority": 30,
+      "cooldownSec": 10
+    },
+    {
+      "name": "ChallengeTowerFloor",
+      "trigger": "towerActive == false && paused == false",
+      "command": "tower.start",
+      "args": { "floor": 1 },
+      "priority": 40,
+      "cooldownSec": 300
+    }
+  ]
+}
