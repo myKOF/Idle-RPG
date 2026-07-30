@@ -2031,13 +2031,68 @@
                     this.essence -= cost.essence;
                     this.total_gold_spent += cost.gold;
 
+                    const baseSlot = slot.replace(/[0-9]/g, '');
                     const eqItemLevel = eq.itemLevel || 500;
-                    eq.affixes.forEach(aff => {
-                        aff.key = OFFICIAL_AFFIX_KEYS[Math.floor(Math.random() * OFFICIAL_AFFIX_KEYS.length)];
-                        aff.val = aff.ancient
-                            ? officialAncientAffixValue(aff.key, eqItemLevel, eq.rarity)
-                            : officialRollAffixValue(aff.key, eqItemLevel, eq.rarity);
-                    });
+                    const rarity = eq.rarity || 8;
+                    const slotsCount = (rarity === 8 || rarity === 7) ? 7 : (RARITY_AFFIX_COUNTS[rarity] || Math.min(7, rarity));
+
+                    const forbiddenKeys = new Set([
+                        'matk', 'matkPct', 'mPen', 'manaSteal', 'mpMax', 'mpRegen',
+                        'elemDmgFire', 'elemDmgIce', 'elemDmgLightning', 'elemDmgPoison', 'elemDmgLight', 'elemDmgDark'
+                    ]);
+
+                    const poolSource = (typeof AFFIX_POOL !== 'undefined') ? AFFIX_POOL : ((typeof OFFICIAL_AFFIX_POOL !== 'undefined') ? OFFICIAL_AFFIX_POOL : {});
+                    const slotKeys = [];
+
+                    for (let k in poolSource) {
+                        if (forbiddenKeys.has(k)) continue;
+                        const def = poolSource[k];
+                        if (def.slots) {
+                            if (def.slots.indexOf(baseSlot) < 0) continue;
+                            if (def.slots.indexOf('all_lock') >= 0) continue;
+                        }
+                        slotKeys.push(k);
+                    }
+
+                    const newAffixes = [];
+                    const usedKeys = new Set();
+
+                    if (baseSlot === 'amulet' || baseSlot === 'ring') {
+                        const requiredCoreKeys = ['gemEff', 'loot', 'xpBonus'];
+                        requiredCoreKeys.forEach(k => {
+                            if (poolSource[k] && !usedKeys.has(k)) {
+                                usedKeys.add(k);
+                                const isAncient = (Math.random() < this.profile.ancientRatio);
+                                const val = isAncient
+                                    ? officialAncientAffixValue(k, eqItemLevel, rarity)
+                                    : officialRollAffixValue(k, eqItemLevel, rarity);
+                                newAffixes.push({ key: k, val: val, ancient: isAncient });
+                            }
+                        });
+                    }
+
+                    const ancientCountRolled = rollOfficialAncientCount(slotsCount);
+                    const ancientIndices = new Set();
+                    while (ancientIndices.size < ancientCountRolled && ancientIndices.size < slotsCount) {
+                        ancientIndices.add(Math.floor(Math.random() * slotsCount));
+                    }
+
+                    let guard = 0;
+                    while (newAffixes.length < slotsCount && guard++ < 300) {
+                        let candidateKeys = slotKeys.filter(k => !usedKeys.has(k));
+                        if (candidateKeys.length === 0) break;
+
+                        const k = candidateKeys[Math.floor(Math.random() * candidateKeys.length)];
+                        usedKeys.add(k);
+
+                        const isAncient = ancientIndices.has(newAffixes.length) || (Math.random() < this.profile.ancientRatio);
+                        const val = isAncient
+                            ? officialAncientAffixValue(k, eqItemLevel, rarity)
+                            : officialRollAffixValue(k, eqItemLevel, rarity);
+                        newAffixes.push({ key: k, val: val, ancient: isAncient });
+                    }
+
+                    eq.affixes = newAffixes;
 
                     this.total_affix_rerolls++;
                     rerollAttemptsThisBatch++;
