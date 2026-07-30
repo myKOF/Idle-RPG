@@ -351,6 +351,36 @@ test('連殺 GM 指令支援裝備部位篩選 (kill 1 500 100 mythic helmet / k
   });
 });
 
+test('equip GM 指令支援 any 品質與 any 部位，且品質逐件隨機', () => {
+  withGMExecContext((context) => {
+    context.RARITIES = [
+      { key: 'common', name: '普通' },
+      { key: 'legendary', name: '傳說' },
+      { key: 'chaos', name: '混沌' }
+    ];
+    context.SLOT_INFO = {
+      weapon: { name: '主手' },
+      helmet: { name: '頭盔' }
+    };
+    context.WEAPON_TYPES = {};
+    context.slotTypeOf = (slot) => slot;
+    const randomValues = [0, 0.4, 0.99];
+    context.Math = { floor: Math.floor, random: () => randomValues.shift() ?? 0 };
+    context.makeEquipment = (level, opts) => ({ level, rarity: opts.rarity, slot: opts.slot || 'random' });
+  }, (context, execute) => {
+    const randomResult = execute('equip any 100 any 3');
+    assert.equal(randomResult.ok, true);
+    assert.deepEqual(context.G.inventory.map((item) => item.rarity), [0, 1, 2]);
+    assert.deepEqual(context.G.inventory.map((item) => item.slot), ['random', 'random', 'random']);
+
+    context.G.inventory = [];
+    const fixedResult = execute('equip legendary 100 any 1');
+    assert.equal(fixedResult.ok, true);
+    assert.equal(context.G.inventory[0].rarity, 1);
+    assert.equal(context.G.inventory[0].slot, 'random');
+  });
+});
+
 test('bag GM 指令（及 inv_cap 別名）可任意擴充背包容量並超越正常上限', () => {
   withGMExecContext((context) => {
     context.INVENTORY_CAP = 100;

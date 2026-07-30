@@ -46,11 +46,13 @@
     UI.dirty.battle = true;
   }
 
-  function gmRarity(raw) {
-    var n = gmNumber(raw, 0, RARITIES.length - 1);
+  function gmRarity(raw, allowAny) {
+    var key = String(raw || '').trim().toLowerCase();
+    if (allowAny && (key === 'any' || key === '*')) return 'any';
+    var n = gmNumber(key, 0, RARITIES.length - 1);
     if (n !== null) return n;
     for (var i = 0; i < RARITIES.length; i++) {
-      if (RARITIES[i].key === raw) return i;
+      if (String(RARITIES[i].key || '').toLowerCase() === key) return i;
     }
     return null;
   }
@@ -68,6 +70,7 @@
 
   function gmGiveEquipment(rarity, level, slot, count) {
     var weaponType;
+    if (slot === 'any' || slot === '*') slot = null;
     if (slot && typeof WEAPON_TYPES !== 'undefined' && WEAPON_TYPES[slot]) {
       weaponType = slot;
       slot = 'weapon';
@@ -76,12 +79,14 @@
     }
     if (slot && !SLOT_INFO[slot]) return '未知部位：' + slot;
     for (var i = 0; i < count; i++) {
-      var item = makeEquipment(level, { rarity: rarity, level: level, slot: slot || undefined, weaponType: weaponType });
+      var itemRarity = rarity === 'any' ? Math.floor(Math.random() * RARITIES.length) : rarity;
+      var item = makeEquipment(level, { rarity: itemRarity, level: level, slot: slot || undefined, weaponType: weaponType });
       item.locked = false;
       G.inventory.push(item);
     }
     gmDirty();
-    return '增加裝備 ' + RARITIES[rarity].name + '、Lv.' + level + ' x' + count;
+    return '增加裝備 ' + (rarity === 'any' ? '隨機品質' : RARITIES[rarity].name) + '、Lv.' + level +
+      (slot ? '、' + ((SLOT_INFO[slot] && SLOT_INFO[slot].name) || slot) : '、隨機部位') + ' x' + count;
   }
 
   function gmGivePart(tier, node, count) {
@@ -488,7 +493,7 @@
       return { ok: true, message: '增加 ' + ENCHANTS[key].name + ' x' + (typeof fmt === 'function' ? fmt(count) : count) };
     }
     if (command === 'equip' || command === 'equipment') {
-      rarity = gmRarity(args[0]);
+      rarity = gmRarity(args[0], true);
       level = gmNumber(args[1], 1, 100000);
       slot = String(args[2] || '').toLowerCase();
       count = gmNumber(args[3] || '1', 1, 1000);
