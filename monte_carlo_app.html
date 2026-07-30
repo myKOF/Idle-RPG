@@ -5,8 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>放置型 RPG 蒙地卡羅數值模擬驗證工具 (高塔與天賦技能對齊版)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/util.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/formula.js"></script>
+    <script src="js/battlefield.js"></script>
+    <script src="js/stats.js"></script>
+    <script src="js/item.js"></script>
+    <script src="js/skills.js"></script>
+    <script src="js/talents.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/special_rules.js"></script>
+    <script src="js/combat.js"></script>
+    <script src="js/legendary.js"></script>
+    <script src="js/potential.js"></script>
+    <script src="js/tower.js"></script>
+    <script src="js/factory.js"></script>
+    <script src="js/newforge.js"></script>
+    <script src="js/forge.js"></script>
+    <script src="js/save.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
+        /* 🛡️ 官方裝備卡片元件專屬樣式 (防污染主儀表板全域排版) */
+        .equip-detail-card { font-family: inherit; color: #f8fafc; }
+        .it-name { font-size: 16px; font-weight: bold; position: relative; margin-bottom: 4px; }
+        .it-up { color: #fbbf24; margin-left: 4px; }
+        .it-syn { color: #c084fc; font-size: 13px; margin-left: 4px; }
+        .it-sub { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; color: #94a3b8; font-size: 13px; margin-bottom: 12px; }
+        .it-score { color: #fbbf24; font-weight: bold; }
+        .it-affixes { display: flex; flex-direction: column; gap: 6px; width: 100%; margin-bottom: 12px; }
+        .it-affix { font-size: 14px; font-weight: 600; line-height: 1.4; color: #f8fafc; }
+        .it-affix.afx-off { color: #f472b6; }
+        .it-affix.afx-def { color: #38bdf8; }
+        .it-affix.afx-util { color: #34d399; }
+        .it-affix.afx-base { color: #c084fc; }
+        .ancient-star { color: #fbbf24; margin-right: 4px; font-weight: bold; }
+        .it-sockets { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+        .socket { display: inline-block; font-size: 13.5px; padding: 4px 10px; border-radius: 6px; border: 1px dashed #475569; color: #94a3b8; width: fit-content; line-height: 1.2; }
+        .socket.filled { border-style: solid; border-color: #818cf8; color: #f8fafc; background: rgba(129, 140, 248, 0.1); }
         :root {
             --bg-dark: #0f172a;
             --panel-bg: #1e293b;
@@ -495,8 +530,8 @@
             background: #111827;
             border: 1px solid #374151;
             border-radius: 14px;
-            width: 92%;
-            max-width: 980px;
+            width: 95%;
+            max-width: 1380px;
             padding: 24px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
             position: relative;
@@ -535,9 +570,75 @@
 
         .paperdoll-layout {
             display: grid;
-            grid-template-columns: minmax(320px, 400px) 1fr;
-            gap: 24px;
+            grid-template-columns: 290px minmax(320px, 380px) 1fr;
+            gap: 20px;
             align-items: start;
+        }
+
+        /* 👈 玩家屬性快照面板樣式 (100% 對齊遊戲內側欄屬性面板版型) */
+        .player-stats-panel {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 14px;
+            height: 100%;
+            max-height: 520px;
+            overflow-y: auto;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.6);
+        }
+
+        .stats-panel-header {
+            border-bottom: 1px solid #334155;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+        }
+
+        .stats-player-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #f59e0b;
+        }
+
+        .stats-player-sub {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        .attr-group {
+            margin-bottom: 8px;
+        }
+
+        .attr-group summary {
+            cursor: pointer;
+            color: #38bdf8;
+            font-weight: 700;
+            font-size: 13px;
+            padding: 4px 0;
+            user-select: none;
+            border-bottom: 1px solid #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .stat-rows-box {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 2px 0 6px 0;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #94a3b8;
+            border-bottom: 1px dashed #1e293b;
+            padding-bottom: 2px;
+        }
+
+        .stat-row b {
+            color: #f8fafc;
+            font-weight: 600;
         }
 
         .paperdoll-grid {
@@ -882,6 +983,28 @@
             <div class="card-label">⚪ 平均獲得【史詩以下】裝備 (R1~R2)</div>
             <div class="card-val" id="cardObtainedBelowEpic" style="color: #94a3b8;">-</div>
         </div>
+
+        <!-- 💰 5 大核心資源 500h 累積總獲得量卡片 -->
+        <div class="card" style="border-color: #eab308;">
+            <div class="card-label">💰 500h 累積平均金幣總獲得</div>
+            <div class="card-val" id="cardTotalGoldEarned" style="color: #eab308; font-size: 19px;">-</div>
+        </div>
+        <div class="card" style="border-color: #38bdf8;">
+            <div class="card-label">🧩 500h 累積平均裝備碎片總獲得</div>
+            <div class="card-val" id="cardTotalStonesEarned" style="color: #38bdf8; font-size: 19px;">-</div>
+        </div>
+        <div class="card" style="border-color: #a855f7;">
+            <div class="card-label">🔮 500h 累積平均附魔精華總獲得</div>
+            <div class="card-val" id="cardTotalEssenceEarned" style="color: #a855f7; font-size: 19px;">-</div>
+        </div>
+        <div class="card" style="border-color: #34d399;">
+            <div class="card-label">✨ 500h 累積平均魔塵總獲得</div>
+            <div class="card-val" id="cardTotalDustEarned" style="color: #34d399; font-size: 19px;">-</div>
+        </div>
+        <div class="card" style="border-color: #818cf8;">
+            <div class="card-label">🌀 500h 累積平均太古精華總獲得</div>
+            <div class="card-val" id="cardTotalAncientEssenceEarned" style="color: #818cf8; font-size: 19px;">-</div>
+        </div>
     </div>
 
     <!-- 圖表展示區 -->
@@ -912,6 +1035,11 @@
                     <option value="obtained_legendary">🟠 獲得【傳奇】裝備數量</option>
                     <option value="obtained_epic">🔵 獲得【史詩】裝備數量</option>
                     <option value="obtained_below_epic">⚪ 獲得【史詩以下】裝備數量</option>
+                    <option value="total_gold_earned">💰 500h 累積平均金幣總獲得</option>
+                    <option value="total_stones_earned">🧩 500h 累積平均裝備碎片總獲得</option>
+                    <option value="total_essence_earned">🔮 500h 累積平均附魔精華總獲得</option>
+                    <option value="total_dust_earned">✨ 500h 累積平均魔塵總獲得</option>
+                    <option value="total_ancient_essence_earned">🌀 500h 累積平均太古精華總獲得</option>
                     <option value="level">📈 玩家等級 (Player Level)</option>
                     <option value="equip_score">🛡️ 裝備綜合戰力分數</option>
                     <option value="enhancements">🔨 裝備強化總次數</option>
@@ -945,7 +1073,8 @@
                 <button class="log-filter-btn" id="filter-enhance" onclick="setLogFilter('enhance')">🔨 裝備強化</button>
                 <button class="log-filter-btn" id="filter-godforge" onclick="setLogFilter('godforge')">👑 神鑄鍛造</button>
                 <button class="log-filter-btn" id="filter-gem" onclick="setLogFilter('gem')">💎 寶石合成</button>
-                <button class="log-filter-btn" id="filter-reinc" onclick="setLogFilter('reinc')">🌀 轉生與升級</button>
+                <button class="log-filter-btn" id="filter-skill" onclick="setLogFilter('skill')">⭐ 升級與技能</button>
+                <button class="log-filter-btn" id="filter-reinc" onclick="setLogFilter('reinc')">🌀 轉生機制</button>
                 <button class="btn-download-log" style="background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%);" onclick="openEquipmentSnapshotModal()">🛡️ 裝備快照 (500h)</button>
                 <button class="btn-download-log" onclick="downloadTopRunLogs()">📥 下載完整日誌 (.txt)</button>
             </div>
@@ -978,20 +1107,26 @@
     </div>
 </div>
 
-<!-- 🛡️ 裝備快照 Modal 彈窗 (對齊遊戲紙娃娃介面) -->
+<!-- 🛡️ 裝備與屬性快照 Modal 彈窗 (對齊遊戲紙娃娃與屬性面板介面) -->
 <div class="modal-overlay" id="equipModalOverlay" onclick="closeEquipmentModalOnBackdrop(event)">
     <div class="modal-card">
         <div class="modal-header">
-            <div class="modal-title">🛡️ 最強玩家 500小時全身裝備快照 (Character Paperdoll Snapshot)</div>
+            <div class="modal-title">🛡️ 最強玩家 500小時全身裝備與屬性快照 (Character Paperdoll & Stats Snapshot)</div>
             <button type="button" class="btn-close-modal" onclick="closeEquipmentModal()">&times;</button>
         </div>
         <div class="paperdoll-layout">
+            <!-- 👈 左側：玩家全屬性快照面板 (對齊遊戲內側欄屬性面板) -->
+            <div class="player-stats-panel" id="playerStatsPanel">
+                <!-- 動態注入玩家全屬性面板 -->
+            </div>
+            <!-- 中間：經典 13 部位紙娃娃 -->
             <div class="paperdoll-grid" id="paperdollGrid">
                 <!-- 13 個部位按經典紙娃娃座標動態生成 -->
             </div>
+            <!-- 右側：官方裝備詳細卡片 -->
             <div class="item-detail-card" id="itemDetailPanel">
                 <div style="color: var(--text-muted); text-align: center; padding: 40px 0;">
-                    👈 點擊左側紙娃娃上的裝備部位，查看 500 小時後頂級裝備的詳細太古詞條與數值
+                    👈 點擊紙娃娃上的裝備部位，查看 500 小時後頂級裝備的詳細太古詞條與數值
                 </div>
             </div>
         </div>
@@ -1200,7 +1335,7 @@
 
     // 官方稀有度倍率 (data.js §RARITIES .mult)
     const RARITY_MULTS = { 1: 1.0, 2: 1.35, 3: 1.75, 4: 2.3, 5: 3.0, 6: 4.0, 7: 6.8, 8: 10.2 };
-    const ANCIENT_AFFIX_VALUE_MULT = 1.35;
+    var ANCIENT_AFFIX_VALUE_MULT = (typeof window !== 'undefined' && window.ANCIENT_AFFIX_VALUE_MULT) || 1.35;
 
     // 官方公式：rollAffixValue(key, itemLevel, rarityIdx)
     function officialRollAffixValue(key, itemLevel, rarityIdx) {
@@ -1241,7 +1376,7 @@
     }
 
     // 官方太古詞條數量權重表 (data.js §ANCIENT_COUNT_WEIGHTS)
-    const ANCIENT_COUNT_WEIGHTS = {
+    var ANCIENT_COUNT_WEIGHTS = (typeof window !== 'undefined' && window.ANCIENT_COUNT_WEIGHTS) || {
         2: [92, 7.5, 0.5],
         3: [78.1, 19.2, 2.4, 0.3],
         4: [72.11, 22.12, 4.61, 0.96, 0.2],
@@ -1261,30 +1396,104 @@
         return 0;
     }
 
-    // 100% 對齊官方 item.js §rollItem + formula.js §rollAffixValue / §ancientAffixValue / §rollAncientAffixCount
-    function generateDroppedEquipment(rarity, ancientTargetRatio, itemLevel) {
-        itemLevel = itemLevel || 500; // 預設裝備等級 500
-        const slotsCount = RARITY_AFFIX_COUNTS[rarity] || Math.min(7, rarity);
-        const affixes = [];
-        
-        // 依官方權重表擲骰太古條數
-        const ancientCount = rollOfficialAncientCount(slotsCount);
+    // 100% 對齊官方 item.js §rollAffixes + data.js 部位專屬詞條限制 (slots)
+    function generateDroppedEquipment(rarity, ancientTargetRatio, itemLevel, slot) {
+        rarity = Math.max(1, Math.min(8, rarity || 1));
+        itemLevel = itemLevel || 500;
+        slot = slot || OFFICIAL_SLOTS[Math.floor(Math.random() * OFFICIAL_SLOTS.length)];
+        const baseSlot = slot.replace(/[0-9]/g, '');
 
-        // 隨機選定哪些位置為太古
+        // 創世 (Rarity 7) 與 神鑄創世 (Rarity 8) 100% 必定為 7 條滿詞條
+        const slotsCount = (rarity === 8 || rarity === 7) ? 7 : (RARITY_AFFIX_COUNTS[rarity] || Math.min(7, rarity));
+        const isGodforged = (rarity === 8);
+
+        // 🎯 製作人指示：詞條選擇必須純物理或純魔法一條路走到黑！嚴禁物魔混合或亂加不符技能的元素傷害！
+        // 防禦類詞條優先各類抗性或減傷 (globalDmgRed, pRes, mRes, evasion, tenacity)，定值物理防禦僅少量！
+        const forbiddenKeys = new Set([
+            'matk', 'matkPct', 'mPen', 'manaSteal', 'mpMax', 'mpRegen',
+            'elemDmgFire', 'elemDmgIce', 'elemDmgLightning', 'elemDmgPoison', 'elemDmgLight', 'elemDmgDark'
+        ]);
+
+        const poolSource = (typeof AFFIX_POOL !== 'undefined') ? AFFIX_POOL : ((typeof OFFICIAL_AFFIX_POOL !== 'undefined') ? OFFICIAL_AFFIX_POOL : {});
+        const slotKeys = [];
+
+        for (let k in poolSource) {
+            if (forbiddenKeys.has(k)) continue; // 排除與物理流派衝突之魔法與無用元素詞條
+            const def = poolSource[k];
+            // 🎯 製作人指示：嚴格守護部位限制！如 gemEff 僅允許 ring/amulet，武器絕不允許出現 gemEff！
+            if (def.slots) {
+                if (def.slots.indexOf(baseSlot) < 0) continue; // 不符合目前部位限制者一律過濾
+                if (def.slots.indexOf('all_lock') >= 0) continue; // 系統鎖定詞條過濾
+            }
+            slotKeys.push(k);
+        }
+
+        const affixes = [];
+        const usedKeys = new Set();
+
+        // 🎯 製作人指示：項鍊 (amulet) 與 2 個戒指 (ring1, ring2) 必出【寶石鑲嵌率 gemEff】、【掉寶率 loot】、【經驗值加成 xpBonus】三大神級詞條！
+        if (baseSlot === 'amulet' || baseSlot === 'ring') {
+            const requiredCoreKeys = ['gemEff', 'loot', 'xpBonus'];
+            requiredCoreKeys.forEach(k => {
+                if (poolSource[k] && !usedKeys.has(k)) {
+                    usedKeys.add(k);
+                    const isAncient = (Math.random() < ancientTargetRatio);
+                    const val = isAncient
+                        ? officialAncientAffixValue(k, itemLevel, rarity)
+                        : officialRollAffixValue(k, itemLevel, rarity);
+                    affixes.push({ key: k, val: val, ancient: isAncient });
+                }
+            });
+        }
+
+        // 太古詞條數量按官方真實權重與概率生成（而非無腦全部強行滿太古，符合 3.43K 產量之真實期望值）
+        const ancientCountRolled = rollOfficialAncientCount(slotsCount);
         const ancientIndices = new Set();
-        while (ancientIndices.size < ancientCount && ancientIndices.size < slotsCount) {
+        while (ancientIndices.size < ancientCountRolled && ancientIndices.size < slotsCount) {
             ancientIndices.add(Math.floor(Math.random() * slotsCount));
         }
 
-        for (let i = 0; i < slotsCount; i++) {
-            const k = OFFICIAL_AFFIX_KEYS[Math.floor(Math.random() * OFFICIAL_AFFIX_KEYS.length)];
-            const isAncient = ancientIndices.has(i);
+        let guard = 0;
+        while (affixes.length < slotsCount && guard++ < 300) {
+            let candidateKeys = slotKeys.filter(k => !usedKeys.has(k));
+            if (candidateKeys.length === 0) break;
+
+            const k = candidateKeys[Math.floor(Math.random() * candidateKeys.length)];
+            usedKeys.add(k);
+
+            const isAncient = ancientIndices.has(affixes.length) || (Math.random() < ancientTargetRatio);
             const val = isAncient
                 ? officialAncientAffixValue(k, itemLevel, rarity)
                 : officialRollAffixValue(k, itemLevel, rarity);
             affixes.push({ key: k, val: val, ancient: isAncient });
         }
-        return { level: 0, rarity: rarity, isGodforged: (rarity === 8), affixes: affixes, itemLevel: itemLevel };
+
+        // 滿極限附魔：物理流派滿填 3 條極限附魔
+        const enchants = isGodforged ? [
+            { key: 'loot', val: 50.0 },
+            { key: 'focus', val: 30.0 },
+            { key: 'haste', val: 25.0 }
+        ] : [];
+
+        // 🎯 寶石 Sockets（對齊圖片 2：50% 石榴石 [暴擊傷害] + 50% 屬性傷害加成寶石 [尖晶石/海藍寶石/天河石]）
+        const attackGemTypes = ['garnet', 'garnet', 'garnet', 'spinel', 'aquamarine', 'amazonite'];
+        const socketCount = (typeof socketCountFor === 'function') ? socketCountFor(rarity) : (rarity === 8 ? 6 : Math.min(6, rarity));
+        const sockets = [];
+        for (let gi = 0; gi < socketCount; gi++) {
+            sockets.push({ type: attackGemTypes[gi % attackGemTypes.length], level: 10 });
+        }
+
+        return { 
+            level: isGodforged ? 60 : 0, 
+            upgrade: isGodforged ? 60 : 0, 
+            rarity: rarity, 
+            slot: slot, 
+            isGodforged: isGodforged, 
+            affixes: affixes, 
+            enchants: enchants,
+            sockets: sockets,
+            itemLevel: itemLevel 
+        };
     }
 
     function countAncientAffixes(affixes) {
@@ -1308,13 +1517,16 @@
 
             this.equipments = {};
             OFFICIAL_SLOTS.forEach(s => {
-                this.equipments[s] = generateDroppedEquipment(1, 0);
+                this.equipments[s] = generateDroppedEquipment(1, 0, 500, s);
             });
 
             this.gold = 0;
             this.upgrade_stones = 0;
-            this.demon_seeds = 0;
+            this.essence = 0;
             this.dust = 0;
+            this.ancient_essence = 0;
+            this.demon_seeds = 0;
+            this.enchant_books = 0;
             this.gems = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0 };
             this.genesisGearPool = 0;
 
@@ -1336,6 +1548,7 @@
             this.obtained_legendary = 0;
             this.obtained_epic = 0;
             this.obtained_below_epic = 0;
+            this.obtained_gems = 0;
 
             this.actionLogs = [];
         }
@@ -1351,8 +1564,11 @@
                 detail: detail,
                 gold: this.gold,
                 stones: this.upgrade_stones,
+                essence: this.essence,
                 dust: this.dust,
-                seeds: this.demon_seeds
+                ancientEssence: this.ancient_essence,
+                seeds: this.demon_seeds,
+                books: this.enchant_books
             });
         }
 
@@ -1439,11 +1655,23 @@
         gainExp(amount, currentTime) {
             this.exp += amount;
             let xpNeeded = this.getXpForNextLevel();
+            let startLvl = this.level;
+
             while (this.exp >= xpNeeded && this.level < GAME_CONFIG.MAX_LEVEL) {
                 this.exp -= xpNeeded;
                 this.level++;
                 this.skill_points++;
                 xpNeeded = this.getXpForNextLevel();
+
+                if (this.level % 10 === 0 || this.level === 5 || this.level === 500) {
+                    this.logAction(
+                        currentTime, 
+                        'skill', 
+                        '⭐', 
+                        `角色突破升級至 Lv.${this.level}！`, 
+                        `獲得 1 點技能點數 (累計技能等級 ${this.total_skill_levels + this.skill_points} 級)，自動分配四大核心主屬性，戰力持續大躍進！`
+                    );
+                }
 
                 if (this.level >= GAME_CONFIG.REINCARNATION_LEVEL && this.reincarnation < GAME_CONFIG.MAX_REINCARNATION) {
                     this.reincarnation++;
@@ -1451,7 +1679,7 @@
                     this.exp = 0;
                     this.talentPoints += 100;
                     xpNeeded = this.getXpForNextLevel();
-                    this.logAction(currentTime, 'reinc', '🌀', `角色達成第 ${this.reincarnation} 轉生！`, `等級重置為 Lv.1，解鎖/升級轉生天賦與技能融合，全屬性提升 ${Math.pow(2.8, this.reincarnation).toFixed(1)} 倍！`);
+                    this.logAction(currentTime, 'skill', '🌀', `角色達成第 ${this.reincarnation} 轉生！`, `等級重置為 Lv.1，解鎖/升級轉生天賦與技能融合，全屬性提升 ${Math.pow(2.8, this.reincarnation).toFixed(1)} 倍！`);
                 }
             }
         }
@@ -1459,53 +1687,83 @@
         processMobKillsLoot(killsCount, currentTime) {
             if (killsCount <= 0) return;
             const stats = this.calculateStats();
-            const lootMult = stats.itemFindBonus;
+            const lootMult = stats.itemFindBonus || 1.0;
+            const mobLevel = Math.max(1, Math.floor(this.stage));
 
-            const droppedGemsCount = rollDropCount(killsCount * 0.20 * lootMult);
-            if (droppedGemsCount > 0) {
-                const g1 = rollDropCount(droppedGemsCount * 0.60);
-                const g2 = rollDropCount(droppedGemsCount * 0.30);
-                const g3 = rollDropCount(droppedGemsCount * 0.10);
-                this.gems[1] = (this.gems[1] || 0) + g1;
-                this.gems[2] = (this.gems[2] || 0) + g2;
-                this.gems[3] = (this.gems[3] || 0) + g3;
+            // 100% 直連官方 dropRatesFor(FIELD_DROP_TABLE, mobLevel) 掉落表
+            const rates = (typeof dropRatesFor === 'function' && typeof FIELD_DROP_TABLE !== 'undefined')
+                ? dropRatesFor(FIELD_DROP_TABLE, mobLevel)
+                : [15, 10, 5, 0, 0, 0, 0, 0];
+
+            let highestRarityDropped = 1;
+            let droppedItemsCount = 0;
+
+            for (let r = 0; r < rates.length; r++) {
+                if (!rates[r]) continue;
+                const count = rollDropCount(killsCount * (rates[r] / 100) * lootMult);
+                if (count > 0) {
+                    droppedItemsCount += count;
+                    if (r > highestRarityDropped) {
+                        highestRarityDropped = r;
+                    }
+                    if (r <= 2) this.obtained_below_epic += count;
+                    else if (r === 3 || r === 4) this.obtained_epic += count;
+                    else if (r === 5) {
+                        this.obtained_legendary += count;
+                        this.legendaryGearPool = (this.legendaryGearPool || 0) + count;
+                    }
+                    else if (r === 6) {
+                        this.obtained_mythic += count;
+                        this.mythicGearPool = (this.mythicGearPool || 0) + count;
+                    }
+                    else if (r === 7) {
+                        this.obtained_genesis += count;
+                        this.genesisGearPool = (this.genesisGearPool || 0) + count;
+                    }
+                }
             }
 
-            let r6Chance = (this.reincarnation >= 1 || this.stage > 150) ? 0.0025 : 0.0005;
-            let r5Chance = (this.stage > 80) ? 0.08 : 0.02;
-            let r4Chance = (this.stage > 30) ? 0.18 : 0.05;
-            let r3Chance = (this.stage > 10) ? 0.35 : 0.15;
-            let r12Chance = 2.50;
+            // 累積金幣與材料 (打怪與掉落裝備拆解獲得附魔精華、魔塵、太古精華與寶石掉落)
+            const earnedGold = killsCount * (20 + mobLevel * 5) * lootMult;
+            const earnedStones = droppedItemsCount * 2;
+            const earnedEssence = rollDropCount(droppedItemsCount * 1.5);
+            const earnedDust = rollDropCount(droppedItemsCount * 0.15);
+            const earnedAncient = rollDropCount(droppedItemsCount * 0.02);
+            const droppedGems = rollDropCount(killsCount * 0.05 * lootMult);
 
-            const r6Count = rollDropCount(killsCount * r6Chance * lootMult);
-            const r5Count = rollDropCount(killsCount * r5Chance * lootMult);
-            const r4Count = rollDropCount(killsCount * r4Chance * lootMult);
-            const r3Count = rollDropCount(killsCount * r3Chance * lootMult);
-            const r12Count = rollDropCount(killsCount * r12Chance * lootMult);
+            this.gold += earnedGold;
+            this.upgrade_stones += earnedStones;
+            this.essence += earnedEssence;
+            this.dust += earnedDust;
+            this.ancient_essence += earnedAncient;
 
-            const genDrop = rollDropCount(r6Count * 0.15);
-            this.obtained_genesis += genDrop;
-            this.genesisGearPool += genDrop;
-            this.obtained_mythic += r6Count;
-            this.obtained_legendary += r5Count;
-            this.obtained_epic += r3Count + r4Count;
-            this.obtained_below_epic += r12Count;
+            this.total_gold_earned = (this.total_gold_earned || 0) + earnedGold;
+            this.total_stones_earned = (this.total_stones_earned || 0) + earnedStones;
+            this.total_essence_earned = (this.total_essence_earned || 0) + earnedEssence;
+            this.total_dust_earned = (this.total_dust_earned || 0) + earnedDust;
+            this.total_ancient_essence_earned = (this.total_ancient_essence_earned || 0) + earnedAncient;
 
-            const totalDropped = r6Count + r5Count + r4Count + r3Count + r12Count;
-            this.upgrade_stones += totalDropped * 6;
-            this.gold += totalDropped * 350;
-
-            let highestRarityDropped = 2;
-            if (this.stage <= 5) {
-                highestRarityDropped = Math.random() < 0.4 ? 2 : 1; // 普通/精良
-            } else if (this.stage <= 15) {
-                highestRarityDropped = Math.random() < 0.5 ? 3 : 2; // 精良/稀有
-            } else {
-                highestRarityDropped = r6Count > 0 ? 6 : (r5Count > 0 ? 5 : (r4Count > 0 ? 4 : (r3Count > 0 ? 3 : 2)));
+            if (droppedGems > 0) {
+                this.gems[1] = (this.gems[1] || 0) + droppedGems;
+                this.obtained_gems += droppedGems;
             }
+
+            if (earnedEssence > 100 && Math.random() < 0.20) {
+                const eventTime = currentTime + (Math.random() * 0.015);
+                this.logAction(
+                    eventTime, 
+                    'equip', 
+                    '♨️', 
+                    `熔爐自動拆解熔煉 ${droppedItemsCount} 件低品質廢棄裝備`, 
+                    `獲得 ${earnedEssence} 點 🔮 附魔精華 與 ${earnedStones} 裝備碎片，累積精華庫存至 ${this.essence} 點。`
+                );
+            }
+
+            if (droppedItemsCount <= 0) return;
+
             const targetSlot = OFFICIAL_SLOTS[Math.floor(Math.random() * OFFICIAL_SLOTS.length)];
             const oldEq = this.equipments[targetSlot];
-            const newEq = generateDroppedEquipment(highestRarityDropped, this.profile.ancientRatio);
+            const newEq = generateDroppedEquipment(highestRarityDropped, this.profile.ancientRatio, 500, targetSlot);
 
             const oldAnc = countAncientAffixes(oldEq.affixes);
             const newAnc = countAncientAffixes(newEq.affixes);
@@ -1520,16 +1778,13 @@
             if (shouldReplace) {
                 newEq.level = oldEq.level;
                 this.equipments[targetSlot] = newEq;
-                const slotName = SLOT_CHINESE_NAMES[targetSlot] || targetSlot;
-                const rInfo = RARITY_INFO[newEq.rarity] || RARITY_INFO[1];
+                const slotName = (typeof SLOT_INFO !== 'undefined' && SLOT_INFO[targetSlot]) ? SLOT_INFO[targetSlot].name : targetSlot;
+                const rInfo = (typeof RARITIES !== 'undefined' && RARITIES[newEq.rarity]) ? RARITIES[newEq.rarity] : (RARITY_INFO[newEq.rarity] || RARITY_INFO[1]);
                 const eventTime = currentTime + (Math.random() * 0.045);
 
-                const mobList = [
+                const mobList = (typeof MONSTER_POOL !== 'undefined') ? MONSTER_POOL : [
                     { name: '史萊姆', emoji: '🟢' }, { name: '哥布林', emoji: '👺' },
-                    { name: '野狼', emoji: '🐺' }, { name: '骷髏兵', emoji: '💀' },
-                    { name: '暗影蝠', emoji: '🦇' }, { name: '樹妖', emoji: '🌳' },
-                    { name: '蜥蜴戰士', emoji: '🦎' }, { name: '半獸人', emoji: '🐗' },
-                    { name: '牛頭人', emoji: '🐂' }, { name: '雙足飛龍', emoji: '🐉' }
+                    { name: '野狼', emoji: '🐺' }, { name: '骷髏兵', emoji: '💀' }
                 ];
                 const mob = mobList[Math.floor(Math.random() * mobList.length)];
                 const curStats = this.calculateStats();
@@ -1569,21 +1824,38 @@
                 this.upgrade_stones += targetFloor * 80;
                 this.demon_seeds += Math.floor(targetFloor / 10) + 1;
 
-                this.gems[2] = (this.gems[2] || 0) + rollDropCount(targetFloor * 0.5);
-                this.gems[3] = (this.gems[3] || 0) + rollDropCount(targetFloor * 0.3);
-                this.gems[4] = (this.gems[4] || 0) + rollDropCount(targetFloor * 0.1);
+                const lootMult = stats.itemFindBonus || 1.0;
+                const gem2 = rollDropCount((targetFloor * 0.08) * lootMult);
+                const gem3 = rollDropCount((targetFloor * 0.04) * lootMult);
+                const gem4 = rollDropCount((targetFloor * 0.01) * lootMult);
+                this.gems[2] = (this.gems[2] || 0) + gem2;
+                this.gems[3] = (this.gems[3] || 0) + gem3;
+                this.gems[4] = (this.gems[4] || 0) + gem4;
+                this.obtained_gems += (gem2 + gem3 + gem4);
 
-                const lootMult = stats.itemFindBonus;
-                if (targetFloor >= 30) {
-                    const genDrop = rollDropCount(2.0 * lootMult);
-                    this.obtained_genesis += genDrop;
-                    this.genesisGearPool += genDrop;
-                    this.obtained_mythic += rollDropCount(5.0 * lootMult);
-                    this.obtained_legendary += rollDropCount(10.0 * lootMult);
-                } else {
-                    this.obtained_mythic += rollDropCount(3.0 * lootMult);
-                    this.obtained_legendary += rollDropCount(5.0 * lootMult);
-                    this.obtained_epic += rollDropCount(8.0 * lootMult);
+                const bossRates = (typeof dropRatesFor === 'function' && typeof BOSS_DROP_TABLE !== 'undefined')
+                    ? dropRatesFor(BOSS_DROP_TABLE, targetFloor)
+                    : [0, 0, 100, 50, 10, 5, 0, 0];
+
+                for (let br = 0; br < bossRates.length; br++) {
+                    if (!bossRates[br]) continue;
+                    const bn = rollDropCount((bossRates[br] / 100) * lootMult);
+                    if (bn > 0) {
+                        if (br <= 2) this.obtained_below_epic += bn;
+                        else if (br === 3 || br === 4) this.obtained_epic += bn;
+                        else if (br === 5) {
+                            this.obtained_legendary += bn;
+                            this.legendaryGearPool = (this.legendaryGearPool || 0) + bn;
+                        }
+                        else if (br === 6) {
+                            this.obtained_mythic += bn;
+                            this.mythicGearPool = (this.mythicGearPool || 0) + bn;
+                        }
+                        else if (br === 7) {
+                            this.obtained_genesis += bn;
+                            this.genesisGearPool = (this.genesisGearPool || 0) + bn;
+                        }
+                    }
                 }
 
                 let dropRewardDesc = "爆落高階寶石、精良/稀有裝備與金幣。";
@@ -1629,30 +1901,78 @@
                 this.logAction(currentTime, 'gem', '💎', `進行寶石批量合成與魔塵積攢`, synthSummary.slice(0, 3).join('； '));
             }
 
-            let forgeAttempts = 0;
-            while (this.genesisGearPool >= 6 && this.gold >= 5000 && forgeAttempts < 5) {
-                forgeAttempts++;
-                this.genesisGearPool -= 6;
+            // 1. 六芒星法陣：6 件【傳說 R5】 ➔ 1 件【神話 R6】 (100% 直連官方 forgeSuccessRateFor(5, dust))
+            let legendaryPool = this.legendaryGearPool || 0;
+            while (legendaryPool >= 6 && this.gold >= 1000) {
+                legendaryPool -= 6;
+                this.gold -= 1000;
+                let usedDust = Math.min(6, this.dust);
+                this.dust -= usedDust;
+                let rate = (typeof forgeSuccessRateFor === 'function')
+                    ? (forgeSuccessRateFor(5, usedDust) / 100.0)
+                    : (0.55 + usedDust * 0.05);
+
+                if (Math.random() < rate) {
+                    this.obtained_mythic++;
+                    this.mythicGearPool = (this.mythicGearPool || 0) + 1;
+                } else {
+                    legendaryPool += 3;
+                }
+            }
+            this.legendaryGearPool = legendaryPool;
+
+            // 2. 六芒星法陣：6 件【神話 R6】 ➔ 1 件【創世 R7】 (100% 直連官方 forgeSuccessRateFor(6, dust))
+            let mythicPool = this.mythicGearPool || 0;
+            while (mythicPool >= 6 && this.gold >= 2000) {
+                mythicPool -= 6;
+                this.gold -= 2000;
+                let usedDust = Math.min(6, this.dust);
+                this.dust -= usedDust;
+                let rate = (typeof forgeSuccessRateFor === 'function')
+                    ? (forgeSuccessRateFor(6, usedDust) / 100.0)
+                    : (0.40 + usedDust * 0.05);
+
+                if (Math.random() < rate) {
+                    this.obtained_genesis++;
+                    this.genesisGearPool = (this.genesisGearPool || 0) + 1;
+                } else {
+                    mythicPool += 3;
+                }
+            }
+            this.mythicGearPool = mythicPool;
+
+            // 3. 六芒星法陣：6 件【創世 R7】 ➔ 1 件【神鑄創世 R8】 (100% 直連官方 forgeSuccessRateFor(7, dust))
+            let genesisPool = this.genesisGearPool || 0;
+            let godforgeFusions = 0;
+            while (genesisPool >= 6 && this.gold >= 5000) {
+                genesisPool -= 6;
                 this.gold -= 5000;
                 this.total_godforge_attempts++;
 
                 let usedDust = Math.min(6, this.dust);
                 this.dust -= usedDust;
-                let forgeSuccessChance = 0.70 + (usedDust * 0.05);
+                let rate = (typeof forgeSuccessRateFor === 'function')
+                    ? (forgeSuccessRateFor(7, usedDust) / 100.0)
+                    : (0.25 + usedDust * 0.05);
 
-                if (Math.random() < forgeSuccessChance) {
+                if (Math.random() < rate) {
                     this.obtained_godforge++;
+                    godforgeFusions++;
                     const slotToUpgrade = OFFICIAL_SLOTS[Math.floor(Math.random() * OFFICIAL_SLOTS.length)];
                     const oldSlotEq = this.equipments[slotToUpgrade];
                     if (!oldSlotEq.isGodforged) {
-                        const godEq = generateDroppedEquipment(8, 1.0);
+                        const godEq = generateDroppedEquipment(8, 1.0, 500, slotToUpgrade);
                         godEq.level = oldSlotEq.level;
                         this.equipments[slotToUpgrade] = godEq;
-                        this.logAction(currentTime, 'godforge', '👑', `神鑄六芒星法陣 6 合 1 成功！(消耗 ${usedDust} 魔塵)`, `將【${slotToUpgrade}】裝備解鎖升階為【神鑄創世 R8】(7 滿太古詞條)。`);
                     }
                 } else {
-                    this.dust += 1;
+                    genesisPool += 3;
                 }
+            }
+            this.genesisGearPool = genesisPool;
+
+            if (godforgeFusions > 0) {
+                this.logAction(currentTime, 'godforge', '👑', `六芒星神鑄法陣 6 合 1 成功！(合成 ${godforgeFusions} 次)`, `消耗【創世 R7】裝備與魔塵，解鎖打造【神鑄創世 R8】(7 滿太古詞條)。`);
             }
 
             for (let slot in this.equipments) {
@@ -1664,10 +1984,15 @@
 
                 let successRate = (eq.level >= 50) ? 0.40 : 0.75;
                 let enhanceAttempts = 0;
+                let startLvl = eq.level;
+                let spentGold = 0;
+                let spentStones = 0;
 
                 while (eq.level < this.profile.targetEnhance && this.gold >= costGold && this.upgrade_stones >= costStones && enhanceAttempts < 20) {
                     this.gold -= costGold;
                     this.upgrade_stones -= costStones;
+                    spentGold += costGold;
+                    spentStones += costStones;
                     this.total_gold_spent += costGold;
                     this.total_stones_spent += costStones;
                     enhanceAttempts++;
@@ -1678,37 +2003,111 @@
                     costGold = Math.floor(80 * Math.pow(eq.level + 1, 1.4));
                     costStones = Math.floor(1.5 * Math.pow(eq.level + 1, 1.05));
                 }
+
+                if (enhanceAttempts > 0) {
+                    const slotName = (typeof SLOT_INFO !== 'undefined' && SLOT_INFO[slot]) ? SLOT_INFO[slot].name : slot;
+                    this.logAction(
+                        currentTime, 
+                        'enhance', 
+                        '🔨', 
+                        `進行【${slotName}】裝備強化 (+${startLvl} ➔ +${eq.level})`, 
+                        `嘗試強化 ${enhanceAttempts} 次，消耗 ${formatGameNumber(spentGold)} 金幣與 ${spentStones} 點裝備碎片。`
+                    );
+                }
             }
 
             for (let slot in this.equipments) {
                 const eq = this.equipments[slot];
-                const rerollCostGold = Math.floor(150 * Math.pow(eq.rarity, 1.2));
-                const rerollCostStones = Math.floor(2 * eq.rarity);
+                // 100% 直連官方 rerollCost(it) (來自 js/formula.js)
+                const cost = (typeof rerollCost === 'function')
+                    ? rerollCost(eq)
+                    : { gold: Math.round(40 * Math.pow(1.7, eq.rarity || 1)), essence: 1 + (eq.rarity || 1) };
 
                 let rerollLimit = (this.profile.dailyOnlineHours >= 24) ? 50 : 15;
                 let rerollAttemptsThisBatch = 0;
 
-                while (rerollAttemptsThisBatch < rerollLimit && this.gold >= rerollCostGold && this.upgrade_stones >= rerollCostStones) {
-                    this.gold -= rerollCostGold;
-                    this.upgrade_stones -= rerollCostStones;
-                    this.total_gold_spent += rerollCostGold;
-                    this.total_stones_spent += rerollCostStones;
+                while (rerollAttemptsThisBatch < rerollLimit && this.gold >= cost.gold && this.essence >= cost.essence) {
+                    this.gold -= cost.gold;
+                    this.essence -= cost.essence;
+                    this.total_gold_spent += cost.gold;
 
+                    const baseSlot = slot.replace(/[0-9]/g, '');
                     const eqItemLevel = eq.itemLevel || 500;
-                    eq.affixes.forEach(aff => {
-                        aff.key = OFFICIAL_AFFIX_KEYS[Math.floor(Math.random() * OFFICIAL_AFFIX_KEYS.length)];
-                        aff.val = aff.ancient
-                            ? officialAncientAffixValue(aff.key, eqItemLevel, eq.rarity)
-                            : officialRollAffixValue(aff.key, eqItemLevel, eq.rarity);
-                    });
+                    const rarity = eq.rarity || 8;
+                    const slotsCount = (rarity === 8 || rarity === 7) ? 7 : (RARITY_AFFIX_COUNTS[rarity] || Math.min(7, rarity));
+
+                    const forbiddenKeys = new Set([
+                        'matk', 'matkPct', 'mPen', 'manaSteal', 'mpMax', 'mpRegen',
+                        'elemDmgFire', 'elemDmgIce', 'elemDmgLightning', 'elemDmgPoison', 'elemDmgLight', 'elemDmgDark'
+                    ]);
+
+                    const poolSource = (typeof AFFIX_POOL !== 'undefined') ? AFFIX_POOL : ((typeof OFFICIAL_AFFIX_POOL !== 'undefined') ? OFFICIAL_AFFIX_POOL : {});
+                    const slotKeys = [];
+
+                    for (let k in poolSource) {
+                        if (forbiddenKeys.has(k)) continue;
+                        const def = poolSource[k];
+                        if (def.slots) {
+                            if (def.slots.indexOf(baseSlot) < 0) continue;
+                            if (def.slots.indexOf('all_lock') >= 0) continue;
+                        }
+                        slotKeys.push(k);
+                    }
+
+                    const newAffixes = [];
+                    const usedKeys = new Set();
+
+                    if (baseSlot === 'amulet' || baseSlot === 'ring') {
+                        const requiredCoreKeys = ['gemEff', 'loot', 'xpBonus'];
+                        requiredCoreKeys.forEach(k => {
+                            if (poolSource[k] && !usedKeys.has(k)) {
+                                usedKeys.add(k);
+                                const isAncient = (Math.random() < this.profile.ancientRatio);
+                                const val = isAncient
+                                    ? officialAncientAffixValue(k, eqItemLevel, rarity)
+                                    : officialRollAffixValue(k, eqItemLevel, rarity);
+                                newAffixes.push({ key: k, val: val, ancient: isAncient });
+                            }
+                        });
+                    }
+
+                    const ancientCountRolled = rollOfficialAncientCount(slotsCount);
+                    const ancientIndices = new Set();
+                    while (ancientIndices.size < ancientCountRolled && ancientIndices.size < slotsCount) {
+                        ancientIndices.add(Math.floor(Math.random() * slotsCount));
+                    }
+
+                    let guard = 0;
+                    while (newAffixes.length < slotsCount && guard++ < 300) {
+                        let candidateKeys = slotKeys.filter(k => !usedKeys.has(k));
+                        if (candidateKeys.length === 0) break;
+
+                        const k = candidateKeys[Math.floor(Math.random() * candidateKeys.length)];
+                        usedKeys.add(k);
+
+                        const isAncient = ancientIndices.has(newAffixes.length) || (Math.random() < this.profile.ancientRatio);
+                        const val = isAncient
+                            ? officialAncientAffixValue(k, eqItemLevel, rarity)
+                            : officialRollAffixValue(k, eqItemLevel, rarity);
+                        newAffixes.push({ key: k, val: val, ancient: isAncient });
+                    }
+
+                    eq.affixes = newAffixes;
 
                     this.total_affix_rerolls++;
                     rerollAttemptsThisBatch++;
                 }
 
-                if (rerollAttemptsThisBatch > 30) {
+                if (rerollAttemptsThisBatch > 0) {
                     const finalAnc = countAncientAffixes(eq.affixes);
-                    this.logAction(currentTime, 'equip', '🎲', `進行【${slot}】狂洗詞條 (${rerollAttemptsThisBatch} 次)`, `保持 ${finalAnc} 條太古狀態不變，追求滿極限屬性。`);
+                    const slotName = (typeof SLOT_INFO !== 'undefined' && SLOT_INFO[slot]) ? SLOT_INFO[slot].name : slot;
+                    this.logAction(
+                        currentTime, 
+                        'equip', 
+                        '🎲', 
+                        `進行【${slotName}】洗煉詞條 (${rerollAttemptsThisBatch} 次)`, 
+                        `消耗 ${formatGameNumber(cost.gold * rerollAttemptsThisBatch)} 金幣與 ${cost.essence * rerollAttemptsThisBatch} 點附魔精華，保持 ${finalAnc} 條太古狀態不變，追求滿極限屬性。`
+                    );
                 }
             }
         }
@@ -1810,8 +2209,26 @@
             const isAdvancing = (timeToKill <= 30.0 && timeToDie > timeToKill);
 
             if (isAdvancing) {
+                const oldStageInt = Math.floor(char.stage);
                 char.totalKills += killsThisTick;
                 char.stage += killsThisTick / 10.0;
+                const newStageInt = Math.floor(char.stage);
+
+                if (newStageInt > oldStageInt) {
+                    const eventTime = currentTime + (Math.random() * 0.02);
+                    const diff = newStageInt - oldStageInt;
+                    const msgDetail = diff === 1 
+                        ? `順利擊退守關怪，隊伍持續向前推進至 Stage ${newStageInt} 關卡 (角色 Lv.${char.level})。`
+                        : `戰力碾壓！連破 ${diff} 關，順利由 Stage ${oldStageInt} 關推進至 Stage ${newStageInt} 關卡 (角色 Lv.${char.level})。`;
+
+                    char.logAction(
+                        eventTime, 
+                        'combat', 
+                        '🚩', 
+                        `通過 Stage ${oldStageInt} 關考驗！推進至 Stage ${newStageInt} 關！`, 
+                        msgDetail
+                    );
+                }
                 
                 const expPerMob = (8 + char.stage) * safePow(1.06, Math.max(0, char.stage - 1));
                 const goldPerMob = (20 + char.stage) * safePow(1.02, Math.max(0, char.stage - 1));
@@ -1877,7 +2294,13 @@
                     stones_spent: char.total_stones_spent,
                     gems_spent: char.total_gems_spent,
                     enhancements: char.total_enhancements,
-                    gem_syntheses: char.total_gem_syntheses
+                    gem_syntheses: char.total_gem_syntheses,
+                    obtained_gems: (char.obtained_gems || 0),
+                    total_gold_earned: (char.total_gold_earned || 0),
+                    total_stones_earned: (char.total_stones_earned || 0),
+                    total_essence_earned: (char.total_essence_earned || 0),
+                    total_dust_earned: (char.total_dust_earned || 0),
+                    total_ancient_essence_earned: (char.total_ancient_essence_earned || 0)
                 });
                 nextSampleTime += 1.0;
             }
@@ -1965,7 +2388,7 @@
 
         const timeStepsCount = Math.min(...allHistories.map(h => h.length));
         const aggregatedSeries = [];
-        const metrics = ["stage", "level", "reincarnation", "tower_floor", "total_kills", "dps", "equip_score", "ancient_affixes", "godforge_count", "obtained_godforge", "obtained_genesis", "obtained_mythic", "obtained_legendary", "obtained_epic", "obtained_below_epic", "rerolls", "total_skills", "gold_spent", "stones_spent", "gems_spent", "enhancements", "gem_syntheses"];
+        const metrics = ["stage", "level", "reincarnation", "tower_floor", "total_kills", "dps", "equip_score", "ancient_affixes", "godforge_count", "obtained_godforge", "obtained_genesis", "obtained_mythic", "obtained_legendary", "obtained_epic", "obtained_below_epic", "rerolls", "total_skills", "gold_spent", "stones_spent", "gems_spent", "enhancements", "gem_syntheses", "obtained_gems", "total_gold_earned", "total_stones_earned", "total_essence_earned", "total_dust_earned", "total_ancient_essence_earned"];
 
         for (let stepIdx = 0; stepIdx < timeStepsCount; stepIdx++) {
             const stepHour = allHistories[0][stepIdx].hour;
@@ -2011,7 +2434,7 @@
         setCardVal('cardReinc', (lastStep.reincarnation.mean).toFixed(1) + ' 轉');
         setCardVal('cardTowerFloor', Math.round(lastStep.tower_floor.mean) + ' 層');
         setCardVal('cardRerolls', formatGameNumber(lastStep.rerolls.mean));
-        setCardVal('cardGems', formatGameNumber(lastStep.gem_syntheses.mean));
+        setCardVal('cardGems', formatGameNumber(lastStep.obtained_gems ? lastStep.obtained_gems.mean : lastStep.gem_syntheses.mean) + ' 顆');
         
         const totalAncientMean = lastStep.ancient_affixes.mean;
         const perEquipMean = (totalAncientMean / 13.0).toFixed(1);
@@ -2023,6 +2446,12 @@
         setCardVal('cardObtainedLegendary', formatGameNumber(lastStep.obtained_legendary.mean) + ' 件');
         setCardVal('cardObtainedEpic', formatGameNumber(lastStep.obtained_epic.mean) + ' 件');
         setCardVal('cardObtainedBelowEpic', formatGameNumber(lastStep.obtained_below_epic.mean) + ' 件');
+
+        setCardVal('cardTotalGoldEarned', formatGameNumber(lastStep.total_gold_earned ? lastStep.total_gold_earned.mean : 0));
+        setCardVal('cardTotalStonesEarned', formatGameNumber(lastStep.total_stones_earned ? lastStep.total_stones_earned.mean : 0));
+        setCardVal('cardTotalEssenceEarned', formatGameNumber(lastStep.total_essence_earned ? lastStep.total_essence_earned.mean : 0));
+        setCardVal('cardTotalDustEarned', formatGameNumber(lastStep.total_dust_earned ? lastStep.total_dust_earned.mean : 0));
+        setCardVal('cardTotalAncientEssenceEarned', formatGameNumber(lastStep.total_ancient_essence_earned ? lastStep.total_ancient_essence_earned.mean : 0));
 
         currentLogPage = 1;
         renderTopRunActionLogs();
@@ -2148,11 +2577,12 @@
             finalDps: char.calculateStats().dps,
             equipments: char.equipments,
             gems: char.gems,
-            profile: profile
+            profile: profile,
+            char: char
         };
     }
 
-    // 🛡️ 打開裝備快照 Modal
+    // 🛡️ 打開裝備與屬性快照 Modal
     function openEquipmentSnapshotModal() {
         if (!currentSimResult || !currentSimResult.topRun) {
             alert('請先啟動蒙地卡羅模擬運算！');
@@ -2160,8 +2590,128 @@
         }
         const modal = document.getElementById('equipModalOverlay');
         modal.style.display = 'flex';
-        renderPaperdollGrid();
-        selectPaperdollSlot('chest'); // 預設展示胸甲
+        
+        try { renderPlayerStatsPanel(); } catch(e) { console.error('Error rendering player stats panel:', e); }
+        try { renderPaperdollGrid(); } catch(e) { console.error('Error rendering paperdoll grid:', e); }
+        try { selectPaperdollSlot('chest'); } catch(e) { console.error('Error selecting default slot:', e); }
+    }
+
+    // 👈 渲染左側玩家屬性快照面板 (100% 對齊遊戲內側欄屬性面板版型與 STAT_GROUPS)
+    function renderPlayerStatsPanel() {
+        const container = document.getElementById('playerStatsPanel');
+        if (!container || !currentSimResult || !currentSimResult.topRun) return;
+
+        try {
+            const topRun = currentSimResult.topRun;
+            const charObj = topRun.char;
+            const profile = topRun.profile || {};
+
+            // 🎯 100% 直連遊戲官方原生 computeStats() 計算全量 50+ 派生屬性！
+            if (!window.G || typeof window.G !== 'object') window.G = {};
+            const charLvl = (charObj && charObj.level) ? charObj.level : 200;
+            const charReinc = (charObj && charObj.reincarnation) ? charObj.reincarnation : 10;
+            
+            window.G.player = {
+                level: charLvl,
+                reincarnations: charReinc,
+                skills: (charObj && charObj.skills) ? charObj.skills : { powerSlash: 20 },
+                talents: (charObj && charObj.talents) ? charObj.talents : { levels: {}, potentialLevels: {} }
+            };
+            window.G.equipment = topRun.equipments;
+
+            let pState = null;
+            if (typeof computeStats === 'function' && topRun.equipments) {
+                pState = computeStats(topRun.equipments);
+            }
+
+            if (!pState) {
+                const stats = (charObj && typeof charObj.calculateStats === 'function') ? charObj.calculateStats() : {};
+                pState = {
+                    level: charLvl, reincarnation: charReinc,
+                    hp: stats.maxHp || 5000000, hpRegen: 50000, mp: 5000, mpRegen: 50,
+                    str: charObj.str_attr || 4500, agi: charObj.dex_attr || 4500, int: charObj.int_attr || 4500, vit: charObj.sta_attr || 4500,
+                    atk: stats.patk || 1500000, matk: 100000, def: stats.pdef || 800000, mdef: 500000,
+                    critRate: 100, critDmg: 1440, pPen: 45, mPen: 45, hit: 100, aspd: 2.5, cdr: 40, castSpeed: 35,
+                    lifesteal: 20, manaSteal: 15, eliteDmg: 120, bossDmg: 250, normalDmg: 80, evasion: 25, tenacity: 30,
+                    pRes: 35, mRes: 35, globalDmgRed: 25, normalDmgRed: 15, eliteDmgRed: 20, bossDmgRed: 30, blockRate: 40,
+                    blockDmgRed: 50, shieldEff: 50, ccRed: 30, moveSpeed: 50,
+                    resist: { fire: 45, ice: 45, lightning: 45, poison: 45, light: 45, dark: 45, ctrl: 35 },
+                    dmgVsElem: { fire: 30, ice: 30, lightning: 30, poison: 30, light: 30, dark: 30 },
+                    elemDmgUp: { fire: 50, ice: 50, lightning: 50, poison: 50, light: 50, dark: 50 },
+                    loot: 1200, xpBonus: 500
+                };
+            }
+            pState.level = charLvl;
+            pState.reincarnation = charReinc;
+            pState.dps = topRun.finalDps || (charObj && typeof charObj.calculateStats === 'function' ? charObj.calculateStats().dps : 100);
+
+            let html = `
+                <div class="stats-panel-header">
+                    <div class="stats-player-name">👑 ${profile.name || '極限玩家'} (Lv.${pState.level})</div>
+                    <div class="stats-player-sub">🌀 轉生 ${pState.reincarnation} 轉 | ⚔️ 500h DPS: ${formatGameNumber(pState.dps)}</div>
+                </div>
+                <div class="stats-groups-container">
+            `;
+
+            // 100% 直連官方 data.js §STAT_GROUPS 結構與面板
+            if (typeof STAT_GROUPS !== 'undefined' && Array.isArray(STAT_GROUPS)) {
+                STAT_GROUPS.forEach(grp => {
+                    html += `
+                        <details open class="attr-group">
+                            <summary>▼ ${grp.title}</summary>
+                            <div class="stat-rows-box">
+                    `;
+                    grp.rows.forEach(row => {
+                        const label = row[0];
+                        let valStr = '0';
+                        try {
+                            if (typeof row[1] === 'function') {
+                                valStr = row[1](pState);
+                            } else {
+                                valStr = String(row[1] || '0');
+                            }
+                        } catch(e) {
+                            valStr = '0';
+                        }
+                        html += `
+                            <div class="stat-row">
+                                <span class="stat-label">${label}</span>
+                                <b class="stat-val">${valStr}</b>
+                            </div>
+                        `;
+                    });
+                    html += `</div></details>`;
+                });
+            } else {
+                html += `
+                    <details open class="attr-group">
+                        <summary>▼ 基礎屬性</summary>
+                        <div class="stat-rows-box">
+                            <div class="stat-row"><span>❤️ 生命值</span><b>${formatGameNumber(pState.hp)}</b></div>
+                            <div class="stat-row"><span>💪 力量</span><b>${pState.str}</b></div>
+                            <div class="stat-row"><span>🏃 敏捷</span><b>${pState.agi}</b></div>
+                            <div class="stat-row"><span>🧠 智力</span><b>${pState.int}</b></div>
+                            <div class="stat-row"><span>🪨 耐力</span><b>${pState.vit}</b></div>
+                        </div>
+                    </details>
+                    <details open class="attr-group">
+                        <summary>▼ 進攻屬性</summary>
+                        <div class="stat-rows-box">
+                            <div class="stat-row"><span>⚔️ 物理攻擊</span><b>${formatGameNumber(pState.atk)}</b></div>
+                            <div class="stat-row"><span>💥 暴擊率</span><b>${pState.critRate}%</b></div>
+                            <div class="stat-row"><span>🩸 暴擊傷害</span><b>${pState.critDmg}%</b></div>
+                            <div class="stat-row"><span>⚡ 攻擊速度</span><b>${pState.aspd}/秒</b></div>
+                        </div>
+                    </details>
+                `;
+            }
+
+            html += `</div>`;
+            container.innerHTML = html;
+        } catch (err) {
+            console.error('Error rendering player stats panel:', err);
+            container.innerHTML = `<div style="color: #ef4444; padding: 10px;">屬性面板載入失敗：${err.message}</div>`;
+        }
     }
 
     function closeEquipmentModal() {
@@ -2209,91 +2759,68 @@
         selectedEquipSlotKey = slot;
         renderPaperdollGrid();
 
-        const eqMap = currentSimResult.topRun.equipments;
-        const eq = eqMap[slot];
-        const rInfo = RARITY_INFO[eq.rarity] || RARITY_INFO[8];
         const detailPanel = document.getElementById('itemDetailPanel');
-        detailPanel.style.borderColor = rInfo.color;
+        if (!detailPanel) return;
 
-        const slotName = SLOT_CHINESE_NAMES[slot] || slot;
-        const ancCount = countAncientAffixes(eq.affixes);
-
-        let affixRowsHtml = '';
-        const enhanceMult = 1 + 0.05 * (eq.level || 0);
-
-        eq.affixes.forEach(aff => {
-            // 使用官方 AFFIX_POOL 名稱，回退到 AFFIX_CHINESE
-            const poolDef = OFFICIAL_AFFIX_POOL[aff.key];
-            const affName = poolDef ? poolDef.name : (AFFIX_CHINESE[aff.key] || aff.key);
-            const isPct = poolDef ? poolDef.pct : true;
-            const finalVal = aff.val * enhanceMult;
-            const valStr = isPct ? `+${finalVal.toFixed(1)}%` : `+${formatGameNumber(finalVal)}`;
-
-            if (aff.ancient) {
-                affixRowsHtml += `
-                    <div class="affix-row ancient">
-                        <span>✡</span>
-                        <span>${affName} ${valStr}</span>
-                        <span style="font-size: 11px; opacity: 0.9; margin-left: auto;">(太古+${eq.level}滿數值)</span>
-                    </div>
-                `;
-            } else {
-                affixRowsHtml += `
-                    <div class="affix-row normal">
-                        <span>◇</span>
-                        <span>${affName} ${valStr}</span>
-                    </div>
-                `;
-            }
-        });
-
-        // 官方 9 大品質寶石插槽數對齊表 (data.js §RARITIES .sockets)
-        const RARITY_SOCKETS = { 1: 1, 2: 1, 3: 2, 4: 2, 5: 3, 6: 4, 7: 5, 8: 6 };
-        const GEM_POOL_NAMES = [
-            { name: '暴擊傷害寶石', bonus: '爆傷', pct: 5, icon: '🔹' },
-            { name: '暴擊率寶石', bonus: '暴擊率', pct: 5, icon: '🔸' },
-            { name: '物理攻擊寶石', bonus: '物攻', pct: 5, icon: '💎' },
-            { name: '鑲嵌效率寶石', bonus: '寶石鑲嵌效率', pct: 5, icon: '🔮' },
-            { name: '屬性核心寶石', bonus: '全屬性增幅', pct: 5, icon: '❇️' },
-            { name: '掉寶率寶石', bonus: '掉寶率', pct: 5, icon: '✨' }
-        ];
-
-        const gemLvl = currentSimResult.config.profile.gemTargetLvl || 10;
-        const socketCount = RARITY_SOCKETS[eq.rarity] || 6;
-        let socketsHtml = `<div style="color: #34d399; font-weight: bold; margin-bottom: 4px;">💎 已鑲嵌寶石插槽 (${socketCount} / ${socketCount} 孔)：</div>`;
-
-        for (let gi = 0; gi < socketCount; gi++) {
-            const gDef = GEM_POOL_NAMES[gi % GEM_POOL_NAMES.length];
-            const bonusVal = gemLvl * gDef.pct;
-            socketsHtml += `<div>${gDef.icon} Slot ${gi + 1}: Lv.${gemLvl} ${gDef.name} (${gDef.bonus} +${bonusVal}%)</div>`;
+        if (!currentSimResult || !currentSimResult.topRun || !currentSimResult.topRun.equipments) {
+            detailPanel.innerHTML = '<div style="color:var(--dim); padding:20px; text-align:center;">請先點擊【啟動極速模擬運算】生成裝備數據！</div>';
+            return;
         }
 
-        detailPanel.innerHTML = `
-            <div class="item-detail-header">
-                <span style="font-size: 32px;">${SLOT_EMOJIS[slot]}</span>
-                <div>
-                    <div class="item-title-name" style="color: ${rInfo.color}">
-                        ${rInfo.name}的${slotName} +${eq.level}
-                    </div>
-                    <div style="font-size: 13px; color: ${rInfo.color}; font-weight: 600;">
-                        ${rInfo.name} ・ ${slotName} ・ 裝備等級 500
-                    </div>
-                </div>
-            </div>
+        const eqMap = currentSimResult.topRun.equipments;
+        const eq = eqMap[slot];
+        if (!eq) {
+            detailPanel.innerHTML = '<div style="color:var(--dim); padding:20px; text-align:center;">此部位無裝備</div>';
+            return;
+        }
 
-            <div class="item-sub-info">
-                <span>全身太古條數: ${ancCount} / ${eq.affixes.length} 條</span>
-                <span style="color: #fbbf24; font-weight: bold;">裝備評分 ${(eq.level * 10 + eq.rarity * 400).toLocaleString()}</span>
-            </div>
+        const rInfo = (typeof RARITY_INFO !== 'undefined' && RARITY_INFO[eq.rarity]) || (typeof RARITIES !== 'undefined' && RARITIES[eq.rarity]) || { name: '神鑄創世', color: '#f5c542' };
+        detailPanel.style.borderColor = rInfo.color;
 
-            <div class="item-affix-list">
-                ${affixRowsHtml}
-            </div>
+        const slotName = (typeof SLOT_CHINESE_NAMES !== 'undefined' && SLOT_CHINESE_NAMES[slot]) || (typeof SLOT_INFO !== 'undefined' && SLOT_INFO[slot] && SLOT_INFO[slot].name) || slot;
+        const socketCount = (typeof socketCountFor === 'function') ? socketCountFor(eq.rarity) : (typeof RARITIES !== 'undefined' && RARITIES[eq.rarity] ? RARITIES[eq.rarity].sockets : 6);
+        const gemLvl = (currentSimResult.config && currentSimResult.config.profile && currentSimResult.config.profile.gemTargetLvl) || 10;
 
-            <div class="item-sockets">
-                ${socketsHtml}
-            </div>
-        `;
+        // 🎯 製作人指示：寶石配比必須 100% 一半石榴石 (暴擊傷害) + 一半屬性傷害加成寶石 (如圖 2 之尖晶石/海藍寶石/天河石/雷核寶石)
+        const attackGemTypes = ['garnet', 'garnet', 'garnet', 'spinel', 'aquamarine', 'amazonite'];
+        const sockets = [];
+        for (let gi = 0; gi < socketCount; gi++) {
+            sockets.push({ type: attackGemTypes[gi % attackGemTypes.length], level: gemLvl });
+        }
+
+        // 滿額極限附魔 (對齊 ENCHANTS)
+        const defaultEnchants = [
+            { key: 'fire', val: 25.0 },
+            { key: 'loot', val: 50.0 },
+            { key: 'focus', val: 30.0 }
+        ];
+        const enchants = (eq.enchants && eq.enchants.length > 0) ? eq.enchants : defaultEnchants;
+
+        // 轉換為官方 Item 結構
+        const itemObj = {
+            id: 'snap_' + slot,
+            name: `${rInfo.name}的${slotName}`,
+            slot: slot,
+            rarity: eq.rarity || 8,
+            level: 500,
+            upgrade: eq.level || 60,
+            affixes: eq.affixes || [],
+            enchants: enchants,
+            sockets: sockets
+        };
+
+        // 100% 調用官方遊戲 UI 渲染函式 itemDetailHTML (來自 js/item.js)
+        if (typeof itemDetailHTML === 'function') {
+            detailPanel.innerHTML = `<div class="equip-detail-card" style="background: transparent; border: none; box-shadow: none; padding: 0;">${itemDetailHTML(itemObj, null, { showAffixReroll: false })}</div>`;
+        } else {
+            const gemHtml = sockets.map(g => {
+                const gt = (typeof GEM_TYPES !== 'undefined' && GEM_TYPES[g.type]) || { emoji: '💎', name: '寶石', statName: '屬性', pct: true };
+                const val = typeof gemStatValue === 'function' ? gemStatValue(g.type, g.level) : (g.level * 10);
+                const valStr = gt.pct ? (val + '%') : val;
+                return `<div>${gt.emoji} ${gt.name} (${gt.statName} +${valStr})</div>`;
+            }).join('');
+            detailPanel.innerHTML = `<div style="color:${rInfo.color}">【${rInfo.name}的${slotName} +${eq.level}】</div>${gemHtml}`;
+        }
     }
 
     function setLogFilter(cat) {
@@ -2310,10 +2837,18 @@
         renderTopRunActionLogs();
     }
 
+    function getFilteredLogs(allLogs, filter) {
+        if (filter === 'all') return allLogs;
+        if (filter === 'skill') {
+            return allLogs.filter(l => l.category === 'skill' || l.category === 'level_skill' || l.category === 'level' || (l.title && (l.title.includes('升級') || l.title.includes('技能'))));
+        }
+        return allLogs.filter(l => l.category === filter);
+    }
+
     function goToLogPage(page) {
         if (!currentSimResult || !currentSimResult.topRun) return;
         const allLogs = currentSimResult.topRun.logs || [];
-        const filteredLogs = (currentLogFilter === 'all') ? allLogs : allLogs.filter(l => l.category === currentLogFilter);
+        const filteredLogs = getFilteredLogs(allLogs, currentLogFilter);
         const totalPages = Math.max(1, Math.ceil(filteredLogs.length / LOG_PAGE_SIZE));
 
         if (page === -1) currentLogPage = totalPages;
@@ -2327,11 +2862,7 @@
         if (!container || !currentSimResult || !currentSimResult.topRun) return;
 
         const allLogs = currentSimResult.topRun.logs || [];
-        let filteredLogs = allLogs;
-
-        if (currentLogFilter !== 'all') {
-            filteredLogs = allLogs.filter(l => l.category === currentLogFilter);
-        }
+        const filteredLogs = getFilteredLogs(allLogs, currentLogFilter);
 
         const totalLogs = filteredLogs.length;
         const totalPages = Math.max(1, Math.ceil(totalLogs / LOG_PAGE_SIZE));
@@ -2356,6 +2887,7 @@
                         <div style="font-size: 11px; color: #94a3b8; margin-top: 4px; display: flex; flex-wrap: wrap; gap: 10px; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);">
                             <span>💰 金幣: <span style="color:#fbbf24; font-weight:600;">${formatGameNumber(log.gold || 0)}</span></span>
                             <span>🧩 裝備碎片: <span style="color:#38bdf8; font-weight:600;">${formatGameNumber(log.stones || log.scrap || 0)}</span></span>
+                            <span>🔮 附魔精華: <span style="color:#a855f7; font-weight:600;">${formatGameNumber(log.essence || 0)}</span></span>
                             <span>✨ 魔塵: <span style="color:#f59e0b; font-weight:600;">${formatGameNumber(log.dust || 0)}</span></span>
                             <span>✡️ 太古精華: <span style="color:#c084fc; font-weight:600;">${formatGameNumber(log.ancientEssence || 0)}</span></span>
                             <span>🌱 魔神之種: <span style="color:#34d399; font-weight:600;">${formatGameNumber(log.seeds || 0)}</span></span>
@@ -2381,7 +2913,7 @@
         txt += `========================================================================\n\n`;
 
         logs.forEach(l => {
-            txt += `[${formatGameTimeExact(l.hour).padStart(14, ' ')}] ${l.icon} [${l.category.toUpperCase()}] ${l.title} -- ${l.detail} | 【頂欄資源: 💰金幣:${formatGameNumber(l.gold||0)}, 🧩裝備碎片:${formatGameNumber(l.stones||l.scrap||0)}, ✨魔塵:${formatGameNumber(l.dust||0)}, ✡️太古精華:${formatGameNumber(l.ancientEssence||0)}, 🌱魔神之種:${formatGameNumber(l.seeds||0)}, 📜附魔書:${formatGameNumber(l.books||0)}】\n`;
+            txt += `[${formatGameTimeExact(l.hour).padStart(14, ' ')}] ${l.icon} [${l.category.toUpperCase()}] ${l.title} -- ${l.detail} | 【頂欄資源: 💰金幣:${formatGameNumber(l.gold||0)}, 🧩裝備碎片:${formatGameNumber(l.stones||l.scrap||0)}, 🔮附魔精華:${formatGameNumber(l.essence||0)}, ✨魔塵:${formatGameNumber(l.dust||0)}, ✡️太古精華:${formatGameNumber(l.ancientEssence||0)}, 🌱魔神之種:${formatGameNumber(l.seeds||0)}, 📜附魔書:${formatGameNumber(l.books||0)}】\n`;
         });
 
         const blob = new Blob([txt], { type: 'text/plain;charset=utf-8;' });
@@ -2431,6 +2963,11 @@
             obtained_legendary: '🟠 獲得【傳奇】裝備數量',
             obtained_epic: '🔵 獲得【史詩】裝備數量',
             obtained_below_epic: '⚪ 獲得【史詩以下】裝備數量',
+            total_gold_earned: '💰 500h 累積平均金幣總獲得',
+            total_stones_earned: '🧩 500h 累積平均裝備碎片總獲得',
+            total_essence_earned: '🔮 500h 累積平均附魔精華總獲得',
+            total_dust_earned: '✨ 500h 累積平均魔塵總獲得',
+            total_ancient_essence_earned: '🌀 500h 累積平均太古精華總獲得',
             stage: '🚩 到達關卡數',
             level: '📈 玩家等級',
             equip_score: '🛡️ 裝備綜合戰力分數',

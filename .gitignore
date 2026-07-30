@@ -50,3 +50,8 @@ params_version.txt
 # Excel 開啟中的暫存鎖定檔（~$ 開頭），不需版控
 ~$*.xlsx
 config/Excel/~$*.xlsx
+
+# 模擬器動態產出之日誌與存檔
+ai_player_action_log.txt
+save_ai_player_500h.json
+save_initial.json

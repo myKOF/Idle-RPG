@@ -63,6 +63,7 @@ function getResourceSnapshot(p) {
     return {
         gold: p.gold || 0,
         scrap: p.scrap || 0,
+        essence: p.essence || 0,
         dust: p.dust || 0,
         ancientEssence: p.ancientEssence || 0,
         seeds: p.demonSeed || 0,
@@ -117,7 +118,7 @@ const sandbox = {
             const res = getResourceSnapshot(p);
 
             const timeStr = formatGameTime(safeTime);
-            const logLine = `${timeStr} ${icon} [${cat.toUpperCase()}] ${cleanText} | 【頂欄資源: 💰金幣:${fmtNum(res.gold)}, 🧩裝備碎片:${fmtNum(res.scrap)}, ✨魔塵:${fmtNum(res.dust)}, ✡️太古精華:${fmtNum(res.ancientEssence)}, 🌱魔神之種:${fmtNum(res.seeds)}, 📜附魔書:${fmtNum(res.books)}】`;
+            const logLine = `${timeStr} ${icon} [${cat.toUpperCase()}] ${cleanText} | 【頂欄資源: 💰金幣:${fmtNum(res.gold)}, 🧩裝備碎片:${fmtNum(res.scrap)}, 🔮附魔精華:${fmtNum(res.essence)}, ✨魔塵:${fmtNum(res.dust)}, ✡️太古精華:${fmtNum(res.ancientEssence)}, 🌱魔神之種:${fmtNum(res.seeds)}, 📜附魔書:${fmtNum(res.books)}】`;
             
             officialActionLogs.push(logLine);
         }
