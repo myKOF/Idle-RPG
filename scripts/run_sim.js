@@ -265,6 +265,22 @@ const summary = {
   events: { counts: eventCounts, kept: eventsKept, dropped: eventsDropped, keptKinds: KEEP_KINDS ? Object.keys(KEEP_KINDS) : 'all' },
   decisions,
   commands: cmdStats,
+
+  /* ---- 哨兵：策略靜靜失效的兩種情況 ----
+     遊戲改版時不必把改了什麼同步給模擬器（數值、公式、常數都是從遊戲讀的），
+     但有兩件事改了會讓策略無聲失準，所以主動報出來。 */
+
+  /* (1) 指到解析不出值的狀態路徑＝面板欄位改名了，而策略還指著舊路徑。
+         條件永遠不成立，那條規則就此不再送出任何指令，且沒有任何錯誤。 */
+  badStatePaths: policy.badPaths(),
+
+  /* (2) 協議指令表裡從未被送出過的指令＝從未被測到的玩家操作。
+         這不一定是問題（有些指令本來就不該由 AI 用），但它是「策略還沒覆蓋什麼」的
+         客觀清單——遊戲新增系統時，新指令會自動出現在這裡。 */
+  untestedCommands: (() => {
+    const sent = new Set(Object.keys(cmdStats).map((k) => k.split(' → ')[1]));
+    return Object.keys(engine.ctx.COMMANDS).filter((name) => !sent.has(name));
+  })(),
   invariantFailures: problems,
   final: (() => { const v = engine.view(); const s = engine.ctx.getStats(); return {
     level: v.level, stage: v.stage, gold: v.gold, reincarnations: engine.state().player.reincarnations || 0,
@@ -283,6 +299,13 @@ console.log(`耗時        ${elapsedSec.toFixed(1)}s（${summary.performance.ste
 console.log(`100h 推估   ${summary.performance.projected100hSec}s`);
 console.log(`原生事件    保留 ${eventsKept.toLocaleString()} 則／丟棄 ${eventsDropped.toLocaleString()} 則（種類：${JSON.stringify(eventCounts)}）`);
 console.log(`決策點      ${decisions.toLocaleString()} 次`);
+
+const badPaths = Object.keys(summary.badStatePaths);
+if (badPaths.length) {
+  console.log(`⚠️ 失效路徑  ${badPaths.length} 條策略路徑解析不出值（面板欄位可能改名了）：`);
+  badPaths.slice(0, 8).forEach((p) => console.log(`            ${p}（${summary.badStatePaths[p]} 次）`));
+}
+console.log(`未測到指令  ${summary.untestedCommands.length}/${Object.keys(engine.ctx.COMMANDS).length} 條協議指令從未被送出（清單見 run_summary.json）`);
 console.log(`最終        Lv.${summary.final.level} stage ${summary.final.stage} 轉生 ${summary.final.reincarnations} 背包 ${summary.final.inventory}`);
 console.log(`存檔雜湊    ${summary.determinism.finalStateHash.slice(0, 16)}`);
 console.log(`輸出        ${path.relative(ROOT, OUT_DIR)}/  (save_final.json, snapshots.csv, native_events.jsonl, run_summary.json)`);

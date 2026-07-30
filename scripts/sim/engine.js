@@ -26,6 +26,17 @@ const { makeRng } = require('./rng');
 const ROOT = path.resolve(__dirname, '..', '..');
 const WORKER_DIR = path.join(ROOT, 'js', 'worker');
 
+/* ---- 5Hz 維護函式：與 sim.worker.js 的 loop() 同步的單一來源 ----
+
+   這幾支不在 simStep() 內，但會改變遊戲狀態（刷新寶石商店、解鎖熔爐、記顯示旗標），
+   線上是由 loop() 每 200ms 呼叫。headless 必須跑同一組，少跑一支就是靜默失真——
+   那個系統會整場不動，而且不會有任何錯誤訊息。
+
+   ⚠️ 有人在 loop() 加第四支維護函式而沒有加到這裡，這裡就會與遊戲不同步。
+   tests/sim-harness-sync.test.cjs 會盯住這件事：它比對 sim.worker.js 兩個迴圈區塊
+   實際呼叫的函式集合與本清單，不一致就讓 npm test 紅燈。 */
+const MAINTENANCE_FNS = ['updateShownRes', 'maintainGemShop', 'checkForgeUnlockNotice'];
+
 /* 模擬起點的真實時間戳。固定值而非 Date.now()，否則同 seed 兩次跑會因為
    savedAt / hourStart 不同而產生不同存檔——決定論就沒了。 */
 const EPOCH_MS = Date.UTC(2026, 0, 1, 0, 0, 0);
@@ -155,17 +166,16 @@ function createEngine(opts) {
        （已在 js/worker/sim.worker.js 加上 early-skip），不是少呼叫它。 */
     step(n) {
       const simStep = ctx.simStep;
-      const updateShownRes = ctx.updateShownRes;
-      const maintainGemShop = ctx.maintainGemShop;
-      const checkForgeUnlockNotice = ctx.checkForgeUnlockNotice;
+      /* 從 MAINTENANCE_FNS 取，不逐一寫死——清單是唯一來源，測試盯著它與遊戲同步。
+         呼叫順序必須與 loop() 一致：updateShownRes 會被 maintainGemShop 影響到的
+         寶石數量讀取，順序反了旗標會晚一個週期才latch。 */
+      const maintenance = MAINTENANCE_FNS.map((n2) => ctx[n2]);
       const drain = ctx.shimDrainEvents;
       for (let i = 0; i < n; i++) {
         vNowMs += TICK_MS;
         simStep(DT);
         if ((++stepCount % EMIT_EVERY) === 0) {
-          updateShownRes();
-          maintainGemShop();
-          checkForgeUnlockNotice();
+          for (let m = 0; m < maintenance.length; m++) maintenance[m]();
           /* 事件佇列上限 400，滿了之後每則事件都要 shift() 一次。
              線上是主執行緒每 200ms 取走，這裡對齊同樣節奏取走，行為一致。 */
           if (onEvents) onEvents(drain());
@@ -198,4 +208,4 @@ function createEngine(opts) {
   };
 }
 
-module.exports = { createEngine, EPOCH_MS };
+module.exports = { createEngine, EPOCH_MS, MAINTENANCE_FNS };

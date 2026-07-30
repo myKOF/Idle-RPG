@@ -195,6 +195,8 @@ node --max-semi-space-size=64 scripts/run_sim.js --hours=2 --policy=scripts/sim/
 - `noEffect` 的 `reasons` 裡，哪些是**策略該調整**、哪些是**遊戲數值該檢討**？
 - 有沒有哪個系統整場沒生效？（某條規則 `effective` 恆為 0）
 - 快照 CSV 有沒有不連續、倒退、爆衝？
+- `badStatePaths` 是不是空的？非空代表有規則正在靜靜失效（面板欄位改名了）
+- `untestedCommands` 裡有哪些是**該測而沒測到**的？那就是任務 D 的待辦清單
 
 **成長曲線慢不等於 bug。** 預設策略 10 小時只到 Lv.16，可能是策略保守，也可能是數值設計。
 你要做的是指出現象並分辨這兩者，不是自己調數值讓它好看。
@@ -245,7 +247,13 @@ hitDmg        = Math.max(10, curStats.dps * (1.1 + Math.random() * 0.9)); // 179
 策略是 JSON 資料不是程式，直接改 `scripts/sim/policy.default.json`。
 格式與機制（`expand` / `$path` / `if` / `everySec`）見該檔與 `scripts/sim/policy.js` 註解。
 
-目前未涵蓋：寶石鑲嵌與轉換、裝備洗詞條、技能融合、附魔。
+**不必自己盤點缺什麼**：跑完 B-2 之後看 `run_summary.json` 的 `untestedCommands`，
+那是協議指令表裡從未被送出過的指令清單，也就是「從未被測到的玩家操作」。
+目前約 75/86 條沒被覆蓋，其中 `item.upgrade`、`item.enchant`、`item.rerollAffix`、
+`gem.socket` 這類明顯該測的優先補。
+
+有些指令本來就不該由 AI 用（`save.restart`、`app.handoff`、`gm.exec`），
+判斷哪些該補是你的工作，在報告裡說明取捨。
 
 - 指令名必須存在於 `js/worker/protocol.js` 的指令表
 - **不要在策略裡預判**「這樣做划不划算」。送出去，讓遊戲回錯，看 `reasons`
