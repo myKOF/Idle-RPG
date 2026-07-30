@@ -198,13 +198,24 @@ function applyPoison(ent, dps, dur) {
     ent.poisonUntil = GT + dur;
 }
 function poisonActive(ent) { return (ent.poisonUntil || 0) > GT; }
+// 直接扣血的持續傷害原本只更新 HP，沒有留下戰鬥日誌，導致敵人可能在沒有任何
+// 傷害行的情況下死亡。只對敵方實體記錄，避免把玩家承受的 DoT 誤報成玩家輸出。
+function logEnemyDirectDamage(ent, source, damage, killed) {
+    if (!ent || !ent.maxHp || !(damage > 0) || typeof blog !== 'function') return;
+    var target = ent.name || '敵人';
+    var shown = typeof fmt === 'function' ? fmt(damage) : String(Math.round(damage));
+    blog('☠️ ' + target + ' 受到' + (source || '直接傷害') + '，' + shown +
+        ' 傷害' + (killed ? '（擊殺）' : '') + '。', 'log-player-skill', 'combat');
+}
 // 中毒跳傷（無視防禦）；回傳是否致死
 function tickPoison(ent, dt) {
     if (effectActive(ent, 'invuln')) return false; // 無敵：持續傷害不生效
     if (!poisonActive(ent)) return false;
     var legendaryPoisonMult = (ent.maxHp && typeof legendaryDotDamageMultiplier === 'function')
         ? legendaryDotDamageMultiplier(ent) : 1;
-    ent.hp -= ent.poisonDps * dt * globalDamageMultiplierForEntity(ent) * legendaryPoisonMult;
+    var poisonDamage = ent.poisonDps * dt * globalDamageMultiplierForEntity(ent) * legendaryPoisonMult;
+    ent.hp -= poisonDamage;
+    logEnemyDirectDamage(ent, '中毒', poisonDamage, ent.hp <= 0);
     if (ent.hp <= 0) { ent.hp = 0; return true; }
     return false;
 }
@@ -272,8 +283,12 @@ function tickDots(ent, dt) {
     if (effectActive(ent, 'invuln')) return false; // 無敵：持續傷害不生效
     if (!ent.dots || !ent.dots.length) return false;
     var total = 0;
+    var dotNames = [];
     ent.dots = ent.dots.filter(function (d) { return d.until > GT; });
-    for (var i = 0; i < ent.dots.length; i++) total += ent.dots[i].dps;
+    for (var i = 0; i < ent.dots.length; i++) {
+        total += ent.dots[i].dps;
+        if (ent.dots[i].name && dotNames.indexOf(ent.dots[i].name) < 0) dotNames.push(ent.dots[i].name);
+    }
     if (total > 0) {
         // 45 新技能（dotSynergy 族）：DoT 跳動加速——僅對敵方實體生效（以 maxHp 欄位辨識敵人；
         // 玩家實體無 maxHp，所受 DoT 不受影響）。dotHaste＝目標旗標（時戳自然過期）、
@@ -290,6 +305,7 @@ function tickDots(ent, dt) {
             ? legendaryDotDamageMultiplier(ent) : 1;
         var dotDealt = total * dtEff * globalDamageMultiplierForEntity(ent) * legendaryDotMult;
         ent.hp -= dotDealt;
+        logEnemyDirectDamage(ent, '持續傷害' + (dotNames.length ? '（' + dotNames.join('、') + '）' : ''), dotDealt, ent.hp <= 0);
         // 45 新技能（echo 族）：dmgWindow「窗內玩家全部傷害」含你的 DoT 跳動——
         // 僅敵方實體計入（玩家所受 DoT 非玩家輸出，不計）
         if (ent.maxHp && typeof skillRtAccWindowDamage === 'function') skillRtAccWindowDamage(dotDealt);
