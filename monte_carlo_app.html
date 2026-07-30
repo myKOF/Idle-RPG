@@ -1334,8 +1334,11 @@
 
             this.gold = 0;
             this.upgrade_stones = 0;
-            this.demon_seeds = 0;
+            this.essence = 0;
             this.dust = 0;
+            this.ancient_essence = 0;
+            this.demon_seeds = 0;
+            this.enchant_books = 0;
             this.gems = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0 };
             this.genesisGearPool = 0;
 
@@ -1372,8 +1375,11 @@
                 detail: detail,
                 gold: this.gold,
                 stones: this.upgrade_stones,
+                essence: this.essence,
                 dust: this.dust,
-                seeds: this.demon_seeds
+                ancientEssence: this.ancient_essence,
+                seeds: this.demon_seeds,
+                books: this.enchant_books
             });
         }
 
@@ -2326,6 +2332,7 @@
                         <div style="font-size: 11px; color: #94a3b8; margin-top: 4px; display: flex; flex-wrap: wrap; gap: 10px; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);">
                             <span>💰 金幣: <span style="color:#fbbf24; font-weight:600;">${formatGameNumber(log.gold || 0)}</span></span>
                             <span>🧩 裝備碎片: <span style="color:#38bdf8; font-weight:600;">${formatGameNumber(log.stones || log.scrap || 0)}</span></span>
+                            <span>🔮 附魔精華: <span style="color:#a855f7; font-weight:600;">${formatGameNumber(log.essence || 0)}</span></span>
                             <span>✨ 魔塵: <span style="color:#f59e0b; font-weight:600;">${formatGameNumber(log.dust || 0)}</span></span>
                             <span>✡️ 太古精華: <span style="color:#c084fc; font-weight:600;">${formatGameNumber(log.ancientEssence || 0)}</span></span>
                             <span>🌱 魔神之種: <span style="color:#34d399; font-weight:600;">${formatGameNumber(log.seeds || 0)}</span></span>
@@ -2351,7 +2358,7 @@
         txt += `========================================================================\n\n`;
 
         logs.forEach(l => {
-            txt += `[${formatGameTimeExact(l.hour).padStart(14, ' ')}] ${l.icon} [${l.category.toUpperCase()}] ${l.title} -- ${l.detail} | 【頂欄資源: 💰金幣:${formatGameNumber(l.gold||0)}, 🧩裝備碎片:${formatGameNumber(l.stones||l.scrap||0)}, ✨魔塵:${formatGameNumber(l.dust||0)}, ✡️太古精華:${formatGameNumber(l.ancientEssence||0)}, 🌱魔神之種:${formatGameNumber(l.seeds||0)}, 📜附魔書:${formatGameNumber(l.books||0)}】\n`;
+            txt += `[${formatGameTimeExact(l.hour).padStart(14, ' ')}] ${l.icon} [${l.category.toUpperCase()}] ${l.title} -- ${l.detail} | 【頂欄資源: 💰金幣:${formatGameNumber(l.gold||0)}, 🧩裝備碎片:${formatGameNumber(l.stones||l.scrap||0)}, 🔮附魔精華:${formatGameNumber(l.essence||0)}, ✨魔塵:${formatGameNumber(l.dust||0)}, ✡️太古精華:${formatGameNumber(l.ancientEssence||0)}, 🌱魔神之種:${formatGameNumber(l.seeds||0)}, 📜附魔書:${formatGameNumber(l.books||0)}】\n`;
         });
 
         const blob = new Blob([txt], { type: 'text/plain;charset=utf-8;' });
