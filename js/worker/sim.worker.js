@@ -21,6 +21,38 @@ importScripts(
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
 importScripts('../gm_exec.js');
 
+/* ---- 決定論測試模式（只在本機、只在網址帶 ?seed=N 時啟用）----
+   存在的唯一理由：讓瀏覽器實機跑出來的結果，能和 headless 模擬器
+   （scripts/sim/engine.js）逐檢查點比對。沒有這個模式，比對在結構上就做不到：
+
+     1. Math.random 未種子化 → 兩邊必然分岔
+     2. 更隱蔽的一點：下面 loop() 的 `dt = Math.min(_catchupDebt, TICK_MS/1000)`
+        每輪最後會走一個**不足一步**的殘步，而欠帳來自真實計時器，
+        幾乎不會剛好是 0.1 的倍數。所以連「同一個瀏覽器跑兩次」都不會一樣。
+
+   測試模式改動的就是這兩件事，其餘一律不動：
+     - Math.random 換成與 scripts/sim/rng.js 相同的 mulberry32
+     - 只走整步，殘餘留到下一輪（DETERMINISTIC_STEPS）
+
+   ⚠️ 這代表測試模式與正式遊玩有一處差異：殘步。比對報告必須註明這一點。
+   安全邊界沿用 js/gm_exec.js 的作法：只認本機 hostname，不依賴可被前端覆寫的旗標。 */
+var DETERMINISTIC_STEPS = false;
+(function installTestSeed() {
+  var loc = (typeof location !== 'undefined') ? location : null;
+  var host = loc && loc.hostname;
+  if (host !== 'localhost' && host !== '127.0.0.1' && host !== '::1') return;
+  var m = /[?&]seed=(\d+)(&|$)/.exec((loc && loc.search) || '');
+  if (!m) return;
+  var a = (Number(m[1]) >>> 0) || 1;
+  Math.random = function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  DETERMINISTIC_STEPS = true;
+})();
+
 /* ---- 節奏參數 ---- */
 var TICK_MS = 100;          // 模擬步長
 var TICK_EMIT_MS = 200;     // 對主執行緒送 tick 的間隔（5Hz）
@@ -160,17 +192,27 @@ var SHOWN_RES_KEYS = [
   ['r-soul-origin', 'soulOrigin'], ['r-demon-seed', 'demonSeed'], ['r-magic-scroll', 'magicScroll']
 ];
 
+/* 旗標是**設了就不會再清除**的，所以已經是 true 的就不必再算一次。
+   這個 early-skip 不改變任何語意，純粹省掉重複計算——而它省掉的量不小：
+   本函式每 0.2 秒跑一次，其中 totalGemsAll() 會掃過全部寶石種類 × 5 個等級，
+   `for in p.books` 又是一次物件走訪。headless 縮時模擬的 profile 顯示這一支
+   （含 totalGemsAll/gemCount）佔掉總 CPU 的 39%，只為了決定頂欄圖示要不要顯示。
+   瀏覽器端同樣每秒跑 5 次，玩家的機器也一直在付這筆錢。 */
 function updateShownRes() {
   var p = G && G.player;
   if (!p) return;
   if (!p.shownRes) p.shownRes = {};
+  var sr = p.shownRes;
   for (var i = 0; i < SHOWN_RES_KEYS.length; i++) {
-    if ((p[SHOWN_RES_KEYS[i][1]] || 0) > 0) p.shownRes[SHOWN_RES_KEYS[i][0]] = true;
+    var key = SHOWN_RES_KEYS[i][0];
+    if (!sr[key] && (p[SHOWN_RES_KEYS[i][1]] || 0) > 0) sr[key] = true;
   }
-  if (typeof totalGemsAll === 'function' && totalGemsAll() > 0) p.shownRes['r-gems'] = true;
-  var books = 0;
-  for (var bk in p.books) books += p.books[bk] || 0;
-  if (books > 0) p.shownRes['r-books'] = true;
+  if (!sr['r-gems'] && typeof totalGemsAll === 'function' && totalGemsAll() > 0) sr['r-gems'] = true;
+  if (!sr['r-books']) {
+    var books = 0;
+    for (var bk in p.books) books += p.books[bk] || 0;
+    if (books > 0) sr['r-books'] = true;
+  }
 }
 
 /* 鑲孔補齊：舊存檔的裝備可能缺 sockets 欄位。原本靠 ui.js 渲染詳情時才補
@@ -230,8 +272,35 @@ function simStep(dt) {
   if (typeof newForgeTick === 'function') newForgeTick(dt);
 }
 
+/* 決定論測試模式的迴圈：每次計時器只走**一整步**，維護區塊固定每 N 步跑一次。
+   刻意寫成獨立分支而不是在正式路徑上灑條件式——正式路徑一行都不該被這個模式影響。
+
+   為什麼連節奏都要釘死：正式路徑的維護區塊是照真實時間 5Hz 跑的，而 maintainGemShop
+   首次會呼叫 rollGemShop() 消耗亂數。它在第 2 步還是第 3 步被呼叫，取決於計時器抖動；
+   一旦與 headless 不同，之後整條亂數序列就對不上，比對結果會全錯而且看不出原因。
+
+   測試模式下遊戲時間會落後真實時間（每個計時器週期只走 0.1 秒），這是刻意的：
+   要的是可重現的步序，不是即時性。同時不落地存檔——不去動測試用 origin 的儲存空間。 */
+var _detSteps = 0;
+function deterministicLoop() {
+  if (!_booted) return;
+  try {
+    simStep(TICK_MS / 1000);
+    _detSteps++;
+    if (_detSteps % Math.round(TICK_EMIT_MS / TICK_MS) === 0) {
+      updateShownRes();
+      maintainGemShop();
+      checkForgeUnlockNotice();
+      emitTick();
+    }
+  } catch (e) {
+    reportError('deterministicLoop', e);
+  }
+}
+
 function loop() {
   if (!_booted) return;
+  if (DETERMINISTIC_STEPS) { deterministicLoop(); return; }
   try {
     var now = Date.now();
     /* 經過時間一律進欠帳，不截斷——截斷等於把背景降頻期間的時間送給瀏覽器。
