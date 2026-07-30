@@ -966,7 +966,8 @@
                 <button class="log-filter-btn" id="filter-enhance" onclick="setLogFilter('enhance')">🔨 裝備強化</button>
                 <button class="log-filter-btn" id="filter-godforge" onclick="setLogFilter('godforge')">👑 神鑄鍛造</button>
                 <button class="log-filter-btn" id="filter-gem" onclick="setLogFilter('gem')">💎 寶石合成</button>
-                <button class="log-filter-btn" id="filter-reinc" onclick="setLogFilter('reinc')">🌀 轉生與升級</button>
+                <button class="log-filter-btn" id="filter-skill" onclick="setLogFilter('skill')">⭐ 升級與技能</button>
+                <button class="log-filter-btn" id="filter-reinc" onclick="setLogFilter('reinc')">🌀 轉生機制</button>
                 <button class="btn-download-log" style="background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%);" onclick="openEquipmentSnapshotModal()">🛡️ 裝備快照 (500h)</button>
                 <button class="btn-download-log" onclick="downloadTopRunLogs()">📥 下載完整日誌 (.txt)</button>
             </div>
@@ -1509,9 +1510,10 @@
                 }
             }
 
-            // 累積金幣與材料
+            // 累積金幣與材料 (打怪與掉落裝備拆解獲得附魔精華)
             this.gold += killsCount * (20 + mobLevel * 5) * lootMult;
             this.upgrade_stones += droppedItemsCount * 2;
+            this.essence += rollDropCount(droppedItemsCount * 1.5);
 
             if (droppedItemsCount <= 0) return;
 
@@ -1691,17 +1693,18 @@
 
             for (let slot in this.equipments) {
                 const eq = this.equipments[slot];
-                const rerollCostGold = Math.floor(150 * Math.pow(eq.rarity, 1.2));
-                const rerollCostStones = Math.floor(2 * eq.rarity);
+                // 100% 直連官方 rerollCost(it) (來自 js/formula.js)
+                const cost = (typeof rerollCost === 'function')
+                    ? rerollCost(eq)
+                    : { gold: Math.round(40 * Math.pow(1.7, eq.rarity || 1)), essence: 1 + (eq.rarity || 1) };
 
                 let rerollLimit = (this.profile.dailyOnlineHours >= 24) ? 50 : 15;
                 let rerollAttemptsThisBatch = 0;
 
-                while (rerollAttemptsThisBatch < rerollLimit && this.gold >= rerollCostGold && this.upgrade_stones >= rerollCostStones) {
-                    this.gold -= rerollCostGold;
-                    this.upgrade_stones -= rerollCostStones;
-                    this.total_gold_spent += rerollCostGold;
-                    this.total_stones_spent += rerollCostStones;
+                while (rerollAttemptsThisBatch < rerollLimit && this.gold >= cost.gold && this.essence >= cost.essence) {
+                    this.gold -= cost.gold;
+                    this.essence -= cost.essence;
+                    this.total_gold_spent += cost.gold;
 
                     const eqItemLevel = eq.itemLevel || 500;
                     eq.affixes.forEach(aff => {
@@ -1715,9 +1718,16 @@
                     rerollAttemptsThisBatch++;
                 }
 
-                if (rerollAttemptsThisBatch > 30) {
+                if (rerollAttemptsThisBatch > 0) {
                     const finalAnc = countAncientAffixes(eq.affixes);
-                    this.logAction(currentTime, 'equip', '🎲', `進行【${slot}】狂洗詞條 (${rerollAttemptsThisBatch} 次)`, `保持 ${finalAnc} 條太古狀態不變，追求滿極限屬性。`);
+                    const slotName = (typeof SLOT_INFO !== 'undefined' && SLOT_INFO[slot]) ? SLOT_INFO[slot].name : slot;
+                    this.logAction(
+                        currentTime, 
+                        'equip', 
+                        '🎲', 
+                        `進行【${slotName}】洗煉詞條 (${rerollAttemptsThisBatch} 次)`, 
+                        `消耗 ${formatGameNumber(cost.gold * rerollAttemptsThisBatch)} 金幣與 ${cost.essence * rerollAttemptsThisBatch} 點附魔精華，保持 ${finalAnc} 條太古狀態不變，追求滿極限屬性。`
+                    );
                 }
             }
         }
@@ -2304,10 +2314,18 @@
         renderTopRunActionLogs();
     }
 
+    function getFilteredLogs(allLogs, filter) {
+        if (filter === 'all') return allLogs;
+        if (filter === 'skill') {
+            return allLogs.filter(l => l.category === 'skill' || l.category === 'level_skill' || l.category === 'level' || (l.title && (l.title.includes('升級') || l.title.includes('技能'))));
+        }
+        return allLogs.filter(l => l.category === filter);
+    }
+
     function goToLogPage(page) {
         if (!currentSimResult || !currentSimResult.topRun) return;
         const allLogs = currentSimResult.topRun.logs || [];
-        const filteredLogs = (currentLogFilter === 'all') ? allLogs : allLogs.filter(l => l.category === currentLogFilter);
+        const filteredLogs = getFilteredLogs(allLogs, currentLogFilter);
         const totalPages = Math.max(1, Math.ceil(filteredLogs.length / LOG_PAGE_SIZE));
 
         if (page === -1) currentLogPage = totalPages;
@@ -2321,11 +2339,7 @@
         if (!container || !currentSimResult || !currentSimResult.topRun) return;
 
         const allLogs = currentSimResult.topRun.logs || [];
-        let filteredLogs = allLogs;
-
-        if (currentLogFilter !== 'all') {
-            filteredLogs = allLogs.filter(l => l.category === currentLogFilter);
-        }
+        const filteredLogs = getFilteredLogs(allLogs, currentLogFilter);
 
         const totalLogs = filteredLogs.length;
         const totalPages = Math.max(1, Math.ceil(totalLogs / LOG_PAGE_SIZE));
