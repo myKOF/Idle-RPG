@@ -1581,9 +1581,16 @@
                 const count = rollDropCount(killsCount * (rates[r] / 100) * lootMult);
                 if (count > 0) {
                     droppedItemsCount += count;
-                    const officialRarity = r; // 官方品質索引 0~7 (0:普通, 1:精良, 2:稀有, 3:獨特, 4:史詩...)
-                    if (officialRarity > highestRarityDropped) {
-                        highestRarityDropped = officialRarity;
+                    if (r > highestRarityDropped) {
+                        highestRarityDropped = r;
+                    }
+                    if (r <= 2) this.obtained_below_epic += count;
+                    else if (r === 3 || r === 4) this.obtained_epic += count;
+                    else if (r === 5) this.obtained_legendary += count;
+                    else if (r === 6) this.obtained_mythic += count;
+                    else if (r === 7) {
+                        this.obtained_genesis += count;
+                        this.genesisGearPool += count;
                     }
                 }
             }
