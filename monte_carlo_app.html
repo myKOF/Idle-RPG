@@ -1380,12 +1380,19 @@
         const slotsCount = (rarity === 8 || rarity === 7) ? 7 : (RARITY_AFFIX_COUNTS[rarity] || Math.min(7, rarity));
         const isGodforged = (rarity === 8);
 
-        // 整理可適用詞條池
+        // 🎯 製作人指示：詞條選擇必須純物理或純魔法一條路走到黑！嚴禁物魔混合或亂加不符技能的元素傷害！
+        // 防禦類詞條優先各類抗性或減傷 (globalDmgRed, pRes, mRes, evasion, tenacity)，定值物理防禦僅少量！
+        const forbiddenKeys = new Set([
+            'matk', 'matkPct', 'mPen', 'manaSteal', 'mpMax', 'mpRegen',
+            'elemDmgFire', 'elemDmgIce', 'elemDmgLightning', 'elemDmgPoison', 'elemDmgLight', 'elemDmgDark'
+        ]);
+
         const poolSource = (typeof OFFICIAL_AFFIX_POOL !== 'undefined') ? OFFICIAL_AFFIX_POOL : (typeof AFFIX_POOL !== 'undefined' ? AFFIX_POOL : {});
         const slotKeys = [];
         const fallbackKeys = [];
 
         for (let k in poolSource) {
+            if (forbiddenKeys.has(k)) continue; // 排除與物理流派衝突之魔法與無用元素詞條
             const def = poolSource[k];
             fallbackKeys.push(k);
             if (!def.slots || def.slots.indexOf(baseSlot) >= 0) {
@@ -1413,7 +1420,7 @@
         // 神鑄創世 (R8) 全部位 100% 7 條太古詞條
         let guard = 0;
         while (affixes.length < slotsCount && guard++ < 300) {
-            // 優先嘗試部位專屬詞條，池空時使用全通用詞條補滿 7 條
+            // 優先嘗試部位專屬純物理/減傷詞條，池空時使用全通用詞條補滿 7 條
             let candidateKeys = slotKeys.filter(k => !usedKeys.has(k));
             if (candidateKeys.length === 0) {
                 candidateKeys = fallbackKeys.filter(k => !usedKeys.has(k));
@@ -1430,11 +1437,11 @@
             affixes.push({ key: k, val: val, ancient: isAncient });
         }
 
-        // 滿極限附魔：神鑄裝備滿填 3 條極限附魔 (對齊 ENCHANTS)
+        // 滿極限附魔：物理流派滿填 3 條極限附魔
         const enchants = isGodforged ? [
-            { key: 'fire', val: 25.0 },
             { key: 'loot', val: 50.0 },
-            { key: 'focus', val: 30.0 }
+            { key: 'focus', val: 30.0 },
+            { key: 'haste', val: 25.0 }
         ] : [];
 
         return { 
@@ -2673,8 +2680,8 @@
         const socketCount = (typeof socketCountFor === 'function') ? socketCountFor(eq.rarity) : (typeof RARITIES !== 'undefined' && RARITIES[eq.rarity] ? RARITIES[eq.rarity].sockets : 6);
         const gemLvl = (currentSimResult.config && currentSimResult.config.profile && currentSimResult.config.profile.gemTargetLvl) || 10;
 
-        // 🎯 製作人指示：寶石 100% 以攻擊為主（50% 石榴石 [暴擊傷害] + 50% 紅寶石/紫水晶/太陽石 [攻擊與屬性]）
-        const attackGemTypes = ['garnet', 'garnet', 'garnet', 'ruby', 'amethyst', 'sunstone'];
+        // 🎯 製作人指示：寶石配比必須 100% 一半石榴石 (暴擊傷害) + 一半屬性傷害加成寶石 (如圖 2 之尖晶石/海藍寶石/天河石/雷核寶石)
+        const attackGemTypes = ['garnet', 'garnet', 'garnet', 'spinel', 'aquamarine', 'amazonite'];
         const sockets = [];
         for (let gi = 0; gi < socketCount; gi++) {
             sockets.push({ type: attackGemTypes[gi % attackGemTypes.length], level: gemLvl });
