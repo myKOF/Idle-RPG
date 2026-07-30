@@ -1426,6 +1426,7 @@
             this.obtained_legendary = 0;
             this.obtained_epic = 0;
             this.obtained_below_epic = 0;
+            this.obtained_gems = 0;
 
             this.actionLogs = [];
         }
@@ -1587,14 +1588,19 @@
                 }
             }
 
-            // 累積金幣與材料 (打怪與掉落裝備拆解獲得附魔精華)
+            // 累積金幣與材料 (打怪與掉落裝備拆解獲得附魔精華、寶石掉落)
             const earnedGold = killsCount * (20 + mobLevel * 5) * lootMult;
             const earnedStones = droppedItemsCount * 2;
             const earnedEssence = rollDropCount(droppedItemsCount * 1.5);
+            const droppedGems = rollDropCount(killsCount * 0.05 * lootMult);
 
             this.gold += earnedGold;
             this.upgrade_stones += earnedStones;
             this.essence += earnedEssence;
+            if (droppedGems > 0) {
+                this.gems[1] = (this.gems[1] || 0) + droppedGems;
+                this.obtained_gems += droppedGems;
+            }
 
             if (earnedEssence > 100 && Math.random() < 0.20) {
                 const eventTime = currentTime + (Math.random() * 0.015);
@@ -1672,21 +1678,32 @@
                 this.upgrade_stones += targetFloor * 80;
                 this.demon_seeds += Math.floor(targetFloor / 10) + 1;
 
-                this.gems[2] = (this.gems[2] || 0) + rollDropCount(targetFloor * 0.5);
-                this.gems[3] = (this.gems[3] || 0) + rollDropCount(targetFloor * 0.3);
-                this.gems[4] = (this.gems[4] || 0) + rollDropCount(targetFloor * 0.1);
+                const lootMult = stats.itemFindBonus || 1.0;
+                const gem2 = rollDropCount((targetFloor * 0.08) * lootMult);
+                const gem3 = rollDropCount((targetFloor * 0.04) * lootMult);
+                const gem4 = rollDropCount((targetFloor * 0.01) * lootMult);
+                this.gems[2] = (this.gems[2] || 0) + gem2;
+                this.gems[3] = (this.gems[3] || 0) + gem3;
+                this.gems[4] = (this.gems[4] || 0) + gem4;
+                this.obtained_gems += (gem2 + gem3 + gem4);
 
-                const lootMult = stats.itemFindBonus;
-                if (targetFloor >= 30) {
-                    const genDrop = rollDropCount(2.0 * lootMult);
-                    this.obtained_genesis += genDrop;
-                    this.genesisGearPool += genDrop;
-                    this.obtained_mythic += rollDropCount(5.0 * lootMult);
-                    this.obtained_legendary += rollDropCount(10.0 * lootMult);
-                } else {
-                    this.obtained_mythic += rollDropCount(3.0 * lootMult);
-                    this.obtained_legendary += rollDropCount(5.0 * lootMult);
-                    this.obtained_epic += rollDropCount(8.0 * lootMult);
+                const bossRates = (typeof dropRatesFor === 'function' && typeof BOSS_DROP_TABLE !== 'undefined')
+                    ? dropRatesFor(BOSS_DROP_TABLE, targetFloor)
+                    : [0, 0, 100, 50, 10, 5, 0, 0];
+
+                for (let br = 0; br < bossRates.length; br++) {
+                    if (!bossRates[br]) continue;
+                    const bn = rollDropCount((bossRates[br] / 100) * lootMult);
+                    if (bn > 0) {
+                        if (br <= 2) this.obtained_below_epic += bn;
+                        else if (br === 3 || br === 4) this.obtained_epic += bn;
+                        else if (br === 5) this.obtained_legendary += bn;
+                        else if (br === 6) this.obtained_mythic += bn;
+                        else if (br === 7) {
+                            this.obtained_genesis += bn;
+                            this.genesisGearPool += bn;
+                        }
+                    }
                 }
 
                 let dropRewardDesc = "爆落高階寶石、精良/稀有裝備與金幣。";
@@ -2006,7 +2023,8 @@
                     stones_spent: char.total_stones_spent,
                     gems_spent: char.total_gems_spent,
                     enhancements: char.total_enhancements,
-                    gem_syntheses: char.total_gem_syntheses
+                    gem_syntheses: char.total_gem_syntheses,
+                    obtained_gems: (char.obtained_gems || 0)
                 });
                 nextSampleTime += 1.0;
             }
@@ -2094,7 +2112,7 @@
 
         const timeStepsCount = Math.min(...allHistories.map(h => h.length));
         const aggregatedSeries = [];
-        const metrics = ["stage", "level", "reincarnation", "tower_floor", "total_kills", "dps", "equip_score", "ancient_affixes", "godforge_count", "obtained_godforge", "obtained_genesis", "obtained_mythic", "obtained_legendary", "obtained_epic", "obtained_below_epic", "rerolls", "total_skills", "gold_spent", "stones_spent", "gems_spent", "enhancements", "gem_syntheses"];
+        const metrics = ["stage", "level", "reincarnation", "tower_floor", "total_kills", "dps", "equip_score", "ancient_affixes", "godforge_count", "obtained_godforge", "obtained_genesis", "obtained_mythic", "obtained_legendary", "obtained_epic", "obtained_below_epic", "rerolls", "total_skills", "gold_spent", "stones_spent", "gems_spent", "enhancements", "gem_syntheses", "obtained_gems"];
 
         for (let stepIdx = 0; stepIdx < timeStepsCount; stepIdx++) {
             const stepHour = allHistories[0][stepIdx].hour;
@@ -2140,7 +2158,7 @@
         setCardVal('cardReinc', (lastStep.reincarnation.mean).toFixed(1) + ' 轉');
         setCardVal('cardTowerFloor', Math.round(lastStep.tower_floor.mean) + ' 層');
         setCardVal('cardRerolls', formatGameNumber(lastStep.rerolls.mean));
-        setCardVal('cardGems', formatGameNumber(lastStep.gem_syntheses.mean));
+        setCardVal('cardGems', formatGameNumber(lastStep.obtained_gems ? lastStep.obtained_gems.mean : lastStep.gem_syntheses.mean) + ' 顆');
         
         const totalAncientMean = lastStep.ancient_affixes.mean;
         const perEquipMean = (totalAncientMean / 13.0).toFixed(1);
