@@ -399,9 +399,11 @@ var ACCESSORY_SLOTS = ['ring', 'amulet'];
 /* 屬性數值上限（單一來源）：computeStats 夾限、面板顯示、提示文字、apply_params 一律引用此表。
    改上限只需改這裡（或參數表「2-屬性上限」→ apply_params 寫入此表），夾限與 tip 會一起同步。 */
 var STAT_CAPS = {
-  critRate: 0, pPen: 80, mPen: 80, cdr: 60, castSpeed: 50,
-  lifesteal: 60, manaSteal: 30, blockRate: 50, blockDmgRed: 50,
-  evasion: 0, tenacity: 60, ctrlRes: 80,
+  // 穿透（pPen/mPen）不設上限：實際忽略防禦% 改由 penIgnorePct 的遞減曲線收斂（formula.js §3）。
+  // 吸血／吸魔不設上限：回復量 = 每秒生命回復／法力恢復 × 此%（formula.js §3）。
+  critRate: 0, pPen: 0, mPen: 0, cdr: 60, castSpeed: 50,
+  lifesteal: 0, manaSteal: 0, blockRate: 50, blockDmgRed: 50,
+  evasion: 0, tenacity: 80, ctrlRes: 80,
   ccRed: 60, moveSpeed: 50, luck: 100, hybridMutation: 60, enrageThreshold: 30,
   affixCap: 100, doubleHit: 45, stun: 30
   // 註：全局減傷上限＝GLOBAL_DMG_RED_CAP（由「2-屬性派生/全局減傷」控制）；此處不重複。
@@ -1510,6 +1512,30 @@ function enemyTypeDmgRedDesc(st, key, label) {
     '<br><br><span style="color:#ffd700">目前同級減傷率：' + pctStrFloor4(reduction) + '</span>';
 }
 
+/* 穿透 tips：穿透%本身不設上限，實際忽略防禦% 由 penIgnorePct 的遞減曲線換算（formula.js §3）；
+   黃字顯示目前穿透值換算後的實際忽略防禦%，超過 100% 時另標示溢出增傷倍率。 */
+function penetrationDesc(st, key, label) {
+  var pen = (st && st[key]) || 0;
+  var ignore = penIgnorePct(pen);
+  var s = '造成' + label + '傷害時，無視敵方一定比例的' + label + '防禦。穿透值本身無上限，' +
+    '實際忽略防禦% ＝ ' + effectNum(PEN_IGNORE_A) + '×(穿透% ÷ 100 × ' + effectNum(PEN_IGNORE_B) +
+    ')^' + effectNum(PEN_IGNORE_C) + '（遞減曲線）；超過 100% 的部分轉為增傷。' +
+    '<br><br><span style="color:#ffd700">目前忽略防禦：' + fmt1(ignore) + '%</span>';
+  if (ignore > 100) {
+    s += '<span style="color:#ffd700">（完全忽略防禦後再 ×' + fmt1(ignore / 100) + ' 增傷）</span>';
+  }
+  return s;
+}
+
+/* 吸血／吸魔 tips：不再以造成的傷害計算，改由每秒生命回復／法力恢復換算（formula.js §3）。 */
+function drainDesc(st, key, label, resLabel, perSec, amount) {
+  var isHp = key === 'lifesteal';
+  return '攻擊命中時回復' + (isHp ? '生命' : '法力') + '。回復量 ＝ 每秒' + resLabel + ' × ' + label + '%，' +
+    '與造成的傷害無關，且不設上限；超出' + (isHp ? '生命上限' : '法力上限') + '的部分不轉為護盾。' +
+    '<br><br><span style="color:#aaa">每秒' + resLabel + '：<span style="color:#fff">' + fmt(perSec) + '</span>' +
+    '<br>目前每次回復：<span style="color:#fff">' + fmt(amount) + '</span></span>';
+}
+
 var STAT_GROUPS = [
   {
     title: '基礎屬性', rows: [
@@ -1530,14 +1556,14 @@ var STAT_GROUPS = [
       ['💥 暴擊率', function (st) { return statFmt(st.critRate, STAT_CAPS.critRate, '%'); }, '攻擊時造成額外暴擊傷害的機率。暴擊率 100% 為完全爆擊，超過 100% 的部分會衍生「連擊數」。' + capText(STAT_CAPS.critRate, '%')],
       ['🔗 連擊數', function (st) { return (st.comboHits || 0) > 0 ? fmt1(st.comboHits) + ' 次' : '—'; }, '暴擊率超過 100% 後衍生：普攻與技能的「直接傷害」會額外追加的攻擊次數。持續傷害不受影響。'],
       ['🩸 暴擊傷害', function (st) { return Math.round(st.critDmg) + '%'; }, '觸發暴擊時的傷害倍率。'],
-      ['🗡️ 物理穿透', function (st) { return statFmt(st.pPen, STAT_CAPS.pPen, '%'); }, '造成物理傷害時，無視敵方一定比例的物理防禦。' + capText(STAT_CAPS.pPen, '%')],
-      ['🪄 魔法穿透', function (st) { return statFmt(st.mPen, STAT_CAPS.mPen, '%'); }, '造成魔法傷害時，無視敵方一定比例的魔法防禦。' + capText(STAT_CAPS.mPen, '%')],
+      ['🗡️ 物理穿透', function (st) { return statFmt(st.pPen, STAT_CAPS.pPen, '%'); }, function (st) { return penetrationDesc(st, 'pPen', '物理'); }],
+      ['🪄 魔法穿透', function (st) { return statFmt(st.mPen, STAT_CAPS.mPen, '%'); }, function (st) { return penetrationDesc(st, 'mPen', '魔法'); }],
       ['🎯 命中率', function (st) { return statFmt(st.hit, null, '%'); }, '直接抵消敵方的閃避機率。'],
       ['⚡ 攻擊速度', function (st) { return statFmt(st.aspd, ASPD_CAP, '/s.1f'); }, function () { return '每秒進行普通攻擊的次數。' + capText(ASPD_CAP, '/秒'); }],
       ['⏱️ 冷卻縮減', function (st) { return statFmt(st.cdr, STAT_CAPS.cdr, '%.1f'); }, '減少技能所需的冷卻時間。' + capText(STAT_CAPS.cdr, '%')],
       ['🌀 施法速度', function (st) { return statFmt(st.castSpeed, STAT_CAPS.castSpeed, '%.1f'); }, '縮短技能的施放延遲或詠唱時間。' + capText(STAT_CAPS.castSpeed, '%')],
-      ['🧛 吸血', function (st) { return statFmt(st.lifesteal, STAT_CAPS.lifesteal, '%.1f'); }, '造成傷害時，將部分傷害轉化為自身生命值。' + capText(STAT_CAPS.lifesteal, '%')],
-      ['🌊 吸魔', function (st) { return statFmt(st.manaSteal, STAT_CAPS.manaSteal, '%.1f'); }, '造成傷害時，將部分傷害轉化為自身法力值。' + capText(STAT_CAPS.manaSteal, '%')],
+      ['🧛 吸血', function (st) { return statFmt(st.lifesteal, STAT_CAPS.lifesteal, '%.1f'); }, function (st) { return drainDesc(st, 'lifesteal', '吸血', '生命回復', playerHpRegenPerSec(st), lifestealHealAmount(st, st.lifesteal)); }],
+      ['🌊 吸魔', function (st) { return statFmt(st.manaSteal, STAT_CAPS.manaSteal, '%.1f'); }, function (st) { return drainDesc(st, 'manaSteal', '吸魔', '法力恢復', playerMpRegenPerSec(st), manaStealAmount(st, st.manaSteal)); }],
       ['👑 對菁英傷害', function (st) { return statFmt(st.eliteDmg, null, '%', true); }, '對菁英怪或首領怪物造成的額外傷害加成。'],
       ['😈 對BOSS傷害', function (st) { return statFmt(st.bossDmg, null, '%', true); }, '專門對首領怪物造成的額外傷害加成。'],
       ['👤 對普通敵人傷害', function (st) { return statFmt(st.normalDmg, null, '%', true); }, '對普通敵人（非菁英、非BOSS）造成的額外傷害加成，公式與對菁英/BOSS傷害相同。'],
@@ -1571,7 +1597,14 @@ var STAT_GROUPS = [
       ['🧱 格擋率', function (st) { return statFmt(st.blockRate, STAT_CAPS.blockRate, '%'); }, '受到攻擊時，有機率觸發格擋來減輕部分傷害。' + capText(STAT_CAPS.blockRate, '%')],
       ['🧲 格擋減傷', function (st) { return statFmt(blockDmgReduction(st.blockDmgRed), blockDmgRedTotalCap(), '%'); }, function () { return '成功格擋時能減免的傷害比例（' + BLOCK_DMG_RED_BASE + '% 基礎 + 詞條）。' + capText(blockDmgRedTotalCap(), '%'); }],
       ['💨 閃避率', function (st) { return statFmt(st.evasion, STAT_CAPS.evasion, '%'); }, '完全避開敵人攻擊的機率（受敵方命中率影響）。' + capText(STAT_CAPS.evasion, '%')],
-      ['🦾 韌性', function (st) { return statFmt(st.tenacity, STAT_CAPS.tenacity, '%'); }, '降低自身被施加暈眩、減速等控制狀態的機率。' + capText(STAT_CAPS.tenacity, '%')],
+      ['🦾 韌性', function (st) { return statFmt(st.tenacity, STAT_CAPS.tenacity, '%'); }, function (st) {
+        var t = st.tenacity || 0;
+        return '同時作用於三處：<br>' +
+          '① 降低自身被施加暈眩、減速等控制狀態的機率（與控制抵抗各自獨立擲骰）<br>' +
+          '② 縮短被控場的持續時間（韌性 ' + fmt1(t) + '% → 控場時間縮短 ' + fmt1(t) + '%）<br>' +
+          '③ 降低被敵人爆擊的機率（敵方爆擊率 × (1 - ' + fmt1(t) + '%)）' +
+          capText(STAT_CAPS.tenacity, '%');
+      }],
       ['🫧 護盾效率', function (st) { return statFmt(st.shieldEff, null, '%', true); }, '提升護盾的最大吸收上限與獲取量。'],
       ['🗿 物理抗性', function (st) { return statFmt(st.pRes, null, '%'); }, function (st) { return '降低受到的物理傷害，抗性值越高減傷效果越強。' + resistanceReductionDesc(st, st.pRes, physicalResistanceReduction); }],
       ['🌌 魔法抗性', function (st) { return statFmt(st.mRes, null, '%'); }, function (st) { return '降低受到的魔法傷害，抗性值越高減傷效果越強。' + resistanceReductionDesc(st, st.mRes, magicResistanceReduction); }],

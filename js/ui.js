@@ -2014,6 +2014,7 @@ var BUFF_TIP_EMOJI = {
   thornsUp: '🌵',
   lootUp: '🎁',
   hot: '💚',
+  penUp: '🗡️',
   atkDown: '⚔️',
   defDown: '🛡️',
   // 潛力技能增益

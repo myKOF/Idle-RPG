@@ -136,13 +136,26 @@ function loadStorageContext() {
   return { context, writes };
 }
 
+/* 等待非同步寫入佇列結算完畢。
+   原本固定 `setTimeout(60)`：節流佇列本身沒有 60 毫秒的保證，測試檔一多、機器一忙就會在
+   回呼到齊前先斷言（實測整包並行跑時約 1/3 機率誤判），所以改成輪詢到條件成立為止，
+   逾時才失敗。不改動被測邏輯，只是把「等固定時間」換成「等真正的結束條件」。 */
+async function waitUntil(cond, timeoutMs) {
+  const deadline = Date.now() + (timeoutMs || 2000);
+  while (!cond()) {
+    if (Date.now() > deadline) return false;
+    await new Promise((r) => setTimeout(r, 5));
+  }
+  return true;
+}
+
 test('連續多筆自動存檔只會實際寫入最新的一份，且每一筆都收到結果', async () => {
   const { context, writes } = loadStorageContext();
   const results = [];
   for (let i = 0; i < 20; i++) {
     context.SaveStorage.persist('auto', 'payload-' + i, {}, (err) => results.push(err));
   }
-  await new Promise((r) => setTimeout(r, 60));
+  assert.ok(await waitUntil(() => results.length === 20), '寫入回呼未在時限內到齊，實際 ' + results.length + '/20');
 
   assert.ok(writes.length <= 2,
     `20 筆請求不該變成 20 次寫入（每一份都會被下一份蓋掉），實際 ${writes.length} 次`);
@@ -161,7 +174,7 @@ test('合併後的寫入若失敗，被它取代的每一筆都要收到同一�
   for (let i = 0; i < 5; i++) {
     context.SaveStorage.persist('auto', 'payload-' + i, {}, (err) => results.push(err));
   }
-  await new Promise((r) => setTimeout(r, 60));
+  assert.ok(await waitUntil(() => results.length === 5), '寫入回呼未在時限內到齊，實際 ' + results.length + '/5');
 
   assert.equal(results.length, 5, '每一筆都必須收到結果');
   assert.ok(results.every((e) => e && e.message === 'quota exceeded'),
