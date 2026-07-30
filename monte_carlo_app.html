@@ -2538,7 +2538,7 @@
             const profile = topRun.profile || {};
 
             // 🎯 100% 直連遊戲官方原生 computeStats() 計算全量 50+ 派生屬性！
-            if (typeof window.G === 'undefined') window.G = {};
+            if (!window.G || typeof window.G !== 'object') window.G = {};
             const charLvl = (charObj && charObj.level) ? charObj.level : 200;
             const charReinc = (charObj && charObj.reincarnation) ? charObj.reincarnation : 10;
             
@@ -2548,10 +2548,10 @@
                 skills: (charObj && charObj.skills) ? charObj.skills : { powerSlash: 20 },
                 talents: (charObj && charObj.talents) ? charObj.talents : { levels: {}, potentialLevels: {} }
             };
+            window.G.equipment = topRun.equipments;
 
             let pState = null;
             if (typeof computeStats === 'function' && topRun.equipments) {
-                // 自動適配 SLOT_LIST 結構傳入 computeStats
                 pState = computeStats(topRun.equipments);
             }
 
