@@ -635,7 +635,6 @@ function fieldTick(dt) {
             onFieldDeaths();
             enemies = liveFieldEnemies();
             if (!enemies.length) return;
-            return;
         }
         if (p.hp <= 0) { onPlayerFieldDeath(); return; } // 狂暴打擊等自傷技能
         // 潛力【極速之力】：施放期間以倍率放大攻擊頻率（突破 5 次/秒上限）

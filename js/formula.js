@@ -1440,7 +1440,7 @@ function gemShopUpgradeCost(level) {
    ============================================================ */
 
 var SKILL_MAX_LV = 10;         // 一般技能等級上限（保留給外部參照）
-var SKILL_CAST_LOCK = 0.5;     // 施放硬直（秒；實際 = 0.5 × (1 - 施法速度%)）
+var SKILL_CAST_LOCK = 0;       // 舊參數保留供參數表相容；技能不再改動普攻 atkCd
 var SKILL_GLOBAL_COOLDOWN = 0.4; // 技能共用冷卻（秒；固定值，不受冷卻縮減影響）
 
 // 裝載欄：初始 2 格，角色每 20 級再 +1 格（最多 20 格；1 轉後解鎖 20 格）

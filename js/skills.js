@@ -4,7 +4,7 @@
    - 被動技能：學會即永久生效（計入屬性）
    - 學習/升級：轉生前每升 1 級獲得 1 技能點；轉生後改獲得轉生天賦點，上限隨轉生提高 */
 
-/* 技能數值公式（SKILL_CAST_LOCK、loadoutSize、
+/* 技能數值公式（loadoutSize、
    skillUpgradeCost、skillMaxLv、skillValue、skillCdFor、scaleAt、
    融合參數 FUSE_FACTOR / FUSION_MUTATION_CHANCE 等）→ js/formula.js §9 */
 
@@ -2474,8 +2474,8 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
     pEnt.skillCds[id] = skillCdFor(sk, buffVal(pEnt, 'chronoCdr')) * (legendaryPrep.cdMult || 1); // 潛力【時間坍縮】：施放時額外 CDR
     if (rtPre.cdHalf) pEnt.skillCds[id] *= 0.5; // 45 新技能（freeCast 族）：受惠技冷卻減半（連禱聖言 M8）
   }
+  // 技能只佔用技能 GCD；普攻有自己的 atkCd，與技能施放並行，不受技能施放影響。
   pEnt.skillGcd = (rtPre.noGcd || (opts && opts.noGcd)) ? 0 : SKILL_GLOBAL_COOLDOWN; // 45 新技能（freeCast 族）：免 GCD 施放
-  if (!(opts && opts.noCastLock)) pEnt.atkCd += SKILL_CAST_LOCK * (1 - st.castSpeed / 100); // 施放硬直
   // areaCells＝本次施放打在地上的那塊區域（領域類效果據此決定之後每跳打哪些格）
   var out = { killed: false, dmg: 0, areaCells: placement.cells };
   // 特效：施放當下就發（不等結算），因為玩家看到的是「技能放出去了」，

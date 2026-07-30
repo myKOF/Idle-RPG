@@ -74,6 +74,7 @@ test('skill global cooldown prevents casting another skill for a fixed 0.4 secon
   assert.equal(first && typeof first, 'object');
   assert.equal(player.skillGcd, 0.4);
   assert.equal(player.skillCds.timeWarp, 8);
+  assert.equal(player.atkCd, 0, '技能施放不應增加普攻計時器');
 
   const blocked = context.pickAndCastSkill(player, null, 'float-layer');
   assert.equal(blocked, null);
@@ -89,6 +90,7 @@ test('skill global cooldown prevents casting another skill for a fixed 0.4 secon
   assert.equal(second && typeof second, 'object');
   assert.equal(player.skillGcd, 0.4);
   assert.equal(player.skillCds.treasureSense, 12);
+  assert.equal(player.atkCd, 0, '技能 GCD 與普攻計時器應彼此獨立');
 });
 
 test('技能依冷卻歸零先後輪轉，前排短 CD 不會在首輪壟斷後排技能', () => {
