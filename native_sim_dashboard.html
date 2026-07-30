@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>100% 官方原生內核實機模擬與快照分析儀表板</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --accent-blue: #38bdf8;
+            --accent-purple: #818cf8;
+            --accent-emerald: #34d399;
+            --accent-amber: #fbbf24;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 24px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--accent-blue);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--accent-blue);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-blue);
+        }
+
+        .card-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 8px;
+            color: var(--accent-amber);
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .chart-box {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            height: 380px;
+            position: relative;
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .table-box {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            text-align: left;
+        }
+
+        th {
+            background: #0f172a;
+            color: var(--accent-blue);
+            font-weight: 600;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+            color: var(--text-main);
+            white-space: nowrap;
+        }
+
+        tr:hover td {
+            background: rgba(56, 189, 248, 0.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>⚔️ 100% 官方原生內核實機模擬儀表板 <span class="badge">Seed: 42</span></h1>
+            <p style="color: var(--text-muted); margin: 6px 0 0 0; font-size: 14px;">
+                呈現官方 Worker 內核 21 支檔案原生推演之時間序列數據與存檔快照
+            </p>
+        </div>
+    </div>
+
+    <!-- 核心數據指標卡片 -->
+    <div class="stats-grid">
+        <div class="card">
+            <div class="card-label">當前等級 / 關卡</div>
+            <div class="card-value" id="val-level-stage">Lv.4 (3關)</div>
+        </div>
+        <div class="card">
+            <div class="card-label">面板 DPS / 攻擊力</div>
+            <div class="card-value" id="val-dps-atk" style="color: var(--accent-blue);">99.2 / 59</div>
+        </div>
+        <div class="card">
+            <div class="card-label">最高生命值 Max HP</div>
+            <div class="card-value" id="val-hp" style="color: var(--accent-emerald);">368</div>
+        </div>
+        <div class="card">
+            <div class="card-label">金幣數量 Gold</div>
+            <div class="card-value" id="val-gold">693</div>
+        </div>
+        <div class="card">
+            <div class="card-label">累積總擊殺數 Kills</div>
+            <div class="card-value" id="val-kills" style="color: var(--accent-purple);">84 隻</div>
+        </div>
+    </div>
+
+    <!-- 視覺化趨勢圖表區塊 -->
+    <div class="charts-grid">
+        <div class="chart-box">
+            <div class="chart-title">📈 戰鬥力與屬性成長 (DPS / ATK / MaxHP)</div>
+            <canvas id="chartCombat"></canvas>
+        </div>
+        <div class="chart-box">
+            <div class="chart-title">💰 資源累積趨勢 (Gold / Scrap / Essence)</div>
+            <canvas id="chartResources"></canvas>
+        </div>
+    </div>
+
+    <!-- 詳細快照數據列表 -->
+    <div class="table-box">
+        <div class="chart-title" style="margin-bottom: 12px;">📑 模擬實況時間序列快照表 (Snapshot Log)</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>時間 (小時)</th>
+                    <th>等級</th>
+                    <th>關卡</th>
+                    <th>地圖</th>
+                    <th>DPS</th>
+                    <th>攻擊力</th>
+                    <th>Max HP</th>
+                    <th>金幣</th>
+                    <th>廢鐵</th>
+                    <th>精華</th>
+                    <th>總擊殺數</th>
+                    <th>總掉落次數</th>
+                </tr>
+            </thead>
+            <tbody id="snapshot-body">
+                <!-- 數據由 JS 動態填充 -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // 快照數據來源
+        const csvRawData = `timeHour,level,stage,zone,dps,atk,hpMax,gold,scrap,essence,dust,ancientEssence,totalKills,totalDrops
+0,1,1,plains,0,13,170,50,0,0,0,0,0,0
+1,4,3,plains,99.2,59,368,693,14,0,0,0,84,84
+2,4,3,plains,99.2,59,368,693,14,0,0,0,84,84
+3,4,3,plains,99.2,59,368,693,14,0,0,0,84,84
+4,4,3,plains,99.2,59,368,693,14,0,0,0,84,84
+5,4,3,plains,99.2,59,368,693,14,0,0,0,84,84
+6,4,3,plains,99.2,59,368,693,14,0,0,0,84,84
+7,4,3,plains,99.2,59,368,693,14,0,0,0,84,84
+8,4,3,plains,99.2,59,368,693,14,0,0,0,84,84
+9,4,3,plains,99.2,59,368,693,14,0,0,0,84,84
+10,4,3,plains,99.2,59,368,693,14,0,0,0,84,84`;
+
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split('\\n');
+            const headers = lines[0].split(',');
+            const rows = [];
+            for(let i = 1; i < lines.length; i++) {
+                const parts = lines[i].split(',');
+                if(parts.length < headers.length) continue;
+                const obj = {};
+                headers.forEach((h, idx) => {
+                    obj[h.trim()] = parts[idx].trim();
+                });
+                rows.push(obj);
+            }
+            return rows;
+        }
+
+        async function initDashboard() {
+            let snapshots = parseCSV(csvRawData);
+            try {
+                // 嘗試動態抓取硬碟最新 sim_snapshots.csv
+                const resp = await fetch('./sim_snapshots.csv?t=' + Date.now());
+                if (resp.ok) {
+                    const text = await resp.text();
+                    if(text && text.includes('timeHour')) {
+                        snapshots = parseCSV(text);
+                    }
+                }
+            } catch(e) {
+                console.warn("無法取得遠端 CSV，使用預設快照數據。");
+            }
+
+            if(!snapshots || snapshots.length === 0) return;
+
+            // 更新最新卡片數值
+            const last = snapshots[snapshots.length - 1];
+            document.getElementById('val-level-stage').innerText = `Lv.${last.level} (${last.stage}關)`;
+            document.getElementById('val-dps-atk').innerText = `${last.dps} / ${last.atk}`;
+            document.getElementById('val-hp').innerText = `${last.hpMax}`;
+            document.getElementById('val-gold').innerText = `${last.gold}`;
+            document.getElementById('val-kills').innerText = `${last.totalKills} 隻`;
+
+            // 填充表格
+            const tbody = document.getElementById('snapshot-body');
+            tbody.innerHTML = '';
+            snapshots.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${row.timeHour} h</b></td>
+                    <td>Lv.${row.level}</td>
+                    <td>關卡 ${row.stage}</td>
+                    <td>${row.zone}</td>
+                    <td style="color: #38bdf8;">${row.dps}</td>
+                    <td style="color: #fbbf24;">${row.atk}</td>
+                    <td style="color: #34d399;">${row.hpMax}</td>
+                    <td>${row.gold}</td>
+                    <td>${row.scrap}</td>
+                    <td>${row.essence}</td>
+                    <td style="color: #c084fc;">${row.totalKills}</td>
+                    <td>${row.totalDrops}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // 繪製 Chart.js 戰鬥力圖表
+            const hours = snapshots.map(s => s.timeHour + 'h');
+            const dpsData = snapshots.map(s => parseFloat(s.dps));
+            const atkData = snapshots.map(s => parseFloat(s.atk));
+            const hpData = snapshots.map(s => parseFloat(s.hpMax));
+
+            new Chart(document.getElementById('chartCombat'), {
+                type: 'line',
+                data: {
+                    labels: hours,
+                    datasets: [
+                        { label: '面板 DPS', data: dpsData, borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.1)', tension: 0.3, fill: true },
+                        { label: '攻擊力 ATK', data: atkData, borderColor: '#fbbf24', tension: 0.3 },
+                        { label: '最大生命 HP', data: hpData, borderColor: '#34d399', tension: 0.3, yAxisID: 'y1' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' }, title: { display: true, text: 'DPS / ATK', color: '#94a3b8' } },
+                        y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#34d399' }, title: { display: true, text: 'Max HP', color: '#34d399' } }
+                    },
+                    plugins: { legend: { labels: { color: '#f8fafc' } } }
+                }
+            });
+
+            // 繪製 Chart.js 資源累積圖表
+            const goldData = snapshots.map(s => parseFloat(s.gold));
+            const scrapData = snapshots.map(s => parseFloat(s.scrap));
+            const killsData = snapshots.map(s => parseFloat(s.totalKills));
+
+            new Chart(document.getElementById('chartResources'), {
+                type: 'line',
+                data: {
+                    labels: hours,
+                    datasets: [
+                        { label: '金幣 Gold', data: goldData, borderColor: '#eab308', backgroundColor: 'rgba(234, 179, 8, 0.1)', tension: 0.3, fill: true },
+                        { label: '廢鐵 Scrap', data: scrapData, borderColor: '#94a3b8', tension: 0.3 },
+                        { label: '總擊殺數 Kills', data: killsData, borderColor: '#c084fc', tension: 0.3, yAxisID: 'y1' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' }, title: { display: true, text: '資源數量', color: '#94a3b8' } },
+                        y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#c084fc' }, title: { display: true, text: '擊殺隻數', color: '#c084fc' } }
+                    },
+                    plugins: { legend: { labels: { color: '#f8fafc' } } }
+                }
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', initDashboard);
+    </script>
+</body>
+</html>

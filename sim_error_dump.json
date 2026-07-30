@@ -1,0 +1,30 @@
+{
+  "error": "formatTime is not defined",
+  "gt": 0.2,
+  "lastView": {
+    "gold": 50,
+    "scrap": 0,
+    "essence": 0,
+    "dust": 0,
+    "ancientEssence": 0,
+    "soulOrigin": 0,
+    "demonSeed": 0,
+    "gems": 0,
+    "books": 0,
+    "level": 1,
+    "xp": 0,
+    "xpMax": 70,
+    "hp": 170,
+    "hpMax": 170,
+    "mp": 35,
+    "mpMax": 50,
+    "shield": 0,
+    "stage": 1,
+    "zone": "plains",
+    "gt": 0.2,
+    "paused": false,
+    "towerActive": false,
+    "forgeBusy": false
+  },
+  "recentLogs": []
+}
