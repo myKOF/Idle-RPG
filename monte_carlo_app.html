@@ -1791,10 +1791,15 @@
 
                 let successRate = (eq.level >= 50) ? 0.40 : 0.75;
                 let enhanceAttempts = 0;
+                let startLvl = eq.level;
+                let spentGold = 0;
+                let spentStones = 0;
 
                 while (eq.level < this.profile.targetEnhance && this.gold >= costGold && this.upgrade_stones >= costStones && enhanceAttempts < 20) {
                     this.gold -= costGold;
                     this.upgrade_stones -= costStones;
+                    spentGold += costGold;
+                    spentStones += costStones;
                     this.total_gold_spent += costGold;
                     this.total_stones_spent += costStones;
                     enhanceAttempts++;
@@ -1804,6 +1809,17 @@
 
                     costGold = Math.floor(80 * Math.pow(eq.level + 1, 1.4));
                     costStones = Math.floor(1.5 * Math.pow(eq.level + 1, 1.05));
+                }
+
+                if (enhanceAttempts > 0) {
+                    const slotName = (typeof SLOT_INFO !== 'undefined' && SLOT_INFO[slot]) ? SLOT_INFO[slot].name : slot;
+                    this.logAction(
+                        currentTime, 
+                        'enhance', 
+                        '🔨', 
+                        `進行【${slotName}】裝備強化 (+${startLvl} ➔ +${eq.level})`, 
+                        `嘗試強化 ${enhanceAttempts} 次，消耗 ${formatGameNumber(spentGold)} 金幣與 ${spentStones} 點裝備碎片。`
+                    );
                 }
             }
 
