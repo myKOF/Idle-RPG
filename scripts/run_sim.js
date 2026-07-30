@@ -1,0 +1,288 @@
+'use strict';
+/* ============ AI 玩家模擬（原生內核） ============
+
+   驅動迴圈只做三件事：推進時間、在決策點問策略、把策略回的指令送進遊戲。
+   所有數值——傷害、掉落、經驗、成本、機率、日誌文字——都由遊戲本體算。
+   本檔沒有任何遊戲公式或常數，也不寫 G（唯一例外是匯出前對齊 savedAt，見 engine.stampSavedAt）。
+
+   用法：
+     node --max-semi-space-size=64 scripts/run_sim.js --hours=100 --seed=20260730
+   選項：
+     --hours=N        模擬遊戲小時數（預設 1）
+     --seed=N         PRNG 種子（預設 20260730）
+     --policy=path    策略檔（預設 scripts/sim/policy.default.json）
+     --save=path      從既有存檔開局（預設 null＝全新角色）
+     --out=dir        輸出目錄（預設 sim_out）
+     --snap-min=N     每 N 遊戲分鐘取一次快照（預設 10）
+     --keep-visual    連飄字/特效事件也寫進日誌（預設丟棄，只留 log/flog/loot/notice）
+*/
+
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const { createEngine } = require('./sim/engine');
+const { createPolicy } = require('./sim/policy');
+const { stateHash } = require('./sim/hash');
+
+const ROOT = path.resolve(__dirname, '..');
+
+function arg(name, dflt) {
+  const hit = process.argv.find((a) => a.startsWith('--' + name + '='));
+  if (hit) return hit.slice(name.length + 3);
+  return process.argv.includes('--' + name) ? true : dflt;
+}
+
+const HOURS = Number(arg('hours', 1));
+const SEED = Number(arg('seed', 20260730));
+const POLICY_PATH = path.resolve(ROOT, String(arg('policy', 'scripts/sim/policy.default.json')));
+const OUT_DIR = path.resolve(ROOT, String(arg('out', 'sim_out')));
+const SNAP_MIN = Number(arg('snap-min', 10));
+const KEEP_VISUAL = !!arg('keep-visual', false);
+const SAVE_PATH = arg('save', null);
+
+/* ---- 策略載入（含雜湊，執行期不得改動）---- */
+const policySrc = fs.readFileSync(POLICY_PATH, 'utf8');
+const policyHash = crypto.createHash('sha256').update(policySrc).digest('hex');
+const policy = createPolicy(JSON.parse(policySrc));
+
+fs.mkdirSync(OUT_DIR, { recursive: true });
+
+/* ---- 原生日誌收集 ----
+   日誌一律來自 shim 的事件佇列（js/worker/shim.js 的 blog/flog/addLog → shimPushEvent），
+   harness 不自己組任何一句訊息、不自己排時間戳格式。
+   丟棄的事件會計數並回報，不做無聲截斷。 */
+const KEEP_KINDS = KEEP_VISUAL ? null : { log: 1, flog: 1, loot: 1, notice: 1 };
+const logStream = fs.createWriteStream(path.join(OUT_DIR, 'native_events.jsonl'));
+const eventCounts = Object.create(null);
+let eventsKept = 0;
+let eventsDropped = 0;
+
+let engine = null;   // onEvents 會用到，先宣告
+
+function onEvents(events) {
+  for (let i = 0; i < events.length; i++) {
+    const ev = events[i];
+    eventCounts[ev.kind] = (eventCounts[ev.kind] || 0) + 1;
+    if (KEEP_KINDS && !KEEP_KINDS[ev.kind]) { eventsDropped++; continue; }
+    ev.gt = engine ? engine.gameTimeSec() : 0;
+    logStream.write(JSON.stringify(ev) + '\n');
+    eventsKept++;
+  }
+}
+
+/* ---- 開機 ---- */
+console.log(`策略 ${path.relative(ROOT, POLICY_PATH)}  sha256 ${policyHash.slice(0, 16)}`);
+console.log(`seed ${SEED}  時數 ${HOURS}h  快照每 ${SNAP_MIN} 遊戲分鐘\n`);
+
+const startSave = SAVE_PATH ? JSON.parse(fs.readFileSync(path.resolve(ROOT, String(SAVE_PATH)), 'utf8')) : null;
+if (startSave) console.log(`起始存檔 ${SAVE_PATH}`);
+
+engine = createEngine({ seed: SEED, onEvents });
+engine.boot(startSave);
+
+/* ---- GM 前置 ----
+   只能用來「建立測試前提」（例如把角色墊到已轉生，才測得到天賦與神鑄），
+   不得用來推進遊戲進度。每一條都原文寫進 run_summary.json，公開揭露。 */
+const bootstrapLog = [];
+for (const line of policy.bootstrap) {
+  const r = engine.cmd('gm.exec', { line });
+  bootstrapLog.push({ line, ok: !!(r && r.ok), result: r && r.result });
+  console.log(`  GM 前置：${line} → ${r && r.ok ? 'ok' : 'FAIL ' + (r && r.error)}`);
+}
+
+/* ---- 指令統計 ----
+   ⚠️ runCommand 的 ok 只代表「執行時沒有拋錯」，不代表「這個操作真的發生了」。
+   模擬層有三種「其實沒做到」的回法，全部都會讓 ok 是 true：
+     1. 回傳錯誤**字串**——js/skills.js:2118 的 learnOrUpgradeSkill 失敗時回 '技能點不足'，
+        那是 truthy，天真地判斷會把 1200 次失敗全部算成成功
+     2. 回傳 { err: ... }
+     3. 什麼都不回（undefined）——js/tower.js:95 的 startTowerAuto 就是，成敗都無回傳值
+   所以分成四類計數，並把遊戲給的原因原文收集起來當診斷資料。
+   第 3 類標成 unknown 而不是成功——沒有回傳值就是沒有證據，要看原生日誌才知道。 */
+const cmdStats = Object.create(null);
+function bump(bucket, key) { bucket[key] = (bucket[key] || 0) + 1; }
+
+function dispatch(cmds) {
+  for (const c of cmds) {
+    const r = engine.cmd(c.name, c.args);
+    const key = c.ruleId + ' → ' + c.name;
+    const s = cmdStats[key] || (cmdStats[key] = {
+      sent: 0, effective: 0, noEffect: 0, unknown: 0, error: 0, reasons: Object.create(null)
+    });
+    s.sent++;
+    if (!r || !r.ok) {
+      s.error++;
+      bump(s.reasons, '[協議拒絕] ' + ((r && r.error) || 'unknown'));
+    } else if (typeof r.result === 'string') {
+      s.noEffect++;
+      bump(s.reasons, r.result);
+    } else if (r.result && typeof r.result === 'object' && r.result.err) {
+      s.noEffect++;
+      bump(s.reasons, String(r.result.err));
+    } else if (r.result === null) {
+      /* 模擬層的慣例是「null＝成功、字串＝失敗原因」（js/skills.js:2129 return null）。
+         與直覺相反，所以特別分開處理——當成失敗會把整份報告的成效數字寫反。 */
+      s.effective++;
+    } else if (r.result === false) {
+      s.noEffect++;
+      bump(s.reasons, '[回傳 false]');
+    } else if (r.result === undefined) {
+      s.unknown++;
+    } else {
+      s.effective++;
+    }
+  }
+}
+
+/* ---- 不變量斷言：任一失敗立即停止，不產出「看起來完成」的檔案 ---- */
+const problems = [];
+let lastLevel = 0;
+function assertInvariants(view, stats) {
+  const bad = [];
+  if (view.level < lastLevel) bad.push(`等級倒退 ${lastLevel} → ${view.level}`);
+  lastLevel = view.level;
+  for (const k of ['gold', 'scrap', 'dust', 'essence', 'ancientEssence', 'level', 'stage']) {
+    const v = view[k];
+    if (typeof v === 'number' && !Number.isFinite(v)) bad.push(`${k} 不是有限數：${v}`);
+    if (typeof v === 'number' && v < 0) bad.push(`${k} 為負：${v}`);
+  }
+  if (stats && !(stats.atk > 0 || stats.matk > 0)) bad.push('面板攻擊力為 0');
+  if (bad.length) {
+    problems.push({ atGameSec: engine.gameTimeSec(), bad });
+    console.error(`\n❌ 不變量失敗 @ 遊戲 ${(engine.gameTimeSec() / 3600).toFixed(2)}h`);
+    bad.forEach((b) => console.error('   ' + b));
+    fs.writeFileSync(path.join(OUT_DIR, 'failure_state.json'), engine.saveJson());
+    console.error(`   當時存檔已寫出：${path.relative(ROOT, path.join(OUT_DIR, 'failure_state.json'))}`);
+    process.exit(2);
+  }
+}
+
+/* ---- 快照（圖表資料來源）----
+   每一欄都是遊戲原生的值，harness 不做任何再計算、外插或平滑。
+   來源欄位記在 snapshots.meta.json，供圖表標註。 */
+const SNAP_VIEW_KEYS = ['level', 'stage', 'gold', 'scrap', 'dust', 'essence',
+  'ancientEssence', 'demonSeed', 'hp', 'hpMax', 'mp', 'mpMax', 'xp', 'xpMax'];
+const snapRows = [];
+function snapshot() {
+  const view = engine.view();
+  const stats = engine.ctx.getStats();
+  const G = engine.state();
+  const row = {
+    gameHours: +(engine.gameTimeSec() / 3600).toFixed(4),
+    reincarnations: G.player.reincarnations || 0,
+    invCount: (G.inventory || []).length,
+    towerFloor: (G.tower && G.tower.floor) || 0,
+    atk: stats.atk, matk: stats.matk, def: stats.def,
+    critRate: stats.critRate, critDmg: stats.critDmg
+  };
+  for (const k of SNAP_VIEW_KEYS) row[k] = view[k];
+  snapRows.push(row);
+  assertInvariants(view, stats);
+  return row;
+}
+
+/* ---- 主迴圈 ---- */
+const decideEvery = policy.decideEveryGameSec;
+const stepsPerDecision = Math.max(1, Math.round(decideEvery / engine.dt));
+const totalSteps = Math.round((HOURS * 3600) / engine.dt);
+const snapEverySec = SNAP_MIN * 60;
+let nextSnapAt = 0;
+let decisions = 0;
+let stepsDone = 0;
+
+const t0 = process.hrtime.bigint();
+let lastReport = t0;
+
+while (stepsDone < totalSteps) {
+  const n = Math.min(stepsPerDecision, totalSteps - stepsDone);
+  engine.step(n);
+  stepsDone += n;
+
+  /* 決策點：策略只拿到 view / panels 的深拷貝（policy.decide 內再 round-trip 一次）。
+     它沒有 G、沒有 FIELD、沒有任何遊戲函式，改不了狀態也讀不到內部值。
+     面板只建策略宣告要的那幾個——背包面板很大，每次都建會白付序列化成本。 */
+  const panels = {};
+  for (const p of policy.needPanels) panels[p] = engine.panel(p);
+  dispatch(policy.decide({ view: engine.view(), panels, gameTimeSec: engine.gameTimeSec() }));
+  decisions++;
+
+  if (engine.gameTimeSec() >= nextSnapAt) {
+    const row = snapshot();
+    nextSnapAt += snapEverySec;
+    const now = process.hrtime.bigint();
+    if (Number(now - lastReport) / 1e9 > 5) {
+      lastReport = now;
+      const pct = (100 * stepsDone / totalSteps).toFixed(1);
+      process.stdout.write(`  ${pct}%  遊戲 ${row.gameHours.toFixed(1)}h  Lv.${row.level} stage ${row.stage} 轉生 ${row.reincarnations}\n`);
+    }
+  }
+}
+snapshot();
+
+const elapsedSec = Number(process.hrtime.bigint() - t0) / 1e9;
+
+/* ---- 落地 ---- */
+logStream.end();
+
+const saveJson = engine.stampSavedAt().saveJson();
+fs.writeFileSync(path.join(OUT_DIR, 'save_final.json'), saveJson);
+
+const cols = Object.keys(snapRows[0]);
+fs.writeFileSync(
+  path.join(OUT_DIR, 'snapshots.csv'),
+  cols.join(',') + '\n' + snapRows.map((r) => cols.map((c) => r[c]).join(',')).join('\n')
+);
+
+fs.writeFileSync(path.join(OUT_DIR, 'snapshots.meta.json'), JSON.stringify({
+  說明: '每一欄的來源。圖表只能畫這些欄位，不得在繪圖層再計算任何衍生值。',
+  來源: {
+    gameHours: 'harness 模擬時間（步數 × 0.1s）',
+    reincarnations: 'G.player.reincarnations',
+    invCount: 'G.inventory.length',
+    towerFloor: 'G.tower.floor',
+    atk: 'getStats().atk', matk: 'getStats().matk', def: 'getStats().def',
+    critRate: 'getStats().critRate', critDmg: 'getStats().critDmg',
+    ...Object.fromEntries(SNAP_VIEW_KEYS.map((k) => [k, `buildView().${k}`]))
+  }
+}, null, 2));
+
+const summary = {
+  seed: SEED,
+  gameHours: HOURS,
+  startSave: SAVE_PATH ? String(SAVE_PATH) : null,
+  policy: { file: path.relative(ROOT, POLICY_PATH), name: policy.name, sha256: policyHash },
+  /* GM 前置一律揭露：讀報告的人要看得出哪些狀態是模擬出來的、哪些是墊出來的。 */
+  gmBootstrap: bootstrapLog,
+  determinism: { finalStateHash: stateHash(saveJson) },
+  performance: {
+    steps: totalSteps,
+    stepSeconds: engine.dt,
+    elapsedSec: +elapsedSec.toFixed(2),
+    stepsPerSec: Math.round(totalSteps / elapsedSec),
+    speedupX: Math.round((HOURS * 3600) / elapsedSec),
+    projected100hSec: +(360000 / ((HOURS * 3600) / elapsedSec)).toFixed(1)
+  },
+  events: { counts: eventCounts, kept: eventsKept, dropped: eventsDropped, keptKinds: KEEP_KINDS ? Object.keys(KEEP_KINDS) : 'all' },
+  decisions,
+  commands: cmdStats,
+  invariantFailures: problems,
+  final: (() => { const v = engine.view(); const s = engine.ctx.getStats(); return {
+    level: v.level, stage: v.stage, gold: v.gold, reincarnations: engine.state().player.reincarnations || 0,
+    atk: s.atk, matk: s.matk, inventory: (engine.state().inventory || []).length }; })()
+};
+fs.writeFileSync(path.join(OUT_DIR, 'run_summary.json'), JSON.stringify(summary, null, 2));
+
+/* ---- 收尾檢查：日誌一則都沒有 = harness 壞了，不是「這局很安靜」---- */
+if (eventsKept === 0) {
+  console.error('\n❌ 原生事件 0 則。日誌管線壞了（shimDrainEvents 沒接上），不是遊戲很安靜。');
+  process.exit(3);
+}
+
+console.log('\n──────── 完成 ────────');
+console.log(`耗時        ${elapsedSec.toFixed(1)}s（${summary.performance.stepsPerSec.toLocaleString()} 步/秒，${summary.performance.speedupX.toLocaleString()}x）`);
+console.log(`100h 推估   ${summary.performance.projected100hSec}s`);
+console.log(`原生事件    保留 ${eventsKept.toLocaleString()} 則／丟棄 ${eventsDropped.toLocaleString()} 則（種類：${JSON.stringify(eventCounts)}）`);
+console.log(`決策點      ${decisions.toLocaleString()} 次`);
+console.log(`最終        Lv.${summary.final.level} stage ${summary.final.stage} 轉生 ${summary.final.reincarnations} 背包 ${summary.final.inventory}`);
+console.log(`存檔雜湊    ${summary.determinism.finalStateHash.slice(0, 16)}`);
+console.log(`輸出        ${path.relative(ROOT, OUT_DIR)}/  (save_final.json, snapshots.csv, native_events.jsonl, run_summary.json)`);

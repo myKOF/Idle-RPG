@@ -1,0 +1,107 @@
+{
+  "name": "lategame-systems-v1",
+  "notes": [
+    "用途：測到天賦、神鑄熔爐、高塔這三個系統。",
+    "全新角色跑不到——轉生門檻是 Lv.1000（REINCARNATION_LEVEL），",
+    "神鑄要 1 轉才開（FORGE_UNLOCK_REINCARNATION），天賦樹也是轉生後才解鎖。",
+    "",
+    "⚠️ 本策略使用 GM 指令建立測試前提（下方 bootstrap），這是「墊出來的狀態」，",
+    "不是模擬出來的進度。每一條都會原文寫進 run_summary.json 的 gmBootstrap。",
+    "拿這份跑出來的數據**不能**用來談成長曲線，只能用來驗證那三個系統會不會動。",
+    "要看成長曲線請用 policy.default.json 從零開始跑。"
+  ],
+  "bootstrap": [
+    "level 1000",
+    "reincarnation 3",
+    "stage 100"
+  ],
+  "decideEveryGameSec": 30,
+  "needPanels": ["tower", "gems", "forge", "newforge", "talents"],
+  "lists": {
+    "skillPriority": [
+      "powerSlash", "doubleStrike", "sharpBlade", "toughness", "whirlwind",
+      "swiftness", "armorBreak", "arcaneMind", "executeStrike", "berserkStrike",
+      "brutality", "vampirism", "keenEye", "meditation"
+    ],
+    "talentPriority": [
+      "t1_str", "t1_agi", "t1_int", "t1_vit", "t1_def", "t1_mdef", "t1_pres", "t1_mres",
+      "t2_crit", "t2_critdmg", "t2_hit", "t2_hp", "t2_shield", "t2_evasion", "t2_normalred", "t2_elitered",
+      "t3_normal", "t3_elite", "t3_boss", "t3_potential", "t3_allres", "t3_def", "t3_mdef", "t3_allres2",
+      "t4_phys", "t4_magic", "t4_def", "t4_special", "t4_passive", "t4_potential", "t4_normalred", "t4_elitered"
+    ]
+  },
+  "rules": [
+    { "id": "auto-equip-on", "once": true, "cmd": "factory.setAutoEquip", "args": { "on": true } },
+    { "id": "auto-advance-on", "once": true, "cmd": "stage.setAutoAdvance", "args": { "on": true } },
+    {
+      "id": "salvage-low-rarity",
+      "once": true,
+      "cmd": "newforge.setQuality",
+      "argsList": [
+        { "furnaceId": 1, "rarity": 0, "on": true },
+        { "furnaceId": 1, "rarity": 1, "on": true },
+        { "furnaceId": 1, "rarity": 2, "on": true },
+        { "furnaceId": 1, "rarity": 3, "on": true }
+      ]
+    },
+    { "id": "learn-skills", "everySec": 120, "cmd": "skill.learn", "expand": [{ "key": "id", "list": "skillPriority" }] },
+    { "id": "buy-inventory", "everySec": 600, "cmd": "player.buyInvUpgrade" },
+
+    {
+      "id": "talent-upgrade",
+      "everySec": 120,
+      "cmd": "talent.upgrade",
+      "expand": [{ "key": "id", "list": "talentPriority" }],
+      "if": [["panels.talents.talentPoints", ">", 0]],
+      "why": "依固定優先序配天賦點"
+    },
+
+    { "id": "gem-shop-buy", "everySec": 600, "cmd": "gem.shopBuyAll" },
+    {
+      "id": "gem-compose",
+      "everySec": 1800,
+      "cmd": "gem.composeAll",
+      "expand": [
+        { "key": "type", "path": "panels.gems.gems" },
+        { "key": "level", "values": [1, 2, 3, 4] }
+      ]
+    },
+
+    {
+      "id": "forge-auto-on",
+      "everySec": 600,
+      "cmd": "forge.setAuto",
+      "args": { "key": "autoForge", "on": true },
+      "if": [["panels.forge.forge.unlocked", "truthy"]]
+    },
+    {
+      "id": "forge-autofill",
+      "everySec": 1800,
+      "cmd": "forge.setAutoFill",
+      "args": { "kind": "equip", "rarity": 4 },
+      "if": [["panels.forge.forge.unlocked", "truthy"]],
+      "why": "史詩品質進法陣。普通~獨特已被熔爐拆掉，挑更低的會補不到料"
+    },
+    { "id": "newforge-add-furnace", "everySec": 1800, "cmd": "newforge.addFurnace" },
+
+    {
+      "id": "tower-auto",
+      "everySec": 300,
+      "cmd": "tower.startAuto",
+      "args": {
+        "floor": { "$add": [{ "$path": "panels.tower.tower.highest" }, 1] },
+        "count": 10
+      },
+      "if": [
+        ["panels.tower.tower.active", "falsy"],
+        ["panels.tower.runtime.auto", "falsy"]
+      ]
+    },
+    {
+      "id": "tower-confirm",
+      "everySec": 30,
+      "cmd": "tower.confirmResult",
+      "if": [["panels.tower.runtime.showingResult", "truthy"]]
+    }
+  ]
+}
