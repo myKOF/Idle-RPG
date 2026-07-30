@@ -1480,50 +1480,35 @@
         processMobKillsLoot(killsCount, currentTime) {
             if (killsCount <= 0) return;
             const stats = this.calculateStats();
-            const lootMult = stats.itemFindBonus;
+            const lootMult = stats.itemFindBonus || 1.0;
+            const mobLevel = Math.max(1, Math.floor(this.stage));
 
-            const droppedGemsCount = rollDropCount(killsCount * 0.20 * lootMult);
-            if (droppedGemsCount > 0) {
-                const g1 = rollDropCount(droppedGemsCount * 0.60);
-                const g2 = rollDropCount(droppedGemsCount * 0.30);
-                const g3 = rollDropCount(droppedGemsCount * 0.10);
-                this.gems[1] = (this.gems[1] || 0) + g1;
-                this.gems[2] = (this.gems[2] || 0) + g2;
-                this.gems[3] = (this.gems[3] || 0) + g3;
+            // 100% 直連官方 dropRatesFor(FIELD_DROP_TABLE, mobLevel) 掉落表
+            const rates = (typeof dropRatesFor === 'function' && typeof FIELD_DROP_TABLE !== 'undefined')
+                ? dropRatesFor(FIELD_DROP_TABLE, mobLevel)
+                : [15, 10, 5, 0, 0, 0, 0, 0];
+
+            let highestRarityDropped = 1;
+            let droppedItemsCount = 0;
+
+            for (let r = 0; r < rates.length; r++) {
+                if (!rates[r]) continue;
+                const count = rollDropCount(killsCount * (rates[r] / 100) * lootMult);
+                if (count > 0) {
+                    droppedItemsCount += count;
+                    const officialRarity = r; // 官方品質索引 0~7 (0:普通, 1:精良, 2:稀有, 3:獨特, 4:史詩...)
+                    if (officialRarity > highestRarityDropped) {
+                        highestRarityDropped = officialRarity;
+                    }
+                }
             }
 
-            let r6Chance = (this.reincarnation >= 1 || this.stage > 150) ? 0.0025 : 0.0005;
-            let r5Chance = (this.stage > 80) ? 0.08 : 0.02;
-            let r4Chance = (this.stage > 30) ? 0.18 : 0.05;
-            let r3Chance = (this.stage > 10) ? 0.35 : 0.15;
-            let r12Chance = 2.50;
+            // 累積金幣與材料
+            this.gold += killsCount * (20 + mobLevel * 5) * lootMult;
+            this.upgrade_stones += droppedItemsCount * 2;
 
-            const r6Count = rollDropCount(killsCount * r6Chance * lootMult);
-            const r5Count = rollDropCount(killsCount * r5Chance * lootMult);
-            const r4Count = rollDropCount(killsCount * r4Chance * lootMult);
-            const r3Count = rollDropCount(killsCount * r3Chance * lootMult);
-            const r12Count = rollDropCount(killsCount * r12Chance * lootMult);
+            if (droppedItemsCount <= 0) return;
 
-            const genDrop = rollDropCount(r6Count * 0.15);
-            this.obtained_genesis += genDrop;
-            this.genesisGearPool += genDrop;
-            this.obtained_mythic += r6Count;
-            this.obtained_legendary += r5Count;
-            this.obtained_epic += r3Count + r4Count;
-            this.obtained_below_epic += r12Count;
-
-            const totalDropped = r6Count + r5Count + r4Count + r3Count + r12Count;
-            this.upgrade_stones += totalDropped * 6;
-            this.gold += totalDropped * 350;
-
-            let highestRarityDropped = 2;
-            if (this.stage <= 5) {
-                highestRarityDropped = Math.random() < 0.4 ? 2 : 1; // 普通/精良
-            } else if (this.stage <= 15) {
-                highestRarityDropped = Math.random() < 0.5 ? 3 : 2; // 精良/稀有
-            } else {
-                highestRarityDropped = r6Count > 0 ? 6 : (r5Count > 0 ? 5 : (r4Count > 0 ? 4 : (r3Count > 0 ? 3 : 2)));
-            }
             const targetSlot = OFFICIAL_SLOTS[Math.floor(Math.random() * OFFICIAL_SLOTS.length)];
             const oldEq = this.equipments[targetSlot];
             const newEq = generateDroppedEquipment(highestRarityDropped, this.profile.ancientRatio);
@@ -1541,16 +1526,13 @@
             if (shouldReplace) {
                 newEq.level = oldEq.level;
                 this.equipments[targetSlot] = newEq;
-                const slotName = SLOT_CHINESE_NAMES[targetSlot] || targetSlot;
-                const rInfo = RARITY_INFO[newEq.rarity] || RARITY_INFO[1];
+                const slotName = (typeof SLOT_INFO !== 'undefined' && SLOT_INFO[targetSlot]) ? SLOT_INFO[targetSlot].name : targetSlot;
+                const rInfo = (typeof RARITIES !== 'undefined' && RARITIES[newEq.rarity]) ? RARITIES[newEq.rarity] : (RARITY_INFO[newEq.rarity] || RARITY_INFO[1]);
                 const eventTime = currentTime + (Math.random() * 0.045);
 
-                const mobList = [
+                const mobList = (typeof MONSTER_POOL !== 'undefined') ? MONSTER_POOL : [
                     { name: '史萊姆', emoji: '🟢' }, { name: '哥布林', emoji: '👺' },
-                    { name: '野狼', emoji: '🐺' }, { name: '骷髏兵', emoji: '💀' },
-                    { name: '暗影蝠', emoji: '🦇' }, { name: '樹妖', emoji: '🌳' },
-                    { name: '蜥蜴戰士', emoji: '🦎' }, { name: '半獸人', emoji: '🐗' },
-                    { name: '牛頭人', emoji: '🐂' }, { name: '雙足飛龍', emoji: '🐉' }
+                    { name: '野狼', emoji: '🐺' }, { name: '骷髏兵', emoji: '💀' }
                 ];
                 const mob = mobList[Math.floor(Math.random() * mobList.length)];
                 const curStats = this.calculateStats();
