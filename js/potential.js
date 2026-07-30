@@ -176,7 +176,7 @@ function firePotentialLightning(pEnt, def, live, floatSel, st, boostVal) {
     var aCfg = {
       atk: baseVal, dmgType: 'magic', skillElem: 'lightning', level: st.level,
       critRate: st.critRate, critDmg: st.critDmg,
-      hit: Math.max(100, st.hit), pen: st.mPen,
+      hit: Math.max(100, st.hit), pen: effectiveMPen(st, pEnt),   // 穿透含技能增益 penUp
       sunder: (st.passives && st.passives.sunder) || 0,
       trueDmgPct: (st.passives && st.passives.trueDmg) || 0,
       annihilate: (st.passives && st.passives.annihilate) || 0,
@@ -207,7 +207,7 @@ function firePotentialOmega(pEnt, def, live, floatSel, st, mult) {
   var aCfg = {
     atk: atkVal, dmgType: 'phys', level: st.level,
     critRate: 0, critDmg: st.critDmg,
-    hit: Math.max(100, st.hit), pen: st.pPen,
+    hit: Math.max(100, st.hit), pen: effectivePPen(st, pEnt),   // 穿透含技能增益 penUp
     annihilate: 0,
     eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, normalDmg: st.normalDmg,
     totalDmgPct: (st.totalDmgPct || 0) + buffVal(pEnt, 'allDmgUp'),
@@ -288,7 +288,7 @@ function tickPotentialRegen(pEnt, st, dt, enemies, floatSel) {
   var sacred = buffVal(pEnt, 'sacredInvert');
   if (sacred <= 0) return false;
   var ratio = sacred / 100;
-  var baseHp = (st.hp * (BASE_HP_REGEN_PCT / 100) + (st.hpRegen || 0)) * dt;
+  var baseHp = playerHpRegenPerSec(st) * dt;   // 每秒生命回復（formula.js §3；與吸血換算同一來源）
   var extraHp = baseHp * ratio;
   var hpOverflow = Math.max(0, (pEnt.hp + extraHp) - st.hp);
   pEnt.hp = Math.min(st.hp, pEnt.hp + extraHp);

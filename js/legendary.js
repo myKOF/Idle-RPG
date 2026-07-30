@@ -281,7 +281,7 @@ function legendaryDamageCfg(pEnt, st, powerPct, dmgType, elem) {
     critRate: st.critRate || 0,
     critDmg: st.critDmg || 150,
     hit: Math.max(100, st.hit || 100),
-    pen: resolvedType === 'phys' ? (st.pPen || 0) : (st.mPen || 0),
+    pen: resolvedType === 'phys' ? effectivePPen(st, pEnt) : effectiveMPen(st, pEnt),   // 穿透含技能增益 penUp
     sunder: st.passives && st.passives.sunder || 0,
     trueDmgPct: 0,
     elemAtk: null,

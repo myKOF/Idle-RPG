@@ -321,7 +321,7 @@ function playerAtkCfg(pEnt) {
     return {
         atk: st.atk * atkMul, matk: st.matk * atkMul, dmgType: 'both', level: st.level,
         critRate: st.critRate, critDmg: st.critDmg + buffVal(pEnt, 'critDmgUp'), hit: st.hit,
-        sunder: st.passives.sunder || 0, pen: st.pPen, mPen: st.mPen,
+        sunder: st.passives.sunder || 0, pen: effectivePPen(st, pEnt), mPen: effectiveMPen(st, pEnt),
         trueDmgPct: st.passives.trueDmg || 0, elemAtk: st.elemAtk, elemDmgPct: st.elemDmgPct,
         elemDmgUp: (typeof legendaryElementDamageUp === 'function') ? legendaryElementDamageUp(st, pEnt) : st.elemDmgUp,
         globalDmgRed: st.globalDmgRed,
@@ -340,7 +340,9 @@ function playerDefCfg(pEnt) {
         dodge: st.evasion + buffVal(pEnt, 'evasionUp'),
         blockRate: st.blockRate + buffVal(pEnt, 'blockUp'), blockDmgRed: st.blockDmgRed,
         pRes: st.pRes, mRes: st.mRes, resist: st.resist, ctrlRes: st.resist.ctrl,
+        // 韌性：控場持續時間縮短（ccFactor）＋ 控場機率與被爆擊機率折減（resistCtrl／resolveHit 暴擊段）
         ccFactor: (1 - st.tenacity / 100) * (1 - st.ccRed / 100),
+        tenacity: st.tenacity,
         dmgRed: (st.passives.sanctuary || 0) + buffVal(pEnt, 'legendaryGuardRed') +
             buffVal(pEnt, 'legendaryLightShieldRed'),
         globalDmgRed: st.globalDmgRed, undying: st.passives.undying || 0,
@@ -363,7 +365,9 @@ function monsterAtkCfg(m, mult) {
     return {
         atk: m.atk * mult * (1 - buffVal(m, 'atkDown') / 100),
         dmgType: m.magic ? 'magic' : 'phys', level: m.level,
-        critRate: 5, critDmg: 150, hit: m.hit || 100, elemAtk: ea, globalDmgRed: m.globalDmgRed || 0,
+        // 敵人爆擊：爆擊率依敵種（普通/菁英/BOSS）、爆傷共用，數值 → formula.js §4 ENEMY_CRIT_*
+        critRate: enemyCritRateFor(m), critDmg: ENEMY_CRIT_DMG_PCT,
+        hit: m.hit || 100, elemAtk: ea, globalDmgRed: m.globalDmgRed || 0,
         isElite: !!m.elite, isBoss: !!m.isBoss, // 攻擊者敵種：供玩家的敵種傷害抗性選值
         attr: m.attr || null // 攻擊者屬性標籤：供玩家的對屬性敵人抗性選值
     };
@@ -377,13 +381,10 @@ function monsterDefCfg(m) {
     };
 }
 
-/* ---- 治療（溢出轉護盾）公式 healPlayer → js/formula.js §3 ---- */
-function healPlayerWithShieldEvent(pEnt, amount, st, floatSel) {
-    var beforeShield = Math.max(0, (pEnt && pEnt.shield) || 0);
-    healPlayer(pEnt, amount, st);
-    var gainedShield = Math.max(0, ((pEnt && pEnt.shield) || 0) - beforeShield);
-    if (gainedShield > 0) floatPlayerEvent(floatSel || 'pv-float', '🛡️+' + fmt(gainedShield), 'shield');
-}
+/* ---- 治療公式 healPlayer → js/formula.js §3 ----
+   戰鬥端的回復（吸血／汲取／擊殺回復／吸魂）皆為非技能來源，一律以 { noShield: true } 呼叫，
+   溢出不再轉護盾，因此不需要「溢出轉護盾」的浮動字提示（技能路徑用 skills.js 的
+   showPlayerShieldGainAfterHeal）。 */
 
 // 完整的一次玩家普攻（含連擊/暈眩/減速/吸血/吸魔/暗影汲取）
 // 45 新技能基建：可選末參 opts（不影響既有呼叫、回傳值不變）——
@@ -414,15 +415,17 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
         if (res.procs.length) logMsg += '<span class="log-hl-good">［' + res.procs.join('・') + '］</span>';
         if (res.thorns) logMsg += '<span class="log-hl-bad">遭到反震 ' + fmt(res.thorns) + ' 傷害。</span>';
         // 吸血 / 暗影汲取 / 吸魔（神鑄特效【萬象汲取】同時加成生命與法力回復）
+        // 吸血/吸魔改由「每秒生命回復／法力恢復 × %」決定（formula.js §3），與造成的傷害無關；
+        // 三者皆非技能效果，溢出不轉護盾（noShield）。
         var omni = st.passives.omniDrain || 0;
-        var healAmt = res.dmg * (st.lifesteal + omni) / 100 + (res.heal || 0);
+        var healAmt = lifestealHealAmount(st, st.lifesteal + omni) + (res.heal || 0);
         if (healAmt > 0) {
-            healPlayerWithShieldEvent(pEnt, healAmt, st, playerFloatSel);
+            healPlayer(pEnt, healAmt, st, { noShield: true });
             floatText(playerFloatSel, '+' + fmt(Math.round(healAmt)), 'heal', Math.round(healAmt));
             if (st.lifesteal > 0 || omni > 0 || res.heal) logMsg += '<span class="log-hl-good">汲取回復 ' + fmt(healAmt) + '。</span>';
         }
         if (st.manaSteal + omni > 0) {
-            var mpGain = res.dmg * (st.manaSteal + omni) / 100;
+            var mpGain = manaStealAmount(st, st.manaSteal + omni);
             pEnt.mp = Math.min(st.mp, pEnt.mp + mpGain);
             floatText(playerFloatSel, '+' + fmt(Math.round(mpGain)) + ' MP', 'mp', Math.round(mpGain));
         }
@@ -511,13 +514,15 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
         floatPlayerEvent(playerFloatSel, '閃避!', 'dodge defend');
         logMsg += '<span class="log-hl-good">被你閃避了！</span>';
     } else {
-        var isCrit = mult && mult > 1;
+        // 敵人爆擊（res.crit，敵種爆擊率 × (1-玩家韌性)）與重擊/狂暴倍率（mult>1）共用爆擊樣式；
+        // 但只有 res.crit 是真正的爆擊，才標「爆擊」字樣。
+        var isCrit = !!res.crit || !!(mult && mult > 1);
         var dmgStr = fmt(res.dmg);
-        if (isCrit) dmgStr = '爆擊 ' + dmgStr;
+        if (res.crit) dmgStr = '爆擊 ' + dmgStr;
         floatText(playerFloatSel, dmgStr, isCrit ? 'crit' : 'mdmg');
         if (res.blocked) floatPlayerEvent(playerFloatSel, '格擋!', 'defend');
         hpDamage = Math.max(0, res.dmg - (res.absorbed || 0));
-        logMsg += '造成 ' + fmt(res.dmg) + (mEnt.magic ? ' 魔法' : '') + ' 傷害。';
+        logMsg += (res.crit ? '<span class="log-hl-bad">爆擊</span> ' : '造成 ') + fmt(res.dmg) + (mEnt.magic ? ' 魔法' : '') + ' 傷害。';
         if (res.blocked) logMsg += '<span class="log-hl-good">你格擋了部分傷害！</span>';
         if (res.absorbed) {
             floatPlayerEvent(playerFloatSel, '🛡️護盾吸收 ' + fmt(res.absorbed), 'shield');
@@ -577,10 +582,11 @@ function fieldTick(dt) {
         return;
     }
 
-    // 回復：基礎 BASE_HP_REGEN_PCT%/秒 + 生命恢復屬性 + 再生增益；法力恢復；技能冷卻
+    // 回復：每秒生命回復（基礎 BASE_HP_REGEN_PCT% + 生命恢復屬性；formula.js §3）+ 再生增益；法力恢復；技能冷卻
+    // 生命回復本身不會溢出（Math.min 夾在生命上限），與改版後「回復不轉護盾」一致。
     var hot = buffVal(p, 'hot');
-    if (p.hp < st.hp) p.hp = Math.min(st.hp, p.hp + (st.hp * (BASE_HP_REGEN_PCT / 100 + hot / 100) + st.hpRegen) * dt);
-    p.mp = Math.min(st.mp, p.mp + st.mpRegen * dt);
+    if (p.hp < st.hp) p.hp = Math.min(st.hp, p.hp + (playerHpRegenPerSec(st) + st.hp * hot / 100) * dt);
+    p.mp = Math.min(st.mp, p.mp + playerMpRegenPerSec(st) * dt);
     tickSkillCds(p, dt); // 潛力技能冷卻共用 skillCds（鍵 'potential:<id>'），一併在此遞減
 
     // 持續傷害（玩家：中毒 / 詛咒等）
@@ -716,11 +722,11 @@ function onFieldKill(m) {
     if (typeof legendaryOnEnemyKill === 'function') legendaryOnEnemyKill(FIELD.player);
     m._deathClearCd = FIELD_ENEMY_DEATH_CLEAR_DELAY;
     var st = getStats();
-    // 擊殺回復 KILL_HEAL_PCT% 最大生命（溢出轉護盾）
-    healPlayerWithShieldEvent(FIELD.player, st.hp * KILL_HEAL_PCT / 100, st, 'pv-float');
-    // 吸魂
+    // 擊殺回復 KILL_HEAL_PCT% 最大生命（非技能效果：溢出不轉護盾）
+    healPlayer(FIELD.player, st.hp * KILL_HEAL_PCT / 100, st, { noShield: true });
+    // 吸魂（神鑄特效；非技能效果：溢出不轉護盾）
     if ((st.passives.soulEater || 0) > 0) {
-        healPlayerWithShieldEvent(FIELD.player, st.hp * st.passives.soulEater / 100, st, 'pv-float');
+        healPlayer(FIELD.player, st.hp * st.passives.soulEater / 100, st, { noShield: true });
     }
     var goldGain = Math.round(m.gold * (1 + st.goldBonus / 100));
     var xpGain = Math.round(m.xp * (1 + st.xpBonus / 100));

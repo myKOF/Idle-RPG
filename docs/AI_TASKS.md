@@ -78,7 +78,7 @@ P5 之後的檔案所有權慣例（沿用即可，非硬性）：
 - `js/ui.js`：Codex
 - 協議變更一律由 Claude 改 `protocol.js` 並同步 `docs/WORKER_PROTOCOL.md`、遞增版本號
 
-`npm test` 現況 **509 項／509 通過／0 失敗**（2026-07-28）。
+`npm test` 現況 **642 項／642 通過／0 失敗**（2026-07-30）。
 先前記錄的 35 條既有失敗（`docs/TEST_FAILURE_TRIAGE.md`）已全部清掉。
 
 驗收標準仍是「不得新增失敗」，並以結尾的 `ℹ fail N` 為準——
@@ -88,6 +88,32 @@ P5 之後的檔案所有權慣例（沿用即可，非硬性）：
 ---
 
 # 2. Claude Code 任務
+
+## 2.-3 屬性及技能效果五項改造（2026-07-30）
+
+狀態：已完成，等待驗證
+
+任務分類：戰鬥核心／屬性派生改造（使用者指派給 Claude，含慣例上屬於 Codex 的 `js/ui.js` 一行圖示對照）。
+
+需求（使用者原文五點）：取消生命回復／吸血的溢出轉護盾（技能效果除外）、吸血／吸魔改由生命回復／
+法力恢復決定且不擋上限、韌性上限 80% 並兼含控場時間與被爆擊機率、敵人對玩家爆擊（8／6／4%、
+爆傷 300%，需參數化）、技能降防改為穿透且穿透不擋上限並改用 `a×(穿透%×b)^c` 曲線（超過 100% 轉增傷）。
+
+修改範圍：`js/formula.js`（核心公式）、`js/data.js`（`STAT_CAPS` 與面板 tips）、`js/combat.js`、
+`js/skills.js`、`js/legendary.js`、`js/potential.js`、`js/ui.js`（buff 圖示）、
+`config/CSV+Excel` 的 `game_parameters` 與 `Skills`、`tools/apply_params.cjs`、`tools/config_tables.cjs`、
+`game_formula.md`、`PATCH.md`。細節見 PATCH.md「屬性及技能效果五項改造（2026-07-30）」。
+
+前置依賴：已先 fast-forward 合併 `develop`（含 `ai/codex` 的混沌裝備兩筆），在合併後基礎上施工。
+衝突預檢：`js/*` 與 codex 變更區塊不重疊；參數表以合併後的 CSV 重生 xlsx，順帶把 codex 只改 CSV
+未同步 xlsx 的 9 列補回 xlsx（原本下次套用參數會被吃掉）。
+
+測試要求／結果：新增 `tests/attr-skill-rework-2026-07-30.test.cjs`（20 項）；`npm test` 642／642、
+`npm run build` 177 檔零錯誤；參數表 round-trip（`config_tables --apply` 語意變更 0、
+`apply_params` 將變更 0）。
+
+待 Antigravity 驗證重點：見 PATCH.md 條目與交付回報的「建議驗證項目」（穿透曲線實機值、
+敵人爆擊頻率與韌性折減、吸血回復量、破甲擊改穿透後的 DPS 與施放頻率、護盾不再由吸血成長）。
 
 ## 2.-2 技能提示退化成風味文字（回報：技能的正確 tips 消失）
 

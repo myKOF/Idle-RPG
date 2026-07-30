@@ -759,11 +759,17 @@ numCtx('formula', 'm.gold *= ', ';', P('4-野外怪物', '菁英倍率', 2), '�
 numCtx('formula', 'm.xp *= ', ';', P('4-野外怪物', '菁英倍率', 2), '菁英-經驗');
 numCtx('formula', 'm.dodge += ', ';', P('4-野外怪物', '菁英倍率', 3), '菁英-閃避');
 numCtx('formula', 'm.aspd = ', ';', P('4-野外怪物', '菁英倍率', 4), '菁英-攻速');
-// 怪物固定戰鬥值（combat.js；玩家設定用 st.xxx 無數字，錨點只中怪物那行）
-numCtx('combat', 'critRate: ', ',', P('3-戰鬥核心', '怪物固定戰鬥值', 0), '怪物-暴擊');
-numCtx('combat', 'critDmg: ', ',', P('3-戰鬥核心', '怪物固定戰鬥值', 1), '怪物-暴傷');
-// 怪物命中 fallback（monsterAtkCfg：hit: m.hit || c；實際命中率由「4-野外怪物/命中率」與「4-高塔BOSS/命中率」的 m.hit 驅動，此處僅為保底預設值）
-numCtx('combat', 'hit: m.hit || ', ',', P('3-戰鬥核心', '怪物固定戰鬥值', 2), '怪物-命中');
+// 怪物命中 fallback（monsterAtkCfg：hit: m.hit || a；實際命中率由「4-野外怪物/命中率」與「4-高塔BOSS/命中率」的 m.hit 驅動，此處僅為保底預設值）
+numCtx('combat', 'hit: m.hit || ', ',', P('3-戰鬥核心', '怪物固定戰鬥值', 0), '怪物-命中');
+// 敵人爆擊（formula.js §4；2026-07-30 起依敵種區分，取代原「怪物固定戰鬥值」的暴擊a/暴傷b）
+scalar('formula', 'ENEMY_CRIT_RATE_NORMAL', '3-戰鬥核心', '敵人爆擊', 0);
+scalar('formula', 'ENEMY_CRIT_RATE_ELITE', '3-戰鬥核心', '敵人爆擊', 1);
+scalar('formula', 'ENEMY_CRIT_RATE_BOSS', '3-戰鬥核心', '敵人爆擊', 2);
+scalar('formula', 'ENEMY_CRIT_DMG_PCT', '3-戰鬥核心', '敵人爆擊', 3);
+// 穿透 → 忽略防禦曲線（formula.js §3；穿透不設上限，超過 100% 的忽略量轉增傷）
+scalar('formula', 'PEN_IGNORE_A', '3-戰鬥核心', '穿透忽略防禦', 0);
+scalar('formula', 'PEN_IGNORE_B', '3-戰鬥核心', '穿透忽略防禦', 1);
+scalar('formula', 'PEN_IGNORE_C', '3-戰鬥核心', '穿透忽略防禦', 2);
 // 野外菁英掉落倍率（formula.js 常數 ELITE_DROP_MULT；野外 rollFieldDrops 與離線收益共用）
 scalar('formula', 'ELITE_DROP_MULT', '4-野外怪物', '野外菁英掉落倍率', 0);
 // 寶石商店刷新週期（item.js，單一常數）

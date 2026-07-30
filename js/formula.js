@@ -305,7 +305,8 @@ function computeStats(equipmentOverride) {
   st.critRate = capValue(5 + st.agi * PRIMARY_STAT_EFFECTS.agiCritRate + A.critRate, STAT_CAPS.critRate);   // 暴擊率：基礎 5% + 敏捷係數
   st.critDmg = 150 + A.critDmg;                                  // 暴擊傷害：基礎 150%
   st.comboHits = comboHitsFor(st.critRate);                     // 連擊數：暴擊率破 100% 衍生的額外攻擊次數（僅普攻／技能直接傷害，持續傷害不計）
-  st.pPen = capValue(A.pPen, STAT_CAPS.pPen);                                // 穿透上限（上限 0＝無上限）
+  // 穿透不設上限（STAT_CAPS.pPen/mPen = 0）：實際忽略防禦% 由 penIgnorePct 的遞減曲線換算（§3）。
+  st.pPen = capValue(A.pPen, STAT_CAPS.pPen);
   st.mPen = capValue(A.mPen, STAT_CAPS.mPen);
   st.hit = 100 + st.agi * 0 + A.hit;                          // 命中率：基礎 100% + 敏捷×a + 額外加成（無上限；戰鬥結算再 clamp 5~100）
   // 攻速：基礎攻速、敏捷係數與上限皆由 data.js 控制。
@@ -316,8 +317,9 @@ function computeStats(equipmentOverride) {
     : Math.max(ASPD_MIN, ASPD_BASE * (1 + st.aspdBonusBase / 100));
   st.cdr = capValue(A.cdr, STAT_CAPS.cdr);       // 冷卻縮減上限（潛力【時間坍縮】於施放時另行突破，見 skills.js castSkill）
   st.castSpeed = capValue(A.castSpeed, STAT_CAPS.castSpeed);                      // 施法速度上限（上限 0＝無上限）
-  st.lifesteal = capValue(A.lifesteal, STAT_CAPS.lifesteal);                      // 吸血上限（上限 0＝無上限）
-  st.manaSteal = capValue(A.manaSteal, STAT_CAPS.manaSteal);                      // 吸魔上限（上限 0＝無上限）
+  // 吸血／吸魔不設上限（STAT_CAPS = 0）：回復量由「每秒生命回復／法力恢復 × 此%」決定（§3 lifestealHealAmount）。
+  st.lifesteal = capValue(A.lifesteal, STAT_CAPS.lifesteal);
+  st.manaSteal = capValue(A.manaSteal, STAT_CAPS.manaSteal);
   // 敵種傷害天賦（清場/破菁/弒王法則）＝「額外」乘算：對應傷害加成總合 ×(1+天賦%)；無其他來源時不憑空提供。
   st.eliteDmg = A.eliteDmg * (1 + (talent.eliteDmg || 0) / 100);
   st.bossDmg = A.bossDmg * (1 + (talent.bossDmg || 0) / 100);
@@ -339,7 +341,9 @@ function computeStats(equipmentOverride) {
   st.blockRate = capValue(A.blockRate, STAT_CAPS.blockRate);                      // 格擋率上限（上限 0＝無上限）
   st.blockDmgRed = capValue(A.blockDmgRed, STAT_CAPS.blockDmgRed);                  // 額外格擋減傷上限（總減傷 = 30% + 此值；上限 0＝不夾上限）
   st.evasion = capValue(st.agi * PRIMARY_STAT_EFFECTS.agiEvasion + A.evasion, STAT_CAPS.evasion);          // 閃避：敏捷係數（上限 0＝無上限）
-  st.tenacity = capValue(A.tenacity, STAT_CAPS.tenacity);                        // 韌性上限（上限 0＝無上限）
+  // 韌性（上限 STAT_CAPS.tenacity＝80%）：同時作用於「被控場機率」（resistCtrl）、
+  // 「被控場持續時間」（ccFactor）與「被爆擊機率」（resolveHit 暴擊段）三處。
+  st.tenacity = capValue(A.tenacity, STAT_CAPS.tenacity);
   // 護盾總值額外（護盾脈衝）＝獨立乘區：與其他護盾效率% 連乘後折算回單一效率值，供既有護盾公式沿用。
   st.shieldEff = ((1 + A.shieldEff / 100) * (1 + (talent.shieldEff || 0) / 100) - 1) * 100;
   // 物理、魔法與元素抗性不設上限；仍保留下限 0，避免負抗性反向增傷。
@@ -558,6 +562,36 @@ function skillElemMixOf(aCfg) {
   return null;
 }
 
+/* ---- 穿透 → 忽略防禦（2026-07-30 改版）----
+   忽略敵人防禦比率 = a × (總穿透加成率 × b)^c
+     總穿透加成率 = 總穿透加成% ÷ 100（b = 100 即「以百分點代入」：穿透 250% → 0.01×250^0.68 ＝ 42.7%）
+   a/b/c 由參數表「3-戰鬥核心／穿透忽略防禦」控制。
+   穿透本身不設上限（STAT_CAPS.pPen/mPen = 0），改由這條遞減曲線收斂：
+     穿透 100% → 22.9%｜250% → 42.7%｜500% → 68.4%｜873% → 100%｜1000% → 109.7%
+   換算結果超過 100% 時，超出部分轉為增傷：150% ＝ 完全忽略防禦後再 ×1.5（penOverflowDmgMultiplier）。 */
+var PEN_IGNORE_A = 0.01;
+var PEN_IGNORE_B = 100;
+var PEN_IGNORE_C = 0.68;
+function penIgnoreRatio(penPct) {
+  var rate = Math.max(0, Number(penPct) || 0) / 100;
+  if (rate <= 0) return 0;
+  return PEN_IGNORE_A * Math.pow(rate * PEN_IGNORE_B, PEN_IGNORE_C);
+}
+// 面板／說明用：實際忽略防禦%（可超過 100，超出部分為增傷）
+function penIgnorePct(penPct) { return penIgnoreRatio(penPct) * 100; }
+// 有效防禦乘區：忽略 100% 時防禦歸零，不會出現負防禦
+function penDefMultiplier(ignoreRatio) { return Math.max(0, 1 - Math.min(1, ignoreRatio)); }
+// 溢出增傷乘區：忽略防禦超過 100% 的部分（1.5 → ×1.5）
+function penOverflowDmgMultiplier(ignoreRatio) { return ignoreRatio > 1 ? ignoreRatio : 1; }
+/* 有效穿透 = 屬性穿透% + 技能增益 penUp%
+   penUp＝技能（破甲擊／旋風斬 M8／法力灼燒 M8）改版後給予的穿透增益，同時作用於物理與魔法穿透。
+   buffVal 定義於 combat.js（同時載入；獨立載入 formula.js 的測試環境以 typeof 保護）。 */
+function penBuffValue(ent) {
+  return (typeof buffVal === 'function' && ent) ? (buffVal(ent, 'penUp') || 0) : 0;
+}
+function effectivePPen(st, ent) { return ((st && st.pPen) || 0) + penBuffValue(ent); }
+function effectiveMPen(st, ent) { return ((st && st.mPen) || 0) + penBuffValue(ent); }
+
 /* ---- 共用攻擊流程（傷害結算總公式） ----
    結算順序：命中 → 防禦減傷（含破甲/穿透）→ 物/魔抗性 → 技能屬性化（元素抗性＋屬性傷害提升）
            → ±10% 浮動 → 暴擊 → 元素附加 → 元素特效（屬性化段＋附加段合計判定）
@@ -576,8 +610,10 @@ function skillElemMixOf(aCfg) {
          （isElite/isBoss = 攻擊者自身敵種，attr = 攻擊者屬性標籤，供防守方敵種/屬性抗性選值）
          （dmgVsElem = 對屬性敵人傷害%合計 {fire..dark}，對 dCfg.attr 對應屬性的敵人生效）
    dCfg: { def, mdef, level, dodge, blockRate, blockDmgRed, pRes, mRes, resist{六元素+ctrl},
-           ctrlRes, ccFactor, thornsPct, maxHp, isElite, isBoss, attr,
+           ctrlRes, ccFactor, tenacity, thornsPct, maxHp, isElite, isBoss, attr,
            normalDmgRed, eliteDmgRed, bossDmgRed, resVsElem{fire..dark} }
+         （tenacity = 防守方韌性%：折減被爆擊機率［暴擊段］與被控場機率［resistCtrl］；
+           ccFactor 另含韌性對控場「持續時間」的縮短）
    回傳 { dmg, crit, miss, blocked, killed, thorns, heal, procs[] }        */
 function resolveHit(attacker, defender, aCfg, dCfg) {
   var out = { dmg: 0, crit: false, miss: false, blocked: false, killed: false, thorns: 0, heal: 0, absorbed: 0, procs: [] };
@@ -590,19 +626,22 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   if (!chance(hitChance)) { out.miss = true; return out; }
   // 潛力技能【絕對領域】／【不屈意志】無敵：免疫本次所有傷害。
   if (dCfg.invuln) { out.invuln = true; return out; }
-  // 防禦選型（物理/魔法）＋破甲＋穿透：有效防禦 = 防禦 × (1-破甲%) × (1-穿透%)
+  // 防禦選型（物理/魔法）＋破甲＋穿透：有效防禦 = 防禦 × (1-破甲%) × (1-忽略防禦%)
+  // 忽略防禦% 由穿透經 penIgnoreRatio 換算（不再等於穿透%本身）；超過 100% 的部分轉為增傷。
   var dmg = 0;
   if (aCfg.dmgType !== 'magic') {
-    var pDef = (dCfg.def || 0) * (1 - (aCfg.sunder || 0) / 100) * (1 - (aCfg.pen || 0) / 100);
-    var pDmg = (aCfg.atk || 0) * (1 - defReduction(pDef, aCfg.level || 1));
+    var pIgnore = penIgnoreRatio(aCfg.pen);
+    var pDef = (dCfg.def || 0) * (1 - (aCfg.sunder || 0) / 100) * penDefMultiplier(pIgnore);
+    var pDmg = (aCfg.atk || 0) * (1 - defReduction(pDef, aCfg.level || 1)) * penOverflowDmgMultiplier(pIgnore);
     pDmg *= 1 - physicalResistanceReduction(dCfg.pRes, aCfg.level || 1);   // 物理抗性：結算防禦後套用抗性曲線
     dmg += pDmg;
   }
   if (aCfg.dmgType === 'magic' || aCfg.dmgType === 'both') {
     var mPen = (aCfg.dmgType === 'both') ? (aCfg.mPen || 0) : (aCfg.pen || 0);
+    var mIgnore = penIgnoreRatio(mPen);
     var baseMAtk = (aCfg.dmgType === 'both') ? (aCfg.matk || 0) : (aCfg.atk || 0);
-    var mDef = (dCfg.mdef || 0) * (1 - (aCfg.sunder || 0) / 100) * (1 - mPen / 100);
-    var mDmg = baseMAtk * (1 - defReduction(mDef, aCfg.level || 1));
+    var mDef = (dCfg.mdef || 0) * (1 - (aCfg.sunder || 0) / 100) * penDefMultiplier(mIgnore);
+    var mDmg = baseMAtk * (1 - defReduction(mDef, aCfg.level || 1)) * penOverflowDmgMultiplier(mIgnore);
     mDmg *= 1 - magicResistanceReduction(dCfg.mRes, aCfg.level || 1);   // 魔法抗性：結算防禦後套用抗性曲線
     dmg += mDmg;
   }
@@ -628,7 +667,10 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   }
   dmg *= rnd(0.9, 1.1);   // 傷害浮動 ±10%
   // 暴擊：傷害 × 暴傷%（基礎 150%）；神鑄特效【破滅】暴擊時機率翻倍
-  if (chance(aCfg.critRate || 0)) {
+  // 防守方韌性折減被爆擊機率：實際爆擊率 = 攻擊者爆擊率 × (1 - 韌性%)
+  //（例：敵方 8% × (1-80%) = 1.6%；怪物無韌性欄位，玩家攻擊端不受影響）
+  var effCritRate = Math.max(0, Number(aCfg.critRate) || 0) * (1 - clamp(Number(dCfg.tenacity) || 0, 0, 100) / 100);
+  if (chance(effCritRate)) {
     dmg *= (aCfg.critDmg || 150) / 100; out.crit = true;
     if (aCfg.annihilate && chance(aCfg.annihilate)) { dmg *= 2; out.procs.push('破滅'); }
   }
@@ -650,8 +692,10 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     var elemMagicMit = 1;
     if (dCfg.isPlayer) {
       var elemMPen = (aCfg.dmgType === 'both') ? (aCfg.mPen || 0) : (aCfg.pen || 0);
-      var elemMDef = (dCfg.mdef || 0) * (1 - (aCfg.sunder || 0) / 100) * (1 - elemMPen / 100);
-      elemMagicMit = (1 - defReduction(elemMDef, aCfg.level || 1)) * (1 - magicResistanceReduction(dCfg.mRes, aCfg.level || 1));
+      var elemMIgnore = penIgnoreRatio(elemMPen);
+      var elemMDef = (dCfg.mdef || 0) * (1 - (aCfg.sunder || 0) / 100) * penDefMultiplier(elemMIgnore);
+      elemMagicMit = (1 - defReduction(elemMDef, aCfg.level || 1)) * penOverflowDmgMultiplier(elemMIgnore) *
+        (1 - magicResistanceReduction(dCfg.mRes, aCfg.level || 1));
     }
     for (var i = 0; i < ELEMENTS.length; i++) {
       var ek = ELEMENTS[i];
@@ -752,15 +796,23 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   return out;
 }
 
-// 控制抵抗判定：ctrlRes% 機率完全抵抗暈眩/減速
+/* 控制抵抗判定：完全抵抗暈眩/減速的機率
+   控制抵抗% 與韌性% 為兩道獨立擲骰，任一成功即抵抗：總機率 = 1 - (1-控抗%)×(1-韌性%)
+  （韌性 60% + 控抗 50% → 1-0.4×0.5 = 80%；怪物 dCfg 無 tenacity 欄位，行為與改版前一致） */
 function resistCtrl(dCfg) {
-  var r = (dCfg.ctrlRes || 0);
-  return r > 0 && chance(r);
+  var r = clamp(Number(dCfg.ctrlRes) || 0, 0, 100);
+  var t = clamp(Number(dCfg.tenacity) || 0, 0, 100);
+  var total = (1 - (1 - r / 100) * (1 - t / 100)) * 100;
+  return total > 0 && chance(total);
 }
 
 /* ---- 治療公式 ----
    溢出治療的 SHIELD_OVERFLOW_PCT% 轉為護盾；
-   護盾上限 = 最大生命 × SHIELD_HEAL_CAP_PCT% × (1 + 護盾效率%) */
+   護盾上限 = 最大生命 × SHIELD_HEAL_CAP_PCT% × (1 + 護盾效率%)
+
+   2026-07-30 改版：溢出轉護盾**僅限技能本身的治療效果**。
+   生命回復、吸血、元素汲取、擊殺回復、神鑄回復等非技能來源以 opts.noShield 呼叫，
+   溢出直接捨棄（回滿即止）。呼叫端不傳 opts 時維持原行為（技能路徑）。 */
 var SHIELD_HEAL_CAP_PCT = 10;   // 治療轉化護盾上限（占最大生命 %）
 var SHIELD_OVERFLOW_PCT = 1;    // 溢出治療轉護盾比例（%）
 var SHIELD_SKILL_CAP_PCT = 10000; // 技能直接給予的護盾上限（占最大生命 %；10000 = 100 倍生命）
@@ -780,11 +832,12 @@ function refreshShieldMaxAfterGain(ent, beforeShield) {
   if (shield > beforeShield || !(ent.shieldMax > 0) || ent.shieldMax < shield) ent.shieldMax = shield;
   ent.shieldMaxVersion = SHIELD_MAX_VERSION;
 }
-function healPlayer(pEnt, amount, st) {
+function healPlayer(pEnt, amount, st, opts) {
   if (amount <= 0) return;
   var space = st.hp - pEnt.hp;
   if (amount <= space) { pEnt.hp += amount; return; }
   pEnt.hp = st.hp;
+  if (opts && opts.noShield) return;   // 非技能來源：溢出不轉護盾
   var over = amount - space;
   var cap = st.hp * (SHIELD_HEAL_CAP_PCT / 100) * (1 + (st.shieldEff || 0) / 100);
   var beforeShield = Math.max(0, pEnt.shield || 0);
@@ -797,9 +850,46 @@ function healPlayer(pEnt, amount, st) {
   refreshShieldMaxAfterGain(pEnt, beforeShield);
 }
 
+/* ---- 吸血／吸魔（2026-07-30 改版）----
+   不再以「造成的傷害 × 吸血%」計算，也不再設 60%／30% 上限；
+   改由「每秒生命回復／每秒法力恢復」決定，每次觸發回復：
+     吸血回復 = 每秒生命回復 × 吸血%      （回復 100/s、吸血 500% → 每次 500）
+     吸魔回復 = 每秒法力恢復 × 吸魔%
+   每秒生命回復 = 最大生命 × BASE_HP_REGEN_PCT% + 額外生命恢復（與屬性面板「生命恢復」同值）。
+   溢出不轉護盾（healPlayer 的 noShield 路徑）。 */
+function playerHpRegenPerSec(st) {
+  if (!st) return 0;
+  return (st.hp || 0) * (BASE_HP_REGEN_PCT / 100) + (st.hpRegen || 0);
+}
+function playerMpRegenPerSec(st) {
+  return st ? (st.mpRegen || 0) : 0;
+}
+function lifestealHealAmount(st, pct) {
+  return Math.max(0, playerHpRegenPerSec(st) * (Number(pct) || 0) / 100);
+}
+function manaStealAmount(st, pct) {
+  return Math.max(0, playerMpRegenPerSec(st) * (Number(pct) || 0) / 100);
+}
+
 /* ============================================================
    §4 敵方屬性
    ============================================================ */
+
+/* ---- 敵人爆擊（2026-07-30 新增；數值以參數表「3-戰鬥核心／敵人爆擊」為準）----
+   敵人攻擊玩家時同樣會爆擊，爆擊率依敵種區分、爆傷倍率共用：
+     普通 ENEMY_CRIT_RATE_NORMAL%｜菁英 ENEMY_CRIT_RATE_ELITE%｜BOSS ENEMY_CRIT_RATE_BOSS%
+     爆擊傷害 = 傷害 × ENEMY_CRIT_DMG_PCT%
+   玩家韌性折減被爆擊機率（resolveHit 暴擊段：爆擊率 × (1 - 韌性%)）。 */
+var ENEMY_CRIT_RATE_NORMAL = 8;
+var ENEMY_CRIT_RATE_ELITE = 6;
+var ENEMY_CRIT_RATE_BOSS = 4;
+var ENEMY_CRIT_DMG_PCT = 300;
+function enemyCritRateFor(m) {
+  if (!m) return ENEMY_CRIT_RATE_NORMAL;
+  if (m.isBoss) return ENEMY_CRIT_RATE_BOSS;
+  if (m.elite) return ENEMY_CRIT_RATE_ELITE;
+  return ENEMY_CRIT_RATE_NORMAL;
+}
 
 /* ---- 野外怪物成長曲線（指數 × 線性；數值以參數表「4-野外怪物」為準）----
    生命 = (30 + 階段×8)   × 1.095^(階段-1)

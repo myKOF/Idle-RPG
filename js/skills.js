@@ -1010,7 +1010,7 @@ function skillRtSimpleCast(pEnt, sk, fx, lv, powerPct, targets, floatSel, opts) 
           atk: baseVal, dmgType: fx.dmgType, level: st.level,
           critRate: st.critRate + (fx.critBonus || 0), critDmg: st.critDmg,
           hit: (fx.neverMiss || opts.neverMiss) ? 999 : Math.max(100, st.hit),
-          pen: fx.dmgType === 'magic' ? st.mPen : st.pPen,
+          pen: fx.dmgType === 'magic' ? effectiveMPen(st, pEnt) : effectivePPen(st, pEnt),
           sunder: st.passives.sunder || 0,
           trueDmgPct: st.passives.trueDmg || 0,
           annihilate: st.passives.annihilate || 0,
@@ -1335,7 +1335,7 @@ function skillRtOpenField(pEnt, sk, fx, id, lv, st, out) {
     atk: tickAtk, dmgType: fx.dmgType, level: st.level,
     critRate: st.critRate + (fx.critBonus || 0), critDmg: st.critDmg,
     hit: fx.neverMiss ? 999 : Math.max(100, st.hit),
-    pen: fx.dmgType === 'magic' ? st.mPen : st.pPen,
+    pen: fx.dmgType === 'magic' ? effectiveMPen(st, pEnt) : effectivePPen(st, pEnt),
     sunder: st.passives.sunder || 0, trueDmgPct: st.passives.trueDmg || 0,
     annihilate: st.passives.annihilate || 0,
     elemDmgPct: st.elemDmgPct, elemDmgUp: st.elemDmgUp,
@@ -1629,7 +1629,7 @@ var SKILLS = {
   powerSlash: { name: '強力斬', emoji: '🗡️', cat: 'phys', tags: [], unlockLv: 1, cost: 15, cd: 6, flavor: '蓄力揮出沉重的一擊。', fx: { dmgType: 'phys', stat: 'atk', base: 360, per: 80 } },
   doubleStrike: { name: '二連擊', emoji: '⚔️', cat: 'phys', tags: [], unlockLv: 1, cost: 20, cd: 8, flavor: '快速的兩段斬擊。', fx: { dmgType: 'phys', stat: 'atk', base: 210, per: 44, hits: 2 } },
   whirlwind: { name: '旋風斬', emoji: '🌪️', cat: 'phys', tags: [], unlockLv: 1, cost: 25, cd: 10, shape: '3*3', flavor: '旋轉身軀橫掃周遭。', fx: { dmgType: 'phys', stat: 'atk', base: 505, per: 110 } },
-  armorBreak: { name: '破甲擊', emoji: '🔨', cat: 'phys', tags: [], unlockLv: 1, cost: 20, cd: 12, flavor: '重擊敵人的護甲弱點。', fx: { dmgType: 'phys', stat: 'atk', base: 300, per: 60, debuff: { key: 'defDown', base: 25, per: 5, dur: 5 } } },
+  armorBreak: { name: '破甲擊', emoji: '🔨', cat: 'phys', tags: [], unlockLv: 1, cost: 20, cd: 12, flavor: '重擊敵人的護甲弱點。', fx: { dmgType: 'phys', stat: 'atk', base: 300, per: 60, buff: { key: 'penUp', base: 25, per: 5, dur: 5 } } },
   executeStrike: { name: '處決', emoji: '💀', cat: 'phys', tags: [], unlockLv: 20, cost: 30, cd: 15, flavor: '對瀕死敵人給予終結。', fx: { dmgType: 'phys', stat: 'atk', base: 500, per: 110, execBelow: 30, execMult: 2 } },
   rendWound: { name: '撕裂', emoji: '🩸', cat: 'phys', tags: [], unlockLv: 20, cost: 18, cd: 10, flavor: '造成難以癒合的傷口。', fx: { dmgType: 'phys', stat: 'atk', base: 240, per: 50, dot: { pct: 25, dur: 5, name: '流血' } } },
   stunBlow: { name: '震盪重擊', emoji: '💫', cat: 'phys', tags: [], unlockLv: 20, cost: 25, cd: 14, flavor: '猛擊敵人使其暈眩。', fx: { dmgType: 'phys', stat: 'atk', base: 320, per: 65, stunDur: 1.5 } },
@@ -1734,8 +1734,8 @@ var UNLOCKS = {
   // 物理
   powerSlash:    { 4: { stunDur: 0.5 }, 8: { stunDur: 1, critBonus: 15 } },
   doubleStrike:  { 4: { hits: 3 }, 8: { hits: 3, healPctOfDmg: 12 } },
-  whirlwind:     { 4: { slowDur: 2 }, 8: { slowDur: 3, debuff: { key: 'defDown', base: 10, per: 2, dur: 4 } } },
-  armorBreak:    { 4: { debuff: { key: 'defDown', base: 35, per: 6, dur: 6 } }, 8: { debuff: { key: 'defDown', base: 45, per: 7, dur: 8 }, stunDur: 0.5 } },
+  whirlwind:     { 4: { slowDur: 2 }, 8: { slowDur: 3, buff: { key: 'penUp', base: 10, per: 2, dur: 4 } } },
+  armorBreak:    { 4: { buff: { key: 'penUp', base: 35, per: 6, dur: 6 } }, 8: { buff: { key: 'penUp', base: 45, per: 7, dur: 8 }, stunDur: 0.5 } },
   executeStrike: { 4: { execBelow: 40 }, 8: { execBelow: 50, execMult: 2.5 } },
   rendWound:     { 4: { dot: { pct: 40, dur: 6, name: '流血' } }, 8: { dot: { pct: 55, dur: 7, name: '流血' }, healPctOfDmg: 15 } },
   stunBlow:      { 4: { stunDur: 2 }, 8: { stunDur: 2.5, debuff: { key: 'atkDown', base: 10, per: 2, dur: 4 } } },
@@ -1754,7 +1754,7 @@ var UNLOCKS = {
   shadowBolt:    { 4: { healPctOfDmg: 45 }, 8: { healPctOfDmg: 55, dot: { pct: 25, dur: 4, name: '侵蝕' } } },
   arcaneBarrage: { 4: { hits: 5 }, 8: { hits: 6, mpOnCrit: 10 } },
   meteor:        { 4: { dot: { pct: 30, dur: 5, name: '燃燒' } }, 8: { dot: { pct: 40, dur: 6, name: '燃燒' }, stunDur: 1.2 } },
-  manaBurn:      { 4: { mpOnCrit: 35 }, 8: { mpOnCrit: 40, debuff: { key: 'defDown', base: 15, per: 3, dur: 5 } } },
+  manaBurn:      { 4: { mpOnCrit: 35 }, 8: { mpOnCrit: 40, buff: { key: 'penUp', base: 15, per: 3, dur: 5 } } },
   frostNova:     { 4: { stunDur: 1.5 }, 8: { stunDur: 1.5, slowDur: 4 } },
   voidRift:      { 4: { execBelow: 30, execMult: 1.5 }, 8: { execBelow: 30, execMult: 1.5, doubleCastPct: 15 } },
   // 防禦與治療
@@ -2215,8 +2215,10 @@ function skillConditionOk(sk, fx, pEnt, target, st) {
       : !!(target && target.hp > 0 && hasDots(target));
     if (!dotTargetOk) return false;
   }
-  // 增益不重複疊放
-  if (fx.buff && buffVal(pEnt, fx.buff.key) > 0) return false;
+  /* 增益不重複疊放——僅限「純增益技」。
+     傷害技的增益是附帶效果（破甲擊等的穿透增益），若因增益還在就不施放，等於白丟一次輸出，
+     因此傷害技不受此閘門限制。 */
+  if (fx.buff && !fx.dmgType && buffVal(pEnt, fx.buff.key) > 0) return false;
   return true;
 }
 
@@ -2301,7 +2303,7 @@ function applySkillDebuffs(targets, fx, lv, parts, mult) {
 
 function playerBuffFloatClass(key) {
   if (key === 'atkUp' || key === 'aspdUp' || key === 'critDmgUp' || key === 'thornsUp' ||
-    key === 'matkUp' || key === 'magicUp') return 'attack';
+    key === 'matkUp' || key === 'magicUp' || key === 'penUp') return 'attack';
   if (key === 'defUp' || key === 'evasionUp' || key === 'blockUp' || key === 'hot') return 'defense';
   if (key === 'lootUp') return 'special';
   if (key === 'atkDown' || key === 'defDown') return 'debuff';
@@ -2558,7 +2560,8 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
           var aCfg = {
             atk: baseVal, dmgType: fx.dmgType, level: st.level,
             critRate: st.critRate + (fx.critBonus || 0), critDmg: st.critDmg,
-            hit: fx.neverMiss ? 999 : Math.max(100, st.hit), pen: fx.dmgType === 'magic' ? st.mPen : st.pPen, // 技能命中吃玩家命中率，保留 100 當地板（低命中不受影響、高命中能壓過高閃避敵人）
+            hit: fx.neverMiss ? 999 : Math.max(100, st.hit), // 技能命中吃玩家命中率，保留 100 當地板（低命中不受影響、高命中能壓過高閃避敵人）
+            pen: fx.dmgType === 'magic' ? effectiveMPen(st, pEnt) : effectivePPen(st, pEnt), // 穿透含技能增益 penUp（破甲擊等）
             sunder: st.passives.sunder || 0,        // 神鑄特效【破甲】：技能同樣適用（與普攻同規格）
             trueDmgPct: st.passives.trueDmg || 0,   // 神鑄特效【真傷】：技能同樣適用（以技能傷害基底計）
             annihilate: st.passives.annihilate || 0, // 神鑄特效【破滅】：技能暴擊同樣適用
@@ -2676,12 +2679,10 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
         }
       }
       applySkillDebuffs(targets, fx, lv, parts, fxMult);
-      if (st.manaSteal > 0) pEnt.mp = Math.min(st.mp, pEnt.mp + totalDmg * st.manaSteal / 100);
-      if (st.lifesteal > 0) {
-        var beforeSkillLifeShield = Math.max(0, pEnt.shield || 0);
-        healPlayer(pEnt, totalDmg * st.lifesteal / 100, st);
-        showPlayerShieldGainAfterHeal(floatSel, pEnt, beforeSkillLifeShield);
-      }
+      // 吸血／吸魔：以「每秒生命回復／法力恢復 × %」計（formula.js §3），與技能傷害無關；
+      // 屬性吸血非技能本身的效果，溢出不轉護盾。
+      if (st.manaSteal > 0) pEnt.mp = Math.min(st.mp, pEnt.mp + manaStealAmount(st, st.manaSteal));
+      if (st.lifesteal > 0) healPlayer(pEnt, lifestealHealAmount(st, st.lifesteal), st, { noShield: true });
       // 45 新技能（resourceConvert 族）：傷害段後結算（hpSacrifice M8——本次傷害部分轉護盾）
       skillRtAfterDamage(pEnt, fx, lv, st, totalDmg, floatSel, parts);
     }
@@ -3113,6 +3114,7 @@ function deleteFusion(id) {
 function buffLabel(key) {
   return ({ atkUp: '攻擊', defUp: '防禦', aspdUp: '攻速', evasionUp: '閃避', critDmgUp: '爆傷',
     lootUp: '掉寶', thornsUp: '反震', blockUp: '格擋', hot: '再生',
+    penUp: '物理/魔法穿透',
     atkDown: '攻擊', defDown: '防禦',
     // 潛力技能增益
     velocitySurge: '極速之力·攻速', lightningOverload: '雷霆過載·雷電傷害', chronoCdr: '時間坍縮·冷卻縮減',

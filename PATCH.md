@@ -1,5 +1,18 @@
 # PATCH.md
 
+## 改造：屬性及技能效果五項改造（2026-07-30）
+
+- **回復溢出轉護盾改為技能限定**：`healPlayer(pEnt, amount, st, opts)` 新增 `opts.noShield`；生命回復、吸血、元素暗影汲取、擊殺回復、吸魂（神鑄）改以 `{ noShield: true }` 呼叫，回滿即止；技能本身的治療（`healPctMax`／`healPctOfDmg`／潛力聖療等）維持溢出轉護盾。`combat.js` 的 `healPlayerWithShieldEvent`（已無來源會轉護盾）移除。
+- **吸血／吸魔改由回復決定且取消上限**：`STAT_CAPS.lifesteal/manaSteal` 改 0；新增 `playerHpRegenPerSec`／`playerMpRegenPerSec`／`lifestealHealAmount`／`manaStealAmount`（`formula.js` §3）。每次命中回復 = 每秒生命回復（`最大生命×1.5% + 生命恢復`）× 吸血%／每秒法力恢復 × 吸魔%，與造成的傷害無關。普攻、技能傷害段與神鑄【萬象汲取】共用同一換算。
+- **韌性上限 80% 並擴充為三效**：`STAT_CAPS.tenacity` 60 → 80；`resistCtrl` 改為「控制抵抗與韌性各自獨立擲骰」（總抵抗 = 1−(1−控抗)(1−韌性)）；`resolveHit` 暴擊段新增 `爆擊率 × (1 − 防守方韌性%)`；控場時間縮短沿用既有 `ccFactor`。`playerDefCfg` 新增傳遞 `tenacity`。
+- **敵人爆擊**：`formula.js` §4 新增 `ENEMY_CRIT_RATE_NORMAL/ELITE/BOSS`（8／6／4%）、`ENEMY_CRIT_DMG_PCT`（300%）與 `enemyCritRateFor(m)`；`monsterAtkCfg` 不再寫死 5%／150%。參數表新增「3-戰鬥核心／敵人爆擊」列，`怪物固定戰鬥值` 列的暴擊／暴傷欄位移除（命中改為參數 a、攻速 b），`apply_params` 映射同步調整。`doMonsterAttack` 的爆擊浮字／日誌改依 `res.crit` 判定（重擊倍率仍沿用爆擊樣式但不標爆擊字樣）。
+- **穿透改遞減曲線、取消上限、技能不再降防**：`STAT_CAPS.pPen/mPen` 改 0；新增 `PEN_IGNORE_A/B/C`（0.01／100／0.68）與 `penIgnoreRatio`／`penIgnorePct`／`penDefMultiplier`／`penOverflowDmgMultiplier`。忽略防禦比率 = `a×(穿透%÷100×b)^c`，物穿與魔穿各自換算（含玩家承受元素攻擊的魔法減免段），超過 100% 時防禦歸零並將超出部分轉為增傷。破甲擊／旋風斬 M8／法力灼燒 M8 的 `defDown` 減益改為自身 `penUp` 增益（同時加成物理與魔法穿透，數值與持續時間沿用）；新增 `effectivePPen`／`effectiveMPen` 供普攻、技能、領域快照、傳奇與潛力共用。`defDown` 機制保留給舊存檔融合技快照。
+- 附帶：`pickAndCastSkill` 的「增益不重複疊放」閘門改為只擋純增益技（傷害技的附帶增益不再阻擋施放，否則破甲擊會因穿透增益未過期而白丟輸出）；`potential.js` 與 `combat.js` 的每秒生命回復改用 `playerHpRegenPerSec` 單一來源。
+- 面板：穿透 tips 顯示實際忽略防禦%（溢出時另標增傷倍率）、吸血／吸魔 tips 顯示每秒回復與每次回復量、韌性 tips 列出三種效果。技能增益新增 `penUp` 圖示與標籤。
+- 參數表：`game_parameters` 新增「敵人爆擊」「穿透忽略防禦」兩列，屬性上限四列改值並補說明；`Skills` 表三支技能改為 `penUp`；`config_tables.cjs` 的 fx 說明頁補上 `penUp` 與「不得再用 defDown」註記。CSV／xlsx 已重生並 round-trip 驗證（`config_tables --apply` 語意變更 0、`apply_params` 將變更 0）。
+- 順手修掉的既有測試脆弱點：`tests/catchup-write-throttle.test.cjs` 兩處固定 `setTimeout(60)` 改為輪詢到回呼到齊（`waitUntil`）。該測試只載入 `js/storage.js`、與本次改動無關，但節流佇列沒有 60 毫秒的保證，測試檔一多就會在回呼到齊前先斷言（本次新增測試檔後整包並行跑約 1/3 機率誤判；乾淨樹也只是剛好沒觸發）。
+- 驗證：`tests/attr-skill-rework-2026-07-30.test.cjs` 新增 20 項全通過；`npm test` 642／642（連跑 3 次無 flake）、`npm run build` 177 檔零錯誤。實機（隔離埠 8321）連續戰鬥 370 次敵人攻擊中 28 次爆擊＝7.6%（韌性 0 的存檔，期望 8%），爆擊傷害約為普通的 2.8～3.0 倍（＝300%）；屬性面板全列 tips 逐一呼叫無拋錯；主控台除探測用的 `panel: unknown panel: stats` 外無錯誤。
+
 ## 修正：背景分頁長時間掛機記憶體累積與回頁卡頓（2026-07-26）
 
 - 根因：分頁隱藏後每次節流喚醒仍完整模擬最多 10 秒戰鬥（浮字 DOM＋強制排版量測、日誌字串、每 15 遊戲秒全存檔序列化）、`renderStatsPanel` 每秒重建、`checkForUpdates` 每 3 分鐘抓整頁、參數輪詢每 2 秒抓檔；數千次喚醒累積使 V8 堆與 DOM 持續墊高（實測 2 天 9GB+），回頁時積壓計時器爆發＋大堆 GC＋換頁造成數分鐘卡死。
