@@ -1414,17 +1414,18 @@
             'elemDmgFire', 'elemDmgIce', 'elemDmgLightning', 'elemDmgPoison', 'elemDmgLight', 'elemDmgDark'
         ]);
 
-        const poolSource = (typeof OFFICIAL_AFFIX_POOL !== 'undefined') ? OFFICIAL_AFFIX_POOL : (typeof AFFIX_POOL !== 'undefined' ? AFFIX_POOL : {});
+        const poolSource = (typeof AFFIX_POOL !== 'undefined') ? AFFIX_POOL : ((typeof OFFICIAL_AFFIX_POOL !== 'undefined') ? OFFICIAL_AFFIX_POOL : {});
         const slotKeys = [];
-        const fallbackKeys = [];
 
         for (let k in poolSource) {
             if (forbiddenKeys.has(k)) continue; // 排除與物理流派衝突之魔法與無用元素詞條
             const def = poolSource[k];
-            fallbackKeys.push(k);
-            if (!def.slots || def.slots.indexOf(baseSlot) >= 0) {
-                slotKeys.push(k);
+            // 🎯 製作人指示：嚴格守護部位限制！如 gemEff 僅允許 ring/amulet，武器絕不允許出現 gemEff！
+            if (def.slots) {
+                if (def.slots.indexOf(baseSlot) < 0) continue; // 不符合目前部位限制者一律過濾
+                if (def.slots.indexOf('all_lock') >= 0) continue; // 系統鎖定詞條過濾
             }
+            slotKeys.push(k);
         }
 
         const affixes = [];
@@ -1436,28 +1437,31 @@
             requiredCoreKeys.forEach(k => {
                 if (poolSource[k] && !usedKeys.has(k)) {
                     usedKeys.add(k);
-                    const val = (isGodforged || rarity >= 7)
+                    const isAncient = (Math.random() < ancientTargetRatio);
+                    const val = isAncient
                         ? officialAncientAffixValue(k, itemLevel, rarity)
                         : officialRollAffixValue(k, itemLevel, rarity);
-                    affixes.push({ key: k, val: val, ancient: (isGodforged || rarity >= 7) });
+                    affixes.push({ key: k, val: val, ancient: isAncient });
                 }
             });
         }
 
-        // 神鑄創世 (R8) 全部位 100% 7 條太古詞條
+        // 太古詞條數量按官方真實權重與概率生成（而非無腦全部強行滿太古，符合 3.43K 產量之真實期望值）
+        const ancientCountRolled = rollOfficialAncientCount(slotsCount);
+        const ancientIndices = new Set();
+        while (ancientIndices.size < ancientCountRolled && ancientIndices.size < slotsCount) {
+            ancientIndices.add(Math.floor(Math.random() * slotsCount));
+        }
+
         let guard = 0;
         while (affixes.length < slotsCount && guard++ < 300) {
-            // 優先嘗試部位專屬純物理/減傷詞條，池空時使用全通用詞條補滿 7 條
             let candidateKeys = slotKeys.filter(k => !usedKeys.has(k));
-            if (candidateKeys.length === 0) {
-                candidateKeys = fallbackKeys.filter(k => !usedKeys.has(k));
-            }
             if (candidateKeys.length === 0) break;
 
             const k = candidateKeys[Math.floor(Math.random() * candidateKeys.length)];
             usedKeys.add(k);
 
-            const isAncient = isGodforged || (rarity >= 7) || (Math.random() < ancientTargetRatio);
+            const isAncient = ancientIndices.has(affixes.length) || (Math.random() < ancientTargetRatio);
             const val = isAncient
                 ? officialAncientAffixValue(k, itemLevel, rarity)
                 : officialRollAffixValue(k, itemLevel, rarity);
