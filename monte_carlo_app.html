@@ -530,8 +530,8 @@
             background: #111827;
             border: 1px solid #374151;
             border-radius: 14px;
-            width: 92%;
-            max-width: 980px;
+            width: 95%;
+            max-width: 1380px;
             padding: 24px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
             position: relative;
@@ -570,9 +570,75 @@
 
         .paperdoll-layout {
             display: grid;
-            grid-template-columns: minmax(320px, 400px) 1fr;
-            gap: 24px;
+            grid-template-columns: 290px minmax(320px, 380px) 1fr;
+            gap: 20px;
             align-items: start;
+        }
+
+        /* 👈 玩家屬性快照面板樣式 (100% 對齊遊戲內側欄屬性面板版型) */
+        .player-stats-panel {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 14px;
+            height: 100%;
+            max-height: 520px;
+            overflow-y: auto;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.6);
+        }
+
+        .stats-panel-header {
+            border-bottom: 1px solid #334155;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+        }
+
+        .stats-player-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #f59e0b;
+        }
+
+        .stats-player-sub {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        .attr-group {
+            margin-bottom: 8px;
+        }
+
+        .attr-group summary {
+            cursor: pointer;
+            color: #38bdf8;
+            font-weight: 700;
+            font-size: 13px;
+            padding: 4px 0;
+            user-select: none;
+            border-bottom: 1px solid #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .stat-rows-box {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 2px 0 6px 0;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #94a3b8;
+            border-bottom: 1px dashed #1e293b;
+            padding-bottom: 2px;
+        }
+
+        .stat-row b {
+            color: #f8fafc;
+            font-weight: 600;
         }
 
         .paperdoll-grid {
@@ -1014,20 +1080,26 @@
     </div>
 </div>
 
-<!-- 🛡️ 裝備快照 Modal 彈窗 (對齊遊戲紙娃娃介面) -->
+<!-- 🛡️ 裝備與屬性快照 Modal 彈窗 (對齊遊戲紙娃娃與屬性面板介面) -->
 <div class="modal-overlay" id="equipModalOverlay" onclick="closeEquipmentModalOnBackdrop(event)">
     <div class="modal-card">
         <div class="modal-header">
-            <div class="modal-title">🛡️ 最強玩家 500小時全身裝備快照 (Character Paperdoll Snapshot)</div>
+            <div class="modal-title">🛡️ 最強玩家 500小時全身裝備與屬性快照 (Character Paperdoll & Stats Snapshot)</div>
             <button type="button" class="btn-close-modal" onclick="closeEquipmentModal()">&times;</button>
         </div>
         <div class="paperdoll-layout">
+            <!-- 👈 左側：玩家全屬性快照面板 (對齊遊戲內側欄屬性面板) -->
+            <div class="player-stats-panel" id="playerStatsPanel">
+                <!-- 動態注入玩家全屬性面板 -->
+            </div>
+            <!-- 中間：經典 13 部位紙娃娃 -->
             <div class="paperdoll-grid" id="paperdollGrid">
                 <!-- 13 個部位按經典紙娃娃座標動態生成 -->
             </div>
+            <!-- 右側：官方裝備詳細卡片 -->
             <div class="item-detail-card" id="itemDetailPanel">
                 <div style="color: var(--text-muted); text-align: center; padding: 40px 0;">
-                    👈 點擊左側紙娃娃上的裝備部位，查看 500 小時後頂級裝備的詳細太古詞條與數值
+                    👈 點擊紙娃娃上的裝備部位，查看 500 小時後頂級裝備的詳細太古詞條與數值
                 </div>
             </div>
         </div>
@@ -2384,7 +2456,7 @@
         };
     }
 
-    // 🛡️ 打開裝備快照 Modal
+    // 🛡️ 打開裝備與屬性快照 Modal
     function openEquipmentSnapshotModal() {
         if (!currentSimResult || !currentSimResult.topRun) {
             alert('請先啟動蒙地卡羅模擬運算！');
@@ -2392,8 +2464,130 @@
         }
         const modal = document.getElementById('equipModalOverlay');
         modal.style.display = 'flex';
+        renderPlayerStatsPanel(); // 👈 渲染左側玩家全屬性快照面板
         renderPaperdollGrid();
         selectPaperdollSlot('chest'); // 預設展示胸甲
+    }
+
+    // 👈 渲染左側玩家屬性快照面板 (100% 對齊遊戲內側欄屬性面板版型與 STAT_GROUPS)
+    function renderPlayerStatsPanel() {
+        const container = document.getElementById('playerStatsPanel');
+        if (!container || !currentSimResult || !currentSimResult.topRun) return;
+
+        const char = currentSimResult.topRun;
+        const stats = char.calculateStats();
+
+        // 建立相容官方 statFmt() 格式化函式的 Player State 模擬實體
+        const pState = {
+            level: char.level || 1,
+            reincarnation: char.reincarnation || 0,
+            hp: Math.round(stats.maxHp || 1000),
+            hpRegen: Math.round((stats.maxHp || 1000) * 0.015),
+            mp: 500,
+            mpRegen: 5,
+            str: char.str_attr || 5,
+            agi: char.dex_attr || 5,
+            int: char.int_attr || 5,
+            vit: char.sta_attr || 5,
+            atk: Math.round(stats.patk || 100),
+            matk: Math.round((stats.patk || 100) * 0.8),
+            def: Math.round(stats.pdef || 50),
+            mdef: Math.round((stats.pdef || 50) * 0.8),
+            critRate: Math.round((stats.critRate || 5) * 10) / 10,
+            critDmg: Math.round((stats.critDmg || 1.5) * 100),
+            hit: Math.round((stats.hit || 100) * 10) / 10,
+            aspd: Math.round((stats.aspd || 1.5) * 100) / 100,
+            evasion: Math.round((stats.evasion || 0) * 10) / 10,
+            tenacity: Math.round((stats.tenacity || 0) * 10) / 10,
+            pRes: Math.round((stats.pRes || 0) * 10) / 10,
+            mRes: Math.round((stats.mRes || 0) * 10) / 10,
+            globalDmgRed: Math.round((stats.globalDmgRed || 0) * 10) / 10,
+            normalDmgRed: Math.round((stats.normalDmgRed || 0) * 10) / 10,
+            eliteDmgRed: Math.round((stats.eliteDmgRed || 0) * 10) / 10,
+            bossDmgRed: Math.round((stats.bossDmgRed || 0) * 10) / 10,
+            blockRate: Math.round((stats.blockRate || 0) * 10) / 10,
+            blockDmgRed: Math.round((stats.blockDmgRed || 0) * 10) / 10,
+            shieldEff: Math.round((stats.shieldEff || 0) * 10) / 10,
+            resist: { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0, ctrl: 0 },
+            dmgVsElem: { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0 },
+            elemDmgUp: { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0 },
+            loot: Math.round((stats.itemFindBonus || 1.0) * 100 - 100),
+            xpBonus: Math.round((stats.xpBonusMult || 1.0) * 100 - 100),
+            dps: stats.dps || 100
+        };
+
+        let html = `
+            <div class="stats-panel-header">
+                <div class="stats-player-name">👑 ${char.profile.name} (Lv.${pState.level})</div>
+                <div class="stats-player-sub">🌀 轉生 ${pState.reincarnation} 轉 | ⚔️ 500h DPS: ${formatGameNumber(pState.dps)}</div>
+            </div>
+            <div class="stats-groups-container">
+        `;
+
+        // 100% 直連官方 data.js §STAT_GROUPS 結構與面板
+        if (typeof STAT_GROUPS !== 'undefined' && Array.isArray(STAT_GROUPS)) {
+            STAT_GROUPS.forEach(grp => {
+                html += `
+                    <details open class="attr-group">
+                        <summary>▼ ${grp.title}</summary>
+                        <div class="stat-rows-box">
+                `;
+                grp.rows.forEach(row => {
+                    const label = row[0];
+                    let valStr = '0';
+                    try {
+                        if (typeof row[1] === 'function') {
+                            valStr = row[1](pState);
+                        } else {
+                            valStr = String(row[1] || '0');
+                        }
+                    } catch(e) {
+                        valStr = '0';
+                    }
+                    html += `
+                        <div class="stat-row">
+                            <span class="stat-label">${label}</span>
+                            <b class="stat-val">${valStr}</b>
+                        </div>
+                    `;
+                });
+                html += `</div></details>`;
+            });
+        } else {
+            // 備用面板
+            html += `
+                <details open class="attr-group">
+                    <summary>▼ 基礎屬性</summary>
+                    <div class="stat-rows-box">
+                        <div class="stat-row"><span>❤️ 生命值</span><b>${formatGameNumber(pState.hp)}</b></div>
+                        <div class="stat-row"><span>💪 力量</span><b>${pState.str}</b></div>
+                        <div class="stat-row"><span>🏃 敏捷</span><b>${pState.agi}</b></div>
+                        <div class="stat-row"><span>🧠 智力</span><b>${pState.int}</b></div>
+                        <div class="stat-row"><span>🪨 耐力</span><b>${pState.vit}</b></div>
+                    </div>
+                </details>
+                <details open class="attr-group">
+                    <summary>▼ 進攻屬性</summary>
+                    <div class="stat-rows-box">
+                        <div class="stat-row"><span>⚔️ 物理攻擊</span><b>${formatGameNumber(pState.atk)}</b></div>
+                        <div class="stat-row"><span>💥 暴擊率</span><b>${pState.critRate}%</b></div>
+                        <div class="stat-row"><span>🩸 暴擊傷害</span><b>${pState.critDmg}%</b></div>
+                        <div class="stat-row"><span>⚡ 攻擊速度</span><b>${pState.aspd}/秒</b></div>
+                    </div>
+                </details>
+                <details open class="attr-group">
+                    <summary>▼ 防禦屬性</summary>
+                    <div class="stat-rows-box">
+                        <div class="stat-row"><span>🛡️ 物理防禦</span><b>${formatGameNumber(pState.def)}</b></div>
+                        <div class="stat-row"><span>💨 閃避率</span><b>${pState.evasion}%</b></div>
+                        <div class="stat-row"><span>🦾 韌性</span><b>${pState.tenacity}%</b></div>
+                    </div>
+                </details>
+            `;
+        }
+
+        html += `</div>`;
+        container.innerHTML = html;
     }
 
     function closeEquipmentModal() {
