@@ -35,6 +35,15 @@ function newPlayerEntity(st) {
     return { hp: st.hp, mp: st.mp, shield: 0, shieldMax: 0, shieldMaxVersion: SHIELD_MAX_VERSION, shieldSkillBase: 0, shieldSkillPct: 0, atkCd: 1 / st.aspd, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {}, poisonUntil: 0, poisonDps: 0, _lastStandAt: 0 };
 }
 
+// 普攻擊殺後換目標的最短間隔沿用技能 GCD；attackRate 用來換算成 atkCd 計時器單位，
+// 確保攻速增益或減速不會把實際 0.4 秒間隔縮短或意外延長。
+function applyBasicAttackKillGap(pEnt, attackRate) {
+    if (!pEnt) return;
+    var gapSec = (typeof SKILL_GLOBAL_COOLDOWN === 'number') ? SKILL_GLOBAL_COOLDOWN : 0.4;
+    var rate = (typeof attackRate === 'number' && attackRate > 0) ? attackRate : 1;
+    pEnt.atkCd = Math.max(pEnt.atkCd || 0, gapSec * rate);
+}
+
 function initFieldPlayer() {
     FIELD.player = newPlayerEntity(getStats());
     // 45 新技能：野外玩家實體重建（開局/讀檔/死亡重生等）＝新一場戰鬥，清空技能執行期狀態
@@ -638,9 +647,10 @@ function fieldTick(dt) {
         }
         if (p.hp <= 0) { onPlayerFieldDeath(); return; } // 狂暴打擊等自傷技能
         // 潛力【極速之力】：施放期間以倍率放大攻擊頻率（突破 5 次/秒上限）
-        p.atkCd -= dt * slowFactor(p) * (1 + buffVal(p, 'aspdUp') / 100) *
+        var playerAttackRate = slowFactor(p) * (1 + buffVal(p, 'aspdUp') / 100) *
             (typeof potentialVelocityFactor === 'function' ? potentialVelocityFactor(p, st) : 1) *
             (typeof legendaryAttackSpeedMultiplier === 'function' ? legendaryAttackSpeedMultiplier(p, st) : 1);
+        p.atkCd -= dt * playerAttackRate;
         if (p.atkCd <= 0) {
             // 普攻打離我方最近的敵人（同距離隨機挑一個）；鎖定後直到該目標死亡才換 → js/battlefield.js
             var primary = bfPickPrimary(liveFieldEnemies(), p._lockTarget);
@@ -648,7 +658,10 @@ function fieldTick(dt) {
             if (primary) {
                 p._lockTarget = primary;
                 var res = doPlayerAttack(p, primary, primary.floatSel || 'mv-float');
-                if (res.killed) onFieldDeaths();
+                if (res.killed) {
+                    applyBasicAttackKillGap(p, playerAttackRate);
+                    onFieldDeaths();
+                }
                 if (!liveFieldEnemies().length) return;
             }
         }

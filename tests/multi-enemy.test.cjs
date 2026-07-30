@@ -158,6 +158,19 @@ test('多敵人逐一擊殺時各自結算經驗與掉落，全部擊殺後才�
   assert.equal(context.G.stage.kills, 1);
 });
 
+test('普攻擊殺後換目標至少間隔技能 GCD 0.4 秒', () => {
+  const context = loadCombatContext();
+  const player = { atkCd: 1 / 4.7 };
+
+  context.applyBasicAttackKillGap(player, 1);
+  assert.equal(player.atkCd, 0.4);
+
+  // 若原本計時器更長，擊殺間隔不能把它縮短。
+  player.atkCd = 0.6;
+  context.applyBasicAttackKillGap(player, 1);
+  assert.equal(player.atkCd, 0.6);
+});
+
 test('戰鬥畫面與敵方 tooltip 使用可見敵人列表，保留死亡待清除敵人資訊', () => {
   const root = path.resolve(__dirname, '..');
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
