@@ -3825,6 +3825,48 @@ textarea#save-io {
   font-size: 11px;
 }
 
+/* 已投入融合技（佔用中）：左下角 ⚗️ 角標＋整格紫色降飽和（2026-07-30 技能融合改造） */
+.tc-fused {
+  position: absolute;
+  bottom: -4px;
+  left: -5px;
+  font-size: 11px;
+}
+
+.tree-cell.fused-locked {
+  filter: saturate(0.45);
+  box-shadow: inset 0 0 0 1px rgba(160, 90, 220, 0.55);
+}
+
+/* 技能熟練度經驗條（比照 #xp-bar 的窄條樣式） */
+.mastery-bar {
+  position: relative;
+  height: 14px;
+  margin: 4px 0 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mastery-bar-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #7b5cd6, #b18cff);
+  transition: width 0.3s;
+}
+
+.mastery-bar-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--text);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
 .skd-head {
   display: flex;
   align-items: center;

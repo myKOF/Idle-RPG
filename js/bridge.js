@@ -344,17 +344,37 @@ var WorkerBridge = (function () {
     }
   }
 
+  /* 決定論測試模式：本機 + 網址帶 ?seed=N。細節見 js/worker/sim.worker.js 檔頭 installTestSeed。 */
+  function isDeterministicTest() {
+    var loc = (typeof location !== 'undefined') ? location : null;
+    if (!loc) return false;
+    var host = loc.hostname;
+    if (host !== 'localhost' && host !== '127.0.0.1' && host !== '::1') return false;
+    return /[?&]seed=\d+(&|$)/.test(loc.search || '');
+  }
+
   function start(opts) {
     if (_started) return true;
     opts = opts || {};
     var isRestart = !!opts._isRestart;
+    /* 決定論測試模式一律以全新角色開機，不讀既有存檔。
+       讀檔開機會觸發離線結算（依真實經過時間補收益），那是不可重現的，
+       交叉驗證只要有它就永遠對不上。順帶讓測試不去動測試用 origin 的既有存檔。
+       安全邊界與 js/gm_exec.js 一致：只認本機 hostname。 */
+    if (isDeterministicTest()) opts = { save: null, maxRunId: opts.maxRunId || 1, _isRestart: isRestart };
     if (!isRestart) { _bootOpts = { save: opts.save || null, maxRunId: opts.maxRunId || 1 }; }
     /* 重啟時先把 alive 拉回來，否則新 Worker 的第一則訊息會走進 onMessage 的
        誤判自我修復分支，對玩家喊「先前的失效判定為誤判」——這次不是誤判。 */
     if (isRestart) { stats.alive = true; stats.deadReason = null; }
     try {
       // 量測模式要讓 Worker 那側也知道，透過 Worker URL 的 query 傳遞（免動協議）
-      _worker = new Worker(MEASURE ? (WORKER_URL + '?measure=1') : WORKER_URL);
+      /* 頁面網址的 seed 參數要一路帶到 Worker——決定論測試模式是在 Worker 內生效的
+         （見 js/worker/sim.worker.js 檔頭 installTestSeed），它讀的是自己的 URL。 */
+      var qs = [];
+      if (MEASURE) qs.push('measure=1');
+      var seedMatch = /[?&]seed=(\d+)(&|$)/.exec((typeof location !== 'undefined' && location.search) || '');
+      if (seedMatch) qs.push('seed=' + seedMatch[1]);
+      _worker = new Worker(qs.length ? (WORKER_URL + '?' + qs.join('&')) : WORKER_URL);
     } catch (e) {
       console.error('[bridge] 無法建立 Worker（以 file:// 開啟時瀏覽器會封鎖，請用開發伺服器）：', e);
       return false;

@@ -184,45 +184,36 @@ test('fxVal：純量原樣、{base,per} 走 scaleAt 語意', () => {
   assertClose(c.fxVal({ base: 1.5, per: 0.1 }, 11), 2.5);
 });
 
-test('effectiveFx：新被動與主動的 M4/M8 淺層覆蓋生效', () => {
+test('effectiveFx：里程碑效果自 Lv.1 全附加（2026-07-30 改制，最高檔為最終值）', () => {
   const c = loadGameContext();
-  // 零式節律（被動）：lv1 每第 5 次；M4 → 4；M8 追加 noGcd
+  // 零式節律（被動）：任何等級都是 M8 終值（n=4、noGcd）
   const z1 = c.effectiveFx('zeroCadence', c.SKILLS.zeroCadence, 1);
-  const z4 = c.effectiveFx('zeroCadence', c.SKILLS.zeroCadence, 4);
   const z8 = c.effectiveFx('zeroCadence', c.SKILLS.zeroCadence, 8);
-  assert.equal(z1.passiveNthFree.n, 5);
-  assert.equal(z1.passiveNthFree.noGcd, undefined);
-  assert.equal(z4.passiveNthFree.n, 4);
-  assert.equal(z8.passiveNthFree.n, 4);
-  assert.equal(z8.passiveNthFree.noGcd, true);
-  // 死神節拍（被動）：M4 selfResetPct、M8 inclBasic
-  const r4 = c.effectiveFx('reaperTempo', c.SKILLS.reaperTempo, 4);
-  const r8 = c.effectiveFx('reaperTempo', c.SKILLS.reaperTempo, 8);
-  assert.equal(r4.passiveKillCd.selfResetPct, 15);
-  assert.equal(r4.passiveKillCd.inclBasic, undefined);
-  assert.equal(r8.passiveKillCd.inclBasic, true);
-  // 烙魂連斬（主動）：lv1 疊 3；M4 疊 5；M8 儲 45%、10 秒
+  assert.equal(z1.passiveNthFree.n, 4);
+  assert.equal(z1.passiveNthFree.noGcd, true);
+  assert.deepEqual(z1.passiveNthFree, z8.passiveNthFree);
+  // 死神節拍（被動）：Lv.1 即含 M4 selfResetPct 與 M8 inclBasic
+  const r1 = c.effectiveFx('reaperTempo', c.SKILLS.reaperTempo, 1);
+  assert.equal(r1.passiveKillCd.selfResetPct, 15);
+  assert.equal(r1.passiveKillCd.inclBasic, true);
+  // 烙魂連斬（主動）：Lv.1 即為 M8 終值（儲 45%、10 秒；M8 重申 maxStacks 5）
   const s1 = c.effectiveFx('soulBrandFlurry', c.SKILLS.soulBrandFlurry, 1);
-  const s4 = c.effectiveFx('soulBrandFlurry', c.SKILLS.soulBrandFlurry, 4);
-  const s8 = c.effectiveFx('soulBrandFlurry', c.SKILLS.soulBrandFlurry, 8);
-  assert.equal(s1.brand.maxStacks, 3);
-  assert.equal(s4.brand.maxStacks, 5);
-  assert.equal(s4.brand.storePct, 30);
-  assert.equal(s8.brand.storePct, 45);
-  assert.equal(s8.brand.dur, 10);
-  // 斷罪引爆 M8：倍率基準 150、重置 40%、暈眩重申
-  const d8 = c.effectiveFx('sinDetonate', c.SKILLS.sinDetonate, 8);
-  assert.equal(d8.detonate.multPct.base, 150);
-  assert.equal(d8.detonate.resetCd.pct, 40);
-  assert.equal(d8.detonate.stunDur, 1);
-  // 凜冬迴潮 M8：雙鍵（cdResetOnKill＋cdResetOnKill2）同時重申＋回捲 cdShift
-  const t8 = c.effectiveFx('rimeTide', c.SKILLS.rimeTide, 8);
-  assert.equal(t8.cdResetOnKill.pct, 30);
-  assert.equal(t8.cdResetOnKill2.othersPct, 20);
-  assertClose(t8.cdShift.sec.base, 2.5);
-  // 低於里程碑等級不套用
-  const t3 = c.effectiveFx('rimeTide', c.SKILLS.rimeTide, 3);
-  assert.equal(t3.cdResetOnKill, undefined);
+  assert.equal(s1.brand.maxStacks, 5);
+  assert.equal(s1.brand.storePct, 45);
+  assert.equal(s1.brand.dur, 10);
+  // 斷罪引爆：Lv.1 即為 M8 終值
+  const d1 = c.effectiveFx('sinDetonate', c.SKILLS.sinDetonate, 1);
+  assert.equal(d1.detonate.multPct.base, 150);
+  assert.equal(d1.detonate.resetCd.pct, 40);
+  assert.equal(d1.detonate.stunDur, 1);
+  // 凜冬迴潮：Lv.1 即含雙鍵與回捲 cdShift
+  const t1 = c.effectiveFx('rimeTide', c.SKILLS.rimeTide, 1);
+  assert.equal(t1.cdResetOnKill.pct, 30);
+  assert.equal(t1.cdResetOnKill2.othersPct, 20);
+  assertClose(t1.cdShift.sec.base, 2.5);
+  // 低等級與高等級結果一致（等級不再影響里程碑）
+  assert.deepEqual(c.effectiveFx('rimeTide', c.SKILLS.rimeTide, 3),
+    c.effectiveFx('rimeTide', c.SKILLS.rimeTide, 8));
 });
 
 /* ================= 3) 確定性機制單元測試 ================= */

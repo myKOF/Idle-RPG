@@ -469,12 +469,41 @@
       if (amount === null) return { ok: false, message: '格式：' + command + ' 數量（可為正負整數）' };
       return { ok: true, message: gmAddCurrency(command === 'g' ? 'gold' : command, amount) };
     }
+    if (command === 'scroll') {
+      // 魔法卷軸（2026-07-30 技能融合材料）
+      amount = gmSignedAmount(args[0], 1e300);
+      if (amount === null) return { ok: false, message: '格式：scroll 數量（可為正負整數）' };
+      return { ok: true, message: gmAddCurrency('magicScroll', amount) };
+    }
     if (command === 'mat' || command === 'material') {
       key = String(args[0] || '').toLowerCase();
-      if (['gold', 'scrap', 'essence', 'dust'].indexOf(key) < 0) return { ok: false, message: '材料只能是 gold、scrap、essence、dust' };
+      if (key === 'magicscroll' || key === 'scroll') key = 'magicScroll';
+      if (['gold', 'scrap', 'essence', 'dust', 'magicScroll'].indexOf(key) < 0) return { ok: false, message: '材料只能是 gold、scrap、essence、dust、scroll' };
       amount = gmSignedAmount(args[1], 1e300);
       if (amount === null) return { ok: false, message: '格式：mat 材料 數量（可為正負整數）' };
       return { ok: true, message: gmAddCurrency(key, amount) };
+    }
+    if (command === 'skillxp') {
+      // 技能熟練度經驗（2026-07-30）
+      amount = gmNumber(args[0], 1, 1e300);
+      if (amount === null) return { ok: false, message: '格式：skillxp 數量（正整數）' };
+      if (typeof gainSkillMasteryXp === 'function') gainSkillMasteryXp(amount);
+      gmDirty();
+      return { ok: true, message: '增加技能經驗 x' + (typeof fmt === 'function' ? fmt(amount) : amount) };
+    }
+    if (command === 'masterylv') {
+      // 直接設定技能熟練度等級（0~SKILL_MASTERY_MAX_LEVEL）
+      level = gmNumber(args[0], 0, (typeof SKILL_MASTERY_MAX_LEVEL !== 'undefined') ? SKILL_MASTERY_MAX_LEVEL : 1000);
+      if (level === null) return { ok: false, message: '格式：masterylv 等級（0~' + ((typeof SKILL_MASTERY_MAX_LEVEL !== 'undefined') ? SKILL_MASTERY_MAX_LEVEL : 1000) + '）' };
+      if (typeof ensureSkillMastery === 'function') {
+        var mMastery = ensureSkillMastery();
+        mMastery.level = level;
+        mMastery.xp = 0;
+      } else {
+        G.player.skillMastery = { level: level, xp: 0 };
+      }
+      gmDirty();
+      return { ok: true, message: '技能熟練度設定為 Lv.' + level };
     }
     if (command === 'gem') {
       type = String(args[0] || '').toLowerCase();

@@ -277,8 +277,9 @@ function loadGame() {
 
 // 以預設狀態為底，深補缺漏欄位（存檔向前相容）
 function migrateSave(data) {
-  // 技能點總預算遷移：舊存檔沒有此欄位時，依轉生狀態補建。
+  // 技能熟練度遷移旗標（2026-07-30 改制）：需在 mergeDefaults 前判斷（merge 會補 skillMastery 預設）。
   var hadSkillPointBudget = !!(data.player && data.player.skillPointBudget !== undefined);
+  var hadSkillMastery = !!(data.player && data.player.skillMastery && typeof data.player.skillMastery === 'object');
   var hadZone = data.stage && data.stage.zone !== undefined; // 需在 mergeDefaults 前判斷
   var hadForgeUnlockNotice = !!(data.forge && data.forge.unlockNotified);
   var hadSalvageSlots = !!(data.factory && data.factory.salvageSlots !== undefined);
@@ -336,6 +337,7 @@ function migrateSave(data) {
   }
   data.player.ancientEssence = Math.max(0, Math.floor(Number(data.player.ancientEssence) || 0));
   data.player.soulOrigin = Math.max(0, Math.floor(Number(data.player.soulOrigin) || 0));
+  data.player.magicScroll = Math.max(0, Math.floor(Number(data.player.magicScroll) || 0));
   // 逐件裝備整理：
   // 1) 太古機制改版（2026-07-23）：洗煉不再使用太古精華，載入時清除殘留欄位。
   // 2) 武器改造（2026-07-23）：舊存檔武器補 weaponType 與 weaponAbility 預留欄位
@@ -394,8 +396,11 @@ function migrateSave(data) {
     if (data.player && data.player.reincarnations < 3) {
       data.player.talents.potentialLevels = {};
     } else {
-      // 潛力技能 V3：只保留現有潛力技能鍵並依等級上限（20＋轉生×10）夾限；舊版潛力（p1_time…）鍵一律清除。
-      var potMaxLv = POTENTIAL_SKILL_BASE_MAX_LEVEL + (Number(data.player.reincarnations) || 0) * 10;
+      // 潛力技能：只保留現有潛力技能鍵並依等級上限（2026-07-30 改制：10、轉生後 15）夾限；舊版潛力鍵一律清除。
+      var potRc = Number(data.player.reincarnations) || 0;
+      var potMaxLv = (typeof REINCARNATION_SKILL_MAX_LEVELS !== 'undefined' && REINCARNATION_SKILL_MAX_LEVELS[potRc] !== undefined)
+        ? REINCARNATION_SKILL_MAX_LEVELS[potRc]
+        : (10 + (potRc > 0 ? 5 : 0));
       var cleaned = {};
       POTENTIAL_TALENTS.forEach(function (def) {
         cleaned[def.id] = clamp(Math.floor(Number(data.player.talents.potentialLevels[def.id]) || 0), 0, potMaxLv);
@@ -403,13 +408,7 @@ function migrateSave(data) {
       data.player.talents.potentialLevels = cleaned;
     }
   }
-  var expectedSkillBudget = data.player.reincarnations > 0 ? SKILL_POINT_BUDGET_CAP : Math.min(SKILL_POINT_BUDGET_CAP, Math.max(0, (data.player.level || 1) + 1));
-  if (!hadSkillPointBudget || Number(data.player.skillPointBudget) < expectedSkillBudget) {
-    data.player.skillPointBudget = expectedSkillBudget;
-    data._skillPointRepairNotice = '技能點總預算已依規則補建為 ' + expectedSkillBudget + ' 點';
-  } else {
-    data.player.skillPointBudget = Math.max(0, Math.floor(Number(data.player.skillPointBudget) || 0));
-  }
+  // 2026-07-30 技能熟練度制：技能點不再依角色等級補建（舊 skillPointBudget 於下方轉換為熟練度等級）。
   if (data.player.level > MAX_LEVEL) {
     data.player.level = MAX_LEVEL;
     data.player.xp = 0;
@@ -490,27 +489,71 @@ function migrateSave(data) {
     data.stage.zone = 'plains';
     data.zoneProgress.plains = { current: data.stage.current || 1, best: data.stage.best || 1 };
   }
-  /* ---- 技能點回溯修復（每次讀檔檢查）----
-     已使用點數以所有技能等級總和計算；轉生玩家總預算固定 10000。
-     若舊存檔曾因 bug 超支，保留玩家技能資料，不再破壞性清除；可用點數會安全封頂為 0。 */
-  var spSpent = 0;
-  for (var skId in data.player.skills) spSpent += data.player.skills[skId] || 0;
-  spSpent = Math.max(0, Math.floor(spSpent));
-  var spTotal = Math.max(0, Math.floor(Number(data.player.skillPointBudget) || 0));
-  if (spSpent > spTotal) {
-    data._skillPointRepairNotice = '技能投入 ' + spSpent + ' 點超過總預算 ' + spTotal + ' 點，可用技能點已保護為 0；既有技能未刪除';
+  /* ---- 技能融合改造遷移（2026-07-30，逐項冪等）----
+     1) 全技能等級夾回新上限（10、轉生後 15）；點數採等級推導制，夾限即自動退點。
+     2) 舊融合記錄補 seed（改用種子演算法重算）＋ algo:2；能重建者移除 fx 快照。
+     3) 舊 skillPointBudget → skillMastery.level（扣基礎 2 點、保底已花費），欄位移除。
+     4) 裝載欄清出被融合佔用的素材技能。 */
+  var mgRc = Number(data.player.reincarnations) || 0;
+  var mgCapLv = (typeof REINCARNATION_SKILL_MAX_LEVELS !== 'undefined' && REINCARNATION_SKILL_MAX_LEVELS[mgRc] !== undefined)
+    ? REINCARNATION_SKILL_MAX_LEVELS[mgRc]
+    : (10 + (mgRc > 0 ? 5 : 0));
+  var mgClamped = 0;
+  for (var skId in data.player.skills) {
+    var skLv = Math.max(0, Math.floor(Number(data.player.skills[skId]) || 0));
+    if (skLv > mgCapLv) { skLv = mgCapLv; mgClamped++; }
+    if (skLv <= 0) delete data.player.skills[skId];
+    else data.player.skills[skId] = skLv;
   }
-  /* ONE-TIME MIGRATION: fusionFxDynamicV1（登錄於 ONE_TIME_MIGRATIONS.md）
-     融合技效果改為動態重算：不再保存 fx 快照。能以現行素材定義重建者移除 fx；
-     無法重建（素材技能已不存在）者保留快照作後備。置於上方既有融合遷移之後，
-     讓一次性旗標遷移仍先作用於舊快照。此正規化為冪等（fx 移除後不再存在），故不需旗標。 */
-  if (data.player.fusions && data.player.fusions.length && typeof buildFusionRuntimeDef === 'function') {
+  if (mgClamped > 0) {
+    data._skillCapClampNotice = '技能等級上限改制（10 級、轉生後 15 級）：' + mgClamped + ' 個技能已夾回上限，超出的技能點已自動退還';
+  }
+  // 融合記錄：補種子＋清除舊 fx 快照（能重建者）；種子補上後結果即固定，重複讀檔不再變動。
+  if (data.player.fusions && data.player.fusions.length) {
     data.player.fusions.forEach(function (fs) {
-      if (fs && fs.fx && Array.isArray(fs.components) && fs.componentLevels && buildFusionRuntimeDef(fs)) {
+      if (!fs || !Array.isArray(fs.components)) return;
+      if (fs.seed === undefined || fs.seed === null) {
+        fs.seed = Math.floor(Math.random() * 4294967296) >>> 0;
+        fs.algo = 2;
+      }
+      if (fs.fx && typeof buildFusionRuntimeDef === 'function' && buildFusionRuntimeDef(fs)) {
         delete fs.fx;
       }
     });
+    // 佔用制：被融合素材不可裝備 → 裝載欄清出（素材等級保留）
+    var mgOccupied = {};
+    data.player.fusions.forEach(function (fs) {
+      if (fs && Array.isArray(fs.components)) fs.components.forEach(function (cid) { mgOccupied[cid] = true; });
+    });
+    if (Array.isArray(data.player.loadout)) {
+      data.player.loadout = data.player.loadout.filter(function (id) { return !mgOccupied[id]; });
+    }
   }
+  // 技能點改制：舊 skillPointBudget → 熟練度等級（總點數 = 基礎 2 + 熟練度 + 天賦加成）。
+  var spSpentAll = 0;
+  for (var spId in data.player.skills) spSpentAll += data.player.skills[spId] || 0;
+  if (data.player.talents && data.player.talents.potentialLevels) {
+    for (var ppId in data.player.talents.potentialLevels) spSpentAll += data.player.talents.potentialLevels[ppId] || 0;
+  }
+  spSpentAll = Math.max(0, Math.floor(spSpentAll));
+  if (!data.player.skillMastery || typeof data.player.skillMastery !== 'object') data.player.skillMastery = { level: 0, xp: 0 };
+  var mgMastery = data.player.skillMastery;
+  mgMastery.level = Math.max(0, Math.min(SKILL_MASTERY_MAX_LEVEL, Math.floor(Number(mgMastery.level) || 0)));
+  mgMastery.xp = Math.max(0, Math.floor(Number(mgMastery.xp) || 0));
+  if (!hadSkillMastery && hadSkillPointBudget) {
+    var mgOldBudget = Math.max(0, Math.floor(Number(data.player.skillPointBudget) || 0));
+    mgMastery.level = Math.max(0, Math.min(SKILL_MASTERY_MAX_LEVEL, Math.max(mgOldBudget - 2, spSpentAll - 2)));
+    mgMastery.xp = 0;
+    data._skillPointRepairNotice = '技能點改由技能熟練度提供：舊技能點預算已轉換為熟練度 Lv.' + mgMastery.level;
+  }
+  // 保底：已花費點數不因改制而倒欠（熟練度至少覆蓋 已花費−基礎2點；超過 1000 級上限者於下方提示保護）
+  if (spSpentAll - 2 > mgMastery.level && mgMastery.level < SKILL_MASTERY_MAX_LEVEL) {
+    mgMastery.level = Math.min(SKILL_MASTERY_MAX_LEVEL, spSpentAll - 2);
+  }
+  if (spSpentAll > 2 + mgMastery.level) {
+    data._skillPointRepairNotice = '技能投入 ' + spSpentAll + ' 點超過總點數上限，可用技能點已保護為 0；既有技能未刪除';
+  }
+  delete data.player.skillPointBudget; // 改制後不再使用（新點數權威 = skillMastery）
   /* ---- 融合寶石「融合次數」改為世代制（2026-07-09 修正）----
      舊定義 fusions = 融合事件總數（兩顆融合1次的再融合 → 3，玩家預期 2）。
      新定義 fusions = 世代（max+1），另補 leaves = 素材 5 階總數（拆解成本用）。
@@ -892,6 +935,8 @@ function applyOfflineProgress(options) {
   var gold = goldPer * kills, xp = xpPer * kills;
   G.player.gold += gold;
   gainXp(xp);
+  // 技能熟練度經驗（2026-07-30）：離線擊殺比照野外
+  if (typeof gainSkillMasteryXp === 'function') gainSkillMasteryXp(Math.round(xp * SKILL_MASTERY_XP_RATE / 100));
 
   // 掉落：與 rollFieldDrops 同一套表與倍率（無戰鬥中增益），逐殺單獨擲骰
   var lootBonus = st.loot;

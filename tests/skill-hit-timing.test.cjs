@@ -131,13 +131,13 @@ test('多段技：每一段各自一個傷害數字，且逐段錯開', () => {
   const c = loadContext();
   const floats = captureFloats(c);
   const player = { hp: 1000, mp: 1000, atkCd: 0, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {} };
-  // 奧術彈幕：4 段
+  // 奧術彈幕：2026-07-30 改制後里程碑全附加，Lv.1 即為 M8 的 6 段
   const fx = c.effectiveFx('arcaneBarrage', c.SKILLS.arcaneBarrage, 1);
-  assert.equal(fx.hits, 4);
+  assert.equal(fx.hits, 6);
 
   c.castSkill(player, [enemy(1, 2)], 'arcaneBarrage', 1, 'mv-float');
   const dmg = floats.filter((f) => /enemy-skill/.test(f.cls));
-  assert.equal(dmg.length, 4, '4 段應該有 4 個獨立的傷害數字，不是一個總和');
+  assert.equal(dmg.length, 6, '6 段應該有 6 個獨立的傷害數字，不是一個總和');
 
   // 逐段遞增錯開，間隔等於 VFX_HIT_STAGGER_SEC
   const step = Math.round(c.VFX_HIT_STAGGER_SEC * 1000);

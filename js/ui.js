@@ -889,6 +889,7 @@ var newForgeCumulativeStats = {
   logCount: 0,
   scrap: 0,
   essence: 0,
+  magicScroll: 0,
   ancientEssence: 0,
   books: {},
   parts: {}
@@ -902,6 +903,9 @@ function accumulateNewForgeLog(msg) {
 
   var essenceMatch = msg.match(/附魔精華x(\d+)/);
   if (essenceMatch) newForgeCumulativeStats.essence += parseInt(essenceMatch[1], 10);
+
+  var scrollMatch = msg.match(/卷軸x(\d+)/);
+  if (scrollMatch) newForgeCumulativeStats.magicScroll += parseInt(scrollMatch[1], 10);
 
   var ancientMatch = msg.match(/太古精華x(\d+)/);
   if (ancientMatch) newForgeCumulativeStats.ancientEssence += parseInt(ancientMatch[1], 10);
@@ -938,6 +942,7 @@ function resetNewForgeCumulativeStats() {
     logCount: 0,
     scrap: 0,
     essence: 0,
+    magicScroll: 0,
     ancientEssence: 0,
     books: {},
     parts: {}
@@ -950,6 +955,7 @@ function getNewForgeLogStats() {
     mats: {
       scrap: newForgeCumulativeStats.scrap,
       essence: newForgeCumulativeStats.essence,
+      magicScroll: newForgeCumulativeStats.magicScroll,
       ancientEssence: newForgeCumulativeStats.ancientEssence,
       books: newForgeCumulativeStats.books,
       parts: newForgeCumulativeStats.parts
@@ -1051,6 +1057,11 @@ function renderNewForgeLogStats() {
   html += '    <div class="stats-mat-card">';
   html += '      <span class="stats-mat-name"><img src="images/icon_essence.png" class="res-icon" alt="">附魔精華</span>';
   html += '      <span class="stats-mat-val">' + fmt(stats.mats.essence) + '</span>';
+  html += '    </div>';
+
+  html += '    <div class="stats-mat-card">';
+  html += '      <span class="stats-mat-name">📜 魔法卷軸</span>';
+  html += '      <span class="stats-mat-val">' + fmt(stats.mats.magicScroll || 0) + '</span>';
   html += '    </div>';
 
   html += '    <div class="stats-mat-card">';
@@ -1832,6 +1843,7 @@ function renderHeader() {
   updateResourceTip('r-scrap', '裝備碎片', '目前持有：' + fmtFull(p.scrap));
   updateResourceTip('r-essence', '附魔精華', '目前持有：' + fmtFull(p.essence));
   updateResourceTip('r-dust', '魔塵', '神鑄材料，可提升鑄造成功率。｜目前持有：' + fmtFull(p.dust || 0));
+  updateResourceTip('r-magic-scroll', '魔法卷軸', '技能融合材料；拆解裝備與高塔通關時隨附魔精華獲得（數量為其 1/10）。｜目前持有：' + fmtFull(p.magicScroll || 0));
   updateResourceTip('r-ancient-essence', '太古精華', '太古機制改版：太古詞條於裝備產出時決定，洗煉不再消耗太古精華（此資源暫保留，用途待定）。｜目前持有：' + fmtFull(p.ancientEssence || 0));
   updateResourceTip('r-soul-origin', '魔魂本源', '用於本源覺醒的道具。｜目前持有：' + fmtFull(p.soulOrigin || 0));
   updateResourceTip('r-demon-seed', '魔種', '煉獄之塔 BOSS 額外掉落材料。煉獄之塔限定｜目前持有：' + fmtFull(p.demonSeed || 0));
@@ -1839,6 +1851,7 @@ function renderHeader() {
   $id('r-scrap').textContent = fmt(p.scrap);
   $id('r-essence').textContent = fmt(p.essence);
   if ($id('r-dust')) $id('r-dust').textContent = fmt(p.dust || 0);
+  if ($id('r-magic-scroll')) $id('r-magic-scroll').textContent = fmt(p.magicScroll || 0);
   if ($id('r-ancient-essence')) $id('r-ancient-essence').textContent = fmt(p.ancientEssence || 0);
   if ($id('r-soul-origin')) $id('r-soul-origin').textContent = fmt(p.soulOrigin || 0);
   if ($id('r-demon-seed')) $id('r-demon-seed').textContent = fmt(p.demonSeed || 0);
@@ -1872,6 +1885,7 @@ function renderHeader() {
   var resVisMap = [
     { id: 'r-essence', val: p.essence || 0 },
     { id: 'r-dust', val: p.dust || 0 },
+    { id: 'r-magic-scroll', val: p.magicScroll || 0 },
     { id: 'r-ancient-essence', val: p.ancientEssence || 0 },
     { id: 'r-soul-origin', val: p.soulOrigin || 0 },
     { id: 'r-demon-seed', val: p.demonSeed || 0 },
@@ -5324,21 +5338,15 @@ function skillViewDef(snapshot, id) {
   return null;
 }
 
+/* 2026-07-30 技能融合改造：全部技能（含融合技/被動）統一上限 10、轉生後 15，
+   與模擬層 skillMaxLv 同步（融合技不再用記錄凍結的 maxLv）。 */
 function skillViewMaxLevel(def, reincarnations) {
   var rc = Math.max(0, Math.floor(Number(reincarnations) || 0));
-  if (def && def.cat === 'fusion') {
-    var fusionAdd = typeof REINCARNATION_FUSION_MAX_LEVELS !== 'undefined' &&
-      REINCARNATION_FUSION_MAX_LEVELS[rc] !== undefined
-      ? REINCARNATION_FUSION_MAX_LEVELS[rc]
-      : rc * 20;
-    return (def.maxLv || 40) + fusionAdd;
-  }
   if (typeof REINCARNATION_SKILL_MAX_LEVELS !== 'undefined' &&
     REINCARNATION_SKILL_MAX_LEVELS[rc] !== undefined) {
     return REINCARNATION_SKILL_MAX_LEVELS[rc];
   }
-  if (def && def.cat === 'passive') return 30 + Math.min(10, rc) * 10;
-  return 20 + Math.min(10, rc) * 10;
+  return 10 + (rc > 0 ? 5 : 0);
 }
 
 function skillViewPotentialMaxLevel(reincarnations) {
@@ -5347,7 +5355,7 @@ function skillViewPotentialMaxLevel(reincarnations) {
     REINCARNATION_SKILL_MAX_LEVELS[rc] !== undefined) {
     return REINCARNATION_SKILL_MAX_LEVELS[rc];
   }
-  return POTENTIAL_SKILL_BASE_MAX_LEVEL + Math.min(10, rc) * 10;
+  return 10 + (rc > 0 ? 5 : 0);
 }
 
 function skillViewUnlockReason(snapshot, headerSnapshot, id, def) {
@@ -5455,14 +5463,26 @@ function skillCellHTML(id, skillsSnapshot, talentSnapshot, headerSnapshot) {
   var inLoadout = loadout.indexOf(id) >= 0;
   var maxLv = skillViewMaxLevel(sk, reincarnations);
   var inFusion = (UI.fuseSlots || []).indexOf(id) >= 0;
+  var usedInFusion = skillViewUsedInFusion(skillsSnapshot, id); // 已投入融合技（佔用中）
   var cls = 'tree-cell' + (lv > 0 ? ' learned' : '') + (lock ? ' locked' : '') +
     (UI.selSkill === id ? ' selected' : '') + (inLoadout ? ' equipped' : '') +
-    (inFusion ? ' fusion-selected' : '');
+    (inFusion ? ' fusion-selected' : '') + (usedInFusion ? ' fused-locked' : '');
   return '<div class="' + cls + '" data-sk="' + id + '">' +
     '<span class="tc-emoji">' + sk.emoji + '</span>' +
     (lv > 0 ? '<span class="tc-lv' + (lv >= maxLv ? ' max-lv' : '') + '">' + lv + '</span>' : (lock ? '<span class="tc-lock">🔒</span>' : '')) +
     (inLoadout ? '<span class="tc-eq">⚔</span>' : '') +
+    (usedInFusion ? '<span class="tc-fused" title="已投入融合技">⚗️</span>' : '') +
     '</div>';
+}
+
+/* 被融合佔用查詢：素材 id 出現在任一融合技 components 即為佔用（快照推導，無獨立欄位） */
+function skillViewUsedInFusion(snapshot, id) {
+  var fusions = snapshot && Array.isArray(snapshot.fusions) ? snapshot.fusions : [];
+  for (var i = 0; i < fusions.length; i++) {
+    var comps = fusions[i] && fusions[i].components;
+    if (Array.isArray(comps) && comps.indexOf(id) >= 0) return fusions[i].id;
+  }
+  return null;
 }
 
 
@@ -5484,8 +5504,23 @@ function renderSkills() {
     Math.floor(Number(skillsSnapshot.budget) || 0),
     availablePoints + spentPoints
   );
-  $id('sp-count').textContent = availablePoints + '（等級 ' + (player.level || 1) +
-    ' 共 ' + totalPoints + ' 點，已用 ' + spentPoints + '）';
+  $id('sp-count').textContent = availablePoints + '（共 ' + totalPoints + ' 點，已用 ' + spentPoints + '）';
+
+  // 技能熟練度（2026-07-30）：等級＋經驗條（快照 mastery 由 Worker 投影）
+  var mastery = skillsSnapshot.mastery || { level: 0, xp: 0, xpMax: 0, maxLevel: 1000 };
+  var masteryLvEl = $id('mastery-level');
+  if (masteryLvEl) {
+    masteryLvEl.textContent = 'Lv.' + (mastery.level || 0) + '/' + (mastery.maxLevel || 1000) +
+      '（打怪獲得技能經驗，每升 1 級 +1 技能點）';
+  }
+  var masteryFill = $id('mastery-bar-fill');
+  var masteryText = $id('mastery-bar-text');
+  if (masteryFill && masteryText) {
+    var atMasteryCap = (mastery.level || 0) >= (mastery.maxLevel || 1000);
+    var masteryPct = atMasteryCap ? 100 : (mastery.xpMax > 0 ? Math.min(100, mastery.xp / mastery.xpMax * 100) : 0);
+    masteryFill.style.width = masteryPct.toFixed(1) + '%';
+    masteryText.textContent = atMasteryCap ? '已滿級' : (fmt(mastery.xp) + ' / ' + fmt(mastery.xpMax));
+  }
 
   // 裝載欄（初始 2 格，每 20 級再 +1 格，最多 20 格）
   var loBox = $id('skill-loadout');
@@ -5684,19 +5719,28 @@ function renderSkillModal() {
     h += '<div style="visibility: hidden;"></div>'; // empty grid cell
   }
 
-  if (canEquip && lv > 0) {
+  var usedInFusionModal = !isPotential && skillViewUsedInFusion(skillsSnapshot, id);
+  if (usedInFusionModal && canEquip) {
+    // 佔用中：不可裝備（刪除該融合技後釋放）
+    h += '<button class="btn sm" disabled data-tip="已投入融合技，刪除該融合技後可再裝備">⚗️ 融合中</button>';
+  } else if (canEquip && lv > 0) {
     h += inLoadout
       ? '<button class="btn sm warn" data-skill-unequip="' + loadoutRef + '"' + pendingAttrs + '>卸下</button>'
       : '<button class="btn sm" data-skill-equip="' + loadoutRef + '"' + pendingAttrs + '>⚔️ 裝備</button>';
   } else if (isPotential && !canEquip && lv > 0) {
     h += '<button class="btn sm" disabled data-tip="被動潛力技能學會即常駐生效">🌀 常駐</button>';
+  } else if (isFusion && lv <= 0) {
+    h += '<button class="btn sm" disabled data-tip="融合技需升級至 Lv.1 才可裝備">📖 未學習</button>';
   } else {
     h += '<div style="visibility: hidden;"></div>'; // empty grid cell
   }
 
-  if (!isPotential && !isFusion && sk.cat !== 'passive' && lv > 0) {
+  // 加入融合：已解鎖即可（不需學習）；被動/潛力/融合技與已佔用素材除外
+  if (!isPotential && !isFusion && sk.cat !== 'passive' && !lock) {
     var inFuse = (UI.fuseSlots || []).indexOf(id) >= 0;
-    if (inFuse) {
+    if (usedInFusionModal) {
+      h += '<button class="btn sm" disabled data-tip="一個技能只能投入一個融合技">⚗️ 已投入融合</button>';
+    } else if (inFuse) {
       h += '<button class="btn sm" disabled>⚗️ 已加入</button>';
     } else {
       h += '<button class="btn sm" data-skill-fuse-add="' + id + '">⚗️ 加入融合</button>';
@@ -5952,6 +5996,7 @@ function showTowerTooltip(flStr, anchorEl) {
     '💰 金幣 x' + fmt(200 * fl) + ' <span style="color:var(--dim)">(首通雙倍)</span><br>' +
     '✨ 經驗 x' + fmt(bossXp) + ' <span style="color:var(--dim)">(基礎，另加經驗加成)</span><br>' +
     '🔮 附魔精華 x' + (3 + fl) + ' <span style="color:var(--dim)">(100%)</span><br>' +
+    '📜 魔法卷軸 <span style="color:var(--dim)">(附魔精華的 1/10，機率式進位)</span><br>' +
     '💎 隨機寶石 x2 <span style="color:var(--dim)">(100%)</span><br>' +
     '📖 隨機附魔書 x2 <span style="color:var(--dim)">(100%)</span><br>' +
     '💫 魔塵 <span style="color:var(--dim)">(' + fmt1(bossDustRate(fl)) + '%，神鑄材料)</span>' +
@@ -6080,6 +6125,7 @@ function showEnemyTooltip(anchorEl) {
     rewardLines.push('✨ 經驗 x' + fmt(m.xp));
     rewardLines.push('💎 寶石 等級 ' + rw.gemLevel + ' x2 顆');
     rewardLines.push('🔮 附魔精華 x' + rw.essence + '（另附魔書 x2）');
+    rewardLines.push('📜 魔法卷軸（附魔精華的 1/10，機率式進位）');
     if (dustRate > 0) rewardLines.push('💫 魔塵 (' + fmt1(dustRate) + '%)');
     if (soulOriginRate > 0) rewardLines.push('🧿 魔魂本源 (' + fmt1(soulOriginRate) + '%)');
     if (ancientEssenceRate > 0) rewardLines.push('🧿 太古精華 (' + fmt1(ancientEssenceRate) + '%)');
@@ -6186,13 +6232,22 @@ function renderFusionPanel(skillsSnapshot) {
   }
   slotBox.innerHTML = h;
   var info = $id('fusion-preview');
-  if (UI.fuseSlots.length >= 2) {
-    var sum = 0;
-    UI.fuseSlots.forEach(function (id2) { sum += skillViewLevel(skillsSnapshot, id2); });
-    info.textContent = '融合後初始等級 Lv.' + sum + '（上限 Lv.' + (sum + 20) + '）｜變異機率 ' +
-      fmt1(Math.min(100, FUSION_MUTATION_CHANCE)) + '%｜素材技能將歸零（點數轉移至融合技）';
+  var fuseBtn = $id('btn-fuse');
+  var slotCount = UI.fuseSlots.length;
+  if (slotCount >= 2) {
+    // 花費與庫存（快照 scrolls 由 Worker 投影；fusionGoldCost/fusionScrollCost 主執行緒同樣載入 formula.js）
+    var costGold = (typeof fusionGoldCost === 'function') ? fusionGoldCost(slotCount)
+      : (skillsSnapshot.fusionCosts ? skillsSnapshot.fusionCosts.goldPerComp * slotCount : 0);
+    var costScroll = (typeof fusionScrollCost === 'function') ? fusionScrollCost(slotCount)
+      : (skillsSnapshot.fusionCosts ? skillsSnapshot.fusionCosts.scrollPerComp * slotCount : 0);
+    var haveScroll = Math.max(0, Math.floor(Number(skillsSnapshot.scrolls) || 0));
+    info.textContent = '花費：💰' + fmt(costGold) + ' 金幣＋📜' + costScroll + ' 張魔法卷軸（持有 ' + haveScroll + '）' +
+      '｜融合以素材「滿級」數值隨機生成，產生後為未學習（升至 Lv.1 才可裝備）' +
+      '｜素材投入期間無法裝備，刪除融合技後釋放｜變異機率 ' + fmt1(Math.min(100, FUSION_MUTATION_CHANCE)) + '%';
+    if (fuseBtn) fuseBtn.disabled = haveScroll < costScroll;
   } else {
-    info.textContent = '請從技能詳情按「⚗️ 加入融合」放入 2~4 個已學習的主動技能。';
+    info.textContent = '請從技能詳情按「⚗️ 加入融合」放入 2~4 個已解鎖的主動技能（不需學習；被動與潛力技能除外）。';
+    if (fuseBtn) fuseBtn.disabled = false;
   }
 }
 
@@ -7289,8 +7344,10 @@ function initUI() {
     var fa = e.target.closest('[data-skill-fuse-add]');
     if (fa) {
       var fid = fa.getAttribute('data-skill-fuse-add');
+      var faSnapshot = uiSkillsPanelSnapshot();
       if (UI.fuseSlots.indexOf(fid) >= 0) blog('⚠️ 此技能已在融合槽中', 'warn');
       else if (UI.fuseSlots.length >= 4) blog('⚠️ 融合槽已滿（最多 4 個）', 'warn');
+      else if (faSnapshot && skillViewUsedInFusion(faSnapshot, fid)) blog('⚠️ 此技能已投入其他融合技', 'warn');
       else UI.fuseSlots.push(fid);
       renderSkills();
       return;
@@ -7315,7 +7372,7 @@ function initUI() {
       if (skDefObj) {
         var isFusionSkill = !isPotential && skDefObj.cat === 'fusion';
         var confirmMsg = isFusionSkill
-          ? '確定刪除此融合技？所有投入的技能點將全數歸還。'
+          ? '確定刪除此融合技？所有投入的技能點將全數歸還，全部素材技能將被釋放（可再次裝備或融合）。'
           : '確定重置技能「' + skDefObj.name + '」？等級將歸零，已投入的技能點將全額退還。';
         var confirmTitle = isFusionSkill ? '融合技刪除確認' : '技能重置確認';
 

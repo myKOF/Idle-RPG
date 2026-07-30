@@ -12,6 +12,12 @@
 >   是讓舊格式讀得進來的必要轉換。
 > - **無旗標的冪等正規化**：融合技 `fx` 快照清理、融合寶石世代制（`leaves` 欄位）、
 >   輸送帶上限裁切、已淘汰零件回收。對新存檔本來就是 no-op，留著沒有成本。
+> - **2026-07-30 技能融合改造的結構相容處理**（`migrateSave`，冪等、無旗標）：
+>   技能等級夾回新上限（10／轉生後 15，等級推導制自動退點＋`_skillCapClampNotice`）、
+>   舊 `skillPointBudget` → `skillMastery.level`（扣基礎 2 點、保底已花費；欄位移除，
+>   `hadSkillMastery`/`hadSkillPointBudget` 於 mergeDefaults 前判斷）、
+>   舊融合記錄補 `seed`＋`algo:2`（補上後結果固定，重複讀檔不變）並清可重建的 fx 快照、
+>   被融合佔用素材自裝載欄卸下。狀態：已實作（tests/skill-fusion-rework.test.cjs 遷移兩案）。
 > - **開機公告的傳輸管線**（`sim.worker.js` 的 BOOTED notices）：目前只剩
 >   `_skillPointRepairNotice` 有產生者，但管線保留，日後要加公告不必重接。
 >

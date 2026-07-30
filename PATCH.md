@@ -1,5 +1,20 @@
 # PATCH.md
 
+## 改造：技能融合系統改造（2026-07-30）
+
+- **融合佔用制**：素材不再被消耗，改為「佔用」——投入期間不可裝備、不可再融合（`skillUsedInFusion`，由 `fusions[].components` 推導），刪除融合技後釋放；圖標左下 ⚗️ 標示（`.tc-fused`）。
+- **種子演算法**：融合結果只存 `{components, seed}`，`fusionGenerateFx(comps, seed)` 以 mulberry32 亂數流確定性生成——物魔 45/45/10（依素材數加權；`both` 走 resolveHit 雙段、每段 ×`FUSION_BOTH_STAT_FACTOR`）、攻擊力＝素材滿級平均切 75/100/125/150 四檔（20/30/30/20）、屬性多重集組合（物理佔 2 份、鐘形取數）、同屬性每多 1 個 ×1.25（折入權重與總值）、buff/debuff 鐘形取數＋「上限一半~上限」4 檔、特效整包取 1、5% 效果融合（最多 2 包）、變異沿用（種子流內擲骰）。素材基準＝未轉生上限 10 級（重算不依賴 G）。舊 `fusionAggregateFx` 與 `FUSE_FACTOR` 合併制廢止。
+- **未學習融合技**：產生時 Lv.0，升至 Lv.1 才可裝備；融合花費金幣＋魔法卷軸（`fusionGoldCost`/`fusionScrollCost`）。
+- **等級上限 10／轉生後 15**：全部技能（含被動/融合/潛力）；`skillMaxLv` 單軌查表，融合技凍結 `maxLv` 欄位棄用；UI 端 `skillViewMaxLevel` 同步。
+- **移除 4/8 級里程碑**：`effectiveFx` 不再看等級，`UNLOCKS` 補丁自 Lv.1 全附加（最高檔為最終值）；`nextUnlockLv` 恆 0。
+- **技能熟練度**：技能點改由熟練度提供（基礎 2＋熟練度等級＋潛力天賦加成）；打怪/高塔/離線給技能經驗＝怪物經驗×100%，經驗曲線 ⌊30×L³+40⌋、上限 1000 級；升級不再給技能點（`gainXp`）；`skillPointBudget` 三處自我修復移除。
+- **魔法卷軸**：新資源 `player.magicScroll`（📜）；拆解與高塔隨附魔精華產出、數量 1/10（`magicScrollFromEssence` 機率式進位）；頂欄/統計/熔爐材料卡/GM（`scroll`、`mat scroll`）全註冊。
+- **buff 清單化**：融合技 `fx.buffList/debuffList` 不限數量；施放/說明/AI 條件統一走 `skillFxBuffList/skillFxDebuffList`（一般技能 `buff/buff2` 相容）。
+- **存檔遷移**（冪等）：技能等級夾回新上限（自動退點＋公告）；舊 `skillPointBudget` → `skillMastery.level`（扣基礎 2、保底已花費）後移除；舊融合記錄補 `seed`＋`algo:2`、清 fx 快照；佔用素材自裝載欄卸下。
+- **協議 v13**：`TICK_VIEW_KEYS` 增 `magicScroll`；skills 面板增 `mastery/scrolls/fusionCosts`，points/budget 改熟練度制即時計算。
+- 參數表：新增「1-成長經驗／技能熟練度經驗需求、技能熟練度」「9-融合／融合花費、物魔判定、攻擊力四檔、同屬性加成、效果融合機率、成長曲線」「6-分解精華機率／魔法卷軸換算」共 9 列；轉生對照表 e=10/15、f=0；順帶修正「技能共用冷卻(GCD)」列既有欄位錯位（0.4 歸位參數 a）；CSV/xlsx 已重生並 round-trip 驗證（將變更 0；15 個場景錨點重複為既有問題另案處理）。
+- 驗證：新增 `tests/skill-fusion-rework.test.cjs`（20 項）；既有 7 檔測試依新規則修正；`npm test` 664/664、`npm run build` 178 檔零錯誤。
+
 ## 改造：屬性及技能效果五項改造（2026-07-30）
 
 - **回復溢出轉護盾改為技能限定**：`healPlayer(pEnt, amount, st, opts)` 新增 `opts.noShield`；生命回復、吸血、元素暗影汲取、擊殺回復、吸魂（神鑄）改以 `{ noShield: true }` 呼叫，回滿即止；技能本身的治療（`healPctMax`／`healPctOfDmg`／潛力聖療等）維持溢出轉護盾。`combat.js` 的 `healPlayerWithShieldEvent`（已無來源會轉護盾）移除。

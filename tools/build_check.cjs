@@ -13,7 +13,9 @@ const root = path.resolve(__dirname, '..');
 const TARGETS = [
   { dir: 'js', ext: /\.js$/, mustNotBeEmpty: true },   // 遊戲程式：語法 + 防空檔
   { dir: 'tools', ext: /\.cjs$/, mustNotBeEmpty: false },
-  { dir: 'tests', ext: /\.cjs$/, mustNotBeEmpty: false }
+  { dir: 'tests', ext: /\.cjs$/, mustNotBeEmpty: false },
+  { dir: 'scripts', ext: /\.js$/, mustNotBeEmpty: false },      // 模擬器驅動與驗證腳本
+  { dir: 'scripts/sim', ext: /\.js$/, mustNotBeEmpty: false }   // 模擬器內核宿主與策略層
 ];
 
 let checked = 0;

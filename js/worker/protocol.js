@@ -11,7 +11,9 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-var WORKER_PROTOCOL_VERSION = 12;
+/* v13（2026-07-30 技能融合改造）：TICK_VIEW_KEYS 新增 magicScroll；
+   skills 面板快照新增 mastery（熟練度）/scrolls/fusionCosts，points/budget 改為熟練度制即時計算。 */
+var WORKER_PROTOCOL_VERSION = 13;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -108,7 +110,7 @@ var PERSIST_KINDS = {
 /* ---- tick 高頻視圖欄位 ----
    只允許小量純量。背包、技能樹、熔爐等大型結構一律走 PANEL，不得塞進 tick。 */
 var TICK_VIEW_KEYS = ['gold', 'scrap', 'essence', 'dust', 'ancientEssence', 'soulOrigin',
-                      'demonSeed', 'gems', 'books', 'level', 'xp', 'xpMax', 'hp', 'hpMax',
+                      'demonSeed', 'magicScroll', 'gems', 'books', 'level', 'xp', 'xpMax', 'hp', 'hpMax',
                       'mp', 'mpMax', 'shield', 'stage', 'zone', 'gt', 'paused',
                       'towerActive', 'forgeBusy'];
 

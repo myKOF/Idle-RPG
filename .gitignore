@@ -55,3 +55,6 @@ config/Excel/~$*.xlsx
 ai_player_action_log.txt
 save_ai_player_500h.json
 save_initial.json
+
+# AI 玩家模擬輸出（存檔／快照／原生事件日誌），每次跑都會重生成
+sim_out*/
