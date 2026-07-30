@@ -1467,11 +1467,23 @@
         gainExp(amount, currentTime) {
             this.exp += amount;
             let xpNeeded = this.getXpForNextLevel();
+            let startLvl = this.level;
+
             while (this.exp >= xpNeeded && this.level < GAME_CONFIG.MAX_LEVEL) {
                 this.exp -= xpNeeded;
                 this.level++;
                 this.skill_points++;
                 xpNeeded = this.getXpForNextLevel();
+
+                if (this.level % 10 === 0 || this.level === 5 || this.level === 500) {
+                    this.logAction(
+                        currentTime, 
+                        'skill', 
+                        '⭐', 
+                        `角色突破升級至 Lv.${this.level}！`, 
+                        `獲得 1 點技能點數 (累計技能等級 ${this.total_skill_levels + this.skill_points} 級)，自動分配四大核心主屬性，戰力持續大躍進！`
+                    );
+                }
 
                 if (this.level >= GAME_CONFIG.REINCARNATION_LEVEL && this.reincarnation < GAME_CONFIG.MAX_REINCARNATION) {
                     this.reincarnation++;
@@ -1479,7 +1491,7 @@
                     this.exp = 0;
                     this.talentPoints += 100;
                     xpNeeded = this.getXpForNextLevel();
-                    this.logAction(currentTime, 'reinc', '🌀', `角色達成第 ${this.reincarnation} 轉生！`, `等級重置為 Lv.1，解鎖/升級轉生天賦與技能融合，全屬性提升 ${Math.pow(2.8, this.reincarnation).toFixed(1)} 倍！`);
+                    this.logAction(currentTime, 'skill', '🌀', `角色達成第 ${this.reincarnation} 轉生！`, `等級重置為 Lv.1，解鎖/升級轉生天賦與技能融合，全屬性提升 ${Math.pow(2.8, this.reincarnation).toFixed(1)} 倍！`);
                 }
             }
         }
@@ -1511,9 +1523,24 @@
             }
 
             // 累積金幣與材料 (打怪與掉落裝備拆解獲得附魔精華)
-            this.gold += killsCount * (20 + mobLevel * 5) * lootMult;
-            this.upgrade_stones += droppedItemsCount * 2;
-            this.essence += rollDropCount(droppedItemsCount * 1.5);
+            const earnedGold = killsCount * (20 + mobLevel * 5) * lootMult;
+            const earnedStones = droppedItemsCount * 2;
+            const earnedEssence = rollDropCount(droppedItemsCount * 1.5);
+
+            this.gold += earnedGold;
+            this.upgrade_stones += earnedStones;
+            this.essence += earnedEssence;
+
+            if (earnedEssence > 100 && Math.random() < 0.20) {
+                const eventTime = currentTime + (Math.random() * 0.015);
+                this.logAction(
+                    eventTime, 
+                    'equip', 
+                    '♨️', 
+                    `熔爐自動拆解熔煉 ${droppedItemsCount} 件低品質廢棄裝備`, 
+                    `獲得 ${earnedEssence} 點 🔮 附魔精華 與 ${earnedStones} 裝備碎片，累積精華庫存至 ${this.essence} 點。`
+                );
+            }
 
             if (droppedItemsCount <= 0) return;
 
