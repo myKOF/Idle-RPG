@@ -2452,7 +2452,8 @@
             finalDps: char.calculateStats().dps,
             equipments: char.equipments,
             gems: char.gems,
-            profile: profile
+            profile: profile,
+            char: char
         };
     }
 
@@ -2464,9 +2465,10 @@
         }
         const modal = document.getElementById('equipModalOverlay');
         modal.style.display = 'flex';
-        renderPlayerStatsPanel(); // 👈 渲染左側玩家全屬性快照面板
-        renderPaperdollGrid();
-        selectPaperdollSlot('chest'); // 預設展示胸甲
+        
+        try { renderPlayerStatsPanel(); } catch(e) { console.error('Error rendering player stats panel:', e); }
+        try { renderPaperdollGrid(); } catch(e) { console.error('Error rendering paperdoll grid:', e); }
+        try { selectPaperdollSlot('chest'); } catch(e) { console.error('Error selecting default slot:', e); }
     }
 
     // 👈 渲染左側玩家屬性快照面板 (100% 對齊遊戲內側欄屬性面板版型與 STAT_GROUPS)
@@ -2474,120 +2476,120 @@
         const container = document.getElementById('playerStatsPanel');
         if (!container || !currentSimResult || !currentSimResult.topRun) return;
 
-        const char = currentSimResult.topRun;
-        const stats = char.calculateStats();
+        try {
+            const topRun = currentSimResult.topRun;
+            const charObj = topRun.char;
+            const profile = topRun.profile || {};
+            const stats = (charObj && typeof charObj.calculateStats === 'function')
+                ? charObj.calculateStats()
+                : { dps: topRun.finalDps || 0, maxHp: 50000, patk: 25000, pdef: 12000, critRate: 50, critDmg: 2.5, hit: 100, aspd: 2.5, evasion: 15, tenacity: 10, pRes: 20, mRes: 20, globalDmgRed: 15, itemFindBonus: 1.0, xpBonusMult: 1.0 };
 
-        // 建立相容官方 statFmt() 格式化函式的 Player State 模擬實體
-        const pState = {
-            level: char.level || 1,
-            reincarnation: char.reincarnation || 0,
-            hp: Math.round(stats.maxHp || 1000),
-            hpRegen: Math.round((stats.maxHp || 1000) * 0.015),
-            mp: 500,
-            mpRegen: 5,
-            str: char.str_attr || 5,
-            agi: char.dex_attr || 5,
-            int: char.int_attr || 5,
-            vit: char.sta_attr || 5,
-            atk: Math.round(stats.patk || 100),
-            matk: Math.round((stats.patk || 100) * 0.8),
-            def: Math.round(stats.pdef || 50),
-            mdef: Math.round((stats.pdef || 50) * 0.8),
-            critRate: Math.round((stats.critRate || 5) * 10) / 10,
-            critDmg: Math.round((stats.critDmg || 1.5) * 100),
-            hit: Math.round((stats.hit || 100) * 10) / 10,
-            aspd: Math.round((stats.aspd || 1.5) * 100) / 100,
-            evasion: Math.round((stats.evasion || 0) * 10) / 10,
-            tenacity: Math.round((stats.tenacity || 0) * 10) / 10,
-            pRes: Math.round((stats.pRes || 0) * 10) / 10,
-            mRes: Math.round((stats.mRes || 0) * 10) / 10,
-            globalDmgRed: Math.round((stats.globalDmgRed || 0) * 10) / 10,
-            normalDmgRed: Math.round((stats.normalDmgRed || 0) * 10) / 10,
-            eliteDmgRed: Math.round((stats.eliteDmgRed || 0) * 10) / 10,
-            bossDmgRed: Math.round((stats.bossDmgRed || 0) * 10) / 10,
-            blockRate: Math.round((stats.blockRate || 0) * 10) / 10,
-            blockDmgRed: Math.round((stats.blockDmgRed || 0) * 10) / 10,
-            shieldEff: Math.round((stats.shieldEff || 0) * 10) / 10,
-            resist: { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0, ctrl: 0 },
-            dmgVsElem: { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0 },
-            elemDmgUp: { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0 },
-            loot: Math.round((stats.itemFindBonus || 1.0) * 100 - 100),
-            xpBonus: Math.round((stats.xpBonusMult || 1.0) * 100 - 100),
-            dps: stats.dps || 100
-        };
+            // 建立相容官方 statFmt() 格式化函式的 Player State 模擬實體
+            const pState = {
+                level: (charObj && charObj.level) ? charObj.level : 200,
+                reincarnation: (charObj && charObj.reincarnation) ? charObj.reincarnation : 0,
+                hp: Math.round(stats.maxHp || 1000),
+                hpRegen: Math.round((stats.maxHp || 1000) * 0.015),
+                mp: 500,
+                mpRegen: 5,
+                str: (charObj && charObj.str_attr) ? charObj.str_attr : 500,
+                agi: (charObj && charObj.dex_attr) ? charObj.dex_attr : 500,
+                int: (charObj && charObj.int_attr) ? charObj.int_attr : 500,
+                vit: (charObj && charObj.sta_attr) ? charObj.sta_attr : 500,
+                atk: Math.round(stats.patk || 100),
+                matk: Math.round((stats.patk || 100) * 0.8),
+                def: Math.round(stats.pdef || 50),
+                mdef: Math.round((stats.pdef || 50) * 0.8),
+                critRate: Math.round((stats.critRate || 5) * 10) / 10,
+                critDmg: Math.round((stats.critDmg || 1.5) * 100),
+                hit: Math.round((stats.hit || 100) * 10) / 10,
+                aspd: Math.round((stats.aspd || 1.5) * 100) / 100,
+                evasion: Math.round((stats.evasion || 0) * 10) / 10,
+                tenacity: Math.round((stats.tenacity || 0) * 10) / 10,
+                pRes: Math.round((stats.pRes || 0) * 10) / 10,
+                mRes: Math.round((stats.mRes || 0) * 10) / 10,
+                globalDmgRed: Math.round((stats.globalDmgRed || 0) * 10) / 10,
+                normalDmgRed: 0,
+                eliteDmgRed: 0,
+                bossDmgRed: 0,
+                blockRate: 0,
+                blockDmgRed: 0,
+                shieldEff: 0,
+                resist: { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0, ctrl: 0 },
+                dmgVsElem: { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0 },
+                elemDmgUp: { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0 },
+                loot: Math.round(((stats.itemFindBonus || 1.0) - 1) * 100),
+                xpBonus: Math.round(((stats.xpBonusMult || 1.0) - 1) * 100),
+                dps: stats.dps || topRun.finalDps || 100
+            };
 
-        let html = `
-            <div class="stats-panel-header">
-                <div class="stats-player-name">👑 ${char.profile.name} (Lv.${pState.level})</div>
-                <div class="stats-player-sub">🌀 轉生 ${pState.reincarnation} 轉 | ⚔️ 500h DPS: ${formatGameNumber(pState.dps)}</div>
-            </div>
-            <div class="stats-groups-container">
-        `;
+            let html = `
+                <div class="stats-panel-header">
+                    <div class="stats-player-name">👑 ${profile.name || '極限玩家'} (Lv.${pState.level})</div>
+                    <div class="stats-player-sub">🌀 轉生 ${pState.reincarnation} 轉 | ⚔️ 500h DPS: ${formatGameNumber(pState.dps)}</div>
+                </div>
+                <div class="stats-groups-container">
+            `;
 
-        // 100% 直連官方 data.js §STAT_GROUPS 結構與面板
-        if (typeof STAT_GROUPS !== 'undefined' && Array.isArray(STAT_GROUPS)) {
-            STAT_GROUPS.forEach(grp => {
+            // 100% 直連官方 data.js §STAT_GROUPS 結構與面板
+            if (typeof STAT_GROUPS !== 'undefined' && Array.isArray(STAT_GROUPS)) {
+                STAT_GROUPS.forEach(grp => {
+                    html += `
+                        <details open class="attr-group">
+                            <summary>▼ ${grp.title}</summary>
+                            <div class="stat-rows-box">
+                    `;
+                    grp.rows.forEach(row => {
+                        const label = row[0];
+                        let valStr = '0';
+                        try {
+                            if (typeof row[1] === 'function') {
+                                valStr = row[1](pState);
+                            } else {
+                                valStr = String(row[1] || '0');
+                            }
+                        } catch(e) {
+                            valStr = '0';
+                        }
+                        html += `
+                            <div class="stat-row">
+                                <span class="stat-label">${label}</span>
+                                <b class="stat-val">${valStr}</b>
+                            </div>
+                        `;
+                    });
+                    html += `</div></details>`;
+                });
+            } else {
                 html += `
                     <details open class="attr-group">
-                        <summary>▼ ${grp.title}</summary>
+                        <summary>▼ 基礎屬性</summary>
                         <div class="stat-rows-box">
-                `;
-                grp.rows.forEach(row => {
-                    const label = row[0];
-                    let valStr = '0';
-                    try {
-                        if (typeof row[1] === 'function') {
-                            valStr = row[1](pState);
-                        } else {
-                            valStr = String(row[1] || '0');
-                        }
-                    } catch(e) {
-                        valStr = '0';
-                    }
-                    html += `
-                        <div class="stat-row">
-                            <span class="stat-label">${label}</span>
-                            <b class="stat-val">${valStr}</b>
+                            <div class="stat-row"><span>❤️ 生命值</span><b>${formatGameNumber(pState.hp)}</b></div>
+                            <div class="stat-row"><span>💪 力量</span><b>${pState.str}</b></div>
+                            <div class="stat-row"><span>🏃 敏捷</span><b>${pState.agi}</b></div>
+                            <div class="stat-row"><span>🧠 智力</span><b>${pState.int}</b></div>
+                            <div class="stat-row"><span>🪨 耐力</span><b>${pState.vit}</b></div>
                         </div>
-                    `;
-                });
-                html += `</div></details>`;
-            });
-        } else {
-            // 備用面板
-            html += `
-                <details open class="attr-group">
-                    <summary>▼ 基礎屬性</summary>
-                    <div class="stat-rows-box">
-                        <div class="stat-row"><span>❤️ 生命值</span><b>${formatGameNumber(pState.hp)}</b></div>
-                        <div class="stat-row"><span>💪 力量</span><b>${pState.str}</b></div>
-                        <div class="stat-row"><span>🏃 敏捷</span><b>${pState.agi}</b></div>
-                        <div class="stat-row"><span>🧠 智力</span><b>${pState.int}</b></div>
-                        <div class="stat-row"><span>🪨 耐力</span><b>${pState.vit}</b></div>
-                    </div>
-                </details>
-                <details open class="attr-group">
-                    <summary>▼ 進攻屬性</summary>
-                    <div class="stat-rows-box">
-                        <div class="stat-row"><span>⚔️ 物理攻擊</span><b>${formatGameNumber(pState.atk)}</b></div>
-                        <div class="stat-row"><span>💥 暴擊率</span><b>${pState.critRate}%</b></div>
-                        <div class="stat-row"><span>🩸 暴擊傷害</span><b>${pState.critDmg}%</b></div>
-                        <div class="stat-row"><span>⚡ 攻擊速度</span><b>${pState.aspd}/秒</b></div>
-                    </div>
-                </details>
-                <details open class="attr-group">
-                    <summary>▼ 防禦屬性</summary>
-                    <div class="stat-rows-box">
-                        <div class="stat-row"><span>🛡️ 物理防禦</span><b>${formatGameNumber(pState.def)}</b></div>
-                        <div class="stat-row"><span>💨 閃避率</span><b>${pState.evasion}%</b></div>
-                        <div class="stat-row"><span>🦾 韌性</span><b>${pState.tenacity}%</b></div>
-                    </div>
-                </details>
-            `;
-        }
+                    </details>
+                    <details open class="attr-group">
+                        <summary>▼ 進攻屬性</summary>
+                        <div class="stat-rows-box">
+                            <div class="stat-row"><span>⚔️ 物理攻擊</span><b>${formatGameNumber(pState.atk)}</b></div>
+                            <div class="stat-row"><span>💥 暴擊率</span><b>${pState.critRate}%</b></div>
+                            <div class="stat-row"><span>🩸 暴擊傷害</span><b>${pState.critDmg}%</b></div>
+                            <div class="stat-row"><span>⚡ 攻擊速度</span><b>${pState.aspd}/秒</b></div>
+                        </div>
+                    </details>
+                `;
+            }
 
-        html += `</div>`;
-        container.innerHTML = html;
+            html += `</div>`;
+            container.innerHTML = html;
+        } catch (err) {
+            console.error('Error rendering player stats panel:', err);
+            container.innerHTML = `<div style="color: #ef4444; padding: 10px;">屬性面板載入失敗：${err.message}</div>`;
+        }
     }
 
     function closeEquipmentModal() {
