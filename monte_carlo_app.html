@@ -983,6 +983,28 @@
             <div class="card-label">⚪ 平均獲得【史詩以下】裝備 (R1~R2)</div>
             <div class="card-val" id="cardObtainedBelowEpic" style="color: #94a3b8;">-</div>
         </div>
+
+        <!-- 💰 5 大核心資源 500h 累積總獲得量卡片 -->
+        <div class="card" style="border-color: #eab308;">
+            <div class="card-label">💰 500h 累積平均金幣總獲得</div>
+            <div class="card-val" id="cardTotalGoldEarned" style="color: #eab308; font-size: 19px;">-</div>
+        </div>
+        <div class="card" style="border-color: #38bdf8;">
+            <div class="card-label">🧩 500h 累積平均裝備碎片總獲得</div>
+            <div class="card-val" id="cardTotalStonesEarned" style="color: #38bdf8; font-size: 19px;">-</div>
+        </div>
+        <div class="card" style="border-color: #a855f7;">
+            <div class="card-label">🔮 500h 累積平均附魔精華總獲得</div>
+            <div class="card-val" id="cardTotalEssenceEarned" style="color: #a855f7; font-size: 19px;">-</div>
+        </div>
+        <div class="card" style="border-color: #34d399;">
+            <div class="card-label">✨ 500h 累積平均魔塵總獲得</div>
+            <div class="card-val" id="cardTotalDustEarned" style="color: #34d399; font-size: 19px;">-</div>
+        </div>
+        <div class="card" style="border-color: #818cf8;">
+            <div class="card-label">🌀 500h 累積平均太古精華總獲得</div>
+            <div class="card-val" id="cardTotalAncientEssenceEarned" style="color: #818cf8; font-size: 19px;">-</div>
+        </div>
     </div>
 
     <!-- 圖表展示區 -->
@@ -1013,6 +1035,11 @@
                     <option value="obtained_legendary">🟠 獲得【傳奇】裝備數量</option>
                     <option value="obtained_epic">🔵 獲得【史詩】裝備數量</option>
                     <option value="obtained_below_epic">⚪ 獲得【史詩以下】裝備數量</option>
+                    <option value="total_gold_earned">💰 500h 累積平均金幣總獲得</option>
+                    <option value="total_stones_earned">🧩 500h 累積平均裝備碎片總獲得</option>
+                    <option value="total_essence_earned">🔮 500h 累積平均附魔精華總獲得</option>
+                    <option value="total_dust_earned">✨ 500h 累積平均魔塵總獲得</option>
+                    <option value="total_ancient_essence_earned">🌀 500h 累積平均太古精華總獲得</option>
                     <option value="level">📈 玩家等級 (Player Level)</option>
                     <option value="equip_score">🛡️ 裝備綜合戰力分數</option>
                     <option value="enhancements">🔨 裝備強化總次數</option>
@@ -1682,17 +1709,26 @@
                 }
             }
 
-            // 累積金幣與材料 (打怪與掉落裝備拆解獲得附魔精華、魔塵與寶石掉落)
+            // 累積金幣與材料 (打怪與掉落裝備拆解獲得附魔精華、魔塵、太古精華與寶石掉落)
             const earnedGold = killsCount * (20 + mobLevel * 5) * lootMult;
             const earnedStones = droppedItemsCount * 2;
             const earnedEssence = rollDropCount(droppedItemsCount * 1.5);
             const earnedDust = rollDropCount(droppedItemsCount * 0.15);
+            const earnedAncient = rollDropCount(droppedItemsCount * 0.02);
             const droppedGems = rollDropCount(killsCount * 0.05 * lootMult);
 
             this.gold += earnedGold;
             this.upgrade_stones += earnedStones;
             this.essence += earnedEssence;
             this.dust += earnedDust;
+            this.ancient_essence += earnedAncient;
+
+            this.total_gold_earned = (this.total_gold_earned || 0) + earnedGold;
+            this.total_stones_earned = (this.total_stones_earned || 0) + earnedStones;
+            this.total_essence_earned = (this.total_essence_earned || 0) + earnedEssence;
+            this.total_dust_earned = (this.total_dust_earned || 0) + earnedDust;
+            this.total_ancient_essence_earned = (this.total_ancient_essence_earned || 0) + earnedAncient;
+
             if (droppedGems > 0) {
                 this.gems[1] = (this.gems[1] || 0) + droppedGems;
                 this.obtained_gems += droppedGems;
@@ -2190,7 +2226,12 @@
                     gems_spent: char.total_gems_spent,
                     enhancements: char.total_enhancements,
                     gem_syntheses: char.total_gem_syntheses,
-                    obtained_gems: (char.obtained_gems || 0)
+                    obtained_gems: (char.obtained_gems || 0),
+                    total_gold_earned: (char.total_gold_earned || 0),
+                    total_stones_earned: (char.total_stones_earned || 0),
+                    total_essence_earned: (char.total_essence_earned || 0),
+                    total_dust_earned: (char.total_dust_earned || 0),
+                    total_ancient_essence_earned: (char.total_ancient_essence_earned || 0)
                 });
                 nextSampleTime += 1.0;
             }
@@ -2278,7 +2319,7 @@
 
         const timeStepsCount = Math.min(...allHistories.map(h => h.length));
         const aggregatedSeries = [];
-        const metrics = ["stage", "level", "reincarnation", "tower_floor", "total_kills", "dps", "equip_score", "ancient_affixes", "godforge_count", "obtained_godforge", "obtained_genesis", "obtained_mythic", "obtained_legendary", "obtained_epic", "obtained_below_epic", "rerolls", "total_skills", "gold_spent", "stones_spent", "gems_spent", "enhancements", "gem_syntheses", "obtained_gems"];
+        const metrics = ["stage", "level", "reincarnation", "tower_floor", "total_kills", "dps", "equip_score", "ancient_affixes", "godforge_count", "obtained_godforge", "obtained_genesis", "obtained_mythic", "obtained_legendary", "obtained_epic", "obtained_below_epic", "rerolls", "total_skills", "gold_spent", "stones_spent", "gems_spent", "enhancements", "gem_syntheses", "obtained_gems", "total_gold_earned", "total_stones_earned", "total_essence_earned", "total_dust_earned", "total_ancient_essence_earned"];
 
         for (let stepIdx = 0; stepIdx < timeStepsCount; stepIdx++) {
             const stepHour = allHistories[0][stepIdx].hour;
@@ -2336,6 +2377,12 @@
         setCardVal('cardObtainedLegendary', formatGameNumber(lastStep.obtained_legendary.mean) + ' 件');
         setCardVal('cardObtainedEpic', formatGameNumber(lastStep.obtained_epic.mean) + ' 件');
         setCardVal('cardObtainedBelowEpic', formatGameNumber(lastStep.obtained_below_epic.mean) + ' 件');
+
+        setCardVal('cardTotalGoldEarned', formatGameNumber(lastStep.total_gold_earned ? lastStep.total_gold_earned.mean : 0));
+        setCardVal('cardTotalStonesEarned', formatGameNumber(lastStep.total_stones_earned ? lastStep.total_stones_earned.mean : 0));
+        setCardVal('cardTotalEssenceEarned', formatGameNumber(lastStep.total_essence_earned ? lastStep.total_essence_earned.mean : 0));
+        setCardVal('cardTotalDustEarned', formatGameNumber(lastStep.total_dust_earned ? lastStep.total_dust_earned.mean : 0));
+        setCardVal('cardTotalAncientEssenceEarned', formatGameNumber(lastStep.total_ancient_essence_earned ? lastStep.total_ancient_essence_earned.mean : 0));
 
         currentLogPage = 1;
         renderTopRunActionLogs();
@@ -2862,6 +2909,11 @@
             obtained_legendary: '🟠 獲得【傳奇】裝備數量',
             obtained_epic: '🔵 獲得【史詩】裝備數量',
             obtained_below_epic: '⚪ 獲得【史詩以下】裝備數量',
+            total_gold_earned: '💰 500h 累積平均金幣總獲得',
+            total_stones_earned: '🧩 500h 累積平均裝備碎片總獲得',
+            total_essence_earned: '🔮 500h 累積平均附魔精華總獲得',
+            total_dust_earned: '✨ 500h 累積平均魔塵總獲得',
+            total_ancient_essence_earned: '🌀 500h 累積平均太古精華總獲得',
             stage: '🚩 到達關卡數',
             level: '📈 玩家等級',
             equip_score: '🛡️ 裝備綜合戰力分數',
