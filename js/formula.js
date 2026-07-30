@@ -1384,12 +1384,12 @@ function gemStatValue(type, level) {
   }
   return Math.round(g.base * level * (1 + 0.2 * (level - 1)) * 10) / 10;
 }
-// 插槽數：依稀有度表（普/精良 1、稀有/獨特 2、史詩 3、傳說 4、神話 5、創世 6）
+// 插槽數：依稀有度表（普通~稀有 1、獨特 2、史詩 3、傳說 4、神話 5、創世/神鑄創世 6）
 function socketCountFor(rarity) {
   var r = RARITIES[clamp(rarity, 0, RARITIES.length - 1)];
   return r.sockets;
 }
-// 附魔欄位數：依稀有度表（普~稀有 1、獨特~傳說 2、神話/創世 3）
+// 附魔欄位數：依稀有度表（普通 0、精良~獨特 1、史詩~神話 2、創世/神鑄創世 3）
 function enchantCapFor(it) {
   return RARITIES[clamp(it.rarity, 0, RARITIES.length - 1)].enchants;
 }

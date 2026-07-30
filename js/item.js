@@ -501,7 +501,7 @@ function makeEquipment(stage, opts) {
 /* 附魔威力/數值公式（enchantPower、enchantValueFor）→ js/formula.js §6 */
 
 /* ---- 多附魔欄位 ----
-   附魔數量依稀有度（普~稀有 1、獨特~傳說 2、神話/創世 3）。
+   附魔數量依稀有度（普通 0、精良~獨特 1、史詩~神話 2、創世/神鑄創世 3）。
    舊存檔單附魔（it.enchant）延遲轉換為 it.enchants 陣列。 */
 function itemEnchants(it) {
   if (!it.enchants) {

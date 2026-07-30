@@ -2,22 +2,22 @@
 /* ============ 遊戲資料定義 ============ */
 
 /* ---- 稀有度（9 階）----
-   affix: 詞條數量範圍｜sockets: 寶石鑲孔數｜enchants: 附魔欄位數
+   affix: 固定詞條數（上下限相同）｜sockets: 寶石鑲孔數｜enchants: 附魔欄位數
    godforged（神鑄創世）：僅能由神鑄系統以 6 件創世鑄造獲得，不自然掉落、
    不可由熔爐合成升階；mult = 創世 × 1.5（詞條數值與洗煉上限同步 1.5 倍）。 */
 var RARITIES = [
-  { key: 'common', name: '普通', color: '#9aa5b1', mult: 1.0, affix: [1, 2], sockets: 1, enchants: 1, salv: 1.0 },
-  { key: 'uncommon', name: '精良', color: '#4ade80', mult: 1.35, affix: [1, 2], sockets: 1, enchants: 1, salv: 1.7 },
-  { key: 'rare', name: '稀有', color: '#38bdf8', mult: 1.75, affix: [2, 3], sockets: 2, enchants: 1, salv: 2.8 },
-  { key: 'unique', name: '獨特', color: '#ffd700', mult: 2.3, affix: [3, 4], sockets: 2, enchants: 2, salv: 4.5 },
-  { key: 'epic', name: '史詩', color: '#c084fc', mult: 3.0, affix: [4, 5], sockets: 3, enchants: 2, salv: 7.5 },
-  { key: 'legendary', name: '傳說', color: '#fb923c', mult: 4.0, affix: [4, 5], sockets: 4, enchants: 2, salv: 12 },
-  { key: 'mythic', name: '神話', color: '#f87171', mult: 5.2, affix: [6, 6], sockets: 5, enchants: 3, salv: 19 },
+  { key: 'common', name: '普通', color: '#9aa5b1', mult: 1.0, affix: [1, 1], sockets: 1, enchants: 0, salv: 1.0 },
+  { key: 'uncommon', name: '精良', color: '#4ade80', mult: 1.35, affix: [2, 2], sockets: 1, enchants: 1, salv: 1.7 },
+  { key: 'rare', name: '稀有', color: '#38bdf8', mult: 1.75, affix: [2, 2], sockets: 1, enchants: 1, salv: 2.8 },
+  { key: 'unique', name: '獨特', color: '#ffd700', mult: 2.3, affix: [3, 3], sockets: 2, enchants: 1, salv: 4.5 },
+  { key: 'epic', name: '史詩', color: '#c084fc', mult: 3.0, affix: [4, 4], sockets: 3, enchants: 2, salv: 7.5 },
+  { key: 'legendary', name: '傳說', color: '#fb923c', mult: 4.0, affix: [5, 5], sockets: 4, enchants: 2, salv: 12 },
+  { key: 'mythic', name: '神話', color: '#f87171', mult: 5.2, affix: [6, 6], sockets: 5, enchants: 2, salv: 19 },
   { key: 'genesis', name: '創世', color: '#b8860b', mult: 6.8, affix: [7, 7], sockets: 6, enchants: 3, salv: 30 },
-  { key: 'godforged', name: '神鑄創世', color: '#f5c542', mult: 10.2, affix: [7, 7], sockets: 6, enchants: 3, salv: 45 }
+  { key: 'godforged', name: '神鑄創世', color: '#f5c542', mult: 10.2, affix: [8, 8], sockets: 6, enchants: 3, salv: 45 }
 ];
 var PASSIVE_MIN_RARITY = 5; // 傳說級（含）以上附帶傳奇特效
-var MAX_AFFIXES = 8; // 單件裝備詞條數安全硬上限（目前稀有度表最高 7 條）
+var MAX_AFFIXES = 8; // 單件裝備詞條數安全硬上限（目前稀有度表最高 8 條）
 var EQUIP_TIER_SIZE = 50; // 裝備等級分段大小：來源等級 1~49 → 1 級裝，之後每 50 級一套（50/100/150…；equipmentTierLevel → formula.js §6）
 var REROLL_ESSENCE_COST = { 6: 9, 7: 14, 8: 20 }; // 神話／創世／神鑄創世洗煉精華費用
 
