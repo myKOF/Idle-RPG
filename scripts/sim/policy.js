@@ -22,13 +22,20 @@ const vm = require('vm');
 /* 直譯器原始碼。刻意以字串形式在隔離 context 內求值——它跑的地方沒有 G，
    所以連「不小心碰到遊戲狀態」都做不到。 */
 const INTERPRETER = `
+/* 解析失敗的路徑要記下來。策略用 $path 或條件指到某個面板欄位，
+   欄位一旦改名，路徑就會解析成 undefined——條件永遠不成立、規則靜靜失效，
+   不會有任何錯誤訊息，試跑報告只會顯示「這條規則沒送出過」。
+   遊戲改版時這是最容易發生、也最難察覺的一種失真，所以要主動記錄。 */
+var BAD_PATHS = {};
+
 function pathVal(root, path) {
   var cur = root;
   var parts = String(path).split('.');
   for (var i = 0; i < parts.length; i++) {
-    if (cur === null || cur === undefined) return undefined;
+    if (cur === null || cur === undefined) { BAD_PATHS[path] = (BAD_PATHS[path] || 0) + 1; return undefined; }
     cur = cur[parts[i]];
   }
+  if (cur === undefined) BAD_PATHS[path] = (BAD_PATHS[path] || 0) + 1;
   return cur;
 }
 
@@ -181,6 +188,10 @@ function createPolicy(policy) {
       /* 回傳值同樣拷貝出來，隔離 context 內的物件不外流。 */
       return JSON.parse(JSON.stringify(cmds));
     },
+
+    /* 解析不出值的狀態路徑。非空就代表策略有規則正在靜靜失效——
+       多半是遊戲面板欄位改名了，而策略還指著舊路徑。 */
+    badPaths() { return vm.runInContext('JSON.parse(JSON.stringify(BAD_PATHS))', ctx); },
 
     /* 反證用：在隔離 context 內執行任意一段程式，看它能不能碰到遊戲狀態。 */
     __evalInPolicyContext(src) { return vm.runInContext(src, ctx); }
