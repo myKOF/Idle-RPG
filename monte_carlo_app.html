@@ -1586,11 +1586,17 @@
                     }
                     if (r <= 2) this.obtained_below_epic += count;
                     else if (r === 3 || r === 4) this.obtained_epic += count;
-                    else if (r === 5) this.obtained_legendary += count;
-                    else if (r === 6) this.obtained_mythic += count;
+                    else if (r === 5) {
+                        this.obtained_legendary += count;
+                        this.legendaryGearPool = (this.legendaryGearPool || 0) + count;
+                    }
+                    else if (r === 6) {
+                        this.obtained_mythic += count;
+                        this.mythicGearPool = (this.mythicGearPool || 0) + count;
+                    }
                     else if (r === 7) {
                         this.obtained_genesis += count;
-                        this.genesisGearPool += count;
+                        this.genesisGearPool = (this.genesisGearPool || 0) + count;
                     }
                 }
             }
@@ -1704,11 +1710,17 @@
                     if (bn > 0) {
                         if (br <= 2) this.obtained_below_epic += bn;
                         else if (br === 3 || br === 4) this.obtained_epic += bn;
-                        else if (br === 5) this.obtained_legendary += bn;
-                        else if (br === 6) this.obtained_mythic += bn;
+                        else if (br === 5) {
+                            this.obtained_legendary += bn;
+                            this.legendaryGearPool = (this.legendaryGearPool || 0) + bn;
+                        }
+                        else if (br === 6) {
+                            this.obtained_mythic += bn;
+                            this.mythicGearPool = (this.mythicGearPool || 0) + bn;
+                        }
                         else if (br === 7) {
                             this.obtained_genesis += bn;
-                            this.genesisGearPool += bn;
+                            this.genesisGearPool = (this.genesisGearPool || 0) + bn;
                         }
                     }
                 }
@@ -1756,30 +1768,70 @@
                 this.logAction(currentTime, 'gem', '💎', `進行寶石批量合成與魔塵積攢`, synthSummary.slice(0, 3).join('； '));
             }
 
-            let forgeAttempts = 0;
-            while (this.genesisGearPool >= 6 && this.gold >= 5000 && forgeAttempts < 5) {
-                forgeAttempts++;
-                this.genesisGearPool -= 6;
+            // 1. 六芒星法陣：6 件【傳說 R5】 ➔ 1 件【神話 R6】 (90% + 5%/魔塵)
+            let legendaryPool = this.legendaryGearPool || 0;
+            while (legendaryPool >= 6 && this.gold >= 1000) {
+                legendaryPool -= 6;
+                this.gold -= 1000;
+                let usedDust = Math.min(6, this.dust);
+                this.dust -= usedDust;
+                let chance = 0.90 + (usedDust * 0.05);
+                if (Math.random() < chance) {
+                    this.obtained_mythic++;
+                    this.mythicGearPool = (this.mythicGearPool || 0) + 1;
+                } else {
+                    legendaryPool += 3;
+                }
+            }
+            this.legendaryGearPool = legendaryPool;
+
+            // 2. 六芒星法陣：6 件【神話 R6】 ➔ 1 件【創世 R7】 (80% + 5%/魔塵)
+            let mythicPool = this.mythicGearPool || 0;
+            while (mythicPool >= 6 && this.gold >= 2000) {
+                mythicPool -= 6;
+                this.gold -= 2000;
+                let usedDust = Math.min(6, this.dust);
+                this.dust -= usedDust;
+                let chance = 0.80 + (usedDust * 0.05);
+                if (Math.random() < chance) {
+                    this.obtained_genesis++;
+                    this.genesisGearPool = (this.genesisGearPool || 0) + 1;
+                } else {
+                    mythicPool += 3;
+                }
+            }
+            this.mythicGearPool = mythicPool;
+
+            // 3. 六芒星法陣：6 件【創世 R7】 ➔ 1 件【神鑄創世 R8】 (70% + 5%/魔塵, 放滿6魔塵 100% 成功!)
+            let genesisPool = this.genesisGearPool || 0;
+            let godforgeFusions = 0;
+            while (genesisPool >= 6 && this.gold >= 5000) {
+                genesisPool -= 6;
                 this.gold -= 5000;
                 this.total_godforge_attempts++;
 
                 let usedDust = Math.min(6, this.dust);
                 this.dust -= usedDust;
-                let forgeSuccessChance = 0.70 + (usedDust * 0.05);
+                let chance = 0.70 + (usedDust * 0.05);
 
-                if (Math.random() < forgeSuccessChance) {
+                if (Math.random() < chance) {
                     this.obtained_godforge++;
+                    godforgeFusions++;
                     const slotToUpgrade = OFFICIAL_SLOTS[Math.floor(Math.random() * OFFICIAL_SLOTS.length)];
                     const oldSlotEq = this.equipments[slotToUpgrade];
                     if (!oldSlotEq.isGodforged) {
                         const godEq = generateDroppedEquipment(8, 1.0, 500, slotToUpgrade);
                         godEq.level = oldSlotEq.level;
                         this.equipments[slotToUpgrade] = godEq;
-                        this.logAction(currentTime, 'godforge', '👑', `神鑄六芒星法陣 6 合 1 成功！(消耗 ${usedDust} 魔塵)`, `將【${slotToUpgrade}】裝備解鎖升階為【神鑄創世 R8】(7 滿太古詞條)。`);
                     }
                 } else {
-                    this.dust += 1;
+                    genesisPool += 3;
                 }
+            }
+            this.genesisGearPool = genesisPool;
+
+            if (godforgeFusions > 0) {
+                this.logAction(currentTime, 'godforge', '👑', `六芒星神鑄法陣 6 合 1 成功！(合成 ${godforgeFusions} 次)`, `消耗【創世 R7】裝備與魔塵，解鎖打造【神鑄創世 R8】(7 滿太古詞條)。`);
             }
 
             for (let slot in this.equipments) {
