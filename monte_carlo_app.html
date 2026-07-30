@@ -1819,8 +1819,26 @@
             const isAdvancing = (timeToKill <= 30.0 && timeToDie > timeToKill);
 
             if (isAdvancing) {
+                const oldStageInt = Math.floor(char.stage);
                 char.totalKills += killsThisTick;
                 char.stage += killsThisTick / 10.0;
+                const newStageInt = Math.floor(char.stage);
+
+                if (newStageInt > oldStageInt) {
+                    const eventTime = currentTime + (Math.random() * 0.02);
+                    const diff = newStageInt - oldStageInt;
+                    const msgDetail = diff === 1 
+                        ? `順利擊退守關怪，隊伍持續向前推進至 Stage ${newStageInt} 關卡 (角色 Lv.${char.level})。`
+                        : `戰力碾壓！連破 ${diff} 關，順利由 Stage ${oldStageInt} 關推進至 Stage ${newStageInt} 關卡 (角色 Lv.${char.level})。`;
+
+                    char.logAction(
+                        eventTime, 
+                        'combat', 
+                        '🚩', 
+                        `通過 Stage ${oldStageInt} 關考驗！推進至 Stage ${newStageInt} 關！`, 
+                        msgDetail
+                    );
+                }
                 
                 const expPerMob = (8 + char.stage) * safePow(1.06, Math.max(0, char.stage - 1));
                 const goldPerMob = (20 + char.stage) * safePow(1.02, Math.max(0, char.stage - 1));
