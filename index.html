@@ -55,6 +55,7 @@
       <span class="res" data-tt-title="附魔精華" data-tt-desc="目前持有的附魔精華"><img src="images/icon_essence.png" class="res-icon" alt="Essence"> <b
           id="r-essence">0</b></span>
       <span class="res" data-tt-title="魔塵" data-tt-desc="神鑄材料，可提升鑄造成功率">💫 <b id="r-dust">0</b></span>
+      <span class="res" data-tt-title="魔法卷軸" data-tt-desc="技能融合材料；拆解裝備與高塔通關時隨附魔精華獲得（數量為其 1/10）"><span class="res-emoji" aria-hidden="true">📜</span> <b id="r-magic-scroll">0</b></span>
       <span class="res" data-tt-title="太古精華" data-tt-desc="太古機制改版：太古詞條於裝備產出時決定，此資源暫保留、用途待定"><img src="images/icon_ancient_essence.png" class="res-icon" alt="Ancient Essence"> <b id="r-ancient-essence">0</b></span>
       <span class="res" data-tt-title="魔魂本源" data-tt-desc="用於本源覺醒的道具"><span class="res-emoji" aria-hidden="true">🧿</span> <b id="r-soul-origin">0</b></span>
       <span class="res" data-tt-title="魔種" data-tt-desc="煉獄之塔 BOSS 額外掉落材料。"><span class="res-emoji" aria-hidden="true">🌱</span> <b id="r-demon-seed">0</b></span>
@@ -416,20 +417,22 @@
         <section id="tab-skills" class="tab">
           <div class="panel" style="margin-bottom:12px">
             <div class="sec-title">🧠 技能 <span class="dim-text">可用技能點：<b id="sp-count"
-                  style="color:var(--accent)">0</b>（每升 1 級 +1 點，一般技能上限 Lv.10）</span></div>
+                  style="color:var(--accent)">0</b>（技能熟練度每升 1 級 +1 點；技能上限 Lv.10，轉生後 Lv.15）</span></div>
+            <div class="sec-sub">📚 技能熟練度 <span id="mastery-level" class="dim-text"></span></div>
+            <div id="mastery-bar" class="mastery-bar"><div id="mastery-bar-fill" class="mastery-bar-fill"></div><span id="mastery-bar-text" class="mastery-bar-text"></span></div>
             <div class="sec-sub">⚔️ 裝載欄 <span id="loadout-cap" class="dim-text"></span>（依順序自動施放；點擊卸下）</div>
             <div id="skill-loadout" class="chip-row"></div>
           </div>
           <div class="hint" style="margin-bottom:12px">💡 滑鼠移到技能圖示上顯示說明；左鍵點擊開啟升級面板（升級/降級/裝備/加入融合）。</div>
           <div class="panel" style="margin-bottom:12px">
-            <div class="sec-title">🧬 融合技 <span class="dim-text">你的專屬奧義（初始等級＝素材加總，可再升 20 級）</span></div>
+            <div class="sec-title">🧬 融合技 <span class="dim-text">你的專屬奧義（產生時為未學習，升至 Lv.1 後可裝備）</span></div>
             <div id="fusion-skill-list" class="tree-row"></div>
           </div>
           <div id="skill-trees"></div>
           <div class="panel" style="margin-top:12px">
             <div class="sec-title">⚗️ 技能融合</div>
             <div class="hint">放入 2~4
-              個已學習的主動技能：融合技繼承素材的部分效果（以素材當前等級計算，等級越高繼承越強），並有機率覺醒「變異效果」（每次只會出現一種，與融合內容相關）。素材技能等級歸零（可重新學習）；融合技可刪除並歸還所有投入點數。
+              個已解鎖的主動技能（不需學習）：融合結果以素材「滿級」數值隨機生成——物理/魔法/雙屬性、攻擊力四檔、屬性組合、增益減益數量與數值、特效（5% 機率融合兩種特效）。素材不會消失，但投入期間無法裝備（刪除融合技後釋放）；被動技與潛力技能不可融合。融合花費金幣與魔法卷軸📜。
             </div>
             <div id="fusion-slots" class="chip-row" style="margin:8px 0"></div>
             <div class="btn-row">
@@ -781,20 +784,20 @@
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js"></script>
   <script src="js/ui-scale.js"></script>
-  <script src="js/data.js?v=1.0.3"></script>
-  <script src="js/formula.js"></script>
+  <script src="js/data.js?v=1.0.4"></script>
+  <script src="js/formula.js?v=1.0.1"></script>
   <script src="js/battlefield.js"></script>
   <script src="js/vfx.js"></script>
-  <script src="js/stats.js"></script>
+  <script src="js/stats.js?v=1.0.1"></script>
   <script src="js/item.js"></script>
-  <script src="js/skills.js?v=1.0.3"></script>
-  <script src="js/talents.js"></script>
-  <script src="js/player.js"></script>
-  <script src="js/combat.js"></script>
+  <script src="js/skills.js?v=1.0.4"></script>
+  <script src="js/talents.js?v=1.0.1"></script>
+  <script src="js/player.js?v=1.0.1"></script>
+  <script src="js/combat.js?v=1.0.1"></script>
   <script src="js/potential.js"></script>
-  <script src="js/tower.js"></script>
-  <script src="js/save.js"></script>
-  <script src="js/ui.js?v=1.0.8"></script>
+  <script src="js/tower.js?v=1.0.1"></script>
+  <script src="js/save.js?v=1.0.1"></script>
+  <script src="js/ui.js?v=1.0.9"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js"></script>

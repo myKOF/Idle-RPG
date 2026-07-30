@@ -94,7 +94,8 @@ test('凍結的 Worker 指令表有 86 條且分類數量固定', () => {
   // v10：新增 vfx 事件（技能／增益特效），指令表未變動
   // v11：float 事件新增可選的 delayMs（讓傷害數字對齊命中時機），指令表未變動
   // v12：vfx 事件新增 travelMs（投射物改為等速飛行，時間依距離算），指令表未變動
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 12);
+  // v13：技能融合改造——TICK_VIEW_KEYS 新增 magicScroll、skills 面板新增 mastery/scrolls/fusionCosts，指令表未變動
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 13);
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   const names = Object.keys(protocol.COMMANDS);
   assert.equal(names.length, 86);

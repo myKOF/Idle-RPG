@@ -182,6 +182,13 @@ function doSalvage(it, silent, bonus) {
   if (res.essence) {
     G.player.essence += res.essence;
     if (window.recordLootMat) window.recordLootMat('essence', res.essence, 'factory');
+    // 魔法卷軸（2026-07-30）：與附魔精華同判定（含幸運晶片×3 後的實得量）、數量 1/10（機率式進位）
+    var scrollGain = (typeof magicScrollFromEssence === 'function') ? magicScrollFromEssence(res.essence) : 0;
+    if (scrollGain > 0) {
+      G.player.magicScroll = (G.player.magicScroll || 0) + scrollGain;
+      if (window.recordLootMat) window.recordLootMat('magicScroll', scrollGain, 'factory');
+      extras.push('📜卷軸x' + scrollGain);
+    }
   }
   if (res.ancientEssence) {
     G.player.ancientEssence = (G.player.ancientEssence || 0) + res.ancientEssence;

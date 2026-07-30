@@ -271,6 +271,8 @@ function endTowerFight(win, reason) {
     var st2 = getStats();
     var xpGain = Math.round((b.xp || 0) * (1 + st2.xpBonus / 100));
     gainXp(xpGain);
+    // 技能熟練度經驗（2026-07-30）：高塔通關比照野外擊殺
+    if (typeof gainSkillMasteryXp === 'function') gainSkillMasteryXp(Math.round(xpGain * SKILL_MASTERY_XP_RATE / 100));
     UI.dirty.header = true;
     result.rewards.push('✨ 經驗 x' + fmt(xpGain));
     var soulOriginRate = hellSoulOriginDropChance(floor);
@@ -330,6 +332,13 @@ function endTowerFight(win, reason) {
     G.player.essence += rw.essence;
     if (window.recordLootMat) window.recordLootMat('essence', rw.essence, 'tower');
     result.rewards.push('🔮 附魔精華 x' + rw.essence);
+    // 魔法卷軸（2026-07-30 技能融合材料）：同附魔精華來源、數量 1/10（機率式進位）
+    var scrollGain = (typeof magicScrollFromEssence === 'function') ? magicScrollFromEssence(rw.essence) : 0;
+    if (scrollGain > 0) {
+      G.player.magicScroll = (G.player.magicScroll || 0) + scrollGain;
+      if (window.recordLootMat) window.recordLootMat('magicScroll', scrollGain, 'tower');
+      result.rewards.push('📜 魔法卷軸 x' + scrollGain);
+    }
     // 太古精華（40 層以上；獨立機率，不受掉寶率影響）
     var ancientEssenceRate = ancientEssenceDropChanceForBoss(floor);
     if (ancientEssenceRate > 0 && chance(ancientEssenceRate)) {

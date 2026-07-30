@@ -1546,20 +1546,28 @@ function skillUpgradeCost(lv) {
   return Math.min(5000000, cost);
 }
 
-// 各類技能等級上限：依 CSV 轉生對照表 param e（一般技能上限）與 param f（融合技上限增加值）。
+/* ---- 技能熟練度（2026-07-30 技能融合改造）----
+   技能點不再隨角色升級發放，改由技能熟練度提供：打怪／道具獲得技能經驗，
+   每升 1 級熟練度給 1 技能點；初始 0 級、上限 SKILL_MASTERY_MAX_LEVEL。
+   經驗需求曲線先沿用玩家升級公式的未轉生版：a × L^b + c。 */
+var SKILL_MASTERY_MAX_LEVEL = 1000;   // 熟練度等級上限
+var SKILL_MASTERY_XP_A = 30;          // 熟練度經驗需求 係數 a
+var SKILL_MASTERY_XP_B = 3;           // 熟練度經驗需求 次方 b
+var SKILL_MASTERY_XP_C = 40;          // 熟練度經驗需求 常數 c
+var SKILL_MASTERY_XP_RATE = 100;      // 擊殺獲得技能經驗 =怪物經驗 × 此% （道具/GM 直接給值）
+function skillMasteryXpForLevel(l) {
+  return Math.floor(SKILL_MASTERY_XP_A * Math.pow(l, SKILL_MASTERY_XP_B) + SKILL_MASTERY_XP_C);
+}
+
+/* 各類技能等級上限（2026-07-30 技能融合改造）：
+   所有技能（含融合技/被動技）統一走 CSV 轉生對照表 param e＝10 級、轉生後 15 級；
+   融合技不再使用記錄內凍結的 maxLv（素材加總+20 舊制欄位僅為存檔相容保留）。 */
 function skillMaxLv(def) {
   var rc = reincarnationCount();
-  if (def && def.cat === 'fusion') {
-    var fusionAdd = (typeof REINCARNATION_FUSION_MAX_LEVELS !== 'undefined' && REINCARNATION_FUSION_MAX_LEVELS[rc] !== undefined)
-      ? REINCARNATION_FUSION_MAX_LEVELS[rc]
-      : (rc * 20);
-    return (def.maxLv || 40) + fusionAdd;
-  }
   if (typeof REINCARNATION_SKILL_MAX_LEVELS !== 'undefined' && REINCARNATION_SKILL_MAX_LEVELS[rc] !== undefined) {
     return REINCARNATION_SKILL_MAX_LEVELS[rc];
   }
-  if (def && def.cat === 'passive') return 30 + Math.min(10, rc) * 10;
-  return 20 + Math.min(10, rc) * 10;
+  return 10 + (rc > 0 ? 5 : 0);
 }
 
 // 技能傷害倍率（%）= base + per × (等級-1)
@@ -1626,13 +1634,44 @@ function fxTriggerMerge(prev, next) {
   return next;
 }
 
-/* ---- 技能融合參數 ---- */
-var FUSE_FACTOR = 0.75;           // 素材效果繼承比例（傷害/元素占比等 ×0.75 後合併；2026-07-09 由 0.6 上調，融合技傷害最高可達舊版 +300%）
-var FUSION_MUTATION_CHANCE = 45;  // 變異基礎機率 %
+/* ---- 技能融合參數（2026-07-30 種子演算法改造）---- */
+var FUSE_FACTOR = 0.75;           // 舊版素材繼承比例；新演算法不再使用，保留供參數表錨點相容
+var FUSION_MUTATION_CHANCE = 45;  // 變異基礎機率 %（種子流內擲骰）
 var FUSION_CD_FACTOR = 1.25;      // 融合技冷卻 = 素材最長冷卻 × 1.25
 
 // 融合變異觸發率 = 基礎 45%
 function fusionMutationChance() { return FUSION_MUTATION_CHANCE; }
+
+/* 新演算法參數：
+   物魔判定＝混合素材時 物理/魔法/雙屬性 權重 45/45/10（物魔票數不等時各自 ×票數比例）；
+   攻擊力＝素材滿級傷害%平均 → 四檔 75/100/125/150%，機率 20/30/30/20；
+   同屬性加成＝素材中同屬性每多 1 個，該屬性最終傷害 ×(1+25%)（折入權重與總值）；
+   雙屬性（物+魔）結果：物攻與魔攻兩段各以 總傷害% × FUSION_BOTH_STAT_FACTOR 結算；
+   所有隨機結果值為融合技滿級（10 級）值，Lv.1 起為 FUSION_LV1_RATIO 線性成長至 100%。 */
+var FUSION_ATK_TIERS = [75, 100, 125, 150];      // 攻擊力四檔（%）
+var FUSION_ATK_TIER_WEIGHTS = [20, 30, 30, 20];  // 四檔機率（%）
+var FUSION_BOTH_BASE_CHANCE = 10;   // 物魔混合素材出「物理+魔法」結果的基礎機率 %
+var FUSION_SAME_ELEM_BONUS = 25;    // 同屬性每多 1 個素材的傷害加成 %
+var FUSION_BOTH_STAT_FACTOR = 0.65; // 雙屬性結果每段攻擊係數
+var FUSION_EFFECT_FUSE_CHANCE = 5;  // 效果融合機率 %（合併兩個素材的特效包，最多 2）
+var FUSION_LV1_RATIO = 0.6;         // 融合技 Lv.1 數值 = 滿級值 × 此比例（線性成長至滿級）
+var FUSION_GOLD_COST_PER_COMP = 50000; // 融合金幣費用（每個素材）
+var FUSION_SCROLL_COST_PER_COMP = 5;   // 融合魔法卷軸費用（每個素材）
+var MAGIC_SCROLL_ESSENCE_RATIO = 0.1;  // 魔法卷軸產出 = 附魔精華量 × 此比例（機率式進位）
+
+// 融合花費（金幣/卷軸）＝每素材費用 × 素材數
+function fusionGoldCost(compCount) { return FUSION_GOLD_COST_PER_COMP * Math.max(0, compCount || 0); }
+function fusionScrollCost(compCount) { return FUSION_SCROLL_COST_PER_COMP * Math.max(0, compCount || 0); }
+
+/* 魔法卷軸產出換算：與附魔精華同來源（拆解/高塔）、同掉落判定，數量 = 精華量 × 0.1。
+   量常小於 1 → 機率式進位（期望值精準等於 精華量 × 比例）。 */
+function magicScrollFromEssence(essenceQty) {
+  var v = Math.max(0, Number(essenceQty) || 0) * MAGIC_SCROLL_ESSENCE_RATIO;
+  var n = Math.floor(v);
+  var frac = v - n;
+  if (frac > 0 && chance(frac * 100)) n++; // 小數部分機率進位；整數量不擲骰
+  return n;
+}
 
 /* ============================================================
    §10 離線收益

@@ -970,8 +970,13 @@ function skillRtSimpleCast(pEnt, sk, fx, lv, powerPct, targets, floatSel, opts) 
   if (!live.length) return out;
   var st = getStats();
   // 攻擊基準：比照 castSkill——互補加成（混沌雙修）→ AOE 分攤 → 技能效果天賦倍率 → 神怒 → 雷霆過載 → 威力%
-  var atkStat = (st[fx.stat] || st.atk);
-  if ((st.crossCore || 0) > 0) atkStat += ((fx.stat === 'atk') ? (st.matk || 0) : (st.atk || 0)) * st.crossCore / 100;
+  var atkStat;
+  if (fx.dmgType === 'both') {
+    atkStat = ((st.atk || 0) + (st.matk || 0)) * FUSION_BOTH_STAT_FACTOR; // 融合技雙屬性（比照 castSkill）
+  } else {
+    atkStat = (st[fx.stat] || st.atk);
+    if ((st.crossCore || 0) > 0) atkStat += ((fx.stat === 'atk') ? (st.matk || 0) : (st.atk || 0)) * st.crossCore / 100;
+  }
   var baseVal = skillDamageShare(((fx.base || 0) + (fx.per || 0) * (lv - 1)) / 100 * atkStat, st.aoeDmg || 0, live.length);
   baseVal *= skillEffectTalentMultiplier(sk);
   if ((st.passives.godWrath || 0) > 0 && pEnt.hp < st.hp * 0.3) baseVal *= 1 + st.passives.godWrath / 100;
@@ -1019,9 +1024,21 @@ function skillRtSimpleCast(pEnt, sk, fx, lv, powerPct, targets, floatSel, opts) 
           totalDmgPct: (st.totalDmgPct || 0) + buffVal(pEnt, 'allDmgUp'),
           dmgVsElem: st.dmgVsElem, isPlayer: true
         };
+        if (fx.dmgType === 'both') {
+          // 融合技雙屬性：比照 castSkill 拆回物攻/魔攻兩段、雙穿透齊備
+          var bothSum = (st.atk || 0) + (st.matk || 0);
+          var bothRatio = bothSum > 0 ? (st.atk || 0) / bothSum : 0.5;
+          aCfg.atk = baseVal * bothRatio;
+          aCfg.matk = baseVal * (1 - bothRatio);
+          aCfg.pen = effectivePPen(st, pEnt);
+          aCfg.mPen = effectiveMPen(st, pEnt);
+        }
         skillElemApplyACfg(aCfg, sk, fx); // 技能屬性化：本體傷害段整段歸屬技能屬性
         // 處決：低血量加成（重放/引動同樣適用）
-        if (fx.execBelow && t.hp / t.maxHp * 100 < fx.execBelow) aCfg.atk *= (fx.execMult || 2);
+        if (fx.execBelow && t.hp / t.maxHp * 100 < fx.execBelow) {
+          aCfg.atk *= (fx.execMult || 2);
+          if (aCfg.matk) aCfg.matk *= (fx.execMult || 2);
+        }
         aCfg = skillRtFieldAmpACfg(aCfg, t); // periodicField 族：領域增幅（只對站在領域裡的目標）
         res = resolveHit(pEnt, t, aCfg, monsterDefCfg(t));
       }
@@ -1897,7 +1914,9 @@ var POTENTIAL_TALENTS = [
   { id: 'chronosStasis', name: '時空凝滯', tags: [], unlockLv: 1, en: 'Chronos Stasis', emoji: '🌀', cat: 'potential', type: 'active', cd: 120, base: 40, per: 0.5, dur: 8, mech: 'timeStop', desc: '封鎖周遭的時空，令萬物靜止——唯有承神之賜福者能自由行動；凝滯之間你的所有傷害大幅提升，敵人動彈不得，持續 8 秒。每級 +0.5% 所有傷害。', flavor: '唯有獲得神之賜福者，方能在凝滯的時空中行動自如。' }
 ];
 
-// 取得指定等級的實際效果（基礎 fx + 已達標的里程碑覆蓋）
+/* 取得技能的實際效果（2026-07-30 技能融合改造）：
+   移除 4/8 級門檻——UNLOCKS 里程碑補丁自 Lv.1 起全數套用（依門檻由小到大淺覆蓋，
+   最高檔為最終值）。lv 參數保留供呼叫端相容，不再影響補丁是否生效。 */
 function effectiveFx(id, def, lv) {
   var base = def.fx;
   var patches = UNLOCKS[id];
@@ -1907,10 +1926,8 @@ function effectiveFx(id, def, lv) {
   for (k in base) fx[k] = base[k];
   var lvs = Object.keys(patches).map(Number).sort(function (a, b) { return a - b; });
   for (var i = 0; i < lvs.length; i++) {
-    if (lv >= lvs[i]) {
-      var p = patches[lvs[i]];
-      for (k in p) fx[k] = p[k];
-    }
+    var p = patches[lvs[i]];
+    for (k in p) fx[k] = p[k];
   }
   return fx;
 }
@@ -1943,27 +1960,50 @@ function currentShieldSkillCap(stats) {
 /* ui.js 的舊路徑在 Claude 移除護盾正規化前仍需委派到模擬層實作。 */
 var simulationCurrentShieldSkillCap = currentShieldSkillCap;
 
-// 下一個里程碑等級（無則回傳 0）
+// 下一個里程碑等級：改制後效果自 Lv.1 全附加，恆回傳 0（保留函式供既有呼叫端相容）
 function nextUnlockLv(id, lv) {
-  var patches = UNLOCKS[id];
-  if (!patches) return 0;
-  var lvs = Object.keys(patches).map(Number).sort(function (a, b) { return a - b; });
-  for (var i = 0; i < lvs.length; i++) if (lv < lvs[i]) return lvs[i];
   return 0;
 }
 
-/* ---- 技能點 ----
-   總預算：初始兩個 1 級技能即計入 2 點，9999 級時為 10000 點。
-   已使用：所有技能等級總和；可用 = 總預算 - 已使用。
-   轉生後總預算保留，但不再因升級增加。 */
-function totalSkillPoints() {
+/* ---- 技能點（2026-07-30 技能熟練度制）----
+   技能點不再隨角色升級發放：總預算 = 初始 2 點（開局兩個 1 級技能）
+   + 技能熟練度等級（每級 1 點）+ 潛力解鎖天賦加成。
+   已使用：所有技能等級總和；可用 = 總預算 - 已使用。 */
+var SKILL_POINT_BASE = 2; // 開局兩個 1 級技能計入的基礎點數
+
+function ensureSkillMastery() {
   var p = G.player;
-  var expected = reincarnationCount() > 0 ? SKILL_POINT_BUDGET_CAP : Math.min(SKILL_POINT_BUDGET_CAP, Math.max(0, p.level + 1));
-  if (p.skillPointBudget === undefined || p.skillPointBudget === null || p.skillPointBudget < expected) {
-    p.skillPointBudget = expected;
+  if (!p.skillMastery || typeof p.skillMastery !== 'object') p.skillMastery = { level: 0, xp: 0 };
+  var m = p.skillMastery;
+  m.level = Math.max(0, Math.min(SKILL_MASTERY_MAX_LEVEL, Math.floor(Number(m.level) || 0)));
+  m.xp = Math.max(0, Math.floor(Number(m.xp) || 0));
+  return m;
+}
+
+/* 技能熟練度經驗入帳：滿足需求即升級（每級 1 技能點），滿級後不再累積。 */
+function gainSkillMasteryXp(n) {
+  n = Math.floor(Number(n) || 0);
+  if (n <= 0) return;
+  var m = ensureSkillMastery();
+  if (m.level >= SKILL_MASTERY_MAX_LEVEL) { m.xp = 0; return; }
+  m.xp += n;
+  var leveled = 0;
+  while (m.level < SKILL_MASTERY_MAX_LEVEL && m.xp >= skillMasteryXpForLevel(m.level)) {
+    m.xp -= skillMasteryXpForLevel(m.level);
+    m.level++;
+    leveled++;
   }
+  if (m.level >= SKILL_MASTERY_MAX_LEVEL) m.xp = 0;
+  if (leveled > 0) {
+    blog('📚 技能熟練度提升至 Lv.' + m.level + '（獲得 ' + leveled + ' 技能點）', 'good');
+    UI.dirty.skills = true; UI.dirty.header = true;
+  }
+}
+
+function totalSkillPoints() {
+  var m = ensureSkillMastery();
   var talentBonus = typeof talentSkillPointBonus === 'function' ? talentSkillPointBonus() : 0;
-  return Math.max(0, Math.floor(Number(p.skillPointBudget) || 0) + talentBonus);
+  return Math.max(0, SKILL_POINT_BASE + m.level + talentBonus);
 }
 function spentSkillPoints() {
   var spent = 0;
@@ -1982,6 +2022,18 @@ function availableSkillPoints() {
 
 /* ---- 查詢（skillValue / skillCdFor / scaleAt → js/formula.js §9） ---- */
 function skillLevel(id) { return (G.player.skills && G.player.skills[id]) || 0; }
+
+/* ---- 融合佔用（2026-07-30）----
+   一個技能只能投入一個融合技；投入期間不可裝備、不可再融合，
+   刪除該融合技後才釋放。佔用狀態由 G.player.fusions[].components 推導，不另存欄位。 */
+function skillUsedInFusion(id, fusions) {
+  var fs = fusions || (G && G.player && G.player.fusions) || [];
+  for (var i = 0; i < fs.length; i++) {
+    var comps = fs[i] && fs[i].components;
+    if (Array.isArray(comps) && comps.indexOf(id) >= 0) return fs[i].id;
+  }
+  return null;
+}
 
 /* ---- 人物等級解鎖（達標後記錄於存檔，永久保留） ---- */
 function ensureSkillUnlockState() {
@@ -2073,9 +2125,7 @@ function learnOrUpgradeSkill(id) {
   G.player.skills[id] = lv + 1;
   if (sk.cat === 'passive') markStatsDirty();
   UI.dirty.skills = true; UI.dirty.header = true;
-  var newFx = UNLOCKS[id] && UNLOCKS[id][lv + 1];
-  blog((lv === 0 ? '📖 學會技能' : '⬆️ 技能升級') + '：' + sk.emoji + sk.name + ' Lv.' + (lv + 1) + '（消耗 ' + fmt(cost) + ' 金幣，1 技能點）' +
-    (newFx ? ' <span class="log-hl-good">✨解鎖新效果！</span>' : ''), 'good');
+  blog((lv === 0 ? '📖 學會技能' : '⬆️ 技能升級') + '：' + sk.emoji + sk.name + ' Lv.' + (lv + 1) + '（消耗 ' + fmt(cost) + ' 金幣，1 技能點）', 'good');
   return null;
 }
 
@@ -2111,13 +2161,12 @@ function maxUpgradeSkill(id) {
   return null;
 }
 
-// 降級：退回 1 級並歸還消耗金幣（降至 0 = 遺忘；融合技最低 Lv.1，移除請用刪除）
+// 降級：退回 1 級並歸還技能點（降至 0 = 遺忘；融合技降至 0 = 回到未學習狀態，記錄保留）
 function downgradeSkill(id) {
   var sk = skillDef(id);
   if (!sk) return '未知技能';
   var lv = skillLevel(id);
   if (!lv) return '尚未學習';
-  if (sk.cat === 'fusion' && lv <= 1) return '融合技最低為 Lv.1，如要移除請使用「刪除」';
   var nl = lv - 1;
   if (nl <= 0) {
     delete G.player.skills[id];
@@ -2172,7 +2221,8 @@ function equipSkillToLoadout(id) {
   }
   var sk = skillDef(id);
   if (!sk || sk.cat === 'passive') return '被動技能無需裝備';
-  if (!skillLevel(id)) return '尚未學習';
+  if (!skillLevel(id)) return sk.cat === 'fusion' ? '融合技需升級至 Lv.1 才可裝備' : '尚未學習';
+  if (skillUsedInFusion(id)) return '技能已投入融合，無法裝備（刪除該融合技後釋放）';
   var lo = G.player.loadout;
   if (lo.indexOf(id) >= 0) return '已在裝載欄';
   if (lo.length >= loadoutSize()) return '裝載欄已滿（' + loadoutSize() + ' 格，初始 2 格，每 20 級再 +1 格）';
@@ -2207,7 +2257,7 @@ function skillConditionOk(sk, fx, pEnt, target, st) {
   var hasTarget = Array.isArray(target)
     ? target.some(function (ent) { return ent && ent.hp > 0; })
     : !!(target && target.hp > 0);
-  if ((fx.dmgType || fx.debuff || fx.maxHpDotPct) && !hasTarget) return false;
+  if ((fx.dmgType || skillFxDebuffList(fx).length || fx.maxHpDotPct) && !hasTarget) return false;
   // 45 新技能（dotSynergy 族）：requiresTargetDot——所有存活目標身上皆無 DoT 時不施放（萬創崩裂等）
   if (fx.requiresTargetDot) {
     var dotTargetOk = Array.isArray(target)
@@ -2218,7 +2268,8 @@ function skillConditionOk(sk, fx, pEnt, target, st) {
   /* 增益不重複疊放——僅限「純增益技」。
      傷害技的增益是附帶效果（破甲擊等的穿透增益），若因增益還在就不施放，等於白丟一次輸出，
      因此傷害技不受此閘門限制。 */
-  if (fx.buff && !fx.dmgType && buffVal(pEnt, fx.buff.key) > 0) return false;
+  var firstBuff = skillFxBuffList(fx)[0];
+  if (firstBuff && !fx.dmgType && buffVal(pEnt, firstBuff.key) > 0) return false;
   return true;
 }
 
@@ -2228,48 +2279,6 @@ function skillDamageShare(baseDamage, aoePct, targetCount) {
   return count > 1 ? baseDamage * (1 + aoePct / 100) / count : baseDamage;
 }
 
-// 融合效果候選整理：同類型只保留素材當前實際數值較高者，再依首次出現順序取前 N 種。
-function fusionSelectEffects(entries, limit) {
-  var best = {}, order = [];
-  (entries || []).forEach(function (entry) {
-    if (!entry || !entry.effect || !entry.effect.key) return;
-    var key = entry.effect.key;
-    var value = scaleAt(entry.effect, entry.lv || 1);
-    if (!best[key]) {
-      best[key] = { effect: entry.effect, lv: entry.lv || 1, value: value };
-      order.push(key);
-    } else if (value > best[key].value) {
-      best[key] = { effect: entry.effect, lv: entry.lv || 1, value: value };
-    }
-  });
-  return order.slice(0, limit).map(function (key) { return best[key]; });
-}
-
-// 融合後的增益/減益基礎值折減 20%，每級成長值與持續時間沿用較高者的效果定義。
-function fusionEffectValueDef(entry) {
-  var e = entry.effect;
-  return { key: e.key, base: Math.round((e.base || 0) * 0.8), per: e.per || 0, dur: e.dur };
-}
-
-// 一次性存檔遷移用：特殊技能已移除的第二增益效果。
-var REMOVED_SPECIAL_SECOND_BUFFS = {
-  timeWarp: 'evasionUp',
-  blinkDodge: 'aspdUp',
-  overload: 'atkUp'
-};
-function trimLegacySpecialFusionBuff(fs) {
-  if (!fs || !fs.fx || !fs.fx.buff2 || !Array.isArray(fs.components)) return false;
-  var removedKeys = {};
-  fs.components.forEach(function (id) {
-    var key = REMOVED_SPECIAL_SECOND_BUFFS[id];
-    if (key) removedKeys[key] = true;
-  });
-  if (!removedKeys[fs.fx.buff2.key]) return false;
-  delete fs.fx.buff2;
-  return true;
-}
-
-// 套用最多兩個減益；多目標時每個存活目標都套用一次。
 /* 技能效果天賦倍率（4 轉昇華天賦，talentSkillEffectMultiplier → talents.js）：
    一般類別依 sk.cat 直接對應；融合技 = 素材類別倍率的平均（舊快照無素材記錄時視為 1）。 */
 function skillEffectTalentMultiplier(sk) {
@@ -2286,11 +2295,30 @@ function skillEffectTalentMultiplier(sk) {
   return n ? sum / n : 1;
 }
 
+/* ---- 增益/減益清單存取（2026-07-30 融合改造）----
+   一般技能沿用 fx.buff/fx.buff2/fx.debuff/fx.debuff2 固定欄位；
+   融合技的隨機結果不限數量，改放 fx.buffList/fx.debuffList 陣列。
+   消費端（施放/說明/AI 條件）一律經由這兩個存取器，兩種形態皆支援。 */
+function skillFxBuffList(fx) {
+  var list = [];
+  if (!fx) return list;
+  if (fx.buff) list.push(fx.buff);
+  if (fx.buff2) list.push(fx.buff2);
+  if (Array.isArray(fx.buffList)) list = list.concat(fx.buffList);
+  return list;
+}
+function skillFxDebuffList(fx) {
+  var list = [];
+  if (!fx) return list;
+  if (fx.debuff) list.push(fx.debuff);
+  if (fx.debuff2) list.push(fx.debuff2);
+  if (Array.isArray(fx.debuffList)) list = list.concat(fx.debuffList);
+  return list;
+}
+
 function applySkillDebuffs(targets, fx, lv, parts, mult) {
   mult = mult || 1;
-  var debuffs = [];
-  if (fx.debuff) debuffs.push(fx.debuff);
-  if (fx.debuff2) debuffs.push(fx.debuff2);
+  var debuffs = skillFxDebuffList(fx);
   debuffs.forEach(function (debuff) {
     var applied = false;
     targets.forEach(function (target) {
@@ -2502,10 +2530,17 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
   // === 傷害段 ===
   if (fx.dmgType) {
     // 潛力【混沌雙修】：物理技能額外獲得魔攻加成、魔法技能額外獲得物攻加成（互補加成）。
-    var atkStat = (st[fx.stat] || st.atk);
-    if ((st.crossCore || 0) > 0) {
-      var crossStat = (fx.stat === 'atk') ? (st.matk || 0) : (st.atk || 0);
-      atkStat += crossStat * st.crossCore / 100;
+    var atkStat;
+    if (fx.dmgType === 'both') {
+      // 融合技「物理+魔法」結果：物攻與魔攻兩段各以 傷害% × FUSION_BOTH_STAT_FACTOR 結算
+      //（resolveHit 的 'both' 分支各自過物防/魔防；混沌雙修不再另外互補，雙段已天然兼得）
+      atkStat = ((st.atk || 0) + (st.matk || 0)) * FUSION_BOTH_STAT_FACTOR;
+    } else {
+      atkStat = (st[fx.stat] || st.atk);
+      if ((st.crossCore || 0) > 0) {
+        var crossStat = (fx.stat === 'atk') ? (st.matk || 0) : (st.atk || 0);
+        atkStat += crossStat * st.crossCore / 100;
+      }
     }
     var rawBaseVal = ((fx.base || 0) + (fx.per || 0) * (lv - 1)) / 100 * atkStat;
     var baseVal = skillDamageShare(rawBaseVal, st.aoeDmg || 0, targetCount);
@@ -2572,9 +2607,21 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
             dmgVsElem: st.dmgVsElem,
             isPlayer: true
           };
+          if (fx.dmgType === 'both') {
+            // 融合技雙屬性：baseVal 依 物攻:魔攻 比例拆回兩段（resolveHit 'both' 分支各自結算），雙穿透齊備
+            var statSum = (st.atk || 0) + (st.matk || 0);
+            var physRatio = statSum > 0 ? (st.atk || 0) / statSum : 0.5;
+            aCfg.atk = baseVal * physRatio;
+            aCfg.matk = baseVal * (1 - physRatio);
+            aCfg.pen = effectivePPen(st, pEnt);
+            aCfg.mPen = effectiveMPen(st, pEnt);
+          }
           skillElemApplyACfg(aCfg, sk, fx); // 技能屬性化：本體傷害段整段歸屬技能屬性（tags／elemOverride／融合 elems）
           // 處決：低血量加成
-          if (fx.execBelow && targetEnt.hp / targetEnt.maxHp * 100 < fx.execBelow) aCfg.atk *= (fx.execMult || 2);
+          if (fx.execBelow && targetEnt.hp / targetEnt.maxHp * 100 < fx.execBelow) {
+            aCfg.atk *= (fx.execMult || 2);
+            if (aCfg.matk) aCfg.matk *= (fx.execMult || 2);
+          }
           // 45 新技能（periodicField 族）：領域內敵人受指定類型傷害增幅（技能傷害端；只對站在領域裡的目標）
           aCfg = skillRtFieldAmpACfg(aCfg, targetEnt);
           dmgRes = resolveHit(pEnt, targetEnt, aCfg, monsterDefCfg(targetEnt));
@@ -2721,16 +2768,11 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
   }
   if (fx.selfCleanse) { cleanse(pEnt); floatPlayerEvent(floatSel, '✨淨化', 'special'); parts.push('淨化負面狀態'); }
   if (fx.mpRestore) { var mpGain = Math.round(fx.mpRestore * fxMult); pEnt.mp = Math.min(st.mp, pEnt.mp + mpGain); floatPlayerEvent(floatSel, '法力 +' + fmt(mpGain), 'mana', mpGain); parts.push('回復 ' + mpGain + ' 法力'); }
-  if (fx.buff) {
-    applyBuff(pEnt, fx.buff.key, scaleAt(fx.buff, lv) * fxMult, fx.buff.dur);
-    showPlayerBuffFloat(floatSel, fx.buff, lv, fxMult);
-    parts.push('<span class="log-hl-good">' + buffLabel(fx.buff.key) + ' +' + fmt1(skillBuffDisplayValue(fx.buff, lv, fxMult)) + '%（' + fx.buff.dur + '秒）</span>');
-  }
-  if (fx.buff2) {
-    applyBuff(pEnt, fx.buff2.key, scaleAt(fx.buff2, lv) * fxMult, fx.buff2.dur);
-    showPlayerBuffFloat(floatSel, fx.buff2, lv, fxMult);
-    parts.push('<span class="log-hl-good">' + buffLabel(fx.buff2.key) + ' +' + fmt1(skillBuffDisplayValue(fx.buff2, lv, fxMult)) + '%（' + fx.buff2.dur + '秒）</span>');
-  }
+  skillFxBuffList(fx).forEach(function (bf) {
+    applyBuff(pEnt, bf.key, scaleAt(bf, lv) * fxMult, bf.dur);
+    showPlayerBuffFloat(floatSel, bf, lv, fxMult);
+    parts.push('<span class="log-hl-good">' + buffLabel(bf.key) + ' +' + fmt1(skillBuffDisplayValue(bf, lv, fxMult)) + '%（' + bf.dur + '秒）</span>');
+  });
   if (!fx.dmgType) applySkillDebuffs(targets, fx, lv, parts, fxMult);
   if (!fx.dmgType && fx.maxHpDotPct) {
     for (var nci = 0; nci < targets.length; nci++) {
@@ -2849,14 +2891,29 @@ function tickSkillCds(pEnt, dt) {
   }
 }
 
-/* ================ 技能融合系統 ================
-   2~4 個已學習的主動技能 → 融合技：繼承素材的部分效果（以素材當前等級的
-   完整效果為準，含里程碑），並有機率誕生一種變異效果。
-   初始等級 = 素材等級加總，可再升 20 級；素材歸零可重學；
-   刪除融合技時（點數採等級推導制）所有投入點數自動歸還。
-   （FUSE_FACTOR、FUSION_MUTATION_CHANCE 等融合參數 → js/formula.js §9） */
+/* ================ 技能融合系統（2026-07-30 種子演算法改造）================
+   2~4 個「已解鎖」的主動技能（可未學習）→ 融合技。素材不再被消耗，改為「佔用」：
+   投入期間不可裝備、不可再次融合，刪除融合技後釋放（skillUsedInFusion）。
+   融合花費金幣＋魔法卷軸（fusionGoldCost / fusionScrollCost → formula.js §9）。
+   融合技剛產生為未學習（Lv.0），花 1 技能點升至 Lv.1 才算學會、才可裝備。
 
-// 變異效果池（req 檢查與融合結果的關聯性；apply 直接改寫 fx；存檔只存 key/name/desc）
+   演算法（fusionGenerateFx，全部隨機以 record.seed 驅動的確定性亂數流）：
+   1. 物魔判定：混合素材時 物理/魔法/物+魔 = 45/45/10（物魔按素材數比例加權）；
+      任一真傷素材 → 真傷。
+   2. 攻擊力：素材「滿級」傷害% 平均 → 四檔 75/100/125/150%（20/30/30/20）。
+   3. 屬性組合：素材屬性做多重集組合全枚舉（物理算一種屬性、每個物理素材佔 2 份），
+      取幾種屬性依常態分佈鐘形權重，再均攤權重；同屬性素材每多 1 個該屬性 ×1.25
+      （等價折入 elems 權重與總傷害值，戰鬥端零改動）。
+   4. buff/debuff：素材滿級效果彙整為池（同 key 取高），取幾個依鐘形權重；
+      每個效果數值於「上限值一半 ~ 上限值」均分 4 檔隨機（各 25%）。
+   5. 特效：取一個素材的特效包（段數/範圍/DoT/控場/機制族等），5% 機率再融合
+      第二個素材的特效包（最多 2 個）。
+   6. 變異：沿用既有變異池（FUSION_MUTATION_CHANCE），於種子流內擲骰。
+   所有隨機結果值為融合技滿級（10 級）值，Lv.1 = 滿級 × FUSION_LV1_RATIO 線性成長。
+   存檔只存 {components, seed}——素材現行定義＋種子即可完整重算（原生技能調整
+   數值後讀檔自動生效，不必重新融合）。 */
+
+// 變異效果池（req 檢查與融合結果的關聯性；apply 直接改寫 fx；由種子流決定、不入存檔）
 var FUSION_MUTATIONS = [
   { key: 'iceFireSong', name: '冰與火之歌', desc: '目標同時處於減速（冰）與燃燒狀態時，引發冰爆追加 100% 傷害',
     req: function (fx) { return fx.elems && fx.elems.fire && fx.elems.ice; },
@@ -2871,13 +2928,13 @@ var FUSION_MUTATIONS = [
     req: function (fx) { return fx.dotList && fx.dotList.length; },
     apply: function (fx) { fx.dotList.forEach(function (d) { d.pct = Math.round(d.pct * 1.5); }); } },
   { key: 'timeRipple', name: '時空漣漪', desc: '附帶的增益效果持續時間變為兩倍',
-    req: function (fx) { return !!fx.buff; },
-    apply: function (fx) { if (fx.buff) fx.buff.dur *= 2; if (fx.buff2) fx.buff2.dur *= 2; } },
+    req: function (fx) { return skillFxBuffList(fx).length > 0; },
+    apply: function (fx) { skillFxBuffList(fx).forEach(function (bf) { bf.dur *= 2; }); } },
   { key: 'reapInstinct', name: '收割本能', desc: '嗜血的融合本能：目標血量低於 25% 時傷害 x2',
     req: function (fx) { return fx.dmgType && fx.dmgType !== 'true'; },
     apply: function (fx) { fx.execBelow = Math.max(fx.execBelow || 0, 25); fx.execMult = Math.max(fx.execMult || 0, 2); } },
   { key: 'guardEmber', name: '守護餘燼', desc: '融合的殘餘能量凝為屏障：施放時額外獲得最大生命 8% 的護盾',
-    req: function (fx) { return !!(fx.shieldPctMax || fx.healPctMax || fx.buff); },
+    req: function (fx) { return !!(fx.shieldPctMax || fx.healPctMax || skillFxBuffList(fx).length); },
     apply: function (fx) { if (!fx.shieldPctMax) fx.shieldPctMax = { base: 8, per: 1 }; } },
   { key: 'manaVortex', name: '法力漩渦', desc: '融合亂流回饋法力：施放後回復 30 點法力',
     req: function () { return true; },
@@ -2887,113 +2944,296 @@ var FUSION_MUTATIONS = [
 // 融合技命名：以元素/性質取字
 function fusionName(comps, fx) {
   var chars = [];
-  if (fx.elems) for (var e in fx.elems) { var ch = ELEM_INFO[e].name.charAt(0); if (chars.indexOf(ch) < 0) chars.push(ch); }
+  if (fx.elems) {
+    for (var e in fx.elems) {
+      // 'phys'（無屬性物理份額）不入名；其餘取元素名首字
+      if (!ELEM_INFO[e]) continue;
+      var ch = ELEM_INFO[e].name.charAt(0);
+      if (chars.indexOf(ch) < 0) chars.push(ch);
+    }
+  }
   if (!chars.length) {
     if (fx.stat === 'matk') chars.push('奧');
     else if (fx.dmgType) chars.push('武');
     if (fx.healPctMax || fx.hotPct) chars.push('聖');
-    if (fx.buff) chars.push('靈');
+    if (skillFxBuffList(fx).length) chars.push('靈');
   }
   chars = chars.slice(0, 3);
-  var suffix = fx.dmgType === 'true' ? '虛空奧義' : (fx.dmgType === 'magic' ? '衝擊彈' : (fx.dmgType ? '斬擊' : (fx.healPctMax || fx.hotPct ? '聖歌' : '祕法')));
+  var suffix = fx.dmgType === 'true' ? '虛空奧義'
+    : (fx.dmgType === 'both' ? '雙極奧義'
+      : (fx.dmgType === 'magic' ? '衝擊彈'
+        : (fx.dmgType ? '斬擊' : (fx.healPctMax || fx.hotPct ? '聖歌' : '祕法'))));
   return (chars.join('') || '混沌') + '融合·' + suffix;
 }
 
-/* ---- 融合 fx 聚合（純函式）----
-   由素材 comps（[{id,def,lv,fx}]）產生融合 fx，供 fuseSkills 與動態重建共用。
-   不含變異擲骰與 def 組裝；變異另由 applyFusionMutationByKey 依 key 重套。 */
-function fusionAggregateFx(comps) {
+/* ---- 種子亂數流（mulberry32）----
+   融合的所有隨機皆由 record.seed 驅動：同 seed＋同素材現行定義 → 同結果。
+   擲骰順序固定：物魔 → 攻擊力檔位 → 屬性數量/組合 → buff 數量/洗牌/檔位 → 特效/效果融合 → 變異。 */
+function fusionRng(seed) {
+  var a = (Number(seed) >>> 0) || 1;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function fusionRngWeighted(rng, weights) {
+  var total = 0, i;
+  for (i = 0; i < weights.length; i++) total += Math.max(0, weights[i]);
+  if (total <= 0) return 0;
+  var roll = rng() * total;
+  for (i = 0; i < weights.length; i++) {
+    roll -= Math.max(0, weights[i]);
+    if (roll < 0) return i;
+  }
+  return weights.length - 1;
+}
+// 鐘形（常態分佈）權重：取 1~n 個的機率，中間高兩端低（n=3 → 約 23/55/23；n=5 → 約 9/24/33/24/9）
+function fusionCountWeights(n) {
+  var mu = (1 + n) / 2, sigma = Math.max(0.6, n / 4), w = [];
+  for (var k = 1; k <= n; k++) w.push(Math.exp(-((k - mu) * (k - mu)) / (2 * sigma * sigma)));
+  return w;
+}
+/* 多重集組合枚舉：shares＝['phys','phys','fire',…] → 依「取 k 份」分組的全部相異組合。
+   物理佔 2 份 → {phys:2} 也是合法組合；規格例：物理+3 屬性魔法 → 4+7+7+4+1=23 種。 */
+function fusionEnumCombos(shares) {
+  var counts = {}, keys = [];
+  shares.forEach(function (s) {
+    if (!counts[s]) { counts[s] = 0; keys.push(s); }
+    counts[s]++;
+  });
+  var bySize = {};
+  function walk(idx, cur, size) {
+    if (idx === keys.length) {
+      if (size > 0) {
+        if (!bySize[size]) bySize[size] = [];
+        bySize[size].push(cur);
+      }
+      return;
+    }
+    var key = keys[idx];
+    for (var c = 0; c <= counts[key]; c++) {
+      var next = {};
+      for (var kk in cur) next[kk] = cur[kk];
+      if (c > 0) next[key] = c;
+      walk(idx + 1, next, size + c);
+    }
+  }
+  walk(0, {}, 0);
+  return bySize;
+}
+/* 融合成長折算：隨機結果值 V 為滿級（10 級基準）值 → Lv.1 = V × FUSION_LV1_RATIO 線性成長。
+   基準固定取未轉生上限（10），轉生上限 15 時滿級可超出 V（與一般技能成長同理）。 */
+function fusionScaledDef(maxVal, extra) {
+  var refMax = (typeof REINCARNATION_SKILL_MAX_LEVELS !== 'undefined' && REINCARNATION_SKILL_MAX_LEVELS[0]) || 10;
+  var out = extra || {};
+  out.base = Math.round(maxVal * FUSION_LV1_RATIO * 10) / 10;
+  out.per = Math.round(maxVal * (1 - FUSION_LV1_RATIO) / Math.max(1, refMax - 1) * 100) / 100;
+  return out;
+}
+// 深度折算：物件內 {base,per} 節點以素材滿級值解析後重新映射為融合成長曲線；純量原樣複製
+function fusionRescaleDeep(v, matLv) {
+  if (v === null || v === undefined) return v;
+  if (typeof v === 'object') {
+    if (v.base !== undefined || v.per !== undefined) {
+      var resolved = scaleAt({ base: Number(v.base) || 0, per: Number(v.per) || 0 }, Math.max(1, matLv));
+      return fusionScaledDef(resolved);
+    }
+    var out = Array.isArray(v) ? [] : {};
+    for (var k in v) out[k] = fusionRescaleDeep(v[k], matLv);
+    return out;
+  }
+  return v;
+}
+/* 特效包鍵集：傷害核心（dmgType/stat/base/per）、屬性（elems）、增益減益（另走效果池）
+   之外可被融合技繼承的欄位；「效果融合」以素材為單位整包取捨。 */
+var FUSION_EFFECT_KEYS = [
+  'hits', 'dot', 'dotList', 'stunDur', 'slowDur', 'execBelow', 'execMult',
+  'healPctOfDmg', 'mpRestore', 'mpOnCrit', 'goldPer', 'critBonus', 'neverMiss',
+  'selfCleanse', 'gamble', 'selfDmgPct', 'doubleCastPct',
+  'healPctMax', 'hotPct', 'hotDur', 'shieldPctMax', 'maxHpDotPct', 'dotDur',
+  'brand', 'detonate', 'charge', 'echo', 'field', 'skillAmp', 'skillAmp2',
+  'cdShift', 'freeNext', 'dotPulse', 'dotHaste', 'dotDetonate', 'comboWindow', 'dmgWindow',
+  'healEcho', 'overhealDmg', 'stigma', 'hpSacrifice', 'mpDump', 'replayBest',
+  'proc', 'proc2', 'buffExtend', 'buffExtend2', 'cdOnHitTaken', 'cdResetOnKill',
+  'cdResetOnKill2', 'shieldBurst', 'requiresTargetDot'
+];
+
+/* ---- 融合 fx 產生（純函式、種子確定性）----
+   comps＝素材滿級快照 [{id, def, maxLv, fx}]（fusionComps 組裝）。
+   回傳 { fx, shape, mutation }；供 fuseSkills（首次）與 buildFusionRuntimeDef（讀檔重算）共用。
+   演算法規格 → 本檔「技能融合系統」區塊註解。 */
+function fusionGenerateFx(comps, seed) {
+  var rng = fusionRng(seed);
   var fx = {};
-  // --- 傷害合併（各取 75% 相加；屬性採多數決）---
+  var i, k;
+
+  // 1) 物魔判定：混合素材 45/45/10（物魔按素材數比例加權）；真傷素材 → 真傷
   var dmgComps = comps.filter(function (c) { return c.fx.dmgType; });
+  var physN = 0, magicN = 0, anyTrue = false;
+  dmgComps.forEach(function (c) {
+    if (c.fx.dmgType === 'true') anyTrue = true;
+    if (c.fx.stat === 'matk') magicN++; else physN++;
+  });
+  var dmgType = null, stat = null;
   if (dmgComps.length) {
-    var base = 0, per = 0, matkVotes = 0, hits = 1, anyTrue = false;
-    dmgComps.forEach(function (c) {
-      base += (c.fx.base || 0) * FUSE_FACTOR;
-      per += (c.fx.per || 0) * FUSE_FACTOR;
-      if (c.fx.stat === 'matk') matkVotes++;
-      if (c.fx.dmgType === 'true') anyTrue = true;
-      hits = Math.max(hits, c.fx.hits || 1);
-    });
-    fx.dmgType = anyTrue ? 'true' : (matkVotes * 2 >= dmgComps.length ? 'magic' : 'phys');
-    fx.stat = (matkVotes * 2 >= dmgComps.length) ? 'matk' : 'atk';
-    fx.base = Math.round(base);
-    fx.per = Math.round(per * 10) / 10;
-    if (hits > 1) fx.hits = Math.min(hits, 4);
+    if (anyTrue) {
+      dmgType = 'true';
+      stat = magicN * 2 >= dmgComps.length ? 'matk' : 'atk';
+    } else if (physN && magicN) {
+      var restW = 100 - FUSION_BOTH_BASE_CHANCE;
+      var pickIdx = fusionRngWeighted(rng, [
+        restW * physN / (physN + magicN),
+        restW * magicN / (physN + magicN),
+        FUSION_BOTH_BASE_CHANCE
+      ]);
+      dmgType = pickIdx === 0 ? 'phys' : (pickIdx === 1 ? 'magic' : 'both');
+      stat = pickIdx === 1 ? 'matk' : 'atk';
+    } else {
+      dmgType = magicN ? 'magic' : 'phys';
+      stat = magicN ? 'matk' : 'atk';
+    }
   }
-  /* --- 元素合併（2026-07-26 技能屬性化）---
-     fx.elems 語意＝「屬性權重表」（合計 1），不再是「占多少比例的傷害」。
-     每個帶屬性標籤的素材各投一票；素材本身為融合技時沿用其權重。
-     全部素材皆無屬性 → 不產生 elems，融合技維持純物理/純魔法。 */
-  var elems = {}, elemTotal = 0;
-  comps.forEach(function (c) {
-    if (c.fx.elems) { for (var e in c.fx.elems) { elems[e] = (elems[e] || 0) + c.fx.elems[e]; elemTotal += c.fx.elems[e]; } return; }
-    var ce = skillElemOf(c.def, c.fx);
-    if (ce) { elems[ce] = (elems[ce] || 0) + 1; elemTotal += 1; }
-  });
-  if (elemTotal > 0) {
-    for (var e2 in elems) elems[e2] = Math.round(elems[e2] / elemTotal * 100) / 100;
-    fx.elems = elems;
+
+  // 2) 攻擊力：素材滿級傷害% 平均 → 四檔 75/100/125/150（20/30/30/20）
+  var dmgTotalPct = 0;
+  if (dmgComps.length) {
+    var avg = dmgComps.reduce(function (s, c) {
+      return s + (c.fx.base || 0) + (c.fx.per || 0) * (c.maxLv - 1);
+    }, 0) / dmgComps.length;
+    var tier = FUSION_ATK_TIERS[fusionRngWeighted(rng, FUSION_ATK_TIER_WEIGHTS)];
+    dmgTotalPct = avg * tier / 100;
   }
-  // --- 持續傷害（同名取高，最多 2 種）---
-  var dmap = {};
+
+  /* 3) 屬性組合：素材屬性（tags）各佔 1 份、無屬性物理傷害素材佔 2 份 'phys'；
+     多重集全枚舉後——取幾份依鐘形權重、同份數組合等機率；
+     同屬性素材加成（每多 1 個 ×1.25）等價折入 elems 權重與總傷害值。 */
+  var shares = [], matCount = {};
   comps.forEach(function (c) {
-    var list = [];
-    if (c.fx.dot) list.push(c.fx.dot);
-    if (c.fx.dotList) list = list.concat(c.fx.dotList);
-    list.forEach(function (dd) {
-      var nd = { pct: Math.round(dd.pct * 0.7), dur: dd.dur, name: dd.name };
-      if (!dmap[nd.name] || dmap[nd.name].pct < nd.pct) dmap[nd.name] = nd;
+    var elem = skillElemOf(c.def, c.fx);
+    if (elem) {
+      shares.push(elem);
+      matCount[elem] = (matCount[elem] || 0) + 1;
+    } else if (c.fx.dmgType && c.fx.stat !== 'matk') {
+      shares.push('phys'); shares.push('phys');
+      matCount.phys = (matCount.phys || 0) + 1;
+    }
+  });
+  if (dmgComps.length && shares.length) {
+    var bySize = fusionEnumCombos(shares);
+    var kPick = fusionRngWeighted(rng, fusionCountWeights(shares.length)) + 1;
+    var combos = bySize[kPick] || [];
+    var combo = combos.length ? combos[Math.floor(rng() * combos.length)] : null;
+    if (combo) {
+      var elems = {}, mult = 0;
+      for (k in combo) {
+        var w = combo[k] / kPick;
+        var amp = 1 + (FUSION_SAME_ELEM_BONUS / 100) * Math.max(0, (matCount[k] || 1) - 1);
+        elems[k] = w * amp;
+        mult += w * amp;
+      }
+      if (mult > 0) {
+        for (k in elems) elems[k] = Math.round(elems[k] / mult * 100) / 100;
+        dmgTotalPct *= mult;
+      }
+      var onlyPhys = true;
+      for (k in elems) if (k !== 'phys') onlyPhys = false;
+      if (!onlyPhys && dmgType !== 'true') fx.elems = elems;
+    }
+  }
+
+  if (dmgComps.length && dmgTotalPct > 0) {
+    fx.dmgType = dmgType;
+    fx.stat = stat;
+    fusionScaledDef(dmgTotalPct, fx); // 寫入 fx.base / fx.per
+  }
+
+  /* 4) buff/debuff 池：素材滿級效果同 key 取高（defDown 已棄用不入池）；
+     取幾個依鐘形權重 → 種子流洗牌取前 N → 每個數值於「上限一半~上限」均分 4 檔（各 25%）。 */
+  var pool = [], seen = {};
+  comps.forEach(function (c) {
+    [['buff', 'buff'], ['buff2', 'buff'], ['debuff', 'debuff'], ['debuff2', 'debuff']].forEach(function (pair) {
+      var e = c.fx[pair[0]];
+      if (!e || !e.key || e.key === 'defDown') return;
+      var capVal = scaleAt(e, c.maxLv);
+      var poolKey = pair[1] + ':' + e.key;
+      if (!seen[poolKey]) {
+        var entry = { kind: pair[1], key: e.key, dur: e.dur, capVal: capVal };
+        seen[poolKey] = entry;
+        pool.push(entry);
+      } else if (capVal > seen[poolKey].capVal) {
+        seen[poolKey].capVal = capVal;
+        seen[poolKey].dur = e.dur;
+      }
     });
   });
-  var dlist = Object.keys(dmap).map(function (k) { return dmap[k]; }).slice(0, 2);
-  if (dlist.length) fx.dotList = dlist;
-  // --- 控場 / 治療 / 護盾 / 其他（擇優或加總後打折）---
-  var agg = { stun: 0, slow: 0, healB: 0, healP: 0, hotB: 0, hotP: 0, hotDur: 0, shB: 0, shP: 0,
-    hpod: 0, mpRestore: 0, mpOnCrit: 0, goldPer: 0, critBonus: 0, execB: 0, execM: 0 };
-  var buffCandidates = [], debuffCandidates = [], maxHpDot = null;
+  if (pool.length) {
+    var take = fusionRngWeighted(rng, fusionCountWeights(pool.length)) + 1;
+    var order = pool.slice();
+    for (i = order.length - 1; i > 0; i--) {
+      var j = Math.floor(rng() * (i + 1));
+      var tmp = order[i]; order[i] = order[j]; order[j] = tmp;
+    }
+    var buffs = [], debuffs = [];
+    for (i = 0; i < take; i++) {
+      var sel = order[i];
+      var tierIdx = Math.min(3, Math.floor(rng() * 4));
+      var val = sel.capVal / 2 + (sel.capVal / 2) * (tierIdx / 3);
+      var bdef = fusionScaledDef(val, { key: sel.key, dur: sel.dur });
+      (sel.kind === 'buff' ? buffs : debuffs).push(bdef);
+    }
+    if (buffs.length) fx.buffList = buffs;
+    if (debuffs.length) fx.debuffList = debuffs;
+  }
+
+  /* 5) 特效：每個素材的特效包（FUSION_EFFECT_KEYS＋傷害範圍 shape）整包為單位，
+     取 1 個；5% 機率（FUSION_EFFECT_FUSE_CHANCE）再融合第 2 個素材的特效包
+     （鍵不重複者併入；hits 取高），最多 2 個。 */
+  var bundles = [];
   comps.forEach(function (c) {
-    var f = c.fx;
-    agg.stun = Math.max(agg.stun, f.stunDur || 0);
-    agg.slow = Math.max(agg.slow, f.slowDur || 0);
-    if (f.healPctMax) { agg.healB += scaleAt(f.healPctMax, 1) * FUSE_FACTOR; agg.healP += (f.healPctMax.per || 0) * FUSE_FACTOR; }
-    if (f.hotPct) { agg.hotB += scaleAt(f.hotPct, 1) * FUSE_FACTOR; agg.hotP += (f.hotPct.per || 0) * FUSE_FACTOR; agg.hotDur = Math.max(agg.hotDur, f.hotDur || 5); }
-    if (f.shieldPctMax) { agg.shB += scaleAt(f.shieldPctMax, 1) * FUSE_FACTOR; agg.shP += (f.shieldPctMax.per || 0) * FUSE_FACTOR; }
-    agg.hpod += (f.healPctOfDmg || 0) * 0.7;
-    agg.mpRestore += (f.mpRestore || 0) * 0.7;
-    agg.mpOnCrit = Math.max(agg.mpOnCrit, f.mpOnCrit || 0);
-    agg.goldPer += (f.goldPer || 0) * 0.6;
-    agg.critBonus = Math.max(agg.critBonus, (f.critBonus || 0) * 0.8);
-    agg.execB = Math.max(agg.execB, f.execBelow || 0);
-    agg.execM = Math.max(agg.execM, f.execMult || 0);
-    if (f.neverMiss) fx.neverMiss = true;
-    if (f.selfCleanse) fx.selfCleanse = true;
-    if (f.buff) buffCandidates.push({ effect: f.buff, lv: c.lv });
-    if (f.buff2) buffCandidates.push({ effect: f.buff2, lv: c.lv });
-    if (f.debuff) debuffCandidates.push({ effect: f.debuff, lv: c.lv });
-    if (f.debuff2) debuffCandidates.push({ effect: f.debuff2, lv: c.lv });
-    if (f.maxHpDotPct && !maxHpDot) maxHpDot = f;
+    var b = {}, has = false;
+    for (i = 0; i < FUSION_EFFECT_KEYS.length; i++) {
+      k = FUSION_EFFECT_KEYS[i];
+      if (c.fx[k] === undefined) continue;
+      b[k] = fusionRescaleDeep(c.fx[k], c.maxLv);
+      has = true;
+    }
+    if (c.def.shape) { b._shape = c.def.shape; has = true; }
+    if (has) bundles.push(b);
   });
-  if (agg.stun) fx.stunDur = Math.round(agg.stun * 0.8 * 10) / 10;
-  if (agg.slow) fx.slowDur = Math.round(agg.slow * 0.8 * 10) / 10;
-  if (agg.healB) fx.healPctMax = { base: Math.round(agg.healB * 10) / 10, per: Math.round(agg.healP * 10) / 10 };
-  if (agg.hotB) { fx.hotPct = { base: Math.round(agg.hotB * 10) / 10, per: Math.round(agg.hotP * 10) / 10 }; fx.hotDur = agg.hotDur; }
-  if (agg.shB) fx.shieldPctMax = { base: Math.round(agg.shB * 10) / 10, per: Math.round(agg.shP * 10) / 10 };
-  if (agg.hpod) fx.healPctOfDmg = Math.min(100, Math.round(agg.hpod));
-  if (agg.mpRestore) fx.mpRestore = Math.round(agg.mpRestore);
-  if (agg.mpOnCrit) fx.mpOnCrit = Math.round(agg.mpOnCrit);
-  if (agg.goldPer) fx.goldPer = Math.round(agg.goldPer);
-  if (agg.critBonus) fx.critBonus = Math.round(agg.critBonus);
-  if (agg.execB) { fx.execBelow = agg.execB; fx.execMult = agg.execM || 2; }
-  // 增益與減益各自最多保留 2 種；同 key 先取素材當前實際數值較高者。
-  var selectedBuffs = fusionSelectEffects(buffCandidates, 2);
-  var selectedDebuffs = fusionSelectEffects(debuffCandidates, 2);
-  if (selectedBuffs[0]) fx.buff = fusionEffectValueDef(selectedBuffs[0]);
-  if (selectedBuffs[1]) fx.buff2 = fusionEffectValueDef(selectedBuffs[1]);
-  if (selectedDebuffs[0]) fx.debuff = fusionEffectValueDef(selectedDebuffs[0]);
-  if (selectedDebuffs[1]) fx.debuff2 = fusionEffectValueDef(selectedDebuffs[1]);
-  if (maxHpDot) { fx.maxHpDotPct = { base: Math.round(maxHpDot.maxHpDotPct.base * 0.7 * 10) / 10, per: maxHpDot.maxHpDotPct.per }; fx.dotDur = maxHpDot.dotDur || 5; }
-  return fx;
+  var shape = null;
+  if (bundles.length) {
+    var firstIdx = Math.floor(rng() * bundles.length);
+    var merged = bundles[firstIdx];
+    if (bundles.length > 1 && rng() * 100 < FUSION_EFFECT_FUSE_CHANCE) {
+      var rest = bundles.filter(function (b, bi) { return bi !== firstIdx; });
+      var second = rest[Math.floor(rng() * rest.length)];
+      var combined = {};
+      for (k in merged) combined[k] = merged[k];
+      for (k in second) {
+        if (combined[k] === undefined) combined[k] = second[k];
+        else if (k === 'hits') combined[k] = Math.max(combined[k], second[k]);
+      }
+      merged = combined;
+    }
+    for (k in merged) {
+      if (k === '_shape') { shape = merged[k]; continue; }
+      fx[k] = merged[k];
+    }
+  }
+
+  // 6) 變異（沿用既有變異池；由種子流擲骰，不入存檔）
+  var mutation = null;
+  if (rng() * 100 < fusionMutationChance()) {
+    var mPool = FUSION_MUTATIONS.filter(function (m) { return m.req(fx); });
+    if (mPool.length) {
+      var m = mPool[Math.floor(rng() * mPool.length)];
+      m.apply(fx);
+      mutation = { key: m.key, name: m.name, desc: m.desc };
+    }
+  }
+  return { fx: fx, shape: shape, mutation: mutation };
 }
 
 // 依 key 重套融合變異（req(fx) 通過才套，避免缺欄位崩潰）；回傳變異定義或 null。
@@ -3008,31 +3248,58 @@ function applyFusionMutationByKey(fx, key) {
   return null;
 }
 
-/* 融合技動態重建：以素材技能「現行定義」+ 凍結的素材等級 + 已存變異即時重算 fx。
-   素材技能已不存在時回傳 null（呼叫端退回存檔快照）。結構欄位（name/cost/cd/maxLv…）沿用記錄值。 */
-function buildFusionRuntimeDef(rec) {
-  if (!rec || !Array.isArray(rec.components) || !rec.componentLevels) return null;
-  var comps = [], lvls = rec.componentLevels;
-  for (var i = 0; i < rec.components.length; i++) {
-    var d = (typeof SKILLS !== 'undefined') ? SKILLS[rec.components[i]] : null;
+/* 素材滿級快照組裝（規格：融合數值一律以素材最高等級計算，與素材當前等級無關）。
+   基準等級固定取「未轉生上限」（10 級）：讓重算不依賴 G（主執行緒 tooltip 與 Worker
+   結果必然一致），融合數值也不因轉生跳動——轉生收益由融合技自身上限 +5 的成長承接。
+   任一素材定義不存在 → null（呼叫端退回存檔快照）。 */
+function fusionComps(ids) {
+  if (!Array.isArray(ids) || !ids.length) return null;
+  var refLv = (typeof REINCARNATION_SKILL_MAX_LEVELS !== 'undefined' && REINCARNATION_SKILL_MAX_LEVELS[0]) || 10;
+  var comps = [];
+  for (var i = 0; i < ids.length; i++) {
+    var d = (typeof SKILLS !== 'undefined') ? SKILLS[ids[i]] : null;
     if (!d) return null;
-    var lv = Math.max(1, lvls[i] || 1);
-    comps.push({ id: rec.components[i], def: d, lv: lv, fx: effectiveFx(rec.components[i], d, lv) });
+    comps.push({ id: ids[i], def: d, maxLv: refLv, fx: effectiveFx(ids[i], d, refLv) });
   }
-  var fx = fusionAggregateFx(comps);
-  if (rec.mutation && rec.mutation.key) applyFusionMutationByKey(fx, rec.mutation.key);
-  return {
+  return comps;
+}
+
+// 無 seed 舊記錄的後備種子：以 id 字串 FNV-1a 雜湊出確定性種子（遷移正常會補 seed，此為保險）
+function fusionFallbackSeed(id) {
+  var h = 2166136261;
+  var s = String(id || '');
+  for (var i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+/* 融合技動態重建：素材「現行定義」（滿級效果）＋ 種子 → 確定性重算 fx（需求 8）。
+   素材技能已不存在時回傳 null（呼叫端退回存檔快照）。
+   cost/cd 由素材現行定義推導；等級上限統一由 skillMaxLv() 判定，不再用記錄凍結 maxLv。 */
+function buildFusionRuntimeDef(rec) {
+  if (!rec || !Array.isArray(rec.components)) return null;
+  var comps = fusionComps(rec.components);
+  if (!comps) return null;
+  var seed = (rec.seed === undefined || rec.seed === null) ? fusionFallbackSeed(rec.id) : (Number(rec.seed) >>> 0);
+  var gen = fusionGenerateFx(comps, seed);
+  var cost = Math.round(comps.reduce(function (s, c) { return s + (c.def.cost || 0); }, 0));
+  var cd = Math.round(Math.max.apply(null, comps.map(function (c) { return c.def.cd || 8; })) * FUSION_CD_FACTOR);
+  var def = {
     id: rec.id, name: rec.name, emoji: rec.emoji || '🧬', cat: 'fusion',
-    cost: rec.cost, cd: rec.cd, maxLv: rec.maxLv,
-    components: rec.components, componentLevels: rec.componentLevels,
-    mutation: rec.mutation, flavor: rec.flavor, fx: fx
+    cost: cost, cd: cd, seed: seed,
+    components: rec.components,
+    mutation: gen.mutation, flavor: rec.flavor, fx: gen.fx
   };
+  if (gen.shape) def.shape = gen.shape;
+  return def;
 }
 
 // 融合技即時 def 快取（模組層、不入存檔；依記錄物件同一性失效）。
 var _fusionRtCache = {};
 function resolveFusionRecord(rec) {
-  if (Array.isArray(rec.components) && rec.componentLevels) {
+  if (Array.isArray(rec.components)) {
     var c = _fusionRtCache[rec.id];
     if (!c || c._srcRef !== rec) {
       var built = buildFusionRuntimeDef(rec);
@@ -3044,56 +3311,52 @@ function resolveFusionRecord(rec) {
   return rec; // 舊融合技無素材記錄 → 沿用快照 fx
 }
 
-// 執行融合；回傳 null=成功，否則錯誤訊息
+/* 執行融合（2026-07-30 改制）；回傳 null=成功，否則錯誤訊息。
+   素材條件：已解鎖即可（不需學習）、非被動/潛力/融合技、未投入其他融合技。
+   花費：金幣＋魔法卷軸（fusionGoldCost / fusionScrollCost）。
+   產物：未學習（Lv.0）的融合技記錄，只存 {components, seed} 供確定性重算。 */
 function fuseSkills(ids) {
   if (!ids || ids.length < 2) return '至少需要 2 個素材技能';
   if (ids.length > 4) return '最多 4 個素材技能';
-  var comps = [], totalLv = 0, i;
+  var i;
   for (i = 0; i < ids.length; i++) {
+    if (ids.indexOf(ids[i]) !== i) return '同一技能不能重複加入';
     var d = SKILLS[ids[i]];
-    if (!d) return '融合技不能作為素材';
+    if (!d) return '融合技與潛力技能不能作為素材';
     if (d.cat === 'passive') return '被動技能無法融合';
-    var lv = skillLevel(ids[i]);
-    if (!lv) return '素材技能「' + d.name + '」尚未學習';
-    comps.push({ id: ids[i], def: d, lv: lv, fx: effectiveFx(ids[i], d, lv) });
-    totalLv += lv;
+    if (d.cat === 'potential') return '潛力技能無法融合';
+    if (!skillUnlocked(ids[i])) return '素材技能「' + d.name + '」尚未解鎖';
+    if (skillUsedInFusion(ids[i])) return '素材技能「' + d.name + '」已投入其他融合技';
   }
-  var fx = fusionAggregateFx(comps);
+  var goldCost = fusionGoldCost(ids.length);
+  var scrollCost = fusionScrollCost(ids.length);
+  if (G.player.gold < goldCost) return '金幣不足（需要 ' + fmt(goldCost) + '）';
+  if ((G.player.magicScroll || 0) < scrollCost) return '魔法卷軸不足（需要 ' + scrollCost + '）';
 
-  // --- 變異效果（每次至多一種，需與融合結果相關；觸發率公式 → formula.js §9）---
-  var mutation = null;
-  if (chance(fusionMutationChance())) {
-    var pool = FUSION_MUTATIONS.filter(function (m) { return m.req(fx); });
-    if (pool.length) {
-      var m = pick(pool);
-      m.apply(fx);
-      mutation = { key: m.key, name: m.name, desc: m.desc };
-    }
-  }
-
-  var cost = Math.round(comps.reduce(function (s, c) { return s + (c.def.cost || 0); }, 0));
-  var cd = Math.round(Math.max.apply(null, comps.map(function (c) { return c.def.cd || 8; })) * FUSION_CD_FACTOR);
-  var def = {
-    id: 'fusion_' + uid(), name: fusionName(comps, fx), emoji: '🧬', cat: 'fusion',
-    cost: cost, cd: cd, maxLv: totalLv + 20, components: ids.slice(), componentLevels: comps.map(function (c) { return c.lv; }),
-    mutation: mutation, flavor: '由 ' + comps.map(function (c) { return c.def.name; }).join('、') + ' 融合而成的專屬奧義。'
-    // 不存 fx：融合技效果改為由 skillDef()→buildFusionRuntimeDef() 依素材現行定義即時重算。
+  var comps = fusionComps(ids);
+  if (!comps) return '素材技能定義缺失';
+  var seed = Math.floor(Math.random() * 4294967296) >>> 0;
+  var gen = fusionGenerateFx(comps, seed);
+  var rec = {
+    id: 'fusion_' + uid(), name: fusionName(comps, gen.fx), emoji: '🧬', cat: 'fusion',
+    components: ids.slice(), seed: seed, algo: 2,
+    flavor: '由 ' + comps.map(function (c) { return c.def.name; }).join('、') + ' 融合而成的專屬奧義。'
+    // 不存 fx / cost / cd：一律由 buildFusionRuntimeDef() 依素材現行定義＋種子重算。
   };
+  G.player.gold -= goldCost;
+  G.player.magicScroll = Math.max(0, (G.player.magicScroll || 0) - scrollCost);
   if (!G.player.fusions) G.player.fusions = [];
-  G.player.fusions.push(def);
-  G.player.skills[def.id] = totalLv;          // 初始等級 = 素材等級加總
-  ids.forEach(function (cid) {                 // 素材歸零、卸下
-    delete G.player.skills[cid];
-    unequipSkillFromLoadout(cid);
-  });
+  G.player.fusions.push(rec);
+  ids.forEach(function (cid) { unequipSkillFromLoadout(cid); }); // 素材保留等級，僅卸下（佔用中不可裝備）
   markStatsDirty();
   UI.dirty.skills = true; UI.dirty.header = true;
-  blog('⚗️ <span class="log-hl-good">技能融合成功！</span>誕生【🧬' + def.name + '】Lv.' + totalLv +
-    (mutation ? '，並覺醒變異效果<span class="log-hl-good">【' + mutation.name + '】</span>！' : '（未觸發變異）'), 'good');
+  blog('⚗️ <span class="log-hl-good">技能融合成功！</span>誕生【🧬' + rec.name + '】（尚未學習，升至 Lv.1 後可裝備）' +
+    (gen.mutation ? '，並覺醒變異效果<span class="log-hl-good">【' + gen.mutation.name + '】</span>！' : '') +
+    '｜花費 ' + fmt(goldCost) + ' 金幣、' + scrollCost + ' 張魔法卷軸', 'good');
   return null;
 }
 
-// 刪除融合技：等級推導制下，所有投入點數（含融合轉移與後續升級）自動歸還
+// 刪除融合技：釋放全部素材技能（解除佔用），已投入融合技的技能點自動歸還（等級推導制）
 function deleteFusion(id) {
   var fs = G.player.fusions || [];
   for (var i = 0; i < fs.length; i++) {
@@ -3102,8 +3365,9 @@ function deleteFusion(id) {
       fs.splice(i, 1);
       delete G.player.skills[id];
       unequipSkillFromLoadout(id);
+      delete _fusionRtCache[id];
       UI.dirty.skills = true; UI.dirty.header = true;
-      blog('🗑️ 已刪除融合技，歸還 ' + refund + ' 點技能點（可用於重新學習素材技能）', 'info');
+      blog('🗑️ 已刪除融合技，釋放全部素材技能' + (refund ? '，歸還 ' + refund + ' 點技能點' : ''), 'info');
       return null;
     }
   }
@@ -3151,6 +3415,7 @@ function describeSkill(id, lv, skipFusionDetail, fusions) {
      風味語句只點出屬性質地，不再帶比例；融合技的多屬性則列出權重。
      系別歸屬：無傷害段（純增益/控場）但帶標籤的技能，以一句話點出系別。 */
   function elemShortName(type) {
+    if (type === 'phys') return '物理'; // 融合技無屬性物理份額（elems 權重表中的 'phys' 鍵）
     return (ELEM_INFO[type] && (ELEM_INFO[type].short || ELEM_INFO[type].name)) || type; // 語境用 short（聖非光）
   }
   function elemFlavorText(type) {
@@ -3182,10 +3447,10 @@ function describeSkill(id, lv, skipFusionDetail, fusions) {
   }
   if (fx.dmgType) {
     // 傷害類型：真傷不屬性化；其餘帶屬性歸屬時直接寫成「火屬性傷害」（魔攻/物攻仍是加成基礎）
-    var t = fx.dmgType === 'true' ? '真實' : (fx.dmgType === 'magic' ? '魔法' : '物理');
+    var t = fx.dmgType === 'true' ? '真實' : (fx.dmgType === 'both' ? '物理＋魔法' : (fx.dmgType === 'magic' ? '魔法' : '物理'));
     var multiElem = !!(fx.elems && Object.keys(fx.elems).length > 1);
-    if (fx.dmgType !== 'true' && dmgElem && !multiElem) t = elemShortName(dmgElem) + '屬性';
-    var statName = fx.stat === 'matk' ? '魔攻' : '物攻';
+    if (fx.dmgType !== 'true' && fx.dmgType !== 'both' && dmgElem && !multiElem) t = elemShortName(dmgElem) + '屬性';
+    var statName = fx.dmgType === 'both' ? '物攻＋魔攻' : (fx.stat === 'matk' ? '魔攻' : '物攻');
     var dVal = (fx.base || 0) + (fx.per || 0) * (lv - 1);
     var dStr = fx.per ? growStr(fmt1(dVal)) : statStr(fmt1(dVal));
     p.push('造成 ' + dStr + '% ' + statName + ' 的' + t + '傷害' + (fx.hits ? ' x' + statStr(fx.hits) + ' 段' : ''));
@@ -3217,10 +3482,12 @@ function describeSkill(id, lv, skipFusionDetail, fusions) {
   if (fx.shieldPctMax) p.push('目前護盾提高 ' + scaleStr(fx.shieldPctMax, lv) + '%（無護盾時以最大生命計算）');
   if (fx.selfCleanse) p.push('淨化自身負面狀態');
   if (fx.mpRestore) p.push('回復 ' + statStr(fx.mpRestore) + ' 法力');
-  if (fx.buff) p.push('自身' + buffLabel(fx.buff.key) + ' +' + scaleStr(fx.buff, lv) + '%，持續 ' + statStr(fx.buff.dur) + ' 秒');
-  if (fx.buff2) p.push(buffLabel(fx.buff2.key) + ' +' + scaleStr(fx.buff2, lv) + '%');
-  if (fx.debuff) p.push('敵方' + buffLabel(fx.debuff.key) + ' -' + scaleStr(fx.debuff, lv) + '%，持續 ' + statStr(fx.debuff.dur) + ' 秒');
-  if (fx.debuff2) p.push('敵方' + buffLabel(fx.debuff2.key) + ' -' + scaleStr(fx.debuff2, lv) + '%，持續 ' + statStr(fx.debuff2.dur) + ' 秒');
+  skillFxBuffList(fx).forEach(function (bf, bi) {
+    p.push((bi === 0 ? '自身' : '') + buffLabel(bf.key) + ' +' + scaleStr(bf, lv) + '%，持續 ' + statStr(bf.dur) + ' 秒');
+  });
+  skillFxDebuffList(fx).forEach(function (df) {
+    p.push('敵方' + buffLabel(df.key) + ' -' + scaleStr(df, lv) + '%，持續 ' + statStr(df.dur) + ' 秒');
+  });
   if (fx.maxHpDotPct) p.push('每秒造成敵方最大生命 ' + scaleStr(fx.maxHpDotPct, lv) + '% 的詛咒傷害（' + statStr(fx.dotDur || 5) + '秒，有上限）');
 
   /* ---- 45 新技能 × 11 機制族：fx 說明分支 ----

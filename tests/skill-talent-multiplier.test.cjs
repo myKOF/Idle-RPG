@@ -47,36 +47,36 @@ test('增益類技能數值吃該類別天賦倍率（特殊/防禦）', () => {
   const c = loadCtx();
   c._mult = { special: 2, def: 3 };
   const p1 = pEnt();
-  c.castSkill(p1, [], 'timeWarp', 1, 'pv-float'); // special：攻速增益 base 25
-  assert.equal(p1.buffs.aspdUp.val, 50);
+  c.castSkill(p1, [], 'timeWarp', 1, 'pv-float'); // special：攻速增益 M8 base 40（2026-07-30 里程碑全附加）
+  assert.equal(p1.buffs.aspdUp.val, 80);
   const p2 = pEnt();
-  c.castSkill(p2, [], 'ironWall', 1, 'pv-float'); // def：防禦增益 base 40
-  assert.equal(p2.buffs.defUp.val, 120);
+  c.castSkill(p2, [], 'ironWall', 1, 'pv-float'); // def：防禦增益 M8 base 55
+  assert.equal(p2.buffs.defUp.val, 165);
 });
 
 test('減益類技能數值吃天賦倍率', () => {
   const c = loadCtx();
   c._mult = { special: 2 };
   const target = foe();
-  c.castSkill(pEnt(), [target], 'weakenCurse', 1, 'pv-float'); // atkDown base 18
-  assert.equal(target.buffs.atkDown.val, 36);
+  c.castSkill(pEnt(), [target], 'weakenCurse', 1, 'pv-float'); // atkDown M8 base 28（里程碑全附加）
+  assert.equal(target.buffs.atkDown.val, 56);
 });
 
 test('持續再生（hot）數值吃天賦倍率', () => {
   const c = loadCtx();
   c._mult = { def: 2 };
   const p = pEnt();
-  c.castSkill(p, [], 'regenerate', 1, 'pv-float'); // hotPct base 2.5
-  assert.equal(p.buffs.hot.val, 5);
+  c.castSkill(p, [], 'regenerate', 1, 'pv-float'); // hotPct M8 base 4（里程碑全附加）
+  assert.equal(p.buffs.hot.val, 8);
 });
 
 test('死亡詛咒（按目標最大生命的 DoT）吃天賦倍率', () => {
   const c = loadCtx();
   c._mult = { special: 2 };
   const target = foe();
-  c.castSkill(pEnt(), [target], 'deathCurse', 1, 'pv-float'); // maxHpDotPct base 2.4 → 1000×2.4%×2
+  c.castSkill(pEnt(), [target], 'deathCurse', 1, 'pv-float'); // maxHpDotPct M8 base 1.8 → 1000×1.8%×2（里程碑全附加）
   assert.equal(target.dots.length, 1);
-  assert.equal(target.dots[0].dps, 48);
+  assert.equal(target.dots[0].dps, 36);
 });
 
 test('法力回復與金幣類效果吃天賦倍率', () => {
@@ -84,12 +84,12 @@ test('法力回復與金幣類效果吃天賦倍率', () => {
   c._mult = { def: 2, special: 2 };
   const p = pEnt();
   p.hp = 500; p.mp = 500;
-  c.castSkill(p, [], 'secondWind', 1, 'pv-float'); // 治療 10%×2、mpRestore 20×2
-  assert.equal(p.hp, 700);
-  assert.equal(p.mp, 540);
+  c.castSkill(p, [], 'secondWind', 1, 'pv-float'); // M8：治療 16%×2、mpRestore 50×2（里程碑全附加）
+  assert.equal(p.hp, 820);
+  assert.equal(p.mp, 600);
   const target = foe();
-  c.castSkill(pEnt(), [target], 'midasTouch', 1, 'pv-float'); // goldPer 15 × lv1 × 玩家等級1 × 2
-  assert.equal(c.G.player.gold, 30);
+  c.castSkill(pEnt(), [target], 'midasTouch', 1, 'pv-float'); // M8 goldPer 35 × lv1 × 玩家等級1 × 2
+  assert.equal(c.G.player.gold, 70);
 });
 
 test('融合技倍率 = 素材類別倍率的平均；無素材記錄時為 1', () => {

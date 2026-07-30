@@ -8,6 +8,7 @@
 var LOOT_MAT_DEFS = [
   { key: 'scrap',          name: '裝備碎片',     icon: 'images/icon_scrap.png' },
   { key: 'essence',        name: '附魔精華',     icon: 'images/icon_essence.png' },
+  { key: 'magicScroll',    name: '魔法卷軸',     emoji: '📜' },
   { key: 'ancientEssence', name: '太古精華',     icon: 'images/icon_ancient_essence.png' },
   { key: 'dust',           name: '魔塵',         emoji: '💫' },
   { key: 'soulOrigin',     name: '魔魂本源',     emoji: '🧿' },

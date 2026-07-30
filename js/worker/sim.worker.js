@@ -157,7 +157,7 @@ function catchupClock() {
    鍵名沿用 DOM id（r-essence…），因為既有存檔就是這樣存的，不能為了好看而破壞相容。 */
 var SHOWN_RES_KEYS = [
   ['r-essence', 'essence'], ['r-dust', 'dust'], ['r-ancient-essence', 'ancientEssence'],
-  ['r-soul-origin', 'soulOrigin'], ['r-demon-seed', 'demonSeed']
+  ['r-soul-origin', 'soulOrigin'], ['r-demon-seed', 'demonSeed'], ['r-magic-scroll', 'magicScroll']
 ];
 
 function updateShownRes() {
@@ -297,6 +297,7 @@ function buildView() {
     ancientEssence: p.ancientEssence || 0,
     soulOrigin: p.soulOrigin || 0,
     demonSeed: p.demonSeed || 0,
+    magicScroll: p.magicScroll || 0,
     gems: (typeof totalGemsAll === 'function') ? totalGemsAll() : 0,
     books: bookTotal,
     level: p.level || 0,
@@ -445,9 +446,25 @@ function buildPanel(name, params) {
         shop: (typeof gemShop === 'function') ? gemShop() : p.gemShop
       };
     case 'skills':
+      // 2026-07-30 熟練度制：points/budget 改由 skills.js 即時計算；mastery 供熟練度條；
+      // scrolls/fusionCosts 供融合面板花費顯示（佔用狀態由 fusions[].components 推導，不另投影）
       return {
         skills: p.skills, unlocks: p.skillUnlocks, loadout: p.loadout,
-        fusions: p.fusions, points: p.skillPoints, budget: p.skillPointBudget
+        fusions: p.fusions,
+        points: (typeof availableSkillPoints === 'function') ? availableSkillPoints() : p.skillPoints,
+        budget: (typeof totalSkillPoints === 'function') ? totalSkillPoints() : 0,
+        mastery: (function () {
+          var m = (typeof ensureSkillMastery === 'function') ? ensureSkillMastery() : (p.skillMastery || { level: 0, xp: 0 });
+          return {
+            level: m.level, xp: m.xp,
+            xpMax: (typeof skillMasteryXpForLevel === 'function') ? skillMasteryXpForLevel(m.level) : 0,
+            maxLevel: (typeof SKILL_MASTERY_MAX_LEVEL !== 'undefined') ? SKILL_MASTERY_MAX_LEVEL : 1000
+          };
+        })(),
+        scrolls: p.magicScroll || 0,
+        fusionCosts: (typeof fusionGoldCost === 'function') ? {
+          goldPerComp: fusionGoldCost(1), scrollPerComp: fusionScrollCost(1)
+        } : null
       };
     case 'talents':
       // 天賦與潛能等級都在 player.talents 底下（levels / potentialLevels）
@@ -1083,6 +1100,12 @@ function boot(msg) {
     notices.push({ key: '_skillPointRepairNotice', text: '🧮 ' + G._skillPointRepairNotice + '；目前可用技能點 ' +
       (typeof availableSkillPoints === 'function' ? availableSkillPoints() : 0) + ' 點。', cls: 'info' });
     delete G._skillPointRepairNotice;
+  }
+  // 2026-07-30 技能融合改造：等級上限夾回通知（10 級、轉生後 15 級）
+  if (G._skillCapClampNotice) {
+    notices.push({ key: '_skillCapClampNotice', text: '📏 ' + G._skillCapClampNotice + '；目前可用技能點 ' +
+      (typeof availableSkillPoints === 'function' ? availableSkillPoints() : 0) + ' 點。', cls: 'info' });
+    delete G._skillCapClampNotice;
   }
   if (G._talentRespecNotice) {
     notices.push({ key: '_talentRespecNotice', text: '🌟 ' + G._talentRespecNotice +

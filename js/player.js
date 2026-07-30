@@ -72,18 +72,19 @@ function newGameState() {
       talents: { levels: {}, potentialLevels: {} },
       gold: 50, scrap: 0, essence: 0, ancientEssence: 0, soulOrigin: 0,
       dust: 0,                // 魔塵（神鑄材料）
+      magicScroll: 0,         // 魔法卷軸（技能融合材料；取得比照附魔精華、數量 1/10）
       gems: gems,
       fusedGems: [],          // 融合寶石（雙屬性，個別實體）
       gemShop: { level: 1, items: [], refreshCount: 0, hourStart: Date.now() },
       books: books,
       invUpgrades: 0,
-      // 技能：初始自帶 2 個 1 級技能；每升 1 級 +1 技能點
+      // 技能：初始自帶 2 個 1 級技能；技能點由「技能熟練度」提供（2026-07-30 改制）
       skills: { powerSlash: 1, arcaneBurst: 1 },
       skillUnlocks: { powerSlash: true, arcaneBurst: true }, // 人物等級達標後永久解鎖的技能
       skillPoints: 0,
-      skillPointBudget: 2,     // 技能點總預算；初始兩個 1 級技能也計入 2 點
+      skillMastery: { level: 0, xp: 0 }, // 技能熟練度：打怪/道具給經驗，每級 1 技能點，0~1000 級
       loadout: ['powerSlash', 'arcaneBurst'],
-      fusions: []   // 玩家自創的融合技定義
+      fusions: []   // 玩家自創的融合技定義（{components, seed} 種子重算制）
 
     },
     equipmentSets: equipmentSets,   // 三套裝備
@@ -165,19 +166,18 @@ function gainXp(n) {
     p.xp -= xpForLevel(p.level);
     p.level++;
     gained++;
+    // 2026-07-30 技能熟練度制：升級不再給技能點（技能點改由技能熟練度提供，見 skills.js）
     if (reincarnationCount() > 0) {
       p.reincarnationTalentPoints = (p.reincarnationTalentPoints || 0) + 1;
-    } else {
-      p.skillPointBudget = (p.skillPointBudget || 0) + 1;
     }
   }
   if (p.level >= MAX_LEVEL) p.xp = 0;
   if (gained > 0) {
     markStatsDirty();
     var reward = reincarnationCount() > 0
-      ? '<span class="log-hl-good">轉生天賦點 +' + gained + '</span>'
-      : '<span class="log-hl-good">技能點 +' + gained + '</span>';
-    blog('🎉 等級提升！目前等級 ' + p.level + '（四維主屬性 +2、' + reward + '）', 'good');
+      ? '、<span class="log-hl-good">轉生天賦點 +' + gained + '</span>'
+      : '';
+    blog('🎉 等級提升！目前等級 ' + p.level + '（四維主屬性 +2' + reward + '）', 'good');
     // 升級回滿血藍
     var st = getStats();
     if (FIELD.player) { FIELD.player.hp = st.hp; FIELD.player.mp = st.mp; }
@@ -192,15 +192,13 @@ function reincarnate() {
   var count = reincarnationCount();
   if (count >= REINCARNATION_MAX) return '已達最高轉生次數（' + REINCARNATION_MAX + ' 轉）';
   if (p.level < REINCARNATION_LEVEL) return '角色尚未達到 ' + REINCARNATION_LEVEL + ' 級';
-  var skillBudgetBeforeReinc = Math.max(p.skillPointBudget || 0, p.level + 1);
   p.reincarnations = count + 1;
   p.level = 1;
   p.xp = 0;
   G.equipActive = 0;
   G.equipView = 0;
   G.equipment = G.equipmentSets[0];
-  // 技能點總預算在轉生後保留；之後升級只增加轉生天賦點。
-  p.skillPointBudget = skillBudgetBeforeReinc;
+  // 技能熟練度（技能點來源）不受轉生影響；轉生後所有技能等級上限 +5（skillMaxLv 查表）。
   markStatsDirty();
   if (typeof FIELD !== 'undefined' && FIELD && FIELD.player) {
     var st = getStats();

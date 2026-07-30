@@ -241,6 +241,7 @@ test('penUp 增益同時加成物理與魔法穿透，且各攻擊來源都吃�
 });
 
 test('傷害技的附帶增益不受「增益不重複疊放」閘門限制', () => {
+  // 2026-07-30 技能融合改造：增益改走 skillFxBuffList 存取器（支援融合技 buffList），閘門語意不變
   const skills = read('js/skills.js');
-  assert.match(skills, /if \(fx\.buff && !fx\.dmgType && buffVal\(pEnt, fx\.buff\.key\) > 0\) return false;/);
+  assert.match(skills, /if \(firstBuff && !fx\.dmgType && buffVal\(pEnt, firstBuff\.key\) > 0\) return false;/);
 });
