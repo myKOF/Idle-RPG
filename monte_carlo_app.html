@@ -1768,15 +1768,18 @@
                 this.logAction(currentTime, 'gem', '💎', `進行寶石批量合成與魔塵積攢`, synthSummary.slice(0, 3).join('； '));
             }
 
-            // 1. 六芒星法陣：6 件【傳說 R5】 ➔ 1 件【神話 R6】 (90% + 5%/魔塵)
+            // 1. 六芒星法陣：6 件【傳說 R5】 ➔ 1 件【神話 R6】 (100% 直連官方 forgeSuccessRateFor(5, dust))
             let legendaryPool = this.legendaryGearPool || 0;
             while (legendaryPool >= 6 && this.gold >= 1000) {
                 legendaryPool -= 6;
                 this.gold -= 1000;
                 let usedDust = Math.min(6, this.dust);
                 this.dust -= usedDust;
-                let chance = 0.90 + (usedDust * 0.05);
-                if (Math.random() < chance) {
+                let rate = (typeof forgeSuccessRateFor === 'function')
+                    ? (forgeSuccessRateFor(5, usedDust) / 100.0)
+                    : (0.55 + usedDust * 0.05);
+
+                if (Math.random() < rate) {
                     this.obtained_mythic++;
                     this.mythicGearPool = (this.mythicGearPool || 0) + 1;
                 } else {
@@ -1785,15 +1788,18 @@
             }
             this.legendaryGearPool = legendaryPool;
 
-            // 2. 六芒星法陣：6 件【神話 R6】 ➔ 1 件【創世 R7】 (80% + 5%/魔塵)
+            // 2. 六芒星法陣：6 件【神話 R6】 ➔ 1 件【創世 R7】 (100% 直連官方 forgeSuccessRateFor(6, dust))
             let mythicPool = this.mythicGearPool || 0;
             while (mythicPool >= 6 && this.gold >= 2000) {
                 mythicPool -= 6;
                 this.gold -= 2000;
                 let usedDust = Math.min(6, this.dust);
                 this.dust -= usedDust;
-                let chance = 0.80 + (usedDust * 0.05);
-                if (Math.random() < chance) {
+                let rate = (typeof forgeSuccessRateFor === 'function')
+                    ? (forgeSuccessRateFor(6, usedDust) / 100.0)
+                    : (0.40 + usedDust * 0.05);
+
+                if (Math.random() < rate) {
                     this.obtained_genesis++;
                     this.genesisGearPool = (this.genesisGearPool || 0) + 1;
                 } else {
@@ -1802,7 +1808,7 @@
             }
             this.mythicGearPool = mythicPool;
 
-            // 3. 六芒星法陣：6 件【創世 R7】 ➔ 1 件【神鑄創世 R8】 (70% + 5%/魔塵, 放滿6魔塵 100% 成功!)
+            // 3. 六芒星法陣：6 件【創世 R7】 ➔ 1 件【神鑄創世 R8】 (100% 直連官方 forgeSuccessRateFor(7, dust))
             let genesisPool = this.genesisGearPool || 0;
             let godforgeFusions = 0;
             while (genesisPool >= 6 && this.gold >= 5000) {
@@ -1812,9 +1818,11 @@
 
                 let usedDust = Math.min(6, this.dust);
                 this.dust -= usedDust;
-                let chance = 0.70 + (usedDust * 0.05);
+                let rate = (typeof forgeSuccessRateFor === 'function')
+                    ? (forgeSuccessRateFor(7, usedDust) / 100.0)
+                    : (0.25 + usedDust * 0.05);
 
-                if (Math.random() < chance) {
+                if (Math.random() < rate) {
                     this.obtained_godforge++;
                     godforgeFusions++;
                     const slotToUpgrade = OFFICIAL_SLOTS[Math.floor(Math.random() * OFFICIAL_SLOTS.length)];
