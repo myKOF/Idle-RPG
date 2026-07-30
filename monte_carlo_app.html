@@ -1601,15 +1601,17 @@
                 }
             }
 
-            // 累積金幣與材料 (打怪與掉落裝備拆解獲得附魔精華、寶石掉落)
+            // 累積金幣與材料 (打怪與掉落裝備拆解獲得附魔精華、魔塵與寶石掉落)
             const earnedGold = killsCount * (20 + mobLevel * 5) * lootMult;
             const earnedStones = droppedItemsCount * 2;
             const earnedEssence = rollDropCount(droppedItemsCount * 1.5);
+            const earnedDust = rollDropCount(droppedItemsCount * 0.15);
             const droppedGems = rollDropCount(killsCount * 0.05 * lootMult);
 
             this.gold += earnedGold;
             this.upgrade_stones += earnedStones;
             this.essence += earnedEssence;
+            this.dust += earnedDust;
             if (droppedGems > 0) {
                 this.gems[1] = (this.gems[1] || 0) + droppedGems;
                 this.obtained_gems += droppedGems;
