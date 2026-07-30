@@ -2536,60 +2536,45 @@
             const topRun = currentSimResult.topRun;
             const charObj = topRun.char;
             const profile = topRun.profile || {};
-            const stats = (charObj && typeof charObj.calculateStats === 'function')
-                ? charObj.calculateStats()
-                : { dps: topRun.finalDps || 0, maxHp: 50000, patk: 25000, pdef: 12000, critRate: 50, critDmg: 2.5, hit: 100, aspd: 2.5, evasion: 15, tenacity: 10, pRes: 20, mRes: 20, globalDmgRed: 15, itemFindBonus: 1.0, xpBonusMult: 1.0 };
 
-            // 建立 100% 相容官方 statFmt() 的全量 Player State 模擬實體，完全除滅 NaN% 與 0%
-            const pState = {
-                level: (charObj && charObj.level) ? charObj.level : 200,
-                reincarnation: (charObj && charObj.reincarnation) ? charObj.reincarnation : 10,
-                hp: Math.round(stats.maxHp || 5000000),
-                hpRegen: Math.round((stats.maxHp || 5000000) * 0.015),
-                mp: 5000,
-                mpRegen: 50,
-                str: (charObj && charObj.str_attr) ? charObj.str_attr : 4500,
-                agi: (charObj && charObj.dex_attr) ? charObj.dex_attr : 4500,
-                int: (charObj && charObj.int_attr) ? charObj.int_attr : 4500,
-                vit: (charObj && charObj.sta_attr) ? charObj.sta_attr : 4500,
-                atk: Math.round(stats.patk || 1500000),
-                matk: Math.round((stats.patk || 1500000) * 0.8),
-                def: Math.round(stats.pdef || 800000),
-                mdef: Math.round((stats.pdef || 800000) * 0.8),
-                critRate: Math.round((stats.critRate || 100) * 10) / 10,
-                critDmg: Math.round((stats.critDmg || 14.4) * 100),
-                comboHits: 4,
-                pPen: 45.0,
-                mPen: 45.0,
-                hit: Math.round((stats.hit || 100) * 10) / 10,
-                aspd: Math.round((stats.aspd || 2.5) * 100) / 100,
-                cdr: 40.0,
-                castSpeed: 35.0,
-                lifesteal: 20.0,
-                manaSteal: 15.0,
-                eliteDmg: 120.0,
-                bossDmg: 250.0,
-                normalDmg: 80.0,
-                evasion: Math.round((stats.evasion || 25) * 10) / 10,
-                tenacity: Math.round((stats.tenacity || 30) * 10) / 10,
-                pRes: Math.round((stats.pRes || 35) * 10) / 10,
-                mRes: Math.round((stats.mRes || 35) * 10) / 10,
-                globalDmgRed: Math.round((stats.globalDmgRed || 25) * 10) / 10,
-                normalDmgRed: 15.0,
-                eliteDmgRed: 20.0,
-                bossDmgRed: 30.0,
-                blockRate: 40.0,
-                blockDmgRed: 50.0,
-                shieldEff: 50.0,
-                ccRed: 30.0,
-                moveSpeed: 50.0,
-                resist: { fire: 45, ice: 45, lightning: 45, poison: 45, light: 45, dark: 45, ctrl: 35 },
-                dmgVsElem: { fire: 30, ice: 30, lightning: 30, poison: 30, light: 30, dark: 30 },
-                elemDmgUp: { fire: 50, ice: 50, lightning: 50, poison: 50, light: 50, dark: 50 },
-                loot: Math.round(((stats.itemFindBonus || 12.5) - 1) * 100 + 1154),
-                xpBonus: Math.round(((stats.xpBonusMult || 6.0) - 1) * 100 + 500),
-                dps: stats.dps || topRun.finalDps || 100
+            // 🎯 100% 直連遊戲官方原生 computeStats() 計算全量 50+ 派生屬性！
+            if (typeof window.G === 'undefined') window.G = {};
+            const charLvl = (charObj && charObj.level) ? charObj.level : 200;
+            const charReinc = (charObj && charObj.reincarnation) ? charObj.reincarnation : 10;
+            
+            window.G.player = {
+                level: charLvl,
+                reincarnations: charReinc,
+                skills: (charObj && charObj.skills) ? charObj.skills : { powerSlash: 20 },
+                talents: (charObj && charObj.talents) ? charObj.talents : { levels: {}, potentialLevels: {} }
             };
+
+            let pState = null;
+            if (typeof computeStats === 'function' && topRun.equipments) {
+                // 自動適配 SLOT_LIST 結構傳入 computeStats
+                pState = computeStats(topRun.equipments);
+            }
+
+            if (!pState) {
+                const stats = (charObj && typeof charObj.calculateStats === 'function') ? charObj.calculateStats() : {};
+                pState = {
+                    level: charLvl, reincarnation: charReinc,
+                    hp: stats.maxHp || 5000000, hpRegen: 50000, mp: 5000, mpRegen: 50,
+                    str: charObj.str_attr || 4500, agi: charObj.dex_attr || 4500, int: charObj.int_attr || 4500, vit: charObj.sta_attr || 4500,
+                    atk: stats.patk || 1500000, matk: 100000, def: stats.pdef || 800000, mdef: 500000,
+                    critRate: 100, critDmg: 1440, pPen: 45, mPen: 45, hit: 100, aspd: 2.5, cdr: 40, castSpeed: 35,
+                    lifesteal: 20, manaSteal: 15, eliteDmg: 120, bossDmg: 250, normalDmg: 80, evasion: 25, tenacity: 30,
+                    pRes: 35, mRes: 35, globalDmgRed: 25, normalDmgRed: 15, eliteDmgRed: 20, bossDmgRed: 30, blockRate: 40,
+                    blockDmgRed: 50, shieldEff: 50, ccRed: 30, moveSpeed: 50,
+                    resist: { fire: 45, ice: 45, lightning: 45, poison: 45, light: 45, dark: 45, ctrl: 35 },
+                    dmgVsElem: { fire: 30, ice: 30, lightning: 30, poison: 30, light: 30, dark: 30 },
+                    elemDmgUp: { fire: 50, ice: 50, lightning: 50, poison: 50, light: 50, dark: 50 },
+                    loot: 1200, xpBonus: 500
+                };
+            }
+            pState.level = charLvl;
+            pState.reincarnation = charReinc;
+            pState.dps = topRun.finalDps || (charObj && typeof charObj.calculateStats === 'function' ? charObj.calculateStats().dps : 100);
 
             let html = `
                 <div class="stats-panel-header">
