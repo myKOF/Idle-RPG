@@ -1471,13 +1471,23 @@
             { key: 'haste', val: 25.0 }
         ] : [];
 
+        // 🎯 寶石 Sockets（對齊圖片 2：50% 石榴石 [暴擊傷害] + 50% 屬性傷害加成寶石 [尖晶石/海藍寶石/天河石]）
+        const attackGemTypes = ['garnet', 'garnet', 'garnet', 'spinel', 'aquamarine', 'amazonite'];
+        const socketCount = (typeof socketCountFor === 'function') ? socketCountFor(rarity) : (rarity === 8 ? 6 : Math.min(6, rarity));
+        const sockets = [];
+        for (let gi = 0; gi < socketCount; gi++) {
+            sockets.push({ type: attackGemTypes[gi % attackGemTypes.length], level: 10 });
+        }
+
         return { 
-            level: 0, 
+            level: isGodforged ? 60 : 0, 
+            upgrade: isGodforged ? 60 : 0, 
             rarity: rarity, 
             slot: slot, 
             isGodforged: isGodforged, 
             affixes: affixes, 
             enchants: enchants,
+            sockets: sockets,
             itemLevel: itemLevel 
         };
     }
