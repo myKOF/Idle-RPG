@@ -1,7 +1,37 @@
 'use strict';
+var CHAOS_IDX = 9;
+var CHAOS_GODFORGED_IDX = 10;
+var MAX_RARITY_IDX = CHAOS_GODFORGED_IDX;
+var REROLL_CHAOS_ESSENCE_COST = 27;
+var REROLL_CHAOS_GODFORGED_ESSENCE_COST = 36;
+var FORGE_CHAOS_BASE_RATE = 20;
+var FORGE_CHAOS_GOLD_COST = 500000000;
+var FORGE_CHAOS_DUST_RATE = 3;
+var FORGE_CHAOS_DURATION = 13;
+var CHAOS_FIELD_DROP_MIN_STAGE = 551;
+var CHAOS_FIELD_DROP_PCT = 1;
+var CHAOS_FIELD_DROP_ZONES = { god_battlefield: 1, god_chaos: 1, god_sanctuary: 1 };
+function isGodforgedRarity(rarity) {
+  return rarity === GODFORGED_IDX || rarity === CHAOS_GODFORGED_IDX;
+}
+function forgeBaseRateFor(rarity) {
+  return rarity === CHAOS_IDX ? FORGE_CHAOS_BASE_RATE : (FORGE_BASE_RATE[rarity] || 0);
+}
+function forgeGoldCostFor(rarity) {
+  return rarity === CHAOS_IDX ? FORGE_CHAOS_GOLD_COST : (FORGE_GOLD_COST[rarity] || 0);
+}
+function forgeEquipDurationFor(rarity) {
+  return rarity === CHAOS_IDX ? FORGE_CHAOS_DURATION : (FORGE_EQUIP_DURATION[rarity] || 0);
+}
+function forgeDustRateFor(rarity) {
+  return rarity === CHAOS_IDX ? FORGE_CHAOS_DUST_RATE : FORGE_DUST_RATE;
+}
+function isForgeableEquipmentRarity(rarity) {
+  return rarity === CHAOS_IDX || Object.prototype.hasOwnProperty.call(FORGE_BASE_RATE, rarity);
+}
 /* ============ 遊戲資料定義 ============ */
 
-/* ---- 稀有度（9 階）----
+/* ---- 稀有度（11 階）----
    affix: 固定詞條數（上下限相同）｜sockets: 寶石鑲孔數｜enchants: 附魔欄位數
    godforged（神鑄創世）：僅能由神鑄系統以 6 件創世鑄造獲得，不自然掉落、
    不可由熔爐合成升階；mult = 創世 × 1.5（詞條數值與洗煉上限同步 1.5 倍）。 */
@@ -14,12 +44,14 @@ var RARITIES = [
   { key: 'legendary', name: '傳說', color: '#fb923c', mult: 4.0, affix: [5, 5], sockets: 4, enchants: 2, salv: 12 },
   { key: 'mythic', name: '神話', color: '#f87171', mult: 5.2, affix: [6, 6], sockets: 5, enchants: 2, salv: 19 },
   { key: 'genesis', name: '創世', color: '#b8860b', mult: 6.8, affix: [7, 7], sockets: 6, enchants: 3, salv: 30 },
-  { key: 'godforged', name: '神鑄創世', color: '#f5c542', mult: 10.2, affix: [8, 8], sockets: 6, enchants: 3, salv: 45 }
+  { key: 'godforged', name: '神鑄創世', color: '#f5c542', mult: 10.2, affix: [8, 8], sockets: 6, enchants: 3, salv: 45 },
+  { key: 'chaos', name: '混沌', color: '#c084fc', mult: 15.3, affix: [9, 9], sockets: 6, enchants: 3, salv: 67.5 },
+  { key: 'chaosGodforged', name: '神鑄混沌', color: '#ff6bcb', mult: 22.95, affix: [10, 10], sockets: 7, enchants: 3, salv: 101.25 }
 ];
 var PASSIVE_MIN_RARITY = 5; // 傳說級（含）以上附帶傳奇特效
-var MAX_AFFIXES = 8; // 單件裝備詞條數安全硬上限（目前稀有度表最高 8 條）
+var MAX_AFFIXES = 10; // 單件裝備詞條數安全硬上限（目前稀有度表最高 10 條）
 var EQUIP_TIER_SIZE = 50; // 裝備等級分段大小：來源等級 1~49 → 1 級裝，之後每 50 級一套（50/100/150…；equipmentTierLevel → formula.js §6）
-var REROLL_ESSENCE_COST = { 6: 9, 7: 14, 8: 20 }; // 神話／創世／神鑄創世洗煉精華費用
+var REROLL_ESSENCE_COST = { 6: 9, 7: 14, 8: 20, 9: REROLL_CHAOS_ESSENCE_COST, 10: REROLL_CHAOS_GODFORGED_ESSENCE_COST }; // 神話／創世／神鑄與混沌系列洗煉精華費用
 
 /* ---- 太古詞條與太古精華 ---- */
 // 太古詞條產生率表（2026-07-23 改版）：裝備產出時依「詞條數量」擲骰決定太古詞條條數，
@@ -358,7 +390,7 @@ var SLOT_BASENAMES = {
   ring: ['銅戒', '銀戒', '秘紋戒指'],
   amulet: ['木墜', '銀鍊', '星辰項鍊']
 };
-var RARITY_PREFIX = ['普通的', '精良的', '稀有的', '獨特的', '史詩的', '傳說的', '神話的', '創世的', '神鑄創世的'];
+var RARITY_PREFIX = ['普通的', '精良的', '稀有的', '獨特的', '史詩的', '傳說的', '神話的', '創世的', '神鑄創世的', '混沌的', '神鑄混沌的'];
 var ACCESSORY_SLOTS = ['ring', 'amulet'];
 
 /* ---- 神鑄系統（Divine Forge）----

@@ -101,7 +101,9 @@ function forgeIsBusy() {
 // 神鑄等待時間（秒）：裝備依素材品質，寶石依素材階級。
 function forgeDurationSeconds(mode, key) {
   var table = mode === 'gem' ? FORGE_GEM_DURATION : FORGE_EQUIP_DURATION;
-  return table && table[key] ? table[key] : 0;
+  return mode === 'equip'
+    ? (typeof forgeEquipDurationFor === 'function' ? forgeEquipDurationFor(key) : (table && table[key] ? table[key] : 0))
+    : (table && table[key] ? table[key] : 0);
 }
 
 // 已放置魔塵數（超過持有量時由後往前釋放，收斂至持有量內）
@@ -144,8 +146,8 @@ function forgeRateInfo() {
   }
   var r = forgeRarity();
   return {
-    mode: 'equip', base: FORGE_BASE_RATE[r] || 0, dust: dustN * FORGE_DUST_RATE,
-    total: forgeSuccessRateFor(r, dustN), cost: FORGE_GOLD_COST[r] || 0
+    mode: 'equip', base: forgeBaseRateFor(r), dust: dustN * forgeDustRateFor(r),
+    total: forgeSuccessRateFor(r, dustN), cost: forgeGoldCostFor(r)
   };
 }
 
@@ -158,8 +160,8 @@ function forgePlaceItem(id) {
   for (var i = 0; i < G.inventory.length; i++) if (G.inventory[i].id === id) { idx = i; break; }
   if (idx < 0) return '找不到該裝備';
   var it = G.inventory[idx];
-  if (it.rarity >= GODFORGED_IDX) return '神鑄創世裝備無法再放入法陣鑄造';
-  if (it.rarity < FORGE_MIN_RARITY) return '只有傳說、神話、創世品質的裝備可放入法陣';
+  if (isGodforgedRarity(it.rarity)) return '神鑄系列裝備無法再放入法陣鑄造';
+  if (!isForgeableEquipmentRarity(it.rarity)) return '只有傳說、神話、創世、混沌品質的裝備可放入法陣';
   var need = forgeRarity();
   if (need !== null && it.rarity !== need) {
     return '六件裝備品質必須相同（法陣目前為「' + RARITIES[need].name + '」）';

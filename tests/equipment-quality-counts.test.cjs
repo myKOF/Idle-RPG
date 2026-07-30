@@ -23,7 +23,9 @@ const EXPECTED_COUNTS = [
   [5, 2, 4],
   [6, 2, 5],
   [7, 3, 6],
-  [8, 3, 6]
+  [8, 3, 6],
+  [9, 3, 6],
+  [10, 3, 7]
 ];
 
 test('rarity table uses the specified fixed affix, enchant, and socket counts', () => {

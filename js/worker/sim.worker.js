@@ -847,7 +847,7 @@ var COMMAND_IMPL = {
   'newforge.setQuality': function (a) {
     var fu = findNewForgeFurnace(a.furnaceId);
     if (!fu) return { err: '找不到熔爐 ' + a.furnaceId };
-    if (a.rarity < 0 || a.rarity >= GODFORGED_IDX) return { err: '品質索引超出範圍' };
+    if (a.rarity < 0 || a.rarity >= RARITIES.length || isGodforgedRarity(a.rarity)) return { err: '品質索引超出範圍' };
     fu.qualities[a.rarity] = !!a.on;
     newForgeReturnUnroutable(fu); // 取消勾選的品質自專屬佇列退回總佇列重新派發
     UI.dirty.newforge = true;

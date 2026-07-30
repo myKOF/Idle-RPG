@@ -118,7 +118,7 @@ function arrayContent(file, varName, contentStr, label) {
 /* ===========================================================================
    映射定義
    =========================================================================== */
-const RAR_KEYS = { '普通': 'common', '精良': 'uncommon', '稀有': 'rare', '獨特': 'unique', '史詩': 'epic', '傳說': 'legendary', '神話': 'mythic', '創世': 'genesis', '神鑄創世': 'godforged' };
+const RAR_KEYS = { '普通': 'common', '精良': 'uncommon', '稀有': 'rare', '獨特': 'unique', '史詩': 'epic', '傳說': 'legendary', '神話': 'mythic', '創世': 'genesis', '神鑄創世': 'godforged', '混沌': 'chaos', '神鑄混沌': 'chaosGodforged' };
 // 稀有度表：mult(0) affix下限(1) affix上限(2) sockets(3) enchants(4) salv(5)
 Object.keys(RAR_KEYS).forEach(nm => {
   const anchor = "key: '" + RAR_KEYS[nm] + "'";
@@ -162,6 +162,8 @@ Object.keys(ZONE_KEYS).forEach(nm => {
 
 /* ---- data.js 具名純量常數 ---- */
 scalar('data', 'MAX_AFFIXES', '表-固定參數', '詞條數硬上限', 0);
+scalar('data', 'REROLL_CHAOS_ESSENCE_COST', '7-洗煉', '混沌精華費用', 0);
+scalar('data', 'REROLL_CHAOS_GODFORGED_ESSENCE_COST', '7-洗煉', '神鑄混沌精華費用', 0);
 // 太古常數（2026-07-23 改版：太古詞條產出時決定；舊「野外/高塔太古詞條機率」「太古精華洗煉」已拆線）
 scalar('data', 'ANCIENT_ESSENCE_ENEMY_BASE_RATE', '5-野外材料', '太古精華', 1);
 scalar('data', 'ANCIENT_ESSENCE_ENEMY_LEVEL_RATE', '5-野外材料', '太古精華', 3);
@@ -192,6 +194,7 @@ scalar('data', 'REINCARNATION_MAX', '1-成長經驗', '可轉生等級 / 最高�
 scalar('data', 'FORGE_UNLOCK_LEVEL', '1-成長經驗', '神鑄系統解鎖等級', 0);
 scalar('data', 'FORGE_UNLOCK_REINCARNATION', '1-成長經驗', '神鑄系統解鎖等級', 1);
 scalar('data', 'FORGE_DUST_RATE', '6-神鑄', '裝備神鑄成功率', 0);
+scalar('data', 'FORGE_CHAOS_DUST_RATE', '6-神鑄', '裝備神鑄混沌魔塵加成', 0);
 scalar('data', 'FORGE_GEM_DUST_RATE', '6-神鑄', '寶石神鑄成功率', 0);
 scalar('data', 'FORGE_FAIL_CONSUME', '6-神鑄', '神鑄失敗', 0);
 scalar('data', 'FORGE_SLOTS', '6-神鑄', '神鑄槽位 / 魔塵上限', 0);
@@ -199,12 +202,20 @@ scalar('data', 'FORGE_SLOTS', '6-神鑄', '神鑄槽位 / 魔塵上限', 0);
 objField('data', 'FORGE_BASE_RATE = {', '5', '6-神鑄', '裝備神鑄基礎成功率', 0, 'FORGE_BASE_RATE');
 objField('data', 'FORGE_BASE_RATE = {', '6', '6-神鑄', '裝備神鑄基礎成功率', 1, 'FORGE_BASE_RATE');
 objField('data', 'FORGE_BASE_RATE = {', '7', '6-神鑄', '裝備神鑄基礎成功率', 2, 'FORGE_BASE_RATE');
+scalar('data', 'FORGE_CHAOS_BASE_RATE', '6-神鑄', '裝備神鑄混沌基礎成功率', 0);
 objField('data', 'FORGE_GOLD_COST = {', '5', '6-神鑄', '裝備神鑄金幣', 0, 'FORGE_GOLD_COST');
 objField('data', 'FORGE_GOLD_COST = {', '6', '6-神鑄', '裝備神鑄金幣', 1, 'FORGE_GOLD_COST');
 objField('data', 'FORGE_GOLD_COST = {', '7', '6-神鑄', '裝備神鑄金幣', 2, 'FORGE_GOLD_COST');
+scalar('data', 'FORGE_CHAOS_GOLD_COST', '6-神鑄', '裝備神鑄混沌金幣', 0);
 objField('data', 'FORGE_EQUIP_DURATION = {', '5', '6-神鑄', '裝備神鑄時間(秒)', 0, 'FORGE_EQUIP_DURATION');
 objField('data', 'FORGE_EQUIP_DURATION = {', '6', '6-神鑄', '裝備神鑄時間(秒)', 1, 'FORGE_EQUIP_DURATION');
 objField('data', 'FORGE_EQUIP_DURATION = {', '7', '6-神鑄', '裝備神鑄時間(秒)', 2, 'FORGE_EQUIP_DURATION');
+scalar('data', 'FORGE_CHAOS_DURATION', '6-神鑄', '裝備神鑄混沌時間(秒)', 0);
+scalar('data', 'CHAOS_FIELD_DROP_MIN_STAGE', '5-野外裝備掉落', '混沌裝備', 0);
+scalar('data', 'CHAOS_FIELD_DROP_PCT', '5-野外裝備掉落', '混沌裝備', 1);
+objField('data', 'CHAOS_FIELD_DROP_ZONES = {', 'god_battlefield', '5-野外裝備掉落', '混沌裝備', 2, 'CHAOS_FIELD_DROP_ZONES');
+objField('data', 'CHAOS_FIELD_DROP_ZONES = {', 'god_chaos', '5-野外裝備掉落', '混沌裝備', 3, 'CHAOS_FIELD_DROP_ZONES');
+objField('data', 'CHAOS_FIELD_DROP_ZONES = {', 'god_sanctuary', '5-野外裝備掉落', '混沌裝備', 4, 'CHAOS_FIELD_DROP_ZONES');
 ['0', '1', '2', '3', '4'].forEach((k, idx) => {
   const codeKey = [5, 6, 7, 8, 9][idx];
   objField('data', 'FORGE_GEM_BASE_RATE = {', String(codeKey), '6-神鑄', '寶石神鑄基礎成功率', idx, 'FORGE_GEM_BASE_RATE');

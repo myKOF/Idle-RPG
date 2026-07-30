@@ -787,6 +787,16 @@ function rollFieldDrops(m) {
             drops.push('裝備[' + rarityTag(it) + ']');
         }
     }
+    var zone = (G.stage && G.stage.zone) || '';
+    if (chaosFieldDropEligible(zone, s)) {
+        var chaosN = rollDropCount(CHAOS_FIELD_DROP_PCT * dropMult);
+        for (var ci = 0; ci < chaosN; ci++) {
+            var chaosIt = makeEquipment(s, { rarity: CHAOS_IDX });
+            pushConveyor(chaosIt);
+            if (window.recordLootEquip) window.recordLootEquip(CHAOS_IDX, 1, 'field');
+            drops.push('裝備[' + rarityTag(chaosIt) + ']');
+        }
+    }
     // ===== 材料掉落：場景倍率（荒漠 x2 / 沼澤 x3；>100% 依必掉+餘數規則）
     //       基礎機率與寶石等級公式 → formula.js §5 =====
     var rw = currentZoneDef().rewardMult;

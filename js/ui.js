@@ -3357,7 +3357,8 @@ function syncFactoryInputs() {
 // 品質勾選摘要（面板收合時顯示）：列出會拆解的品質（0 普通 ~ 7 創世；神鑄創世恆保留）
 function nfQualitySummary(fu) {
   var salv = [];
-  for (var r = 0; r < GODFORGED_IDX; r++) {
+  for (var r = 0; r < RARITIES.length; r++) {
+    if (isGodforgedRarity(r)) continue;
     if (fu.qualities[r]) salv.push('<span style="color:' + RARITIES[r].color + '">' + RARITIES[r].name + '</span>');
   }
   return salv.length ? '分解：' + salv.join('、') + '（其餘保留）' : '未勾選任何品質（全部保留）';
@@ -3366,7 +3367,8 @@ function nfQualitySummary(fu) {
 // 品質勾選面板（圖2）：勾選＝該品質裝備自動入帶拆解；未勾＝保留
 function nfQualityPanelHTML(fu) {
   var rows = '';
-  for (var r = 0; r < GODFORGED_IDX; r++) {
+  for (var r = 0; r < RARITIES.length; r++) {
+    if (isGodforgedRarity(r)) continue;
     rows += '<label class="nf-qual-row"><input type="checkbox" data-nf-fid="' + fu.id + '" data-nf-qual="' + r + '"' +
       pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
       (fu.qualities[r] ? ' checked' : '') + '> <span style="color:' + RARITIES[r].color + '">' + RARITIES[r].name + '</span></label>';
@@ -3768,7 +3770,8 @@ function renderForgeAutoMenu(forge, inventorySnapshot, gemsSnapshot) {
     }
   } else {
     title = '🎒 自動放入裝備（取未上鎖、評分最低 6 件）';
-    for (var r = FORGE_MIN_RARITY; r < GODFORGED_IDX; r++) {
+    for (var r = FORGE_MIN_RARITY; r < RARITIES.length; r++) {
+      if (!isForgeableEquipmentRarity(r)) continue;
       var cnt = 0;
       var inventoryItems = inventorySnapshot.items || [];
       for (var i = 0; i < inventoryItems.length; i++) {
@@ -3934,11 +3937,18 @@ function renderForge() {
   }
   // 六個魔塵符位（各自獨立：點哪格亮哪格）
   var dustN = forgeViewDustCount(f, player);
+  var equipDustRate = FORGE_GEM_DUST_RATE;
+  for (var dri = 0; dri < f.slots.length; dri++) {
+    if (f.slots[dri] && f.slots[dri].kind !== 'gem') {
+      equipDustRate = forgeDustRateFor(f.slots[dri].rarity);
+      break;
+    }
+  }
   for (var di = 0; di < FORGE_SLOTS; di++) {
     var dp = FORGE_DUST_POS[di];
     var lit = !!f.dustSlots[di];
     h += '<div class="forge-dust' + (lit ? ' lit' : '') + '" data-forge-dust="' + di + '" data-tip="' +
-      (lit ? '點擊取下魔塵' : '點擊放入魔塵（+' + FORGE_DUST_RATE + '% 成功率）') + '"' +
+      (lit ? '點擊取下魔塵' : '點擊放入魔塵（+' + equipDustRate + '% 成功率）') + '"' +
       pendingUiButtonAttributes(nodePendingKey('forge')) + ' style="left:' + dp.x + '%;top:' + dp.y + '%;">💫</div>';
   }
   // 中央產物（上次鑄造成功的裝備或寶石）
@@ -4058,7 +4068,7 @@ function renderForge() {
       grid.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">背包是空的。戰鬥掉落的裝備會先進入生產線輸送帶，「保留」的會送到這裡。</div>';
     } else {
       grid.innerHTML = inventoryItems.map(function (it2) {
-        var ok = it2.rarity >= FORGE_MIN_RARITY && it2.rarity < GODFORGED_IDX;
+        var ok = isForgeableEquipmentRarity(it2.rarity);
         return itemCellHTML(it2, 'forgeinv', ok ? '' : ' forge-na', nodePendingKey('forge'));
       }).join('');
     }
@@ -4812,10 +4822,10 @@ function forgeViewRateInfo(forge, player) {
   }
   return {
     mode: 'equip',
-    base: FORGE_BASE_RATE[first.rarity] || 0,
-    dust: dustN * FORGE_DUST_RATE,
+    base: forgeBaseRateFor(first.rarity),
+    dust: dustN * forgeDustRateFor(first.rarity),
     total: forgeSuccessRateFor(first.rarity, dustN),
-    cost: FORGE_GOLD_COST[first.rarity] || 0
+    cost: forgeGoldCostFor(first.rarity)
   };
 }
 

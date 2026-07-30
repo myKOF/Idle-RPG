@@ -36,7 +36,9 @@ function newForgeDefaultFurnace(id, previousFurnace) {
   }
   while (qualities.length < RARITIES.length) qualities.push(false);
   qualities.length = RARITIES.length;
-  qualities[GODFORGED_IDX] = false;
+  for (var qr = 0; qr < RARITIES.length; qr++) {
+    if (isGodforgedRarity(qr)) qualities[qr] = false;
+  }
   return {
     id: id,
     enabled: true,

@@ -1179,7 +1179,11 @@ function godforgePassiveValue(key) {
 
 // 神鑄成功率（裝備）= 基礎（依素材品質）+ 魔塵數 × 5%
 function forgeSuccessRateFor(rarity, dustCount) {
-  return clamp((FORGE_BASE_RATE[rarity] || 0) + dustCount * FORGE_DUST_RATE, 0, 100);
+  return clamp(forgeBaseRateFor(rarity) + dustCount * forgeDustRateFor(rarity), 0, 100);
+}
+
+function chaosFieldDropEligible(zone, stage) {
+  return Number(stage) >= CHAOS_FIELD_DROP_MIN_STAGE && !!CHAOS_FIELD_DROP_ZONES[zone] && CHAOS_FIELD_DROP_PCT > 0;
 }
 
 // 神鑄成功率（寶石）= 基礎（依素材階級）+ 魔塵數 × 3%

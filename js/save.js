@@ -542,7 +542,7 @@ function migrateSave(data) {
   // 修正舊有裝備名稱前綴（「神鑄創世的」須排最前，避免被「神鑄的/創世的」截半）
   var fixName = function(it) {
     if (!it) return;
-    it.name = RARITY_PREFIX[it.rarity] + it.name.replace(/^(神鑄創世的|粗糙的|堅實的|精工的|奇異的|大師級|傳世的|神鑄的|創世的|普通的|精良的|稀有的|獨特的|史詩的|傳說的|神話的)/, '');
+    it.name = RARITY_PREFIX[it.rarity] + it.name.replace(/^(神鑄混沌的|混沌的|神鑄創世的|粗糙的|堅實的|精工的|奇異的|大師級|傳世的|神鑄的|創世的|普通的|精良的|稀有的|獨特的|史詩的|傳說的|神話的)/, '');
   };
   for (var k in data.equipment) fixName(data.equipment[k]);
   data.inventory.forEach(fixName);
@@ -922,6 +922,20 @@ function applyOfflineProgress(options) {
           }
         } else {
           sum.scrap += Math.round(3 * RARITIES[r].salv);
+        }
+      }
+    }
+    if (chaosFieldDropEligible(G.stage && G.stage.zone, stage)) {
+      var chaosN = rollDropCount(CHAOS_FIELD_DROP_PCT * dropMult);
+      for (var ci = 0; ci < chaosN; ci++) {
+        sum.equips[CHAOS_IDX] = (sum.equips[CHAOS_IDX] || 0) + 1;
+        if (!conveyorFull) {
+          if (!pushConveyor(makeEquipment(stage, { rarity: CHAOS_IDX }))) {
+            conveyorFull = true;
+            sum.scrap += Math.round(3 * RARITIES[CHAOS_IDX].salv);
+          }
+        } else {
+          sum.scrap += Math.round(3 * RARITIES[CHAOS_IDX].salv);
         }
       }
     }

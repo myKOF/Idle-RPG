@@ -80,7 +80,7 @@ function newForgeRouteQueue() {
     n++;
     UI.dirty.newforge = true;
     if (G.factory && G.factory.autoEquip && tryAutoEquip(it)) continue; // 空部位穿上後即完成處理
-    if (!it.locked && it.rarity < GODFORGED_IDX) {
+    if (!it.locked && !isGodforgedRarity(it.rarity)) {
       var hit = newForgeDispatchTarget(it.rarity);
       if (hit && hit.furnace) { hit.furnace.queue.push(it); continue; }
       if (hit && hit.wait) { nf.queue.unshift(it); break; } // 專屬佇列皆滿，維持先進先出等待
@@ -109,7 +109,7 @@ function newForgeReturnUnroutable(fu) {
   for (var i = 0; i < fu.queue.length; i++) {
     var it = fu.queue[i];
     if (!it) continue;
-    if (fu.enabled && !it.locked && it.rarity < GODFORGED_IDX && fu.qualities[it.rarity]) keep.push(it);
+    if (fu.enabled && !it.locked && !isGodforgedRarity(it.rarity) && fu.qualities[it.rarity]) keep.push(it);
     else nf.queue.push(it);
   }
   if (keep.length !== fu.queue.length) UI.dirty.newforge = true;
@@ -321,7 +321,9 @@ function sanitizeNewForge(data) {
       fu.qualities = newForgeDefaultFurnace(fu.id, i > 0 ? nf.furnaces[i - 1] : null).qualities;
     }
     for (var r = 0; r < RARITIES.length; r++) fu.qualities[r] = fu.qualities[r] === true;
-    fu.qualities[RARITIES.length - 1] = false; // 神鑄創世恆不入帶
+    for (var qr = 0; qr < RARITIES.length; qr++) {
+      if (isGodforgedRarity(qr)) fu.qualities[qr] = false;
+    }
     fu.qualities.length = RARITIES.length;
     var validItem = function (it) { return it && typeof it === 'object' && it.slot && it.rarity !== undefined; };
     if (!Array.isArray(fu.queue)) fu.queue = []; // 專屬佇列（合併前存檔無此欄位）

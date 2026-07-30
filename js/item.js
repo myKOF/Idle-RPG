@@ -487,7 +487,7 @@ function makeEquipment(stage, opts) {
     }
   }
   // 神鑄創世：必帶 2 條不重複的專屬特效（池 GODFORGE_POOL）
-  if (rarity === GODFORGED_IDX) {
+  if (isGodforgedRarity(rarity)) {
     var gkeys = Object.keys(GODFORGE_POOL).slice();
     it.godPassives = [];
     for (var gi = 0; gi < GODFORGE_PASSIVE_COUNT && gkeys.length; gi++) {
