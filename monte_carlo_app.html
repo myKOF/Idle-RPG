@@ -5,13 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>放置型 RPG 蒙地卡羅數值模擬驗證工具 (高塔與天賦技能對齊版)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="css/style.css">
     <script src="js/util.js"></script>
     <script src="js/data.js"></script>
     <script src="js/formula.js"></script>
     <script src="js/item.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
+        /* 🛡️ 官方裝備卡片元件專屬樣式 (防污染主儀表板全域排版) */
+        .equip-detail-card { font-family: inherit; color: #f8fafc; }
+        .it-name { font-size: 16px; font-weight: bold; position: relative; margin-bottom: 4px; }
+        .it-up { color: #fbbf24; margin-left: 4px; }
+        .it-syn { color: #c084fc; font-size: 13px; margin-left: 4px; }
+        .it-sub { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; color: #94a3b8; font-size: 13px; margin-bottom: 12px; }
+        .it-score { color: #fbbf24; font-weight: bold; }
+        .it-affixes { display: flex; flex-direction: column; gap: 6px; width: 100%; margin-bottom: 12px; }
+        .it-affix { font-size: 14px; font-weight: 600; line-height: 1.4; color: #f8fafc; }
+        .it-affix.afx-off { color: #f472b6; }
+        .it-affix.afx-def { color: #38bdf8; }
+        .it-affix.afx-util { color: #34d399; }
+        .it-affix.afx-base { color: #c084fc; }
+        .ancient-star { color: #fbbf24; margin-right: 4px; font-weight: bold; }
+        .it-sockets { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+        .socket { display: inline-block; font-size: 13.5px; padding: 4px 10px; border-radius: 6px; border: 1px dashed #475569; color: #94a3b8; width: fit-content; line-height: 1.2; }
+        .socket.filled { border-style: solid; border-color: #818cf8; color: #f8fafc; background: rgba(129, 140, 248, 0.1); }
         :root {
             --bg-dark: #0f172a;
             --panel-bg: #1e293b;
