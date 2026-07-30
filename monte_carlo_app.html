@@ -1283,30 +1283,81 @@
         return 0;
     }
 
-    // 100% 對齊官方 item.js §rollItem + formula.js §rollAffixValue / §ancientAffixValue / §rollAncientAffixCount
-    function generateDroppedEquipment(rarity, ancientTargetRatio, itemLevel) {
+    // 100% 對齊官方 item.js §rollAffixes + data.js 部位專屬詞條限制 (slots)
+    function generateDroppedEquipment(rarity, ancientTargetRatio, itemLevel, slot) {
+        rarity = Math.max(1, Math.min(8, rarity || 1));
         itemLevel = itemLevel || 500; // 預設裝備等級 500
-        const slotsCount = RARITY_AFFIX_COUNTS[rarity] || Math.min(7, rarity);
-        const affixes = [];
-        
-        // 依官方權重表擲骰太古條數
-        const ancientCount = rollOfficialAncientCount(slotsCount);
+        slot = slot || OFFICIAL_SLOTS[Math.floor(Math.random() * OFFICIAL_SLOTS.length)];
+        const baseSlot = slot.replace(/[0-9]/g, '');
 
-        // 隨機選定哪些位置為太古
+        // 創世 (Rarity 7) 與 神鑄創世 (Rarity 8) 100% 必定為 7 條詞條
+        const slotsCount = (rarity === 8 || rarity === 7) ? 7 : (RARITY_AFFIX_COUNTS[rarity] || Math.min(7, rarity));
+
+        // 100% 優先直連官方原生 rollAffixes (來自 js/item.js)
+        if (typeof rollAffixes === 'function' && typeof AFFIX_POOL !== 'undefined') {
+            const ancientSet = {};
+            const ancientCount = rollOfficialAncientCount(slotsCount);
+            for (let a = 0; a < ancientCount; a++) ancientSet[a] = true;
+
+            const officialRarityIdx = (rarity === 8) ? 8 : (rarity - 1);
+            const affs = rollAffixes(slotsCount, itemLevel, officialRarityIdx, baseSlot, ancientSet);
+            if (affs && affs.length > 0) {
+                return {
+                    level: 0,
+                    rarity: rarity,
+                    slot: slot,
+                    isGodforged: (rarity === 8),
+                    affixes: affs,
+                    itemLevel: itemLevel
+                };
+            }
+        }
+
+        // 備用防護：過濾部位專屬詞條 (例如 legs 不得出現 critDmg) + 不重複詞條機制
+        const poolKeys = [];
+        const poolSource = (typeof OFFICIAL_AFFIX_POOL !== 'undefined') ? OFFICIAL_AFFIX_POOL : (typeof AFFIX_POOL !== 'undefined' ? AFFIX_POOL : {});
+
+        for (let k in poolSource) {
+            const def = poolSource[k];
+            // 嚴格過濾部位專屬詞條限制 (使用正規化後的 baseSlot)
+            if (def.slots && def.slots.indexOf(baseSlot) < 0) continue;
+            poolKeys.push(k);
+        }
+
+        if (poolKeys.length === 0) {
+            for (let k in poolSource) poolKeys.push(k);
+        }
+
+        const ancientCount = rollOfficialAncientCount(slotsCount);
         const ancientIndices = new Set();
         while (ancientIndices.size < ancientCount && ancientIndices.size < slotsCount) {
             ancientIndices.add(Math.floor(Math.random() * slotsCount));
         }
 
-        for (let i = 0; i < slotsCount; i++) {
-            const k = OFFICIAL_AFFIX_KEYS[Math.floor(Math.random() * OFFICIAL_AFFIX_KEYS.length)];
-            const isAncient = ancientIndices.has(i);
+        const affixes = [];
+        const usedKeys = new Set();
+        let guard = 0;
+
+        while (affixes.length < slotsCount && guard++ < 300) {
+            const k = poolKeys[Math.floor(Math.random() * poolKeys.length)];
+            if (usedKeys.has(k)) continue;
+            usedKeys.add(k);
+
+            const isAncient = ancientIndices.has(affixes.length);
             const val = isAncient
                 ? officialAncientAffixValue(k, itemLevel, rarity)
                 : officialRollAffixValue(k, itemLevel, rarity);
             affixes.push({ key: k, val: val, ancient: isAncient });
         }
-        return { level: 0, rarity: rarity, isGodforged: (rarity === 8), affixes: affixes, itemLevel: itemLevel };
+
+        return { 
+            level: 0, 
+            rarity: rarity, 
+            slot: slot, 
+            isGodforged: (rarity === 8), 
+            affixes: affixes, 
+            itemLevel: itemLevel 
+        };
     }
 
     function countAncientAffixes(affixes) {
@@ -1330,7 +1381,7 @@
 
             this.equipments = {};
             OFFICIAL_SLOTS.forEach(s => {
-                this.equipments[s] = generateDroppedEquipment(1, 0);
+                this.equipments[s] = generateDroppedEquipment(1, 0, 500, s);
             });
 
             this.gold = 0;
@@ -1546,7 +1597,7 @@
 
             const targetSlot = OFFICIAL_SLOTS[Math.floor(Math.random() * OFFICIAL_SLOTS.length)];
             const oldEq = this.equipments[targetSlot];
-            const newEq = generateDroppedEquipment(highestRarityDropped, this.profile.ancientRatio);
+            const newEq = generateDroppedEquipment(highestRarityDropped, this.profile.ancientRatio, 500, targetSlot);
 
             const oldAnc = countAncientAffixes(oldEq.affixes);
             const newAnc = countAncientAffixes(newEq.affixes);
@@ -1683,7 +1734,7 @@
                     const slotToUpgrade = OFFICIAL_SLOTS[Math.floor(Math.random() * OFFICIAL_SLOTS.length)];
                     const oldSlotEq = this.equipments[slotToUpgrade];
                     if (!oldSlotEq.isGodforged) {
-                        const godEq = generateDroppedEquipment(8, 1.0);
+                        const godEq = generateDroppedEquipment(8, 1.0, 500, slotToUpgrade);
                         godEq.level = oldSlotEq.level;
                         this.equipments[slotToUpgrade] = godEq;
                         this.logAction(currentTime, 'godforge', '👑', `神鑄六芒星法陣 6 合 1 成功！(消耗 ${usedDust} 魔塵)`, `將【${slotToUpgrade}】裝備解鎖升階為【神鑄創世 R8】(7 滿太古詞條)。`);
