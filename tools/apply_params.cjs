@@ -401,8 +401,14 @@ arrayContent('data', 'FIELD_ENEMY_COUNT_TABLE', parseCountTuples('4-敵人數量
 const PLAINS_EARLY_ENEMY_COUNT_RANGES = ['1~20', '21~40', '41~60', '61~80', '81~100'];
 const plainsEarlyEnemyCountTables = PLAINS_EARLY_ENEMY_COUNT_RANGES.map(range =>
   parseCountTuples('4-敵人數量', '小怪 數量權重(草原' + range + '關)'));
+/* ⚠️ arrayContent 替換的是既有 `[ ... ]` **裡面**的內容（regex 第 2 組），
+   所以這裡只能給「元素們」，不能再自己包一層外括號——包了就會寫成 [[...]]，
+   變成長度 1 的陣列：[0] 是整包巢狀表、[1]~[4] 全是 undefined。
+   後果是 fieldCountTableFor() 在 1~20 關拿到不是權重表的東西（實測固定出 1 隻怪）、
+   21~100 關則因為 undefined 直接掉回後期表，五段分段等於完全沒生效。
+   隔壁 FIELD_ENEMY_COUNT_TABLE 傳的是 parseCountTuples() 的回傳值，本來就沒有外括號。 */
 arrayContent('data', 'FIELD_PLAINS_EARLY_ENEMY_COUNT_TABLES',
-  '[' + plainsEarlyEnemyCountTables.map(table => '[' + table + ']').join(', ') + ']',
+  plainsEarlyEnemyCountTables.map(table => '[' + table + ']').join(', '),
   'FIELD_PLAINS_EARLY_ENEMY_COUNT_TABLES');
 arrayContent('data', 'FIELD_ELITE_COUNT_TABLE', parseCountTuples('4-敵人數量', '菁英 數量權重'), 'FIELD_ELITE_COUNT_TABLE');
 arrayContent('data', 'FIELD_BOSS_COUNT_TABLE', parseCountTuples('4-敵人數量', 'BOSS 數量權重'), 'FIELD_BOSS_COUNT_TABLE');
