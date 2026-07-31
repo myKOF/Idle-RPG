@@ -1,16 +1,27 @@
 {
   "name": "policy-light",
-  "description": "輕度玩家：每日遊玩2小時，其餘離線。採最佳技能與配裝策略(物理專精+爆擊爆傷詞條+技能融合)，全身11部位平均強化至+20，寶石目標全身5級爆傷，不買商店，10分鐘高塔與寶石合成。採最佳分解策略，穩定擴背包至300格，機體提升後衝刺高關(stage.goMax)",
+  "description": "輕度玩家：每日遊玩2小時，其餘離線。採最佳技能與配裝策略(物理+吸血續戰+爆擊爆傷詞條+技能融合)，equip-best-per-slot自動換裝，全身11部位平均強化至+20，寶石目標全身5級爆傷，不買商店，10分鐘高塔與寶石合成。採最佳分解策略(R0~R1)，穩定擴背包至300格",
   "decideEveryGameSec": 60,
   "dailyActiveHours": 2,
   "needPanels": ["tower", "gems", "newforge", "equip", "header", "inv"],
   "lists": {
     "skillPriority": [
-      "powerSlash", "doubleStrike", "sharpBlade", "toughness", "whirlwind",
-      "swiftness", "armorBreak", "arcaneMind", "healWound", "ironWall"
+      "vampirism", "healWound", "secondWind", "regenerate", "powerSlash",
+      "doubleStrike", "sharpBlade", "toughness", "whirlwind", "swiftness",
+      "armorBreak", "arcaneMind", "ironWall"
     ]
   },
   "rules": [
+    {
+      "id": "equip-best-per-slot",
+      "everySec": 15,
+      "cmd": "item.equip",
+      "bestPerSlot": {
+        "items": "panels.inv.items",
+        "equippedScores": "panels.inv.equipmentScores"
+      },
+      "why": "每個部位換上背包裡評分最高且優於身上那件的裝備"
+    },
     {
       "id": "auto-equip-on",
       "once": true,
@@ -23,13 +34,7 @@
       "everySec": 15,
       "cmd": "stage.setAutoAdvance",
       "args": { "on": true },
-      "why": "持續保持自動推關勾選狀態以極速推關"
-    },
-    {
-      "id": "push-max-stage",
-      "everySec": 15,
-      "cmd": "stage.goMax",
-      "why": "極速衝刺最高解鎖關卡"
+      "why": "持續保持自動推關勾選狀態"
     },
 
     {
@@ -54,7 +59,7 @@
         { "furnaceId": 1, "rarity": 0, "on": true },
         { "furnaceId": 1, "rarity": 1, "on": true }
       ],
-      "why": "最佳分解策略：自動分解低於身上品質之普通與優良裝備"
+      "why": "只拆解普通與優良(R0~R1)，稀有以上保留在背包當換裝候選"
     },
 
     {
@@ -154,13 +159,13 @@
       "everySec": 60,
       "cmd": "skill.learn",
       "expand": [{ "key": "id", "list": "skillPriority" }],
-      "why": "最佳技能策略：遵循最佳技能與配裝策略，專注升級物理攻防技能"
+      "why": "集中升級吸血與回復技能(vampirism, healWound, secondWind, regenerate)及物理攻擊技能"
     },
     {
       "id": "fuse-skills",
       "everySec": 1200,
       "cmd": "skill.fuse",
-      "why": "最佳技能策略：主動使用技能融合以強化技能"
+      "why": "主動使用技能融合以強化技能"
     },
 
     {

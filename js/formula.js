@@ -279,7 +279,7 @@ function computeStats(equipmentOverride) {
   st.int = Math.round(rawInt * reincMult); st.vit = Math.round(rawVit * reincMult);
   // 基礎：生命 = (120 + (等級-1)×22 + 耐力×10 + 定值) × (1 + 生命%) × (1 + 天賦生命%［生命洪流，獨立乘區］)
   st.base = {};
-  st.base.hp = 120 + (lv - 1) * 22 + rawVit * PRIMARY_STAT_EFFECTS.vitHp;
+  st.base.hp = 200 + (lv - 1) * 25 + rawVit * PRIMARY_STAT_EFFECTS.vitHp;
   var rawHp = (st.base.hp + A.hpFlat) * (1 + A.hpPct / 100);
   st.hp = Math.round(rawHp * reincMult * (1 + (talent.hpPct || 0) / 100));
   st.hpRegen = A.hpRegen;                                    // 額外生命恢復/秒（另有 BASE_HP_REGEN_PCT%/秒 基礎回復）
@@ -481,7 +481,7 @@ function enemyTypeDamageReduction(total, attackerLevel) {
 }
 
 var SLOW_ASPD_FACTOR = 0.7;   // 減速狀態：攻速 -30%（攻擊冷卻累積 ×0.7）
-var BASE_HP_REGEN_PCT = 1.5;  // 野外每秒基礎生命回復（最大生命 %；高塔內無此回復）
+var BASE_HP_REGEN_PCT = 2;  // 野外每秒基礎生命回復（最大生命 %；高塔內無此回復）
 var KILL_HEAL_PCT = 12;       // 野外擊殺回復（最大生命 %，溢出轉護盾）
 
 function slowFactor(ent) { return effectActive(ent, 'slow') ? SLOW_ASPD_FACTOR : 1; }
@@ -924,7 +924,7 @@ function monsterStatsFor(stage, elite, boss) {
     level: stage, hp: hp, atk: atk,
     def: def,                 // 物理防禦
     mdef: def * 0.75,         // 魔法防禦
-    aspd: 2,
+    aspd: 1,
     dodge: segmentedLevelGrowth(FIELD_MONSTER_DODGE_BASE, stage, FIELD_MONSTER_DODGE_GROWTH),
     hit: segmentedLevelGrowth(FIELD_MONSTER_HIT_BASE, stage, FIELD_MONSTER_HIT_GROWTH),
     gold: gold, xp: xp, elite: !!elite && !boss, isBoss: !!boss
