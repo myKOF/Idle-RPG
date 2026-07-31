@@ -20,6 +20,8 @@ var UI = {
   inventoryScrolling: false,
   inventoryScrollTimer: null,
   inventoryDetailRefreshPending: false,
+  equipFlashSlots: Object.create(null),
+  equipFlashTimer: null,
   statsPanelOpen: false,
   battleLayoutDirty: true,
   zoneBarSignature: null,
@@ -1907,6 +1909,12 @@ function renderHeader() {
   if ($id('pv-level')) $id('pv-level').textContent = 'Lv.' + p.level;
   if ($id('tp-level')) $id('tp-level').textContent = 'Lv.' + p.level;
   var reinc = clamp(Math.floor(Number(p.reincarnations) || 0), 0, REINCARNATION_MAX);
+  var currentLevel = Math.max(0, Math.floor(Number(p.level) || 0));
+  var canReincarnate = currentLevel >= REINCARNATION_LEVEL && reinc < REINCARNATION_MAX;
+  var reincarnationControls = $id('reincarnation-controls');
+  if (reincarnationControls) {
+    reincarnationControls.classList.toggle('is-visible', reinc > 0 || canReincarnate);
+  }
   var rank = reincarnationRankName(reinc);
   var classEl = $id('p-class');
   if (classEl) { classEl.textContent = rank; applyReincarnationTitleClass(classEl, reinc); }
@@ -1922,7 +1930,6 @@ function renderHeader() {
   var reincBtn = $id('btn-reincarnate');
   if (reincBtn) {
     var isGodStage = reinc >= 10;
-    var canReincarnate = p.level >= REINCARNATION_LEVEL && reinc < REINCARNATION_MAX;
     reincBtn.classList.toggle('reincarnate-ready', canReincarnate);
     reincBtn.textContent = isGodStage ? '🔄 晉階' : '🔄 轉生';
     reincBtn.setAttribute('data-tip', reinc >= REINCARNATION_MAX
@@ -2701,12 +2708,18 @@ function renderEquip() {
   SLOT_LIST.forEach(function (slot) {
     var it = eq[slot];
     var info = SLOT_INFO[slot];
+    // A two-handed weapon occupies the main-hand slot in the data model, but
+    // the off-hand cell should still show the same weapon as a visual cue.
+    var twoHandDuplicate = !it && slot === 'weapon2' &&
+      typeof isTwoHandItem === 'function' && isTwoHandItem(eq.weapon);
+    if (twoHandDuplicate) it = eq.weapon;
     if (it) {
       var r = RARITIES[it.rarity];
       var effClass = (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= GODFORGED_IDX ? ' eff-godforged' : (it.rarity === 7 ? ' eff-genesis' : ''));
       var iconHtml = info.icon ? '<img src="images/' + info.icon + '" class="eq-icon">' : '<div class="eq-emoji">' + info.emoji + '</div>';
-      h += '<div class="eq-slot filled' + effClass + ' slot-' + slot + '" data-id="' + it.id + '" data-src="equip" data-slot="' + slot + '" style="border-color:' + r.color + '; box-shadow: inset 0 0 15px ' + r.color + '40">' +
-        iconHtml + ancientStarBadgeHTML(it) + '</div>';
+      var flashHtml = equipFlashActive(slot) ? '<span class="equip-flash-overlay" aria-hidden="true"></span>' : '';
+      h += '<div class="eq-slot filled' + effClass + (twoHandDuplicate ? ' twohand-duplicate' : '') + ' slot-' + slot + '" data-id="' + it.id + '" data-src="equip" data-slot="' + slot + '" style="border-color:' + r.color + '; box-shadow: inset 0 0 15px ' + r.color + '40">' +
+        iconHtml + ancientStarBadgeHTML(it) + flashHtml + '</div>';
     } else {
       // 副手欄被主手雙手武器連帶佔用：加佔用標記（仍可點選，改裝副手會自動卸下雙手武器）
       var blocked2h = (typeof slotBlockedByTwoHand === 'function') && slotBlockedByTwoHand(eq, slot);
@@ -2718,6 +2731,35 @@ function renderEquip() {
   box.innerHTML = h;
   renderEquipSetTabs(equipSnapshot, headerSnapshot);
   renderDetail();
+}
+
+function equipFlashActive(slot) {
+  var until = UI.equipFlashSlots && UI.equipFlashSlots[slot];
+  if (!until) return false;
+  if (until <= Date.now()) {
+    delete UI.equipFlashSlots[slot];
+    return false;
+  }
+  return true;
+}
+
+function triggerEquipFlash(slotKey, item) {
+  if (!slotKey) return;
+  var slots = [slotKey];
+  if (slotKey === 'weapon' && typeof isTwoHandItem === 'function' && isTwoHandItem(item)) {
+    slots.push('weapon2');
+  }
+  var until = Date.now() + 2000;
+  slots.forEach(function (slot) { UI.equipFlashSlots[slot] = until; });
+  UI.dirty.equip = true;
+  if (UI.equipFlashTimer) clearTimeout(UI.equipFlashTimer);
+  UI.equipFlashTimer = setTimeout(function () {
+    Object.keys(UI.equipFlashSlots).forEach(function (slot) {
+      if (UI.equipFlashSlots[slot] <= Date.now()) delete UI.equipFlashSlots[slot];
+    });
+    UI.equipFlashTimer = null;
+    UI.dirty.equip = true;
+  }, 2050);
 }
 
 // 裝備欄下方三套切頁＋確定切換
@@ -3285,7 +3327,10 @@ function detailAction(act, actBtn) {
       }
       return;
     }
-    if (act === 'equip') UI.sel = { id: it.id, source: 'equip' };
+    if (act === 'equip') {
+      UI.sel = { id: it.id, source: 'equip' };
+      triggerEquipFlash(args.slotKey || it.slot, it);
+    }
     if (act === 'unequip') UI.sel = { id: it.id, source: 'inv' };
     if (act === 'salvage') UI.sel = null;
     if (act === 'upgrade' && actBtn) {
@@ -3473,7 +3518,7 @@ function nfPartsListHTML(fu, factory) {
     '<div class="hint">完全自由裝配：同類型可重複、連續點擊可一次裝滿，不佔用也不消耗零件庫存；點擊已裝格卸下。全部 10 種分解槽零件皆對該熔爐生效（速度/產量/精華/額外掉落）。</div></div>';
 }
 
-// 熔爐卡片（圖1）：左側大圖＋右側傳送帶（品質設定/啟用/摘要/帶視覺）＋零件格
+// 熔爐卡片（圖1）：左側大圖＋右側傳送帶（拆解設定/啟用/摘要/帶視覺）＋零件格
 function nfFurnaceHTML(fu, nf, factory, player) {
   var head = '<div class="node-title">' + NEW_FORGE_EMOJI + ' ' + esc(NEW_FORGE_NAME) +
     ' <span class="node-badge">#' + fu.id + '</span>' +
@@ -3482,7 +3527,7 @@ function nfFurnaceHTML(fu, nf, factory, player) {
   var open = UI.nfCfgOpen && UI.nfCfgOpen[fu.id];
   var beltRow = '<div class="nf-line-head">' +
     '<span class="nf-line-no">傳送帶</span>' +
-    '<button class="btn sm" data-nf-fid="' + fu.id + '" data-nf-cfg="1">⚙ 品質設定</button>' +
+    '<button class="btn sm" data-nf-fid="' + fu.id + '" data-nf-cfg="1">⚙ 拆解設定</button>' +
     '<label class="chk"><input type="checkbox" data-nf-fid="' + fu.id + '" data-nf-on="1"' +
     pendingUiButtonAttributes(furnacePendingKey(fu.id)) + (fu.enabled ? ' checked' : '') + '> 啟用</label>' +
     '</div>' +
@@ -3596,7 +3641,7 @@ function bindNewForgeEvents() {
           keys: [furnacePendingKey(furnaceId)],
           panels: ['newforge']
         }).catch(function (error) {
-          reportUiCommandFailure('熔爐品質設定', error, ['newforge']);
+          reportUiCommandFailure('熔爐拆解設定', error, ['newforge']);
         });
 
       }

@@ -49,6 +49,7 @@ test('野外死亡後退 10 關繼續，歷史最高階段不重置', () => {
   assert.equal(context.FIELD.monsters.length, 0);
   assert.equal(context.FIELD.reviveCd, context.REVIVE_DELAY);
   assert.equal(context.RUN_STATS.maxStage, 25);
+  assert.equal(context.UI.dirty.header, true, 'retreat should refresh header stage');
   assert.match(context.logs.join('\n'), /退回第 25 階段/);
 });
 
