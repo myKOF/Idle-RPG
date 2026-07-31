@@ -1,6 +1,6 @@
 {
   "name": "policy-extreme",
-  "description": "極限玩家：24小時不間斷在線。最終神鑄創世裝+60，80%+6太古詞條+5菁英傷，寶石商店重置8次+掃光，極速潛力與技能融合，階梯點滿轉生天賦。穩定擴背包至1000格，採最佳分解策略(自動分解低於身上品質裝備但保留神話及以上供神鑄)，機體提升後衝刺高關(stage.goMax)",
+  "description": "極限玩家：24小時不間斷在線。採最佳技能與配裝策略(物理專精+爆擊爆傷詞條+技能融合)，最終神鑄創世裝+60，80%+6太古詞條+5菁英傷，寶石商店重置8次+掃光，極速潛力與技能融合，階梯點滿轉生天賦。穩定擴背包至1000格，採最佳分解策略(自動分解低於身上品質裝備但保留神話及以上供神鑄)，機體提升後衝刺高關(stage.goMax)",
   "decideEveryGameSec": 5,
   "dailyActiveHours": 24,
   "needPanels": ["tower", "gems", "newforge", "equip", "skills", "talents", "header", "inv"],
@@ -20,7 +20,7 @@
     "talentStep3": [
       "t3_normal", "t3_elite", "t3_boss", "t3_potential", "t3_allres", "t3_def", "t3_mdef", "t3_allres2"
     ],
-    "targetAffixes": ["gemEff", "xpGain", "dropRate", "patk", "critDmg", "eliteDmg"]
+    "targetAffixes": ["patk", "critDmg", "crit", "gemEff", "xpGain", "dropRate", "eliteDmg"]
   },
   "rules": [
     {
@@ -98,7 +98,7 @@
         "itemId": { "$path": "panels.equip.equipment.amulet.id" },
         "affixKey": { "$arg": "affixKey" }
       },
-      "why": "詞條策略：項鍊保證3鑲嵌/3經驗/3掉寶"
+      "why": "最佳技能與配裝策略：詞條以物理加成與爆擊爆傷為主，首飾保證3鑲嵌/3經驗/3掉寶"
     },
     {
       "id": "reroll-jewel-ring",
@@ -110,7 +110,7 @@
         "itemId": { "$path": "panels.equip.equipment.ring.id" },
         "affixKey": { "$arg": "affixKey" }
       },
-      "why": "詞條策略：戒指保證3鑲嵌/3經驗/3掉寶"
+      "why": "最佳技能與配裝策略：詞條以物理加成與爆擊爆傷為主，首飾保證3鑲嵌/3經驗/3掉寶"
     },
 
     {
@@ -125,7 +125,13 @@
       "everySec": 10,
       "cmd": "skill.learn",
       "expand": [{ "key": "id", "list": "skillPriority" }],
-      "why": "學習主動與被動技能"
+      "why": "最佳技能策略：集中升級物理攻擊與爆擊爆傷技能"
+    },
+    {
+      "id": "fuse-skills",
+      "everySec": 300,
+      "cmd": "skill.fuse",
+      "why": "最佳技能策略：主動使用技能融合以強化技能"
     },
 
     {

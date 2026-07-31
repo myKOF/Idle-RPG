@@ -1,6 +1,6 @@
 {
   "name": "policy-moderate",
-  "description": "中度玩家：每日遊玩4小時。目標全身神話裝+35，詞條70%+首飾保證1鑲嵌/1經驗/1掉寶，金幣充裕升級商店，每20分鐘掃商店+重置2次，10分鐘寶石合成與高塔，主動技能融合。穩定擴背包至500格，採最佳分解策略(自動分解低於身上品質裝備但保留神話及以上供神鑄)，機體提升後衝刺高關(stage.goMax)",
+  "description": "中度玩家：每日遊玩4小時。採最佳技能與配裝策略(物理專精+爆擊爆傷詞條+技能融合)，目標全身神話裝+35，詞條70%+首飾保證1鑲嵌/1經驗/1掉寶，金幣充裕升級商店，每20分鐘掃商店+重置2次，10分鐘寶石合成與高塔，主動技能融合。穩定擴背包至500格，採最佳分解策略(自動分解低於身上品質裝備但保留神話及以上供神鑄)，機體提升後衝刺高關(stage.goMax)",
   "decideEveryGameSec": 30,
   "dailyActiveHours": 4,
   "needPanels": ["tower", "gems", "newforge", "equip", "skills", "header", "inv"],
@@ -10,7 +10,7 @@
       "swiftness", "armorBreak", "arcaneMind", "healWound", "ironWall",
       "executeStrike", "berserkStrike", "rendWound", "brutality", "vampirism"
     ],
-    "targetAffixes": ["gemEff", "xpGain", "dropRate", "patk"]
+    "targetAffixes": ["patk", "critDmg", "crit", "gemEff", "xpGain", "dropRate"]
   },
   "rules": [
     {
@@ -88,7 +88,7 @@
         "itemId": { "$path": "panels.equip.equipment.amulet.id" },
         "affixKey": { "$arg": "affixKey" }
       },
-      "why": "詞條策略：項鍊保證1條寶石鑲嵌率、1條經驗加成、1條掉寶率詞條"
+      "why": "最佳技能與配裝策略：詞條以物理加成與爆擊爆傷為主，項鍊保證1條寶石鑲嵌率、1條經驗加成、1條掉寶率詞條"
     },
     {
       "id": "reroll-jewel-ring",
@@ -100,7 +100,7 @@
         "itemId": { "$path": "panels.equip.equipment.ring.id" },
         "affixKey": { "$arg": "affixKey" }
       },
-      "why": "詞條策略：戒指保證1條寶石鑲嵌率、1條經驗加成、1條掉寶率詞條"
+      "why": "最佳技能與配裝策略：詞條以物理加成與爆擊爆傷為主，戒指保證1條寶石鑲嵌率、1條經驗加成、1條掉寶率詞條"
     },
 
     {
@@ -108,13 +108,13 @@
       "everySec": 30,
       "cmd": "skill.learn",
       "expand": [{ "key": "id", "list": "skillPriority" }],
-      "why": "有技能點即升級技能"
+      "why": "最佳技能策略：遵循最佳技能與配裝策略"
     },
     {
       "id": "fuse-skills",
       "everySec": 1200,
       "cmd": "skill.fuse",
-      "why": "主動使用技能融合以強化技能"
+      "why": "最佳技能策略：主動使用技能融合以強化技能"
     },
 
     {
