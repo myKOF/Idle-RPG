@@ -36,7 +36,7 @@ test('玩家護盾同時顯示獨立護盾條與血量文字數值', () => {
   const shieldMaxHelper = ui.match(/function playerShieldMax\(entity\)\s*\{([\s\S]*?)\n\}/);
   assert.ok(shieldMaxHelper, 'UI 應提供純讀取的護盾上限 helper');
   assert.match(shieldMaxHelper[1], /return Math\.max\(0,\s*entity\.shieldMax \|\| 0\)/);
-  assert.doesNotMatch(shieldMaxHelper[1], /entity\.(?:shield|shieldMax|shieldMaxVersion|shieldSkillBase|shieldSkillPct)\s*=/);
+  assert.doesNotMatch(shieldMaxHelper[1], /entity\.(?:shield|shieldMax|shieldMaxVersion)\s*=/);
   assert.doesNotMatch(ui, /function currentShieldSkillCap\(stats\)/);
   assert.match(ui, /var shieldMax = playerShieldMax\(entity\)/);
   assert.match(ui, /setStyleIfChanged\(shieldBar,\s*'width',\s*clamp\(shield \/ shieldMax \* 100,\s*0,\s*100\) \+ '%'\)/);

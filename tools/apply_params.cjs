@@ -795,7 +795,7 @@ scalar('formula', 'PEN_IGNORE_C', '3-戰鬥核心', '穿透忽略防禦', 2);
 scalar('formula', 'ELITE_DROP_MULT', '4-野外怪物', '野外菁英掉落倍率', 0);
 // 寶石商店刷新週期（item.js，單一常數）
 scalar('item', 'GEM_SHOP_REFRESH_HOURS', '8-寶石商店', '刷新週期', 0);
-// 技能點（2026-07-30 熟練度制）：a=基礎點數(skills.js SKILL_POINT_BASE)；b 已停用（升級不再給點）；
+// 技能點（2026-07-30 熟練度制）：a=基礎點數(skills.js SKILL_POINT_BASE，須與 player.js 初始 skills 數量一致)；b 已停用（升級不再給點）；
 // c=舊制上限常數（data.js SKILL_POINT_BUDGET_CAP，改制後僅保留相容）
 numCtx('skills', 'var SKILL_POINT_BASE = ', ';', P('1-成長經驗', '技能點總預算', 0), '技能點-基礎');
 scalar('data', 'SKILL_POINT_BUDGET_CAP', '1-成長經驗', '技能點總預算', 2);

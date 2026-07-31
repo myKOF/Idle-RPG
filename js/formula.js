@@ -486,7 +486,7 @@ var BASE_HP_REGEN_PCT = 2;  // 野外每秒基礎生命回復（最大生命 %�
    ⚠️ 溢出**不**轉護盾——呼叫端傳 { noShield: true }（見 combat.js 的 completeFieldWave）。
    高塔沒有這個回復，也沒有每秒基礎回復，是純爆發戰。
    2026-08 之前這裡是「擊殺回復 12%」，每擊殺一隻觸發；改為整波清空才回復一次。 */
-var WAVE_CLEAR_HEAL_PCT = 30;
+var WAVE_CLEAR_HEAL_PCT = 12;
 
 function slowFactor(ent) { return effectActive(ent, 'slow') ? SLOW_ASPD_FACTOR : 1; }
 
@@ -768,8 +768,6 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     if (defender.shield <= 0) {
       defender.shieldMax = 0;
       defender.shieldMaxVersion = SHIELD_MAX_VERSION;
-      defender.shieldSkillBase = 0;
-      defender.shieldSkillPct = 0;
     }
     dmg -= out.absorbed;
   }
@@ -828,8 +826,6 @@ function refreshShieldMaxAfterGain(ent, beforeShield) {
     ent.shield = 0;
     ent.shieldMax = 0;
     ent.shieldMaxVersion = SHIELD_MAX_VERSION;
-    ent.shieldSkillBase = 0;
-    ent.shieldSkillPct = 0;
     return;
   }
   beforeShield = Math.max(0, beforeShield || 0);
@@ -847,10 +843,6 @@ function healPlayer(pEnt, amount, st, opts) {
   var beforeShield = Math.max(0, pEnt.shield || 0);
   var nextShield = Math.min(cap, beforeShield + over * (SHIELD_OVERFLOW_PCT / 100));
   pEnt.shield = Math.max(beforeShield, nextShield);
-  if (pEnt.shield > beforeShield) {
-    pEnt.shieldSkillBase = 0;
-    pEnt.shieldSkillPct = 0;
-  }
   refreshShieldMaxAfterGain(pEnt, beforeShield);
 }
 

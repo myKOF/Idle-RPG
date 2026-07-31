@@ -321,16 +321,17 @@ test('skillMaxLv：一般/被動/融合技一律 10；轉生後 15', () => {
 
 /* ================= 9) 技能熟練度 ================= */
 
-test('技能熟練度：經驗升級給點、上限封頂；技能點 = 基礎2 + 熟練度', () => {
+test('技能熟練度：經驗升級給點、上限封頂；技能點 = 基礎點數 + 熟練度', () => {
   const c = loadGameContext();
   const p = c.G.player;
-  assert.equal(c.totalSkillPoints(), 2);
+  const base = c.SKILL_POINT_BASE; // 開局自帶技能數；調整初始技能不該讓本測試變紅
+  assert.equal(c.totalSkillPoints(), base);
   c.gainSkillMasteryXp(c.skillMasteryXpForLevel(0)); // 升 1 級
   assert.equal(p.skillMastery.level, 1);
-  assert.equal(c.totalSkillPoints(), 3);
+  assert.equal(c.totalSkillPoints(), base + 1);
   // 已用 = 技能等級總和；可用 = 總 − 已用
   p.skills.powerSlash = 2;
-  assert.equal(c.availableSkillPoints(), 1);
+  assert.equal(c.availableSkillPoints(), base + 1 - 2);
   // 上限封頂
   p.skillMastery.level = c.SKILL_MASTERY_MAX_LEVEL;
   c.gainSkillMasteryXp(999999999);
@@ -405,8 +406,9 @@ test('遷移：舊 skillPointBudget → 熟練度、等級夾回上限、舊融�
   assert.equal(out.player.skills.powerSlash, 10);
   assert.equal(out.player.skills.arcaneBurst, 10);
   assert.equal(out.player.skills.fusion_old1, 10);
-  // 熟練度轉換：max(舊預算 501−2, 夾回後已花費 30−2) = 499；舊欄位移除
-  assert.equal(out.player.skillMastery.level, 499);
+  // 熟練度轉換：max(舊預算 501−基礎, 夾回後已花費 30−基礎)；基礎點數由常數推導，調整初始技能不該讓本測試變紅
+  const expectedMastery = 501 - c.SKILL_POINT_BASE;
+  assert.equal(out.player.skillMastery.level, expectedMastery);
   assert.equal(out.player.skillPointBudget, undefined);
   // 舊融合記錄補 seed，可重建者移除 fx 快照
   const rec = out.player.fusions[0];
@@ -419,7 +421,7 @@ test('遷移：舊 skillPointBudget → 熟練度、等級夾回上限、舊融�
   const seed1 = rec.seed;
   const again = c.migrateSave(out);
   assert.equal(again.player.fusions[0].seed, seed1);
-  assert.equal(again.player.skillMastery.level, 499);
+  assert.equal(again.player.skillMastery.level, expectedMastery);
 });
 
 test('遷移：新帳號（無舊欄位）不受影響；魔法卷軸欄位補 0', () => {

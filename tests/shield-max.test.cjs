@@ -37,8 +37,6 @@ test('shield max is cleared when shield is fully depleted', () => {
   assert.equal(defender.shield, 0);
   assert.equal(defender.shieldMax, 0);
   assert.equal(defender.shieldMaxVersion, context.SHIELD_MAX_VERSION);
-  assert.equal(defender.shieldSkillBase, 0);
-  assert.equal(defender.shieldSkillPct, 0);
 });
 
 test('overheal shield refreshes max from the current shield without lowering high shields', () => {
