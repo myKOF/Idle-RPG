@@ -1,6 +1,6 @@
 {
   "name": "policy-moderate",
-  "description": "中度玩家：每日遊玩4小時。採最佳技能與配裝策略(物理專精+爆擊爆傷詞條+技能融合)，目標全身神話裝+35，詞條70%+首飾保證1鑲嵌/1經驗/1掉寶，金幣充裕升級商店，每20分鐘掃商店+重置2次，10分鐘寶石合成與高塔，主動技能融合。穩定擴背包至500格，採最佳分解策略(自動分解低於身上品質裝備但保留神話及以上供神鑄)，機體提升後衝刺高關(stage.goMax)",
+  "description": "中度玩家：每日遊玩4小時。採最佳技能與配裝策略(物理專精+爆擊爆傷詞條+技能融合)，全身11部位平均強化至+35，詞條70%+首飾保證1鑲嵌/1經驗/1掉寶，金幣充裕升級商店，每20分鐘掃商店+重置2次，10分鐘寶石合成與高塔，主動技能融合。穩定擴背包至500格，採最佳分解策略，史詩以上裝備才洗詞條，機體提升後衝刺高關(stage.goMax)",
   "decideEveryGameSec": 30,
   "dailyActiveHours": 4,
   "needPanels": ["tower", "gems", "newforge", "equip", "skills", "header", "inv"],
@@ -54,53 +54,121 @@
       "cmd": "newforge.setQuality",
       "argsList": [
         { "furnaceId": 1, "rarity": 0, "on": true },
-        { "furnaceId": 1, "rarity": 1, "on": true },
-        { "furnaceId": 1, "rarity": 2, "on": true },
-        { "furnaceId": 1, "rarity": 3, "on": true }
+        { "furnaceId": 1, "rarity": 1, "on": true }
       ],
-      "why": "最佳分解策略：自動分解普通~史詩裝備，保留神話及以上品質裝備供神鑄合成用"
+      "why": "最佳分解策略：開局只分解普通與優良，保留精良與史詩裝備供主角自動替換更高階裝備"
     },
 
     {
-      "id": "upgrade-weapon",
+      "id": "upgrade-all-equips-weapon",
       "everySec": 60,
       "if": [["panels.equip.equipment.weapon", "truthy"]],
       "cmd": "item.upgrade",
       "args": { "itemId": { "$path": "panels.equip.equipment.weapon.id" } },
-      "why": "目標強化至+35：主手武器"
+      "why": "全身平均強化：主手武器"
     },
     {
-      "id": "upgrade-chest",
+      "id": "upgrade-all-equips-chest",
       "everySec": 60,
       "if": [["panels.equip.equipment.chest", "truthy"]],
       "cmd": "item.upgrade",
       "args": { "itemId": { "$path": "panels.equip.equipment.chest.id" } },
-      "why": "目標強化至+35：胸甲"
+      "why": "全身平均強化：胸甲"
+    },
+    {
+      "id": "upgrade-all-equips-helmet",
+      "everySec": 60,
+      "if": [["panels.equip.equipment.helmet", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.helmet.id" } },
+      "why": "全身平均強化：頭盔"
+    },
+    {
+      "id": "upgrade-all-equips-shoulder",
+      "everySec": 60,
+      "if": [["panels.equip.equipment.shoulder", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.shoulder.id" } },
+      "why": "全身平均強化：肩甲"
+    },
+    {
+      "id": "upgrade-all-equips-gloves",
+      "everySec": 60,
+      "if": [["panels.equip.equipment.gloves", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.gloves.id" } },
+      "why": "全身平均強化：手套"
+    },
+    {
+      "id": "upgrade-all-equips-wrist",
+      "everySec": 60,
+      "if": [["panels.equip.equipment.wrist", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.wrist.id" } },
+      "why": "全身平均強化：護腕"
+    },
+    {
+      "id": "upgrade-all-equips-legs",
+      "everySec": 60,
+      "if": [["panels.equip.equipment.legs", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.legs.id" } },
+      "why": "全身平均強化：腿甲"
+    },
+    {
+      "id": "upgrade-all-equips-boots",
+      "everySec": 60,
+      "if": [["panels.equip.equipment.boots", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.boots.id" } },
+      "why": "全身平均強化：靴子"
+    },
+    {
+      "id": "upgrade-all-equips-ring",
+      "everySec": 60,
+      "if": [["panels.equip.equipment.ring", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.ring.id" } },
+      "why": "全身平均強化：戒指"
+    },
+    {
+      "id": "upgrade-all-equips-amulet",
+      "everySec": 60,
+      "if": [["panels.equip.equipment.amulet", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.amulet.id" } },
+      "why": "全身平均強化：項鍊"
     },
 
     {
       "id": "reroll-jewel-amulet",
       "everySec": 300,
-      "if": [["panels.equip.equipment.amulet", "truthy"]],
+      "if": [
+        ["panels.equip.equipment.amulet", "truthy"],
+        ["panels.equip.equipment.amulet.rarity", ">=", 3]
+      ],
       "cmd": "item.rerollAffix",
       "expand": [{ "key": "affixKey", "list": "targetAffixes" }],
       "args": {
         "itemId": { "$path": "panels.equip.equipment.amulet.id" },
         "affixKey": { "$arg": "affixKey" }
       },
-      "why": "最佳技能與配裝策略：詞條以物理加成與爆擊爆傷為主，項鍊保證1條寶石鑲嵌率、1條經驗加成、1條掉寶率詞條"
+      "why": "最佳技能與配裝策略：飾品達到史詩以上才進行洗煉，避免前期吸乾金幣"
     },
     {
       "id": "reroll-jewel-ring",
       "everySec": 300,
-      "if": [["panels.equip.equipment.ring", "truthy"]],
+      "if": [
+        ["panels.equip.equipment.ring", "truthy"],
+        ["panels.equip.equipment.ring.rarity", ">=", 3]
+      ],
       "cmd": "item.rerollAffix",
       "expand": [{ "key": "affixKey", "list": "targetAffixes" }],
       "args": {
         "itemId": { "$path": "panels.equip.equipment.ring.id" },
         "affixKey": { "$arg": "affixKey" }
       },
-      "why": "最佳技能與配裝策略：詞條以物理加成與爆擊爆傷為主，戒指保證1條寶石鑲嵌率、1條經驗加成、1條掉寶率詞條"
+      "why": "最佳技能與配裝策略：戒指達到史詩以上才進行洗煉，避免前期吸乾金幣"
     },
 
     {

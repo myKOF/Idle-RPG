@@ -1,6 +1,6 @@
 {
   "name": "policy-light",
-  "description": "輕度玩家：每日遊玩2小時，其餘離線。採最佳技能與配裝策略(物理專精+爆擊爆傷詞條+技能融合)，強化上限+20，寶石目標全身5級爆傷，不買商店，10分鐘高塔與寶石合成。採最佳分解策略，穩定擴背包至300格，機體提升後衝刺高關(stage.goMax)",
+  "description": "輕度玩家：每日遊玩2小時，其餘離線。採最佳技能與配裝策略(物理專精+爆擊爆傷詞條+技能融合)，全身11部位平均強化至+20，寶石目標全身5級爆傷，不買商店，10分鐘高塔與寶石合成。採最佳分解策略，穩定擴背包至300格，機體提升後衝刺高關(stage.goMax)",
   "decideEveryGameSec": 60,
   "dailyActiveHours": 2,
   "needPanels": ["tower", "gems", "newforge", "equip", "header", "inv"],
@@ -58,20 +58,84 @@
     },
 
     {
-      "id": "upgrade-weapon",
+      "id": "upgrade-all-equips-weapon",
       "everySec": 120,
       "if": [["panels.equip.equipment.weapon", "truthy"]],
       "cmd": "item.upgrade",
       "args": { "itemId": { "$path": "panels.equip.equipment.weapon.id" } },
-      "why": "平均強化至+20：強化主手武器"
+      "why": "全身平均強化：主手武器"
     },
     {
-      "id": "upgrade-chest",
+      "id": "upgrade-all-equips-chest",
       "everySec": 120,
       "if": [["panels.equip.equipment.chest", "truthy"]],
       "cmd": "item.upgrade",
       "args": { "itemId": { "$path": "panels.equip.equipment.chest.id" } },
-      "why": "平均強化至+20：強化胸甲"
+      "why": "全身平均強化：胸甲"
+    },
+    {
+      "id": "upgrade-all-equips-helmet",
+      "everySec": 120,
+      "if": [["panels.equip.equipment.helmet", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.helmet.id" } },
+      "why": "全身平均強化：頭盔"
+    },
+    {
+      "id": "upgrade-all-equips-shoulder",
+      "everySec": 120,
+      "if": [["panels.equip.equipment.shoulder", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.shoulder.id" } },
+      "why": "全身平均強化：肩甲"
+    },
+    {
+      "id": "upgrade-all-equips-gloves",
+      "everySec": 120,
+      "if": [["panels.equip.equipment.gloves", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.gloves.id" } },
+      "why": "全身平均強化：手套"
+    },
+    {
+      "id": "upgrade-all-equips-wrist",
+      "everySec": 120,
+      "if": [["panels.equip.equipment.wrist", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.wrist.id" } },
+      "why": "全身平均強化：護腕"
+    },
+    {
+      "id": "upgrade-all-equips-legs",
+      "everySec": 120,
+      "if": [["panels.equip.equipment.legs", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.legs.id" } },
+      "why": "全身平均強化：腿甲"
+    },
+    {
+      "id": "upgrade-all-equips-boots",
+      "everySec": 120,
+      "if": [["panels.equip.equipment.boots", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.boots.id" } },
+      "why": "全身平均強化：靴子"
+    },
+    {
+      "id": "upgrade-all-equips-ring",
+      "everySec": 120,
+      "if": [["panels.equip.equipment.ring", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.ring.id" } },
+      "why": "全身平均強化：戒指"
+    },
+    {
+      "id": "upgrade-all-equips-amulet",
+      "everySec": 120,
+      "if": [["panels.equip.equipment.amulet", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.amulet.id" } },
+      "why": "全身平均強化：項鍊"
     },
 
     {
