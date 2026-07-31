@@ -89,6 +89,22 @@ P5 之後的檔案所有權慣例（沿用即可，非硬性）：
 
 # 2. Claude Code 任務
 
+## 2.-6 apply_params 場景倍率錨點修正（2026-07-31）
+
+狀態：已完成，等待使用者合併
+
+任務內容：修正 `tools/apply_params.cjs` 對神界場景倍率的跨行錨點搜尋，避免同名 key 同時出現在 `CHAOS_FIELD_DROP_ZONES` 與 `ZONES` 時被誤判為 2 次匹配；補上套用工具回歸測試。
+
+允許修改：`docs/AI_TASKS.md`、`tools/apply_params.cjs`、`tests/apply-params.test.cjs`。
+
+禁止修改：其餘檔案。
+
+驗收方式：`node tools/apply_params.cjs` 顯示 554 一致、0 變更、0 錨點問題；`npm test` 672/672、`npm run build` 192 檔全數通過。
+
+後續接手者：Codex 完成後由使用者合併至整合分支。
+
+---
+
 ## 2.-5 草原前 100 關敵人數量調整（2026-07-31）
 
 狀態：已完成，等待使用者合併

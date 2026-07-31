@@ -95,11 +95,11 @@ function objField(file, keyAnchor, field, cat, name, i, label) {
   });
 }
 // 物件跨行欄位（多行物件內第一個該欄位）
-function objFieldML(file, keyAnchor, field, cat, name, i, label) {
+function objFieldML(file, keyAnchor, field, cat, name, i, label, scopeVar) {
   edits.push({
     file,
     re: new RegExp('(' + esc(keyAnchor) + '[\\s\\S]*?\\b' + esc(field) + ':\\s*)(-?[\\d.]+)'),
-    grp: 2, value: P(cat, name, i), label: (label || keyAnchor) + '.' + field
+    grp: 2, value: P(cat, name, i), label: (label || keyAnchor) + '.' + field, scopeVar: scopeVar
   });
 }
 // 內嵌唯一片段： <prefix><num> —— prefix 需在整檔唯一
@@ -153,11 +153,11 @@ const ZONE_KEYS = {
 };
 Object.keys(ZONE_KEYS).forEach(nm => {
   const a = ZONE_KEYS[nm] + ':';
-  objFieldML('data', a, 'hpMult', '4-場景倍率', nm, 0, '場景-' + nm);
-  objFieldML('data', a, 'atkMult', '4-場景倍率', nm, 1, '場景-' + nm);
-  objFieldML('data', a, 'defMult', '4-場景倍率', nm, 2, '場景-' + nm);
-  objFieldML('data', a, 'aspdMult', '4-場景倍率', nm, 3, '場景-' + nm);
-  objFieldML('data', a, 'rewardMult', '4-場景倍率', nm, 4, '場景-' + nm);
+  objFieldML('data', a, 'hpMult', '4-場景倍率', nm, 0, '場景-' + nm, 'ZONES');
+  objFieldML('data', a, 'atkMult', '4-場景倍率', nm, 1, '場景-' + nm, 'ZONES');
+  objFieldML('data', a, 'defMult', '4-場景倍率', nm, 2, '場景-' + nm, 'ZONES');
+  objFieldML('data', a, 'aspdMult', '4-場景倍率', nm, 3, '場景-' + nm, 'ZONES');
+  objFieldML('data', a, 'rewardMult', '4-場景倍率', nm, 4, '場景-' + nm, 'ZONES');
 });
 
 /* ---- data.js 具名純量常數 ---- */
