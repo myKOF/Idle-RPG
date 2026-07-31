@@ -42,14 +42,38 @@ function functionBody(src, name) {
   throw new Error(`${name}() 的大括號沒有配對成功`);
 }
 
-/* loop() 與 deterministicLoop() 都有一段「每 200ms / 每 N 步跑一次」的維護區塊。
-   兩者呼叫的維護函式必須相同，否則決定論測試模式與正式遊玩會是兩個遊戲。 */
-const CANDIDATES = ['updateShownRes', 'maintainGemShop', 'checkForgeUnlockNotice',
-  'backfillItemSockets', 'emitTick'];
+/* 取出以 marker 開頭那一段大括號區塊（例如 loop() 內的 5Hz 維護區塊）。 */
+function blockAfter(src, marker) {
+  const at = src.indexOf(marker);
+  assert.notEqual(at, -1, `找不到區塊起點：${marker}——sim.worker.js 的結構變了，請同步更新本測試`);
+  const open = src.indexOf('{', at);
+  let depth = 0;
+  for (let i = open; i < src.length; i++) {
+    if (src[i] === '{') depth++;
+    else if (src[i] === '}') {
+      depth--;
+      if (depth === 0) return src.slice(open, i + 1);
+    }
+  }
+  throw new Error(`區塊沒有配對成功：${marker}`);
+}
+
+/* ⚠️ 這裡刻意用**反向比對**（全部呼叫扣掉已知非維護者），不是白名單。
+   白名單只認得清單上的名字，日後新增一支叫別的名字的維護函式會從縫隙溜過去——
+   而那正是本測試存在的唯一理由。要新增例外，必須具名寫進 NOT_MAINTENANCE 並說明理由。 */
+const NOT_MAINTENANCE = new Set([
+  'simStep',        // 推進時間本身，不是維護
+  'emitTick',       // 純 I/O：把快照送給主執行緒
+  'reportError',    // 錯誤處理
+  'requestPersist'  // 存檔落地，屬 I/O
+]);
+
+function maintenanceIn(block) {
+  return [...calledFunctions(block)].filter((fn) => !NOT_MAINTENANCE.has(fn)).sort();
+}
 
 test('模擬器跑齊 loop() 的所有維護函式（新增維護函式時本測試會擋下）', () => {
-  const inLoop = calledFunctions(functionBody(workerSrc, 'loop'));
-  const maintenanceInLoop = CANDIDATES.filter((fn) => inLoop.has(fn) && fn !== 'emitTick');
+  const maintenanceInLoop = maintenanceIn(blockAfter(workerSrc, 'if (now - _lastEmitAt >= TICK_EMIT_MS)'));
 
   assert.deepEqual(
     maintenanceInLoop.slice().sort(),
@@ -63,11 +87,8 @@ test('模擬器跑齊 loop() 的所有維護函式（新增維護函式時本測
 });
 
 test('決定論測試模式與正式迴圈跑同一組維護函式', () => {
-  const inLoop = calledFunctions(functionBody(workerSrc, 'loop'));
-  const inDet = calledFunctions(functionBody(workerSrc, 'deterministicLoop'));
-
-  const a = CANDIDATES.filter((fn) => inLoop.has(fn)).sort();
-  const b = CANDIDATES.filter((fn) => inDet.has(fn)).sort();
+  const a = maintenanceIn(blockAfter(workerSrc, 'if (now - _lastEmitAt >= TICK_EMIT_MS)'));
+  const b = maintenanceIn(blockAfter(workerSrc, 'if (_detSteps % Math.round(TICK_EMIT_MS / TICK_MS)'));
 
   assert.deepEqual(b, a,
     '\ndeterministicLoop() 與 loop() 的維護區塊不一致。' +

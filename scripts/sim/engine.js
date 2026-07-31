@@ -35,7 +35,7 @@ const WORKER_DIR = path.join(ROOT, 'js', 'worker');
    ⚠️ 有人在 loop() 加第四支維護函式而沒有加到這裡，這裡就會與遊戲不同步。
    tests/sim-harness-sync.test.cjs 會盯住這件事：它比對 sim.worker.js 兩個迴圈區塊
    實際呼叫的函式集合與本清單，不一致就讓 npm test 紅燈。 */
-const MAINTENANCE_FNS = ['updateShownRes', 'maintainGemShop', 'checkForgeUnlockNotice'];
+const MAINTENANCE_FNS = ['updateShownRes', 'maintainGemShop', 'checkForgeUnlockNotice', 'markCombatDirty'];
 
 /* 模擬起點的真實時間戳。固定值而非 Date.now()，否則同 seed 兩次跑會因為
    savedAt / hourStart 不同而產生不同存檔——決定論就沒了。 */
