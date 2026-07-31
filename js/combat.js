@@ -398,7 +398,7 @@ function monsterDefCfg(m) {
 }
 
 /* ---- 治療公式 healPlayer → js/formula.js §3 ----
-   戰鬥端的回復（吸血／汲取／擊殺回復／吸魂）皆為非技能來源，一律以 { noShield: true } 呼叫，
+   戰鬥端的回復（吸血／汲取／過關回復／吸魂）皆為非技能來源，一律以 { noShield: true } 呼叫，
    溢出不再轉護盾，因此不需要「溢出轉護盾」的浮動字提示（技能路徑用 skills.js 的
    showPlayerShieldGainAfterHeal）。 */
 
@@ -783,6 +783,15 @@ function fieldTick(dt) {
 function completeFieldWave(st) {
     if (!FIELD._waveClearPending) return;
     FIELD._waveClearPending = false;
+    /* 過關回復：整波敵人清空時回復 WAVE_CLEAR_HEAL_PCT% 最大生命。
+       非技能來源，溢出直接捨棄不轉護盾（與每秒回復／吸血同一類）。
+
+       綁在「清空整波」而不是「stage.current++」：自動推進關閉時關卡不會前進，
+       綁在推進上會變成「關掉自動推進就永遠不回血」，那不是玩家預期的行為。
+       高塔走另一條結算路徑，不經過這裡，維持零回復的爆發戰設計。 */
+    if (FIELD.player) {
+        healPlayer(FIELD.player, st.hp * WAVE_CLEAR_HEAL_PCT / 100, st, { noShield: true });
+    }
     G.stage.kills++;
     if (window.recordLootBattle) window.recordLootBattle('field'); // 整波敵人清空 = 一場戰鬥
     // 移動速度：縮短推圖間隔；只有整波敵人全部擊殺且死亡資訊清除後才進入下一波。
@@ -807,8 +816,8 @@ function onFieldKill(m) {
     if (typeof legendaryOnEnemyKill === 'function') legendaryOnEnemyKill(FIELD.player);
     m._deathClearCd = FIELD_ENEMY_DEATH_CLEAR_DELAY;
     var st = getStats();
-    // 擊殺回復 KILL_HEAL_PCT% 最大生命（非技能效果：溢出不轉護盾）
-    healPlayer(FIELD.player, st.hp * KILL_HEAL_PCT / 100, st, { noShield: true });
+    /* 2026-08：擊殺回復（每殺一隻回 12%）已移除，改為整波清空回復一次
+       （見 completeFieldWave 的 WAVE_CLEAR_HEAL_PCT）。 */
     // 吸魂（神鑄特效；非技能效果：溢出不轉護盾）
     if ((st.passives.soulEater || 0) > 0) {
         healPlayer(FIELD.player, st.hp * st.passives.soulEater / 100, st, { noShield: true });
