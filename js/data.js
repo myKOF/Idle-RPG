@@ -447,7 +447,7 @@ var PRIMARY_STAT_EFFECTS = {
   agiAspdPct: 0,
   agiEvasion: 0.0000035,
   intMp: 2,
-  intMpRegen: 0.002,
+  intMpRegen: 0.004,
   intMatk: 1,
   intMdef: 0.35,
   vitHp: 10,
@@ -1346,10 +1346,10 @@ function gemShopPrice(lv) { // 商店標價：查上方 GEM_SHOP_TABLE（刷新�
    每個品質獨立擲骰（可同時掉多件）；機率 >100%：必掉 floor(p/100) 件，餘數為再掉 1 件的機率。
    rates 索引 = 品質 0~7（普通~創世）。 */
 var FIELD_DROP_TABLE = [   // 野外：依怪物等級
-  { min: 150, rates: [50, 40, 30, 10, 5, 2, 0.05, 0] },
+  { min: 150, rates: [50, 40, 30, 15, 5, 2, 0.05, 0] },
   { min: 100, rates: [40, 30, 20, 10, 2.5, 1, 0, 0] },
-  { min: 50, rates: [35, 20, 15, 5, 0.5, 0, 0, 0] },
-  { min: 1, rates: [25, 15, 10, 0, 0, 0, 0, 0] }
+  { min: 50, rates: [35, 20, 15, 10, 0.5, 0, 0, 0] },
+  { min: 1, rates: [25, 15, 10, 7, 0, 0, 0, 0] }
 ];
 var FIELD_GEM_DROP_TABLE = [ // 野外寶石：依怪物等級，各階級獨立判定
   { min: 301, rates: [14, 2.3, 0.8, 0.4, 0.3] },

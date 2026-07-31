@@ -287,7 +287,7 @@ function computeStats(equipmentOverride) {
   st.base.mp = 40 + rawInt * PRIMARY_STAT_EFFECTS.intMp;
   var rawMp = st.base.mp + A.mpFlat;
   st.mp = Math.round(rawMp * reincMult);
-  st.mpRegen = 2 + st.int * PRIMARY_STAT_EFFECTS.intMpRegen + A.mpRegen;
+  st.mpRegen = 5 + st.int * PRIMARY_STAT_EFFECTS.intMpRegen + A.mpRegen;
   // 進攻／防禦定值的轉生指數強化：flatMult × 定值 × reincBase^轉生次數（0 轉時 = flatMult×定值）
   var reincN = reincarnationCount();
   st.reincFlatBonus = {
