@@ -918,8 +918,8 @@ function monsterStatsFor(stage, elite, boss) {
   var hp = (30 + stage * 20) * Math.pow(1.06, stage - 1);
   var atk = (3 + stage * 5) * Math.pow(1.055, stage - 1);
   var def = (2 + stage * 0.5) * Math.pow(1.06, stage - 1);
-  var gold = (125 + stage) * Math.pow(1.018, stage - 1);
-  var xp = (16 + stage) * Math.pow(1.06, stage - 1);
+  var gold = (250 + stage) * Math.pow(1.018, stage - 1);
+  var xp = (60 + stage) * Math.pow(1.06, stage - 1);
   var m = {
     level: stage, hp: hp, atk: atk,
     def: def,                 // 物理防禦
@@ -1552,7 +1552,7 @@ function loadoutSize() {
 
 // 技能升級金幣費用 = 20000 × 當前等級 + 20^(1 + 當前等級/10)
 function skillUpgradeCost(lv) {
-  var cost = Math.floor(5000 * lv + Math.pow(20, 1 + lv / 10));
+  var cost = Math.floor(1000 * lv + Math.pow(20, 1 + lv / 10));
   return Math.min(5000000, cost);
 }
 
