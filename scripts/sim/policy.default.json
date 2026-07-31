@@ -51,6 +51,29 @@
       "why": "每個部位換上背包裡評分最高且優於身上那件的裝備。評分是遊戲的 itemScore，策略只挑最大值。遊戲的自動裝備只填空格不做替換（js/player.js:313），不補這條就會穿著開場的普通裝打到底"
     },
     {
+      "id": "upgrade-by-rarity-cap",
+      "everySec": 30,
+      "cmd": "item.upgrade",
+      "why": "依品質分配強化資源：R0/R1 不強化，R2→+6，R3→+11，R4→+17，之後每階 +6；身上最高品質不設上限。低階裝要強到打得動下一段關卡（推不過去就掉不到好裝），但不能把材料砸在遲早換掉的裝備上——換掉時強化等級會一起消失",
+      "upgradePriority": {
+        "equippedRarities": "panels.inv.equipmentRarities",
+        "equipment": "panels.inv.equipment",
+        "capByRarity": [
+          0,
+          0,
+          6,
+          11,
+          17,
+          23,
+          29,
+          35,
+          41,
+          47,
+          53
+        ]
+      }
+    },
+    {
       "id": "auto-equip-on",
       "once": true,
       "cmd": "factory.setAutoEquip",
@@ -85,40 +108,6 @@
         }
       ],
       "why": "只拆解普通與優良。稀有以上要留在背包當換裝候選——遊戲的自動裝備只填空格不做替換（js/player.js:313），全拆掉等於把換裝的來源砍光，角色會被鎖死在開場隨便填進去的裝備"
-    },
-    {
-      "id": "upgrade-weapon",
-      "everySec": 30,
-      "if": [
-        [
-          "panels.equip.equipment.weapon",
-          "truthy"
-        ]
-      ],
-      "cmd": "item.upgrade",
-      "args": {
-        "itemId": {
-          "$path": "panels.equip.equipment.weapon.id"
-        }
-      },
-      "why": "強化主手武器"
-    },
-    {
-      "id": "upgrade-chest",
-      "everySec": 30,
-      "if": [
-        [
-          "panels.equip.equipment.chest",
-          "truthy"
-        ]
-      ],
-      "cmd": "item.upgrade",
-      "args": {
-        "itemId": {
-          "$path": "panels.equip.equipment.chest.id"
-        }
-      },
-      "why": "強化胸甲"
     },
     {
       "id": "learn-skills",

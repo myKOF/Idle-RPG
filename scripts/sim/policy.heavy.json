@@ -3,21 +3,69 @@
   "description": "重度玩家：每日遊玩8小時。採最佳技能與配裝策略(物理+吸血續戰+爆擊爆傷詞條+技能融合)，equip-best-per-slot自動換裝，全身11部位平均強化至+50，詞條75%+2太古+首飾保證2鑲嵌/2經驗/2掉寶+3菁英傷，金幣充裕升級商店，每20分鐘掃商店+重置5次，優先潛力技能與技能融合，階梯式點滿轉生天賦。穩定擴背包至700格，R0~R1自動拆解，史詩以上裝備洗詞條",
   "decideEveryGameSec": 15,
   "dailyActiveHours": 8,
-  "needPanels": ["tower", "gems", "newforge", "equip", "skills", "talents", "header", "inv"],
+  "needPanels": [
+    "tower",
+    "gems",
+    "newforge",
+    "equip",
+    "skills",
+    "talents",
+    "header",
+    "inv"
+  ],
   "lists": {
     "skillPriority": [
-      "vampirism", "healWound", "secondWind", "regenerate", "powerSlash",
-      "doubleStrike", "sharpBlade", "toughness", "whirlwind", "swiftness",
-      "armorBreak", "arcaneMind", "ironWall", "executeStrike", "berserkStrike",
-      "rendWound", "brutality", "keenEye", "meditation", "stunBlow"
+      "vampirism",
+      "healWound",
+      "secondWind",
+      "regenerate",
+      "powerSlash",
+      "doubleStrike",
+      "sharpBlade",
+      "toughness",
+      "whirlwind",
+      "swiftness",
+      "armorBreak",
+      "arcaneMind",
+      "ironWall",
+      "executeStrike",
+      "berserkStrike",
+      "rendWound",
+      "brutality",
+      "keenEye",
+      "meditation",
+      "stunBlow"
     ],
     "talentStep1": [
-      "t1_str", "t1_agi", "t1_int", "t1_vit", "t1_def", "t1_mdef", "t1_pres", "t1_mres"
+      "t1_str",
+      "t1_agi",
+      "t1_int",
+      "t1_vit",
+      "t1_def",
+      "t1_mdef",
+      "t1_pres",
+      "t1_mres"
     ],
     "talentStep2": [
-      "t2_crit", "t2_critdmg", "t2_hit", "t2_hp", "t2_shield", "t2_evasion", "t2_normalred", "t2_elitered"
+      "t2_crit",
+      "t2_critdmg",
+      "t2_hit",
+      "t2_hp",
+      "t2_shield",
+      "t2_evasion",
+      "t2_normalred",
+      "t2_elitered"
     ],
-    "targetAffixes": ["patk", "lifesteal", "critDmg", "crit", "gemEff", "xpGain", "dropRate", "eliteDmg"]
+    "targetAffixes": [
+      "patk",
+      "lifesteal",
+      "critDmg",
+      "crit",
+      "gemEff",
+      "xpGain",
+      "dropRate",
+      "eliteDmg"
+    ]
   },
   "rules": [
     {
@@ -31,28 +79,59 @@
       "why": "每個部位換上背包裡評分最高且優於身上那件的裝備"
     },
     {
+      "id": "upgrade-by-rarity-cap",
+      "everySec": 30,
+      "cmd": "item.upgrade",
+      "why": "依品質分配強化資源：R0/R1 不強化，R2→+6，R3→+11，R4→+17，之後每階 +6；身上最高品質不設上限。低階裝要強到打得動下一段關卡（推不過去就掉不到好裝），但不能把材料砸在遲早換掉的裝備上——換掉時強化等級會一起消失",
+      "upgradePriority": {
+        "equippedRarities": "panels.inv.equipmentRarities",
+        "equipment": "panels.inv.equipment",
+        "capByRarity": [
+          0,
+          0,
+          6,
+          11,
+          17,
+          23,
+          29,
+          35,
+          41,
+          47,
+          53
+        ]
+      }
+    },
+    {
       "id": "auto-equip-on",
       "once": true,
       "cmd": "factory.setAutoEquip",
-      "args": { "on": true },
+      "args": {
+        "on": true
+      },
       "why": "品質高優先穿：開啟自動換裝"
     },
     {
       "id": "auto-advance-init-on",
       "everySec": 15,
       "cmd": "stage.setAutoAdvance",
-      "args": { "on": true },
+      "args": {
+        "on": true
+      },
       "why": "持續保持自動推關勾選狀態"
     },
-
     {
       "id": "buy-inv-upgrade",
       "everySec": 300,
-      "if": [["panels.inv.cap", "<", 700]],
+      "if": [
+        [
+          "panels.inv.cap",
+          "<",
+          700
+        ]
+      ],
       "cmd": "player.buyInvUpgrade",
       "why": "背包策略：穩定將背包逐步解鎖至700格"
     },
-
     {
       "id": "add-furnace-max",
       "everySec": 900,
@@ -64,105 +143,47 @@
       "once": true,
       "cmd": "newforge.setQuality",
       "argsList": [
-        { "furnaceId": 1, "rarity": 0, "on": true },
-        { "furnaceId": 1, "rarity": 1, "on": true }
+        {
+          "furnaceId": 1,
+          "rarity": 0,
+          "on": true
+        },
+        {
+          "furnaceId": 1,
+          "rarity": 1,
+          "on": true
+        }
       ],
       "why": "只拆解普通與優良(R0~R1)，稀有以上保留在背包當換裝候選"
     },
-
-    {
-      "id": "upgrade-all-equips-weapon",
-      "everySec": 30,
-      "if": [["panels.equip.equipment.weapon", "truthy"]],
-      "cmd": "item.upgrade",
-      "args": { "itemId": { "$path": "panels.equip.equipment.weapon.id" } },
-      "why": "全身平均強化：主手武器"
-    },
-    {
-      "id": "upgrade-all-equips-chest",
-      "everySec": 30,
-      "if": [["panels.equip.equipment.chest", "truthy"]],
-      "cmd": "item.upgrade",
-      "args": { "itemId": { "$path": "panels.equip.equipment.chest.id" } },
-      "why": "全身平均強化：胸甲"
-    },
-    {
-      "id": "upgrade-all-equips-helmet",
-      "everySec": 30,
-      "if": [["panels.equip.equipment.helmet", "truthy"]],
-      "cmd": "item.upgrade",
-      "args": { "itemId": { "$path": "panels.equip.equipment.helmet.id" } },
-      "why": "全身平均強化：頭盔"
-    },
-    {
-      "id": "upgrade-all-equips-shoulder",
-      "everySec": 30,
-      "if": [["panels.equip.equipment.shoulder", "truthy"]],
-      "cmd": "item.upgrade",
-      "args": { "itemId": { "$path": "panels.equip.equipment.shoulder.id" } },
-      "why": "全身平均強化：肩甲"
-    },
-    {
-      "id": "upgrade-all-equips-gloves",
-      "everySec": 30,
-      "if": [["panels.equip.equipment.gloves", "truthy"]],
-      "cmd": "item.upgrade",
-      "args": { "itemId": { "$path": "panels.equip.equipment.gloves.id" } },
-      "why": "全身平均強化：手套"
-    },
-    {
-      "id": "upgrade-all-equips-wrist",
-      "everySec": 30,
-      "if": [["panels.equip.equipment.wrist", "truthy"]],
-      "cmd": "item.upgrade",
-      "args": { "itemId": { "$path": "panels.equip.equipment.wrist.id" } },
-      "why": "全身平均強化：護腕"
-    },
-    {
-      "id": "upgrade-all-equips-legs",
-      "everySec": 30,
-      "if": [["panels.equip.equipment.legs", "truthy"]],
-      "cmd": "item.upgrade",
-      "args": { "itemId": { "$path": "panels.equip.equipment.legs.id" } },
-      "why": "全身平均強化：腿甲"
-    },
-    {
-      "id": "upgrade-all-equips-boots",
-      "everySec": 30,
-      "if": [["panels.equip.equipment.boots", "truthy"]],
-      "cmd": "item.upgrade",
-      "args": { "itemId": { "$path": "panels.equip.equipment.boots.id" } },
-      "why": "全身平均強化：靴子"
-    },
-    {
-      "id": "upgrade-all-equips-ring",
-      "everySec": 30,
-      "if": [["panels.equip.equipment.ring", "truthy"]],
-      "cmd": "item.upgrade",
-      "args": { "itemId": { "$path": "panels.equip.equipment.ring.id" } },
-      "why": "全身平均強化：戒指"
-    },
-    {
-      "id": "upgrade-all-equips-amulet",
-      "everySec": 30,
-      "if": [["panels.equip.equipment.amulet", "truthy"]],
-      "cmd": "item.upgrade",
-      "args": { "itemId": { "$path": "panels.equip.equipment.amulet.id" } },
-      "why": "全身平均強化：項鍊"
-    },
-
     {
       "id": "reroll-jewel-amulet",
       "everySec": 150,
       "if": [
-        ["panels.equip.equipment.amulet", "truthy"],
-        ["panels.equip.equipment.amulet.rarity", ">=", 3]
+        [
+          "panels.equip.equipment.amulet",
+          "truthy"
+        ],
+        [
+          "panels.equip.equipment.amulet.rarity",
+          ">=",
+          3
+        ]
       ],
       "cmd": "item.rerollAffix",
-      "expand": [{ "key": "affixKey", "list": "targetAffixes" }],
+      "expand": [
+        {
+          "key": "affixKey",
+          "list": "targetAffixes"
+        }
+      ],
       "args": {
-        "itemId": { "$path": "panels.equip.equipment.amulet.id" },
-        "affixKey": { "$arg": "affixKey" }
+        "itemId": {
+          "$path": "panels.equip.equipment.amulet.id"
+        },
+        "affixKey": {
+          "$arg": "affixKey"
+        }
       },
       "why": "飾品達到史詩以上才進行洗煉，加入吸血lifesteal詞條提升續戰力"
     },
@@ -170,30 +191,55 @@
       "id": "reroll-jewel-ring",
       "everySec": 150,
       "if": [
-        ["panels.equip.equipment.ring", "truthy"],
-        ["panels.equip.equipment.ring.rarity", ">=", 3]
+        [
+          "panels.equip.equipment.ring",
+          "truthy"
+        ],
+        [
+          "panels.equip.equipment.ring.rarity",
+          ">=",
+          3
+        ]
       ],
       "cmd": "item.rerollAffix",
-      "expand": [{ "key": "affixKey", "list": "targetAffixes" }],
+      "expand": [
+        {
+          "key": "affixKey",
+          "list": "targetAffixes"
+        }
+      ],
       "args": {
-        "itemId": { "$path": "panels.equip.equipment.ring.id" },
-        "affixKey": { "$arg": "affixKey" }
+        "itemId": {
+          "$path": "panels.equip.equipment.ring.id"
+        },
+        "affixKey": {
+          "$arg": "affixKey"
+        }
       },
       "why": "戒指達到史詩以上才進行洗煉，加入吸血lifesteal詞條提升續戰力"
     },
-
     {
       "id": "learn-potential-talents",
       "everySec": 30,
       "cmd": "talent.potentialUpgrade",
-      "expand": [{ "key": "id", "list": "skillPriority" }],
+      "expand": [
+        {
+          "key": "id",
+          "list": "skillPriority"
+        }
+      ],
       "why": "潛力技能解鎖後優先潛力技能升級"
     },
     {
       "id": "learn-skills",
       "everySec": 15,
       "cmd": "skill.learn",
-      "expand": [{ "key": "id", "list": "skillPriority" }],
+      "expand": [
+        {
+          "key": "id",
+          "list": "skillPriority"
+        }
+      ],
       "why": "集中升級吸血與回復技能(vampirism, healWound, secondWind, regenerate)及物理攻擊技能"
     },
     {
@@ -202,22 +248,30 @@
       "cmd": "skill.fuse",
       "why": "主動使用技能融合以強化技能"
     },
-
     {
       "id": "talent-upgrade-step1",
       "everySec": 60,
       "cmd": "talent.upgrade",
-      "expand": [{ "key": "id", "list": "talentStep1" }],
+      "expand": [
+        {
+          "key": "id",
+          "list": "talentStep1"
+        }
+      ],
       "why": "天賦策略：優先將1轉天賦全點滿"
     },
     {
       "id": "talent-upgrade-step2",
       "everySec": 60,
       "cmd": "talent.upgrade",
-      "expand": [{ "key": "id", "list": "talentStep2" }],
+      "expand": [
+        {
+          "key": "id",
+          "list": "talentStep2"
+        }
+      ],
       "why": "天賦策略：再將2轉天賦全點滿"
     },
-
     {
       "id": "gem-shop-buy-1",
       "everySec": 1200,
@@ -241,18 +295,40 @@
       "everySec": 600,
       "cmd": "gem.composeAll",
       "expand": [
-        { "key": "type", "path": "panels.gems.gems" },
-        { "key": "level", "values": [1, 2, 3, 4, 5, 6, 7, 8, 9] }
+        {
+          "key": "type",
+          "path": "panels.gems.gems"
+        },
+        {
+          "key": "level",
+          "values": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ]
+        }
       ],
       "why": "每10分鐘自動向上合成達10級寶石"
     },
-
     {
       "id": "tower-auto",
       "everySec": 1200,
       "cmd": "tower.startAuto",
       "args": {
-        "floor": { "$add": [{ "$path": "panels.tower.tower.highest" }, 1] },
+        "floor": {
+          "$add": [
+            {
+              "$path": "panels.tower.tower.highest"
+            },
+            1
+          ]
+        },
         "count": 1
       },
       "why": "每20分鐘嘗試一次BOSS高塔挑戰"
@@ -260,7 +336,12 @@
     {
       "id": "tower-finish-if-needed",
       "everySec": 30,
-      "if": [["panels.tower.tower.active", "truthy"]],
+      "if": [
+        [
+          "panels.tower.tower.active",
+          "truthy"
+        ]
+      ],
       "cmd": "tower.finish",
       "why": "高塔挑戰結束後回到一般場景戰鬥繼續遊玩"
     }

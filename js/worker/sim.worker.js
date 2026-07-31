@@ -452,6 +452,11 @@ function inventoryCellView(it) {
      暴露出來之後，模擬器的策略層才能像玩家一樣「看數字挑最好的穿」，
      而不需要自己實作一套強弱比較。 */
   out.score = (typeof itemScore === 'function') ? itemScore(it) : 0;
+  /* 這件裝備可以裝在哪些部位（js/data.js:346 的 equipSlotsForItem）。
+     不能靠「把部位鍵結尾的數字去掉」來推：雙手武器的合法部位只有 weapon，
+     推出來的 weapon2 會讓遊戲為了騰出副手而把主手卸下（js/player.js:291），
+     結果主手變空、武器躺在副手。哪件能裝哪裡是遊戲的規則，讓遊戲自己講。 */
+  out.slots = (typeof equipSlotsForItem === 'function') ? equipSlotsForItem(it) : [];
   return out;
 }
 
