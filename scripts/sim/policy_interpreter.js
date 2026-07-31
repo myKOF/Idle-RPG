@@ -306,6 +306,64 @@ function decide(state, policy, memo) {
           out.push({ name: r.cmd, args: { itemId: sItem.id, type: pick }, ruleId: r.id });
         }
       }
+    } else if (r.convertToPreferred) {
+      /* 把不在當前偏好段的寶石轉成偏好種類（九宮格轉換）。
+
+         為什麼需要：偏好種類只佔 40 種寶石裡的 5~7 種，掉落又是隨機的，
+         所以光靠「挑有貨的鑲」永遠補不滿——實測 3 小時後身上偏好種類只有 5/20 顆，
+         其餘全是掉到什麼算什麼。轉換在遊戲裡是同階 1:1、數量不變、不花金幣
+         （convertGems，js/item.js），所以這是把既有庫存重新分配，不是憑空生資源。
+
+         排在合成之前：轉換讓同一種類的數量集中，合成才有 3 顆可併，
+         鑲上去的階級也才會跟著上去。
+
+         ⚠️ maxSlots / maxPerSlot 是遊戲的九宮格上限（GEM_CONVERT_SLOTS /
+         GEM_CONVERT_STACK），寫在策略資料裡；超過的話 convertGems 會在動手前
+         整批回絕——一格超標就整批白做，而且不會有徵兆。
+         tests/policy-keys.test.cjs 有哨兵盯著這兩個值不得超過遊戲的上限。 */
+      var cCfg = r.convertToPreferred;
+      var cGems = pathVal(state, cCfg.gems) || {};
+      var cBand = bandGroups(pickBand(state, cCfg.preferByLevel, cCfg.levelPath), cCfg.preferTypes);
+
+      if (cBand.flat.length) {
+        var maxSlots = cCfg.maxSlots || 9;
+        var maxPerSlot = cCfg.maxPerSlot || 1000;
+        var maxCommands = cCfg.maxCommands || 4;
+
+        /* 雜牌＝有貨但不在當前偏好段的種類。轉換是同階進行的，
+           所以每個 (種類, 階級) 各佔一格。 */
+        var junk = [];
+        for (var jt in cGems) {
+          if (cBand.set[jt]) continue;
+          for (var jl in cGems[jt]) {
+            var jn = Number(cGems[jt][jl]) || 0;
+            var jlv = Number(jl);
+            if (jn > 0 && jlv >= 1) junk.push({ type: jt, lv: jlv, n: Math.min(jn, maxPerSlot) });
+          }
+        }
+
+        /* 目標在偏好種類之間輪流分配。全部轉成同一種的話，101 段那個
+           「一半爆傷、一半六大屬性傷害加成」會被轉成清一色爆傷。 */
+        var buckets = {}, order = [];
+        for (var ji = 0; ji < junk.length; ji++) {
+          var tgt = cBand.flat[ji % cBand.flat.length];
+          if (!buckets[tgt]) { buckets[tgt] = []; order.push(tgt); }
+          buckets[tgt].push(junk[ji]);
+        }
+
+        var emitted = 0;
+        for (var oi = 0; oi < order.length && emitted < maxCommands; oi++) {
+          var bSlots = buckets[order[oi]];
+          for (var off = 0; off < bSlots.length && emitted < maxCommands; off += maxSlots) {
+            out.push({
+              name: r.cmd,
+              args: { slots: bSlots.slice(off, off + maxSlots), targetType: order[oi] },
+              ruleId: r.id
+            });
+            emitted++;
+          }
+        }
+      }
     } else if (r.unsocketOffPriority) {
       /* 把不符合當前偏好段、或階級低於庫存最高階的寶石拆下來，讓 socket-gems 重鑲。
 

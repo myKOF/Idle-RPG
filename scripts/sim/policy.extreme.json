@@ -184,6 +184,57 @@
       }
     },
     {
+      "id": "gem-convert",
+      "everySec": 60,
+      "cmd": "gem.convert",
+      "convertToPreferred": {
+        "gems": "panels.gems.gems",
+        "levelPath": "view.level",
+        "preferByLevel": [
+          {
+            "maxLevel": 50,
+            "types": [
+              "topaz",
+              "amethyst",
+              "onyx",
+              "ruby",
+              "sapphire"
+            ]
+          },
+          {
+            "maxLevel": 100,
+            "types": [
+              "onyx",
+              "amethyst",
+              "garnet",
+              "topaz",
+              "ruby",
+              "sapphire"
+            ]
+          },
+          {
+            "mix": [
+              [
+                "garnet"
+              ],
+              [
+                "coreFire",
+                "coreIce",
+                "coreLightning",
+                "corePoison",
+                "coreLight",
+                "coreDark"
+              ]
+            ]
+          }
+        ],
+        "maxSlots": 9,
+        "maxPerSlot": 1000,
+        "maxCommands": 4
+      },
+      "why": "把不在當前偏好段的寶石同階轉成偏好種類。偏好種類只佔 40 種寶石裡的 5~7 種、掉落又隨機，光靠「挑有貨的鑲」永遠補不滿（實測 3 小時偏好種類只有 5/20 顆）。轉換在遊戲裡同階 1:1、數量不變、不花金幣（convertGems），是既有庫存的重新分配。排在 gem-compose 之前：先把同種類集中起來，合成才有 3 顆可併，鑲上去的階級才會跟著上去。目標在偏好種類間輪流分配，否則 101 段的「一半爆傷、一半屬性」會被轉成清一色爆傷。maxSlots/maxPerSlot 對應遊戲的 GEM_CONVERT_SLOTS/GEM_CONVERT_STACK，超過會整批被回絕"
+    },
+    {
       "id": "gem-compose",
       "everySec": 60,
       "cmd": "gem.composeAll",

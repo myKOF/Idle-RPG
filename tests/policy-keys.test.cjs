@@ -116,6 +116,36 @@ test('分段設定的最後一段必須是無上限的 catch-all', () => {
   }
 });
 
+test('寶石轉換的九宮格上限不得超過遊戲的上限', () => {
+  /* convertGems 是先驗證整批、任一格超標就整批回絕（js/item.js），
+     所以超標不是「多的那格失敗」，而是那次轉換完全沒發生——而且不會有徵兆。
+     這兩個值寫在策略資料裡是為了讓引擎不內建遊戲常數，代價就是要有這支哨兵。 */
+  for (const f of POLICY_FILES) {
+    for (const rule of loadPolicy(f).rules) {
+      const cfg = rule.convertToPreferred;
+      if (!cfg) continue;
+      assert.ok(cfg.maxSlots <= ctx.GEM_CONVERT_SLOTS,
+        `${f} 規則 ${rule.id} 的 maxSlots=${cfg.maxSlots} 超過遊戲的 GEM_CONVERT_SLOTS=${ctx.GEM_CONVERT_SLOTS}`);
+      assert.ok(cfg.maxPerSlot <= ctx.GEM_CONVERT_STACK,
+        `${f} 規則 ${rule.id} 的 maxPerSlot=${cfg.maxPerSlot} 超過遊戲的 GEM_CONVERT_STACK=${ctx.GEM_CONVERT_STACK}`);
+    }
+  }
+});
+
+test('寶石規則的順序：轉換 → 合成 → 換下 → 鑲嵌', () => {
+  /* 這條產線是靠**規則順序**成立的，不是靠參數，順序反了不會報錯：
+     先合成再轉換 → 合成時同種類還沒集中，湊不到 3 顆；
+     先鑲嵌再合成 → 鑲上的是沒合成過的低階寶石（socketGem 取庫存最高階）。 */
+  const CHAIN = ['gem-convert', 'gem-compose', 'unsocket-off-priority', 'socket-gems'];
+  for (const f of POLICY_FILES) {
+    const ids = loadPolicy(f).rules.map((r) => r.id);
+    const pos = CHAIN.map((id) => ids.indexOf(id)).filter((i) => i >= 0);
+    const sorted = pos.slice().sort((a, b) => a - b);
+    assert.deepEqual(pos, sorted,
+      `${f} 的寶石規則順序不是「${CHAIN.join(' → ')}」（目前索引 ${pos.join(', ')}）`);
+  }
+});
+
 test('合成寶石必須排在鑲嵌之前（先合成才鑲得到最高品質）', () => {
   /* socketGem() 取的是庫存中最高階的那顆（js/item.js），
      所以「鑲寶石前先向上合成」這條策略是靠**規則順序**實現的，不是靠參數。

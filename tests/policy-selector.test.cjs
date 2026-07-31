@@ -268,6 +268,60 @@ test('換下寶石：replaceWith 讓拆與補在同一決策點成對送出', ()
     'topaz 只有 1 顆，第二個雜牌就補不到偏好種類，必須放著不動而不是拆掉');
 });
 
+/* ---- 寶石轉換 ----
+   偏好種類只佔 40 種寶石裡的少數，掉落又隨機，所以「挑有貨的鑲」永遠補不滿。
+   轉換在遊戲裡是同階 1:1、數量不變、不花金幣，是既有庫存的重新分配。 */
+
+const CONVERT_RULE = {
+  id: 'conv', cmd: 'gem.convert',
+  convertToPreferred: {
+    gems: 'panels.gems.gems', levelPath: 'view.level',
+    maxSlots: 9, maxPerSlot: 1000, maxCommands: 4,
+    preferByLevel: [{ maxLevel: 50, types: ['topaz'] }, { mix: [['garnet'], ['coreFire']] }]
+  }
+};
+
+function convState(level, gems) {
+  return { gameTimeSec: 100, view: { level }, panels: { gems: { gems } } };
+}
+
+test('轉換寶石：雜牌逐 (種類,階級) 成格，偏好種類不動', () => {
+  const p = makePolicy([CONVERT_RULE]);
+  const cmds = p.decide(convState(10, {
+    catseye: { 1: 4, 3: 2 }, opal: { 1: 1 },
+    topaz: { 1: 9 },          // 已是偏好種類，不該被轉走
+    onyx: { 1: 0 }            // 沒貨
+  }));
+  assert.equal(cmds.length, 1);
+  assert.equal(cmds[0].args.targetType, 'topaz');
+  assert.deepEqual(cmds[0].args.slots, [
+    { type: 'catseye', lv: 1, n: 4 },
+    { type: 'catseye', lv: 3, n: 2 },
+    { type: 'opal', lv: 1, n: 1 }
+  ], '轉換是同階進行的，所以每個 (種類, 階級) 各佔一格；偏好種類與零庫存都不入格');
+});
+
+test('轉換寶石：目標在偏好種類之間輪流，不會轉成清一色', () => {
+  const p = makePolicy([CONVERT_RULE]);
+  const cmds = p.decide(convState(101, { catseye: { 1: 3 }, opal: { 1: 3 }, jade: { 1: 3 } }));
+  assert.deepEqual(cmds.map((c) => c.args.targetType).sort(), ['coreFire', 'garnet'],
+    '101 段是「一半爆傷、一半屬性」，全轉成同一種會把那個一半一半毀掉');
+});
+
+test('轉換寶石：單格數量與單次格數都不得超過遊戲上限', () => {
+  const p = makePolicy([Object.assign({}, CONVERT_RULE, {
+    convertToPreferred: Object.assign({}, CONVERT_RULE.convertToPreferred, { maxSlots: 2, maxPerSlot: 5 })
+  })]);
+  const cmds = p.decide(convState(10, {
+    catseye: { 1: 900 }, opal: { 1: 3 }, jade: { 1: 3 }, agate: { 1: 3 }
+  }));
+  assert.equal(cmds[0].args.slots[0].n, 5, '單格數量要夾在上限內');
+  for (const c of cmds) {
+    assert.ok(c.args.slots.length <= 2, '單次格數不得超過上限——一格超標整批就被回絕');
+  }
+  assert.equal(cmds.reduce((a, c) => a + c.args.slots.length, 0), 4, '四種雜牌全部要被排進去');
+});
+
 test('學技能：清單隨等級換段', () => {
   const p = createPolicy({
     name: 'test', decideEveryGameSec: 1, needPanels: [],
