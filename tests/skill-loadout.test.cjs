@@ -18,7 +18,11 @@ function loadFormulaContext() {
 test('未轉生玩家技能裝載欄依等級成長與上限計算', () => {
   const context = loadFormulaContext();
   context.G.player.level = 1;
-  assert.equal(context.loadoutSize(), 2);
+  assert.equal(context.loadoutSize(), 4);
+  context.G.player.level = 200;
+  assert.equal(context.loadoutSize(), 4);
+  context.G.player.level = 250;
+  assert.equal(context.loadoutSize(), 5);
   context.G.player.level = 9999;
   assert.equal(context.loadoutSize(), 20);
 });

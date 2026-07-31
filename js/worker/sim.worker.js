@@ -571,6 +571,7 @@ function buildPanel(name, params) {
       // scrolls/fusionCosts 供融合面板花費顯示（佔用狀態由 fusions[].components 推導，不另投影）
       return {
         skills: p.skills, unlocks: p.skillUnlocks, loadout: p.loadout,
+        loadoutSize: (typeof loadoutSize === 'function') ? loadoutSize() : 0,
         fusions: p.fusions,
         points: (typeof availableSkillPoints === 'function') ? availableSkillPoints() : p.skillPoints,
         budget: (typeof totalSkillPoints === 'function') ? totalSkillPoints() : 0,

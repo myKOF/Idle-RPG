@@ -338,11 +338,19 @@ test('技能熟練度：經驗升級給點、上限封頂；技能點 = 基礎2 
   assert.equal(p.skillMastery.xp, 0);
 });
 
-test('熟練度經驗需求沿用玩家公式未轉生版：⌊30×L³+40⌋', () => {
+test('技能熟練度未升級時也刷新技能面板進度', () => {
   const c = loadGameContext();
-  assert.equal(c.skillMasteryXpForLevel(0), 40);
-  assert.equal(c.skillMasteryXpForLevel(1), 70);
-  assert.equal(c.skillMasteryXpForLevel(10), 30040);
+  c.UI.dirty.skills = false;
+  c.gainSkillMasteryXp(1);
+  assert.equal(c.G.player.skillMastery.xp, 1);
+  assert.equal(c.UI.dirty.skills, true);
+});
+
+test('熟練度經驗需求依參數表：⌊30×L³+20⌋', () => {
+  const c = loadGameContext();
+  assert.equal(c.skillMasteryXpForLevel(0), 20);
+  assert.equal(c.skillMasteryXpForLevel(1), 50);
+  assert.equal(c.skillMasteryXpForLevel(10), 30020);
 });
 
 /* ================= 10) 魔法卷軸換算 ================= */

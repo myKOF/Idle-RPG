@@ -1994,9 +1994,11 @@ function gainSkillMasteryXp(n) {
     leveled++;
   }
   if (m.level >= SKILL_MASTERY_MAX_LEVEL) m.xp = 0;
+  // 經驗未達升級門檻時也要刷新技能面板；否則降低獲得倍率後，進度條會長時間停在舊快照。
+  UI.dirty.skills = true;
   if (leveled > 0) {
     blog('📚 技能熟練度提升至 Lv.' + m.level + '（獲得 ' + leveled + ' 技能點）', 'good');
-    UI.dirty.skills = true; UI.dirty.header = true;
+    UI.dirty.header = true;
   }
 }
 
@@ -2214,7 +2216,7 @@ function equipSkillToLoadout(id) {
     if (typeof potentialSkillActive === 'function' && !potentialSkillActive(pid)) return '潛力節點尚未解鎖';
     var plo = G.player.loadout;
     if (plo.indexOf(id) >= 0) return '已在裝載欄';
-    if (plo.length >= loadoutSize()) return '裝載欄已滿（' + loadoutSize() + ' 格，初始 2 格，每 20 級再 +1 格）';
+    if (plo.length >= loadoutSize()) return '裝載欄已滿（' + loadoutSize() + ' 格，依參數表計算）';
     plo.push(id);
     UI.dirty.skills = true;
     return null;
@@ -2225,7 +2227,7 @@ function equipSkillToLoadout(id) {
   if (skillUsedInFusion(id)) return '技能已投入融合，無法裝備（刪除該融合技後釋放）';
   var lo = G.player.loadout;
   if (lo.indexOf(id) >= 0) return '已在裝載欄';
-  if (lo.length >= loadoutSize()) return '裝載欄已滿（' + loadoutSize() + ' 格，初始 2 格，每 20 級再 +1 格）';
+  if (lo.length >= loadoutSize()) return '裝載欄已滿（' + loadoutSize() + ' 格，依參數表計算）';
   lo.push(id);
   UI.dirty.skills = true;
   return null;
