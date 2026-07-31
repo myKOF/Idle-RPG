@@ -458,8 +458,8 @@ var PRIMARY_STAT_EFFECTS = {
 // 攻擊 = (base + 定值 + flatMult×定值×reincBase^轉生次數 + 主屬性×係數) × (1 + 對應攻擊%)
 // 防禦 = (base + 定值 + flatMult×定值×reincBase^轉生次數 + 主屬性×係數 + 耐力×係數) × (1 + 共用對應攻擊%)
 var DERIVED_COEF = {
-  atkBase: 8, atkFlatMult: 1.2, atkReincBase: 2.5,
-  matkBase: 6, matkFlatMult: 1.2, matkReincBase: 2.5,
+  atkBase: 20, atkFlatMult: 1.2, atkReincBase: 2.5,
+  matkBase: 16, matkFlatMult: 1.2, matkReincBase: 2.5,
   defBase: 3, defFlatMult: 0.75, defReincBase: 2.4,
   mdefBase: 2, mdefFlatMult: 0.75, mdefReincBase: 2.4
 };

@@ -279,7 +279,7 @@ function computeStats(equipmentOverride) {
   st.int = Math.round(rawInt * reincMult); st.vit = Math.round(rawVit * reincMult);
   // 基礎：生命 = (120 + (等級-1)×22 + 耐力×10 + 定值) × (1 + 生命%) × (1 + 天賦生命%［生命洪流，獨立乘區］)
   st.base = {};
-  st.base.hp = 200 + (lv - 1) * 25 + rawVit * PRIMARY_STAT_EFFECTS.vitHp;
+  st.base.hp = 500 + (lv - 1) * 30 + rawVit * PRIMARY_STAT_EFFECTS.vitHp;
   var rawHp = (st.base.hp + A.hpFlat) * (1 + A.hpPct / 100);
   st.hp = Math.round(rawHp * reincMult * (1 + (talent.hpPct || 0) / 100));
   st.hpRegen = A.hpRegen;                                    // 額外生命恢復/秒（另有 BASE_HP_REGEN_PCT%/秒 基礎回復）
@@ -880,9 +880,9 @@ function manaStealAmount(st, pct) {
      普通 ENEMY_CRIT_RATE_NORMAL%｜菁英 ENEMY_CRIT_RATE_ELITE%｜BOSS ENEMY_CRIT_RATE_BOSS%
      爆擊傷害 = 傷害 × ENEMY_CRIT_DMG_PCT%
    玩家韌性折減被爆擊機率（resolveHit 暴擊段：爆擊率 × (1 - 韌性%)）。 */
-var ENEMY_CRIT_RATE_NORMAL = 8;
-var ENEMY_CRIT_RATE_ELITE = 6;
-var ENEMY_CRIT_RATE_BOSS = 4;
+var ENEMY_CRIT_RATE_NORMAL = 5;
+var ENEMY_CRIT_RATE_ELITE = 3;
+var ENEMY_CRIT_RATE_BOSS = 2;
 var ENEMY_CRIT_DMG_PCT = 300;
 function enemyCritRateFor(m) {
   if (!m) return ENEMY_CRIT_RATE_NORMAL;
@@ -915,8 +915,8 @@ function segmentedLevelGrowth(base, level, brackets) {
 }
 
 function monsterStatsFor(stage, elite, boss) {
-  var hp = (30 + stage * 20) * Math.pow(1.06, stage - 1);
-  var atk = (3 + stage * 5) * Math.pow(1.055, stage - 1);
+  var hp = (20 + stage * 18) * Math.pow(1.06, stage - 1);
+  var atk = (3 + stage * 4) * Math.pow(1.055, stage - 1);
   var def = (2 + stage * 0.5) * Math.pow(1.06, stage - 1);
   var gold = (250 + stage) * Math.pow(1.018, stage - 1);
   var xp = (60 + stage) * Math.pow(1.06, stage - 1);
@@ -936,7 +936,7 @@ function monsterStatsFor(stage, elite, boss) {
     m.gold *= FIELD_BOSS_REWARD_MULT; m.xp *= FIELD_BOSS_REWARD_MULT;
     m.dodge += FIELD_BOSS_DODGE_ADD; m.aspd = FIELD_BOSS_ASPD;
   } else if (elite) {
-    m.hp *= 4; m.atk *= 2.5; m.gold *= 2; m.xp *= 2; m.dodge += 3; m.aspd = 1.5;
+    m.hp *= 4; m.atk *= 2; m.gold *= 2; m.xp *= 2; m.dodge += 1.5; m.aspd = 1;
   }
   return m;
 }
