@@ -55,6 +55,40 @@ function stopCurrentSim(reason) {
   return true;
 }
 
+/* ---- 批次進度：逐一收集每個 seed 自己的進度 ----
+   run_batch.js 本身不寫進度檔，但它生出來的每個子模擬都會在自己的輸出目錄寫一份
+   sim_progress.json。把那些檔案收集起來就能同時看到每個 seed 各自跑到哪，
+   而不是只有「幾份跑完了」這種粗顆粒——十個 seed 各跑 10 小時的話，
+   粗顆粒進度會卡在 0% 好幾分鐘，看起來像當掉。 */
+function collectBatchProgress(dir) {
+  const out = [];
+  let names = [];
+  try { names = fs.readdirSync(dir); } catch (e) { return out; }
+  for (const name of names) {
+    const sub = path.join(dir, name);
+    try { if (!fs.statSync(sub).isDirectory()) continue; } catch (e) { continue; }
+
+    const done = fs.existsSync(path.join(sub, 'run_summary.json'));
+    let p = null;
+    try { p = JSON.parse(fs.readFileSync(path.join(sub, 'sim_progress.json'), 'utf8')); } catch (e) {}
+
+    out.push({
+      tag: name,
+      /* seed 由子行程自己寫進進度檔；讀不到才退回從目錄名推。
+         推命名規則只能當最後手段——規則改了會安靜地推錯。 */
+      seed: (p && p.seed != null) ? p.seed : (((/-seed(\d+)$/.exec(name) || [])[1]) || null),
+      /* 跑完的一律算 100%：最後一次快照不會剛好落在終點，
+         照著進度檔顯示會讓已完成的 seed 停在 99.x%。 */
+      percent: done ? 100 : ((p && p.percent) || 0),
+      currentHour: (p && p.currentHour) || 0,
+      level: (p && p.level) || 0,
+      stage: (p && p.stage) || 0,
+      done
+    });
+  }
+  return out;
+}
+
 const server = http.createServer((req, res) => {
   const urlParts = req.url.split('?');
   const pathname = urlParts[0];
@@ -67,17 +101,26 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
     
     if (currentProgress.isSimulating && currentProgress.batch) {
-      /* 批次模式：run_batch.js 不會寫 sim_progress.json，改以「已產出幾份 run_summary.json」
-         當進度。用檔案而不是解析子行程 stdout——輸出格式改了不會把進度弄壞。 */
-      const dir = path.join(ROOT, currentProgress.outDir);
-      let done = 0;
-      try {
-        for (const name of fs.readdirSync(dir)) {
-          if (fs.existsSync(path.join(dir, name, 'run_summary.json'))) done++;
-        }
-      } catch (e) {}
-      currentProgress.percent = Math.round((done / currentProgress.batch.total) * 100);
-      currentProgress.statusText = `⏳ 批次模擬 ${done} / ${currentProgress.batch.total} 次完成（每次 ${currentProgress.totalHours} 小時）`;
+      /* 批次模式：讀每個 seed 自己的進度檔。用檔案而不是解析子行程 stdout——
+         輸出格式改了不會把進度弄壞。 */
+      const seeds = collectBatchProgress(path.join(ROOT, currentProgress.outDir));
+      const total = currentProgress.batch.total;
+      const done = seeds.filter((s) => s.done).length;
+      /* 還沒開始的沒有目錄（工作佇列有並行上限，不是一次全部開跑）。 */
+      const queued = Math.max(0, total - seeds.length);
+
+      /* 整體進度取所有 seed 的平均，尚未開始的算 0。
+         比只數「跑完幾份」細得多，也才對得上畫面上那條總進度條。 */
+      const sum = seeds.reduce((a, s) => a + s.percent, 0);
+      currentProgress.percent = total ? Math.round(sum / total) : 0;
+      currentProgress.batch.done = done;
+      currentProgress.batch.running = seeds.length - done;
+      currentProgress.batch.queued = queued;
+      /* 只回最接近完成的前 10 個：seed 數可以開到 32，全部塞進畫面反而看不出重點。
+         被截掉的仍計入上面的統計數字，不會被藏起來。 */
+      currentProgress.batch.seeds = seeds.sort((a, b) => b.percent - a.percent).slice(0, 10);
+      currentProgress.statusText = `⏳ 批次模擬 ${done} / ${total} 次完成`
+        + `（執行中 ${seeds.length - done}、排隊 ${queued}，每次 ${currentProgress.totalHours} 小時）`;
     } else if (currentProgress.isSimulating) {
       const outDir = currentProgress.outDir || 'sim_out';
       const progressFile = path.join(ROOT, outDir, 'sim_progress.json');

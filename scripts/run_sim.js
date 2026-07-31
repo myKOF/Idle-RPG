@@ -296,6 +296,9 @@ try {
       process.stdout.write(`[PROGRESS] ${pct}% ${row.gameHours.toFixed(1)}h / ${HOURS}h Lv.${row.level}\n`);
       try {
         fs.writeFileSync(path.join(OUT_DIR, 'sim_progress.json'), JSON.stringify({
+          /* 批次模式下這份檔案是「這個 seed 跑到哪」的唯一來源，
+             所以要自報 seed——否則讀的人只能從目錄名反推命名規則，推錯了不會有徵兆。 */
+          seed: SEED,
           percent: parseFloat(pct),
           currentHour: row.gameHours,
           totalHours: HOURS,
