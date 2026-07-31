@@ -826,6 +826,9 @@
             <button type="submit" id="btnRunAutoSim" class="btn-submit" style="margin: 0; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border: 1px solid #818cf8; color: #fff; padding: 11px 18px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
                 🚀 開始全系統無作弊原生模擬 (Start Simulation)
             </button>
+            <button type="button" id="btnCancelSim" onclick="cancelRunningSim()" style="display: none; margin-top: 8px; width: 100%; background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%); border: 1px solid #ef4444; color: #fff; padding: 10px 18px; font-weight: 700; border-radius: 6px; cursor: pointer;">
+                ⏹️ 取消模擬 (Cancel)
+            </button>
         </form>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
@@ -1732,17 +1735,55 @@
             } catch (e) {}
         }, 300);
 
+        showCancelButton(true);
+
         try {
+            /* 伺服器收到請求後立刻回 202（不再等模擬跑完才回應——那樣送出 500 小時
+               就等於把這個 fetch 掛住幾十分鐘，而且沒有取消的辦法）。
+               完成與否改由輪詢 /sim_progress 判斷。 */
             const resp = await fetch('/run_sim', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ hours: hours, seed: seed, policy: policy, out: out })
             });
+            const accepted = await resp.json();
+            if (!resp.ok || !accepted.ok) {
+                clearInterval(pollTimer);
+                showCancelButton(false);
+                if (statusText) {
+                    statusText.innerText = '❌ 無法開始模擬: ' + (accepted.message || accepted.error || resp.status);
+                    statusText.style.color = 'var(--accent-rose)';
+                }
+                if (btn) { btn.disabled = false; btn.innerText = '🚀 開始全系統無作弊原生模擬 (Start Simulation)'; }
+                return;
+            }
 
-            const data = await resp.json();
+            /* 等到伺服器回報不再執行為止。輪詢本身也是心跳——
+               頁面關掉就不會再有人來問，伺服器的看門狗會據此中止模擬。 */
+            const data = await new Promise((resolve) => {
+                const waitTimer = setInterval(async () => {
+                    try {
+                        const r = await fetch('/sim_progress?t=' + Date.now());
+                        const p = await r.json();
+                        if (!p.isSimulating) {
+                            clearInterval(waitTimer);
+                            const cancelled = /取消|已關閉/.test(p.statusText || '');
+                            resolve({ ok: !cancelled && (p.percent === 100), cancelled, message: p.statusText });
+                        }
+                    } catch (e) { /* 伺服器暫時無回應就繼續等 */ }
+                }, 500);
+            });
+
             clearInterval(pollTimer);
+            showCancelButton(false);
 
-            if (data.ok) {
+            if (data.cancelled) {
+                if (statusText) {
+                    statusText.innerText = data.message || '⏹️ 模擬已取消';
+                    statusText.style.color = 'var(--accent-amber)';
+                }
+                if (progressFill) progressFill.style.width = '0%';
+            } else if (data.ok) {
                 if (progressFill) progressFill.style.width = '100%';
                 if (statusText) {
                     statusText.innerText = `✅ ${hours} 小時系統自測 100% 成功完成！正在繪製最新數據...`;
@@ -1761,12 +1802,44 @@
             console.error('觸發模擬失敗:', e);
             alert('觸發模擬失敗，請確認是否已啟動「啟動數值模擬器.bat」伺服器: ' + e.message);
         } finally {
+            showCancelButton(false);
             if (btn) {
                 btn.disabled = false;
                 btn.innerText = '🚀 開始全系統無作弊原生模擬 (Start Simulation)';
             }
         }
     }
+
+    /* ---- 取消 ---- */
+    function showCancelButton(show) {
+        const btn = document.getElementById('btnCancelSim');
+        if (btn) btn.style.display = show ? 'inline-block' : 'none';
+    }
+
+    async function cancelRunningSim() {
+        try {
+            const r = await fetch('/cancel_sim', { method: 'POST' });
+            const d = await r.json();
+            const statusText = document.getElementById('simStatusText');
+            if (statusText) {
+                statusText.innerText = '⏹️ ' + (d.message || '已送出取消');
+                statusText.style.color = 'var(--accent-amber)';
+            }
+        } catch (e) {
+            alert('取消失敗，伺服器可能已關閉: ' + e.message);
+        }
+    }
+
+    /* 關閉分頁／重新整理時一併取消，避免模擬變成沒人看管的背景工作。
+       sendBeacon 是「離開頁面時仍送得出去」的正式做法，一般 fetch 會被中止。
+       這條是正常關閉的即時路徑；瀏覽器當掉或強制關閉收不到通知，
+       由伺服器端的心跳看門狗兜底（tools/sim_server.cjs 的 WATCHDOG_MS）。 */
+    window.addEventListener('beforeunload', function () {
+        const btn = document.getElementById('btnCancelSim');
+        if (btn && btn.style.display !== 'none') {
+            try { navigator.sendBeacon('/cancel_sim'); } catch (e) {}
+        }
+    });
 
     async function loadNativeCsvSnapshotsToApp() {
         try {

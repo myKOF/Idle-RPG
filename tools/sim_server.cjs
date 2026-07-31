@@ -20,12 +20,50 @@ let currentProgress = {
   statusText: '準備中...'
 };
 
+/* 執行中的模擬子行程。一定要留著參照，否則沒有任何辦法中止——
+   先前不小心送出 500 小時的請求就只能等它跑完或去工作管理員砍行程。 */
+let currentChild = null;
+
+/* ---- 瀏覽器心跳看門狗 ----
+   儀表板本來就在輪詢 /sim_progress，直接拿它當心跳：頁面關掉就沒人來問，
+   超過門檻仍在跑就中止。頁面 unload 時另外會用 sendBeacon 主動送 /cancel_sim，
+   那條是正常關閉的即時路徑；看門狗負責瀏覽器當掉、斷電、強制關閉這些收不到通知的情況。
+
+   ⚠️ 門檻刻意放到 90 秒：分頁切到背景時瀏覽器會把計時器降頻到每分鐘一次，
+   門檻太短會在使用者只是切去別的分頁時誤砍模擬。 */
+const WATCHDOG_MS = 90000;
+let lastPollAt = 0;
+
+setInterval(() => {
+  if (!currentProgress.isSimulating || !currentChild) return;
+  if (lastPollAt && Date.now() - lastPollAt > WATCHDOG_MS) {
+    stopCurrentSim('儀表板已關閉（超過 ' + (WATCHDOG_MS / 1000) + ' 秒沒有心跳）');
+  }
+}, 5000).unref();
+
+function stopCurrentSim(reason) {
+  if (!currentChild) return false;
+  const child = currentChild;
+  currentChild = null;
+  /* 先送 SIGTERM，2 秒後仍在就 SIGKILL。
+     Windows 的 SIGTERM 其實等同強制終止，但保留這個順序讓 POSIX 上行為一致。 */
+  try { child.kill('SIGTERM'); } catch (e) {}
+  setTimeout(() => { try { if (!child.killed) child.kill('SIGKILL'); } catch (e) {} }, 2000);
+  currentProgress.isSimulating = false;
+  currentProgress.statusText = '⏹️ ' + (reason || '模擬已取消');
+  console.log('⏹️ 模擬已取消：' + (reason || '使用者要求'));
+  return true;
+}
+
 const server = http.createServer((req, res) => {
   const urlParts = req.url.split('?');
   const pathname = urlParts[0];
 
   // 1. 查詢即時模擬進度 API (直接讀取落地進度檔，徹底擺脫 Node stdout buffer 延遲)
   if (req.method === 'GET' && pathname === '/sim_progress') {
+    /* 這支輪詢同時當作瀏覽器的心跳：頁面被關掉就不會再有人來問，
+       看門狗據此中止模擬（見下方 WATCHDOG_MS）。 */
+    lastPollAt = Date.now();
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
     
     if (currentProgress.isSimulating) {
@@ -43,8 +81,24 @@ const server = http.createServer((req, res) => {
     return res.end(JSON.stringify(currentProgress));
   }
 
+  // 1.5 取消執行中的模擬
+  if (req.method === 'POST' && pathname === '/cancel_sim') {
+    const stopped = stopCurrentSim('使用者取消');
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
+    return res.end(JSON.stringify({
+      ok: true, stopped,
+      message: stopped ? '已中止執行中的模擬' : '目前沒有執行中的模擬'
+    }));
+  }
+
   // 2. 觸發原生模擬 API
   if (req.method === 'POST' && pathname === '/run_sim') {
+    /* 保險：狀態顯示執行中但子行程已經不在（例如被外部砍掉），直接放行，
+       否則使用者會被一個永遠不會結束的假狀態鎖死。 */
+    if (currentProgress.isSimulating && !currentChild) {
+      currentProgress.isSimulating = false;
+      currentProgress.statusText = '⚠️ 前一次模擬已不在執行中，狀態已重置';
+    }
     if (currentProgress.isSimulating) {
       res.writeHead(409, { 'Content-Type': 'application/json; charset=utf-8' });
       return res.end(JSON.stringify({ ok: false, message: '已有模擬任務在執行中，請稍候...' }));
@@ -90,31 +144,35 @@ const server = http.createServer((req, res) => {
         `--out=${params.out}`
       ];
 
-      const child = spawn('node', args, { cwd: ROOT });
+      /* stdout 直接丟棄（不是 'pipe'）：沒有人讀管線的話，子行程寫滿緩衝區就會卡死，
+         而 run_sim.js 全程都在印進度。stderr 保留，錯誤要看得到。 */
+      const child = spawn('node', args, { cwd: ROOT, stdio: ['ignore', 'ignore', 'pipe'] });
+      currentChild = child;
+      lastPollAt = Date.now();   // 給看門狗一個起點，避免開跑瞬間就被判定沒心跳
 
-      child.stdout.on('data', data => {
-        // Log output if needed
-      });
-
-      child.stderr.on('data', data => {
-        console.error(data.toString());
-      });
+      child.stderr.on('data', data => { console.error(data.toString()); });
 
       child.on('close', code => {
+        const wasCancelled = (currentChild !== child);   // stopCurrentSim 會先把參照清掉
+        if (currentChild === child) currentChild = null;
         currentProgress.isSimulating = false;
+        if (wasCancelled) return;                        // 取消時的狀態文字由 stopCurrentSim 設定
         if (code === 0) {
           currentProgress.percent = 100;
           currentProgress.currentHour = params.hours;
-          currentProgress.statusText = `✅ 模擬 100% 完成！`;
+          currentProgress.statusText = '✅ 模擬 100% 完成！';
           console.log('✅ 模擬執行成功，已更新數據!');
-          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({ ok: true, message: '模擬執行完成' }));
         } else {
-          currentProgress.statusText = `❌ 模擬失敗`;
-          res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({ ok: false, error: '模擬過程發生錯誤' }));
+          currentProgress.statusText = `❌ 模擬失敗（退出碼 ${code}）`;
         }
       });
+
+      /* ⚠️ 立刻回應，不等模擬跑完。
+         先前是在 child close 時才 res.end()，於是瀏覽器那個 fetch 會一直掛著——
+         送出 500 小時的請求就等於把分頁掛住好幾十分鐘，而且沒有取消的辦法。
+         進度本來就由儀表板輪詢 /sim_progress 取得，這裡回 202 表示「已受理」即可。 */
+      res.writeHead(202, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ ok: true, accepted: true, hours: params.hours, seed: params.seed }));
     });
     return;
   }
