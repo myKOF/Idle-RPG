@@ -421,6 +421,15 @@ function inventoryCellView(it) {
      這裡傳的是真實物品（有 affixes、沒有 ancientCount），走的是逐條計數那條路徑；
      item.js 裡的 ancientCount 短路分支是給主執行緒讀投影用的。 */
   out.ancientCount = getItemAncientCount(it);
+  /* 裝備強弱評分。與 ancientCount 同理：投影裁掉了 affixes/sockets，
+     而 itemScore() 需要那些欄位，所以只能在還握有真實物品的這裡算。
+
+     加這個欄位是為了讓「換裝」這個動作有依據。背包投影原本只有品質與等級，
+     光看品質換裝是錯的——R0+6 可能比 R2+0 強。評分是遊戲既有的判準
+     （js/formula.js:1325，背包滿載「捨弱留強」用的就是它），
+     暴露出來之後，模擬器的策略層才能像玩家一樣「看數字挑最好的穿」，
+     而不需要自己實作一套強弱比較。 */
+  out.score = (typeof itemScore === 'function') ? itemScore(it) : 0;
   return out;
 }
 
@@ -456,7 +465,19 @@ function buildInventoryPanel(params) {
     cap: inventoryCapacityNow(),
     settings: G.settings,                     // compareEq：詳情是否顯示與現有裝備的比較
     equipment: G.equipment,                   // 比較對象＝目前穿戴那套
-    viewEquipment: (typeof viewedEquipment === 'function') ? viewedEquipment() : G.equipment
+    viewEquipment: (typeof viewedEquipment === 'function') ? viewedEquipment() : G.equipment,
+    /* 目前穿戴那套的評分，與 items[].score 同一把尺（js/formula.js:1325 的 itemScore）。
+       沒有這組數字，就只能拿「背包最好的一件」跟空氣比——換裝會變成無條件換，
+       把 R0+6 換成 R2+0 反而更弱。 */
+    equipmentScores: (function () {
+      var out = {};
+      var eq = G.equipment || {};
+      for (var slot in eq) {
+        if (!eq[slot]) { out[slot] = 0; continue; }
+        out[slot] = (typeof itemScore === 'function') ? itemScore(eq[slot]) : 0;
+      }
+      return out;
+    })()
   };
 }
 
