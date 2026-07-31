@@ -477,6 +477,15 @@ function buildInventoryPanel(params) {
         out[slot] = (typeof itemScore === 'function') ? itemScore(eq[slot]) : 0;
       }
       return out;
+    })(),
+    equipmentRarities: (function () {
+      var out = {};
+      var eq = G.equipment || {};
+      for (var slot in eq) {
+        if (!eq[slot]) { out[slot] = -1; continue; }
+        out[slot] = typeof eq[slot].rarity === 'number' ? eq[slot].rarity : 0;
+      }
+      return out;
     })()
   };
 }

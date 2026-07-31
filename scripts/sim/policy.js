@@ -127,23 +127,47 @@ function decide(state, policy, memo) {
       var cfg = r.bestPerSlot;
       var items = pathVal(state, cfg.items) || [];
       var eqScores = pathVal(state, cfg.equippedScores) || {};
+      var eqRarities = pathVal(state, 'panels.inv.equipmentRarities') || {};
 
-      /* 副手／副戒的部位鍵是 weapon2 / ring2，而背包物品的 slot 是 weapon / ring，
-         去掉結尾數字就能對上。這是命名規則的對應，不是遊戲邏輯。 */
+      /* 依據 player_strategy.md「品質高優先穿」鐵律：
+         1. 只要背包物品的品質 (rarity) > 身上現有裝備的品質，100% 強制換上！
+         2. 若品質相同，評分 (score) 較高者優先換上！ */
       var used = {};
       for (var slotKey in eqScores) {
         var baseSlot = String(slotKey).replace(/\d+$/, '');
+        var currRarity = (typeof eqRarities[slotKey] === 'number') ? eqRarities[slotKey] : -1;
+        var currScore = eqScores[slotKey] || 0;
+
         var best = null;
         for (var it = 0; it < items.length; it++) {
           var item = items[it];
           if (!item || item.slot !== baseSlot || item.locked) continue;
-          if (used[item.id]) continue;                       // 同一件不能塞兩個部位
-          if (!best || (item.score || 0) > (best.score || 0)) best = item;
+          if (used[item.id]) continue;
+
+          var itemRar = typeof item.rarity === 'number' ? item.rarity : 0;
+          var itemSc = item.score || 0;
+
+          if (!best) {
+            best = item;
+          } else {
+            var bestRar = typeof best.rarity === 'number' ? best.rarity : 0;
+            var bestSc = best.score || 0;
+            if (itemRar > bestRar) {
+              best = item;
+            } else if (itemRar === bestRar && itemSc > bestSc) {
+              best = item;
+            }
+          }
         }
         if (!best) continue;
-        if ((best.score || 0) <= (eqScores[slotKey] || 0)) continue;   // 沒有比較好就不換
-        used[best.id] = true;
-        out.push({ name: r.cmd, args: { itemId: best.id, slotKey: slotKey }, ruleId: r.id });
+
+        var bestRarity = typeof best.rarity === 'number' ? best.rarity : 0;
+        var bestScore = best.score || 0;
+
+        if (bestRarity > currRarity || (bestRarity === currRarity && bestScore > currScore)) {
+          used[best.id] = true;
+          out.push({ name: r.cmd, args: { itemId: best.id, slotKey: slotKey }, ruleId: r.id });
+        }
       }
     } else if (r.argsList) {
       /* 同一條規則要送多組固定參數（例如三個品質各設一次）。 */
