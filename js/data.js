@@ -1544,7 +1544,10 @@ var STAT_GROUPS = [
   {
     title: '基礎屬性', rows: [
       ['❤️ 生命值', function (st) { return statFmt(st.hp, null); }, function (st) { return statDesc(st, '承受傷害的能力，歸零時角色將會死亡。', '生命', 'hp', 'hpPct'); }],
-      ['💗 生命恢復', function (st) { return statFmt(st.hpRegen + st.hp * BASE_HP_REGEN_PCT / 100, null, '/s'); }, '每秒自動回復的生命值（包含基礎 1.5% 與額外加成）。'],
+      /* 說明寫成函式而不是固定字串：基礎回復是可調參數（BASE_HP_REGEN_PCT），
+         寫死數字的話一調參就變成錯的說明——先前寫著 1.5%，實際值早已是 2%。 */
+      ['💗 生命恢復', function (st) { return statFmt(st.hpRegen + st.hp * BASE_HP_REGEN_PCT / 100, null, '/s'); },
+        function () { return '每秒自動回復的生命值（包含基礎 ' + BASE_HP_REGEN_PCT + '% 與額外加成）。'; }],
       ['🔵 法力值', function (st) { return statFmt(st.mp, null); }, function (st) { return statDesc(st, '施放多數技能所需的能量。', '法力', 'mp', null); }],
       ['💧 法力恢復', function (st) { return statFmt(st.mpRegen, null, '/s'); }, '每秒自動回復的法力值。'],
       ['💪 力量', function (st) { return statFmt(st.str, null); }, function () { return primaryStatDesc('str'); }],

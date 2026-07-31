@@ -42,11 +42,13 @@ test('healPlayer：noShield（生命回復／吸血等非技能來源）溢出�
   assert.equal(p.shield, 0, '非技能來源不得轉護盾');
 });
 
-test('戰鬥端與技能端的吸血／汲取／擊殺回復皆以 noShield 呼叫', () => {
+test('戰鬥端與技能端的吸血／汲取／過關回復皆以 noShield 呼叫', () => {
   const combat = read('js/combat.js');
   const skills = read('js/skills.js');
   assert.match(combat, /healPlayer\(pEnt, healAmt, st, \{ noShield: true \}\)/);       // 普攻吸血/汲取
-  assert.match(combat, /healPlayer\(FIELD\.player, st\.hp \* KILL_HEAL_PCT \/ 100, st, \{ noShield: true \}\)/);
+  /* 2026-08：擊殺回復（每殺一隻 12%）改為過關回復（整波清空 30%），觸發點從
+     onFieldKill 移到 completeFieldWave，回復性質不變——仍是非技能來源、溢出不轉護盾。 */
+  assert.match(combat, /healPlayer\(FIELD\.player, st\.hp \* WAVE_CLEAR_HEAL_PCT \/ 100, st, \{ noShield: true \}\)/);
   assert.match(combat, /st\.passives\.soulEater \/ 100, st, \{ noShield: true \}\)/);   // 吸魂
   assert.match(skills, /healPlayer\(pEnt, lifestealHealAmount\(st, st\.lifesteal\), st, \{ noShield: true \}\)/);
   // 技能自身的治療（healPctMax／healPctOfDmg）不得帶 noShield
@@ -62,12 +64,16 @@ test('吸血／吸魔上限已取消（STAT_CAPS = 0）', () => {
   assert.equal(c.capValue(500, c.STAT_CAPS.lifesteal), 500);
 });
 
-test('吸血回復 = 每秒生命回復 × 吸血%（回復 100/s、吸血 500% → 500）', () => {
+test('吸血回復 = 每秒生命回復 × 吸血%', () => {
   const c = loadContext();
-  // 每秒生命回復 = 最大生命 × BASE_HP_REGEN_PCT% + 生命恢復屬性
-  const st = { hp: 4000, hpRegen: 40, mpRegen: 20 };            // 4000×1.5% = 60，+40 → 100/秒
-  assert.equal(c.playerHpRegenPerSec(st), 100);
-  assert.equal(c.lifestealHealAmount(st, 500), 500);
+  /* 每秒生命回復 = 最大生命 × BASE_HP_REGEN_PCT% + 生命恢復屬性。
+     ⚠️ 期望值改為從 BASE_HP_REGEN_PCT 推導，不寫死數字——這支測試原本假設
+     基礎回復是 1.5%，參數調成 2% 之後就紅燈了，但要驗的關係式其實沒有變。
+     測「關係是否成立」才是這支測試的目的，「數值是多少」歸參數表管。 */
+  const st = { hp: 4000, hpRegen: 40, mpRegen: 20 };
+  const perSec = st.hp * c.BASE_HP_REGEN_PCT / 100 + st.hpRegen;
+  assert.equal(c.playerHpRegenPerSec(st), perSec);
+  assert.equal(c.lifestealHealAmount(st, 500), perSec * 5);
   assert.equal(c.lifestealHealAmount(st, 0), 0);
   assert.equal(c.manaStealAmount(st, 250), 50);                  // 20/秒 × 250%
 });
