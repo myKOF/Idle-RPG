@@ -3249,6 +3249,11 @@ function detailAction(act, actBtn) {
     commandName = 'item.equip';
     var equipSnapshot = uiEquipPanelSnapshot();
     args.setIndex = equipSnapshot && typeof equipSnapshot.equipView === 'number' ? equipSnapshot.equipView : 0;
+    // The Worker cannot see the main-thread selection state. Preserve the
+    // slot the player selected (notably the right-hand ring) instead of
+    // letting equipItem fall back to its default candidate order.
+    var selectedEquipSlot = selectionSlotForItem(it);
+    if (selectedEquipSlot) args.slotKey = selectedEquipSlot;
   } else if (act === 'unequip') {
     commandName = 'item.unequip';
     if (UI.sel && UI.sel.slot) args.slotKey = UI.sel.slot;
