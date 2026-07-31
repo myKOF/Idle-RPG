@@ -106,6 +106,11 @@ function objFieldML(file, keyAnchor, field, cat, name, i, label, scopeVar) {
 function inline(file, prefix, value, label) {
   edits.push({ file, re: new RegExp('(' + esc(prefix) + ')(-?[\\d.]+)'), grp: 2, value: String(value), label });
 }
+// 結構型內嵌數值：錨點只描述公式結構，不把目前程式裡的數值寫死。
+// 這樣某個參數先被套用後，同一公式中的其他參數仍能在下一次套用時找到。
+function inlineRegex(file, re, value, label) {
+  edits.push({ file, re, grp: 2, value: String(value), label });
+}
 // 前後文夾住數字： <before><num><after> —— 三段合起來需在整檔唯一（用於同一數值多處出現時精準定位）
 function numCtx(file, before, after, value, label) {
   edits.push({ file, re: new RegExp('(' + esc(before) + ')(-?[\\d.]+)(' + esc(after) + ')'), grp: 2, value: String(value), label });
@@ -562,8 +567,10 @@ scalar('data', 'FIELD_MONSTER_HIT_BASE', '4-野外怪物', '命中率', 0);
 arrayContent('data', 'FIELD_MONSTER_HIT_GROWTH', levelGrowthContent('4-野外怪物', '命中率'), '怪物命中分段成長');
 
 /* ---- §2 玩家屬性派生（computeStats） ---- */
-inline('formula', 'st.base.hp = ', P('2-屬性派生', '生命上限', 0), 'hp基底');
-inline('formula', 'st.base.hp = 120 + (lv - 1) * ', P('2-屬性派生', '生命上限', 1), 'hp每級');
+inlineRegex('formula', /(st\.base\.hp\s*=\s*)(-?[\d.]+)(?=\s*\+\s*\(lv\s*-\s*1\)\s*\*\s*)/,
+  P('2-屬性派生', '生命上限', 0), 'hp基底');
+inlineRegex('formula', /(st\.base\.hp\s*=\s*-?[\d.]+\s*\+\s*\(lv\s*-\s*1\)\s*\*\s*)(-?[\d.]+)/,
+  P('2-屬性派生', '生命上限', 1), 'hp每級');
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'vitHp', '2-屬性派生', '生命上限', 2, 'hp每耐');
 inline('formula', 'st.base.mp = ', P('2-屬性派生', '法力上限', 0), 'mp基底');
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'intMp', '2-屬性派生', '法力上限', 1, 'mp每智');
@@ -729,10 +736,14 @@ numCtx('formula', 'Math.floor(', ' * lv + Math.pow(20', P('9-技能', '升級費
 inline('formula', ' + Math.pow(', P('9-技能', '升級費用', 1), '技升-底');
 inline('formula', '1 + lv / ', P('9-技能', '升級費用', 2), '技升-除數');
 inline('formula', 'skillBaseManaCost(def) * (1 + ', P('9-技能', '一般技能法力消耗', 0), '法力每級');
-inline('formula', '2 + Math.floor(lvl / ', P('1-成長經驗', '技能裝載欄', 0), '裝載欄-每級');
-numCtx('formula', 'Math.max(', ', 2 + Math.floor(lvl', P('1-成長經驗', '技能裝載欄', 1), '裝載欄-下限');
-numCtx('formula', 'Math.max(2, ', ' + Math.floor(lvl', P('1-成長經驗', '技能裝載欄', 1), '裝載欄-初始');
-numCtx('formula', 'return Math.min(', ', Math.max(2', P('1-成長經驗', '技能裝載欄', 2), '裝載欄-上限');
+inlineRegex('formula', /(function loadoutSize\(\)[\s\S]*?Math\.floor\(lvl\s*\/\s*)(-?[\d.]+)(?=\s*\)\s*\)\s*\);)/,
+  P('1-成長經驗', '技能裝載欄', 0), '裝載欄-每級');
+inlineRegex('formula', /(function loadoutSize\(\)[\s\S]*?return Math\.min\(-?[\d.]+\s*,\s*Math\.max\()(-?[\d.]+)/,
+  P('1-成長經驗', '技能裝載欄', 1), '裝載欄-下限');
+inlineRegex('formula', /(function loadoutSize\(\)[\s\S]*?return Math\.min\(-?[\d.]+\s*,\s*Math\.max\(-?[\d.]+\s*,\s*)(-?[\d.]+)(?=\s*\+\s*Math\.floor\(lvl\s*\/\s*-?[\d.]+\s*\)\s*\)\s*\);)/,
+  P('1-成長經驗', '技能裝載欄', 1), '裝載欄-初始');
+inlineRegex('formula', /(function loadoutSize\(\)[\s\S]*?return Math\.min\()(-?[\d.]+)(?=\s*,\s*Math\.max\()/,
+  P('1-成長經驗', '技能裝載欄', 2), '裝載欄-上限');
 
 /* ---- Batch2a：補接 formula.js 內漏接的可調單值（多值行用正規式避免相依錨點失配） ---- */
 inline('formula', 'FIELD_BOOK_DROP_PCT = ', P('5-野外材料', '附魔書', 0), 'FIELD_BOOK_DROP_PCT');
