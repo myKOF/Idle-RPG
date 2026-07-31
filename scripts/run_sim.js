@@ -207,8 +207,11 @@ function assertInvariants(view, stats) {
 /* ---- 快照（圖表資料來源）----
    每一欄都是遊戲原生的值，harness 不做任何再計算、外插或平滑。
    來源欄位記在 snapshots.meta.json，供圖表標註。 */
+/* gems / magicScroll / soulOrigin 也是 buildView() 既有欄位（見 protocol.js 的
+   TICK_VIEW_KEYS）。先前沒放進來，導致儀表板拿不到寶石數量只能顯示 0。 */
 const SNAP_VIEW_KEYS = ['level', 'stage', 'gold', 'scrap', 'dust', 'essence',
-  'ancientEssence', 'demonSeed', 'hp', 'hpMax', 'mp', 'mpMax', 'xp', 'xpMax'];
+  'ancientEssence', 'demonSeed', 'gems', 'magicScroll', 'soulOrigin',
+  'hp', 'hpMax', 'mp', 'mpMax', 'xp', 'xpMax'];
 const snapRows = [];
 
 let lastKillsTotal = 0;
@@ -239,11 +242,20 @@ function snapshot() {
     reincarnations: G.player.reincarnations || 0,
     invCount: (G.inventory || []).length,
     towerFloor: (G.tower && G.tower.floor) || 0,
-    dps: stats.dps || 0,
+    /* ⚠️ DPS 必須取 currentDps()（js/combat.js:575，10 秒視窗，UI 顯示的就是它）。
+       getStats() **沒有** dps 這個欄位，寫 stats.dps 會恆為 0——儀表板的 DPS 曲線
+       之所以是一條貼著 0 的直線就是這個原因。同一支檔案的不變量檢查用的是對的來源，
+       只有這裡寫錯，兩邊不一致反而讓問題更難發現。 */
+    dps: engine.ctx.currentDps ? engine.ctx.currentDps() : 0,
     atk: stats.atk || 0, matk: stats.matk || 0, def: stats.def || 0,
     critRate: stats.critRate || 0, critDmg: stats.critDmg || 0,
+    /* LOOT_STATS 的欄位名是 dropRolls（js/stats.js:20），不是 drops；
+       寫錯的話恆為 0，而且不會有任何錯誤訊息。 */
     totalKills: lootStats.kills || 0,
-    totalDrops: lootStats.drops || 0
+    totalDrops: lootStats.dropRolls || 0,
+    totalBattles: lootStats.battles || 0,
+    totalDeaths: lootStats.deaths || 0,
+    cumGold: lootStats.gold || 0
   };
   for (const k of SNAP_VIEW_KEYS) row[k] = view[k];
   snapRows.push(row);
@@ -344,7 +356,7 @@ const logHeader = `=============================================================
  總擷取官方原生日誌數: ${readableLogs.length} 筆
  最終角色等級: Lv.${finalView.level}
  最終最高關卡: Stage ${finalView.stage}
- 最終面板 DPS: ${engine.ctx.fmt ? engine.ctx.fmt(finalStats.dps || 0) : (finalStats.dps || 0)}
+ 最終面板 DPS: ${(() => { const d = engine.ctx.currentDps ? engine.ctx.currentDps() : 0; return engine.ctx.fmt ? engine.ctx.fmt(d) : d; })()}
 ========================================================================\n\n`;
 
 fs.writeFileSync(path.join(OUT_DIR, 'ai_player_action_log.txt'), logHeader + readableLogs.join('\n'), 'utf8');
@@ -363,13 +375,21 @@ fs.writeFileSync(path.join(OUT_DIR, 'snapshots.meta.json'), JSON.stringify({
     reincarnations: 'G.player.reincarnations',
     invCount: 'G.inventory.length',
     towerFloor: 'G.tower.floor',
-    dps: 'getStats().dps',
+    dps: 'currentDps()（js/combat.js:575，10 秒視窗；getStats() 沒有 dps 欄位）',
     atk: 'getStats().atk', matk: 'getStats().matk', def: 'getStats().def',
     critRate: 'getStats().critRate', critDmg: 'getStats().critDmg',
-    totalKills: 'LOOT_STATS.kills',
-    totalDrops: 'LOOT_STATS.drops',
-    ...Object.fromEntries(SNAP_VIEW_KEYS.map((k) => [k, `buildView().${k}`]))
-  }
+    totalKills: 'LOOT_STATS.kills（累積）',
+    totalDrops: 'LOOT_STATS.dropRolls（累積掉落擲骰次數）',
+    totalBattles: 'LOOT_STATS.battles（累積）',
+    totalDeaths: 'LOOT_STATS.deaths（累積）',
+    cumGold: 'LOOT_STATS.gold（累積獲得，非持有）',
+    ...Object.fromEntries(SNAP_VIEW_KEYS.map((k) => [k, `buildView().${k}（目前持有，非累積）`]))
+  },
+  提醒: [
+    'CSV 裡的資源欄位（gold/scrap/essence/gems…）是「目前持有」，會因為消耗而下降。',
+    '要顯示「累積總獲得」請讀 run_summary.json 的 lootStats（遊戲原生 LOOT_STATS）。',
+    '兩者混用會得到嚴重偏低的數字——這是先前儀表板數據對不上的主因之一。'
+  ]
 }, null, 2));
 
 const summary = {
@@ -380,6 +400,29 @@ const summary = {
   /* GM 前置一律揭露：讀報告的人要看得出哪些狀態是模擬出來的、哪些是墊出來的。 */
   gmBootstrap: bootstrapLog,
   determinism: { finalStateHash: stateHash(saveJson) },
+
+  /* ---- 累積掉落統計（遊戲原生 LOOT_STATS，js/stats.js）----
+     ⚠️ 這是「整場累積獲得」，與存檔裡的「目前持有」是兩回事：
+     東西會被拆解、賣掉、消耗，所以持有量必定遠小於累積獲得量。
+     儀表板的「累積總獲得」卡片必須讀這裡，讀存檔會得到偏低到不合理的數字。
+
+     欄位（原生定義，不要改名）：
+       battles/kills/deaths/dropRolls/gold  純量
+       equip  { 稀有度index: 件數 }   稀有度對照見 js/data.js 的 RARITIES
+       mats   { 素材key: 數量 }
+       gems   { '種類:等級': 數量 }
+       sources{ 來源: 同上結構 }      野外／高塔／工廠拆解／技能 各自分開 */
+  lootStats: (() => {
+    const ls = engine.ctx.LOOT_STATS;
+    return ls ? JSON.parse(JSON.stringify(ls)) : null;
+  })(),
+
+  /* 稀有度索引 → 名稱對照，直接取自遊戲的 RARITIES，讓儀表板不必自己維護一份。
+     先前儀表板把 R3 標成「史詩」（實際是獨特）、R4/R5 標成「傳奇」，就是自己抄名字抄錯。 */
+  rarityNames: (() => {
+    const R = engine.ctx.RARITIES || [];
+    return R.map((r, i) => ({ index: i, key: r.key, name: r.name }));
+  })(),
   performance: {
     steps: totalSteps,
     stepSeconds: engine.dt,

@@ -928,15 +928,15 @@
             <div class="card-val" id="cardObtainedMythic" style="color: #a855f7; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #f97316;">
-            <div class="card-label">🟠 獲得【傳奇】裝備 (R4/R5)</div>
+            <div class="card-label">🟠 獲得【傳說】裝備 (R5)</div>
             <div class="card-val" id="cardObtainedLegendary" style="color: #f97316; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #3b82f6;">
-            <div class="card-label">🔵 獲得【史詩】裝備 (R3)</div>
+            <div class="card-label">🔵 獲得【史詩】裝備 (R4)</div>
             <div class="card-val" id="cardObtainedEpic" style="color: #3b82f6; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #94a3b8;">
-            <div class="card-label">⚪ 獲得【史詩以下】裝備 (R1~R2)</div>
+            <div class="card-label">⚪ 獲得【史詩以下】裝備 (R0~R3)</div>
             <div class="card-val" id="cardObtainedBelowEpic" style="color: #94a3b8;">-</div>
         </div>
 
@@ -988,7 +988,7 @@
                     <option value="obtained_godforge">👑 獲得【神鑄創世】裝備數量</option>
                     <option value="obtained_genesis">✨ 獲得【創世】裝備數量</option>
                     <option value="obtained_mythic">🟣 獲得【神話】裝備數量</option>
-                    <option value="obtained_legendary">🟠 獲得【傳奇】裝備數量</option>
+                    <option value="obtained_legendary">🟠 獲得【傳說】裝備數量</option>
                     <option value="obtained_epic">🔵 獲得【史詩】裝備數量</option>
                     <option value="obtained_below_epic">⚪ 獲得【史詩以下】裝備數量</option>
                     <option value="total_gold_earned">💰 500h 累積平均金幣總獲得</option>
@@ -1133,16 +1133,69 @@
         legs: '👖', boots: '🥾', ring: '💍', ring2: '💍', amulet: '📿'
     };
 
-    const RARITY_INFO = {
-        1: { name: '普通', color: '#9aa5b1' },
-        2: { name: '精良', color: '#4ade80' },
-        3: { name: '稀有', color: '#38bdf8' },
-        4: { name: '獨特', color: '#ffd700' },
-        5: { name: '史詩', color: '#c084fc' },
-        6: { name: '傳說', color: '#fb923c' },
-        7: { name: '創世', color: '#b8860b' },
-        8: { name: '神鑄創世', color: '#f5c542' }
-    };
+    /* ⚠️ 稀有度索引 0 起算，與遊戲 js/data.js 的 RARITIES 一致，顯示也用同一組編號：
+       R0=普通 R1=精良 R2=稀有 R3=獨特 R4=史詩 R5=傳說 R6=神話
+       R7=創世 R8=神鑄創世 R9=混沌 R10=神鑄混沌
+
+       這裡先前是一份 1 起算的手抄表，卻拿去查 0 起算的 item.rarity，整份對照往上偏一格：
+       獨特(3) 被顯示成「稀有」、卡片把 R3 標成「史詩」（實際是獨特）。
+       數據沒錯，是標籤錯，而標籤錯比數據錯更難察覺——看到「史詩 70 件」只會以為
+       換裝壞了，不會想到是名字貼錯。
+
+       名稱一律以 run_summary.json 的 rarityNames 為準（那是從遊戲 RARITIES 直接匯出的），
+       這裡只保留顏色。拿不到 summary 時才退回下面的預設名稱。 */
+    const RARITY_COLORS = ['#9aa5b1', '#4ade80', '#38bdf8', '#ffd700', '#c084fc',
+                           '#fb923c', '#f87171', '#b8860b', '#f5c542', '#a78bfa', '#e879f9'];
+    const RARITY_FALLBACK_NAMES = ['普通', '精良', '稀有', '獨特', '史詩', '傳說',
+                                   '神話', '創世', '神鑄創世', '混沌', '神鑄混沌'];
+    let rarityNamesFromGame = null;   // run_summary.json 載入後填入
+    let cumulativeLootStats = null;   // run_summary.json 的 lootStats（遊戲原生 LOOT_STATS）
+
+    /* ---- 累積總獲得卡片 ----
+       ⚠️ 只能讀 LOOT_STATS，不能讀存檔或 CSV 的資源欄位。
+       那些是「目前持有」，會因為拆解、強化、購買而下降；而卡片標題寫的是「總獲得」。
+       先前混用的後果：10 小時的報告顯示累積碎片 403（那是當下持有量），
+       但遊戲實際記錄的累積量光第 1 小時就有 963。裝備件數同理——
+       掉落後被熔爐拆掉，持有量只剩零頭。
+
+       這支必須在所有檔案都載入之後才呼叫，否則會被存檔解析的寫入蓋掉。 */
+    function applyCumulativeLootCards() {
+        const ls = cumulativeLootStats;
+        if (!ls) return;
+        const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v; };
+        const num = (v) => (Number(v) || 0).toLocaleString();
+
+        const equip = ls.equip || {};
+        const sumRarities = (list) => list.reduce((a, i) => a + (Number(equip[i]) || 0), 0);
+        /* 分組沿用原本三張卡片的切法，但索引改成正確的 0 起算：
+           R8 神鑄創世 / R7 創世 / R6 神話 / R5 傳說 / R4 史詩 / R0~R3 史詩以下 */
+        setVal('cardObtainedGodforge', num(equip[8]));
+        setVal('cardObtainedGenesis', num(equip[7]));
+        setVal('cardObtainedMythic', num(equip[6]));
+        setVal('cardObtainedLegendary', num(equip[5]));
+        setVal('cardObtainedEpic', num(equip[4]));
+        setVal('cardObtainedBelowEpic', num(sumRarities([0, 1, 2, 3])));
+
+        const mats = ls.mats || {};
+        setVal('cardTotalGoldEarned', num(ls.gold));
+        setVal('cardTotalStonesEarned', num(mats.scrap));
+        setVal('cardTotalEssenceEarned', num(mats.essence));
+        setVal('cardTotalDustEarned', num(mats.dust));
+        setVal('cardTotalAncientEssenceEarned', num(mats.ancientEssence));
+
+        /* 寶石：LOOT_STATS.gems 的鍵是「種類:等級」，值是累積顆數。
+           先前讀存檔的 player.gems（持有量），合成與鑲嵌都會讓它下降。 */
+        let gemTotal = 0;
+        for (const k in (ls.gems || {})) gemTotal += Number(ls.gems[k]) || 0;
+        setVal('cardGems', gemTotal.toLocaleString() + ' 顆');
+    }
+
+    /* rarity：遊戲的 0 起算索引。回傳 { name, color, label }，label 即 R+索引。 */
+    function rarityInfo(rarity) {
+        const i = Number(rarity);
+        const name = (rarityNamesFromGame && rarityNamesFromGame[i]) || RARITY_FALLBACK_NAMES[i] || '未知';
+        return { name, color: RARITY_COLORS[i] || '#9aa5b1', label: 'R' + i };
+    }
 
     const AFFIX_CHINESE = {
         patkPct: '物理攻擊加成',
@@ -1232,6 +1285,9 @@
             parseAndLoadEvents(nativeEventsText);
             loadedNames.push('native_events.jsonl');
         }
+
+        /* 最後才套用累積統計：它必須蓋過存檔解析寫進去的持有量，不能反過來。 */
+        applyCumulativeLootCards();
 
         if (loadedNames.length > 0) {
             const statusBox = document.getElementById('loadStatusBox');
@@ -1356,7 +1412,17 @@
     function parseAndLoadSummary(jsonText) {
         try {
             const summary = JSON.parse(jsonText);
-            
+
+            /* 稀有度名稱一律以遊戲匯出的為準，不要在這支檔案自己維護第二份對照表。 */
+            if (Array.isArray(summary.rarityNames)) {
+                rarityNamesFromGame = {};
+                summary.rarityNames.forEach(r => { rarityNamesFromGame[r.index] = r.name; });
+            }
+
+            /* 累積統計先存起來，等所有檔案都載完再套用（見 applyCumulativeLootCards）。
+               存檔解析在本函式之後執行，若在這裡就寫卡片會被它蓋掉。 */
+            cumulativeLootStats = summary.lootStats || null;
+
             document.getElementById('sumSeed').innerText = summary.seed || '-';
             document.getElementById('sumHours').innerText = (summary.gameHours || '-') + ' 小時';
             document.getElementById('sumPolicy').innerText = (summary.policy && summary.policy.file) || '-';
@@ -1750,6 +1816,9 @@
                 }
             } catch (e) {}
 
+            /* 與拖放路徑一致：累積統計最後套用，蓋過存檔解析寫進去的持有量。 */
+            applyCumulativeLootCards();
+
         } catch (e) {
             console.error('載入本地數據失敗:', e);
             if (window.location.protocol === 'file:' || (e.message && e.message.includes('fetch'))) {
@@ -2024,7 +2093,7 @@
         OFFICIAL_SLOTS.forEach(slot => {
             const eq = eqMap[slot];
             if (!eq) return;
-            const rInfo = RARITY_INFO[eq.rarity] || { name: '普通', color: '#9aa5b1' };
+            const rInfo = rarityInfo(eq.rarity);
             const ancCount = eq.affixes ? eq.affixes.filter(a => a.ancient).length : 0;
 
             let starsStr = '';
@@ -2040,7 +2109,7 @@
             slotEl.innerHTML = `
                 ${starsStr ? `<div class="anc-stars">${starsStr}</div>` : ''}
                 <div class="slot-emoji">${SLOT_EMOJIS[slot] || '🛡️'}</div>
-                <div style="font-size: 10px; color: ${rInfo.color}; font-weight: bold; margin-top: 2px;">+${eq.level || eq.upgrade || 0}</div>
+                <div style="font-size: 10px; color: ${rInfo.color}; font-weight: bold; margin-top: 2px;">+${eq.upgrade || 0}</div>
             `;
             grid.appendChild(slotEl);
         });
@@ -2065,7 +2134,7 @@
             return;
         }
 
-        const rInfo = RARITY_INFO[eq.rarity] || { name: '未知', color: '#9aa5b1' };
+        const rInfo = rarityInfo(eq.rarity);
         detailPanel.style.borderColor = rInfo.color;
 
         const detailHTMLFn = window.itemDetailHTML || window.uiItemDetailHTML;
