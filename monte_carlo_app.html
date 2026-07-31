@@ -858,6 +858,7 @@
                     <div id="simProgressBarTrack" style="display: none; height: 10px; width: 100%; background: #1e293b; border-radius: 5px; overflow: hidden; border: 1px solid #334155;">
                         <div id="simProgressBarFill" style="height: 100%; width: 0%; background: linear-gradient(90deg, #6366f1 0%, #34d399 100%); transition: width 0.3s ease;"></div>
                     </div>
+                    <div id="batchSpreadBox" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--panel-border); color: #cbd5e1;"></div>
                 </div>
             </div>
 
@@ -1796,11 +1797,17 @@
                 if (progressFill) progressFill.style.width = '0%';
             } else if (data.ok) {
                 if (progressFill) progressFill.style.width = '100%';
-                if (statusText) {
-                    statusText.innerText = `✅ ${hours} 小時系統自測 100% 成功完成！正在繪製最新數據...`;
-                    statusText.style.color = 'var(--accent-emerald)';
+                if (statusText) statusText.style.color = 'var(--accent-emerald)';
+                if (seedCount > 1) {
+                    /* 批次的結果在 sim_batch/<每個 seed 一個子目錄>，不在 sim_out。
+                       圖表沒辦法同時畫 N 次模擬，所以取第一個 seed 當代表，
+                       並把跨 seed 的散佈另外列出來——只看單一 seed 會誤判，
+                       實測 5 個 seed 的物攻極差可以到 2.4 倍。 */
+                    await loadBatchResults(statusText, hours, seedCount);
+                } else {
+                    if (statusText) statusText.innerText = `✅ ${hours} 小時系統自測 100% 成功完成！正在繪製最新數據...`;
+                    await loadNativeCsvSnapshotsToApp();
                 }
-                await loadNativeCsvSnapshotsToApp();
             } else {
                 if (statusText) {
                     statusText.innerText = '❌ 系統自測失敗: ' + (data.message || data.error);
@@ -1817,6 +1824,48 @@
             if (btn) {
                 btn.disabled = false;
                 btn.innerText = '🚀 開始全系統無作弊原生模擬 (Start Simulation)';
+            }
+        }
+    }
+
+    /* ---- 批次結果 ---- */
+    async function loadBatchResults(statusText, hours, seedCount) {
+        try {
+            const r = await fetch('./sim_batch/batch_summary.json?t=' + Date.now());
+            if (!r.ok) throw new Error('讀不到 batch_summary.json');
+            const b = await r.json();
+            const rows = b.rows || [];
+            if (!rows.length) throw new Error('批次沒有成功的結果');
+
+            const base = (b.outDir || 'sim_batch') + '/' + rows[0].dir;
+            await loadNativeCsvSnapshotsToApp('./' + base);
+
+            /* 散佈表：這是**跨次模擬的統計量**，不是遊戲數值。
+               每個輸入值都直接取自各次的 run_summary.json。 */
+            const box = document.getElementById('batchSpreadBox');
+            if (box) {
+                const sp = (b.spread && b.spread[rows[0].policy]) || {};
+                const label = { level: '等級', stage: '關卡', atk: '物攻', kills: '擊殺', deaths: '死亡' };
+                let html = `<div style="font-weight:700;color:var(--accent-emerald);margin-bottom:6px;">`
+                    + `🎲 批次 ${rows.length} 個 seed × ${hours} 小時（圖表顯示 seed ${rows[0].seed}，以下為跨 seed 散佈）</div>`
+                    + '<table style="width:100%;font-size:12px;border-collapse:collapse;">'
+                    + '<tr style="color:#94a3b8;"><td>指標</td><td style="text-align:right;">最小</td>'
+                    + '<td style="text-align:right;">中位數</td><td style="text-align:right;">最大</td></tr>';
+                for (const k of Object.keys(label)) {
+                    const v = sp[k];
+                    if (!v) continue;
+                    html += `<tr><td>${label[k]}</td><td style="text-align:right;">${v.min}</td>`
+                        + `<td style="text-align:right;">${v.median}</td><td style="text-align:right;">${v.max}</td></tr>`;
+                }
+                html += '</table>';
+                box.innerHTML = html;
+                box.style.display = 'block';
+            }
+            if (statusText) statusText.innerText = `✅ 批次完成：${rows.length} 個 seed × ${hours} 小時（圖表為 seed ${rows[0].seed}）`;
+        } catch (e) {
+            if (statusText) {
+                statusText.innerText = '⚠️ 批次已完成，但讀取結果失敗: ' + e.message;
+                statusText.style.color = 'var(--accent-amber)';
             }
         }
     }
@@ -1852,9 +1901,12 @@
         }
     });
 
-    async function loadNativeCsvSnapshotsToApp() {
+        /* baseDir 預設是單跑的 sim_out；批次完成後會傳入 sim_batch/<某個 seed> 的目錄。
+       先前寫死 './sim_out/'，於是批次跑完仍然載入上一次單跑的結果——
+       畫面顯示「2 小時完成」卻配著 10 小時的舊數據，比沒更新更容易誤導。 */
+    async function loadNativeCsvSnapshotsToApp(baseDir = './sim_out') {
         try {
-            const resp = await fetch('./sim_out/snapshots.csv?t=' + Date.now());
+            const resp = await fetch(baseDir + '/snapshots.csv?t=' + Date.now());
             if (!resp.ok) {
                 const resp2 = await fetch('./sim_snapshots.csv?t=' + Date.now());
                 if (!resp2.ok) {
@@ -1869,7 +1921,7 @@
             }
 
             try {
-                const sumResp = await fetch('./sim_out/run_summary.json?t=' + Date.now());
+                const sumResp = await fetch(baseDir + '/run_summary.json?t=' + Date.now());
                 if (sumResp.ok) {
                     const sumText = await sumResp.text();
                     parseAndLoadSummary(sumText);
@@ -1877,7 +1929,7 @@
             } catch (e) {}
 
             try {
-                const metaResp = await fetch('./sim_out/snapshots.meta.json?t=' + Date.now());
+                const metaResp = await fetch(baseDir + '/snapshots.meta.json?t=' + Date.now());
                 if (metaResp.ok) {
                     const metaText = await metaResp.text();
                     parseAndLoadMeta(metaText);
@@ -1885,7 +1937,7 @@
             } catch (e) {}
 
             try {
-                const saveResp = await fetch('./sim_out/save_final.json?t=' + Date.now());
+                const saveResp = await fetch(baseDir + '/save_final.json?t=' + Date.now());
                 if (saveResp.ok) {
                     const saveText = await saveResp.text();
                     parseAndLoadSaveFinal(saveText);
@@ -1893,7 +1945,7 @@
             } catch (e) {}
 
             try {
-                const evResp = await fetch('./sim_out/native_events.jsonl?t=' + Date.now());
+                const evResp = await fetch(baseDir + '/native_events.jsonl?t=' + Date.now());
                 if (evResp.ok) {
                     const evText = await evResp.text();
                     parseAndLoadEvents(evText);

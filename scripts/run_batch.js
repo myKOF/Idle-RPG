@@ -137,6 +137,9 @@ async function main() {
     rows.push({
       policy: path.basename(job.policy, '.json'),
       seed: job.seed,
+      /* 這一次的輸出子目錄（相對於批次目錄）。讓讀 batch_summary.json 的人
+         不必自己重推命名規則——推錯了只會得到「載不到檔案」這種難查的症狀。 */
+      dir: path.basename(job.out),
       level: s.final.level, stage: s.final.stage,
       atk: s.final.atk, matk: s.final.matk,
       kills: ls.kills || 0, deaths: ls.deaths || 0,
@@ -177,6 +180,7 @@ async function main() {
   const summaryFile = path.join(OUT_DIR, 'batch_summary.json');
   fs.writeFileSync(summaryFile, JSON.stringify({
     hours: HOURS, policies: POLICIES, seeds: SEEDS, concurrency: CONCURRENCY,
+    outDir: path.relative(ROOT, OUT_DIR).replace(/\\/g, '/'),
     elapsedSec: +elapsed.toFixed(1), failed: failed.length,
     說明: 'rows 為各次模擬的原生結果；spread 為跨次統計量（不是遊戲數值）。',
     rows,
