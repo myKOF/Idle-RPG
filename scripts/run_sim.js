@@ -123,13 +123,21 @@ for (const line of policy.bootstrap) {
 
 /* ---- 指令統計 ----
    ⚠️ runCommand 的 ok 只代表「執行時沒有拋錯」，不代表「這個操作真的發生了」。
-   模擬層有三種「其實沒做到」的回法，全部都會讓 ok 是 true：
-     1. 回傳錯誤**字串**——js/skills.js:2118 的 learnOrUpgradeSkill 失敗時回 '技能點不足'，
-        那是 truthy，天真地判斷會把 1200 次失敗全部算成成功
-     2. 回傳 { err: ... }
-     3. 什麼都不回（undefined）——js/tower.js:95 的 startTowerAuto 就是，成敗都無回傳值
-   所以分成四類計數，並把遊戲給的原因原文收集起來當診斷資料。
-   第 3 類標成 unknown 而不是成功——沒有回傳值就是沒有證據，要看原生日誌才知道。 */
+   而「做到了沒有」這件事，模擬層**沒有統一的表達方式**：
+
+     js/skills.js:2129   learnOrUpgradeSkill  成功回 null，失敗回 '技能點不足'
+     js/factory.js:457   manualUpgrade        成功回 'ok'，資源不足回 'poor'，失敗回 'fail'
+     js/tower.js:95      startTowerAuto       成敗都無回傳值
+     gem.composeAll                           回 { made, err }
+
+   注意 learnOrUpgradeSkill 與 manualUpgrade **完全相反**：一個字串代表失敗，
+   另一個字串代表成功。所以**不能用型別猜語意**——這個坑踩過兩次了：
+   第一次把「字串＝失敗」寫死，於是 learnOrUpgradeSkill 的成功被算成失敗；
+   第二次沿用同一條規則，於是 manualUpgrade 回的 'ok' 又被算成失敗，
+   報表顯示「強化 231 次全部無效」，實際上武器已經 +6。
+
+   所以只在語意明確時分類，字串一律歸到 gameReply 並保留原文直方圖，交給人判讀——
+   遊戲回的字串本來就是講給人看的（'poor' / 'ok' / '技能點不足'），呈現原文比猜測有用。 */
 const cmdStats = Object.create(null);
 function bump(bucket, key) { bucket[key] = (bucket[key] || 0) + 1; }
 
@@ -138,29 +146,30 @@ function dispatch(cmds) {
     const r = engine.cmd(c.name, c.args);
     const key = c.ruleId + ' → ' + c.name;
     const s = cmdStats[key] || (cmdStats[key] = {
-      sent: 0, effective: 0, noEffect: 0, unknown: 0, error: 0, reasons: Object.create(null)
+      sent: 0, ok: 0, failed: 0, gameReply: 0, noReturn: 0, rejected: 0, replies: Object.create(null)
     });
     s.sent++;
+    const res = r && r.result;
     if (!r || !r.ok) {
-      s.error++;
-      bump(s.reasons, '[協議拒絕] ' + ((r && r.error) || 'unknown'));
-    } else if (typeof r.result === 'string') {
-      s.noEffect++;
-      bump(s.reasons, r.result);
-    } else if (r.result && typeof r.result === 'object' && r.result.err) {
-      s.noEffect++;
-      bump(s.reasons, String(r.result.err));
-    } else if (r.result === null) {
-      /* 模擬層的慣例是「null＝成功、字串＝失敗原因」（js/skills.js:2129 return null）。
-         與直覺相反，所以特別分開處理——當成失敗會把整份報告的成效數字寫反。 */
-      s.effective++;
-    } else if (r.result === false) {
-      s.noEffect++;
-      bump(s.reasons, '[回傳 false]');
-    } else if (r.result === undefined) {
-      s.unknown++;
+      /* 協議層就擋下了：指令名或參數不合法。這一類與遊戲無關，是策略寫錯。 */
+      s.rejected++;
+      bump(s.replies, '[協議拒絕] ' + ((r && r.error) || 'unknown'));
+    } else if (typeof res === 'string') {
+      /* 語意不明確：字串在不同指令代表相反的事。保留原文供判讀，不猜。 */
+      s.gameReply++;
+      bump(s.replies, res);
+    } else if (res && typeof res === 'object' && res.err) {
+      s.failed++;
+      bump(s.replies, String(res.err));
+    } else if (res === false) {
+      s.failed++;
+      bump(s.replies, '[回傳 false]');
+    } else if (res === undefined) {
+      /* 沒有回傳值就是沒有證據（js/tower.js:95）。要判斷成敗只能看原生日誌。 */
+      s.noReturn++;
     } else {
-      s.effective++;
+      /* null（js/skills.js:2129 的成功慣例）、true、或有內容的物件 */
+      s.ok++;
     }
   }
 }
