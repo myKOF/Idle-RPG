@@ -1,9 +1,9 @@
 {
   "name": "policy-light",
-  "description": "輕度玩家：每日遊玩2小時，其餘離線。強化上限+20，寶石目標全身5級爆傷，不買商店，10分鐘高塔與寶石合成。退回安全關卡時關閉自動推關穩定掛機，強度提升後重新勾選並挑戰最高關卡",
+  "description": "輕度玩家：每日遊玩2小時，其餘離線。採最佳技能與配裝策略(物理專精+爆擊爆傷詞條+技能融合)，全身11部位平均強化至+20，寶石目標全身5級爆傷，不買商店，10分鐘高塔與寶石合成。採最佳分解策略，穩定擴背包至300格，機體提升後衝刺高關(stage.goMax)",
   "decideEveryGameSec": 60,
   "dailyActiveHours": 2,
-  "needPanels": ["tower", "gems", "newforge", "equip", "header"],
+  "needPanels": ["tower", "gems", "newforge", "equip", "header", "inv"],
   "lists": {
     "skillPriority": [
       "powerSlash", "doubleStrike", "sharpBlade", "toughness", "whirlwind",
@@ -20,32 +20,24 @@
     },
     {
       "id": "auto-advance-init-on",
-      "once": true,
+      "everySec": 15,
       "cmd": "stage.setAutoAdvance",
       "args": { "on": true },
-      "why": "開局保持自動推關勾選狀態"
-    },
-
-    {
-      "id": "disable-autoadvance-on-retreat",
-      "everySec": 60,
-      "if": [["panels.header.stage.current", "<", { "$path": "panels.header.stage.best" }]],
-      "cmd": "stage.setAutoAdvance",
-      "args": { "on": false },
-      "why": "發現關卡打不過退回安全關卡時，將自動推關關閉以維持穩定掛機"
-    },
-    {
-      "id": "enable-autoadvance-and-push",
-      "everySec": 600,
-      "cmd": "stage.setAutoAdvance",
-      "args": { "on": true },
-      "why": "人物強度提升後，重新勾選自動推關以嘗試更高關卡推進"
+      "why": "持續保持自動推關勾選狀態以極速推關"
     },
     {
       "id": "push-max-stage",
-      "everySec": 600,
+      "everySec": 15,
       "cmd": "stage.goMax",
-      "why": "人物強度提升後，切換至最高關卡嘗試推進"
+      "why": "極速衝刺最高解鎖關卡"
+    },
+
+    {
+      "id": "buy-inv-upgrade",
+      "everySec": 600,
+      "if": [["panels.inv.cap", "<", 300]],
+      "cmd": "player.buyInvUpgrade",
+      "why": "背包策略：穩定將背包逐步解鎖至300格"
     },
 
     {
@@ -55,31 +47,95 @@
       "why": "輕度玩家：熔爐開兩個"
     },
     {
-      "id": "salvage-low-rarity",
+      "id": "salvage-best-strategy",
       "once": true,
       "cmd": "newforge.setQuality",
       "argsList": [
         { "furnaceId": 1, "rarity": 0, "on": true },
         { "furnaceId": 1, "rarity": 1, "on": true }
       ],
-      "why": "分解普通與優良品質裝備"
+      "why": "最佳分解策略：自動分解低於身上品質之普通與優良裝備"
     },
 
     {
-      "id": "upgrade-weapon",
+      "id": "upgrade-all-equips-weapon",
       "everySec": 120,
       "if": [["panels.equip.equipment.weapon", "truthy"]],
       "cmd": "item.upgrade",
       "args": { "itemId": { "$path": "panels.equip.equipment.weapon.id" } },
-      "why": "平均強化至+20：強化主手武器"
+      "why": "全身平均強化：主手武器"
     },
     {
-      "id": "upgrade-chest",
+      "id": "upgrade-all-equips-chest",
       "everySec": 120,
       "if": [["panels.equip.equipment.chest", "truthy"]],
       "cmd": "item.upgrade",
       "args": { "itemId": { "$path": "panels.equip.equipment.chest.id" } },
-      "why": "平均強化至+20：強化胸甲"
+      "why": "全身平均強化：胸甲"
+    },
+    {
+      "id": "upgrade-all-equips-helmet",
+      "everySec": 120,
+      "if": [["panels.equip.equipment.helmet", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.helmet.id" } },
+      "why": "全身平均強化：頭盔"
+    },
+    {
+      "id": "upgrade-all-equips-shoulder",
+      "everySec": 120,
+      "if": [["panels.equip.equipment.shoulder", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.shoulder.id" } },
+      "why": "全身平均強化：肩甲"
+    },
+    {
+      "id": "upgrade-all-equips-gloves",
+      "everySec": 120,
+      "if": [["panels.equip.equipment.gloves", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.gloves.id" } },
+      "why": "全身平均強化：手套"
+    },
+    {
+      "id": "upgrade-all-equips-wrist",
+      "everySec": 120,
+      "if": [["panels.equip.equipment.wrist", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.wrist.id" } },
+      "why": "全身平均強化：護腕"
+    },
+    {
+      "id": "upgrade-all-equips-legs",
+      "everySec": 120,
+      "if": [["panels.equip.equipment.legs", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.legs.id" } },
+      "why": "全身平均強化：腿甲"
+    },
+    {
+      "id": "upgrade-all-equips-boots",
+      "everySec": 120,
+      "if": [["panels.equip.equipment.boots", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.boots.id" } },
+      "why": "全身平均強化：靴子"
+    },
+    {
+      "id": "upgrade-all-equips-ring",
+      "everySec": 120,
+      "if": [["panels.equip.equipment.ring", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.ring.id" } },
+      "why": "全身平均強化：戒指"
+    },
+    {
+      "id": "upgrade-all-equips-amulet",
+      "everySec": 120,
+      "if": [["panels.equip.equipment.amulet", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.amulet.id" } },
+      "why": "全身平均強化：項鍊"
     },
 
     {
@@ -98,7 +154,13 @@
       "everySec": 60,
       "cmd": "skill.learn",
       "expand": [{ "key": "id", "list": "skillPriority" }],
-      "why": "只要有技能點就升級技能，主動技與被動技並重"
+      "why": "最佳技能策略：遵循最佳技能與配裝策略，專注升級物理攻防技能"
+    },
+    {
+      "id": "fuse-skills",
+      "everySec": 1200,
+      "cmd": "skill.fuse",
+      "why": "最佳技能策略：主動使用技能融合以強化技能"
     },
 
     {
