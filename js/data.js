@@ -1207,13 +1207,22 @@ var GEM_MAX_LEVEL = 5;
 var GEM_FORGE_MAX_LEVEL = 10;
 var GEM_NAMES = ['', '一級', '二級', '三級', '四級', '五級', '六級', '七級', '八級', '九級', '十級'];
 
-/* 寶石種類（12 種能力）：鑲嵌到裝備插槽後生效。
-   stat 對應 computeStats 的聚合桶（aspd 會轉為 aspdPct） */
+/* 寶石種類：鑲嵌到裝備插槽後生效。
+   stat 對應 computeStats 的聚合桶（aspd 會轉為 aspdPct）；
+   只要指到既有聚合桶，掉落／商店／合成／融合都會自動涵蓋（randomGemType 直接取鍵）。 */
 var GEM_TYPES = {
   ruby: { name: '紅寶石', emoji: '🔴', stat: 'atkFlat', statName: '物理攻擊', base: 6, pct: false },
   sapphire: { name: '藍寶石', emoji: '🔵', stat: 'matkFlat', statName: '魔法攻擊', base: 6, pct: false },
   topaz: { name: '黃玉', emoji: '🟡', stat: 'hpFlat', statName: '生命值', base: 40, pct: false },
   emerald: { name: '綠寶石', emoji: '🟢', stat: 'hpRegen', statName: '生命恢復/秒', base: 3, pct: false },
+  /* 法力對位（黃玉／綠寶石的法力側）：法力池是 40 + 智力×2，比生命池小一個數量級，
+     所以法力值 base 取黃玉 40 的一半略多。法力恢復另有考量——基礎值只有
+     2 + 智力×intMpRegen（智力 3000 時約 14/秒），而生命恢復的基礎是最大生命的
+     BASE_HP_REGEN_PCT%/秒（數百/秒）。同樣的 base 在法力側相對威力大得多，
+     故取 0.5（5 階 +4.5/秒）而非與綠寶石等值換算的 0.9；SCORE_WEIGHTS 把
+     mpRegen 定為 hpRegen 的 3.3 倍，也是同一個判斷。 */
+  iolite: { name: '堇青石', emoji: '🔮', stat: 'mpFlat', statName: '法力值', base: 25, pct: false },
+  kyanite: { name: '藍晶石', emoji: '💧', stat: 'mpRegen', statName: '法力恢復/秒', base: 0.5, pct: false },
   diamond: { name: '鑽石', emoji: '⚪', stat: 'defFlat', statName: '物理防禦', base: 5, pct: false },
   lapis: { name: '青金石', emoji: '🔷', stat: 'mdefFlat', statName: '魔法防禦', base: 5, pct: false },
   amethyst: { name: '紫水晶', emoji: '🟣', stat: 'critRate', statName: '暴擊率%', base: 1.5, pct: true },
