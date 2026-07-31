@@ -936,7 +936,7 @@ function monsterStatsFor(stage, elite, boss) {
     m.gold *= FIELD_BOSS_REWARD_MULT; m.xp *= FIELD_BOSS_REWARD_MULT;
     m.dodge += FIELD_BOSS_DODGE_ADD; m.aspd = FIELD_BOSS_ASPD;
   } else if (elite) {
-    m.hp *= 4; m.atk *= 2.5; m.gold *= 2; m.xp *= 2; m.dodge += 3; m.aspd = 1.5;
+    m.hp *= 5; m.atk *= 2; m.gold *= 2; m.xp *= 2; m.dodge += 1.5; m.aspd = 1;
   }
   return m;
 }
@@ -1547,7 +1547,7 @@ var SKILL_GLOBAL_COOLDOWN = 0.4; // 技能共用冷卻（秒；固定值，不�
 function loadoutSize() {
   if (typeof reincarnationCount === 'function' && reincarnationCount() >= 1) return 20;
   var lvl = (typeof G !== 'undefined' && G.player && G.player.level) ? G.player.level : 1;
-  return Math.min(20, Math.max(2, 2 + Math.floor(lvl / 50)));
+  return Math.min(20, Math.max(4, 4 + Math.floor(lvl / 50)));
 }
 
 // 技能升級金幣費用 = 20000 × 當前等級 + 20^(1 + 當前等級/10)
@@ -1563,8 +1563,8 @@ function skillUpgradeCost(lv) {
 var SKILL_MASTERY_MAX_LEVEL = 1000;   // 熟練度等級上限
 var SKILL_MASTERY_XP_A = 30;          // 熟練度經驗需求 係數 a
 var SKILL_MASTERY_XP_B = 3;           // 熟練度經驗需求 次方 b
-var SKILL_MASTERY_XP_C = 40;          // 熟練度經驗需求 常數 c
-var SKILL_MASTERY_XP_RATE = 100;      // 擊殺獲得技能經驗 =怪物經驗 × 此% （道具/GM 直接給值）
+var SKILL_MASTERY_XP_C = 20;          // 熟練度經驗需求 常數 c
+var SKILL_MASTERY_XP_RATE = 50;      // 擊殺獲得技能經驗 =怪物經驗 × 此% （道具/GM 直接給值）
 function skillMasteryXpForLevel(l) {
   return Math.floor(SKILL_MASTERY_XP_A * Math.pow(l, SKILL_MASTERY_XP_B) + SKILL_MASTERY_XP_C);
 }
