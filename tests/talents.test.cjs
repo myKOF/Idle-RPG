@@ -185,10 +185,11 @@ test('潛力解鎖天賦升至 100 級才解鎖；技能點依 2/4 點規則逐�
   c.G.player.talents.levels.t3_potential = 100;
   c.G.player.talents.levels.t4_potential = 100;
   assert.equal(c.talentSkillPointBonus(), 600);
-  // 2026-07-30 熟練度制：總點數 = 基礎 2 + 熟練度等級 + 潛力天賦加成（不再隨轉生/等級發放）
-  assert.equal(c.totalSkillPoints(), 602);
+  // 2026-07-30 熟練度制：總點數 = 基礎點數 + 熟練度等級 + 潛力天賦加成（不再隨轉生/等級發放）
+  const base = c.SKILL_POINT_BASE; // 開局自帶技能數；調整初始技能不該讓本測試變紅
+  assert.equal(c.totalSkillPoints(), base + 600);
   c.G.player.skillMastery = { level: 40, xp: 0 };
-  assert.equal(c.totalSkillPoints(), 642);
+  assert.equal(c.totalSkillPoints(), base + 640);
 });
 
 test('潛力解鎖天賦的 tips 明確標示「升至 100 級才會解鎖」', () => {

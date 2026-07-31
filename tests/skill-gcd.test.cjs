@@ -198,9 +198,12 @@ test('傷害範圍 all 的技能命中場上全部敵人', () => {
   assert.equal(enemies[1].hp, enemies[2].hp);
 });
 
-test('護盾技能依目前護盾做額外乘法加成', () => {
+/* 2026-07-31：護盾技能改為「最大生命 × 技能護盾%」。
+   舊式是「目前護盾基準 ×(1 + 技能護盾%)」，標示 34% 實得 134% 最大生命，約為標示的 4 倍。 */
+test('護盾技能給予最大生命固定比例的護盾，不以目前護盾為基準乘算', () => {
   const context = loadGameContext();
-  context.G.player.skills = { manaBarrier: 80 };
+  const lv = 80;
+  context.G.player.skills = { manaBarrier: lv };
   context.G.player.loadout = ['manaBarrier'];
   context.getStats = () => ({
     cdr: 0,
@@ -211,17 +214,28 @@ test('護盾技能依目前護盾做額外乘法加成', () => {
     aoeDmg: 0,
     passives: {}
   });
+  // 期望值由技能表推導，調整 manaBarrier 數值不該讓本測試變紅
+  const pct = context.scaleAt(context.mergedSkillFx('manaBarrier').shieldPctMax, lv);
+  const expected = 1000 * pct / 100;
+
   const player = playerEntity();
   player.shield = 10;
   player.shieldMax = 1000;
 
-  context.castSkill(player, null, 'manaBarrier', 80, 'float-layer');
+  context.castSkill(player, null, 'manaBarrier', lv, 'float-layer');
 
-  assertClose(player.shield, 60.2);
-  assertClose(player.shieldMax, 60.2);
+  assertClose(player.shield, expected);
+  assertClose(player.shieldMax, expected);
 
-  context.castSkill(player, null, 'manaBarrier', 80, 'float-layer');
+  // 重放不疊加：滿盾時再放維持同值
+  context.castSkill(player, null, 'manaBarrier', lv, 'float-layer');
 
-  assertClose(player.shield, 60.2);
-  assertClose(player.shieldMax, 60.2);
+  assertClose(player.shield, expected);
+  assertClose(player.shieldMax, expected);
+
+  // 被打掉一部分後重放：補回同一比例，不會疊到更高
+  player.shield = expected / 2;
+  context.castSkill(player, null, 'manaBarrier', lv, 'float-layer');
+
+  assertClose(player.shield, expected);
 });

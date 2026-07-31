@@ -1939,37 +1939,16 @@ function mergedSkillFx(id) {
   return effectiveFx(id, def, skillLevel(id));
 }
 
-/* 護盾舊資料正規化所需上限。狀態修正由 Worker 執行，UI 只讀取結果。 */
-function currentShieldSkillCap(stats) {
-  if (!stats || !(stats.hp > 0)) return 0;
-  var cap = stats.hp * 20;
-  if (typeof G === 'undefined' || !G.player || !Array.isArray(G.player.loadout)) return cap;
-  if (typeof scaleAt !== 'function') return cap;
-  for (var i = 0; i < G.player.loadout.length; i++) {
-    var id = G.player.loadout[i];
-    var lv = (G.player.skills && G.player.skills[id]) || 0;
-    if (!id || lv <= 0) continue;
-    var fx = mergedSkillFx(id);
-    if (!fx || !fx.shieldPctMax) continue;
-    var pct = scaleAt(fx.shieldPctMax, lv) * (1 + (stats.shieldEff || 0) / 100);
-    cap = Math.max(cap, stats.hp * (1 + pct / 100));
-  }
-  return cap;
-}
-
-/* ui.js 的舊路徑在 Claude 移除護盾正規化前仍需委派到模擬層實作。 */
-var simulationCurrentShieldSkillCap = currentShieldSkillCap;
-
 // 下一個里程碑等級：改制後效果自 Lv.1 全附加，恆回傳 0（保留函式供既有呼叫端相容）
 function nextUnlockLv(id, lv) {
   return 0;
 }
 
 /* ---- 技能點（2026-07-30 技能熟練度制）----
-   技能點不再隨角色升級發放：總預算 = 初始 2 點（開局兩個 1 級技能）
+   技能點不再隨角色升級發放：總預算 = 初始 3 點（開局三個 1 級技能）
    + 技能熟練度等級（每級 1 點）+ 潛力解鎖天賦加成。
    已使用：所有技能等級總和；可用 = 總預算 - 已使用。 */
-var SKILL_POINT_BASE = 2; // 開局兩個 1 級技能計入的基礎點數
+var SKILL_POINT_BASE = 3; // 開局三個 1 級技能計入的基礎點數（須與 player.js 的初始 skills 同步）
 
 function ensureSkillMastery() {
   var p = G.player;
@@ -2757,12 +2736,11 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
   if (fx.shieldPctMax) {
     var beforeShield = Math.max(0, pEnt.shield || 0);
     var shieldPct = scaleAt(fx.shieldPctMax, lv) * (1 + st.shieldEff / 100) * fxMult;
-    var shieldBase = beforeShield > 0 ? Math.max(0, pEnt.shieldSkillBase || 0) || beforeShield : st.hp;
-    // 技能護盾上限 = 最大生命 × SHIELD_SKILL_CAP_PCT%（→ formula.js §3；參數表「3-戰鬥核心/護盾上限(技能給予)」）
-    var targetShield = Math.min(shieldBase * (1 + shieldPct / 100), st.hp * (SHIELD_SKILL_CAP_PCT / 100));
+    // 技能護盾 = 最大生命 × 技能護盾%，上限 SHIELD_SKILL_CAP_PCT%
+    // （→ formula.js §3；參數表「3-戰鬥核心/護盾上限(技能給予)」）
+    var targetShield = Math.min(st.hp * (shieldPct / 100), st.hp * (SHIELD_SKILL_CAP_PCT / 100));
+    // 取 max 而非累加：同一護盾技能重放只把護盾補回該比例，不疊高。
     pEnt.shield = Math.max(beforeShield, targetShield);
-    pEnt.shieldSkillBase = shieldBase;
-    pEnt.shieldSkillPct = Math.max(pEnt.shieldSkillPct || 0, shieldPct);
     refreshShieldMaxAfterGain(pEnt, beforeShield);
     var gainedShield = Math.max(0, pEnt.shield - beforeShield);
     if (gainedShield > 0) floatPlayerEvent(floatSel, '🛡️+' + fmt(gainedShield), 'shield');
@@ -3481,7 +3459,7 @@ function describeSkill(id, lv, skipFusionDetail, fusions) {
   }
   if (fx.healPctMax) p.push('回復 ' + scaleStr(fx.healPctMax, lv) + '% 最大生命');
   if (fx.hotPct) p.push('每秒再生 ' + scaleStr(fx.hotPct, lv) + '% 生命，持續 ' + statStr(fx.hotDur) + ' 秒');
-  if (fx.shieldPctMax) p.push('目前護盾提高 ' + scaleStr(fx.shieldPctMax, lv) + '%（無護盾時以最大生命計算）');
+  if (fx.shieldPctMax) p.push('獲得相當於最大生命 ' + scaleStr(fx.shieldPctMax, lv) + '% 的護盾（不隨時間消失，被打完為止）');
   if (fx.selfCleanse) p.push('淨化自身負面狀態');
   if (fx.mpRestore) p.push('回復 ' + statStr(fx.mpRestore) + ' 法力');
   skillFxBuffList(fx).forEach(function (bf, bi) {

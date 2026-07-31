@@ -295,6 +295,7 @@ function migrateSave(data) {
   if (data.player && data.player.skills) {
     delete def.player.skills.powerSlash;
     delete def.player.skills.arcaneBurst;
+    delete def.player.skills.manaBarrier;
   }
   
   mergeDefaults(data, def);
@@ -492,7 +493,7 @@ function migrateSave(data) {
   /* ---- 技能融合改造遷移（2026-07-30，逐項冪等）----
      1) 全技能等級夾回新上限（10、轉生後 15）；點數採等級推導制，夾限即自動退點。
      2) 舊融合記錄補 seed（改用種子演算法重算）＋ algo:2；能重建者移除 fx 快照。
-     3) 舊 skillPointBudget → skillMastery.level（扣基礎 2 點、保底已花費），欄位移除。
+     3) 舊 skillPointBudget → skillMastery.level（扣 SKILL_POINT_BASE 基礎點、保底已花費），欄位移除。
      4) 裝載欄清出被融合佔用的素材技能。 */
   var mgRc = Number(data.player.reincarnations) || 0;
   var mgCapLv = (typeof REINCARNATION_SKILL_MAX_LEVELS !== 'undefined' && REINCARNATION_SKILL_MAX_LEVELS[mgRc] !== undefined)
@@ -529,7 +530,9 @@ function migrateSave(data) {
       data.player.loadout = data.player.loadout.filter(function (id) { return !mgOccupied[id]; });
     }
   }
-  // 技能點改制：舊 skillPointBudget → 熟練度等級（總點數 = 基礎 2 + 熟練度 + 天賦加成）。
+  // 技能點改制：舊 skillPointBudget → 熟練度等級（總點數 = 基礎點數 + 熟練度 + 天賦加成）。
+  // 基礎點數以 skills.js 的 SKILL_POINT_BASE 為準，不得寫死：它等於開局自帶技能數，會隨初始技能調整。
+  var spBase = (typeof SKILL_POINT_BASE === 'number') ? SKILL_POINT_BASE : 2;
   var spSpentAll = 0;
   for (var spId in data.player.skills) spSpentAll += data.player.skills[spId] || 0;
   if (data.player.talents && data.player.talents.potentialLevels) {
@@ -542,15 +545,15 @@ function migrateSave(data) {
   mgMastery.xp = Math.max(0, Math.floor(Number(mgMastery.xp) || 0));
   if (!hadSkillMastery && hadSkillPointBudget) {
     var mgOldBudget = Math.max(0, Math.floor(Number(data.player.skillPointBudget) || 0));
-    mgMastery.level = Math.max(0, Math.min(SKILL_MASTERY_MAX_LEVEL, Math.max(mgOldBudget - 2, spSpentAll - 2)));
+    mgMastery.level = Math.max(0, Math.min(SKILL_MASTERY_MAX_LEVEL, Math.max(mgOldBudget - spBase, spSpentAll - spBase)));
     mgMastery.xp = 0;
     data._skillPointRepairNotice = '技能點改由技能熟練度提供：舊技能點預算已轉換為熟練度 Lv.' + mgMastery.level;
   }
-  // 保底：已花費點數不因改制而倒欠（熟練度至少覆蓋 已花費−基礎2點；超過 1000 級上限者於下方提示保護）
-  if (spSpentAll - 2 > mgMastery.level && mgMastery.level < SKILL_MASTERY_MAX_LEVEL) {
-    mgMastery.level = Math.min(SKILL_MASTERY_MAX_LEVEL, spSpentAll - 2);
+  // 保底：已花費點數不因改制而倒欠（熟練度至少覆蓋 已花費−基礎點數；超過 1000 級上限者於下方提示保護）
+  if (spSpentAll - spBase > mgMastery.level && mgMastery.level < SKILL_MASTERY_MAX_LEVEL) {
+    mgMastery.level = Math.min(SKILL_MASTERY_MAX_LEVEL, spSpentAll - spBase);
   }
-  if (spSpentAll > 2 + mgMastery.level) {
+  if (spSpentAll > spBase + mgMastery.level) {
     data._skillPointRepairNotice = '技能投入 ' + spSpentAll + ' 點超過總點數上限，可用技能點已保護為 0；既有技能未刪除';
   }
   delete data.player.skillPointBudget; // 改制後不再使用（新點數權威 = skillMastery）

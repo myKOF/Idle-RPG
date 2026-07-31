@@ -78,12 +78,12 @@ function newGameState() {
       gemShop: { level: 1, items: [], refreshCount: 0, hourStart: Date.now() },
       books: books,
       invUpgrades: 0,
-      // 技能：初始自帶 2 個 1 級技能；技能點由「技能熟練度」提供（2026-07-30 改制）
-      skills: { powerSlash: 1, arcaneBurst: 1 },
-      skillUnlocks: { powerSlash: true, arcaneBurst: true }, // 人物等級達標後永久解鎖的技能
+      // 技能：初始自帶 3 個 1 級技能；技能點由「技能熟練度」提供（2026-07-30 改制）
+      skills: { powerSlash: 1, arcaneBurst: 1, manaBarrier: 1 },
+      skillUnlocks: { powerSlash: true, arcaneBurst: true, manaBarrier: true }, // 人物等級達標後永久解鎖的技能
       skillPoints: 0,
       skillMastery: { level: 0, xp: 0 }, // 技能熟練度：打怪/道具給經驗，每級 1 技能點，0~1000 級
-      loadout: ['powerSlash', 'arcaneBurst'],
+      loadout: ['powerSlash', 'arcaneBurst', 'manaBarrier'],
       fusions: []   // 玩家自創的融合技定義（{components, seed} 種子重算制）
 
     },
@@ -207,8 +207,6 @@ function reincarnate() {
     FIELD.player.shield = 0;
     FIELD.player.shieldMax = 0;
     FIELD.player.shieldMaxVersion = SHIELD_MAX_VERSION;
-    FIELD.player.shieldSkillBase = 0;
-    FIELD.player.shieldSkillPct = 0;
     FIELD.player.skillCds = {};
     FIELD.player.skillGcd = 0;
     // 45 新技能：轉生重置技能冷卻時，一併清空技能執行期狀態（比照 skillCds）

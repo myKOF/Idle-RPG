@@ -89,7 +89,7 @@
 
 | 行號 | 目前寫入 | v3 指令／處理 |
 |---|---|---|
-| 1372–1384 | `playerShieldMax()` 在 render 中改 `entity.shield/shieldMax/shieldMaxVersion/shieldSkillBase/shieldSkillPct` | **不可由 UI 寫 mirror**。這是 Worker 內部正規化，不應新增玩家指令；battle snapshot 應直接給可渲染值 |
+| 1372–1384 | `playerShieldMax()` 在 render 中改 `entity.shield/shieldMax/shieldMaxVersion` | **不可由 UI 寫 mirror**。這是 Worker 內部正規化，不應新增玩家指令；battle snapshot 應直接給可渲染值（`shieldSkillBase`/`shieldSkillPct` 已於 2026-07-31 護盾語意修正時移除） |
 | 1452、1503–1507 | 只改 DOM 與 UI cache；無權威狀態寫入 | 主執行緒保留 |
 | 2826、2952、2957 | 圖片載入失敗時改 `BOSS_LIST[*].imgFailed`／`TOWER.boss.imgFailed` | 改用 UI-local 圖片失敗 cache；不送指令、不寫 Worker mirror／共載資料表 |
 | 5617 | `G.stage.autoAdvance = checked` | `stage.setAutoAdvance` |
