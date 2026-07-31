@@ -1779,18 +1779,36 @@
             }
 
             /* 等到伺服器回報不再執行為止。輪詢本身也是心跳——
-               頁面關掉就不會再有人來問，伺服器的看門狗會據此中止模擬。 */
+               頁面關掉就不會再有人來問，伺服器的看門狗會據此中止模擬。
+
+               ⚠️ 伺服器整個掛掉時一定要講話。先前這裡的 catch 是空的，於是
+               fetch 一直失敗、迴圈一直空轉、畫面永遠停在最後一次成功的進度上——
+               看起來就像「還在跑」。實際發生過：伺服器行程沒了，使用者盯著
+               「批次模擬中 5/10」等了 30 分鐘，底下早就一個模擬都不在了。
+               偶發的失敗要容忍（伺服器忙碌時會漏接），連續失敗才判定為斷線。 */
+            const DEAD_AFTER = 24;          // 連續 24 次失敗 ≈ 12 秒
             const data = await new Promise((resolve) => {
+                let miss = 0;
                 const waitTimer = setInterval(async () => {
                     try {
                         const r = await fetch('/sim_progress?t=' + Date.now());
                         const p = await r.json();
+                        miss = 0;
                         if (!p.isSimulating) {
                             clearInterval(waitTimer);
                             const cancelled = /取消|已關閉/.test(p.statusText || '');
                             resolve({ ok: !cancelled && (p.percent === 100), cancelled, message: p.statusText });
                         }
-                    } catch (e) { /* 伺服器暫時無回應就繼續等 */ }
+                    } catch (e) {
+                        if (++miss < DEAD_AFTER) return;      // 偶發失敗：繼續等
+                        clearInterval(waitTimer);
+                        resolve({
+                            ok: false, cancelled: false, serverDown: true,
+                            message: '伺服器沒有回應（連續 ' + DEAD_AFTER + ' 次輪詢失敗）。'
+                                + '模擬行程可能已被中止；請重新啟動「啟動數值模擬器.bat」後再試。'
+                                + '已完成的 seed 仍保留在 sim_batch/ 內。'
+                        });
+                    }
                 }, 500);
             });
 
@@ -1819,6 +1837,14 @@
                     if (statusText) statusText.innerText = `✅ ${hours} 小時系統自測 100% 成功完成！正在繪製最新數據...`;
                     await loadNativeCsvSnapshotsToApp();
                 }
+            } else if (data.serverDown) {
+                /* 伺服器不見了。不彈 alert——使用者可能已經離開螢幕前，
+                   訊息留在面板上比一個要按掉的對話框有用。 */
+                if (statusText) {
+                    statusText.innerText = '🔌 ' + data.message;
+                    statusText.style.color = 'var(--accent-rose)';
+                }
+                if (progressFill) progressFill.style.width = '0%';
             } else {
                 if (statusText) {
                     statusText.innerText = '❌ 系統自測失敗: ' + (data.message || data.error);

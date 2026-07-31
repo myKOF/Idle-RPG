@@ -134,6 +134,34 @@ test('關卡閘門的最後一段必須是無上限、且不再設門檻', () =>
   }
 });
 
+test('關卡閘門的品質門檻在該關卡區間必須真的掉得出來', () => {
+  /* 這條擋的是一個實際發生過、而且非常昂貴的錯誤：
+     閘門要求 41~50 關達到 30% 史詩，但 FIELD_DROP_TABLE 是按**怪物等級**查表的，
+     而怪物等級＝關卡數（monsterStatsFor 的 level: stage），Lv20~49 的史詩掉落率是 0。
+     結果是一道數學上不可能打開的閘門——101 小時實跑、85,524 次掉落擲骰，
+     史詩一件都沒掉，角色從第 40 小時起卡在 41 關直到跑完，而且完全沒有徵兆。
+
+     檢查點取各段的**下緣**（進入這一段時所在的關卡），因為角色就是被卡在那裡。 */
+  let lo = 1;
+  for (const f of POLICY_FILES) {
+    for (const rule of loadPolicy(f).rules) {
+      const cps = (rule.stageGate && rule.stageGate.checkpoints) || [];
+      lo = 1;
+      for (const cp of cps) {
+        if (cp.minRarity > 0 && cp.coverage > 0) {
+          const rates = ctx.dropRatesFor(ctx.FIELD_DROP_TABLE, lo);
+          assert.ok(rates[cp.minRarity] > 0,
+            `${f} 規則 ${rule.id}：${lo}~${cp.maxStage === undefined ? '∞' : cp.maxStage} 關要求 ` +
+            `${ctx.RARITIES[cp.minRarity].name}(R${cp.minRarity})，但怪物 Lv${lo} 的該品質掉落率是 0` +
+            `（FIELD_DROP_TABLE）——這道閘門永遠打不開，模擬會從此卡死`);
+        }
+        if (cp.maxStage === undefined) break;
+        lo = cp.maxStage + 1;
+      }
+    }
+  }
+});
+
 test('關卡閘門引用的品質索引落在遊戲的 RARITIES 範圍內', () => {
   for (const f of POLICY_FILES) {
     for (const rule of loadPolicy(f).rules) {
