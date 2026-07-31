@@ -112,7 +112,40 @@ function decide(state, policy, memo) {
 
     var baseArgs = resolveArg(state, r.args || {});
 
-    if (r.argsList) {
+    if (r.bestPerSlot) {
+      /* 換裝：每個部位挑背包裡分數最高、且比身上那件更高的一件。
+
+         ⚠️ 比較用的 score 是**遊戲算的**（js/formula.js:1325 的 itemScore，
+         背包滿載「捨弱留強」用的就是同一把尺），這裡只做「取最大值」與「大於就換」。
+         策略不知道也不需要知道什麼叫強——那是遊戲的判斷，跟玩家看著面板上的數字
+         挑最好的一件穿上，是同一件事。
+
+         為什麼非要有這條：遊戲的自動裝備只填空格，不做替換
+         （js/player.js:313 的 if (G.equipment[key]) continue），
+         所以開場一分鐘把 13 個部位塞滿垃圾之後，它就再也不會動。
+         真人玩家是全程手動換裝的，AI 不做這件事就會穿著開場的普通裝打到底。 */
+      var cfg = r.bestPerSlot;
+      var items = pathVal(state, cfg.items) || [];
+      var eqScores = pathVal(state, cfg.equippedScores) || {};
+
+      /* 副手／副戒的部位鍵是 weapon2 / ring2，而背包物品的 slot 是 weapon / ring，
+         去掉結尾數字就能對上。這是命名規則的對應，不是遊戲邏輯。 */
+      var used = {};
+      for (var slotKey in eqScores) {
+        var baseSlot = String(slotKey).replace(/\d+$/, '');
+        var best = null;
+        for (var it = 0; it < items.length; it++) {
+          var item = items[it];
+          if (!item || item.slot !== baseSlot || item.locked) continue;
+          if (used[item.id]) continue;                       // 同一件不能塞兩個部位
+          if (!best || (item.score || 0) > (best.score || 0)) best = item;
+        }
+        if (!best) continue;
+        if ((best.score || 0) <= (eqScores[slotKey] || 0)) continue;   // 沒有比較好就不換
+        used[best.id] = true;
+        out.push({ name: r.cmd, args: { itemId: best.id, slotKey: slotKey }, ruleId: r.id });
+      }
+    } else if (r.argsList) {
       /* 同一條規則要送多組固定參數（例如三個品質各設一次）。 */
       for (var m = 0; m < r.argsList.length; m++) {
         out.push({ name: r.cmd, args: resolveArg(state, r.argsList[m]), ruleId: r.id });
