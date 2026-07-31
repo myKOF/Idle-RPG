@@ -67,6 +67,24 @@ let started = 0;
 let finished = 0;
 const t0 = Date.now();
 
+/* 執行中的子行程，供中止用。批次自己被 kill 掉時要一併帶走底下的模擬，
+   否則會留下一堆沒人管的孤兒行程繼續吃 CPU——伺服器的取消鈕殺的是這支批次，
+   不是它生出來的那些。 */
+const liveChildren = new Set();
+let aborted = false;
+
+function abortAll(signal) {
+  aborted = true;
+  for (const c of liveChildren) {
+    try { c.kill('SIGKILL'); } catch (e) {}
+  }
+  liveChildren.clear();
+  console.log(`\n⏹️ 批次已中止（${signal}），已停止所有子模擬。`);
+  process.exit(130);
+}
+process.on('SIGTERM', () => abortAll('SIGTERM'));
+process.on('SIGINT', () => abortAll('SIGINT'));
+
 function runJob(job) {
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [
@@ -75,11 +93,14 @@ function runJob(job) {
       `--hours=${HOURS}`, `--seed=${job.seed}`,
       `--policy=${job.policy}`, `--out=${job.out}`
     ], { cwd: ROOT, stdio: ['ignore', 'ignore', 'pipe'] });
+    liveChildren.add(child);
 
     let stderr = '';
     child.stderr.on('data', (d) => { stderr += d.toString(); });
 
     child.on('close', (code) => {
+      liveChildren.delete(child);
+      if (aborted) return resolve({ job, code: 130, stderr: '' });
       finished++;
       const mark = code === 0 ? '✅' : '❌';
       console.log(`  ${mark} [${finished}/${jobs.length}] ${job.tag}${code === 0 ? '' : '  退出碼 ' + code}`);

@@ -812,10 +812,16 @@
             </div>
         </div>
 
-        <form id="simParamsForm" onsubmit="handleFormSimSubmit(event)" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: end; background: rgba(15, 23, 42, 0.5); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+        <form id="simParamsForm" onsubmit="handleFormSimSubmit(event)" style="display: grid; grid-template-columns: 1fr 0.7fr 1fr 1fr; gap: 14px; align-items: end; background: rgba(15, 23, 42, 0.5); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
             <div class="form-group">
                 <label for="hoursInput" style="font-size: 13px; font-weight: 600; color: var(--accent-amber); display: block; margin-bottom: 6px;">⏱️ 模擬總時長 (小時 Hours)</label>
                 <input type="number" id="hoursInput" min="1" max="2160" value="100" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: #fff; font-weight: bold;" required>
+            </div>
+
+            <div class="form-group">
+                <label for="seedCountInput" style="font-size: 13px; font-weight: 600; color: var(--accent-emerald); display: block; margin-bottom: 6px;">🎲 Seed 數量 (平行批次)</label>
+                <input type="number" id="seedCountInput" min="1" max="32" value="1" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: #fff; font-weight: bold;" required>
+                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">1＝單次；&gt;1 則同策略跑多個 seed 看散佈</div>
             </div>
 
             <div class="form-group">
@@ -1692,10 +1698,15 @@
             out = 'sim_out_late';
         }
 
-        await triggerNativeSimulation(hours, seed, policy, out);
+        /* Seed 數量 > 1 走批次：同策略跑多個 seed。單次模擬每一步都依賴前一步、
+           無法平行，所以平行化放在跑與跑之間。 */
+        const seedCountEl = document.getElementById('seedCountInput');
+        const seedCount = Math.max(1, parseInt((seedCountEl && seedCountEl.value) || '1', 10) || 1);
+
+        await triggerNativeSimulation(hours, seed, policy, out, seedCount);
     }
 
-    async function triggerNativeSimulation(hours = 100, seed = 20260730, policy = 'scripts/sim/policy.default.json', out = 'sim_out') {
+    async function triggerNativeSimulation(hours = 100, seed = 20260730, policy = 'scripts/sim/policy.default.json', out = 'sim_out', seedCount = 1) {
         if (window.location.protocol === 'file:') {
             alert('💡 提示：您目前是以本地檔案 (file://) 直接開啟網頁。\n\n請雙擊開啟「啟動數值模擬器.bat」即可啟動伺服器並一鍵點擊執行系統自測！');
             return;
@@ -1704,7 +1715,7 @@
         const btn = document.getElementById('btnRunAutoSim');
         if (btn) {
             btn.disabled = true;
-            btn.innerText = `⏳ 系統自測運算中 (${hours}h 原生內核模擬...請稍候)`;
+            btn.innerText = seedCount > 1 ? `⏳ 批次模擬中 (${seedCount} 個 seed × ${hours}h...請稍候)` : `⏳ 系統自測運算中 (${hours}h 原生內核模擬...請稍候)`;
         }
 
         const statusBox = document.getElementById('loadStatusBox');
@@ -1744,7 +1755,7 @@
             const resp = await fetch('/run_sim', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ hours: hours, seed: seed, policy: policy, out: out })
+                body: JSON.stringify({ hours: hours, seed: seed, policy: policy, out: out, seeds: seedCount })
             });
             const accepted = await resp.json();
             if (!resp.ok || !accepted.ok) {

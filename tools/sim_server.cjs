@@ -66,7 +66,19 @@ const server = http.createServer((req, res) => {
     lastPollAt = Date.now();
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
     
-    if (currentProgress.isSimulating) {
+    if (currentProgress.isSimulating && currentProgress.batch) {
+      /* 批次模式：run_batch.js 不會寫 sim_progress.json，改以「已產出幾份 run_summary.json」
+         當進度。用檔案而不是解析子行程 stdout——輸出格式改了不會把進度弄壞。 */
+      const dir = path.join(ROOT, currentProgress.outDir);
+      let done = 0;
+      try {
+        for (const name of fs.readdirSync(dir)) {
+          if (fs.existsSync(path.join(dir, name, 'run_summary.json'))) done++;
+        }
+      } catch (e) {}
+      currentProgress.percent = Math.round((done / currentProgress.batch.total) * 100);
+      currentProgress.statusText = `⏳ 批次模擬 ${done} / ${currentProgress.batch.total} 次完成（每次 ${currentProgress.totalHours} 小時）`;
+    } else if (currentProgress.isSimulating) {
       const outDir = currentProgress.outDir || 'sim_out';
       const progressFile = path.join(ROOT, outDir, 'sim_progress.json');
       if (fs.existsSync(progressFile)) {
@@ -115,13 +127,32 @@ const server = http.createServer((req, res) => {
           if (parsed.seed) params.seed = Number(parsed.seed);
           if (parsed.policy) params.policy = parsed.policy;
           if (parsed.out) params.out = parsed.out;
+          if (parsed.seeds) params.seeds = Math.max(1, Math.floor(Number(parsed.seeds)));
         }
-      } catch (e) {}
+      } catch (e) {
+        /* ⚠️ 不能吞掉。先前是 catch(e){} 什麼都不做，於是請求內容壞掉時
+           會靜默改用預設值（100 小時單跑）——使用者以為送出的是 1 小時 4 個 seed，
+           實際跑的是完全不同的東西，而且沒有任何徵兆。 */
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
+        return res.end(JSON.stringify({ ok: false, message: '請求內容不是合法的 JSON：' + e.message }));
+      }
+
+      /* seeds > 1 走批次：同策略跑多個 seed，看結果散佈。
+         單次模擬無法平行（每步都依賴前一步），所以平行化放在跑與跑之間。
+         批次的輸出目錄與單跑分開，免得覆蓋掉上一份單跑結果。 */
+      const isBatch = params.seeds > 1;
+      if (isBatch && (!params.out || params.out === 'sim_out')) params.out = 'sim_batch';
 
       const outDirAbs = path.join(ROOT, params.out);
       const progressFile = path.join(outDirAbs, 'sim_progress.json');
       if (fs.existsSync(progressFile)) {
         try { fs.unlinkSync(progressFile); } catch (e) {}
+      }
+
+      /* 批次要先清乾淨舊結果，否則進度是用「已產出幾份 run_summary.json」數的，
+         上一批留下來的檔案會讓進度一開始就不是 0。 */
+      if (isBatch && fs.existsSync(outDirAbs)) {
+        try { fs.rmSync(outDirAbs, { recursive: true, force: true }); } catch (e) {}
       }
 
       currentProgress = {
@@ -130,12 +161,21 @@ const server = http.createServer((req, res) => {
         currentHour: 0,
         totalHours: params.hours,
         outDir: params.out,
-        statusText: `🚀 開始全系統原生內核模擬 (總時長 ${params.hours} 小時)...`
+        batch: isBatch ? { total: params.seeds } : null,
+        statusText: isBatch
+          ? `🚀 開始批次模擬（${params.seeds} 個 seed × ${params.hours} 小時）...`
+          : `🚀 開始全系統原生內核模擬 (總時長 ${params.hours} 小時)...`
       };
 
-      console.log(`\n🚀 [伺服器收到觸發請求] 開始執行原生內核模擬: 時數 ${params.hours}h, Seed ${params.seed}`);
+      console.log(`\n🚀 [伺服器收到觸發請求] ${isBatch ? `批次 ${params.seeds} 個 seed` : `Seed ${params.seed}`}, 時數 ${params.hours}h`);
 
-      const args = [
+      const args = isBatch ? [
+        path.join(ROOT, 'scripts/run_batch.js'),
+        `--hours=${params.hours}`,
+        `--seeds=${params.seeds}`,
+        `--policy=${params.policy}`,
+        `--out=${params.out}`
+      ] : [
         '--max-semi-space-size=64',
         path.join(ROOT, 'scripts/run_sim.js'),
         `--hours=${params.hours}`,
@@ -160,7 +200,9 @@ const server = http.createServer((req, res) => {
         if (code === 0) {
           currentProgress.percent = 100;
           currentProgress.currentHour = params.hours;
-          currentProgress.statusText = '✅ 模擬 100% 完成！';
+          currentProgress.statusText = isBatch
+            ? `✅ 批次模擬完成（${params.seeds} 個 seed）`
+            : '✅ 模擬 100% 完成！';
           console.log('✅ 模擬執行成功，已更新數據!');
         } else {
           currentProgress.statusText = `❌ 模擬失敗（退出碼 ${code}）`;
