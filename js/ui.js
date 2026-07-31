@@ -3513,7 +3513,7 @@ function nfPartsListHTML(fu, factory) {
     '<div class="hint">完全自由裝配：同類型可重複、連續點擊可一次裝滿，不佔用也不消耗零件庫存；點擊已裝格卸下。全部 10 種分解槽零件皆對該熔爐生效（速度/產量/精華/額外掉落）。</div></div>';
 }
 
-// 熔爐卡片（圖1）：左側大圖＋右側傳送帶（品質設定/啟用/摘要/帶視覺）＋零件格
+// 熔爐卡片（圖1）：左側大圖＋右側傳送帶（拆解設定/啟用/摘要/帶視覺）＋零件格
 function nfFurnaceHTML(fu, nf, factory, player) {
   var head = '<div class="node-title">' + NEW_FORGE_EMOJI + ' ' + esc(NEW_FORGE_NAME) +
     ' <span class="node-badge">#' + fu.id + '</span>' +
@@ -3522,7 +3522,7 @@ function nfFurnaceHTML(fu, nf, factory, player) {
   var open = UI.nfCfgOpen && UI.nfCfgOpen[fu.id];
   var beltRow = '<div class="nf-line-head">' +
     '<span class="nf-line-no">傳送帶</span>' +
-    '<button class="btn sm" data-nf-fid="' + fu.id + '" data-nf-cfg="1">⚙ 品質設定</button>' +
+    '<button class="btn sm" data-nf-fid="' + fu.id + '" data-nf-cfg="1">⚙ 拆解設定</button>' +
     '<label class="chk"><input type="checkbox" data-nf-fid="' + fu.id + '" data-nf-on="1"' +
     pendingUiButtonAttributes(furnacePendingKey(fu.id)) + (fu.enabled ? ' checked' : '') + '> 啟用</label>' +
     '</div>' +
@@ -3636,7 +3636,7 @@ function bindNewForgeEvents() {
           keys: [furnacePendingKey(furnaceId)],
           panels: ['newforge']
         }).catch(function (error) {
-          reportUiCommandFailure('熔爐品質設定', error, ['newforge']);
+          reportUiCommandFailure('熔爐拆解設定', error, ['newforge']);
         });
 
       }
