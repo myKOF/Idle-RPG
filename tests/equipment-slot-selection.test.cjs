@@ -7,6 +7,18 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const uiSource = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
 
+function functionBody(name) {
+  const start = uiSource.indexOf('function ' + name + '(');
+  assert.notEqual(start, -1, 'missing function ' + name);
+  const open = uiSource.indexOf('{', start);
+  let depth = 0;
+  for (let i = open; i < uiSource.length; i++) {
+    if (uiSource[i] === '{') depth++;
+    if (uiSource[i] === '}' && --depth === 0) return uiSource.slice(start, i + 1);
+  }
+  assert.fail('unterminated function ' + name);
+}
+
 function loadSelectionHelpers() {
   const context = {
     UI: { sel: null },
@@ -52,6 +64,39 @@ test('背包裝備選取仍以裝備目標部位作為裝備欄高亮部位', ()
   context.UI.sel = { id: 'inventory-weapon', source: 'inv' };
 
   assert.equal(context.selectionSlotForItem({ slot: 'weapon' }), 'weapon2');
+});
+
+test('inventory equip command preserves the selected equipment slot', async () => {
+  const context = {
+    UI: { sel: { id: 'ring-new', source: 'inv' } },
+    uiHeaderPanelSnapshot: () => ({ player: {} }),
+    uiEquipPanelSnapshot: () => ({ equipView: 0 }),
+    uiInventoryPanelSnapshot: () => null,
+    equipViewEquipment: () => ({}),
+    uiEquipTargetSlotFromSnapshot: () => 'ring2',
+    findSelItem: () => ({ id: 'ring-new', slot: 'ring' }),
+    itemPendingKey: (id) => 'item:' + id,
+    sendUiCommand: (name, args) => {
+      context.sent = { name, args };
+      return Promise.resolve({});
+    },
+    uiCommandResultError: () => null,
+    hasOwnUiState: () => false,
+    reportUiCommandFailure: () => {}
+  };
+  vm.createContext(context);
+  vm.runInContext(
+    functionBody('selectionSlotForItem') + '\n' + functionBody('detailAction'),
+    context
+  );
+
+  context.detailAction('equip');
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.deepEqual(JSON.parse(JSON.stringify(context.sent)), {
+    name: 'item.equip',
+    args: { itemId: 'ring-new', setIndex: 0, slotKey: 'ring2' }
+  });
 });
 
 test('選取空部位時，同部位背包亮起、不同部位背包灰化', () => {
