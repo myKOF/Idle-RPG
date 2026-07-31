@@ -20,18 +20,6 @@
     "inv"
   ],
   "lists": {
-    "skillPriority": [
-      "powerSlash",
-      "doubleStrike",
-      "sharpBlade",
-      "toughness",
-      "whirlwind",
-      "swiftness",
-      "armorBreak",
-      "arcaneMind",
-      "healWound",
-      "ironWall"
-    ],
     "targetAffixes": [
       "atkPct",
       "atkFlat",
@@ -45,6 +33,83 @@
       "gemEff",
       "xpBonus",
       "loot"
+    ],
+    "skillEarly": [
+      "toughness",
+      "manaBarrier",
+      "regenerate",
+      "healWound",
+      "secondWind",
+      "vampirism",
+      "sharpBlade",
+      "powerSlash",
+      "doubleStrike",
+      "whirlwind",
+      "armorBreak"
+    ],
+    "skillMid": [
+      "toughness",
+      "sharpBlade",
+      "keenEye",
+      "brutality",
+      "vampirism",
+      "swiftness",
+      "ironSkin",
+      "fortuneFavor",
+      "phantomEcho",
+      "meditation",
+      "reaperTempo",
+      "battleReflex",
+      "zeroCadence",
+      "afterimagePursuit",
+      "bulwarkFeedback",
+      "huntSigil",
+      "lingeringGlow",
+      "virulentPulse",
+      "arcaneMind",
+      "manaBarrier",
+      "regenerate",
+      "healWound",
+      "secondWind"
+    ],
+    "skillLate": [
+      "sharpBlade",
+      "keenEye",
+      "brutality",
+      "swiftness",
+      "vampirism",
+      "toughness",
+      "powerSlash",
+      "doubleStrike",
+      "whirlwind",
+      "armorBreak",
+      "executeStrike",
+      "rendWound",
+      "stunBlow",
+      "berserkStrike",
+      "preciseThrust",
+      "heavySmash",
+      "swiftCuts",
+      "counterStance",
+      "soulBrandFlurry",
+      "sinDetonate",
+      "echoBlade",
+      "warSpiritEngine",
+      "pursuitDecree",
+      "warOverture",
+      "woundCollapse",
+      "mindflowChain",
+      "swordDomain",
+      "phantomEcho",
+      "reaperTempo",
+      "battleReflex",
+      "zeroCadence",
+      "afterimagePursuit",
+      "huntSigil",
+      "manaBarrier",
+      "regenerate",
+      "healWound",
+      "secondWind"
     ]
   },
   "rules": [
@@ -82,20 +147,177 @@
       }
     },
     {
+      "id": "gem-convert",
+      "everySec": 60,
+      "cmd": "gem.convert",
+      "convertToPreferred": {
+        "gems": "panels.gems.gems",
+        "levelPath": "view.level",
+        "preferByLevel": [
+          {
+            "maxLevel": 50,
+            "types": [
+              "topaz",
+              "amethyst",
+              "onyx",
+              "ruby",
+              "sapphire"
+            ]
+          },
+          {
+            "maxLevel": 100,
+            "types": [
+              "onyx",
+              "amethyst",
+              "garnet",
+              "topaz",
+              "ruby",
+              "sapphire"
+            ]
+          },
+          {
+            "mix": [
+              [
+                "garnet"
+              ],
+              [
+                "coreFire",
+                "coreIce",
+                "coreLightning",
+                "corePoison",
+                "coreLight",
+                "coreDark"
+              ]
+            ]
+          }
+        ],
+        "maxSlots": 9,
+        "maxPerSlot": 1000,
+        "maxCommands": 4
+      },
+      "why": "把不在當前偏好段的寶石同階轉成偏好種類。偏好種類只佔 40 種寶石裡的 5~7 種、掉落又隨機，光靠「挑有貨的鑲」永遠補不滿（實測 3 小時偏好種類只有 5/20 顆）。轉換在遊戲裡同階 1:1、數量不變、不花金幣（convertGems），是既有庫存的重新分配。排在 gem-compose 之前：先把同種類集中起來，合成才有 3 顆可併，鑲上去的階級才會跟著上去。目標在偏好種類間輪流分配，否則 101 段的「一半爆傷、一半屬性」會被轉成清一色爆傷。maxSlots/maxPerSlot 對應遊戲的 GEM_CONVERT_SLOTS/GEM_CONVERT_STACK，超過會整批被回絕"
+    },
+    {
+      "id": "gem-compose",
+      "everySec": 60,
+      "cmd": "gem.composeAll",
+      "expand": [
+        {
+          "key": "type",
+          "path": "panels.gems.gems",
+          "nonEmpty": true
+        },
+        {
+          "key": "level",
+          "values": [
+            1,
+            2,
+            3,
+            4
+          ]
+        }
+      ],
+      "why": "鑲嵌前先把寶石向上合成至當前可合成的最高品質（一般合成上限為 5 級，GEM_MAX_LEVEL；6 級以上只能由熔爐產出，送 5~9 階必被回絕故不送）。nonEmpty 只送手上真的有貨的種類——遊戲開局就把 40 種寶石建好且數量為 0"
+    },
+    {
+      "id": "unsocket-off-priority",
+      "everySec": 60,
+      "cmd": "gem.unsocket",
+      "unsocketOffPriority": {
+        "equipment": "panels.inv.equipment",
+        "gems": "panels.gems.gems",
+        "levelPath": "view.level",
+        "preferByLevel": [
+          {
+            "maxLevel": 50,
+            "types": [
+              "topaz",
+              "amethyst",
+              "onyx",
+              "ruby",
+              "sapphire"
+            ]
+          },
+          {
+            "maxLevel": 100,
+            "types": [
+              "onyx",
+              "amethyst",
+              "garnet",
+              "topaz",
+              "ruby",
+              "sapphire"
+            ]
+          },
+          {
+            "mix": [
+              [
+                "garnet"
+              ],
+              [
+                "coreFire",
+                "coreIce",
+                "coreLightning",
+                "corePoison",
+                "coreLight",
+                "coreDark"
+              ]
+            ]
+          }
+        ],
+        "maxPerDecision": 2,
+        "replaceWith": "gem.socket"
+      },
+      "why": "把不符當前偏好段、或階級低於庫存最高階的寶石換掉（拆與補在同一決策點成對送出）。socketEmpty 只填空槽，前期偏好種類還沒掉到時鑲上的雜牌會把插槽佔死（實測 3 小時後 12 個插槽偏好種類 0 顆），等級跨段時也不會有任何變化。只拆不補的話空槽會被 socket-gems 的退路重新塞回雜牌，變成每分鐘拆了又鑲。拆寶石在遊戲裡免費無損（unsocketGem 直接退回庫存），故為純重新配置；補不到偏好種類就完全不動，每次最多換 2 顆"
+    },
+    {
       "id": "socket-gems",
       "everySec": 60,
       "cmd": "gem.socket",
       "socketEmpty": {
         "equipment": "panels.inv.equipment",
         "gems": "panels.gems.gems",
-        "preferTypes": [
-          "garnet",
-          "amethyst",
-          "ruby",
-          "sapphire"
+        "levelPath": "view.level",
+        "preferByLevel": [
+          {
+            "maxLevel": 50,
+            "types": [
+              "topaz",
+              "amethyst",
+              "onyx",
+              "ruby",
+              "sapphire"
+            ]
+          },
+          {
+            "maxLevel": 100,
+            "types": [
+              "onyx",
+              "amethyst",
+              "garnet",
+              "topaz",
+              "ruby",
+              "sapphire"
+            ]
+          },
+          {
+            "mix": [
+              [
+                "garnet"
+              ],
+              [
+                "coreFire",
+                "coreIce",
+                "coreLightning",
+                "corePoison",
+                "coreLight",
+                "coreDark"
+              ]
+            ]
+          }
         ]
       },
-      "why": "把寶石鑲進空插槽，優先爆傷(garnet)→爆擊(amethyst)→物攻(ruby)→魔攻(sapphire)，手上沒有偏好種類就鑲任何有貨的。等級由遊戲挑（取現有最高階）"
+      "why": "把寶石鑲進空插槽，依 player_strategy.md 寶石鑲嵌策略分段：前50級 生命→暴擊率→吸血→物攻→魔攻；51~100 吸血→暴擊率→爆傷→生命→物攻→魔攻；101以後 一半爆傷、一半六大屬性傷害加成（mix 兩組輪流）。手上沒有偏好種類就鑲任何有貨的；階級由遊戲挑（socketGem 取庫存最高階），所以本規則排在 gem-compose 之後，先合成再鑲就會鑲到當前可得的最高品質"
     },
     {
       "id": "reroll-off-target",
@@ -159,42 +381,28 @@
       "expand": [
         {
           "key": "id",
-          "list": "skillPriority"
+          "listByLevel": [
+            {
+              "maxLevel": 50,
+              "list": "skillEarly"
+            },
+            {
+              "maxLevel": 100,
+              "list": "skillMid"
+            },
+            {
+              "list": "skillLate"
+            }
+          ]
         }
       ],
-      "why": "學習主動與被動技能"
+      "why": "依 player_strategy.md 技能升級優先順序分段：前期(≤50)先點生命上限被動與護盾／持續恢復；中期(51~100)把被動技能全點滿；後期(101+)依裝備詞條方向（targetAffixes 為物理向）集中投物理。清單順序即投點優先序，點數不足時後面的由遊戲擋下"
     },
     {
       "id": "gem-shop-buy",
       "everySec": 600,
       "cmd": "gem.shopBuyAll",
       "why": "寶石商店有貨就買"
-    },
-    {
-      "id": "gem-compose",
-      "everySec": 600,
-      "cmd": "gem.composeAll",
-      "expand": [
-        {
-          "key": "type",
-          "path": "panels.gems.gems"
-        },
-        {
-          "key": "level",
-          "values": [
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9
-          ]
-        }
-      ],
-      "why": "低階寶石往上合成"
     },
     {
       "id": "tower-auto",

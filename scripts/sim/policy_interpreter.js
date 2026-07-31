@@ -61,21 +61,116 @@ function resolveArg(state, v) {
   return out;
 }
 
+/* 依角色等級選出適用的「段」。段由上往下比對，第一個 maxLevel >= 目前等級的就是它；
+   沒有 maxLevel 的段視為「以上皆非」的最後一段。
+
+   player_strategy.md 的寶石鑲嵌與技能升級都是分階段的（前 50 級／51~100／101 以後），
+   所以前中後期在這裡是同一套邊界，不各自定義一套。 */
+function pickBand(state, bands, levelPath) {
+  if (!bands || !bands.length) return null;
+  var lv = Number(pathVal(state, levelPath || 'view.level')) || 0;
+  for (var i = 0; i < bands.length; i++) {
+    if (bands[i].maxLevel === undefined || lv <= bands[i].maxLevel) return bands[i];
+  }
+  return null;
+}
+
+/* 這個節點底下所有數字的總和。寶石庫存是 { 種類: { 階級: 數量 } } 這種巢狀表，
+   要判斷「這種寶石到底有沒有貨」就得把各階級加起來。 */
+function sumLeaves(v) {
+  if (typeof v === 'number') return v;
+  if (!v || typeof v !== 'object') return 0;
+  var s = 0;
+  for (var k in v) s += sumLeaves(v[k]);
+  return s;
+}
+
 /* expand：把一條規則展開成多條指令（跨乘）。每一項的候選值來自
      { values: [...] }        寫死的清單
      { list: "名稱" }          policy.lists 裡的清單
+     { listByLevel: [...] }   依角色等級分段挑清單（見 pickBand）
      { path: "panels.x.y" }   狀態裡某個物件的鍵（或陣列的元素）
    例如「每種寶石 × 等級 1~4 各試一次合成」就是兩項跨乘。 */
 function expandCandidates(state, policy, spec) {
   if (spec.values) return spec.values.slice();
   if (spec.list) return (policy.lists[spec.list] || []).slice();
+  if (spec.listByLevel) {
+    var band = pickBand(state, spec.listByLevel, spec.levelPath);
+    if (!band) return [];
+    return (band.list ? (policy.lists[band.list] || []) : (band.values || [])).slice();
+  }
   if (spec.path) {
     var v = pathVal(state, spec.path);
     if (!v) return [];
     if (Array.isArray(v)) return v.slice();
-    return Object.keys(v);
+    var keys = Object.keys(v);
+    /* nonEmpty：只留下數量真的大於 0 的鍵。
+       遊戲一開局就把全部寶石種類建好、數量為 0（js/player.js:62），不篩的話
+       每個合成決策點都會送出 40 種 × 4 階＝160 條必定失敗的指令，把指令統計整個淹掉。
+       這不是在替遊戲判斷成敗，只是不去按明顯沒東西可按的按鈕——
+       跟 socketEmpty 要卡庫存是同一個理由。 */
+    if (spec.nonEmpty) {
+      keys = keys.filter(function (k) { return sumLeaves(v[k]) > 0; });
+    }
+    return keys;
   }
   return [];
+}
+
+/* 從偏好群組裡挑一種「手上真的有貨」的寶石。
+   依序試：這一輪輪到的群組 → 其餘群組 → 任何有貨的種類。
+   送出手上沒有的種類，遊戲只會回「沒有這種寶石」——實測寫死一種時 1,421 次呼叫全部落空。 */
+function pickGemType(groups, turn, cursor, spread, stockOf, available, allowFallback) {
+  for (var g = 0; g < groups.length; g++) {
+    var idx = (turn + g) % groups.length;
+    var list = groups[idx] || [];
+    for (var k = 0; k < list.length; k++) {
+      /* spread 群組（mix）從游標往下輪，讓六種屬性寶石平均分散到各插槽；
+         一般的偏好序群組游標恆為 0，永遠先挑清單最前面有貨的那種。 */
+      var t = list[(cursor[idx] + k) % list.length];
+      if (stockOf[t] > 0) {
+        if (spread) cursor[idx] = (cursor[idx] + k + 1) % list.length;
+        return t;
+      }
+    }
+  }
+  /* 空槽可以退而求其次鑲雜牌（有總比沒有好）；
+     但「換掉雜牌」時不行——拿雜牌換雜牌只是白做工，還會每個決策點來回一次。 */
+  if (!allowFallback) return null;
+  for (var a = 0; a < available.length; a++) if (stockOf[available[a]] > 0) return available[a];
+  return null;
+}
+
+/* 手上每種寶石的總數與最高階。庫存是 { 種類: { 階級: 數量 } } 的巢狀表。 */
+function gemStock(heldGems) {
+  var stockOf = {}, available = [], maxLvOf = {};
+  for (var gt in heldGems) {
+    var n = sumLeaves(heldGems[gt]);
+    if (n <= 0) continue;
+    stockOf[gt] = n;
+    available.push(gt);
+    var top = 0;
+    for (var lv in heldGems[gt]) {
+      if ((Number(heldGems[gt][lv]) || 0) > 0 && Number(lv) > top) top = Number(lv);
+    }
+    maxLvOf[gt] = top;
+  }
+  return { stockOf: stockOf, available: available, maxLvOf: maxLvOf };
+}
+
+/* 把偏好段攤平成「輪用群組」＋「是否屬於偏好」的查表。 */
+function bandGroups(band, fallbackTypes) {
+  var groups = null, spread = false;
+  if (band) {
+    groups = band.mix ? band.mix : [band.types || []];
+    spread = !!band.mix;
+  }
+  if (!groups) groups = [fallbackTypes || []];
+  var set = {}, flat = [];
+  for (var i = 0; i < groups.length; i++) {
+    for (var j = 0; j < groups[i].length; j++) { set[groups[i][j]] = true; flat.push(groups[i][j]); }
+  }
+  return { groups: groups, spread: spread, set: set, flat: flat };
 }
 
 /* 回傳這個決策點要送出的指令陣列。純函式：同樣的輸入必定得到同樣的輸出。 */
@@ -171,9 +266,12 @@ function decide(state, policy, memo) {
          實測 2 小時後身上握著 31 顆寶石、13 個部位卻是 0 鑲嵌、24 個空插槽全開著。
          寶石不鑲等於沒有，這是純粹的漏做。
 
-         哪一種寶石由策略資料指定（gemType，例如 garnet＝爆傷，
-         對應 player_strategy.md「寶石以攻擊為主，目標全身戴滿爆傷寶石」）。
-         夠不夠鑲、等級對不對一律由遊戲判斷，這裡只負責找出空槽並送指令。 */
+         哪一種寶石由策略資料指定，對應 player_strategy.md 的「寶石鑲嵌策略」：
+         偏好序隨等級改變（前 50 級／51~100／101 以後各一段），101 以後那段是
+         「一半爆傷、一半六大屬性傷害加成」——用 mix 表示，兩組輪流取用。
+         夠不夠鑲、等級對不對一律由遊戲判斷，這裡只負責找出空槽並送指令。
+         鑲上去的階級也是遊戲挑的（socketGem 取庫存中最高階），所以策略只要在
+         鑲嵌前先把寶石合成上去，就會自動鑲到當前可得的最高品質。 */
       var sCfg = r.socketEmpty;
       var sEquip = pathVal(state, sCfg.equipment) || {};
       var heldGems = pathVal(state, sCfg.gems) || {};
@@ -181,35 +279,156 @@ function decide(state, policy, memo) {
       /* ⚠️ 不能寫死寶石種類。socketGem() 找不到那種寶石就直接回「沒有這種寶石」
          （js/item.js:368），實測寫死 garnet 的話 1,421 次呼叫全部落空——
          身上明明有 31 顆，只是沒有那一種。
-         改成：先照 preferTypes 的優先序找手上真的有的，都沒有就用任何一種有貨的。
-         等級由遊戲自己挑（socketGem 會取現有的最高階），策略不介入。 */
-      var available = [];
-      for (var gt in heldGems) {
-        var lvObj = heldGems[gt], n = 0;
-        for (var gl in lvObj) n += Number(lvObj[gl]) || 0;
-        if (n > 0) available.push(gt);
-      }
-      var pick = null;
-      var prefer = sCfg.preferTypes || [];
-      for (var pi = 0; pi < prefer.length && !pick; pi++) {
-        if (available.indexOf(prefer[pi]) >= 0) pick = prefer[pi];
-      }
-      if (!pick && available.length) pick = available[0];
-      /* 送出的數量不能超過該種寶石的庫存，否則多出來的每一條都會換回
-         「沒有這種寶石」——實測一次決策點就浪費 183 次呼叫，把報表淹掉。 */
-      var stock = 0;
-      if (pick && heldGems[pick]) for (var sl in heldGems[pick]) stock += Number(heldGems[pick][sl]) || 0;
-      if (pick && stock > 0) {
+         所以先把「哪些種類真的有貨、各有幾顆」算出來，之後每送一顆就扣一顆；
+         送超過庫存的話多出來的每一條都會換回「沒有這種寶石」，實測一次決策點
+         就浪費 183 次呼叫，把報表淹掉。 */
+      var sStock = gemStock(heldGems);
+
+      /* 偏好群組：preferByLevel 分段（types＝偏好序；mix＝多組輪流取用），
+         沒設定就退回單一段的 preferTypes。 */
+      var sBand = bandGroups(pickBand(state, sCfg.preferByLevel, sCfg.levelPath), sCfg.preferTypes);
+      var groupTurn = 0;
+      var cursor = [];
+      for (var ci = 0; ci < sBand.groups.length; ci++) cursor.push(0);
+
+      if (sStock.available.length) {
         for (var ssk in sEquip) {
           var sItem = sEquip[ssk];
           if (!sItem || !sItem.id || !sItem.sockets) continue;
           var hasEmpty = false;
           for (var si = 0; si < sItem.sockets.length; si++) if (!sItem.sockets[si]) { hasEmpty = true; break; }
           if (!hasEmpty) continue;
-          if (stock <= 0) break;
-          stock--;
+          var pick = pickGemType(sBand.groups, groupTurn, cursor, sBand.spread, sStock.stockOf, sStock.available, true);
+          if (!pick) break;                       // 庫存見底
+          sStock.stockOf[pick]--;
+          groupTurn = (groupTurn + 1) % sBand.groups.length;
           /* 每個部位一次只送一顆：鑲上之後空槽與庫存都會變，下個決策點再算一次即可。 */
           out.push({ name: r.cmd, args: { itemId: sItem.id, type: pick }, ruleId: r.id });
+        }
+      }
+    } else if (r.convertToPreferred) {
+      /* 把不在當前偏好段的寶石轉成偏好種類（九宮格轉換）。
+
+         為什麼需要：偏好種類只佔 40 種寶石裡的 5~7 種，掉落又是隨機的，
+         所以光靠「挑有貨的鑲」永遠補不滿——實測 3 小時後身上偏好種類只有 5/20 顆，
+         其餘全是掉到什麼算什麼。轉換在遊戲裡是同階 1:1、數量不變、不花金幣
+         （convertGems，js/item.js），所以這是把既有庫存重新分配，不是憑空生資源。
+
+         排在合成之前：轉換讓同一種類的數量集中，合成才有 3 顆可併，
+         鑲上去的階級也才會跟著上去。
+
+         ⚠️ maxSlots / maxPerSlot 是遊戲的九宮格上限（GEM_CONVERT_SLOTS /
+         GEM_CONVERT_STACK），寫在策略資料裡；超過的話 convertGems 會在動手前
+         整批回絕——一格超標就整批白做，而且不會有徵兆。
+         tests/policy-keys.test.cjs 有哨兵盯著這兩個值不得超過遊戲的上限。 */
+      var cCfg = r.convertToPreferred;
+      var cGems = pathVal(state, cCfg.gems) || {};
+      var cBand = bandGroups(pickBand(state, cCfg.preferByLevel, cCfg.levelPath), cCfg.preferTypes);
+
+      if (cBand.flat.length) {
+        var maxSlots = cCfg.maxSlots || 9;
+        var maxPerSlot = cCfg.maxPerSlot || 1000;
+        var maxCommands = cCfg.maxCommands || 4;
+
+        /* 雜牌＝有貨但不在當前偏好段的種類。轉換是同階進行的，
+           所以每個 (種類, 階級) 各佔一格。 */
+        var junk = [];
+        for (var jt in cGems) {
+          if (cBand.set[jt]) continue;
+          for (var jl in cGems[jt]) {
+            var jn = Number(cGems[jt][jl]) || 0;
+            var jlv = Number(jl);
+            if (jn > 0 && jlv >= 1) junk.push({ type: jt, lv: jlv, n: Math.min(jn, maxPerSlot) });
+          }
+        }
+
+        /* 目標在偏好種類之間輪流分配。全部轉成同一種的話，101 段那個
+           「一半爆傷、一半六大屬性傷害加成」會被轉成清一色爆傷。 */
+        var buckets = {}, order = [];
+        for (var ji = 0; ji < junk.length; ji++) {
+          var tgt = cBand.flat[ji % cBand.flat.length];
+          if (!buckets[tgt]) { buckets[tgt] = []; order.push(tgt); }
+          buckets[tgt].push(junk[ji]);
+        }
+
+        var emitted = 0;
+        for (var oi = 0; oi < order.length && emitted < maxCommands; oi++) {
+          var bSlots = buckets[order[oi]];
+          for (var off = 0; off < bSlots.length && emitted < maxCommands; off += maxSlots) {
+            out.push({
+              name: r.cmd,
+              args: { slots: bSlots.slice(off, off + maxSlots), targetType: order[oi] },
+              ruleId: r.id
+            });
+            emitted++;
+          }
+        }
+      }
+    } else if (r.unsocketOffPriority) {
+      /* 把不符合當前偏好段、或階級低於庫存最高階的寶石拆下來，讓 socket-gems 重鑲。
+
+         為什麼非要有這條：socketEmpty 只填**空槽**，而前期偏好種類根本還沒掉到，
+         退而求其次鑲上的雜牌寶石就會把插槽佔死——實測 3 小時後 12 個插槽全是
+         貓眼石／堇青石／藍晶石這類，偏好種類 0 顆。等級跨到 51 偏好序整組換掉時，
+         身上也不會有任何變化。沒有這條規則，分段偏好序等於裝飾。
+
+         拆寶石在遊戲裡是**免費且無損**的（unsocketGem 直接 addGem 退回庫存，
+         js/item.js），所以這是純粹的重新配置，不消耗任何資源。
+
+         ⚠️ 拆與補**必須在同一個決策點成對送出**（replaceWith 指定補的指令）。
+         只拆不補的話，空出來的槽會在下一個決策點被 socket-gems 的「沒有偏好種類
+         就鑲任何有貨的」退路重新塞回雜牌——實測那樣做 3 小時後偏好種類只有 3/17 顆，
+         而且每分鐘都在拆了又鑲。指令是循序派送的，unsocket 先執行，
+         接著的 socket 就找得到那個剛空出來的槽。
+
+         兩個安全閥：
+         - 補不到**偏好**種類就完全不動（這一條不吃「任何有貨的」退路）。
+           拿雜牌換雜牌只是白做工，插槽空著更糟。
+         - maxPerDecision 限制單次換的數量，避免一口氣把全身拆光。 */
+      var uoCfg = r.unsocketOffPriority;
+      var uoEquip = pathVal(state, uoCfg.equipment) || {};
+      var uoStock = gemStock(pathVal(state, uoCfg.gems) || {});
+
+      /* 偏好種類與 socketEmpty 取自同一份設定，維持單一來源——
+         兩邊各寫一份的話，改了其中一份就會變成「拆掉的正是剛鑲上的」無限來回。 */
+      var uBand = bandGroups(pickBand(state, uoCfg.preferByLevel, uoCfg.levelPath), uoCfg.preferTypes);
+      var uTurn = 0, uCursor = [];
+      for (var uc = 0; uc < uBand.groups.length; uc++) uCursor.push(0);
+
+      var swapCmd = uoCfg.replaceWith;
+      var quota = (typeof uoCfg.maxPerDecision === 'number') ? uoCfg.maxPerDecision : 2;
+
+      for (var uk in uoEquip) {
+        if (quota <= 0) break;
+        var uItem = uoEquip[uk];
+        if (!uItem || !uItem.id || !uItem.sockets) continue;
+        for (var ui = 0; ui < uItem.sockets.length && quota > 0; ui++) {
+          var sg = uItem.sockets[ui];
+          if (!sg || sg.fused || !sg.type) continue;          // 空槽與融合寶石不動
+
+          var offPriority = uBand.flat.length > 0 && !uBand.set[sg.type];
+          /* socketGem 鑲的是庫存最高階那顆，所以「身上這顆比庫存最高階低」
+             就代表重鑲會拿到更好的。這個條件會自然收斂：換上最高階之後就不再成立。 */
+          var lowerThanStock = (uoStock.maxLvOf[sg.type] || 0) > (sg.level || 0);
+          if (!offPriority && !lowerThanStock) continue;      // 符合偏好又已是最高階：不動
+
+          /* 補什麼：階級升級的情況補回同一種（才拿得到高階那顆）；
+             換掉雜牌的情況照偏好序挑，且不吃「任何有貨的」退路。 */
+          var repl = null;
+          if (!offPriority) {
+            repl = sg.type;
+          } else {
+            repl = pickGemType(uBand.groups, uTurn, uCursor, uBand.spread, uoStock.stockOf, uoStock.available, false);
+            if (repl) uTurn = (uTurn + 1) % uBand.groups.length;
+          }
+          if (!repl) continue;                                // 補不到偏好種類就不拆
+
+          quota--;
+          out.push({ name: r.cmd, args: { itemId: uItem.id, index: ui }, ruleId: r.id });
+          if (swapCmd) {
+            uoStock.stockOf[repl] = (uoStock.stockOf[repl] || 0) - 1;
+            out.push({ name: swapCmd, args: { itemId: uItem.id, type: repl }, ruleId: r.id });
+          }
         }
       }
     } else if (r.rerollOffTarget) {

@@ -146,6 +146,220 @@ test('鑲寶石：只鑲手上真的有的種類，且不超過庫存', () => {
     '只鑲有空槽的部位，且送出數量不得超過庫存 2 顆');
 });
 
+/* ---- 分段策略（player_strategy.md 的寶石鑲嵌順序與技能升級優先順序）----
+   分段的邊界是角色等級，錯段不會報錯，只會整場鑲錯寶石／點錯技能。 */
+
+const BAND_RULE = {
+  id: 'sock', cmd: 'gem.socket',
+  socketEmpty: {
+    equipment: 'panels.inv.equipment', gems: 'panels.gems.gems', levelPath: 'view.level',
+    preferByLevel: [
+      { maxLevel: 50, types: ['topaz', 'amethyst'] },
+      { maxLevel: 100, types: ['onyx', 'amethyst'] },
+      { mix: [['garnet'], ['coreFire', 'coreIce']] }
+    ]
+  }
+};
+
+function socketState(level, slots, gems) {
+  const equipment = {};
+  slots.forEach((id) => { equipment[id] = { id, sockets: [null] }; });
+  return { gameTimeSec: 100, view: { level }, panels: { inv: { equipment }, gems: { gems } } };
+}
+
+test('鑲寶石：偏好序隨等級換段', () => {
+  const p = makePolicy([BAND_RULE]);
+  const stock = { topaz: { 1: 5 }, onyx: { 1: 5 }, amethyst: { 1: 5 } };
+
+  const early = p.decide(socketState(50, ['a'], stock));
+  assert.deepEqual(early.map((c) => c.args.type), ['topaz'], '前 50 級以生命(topaz)為首');
+
+  const mid = p.decide(socketState(51, ['a'], stock));
+  assert.deepEqual(mid.map((c) => c.args.type), ['onyx'],
+    '51 級起改以吸血(onyx)為首——邊界值必須落在下一段，差一級就整場鑲錯');
+});
+
+test('鑲寶石：101 以後一半爆傷、一半屬性寶石，且屬性組平均分散', () => {
+  const p = makePolicy([BAND_RULE]);
+  const cmds = p.decide(socketState(101, ['a', 'b', 'c', 'd'], {
+    garnet: { 1: 10 }, coreFire: { 1: 10 }, coreIce: { 1: 10 }
+  }));
+  const types = cmds.map((c) => c.args.type);
+  assert.equal(types.filter((t) => t === 'garnet').length, 2, '一半鑲爆傷');
+  assert.deepEqual(types, ['garnet', 'coreFire', 'garnet', 'coreIce'],
+    '屬性組要輪流取用，否則六種屬性寶石會全押在清單第一個上');
+});
+
+test('鑲寶石：偏好的種類沒貨就退到有貨的，且不超過庫存', () => {
+  const p = makePolicy([BAND_RULE]);
+  const cmds = p.decide(socketState(10, ['a', 'b', 'c'], { topaz: { 1: 0 }, amethyst: { 2: 2 } }));
+  assert.deepEqual(cmds.map((c) => c.args.type), ['amethyst', 'amethyst'],
+    'topaz 庫存 0 應退到 amethyst；只有 2 顆就只能送 2 條——送超過庫存的每一條都會換回「沒有這種寶石」');
+});
+
+/* ---- 換下寶石 ----
+   沒有這條規則的話分段偏好序是裝飾用的：socketEmpty 只填空槽，
+   前期鑲上的雜牌會把插槽佔死，等級跨段時身上也不會有任何變化。 */
+
+const UNSOCKET_RULE = {
+  id: 'unsock', cmd: 'gem.unsocket',
+  unsocketOffPriority: {
+    equipment: 'panels.inv.equipment', gems: 'panels.gems.gems', levelPath: 'view.level',
+    maxPerDecision: 9,
+    preferByLevel: [{ maxLevel: 50, types: ['topaz'] }, { types: ['garnet'] }]
+  }
+};
+
+function unsockState(level, sockets, gems) {
+  return {
+    gameTimeSec: 100, view: { level },
+    panels: { inv: { equipment: { helmet: { id: 'h', sockets } } }, gems: { gems } }
+  };
+}
+
+test('換下寶石：拆掉不符當前偏好段的種類', () => {
+  const p = makePolicy([UNSOCKET_RULE]);
+  const cmds = p.decide(unsockState(10,
+    [{ type: 'catseye', level: 1 }, { type: 'topaz', level: 2 }, { type: 'opal', level: 1 }],
+    { topaz: { 2: 3 } }));
+  assert.deepEqual(cmds.map((c) => c.args.index), [0, 2],
+    '只拆非偏好的 catseye 與 opal，偏好且已是最高階的 topaz 不動');
+});
+
+test('換下寶石：偏好種類一顆都沒有時完全不動', () => {
+  const p = makePolicy([UNSOCKET_RULE]);
+  const cmds = p.decide(unsockState(10, [{ type: 'catseye', level: 1 }], { topaz: { 1: 0 } }));
+  assert.deepEqual(cmds, [],
+    '拆下來補不回去的話插槽會空著，比留著雜牌更糟');
+});
+
+test('換下寶石：同種類但階級低於庫存最高階也要換，且會收斂', () => {
+  const p = makePolicy([UNSOCKET_RULE]);
+  const low = p.decide(unsockState(10, [{ type: 'topaz', level: 1 }], { topaz: { 1: 1, 5: 2 } }));
+  assert.deepEqual(low.map((c) => c.args.index), [0], '身上一級、庫存有五級就該換');
+
+  const top = p.decide(unsockState(10, [{ type: 'topaz', level: 5 }], { topaz: { 1: 1, 5: 2 } }));
+  assert.deepEqual(top, [],
+    '已經是庫存最高階就不再換——不收斂的話每個決策點都會拆了又鑲，永遠來回');
+});
+
+test('換下寶石：融合寶石與空槽不動，且受單次上限限制', () => {
+  const p = makePolicy([Object.assign({}, UNSOCKET_RULE, {
+    unsocketOffPriority: Object.assign({}, UNSOCKET_RULE.unsocketOffPriority, { maxPerDecision: 1 })
+  })]);
+  const cmds = p.decide(unsockState(10,
+    [null, { fused: { id: 'f1' } }, { type: 'opal', level: 1 }, { type: 'catseye', level: 1 }],
+    { topaz: { 1: 5 } }));
+  assert.deepEqual(cmds.map((c) => c.args.index), [2],
+    '空槽與融合寶石都不該被拆；上限 1 顆時只送一條——一次拆光會害角色在補回來之前裸裝作戰');
+});
+
+test('換下寶石：replaceWith 讓拆與補在同一決策點成對送出', () => {
+  const p = makePolicy([Object.assign({}, UNSOCKET_RULE, {
+    unsocketOffPriority: Object.assign({}, UNSOCKET_RULE.unsocketOffPriority, { replaceWith: 'gem.socket' })
+  })]);
+  const cmds = p.decide(unsockState(10,
+    [{ type: 'catseye', level: 1 }, { type: 'opal', level: 1 }], { topaz: { 3: 1 } }));
+  assert.deepEqual(cmds.map((c) => c.name),
+    ['gem.unsocket', 'gem.socket'],
+    '拆一顆就要立刻補一顆——只拆不補的話空槽會被 socket-gems 的退路塞回雜牌');
+  assert.equal(cmds[1].args.type, 'topaz');
+  assert.equal(cmds.length, 2,
+    'topaz 只有 1 顆，第二個雜牌就補不到偏好種類，必須放著不動而不是拆掉');
+});
+
+/* ---- 寶石轉換 ----
+   偏好種類只佔 40 種寶石裡的少數，掉落又隨機，所以「挑有貨的鑲」永遠補不滿。
+   轉換在遊戲裡是同階 1:1、數量不變、不花金幣，是既有庫存的重新分配。 */
+
+const CONVERT_RULE = {
+  id: 'conv', cmd: 'gem.convert',
+  convertToPreferred: {
+    gems: 'panels.gems.gems', levelPath: 'view.level',
+    maxSlots: 9, maxPerSlot: 1000, maxCommands: 4,
+    preferByLevel: [{ maxLevel: 50, types: ['topaz'] }, { mix: [['garnet'], ['coreFire']] }]
+  }
+};
+
+function convState(level, gems) {
+  return { gameTimeSec: 100, view: { level }, panels: { gems: { gems } } };
+}
+
+test('轉換寶石：雜牌逐 (種類,階級) 成格，偏好種類不動', () => {
+  const p = makePolicy([CONVERT_RULE]);
+  const cmds = p.decide(convState(10, {
+    catseye: { 1: 4, 3: 2 }, opal: { 1: 1 },
+    topaz: { 1: 9 },          // 已是偏好種類，不該被轉走
+    onyx: { 1: 0 }            // 沒貨
+  }));
+  assert.equal(cmds.length, 1);
+  assert.equal(cmds[0].args.targetType, 'topaz');
+  assert.deepEqual(cmds[0].args.slots, [
+    { type: 'catseye', lv: 1, n: 4 },
+    { type: 'catseye', lv: 3, n: 2 },
+    { type: 'opal', lv: 1, n: 1 }
+  ], '轉換是同階進行的，所以每個 (種類, 階級) 各佔一格；偏好種類與零庫存都不入格');
+});
+
+test('轉換寶石：目標在偏好種類之間輪流，不會轉成清一色', () => {
+  const p = makePolicy([CONVERT_RULE]);
+  const cmds = p.decide(convState(101, { catseye: { 1: 3 }, opal: { 1: 3 }, jade: { 1: 3 } }));
+  assert.deepEqual(cmds.map((c) => c.args.targetType).sort(), ['coreFire', 'garnet'],
+    '101 段是「一半爆傷、一半屬性」，全轉成同一種會把那個一半一半毀掉');
+});
+
+test('轉換寶石：單格數量與單次格數都不得超過遊戲上限', () => {
+  const p = makePolicy([Object.assign({}, CONVERT_RULE, {
+    convertToPreferred: Object.assign({}, CONVERT_RULE.convertToPreferred, { maxSlots: 2, maxPerSlot: 5 })
+  })]);
+  const cmds = p.decide(convState(10, {
+    catseye: { 1: 900 }, opal: { 1: 3 }, jade: { 1: 3 }, agate: { 1: 3 }
+  }));
+  assert.equal(cmds[0].args.slots[0].n, 5, '單格數量要夾在上限內');
+  for (const c of cmds) {
+    assert.ok(c.args.slots.length <= 2, '單次格數不得超過上限——一格超標整批就被回絕');
+  }
+  assert.equal(cmds.reduce((a, c) => a + c.args.slots.length, 0), 4, '四種雜牌全部要被排進去');
+});
+
+test('學技能：清單隨等級換段', () => {
+  const p = createPolicy({
+    name: 'test', decideEveryGameSec: 1, needPanels: [],
+    lists: { early: ['toughness'], mid: ['keenEye'], late: ['sharpBlade'] },
+    rules: [{
+      id: 'learn', cmd: 'skill.learn',
+      expand: [{ key: 'id', listByLevel: [
+        { maxLevel: 50, list: 'early' }, { maxLevel: 100, list: 'mid' }, { list: 'late' }
+      ] }]
+    }]
+  });
+  const at = (lv) => p.decide({ gameTimeSec: 100, view: { level: lv }, panels: {} }).map((c) => c.args.id);
+  assert.deepEqual(at(1), ['toughness']);
+  assert.deepEqual(at(50), ['toughness'], '50 級仍屬前期');
+  assert.deepEqual(at(51), ['keenEye']);
+  assert.deepEqual(at(101), ['sharpBlade'], '沒有 maxLevel 的段是最後一段');
+});
+
+test('合成寶石：nonEmpty 只送手上真的有貨的種類', () => {
+  const p = createPolicy({
+    name: 'test', decideEveryGameSec: 1, needPanels: [], lists: {},
+    rules: [{
+      id: 'compose', cmd: 'gem.composeAll',
+      expand: [
+        { key: 'type', path: 'panels.gems.gems', nonEmpty: true },
+        { key: 'level', values: [1, 2] }
+      ]
+    }]
+  });
+  const cmds = p.decide({
+    gameTimeSec: 100,
+    panels: { gems: { gems: { ruby: { 1: 3 }, topaz: { 1: 0, 2: 0 }, onyx: { 2: 1 } } } }
+  });
+  assert.deepEqual([...new Set(cmds.map((c) => c.args.type))].sort(), ['onyx', 'ruby'],
+    'topaz 全階都是 0 就不該送——遊戲開局會把 40 種寶石全部建好且數量為 0，不篩會送出上百條必敗指令');
+  assert.equal(cmds.length, 4, '兩種有貨 × 兩個階級');
+});
+
 test('洗詞條：只洗不在目標清單的詞條，太古詞條不動', () => {
   const rule = {
     id: 'rr', cmd: 'item.rerollAffix',
