@@ -1397,6 +1397,16 @@
                 setCardVal('cardReinc', summary.final.reincarnations + ' 轉');
             }
 
+            let rerollCount = 0;
+            if (summary.commands) {
+                for (let k in summary.commands) {
+                    if (k.includes('item.rerollAffix')) {
+                        rerollCount += (summary.commands[k].sent || 0);
+                    }
+                }
+            }
+            setCardVal('cardRerolls', rerollCount > 0 ? rerollCount.toLocaleString() + ' 次' : '0 次');
+
             if (summary.untestedCommands) {
                 console.log(`未測到指令共 ${summary.untestedCommands.length} 個：`, summary.untestedCommands);
             }
@@ -1461,6 +1471,47 @@
             }
             if (finalSaveG.tower) {
                 setCardVal('cardTowerFloor', (finalSaveG.tower.floor || 0) + ' 層');
+            }
+
+            let allEquips = [];
+            if (finalSaveG.equipment) {
+                for (let k in finalSaveG.equipment) {
+                    if (finalSaveG.equipment[k]) allEquips.push(finalSaveG.equipment[k]);
+                }
+            }
+            if (Array.isArray(finalSaveG.inventory)) {
+                allEquips = allEquips.concat(finalSaveG.inventory);
+            }
+            
+            let r012 = 0, r3 = 0, r45 = 0, r6 = 0, r7 = 0, godforge = 0, ancientAffixes = 0, gemsSocketed = 0;
+            allEquips.forEach(it => {
+                if (!it) return;
+                let rar = Number(it.rarity) || 0;
+                if (rar <= 2) r012++;
+                else if (rar === 3) r3++;
+                else if (rar === 4 || rar === 5) r45++;
+                else if (rar === 6) r6++;
+                else if (rar >= 7) r7++;
+                if (it.isGodforge) godforge++;
+                if (Array.isArray(it.affixes)) {
+                    it.affixes.forEach(af => { if (af && (af.ancient || af.isAncient)) ancientAffixes++; });
+                }
+                if (Array.isArray(it.sockets)) {
+                    it.sockets.forEach(g => { if (g) gemsSocketed++; });
+                }
+            });
+
+            setCardVal('cardAncientAffixes', ancientAffixes + ' 條');
+            setCardVal('cardGems', (gemsSocketed || (finalSaveG.gems ? Object.keys(finalSaveG.gems).length : 0)) + ' 顆');
+            setCardVal('cardObtainedGodforge', godforge.toLocaleString());
+            setCardVal('cardObtainedGenesis', r7.toLocaleString());
+            setCardVal('cardObtainedMythic', r6.toLocaleString());
+            setCardVal('cardObtainedLegendary', r45.toLocaleString());
+            setCardVal('cardObtainedEpic', r3.toLocaleString());
+            setCardVal('cardObtainedBelowEpic', r012.toLocaleString());
+            if (finalSaveG.stats) {
+                if (finalSaveG.stats.goldEarned) setCardVal('cardTotalGoldEarned', formatGameNumber(finalSaveG.stats.goldEarned));
+                if (finalSaveG.stats.stonesEarned) setCardVal('cardTotalStonesEarned', formatGameNumber(finalSaveG.stats.stonesEarned));
             }
             
         } catch (e) {
