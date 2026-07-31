@@ -1348,8 +1348,8 @@ function gemShopPrice(lv) { // 商店標價：查上方 GEM_SHOP_TABLE（刷新�
 var FIELD_DROP_TABLE = [   // 野外：依怪物等級
   { min: 150, rates: [50, 40, 30, 15, 5, 2, 0.05, 0] },
   { min: 100, rates: [40, 30, 20, 10, 2.5, 1, 0, 0] },
-  { min: 50, rates: [35, 20, 15, 10, 0.5, 0, 0, 0] },
-  { min: 1, rates: [25, 15, 10, 7, 0, 0, 0, 0] }
+  { min: 50, rates: [35, 20, 15, 5, 0.5, 0, 0, 0] },
+  { min: 1, rates: [25, 15, 10, 0, 0, 0, 0, 0] }
 ];
 var FIELD_GEM_DROP_TABLE = [ // 野外寶石：依怪物等級，各階級獨立判定
   { min: 301, rates: [14, 2.3, 0.8, 0.4, 0.3] },
