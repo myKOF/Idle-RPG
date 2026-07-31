@@ -2371,6 +2371,19 @@ textarea#save-io {
   opacity: .8;
 }
 
+.eq-slot.twohand-duplicate {
+  border-color: #f87171 !important;
+  background: linear-gradient(rgba(127, 29, 29, 0.16), rgba(7, 6, 5, 0.90));
+}
+
+.eq-slot.twohand-duplicate::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(185, 28, 28, 0.10);
+  pointer-events: none;
+}
+
 .eq-slot .th-occupied-mark {
   position: absolute;
   right: 3px;

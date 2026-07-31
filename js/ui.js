@@ -2701,11 +2701,16 @@ function renderEquip() {
   SLOT_LIST.forEach(function (slot) {
     var it = eq[slot];
     var info = SLOT_INFO[slot];
+    // A two-handed weapon occupies the main-hand slot in the data model, but
+    // the off-hand cell should still show the same weapon as a visual cue.
+    var twoHandDuplicate = !it && slot === 'weapon2' &&
+      typeof isTwoHandItem === 'function' && isTwoHandItem(eq.weapon);
+    if (twoHandDuplicate) it = eq.weapon;
     if (it) {
       var r = RARITIES[it.rarity];
       var effClass = (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= GODFORGED_IDX ? ' eff-godforged' : (it.rarity === 7 ? ' eff-genesis' : ''));
       var iconHtml = info.icon ? '<img src="images/' + info.icon + '" class="eq-icon">' : '<div class="eq-emoji">' + info.emoji + '</div>';
-      h += '<div class="eq-slot filled' + effClass + ' slot-' + slot + '" data-id="' + it.id + '" data-src="equip" data-slot="' + slot + '" style="border-color:' + r.color + '; box-shadow: inset 0 0 15px ' + r.color + '40">' +
+      h += '<div class="eq-slot filled' + effClass + (twoHandDuplicate ? ' twohand-duplicate' : '') + ' slot-' + slot + '" data-id="' + it.id + '" data-src="equip" data-slot="' + slot + '" style="border-color:' + r.color + '; box-shadow: inset 0 0 15px ' + r.color + '40">' +
         iconHtml + ancientStarBadgeHTML(it) + '</div>';
     } else {
       // 副手欄被主手雙手武器連帶佔用：加佔用標記（仍可點選，改裝副手會自動卸下雙手武器）
