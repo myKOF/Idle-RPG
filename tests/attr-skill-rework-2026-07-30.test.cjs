@@ -136,14 +136,15 @@ test('韌性同時縮短控場時間（playerDefCfg 的 ccFactor 仍含韌性）
 /* ---- 4. 敵人爆擊 ---- */
 test('敵人爆擊率依敵種區分、爆傷共用，且為具名常數（可由參數表調整）', () => {
   const c = loadContext();
-  assert.equal(c.ENEMY_CRIT_RATE_NORMAL, 8);
-  assert.equal(c.ENEMY_CRIT_RATE_ELITE, 6);
-  assert.equal(c.ENEMY_CRIT_RATE_BOSS, 4);
-  assert.equal(c.ENEMY_CRIT_DMG_PCT, 300);
-  assert.equal(c.enemyCritRateFor({ isBoss: true, elite: true }), 4);  // BOSS 優先
-  assert.equal(c.enemyCritRateFor({ elite: true }), 6);
-  assert.equal(c.enemyCritRateFor({}), 8);
-  assert.equal(c.enemyCritRateFor(null), 8);
+  /* ⚠️ 不寫死 8／6／4／300——那是參數表管的可調值（下一支測試負責驗它與參數表一致）。
+     這支要驗的是**選用邏輯**：具名常數存在、BOSS 優先於菁英、其餘走一般值。 */
+  [ 'ENEMY_CRIT_RATE_NORMAL', 'ENEMY_CRIT_RATE_ELITE', 'ENEMY_CRIT_RATE_BOSS', 'ENEMY_CRIT_DMG_PCT' ]
+    .forEach((name) => assert.equal(typeof c[name], 'number', name + ' 應為具名常數'));
+
+  assert.equal(c.enemyCritRateFor({ isBoss: true, elite: true }), c.ENEMY_CRIT_RATE_BOSS, 'BOSS 優先於菁英');
+  assert.equal(c.enemyCritRateFor({ elite: true }), c.ENEMY_CRIT_RATE_ELITE);
+  assert.equal(c.enemyCritRateFor({}), c.ENEMY_CRIT_RATE_NORMAL);
+  assert.equal(c.enemyCritRateFor(null), c.ENEMY_CRIT_RATE_NORMAL, '沒有敵人資料時退回一般值');
 });
 
 test('monsterAtkCfg 使用敵種爆擊率與爆傷常數，不再寫死 5%／150%', () => {
@@ -158,7 +159,15 @@ test('參數表含「敵人爆擊」列，且 apply_params 已建立映射', () 
   const row = csv.split(/\r?\n/).find((l) => l.includes(',3-戰鬥核心,敵人爆擊,'));
   assert.ok(row, '參數表缺少「3-戰鬥核心/敵人爆擊」列');
   const cols = row.split(',');
-  assert.deepEqual(cols.slice(-12, -8), ['8', '6', '4', '300']);
+  /* ⚠️ 比對的是「參數表與程式常數一致」，不是寫死 8／6／4／300。
+     這才是這支測試真正要守的不變量；數值本身由使用者在參數表調整。 */
+  const c = loadContext();
+  assert.deepEqual(
+    cols.slice(-12, -8),
+    [c.ENEMY_CRIT_RATE_NORMAL, c.ENEMY_CRIT_RATE_ELITE, c.ENEMY_CRIT_RATE_BOSS, c.ENEMY_CRIT_DMG_PCT]
+      .map(String),
+    '參數表的敵人爆擊四欄應與 js/formula.js 的常數一致（一般／菁英／BOSS／爆傷）'
+  );
   ['ENEMY_CRIT_RATE_NORMAL', 'ENEMY_CRIT_RATE_ELITE', 'ENEMY_CRIT_RATE_BOSS', 'ENEMY_CRIT_DMG_PCT']
     .forEach((name) => assert.ok(applyParams.includes(name), 'apply_params 缺少 ' + name));
 });
