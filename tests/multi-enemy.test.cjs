@@ -77,6 +77,41 @@ test('小怪／菁英／BOSS 各用自己的權重表（菁英不會跟著小怪
   assert.equal(context.fieldCountTableFor('boss'), context.FIELD_BOSS_COUNT_TABLE);
 });
 
+test('草原前 100 關每 20 關套用小怪分段表，菁英固定 1 隻，100 關後恢復正常', () => {
+  const context = loadFormulaContext();
+  const ranges = [1, 20, 21, 40, 41, 60, 61, 80, 81, 100];
+  ranges.forEach((stage) => {
+    const index = Math.floor((stage - 1) / 20);
+    assert.equal(context.fieldCountTableFor('normal', stage, 'plains'),
+      context.FIELD_PLAINS_EARLY_ENEMY_COUNT_TABLES[index], '草原第 ' + stage + ' 關小怪分段');
+    assert.deepEqual(JSON.parse(JSON.stringify(context.fieldCountTableFor('elite', stage, 'plains'))), [[1, 1]],
+      '草原第 ' + stage + ' 關菁英應固定 1 隻');
+  });
+  assert.equal(context.fieldCountTableFor('normal', 101, 'plains'), context.FIELD_ENEMY_COUNT_TABLE);
+  assert.equal(context.fieldCountTableFor('elite', 101, 'plains'), context.FIELD_ELITE_COUNT_TABLE);
+  assert.equal(context.fieldCountTableFor('normal', 1, 'desert'), context.FIELD_ENEMY_COUNT_TABLE);
+  assert.equal(context.fieldCountTableFor('elite', 1, 'desert'), context.FIELD_ELITE_COUNT_TABLE);
+
+  const combat = loadCombatContext();
+  [1, 21, 41, 61, 81].forEach((stage) => {
+    combat.G.stage.current = stage;
+    combat.G.stage.zone = 'plains';
+    combat.spawnFieldMonster();
+    const table = combat.FIELD_PLAINS_EARLY_ENEMY_COUNT_TABLES[Math.floor((stage - 1) / 20)];
+    const range = weightedRange(table);
+    assert.ok(combat.FIELD.monsters.length >= range.min && combat.FIELD.monsters.length <= range.max,
+      '實際出怪未套用草原第 ' + stage + ' 關分段表');
+  });
+  combat.G.stage.current = 10;
+  combat.spawnFieldMonster();
+  assert.equal(combat.FIELD.monsters.length, 1, '實際出怪的草原菁英應固定 1 隻');
+  combat.G.stage.current = 101;
+  combat.spawnFieldMonster();
+  const normalRange = weightedRange(combat.FIELD_ENEMY_COUNT_TABLE);
+  assert.ok(combat.FIELD.monsters.length >= normalRange.min && combat.FIELD.monsters.length <= normalRange.max,
+    '草原第 101 關應恢復一般小怪表');
+});
+
 test('出怪依階段敵種選用對應的數量表', () => {
   const context = loadCombatContext();
   const eliteMax = weightedRange(context.FIELD_ELITE_COUNT_TABLE).max;

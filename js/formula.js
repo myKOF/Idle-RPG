@@ -958,7 +958,17 @@ function isPurgatoryTowerFloor(floor) {
 /* 普通關卡敵人數量：權重見參數表「4-敵人數量」（預設 1 隻 60%、2 隻 25%、3 隻 10%、4 隻 5%）。
    權重 0 的列先濾掉——wpick 在浮點誤差下會回傳陣列最後一項，留著會讓「權重 0 的 16 隻」
    有極小機率被抽中。最後再夾到棋盤總格數，避免出怪數超過站得下的格子。 */
-function fieldCountTableFor(rank) {
+function fieldCountTableFor(rank, stage, zone) {
+  var s = stage == null && typeof G !== 'undefined' && G && G.stage ? G.stage.current : stage;
+  s = Math.floor(Number(s) || 0);
+  var z = zone == null && typeof G !== 'undefined' && G && G.stage ? G.stage.zone : zone;
+  z = z || 'plains';
+  var plainsEarly = z === 'plains' && s >= 1 && s <= 100;
+  if (plainsEarly && rank === 'elite') return [[1, 1]];
+  if (plainsEarly && rank !== 'boss' && typeof FIELD_PLAINS_EARLY_ENEMY_COUNT_TABLES !== 'undefined') {
+    var earlyTable = FIELD_PLAINS_EARLY_ENEMY_COUNT_TABLES[Math.floor((s - 1) / 20)];
+    if (earlyTable) return earlyTable;
+  }
   if (rank === 'boss' && typeof FIELD_BOSS_COUNT_TABLE !== 'undefined') return FIELD_BOSS_COUNT_TABLE;
   if (rank === 'elite' && typeof FIELD_ELITE_COUNT_TABLE !== 'undefined') return FIELD_ELITE_COUNT_TABLE;
   return FIELD_ENEMY_COUNT_TABLE;
@@ -966,8 +976,8 @@ function fieldCountTableFor(rank) {
 
 /* rank：'normal'（預設）／'elite'／'boss'，三者各有一張權重表。
    同樣出 16 隻，小怪打得動、菁英打不動、BOSS 佔 2×2 根本放不下，所以必須分開。 */
-function rollFieldEnemyCount(rank) {
-  var table = fieldCountTableFor(rank) || [];
+function rollFieldEnemyCount(rank, stage, zone) {
+  var table = fieldCountTableFor(rank, stage, zone) || [];
   var pairs = [];
   for (var i = 0; i < table.length; i++) {
     if (table[i][1] > 0) pairs.push(table[i]);
