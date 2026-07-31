@@ -114,6 +114,48 @@
   },
   "rules": [
     {
+      "id": "survival-gate",
+      "everySec": 15,
+      "cmd": "stage.setAutoAdvance",
+      "stageGate": {
+        "stage": "view.stage",
+        "equippedRarities": "panels.inv.equipmentRarities",
+        "argKey": "on",
+        "checkpoints": [
+          {
+            "maxStage": 20,
+            "minRarity": 2,
+            "coverage": 1,
+            "依據": "1. 前20關全身換成稀有裝再過20關守關菁英"
+          },
+          {
+            "maxStage": 40,
+            "minRarity": 3,
+            "coverage": 1,
+            "依據": "2+4. 21~29關掛機換獨特裝，第二目標40關守關菁英"
+          },
+          {
+            "maxStage": 50,
+            "minRarity": 4,
+            "coverage": 0.3,
+            "依據": "4. 41~49關掛機，全身至少一部份換到史詩才挑戰50關BOSS"
+          },
+          {
+            "maxStage": 59,
+            "minRarity": 4,
+            "coverage": 1,
+            "依據": "5. 通關50關BOSS後在51~59關掛機，全身換成史詩"
+          },
+          {
+            "minRarity": 0,
+            "coverage": 0,
+            "依據": "指南只涵蓋前期（50級前生存引導），之後交回各強度自己的推關策略"
+          }
+        ]
+      },
+      "why": "依 player_strategy.md「前期優先生存任務指南」控制自動推關：裝備品質覆蓋率沒到門檻就關掉自動推關、留在原地掛機把裝備換上來。指南的核心是不要讓關卡跑在裝備前面——推太深只會一直死，死了就掉不到裝備，掉不到裝備就更推不動。先前是無條件每 15 秒送一次「開啟自動推關」，正是指南要防的那件事。覆蓋率只算身上真的有裝備的部位（空部位面板值為 -1，雙手武器會讓 weapon2 永遠空著，算進分母的話門檻永遠到不了、閘門永久關閉）"
+    },
+    {
       "id": "equip-best-per-slot",
       "everySec": 15,
       "cmd": "item.equip",
@@ -346,15 +388,6 @@
         "on": true
       },
       "why": "開啟自動換裝"
-    },
-    {
-      "id": "auto-advance-on",
-      "everySec": 15,
-      "cmd": "stage.setAutoAdvance",
-      "args": {
-        "on": true
-      },
-      "why": "持續開啟自動推關"
     },
     {
       "id": "salvage-low-rarity",
