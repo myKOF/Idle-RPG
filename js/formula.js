@@ -911,8 +911,8 @@ function segmentedLevelGrowth(base, level, brackets) {
 }
 
 function monsterStatsFor(stage, elite, boss) {
-  var hp = (20 + stage * 18) * Math.pow(1.06, stage - 1);
-  var atk = (3 + stage * 4) * Math.pow(1.055, stage - 1);
+  var hp = (20 + stage * 16) * Math.pow(1.06, stage - 1);
+  var atk = (2 + stage * 3.5) * Math.pow(1.055, stage - 1);
   var def = (2 + stage * 0.5) * Math.pow(1.06, stage - 1);
   var gold = (250 + stage) * Math.pow(1.018, stage - 1);
   var xp = (60 + stage) * Math.pow(1.06, stage - 1);
@@ -1560,7 +1560,7 @@ var SKILL_MASTERY_MAX_LEVEL = 1000;   // 熟練度等級上限
 var SKILL_MASTERY_XP_A = 30;          // 熟練度經驗需求 係數 a
 var SKILL_MASTERY_XP_B = 3;           // 熟練度經驗需求 次方 b
 var SKILL_MASTERY_XP_C = 20;          // 熟練度經驗需求 常數 c
-var SKILL_MASTERY_XP_RATE = 50;      // 擊殺獲得技能經驗 =怪物經驗 × 此% （道具/GM 直接給值）
+var SKILL_MASTERY_XP_RATE = 90;      // 擊殺獲得技能經驗 =怪物經驗 × 此% （道具/GM 直接給值）
 function skillMasteryXpForLevel(l) {
   return Math.floor(SKILL_MASTERY_XP_A * Math.pow(l, SKILL_MASTERY_XP_B) + SKILL_MASTERY_XP_C);
 }
