@@ -306,6 +306,63 @@ function decide(state, policy, memo) {
           out.push({ name: r.cmd, args: { itemId: sItem.id, type: pick }, ruleId: r.id });
         }
       }
+    } else if (r.enchantPriority) {
+      /* 依部位可用的附魔類別挑書附上去。
+
+         遊戲規定每個部位只吃一種類別（enchantCatForType：武器/戒指/手套/護腕＝攻擊，
+         項鍊/鞋子＝功能，其餘＝防禦），所以 player_strategy.md 的附魔優先序
+         其實是**按類別分工**而不是單一排序：
+           功能部位 → 生命值(vigor)
+           攻擊部位 → 冰凍(ice)
+           防禦部位 → 六大屬性抗性，平均分散
+
+         ⚠️ 部位與類別的對應由遊戲的面板欄位提供（equipmentEnchantInfo），
+         策略不自己抄一份。抄一份的話遲早跟遊戲脫鉤，而 manualEnchant 只會回
+         「XX 只能使用 OO 類附魔」——看報表完全不會發現整條規則從沒生效過。 */
+      var eCfg = r.enchantPriority;
+      var eEquip = pathVal(state, eCfg.equipment) || {};
+      var eInfo = pathVal(state, eCfg.enchantInfo) || {};
+      var eBooks = pathVal(state, eCfg.books) || {};
+      var byCat = eCfg.byCategory || {};
+      var spreadCats = {};
+      for (var sc = 0; sc < (eCfg.spread || []).length; sc++) spreadCats[eCfg.spread[sc]] = true;
+
+      /* 每個類別各自的游標，讓「平均分散」那種類別（六大抗性）輪流取用，
+         而不是把書全押在清單第一個上。 */
+      if (!memo.enchantCursor) memo.enchantCursor = {};
+      var eQuota = (typeof eCfg.maxPerDecision === 'number') ? eCfg.maxPerDecision : 4;
+
+      for (var esk in eEquip) {
+        if (eQuota <= 0) break;
+        var eItem = eEquip[esk];
+        var info = eInfo[esk];
+        if (!eItem || !eItem.id || !info || !info.cat) continue;
+        /* cap 0＝普通裝備不能附魔；已放滿就跳過（同鍵覆蓋只有數值會提升時才成立，
+           而裝備不動的話數值不會變，每次都送只會每次都被回絕）。 */
+        var cur = eItem.enchants || [];
+        if (!(info.cap > 0) || cur.length >= info.cap) continue;
+
+        var cands = byCat[info.cat] || [];
+        if (!cands.length) continue;
+        var has = {};
+        for (var hi = 0; hi < cur.length; hi++) if (cur[hi] && cur[hi].key) has[cur[hi].key] = true;
+
+        var start = spreadCats[info.cat] ? (memo.enchantCursor[info.cat] || 0) : 0;
+        var bookKey = null;
+        for (var ci2 = 0; ci2 < cands.length; ci2++) {
+          var cand = cands[(start + ci2) % cands.length];
+          if (has[cand]) continue;
+          if ((Number(eBooks[cand]) || 0) < 1) continue;      // 沒書就別送，遊戲只會回「沒有這本書」
+          bookKey = cand;
+          if (spreadCats[info.cat]) memo.enchantCursor[info.cat] = (start + ci2 + 1) % cands.length;
+          break;
+        }
+        if (!bookKey) continue;
+
+        eBooks[bookKey] = (Number(eBooks[bookKey]) || 0) - 1;  // 同一決策點內不重複用同一本
+        eQuota--;
+        out.push({ name: r.cmd, args: { itemId: eItem.id, bookKey: bookKey }, ruleId: r.id });
+      }
     } else if (r.stageGate) {
       /* 關卡閘門：裝備品質沒到門檻就關掉自動推關，留在原地掛機把裝備換上來。
 

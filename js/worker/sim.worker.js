@@ -513,6 +513,24 @@ function buildInventoryPanel(params) {
         out[slot] = typeof eq[slot].rarity === 'number' ? eq[slot].rarity : 0;
       }
       return out;
+    })(),
+    /* 附魔書庫存（逐種）。view.books 只有總數，決定「這件要附什麼」時不夠用。 */
+    books: G.player ? (G.player.books || {}) : {},
+    /* 每個部位能用的附魔類別與可放幾條——兩者都由遊戲的函式算，不在外面重推。
+       部位與類別的對應（武器/戒指/手套/護腕＝攻擊，項鍊/鞋子＝功能，其餘＝防禦）
+       是遊戲規則，抄一份到策略裡遲早會跟遊戲脫鉤，而 manualEnchant 只會回一句
+       「XX 只能使用 OO 類附魔」，看報表完全不會發現整條規則沒生效過。 */
+    equipmentEnchantInfo: (function () {
+      var out = {};
+      var eq = G.equipment || {};
+      for (var slot in eq) {
+        if (!eq[slot]) continue;
+        out[slot] = {
+          cat: (typeof enchantCatForType === 'function') ? enchantCatForType(eq[slot].slot) : null,
+          cap: (typeof enchantCapFor === 'function') ? enchantCapFor(eq[slot]) : 0
+        };
+      }
+      return out;
     })()
   };
 }

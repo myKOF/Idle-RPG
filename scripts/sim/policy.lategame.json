@@ -500,6 +500,37 @@
         ]
       },
       "why": "把寶石鑲進空插槽，依 player_strategy.md 寶石鑲嵌策略分段：前50級 生命→暴擊率→吸血→物攻→魔攻；51~100 吸血→暴擊率→爆傷→生命→物攻→魔攻；101以後 一半爆傷、一半六大屬性傷害加成（mix 兩組輪流）。手上沒有偏好種類就鑲任何有貨的；階級由遊戲挑（socketGem 取庫存最高階），所以本規則排在 gem-compose 之後，先合成再鑲就會鑲到當前可得的最高品質"
+    },
+    {
+      "id": "enchant-equipped",
+      "everySec": 300,
+      "cmd": "item.enchant",
+      "enchantPriority": {
+        "equipment": "panels.inv.equipment",
+        "enchantInfo": "panels.inv.equipmentEnchantInfo",
+        "books": "panels.inv.books",
+        "byCategory": {
+          "util": [
+            "vigor"
+          ],
+          "atk": [
+            "ice"
+          ],
+          "def": [
+            "fireRes",
+            "iceRes",
+            "lightningRes",
+            "poisonRes",
+            "lightRes",
+            "darkRes"
+          ]
+        },
+        "spread": [
+          "def"
+        ],
+        "maxPerDecision": 4
+      },
+      "why": "依 player_strategy.md 附魔策略：生命值(vigor)→冰凍(ice)→六大屬性抗性平均。遊戲規定每個部位只吃一種類別（enchantCatForType：武器/戒指/手套/護腕＝攻擊，項鍊/鞋子＝功能，其餘＝防禦），所以這份優先序實際上是按類別分工而不是單一排序：功能部位放生命值、攻擊部位放冰凍、防禦部位放六大抗性並輪流分散。部位與類別的對應取自遊戲的面板欄位，策略不自己抄——抄一份遲早跟遊戲脫鉤，而 manualEnchant 只會回「XX 只能使用 OO 類附魔」，看報表不會發現規則從沒生效"
     }
   ]
 }
