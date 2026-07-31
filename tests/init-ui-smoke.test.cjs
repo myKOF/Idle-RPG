@@ -244,11 +244,12 @@ test('Worker Snapshot 完整但主執行緒 G 為空時 initUI 與 uiTick 不拋
       gems: {}, fusedGems: [],
       shop: { level: 1, items: [], refreshes: 0, hourStart: Date.now() }
     },
-    skills: { skills: {}, unlocks: {}, loadout: [], fusions: [], points: 0, budget: 0 },
+    skills: { skills: {}, unlocks: {}, loadout: [], loadoutSize: 4, fusions: [], points: 0, budget: 0 },
     talents: { talents: { levels: {}, potentialLevels: {} }, reincarnations: 0, talentPoints: 0 },
     tower: { tower: { active: false }, player: null, monsters: [] }
   };
   assert.doesNotThrow(() => context.initUI());
+  assert.equal(context.skillViewLoadoutSize({ loadoutSize: 4 }), 4);
 
   for (const renderer of [
     'renderHeader', 'renderBattle', 'renderEquip', 'renderInventory',

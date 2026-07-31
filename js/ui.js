@@ -5392,12 +5392,9 @@ function skillViewSpentPoints(skillsSnapshot, talentSnapshot, reincarnations) {
   return spent;
 }
 
-function skillViewLoadoutSize(headerSnapshot, reincarnations) {
-  if (reincarnations >= 1) return 20;
-  var level = Math.max(1, Math.floor(Number(
-    headerSnapshot && headerSnapshot.player && headerSnapshot.player.level
-  ) || 1));
-  return Math.min(20, Math.max(2, 2 + Math.floor(level / 50)));
+function skillViewLoadoutSize(skillsSnapshot) {
+  var cap = Number(skillsSnapshot && skillsSnapshot.loadoutSize);
+  return Number.isFinite(cap) ? Math.max(0, Math.floor(cap)) : 0;
 }
 
 function skillViewLoadout(snapshot) {
@@ -5522,13 +5519,13 @@ function renderSkills() {
     masteryText.textContent = atMasteryCap ? '已滿級' : (fmt(mastery.xp) + ' / ' + fmt(mastery.xpMax));
   }
 
-  // 裝載欄（初始 2 格，每 20 級再 +1 格，最多 20 格）
+  // 裝載欄上限由 Worker 依參數表計算；存檔只保存已裝備技能，不保存欄位數。
   var loBox = $id('skill-loadout');
   var lo = skillViewLoadout(skillsSnapshot);
-  var cap = skillViewLoadoutSize(headerSnapshot, reincarnations);
+  var cap = skillViewLoadoutSize(skillsSnapshot);
   var loadoutPendingKey = nodePendingKey('skill-loadout');
   var loadoutPending = isUiCommandPending(loadoutPendingKey);
-  $id('loadout-cap').textContent = lo.length + '/' + cap + ' 格' + (reincarnations >= 1 ? '（1 轉已解鎖全部 20 格）' : '（初始 2 格，每 20 級再 +1 格）');
+  $id('loadout-cap').textContent = lo.length + '/' + cap + ' 格' + (reincarnations >= 1 ? '（1 轉已解鎖全部上限）' : '（依參數表成長）');
   var lh = '';
   for (var i = 0; i < cap; i++) {
     var id0 = lo[i];
