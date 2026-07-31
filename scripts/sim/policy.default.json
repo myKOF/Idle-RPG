@@ -1,37 +1,16 @@
 {
   "name": "baseline-idle-v2",
   "notes": [
-    "策略是資料，不是程式。開跑前寫定，執行期不得修改（run_sim.js 比對 sha256）。",
-    "每條規則只做一件事：送出一個玩家指令。能不能執行由遊戲判斷——",
-    "點數不足、素材不夠、前置未達一律由 runCommand 回錯，策略不預判、不自己算。",
-    "指令名必須存在於 js/worker/protocol.js 的指令表，否則會被 runCommand 擋下。",
-    "",
-    "⚠️ 全新角色跑 100 小時碰不到天賦與神鑄熔爐：轉生門檻是 Lv.1000",
-    "（REINCARNATION_LEVEL），而神鑄要 1 轉才開（FORGE_UNLOCK_REINCARNATION）。",
-    "那些規則仍然寫在這裡，條件成立就會開始送指令；要實際測到請改用",
-    "scripts/sim/policy.lategame.json（以 GM 建立已轉生的測試前提，並公開揭露）。"
+    "預設基礎策略：包含自動推關、高塔挑戰與自動退場、自動換裝、熔煉與強化裝備"
   ],
-  "decideEveryGameSec": 30,
-  "needPanels": ["tower", "gems", "forge", "newforge", "talents"],
+  "decideEveryGameSec": 15,
+  "needPanels": ["tower", "gems", "forge", "newforge", "talents", "equip", "skills", "header"],
   "lists": {
     "skillPriority": [
       "powerSlash", "doubleStrike", "sharpBlade", "toughness", "whirlwind",
-      "swiftness", "armorBreak", "arcaneMind", "healWound", "ironWall",
-      "executeStrike", "berserkStrike", "rendWound", "brutality", "vampirism",
-      "keenEye", "meditation", "stunBlow", "secondWind", "regenerate"
+      "swiftness", "armorBreak", "arcaneMind", "healWound", "ironWall"
     ],
-    "talentPriority": [
-      "t1_str", "t1_agi", "t1_int", "t1_vit", "t1_def", "t1_mdef", "t1_pres", "t1_mres",
-      "t2_crit", "t2_critdmg", "t2_hit", "t2_hp", "t2_shield", "t2_evasion", "t2_normalred", "t2_elitered",
-      "t3_normal", "t3_elite", "t3_boss", "t3_potential", "t3_allres", "t3_def", "t3_mdef", "t3_allres2",
-      "t4_phys", "t4_magic", "t4_def", "t4_special", "t4_passive", "t4_potential", "t4_normalred", "t4_elitered",
-      "t5_fire", "t5_ice", "t5_lightning", "t5_poison", "t5_light", "t5_dark", "t5_allres", "t5_global",
-      "t6_vsfire", "t6_vsice", "t6_vslightning", "t6_vspoison", "t6_vsdark", "t6_vslight", "t6_boss", "t6_bossred",
-      "t7_patk", "t7_matk", "t7_allres", "t7_evasion", "t7_hit", "t7_global", "t7_potential", "t7_totaldmg",
-      "t8_rvsfire", "t8_rvsice", "t8_rvslightning", "t8_rvspoison", "t8_rvsdark", "t8_rvslight", "t8_boss", "t8_bossred",
-      "t9_fire", "t9_ice", "t9_lightning", "t9_poison", "t9_light", "t9_dark", "t9_pres", "t9_mres",
-      "t10_str", "t10_agi", "t10_int", "t10_vit", "t10_bossred", "t10_gemeff", "t10_totaldmg", "t10_potential"
-    ]
+    "targetAffixes": ["gemEff", "xpGain", "dropRate", "patk"]
   },
   "rules": [
     {
@@ -39,15 +18,22 @@
       "once": true,
       "cmd": "factory.setAutoEquip",
       "args": { "on": true },
-      "why": "換裝交給遊戲原生的自動裝備，不由策略自己比較裝備強弱"
+      "why": "開啟自動換裝"
     },
     {
       "id": "auto-advance-on",
-      "once": true,
+      "everySec": 15,
       "cmd": "stage.setAutoAdvance",
       "args": { "on": true },
-      "why": "推關由遊戲判斷是否打得動，不由策略自己估 DPS"
+      "why": "持續開啟自動推關"
     },
+    {
+      "id": "push-max-stage",
+      "everySec": 15,
+      "cmd": "stage.goMax",
+      "why": "高頻衝刺最高解鎖關卡"
+    },
+
     {
       "id": "salvage-low-rarity",
       "once": true,
@@ -55,107 +41,70 @@
       "argsList": [
         { "furnaceId": 1, "rarity": 0, "on": true },
         { "furnaceId": 1, "rarity": 1, "on": true },
-        { "furnaceId": 1, "rarity": 2, "on": true }
+        { "furnaceId": 1, "rarity": 2, "on": true },
+        { "furnaceId": 1, "rarity": 3, "on": true }
       ],
-      "why": "普通/優良/精良自動拆解成碎片與精華；獨特以上留著給神鑄與自動換裝"
+      "why": "自動分解普通~史詩裝備，保持背包暢通"
     },
+
+    {
+      "id": "upgrade-weapon",
+      "everySec": 30,
+      "if": [["panels.equip.equipment.weapon", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.weapon.id" } },
+      "why": "強化主手武器"
+    },
+    {
+      "id": "upgrade-chest",
+      "everySec": 30,
+      "if": [["panels.equip.equipment.chest", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.chest.id" } },
+      "why": "強化胸甲"
+    },
+
     {
       "id": "learn-skills",
-      "everySec": 60,
+      "everySec": 30,
       "cmd": "skill.learn",
       "expand": [{ "key": "id", "list": "skillPriority" }],
-      "why": "依固定優先序嘗試學習／升級，點數不足時遊戲回錯，屬正常"
-    },
-    {
-      "id": "buy-inventory",
-      "everySec": 600,
-      "cmd": "player.buyInvUpgrade",
-      "why": "定期嘗試擴充背包；買不起時遊戲回錯"
+      "why": "學習主動與被動技能"
     },
 
     {
       "id": "gem-shop-buy",
       "everySec": 600,
       "cmd": "gem.shopBuyAll",
-      "why": "寶石商店有貨就整批買，買得起與否由遊戲判斷"
-    },
-    {
-      "id": "gem-shop-upgrade",
-      "everySec": 3600,
-      "cmd": "gem.shopUpgrade",
-      "why": "定期嘗試升級商店等級，提升出貨品質"
+      "why": "寶石商店有貨就買"
     },
     {
       "id": "gem-compose",
-      "everySec": 1800,
+      "everySec": 600,
       "cmd": "gem.composeAll",
       "expand": [
         { "key": "type", "path": "panels.gems.gems" },
-        { "key": "level", "values": [1, 2, 3, 4] }
+        { "key": "level", "values": [1, 2, 3, 4, 5, 6, 7, 8, 9] }
       ],
-      "why": "低階寶石往上合成。種類直接取自遊戲面板，不寫死寶石清單。等級只到 4——遊戲回報「五級寶石已是最高階」，再往上送只是白呼叫"
+      "why": "低階寶石往上合成"
     },
 
     {
       "id": "tower-auto",
-      "everySec": 300,
+      "everySec": 600,
       "cmd": "tower.startAuto",
       "args": {
         "floor": { "$add": [{ "$path": "panels.tower.tower.highest" }, 1] },
-        "count": 10
+        "count": 1
       },
-      "if": [
-        ["panels.tower.tower.active", "falsy"],
-        ["panels.tower.runtime.auto", "falsy"]
-      ],
-      "why": "從已通關的下一層開始連續挑戰 10 層；打不過由遊戲自己中止"
+      "why": "挑戰高塔"
     },
     {
-      "id": "tower-confirm",
+      "id": "tower-finish-if-needed",
       "everySec": 30,
-      "cmd": "tower.confirmResult",
-      "if": [["panels.tower.runtime.showingResult", "truthy"]],
-      "why": "結算畫面卡著會擋住下一場，玩家會按確認，AI 也按"
-    },
-
-    {
-      "id": "newforge-add-furnace",
-      "everySec": 1800,
-      "cmd": "newforge.addFurnace",
-      "why": "有條件就多開一座熔爐；不符條件時遊戲回錯"
-    },
-    {
-      "id": "forge-auto-on",
-      "everySec": 600,
-      "cmd": "forge.setAuto",
-      "args": { "key": "autoForge", "on": true },
-      "if": [["panels.forge.forge.unlocked", "truthy"]],
-      "why": "神鑄開放後打開自動鑄造，鑄造流程交給遊戲跑"
-    },
-    {
-      "id": "forge-autofill",
-      "everySec": 1800,
-      "cmd": "forge.setAutoFill",
-      "args": { "kind": "equip", "rarity": 3 },
-      "if": [["panels.forge.forge.unlocked", "truthy"]],
-      "why": "自動補放獨特品質裝備進法陣。挑獨特是因為普通~精良已被熔爐拆掉"
-    },
-
-    {
-      "id": "talent-upgrade",
-      "everySec": 300,
-      "cmd": "talent.upgrade",
-      "expand": [{ "key": "id", "list": "talentPriority" }],
-      "if": [["panels.talents.talentPoints", ">", 0]],
-      "why": "依固定優先序配天賦點；未解鎖或點數不足由遊戲回錯"
-    },
-
-    {
-      "id": "reincarnate",
-      "everySec": 60,
-      "cmd": "player.reincarnate",
-      "if": [["view.level", ">=", 1000]],
-      "why": "到達轉生門檻（Lv.1000）就轉生，換取轉生倍率與天賦樹"
+      "if": [["panels.tower.tower.active", "truthy"]],
+      "cmd": "tower.finish",
+      "why": "高塔挑戰結束後回到野外戰鬥"
     }
   ]
 }

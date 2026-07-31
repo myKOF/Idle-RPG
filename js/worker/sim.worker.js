@@ -744,6 +744,17 @@ var COMMAND_IMPL = {
     UI.dirty.battle = true;
     return true;
   },
+  'stage.goMax': function (a) {
+    if (typeof stageGoMax === 'function') stageGoMax();
+    else if (G && G.stage) G.stage.current = G.stage.best || 1;
+    UI.dirty.battle = true; UI.dirty.header = true;
+    return true;
+  },
+  'stage.go': function (a) {
+    if (typeof stageGo === 'function') stageGo(a.delta || 0);
+    UI.dirty.battle = true; UI.dirty.header = true;
+    return true;
+  },
 
   /* ---- 裝備、背包 ---- */
   'item.equip': function (a) {
@@ -779,6 +790,30 @@ var COMMAND_IMPL = {
     it.locked = !!a.locked;
     UI.dirty.inv = true; UI.dirty.equip = true;
     return { id: it.id, locked: it.locked };
+  },
+
+  'item.upgrade': function (a) {
+    var it = mustResolve(a.itemId);
+    if (!it) return false;
+    var res = (typeof manualUpgrade === 'function') ? manualUpgrade(it) : null;
+    UI.dirty.inv = true; UI.dirty.equip = true; UI.dirty.header = true;
+    return res;
+  },
+
+  'item.rerollAffix': function (a) {
+    var it = mustResolve(a.itemId);
+    if (!it) return false;
+    var res = (typeof rerollSingleAffix === 'function') ? rerollSingleAffix(it, a.affixKey) : null;
+    UI.dirty.inv = true; UI.dirty.equip = true; UI.dirty.header = true;
+    return res;
+  },
+
+  'gem.socket': function (a) {
+    var it = mustResolve(a.itemId);
+    if (!it) return false;
+    var res = (typeof socketGem === 'function') ? socketGem(it, a.type) : null;
+    UI.dirty.inv = true; UI.dirty.equip = true; UI.dirty.gems = true; UI.dirty.header = true;
+    return res;
   },
 
   'item.salvage': function (a) {
