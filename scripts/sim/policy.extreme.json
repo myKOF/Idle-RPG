@@ -1,9 +1,9 @@
 {
   "name": "policy-extreme",
-  "description": "極限玩家：24小時不間斷在線。最終神鑄創世裝+60，80%+6太古詞條+5菁英傷，寶石商店重置8次+掃光，極速潛力與技能融合，階梯點滿轉生天賦。自動熔煉分解普通~史詩裝備確保背包暢通，機體強度提升後立刻重新勾選自動推關衝刺高關(stage.goMax)",
+  "description": "極限玩家：24小時不間斷在線。最終神鑄創世裝+60，80%+6太古詞條+5菁英傷，寶石商店重置8次+掃光，極速潛力與技能融合，階梯點滿轉生天賦。穩定將背包擴充至1000格，自動熔煉分解普通~史詩裝備，機體強度提升後衝刺高關(stage.goMax)",
   "decideEveryGameSec": 5,
   "dailyActiveHours": 24,
-  "needPanels": ["tower", "gems", "newforge", "equip", "skills", "talents", "header"],
+  "needPanels": ["tower", "gems", "newforge", "equip", "skills", "talents", "header", "inv"],
   "lists": {
     "skillPriority": [
       "powerSlash", "doubleStrike", "sharpBlade", "toughness", "whirlwind",
@@ -42,6 +42,14 @@
       "everySec": 15,
       "cmd": "stage.goMax",
       "why": "極速衝刺最高解鎖關卡"
+    },
+
+    {
+      "id": "buy-inv-upgrade",
+      "everySec": 300,
+      "if": [["panels.inv.cap", "<", 1000]],
+      "cmd": "player.buyInvUpgrade",
+      "why": "背包策略：穩定將背包逐步解鎖至1000格"
     },
 
     {

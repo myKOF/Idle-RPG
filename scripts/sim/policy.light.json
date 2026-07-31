@@ -1,9 +1,9 @@
 {
   "name": "policy-light",
-  "description": "輕度玩家：每日遊玩2小時，其餘離線。強化上限+20，寶石目標全身5級爆傷，不買商店，10分鐘高塔與寶石合成。退回安全關卡時關閉自動推關穩定掛機，強度提升後重新勾選並挑戰最高關卡",
+  "description": "輕度玩家：每日遊玩2小時，其餘離線。強化上限+20，寶石目標全身5級爆傷，不買商店，10分鐘高塔與寶石合成。穩定將背包擴充至300格，機體強度提升後衝刺高關(stage.goMax)",
   "decideEveryGameSec": 60,
   "dailyActiveHours": 2,
-  "needPanels": ["tower", "gems", "newforge", "equip", "header"],
+  "needPanels": ["tower", "gems", "newforge", "equip", "header", "inv"],
   "lists": {
     "skillPriority": [
       "powerSlash", "doubleStrike", "sharpBlade", "toughness", "whirlwind",
@@ -20,32 +20,24 @@
     },
     {
       "id": "auto-advance-init-on",
-      "once": true,
+      "everySec": 15,
       "cmd": "stage.setAutoAdvance",
       "args": { "on": true },
-      "why": "開局保持自動推關勾選狀態"
-    },
-
-    {
-      "id": "disable-autoadvance-on-retreat",
-      "everySec": 60,
-      "if": [["panels.header.stage.current", "<", { "$path": "panels.header.stage.best" }]],
-      "cmd": "stage.setAutoAdvance",
-      "args": { "on": false },
-      "why": "發現關卡打不過退回安全關卡時，將自動推關關閉以維持穩定掛機"
-    },
-    {
-      "id": "enable-autoadvance-and-push",
-      "everySec": 600,
-      "cmd": "stage.setAutoAdvance",
-      "args": { "on": true },
-      "why": "人物強度提升後，重新勾選自動推關以嘗試更高關卡推進"
+      "why": "持續保持自動推關勾選狀態以極速推關"
     },
     {
       "id": "push-max-stage",
-      "everySec": 600,
+      "everySec": 15,
       "cmd": "stage.goMax",
-      "why": "人物強度提升後，切換至最高關卡嘗試推進"
+      "why": "極速衝刺最高解鎖關卡"
+    },
+
+    {
+      "id": "buy-inv-upgrade",
+      "everySec": 600,
+      "if": [["panels.inv.cap", "<", 300]],
+      "cmd": "player.buyInvUpgrade",
+      "why": "背包策略：穩定將背包逐步解鎖至300格"
     },
 
     {

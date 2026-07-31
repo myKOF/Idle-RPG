@@ -1,9 +1,9 @@
 {
   "name": "policy-moderate",
-  "description": "中度玩家：每日遊玩4小時。目標全身神話裝+35，詞條70%+首飾保證1鑲嵌/1經驗/1掉寶，金幣充裕升級商店，每20分鐘掃商店+重置2次，10分鐘寶石合成與高塔，主動技能融合。自動熔煉分解普通~稀有裝備確保背包暢通，機體強度提升後立刻重新勾選自動推關衝刺高關(stage.goMax)",
+  "description": "中度玩家：每日遊玩4小時。目標全身神話裝+35，詞條70%+首飾保證1鑲嵌/1經驗/1掉寶，金幣充裕升級商店，每20分鐘掃商店+重置2次，10分鐘寶石合成與高塔，主動技能融合。穩定將背包擴充至500格，自動熔煉分解普通~稀有裝備，機體強度提升後衝刺高關(stage.goMax)",
   "decideEveryGameSec": 30,
   "dailyActiveHours": 4,
-  "needPanels": ["tower", "gems", "newforge", "equip", "skills", "header"],
+  "needPanels": ["tower", "gems", "newforge", "equip", "skills", "header", "inv"],
   "lists": {
     "skillPriority": [
       "powerSlash", "doubleStrike", "sharpBlade", "toughness", "whirlwind",
@@ -32,6 +32,14 @@
       "everySec": 15,
       "cmd": "stage.goMax",
       "why": "極速衝刺最高解鎖關卡"
+    },
+
+    {
+      "id": "buy-inv-upgrade",
+      "everySec": 600,
+      "if": [["panels.inv.cap", "<", 500]],
+      "cmd": "player.buyInvUpgrade",
+      "why": "背包策略：穩定將背包逐步解鎖至500格"
     },
 
     {
@@ -157,7 +165,7 @@
         "floor": { "$add": [{ "$path": "panels.tower.tower.highest" }, 1] },
         "count": 1
       },
-      "why": "每20分鐘嘗試一次BOSS挑戰"
+      "why": "每10分鐘嘗試一次BOSS挑戰"
     },
     {
       "id": "tower-finish-if-needed",
