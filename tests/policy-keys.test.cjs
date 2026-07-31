@@ -147,6 +147,26 @@ test('關卡閘門引用的品質索引落在遊戲的 RARITIES 範圍內', () =
   }
 });
 
+test('策略引用的附魔書鍵都存在於 ENCHANTS，且類別對得上', () => {
+  /* 送錯類別只會換回「XX 只能使用 OO 類附魔」——規則整場落空，看報表看不出來。
+     這裡直接拿遊戲的 ENCHANTS[key].cat 對照策略把它歸在哪一類。 */
+  for (const f of POLICY_FILES) {
+    for (const rule of loadPolicy(f).rules) {
+      const byCat = rule.enchantPriority && rule.enchantPriority.byCategory;
+      if (!byCat) continue;
+      for (const cat of Object.keys(byCat)) {
+        for (const key of byCat[cat]) {
+          const def = ctx.ENCHANTS[key];
+          assert.ok(def, `${f} 規則 ${rule.id} 引用了不存在的附魔書「${key}」（見 js/data.js 的 ENCHANTS）`);
+          assert.equal(def.cat, cat,
+            `${f} 規則 ${rule.id} 把「${key}」歸在 ${cat} 類，但遊戲裡它是 ${def.cat} 類——` +
+            '部位只吃自己那一類，歸錯的話這本書永遠附不上去');
+        }
+      }
+    }
+  }
+});
+
 test('寶石轉換的九宮格上限不得超過遊戲的上限', () => {
   /* convertGems 是先驗證整批、任一格超標就整批回絕（js/item.js），
      所以超標不是「多的那格失敗」，而是那次轉換完全沒發生——而且不會有徵兆。

@@ -268,6 +268,72 @@ test('換下寶石：replaceWith 讓拆與補在同一決策點成對送出', ()
     'topaz 只有 1 顆，第二個雜牌就補不到偏好種類，必須放著不動而不是拆掉');
 });
 
+/* ---- 附魔 ----
+   遊戲規定每個部位只吃一種類別，送錯類別只會換回一句「XX 只能使用 OO 類附魔」，
+   規則整場落空卻看不出來。 */
+
+const ENCHANT_RULE = {
+  id: 'ench', cmd: 'item.enchant',
+  enchantPriority: {
+    equipment: 'panels.inv.equipment',
+    enchantInfo: 'panels.inv.equipmentEnchantInfo',
+    books: 'panels.inv.books',
+    byCategory: { util: ['vigor'], atk: ['ice'], def: ['fireRes', 'iceRes', 'lightningRes'] },
+    spread: ['def'], maxPerDecision: 9
+  }
+};
+
+function enchState(equipment, info, books) {
+  return { gameTimeSec: 100, panels: { inv: { equipment, equipmentEnchantInfo: info, books } } };
+}
+
+test('附魔：依部位的類別挑書，不跨類別', () => {
+  const p = makePolicy([ENCHANT_RULE]);
+  const cmds = p.decide(enchState(
+    { amulet: { id: 'a', enchants: [] }, weapon: { id: 'w', enchants: [] }, helmet: { id: 'h', enchants: [] } },
+    { amulet: { cat: 'util', cap: 1 }, weapon: { cat: 'atk', cap: 1 }, helmet: { cat: 'def', cap: 1 } },
+    { vigor: 1, ice: 1, fireRes: 1 }
+  ));
+  assert.deepEqual(cmds.map((c) => c.args.bookKey), ['vigor', 'ice', 'fireRes'],
+    '功能部位放生命值、攻擊部位放冰凍、防禦部位放抗性');
+});
+
+test('附魔：六大抗性要輪流分散，不是全押第一個', () => {
+  const p = makePolicy([ENCHANT_RULE]);
+  const cmds = p.decide(enchState(
+    { helmet: { id: 'h', enchants: [] }, chest: { id: 'c', enchants: [] }, legs: { id: 'l', enchants: [] } },
+    { helmet: { cat: 'def', cap: 1 }, chest: { cat: 'def', cap: 1 }, legs: { cat: 'def', cap: 1 } },
+    { fireRes: 5, iceRes: 5, lightningRes: 5 }
+  ));
+  assert.deepEqual(cmds.map((c) => c.args.bookKey), ['fireRes', 'iceRes', 'lightningRes'],
+    '「六大屬性抗性平均」要真的分散到不同部位');
+});
+
+test('附魔：沒書、附魔欄已滿、普通品質都不送', () => {
+  const p = makePolicy([ENCHANT_RULE]);
+  const cmds = p.decide(enchState(
+    {
+      amulet: { id: 'a', enchants: [] },                       // 沒 vigor 書
+      boots: { id: 'b', enchants: [{ key: 'vigor' }] },        // 欄位已滿
+      helmet: { id: 'h', enchants: [] }                        // cap 0＝普通裝備
+    },
+    { amulet: { cat: 'util', cap: 1 }, boots: { cat: 'util', cap: 1 }, helmet: { cat: 'def', cap: 0 } },
+    { vigor: 0, fireRes: 3 }
+  ));
+  assert.deepEqual(cmds, [],
+    '這三種都會被遊戲回絕，先攔下來才不會把指令統計淹掉');
+});
+
+test('附魔：同一決策點不重複用光同一本書', () => {
+  const p = makePolicy([ENCHANT_RULE]);
+  const cmds = p.decide(enchState(
+    { amulet: { id: 'a', enchants: [] }, boots: { id: 'b', enchants: [] } },
+    { amulet: { cat: 'util', cap: 1 }, boots: { cat: 'util', cap: 1 } },
+    { vigor: 1 }
+  ));
+  assert.equal(cmds.length, 1, '只有 1 本 vigor，第二個部位就不該再送');
+});
+
 /* ---- 關卡閘門（前期優先生存任務指南）----
    核心是不要讓關卡跑在裝備前面。閘門若因為算錯分母而永久關閉，
    模擬會整場卡在同一關——不會報錯，只會看起來「這個 seed 運氣很差」。 */
