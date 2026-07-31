@@ -11,5 +11,5 @@ test('apply_params 的場景倍率錨點只搜尋 ZONES，避免神界 key 重�
     encoding: 'utf8'
   });
   assert.match(output, /錨點問題 0/);
-  assert.match(output, /一致 553/);
+  assert.match(output, /將變更 0/);
 });

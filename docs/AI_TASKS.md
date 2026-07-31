@@ -495,6 +495,47 @@ Antigravity 驗證 `?worker=1` 空跑；Codex 依協議撰寫協議測試
 
 使用者合併至整合分支。
 
+## 3.10 Codex：野外裝備掉落區間對齊配置表
+
+狀態：
+
+已完成，等待使用者合併
+
+任務名稱：
+
+野外裝備掉落區間對齊配置表
+
+任務內容：
+
+讓野外裝備掉落率依 `config/CSV/game_parameters.csv` 的實際怪物等級區間判定；裝備等級套裝分段（1、50、100、150…）只決定裝備等級，不得取代掉落率區間。21 級必須讀取 `20~99` 區間的獨特裝備機率。
+
+允許修改：
+
+- `js/data.js`
+- `tools/apply_params.cjs`
+- `tests/field-equipment-drop-table.test.cjs`
+- `tests/apply-params.test.cjs`
+- `game_formula.md`
+- `docs/AI_TASKS.md`
+
+禁止修改：
+
+- `js/item.js` 的裝備等級套裝公式
+- 掉寶率加成、菁英倍率與存檔格式
+- 其他未相關檔案
+
+前置依賴：
+
+使用者已處理 `js/data.js` 的既有分支衝突；Claude 的寶石資料修改需保留。
+
+測試要求：
+
+驗證 19、20、21、49、50、99、100 等邊界；野外掉落與 `apply_params` 定向測試 2/2 通過；`apply_params` 顯示 550 一致、0 變更、0 錨點錯誤；`npm run build` 193 檔通過；完整 `npm test` 677 項中 674 項通過，3 項既有敵人爆擊參數／神力測試失敗，與本任務無關。
+
+完成後交給：
+
+使用者合併至整合分支。
+
 ## 3.4 Codex P0：uiTick 移除主執行緒模擬層屬性計算
 
 狀態：
