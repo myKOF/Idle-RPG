@@ -877,6 +877,7 @@ function onPlayerFieldDeath() {
     G.stage.kills = 0;
     G.stage.current = retreatStage;
     UI.dirty.battle = true;
+    UI.dirty.header = true;
 }
 
 /* ---- 掉落 ---- */
