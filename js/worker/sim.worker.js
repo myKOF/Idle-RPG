@@ -249,6 +249,26 @@ function maintainGemShop() {
   }
 }
 
+/* 戰鬥中每個 emit 週期都把 battle 標髒。
+
+   為什麼需要這一支：血條畫在 battle 面板裡，面板不推就不會重畫。而 combat.js 的
+   10 處 UI.dirty.battle 全部落在**結構性事件**上（暫停、敵人清單變動、復活、新波生成、
+   清波、死亡退場、換關），傷害套用的路徑上一處都沒有。
+
+   實測（2.5 分鐘、1500 個 200ms 週期）：血量有變化的 824 幀裡，只有 157 幀（19%）
+   通知了畫面；兩次刷新最長間隔 3.6 秒。玩家看到的是「好幾秒不掉血，然後忽然見底」——
+   累積數秒的傷害在下一次結構性事件時一次現形。
+
+   刻意不逐一去傷害來源補標記：DoT、反傷、多段技、敵人技能、吸血各有各的路徑，
+   補得完也保證不了下一個新增的傷害來源會記得補。改成「戰鬥中就是每幀都要重畫」，
+   一處涵蓋全部。battle 面板實測 2.8 KB，5Hz 約 14 KB/秒，成本可忽略。 */
+function markCombatDirty() {
+  if (typeof isCombatPaused === 'function' && isCombatPaused()) return; // 暫停時沒有東西會動
+  /* 既有測試有些用精簡 context 直接驅動 loop()，那裡沒有 UI 替身。
+     沿用 js/combat.js:26 的既有寫法防護，不要求測試為了這支去補環境。 */
+  if (typeof UI !== 'undefined' && UI.dirty) UI.dirty.battle = true;
+}
+
 /* 神鑄開放公告：原本由 uiTick 偵測並寫旗標。改由 Worker 在解鎖當下設旗標並送一次事件，
    UI 只負責顯示。旗標寫在存檔裡，所以只會提示一次。 */
 function checkForgeUnlockNotice() {
@@ -291,6 +311,7 @@ function deterministicLoop() {
       updateShownRes();
       maintainGemShop();
       checkForgeUnlockNotice();
+      markCombatDirty();
       emitTick();
     }
   } catch (e) {
@@ -331,6 +352,7 @@ function loop() {
       updateShownRes();
       maintainGemShop();
       checkForgeUnlockNotice();
+      markCombatDirty();
       emitTick();
     }
 
