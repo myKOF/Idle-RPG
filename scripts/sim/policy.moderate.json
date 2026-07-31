@@ -1,6 +1,6 @@
 {
   "name": "policy-moderate",
-  "description": "中度玩家：每日遊玩4小時。目標全身神話裝+35，詞條70%+首飾保證1鑲嵌/1經驗/1掉寶，金幣充裕升級商店，每20分鐘掃商店+重置2次，10分鐘寶石合成與高塔，主動技能融合。穩定將背包擴充至500格，自動熔煉分解普通~稀有裝備，機體強度提升後衝刺高關(stage.goMax)",
+  "description": "中度玩家：每日遊玩4小時。目標全身神話裝+35，詞條70%+首飾保證1鑲嵌/1經驗/1掉寶，金幣充裕升級商店，每20分鐘掃商店+重置2次，10分鐘寶石合成與高塔，主動技能融合。穩定擴背包至500格，採最佳分解策略(自動分解低於身上品質裝備但保留神話及以上供神鑄)，機體提升後衝刺高關(stage.goMax)",
   "decideEveryGameSec": 30,
   "dailyActiveHours": 4,
   "needPanels": ["tower", "gems", "newforge", "equip", "skills", "header", "inv"],
@@ -46,18 +46,19 @@
       "id": "add-furnace-max",
       "everySec": 1800,
       "cmd": "newforge.addFurnace",
-      "why": "熔爐開到當前可開的最大數量"
+      "why": "熔爐解鎖到當前可開的最大數量"
     },
     {
-      "id": "salvage-low-rarities",
+      "id": "salvage-best-strategy",
       "once": true,
       "cmd": "newforge.setQuality",
       "argsList": [
         { "furnaceId": 1, "rarity": 0, "on": true },
         { "furnaceId": 1, "rarity": 1, "on": true },
-        { "furnaceId": 1, "rarity": 2, "on": true }
+        { "furnaceId": 1, "rarity": 2, "on": true },
+        { "furnaceId": 1, "rarity": 3, "on": true }
       ],
-      "why": "自動分解普通、優良、稀有品質裝備，保持背包暢通"
+      "why": "最佳分解策略：自動分解普通~史詩裝備，保留神話及以上品質裝備供神鑄合成用"
     },
 
     {

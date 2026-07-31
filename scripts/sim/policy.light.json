@@ -1,6 +1,6 @@
 {
   "name": "policy-light",
-  "description": "輕度玩家：每日遊玩2小時，其餘離線。強化上限+20，寶石目標全身5級爆傷，不買商店，10分鐘高塔與寶石合成。穩定將背包擴充至300格，機體強度提升後衝刺高關(stage.goMax)",
+  "description": "輕度玩家：每日遊玩2小時，其餘離線。強化上限+20，寶石目標全身5級爆傷，不買商店，10分鐘高塔與寶石合成。採最佳分解策略，穩定擴背包至300格，機體強度提升後衝刺高關(stage.goMax)",
   "decideEveryGameSec": 60,
   "dailyActiveHours": 2,
   "needPanels": ["tower", "gems", "newforge", "equip", "header", "inv"],
@@ -47,14 +47,14 @@
       "why": "輕度玩家：熔爐開兩個"
     },
     {
-      "id": "salvage-low-rarity",
+      "id": "salvage-best-strategy",
       "once": true,
       "cmd": "newforge.setQuality",
       "argsList": [
         { "furnaceId": 1, "rarity": 0, "on": true },
         { "furnaceId": 1, "rarity": 1, "on": true }
       ],
-      "why": "分解普通與優良品質裝備"
+      "why": "最佳分解策略：自動分解低於身上品質之普通與優良裝備"
     },
 
     {

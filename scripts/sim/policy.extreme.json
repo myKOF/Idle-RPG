@@ -1,6 +1,6 @@
 {
   "name": "policy-extreme",
-  "description": "極限玩家：24小時不間斷在線。最終神鑄創世裝+60，80%+6太古詞條+5菁英傷，寶石商店重置8次+掃光，極速潛力與技能融合，階梯點滿轉生天賦。穩定將背包擴充至1000格，自動熔煉分解普通~史詩裝備，機體強度提升後衝刺高關(stage.goMax)",
+  "description": "極限玩家：24小時不間斷在線。最終神鑄創世裝+60，80%+6太古詞條+5菁英傷，寶石商店重置8次+掃光，極速潛力與技能融合，階梯點滿轉生天賦。穩定擴背包至1000格，採最佳分解策略(自動分解低於身上品質裝備但保留神話及以上供神鑄)，機體提升後衝刺高關(stage.goMax)",
   "decideEveryGameSec": 5,
   "dailyActiveHours": 24,
   "needPanels": ["tower", "gems", "newforge", "equip", "skills", "talents", "header", "inv"],
@@ -56,10 +56,10 @@
       "id": "add-furnace-max",
       "everySec": 300,
       "cmd": "newforge.addFurnace",
-      "why": "熔爐開到當前可開的最大數量"
+      "why": "熔爐解鎖到當前可開的最大數量"
     },
     {
-      "id": "salvage-low-rarities",
+      "id": "salvage-best-strategy",
       "once": true,
       "cmd": "newforge.setQuality",
       "argsList": [
@@ -68,7 +68,7 @@
         { "furnaceId": 1, "rarity": 2, "on": true },
         { "furnaceId": 1, "rarity": 3, "on": true }
       ],
-      "why": "自動分解普通、優良、稀有、史詩品質裝備，保持背包暢通"
+      "why": "最佳分解策略：自動分解普通~史詩裝備，保留神話及以上品質裝備供神鑄合成用"
     },
 
     {
