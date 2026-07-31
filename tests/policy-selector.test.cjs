@@ -268,6 +268,70 @@ test('換下寶石：replaceWith 讓拆與補在同一決策點成對送出', ()
     'topaz 只有 1 顆，第二個雜牌就補不到偏好種類，必須放著不動而不是拆掉');
 });
 
+/* ---- 分解門檻與背包壓力閥 ----
+   這兩條守的是同一個災難：背包滿了不只是換裝挑不到東西，而是整條掉落管線停擺
+   （熔爐佇列推不進背包就回堵，新裝備直接丟棄）。角色會停在原地打幾十小時，
+   畫面上完全正常，只是再也不會有任何東西掉下來。 */
+
+test('分解門檻：跟著身上最低品質走，且只在需要改變時送指令', () => {
+  const p = makePolicy([{
+    id: 'sv', cmd: 'newforge.setQuality',
+    salvageBelowEquipped: {
+      equippedRarities: 'panels.inv.equipmentRarities',
+      furnaces: 'panels.newforge.newForge.furnaces'
+    }
+  }]);
+  const cmds = p.decide({
+    gameTimeSec: 100,
+    panels: {
+      inv: { equipmentRarities: { helmet: 3, chest: 2, weapon2: -1 } },   // 最低是 2（空部位不算）
+      newforge: { newForge: { furnaces: [{ id: 1, qualities: [true, false, false, false] }] } }
+    }
+  });
+  assert.deepEqual(cmds.map((c) => [c.args.rarity, c.args.on]), [[1, true]],
+    'R0 已經是 true 不用再送；R1 要打開；R2/R3 已經是 false 也不用送——' +
+    '每次都送一整輪只會把指令統計淹掉');
+});
+
+test('分解門檻：空部位不能把門檻拉到地板', () => {
+  const p = makePolicy([{
+    id: 'sv', cmd: 'newforge.setQuality',
+    salvageBelowEquipped: {
+      equippedRarities: 'panels.inv.equipmentRarities',
+      furnaces: 'panels.newforge.newForge.furnaces'
+    }
+  }]);
+  const cmds = p.decide({
+    gameTimeSec: 100,
+    panels: {
+      inv: { equipmentRarities: { helmet: 3, weapon2: -1 } },
+      newforge: { newForge: { furnaces: [{ id: 1, qualities: [false, false, false, false] }] } }
+    }
+  });
+  assert.deepEqual(cmds.map((c) => c.args.rarity), [0, 1, 2],
+    '雙手武器讓 weapon2 永遠是 -1，若當成品質 0 就永遠只拆 R0，門檻升不上去');
+});
+
+test('背包壓力閥：未達使用率不動，達到才清到「身上最高品質往下一階」', () => {
+  const rule = {
+    id: 'bf', cmd: 'item.salvageBulk',
+    salvageWhenFull: {
+      count: 'panels.inv.count', cap: 'panels.inv.cap',
+      equippedRarities: 'panels.inv.equipmentRarities',
+      fullRatio: 0.9, belowMaxBy: 1
+    }
+  };
+  const p = makePolicy([rule]);
+  const st = (count, cap) => ({
+    gameTimeSec: 100,
+    panels: { inv: { count, cap, equipmentRarities: { helmet: 3, chest: 2 } } }
+  });
+  assert.deepEqual(p.decide(st(200, 300)), [], '三分之二滿：還有空間就別動庫存');
+  const cmds = p.decide(st(298, 300));
+  assert.deepEqual(cmds.map((c) => c.args.maxRarity), [2],
+    '身上最高是 R3，清掉 R2 以下——留「配得上最好那件」的標準只在空間稀缺時才啟用');
+});
+
 /* ---- 附魔 ----
    遊戲規定每個部位只吃一種類別，送錯類別只會換回一句「XX 只能使用 OO 類附魔」，
    規則整場落空卻看不出來。 */
