@@ -2384,6 +2384,35 @@ textarea#save-io {
   pointer-events: none;
 }
 
+.eq-slot .equip-flash-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border-radius: 4px;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(125, 211, 252, 0.55) 28%, rgba(56, 189, 248, 0.12) 62%, transparent 78%);
+  mix-blend-mode: screen;
+  animation: equipSlotFlash 2s ease-out forwards;
+}
+
+@keyframes equipSlotFlash {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+    box-shadow: 0 0 0 rgba(125, 211, 252, 0);
+  }
+  12% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 22px 8px rgba(125, 211, 252, 0.85);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.18);
+    box-shadow: 0 0 4px 1px rgba(125, 211, 252, 0);
+  }
+}
+
 .eq-slot .th-occupied-mark {
   position: absolute;
   right: 3px;

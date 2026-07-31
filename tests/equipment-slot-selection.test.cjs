@@ -80,6 +80,9 @@ test('inventory equip command preserves the selected equipment slot', async () =
       context.sent = { name, args };
       return Promise.resolve({});
     },
+    triggerEquipFlash: (slot, item) => {
+      context.flash = { slot, item };
+    },
     uiCommandResultError: () => null,
     hasOwnUiState: () => false,
     reportUiCommandFailure: () => {}
@@ -97,6 +100,8 @@ test('inventory equip command preserves the selected equipment slot', async () =
     name: 'item.equip',
     args: { itemId: 'ring-new', setIndex: 0, slotKey: 'ring2' }
   });
+  assert.equal(context.flash.slot, 'ring2');
+  assert.equal(context.flash.item.id, 'ring-new');
 });
 
 test('選取空部位時，同部位背包亮起、不同部位背包灰化', () => {
