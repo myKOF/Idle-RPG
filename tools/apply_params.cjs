@@ -455,13 +455,37 @@ function levelGrowthContent(cat, name) {
   if (!brackets.length) throw new Error('CSV 缺少有效等級區間參數：' + cat + ' / ' + name);
   return brackets.join(',\n  ');
 }
-// 野外裝備：CSV 每品質 4 個 bracket（1~49,50~99,100~149,150+）→ code min 1/50/100/150
+// 野外裝備：各品質的等級 bracket 可能不同（普通～獨特從 20 級切段，史詩以上從 50 級切段）。
+// 將所有品質的分段起點合併，讓 FIELD_DROP_TABLE 同時保留每一個實際邊界。
 {
   const quals = ['普通', '精良', '稀有', '獨特', '史詩', '傳說', '神話', '創世'];
-  const brIdxByMin = { 1: 0, 50: 1, 100: 2, 150: 3 };
-  [1, 50, 100, 150].forEach(min => {
-    const rates = quals.map(q => parseTuple(index['5-野外裝備掉落'][q + '裝備'][brIdxByMin[min]]));
-    edits.push({ file: 'data', scopeVar: 'FIELD_DROP_TABLE', re: new RegExp('min: ' + min + ',\\s*rates:\\s*\\[([^\\]]*)\\]'), grp: 1, value: rates.join(', '), label: 'FIELD_DROP min' + min, multiGroup: true });
+  function parseFieldDropBracket(cell) {
+    cell = (cell == null ? '' : String(cell)).trim();
+    const m = /^\{\s*(\d+)\s*(?:~\s*(\d+)|\+)\s*=\s*(-?(?:\d+(?:\.\d*)?|\.\d+))\s*\}$/.exec(cell);
+    if (!m) throw new Error('CSV 野外裝備掉落區間無法解析為數字：「' + cell + '」');
+    return { min: Number(m[1]), max: m[2] ? Number(m[2]) : null, rate: Number(m[3]) };
+  }
+  const bracketsByQuality = quals.map(q => {
+    const cells = index['5-野外裝備掉落'][q + '裝備'];
+    return cells.filter(cell => /^\s*\{/.test(String(cell))).map(parseFieldDropBracket);
+  });
+  const mins = [...new Set(bracketsByQuality.flatMap(brackets => brackets.map(b => b.min)))].sort((a, b) => b - a);
+  const rows = mins.map(min => {
+    const rates = bracketsByQuality.map(brackets => {
+      const bracket = brackets.find(b => min >= b.min && (b.max === null || min <= b.max));
+      if (!bracket) throw new Error('CSV 野外裝備掉落缺少等級 ' + min + ' 的品質區間');
+      return bracket.rate;
+    });
+    return '{ min: ' + min + ', rates: [' + rates.join(', ') + '] }';
+  }).join(',\n  ');
+  edits.push({
+    file: 'data',
+    scopeVar: 'FIELD_DROP_TABLE',
+    re: /FIELD_DROP_TABLE\s*=\s*\[([\s\S]*?)\]\s*;/,
+    grp: 1,
+    value: '// 野外：依怪物等級（掉落區間與裝備套裝等級分開）\n  ' + rows,
+    label: 'FIELD_DROP_TABLE 等級區間',
+    multiGroup: true
   });
 }
 // 野外寶石：CSV 每 bracket 一列，5 tier；code min 1/51/101/151/201/251/301

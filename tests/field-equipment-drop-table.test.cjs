@@ -8,25 +8,21 @@ function loadDataContext() {
   const root = path.resolve(__dirname, '..');
   const context = { console, Math };
   vm.createContext(context);
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/data.js'), 'utf8'), context, {
-    filename: 'js/data.js'
+  ['js/data.js', 'js/formula.js'].forEach((file) => {
+    vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   return context;
 }
 
-test('野外裝備掉落表依怪物等級分層，且高等級層每一品質都不低於低等級層', () => {
+test('野外裝備掉落表完整對齊配置表的怪物等級分層', () => {
   const context = loadDataContext();
   const table = JSON.parse(JSON.stringify(context.FIELD_DROP_TABLE));
 
-  /* ⚠️ 這裡刻意**不寫死機率數字**。數值歸參數表管
-     （config/CSV/game_parameters.csv），而「程式表與參數表是否一致」已經由
-     tests/apply-params.test.cjs 全域把關。這支測試若也抄一份數字，就變成每次調平衡
-     都要改兩個地方，而且改漏了只會得到一支與設計無關的紅燈——先前正是如此。
-
-     這支要守的是**結構性保證**：分層存在、由高到低排序、每層品質數一致，
-     而且同一品質的機率不會出現「低等級層比高等級層還好」這種反向。 */
-  assert.equal(table.length, 4, '應有 4 個等級分層');
-  assert.deepEqual(table.map((t) => t.min), [150, 100, 50, 1], '分層門檻由高到低');
+  /* 這支測試同時守住兩件事：分層結構，以及配置表中容易回歸的關鍵邊界。
+     完整數值同步由 tests/apply-params.test.cjs 與 apply_params 工具負責；
+     這裡特別鎖定 20 級與 50 級，避免裝備套裝等級門檻再次取代掉落率區間。 */
+  assert.equal(table.length, 8, '應保留配置表產生的 8 個等級分層');
+  assert.deepEqual(table.map((t) => t.min), [300, 250, 200, 150, 100, 50, 20, 1], '分層門檻由高到低');
 
   const width = table[0].rates.length;
   table.forEach((tier) => {
@@ -41,4 +37,11 @@ test('野外裝備掉落表依怪物等級分層，且高等級層每一品質�
         '）高於更高等級層 min=' + table[i - 1].min + '（' + table[i - 1].rates[q] + '）');
     }
   }
+
+  assert.equal(context.dropRatesFor(context.FIELD_DROP_TABLE, 19)[3], 0, '19 級應使用獨特 1~19 區間');
+  assert.equal(context.dropRatesFor(context.FIELD_DROP_TABLE, 20)[3], 5, '20 級應切換至獨特 20~99 區間');
+  assert.equal(context.dropRatesFor(context.FIELD_DROP_TABLE, 21)[3], 5, '21 級應使用獨特 20~99 區間');
+  assert.equal(context.dropRatesFor(context.FIELD_DROP_TABLE, 49)[4], 0, '49 級尚未進入史詩 50~99 區間');
+  assert.equal(context.dropRatesFor(context.FIELD_DROP_TABLE, 50)[4], 0.5, '50 級應切換至史詩 50~99 區間');
+  assert.equal(context.dropRatesFor(context.FIELD_DROP_TABLE, 300)[3], 20, '300 級應使用 300+ 區間');
 });
