@@ -279,12 +279,12 @@ function computeStats(equipmentOverride) {
   st.int = Math.round(rawInt * reincMult); st.vit = Math.round(rawVit * reincMult);
   // 基礎：生命 = (120 + (等級-1)×22 + 耐力×10 + 定值) × (1 + 生命%) × (1 + 天賦生命%［生命洪流，獨立乘區］)
   st.base = {};
-  st.base.hp = 500 + (lv - 1) * 30 + rawVit * PRIMARY_STAT_EFFECTS.vitHp;
+  st.base.hp = 500 + (lv - 1) * 50 + rawVit * PRIMARY_STAT_EFFECTS.vitHp;
   var rawHp = (st.base.hp + A.hpFlat) * (1 + A.hpPct / 100);
   st.hp = Math.round(rawHp * reincMult * (1 + (talent.hpPct || 0) / 100));
   st.hpRegen = A.hpRegen;                                    // 額外生命恢復/秒（另有 BASE_HP_REGEN_PCT%/秒 基礎回復）
   // 法力 =（40 + 原始智力×4 + 定值）×轉生倍率；法力恢復另依原有公式計算
-  st.base.mp = 40 + rawInt * PRIMARY_STAT_EFFECTS.intMp;
+  st.base.mp = 100 + rawInt * PRIMARY_STAT_EFFECTS.intMp;
   var rawMp = st.base.mp + A.mpFlat;
   st.mp = Math.round(rawMp * reincMult);
   st.mpRegen = 5 + st.int * PRIMARY_STAT_EFFECTS.intMpRegen + A.mpRegen;
