@@ -1909,6 +1909,12 @@ function renderHeader() {
   if ($id('pv-level')) $id('pv-level').textContent = 'Lv.' + p.level;
   if ($id('tp-level')) $id('tp-level').textContent = 'Lv.' + p.level;
   var reinc = clamp(Math.floor(Number(p.reincarnations) || 0), 0, REINCARNATION_MAX);
+  var currentLevel = Math.max(0, Math.floor(Number(p.level) || 0));
+  var canReincarnate = currentLevel >= REINCARNATION_LEVEL && reinc < REINCARNATION_MAX;
+  var reincarnationControls = $id('reincarnation-controls');
+  if (reincarnationControls) {
+    reincarnationControls.classList.toggle('is-visible', reinc > 0 || canReincarnate);
+  }
   var rank = reincarnationRankName(reinc);
   var classEl = $id('p-class');
   if (classEl) { classEl.textContent = rank; applyReincarnationTitleClass(classEl, reinc); }
@@ -1924,7 +1930,6 @@ function renderHeader() {
   var reincBtn = $id('btn-reincarnate');
   if (reincBtn) {
     var isGodStage = reinc >= 10;
-    var canReincarnate = p.level >= REINCARNATION_LEVEL && reinc < REINCARNATION_MAX;
     reincBtn.classList.toggle('reincarnate-ready', canReincarnate);
     reincBtn.textContent = isGodStage ? '🔄 晉階' : '🔄 轉生';
     reincBtn.setAttribute('data-tip', reinc >= REINCARNATION_MAX
