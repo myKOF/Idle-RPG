@@ -482,7 +482,11 @@ function enemyTypeDamageReduction(total, attackerLevel) {
 
 var SLOW_ASPD_FACTOR = 0.7;   // 減速狀態：攻速 -30%（攻擊冷卻累積 ×0.7）
 var BASE_HP_REGEN_PCT = 2;  // 野外每秒基礎生命回復（最大生命 %；高塔內無此回復）
-var KILL_HEAL_PCT = 12;       // 野外擊殺回復（最大生命 %，溢出轉護盾）
+/* 野外過關回復：整波敵人清空時回復最大生命 %。
+   ⚠️ 溢出**不**轉護盾——呼叫端傳 { noShield: true }（見 combat.js 的 completeFieldWave）。
+   高塔沒有這個回復，也沒有每秒基礎回復，是純爆發戰。
+   2026-08 之前這裡是「擊殺回復 12%」，每擊殺一隻觸發；改為整波清空才回復一次。 */
+var WAVE_CLEAR_HEAL_PCT = 30;
 
 function slowFactor(ent) { return effectActive(ent, 'slow') ? SLOW_ASPD_FACTOR : 1; }
 
@@ -811,7 +815,7 @@ function resistCtrl(dCfg) {
    護盾上限 = 最大生命 × SHIELD_HEAL_CAP_PCT% × (1 + 護盾效率%)
 
    2026-07-30 改版：溢出轉護盾**僅限技能本身的治療效果**。
-   生命回復、吸血、元素汲取、擊殺回復、神鑄回復等非技能來源以 opts.noShield 呼叫，
+   生命回復、吸血、元素汲取、過關回復、神鑄回復等非技能來源以 opts.noShield 呼叫，
    溢出直接捨棄（回滿即止）。呼叫端不傳 opts 時維持原行為（技能路徑）。 */
 var SHIELD_HEAL_CAP_PCT = 10;   // 治療轉化護盾上限（占最大生命 %）
 var SHIELD_OVERFLOW_PCT = 1;    // 溢出治療轉護盾比例（%）
