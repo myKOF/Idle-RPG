@@ -31,13 +31,18 @@
       "berserkStrike"
     ],
     "targetAffixes": [
-      "patk",
-      "lifesteal",
+      "atkPct",
+      "atkFlat",
+      "critRate",
       "critDmg",
-      "crit",
+      "aspd",
+      "pPen",
+      "lifesteal",
+      "eliteDmg",
+      "bossDmg",
       "gemEff",
-      "xpGain",
-      "dropRate"
+      "xpBonus",
+      "loot"
     ]
   },
   "rules": [
@@ -73,6 +78,41 @@
           53
         ]
       }
+    },
+    {
+      "id": "socket-gems",
+      "everySec": 60,
+      "cmd": "gem.socket",
+      "socketEmpty": {
+        "equipment": "panels.inv.equipment",
+        "gems": "panels.gems.gems",
+        "preferTypes": [
+          "garnet",
+          "amethyst",
+          "ruby",
+          "sapphire"
+        ]
+      },
+      "why": "把寶石鑲進空插槽，優先爆傷(garnet)→爆擊(amethyst)→物攻(ruby)→魔攻(sapphire)，手上沒有偏好種類就鑲任何有貨的。等級由遊戲挑（取現有最高階）"
+    },
+    {
+      "id": "reroll-off-target",
+      "everySec": 300,
+      "cmd": "item.rerollAffix",
+      "rerollOffTarget": {
+        "equipment": "panels.inv.equipment",
+        "targetList": "targetAffixes",
+        "minRarity": 3,
+        "keepAncient": true
+      },
+      "why": "把不在 targetAffixes 的詞條洗掉（攻擊為主、防禦為輔）。精華少於 20 就不洗——實測精華是瓶頸，硬送只會得到 1,410 次「資源不足」把報表淹掉",
+      "if": [
+        [
+          "view.essence",
+          ">=",
+          20
+        ]
+      ]
     },
     {
       "id": "auto-equip-on",
@@ -128,68 +168,6 @@
         }
       ],
       "why": "只拆解普通與優良(R0~R1)，稀有以上保留在背包當換裝候選"
-    },
-    {
-      "id": "reroll-jewel-amulet",
-      "everySec": 300,
-      "if": [
-        [
-          "panels.equip.equipment.amulet",
-          "truthy"
-        ],
-        [
-          "panels.equip.equipment.amulet.rarity",
-          ">=",
-          3
-        ]
-      ],
-      "cmd": "item.rerollAffix",
-      "expand": [
-        {
-          "key": "affixKey",
-          "list": "targetAffixes"
-        }
-      ],
-      "args": {
-        "itemId": {
-          "$path": "panels.equip.equipment.amulet.id"
-        },
-        "affixKey": {
-          "$arg": "affixKey"
-        }
-      },
-      "why": "飾品達到史詩以上才進行洗煉，加入吸血lifesteal詞條提升續戰力"
-    },
-    {
-      "id": "reroll-jewel-ring",
-      "everySec": 300,
-      "if": [
-        [
-          "panels.equip.equipment.ring",
-          "truthy"
-        ],
-        [
-          "panels.equip.equipment.ring.rarity",
-          ">=",
-          3
-        ]
-      ],
-      "cmd": "item.rerollAffix",
-      "expand": [
-        {
-          "key": "affixKey",
-          "list": "targetAffixes"
-        }
-      ],
-      "args": {
-        "itemId": {
-          "$path": "panels.equip.equipment.ring.id"
-        },
-        "affixKey": {
-          "$arg": "affixKey"
-        }
-      },
-      "why": "戒指達到史詩以上才進行洗煉，加入吸血lifesteal詞條提升續戰力"
     },
     {
       "id": "learn-skills",

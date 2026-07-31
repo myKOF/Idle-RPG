@@ -164,6 +164,84 @@ function decide(state, policy, memo) {
           out.push({ name: r.cmd, args: { itemId: best.id, slotKey: slotKey }, ruleId: r.id });
         }
       }
+    } else if (r.socketEmpty) {
+      /* 把寶石鑲進身上裝備的空插槽。
+
+         為什麼需要：先前策略完全沒有 gem.socket 規則，於是寶石只進不出——
+         實測 2 小時後身上握著 31 顆寶石、13 個部位卻是 0 鑲嵌、24 個空插槽全開著。
+         寶石不鑲等於沒有，這是純粹的漏做。
+
+         哪一種寶石由策略資料指定（gemType，例如 garnet＝爆傷，
+         對應 player_strategy.md「寶石以攻擊為主，目標全身戴滿爆傷寶石」）。
+         夠不夠鑲、等級對不對一律由遊戲判斷，這裡只負責找出空槽並送指令。 */
+      var sCfg = r.socketEmpty;
+      var sEquip = pathVal(state, sCfg.equipment) || {};
+      var heldGems = pathVal(state, sCfg.gems) || {};
+
+      /* ⚠️ 不能寫死寶石種類。socketGem() 找不到那種寶石就直接回「沒有這種寶石」
+         （js/item.js:368），實測寫死 garnet 的話 1,421 次呼叫全部落空——
+         身上明明有 31 顆，只是沒有那一種。
+         改成：先照 preferTypes 的優先序找手上真的有的，都沒有就用任何一種有貨的。
+         等級由遊戲自己挑（socketGem 會取現有的最高階），策略不介入。 */
+      var available = [];
+      for (var gt in heldGems) {
+        var lvObj = heldGems[gt], n = 0;
+        for (var gl in lvObj) n += Number(lvObj[gl]) || 0;
+        if (n > 0) available.push(gt);
+      }
+      var pick = null;
+      var prefer = sCfg.preferTypes || [];
+      for (var pi = 0; pi < prefer.length && !pick; pi++) {
+        if (available.indexOf(prefer[pi]) >= 0) pick = prefer[pi];
+      }
+      if (!pick && available.length) pick = available[0];
+      /* 送出的數量不能超過該種寶石的庫存，否則多出來的每一條都會換回
+         「沒有這種寶石」——實測一次決策點就浪費 183 次呼叫，把報表淹掉。 */
+      var stock = 0;
+      if (pick && heldGems[pick]) for (var sl in heldGems[pick]) stock += Number(heldGems[pick][sl]) || 0;
+      if (pick && stock > 0) {
+        for (var ssk in sEquip) {
+          var sItem = sEquip[ssk];
+          if (!sItem || !sItem.id || !sItem.sockets) continue;
+          var hasEmpty = false;
+          for (var si = 0; si < sItem.sockets.length; si++) if (!sItem.sockets[si]) { hasEmpty = true; break; }
+          if (!hasEmpty) continue;
+          if (stock <= 0) break;
+          stock--;
+          /* 每個部位一次只送一顆：鑲上之後空槽與庫存都會變，下個決策點再算一次即可。 */
+          out.push({ name: r.cmd, args: { itemId: sItem.id, type: pick }, ruleId: r.id });
+        }
+      }
+    } else if (r.rerollOffTarget) {
+      /* 把身上裝備「不在目標清單裡」的詞條洗掉。
+
+         player_strategy.md 的詞條策略是「以攻擊為主、防禦為輔」，但先前只有戒指與項鍊
+         各一條洗煉規則，其餘 11 個部位從來沒洗過——實測身上滿是 defPct／evasion／
+         mdefFlat／resFire 這類詞條，攻擊詞條沒幾個。
+
+         目標清單是策略資料（targetAffixes）。⚠️ 清單裡的鍵必須真的存在於遊戲的
+         AFFIX_POOL：先前寫了 patk／crit／xpGain／dropRate 四個不存在的鍵，
+         送出去只會被遊戲回錯，而且不會有人發現。正確鍵名見 js/data.js 的 AFFIX_POOL。
+
+         洗到什麼由遊戲擲骰決定，策略只負責指出「這條不是我要的」。 */
+      var rCfg = r.rerollOffTarget;
+      var rEquip = pathVal(state, rCfg.equipment) || {};
+      var wanted = {};
+      var wantList = (policy.lists && policy.lists[rCfg.targetList]) || [];
+      for (var wi = 0; wi < wantList.length; wi++) wanted[wantList[wi]] = true;
+      var minRarity = (typeof rCfg.minRarity === 'number') ? rCfg.minRarity : 0;
+
+      for (var rsk in rEquip) {
+        var rItem = rEquip[rsk];
+        if (!rItem || !rItem.id || !rItem.affixes) continue;
+        if ((rItem.rarity || 0) < minRarity) continue;      // 低品質不值得花精華
+        for (var ai = 0; ai < rItem.affixes.length; ai++) {
+          var af = rItem.affixes[ai];
+          if (!af || !af.key || wanted[af.key]) continue;
+          if (af.ancient && rCfg.keepAncient !== false) continue;   // 太古詞條預設不動
+          out.push({ name: r.cmd, args: { itemId: rItem.id, affixKey: af.key }, ruleId: r.id });
+        }
+      }
     } else if (r.upgradePriority) {
       /* 強化資源分配：每個品質有各自的強化上限，身上最高品質的部位不設上限。
 

@@ -119,3 +119,56 @@ test('強化：上限表沒列到的品質視為不強化，不能變成無限�
   assert.deepEqual(ids, ['h'],
     'R3 沒列在表上應視為不強化；只有最高品質 R5 該被強化——忘了填表不該變成資源黑洞');
 });
+
+test('鑲寶石：只鑲手上真的有的種類，且不超過庫存', () => {
+  const rule = {
+    id: 'sock', cmd: 'gem.socket',
+    socketEmpty: {
+      equipment: 'panels.inv.equipment', gems: 'panels.gems.gems',
+      preferTypes: ['garnet', 'ruby']          // garnet 沒貨，應退到 ruby
+    }
+  };
+  const p = makePolicy([rule]);
+  const cmds = p.decide({
+    gameTimeSec: 100,
+    panels: {
+      inv: { equipment: {
+        helmet: { id: 'h', sockets: [null, null] },
+        chest: { id: 'c', sockets: [null] },
+        boots: { id: 'b', sockets: [{ type: 'ruby', level: 1 }] }   // 已鑲滿
+      } },
+      gems: { gems: { ruby: { 1: 2 }, garnet: { 1: 0 } } }          // ruby 只有 2 顆
+    }
+  });
+  assert.deepEqual(cmds.map((c) => c.args.type), ['ruby', 'ruby'],
+    'garnet 庫存為 0 應退回 ruby——寫死種類時遊戲只會回「沒有這種寶石」');
+  assert.deepEqual(cmds.map((c) => c.args.itemId), ['h', 'c'],
+    '只鑲有空槽的部位，且送出數量不得超過庫存 2 顆');
+});
+
+test('洗詞條：只洗不在目標清單的詞條，太古詞條不動', () => {
+  const rule = {
+    id: 'rr', cmd: 'item.rerollAffix',
+    rerollOffTarget: {
+      equipment: 'panels.inv.equipment', targetList: 'targetAffixes',
+      minRarity: 3, keepAncient: true
+    }
+  };
+  const p = createPolicy({
+    name: 'test', decideEveryGameSec: 1, needPanels: ['inv'],
+    lists: { targetAffixes: ['atkPct', 'critDmg'] }, rules: [rule]
+  });
+  const cmds = p.decide({
+    gameTimeSec: 100,
+    panels: { inv: { equipment: {
+      helmet: { id: 'h', rarity: 3, affixes: [
+        { key: 'atkPct' },                 // 目標，保留
+        { key: 'defPct' },                 // 非目標，要洗
+        { key: 'evasion', ancient: true }  // 太古，不動
+      ] },
+      boots: { id: 'b', rarity: 2, affixes: [{ key: 'defPct' }] }   // 低於 minRarity
+    } } }
+  });
+  assert.deepEqual(cmds.map((c) => c.args.affixKey), ['defPct']);
+  assert.deepEqual(cmds.map((c) => c.args.itemId), ['h'], '獨特以下不洗，避免前期吸乾精華');
+});
