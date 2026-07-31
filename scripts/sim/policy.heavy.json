@@ -1,0 +1,187 @@
+{
+  "name": "policy-heavy",
+  "description": "重度玩家：每日遊玩8小時。強化+50，詞條75%+2太古+首飾保證2鑲嵌/2經驗/2掉寶+3菁英傷，金幣充裕升級商店，每20分鐘掃商店+重置5次，優先潛力技能與技能融合，階梯式點滿轉生天賦。自動熔煉分解普通~史詩裝備確保背包暢通，機體強度提升後立刻重新勾選自動推關衝刺高關(stage.goMax)",
+  "decideEveryGameSec": 15,
+  "dailyActiveHours": 8,
+  "needPanels": ["tower", "gems", "newforge", "equip", "skills", "talents", "header"],
+  "lists": {
+    "skillPriority": [
+      "powerSlash", "doubleStrike", "sharpBlade", "toughness", "whirlwind",
+      "swiftness", "armorBreak", "arcaneMind", "healWound", "ironWall",
+      "executeStrike", "berserkStrike", "rendWound", "brutality", "vampirism",
+      "keenEye", "meditation", "stunBlow", "secondWind", "regenerate"
+    ],
+    "talentStep1": [
+      "t1_str", "t1_agi", "t1_int", "t1_vit", "t1_def", "t1_mdef", "t1_pres", "t1_mres"
+    ],
+    "talentStep2": [
+      "t2_crit", "t2_critdmg", "t2_hit", "t2_hp", "t2_shield", "t2_evasion", "t2_normalred", "t2_elitered"
+    ],
+    "targetAffixes": ["gemEff", "xpGain", "dropRate", "patk", "critDmg", "eliteDmg"]
+  },
+  "rules": [
+    {
+      "id": "auto-equip-on",
+      "once": true,
+      "cmd": "factory.setAutoEquip",
+      "args": { "on": true },
+      "why": "品質高優先穿：開啟自動換裝"
+    },
+    {
+      "id": "auto-advance-init-on",
+      "everySec": 15,
+      "cmd": "stage.setAutoAdvance",
+      "args": { "on": true },
+      "why": "持續保持自動推關勾選狀態以極速推關"
+    },
+    {
+      "id": "push-max-stage",
+      "everySec": 15,
+      "cmd": "stage.goMax",
+      "why": "極速衝刺最高解鎖關卡"
+    },
+
+    {
+      "id": "add-furnace-max",
+      "everySec": 900,
+      "cmd": "newforge.addFurnace",
+      "why": "熔爐開到當前可開的最大數量"
+    },
+    {
+      "id": "salvage-low-rarities",
+      "once": true,
+      "cmd": "newforge.setQuality",
+      "argsList": [
+        { "furnaceId": 1, "rarity": 0, "on": true },
+        { "furnaceId": 1, "rarity": 1, "on": true },
+        { "furnaceId": 1, "rarity": 2, "on": true },
+        { "furnaceId": 1, "rarity": 3, "on": true }
+      ],
+      "why": "自動分解普通、優良、稀有、史詩品質裝備，保持背包暢通"
+    },
+
+    {
+      "id": "upgrade-weapon",
+      "everySec": 30,
+      "if": [["panels.equip.equipment.weapon", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.weapon.id" } },
+      "why": "目標強化至+50：主手武器"
+    },
+    {
+      "id": "upgrade-chest",
+      "everySec": 30,
+      "if": [["panels.equip.equipment.chest", "truthy"]],
+      "cmd": "item.upgrade",
+      "args": { "itemId": { "$path": "panels.equip.equipment.chest.id" } },
+      "why": "目標強化至+50：胸甲"
+    },
+
+    {
+      "id": "reroll-jewel-amulet",
+      "everySec": 150,
+      "if": [["panels.equip.equipment.amulet", "truthy"]],
+      "cmd": "item.rerollAffix",
+      "expand": [{ "key": "affixKey", "list": "targetAffixes" }],
+      "args": {
+        "itemId": { "$path": "panels.equip.equipment.amulet.id" },
+        "affixKey": { "$arg": "affixKey" }
+      },
+      "why": "詞條策略：項鍊保證共2條寶石鑲嵌率、2條經驗加成、2條掉寶率詞條"
+    },
+    {
+      "id": "reroll-jewel-ring",
+      "everySec": 150,
+      "if": [["panels.equip.equipment.ring", "truthy"]],
+      "cmd": "item.rerollAffix",
+      "expand": [{ "key": "affixKey", "list": "targetAffixes" }],
+      "args": {
+        "itemId": { "$path": "panels.equip.equipment.ring.id" },
+        "affixKey": { "$arg": "affixKey" }
+      },
+      "why": "詞條策略：戒指保證共2條寶石鑲嵌率、2條經驗加成、2條掉寶率詞條"
+    },
+
+    {
+      "id": "learn-potential-talents",
+      "everySec": 30,
+      "cmd": "talent.potentialUpgrade",
+      "why": "潛力技能解鎖後優先潛力技能升級"
+    },
+    {
+      "id": "learn-skills",
+      "everySec": 15,
+      "cmd": "skill.learn",
+      "expand": [{ "key": "id", "list": "skillPriority" }],
+      "why": "學習主動與被動技能"
+    },
+    {
+      "id": "fuse-skills",
+      "everySec": 600,
+      "cmd": "skill.fuse",
+      "why": "主動使用技能融合"
+    },
+
+    {
+      "id": "talent-upgrade-step1",
+      "everySec": 60,
+      "cmd": "talent.upgrade",
+      "expand": [{ "key": "id", "list": "talentStep1" }],
+      "why": "天賦策略：優先將1轉天賦全點滿"
+    },
+    {
+      "id": "talent-upgrade-step2",
+      "everySec": 60,
+      "cmd": "talent.upgrade",
+      "expand": [{ "key": "id", "list": "talentStep2" }],
+      "why": "天賦策略：再將2轉天賦全點滿"
+    },
+
+    {
+      "id": "gem-shop-buy-1",
+      "everySec": 1200,
+      "cmd": "gem.shopBuyAll",
+      "why": "每20分鐘買光所有商店寶石"
+    },
+    {
+      "id": "gem-shop-refresh-5x",
+      "everySec": 1200,
+      "cmd": "gem.shopRefresh",
+      "why": "重置寶石商店5次後再買光"
+    },
+    {
+      "id": "gem-shop-buy-2",
+      "everySec": 1200,
+      "cmd": "gem.shopBuyAll",
+      "why": "重置後再次買光"
+    },
+    {
+      "id": "gem-compose",
+      "everySec": 600,
+      "cmd": "gem.composeAll",
+      "expand": [
+        { "key": "type", "path": "panels.gems.gems" },
+        { "key": "level", "values": [1, 2, 3, 4, 5, 6, 7, 8, 9] }
+      ],
+      "why": "每10分鐘自動向上合成達10級寶石"
+    },
+
+    {
+      "id": "tower-auto",
+      "everySec": 1200,
+      "cmd": "tower.startAuto",
+      "args": {
+        "floor": { "$add": [{ "$path": "panels.tower.tower.highest" }, 1] },
+        "count": 1
+      },
+      "why": "每20分鐘嘗試一次BOSS高塔挑戰"
+    },
+    {
+      "id": "tower-finish-if-needed",
+      "everySec": 30,
+      "if": [["panels.tower.tower.active", "truthy"]],
+      "cmd": "tower.finish",
+      "why": "高塔挑戰結束後回到一般場景戰鬥繼續遊玩"
+    }
+  ]
+}

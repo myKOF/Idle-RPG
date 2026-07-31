@@ -59,6 +59,9 @@ let eventsDropped = 0;
 
 let engine = null;   // onEvents 會用到，先宣告
 
+let lastCombatDamageLogHour = -1;
+const readableLogs = [];
+
 function onEvents(events) {
   for (let i = 0; i < events.length; i++) {
     const ev = events[i];
@@ -67,6 +70,34 @@ function onEvents(events) {
     ev.gt = engine ? engine.gameTimeSec() : 0;
     logStream.write(JSON.stringify(ev) + '\n');
     eventsKept++;
+
+    // 移植：人類可讀日誌與戰鬥日誌節流 (每分鐘保留一筆)
+    if (ev.kind === 'log' || ev.kind === 'flog' || ev.kind === 'notice') {
+      const cls = ev.cls || (ev.payload && ev.payload.cls) || 'info';
+      const cat = ev.cat || (ev.payload && ev.payload.cat) || 'system';
+      const hours = ev.gt / 3600;
+
+      if (cls === 'log-enemy-damage' && (hours - lastCombatDamageLogHour < 1.0 / 60)) {
+        continue;
+      }
+      if (cls === 'log-enemy-damage') {
+        lastCombatDamageLogHour = hours;
+      }
+
+      const rawMsg = ev.msg || ev.text || (ev.payload ? (ev.payload.msg || ev.payload) : '');
+      const stripHtml = engine && engine.ctx && engine.ctx.stripHtml;
+      const cleanText = stripHtml ? stripHtml(rawMsg) : String(rawMsg);
+      if (cleanText) {
+        const totalSec = Math.floor(hours * 3600);
+        const days = Math.floor(totalSec / 86400) + 1;
+        const remSec = totalSec % 86400;
+        const h = String(Math.floor(remSec / 3600)).padStart(2, '0');
+        const m = String(Math.floor((remSec % 3600) / 60)).padStart(2, '0');
+        const s = String(remSec % 60).padStart(2, '0');
+        const timeStr = `[第${days}天 ${h}:${m}:${s}]`;
+        readableLogs.push(`${timeStr} [${cat.toUpperCase()}/${cls}] ${cleanText}`);
+      }
+    }
   }
 }
 
@@ -147,6 +178,13 @@ function assertInvariants(view, stats) {
     if (typeof v === 'number' && v < 0) bad.push(`${k} 為負：${v}`);
   }
   if (stats && !(stats.atk > 0 || stats.matk > 0)) bad.push('面板攻擊力為 0');
+  
+  // 移植：第 30 秒起 DPS 必須大於 0
+  const dps = engine.ctx.currentDps ? engine.ctx.currentDps() : 0;
+  if (engine.gameTimeSec() > 30 && dps <= 0) {
+    bad.push(`面板 DPS 異常：${dps}`);
+  }
+
   if (bad.length) {
     problems.push({ atGameSec: engine.gameTimeSec(), bad });
     console.error(`\n❌ 不變量失敗 @ 遊戲 ${(engine.gameTimeSec() / 3600).toFixed(2)}h`);
@@ -163,17 +201,40 @@ function assertInvariants(view, stats) {
 const SNAP_VIEW_KEYS = ['level', 'stage', 'gold', 'scrap', 'dust', 'essence',
   'ancientEssence', 'demonSeed', 'hp', 'hpMax', 'mp', 'mpMax', 'xp', 'xpMax'];
 const snapRows = [];
+
+let lastKillsTotal = 0;
+let lastHourChecked = 0;
+
 function snapshot() {
   const view = engine.view();
   const stats = engine.ctx.getStats();
   const G = engine.state();
+  
+  // 移植：每 1 小時檢查擊殺數是否為 0
+  const simTimeHours = engine.gameTimeSec() / 3600;
+  if (simTimeHours - lastHourChecked >= 1.0) {
+    const totalKills = (engine.ctx.LOOT_STATS && engine.ctx.LOOT_STATS.kills) || 0;
+    if (simTimeHours > 1.0) {
+      const killsThisHour = totalKills - lastKillsTotal;
+      if (killsThisHour <= 0) {
+        console.warn(`⚠️ [警告] 第 ${Math.floor(simTimeHours)} 小時擊殺數為 0！`);
+      }
+    }
+    lastKillsTotal = totalKills;
+    lastHourChecked = simTimeHours;
+  }
+
+  const lootStats = engine.ctx.LOOT_STATS || {};
   const row = {
     gameHours: +(engine.gameTimeSec() / 3600).toFixed(4),
     reincarnations: G.player.reincarnations || 0,
     invCount: (G.inventory || []).length,
     towerFloor: (G.tower && G.tower.floor) || 0,
-    atk: stats.atk, matk: stats.matk, def: stats.def,
-    critRate: stats.critRate, critDmg: stats.critDmg
+    dps: stats.dps || 0,
+    atk: stats.atk || 0, matk: stats.matk || 0, def: stats.def || 0,
+    critRate: stats.critRate || 0, critDmg: stats.critDmg || 0,
+    totalKills: lootStats.kills || 0,
+    totalDrops: lootStats.drops || 0
   };
   for (const k of SNAP_VIEW_KEYS) row[k] = view[k];
   snapRows.push(row);
@@ -193,30 +254,58 @@ let stepsDone = 0;
 const t0 = process.hrtime.bigint();
 let lastReport = t0;
 
-while (stepsDone < totalSteps) {
-  const n = Math.min(stepsPerDecision, totalSteps - stepsDone);
-  engine.step(n);
-  stepsDone += n;
+try {
+  while (stepsDone < totalSteps) {
+    const n = Math.min(stepsPerDecision, totalSteps - stepsDone);
+    engine.step(n);
+    stepsDone += n;
 
-  /* 決策點：策略只拿到 view / panels 的深拷貝（policy.decide 內再 round-trip 一次）。
-     它沒有 G、沒有 FIELD、沒有任何遊戲函式，改不了狀態也讀不到內部值。
-     面板只建策略宣告要的那幾個——背包面板很大，每次都建會白付序列化成本。 */
-  const panels = {};
-  for (const p of policy.needPanels) panels[p] = engine.panel(p);
-  dispatch(policy.decide({ view: engine.view(), panels, gameTimeSec: engine.gameTimeSec() }));
-  decisions++;
+    /* 決策點：策略只拿到 view / panels 的深拷貝（policy.decide 內再 round-trip 一次）。
+       它沒有 G、沒有 FIELD、沒有任何遊戲函式，改不了狀態也讀不到內部值。
+       面板只建策略宣告要的那幾個——背包面板很大，每次都建會白付序列化成本。 */
+    const panels = {};
+    for (const p of policy.needPanels) panels[p] = engine.panel(p);
+    dispatch(policy.decide({ view: engine.view(), panels, gameTimeSec: engine.gameTimeSec() }));
+    decisions++;
 
-  if (engine.gameTimeSec() >= nextSnapAt) {
-    const row = snapshot();
-    nextSnapAt += snapEverySec;
-    const now = process.hrtime.bigint();
-    if (Number(now - lastReport) / 1e9 > 5) {
-      lastReport = now;
+    if (engine.gameTimeSec() >= nextSnapAt) {
+      const row = snapshot();
+      nextSnapAt += snapEverySec;
       const pct = (100 * stepsDone / totalSteps).toFixed(1);
-      process.stdout.write(`  ${pct}%  遊戲 ${row.gameHours.toFixed(1)}h  Lv.${row.level} stage ${row.stage} 轉生 ${row.reincarnations}\n`);
+      process.stdout.write(`[PROGRESS] ${pct}% ${row.gameHours.toFixed(1)}h / ${HOURS}h Lv.${row.level}\n`);
+      try {
+        fs.writeFileSync(path.join(OUT_DIR, 'sim_progress.json'), JSON.stringify({
+          percent: parseFloat(pct),
+          currentHour: row.gameHours,
+          totalHours: HOURS,
+          level: row.level,
+          stage: row.stage
+        }));
+      } catch (e) {}
     }
   }
+} catch (err) {
+  console.error('\n💥 [模擬中斷] 觸發執行期阻斷或未處理錯誤！');
+  console.error(err.stack || err.message);
+  
+  // Dump 當時 G 及最後 200 筆原生事件
+  const errorDumpPath = path.join(OUT_DIR, 'sim_error_dump.json');
+  const dumpData = {
+    error: err.message,
+    gt: engine ? engine.gameTimeSec() : 0,
+    lastView: engine ? engine.view() : null,
+    recentLogs: readableLogs.slice(-200)
+  };
+  fs.writeFileSync(errorDumpPath, JSON.stringify(dumpData, null, 2), 'utf-8');
+  console.error(`📁 已將 Error Dump 導出至: ${errorDumpPath}`);
+  
+  // 同時寫出當時的 failure 存檔
+  if (engine) {
+    fs.writeFileSync(path.join(OUT_DIR, 'failure_state.json'), engine.saveJson());
+  }
+  process.exit(1);
 }
+
 snapshot();
 
 const elapsedSec = Number(process.hrtime.bigint() - t0) / 1e9;
@@ -226,6 +315,31 @@ logStream.end();
 
 const saveJson = engine.stampSavedAt().saveJson();
 fs.writeFileSync(path.join(OUT_DIR, 'save_final.json'), saveJson);
+
+const finalView = engine.view();
+const finalStats = engine.ctx.getStats();
+
+// 移植：500h 進度下限斷言
+if (HOURS >= 500 && finalView.level < 10) {
+  console.error(`❌ [500h 進度下限斷言失敗] 最終等級 Lv.${finalView.level} 低於 500h 期望下限 Lv.10！`);
+  process.exit(1);
+}
+
+// 移植：寫出人類可讀日誌 (.TXT Dump)
+const speedupMult = ((HOURS * 3600) / elapsedSec).toFixed(0);
+const logHeader = `========================================================================
+ Idle-RPG 100% 官方內建原生遊戲日誌 ${HOURS} 小時真實遊玩履歷 (.TXT Dump)
+ 生成時間: ${new Date().toLocaleString()}
+ Seed: ${SEED} | Policy SHA256: ${policyHash.slice(0, 12)}
+ 時間加速倍率: ${Number(speedupMult).toLocaleString()}x
+ 總擷取官方原生日誌數: ${readableLogs.length} 筆
+ 最終角色等級: Lv.${finalView.level}
+ 最終最高關卡: Stage ${finalView.stage}
+ 最終面板 DPS: ${engine.ctx.fmt ? engine.ctx.fmt(finalStats.dps || 0) : (finalStats.dps || 0)}
+========================================================================\n\n`;
+
+fs.writeFileSync(path.join(OUT_DIR, 'ai_player_action_log.txt'), logHeader + readableLogs.join('\n'), 'utf8');
+console.log(`📝 [${HOURS}h 官方原生動作日誌檔導出成功] -> ${path.join(OUT_DIR, 'ai_player_action_log.txt')}`);
 
 const cols = Object.keys(snapRows[0]);
 fs.writeFileSync(
@@ -240,8 +354,11 @@ fs.writeFileSync(path.join(OUT_DIR, 'snapshots.meta.json'), JSON.stringify({
     reincarnations: 'G.player.reincarnations',
     invCount: 'G.inventory.length',
     towerFloor: 'G.tower.floor',
+    dps: 'getStats().dps',
     atk: 'getStats().atk', matk: 'getStats().matk', def: 'getStats().def',
     critRate: 'getStats().critRate', critDmg: 'getStats().critDmg',
+    totalKills: 'LOOT_STATS.kills',
+    totalDrops: 'LOOT_STATS.drops',
     ...Object.fromEntries(SNAP_VIEW_KEYS.map((k) => [k, `buildView().${k}`]))
   }
 }, null, 2));
@@ -282,8 +399,8 @@ const summary = {
     return Object.keys(engine.ctx.COMMANDS).filter((name) => !sent.has(name));
   })(),
   invariantFailures: problems,
-  final: (() => { const v = engine.view(); const s = engine.ctx.getStats(); return {
-    level: v.level, stage: v.stage, gold: v.gold, reincarnations: engine.state().player.reincarnations || 0,
+  final: (() => { const v = engine.view(); const s = engine.ctx.getStats(); const st = engine.state().stage || {}; return {
+    level: v.level, stage: st.best || v.stage, stageCurrent: st.current || v.stage, gold: v.gold, reincarnations: engine.state().player.reincarnations || 0,
     atk: s.atk, matk: s.matk, inventory: (engine.state().inventory || []).length }; })()
 };
 fs.writeFileSync(path.join(OUT_DIR, 'run_summary.json'), JSON.stringify(summary, null, 2));
