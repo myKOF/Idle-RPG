@@ -2,6 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "sim-dashboard",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["tools/sim_server.cjs"],
+      "port": 28342
+    },
+    {
       "name": "idle-rpg",
       "runtimeExecutable": "powershell",
       "runtimeArgs": [

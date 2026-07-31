@@ -858,6 +858,8 @@
                     <div id="simProgressBarTrack" style="display: none; height: 10px; width: 100%; background: #1e293b; border-radius: 5px; overflow: hidden; border: 1px solid #334155;">
                         <div id="simProgressBarFill" style="height: 100%; width: 0%; background: linear-gradient(90deg, #6366f1 0%, #34d399 100%); transition: width 0.3s ease;"></div>
                     </div>
+                    <!-- 批次模式：每個 seed 一個標籤，各自顯示自己的百分比 -->
+                    <div id="batchSeedProgress" style="display: none; margin-top: 8px; flex-wrap: wrap; gap: 6px;"></div>
                     <div id="batchSpreadBox" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--panel-border); color: #cbd5e1;"></div>
                 </div>
             </div>
@@ -1727,6 +1729,11 @@
         if (statusBox) statusBox.style.display = 'block';
         if (progressTrack) progressTrack.style.display = 'block';
         if (progressFill) progressFill.style.width = '0%';
+        /* 上一次的批次散佈與 seed 標籤要先清掉，否則新的一跑會頂著舊結果顯示，
+           看起來完全正常卻是別次的數據——這是先前「批次跑完仍顯示 sim_out 舊資料」同一類的坑。 */
+        renderBatchSeedProgress(null);
+        const spreadBox = document.getElementById('batchSpreadBox');
+        if (spreadBox) spreadBox.style.display = 'none';
         if (statusText) {
             statusText.innerText = `🚀 系統正在由零建角跑 ${hours} 小時無作弊測試 (0%)...`;
             statusText.style.color = 'var(--accent-amber)';
@@ -1742,6 +1749,7 @@
                         const pct = pData.percent || 0;
                         if (progressFill) progressFill.style.width = pct + '%';
                         if (statusText) statusText.innerText = pData.statusText || `⏳ 已模擬 ${pData.currentHour || 0} / ${hours} 小時 (${pct}%)...`;
+                        renderBatchSeedProgress(pData.batch);
                     }
                 }
             } catch (e) {}
@@ -1788,6 +1796,9 @@
 
             clearInterval(pollTimer);
             showCancelButton(false);
+            /* 跑完就把 seed 標籤收掉。最後一次輪詢很可能停在「8/10 完成」，
+               留著它配上「批次完成」的狀態文字只會自相矛盾；結果改看下面的散佈表。 */
+            renderBatchSeedProgress(null);
 
             if (data.cancelled) {
                 if (statusText) {
@@ -1826,6 +1837,33 @@
                 btn.innerText = '🚀 開始全系統無作弊原生模擬 (Start Simulation)';
             }
         }
+    }
+
+    /* ---- 批次進行中：每個 seed 各自的進度 ----
+       刻意用標籤而不是進度條：同時十幾條進度條擠在一起反而看不出誰快誰慢，
+       而且批次的重點是「有沒有哪個 seed 卡住」，一個百分比數字就夠回答。
+       伺服器只回最接近完成的前 10 個；被截掉的仍計入狀態列的完成／執行中／排隊數字。 */
+    function renderBatchSeedProgress(batch) {
+        const box = document.getElementById('batchSeedProgress');
+        if (!box) return;
+        const seeds = (batch && batch.seeds) || [];
+        if (!seeds.length) {
+            box.style.display = 'none';
+            box.innerHTML = '';
+            return;
+        }
+        box.innerHTML = seeds.map((s) => {
+            const name = (s.seed !== null && s.seed !== undefined) ? ('seed ' + s.seed) : s.tag;
+            const pct = Number(s.percent) || 0;
+            const color = s.done ? 'var(--accent-emerald)' : 'var(--accent-amber)';
+            const text = s.done ? '完成' : pct.toFixed(1) + '%';
+            /* 詳細數據放 title：平常不佔版面，要查「這個 seed 現在打到哪」時滑過去就有。 */
+            const tip = `${name}｜${(Number(s.currentHour) || 0).toFixed(1)}h・Lv.${s.level || 0}・關卡 ${s.stage || 0}`;
+            return `<span title="${tip}" style="font-size:11px;padding:2px 8px;border-radius:10px;`
+                + `border:1px solid ${color};color:${color};background:rgba(15,23,42,0.6);white-space:nowrap;">`
+                + `${name} · ${text}</span>`;
+        }).join('');
+        box.style.display = 'flex';
     }
 
     /* ---- 批次結果 ---- */
