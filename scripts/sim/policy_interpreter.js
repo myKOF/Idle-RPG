@@ -306,6 +306,43 @@ function decide(state, policy, memo) {
           out.push({ name: r.cmd, args: { itemId: sItem.id, type: pick }, ruleId: r.id });
         }
       }
+    } else if (r.stageGate) {
+      /* 關卡閘門：裝備品質沒到門檻就關掉自動推關，留在原地掛機把裝備換上來。
+
+         對應 player_strategy.md「前期優先生存任務指南」：那份指南的核心是
+         **不要讓關卡跑在裝備前面**——推得太深只會一直死，死了就掉不到裝備，
+         掉不到裝備就更推不動。先前策略是無條件每 15 秒送一次「開啟自動推關」，
+         等於全程一路往前衝，正是指南要防的那件事。
+
+         ⚠️ 覆蓋率只算「身上真的有裝備」的部位。空部位在面板裡是 -1，
+         而雙手武器會讓 weapon2 永遠空著——把空部位算進分母的話覆蓋率
+         永遠到不了 100%，閘門就變成永久關閉，模擬整場卡在同一關而且看不出原因。 */
+      var gCfg = r.stageGate;
+      var gStage = Number(pathVal(state, gCfg.stage)) || 0;
+      var gRar = pathVal(state, gCfg.equippedRarities) || {};
+
+      var cp = null;
+      var cps = gCfg.checkpoints || [];
+      for (var gi = 0; gi < cps.length; gi++) {
+        if (cps[gi].maxStage === undefined || gStage <= cps[gi].maxStage) { cp = cps[gi]; break; }
+      }
+      if (cp) {
+        var totalSlots = 0, meetSlots = 0;
+        for (var gk in gRar) {
+          var gv = Number(gRar[gk]);
+          if (!(gv >= 0)) continue;                 // -1＝該部位是空的，不列入分母
+          totalSlots++;
+          if (gv >= (cp.minRarity || 0)) meetSlots++;
+        }
+        var need = (cp.coverage === undefined) ? 1 : cp.coverage;
+        /* need 為 0 代表這一段沒有要求（指南只涵蓋前期，之後交回各強度的推關策略）。 */
+        var passGate = (need <= 0) || (totalSlots > 0 && (meetSlots / totalSlots) >= need);
+
+        var gArgs = {};
+        for (var gak in baseArgs) gArgs[gak] = baseArgs[gak];
+        gArgs[gCfg.argKey || 'on'] = passGate;
+        out.push({ name: r.cmd, args: gArgs, ruleId: r.id });
+      }
     } else if (r.convertToPreferred) {
       /* 把不在當前偏好段的寶石轉成偏好種類（九宮格轉換）。
 

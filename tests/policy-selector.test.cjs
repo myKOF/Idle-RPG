@@ -268,6 +268,55 @@ test('換下寶石：replaceWith 讓拆與補在同一決策點成對送出', ()
     'topaz 只有 1 顆，第二個雜牌就補不到偏好種類，必須放著不動而不是拆掉');
 });
 
+/* ---- 關卡閘門（前期優先生存任務指南）----
+   核心是不要讓關卡跑在裝備前面。閘門若因為算錯分母而永久關閉，
+   模擬會整場卡在同一關——不會報錯，只會看起來「這個 seed 運氣很差」。 */
+
+const GATE_RULE = {
+  id: 'gate', cmd: 'stage.setAutoAdvance',
+  stageGate: {
+    stage: 'view.stage', equippedRarities: 'panels.inv.equipmentRarities', argKey: 'on',
+    checkpoints: [
+      { maxStage: 20, minRarity: 2, coverage: 1.0 },
+      { maxStage: 50, minRarity: 4, coverage: 0.3 },
+      { minRarity: 0, coverage: 0 }
+    ]
+  }
+};
+
+function gateState(stage, rarities) {
+  return { gameTimeSec: 100, view: { stage }, panels: { inv: { equipmentRarities: rarities } } };
+}
+
+test('關卡閘門：品質沒到門檻就關掉自動推關', () => {
+  const p = makePolicy([GATE_RULE]);
+  assert.equal(p.decide(gateState(10, { helmet: 2, chest: 1 }))[0].args.on, false,
+    '胸甲還是精良，未達「全身稀有」');
+  assert.equal(p.decide(gateState(10, { helmet: 2, chest: 3 }))[0].args.on, true,
+    '全部達到稀有以上就放行——更高品質也算達標');
+});
+
+test('關卡閘門：空部位不列入分母（否則閘門會永久關閉）', () => {
+  const p = makePolicy([GATE_RULE]);
+  assert.equal(p.decide(gateState(10, { helmet: 2, chest: 2, weapon2: -1 }))[0].args.on, true,
+    '雙手武器會讓 weapon2 永遠是 -1，算進分母的話覆蓋率永遠到不了 100%，' +
+    '模擬會整場卡在同一關而且看不出原因');
+});
+
+test('關卡閘門：部分覆蓋率門檻', () => {
+  const p = makePolicy([GATE_RULE]);
+  const four = (a, b, c, d) => ({ weapon: a, helmet: b, chest: c, legs: d });
+  assert.equal(p.decide(gateState(45, four(4, 4, 1, 1)))[0].args.on, true, '2/4＝50%，已達 30%');
+  assert.equal(p.decide(gateState(45, four(4, 1, 1, 1)))[0].args.on, false, '1/4＝25%，未達 30%');
+  assert.equal(p.decide(gateState(45, four(1, 1, 1, 1)))[0].args.on, false, '0/4 未達 30%');
+});
+
+test('關卡閘門：coverage 為 0 的收尾段一律放行', () => {
+  const p = makePolicy([GATE_RULE]);
+  assert.equal(p.decide(gateState(100, { helmet: 0 }))[0].args.on, true,
+    '指南只涵蓋前期，之後要交回各強度自己的推關策略，不能繼續卡著');
+});
+
 /* ---- 寶石轉換 ----
    偏好種類只佔 40 種寶石裡的少數，掉落又隨機，所以「挑有貨的鑲」永遠補不滿。
    轉換在遊戲裡是同階 1:1、數量不變、不花金幣，是既有庫存的重新分配。 */

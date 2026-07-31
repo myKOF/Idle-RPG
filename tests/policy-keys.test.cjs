@@ -111,7 +111,38 @@ test('分段設定的最後一段必須是無上限的 catch-all', () => {
   for (const f of POLICY_FILES) {
     for (const rule of loadPolicy(f).rules) {
       if (rule.socketEmpty) check(rule.socketEmpty.preferByLevel, `${f} 規則 ${rule.id} 的 preferByLevel`);
+      if (rule.convertToPreferred) check(rule.convertToPreferred.preferByLevel, `${f} 規則 ${rule.id} 的 preferByLevel`);
       for (const spec of rule.expand || []) check(spec.listByLevel, `${f} 規則 ${rule.id} 的 listByLevel`);
+    }
+  }
+});
+
+test('關卡閘門的最後一段必須是無上限、且不再設門檻', () => {
+  /* 最後一段仍設 maxStage → 超過之後閘門不再送指令，自動推關就停在上次的值；
+     最後一段仍要求品質 → 前期指南會一路管到後期，把角色永久卡在某一關。
+     兩種都不會報錯，只會看起來「這個 seed 卡住了」。 */
+  for (const f of POLICY_FILES) {
+    for (const rule of loadPolicy(f).rules) {
+      const cps = rule.stageGate && rule.stageGate.checkpoints;
+      if (!cps || !cps.length) continue;
+      const last = cps[cps.length - 1];
+      assert.equal(last.maxStage, undefined,
+        `${f} 規則 ${rule.id}：最後一段仍設了 maxStage=${last.maxStage}，超過之後閘門就不再送指令`);
+      assert.equal(last.coverage, 0,
+        `${f} 規則 ${rule.id}：最後一段的 coverage 應為 0（前期指南只涵蓋前期，之後交回推關策略）`);
+    }
+  }
+});
+
+test('關卡閘門引用的品質索引落在遊戲的 RARITIES 範圍內', () => {
+  for (const f of POLICY_FILES) {
+    for (const rule of loadPolicy(f).rules) {
+      const cps = (rule.stageGate && rule.stageGate.checkpoints) || [];
+      for (const cp of cps) {
+        assert.ok(cp.minRarity >= 0 && cp.minRarity < ctx.RARITIES.length,
+          `${f} 規則 ${rule.id} 的 minRarity=${cp.minRarity} 超出 RARITIES（0~${ctx.RARITIES.length - 1}）` +
+          '——門檻高於遊戲最高品質的話閘門永遠打不開');
+      }
     }
   }
 });
