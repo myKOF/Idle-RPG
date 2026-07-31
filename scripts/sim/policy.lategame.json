@@ -2,13 +2,8 @@
   "name": "lategame-systems-v1",
   "notes": [
     "用途：測到天賦、神鑄熔爐、高塔這三個系統。",
-    "全新角色跑不到——轉生門檻是 Lv.1000（REINCARNATION_LEVEL），",
-    "神鑄要 1 轉才開（FORGE_UNLOCK_REINCARNATION），天賦樹也是轉生後才解鎖。",
-    "",
-    "⚠️ 本策略使用 GM 指令建立測試前提（下方 bootstrap），這是「墊出來的狀態」，",
-    "不是模擬出來的進度。每一條都會原文寫進 run_summary.json 的 gmBootstrap。",
-    "拿這份跑出來的數據**不能**用來談成長曲線，只能用來驗證那三個系統會不會動。",
-    "要看成長曲線請用 policy.default.json 從零開始跑。"
+    "⚠️ 本策略使用 GM 指令建立測試前提（下方 bootstrap），這是「墊出來的狀態」",
+    "⚠️ 拆解只設普通/優良 (R0~R1)，保留稀有及以上裝備供 equip-best-per-slot 換裝。"
   ],
   "bootstrap": [
     "level 1000",
@@ -16,7 +11,7 @@
     "stage 100"
   ],
   "decideEveryGameSec": 30,
-  "needPanels": ["tower", "gems", "forge", "newforge", "talents"],
+  "needPanels": ["tower", "gems", "forge", "newforge", "talents", "equip", "skills", "inv"],
   "lists": {
     "skillPriority": [
       "powerSlash", "doubleStrike", "sharpBlade", "toughness", "whirlwind",
@@ -31,6 +26,16 @@
     ]
   },
   "rules": [
+    {
+      "id": "equip-best-per-slot",
+      "everySec": 15,
+      "cmd": "item.equip",
+      "bestPerSlot": {
+        "items": "panels.inv.items",
+        "equippedScores": "panels.inv.equipmentScores"
+      },
+      "why": "每個部位換上背包裡評分最高且優於身上那件的裝備"
+    },
     { "id": "auto-equip-on", "once": true, "cmd": "factory.setAutoEquip", "args": { "on": true } },
     { "id": "auto-advance-on", "once": true, "cmd": "stage.setAutoAdvance", "args": { "on": true } },
     {
@@ -39,10 +44,9 @@
       "cmd": "newforge.setQuality",
       "argsList": [
         { "furnaceId": 1, "rarity": 0, "on": true },
-        { "furnaceId": 1, "rarity": 1, "on": true },
-        { "furnaceId": 1, "rarity": 2, "on": true },
-        { "furnaceId": 1, "rarity": 3, "on": true }
-      ]
+        { "furnaceId": 1, "rarity": 1, "on": true }
+      ],
+      "why": "只拆解普通與優良 (R0~R1)"
     },
     { "id": "learn-skills", "everySec": 120, "cmd": "skill.learn", "expand": [{ "key": "id", "list": "skillPriority" }] },
     { "id": "buy-inventory", "everySec": 600, "cmd": "player.buyInvUpgrade" },
@@ -79,8 +83,7 @@
       "everySec": 1800,
       "cmd": "forge.setAutoFill",
       "args": { "kind": "equip", "rarity": 4 },
-      "if": [["panels.forge.forge.unlocked", "truthy"]],
-      "why": "史詩品質進法陣。普通~獨特已被熔爐拆掉，挑更低的會補不到料"
+      "if": [["panels.forge.forge.unlocked", "truthy"]]
     },
     { "id": "newforge-add-furnace", "everySec": 1800, "cmd": "newforge.addFurnace" },
 
@@ -91,17 +94,13 @@
       "args": {
         "floor": { "$add": [{ "$path": "panels.tower.tower.highest" }, 1] },
         "count": 10
-      },
-      "if": [
-        ["panels.tower.tower.active", "falsy"],
-        ["panels.tower.runtime.auto", "falsy"]
-      ]
+      }
     },
     {
-      "id": "tower-confirm",
+      "id": "tower-finish-if-needed",
       "everySec": 30,
-      "cmd": "tower.confirmResult",
-      "if": [["panels.tower.runtime.showingResult", "truthy"]]
+      "if": [["panels.tower.tower.active", "truthy"]],
+      "cmd": "tower.finish"
     }
   ]
 }
