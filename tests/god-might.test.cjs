@@ -35,10 +35,14 @@ test('神力改為物理與魔法攻擊的額外乘區', () => {
   };
 
   const stats = context.computeStats();
-  // CSV: config/CSV/game_parameters.csv:33，魔攻基礎 a=6、每點智力 d=1。
-  // Lv1 智力 5：基礎魔攻 11；11 × (1 + 100%) × (1 + 20%) = 26.4 → 26。
-  assert.equal(stats.base.matk, 11);
-  assert.equal(stats.matk, 26);
+  /* ⚠️ 期望值從遊戲常數推導，不寫死數字。
+     這支測試要驗的是「神力是一個額外乘區」這個關係，而基礎魔攻的係數
+     （DERIVED_COEF.matkBase、PRIMARY_STAT_EFFECTS.intMatk）是參數表管的可調值。
+     先前寫死 11／26，參數一調就紅燈，但驗的關係其實沒有變。 */
+  const expectedBase = context.DERIVED_COEF.matkBase + stats.int * context.PRIMARY_STAT_EFFECTS.intMatk;
+  assert.equal(stats.base.matk, expectedBase, '基礎魔攻 = 係數 + 智力 × 每點智力魔攻');
+  // 神力 20% 是額外乘區：base × (1 + matkPct%) × (1 + 神力%)
+  assert.equal(stats.matk, Math.round(expectedBase * (1 + 100 / 100) * (1 + 20 / 100)));
   assert.equal(stats.A.matkPct, 100);
 });
 

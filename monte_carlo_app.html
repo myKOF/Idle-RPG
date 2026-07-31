@@ -812,10 +812,16 @@
             </div>
         </div>
 
-        <form id="simParamsForm" onsubmit="handleFormSimSubmit(event)" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: end; background: rgba(15, 23, 42, 0.5); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+        <form id="simParamsForm" onsubmit="handleFormSimSubmit(event)" style="display: grid; grid-template-columns: 1fr 0.7fr 1fr 1fr; gap: 14px; align-items: end; background: rgba(15, 23, 42, 0.5); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
             <div class="form-group">
                 <label for="hoursInput" style="font-size: 13px; font-weight: 600; color: var(--accent-amber); display: block; margin-bottom: 6px;">⏱️ 模擬總時長 (小時 Hours)</label>
                 <input type="number" id="hoursInput" min="1" max="2160" value="100" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: #fff; font-weight: bold;" required>
+            </div>
+
+            <div class="form-group">
+                <label for="seedCountInput" style="font-size: 13px; font-weight: 600; color: var(--accent-emerald); display: block; margin-bottom: 6px;">🎲 Seed 數量 (平行批次)</label>
+                <input type="number" id="seedCountInput" min="1" max="32" value="1" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: #fff; font-weight: bold;" required>
+                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">1＝單次；&gt;1 則同策略跑多個 seed 看散佈</div>
             </div>
 
             <div class="form-group">
@@ -825,6 +831,9 @@
 
             <button type="submit" id="btnRunAutoSim" class="btn-submit" style="margin: 0; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border: 1px solid #818cf8; color: #fff; padding: 11px 18px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
                 🚀 開始全系統無作弊原生模擬 (Start Simulation)
+            </button>
+            <button type="button" id="btnCancelSim" onclick="cancelRunningSim()" style="display: none; margin-top: 8px; width: 100%; background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%); border: 1px solid #ef4444; color: #fff; padding: 10px 18px; font-weight: 700; border-radius: 6px; cursor: pointer;">
+                ⏹️ 取消模擬 (Cancel)
             </button>
         </form>
 
@@ -849,6 +858,7 @@
                     <div id="simProgressBarTrack" style="display: none; height: 10px; width: 100%; background: #1e293b; border-radius: 5px; overflow: hidden; border: 1px solid #334155;">
                         <div id="simProgressBarFill" style="height: 100%; width: 0%; background: linear-gradient(90deg, #6366f1 0%, #34d399 100%); transition: width 0.3s ease;"></div>
                     </div>
+                    <div id="batchSpreadBox" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--panel-border); color: #cbd5e1;"></div>
                 </div>
             </div>
 
@@ -928,15 +938,15 @@
             <div class="card-val" id="cardObtainedMythic" style="color: #a855f7; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #f97316;">
-            <div class="card-label">🟠 獲得【傳奇】裝備 (R4/R5)</div>
+            <div class="card-label">🟠 獲得【傳說】裝備 (R5)</div>
             <div class="card-val" id="cardObtainedLegendary" style="color: #f97316; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #3b82f6;">
-            <div class="card-label">🔵 獲得【史詩】裝備 (R3)</div>
+            <div class="card-label">🔵 獲得【史詩】裝備 (R4)</div>
             <div class="card-val" id="cardObtainedEpic" style="color: #3b82f6; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #94a3b8;">
-            <div class="card-label">⚪ 獲得【史詩以下】裝備 (R1~R2)</div>
+            <div class="card-label">⚪ 獲得【史詩以下】裝備 (R0~R3)</div>
             <div class="card-val" id="cardObtainedBelowEpic" style="color: #94a3b8;">-</div>
         </div>
 
@@ -988,7 +998,7 @@
                     <option value="obtained_godforge">👑 獲得【神鑄創世】裝備數量</option>
                     <option value="obtained_genesis">✨ 獲得【創世】裝備數量</option>
                     <option value="obtained_mythic">🟣 獲得【神話】裝備數量</option>
-                    <option value="obtained_legendary">🟠 獲得【傳奇】裝備數量</option>
+                    <option value="obtained_legendary">🟠 獲得【傳說】裝備數量</option>
                     <option value="obtained_epic">🔵 獲得【史詩】裝備數量</option>
                     <option value="obtained_below_epic">⚪ 獲得【史詩以下】裝備數量</option>
                     <option value="total_gold_earned">💰 500h 累積平均金幣總獲得</option>
@@ -1133,16 +1143,69 @@
         legs: '👖', boots: '🥾', ring: '💍', ring2: '💍', amulet: '📿'
     };
 
-    const RARITY_INFO = {
-        1: { name: '普通', color: '#9aa5b1' },
-        2: { name: '精良', color: '#4ade80' },
-        3: { name: '稀有', color: '#38bdf8' },
-        4: { name: '獨特', color: '#ffd700' },
-        5: { name: '史詩', color: '#c084fc' },
-        6: { name: '傳說', color: '#fb923c' },
-        7: { name: '創世', color: '#b8860b' },
-        8: { name: '神鑄創世', color: '#f5c542' }
-    };
+    /* ⚠️ 稀有度索引 0 起算，與遊戲 js/data.js 的 RARITIES 一致，顯示也用同一組編號：
+       R0=普通 R1=精良 R2=稀有 R3=獨特 R4=史詩 R5=傳說 R6=神話
+       R7=創世 R8=神鑄創世 R9=混沌 R10=神鑄混沌
+
+       這裡先前是一份 1 起算的手抄表，卻拿去查 0 起算的 item.rarity，整份對照往上偏一格：
+       獨特(3) 被顯示成「稀有」、卡片把 R3 標成「史詩」（實際是獨特）。
+       數據沒錯，是標籤錯，而標籤錯比數據錯更難察覺——看到「史詩 70 件」只會以為
+       換裝壞了，不會想到是名字貼錯。
+
+       名稱一律以 run_summary.json 的 rarityNames 為準（那是從遊戲 RARITIES 直接匯出的），
+       這裡只保留顏色。拿不到 summary 時才退回下面的預設名稱。 */
+    const RARITY_COLORS = ['#9aa5b1', '#4ade80', '#38bdf8', '#ffd700', '#c084fc',
+                           '#fb923c', '#f87171', '#b8860b', '#f5c542', '#a78bfa', '#e879f9'];
+    const RARITY_FALLBACK_NAMES = ['普通', '精良', '稀有', '獨特', '史詩', '傳說',
+                                   '神話', '創世', '神鑄創世', '混沌', '神鑄混沌'];
+    let rarityNamesFromGame = null;   // run_summary.json 載入後填入
+    let cumulativeLootStats = null;   // run_summary.json 的 lootStats（遊戲原生 LOOT_STATS）
+
+    /* ---- 累積總獲得卡片 ----
+       ⚠️ 只能讀 LOOT_STATS，不能讀存檔或 CSV 的資源欄位。
+       那些是「目前持有」，會因為拆解、強化、購買而下降；而卡片標題寫的是「總獲得」。
+       先前混用的後果：10 小時的報告顯示累積碎片 403（那是當下持有量），
+       但遊戲實際記錄的累積量光第 1 小時就有 963。裝備件數同理——
+       掉落後被熔爐拆掉，持有量只剩零頭。
+
+       這支必須在所有檔案都載入之後才呼叫，否則會被存檔解析的寫入蓋掉。 */
+    function applyCumulativeLootCards() {
+        const ls = cumulativeLootStats;
+        if (!ls) return;
+        const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v; };
+        const num = (v) => (Number(v) || 0).toLocaleString();
+
+        const equip = ls.equip || {};
+        const sumRarities = (list) => list.reduce((a, i) => a + (Number(equip[i]) || 0), 0);
+        /* 分組沿用原本三張卡片的切法，但索引改成正確的 0 起算：
+           R8 神鑄創世 / R7 創世 / R6 神話 / R5 傳說 / R4 史詩 / R0~R3 史詩以下 */
+        setVal('cardObtainedGodforge', num(equip[8]));
+        setVal('cardObtainedGenesis', num(equip[7]));
+        setVal('cardObtainedMythic', num(equip[6]));
+        setVal('cardObtainedLegendary', num(equip[5]));
+        setVal('cardObtainedEpic', num(equip[4]));
+        setVal('cardObtainedBelowEpic', num(sumRarities([0, 1, 2, 3])));
+
+        const mats = ls.mats || {};
+        setVal('cardTotalGoldEarned', num(ls.gold));
+        setVal('cardTotalStonesEarned', num(mats.scrap));
+        setVal('cardTotalEssenceEarned', num(mats.essence));
+        setVal('cardTotalDustEarned', num(mats.dust));
+        setVal('cardTotalAncientEssenceEarned', num(mats.ancientEssence));
+
+        /* 寶石：LOOT_STATS.gems 的鍵是「種類:等級」，值是累積顆數。
+           先前讀存檔的 player.gems（持有量），合成與鑲嵌都會讓它下降。 */
+        let gemTotal = 0;
+        for (const k in (ls.gems || {})) gemTotal += Number(ls.gems[k]) || 0;
+        setVal('cardGems', gemTotal.toLocaleString() + ' 顆');
+    }
+
+    /* rarity：遊戲的 0 起算索引。回傳 { name, color, label }，label 即 R+索引。 */
+    function rarityInfo(rarity) {
+        const i = Number(rarity);
+        const name = (rarityNamesFromGame && rarityNamesFromGame[i]) || RARITY_FALLBACK_NAMES[i] || '未知';
+        return { name, color: RARITY_COLORS[i] || '#9aa5b1', label: 'R' + i };
+    }
 
     const AFFIX_CHINESE = {
         patkPct: '物理攻擊加成',
@@ -1232,6 +1295,9 @@
             parseAndLoadEvents(nativeEventsText);
             loadedNames.push('native_events.jsonl');
         }
+
+        /* 最後才套用累積統計：它必須蓋過存檔解析寫進去的持有量，不能反過來。 */
+        applyCumulativeLootCards();
 
         if (loadedNames.length > 0) {
             const statusBox = document.getElementById('loadStatusBox');
@@ -1356,7 +1422,17 @@
     function parseAndLoadSummary(jsonText) {
         try {
             const summary = JSON.parse(jsonText);
-            
+
+            /* 稀有度名稱一律以遊戲匯出的為準，不要在這支檔案自己維護第二份對照表。 */
+            if (Array.isArray(summary.rarityNames)) {
+                rarityNamesFromGame = {};
+                summary.rarityNames.forEach(r => { rarityNamesFromGame[r.index] = r.name; });
+            }
+
+            /* 累積統計先存起來，等所有檔案都載完再套用（見 applyCumulativeLootCards）。
+               存檔解析在本函式之後執行，若在這裡就寫卡片會被它蓋掉。 */
+            cumulativeLootStats = summary.lootStats || null;
+
             document.getElementById('sumSeed').innerText = summary.seed || '-';
             document.getElementById('sumHours').innerText = (summary.gameHours || '-') + ' 小時';
             document.getElementById('sumPolicy').innerText = (summary.policy && summary.policy.file) || '-';
@@ -1623,10 +1699,15 @@
             out = 'sim_out_late';
         }
 
-        await triggerNativeSimulation(hours, seed, policy, out);
+        /* Seed 數量 > 1 走批次：同策略跑多個 seed。單次模擬每一步都依賴前一步、
+           無法平行，所以平行化放在跑與跑之間。 */
+        const seedCountEl = document.getElementById('seedCountInput');
+        const seedCount = Math.max(1, parseInt((seedCountEl && seedCountEl.value) || '1', 10) || 1);
+
+        await triggerNativeSimulation(hours, seed, policy, out, seedCount);
     }
 
-    async function triggerNativeSimulation(hours = 100, seed = 20260730, policy = 'scripts/sim/policy.default.json', out = 'sim_out') {
+    async function triggerNativeSimulation(hours = 100, seed = 20260730, policy = 'scripts/sim/policy.default.json', out = 'sim_out', seedCount = 1) {
         if (window.location.protocol === 'file:') {
             alert('💡 提示：您目前是以本地檔案 (file://) 直接開啟網頁。\n\n請雙擊開啟「啟動數值模擬器.bat」即可啟動伺服器並一鍵點擊執行系統自測！');
             return;
@@ -1635,7 +1716,7 @@
         const btn = document.getElementById('btnRunAutoSim');
         if (btn) {
             btn.disabled = true;
-            btn.innerText = `⏳ 系統自測運算中 (${hours}h 原生內核模擬...請稍候)`;
+            btn.innerText = seedCount > 1 ? `⏳ 批次模擬中 (${seedCount} 個 seed × ${hours}h...請稍候)` : `⏳ 系統自測運算中 (${hours}h 原生內核模擬...請稍候)`;
         }
 
         const statusBox = document.getElementById('loadStatusBox');
@@ -1666,23 +1747,67 @@
             } catch (e) {}
         }, 300);
 
+        showCancelButton(true);
+
         try {
+            /* 伺服器收到請求後立刻回 202（不再等模擬跑完才回應——那樣送出 500 小時
+               就等於把這個 fetch 掛住幾十分鐘，而且沒有取消的辦法）。
+               完成與否改由輪詢 /sim_progress 判斷。 */
             const resp = await fetch('/run_sim', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ hours: hours, seed: seed, policy: policy, out: out })
+                body: JSON.stringify({ hours: hours, seed: seed, policy: policy, out: out, seeds: seedCount })
+            });
+            const accepted = await resp.json();
+            if (!resp.ok || !accepted.ok) {
+                clearInterval(pollTimer);
+                showCancelButton(false);
+                if (statusText) {
+                    statusText.innerText = '❌ 無法開始模擬: ' + (accepted.message || accepted.error || resp.status);
+                    statusText.style.color = 'var(--accent-rose)';
+                }
+                if (btn) { btn.disabled = false; btn.innerText = '🚀 開始全系統無作弊原生模擬 (Start Simulation)'; }
+                return;
+            }
+
+            /* 等到伺服器回報不再執行為止。輪詢本身也是心跳——
+               頁面關掉就不會再有人來問，伺服器的看門狗會據此中止模擬。 */
+            const data = await new Promise((resolve) => {
+                const waitTimer = setInterval(async () => {
+                    try {
+                        const r = await fetch('/sim_progress?t=' + Date.now());
+                        const p = await r.json();
+                        if (!p.isSimulating) {
+                            clearInterval(waitTimer);
+                            const cancelled = /取消|已關閉/.test(p.statusText || '');
+                            resolve({ ok: !cancelled && (p.percent === 100), cancelled, message: p.statusText });
+                        }
+                    } catch (e) { /* 伺服器暫時無回應就繼續等 */ }
+                }, 500);
             });
 
-            const data = await resp.json();
             clearInterval(pollTimer);
+            showCancelButton(false);
 
-            if (data.ok) {
-                if (progressFill) progressFill.style.width = '100%';
+            if (data.cancelled) {
                 if (statusText) {
-                    statusText.innerText = `✅ ${hours} 小時系統自測 100% 成功完成！正在繪製最新數據...`;
-                    statusText.style.color = 'var(--accent-emerald)';
+                    statusText.innerText = data.message || '⏹️ 模擬已取消';
+                    statusText.style.color = 'var(--accent-amber)';
                 }
-                await loadNativeCsvSnapshotsToApp();
+                if (progressFill) progressFill.style.width = '0%';
+            } else if (data.ok) {
+                if (progressFill) progressFill.style.width = '100%';
+                if (statusText) statusText.style.color = 'var(--accent-emerald)';
+                if (seedCount > 1) {
+                    /* 批次的結果在 sim_batch/<每個 seed 一個子目錄>，不在 sim_out。
+                       圖表沒辦法同時畫 N 次模擬，所以取第一個 seed 當代表，
+                       並把跨 seed 的散佈另外列出來——只看單一 seed 會誤判，
+                       實測 5 個 seed 的物攻極差可以到 2.4 倍。 */
+                    await loadBatchResults(statusText, hours, seedCount);
+                } else {
+                    if (statusText) statusText.innerText = `✅ ${hours} 小時系統自測 100% 成功完成！正在繪製最新數據...`;
+                    await loadNativeCsvSnapshotsToApp();
+                }
             } else {
                 if (statusText) {
                     statusText.innerText = '❌ 系統自測失敗: ' + (data.message || data.error);
@@ -1695,6 +1820,7 @@
             console.error('觸發模擬失敗:', e);
             alert('觸發模擬失敗，請確認是否已啟動「啟動數值模擬器.bat」伺服器: ' + e.message);
         } finally {
+            showCancelButton(false);
             if (btn) {
                 btn.disabled = false;
                 btn.innerText = '🚀 開始全系統無作弊原生模擬 (Start Simulation)';
@@ -1702,9 +1828,85 @@
         }
     }
 
-    async function loadNativeCsvSnapshotsToApp() {
+    /* ---- 批次結果 ---- */
+    async function loadBatchResults(statusText, hours, seedCount) {
         try {
-            const resp = await fetch('./sim_out/snapshots.csv?t=' + Date.now());
+            const r = await fetch('./sim_batch/batch_summary.json?t=' + Date.now());
+            if (!r.ok) throw new Error('讀不到 batch_summary.json');
+            const b = await r.json();
+            const rows = b.rows || [];
+            if (!rows.length) throw new Error('批次沒有成功的結果');
+
+            const base = (b.outDir || 'sim_batch') + '/' + rows[0].dir;
+            await loadNativeCsvSnapshotsToApp('./' + base);
+
+            /* 散佈表：這是**跨次模擬的統計量**，不是遊戲數值。
+               每個輸入值都直接取自各次的 run_summary.json。 */
+            const box = document.getElementById('batchSpreadBox');
+            if (box) {
+                const sp = (b.spread && b.spread[rows[0].policy]) || {};
+                const label = { level: '等級', stage: '關卡', atk: '物攻', kills: '擊殺', deaths: '死亡' };
+                let html = `<div style="font-weight:700;color:var(--accent-emerald);margin-bottom:6px;">`
+                    + `🎲 批次 ${rows.length} 個 seed × ${hours} 小時（圖表顯示 seed ${rows[0].seed}，以下為跨 seed 散佈）</div>`
+                    + '<table style="width:100%;font-size:12px;border-collapse:collapse;">'
+                    + '<tr style="color:#94a3b8;"><td>指標</td><td style="text-align:right;">最小</td>'
+                    + '<td style="text-align:right;">中位數</td><td style="text-align:right;">最大</td></tr>';
+                for (const k of Object.keys(label)) {
+                    const v = sp[k];
+                    if (!v) continue;
+                    html += `<tr><td>${label[k]}</td><td style="text-align:right;">${v.min}</td>`
+                        + `<td style="text-align:right;">${v.median}</td><td style="text-align:right;">${v.max}</td></tr>`;
+                }
+                html += '</table>';
+                box.innerHTML = html;
+                box.style.display = 'block';
+            }
+            if (statusText) statusText.innerText = `✅ 批次完成：${rows.length} 個 seed × ${hours} 小時（圖表為 seed ${rows[0].seed}）`;
+        } catch (e) {
+            if (statusText) {
+                statusText.innerText = '⚠️ 批次已完成，但讀取結果失敗: ' + e.message;
+                statusText.style.color = 'var(--accent-amber)';
+            }
+        }
+    }
+
+    /* ---- 取消 ---- */
+    function showCancelButton(show) {
+        const btn = document.getElementById('btnCancelSim');
+        if (btn) btn.style.display = show ? 'inline-block' : 'none';
+    }
+
+    async function cancelRunningSim() {
+        try {
+            const r = await fetch('/cancel_sim', { method: 'POST' });
+            const d = await r.json();
+            const statusText = document.getElementById('simStatusText');
+            if (statusText) {
+                statusText.innerText = '⏹️ ' + (d.message || '已送出取消');
+                statusText.style.color = 'var(--accent-amber)';
+            }
+        } catch (e) {
+            alert('取消失敗，伺服器可能已關閉: ' + e.message);
+        }
+    }
+
+    /* 關閉分頁／重新整理時一併取消，避免模擬變成沒人看管的背景工作。
+       sendBeacon 是「離開頁面時仍送得出去」的正式做法，一般 fetch 會被中止。
+       這條是正常關閉的即時路徑；瀏覽器當掉或強制關閉收不到通知，
+       由伺服器端的心跳看門狗兜底（tools/sim_server.cjs 的 WATCHDOG_MS）。 */
+    window.addEventListener('beforeunload', function () {
+        const btn = document.getElementById('btnCancelSim');
+        if (btn && btn.style.display !== 'none') {
+            try { navigator.sendBeacon('/cancel_sim'); } catch (e) {}
+        }
+    });
+
+        /* baseDir 預設是單跑的 sim_out；批次完成後會傳入 sim_batch/<某個 seed> 的目錄。
+       先前寫死 './sim_out/'，於是批次跑完仍然載入上一次單跑的結果——
+       畫面顯示「2 小時完成」卻配著 10 小時的舊數據，比沒更新更容易誤導。 */
+    async function loadNativeCsvSnapshotsToApp(baseDir = './sim_out') {
+        try {
+            const resp = await fetch(baseDir + '/snapshots.csv?t=' + Date.now());
             if (!resp.ok) {
                 const resp2 = await fetch('./sim_snapshots.csv?t=' + Date.now());
                 if (!resp2.ok) {
@@ -1719,7 +1921,7 @@
             }
 
             try {
-                const sumResp = await fetch('./sim_out/run_summary.json?t=' + Date.now());
+                const sumResp = await fetch(baseDir + '/run_summary.json?t=' + Date.now());
                 if (sumResp.ok) {
                     const sumText = await sumResp.text();
                     parseAndLoadSummary(sumText);
@@ -1727,7 +1929,7 @@
             } catch (e) {}
 
             try {
-                const metaResp = await fetch('./sim_out/snapshots.meta.json?t=' + Date.now());
+                const metaResp = await fetch(baseDir + '/snapshots.meta.json?t=' + Date.now());
                 if (metaResp.ok) {
                     const metaText = await metaResp.text();
                     parseAndLoadMeta(metaText);
@@ -1735,7 +1937,7 @@
             } catch (e) {}
 
             try {
-                const saveResp = await fetch('./sim_out/save_final.json?t=' + Date.now());
+                const saveResp = await fetch(baseDir + '/save_final.json?t=' + Date.now());
                 if (saveResp.ok) {
                     const saveText = await saveResp.text();
                     parseAndLoadSaveFinal(saveText);
@@ -1743,12 +1945,15 @@
             } catch (e) {}
 
             try {
-                const evResp = await fetch('./sim_out/native_events.jsonl?t=' + Date.now());
+                const evResp = await fetch(baseDir + '/native_events.jsonl?t=' + Date.now());
                 if (evResp.ok) {
                     const evText = await evResp.text();
                     parseAndLoadEvents(evText);
                 }
             } catch (e) {}
+
+            /* 與拖放路徑一致：累積統計最後套用，蓋過存檔解析寫進去的持有量。 */
+            applyCumulativeLootCards();
 
         } catch (e) {
             console.error('載入本地數據失敗:', e);
@@ -2024,7 +2229,7 @@
         OFFICIAL_SLOTS.forEach(slot => {
             const eq = eqMap[slot];
             if (!eq) return;
-            const rInfo = RARITY_INFO[eq.rarity] || { name: '普通', color: '#9aa5b1' };
+            const rInfo = rarityInfo(eq.rarity);
             const ancCount = eq.affixes ? eq.affixes.filter(a => a.ancient).length : 0;
 
             let starsStr = '';
@@ -2040,7 +2245,7 @@
             slotEl.innerHTML = `
                 ${starsStr ? `<div class="anc-stars">${starsStr}</div>` : ''}
                 <div class="slot-emoji">${SLOT_EMOJIS[slot] || '🛡️'}</div>
-                <div style="font-size: 10px; color: ${rInfo.color}; font-weight: bold; margin-top: 2px;">+${eq.level || eq.upgrade || 0}</div>
+                <div style="font-size: 10px; color: ${rInfo.color}; font-weight: bold; margin-top: 2px;">+${eq.upgrade || 0}</div>
             `;
             grid.appendChild(slotEl);
         });
@@ -2065,7 +2270,7 @@
             return;
         }
 
-        const rInfo = RARITY_INFO[eq.rarity] || { name: '未知', color: '#9aa5b1' };
+        const rInfo = rarityInfo(eq.rarity);
         detailPanel.style.borderColor = rInfo.color;
 
         const detailHTMLFn = window.itemDetailHTML || window.uiItemDetailHTML;

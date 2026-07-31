@@ -33,10 +33,18 @@
       "ironWall"
     ],
     "targetAffixes": [
+      "atkPct",
+      "atkFlat",
+      "critRate",
+      "critDmg",
+      "aspd",
+      "pPen",
+      "lifesteal",
+      "eliteDmg",
+      "bossDmg",
       "gemEff",
-      "xpGain",
-      "dropRate",
-      "patk"
+      "xpBonus",
+      "loot"
     ]
   },
   "rules": [
@@ -49,6 +57,64 @@
         "equippedScores": "panels.inv.equipmentScores"
       },
       "why": "每個部位換上背包裡評分最高且優於身上那件的裝備。評分是遊戲的 itemScore，策略只挑最大值。遊戲的自動裝備只填空格不做替換（js/player.js:313），不補這條就會穿著開場的普通裝打到底"
+    },
+    {
+      "id": "upgrade-by-rarity-cap",
+      "everySec": 30,
+      "cmd": "item.upgrade",
+      "why": "依品質分配強化資源：R0/R1 不強化，R2→+6，R3→+11，R4→+17，之後每階 +6；身上最高品質不設上限。低階裝要強到打得動下一段關卡（推不過去就掉不到好裝），但不能把材料砸在遲早換掉的裝備上——換掉時強化等級會一起消失",
+      "upgradePriority": {
+        "equippedRarities": "panels.inv.equipmentRarities",
+        "equipment": "panels.inv.equipment",
+        "capByRarity": [
+          0,
+          0,
+          6,
+          11,
+          17,
+          23,
+          29,
+          35,
+          41,
+          47,
+          53
+        ]
+      }
+    },
+    {
+      "id": "socket-gems",
+      "everySec": 60,
+      "cmd": "gem.socket",
+      "socketEmpty": {
+        "equipment": "panels.inv.equipment",
+        "gems": "panels.gems.gems",
+        "preferTypes": [
+          "garnet",
+          "amethyst",
+          "ruby",
+          "sapphire"
+        ]
+      },
+      "why": "把寶石鑲進空插槽，優先爆傷(garnet)→爆擊(amethyst)→物攻(ruby)→魔攻(sapphire)，手上沒有偏好種類就鑲任何有貨的。等級由遊戲挑（取現有最高階）"
+    },
+    {
+      "id": "reroll-off-target",
+      "everySec": 300,
+      "cmd": "item.rerollAffix",
+      "rerollOffTarget": {
+        "equipment": "panels.inv.equipment",
+        "targetList": "targetAffixes",
+        "minRarity": 3,
+        "keepAncient": true
+      },
+      "why": "把不在 targetAffixes 的詞條洗掉（攻擊為主、防禦為輔）。精華少於 20 就不洗——實測精華是瓶頸，硬送只會得到 1,410 次「資源不足」把報表淹掉",
+      "if": [
+        [
+          "view.essence",
+          ">=",
+          20
+        ]
+      ]
     },
     {
       "id": "auto-equip-on",
@@ -85,40 +151,6 @@
         }
       ],
       "why": "只拆解普通與優良。稀有以上要留在背包當換裝候選——遊戲的自動裝備只填空格不做替換（js/player.js:313），全拆掉等於把換裝的來源砍光，角色會被鎖死在開場隨便填進去的裝備"
-    },
-    {
-      "id": "upgrade-weapon",
-      "everySec": 30,
-      "if": [
-        [
-          "panels.equip.equipment.weapon",
-          "truthy"
-        ]
-      ],
-      "cmd": "item.upgrade",
-      "args": {
-        "itemId": {
-          "$path": "panels.equip.equipment.weapon.id"
-        }
-      },
-      "why": "強化主手武器"
-    },
-    {
-      "id": "upgrade-chest",
-      "everySec": 30,
-      "if": [
-        [
-          "panels.equip.equipment.chest",
-          "truthy"
-        ]
-      ],
-      "cmd": "item.upgrade",
-      "args": {
-        "itemId": {
-          "$path": "panels.equip.equipment.chest.id"
-        }
-      },
-      "why": "強化胸甲"
     },
     {
       "id": "learn-skills",
