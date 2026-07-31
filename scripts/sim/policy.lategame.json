@@ -147,14 +147,16 @@
           {
             "maxStage": 20,
             "minRarity": 2,
-            "coverage": 1,
-            "依據": "指南1. 前20關全身換稀有，再過20關守關菁英"
+            "coverage": 0.85,
+            "依據": "指南1. 前20關全身換稀有，再過20關守關菁英",
+            "備註": "13 格允許 2 格未達標。要求全滿時一格就能卡住整場——實測 12/13 獨特卡了 90 小時"
           },
           {
             "maxStage": 40,
             "minRarity": 3,
-            "coverage": 1,
-            "依據": "指南2. 21~29關掛機換全身獨特；第二目標40關守關菁英（獨特自怪物Lv20起掉落5%）"
+            "coverage": 0.85,
+            "依據": "指南2. 21~29關掛機換全身獨特；第二目標40關守關菁英（獨特自怪物Lv20起掉落5%）",
+            "備註": "13 格允許 2 格未達標。要求全滿時一格就能卡住整場——實測 12/13 獨特卡了 90 小時"
           },
           {
             "maxStage": 50,
@@ -165,8 +167,9 @@
           {
             "maxStage": 59,
             "minRarity": 4,
-            "coverage": 1,
-            "依據": "指南5. 通關50關BOSS後在51~59關掛機，全身換成史詩"
+            "coverage": 0.85,
+            "依據": "指南5. 通關50關BOSS後在51~59關掛機，全身換成史詩",
+            "備註": "13 格允許 2 格未達標。要求全滿時一格就能卡住整場——實測 12/13 獨特卡了 90 小時"
           },
           {
             "minRarity": 0,
@@ -531,6 +534,29 @@
         "maxPerDecision": 4
       },
       "why": "依 player_strategy.md 附魔策略：生命值(vigor)→冰凍(ice)→六大屬性抗性平均。遊戲規定每個部位只吃一種類別（enchantCatForType：武器/戒指/手套/護腕＝攻擊，項鍊/鞋子＝功能，其餘＝防禦），所以這份優先序實際上是按類別分工而不是單一排序：功能部位放生命值、攻擊部位放冰凍、防禦部位放六大抗性並輪流分散。部位與類別的對應取自遊戲的面板欄位，策略不自己抄——抄一份遲早跟遊戲脫鉤，而 manualEnchant 只會回「XX 只能使用 OO 類附魔」，看報表不會發現規則從沒生效"
+    },
+    {
+      "id": "salvage-below-equipped",
+      "everySec": 600,
+      "cmd": "newforge.setQuality",
+      "salvageBelowEquipped": {
+        "equippedRarities": "panels.inv.equipmentRarities",
+        "furnaces": "panels.newforge.newForge.furnaces"
+      },
+      "why": "最佳分解策略：分解門檻跟著身上最低品質往上升，低於它的裝備不可能升級任何部位。先前是 once:true 開局設一次「只拆R0/R1」就再也不動——101小時實測背包 298 格有 247 件稀有(83%)，背包一滿掉落連熔爐佇列都進不去而被直接丟棄，主手武器 90 小時等不到升級"
+    },
+    {
+      "id": "salvage-when-bag-full",
+      "everySec": 120,
+      "cmd": "item.salvageBulk",
+      "salvageWhenFull": {
+        "count": "panels.inv.count",
+        "cap": "panels.inv.cap",
+        "equippedRarities": "panels.inv.equipmentRarities",
+        "fullRatio": 0.9,
+        "belowMaxBy": 1
+      },
+      "why": "背包壓力閥：使用率達 90% 時，把低於身上最高品質的庫存一次清掉。背包滿了不只是挑不到東西，而是整條掉落管線停擺——熔爐佇列推不進背包就回堵，新裝備直接丟棄，角色會停在原地打幾十小時而畫面完全正常"
     }
   ]
 }

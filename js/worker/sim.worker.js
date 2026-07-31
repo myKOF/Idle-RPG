@@ -516,6 +516,16 @@ function buildInventoryPanel(params) {
     })(),
     /* 附魔書庫存（逐種）。view.books 只有總數，決定「這件要附什麼」時不夠用。 */
     books: G.player ? (G.player.books || {}) : {},
+    /* 下一次背包擴充的金幣成本；已達上限時為 null。
+       沒有這個數字的話，外面只能「先送出再看它回金幣不足」——實測一次 101 小時
+       的模擬送了 1,212 次擴充、其中 1,014 次是金幣不足的空轉。 */
+    expandCost: (function () {
+      if (typeof inventoryExpandCost !== 'function') return null;
+      var upg = (G.player && G.player.invUpgrades) || 0;
+      if (typeof INVENTORY_CAP === 'number' && typeof INVENTORY_MAX === 'number'
+        && INVENTORY_CAP + upg >= INVENTORY_MAX) return null;
+      return inventoryExpandCost(upg);
+    })(),
     /* 每個部位能用的附魔類別與可放幾條——兩者都由遊戲的函式算，不在外面重推。
        部位與類別的對應（武器/戒指/手套/護腕＝攻擊，項鍊/鞋子＝功能，其餘＝防禦）
        是遊戲規則，抄一份到策略裡遲早會跟遊戲脫鉤，而 manualEnchant 只會回一句

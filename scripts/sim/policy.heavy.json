@@ -139,14 +139,16 @@
           {
             "maxStage": 20,
             "minRarity": 2,
-            "coverage": 1,
-            "依據": "指南1. 前20關全身換稀有，再過20關守關菁英"
+            "coverage": 0.85,
+            "依據": "指南1. 前20關全身換稀有，再過20關守關菁英",
+            "備註": "13 格允許 2 格未達標。要求全滿時一格就能卡住整場——實測 12/13 獨特卡了 90 小時"
           },
           {
             "maxStage": 40,
             "minRarity": 3,
-            "coverage": 1,
-            "依據": "指南2. 21~29關掛機換全身獨特；第二目標40關守關菁英（獨特自怪物Lv20起掉落5%）"
+            "coverage": 0.85,
+            "依據": "指南2. 21~29關掛機換全身獨特；第二目標40關守關菁英（獨特自怪物Lv20起掉落5%）",
+            "備註": "13 格允許 2 格未達標。要求全滿時一格就能卡住整場——實測 12/13 獨特卡了 90 小時"
           },
           {
             "maxStage": 50,
@@ -157,8 +159,9 @@
           {
             "maxStage": 59,
             "minRarity": 4,
-            "coverage": 1,
-            "依據": "指南5. 通關50關BOSS後在51~59關掛機，全身換成史詩"
+            "coverage": 0.85,
+            "依據": "指南5. 通關50關BOSS後在51~59關掛機，全身換成史詩",
+            "備註": "13 格允許 2 格未達標。要求全滿時一格就能卡住整場——實測 12/13 獨特卡了 90 小時"
           },
           {
             "minRarity": 0,
@@ -441,11 +444,18 @@
         [
           "panels.inv.cap",
           "<",
-          700
+          1000
+        ],
+        [
+          "panels.inv.expandCost",
+          "<=",
+          {
+            "$path": "view.gold"
+          }
         ]
       ],
       "cmd": "player.buyInvUpgrade",
-      "why": "背包策略：穩定將背包逐步解鎖至700格"
+      "why": "背包策略：逐步解鎖至1000格。先比對擴充成本與金幣才送出——沒有這個條件時實測 101 小時送了 1,212 次、其中 1,014 次是金幣不足的空轉"
     },
     {
       "id": "add-furnace-max",
@@ -454,22 +464,27 @@
       "why": "熔爐解鎖到當前可開的最大數量"
     },
     {
-      "id": "salvage-best-strategy",
-      "once": true,
+      "id": "salvage-below-equipped",
+      "everySec": 600,
       "cmd": "newforge.setQuality",
-      "argsList": [
-        {
-          "furnaceId": 1,
-          "rarity": 0,
-          "on": true
-        },
-        {
-          "furnaceId": 1,
-          "rarity": 1,
-          "on": true
-        }
-      ],
-      "why": "只拆解普通與優良(R0~R1)，稀有以上保留在背包當換裝候選"
+      "salvageBelowEquipped": {
+        "equippedRarities": "panels.inv.equipmentRarities",
+        "furnaces": "panels.newforge.newForge.furnaces"
+      },
+      "why": "最佳分解策略：分解門檻跟著身上最低品質往上升，低於它的裝備不可能升級任何部位。先前是 once:true 開局設一次「只拆R0/R1」就再也不動——101小時實測背包 298 格有 247 件稀有(83%)，背包一滿掉落連熔爐佇列都進不去而被直接丟棄，主手武器 90 小時等不到升級"
+    },
+    {
+      "id": "salvage-when-bag-full",
+      "everySec": 120,
+      "cmd": "item.salvageBulk",
+      "salvageWhenFull": {
+        "count": "panels.inv.count",
+        "cap": "panels.inv.cap",
+        "equippedRarities": "panels.inv.equipmentRarities",
+        "fullRatio": 0.9,
+        "belowMaxBy": 1
+      },
+      "why": "背包壓力閥：使用率達 90% 時，把低於身上最高品質的庫存一次清掉。背包滿了不只是挑不到東西，而是整條掉落管線停擺——熔爐佇列推不進背包就回堵，新裝備直接丟棄，角色會停在原地打幾十小時而畫面完全正常"
     },
     {
       "id": "learn-potential-talents",

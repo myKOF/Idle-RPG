@@ -29,7 +29,9 @@ function pathVal(root, path) {
 function testCond(root, cond) {
   var v = pathVal(root, cond[0]);
   var op = cond[1];
-  var rhs = cond[2];
+  /* 右邊也可以是 {$path:...}，才寫得出「金幣夠不夠付這次擴充」這種兩個狀態值的比較。
+     只寫得出「跟常數比」的話，成本會隨次數成長的東西就只能先送出去撞牆。 */
+  var rhs = resolveArg(root, cond[2]);
   switch (op) {
     case '>':  return v > rhs;
     case '>=': return v >= rhs;
@@ -305,6 +307,57 @@ function decide(state, policy, memo) {
           /* 每個部位一次只送一顆：鑲上之後空槽與庫存都會變，下個決策點再算一次即可。 */
           out.push({ name: r.cmd, args: { itemId: sItem.id, type: pick }, ruleId: r.id });
         }
+      }
+    } else if (r.salvageBelowEquipped) {
+      /* 熔爐的分解品質門檻要跟著身上的裝備一起往上升。
+
+         player_strategy.md 的「最佳分解策略」是：全身穿滿某品質時，把低於身上的
+         全部分解。先前這條規則是 once:true——開局設定一次「只拆 R0/R1」就再也不動，
+         於是稀有裝一路累積：101 小時實測背包 298 格裡有 247 件稀有（83%），
+         背包一滿，掉落連熔爐佇列都進不去而被直接丟棄（pushConveyor），
+         主手那把獨特武器 90 小時都等不到。
+
+         門檻取身上**最低**的品質：低於它的裝備不可能升級任何一個部位。
+         只在狀態與現況不同時才送指令，免得每次決策都送一輪必然無效的設定。 */
+      var svCfg = r.salvageBelowEquipped;
+      var svRar = pathVal(state, svCfg.equippedRarities) || {};
+      var furnaces = pathVal(state, svCfg.furnaces) || [];
+      var minRar = null;
+      for (var svk in svRar) {
+        var rv3 = Number(svRar[svk]);
+        if (!(rv3 >= 0)) continue;                       // -1＝空部位
+        if (minRar === null || rv3 < minRar) minRar = rv3;
+      }
+      if (minRar !== null) {
+        for (var fi = 0; fi < furnaces.length; fi++) {
+          var fu = furnaces[fi];
+          if (!fu || fu.id === undefined || !fu.qualities) continue;
+          for (var qi = 0; qi < fu.qualities.length; qi++) {
+            var want = qi < minRar;
+            if (!!fu.qualities[qi] === want) continue;
+            out.push({ name: r.cmd, args: { furnaceId: fu.id, rarity: qi, on: want }, ruleId: r.id });
+          }
+        }
+      }
+    } else if (r.salvageWhenFull) {
+      /* 背包壓力閥：快滿時把「配不上身上最好那件」的庫存一次清掉。
+
+         為什麼需要：背包滿了不只是換裝挑不到東西，而是**整條掉落管線停擺**——
+         熔爐佇列推不進背包就回堵，新裝備直接丟棄。角色會停在原地打幾十小時，
+         畫面上完全正常，只是再也不會有任何東西掉下來。
+
+         門檻取身上**最高**品質往下 belowMaxBy 階。平常不動；只有在空間真的稀缺時，
+         才用「留得下最好的」這個標準取代「留得下可能有用的」。 */
+      var bfCfg = r.salvageWhenFull;
+      var bfCnt = Number(pathVal(state, bfCfg.count)) || 0;
+      var bfCap = Number(pathVal(state, bfCfg.cap)) || 0;
+      var bfRatio = (typeof bfCfg.fullRatio === 'number') ? bfCfg.fullRatio : 0.9;
+      if (bfCap > 0 && (bfCnt / bfCap) >= bfRatio) {
+        var bfRar = pathVal(state, bfCfg.equippedRarities) || {};
+        var maxRar2 = -1;
+        for (var bk in bfRar) { var bv = Number(bfRar[bk]); if (bv > maxRar2) maxRar2 = bv; }
+        var cut = maxRar2 - ((typeof bfCfg.belowMaxBy === 'number') ? bfCfg.belowMaxBy : 1);
+        if (cut >= 0) out.push({ name: r.cmd, args: { maxRarity: cut }, ruleId: r.id });
       }
     } else if (r.enchantPriority) {
       /* 依部位可用的附魔類別挑書附上去。
