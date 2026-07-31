@@ -89,6 +89,24 @@ P5 之後的檔案所有權慣例（沿用即可，非硬性）：
 
 # 2. Claude Code 任務
 
+## 2.-5 草原前 100 關敵人數量調整（2026-07-31）
+
+狀態：已完成，等待使用者合併
+
+任務內容：依 `config/Excel/game_parameters.xlsx` 新增的五列參數，讓草原第 1～100 關每 20 關套用一組小怪出怪數量權重；草原第 100 關之後恢復一般小怪數量。草原前 100 關菁英固定出現 1 隻；BOSS 規則維持原狀。
+
+允許修改：`docs/AI_TASKS.md`、`config/CSV/game_parameters.csv`、`js/data.js`、`js/formula.js`、`js/combat.js`、`tools/apply_params.cjs`、`tests/multi-enemy.test.cjs`。
+
+禁止修改：其餘檔案（`config/Excel/game_parameters.xlsx` 保留使用者既有修改）。
+
+前置依賴：參數表五列已由使用者合併至最新版本。
+
+驗收方式：新增分段權重與階段／場景選擇測試；`npm test` 671/671、`npm run build` 191 檔全數通過；`node tools/apply_params.cjs` 顯示本次新增參數 0 變更，僅保留既有 15 個場景錨點問題。
+
+後續接手者：Codex 完成後由使用者合併至整合分支。
+
+---
+
 ## 2.-4 技能融合系統改造（2026-07-30）
 
 狀態：已完成，等待驗證（細節見 PATCH.md「技能融合系統改造（2026-07-30）」）

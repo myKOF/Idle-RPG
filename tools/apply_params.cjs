@@ -393,6 +393,12 @@ function parseCountTuples(cat, name) {
   return out.join(', ');
 }
 arrayContent('data', 'FIELD_ENEMY_COUNT_TABLE', parseCountTuples('4-敵人數量', '小怪 數量權重'), 'FIELD_ENEMY_COUNT_TABLE');
+const PLAINS_EARLY_ENEMY_COUNT_RANGES = ['1~20', '21~40', '41~60', '61~80', '81~100'];
+const plainsEarlyEnemyCountTables = PLAINS_EARLY_ENEMY_COUNT_RANGES.map(range =>
+  parseCountTuples('4-敵人數量', '小怪 數量權重(草原' + range + '關)'));
+arrayContent('data', 'FIELD_PLAINS_EARLY_ENEMY_COUNT_TABLES',
+  '[' + plainsEarlyEnemyCountTables.map(table => '[' + table + ']').join(', ') + ']',
+  'FIELD_PLAINS_EARLY_ENEMY_COUNT_TABLES');
 arrayContent('data', 'FIELD_ELITE_COUNT_TABLE', parseCountTuples('4-敵人數量', '菁英 數量權重'), 'FIELD_ELITE_COUNT_TABLE');
 arrayContent('data', 'FIELD_BOSS_COUNT_TABLE', parseCountTuples('4-敵人數量', 'BOSS 數量權重'), 'FIELD_BOSS_COUNT_TABLE');
 // 戰場站位（敵方棋盤）：格數、距離係數、BOSS 佔格 → js/battlefield.js 讀這些常數

@@ -119,7 +119,7 @@ function spawnFieldMonster() {
     var base = monsterStatsFor(s, elite, boss);
     var zn = currentZoneDef();
     // 數量依敵種各自擲骰（小怪／菁英／BOSS 三張權重表 → data.js）
-    var count = rollFieldEnemyCount(boss ? 'boss' : (elite ? 'elite' : 'normal'));
+    var count = rollFieldEnemyCount(boss ? 'boss' : (elite ? 'elite' : 'normal'), s, G.stage.zone || 'plains');
     var enemies = [];
     for (var i = 0; i < count; i++) {
         var mtype = pick(zn.pool);
