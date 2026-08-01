@@ -415,7 +415,7 @@ function computeStats(equipmentOverride) {
 // 防禦減傷率 = 防禦 / (防禦 + 60 + 8 × 攻擊者等級)
 function defReduction(def, attackerLevel) {
   if (def <= 0) return 0;
-  return def / (def + 60 + 8 * attackerLevel);
+  return def / (def + 10000 + 100 * attackerLevel);
 }
 
 // 元素附傷減免：只套用對應元素抗性，不重複套用魔法抗性
@@ -429,14 +429,14 @@ function resistanceReduction(total, enemyLevel, exponent, base, levelCoef) {
   return denominator > 0 ? power / denominator : 0;
 }
 
-var PHYSICAL_RESISTANCE_EXPONENT = 1.8;
-var PHYSICAL_RESISTANCE_BASE = 10;
+var PHYSICAL_RESISTANCE_EXPONENT = 1.5;
+var PHYSICAL_RESISTANCE_BASE = 20;
 var PHYSICAL_RESISTANCE_LEVEL_COEF = 0.1;
-var MAGIC_RESISTANCE_EXPONENT = 1.8;
-var MAGIC_RESISTANCE_BASE = 10;
+var MAGIC_RESISTANCE_EXPONENT = 1.5;
+var MAGIC_RESISTANCE_BASE = 20;
 var MAGIC_RESISTANCE_LEVEL_COEF = 0.1;
-var ELEMENTAL_RESISTANCE_EXPONENT = 1.8;
-var ELEMENTAL_RESISTANCE_BASE = 10;
+var ELEMENTAL_RESISTANCE_EXPONENT = 1.5;
+var ELEMENTAL_RESISTANCE_BASE = 20;
 var ELEMENTAL_RESISTANCE_LEVEL_COEF = 0.1;
 
 function physicalResistanceReduction(total, enemyLevel) {
@@ -474,7 +474,7 @@ function globalDamageMultiplier(total) {
    減傷率 = 抗性值總合 / (抗性值總合 + a + b × 攻擊者等級)，a/b 與防禦減傷曲線同基準。
    於 resolveHit 全局減傷之後、最低傷害之前的最末端套用；
    依攻擊者敵種（普通/菁英/BOSS）選用防守方對應的抗性總合。 */
-var ENEMY_TYPE_DMG_RED_A = 700;  // 常數 a
+var ENEMY_TYPE_DMG_RED_A = 750;  // 常數 a
 var ENEMY_TYPE_DMG_RED_B = 0.5;   // 攻擊者每級係數 b
 function enemyTypeDamageReduction(total, attackerLevel) {
   total = Number(total) || 0;
