@@ -131,7 +131,7 @@ function computeStats(equipmentOverride) {
     var um = upgradeMult(it); // 強化倍率：每 +1 詞條數值 +5%
     it.affixes.forEach(function (a) {
       if (typeof affixIsAllLocked === 'function' && affixIsAllLocked(a.key)) return;
-      var v = a.val * um;
+      var v = affixValue(it, a) * um;   // 詞條值由強度值當場算出（affixValue → §6）
       var k = a.key;
       var re = affixResElem(k);
       var dv = affixDmgVsElem(k);
@@ -419,9 +419,10 @@ function defReduction(def, attackerLevel) {
 
 // 元素附傷減免：只套用對應元素抗性，不重複套用魔法抗性
 function resistanceReduction(total, enemyLevel, exponent, base, levelCoef) {
-  total = Math.max(0, Number(total) || 0);
-  if (total <= 0) return 0;
-  var power = Math.pow(total, Number(exponent));
+  // pRes/mRes/elemental resistance are stored as percentage points (46.6 = 46.6%).
+  var resistanceRatio = Math.max(0, Number(total) || 0) / 100;
+  if (resistanceRatio <= 0) return 0;
+  var power = Math.pow(resistanceRatio, Number(exponent));
   var level = Number(enemyLevel) || 1;
   var denominator = power + Number(base) + Number(levelCoef) * level;
   return denominator > 0 ? power / denominator : 0;
@@ -1216,8 +1217,22 @@ function equipmentTierLevel(level) {
 
 /* ---- 詞條數值 ----
    基準值 = (base + base × lv係數 × (裝備等級-1)) × 稀有度倍率
-   一般產出值 = 基準值 × rnd(0.8, 1.2)（即洗煉區間 ±20%）
-   洗煉值（傳入 affixCap 時）先把 80%~120% 平分為 A/B 兩段，再依權重選段。 */
+   一般產出值 = 基準值 × (0.8 + 強度值/AFFIX_ROLL_MAX × 0.4)（即洗煉區間 ±20%）
+   洗煉值（傳入 affixCap 時）先把 80%~120% 平分為 A/B 兩段，再依權重選段。
+
+   ---- 為什麼存檔只存強度值（2026-08-01 詞條存檔改造）----
+   存檔的每條詞條只留 { key, roll, ancient }：roll 是「在隨機區間中的位置」
+   （0 ~ AFFIX_ROLL_MAX 的整數，0＝區間下限、滿值＝區間上限），最終數值一律由
+   base／每級成長／稀有度倍率當場算出。這樣參數表（config/Excel/game_parameters.xlsx
+   → Equipment_Affix）調整詞條數值後，**舊存檔既有裝備會跟著套用新值**，
+   不會出現「新掉的裝備與背包裡同名詞條數值不一致」，內測期間調平衡也不必刪檔。
+   強化 +N 的 ×5% 本來就是讀取時乘（upgradeMult），這只是把同一原則套到隨機值上。
+
+   刻度為固定 1000，而不是「把隨機區間寬度等分」：區間寬度＝基準值×40%，
+   會隨等級與稀有度從個位數暴增到數十萬（Lv1 生命值約 9 點、Lv500 神鑄創世超過 28 萬點），
+   等分數若跟著裝備變，強度值本身就會再次被 base 變動污染。1000 階的取捨是
+   舊存檔換算最壞飄移 0.049%（實測 724,423 → 724,574 生命，全詞條 × 等級 × 稀有度掃描）。 */
+var AFFIX_ROLL_MAX = 1000;
 var AFFIX_REROLL_LOWER_WEIGHT = 1;
 var AFFIX_REROLL_UPPER_BASE_WEIGHT = 1;
 var AFFIX_REROLL_BIAS_EXPONENT = 0.3333;
@@ -1234,28 +1249,86 @@ function affixRerollUnit(affixCap) {
   return Math.random() * total < lowerWeight ? rnd(0, 0.5) : rnd(0.5, 1);
 }
 
-function rollAffixValue(key, itemLevel, rarityIdx, affixCap) {
+// 詞條基準值（不含隨機、不含強化）＝ (base + base×lv×(裝備等級-1)) × 稀有度倍率
+function affixBaseValue(key, itemLevel, rarityIdx) {
   var def = AFFIX_POOL[key];
   var r = RARITIES[rarityIdx];
+  if (!def || !r) return 0;
+  return (def.base + def.base * def.lv * ((Number(itemLevel) || 1) - 1)) * r.mult;
+}
+// 依詞條定義進位：百分比類留一位小數，其餘取整（產出與顯示共用同一套進位）
+function affixRoundValue(key, v) {
+  var def = AFFIX_POOL[key];
+  return (def && def.pct) ? Math.round(v * 10) / 10 : Math.round(v);
+}
+// 擲強度值：0 ~ AFFIX_ROLL_MAX 的整數。affixCap（詞條上限率）只在洗煉時偏重高數值段。
+// ⚠️ 每次呼叫消耗的 Math.random 次數必須與改造前的 rollAffixValue 一致，
+//    否則 ?seed=N 決定論模式與 headless 模擬器的逐檢查點比對會分岔。
+function rollAffixStrength(affixCap) {
   var unit = affixCap === undefined ? rnd(0, 1) : affixRerollUnit(affixCap);
-  var v = (def.base + def.base * def.lv * (itemLevel - 1)) * r.mult * (0.8 + unit * 0.4);
-  return def.pct ? Math.round(v * 10) / 10 : Math.round(v);
+  return Math.round(clamp(unit, 0, 1) * AFFIX_ROLL_MAX);
 }
-function ancientAffixValue(key, itemLevel, rarityIdx) {
-  var def = AFFIX_POOL[key];
-  var r = RARITIES[rarityIdx];
-  var baseV = (def.base + def.base * def.lv * (itemLevel - 1)) * r.mult;
-  var v = baseV * 1.2 * ANCIENT_AFFIX_VALUE_MULT;
-  return def.pct ? Math.round(v * 10) / 10 : Math.round(v);
+// 強度值 → 最終詞條值。太古位置不看強度值：必為滿值再乘太古倍率（倍率日後可調且回溯生效）。
+function affixValueFromStrength(key, itemLevel, rarityIdx, roll, ancient) {
+  var baseV = affixBaseValue(key, itemLevel, rarityIdx);
+  if (!baseV) return 0;
+  var v = ancient
+    ? baseV * 1.2 * ANCIENT_AFFIX_VALUE_MULT
+    : baseV * (0.8 + (Number(roll) || 0) / AFFIX_ROLL_MAX * 0.4);
+  return affixRoundValue(key, v);
 }
+/* 最終詞條值 → 強度值（舊存檔換算用）。
+   刻意不夾在 0 ~ AFFIX_ROLL_MAX：區間外的舊值（例如 GM 塞的、或更早期公式產生的）
+   照線性關係換算後仍能還原成原本的數值，而且日後調整 base 一樣會等比跟著變；
+   夾限只會讓那些裝備在載入的瞬間被悄悄砍到區間邊界。 */
+function affixStrengthFromValue(key, itemLevel, rarityIdx, val) {
+  var baseV = affixBaseValue(key, itemLevel, rarityIdx);
+  if (!(baseV > 0)) return 0;   // 沒有基準值可推（詞條已下架／等級或稀有度不明）
+  var unit = ((Number(val) || 0) / baseV - 0.8) / 0.4;
+  return Math.round(unit * AFFIX_ROLL_MAX);
+}
+
+/* ---- 詞條數值的唯一讀取入口 ----
+   「這條詞條現在是多少」一律走這裡（不含強化倍率，由呼叫端自行乘 upgradeMult）。
+   兩條相容路徑：
+   1) 沒有 roll（舊存檔、或測試/GM 手寫的 {key,val}）→ 就地補上強度值後照算。
+      存檔載入本來就會由 ensureItemAffixRolls 掃過，這裡是最後一道自癒，
+      避免日後新增了裝備容器卻忘記掃，那些裝備會永久停在舊數值而且沒有任何錯誤訊息。
+   2) 算不出基準值（詞條已從參數表下架／改名，或裝備的等級、稀有度不明）→ 沿用凍結的
+      舊 val：既不會崩，也不會把玩家既有數值悄悄歸零。 */
+function affixValue(it, a) {
+  if (!a) return 0;
+  if (a.roll === undefined || a.roll === null) ensureAffixRoll(it, a);
+  if (a.roll === undefined || a.roll === null) return Number(a.val) || 0;
+  return affixValueFromStrength(a.key, it ? it.level : 1, it ? it.rarity : 0, a.roll, a.ancient);
+}
+/* 就地把舊格式（只有 val）換算為強度值並移除 val；已有 roll 則不動（冪等，可重複讀檔）。
+   ⚠️ 換算用的是「現行參數」推出的基準值，所以只有在調整詞條參數**之前**完成換算才精確
+   （見 ONE_TIME_MIGRATIONS.md 的說明：本次改造必須先於下一次詞條數值調整上線）。 */
+function ensureAffixRoll(it, a) {
+  if (!a || (a.roll !== undefined && a.roll !== null)) return a;
+  var lv = it ? it.level : undefined, r = it ? it.rarity : undefined;
+  if (!(affixBaseValue(a.key, lv, r) > 0)) return a;  // 推不出基準值：保留 val 當凍結值
+  a.roll = a.ancient
+    ? AFFIX_ROLL_MAX                  // 太古位置必為滿值，舊值多少都重算為現行太古倍率
+    : affixStrengthFromValue(a.key, lv, r, a.val);
+  delete a.val;
+  return a;
+}
+// 整件裝備的詞條正規化（存檔載入用；見 js/save.js fixLoadedItem）
+function ensureItemAffixRolls(it) {
+  if (!it || !Array.isArray(it.affixes)) return it;
+  for (var i = 0; i < it.affixes.length; i++) ensureAffixRoll(it, it.affixes[i]);
+  return it;
+}
+
 // 詞條可能範圍（洗煉區間顯示用）：基準值 × 0.8 ~ × 1.2
 function getAffixLimits(key, itemLevel, rarityIdx) {
-  var def = AFFIX_POOL[key];
-  var r = RARITIES[rarityIdx];
-  var baseV = (def.base + def.base * def.lv * (itemLevel - 1)) * r.mult;
-  var minV = def.pct ? Math.round(baseV * 0.8 * 10) / 10 : Math.round(baseV * 0.8);
-  var maxV = def.pct ? Math.round(baseV * 1.2 * 10) / 10 : Math.round(baseV * 1.2);
-  return { min: minV, max: maxV };
+  var baseV = affixBaseValue(key, itemLevel, rarityIdx);
+  return {
+    min: affixRoundValue(key, baseV * 0.8),
+    max: affixRoundValue(key, baseV * 1.2)
+  };
 }
 
 // 強化倍率：每 +1 全詞條數值 +5%
@@ -1323,7 +1396,7 @@ function itemScore(it) {
   var s = 0, um = upgradeMult(it);
   for (var i = 0; i < it.affixes.length; i++) {
     var a = it.affixes[i];
-    s += (SCORE_WEIGHTS[a.key] || 1) * a.val * um;
+    s += (SCORE_WEIGHTS[a.key] || 1) * affixValue(it, a) * um;
   }
   // 鑲嵌的寶石計入評分；融合寶石逐屬性計
   if (it.sockets) {

@@ -12,7 +12,7 @@ function loadFormulaContext() {
   ['js/util.js', 'js/data.js', 'js/formula.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
-  context.chance = () => true;
+  context.chance = (pct) => Number(pct) >= 100;
   context.rnd = () => 1;
   return context;
 }
@@ -29,6 +29,14 @@ function hit(context, dCfg, aCfg = {}) {
   }, Object.assign({ dodge: 0, mdef: 0, mRes: 0, resist: {} }, dCfg));
   return result.dmg;
 }
+
+test('physical and magic resistance convert percentage points before applying curve', () => {
+  const context = loadFormulaContext();
+  const physical = context.physicalResistanceReduction(46.6, 71);
+  const magic = context.magicResistanceReduction(38.8, 71);
+  assert.ok(Math.abs(physical - 0.01457876) < 0.00000001);
+  assert.ok(Math.abs(magic - 0.01052701) < 0.00000001);
+});
 
 test('元素抗性會減免對應的元素附傷', () => {
   const context = loadFormulaContext();

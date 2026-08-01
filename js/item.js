@@ -400,11 +400,14 @@ function unsocketGem(it, idx) {
   return true;
 }
 
-/* 稀有度擲骰 rollRarity、詞條數值 rollAffixValue、詞條區間 getAffixLimits → js/formula.js §5 / §6 */
+/* 稀有度擲骰 rollRarity、詞條強度值 rollAffixStrength、詞條數值 affixValue、
+   詞條區間 getAffixLimits → js/formula.js §5 / §6 */
 
 // ancientSet：太古位置集合（{索引:true}）。太古改版（2026-07-23）：太古與否只看位置，
-// 產出時由 pickAncientPositions 決定、洗煉時沿用原位置；太古位置數值必為滿值（ancientAffixValue）。
-function rollAffixes(count, itemLevel, rarityIdx, slot, ancientSet, affixCap) {
+// 產出時由 pickAncientPositions 決定、洗煉時沿用原位置；太古位置數值必為滿值。
+// 只擲「強度值」不算數值：數值一律由 affixValue 當場算（詞條存檔改造 → formula.js §6），
+// 所以這裡不需要裝備等級，rarityIdx 只用於過濾高階詞條池（minR）。
+function rollAffixes(count, rarityIdx, slot, ancientSet, affixCap) {
   var pool = [];
   for (var k in AFFIX_POOL) {
     var d = AFFIX_POOL[k];
@@ -420,8 +423,8 @@ function rollAffixes(count, itemLevel, rarityIdx, slot, ancientSet, affixCap) {
     if (used[key]) continue;
     used[key] = true;
     var ancient = !!(ancientSet && ancientSet[out.length]);
-    var val = ancient ? ancientAffixValue(key, itemLevel, rarityIdx) : rollAffixValue(key, itemLevel, rarityIdx, affixCap);
-    out.push({ key: key, val: val, ancient: ancient });
+    // 太古位置的強度值記為滿值（affixValue 另乘太古倍率），一般位置照 affixCap 擲骰
+    out.push({ key: key, roll: ancient ? AFFIX_ROLL_MAX : rollAffixStrength(affixCap), ancient: ancient });
   }
   return out;
 }
@@ -465,7 +468,7 @@ function makeEquipment(stage, opts) {
     rarity: rarity,
     level: lvl,
     name: RARITY_PREFIX[rarity] + pick(weaponType ? WEAPON_TYPES[weaponType].basenames : SLOT_BASENAMES[slot]),
-    affixes: rollAffixes(affixCount, lvl, rarity, slot, ancientSet),
+    affixes: rollAffixes(affixCount, rarity, slot, ancientSet),
     passive: null,
     enchant: null,   // { key, val }
     sockets: [],     // 寶石插槽 [{type, level}|null, ...]
@@ -576,12 +579,6 @@ function removeEnchantAt(it, idx) {
 /* 強化倍率 upgradeMult、戰力評分 itemScore（含 SCORE_WEIGHTS 權重表）、
    分解產出 salvageResult → js/formula.js §6 */
 
-function affixLine(a) {
-  var def = AFFIX_POOL[a.key];
-  var val = a.key === 'loot' ? effectiveDropRateEffect(a.val) : a.val;
-  return def.name.replace('%', '') + ' +' + (def.pct ? pctStr(val) : fmt(val));
-}
-
 function rerollResourceError(cost) {
   var missing = [];
   if (G.player.gold < cost.gold) missing.push('金幣 ' + fmt(cost.gold));
@@ -681,15 +678,15 @@ function itemDetailHTML(it, cmp, opts) {
   var um = upgradeMult(it);
   var curMap = {};
   for (var i = 0; i < it.affixes.length; i++) {
-    var a = it.affixes[i];
-    curMap[a.key] = (curMap[a.key] || 0) + (a.key === 'loot' ? effectiveDropRateEffect(a.val) : a.val) * um;
+    var a = it.affixes[i], av = affixValue(it, a);
+    curMap[a.key] = (curMap[a.key] || 0) + (a.key === 'loot' ? effectiveDropRateEffect(av) : av) * um;
   }
   var cmpMap = {};
   if (cmp) {
     var cum = upgradeMult(cmp);
     for (var i = 0; i < cmp.affixes.length; i++) {
-      var a = cmp.affixes[i];
-      cmpMap[a.key] = (cmpMap[a.key] || 0) + (a.key === 'loot' ? effectiveDropRateEffect(a.val) : a.val) * cum;
+      var a = cmp.affixes[i], cav = affixValue(cmp, a);
+      cmpMap[a.key] = (cmpMap[a.key] || 0) + (a.key === 'loot' ? effectiveDropRateEffect(cav) : cav) * cum;
     }
   }
 
@@ -698,14 +695,15 @@ function itemDetailHTML(it, cmp, opts) {
     var k = it.affixes[i].key;
     if (processedKeys[k]) continue;
     processedKeys[k] = true;
-    var baseVal = it.affixes[i].val;
     var vCur = curMap[k];
     var vCmp = cmpMap[k] || 0;
     var def = AFFIX_POOL[k];
+    if (!def) continue;   // 已從參數表下架的詞條：不渲染（數值仍以凍結值計入屬性與評分）
     var name = esc(def.name.replace('%', ''));
 
     var limits = getAffixLimits(k, it.level, it.rarity);
-    var isMax = baseVal >= limits.max - 0.01;
+    // 滿值高亮改看強度值（精確判定，不再靠 0.01 容差比對數值）；太古位置恆視為滿值
+    var isMax = !!it.affixes[i].ancient || (Number(it.affixes[i].roll) || 0) >= AFFIX_ROLL_MAX;
     var limitMult = k === 'loot' ? DROP_RATE_EFFECT_MULT : 1;
     var minDisplay = def.pct ? pctStr(limits.min * um * limitMult) : fmt(limits.min * um * limitMult);
     var maxDisplay = def.pct ? pctStr(limits.max * um * limitMult) : fmt(limits.max * um * limitMult);
@@ -876,7 +874,7 @@ function rerollItemAffixes(it) {
   for (var ai = 0; ai < it.affixes.length; ai++) {
     if (it.affixes[ai].ancient) ancientSet[ai] = true;
   }
-  it.affixes = rollAffixes(it.affixes.length, it.level, it.rarity, it.slot, ancientSet, affixCap);
+  it.affixes = rollAffixes(it.affixes.length, it.rarity, it.slot, ancientSet, affixCap);
   markStatsDirty();
   UI.dirty.header = true; UI.dirty.equip = true; UI.dirty.inv = true;
   return null;
@@ -917,8 +915,11 @@ function rerollSingleAffix(it, affixKey) {
   var newKey = wpick(pool);
   // 太古與否只看位置：太古位置洗煉必為滿值、只變換詞條種類；非太古位置永不洗出太古
   var isAncient = !!it.affixes[targetIdx].ancient;
-  var newVal = isAncient ? ancientAffixValue(newKey, it.level, it.rarity) : rollAffixValue(newKey, it.level, it.rarity, affixCap);
-  it.affixes[targetIdx] = { key: newKey, val: newVal, ancient: isAncient };
+  it.affixes[targetIdx] = {
+    key: newKey,
+    roll: isAncient ? AFFIX_ROLL_MAX : rollAffixStrength(affixCap),
+    ancient: isAncient
+  };
 
   markStatsDirty();
   UI.dirty.header = true; UI.dirty.equip = true; UI.dirty.inv = true;
