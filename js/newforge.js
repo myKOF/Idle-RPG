@@ -191,7 +191,7 @@ function newForgeBestOwnedPart(key) {
   for (var i = 0; i < G.factory.parts.length; i++) {
     var p = G.factory.parts[i];
     if (!p || p.key !== key) continue;
-    if (!best || p.tier > best.tier || (p.tier === best.tier && p.val > best.val)) best = p;
+    if (!best || p.tier > best.tier || (p.tier === best.tier && partValue(p) > partValue(best))) best = p;
   }
   return best;
 }
@@ -203,9 +203,9 @@ function newForgeInstallPart(furnaceId, partKey) {
   if (!pt || pt.node !== 'salvage') return '此零件無法安裝到熔爐（僅限分解槽零件）';
   var best = newForgeBestOwnedPart(partKey);
   if (!best) return '尚無此類型零件（野外/高塔掉落自動機組零件）';
-  fu.parts.push({ key: best.key, tier: best.tier, val: best.val, name: best.name });
+  fu.parts.push({ key: best.key, tier: best.tier }); // 數值與名稱由 partValue／partName 當場算
   UI.dirty.newforge = true;
-  nflog('🔧 已裝配 ' + best.name + ' 至熔爐 #' + fu.id, 'good');
+  nflog('🔧 已裝配 ' + partName(best) + ' 至熔爐 #' + fu.id, 'good');
   return null;
 }
 function newForgeUninstallPart(furnaceId, slotIdx) {
@@ -213,7 +213,7 @@ function newForgeUninstallPart(furnaceId, slotIdx) {
   if (!fu || !fu.parts[slotIdx]) return false;
   var removed = fu.parts.splice(slotIdx, 1)[0];
   UI.dirty.newforge = true;
-  nflog('🔧 已卸下 ' + (removed.name || removed.key) + '（熔爐 #' + fu.id + '）', 'info');
+  nflog('🔧 已卸下 ' + partName(removed) + '（熔爐 #' + fu.id + '）', 'info');
   return true;
 }
 // 該熔爐零件加成：同類型快照堆疊（同舊分解槽 partBonus 計算方式）
@@ -221,7 +221,7 @@ function newForgePartBonus(fu, key) {
   var sum = 0;
   for (var i = 0; i < fu.parts.length; i++) {
     var p = fu.parts[i];
-    if (p && p.key === key) sum += effectiveFactoryPartValue(p.key, p.val);
+    if (p && p.key === key) sum += effectiveFactoryPartValue(p.key, partValue(p));
   }
   return sum;
 }
@@ -347,7 +347,7 @@ function sanitizeNewForge(data) {
       fu2.parts = fu2.parts.map(function (e) {
         if (typeof e === 'string') { // 舊實例制存檔：id → 快照
           var src = poolById[e];
-          return src ? { key: src.key, tier: src.tier, val: src.val, name: src.name } : null;
+          return src ? { key: src.key, tier: src.tier } : null;
         }
         return e;
       }).filter(function (e) {
@@ -355,8 +355,7 @@ function sanitizeNewForge(data) {
         var pt = PART_TYPES[e.key];
         if (!pt || pt.node !== 'salvage') return false;
         e.tier = clamp(Math.floor(Number(e.tier) || 1), 1, PART_MAX_TIER);
-        e.val = Math.max(0, Number(e.val) || 0);
-        e.name = typeof e.name === 'string' ? e.name : (pt.name + ' T' + e.tier);
+        ensurePartSource(e);   // 舊快照的 val／name 可由 key+階級推導 → 丟棄（partValue／partName）
         return true;
       });
       if (fu2.parts.length > fu2.partSlots) fu2.parts.length = fu2.partSlots;

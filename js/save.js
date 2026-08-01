@@ -315,6 +315,8 @@ function migrateSave(data) {
         removedPartIds[part.id] = true;
         deprecatedPartScrap += Math.max(0, Math.floor(Number(part.tier) || 1) * 2);
       } else {
+        // 零件的 val／name 可由 key+階級推導 → 丟棄凍結值（partValue／partName，冪等）
+        if (typeof ensurePartSource === 'function') ensurePartSource(part);
         keptParts.push(part);
       }
     });
@@ -571,6 +573,10 @@ function migrateSave(data) {
        leaves = 舊 fusions + 1（舊定義下事件數 n → 葉子 n+1，成本不變）
        fusions = ⌈log2(leaves)⌉（以平衡樹回推世代；1→1、3→2 符合玩家實例） */
   var fixFusedGem = function (fg) {
+    /* 屬性數值改存「5 階等值倍率」（2026-08-01 裝備數值存檔改造）：val → mult，冪等
+       （ensureFusedGemSource → js/formula.js §8）。之後寶石 base／曲線調整會等比套用，
+       不再需要 gemAttrDmgBaseV1 那種「改 base 後手動縮放快照」的一次性遷移。 */
+    if (typeof ensureFusedGemSource === 'function') ensureFusedGemSource(fg);
     if (!fg || fg.leaves !== undefined) return;
     var oldF = fg.fusions || 1;
     fg.leaves = oldF + 1;

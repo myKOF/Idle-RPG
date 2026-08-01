@@ -375,6 +375,122 @@ test('背包壓力閥：未達使用率不動，達到才清到「身上最高�
     '身上最高是 R3，清掉 R2 以下——留「配得上最好那件」的標準只在空間稀缺時才啟用');
 });
 
+/* ---- 卡關追蹤與重試閘門（player_strategy.md 卡關定義）----
+   這是直譯器裡唯一有記憶的部分，也是唯一「同樣的面板、不同的歷史會做不同決定」的地方。
+   算錯的話症狀是角色一直往同一個菁英關送死，或反過來永遠不敢再試。 */
+
+const TRACK = {
+  monster: 'panels.battle.field.monster', stage: 'view.stage',
+  equipment: 'panels.inv.equipment', equippedScores: 'panels.inv.equipmentScores'
+};
+const GATE_WITH_RETRY = {
+  id: 'gate', cmd: 'stage.setAutoAdvance',
+  stageGate: {
+    stage: 'view.stage', equippedRarities: 'panels.inv.equipmentRarities', argKey: 'on',
+    checkpoints: [{ minRarity: 0, coverage: 0 }]      // 品質門檻全開，只測重試閘門
+  }
+};
+
+/* sec：遊戲時間；stage：目前關卡；mon：怪物（null＝一般戰鬥）。 */
+function trackState(sec, stage, mon, equipment) {
+  return {
+    gameTimeSec: sec, view: { stage: stage },
+    panels: {
+      battle: { field: { monster: mon } },
+      inv: {
+        equipmentRarities: { helmet: 3 },
+        equipment: equipment || { helmet: { id: 'h', upgrade: 0, affixes: [], sockets: [] } },
+        equipmentScores: { helmet: 100 }
+      }
+    }
+  };
+}
+const ELITE = (hpPct) => ({ elite: true, isBoss: false, hp: hpPct, maxHp: 100 });
+
+function retryPolicy() {
+  return createPolicy({
+    name: 'test', decideEveryGameSec: 1, needPanels: [], lists: {},
+    track: TRACK, rules: [GATE_WITH_RETRY]
+  });
+}
+const on = (cmds) => cmds[cmds.length - 1].args.on;
+
+test('卡關：菁英打到剩 60% 就死，重試間隔應為 60 分鐘', () => {
+  const p = retryPolicy();
+  assert.equal(on(p.decide(trackState(0, 40, null))), true, '一開始沒有卡點，放行');
+
+  p.decide(trackState(10, 40, ELITE(80)));           // 交戰
+  p.decide(trackState(20, 40, ELITE(60)));           // 打到剩 60%
+  const dead = p.decide(trackState(30, 35, null));   // 死亡退關
+  assert.equal(on(dead), false, '剛失敗就不該再往前');
+
+  assert.equal(on(p.decide(trackState(30 + 59 * 60, 35, null))), false,
+    '59 分鐘還沒到 60 分鐘門檻');
+  assert.equal(on(p.decide(trackState(30 + 61 * 60, 35, null))), false,
+    '時間到了但沒變強，仍然不放行——兩個條件都要滿足');
+});
+
+test('卡關：時間到且換了一件裝備就放行', () => {
+  const p = retryPolicy();
+  p.decide(trackState(10, 40, ELITE(60)));
+  p.decide(trackState(20, 35, null));                // 失敗，基準線在此拍下
+
+  const better = { helmet: { id: 'h2', upgrade: 0, affixes: [], sockets: [] } };
+  assert.equal(on(p.decide(trackState(20 + 61 * 60, 35, null, better))), true,
+    '換了一件裝備＋時間到＝可以再試');
+});
+
+test('卡關：太古要 +2、更強寶石要 2 個才算變強', () => {
+  const mk = (anc, gemLv) => ({ helmet: {
+    id: 'h', upgrade: 0,
+    affixes: Array.from({ length: anc }, () => ({ key: 'x', ancient: true })),
+    sockets: gemLv.map((l) => ({ type: 'g', level: l }))
+  } });
+
+  const p1 = retryPolicy();
+  p1.decide(trackState(10, 40, ELITE(60)));
+  p1.decide(trackState(20, 35, null, mk(0, [1, 1])));
+  assert.equal(on(p1.decide(trackState(20 + 61 * 60, 35, null, mk(1, [1, 1])))), false,
+    '太古只 +1 不算');
+  assert.equal(on(p1.decide(trackState(20 + 62 * 60, 35, null, mk(2, [1, 1])))), true,
+    '太古 +2 才算');
+
+  const p2 = retryPolicy();
+  p2.decide(trackState(10, 40, ELITE(60)));
+  p2.decide(trackState(20, 35, null, mk(0, [1, 1])));
+  assert.equal(on(p2.decide(trackState(20 + 61 * 60, 35, null, mk(0, [3, 1])))), false,
+    '只有一個寶石變強不算');
+  assert.equal(on(p2.decide(trackState(20 + 62 * 60, 35, null, mk(0, [3, 3])))), true,
+    '兩個寶石變強才算');
+});
+
+test('卡關：過關就清掉紀錄，不再擋路', () => {
+  const p = retryPolicy();
+  p.decide(trackState(10, 40, ELITE(60)));
+  p.decide(trackState(20, 35, null));
+  assert.equal(on(p.decide(trackState(30, 35, null))), false);
+
+  p.decide(trackState(40, 40, ELITE(10)));
+  assert.equal(on(p.decide(trackState(50, 41, null))), true,
+    '關卡往前＝過了，紀錄要清掉，否則會永遠擋著自己');
+});
+
+test('卡關：同一關失敗 5 次進入針對性強化模式', () => {
+  const p = createPolicy({
+    name: 'test', decideEveryGameSec: 1, needPanels: [], lists: { a: ['x'] },
+    track: TRACK,
+    rules: [{ id: 'probe', cmd: 'noop', if: [['ctx.desperate', 'truthy']] }]
+  });
+  const fail = (n) => {
+    p.decide(trackState(n * 1000, 40, ELITE(60)));
+    p.decide(trackState(n * 1000 + 10, 35, null));
+  };
+  for (let i = 1; i <= 4; i++) fail(i);
+  assert.deepEqual(p.decide(trackState(9000, 35, null)), [], '4 次還不算');
+  fail(5);
+  assert.equal(p.decide(trackState(9000, 35, null)).length, 1, '第 5 次起轉為針對性強化');
+});
+
 /* ---- 附魔 ----
    遊戲規定每個部位只吃一種類別，送錯類別只會換回一句「XX 只能使用 OO 類附魔」，
    規則整場落空卻看不出來。 */
@@ -429,6 +545,36 @@ test('附魔：沒書、附魔欄已滿、普通品質都不送', () => {
   ));
   assert.deepEqual(cmds, [],
     '這三種都會被遊戲回絕，先攔下來才不會把指令統計淹掉');
+});
+
+test('附魔：情境覆寫——生存不足時功能部位換成生命值與冷卻縮短', () => {
+  const rule = {
+    id: 'ench', cmd: 'item.enchant',
+    enchantPriority: {
+      equipment: 'panels.inv.equipment',
+      enchantInfo: 'panels.inv.equipmentEnchantInfo',
+      books: 'panels.inv.books',
+      byCategory: { util: ['wisdom', 'loot'], def: ['fireRes'] },
+      overrides: [{ when: ['ctx.desperate', 'truthy'], byCategory: { util: ['vigor', 'focus'] } }],
+      maxPerDecision: 9
+    }
+  };
+  const p = createPolicy({
+    name: 'test', decideEveryGameSec: 1, needPanels: [], lists: {},
+    track: null, rules: [rule]
+  });
+  const run = (desperate) => {
+    const st = enchState(
+      { amulet: { id: 'a', enchants: [] }, helmet: { id: 'h', enchants: [] } },
+      { amulet: { cat: 'util', cap: 1 }, helmet: { cat: 'def', cap: 1 } },
+      { wisdom: 1, loot: 1, vigor: 1, focus: 1, fireRes: 1 }
+    );
+    st.ctx = { desperate: desperate };
+    return p.decide(st).map((c) => c.args.bookKey);
+  };
+  assert.deepEqual(run(false), ['wisdom', 'fireRes'], '平時放經驗加成');
+  assert.deepEqual(run(true), ['vigor', 'fireRes'],
+    '生存不足時換成生命值；沒被覆寫的防禦類要沿用基本設定');
 });
 
 test('附魔：同一決策點不重複用光同一本書', () => {

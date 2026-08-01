@@ -250,8 +250,134 @@ function bandGroups(band, fallbackTypes) {
   return { groups: groups, spread: spread, set: set, flat: flat };
 }
 
+/* ============ 戰鬥情境追蹤（player_strategy.md 推關策略／卡關定義） ============
+
+   這是直譯器裡唯一有「記憶」的部分。其餘規則都只看當下狀態，但卡關判定天生需要
+   跨決策的資訊：上一次打菁英／BOSS 打到剩幾血、隔了多久、這段期間有沒有變強。
+
+   狀態全部放在 memo（policy 實例私有），策略本身仍然拿不到 G、也改不了遊戲。 */
+
+/* 進步基準線：卡關後要「至少替換一件更強裝備／平均強化+2／太古+2／洗出更優詞條／
+   更強寶石 2 個以上」才值得再試一次。這裡把五項各自的可比較值一次取下來。 */
+function progressSnapshot(state, t) {
+  var eq = pathVal(state, t.equipment) || {};
+  var scores = pathVal(state, t.equippedScores) || {};
+  var snap = { ids: {}, gemLv: {}, upgradeSum: 0, slots: 0, ancient: 0, score: 0 };
+  for (var k in eq) {
+    var it = eq[k];
+    if (!it || !it.id) continue;
+    snap.ids[k] = it.id;
+    snap.slots++;
+    snap.upgradeSum += Number(it.upgrade) || 0;
+    snap.score += Number(scores[k]) || 0;
+    var af = it.affixes || [];
+    for (var i = 0; i < af.length; i++) if (af[i] && af[i].ancient) snap.ancient++;
+    var sk = it.sockets || [];
+    var lv = [];
+    for (var j = 0; j < sk.length; j++) lv.push((sk[j] && Number(sk[j].level)) || 0);
+    snap.gemLv[k] = lv;
+  }
+  return snap;
+}
+
+/* 五項只要達成任一項就算「變強了，可以再試」。門檻取自 player_strategy.md。 */
+function hasProgressed(base, now) {
+  if (!base || !now) return true;
+
+  var swapped = 0;
+  for (var k in now.ids) if (base.ids[k] && base.ids[k] !== now.ids[k]) swapped++;
+  if (swapped >= 1) return true;                     // 至少替換一件更強裝備
+
+  var avgNow = now.slots ? now.upgradeSum / now.slots : 0;
+  var avgBase = base.slots ? base.upgradeSum / base.slots : 0;
+  if (avgNow - avgBase >= 2) return true;            // 平均強化增加 2 級
+
+  if (now.ancient - base.ancient >= 2) return true;  // 太古詞條數 +2 以上
+
+  var better = 0;
+  for (var sk in now.gemLv) {
+    var a = now.gemLv[sk] || [], b = base.gemLv[sk] || [];
+    for (var i = 0; i < a.length; i++) if (a[i] > (b[i] || 0)) better++;
+  }
+  if (better >= 2) return true;                      // 鑲了更強的寶石 2 個以上
+
+  /* 「洗煉出更優詞條」沒有客觀基準——詞條是隨機滾的，好壞取決於當下的目標清單。
+     這裡用裝備評分總和上升 2% 當代理指標，是近似而不是精確判定。
+     另外四項都能精確計算，而五項只要一項成立就放行，所以這個近似不會卡住流程。 */
+  if (base.score > 0 && now.score >= base.score * 1.02) return true;
+
+  return false;
+}
+
+/* 每個決策點更新一次，結果掛在 state.ctx 供規則以 ctx.* 路徑取用。 */
+function updateContext(state, policy, memo) {
+  if (!policy.track) return;
+  var t = policy.track;
+  if (!memo.trk) memo.trk = { attempts: {}, engaged: null, baseline: null };
+  var T = memo.trk;
+  var now = state.gameTimeSec;
+  var stage = Number(pathVal(state, t.stage)) || 0;
+  var m = pathVal(state, t.monster);
+
+  var mode = 'normal';
+  if (m && m.isBoss) mode = 'boss';
+  else if (m && m.elite) mode = 'elite';
+
+  /* 交戰中：記下這一關打到的最低血量。決策點是取樣式的（每 10~60 遊戲秒一次），
+     所以這是「觀察到的最低」而不是精確最低——用來分級重試間隔已經足夠。 */
+  if (mode !== 'normal' && m && m.maxHp > 0) {
+    if (!T.engaged || T.engaged.stage !== stage) T.engaged = { stage: stage, minHpPct: 100, mode: mode };
+    var pct = 100 * m.hp / m.maxHp;
+    if (pct < T.engaged.minHpPct) T.engaged.minHpPct = pct;
+  } else if (T.engaged) {
+    /* 交戰結束。關卡往前＝過了，往後＝死了退關（js/combat.js 的 retreatStage）。 */
+    var e = T.engaged;
+    T.engaged = null;
+    if (stage > e.stage) {
+      delete T.attempts[e.stage];                    // 過關就清掉紀錄
+    } else if (stage < e.stage) {
+      var rec = T.attempts[e.stage] || (T.attempts[e.stage] = { fails: 0 });
+      rec.fails++;
+      rec.lastFailAt = now;
+      rec.minHpPct = e.minHpPct;
+      rec.mode = e.mode;
+      /* 重試間隔＝敵人剩餘血量百分比當分鐘數，最少 10 分鐘。 */
+      rec.retryAt = now + Math.max(10, e.minHpPct) * 60;
+      T.baseline = progressSnapshot(state, t);
+    }
+  }
+
+  /* 擋在前面的那個卡點：關卡數大於目前所在、且編號最小的那一個。 */
+  var blockStage = 0, blockRec = null;
+  for (var sk2 in T.attempts) {
+    var s2 = Number(sk2);
+    if (s2 <= stage) continue;
+    if (!blockRec || s2 < blockStage) { blockStage = s2; blockRec = T.attempts[sk2]; }
+  }
+
+  var waiting = false;
+  if (blockRec) {
+    var timeUp = now >= (blockRec.retryAt || 0);
+    var grew = hasProgressed(T.baseline, progressSnapshot(state, t));
+    waiting = !(timeUp && grew);                     // 時間到＋有變強，兩者都要
+  }
+
+  state.ctx = {
+    mode: mode,
+    stage: stage,
+    blockStage: blockStage,
+    fails: blockRec ? blockRec.fails : 0,
+    /* 同一個卡點試了 5 次還過不去＝生存率不足，轉為針對性強化
+       （菁英／BOSS 抗性與傷害加成）。 */
+    desperate: !!(blockRec && blockRec.fails >= 5),
+    retryWaiting: waiting,
+    minHpPct: blockRec ? Math.round(blockRec.minHpPct || 100) : 100
+  };
+}
+
 /* 回傳這個決策點要送出的指令陣列。純函式：同樣的輸入必定得到同樣的輸出。 */
 function decide(state, policy, memo) {
+  updateContext(state, policy, memo);
   var out = [];
   var now = state.gameTimeSec;
   for (var i = 0; i < policy.rules.length; i++) {
@@ -453,7 +579,20 @@ function decide(state, policy, memo) {
       var eEquip = pathVal(state, eCfg.equipment) || {};
       var eInfo = pathVal(state, eCfg.enchantInfo) || {};
       var eBooks = pathVal(state, eCfg.books) || {};
+      /* 情境覆寫：項鏈與鞋子平時放經驗與掉寶率，遇菁英／BOSS 生存不足時
+         換成生命值與冷卻縮短（player_strategy.md 附魔策略）。
+         第一個條件成立的覆寫說了算，其餘類別沿用基本設定。 */
       var byCat = eCfg.byCategory || {};
+      for (var ov = 0; ov < (eCfg.overrides || []).length; ov++) {
+        var o = eCfg.overrides[ov];
+        if (!o || !o.byCategory) continue;
+        if (o.when && !testCond(state, o.when)) continue;
+        var merged = {};
+        for (var mk in byCat) merged[mk] = byCat[mk];
+        for (var ok in o.byCategory) merged[ok] = o.byCategory[ok];
+        byCat = merged;
+        break;
+      }
       var spreadCats = {};
       for (var sc = 0; sc < (eCfg.spread || []).length; sc++) spreadCats[eCfg.spread[sc]] = true;
 
@@ -529,6 +668,11 @@ function decide(state, policy, memo) {
            品質沒到門檻時就待在區間裡刷——低於下緣要往前推到區間內，
            高於上緣要退回來。只把自動推關關掉是不夠的：關掉時人在哪就停在哪，
            可能停在一個一直死的關卡，而指南要的是停在「穩定不死、殺得快」的那一段。 */
+        /* 卡關重試閘門：上一次菁英／BOSS 沒打過，且「時間沒到」或「還沒變強」，
+           就不准再往前送死——回安全關卡刷到條件滿足為止（player_strategy.md 卡關定義）。
+           這一條蓋過品質門檻：品質達標也不代表打得過那一關。 */
+        if (state.ctx && state.ctx.retryWaiting) passGate = false;
+
         var park = cp.park;
         var inPark = !!(park && park.length === 2);
         if (!passGate && inPark && gStage > park[1] && gCfg.retreatCmd) {

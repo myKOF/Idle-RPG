@@ -120,14 +120,17 @@ function dismantleFusedGem(id) {
 }
 
 /* ================ 融合寶石（雙屬性，僅 5 階可融合） ================
-   G.player.fusedGems = [ { id, stats:[{type,val}x1~2], level:5, fusions:n, leaves:m } ]
+   G.player.fusedGems = [ { id, stats:[{type,mult}x1~2], level:5, fusions:n, leaves:m } ]
+   mult   = 「相當於幾顆 5 階寶石」的倍率；數值 = 5 階寶石數值 × mult（fusedStatValue →
+            js/formula.js §8）。存倍率而不存數值，寶石 base／曲線一改就會等比跟著變。
    fusions = 融合世代（次數）：兩顆一般寶石 → 1；兩顆融合 1 次的再融合 → 2
              （取雙方較大值 +1，用於顯示與成功率遞減）
    leaves  = 素材 5 階寶石總數（融合樹的葉子數，雙方相加）：拆解成本推算用 */
 function fusedGemStatText(fg) {
   return fg.stats.map(function (s) {
     var gt = GEM_TYPES[s.type];
-    return gt.statName.replace('%', '') + ' +' + (gt.pct ? pctStr(s.val) : fmt(s.val));
+    var v = fusedStatValue(s);
+    return gt.statName.replace('%', '') + ' +' + (gt.pct ? pctStr(v) : fmt(v));
   }).join('、');
 }
 function fusedGemLabel(fg) {
@@ -157,7 +160,8 @@ function normalizeFuseMaterial(ref) {
     if (lv < GEM_MAX_LEVEL || lv > GEM_FORGE_MAX_LEVEL) return null;
     if (gemCount(ref.type, lv) < 1) return null;
     return {
-      stats: [{ type: ref.type, val: gemStatValue(ref.type, lv) }], fusions: 0,
+      // 5 階＝1 倍，每高 1 階數值 ×2（與 gemStatValue 的 6 階起規則一致）
+      stats: [{ type: ref.type, mult: Math.pow(2, lv - GEM_MAX_LEVEL) }], fusions: 0,
       leaves: Math.pow(2, lv - GEM_MAX_LEVEL), ref: ref
     };
   }
@@ -207,10 +211,12 @@ function fuseGemsV2(ref1, ref2) {
     // === 成功：雙方消耗，產出融合寶石 ===
     consumeFuseMaterial(m1);
     consumeFuseMaterial(m2);
+    /* 在「5 階等值倍率」空間運算：融合公式全是線性，與改造前在數值空間等價，
+       但結果不再是凍結數值——寶石 base／曲線調整後會等比跟著變（fusedStatValue → §8）。 */
     var stats = unionTypes.map(function (t) {
       var v1 = null, v2 = null;
-      m1.stats.forEach(function (s) { if (s.type === t) v1 = s.val; });
-      m2.stats.forEach(function (s) { if (s.type === t) v2 = s.val; });
+      m1.stats.forEach(function (s) { if (s.type === t) v1 = fusedMaterialMult(s); });
+      m2.stats.forEach(function (s) { if (s.type === t) v2 = fusedMaterialMult(s); });
       var v;
       if (v1 !== null && v2 !== null) {
         // 同屬性：介於兩者之間，上限為較大值的 2 倍
@@ -219,7 +225,7 @@ function fuseGemsV2(ref1, ref2) {
         // 單方屬性：數值隨機（不一定更高）
         v = (v1 !== null ? v1 : v2) * rnd(0.5, 1.5);
       }
-      return { type: t, val: Math.round(v * 10) / 10 };
+      return { type: t, mult: Math.round(v * 10000) / 10000 };
     });
     // 融合次數＝世代：取雙方較大值 +1（一般+一般=1；融合1次+融合1次=2）
     // leaves＝素材 5 階總數：雙方相加（拆解成本精確推算用）
@@ -238,8 +244,9 @@ function fuseGemsV2(ref1, ref2) {
   if (m1.stats.length !== m2.stats.length) {
     weaker = m1.stats.length < m2.stats.length ? m1 : m2;
   } else {
-    var sum1 = m1.stats.reduce(function (a, s) { return a + s.val; }, 0);
-    var sum2 = m2.stats.reduce(function (a, s) { return a + s.val; }, 0);
+    // 比強弱改比 5 階等值倍率（同一屬性下與比數值等價，跨屬性時不受各寶石 base 差異干擾）
+    var sum1 = m1.stats.reduce(function (a, s) { return a + fusedMaterialMult(s); }, 0);
+    var sum2 = m2.stats.reduce(function (a, s) { return a + fusedMaterialMult(s); }, 0);
     weaker = sum1 <= sum2 ? m1 : m2;
   }
   consumeFuseMaterial(weaker);
@@ -952,15 +959,12 @@ function makePart(tier, node) {
   var enabledKeys = keys.filter(function (k) { return isFactoryNodeEnabled(PART_TYPES[k].node); });
   if (!pool.length && !enabledKeys.length) return null;
   var key = pick(pool.length ? pool : enabledKeys);
-  var pt = PART_TYPES[key];
-  return {
-    id: uid(), kind: 'part', key: key, tier: tier,
-    name: 'T' + tier + ' ' + pt.name, val: Math.round(pt.perTier * tier * 100) / 100
-  };
+  // 只存 key 與階級：數值與名稱由 partValue／partName 當場算（js/formula.js §7）
+  return { id: uid(), kind: 'part', key: key, tier: tier };
 }
 function partDesc(p) {
   // 小於 1 的機率值保留兩位小數（如 0.15%），其餘一位
-  var val = effectivePartEffectValue(p.key, effectiveFactoryPartValue(p.key, p.val));
+  var val = effectivePartEffectValue(p.key, effectiveFactoryPartValue(p.key, partValue(p)));
   var vs = (val < 1) ? String(Math.round(val * 100) / 100) : fmt1(val);
   return PART_TYPES[p.key].desc.replace('{v}', vs);
 }

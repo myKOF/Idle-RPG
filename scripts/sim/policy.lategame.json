@@ -20,7 +20,8 @@
     "equip",
     "skills",
     "inv",
-    "header"
+    "header",
+    "battle"
   ],
   "lists": {
     "talentPriority": [
@@ -141,7 +142,6 @@
       "pPen",
       "eliteDmg",
       "bossDmg",
-      "normalDmg",
       "aoeDmg",
       "atkFlat"
     ],
@@ -158,7 +158,6 @@
       "blockRate",
       "blockDmgRed",
       "tenacity",
-      "normalDmgRed",
       "eliteDmgRed",
       "bossDmgRed",
       "hit",
@@ -189,6 +188,12 @@
     ],
     "affixCritDmg": [
       "critDmg"
+    ],
+    "affixVsNormal": [
+      "normalDmg"
+    ],
+    "affixVsNormalRed": [
+      "normalDmgRed"
     ]
   },
   "rules": [
@@ -486,12 +491,22 @@
           {
             "type": "malachite",
             "count": 1,
-            "依據": "物理抗性寶石至少鑲一個"
+            "依據": "物理/魔法抗性寶石依情況替換（打菁英或BOSS時）",
+            "when": [
+              "ctx.mode",
+              "!=",
+              "normal"
+            ]
           },
           {
             "type": "fluorite",
             "count": 1,
-            "依據": "魔法抗性寶石至少鑲一個"
+            "依據": "物理/魔法抗性寶石依情況替換（打菁英或BOSS時）",
+            "when": [
+              "ctx.mode",
+              "!=",
+              "normal"
+            ]
           },
           {
             "type": "kyanite",
@@ -651,12 +666,22 @@
           {
             "type": "malachite",
             "count": 1,
-            "依據": "物理抗性寶石至少鑲一個"
+            "依據": "物理/魔法抗性寶石依情況替換（打菁英或BOSS時）",
+            "when": [
+              "ctx.mode",
+              "!=",
+              "normal"
+            ]
           },
           {
             "type": "fluorite",
             "count": 1,
-            "依據": "魔法抗性寶石至少鑲一個"
+            "依據": "物理/魔法抗性寶石依情況替換（打菁英或BOSS時）",
+            "when": [
+              "ctx.mode",
+              "!=",
+              "normal"
+            ]
           },
           {
             "type": "kyanite",
@@ -771,12 +796,22 @@
           {
             "type": "malachite",
             "count": 1,
-            "依據": "物理抗性寶石至少鑲一個"
+            "依據": "物理/魔法抗性寶石依情況替換（打菁英或BOSS時）",
+            "when": [
+              "ctx.mode",
+              "!=",
+              "normal"
+            ]
           },
           {
             "type": "fluorite",
             "count": 1,
-            "依據": "魔法抗性寶石至少鑲一個"
+            "依據": "物理/魔法抗性寶石依情況替換（打菁英或BOSS時）",
+            "when": [
+              "ctx.mode",
+              "!=",
+              "normal"
+            ]
           },
           {
             "type": "kyanite",
@@ -809,7 +844,8 @@
         "books": "panels.inv.books",
         "byCategory": {
           "util": [
-            "vigor"
+            "wisdom",
+            "loot"
           ],
           "atk": [
             "ice"
@@ -826,9 +862,24 @@
         "spread": [
           "def"
         ],
-        "maxPerDecision": 4
+        "maxPerDecision": 4,
+        "overrides": [
+          {
+            "when": [
+              "ctx.desperate",
+              "truthy"
+            ],
+            "byCategory": {
+              "util": [
+                "vigor",
+                "focus"
+              ]
+            },
+            "依據": "遇菁英或BOSS時若生存能力不足則換成生命值提升及冷卻縮短"
+          }
+        ]
       },
-      "why": "依 player_strategy.md 附魔策略：生命值(vigor)→冰凍(ice)→六大屬性抗性平均。遊戲規定每個部位只吃一種類別（enchantCatForType：武器/戒指/手套/護腕＝攻擊，項鍊/鞋子＝功能，其餘＝防禦），所以這份優先序實際上是按類別分工而不是單一排序：功能部位放生命值、攻擊部位放冰凍、防禦部位放六大抗性並輪流分散。部位與類別的對應取自遊戲的面板欄位，策略不自己抄——抄一份遲早跟遊戲脫鉤，而 manualEnchant 只會回「XX 只能使用 OO 類附魔」，看報表不會發現規則從沒生效"
+      "why": "依 player_strategy.md 附魔策略：生命值(vigor)→冰凍(ice)→六大屬性抗性平均。遊戲規定每個部位只吃一種類別（enchantCatForType：武器/戒指/手套/護腕＝攻擊，項鍊/鞋子＝功能，其餘＝防禦），所以這份優先序實際上是按類別分工而不是單一排序：功能部位放生命值、攻擊部位放冰凍、防禦部位放六大抗性並輪流分散。部位與類別的對應取自遊戲的面板欄位，策略不自己抄——抄一份遲早跟遊戲脫鉤，而 manualEnchant 只會回「XX 只能使用 OO 類附魔」，看報表不會發現規則從沒生效。項鏈與鞋子平時放經驗(wisdom)與掉寶率(loot)，生存不足時換成生命值(vigor)與冷卻縮短(focus)"
     },
     {
       "id": "salvage-below-equipped",
@@ -853,5 +904,11 @@
       },
       "why": "背包壓力閥：使用率達 90% 時，把低於身上最高品質的庫存一次清掉。背包滿了不只是挑不到東西，而是整條掉落管線停擺——熔爐佇列推不進背包就回堵，新裝備直接丟棄，角色會停在原地打幾十小時而畫面完全正常"
     }
-  ]
+  ],
+  "track": {
+    "monster": "panels.battle.field.monster",
+    "stage": "view.stage",
+    "equipment": "panels.inv.equipment",
+    "equippedScores": "panels.inv.equipmentScores"
+  }
 }

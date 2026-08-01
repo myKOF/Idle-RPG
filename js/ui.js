@@ -3505,7 +3505,7 @@ function nfPartsListHTML(fu, factory) {
     owned.forEach(function (p) { (byKey[p.key] || (byKey[p.key] = [])).push(p); });
     chips = Object.keys(byKey).map(function (key) {
       var group = byKey[key];
-      var best = group.slice().sort(function (a, b) { return (b.tier - a.tier) || (b.val - a.val); })[0];
+      var best = group.slice().sort(function (a, b) { return (b.tier - a.tier) || (partValue(b) - partValue(a)); })[0];
       return '<span class="part-chip" style="cursor:pointer; border-color:var(--accent);" data-nf-fid="' + fu.id +
         '" data-nf-partinstall-key="' + key + '"' + pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
         ' data-tip="【點擊裝配】取最高階數值：' + esc(partDesc(best)) +
@@ -4662,7 +4662,8 @@ function uiProjectedItemScore(item) {
     if (socket.fused && Array.isArray(socket.fused.stats)) {
       socket.fused.stats.forEach(function (stat) {
         var gemDef = GEM_TYPES[stat.type];
-        score += (Number(stat.val) || 0) * (SCORE_WEIGHTS[gemDef && gemDef.stat] || 1);
+        var sv = typeof fusedStatValue === 'function' ? fusedStatValue(stat) : (Number(stat.val) || 0);
+        score += sv * (SCORE_WEIGHTS[gemDef && gemDef.stat] || 1);
       });
     } else if (GEM_TYPES[socket.type]) {
       var plainGem = GEM_TYPES[socket.type];
@@ -4803,7 +4804,7 @@ function gemsViewNormalizeFuseMaterial(snapshot, ref) {
       return null;
     }
     return {
-      stats: [{ type: ref.type, val: gemStatValue(ref.type, level) }],
+      stats: [{ type: ref.type, mult: Math.pow(2, level - GEM_MAX_LEVEL) }],
       fusions: 0,
       leaves: Math.pow(2, level - GEM_MAX_LEVEL),
       ref: ref
