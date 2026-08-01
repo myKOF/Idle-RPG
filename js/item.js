@@ -625,6 +625,7 @@ function itemDetailHTML(it, cmp, opts) {
   var ownedGold = (opts.gold === undefined || opts.gold === null) ? Infinity : (Number(opts.gold) || 0);
   var ownedEssence = (opts.essence === undefined || opts.essence === null) ? Infinity : (Number(opts.essence) || 0);
   var r = RARITIES[it.rarity];
+  var levelRarity = RARITIES[equipmentLevelRarityIndex(it.level)] || r;
   var curScore = itemScore(it);
   var cmpScore = cmp ? itemScore(cmp) : 0;
   var sdiffStr = '';
@@ -669,7 +670,8 @@ function itemDetailHTML(it, cmp, opts) {
     '</div>';
 
   h += '<div class="it-sub"><span>' + r.name + '・' +
-    ((typeof itemTypeLabel === 'function') ? itemTypeLabel(it) : SLOT_INFO[it.slot].name) + '・等級 ' + it.level;
+    ((typeof itemTypeLabel === 'function') ? itemTypeLabel(it) : SLOT_INFO[it.slot].name) + '・' +
+    '<span class="it-level" style="color:' + levelRarity.color + '">等級 ' + it.level + '</span>';
   if (cmp && cmp.level !== it.level) {
     var ldiff = it.level - cmp.level;
     if (ldiff > 0) h += ' <span style="color: #4ade80">↑' + ldiff + '</span>';

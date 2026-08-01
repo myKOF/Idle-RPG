@@ -90,6 +90,21 @@ test('滿值詞條金色高亮', () => {
   assert.match(c.itemDetailHTML(it, null, {}), /fbbf24/);
 });
 
+test('裝備等級文字依每 50 級套用品質色，超過最高品質固定最高色', () => {
+  const c = loadItemContext();
+  const cases = [
+    [1, 0], [49, 0], [50, 1], [99, 1], [100, 2],
+    [c.RARITIES.length * 50, c.RARITIES.length - 1],
+    [c.RARITIES.length * 50 + 50, c.RARITIES.length - 1]
+  ];
+
+  cases.forEach(([level, rarity]) => {
+    assert.equal(c.equipmentLevelRarityIndex(level), rarity, `Lv.${level} 應對應 R${rarity}`);
+    const html = c.itemDetailHTML(makeItem({ level }), null, {});
+    assert.match(html, new RegExp('class="it-level" style="color:' + c.RARITIES[rarity].color.replace('#', '\\#') + '">等級 ' + level + '<'));
+  });
+});
+
 test('ui.js 三個裝備詳情呼叫點共用 itemDetailHTML', () => {
   const uiSrc = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   assert.doesNotMatch(uiSrc, /\buiItemDetailHTML\b/,
