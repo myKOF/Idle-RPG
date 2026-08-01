@@ -480,6 +480,20 @@ test('轉換寶石：雜牌逐 (種類,階級) 成格，偏好種類不動', () 
   ], '轉換是同階進行的，所以每個 (種類, 階級) 各佔一格；偏好種類與零庫存都不入格');
 });
 
+test('轉換寶石：配額種類不能被當成雜牌轉走', () => {
+  const p = makePolicy([Object.assign({}, CONVERT_RULE, {
+    convertToPreferred: Object.assign({}, CONVERT_RULE.convertToPreferred, {
+      quota: [{ type: 'malachite' }, { type: 'fluorite' }]
+    })
+  })]);
+  const cmds = p.decide(convState(10, {
+    catseye: { 1: 3 }, malachite: { 1: 2 }, fluorite: { 1: 2 }
+  }));
+  const converted = cmds.flatMap((c) => c.args.slots.map((s) => s.type));
+  assert.deepEqual(converted, ['catseye'],
+    '抗性寶石被轉走的話，鑲嵌的配額就永遠補不到——實測 20 小時後身上一顆抗性都沒有');
+});
+
 test('轉換寶石：目標在偏好種類之間輪流，不會轉成清一色', () => {
   const p = makePolicy([CONVERT_RULE]);
   const cmds = p.decide(convState(101, { catseye: { 1: 3 }, opal: { 1: 3 }, jade: { 1: 3 } }));
@@ -499,6 +513,105 @@ test('轉換寶石：單格數量與單次格數都不得超過遊戲上限', ()
     assert.ok(c.args.slots.length <= 2, '單次格數不得超過上限——一格超標整批就被回絕');
   }
   assert.equal(cmds.reduce((a, c) => a + c.args.slots.length, 0), 4, '四種雜牌全部要被排進去');
+});
+
+test('鑲寶石：生命／物理／魔法未達最低階級就不鑲', () => {
+  const p = makePolicy([{
+    id: 'sock', cmd: 'gem.socket',
+    socketEmpty: {
+      equipment: 'panels.inv.equipment', gems: 'panels.gems.gems', levelPath: 'view.level',
+      minLevelByType: { topaz: 3 },
+      preferByLevel: [{ types: ['topaz', 'amethyst'] }]
+    }
+  }]);
+  const at = (topazLv) => p.decide(socketState(10, ['a'], {
+    topaz: { [topazLv]: 5 }, amethyst: { 1: 5 }
+  })).map((c) => c.args.type);
+
+  assert.deepEqual(at(2), ['amethyst'],
+    '只有二級黃玉時要跳過——socketGem 鑲的是庫存最高階，最高階沒到門檻就等於鑲不出合格的');
+  assert.deepEqual(at(3), ['topaz'], '有三級就照偏好序鑲');
+});
+
+test('鑲寶石：抗性配額先補，且補滿就停', () => {
+  const rule = {
+    id: 'sock', cmd: 'gem.socket',
+    socketEmpty: {
+      equipment: 'panels.inv.equipment', gems: 'panels.gems.gems', levelPath: 'view.level',
+      quota: [{ type: 'malachite', count: 1 }, { type: 'fluorite', count: 1 }],
+      preferByLevel: [{ types: ['amethyst'] }]
+    }
+  };
+  const p = makePolicy([rule]);
+  const stock = { malachite: { 1: 9 }, fluorite: { 1: 9 }, amethyst: { 1: 9 } };
+
+  assert.deepEqual(
+    p.decide(socketState(10, ['a', 'b', 'c', 'd'], stock)).map((c) => c.args.type),
+    ['malachite', 'fluorite', 'amethyst', 'amethyst'],
+    '配額是「至少要有」不是「優先鑲滿」：各補一顆就交還給偏好序');
+
+  /* 身上已經有的要算進配額，否則每次決策都會再補一顆，鑲滿整身抗性。 */
+  const already = {
+    gameTimeSec: 100, view: { level: 10 },
+    panels: {
+      inv: { equipment: {
+        a: { id: 'a', sockets: [{ type: 'malachite', level: 1 }, null] },
+        b: { id: 'b', sockets: [{ type: 'fluorite', level: 1 }, null] }
+      } },
+      gems: { gems: stock }
+    }
+  };
+  assert.deepEqual(p.decide(already).map((c) => c.args.type), ['amethyst', 'amethyst'],
+    '兩個配額都滿了就不再補');
+});
+
+test('鑲寶石：分段可以再掛條件（爆率未達標就不改鑲屬性寶石）', () => {
+  const p = makePolicy([{
+    id: 'sock', cmd: 'gem.socket',
+    socketEmpty: {
+      equipment: 'panels.inv.equipment', gems: 'panels.gems.gems', levelPath: 'view.level',
+      preferByLevel: [
+        { when: ['panels.header.stats.critRate', '>=', 100], mix: [['garnet'], ['coreFire']] },
+        { types: ['amethyst'] }
+      ]
+    }
+  }]);
+  const at = (crit) => p.decide({
+    gameTimeSec: 100, view: { level: 150 },
+    panels: {
+      inv: { equipment: { a: { id: 'a', sockets: [null] }, b: { id: 'b', sockets: [null] } } },
+      gems: { gems: { garnet: { 1: 5 }, coreFire: { 1: 5 }, amethyst: { 1: 5 } } },
+      header: { stats: { critRate: crit } }
+    }
+  }).map((c) => c.args.type);
+
+  assert.deepEqual(at(120), ['garnet', 'coreFire'], '爆率破百才改鑲一半爆傷一半屬性');
+  assert.deepEqual(at(80), ['amethyst', 'amethyst'],
+    '爆率沒到就繼續補爆擊率——條件段後面一定要留一個無條件的收尾段，否則整條規則會靜靜停擺');
+});
+
+test('關卡閘門：品質沒到門檻時要退回安全關卡區間', () => {
+  const rule = {
+    id: 'gate', cmd: 'stage.setAutoAdvance',
+    stageGate: {
+      stage: 'view.stage', equippedRarities: 'panels.inv.equipmentRarities',
+      argKey: 'on', retreatCmd: 'stage.go',
+      checkpoints: [{ maxStage: 40, minRarity: 3, coverage: 1.0, park: [21, 25] }, { minRarity: 0, coverage: 0 }]
+    }
+  };
+  const p = makePolicy([rule]);
+  const at = (stage, rar) => p.decide(gateState(stage, rar));
+
+  const high = at(38, { helmet: 2 });
+  assert.deepEqual(high.map((c) => c.name), ['stage.go', 'stage.setAutoAdvance']);
+  assert.equal(high[0].args.delta, -13, '38 關要退回區間上緣 25');
+  assert.equal(high[1].args.on, false);
+
+  const low = at(21, { helmet: 2 });
+  assert.deepEqual(low.map((c) => c.name), ['stage.setAutoAdvance'], '已在區間內就不用退');
+  assert.equal(low[0].args.on, false, '區間內、品質未達標：停在原地刷');
+
+  assert.equal(at(30, { helmet: 3 })[0].args.on, true, '品質達標就放行，不受安全關卡區間限制');
 });
 
 test('學技能：清單隨等級換段', () => {

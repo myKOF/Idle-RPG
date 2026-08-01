@@ -107,6 +107,10 @@ test('分段設定的最後一段必須是無上限的 catch-all', () => {
     assert.equal(last.maxLevel, undefined,
       `${where} 的最後一段仍設了 maxLevel=${last.maxLevel}——` +
       '角色等級超過它之後這條規則會靜靜停止運作');
+    /* 分段除了等級之外還可以掛 when（例如「爆率 100% 以上才改鑲屬性寶石」）。
+       收尾段若也掛了條件，條件不成立時同樣會找不到任何一段而整條停擺。 */
+    assert.equal(last.when, undefined,
+      `${where} 的最後一段仍掛了 when 條件——條件不成立時這條規則會靜靜停止運作`);
   };
   for (const f of POLICY_FILES) {
     for (const rule of loadPolicy(f).rules) {

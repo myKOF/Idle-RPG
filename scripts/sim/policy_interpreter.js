@@ -58,6 +58,13 @@ function resolveArg(state, v) {
     for (var i = 0; i < v.$add.length; i++) sum += Number(resolveArg(state, v.$add[i])) || 0;
     return sum;
   }
+  /* 乘法只為了寫得出「上限的三成」這種相對門檻（例如法力低於上限 30% 才補法力寶石）。
+     一樣不是在算遊戲數值——遊戲數值都由遊戲算好放在狀態裡，這裡只是取閾值。 */
+  if (v.$mul !== undefined) {
+    var prod = 1;
+    for (var mi = 0; mi < v.$mul.length; mi++) prod *= Number(resolveArg(state, v.$mul[mi])) || 0;
+    return prod;
+  }
   var out = {};
   for (var k in v) out[k] = resolveArg(state, v[k]);
   return out;
@@ -72,7 +79,12 @@ function pickBand(state, bands, levelPath) {
   if (!bands || !bands.length) return null;
   var lv = Number(pathVal(state, levelPath || 'view.level')) || 0;
   for (var i = 0; i < bands.length; i++) {
-    if (bands[i].maxLevel === undefined || lv <= bands[i].maxLevel) return bands[i];
+    var b = bands[i];
+    if (b.maxLevel !== undefined && lv > b.maxLevel) continue;
+    /* when：這一段還可以再掛條件（例如「爆率 100% 以上才改鑲屬性傷害」）。
+       條件不成立就往下一段找，所以條件段後面一定要留一個無條件的收尾段。 */
+    if (b.when && !testCond(state, b.when)) continue;
+    return b;
   }
   return null;
 }
@@ -143,21 +155,51 @@ function pickGemType(groups, turn, cursor, spread, stockOf, available, allowFall
   return null;
 }
 
-/* 手上每種寶石的總數與最高階。庫存是 { 種類: { 階級: 數量 } } 的巢狀表。 */
-function gemStock(heldGems) {
+/* 手上每種寶石的總數與最高階。庫存是 { 種類: { 階級: 數量 } } 的巢狀表。
+
+   minLevelByType：某些種類要求「至少 N 階才鑲」（player_strategy.md：生命／物理／
+   魔法只鑲三級以上）。socketGem 鑲的是庫存最高階那顆，所以只要最高階沒到門檻，
+   這個種類這一輪就當成沒貨——把它從庫存裡剔掉，後面所有挑選邏輯自動一致。 */
+function gemStock(heldGems, minLevelByType) {
   var stockOf = {}, available = [], maxLvOf = {};
   for (var gt in heldGems) {
     var n = sumLeaves(heldGems[gt]);
     if (n <= 0) continue;
-    stockOf[gt] = n;
-    available.push(gt);
     var top = 0;
     for (var lv in heldGems[gt]) {
       if ((Number(heldGems[gt][lv]) || 0) > 0 && Number(lv) > top) top = Number(lv);
     }
     maxLvOf[gt] = top;
+    var need = minLevelByType && minLevelByType[gt];
+    if (typeof need === 'number' && top < need) continue;    // 階級不夠，這輪不鑲
+    stockOf[gt] = n;
+    available.push(gt);
   }
   return { stockOf: stockOf, available: available, maxLvOf: maxLvOf };
+}
+
+/* 配額：某些種類身上至少要有 N 顆（player_strategy.md：物理／魔法抗性寶石各至少一個；
+   法力不夠時補法力恢復寶石）。回傳還缺幾顆，缺的優先補。 */
+function gemQuotaNeeds(state, quota, equipment, stockOf) {
+  var out = [];
+  for (var i = 0; i < (quota || []).length; i++) {
+    var q = quota[i];
+    if (!q || !q.type) continue;
+    if (q.when && !testCond(state, q.when)) continue;
+    if (!(stockOf[q.type] > 0)) continue;                    // 手上沒有就不用談
+    var have = 0;
+    for (var sk in equipment) {
+      var it = equipment[sk];
+      if (!it || !it.sockets) continue;
+      for (var si = 0; si < it.sockets.length; si++) {
+        var g = it.sockets[si];
+        if (g && g.type === q.type) have++;
+      }
+    }
+    var need = (q.count || 1) - have;
+    if (need > 0) out.push({ type: q.type, remaining: need });
+  }
+  return out;
 }
 
 /* 把偏好段攤平成「輪用群組」＋「是否屬於偏好」的查表。 */
@@ -284,7 +326,7 @@ function decide(state, policy, memo) {
          所以先把「哪些種類真的有貨、各有幾顆」算出來，之後每送一顆就扣一顆；
          送超過庫存的話多出來的每一條都會換回「沒有這種寶石」，實測一次決策點
          就浪費 183 次呼叫，把報表淹掉。 */
-      var sStock = gemStock(heldGems);
+      var sStock = gemStock(heldGems, sCfg.minLevelByType);
 
       /* 偏好群組：preferByLevel 分段（types＝偏好序；mix＝多組輪流取用），
          沒設定就退回單一段的 preferTypes。 */
@@ -293,6 +335,10 @@ function decide(state, policy, memo) {
       var cursor = [];
       for (var ci = 0; ci < sBand.groups.length; ci++) cursor.push(0);
 
+      /* 配額先補：抗性各一顆、法力不夠時補法力恢復，這些是「至少要有」而不是
+         「優先鑲滿」，所以排在偏好序之前、但只補到數量為止。 */
+      var needs = gemQuotaNeeds(state, sCfg.quota, sEquip, sStock.stockOf);
+
       if (sStock.available.length) {
         for (var ssk in sEquip) {
           var sItem = sEquip[ssk];
@@ -300,10 +346,18 @@ function decide(state, policy, memo) {
           var hasEmpty = false;
           for (var si = 0; si < sItem.sockets.length; si++) if (!sItem.sockets[si]) { hasEmpty = true; break; }
           if (!hasEmpty) continue;
-          var pick = pickGemType(sBand.groups, groupTurn, cursor, sBand.spread, sStock.stockOf, sStock.available, true);
+
+          var pick = null;
+          while (needs.length && !pick) {
+            if (sStock.stockOf[needs[0].type] > 0) pick = needs[0].type;
+            if (--needs[0].remaining <= 0 || !pick) needs.shift();
+          }
+          if (!pick) {
+            pick = pickGemType(sBand.groups, groupTurn, cursor, sBand.spread, sStock.stockOf, sStock.available, true);
+            if (pick) groupTurn = (groupTurn + 1) % sBand.groups.length;
+          }
           if (!pick) break;                       // 庫存見底
           sStock.stockOf[pick]--;
-          groupTurn = (groupTurn + 1) % sBand.groups.length;
           /* 每個部位一次只送一顆：鑲上之後空槽與庫存都會變，下個決策點再算一次即可。 */
           out.push({ name: r.cmd, args: { itemId: sItem.id, type: pick }, ruleId: r.id });
         }
@@ -448,9 +502,20 @@ function decide(state, policy, memo) {
         /* need 為 0 代表這一段沒有要求（指南只涵蓋前期，之後交回各強度的推關策略）。 */
         var passGate = (need <= 0) || (totalSlots > 0 && (meetSlots / totalSlots) >= need);
 
+        /* park：這一段的安全關卡區間（player_strategy.md 的「安全關卡」建議值）。
+           品質沒到門檻時就待在區間裡刷——低於下緣要往前推到區間內，
+           高於上緣要退回來。只把自動推關關掉是不夠的：關掉時人在哪就停在哪，
+           可能停在一個一直死的關卡，而指南要的是停在「穩定不死、殺得快」的那一段。 */
+        var park = cp.park;
+        var inPark = !!(park && park.length === 2);
+        if (!passGate && inPark && gStage > park[1] && gCfg.retreatCmd) {
+          out.push({ name: gCfg.retreatCmd, args: { delta: park[1] - gStage }, ruleId: r.id });
+        }
+
         var gArgs = {};
         for (var gak in baseArgs) gArgs[gak] = baseArgs[gak];
-        gArgs[gCfg.argKey || 'on'] = passGate;
+        /* 一定要是布林值：協議的 on 是 bool，回 undefined 會被 validateCommand 擋下。 */
+        gArgs[gCfg.argKey || 'on'] = !!(passGate || (inPark && gStage < park[0]));
         out.push({ name: r.cmd, args: gArgs, ruleId: r.id });
       }
     } else if (r.convertToPreferred) {
@@ -477,11 +542,20 @@ function decide(state, policy, memo) {
         var maxPerSlot = cCfg.maxPerSlot || 1000;
         var maxCommands = cCfg.maxCommands || 4;
 
-        /* 雜牌＝有貨但不在當前偏好段的種類。轉換是同階進行的，
+        /* 配額種類（抗性、法力恢復）不是雜牌。
+           不排除的話會變成：這條規則把抗性寶石轉成爆傷，socketEmpty 又永遠補不到配額——
+           實測 20 小時後身上一顆抗性寶石都沒有，而策略明明要求各鑲一個。 */
+        var keepTypes = {};
+        for (var kq = 0; kq < (cCfg.quota || []).length; kq++) {
+          var kt = cCfg.quota[kq] && cCfg.quota[kq].type;
+          if (kt) keepTypes[kt] = true;
+        }
+
+        /* 雜牌＝有貨、不在當前偏好段、也不是配額種類。轉換是同階進行的，
            所以每個 (種類, 階級) 各佔一格。 */
         var junk = [];
         for (var jt in cGems) {
-          if (cBand.set[jt]) continue;
+          if (cBand.set[jt] || keepTypes[jt]) continue;
           for (var jl in cGems[jt]) {
             var jn = Number(cGems[jt][jl]) || 0;
             var jlv = Number(jl);
@@ -534,11 +608,17 @@ function decide(state, policy, memo) {
          - maxPerDecision 限制單次換的數量，避免一口氣把全身拆光。 */
       var uoCfg = r.unsocketOffPriority;
       var uoEquip = pathVal(state, uoCfg.equipment) || {};
-      var uoStock = gemStock(pathVal(state, uoCfg.gems) || {});
+      var uoStock = gemStock(pathVal(state, uoCfg.gems) || {}, uoCfg.minLevelByType);
 
       /* 偏好種類與 socketEmpty 取自同一份設定，維持單一來源——
          兩邊各寫一份的話，改了其中一份就會變成「拆掉的正是剛鑲上的」無限來回。 */
       var uBand = bandGroups(pickBand(state, uoCfg.preferByLevel, uoCfg.levelPath), uoCfg.preferTypes);
+      /* 配額種類（抗性、法力恢復）也算「符合偏好」，否則這裡會把 socketEmpty
+         剛依配額鑲上的抗性寶石當成雜牌拆掉，兩條規則每分鐘互相拆台。 */
+      for (var uq = 0; uq < (uoCfg.quota || []).length; uq++) {
+        var qt = uoCfg.quota[uq] && uoCfg.quota[uq].type;
+        if (qt && !uBand.set[qt]) { uBand.set[qt] = true; uBand.flat.push(qt); }
+      }
       var uTurn = 0, uCursor = [];
       for (var uc = 0; uc < uBand.groups.length; uc++) uCursor.push(0);
 
