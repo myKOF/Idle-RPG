@@ -359,10 +359,10 @@ function ensureWeaponMeta(it, preferType) {
   if (it.weaponAbility === undefined) it.weaponAbility = null;
   return it;
 }
-// 物品種類顯示名：武器顯示「類型（大類）」，其餘用部位名
+// 物品種類顯示名：武器顯示具體類型，其餘用部位名
 function itemTypeLabel(it) {
   var wd = weaponDef(it);
-  if (wd) return wd.name + '（' + WEAPON_CATEGORIES[wd.cat].name + '）';
+  if (wd) return wd.name;
   return (SLOT_INFO[it.slot] || {}).name || it.slot;
 }
 

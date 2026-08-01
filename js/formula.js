@@ -1240,6 +1240,12 @@ function equipmentTierLevel(level) {
   return Math.floor(level / EQUIP_TIER_SIZE) * EQUIP_TIER_SIZE;
 }
 
+// 裝備等級文字顏色：1 級套用 R0，50 級套用 R1，之後每 50 級提升一階，最高固定為最高品質。
+function equipmentLevelRarityIndex(level) {
+  level = Math.max(1, Math.floor(Number(level) || 1));
+  return clamp(Math.floor(level / EQUIP_TIER_SIZE), 0, RARITIES.length - 1);
+}
+
 /* ---- 詞條數值 ----
    基準值 = (base + base × lv係數 × (裝備等級-1)) × 稀有度倍率
    一般產出值 = 基準值 × (0.8 + 強度值/STRENGTH_ROLL_MAX × 0.4)（即洗煉區間 ±20%）
