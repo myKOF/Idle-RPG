@@ -2349,7 +2349,9 @@
             if (eq.affixes) {
                 affixesHtml = eq.affixes.map(af => {
                     const chName = AFFIX_CHINESE[af.key] || af.key;
-                    return `<div class="it-affix" style="color: ${af.ancient ? '#fbbf24' : '#f8fafc'}">${af.ancient ? '✡ ' : ''}${chName} +${af.val}</div>`;
+                    // 詞條存檔只有強度值，數值由 affixValue 當場算（js/formula.js §6）
+                    const afVal = typeof affixValue === 'function' ? affixValue(eq, af) : af.val;
+                    return `<div class="it-affix" style="color: ${af.ancient ? '#fbbf24' : '#f8fafc'}">${af.ancient ? '✡ ' : ''}${chName} +${afVal}</div>`;
                 }).join('');
             }
             detailPanel.innerHTML = `

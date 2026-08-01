@@ -294,6 +294,20 @@ function processOneConveyorItem() {
 }
 
 /* ---- 合成節點 ---- */
+/* 重骰模組（合成節點零件）：每條詞條重擲一次強度值，與原強度值取較佳者。
+   數值改存強度值後（formula.js §6），「取較佳」直接比 roll 即可——同一條詞條的
+   數值對強度值單調遞增，不必先各自算出數值再比。
+   ⚠️ ancient 必須帶回：太古與否只看位置（item.js rollAffixes），旗標掉了就會失去
+   ✡ 標記與太古計數，之後洗煉也不再把該位置當太古處理。 */
+function rerollAffixesKeepBetter(it) {
+  return it.affixes.map(function (a) {
+    ensureAffixRoll(it, a);              // 舊存檔素材可能還沒換算成強度值
+    var fresh = rollAffixStrength();     // 一律擲骰：維持與改造前相同的隨機取用次數（決定論）
+    if (a.roll === undefined || a.roll === null) return a; // 推不出強度值（詞條已下架）：原封不動
+    return { key: a.key, roll: Math.max(a.roll, fresh), ancient: !!a.ancient };
+  });
+}
+
 function synthTick() {
   if (!SYNTHESIS_ENABLED) return;
   var f = G.factory;
@@ -352,10 +366,7 @@ function tryHybridSynthesis() {
   // 詞條重骰（重骰模組）：每條詞條重骰一次取較佳值
   var rerollChance = partBonus('synth', 'rerollModule');
   if (rerollChance > 0 && chance(rerollChance)) {
-    it.affixes = it.affixes.map(function (a) {
-      var nv = rollAffixValue(a.key, it.level, it.rarity);
-      return { key: a.key, val: Math.max(a.val, nv) };
-    });
+    it.affixes = rerollAffixesKeepBetter(it);
     flog('🎲 重骰模組發動！詞條取較佳值', 'good');
   }
   // 寶石鑲嵌效率：提高寶石對附魔威力的貢獻
@@ -369,7 +380,7 @@ function tryHybridSynthesis() {
       if (mens[mi].key === bookKey) { mens[mi].val = Math.round(mens[mi].val * 1.5 * 10) / 10; break; }
     }
     if (it.affixes.length < MAX_AFFIXES) {
-      it.affixes = it.affixes.concat(rollAffixes(1, it.level, it.rarity, it.slot)
+      it.affixes = it.affixes.concat(rollAffixes(1, it.rarity, it.slot)
         .filter(function (na) { return !it.affixes.some(function (a) { return a.key === na.key; }); }));
     }
     G.factory.stats.mutated = (G.factory.stats.mutated || 0) + 1;
@@ -408,10 +419,7 @@ function tryRarityMerge() {
       // 重骰模組
       var rerollChance = partBonus('synth', 'rerollModule');
       if (rerollChance > 0 && chance(rerollChance)) {
-        it.affixes = it.affixes.map(function (a) {
-          var nv = rollAffixValue(a.key, it.level, it.rarity);
-          return { key: a.key, val: Math.max(a.val, nv) };
-        });
+        it.affixes = rerollAffixesKeepBetter(it);
       }
       G.factory.stats.synthesized++;
       flog((great ? '🌟 大成功！' : '⚗️ ') + '品質合成：' + RARITIES[rr].name + 'x3 → ' + rarityTag(it), great ? 'good' : 'info');

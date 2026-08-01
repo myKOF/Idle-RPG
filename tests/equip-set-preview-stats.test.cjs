@@ -26,7 +26,9 @@ function makeG(context) {
   const setB = emptySet(context);
   setB.chest = {
     id: 1, slot: 'chest', level: 10, rarity: 0, upgrade: 0,
-    affixes: [{ key: 'atkFlat', val: 500 }], sockets: [], enchants: []
+    // 詞條以強度值儲存（js/formula.js §6）；這裡把「想要的數值 500」換算成強度值
+    affixes: [{ key: 'atkFlat', roll: context.affixStrengthFromValue('atkFlat', 10, 0, 500) }],
+    sockets: [], enchants: []
   };
   return {
     player: { level: 2000, skills: {}, reincarnations: 0 },
@@ -68,7 +70,9 @@ test('檢視套裝備變動（markStatsDirty）後預覽屬性即時更新', () 
   context.G = makeG(context);
   context.setEquipView(1);
   const before = context.getViewStats().atk;
-  context.G.equipmentSets[1].chest.affixes[0].val = 1500; // 模擬洗煉/強化改動檢視套
+  // 模擬洗煉/強化改動檢視套：500 → 1500（改的是強度值，數值由 affixValue 當場算）
+  context.G.equipmentSets[1].chest.affixes[0].roll =
+    context.affixStrengthFromValue('atkFlat', 10, 0, 1500);
   context.markStatsDirty();
   const after = context.getViewStats().atk;
   assert.equal(after - before, 2200); // 1500-500=1000 定值改動，經由 1.2 倍轉生強化為 2200

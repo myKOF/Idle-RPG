@@ -4653,7 +4653,9 @@ function uiProjectedItemScore(item) {
   var score = 0;
   var multiplier = typeof upgradeMult === 'function' ? upgradeMult(item) : 1;
   (item.affixes || []).forEach(function (affix) {
-    score += (SCORE_WEIGHTS[affix.key] || 1) * (Number(affix.val) || 0) * multiplier;
+    // 詞條值由強度值當場算（affixValue → js/formula.js §6）；formula.js 未載入時以 0 計
+    var av = typeof affixValue === 'function' ? affixValue(item, affix) : 0;
+    score += (SCORE_WEIGHTS[affix.key] || 1) * av * multiplier;
   });
   (item.sockets || []).forEach(function (socket) {
     if (!socket) return;

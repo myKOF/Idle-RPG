@@ -344,12 +344,18 @@ function migrateSave(data) {
   // 2) 武器改造（2026-07-23）：舊存檔武器補 weaponType 與 weaponAbility 預留欄位
   //    （ensureWeaponMeta → js/data.js）。預設補單手劍（僅主手）；「裝在副手欄」的舊武器
   //    改補單手匕首（唯一可雙持類型），保持原裝備位置合法。
+  // 3) 詞條存檔改造（2026-08-01）：舊存檔的 affixes[].val（產出當下的凍結數值）
+  //    換算為 roll（強度值＝在隨機區間中的位置）並移除 val，之後數值一律由參數表當場算出
+  //    （ensureItemAffixRolls → js/formula.js §6）。冪等、無旗標：已是新格式即為 no-op，
+  //    所以不是一次性遷移，屬於「讓舊格式讀得進來的結構相容處理」
+  //    （分類見 ONE_TIME_MIGRATIONS.md）。
   var fixLoadedItem = function (it, slotKey) {
     if (!it || typeof it !== 'object') return;
     delete it.useAncientEssence;
     if (typeof ensureWeaponMeta === 'function') {
       ensureWeaponMeta(it, slotKey === 'weapon2' ? 'dagger1h' : undefined);
     }
+    if (typeof ensureItemAffixRolls === 'function') ensureItemAffixRolls(it);
   };
   Object.keys(data.equipment || {}).forEach(function (slot) { fixLoadedItem(data.equipment[slot], slot); });
   Object.keys(data.equipmentSets || {}).forEach(function (setKey) {

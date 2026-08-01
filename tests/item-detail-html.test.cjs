@@ -28,9 +28,16 @@ function makeItem(over) {
   }, over || {});
 }
 
+/* 詞條存檔只有強度值（js/formula.js §6），數值是算出來的。
+   這些測試在意的是「顯示成什麼」，所以照舊用想要的數值描述，換算成對應強度值。
+   makeItem 的預設是 Lv.50、稀有度 5，故換算以此為準。 */
+function affixAt(c, key, val) {
+  return { key: key, roll: c.affixStrengthFromValue(key, 50, 5, val) };
+}
+
 test('不讀取 G——沒有 G 的環境下也能產生完整詳情', () => {
   const c = loadItemContext();
-  const it = makeItem({ affixes: [{ key: 'atkFlat', val: 10 }] });
+  const it = makeItem({ affixes: [affixAt(c, 'atkFlat', 10)] });
   const html = c.itemDetailHTML(it, null, { showAffixReroll: true, gold: 999999, essence: 999 });
   assert.match(html, /測試劍/);
   assert.match(html, /評分/, '標題列應有評分');
@@ -41,7 +48,7 @@ test('不讀取 G——沒有 G 的環境下也能產生完整詳情', () => {
 
 test('洗煉花費依傳入的餘額標示不足，未提供餘額時不標紅', () => {
   const c = loadItemContext();
-  const it = makeItem({ affixes: [{ key: 'atkFlat', val: 10 }] });
+  const it = makeItem({ affixes: [affixAt(c, 'atkFlat', 10)] });
   const cost = c.rerollCost(it);
 
   const rich = c.itemDetailHTML(it, null, { gold: cost.gold, essence: cost.essence });
@@ -56,7 +63,7 @@ test('洗煉花費依傳入的餘額標示不足，未提供餘額時不標紅',
 
 test('渲染不得改動傳入的物品（不補鑲孔、不寫任何欄位）', () => {
   const c = loadItemContext();
-  const it = makeItem({ affixes: [{ key: 'atkFlat', val: 10 }], sockets: [] });
+  const it = makeItem({ affixes: [affixAt(c, 'atkFlat', 10)], sockets: [] });
   const before = JSON.stringify(it);
   c.itemDetailHTML(it, null, { gold: 0, essence: 0 });
   assert.equal(JSON.stringify(it), before, '渲染函式有副作用＝畫面更新時順便改狀態');
@@ -64,7 +71,7 @@ test('渲染不得改動傳入的物品（不補鑲孔、不寫任何欄位）',
 
 test('掉寶率詞條顯示經 effectiveDropRateEffect 換算後的實際生效值', () => {
   const c = loadItemContext();
-  const it = makeItem({ affixes: [{ key: 'loot', val: 20 }] });
+  const it = makeItem({ affixes: [affixAt(c, 'loot', 20)] });
   const html = c.itemDetailHTML(it, null, {});
   const shown = c.effectiveDropRateEffect(20); // 20 × 0.5 = 10
   assert.equal(c.DROP_RATE_EFFECT_MULT, 0.5);
@@ -75,7 +82,7 @@ test('掉寶率詞條顯示經 effectiveDropRateEffect 換算後的實際生效�
 
 test('同 key 詞條合併累加成一行', () => {
   const c = loadItemContext();
-  const it = makeItem({ affixes: [{ key: 'atkFlat', val: 10 }, { key: 'atkFlat', val: 5 }] });
+  const it = makeItem({ affixes: [affixAt(c, 'atkFlat', 10), affixAt(c, 'atkFlat', 5)] });
   // 關掉洗煉區塊，否則詞條池模板也會列出「物理攻擊」這個可能詞條，混進計數裡
   const html = c.itemDetailHTML(it, null, { showAffixReroll: false });
   const named = (html.match(/物理攻擊/g) || []).length;
@@ -85,8 +92,7 @@ test('同 key 詞條合併累加成一行', () => {
 
 test('滿值詞條金色高亮', () => {
   const c = loadItemContext();
-  const limits = c.getAffixLimits('atkFlat', 50, 5);
-  const it = makeItem({ affixes: [{ key: 'atkFlat', val: limits.max }] });
+  const it = makeItem({ affixes: [{ key: 'atkFlat', roll: c.AFFIX_ROLL_MAX }] }); // 強度值滿值
   assert.match(c.itemDetailHTML(it, null, {}), /fbbf24/);
 });
 

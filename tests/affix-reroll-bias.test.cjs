@@ -27,8 +27,9 @@ test('詞條上限率提高時，洗煉會先偏向高數值半段', () => {
   const randomValues = [0.4, 0.2, 0.2, 0.2, 0.4, 0.2];
   context.Math.random = () => randomValues.shift() ?? 0.2;
   assert.equal(context.affixRerollUnit(100), 0.6);
-  assert.equal(context.rollAffixValue('hpFlat', 1, 0, 0), 18);
-  assert.equal(context.rollAffixValue('hpFlat', 1, 0, 100), 23);
+  // 詞條改存強度值後（js/formula.js §6）：先擲強度值，再由強度值算出數值
+  assert.equal(context.affixValueFromStrength('hpFlat', 1, 0, context.rollAffixStrength(0), false), 18);
+  assert.equal(context.affixValueFromStrength('hpFlat', 1, 0, context.rollAffixStrength(100), false), 23);
 });
 
 test('洗煉分段權重參數接到公式檔與主參數表', () => {
