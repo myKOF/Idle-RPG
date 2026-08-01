@@ -2677,11 +2677,16 @@ function ancientStarBadgeHTML(it) {
   var overlapClass = shown > 4 ? ' overlap' : '';
   return '<span class="ancient-star-badge' + overlapClass + '" aria-label="太古詞條 ' + count + ' 條">' + stars + '</span>';
 }
+function itemIconFile(it, info) {
+  var weaponIcon = (typeof weaponIconForItem === 'function') ? weaponIconForItem(it) : null;
+  return weaponIcon || (info && info.icon) || '';
+}
 function itemCellHTML(it, source, extraClass, pendingKey) {
   var r = RARITIES[it.rarity];
   var effClass = (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= GODFORGED_IDX ? ' eff-godforged' : (it.rarity === 7 ? ' eff-genesis' : ''));
   var info = SLOT_INFO[it.slot];
-  var iconHtml = info.icon ? '<img src="images/' + info.icon + '" class="item-icon">' : '<span class="ic-emoji">' + info.emoji + '</span>';
+  var iconFile = itemIconFile(it, info);
+  var iconHtml = iconFile ? '<img src="images/' + iconFile + '" class="item-icon">' : '<span class="ic-emoji">' + info.emoji + '</span>';
   // data-eqslots：此「實例」可裝入的欄位（武器依類型而異），供選取比對用
   var eqSlots = (typeof equipSlotsForItem === 'function') ? equipSlotsForItem(it).join(',') : it.slot;
   return '<div class="item-cell' + effClass + (extraClass || '') + '" data-id="' + it.id + '" data-src="' + source + '" data-slot="' + it.slot + '" data-eqslots="' + eqSlots + '"' +
@@ -2716,7 +2721,8 @@ function renderEquip() {
     if (it) {
       var r = RARITIES[it.rarity];
       var effClass = (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= GODFORGED_IDX ? ' eff-godforged' : (it.rarity === 7 ? ' eff-genesis' : ''));
-      var iconHtml = info.icon ? '<img src="images/' + info.icon + '" class="eq-icon">' : '<div class="eq-emoji">' + info.emoji + '</div>';
+      var iconFile = itemIconFile(it, info);
+      var iconHtml = iconFile ? '<img src="images/' + iconFile + '" class="eq-icon">' : '<div class="eq-emoji">' + info.emoji + '</div>';
       var flashHtml = equipFlashActive(slot) ? '<span class="equip-flash-overlay" aria-hidden="true"></span>' : '';
       h += '<div class="eq-slot filled' + effClass + (twoHandDuplicate ? ' twohand-duplicate' : '') + ' slot-' + slot + '" data-id="' + it.id + '" data-src="equip" data-slot="' + slot + '" style="border-color:' + r.color + '; box-shadow: inset 0 0 15px ' + r.color + '40">' +
         iconHtml + ancientStarBadgeHTML(it) + flashHtml + '</div>';
@@ -3991,7 +3997,8 @@ function renderForge() {
     } else if (it) {
       var r = RARITIES[it.rarity];
       var info = SLOT_INFO[it.slot];
-      var iconHtml = info.icon ? '<img src="images/' + info.icon + '" class="item-icon">' : '<span class="ic-emoji">' + info.emoji + '</span>';
+      var iconFile = itemIconFile(it, info);
+      var iconHtml = iconFile ? '<img src="images/' + iconFile + '" class="item-icon">' : '<span class="ic-emoji">' + info.emoji + '</span>';
       // 裝備槽不掛 data-tip：滑過改由 mouseover 委派顯示完整裝備詳情 tooltip
       h += '<div class="forge-slot filled" data-forge-slot="' + i + '" data-id="' + it.id + '" ' +
         pendingUiButtonAttributes(nodePendingKey('forge')) +

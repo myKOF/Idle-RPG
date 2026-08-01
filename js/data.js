@@ -320,6 +320,25 @@ var WEAPON_TYPES = {
   spellbook:    { name: '魔法書',   cat: 'offHand', hands: 1, slots: ['weapon2'], emoji: '📖', basenames: ['咒文書', '禁咒魔法書', '賢者魔導書'] },
   orb:          { name: '水晶球',   cat: 'offHand', hands: 1, slots: ['weapon2'], emoji: '🔮', basenames: ['水晶球', '祕法水晶球', '預言水晶球'] }
 };
+// 武器類型專屬圖示；沒有 weaponType 的舊物品由 UI 退回 SLOT_INFO 的通用圖示。
+var WEAPON_TYPE_ICONS = {
+  sword1h: 'icon_weapon_sword1h.png',
+  dagger1h: 'icon_weapon_dagger1h.png',
+  wand1h: 'icon_weapon_wand1h.png',
+  magicSword1h: 'icon_weapon_magic_sword1h.png',
+  greatsword2h: 'icon_weapon_greatsword2h.png',
+  axe2h: 'icon_weapon_axe2h.png',
+  staff2h: 'icon_weapon_staff2h.png',
+  magicSword2h: 'icon_weapon_magic_sword2h.png',
+  shield: 'icon_weapon_shield.png',
+  focus: 'icon_weapon_focus.png',
+  spellbook: 'icon_weapon_spellbook.png',
+  orb: 'icon_weapon_orb.png'
+};
+function weaponIconForItem(it) {
+  if (!it || !WEAPON_TYPES[it.weaponType]) return null;
+  return WEAPON_TYPE_ICONS[it.weaponType] || null;
+}
 /* 武器專屬特殊能力（預留架構，尚未實裝）：
    之後每種武器類型掛專屬能力，規劃結構 {key: {name, desc, base, ...}}（比照 GODFORGE_POOL）；
    裝備欄位 it.weaponAbility 已預留（null＝無），實際能力池與數值待設計後填入。 */

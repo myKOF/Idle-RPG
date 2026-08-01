@@ -37,6 +37,7 @@ test('雙手武器在副手欄顯示同一把武器，但仍以視覺 duplicate 
     uiHeaderPanelSnapshot: () => ({ player: {} }),
     equipViewEquipment: (snapshot) => snapshot.sets[0],
     isTwoHandItem: (item) => !!item && item.weaponType === 'greatsword2h',
+    itemIconFile: (item, info) => info.icon,
     equipFlashActive: (slot) => slot === 'weapon2',
     ancientStarBadgeHTML: () => '',
     renderEquipSetTabs: () => {},
