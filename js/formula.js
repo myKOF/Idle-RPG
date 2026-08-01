@@ -241,7 +241,7 @@ function computeStats(equipmentOverride) {
   }
   socketed.forEach(function (g) {
     if (g.fused) {
-      g.fused.stats.forEach(function (s) { applyGemStat(s.type, s.val); });
+      g.fused.stats.forEach(function (s) { applyGemStat(s.type, fusedStatValue(s)); });
     } else if (GEM_TYPES[g.type]) {
       applyGemStat(g.type, gemStatValue(g.type, g.level));
     }
@@ -1049,6 +1049,30 @@ function effectiveFactoryPartValue(key, value) {
   return key === 'speedGear' ? (Number(value) || 0) + SPEED_GEAR_FIXED_BONUS : value;
 }
 
+/* ---- 自動機組零件的數值與名稱 ----
+   效果值 = perTier × 階級（定值，沒有隨機成分）、名稱 = 'T階 零件名'，兩者都能由
+   { key, tier } 推導，所以存檔不留 val／name（與裝備數值存檔改造同一原則 → §6）。
+   改 PART_TYPES 的 perTier 或改名後，舊存檔既有零件（含熔爐裡的零件快照）跟著套用新值。 */
+function partValue(p) {
+  if (!p) return 0;
+  var pt = PART_TYPES[p.key];
+  if (!pt) return Number(p.val) || 0;      // 零件已下架：沿用凍結值，不歸零
+  return Math.round(pt.perTier * (Number(p.tier) || 0) * 100) / 100;
+}
+function partName(p) {
+  if (!p) return '';
+  var pt = PART_TYPES[p.key];
+  if (!pt) return String(p.name || p.key || '');
+  return 'T' + (Number(p.tier) || 0) + ' ' + pt.name;
+}
+// 舊存檔零件：val 與 name 都可推導 → 直接丟棄（冪等）
+function ensurePartSource(p) {
+  if (!p || !PART_TYPES[p.key] || !isFinite(Number(p.tier))) return p;
+  delete p.val;
+  delete p.name;
+  return p;
+}
+
 function dropRatesFor(table, lvl) {
   for (var i = 0; i < table.length; i++) {
     if (lvl >= table[i].min) return table[i].rates;
@@ -1502,7 +1526,7 @@ function itemScore(it) {
       var g = it.sockets[j];
       if (!g) continue;
       if (g.fused) {
-        g.fused.stats.forEach(function (fs) { s += fs.val * (SCORE_WEIGHTS[GEM_TYPES[fs.type].stat] || 1); });
+        g.fused.stats.forEach(function (fs) { s += fusedStatValue(fs) * (SCORE_WEIGHTS[GEM_TYPES[fs.type].stat] || 1); });
       } else if (GEM_TYPES[g.type]) {
         s += gemStatValue(g.type, g.level) * (SCORE_WEIGHTS[GEM_TYPES[g.type].stat] || 1);
       }
@@ -1655,6 +1679,44 @@ function gemStatValue(type, level) {
   }
   return Math.round(g.base * level * (1 + 0.2 * (level - 1)) * 10) / 10;
 }
+/* ---- 融合寶石的屬性數值 ----
+   融合寶石的數值來自整條融合樹的隨機遞迴（每次融合取 rnd(較小值, 較大值×2)），
+   沒辦法只靠參數重算，但可以改用「相當於幾顆 5 階寶石」的**倍率**來存：
+     stats: [{ type, mult }]，數值 = 5 階寶石數值 × mult
+   融合公式全是線性運算，改在倍率空間做完全等價；而寶石 base 或曲線一改，
+   融合寶石的數值就會跟著等比變動——`gemAttrDmgBaseV1` 那種一次性遷移
+   （改 base 後手動縮放所有融合寶石快照）從此不再需要。 */
+function fusedStatValue(s) {
+  if (!s) return 0;
+  if (s.mult === undefined || s.mult === null) return Number(s.val) || 0;  // 舊格式／已下架寶石
+  var base5 = GEM_TYPES[s.type] ? gemStatValue(s.type, GEM_MAX_LEVEL) : 0;
+  if (!(base5 > 0)) return Number(s.val) || 0;
+  return Math.round(base5 * (Number(s.mult) || 0) * 100) / 100;
+}
+// 融合素材的 5 階等值倍率（舊格式素材以 val 反推，融合結果與改造前一致）
+function fusedMaterialMult(s) {
+  if (!s) return 0;
+  if (s.mult !== undefined && s.mult !== null) return Number(s.mult) || 0;
+  return fusedStatMult(s.type, s.val);
+}
+// 數值 → 5 階等值倍率（產出與舊存檔換算共用）
+function fusedStatMult(type, val) {
+  var base5 = GEM_TYPES[type] ? gemStatValue(type, GEM_MAX_LEVEL) : 0;
+  if (!(base5 > 0)) return 0;
+  return Math.round((Number(val) || 0) / base5 * 10000) / 10000;
+}
+// 舊存檔的融合寶石：val → mult（冪等；推不出倍率就保留 val 當凍結值）
+function ensureFusedGemSource(fg) {
+  if (!fg || !Array.isArray(fg.stats)) return fg;
+  fg.stats.forEach(function (s) {
+    if (!s || (s.mult !== undefined && s.mult !== null)) return;
+    if (!GEM_TYPES[s.type] || !(gemStatValue(s.type, GEM_MAX_LEVEL) > 0)) return;
+    s.mult = fusedStatMult(s.type, s.val);
+    delete s.val;
+  });
+  return fg;
+}
+
 // 插槽數：依稀有度表（普通~稀有 1、獨特 2、史詩 3、傳說 4、神話 5、創世/神鑄創世 6）
 function socketCountFor(rarity) {
   var r = RARITIES[clamp(rarity, 0, RARITIES.length - 1)];

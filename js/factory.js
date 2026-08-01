@@ -9,7 +9,7 @@ function partBonus(node, key) {
   var sum = 0;
   ids.forEach(function (id) {
     var p = findPart(id);
-    if (p && p.key === key) sum += effectiveFactoryPartValue(p.key, p.val);
+    if (p && p.key === key) sum += effectiveFactoryPartValue(p.key, partValue(p));
   });
   return sum;
 }
@@ -25,7 +25,7 @@ function bestAvailablePartForInstall(node, key) {
   var best = null;
   G.factory.parts.forEach(function (p) {
     if (!p || p.key !== key || !PART_TYPES[p.key] || PART_TYPES[p.key].node !== node || isInstalled(p.id)) return;
-    if (!best || p.tier > best.tier || (p.tier === best.tier && p.val > best.val)) best = p;
+    if (!best || p.tier > best.tier || (p.tier === best.tier && partValue(p) > partValue(best))) best = p;
   });
   return best;
 }
@@ -38,14 +38,14 @@ function installPart(id, node) {
   if (!isFactoryNodeEnabled(node)) return false;
   var p = findPart(id);
   if (!p) return false;
-  if (!PART_TYPES[p.key] || PART_TYPES[p.key].node !== node) { flog('⚠️ ' + p.name + ' 無法安裝到' + NODE_NAMES[node], 'warn'); return false; }
+  if (!PART_TYPES[p.key] || PART_TYPES[p.key].node !== node) { flog('⚠️ ' + partName(p) + ' 無法安裝到' + NODE_NAMES[node], 'warn'); return false; }
   if (isInstalled(id)) return false;
   var arr = G.factory.installed[node];
   if (arr.length >= slotsForNode(node)) {
     arr.shift(); // 擠掉最舊的（回到零件庫，本來就都在 parts 陣列中）
   }
   arr.push(id);
-  flog('🔧 已安裝 ' + p.name + ' 至 ' + NODE_NAMES[node], 'good');
+  flog('🔧 已安裝 ' + partName(p) + ' 至 ' + NODE_NAMES[node], 'good');
   UI.dirty.factory = true;
   return true;
 }
@@ -82,7 +82,7 @@ function trimFactoryParts() {
   Object.keys(byKey).forEach(function (k) {
     var installedParts = byKey[k].filter(function (p) { return isInstalled(p.id); });
     var loose = byKey[k].filter(function (p) { return !isInstalled(p.id); })
-      .sort(function (a, b) { return (b.tier - a.tier) || (b.val - a.val); });
+      .sort(function (a, b) { return (b.tier - a.tier) || (partValue(b) - partValue(a)); });
     keep = keep.concat(installedParts, loose.slice(0, PART_KEEP_PER_KEY));
     loose.slice(PART_KEEP_PER_KEY).forEach(function (p) { scrapGain += p.tier * 2; });
   });
@@ -218,7 +218,7 @@ function doSalvage(it, silent, bonus) {
     G.factory.parts.push(np);
     if (window.recordLootMat) window.recordLootMat('part', 1, 'factory');
     trimFactoryParts(); // 收斂零件庫存，防無限成長
-    extras.push('⛏️' + np.name);
+    extras.push('⛏️' + partName(np));
     UI.dirty.factory = true;
   }
 

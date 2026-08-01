@@ -11,7 +11,8 @@
     "skills",
     "talents",
     "header",
-    "inv"
+    "inv",
+    "battle"
   ],
   "lists": {
     "talentStep1": [
@@ -118,7 +119,6 @@
       "pPen",
       "eliteDmg",
       "bossDmg",
-      "normalDmg",
       "aoeDmg",
       "atkFlat"
     ],
@@ -135,7 +135,6 @@
       "blockRate",
       "blockDmgRed",
       "tenacity",
-      "normalDmgRed",
       "eliteDmgRed",
       "bossDmgRed",
       "hit",
@@ -166,6 +165,12 @@
     ],
     "affixCritDmg": [
       "critDmg"
+    ],
+    "affixVsNormal": [
+      "normalDmg"
+    ],
+    "affixVsNormalRed": [
+      "normalDmgRed"
     ]
   },
   "rules": [
@@ -345,12 +350,22 @@
           {
             "type": "malachite",
             "count": 1,
-            "依據": "物理抗性寶石至少鑲一個"
+            "依據": "物理/魔法抗性寶石依情況替換（打菁英或BOSS時）",
+            "when": [
+              "ctx.mode",
+              "!=",
+              "normal"
+            ]
           },
           {
             "type": "fluorite",
             "count": 1,
-            "依據": "魔法抗性寶石至少鑲一個"
+            "依據": "物理/魔法抗性寶石依情況替換（打菁英或BOSS時）",
+            "when": [
+              "ctx.mode",
+              "!=",
+              "normal"
+            ]
           },
           {
             "type": "kyanite",
@@ -510,12 +525,22 @@
           {
             "type": "malachite",
             "count": 1,
-            "依據": "物理抗性寶石至少鑲一個"
+            "依據": "物理/魔法抗性寶石依情況替換（打菁英或BOSS時）",
+            "when": [
+              "ctx.mode",
+              "!=",
+              "normal"
+            ]
           },
           {
             "type": "fluorite",
             "count": 1,
-            "依據": "魔法抗性寶石至少鑲一個"
+            "依據": "物理/魔法抗性寶石依情況替換（打菁英或BOSS時）",
+            "when": [
+              "ctx.mode",
+              "!=",
+              "normal"
+            ]
           },
           {
             "type": "kyanite",
@@ -630,12 +655,22 @@
           {
             "type": "malachite",
             "count": 1,
-            "依據": "物理抗性寶石至少鑲一個"
+            "依據": "物理/魔法抗性寶石依情況替換（打菁英或BOSS時）",
+            "when": [
+              "ctx.mode",
+              "!=",
+              "normal"
+            ]
           },
           {
             "type": "fluorite",
             "count": 1,
-            "依據": "魔法抗性寶石至少鑲一個"
+            "依據": "物理/魔法抗性寶石依情況替換（打菁英或BOSS時）",
+            "when": [
+              "ctx.mode",
+              "!=",
+              "normal"
+            ]
           },
           {
             "type": "kyanite",
@@ -683,6 +718,14 @@
                   ">",
                   50
                 ]
+              },
+              {
+                "list": "affixVsNormal",
+                "when": [
+                  "ctx.desperate",
+                  "falsy"
+                ],
+                "依據": "生存率不足時把對普通敵人的加成／抗性從保留清單移除，讓它們被洗成對菁英/BOSS的"
               }
             ],
             "依據": "主副手：全洗傷害類，百分比>定值；爆傷只在爆率高於50%後才洗"
@@ -704,6 +747,14 @@
                   ">",
                   50
                 ]
+              },
+              {
+                "list": "affixVsNormal",
+                "when": [
+                  "ctx.desperate",
+                  "falsy"
+                ],
+                "依據": "生存率不足時把對普通敵人的加成／抗性從保留清單移除，讓它們被洗成對菁英/BOSS的"
               }
             ],
             "依據": "項鏈戒指：寶石鑲嵌效率最關鍵，其次掉寶率與經驗加成"
@@ -712,13 +763,21 @@
             "lists": [
               {
                 "list": "affixArmor"
+              },
+              {
+                "list": "affixVsNormalRed",
+                "when": [
+                  "ctx.desperate",
+                  "falsy"
+                ],
+                "依據": "生存率不足時把對普通敵人的加成／抗性從保留清單移除，讓它們被洗成對菁英/BOSS的"
               }
             ],
             "依據": "防具：以防禦性詞條為主，保留一條物攻；不留單一元素抗性（怪物屬性隨機），改留全抗性與全局減傷"
           }
         ]
       },
-      "why": "依 player_strategy.md 裝備詞條洗煉策略分三組：主副手全傷害、防具以防禦為主、項鏈戒指以寶石鑲嵌效率/掉寶率/經驗加成為關鍵。用同一份清單套 13 個部位不可能對——武器洗不出防禦詞條，而 gemEff/loot/xpBonus 只有戒指項鏈出得來。爆傷要爆率破 50% 才留；閃避 300 級前不留；單一元素抗性不留（怪物屬性隨機，改留全抗性）",
+      "why": "依 player_strategy.md 裝備詞條洗煉策略分三組：主副手全傷害、防具以防禦為主、項鏈戒指以寶石鑲嵌效率/掉寶率/經驗加成為關鍵。用同一份清單套 13 個部位不可能對——武器洗不出防禦詞條，而 gemEff/loot/xpBonus 只有戒指項鏈出得來。爆傷要爆率破 50% 才留；閃避 300 級前不留；單一元素抗性不留（怪物屬性隨機，改留全抗性）。連續 5 次打不過菁英/BOSS（ctx.desperate）時改打針對性：對普通敵人的傷害加成與抗性不再保留",
       "if": [
         [
           "view.essence",
@@ -737,7 +796,8 @@
         "books": "panels.inv.books",
         "byCategory": {
           "util": [
-            "vigor"
+            "wisdom",
+            "loot"
           ],
           "atk": [
             "ice"
@@ -754,9 +814,24 @@
         "spread": [
           "def"
         ],
-        "maxPerDecision": 4
+        "maxPerDecision": 4,
+        "overrides": [
+          {
+            "when": [
+              "ctx.desperate",
+              "truthy"
+            ],
+            "byCategory": {
+              "util": [
+                "vigor",
+                "focus"
+              ]
+            },
+            "依據": "遇菁英或BOSS時若生存能力不足則換成生命值提升及冷卻縮短"
+          }
+        ]
       },
-      "why": "依 player_strategy.md 附魔策略：生命值(vigor)→冰凍(ice)→六大屬性抗性平均。遊戲規定每個部位只吃一種類別（enchantCatForType：武器/戒指/手套/護腕＝攻擊，項鍊/鞋子＝功能，其餘＝防禦），所以這份優先序實際上是按類別分工而不是單一排序：功能部位放生命值、攻擊部位放冰凍、防禦部位放六大抗性並輪流分散。部位與類別的對應取自遊戲的面板欄位，策略不自己抄——抄一份遲早跟遊戲脫鉤，而 manualEnchant 只會回「XX 只能使用 OO 類附魔」，看報表不會發現規則從沒生效"
+      "why": "依 player_strategy.md 附魔策略：生命值(vigor)→冰凍(ice)→六大屬性抗性平均。遊戲規定每個部位只吃一種類別（enchantCatForType：武器/戒指/手套/護腕＝攻擊，項鍊/鞋子＝功能，其餘＝防禦），所以這份優先序實際上是按類別分工而不是單一排序：功能部位放生命值、攻擊部位放冰凍、防禦部位放六大抗性並輪流分散。部位與類別的對應取自遊戲的面板欄位，策略不自己抄——抄一份遲早跟遊戲脫鉤，而 manualEnchant 只會回「XX 只能使用 OO 類附魔」，看報表不會發現規則從沒生效。項鏈與鞋子平時放經驗(wisdom)與掉寶率(loot)，生存不足時換成生命值(vigor)與冷卻縮短(focus)"
     },
     {
       "id": "auto-equip-on",
@@ -929,5 +1004,11 @@
       "cmd": "tower.finish",
       "why": "高塔挑戰結束後回到一般場景戰鬥繼續遊玩"
     }
-  ]
+  ],
+  "track": {
+    "monster": "panels.battle.field.monster",
+    "stage": "view.stage",
+    "equipment": "panels.inv.equipment",
+    "equippedScores": "panels.inv.equipmentScores"
+  }
 }
