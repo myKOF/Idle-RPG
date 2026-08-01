@@ -306,24 +306,32 @@ const snapRows = [];
 
 let lastKillsTotal = 0;
 let lastHourChecked = 0;
+/* 累計在線秒數。宣告在這裡而不是主迴圈那一段，是因為 snapshot() 要用它做每小時的
+   擊殺檢查——放在下面的話，任何人在主迴圈之前多加一次 snapshot() 就會踩到 TDZ。 */
+let onlineSec = 0;
 
 function snapshot() {
   const view = engine.view();
   const stats = engine.ctx.getStats();
   const G = engine.state();
   
-  // 移植：每 1 小時檢查擊殺數是否為 0
-  const simTimeHours = engine.gameTimeSec() / 3600;
-  if (simTimeHours - lastHourChecked >= 1.0) {
+  /* 每一「在線小時」檢查擊殺數是否為 0，用來抓「戰鬥根本沒在跑」這種 harness 故障。
+
+     ⚠️ 這裡量的必須是**在線時數**，不是牆鐘。啟用班表後牆鐘的第 24 小時裡有 22 小時
+     是離線的，線上擊殺本來就會是 0——用牆鐘算會讓每一個離線日都噴一次假警報，
+     而假警報多了之後真正的故障就不會有人看。離線期間的收益走的是另一套結算，
+     由 schedule.offlineSettlements 各自回報，不歸這個檢查管。 */
+  const onlineHoursNow = onlineSec / 3600;
+  if (onlineHoursNow - lastHourChecked >= 1.0) {
     const totalKills = (engine.ctx.LOOT_STATS && engine.ctx.LOOT_STATS.kills) || 0;
-    if (simTimeHours > 1.0) {
+    if (onlineHoursNow > 1.0) {
       const killsThisHour = totalKills - lastKillsTotal;
       if (killsThisHour <= 0) {
-        console.warn(`⚠️ [警告] 第 ${Math.floor(simTimeHours)} 小時擊殺數為 0！`);
+        console.warn(`⚠️ [警告] 第 ${Math.floor(onlineHoursNow)} 個在線小時擊殺數為 0！`);
       }
     }
     lastKillsTotal = totalKills;
-    lastHourChecked = simTimeHours;
+    lastHourChecked = onlineHoursNow;
   }
 
   const lootStats = engine.ctx.LOOT_STATS || {};
@@ -420,7 +428,6 @@ let nextSnapAt = 0;
 let decisions = 0;
 let observations = 0;
 let stepsDone = 0;
-let onlineSec = 0;
 const offlineLog = [];
 
 const t0 = process.hrtime.bigint();

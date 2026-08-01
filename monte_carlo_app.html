@@ -823,7 +823,9 @@
         <form id="simParamsForm" onsubmit="handleFormSimSubmit(event)" style="display: grid; grid-template-columns: 1fr 0.7fr 1fr 1fr; gap: 14px; align-items: end; background: rgba(15, 23, 42, 0.5); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
             <div class="form-group">
                 <label for="hoursInput" style="font-size: 13px; font-weight: 600; color: var(--accent-amber); display: block; margin-bottom: 6px;">⏱️ 模擬總時長 (小時 Hours)</label>
-                <input type="number" id="hoursInput" min="1" max="2160" value="100" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: #fff; font-weight: bold;" required>
+                <input type="number" id="hoursInput" min="1" max="2160" value="100" oninput="updateHoursHint()" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: #fff; font-weight: bold;" required>
+                <!-- 這行會隨玩家型態改變：有作息設定的型態，這個數字是「經過的日子」而不是「玩的時數」 -->
+                <div id="hoursHint" style="font-size: 11px; color: #94a3b8; margin-top: 4px;"></div>
             </div>
 
             <div class="form-group">
@@ -848,6 +850,37 @@
                 ⏹️ 取消模擬 (Cancel)
             </button>
         </form>
+
+        <!-- ============ 作息對照 ============
+             玩家問的是「這個改動到底讓數字差多少」，而那需要兩次同條件的模擬：
+             一次照玩家真實作息（每天只玩幾小時、其餘離線），一次全程在線（舊口徑）。
+             兩次用同一個 seed、同一個時長，唯一的差別就是作息，差異才歸得了因。 -->
+        <div style="background: rgba(15, 23, 42, 0.5); padding: 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--panel-border);">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 280px;">
+                    <div style="font-size: 13px; font-weight: 700; color: var(--accent-purple); margin-bottom: 4px;">🔬 作息對照（跑兩次，看差多少）</div>
+                    <div id="abHint" style="font-size: 11px; color: #94a3b8; line-height: 1.6;"></div>
+                </div>
+                <button type="button" id="btnRunAB" onclick="runScheduleAB()" style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); border: 1px solid #a78bfa; color: #fff; padding: 11px 18px; font-weight: 700; border-radius: 6px; cursor: pointer; white-space: nowrap;">
+                    🔬 跑對照組（連續兩次）
+                </button>
+            </div>
+
+            <div id="abResultBox" style="display: none; margin-top: 16px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                        <tr style="color: var(--text-muted); font-size: 11px; text-align: right;">
+                            <th style="text-align: left; padding: 6px 8px;">項目</th>
+                            <th style="padding: 6px 8px; color: var(--accent-emerald);">A 真實作息</th>
+                            <th style="padding: 6px 8px; color: var(--accent-amber);">B 全程在線</th>
+                            <th style="padding: 6px 8px;">差異</th>
+                        </tr>
+                    </thead>
+                    <tbody id="abResultBody"></tbody>
+                </table>
+                <div id="abConclusion" style="margin-top: 12px; font-size: 12px; line-height: 1.7; color: #cbd5e1; background: rgba(2, 6, 23, 0.5); padding: 12px; border-radius: 6px; border-left: 3px solid var(--accent-purple);"></div>
+            </div>
+        </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
             <!-- 左側：數據載入中心 -->
@@ -1669,6 +1702,49 @@
 
     let currentSelectedProfile = 'LIGHT';
 
+    /* ============ 玩家作息 ============
+       每個型態每天實際玩幾小時。這個值是策略檔（scripts/sim/policy.*.json）的
+       dailyActiveHours，這裡只是為了在按下按鈕之前就能把話講清楚而重複一份。
+
+       ⚠️ 這份是給人看的文案，不是模擬的依據——模擬吃的一律是策略檔裡那個值。
+       兩邊不同步只會讓提示文字說錯話，不會讓模擬跑錯；真正的數字一律以
+       run_summary.json 的 schedule 為準（下面的對照表就是讀它）。 */
+    const PROFILE_DAILY_HOURS = { LIGHT: 2, MODERATE: 4, HEAVY: 8, EXTREME: 24 };
+
+    /* 「模擬總時長」對有作息的型態是牆鐘時間（含離線），不是玩的時數。
+       不講清楚的話，使用者會把輕度玩家 100 小時讀成「玩了 100 小時」，
+       然後覺得等級低得莫名其妙。 */
+    function updateHoursHint() {
+        const hint = document.getElementById('hoursHint');
+        const abHint = document.getElementById('abHint');
+        const hours = Number((document.getElementById('hoursInput') || {}).value) || 0;
+        const daily = PROFILE_DAILY_HOURS[currentSelectedProfile];
+
+        if (hint) {
+            if (!daily || daily >= 24) {
+                hint.innerHTML = '這個型態全程在線，時長就是實際遊玩時數。';
+                hint.style.color = '#94a3b8';
+            } else {
+                const online = (hours * daily / 24).toFixed(1);
+                hint.innerHTML = `⚠️ 這是<b>經過的日子</b>（含離線）。此型態每天玩 ${daily} 小時，`
+                    + `所以 ${hours} 小時裡實際只玩 <b style="color:var(--accent-emerald)">${online} 小時</b>，其餘為離線掛機。`;
+                hint.style.color = '#fbbf24';
+            }
+        }
+        if (abHint) {
+            if (!daily || daily >= 24) {
+                abHint.innerHTML = `<b style="color:var(--accent-rose)">目前型態沒有作息差異</b>`
+                    + `（${currentSelectedProfile === 'LATEGAME' ? '後期轉生測試' : '極限玩家'}本來就全程在線），兩組會跑出一樣的結果。`
+                    + `<br>要看差異請先選輕度／中度／重度。`;
+            } else {
+                abHint.innerHTML = `用<b>同一個 seed、同一個時長</b>連續跑兩次，唯一差別是作息：`
+                    + `<br>　<b style="color:var(--accent-emerald)">A</b> 每天玩 ${daily} 小時、其餘離線（真實作息）`
+                    + `　<b style="color:var(--accent-amber)">B</b> ${hours} 小時全程在線（舊口徑）`
+                    + `<br>跑完直接列出兩邊差多少。時間約為單次的兩倍。`;
+            }
+        }
+    }
+
     function selectProfileUI(profileKey) {
         currentSelectedProfile = profileKey;
         const tabs = ['LIGHT', 'MODERATE', 'HEAVY', 'EXTREME', 'LATEGAME'];
@@ -1695,6 +1771,120 @@
             else if (profileKey === 'EXTREME') hoursInput.value = 500;
             else if (profileKey === 'LATEGAME') hoursInput.value = 2;
         }
+        updateHoursHint();
+    }
+
+    /* 型態決定策略檔。原本這段散在 handleFormSimSubmit 裡，對照組也要用同一份對應，
+       抽出來共用——兩份對應遲早會長歪，而長歪時對照組會拿另一個策略去比。 */
+    function policyFileFor(profileKey) {
+        switch (profileKey) {
+            case 'LIGHT': return 'scripts/sim/policy.light.json';
+            case 'MODERATE': return 'scripts/sim/policy.moderate.json';
+            case 'HEAVY': return 'scripts/sim/policy.heavy.json';
+            case 'EXTREME': return 'scripts/sim/policy.extreme.json';
+            case 'LATEGAME': return 'scripts/sim/policy.lategame.json';
+            default: return 'scripts/sim/policy.default.json';
+        }
+    }
+
+    /* ---- 作息對照 ----
+       同 seed、同時長跑兩次，唯一差別是有沒有照玩家作息。 */
+    async function runScheduleAB() {
+        if (window.location.protocol === 'file:') {
+            alert('請先雙擊「啟動數值模擬器.bat」，再從伺服器開啟這個頁面。');
+            return;
+        }
+        const daily = PROFILE_DAILY_HOURS[currentSelectedProfile];
+        if (!daily || daily >= 24) {
+            alert('目前型態沒有作息差異（極限玩家與後期轉生測試本來就全程在線），兩組會跑出一樣的結果。\n\n請先選輕度／中度／重度。');
+            return;
+        }
+
+        const hours = Number(document.getElementById('hoursInput').value) || 100;
+        /* 兩組必須同一個 seed，否則差異裡混著運氣，什麼都歸不了因。
+           這裡刻意只擲一次，且不理會「自動換新種子」——那個選項是給單次跑用的。 */
+        const seed = nextSeed();
+        const policy = policyFileFor(currentSelectedProfile);
+
+        const btn = document.getElementById('btnRunAB');
+        const box = document.getElementById('abResultBox');
+        if (box) box.style.display = 'none';
+        if (btn) { btn.disabled = true; btn.innerText = '⏳ 對照組 1/2（真實作息）...'; }
+
+        try {
+            const okA = await triggerNativeSimulation(hours, seed, policy, 'sim_out_schedule', 1, false, true);
+            if (!okA) { alert('第一組（真實作息）沒有跑完，對照中止。'); return; }
+
+            if (btn) btn.innerText = '⏳ 對照組 2/2（全程在線）...';
+            const okB = await triggerNativeSimulation(hours, seed, policy, 'sim_out_online', 1, true, true);
+            if (!okB) { alert('第二組（全程在線）沒有跑完，對照中止。'); return; }
+
+            await renderScheduleAB();
+        } catch (e) {
+            console.error('對照組失敗:', e);
+            alert('對照組失敗：' + e.message);
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerText = '🔬 跑對照組（連續兩次）'; }
+        }
+    }
+
+    async function renderScheduleAB() {
+        const [a, b] = await Promise.all([
+            fetch('./sim_out_schedule/run_summary.json?t=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null),
+            fetch('./sim_out_online/run_summary.json?t=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null)
+        ]);
+        if (!a || !b) { alert('讀不到對照結果，請確認兩組都跑完了。'); return; }
+
+        const fmtNum = (v) => (v === null || v === undefined) ? '—'
+            : (Math.abs(v) >= 10000 ? Math.round(v).toLocaleString() : (Number.isInteger(v) ? v : v.toFixed(1)));
+        /* 差異一律以 A（真實作息）為基準。B 比較高就是「舊口徑高估了多少」。 */
+        const diff = (va, vb) => {
+            if (typeof va !== 'number' || typeof vb !== 'number') return '—';
+            const d = vb - va;
+            const pct = va ? (100 * d / va) : null;
+            const sign = d > 0 ? '+' : '';
+            return sign + fmtNum(d) + (pct === null ? '' : `（${sign}${pct.toFixed(0)}%）`);
+        };
+
+        const rows = [
+            ['實際遊玩時數', a.schedule ? a.schedule.onlineHours : null, b.schedule ? b.schedule.onlineHours : null],
+            ['最終等級', a.final.level, b.final.level],
+            ['最高關卡', a.final.stage, b.final.stage],
+            ['物理攻擊', a.final.atk, b.final.atk],
+            ['持有金幣', a.final.gold, b.final.gold],
+            ['累計擊殺', a.lootStats ? a.lootStats.kills : null, b.lootStats ? b.lootStats.kills : null],
+            ['死亡次數', a.lootStats ? a.lootStats.deaths : null, b.lootStats ? b.lootStats.deaths : null],
+            ['背包件數', a.final.inventory, b.final.inventory]
+        ];
+
+        const body = document.getElementById('abResultBody');
+        body.innerHTML = rows.map(([label, va, vb]) => `
+            <tr style="border-top: 1px solid var(--panel-border); text-align: right;">
+                <td style="text-align: left; padding: 7px 8px; color: #cbd5e1;">${label}</td>
+                <td style="padding: 7px 8px; color: var(--accent-emerald); font-weight: 700;">${fmtNum(va)}</td>
+                <td style="padding: 7px 8px; color: var(--accent-amber); font-weight: 700;">${fmtNum(vb)}</td>
+                <td style="padding: 7px 8px; color: #94a3b8;">${diff(va, vb)}</td>
+            </tr>`).join('');
+
+        const sc = a.schedule || {};
+        const settled = (sc.offlineSettlements || []).filter(o => o.settled);
+        const offKills = settled.reduce((s, o) => s + (o.settled.kills || 0), 0);
+        const lvGap = (typeof a.final.level === 'number' && typeof b.final.level === 'number')
+            ? b.final.level - a.final.level : null;
+
+        document.getElementById('abConclusion').innerHTML =
+            `<b>怎麼讀這張表</b>：A 是玩家每天只玩 ${sc.declaredDailyActiveHours} 小時的真實情況；`
+            + `B 是把他當成全天不睡覺（2026-08-01 之前模擬器的做法）。`
+            + `<br>兩組同 seed（${a.seed}）、同樣經過 ${sc.wallHours} 小時，`
+            + `A 實際只玩了 ${sc.onlineHours} 小時，離線 ${sc.offlineHours} 小時、結算 ${settled.length} 次，`
+            + `離線期間由遊戲自己的固定費率補了 ${offKills.toLocaleString()} 隻擊殺。`
+            + (lvGap === null ? '' :
+                `<br><b style="color:var(--accent-rose)">舊口徑把這個玩家高估了 ${lvGap} 級。</b>`
+                + `先前所有輕度與中度的數據都要以 A 這一欄為準。`);
+
+        document.getElementById('abResultBox').style.display = 'block';
+        /* 圖表留在 A（真實作息）那一份，那才是要拿來談成長曲線的。 */
+        await loadNativeCsvSnapshotsToApp('./sim_out_schedule');
     }
 
     /* 這一次要用的 seed。勾了「自動換新種子」就當場擲一個並寫回欄位——
@@ -1718,21 +1908,8 @@
         event.preventDefault();
         const hours = Number(document.getElementById('hoursInput').value) || 100;
         const seed = nextSeed();
-        let policy = 'scripts/sim/policy.default.json';
-        let out = 'sim_out';
-
-        if (currentSelectedProfile === 'LIGHT') {
-            policy = 'scripts/sim/policy.light.json';
-        } else if (currentSelectedProfile === 'MODERATE') {
-            policy = 'scripts/sim/policy.moderate.json';
-        } else if (currentSelectedProfile === 'HEAVY') {
-            policy = 'scripts/sim/policy.heavy.json';
-        } else if (currentSelectedProfile === 'EXTREME') {
-            policy = 'scripts/sim/policy.extreme.json';
-        } else if (currentSelectedProfile === 'LATEGAME') {
-            policy = 'scripts/sim/policy.lategame.json';
-            out = 'sim_out_late';
-        }
+        const policy = policyFileFor(currentSelectedProfile);
+        const out = currentSelectedProfile === 'LATEGAME' ? 'sim_out_late' : 'sim_out';
 
         /* Seed 數量 > 1 走批次：同策略跑多個 seed。單次模擬每一步都依賴前一步、
            無法平行，所以平行化放在跑與跑之間。 */
@@ -1742,10 +1919,14 @@
         await triggerNativeSimulation(hours, seed, policy, out, seedCount);
     }
 
-    async function triggerNativeSimulation(hours = 100, seed = 20260730, policy = 'scripts/sim/policy.default.json', out = 'sim_out', seedCount = 1) {
+    /* ignoreSchedule：忽略策略宣告的每日在線時數，全程在線（舊口徑）。
+       abMode：這一次是對照組的其中一半——跑完不要自己去載圖表，交給對照組收尾統一處理，
+               否則兩次跑完會各載一次，畫面在中途閃過另一組的資料。
+       回傳 true/false 讓對照組知道要不要繼續跑第二組。 */
+    async function triggerNativeSimulation(hours = 100, seed = 20260730, policy = 'scripts/sim/policy.default.json', out = 'sim_out', seedCount = 1, ignoreSchedule = false, abMode = false) {
         if (window.location.protocol === 'file:') {
             alert('💡 提示：您目前是以本地檔案 (file://) 直接開啟網頁。\n\n請雙擊開啟「啟動數值模擬器.bat」即可啟動伺服器並一鍵點擊執行系統自測！');
-            return;
+            return false;
         }
 
         const btn = document.getElementById('btnRunAutoSim');
@@ -1800,7 +1981,7 @@
             const resp = await fetch('/run_sim', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ hours: hours, seed: seed, policy: policy, out: out, seeds: seedCount })
+                body: JSON.stringify({ hours: hours, seed: seed, policy: policy, out: out, seeds: seedCount, ignoreSchedule: ignoreSchedule })
             });
             const accepted = await resp.json();
             if (!resp.ok || !accepted.ok) {
@@ -1811,7 +1992,7 @@
                     statusText.style.color = 'var(--accent-rose)';
                 }
                 if (btn) { btn.disabled = false; btn.innerText = '🚀 開始全系統無作弊原生模擬 (Start Simulation)'; }
-                return;
+                return false;
             }
 
             /* 等到伺服器回報不再執行為止。輪詢本身也是心跳——
@@ -1869,9 +2050,12 @@
                        並把跨 seed 的散佈另外列出來——只看單一 seed 會誤判，
                        實測 5 個 seed 的物攻極差可以到 2.4 倍。 */
                     await loadBatchResults(statusText, hours, seedCount);
+                } else if (abMode) {
+                    /* 對照組的其中一半跑完了。圖表與結論交給對照組收尾統一處理。 */
+                    if (statusText) statusText.innerText = `✅ 對照組（${ignoreSchedule ? '全程在線' : '真實作息'}）完成，${hours} 小時。`;
                 } else {
                     if (statusText) statusText.innerText = `✅ ${hours} 小時系統自測 100% 成功完成！正在繪製最新數據...`;
-                    await loadNativeCsvSnapshotsToApp();
+                    await loadNativeCsvSnapshotsToApp(out === 'sim_out' ? './sim_out' : './' + out);
                 }
             } else if (data.serverDown) {
                 /* 伺服器不見了。不彈 alert——使用者可能已經離開螢幕前，
@@ -1888,10 +2072,14 @@
                 }
                 alert('系統自測失敗: ' + (data.message || data.error));
             }
+            /* 對照組要靠這個回傳值決定要不要跑第二組——第一組沒跑完就繼續跑，
+               只會得到一張把「跑完的」和「跑一半的」並排的表。 */
+            return !!data.ok;
         } catch (e) {
             clearInterval(pollTimer);
             console.error('觸發模擬失敗:', e);
             alert('觸發模擬失敗，請確認是否已啟動「啟動數值模擬器.bat」伺服器: ' + e.message);
+            return false;
         } finally {
             showCancelButton(false);
             if (btn) {
@@ -2455,6 +2643,10 @@
         }
         renderTopRunActionLogs();
     }
+
+/* 開頁時把作息提示補上。預設型態是輕度（2 小時／日），不先算一次的話，
+   使用者看到的第一眼是「模擬總時長 24 小時」而不知道那其實只玩 2 小時。 */
+updateHoursHint();
 </script>
 </body>
 </html>

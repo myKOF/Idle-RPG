@@ -162,7 +162,8 @@ const server = http.createServer((req, res) => {
     let body = '';
     req.on('data', chunk => { body += chunk; });
     req.on('end', () => {
-      let params = { hours: 100, seed: 20260730, policy: 'scripts/sim/policy.default.json', out: 'sim_out' };
+      let params = { hours: 100, seed: 20260730, policy: 'scripts/sim/policy.default.json', out: 'sim_out',
+                     ignoreSchedule: false };
       try {
         if (body) {
           const parsed = JSON.parse(body);
@@ -171,6 +172,8 @@ const server = http.createServer((req, res) => {
           if (parsed.policy) params.policy = parsed.policy;
           if (parsed.out) params.out = parsed.out;
           if (parsed.seeds) params.seeds = Math.max(1, Math.floor(Number(parsed.seeds)));
+          /* 忽略策略宣告的每日在線時數，全程在線。儀表板的「對照組」用它跑舊口徑那一半。 */
+          params.ignoreSchedule = !!parsed.ignoreSchedule;
         }
       } catch (e) {
         /* ⚠️ 不能吞掉。先前是 catch(e){} 什麼都不做，於是請求內容壞掉時
@@ -233,6 +236,8 @@ const server = http.createServer((req, res) => {
         `--policy=${params.policy}`,
         `--out=${params.out}`
       ];
+      /* 旗標型參數要在陣列組好之後再加，批次與單跑共用同一個開關。 */
+      if (params.ignoreSchedule) args.push('--ignore-schedule');
 
       /* stdout 直接丟棄（不是 'pipe'）：沒有人讀管線的話，子行程寫滿緩衝區就會卡死，
          而 run_sim.js 全程都在印進度。stderr 保留，錯誤要看得到。 */

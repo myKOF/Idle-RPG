@@ -37,6 +37,9 @@ function arg(name, dflt) {
 }
 
 const HOURS = Number(arg('hours', 1));
+/* 轉送給每一個 run_sim.js。批次自己不解讀它的意思，但一定要轉送——
+   不轉送的話旗標會被安靜吃掉，使用者以為跑的是全程在線，實際上跑的是班表。 */
+const IGNORE_SCHEDULE = process.argv.includes('--ignore-schedule');
 const OUT_DIR = path.resolve(ROOT, String(arg('out', 'sim_batch')));
 const CONCURRENCY = Math.max(1, Number(arg('concurrency', Math.max(1, os.cpus().length - 1))));
 
@@ -91,12 +94,14 @@ process.on('SIGINT', () => abortAll('SIGINT'));
 
 function runJob(job) {
   return new Promise((resolve) => {
-    const child = spawn(process.execPath, [
+    const childArgs = [
       '--max-semi-space-size=64',
       path.join(ROOT, 'scripts', 'run_sim.js'),
       `--hours=${HOURS}`, `--seed=${job.seed}`,
       `--policy=${job.policy}`, `--out=${job.out}`
-    ], { cwd: ROOT, stdio: ['ignore', 'ignore', 'pipe'] });
+    ];
+    if (IGNORE_SCHEDULE) childArgs.push('--ignore-schedule');
+    const child = spawn(process.execPath, childArgs, { cwd: ROOT, stdio: ['ignore', 'ignore', 'pipe'] });
     liveChildren.add(child);
 
     let stderr = '';
