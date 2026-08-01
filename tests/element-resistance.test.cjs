@@ -31,11 +31,31 @@ function hit(context, dCfg, aCfg = {}) {
 }
 
 test('physical and magic resistance convert percentage points before applying curve', () => {
+  /* 要驗的是「抗性值以百分點原值進曲線」與「各自帶對的曲線參數」，
+     不是「等於某個特定小數」。
+
+     ⚠️ 期望值一律由遊戲自己的通用曲線 resistanceReduction() 搭配遊戲自己的常數算出。
+     寫死小數的話，參數表「3-戰鬥核心／物理抗性減傷」一被調整這裡就紅——
+     而紅的不是 bug，只是數值換了。實際發生過：指數 1.8→1.5、base 10→20 之後，
+     這個測試立刻失敗，但轉換邏輯完全正常。 */
   const context = loadFormulaContext();
-  const physical = context.physicalResistanceReduction(46.6, 71);
-  const magic = context.magicResistanceReduction(38.8, 71);
-  assert.ok(Math.abs(physical - 0.01457876) < 0.00000001);
-  assert.ok(Math.abs(magic - 0.01052701) < 0.00000001);
+  const level = 71;
+
+  const expectedPhys = context.resistanceReduction(46.6, level,
+    context.PHYSICAL_RESISTANCE_EXPONENT, context.PHYSICAL_RESISTANCE_BASE, context.PHYSICAL_RESISTANCE_LEVEL_COEF);
+  const expectedMagic = context.resistanceReduction(38.8, level,
+    context.MAGIC_RESISTANCE_EXPONENT, context.MAGIC_RESISTANCE_BASE, context.MAGIC_RESISTANCE_LEVEL_COEF);
+
+  assert.equal(context.physicalResistanceReduction(46.6, level), expectedPhys);
+  assert.equal(context.magicResistanceReduction(38.8, level), expectedMagic);
+
+  /* 單位：46.6 代表 46.6 個百分點，不是 0.466。兩者不能給出同一個結果，
+     否則就是某處多除或少除了 100。 */
+  assert.notEqual(context.physicalResistanceReduction(46.6, level),
+                  context.physicalResistanceReduction(0.466, level));
+  assert.ok(context.physicalResistanceReduction(46.6, level) >
+            context.physicalResistanceReduction(0.466, level),
+    '抗性值愈大減傷應愈多——若相反代表輸入被當成小數比例了');
 });
 
 test('元素抗性會減免對應的元素附傷', () => {

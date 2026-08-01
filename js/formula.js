@@ -54,7 +54,8 @@ function reincarnationExpBaseAdd(count) {
   return REINCARNATION_EXP_BASE_ADD[n] || 0;
 }
 
-// 升到下一級所需經驗 =（30 × 等級^2 + 40）× 轉生經驗倍率（各轉倍數由參數表 a~j 制定、累積連乘）＋ 升級經驗基礎增加值（依轉生次數）
+// 升到下一級所需經驗 =（係數 × 等級^次方 + 常數）× 轉生經驗倍率（各轉倍數累積連乘）＋ 升級經驗基礎增加值（依轉生次數）
+// 係數／次方／常數取自參數表「1-成長經驗／升級所需經驗」，由 tools/apply_params.cjs 寫入。
 function xpForLevel(l) { return Math.floor((20 * Math.pow(l, 3) + 40) * reincarnationExpMultiplier() + reincarnationExpBaseAdd()); }
 
 /* 等級基礎四維主屬性（不含裝備）：力/敏/智/耐 相同
@@ -278,13 +279,13 @@ function computeStats(equipmentOverride) {
   // 四維主屬性：原始總值完成後，再套用轉生最終倍率。
   st.str = Math.round(rawStr * reincMult); st.agi = Math.round(rawAgi * reincMult);
   st.int = Math.round(rawInt * reincMult); st.vit = Math.round(rawVit * reincMult);
-  // 基礎：生命 = (120 + (等級-1)×22 + 耐力×10 + 定值) × (1 + 生命%) × (1 + 天賦生命%［生命洪流，獨立乘區］)
+  // 基礎：生命 = (基底 + (等級-1)×每級 + 耐力×vitHp + 定值) × (1 + 生命%) × (1 + 天賦生命%［生命洪流，獨立乘區］)
   st.base = {};
   st.base.hp = 500 + (lv - 1) * 50 + rawVit * PRIMARY_STAT_EFFECTS.vitHp;
   var rawHp = (st.base.hp + A.hpFlat) * (1 + A.hpPct / 100);
   st.hp = Math.round(rawHp * reincMult * (1 + (talent.hpPct || 0) / 100));
   st.hpRegen = A.hpRegen;                                    // 額外生命恢復/秒（另有 BASE_HP_REGEN_PCT%/秒 基礎回復）
-  // 法力 =（40 + 原始智力×4 + 定值）×轉生倍率；法力恢復另依原有公式計算
+  // 法力 =（基底 + 原始智力×intMp + 定值）×轉生倍率；法力恢復另依原有公式計算
   st.base.mp = 100 + rawInt * PRIMARY_STAT_EFFECTS.intMp;
   var rawMp = st.base.mp + A.mpFlat;
   st.mp = Math.round(rawMp * reincMult);
@@ -297,10 +298,10 @@ function computeStats(equipmentOverride) {
     def: DERIVED_COEF.defFlatMult * A.defFlat * Math.pow(DERIVED_COEF.defReincBase, reincN),
     mdef: DERIVED_COEF.mdefFlatMult * A.mdefFlat * Math.pow(DERIVED_COEF.mdefReincBase, reincN)
   };
-  // 進攻：物攻 = (8 + 物攻定值 + 1.2×物攻定值×2.8^轉生次數 + 力量×1) × (1 + 物攻%) × (1 + 天賦物攻%［武力賁張，獨立乘區］)
+  // 進攻：物攻 = (atkBase + 物攻定值 + 轉生定值強化 + 力量×strAtk) × (1 + 物攻%) × (1 + 天賦物攻%［武力賁張，獨立乘區］)
   st.base.atk = DERIVED_COEF.atkBase + st.str * PRIMARY_STAT_EFFECTS.strAtk;
   st.atk = Math.round((st.base.atk + A.atkFlat + st.reincFlatBonus.atk) * (1 + A.atkPct / 100) * godAttackMultiplier * (1 + (talent.patkPct || 0) / 100));
-  // 魔攻 = (6 + 魔攻定值 + 1.2×魔攻定值×2.8^轉生次數 + 智力×1) × (1 + 魔攻%) × (1 + 天賦魔攻%［奧能賁張，獨立乘區］)
+  // 魔攻 = (matkBase + 魔攻定值 + 轉生定值強化 + 智力×intMatk) × (1 + 魔攻%) × (1 + 天賦魔攻%［奧能賁張，獨立乘區］)
   st.base.matk = DERIVED_COEF.matkBase + st.int * PRIMARY_STAT_EFFECTS.intMatk;
   st.matk = Math.round((st.base.matk + A.matkFlat + st.reincFlatBonus.matk) * (1 + A.matkPct / 100) * godAttackMultiplier * (1 + (talent.matkPct || 0) / 100));
   st.critRate = capValue(5 + st.agi * PRIMARY_STAT_EFFECTS.agiCritRate + A.critRate, STAT_CAPS.critRate);   // 暴擊率：基礎 5% + 敏捷係數
@@ -333,14 +334,14 @@ function computeStats(equipmentOverride) {
   st.bossDmgRed = A.bossDmgRed * (1 + (talent.bossDmgRed || 0) / 100);
   // 7/10 轉「總傷害額外增加」＝攻擊端最終獨立乘區（resolveHit 於敵種/屬性加成後套用）。
   st.totalDmgPct = talent.totalDmgPct || 0;
-  // 防禦：物防 = (3 + 物防定值 + 0.75×物防定值×2.7^轉生次數 + 力量×0.35 + 耐力×0.65) × (1 + 物防%) × (1 + 天賦物防%［獨立乘區］)
+  // 防禦：物防 = (defBase + 物防定值 + 轉生定值強化 + 力量×strDef + 耐力×vitDef) × (1 + 物防%) × (1 + 天賦物防%［獨立乘區］)
   st.base.def = DERIVED_COEF.defBase + st.str * PRIMARY_STAT_EFFECTS.strDef + st.vit * PRIMARY_STAT_EFFECTS.vitDef;
   st.def = Math.round((st.base.def + A.defFlat + st.reincFlatBonus.def) * (1 + A.defPct / 100) * (1 + (talent.defPct || 0) / 100));
-  // 魔防 = (2 + 魔防定值 + 0.75×魔防定值×2.7^轉生次數 + 智力×0.35 + 耐力×0.65) × (1 + 魔防%) × (1 + 天賦魔防%［獨立乘區］)
+  // 魔防 = (mdefBase + 魔防定值 + 轉生定值強化 + 智力×intMdef + 耐力×vitMdef) × (1 + 魔防%) × (1 + 天賦魔防%［獨立乘區］)
   st.base.mdef = DERIVED_COEF.mdefBase + st.int * PRIMARY_STAT_EFFECTS.intMdef + st.vit * PRIMARY_STAT_EFFECTS.vitMdef;
   st.mdef = Math.round((st.base.mdef + A.mdefFlat + st.reincFlatBonus.mdef) * (1 + A.mdefPct / 100) * (1 + (talent.mdefPct || 0) / 100));
   st.blockRate = capValue(A.blockRate, STAT_CAPS.blockRate);                      // 格擋率上限（上限 0＝無上限）
-  st.blockDmgRed = capValue(A.blockDmgRed, STAT_CAPS.blockDmgRed);                  // 額外格擋減傷上限（總減傷 = 30% + 此值；上限 0＝不夾上限）
+  st.blockDmgRed = capValue(A.blockDmgRed, STAT_CAPS.blockDmgRed);                  // 額外格擋減傷上限（總減傷 = 格擋基礎減傷 + 此值；上限 0＝不夾上限）
   st.evasion = capValue(st.agi * PRIMARY_STAT_EFFECTS.agiEvasion + A.evasion, STAT_CAPS.evasion);          // 閃避：敏捷係數（上限 0＝無上限）
   // 韌性（上限 STAT_CAPS.tenacity＝80%）：同時作用於「被控場機率」（resistCtrl）、
   // 「被控場持續時間」（ccFactor）與「被爆擊機率」（resolveHit 暴擊段）三處。
@@ -381,7 +382,7 @@ function computeStats(equipmentOverride) {
   st.enrageThreshold = capValue(A.enrageThreshold, STAT_CAPS.enrageThreshold);          // 狂暴閾值上限（上限 0＝無上限）
   st.affixCap = capValue(A.affixCap, STAT_CAPS.affixCap);                             // 詞條上限率（上限 0＝無上限）
   st.gemEff = gemEffTotal;
-  // 被動上限：連擊 45%、暈眩 30%（上限 0＝無上限）
+  // 被動上限取自 STAT_CAPS（上限 0＝無上限）
   if (passives.doubleHit) passives.doubleHit = capValue(passives.doubleHit, STAT_CAPS.doubleHit);
   if (passives.stun) passives.stun = capValue(passives.stun, STAT_CAPS.stun);
   st.passives = passives;
@@ -412,7 +413,13 @@ function computeStats(equipmentOverride) {
    §3 戰鬥核心
    ============================================================ */
 
-// 防禦減傷率 = 防禦 / (防禦 + 60 + 8 × 攻擊者等級)
+/* 防禦減傷率 = 防禦 / (防禦 + 常數 + 每級係數 × 攻擊者等級)
+
+   遞減曲線：防禦愈高，每一點防禦帶來的減傷愈少，且永遠到不了 100%。
+   分母隨攻擊者等級線性成長，所以同一份防禦面對愈高等的敵人愈不管用。
+
+   兩個係數取自參數表「3-戰鬥核心／防禦減傷率」，由 tools/apply_params.cjs 寫入，
+   不在這裡複述數值——複述的那一份不會跟著參數表變，只會變成謊話。 */
 function defReduction(def, attackerLevel) {
   if (def <= 0) return 0;
   return def / (def + 10000 + 100 * attackerLevel);
