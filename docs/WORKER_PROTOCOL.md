@@ -1,6 +1,6 @@
-# Worker 協議 v14
+# Worker 協議 v15
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 14`　最後更新：2026-08-01
+> 協議版本：`WORKER_PROTOCOL_VERSION = 15`　最後更新：2026-08-02
 > **單一資料來源是 `js/worker/protocol.js`。** 本文件是說明；兩者衝突時以程式碼為準。
 >
 > 遷移（P0～P5）已於 2026-07-28 完成，Worker 是模擬與存檔的唯一權威，舊單執行緒路徑已移除。
@@ -303,6 +303,7 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 
 | 版本 | 日期 | 變更 |
 | :--- | :--- | :--- |
+| 15 | 2026-08-02 | **詞條規則外送**：`equip` 面板新增 `affixRules`＝`{詞條鍵: {slots, minR}}`，取自 `AFFIX_POOL`，是靜態遊戲規則。<br>加它的理由：任何「想洗出某條詞條」的一方原本都得自己抄一份可用部位清單，抄錯不會有徵兆。實測踩過——AI 策略手寫的清單裡放了 `weapon`（命中率根本不能出現在武器上）與 `bracers`（遊戲的鍵是 `wrist`），375 次洗煉一條都沒洗出來，而且沒有任何錯誤訊息。規則的唯一來源是 `AFFIX_POOL`，讀它就不會有第二份會過期的副本。<br>指令表未變動（仍 86 條） |
 | 14 | 2026-08-01 | **真人軌跡重播**：`TICK_VIEW_KEYS` 新增 `simT`（模擬時鐘，`js/worker/sim.worker.js` 的 `SIM_T`）。與既有 `gt` 的唯一差別是戰鬥暫停時 `gt` 停住、`simT` 照走。<br>加這個欄位的理由是既有的 `gt` 當不了對齊軸：暫停期間 `simStep` 仍在跑 `factoryTick`/`newForgeTick`/`forgeTick`，狀態有在動而 `gt` 沒記錄到，於是重播與交叉驗證在暫停那一段整批錯開（實測：暫停在 `gt=51.8`，`verify_trace` 到 `gt=55.2` 才 FAIL，分岔點看起來像別的原因）。<br>同時修正 `requestPersist`：決定論測試模式（`?seed=N`）下不再執行**非自願**的落地（`auto`/`folder`/`shutdown`），`manual`/`manualFolder`/`restart` 照常。先前 `onVisibility` 的 `SHUTDOWN` 沒有被擋，測試模式切一次分頁就會用種子化亂數跑出來的狀態蓋掉玩家的 `auto_current`——與 `installTestSeed` 檔頭宣稱的「不落地存檔」不符。<br>指令表未變動（仍 86 條） |
 | 13 | 2026-07-30 | **技能融合系統改造**：`TICK_VIEW_KEYS` 新增 `magicScroll`（魔法卷軸，融合材料）；`skills` 面板快照新增 `mastery`（技能熟練度 `{level, xp, xpMax, maxLevel}`）、`scrolls`（卷軸持有量）、`fusionCosts`（每素材金幣/卷軸費用），`points/budget` 改為熟練度制即時計算（`availableSkillPoints()`/`totalSkillPoints()`，不再讀已移除的 `skillPointBudget` 欄位）。融合記錄改 `{components, seed}` 種子重算制——記錄仍原樣隨面板傳主執行緒，兩端共用 `buildFusionRuntimeDef` 重建，故無新訊息型別；指令表未變動（仍 86 條） |
 | 10 | 2026-07-29 | 事件新增 `vfx`：技能／增益特效。`{ fxKind, glyph, color, targets, cells, dur, count }`，隨 tick 合批，與 `float` 走同一條路。<br>新版戰鬥規格要求「所有技能或 buff 都要有簡易特效」。特效必須由**模擬層決定何時發生**——只有那一側知道技能真的施放了、打到誰、範圍蓋住哪幾格；但特效**怎麼畫**完全屬於主執行緒，所以事件只描述語意（原型／顏色／目標／格子），一個 DOM 字眼都不帶。<br>`targets` 沿用 `float` 的圖層 id 定址（`mv-float-N`／`tb-float`），理由與 `float` 相同：structured clone 過來的實體複本永遠比不出識別。<br>`cells` 是棋盤格座標，給領域與天降類特效定位；非區域類為 `null`。<br>指令表未變動 |

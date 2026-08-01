@@ -599,7 +599,25 @@ function buildPanel(name, params) {
         equipActive: G.equipActive, equipView: G.equipView,
         settings: G.settings,
         stats: (typeof getStats === 'function') ? getStats() : null,
-        viewStats: (typeof getViewStats === 'function') ? getViewStats() : null
+        viewStats: (typeof getViewStats === 'function') ? getViewStats() : null,
+        /* 每種詞條能出現在哪些部位、要什麼品質才會出現。取自 AFFIX_POOL，
+           是靜態的遊戲規則，不隨狀態改變。
+
+           為什麼要送出來：不送的話，任何「想洗出某條詞條」的一方都得自己抄一份
+           部位清單——抄錯就會把精華花在洗不出來的部位上，而且完全沒有徵兆。
+           實測踩過：AI 策略手寫的清單裡放了 weapon（命中率根本不能出現在武器上）
+           與 bracers（遊戲的鍵是 wrist），375 次洗煉一條都沒洗出來。
+           規則的唯一來源是 AFFIX_POOL，讀它就不會有第二份會過期的副本。 */
+        affixRules: (function () {
+          if (typeof AFFIX_POOL === 'undefined') return null;
+          var out = {};
+          for (var k in AFFIX_POOL) {
+            var d = AFFIX_POOL[k];
+            if (!d) continue;
+            out[k] = { slots: d.slots || null, minR: (d.minR === undefined) ? null : d.minR };
+          }
+          return out;
+        })()
       };
     case 'inv':
       return buildInventoryPanel(params);

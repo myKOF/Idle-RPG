@@ -330,6 +330,15 @@ function hasProgressed(base, now) {
    ⚠️ observeCombat 必須可重入：同一個時刻被 observe 與 decide 各呼叫一次是正常的，
    兩次都不能重複計數。交戰結束的分支靠 T.engaged 置 null 自我防護。 */
 
+/* 這件裝備身上有沒有某條詞條。換裝與缺口洗煉都要問這件事。 */
+function hasAffixKey(item, key) {
+  if (!item || !item.affixes) return false;
+  for (var i = 0; i < item.affixes.length; i++) {
+    if (item.affixes[i] && item.affixes[i].key === key) return true;
+  }
+  return false;
+}
+
 /* 高頻觀測。只做戰鬥取樣與交戰結束的記帳，不碰背包。 */
 function observeCombat(state, policy, memo) {
   if (!policy.track) return null;
@@ -343,6 +352,15 @@ function observeCombat(state, policy, memo) {
   var mode = 'normal';
   if (m && m.isBoss) mode = 'boss';
   else if (m && m.elite) mode = 'elite';
+
+  /* 當前對手的閃避。記在這裡而不是決策點現讀，理由有兩個：
+       1. 決策點不一定正在交戰（怪物剛死、正在換關），現讀會拿到 null
+       2. 這是高頻觀測，取到的是「最近真的在打的那隻」，不是十秒前的殘影
+     有效命中率（自身命中 − 對手閃避）要拿它算，見 evalTargets。 */
+  if (m && typeof m.dodge === 'number') {
+    T.enemyDodge = m.dodge;
+    T.enemyLevel = m.level || 0;
+  }
 
   /* 交戰中：記下這一關打到的最低血量。取樣頻率由 observeEverySec 決定，
      與玩家強度無關——這正是上面說的那條耦合被解開的地方。 */
@@ -375,7 +393,16 @@ function observeCombat(state, policy, memo) {
 
 /* 每個決策點更新一次，結果掛在 state.ctx 供規則以 ctx.* 路徑取用。 */
 function updateContext(state, policy, memo) {
-  if (!policy.track) return;
+  if (!policy.track) {
+    /* 沒有戰鬥追蹤的策略仍然可以宣告目標——deficit 要算，否則相關規則會靜靜地
+       永遠不觸發。
+
+       ⚠️ 只補 deficit，不覆寫整個 ctx：呼叫端（測試、或日後別的驅動）可能自己
+       塞了 ctx 進來，整包換掉會把它們默默清空。 */
+    if (!state.ctx) state.ctx = {};
+    state.ctx.deficit = evalTargets(state, policy, memo);
+    return;
+  }
   var t = policy.track;
   /* 先補一次觀測：行動點本身也是一個觀測時刻，而且 observeEverySec 若沒有設定，
      這裡就是唯一的觀測來源（行為與拆分前相同）。 */
@@ -408,6 +435,10 @@ function updateContext(state, policy, memo) {
   state.ctx = {
     mode: mode,
     stage: stage,
+    /* 最近一次觀測到的對手閃避／等級。決策點不一定正在交戰，所以取觀測記下的值，
+       見 observeCombat。目標度量（例如有效命中率）要拿它算。 */
+    enemyDodge: (typeof T.enemyDodge === 'number') ? T.enemyDodge : null,
+    enemyLevel: T.enemyLevel || 0,
     blockStage: blockStage,
     fails: blockRec ? blockRec.fails : 0,
     /* 同一個卡點試了 5 次還過不去＝生存率不足，轉為針對性強化
@@ -416,6 +447,63 @@ function updateContext(state, policy, memo) {
     retryWaiting: waiting,
     minHpPct: blockRec ? Math.round(blockRec.minHpPct || 100) : 100
   };
+
+  /* 目標缺口。要在 state.ctx 建好之後才算——度量路徑可以指向 ctx.*
+     （例如有效命中率要用 ctx.enemyDodge）。 */
+  state.ctx.deficit = evalTargets(state, policy, memo);
+}
+
+/* ============ 目標與缺口 ============
+
+   策略原本寫的是「該做什麼」——一份靜態的詞條保留清單。問題是正確答案會隨關卡改變：
+   關卡 100 不需要命中率，關卡 146 命中率是唯一解。任何固定清單必然在某個階段是錯的，
+   而錯的時候不會有人發現，只會看到「AI 卡住了」。
+
+   實測過的例子：怪物閃避在關卡 130 是 86.8%、關卡 150 是 103%，而命中公式是
+   clamp(自身命中 − 對手閃避, 5%, 100%)。角色面板命中 100%、身上 65 條詞條一條命中率
+   都沒有，於是有效命中率觸底 5%——13,718 次出手只中 551 次。策略完全不知道這件事，
+   它以為自己物攻 91K 很強。
+
+   改成宣告「要達成什麼」：每個 target 是一個可量測的目標值，直譯器每個決策點算出
+   當前值與缺口，掛在 ctx.deficit 供規則使用。補到目標缺口自然歸零，優先序自己讓位，
+   不需要有人去改清單。
+
+   目標的度量方式刻意只做少數幾種 kind，不做運算式語言——策略是資料不是程式，
+   能算的東西愈少愈好稽核。要新的度量就加一種 kind，並在這裡寫清楚它算什麼。 */
+function evalTargets(state, policy, memo) {
+  var out = {};
+  var list = policy.targets || [];
+  for (var i = 0; i < list.length; i++) {
+    var t = list[i];
+    if (!t || !t.id) continue;
+    var value = null;
+
+    if (t.kind === 'selfMinusEnemy') {
+      /* 自身屬性減去對手的對應屬性，並套用遊戲的夾值（例如命中率下限 5%、上限 100%）。
+         夾值必須套：不套的話「命中 100 − 閃避 103 = −3」會被當成缺口 98，
+         但實際上再怎麼補到 100 之前都是 5%，缺口的大小會誤導優先序。 */
+      /* ⚠️ 一定要先擋 null/undefined 再轉數字：Number(null) 是 0 不是 NaN。
+         漏了這一步，還沒觀測到怪物時會被算成「閃避 0 ⇒ 命中 100% ⇒ 已達標」——
+         一個假的達標，缺口規則整場都不會啟動，而且完全沒有徵兆。 */
+      var selfRaw = pathVal(state, t.self);
+      var enemyRaw = pathVal(state, t.enemy);
+      var self = (selfRaw === null || selfRaw === undefined) ? NaN : Number(selfRaw);
+      var enemy = (enemyRaw === null || enemyRaw === undefined) ? NaN : Number(enemyRaw);
+      if (isFinite(self) && isFinite(enemy)) {
+        value = self - enemy;
+        if (typeof t.clampMin === 'number') value = Math.max(t.clampMin, value);
+        if (typeof t.clampMax === 'number') value = Math.min(t.clampMax, value);
+      }
+    } else if (t.kind === 'value') {
+      var v = Number(pathVal(state, t.path));
+      if (isFinite(v)) value = v;
+    }
+
+    if (value === null) { out[t.id] = { value: null, target: t.atLeast, short: 0, met: true, unknown: true }; continue; }
+    var short = Math.max(0, (Number(t.atLeast) || 0) - value);
+    out[t.id] = { value: value, target: Number(t.atLeast) || 0, short: short, met: short <= 0, unknown: false };
+  }
+  return out;
 }
 
 /* 高頻觀測的進入點。不回傳指令——觀測不是操作，玩家看戰鬥不算按按鈕。
@@ -496,6 +584,16 @@ function decide(state, policy, memo) {
         }
         if (!best) continue;
 
+        /* ⚠️ 這裡刻意**不**因為「身上這件帶著補缺口的詞條」就擋下換裝。
+
+           試過，結果更糟：實測 100 小時從關卡 190 掉到 117。原因是目標訂了達不到的值
+           （有效命中 95%，而高關卡怪物閃避已超過 100%，公式上永遠達不到），
+           於是「缺口未補滿」永遠成立，保護變成永久凍結，裝備從此停止升級。
+
+           教訓是通則：**任何「缺口未補滿時就改變行為」的規則，都要能在目標達不到時
+           自己收手**，否則不可達的目標會把整個策略鎖死在緊急模式。
+           換裝把詞條換掉的損失，由缺口洗煉重新洗回來吸收——那是有界的成本，
+           凍結換裝不是。 */
         if (rankBetter(bestRank, currRank)) {
           used[best.id] = true;
           out.push({ name: r.cmd, args: { itemId: best.id, slotKey: slotKey }, ruleId: r.id });
@@ -946,6 +1044,16 @@ function decide(state, policy, memo) {
         if (groupCache[slotKey]) return groupCache[slotKey];
         var groups = rCfg.targetGroups;
         var set = {};
+        /* 所有宣告過的目標詞條一律視為保留，不管它在不在哪份清單裡。
+
+           ⚠️ 不這樣做，兩條規則會互相打架：rerollForDeficit 好不容易在武器上洗出
+           命中率，rerollOffTarget 下一輪就把它洗掉——因為 affixWeapon 這份清單裡
+           沒有 hit。實測就是這樣：身上 65 條詞條，命中率 0 條。
+           保留集從目標宣告自動長出來，就不會有人忘記同步。 */
+        var tg = policy.targets || [];
+        for (var tgi = 0; tgi < tg.length; tgi++) {
+          if (tg[tgi] && tg[tgi].affixKey) set[tg[tgi].affixKey] = true;
+        }
         if (!groups) {
           var single = (policy.lists && policy.lists[rCfg.targetList]) || [];
           for (var si2 = 0; si2 < single.length; si2++) set[single[si2]] = true;
@@ -976,6 +1084,141 @@ function decide(state, policy, memo) {
           if (!af || !af.key || wanted[af.key]) continue;
           if (af.ancient && rCfg.keepAncient !== false) continue;   // 太古詞條預設不動
           out.push({ name: r.cmd, args: { itemId: rItem.id, affixKey: af.key }, ruleId: r.id });
+        }
+      }
+    } else if (r.rerollForDeficit) {
+      /* ============ 缺口驅動的洗煉 ============
+
+         rerollOffTarget 是「把不要的洗掉」，它只能被動等遊戲擲出保留清單裡的任一項。
+         保留清單有 19 項時，隨便中一項就停手——所以它**永遠不會刻意去取得某一條詞條**。
+         這就是命中率一條都沒有的原因：hit 在清單裡（會被保留），但機率只有 1/19，
+         而且武器清單裡根本沒有它，洗到還會被洗掉。
+
+         這條規則反過來：目標沒達成時，指定一個部位持續洗，直到那條詞條出現為止。
+         等於真人說的「我拿一兩個詞條格去換命中率」——player_strategy.md 寫的
+         「超過40級裝備開始可至少搭配1~2條命中率詞條」就是這件事。
+
+         缺口補滿之後規則自動停手，不需要有人回來改清單。 */
+      var dCfg = r.rerollForDeficit;
+      var dEquip = pathVal(state, dCfg.equipment) || {};
+      if (!memo.deficitTries) memo.deficitTries = {};
+      var targets = policy.targets || [];
+
+      for (var ti = 0; ti < targets.length; ti++) {
+        var tg2 = targets[ti];
+        if (!tg2 || !tg2.affixKey) continue;
+        var d = state.ctx && state.ctx.deficit && state.ctx.deficit[tg2.id];
+        if (!d || d.unknown || d.met) continue;               // 沒缺口就不動
+
+        /* ---- 可洗的部位由遊戲決定，不由策略宣告 ----
+
+           每種詞條只會出現在特定部位（AFFIX_POOL 的 slots），這是遊戲規則。
+           策略手寫一份就是抄第二份，抄錯不會有徵兆——實測寫了 weapon（命中率根本
+           不能出現在武器上）與 bracers（遊戲的鍵是 wrist），375 次洗煉一條都沒出來。
+
+           改成從 panels.equip.affixRules 讀。策略只宣告「我要哪一條詞條」，
+           「它能長在哪裡」是遊戲的事。日後加新目標也不必再查一次部位表。 */
+        var rules = pathVal(state, dCfg.affixRules || 'panels.equip.affixRules') || {};
+        var allowRule = rules[tg2.affixKey];
+        var allowSlots = allowRule && allowRule.slots ? allowRule.slots : null;
+
+        /* 候選部位＝身上所有部位，交集遊戲允許的那些。
+           策略仍可用 slots 進一步縮小範圍，但不能擴大——擴大只會洗到洗不出來的地方。
+
+           ---- 犧牲哪一格是策略決定，不是隨便挑 ----
+
+           同一條詞條通常有好幾個部位可以洗出來（命中率有 7 個），而那些部位的詞條格
+           價值差很多。player_strategy.md：「項鏈戒指是裝備中的關鍵，其中最關鍵的為
+           寶石鑲嵌率，其次為掉寶率與經驗加成」——把首飾的一格拿去換命中率，
+           等於用最貴的格子付帳。
+
+           avoidSlots 是硬排除，preferSlots 是排序偏好（沒列到的排在後面）。
+           兩者都用遊戲的部位鍵（AFFIX_POOL 的 slots 用的那一套），不是裝備欄位鍵，
+           免得又出現 bracers/wrist 這種對不上的抄寫錯誤。 */
+        var avoid = tg2.avoidSlots || [];
+        var prefer = tg2.preferSlots || [];
+        var slots = [];
+        for (var sk3 in dEquip) {
+          var itC = dEquip[sk3];
+          if (!itC || !itC.slot) continue;
+          if (allowSlots && allowSlots.indexOf(itC.slot) < 0) continue;
+          if (avoid.indexOf(itC.slot) >= 0) continue;
+          if (tg2.slots && tg2.slots.indexOf(sk3) < 0 && tg2.slots.indexOf(itC.slot) < 0) continue;
+          if (allowRule && allowRule.minR !== null && (itC.rarity || 0) < allowRule.minR) continue;
+          slots.push(sk3);
+        }
+        /* 依偏好排序。沒列到的一律排在列到的後面；同組之間用部位鍵排序，
+           確保決定論——object 的鍵順序不該影響結果。 */
+        slots.sort(function (x, y) {
+          var px = prefer.indexOf(dEquip[x].slot); if (px < 0) px = prefer.length;
+          var py = prefer.indexOf(dEquip[y].slot); if (py < 0) py = prefer.length;
+          if (px !== py) return px - py;
+          return x < y ? -1 : (x > y ? 1 : 0);
+        });
+        var want = (typeof tg2.maxAffixes === 'number') ? tg2.maxAffixes : 1;
+        /* 先數身上已經有幾條。夠了就不再洗——這是「拿一兩個詞條格去換」的上限，
+           不是「全身都洗成這個」。 */
+        var have = 0;
+        for (var s1 = 0; s1 < slots.length; s1++) {
+          var itA = dEquip[slots[s1]];
+          if (!itA || !itA.affixes) continue;
+          for (var a1 = 0; a1 < itA.affixes.length; a1++) {
+            if (itA.affixes[a1] && itA.affixes[a1].key === tg2.affixKey) have++;
+          }
+        }
+        if (have >= want) continue;
+
+        /* 挑一個還沒有這條詞條的部位來洗。同一個部位試太多次仍洗不出來，就跳過它——
+           有些詞條在某些部位的詞條池裡根本不存在，硬洗只會無限燒精華，而且沒有徵兆。
+           放棄次數記在 memo 並由 report 回報，不靜靜放棄。 */
+        var maxTries = (typeof tg2.maxTriesPerSlot === 'number') ? tg2.maxTriesPerSlot : 40;
+        for (var s2 = 0; s2 < slots.length; s2++) {
+          var slotKey2 = slots[s2];
+          var itB = dEquip[slotKey2];
+          if (!itB || !itB.id || !itB.affixes || !itB.affixes.length) continue;
+          if ((itB.rarity || 0) < (dCfg.minRarity || 0)) continue;
+
+          var hasIt = false;
+          for (var a2 = 0; a2 < itB.affixes.length; a2++) {
+            if (itB.affixes[a2] && itB.affixes[a2].key === tg2.affixKey) { hasIt = true; break; }
+          }
+          if (hasIt) continue;
+
+          /* 試次以「目標 + 部位 + 這件裝備」為鍵。換了裝備就重新算——
+             新裝備的詞條池可能不一樣，拿舊裝備的失敗次數判它死刑是錯的。
+
+             ⚠️ 只有「真的洗到了」才算一次。策略層看不到指令結果，但看得到詞條有沒有變：
+             送出去的洗煉若因為精華不足被遊戲擋下，這件裝備的詞條組合不會變。
+             不這樣分辨的話，資源不足的空轉會把試次燒光，然後永久放棄這個部位——
+             實測 832 次嘗試有 579 次（70%）是資源不足，於是所有部位都在沒洗到半次的
+             情況下被判死刑，整條規則等於沒作用。 */
+          var sig = [];
+          for (var a4 = 0; a4 < itB.affixes.length; a4++) {
+            sig.push((itB.affixes[a4] && itB.affixes[a4].key) || '?');
+          }
+          sig = sig.join(',');
+
+          var tryKey = tg2.id + '|' + slotKey2 + '|' + itB.id;
+          var rec2 = memo.deficitTries[tryKey];
+          if (!rec2) rec2 = memo.deficitTries[tryKey] = { n: 0, sig: sig };
+          else if (rec2.sig !== sig) { rec2.n++; rec2.sig = sig; }   // 詞條變了＝上一次真的洗了
+          if (rec2.n >= maxTries) continue;
+
+          /* 洗掉這件上面第一條「不是目標、也不是太古」的詞條。
+             選第一條而不是挑最沒用的：策略層沒有評價詞條好壞的能力，
+             那是遊戲的事；硬要挑就會變成在 harness 裡寫遊戲數值判斷。 */
+          var victim = null;
+          for (var a3 = 0; a3 < itB.affixes.length; a3++) {
+            var af3 = itB.affixes[a3];
+            if (!af3 || !af3.key) continue;
+            if (af3.key === tg2.affixKey) continue;
+            if (af3.ancient && dCfg.keepAncient !== false) continue;
+            victim = af3.key; break;
+          }
+          if (!victim) continue;
+
+          out.push({ name: r.cmd, args: { itemId: itB.id, affixKey: victim }, ruleId: r.id });
+          break;                                              // 一次只專注一個部位
         }
       }
     } else if (r.upgradePriority) {
