@@ -34,8 +34,20 @@ test('天賦附傷 = 當次傷害 × 附傷%（1% 火、當次 10000 → 額外 
 
 test('附傷基底跟著當次傷害縮放：防禦減半 → 附傷同步減半', () => {
   const c = loadFormulaContext();
-  // defReduction(68, Lv1) = 68 / (68 + 60 + 8) = 50% → 當次 5000、火附傷 50
-  assert.equal(hit(c, { elemDmgPct: { fire: 1 } }, { mdef: 68 }).dmg, 5050);
+  /* 「剛好減半」需要多少防禦，由遊戲自己的曲線反推，不寫死。
+
+     ⚠️ 原本寫死 mdef: 68（舊曲線下 68/(68+60+8) 剛好 50%）。防禦減傷係數
+     一被調整，這個 68 就不再是 50%，測試紅掉——但紅的不是 bug，是數值換了。
+     實際發生過：2026-08-02 的參數套用把常數從 60 改成 10000。
+
+     defReduction(def) = def / (def + K)，要 50% 就令 def = K；
+     K 由遊戲自己給：取 defReduction(1) 反推。 */
+  const r1 = c.defReduction(1, 1);
+  const halfDef = (1 - r1) / r1;
+  assert.ok(Math.abs(c.defReduction(halfDef, 1) - 0.5) < 1e-9, '前提沒建立：這個防禦值應剛好減傷 50%');
+
+  /* 當次傷害從 10000 減半成 5000，1% 火附傷也要跟著從 100 減半成 50。 */
+  assert.equal(hit(c, { elemDmgPct: { fire: 1 } }, { mdef: halfDef }).dmg, 5050);
 });
 
 test('暴擊放大附傷基底：暴擊 ×200% → 附傷同步 ×2', () => {

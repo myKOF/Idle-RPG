@@ -565,14 +565,16 @@ arrayContent('formula', 'ESSENCE_SALVAGE_CHANCE_BY_RARITY',
 // 本表不再定義「表-戰力權重」錨點；主參數表殘留該分類列一律視為死列忽略。
 
 /* ---- formula.js 內嵌係數（唯一片段） ---- */
-// 升級經驗 (30 * l^2 + 40)
-inline('formula', 'Math.floor((', P('1-成長經驗', '升級所需經驗', 0), 'xp-a=30');
+// 升級經驗：係數 × 等級^次方 + 常數
+inline('formula', 'Math.floor((', P('1-成長經驗', '升級所需經驗', 0), 'xp-a（係數）');
 inline('formula', ' * Math.pow(l, ', P('1-成長經驗', '升級所需經驗', 1), 'xp-b（次方）');
 // xp-c（常數）：錨點不綁定次方值（次方＝xp-b 可被調整），以 Math.pow(l, <任意>) + 為前綴。
 edits.push({ file: 'formula', re: /(Math\.pow\(l, -?[\d.]+\) \+ )(-?[\d.]+)/, grp: 2, value: P('1-成長經驗', '升級所需經驗', 2), label: 'xp-c（常數）' });
-// 基礎四維 5 + (level - 1) * 2
-inline('formula', 'var v = ', P('1-成長經驗', '等級基礎四維', 0), '四維-a=5');
-inline('formula', 'var v = 5 + (level - 1) * ', P('1-成長經驗', '等級基礎四維', 1), '四維-b=2');
+// 基礎四維：基底 + (等級-1) × 每級增加
+inline('formula', 'var v = ', P('1-成長經驗', '等級基礎四維', 0), '四維-a（基底）');
+/* 每級增加的錨點不能綁基底值——基底一旦被前一條套用改掉，這一條就再也對不上，
+   而且是靜靜地對不上（見下方防禦減傷曲線那兩行的說明）。 */
+inlineRegex('formula', /(var v = -?[\d.]+ \+ \(level - 1\) \* )(-?[\d.]+)/, P('1-成長經驗', '等級基礎四維', 1), '四維-b（每級）');
 // 野外怪物成長：形如 var X = (a + stage [* b]) * Math.pow(c, stage - 1)。
 // b/c 錨點以正規式「萬用」掉同一行的 a（與 b）值，避免調整某一項後其它項錨點失配。
 inline('formula', 'var hp = (', P('4-野外怪物', '生命', 0), 'hp-a');
@@ -669,15 +671,21 @@ scalar('formula', 'MAGIC_RESISTANCE_LEVEL_COEF', '3-戰鬥核心', '魔法抗性
 scalar('formula', 'ELEMENTAL_RESISTANCE_EXPONENT', '3-戰鬥核心', '六系元素抗性減傷', 0);
 scalar('formula', 'ELEMENTAL_RESISTANCE_BASE', '3-戰鬥核心', '六系元素抗性減傷', 1);
 scalar('formula', 'ELEMENTAL_RESISTANCE_LEVEL_COEF', '3-戰鬥核心', '六系元素抗性減傷', 2);
-inline('formula', 'return def / (def + ', P('3-戰鬥核心', '防禦減傷率', 0), '防減-常數');
-inline('formula', 'return def / (def + 60 + ', P('3-戰鬥核心', '防禦減傷率', 1), '防減-每級');
+/* 防禦減傷曲線的兩個係數。錨點必須用 inlineRegex 而不是 inline——
+   inline 會把前綴原文寫死，於是「常數」被套用之後，「每級係數」的錨點
+   'return def / (def + 60 + ' 就再也對不上了（60 已經變成別的值）。
+   實際發生過：2026-08-02 的參數套用把常數從 60 改成 10000，下一次試跑就報
+   「防減-每級：錨點匹配 0 次」，那個參數從此靜靜地套不進去。
+   結構型錨點只描述公式形狀，同一條公式裡的參數彼此不會互相打死。 */
+inlineRegex('formula', /(return def \/ \(def \+ )(-?[\d.]+)/, P('3-戰鬥核心', '防禦減傷率', 0), '防減-常數');
+inlineRegex('formula', /(return def \/ \(def \+ -?[\d.]+ \+ )(-?[\d.]+)/, P('3-戰鬥核心', '防禦減傷率', 1), '防減-每級');
 // 敵種傷害抗性（普通敵人/普通菁英/普通BOSS）：a/b；表列缺席時跳過（相容尚未含此列的舊參數表）
 if (index['3-戰鬥核心'] && index['3-戰鬥核心']['敵種傷害抗性']) {
   scalar('formula', 'ENEMY_TYPE_DMG_RED_A', '3-戰鬥核心', '敵種傷害抗性', 0);
   scalar('formula', 'ENEMY_TYPE_DMG_RED_B', '3-戰鬥核心', '敵種傷害抗性', 1);
 }
 inline('formula', 'dmg *= rnd(', P('3-戰鬥核心', '傷害浮動', 0), '浮動-下');
-inline('formula', 'dmg *= rnd(0.9, ', P('3-戰鬥核心', '傷害浮動', 1), '浮動-上');
+inlineRegex('formula', /(dmg \*= rnd\(-?[\d.]+, )(-?[\d.]+)/, P('3-戰鬥核心', '傷害浮動', 1), '浮動-上');
 numCtx('formula', 'dmg = Math.max(', ', Math.round(dmg))', P('3-戰鬥核心', '最低傷害下限', 0), '最低傷害');
 inline('formula', 'iceSlowChance: ', P('3-元素特效', '冰霜 特效', 0), '元素-冰');
 inline('formula', 'lightningChance: ', P('3-元素特效', '雷電 特效', 0), '元素-雷');
@@ -703,21 +711,28 @@ inline('formula', 'GT - defender._undyingAt >= ', P('3-戰鬥核心', '不朽(�
 /* ---- §5 稀有度擲骰（rollRarity） ---- */
 inline('formula', 'effectiveDropRateEffect(lootBonus || 0) / ', P('5-稀有度擲骰', '權重加成 b', 0), '權重加成除數');
 inline('formula', ' + s * ', P('5-稀有度擲骰', '權重加成 b', 1), '權重加成每階');
+/* 稀有度權重表：每一列形如 [稀有度索引, 權重 * Math.min(b, 上限)]，
+   高稀有度另有解鎖階段門檻 (s >= 門檻 ? 權重 : 0)。
+
+   ⚠️ 「上限」的錨點不能綁權重值。綁了的話，權重一被套用，上限就再也對不上——
+   而且是靜靜地對不上，那個參數從此形同從參數表消失。實測擾動全表時，
+   這裡的 7 個上限全部失配。結構型錨點只認公式形狀，彼此不會互相打死。 */
 numCtx('formula', '[0, ', ']', P('5-稀有度擲骰', '普通 權重', 0), '權重-普通');
 numCtx('formula', '[1, ', ' * Math.min', P('5-稀有度擲骰', '精良 權重', 0), '權重-精良');
-numCtx('formula', '[1, 25 * Math.min(b, ', ')', P('5-稀有度擲骰', '精良 權重', 2), '上限-精良');
+inlineRegex('formula', /(\[1, -?[\d.]+ \* Math\.min\(b, )(-?[\d.]+)/, P('5-稀有度擲骰', '精良 權重', 2), '上限-精良');
 numCtx('formula', '[2, ', ' * Math.min', P('5-稀有度擲骰', '稀有 權重', 0), '權重-稀有');
-numCtx('formula', '[2, 12 * Math.min(b, ', ')', P('5-稀有度擲骰', '稀有 權重', 2), '上限-稀有');
+inlineRegex('formula', /(\[2, -?[\d.]+ \* Math\.min\(b, )(-?[\d.]+)/, P('5-稀有度擲骰', '稀有 權重', 2), '上限-稀有');
 numCtx('formula', '[3, ', ' * Math.min', P('5-稀有度擲骰', '獨特 權重', 0), '權重-獨特');
-numCtx('formula', '[3, 5.5 * Math.min(b, ', ')', P('5-稀有度擲骰', '獨特 權重', 2), '上限-獨特');
+inlineRegex('formula', /(\[3, -?[\d.]+ \* Math\.min\(b, )(-?[\d.]+)/, P('5-稀有度擲骰', '獨特 權重', 2), '上限-獨特');
+/* 史詩以上多一層階段門檻。門檻值本身也是參數（權重欄位 1），所以連它一起萬用掉。 */
 numCtx('formula', '(s >= 8 ? ', ' : 0)', P('5-稀有度擲骰', '史詩 權重', 0), '權重-史詩');
-numCtx('formula', '1.8 : 0) * Math.min(b, ', ')', P('5-稀有度擲骰', '史詩 權重', 2), '上限-史詩');
+inlineRegex('formula', /(\[4, \(s >= [\d.]+ \? -?[\d.]+ : 0\) \* Math\.min\(b, )(-?[\d.]+)/, P('5-稀有度擲骰', '史詩 權重', 2), '上限-史詩');
 numCtx('formula', '(s >= 15 ? ', ' : 0)', P('5-稀有度擲骰', '傳說 權重', 0), '權重-傳說');
-numCtx('formula', '0.35 : 0) * Math.min(b, ', ')', P('5-稀有度擲骰', '傳說 權重', 2), '上限-傳說');
+inlineRegex('formula', /(\[5, \(s >= [\d.]+ \? -?[\d.]+ : 0\) \* Math\.min\(b, )(-?[\d.]+)/, P('5-稀有度擲骰', '傳說 權重', 2), '上限-傳說');
 numCtx('formula', '(s >= 25 ? ', ' : 0)', P('5-稀有度擲骰', '神話 權重', 0), '權重-神話');
-numCtx('formula', '0.08 : 0) * Math.min(b, ', ')', P('5-稀有度擲骰', '神話 權重', 2), '上限-神話');
+inlineRegex('formula', /(\[6, \(s >= [\d.]+ \? -?[\d.]+ : 0\) \* Math\.min\(b, )(-?[\d.]+)/, P('5-稀有度擲骰', '神話 權重', 2), '上限-神話');
 numCtx('formula', '(s >= 40 ? ', ' : 0)', P('5-稀有度擲骰', '創世 權重', 0), '權重-創世');
-numCtx('formula', '0.015 : 0) * Math.min(b, ', ')', P('5-稀有度擲骰', '創世 權重', 2), '上限-創世');
+inlineRegex('formula', /(\[7, \(s >= [\d.]+ \? -?[\d.]+ : 0\) \* Math\.min\(b, )(-?[\d.]+)/, P('5-稀有度擲骰', '創世 權重', 2), '上限-創世');
 
 /* ---- §6 裝備 ---- */
 numCtx('formula', 'return 1 + ', ' * (item.upgrade', P('6-裝備', '強化倍率', 0), '強化倍率');
@@ -726,27 +741,30 @@ numCtx('formula', 'return 1 + ', ' * (item.upgrade', P('6-裝備', '強化倍率
 edits.push({ file: 'formula', re: /(var v = \()([\d.]+)( \+ item\.level \* [\d.]+)/, grp: 2, value: P('6-裝備', '附魔-攻擊類', 0), label: '附魔攻-基' });
 edits.push({ file: 'formula', re: /(var v = \([\d.]+ \+ item\.level \* )([\d.]+)/, grp: 2, value: P('6-裝備', '附魔-攻擊類', 1), label: '附魔攻-每級' });
 numCtx('formula', '(1 + ', ' * (gemLevel || 0))', P('6-裝備', '附魔-攻擊類', 2), '附魔攻-每寶石');
-numCtx('formula', 'Math.round((', ' + item.rarity * 4', P('6-裝備', '附魔-防禦/功能類', 0), '附魔防-基');
+inlineRegex('formula', /(var val = Math\.round\(\()(-?[\d.]+)(?= \+ item\.rarity \* )/, P('6-裝備', '附魔-防禦/功能類', 0), '附魔防-基');
 inline('formula', ' + item.rarity * ', P('6-裝備', '附魔-防禦/功能類', 1), '附魔防-每階');
 inline('formula', '(gemLevel || 0) * ', P('6-裝備', '附魔-防禦/功能類', 2), '附魔防-每寶石');
 inline('formula', 'Math.min(val, ', P('6-裝備', '附魔-防禦/功能類', 3), '附魔防-上限');
-numCtx('formula', 'Math.round((', ' + it.level * 0.6)', P('6-裝備', '分解-碎片', 0), '分解碎-基');
-inline('formula', 'Math.round((2 + it.level * ', P('6-裝備', '分解-碎片', 1), '分解碎-每級');
+inlineRegex('formula', /(scrap: Math\.max\(1, Math\.round\(\()(-?[\d.]+)(?= \+ it\.level \* )/, P('6-裝備', '分解-碎片', 0), '分解碎-基');
+inlineRegex('formula', /(scrap: Math\.max\(1, Math\.round\(\(-?[\d.]+ \+ it\.level \* )(-?[\d.]+)/, P('6-裝備', '分解-碎片', 1), '分解碎-每級');
 numCtx('formula', 'Math.round((', ' + it.level) * r.salv', P('6-裝備', '分解-金幣', 0), '分解金-基');
 inline('formula', ' + it.level) * r.salv * ', P('6-裝備', '分解-金幣', 1), '分解金-係數');
 
 /* ---- §7 強化 / 洗煉 ---- */
 numCtx('formula', 'return Math.max(', ', 100 - (nextLevel - 5)', P('7-強化', '基礎成功率', 0), '強化率下限');
 inline('formula', '100 - (nextLevel - 5) * ', P('7-強化', '基礎成功率', 1), '強化率遞減');
-numCtx('formula', 'gold: Math.round(', ' * Math.pow(1.45', P('7-強化', '金幣費用', 0), '強化金-係數');
-inline('formula', 'Math.round(25 * Math.pow(', P('7-強化', '金幣費用', 1), '強化金-底');
-numCtx('formula', 'Math.pow(1.45, lv) * (1 + it.level * ', '))', P('7-強化', '金幣費用', 2), '強化金-每級');
-numCtx('formula', 'scrap: Math.round(', ' * Math.pow(1.35', P('7-強化', '碎片費用', 0), '強化碎-係數');
-inline('formula', 'Math.round(8 * Math.pow(', P('7-強化', '碎片費用', 1), '強化碎-底');
-numCtx('formula', 'Math.pow(1.35, lv) * (1 + it.level * ', '))', P('7-強化', '碎片費用', 2), '強化碎-每級');
-numCtx('formula', 'gold: Math.round(', ' * Math.pow(1.7', P('7-洗煉', '金幣費用', 0), '洗煉金-係數');
-inline('formula', 'Math.round(40 * Math.pow(', P('7-洗煉', '金幣費用', 1), '洗煉金-底');
-numCtx('formula', 'Math.pow(1.7, it.rarity) * (1 + it.level * ', '))', P('7-洗煉', '金幣費用', 2), '洗煉金-每級');
+/* 強化／洗煉費用：形如 <資源>: Math.round(係數 * Math.pow(底, 指數變數) * (1 + it.level * 每級))
+   三個參數同在一行，錨點一律萬用掉其他兩個，否則套用其中一個就會打死另外兩個。
+   以 lv / it.rarity 這個指數變數區分強化與洗煉，兩者的行形狀在其餘部分相同。 */
+inlineRegex('formula', /(gold: Math\.round\()(-?[\d.]+)(?= \* Math\.pow\([\d.]+, lv\))/, P('7-強化', '金幣費用', 0), '強化金-係數');
+inlineRegex('formula', /(gold: Math\.round\(-?[\d.]+ \* Math\.pow\()(-?[\d.]+)(?=, lv\))/, P('7-強化', '金幣費用', 1), '強化金-底');
+inlineRegex('formula', /(gold: Math\.round\(-?[\d.]+ \* Math\.pow\([\d.]+, lv\) \* \(1 \+ it\.level \* )(-?[\d.]+)/, P('7-強化', '金幣費用', 2), '強化金-每級');
+inlineRegex('formula', /(scrap: Math\.round\()(-?[\d.]+)(?= \* Math\.pow\([\d.]+, lv\))/, P('7-強化', '碎片費用', 0), '強化碎-係數');
+inlineRegex('formula', /(scrap: Math\.round\(-?[\d.]+ \* Math\.pow\()(-?[\d.]+)(?=, lv\))/, P('7-強化', '碎片費用', 1), '強化碎-底');
+inlineRegex('formula', /(scrap: Math\.round\(-?[\d.]+ \* Math\.pow\([\d.]+, lv\) \* \(1 \+ it\.level \* )(-?[\d.]+)/, P('7-強化', '碎片費用', 2), '強化碎-每級');
+inlineRegex('formula', /(gold: Math\.round\()(-?[\d.]+)(?= \* Math\.pow\([\d.]+, it\.rarity\))/, P('7-洗煉', '金幣費用', 0), '洗煉金-係數');
+inlineRegex('formula', /(gold: Math\.round\(-?[\d.]+ \* Math\.pow\()(-?[\d.]+)(?=, it\.rarity\))/, P('7-洗煉', '金幣費用', 1), '洗煉金-底');
+inlineRegex('formula', /(gold: Math\.round\(-?[\d.]+ \* Math\.pow\([\d.]+, it\.rarity\) \* \(1 \+ it\.level \* )(-?[\d.]+)/, P('7-洗煉', '金幣費用', 2), '洗煉金-每級');
 scalar('formula', 'AFFIX_REROLL_LOWER_WEIGHT', '7-洗煉', '數值洗煉分段權重', 0);
 scalar('formula', 'AFFIX_REROLL_UPPER_BASE_WEIGHT', '7-洗煉', '數值洗煉分段權重', 1);
 scalar('formula', 'AFFIX_REROLL_BIAS_EXPONENT', '7-洗煉', '數值洗煉分段權重', 2);
@@ -757,12 +775,12 @@ inline('formula', 'g.base * GEM_MAX_LEVEL * (1 + ', P('8-寶石', '能力數值(
 inline('formula', 'base5 * Math.pow(', P('8-寶石', '能力數值(6~10階神鑄)', 0), '寶石神鑄底');
 numCtx('formula', 'return ', ' + (level - GEM_MAX_LEVEL)', P('6-神鑄', '寶石神鑄金幣', 0), '寶石神鑄金-基');
 inline('formula', '(level - GEM_MAX_LEVEL) * ', P('6-神鑄', '寶石神鑄金幣', 0), '寶石神鑄金-每階');
-numCtx('formula', 'return ', ' + Math.pow(level, 3)', P('8-寶石商店', '升級費用', 0), '寶店升級-基');
+inlineRegex('formula', /(return )(-?[\d.]+)(?= \+ Math\.pow\(level, [\d.]+\) \* )/, P('8-寶石商店', '升級費用', 0), '寶店升級-基');
 inline('formula', 'Math.pow(level, ', P('8-寶石商店', '升級費用', 1), '寶店升級-次方');
-inline('formula', 'Math.pow(level, 3) * ', P('8-寶石商店', '升級費用', 2), '寶店升級-係數');
+inlineRegex('formula', /(Math\.pow\(level, [\d.]+\) \* )(-?[\d.]+)/, P('8-寶石商店', '升級費用', 2), '寶店升級-係數');
 
 /* ---- §9 技能 ---- */
-numCtx('formula', 'Math.floor(', ' * lv + Math.pow(20', P('9-技能', '升級費用', 0), '技升-係數');
+inlineRegex('formula', /(var cost = Math\.floor\()(-?[\d.]+)(?= \* lv \+ Math\.pow\()/, P('9-技能', '升級費用', 0), '技升-係數');
 inline('formula', ' + Math.pow(', P('9-技能', '升級費用', 1), '技升-底');
 inline('formula', '1 + lv / ', P('9-技能', '升級費用', 2), '技升-除數');
 inline('formula', 'skillBaseManaCost(def) * (1 + ', P('9-技能', '一般技能法力消耗', 0), '法力每級');
@@ -869,7 +887,10 @@ let hadError = false;
 edits.forEach(e => {
   try {
     const { text, offset } = scopedText(e.file, e.scopeVar);
-    const re = new RegExp(e.re.source, 'g');
+    /* 'd'（hasIndices）讓 match 帶上每個群組的真實起訖位置。沒有它就只能靠
+       「在整段 match 裡搜尋群組文字」去猜位置，而那個猜法會寫到錯的地方——
+       見 groupSpan 的說明。 */
+    const re = new RegExp(e.re.source, 'gd');
     const matches = [];
     let m; while ((m = re.exec(text)) !== null) { matches.push(m); if (m.index === re.lastIndex) re.lastIndex++; }
     if (matches.length !== 1) {
@@ -894,12 +915,20 @@ edits.forEach(e => {
   }
 });
 
+/* 群組在檔案中的真實位置，取自正則的 hasIndices（'d' 旗標）。
+
+   ⚠️ 舊版是「在整段 match 裡搜尋群組的文字」來推位置，那個推法在群組文字於
+   match 內更早處也出現時會指到錯的地方。實測踩到：稀有度表的 affix 上下限，
+   match 從 key: 'epic' 起算，中間就有 mult: 4，於是找 '4' 找到 mult 那一個，
+   套用後把 { mult: 4, affix: [4, 4] } 寫成 { mult: 4, affix: [4,54] }——
+   數值錯、格式也錯，而且不會有任何錯誤訊息。
+
+   捕獲位置是正則引擎自己給的，沒有猜的餘地。 */
 function groupSpan(mm, gi) {
-  // 計算群組在整段 match 中的位置（用 match 內搜尋群組字串一次）
-  const whole = mm[0];
-  const gtext = mm[gi];
-  const rel = whole.indexOf(gtext, gi > 1 ? whole.indexOf(mm[gi - 1]) + mm[gi - 1].length : 0);
-  return { start: mm.index + rel, end: mm.index + rel + gtext.length };
+  if (!mm.indices || !mm.indices[gi]) {
+    throw new Error('群組 ' + gi + ' 沒有捕獲位置（正則需帶 d 旗標，且該群組必須有匹配到）');
+  }
+  return { start: mm.indices[gi][0], end: mm.indices[gi][1] };
 }
 function applyOne(e, mm, offset) {
   const span = groupSpan(mm, e.grp);
@@ -913,6 +942,69 @@ function applyTwo(e, mm, offset) {
   t = t.slice(0, offset + s2.start) + e.value2 + t.slice(offset + s2.end);
   t = t.slice(0, offset + s1.start) + e.value + t.slice(offset + s1.end);
   srcCache[e.file] = t;
+}
+
+/* ---- 錨點獨立性自檢（--check-anchors）----
+
+   問題：某個錨點若把**另一個參數的現值**寫進字串裡，那麼只要那個參數被調整過一次，
+   這個錨點就再也對不上——它負責的參數從此靜靜地套不進程式，公式讀的不再是配置表的值。
+   這種壞法沒有徵兆：遊戲照跑、測試照綠、參數表照改，只是改了沒有效果。
+   實測發現過 23 條（2026-08-02）。
+
+   檢查方式：把每一個目標數值都換成一個不同的值（原值 +1），在**記憶體裡**套用，
+   然後要求每一個錨點仍然剛好命中一次。全程不寫檔——寫檔的版本會與平行執行的
+   其他測試互相干擾（實測會讓 49 個無關測試連帶紅掉）。
+
+   只擾動單群組的純數值錨點：twoGroup 與 multiGroup 的目標是整段內容，
+   它們的錨點本來就不是靠鄰近數值定位的。 */
+if (process.argv.includes('--check-anchors')) {
+  const perturbed = {};
+  Object.keys(FILES).forEach((f) => { perturbed[f] = src(f); });
+
+  /* 逐檔由後往前套用，避免前面的取代位移後面的位置。 */
+  const spans = [];
+  edits.forEach((e) => {
+    if (e.twoGroup || e.multiGroup) return;
+    try {
+      const { text, offset } = scopedText(e.file, e.scopeVar);
+      const re = new RegExp(e.re.source, 'gd');
+      const ms = []; let m;
+      while ((m = re.exec(text)) !== null) { ms.push(m); if (m.index === re.lastIndex) re.lastIndex++; }
+      if (ms.length !== 1) return;                 // 本來就壞的由主流程回報
+      const sp = groupSpan(ms[0], e.grp);
+      const cur = Number(ms[0][e.grp]);
+      if (!Number.isFinite(cur)) return;
+      spans.push({ file: e.file, start: offset + sp.start, end: offset + sp.end, value: String(cur + 1) });
+    } catch (err) { /* 主流程會回報 */ }
+  });
+  spans.sort((a, b) => b.start - a.start);
+  spans.forEach((s) => {
+    perturbed[s.file] = perturbed[s.file].slice(0, s.start) + s.value + perturbed[s.file].slice(s.end);
+  });
+
+  /* 擾動後重新比對每一個錨點。 */
+  const broken = [];
+  edits.forEach((e) => {
+    let text = perturbed[e.file];
+    if (e.scopeVar) {
+      const m = new RegExp('\\b' + esc(e.scopeVar) + '\\s*=\\s*[\\[{][\\s\\S]*?[\\]}];').exec(text);
+      if (m) text = m[0];
+    }
+    const re = new RegExp(e.re.source, 'g');
+    let n = 0, m2;
+    while ((m2 = re.exec(text)) !== null) { n++; if (m2.index === re.lastIndex) re.lastIndex++; }
+    if (n !== 1) broken.push({ file: e.file, label: e.label, n: n });
+  });
+
+  console.log('=== apply_params (--check-anchors) ===');
+  console.log('擾動了 ' + spans.length + ' 個數值後重新比對 ' + edits.length + ' 個錨點');
+  if (!broken.length) {
+    console.log('✅ 所有錨點仍剛好命中一次（錨點彼此獨立，不依賴其他參數的現值）');
+    process.exit(0);
+  }
+  console.log('❌ ' + broken.length + ' 個錨點在其他參數變動後失配——那些參數會靜靜地套不進程式：');
+  broken.forEach((b) => console.log('  ✗ ' + b.file + ' ' + b.label + '：擾動後匹配 ' + b.n + ' 次'));
+  process.exit(2);
 }
 
 /* ---- 報告 ---- */
