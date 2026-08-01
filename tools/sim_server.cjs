@@ -203,6 +203,9 @@ const server = http.createServer((req, res) => {
         percent: 0,
         currentHour: 0,
         totalHours: params.hours,
+        /* 開始時間讓儀表板分得出「畫面上這份是剛跑的還是舊的」。
+           重新整理頁面時也靠這個把時間補回去。 */
+        startedAt: new Date().toISOString(),
         outDir: params.out,
         batch: isBatch ? { total: params.seeds } : null,
         statusText: isBatch
