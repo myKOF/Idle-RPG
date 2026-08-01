@@ -188,6 +188,43 @@ function createEngine(opts) {
     stepSeconds(sec) { return this.step(Math.round(sec / DT)); },
     stepHours(h) { return this.stepSeconds(h * 3600); },
 
+    /* ---- 離線一段時間 ----
+
+       模擬「玩家把遊戲關掉，過了 N 秒才再打開」。
+
+       遊戲對離線的定義很明確（js/worker/sim.worker.js:145）：
+       **分頁在背景＝仍在線上掛機，只有整個遊戲被關掉才算離線**，而離線結算只在
+       開機時發生。所以這裡照著真實流程走，一步都不省：
+
+         1. stampSavedAt()          等同關掉遊戲時的落地（savedAt ＝ 當下）
+         2. 推進虛擬時鐘，不跑 simStep   離線期間遊戲根本沒在跑
+         3. applyOfflineProgress()  遊戲自己的離線結算
+
+       ⚠️ 收益一律由 js/save.js 的 applyOfflineProgress 計算，harness 不碰任何公式。
+       那是與線上**完全不同的一套模型**（固定費率：每 OFFLINE_KILL_INTERVAL 秒殺一隻
+       比最高關卡低十幾關的菁英怪），這正是「輕度玩家掛機 22 小時」與「在線掛機 22 小時」
+       結果差很多的原因——也正是不模擬離線就會失真的地方。
+       上限（OFFLINE_MAX_HOURS）與「一分鐘內不計」也都由它自己判斷，這裡不預先過濾。
+
+       不傳 done 就走同步路徑（js/save.js 結尾的 for 迴圈），直接回傳摘要；
+       非同步分塊路徑是給瀏覽器不要卡住主執行緒用的，headless 不需要。
+
+       回傳遊戲給的摘要物件；elapsed 不足一分鐘或算不出擊殺數時遊戲會回 undefined。 */
+    offlineFor(sec) {
+      const seconds = Math.max(0, Number(sec) || 0);
+      this.stampSavedAt();
+      vNowMs += Math.round(seconds * 1000);
+      const summary = ctx.applyOfflineProgress ? ctx.applyOfflineProgress() : undefined;
+      /* 結算完把 savedAt 對到新的當下。不對的話下一次離線會把這一段重算一遍
+         （elapsed 從舊的 savedAt 起算），收益就重複了。 */
+      this.stampSavedAt();
+      /* 離線結算會 blog 一行摘要，走的是 shim 事件佇列；不取走的話會佔著佇列，
+         而佇列滿 400 則之後每則都要 shift 一次。與 step() 的處理一致。 */
+      const drained = ctx.shimDrainEvents ? ctx.shimDrainEvents() : [];
+      if (onEvents && drained && drained.length) onEvents(drained);
+      return summary || null;
+    },
+
     /* 玩家操作的唯一入口。與 Worker 收到 MSG_IN.CMD 時走的是同一支 runCommand，
        指令名不在 js/worker/protocol.js 的指令表內會被它自己擋下。 */
     cmd(name, args) { return ctx.runCommand(name, args || {}); },

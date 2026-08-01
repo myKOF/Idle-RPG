@@ -9,6 +9,8 @@
      node --max-semi-space-size=64 scripts/run_sim.js --hours=100 --seed=20260730
    選項：
      --hours=N        模擬遊戲小時數（預設 1；--trace 時預設為軌跡長度）
+                      ⚠️ 策略有宣告 dailyActiveHours 時，這是**牆鐘時間（含離線）**
+     --ignore-schedule 忽略策略的 dailyActiveHours，全程在線（重現班表實作前的行為）
      --seed=N         PRNG 種子（預設 20260730；--trace 時預設為錄製當下的種子）
      --policy=path    策略檔（預設 scripts/sim/policy.default.json）
      --trace=path     改用真人錄製軌跡當決策來源（js/recorder.js 匯出的檔），與 --policy 互斥
@@ -44,6 +46,9 @@ const OUT_DIR = path.resolve(ROOT, String(arg('out', 'sim_out')));
 const START_WALL_CLOCK = new Date().toISOString();
 const SNAP_MIN = Number(arg('snap-min', 10));
 const KEEP_VISUAL = !!arg('keep-visual', false);
+/* 忽略策略宣告的 dailyActiveHours，全程在線。用來重現「班表實作之前」的行為，
+   或單獨觀察線上那一段。 */
+const IGNORE_SCHEDULE = !!arg('ignore-schedule', false);
 
 if (TRACE_PATH && process.argv.some((a) => a.startsWith('--policy='))) {
   console.error('--trace 與 --policy 互斥：一場模擬只能有一個決策來源。');
@@ -344,50 +349,119 @@ function snapshot() {
   return row;
 }
 
+/* ---- 線上／離線班表 ----
+
+   策略以 dailyActiveHours 宣告「每日遊玩幾小時」。在這之前這個欄位四份策略都寫了、
+   卻沒有任何一行程式讀它——四種強度全部被當成 24 小時不間斷在線，只有決策頻率不同。
+   輕度玩家（2 小時／日）因此被模擬成一個永不睡覺、每 60 秒操作一次的人。
+
+   差別不只是「操作次數少」。玩家關掉遊戲的那 22 小時走的是**完全不同的一套模型**
+   （js/save.js 的 applyOfflineProgress：固定每 20 秒殺一隻比最高關卡低十幾關的菁英，
+   與實際 DPS 無關，且上限 24 小時），寶石商店的每小時刷新也只會經歷 2 次而不是 24 次。
+
+   班表的形狀：每個 24 小時週期，先連續在線 dailyActiveHours 小時，其餘時間離線。
+   真人可能拆成好幾段，但離線收益是線性且未達上限，拆不拆對離線那一側幾乎沒差；
+   對線上那一側才有差（回來時變強了多少）。先用單一區塊，這個假設寫在這裡。
+
+   ⚠️ 啟用班表後 --hours 的語意是**牆鐘時間（含離線）**，不是線上時數。
+   輕度玩家跑 --hours=100 就是「100 小時的日子」，其中約 8.3 小時在線。 */
+const DAILY_HOURS = 24;
+const scheduleDeclared = typeof policy.dailyActiveHours === 'number' &&
+                         policy.dailyActiveHours > 0 &&
+                         policy.dailyActiveHours < DAILY_HOURS;
+const scheduleOn = scheduleDeclared && !IGNORE_SCHEDULE;
+/* 沒有班表時線上區塊是無限長——整場就是一個區塊，迴圈結構退化成原本那一個 while，
+   不另外寫一條路徑。兩條路徑會長歪，而長歪的那一刻沒有人會發現。 */
+const ONLINE_BLOCK_SEC = scheduleOn ? policy.dailyActiveHours * 3600 : Infinity;
+const OFFLINE_BLOCK_SEC = scheduleOn ? (DAILY_HOURS - policy.dailyActiveHours) * 3600 : 0;
+
+if (scheduleDeclared && IGNORE_SCHEDULE) {
+  console.log(`班表 已宣告 ${policy.dailyActiveHours}h/日，但 --ignore-schedule 要求忽略，本場全程在線。`);
+} else if (scheduleOn) {
+  console.log(`班表 每日在線 ${policy.dailyActiveHours}h、離線 ${DAILY_HOURS - policy.dailyActiveHours}h（--hours 是牆鐘時間，含離線）`);
+} else if (typeof policy.dailyActiveHours === 'number') {
+  console.log(`班表 dailyActiveHours=${policy.dailyActiveHours}，等同全程在線，不做離線結算。`);
+}
+
 /* ---- 主迴圈 ---- */
 const decideEvery = policy.decideEveryGameSec;
 const stepsPerDecision = Math.max(1, Math.round(decideEvery / engine.dt));
-const totalSteps = Math.round((HOURS * 3600) / engine.dt);
+const totalWallSec = HOURS * 3600;
+const totalSteps = Math.round(totalWallSec / engine.dt);   // 全程在線時的步數，進度條與摘要用
 const snapEverySec = SNAP_MIN * 60;
 let nextSnapAt = 0;
 let decisions = 0;
 let stepsDone = 0;
+let onlineSec = 0;
+const offlineLog = [];
 
 const t0 = process.hrtime.bigint();
 let lastReport = t0;
 
+function progressLine(row) {
+  const pct = (100 * engine.gameTimeSec() / totalWallSec).toFixed(1);
+  process.stdout.write(`[PROGRESS] ${pct}% ${row.gameHours.toFixed(1)}h / ${HOURS}h Lv.${row.level}\n`);
+  try {
+    fs.writeFileSync(path.join(OUT_DIR, 'sim_progress.json'), JSON.stringify({
+      /* 批次模式下這份檔案是「這個 seed 跑到哪」的唯一來源，
+         所以要自報 seed——否則讀的人只能從目錄名反推命名規則，推錯了不會有徵兆。 */
+      seed: SEED,
+      percent: parseFloat(pct),
+      currentHour: row.gameHours,
+      totalHours: HOURS,
+      level: row.level,
+      stage: row.stage
+    }));
+  } catch (e) {}
+}
+
 try {
-  while (stepsDone < totalSteps) {
-    const n = Math.min(stepsPerDecision, totalSteps - stepsDone);
-    engine.step(n);
-    stepsDone += n;
+  while (engine.gameTimeSec() < totalWallSec - 1e-9) {
+    /* ---- 在線區塊 ---- */
+    const onlineUntil = Math.min(engine.gameTimeSec() + ONLINE_BLOCK_SEC, totalWallSec);
+    while (engine.gameTimeSec() < onlineUntil - 1e-9) {
+      const remain = Math.round((onlineUntil - engine.gameTimeSec()) / engine.dt);
+      const n = Math.min(stepsPerDecision, remain);
+      engine.step(n);
+      stepsDone += n;
+      onlineSec += n * engine.dt;
 
-    /* 決策點：策略只拿到 view / panels 的深拷貝（policy.decide 內再 round-trip 一次）。
-       它沒有 G、沒有 FIELD、沒有任何遊戲函式，改不了狀態也讀不到內部值。
-       面板只建策略宣告要的那幾個——背包面板很大，每次都建會白付序列化成本。 */
-    const panels = {};
-    for (const p of policy.needPanels) panels[p] = engine.panel(p);
-    dispatch(policy.decide({ view: engine.view(), panels, gameTimeSec: engine.gameTimeSec() }));
-    decisions++;
+      /* 決策點：策略只拿到 view / panels 的深拷貝（policy.decide 內再 round-trip 一次）。
+         它沒有 G、沒有 FIELD、沒有任何遊戲函式，改不了狀態也讀不到內部值。
+         面板只建策略宣告要的那幾個——背包面板很大，每次都建會白付序列化成本。 */
+      const panels = {};
+      for (const p of policy.needPanels) panels[p] = engine.panel(p);
+      dispatch(policy.decide({ view: engine.view(), panels, gameTimeSec: engine.gameTimeSec() }));
+      decisions++;
 
-    if (engine.gameTimeSec() >= nextSnapAt) {
-      const row = snapshot();
-      nextSnapAt += snapEverySec;
-      const pct = (100 * stepsDone / totalSteps).toFixed(1);
-      process.stdout.write(`[PROGRESS] ${pct}% ${row.gameHours.toFixed(1)}h / ${HOURS}h Lv.${row.level}\n`);
-      try {
-        fs.writeFileSync(path.join(OUT_DIR, 'sim_progress.json'), JSON.stringify({
-          /* 批次模式下這份檔案是「這個 seed 跑到哪」的唯一來源，
-             所以要自報 seed——否則讀的人只能從目錄名反推命名規則，推錯了不會有徵兆。 */
-          seed: SEED,
-          percent: parseFloat(pct),
-          currentHour: row.gameHours,
-          totalHours: HOURS,
-          level: row.level,
-          stage: row.stage
-        }));
-      } catch (e) {}
+      if (engine.gameTimeSec() >= nextSnapAt) {
+        progressLine(snapshot());
+        nextSnapAt += snapEverySec;
+      }
     }
+
+    if (!scheduleOn || engine.gameTimeSec() >= totalWallSec - 1e-9) break;
+
+    /* ---- 離線區塊 ----
+       收益全部由遊戲的 applyOfflineProgress 算（見 sim/engine.js 的 offlineFor）。 */
+    const offlineSec = Math.min(OFFLINE_BLOCK_SEC, totalWallSec - engine.gameTimeSec());
+    const atHour = engine.gameTimeSec() / 3600;
+    const sum = engine.offlineFor(offlineSec);
+    offlineLog.push({
+      atHour: +atHour.toFixed(3),
+      hours: +(offlineSec / 3600).toFixed(3),
+      /* 遊戲回的原始摘要欄位，不改名也不再計算。null 代表遊戲判定這段不計
+         （未滿一分鐘，或算出來的擊殺數不足 1）。 */
+      settled: sum ? {
+        seconds: sum.seconds, stage: sum.stage, kills: sum.kills,
+        gold: sum.gold, xp: sum.xp, scrap: sum.scrap
+      } : null
+    });
+
+    /* 離線是曲線上的一個跳點，結算完立刻取樣，否則圖上會看到一條直接飛上去的斜線，
+       看不出那是離線收益一次入帳。同時把取樣格點重新對齊到現在。 */
+    progressLine(snapshot());
+    nextSnapAt = engine.gameTimeSec() + snapEverySec;
   }
 } catch (err) {
   console.error('\n💥 [模擬中斷] 觸發執行期阻斷或未處理錯誤！');
@@ -486,6 +560,20 @@ const summary = {
   finishedAt: new Date().toISOString(),
   startSave: SAVE_PATH ? String(SAVE_PATH) : null,
   policy: { file: path.relative(ROOT, POLICY_PATH), name: policy.name, sha256: policyHash },
+
+  /* ---- 線上／離線班表 ----
+     gameHours 是牆鐘時間；onlineHours 才是實際跑了模擬的時數。兩者混用會把
+     「輕度玩家 100 小時只在線 8.3 小時」讀成「跑了 100 小時的模擬」。
+     offlineSettlements 逐筆記錄遊戲原生的離線結算結果，欄位是它自己的，不改名。 */
+  schedule: {
+    declaredDailyActiveHours: (typeof policy.dailyActiveHours === 'number') ? policy.dailyActiveHours : null,
+    enabled: scheduleOn,
+    ignoredByFlag: !!(scheduleDeclared && IGNORE_SCHEDULE),
+    wallHours: HOURS,
+    onlineHours: +(onlineSec / 3600).toFixed(3),
+    offlineHours: +((HOURS * 3600 - onlineSec) / 3600).toFixed(3),
+    offlineSettlements: offlineLog
+  },
   /* 真人軌跡重播才有。remaining 非 0 代表軌跡沒跑完（--hours 太短，或重播提早分岔
      讓 GT 停住），此時這場的曲線不能拿去跟 AI 比。 */
   trace: TRACE_PATH ? policy.report() : null,
@@ -516,10 +604,13 @@ const summary = {
     return R.map((r, i) => ({ index: i, key: r.key, name: r.name }));
   })(),
   performance: {
-    steps: totalSteps,
+    /* 實際跑掉的步數。啟用班表時它會少於 wallHours × 36000——離線那一段沒有跑 simStep，
+       用 totalSteps 會把吞吐量灌水成好幾倍。 */
+    steps: stepsDone,
     stepSeconds: engine.dt,
     elapsedSec: +elapsedSec.toFixed(2),
-    stepsPerSec: Math.round(totalSteps / elapsedSec),
+    stepsPerSec: Math.round(stepsDone / elapsedSec),
+    /* 縮時倍率照牆鐘算：使用者關心的是「一場 100 小時的日子要跑多久」。 */
     speedupX: Math.round((HOURS * 3600) / elapsedSec),
     projected100hSec: +(360000 / ((HOURS * 3600) / elapsedSec)).toFixed(1)
   },
@@ -560,6 +651,16 @@ console.log(`耗時        ${elapsedSec.toFixed(1)}s（${summary.performance.ste
 console.log(`100h 推估   ${summary.performance.projected100hSec}s`);
 console.log(`原生事件    保留 ${eventsKept.toLocaleString()} 則／丟棄 ${eventsDropped.toLocaleString()} 則（種類：${JSON.stringify(eventCounts)}）`);
 console.log(`決策點      ${decisions.toLocaleString()} 次`);
+
+if (summary.schedule.enabled) {
+  const s = summary.schedule;
+  const settled = s.offlineSettlements.filter((o) => o.settled);
+  const kills = settled.reduce((a, o) => a + o.settled.kills, 0);
+  console.log(`班表        牆鐘 ${s.wallHours}h ＝ 在線 ${s.onlineHours}h ＋ 離線 ${s.offlineHours}h（每日在線 ${s.declaredDailyActiveHours}h）`);
+  console.log(`離線結算    ${settled.length}/${s.offlineSettlements.length} 次生效，累計離線擊殺 ${kills.toLocaleString()}（遊戲原生固定費率，與線上 DPS 無關）`);
+} else if (summary.schedule.ignoredByFlag) {
+  console.log(`班表        已宣告 ${summary.schedule.declaredDailyActiveHours}h/日但被 --ignore-schedule 忽略，全程在線`);
+}
 
 if (summary.trace) {
   const t = summary.trace;

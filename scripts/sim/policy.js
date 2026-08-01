@@ -47,6 +47,13 @@ function createPolicy(policy) {
   return {
     name: policy.name,
     decideEveryGameSec: policy.decideEveryGameSec || 10,
+    /* 每日在線時數。策略只是宣告，班表由驅動端（scripts/run_sim.js）實作——
+       「什麼時候不在玩」不是策略能決定的事，它連自己何時被呼叫都不知道。
+
+       ⚠️ 沒有預設值：沒宣告就是 undefined，驅動端據此判斷「這份策略沒有班表」。
+       給 24 當預設看起來無害，但那會讓「沒宣告」與「宣告 24 小時」變成同一件事，
+       摘要就分不出這一場是沒有班表還是刻意全天在線。 */
+    dailyActiveHours: policy.dailyActiveHours,
     /* 策略宣告它需要哪些面板。驅動端只建這幾個——背包面板很大，
        每個決策點都建一次會白白付出序列化成本。 */
     needPanels: policy.needPanels || [],
