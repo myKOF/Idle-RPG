@@ -2272,6 +2272,23 @@ textarea#save-io {
   height: 84%;
 }
 
+/* 武器圖示多為深色金屬材質；在窄長武器槽中需提升前景辨識度，
+   並放到稀有度內襯遮罩之上，避免整把武器被暗色圖層壓黑。 */
+.eq-slot.filled .eq-icon[src*="icon_weapon_"] {
+  position: relative;
+  z-index: 1;
+  filter: brightness(1.5) contrast(1.2) saturate(1.1)
+    drop-shadow(0 0 2px rgba(255, 255, 255, 0.16));
+}
+
+/* 武器槽是窄長比例；放大圖示，避免正方形素材被 contain 縮成小方塊。 */
+.eq-slot.slot-weapon .eq-icon[src*="icon_weapon_"],
+.eq-slot.slot-weapon2 .eq-icon[src*="icon_weapon_"] {
+  width: 100%;
+  height: 100%;
+  transform: scale(1.18);
+}
+
 .eq-slot.filled:hover {
   background: rgba(0, 0, 0, 0.7);
   filter: brightness(1.2);
