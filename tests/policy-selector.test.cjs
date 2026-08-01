@@ -523,6 +523,37 @@ test('轉換寶石：雜牌逐 (種類,階級) 成格，偏好種類不動', () 
   ], '轉換是同階進行的，所以每個 (種類, 階級) 各佔一格；偏好種類與零庫存都不入格');
 });
 
+test('轉換寶石：rebalance 把偏好種類的一半轉給另一群，且只轉夠階的', () => {
+  /* 201 級起要把一半爆傷換成元素屬性傷害加成寶石。但元素寶石在那之前一直是雜牌、
+     早被轉光，而爆傷與元素寶石那時都算偏好種類，一般轉換邏輯不會在兩者之間轉——
+     沒有這條，mix 分段永遠挑不到元素寶石，整段是空轉。 */
+  const rule = {
+    id: 'conv', cmd: 'gem.convert',
+    convertToPreferred: {
+      gems: 'panels.gems.gems', levelPath: 'view.level',
+      maxSlots: 9, maxPerSlot: 1000, maxCommands: 4,
+      preferByLevel: [{ types: ['garnet', 'coreFire', 'coreIce'] }],
+      rebalance: [{
+        from: 'garnet', to: ['coreFire', 'coreIce'],
+        when: ['view.level', '>=', 201], toShare: 0.5, minLevel: 6
+      }]
+    }
+  };
+  const p = makePolicy([rule]);
+  const run = (level, gems) => p.decide({
+    gameTimeSec: 100, view: { level }, panels: { gems: { gems } }
+  }).map((c) => ({ from: c.args.slots[0].type, lv: c.args.slots[0].lv, n: c.args.slots[0].n, to: c.args.targetType }));
+
+  assert.deepEqual(run(200, { garnet: { 6: 10 } }), [], '未達 201 不動');
+
+  assert.deepEqual(run(201, { garnet: { 5: 8, 6: 10 } }),
+    [{ from: 'garnet', lv: 6, n: 5, to: 'coreFire' }],
+    '只算六級以上（五級的 8 顆不列入），10 顆轉一半＝5 顆；低階元素寶石加成比爆傷還低，換上去傷害會不升反降');
+
+  assert.deepEqual(run(201, { garnet: { 6: 5 }, coreFire: { 6: 5 } }), [],
+    '已經一半一半就別再轉——不收斂的話每個決策點都會來回轉');
+});
+
 test('轉換寶石：配額種類不能被當成雜牌轉走', () => {
   const p = makePolicy([Object.assign({}, CONVERT_RULE, {
     convertToPreferred: Object.assign({}, CONVERT_RULE.convertToPreferred, {

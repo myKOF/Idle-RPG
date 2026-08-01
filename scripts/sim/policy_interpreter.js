@@ -595,6 +595,50 @@ function decide(state, policy, memo) {
           buckets[tgt].push(junk[ji]);
         }
 
+        /* rebalance：把「已經是偏好種類」的其中一種轉成另一群，直到後者佔到指定比例。
+
+           為什麼需要：201 級起的策略是「把一半的爆傷寶石換成元素屬性傷害加成寶石」。
+           但元素寶石在 201 之前一直是雜牌、早就被轉光了，到 201 時庫存是零；
+           而爆傷與元素寶石那時都算偏好種類，一般的轉換邏輯不會在兩者之間轉，
+           於是 mix 分段永遠挑不到元素寶石——規則看起來設好了，實際整段是空轉。
+
+           只轉 minLevel 以上的：低階元素寶石的加成比爆傷還低，換上去會讓傷害不升反降。 */
+        for (var rbi = 0; rbi < (cCfg.rebalance || []).length; rbi++) {
+          var rb = cCfg.rebalance[rbi];
+          if (!rb || !rb.from || !rb.to || !rb.to.length) continue;
+          if (rb.when && !testCond(state, rb.when)) continue;
+          var minLv = (typeof rb.minLevel === 'number') ? rb.minLevel : 1;
+
+          var fromByLv = [], fromTotal = 0;
+          var fl = cGems[rb.from] || {};
+          for (var flk in fl) {
+            var flv = Number(flk), fn = Number(fl[flk]) || 0;
+            if (flv >= minLv && fn > 0) { fromByLv.push({ lv: flv, n: fn }); fromTotal += fn; }
+          }
+          var toTotal = 0;
+          for (var tti = 0; tti < rb.to.length; tti++) {
+            var tl = cGems[rb.to[tti]] || {};
+            for (var tlk in tl) if (Number(tlk) >= minLv) toTotal += Number(tl[tlk]) || 0;
+          }
+          var share = (typeof rb.toShare === 'number') ? rb.toShare : 0.5;
+          var budget = Math.floor(share * (fromTotal + toTotal)) - toTotal;
+          if (budget <= 0) continue;
+
+          fromByLv.sort(function (a, b) { return b.lv - a.lv; });   // 高階先換
+          var tIdx = 0;
+          for (var fbi = 0; fbi < fromByLv.length && budget > 0; fbi++) {
+            var take = Math.min(fromByLv[fbi].n, budget, maxPerSlot);
+            if (take <= 0) continue;
+            budget -= take;
+            out.push({
+              name: r.cmd,
+              args: { slots: [{ type: rb.from, lv: fromByLv[fbi].lv, n: take }], targetType: rb.to[tIdx % rb.to.length] },
+              ruleId: r.id
+            });
+            tIdx++;
+          }
+        }
+
         var emitted = 0;
         for (var oi = 0; oi < order.length && emitted < maxCommands; oi++) {
           var bSlots = buckets[order[oi]];

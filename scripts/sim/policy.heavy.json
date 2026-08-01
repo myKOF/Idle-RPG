@@ -290,6 +290,26 @@
             "依據": "51~100級：暴擊率、爆擊傷害"
           },
           {
+            "maxLevel": 200,
+            "when": [
+              "panels.header.stats.critRate",
+              ">=",
+              100
+            ],
+            "types": [
+              "garnet"
+            ],
+            "依據": "101以後：全鑲孔基本全用爆擊傷害，前提爆率達100%"
+          },
+          {
+            "maxLevel": 200,
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "101以後但爆率未達100%：先把爆率補上來"
+          },
+          {
             "when": [
               "panels.header.stats.critRate",
               ">=",
@@ -308,14 +328,14 @@
                 "coreDark"
               ]
             ],
-            "依據": "101以後且爆率100%以上：一半爆擊傷害、一半六大屬性傷害加成"
+            "依據": "201以後：爆傷邊際效益出現，一半換成元素屬性傷害加成寶石"
           },
           {
             "types": [
               "amethyst",
               "garnet"
             ],
-            "依據": "101以後但爆率未達100%：繼續補爆擊率與爆擊傷害"
+            "依據": "收尾段：爆率未達100%時繼續補爆擊"
           }
         ],
         "maxSlots": 9,
@@ -348,6 +368,27 @@
               }
             ],
             "依據": "法力恢復不夠者補法力恢復寶石至夠用"
+          }
+        ],
+        "rebalance": [
+          {
+            "from": "garnet",
+            "to": [
+              "coreFire",
+              "coreIce",
+              "coreLightning",
+              "corePoison",
+              "coreLight",
+              "coreDark"
+            ],
+            "when": [
+              "view.level",
+              ">=",
+              201
+            ],
+            "toShare": 0.5,
+            "minLevel": 6,
+            "依據": "201以後把一半的爆傷寶石轉成元素屬性傷害加成寶石；只轉六級以上，低階的加成比爆傷還低"
           }
         ]
       },
@@ -404,6 +445,26 @@
             "依據": "51~100級：暴擊率、爆擊傷害"
           },
           {
+            "maxLevel": 200,
+            "when": [
+              "panels.header.stats.critRate",
+              ">=",
+              100
+            ],
+            "types": [
+              "garnet"
+            ],
+            "依據": "101以後：全鑲孔基本全用爆擊傷害，前提爆率達100%"
+          },
+          {
+            "maxLevel": 200,
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "101以後但爆率未達100%：先把爆率補上來"
+          },
+          {
             "when": [
               "panels.header.stats.critRate",
               ">=",
@@ -422,14 +483,14 @@
                 "coreDark"
               ]
             ],
-            "依據": "101以後且爆率100%以上：一半爆擊傷害、一半六大屬性傷害加成"
+            "依據": "201以後：爆傷邊際效益出現，一半換成元素屬性傷害加成寶石"
           },
           {
             "types": [
               "amethyst",
               "garnet"
             ],
-            "依據": "101以後但爆率未達100%：繼續補爆擊率與爆擊傷害"
+            "依據": "收尾段：爆率未達100%時繼續補爆擊"
           }
         ],
         "maxPerDecision": 2,
@@ -437,7 +498,13 @@
         "minLevelByType": {
           "topaz": 3,
           "ruby": 3,
-          "sapphire": 3
+          "sapphire": 3,
+          "coreFire": 6,
+          "coreIce": 6,
+          "coreLightning": 6,
+          "corePoison": 6,
+          "coreLight": 6,
+          "coreDark": 6
         },
         "quota": [
           {
@@ -500,6 +567,26 @@
             "依據": "51~100級：暴擊率、爆擊傷害"
           },
           {
+            "maxLevel": 200,
+            "when": [
+              "panels.header.stats.critRate",
+              ">=",
+              100
+            ],
+            "types": [
+              "garnet"
+            ],
+            "依據": "101以後：全鑲孔基本全用爆擊傷害，前提爆率達100%"
+          },
+          {
+            "maxLevel": 200,
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "101以後但爆率未達100%：先把爆率補上來"
+          },
+          {
             "when": [
               "panels.header.stats.critRate",
               ">=",
@@ -518,20 +605,26 @@
                 "coreDark"
               ]
             ],
-            "依據": "101以後且爆率100%以上：一半爆擊傷害、一半六大屬性傷害加成"
+            "依據": "201以後：爆傷邊際效益出現，一半換成元素屬性傷害加成寶石"
           },
           {
             "types": [
               "amethyst",
               "garnet"
             ],
-            "依據": "101以後但爆率未達100%：繼續補爆擊率與爆擊傷害"
+            "依據": "收尾段：爆率未達100%時繼續補爆擊"
           }
         ],
         "minLevelByType": {
           "topaz": 3,
           "ruby": 3,
-          "sapphire": 3
+          "sapphire": 3,
+          "coreFire": 6,
+          "coreIce": 6,
+          "coreLightning": 6,
+          "corePoison": 6,
+          "coreLight": 6,
+          "coreDark": 6
         },
         "quota": [
           {
