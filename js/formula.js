@@ -915,7 +915,7 @@ function monsterStatsFor(stage, elite, boss) {
   var atk = (2 + stage * 3.5) * Math.pow(1.055, stage - 1);
   var def = (2 + stage * 0.5) * Math.pow(1.06, stage - 1);
   var gold = (250 + stage) * Math.pow(1.018, stage - 1);
-  var xp = (60 + stage) * Math.pow(1.06, stage - 1);
+  var xp = (120 + stage) * Math.pow(1.06, stage - 1);
   var m = {
     level: stage, hp: hp, atk: atk,
     def: def,                 // 物理防禦
