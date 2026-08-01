@@ -280,7 +280,20 @@ function checkForgeUnlockNotice() {
   shimPushEvent('notice', { key: 'forgeUnlocked', modal: true });
 }
 
+/* ---- 模擬時鐘 ----
+   與 js/util.js:4 的 GT 只差一件事：GT 在戰鬥暫停時停住，SIM_T 照走。
+
+   GT 停住是它的語意（它衡量「打了多久」），但暫停期間 simStep 仍然在跑
+   factoryTick / newForgeTick / forgeTick——狀態有在動，只是 GT 沒記錄到。
+   於是任何想用時間軸把兩次執行對齊的東西（真人軌跡重播、瀏覽器↔headless 交叉驗證）
+   一碰到暫停就整批錯開，而分岔點會落在暫停之後好幾秒，看起來像別的原因。
+
+   SIM_T 是那條不會停的軸。與 GT 同樣是每步累加、從 0 起算、不進存檔，
+   所以兩次執行只要從同一份存檔開機，它就是同一條刻度。 */
+var SIM_T = 0;
+
 function simStep(dt) {
+  SIM_T += dt;
   var combatPaused = typeof isCombatPaused === 'function' && isCombatPaused();
   if (!combatPaused) GT += dt;
   if (typeof forgeTick === 'function') forgeTick(Date.now());
@@ -300,7 +313,11 @@ function simStep(dt) {
    一旦與 headless 不同，之後整條亂數序列就對不上，比對結果會全錯而且看不出原因。
 
    測試模式下遊戲時間會落後真實時間（每個計時器週期只走 0.1 秒），這是刻意的：
-   要的是可重現的步序，不是即時性。同時不落地存檔——不去動測試用 origin 的儲存空間。 */
+   要的是可重現的步序，不是即時性。
+
+   同時**不做非自願的落地存檔**——不去動測試用 origin 的儲存空間。這件事由
+   requestPersist 把關（見該處說明），不是靠這個迴圈剛好沒呼叫自動存檔：
+   onVisibility 的 SHUTDOWN 不經過這裡，只靠迴圈是擋不住的。 */
 var _detSteps = 0;
 function deterministicLoop() {
   if (!_booted) return;
@@ -402,6 +419,8 @@ function buildView() {
     stage: st.current || 0,
     zone: st.zone || '',
     gt: GT,
+    /* 見 SIM_T 宣告處：暫停時 gt 停住、simT 照走，對齊用的是後者。 */
+    simT: SIM_T,
     paused: typeof isCombatPaused === 'function' ? !!isCombatPaused() : false,
     towerActive: !!(G && G.tower && G.tower.active),
     forgeBusy: typeof forgeIsBusy === 'function' ? !!forgeIsBusy() : false

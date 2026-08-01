@@ -1,6 +1,6 @@
-# Worker 協議 v13
+# Worker 協議 v14
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 13`　最後更新：2026-07-30
+> 協議版本：`WORKER_PROTOCOL_VERSION = 14`　最後更新：2026-08-01
 > **單一資料來源是 `js/worker/protocol.js`。** 本文件是說明；兩者衝突時以程式碼為準。
 >
 > 遷移（P0～P5）已於 2026-07-28 完成，Worker 是模擬與存檔的唯一權威，舊單執行緒路徑已移除。
@@ -61,6 +61,19 @@
 | 層級 | 頻率 | 內容 |
 |---|---|---|
 | `tick.view` | 5 Hz | 只有 `TICK_VIEW_KEYS` 列出的純量：資源、等級、血魔、關卡、暫停狀態等 |
+
+`tick.view` 裡有**兩個時鐘**，用途不同，不可互換：
+
+| 欄位 | 語意 | 戰鬥暫停時 |
+| :--- | :--- | :--- |
+| `gt` | 遊戲時鐘（`js/util.js` 的 `GT`），衡量「打了多久」，給玩家看 | **停住** |
+| `simT` | 模擬時鐘（`js/worker/sim.worker.js` 的 `SIM_T`，v14 新增），衡量「模擬跑了多久」 | 照走 |
+
+暫停期間 `simStep` 仍在跑 `factoryTick` / `newForgeTick` / `forgeTick`，狀態有在動，
+但 `gt` 完全不動。所以任何想用時間軸把兩次執行對齊的東西——真人軌跡重播
+（`scripts/sim/trace.js`）、瀏覽器↔headless 交叉驗證（`scripts/cross_check.js`）——
+**一律用 `simT`**。用 `gt` 會在暫停那一段整批錯開，而且分岔點會落在暫停之後好幾秒，
+看起來像別的原因。
 | `tick.dirty` | 5 Hz | 髒面板鍵陣列，來自模擬層既有的 `UI.dirty.*` 標記 |
 | `panel` | 需要時 | 主執行緒看到 `dirty` 且該面板正在顯示時才索取 |
 
@@ -289,7 +302,8 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 ## 8. 版本
 
 | 版本 | 日期 | 變更 |
-|---|---|---|
+| :--- | :--- | :--- |
+| 14 | 2026-08-01 | **真人軌跡重播**：`TICK_VIEW_KEYS` 新增 `simT`（模擬時鐘，`js/worker/sim.worker.js` 的 `SIM_T`）。與既有 `gt` 的唯一差別是戰鬥暫停時 `gt` 停住、`simT` 照走。<br>加這個欄位的理由是既有的 `gt` 當不了對齊軸：暫停期間 `simStep` 仍在跑 `factoryTick`/`newForgeTick`/`forgeTick`，狀態有在動而 `gt` 沒記錄到，於是重播與交叉驗證在暫停那一段整批錯開（實測：暫停在 `gt=51.8`，`verify_trace` 到 `gt=55.2` 才 FAIL，分岔點看起來像別的原因）。<br>同時修正 `requestPersist`：決定論測試模式（`?seed=N`）下不再執行**非自願**的落地（`auto`/`folder`/`shutdown`），`manual`/`manualFolder`/`restart` 照常。先前 `onVisibility` 的 `SHUTDOWN` 沒有被擋，測試模式切一次分頁就會用種子化亂數跑出來的狀態蓋掉玩家的 `auto_current`——與 `installTestSeed` 檔頭宣稱的「不落地存檔」不符。<br>指令表未變動（仍 86 條） |
 | 13 | 2026-07-30 | **技能融合系統改造**：`TICK_VIEW_KEYS` 新增 `magicScroll`（魔法卷軸，融合材料）；`skills` 面板快照新增 `mastery`（技能熟練度 `{level, xp, xpMax, maxLevel}`）、`scrolls`（卷軸持有量）、`fusionCosts`（每素材金幣/卷軸費用），`points/budget` 改為熟練度制即時計算（`availableSkillPoints()`/`totalSkillPoints()`，不再讀已移除的 `skillPointBudget` 欄位）。融合記錄改 `{components, seed}` 種子重算制——記錄仍原樣隨面板傳主執行緒，兩端共用 `buildFusionRuntimeDef` 重建，故無新訊息型別；指令表未變動（仍 86 條） |
 | 10 | 2026-07-29 | 事件新增 `vfx`：技能／增益特效。`{ fxKind, glyph, color, targets, cells, dur, count }`，隨 tick 合批，與 `float` 走同一條路。<br>新版戰鬥規格要求「所有技能或 buff 都要有簡易特效」。特效必須由**模擬層決定何時發生**——只有那一側知道技能真的施放了、打到誰、範圍蓋住哪幾格；但特效**怎麼畫**完全屬於主執行緒，所以事件只描述語意（原型／顏色／目標／格子），一個 DOM 字眼都不帶。<br>`targets` 沿用 `float` 的圖層 id 定址（`mv-float-N`／`tb-float`），理由與 `float` 相同：structured clone 過來的實體複本永遠比不出識別。<br>`cells` 是棋盤格座標，給領域與天降類特效定位；非區域類為 `null`。<br>指令表未變動 |
 | 9 | 2026-07-28 | **背景休眠機制移除**：分頁在背景＝仍在線上掛機，只有整個遊戲被關掉才算離線（使用者定案的遊戲規則）。`visibility` 移除 `pip` 欄位；指令表未變動（仍 86 條）。<br>舊版隱藏逾 60 秒就停止推進、回前景改用離線收益補。問題有三：①離線收益是**另一套固定費率模型**（每 20 秒殺一隻 `best−10` 的菁英怪，與玩家實際 DPS 及所在關卡無關），拿它替代即時模擬等於在背景換一套玩法；②休眠門檻用 `_hiddenAt` 起算、離線結算的 60 秒下限卻用 `savedAt` 起算，兩個基準不同，背景約 60～120 秒這段兩邊都不給，收益是 0；③與掛機遊戲的直覺相反。<br>`pip` 一併移除：它存在的唯一理由是「PiP 觀戰中要豁免休眠」，休眠沒了就沒有接收端，留著就是死欄位。PiP 功能本身不受影響（狀態仍在 `ui.js` 的 `MINI`）。<br>降頻補償改為「欠帳 + CPU 預算分次補完」，見第 6 節 |
