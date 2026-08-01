@@ -472,8 +472,8 @@ function globalDamageMultiplier(total) {
    減傷率 = 抗性值總合 / (抗性值總合 + a + b × 攻擊者等級)，a/b 與防禦減傷曲線同基準。
    於 resolveHit 全局減傷之後、最低傷害之前的最末端套用；
    依攻擊者敵種（普通/菁英/BOSS）選用防守方對應的抗性總合。 */
-var ENEMY_TYPE_DMG_RED_A = 100;  // 常數 a
-var ENEMY_TYPE_DMG_RED_B = 0.25;   // 攻擊者每級係數 b
+var ENEMY_TYPE_DMG_RED_A = 700;  // 常數 a
+var ENEMY_TYPE_DMG_RED_B = 0.5;   // 攻擊者每級係數 b
 function enemyTypeDamageReduction(total, attackerLevel) {
   total = Number(total) || 0;
   if (total <= 0) return 0;
@@ -912,7 +912,7 @@ function segmentedLevelGrowth(base, level, brackets) {
 
 function monsterStatsFor(stage, elite, boss) {
   var hp = (20 + stage * 16) * Math.pow(1.06, stage - 1);
-  var atk = (2 + stage * 3.5) * Math.pow(1.055, stage - 1);
+  var atk = (2 + stage * 2) * Math.pow(1.04, stage - 1);
   var def = (2 + stage * 0.5) * Math.pow(1.06, stage - 1);
   var gold = (250 + stage) * Math.pow(1.018, stage - 1);
   var xp = (120 + stage) * Math.pow(1.06, stage - 1);
