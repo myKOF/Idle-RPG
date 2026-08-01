@@ -104,7 +104,7 @@ test('inventory equip command preserves the selected equipment slot', async () =
   assert.equal(context.flash.item.id, 'ring-new');
 });
 
-test('選取空部位時，同部位背包亮起、不同部位背包灰化', () => {
+test('選取空部位時，同部位背包保持正常、不同部位背包灰化', () => {
   const context = loadSelectionHelpers();
   const emptyChest = fakeElement(['eq-slot', 'empty'], { 'data-slot': 'chest' });
   const chestItem = fakeElement(['item-cell'], { 'data-slot': 'chest' });
@@ -120,10 +120,55 @@ test('選取空部位時，同部位背包亮起、不同部位背包灰化', ()
   context.updateSelectionUI();
 
   assert.equal(emptyChest.hasClass('selected'), true);
-  assert.equal(chestItem.hasClass('selected'), true);
+  assert.equal(chestItem.hasClass('selected'), false);
   assert.equal(chestItem.hasClass('dimmed'), false);
   assert.equal(helmetItem.hasClass('selected'), false);
   assert.equal(helmetItem.hasClass('dimmed'), true);
+});
+
+test('點擊裝備欄裝備時，只有裝備欄保留白框', () => {
+  const context = loadSelectionHelpers();
+  const equippedChest = fakeElement(['eq-slot', 'filled'], { 'data-id': 'equipped-chest', 'data-slot': 'chest' });
+  const chestItem = fakeElement(['item-cell'], { 'data-id': 'inventory-chest', 'data-slot': 'chest' });
+  const helmetItem = fakeElement(['item-cell'], { 'data-id': 'inventory-helmet', 'data-slot': 'helmet' });
+  context.UI.sel = { id: 'equipped-chest', source: 'equip', slot: 'chest' };
+  context.findSelItem = () => ({ id: 'equipped-chest', slot: 'chest' });
+  context.document = {
+    querySelectorAll: (selector) => selector === '.item-cell, .eq-slot'
+      ? [equippedChest, chestItem, helmetItem]
+      : [chestItem, helmetItem]
+  };
+
+  context.updateSelectionUI();
+
+  assert.equal(equippedChest.hasClass('selected'), true);
+  assert.equal(chestItem.hasClass('selected'), false);
+  assert.equal(chestItem.hasClass('dimmed'), false);
+  assert.equal(helmetItem.hasClass('selected'), false);
+  assert.equal(helmetItem.hasClass('dimmed'), true);
+});
+
+test('點擊背包裝備時，背包保留白框、對應裝備欄改用亮起樣式', () => {
+  const context = loadSelectionHelpers();
+  context.uiEquipTargetSlotFromSnapshot = () => 'chest';
+  const equippedChest = fakeElement(['eq-slot', 'filled'], { 'data-id': 'equipped-chest', 'data-slot': 'chest' });
+  const selectedChest = fakeElement(['item-cell'], { 'data-id': 'inventory-chest', 'data-slot': 'chest' });
+  const helmetItem = fakeElement(['item-cell'], { 'data-id': 'inventory-helmet', 'data-slot': 'helmet' });
+  context.UI.sel = { id: 'inventory-chest', source: 'inv' };
+  context.findSelItem = () => ({ id: 'inventory-chest', slot: 'chest' });
+  context.document = {
+    querySelectorAll: (selector) => selector === '.item-cell, .eq-slot'
+      ? [equippedChest, selectedChest, helmetItem]
+      : [selectedChest, helmetItem]
+  };
+
+  context.updateSelectionUI();
+
+  assert.equal(selectedChest.hasClass('selected'), true);
+  assert.equal(helmetItem.hasClass('dimmed'), true);
+  assert.equal(equippedChest.hasClass('inventory-selection-match'), true);
+  assert.equal(equippedChest.hasClass('selected'), false);
+  assert.equal(equippedChest.hasClass('dimmed'), false);
 });
 
 test('空裝備格可點擊，且選取樣式套用於空格', () => {
@@ -132,5 +177,7 @@ test('空裝備格可點擊，且選取樣式套用於空格', () => {
 
   assert.match(ui, /if \(cell\.classList\.contains\('empty'\)\) \{[\s\S]*var emptySlot = cell\.getAttribute\('data-slot'\)[\s\S]*UI\.sel = \{ source: 'equip-slot', slot: emptySlot \}/);
   assert.match(ui, /if \(selectedSlot && el\.classList\.contains\('eq-slot'\) && el\.getAttribute\('data-slot'\) === selectedSlot\)/);
+  assert.match(ui, /inventory-selection-match/);
   assert.match(css, /\.eq-slot\.empty\s*\{[\s\S]*cursor:\s*pointer/);
+  assert.match(css, /\.eq-slot\.inventory-selection-match\s*\{[\s\S]*border-width:\s*4px/);
 });

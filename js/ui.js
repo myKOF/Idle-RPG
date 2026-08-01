@@ -2992,12 +2992,10 @@ function renderInventory() {
           }
         }
         if (selItem) {
-          if (it.id === selItem.id) {
+          if (UI.sel && UI.sel.source === 'inv' && it.id === selItem.id) {
             extraClass += ' selected';
           } else if (highlightInventoryBySlot && selectedSlot) {
-            if (itemMatchesEquipSlot(it, selectedSlot)) {
-              extraClass += ' selected';
-            } else {
+            if (!itemMatchesEquipSlot(it, selectedSlot)) {
               extraClass += ' dimmed';
             }
           } else if (it.slot !== selItem.slot) {
@@ -3204,20 +3202,25 @@ function updateSelectionUI() {
   var selItem = selectionItemForGrid();
   var selectedSlot = selectionSlotForItem(selItem);
   var highlightInventoryBySlot = !!(UI.sel && (UI.sel.source === 'equip-slot' || UI.sel.source === 'equip'));
+  var highlightEquipByInventory = !!(UI.sel && UI.sel.source === 'inv');
 
   document.querySelectorAll('.item-cell, .eq-slot').forEach(function (el) {
-    el.classList.remove('selected', 'dimmed');
+    el.classList.remove('selected', 'dimmed', 'inventory-selection-match');
 
     if (selectedSlot && el.classList.contains('eq-slot') && el.getAttribute('data-slot') === selectedSlot) {
-      el.classList.add('selected');
+      if (highlightEquipByInventory) {
+        el.classList.add('inventory-selection-match');
+      } else {
+        el.classList.add('selected');
+      }
     }
 
     if (!selItem) return;
 
     var elId = el.getAttribute('data-id');
-    if (elId && elId === selItem.id) {
+    if (elId && elId === selItem.id && UI.sel && UI.sel.source === 'inv' && el.classList.contains('item-cell')) {
       el.classList.add('selected');
-    } else if (el.classList.contains('item-cell')) {
+    } else if (el.classList.contains('item-cell') && UI.sel && UI.sel.source === 'inv') {
       var elSlot = el.getAttribute('data-slot');
       if (elSlot !== selItem.slot) {
         el.classList.add('dimmed');
@@ -3227,9 +3230,7 @@ function updateSelectionUI() {
 
   if (!highlightInventoryBySlot || !selectedSlot) return;
   document.querySelectorAll('.item-cell').forEach(function (el) {
-    if (cellMatchesEquipSlot(el, selectedSlot)) {
-      el.classList.add('selected');
-    } else {
+    if (!cellMatchesEquipSlot(el, selectedSlot)) {
       el.classList.add('dimmed');
     }
   });
