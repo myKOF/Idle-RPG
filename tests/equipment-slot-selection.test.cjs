@@ -103,6 +103,9 @@ test('inventory equip command preserves the selected equipment slot', async () =
   });
   assert.equal(context.flash.slot, 'ring2');
   assert.equal(context.flash.item.id, 'ring-new');
+  assert.deepEqual(JSON.parse(JSON.stringify(context.UI.sel)), {
+    id: 'ring-new', source: 'equip', slot: 'ring2'
+  });
 });
 
 test('選取空部位時，同部位背包保持正常、不同部位背包灰化', () => {
