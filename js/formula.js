@@ -55,7 +55,7 @@ function reincarnationExpBaseAdd(count) {
 }
 
 // 升到下一級所需經驗 =（30 × 等級^2 + 40）× 轉生經驗倍率（各轉倍數由參數表 a~j 制定、累積連乘）＋ 升級經驗基礎增加值（依轉生次數）
-function xpForLevel(l) { return Math.floor((30 * Math.pow(l, 3) + 40) * reincarnationExpMultiplier() + reincarnationExpBaseAdd()); }
+function xpForLevel(l) { return Math.floor((20 * Math.pow(l, 3) + 40) * reincarnationExpMultiplier() + reincarnationExpBaseAdd()); }
 
 /* 等級基礎四維主屬性（不含裝備）：力/敏/智/耐 相同
    = 5 + (等級 - 1) × 2 */
@@ -474,8 +474,8 @@ function globalDamageMultiplier(total) {
    減傷率 = 抗性值總合 / (抗性值總合 + a + b × 攻擊者等級)，a/b 與防禦減傷曲線同基準。
    於 resolveHit 全局減傷之後、最低傷害之前的最末端套用；
    依攻擊者敵種（普通/菁英/BOSS）選用防守方對應的抗性總合。 */
-var ENEMY_TYPE_DMG_RED_A = 100;  // 常數 a
-var ENEMY_TYPE_DMG_RED_B = 0.25;   // 攻擊者每級係數 b
+var ENEMY_TYPE_DMG_RED_A = 700;  // 常數 a
+var ENEMY_TYPE_DMG_RED_B = 0.5;   // 攻擊者每級係數 b
 function enemyTypeDamageReduction(total, attackerLevel) {
   total = Number(total) || 0;
   if (total <= 0) return 0;
@@ -914,7 +914,7 @@ function segmentedLevelGrowth(base, level, brackets) {
 
 function monsterStatsFor(stage, elite, boss) {
   var hp = (20 + stage * 16) * Math.pow(1.06, stage - 1);
-  var atk = (2 + stage * 3.5) * Math.pow(1.055, stage - 1);
+  var atk = (2 + stage * 2) * Math.pow(1.04, stage - 1);
   var def = (2 + stage * 0.5) * Math.pow(1.06, stage - 1);
   var gold = (250 + stage) * Math.pow(1.018, stage - 1);
   var xp = (120 + stage) * Math.pow(1.06, stage - 1);
