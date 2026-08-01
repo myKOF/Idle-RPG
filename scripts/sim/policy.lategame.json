@@ -133,6 +133,62 @@
       "regenerate",
       "healWound",
       "secondWind"
+    ],
+    "affixWeapon": [
+      "atkPct",
+      "critRate",
+      "aspd",
+      "pPen",
+      "eliteDmg",
+      "bossDmg",
+      "normalDmg",
+      "aoeDmg",
+      "atkFlat"
+    ],
+    "affixArmor": [
+      "hpPct",
+      "hpFlat",
+      "defPct",
+      "mdefPct",
+      "globalDmgRed",
+      "resAll",
+      "pRes",
+      "mRes",
+      "shieldEff",
+      "blockRate",
+      "blockDmgRed",
+      "tenacity",
+      "normalDmgRed",
+      "eliteDmgRed",
+      "bossDmgRed",
+      "hit",
+      "lifesteal",
+      "atkFlat",
+      "defFlat",
+      "mdefFlat"
+    ],
+    "affixJewel": [
+      "gemEff",
+      "loot",
+      "xpBonus",
+      "atkPct",
+      "critRate",
+      "pPen",
+      "aspd",
+      "eliteDmg",
+      "bossDmg",
+      "hit",
+      "hpPct",
+      "globalDmgRed",
+      "resAll",
+      "eliteDmgRed",
+      "bossDmgRed",
+      "shieldEff",
+      "lifesteal",
+      "atkFlat"
+    ],
+    "affixCritDmg": [
+      "critDmg"
     ]
   },
   "rules": [
@@ -201,9 +257,10 @@
       "cmd": "item.equip",
       "bestPerSlot": {
         "items": "panels.inv.items",
-        "equippedScores": "panels.inv.equipmentScores"
+        "equippedScores": "panels.inv.equipmentScores",
+        "equipment": "panels.inv.equipment"
       },
-      "why": "每個部位換上背包裡評分最高且優於身上那件的裝備"
+      "why": "換裝優先序：品質 >> 等級 >> 太古詞條數 >> 評分（player_strategy.md）。評分只當平手裁判——itemScore 把品質、等級、太古壓成一個數字，照它排會出現「品質低一階但詞條滾得好所以分數高」而換錯，而品質決定插槽數與附魔欄數，換不回來"
     },
     {
       "id": "auto-equip-on",

@@ -202,6 +202,39 @@ function gemQuotaNeeds(state, quota, equipment, stockOf) {
   return out;
 }
 
+/* 裝備優劣的比較階層（player_strategy.md 裝備詞條洗煉策略：品質 >> 等級 >> 太古詞條數）。
+
+   分數只當最後的平手裁判。itemScore 是遊戲算的沒錯，但它把品質、等級、太古全部
+   壓成一個數字——照它排就會出現「品質低一階、但詞條剛好滾得好所以分數高」而換錯，
+   而品質決定插槽數與附魔欄數，是換不回來的。
+
+   身上那件給的是完整物件（有 affixes），背包那件是投影過的（只有 ancientCount），
+   兩種都要吃得下。 */
+function itemRank(it, scoreOverride) {
+  if (!it) return [-1, -1, -1, -1];
+  var anc = (typeof it.ancientCount === 'number') ? it.ancientCount : 0;
+  if (it.affixes) {
+    anc = 0;
+    for (var i = 0; i < it.affixes.length; i++) if (it.affixes[i] && it.affixes[i].ancient) anc++;
+  }
+  return [
+    (typeof it.rarity === 'number') ? it.rarity : 0,
+    (typeof it.level === 'number') ? it.level : 0,
+    anc,
+    (typeof scoreOverride === 'number') ? scoreOverride : (it.score || 0)
+  ];
+}
+/* null＝這一層無從比較（例如只拿得到身上那件的品質與評分，不知道等級與太古數），
+   要當成「平手」往下一層看。當成 -1 的話，任何有等級的候選都會在等級那層直接勝出，
+   把「評分較低就不換」整條規則架空。 */
+function rankBetter(a, b) {
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] === null || b[i] === null) continue;
+    if (a[i] !== b[i]) return a[i] > b[i];
+  }
+  return false;
+}
+
 /* 把偏好段攤平成「輪用群組」＋「是否屬於偏好」的查表。 */
 function bandGroups(band, fallbackTypes) {
   var groups = null, spread = false;
@@ -254,6 +287,7 @@ function decide(state, policy, memo) {
       var items = pathVal(state, cfg.items) || [];
       var eqScores = pathVal(state, cfg.equippedScores) || {};
       var eqRarities = pathVal(state, 'panels.inv.equipmentRarities') || {};
+      var eqItems = pathVal(state, cfg.equipment || 'panels.inv.equipment') || {};
 
       /* 依據 player_strategy.md「品質高優先穿」鐵律：
          1. 只要背包物品的品質 (rarity) > 身上現有裝備的品質，100% 強制換上！
@@ -265,10 +299,14 @@ function decide(state, policy, memo) {
            但雙手武器的合法部位只有 weapon，硬塞進 weapon2 會害主手被卸下。
            沒有 slots 欄位的舊資料才退回去數字的作法。 */
         var baseSlot = String(slotKey).replace(/\d+$/, '');
-        var currRarity = (typeof eqRarities[slotKey] === 'number') ? eqRarities[slotKey] : -1;
-        var currScore = eqScores[slotKey] || 0;
+        /* 身上那件的排名。equipmentRarities 只有品質，等級與太古數要從
+           equipment 的完整物件取；沒有那件時 itemRank 會回全 -1，任何一件都贏它。 */
+        var currItem = eqItems[slotKey];
+        var currRank = currItem
+          ? itemRank(currItem, eqScores[slotKey] || 0)
+          : [(typeof eqRarities[slotKey] === 'number') ? eqRarities[slotKey] : -1, null, null, eqScores[slotKey] || 0];
 
-        var best = null;
+        var best = null, bestRank = null;
         for (var it = 0; it < items.length; it++) {
           var item = items[it];
           if (!item || item.locked) continue;
@@ -278,27 +316,12 @@ function decide(state, policy, memo) {
           if (!fits) continue;
           if (used[item.id]) continue;
 
-          var itemRar = typeof item.rarity === 'number' ? item.rarity : 0;
-          var itemSc = item.score || 0;
-
-          if (!best) {
-            best = item;
-          } else {
-            var bestRar = typeof best.rarity === 'number' ? best.rarity : 0;
-            var bestSc = best.score || 0;
-            if (itemRar > bestRar) {
-              best = item;
-            } else if (itemRar === bestRar && itemSc > bestSc) {
-              best = item;
-            }
-          }
+          var rk = itemRank(item);
+          if (!best || rankBetter(rk, bestRank)) { best = item; bestRank = rk; }
         }
         if (!best) continue;
 
-        var bestRarity = typeof best.rarity === 'number' ? best.rarity : 0;
-        var bestScore = best.score || 0;
-
-        if (bestRarity > currRarity || (bestRarity === currRarity && bestScore > currScore)) {
+        if (rankBetter(bestRank, currRank)) {
           used[best.id] = true;
           out.push({ name: r.cmd, args: { itemId: best.id, slotKey: slotKey }, ruleId: r.id });
         }
@@ -672,15 +695,45 @@ function decide(state, policy, memo) {
          洗到什麼由遊戲擲骰決定，策略只負責指出「這條不是我要的」。 */
       var rCfg = r.rerollOffTarget;
       var rEquip = pathVal(state, rCfg.equipment) || {};
-      var wanted = {};
-      var wantList = (policy.lists && policy.lists[rCfg.targetList]) || [];
-      for (var wi = 0; wi < wantList.length; wi++) wanted[wantList[wi]] = true;
       var minRarity = (typeof rCfg.minRarity === 'number') ? rCfg.minRarity : 0;
+
+      /* 目標清單依部位分組（player_strategy.md 裝備詞條洗煉策略）：
+         主副手全洗傷害、防具以防禦為主、項鏈戒指以寶石鑲嵌效率／掉寶／經驗為關鍵。
+         用同一份清單套 13 個部位是不可能對的——武器根本洗不出防禦詞條，
+         而項鏈戒指專屬的 gemEff／loot／xpBonus 放進武器清單也永遠不會出現。
+
+         每組可掛多份清單，各自帶 when 條件（例如爆傷要爆率破 50% 才留）。
+         沒有 slots 的組是收尾組，套用在其餘所有部位。 */
+      var groupCache = {};
+      function wantedFor(slotKey) {
+        if (groupCache[slotKey]) return groupCache[slotKey];
+        var groups = rCfg.targetGroups;
+        var set = {};
+        if (!groups) {
+          var single = (policy.lists && policy.lists[rCfg.targetList]) || [];
+          for (var si2 = 0; si2 < single.length; si2++) set[single[si2]] = true;
+        } else {
+          for (var gi2 = 0; gi2 < groups.length; gi2++) {
+            var g = groups[gi2];
+            if (g.slots && g.slots.indexOf(slotKey) < 0) continue;
+            for (var li2 = 0; li2 < (g.lists || []).length; li2++) {
+              var entry = g.lists[li2];
+              if (entry.when && !testCond(state, entry.when)) continue;
+              var lst = (policy.lists && policy.lists[entry.list]) || [];
+              for (var ki2 = 0; ki2 < lst.length; ki2++) set[lst[ki2]] = true;
+            }
+            break;                                   // 第一個對上的組說了算
+          }
+        }
+        groupCache[slotKey] = set;
+        return set;
+      }
 
       for (var rsk in rEquip) {
         var rItem = rEquip[rsk];
         if (!rItem || !rItem.id || !rItem.affixes) continue;
         if ((rItem.rarity || 0) < minRarity) continue;      // 低品質不值得花精華
+        var wanted = wantedFor(rsk);
         for (var ai = 0; ai < rItem.affixes.length; ai++) {
           var af = rItem.affixes[ai];
           if (!af || !af.key || wanted[af.key]) continue;
