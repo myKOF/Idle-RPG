@@ -778,6 +778,14 @@
             <h1>🎮 放置型 RPG 蒙地卡羅數值模擬驗證工具 (高塔與天賦技能對齊版)</h1>
             <p>Monte Carlo DES Engine (100%對齊官方高塔 BOSS 試煉/地獄/煉獄關卡倍率、技能升級融合與轉生天賦數值)</p>
         </div>
+        <!-- 本次資料是哪一次模擬跑出來的。畫面上不標時間的話，看到的究竟是剛跑完的
+             還是幾小時前的舊資料完全分不出來——實際發生過拿舊 sim_out 的快照當成
+             新結果來判斷 bug，查了半天才發現資料是三小時前的。 -->
+        <div id="simStartedAtBox" style="min-width: 230px; padding: 10px 14px; border: 1px solid var(--panel-border); border-radius: 8px; background: rgba(15,23,42,0.6); font-size: 12px; line-height: 1.6; color: #94a3b8;">
+            <div style="font-weight: 700; color: var(--accent-emerald);">🕒 模擬開始時間</div>
+            <div id="simStartedAt" style="font-family: ui-monospace, monospace; font-size: 14px; color: var(--text-main);">—</div>
+            <div id="simStartedMeta"></div>
+        </div>
     </div>
 
     <div class="control-panel" style="margin-bottom: 24px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);">
@@ -1435,6 +1443,10 @@
                存檔解析在本函式之後執行，若在這裡就寫卡片會被它蓋掉。 */
             cumulativeLootStats = summary.lootStats || null;
 
+            /* 這份資料是什麼時候跑的。舊的 run_summary 沒有這個欄位，顯示為「—」，
+               那本身就是有用的訊息：代表這份資料舊到還沒有時間戳。 */
+            setSimStartedAt(summary.startedAt, 'seed ' + (summary.seed || '?') + '｜' + (summary.gameHours || '?') + ' 小時', false);
+
             document.getElementById('sumSeed').innerText = summary.seed || '-';
             document.getElementById('sumHours').innerText = (summary.gameHours || '-') + ' 小時';
             document.getElementById('sumPolicy').innerText = (summary.policy && summary.policy.file) || '-';
@@ -1750,6 +1762,9 @@
                         if (progressFill) progressFill.style.width = pct + '%';
                         if (statusText) statusText.innerText = pData.statusText || `⏳ 已模擬 ${pData.currentHour || 0} / ${hours} 小時 (${pct}%)...`;
                         renderBatchSeedProgress(pData.batch);
+                        /* 執行中的開始時間由伺服器提供，重新整理頁面也補得回來。 */
+                        setSimStartedAt(pData.startedAt,
+                            (seedCount > 1 ? seedCount + ' seed × ' : '') + hours + ' 小時', true);
                     }
                 }
             } catch (e) {}
@@ -1863,6 +1878,22 @@
                 btn.innerText = '🚀 開始全系統無作弊原生模擬 (Start Simulation)';
             }
         }
+    }
+
+    /* ---- 模擬開始時間 ----
+       秒級本機時間。live=true 表示是「這一次正在跑的」，否則是載入的舊資料——
+       兩者要分得出來，否則會拿舊快照當新結果去判斷 bug。 */
+    function setSimStartedAt(iso, meta, live) {
+        const el = document.getElementById('simStartedAt');
+        const metaEl = document.getElementById('simStartedMeta');
+        if (!el) return;
+        if (!iso) { el.innerText = '—'; if (metaEl) metaEl.innerText = ''; return; }
+        const d = new Date(iso);
+        const p = (n) => String(n).padStart(2, '0');
+        el.innerText = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} `
+            + `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+        el.style.color = live ? 'var(--accent-amber)' : 'var(--text-main)';
+        if (metaEl) metaEl.innerText = (live ? '⏳ 執行中' : '📄 載入的資料') + (meta ? '｜' + meta : '');
     }
 
     /* ---- 批次進行中：每個 seed 各自的進度 ----

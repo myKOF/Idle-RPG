@@ -36,6 +36,9 @@ const HOURS = Number(arg('hours', 1));
 const SEED = Number(arg('seed', 20260730));
 const POLICY_PATH = path.resolve(ROOT, String(arg('policy', 'scripts/sim/policy.default.json')));
 const OUT_DIR = path.resolve(ROOT, String(arg('out', 'sim_out')));
+/* 這一次模擬的開機時間（本機牆鐘）。在載入遊戲之前先取，才不會被虛擬時鐘影響——
+   引擎會把 Date 換成虛擬的（js/item.js 的寶石商店與 js/forge.js 都讀牆鐘）。 */
+const START_WALL_CLOCK = new Date().toISOString();
 const SNAP_MIN = Number(arg('snap-min', 10));
 const KEEP_VISUAL = !!arg('keep-visual', false);
 const SAVE_PATH = arg('save', null);
@@ -398,6 +401,11 @@ fs.writeFileSync(path.join(OUT_DIR, 'snapshots.meta.json'), JSON.stringify({
 const summary = {
   seed: SEED,
   gameHours: HOURS,
+  /* 這份資料是什麼時候跑出來的（本機時間，秒級）。
+     沒有這個欄位的話，儀表板讀到的快照究竟是剛跑完的還是幾小時前的完全分不出來——
+     實際發生過拿三小時前的 sim_out 當成新結果去判斷 bug，查了半天才發現資料是舊的。 */
+  startedAt: START_WALL_CLOCK,
+  finishedAt: new Date().toISOString(),
   startSave: SAVE_PATH ? String(SAVE_PATH) : null,
   policy: { file: path.relative(ROOT, POLICY_PATH), name: policy.name, sha256: policyHash },
   /* GM 前置一律揭露：讀報告的人要看得出哪些狀態是模擬出來的、哪些是墊出來的。 */
