@@ -23,6 +23,7 @@ function loadSelectionHelpers() {
   const context = {
     UI: { sel: null },
     slotTypeOf: (slot) => slot === 'weapon2' ? 'weapon' : slot,
+    isTwoHandItem: (item) => !!item && item.weaponType === 'greatsword2h',
     uiEquipTargetSlotFromSnapshot: () => 'weapon2',
     uiInventoryPanelSnapshot: () => null,
     uiEquipPanelSnapshot: () => null,
@@ -171,12 +172,36 @@ test('點擊背包裝備時，背包保留白框、對應裝備欄改用亮起�
   assert.equal(equippedChest.hasClass('dimmed'), false);
 });
 
+test('點擊背包雙手武器時，裝備欄主手與副手都亮起', () => {
+  const context = loadSelectionHelpers();
+  context.uiEquipTargetSlotFromSnapshot = () => 'weapon';
+  const equippedWeapon = fakeElement(['eq-slot', 'filled'], { 'data-id': 'equipped-weapon', 'data-slot': 'weapon' });
+  const equippedWeapon2 = fakeElement(['eq-slot', 'filled'], { 'data-id': 'equipped-weapon', 'data-slot': 'weapon2' });
+  const selectedGreatsword = fakeElement(['item-cell'], { 'data-id': 'inventory-greatsword', 'data-slot': 'weapon' });
+  const helmetItem = fakeElement(['item-cell'], { 'data-id': 'inventory-helmet', 'data-slot': 'helmet' });
+  context.UI.sel = { id: 'inventory-greatsword', source: 'inv' };
+  context.findSelItem = () => ({ id: 'inventory-greatsword', slot: 'weapon', weaponType: 'greatsword2h' });
+  context.document = {
+    querySelectorAll: (selector) => selector === '.item-cell, .eq-slot'
+      ? [equippedWeapon, equippedWeapon2, selectedGreatsword, helmetItem]
+      : [selectedGreatsword, helmetItem]
+  };
+
+  context.updateSelectionUI();
+
+  assert.equal(equippedWeapon.hasClass('inventory-selection-match'), true);
+  assert.equal(equippedWeapon2.hasClass('inventory-selection-match'), true);
+  assert.equal(selectedGreatsword.hasClass('selected'), true);
+  assert.equal(helmetItem.hasClass('dimmed'), true);
+});
+
 test('空裝備格可點擊，且選取樣式套用於空格', () => {
   const ui = uiSource;
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
 
   assert.match(ui, /if \(cell\.classList\.contains\('empty'\)\) \{[\s\S]*var emptySlot = cell\.getAttribute\('data-slot'\)[\s\S]*UI\.sel = \{ source: 'equip-slot', slot: emptySlot \}/);
-  assert.match(ui, /if \(selectedSlot && el\.classList\.contains\('eq-slot'\) && el\.getAttribute\('data-slot'\) === selectedSlot\)/);
+  assert.match(ui, /var selectedEquipSlots = selectionEquipSlotsForItem\(selItem, selectedSlot\)/);
+  assert.match(ui, /if \(selectedSlot && selectedEquipSlots\.indexOf\(el\.getAttribute\('data-slot'\)\) >= 0 && el\.classList\.contains\('eq-slot'\)\)/);
   assert.match(ui, /inventory-selection-match/);
   assert.match(css, /\.eq-slot\.empty\s*\{[\s\S]*cursor:\s*pointer/);
   assert.match(css, /\.eq-slot\.inventory-selection-match\s*\{[\s\S]*border-width:\s*2px\s*!important/);
