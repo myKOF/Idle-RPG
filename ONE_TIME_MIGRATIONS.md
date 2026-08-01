@@ -24,10 +24,15 @@
 >   而且不會有任何錯誤訊息。細節與飄移實測見 `game_formula.md` §6.4~6.6。
 >   相關測試：`tests/affix-roll-storage.test.cjs`（含八個裝備容器的掃描覆蓋）、
 >   `tests/effect-value-storage.test.cjs`（傳奇／神鑄特效與附魔）。
->   ⚠️ 尚未改造、仍是凍結數值的同類項目：**融合寶石** `fusedGems[].stats[].val`
->   （數值由整條融合樹的隨機遞迴決定，要回溯需存融合樹或改存「相當於幾顆 5 階寶石」
->   的倍率；`gemAttrDmgBaseV1` 一次性遷移就是為它而存在）、**自動機組零件**
->   `factory.parts[].val`（其實是 `perTier × tier` 的定值，可直接推導，最容易改）。
+> - **自動機組零件與融合寶石的來源值換算**（2026-08-01，同一波改造的第三階段，冪等無旗標）：
+>   零件（`data.factory.parts` 與各熔爐 `parts` 快照）丟掉可推導的 `val`／`name`
+>   （`ensurePartSource` → `js/formula.js` §7，由 migrateSave 的零件清理段與
+>   `sanitizeNewForge` 呼叫）；融合寶石的 `stats[].val` → `mult`（5 階等值倍率，
+>   `ensureFusedGemSource` → §8，由 migrateSave 既有的 `fixFusedGem` 逐顆呼叫，
+>   涵蓋 `player.fusedGems` 與所有容器插槽內的融合寶石）。
+>   **這一段讓 `gemAttrDmgBaseV1` 那類「改寶石 base 後手動縮放融合寶石快照」的
+>   一次性遷移從此不再需要**：改 base／曲線後融合寶石數值會自動等比套用。
+>   相關測試：`tests/part-fused-value-storage.test.cjs`。
 > - **2026-07-30 技能融合改造的結構相容處理**（`migrateSave`，冪等、無旗標）：
 >   技能等級夾回新上限（10／轉生後 15，等級推導制自動退點＋`_skillCapClampNotice`）、
 >   舊 `skillPointBudget` → `skillMastery.level`（扣基礎 2 點、保底已花費；欄位移除，
