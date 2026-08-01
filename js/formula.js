@@ -419,9 +419,10 @@ function defReduction(def, attackerLevel) {
 
 // 元素附傷減免：只套用對應元素抗性，不重複套用魔法抗性
 function resistanceReduction(total, enemyLevel, exponent, base, levelCoef) {
-  total = Math.max(0, Number(total) || 0);
-  if (total <= 0) return 0;
-  var power = Math.pow(total, Number(exponent));
+  // pRes/mRes/elemental resistance are stored as percentage points (46.6 = 46.6%).
+  var resistanceRatio = Math.max(0, Number(total) || 0) / 100;
+  if (resistanceRatio <= 0) return 0;
+  var power = Math.pow(resistanceRatio, Number(exponent));
   var level = Number(enemyLevel) || 1;
   var denominator = power + Number(base) + Number(levelCoef) * level;
   return denominator > 0 ? power / denominator : 0;
