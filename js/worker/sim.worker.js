@@ -634,8 +634,33 @@ function buildPanel(name, params) {
 /* ---- 存檔 ----
    序列化在 Worker，落地在主執行緒。savedAt 只能在收到 saveResult{ok:true} 後才算數，
    否則寫入失敗時離線結算的基準會錯位，造成收益漏算或重複結算。 */
+/* 決定論測試模式下**不做非自願的落地**。
+
+   檔頭 installTestSeed 那段寫著測試模式「不落地存檔」，但先前那句話只涵蓋
+   deterministicLoop 沒有週期性自動存檔而已——onVisibility 在分頁切走時仍會
+   requestPersist(SHUTDOWN)，而本函式沒有檢查 DETERMINISTIC_STEPS。
+   於是以 ?seed=N 錄製或比對時只要切一次分頁，那一局用種子化亂數跑出來的狀態
+   就會蓋掉玩家真正的 auto_current。實測確認過會發生。
+
+   分辨標準是「玩家有沒有要求」，不是「會不會寫檔」：
+     擋   auto / folder / shutdown   玩家沒有要求，寫入是副作用
+     放行 manual / manualFolder      玩家明確按了存檔，而且寫到 IC_manual_* 另一個位置
+     放行 restart                    重新開局的目的就是取代存檔，擋掉會讓它靜靜失敗
+   （app.handoff 也走 shutdown，一併擋下；主執行緒等的是 _pendingWrites 歸零，
+     沒有寫入就是立刻歸零，不會卡住交接。） */
+/* typeof 保護的理由同 MAX_CATCHUP_DEBT_SEC：既有測試會以空的 importScripts 載入本檔，
+   那時 protocol.js 沒有載入，PERSIST_KINDS 不存在。所以判斷寫在函式裡、不在載入期求值，
+   也不把 'auto' / 'folder' / 'shutdown' 抄成字串字面值——那會變成契約的第二份副本。 */
+function isUnattendedPersist(kind) {
+  if (typeof PERSIST_KINDS === 'undefined') return false;
+  return kind === PERSIST_KINDS.AUTO ||
+         kind === PERSIST_KINDS.FOLDER ||
+         kind === PERSIST_KINDS.SHUTDOWN;
+}
+
 function requestPersist(kind, opts) {
   if (!G) return null;
+  if (DETERMINISTIC_STEPS && isUnattendedPersist(kind)) return null;
   if (_restarting && kind !== PERSIST_KINDS.RESTART) return null;
   opts = opts || {};
   try {
