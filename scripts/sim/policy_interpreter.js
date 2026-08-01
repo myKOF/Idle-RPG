@@ -309,9 +309,30 @@ function hasProgressed(base, now) {
   return false;
 }
 
-/* 每個決策點更新一次，結果掛在 state.ctx 供規則以 ctx.* 路徑取用。 */
-function updateContext(state, policy, memo) {
-  if (!policy.track) return;
+/* ============ 觀測與行動是兩件事 ============
+
+   下面兩支的分工，是為了解掉一條非預期的耦合。
+
+   原本這一整段每個「決策點」跑一次，而決策間隔就是 decideEveryGameSec——同一個旋鈕
+   同時決定了「玩家多久做一次後勤」與「玩家多仔細看戰鬥」。後果是：
+
+     輕度玩家 60 秒才看一次戰鬥，最後一次取樣可能在死前 60 秒，那時 BOSS 還有 80% 血
+     極限玩家 5 秒看一次，最後一次取樣接近死亡瞬間，看到的是 30%
+
+   而重試間隔正是「觀察到的殘血百分比當分鐘數」。於是玩得少的人不只操作少，還會
+   **系統性地高估 BOSS 殘血**，把回頭再試的間隔拉長好幾倍。這不是設計，是取樣假象：
+   真人盯著螢幕看到的戰鬥細節不會因為他今天只上線兩小時就變粗。
+
+   所以拆成兩支：
+     observeCombat  高頻、與玩家強度無關。只讀 view.stage 與 track.monster，很便宜。
+     updateContext  低頻、跟著行動走。要背包面板算「有沒有變強」，那個貴。
+
+   ⚠️ observeCombat 必須可重入：同一個時刻被 observe 與 decide 各呼叫一次是正常的，
+   兩次都不能重複計數。交戰結束的分支靠 T.engaged 置 null 自我防護。 */
+
+/* 高頻觀測。只做戰鬥取樣與交戰結束的記帳，不碰背包。 */
+function observeCombat(state, policy, memo) {
+  if (!policy.track) return null;
   var t = policy.track;
   if (!memo.trk) memo.trk = { attempts: {}, engaged: null, baseline: null };
   var T = memo.trk;
@@ -323,8 +344,8 @@ function updateContext(state, policy, memo) {
   if (m && m.isBoss) mode = 'boss';
   else if (m && m.elite) mode = 'elite';
 
-  /* 交戰中：記下這一關打到的最低血量。決策點是取樣式的（每 10~60 遊戲秒一次），
-     所以這是「觀察到的最低」而不是精確最低——用來分級重試間隔已經足夠。 */
+  /* 交戰中：記下這一關打到的最低血量。取樣頻率由 observeEverySec 決定，
+     與玩家強度無關——這正是上面說的那條耦合被解開的地方。 */
   if (mode !== 'normal' && m && m.maxHp > 0) {
     if (!T.engaged || T.engaged.stage !== stage) T.engaged = { stage: stage, minHpPct: 100, mode: mode };
     var pct = 100 * m.hp / m.maxHp;
@@ -343,8 +364,30 @@ function updateContext(state, policy, memo) {
       rec.mode = e.mode;
       /* 重試間隔＝敵人剩餘血量百分比當分鐘數，最少 10 分鐘。 */
       rec.retryAt = now + Math.max(10, e.minHpPct) * 60;
-      T.baseline = progressSnapshot(state, t);
+      /* 基準線要拍背包，那是貴的面板，高頻觀測拿不到也不該拿。改成掛旗標，
+         由下一次 updateContext 補拍。延遲最多一個行動間隔，而基準線本來就是
+         「卡關當下的強度」這種粗粒度的東西，差幾秒不影響判定。 */
+      T.baselinePending = true;
     }
+  }
+  return mode;
+}
+
+/* 每個決策點更新一次，結果掛在 state.ctx 供規則以 ctx.* 路徑取用。 */
+function updateContext(state, policy, memo) {
+  if (!policy.track) return;
+  var t = policy.track;
+  /* 先補一次觀測：行動點本身也是一個觀測時刻，而且 observeEverySec 若沒有設定，
+     這裡就是唯一的觀測來源（行為與拆分前相同）。 */
+  var mode = observeCombat(state, policy, memo);
+  var T = memo.trk;
+  var now = state.gameTimeSec;
+  var stage = Number(pathVal(state, t.stage)) || 0;
+
+  /* 補拍卡關當下的基準線（見 observeCombat 的說明）。 */
+  if (T.baselinePending) {
+    T.baseline = progressSnapshot(state, t);
+    T.baselinePending = false;
   }
 
   /* 擋在前面的那個卡點：關卡數大於目前所在、且編號最小的那一個。 */
@@ -373,6 +416,12 @@ function updateContext(state, policy, memo) {
     retryWaiting: waiting,
     minHpPct: blockRec ? Math.round(blockRec.minHpPct || 100) : 100
   };
+}
+
+/* 高頻觀測的進入點。不回傳指令——觀測不是操作，玩家看戰鬥不算按按鈕。
+   驅動端每 observeEverySec 呼叫一次，與 decide 的頻率無關。 */
+function observe(state, policy, memo) {
+  observeCombat(state, policy, memo);
 }
 
 /* 回傳這個決策點要送出的指令陣列。純函式：同樣的輸入必定得到同樣的輸出。 */
