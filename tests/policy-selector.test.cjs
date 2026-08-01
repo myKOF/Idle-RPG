@@ -64,6 +64,49 @@ test('換裝：雙手武器不得被裝進副手（會害主手被卸下）', ()
     '雙手武器的合法部位只有 weapon，主手已有更好的就不該再塞進 weapon2');
 });
 
+test('換裝：優先序是 品質 >> 等級 >> 太古數 >> 評分', () => {
+  const p = makePolicy([EQUIP_RULE]);
+  const decide = (bagItem, equipped) => p.decide({
+    gameTimeSec: 100,
+    panels: { inv: {
+      items: [Object.assign({ id: 'x', slot: 'helmet', slots: ['helmet'] }, bagItem)],
+      equipmentScores: { helmet: equipped.score || 0 },
+      equipmentRarities: { helmet: equipped.rarity },
+      equipment: { helmet: Object.assign({ id: 'cur' }, equipped) }
+    } }
+  }).length > 0;
+
+  assert.equal(decide({ rarity: 3, level: 1, ancientCount: 0, score: 10 },
+    { rarity: 2, level: 50, ancientCount: 5, score: 999 }), true,
+    '品質高一階就換，即使等級、太古、評分全部落後——品質決定插槽數與附魔欄數，換不回來');
+
+  assert.equal(decide({ rarity: 3, level: 50, ancientCount: 0, score: 10 },
+    { rarity: 3, level: 1, ancientCount: 5, score: 999 }), true,
+    '同品質比等級，等級贏就換');
+
+  assert.equal(decide({ rarity: 3, level: 50, ancientCount: 2, score: 10 },
+    { rarity: 3, level: 50, ancientCount: 1, score: 999 }), true,
+    '品質等級都同就比太古數');
+
+  assert.equal(decide({ rarity: 3, level: 50, ancientCount: 1, score: 10 },
+    { rarity: 3, level: 50, ancientCount: 1, score: 999 }), false,
+    '前三層全同才看評分——評分只是平手裁判');
+});
+
+test('換裝：只知道身上那件的品質與評分時，不得憑空在等級那層勝出', () => {
+  /* 面板沒給完整物件時，等級與太古數是 null＝無從比較，要當平手往下看。
+     當成 -1 的話任何有等級的候選都會直接勝出，把「評分較低就不換」整條架空。 */
+  const p = makePolicy([EQUIP_RULE]);
+  const cmds = p.decide({
+    gameTimeSec: 100,
+    panels: { inv: invPanel({
+      items: [{ id: 'r1', slot: 'ring', slots: ['ring'], rarity: 3, level: 1, score: 50 }],
+      scores: { ring: 90 }, rarities: { ring: 3 }
+    }) }
+  });
+  assert.deepEqual(cmds, [], '同品質、等級無從比較、評分較低——不該換');
+});
+
 test('強化：低品質依上限表停手，身上最高品質不設上限', () => {
   const rule = {
     id: 'up', cmd: 'item.upgrade',
@@ -480,6 +523,37 @@ test('轉換寶石：雜牌逐 (種類,階級) 成格，偏好種類不動', () 
   ], '轉換是同階進行的，所以每個 (種類, 階級) 各佔一格；偏好種類與零庫存都不入格');
 });
 
+test('轉換寶石：rebalance 把偏好種類的一半轉給另一群，且只轉夠階的', () => {
+  /* 201 級起要把一半爆傷換成元素屬性傷害加成寶石。但元素寶石在那之前一直是雜牌、
+     早被轉光，而爆傷與元素寶石那時都算偏好種類，一般轉換邏輯不會在兩者之間轉——
+     沒有這條，mix 分段永遠挑不到元素寶石，整段是空轉。 */
+  const rule = {
+    id: 'conv', cmd: 'gem.convert',
+    convertToPreferred: {
+      gems: 'panels.gems.gems', levelPath: 'view.level',
+      maxSlots: 9, maxPerSlot: 1000, maxCommands: 4,
+      preferByLevel: [{ types: ['garnet', 'coreFire', 'coreIce'] }],
+      rebalance: [{
+        from: 'garnet', to: ['coreFire', 'coreIce'],
+        when: ['view.level', '>=', 201], toShare: 0.5, minLevel: 6
+      }]
+    }
+  };
+  const p = makePolicy([rule]);
+  const run = (level, gems) => p.decide({
+    gameTimeSec: 100, view: { level }, panels: { gems: { gems } }
+  }).map((c) => ({ from: c.args.slots[0].type, lv: c.args.slots[0].lv, n: c.args.slots[0].n, to: c.args.targetType }));
+
+  assert.deepEqual(run(200, { garnet: { 6: 10 } }), [], '未達 201 不動');
+
+  assert.deepEqual(run(201, { garnet: { 5: 8, 6: 10 } }),
+    [{ from: 'garnet', lv: 6, n: 5, to: 'coreFire' }],
+    '只算六級以上（五級的 8 顆不列入），10 顆轉一半＝5 顆；低階元素寶石加成比爆傷還低，換上去傷害會不升反降');
+
+  assert.deepEqual(run(201, { garnet: { 6: 5 }, coreFire: { 6: 5 } }), [],
+    '已經一半一半就別再轉——不收斂的話每個決策點都會來回轉');
+});
+
 test('轉換寶石：配額種類不能被當成雜牌轉走', () => {
   const p = makePolicy([Object.assign({}, CONVERT_RULE, {
     convertToPreferred: Object.assign({}, CONVERT_RULE.convertToPreferred, {
@@ -650,6 +724,42 @@ test('合成寶石：nonEmpty 只送手上真的有貨的種類', () => {
   assert.deepEqual([...new Set(cmds.map((c) => c.args.type))].sort(), ['onyx', 'ruby'],
     'topaz 全階都是 0 就不該送——遊戲開局會把 40 種寶石全部建好且數量為 0，不篩會送出上百條必敗指令');
   assert.equal(cmds.length, 4, '兩種有貨 × 兩個階級');
+});
+
+test('洗詞條：目標清單依部位分組', () => {
+  /* 用同一份清單套 13 個部位不可能對：武器洗不出防禦詞條，
+     而 gemEff／loot／xpBonus 只有戒指項鏈出得來（AFFIX_POOL 的 slots 就是這樣定的）。 */
+  const p = createPolicy({
+    name: 'test', decideEveryGameSec: 1, needPanels: ['inv'],
+    lists: { w: ['atkPct'], j: ['gemEff'], a: ['hpPct'], cd: ['critDmg'] },
+    rules: [{
+      id: 'rr', cmd: 'item.rerollAffix',
+      rerollOffTarget: {
+        equipment: 'panels.inv.equipment', minRarity: 0,
+        targetGroups: [
+          { slots: ['weapon'], lists: [{ list: 'w' }, { list: 'cd', when: ['panels.header.stats.critRate', '>', 50] }] },
+          { slots: ['amulet'], lists: [{ list: 'j' }] },
+          { lists: [{ list: 'a' }] }
+        ]
+      }
+    }]
+  });
+  const run = (crit) => p.decide({
+    gameTimeSec: 100,
+    panels: {
+      header: { stats: { critRate: crit } },
+      inv: { equipment: {
+        weapon: { id: 'w', rarity: 3, affixes: [{ key: 'atkPct' }, { key: 'critDmg' }, { key: 'hpPct' }] },
+        amulet: { id: 'a', rarity: 3, affixes: [{ key: 'gemEff' }, { key: 'atkPct' }] },
+        chest:  { id: 'c', rarity: 3, affixes: [{ key: 'hpPct' }, { key: 'gemEff' }] }
+      } }
+    }
+  }).map((c) => c.args.itemId + ':' + c.args.affixKey);
+
+  assert.deepEqual(run(80), ['w:hpPct', 'a:atkPct', 'c:gemEff'],
+    '武器留傷害與爆傷、項鏈留 gemEff、防具留 hpPct——各組互不相干');
+  assert.deepEqual(run(20), ['w:critDmg', 'w:hpPct', 'a:atkPct', 'c:gemEff'],
+    '爆率沒到 50% 時爆傷也要洗掉');
 });
 
 test('洗詞條：只洗不在目標清單的詞條，太古詞條不動', () => {

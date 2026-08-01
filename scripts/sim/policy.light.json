@@ -12,20 +12,6 @@
     "inv"
   ],
   "lists": {
-    "targetAffixes": [
-      "atkPct",
-      "atkFlat",
-      "critRate",
-      "critDmg",
-      "aspd",
-      "pPen",
-      "lifesteal",
-      "eliteDmg",
-      "bossDmg",
-      "gemEff",
-      "xpBonus",
-      "loot"
-    ],
     "skillEarly": [
       "toughness",
       "manaBarrier",
@@ -102,6 +88,62 @@
       "regenerate",
       "healWound",
       "secondWind"
+    ],
+    "affixWeapon": [
+      "atkPct",
+      "critRate",
+      "aspd",
+      "pPen",
+      "eliteDmg",
+      "bossDmg",
+      "normalDmg",
+      "aoeDmg",
+      "atkFlat"
+    ],
+    "affixArmor": [
+      "hpPct",
+      "hpFlat",
+      "defPct",
+      "mdefPct",
+      "globalDmgRed",
+      "resAll",
+      "pRes",
+      "mRes",
+      "shieldEff",
+      "blockRate",
+      "blockDmgRed",
+      "tenacity",
+      "normalDmgRed",
+      "eliteDmgRed",
+      "bossDmgRed",
+      "hit",
+      "lifesteal",
+      "atkFlat",
+      "defFlat",
+      "mdefFlat"
+    ],
+    "affixJewel": [
+      "gemEff",
+      "loot",
+      "xpBonus",
+      "atkPct",
+      "critRate",
+      "pPen",
+      "aspd",
+      "eliteDmg",
+      "bossDmg",
+      "hit",
+      "hpPct",
+      "globalDmgRed",
+      "resAll",
+      "eliteDmgRed",
+      "bossDmgRed",
+      "shieldEff",
+      "lifesteal",
+      "atkFlat"
+    ],
+    "affixCritDmg": [
+      "critDmg"
     ]
   },
   "rules": [
@@ -170,9 +212,10 @@
       "cmd": "item.equip",
       "bestPerSlot": {
         "items": "panels.inv.items",
-        "equippedScores": "panels.inv.equipmentScores"
+        "equippedScores": "panels.inv.equipmentScores",
+        "equipment": "panels.inv.equipment"
       },
-      "why": "每個部位換上背包裡評分最高且優於身上那件的裝備"
+      "why": "換裝優先序：品質 >> 等級 >> 太古詞條數 >> 評分（player_strategy.md）。評分只當平手裁判——itemScore 把品質、等級、太古壓成一個數字，照它排會出現「品質低一階但詞條滾得好所以分數高」而換錯，而品質決定插槽數與附魔欄數，換不回來"
     },
     {
       "id": "upgrade-by-rarity-cap",
@@ -225,6 +268,26 @@
             "依據": "51~100級：暴擊率、爆擊傷害"
           },
           {
+            "maxLevel": 200,
+            "when": [
+              "panels.header.stats.critRate",
+              ">=",
+              100
+            ],
+            "types": [
+              "garnet"
+            ],
+            "依據": "101以後：全鑲孔基本全用爆擊傷害，前提爆率達100%"
+          },
+          {
+            "maxLevel": 200,
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "101以後但爆率未達100%：先把爆率補上來"
+          },
+          {
             "when": [
               "panels.header.stats.critRate",
               ">=",
@@ -243,14 +306,14 @@
                 "coreDark"
               ]
             ],
-            "依據": "101以後且爆率100%以上：一半爆擊傷害、一半六大屬性傷害加成"
+            "依據": "201以後：爆傷邊際效益出現，一半換成元素屬性傷害加成寶石"
           },
           {
             "types": [
               "amethyst",
               "garnet"
             ],
-            "依據": "101以後但爆率未達100%：繼續補爆擊率與爆擊傷害"
+            "依據": "收尾段：爆率未達100%時繼續補爆擊"
           }
         ],
         "maxSlots": 9,
@@ -283,6 +346,27 @@
               }
             ],
             "依據": "法力恢復不夠者補法力恢復寶石至夠用"
+          }
+        ],
+        "rebalance": [
+          {
+            "from": "garnet",
+            "to": [
+              "coreFire",
+              "coreIce",
+              "coreLightning",
+              "corePoison",
+              "coreLight",
+              "coreDark"
+            ],
+            "when": [
+              "view.level",
+              ">=",
+              201
+            ],
+            "toShare": 0.5,
+            "minLevel": 6,
+            "依據": "201以後把一半的爆傷寶石轉成元素屬性傷害加成寶石；只轉六級以上，低階的加成比爆傷還低"
           }
         ]
       },
@@ -339,6 +423,26 @@
             "依據": "51~100級：暴擊率、爆擊傷害"
           },
           {
+            "maxLevel": 200,
+            "when": [
+              "panels.header.stats.critRate",
+              ">=",
+              100
+            ],
+            "types": [
+              "garnet"
+            ],
+            "依據": "101以後：全鑲孔基本全用爆擊傷害，前提爆率達100%"
+          },
+          {
+            "maxLevel": 200,
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "101以後但爆率未達100%：先把爆率補上來"
+          },
+          {
             "when": [
               "panels.header.stats.critRate",
               ">=",
@@ -357,14 +461,14 @@
                 "coreDark"
               ]
             ],
-            "依據": "101以後且爆率100%以上：一半爆擊傷害、一半六大屬性傷害加成"
+            "依據": "201以後：爆傷邊際效益出現，一半換成元素屬性傷害加成寶石"
           },
           {
             "types": [
               "amethyst",
               "garnet"
             ],
-            "依據": "101以後但爆率未達100%：繼續補爆擊率與爆擊傷害"
+            "依據": "收尾段：爆率未達100%時繼續補爆擊"
           }
         ],
         "maxPerDecision": 2,
@@ -372,7 +476,13 @@
         "minLevelByType": {
           "topaz": 3,
           "ruby": 3,
-          "sapphire": 3
+          "sapphire": 3,
+          "coreFire": 6,
+          "coreIce": 6,
+          "coreLightning": 6,
+          "corePoison": 6,
+          "coreLight": 6,
+          "coreDark": 6
         },
         "quota": [
           {
@@ -435,6 +545,26 @@
             "依據": "51~100級：暴擊率、爆擊傷害"
           },
           {
+            "maxLevel": 200,
+            "when": [
+              "panels.header.stats.critRate",
+              ">=",
+              100
+            ],
+            "types": [
+              "garnet"
+            ],
+            "依據": "101以後：全鑲孔基本全用爆擊傷害，前提爆率達100%"
+          },
+          {
+            "maxLevel": 200,
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "101以後但爆率未達100%：先把爆率補上來"
+          },
+          {
             "when": [
               "panels.header.stats.critRate",
               ">=",
@@ -453,20 +583,26 @@
                 "coreDark"
               ]
             ],
-            "依據": "101以後且爆率100%以上：一半爆擊傷害、一半六大屬性傷害加成"
+            "依據": "201以後：爆傷邊際效益出現，一半換成元素屬性傷害加成寶石"
           },
           {
             "types": [
               "amethyst",
               "garnet"
             ],
-            "依據": "101以後但爆率未達100%：繼續補爆擊率與爆擊傷害"
+            "依據": "收尾段：爆率未達100%時繼續補爆擊"
           }
         ],
         "minLevelByType": {
           "topaz": 3,
           "ruby": 3,
-          "sapphire": 3
+          "sapphire": 3,
+          "coreFire": 6,
+          "coreIce": 6,
+          "coreLightning": 6,
+          "corePoison": 6,
+          "coreLight": 6,
+          "coreDark": 6
         },
         "quota": [
           {
@@ -506,11 +642,61 @@
       "cmd": "item.rerollAffix",
       "rerollOffTarget": {
         "equipment": "panels.inv.equipment",
-        "targetList": "targetAffixes",
         "minRarity": 3,
-        "keepAncient": true
+        "keepAncient": true,
+        "targetGroups": [
+          {
+            "slots": [
+              "weapon",
+              "weapon2"
+            ],
+            "lists": [
+              {
+                "list": "affixWeapon"
+              },
+              {
+                "list": "affixCritDmg",
+                "when": [
+                  "panels.header.stats.critRate",
+                  ">",
+                  50
+                ]
+              }
+            ],
+            "依據": "主副手：全洗傷害類，百分比>定值；爆傷只在爆率高於50%後才洗"
+          },
+          {
+            "slots": [
+              "ring",
+              "ring2",
+              "amulet"
+            ],
+            "lists": [
+              {
+                "list": "affixJewel"
+              },
+              {
+                "list": "affixCritDmg",
+                "when": [
+                  "panels.header.stats.critRate",
+                  ">",
+                  50
+                ]
+              }
+            ],
+            "依據": "項鏈戒指：寶石鑲嵌效率最關鍵，其次掉寶率與經驗加成"
+          },
+          {
+            "lists": [
+              {
+                "list": "affixArmor"
+              }
+            ],
+            "依據": "防具：以防禦性詞條為主，保留一條物攻；不留單一元素抗性（怪物屬性隨機），改留全抗性與全局減傷"
+          }
+        ]
       },
-      "why": "把不在 targetAffixes 的詞條洗掉（攻擊為主、防禦為輔）。精華少於 20 就不洗——實測精華是瓶頸，硬送只會得到 1,410 次「資源不足」把報表淹掉",
+      "why": "依 player_strategy.md 裝備詞條洗煉策略分三組：主副手全傷害、防具以防禦為主、項鏈戒指以寶石鑲嵌效率/掉寶率/經驗加成為關鍵。用同一份清單套 13 個部位不可能對——武器洗不出防禦詞條，而 gemEff/loot/xpBonus 只有戒指項鏈出得來。爆傷要爆率破 50% 才留；閃避 300 級前不留；單一元素抗性不留（怪物屬性隨機，改留全抗性）",
       "if": [
         [
           "view.essence",

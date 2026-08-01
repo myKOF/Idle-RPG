@@ -62,11 +62,11 @@ test('裝備產出時決定太古條數與位置，太古數值必為滿值 ×1.
     const v = context.affixValue(it, a);
     const limits = context.getAffixLimits(a.key, it.level, it.rarity);
     if (a.ancient) {
-      assert.equal(a.roll, context.AFFIX_ROLL_MAX, '太古位置的強度值必為滿值');
-      assert.equal(v, context.affixValueFromStrength(a.key, it.level, it.rarity, context.AFFIX_ROLL_MAX, true));
+      assert.equal(a.roll, context.STRENGTH_ROLL_MAX, '太古位置的強度值必為滿值');
+      assert.equal(v, context.affixValueFromStrength(a.key, it.level, it.rarity, context.STRENGTH_ROLL_MAX, true));
       assert.ok(v > limits.max, '太古數值必超出一般上限');
     } else {
-      assert.ok(a.roll >= 0 && a.roll <= context.AFFIX_ROLL_MAX, '一般位置的強度值須落在刻度內');
+      assert.ok(a.roll >= 0 && a.roll <= context.STRENGTH_ROLL_MAX, '一般位置的強度值須落在刻度內');
       assert.ok(v <= limits.max + 1e-9);
     }
   });
@@ -91,14 +91,14 @@ test('整件洗煉：太古位置永久固定且必滿值，非太古位置永�
   // 手動指定位置 1、3 為太古（模擬產出時決定）
   it.affixes = it.affixes.map((a, i) => {
     const ancient = i === 1 || i === 3;
-    return { key: a.key, roll: ancient ? context.AFFIX_ROLL_MAX : a.roll, ancient: ancient };
+    return { key: a.key, roll: ancient ? context.STRENGTH_ROLL_MAX : a.roll, ancient: ancient };
   });
   for (let round = 0; round < 3; round++) {
     assert.equal(context.rerollItemAffixes(it), null);
     it.affixes.forEach((a, i) => {
       if (i === 1 || i === 3) {
         assert.equal(a.ancient, true, '第 ' + i + ' 位置應維持太古');
-        assert.equal(a.roll, context.AFFIX_ROLL_MAX, '太古位置洗煉後強度值仍為滿值');
+        assert.equal(a.roll, context.STRENGTH_ROLL_MAX, '太古位置洗煉後強度值仍為滿值');
         assert.ok(context.affixValue(it, a) > context.getAffixLimits(a.key, it.level, it.rarity).max);
       } else {
         assert.equal(a.ancient, false, '第 ' + i + ' 位置不應洗出太古');
@@ -118,12 +118,12 @@ test('單詞條洗煉：太古位置必滿值只換種類，非太古位置不�
   context.rollAncientAffixCount = () => 0;
   const it = context.makeEquipment(200, { rarity: 6, level: 200 });
   it.affixes = it.affixes.map((a, i) => ({
-    key: a.key, roll: i === 0 ? context.AFFIX_ROLL_MAX : a.roll, ancient: i === 0
+    key: a.key, roll: i === 0 ? context.STRENGTH_ROLL_MAX : a.roll, ancient: i === 0
   }));
   // 太古位置：重骰後仍為太古、必滿值
   assert.equal(context.rerollSingleAffix(it, it.affixes[0].key), null);
   assert.equal(it.affixes[0].ancient, true);
-  assert.equal(it.affixes[0].roll, context.AFFIX_ROLL_MAX);
+  assert.equal(it.affixes[0].roll, context.STRENGTH_ROLL_MAX);
   assert.ok(context.affixValue(it, it.affixes[0]) >
     context.getAffixLimits(it.affixes[0].key, it.level, it.rarity).max);
   // 非太古位置：重骰後仍非太古

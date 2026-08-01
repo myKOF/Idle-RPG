@@ -12,15 +12,22 @@
 >   是讓舊格式讀得進來的必要轉換。
 > - **無旗標的冪等正規化**：融合技 `fx` 快照清理、融合寶石世代制（`leaves` 欄位）、
 >   輸送帶上限裁切、已淘汰零件回收。對新存檔本來就是 no-op，留著沒有成本。
-> - **詞條強度值換算**（2026-08-01 詞條存檔改造，`ensureItemAffixRolls` →
->   `js/formula.js` §6，由 `migrateSave` 的 `fixLoadedItem` 逐件呼叫）：把舊存檔
->   `affixes[].val`（產出當下凍結的數值）反推為 `roll`（強度值）並移除 `val`。
->   有 `roll` 就是 no-op，故為冪等正規化而非一次性遷移，不設完成旗標。
+> - **裝備數值來源換算**（2026-08-01 裝備數值存檔改造，`normalizeItemValueSources` →
+>   `js/formula.js` §6，由 `migrateSave` 的 `fixLoadedItem` 逐件呼叫）：把舊存檔的凍結
+>   數值反推成可重算的來源值——詞條 `affixes[].val` → `roll`（強度值）、傳奇特效
+>   `passive.val` 直接移除（由 key + 稀有度推導）、神鑄特效 `godPassives[].val` → `roll`、
+>   附魔 `enchants[].val` → `gemLv`（附魔當下的寶石等級）。
+>   來源欄位已存在就是 no-op，故為冪等正規化而非一次性遷移，不設完成旗標。
 >   **⚠️ 有時序要求**：換算用的是「現行參數推出的基準值」，所以這段程式必須在
->   **下一次調整詞條參數（base／每級成長／稀有度倍率）之前上線**。若先調參數再讓玩家
->   載入舊存檔，反推會用新基準值算，結果是把舊數值原封不動保留下來——正好是這次改造
->   要消滅的狀態，而且不會有任何錯誤訊息。細節與飄移實測見 `game_formula.md` §6.4。
->   相關測試：`tests/affix-roll-storage.test.cjs`（含八個裝備容器的掃描覆蓋）。
+>   **下一次調整詞條／特效／附魔數值之前上線**。若先調參數再讓玩家載入舊存檔，
+>   反推會用新基準值算，結果是把舊數值原封不動保留下來——正好是這次改造要消滅的狀態，
+>   而且不會有任何錯誤訊息。細節與飄移實測見 `game_formula.md` §6.4~6.6。
+>   相關測試：`tests/affix-roll-storage.test.cjs`（含八個裝備容器的掃描覆蓋）、
+>   `tests/effect-value-storage.test.cjs`（傳奇／神鑄特效與附魔）。
+>   ⚠️ 尚未改造、仍是凍結數值的同類項目：**融合寶石** `fusedGems[].stats[].val`
+>   （數值由整條融合樹的隨機遞迴決定，要回溯需存融合樹或改存「相當於幾顆 5 階寶石」
+>   的倍率；`gemAttrDmgBaseV1` 一次性遷移就是為它而存在）、**自動機組零件**
+>   `factory.parts[].val`（其實是 `perTier × tier` 的定值，可直接推導，最容易改）。
 > - **2026-07-30 技能融合改造的結構相容處理**（`migrateSave`，冪等、無旗標）：
 >   技能等級夾回新上限（10／轉生後 15，等級推導制自動退點＋`_skillCapClampNotice`）、
 >   舊 `skillPointBudget` → `skillMastery.level`（扣基礎 2 點、保底已花費；欄位移除，

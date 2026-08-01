@@ -38,7 +38,7 @@ test('產出的詞條只帶強度值，不再帶凍結數值', () => {
     assert.equal(Object.prototype.hasOwnProperty.call(a, 'val'), false, '存檔不得再出現 val');
     assert.equal(typeof a.roll, 'number');
     assert.equal(a.roll, Math.floor(a.roll), '強度值必為整數');
-    assert.ok(a.roll >= 0 && a.roll <= c.AFFIX_ROLL_MAX, '強度值須落在 0 ~ AFFIX_ROLL_MAX');
+    assert.ok(a.roll >= 0 && a.roll <= c.STRENGTH_ROLL_MAX, '強度值須落在 0 ~ STRENGTH_ROLL_MAX');
   });
 });
 
@@ -46,12 +46,12 @@ test('強度值與數值的對應：0＝區間下限、滿值＝區間上限、�
   const c = loadContext();
   const limits = c.getAffixLimits('hpFlat', 100, 4);
   assert.equal(c.affixValueFromStrength('hpFlat', 100, 4, 0, false), limits.min);
-  assert.equal(c.affixValueFromStrength('hpFlat', 100, 4, c.AFFIX_ROLL_MAX, false), limits.max);
-  const mid = c.affixValueFromStrength('hpFlat', 100, 4, c.AFFIX_ROLL_MAX / 2, false);
+  assert.equal(c.affixValueFromStrength('hpFlat', 100, 4, c.STRENGTH_ROLL_MAX, false), limits.max);
+  const mid = c.affixValueFromStrength('hpFlat', 100, 4, c.STRENGTH_ROLL_MAX / 2, false);
   assert.equal(mid, Math.round((limits.min + limits.max) / 2));
   // 單調遞增：強度值越高、數值不會變小（熔爐重骰模組直接比 roll 的前提）
   let prev = -Infinity;
-  for (let roll = 0; roll <= c.AFFIX_ROLL_MAX; roll += 50) {
+  for (let roll = 0; roll <= c.STRENGTH_ROLL_MAX; roll += 50) {
     const v = c.affixValueFromStrength('hpFlat', 100, 4, roll, false);
     assert.ok(v >= prev);
     prev = v;
@@ -62,7 +62,7 @@ test('太古位置不看強度值：必為滿值 × 太古倍率', () => {
   const c = loadContext();
   const max = c.getAffixLimits('atkFlat', 100, 6).max;
   const anc = c.affixValueFromStrength('atkFlat', 100, 6, 0, true); // 強度值 0 也一樣
-  assert.equal(anc, c.affixValueFromStrength('atkFlat', 100, 6, c.AFFIX_ROLL_MAX, true));
+  assert.equal(anc, c.affixValueFromStrength('atkFlat', 100, 6, c.STRENGTH_ROLL_MAX, true));
   assert.ok(anc > max, '太古數值必超出一般上限');
   assert.equal(anc, Math.round(c.affixBaseValue('atkFlat', 100, 6) * 1.2 * c.ANCIENT_AFFIX_VALUE_MULT));
 });
@@ -113,9 +113,9 @@ test('舊存檔換算：太古位置一律重算為現行太古倍率', () => {
     affixes: [{ key: 'atkFlat', val: 1, ancient: true }]
   });
   c.ensureItemAffixRolls(it);
-  assert.equal(it.affixes[0].roll, c.AFFIX_ROLL_MAX);
+  assert.equal(it.affixes[0].roll, c.STRENGTH_ROLL_MAX);
   assert.equal(c.affixValue(it, it.affixes[0]),
-    c.affixValueFromStrength('atkFlat', 50, 5, c.AFFIX_ROLL_MAX, true));
+    c.affixValueFromStrength('atkFlat', 50, 5, c.STRENGTH_ROLL_MAX, true));
 });
 
 test('舊存檔換算是冪等的：重複讀檔不再變動', () => {

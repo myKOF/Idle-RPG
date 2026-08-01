@@ -424,7 +424,7 @@ function rollAffixes(count, rarityIdx, slot, ancientSet, affixCap) {
     used[key] = true;
     var ancient = !!(ancientSet && ancientSet[out.length]);
     // 太古位置的強度值記為滿值（affixValue 另乘太古倍率），一般位置照 affixCap 擲骰
-    out.push({ key: key, roll: ancient ? AFFIX_ROLL_MAX : rollAffixStrength(affixCap), ancient: ancient });
+    out.push({ key: key, roll: ancient ? STRENGTH_ROLL_MAX : rollAffixStrength(affixCap), ancient: ancient });
   }
   return out;
 }
@@ -485,17 +485,17 @@ function makeEquipment(stage, opts) {
   if (rarity >= PASSIVE_MIN_RARITY) {
     var passiveKeys = passiveKeysForItem(it);
     if (passiveKeys.length) {
-      var pk = pick(passiveKeys);
-      it.passive = { key: pk, val: passiveValueFor(pk, rarity) };
+      // 只存 key：傳奇特效數值完全由 key + 稀有度決定（passiveValue → formula.js §6）
+      it.passive = { key: pick(passiveKeys) };
     }
   }
-  // 神鑄創世：必帶 2 條不重複的專屬特效（池 GODFORGE_POOL）
+  // 神鑄創世：必帶 2 條不重複的專屬特效（池 GODFORGE_POOL）；只存強度值，數值當場算
   if (isGodforgedRarity(rarity)) {
     var gkeys = Object.keys(GODFORGE_POOL).slice();
     it.godPassives = [];
     for (var gi = 0; gi < GODFORGE_PASSIVE_COUNT && gkeys.length; gi++) {
       var gk = gkeys.splice(Math.floor(Math.random() * gkeys.length), 1)[0];
-      it.godPassives.push({ key: gk, val: godforgePassiveValue(gk) });
+      it.godPassives.push({ key: gk, roll: rollStrength() });
     }
   }
   return it;
@@ -514,18 +514,21 @@ function itemEnchants(it) {
   return it.enchants;
 }
 
-// 對裝備套用附魔：同類附魔取較高值；有空欄位則新增；全滿則覆蓋最後一欄
+/* 對裝備套用附魔：同類附魔取較高值；有空欄位則新增；全滿則覆蓋最後一欄。
+   存的是「附魔當下的寶石等級」而非數值（enchantValue → js/formula.js §6），
+   所以「取較高」是比算出來的數值——既有那條可能帶變異倍率，不能只比寶石等級。 */
 function applyEnchantTo(item, bookKey, gemLevel) {
   var ens = itemEnchants(item);
-  var val = enchantValueFor(item, bookKey, gemLevel);
+  var gemLv = Math.max(0, Number(gemLevel) || 0);
+  var val = enchantValueFor(item, bookKey, gemLv);
   for (var i = 0; i < ens.length; i++) {
     if (ens[i].key === bookKey) {
-      ens[i].val = Math.max(ens[i].val, val);
+      if (val > enchantValue(item, ens[i])) ens[i] = { key: bookKey, gemLv: gemLv };
       return item;
     }
   }
-  if (ens.length < enchantCapFor(item)) ens.push({ key: bookKey, val: val });
-  else ens[ens.length - 1] = { key: bookKey, val: val };
+  if (ens.length < enchantCapFor(item)) ens.push({ key: bookKey, gemLv: gemLv });
+  else ens[ens.length - 1] = { key: bookKey, gemLv: gemLv };
   return item;
 }
 
@@ -552,7 +555,7 @@ function manualEnchant(it, bookKey) {
   var same = null;
   for (var i = 0; i < ens.length; i++) if (ens[i].key === bookKey) { same = ens[i]; break; }
   if (same) {
-    if (enchantValueFor(it, bookKey, 0) <= same.val) return '已有同類附魔且數值不會提升';
+    if (enchantValueFor(it, bookKey, 0) <= enchantValue(it, same)) return '已有同類附魔且數值不會提升';
   } else if (ens.length >= enchantCapFor(it)) {
     return '附魔欄已滿（點擊既有附魔可取下）';
   }
@@ -590,14 +593,17 @@ function consumeRerollResources(cost) {
   G.player.essence -= cost.essence;
 }
 
-function passiveLine(p) {
+// it：特效數值需要裝備稀有度才能算（passiveValue → js/formula.js §6）
+function passiveLine(it, p) {
   var d = PASSIVE_POOL[p.key];
-  return '【' + d.name + '】' + d.desc.replace('{v}', fmt1(p.val));
+  return '【' + d.name + '】' + d.desc.replace('{v}', fmt1(passiveValue(it, p)));
 }
 
-function enchantLine(en) {
+// it：附魔數值需要裝備等級與稀有度才能算（enchantValue → js/formula.js §6）
+function enchantLine(it, en) {
   var e = ENCHANTS[en.key];
-  var val = en.key === 'loot' ? effectiveDropRateEffect(en.val) : en.val;
+  var raw = enchantValue(it, en);
+  var val = en.key === 'loot' ? effectiveDropRateEffect(raw) : raw;
   // 六系抗性附魔＝獨立乘區，顯示為「XX屬性抗性額外+N%」
   if (ENCHANT_RES_MAP[en.key]) {
     return e.emoji + ' ' + e.name.replace('抗性', '屬性抗性') + '額外+' + pctStr(val);
@@ -703,7 +709,7 @@ function itemDetailHTML(it, cmp, opts) {
 
     var limits = getAffixLimits(k, it.level, it.rarity);
     // 滿值高亮改看強度值（精確判定，不再靠 0.01 容差比對數值）；太古位置恆視為滿值
-    var isMax = !!it.affixes[i].ancient || (Number(it.affixes[i].roll) || 0) >= AFFIX_ROLL_MAX;
+    var isMax = !!it.affixes[i].ancient || (Number(it.affixes[i].roll) || 0) >= STRENGTH_ROLL_MAX;
     var limitMult = k === 'loot' ? DROP_RATE_EFFECT_MULT : 1;
     var minDisplay = def.pct ? pctStr(limits.min * um * limitMult) : fmt(limits.min * um * limitMult);
     var maxDisplay = def.pct ? pctStr(limits.max * um * limitMult) : fmt(limits.max * um * limitMult);
@@ -762,15 +768,15 @@ function itemDetailHTML(it, cmp, opts) {
   h += '</div>';
 
   if (cmp && cmp.passive && (!it.passive || it.passive.key !== cmp.passive.key)) {
-    h += '<div class="it-passive" style="color: #f87171; text-decoration: line-through;">' + esc(passiveLine(cmp.passive)) + '</div>';
+    h += '<div class="it-passive" style="color: #f87171; text-decoration: line-through;">' + esc(passiveLine(cmp, cmp.passive)) + '</div>';
   }
   if (it.passive) {
     if (!cmp) {
-      h += '<div class="it-passive">' + esc(passiveLine(it.passive)) + '</div>';
+      h += '<div class="it-passive">' + esc(passiveLine(it, it.passive)) + '</div>';
     } else if (!cmp.passive || cmp.passive.key !== it.passive.key) {
-      h += '<div class="it-passive" style="color: #4ade80">' + esc(passiveLine(it.passive)) + '</div>';
+      h += '<div class="it-passive" style="color: #4ade80">' + esc(passiveLine(it, it.passive)) + '</div>';
     } else {
-      var diff = it.passive.val - cmp.passive.val;
+      var diff = passiveValue(it, it.passive) - passiveValue(cmp, cmp.passive);
       var diffStr = '';
       if (Math.abs(diff) > 0.05) {
         if (diff > 0) diffStr = ' <span style="color: #4ade80">↑' + fmt1(diff) + '</span>';
@@ -778,7 +784,7 @@ function itemDetailHTML(it, cmp, opts) {
       }
       var p = it.passive;
       var d = PASSIVE_POOL[p.key];
-      h += '<div class="it-passive">【' + esc(d.name) + '】' + esc(d.desc).replace('{v}', fmt1(p.val) + diffStr) + '</div>';
+      h += '<div class="it-passive">【' + esc(d.name) + '】' + esc(d.desc).replace('{v}', fmt1(passiveValue(it, p)) + diffStr) + '</div>';
     }
   }
 
@@ -787,9 +793,10 @@ function itemDetailHTML(it, cmp, opts) {
     it.godPassives.forEach(function (gp) {
       var gd = GODFORGE_POOL[gp.key];
       if (!gd) return;
+      var gv = godPassiveValue(gp);
       var gpDesc = gp.key === 'greed'
-        ? '金幣加成與掉寶率提高 ' + fmt1(gp.val) + '%／' + fmt1(effectiveDropRateEffect(gp.val)) + '%'
-        : esc(gd.desc).replace('{v}', fmt1(gp.val));
+        ? '金幣加成與掉寶率提高 ' + fmt1(gv) + '%／' + fmt1(effectiveDropRateEffect(gv)) + '%'
+        : esc(gd.desc).replace('{v}', fmt1(gv));
       h += '<div class="it-godpassive">【' + esc(gd.name) + '】' + gpDesc + '</div>';
     });
   }
@@ -801,24 +808,24 @@ function itemDetailHTML(it, cmp, opts) {
     var cmpEns = cmp ? itemEnchants(cmp) : [];
     var enCap = enchantCapFor(it);
     var cmpEnMap = {};
-    cmpEns.forEach(function (ce) { cmpEnMap[ce.key] = ce.val; });
+    cmpEns.forEach(function (ce) { cmpEnMap[ce.key] = enchantValue(cmp, ce); });
     var itEnKeys = {};
     itEns.forEach(function (en2) { itEnKeys[en2.key] = true; });
     // 對方有而自己沒有的附魔（劃線顯示）
     cmpEns.forEach(function (ce) {
       if (!itEnKeys[ce.key] && ENCHANTS[ce.key]) {
-        h += '<div class="it-enchant" style="color: #f87171; text-decoration: line-through;">' + esc(enchantLine(ce)) + '</div>';
+        h += '<div class="it-enchant" style="color: #f87171; text-decoration: line-through;">' + esc(enchantLine(cmp, ce)) + '</div>';
       }
     });
     itEns.forEach(function (en, enIdx) {
       var e = ENCHANTS[en.key];
       if (!e) return;
       if (!cmp) {
-        h += '<div class="it-enchant removable" data-enchant-remove="' + enIdx + '" data-tip="點擊取下（返還附魔書，精華不退）">' + esc(enchantLine(en)) + '</div>';
+        h += '<div class="it-enchant removable" data-enchant-remove="' + enIdx + '" data-tip="點擊取下（返還附魔書，精華不退）">' + esc(enchantLine(it, en)) + '</div>';
       } else if (!(en.key in cmpEnMap)) {
-        h += '<div class="it-enchant" style="color: #4ade80">' + esc(enchantLine(en)) + '</div>';
+        h += '<div class="it-enchant" style="color: #4ade80">' + esc(enchantLine(it, en)) + '</div>';
       } else {
-        var ediff = en.val - cmpEnMap[en.key];
+        var ediff = enchantValue(it, en) - cmpEnMap[en.key];
         var ediffStr = '';
         if (Math.abs(ediff) > 0.05) {
           var dfStr = (e.cat === 'atk') ? fmt(Math.abs(ediff)) : pctStr(Math.abs(ediff));
@@ -826,7 +833,8 @@ function itemDetailHTML(it, cmp, opts) {
             ? ' <span style="color: #4ade80">↑' + dfStr + '</span>'
             : ' <span style="color: #f87171">↓' + dfStr + '</span>';
         }
-        var vs = (e.cat === 'atk') ? '+' + fmt(en.val) : '+' + pctStr(en.val);
+        var env = enchantValue(it, en);
+        var vs = (e.cat === 'atk') ? '+' + fmt(env) : '+' + pctStr(env);
         h += '<div class="it-enchant">' + e.emoji + ' ' + esc(e.name) + ' ' + vs + ediffStr + '</div>';
       }
     });
@@ -917,7 +925,7 @@ function rerollSingleAffix(it, affixKey) {
   var isAncient = !!it.affixes[targetIdx].ancient;
   it.affixes[targetIdx] = {
     key: newKey,
-    roll: isAncient ? AFFIX_ROLL_MAX : rollAffixStrength(affixCap),
+    roll: isAncient ? STRENGTH_ROLL_MAX : rollAffixStrength(affixCap),
     ancient: isAncient
   };
 

@@ -357,10 +357,9 @@ function tryHybridSynthesis() {
     // 升至傳說級後補傳奇特效，並遵守武器類型限制。
     if (it.rarity >= PASSIVE_MIN_RARITY && !it.passive) {
       var passiveKeys = passiveKeysForItem(it);
-      if (passiveKeys.length) {
-        var pk = pick(passiveKeys);
-        it.passive = { key: pk, val: passiveValueFor(pk, it.rarity) };
-      }
+      // 只存 key：數值由 key + 稀有度當場算（passiveValue → formula.js §6），
+      // 因此稀有度提升後傳奇特效數值也會跟著提升（舊做法會停在升級前的數值）
+      if (passiveKeys.length) it.passive = { key: pick(passiveKeys) };
     }
   }
   // 詞條重骰（重骰模組）：每條詞條重骰一次取較佳值
@@ -377,7 +376,8 @@ function tryHybridSynthesis() {
   if (mutated) {
     var mens = itemEnchants(it);
     for (var mi = 0; mi < mens.length; mi++) {
-      if (mens[mi].key === bookKey) { mens[mi].val = Math.round(mens[mi].val * 1.5 * 10) / 10; break; }
+      // 變異倍率存為 mult（數值仍由 enchantValue 當場算），×1.5 可疊乘
+      if (mens[mi].key === bookKey) { mens[mi].mult = (Number(mens[mi].mult) || 1) * 1.5; break; }
     }
     if (it.affixes.length < MAX_AFFIXES) {
       it.affixes = it.affixes.concat(rollAffixes(1, it.rarity, it.slot)
