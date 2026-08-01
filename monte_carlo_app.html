@@ -835,6 +835,10 @@
             <div class="form-group">
                 <label for="seedInput" style="font-size: 13px; font-weight: 600; color: var(--accent-blue); display: block; margin-bottom: 6px;">🔑 PRNG 隨機種子 (Seed)</label>
                 <input type="number" id="seedInput" value="20260730" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: #fff; font-weight: bold;" required>
+                <label style="display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 11px; color: #94a3b8; cursor: pointer;">
+                    <input type="checkbox" id="seedAutoInput" checked style="cursor: pointer;">
+                    <span>每次自動換新種子（取消勾選＝用上面這個值重現同一次）</span>
+                </label>
             </div>
 
             <button type="submit" id="btnRunAutoSim" class="btn-submit" style="margin: 0; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border: 1px solid #818cf8; color: #fff; padding: 11px 18px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
@@ -1693,10 +1697,27 @@
         }
     }
 
+    /* 這一次要用的 seed。勾了「自動換新種子」就當場擲一個並寫回欄位——
+       寫回是關鍵：seed 是這次模擬唯一的可重現憑證，畫面上看不到就等於丟了。
+       取消勾選則沿用欄位裡的值，用來重現特定一次。
+
+       上限取 2^31 − 64：批次模式會從這個值往上連號取 N 個（最多 32 個），
+       留 64 的餘裕免得最後幾個溢位。 */
+    function nextSeed() {
+        const el = document.getElementById('seedInput');
+        const auto = document.getElementById('seedAutoInput');
+        if (auto && auto.checked) {
+            const s = 1 + Math.floor(Math.random() * (2147483648 - 64));
+            if (el) el.value = String(s);
+            return s;
+        }
+        return Number(el && el.value) || 20260730;
+    }
+
     async function handleFormSimSubmit(event) {
         event.preventDefault();
         const hours = Number(document.getElementById('hoursInput').value) || 100;
-        const seed = Number(document.getElementById('seedInput').value) || 20260730;
+        const seed = nextSeed();
         let policy = 'scripts/sim/policy.default.json';
         let out = 'sim_out';
 

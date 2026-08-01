@@ -219,6 +219,10 @@ const server = http.createServer((req, res) => {
         path.join(ROOT, 'scripts/run_batch.js'),
         `--hours=${params.hours}`,
         `--seeds=${params.seeds}`,
+        /* 批次也要吃畫面上那個 seed。先前沒傳，run_batch 就從 1 開始寫死連號，
+           於是同樣張數的批次每次跑出來一模一樣——批次的意義是看散佈，
+           結果每次看到的都是同一份散佈。 */
+        `--seedBase=${params.seed}`,
         `--policy=${params.policy}`,
         `--out=${params.out}`
       ] : [
