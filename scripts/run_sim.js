@@ -49,6 +49,10 @@ const KEEP_VISUAL = !!arg('keep-visual', false);
 /* 忽略策略宣告的 dailyActiveHours，全程在線。用來重現「班表實作之前」的行為，
    或單獨觀察線上那一段。 */
 const IGNORE_SCHEDULE = !!arg('ignore-schedule', false);
+/* 覆蓋策略宣告的觀測間隔。設成與 decideEveryGameSec 相同即可還原「觀測與行動未分離」
+   的舊行為，用來比對這項改動造成的差異。 */
+const OBSERVE_EVERY = process.argv.some((a) => a.startsWith('--observe-every='))
+  ? Number(arg('observe-every')) : null;
 
 if (TRACE_PATH && process.argv.some((a) => a.startsWith('--policy='))) {
   console.error('--trace 與 --policy 互斥：一場模擬只能有一個決策來源。');
@@ -383,14 +387,38 @@ if (scheduleDeclared && IGNORE_SCHEDULE) {
   console.log(`班表 dailyActiveHours=${policy.dailyActiveHours}，等同全程在線，不做離線結算。`);
 }
 
+/* ---- 觀測與行動的兩種節奏 ----
+
+   decideEveryGameSec 是「玩家多久做一次後勤」，會因玩家強度而異（輕度 60 秒、極限 5 秒）。
+   observeEverySec 是「玩家多仔細看戰鬥」，預設 1 秒且**不因強度而異**。
+
+   兩者原本是同一個旋鈕，於是玩得少的人連戰鬥觀測都變粗：最後一次取樣可能落在死前
+   60 秒，那時 BOSS 還有八成血，而重試間隔正是「殘血百分比當分鐘數」。玩得少的人因此
+   被系統性地多罰一次。真人盯著螢幕看到的戰鬥細節不會因為他今天只上線兩小時就變粗。
+
+   詳見 scripts/sim/policy_interpreter.js 的「觀測與行動是兩件事」。
+   --observe-every 可覆蓋；設成與 decideEveryGameSec 相同即還原拆分前的行為。 */
+const observeEvery = OBSERVE_EVERY !== null ? OBSERVE_EVERY : (policy.observeEverySec || 1);
+const observePanels = policy.observePanels || [];
+/* 軌跡重播不做觀測：它不判斷任何事，只是照時間表送出真人當初送過的指令。
+   多跑一層觀測只會白花時間，也不會改變結果。 */
+const observeOn = !TRACE_PATH && observeEvery > 0 && observeEvery < policy.decideEveryGameSec;
+if (observeOn) {
+  console.log(`節奏 觀測每 ${observeEvery}s（與強度無關）、行動每 ${policy.decideEveryGameSec}s`);
+} else if (!TRACE_PATH) {
+  console.log(`節奏 觀測與行動同為每 ${policy.decideEveryGameSec}s（未分離）`);
+}
+
 /* ---- 主迴圈 ---- */
 const decideEvery = policy.decideEveryGameSec;
 const stepsPerDecision = Math.max(1, Math.round(decideEvery / engine.dt));
+const stepsPerObserve = Math.max(1, Math.round(observeEvery / engine.dt));
 const totalWallSec = HOURS * 3600;
 const totalSteps = Math.round(totalWallSec / engine.dt);   // 全程在線時的步數，進度條與摘要用
 const snapEverySec = SNAP_MIN * 60;
 let nextSnapAt = 0;
 let decisions = 0;
+let observations = 0;
 let stepsDone = 0;
 let onlineSec = 0;
 const offlineLog = [];
@@ -422,7 +450,23 @@ try {
     while (engine.gameTimeSec() < onlineUntil - 1e-9) {
       const remain = Math.round((onlineUntil - engine.gameTimeSec()) / engine.dt);
       const n = Math.min(stepsPerDecision, remain);
-      engine.step(n);
+
+      if (!observeOn) {
+        engine.step(n);
+      } else {
+        /* 把一個行動間隔切成若干個觀測間隔。每一段之間問一次觀測——它只讀
+           view.stage 與 track.monster 指到的那個面板，不碰背包。 */
+        let left = n;
+        while (left > 0) {
+          const chunk = Math.min(stepsPerObserve, left);
+          engine.step(chunk);
+          left -= chunk;
+          const oPanels = {};
+          for (const p of observePanels) oPanels[p] = engine.panel(p);
+          policy.observe({ view: engine.view(), panels: oPanels, gameTimeSec: engine.gameTimeSec() });
+          observations++;
+        }
+      }
       stepsDone += n;
       onlineSec += n * engine.dt;
 
@@ -616,6 +660,14 @@ const summary = {
   },
   events: { counts: eventCounts, kept: eventsKept, dropped: eventsDropped, keptKinds: KEEP_KINDS ? Object.keys(KEEP_KINDS) : 'all' },
   decisions,
+  /* 觀測與行動的節奏。observeEverySec < actEverySec 代表兩者已分離；相同則是未分離
+     （＝2026-08-01 之前的行為，玩得少的人連戰鬥觀測都變粗）。 */
+  cadence: {
+    actEverySec: policy.decideEveryGameSec,
+    observeEverySec: observeOn ? observeEvery : policy.decideEveryGameSec,
+    separated: observeOn,
+    observations: observations
+  },
   commands: cmdStats,
 
   /* ---- 哨兵：策略靜靜失效的兩種情況 ----

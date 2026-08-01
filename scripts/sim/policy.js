@@ -57,6 +57,30 @@ function createPolicy(policy) {
     /* 策略宣告它需要哪些面板。驅動端只建這幾個——背包面板很大，
        每個決策點都建一次會白白付出序列化成本。 */
     needPanels: policy.needPanels || [],
+
+    /* ---- 觀測頻率（與行動頻率分開）----
+       decideEveryGameSec 是「玩家多久做一次後勤」；這一個是「玩家多仔細看戰鬥」。
+       兩者原本是同一個旋鈕，導致玩得少的人連戰鬥觀測都變粗，卡關重試間隔被
+       系統性拉長——真人不是這樣（見 policy_interpreter.js 的「觀測與行動是兩件事」）。
+
+       預設 1 秒且**不因玩家強度而異**，那正是解耦的目的。
+       設成與 decideEveryGameSec 相同即可還原拆分前的行為。 */
+    observeEverySec: (typeof policy.observeEverySec === 'number' && policy.observeEverySec > 0)
+      ? policy.observeEverySec : 1,
+
+    /* 觀測只需要 track.monster / track.stage 指到的面板，不需要背包。
+       從宣告的路徑推導，不另外要策略再列一份會與 track 不同步的清單。 */
+    observePanels: (function () {
+      const t = policy.track || {};
+      const out = [];
+      for (const key of ['monster', 'stage']) {
+        const p = t[key];
+        if (typeof p !== 'string') continue;
+        const m = /^panels\.([^.]+)/.exec(p);
+        if (m && out.indexOf(m[1]) === -1) out.push(m[1]);
+      }
+      return out;
+    })(),
     /* 開跑前的 GM 前置（例如把角色墊到已轉生，才測得到天賦與神鑄）。
        屬於「建立測試前提」，不是推進遊戲；會原文寫進 run_summary.json 公開揭露。 */
     bootstrap: policy.bootstrap || [],
@@ -69,6 +93,13 @@ function createPolicy(policy) {
       const cmds = vm.runInContext('decide(__state, __policy, __memo)', ctx);
       /* 回傳值同樣拷貝出來，隔離 context 內的物件不外流。 */
       return JSON.parse(JSON.stringify(cmds));
+    },
+
+    /* 高頻觀測。不回傳指令——觀測不是操作，玩家看戰鬥不算按按鈕。
+       隔離方式與 decide 完全相同：策略拿到的仍然只是深拷貝，碰不到遊戲狀態。 */
+    observe(state) {
+      ctx.__state = JSON.parse(JSON.stringify(state));
+      vm.runInContext('observe(__state, __policy, __memo)', ctx);
     },
 
     /* 解析不出值的狀態路徑。非空就代表策略有規則正在靜靜失效——
