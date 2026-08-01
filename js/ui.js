@@ -3204,16 +3204,28 @@ function selectionItemForGrid(invSnapshot) {
   return null;
 }
 
+function selectionEquipSlotsForItem(selItem, selectedSlot) {
+  if (!selectedSlot) return [];
+  var slots = [selectedSlot];
+  // 雙手武器實際只記在 weapon，但裝備欄會在 weapon2 顯示同一把武器的 duplicate。
+  if (UI.sel && UI.sel.source === 'inv' && selectedSlot === 'weapon' &&
+      typeof isTwoHandItem === 'function' && isTwoHandItem(selItem)) {
+    slots.push('weapon2');
+  }
+  return slots;
+}
+
 function updateSelectionUI() {
   var selItem = selectionItemForGrid();
   var selectedSlot = selectionSlotForItem(selItem);
+  var selectedEquipSlots = selectionEquipSlotsForItem(selItem, selectedSlot);
   var highlightInventoryBySlot = !!(UI.sel && (UI.sel.source === 'equip-slot' || UI.sel.source === 'equip'));
   var highlightEquipByInventory = !!(UI.sel && UI.sel.source === 'inv');
 
   document.querySelectorAll('.item-cell, .eq-slot').forEach(function (el) {
     el.classList.remove('selected', 'dimmed', 'inventory-selection-match');
 
-    if (selectedSlot && el.classList.contains('eq-slot') && el.getAttribute('data-slot') === selectedSlot) {
+    if (selectedSlot && selectedEquipSlots.indexOf(el.getAttribute('data-slot')) >= 0 && el.classList.contains('eq-slot')) {
       if (highlightEquipByInventory) {
         el.classList.add('inventory-selection-match');
       } else {
@@ -3335,7 +3347,7 @@ function detailAction(act, actBtn) {
       return;
     }
     if (act === 'equip') {
-      UI.sel = { id: it.id, source: 'equip' };
+      UI.sel = { id: it.id, source: 'equip', slot: args.slotKey || it.slot };
       triggerEquipFlash(args.slotKey || it.slot, it);
     }
     if (act === 'unequip') UI.sel = { id: it.id, source: 'inv' };
