@@ -108,6 +108,11 @@ var WorkerBridge = (function () {
       if (invalid) { reject(new Error(invalid)); return; }
       var id = ++_seq;
       _pending[id] = { resolve: resolve, reject: reject, name: name, at: Date.now() };
+      /* 真人操作錄製（js/recorder.js，只在本機 ?record=1 啟用）。這裡是所有玩家操作
+         唯一的出口，錄在任何別的地方都一定會漏掉某些路徑。 */
+      if (typeof PlayRecorder !== 'undefined' && PlayRecorder.active()) {
+        PlayRecorder.onSend(id, name, args);
+      }
       post(MSG_IN.CMD, { id: id, name: name, args: args || {} });
     });
   }
@@ -392,6 +397,12 @@ var WorkerBridge = (function () {
     _lastMessageAt = Date.now();
     // 新起的 Worker 沒有欠帳；不歸零的話，死在補進度中途會讓放寬過的門檻一直留著
     stats.catchupSec = 0;
+    /* 錄製器要的是「這一場從哪個狀態開始」。重播必須從同一份存檔開機，
+       所以在送出 BOOT 的同一個地方取，取別處都可能已經不是開機時的那一份。
+       重啟時不會重取（錄製器自己只認第一次），否則起點會被中途的狀態蓋掉。 */
+    if (typeof PlayRecorder !== 'undefined' && PlayRecorder.active()) {
+      PlayRecorder.onBoot(opts.save || null);
+    }
     post(MSG_IN.BOOT, {
       save: opts.save || null, now: Date.now(),
       maxRunId: opts.maxRunId || 1, safeMode: safeMode()

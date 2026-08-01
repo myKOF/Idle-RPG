@@ -8,13 +8,17 @@
    用法：
      node --max-semi-space-size=64 scripts/run_sim.js --hours=100 --seed=20260730
    選項：
-     --hours=N        模擬遊戲小時數（預設 1）
-     --seed=N         PRNG 種子（預設 20260730）
+     --hours=N        模擬遊戲小時數（預設 1；--trace 時預設為軌跡長度）
+     --seed=N         PRNG 種子（預設 20260730；--trace 時預設為錄製當下的種子）
      --policy=path    策略檔（預設 scripts/sim/policy.default.json）
-     --save=path      從既有存檔開局（預設 null＝全新角色）
+     --trace=path     改用真人錄製軌跡當決策來源（js/recorder.js 匯出的檔），與 --policy 互斥
+     --save=path      從既有存檔開局（預設 null＝全新角色；--trace 時預設為錄製檔內的起始存檔）
      --out=dir        輸出目錄（預設 sim_out）
      --snap-min=N     每 N 遊戲分鐘取一次快照（預設 10）
      --keep-visual    連飄字/特效事件也寫進日誌（預設丟棄，只留 log/flog/loot/notice）
+
+   --trace 走的是同一條驅動迴圈、同一組快照欄位、同一份 run_summary 格式，
+   所以「真人那一場」與「AI 那一場」的輸出可以直接相減（見 scripts/compare_runs.js）。
 */
 
 const fs = require('fs');
@@ -22,6 +26,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { createEngine } = require('./sim/engine');
 const { createPolicy } = require('./sim/policy');
+const { createTraceSource } = require('./sim/trace');
 const { stateHash } = require('./sim/hash');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -32,21 +37,54 @@ function arg(name, dflt) {
   return process.argv.includes('--' + name) ? true : dflt;
 }
 
-const HOURS = Number(arg('hours', 1));
-const SEED = Number(arg('seed', 20260730));
-const POLICY_PATH = path.resolve(ROOT, String(arg('policy', 'scripts/sim/policy.default.json')));
+const TRACE_PATH = arg('trace', null);
 const OUT_DIR = path.resolve(ROOT, String(arg('out', 'sim_out')));
 /* 這一次模擬的開機時間（本機牆鐘）。在載入遊戲之前先取，才不會被虛擬時鐘影響——
    引擎會把 Date 換成虛擬的（js/item.js 的寶石商店與 js/forge.js 都讀牆鐘）。 */
 const START_WALL_CLOCK = new Date().toISOString();
 const SNAP_MIN = Number(arg('snap-min', 10));
 const KEEP_VISUAL = !!arg('keep-visual', false);
-const SAVE_PATH = arg('save', null);
 
-/* ---- 策略載入（含雜湊，執行期不得改動）---- */
+if (TRACE_PATH && process.argv.some((a) => a.startsWith('--policy='))) {
+  console.error('--trace 與 --policy 互斥：一場模擬只能有一個決策來源。');
+  process.exit(1);
+}
+
+/* ---- 決策來源載入（含雜湊，執行期不得改動）----
+   策略與真人軌跡走同一個介面（name / decideEveryGameSec / needPanels / bootstrap /
+   decide / badPaths），下面整條驅動迴圈因此不需要知道自己在跑哪一種。 */
+const POLICY_PATH = path.resolve(ROOT, String(arg('policy',
+  TRACE_PATH ? String(TRACE_PATH) : 'scripts/sim/policy.default.json')));
 const policySrc = fs.readFileSync(POLICY_PATH, 'utf8');
 const policyHash = crypto.createHash('sha256').update(policySrc).digest('hex');
-const policy = createPolicy(JSON.parse(policySrc));
+const policy = TRACE_PATH
+  ? createTraceSource(JSON.parse(policySrc))
+  : createPolicy(JSON.parse(policySrc));
+
+/* seed 與起始存檔：軌跡自帶錄製當下的值，命令列給了就以命令列為準。
+   ⚠️ 用不同的 seed 重播真人軌跡是合法的（看「同樣的操作換一組運氣會怎樣」），
+   但那就不再是「重現那一場」，逐點比對必然失敗。摘要會記下實際用的值。 */
+const SEED = process.argv.some((a) => a.startsWith('--seed='))
+  ? Number(arg('seed'))
+  : (TRACE_PATH && policy.seed !== null ? policy.seed : 20260730);
+const SAVE_PATH = arg('save', null);
+
+if (TRACE_PATH && policy.seed === null) {
+  console.warn('⚠️ 錄製檔沒有記錄 seed，改用預設值 ' + SEED + '。這場重播不會重現原本那一場。');
+}
+
+/* 軌跡預設跑滿整段錄製。GT 只在戰鬥沒暫停時前進，所以牆鐘時間必定 ≥ GT，
+   多給 5% 與 60 秒的餘裕；真的還是沒跑完，摘要的 trace.remaining 會非 0。 */
+const HOURS = process.argv.some((a) => a.startsWith('--hours='))
+  ? Number(arg('hours'))
+  : (TRACE_PATH ? traceHours(policy) : 1);
+
+function traceHours(src) {
+  const rows = src.rows || [];
+  const lastRowGt = rows.length ? (rows[rows.length - 1].gt || 0) : 0;
+  const endGt = Math.max(src.report().traceEndGt, lastRowGt);
+  return +((endGt * 1.05 + 60) / 3600).toFixed(4);
+}
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
@@ -105,14 +143,54 @@ function onEvents(events) {
 }
 
 /* ---- 開機 ---- */
-console.log(`策略 ${path.relative(ROOT, POLICY_PATH)}  sha256 ${policyHash.slice(0, 16)}`);
+console.log(`${TRACE_PATH ? '真人軌跡' : '策略'} ${path.relative(ROOT, POLICY_PATH)}  sha256 ${policyHash.slice(0, 16)}`);
+if (TRACE_PATH) {
+  const r = policy.report();
+  console.log(`  錄於 ${r.recordedAt}　指令 ${r.commands} 道　錄製端 seed ${r.seed}`);
+  if (r.recorderTruncated) console.warn('  ⚠️ 錄製檔自報已截斷，這份軌跡不完整。');
+  if (r.recorderUnacked) console.warn(`  ⚠️ 錄製時有 ${r.recorderUnacked} 道指令沒等到 ACK，軌跡有缺口。`);
+  console.log(`  對齊軸 ${r.axis}` + (r.axis === 'gt' ? '（協議 v14 之前的舊錄製檔）' : ''));
+  /* 暫停只有在退回 gt 對齊時才是問題；以 simT 對齊時它照走，不必警告。 */
+  if (r.recorderPauseWindows && r.axis === 'gt') {
+    console.warn(`  ⚠️ 錄製期間暫停過戰鬥 ${r.recorderPauseWindows} 次（${r.recorderPausedTicks} 則 tick），而這份是以 gt 對齊的舊錄製檔。`);
+    console.warn('     暫停期間 gt 不前進，重播無從得知燒掉幾步——這一場重現不出原本那一場，不可拿去比對。');
+  }
+  /* 同一個 tick 內連送也會共用 gt，但那會被完整重現，不是風險——只警告暫停期間那一種。
+     細節見 scripts/sim/trace.js 檔頭的「已知限制」。 */
+  if (r.sharedGtWhilePaused) {
+    console.warn(`  ⚠️ ${r.sharedGtWhilePaused} 道指令是在戰鬥暫停期間送出且與前一道共用 gt，重播會壓成同一步，亂數序列可能偏移。`);
+  } else if (r.sharedGtCommands) {
+    console.log(`  註：${r.sharedGtCommands} 道指令與前一道共用 gt（同一個 tick 內連送），重播會在同一步依序送出，可完整重現。`);
+  }
+}
 console.log(`seed ${SEED}  時數 ${HOURS}h  快照每 ${SNAP_MIN} 遊戲分鐘\n`);
 
-const startSave = SAVE_PATH ? JSON.parse(fs.readFileSync(path.resolve(ROOT, String(SAVE_PATH)), 'utf8')) : null;
-if (startSave) console.log(`起始存檔 ${SAVE_PATH}`);
+/* 起始存檔：--save 優先，其次是軌跡自帶的錄製起點。
+   兩者都沒有就是全新角色——對軌跡而言那幾乎一定是錯的（真人不會從零開始錄），
+   所以明白警告，不要讓人拿一場從頭開始的重播去比對。 */
+const startSave = SAVE_PATH
+  ? JSON.parse(fs.readFileSync(path.resolve(ROOT, String(SAVE_PATH)), 'utf8'))
+  : (TRACE_PATH ? policy.startSave : null);
+if (startSave) {
+  console.log(`起始存檔 ${SAVE_PATH || '（來自錄製檔）'}`);
+} else if (TRACE_PATH) {
+  /* startSave 是 null 有兩種意思，只有第二種是問題——見 js/recorder.js 的 startSaveCaptured。
+     全新角色開局其實是最常見的錄製情境，把它一律報成警告只會讓人學會忽略警告。 */
+  const captured = policy.report().startSaveCaptured;
+  if (captured === true) console.log('起始存檔 無（錄製時就是全新角色，重播從全新角色開始是正確的）');
+  else if (captured === false) console.warn('⚠️ 錄製器沒有接到開機事件，起點不明——這一場重現不出原本那一場。');
+  else console.warn('⚠️ 錄製檔沒有起始存檔，也沒記錄原因（舊版錄製器）。若當時不是全新角色，這一場不可比。');
+}
 
 engine = createEngine({ seed: SEED, onEvents });
 engine.boot(startSave);
+
+/* 軌跡是逐步對齊的：決策間隔必須剛好是一步，否則真人落在步與步之間的指令會被
+   擠到格點上，亂數序列跟著錯開。這裡把假設寫成斷言，而不是靠 trace.js 猜對步長。 */
+if (TRACE_PATH && Math.abs(policy.decideEveryGameSec - engine.dt) > 1e-9) {
+  console.error(`軌跡重播的決策間隔必須等於引擎步長：${policy.decideEveryGameSec} ≠ ${engine.dt}`);
+  process.exit(1);
+}
 
 /* ---- GM 前置 ----
    只能用來「建立測試前提」（例如把角色墊到已轉生，才測得到天賦與神鑄），
@@ -408,6 +486,9 @@ const summary = {
   finishedAt: new Date().toISOString(),
   startSave: SAVE_PATH ? String(SAVE_PATH) : null,
   policy: { file: path.relative(ROOT, POLICY_PATH), name: policy.name, sha256: policyHash },
+  /* 真人軌跡重播才有。remaining 非 0 代表軌跡沒跑完（--hours 太短，或重播提早分岔
+     讓 GT 停住），此時這場的曲線不能拿去跟 AI 比。 */
+  trace: TRACE_PATH ? policy.report() : null,
   /* GM 前置一律揭露：讀報告的人要看得出哪些狀態是模擬出來的、哪些是墊出來的。 */
   gmBootstrap: bootstrapLog,
   determinism: { finalStateHash: stateHash(saveJson) },
@@ -479,6 +560,15 @@ console.log(`耗時        ${elapsedSec.toFixed(1)}s（${summary.performance.ste
 console.log(`100h 推估   ${summary.performance.projected100hSec}s`);
 console.log(`原生事件    保留 ${eventsKept.toLocaleString()} 則／丟棄 ${eventsDropped.toLocaleString()} 則（種類：${JSON.stringify(eventCounts)}）`);
 console.log(`決策點      ${decisions.toLocaleString()} 次`);
+
+if (summary.trace) {
+  const t = summary.trace;
+  console.log(`真人軌跡    送出 ${t.fired}/${t.commands} 道（錄製時就失敗的 ${t.failedWhenRecorded} 道也照送）`);
+  if (t.remaining) {
+    console.log(`⚠️ 還有 ${t.remaining} 道指令沒送出：重播只走到 gt=${t.lastGt}s，軌跡到 gt=${t.traceEndGt}s。`);
+    console.log(`            加大 --hours，或先用 scripts/verify_trace.js 查是不是提早分岔了。`);
+  }
+}
 
 const badPaths = Object.keys(summary.badStatePaths);
 if (badPaths.length) {

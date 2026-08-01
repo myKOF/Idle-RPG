@@ -20,6 +20,9 @@
 const fs = require('fs');
 const path = require('path');
 const { createEngine } = require('./sim/engine');
+/* 比對邏輯與 scripts/verify_trace.js 共用一份（見 sim/viewdiff.js 檔頭）。
+   兩支腳本問的是同一個問題，判定不該有兩種寬嚴。 */
+const { compareByGt, printResult } = require('./sim/viewdiff');
 
 const ROWS_PATH = process.argv[2];
 const SEED = Number(process.argv[3] || 777);
@@ -32,61 +35,27 @@ if (!ROWS_PATH) {
 const browserRows = JSON.parse(fs.readFileSync(path.resolve(ROWS_PATH), 'utf8'));
 if (!browserRows.length) { console.error('瀏覽器樣本是空的'); process.exit(1); }
 
-/* gt 是浮點累加（GT += 0.1），必然有尾差，四捨五入到 0.1 當鍵。 */
-const key = (gt) => (Math.round(gt * 10) / 10).toFixed(1);
-
-const browserByGt = new Map();
-for (const r of browserRows) browserByGt.set(key(r.gt), r);
-
 const maxGt = Math.max(...browserRows.map((r) => r.gt));
 console.log(`\n瀏覽器樣本 ${browserRows.length} 筆，涵蓋遊戲時間 ${Math.min(...browserRows.map(r => r.gt)).toFixed(1)}s ~ ${maxGt.toFixed(1)}s`);
 
 /* headless 以同樣節奏跑：每 2 步（＝TICK_EMIT_MS/TICK_MS）取一次 view，
    對應瀏覽器 deterministicLoop 的維護＋emit 節奏。 */
 const eng = createEngine({ seed: SEED }).boot(null);
-const headlessByGt = new Map();
+const headlessRows = [];
 const totalSteps = Math.ceil((maxGt + 1) / eng.dt);
 for (let i = 0; i < totalSteps; i += 2) {
   eng.step(2);
-  const v = eng.view();
-  headlessByGt.set(key(v.gt), v);
+  headlessRows.push(eng.view());
 }
 
 /* 只比兩邊都有的檢查點。瀏覽器的收集器是在頁面開起來之後才掛上的，
-   前面幾筆本來就抓不到，那不是不一致。 */
-const shared = [...browserByGt.keys()].filter((k) => headlessByGt.has(k)).sort((a, b) => a - b);
-console.log(`headless 檢查點 ${headlessByGt.size} 筆，共同檢查點 ${shared.length} 筆\n`);
+   前面幾筆本來就抓不到，那不是不一致。
+   ⚠️ 豁免欄位一律留空；要加必須在這裡具名並說明理由，不得是空白支票。 */
+const res = compareByGt(browserRows, headlessRows, {
+  labelA: '瀏覽器', labelB: 'headless', ignore: []
+});
 
-const IGNORE = new Set([]);   // 目前沒有需要豁免的欄位；有的話必須在這裡具名並說明理由
-let mismatches = 0;
-let firstMismatch = null;
-
-for (const k of shared) {
-  const b = browserByGt.get(k);
-  const h = headlessByGt.get(k);
-  const diffs = [];
-  const keys = new Set([...Object.keys(b), ...Object.keys(h)]);
-  for (const f of keys) {
-    if (IGNORE.has(f)) continue;
-    if (JSON.stringify(b[f]) !== JSON.stringify(h[f])) {
-      diffs.push(`${f}: 瀏覽器 ${JSON.stringify(b[f])} ≠ headless ${JSON.stringify(h[f])}`);
-    }
-  }
-  if (diffs.length) {
-    mismatches++;
-    if (!firstMismatch) firstMismatch = { gt: k, diffs };
-  }
-}
-
-console.log('──────── 結論 ────────');
-if (mismatches === 0) {
-  console.log(`✅ PASS  ${shared.length} 個共同檢查點的 buildView() 完全一致`);
-  console.log('   headless 跑的就是瀏覽器裡那個遊戲。');
-  process.exit(0);
-} else {
-  console.log(`❌ FAIL  ${shared.length} 個檢查點中有 ${mismatches} 個不一致`);
-  console.log(`   最早不一致於 gt=${firstMismatch.gt}s：`);
-  firstMismatch.diffs.slice(0, 12).forEach((d) => console.log('     ' + d));
-  console.log('\n   最早的那一點才是線索——之後的不一致都是它的後果。');
-  process.exit(1);
-}
+console.log('');
+const code = printResult(res, { labelA: '瀏覽器', labelB: 'headless' });
+if (code === 0) console.log('   headless 跑的就是瀏覽器裡那個遊戲。');
+process.exit(code);

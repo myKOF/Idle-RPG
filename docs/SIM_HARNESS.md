@@ -22,6 +22,8 @@ node --max-semi-space-size=64 scripts/run_sim.js --hours=100 --seed=20260730
 | `scripts/verify_equivalence.js` | 決定論 + 改造等價性 + 種子敏感度 |
 | `scripts/test_policy_isolation.js` | 策略層隔離反證（每項都必須失敗） |
 | `scripts/cross_check.js` | 真瀏覽器 ↔ headless 逐檢查點比對 |
+| `scripts/verify_trace.js` | 真人錄製 ↔ 軌跡重播逐檢查點比對（見「真人基準線」） |
+| `scripts/compare_runs.js` | 兩場模擬的曲線對照（真人 vs AI） |
 | `scripts/proxy_guard_ab.js` | Proxy 守門方案的行為中性 A/B 判定 |
 
 策略檔（資料，非程式）：
@@ -221,6 +223,93 @@ naive 版本 20 分鐘內就少了 7% 金幣、少一級。**用它跑出來的�
 ⚠️ 模擬層的回傳慣例與直覺相反：**`null` 是成功、字串是失敗原因**
 （`js/skills.js:2129` 成功時 `return null`，失敗時 `return '技能點不足'`）。
 天真地判斷 truthy 會把 1200 次失敗全部算成成功——這個坑踩過一次。
+
+---
+
+## 真人基準線：錄一場真人的，拿去跟 AI 的相減
+
+### 為什麼需要這個
+
+「AI 跑起來跟真人有落差」在這條管線出現之前是一句沒辦法追下去的話——只有 AI 那條
+曲線有數字，真人那條沒有。要調策略、要判斷 `player_strategy.md` 哪一段翻譯失真，
+都得先有真人那條線。
+
+### 三個步驟
+
+**1. 錄**　起伺服器（`啟動數值模擬器.bat` 或直接跑 `node tools/sim_server.cjs`，
+它本來就有靜態託管），以決定論模式開遊戲，正常玩：
+
+```
+http://127.0.0.1:28342/index.html?seed=777&record=1
+```
+
+必須走 `http://127.0.0.1`，不能用 `file://`——錄製器與決定論模式都只認本機 hostname。
+
+右下角會出現「● 錄製中」的徽章，顯示已錄到幾道指令、幾筆樣本。玩完按「匯出軌跡」
+下載 JSON。可選 `&rowEvery=N` 調整樣本密度（預設每 10 則 tick 一筆）。
+
+錄到的東西有三樣：起始存檔、指令軌跡（含**執行當下**的 `simT`）、實測 view 樣本。
+
+**2. 驗**　證明軌跡是完整的——漏一道指令不會有任何錯誤訊息：
+
+```bash
+node scripts/verify_trace.js human_trace_seed777_....json
+```
+
+它用同一份存檔、同一個 seed 重播軌跡，再與錄製當下的實測樣本逐檢查點比對。
+PASS 同時證明了三件事：軌跡沒漏指令、時間戳精確到步、headless 忠實於瀏覽器。
+做這一步建議用 `&rowEvery=1` 錄一段短的（幾分鐘），檢查點最密。
+
+**3. 比**　把真人那一場跑成標準輸出，再與 AI 的相減：
+
+```bash
+node scripts/run_sim.js --trace=human_trace_seed777_....json --out=sim_out_human
+node scripts/run_sim.js --policy=scripts/sim/policy.moderate.json --seed=777 --hours=3 --out=sim_out_ai
+node scripts/compare_runs.js sim_out_human sim_out_ai
+```
+
+`--trace` 走的是同一支 `run_sim.js`、同一組快照欄位、同一份 `run_summary.json` 格式，
+所以兩邊的輸出天生可以相減。這也是軌跡重播刻意不另寫回放腳本的原因——第二套報表
+遲早會跟第一套長歪，而長歪的那一刻沒有人會發現。
+
+### 精確的時間戳是怎麼拿到的
+
+指令是非同步的，主執行緒自己蓋的時間戳一定是糊的，而糊掉的軌跡重播出來會是另一場
+（亂數序列錯開一步，之後每一次掉落都不同）。
+
+關鍵在 `js/worker/sim.worker.js` 的 `MSG_IN.CMD` 分支：指令成功後 Worker 會**立刻補送
+一則 tick**。Worker 的 `onmessage` 是同步的，ACK 與那則 tick 之間插不進任何東西，
+所以「ACK 之後收到的第一則 tick」的 `view.simT` 就是指令執行當下的模擬時鐘，精確到步。
+
+因此錄製器不需要自己算時間——精確的時間本來就在訊息流裡。
+（唯一需要協議配合的是 `simT` 這個欄位本身，見 v14；`gt` 在戰鬥暫停時會停住，
+當不了對齊軸。）
+
+| 檔案 | 角色 |
+| :--- | :--- |
+| `js/recorder.js` | 錄製器本體。只在本機 `?record=1` 時做事，正式遊玩是空殼 |
+| `js/bridge.js` | 兩個鉤子：`send()`（操作的唯一出口）與 `start()`（起始存檔） |
+| `scripts/sim/trace.js` | 把軌跡包成與 `sim/policy.js` 相同的決策來源介面 |
+| `scripts/sim/viewdiff.js` | `cross_check` 與 `verify_trace` 共用的比對判定 |
+
+### 已知限制（不要在報告裡略過）
+
+- **協議 v14 之前錄的檔**只能退回以 `gt` 對齊，而 `gt` 在戰鬥暫停時會停住，
+  那種錄製只要暫停過就重播不出來（`run_summary.json` 的 `trace.axis` 會是 `gt`，
+  `verify_trace.js` 會在比對前先警告）。用目前版本重錄即可，v14 起以 `simT` 對齊，
+  暫停已經不是限制——實測：暫停 2 次共 89 個 tick、`gt` 與 `simT` 差 17 秒，
+  332 個檢查點仍然完全一致。
+- **同一個 tick 內連送的多道指令**會共用同一個刻度（一步 0.1 秒，人手連點兩下必定同步），
+  但那一種重播會在同一步依序送出、完整重現，**不是問題**。
+- **錄製不會動到你的存檔**（2026-08-01 起）。決定論模式下 `requestPersist` 會擋掉所有
+  非自願的落地（`auto` / `folder` / `shutdown`），只有明確按下手動存檔或重新開局才會寫。
+  在此之前 `onVisibility` 的 `SHUTDOWN` 沒有被擋，錄製期間切一次分頁就會蓋掉
+  `auto_current`——如果你用的是舊版本，錄製前請先備份。
+- **軌跡重播每步都問一次決策**（`decideEveryGameSec` = 一步），所以 `engine.view()`
+  的呼叫次數是一般策略跑的一百多倍。它會順帶呼叫 `updateShownRes()`，讓重播存檔的
+  `shownRes` 旗標比瀏覽器那份早一點被點亮。`shownRes` 不在 `buildView()` 的輸出裡，
+  不影響逐點比對，但會影響最終存檔雜湊。
+- **真人錄製只有幾小時**，`compare_runs.js` 只比重疊區間，不外插。
 
 ---
 

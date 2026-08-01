@@ -11,9 +11,9 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-/* v13（2026-07-30 技能融合改造）：TICK_VIEW_KEYS 新增 magicScroll；
-   skills 面板快照新增 mastery（熟練度）/scrolls/fusionCosts，points/budget 改為熟練度制即時計算。 */
-var WORKER_PROTOCOL_VERSION = 13;
+/* v14（2026-08-01 真人軌跡重播）：TICK_VIEW_KEYS 新增 simT（模擬時鐘）。
+   與既有的 gt 的唯一差別是戰鬥暫停時 gt 停住、simT 照走，見下方 TICK_VIEW_KEYS 的說明。 */
+var WORKER_PROTOCOL_VERSION = 14;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -108,10 +108,22 @@ var PERSIST_KINDS = {
 };
 
 /* ---- tick 高頻視圖欄位 ----
-   只允許小量純量。背包、技能樹、熔爐等大型結構一律走 PANEL，不得塞進 tick。 */
+   只允許小量純量。背包、技能樹、熔爐等大型結構一律走 PANEL，不得塞進 tick。
+
+   ⚠️ 這裡有兩個時鐘，用途不同，不可互換：
+
+     gt    遊戲時鐘（js/util.js 的 GT）。**戰鬥暫停時停住**，那是它的語意——
+           它衡量的是「打了多久」，給玩家看的。
+     simT  模擬時鐘（js/worker/sim.worker.js 的 SIM_T，v14 新增）。每一步都前進，
+           暫停照走。它衡量的是「模擬跑了多久」。
+
+   為什麼需要第二個：暫停期間 simStep 仍在跑 factoryTick / newForgeTick / forgeTick，
+   狀態有在動，但 gt 完全不動。任何想用時間軸把兩次執行對齊的東西——真人軌跡重播
+   （scripts/sim/trace.js）、瀏覽器↔headless 交叉驗證（scripts/cross_check.js）——
+   拿 gt 當軸就會在暫停那一段整批錯開，而且分岔點會出現在暫停之後好幾秒，看起來像別的原因。 */
 var TICK_VIEW_KEYS = ['gold', 'scrap', 'essence', 'dust', 'ancientEssence', 'soulOrigin',
                       'demonSeed', 'magicScroll', 'gems', 'books', 'level', 'xp', 'xpMax', 'hp', 'hpMax',
-                      'mp', 'mpMax', 'shield', 'stage', 'zone', 'gt', 'paused',
+                      'mp', 'mpMax', 'shield', 'stage', 'zone', 'gt', 'simT', 'paused',
                       'towerActive', 'forgeBusy'];
 
 /* ---- 指令表 ----

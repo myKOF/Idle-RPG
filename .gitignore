@@ -60,5 +60,11 @@ save_initial.json
 sim_out*/
 sim_batch*/
 
+# 真人 vs AI 曲線對照的輸出（scripts/compare_runs.js）
+compare_runs.json
+
+# 真人操作錄製檔（js/recorder.js 匯出，可能有數十 MB）
+scratch/recordings/
+
 # 模擬儀表板伺服器的輸出（啟動數值模擬器.bat 產生，失敗時用來顯示原因）
 sim_server.log
