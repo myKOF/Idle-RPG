@@ -2505,7 +2505,10 @@ textarea#save-io {
 .eq-slot.inventory-selection-match {
   opacity: 1 !important;
   background: rgba(0, 0, 0, 0.7) !important;
-  border-width: 4px !important;
+  /* 保留原本 2px 內框，粗化改用向外的 outline，避免 box-sizing 將內容往內擠。 */
+  border-width: 2px !important;
+  outline: 2px solid var(--eq-selection-border-color) !important;
+  outline-offset: 0 !important;
   filter: brightness(1.2) !important;
 }
 

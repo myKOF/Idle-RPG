@@ -2724,7 +2724,7 @@ function renderEquip() {
       var iconFile = itemIconFile(it, info);
       var iconHtml = iconFile ? '<img src="images/' + iconFile + '" class="eq-icon">' : '<div class="eq-emoji">' + info.emoji + '</div>';
       var flashHtml = equipFlashActive(slot) ? '<span class="equip-flash-overlay" aria-hidden="true"></span>' : '';
-      h += '<div class="eq-slot filled' + effClass + (twoHandDuplicate ? ' twohand-duplicate' : '') + ' slot-' + slot + '" data-id="' + it.id + '" data-src="equip" data-slot="' + slot + '" style="border-color:' + r.color + '; box-shadow: inset 0 0 15px ' + r.color + '40">' +
+      h += '<div class="eq-slot filled' + effClass + (twoHandDuplicate ? ' twohand-duplicate' : '') + ' slot-' + slot + '" data-id="' + it.id + '" data-src="equip" data-slot="' + slot + '" style="--eq-selection-border-color:' + r.color + '; border-color:' + r.color + '; box-shadow: inset 0 0 15px ' + r.color + '40">' +
         iconHtml + ancientStarBadgeHTML(it) + flashHtml + '</div>';
     } else {
       // 副手欄被主手雙手武器連帶佔用：加佔用標記（仍可點選，改裝副手會自動卸下雙手武器）
