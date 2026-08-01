@@ -180,4 +180,5 @@ test('空裝備格可點擊，且選取樣式套用於空格', () => {
   assert.match(ui, /inventory-selection-match/);
   assert.match(css, /\.eq-slot\.empty\s*\{[\s\S]*cursor:\s*pointer/);
   assert.match(css, /\.eq-slot\.inventory-selection-match\s*\{[\s\S]*border-width:\s*4px/);
+  assert.match(css, /\.eq-slot\.inventory-selection-match\s*\{[\s\S]*filter:\s*brightness\(1\.08\) saturate\(1\.05\)/);
 });
