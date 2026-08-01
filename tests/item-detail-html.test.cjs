@@ -92,7 +92,7 @@ test('同 key 詞條合併累加成一行', () => {
 
 test('滿值詞條金色高亮', () => {
   const c = loadItemContext();
-  const it = makeItem({ affixes: [{ key: 'atkFlat', roll: c.AFFIX_ROLL_MAX }] }); // 強度值滿值
+  const it = makeItem({ affixes: [{ key: 'atkFlat', roll: c.STRENGTH_ROLL_MAX }] }); // 強度值滿值
   assert.match(c.itemDetailHTML(it, null, {}), /fbbf24/);
 });
 

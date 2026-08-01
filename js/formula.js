@@ -144,7 +144,7 @@ function computeStats(equipmentOverride) {
       else if (A[k] !== undefined) A[k] += v;
     });
     if (it.passive) {
-      passives[it.passive.key] = (passives[it.passive.key] || 0) + it.passive.val;
+      passives[it.passive.key] = (passives[it.passive.key] || 0) + passiveValue(it, it.passive);
       var passiveDef = PASSIVE_POOL[it.passive.key];
       if (passiveDef && passiveDef.legendary) legendaryEffects[it.passive.key] = true;
     }
@@ -153,21 +153,22 @@ function computeStats(equipmentOverride) {
       it.godPassives.forEach(function (gp) {
         var gd = GODFORGE_POOL[gp.key];
         if (!gd) return;
+        var gv = godPassiveValue(gp);   // 由強度值當場算出（§6）
         if (gd.stats) {
           if (gp.key === 'godMight') {
-            godAttackMultiplier *= 1 + gp.val / 100;
+            godAttackMultiplier *= 1 + gv / 100;
             return;
           }
           gd.stats.forEach(function (bk) {
-            if (A[bk] !== undefined) A[bk] += bk === 'loot' ? effectiveDropRateEffect(gp.val) : gp.val;
+            if (A[bk] !== undefined) A[bk] += bk === 'loot' ? effectiveDropRateEffect(gv) : gv;
           });
         } else {
-          passives[gp.key] = (passives[gp.key] || 0) + gp.val;
+          passives[gp.key] = (passives[gp.key] || 0) + gv;
         }
       });
     }
     itemEnchants(it).forEach(function (en) {
-      var ek = en.key, ev = en.val;
+      var ek = en.key, ev = enchantValue(it, en);   // 由附魔當下的寶石等級當場算出（§6）
       var e = ENCHANTS[ek];
       if (!e) return;
       if (e.cat === 'atk' && e.elem) elemAtk[e.elem] += ev;
@@ -1217,22 +1218,44 @@ function equipmentTierLevel(level) {
 
 /* ---- 詞條數值 ----
    基準值 = (base + base × lv係數 × (裝備等級-1)) × 稀有度倍率
-   一般產出值 = 基準值 × (0.8 + 強度值/AFFIX_ROLL_MAX × 0.4)（即洗煉區間 ±20%）
+   一般產出值 = 基準值 × (0.8 + 強度值/STRENGTH_ROLL_MAX × 0.4)（即洗煉區間 ±20%）
    洗煉值（傳入 affixCap 時）先把 80%~120% 平分為 A/B 兩段，再依權重選段。
 
-   ---- 為什麼存檔只存強度值（2026-08-01 詞條存檔改造）----
-   存檔的每條詞條只留 { key, roll, ancient }：roll 是「在隨機區間中的位置」
-   （0 ~ AFFIX_ROLL_MAX 的整數，0＝區間下限、滿值＝區間上限），最終數值一律由
-   base／每級成長／稀有度倍率當場算出。這樣參數表（config/Excel/game_parameters.xlsx
-   → Equipment_Affix）調整詞條數值後，**舊存檔既有裝備會跟著套用新值**，
-   不會出現「新掉的裝備與背包裡同名詞條數值不一致」，內測期間調平衡也不必刪檔。
-   強化 +N 的 ×5% 本來就是讀取時乘（upgradeMult），這只是把同一原則套到隨機值上。
+   ---- 為什麼存檔不存數值（2026-08-01 裝備數值存檔改造）----
+   裝備上所有隨機／衍生數值都不進存檔，存檔只留「能把數值重算出來的來源」：
 
-   刻度為固定 1000，而不是「把隨機區間寬度等分」：區間寬度＝基準值×40%，
+     詞條       affixes:     { key, roll, ancient }   roll＝強度值（在隨機區間中的位置）
+     傳奇特效   passive:     { key }                  數值完全由 key + 稀有度決定
+     神鑄特效   godPassives: { key, roll }            強度值同一套刻度（base 的 80%~120%）
+     附魔       enchants:    { key, gemLv, mult? }    附魔當下的寶石等級（手動附魔為 0）
+
+   數值一律當場算（affixValue／passiveValue／godPassiveValue／enchantValue）。這樣參數表
+   （config/Excel/game_parameters.xlsx → Equipment_Affix）或公式一改，**舊存檔既有裝備
+   會跟著套用新值**，不會出現「新掉的裝備與背包裡同名效果數值不一致」，內測期間調平衡
+   也不必刪檔。強化 +N 的 ×5% 本來就是讀取時乘（upgradeMult），這只是把同一原則
+   推廣到隨機值與衍生值上。
+
+   強度值刻度固定 1000，而不是「把隨機區間寬度等分」：區間寬度＝基準值×40%，
    會隨等級與稀有度從個位數暴增到數十萬（Lv1 生命值約 9 點、Lv500 神鑄創世超過 28 萬點），
    等分數若跟著裝備變，強度值本身就會再次被 base 變動污染。1000 階的取捨是
    舊存檔換算最壞飄移 0.049%（實測 724,423 → 724,574 生命，全詞條 × 等級 × 稀有度掃描）。 */
-var AFFIX_ROLL_MAX = 1000;
+var STRENGTH_ROLL_MAX = 1000;
+
+/* 強度值 → 區間倍率（0＝下限 80%、滿值＝上限 120%）。詞條與神鑄特效共用。
+   刻意不夾限：區間外的舊值（GM 塞的、更早期公式產生的）照線性延伸仍還原成原數值。 */
+function strengthMult(roll) {
+  return 0.8 + (Number(roll) || 0) / STRENGTH_ROLL_MAX * 0.4;
+}
+// 擲一個強度值（0 ~ STRENGTH_ROLL_MAX 的整數，區間內均勻）
+function rollStrength() {
+  return Math.round(clamp(rnd(0, 1), 0, 1) * STRENGTH_ROLL_MAX);
+}
+// 數值 → 強度值（舊存檔換算用）；baseV＝該效果的基準值（區間中心的 100% 位置）
+function strengthFromValue(val, baseV) {
+  if (!(baseV > 0)) return 0;
+  return Math.round(((Number(val) || 0) / baseV - 0.8) / 0.4 * STRENGTH_ROLL_MAX);
+}
+
 var AFFIX_REROLL_LOWER_WEIGHT = 1;
 var AFFIX_REROLL_UPPER_BASE_WEIGHT = 1;
 var AFFIX_REROLL_BIAS_EXPONENT = 0.3333;
@@ -1261,31 +1284,23 @@ function affixRoundValue(key, v) {
   var def = AFFIX_POOL[key];
   return (def && def.pct) ? Math.round(v * 10) / 10 : Math.round(v);
 }
-// 擲強度值：0 ~ AFFIX_ROLL_MAX 的整數。affixCap（詞條上限率）只在洗煉時偏重高數值段。
+// 擲強度值：0 ~ STRENGTH_ROLL_MAX 的整數。affixCap（詞條上限率）只在洗煉時偏重高數值段。
 // ⚠️ 每次呼叫消耗的 Math.random 次數必須與改造前的 rollAffixValue 一致，
 //    否則 ?seed=N 決定論模式與 headless 模擬器的逐檢查點比對會分岔。
 function rollAffixStrength(affixCap) {
-  var unit = affixCap === undefined ? rnd(0, 1) : affixRerollUnit(affixCap);
-  return Math.round(clamp(unit, 0, 1) * AFFIX_ROLL_MAX);
+  if (affixCap === undefined) return rollStrength();
+  return Math.round(clamp(affixRerollUnit(affixCap), 0, 1) * STRENGTH_ROLL_MAX);
 }
 // 強度值 → 最終詞條值。太古位置不看強度值：必為滿值再乘太古倍率（倍率日後可調且回溯生效）。
 function affixValueFromStrength(key, itemLevel, rarityIdx, roll, ancient) {
   var baseV = affixBaseValue(key, itemLevel, rarityIdx);
   if (!baseV) return 0;
-  var v = ancient
-    ? baseV * 1.2 * ANCIENT_AFFIX_VALUE_MULT
-    : baseV * (0.8 + (Number(roll) || 0) / AFFIX_ROLL_MAX * 0.4);
+  var v = ancient ? baseV * 1.2 * ANCIENT_AFFIX_VALUE_MULT : baseV * strengthMult(roll);
   return affixRoundValue(key, v);
 }
-/* 最終詞條值 → 強度值（舊存檔換算用）。
-   刻意不夾在 0 ~ AFFIX_ROLL_MAX：區間外的舊值（例如 GM 塞的、或更早期公式產生的）
-   照線性關係換算後仍能還原成原本的數值，而且日後調整 base 一樣會等比跟著變；
-   夾限只會讓那些裝備在載入的瞬間被悄悄砍到區間邊界。 */
+// 最終詞條值 → 強度值（舊存檔換算用）；沒有基準值可推（詞條已下架／等級稀有度不明）時回 0
 function affixStrengthFromValue(key, itemLevel, rarityIdx, val) {
-  var baseV = affixBaseValue(key, itemLevel, rarityIdx);
-  if (!(baseV > 0)) return 0;   // 沒有基準值可推（詞條已下架／等級或稀有度不明）
-  var unit = ((Number(val) || 0) / baseV - 0.8) / 0.4;
-  return Math.round(unit * AFFIX_ROLL_MAX);
+  return strengthFromValue(val, affixBaseValue(key, itemLevel, rarityIdx));
 }
 
 /* ---- 詞條數值的唯一讀取入口 ----
@@ -1310,7 +1325,7 @@ function ensureAffixRoll(it, a) {
   var lv = it ? it.level : undefined, r = it ? it.rarity : undefined;
   if (!(affixBaseValue(a.key, lv, r) > 0)) return a;  // 推不出基準值：保留 val 當凍結值
   a.roll = a.ancient
-    ? AFFIX_ROLL_MAX                  // 太古位置必為滿值，舊值多少都重算為現行太古倍率
+    ? STRENGTH_ROLL_MAX                  // 太古位置必為滿值，舊值多少都重算為現行太古倍率
     : affixStrengthFromValue(a.key, lv, r, a.val);
   delete a.val;
   return a;
@@ -1337,13 +1352,44 @@ function upgradeMult(item) { return 1 + 0.05 * (item.upgrade || 0); }
 // 傳奇特效數值 = base + perR × (稀有度 - 傳說級)
 function passiveValueFor(key, rarity) {
   var pd = PASSIVE_POOL[key];
+  if (!pd) return 0;
   return Math.round((pd.base + pd.perR * (rarity - PASSIVE_MIN_RARITY)) * 10) / 10;
 }
+/* ---- 傳奇特效數值的唯一讀取入口 ----
+   數值完全由 key + 裝備稀有度決定（沒有隨機成分），所以存檔只留 { key }。
+   算不出來（特效已下架／稀有度不明）才沿用凍結的舊 val。 */
+function passiveValue(it, p) {
+  if (!p) return 0;
+  var r = it ? Number(it.rarity) : NaN;
+  if (!PASSIVE_POOL[p.key] || !isFinite(r)) return Number(p.val) || 0;
+  return passiveValueFor(p.key, r);
+}
+// 舊存檔的傳奇特效：數值可推導 → 直接丟掉凍結值（冪等）
+function ensurePassiveSource(it, p) {
+  if (!p || p.val === undefined) return p;
+  var r = it ? Number(it.rarity) : NaN;
+  if (!PASSIVE_POOL[p.key] || !isFinite(r)) return p;  // 推不出來：保留 val 當凍結值
+  delete p.val;
+  return p;
+}
 
-// 神鑄創世專屬特效數值 = base × rnd(0.8, 1.2)
-function godforgePassiveValue(key) {
-  var d = GODFORGE_POOL[key];
-  return Math.round(d.base * rnd(0.8, 1.2) * 10) / 10;
+/* ---- 神鑄創世專屬特效數值 ----
+   ＝ base × (80% + 強度值/滿值 × 40%)，與詞條同一套強度值刻度。 */
+function godPassiveValue(gp) {
+  if (!gp) return 0;
+  if (gp.roll === undefined || gp.roll === null) ensureGodPassiveSource(gp);
+  var d = GODFORGE_POOL[gp.key];
+  if (!d || gp.roll === undefined || gp.roll === null) return Number(gp.val) || 0;
+  return Math.round(d.base * strengthMult(gp.roll) * 10) / 10;
+}
+// 舊存檔的神鑄特效：val → 強度值（冪等）
+function ensureGodPassiveSource(gp) {
+  if (!gp || (gp.roll !== undefined && gp.roll !== null)) return gp;
+  var d = GODFORGE_POOL[gp.key];
+  if (!d || !(d.base > 0)) return gp;                  // 推不出來：保留 val 當凍結值
+  gp.roll = strengthFromValue(gp.val, d.base);
+  delete gp.val;
+  return gp;
 }
 
 // 神鑄成功率（裝備）= 基礎（依素材品質）+ 魔塵數 × 5%
@@ -1386,6 +1432,58 @@ function enchantValueFor(item, bookKey, gemLevel) {
   return Math.min(val, 60);
 }
 
+/* ---- 附魔數值的唯一讀取入口 ----
+   附魔數值沒有隨機成分，但取決於「附魔當下用的寶石等級」（手動附魔為 0，混合合成為
+   寶石等級 ×(1+寶石鑲嵌效率%)，故可能是小數），所以存檔留 { key, gemLv }，
+   混合合成變異的 ×1.5 另存為 mult。數值一律由 enchantValueFor 當場算。 */
+function enchantValue(it, en) {
+  if (!en) return 0;
+  if (en.gemLv === undefined || en.gemLv === null) ensureEnchantSource(it, en);
+  if (en.gemLv === undefined || en.gemLv === null) return Number(en.val) || 0;
+  var v = enchantValueFor(it, en.key, en.gemLv);
+  var m = Number(en.mult);
+  return (m > 0 && m !== 1) ? Math.round(v * m * 10) / 10 : v;
+}
+/* 附魔數值 → 附魔當下的寶石等級（舊存檔換算用）。
+   反推的是 enchantValueFor 的逆；攻擊類的 base 取自 enchantPower 的 gemLevel=0 部分。
+   ⚠️ 防禦／功能類有 60% 上限，若舊值已頂到上限，反推得到的是「剛好到上限的寶石等級」，
+      重算後仍是 60%（值不變）；但日後若把上限調高，這件裝備只會漲到新上限的最低點。 */
+function enchantGemLvFromValue(it, bookKey, val) {
+  var e = ENCHANTS[bookKey];
+  var r = it ? RARITIES[it.rarity] : null;
+  var v = Number(val) || 0;
+  if (!e || !r) return 0;
+  if (e.cat === 'atk') {
+    if (bookKey === 'fire') v = v / 1.25;   // 火焰附魔：純高額傷害，另乘 1.25
+    var pow = (5 + (Number(it.level) || 1) * 1.2) * r.mult;
+    if (!(pow > 0)) return 0;
+    return (v / pow - 1) / 0.15;
+  }
+  return (v - 8 - (Number(it.rarity) || 0) * 4) / 3;
+}
+// 舊存檔的附魔：val → gemLv（冪等）
+function ensureEnchantSource(it, en) {
+  if (!en || (en.gemLv !== undefined && en.gemLv !== null)) return en;
+  if (!ENCHANTS[en.key] || !it || !RARITIES[it.rarity] || !isFinite(Number(it.level))) return en;
+  en.gemLv = enchantGemLvFromValue(it, en.key, en.val);
+  delete en.val;
+  return en;
+}
+
+/* ---- 整件裝備的來源值正規化（存檔載入唯一入口：js/save.js fixLoadedItem）----
+   把所有凍結數值換算成可重算的來源值。全部冪等：新格式進來就是 no-op。 */
+function normalizeItemValueSources(it) {
+  if (!it || typeof it !== 'object') return it;
+  ensureItemAffixRolls(it);
+  if (it.passive) ensurePassiveSource(it, it.passive);
+  if (Array.isArray(it.godPassives)) it.godPassives.forEach(ensureGodPassiveSource);
+  var ens = (typeof itemEnchants === 'function') ? itemEnchants(it) : it.enchants;
+  if (Array.isArray(ens)) {
+    for (var i = 0; i < ens.length; i++) ensureEnchantSource(it, ens[i]);
+  }
+  return it;
+}
+
 /* ---- 裝備戰力評分（裝備比較與其他評估用）----
    評分 = Σ(詞條值 × 權重 × 強化倍率) + Σ(寶石值 × 權重)
         → 有被動 ×1.15 → + Σ(附魔值 × 1.2攻/2防) → ×(1 + 稀有度×0.06)
@@ -1415,7 +1513,7 @@ function itemScore(it) {
   var ens = itemEnchants(it);
   for (var ei = 0; ei < ens.length; ei++) {
     var e = ENCHANTS[ens[ei].key];
-    if (e) s += (e.cat === 'atk') ? ens[ei].val * 1.2 : ens[ei].val * 2;
+    if (e) s += (e.cat === 'atk') ? enchantValue(it, ens[ei]) * 1.2 : enchantValue(it, ens[ei]) * 2;
   }
   s *= 1 + it.rarity * 0.06;
   return s;

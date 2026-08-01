@@ -496,7 +496,7 @@ var DUST_BOSS_CAP = 30;                      // 高塔 BOSS 魔塵掉落率上�
 /* ---- 神鑄創世專屬特效池（12 種，僅出現於神鑄創世裝備，生成時必帶 2 條）----
    stats: 直接併入 computeStats 的屬性聚合桶；無 stats 者為戰鬥觸發型
   （掛勾：resolveHit［破滅/聖佑/不朽］、doPlayerAttack［天罰/萬象汲取］、
-   playerAtkCfg［神怒］）。數值公式 godforgePassiveValue → js/formula.js §6。 */
+   playerAtkCfg［神怒］）。數值公式 godPassiveValue → js/formula.js §6。 */
 var GODFORGE_PASSIVE_COUNT = 2;
 var GODFORGE_POOL = {
   dragonBlood: { name: '龍血', desc: '生命上限提高 {v}%', base: 25, stats: ['hpPct'] },

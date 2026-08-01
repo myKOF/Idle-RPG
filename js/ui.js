@@ -2594,7 +2594,7 @@ function itemMatchesKeyword(it, keyword) {
       if (pDef.desc && pDef.desc.toLowerCase().indexOf(kw) !== -1) return true;
     }
     if (typeof passiveLine === 'function') {
-      var pText = passiveLine(it.passive);
+      var pText = passiveLine(it, it.passive);
       if (pText && pText.toLowerCase().indexOf(kw) !== -1) return true;
     }
     if (it.passive.key && it.passive.key.toLowerCase().indexOf(kw) !== -1) return true;
@@ -2624,7 +2624,7 @@ function itemMatchesKeyword(it, keyword) {
         if (eDef.name && eDef.name.toLowerCase().indexOf(kw) !== -1) return true;
       }
       if (typeof enchantLine === 'function') {
-        var eText = enchantLine(en);
+        var eText = enchantLine(it, en);
         if (eText && eText.toLowerCase().indexOf(kw) !== -1) return true;
       }
     }
@@ -4674,7 +4674,8 @@ function uiProjectedItemScore(item) {
   var enchants = item.enchants || item.enchant ? (typeof itemEnchants === 'function' ? itemEnchants(item) : []) : [];
   enchants.forEach(function (enchant) {
     var def = ENCHANTS[enchant.key];
-    if (def) score += (def.cat === 'atk' ? 1.2 : 2) * (Number(enchant.val) || 0);
+    var env = typeof enchantValue === 'function' ? enchantValue(item, enchant) : 0;
+    if (def) score += (def.cat === 'atk' ? 1.2 : 2) * env;
   });
   return score;
 }
