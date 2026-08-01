@@ -55,7 +55,7 @@ function reincarnationExpBaseAdd(count) {
 }
 
 // 升到下一級所需經驗 =（30 × 等級^2 + 40）× 轉生經驗倍率（各轉倍數由參數表 a~j 制定、累積連乘）＋ 升級經驗基礎增加值（依轉生次數）
-function xpForLevel(l) { return Math.floor((30 * Math.pow(l, 3) + 40) * reincarnationExpMultiplier() + reincarnationExpBaseAdd()); }
+function xpForLevel(l) { return Math.floor((20 * Math.pow(l, 3) + 40) * reincarnationExpMultiplier() + reincarnationExpBaseAdd()); }
 
 /* 等級基礎四維主屬性（不含裝備）：力/敏/智/耐 相同
    = 5 + (等級 - 1) × 2 */
