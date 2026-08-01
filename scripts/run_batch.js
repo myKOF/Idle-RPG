@@ -40,10 +40,14 @@ const HOURS = Number(arg('hours', 1));
 const OUT_DIR = path.resolve(ROOT, String(arg('out', 'sim_batch')));
 const CONCURRENCY = Math.max(1, Number(arg('concurrency', Math.max(1, os.cpus().length - 1))));
 
+/* seedBase：批次的起始 seed，往上連號取 N 個。
+   ⚠️ 沒有這個參數時本檔是寫死從 1 開始數的，於是同樣張數的批次每次跑出來
+   一模一樣——批次的意義本來就是看散佈，結果每次看到的是同一份散佈。 */
+const SEED_BASE = Math.max(1, Math.floor(Number(arg('seedBase', 1))) || 1);
 const seedSpec = String(arg('seeds', '5'));
 const SEEDS = seedSpec.includes(',')
   ? seedSpec.split(',').map((s) => Number(s.trim())).filter((n) => Number.isFinite(n))
-  : Array.from({ length: Number(seedSpec) }, (_, i) => i + 1);
+  : Array.from({ length: Number(seedSpec) }, (_, i) => SEED_BASE + i);
 
 const POLICIES = String(arg('policy', 'scripts/sim/policy.default.json'))
   .split(',').map((s) => s.trim()).filter(Boolean);
