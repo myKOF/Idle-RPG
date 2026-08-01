@@ -1215,14 +1215,10 @@ var GEM_TYPES = {
   sapphire: { name: '藍寶石', emoji: '🔵', stat: 'matkFlat', statName: '魔法攻擊', base: 6, pct: false },
   topaz: { name: '黃玉', emoji: '🟡', stat: 'hpFlat', statName: '生命值', base: 40, pct: false },
   emerald: { name: '綠寶石', emoji: '🟢', stat: 'hpRegen', statName: '生命恢復/秒', base: 3, pct: false },
-  /* 法力對位（黃玉／綠寶石的法力側）：法力池是 40 + 智力×2，比生命池小一個數量級，
-     所以法力值 base 取黃玉 40 的一半略多。法力恢復另有考量——基礎值只有
-     2 + 智力×intMpRegen（智力 3000 時約 14/秒），而生命恢復的基礎是最大生命的
-     BASE_HP_REGEN_PCT%/秒（數百/秒）。同樣的 base 在法力側相對威力大得多，
-     故取 0.5（5 階 +4.5/秒）而非與綠寶石等值換算的 0.9；SCORE_WEIGHTS 把
-     mpRegen 定為 hpRegen 的 3.3 倍，也是同一個判斷。 */
+  /* 法力恢復寶石與生命恢復寶石共用同一成長曲線；基礎值 1 讓 Lv.1 至少顯示 1，
+     且約為綠寶石基礎值 3 的三分之一。 */
   iolite: { name: '堇青石', emoji: '🔮', stat: 'mpFlat', statName: '法力值', base: 25, pct: false },
-  kyanite: { name: '藍晶石', emoji: '💧', stat: 'mpRegen', statName: '法力恢復/秒', base: 0.5, pct: false },
+  kyanite: { name: '藍晶石', emoji: '💧', stat: 'mpRegen', statName: '法力恢復/秒', base: 1, pct: false },
   diamond: { name: '鑽石', emoji: '⚪', stat: 'defFlat', statName: '物理防禦', base: 5, pct: false },
   lapis: { name: '青金石', emoji: '🔷', stat: 'mdefFlat', statName: '魔法防禦', base: 5, pct: false },
   amethyst: { name: '紫水晶', emoji: '🟣', stat: 'critRate', statName: '暴擊率%', base: 1.5, pct: true },
