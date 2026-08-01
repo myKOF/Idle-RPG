@@ -50,15 +50,15 @@ test('法力寶石存在，且與生命側的黃玉／綠寶石成對', () => {
   assert.equal(!!mpRegen.linear, !!context.GEM_TYPES.emerald.linear);
 });
 
-test('法力恢復寶石刻意弱於等值換算：法力回復基礎值遠低於生命回復', () => {
+test('法力恢復寶石 Lv.1 至少為 1，且整體約為生命恢復寶石的三分之一', () => {
   const context = loadGameContext();
   const mpRegen = context.GEM_TYPES.kyanite;
   const hpRegen = context.GEM_TYPES.emerald;
-  // SCORE_WEIGHTS 等值換算會得到 hpRegen.base × (hpRegen 權重 / mpRegen 權重)，
-  // 但法力回復的基礎值只有個位數，等值給值會讓單顆寶石就讓法力回復翻倍。
-  const equalValueBase = hpRegen.base * context.SCORE_WEIGHTS.hpRegen / context.SCORE_WEIGHTS.mpRegen;
-  assert.ok(mpRegen.base < equalValueBase,
-    '法力恢復寶石應低於與綠寶石等值的 ' + equalValueBase + '，避免單顆就蓋過基礎回復');
+  assert.equal(mpRegen.base, 1);
+  assert.equal(context.gemStatValue('kyanite', 1), 1);
+  assert.equal(context.gemStatValue('kyanite', 10), 288);
+  assert.equal(context.gemStatValue('emerald', 10), 864);
+  assert.equal(context.gemStatValue('kyanite', 10) / context.gemStatValue('emerald', 10), 1 / 3);
 });
 
 test('鑲上法力寶石會實際提高 st.mp 與 st.mpRegen，數值等於該階級的寶石值', () => {
