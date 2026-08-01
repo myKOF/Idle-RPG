@@ -2504,10 +2504,9 @@ textarea#save-io {
 /* 背包來源選取時，裝備欄只呈現對應部位的亮起狀態，不使用白色選取外框。 */
 .eq-slot.inventory-selection-match {
   opacity: 1 !important;
-  background: rgba(255, 255, 255, 0.06) !important;
+  background: rgba(0, 0, 0, 0.7) !important;
   border-width: 4px !important;
-  filter: brightness(1.08) saturate(1.05) !important;
-  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.12), 0 0 6px rgba(255, 255, 255, 0.1) !important;
+  filter: brightness(1.2) !important;
 }
 
 .eq-slot.filled.dimmed,
