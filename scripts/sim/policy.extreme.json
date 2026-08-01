@@ -163,35 +163,49 @@
             "maxStage": 20,
             "minRarity": 2,
             "coverage": 0.85,
-            "依據": "指南1. 前20關全身換稀有，再過20關守關菁英",
-            "備註": "13 格允許 2 格未達標。要求全滿時一格就能卡住整場——實測 12/13 獨特卡了 90 小時"
+            "park": [
+              11,
+              15
+            ],
+            "依據": "指南1＋安全關卡1. 前20關在11~15關刷到全身稀有"
           },
           {
             "maxStage": 40,
             "minRarity": 3,
             "coverage": 0.85,
-            "依據": "指南2. 21~29關掛機換全身獨特；第二目標40關守關菁英（獨特自怪物Lv20起掉落5%）",
-            "備註": "13 格允許 2 格未達標。要求全滿時一格就能卡住整場——實測 12/13 獨特卡了 90 小時"
+            "park": [
+              21,
+              25
+            ],
+            "依據": "指南2＋安全關卡2. 過20關菁英後在21~25關刷到全身獨特"
           },
           {
             "maxStage": 50,
             "minRarity": 4,
             "coverage": 0.3,
-            "依據": "指南4. 41~49關掛機，全身至少一部份換到史詩才挑戰50關BOSS（史詩自怪物Lv40起掉落1.5%）"
+            "park": [
+              41,
+              45
+            ],
+            "依據": "指南4＋安全關卡3. 過40關菁英後在41~45關刷到一部份史詩"
           },
           {
             "maxStage": 59,
             "minRarity": 4,
             "coverage": 0.85,
-            "依據": "指南5. 通關50關BOSS後在51~59關掛機，全身換成史詩",
-            "備註": "13 格允許 2 格未達標。要求全滿時一格就能卡住整場——實測 12/13 獨特卡了 90 小時"
+            "park": [
+              51,
+              59
+            ],
+            "依據": "指南5＋安全關卡4. 過50關BOSS後在51~59關刷到全身史詩"
           },
           {
             "minRarity": 0,
             "coverage": 0,
             "依據": "指南只涵蓋前期，之後交回各強度自己的推關策略"
           }
-        ]
+        ],
+        "retreatCmd": "stage.go"
       },
       "why": "依 player_strategy.md「前期優先生存任務指南」控制自動推關：裝備品質覆蓋率沒到門檻就關掉自動推關、留在原地掛機把裝備換上來。指南的核心是不要讓關卡跑在裝備前面——推太深只會一直死，死了就掉不到裝備，掉不到裝備就更推不動。先前是無條件每 15 秒送一次「開啟自動推關」，正是指南要防的那件事。覆蓋率只算身上真的有裝備的部位（空部位面板值為 -1，雙手武器會讓 weapon2 永遠空著，算進分母的話門檻永遠到不了、閘門永久關閉）"
     },
@@ -239,25 +253,28 @@
           {
             "maxLevel": 50,
             "types": [
-              "topaz",
-              "amethyst",
-              "onyx",
-              "ruby",
-              "sapphire"
-            ]
-          },
-          {
-            "maxLevel": 100,
-            "types": [
-              "onyx",
               "amethyst",
               "garnet",
               "topaz",
               "ruby",
               "sapphire"
-            ]
+            ],
+            "依據": "前50級：爆擊率、爆擊傷害、生命、物理攻擊、魔法攻擊"
           },
           {
+            "maxLevel": 100,
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "51~100級：暴擊率、爆擊傷害"
+          },
+          {
+            "when": [
+              "panels.header.stats.critRate",
+              ">=",
+              100
+            ],
             "mix": [
               [
                 "garnet"
@@ -270,14 +287,51 @@
                 "coreLight",
                 "coreDark"
               ]
-            ]
+            ],
+            "依據": "101以後且爆率100%以上：一半爆擊傷害、一半六大屬性傷害加成"
+          },
+          {
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "101以後但爆率未達100%：繼續補爆擊率與爆擊傷害"
           }
         ],
         "maxSlots": 9,
         "maxPerSlot": 1000,
-        "maxCommands": 4
+        "maxCommands": 4,
+        "quota": [
+          {
+            "type": "malachite",
+            "count": 1,
+            "依據": "物理抗性寶石至少鑲一個"
+          },
+          {
+            "type": "fluorite",
+            "count": 1,
+            "依據": "魔法抗性寶石至少鑲一個"
+          },
+          {
+            "type": "kyanite",
+            "count": 2,
+            "when": [
+              "view.mp",
+              "<",
+              {
+                "$mul": [
+                  {
+                    "$path": "view.mpMax"
+                  },
+                  0.3
+                ]
+              }
+            ],
+            "依據": "法力恢復不夠者補法力恢復寶石至夠用"
+          }
+        ]
       },
-      "why": "把不在當前偏好段的寶石同階轉成偏好種類。偏好種類只佔 40 種寶石裡的 5~7 種、掉落又隨機，光靠「挑有貨的鑲」永遠補不滿（實測 3 小時偏好種類只有 5/20 顆）。轉換在遊戲裡同階 1:1、數量不變、不花金幣（convertGems），是既有庫存的重新分配。排在 gem-compose 之前：先把同種類集中起來，合成才有 3 顆可併，鑲上去的階級才會跟著上去。目標在偏好種類間輪流分配，否則 101 段的「一半爆傷、一半屬性」會被轉成清一色爆傷。maxSlots/maxPerSlot 對應遊戲的 GEM_CONVERT_SLOTS/GEM_CONVERT_STACK，超過會整批被回絕"
+      "why": "把不在當前偏好段的寶石同階轉成偏好種類。偏好種類只佔 40 種寶石裡的 5~7 種、掉落又隨機，光靠「挑有貨的鑲」永遠補不滿（實測 3 小時偏好種類只有 5/20 顆）。轉換在遊戲裡同階 1:1、數量不變、不花金幣（convertGems），是既有庫存的重新分配。排在 gem-compose 之前：先把同種類集中起來，合成才有 3 顆可併，鑲上去的階級才會跟著上去。配額種類（抗性、法力恢復）不轉走；目標在偏好種類間輪流分配，否則 101 段的「一半爆傷、一半屬性」會被轉成清一色爆傷。maxSlots/maxPerSlot 對應遊戲的 GEM_CONVERT_SLOTS/GEM_CONVERT_STACK，超過會整批被回絕"
     },
     {
       "id": "gem-compose",
@@ -313,25 +367,28 @@
           {
             "maxLevel": 50,
             "types": [
-              "topaz",
-              "amethyst",
-              "onyx",
-              "ruby",
-              "sapphire"
-            ]
-          },
-          {
-            "maxLevel": 100,
-            "types": [
-              "onyx",
               "amethyst",
               "garnet",
               "topaz",
               "ruby",
               "sapphire"
-            ]
+            ],
+            "依據": "前50級：爆擊率、爆擊傷害、生命、物理攻擊、魔法攻擊"
           },
           {
+            "maxLevel": 100,
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "51~100級：暴擊率、爆擊傷害"
+          },
+          {
+            "when": [
+              "panels.header.stats.critRate",
+              ">=",
+              100
+            ],
             "mix": [
               [
                 "garnet"
@@ -344,11 +401,53 @@
                 "coreLight",
                 "coreDark"
               ]
-            ]
+            ],
+            "依據": "101以後且爆率100%以上：一半爆擊傷害、一半六大屬性傷害加成"
+          },
+          {
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "101以後但爆率未達100%：繼續補爆擊率與爆擊傷害"
           }
         ],
         "maxPerDecision": 2,
-        "replaceWith": "gem.socket"
+        "replaceWith": "gem.socket",
+        "minLevelByType": {
+          "topaz": 3,
+          "ruby": 3,
+          "sapphire": 3
+        },
+        "quota": [
+          {
+            "type": "malachite",
+            "count": 1,
+            "依據": "物理抗性寶石至少鑲一個"
+          },
+          {
+            "type": "fluorite",
+            "count": 1,
+            "依據": "魔法抗性寶石至少鑲一個"
+          },
+          {
+            "type": "kyanite",
+            "count": 2,
+            "when": [
+              "view.mp",
+              "<",
+              {
+                "$mul": [
+                  {
+                    "$path": "view.mpMax"
+                  },
+                  0.3
+                ]
+              }
+            ],
+            "依據": "法力恢復不夠者補法力恢復寶石至夠用"
+          }
+        ]
       },
       "why": "把不符當前偏好段、或階級低於庫存最高階的寶石換掉（拆與補在同一決策點成對送出）。socketEmpty 只填空槽，前期偏好種類還沒掉到時鑲上的雜牌會把插槽佔死（實測 3 小時後 12 個插槽偏好種類 0 顆），等級跨段時也不會有任何變化。只拆不補的話空槽會被 socket-gems 的退路重新塞回雜牌，變成每分鐘拆了又鑲。拆寶石在遊戲裡免費無損（unsocketGem 直接退回庫存），故為純重新配置；補不到偏好種類就完全不動，每次最多換 2 顆"
     },
@@ -364,25 +463,28 @@
           {
             "maxLevel": 50,
             "types": [
-              "topaz",
-              "amethyst",
-              "onyx",
-              "ruby",
-              "sapphire"
-            ]
-          },
-          {
-            "maxLevel": 100,
-            "types": [
-              "onyx",
               "amethyst",
               "garnet",
               "topaz",
               "ruby",
               "sapphire"
-            ]
+            ],
+            "依據": "前50級：爆擊率、爆擊傷害、生命、物理攻擊、魔法攻擊"
           },
           {
+            "maxLevel": 100,
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "51~100級：暴擊率、爆擊傷害"
+          },
+          {
+            "when": [
+              "panels.header.stats.critRate",
+              ">=",
+              100
+            ],
             "mix": [
               [
                 "garnet"
@@ -395,7 +497,49 @@
                 "coreLight",
                 "coreDark"
               ]
-            ]
+            ],
+            "依據": "101以後且爆率100%以上：一半爆擊傷害、一半六大屬性傷害加成"
+          },
+          {
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "101以後但爆率未達100%：繼續補爆擊率與爆擊傷害"
+          }
+        ],
+        "minLevelByType": {
+          "topaz": 3,
+          "ruby": 3,
+          "sapphire": 3
+        },
+        "quota": [
+          {
+            "type": "malachite",
+            "count": 1,
+            "依據": "物理抗性寶石至少鑲一個"
+          },
+          {
+            "type": "fluorite",
+            "count": 1,
+            "依據": "魔法抗性寶石至少鑲一個"
+          },
+          {
+            "type": "kyanite",
+            "count": 2,
+            "when": [
+              "view.mp",
+              "<",
+              {
+                "$mul": [
+                  {
+                    "$path": "view.mpMax"
+                  },
+                  0.3
+                ]
+              }
+            ],
+            "依據": "法力恢復不夠者補法力恢復寶石至夠用"
           }
         ]
       },
