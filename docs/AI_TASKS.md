@@ -105,16 +105,18 @@ Web Worker 遷移全部完成，無進行中的大型工程。
 - 避免浮字數量上限直接刪除尚未播完的數字。
 - 避免敵人陣列重排後，延遲浮字送到錯誤目標或因 DOM 重建消失。
 - 修正長傷害文字定位時受 `translate(-50%)` 影響而只顯示半截的問題。
+- Worker 事件佇列、待建立圖層佇列與戰鬥狀態切換均不得丟棄正在播放的傷害浮字。
 
-允許修改檔案：`docs/AI_TASKS.md`、`js/ui.js`、`js/combat.js`、`tests/damage-float-regression.test.cjs`
+允許修改檔案：`docs/AI_TASKS.md`、`js/ui.js`、`js/combat.js`、`js/worker/shim.js`、
+`tests/damage-float-regression.test.cjs`、`tests/ui-worker-events.test.cjs`
 
 禁止修改：Worker Protocol／存檔格式／戰鬥數值公式，以及其他 AI 進行中的檔案。
 
 前置依賴：無；衝突預檢已通過。
 
-測試要求／結果：浮字回歸與相關定向測試 39/39；完整測試 894/894；build 217/217 通過。瀏覽器實際驗證受本機 Browser runtime 路徑限制未完成。
+測試要求／結果：浮字與相關定向測試 37/37；完整測試 897/897；build 217/217 通過。瀏覽器實際驗證受本機 Browser runtime 路徑限制未完成。
 
-完成條件：浮字不因固定數量上限或敵人索引重排而提前消失；敵人卡片重建時仍保留同一敵人的未完成浮字；定位不會因容器邊界裁切數字。
+完成條件：浮字不因固定數量上限、敵人索引重排、待建立佇列、Worker 事件佇列或狀態切換而提前消失；只由自然淡出計時器移除。
 
 完成後交給：Claude Review，之後由 Antigravity 進行快速擊殺／切換目標的瀏覽器驗證。
 

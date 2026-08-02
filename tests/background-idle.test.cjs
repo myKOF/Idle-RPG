@@ -148,11 +148,9 @@ test('PiP 狀態不再隨 visibility 轉發（休眠機制移除後已無接收�
   assert.doesNotMatch(bridgeSrc, /miniMonitorActive/, 'bridge 不應再讀 ui.js 的 MINI');
 });
 
-test('背景分頁跳過純視覺與輪詢工作', () => {
-  // 模擬照跑，但畫面沒人看——渲染與輪詢仍應省下來
-  // 刻意不釘死參數列：這裡要驗的是「進函式就先檢查渲染是否暫停」，
-  // 把簽章寫進斷言只會讓無關的 UI 改動誤擋（floatText 就多過一個 battleSnapshot 參數）
-  assert.match(uiSrc, /function floatText\([^)]*\) \{\s*if \(uiRenderingSuspended\(\)\) return;/);
+test('背景分頁跳過非必要渲染與輪詢，但不丟棄傷害浮字', () => {
+  // 模擬照跑，非必要面板與輪詢省下來；傷害浮字仍必須接收，不能因背景分頁消失。
+  assert.doesNotMatch(uiSrc, /function floatText\([^)]*\) \{\s*if \(uiRenderingSuspended\(\)\) return;/);
   assert.match(uiSrc, /function renderStatsPanel\([^)]*\) \{\s*if \(uiRenderingSuspended\(\)\) return;/);
   assert.match(mainSrc, /function checkForUpdates\(\) \{\s*if \(typeof document !== 'undefined' && document\.hidden\) return;/);
   assert.match(autoreloadSrc, /function poll\(\) \{\s*if \(document\.hidden\) return;/);

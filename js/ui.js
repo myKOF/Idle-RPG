@@ -1290,7 +1290,6 @@ var INSTANT_KILL_HP_ANIMATION_MS = 100;
 function queuePendingEnemyFloat(elId, text, cls, damageValue, ent) {
   if (!elId || elId.indexOf('mv-float-') !== 0) return false;
   PENDING_ENEMY_FLOATS.push({ elId: elId, text: text, cls: cls, damageValue: damageValue, ent: ent || null });
-  if (PENDING_ENEMY_FLOATS.length > 50) PENDING_ENEMY_FLOATS.shift();
   return true;
 }
 
@@ -1325,11 +1324,9 @@ function animatePendingEnemyKill(ent, elId, cls, battleSnapshot) {
 
 function flushPendingEnemyFloats(battleSnapshot) {
   if (!PENDING_ENEMY_FLOATS.length) return;
-  var activeEnemies = (typeof fieldEnemyList === 'function') ? fieldEnemyList() : null;
   var keep = [];
   for (var i = 0; i < PENDING_ENEMY_FLOATS.length; i++) {
     var item = PENDING_ENEMY_FLOATS[i];
-    if (item.ent && activeEnemies && activeEnemies.indexOf(item.ent) < 0) continue;
     var layer = $id(item.elId);
     if (!layer || layer.offsetParent === null) {
       keep.push(item);
@@ -1400,11 +1397,8 @@ function scheduleFloatTextRemoval(sp, lifetimeMs) {
 function clearFloatLayer(elId) {
   var layer = $id(elId);
   if (!layer) return;
-  var floats = layer.querySelectorAll('.float-txt');
-  for (var i = 0; i < floats.length; i++) {
-    if (floats[i]._floatRemovalTimer) clearTimeout(floats[i]._floatRemovalTimer);
-  }
-  layer.innerHTML = '';
+  // 戰鬥切換、暫停或進入高塔時也不刪除正在播放的浮字；所有浮字都由
+  // scheduleFloatTextRemoval 的自然淡出計時器清理，避免狀態切換造成瞬間消失。
   layer.removeAttribute('data-last-miss-at');
 }
 
@@ -1507,7 +1501,6 @@ function placePlayerRecoveryFloat(sp, layer) {
 }
 
 function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
-  if (uiRenderingSuspended()) return; // 背景分頁：純視覺浮字直接略過，不建 DOM 也不量測排版
   /* 顯示延遲（協議 v11）：讓數字對齊「打到人」那一刻——投射物要飛、多段技一段一段打，
      但模擬層是一瞬間把整段結算完的。純顯示時序，戰鬥結果早就定了。
      延遲期間敵人可能已死，但卡片還會留 FIELD_ENEMY_DEATH_CLEAR_DELAY（2.1 秒）才移除，

@@ -30,15 +30,28 @@ function shimDiagReset() {
 
 /* ---- 事件佇列 ----
    協議規定日誌一律合批進 tick.events，禁止一則一次 postMessage。
-   超過上限就丟棄最舊的並計數，避免掛機一整天把記憶體吃光。 */
+   非視覺事件超過上限時丟棄最舊的並計數，避免掛機一整天把記憶體吃光。
+   傷害浮字例外：它們必須送到主執行緒自然淡出，不能因佇列壅塞而消失，
+   因此永遠不會被這個上限丟棄。 */
 var SHIM_EVENT_CAP = 400;
 var _shimEvents = [];
 var _shimEventsDropped = 0;
 
 function shimPushEvent(kind, data) {
-  if (_shimEvents.length >= SHIM_EVENT_CAP) {
-    _shimEvents.shift();
-    _shimEventsDropped++;
+  if (kind !== 'float') {
+    var nonFloatCount = 0;
+    for (var i = 0; i < _shimEvents.length; i++) {
+      if (_shimEvents[i] && _shimEvents[i].kind !== 'float') nonFloatCount++;
+    }
+    if (nonFloatCount >= SHIM_EVENT_CAP) {
+      for (var di = 0; di < _shimEvents.length; di++) {
+        if (_shimEvents[di] && _shimEvents[di].kind !== 'float') {
+          _shimEvents.splice(di, 1);
+          _shimEventsDropped++;
+          break;
+        }
+      }
+    }
   }
   data = data || {};
   data.kind = kind;
