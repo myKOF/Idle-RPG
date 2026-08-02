@@ -78,6 +78,22 @@ function scalarValue(file, varName, value, label) {
 function scalar(file, varName, cat, name, i) {
   scalarValue(file, varName, P(cat, name, i), varName);
 }
+/* 參數表還沒有這一列（或這一格是空的）時跳過，不中斷整份套用。
+
+   為什麼需要：CSV 是由 config/Excel/game_parameters.xlsx 產生的（套用參數.bat 第 2 步），
+   所以「先寫程式、再請人在 Excel 補列」是必然的順序。用 scalar() 的話，那段期間
+   每跑一次套用參數就整個中斷，連其他 550 個參數也套不進去。
+   跳過的項目會列在最後，不會安靜消失。 */
+const skippedParams = [];
+function scalarOpt(file, varName, cat, name, i) {
+  const row = index[cat] && index[cat][name];
+  const raw = row ? row[i] : undefined;
+  if (raw === undefined || String(raw).trim() === '' || String(raw).trim() === '0') {
+    skippedParams.push(`${cat} / ${name} 參數#${i} → ${varName}`);
+    return;
+  }
+  scalarValue(file, varName, String(raw).trim(), varName);
+}
 function rangeBound(file, varName, cat, name, i, bound) {
   const raw = P(cat, name, i);
   const match = raw.match(/^\{\s*(-?[\d.]+)\s*~\s*(-?[\d.]+)\s*\}$/);
@@ -552,6 +568,11 @@ scalar('formula', 'FUSION_CD_FACTOR', '9-融合', '融合冷卻', 0);
 scalar('formula', 'OFFLINE_MAX_HOURS', '10-離線', '有效離線時間', 0);
 scalar('formula', 'OFFLINE_LEVEL_REDUCE', '10-離線', '計算等級', 0);
 scalar('formula', 'OFFLINE_KILL_INTERVAL', '10-離線', '擊殺速率', 0);
+/* 下面三個要等 Excel 補上欄位／列才會生效，在那之前 scalarOpt 會跳過並列在報表最後。
+   「計算等級」列目前只有參數a（扣減），b（取整單位）與 c（關卡比例）是新增的欄位。 */
+scalarOpt('formula', 'OFFLINE_STAGE_ROUND', '10-離線', '計算等級', 1);
+scalarOpt('formula', 'OFFLINE_STAGE_RATIO', '10-離線', '計算等級', 2);
+scalarOpt('formula', 'OFFLINE_ELITE', '10-離線', '怪物種類', 0);
 scalar('formula', 'SKILL_CAST_LOCK', '9-技能', '施放硬直', 0);
 scalar('formula', 'SKILL_GLOBAL_COOLDOWN', '9-技能', '技能共用冷卻(GCD)', 0);
 // ESSENCE_SALVAGE_CHANCE_BY_RARITY = [0.1,0.5,1,2,4,8,20,100,100]
@@ -1018,6 +1039,10 @@ console.log('對應參數總數：' + results.length + '（一致 ' + okUnchange
 if (errors.length) {
   console.log('\n[錨點問題]（這些不會被寫入；請回報以修正對應）');
   errors.forEach(r => console.log('  ✗ ' + r.file + ' ' + r.label + '：' + r.error));
+}
+if (skippedParams.length) {
+  console.log('\n[參數表尚未提供]（程式已支援，補上這些格子就會生效；目前沿用程式內的預設值）');
+  skippedParams.forEach(s => console.log('  – ' + s));
 }
 if (changes.length) {
   console.log('\n[將套用的變更]');

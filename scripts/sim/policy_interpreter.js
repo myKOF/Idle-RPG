@@ -545,6 +545,19 @@ function evalTargets(state, policy, memo) {
   for (var i = 0; i < list.length; i++) {
     var t = list[i];
     if (!t || !t.id) continue;
+
+    /* 目標可以有前提。用途是**排順序**，不是開關：真人的打法是
+       「先在穩定關卡快速刷怪累積材料，穿上 Lv100 史詩／傳說之後才去洗寶石鑲嵌率；
+       在那之前能洗到經驗加成就很好，升級速度差很多」。
+       寶石鑲嵌率期望要 168 次洗煉才中一條，材料不夠時去追它等於把精華燒在
+       最貴的那一項上，其他兩項也拿不到。
+
+       前提不成立時回報 met＝已達標，讓缺口規則自動讓位給還沒達標的目標。 */
+    if (t.when && !testCond(state, t.when)) {
+      out[t.id] = { value: null, target: t.atLeast, short: 0, met: true, waiting: true };
+      continue;
+    }
+
     var value = null;
 
     if (t.kind === 'selfMinusEnemy') {
@@ -566,6 +579,28 @@ function evalTargets(state, policy, memo) {
     } else if (t.kind === 'value') {
       var v = Number(pathVal(state, t.path));
       if (isFinite(v)) value = v;
+    } else if (t.kind === 'affixCount') {
+      /* 身上（限定部位）已經有幾條這條詞條。
+
+         為什麼需要這一種：player_strategy.md 對首飾的要求是「至少保證共 N 條
+         寶石鑲嵌率／經驗加成／掉寶率」——那是**數量下限**，而保留清單
+         （rerollOffTarget）只表達得出「這些可以留」，表達不出「這個要湊到 N 條」。
+         實測後果：極限玩家 5 個 seed、15 件首飾，規格各 3 條，實際只出現
+         寶石鑲嵌 1 條、經驗 4 條、掉寶 2 條——因為那三條合計只佔項鏈詞條池權重的
+         3%（336 分之 10），保留清單裡有 18 項可接受，隨便中一項就停手。 */
+      var acEquip = pathVal(state, t.equipment || 'panels.inv.equipment') || {};
+      var acN = 0;
+      for (var acK in acEquip) {
+        var acIt = acEquip[acK];
+        if (!acIt || !acIt.affixes) continue;
+        /* slots 同時接受裝備欄位鍵（ring2）與遊戲的部位鍵（ring）——
+           兩套鍵在戒指與副手上不一致，只認一套就會漏掉一格。 */
+        if (t.slots && t.slots.indexOf(acK) < 0 && t.slots.indexOf(acIt.slot) < 0) continue;
+        for (var acA = 0; acA < acIt.affixes.length; acA++) {
+          if (acIt.affixes[acA] && acIt.affixes[acA].key === t.affixKey) acN++;
+        }
+      }
+      value = acN;
     } else if (t.kind === 'ratePerMin') {
       /* 取樣點由 sampleRates 累積，這裡只做差分。
          視窗還沒攢夠就回 null（＝unknown）：資料不足時不要下判斷，
@@ -668,16 +703,51 @@ function decide(state, policy, memo) {
         }
         if (!best) continue;
 
-        /* ⚠️ 這裡刻意**不**因為「身上這件帶著補缺口的詞條」就擋下換裝。
+        /* ---- 保住已經投資在太古位置上的關鍵詞條 ----
 
-           試過，結果更糟：實測 100 小時從關卡 190 掉到 117。原因是目標訂了達不到的值
-           （有效命中 95%，而高關卡怪物閃避已超過 100%，公式上永遠達不到），
-           於是「缺口未補滿」永遠成立，保護變成永久凍結，裝備從此停止升級。
+           ⚠️ 先講一個試過而且失敗的版本：「身上這件帶著補缺口的詞條就不換」。
+           實測 100 小時從關卡 190 掉到 117——因為那個條件綁的是**缺口未補滿**，
+           而目標訂了達不到的值時它永遠成立，保護就變成永久凍結，裝備停止升級。
+           通則：任何「缺口未補滿時就改變行為」的規則都要能在目標達不到時自己收手。
 
-           教訓是通則：**任何「缺口未補滿時就改變行為」的規則，都要能在目標達不到時
-           自己收手**，否則不可達的目標會把整個策略鎖死在緊急模式。
-           換裝把詞條換掉的損失，由缺口洗煉重新洗回來吸收——那是有界的成本，
-           凍結換裝不是。 */
+           keepInvested 綁的是完全不同的東西：**這件裝備的太古位置上實際帶著什麼**。
+           那是有界的（太古位置數量固定、看得見、與目標達成與否無關），不會凍結。
+
+           為什麼只保太古位置：太古位置洗煉必為滿值且永遠維持太古（js/item.js 的
+           rerollSingleAffix），所以洗在太古上的關鍵詞條是**可累積的永久投資**；
+           洗在普通位置上的，換裝之後重洗一次就回來了。
+
+           真人存檔就是這樣打的：ring2 是史詩 Lv50，三條太古分別帶著寶石鑲嵌、
+           掉寶率、經驗加成，於是他留著它並把強化從 +5 堆到 +20；而 boots 的太古
+           帶的是力量／智力／法力恢復（雜項），他就換成傳說 Lv100 了。
+           規則不是「有太古就留」，是「太古位置帶的是不是關鍵詞條」。
+
+           ⚠️ 背包投影沒有 affixes（js/worker/sim.worker.js 的 INV_CELL_FIELDS 刻意
+           裁掉，加回去裁切效益從 56% 掉到 17%），所以候選裝備帶什麼看不到，
+           只看得到 ancientCount。這個不對稱是可接受的：新掉落的太古位置是隨機的，
+           期望帶到關鍵詞條的機率極低。真要放行就靠 overrideRarityGap。 */
+        var ki = cfg.keepInvested;
+        if (ki && currItem && currItem.affixes) {
+          var keyset = {};
+          var kiT = policy.targets || [];
+          for (var kti = 0; kti < kiT.length; kti++) {
+            if (kiT[kti] && kiT[kti].affixKey) keyset[kiT[kti].affixKey] = true;
+          }
+          var invested = 0;
+          for (var kai = 0; kai < currItem.affixes.length; kai++) {
+            var kaf = currItem.affixes[kai];
+            if (!kaf || !kaf.key) continue;
+            if (ki.ancientOnly !== false && !kaf.ancient) continue;
+            if (keyset[kaf.key]) invested++;
+          }
+          if (invested > 0) {
+            /* 品質高出這麼多階就仍然換——避免一件早期的低階裝把那個部位永久鎖死。 */
+            var gap = (typeof ki.overrideRarityGap === 'number') ? ki.overrideRarityGap : 2;
+            var curR = (typeof currItem.rarity === 'number') ? currItem.rarity : -1;
+            if ((best.rarity || 0) < curR + gap) continue;
+          }
+        }
+
         if (rankBetter(bestRank, currRank)) {
           used[best.id] = true;
           out.push({ name: r.cmd, args: { itemId: best.id, slotKey: slotKey }, ruleId: r.id });
@@ -1289,7 +1359,10 @@ function decide(state, policy, memo) {
           if (px !== py) return px - py;
           return x < y ? -1 : (x > y ? 1 : 0);
         });
-        var want = (typeof tg2.maxAffixes === 'number') ? tg2.maxAffixes : 1;
+        /* 要湊到幾條。affixCount 目標的 atLeast 本身就是數量下限，不必再寫一次
+           maxAffixes——寫兩次遲早對不上，而對不上的症狀是「洗到一半就停」。 */
+        var want = (typeof tg2.maxAffixes === 'number') ? tg2.maxAffixes
+          : (tg2.kind === 'affixCount' ? (Number(tg2.atLeast) || 1) : 1);
         /* 先數身上已經有幾條。夠了就不再洗——這是「拿一兩個詞條格去換」的上限，
            不是「全身都洗成這個」。 */
         var have = 0;

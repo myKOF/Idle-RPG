@@ -68,3 +68,6 @@ scratch/recordings/
 
 # 模擬儀表板伺服器的輸出（啟動數值模擬器.bat 產生，失敗時用來顯示原因）
 sim_server.log
+
+# 模擬伺服器實際使用的連接埠（啟動時挑，每次可能不同）
+sim_server.port

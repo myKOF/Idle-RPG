@@ -93,12 +93,7 @@ function newGameState() {
     equipSetNames: ['', '', ''],    // 每套自訂名稱（空＝用預設「第X套」）
     equipment: equipment,           // 永遠 = equipmentSets[equipActive]
     inventory: [],
-    /* killPace：實測野外擊殺速率，供離線結算當速率上限（js/formula.js §10）。
-       kills/sec 是指數加權的擊殺數與觀測時長，at 是最後一次更新的牆鐘時刻。
-       預設值刻意就是固定費率 1/20，所以新角色與舊存檔（mergeDefaults 會補上這一層）
-       都維持原本的離線收益，等真的打過怪之後才換成實測值。 */
-    stage: { current: 1, best: 1, kills: 0, autoAdvance: true, zone: 'plains',
-             killPace: { kills: 1, sec: OFFLINE_KILL_INTERVAL, at: 0 } },
+    stage: { current: 1, best: 1, kills: 0, autoAdvance: true, zone: 'plains' },
     zoneProgress: {   // 各戰鬥場景獨立進度（stage 為當前場景的即時狀態）
       plains: { current: 1, best: 1 },
       desert: { current: 1, best: 1 },

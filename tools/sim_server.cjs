@@ -10,7 +10,21 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
-const PORT = 28342;
+
+/* 連接埠：28342 起往上找第一個沒被占用的。
+
+   為什麼要能換：28342 不是我們獨占的號碼，實測被別的工具搶走過
+   （Codex 的 runtime kernel 就會聽這個埠）。搶走之後最糟的不是啟不起來，
+   是**啟動器以為我們已經在跑**——它原本只檢查「這個埠有沒有回應」，
+   對方回 200 就直接開瀏覽器，使用者看到的是一頁 404，完全看不出原因。
+
+   所以兩件事一起做：換埠找得到位子，並且提供一個身分標記讓啟動器
+   確認接電話的真的是我們。選定的埠寫進 sim_server.port 供啟動器讀取。 */
+const PORT_BASE = 28342;
+const PORT_TRIES = 10;
+const PORT_FILE = path.join(ROOT, 'sim_server.port');
+/* 身分標記。啟動器比對這個字串，不是比對「有沒有回應」。 */
+const WHOAMI = 'idle-rpg-sim-server';
 
 let currentProgress = {
   isSimulating: false,
@@ -92,6 +106,13 @@ function collectBatchProgress(dir) {
 const server = http.createServer((req, res) => {
   const urlParts = req.url.split('?');
   const pathname = urlParts[0];
+
+  /* 身分標記。啟動器用它確認接電話的是我們，而不是剛好占用同一個埠的別的程式。 */
+  if (req.method === 'GET' && pathname === '/__whoami') {
+    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end(WHOAMI);
+    return;
+  }
 
   // 1. 查詢即時模擬進度 API (直接讀取落地進度檔，徹底擺脫 Node stdout buffer 延遲)
   if (req.method === 'GET' && pathname === '/sim_progress') {
@@ -292,8 +313,39 @@ const server = http.createServer((req, res) => {
   }
 });
 
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`=======================================================`);
-  console.log(`🌐 放置型 RPG 模擬儀表板伺服器已啟動: http://127.0.0.1:${PORT}/`);
-  console.log(`=======================================================`);
-});
+/* 依序試 PORT_BASE .. PORT_BASE+PORT_TRIES-1，用掉第一個空的。
+
+   ⚠️ 每一輪都要重新掛 error handler：listen 失敗是非同步事件，沒有 handler
+   就是 unhandled 'error' 直接讓行程掛掉——原本的行為就是這樣，
+   使用者只會在 sim_server.log 裡看到一段 EADDRINUSE 堆疊。
+
+   ⚠️ 成功回呼要用 once('listening') 自己掛，不能用 listen(port, host, cb) 的
+   第三參數。那個參數是**加一個 'listening' 監聽器**，不是這一次呼叫專屬的回呼：
+   重試三次就累積三個，最後成功時三個一起觸發，印出三行「已啟動」並把三個不同的
+   埠號依序寫進 sim_server.port。踩過一次，寫在這裡。 */
+function listenFrom(port, left) {
+  const onError = (err) => {
+    server.removeListener('listening', onReady);
+    if (err && err.code === 'EADDRINUSE' && left > 0) {
+      console.log(`⚠️ 連接埠 ${port} 已被其他程式占用，改試 ${port + 1}`);
+      setImmediate(() => listenFrom(port + 1, left - 1));
+      return;
+    }
+    console.error(`❌ 伺服器啟動失敗：${err && err.message ? err.message : err}`);
+    process.exit(1);
+  };
+  const onReady = () => {
+    server.removeListener('error', onError);
+    server.on('error', (err) => console.error(`伺服器錯誤：${err && err.message}`));
+    /* 把選定的埠寫出來給啟動器讀。檔案可能是上一輪留下的舊值，
+       所以啟動器仍要用 /__whoami 驗一次，不能只信這個檔。 */
+    try { fs.writeFileSync(PORT_FILE, String(port)); } catch (e) { /* 寫不出來不影響服務 */ }
+    console.log(`=======================================================`);
+    console.log(`🌐 放置型 RPG 模擬儀表板伺服器已啟動: http://127.0.0.1:${port}/`);
+    console.log(`=======================================================`);
+  };
+  server.once('error', onError);
+  server.once('listening', onReady);
+  server.listen(port, '127.0.0.1');
+}
+listenFrom(PORT_BASE, PORT_TRIES - 1);

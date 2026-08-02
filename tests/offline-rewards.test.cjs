@@ -5,9 +5,14 @@ const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 
-/* 離線收益改版：固定速率獵殺「當前地圖最高階段 −10 捨十位」等級的菁英怪，
-   每 20 秒 1 隻、每隻掉落單獨擲骰。
-   固定化隨機：chance 只在機率 ≥100% 成立 → rollDropCount 退化為 ⌊pct/100⌋，結果可精確斷言。 */
+/* 離線收益：固定速率獵殺「歷史最高階段 × 比例 − 扣減，捨去到取整單位」等級的怪，
+   每隻掉落單獨擲骰。
+   固定化隨機：chance 只在機率 ≥100% 成立 → rollDropCount 退化為 ⌊pct/100⌋，結果可精確斷言。
+
+   ⚠️ 這一段的期望值一律從遊戲常數推導，不寫死 20 秒／180 隻。
+   那幾個值是參數表旋鈕（10-離線），設計者調一次就會讓這幾支測試整片紅燈，
+   而紅燈的原因跟程式對錯無關——那是假警報，久了就沒人看測試了。
+   實際踩過：把擊殺速率從 20 秒調成 10 秒，三支測試同時失敗。 */
 
 function loadGameContext() {
   const context = { console, UI: { dirty: {} }, GT: 0 };
@@ -26,23 +31,28 @@ function loadGameContext() {
   return context;
 }
 
-test('離線計算等級：目前地圖最高階段 −10 後捨去個位數，下限 1', () => {
+/* 依當前參數推出期望值。公式與 formula.js §10 一致，但這裡的重點是
+   「有沒有真的照參數走」，數值本身的正確性由 tests/offline-stage-params.test.cjs 顧。 */
+function expectStage(c, best) {
+  const unit = Math.max(1, Math.floor(c.OFFLINE_STAGE_ROUND));
+  return Math.max(1, Math.floor((best * c.OFFLINE_STAGE_RATIO - c.OFFLINE_LEVEL_REDUCE) / unit) * unit);
+}
+function expectKills(c, sec) { return Math.floor(sec / c.OFFLINE_KILL_INTERVAL); }
+
+test('離線計算等級：歷史最高階段扣減後捨去到取整單位，下限 1', () => {
   const c = loadGameContext();
-  assert.equal(c.OFFLINE_LEVEL_REDUCE, 10);
-  assert.equal(c.offlineStageFor(256), 240); // 使用者範例：256-10=246 → 240
-  assert.equal(c.offlineStageFor(265), 250);
-  assert.equal(c.offlineStageFor(250), 240);
-  assert.equal(c.offlineStageFor(20), 10);
-  assert.equal(c.offlineStageFor(15), 1);
-  assert.equal(c.offlineStageFor(1), 1);
+  for (const best of [256, 265, 250, 20, 15, 1]) {
+    assert.equal(c.offlineStageFor(best), expectStage(c, best), `best=${best}`);
+  }
+  assert.equal(c.offlineStageFor(1), 1, '下限永遠是 1');
 });
 
-test('離線擊殺數：每 20 秒 1 隻菁英怪，離線預言潛力加成擊殺數', () => {
+test('離線擊殺數依擊殺速率換算，並吃離線預言潛力加成', () => {
   const c = loadGameContext();
-  assert.equal(c.OFFLINE_KILL_INTERVAL, 20);
-  assert.equal(c.offlineKillCount(3600, 0), 180);
-  assert.equal(c.offlineKillCount(3600, 10), 198); // 離線預言 +10%
-  assert.equal(c.offlineKillCount(19, 0), 0);
+  const iv = c.OFFLINE_KILL_INTERVAL;
+  assert.equal(c.offlineKillCount(3600, 0), expectKills(c, 3600));
+  assert.equal(c.offlineKillCount(3600, 10), Math.floor(3600 / iv * 1.1), '離線預言 +10%');
+  assert.equal(c.offlineKillCount(iv - 1, 0), 0, '不足一個間隔就是 0 隻');
 });
 
 test('離線收益逐殺結算：每隻菁英單獨擲骰、金幣經驗依菁英與場景倍率', () => {
@@ -55,18 +65,20 @@ test('離線收益逐殺結算：每隻菁英單獨擲骰、金幣經驗依菁�
   c.G.savedAt = Date.now() - 3600 * 1000; // 離線 1 小時
 
   const goldBefore = c.G.player.gold;
+  const kills = expectKills(c, 3600);
+  const stage = expectStage(c, 256);
   const summary = c.applyOfflineProgress();
 
   assert.ok(summary, '應回傳離線收益彙總');
-  assert.equal(summary.kills, 180);
-  assert.equal(summary.stage, 240);
-  assert.equal(summary.equips[0], 180);       // 普通裝備 ×180（每隻 1 件）
-  assert.equal(c.G.factory.conveyor.length, 180); // 實體裝備進輸送帶
+  assert.equal(summary.kills, kills);
+  assert.equal(summary.stage, stage);
+  assert.equal(summary.equips[0], kills);       // 普通裝備 ×擊殺數（每隻 1 件）
+  assert.equal(c.G.factory.conveyor.length, kills); // 實體裝備進輸送帶
 
-  const m = c.monsterStatsFor(240, true);     // 菁英怪
-  const rw = c.ZONES.swamp.rewardMult;        // 沼澤場景倍率
-  assert.equal(summary.gold, Math.round(m.gold * rw) * 180);
-  assert.equal(summary.xp, Math.round(m.xp * rw) * 180);
+  const m = c.monsterStatsFor(stage, true);     // 菁英怪
+  const rw = c.ZONES.swamp.rewardMult;          // 沼澤場景倍率
+  assert.equal(summary.gold, Math.round(m.gold * rw) * kills);
+  assert.equal(summary.xp, Math.round(m.xp * rw) * kills);
   assert.equal(c.G.player.gold - goldBefore, summary.gold);
 });
 
@@ -82,13 +94,14 @@ test('離線收益採用玩家上線時的經驗/金幣/掉寶加成', () => {
   c.G.stage.best = 256;
   c.G.savedAt = Date.now() - 3600 * 1000;
 
+  const kills = expectKills(c, 3600);
   const summary = c.applyOfflineProgress();
-  const m = c.monsterStatsFor(240, true);
+  const m = c.monsterStatsFor(expectStage(c, 256), true);
   const rw = c.ZONES.swamp.rewardMult;
-  assert.equal(summary.gold, Math.round(m.gold * rw * 1.5) * 180); // 金幣加成 +50%
-  assert.equal(summary.xp, Math.round(m.xp * rw * 2) * 180);       // 經驗加成 +100%
+  assert.equal(summary.gold, Math.round(m.gold * rw * 1.5) * kills); // 金幣加成 +50%
+  assert.equal(summary.xp, Math.round(m.xp * rw * 2) * kills);       // 經驗加成 +100%
   // 掉寶：100% × (1 + 100%) × 菁英 1.3 = 260% → 每殺必掉 2 件
-  assert.equal(summary.equips[0], 360);
+  assert.equal(summary.equips[0], kills * 2);
 });
 
 test('有效離線時間上限（OFFLINE_MAX_HOURS），1 分鐘內不計', () => {

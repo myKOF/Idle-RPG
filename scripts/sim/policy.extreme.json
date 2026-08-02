@@ -256,14 +256,13 @@
         "requireTargets": [
           "killRate"
         ],
-        "requireTargets_依據": "player_strategy.md 的安全關卡定義量的是產出。前面兩道閘門量的是投入（裝備品質覆蓋率、上次死在哪），實測會脫節：全身史詩、沒死過、重試閘門也沒攔，卻在關卡 150 之後每分鐘殺 0~1 隻",
         "targetRetreat": {
           "step": 5,
           "everySec": 300,
           "minStage": 1,
-          "說明": "產出不足就每 300 秒往回退 5 關，直到殺得動為止。everySec 必須 >= killRate 的 windowSec，否則下一次判斷用的還是退關前的取樣，會連退好幾階（tests/policy-keys.test.cjs 有哨兵）",
-          "退關不會損失歷史最高": "js/combat.js 的 stageGo 只改 G.stage.current，G.stage.best 是單向棘輪（combat.js:801）"
-        }
+          "說明": "產出不足就每 300 秒往回退 5 關。everySec 必須 >= killRate 的 windowSec（tests/policy-keys.test.cjs 有哨兵）"
+        },
+        "requireTargets_依據": "極限玩家 dailyActiveHours=24 全程在線，沒有離線收益可領，所以「待在刷得動的關卡」直接決定產出。實測 4 個 seed：中位等級 201→412、擊殺 30K→138K、死亡 73→23"
       },
       "why": "依 player_strategy.md「前期優先生存任務指南」控制自動推關：裝備品質覆蓋率沒到門檻就關掉自動推關、留在原地掛機把裝備換上來。指南的核心是不要讓關卡跑在裝備前面——推太深只會一直死，死了就掉不到裝備，掉不到裝備就更推不動。先前是無條件每 15 秒送一次「開啟自動推關」，正是指南要防的那件事。覆蓋率只算身上真的有裝備的部位（空部位面板值為 -1，雙手武器會讓 weapon2 永遠空著，算進分母的話門檻永遠到不了、閘門永久關閉）"
     },
@@ -274,7 +273,14 @@
       "bestPerSlot": {
         "items": "panels.inv.items",
         "equippedScores": "panels.inv.equipmentScores",
-        "equipment": "panels.inv.equipment"
+        "equipment": "panels.inv.equipment",
+        "keepInvested": {
+          "ancientOnly": false,
+          "overrideRarityGap": 2,
+          "說明": "身上這件帶著目標詞條就不換，除非新裝備品質高 2 階以上。對應真人打法：留著史詩 Lv50 的 ring2（三條太古帶三寶）不換，而把太古是雜項的 boots 換成傳說 Lv100——判準是「帶什麼」不是「品質多高」",
+          "ancientOnly_為什麼是_false": "只保太古位置時，洗在普通位置上的關鍵詞條會被換裝丟掉。實測 4 個 seed：只保太古是 2/3/3 條（寶石鑲嵌/經驗/掉寶合計），全位置保護是 5/7/2 並出現第一個達標項。代價是成績下緣變差（等級最低 365→203、死亡中位約 53→99.5），中位等級 412→378.5 在 n=4 下算噪音。選 false 是取「像真人的配裝」而不是「最高分」",
+          "overrideRarityGap_的作用": "防止保護變成永久凍結的閘。先前有一版保護綁在「缺口未補滿」上，目標達不到時永遠成立，實測 100 小時從關卡 190 掉到 117。品質高 2 階以上仍然換，凍結就有出口"
+        }
       },
       "why": "換裝優先序：品質 >> 等級 >> 太古詞條數 >> 評分（player_strategy.md）。評分只當平手裁判——itemScore 把品質、等級、太古壓成一個數字，照它排會出現「品質低一階但詞條滾得好所以分數高」而換錯，而品質決定插槽數與附魔欄數，換不回來"
     },
@@ -728,6 +734,24 @@
       "why": "把寶石鑲進空插槽，依 player_strategy.md 寶石鑲嵌策略分段：前50級 生命→暴擊率→吸血→物攻→魔攻；51~100 吸血→暴擊率→爆傷→生命→物攻→魔攻；101以後 一半爆傷、一半六大屬性傷害加成（mix 兩組輪流）。手上沒有偏好種類就鑲任何有貨的；階級由遊戲挑（socketGem 取庫存最高階），所以本規則排在 gem-compose 之後，先合成再鑲就會鑲到當前可得的最高品質"
     },
     {
+      "id": "reroll-for-deficit",
+      "everySec": 60,
+      "cmd": "item.rerollAffix",
+      "if": [
+        [
+          "view.essence",
+          ">=",
+          20
+        ]
+      ],
+      "rerollForDeficit": {
+        "equipment": "panels.inv.equipment",
+        "affixRules": "panels.equip.affixRules",
+        "minRarity": 4,
+        "keepAncient": true
+      }
+    },
+    {
       "id": "reroll-off-target",
       "everySec": 300,
       "cmd": "item.rerollAffix",
@@ -1060,14 +1084,60 @@
   "targets": [
     {
       "id": "killRate",
-      "說明": "每分鐘野外擊殺數。player_strategy.md 的安全關卡定義：「能在平均 3 秒內殺死一個敵人」。實測掃描 5/10/15/20/25 之後取 15（4 秒殺一隻）",
       "kind": "ratePerMin",
       "counter": "panels.battle.lootStats.sources.field.kills",
-      "counter_為什麼是_sources_field": "lootStats.kills 的總數包含塔戰 BOSS（js/tower.js），指到總數的話爬塔會被誤算成野外打得動。離線結算不寫 LOOT_STATS（js/save.js 的 applyOfflineProgress 不呼叫 recordLootKill），所以離線那一段不會汙染速率",
       "windowSec": 300,
       "atLeast": 15,
-      "atLeast_量測依據": "重度策略 100 小時牆鐘、4 個 seed 的門檻掃描（中位等級）：不設閘門 118、5 隻/分 188、10 隻/分 194、15 隻/分 299.5、20 隻/分 212、25 隻/分 53.5。太鬆攔不到打不動的關卡，太緊會把角色鎖在淺關",
-      "為什麼量產出而不是量命中率": "命中率、傷害、抗性都是原因，殺敵速度是結果。量結果的話任何一個原因出問題都會反映出來，不必替每一個原因各補一條規則"
+      "說明": "每分鐘野外擊殺數。門檻 15＝4 秒殺一隻（player_strategy.md 安全關卡定義是 3 秒）；掃描 5/10/15/20/25 之後 15 全面最佳",
+      "counter_為什麼是_sources_field": "lootStats.kills 總數含塔戰 BOSS，指到總數會把爬塔誤算成野外打得動"
+    },
+    {
+      "id": "jewelXpBonus",
+      "kind": "affixCount",
+      "affixKey": "xpBonus",
+      "equipment": "panels.inv.equipment",
+      "slots": [
+        "amulet",
+        "ring",
+        "ring2"
+      ],
+      "atLeast": 3,
+      "說明": "項鏈與戒指的關鍵詞條（player_strategy.md：寶石鑲嵌率最關鍵，其次掉寶率與經驗加成）",
+      "為什麼不能只靠保留清單": "保留清單只表達得出「這些可以留」，表達不出「這條要湊到 N 條」。這三條合計只佔項鏈詞條池權重的 3%（336 分之 10），而清單有 18 項可接受，隨便中一項就停手"
+    },
+    {
+      "id": "jewelLoot",
+      "kind": "affixCount",
+      "affixKey": "loot",
+      "equipment": "panels.inv.equipment",
+      "slots": [
+        "amulet",
+        "ring",
+        "ring2"
+      ],
+      "atLeast": 3,
+      "說明": "項鏈與戒指的關鍵詞條（player_strategy.md：寶石鑲嵌率最關鍵，其次掉寶率與經驗加成）",
+      "為什麼不能只靠保留清單": "保留清單只表達得出「這些可以留」，表達不出「這條要湊到 N 條」。這三條合計只佔項鏈詞條池權重的 3%（336 分之 10），而清單有 18 項可接受，隨便中一項就停手"
+    },
+    {
+      "id": "jewelGemEff",
+      "kind": "affixCount",
+      "affixKey": "gemEff",
+      "equipment": "panels.inv.equipment",
+      "slots": [
+        "amulet",
+        "ring",
+        "ring2"
+      ],
+      "atLeast": 3,
+      "when": [
+        "view.essence",
+        ">=",
+        400
+      ],
+      "說明": "項鏈與戒指的關鍵詞條（player_strategy.md：寶石鑲嵌率最關鍵，其次掉寶率與經驗加成）",
+      "為什麼不能只靠保留清單": "保留清單只表達得出「這些可以留」，表達不出「這條要湊到 N 條」。這三條合計只佔項鏈詞條池權重的 3%（336 分之 10），而清單有 18 項可接受，隨便中一項就停手",
+      "when_依據": "真人打法：先在穩定關卡快速刷怪累積材料，穿上 Lv100 史詩／傳說之後才去洗寶石鑲嵌率——它期望要 168 次洗煉才中一條，材料不夠時去追等於把精華燒在最貴的一項上"
     }
   ]
 }

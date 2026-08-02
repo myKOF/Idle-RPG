@@ -169,6 +169,180 @@ test('缺口補滿後停手，就算身上一條目標詞條都沒有', () => {
   assert.equal(rerollOf(p.decide(st(1, 200, 60, GEAR))).length, 0, '有效命中已達 100%，不該再洗');
 });
 
+/* ============ 數量型目標：首飾保證詞條 ============
+
+   player_strategy.md 對首飾的要求是「至少保證共 N 條寶石鑲嵌率／經驗加成／掉寶率」。
+   那是**數量下限**，而保留清單只表達得出「這些可以留」。實測 5 個 seed、15 件首飾，
+   極限規格各 3 條，實際只出現寶石鑲嵌 1 條、經驗 4 條、掉寶 2 條——因為那三條合計
+   只佔項鏈詞條池權重的 3%，而清單裡有 18 項可接受，隨便中一項就停手。 */
+
+function countPolicy(atLeast, extra) {
+  return createPolicy({
+    name: 'count-test',
+    decideEveryGameSec: 60,
+    needPanels: ['equip', 'inv'],
+    targets: [Object.assign({
+      id: 'jewelGemEff',
+      kind: 'affixCount',
+      affixKey: 'gemEff',
+      equipment: 'panels.inv.equipment',
+      slots: ['amulet', 'ring', 'ring2'],
+      atLeast: atLeast
+    }, extra || {})],
+    rules: [{
+      id: 'fix', cmd: 'item.rerollAffix',
+      rerollForDeficit: { equipment: 'panels.inv.equipment', minRarity: 4, keepAncient: true }
+    }]
+  });
+}
+
+/* 首飾三件，預設都沒有目標詞條。遊戲規則：gemEff 只長在 ring/amulet 且需 R4 以上。 */
+function jewelState(sec, equipment) {
+  return {
+    gameTimeSec: sec,
+    view: { stage: 100 },
+    panels: {
+      equip: { stats: { hit: 100 }, affixRules: { gemEff: { slots: ['ring', 'amulet'], minR: 4 } } },
+      inv: { equipment: equipment }
+    }
+  };
+}
+function jewelGear(perSlot) {
+  const mk = (id, slot, keys) => ({ id: id, slot: slot, rarity: 5, affixes: keys.map((k) => ({ key: k })) });
+  return {
+    amulet: mk('a1', 'amulet', perSlot.amulet || ['critRate', 'atkPct']),
+    ring: mk('r1', 'ring', perSlot.ring || ['critRate', 'atkPct']),
+    ring2: mk('r2', 'ring', perSlot.ring2 || ['critRate', 'atkPct']),
+    weapon: mk('w1', 'weapon', ['atkPct', 'critRate'])
+  };
+}
+
+test('數量型目標：缺口＝要求條數減去身上實際條數', () => {
+  const p = countPolicy(3);
+  const cmds = p.decide(jewelState(1, jewelGear({})));
+  assert.equal(cmds.filter((c) => c.name === 'item.rerollAffix').length, 1, '一次專注一個部位');
+
+  const q = countPolicy(3);
+  const done = jewelGear({ amulet: ['gemEff'], ring: ['gemEff'], ring2: ['gemEff'] });
+  assert.equal(q.decide(jewelState(1, done)).filter((c) => c.name === 'item.rerollAffix').length, 0,
+    '三條都有了就停手');
+});
+
+test('ring2 用的是裝備欄位鍵、部位鍵是 ring——兩套鍵都要認得', () => {
+  /* 戒指與副手的裝備欄位鍵（ring2/weapon2）與遊戲的部位鍵（ring/weapon）不一致。
+     只認一套的話會漏掉一整格，而且不會有任何徵兆。 */
+  const p = countPolicy(1);
+  const gear = jewelGear({ ring2: ['gemEff'] });          // 只有 ring2 有
+  assert.equal(p.decide(jewelState(1, gear)).filter((c) => c.name === 'item.rerollAffix').length, 0,
+    'ring2 上的那一條要算進數量');
+});
+
+test('只洗遊戲允許的部位——武器洗不出寶石鑲嵌效率', () => {
+  const p = countPolicy(3);
+  const cmds = p.decide(jewelState(1, jewelGear({}))).filter((c) => c.name === 'item.rerollAffix');
+  assert.notEqual(cmds[0].args.itemId, 'w1');
+});
+
+test('不會把已經洗出來的目標詞條當成犧牲品洗掉', () => {
+  const p = countPolicy(3);
+  const gear = jewelGear({ amulet: ['gemEff', 'critRate'] });
+  const cmds = p.decide(jewelState(1, gear)).filter((c) => c.name === 'item.rerollAffix');
+  assert.equal(cmds.length, 1);
+  assert.notEqual(cmds[0].args.affixKey, 'gemEff');
+});
+
+test('atLeast 就是數量下限，不必再寫一次 maxAffixes', () => {
+  /* 兩個地方各寫一次同一個數字，遲早對不上；對不上的症狀是「洗到一半就停」。 */
+  const p = countPolicy(2);
+  const gear = jewelGear({ amulet: ['gemEff'] });          // 已有 1 條，還缺 1 條
+  assert.equal(p.decide(jewelState(1, gear)).filter((c) => c.name === 'item.rerollAffix').length, 1);
+
+  const q = countPolicy(2);
+  const gear2 = jewelGear({ amulet: ['gemEff'], ring: ['gemEff'] });
+  assert.equal(q.decide(jewelState(1, gear2)).filter((c) => c.name === 'item.rerollAffix').length, 0);
+});
+
+test('目標可以有前提（when）：前提不成立時讓位給其他目標', () => {
+  /* 真人打法是有順序的：「先在穩定關卡快速刷怪累積材料，穿上 Lv100 史詩／傳說
+     之後才去洗寶石鑲嵌率；在那之前能洗到經驗加成就很好」。寶石鑲嵌率期望要 168 次
+     洗煉才中一條，材料不夠時去追它等於把精華燒在最貴的一項上。 */
+  const p = countPolicy(3, { when: ['view.essence', '>=', 400] });
+  const poor = jewelState(1, jewelGear({}));
+  poor.view.essence = 50;
+  assert.equal(p.decide(poor).filter((c) => c.name === 'item.rerollAffix').length, 0,
+    '材料不夠時不該去追這個目標');
+
+  const rich = jewelState(2, jewelGear({}));
+  rich.view.essence = 900;
+  assert.equal(p.decide(rich).filter((c) => c.name === 'item.rerollAffix').length, 1,
+    '材料夠了才開始追');
+});
+
+/* ---- 換裝：保住投資在太古位置上的關鍵詞條 ---- */
+
+function equipPolicy(keepInvested) {
+  return createPolicy({
+    name: 'equip-test',
+    decideEveryGameSec: 60,
+    needPanels: ['inv'],
+    targets: [{ id: 'jewelGemEff', kind: 'affixCount', affixKey: 'gemEff', slots: ['ring'], atLeast: 1 }],
+    rules: [{
+      id: 'equip', cmd: 'item.equip',
+      bestPerSlot: Object.assign({
+        items: 'panels.inv.items',
+        equippedScores: 'panels.inv.equipmentScores',
+        equipment: 'panels.inv.equipment'
+      }, keepInvested ? { keepInvested: keepInvested } : {})
+    }]
+  });
+}
+/* 身上一隻史詩(4) 戒指，背包一隻傳說(5)。預設規則會換；keepInvested 要能擋下。 */
+function equipState(currentAffixes) {
+  return {
+    gameTimeSec: 1,
+    panels: {
+      inv: {
+        equipment: { ring: { id: 'cur', slot: 'ring', rarity: 4, level: 50, affixes: currentAffixes } },
+        equipmentScores: { ring: 100 },
+        equipmentRarities: { ring: 4 },
+        items: [{ id: 'new', slot: 'ring', slots: ['ring'], rarity: 5, level: 100, ancientCount: 0, score: 999 }]
+      }
+    }
+  };
+}
+const equipOf = (cmds) => cmds.filter((c) => c.name === 'item.equip');
+
+test('沒宣告 keepInvested 時維持原本行為：品質高就換', () => {
+  const p = equipPolicy(null);
+  assert.equal(equipOf(p.decide(equipState([{ key: 'gemEff', ancient: true }]))).length, 1);
+});
+
+test('太古位置帶著目標詞條就不換——那是可累積的永久投資', () => {
+  /* 太古位置洗煉必為滿值且永遠維持太古（js/item.js 的 rerollSingleAffix），
+     所以洗在太古上的關鍵詞條換掉就是真的沒了。真人存檔就是留著史詩 Lv50 的 ring2
+     （三條太古分別帶寶石鑲嵌／掉寶／經驗），旁邊的傳說 Lv100 反而沒有。 */
+  const p = equipPolicy({ ancientOnly: true, overrideRarityGap: 2 });
+  assert.equal(equipOf(p.decide(equipState([{ key: 'gemEff', ancient: true }]))).length, 0);
+});
+
+test('太古位置帶的是雜項就照換——規則是「帶什麼」不是「有沒有太古」', () => {
+  const p = equipPolicy({ ancientOnly: true, overrideRarityGap: 2 });
+  assert.equal(equipOf(p.decide(equipState([{ key: 'atkPct', ancient: true }]))).length, 1);
+});
+
+test('目標詞條在普通位置上不受保護——換裝後重洗即可', () => {
+  const p = equipPolicy({ ancientOnly: true, overrideRarityGap: 2 });
+  assert.equal(equipOf(p.decide(equipState([{ key: 'gemEff', ancient: false }]))).length, 1);
+});
+
+test('品質高出夠多階仍然換，避免早期低階裝把部位永久鎖死', () => {
+  /* 這是防「保護變成永久凍結」的那道閘。先前有一版保護綁在「缺口未補滿」上，
+     目標達不到時就永遠成立，實測 100 小時從關卡 190 掉到 117。 */
+  const p = equipPolicy({ ancientOnly: true, overrideRarityGap: 1 });
+  assert.equal(equipOf(p.decide(equipState([{ key: 'gemEff', ancient: true }]))).length, 1,
+    '差 1 階且門檻設 1 就該放行');
+});
+
 /* ============ 產出速率與關卡閘門 ============
 
    命中率、傷害、抗性都是原因；殺敵速度是結果。player_strategy.md 定義安全關卡
