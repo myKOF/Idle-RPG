@@ -1034,6 +1034,7 @@
                 <label for="yAxisSelect">📈 Y 軸指標維度選擇</label>
                 <select id="yAxisSelect" onchange="renderChart()">
                     <option value="dps">⚔️ 玩家 DPS (每秒輸出傷害，對數展示)</option>
+                    <option value="kill_rate">🐢 每分鐘擊殺數 (看有沒有卡在推不動的關卡)</option>
                     <option value="total_kills">⚔️ 總殺敵數 (Total Monster Kills)</option>
                     <option value="reincarnation">🌀 轉生次數 (0~10 轉生進程)</option>
                     <option value="tower_floor">🗼 高塔通關樓層 (1~150 層 BOSS)</option>
@@ -1416,9 +1417,28 @@
                     total_stones_earned: wrap(stones),
                     total_essence_earned: wrap(essence),
                     total_dust_earned: wrap(dust),
-                    total_ancient_essence_earned: wrap(ancientEssence)
+                    total_ancient_essence_earned: wrap(ancientEssence),
+                    /* kill_rate 由下面補算（要用相鄰兩點的差分，這裡還看不到前一點）。 */
+                    kill_rate: wrap(0)
                 };
             });
+
+            /* ---- 每分鐘擊殺數 ----
+               為什麼需要這一條：DPS 回答不了「有沒有卡在推不動的關卡」。
+               currentDps() 是 10 秒滾動視窗（js/combat.js:575），角色打得動與否
+               它都會跳；實測有一場 DPS 讀到 162,152 而同時間每分鐘只殺 0.4 隻——
+               傷害很高但怪物血量高兩個數量級，就是「硬推打不動的關卡」的樣子。
+               擊殺速率是產出，直接看得出來。
+
+               ⚠️ 只用連續在線的相鄰取樣算。班表下離線區塊在快照上是一段很長的間隔，
+               而離線擊殺不寫 LOOT_STATS，算進去會得到一整排假的 0。 */
+            for (let n = 1; n < timeSeries.length; n++) {
+                const dh = timeSeries[n].hour - timeSeries[n - 1].hour;
+                if (!(dh > 0) || dh > 0.5) continue;          // 0.5h 以上視為離線區塊，跳過
+                const dk = timeSeries[n].total_kills.mean - timeSeries[n - 1].total_kills.mean;
+                const rate = dk / (dh * 60);
+                timeSeries[n].kill_rate = { mean: rate, median: rate, p10: rate, p90: rate };
+            }
 
             currentSimResult = currentSimResult || {};
             currentSimResult.time_series = timeSeries;
