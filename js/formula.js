@@ -1940,7 +1940,7 @@ var OFFLINE_MAX_HOURS = 24;        // 離線收益時間上限（小時）；1 �
 var OFFLINE_LEVEL_REDUCE = 10;    // 計算等級扣減：歷史最高階段 × 比例 − 此值
 var OFFLINE_STAGE_RATIO = 1;      // 計算等級比例：先把歷史最高階段乘上這個值再扣減（1＝不打折）
 var OFFLINE_STAGE_ROUND = 10;     // 計算等級取整單位：扣減後無條件捨去到此值的倍數
-var OFFLINE_KILL_INTERVAL = 20;   // 擊殺速率：每隔此秒數擊殺 1 隻（20 秒＝每分鐘 3 隻）
+var OFFLINE_KILL_INTERVAL = 10;   // 擊殺速率：每隔此秒數擊殺 1 隻（20 秒＝每分鐘 3 隻）
 var OFFLINE_ELITE = 1;            // 離線怪物種類：1＝菁英（經驗掉落較高，並套用菁英掉落倍率）0＝普通
 
 // 離線計算等級 = max(1, ⌊(歷史最高階段 × 比例 − 扣減) / 取整單位⌋ × 取整單位)
