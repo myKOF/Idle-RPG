@@ -1785,11 +1785,11 @@ var SKILL_MAX_LV = 10;         // 一般技能等級上限（保留給外部參�
 var SKILL_CAST_LOCK = 0;       // 舊參數保留供參數表相容；技能不再改動普攻 atkCd
 var SKILL_GLOBAL_COOLDOWN = 0.4; // 技能共用冷卻（秒；固定值，不受冷卻縮減影響）
 
-// 裝載欄：參數表「技能裝載欄」＝clamp(⌊等級/a⌋, b, c)；1 轉後解鎖全部上限。
+// 裝載欄：參數表「技能裝載欄」＝clamp(b + ⌊等級/a⌋, b, c)；1 轉後解鎖全部上限。
 function loadoutSize() {
   if (typeof reincarnationCount === 'function' && reincarnationCount() >= 1) return 20;
   var lvl = (typeof G !== 'undefined' && G.player && G.player.level) ? G.player.level : 1;
-  return Math.min(20, Math.max(4, Math.floor(lvl / 50)));
+  return Math.min(20, Math.max(4, 4 + Math.floor(lvl / 50)));
 }
 
 // 技能升級金幣費用 = 20000 × 當前等級 + 20^(1 + 當前等級/10)

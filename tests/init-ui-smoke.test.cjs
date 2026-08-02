@@ -75,6 +75,7 @@ function fakeElement() {
 test('initUI 可在 Worker 面板尚未抵達時安全啟動', () => {
   const elements = Object.create(null);
   const workerHandlers = Object.create(null);
+  const panelRequests = [];
   const body = fakeElement();
   const document = {
     hidden: false,
@@ -116,7 +117,7 @@ test('initUI 可在 Worker 面板尚未抵達時安全啟動', () => {
       on: (name, handler) => { workerHandlers[name] = handler; },
       subscribeView: () => {},
       subscribePanels: () => {},
-      requestPanel: () => Promise.resolve(),
+      requestPanel: (name, params) => { panelRequests.push({ name, params }); return Promise.resolve(); },
       send: () => Promise.resolve({ ok: true }),
       status: () => ({ booted: true }),
     safeMode: () => false
@@ -142,6 +143,10 @@ test('initUI 可在 Worker 面板尚未抵達時安全啟動', () => {
   context.UI_WORKER_STATE.panels.factory = { factory: { autoEquip: true } };
   workerHandlers.PANEL({ name: 'factory', data: context.UI_WORKER_STATE.panels.factory });
   assert.equal(elements['toggle-autoequip'].checked, true);
+
+  panelRequests.length = 0;
+  context.switchTab('skills');
+  assert.deepEqual(panelRequests.map((request) => request.name), ['skills']);
 });
 
 test('Worker Snapshot 完整但主執行緒 G 為空時 initUI 與 uiTick 不拋例外', () => {

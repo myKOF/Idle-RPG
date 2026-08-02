@@ -73,6 +73,26 @@ Worker 是模擬與存檔的唯一權威，主執行緒不再持有 `G`，舊單
 
 Web Worker 遷移全部完成，無進行中的大型工程。
 
+## Codex：技能頁面板刷新與 Lv.51 裝載欄（2026-08-02）
+
+狀態：已完成
+
+任務分類：技能 UI 狀態同步、技能裝載欄公式修正
+
+任務目的：
+
+- 切換到技能頁時，立即取得最新技能點與技能面板快照，不需等待熟練度經驗再次變動。
+- 修正未轉生玩家技能裝載欄的等級分段，使 Lv.1～49 維持 4 格、Lv.50 起增加第 5 格。
+
+允許修改檔案：`docs/AI_TASKS.md`、`js/ui.js`、`js/formula.js`、`tools/apply_params.cjs`、
+`tests/skill-loadout.test.cjs`、`tests/ui-performance.test.cjs`、`tests/init-ui-smoke.test.cjs`、`game_formula.md`。
+
+前置依賴：無。衝突檢查已完成，未發現其他副本或分支修改。
+
+驗收方式：技能頁切換會強制請求 `skills` 面板；Lv.51 的 `loadoutSize()` 為 5；相關 Node 測試與參數錨點檢查通過。
+
+完成結果：定向測試 17/17、完整測試 839/839、build 214/214 通過。
+
 P5 之後的檔案所有權慣例（沿用即可，非硬性）：
 - `js/worker/*`、`js/bridge.js`、`js/storage.js`、`js/main.js`、`js/worker/protocol.js`：Claude
 - `js/ui.js`：Codex
