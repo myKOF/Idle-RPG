@@ -1430,7 +1430,12 @@ function placeFloatAvoidingOverlap(sp, layer, selector, randomTop, randomRange, 
   }
 
   var oldAnimation = sp.style.animation;
+  var oldTransform = sp.style.transform;
   sp.style.animation = 'none';
+  // enemyDamageFloatUp uses translate(-50%, ...). Include the horizontal
+  // centering transform while measuring, otherwise long numbers are placed
+  // half a text width too far to the right.
+  sp.style.transform = 'translate(-50%, 0)';
   var candidates = [{
     left: 8 + Math.random() * 84,
     top: randomTop + Math.random() * randomRange
@@ -1473,8 +1478,23 @@ function placeFloatAvoidingOverlap(sp, layer, selector, randomTop, randomRange, 
     sp.style.left = best.left + '%';
     sp.style.top = best.top + '%';
     sp.style.marginTop = '0px';
+    // 允許浮字跨出敵人卡片，但不要讓長數字超出整個戰鬥容器或視窗邊界。
+    // 此時仍維持 translate(-50%, 0)，所以 getBoundingClientRect() 是實際顯示寬度。
+    var clipNode = layer.closest ? layer.closest('#combat-area') : null;
+    var clipRect = clipNode && clipNode.getBoundingClientRect ? clipNode.getBoundingClientRect() : null;
+    if (clipRect && clipRect.width > 0) {
+      var placedRect = sp.getBoundingClientRect();
+      var shift = 0;
+      if (placedRect.left < clipRect.left) shift = clipRect.left - placedRect.left;
+      if (placedRect.right > clipRect.right) shift = clipRect.right - placedRect.right;
+      if (shift) {
+        var currentLeft = parseFloat(sp.style.left) || 0;
+        sp.style.left = (currentLeft + shift / lr.width * 100) + '%';
+      }
+    }
   }
   sp.style.animation = oldAnimation;
+  sp.style.transform = oldTransform;
 }
 
 function placeEnemyDamageFloat(sp, layer) {
@@ -1514,14 +1534,19 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
     if (now - lastMissAt < 300) return;
     layer.setAttribute('data-last-miss-at', String(now));
   }
-  // 戰鬥中會持續產生傷害/事件浮字；一般浮字的數量上限不能提前刪除
-  // 尚未播完的玩家事件（增益、閃避、護盾、格擋等）。玩家事件由自身
-  // 的動畫結束清理，避免「只有戰鬥中約 0.5 秒、停戰後才有 2 秒」的差異。
+  // Each float has its own removal timer. Do not enforce a fixed node cap by
+  // deleting an active number: rapid multi-hit attacks must remain visible.
   var isPlayerEvent = (cls || '').split(/\s+/).indexOf('player-event') >= 0;
   if (!isPlayerEvent) {
     var normalFloats = layer.querySelectorAll('.float-txt:not(.player-event)');
-    if (normalFloats.length >= 50) {
-      normalFloats[0].parentNode.removeChild(normalFloats[0]);
+    // 只回收已完全淡出的殘留節點；絕不因數量而刪除仍可見的數字。
+    if (normalFloats.length > 50) {
+      for (var ni = 0; ni < normalFloats.length; ni++) {
+        var floatOpacity = parseFloat(window.getComputedStyle(normalFloats[ni]).opacity);
+        if (isFinite(floatOpacity) && floatOpacity <= 0.05 && normalFloats[ni].parentNode) {
+          normalFloats[ni].parentNode.removeChild(normalFloats[ni]);
+        }
+      }
     }
   }
   var enemyHitFloat = isEnemyHitFloat(elId, cls);
@@ -2445,6 +2470,29 @@ function enemyCellStyle(enemy) {
     ';grid-row:' + cell.row + ' / span ' + (cell.h || 1) + '"';
 }
 
+function enemyFloatLayerId(enemy, index) {
+  var id = enemy && enemy.floatSel;
+  return /^mv-float-\d+$/.test(id || '') ? id : 'mv-float-' + index;
+}
+
+/* 敵人卡片因死亡清除或站位變更而重建時，保留仍在播放的浮字節點。
+   floatSel 是同一敵人的穩定識別，不能用目前陣列索引判斷是否同一張卡片。 */
+function rebuildEnemyParty(party, html) {
+  var oldLayers = {};
+  var layers = party.querySelectorAll('.enemy-card .float-layer');
+  for (var i = 0; i < layers.length; i++) oldLayers[layers[i].id] = layers[i];
+  party.innerHTML = html;
+  for (var id in oldLayers) {
+    if (!Object.prototype.hasOwnProperty.call(oldLayers, id)) continue;
+    var nextLayer = party.querySelector('#' + id);
+    if (!nextLayer) continue;
+    var oldLayer = oldLayers[id];
+    while (oldLayer.firstChild) nextLayer.appendChild(oldLayer.firstChild);
+    var lastMissAt = oldLayer.getAttribute('data-last-miss-at');
+    if (lastMissAt !== null) nextLayer.setAttribute('data-last-miss-at', lastMissAt);
+  }
+}
+
 function renderBattle() {
   var headerSnapshot = uiHeaderPanelSnapshot() || {};
   var battleSnapshot = uiBattlePanelSnapshot() || {};
@@ -2489,7 +2537,7 @@ function renderBattle() {
   var guideHtml = battlefieldGuideHtml();
   if (!enemies.length) {
     if (party.getAttribute('data-enemy-signature') !== 'empty') {
-      party.innerHTML = guideHtml + '<div class="enemy-empty">' + (view.towerActive ? '（高塔戰鬥中…）' : '🔍 搜索敵人中…') + '</div>';
+      rebuildEnemyParty(party, guideHtml + '<div class="enemy-empty">' + (view.towerActive ? '（高塔戰鬥中…）' : '🔍 搜索敵人中…') + '</div>');
       party.setAttribute('data-enemy-signature', 'empty');
     }
     flushPendingEnemyFloats(battleSnapshot);
@@ -2497,7 +2545,7 @@ function renderBattle() {
   }
   // 站位也要納入簽章：敵人身分沒變但格位變了（例如新一波剛好同名同級）仍須重建 DOM。
   var enemySignature = enemies.map(function (enemy, index) {
-    return index + ':' + enemy.name + ':' + enemy.level + ':' + enemyRankOf(enemy) + ':' + enemyCellSignature(enemy);
+    return enemyFloatLayerId(enemy, index) + ':' + enemy.name + ':' + enemy.level + ':' + enemyRankOf(enemy) + ':' + enemyCellSignature(enemy);
   }).join('|');
   var partyHtml = guideHtml;
   for (var ei = 0; ei < enemies.length; ei++) {
@@ -2511,7 +2559,7 @@ function renderBattle() {
     var rank = enemyRankOf(enemy);                       // normal / elite / boss
     var rankIcon = ENEMY_RANK_ICONS[rank] || '';         // 小怪無圖示、菁英骷髏頭、BOSS 專屬圖標
     partyHtml += '<div class="enemy-card enemy-rank-' + rank + '"' + enemyCellStyle(enemy) + '>' +
-      '<div class="float-layer" id="mv-float-' + ei + '"></div>' +
+      '<div class="float-layer" id="' + enemyFloatLayerId(enemy, ei) + '"></div>' +
       '<div class="cb-level">' + (rankIcon ? '<span class="enemy-rank-icon">' + rankIcon + '</span>' : '') + 'Lv.' + enemy.level + '</div>' + icon +
       '<div class="enemy-name">' + (enemy.attr && ELEM_INFO[enemy.attr] ? ELEM_INFO[enemy.attr].emoji : '') + enemy.name + '</div>' +
       '<div class="enemy-hp hp-bar"><div class="hp-fill monster" style="width:' + enemyHp + '%"></div><span class="hp-text">' + fmt(Math.max(0, enemy.hp)) + enemyShield + ' / ' + fmt(enemy.maxHp) + '</span></div>' +
@@ -2519,7 +2567,7 @@ function renderBattle() {
   }
   // 只有換波、敵人數量或敵人身分變化時才重建 DOM；避免刪除尚未播完的傷害浮字。
   if (party.getAttribute('data-enemy-signature') !== enemySignature) {
-    party.innerHTML = partyHtml;
+    rebuildEnemyParty(party, partyHtml);
     party.setAttribute('data-enemy-signature', enemySignature);
     UI.battleLayoutDirty = true;
   }
