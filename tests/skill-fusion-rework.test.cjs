@@ -48,6 +48,21 @@ function matMaxDmg(c, id) {
   return (fx.base || 0) + (fx.per || 0) * 9;
 }
 
+test('融合技在既有命中結算後將最終傷害乘 2，普通技能維持原值', () => {
+  const c = loadGameContext();
+  const fusionTarget = { hp: 875, shield: 0 };
+  const fusionResult = { dmg: 125, miss: false, killed: false };
+  c.applySkillFinalDamageMultiplier(fusionTarget, fusionResult, true);
+  assert.equal(fusionResult.dmg, 250);
+  assert.equal(fusionTarget.hp, 750);
+
+  const normalTarget = { hp: 875, shield: 0 };
+  const normalResult = { dmg: 125, miss: false, killed: false };
+  c.applySkillFinalDamageMultiplier(normalTarget, normalResult, false);
+  assert.equal(normalResult.dmg, 125);
+  assert.equal(normalTarget.hp, 875);
+});
+
 /* ================= 1) 種子確定性 ================= */
 
 test('同 seed＋同素材 → 完全相同結果；異 seed 會出現不同結果', () => {

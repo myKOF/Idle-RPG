@@ -955,6 +955,37 @@ function skillRtFieldAmpACfg(aCfg, target) {
   return aCfg;
 }
 
+/* 融合技維持既有完整結算流程，僅在最終傷害結果產生後追加 ×2。 */
+var FUSION_FINAL_DAMAGE_MULTIPLIER = 2;
+function applySkillFinalDamageMultiplier(target, result, isFusion) {
+  if (!isFusion || !result || result.miss || !(result.dmg > 0)) return result;
+  var original = result.dmg;
+  var bonus = Math.max(0, Math.round(original * (FUSION_FINAL_DAMAGE_MULTIPLIER - 1)));
+  // 追加傷害沿用同一個命中結果，先吃剩餘護盾，再扣生命，避免改動原本 resolveHit 算法。
+  if (target && target.hp > 0 && bonus > 0) {
+    if (target.shield > 0) {
+      var absorbed = Math.min(target.shield, bonus);
+      target.shield -= absorbed;
+      bonus -= absorbed;
+      result.absorbed = (result.absorbed || 0) + absorbed;
+      if (target.shield <= 0) {
+        target.shield = 0;
+        target.shieldMax = 0;
+        if (typeof SHIELD_MAX_VERSION === 'number') target.shieldMaxVersion = SHIELD_MAX_VERSION;
+      }
+    }
+    if (bonus > 0) {
+      target.hp -= bonus;
+      if (target.hp <= 0) {
+        target.hp = 0;
+        result.killed = true;
+      }
+    }
+  }
+  result.dmg = Math.round(original * FUSION_FINAL_DAMAGE_MULTIPLIER);
+  return result;
+}
+
 /* ---- 簡化傷害段（echo／procCast／replayBest／passiveExtraHit 共用重放器）----
    以技能當級數值 × powerPct% 威力結算：混沌雙修/AOE 分攤/技能效果天賦倍率/神怒/雷霆過載照吃，
    之後走 resolveHit 全規格（真傷技能比照 castSkill 直扣分支）。
@@ -1042,6 +1073,7 @@ function skillRtSimpleCast(pEnt, sk, fx, lv, powerPct, targets, floatSel, opts) 
         aCfg = skillRtFieldAmpACfg(aCfg, t); // periodicField 族：領域增幅（只對站在領域裡的目標）
         res = resolveHit(pEnt, t, aCfg, monsterDefCfg(t));
       }
+      applySkillFinalDamageMultiplier(t, res, sk.cat === 'fusion');
       if (!res.miss) {
         out.dmg += res.dmg;
         if (res.crit) out.crit = true;
@@ -1380,7 +1412,7 @@ function skillRtOpenField(pEnt, sk, fx, id, lv, st, out) {
     // 領域是「打在地上的一塊區域」：施放當下記住覆蓋的格子，之後每跳打站在那些格子裡的敵人。
     // 沒有格位資訊（高塔單體 BOSS、未載入格位模組）時 cellSet 為 null＝不設限，維持原本的全場語意。
     cellSet: (out && out.areaCells && typeof bfCellSet === 'function') ? bfCellSet(out.areaCells) : null,
-    snapshot: { aCfg: snapACfg, elemAtk: snapElem, emoji: sk.emoji, tag: sk.name + '·領域', dmgType: fx.dmgType, trueTick: fx.dmgType === 'true' ? tickAtk : 0 }
+    snapshot: { aCfg: snapACfg, elemAtk: snapElem, emoji: sk.emoji, tag: sk.name + '·領域', dmgType: fx.dmgType, trueTick: fx.dmgType === 'true' ? tickAtk : 0, isFusion: sk.cat === 'fusion' }
   };
   entry.onTick = function (ctx) {
     var all = ctx.getEnemies ? ctx.getEnemies() : [];
@@ -1411,6 +1443,7 @@ function skillRtOpenField(pEnt, sk, fx, id, lv, st, out) {
         aCfg = skillRtFieldAmpACfg(aCfg, t); // 領域增幅對領域跳傷同樣生效
         res = resolveHit(ctx.pEnt, t, aCfg, monsterDefCfg(t));
       }
+      applySkillFinalDamageMultiplier(t, res, entry.snapshot.isFusion);
       if (!res.miss) {
         total += res.dmg;
         floatEnemyEvent(t, ctx.floatSel, entry.snapshot.emoji + fmt(res.dmg), (res.crit ? 'crit ' : 'dmg ') + 'enemy-skill', res.dmg);
@@ -2607,6 +2640,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
           aCfg = skillRtFieldAmpACfg(aCfg, targetEnt);
           dmgRes = resolveHit(pEnt, targetEnt, aCfg, monsterDefCfg(targetEnt));
         }
+        applySkillFinalDamageMultiplier(targetEnt, dmgRes, sk.cat === 'fusion');
         if (!dmgRes.miss) {
           allMiss = false;
           totalDmg += dmgRes.dmg;
