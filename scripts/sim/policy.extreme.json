@@ -1242,9 +1242,10 @@
       "kind": "ratePerMin",
       "counter": "panels.battle.lootStats.sources.field.kills",
       "windowSec": 300,
-      "atLeast": 15,
+      "atLeast": 5,
       "說明": "每分鐘野外擊殺數。門檻 15＝4 秒殺一隻（player_strategy.md 安全關卡定義是 3 秒）；掃描 5/10/15/20/25 之後 15 全面最佳",
-      "counter_為什麼是_sources_field": "lootStats.kills 總數含塔戰 BOSS，指到總數會把爬塔誤算成野外打得動"
+      "counter_為什麼是_sources_field": "lootStats.kills 總數含塔戰 BOSS，指到總數會把爬塔誤算成野外打得動",
+      "依據": "安全關卡的產出下限。經驗與掉落都隨關卡指數成長（每隻經驗 =（120+關卡）×1.06^(關卡−1)，掉落表 FIELD_DROP_TABLE 也依怪物等級＝關卡分檔），而擊殺速率是線性的——門檻訂太高會把角色綁在不值錢的淺關卡。實測 24 小時 × 5 seed：atLeast 15 → 關卡中位 86、物攻 5,686；atLeast 5 → 關卡 100（5/5 全達）、物攻 10,432；atLeast 2 → 關卡沒再前進、物攻掉回 5,024、死亡從 41 翻到 65。最佳點在 5，不是愈鬆愈好。（舊強化參數下量過一次結論相同，改參數後重量仍為 5，兩個旋鈕互相獨立）"
     },
     {
       "id": "jewelXpBonus",

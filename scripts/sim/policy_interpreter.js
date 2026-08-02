@@ -1048,6 +1048,11 @@ function decide(state, policy, memo) {
           var gm = memo.gate[r.id] || (memo.gate[r.id] = {});
           var cool = (typeof rtc.everySec === 'number') ? rtc.everySec : 300;
           var floorStage = Math.max(1, Number(rtc.minStage) || 1);
+          /* ⚠️ 試過在這裡加「不退出當前裝等分段」的地板（tierFloors），實測更差：
+             24 小時 × 5 seed，關卡中位數 78 → 50、物攻 4,336 → 716、死亡 11 → 24，
+             五個 seed 有三個死鎖在關卡 50。理由就是上面那段註解講的——
+             它就是一種「已知安全關卡」下限。動機（掉出分段撿到的裝備弱一個量級）
+             是對的，但用地板去擋會直接踩進死鎖。 */
           if (gStage > floorStage && (gm.lastRetreatAt === undefined || now - gm.lastRetreatAt >= cool)) {
             var to = Math.max(floorStage, gStage - Math.max(1, Number(rtc.step) || 5));
             out.push({ name: gCfg.retreatCmd, args: { delta: to - gStage }, ruleId: r.id });
