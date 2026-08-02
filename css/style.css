@@ -668,9 +668,8 @@ body {
   background-blend-mode: multiply;
   box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.9);
   padding: 14px 16px 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  /* ?�鬥?�保�?滾�??��?，�?不顯示右?��?底部?��???*/
+  /* 傷害浮字可跨出戰鬥卡片與場景邊界；紀錄區本身已有獨立捲動。 */
+  overflow: visible;
   scrollbar-width: none;
 }
 
@@ -6857,8 +6856,8 @@ button.nf-part-slot.nf-part-ico {
   min-height: 0 !important;
   max-height: 100% !important;
   flex-direction: row !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
+  /* 傷害浮字不可被固定畫布右側的戰鬥容器裁切。 */
+  overflow: visible !important;
 }
 
 #ui-shell .equip-layout {

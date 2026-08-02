@@ -626,31 +626,6 @@ function combatDebugAuditFieldDeaths(snapshot, phase) {
     blog('DEBUG: stage ' + stage + ', same tick phase [' + phase + '] killed ' + dead.length +
         ' enemies: ' + dead.join(', ') + '; alive=' + alive, 'info', 'combat');
 }
-function combatDebugAuditFieldDamage(snapshot, phase) {
-    if (!snapshot || typeof blog !== 'function') return;
-    var total = 0;
-    var singleLarge = false;
-    var changed = [];
-    for (var i = 0; i < snapshot.entries.length; i++) {
-        var item = snapshot.entries[i];
-        if (!item.ent || item.damageHp <= 0) continue;
-        var currentHp = Math.max(0, item.ent.hp);
-        var loss = Math.max(0, item.damageHp - currentHp);
-        if (loss <= 0) continue;
-        total += loss;
-        if (loss >= 1000000) singleLarge = true;
-        changed.push((item.ent.name || 'enemy') + ' -' + fmt(loss) + ' (' + fmt(item.damageHp) + '->' + fmt(currentHp) + ')');
-    }
-    for (var bi = 0; bi < snapshot.entries.length; bi++) {
-        snapshot.entries[bi].damageHp = Math.max(0, snapshot.entries[bi].ent.hp);
-    }
-    // 一隻超過 100 萬，或同階段多隻合計超過 50 萬，才視為可疑大幅掉血。
-    if (!changed.length || (total < 500000 && !singleLarge)) return;
-    var stage = G && G.stage ? G.stage.current : '?';
-    blog('DEBUG DAMAGE: stage ' + stage + ', phase [' + phase + '] total -' + fmt(total) +
-        ': ' + changed.join('、'), 'info', 'combat');
-}
-
 /* ---- 野外主迴圈 ---- */
 function fieldTick(dt) {
     if (G.tower.active) return; // 高塔戰鬥期間野外暫停
@@ -689,7 +664,6 @@ function fieldTick(dt) {
     // 空場時回響/領域跳傷/快照窗轟出自然落空（fizzle）、聖痕期滿仍照時給盾，行為與高塔恆有 BOSS 一致。
     if (typeof tickSkillSchedulers === 'function') {
         tickSkillSchedulers(dt, { pEnt: p, getEnemies: liveFieldEnemies, floatSel: 'mv-float', onDeaths: onFieldDeaths });
-        combatDebugAuditFieldDamage(debugFieldTick, 'skill scheduler');
         combatDebugAuditFieldDeaths(debugFieldTick, 'skill scheduler');
     }
     if (typeof tickLegendaryEffects === 'function') {
@@ -699,7 +673,6 @@ function fieldTick(dt) {
             floatSel: 'mv-float',
             onDeaths: onFieldDeaths
         });
-        combatDebugAuditFieldDamage(debugFieldTick, 'legendary effects');
         combatDebugAuditFieldDeaths(debugFieldTick, 'legendary effects');
         if (legendaryTick && legendaryTick.playerKilled) { onPlayerFieldDeath(); return; }
     }
@@ -722,7 +695,6 @@ function fieldTick(dt) {
     for (var di = 0; di < enemies.length; di++) {
         if (tickPoison(enemies[di], dt) || tickDots(enemies[di], dt)) onFieldKill(enemies[di]);
     }
-    combatDebugAuditFieldDamage(debugFieldTick, 'poison/dots');
     combatDebugAuditFieldDeaths(debugFieldTick, 'poison/dots');
     enemies = liveFieldEnemies();
     if (!enemies.length) return;
@@ -731,14 +703,12 @@ function fieldTick(dt) {
     var regenKilled = false;
     if (typeof tickPotentialRegen === 'function') {
         regenKilled = tickPotentialRegen(p, st, dt, enemies, 'mv-float');
-        combatDebugAuditFieldDamage(debugFieldTick, 'potential overheal damage');
         combatDebugAuditFieldDeaths(debugFieldTick, 'potential overheal damage');
         if (regenKilled) { onFieldDeaths(); enemies = liveFieldEnemies(); if (!enemies.length) return; }
     }
     // 潛力【雷霆過載】持續轟擊（增益期間每 1 秒一輪；持續效果，不受暈眩影響）
     if (typeof tickPotentialOverdrive === 'function') {
         var odRes = tickPotentialOverdrive(p, enemies, 'mv-float');
-        combatDebugAuditFieldDamage(debugFieldTick, 'potential overdrive');
         combatDebugAuditFieldDeaths(debugFieldTick, 'potential overdrive');
         if (odRes && odRes.killed) { onFieldDeaths(); enemies = liveFieldEnemies(); if (!enemies.length) return; }
     }
@@ -747,7 +717,6 @@ function fieldTick(dt) {
     if (!effectActive(p, 'stun')) {
         // 技能優先（依裝載順序；含裝載的潛力技能）
         var sres = pickAndCastSkill(p, enemies, 'mv-float');
-        combatDebugAuditFieldDamage(debugFieldTick, 'skill cast');
         combatDebugAuditFieldDeaths(debugFieldTick, 'skill cast');
         if (sres && sres.killed) {
             onFieldDeaths();
@@ -767,7 +736,6 @@ function fieldTick(dt) {
             if (primary) {
                 p._lockTarget = primary;
                 var res = doPlayerAttack(p, primary, primary.floatSel || 'mv-float');
-                combatDebugAuditFieldDamage(debugFieldTick, 'basic attack');
                 combatDebugAuditFieldDeaths(debugFieldTick, 'basic attack');
                 if (res.killed) {
                     applyBasicAttackKillGap(p, playerAttackRate);
@@ -798,7 +766,6 @@ function fieldTick(dt) {
             }
         }
     }
-    combatDebugAuditFieldDamage(debugFieldTick, 'enemy attack/thorns');
     combatDebugAuditFieldDeaths(debugFieldTick, 'enemy attack/thorns');
 }
 
