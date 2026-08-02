@@ -12,6 +12,7 @@ var FIELD = {
 };
 
 var COMBAT_PAUSED = false;
+var FIELD_ENEMY_FLOAT_SEQ = 0;
 
 function isCombatPaused() {
     return COMBAT_PAUSED;
@@ -108,7 +109,15 @@ function tickFieldDeathClears(dt) {
 }
 
 function markFieldEnemyFloatTargets(enemies) {
-    for (var i = 0; i < enemies.length; i++) enemies[i].floatSel = 'mv-float-' + i;
+    for (var i = 0; i < enemies.length; i++) {
+        var enemy = enemies[i];
+        if (!enemy) continue;
+        // 浮字圖層不能使用目前陣列索引：死敵清除後，剩餘敵人的索引會前移，
+        // 延遲中的傷害事件便會落到錯誤卡片，且 UI 可能因此整批重建 DOM。
+        if (!/^mv-float-\d+$/.test(enemy.floatSel || '')) {
+            enemy.floatSel = 'mv-float-' + (FIELD_ENEMY_FLOAT_SEQ++);
+        }
+    }
 }
 
 function spawnFieldMonster() {

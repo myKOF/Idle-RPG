@@ -1,0 +1,59 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+const root = path.resolve(__dirname, '..');
+const combat = fs.readFileSync(path.join(root, 'js', 'combat.js'), 'utf8');
+const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
+
+function functionBody(source, name) {
+  const start = source.indexOf('function ' + name + '(');
+  assert.notEqual(start, -1, 'missing function ' + name);
+  const open = source.indexOf('{', start);
+  let depth = 0;
+  for (let i = open; i < source.length; i++) {
+    if (source[i] === '{') depth++;
+    if (source[i] === '}' && --depth === 0) return source.slice(start, i + 1);
+  }
+  assert.fail('unterminated function ' + name);
+}
+
+test('敵人浮字識別碼在陣列重排後保持穩定', () => {
+  const context = { FIELD_ENEMY_FLOAT_SEQ: 0 };
+  vm.runInNewContext(functionBody(combat, 'markFieldEnemyFloatTargets'), context);
+
+  const first = {};
+  const second = {};
+  context.markFieldEnemyFloatTargets([first, second]);
+  const secondId = second.floatSel;
+  context.markFieldEnemyFloatTargets([second]);
+
+  assert.equal(first.floatSel, 'mv-float-0');
+  assert.equal(secondId, 'mv-float-1');
+  assert.equal(second.floatSel, secondId);
+});
+
+test('敵人卡片重建會依穩定浮字圖層識別碼保留舊節點', () => {
+  assert.match(ui, /function enemyFloatLayerId\(enemy, index\)/);
+  assert.match(ui, /function rebuildEnemyParty\(party, html\)/);
+  assert.match(ui, /while \(oldLayer\.firstChild\) nextLayer\.appendChild\(oldLayer\.firstChild\)/);
+  assert.match(ui, /enemyFloatLayerId\(enemy, index\) \+ ':'/);
+  assert.match(ui, /id="' \+ enemyFloatLayerId\(enemy, ei\) \+ '"/);
+  assert.match(ui, /rebuildEnemyParty\(party, partyHtml\)/);
+});
+
+test('浮字不再以固定 50 個節點刪除尚未播完的傷害', () => {
+  assert.doesNotMatch(ui, /normalFloats\.length\s*>=\s*50/);
+  assert.match(ui, /Each float has its own removal timer/);
+});
+
+test('浮字定位量測時包含 translate(-50%)，並限制在戰鬥容器內', () => {
+  assert.match(ui, /var oldTransform = sp\.style\.transform;/);
+  assert.match(ui, /sp\.style\.transform = 'translate\(-50%, 0\)'/);
+  assert.match(ui, /sp\.style\.transform = oldTransform;/);
+  assert.match(ui, /layer\.closest\('#combat-area'\)/);
+  assert.match(ui, /placedRect\.left < clipRect\.left/);
+  assert.match(ui, /placedRect\.right > clipRect\.right/);
+});
