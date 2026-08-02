@@ -572,6 +572,28 @@ function trackDps(dmg) {
     FIELD.dpsWindow.push([GT, dmg]);
     while (FIELD.dpsWindow.length && FIELD.dpsWindow[0][0] < GT - 10) FIELD.dpsWindow.shift();
 }
+
+/* 實測野外擊殺速率，寫進存檔供離線結算當速率上限用。
+   資料結構與公式 → js/formula.js §10 offlineKillIntervalFor。
+
+   ⚠️ 用 Date.now() 而不是 GT：GT 不寫進存檔，重登就歸零，而這個估計值必須跨
+   工作階段存活，離線結算才用得到它。模擬器的虛擬時鐘同樣換掉了 Date，所以一致。
+   ⚠️ 只在野外擊殺呼叫。塔戰是另一套節奏，混進來會讓爬塔看起來像野外打得動。 */
+function recordFieldKillPace() {
+    var p = G.stage.killPace;
+    if (!p || typeof p !== 'object') p = G.stage.killPace = { kills: 1, sec: OFFLINE_KILL_INTERVAL, at: 0 };
+    var now = Date.now();
+    var last = Number(p.at) || 0;
+    /* at 為 0＝這一場的第一隻（新角色，或剛結算完離線由 applyOfflineProgress 重置）。
+       只記時刻不累計，否則會把「沒在玩的那段時間」當成打不動。 */
+    if (last > 0 && now > last) {
+        var gap = (now - last) / 1000;
+        var k = Math.exp(-gap / Math.max(1, OFFLINE_PACE_TAU));
+        p.kills = (Number(p.kills) || 0) * k + 1;
+        p.sec = (Number(p.sec) || 0) * k + gap;
+    }
+    p.at = now;
+}
 function currentDps() {
     var sum = 0;
     for (var i = 0; i < FIELD.dpsWindow.length; i++) sum += FIELD.dpsWindow[i][1];
@@ -830,6 +852,7 @@ function onFieldKill(m) {
     if (typeof gainSkillMasteryXp === 'function') gainSkillMasteryXp(Math.round(xpGain * SKILL_MASTERY_XP_RATE / 100));
     if (window.recordLootGold) window.recordLootGold(goldGain, 'field');
     if (window.recordLootKill) window.recordLootKill(undefined, 'field');
+    recordFieldKillPace();
 
     var drops = rollFieldDrops(m);
     blog('💀 擊敗 ' + m.name, 'log-kill', 'combat');

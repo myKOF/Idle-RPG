@@ -229,9 +229,19 @@
             "依據": "指南只涵蓋前期，之後交回各強度自己的推關策略"
           }
         ],
-        "retreatCmd": "stage.go"
+        "retreatCmd": "stage.go",
+        "requireTargets": [
+          "killRate"
+        ],
+        "requireTargets_依據": "player_strategy.md 的安全關卡定義量的是產出。前面兩道閘門量的是投入（裝備品質覆蓋率、上次死在哪），實測會脫節：全身史詩、沒死過、重試閘門也沒攔，卻在關卡 150 之後每分鐘殺 0~1 隻",
+        "targetRetreat": {
+          "step": 5,
+          "everySec": 300,
+          "minStage": 1,
+          "說明": "產出不足就每 300 秒往回退 5 關，直到殺得動為止。everySec 必須 >= killRate 的 windowSec，否則下一次判斷用的還是退關前的取樣，會連退好幾階（tests/policy-keys.test.cjs 有哨兵）",
+          "退關不會損失歷史最高": "js/combat.js 的 stageGo 只改 G.stage.current，G.stage.best 是單向棘輪（combat.js:801）"
+        }
       },
-      "為什麼沒有掛產出閘門": "試過而且量過：閘門機制（stageGate.requireTargets + targetRetreat，以每分鐘擊殺數當安全關卡判準）已實作並有測試，但四種門檻在 4 個 seed 上全部輸給不設閘門——中位關卡 160.5 → 136~145.5，最高關卡 200 → 150~160。原因是離線收益算的是 offlineStageFor(G.stage.best)，而菁英怪單殺經驗隨關卡指數成長、升級所需經驗只是多項式成長，所以「推得深」的價值遠大於「殺得快」。退關雖然不會讓 best 縮水，卻要花在線時間重爬。詳見 docs/SIM_HARNESS.md「產出閘門：量對了指標，卻是錯的目標」",
       "why": "依 player_strategy.md「前期優先生存任務指南」控制自動推關：裝備品質覆蓋率沒到門檻就關掉自動推關、留在原地掛機把裝備換上來。指南的核心是不要讓關卡跑在裝備前面——推太深只會一直死，死了就掉不到裝備，掉不到裝備就更推不動。先前是無條件每 15 秒送一次「開啟自動推關」，正是指南要防的那件事。覆蓋率只算身上真的有裝備的部位（空部位面板值為 -1，雙手武器會讓 weapon2 永遠空著，算進分母的話門檻永遠到不了、閘門永久關閉）"
     },
     {
@@ -699,7 +709,13 @@
       "everySec": 60,
       "cmd": "item.rerollAffix",
       "why": "目標沒達成時主動洗出補缺口的詞條。比 reroll-off-target 密集（60s vs 300s）：那條是維護，這條是在救火——有效命中率觸底時每一次揮空都是白打的",
-      "if": [["view.essence", ">=", 6]],
+      "if": [
+        [
+          "view.essence",
+          ">=",
+          6
+        ]
+      ],
       "if_依據": "精華不夠就別送——實測未設閘門時 832 次嘗試有 579 次被遊戲回「資源不足」，白白吃掉決策點也把日誌洗版。品質 2 以上的洗煉實測要 4~6 精華，取上界當門檻",
       "rerollForDeficit": {
         "equipment": "panels.inv.equipment",
@@ -1033,13 +1049,33 @@
       "atLeast": 95,
       "affixKey": "hit",
       "slots_為什麼沒有": "可洗的部位由遊戲的 AFFIX_POOL 決定（經 panels.equip.affixRules 讀取），策略不再自己抄一份。手抄過一次就錯了：寫了 weapon（命中率不能出現在武器上）與 bracers（遊戲的鍵是 wrist），375 次洗煉一條都沒洗出來",
-      "avoidSlots": ["ring", "amulet"],
+      "avoidSlots": [
+        "ring",
+        "amulet"
+      ],
       "avoidSlots_依據": "player_strategy.md：「項鏈戒指是裝備中的關鍵，其中最關鍵的為寶石鑲嵌率，其次為掉寶率與經驗加成」。命中率有 7 個部位可以洗，不必用最貴的格子付帳",
-      "preferSlots": ["boots", "legs", "wrist", "helmet", "gloves"],
+      "preferSlots": [
+        "boots",
+        "legs",
+        "wrist",
+        "helmet",
+        "gloves"
+      ],
       "preferSlots_依據": "防具的詞條格以防禦與單一攻擊詞條為主，犧牲一格的代價最小；由下往上排是因為鞋子與腿甲的詞條對輸出與存活的邊際貢獻最低",
       "maxAffixes": 4,
       "maxTriesPerSlot": 40,
       "上限依據": "拿少數幾個詞條格去換命中率，不是全身都洗成命中率——其餘部位仍照原本的攻防清單洗"
+    },
+    {
+      "id": "killRate",
+      "說明": "每分鐘野外擊殺數。player_strategy.md 的安全關卡定義：「能在平均 3 秒內殺死一個敵人」。實測掃描 5/10/15/20/25 之後取 15（4 秒殺一隻）",
+      "kind": "ratePerMin",
+      "counter": "panels.battle.lootStats.sources.field.kills",
+      "counter_為什麼是_sources_field": "lootStats.kills 的總數包含塔戰 BOSS（js/tower.js），指到總數的話爬塔會被誤算成野外打得動。離線結算不寫 LOOT_STATS（js/save.js 的 applyOfflineProgress 不呼叫 recordLootKill），所以離線那一段不會汙染速率",
+      "windowSec": 300,
+      "atLeast": 15,
+      "atLeast_量測依據": "重度策略 100 小時牆鐘、4 個 seed 的門檻掃描（中位等級）：不設閘門 118、5 隻/分 188、10 隻/分 194、15 隻/分 299.5、20 隻/分 212、25 隻/分 53.5。太鬆攔不到打不動的關卡，太緊會把角色鎖在淺關",
+      "為什麼量產出而不是量命中率": "命中率、傷害、抗性都是原因，殺敵速度是結果。量結果的話任何一個原因出問題都會反映出來，不必替每一個原因各補一條規則"
     }
   ],
   "track": {
