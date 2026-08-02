@@ -252,7 +252,17 @@
             "依據": "指南只涵蓋前期，之後交回各強度自己的推關策略"
           }
         ],
-        "retreatCmd": "stage.go"
+        "retreatCmd": "stage.go",
+        "requireTargets": [
+          "killRate"
+        ],
+        "targetRetreat": {
+          "step": 5,
+          "everySec": 300,
+          "minStage": 1,
+          "說明": "產出不足就每 300 秒往回退 5 關。everySec 必須 >= killRate 的 windowSec（tests/policy-keys.test.cjs 有哨兵）"
+        },
+        "requireTargets_依據": "極限玩家 dailyActiveHours=24 全程在線，沒有離線收益可領，所以「待在刷得動的關卡」直接決定產出。實測 4 個 seed：中位等級 201→412、擊殺 30K→138K、死亡 73→23"
       },
       "why": "依 player_strategy.md「前期優先生存任務指南」控制自動推關：裝備品質覆蓋率沒到門檻就關掉自動推關、留在原地掛機把裝備換上來。指南的核心是不要讓關卡跑在裝備前面——推太深只會一直死，死了就掉不到裝備，掉不到裝備就更推不動。先前是無條件每 15 秒送一次「開啟自動推關」，正是指南要防的那件事。覆蓋率只算身上真的有裝備的部位（空部位面板值為 -1，雙手武器會讓 weapon2 永遠空著，算進分母的話門檻永遠到不了、閘門永久關閉）"
     },
@@ -263,7 +273,12 @@
       "bestPerSlot": {
         "items": "panels.inv.items",
         "equippedScores": "panels.inv.equipmentScores",
-        "equipment": "panels.inv.equipment"
+        "equipment": "panels.inv.equipment",
+        "keepInvested": {
+          "ancientOnly": true,
+          "overrideRarityGap": 2,
+          "說明": "太古位置帶著目標詞條的裝備不換，除非新裝備品質高 2 階以上。太古位置洗煉必為滿值且永遠維持太古（js/item.js 的 rerollSingleAffix），是可累積的永久投資。真人存檔就是留著史詩 Lv50 的 ring2（三條太古帶三寶）不換，而把太古是雜項的 boots 換成傳說 Lv100"
+        }
       },
       "why": "換裝優先序：品質 >> 等級 >> 太古詞條數 >> 評分（player_strategy.md）。評分只當平手裁判——itemScore 把品質、等級、太古壓成一個數字，照它排會出現「品質低一階但詞條滾得好所以分數高」而換錯，而品質決定插槽數與附魔欄數，換不回來"
     },
@@ -717,6 +732,24 @@
       "why": "把寶石鑲進空插槽，依 player_strategy.md 寶石鑲嵌策略分段：前50級 生命→暴擊率→吸血→物攻→魔攻；51~100 吸血→暴擊率→爆傷→生命→物攻→魔攻；101以後 一半爆傷、一半六大屬性傷害加成（mix 兩組輪流）。手上沒有偏好種類就鑲任何有貨的；階級由遊戲挑（socketGem 取庫存最高階），所以本規則排在 gem-compose 之後，先合成再鑲就會鑲到當前可得的最高品質"
     },
     {
+      "id": "reroll-for-deficit",
+      "everySec": 60,
+      "cmd": "item.rerollAffix",
+      "if": [
+        [
+          "view.essence",
+          ">=",
+          20
+        ]
+      ],
+      "rerollForDeficit": {
+        "equipment": "panels.inv.equipment",
+        "affixRules": "panels.equip.affixRules",
+        "minRarity": 4,
+        "keepAncient": true
+      }
+    },
+    {
       "id": "reroll-off-target",
       "everySec": 300,
       "cmd": "item.rerollAffix",
@@ -1045,5 +1078,64 @@
     "stage": "view.stage",
     "equipment": "panels.inv.equipment",
     "equippedScores": "panels.inv.equipmentScores"
-  }
+  },
+  "targets": [
+    {
+      "id": "killRate",
+      "kind": "ratePerMin",
+      "counter": "panels.battle.lootStats.sources.field.kills",
+      "windowSec": 300,
+      "atLeast": 15,
+      "說明": "每分鐘野外擊殺數。門檻 15＝4 秒殺一隻（player_strategy.md 安全關卡定義是 3 秒）；掃描 5/10/15/20/25 之後 15 全面最佳",
+      "counter_為什麼是_sources_field": "lootStats.kills 總數含塔戰 BOSS，指到總數會把爬塔誤算成野外打得動"
+    },
+    {
+      "id": "jewelXpBonus",
+      "kind": "affixCount",
+      "affixKey": "xpBonus",
+      "equipment": "panels.inv.equipment",
+      "slots": [
+        "amulet",
+        "ring",
+        "ring2"
+      ],
+      "atLeast": 3,
+      "說明": "項鏈與戒指的關鍵詞條（player_strategy.md：寶石鑲嵌率最關鍵，其次掉寶率與經驗加成）",
+      "為什麼不能只靠保留清單": "保留清單只表達得出「這些可以留」，表達不出「這條要湊到 N 條」。這三條合計只佔項鏈詞條池權重的 3%（336 分之 10），而清單有 18 項可接受，隨便中一項就停手"
+    },
+    {
+      "id": "jewelLoot",
+      "kind": "affixCount",
+      "affixKey": "loot",
+      "equipment": "panels.inv.equipment",
+      "slots": [
+        "amulet",
+        "ring",
+        "ring2"
+      ],
+      "atLeast": 3,
+      "說明": "項鏈與戒指的關鍵詞條（player_strategy.md：寶石鑲嵌率最關鍵，其次掉寶率與經驗加成）",
+      "為什麼不能只靠保留清單": "保留清單只表達得出「這些可以留」，表達不出「這條要湊到 N 條」。這三條合計只佔項鏈詞條池權重的 3%（336 分之 10），而清單有 18 項可接受，隨便中一項就停手"
+    },
+    {
+      "id": "jewelGemEff",
+      "kind": "affixCount",
+      "affixKey": "gemEff",
+      "equipment": "panels.inv.equipment",
+      "slots": [
+        "amulet",
+        "ring",
+        "ring2"
+      ],
+      "atLeast": 3,
+      "when": [
+        "view.essence",
+        ">=",
+        400
+      ],
+      "說明": "項鏈與戒指的關鍵詞條（player_strategy.md：寶石鑲嵌率最關鍵，其次掉寶率與經驗加成）",
+      "為什麼不能只靠保留清單": "保留清單只表達得出「這些可以留」，表達不出「這條要湊到 N 條」。這三條合計只佔項鏈詞條池權重的 3%（336 分之 10），而清單有 18 項可接受，隨便中一項就停手",
+      "when_依據": "真人打法：先在穩定關卡快速刷怪累積材料，穿上 Lv100 史詩／傳說之後才去洗寶石鑲嵌率——它期望要 168 次洗煉才中一條，材料不夠時去追等於把精華燒在最貴的一項上"
+    }
+  ]
 }
