@@ -107,7 +107,7 @@ test('Worker log 分類優先採用 cat，並依 tower Snapshot 導向 boss log'
   assert.deepEqual(calls, [['battle-log', '任意文字', 'hit', 150, 'boss']]);
 });
 
-test('Worker 飄字以 elId 呈現，舊路徑仍排除已離場的敵人物件', () => {
+test('Worker 飄字以 elId 呈現，舊路徑也保留已離場目標的浮字', () => {
   const staleEnemy = { id: 'stale' };
   const calls = [];
   const context = {
@@ -126,9 +126,23 @@ test('Worker 飄字以 elId 呈現，舊路徑仍排除已離場的敵人物件'
 
   assert.deepEqual(calls, [
     ['animate', null, 'mv-float-0', 'dmg', battleSnapshot],
-    ['float', 'mv-float-0', '10', 'dmg', 10, null, battleSnapshot]
+    ['float', 'mv-float-0', '10', 'dmg', 10, null, battleSnapshot],
+    ['animate', staleEnemy, 'mv-float-1', 'dmg', battleSnapshot],
+    ['float', 'mv-float-1', '20', 'dmg', 20, staleEnemy, battleSnapshot]
   ]);
   assert.equal(context.PENDING_ENEMY_FLOATS.length, 0);
+});
+
+test('待建立敵人圖層時不設浮字數量上限，也不丟棄舊目標的浮字', () => {
+  const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
+  const queueStart = ui.indexOf('function queuePendingEnemyFloat(');
+  const queueEnd = ui.indexOf('function animatePendingEnemyKill(', queueStart);
+  const flushStart = ui.indexOf('function flushPendingEnemyFloats(');
+  const flushEnd = ui.indexOf('/* ⚠️ 暫時關閉傷害合併', flushStart);
+  assert.ok(queueStart >= 0 && queueEnd > queueStart);
+  assert.ok(flushStart >= 0 && flushEnd > flushStart);
+  assert.doesNotMatch(ui.slice(queueStart, queueEnd), /PENDING_ENEMY_FLOATS\.length\s*>\s*50/);
+  assert.doesNotMatch(ui.slice(flushStart, flushEnd), /activeEnemies\.indexOf\(item\.ent\)/);
 });
 
 test('Worker delayed lethal float animates a dead enemy bar from full to empty', () => {

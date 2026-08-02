@@ -57,3 +57,21 @@ test('浮字定位量測時包含 translate(-50%)，並限制在戰鬥容器內'
   assert.match(ui, /placedRect\.left < clipRect\.left/);
   assert.match(ui, /placedRect\.right > clipRect\.right/);
 });
+
+test('Worker 事件佇列滿載時不丟棄傷害浮字', () => {
+  const shim = fs.readFileSync(path.join(root, 'js', 'worker', 'shim.js'), 'utf8');
+  assert.match(shim, /var SHIM_EVENT_CAP = 400;/);
+  assert.match(shim, /if \(kind !== 'float'\)/);
+  assert.doesNotMatch(shim, /if \(_shimEvents\.length >= SHIM_EVENT_CAP\) \{[\s\S]*?_shimEvents\.shift\(\)/);
+  assert.match(shim, /_shimEvents\[di\]\.kind !== 'float'/);
+});
+
+test('狀態切換不清空浮字，只重置 MISS 節流狀態', () => {
+  const clearStart = ui.indexOf('function clearFloatLayer(');
+  const clearEnd = ui.indexOf('function clearTowerFloatLayers(', clearStart);
+  assert.ok(clearStart >= 0 && clearEnd > clearStart);
+  const clearBody = ui.slice(clearStart, clearEnd);
+  assert.doesNotMatch(clearBody, /innerHTML\s*=\s*['"]['"]/);
+  assert.doesNotMatch(clearBody, /removeChild\(/);
+  assert.match(clearBody, /removeAttribute\('data-last-miss-at'\)/);
+});
