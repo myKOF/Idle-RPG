@@ -938,7 +938,15 @@ function applyOfflineProgress(options) {
   elapsed = Math.min(elapsed, OFFLINE_MAX_HOURS * 3600);
 
   var st = getStats();
-  var kills = offlineKillCount(elapsed, 0); // 潛力技能 V3 起無離線收益加成（舊 potentialOffline 已移除）
+  /* 擊殺間隔取「固定費率」與「實測速率」的較慢者。固定費率不看命中率、不看怪物血量、
+     也不看玩家傷害，關卡一旦跑贏傷害就會發放玩家實際做不到的擊殺——理由與量測
+     → js/formula.js §10 offlineKillIntervalFor。 */
+  var interval = offlineKillIntervalFor(G.stage.killPace, G.savedAt);
+  /* 把速率量測的時間錨點移到現在。離線那一段沒在玩，不是「打不動」，
+     不重置的話回來打的第一隻怪會把整段離線時間算進分母，速率被灌成幾乎為零。
+     必須在下面的 early return 之前做。 */
+  if (G.stage.killPace && typeof G.stage.killPace === 'object') G.stage.killPace.at = Date.now();
+  var kills = offlineKillCount(elapsed, 0, interval); // 潛力技能 V3 起無離線收益加成（舊 potentialOffline 已移除）
   if (kills < 1) return;
   var stage = offlineStageFor(G.stage.best);
   var m = monsterStatsFor(stage, true); // 菁英怪
@@ -965,6 +973,9 @@ function applyOfflineProgress(options) {
   var partRate = FIELD_PART_DROP_PCT * (1 + lootBonus / 100) * rw * ELITE_DROP_MULT;
 
   var sum = {
+    /* killInterval：這一次實際採用的擊殺間隔。等於下限就是滿速；比下限大代表被
+       實測戰力壓下來了，彈窗要講清楚，否則玩家只會看到「離線收益忽然變少」。 */
+    killInterval: interval,
     seconds: elapsed, stage: stage, zoneName: zn.name, zoneEmoji: zn.emoji, kills: kills,
     gold: gold, xp: xp, equips: {}, scrap: 0, gems: {}, books: 0, essence: 0, dust: 0, parts: 0
   };
