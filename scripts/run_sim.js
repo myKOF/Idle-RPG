@@ -102,7 +102,38 @@ fs.mkdirSync(OUT_DIR, { recursive: true });
    harness 不自己組任何一句訊息、不自己排時間戳格式。
    丟棄的事件會計數並回報，不做無聲截斷。 */
 const KEEP_KINDS = KEEP_VISUAL ? null : { log: 1, flog: 1, loot: 1, notice: 1 };
-const logStream = fs.createWriteStream(path.join(OUT_DIR, 'native_events.jsonl'));
+
+/* ---- 有界的同步落地 ----
+
+   ⚠️ 這兩個檔案在深局會來到 588 MB（native_events.jsonl）與 294 MB
+   （ai_player_action_log.txt）。策略修好、角色打得深之後，5 個 seed 有 2 個
+   被 V8 直接打死（Windows 退出碼 0xC0000409，不留 stderr）。兩個原因：
+
+     1. 動作日誌原本整場 push 進 readableLogs 陣列，最後 join 成一整個字串——
+        兩百多萬個字串的陣列**加上** join 出來的整份字串同時在堆上。
+     2. createWriteStream 是非同步的，寫得比磁碟快時就在記憶體裡積，
+        而這裡從來沒有等過 drain。
+
+   改成 writeSync + 固定大小的字串緩衝：記憶體上限就是 FLUSH_BYTES，
+   而且同步寫完才回來，不會有沒沖掉的尾巴。 */
+const FLUSH_BYTES = 1 << 20;   // 1 MB
+
+function makeSink(filePath) {
+  const fd = fs.openSync(filePath, 'w');
+  let buf = '';
+  return {
+    write(s) {
+      buf += s;
+      if (buf.length >= FLUSH_BYTES) { fs.writeSync(fd, buf); buf = ''; }
+    },
+    close() {
+      if (buf) { fs.writeSync(fd, buf); buf = ''; }
+      fs.closeSync(fd);
+    }
+  };
+}
+
+const logSink = makeSink(path.join(OUT_DIR, 'native_events.jsonl'));
 const eventCounts = Object.create(null);
 let eventsKept = 0;
 let eventsDropped = 0;
@@ -110,7 +141,23 @@ let eventsDropped = 0;
 let engine = null;   // onEvents 會用到，先宣告
 
 let lastCombatDamageLogHour = -1;
-const readableLogs = [];
+
+/* 動作日誌的標頭要帶最終等級與總筆數，只有跑完才知道，
+   所以本文先寫到 .part，收尾時開正式檔寫標頭再把 .part 搬進去。
+   陣列只留最後 200 筆給 run_summary 的 recentLogs。 */
+const ACTION_LOG = path.join(OUT_DIR, 'ai_player_action_log.txt');
+const ACTION_LOG_PART = ACTION_LOG + '.part';
+const actionSink = makeSink(ACTION_LOG_PART);
+const RECENT_LOG_KEEP = 200;
+const recentLogTail = [];
+let readableLogCount = 0;
+
+function pushReadableLog(line) {
+  actionSink.write(line + '\n');
+  readableLogCount++;
+  recentLogTail.push(line);
+  if (recentLogTail.length > RECENT_LOG_KEEP) recentLogTail.shift();
+}
 
 function onEvents(events) {
   for (let i = 0; i < events.length; i++) {
@@ -118,7 +165,7 @@ function onEvents(events) {
     eventCounts[ev.kind] = (eventCounts[ev.kind] || 0) + 1;
     if (KEEP_KINDS && !KEEP_KINDS[ev.kind]) { eventsDropped++; continue; }
     ev.gt = engine ? engine.gameTimeSec() : 0;
-    logStream.write(JSON.stringify(ev) + '\n');
+    logSink.write(JSON.stringify(ev) + '\n');
     eventsKept++;
 
     // 移植：人類可讀日誌與戰鬥日誌節流 (每分鐘保留一筆)
@@ -145,7 +192,7 @@ function onEvents(events) {
         const m = String(Math.floor((remSec % 3600) / 60)).padStart(2, '0');
         const s = String(remSec % 60).padStart(2, '0');
         const timeStr = `[第${days}天 ${h}:${m}:${s}]`;
-        readableLogs.push(`${timeStr} [${cat.toUpperCase()}/${cls}] ${cleanText}`);
+        pushReadableLog(`${timeStr} [${cat.toUpperCase()}/${cls}] ${cleanText}`);
       }
     }
   }
@@ -339,7 +386,10 @@ function snapshot() {
     gameHours: +(engine.gameTimeSec() / 3600).toFixed(4),
     reincarnations: G.player.reincarnations || 0,
     invCount: (G.inventory || []).length,
-    towerFloor: (G.tower && G.tower.floor) || 0,
+    /* ⚠️ G.tower.floor 不存在——狀態裡是 highest（已通關的最高樓層，js/player.js）。
+       讀錯欄位的話這一欄與儀表板的高塔卡片都恆為 0，實際已經打到 27~30 層。
+       TOWER.floor 是「當前這一場打的是第幾層」的執行期值，不是進度。 */
+    towerFloor: (G.tower && (G.tower.highest || G.tower.floor)) || 0,
     /* ⚠️ DPS 必須取 currentDps()（js/combat.js:575，10 秒視窗，UI 顯示的就是它）。
        getStats() **沒有** dps 這個欄位，寫 stats.dps 會恆為 0——儀表板的 DPS 曲線
        之所以是一條貼著 0 的直線就是這個原因。同一支檔案的不變量檢查用的是對的來源，
@@ -524,7 +574,7 @@ try {
     error: err.message,
     gt: engine ? engine.gameTimeSec() : 0,
     lastView: engine ? engine.view() : null,
-    recentLogs: readableLogs.slice(-200)
+    recentLogs: recentLogTail.slice()
   };
   fs.writeFileSync(errorDumpPath, JSON.stringify(dumpData, null, 2), 'utf-8');
   console.error(`📁 已將 Error Dump 導出至: ${errorDumpPath}`);
@@ -541,7 +591,7 @@ snapshot();
 const elapsedSec = Number(process.hrtime.bigint() - t0) / 1e9;
 
 /* ---- 落地 ---- */
-logStream.end();
+logSink.close();
 
 const saveJson = engine.stampSavedAt().saveJson();
 fs.writeFileSync(path.join(OUT_DIR, 'save_final.json'), saveJson);
@@ -562,14 +612,30 @@ const logHeader = `=============================================================
  生成時間: ${new Date().toLocaleString()}
  Seed: ${SEED} | Policy SHA256: ${policyHash.slice(0, 12)}
  時間加速倍率: ${Number(speedupMult).toLocaleString()}x
- 總擷取官方原生日誌數: ${readableLogs.length} 筆
+ 總擷取官方原生日誌數: ${readableLogCount} 筆
  最終角色等級: Lv.${finalView.level}
  最終最高關卡: Stage ${finalView.stage}
  最終面板 DPS: ${(() => { const d = engine.ctx.currentDps ? engine.ctx.currentDps() : 0; return engine.ctx.fmt ? engine.ctx.fmt(d) : d; })()}
 ========================================================================\n\n`;
 
-fs.writeFileSync(path.join(OUT_DIR, 'ai_player_action_log.txt'), logHeader + readableLogs.join('\n'), 'utf8');
-console.log(`📝 [${HOURS}h 官方原生動作日誌檔導出成功] -> ${path.join(OUT_DIR, 'ai_player_action_log.txt')}`);
+/* 標頭寫進正式檔，再把 .part 的本文串接進來。
+   用 64 KB 的固定緩衝逐段搬，檔案 300 MB 也只佔 64 KB 記憶體。 */
+actionSink.close();
+fs.writeFileSync(ACTION_LOG, logHeader, 'utf8');
+if (fs.existsSync(ACTION_LOG_PART)) {
+  const src = fs.openSync(ACTION_LOG_PART, 'r');
+  const dst = fs.openSync(ACTION_LOG, 'a');
+  const buf = Buffer.allocUnsafe(64 * 1024);
+  for (;;) {
+    const n = fs.readSync(src, buf, 0, buf.length, null);
+    if (n <= 0) break;
+    fs.writeSync(dst, buf, 0, n);
+  }
+  fs.closeSync(src);
+  fs.closeSync(dst);
+  fs.unlinkSync(ACTION_LOG_PART);
+}
+console.log(`📝 [${HOURS}h 官方原生動作日誌檔導出成功] -> ${ACTION_LOG}`);
 
 const cols = Object.keys(snapRows[0]);
 fs.writeFileSync(
@@ -583,7 +649,7 @@ fs.writeFileSync(path.join(OUT_DIR, 'snapshots.meta.json'), JSON.stringify({
     gameHours: 'harness 模擬時間（步數 × 0.1s）',
     reincarnations: 'G.player.reincarnations',
     invCount: 'G.inventory.length',
-    towerFloor: 'G.tower.floor',
+    towerFloor: 'G.tower.highest（已通關的最高樓層；G.tower.floor 不存在）',
     dps: 'currentDps()（js/combat.js:575，10 秒視窗；getStats() 沒有 dps 欄位）',
     atk: 'getStats().atk', matk: 'getStats().matk', def: 'getStats().def',
     critRate: 'getStats().critRate', critDmg: 'getStats().critDmg',

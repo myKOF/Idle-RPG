@@ -194,6 +194,35 @@
     ],
     "affixVsNormalRed": [
       "normalDmgRed"
+    ],
+    "loadoutPriority": [
+      "soulBrandFlurry",
+      "counterStance",
+      "swiftCuts",
+      "preciseThrust",
+      "heavySmash",
+      "rendWound",
+      "berserkStrike",
+      "stunBlow",
+      "swordDomain",
+      "mindflowChain",
+      "doubleStrike",
+      "powerSlash",
+      "woundCollapse",
+      "warOverture",
+      "pursuitDecree",
+      "warSpiritEngine",
+      "echoBlade",
+      "sinDetonate",
+      "executeStrike",
+      "armorBreak",
+      "whirlwind",
+      "manaBarrier",
+      "regenerate",
+      "healWound",
+      "secondWind",
+      "treasureSense",
+      "midasTouch"
     ]
   },
   "rules": [
@@ -277,9 +306,10 @@
         "keepInvested": {
           "ancientOnly": false,
           "overrideRarityGap": 2,
-          "說明": "身上這件帶著目標詞條就不換，除非新裝備品質高 2 階以上。對應真人打法：留著史詩 Lv50 的 ring2（三條太古帶三寶）不換，而把太古是雜項的 boots 換成傳說 Lv100——判準是「帶什麼」不是「品質多高」",
+          "說明": "身上這件的關鍵詞條要保住，除非候選裝等更高（overrideLevelGap，先判）或品質高 overrideRarityGap 階。裝等一定要先判：詞條數值 =（base + base×每級成長×(裝等−1)）× 品質倍率，裝等 1 的詞條只剩 base。只比品質的實測後果是 ring／ring2／amulet 三個部位 100 小時停在 R4 裝等 1，其餘九個部位早就 R5 裝等 100",
           "ancientOnly_為什麼是_false": "只保太古位置時，洗在普通位置上的關鍵詞條會被換裝丟掉。實測 4 個 seed：只保太古是 2/3/3 條（寶石鑲嵌/經驗/掉寶合計），全位置保護是 5/7/2 並出現第一個達標項。代價是成績下緣變差（等級最低 365→203、死亡中位約 53→99.5），中位等級 412→378.5 在 n=4 下算噪音。選 false 是取「像真人的配裝」而不是「最高分」",
-          "overrideRarityGap_的作用": "防止保護變成永久凍結的閘。先前有一版保護綁在「缺口未補滿」上，目標達不到時永遠成立，實測 100 小時從關卡 190 掉到 117。品質高 2 階以上仍然換，凍結就有出口"
+          "overrideRarityGap_的作用": "防止保護變成永久凍結的閘。先前有一版保護綁在「缺口未補滿」上，目標達不到時永遠成立，實測 100 小時從關卡 190 掉到 117。品質高 2 階以上仍然換，凍結就有出口",
+          "overrideLevelGap": 0
         }
       },
       "why": "換裝優先序：品質 >> 等級 >> 太古詞條數 >> 評分（player_strategy.md）。評分只當平手裁判——itemScore 把品質、等級、太古壓成一個數字，照它排會出現「品質低一階但詞條滾得好所以分數高」而換錯，而品質決定插槽數與附魔欄數，換不回來"
@@ -986,10 +1016,114 @@
       "why": "依 player_strategy.md 技能升級優先順序分段：前期(≤50)先點生命上限被動與護盾／持續恢復；中期(51~100)把被動技能全點滿；後期(101+)依裝備詞條方向（targetAffixes 為物理向）集中投物理。清單順序即投點優先序，點數不足時後面的由遊戲擋下"
     },
     {
-      "id": "fuse-skills",
+      "id": "learn-fusions",
+      "everySec": 60,
+      "cmd": "skill.learn",
+      "expand": [
+        {
+          "key": "id",
+          "path": "panels.skills.fusions",
+          "field": "id"
+        }
+      ],
+      "why": "融合技產出時是未學習狀態，要先升到 Lv.1 才能裝備。id 由遊戲生成（fusion_ + uid），只能從 fusions[].id 撈"
+    },
+    {
+      "id": "equip-loadout-fusions",
+      "everySec": 60,
+      "cmd": "skill.equipLoadout",
+      "expand": [
+        {
+          "key": "id",
+          "path": "panels.skills.fusions",
+          "field": "id"
+        }
+      ],
+      "why": "融合技裝上技能欄，排在一般技能之前——格數有限時優先給融合技"
+    },
+    {
+      "id": "unequip-worst-skill",
+      "everySec": 60,
+      "cmd": "skill.unequipLoadout",
+      "loadoutSwap": {
+        "skills": "panels.skills",
+        "priority": "loadoutPriority"
+      },
+      "why": "技能欄滿了就卸下優先序最差的，讓 equip-loadout 補上更好的。開局預設的 arcaneBurst（Lv.1 魔法技，物理流用不到）不卸就永久佔位"
+    },
+    {
+      "id": "equip-loadout",
+      "everySec": 60,
+      "cmd": "skill.equipLoadout",
+      "expand": [
+        {
+          "key": "id",
+          "list": "loadoutPriority"
+        }
+      ],
+      "why": "把學會的技能真的裝上技能欄。原本六份策略都沒有這條，實測 100 小時後技能欄仍是開局預設的 powerSlash／arcaneBurst(Lv.1)／manaBarrier，學會的 28 個技能一個都沒上場。清單依多段傷害排序（js/skills.js 的 fx.hits），重複／已滿／未學會一律由遊戲擋下"
+    },
+    {
+      "id": "fuse-skills-1",
       "everySec": 300,
       "cmd": "skill.fuse",
-      "why": "主動使用技能融合以強化技能"
+      "if": [
+        [
+          "panels.skills.fusions.length",
+          "<",
+          1
+        ],
+        [
+          "view.level",
+          ">=",
+          100
+        ],
+        [
+          "view.gold",
+          ">=",
+          500000
+        ]
+      ],
+      "args": {
+        "ids": [
+          "whirlwind",
+          "armorBreak",
+          "executeStrike",
+          "sinDetonate"
+        ]
+      },
+      "why": "技能融合：whirlwind＋armorBreak＋executeStrike＋sinDetonate。真人 24 小時存檔做了 3 組四材融合並全部裝上技能欄。素材取單段技，多段技留給技能欄。前提用融合技數量而非 once——做不到要能重試，做到了條件自然不成立"
+    },
+    {
+      "id": "fuse-skills-2",
+      "everySec": 300,
+      "cmd": "skill.fuse",
+      "if": [
+        [
+          "panels.skills.fusions.length",
+          "<",
+          2
+        ],
+        [
+          "view.level",
+          ">=",
+          200
+        ],
+        [
+          "view.gold",
+          ">=",
+          500000
+        ]
+      ],
+      "args": {
+        "ids": [
+          "echoBlade",
+          "warSpiritEngine",
+          "pursuitDecree",
+          "warOverture"
+        ]
+      },
+      "why": "技能融合：echoBlade＋warSpiritEngine＋pursuitDecree＋warOverture。真人 24 小時存檔做了 3 組四材融合並全部裝上技能欄。素材取單段技，多段技留給技能欄。前提用融合技數量而非 once——做不到要能重試，做到了條件自然不成立"
     },
     {
       "id": "talent-upgrade-step1",
@@ -1001,7 +1135,14 @@
           "list": "talentStep1"
         }
       ],
-      "why": "天賦策略：優先將1轉天賦全點滿"
+      "why": "天賦策略：優先將1轉天賦全點滿（加上轉生前提：天賦系統轉生後才開，未加時實測空送 96,000 次「尚未達到 1 轉」）",
+      "if": [
+        [
+          "panels.talents.reincarnations",
+          ">=",
+          1
+        ]
+      ]
     },
     {
       "id": "talent-upgrade-step2",
@@ -1013,7 +1154,14 @@
           "list": "talentStep2"
         }
       ],
-      "why": "天賦策略：再將2轉天賦全點滿"
+      "why": "天賦策略：再將2轉天賦全點滿（加上轉生前提：天賦系統轉生後才開，未加時實測空送 96,000 次「尚未達到 1 轉」）",
+      "if": [
+        [
+          "panels.talents.reincarnations",
+          ">=",
+          1
+        ]
+      ]
     },
     {
       "id": "talent-upgrade-step3",
@@ -1025,7 +1173,14 @@
           "list": "talentStep3"
         }
       ],
-      "why": "天賦策略：再將3轉天賦全點滿"
+      "why": "天賦策略：再將3轉天賦全點滿（加上轉生前提：天賦系統轉生後才開，未加時實測空送 96,000 次「尚未達到 1 轉」）",
+      "if": [
+        [
+          "panels.talents.reincarnations",
+          ">=",
+          1
+        ]
+      ]
     },
     {
       "id": "gem-shop-buy-1",

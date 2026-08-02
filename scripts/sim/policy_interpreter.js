@@ -116,7 +116,20 @@ function expandCandidates(state, policy, spec) {
   if (spec.path) {
     var v = pathVal(state, spec.path);
     if (!v) return [];
-    if (Array.isArray(v)) return v.slice();
+    /* field：陣列元素是物件時取其中一個欄位。
+       融合技的 id 是遊戲產生的（fusions[].id = 'fusion_' + uid()），策略沒辦法寫死，
+       只能從狀態裡把它撈出來，否則融合完的技能永遠學不了也裝不上。 */
+    if (Array.isArray(v)) {
+      if (spec.field) {
+        var picked = [];
+        for (var fi = 0; fi < v.length; fi++) {
+          var fv = v[fi] && v[fi][spec.field];
+          if (fv !== undefined && fv !== null) picked.push(fv);
+        }
+        return picked;
+      }
+      return v.slice();
+    }
     var keys = Object.keys(v);
     /* nonEmpty：只留下數量真的大於 0 的鍵。
        遊戲一開局就把全部寶石種類建好、數量為 0（js/player.js:62），不篩的話
@@ -741,10 +754,25 @@ function decide(state, policy, memo) {
             if (keyset[kaf.key]) invested++;
           }
           if (invested > 0) {
-            /* 品質高出這麼多階就仍然換——避免一件早期的低階裝把那個部位永久鎖死。 */
-            var gap = (typeof ki.overrideRarityGap === 'number') ? ki.overrideRarityGap : 2;
-            var curR = (typeof currItem.rarity === 'number') ? currItem.rarity : -1;
-            if ((best.rarity || 0) < curR + gap) continue;
+            /* ⚠️ 裝等必須先看，而且比品質重要。
+               詞條數值 =（base + base×每級成長×(裝等−1)）× 品質倍率（js/item.js affixValue），
+               裝等 1 的詞條只剩 base，等於沒有。只比品質的話，一件裝等 1 的 R4
+               會把整個部位鎖到 R6 才放行——實測 100 小時後 ring／ring2／amulet
+               三個部位全都停在 R4 裝等 1，其餘九個部位早就是 R5 裝等 100。
+
+               同一條詞條換到更高裝等的底子上一定更強，而且洗煉可以再洗回來，
+               所以「候選裝等更高」時保護一律不成立，不看品質。 */
+            var lvGap = (typeof ki.overrideLevelGap === 'number') ? ki.overrideLevelGap : 0;
+            var curLv = (typeof currItem.level === 'number') ? currItem.level : 0;
+            var bestLv = (typeof best.level === 'number') ? best.level : 0;
+            if (bestLv > curLv + lvGap) {
+              /* 裝等更高：放行，不套用保護 */
+            } else {
+              /* 品質高出這麼多階就仍然換——避免一件早期的低階裝把那個部位永久鎖死。 */
+              var gap = (typeof ki.overrideRarityGap === 'number') ? ki.overrideRarityGap : 2;
+              var curR = (typeof currItem.rarity === 'number') ? currItem.rarity : -1;
+              if ((best.rarity || 0) < curR + gap) continue;
+            }
           }
         }
 
@@ -1218,6 +1246,56 @@ function decide(state, policy, memo) {
             uoStock.stockOf[repl] = (uoStock.stockOf[repl] || 0) - 1;
             out.push({ name: swapCmd, args: { itemId: uItem.id, type: repl }, ruleId: r.id });
           }
+        }
+      }
+    } else if (r.loadoutSwap) {
+      /* 技能欄滿了的時候，把優先序最差的那個卸下來，讓好的擠進去。
+
+         為什麼需要：技能欄格數 = min(20, max(4, 4 + 等級/50))（js/formula.js loadoutSize），
+         50 級才多一格，而開局就預設塞了 powerSlash／arcaneBurst／manaBarrier 三個。
+         arcaneBurst 是 Lv.1 的魔法技，在物理流裡永遠是廢的，但沒有卸下的動作它就
+         佔著格子到天荒地老——實測 100 小時後技能欄仍是那三個開局技能。
+
+         只送卸下、不送裝上：裝上交給 equip-loadout（下一個決策點就會補），
+         這樣「補什麼」只有一份邏輯。與 unsocket-off-priority 只拆不補是同一個取捨，
+         差別在那邊補不到就不拆，這邊卸下是無損的（技能等級保留，隨時可再裝）。
+
+         收斂條件：只有當「場外存在排序更前面、且已學會的技能」時才卸。
+         全部裝的都已經是最優的 N 個時條件不成立，不會每分鐘拆了又裝。 */
+      var lsCfg = r.loadoutSwap;
+      var lsOrder = (policy.lists && policy.lists[lsCfg.priority]) || [];
+      var lsPanel = pathVal(state, lsCfg.skills) || {};
+      var lsLoadout = lsPanel.loadout || [];
+      var lsSize = Number(lsPanel.loadoutSize) || 0;
+      var lsLearned = lsPanel.skills || {};
+
+      if (lsOrder.length && lsSize > 0 && lsLoadout.length >= lsSize) {
+        var rankOf = {};
+        for (var lo = 0; lo < lsOrder.length; lo++) rankOf[lsOrder[lo]] = lo;
+        var WORST = lsOrder.length + 1;          // 不在優先序裡的一律排最後
+
+        /* 場上最差的那個 */
+        var worstId = null, worstRank = -1;
+        for (var li = 0; li < lsLoadout.length; li++) {
+          var lid = lsLoadout[li];
+          var lrank = (rankOf[lid] === undefined) ? WORST : rankOf[lid];
+          if (lrank > worstRank) { worstRank = lrank; worstId = lid; }
+        }
+
+        /* 場外有沒有更好的、而且真的學會了的 */
+        var equipped = {};
+        for (var le = 0; le < lsLoadout.length; le++) equipped[lsLoadout[le]] = true;
+        var better = false;
+        for (var lb = 0; lb < lsOrder.length && lb < worstRank; lb++) {
+          var cand = lsOrder[lb];
+          if (equipped[cand]) continue;
+          if (!(Number(lsLearned[cand]) > 0)) continue;   // 沒學會的裝不上，不能拿它當理由卸
+          better = true;
+          break;
+        }
+
+        if (better && worstId) {
+          out.push({ name: r.cmd, args: { id: worstId }, ruleId: r.id });
         }
       }
     } else if (r.rerollOffTarget) {
