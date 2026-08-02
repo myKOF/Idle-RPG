@@ -59,6 +59,7 @@ test('熔爐消費背包 dirty 後會清旗標，切回裝備頁時再定向補�
   const ui = uiSource();
   assert.match(ui, /function markTabDirty\(name\)/);
   assert.match(ui, /function switchTab\(name\)[\s\S]*markTabDirty\(name\);/);
+  assert.match(ui, /function switchTab\(name\)[\s\S]*if \(validUiPanelKey\(name\)\) requestPanelData\(name, true\);/);
   assert.match(ui, /name === 'equip'[\s\S]*UI\.dirty\.equip = true;[\s\S]*UI\.dirty\.inv = true;/);
   assert.match(ui, /name === 'newforge'[\s\S]*UI\.dirty\.newforge = true;/);
   assert.match(ui, /UI\.tab === 'newforge'\) \{ renderNewForge\(\); d\.newforge = false; d\.factory = false; d\.inv = false; \}/);

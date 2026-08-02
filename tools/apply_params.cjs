@@ -784,10 +784,12 @@ inlineRegex('formula', /(var cost = Math\.floor\()(-?[\d.]+)(?= \* lv \+ Math\.p
 inline('formula', ' + Math.pow(', P('9-技能', '升級費用', 1), '技升-底');
 inline('formula', '1 + lv / ', P('9-技能', '升級費用', 2), '技升-除數');
 inline('formula', 'skillBaseManaCost(def) * (1 + ', P('9-技能', '一般技能法力消耗', 0), '法力每級');
-inlineRegex('formula', /(function loadoutSize\(\)[\s\S]*?Math\.floor\(lvl\s*\/\s*)(-?[\d.]+)(?=\s*\)\s*\)\s*\);)/,
+inlineRegex('formula', /(function loadoutSize\(\)[\s\S]*?Math\.floor\(lvl\s*\/\s*)(-?[\d.]+)(?=\s*\)\s*\)\s*\)\s*;)/,
   P('1-成長經驗', '技能裝載欄', 0), '裝載欄-每級');
-inlineRegex('formula', /(function loadoutSize\(\)[\s\S]*?return Math\.min\(-?[\d.]+\s*,\s*Math\.max\()(-?[\d.]+)(?=\s*,\s*Math\.floor\(lvl\s*\/\s*-?[\d.]+\s*\)\s*\)\s*\);)/,
+inlineRegex('formula', /(function loadoutSize\(\)[\s\S]*?return Math\.min\(-?[\d.]+\s*,\s*Math\.max\()(-?[\d.]+)(?=\s*,\s*-?[\d.]+\s*\+\s*Math\.floor\(lvl\s*\/\s*-?[\d.]+\s*\)\s*\)\s*\)\s*;)/,
   P('1-成長經驗', '技能裝載欄', 1), '裝載欄-下限');
+inlineRegex('formula', /(function loadoutSize\(\)[\s\S]*?return Math\.min\(-?[\d.]+\s*,\s*Math\.max\(-?[\d.]+\s*,\s*)(-?[\d.]+)(?=\s*\+\s*Math\.floor\(lvl\s*\/\s*-?[\d.]+\s*\)\s*\)\s*\)\s*;)/,
+  P('1-成長經驗', '技能裝載欄', 1), '裝載欄-基準');
 inlineRegex('formula', /(function loadoutSize\(\)[\s\S]*?return Math\.min\()(-?[\d.]+)(?=\s*,\s*Math\.max\()/,
   P('1-成長經驗', '技能裝載欄', 2), '裝載欄-上限');
 

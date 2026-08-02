@@ -1625,6 +1625,9 @@ function switchTab(name) {
   UI.tab = name;
   refreshUiPanelSubscriptions();
   markTabDirty(name);
+  // 分頁重新取得最新快照：背景分頁的 dirty 訊號可能已被 Worker 消費，
+  // 若只標記 UI dirty，切回技能頁時會繼續顯示舊技能點／裝載欄數量。
+  if (validUiPanelKey(name)) requestPanelData(name, true);
   var activeTabButton = document.querySelector('.tab-btn.active');
   var nextTabButton = document.querySelector('.tab-btn[data-tab="' + name + '"]');
   if (activeTabButton && activeTabButton !== nextTabButton) activeTabButton.classList.remove('active');
