@@ -2468,21 +2468,37 @@ function enemyFloatLayerId(enemy, index) {
   return /^mv-float-\d+$/.test(id || '') ? id : 'mv-float-' + index;
 }
 
+function ensureRetainedEnemyFloatLayer(party) {
+  var host = party.querySelector('.enemy-float-retained');
+  if (host) return host;
+  host = document.createElement('div');
+  host.className = 'float-layer enemy-float-retained';
+  host.id = 'mv-float-retained';
+  party.appendChild(host);
+  return host;
+}
+
 /* 敵人卡片因死亡清除或站位變更而重建時，保留仍在播放的浮字節點。
    floatSel 是同一敵人的穩定識別，不能用目前陣列索引判斷是否同一張卡片。 */
 function rebuildEnemyParty(party, html) {
   var oldLayers = {};
-  var layers = party.querySelectorAll('.enemy-card .float-layer');
+  var layers = party.querySelectorAll('.enemy-card .float-layer, .enemy-float-retained > .float-layer');
   for (var i = 0; i < layers.length; i++) oldLayers[layers[i].id] = layers[i];
   party.innerHTML = html;
+  var retained = ensureRetainedEnemyFloatLayer(party);
   for (var id in oldLayers) {
     if (!Object.prototype.hasOwnProperty.call(oldLayers, id)) continue;
     var nextLayer = party.querySelector('#' + id);
-    if (!nextLayer) continue;
     var oldLayer = oldLayers[id];
-    while (oldLayer.firstChild) nextLayer.appendChild(oldLayer.firstChild);
-    var lastMissAt = oldLayer.getAttribute('data-last-miss-at');
-    if (lastMissAt !== null) nextLayer.setAttribute('data-last-miss-at', lastMissAt);
+    if (nextLayer && nextLayer !== oldLayer) {
+      while (oldLayer.firstChild) nextLayer.appendChild(oldLayer.firstChild);
+      var lastMissAt = oldLayer.getAttribute('data-last-miss-at');
+      if (lastMissAt !== null) nextLayer.setAttribute('data-last-miss-at', lastMissAt);
+    } else {
+      // 敵人死亡倒數結束後，卡片會被移出 party；把它的整個浮字圖層
+      // 留在持久層，否則 DOM 重建會連同仍在播放／延遲中的數字一起移除。
+      retained.appendChild(oldLayer);
+    }
   }
 }
 

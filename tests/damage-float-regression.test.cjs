@@ -37,8 +37,11 @@ test('敵人浮字識別碼在陣列重排後保持穩定', () => {
 
 test('敵人卡片重建會依穩定浮字圖層識別碼保留舊節點', () => {
   assert.match(ui, /function enemyFloatLayerId\(enemy, index\)/);
+  assert.match(ui, /function ensureRetainedEnemyFloatLayer\(party\)/);
   assert.match(ui, /function rebuildEnemyParty\(party, html\)/);
   assert.match(ui, /while \(oldLayer\.firstChild\) nextLayer\.appendChild\(oldLayer\.firstChild\)/);
+  assert.match(ui, /retained\.appendChild\(oldLayer\)/);
+  assert.match(ui, /enemy-float-retained > \.float-layer/);
   assert.match(ui, /enemyFloatLayerId\(enemy, index\) \+ ':'/);
   assert.match(ui, /id="' \+ enemyFloatLayerId\(enemy, ei\) \+ '"/);
   assert.match(ui, /rebuildEnemyParty\(party, partyHtml\)/);
