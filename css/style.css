@@ -5952,6 +5952,12 @@ textarea#save-io {
   z-index: 20;
 }
 
+/* 敵人死亡卡片移除後，仍在播放的浮字暫存於棋盤持久層，直到各自自然淡出。 */
+.enemy-party .enemy-float-retained {
+  z-index: 30;
+  overflow: visible;
+}
+
 .enemy-party.enemy-grid .float-txt {
   font-size: 14px;
 }
