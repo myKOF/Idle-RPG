@@ -262,6 +262,87 @@ test('atLeast 就是數量下限，不必再寫一次 maxAffixes', () => {
   assert.equal(q.decide(jewelState(1, gear2)).filter((c) => c.name === 'item.rerollAffix').length, 0);
 });
 
+test('目標可以有前提（when）：前提不成立時讓位給其他目標', () => {
+  /* 真人打法是有順序的：「先在穩定關卡快速刷怪累積材料，穿上 Lv100 史詩／傳說
+     之後才去洗寶石鑲嵌率；在那之前能洗到經驗加成就很好」。寶石鑲嵌率期望要 168 次
+     洗煉才中一條，材料不夠時去追它等於把精華燒在最貴的一項上。 */
+  const p = countPolicy(3, { when: ['view.essence', '>=', 400] });
+  const poor = jewelState(1, jewelGear({}));
+  poor.view.essence = 50;
+  assert.equal(p.decide(poor).filter((c) => c.name === 'item.rerollAffix').length, 0,
+    '材料不夠時不該去追這個目標');
+
+  const rich = jewelState(2, jewelGear({}));
+  rich.view.essence = 900;
+  assert.equal(p.decide(rich).filter((c) => c.name === 'item.rerollAffix').length, 1,
+    '材料夠了才開始追');
+});
+
+/* ---- 換裝：保住投資在太古位置上的關鍵詞條 ---- */
+
+function equipPolicy(keepInvested) {
+  return createPolicy({
+    name: 'equip-test',
+    decideEveryGameSec: 60,
+    needPanels: ['inv'],
+    targets: [{ id: 'jewelGemEff', kind: 'affixCount', affixKey: 'gemEff', slots: ['ring'], atLeast: 1 }],
+    rules: [{
+      id: 'equip', cmd: 'item.equip',
+      bestPerSlot: Object.assign({
+        items: 'panels.inv.items',
+        equippedScores: 'panels.inv.equipmentScores',
+        equipment: 'panels.inv.equipment'
+      }, keepInvested ? { keepInvested: keepInvested } : {})
+    }]
+  });
+}
+/* 身上一隻史詩(4) 戒指，背包一隻傳說(5)。預設規則會換；keepInvested 要能擋下。 */
+function equipState(currentAffixes) {
+  return {
+    gameTimeSec: 1,
+    panels: {
+      inv: {
+        equipment: { ring: { id: 'cur', slot: 'ring', rarity: 4, level: 50, affixes: currentAffixes } },
+        equipmentScores: { ring: 100 },
+        equipmentRarities: { ring: 4 },
+        items: [{ id: 'new', slot: 'ring', slots: ['ring'], rarity: 5, level: 100, ancientCount: 0, score: 999 }]
+      }
+    }
+  };
+}
+const equipOf = (cmds) => cmds.filter((c) => c.name === 'item.equip');
+
+test('沒宣告 keepInvested 時維持原本行為：品質高就換', () => {
+  const p = equipPolicy(null);
+  assert.equal(equipOf(p.decide(equipState([{ key: 'gemEff', ancient: true }]))).length, 1);
+});
+
+test('太古位置帶著目標詞條就不換——那是可累積的永久投資', () => {
+  /* 太古位置洗煉必為滿值且永遠維持太古（js/item.js 的 rerollSingleAffix），
+     所以洗在太古上的關鍵詞條換掉就是真的沒了。真人存檔就是留著史詩 Lv50 的 ring2
+     （三條太古分別帶寶石鑲嵌／掉寶／經驗），旁邊的傳說 Lv100 反而沒有。 */
+  const p = equipPolicy({ ancientOnly: true, overrideRarityGap: 2 });
+  assert.equal(equipOf(p.decide(equipState([{ key: 'gemEff', ancient: true }]))).length, 0);
+});
+
+test('太古位置帶的是雜項就照換——規則是「帶什麼」不是「有沒有太古」', () => {
+  const p = equipPolicy({ ancientOnly: true, overrideRarityGap: 2 });
+  assert.equal(equipOf(p.decide(equipState([{ key: 'atkPct', ancient: true }]))).length, 1);
+});
+
+test('目標詞條在普通位置上不受保護——換裝後重洗即可', () => {
+  const p = equipPolicy({ ancientOnly: true, overrideRarityGap: 2 });
+  assert.equal(equipOf(p.decide(equipState([{ key: 'gemEff', ancient: false }]))).length, 1);
+});
+
+test('品質高出夠多階仍然換，避免早期低階裝把部位永久鎖死', () => {
+  /* 這是防「保護變成永久凍結」的那道閘。先前有一版保護綁在「缺口未補滿」上，
+     目標達不到時就永遠成立，實測 100 小時從關卡 190 掉到 117。 */
+  const p = equipPolicy({ ancientOnly: true, overrideRarityGap: 1 });
+  assert.equal(equipOf(p.decide(equipState([{ key: 'gemEff', ancient: true }]))).length, 1,
+    '差 1 階且門檻設 1 就該放行');
+});
+
 /* ============ 產出速率與關卡閘門 ============
 
    命中率、傷害、抗性都是原因；殺敵速度是結果。player_strategy.md 定義安全關卡
