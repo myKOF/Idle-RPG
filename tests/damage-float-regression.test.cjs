@@ -41,14 +41,23 @@ test('敵人卡片重建會依穩定浮字圖層識別碼保留舊節點', () =>
   assert.match(ui, /function rebuildEnemyParty\(party, html\)/);
   assert.match(ui, /while \(oldLayer\.firstChild\) nextLayer\.appendChild\(oldLayer\.firstChild\)/);
   assert.match(ui, /retained\.appendChild\(oldLayer\)/);
+  assert.match(ui, /party\.parentNode && typeof party\.parentNode\.appendChild === 'function' \? party\.parentNode : party/);
+  assert.match(ui, /container\.querySelectorAll\('\.enemy-card \.float-layer, \.enemy-float-retained > \.float-layer'\)/);
   assert.match(ui, /enemy-float-retained > \.float-layer/);
   assert.match(ui, /enemyFloatLayerId\(enemy, index\) \+ ':'/);
   assert.match(ui, /id="' \+ enemyFloatLayerId\(enemy, ei\) \+ '"/);
   assert.match(ui, /rebuildEnemyParty\(party, partyHtml\)/);
 });
 
+test('敵人批次死亡重建時，保留層位於 mv-party 外部', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert.match(html, /id="mv-party"[\s\S]*?id="mv-float-retained"/);
+  assert.match(ui, /host\.parentNode === party\) container\.appendChild\(host\)/);
+});
+
 test('浮字不再以固定 50 個節點刪除尚未播完的傷害', () => {
   assert.doesNotMatch(ui, /normalFloats\.length\s*>=\s*50/);
+  assert.doesNotMatch(ui, /floatOpacity\s*<=\s*0\.05/);
   assert.match(ui, /Each float has its own removal timer/);
 });
 
@@ -77,4 +86,11 @@ test('狀態切換不清空浮字，只重置 MISS 節流狀態', () => {
   assert.doesNotMatch(clearBody, /innerHTML\s*=\s*['"]['"]/);
   assert.doesNotMatch(clearBody, /removeChild\(/);
   assert.match(clearBody, /removeAttribute\('data-last-miss-at'\)/);
+});
+
+test('大量敵人浮字只關閉昂貴碰撞量測，不限制或刪除浮字節點', () => {
+  assert.match(ui, /var ENEMY_FLOAT_LAYOUT_LOAD_LIMIT = 80;/);
+  assert.match(ui, /totalEnemyFloats > ENEMY_FLOAT_LAYOUT_LOAD_LIMIT/);
+  assert.match(ui, /仍建立每一個數字，只略過碰撞避讓/);
+  assert.doesNotMatch(ui, /normalFloats\.length\s*>\s*50/);
 });
