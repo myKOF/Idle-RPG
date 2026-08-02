@@ -5264,14 +5264,10 @@ function showOfflineSummary(sum) {
   var hrs = Math.floor(sum.seconds / 3600), mins = Math.floor((sum.seconds % 3600) / 60);
   var h = '<div class="talent-modal-head"><span class="talent-modal-icon">🌙</span><b>離線收益</b> ' +
     '<span class="dim-text">離線 ' + (hrs ? hrs + ' 小時 ' : '') + mins + ' 分鐘</span></div>';
-  h += '<div class="offline-sum-row">⚔️ 擊殺：Lv.' + fmt(sum.stage) + ' ' + esc(sum.zoneName || '') + '菁英怪 ×' + fmt(sum.kills) + '</div>';
-  /* 擊殺速率被實測戰力壓下來時一定要講。不講的話玩家只會看到收益忽然變少，
-     完全不知道原因是「停在打不動的關卡」，也就不會想到該退回去把裝備補上來。 */
-  if (sum.killInterval > OFFLINE_KILL_INTERVAL) {
-    var per = isFinite(sum.killInterval) ? Math.round(sum.killInterval) + ' 秒' : '——';
-    h += '<div class="offline-sum-row dim-text">🐢 離線擊殺速率依你下線前的實測戰力計算（每 ' + per +
-      ' 1 隻，滿速為每 ' + OFFLINE_KILL_INTERVAL + ' 秒 1 隻）。回到殺得動的關卡把裝備補上來，就能回到滿速。</div>';
-  }
+  /* 怪物種類由參數表決定（formula.js §10 OFFLINE_ELITE），不能寫死「菁英怪」。
+     舊的離線摘要沒有 elite 欄位，視為菁英以維持原本的顯示。 */
+  var offKind = (sum.elite === false) ? '普通怪' : '菁英怪';
+  h += '<div class="offline-sum-row">⚔️ 擊殺：Lv.' + fmt(sum.stage) + ' ' + esc(sum.zoneName || '') + offKind + ' ×' + fmt(sum.kills) + '</div>';
   h += '<div class="offline-sum-row">💡 經驗 +' + fmt(sum.xp) + '　💰 金幣 +' + fmt(sum.gold) + '</div>';
   var loot = [];
   for (var r = 0; r < RARITIES.length; r++) {

@@ -938,18 +938,14 @@ function applyOfflineProgress(options) {
   elapsed = Math.min(elapsed, OFFLINE_MAX_HOURS * 3600);
 
   var st = getStats();
-  /* 擊殺間隔取「固定費率」與「實測速率」的較慢者。固定費率不看命中率、不看怪物血量、
-     也不看玩家傷害，關卡一旦跑贏傷害就會發放玩家實際做不到的擊殺——理由與量測
-     → js/formula.js §10 offlineKillIntervalFor。 */
-  var interval = offlineKillIntervalFor(G.stage.killPace, G.savedAt);
-  /* 把速率量測的時間錨點移到現在。離線那一段沒在玩，不是「打不動」，
-     不重置的話回來打的第一隻怪會把整段離線時間算進分母，速率被灌成幾乎為零。
-     必須在下面的 early return 之前做。 */
-  if (G.stage.killPace && typeof G.stage.killPace === 'object') G.stage.killPace.at = Date.now();
-  var kills = offlineKillCount(elapsed, 0, interval); // 潛力技能 V3 起無離線收益加成（舊 potentialOffline 已移除）
+  var kills = offlineKillCount(elapsed, 0); // 潛力技能 V3 起無離線收益加成（舊 potentialOffline 已移除）
   if (kills < 1) return;
   var stage = offlineStageFor(G.stage.best);
-  var m = monsterStatsFor(stage, true); // 菁英怪
+  /* 怪物種類由參數表決定（formula.js §10 OFFLINE_ELITE）。掉落倍率一定要跟著同一個
+     旗標走，否則調成普通怪之後會變成「普通怪的經驗、菁英怪的掉落倍率」。 */
+  var offElite = offlineUsesElite();
+  var m = monsterStatsFor(stage, offElite);
+  var eliteMult = offElite ? ELITE_DROP_MULT : 1;
   var zn = currentZoneDef();
   var rw = zn.rewardMult;
 
@@ -964,18 +960,17 @@ function applyOfflineProgress(options) {
 
   // 掉落：與 rollFieldDrops 同一套表與倍率（無戰鬥中增益），逐殺單獨擲骰
   var lootBonus = st.loot;
-  var dropMult = (1 + lootBonus / 100) * ELITE_DROP_MULT;
+  var dropMult = (1 + lootBonus / 100) * eliteMult;
   var rates = dropRatesFor(FIELD_DROP_TABLE, m.level);
   var gemRates = fieldGemDropRatesFor(m.level);
-  var bookRate = FIELD_BOOK_DROP_PCT * (1 + lootBonus / 100) * rw * ELITE_DROP_MULT;
-  var essenceRate = ancientEssenceDropChanceForEnemy(m.level) * ELITE_DROP_MULT;
-  var dustRate = fieldDustRate(m.level) * ELITE_DROP_MULT;
-  var partRate = FIELD_PART_DROP_PCT * (1 + lootBonus / 100) * rw * ELITE_DROP_MULT;
+  var bookRate = FIELD_BOOK_DROP_PCT * (1 + lootBonus / 100) * rw * eliteMult;
+  var essenceRate = ancientEssenceDropChanceForEnemy(m.level) * eliteMult;
+  var dustRate = fieldDustRate(m.level) * eliteMult;
+  var partRate = FIELD_PART_DROP_PCT * (1 + lootBonus / 100) * rw * eliteMult;
 
   var sum = {
-    /* killInterval：這一次實際採用的擊殺間隔。等於下限就是滿速；比下限大代表被
-       實測戰力壓下來了，彈窗要講清楚，否則玩家只會看到「離線收益忽然變少」。 */
-    killInterval: interval,
+    /* 給彈窗顯示用：怪物種類可由參數表切換，寫死「菁英怪」的話調成普通怪之後會說謊。 */
+    elite: offElite,
     seconds: elapsed, stage: stage, zoneName: zn.name, zoneEmoji: zn.emoji, kills: kills,
     gold: gold, xp: xp, equips: {}, scrap: 0, gems: {}, books: 0, essence: 0, dust: 0, parts: 0
   };

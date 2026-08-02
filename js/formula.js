@@ -1929,68 +1929,38 @@ function magicScrollFromEssence(essenceQty) {
    §10 離線收益
    ============================================================ */
 
+/* 離線收益是「以歷史最高關卡為基準的固定費率」模型：不看命中率、不看怪物血量、
+   也不看玩家傷害，時間到就照表發。下面五個值就是這個模型的全部旋鈕。
+
+   ⚠️ 模擬器實測過這個模型的後果：關卡數一旦跑贏傷害，固定費率會發放玩家實際
+   做不到的擊殺（停在關卡 188 時線上每分鐘殺 0~1 隻，離線照發 3 隻菁英怪），
+   於是「推到推不動然後掛機」成為最佳解。這是刻意保留的設計，用下面的旋鈕調整
+   強度即可；量測與取捨記在 docs/SIM_HARNESS.md「產出閘門」一節。 */
 var OFFLINE_MAX_HOURS = 24;        // 離線收益時間上限（小時）；1 分鐘內不計
-var OFFLINE_LEVEL_REDUCE = 10;    // 計算等級扣減：目前地圖最高階段 − 此值，再捨去個位數（下限 1）
-var OFFLINE_KILL_INTERVAL = 20;   // 擊殺速率下限：最快每隔此秒數擊殺 1 隻菁英怪
-/* 實測擊殺速率的時間常數（秒）：大約幾分鐘內的表現才算數。
-   調小＝反應快但容易被短暫空窗誤判；調大＝穩定但退關之後要更久才反映。
+var OFFLINE_LEVEL_REDUCE = 10;    // 計算等級扣減：歷史最高階段 × 比例 − 此值
+var OFFLINE_STAGE_RATIO = 1;      // 計算等級比例：先把歷史最高階段乘上這個值再扣減（1＝不打折）
+var OFFLINE_STAGE_ROUND = 10;     // 計算等級取整單位：扣減後無條件捨去到此值的倍數
+var OFFLINE_KILL_INTERVAL = 20;   // 擊殺速率：每隔此秒數擊殺 1 隻（20 秒＝每分鐘 3 隻）
+var OFFLINE_ELITE = 1;            // 離線怪物種類：1＝菁英（經驗掉落較高，並套用菁英掉落倍率）0＝普通
 
-   ⚠️ 這個值目前不在參數表裡。參數表 config/CSV/game_parameters.csv 是由
-   config/Excel/game_parameters.xlsx 產生的（套用參數.bat 第 2 步），直接改 CSV
-   下次轉檔就會被蓋掉，而且 apply_params 會因為找不到那一列而中斷。
-   要納入參數表請先在 Excel 加一列「10-離線 / 實測速率記憶長度」，錨點再一起補上。
-   真正的平衡旋鈕是上面的 OFFLINE_KILL_INTERVAL，那一個已經在表裡。 */
-var OFFLINE_PACE_TAU = 600;
-
-// 離線計算等級 = max(1, ⌊(目前地圖最高階段 − OFFLINE_LEVEL_REDUCE) / 10⌋ × 10)
-// 例：沼澤最高 256 → 256 − 10 = 246 → 捨去個位數 → 240 級沼澤菁英怪
+// 離線計算等級 = max(1, ⌊(歷史最高階段 × 比例 − 扣減) / 取整單位⌋ × 取整單位)
+// 例（預設值）：沼澤最高 256 → 256 − 10 = 246 → 捨去到 10 的倍數 → 240 級沼澤菁英怪
 function offlineStageFor(best) {
-  var s = Math.floor((Math.max(1, Math.floor(Number(best) || 1)) - OFFLINE_LEVEL_REDUCE) / 10) * 10;
+  var b = Math.max(1, Math.floor(Number(best) || 1));
+  /* 取整單位若被設成 0 或負數，除法會得到 Infinity/NaN 而不是「不取整」。
+     這是配置檔常見的手誤，夾在 1 以上讓它退化成「不取整」而不是壞掉。 */
+  var unit = Math.max(1, Math.floor(Number(OFFLINE_STAGE_ROUND) || 1));
+  var ratio = Number(OFFLINE_STAGE_RATIO);
+  if (!isFinite(ratio) || ratio <= 0) ratio = 1;
+  var s = Math.floor((b * ratio - OFFLINE_LEVEL_REDUCE) / unit) * unit;
   return Math.max(1, s);
 }
 
-/* 實測擊殺速率 → 離線擊殺間隔。
+// 離線是否結算菁英怪。掉落倍率也跟著這個旗標，才不會出現「普通怪卻吃菁英掉落倍率」。
+function offlineUsesElite() { return !!Number(OFFLINE_ELITE); }
 
-   為什麼需要這一層：離線結算原本是「每 20 秒 1 隻菁英怪」的固定費率，不看命中率、
-   不看怪物血量、也不看玩家的傷害。關卡數一旦跑贏傷害，這個費率就會發放玩家實際
-   做不到的擊殺——實測角色停在關卡 188 時線上每分鐘殺 0～1 隻普通怪，而離線同時段
-   照發每分鐘 3 隻菁英怪（經驗是普通怪的 2 倍）。於是「推到推不動然後掛機」變成最佳解，
-   線上經營完全失去意義。
-
-   ⚠️ 這裡刻意用**實測**而不是用血量除以傷害去推算。推算會漏掉技能、連擊、範圍攻擊，
-   實測比對顯示只算普攻會低估實際輸出約 5 倍——那等於全面砍離線收益，不是設下限。
-
-   pace 是 { kills, sec, at }：指數加權的擊殺數與觀測時長，速率取兩者相除。
-   ⚠️ 分子分母要分開衰減，不能只維護一個「速率的移動平均」。只維護速率的話，
-   估計值要 tau 這麼久才暖機完畢，剛開打的那幾分鐘會嚴重低估——實測開局 120 秒
-   會低估 5 倍，等於平白砍掉剛上線就登出的玩家的離線收益。分子分母同步衰減的話，
-   分母只累計「真的觀測到的時間」，第二隻怪之後就已經是正確的速率。
-
-   at 用牆鐘時間而不是遊戲時鐘：GT 不寫進存檔，重登就歸零，而這個估計值必須
-   跨工作階段存活，離線結算才用得到它。 */
-function offlineKillIntervalFor(pace, until) {
-  var floor = Math.max(1, Number(OFFLINE_KILL_INTERVAL) || 1);
-  var n = pace ? Number(pace.kills) : NaN;
-  var t = pace ? Number(pace.sec) : NaN;
-  if (!isFinite(n) || !isFinite(t) || n <= 0 || t <= 0) return floor;   // 沒有量測資料就沿用固定費率
-  /* 最後一次擊殺到存檔之間的空窗期，是「觀測到了、但一隻都沒殺」的時間，
-     所以要算進分母、同時衰減分子。不算的話，停在打不動的關卡整整八小時，
-     離線仍會照著八小時前那個還殺得動的速率發獎。 */
-  var at = pace ? Number(pace.at) : 0, end = Number(until);
-  if (isFinite(at) && at > 0 && isFinite(end) && end > at) {
-    var dry = (end - at) / 1000;
-    var k = Math.exp(-dry / Math.max(1, OFFLINE_PACE_TAU));
-    n *= k;
-    t = t * k + dry;
-  }
-  if (!(n > 0) || !(t > 0)) return Infinity;
-  return Math.max(floor, t / n);
-}
-
-// 離線擊殺數 = ⌊有效離線秒數 / 擊殺間隔 × (1 + 離線預言%)⌋；每隻菁英怪掉落單獨擲骰（save.js）
-// interval 省略時沿用固定費率（舊行為）；傳入時代表已套用實測速率下限。
-function offlineKillCount(elapsed, potentialOfflinePct, interval) {
-  var iv = Number(interval);
-  if (!isFinite(iv) || iv <= 0) iv = Math.max(1, Number(OFFLINE_KILL_INTERVAL) || 1);
-  return Math.max(0, Math.floor(elapsed / iv * (1 + (Number(potentialOfflinePct) || 0) / 100)));
+// 離線擊殺數 = ⌊有效離線秒數 / 擊殺間隔 × (1 + 離線預言%)⌋；每隻怪的掉落單獨擲骰（save.js）
+function offlineKillCount(elapsed, potentialOfflinePct) {
+  var interval = Math.max(1, Number(OFFLINE_KILL_INTERVAL) || 1);
+  return Math.max(0, Math.floor(elapsed / interval * (1 + (Number(potentialOfflinePct) || 0) / 100)));
 }
