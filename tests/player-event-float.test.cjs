@@ -120,7 +120,7 @@ test('敵人傷害浮字維持可讀字號且出現範圍更分散', () => {
   assert.match(ui, /var FLOAT_TEXT_LIFETIME_MS = 2000/);
   assert.match(ui, /damage-aggregate/);
   assert.match(ui, /function placeEnemyDamageFloat\(sp, layer\)/);
-  assert.match(ui, /if \(enemyHitFloat\) placeEnemyDamageFloat\(sp, layer\);/);
+  assert.match(ui, /if \(enemyHitFloat\) placeEnemyDamageFloat\(sp, layer, targetLayer\);/);
   assert.match(ui, /if \(panel && !enemyHitFloat\) \{/);
   assert.match(ui, /tokens\.indexOf\('crit'\) >= 0/);
   assert.match(ui, /sp\.className \+= ' enemy-hit-float'/);
