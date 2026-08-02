@@ -393,6 +393,9 @@ function observeCombat(state, policy, memo) {
 
 /* 每個決策點更新一次，結果掛在 state.ctx 供規則以 ctx.* 路徑取用。 */
 function updateContext(state, policy, memo) {
+  /* 速率型目標的取樣。放在最前面而且與 track 無關：決策點本身也是一個觀測時刻，
+     而沒宣告 track 的策略一樣可以宣告速率目標。 */
+  sampleRates(state, policy, memo);
   if (!policy.track) {
     /* 沒有戰鬥追蹤的策略仍然可以宣告目標——deficit 要算，否則相關規則會靜靜地
        永遠不觸發。
@@ -470,6 +473,72 @@ function updateContext(state, policy, memo) {
 
    目標的度量方式刻意只做少數幾種 kind，不做運算式語言——策略是資料不是程式，
    能算的東西愈少愈好稽核。要新的度量就加一種 kind，並在這裡寫清楚它算什麼。 */
+
+/* ---- 速率型目標的取樣 ----
+
+   ratePerMin 量的是「一個累積計數器每分鐘增加多少」，例如野外擊殺數。
+   它跟其他 kind 不一樣：單看一個瞬間的值沒有意義，必須有兩個時刻才算得出來，
+   所以要在觀測時累積，不能等到決策點才現讀。
+
+   為什麼需要這種度量：命中率、抗性、生存餘裕這些都是**原因**，而
+   player_strategy.md 定義安全關卡用的是**結果**——「能在平均 3 秒內殺死一個敵人」。
+   量結果的好處是它一次涵蓋所有原因：命中不足、傷害不足、抗性不足、被打斷，
+   任何一項出問題都會反映在殺敵速度上，不必替每一個原因各寫一條規則。
+
+   ⚠️ 計數器要挑對來源。這裡用的是遊戲的 LOOT_STATS：
+     - 離線結算**不會**寫進 LOOT_STATS（js/save.js 的 applyOfflineProgress 不呼叫
+       recordLootKill），所以離線那一段不會汙染速率
+     - 但塔戰的 BOSS 會計入總數（js/tower.js），所以要指到 sources.field 那一桶，
+       不要指到總數——否則爬塔會被誤算成「野外打得動」 */
+function sampleRates(state, policy, memo) {
+  var list = policy.targets || [];
+  if (!list.length) return;
+  var now = Number(state.gameTimeSec) || 0;
+  if (!memo.rates) memo.rates = {};
+
+  for (var i = 0; i < list.length; i++) {
+    var t = list[i];
+    if (!t || t.kind !== 'ratePerMin' || !t.id) continue;
+    var raw = pathVal(state, t.counter);
+    if (raw === null || raw === undefined) continue;   // 這一拍沒送這個面板，跳過不記
+    var v = Number(raw);
+    if (!isFinite(v)) continue;
+
+    var r = memo.rates[t.id] || (memo.rates[t.id] = { pts: [] });
+    var pts = r.pts;
+    var last = pts.length ? pts[pts.length - 1] : null;
+
+    /* 觀測與決策可能落在同一個遊戲時刻（決策點本身也是觀測時刻）。
+       時間沒前進就只更新最後一點，不新增——否則視窗會被同時刻的重複點灌滿。 */
+    if (last && now - last.t <= 0) { last.v = v; continue; }
+
+    /* 計數器倒退＝被歸零（遊戲的統計「清理」會重建 LOOT_STATS）。
+       不處理的話差分變負數，速率會憑空變成 0 以下，閘門就被一個假訊號關上。 */
+    if (last && v < last.v) { r.pts = pts = []; last = null; }
+
+    /* 取樣中斷過就重新起算。
+
+       ⚠️ 這一條是離線期間的必要防護。state.gameTimeSec 是含離線的牆鐘
+       （scripts/sim/engine.js 的 gameTimeSec 讀 vNowMs，而 offlineFor 會把它往前推），
+       但離線收益不寫 LOOT_STATS。所以離線 16 小時之後那一拍是「時間過了 57,600 秒、
+       擊殺 0 隻」——速率被算成 0 隻/分，閘門會在每天上線的頭五分鐘誤判成打不動並退關。
+       中斷不是「打不動」，是「沒在看」，兩者要分開。 */
+    var gap = (typeof t.maxGapSec === 'number') ? t.maxGapSec : windowSecOf(t);
+    if (last && (now - last.t) >= gap) { r.pts = pts = []; }
+
+    pts.push({ t: now, v: v });
+
+    /* 只留視窗內的點，外加一個剛好在視窗起點之前的點當基準。
+       pts[0] 是基準，pts[1] 一旦也出了視窗才丟得掉 pts[0]。 */
+    var win = windowSecOf(t);
+    while (pts.length > 2 && (now - pts[1].t) >= win) pts.shift();
+  }
+}
+
+function windowSecOf(t) {
+  return (typeof t.windowSec === 'number' && t.windowSec > 0) ? t.windowSec : 300;
+}
+
 function evalTargets(state, policy, memo) {
   var out = {};
   var list = policy.targets || [];
@@ -497,6 +566,20 @@ function evalTargets(state, policy, memo) {
     } else if (t.kind === 'value') {
       var v = Number(pathVal(state, t.path));
       if (isFinite(v)) value = v;
+    } else if (t.kind === 'ratePerMin') {
+      /* 取樣點由 sampleRates 累積，這裡只做差分。
+         視窗還沒攢夠就回 null（＝unknown）：資料不足時不要下判斷，
+         「還不知道」跟「已達標」與「沒達標」是三件不同的事。 */
+      var rr = memo.rates && memo.rates[t.id];
+      var pts = rr && rr.pts;
+      if (pts && pts.length >= 2) {
+        var a = pts[0], b = pts[pts.length - 1];
+        var span = b.t - a.t;
+        /* 預設要求視窗攢到一半才給值。太短的視窗在殺敵這種離散事件上雜訊很大：
+           3 秒殺一隻的關卡，隨便一個 10 秒的空窗都會被算成 0 隻/分。 */
+        var minSpan = (typeof t.minSpanSec === 'number') ? t.minSpanSec : windowSecOf(t) / 2;
+        if (span > 0 && span >= minSpan) value = (b.v - a.v) / span * 60;
+      }
     }
 
     if (value === null) { out[t.id] = { value: null, target: t.atLeast, short: 0, met: true, unknown: true }; continue; }
@@ -509,6 +592,7 @@ function evalTargets(state, policy, memo) {
 /* 高頻觀測的進入點。不回傳指令——觀測不是操作，玩家看戰鬥不算按按鈕。
    驅動端每 observeEverySec 呼叫一次，與 decide 的頻率無關。 */
 function observe(state, policy, memo) {
+  sampleRates(state, policy, memo);
   observeCombat(state, policy, memo);
 }
 
@@ -820,16 +904,66 @@ function decide(state, policy, memo) {
            這一條蓋過品質門檻：品質達標也不代表打得過那一關。 */
         if (state.ctx && state.ctx.retryWaiting) passGate = false;
 
+        /* 產出閘門：宣告的目標沒達成，這一關就不算安全關卡。
+
+           前面兩道閘門（裝備品質覆蓋率、卡關重試）量的都是**投入**——身上穿了什麼、
+           上次死在哪。但 player_strategy.md 對安全關卡的定義量的是**產出**：
+           「能在平均 3 秒內殺死一個敵人」。兩者會脫節：實測有一場全身史詩、沒死過、
+           重試閘門也沒攔，卻在關卡 150 之後每分鐘殺 0~1 隻，整整 24 個在線小時
+           零掉落零經驗——三道閘門一道都沒響，因為沒有一道在量「有沒有打死東西」。
+
+           量產出的另一個好處是它一次涵蓋所有原因。命中不足、傷害不足、抗性不足，
+           任何一項出問題都反映在殺敵速度上，不必替每一個原因各補一條規則。 */
+        var reqs = gCfg.requireTargets || [];
+        var targetBlocked = false;
+        for (var rq = 0; rq < reqs.length; rq++) {
+          var dq = state.ctx && state.ctx.deficit && state.ctx.deficit[reqs[rq]];
+          /* unknown 不算沒達標。視窗還沒攢滿就退關的話，每次退關都會再觸發一次退關。 */
+          if (dq && !dq.unknown && !dq.met) { targetBlocked = true; break; }
+        }
+        if (targetBlocked) passGate = false;
+
         var park = cp.park;
         var inPark = !!(park && park.length === 2);
-        if (!passGate && inPark && gStage > park[1] && gCfg.retreatCmd) {
+        var parkRetreat = (!passGate && inPark && gStage > park[1] && gCfg.retreatCmd);
+        if (parkRetreat) {
           out.push({ name: gCfg.retreatCmd, args: { delta: park[1] - gStage }, ruleId: r.id });
+        }
+
+        /* 動態退關：產出不足而且這一段沒有指南給的安全區間時，自己往回退。
+
+           光把自動推關關掉是不夠的——關掉時人在哪就停在哪，而停下來的地方
+           正是那個打不動的關卡。要退回打得動的地方，撿裝備、把命中與傷害拉上來，
+           再讓閘門自己重新打開往前推。這是個閉環，不是一次性的判斷。
+
+           ⚠️ everySec 必須 >= 速率目標的 windowSec。退太快的話下一次判斷用的
+           還是退關前那個關卡的取樣，會連退好幾階直到視窗換血完畢——
+           tests/policy-keys.test.cjs 有哨兵盯著這個關係。
+
+           ⚠️ 沒有「已知安全關卡」這種下限。看起來很自然（不要退到證明過打得動的
+           關卡以下），但推關途中視窗會橫跨好幾關，「當時達標」記到的關卡編號
+           不見得真的打得動；一旦記錯就成了永遠退不下去的地板，閘門關著、退關被擋，
+           整場卡死。改成無條件相信當下的量測：退錯了下一個視窗會把它推回去。 */
+        var rtc = gCfg.targetRetreat;
+        if (targetBlocked && rtc && gCfg.retreatCmd && !parkRetreat) {
+          if (!memo.gate) memo.gate = {};
+          var gm = memo.gate[r.id] || (memo.gate[r.id] = {});
+          var cool = (typeof rtc.everySec === 'number') ? rtc.everySec : 300;
+          var floorStage = Math.max(1, Number(rtc.minStage) || 1);
+          if (gStage > floorStage && (gm.lastRetreatAt === undefined || now - gm.lastRetreatAt >= cool)) {
+            var to = Math.max(floorStage, gStage - Math.max(1, Number(rtc.step) || 5));
+            out.push({ name: gCfg.retreatCmd, args: { delta: to - gStage }, ruleId: r.id });
+            gm.lastRetreatAt = now;
+          }
         }
 
         var gArgs = {};
         for (var gak in baseArgs) gArgs[gak] = baseArgs[gak];
-        /* 一定要是布林值：協議的 on 是 bool，回 undefined 會被 validateCommand 擋下。 */
-        gArgs[gCfg.argKey || 'on'] = !!(passGate || (inPark && gStage < park[0]));
+        /* 一定要是布林值：協議的 on 是 bool，回 undefined 會被 validateCommand 擋下。
+
+           「低於安全區間下緣就往前推」這一條要讓給產出閘門：品質不足時往前推是為了
+           進到指南建議的區間，但打不動的時候往前推只會更打不動。 */
+        gArgs[gCfg.argKey || 'on'] = !!(passGate || (inPark && gStage < park[0] && !targetBlocked));
         out.push({ name: r.cmd, args: gArgs, ruleId: r.id });
       }
     } else if (r.convertToPreferred) {

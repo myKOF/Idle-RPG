@@ -179,6 +179,84 @@ test('關卡閘門引用的品質索引落在遊戲的 RARITIES 範圍內', () =
   }
 });
 
+/* ---- 產出閘門（stageGate.requireTargets + ratePerMin）---- */
+
+function targetsOf(p) {
+  const out = {};
+  for (const t of p.targets || []) if (t && t.id) out[t.id] = t;
+  return out;
+}
+
+test('關卡閘門要求的目標必須真的宣告過', () => {
+  /* requireTargets 指到一個不存在的目標 id，deficit 查出來是 undefined，
+     程式會判成「沒有阻擋」——閘門看起來裝上了，其實整場沒作用過。 */
+  for (const f of POLICY_FILES) {
+    const p = loadPolicy(f);
+    const declared = targetsOf(p);
+    for (const rule of p.rules) {
+      for (const id of (rule.stageGate && rule.stageGate.requireTargets) || []) {
+        assert.ok(declared[id],
+          `${f} 規則 ${rule.id} 的 requireTargets 指到未宣告的目標「${id}」——` +
+          '查不到缺口會被當成沒有阻擋，這道閘門不會有任何作用且無徵兆');
+      }
+    }
+  }
+});
+
+test('動態退關的間隔必須不短於速率目標的取樣視窗', () => {
+  /* 退關之後速率視窗裡還留著退關前那個關卡的取樣。間隔比視窗短的話，
+     下一次判斷用的仍是舊資料，於是再退一階、再判一次⋯⋯一路退到底，
+     而且看起來就只是「這個 seed 一直往回跑」。 */
+  for (const f of POLICY_FILES) {
+    const p = loadPolicy(f);
+    const declared = targetsOf(p);
+    for (const rule of p.rules) {
+      const g = rule.stageGate;
+      if (!g || !g.targetRetreat) continue;
+      const every = (typeof g.targetRetreat.everySec === 'number') ? g.targetRetreat.everySec : 300;
+      for (const id of g.requireTargets || []) {
+        const t = declared[id];
+        if (!t || t.kind !== 'ratePerMin') continue;
+        const win = (typeof t.windowSec === 'number') ? t.windowSec : 300;
+        assert.ok(every >= win,
+          `${f} 規則 ${rule.id}：退關間隔 ${every}s 短於目標「${id}」的視窗 ${win}s——` +
+          '會連續退關直到視窗換血完畢');
+      }
+    }
+  }
+});
+
+test('速率目標的計數器路徑在遊戲的面板裡真的取得到', () => {
+  /* 這是本檔要擋的那一類失真的速率版：路徑寫錯只會讓取樣安靜地跳過，
+     速率永遠是 unknown，閘門永遠不觸發——報表上完全看不出來。
+     所以實際開一場遊戲、打到有擊殺、再把策略宣告的路徑解一次。 */
+  const specs = [];
+  for (const f of POLICY_FILES) {
+    for (const t of loadPolicy(f).targets || []) {
+      if (t && t.kind === 'ratePerMin' && t.counter) specs.push({ f, id: t.id, path: t.counter });
+    }
+  }
+  if (!specs.length) return;
+
+  const eng = createEngine({ seed: 7 }).boot(null);
+  /* 打到第一隻怪死掉為止。sources 那一桶是第一次擊殺才建的（js/stats.js 的
+     lootSourceBucket），所以不打就驗不到——這正是要驗的東西。 */
+  for (let i = 0; i < 200 && !((eng.ctx.LOOT_STATS.sources.field || {}).kills > 0); i++) eng.step(20);
+  assert.ok((eng.ctx.LOOT_STATS.sources.field || {}).kills > 0, '前置條件：模擬應該要打得死第一關的怪');
+
+  for (const s of specs) {
+    const m = /^panels\.([^.]+)\.(.+)$/.exec(s.path);
+    assert.ok(m, `${s.f} 目標 ${s.id} 的 counter「${s.path}」不是 panels.<面板>.<欄位> 格式`);
+    let cur = eng.panel(m[1]);
+    for (const part of m[2].split('.')) {
+      assert.ok(cur !== null && cur !== undefined,
+        `${s.f} 目標 ${s.id} 的 counter「${s.path}」在「${part}」這一段斷掉——取樣會整場跳過`);
+      cur = cur[part];
+    }
+    assert.equal(typeof cur, 'number', `${s.f} 目標 ${s.id} 的 counter「${s.path}」解出來不是數字（得到 ${cur}）`);
+  }
+});
+
 test('策略引用的附魔書鍵都存在於 ENCHANTS，且類別對得上', () => {
   /* 送錯類別只會換回「XX 只能使用 OO 類附魔」——規則整場落空，看報表看不出來。
      這裡直接拿遊戲的 ENCHANTS[key].cat 對照策略把它歸在哪一類。 */
