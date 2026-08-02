@@ -1409,7 +1409,7 @@ function clearTowerFloatLayers() {
 }
 
 /* 敵方傷害浮字優先找不與現有文字重疊的位置，真的沒有空間時才接受重疊。 */
-function placeFloatAvoidingOverlap(sp, layer, selector, randomTop, randomRange, gridRows, gridStep) {
+function placeFloatAvoidingOverlap(sp, layer, selector, randomTop, randomRange, gridRows, gridStep, anchorLayer) {
   var lr = layer.getBoundingClientRect();
   if (!lr.width || !lr.height) return;
 
@@ -1437,9 +1437,18 @@ function placeFloatAvoidingOverlap(sp, layer, selector, randomTop, randomRange, 
   // centering transform while measuring, otherwise long numbers are placed
   // half a text width too far to the right.
   sp.style.transform = 'translate(-50%, 0)';
+  var anchorRect = anchorLayer && anchorLayer.getBoundingClientRect ? anchorLayer.getBoundingClientRect() : null;
+  var anchor = anchorRect && anchorRect.width && anchorRect.height ? {
+    left: ((anchorRect.left - lr.left) / lr.width) * 100,
+    top: ((anchorRect.top - lr.top) / lr.height) * 100,
+    width: (anchorRect.width / lr.width) * 100,
+    height: (anchorRect.height / lr.height) * 100
+  } : null;
+  var initialLeft = anchor ? anchor.left + anchor.width * (0.2 + Math.random() * 0.6) : 8 + Math.random() * 84;
+  var initialTop = anchor ? anchor.top + anchor.height * (0.2 + Math.random() * 0.6) : randomTop + Math.random() * randomRange;
   var candidates = [{
-    left: 8 + Math.random() * 84,
-    top: randomTop + Math.random() * randomRange
+    left: Math.max(4, Math.min(96, initialLeft)),
+    top: Math.max(8, Math.min(92, initialTop))
   }];
   gridRows = gridRows || 6;
   gridStep = gridStep || 10;
@@ -1447,8 +1456,8 @@ function placeFloatAvoidingOverlap(sp, layer, selector, randomTop, randomRange, 
     var col = ci % 8;
     var row = Math.floor(ci / 8) % gridRows;
     candidates.push({
-      left: 10 + col * 11 + (row % 2 ? 3 : 0),
-      top: Math.max(10, randomTop - 4) + row * gridStep
+      left: anchor ? Math.max(4, Math.min(96, anchor.left + anchor.width * 0.5 - 38 + col * 10 + (row % 2 ? 3 : 0))) : 10 + col * 11 + (row % 2 ? 3 : 0),
+      top: anchor ? Math.max(8, Math.min(92, anchor.top + anchor.height * 0.5 - 22 + row * gridStep)) : Math.max(10, randomTop - 4) + row * gridStep
     });
   }
 
@@ -1499,7 +1508,7 @@ function placeFloatAvoidingOverlap(sp, layer, selector, randomTop, randomRange, 
 }
 
 function placeEnemyDamageFloat(sp, layer) {
-  placeFloatAvoidingOverlap(sp, layer, '.float-txt.enemy-hit-float', 28, 44);
+  placeFloatAvoidingOverlap(sp, layer, '.float-txt.enemy-hit-float', 28, 44, undefined, undefined, arguments[2]);
 }
 
 function placePlayerRecoveryFloat(sp, layer) {
@@ -1523,7 +1532,11 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
     text = '閃避!';
     cls = 'player-event dodge defend';
   }
-  var layer = $id(elId);
+  var enemyHitFloat = isEnemyHitFloat(elId, cls);
+  var targetLayer = $id(elId);
+  // 敵方傷害字從建立起就掛在敵方戰鬥容器的持久層，不再掛在會隨死亡
+  // 卡片重建的 enemy-card 內。targetLayer 僅用來把數字定位在原目標附近。
+  var layer = enemyHitFloat ? ($id('mv-float-retained') || targetLayer) : targetLayer;
   if (!layer || layer.offsetParent === null) {
     queuePendingEnemyFloat(elId, text, cls, damageValue, ent);
     return;
@@ -1538,7 +1551,6 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
   // deleting an active number: rapid multi-hit attacks must remain visible.
   // 不因數量或 opacity 主動清理任何數字；每個節點只由自己的自然淡出
   // 計時器移除，避免大量死亡時一次掃描造成畫面與動畫不同步。
-  var enemyHitFloat = isEnemyHitFloat(elId, cls);
   var damageInfo = enemyHitFloat ? enemyDamageFloatInfo(text, damageValue) : null;
   var damageKey = damageInfo ? enemyDamageFloatKey(cls) : '';
   var recoveryInfo = playerRecoveryFloatInfo(elId, cls, text, damageValue);
@@ -1548,7 +1560,7 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
     var damageFloats = layer.querySelectorAll('.float-txt.enemy-hit-float');
     for (var di = damageFloats.length - 1; di >= 0; di--) {
       var existing = damageFloats[di];
-      if (existing._damageFloatKey !== damageKey || existing._damageFloatHits >= damageMergeLimit) continue;
+      if (existing._enemyFloatTargetId !== elId || existing._damageFloatKey !== damageKey || existing._damageFloatHits >= damageMergeLimit) continue;
       existing._damageFloatTotal += damageValue;
       existing._damageFloatHits++;
       existing.textContent = existing._damageFloatPrefix + fmt(existing._damageFloatTotal);
@@ -1578,6 +1590,7 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
   sp.style.marginTop = (enemyHitFloat ? (Math.random() * 24 - 12) : (Math.random() * 30 - 15)) + 'px';
   if (damageKey) {
     sp.className += ' damage-aggregate';
+    sp._enemyFloatTargetId = elId;
     sp._damageFloatKey = damageKey;
     sp._damageFloatTotal = damageValue;
     sp._damageFloatHits = 1;
@@ -1591,7 +1604,7 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
     sp._recoveryFloatPrefix = recoveryInfo.prefix;
   }
   layer.appendChild(sp);
-  if (enemyHitFloat) placeEnemyDamageFloat(sp, layer);
+  if (enemyHitFloat) placeEnemyDamageFloat(sp, layer, targetLayer);
   if (recoveryKey) placePlayerRecoveryFloat(sp, layer);
   var panel = layer.closest('.combatant');
   // 敵方傷害浮字允許超出敵方框線；玩家事件與其他浮字仍維持在面板範圍內。

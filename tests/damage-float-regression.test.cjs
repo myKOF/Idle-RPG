@@ -94,3 +94,11 @@ test('大量敵人浮字只關閉昂貴碰撞量測，不限制或刪除浮字�
   assert.match(ui, /仍建立每一個數字，只略過碰撞避讓/);
   assert.doesNotMatch(ui, /normalFloats\.length\s*>\s*50/);
 });
+
+test('敵方傷害浮字從建立起掛在死亡重建之外的持久層', () => {
+  assert.match(ui, /var enemyHitFloat = isEnemyHitFloat\(elId, cls\);/);
+  assert.match(ui, /var targetLayer = \$id\(elId\);/);
+  assert.match(ui, /var layer = enemyHitFloat \? \(\$id\('mv-float-retained'\) \|\| targetLayer\) : targetLayer;/);
+  assert.match(ui, /placeEnemyDamageFloat\(sp, layer, targetLayer\)/);
+  assert.match(ui, /_enemyFloatTargetId !== elId/);
+});

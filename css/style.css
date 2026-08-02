@@ -5958,6 +5958,27 @@ textarea#save-io {
   overflow: visible;
 }
 
+/* 傷害字從建立起就掛在 mv-float-retained；它是 enemy-combatant 的固定兄弟節點，
+   不隨敵人卡片死亡、換波或批次重建而被移除。 */
+.enemy-combatant > .enemy-float-retained {
+  z-index: 30;
+  overflow: visible;
+}
+
+.enemy-combatant > .enemy-float-retained .float-txt {
+  font-size: 14px;
+}
+
+.enemy-combatant > .enemy-float-retained .float-txt.enemy-hit-float.dmg,
+.enemy-combatant > .enemy-float-retained .float-txt.enemy-hit-float.mdmg {
+  font-size: 14px;
+}
+
+.enemy-combatant > .enemy-float-retained .float-txt.enemy-hit-float.crit,
+.enemy-combatant > .enemy-float-retained .float-txt.enemy-hit-float.skill {
+  font-size: 18px;
+}
+
 .enemy-party.enemy-grid .float-txt {
   font-size: 14px;
 }
