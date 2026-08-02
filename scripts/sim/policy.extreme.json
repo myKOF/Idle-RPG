@@ -59,44 +59,55 @@
       "t3_allres2"
     ],
     "skillEarly": [
-      "toughness",
-      "manaBarrier",
-      "regenerate",
-      "healWound",
-      "secondWind",
-      "vampirism",
-      "sharpBlade",
+      "midasTouch",
       "powerSlash",
       "doubleStrike",
+      "manaBarrier",
+      "regenerate",
+      "sharpBlade",
+      "rendWound",
+      "berserkStrike",
+      "stunBlow",
+      "treasureSense",
+      "toughness",
+      "vampirism",
+      "healWound",
       "whirlwind",
-      "armorBreak"
+      "armorBreak",
+      "secondWind"
     ],
     "skillMid": [
-      "toughness",
+      "midasTouch",
+      "swiftCuts",
+      "preciseThrust",
+      "heavySmash",
+      "rendWound",
+      "berserkStrike",
+      "stunBlow",
+      "powerSlash",
+      "doubleStrike",
       "sharpBlade",
       "keenEye",
       "brutality",
+      "fortuneFavor",
+      "treasureSense",
+      "manaBarrier",
+      "regenerate",
+      "toughness",
       "vampirism",
       "swiftness",
       "ironSkin",
-      "fortuneFavor",
-      "phantomEcho",
-      "meditation",
       "reaperTempo",
       "battleReflex",
       "zeroCadence",
       "afterimagePursuit",
-      "bulwarkFeedback",
-      "huntSigil",
-      "lingeringGlow",
-      "virulentPulse",
       "arcaneMind",
-      "manaBarrier",
-      "regenerate",
       "healWound",
       "secondWind"
     ],
     "skillLate": [
+      "midasTouch",
+      "treasureSense",
       "sharpBlade",
       "keenEye",
       "brutality",
@@ -194,7 +205,39 @@
     ],
     "affixVsNormalRed": [
       "normalDmgRed"
-    ]
+    ],
+    "loadoutPriority": [
+      "midasTouch",
+      "soulBrandFlurry",
+      "counterStance",
+      "treasureSense",
+      "swiftCuts",
+      "preciseThrust",
+      "heavySmash",
+      "rendWound",
+      "berserkStrike",
+      "stunBlow",
+      "swordDomain",
+      "mindflowChain",
+      "doubleStrike",
+      "powerSlash",
+      "woundCollapse",
+      "warOverture",
+      "pursuitDecree",
+      "warSpiritEngine",
+      "echoBlade",
+      "sinDetonate",
+      "executeStrike",
+      "armorBreak",
+      "whirlwind",
+      "manaBarrier",
+      "regenerate",
+      "healWound",
+      "secondWind"
+    ],
+    "skillEarly_依據": "技能點極度稀缺，清單順序＝投點順序（點數不足時後面的由遊戲擋下），所以順序就是策略本身。實測改前 Lv.97 時 powerSlash 與 arcaneBurst 都停在 1 級、防禦與被動八個全 10 級、技能點剩 0——等於用 440% 攻擊的一級強力斬打完前 100 級（滿級 1160%）。真人 24 小時存檔是 37 個技能全 Lv.10。排序原則：點金手（金幣引擎，解開強化的瓶頸，收益擴散到每個部位）→ Lv.1 多段技 → 最低限度生存 → Lv.20/50 多段技。",
+    "skillMid_依據": "原本這一段（51~100 級）攻擊技掛零，是前期最大的漏洞。Lv.50 解鎖 swiftCuts／preciseThrust／heavySmash 皆為多段x3。",
+    "loadoutPriority_依據": "技能欄同時是資源產出的位置，不只是輸出位。點金手金幣 = goldPer × 技能等級 × 角色等級（js/skills.js:2705），8 級後 goldPer=35；尋寶直覺給 lootUp。真人 24 小時存檔的 12 格裡兩個都在。⚠️ 排進這份清單還不夠——三份 learn 清單裡也要有，沒學會的技能裝不上（實測只改本清單時 A/B 兩組結果完全相同）。"
   },
   "rules": [
     {
@@ -277,9 +320,10 @@
         "keepInvested": {
           "ancientOnly": false,
           "overrideRarityGap": 2,
-          "說明": "身上這件帶著目標詞條就不換，除非新裝備品質高 2 階以上。對應真人打法：留著史詩 Lv50 的 ring2（三條太古帶三寶）不換，而把太古是雜項的 boots 換成傳說 Lv100——判準是「帶什麼」不是「品質多高」",
+          "說明": "身上這件的關鍵詞條要保住，除非候選裝等更高（overrideLevelGap，先判）或品質高 overrideRarityGap 階。裝等一定要先判：詞條數值 =（base + base×每級成長×(裝等−1)）× 品質倍率，裝等 1 的詞條只剩 base。只比品質的實測後果是 ring／ring2／amulet 三個部位 100 小時停在 R4 裝等 1，其餘九個部位早就 R5 裝等 100",
           "ancientOnly_為什麼是_false": "只保太古位置時，洗在普通位置上的關鍵詞條會被換裝丟掉。實測 4 個 seed：只保太古是 2/3/3 條（寶石鑲嵌/經驗/掉寶合計），全位置保護是 5/7/2 並出現第一個達標項。代價是成績下緣變差（等級最低 365→203、死亡中位約 53→99.5），中位等級 412→378.5 在 n=4 下算噪音。選 false 是取「像真人的配裝」而不是「最高分」",
-          "overrideRarityGap_的作用": "防止保護變成永久凍結的閘。先前有一版保護綁在「缺口未補滿」上，目標達不到時永遠成立，實測 100 小時從關卡 190 掉到 117。品質高 2 階以上仍然換，凍結就有出口"
+          "overrideRarityGap_的作用": "防止保護變成永久凍結的閘。先前有一版保護綁在「缺口未補滿」上，目標達不到時永遠成立，實測 100 小時從關卡 190 掉到 117。品質高 2 階以上仍然換，凍結就有出口",
+          "overrideLevelGap": 0
         }
       },
       "why": "換裝優先序：品質 >> 等級 >> 太古詞條數 >> 評分（player_strategy.md）。評分只當平手裁判——itemScore 把品質、等級、太古壓成一個數字，照它排會出現「品質低一階但詞條滾得好所以分數高」而換錯，而品質決定插槽數與附魔欄數，換不回來"
@@ -986,10 +1030,114 @@
       "why": "依 player_strategy.md 技能升級優先順序分段：前期(≤50)先點生命上限被動與護盾／持續恢復；中期(51~100)把被動技能全點滿；後期(101+)依裝備詞條方向（targetAffixes 為物理向）集中投物理。清單順序即投點優先序，點數不足時後面的由遊戲擋下"
     },
     {
-      "id": "fuse-skills",
+      "id": "learn-fusions",
+      "everySec": 60,
+      "cmd": "skill.learn",
+      "expand": [
+        {
+          "key": "id",
+          "path": "panels.skills.fusions",
+          "field": "id"
+        }
+      ],
+      "why": "融合技產出時是未學習狀態，要先升到 Lv.1 才能裝備。id 由遊戲生成（fusion_ + uid），只能從 fusions[].id 撈"
+    },
+    {
+      "id": "equip-loadout-fusions",
+      "everySec": 60,
+      "cmd": "skill.equipLoadout",
+      "expand": [
+        {
+          "key": "id",
+          "path": "panels.skills.fusions",
+          "field": "id"
+        }
+      ],
+      "why": "融合技裝上技能欄，排在一般技能之前——格數有限時優先給融合技"
+    },
+    {
+      "id": "unequip-worst-skill",
+      "everySec": 60,
+      "cmd": "skill.unequipLoadout",
+      "loadoutSwap": {
+        "skills": "panels.skills",
+        "priority": "loadoutPriority"
+      },
+      "why": "技能欄滿了就卸下優先序最差的，讓 equip-loadout 補上更好的。開局預設的 arcaneBurst（Lv.1 魔法技，物理流用不到）不卸就永久佔位"
+    },
+    {
+      "id": "equip-loadout",
+      "everySec": 60,
+      "cmd": "skill.equipLoadout",
+      "expand": [
+        {
+          "key": "id",
+          "list": "loadoutPriority"
+        }
+      ],
+      "why": "把學會的技能真的裝上技能欄。原本六份策略都沒有這條，實測 100 小時後技能欄仍是開局預設的 powerSlash／arcaneBurst(Lv.1)／manaBarrier，學會的 28 個技能一個都沒上場。清單依多段傷害排序（js/skills.js 的 fx.hits），重複／已滿／未學會一律由遊戲擋下"
+    },
+    {
+      "id": "fuse-skills-1",
       "everySec": 300,
       "cmd": "skill.fuse",
-      "why": "主動使用技能融合以強化技能"
+      "if": [
+        [
+          "panels.skills.fusions.length",
+          "<",
+          1
+        ],
+        [
+          "view.level",
+          ">=",
+          100
+        ],
+        [
+          "view.gold",
+          ">=",
+          500000
+        ]
+      ],
+      "args": {
+        "ids": [
+          "whirlwind",
+          "armorBreak",
+          "executeStrike",
+          "sinDetonate"
+        ]
+      },
+      "why": "技能融合：whirlwind＋armorBreak＋executeStrike＋sinDetonate。真人 24 小時存檔做了 3 組四材融合並全部裝上技能欄。素材取單段技，多段技留給技能欄。前提用融合技數量而非 once——做不到要能重試，做到了條件自然不成立"
+    },
+    {
+      "id": "fuse-skills-2",
+      "everySec": 300,
+      "cmd": "skill.fuse",
+      "if": [
+        [
+          "panels.skills.fusions.length",
+          "<",
+          2
+        ],
+        [
+          "view.level",
+          ">=",
+          200
+        ],
+        [
+          "view.gold",
+          ">=",
+          500000
+        ]
+      ],
+      "args": {
+        "ids": [
+          "echoBlade",
+          "warSpiritEngine",
+          "pursuitDecree",
+          "warOverture"
+        ]
+      },
+      "why": "技能融合：echoBlade＋warSpiritEngine＋pursuitDecree＋warOverture。真人 24 小時存檔做了 3 組四材融合並全部裝上技能欄。素材取單段技，多段技留給技能欄。前提用融合技數量而非 once——做不到要能重試，做到了條件自然不成立"
     },
     {
       "id": "talent-upgrade-step1",
@@ -1001,7 +1149,14 @@
           "list": "talentStep1"
         }
       ],
-      "why": "天賦策略：優先將1轉天賦全點滿"
+      "why": "天賦策略：優先將1轉天賦全點滿（加上轉生前提：天賦系統轉生後才開，未加時實測空送 96,000 次「尚未達到 1 轉」）",
+      "if": [
+        [
+          "panels.talents.reincarnations",
+          ">=",
+          1
+        ]
+      ]
     },
     {
       "id": "talent-upgrade-step2",
@@ -1013,7 +1168,14 @@
           "list": "talentStep2"
         }
       ],
-      "why": "天賦策略：再將2轉天賦全點滿"
+      "why": "天賦策略：再將2轉天賦全點滿（加上轉生前提：天賦系統轉生後才開，未加時實測空送 96,000 次「尚未達到 1 轉」）",
+      "if": [
+        [
+          "panels.talents.reincarnations",
+          ">=",
+          1
+        ]
+      ]
     },
     {
       "id": "talent-upgrade-step3",
@@ -1025,7 +1187,14 @@
           "list": "talentStep3"
         }
       ],
-      "why": "天賦策略：再將3轉天賦全點滿"
+      "why": "天賦策略：再將3轉天賦全點滿（加上轉生前提：天賦系統轉生後才開，未加時實測空送 96,000 次「尚未達到 1 轉」）",
+      "if": [
+        [
+          "panels.talents.reincarnations",
+          ">=",
+          1
+        ]
+      ]
     },
     {
       "id": "gem-shop-buy-1",
@@ -1087,9 +1256,10 @@
       "kind": "ratePerMin",
       "counter": "panels.battle.lootStats.sources.field.kills",
       "windowSec": 300,
-      "atLeast": 15,
+      "atLeast": 5,
       "說明": "每分鐘野外擊殺數。門檻 15＝4 秒殺一隻（player_strategy.md 安全關卡定義是 3 秒）；掃描 5/10/15/20/25 之後 15 全面最佳",
-      "counter_為什麼是_sources_field": "lootStats.kills 總數含塔戰 BOSS，指到總數會把爬塔誤算成野外打得動"
+      "counter_為什麼是_sources_field": "lootStats.kills 總數含塔戰 BOSS，指到總數會把爬塔誤算成野外打得動",
+      "依據": "安全關卡的產出下限。經驗與掉落都隨關卡指數成長（每隻經驗 =（120+關卡）×1.06^(關卡−1)，掉落表 FIELD_DROP_TABLE 也依怪物等級＝關卡分檔），而擊殺速率是線性的——門檻訂太高會把角色綁在不值錢的淺關卡。實測 24 小時 × 5 seed：atLeast 15 → 關卡中位 86、物攻 5,686；atLeast 5 → 關卡 100（5/5 全達）、物攻 10,432；atLeast 2 → 關卡沒再前進、物攻掉回 5,024、死亡從 41 翻到 65。最佳點在 5，不是愈鬆愈好。（舊強化參數下量過一次結論相同，改參數後重量仍為 5，兩個旋鈕互相獨立）"
     },
     {
       "id": "jewelXpBonus",

@@ -296,16 +296,21 @@ function equipPolicy(keepInvested) {
     }]
   });
 }
-/* 身上一隻史詩(4) 戒指，背包一隻傳說(5)。預設規則會換；keepInvested 要能擋下。 */
-function equipState(currentAffixes) {
+/* 身上一隻史詩(4) 戒指，背包一隻傳說(5)。預設規則會換；keepInvested 要能擋下。
+   兩件的裝等預設相同——裝等是獨立的一道閘（見下方「裝等更高就換」），
+   要單獨測品質保護就不能讓裝等差異混進來。 */
+function equipState(currentAffixes, levels) {
+  const lv = levels || {};
+  const curLv = (lv.cur === undefined) ? 100 : lv.cur;
+  const newLv = (lv.next === undefined) ? 100 : lv.next;
   return {
     gameTimeSec: 1,
     panels: {
       inv: {
-        equipment: { ring: { id: 'cur', slot: 'ring', rarity: 4, level: 50, affixes: currentAffixes } },
+        equipment: { ring: { id: 'cur', slot: 'ring', rarity: 4, level: curLv, affixes: currentAffixes } },
         equipmentScores: { ring: 100 },
         equipmentRarities: { ring: 4 },
-        items: [{ id: 'new', slot: 'ring', slots: ['ring'], rarity: 5, level: 100, ancientCount: 0, score: 999 }]
+        items: [{ id: 'new', slot: 'ring', slots: ['ring'], rarity: 5, level: newLv, ancientCount: 0, score: 999 }]
       }
     }
   };
@@ -341,6 +346,40 @@ test('品質高出夠多階仍然換，避免早期低階裝把部位永久鎖�
   const p = equipPolicy({ ancientOnly: true, overrideRarityGap: 1 });
   assert.equal(equipOf(p.decide(equipState([{ key: 'gemEff', ancient: true }]))).length, 1,
     '差 1 階且門檻設 1 就該放行');
+});
+
+/* ---- 裝等：比品質更前面的一道閘 ----
+
+   詞條數值 =（base + base×每級成長×(裝等−1)）× 品質倍率（js/item.js 的 affixValue），
+   所以同一條詞條換到更高裝等的底子上一定更強，而洗煉可以把詞條再洗回來。
+   只比品質的實測後果：ring／ring2／amulet 三個部位在 100 小時後全都停在
+   R4 裝等 1（因為身上那件帶著 xpBonus／gemEff，要 R6 才准換），
+   其餘九個部位早就是 R5 裝等 100。 */
+
+test('候選裝等更高就換，不管保護——裝等 1 的詞條只剩 base，形同沒有', () => {
+  const p = equipPolicy({ ancientOnly: false, overrideRarityGap: 2 });
+  const st = equipState([{ key: 'gemEff', ancient: true }], { cur: 1, next: 100 });
+  assert.equal(equipOf(p.decide(st)).length, 1);
+});
+
+test('裝等相同時保護照舊成立', () => {
+  const p = equipPolicy({ ancientOnly: true, overrideRarityGap: 2 });
+  const st = equipState([{ key: 'gemEff', ancient: true }], { cur: 100, next: 100 });
+  assert.equal(equipOf(p.decide(st)).length, 0);
+});
+
+test('候選裝等較低時保護也成立——不會為了換裝反而掉裝等', () => {
+  const p = equipPolicy({ ancientOnly: true, overrideRarityGap: 2 });
+  const st = equipState([{ key: 'gemEff', ancient: true }], { cur: 150, next: 100 });
+  assert.equal(equipOf(p.decide(st)).length, 0);
+});
+
+test('overrideLevelGap 可以要求裝等高出一定幅度才放行', () => {
+  const p = equipPolicy({ ancientOnly: true, overrideRarityGap: 2, overrideLevelGap: 50 });
+  const near = equipState([{ key: 'gemEff', ancient: true }], { cur: 100, next: 120 });
+  assert.equal(equipOf(p.decide(near)).length, 0, '只高 20 級，還在保護範圍內');
+  const far = equipState([{ key: 'gemEff', ancient: true }], { cur: 100, next: 200 });
+  assert.equal(equipOf(p.decide(far)).length, 1, '高 100 級就該放行');
 });
 
 /* ============ 產出速率與關卡閘門 ============
@@ -511,4 +550,85 @@ test('速率目標的計數器面板會自動列進觀測面板', () => {
      決策間隔 15~60 秒，視窗要好幾分鐘才攢得滿，而且不會有任何錯誤訊息。 */
   const p = gatePolicy();
   assert.ok(p.observePanels.indexOf('battle') >= 0, `observePanels 應含 battle，實際為 ${JSON.stringify(p.observePanels)}`);
+});
+
+/* ============ 技能欄 ============
+
+   技能欄格數 = min(20, max(4, 4 + 等級/50))（js/formula.js 的 loadoutSize），
+   50 級才多一格，而開局就預設塞了 powerSlash／arcaneBurst／manaBarrier 三個。
+   對照真人 24 小時存檔：12 格全滿、全 Lv.10、含 3 個融合技；
+   而 AI 跑 100 小時之後技能欄仍是那三個開局技能，學會的 28 個技能一個都沒上場。
+   裝上交給 equip-loadout（expand 展開優先序清單），這裡負責把最差的那個卸下來。 */
+
+function loadoutPolicy(order) {
+  return createPolicy({
+    name: 'loadout-test',
+    decideEveryGameSec: 60,
+    needPanels: ['skills'],
+    lists: { loadoutPriority: order },
+    rules: [{
+      id: 'unequip-worst', cmd: 'skill.unequipLoadout',
+      loadoutSwap: { skills: 'panels.skills', priority: 'loadoutPriority' }
+    }]
+  });
+}
+function loadoutState(loadout, size, learned) {
+  return {
+    gameTimeSec: 1,
+    panels: { skills: { loadout: loadout, loadoutSize: size, skills: learned } }
+  };
+}
+const unequipOf = (cmds) => cmds.filter((c) => c.name === 'skill.unequipLoadout');
+
+test('技能欄滿了且場外有更好的，就把最差的卸下來', () => {
+  const p = loadoutPolicy(['good', 'mid', 'bad']);
+  const st = loadoutState(['mid', 'bad'], 2, { good: 10, mid: 10, bad: 10 });
+  assert.deepEqual(unequipOf(p.decide(st)).map((c) => c.args), [{ id: 'bad' }]);
+});
+
+test('不在優先序裡的排最後——開局預設的雜技能優先被卸', () => {
+  /* arcaneBurst 是 Lv.1 魔法技，物理流用不到，但它不在優先序清單裡，
+     沒有「不在清單＝最差」這條就永遠排不到它頭上。 */
+  const p = loadoutPolicy(['good', 'mid']);
+  const st = loadoutState(['mid', 'arcaneBurst'], 2, { good: 10, mid: 10 });
+  assert.deepEqual(unequipOf(p.decide(st)).map((c) => c.args), [{ id: 'arcaneBurst' }]);
+});
+
+test('場上已經是最優的 N 個就不動——不會每分鐘拆了又裝', () => {
+  const p = loadoutPolicy(['good', 'mid', 'bad']);
+  const st = loadoutState(['good', 'mid'], 2, { good: 10, mid: 10, bad: 10 });
+  assert.equal(unequipOf(p.decide(st)).length, 0);
+});
+
+test('更好的那個還沒學會就不卸——卸了也補不上，只會空著一格', () => {
+  const p = loadoutPolicy(['good', 'mid', 'bad']);
+  const st = loadoutState(['mid', 'bad'], 2, { mid: 10, bad: 10 });
+  assert.equal(unequipOf(p.decide(st)).length, 0);
+});
+
+test('技能欄還沒滿就不卸——直接裝上去就好', () => {
+  const p = loadoutPolicy(['good', 'mid', 'bad']);
+  const st = loadoutState(['bad'], 3, { good: 10, mid: 10, bad: 10 });
+  assert.equal(unequipOf(p.decide(st)).length, 0);
+});
+
+/* ---- expand 的 field：從狀態裡撈遊戲生成的 id ---- */
+
+test('expand 可以取陣列元素的欄位——融合技 id 是遊戲生成的，寫不死', () => {
+  /* fusions[].id = 'fusion_' + uid()（js/skills.js 的 fuseSkills），
+     沒有 field 就只能把整個物件當 id 送出去，融合完的技能永遠學不了也裝不上。 */
+  const p = createPolicy({
+    name: 'fusion-test',
+    decideEveryGameSec: 60,
+    needPanels: ['skills'],
+    rules: [{
+      id: 'learn-fusions', cmd: 'skill.learn',
+      expand: [{ key: 'id', path: 'panels.skills.fusions', field: 'id' }]
+    }]
+  });
+  const st = {
+    gameTimeSec: 1,
+    panels: { skills: { fusions: [{ id: 'fusion_aaa', name: 'x' }, { id: 'fusion_bbb', name: 'y' }] } }
+  };
+  assert.deepEqual(p.decide(st).map((c) => c.args), [{ id: 'fusion_aaa' }, { id: 'fusion_bbb' }]);
 });

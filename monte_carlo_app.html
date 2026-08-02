@@ -1617,7 +1617,9 @@
                 setCardVal('cardDps', formatGameNumber(finalSaveG.battle.stats.dps || 0));
             }
             if (finalSaveG.tower) {
-                setCardVal('cardTowerFloor', (finalSaveG.tower.floor || 0) + ' 層');
+                /* 存檔欄位是 tower.highest（js/player.js），沒有 tower.floor——
+                   讀錯欄位的話這張卡永遠顯示 0 層，實際上已經打到 10~11 層。 */
+                setCardVal('cardTowerFloor', (finalSaveG.tower.highest || finalSaveG.tower.floor || 0) + ' 層');
             }
 
             let allEquips = [];
@@ -2161,17 +2163,24 @@
             const rows = b.rows || [];
             if (!rows.length) throw new Error('批次沒有成功的結果');
 
-            const base = (b.outDir || 'sim_batch') + '/' + rows[0].dir;
+            /* 圖表與卡片要挑「中位 seed」，不能拿 rows[0]。
+               rows 是依完成順序寫入的，而跑得越差的 seed 越早結束，
+               rows[0] 因此系統性地是最弱的一筆——批次散佈寫著最大關卡 150，
+               卡片卻永遠顯示 77。改成依等級排序取中位數那一筆。 */
+            const ranked = rows.slice().sort((x, y) => (x.level || 0) - (y.level || 0));
+            const pick = ranked[Math.floor((ranked.length - 1) / 2)];
+
+            const base = (b.outDir || 'sim_batch') + '/' + pick.dir;
             await loadNativeCsvSnapshotsToApp('./' + base);
 
             /* 散佈表：這是**跨次模擬的統計量**，不是遊戲數值。
                每個輸入值都直接取自各次的 run_summary.json。 */
             const box = document.getElementById('batchSpreadBox');
             if (box) {
-                const sp = (b.spread && b.spread[rows[0].policy]) || {};
+                const sp = (b.spread && b.spread[pick.policy]) || {};
                 const label = { level: '等級', stage: '關卡', atk: '物攻', kills: '擊殺', deaths: '死亡' };
                 let html = `<div style="font-weight:700;color:var(--accent-emerald);margin-bottom:6px;">`
-                    + `🎲 批次 ${rows.length} 個 seed × ${hours} 小時（圖表顯示 seed ${rows[0].seed}，以下為跨 seed 散佈）</div>`
+                    + `🎲 批次 ${rows.length} 個 seed × ${hours} 小時（圖表顯示<b>中位 seed ${pick.seed}</b>：Lv.${pick.level}／關卡 ${pick.stage}，以下為跨 seed 散佈）</div>`
                     + '<table style="width:100%;font-size:12px;border-collapse:collapse;">'
                     + '<tr style="color:#94a3b8;"><td>指標</td><td style="text-align:right;">最小</td>'
                     + '<td style="text-align:right;">中位數</td><td style="text-align:right;">最大</td></tr>';
@@ -2185,7 +2194,7 @@
                 box.innerHTML = html;
                 box.style.display = 'block';
             }
-            if (statusText) statusText.innerText = `✅ 批次完成：${rows.length} 個 seed × ${hours} 小時（圖表為 seed ${rows[0].seed}）`;
+            if (statusText) statusText.innerText = `✅ 批次完成：${rows.length} 個 seed × ${hours} 小時（圖表為中位 seed ${pick.seed}）`;
         } catch (e) {
             if (statusText) {
                 statusText.innerText = '⚠️ 批次已完成，但讀取結果失敗: ' + e.message;

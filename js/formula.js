@@ -1607,7 +1607,7 @@ function upgradeSuccessBase(nextLevel) {
 function upgradeCost(it) {
   var lv = it.upgrade || 0;
   return {
-    gold: Math.round(25 * Math.pow(1.45, lv) * (1 + it.level * 0.08)),
+    gold: Math.round(25 * Math.pow(1.3, lv) * (1 + it.level * 0.2)),
     scrap: Math.round(8 * Math.pow(1.35, lv) * (1 + it.level * 0.04))
   };
 }
