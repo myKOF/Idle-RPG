@@ -231,6 +231,7 @@
         ],
         "retreatCmd": "stage.go"
       },
+      "為什麼沒有掛產出閘門": "試過而且量過：閘門機制（stageGate.requireTargets + targetRetreat，以每分鐘擊殺數當安全關卡判準）已實作並有測試，但四種門檻在 4 個 seed 上全部輸給不設閘門——中位關卡 160.5 → 136~145.5，最高關卡 200 → 150~160。原因是離線收益算的是 offlineStageFor(G.stage.best)，而菁英怪單殺經驗隨關卡指數成長、升級所需經驗只是多項式成長，所以「推得深」的價值遠大於「殺得快」。退關雖然不會讓 best 縮水，卻要花在線時間重爬。詳見 docs/SIM_HARNESS.md「產出閘門：量對了指標，卻是錯的目標」",
       "why": "依 player_strategy.md「前期優先生存任務指南」控制自動推關：裝備品質覆蓋率沒到門檻就關掉自動推關、留在原地掛機把裝備換上來。指南的核心是不要讓關卡跑在裝備前面——推太深只會一直死，死了就掉不到裝備，掉不到裝備就更推不動。先前是無條件每 15 秒送一次「開啟自動推關」，正是指南要防的那件事。覆蓋率只算身上真的有裝備的部位（空部位面板值為 -1，雙手武器會讓 weapon2 永遠空著，算進分母的話門檻永遠到不了、閘門永久關閉）"
     },
     {
@@ -694,6 +695,19 @@
       "why": "把寶石鑲進空插槽，依 player_strategy.md 寶石鑲嵌策略分段：前50級 生命→暴擊率→吸血→物攻→魔攻；51~100 吸血→暴擊率→爆傷→生命→物攻→魔攻；101以後 一半爆傷、一半六大屬性傷害加成（mix 兩組輪流）。手上沒有偏好種類就鑲任何有貨的；階級由遊戲挑（socketGem 取庫存最高階），所以本規則排在 gem-compose 之後，先合成再鑲就會鑲到當前可得的最高品質"
     },
     {
+      "id": "reroll-for-deficit",
+      "everySec": 60,
+      "cmd": "item.rerollAffix",
+      "why": "目標沒達成時主動洗出補缺口的詞條。比 reroll-off-target 密集（60s vs 300s）：那條是維護，這條是在救火——有效命中率觸底時每一次揮空都是白打的",
+      "if": [["view.essence", ">=", 6]],
+      "if_依據": "精華不夠就別送——實測未設閘門時 832 次嘗試有 579 次被遊戲回「資源不足」，白白吃掉決策點也把日誌洗版。品質 2 以上的洗煉實測要 4~6 精華，取上界當門檻",
+      "rerollForDeficit": {
+        "equipment": "panels.inv.equipment",
+        "minRarity": 2,
+        "keepAncient": true
+      }
+    },
+    {
       "id": "reroll-off-target",
       "everySec": 300,
       "cmd": "item.rerollAffix",
@@ -1003,6 +1017,29 @@
       ],
       "cmd": "tower.finish",
       "why": "高塔挑戰結束後回到一般場景戰鬥繼續遊玩"
+    }
+  ],
+  "targets": [
+    {
+      "id": "hit",
+      "說明": "對當前怪物的有效命中率。player_strategy.md：對敵人務必保持 95% 以上命中率，超過 40 級裝備開始至少搭配 1~2 條命中率詞條",
+      "為什麼要宣告成目標而不是寫進保留清單": "怪物閃避會隨關卡成長（實測關卡 130 為 86.8%、關卡 150 為 103%），所以命中率詞條的優先序沒有固定答案——關卡 100 不需要、關卡 146 是唯一解。宣告成目標之後，缺口大小自己決定它該排第幾，補滿就自動讓位",
+      "kind": "selfMinusEnemy",
+      "self": "panels.equip.stats.hit",
+      "enemy": "ctx.enemyDodge",
+      "clampMin": 5,
+      "clampMax": 100,
+      "夾值依據": "js/formula.js 的命中公式 clamp(攻擊者命中 − 防守者閃避, 5%, 100%)。不套夾值的話缺口會被算成 98 而不是 90，優先序會被誤導",
+      "atLeast": 95,
+      "affixKey": "hit",
+      "slots_為什麼沒有": "可洗的部位由遊戲的 AFFIX_POOL 決定（經 panels.equip.affixRules 讀取），策略不再自己抄一份。手抄過一次就錯了：寫了 weapon（命中率不能出現在武器上）與 bracers（遊戲的鍵是 wrist），375 次洗煉一條都沒洗出來",
+      "avoidSlots": ["ring", "amulet"],
+      "avoidSlots_依據": "player_strategy.md：「項鏈戒指是裝備中的關鍵，其中最關鍵的為寶石鑲嵌率，其次為掉寶率與經驗加成」。命中率有 7 個部位可以洗，不必用最貴的格子付帳",
+      "preferSlots": ["boots", "legs", "wrist", "helmet", "gloves"],
+      "preferSlots_依據": "防具的詞條格以防禦與單一攻擊詞條為主，犧牲一格的代價最小；由下往上排是因為鞋子與腿甲的詞條對輸出與存活的邊際貢獻最低",
+      "maxAffixes": 4,
+      "maxTriesPerSlot": 40,
+      "上限依據": "拿少數幾個詞條格去換命中率，不是全身都洗成命中率——其餘部位仍照原本的攻防清單洗"
     }
   ],
   "track": {

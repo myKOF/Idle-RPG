@@ -68,16 +68,23 @@ function createPolicy(policy) {
     observeEverySec: (typeof policy.observeEverySec === 'number' && policy.observeEverySec > 0)
       ? policy.observeEverySec : 1,
 
-    /* 觀測只需要 track.monster / track.stage 指到的面板，不需要背包。
-       從宣告的路徑推導，不另外要策略再列一份會與 track 不同步的清單。 */
+    /* 觀測只需要 track.monster / track.stage 與速率目標的計數器指到的面板，
+       不需要背包。從宣告的路徑推導，不另外要策略再列一份會與宣告不同步的清單。
+
+       ⚠️ 速率型目標（ratePerMin）的計數器一定要列進來。漏掉的話觀測時
+       pathVal 取不到值、取樣直接跳過，速率就只會在決策點被取樣——決策間隔
+       是 15~60 秒，視窗要好幾分鐘才攢得滿，而且完全不會有錯誤訊息。 */
     observePanels: (function () {
-      const t = policy.track || {};
       const out = [];
-      for (const key of ['monster', 'stage']) {
-        const p = t[key];
-        if (typeof p !== 'string') continue;
+      const add = (p) => {
+        if (typeof p !== 'string') return;
         const m = /^panels\.([^.]+)/.exec(p);
         if (m && out.indexOf(m[1]) === -1) out.push(m[1]);
+      };
+      const t = policy.track || {};
+      for (const key of ['monster', 'stage']) add(t[key]);
+      for (const tg of policy.targets || []) {
+        if (tg && tg.kind === 'ratePerMin') add(tg.counter);
       }
       return out;
     })(),
