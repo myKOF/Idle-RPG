@@ -22,8 +22,8 @@ test('玩家事件浮字使用頭像區專用位置，不和傷害數字共用�
   assert.match(block[1], /top:\s*20%/);
   assert.match(block[1], /animation:\s*playerEventFloat\s+2s\s+ease-out\s+forwards/);
   assert.match(css, /@keyframes\s+playerEventFloat\s*\{/);
-  assert.match(ui, /var isPlayerEvent = \(cls \|\| ''\)\.split\(\/\\s\+\/\)\.indexOf\('player-event'\) >= 0/);
-  assert.match(ui, /querySelectorAll\('\.float-txt:not\(\.player-event\)'\)/);
+  assert.match(ui, /Each float has its own removal timer/);
+  assert.doesNotMatch(ui, /querySelectorAll\('\.float-txt:not\(\.player-event\)'\)/);
   assert.doesNotMatch(ui, /if \(layer\.children\.length > 50\) layer\.removeChild\(layer\.firstChild\)/);
 });
 

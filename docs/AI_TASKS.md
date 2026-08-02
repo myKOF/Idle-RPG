@@ -107,15 +107,17 @@ Web Worker 遷移全部完成，無進行中的大型工程。
 - 修正長傷害文字定位時受 `translate(-50%)` 影響而只顯示半截的問題。
 - Worker 事件佇列、待建立圖層佇列與戰鬥狀態切換均不得丟棄正在播放的傷害浮字。
 - 死亡敵人卡片從棋盤移除後，仍在播放的浮字改掛到持久保留層，直到自然淡出。
+- 持久保留層掛在 `mv-party` 外部，批次死亡造成棋盤重建時也不會被清除。
+- 大量同 tick 浮字時只停用昂貴的碰撞避讓量測，不限制建立數量或刪除仍在播放的數字。
 
 允許修改檔案：`docs/AI_TASKS.md`、`js/ui.js`、`js/combat.js`、`js/worker/shim.js`、
-`css/style.css`、`tests/damage-float-regression.test.cjs`、`tests/ui-worker-events.test.cjs`
+`css/style.css`、`index.html`、`tests/damage-float-regression.test.cjs`、`tests/ui-worker-events.test.cjs`
 
 禁止修改：Worker Protocol／存檔格式／戰鬥數值公式，以及其他 AI 進行中的檔案。
 
 前置依賴：無；衝突預檢已通過。
 
-測試要求／結果：死亡卡片浮字回歸與相關定向測試 24/24；完整測試 897/897；build 217/217 通過。瀏覽器實際驗證受本機 Browser runtime 路徑限制未完成。
+測試要求／結果：大量敵人死亡與浮字相關定向測試 26/26；完整測試 899/899；build 217/217 通過。瀏覽器實際驗證受本機 Browser runtime 路徑限制未完成。
 
 完成條件：浮字不因固定數量上限、敵人索引重排、待建立佇列、Worker 事件佇列、狀態切換或死亡卡片移除而提前消失；只由自然淡出計時器移除。
 

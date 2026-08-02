@@ -1286,6 +1286,7 @@ var ENEMY_DAMAGE_FLOAT_MAX_HITS = 20;
 var PLAYER_RECOVERY_FLOAT_MAX_HITS = 20;
 var PENDING_ENEMY_FLOATS = [];
 var INSTANT_KILL_HP_ANIMATION_MS = 100;
+var ENEMY_FLOAT_LAYOUT_LOAD_LIMIT = 80;
 
 function queuePendingEnemyFloat(elId, text, cls, damageValue, ent) {
   if (!elId || elId.indexOf('mv-float-') !== 0) return false;
@@ -1414,6 +1415,12 @@ function placeFloatAvoidingOverlap(sp, layer, selector, randomTop, randomRange, 
 
   var existingRects = [];
   var existingFloats = layer.querySelectorAll(selector);
+  // 大量敵人同一 tick 同時命中時，逐個做 48 個候選點 × 全部既有文字的
+  // layout 量測會阻塞主執行緒，讓 CSS 動畫在首次繪製前就跑完。高負載時
+  // 仍建立每一個數字，只略過碰撞避讓，讓它們以隨機位置自然淡出。
+  var combatant = layer.closest ? layer.closest('.enemy-combatant') : null;
+  var totalEnemyFloats = combatant ? combatant.querySelectorAll('.enemy-hit-float').length : existingFloats.length;
+  if (selector.indexOf('enemy-hit-float') >= 0 && totalEnemyFloats > ENEMY_FLOAT_LAYOUT_LOAD_LIMIT) return;
   for (var ei = 0; ei < existingFloats.length; ei++) {
     var existing = existingFloats[ei];
     if (existing === sp) continue;
@@ -1529,19 +1536,8 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
   }
   // Each float has its own removal timer. Do not enforce a fixed node cap by
   // deleting an active number: rapid multi-hit attacks must remain visible.
-  var isPlayerEvent = (cls || '').split(/\s+/).indexOf('player-event') >= 0;
-  if (!isPlayerEvent) {
-    var normalFloats = layer.querySelectorAll('.float-txt:not(.player-event)');
-    // 只回收已完全淡出的殘留節點；絕不因數量而刪除仍可見的數字。
-    if (normalFloats.length > 50) {
-      for (var ni = 0; ni < normalFloats.length; ni++) {
-        var floatOpacity = parseFloat(window.getComputedStyle(normalFloats[ni]).opacity);
-        if (isFinite(floatOpacity) && floatOpacity <= 0.05 && normalFloats[ni].parentNode) {
-          normalFloats[ni].parentNode.removeChild(normalFloats[ni]);
-        }
-      }
-    }
-  }
+  // 不因數量或 opacity 主動清理任何數字；每個節點只由自己的自然淡出
+  // 計時器移除，避免大量死亡時一次掃描造成畫面與動畫不同步。
   var enemyHitFloat = isEnemyHitFloat(elId, cls);
   var damageInfo = enemyHitFloat ? enemyDamageFloatInfo(text, damageValue) : null;
   var damageKey = damageInfo ? enemyDamageFloatKey(cls) : '';
@@ -2469,12 +2465,14 @@ function enemyFloatLayerId(enemy, index) {
 }
 
 function ensureRetainedEnemyFloatLayer(party) {
-  var host = party.querySelector('.enemy-float-retained');
+  var container = party.parentNode && typeof party.parentNode.appendChild === 'function' ? party.parentNode : party;
+  var host = container.querySelector ? container.querySelector('.enemy-float-retained') : null;
+  if (host && host.parentNode === party) container.appendChild(host);
   if (host) return host;
   host = document.createElement('div');
   host.className = 'float-layer enemy-float-retained';
   host.id = 'mv-float-retained';
-  party.appendChild(host);
+  container.appendChild(host);
   return host;
 }
 
@@ -2482,10 +2480,14 @@ function ensureRetainedEnemyFloatLayer(party) {
    floatSel 是同一敵人的穩定識別，不能用目前陣列索引判斷是否同一張卡片。 */
 function rebuildEnemyParty(party, html) {
   var oldLayers = {};
-  var layers = party.querySelectorAll('.enemy-card .float-layer, .enemy-float-retained > .float-layer');
+  var container = party.parentNode && typeof party.parentNode.appendChild === 'function' ? party.parentNode : party;
+  var retained = ensureRetainedEnemyFloatLayer(party);
+  var layers = container.querySelectorAll
+    ? container.querySelectorAll('.enemy-card .float-layer, .enemy-float-retained > .float-layer')
+    : party.querySelectorAll('.enemy-card .float-layer, .enemy-float-retained > .float-layer');
   for (var i = 0; i < layers.length; i++) oldLayers[layers[i].id] = layers[i];
   party.innerHTML = html;
-  var retained = ensureRetainedEnemyFloatLayer(party);
+  retained = ensureRetainedEnemyFloatLayer(party);
   for (var id in oldLayers) {
     if (!Object.prototype.hasOwnProperty.call(oldLayers, id)) continue;
     var nextLayer = party.querySelector('#' + id);
