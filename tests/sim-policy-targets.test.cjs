@@ -169,6 +169,99 @@ test('缺口補滿後停手，就算身上一條目標詞條都沒有', () => {
   assert.equal(rerollOf(p.decide(st(1, 200, 60, GEAR))).length, 0, '有效命中已達 100%，不該再洗');
 });
 
+/* ============ 數量型目標：首飾保證詞條 ============
+
+   player_strategy.md 對首飾的要求是「至少保證共 N 條寶石鑲嵌率／經驗加成／掉寶率」。
+   那是**數量下限**，而保留清單只表達得出「這些可以留」。實測 5 個 seed、15 件首飾，
+   極限規格各 3 條，實際只出現寶石鑲嵌 1 條、經驗 4 條、掉寶 2 條——因為那三條合計
+   只佔項鏈詞條池權重的 3%，而清單裡有 18 項可接受，隨便中一項就停手。 */
+
+function countPolicy(atLeast, extra) {
+  return createPolicy({
+    name: 'count-test',
+    decideEveryGameSec: 60,
+    needPanels: ['equip', 'inv'],
+    targets: [Object.assign({
+      id: 'jewelGemEff',
+      kind: 'affixCount',
+      affixKey: 'gemEff',
+      equipment: 'panels.inv.equipment',
+      slots: ['amulet', 'ring', 'ring2'],
+      atLeast: atLeast
+    }, extra || {})],
+    rules: [{
+      id: 'fix', cmd: 'item.rerollAffix',
+      rerollForDeficit: { equipment: 'panels.inv.equipment', minRarity: 4, keepAncient: true }
+    }]
+  });
+}
+
+/* 首飾三件，預設都沒有目標詞條。遊戲規則：gemEff 只長在 ring/amulet 且需 R4 以上。 */
+function jewelState(sec, equipment) {
+  return {
+    gameTimeSec: sec,
+    view: { stage: 100 },
+    panels: {
+      equip: { stats: { hit: 100 }, affixRules: { gemEff: { slots: ['ring', 'amulet'], minR: 4 } } },
+      inv: { equipment: equipment }
+    }
+  };
+}
+function jewelGear(perSlot) {
+  const mk = (id, slot, keys) => ({ id: id, slot: slot, rarity: 5, affixes: keys.map((k) => ({ key: k })) });
+  return {
+    amulet: mk('a1', 'amulet', perSlot.amulet || ['critRate', 'atkPct']),
+    ring: mk('r1', 'ring', perSlot.ring || ['critRate', 'atkPct']),
+    ring2: mk('r2', 'ring', perSlot.ring2 || ['critRate', 'atkPct']),
+    weapon: mk('w1', 'weapon', ['atkPct', 'critRate'])
+  };
+}
+
+test('數量型目標：缺口＝要求條數減去身上實際條數', () => {
+  const p = countPolicy(3);
+  const cmds = p.decide(jewelState(1, jewelGear({})));
+  assert.equal(cmds.filter((c) => c.name === 'item.rerollAffix').length, 1, '一次專注一個部位');
+
+  const q = countPolicy(3);
+  const done = jewelGear({ amulet: ['gemEff'], ring: ['gemEff'], ring2: ['gemEff'] });
+  assert.equal(q.decide(jewelState(1, done)).filter((c) => c.name === 'item.rerollAffix').length, 0,
+    '三條都有了就停手');
+});
+
+test('ring2 用的是裝備欄位鍵、部位鍵是 ring——兩套鍵都要認得', () => {
+  /* 戒指與副手的裝備欄位鍵（ring2/weapon2）與遊戲的部位鍵（ring/weapon）不一致。
+     只認一套的話會漏掉一整格，而且不會有任何徵兆。 */
+  const p = countPolicy(1);
+  const gear = jewelGear({ ring2: ['gemEff'] });          // 只有 ring2 有
+  assert.equal(p.decide(jewelState(1, gear)).filter((c) => c.name === 'item.rerollAffix').length, 0,
+    'ring2 上的那一條要算進數量');
+});
+
+test('只洗遊戲允許的部位——武器洗不出寶石鑲嵌效率', () => {
+  const p = countPolicy(3);
+  const cmds = p.decide(jewelState(1, jewelGear({}))).filter((c) => c.name === 'item.rerollAffix');
+  assert.notEqual(cmds[0].args.itemId, 'w1');
+});
+
+test('不會把已經洗出來的目標詞條當成犧牲品洗掉', () => {
+  const p = countPolicy(3);
+  const gear = jewelGear({ amulet: ['gemEff', 'critRate'] });
+  const cmds = p.decide(jewelState(1, gear)).filter((c) => c.name === 'item.rerollAffix');
+  assert.equal(cmds.length, 1);
+  assert.notEqual(cmds[0].args.affixKey, 'gemEff');
+});
+
+test('atLeast 就是數量下限，不必再寫一次 maxAffixes', () => {
+  /* 兩個地方各寫一次同一個數字，遲早對不上；對不上的症狀是「洗到一半就停」。 */
+  const p = countPolicy(2);
+  const gear = jewelGear({ amulet: ['gemEff'] });          // 已有 1 條，還缺 1 條
+  assert.equal(p.decide(jewelState(1, gear)).filter((c) => c.name === 'item.rerollAffix').length, 1);
+
+  const q = countPolicy(2);
+  const gear2 = jewelGear({ amulet: ['gemEff'], ring: ['gemEff'] });
+  assert.equal(q.decide(jewelState(1, gear2)).filter((c) => c.name === 'item.rerollAffix').length, 0);
+});
+
 /* ============ 產出速率與關卡閘門 ============
 
    命中率、傷害、抗性都是原因；殺敵速度是結果。player_strategy.md 定義安全關卡

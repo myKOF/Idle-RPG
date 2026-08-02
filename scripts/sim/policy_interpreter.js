@@ -566,6 +566,28 @@ function evalTargets(state, policy, memo) {
     } else if (t.kind === 'value') {
       var v = Number(pathVal(state, t.path));
       if (isFinite(v)) value = v;
+    } else if (t.kind === 'affixCount') {
+      /* 身上（限定部位）已經有幾條這條詞條。
+
+         為什麼需要這一種：player_strategy.md 對首飾的要求是「至少保證共 N 條
+         寶石鑲嵌率／經驗加成／掉寶率」——那是**數量下限**，而保留清單
+         （rerollOffTarget）只表達得出「這些可以留」，表達不出「這個要湊到 N 條」。
+         實測後果：極限玩家 5 個 seed、15 件首飾，規格各 3 條，實際只出現
+         寶石鑲嵌 1 條、經驗 4 條、掉寶 2 條——因為那三條合計只佔項鏈詞條池權重的
+         3%（336 分之 10），保留清單裡有 18 項可接受，隨便中一項就停手。 */
+      var acEquip = pathVal(state, t.equipment || 'panels.inv.equipment') || {};
+      var acN = 0;
+      for (var acK in acEquip) {
+        var acIt = acEquip[acK];
+        if (!acIt || !acIt.affixes) continue;
+        /* slots 同時接受裝備欄位鍵（ring2）與遊戲的部位鍵（ring）——
+           兩套鍵在戒指與副手上不一致，只認一套就會漏掉一格。 */
+        if (t.slots && t.slots.indexOf(acK) < 0 && t.slots.indexOf(acIt.slot) < 0) continue;
+        for (var acA = 0; acA < acIt.affixes.length; acA++) {
+          if (acIt.affixes[acA] && acIt.affixes[acA].key === t.affixKey) acN++;
+        }
+      }
+      value = acN;
     } else if (t.kind === 'ratePerMin') {
       /* 取樣點由 sampleRates 累積，這裡只做差分。
          視窗還沒攢夠就回 null（＝unknown）：資料不足時不要下判斷，
@@ -1289,7 +1311,10 @@ function decide(state, policy, memo) {
           if (px !== py) return px - py;
           return x < y ? -1 : (x > y ? 1 : 0);
         });
-        var want = (typeof tg2.maxAffixes === 'number') ? tg2.maxAffixes : 1;
+        /* 要湊到幾條。affixCount 目標的 atLeast 本身就是數量下限，不必再寫一次
+           maxAffixes——寫兩次遲早對不上，而對不上的症狀是「洗到一半就停」。 */
+        var want = (typeof tg2.maxAffixes === 'number') ? tg2.maxAffixes
+          : (tg2.kind === 'affixCount' ? (Number(tg2.atLeast) || 1) : 1);
         /* 先數身上已經有幾條。夠了就不再洗——這是「拿一兩個詞條格去換」的上限，
            不是「全身都洗成這個」。 */
         var have = 0;
