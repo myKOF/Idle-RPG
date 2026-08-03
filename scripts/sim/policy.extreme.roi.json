@@ -1,0 +1,1410 @@
+{
+  "name": "policy-extreme-roi",
+  "description": "極限玩家（邊際效益導向）：敗因診斷 + ROI 詞條選擇 + 裝等斷點感知 + 資源止損。與 policy.extreme.json 的差異只有四條規則與四個宣告區塊，其餘完全相同，供 A/B 對照。",
+  "decideEveryGameSec": 5,
+  "dailyActiveHours": 24,
+  "needPanels": [
+    "tower",
+    "gems",
+    "newforge",
+    "equip",
+    "skills",
+    "talents",
+    "header",
+    "inv",
+    "battle",
+    "eval"
+  ],
+  "lists": {
+    "slotList": [
+      "weapon",
+      "helmet",
+      "shoulder",
+      "chest",
+      "belt",
+      "gloves",
+      "wrist",
+      "legs",
+      "boots",
+      "ring",
+      "amulet"
+    ],
+    "talentStep1": [
+      "t1_str",
+      "t1_agi",
+      "t1_int",
+      "t1_vit",
+      "t1_def",
+      "t1_mdef",
+      "t1_pres",
+      "t1_mres"
+    ],
+    "talentStep2": [
+      "t2_crit",
+      "t2_critdmg",
+      "t2_hit",
+      "t2_hp",
+      "t2_shield",
+      "t2_evasion",
+      "t2_normalred",
+      "t2_elitered"
+    ],
+    "talentStep3": [
+      "t3_normal",
+      "t3_elite",
+      "t3_boss",
+      "t3_potential",
+      "t3_allres",
+      "t3_def",
+      "t3_mdef",
+      "t3_allres2"
+    ],
+    "skillEarly": [
+      "midasTouch",
+      "powerSlash",
+      "doubleStrike",
+      "manaBarrier",
+      "regenerate",
+      "sharpBlade",
+      "rendWound",
+      "berserkStrike",
+      "stunBlow",
+      "treasureSense",
+      "toughness",
+      "vampirism",
+      "healWound",
+      "whirlwind",
+      "armorBreak",
+      "secondWind"
+    ],
+    "skillMid": [
+      "midasTouch",
+      "swiftCuts",
+      "preciseThrust",
+      "heavySmash",
+      "rendWound",
+      "berserkStrike",
+      "stunBlow",
+      "powerSlash",
+      "doubleStrike",
+      "sharpBlade",
+      "keenEye",
+      "brutality",
+      "fortuneFavor",
+      "treasureSense",
+      "manaBarrier",
+      "regenerate",
+      "toughness",
+      "vampirism",
+      "swiftness",
+      "ironSkin",
+      "reaperTempo",
+      "battleReflex",
+      "zeroCadence",
+      "afterimagePursuit",
+      "arcaneMind",
+      "healWound",
+      "secondWind"
+    ],
+    "skillLate": [
+      "midasTouch",
+      "treasureSense",
+      "sharpBlade",
+      "keenEye",
+      "brutality",
+      "swiftness",
+      "vampirism",
+      "toughness",
+      "powerSlash",
+      "doubleStrike",
+      "whirlwind",
+      "armorBreak",
+      "executeStrike",
+      "rendWound",
+      "stunBlow",
+      "berserkStrike",
+      "preciseThrust",
+      "heavySmash",
+      "swiftCuts",
+      "counterStance",
+      "soulBrandFlurry",
+      "sinDetonate",
+      "echoBlade",
+      "warSpiritEngine",
+      "pursuitDecree",
+      "warOverture",
+      "woundCollapse",
+      "mindflowChain",
+      "swordDomain",
+      "phantomEcho",
+      "reaperTempo",
+      "battleReflex",
+      "zeroCadence",
+      "afterimagePursuit",
+      "huntSigil",
+      "manaBarrier",
+      "regenerate",
+      "healWound",
+      "secondWind"
+    ],
+    "affixWeapon": [
+      "atkPct",
+      "critRate",
+      "aspd",
+      "pPen",
+      "eliteDmg",
+      "bossDmg",
+      "aoeDmg",
+      "atkFlat"
+    ],
+    "affixArmor": [
+      "hpPct",
+      "hpFlat",
+      "defPct",
+      "mdefPct",
+      "globalDmgRed",
+      "resAll",
+      "pRes",
+      "mRes",
+      "shieldEff",
+      "blockRate",
+      "blockDmgRed",
+      "tenacity",
+      "eliteDmgRed",
+      "bossDmgRed",
+      "hit",
+      "lifesteal",
+      "atkFlat",
+      "defFlat",
+      "mdefFlat"
+    ],
+    "affixJewel": [
+      "gemEff",
+      "loot",
+      "xpBonus",
+      "atkPct",
+      "critRate",
+      "pPen",
+      "aspd",
+      "eliteDmg",
+      "bossDmg",
+      "hit",
+      "hpPct",
+      "globalDmgRed",
+      "resAll",
+      "eliteDmgRed",
+      "bossDmgRed",
+      "shieldEff",
+      "lifesteal",
+      "atkFlat"
+    ],
+    "affixCritDmg": [
+      "critDmg"
+    ],
+    "affixVsNormal": [
+      "normalDmg"
+    ],
+    "affixVsNormalRed": [
+      "normalDmgRed"
+    ],
+    "loadoutPriority": [
+      "midasTouch",
+      "soulBrandFlurry",
+      "counterStance",
+      "treasureSense",
+      "swiftCuts",
+      "preciseThrust",
+      "heavySmash",
+      "rendWound",
+      "berserkStrike",
+      "stunBlow",
+      "swordDomain",
+      "mindflowChain",
+      "doubleStrike",
+      "powerSlash",
+      "woundCollapse",
+      "warOverture",
+      "pursuitDecree",
+      "warSpiritEngine",
+      "echoBlade",
+      "sinDetonate",
+      "executeStrike",
+      "armorBreak",
+      "whirlwind",
+      "manaBarrier",
+      "regenerate",
+      "healWound",
+      "secondWind"
+    ],
+    "skillEarly_依據": "技能點極度稀缺，清單順序＝投點順序（點數不足時後面的由遊戲擋下），所以順序就是策略本身。實測改前 Lv.97 時 powerSlash 與 arcaneBurst 都停在 1 級、防禦與被動八個全 10 級、技能點剩 0——等於用 440% 攻擊的一級強力斬打完前 100 級（滿級 1160%）。真人 24 小時存檔是 37 個技能全 Lv.10。排序原則：點金手（金幣引擎，解開強化的瓶頸，收益擴散到每個部位）→ Lv.1 多段技 → 最低限度生存 → Lv.20/50 多段技。",
+    "skillMid_依據": "原本這一段（51~100 級）攻擊技掛零，是前期最大的漏洞。Lv.50 解鎖 swiftCuts／preciseThrust／heavySmash 皆為多段x3。",
+    "loadoutPriority_依據": "技能欄同時是資源產出的位置，不只是輸出位。點金手金幣 = goldPer × 技能等級 × 角色等級（js/skills.js:2705），8 級後 goldPer=35；尋寶直覺給 lootUp。真人 24 小時存檔的 12 格裡兩個都在。⚠️ 排進這份清單還不夠——三份 learn 清單裡也要有，沒學會的技能裝不上（實測只改本清單時 A/B 兩組結果完全相同）。"
+  },
+  "rules": [
+    {
+      "id": "survival-gate",
+      "everySec": 15,
+      "cmd": "stage.setAutoAdvance",
+      "stageGate": {
+        "stage": "view.stage",
+        "equippedRarities": "panels.inv.equipmentRarities",
+        "argKey": "on",
+        "checkpoints": [
+          {
+            "maxStage": 20,
+            "minRarity": 2,
+            "coverage": 0.85,
+            "park": [
+              11,
+              15
+            ],
+            "依據": "指南1＋安全關卡1. 前20關在11~15關刷到全身稀有"
+          },
+          {
+            "maxStage": 40,
+            "minRarity": 3,
+            "coverage": 0.85,
+            "park": [
+              21,
+              25
+            ],
+            "依據": "指南2＋安全關卡2. 過20關菁英後在21~25關刷到全身獨特"
+          },
+          {
+            "maxStage": 50,
+            "minRarity": 4,
+            "coverage": 0.3,
+            "park": [
+              41,
+              45
+            ],
+            "依據": "指南4＋安全關卡3. 過40關菁英後在41~45關刷到一部份史詩"
+          },
+          {
+            "maxStage": 59,
+            "minRarity": 4,
+            "coverage": 0.85,
+            "park": [
+              51,
+              59
+            ],
+            "依據": "指南5＋安全關卡4. 過50關BOSS後在51~59關刷到全身史詩"
+          },
+          {
+            "minRarity": 0,
+            "coverage": 0,
+            "依據": "指南只涵蓋前期，之後交回各強度自己的推關策略"
+          }
+        ],
+        "retreatCmd": "stage.go",
+        "requireTargets": [
+          "killRate"
+        ],
+        "targetRetreat": {
+          "step": 5,
+          "everySec": 300,
+          "minStage": 1,
+          "說明": "產出不足就每 300 秒往回退 5 關。everySec 必須 >= killRate 的 windowSec（tests/policy-keys.test.cjs 有哨兵）"
+        },
+        "requireTargets_依據": "極限玩家 dailyActiveHours=24 全程在線，沒有離線收益可領，所以「待在刷得動的關卡」直接決定產出。實測 4 個 seed：中位等級 201→412、擊殺 30K→138K、死亡 73→23",
+        "tierPush": {
+          "source": "panels.eval.tier",
+          "minBreakpointGain": 2,
+          "依據": "掉落裝備等級由 equipmentTierLevel 分段（EQUIP_TIER_SIZE=50）：關卡 1~49 掉裝等 1、50~99 掉裝等 50。park [41,45] 是一個每一件掉落都是裝等 1 的區間，而裝等 1 的詞條只剩 base（實測 12.0 對 335.4）。身上裝等追平當前分段之後就不該再留在原地——這一段能掉的都掉過了。跨過斷點的增幅低於 minBreakpointGain 倍時不觸發，避免在沒有斷點可跨的區間亂衝"
+        }
+      },
+      "why": "依 player_strategy.md「前期優先生存任務指南」控制自動推關：裝備品質覆蓋率沒到門檻就關掉自動推關、留在原地掛機把裝備換上來。指南的核心是不要讓關卡跑在裝備前面——推太深只會一直死，死了就掉不到裝備，掉不到裝備就更推不動。先前是無條件每 15 秒送一次「開啟自動推關」，正是指南要防的那件事。覆蓋率只算身上真的有裝備的部位（空部位面板值為 -1，雙手武器會讓 weapon2 永遠空著，算進分母的話門檻永遠到不了、閘門永久關閉）",
+      "tierPush_退關地板": "退關的地板同時被拉到當前裝等分段的底（見 policy_interpreter.js 的 tierFloor）。跌破分段邊界一定更差，而這個地板是靜態的分段邊界、不是「記下來的已知安全關卡」，所以不會造成死鎖"
+    },
+    {
+      "id": "equip-best-per-slot",
+      "everySec": 15,
+      "cmd": "item.equip",
+      "why": "換裝改問遊戲「哪一件真的比較強」，不再用 [品質, 裝等, 太古數, 評分] 的字典序。實測 20 小時 × 10 seed：字典序讓 5 個 seed 全身 13 件停在「R4 史詩、裝等 1」，物攻 334，卡在關卡 42 整整 20 小時。因為品質排在裝等前面，而實測同一條 atkFlat 裝等 1→50 是 ×27.95、R2→R5（裝等 1）只有 ×2.29——等於用 ×2.3 的因子否決 ×28 的因子。品質的價值（插槽數、詞條數）在 computeStats 裡本來就算得到，不需要靠否決權",
+      "equipByPower": {
+        "source": "panels.eval.slotUpgrades",
+        "minGainPct": 1,
+        "minGainPct_依據": "評估器的 worth 已扣掉插槽與強化重建成本；這裡再加一道，避免為了 <1% 的增幅換裝——換裝會讓寶石與附魔重來一輪",
+        "maxPerDecision": 4
+      }
+    },
+    {
+      "id": "upgrade-by-rarity-cap",
+      "everySec": 15,
+      "cmd": "item.upgrade",
+      "why": "強化加上兩道閘門：付得起才送（實測舊版 98% 的呼叫得到「資源不足」），以及正要被換掉的部位不強化（強化等級換裝時歸零，往那裡投等於直接丟掉）",
+      "upgradeByRoi": {
+        "equippedRarities": "panels.inv.equipmentRarities",
+        "equipment": "panels.inv.equipment",
+        "slotUpgrades": "panels.eval.slotUpgrades",
+        "affordPath": "panels.eval.resources.upgradesAffordable",
+        "minAffordable": 1,
+        "maxPerDecision": 6,
+        "capByRarity": [
+          0,
+          0,
+          6,
+          11,
+          17,
+          23,
+          29,
+          35,
+          41,
+          47,
+          53
+        ],
+        "affordableSlots": "panels.eval.resources.affordableSlots",
+        "affordableSlots_依據": "逐部位判定付款能力。前一版用「身上最貴那件」當全體分母，實測 seed …076 握著 157,034 碎片沒用掉、停在關卡 51 六小時——一個部位付不起，全身十三個部位一起停工"
+      }
+    },
+    {
+      "id": "gem-convert",
+      "everySec": 60,
+      "cmd": "gem.convert",
+      "convertToPreferred": {
+        "gems": "panels.gems.gems",
+        "levelPath": "view.level",
+        "preferByLevel": [
+          {
+            "maxLevel": 50,
+            "types": [
+              "amethyst",
+              "garnet",
+              "topaz",
+              "ruby",
+              "sapphire"
+            ],
+            "依據": "前50級：爆擊率、爆擊傷害、生命、物理攻擊、魔法攻擊"
+          },
+          {
+            "maxLevel": 100,
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "51~100級：暴擊率、爆擊傷害"
+          },
+          {
+            "maxLevel": 200,
+            "when": [
+              "panels.header.stats.critRate",
+              ">=",
+              100
+            ],
+            "types": [
+              "garnet"
+            ],
+            "依據": "101以後：全鑲孔基本全用爆擊傷害，前提爆率達100%"
+          },
+          {
+            "maxLevel": 200,
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "101以後但爆率未達100%：先把爆率補上來"
+          },
+          {
+            "when": [
+              "panels.header.stats.critRate",
+              ">=",
+              100
+            ],
+            "mix": [
+              [
+                "garnet"
+              ],
+              [
+                "coreFire",
+                "coreIce",
+                "coreLightning",
+                "corePoison",
+                "coreLight",
+                "coreDark"
+              ]
+            ],
+            "依據": "201以後：爆傷邊際效益出現，一半換成元素屬性傷害加成寶石"
+          },
+          {
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "收尾段：爆率未達100%時繼續補爆擊"
+          }
+        ],
+        "maxSlots": 9,
+        "maxPerSlot": 1000,
+        "maxCommands": 4,
+        "quota": [
+          {
+            "type": "malachite",
+            "count": 1,
+            "依據": "物理/魔法抗性寶石依情況替換（打菁英或BOSS時）",
+            "when": [
+              "ctx.mode",
+              "!=",
+              "normal"
+            ]
+          },
+          {
+            "type": "fluorite",
+            "count": 1,
+            "依據": "物理/魔法抗性寶石依情況替換（打菁英或BOSS時）",
+            "when": [
+              "ctx.mode",
+              "!=",
+              "normal"
+            ]
+          },
+          {
+            "type": "kyanite",
+            "count": 2,
+            "when": [
+              "view.mp",
+              "<",
+              {
+                "$mul": [
+                  {
+                    "$path": "view.mpMax"
+                  },
+                  0.3
+                ]
+              }
+            ],
+            "依據": "法力恢復不夠者補法力恢復寶石至夠用"
+          }
+        ],
+        "rebalance": [
+          {
+            "from": "garnet",
+            "to": [
+              "coreFire",
+              "coreIce",
+              "coreLightning",
+              "corePoison",
+              "coreLight",
+              "coreDark"
+            ],
+            "when": [
+              "view.level",
+              ">=",
+              201
+            ],
+            "toShare": 0.5,
+            "minLevel": 6,
+            "依據": "201以後把一半的爆傷寶石轉成元素屬性傷害加成寶石；只轉六級以上，低階的加成比爆傷還低"
+          }
+        ]
+      },
+      "why": "把不在當前偏好段的寶石同階轉成偏好種類。偏好種類只佔 40 種寶石裡的 5~7 種、掉落又隨機，光靠「挑有貨的鑲」永遠補不滿（實測 3 小時偏好種類只有 5/20 顆）。轉換在遊戲裡同階 1:1、數量不變、不花金幣（convertGems），是既有庫存的重新分配。排在 gem-compose 之前：先把同種類集中起來，合成才有 3 顆可併，鑲上去的階級才會跟著上去。配額種類（抗性、法力恢復）不轉走；目標在偏好種類間輪流分配，否則 101 段的「一半爆傷、一半屬性」會被轉成清一色爆傷。maxSlots/maxPerSlot 對應遊戲的 GEM_CONVERT_SLOTS/GEM_CONVERT_STACK，超過會整批被回絕"
+    },
+    {
+      "id": "gem-compose",
+      "everySec": 60,
+      "cmd": "gem.composeAll",
+      "expand": [
+        {
+          "key": "type",
+          "path": "panels.gems.gems",
+          "nonEmpty": true
+        },
+        {
+          "key": "level",
+          "values": [
+            1,
+            2,
+            3,
+            4
+          ]
+        }
+      ],
+      "why": "鑲嵌前先把寶石向上合成至當前可合成的最高品質（一般合成上限為 5 級，GEM_MAX_LEVEL；6 級以上只能由熔爐產出，送 5~9 階必被回絕故不送）。nonEmpty 只送手上真的有貨的種類——遊戲開局就把 40 種寶石建好且數量為 0"
+    },
+    {
+      "id": "unsocket-off-priority",
+      "everySec": 60,
+      "cmd": "gem.unsocket",
+      "unsocketOffPriority": {
+        "equipment": "panels.inv.equipment",
+        "gems": "panels.gems.gems",
+        "levelPath": "view.level",
+        "preferByLevel": [
+          {
+            "maxLevel": 50,
+            "types": [
+              "amethyst",
+              "garnet",
+              "topaz",
+              "ruby",
+              "sapphire"
+            ],
+            "依據": "前50級：爆擊率、爆擊傷害、生命、物理攻擊、魔法攻擊"
+          },
+          {
+            "maxLevel": 100,
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "51~100級：暴擊率、爆擊傷害"
+          },
+          {
+            "maxLevel": 200,
+            "when": [
+              "panels.header.stats.critRate",
+              ">=",
+              100
+            ],
+            "types": [
+              "garnet"
+            ],
+            "依據": "101以後：全鑲孔基本全用爆擊傷害，前提爆率達100%"
+          },
+          {
+            "maxLevel": 200,
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "101以後但爆率未達100%：先把爆率補上來"
+          },
+          {
+            "when": [
+              "panels.header.stats.critRate",
+              ">=",
+              100
+            ],
+            "mix": [
+              [
+                "garnet"
+              ],
+              [
+                "coreFire",
+                "coreIce",
+                "coreLightning",
+                "corePoison",
+                "coreLight",
+                "coreDark"
+              ]
+            ],
+            "依據": "201以後：爆傷邊際效益出現，一半換成元素屬性傷害加成寶石"
+          },
+          {
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "收尾段：爆率未達100%時繼續補爆擊"
+          }
+        ],
+        "maxPerDecision": 2,
+        "replaceWith": "gem.socket",
+        "minLevelByType": {
+          "topaz": 3,
+          "ruby": 3,
+          "sapphire": 3,
+          "coreFire": 6,
+          "coreIce": 6,
+          "coreLightning": 6,
+          "corePoison": 6,
+          "coreLight": 6,
+          "coreDark": 6
+        },
+        "quota": [
+          {
+            "type": "malachite",
+            "count": 1,
+            "依據": "物理/魔法抗性寶石依情況替換（打菁英或BOSS時）",
+            "when": [
+              "ctx.mode",
+              "!=",
+              "normal"
+            ]
+          },
+          {
+            "type": "fluorite",
+            "count": 1,
+            "依據": "物理/魔法抗性寶石依情況替換（打菁英或BOSS時）",
+            "when": [
+              "ctx.mode",
+              "!=",
+              "normal"
+            ]
+          },
+          {
+            "type": "kyanite",
+            "count": 2,
+            "when": [
+              "view.mp",
+              "<",
+              {
+                "$mul": [
+                  {
+                    "$path": "view.mpMax"
+                  },
+                  0.3
+                ]
+              }
+            ],
+            "依據": "法力恢復不夠者補法力恢復寶石至夠用"
+          }
+        ]
+      },
+      "why": "把不符當前偏好段、或階級低於庫存最高階的寶石換掉（拆與補在同一決策點成對送出）。socketEmpty 只填空槽，前期偏好種類還沒掉到時鑲上的雜牌會把插槽佔死（實測 3 小時後 12 個插槽偏好種類 0 顆），等級跨段時也不會有任何變化。只拆不補的話空槽會被 socket-gems 的退路重新塞回雜牌，變成每分鐘拆了又鑲。拆寶石在遊戲裡免費無損（unsocketGem 直接退回庫存），故為純重新配置；補不到偏好種類就完全不動，每次最多換 2 顆"
+    },
+    {
+      "id": "socket-gems",
+      "everySec": 60,
+      "cmd": "gem.socket",
+      "socketEmpty": {
+        "equipment": "panels.inv.equipment",
+        "gems": "panels.gems.gems",
+        "levelPath": "view.level",
+        "preferByLevel": [
+          {
+            "maxLevel": 50,
+            "types": [
+              "amethyst",
+              "garnet",
+              "topaz",
+              "ruby",
+              "sapphire"
+            ],
+            "依據": "前50級：爆擊率、爆擊傷害、生命、物理攻擊、魔法攻擊"
+          },
+          {
+            "maxLevel": 100,
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "51~100級：暴擊率、爆擊傷害"
+          },
+          {
+            "maxLevel": 200,
+            "when": [
+              "panels.header.stats.critRate",
+              ">=",
+              100
+            ],
+            "types": [
+              "garnet"
+            ],
+            "依據": "101以後：全鑲孔基本全用爆擊傷害，前提爆率達100%"
+          },
+          {
+            "maxLevel": 200,
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "101以後但爆率未達100%：先把爆率補上來"
+          },
+          {
+            "when": [
+              "panels.header.stats.critRate",
+              ">=",
+              100
+            ],
+            "mix": [
+              [
+                "garnet"
+              ],
+              [
+                "coreFire",
+                "coreIce",
+                "coreLightning",
+                "corePoison",
+                "coreLight",
+                "coreDark"
+              ]
+            ],
+            "依據": "201以後：爆傷邊際效益出現，一半換成元素屬性傷害加成寶石"
+          },
+          {
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "收尾段：爆率未達100%時繼續補爆擊"
+          }
+        ],
+        "minLevelByType": {
+          "topaz": 3,
+          "ruby": 3,
+          "sapphire": 3,
+          "coreFire": 6,
+          "coreIce": 6,
+          "coreLightning": 6,
+          "corePoison": 6,
+          "coreLight": 6,
+          "coreDark": 6
+        },
+        "quota": [
+          {
+            "type": "malachite",
+            "count": 1,
+            "依據": "物理/魔法抗性寶石依情況替換（打菁英或BOSS時）",
+            "when": [
+              "ctx.mode",
+              "!=",
+              "normal"
+            ]
+          },
+          {
+            "type": "fluorite",
+            "count": 1,
+            "依據": "物理/魔法抗性寶石依情況替換（打菁英或BOSS時）",
+            "when": [
+              "ctx.mode",
+              "!=",
+              "normal"
+            ]
+          },
+          {
+            "type": "kyanite",
+            "count": 2,
+            "when": [
+              "view.mp",
+              "<",
+              {
+                "$mul": [
+                  {
+                    "$path": "view.mpMax"
+                  },
+                  0.3
+                ]
+              }
+            ],
+            "依據": "法力恢復不夠者補法力恢復寶石至夠用"
+          }
+        ]
+      },
+      "why": "把寶石鑲進空插槽，依 player_strategy.md 寶石鑲嵌策略分段：前50級 生命→暴擊率→吸血→物攻→魔攻；51~100 吸血→暴擊率→爆傷→生命→物攻→魔攻；101以後 一半爆傷、一半六大屬性傷害加成（mix 兩組輪流）。手上沒有偏好種類就鑲任何有貨的；階級由遊戲挑（socketGem 取庫存最高階），所以本規則排在 gem-compose 之後，先合成再鑲就會鑲到當前可得的最高品質"
+    },
+    {
+      "id": "reroll-by-roi",
+      "everySec": 60,
+      "cmd": "item.rerollAffix",
+      "if": [
+        [
+          "view.essence",
+          ">=",
+          20
+        ]
+      ],
+      "why": "邊際效益驅動的洗煉。既有兩條規則各有一半答案：rerollOffTarget 只會被動洗掉清單外的，rerollForDeficit 只認宣告過的目標，兩者都要有人先寫下「什麼是好詞條」。這條不需要：好壞由 ΔDPS/ΔEHP 排序，犧牲哪一條由「拿掉它戰力掉多少」決定，兩邊都是遊戲算的。實測面板：atkFlat +11.11% / hit +6.35% / atkPct +2.96% / critRate +1.90% / critDmg +0.52%——暴擊率只有 5% 時爆傷幾乎無效，任何固定名次在某個階段一定是錯的",
+      "rerollByRoi": {
+        "equipment": "panels.inv.equipment",
+        "equippedAffixes": "panels.eval.equippedAffixes",
+        "keepAncient": true
+      }
+    },
+    {
+      "id": "reroll-for-deficit",
+      "everySec": 60,
+      "cmd": "item.rerollAffix",
+      "if": [
+        [
+          "view.essence",
+          ">=",
+          20
+        ]
+      ],
+      "rerollForDeficit": {
+        "equipment": "panels.inv.equipment",
+        "affixRules": "panels.equip.affixRules",
+        "minRarity": 4,
+        "keepAncient": true
+      }
+    },
+    {
+      "id": "reroll-off-target",
+      "everySec": 300,
+      "cmd": "item.rerollAffix",
+      "rerollOffTarget": {
+        "equipment": "panels.inv.equipment",
+        "minRarity": 3,
+        "keepAncient": true,
+        "targetGroups": [
+          {
+            "slots": [
+              "weapon",
+              "weapon2"
+            ],
+            "lists": [
+              {
+                "list": "affixWeapon"
+              },
+              {
+                "list": "affixCritDmg",
+                "when": [
+                  "panels.header.stats.critRate",
+                  ">",
+                  50
+                ]
+              },
+              {
+                "list": "affixVsNormal",
+                "when": [
+                  "ctx.desperate",
+                  "falsy"
+                ],
+                "依據": "生存率不足時把對普通敵人的加成／抗性從保留清單移除，讓它們被洗成對菁英/BOSS的"
+              }
+            ],
+            "依據": "主副手：全洗傷害類，百分比>定值；爆傷只在爆率高於50%後才洗"
+          },
+          {
+            "slots": [
+              "ring",
+              "ring2",
+              "amulet"
+            ],
+            "lists": [
+              {
+                "list": "affixJewel"
+              },
+              {
+                "list": "affixCritDmg",
+                "when": [
+                  "panels.header.stats.critRate",
+                  ">",
+                  50
+                ]
+              },
+              {
+                "list": "affixVsNormal",
+                "when": [
+                  "ctx.desperate",
+                  "falsy"
+                ],
+                "依據": "生存率不足時把對普通敵人的加成／抗性從保留清單移除，讓它們被洗成對菁英/BOSS的"
+              }
+            ],
+            "依據": "項鏈戒指：寶石鑲嵌效率最關鍵，其次掉寶率與經驗加成"
+          },
+          {
+            "lists": [
+              {
+                "list": "affixArmor"
+              },
+              {
+                "list": "affixVsNormalRed",
+                "when": [
+                  "ctx.desperate",
+                  "falsy"
+                ],
+                "依據": "生存率不足時把對普通敵人的加成／抗性從保留清單移除，讓它們被洗成對菁英/BOSS的"
+              }
+            ],
+            "依據": "防具：以防禦性詞條為主，保留一條物攻；不留單一元素抗性（怪物屬性隨機），改留全抗性與全局減傷"
+          }
+        ]
+      },
+      "why": "依 player_strategy.md 裝備詞條洗煉策略分三組：主副手全傷害、防具以防禦為主、項鏈戒指以寶石鑲嵌效率/掉寶率/經驗加成為關鍵。用同一份清單套 13 個部位不可能對——武器洗不出防禦詞條，而 gemEff/loot/xpBonus 只有戒指項鏈出得來。爆傷要爆率破 50% 才留；閃避 300 級前不留；單一元素抗性不留（怪物屬性隨機，改留全抗性）。連續 5 次打不過菁英/BOSS（ctx.desperate）時改打針對性：對普通敵人的傷害加成與抗性不再保留",
+      "if": [
+        [
+          "view.essence",
+          ">=",
+          20
+        ]
+      ]
+    },
+    {
+      "id": "enchant-equipped",
+      "everySec": 300,
+      "cmd": "item.enchant",
+      "enchantPriority": {
+        "equipment": "panels.inv.equipment",
+        "enchantInfo": "panels.inv.equipmentEnchantInfo",
+        "books": "panels.inv.books",
+        "byCategory": {
+          "util": [
+            "wisdom",
+            "loot"
+          ],
+          "atk": [
+            "ice"
+          ],
+          "def": [
+            "fireRes",
+            "iceRes",
+            "lightningRes",
+            "poisonRes",
+            "lightRes",
+            "darkRes"
+          ]
+        },
+        "spread": [
+          "def"
+        ],
+        "maxPerDecision": 4,
+        "overrides": [
+          {
+            "when": [
+              "ctx.desperate",
+              "truthy"
+            ],
+            "byCategory": {
+              "util": [
+                "vigor",
+                "focus"
+              ]
+            },
+            "依據": "遇菁英或BOSS時若生存能力不足則換成生命值提升及冷卻縮短"
+          }
+        ]
+      },
+      "why": "依 player_strategy.md 附魔策略：生命值(vigor)→冰凍(ice)→六大屬性抗性平均。遊戲規定每個部位只吃一種類別（enchantCatForType：武器/戒指/手套/護腕＝攻擊，項鍊/鞋子＝功能，其餘＝防禦），所以這份優先序實際上是按類別分工而不是單一排序：功能部位放生命值、攻擊部位放冰凍、防禦部位放六大抗性並輪流分散。部位與類別的對應取自遊戲的面板欄位，策略不自己抄——抄一份遲早跟遊戲脫鉤，而 manualEnchant 只會回「XX 只能使用 OO 類附魔」，看報表不會發現規則從沒生效。項鏈與鞋子平時放經驗(wisdom)與掉寶率(loot)，生存不足時換成生命值(vigor)與冷卻縮短(focus)"
+    },
+    {
+      "id": "auto-equip-on",
+      "once": true,
+      "cmd": "factory.setAutoEquip",
+      "args": {
+        "on": true
+      },
+      "why": "品質高優先穿：開啟自動換裝"
+    },
+    {
+      "id": "buy-inv-upgrade",
+      "everySec": 300,
+      "if": [
+        [
+          "panels.inv.cap",
+          "<",
+          1000
+        ],
+        [
+          "panels.inv.expandCost",
+          "<=",
+          {
+            "$path": "view.gold"
+          }
+        ]
+      ],
+      "cmd": "player.buyInvUpgrade",
+      "why": "背包策略：逐步解鎖至1000格。先比對擴充成本與金幣才送出——沒有這個條件時實測 101 小時送了 1,212 次、其中 1,014 次是金幣不足的空轉"
+    },
+    {
+      "id": "add-furnace-max",
+      "everySec": 300,
+      "cmd": "newforge.addFurnace",
+      "why": "熔爐解鎖到當前可開的最大數量"
+    },
+    {
+      "id": "salvage-below-equipped",
+      "everySec": 600,
+      "cmd": "newforge.setQuality",
+      "salvageBelowEquipped": {
+        "equippedRarities": "panels.inv.equipmentRarities",
+        "furnaces": "panels.newforge.newForge.furnaces"
+      },
+      "why": "最佳分解策略：分解門檻跟著身上最低品質往上升，低於它的裝備不可能升級任何部位。先前是 once:true 開局設一次「只拆R0/R1」就再也不動——101小時實測背包 298 格有 247 件稀有(83%)，背包一滿掉落連熔爐佇列都進不去而被直接丟棄，主手武器 90 小時等不到升級"
+    },
+    {
+      "id": "salvage-when-bag-full",
+      "everySec": 120,
+      "cmd": "item.salvageBulk",
+      "salvageWhenFull": {
+        "count": "panels.inv.count",
+        "cap": "panels.inv.cap",
+        "equippedRarities": "panels.inv.equipmentRarities",
+        "fullRatio": 0.9,
+        "belowMaxBy": 1
+      },
+      "why": "背包壓力閥：使用率達 90% 時，把低於身上最高品質的庫存一次清掉。背包滿了不只是挑不到東西，而是整條掉落管線停擺——熔爐佇列推不進背包就回堵，新裝備直接丟棄，角色會停在原地打幾十小時而畫面完全正常"
+    },
+    {
+      "id": "learn-potential-talents",
+      "everySec": 15,
+      "cmd": "talent.potentialUpgrade",
+      "expand": [
+        {
+          "key": "id",
+          "list": "skillPriority"
+        }
+      ],
+      "why": "極速：潛力技能解鎖後優先潛力技能升級"
+    },
+    {
+      "id": "learn-skills",
+      "everySec": 10,
+      "cmd": "skill.learn",
+      "expand": [
+        {
+          "key": "id",
+          "listByLevel": [
+            {
+              "maxLevel": 50,
+              "list": "skillEarly"
+            },
+            {
+              "maxLevel": 100,
+              "list": "skillMid"
+            },
+            {
+              "list": "skillLate"
+            }
+          ]
+        }
+      ],
+      "why": "依 player_strategy.md 技能升級優先順序分段：前期(≤50)先點生命上限被動與護盾／持續恢復；中期(51~100)把被動技能全點滿；後期(101+)依裝備詞條方向（targetAffixes 為物理向）集中投物理。清單順序即投點優先序，點數不足時後面的由遊戲擋下"
+    },
+    {
+      "id": "learn-fusions",
+      "everySec": 60,
+      "cmd": "skill.learn",
+      "expand": [
+        {
+          "key": "id",
+          "path": "panels.skills.fusions",
+          "field": "id"
+        }
+      ],
+      "why": "融合技產出時是未學習狀態，要先升到 Lv.1 才能裝備。id 由遊戲生成（fusion_ + uid），只能從 fusions[].id 撈"
+    },
+    {
+      "id": "equip-loadout-fusions",
+      "everySec": 60,
+      "cmd": "skill.equipLoadout",
+      "expand": [
+        {
+          "key": "id",
+          "path": "panels.skills.fusions",
+          "field": "id"
+        }
+      ],
+      "why": "融合技裝上技能欄，排在一般技能之前——格數有限時優先給融合技"
+    },
+    {
+      "id": "unequip-worst-skill",
+      "everySec": 60,
+      "cmd": "skill.unequipLoadout",
+      "loadoutSwap": {
+        "skills": "panels.skills",
+        "priority": "loadoutPriority"
+      },
+      "why": "技能欄滿了就卸下優先序最差的，讓 equip-loadout 補上更好的。開局預設的 arcaneBurst（Lv.1 魔法技，物理流用不到）不卸就永久佔位"
+    },
+    {
+      "id": "equip-loadout",
+      "everySec": 60,
+      "cmd": "skill.equipLoadout",
+      "expand": [
+        {
+          "key": "id",
+          "list": "loadoutPriority"
+        }
+      ],
+      "why": "把學會的技能真的裝上技能欄。原本六份策略都沒有這條，實測 100 小時後技能欄仍是開局預設的 powerSlash／arcaneBurst(Lv.1)／manaBarrier，學會的 28 個技能一個都沒上場。清單依多段傷害排序（js/skills.js 的 fx.hits），重複／已滿／未學會一律由遊戲擋下"
+    },
+    {
+      "id": "fuse-skills-1",
+      "everySec": 300,
+      "cmd": "skill.fuse",
+      "if": [
+        [
+          "panels.skills.fusions.length",
+          "<",
+          1
+        ],
+        [
+          "view.level",
+          ">=",
+          100
+        ],
+        [
+          "view.gold",
+          ">=",
+          500000
+        ]
+      ],
+      "args": {
+        "ids": [
+          "whirlwind",
+          "armorBreak",
+          "executeStrike",
+          "sinDetonate"
+        ]
+      },
+      "why": "技能融合：whirlwind＋armorBreak＋executeStrike＋sinDetonate。真人 24 小時存檔做了 3 組四材融合並全部裝上技能欄。素材取單段技，多段技留給技能欄。前提用融合技數量而非 once——做不到要能重試，做到了條件自然不成立"
+    },
+    {
+      "id": "fuse-skills-2",
+      "everySec": 300,
+      "cmd": "skill.fuse",
+      "if": [
+        [
+          "panels.skills.fusions.length",
+          "<",
+          2
+        ],
+        [
+          "view.level",
+          ">=",
+          200
+        ],
+        [
+          "view.gold",
+          ">=",
+          500000
+        ]
+      ],
+      "args": {
+        "ids": [
+          "echoBlade",
+          "warSpiritEngine",
+          "pursuitDecree",
+          "warOverture"
+        ]
+      },
+      "why": "技能融合：echoBlade＋warSpiritEngine＋pursuitDecree＋warOverture。真人 24 小時存檔做了 3 組四材融合並全部裝上技能欄。素材取單段技，多段技留給技能欄。前提用融合技數量而非 once——做不到要能重試，做到了條件自然不成立"
+    },
+    {
+      "id": "talent-upgrade-step1",
+      "everySec": 30,
+      "cmd": "talent.upgrade",
+      "expand": [
+        {
+          "key": "id",
+          "list": "talentStep1"
+        }
+      ],
+      "why": "天賦策略：優先將1轉天賦全點滿（加上轉生前提：天賦系統轉生後才開，未加時實測空送 96,000 次「尚未達到 1 轉」）",
+      "if": [
+        [
+          "panels.talents.reincarnations",
+          ">=",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "talent-upgrade-step2",
+      "everySec": 30,
+      "cmd": "talent.upgrade",
+      "expand": [
+        {
+          "key": "id",
+          "list": "talentStep2"
+        }
+      ],
+      "why": "天賦策略：再將2轉天賦全點滿（加上轉生前提：天賦系統轉生後才開，未加時實測空送 96,000 次「尚未達到 1 轉」）",
+      "if": [
+        [
+          "panels.talents.reincarnations",
+          ">=",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "talent-upgrade-step3",
+      "everySec": 30,
+      "cmd": "talent.upgrade",
+      "expand": [
+        {
+          "key": "id",
+          "list": "talentStep3"
+        }
+      ],
+      "why": "天賦策略：再將3轉天賦全點滿（加上轉生前提：天賦系統轉生後才開，未加時實測空送 96,000 次「尚未達到 1 轉」）",
+      "if": [
+        [
+          "panels.talents.reincarnations",
+          ">=",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "gem-shop-buy-1",
+      "everySec": 1200,
+      "cmd": "gem.shopBuyAll",
+      "why": "每20分鐘買光所有商店寶石"
+    },
+    {
+      "id": "gem-shop-refresh-8x",
+      "everySec": 1200,
+      "cmd": "gem.shopRefresh",
+      "why": "重置寶石商店8次後再買光"
+    },
+    {
+      "id": "gem-shop-buy-2",
+      "everySec": 1200,
+      "cmd": "gem.shopBuyAll",
+      "why": "重置8次後再次買光"
+    },
+    {
+      "id": "tower-auto",
+      "everySec": 1200,
+      "cmd": "tower.startAuto",
+      "args": {
+        "floor": {
+          "$add": [
+            {
+              "$path": "panels.tower.tower.highest"
+            },
+            1
+          ]
+        },
+        "count": 1
+      },
+      "why": "嘗試一次BOSS高塔挑戰"
+    },
+    {
+      "id": "tower-finish-if-needed",
+      "everySec": 30,
+      "if": [
+        [
+          "panels.tower.tower.active",
+          "truthy"
+        ]
+      ],
+      "cmd": "tower.finish",
+      "why": "高塔挑戰結束後回到一般場景戰鬥繼續遊玩"
+    }
+  ],
+  "track": {
+    "monster": "panels.battle.field.monster",
+    "stage": "view.stage",
+    "equipment": "panels.inv.equipment",
+    "equippedScores": "panels.inv.equipmentScores"
+  },
+  "targets": [
+    {
+      "id": "killRate",
+      "kind": "ratePerMin",
+      "counter": "panels.battle.lootStats.sources.field.kills",
+      "windowSec": 300,
+      "atLeast": 5,
+      "說明": "每分鐘野外擊殺數。門檻 15＝4 秒殺一隻（player_strategy.md 安全關卡定義是 3 秒）；掃描 5/10/15/20/25 之後 15 全面最佳",
+      "counter_為什麼是_sources_field": "lootStats.kills 總數含塔戰 BOSS，指到總數會把爬塔誤算成野外打得動",
+      "依據": "安全關卡的產出下限。經驗與掉落都隨關卡指數成長（每隻經驗 =（120+關卡）×1.06^(關卡−1)，掉落表 FIELD_DROP_TABLE 也依怪物等級＝關卡分檔），而擊殺速率是線性的——門檻訂太高會把角色綁在不值錢的淺關卡。實測 24 小時 × 5 seed：atLeast 15 → 關卡中位 86、物攻 5,686；atLeast 5 → 關卡 100（5/5 全達）、物攻 10,432；atLeast 2 → 關卡沒再前進、物攻掉回 5,024、死亡從 41 翻到 65。最佳點在 5，不是愈鬆愈好。（舊強化參數下量過一次結論相同，改參數後重量仍為 5，兩個旋鈕互相獨立）"
+    },
+    {
+      "id": "jewelXpBonus",
+      "kind": "affixCount",
+      "affixKey": "xpBonus",
+      "equipment": "panels.inv.equipment",
+      "slots": [
+        "amulet",
+        "ring",
+        "ring2"
+      ],
+      "atLeast": 3,
+      "說明": "項鏈與戒指的關鍵詞條（player_strategy.md：寶石鑲嵌率最關鍵，其次掉寶率與經驗加成）",
+      "為什麼不能只靠保留清單": "保留清單只表達得出「這些可以留」，表達不出「這條要湊到 N 條」。這三條合計只佔項鏈詞條池權重的 3%（336 分之 10），而清單有 18 項可接受，隨便中一項就停手"
+    },
+    {
+      "id": "jewelLoot",
+      "kind": "affixCount",
+      "affixKey": "loot",
+      "equipment": "panels.inv.equipment",
+      "slots": [
+        "amulet",
+        "ring",
+        "ring2"
+      ],
+      "atLeast": 3,
+      "說明": "項鏈與戒指的關鍵詞條（player_strategy.md：寶石鑲嵌率最關鍵，其次掉寶率與經驗加成）",
+      "為什麼不能只靠保留清單": "保留清單只表達得出「這些可以留」，表達不出「這條要湊到 N 條」。這三條合計只佔項鏈詞條池權重的 3%（336 分之 10），而清單有 18 項可接受，隨便中一項就停手"
+    },
+    {
+      "id": "jewelGemEff",
+      "kind": "affixCount",
+      "affixKey": "gemEff",
+      "equipment": "panels.inv.equipment",
+      "slots": [
+        "amulet",
+        "ring",
+        "ring2"
+      ],
+      "atLeast": 3,
+      "when": [
+        "view.essence",
+        ">=",
+        400
+      ],
+      "說明": "項鏈與戒指的關鍵詞條（player_strategy.md：寶石鑲嵌率最關鍵，其次掉寶率與經驗加成）",
+      "為什麼不能只靠保留清單": "保留清單只表達得出「這些可以留」，表達不出「這條要湊到 N 條」。這三條合計只佔項鏈詞條池權重的 3%（336 分之 10），而清單有 18 項可接受，隨便中一項就停手",
+      "when_依據": "真人打法：先在穩定關卡快速刷怪累積材料，穿上 Lv100 史詩／傳說之後才去洗寶石鑲嵌率——它期望要 168 次洗煉才中一條，材料不夠時去追等於把精華燒在最貴的一項上"
+    }
+  ],
+  "profile": {
+    "說明": "敗因診斷（Bottleneck Profiler）。combat 指到便宜的 evalCombat 面板，才掛得上 1Hz 觀測；完整的 panels.eval 一次要幾十次 computeStats，掛 1Hz 會爆",
+    "combat": [
+      "panels.evalCombat.combat",
+      "panels.eval.combat"
+    ],
+    "microRetry": {
+      "limit": 3,
+      "cooldownSec": 120,
+      "依據": "player_strategy.md v2.0：推關失敗允許連續嘗試 3 次微調。冷卻必須大於一個決策間隔（極限玩家 5 秒），否則第二次重試會用完全相同的配置上場"
+    },
+    "combat_順序說明": "第一條是觀測用（便宜，掛 1Hz），第二條是決策點才有的完整面板。只有第一條會被加進觀測面板——見 scripts/sim/policy.js 的說明"
+  },
+  "evalConfig": {
+    "說明": "評估器參數。要評估哪些詞條是策略的事，怎麼評估是 scripts/sim/evaluator.js 的事",
+    "affixKeys": [
+      "atkFlat",
+      "atkPct",
+      "critRate",
+      "critDmg",
+      "aspd",
+      "pPen",
+      "hit",
+      "eliteDmg",
+      "bossDmg",
+      "lifesteal",
+      "hpFlat",
+      "hpPct",
+      "defPct",
+      "mdefPct",
+      "globalDmgRed",
+      "resAll",
+      "blockRate"
+    ],
+    "affixKeys_依據": "取自本策略既有的 affixWeapon / affixArmor / affixJewel 三份清單的交集與主力項。清單本身不再決定優先序——優先序由 ROI 排出來，清單只決定「要評估哪些」",
+    "slotUpgrades": {
+      "candidatesPerSlot": 2
+    },
+    "probeEquippedAffixes": true,
+    "probeTopSlots": 3,
+    "refreshSec": 15,
+    "refreshSec_依據": "規劃結果的重算間隔（遊戲秒）。極限玩家決策每 5 秒，全部重算實測會替 20 小時的模擬多加 5 分鐘；15 秒與 equip 規則的 everySec 對齊"
+  },
+  "roi": {
+    "說明": "邊際效益排序。ΔDPS/ΔEHP 由評估器算（呼叫遊戲的 computeStats），這裡只依敗因加權後排序",
+    "source": "panels.eval.affixRoi",
+    "minGainPct": 0.5,
+    "minGainPct_依據": "低於 0.5% 的增幅不值得花一次洗煉。沒有門檻的話，全身達標之後 AI 仍會為了 +0.01% 無限洗煉",
+    "weights": {
+      "DPS_TIMEOUT": {
+        "offense": 1,
+        "ehp": 0
+      },
+      "EHP_TOO_LOW": {
+        "offense": 0.25,
+        "ehp": 1
+      },
+      "neutral": {
+        "offense": 1,
+        "ehp": 0.3
+      }
+    },
+    "weights_依據": "player_strategy.md：極限玩家「除非被秒殺否則完全不堆防禦」。所以中性權重仍偏攻（1 : 0.3），只有診斷為 EHP_TOO_LOW 才翻轉"
+  },
+  "stopLoss": {
+    "說明": "資源止損。分母取遊戲當下報的強化成本，比值在任何階段都是同一個意思",
+    "affordPath": "panels.eval.resources.upgradesAffordable",
+    "essencePath": "view.essence",
+    "minUpgradesAffordable": 3,
+    "minEssence": 20,
+    "leanGainMultiplier": 4,
+    "依據": "實測 20 小時送出 52,465 次 item.upgrade，遊戲回「資源不足」51,353 次（98%）。策略完全不看戶頭就一路送，資源永遠在見底邊緣"
+  }
+}

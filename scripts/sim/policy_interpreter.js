@@ -26,6 +26,27 @@ function pathVal(root, path) {
   return cur;
 }
 
+/* 依序試幾條路徑，回傳第一條解得出值的。**不記 BAD_PATHS**——
+   這裡的「解不出來」是預期內的：同一份資料在觀測節奏與決策節奏下住在不同面板
+   （觀測建的是便宜的 evalCombat，決策建的是完整的 eval），
+   兩條都宣告、哪條在就用哪條。
+
+   ⚠️ 不能直接用 pathVal 串起來：它會把每一次「這一拍沒建這個面板」都記成失效路徑，
+   而失效路徑是「策略指到已改名欄位」的診斷管道，被雜訊灌滿就沒用了——
+   實測一場 1 小時的模擬就多出 116 筆假警報。 */
+function firstPathVal(root, paths) {
+  var list = Array.isArray(paths) ? paths : [paths];
+  for (var i = 0; i < list.length; i++) {
+    var cur = root, parts = String(list[i]).split('.'), ok = true;
+    for (var j = 0; j < parts.length; j++) {
+      if (cur === null || cur === undefined) { ok = false; break; }
+      cur = cur[parts[j]];
+    }
+    if (ok && cur !== undefined) return cur;
+  }
+  return undefined;
+}
+
 function testCond(root, cond) {
   var v = pathVal(root, cond[0]);
   var op = cond[1];
@@ -381,6 +402,33 @@ function observeCombat(state, policy, memo) {
     if (!T.engaged || T.engaged.stage !== stage) T.engaged = { stage: stage, minHpPct: 100, mode: mode };
     var pct = 100 * m.hp / m.maxHp;
     if (pct < T.engaged.minHpPct) T.engaged.minHpPct = pct;
+
+    /* ---- 敗因取樣（Bottleneck Profiler） ----
+
+       這裡取的是評估器算好的診斷（panels.evalCombat.combat），不是自己判斷。
+       兩個時間都要遊戲的公式才算得出來：
+         timeToKill  以實測 DPS 校正過的「還要幾秒殺得死」
+         timeToDie   對手輸出扣掉我方減免之後的「還有幾秒會倒」
+       timeToDie < timeToKill ⇒ EHP_TOO_LOW，反之 ⇒ DPS_TIMEOUT。
+
+       ⚠️ 一定要在觀測節奏上取，不能等到決策點。整場交戰可能只有幾秒，
+       而決策間隔是 15~60 秒——決策點取到的多半是「已經沒有對手了」。
+
+       取**最後一次**看到的診斷（持續覆寫），因為愈接近死亡瞬間的樣本愈準：
+       開場第一秒血量滿、護盾在，那時的 timeToDie 一律很樂觀。 */
+    var pf = policy.profile;
+    if (pf && pf.combat) {
+      /* 觀測節奏建的是 panels.evalCombat（便宜），決策節奏建的是 panels.eval（完整），
+         兩者都有 combat 欄位。宣告成陣列、哪個在就用哪個——
+         這一支同時被 observe 與 decide 呼叫，寫死一條路徑必定有一半解不出來。 */
+      var cp = firstPathVal(state, pf.combat);
+      if (cp && cp.known) {
+        T.engaged.cause = cp.cause;
+        T.engaged.margin = cp.margin;
+        T.engaged.timeToKill = cp.timeToKill;
+        T.engaged.timeToDie = cp.timeToDie;
+      }
+    }
   } else if (T.engaged) {
     /* 交戰結束。關卡往前＝過了，往後＝死了退關（js/combat.js 的 retreatStage）。 */
     var e = T.engaged;
@@ -388,13 +436,41 @@ function observeCombat(state, policy, memo) {
     if (stage > e.stage) {
       delete T.attempts[e.stage];                    // 過關就清掉紀錄
     } else if (stage < e.stage) {
-      var rec = T.attempts[e.stage] || (T.attempts[e.stage] = { fails: 0 });
+      var rec = T.attempts[e.stage] || (T.attempts[e.stage] = { fails: 0, micro: 0 });
       rec.fails++;
       rec.lastFailAt = now;
       rec.minHpPct = e.minHpPct;
       rec.mode = e.mode;
-      /* 重試間隔＝敵人剩餘血量百分比當分鐘數，最少 10 分鐘。 */
-      rec.retryAt = now + Math.max(10, e.minHpPct) * 60;
+      /* 敗因留在紀錄上，供決策點驅動資源分配（打不完就全堆攻、撐不住才補防）。 */
+      rec.cause = e.cause || null;
+      rec.margin = (typeof e.margin === 'number') ? e.margin : null;
+
+      /* ---- 微調重試（player_strategy.md v2.0：允許連續嘗試 3 次） ----
+
+         舊行為：只要失敗一次，重試間隔就是「殘血百分比當分鐘數」（最少 10 分鐘），
+         而且必須先驗到「有變強」才准再試。實測後果是每次卡關至少賠掉十分鐘，
+         而真人在這種時候做的事是**換個打法馬上再試一次**——換抗性寶石、
+         換技能組、把爆傷換成命中——那些調整只要幾秒，不需要等十分鐘。
+
+         所以前 microLimit 次失敗走短冷卻、而且**不要求「有變強」**：
+         敗因已經寫進 ctx.cause，ROI 規則會在這幾秒內針對性地改配置，
+         那本身就是「調整」。三次都失敗才承認是真的打不動，退回長冷卻。
+
+         ⚠️ 冷卻不能是 0。指令是循序派送的，換寶石／換裝要幾個決策點才落地；
+         冷卻短於一個決策間隔的話，第二次重試會用**完全相同的配置**上場，
+         三次微調就白白燒掉，症狀是「重試三次都一模一樣地死」。 */
+      var mp = (policy.profile && policy.profile.microRetry) || null;
+      var microLimit = mp && typeof mp.limit === 'number' ? mp.limit : 0;
+      if (rec.micro === undefined) rec.micro = 0;
+      if (rec.micro < microLimit) {
+        rec.micro++;
+        rec.retryAt = now + (typeof mp.cooldownSec === 'number' ? mp.cooldownSec : 120);
+        rec.microPhase = true;
+      } else {
+        /* 重試間隔＝敵人剩餘血量百分比當分鐘數，最少 10 分鐘。 */
+        rec.retryAt = now + Math.max(10, e.minHpPct) * 60;
+        rec.microPhase = false;
+      }
       /* 基準線要拍背包，那是貴的面板，高頻觀測拿不到也不該拿。改成掛旗標，
          由下一次 updateContext 補拍。延遲最多一個行動間隔，而基準線本來就是
          「卡關當下的強度」這種粗粒度的東西，差幾秒不影響判定。 */
@@ -417,6 +493,11 @@ function updateContext(state, policy, memo) {
        塞了 ctx 進來，整包換掉會把它們默默清空。 */
     if (!state.ctx) state.ctx = {};
     state.ctx.deficit = evalTargets(state, policy, memo);
+    /* ⚠️ 邊際效益與止損跟 track 無關，兩條路徑都要算。
+       漏了這一行的話，沒宣告 track 的策略會拿到 ctx.roi === undefined，
+       而所有 ROI 規則的條件都會靜靜地不成立——規則看起來設好了，實際整段空轉。 */
+    state.ctx.roi = rankRoi(state, policy);
+    state.ctx.stopLoss = evalStopLoss(state, policy);
     return;
   }
   var t = policy.track;
@@ -444,7 +525,11 @@ function updateContext(state, policy, memo) {
   var waiting = false;
   if (blockRec) {
     var timeUp = now >= (blockRec.retryAt || 0);
-    var grew = hasProgressed(T.baseline, progressSnapshot(state, t));
+    /* 微調階段不要求「有變強」——那正是微調的意思：改配置而不是變強。
+       要求變強會讓三次微調全部被擋在門外，機制等於沒有。
+       ⚠️ 這是一個**有界**的放寬（最多 microLimit 次），不是永久放寬。
+       docs/SIM_HARNESS.md 記過：任何無界的「條件不滿足就改變行為」都會變成死鎖。 */
+    var grew = blockRec.microPhase ? true : hasProgressed(T.baseline, progressSnapshot(state, t));
     waiting = !(timeUp && grew);                     // 時間到＋有變強，兩者都要
   }
 
@@ -461,12 +546,136 @@ function updateContext(state, policy, memo) {
        （菁英／BOSS 抗性與傷害加成）。 */
     desperate: !!(blockRec && blockRec.fails >= 5),
     retryWaiting: waiting,
-    minHpPct: blockRec ? Math.round(blockRec.minHpPct || 100) : 100
+    minHpPct: blockRec ? Math.round(blockRec.minHpPct || 100) : 100,
+
+    /* ---- 敗因（Bottleneck Profiler 的輸出） ----
+       'DPS_TIMEOUT'：打不完 → 資源全押輸出
+       'EHP_TOO_LOW'：撐不住 → 補生命／抗性／減傷
+       null：沒有卡點，或還沒取樣到 → 規則一律不改變行為
+
+       ⚠️ 取的是**擋在前面那個卡點**的敗因，不是最近一次交戰的。
+       AI 可能正在安全關卡刷怪（那裡不會失敗），但要解的是前面那道牆。 */
+    cause: blockRec ? (blockRec.cause || null) : null,
+    /* 餘裕比（timeToDie ÷ timeToKill）。>1 殺得死，<1 會先倒。
+       比布林值好用的地方是它分得出「差一點」與「差很遠」——
+       0.9 值得再微調一次，0.05 就該回去換裝備了。 */
+    margin: blockRec ? (blockRec.margin === undefined ? null : blockRec.margin) : null,
+    microTries: blockRec ? (blockRec.micro || 0) : 0,
+    microPhase: !!(blockRec && blockRec.microPhase)
   };
 
   /* 目標缺口。要在 state.ctx 建好之後才算——度量路徑可以指向 ctx.*
      （例如有效命中率要用 ctx.enemyDodge）。 */
   state.ctx.deficit = evalTargets(state, policy, memo);
+
+  /* 邊際效益排序與止損水位。放在最後：它們要讀 panels.eval，而那個面板
+     只在決策點才建（貴），觀測節奏上沒有。 */
+  state.ctx.roi = rankRoi(state, policy);
+  state.ctx.stopLoss = evalStopLoss(state, policy);
+}
+
+/* ============ 邊際效益排序（ROI Driven Affix Selection） ============
+
+   ---- 為什麼要廢掉靜態優先級清單 ----
+
+   舊策略的詞條選擇是一份寫死的保留清單（policy.lists.affixWeapon 之類）。
+   問題不是清單排錯，是**清單這種形式本身表達不出正確答案**——正確答案隨面板改變：
+
+     暴擊率 5% 時，一條爆傷詞條的邊際 DPS 幾乎是 0（實測 +0.52%）
+     暴擊率 60% 時，同一條爆傷是全場最高
+
+   實測本專案 20 小時的面板：atkFlat +11.11% / hit +6.35% / atkPct +2.96% /
+   critRate +1.90% / critDmg +0.52%。任何固定名次在某個階段一定是錯的，
+   而錯的時候不會有人發現，只會看到「AI 卡住了」。
+
+   ---- 這裡只做排序，不做評估 ----
+
+   ΔDPS / ΔEHP 由評估器算（scripts/sim/evaluator.js，跑在引擎 context，
+   呼叫遊戲的 computeStats）。這裡拿到的已經是純數字，做的事只有兩件：
+   依敗因決定攻防權重，然後排序。策略仍然只是「在一堆數字裡挑最大的」。 */
+function rankRoi(state, policy) {
+  var cfg = policy.roi;
+  if (!cfg || !cfg.source) return null;
+  var table = pathVal(state, cfg.source);
+  if (!table) return null;
+
+  /* ---- 攻防權重由敗因決定 ----
+     player_strategy.md v2.0：「超時就全堆攻，被秒殺才補對應屬性抗性或生命」。
+     沒有敗因時用中性權重（各半），不是預設堆攻——沒有診斷就不該有偏見。 */
+  var cause = state.ctx && state.ctx.cause;
+  var w = cfg.weights || {};
+  var pair = w[cause] || w.neutral || { offense: 1, ehp: 1 };
+  var wo = Number(pair.offense) || 0;
+  var we = Number(pair.ehp) || 0;
+
+  var ranked = [];
+  for (var key in table) {
+    var r = table[key];
+    if (!r) continue;                                  // 這條詞條在身上找不到合法部位
+    var score = (Number(r.dOffPct) || 0) * wo + (Number(r.dEhpPct) || 0) * we;
+    ranked.push({ key: key, slotKey: r.slotKey, score: score, dOffPct: r.dOffPct, dEhpPct: r.dEhpPct });
+  }
+  /* 決定論：分數相同時以鍵名排序，不能讓物件的鍵順序決定結果。 */
+  ranked.sort(function (a, b) {
+    if (b.score !== a.score) return b.score - a.score;
+    return a.key < b.key ? -1 : (a.key > b.key ? 1 : 0);
+  });
+
+  return {
+    cause: cause || null,
+    weights: { offense: wo, ehp: we },
+    ranked: ranked,
+    best: ranked.length ? ranked[0] : null,
+    /* 門檻：低於這個增幅就不值得花精華去追。沒有門檻的話，
+       全身詞條都達標之後 AI 仍會為了 +0.01% 無限洗煉，把精華燒光。 */
+    minGainPct: (typeof cfg.minGainPct === 'number') ? cfg.minGainPct : 0.5
+  };
+}
+
+/* ============ 止損與過渡（Resource Stop-loss） ============
+
+   player_strategy.md v2.0：「若資源／金幣低於一定比例，AI 自動降級詞條要求
+   （選擇次佳詞條），避免因死摳完美太古裝而卡死資源累積。」
+
+   ---- 為什麼需要分母 ----
+
+   「金幣低於一定比例」的比例要有分母。用固定門檻（例如「金幣 < 10 萬」）
+   在前期太嚴、後期形同虛設——強化成本隨等級成長，10 萬在關卡 20 是巨款、
+   在關卡 150 連一次強化都不夠。
+
+   所以分母取**遊戲當下報的成本**（panels.eval.resources.upgradesAffordable
+   ＝身上最貴那件還能再強化幾次）。這個比值在任何階段都是同一個意思。
+
+   ---- 實測動機 ----
+
+   一場 20 小時的模擬送了 52,465 次 item.upgrade，遊戲回「資源不足」51,353 次（98%）。
+   策略完全不看有沒有錢就一路送，於是資源永遠在見底邊緣，每一項投資都做不完整。 */
+function evalStopLoss(state, policy) {
+  var cfg = policy.stopLoss;
+  if (!cfg) return null;
+
+  var afford = pathVal(state, cfg.affordPath);
+  var essence = Number(pathVal(state, cfg.essencePath));
+  var lean = false, reasons = [];
+
+  /* null＝身上沒有裝備可強化（開局那幾秒）。當成「不缺」而不是「缺」：
+     缺的那一側會降級要求，開局就降級沒有意義。 */
+  if (typeof afford === 'number' && isFinite(afford)) {
+    var need = (typeof cfg.minUpgradesAffordable === 'number') ? cfg.minUpgradesAffordable : 3;
+    if (afford < need) { lean = true; reasons.push('upgrade'); }
+  }
+  if (isFinite(essence)) {
+    var needE = (typeof cfg.minEssence === 'number') ? cfg.minEssence : 0;
+    if (essence < needE) { lean = true; reasons.push('essence'); }
+  }
+
+  return {
+    lean: lean,
+    reasons: reasons,
+    /* 過渡模式下把 ROI 門檻放寬幾倍：只要出現「還可以」的詞條就停手去推關，
+       不再追最佳解。倍率 >1 代表要求**更高**的增幅才動手（＝更少動手、更省資源）。 */
+    gainMultiplier: lean ? ((typeof cfg.leanGainMultiplier === 'number') ? cfg.leanGainMultiplier : 4) : 1
+  };
 }
 
 /* ============ 目標與缺口 ============
@@ -1021,7 +1230,76 @@ function decide(state, policy, memo) {
         }
         if (targetBlocked) passGate = false;
 
+        /* ============ 裝等斷點優先（Dynamic Farming Stage Selector） ============
+
+           ---- 舊行為做錯了什麼 ----
+
+           checkpoints 的 park 是寫死的關卡區間（前期是 [11,15] / [21,25] /
+           [41,45] / [51,59]）。實測 20 小時 × 10 個 seed，5 個 seed 在
+           park [41,45] 裡來回震盪整整 20 小時，最後全身 13 件都是「R4 史詩、裝等 1」，
+           物攻 334。另外 5 個跨過關卡 50 之後物攻衝到 34,983。
+
+           原因是掉落的裝備等級由 equipmentTierLevel 分段（js/formula.js:1251，
+           EQUIP_TIER_SIZE = 50）：關卡 1~49 掉裝等 1、50~99 掉裝等 50。
+           **park [41,45] 是一個每一件掉落都是裝等 1 的區間**，而裝等 1 的詞條
+           只剩 base（實測 atkFlat 12.0 對 335.4，差 27.95 倍）。
+
+           於是形成閉環死鎖：
+             裝備永遠裝等 1 → 戰力上不去 → 過不了關卡 50 的守關 BOSS
+             → 品質覆蓋率閘門把它退回 [41,45] → 裝備永遠裝等 1
+
+           三道舊閘門一道都沒響，因為沒有一道在量「我停的地方掉得出有用的裝備嗎」。
+
+           ---- 為什麼不用需求規格裡的效率公式 ----
+
+           規格要的是 (每秒擊退怪物數 × 單隻經驗金幣) / (1 + 死亡率 penalty)。
+           那個機制本專案**已經實作過、量過、而且回退了**：
+           docs/SIM_HARNESS.md「產出閘門」一節記錄 4 個 seed 的 A/B，
+           四種門檻全部輸給不設閘門（中位關卡 160.5 → 136~145.5）。
+           原因是離線收益吃的是 stage.best 這個單向棘輪，且隨關卡指數成長，
+           退關省下的在線時間換不回那筆損失。
+
+           所以這裡改成量**同一件事的另一面**：不是「這關殺得快嗎」，
+           而是「我停的這一段掉得出比身上更好的裝備嗎」。它天生不會叫 AI 退關——
+           下限永遠是當前裝等分段的底，退到分段以下只會讓掉落更差。
+
+           ---- 三條規則 ----
+
+           1. 身上裝備的裝等已經落後於當前關卡能掉的 → 這裡值得刷，不要往前衝
+           2. 身上裝等已經追平當前分段 → 這一段再刷也拿不到更好的，往斷點推
+           3. 退關的地板是**當前分段的底**，不是固定區間；分段之內盡量待在深處
+              （關卡愈深品質擲骰愈好，而裝等不變——純賺） */
         var park = cp.park;
+        var tierCfg = gCfg.tierPush;
+        var tier = tierCfg ? pathVal(state, tierCfg.source) : null;
+        var tierFloor = null;
+        var tierBand = false;      // park 上緣是否已被拉到裝等分段的頂端（見下方 behind）
+
+        if (tier && typeof tier.nextBreakpointStage === 'number') {
+          /* 當前分段的底：跌破它，掉落的裝等會退一階，那是換不回來的損失。
+             itemLevelHere 就是分段起點（裝等 1 的那一段起點視為關卡 1）。 */
+          tierFloor = (tier.itemLevelHere > 1) ? tier.itemLevelHere : 1;
+
+          var behind = (tier.equippedItemLevelMin !== null
+            && tier.equippedItemLevelMin < tier.itemLevelHere);
+          var gain = Number(tier.breakpointGain) || 0;
+          var minGain = (typeof tierCfg.minBreakpointGain === 'number') ? tierCfg.minBreakpointGain : 2;
+
+          /* 追平了、而且跨過斷點有明顯收益 → 放行往前推，不受品質覆蓋率門檻約束。
+
+             ⚠️ 這裡蓋掉的是**品質覆蓋率**，不是卡關重試。retryWaiting 在下面
+             仍然會把它關回去——真的打不過的時候往前送死沒有意義，
+             那時該做的是微調重試（見 Bottleneck Profiler）。 */
+          if (!behind && gain >= minGain) passGate = true;
+
+          /* 落後於當前分段：這一段還有東西可以撿，把 park 上緣拉到分段底部之上。
+             舊的固定區間 [41,45] 在這裡會被分段底 [tierFloor, 斷點−1] 取代。 */
+          if (behind && park && park.length === 2 && park[1] < tier.nextBreakpointStage - 1) {
+            park = [Math.max(park[0], tierFloor), tier.nextBreakpointStage - 1];
+            tierBand = true;
+          }
+        }
+
         var inPark = !!(park && park.length === 2);
         var parkRetreat = (!passGate && inPark && gStage > park[1] && gCfg.retreatCmd);
         if (parkRetreat) {
@@ -1048,6 +1326,16 @@ function decide(state, policy, memo) {
           var gm = memo.gate[r.id] || (memo.gate[r.id] = {});
           var cool = (typeof rtc.everySec === 'number') ? rtc.everySec : 300;
           var floorStage = Math.max(1, Number(rtc.minStage) || 1);
+          /* 動態地板：不得退出當前的裝等分段。
+
+             ⚠️ 這**看起來**就是那個實測失敗的 tierFloors（見下方註解裡的警告：
+             24 小時 × 5 seed，關卡中位數 78 → 50，三個 seed 死鎖在關卡 50）。
+             差別在於資料來源：舊版的地板是「策略記下來的已知安全關卡」——
+             一旦記錯就永遠退不下去。這裡的地板是 equipmentTierLevel 算出來的
+             **靜態分段邊界**，與「打不打得動」無關，也不會因為記錯而漂移。
+             跌破它一定更差（掉落裝等退一階），所以它不會造成死鎖，
+             只會把退關限制在同一個裝等分段裡。 */
+          if (tierFloor !== null && tierFloor > floorStage) floorStage = tierFloor;
           /* ⚠️ 試過在這裡加「不退出當前裝等分段」的地板（tierFloors），實測更差：
              24 小時 × 5 seed，關卡中位數 78 → 50、物攻 4,336 → 716、死亡 11 → 24，
              五個 seed 有三個死鎖在關卡 50。理由就是上面那段註解講的——
@@ -1066,7 +1354,25 @@ function decide(state, policy, memo) {
 
            「低於安全區間下緣就往前推」這一條要讓給產出閘門：品質不足時往前推是為了
            進到指南建議的區間，但打不動的時候往前推只會更打不動。 */
-        gArgs[gCfg.argKey || 'on'] = !!(passGate || (inPark && gStage < park[0] && !targetBlocked));
+        /* ---- 在 park 區間裡要往哪走 ----
+
+           舊語意是「低於下緣才往前推」，也就是進到區間之後就原地不動。
+           對寫死的小區間（[11,15]）那沒問題，但 tierBand 把上緣拉到分段頂端
+           （例如 [41,99]）之後，原地不動就變成災難：
+
+             實測 seed …076，第 14 小時踏進關卡 51，之後**整整 6 小時停在 51**，
+             碎片累積到 157,034 沒有用掉，而對照組同時間已經推到關卡 89。
+
+           分段之內往前推是純賺：裝等不變（同一段），但關卡愈深品質擲骰愈好、
+           經驗與金幣也愈多。所以在 tierBand 模式下，目標是推到**上緣**而不是下緣。
+
+           ⚠️ 只在 tierBand 成立時改變語意。寫死的小區間仍照舊——
+           那些是「指南建議停在這裡」，不是「這一段隨便你跑」。 */
+        /* ⚠️ park 可以不存在（收尾那一段的 checkpoint 通常沒有），所以取值一定要
+           在 inPark 之內。少了這道防護會在「沒有安全區間」的關卡段直接拋錯，
+           而那是最常見的一段——tests/sim-policy-targets.test.cjs 抓到過。 */
+        var advanceOn = inPark && gStage < (tierBand ? park[1] : park[0]) && !targetBlocked;
+        gArgs[gCfg.argKey || 'on'] = !!(passGate || advanceOn);
         out.push({ name: r.cmd, args: gArgs, ruleId: r.id });
       }
     } else if (r.convertToPreferred) {
@@ -1548,6 +1854,220 @@ function decide(state, policy, memo) {
         for (var ak in baseArgs) uArgs[ak] = baseArgs[ak];
         uArgs[uCfg.argKey || 'itemId'] = eqItem.id;
         out.push({ name: r.cmd, args: uArgs, ruleId: r.id });
+      }
+    } else if (r.equipByPower) {
+      /* ============ 換裝：問遊戲哪一件真的比較強 ============
+
+         這條取代 bestPerSlot 的字典序比較 [品質, 裝等, 太古數, 評分]。
+
+         ---- 為什麼一定要換掉 ----
+
+         實測 20 小時 × 10 個 seed：5 個 seed 最後全身 13 件都是「R4 史詩、裝等 1」，
+         物攻 334、等級 54、卡在關卡 42 整整 20 小時動不了。
+         另外 5 個跨過關卡 50 之後物攻直接衝到 34,983。
+
+         原因是字典序把**品質**排在**裝等**前面。而遊戲的掉落分段
+         （equipmentTierLevel，js/formula.js:1251，EQUIP_TIER_SIZE=50）是
+         關卡 1~49 掉裝等 1、50~99 掉裝等 50，同時詞條數值 =
+         (base + base × 每級成長 × (裝等−1)) × 品質倍率。實測同一條 atkFlat：
+
+             裝等 1 → 裝等 50   ×27.95
+             R2 → R5（裝等 1）   ×2.29
+
+         **品質排在裝等前面，等於用一個 ×2.3 的因子否決一個 ×28 的因子。**
+         一件 R4 裝等 1 會把整個部位鎖死，直到同品質的新裝等掉落為止。
+
+         ---- 那品質的價值跑到哪去了 ----
+
+         沒有不見。品質決定插槽數與詞條數（R4 三槽四詞條、R5 四槽五詞條），
+         而那些在 computeStats 裡本來就算得到，會如實反映在戰力差上。
+         差別只在於它現在是**一個可以被別的因子超越的加分**，而不是否決權。
+
+         插槽變少與強化歸零這兩件無法由 computeStats 反映的成本，
+         由評估器折算成 need 門檻（見 evaluator.js 的 evalSlotUpgrades）。
+
+         ---- 策略在這裡做什麼 ----
+
+         只做一件事：把評估器標記為 worth 的部位送出換裝指令。
+         誰比較強是遊戲算的，不是這裡判斷的。 */
+      var epCfg = r.equipByPower;
+      var epTable = pathVal(state, epCfg.source);
+      if (epTable) {
+        /* 決定論：物件的鍵順序不該影響送出的指令順序。 */
+        var epSlots = [];
+        for (var epk in epTable) epSlots.push(epk);
+        epSlots.sort();
+
+        var epQuota = (typeof epCfg.maxPerDecision === 'number') ? epCfg.maxPerDecision : 13;
+        for (var epi = 0; epi < epSlots.length && epQuota > 0; epi++) {
+          var ep = epTable[epSlots[epi]];
+          if (!ep || !ep.itemId || !ep.worth) continue;
+          /* 額外的最低增幅門檻。評估器的 worth 已經扣掉插槽與強化成本，
+             這裡是策略自己再加一道——換裝會讓寶石與附魔重來一輪，
+             增幅太小的話換來換去的間接成本大於帳面收益。 */
+          if (typeof epCfg.minGainPct === 'number' && ep.gain < epCfg.minGainPct) continue;
+          epQuota--;
+          out.push({ name: r.cmd, args: { itemId: ep.itemId, slotKey: epSlots[epi] }, ruleId: r.id });
+        }
+      }
+    } else if (r.rerollByRoi) {
+      /* ============ 邊際效益驅動的洗煉 ============
+
+         舊的兩條洗煉規則各有一半的答案，合起來仍然不完整：
+           rerollOffTarget    「洗掉不在保留清單裡的」——被動，永遠不會主動去追某條詞條
+           rerollForDeficit   「補到目標為止」——主動，但只認宣告過的目標
+
+         兩者都要有人先寫下「什麼是好詞條」。這條規則不需要：
+         好壞由 ctx.roi 排序（來自評估器的 ΔDPS/ΔEHP），犧牲哪一條由
+         panels.eval.equippedAffixes 的邊際貢獻決定——兩邊都是遊戲算的。
+
+         ---- 動作 ----
+
+         1. 取 ROI 第一名的詞條與它建議的部位
+         2. 在那個部位上找出邊際貢獻最低的一條詞條當犧牲品
+         3. 只有「第一名的增幅 > 犧牲品的損失 + 門檻」時才送出洗煉
+
+         第 3 點是這條規則不會空轉的原因：洗煉是隨機的，期望值不划算就不要洗。
+         門檻會隨止損水位放寬（資源見底時要求更高的增幅才動手）。
+
+         ⚠️ 洗煉的結果由遊戲擲骰，這裡只決定「犧牲哪一格」。
+         策略仍然沒有能力指定要洗出什麼——那本來就不是玩家能決定的事。 */
+      var rrCfg = r.rerollByRoi;
+      var roi = state.ctx && state.ctx.roi;
+      var eqAff = pathVal(state, rrCfg.equippedAffixes);
+      var rrEquip = pathVal(state, rrCfg.equipment) || {};
+
+      if (roi && roi.best && eqAff) {
+        /* 止損：資源見底時把門檻乘上去（＝更少動手），而不是直接停手。
+           完全停手會讓「資源不足」變成一個永久狀態——不洗就不會變強，
+           不變強就推不過去，推不過去就掉不到資源。 */
+        var sl = state.ctx.stopLoss;
+        var gate = roi.minGainPct * (sl ? sl.gainMultiplier : 1);
+
+        /* ---- 排序名次要落在「有被探測過的部位」上 ----
+
+           評估器為了省 computeStats，只對前幾名的宿主部位探「身上這條詞條值多少」
+           （probeTopSlots）。而它挑前幾名用的是**未加權**的增幅，這裡的排序卻是
+           **依敗因加權**過的——兩份名次不一定同一個。
+
+           不處理的話，第一名的部位剛好沒被探到時，eqAff[tgtSlot] 是 undefined，
+           規則直接靜靜地什麼都不做。那種失效不會有任何徵兆，只會在報表上看到
+           「reroll-by-roi 送出 0 次」，而看報表的人會以為是門檻設太高。
+
+           所以往下找第一個「有被探到」的名次。找不到就是這一拍真的沒東西可洗。 */
+        var pick = null;
+        for (var rri = 0; rri < roi.ranked.length; rri++) {
+          var cand2 = roi.ranked[rri];
+          if (cand2.score < gate) break;              // 已排序，後面只會更低
+          if (eqAff[cand2.slotKey]) { pick = cand2; break; }
+        }
+        if (!pick) pick = null;
+
+        var tgtSlot = pick ? pick.slotKey : null;
+        var affList = tgtSlot ? eqAff[tgtSlot] : null;
+        var tgtItem = tgtSlot ? rrEquip[tgtSlot] : null;
+
+        if (pick && affList && affList.length && tgtItem && tgtItem.id) {
+          /* 身上已經有這條詞條就不必洗了——洗出第二條同名詞條遊戲會擋，
+             而且 ROI 表算的是「多一條」的價值，不是「多兩條」。 */
+          var already = false;
+          for (var rai = 0; rai < affList.length; rai++) {
+            if (affList[rai].key === pick.key) { already = true; break; }
+          }
+
+          if (!already) {
+            /* 犧牲品：邊際貢獻（依當前攻防權重加權）最低的那一條。
+               太古位置預設不動，理由見 evaluator.js 的 evalEquippedAffixValue。 */
+            var victimAf = null, victimLoss = Infinity;
+            for (var raj = 0; raj < affList.length; raj++) {
+              var af2 = affList[raj];
+              if (af2.ancient && rrCfg.keepAncient !== false) continue;
+              var loss = (af2.lossOffPct || 0) * roi.weights.offense
+                + (af2.lossEhpPct || 0) * roi.weights.ehp;
+              /* 決定論：損失相同時以鍵名決勝，不讓陣列順序以外的東西影響結果。 */
+              if (loss < victimLoss || (loss === victimLoss && victimAf && af2.key < victimAf.key)) {
+                victimLoss = loss; victimAf = af2;
+              }
+            }
+
+            /* 淨期望增益。這是整條規則的守門員：
+               新詞條的價值必須明顯高於被犧牲那條，而且高出門檻。 */
+            if (victimAf && (pick.score - victimLoss) >= gate) {
+              out.push({ name: r.cmd, args: { itemId: tgtItem.id, affixKey: victimAf.key }, ruleId: r.id });
+            }
+          }
+        }
+      }
+    } else if (r.upgradeByRoi) {
+      /* ============ 強化：先確認付得起，再決定強化誰 ============
+
+         ---- 實測動機 ----
+
+         一場 20 小時的模擬送了 52,465 次 item.upgrade，其中 51,353 次（98%）
+         遊戲回「資源不足」。舊規則（upgradePriority）只看品質上限表，
+         完全不看戶頭裡有沒有錢，於是：
+           - 每個決策點對 13 個部位各送一次，絕大多數必定落空
+           - 少數成功的那幾次把資源打散在「即將被換掉」的部位上
+             （強化等級在換裝時一起蒸發）
+
+         ---- 兩道閘門 ----
+
+         1. **付得起**：panels.eval.resources.upgradesAffordable < 門檻就整條停手。
+            這不是保守，是把資源攢到能真的做完一次投資為止。
+         2. **值得投**：正要被換掉的部位不強化（評估器說那個部位有 worth 的候選）。
+            強化等級換裝時歸零，往那裡投等於直接丟掉。
+
+         品質上限表（capByRarity）沿用舊規則的語意，仍然是策略資料。 */
+      var urCfg = r.upgradeByRoi;
+      var urAfford = pathVal(state, urCfg.affordPath);
+      var urNeed = (typeof urCfg.minAffordable === 'number') ? urCfg.minAffordable : 1;
+      /* 逐部位的付款能力。有這張表時整體門檻只當粗閘，實際由每個部位自己決定——
+         一個部位付不起不該讓全身停工（見 evaluator.js evalResources 的實測說明）。 */
+      var urSlotAfford = urCfg.affordableSlots ? pathVal(state, urCfg.affordableSlots) : null;
+
+      /* null／NaN＝還算不出成本（開局沒有裝備）。當成「先別強化」——
+         這一條每個決策點都會重來，晚幾秒沒有代價。 */
+      if (typeof urAfford === 'number' && isFinite(urAfford) && urAfford >= urNeed) {
+        var urRarities = pathVal(state, urCfg.equippedRarities) || {};
+        var urEquip = pathVal(state, urCfg.equipment) || {};
+        var urPlan = pathVal(state, urCfg.slotUpgrades) || {};
+        var urCap = urCfg.capByRarity || [];
+
+        var urMaxRarity = -1;
+        for (var urk in urRarities) {
+          var urv = Number(urRarities[urk]);
+          if (urv > urMaxRarity) urMaxRarity = urv;
+        }
+
+        /* 決定論：鍵順序不該決定資源花在誰身上。 */
+        var urSlots = [];
+        for (var urk2 in urRarities) urSlots.push(urk2);
+        urSlots.sort();
+
+        var urQuota = (typeof urCfg.maxPerDecision === 'number') ? urCfg.maxPerDecision : 4;
+        for (var uri = 0; uri < urSlots.length && urQuota > 0; uri++) {
+          var urSlot = urSlots[uri];
+          var urItem = urEquip[urSlot];
+          if (!urItem || !urItem.id) continue;
+
+          /* 這一格現在付得起嗎。付不起就跳過**這一格**，不是停掉整條規則。 */
+          if (urSlotAfford && urSlotAfford[urSlot] === false) continue;
+
+          /* 這個部位馬上要換掉：強化等級會一起蒸發，別投。 */
+          var urPlanned = urPlan[urSlot];
+          if (urPlanned && urPlanned.worth) continue;
+
+          var urRar = Number(urRarities[urSlot]);
+          if (urRar !== urMaxRarity) {
+            var urLimit = (typeof urCap[urRar] === 'number') ? urCap[urRar] : 0;
+            if ((urItem.upgrade || 0) >= urLimit) continue;
+          }
+          urQuota--;
+          var urArgs = {};
+          for (var urak in baseArgs) urArgs[urak] = baseArgs[urak];
+          urArgs[urCfg.argKey || 'itemId'] = urItem.id;
+          out.push({ name: r.cmd, args: urArgs, ruleId: r.id });
+        }
       }
     } else if (r.argsList) {
       /* 同一條規則要送多組固定參數（例如三個品質各設一次）。 */
