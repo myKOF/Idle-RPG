@@ -1848,3 +1848,27 @@ Commit：
 
 阻塞
 - [已完成] Codex：新增混沌裝備與神鑄混沌。範圍：`js/data.js`、掉落／離線掉落、神鑄、熔爐與 worker、`config/CSV/game_parameters.csv`、`tools/apply_params.cjs`、UI、文件與測試。需求：三個神界場景 551 級起 1% 掉落；6 件混沌以 20% 基礎成功率神鑄，每魔塵 +3%，失敗退 3 件。驗收：`npm.cmd test` 622/622、`npm.cmd run build` 通過；apply_params 仍受既有 15 個場景錨點問題阻擋 `--write`，本次新增無新錨點錯誤。
+
+## Codex：驗證邊際效益導向決策改造（c703483）
+
+任務狀態：已完成
+
+任務分類：模擬器獨立驗證
+
+負責 AI：Codex
+
+任務內容：依 `prompts/codex_task_verify_roi_agent.md` 執行 T1～T6，驗證既有策略回歸、評估器唯讀性與決定性、新 seed A/B 成效、效能與快取命中；只記錄證據，不修改模擬決策實作或策略參數。
+
+允許修改：`prompts/codex_task_verify_roi_agent.md`、`docs/` 底下新增驗證報告；若發現缺陷，才可在 `tests/` 新增重現測試。
+
+禁止修改：`scripts/sim/**`、`js/**`、`scripts/run_sim.js`、`scripts/sim/policy.*.json`。
+
+前置依賴：`c703483`；已確認目前分支包含該 commit，並建立 `../verify_base` 於 `d1c7c1e`。
+
+測試要求：T1 18 組雜湊、T2 獨立唯讀腳本、T3 `js/` 差異、T4 8 seed A/B、T5 效能與 `planAgeSec`、T6 瀏覽器交叉驗證（環境可支援時），以及 `npm test`、`node tools/build_check.cjs`。
+
+完成條件：所有實際執行結果、數字、原始輸出位置與未通過項目均寫入報告，且不修改被禁止檔案。已完成：T1 18/18、T2 唯讀／決定性通過、T3 `js/` 無差異；T4 中位數改善但 seed `20260903` 退步且最高 stage 最小值未提升；T5 ROI／舊策略縮時中位數 55.7% 不達 70%；T6 因無瀏覽器樣本環境跳過；完整測試 928/928，build 220 檔通過。
+
+驗證報告：`docs/ROI_AGENT_VERIFICATION_2026-08-03.md`
+
+完成後交給：主整合工作區。
