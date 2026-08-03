@@ -64,15 +64,16 @@ test('太古位置不看強度值：必為滿值 × 太古倍率', () => {
   const anc = c.affixValueFromStrength('atkFlat', 100, 6, 0, true); // 強度值 0 也一樣
   assert.equal(anc, c.affixValueFromStrength('atkFlat', 100, 6, c.STRENGTH_ROLL_MAX, true));
   assert.ok(anc > max, '太古數值必超出一般上限');
-  assert.equal(anc, Math.round(c.affixBaseValue('atkFlat', 100, 6) * 1.2 * c.ANCIENT_AFFIX_VALUE_MULT));
+  assert.equal(anc, Math.round(c.affixBaseValue('atkFlat', 100, 6) * c.AFFIX_MAX_VALUE_MULT * c.ANCIENT_AFFIX_VALUE_MULT));
 });
 
-test('調整參數表的 base／每級成長後，同一強度值算出新數值（改造目的）', () => {
+test('調整參數表的基礎值／成長基礎值後，同一強度值算出新數值（改造目的）', () => {
   const c = loadContext();
   const it = makeItem({ affixes: [{ key: 'atkFlat', roll: 500 }] });
   const before = c.affixValue(it, it.affixes[0]);
 
   c.AFFIX_POOL.atkFlat.base *= 2;                       // 模擬參數表把基礎值調整為兩倍
+  c.AFFIX_POOL.atkFlat.growthBase *= 2;                 // 成長基礎值同步調整，維持整條曲線等比
   const after = c.affixValue(it, it.affixes[0]);
 
   assert.equal(after, before * 2, '舊存檔的既有裝備必須跟著套用新參數');

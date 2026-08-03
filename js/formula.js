@@ -1261,7 +1261,7 @@ function equipmentLevelRarityIndex(level) {
 }
 
 /* ---- 詞條數值 ----
-   基準值 = (base + base × lv係數 × (裝備等級-1)) × 稀有度倍率
+   基準值 = (基礎值 + 成長基礎值 × lv係數 × (裝備等級-1)) × 稀有度倍率
    一般產出值 = 基準值 × (0.8 + 強度值/STRENGTH_ROLL_MAX × 0.4)（即洗煉區間 ±20%）
    洗煉值（傳入 affixCap 時）先把 80%~120% 平分為 A/B 兩段，再依權重選段。
 
@@ -1316,12 +1316,14 @@ function affixRerollUnit(affixCap) {
   return Math.random() * total < lowerWeight ? rnd(0, 0.5) : rnd(0.5, 1);
 }
 
-// 詞條基準值（不含隨機、不含強化）＝ (base + base×lv×(裝備等級-1)) × 稀有度倍率
+// 詞條基準值（不含隨機、不含強化）＝ (基礎值 + 成長基礎值×lv×(裝備等級-1)) × 稀有度倍率
 function affixBaseValue(key, itemLevel, rarityIdx) {
   var def = AFFIX_POOL[key];
   var r = RARITIES[rarityIdx];
   if (!def || !r) return 0;
-  return (def.base + def.base * def.lv * ((Number(itemLevel) || 1) - 1)) * r.mult;
+  var base = Number(def.base) || 0;
+  var growthBase = def.growthBase === undefined ? base : (Number(def.growthBase) || 0);
+  return (base + growthBase * (Number(def.lv) || 0) * ((Number(itemLevel) || 1) - 1)) * r.mult;
 }
 // 依詞條定義進位：百分比類留一位小數，其餘取整（產出與顯示共用同一套進位）
 function affixRoundValue(key, v) {
@@ -1339,7 +1341,7 @@ function rollAffixStrength(affixCap) {
 function affixValueFromStrength(key, itemLevel, rarityIdx, roll, ancient, valueMult) {
   var baseV = affixBaseValue(key, itemLevel, rarityIdx);
   if (!baseV) return 0;
-  var v = ancient ? baseV * 1.2 * ANCIENT_AFFIX_VALUE_MULT : baseV * strengthMult(roll);
+  var v = ancient ? baseV * AFFIX_MAX_VALUE_MULT * ANCIENT_AFFIX_VALUE_MULT : baseV * strengthMult(roll);
   v *= Number(valueMult) > 0 ? Number(valueMult) : 1;
   return affixRoundValue(key, v);
 }
@@ -1392,7 +1394,7 @@ function getAffixLimits(key, itemLevel, rarityIdx, item) {
     ? TWO_HAND_AFFIX_VALUE_MULT : 1;
   return {
     min: affixRoundValue(key, baseV * 0.8 * mult),
-    max: affixRoundValue(key, baseV * 1.2 * mult)
+    max: affixRoundValue(key, baseV * AFFIX_MAX_VALUE_MULT * mult)
   };
 }
 
