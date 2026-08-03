@@ -1392,6 +1392,23 @@ function enemyDamageFloatKey(cls) {
   return source + ':' + (tokens.indexOf('crit') >= 0 ? 'crit' : 'normal');
 }
 
+/*
+ * 將敵人傷害轉成唯一的視覺分類。
+ * dmg／crit／enemy-attack／enemy-skill 仍保留給傷害合併邏輯判斷，
+ * 但 CSS 只讀這四個分類，避免來源與暴擊規則彼此覆蓋。
+ */
+function enemyDamageFloatStyleClass(cls) {
+  var tokens = (cls || '').split(/\s+/);
+  var isCrit = tokens.indexOf('crit') >= 0;
+  if (tokens.indexOf('enemy-attack') >= 0) {
+    return isCrit ? 'enemy-hit-attack-crit' : 'enemy-hit-attack';
+  }
+  if (tokens.indexOf('enemy-skill') >= 0) {
+    return isCrit ? 'enemy-hit-skill-crit' : 'enemy-hit-skill';
+  }
+  return '';
+}
+
 function enemyDamageFloatInfo(text, value) {
   if (typeof value !== 'number' || !isFinite(value) || value <= 0 || typeof fmt !== 'function') return null;
   var formatted = fmt(value);
@@ -1614,7 +1631,8 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
     }
   }
   var sp = document.createElement('span');
-  sp.className = 'float-txt ' + (cls || '');
+  var enemyStyleClass = enemyHitFloat ? enemyDamageFloatStyleClass(cls) : '';
+  sp.className = 'float-txt ' + (cls || '') + (enemyStyleClass ? ' ' + enemyStyleClass : '');
   if (enemyHitFloat) sp.className += ' enemy-hit-float';
   sp.textContent = text;
   var pct = enemyHitFloat ? 8 + Math.random() * 84 : 15 + Math.random() * 70;

@@ -1319,56 +1319,64 @@ textarea#save-io {
   position: absolute;
   top: 55%;
   font-weight: bold;
-  /* 所有飄字的預設字級；下方的 dmg、crit、enemy-attack 等規則會覆蓋它。 */
+  /* 非敵人傷害分類飄字的預設字級；四種敵人傷害會使用下方獨立規則。 */
   font-size: 14px;
   /* 一般飄字動畫：0.80 秒內完成上浮與淡出。時間越短，視覺上浮得越快。 */
   animation: floatUp .80s ease-out forwards;
   text-shadow: 0 1px 3px #000;
 }
 
-.float-txt.dmg {
-  /* 一般傷害數字的文字顏色。 */
+.float-txt.dmg:not(.enemy-hit-float) {
+  /* 非敵人飄字的一般傷害顏色。 */
   color: #ffffff;
 }
 
-.float-txt.crit {
-  /* 爆擊、重擊等強調傷害的預設顏色與字級。 */
+.float-txt.crit:not(.enemy-hit-float) {
+  /* 非敵人飄字的爆擊／重擊預設顏色與字級。 */
   color: #ffd700;
   font-size: 20px;
 }
 
-.float-txt.mdmg {
-  /* 敵人攻擊玩家時使用的普通傷害文字。 */
+.float-txt.mdmg:not(.enemy-hit-float) {
+  /* 非敵人飄字的敵方普通傷害顏色。 */
   color: #ffffff;
 }
 
-.float-txt.enemy-hit-float.dmg,
-.float-txt.enemy-hit-float.mdmg {
-  /* 玩家普攻或一般技能打到敵人時的普通傷害字級。 */
-  font-size: 18px;
-}
+/*
+   敵人受到傷害時只會套用以下四個獨立分類之一：
+   1. enemy-hit-attack       玩家普攻
+   2. enemy-hit-skill        玩家技能
+   3. enemy-hit-attack-crit  玩家普攻暴擊
+   4. enemy-hit-skill-crit   玩家技能暴擊
 
-.float-txt.enemy-hit-float.crit,
-.float-txt.enemy-hit-float.skill {
-  /* 玩家造成爆擊或技能強調字時的字級。 */
-  font-size: 22px;
-}
-
-/* 玩家打到敵人時，依傷害來源區分普攻與技能的顏色、層級及字級。 */
-.float-txt.enemy-hit-float.enemy-attack {
+   每個分類都完整設定自己的字級、顏色與圖層；不要在這四個區塊外
+   另外用 dmg、crit、enemy-attack 或 enemy-skill 覆寫敵人傷害字。
+*/
+.float-txt.enemy-hit-float.enemy-hit-attack {
+  /* 玩家普攻：只調整這個區塊，就不會影響技能或任何暴擊字。 */
   color: #ffffff;
   font-size: 18px;
   z-index: 10 !important;
 }
 
-.float-txt.enemy-hit-float.enemy-attack.crit {
-  /* 玩家普攻爆擊字。 */
-  font-size: 22px;
+.float-txt.enemy-hit-float.enemy-hit-skill {
+  /* 玩家技能：只調整這個區塊，就不會影響普攻或暴擊字。 */
+  color: #ffd700;
+  font-size: 18px;
+  z-index: 20 !important;
 }
 
-.float-txt.enemy-hit-float.enemy-skill {
-  /* 玩家技能傷害字：金色，並壓在普通傷害字上方。 */
+.float-txt.enemy-hit-float.enemy-hit-attack-crit {
+  /* 玩家普攻暴擊：與普通普攻完全獨立。 */
+  color: #ffffff;
+  font-size: 22px;
+  z-index: 10 !important;
+}
+
+.float-txt.enemy-hit-float.enemy-hit-skill-crit {
+  /* 玩家技能暴擊：與普通技能及普攻暴擊完全獨立。 */
   color: #ffd700;
+  font-size: 22px;
   z-index: 20 !important;
 }
 
@@ -5996,52 +6004,19 @@ textarea#save-io {
   overflow: visible;
 }
 
-.enemy-combatant > .enemy-float-retained .float-txt {
-  /* 死亡敵人保留層的預設飄字大小。 */
+.enemy-combatant > .enemy-float-retained .float-txt:not(.enemy-hit-float) {
+  /* 死亡敵人保留層中，非四種傷害分類飄字的預設大小。 */
   font-size: 14px;
 }
 
-.enemy-combatant > .enemy-float-retained .float-txt.enemy-hit-float.dmg,
-.enemy-combatant > .enemy-float-retained .float-txt.enemy-hit-float.mdmg {
-  /* 保留層中的普通傷害字。 */
+.enemy-party.enemy-grid .float-txt:not(.enemy-hit-float) {
+  /* 棋盤版型中，非四種傷害分類飄字的預設大小。 */
   font-size: 14px;
 }
 
-.enemy-combatant > .enemy-float-retained .float-txt.enemy-hit-float.crit,
-.enemy-combatant > .enemy-float-retained .float-txt.enemy-hit-float.skill {
-  /* 保留層中的爆擊／技能強調字。 */
-  font-size: 18px;
-}
-
-.enemy-party.enemy-grid .float-txt {
-  /* 棋盤版型所有浮字的最終預設字級。 */
-  font-size: 14px;
-}
-
-.enemy-party.enemy-grid .float-txt.enemy-hit-float.dmg,
-.enemy-party.enemy-grid .float-txt.enemy-hit-float.mdmg {
-  /* 棋盤版型：敵人受到普通普攻／技能傷害時的字級。 */
-  font-size: 14px;
-}
-
-.enemy-party.enemy-grid .float-txt.crit,
-.enemy-party.enemy-grid .float-txt.skill {
-  font-size: 18px;
-}
-
-.enemy-party.enemy-grid .float-txt.enemy-hit-float.crit,
-.enemy-party.enemy-grid .float-txt.enemy-hit-float.skill {
-  /* 棋盤版型：敵人受到爆擊／技能強調傷害時的字級。 */
-  font-size: 18px;
-}
-
-.enemy-party.enemy-grid .float-txt.enemy-hit-float.enemy-attack {
-  /* 棋盤版型：玩家普攻傷害字。 */
-  font-size: 14px;
-}
-
-.enemy-party.enemy-grid .float-txt.enemy-hit-float.enemy-attack.crit {
-  /* 棋盤版型：玩家普攻爆擊字。 */
+.enemy-party.enemy-grid .float-txt.crit:not(.enemy-hit-float),
+.enemy-party.enemy-grid .float-txt.skill:not(.enemy-hit-float) {
+  /* 棋盤版型中，非敵人傷害分類的強調飄字大小。 */
   font-size: 18px;
 }
 
