@@ -431,7 +431,7 @@ var STAT_CAPS = {
   lifesteal: 0, manaSteal: 0, blockRate: 50, blockDmgRed: 50,
   evasion: 0, tenacity: 80, ctrlRes: 80,
   ccRed: 60, moveSpeed: 50, luck: 100, hybridMutation: 60, enrageThreshold: 30,
-  affixCap: 100, doubleHit: 45, stun: 30
+  affixCap: 0, doubleHit: 45, stun: 30
   // 註：全局減傷上限＝GLOBAL_DMG_RED_CAP（由「2-屬性派生/全局減傷」控制）；此處不重複。
 };
 

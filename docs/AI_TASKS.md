@@ -153,6 +153,35 @@ Web Worker 遷移全部完成，無進行中的大型工程。
 
 完成後交給：Claude Review，之後由 Antigravity 進行長時間背景掛機與切回驗證。
 
+## Codex：移除詞條上限率 100% 硬上限（2026-08-03）
+
+狀態：已完成
+
+任務分類：裝備洗煉公式／屬性上限調整
+
+任務目的：
+
+- 依使用者要求移除詞條上限率的 100% 硬上限。
+- 保留現有洗煉高值偏向公式，讓超過 100% 的詞條上限率可以繼續提高高值段權重。
+- 同步參數表、程式單一來源、公式文件與回歸測試。
+
+負責 AI：Codex
+
+允許修改檔案：`docs/AI_TASKS.md`、`js/data.js`、`config/CSV/game_parameters.csv`、
+`game_formula.md`、`tests/stat-cap-unlimited.test.cjs`
+
+禁止修改：裝備存檔格式、洗煉區間與分段權重公式、其他 AI 進行中的檔案。
+
+前置依賴：無；已完成上述檔案衝突預檢，未發現其他副本或分支修改。
+
+測試要求／結果：詞條上限率無上限回歸測試 6/6 通過；`apply_params --check-anchors` 的 555 個錨點通過；build 226/226 通過；完整測試 972 項中 970 通過，2 項既有失敗（`affix-reroll-bias`、`enemy-type-damage`）與本次無關。
+
+完成結果：`STAT_CAPS.affixCap = 0`、參數表對應值為 0、面板不再將詞條上限率夾在 100%；洗煉分段權重公式維持不變，超過 100% 的詞條上限率可繼續提高高值段權重。
+
+完成條件：`STAT_CAPS.affixCap = 0`、參數表對應值為 0、面板不再將詞條上限率夾在 100%，且公式與既有洗煉行為通過驗證。
+
+完成後交給：Claude Review，之後由使用者確認洗煉體感。
+
 P5 之後的檔案所有權慣例（沿用即可，非硬性）：
 - `js/worker/*`、`js/bridge.js`、`js/storage.js`、`js/main.js`、`js/worker/protocol.js`：Claude
 - `js/ui.js`：Codex

@@ -42,6 +42,13 @@ test('statFmt：上限 0 不做「達上限」金色標示；>0 達標才標示'
   assert.doesNotMatch(c.statFmt(80, 100, '%'), /ffd700/);   // 未達上限 → 不標金
 });
 
+test('詞條上限率取消 100% 硬上限', () => {
+  const c = loadContext();
+  assert.equal(c.STAT_CAPS.affixCap, 0);
+  assert.equal(c.capValue(150, c.STAT_CAPS.affixCap), 150);
+  assert.doesNotMatch(c.statFmt(150, c.STAT_CAPS.affixCap, '%'), /ffd700/);
+});
+
 test('globalDamageReduction：上限 0 代表無上限（減傷率趨近 100%）', () => {
   const c = loadContext();
   c.GLOBAL_DMG_RED_CAP = 50;
