@@ -162,12 +162,30 @@ function getViewStats() {
 }
 
 /* ---- 經驗 / 升級 ---- */
-function gainXp(n) {
-  var p = G.player;
-  p.xp += n;
+function normalizePlayerXpValue(value) {
+  // Infinity 只可能來自執行期極端大量入帳；保留它，讓結算流程把角色推到最高級。
+  if (value === Infinity) return value;
+  var n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
+/* 將目前經驗完整結算。除了 gainXp 外，讀檔後也必須呼叫這支，因為升級公式
+   可能在兩次存檔之間調整，舊存檔的 xp 可能已經超過新公式的下一級門檻。 */
+function settlePlayerXp(options) {
+  options = options || {};
+  var p = options.player || (typeof G !== 'undefined' && G ? G.player : null);
+  if (!p) return 0;
+
+  var level = Number(p.level);
+  p.level = Number.isFinite(level) ? clamp(Math.floor(level), 1, MAX_LEVEL) : 1;
+  p.xp = normalizePlayerXpValue(p.xp);
+
   var gained = 0;
-  while (p.level < MAX_LEVEL && p.xp >= xpForLevel(p.level)) {
-    p.xp -= xpForLevel(p.level);
+  while (p.level < MAX_LEVEL) {
+    var need = Number(xpForLevel(p.level));
+    // 公式異常時停止，避免壞資料造成無限迴圈；正常公式永遠是正的有限值。
+    if (!Number.isFinite(need) || need <= 0 || p.xp < need) break;
+    p.xp -= need;
     p.level++;
     gained++;
     // 2026-07-30 技能熟練度制：升級不再給技能點（技能點改由技能熟練度提供，見 skills.js）
@@ -181,12 +199,33 @@ function gainXp(n) {
     var reward = reincarnationCount() > 0
       ? '、<span class="log-hl-good">轉生天賦點 +' + gained + '</span>'
       : '';
-    blog('🎉 等級提升！目前等級 ' + p.level + '（四維主屬性 +2' + reward + '）', 'good');
+    if (options.silent !== true && typeof blog === 'function') {
+      blog('🎉 等級提升！目前等級 ' + p.level + '（四維主屬性 +2' + reward + '）', 'good');
+    }
     // 升級回滿血藍
-    var st = getStats();
-    if (FIELD.player) { FIELD.player.hp = st.hp; FIELD.player.mp = st.mp; }
-    UI.dirty.header = true; UI.dirty.skills = true; UI.dirty.talents = true;
+    if (typeof getStats === 'function') {
+      var st = getStats();
+      if (typeof FIELD !== 'undefined' && FIELD && FIELD.player) {
+        FIELD.player.hp = st.hp; FIELD.player.mp = st.mp;
+      }
+    }
+    if (typeof UI !== 'undefined' && UI.dirty) {
+      UI.dirty.header = true; UI.dirty.skills = true; UI.dirty.talents = true;
+    }
   }
+  return gained;
+}
+
+function gainXp(n) {
+  var p = G.player;
+  var amount = Number(n);
+  // 無效／負數入帳不應污染 xp；但仍結算既有的溢出經驗，修復舊存檔也不必等下一筆有效收益。
+  if (!Number.isNaN(amount) && amount >= 0) {
+    p.xp = normalizePlayerXpValue(p.xp) + amount;
+  } else {
+    p.xp = normalizePlayerXpValue(p.xp);
+  }
+  return settlePlayerXp();
 }
 
 /* ---- 轉生 ----

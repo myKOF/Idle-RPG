@@ -1362,6 +1362,8 @@ function boot(msg) {
     loaded = (typeof migrateSave === 'function') ? migrateSave(msg.save) : msg.save;
   }
   G = loaded || newGameState();
+  // 存檔中的 xp 可能是舊升級公式留下的溢出值；先完成升級再建立戰鬥實體。
+  if (typeof settlePlayerXp === 'function') settlePlayerXp({ silent: true });
   backfillItemSockets();
   updateShownRes();
   if (typeof markStatsDirty === 'function') markStatsDirty();
@@ -1479,6 +1481,7 @@ function loadIntoRunningSim(msg) {
   if (!msg.save) { reportError('load', new Error('load 訊息沒有帶存檔內容')); return; }
   requestPersist(PERSIST_KINDS.AUTO); // 目前進度先保底
   G = (typeof migrateSave === 'function') ? migrateSave(msg.save) : msg.save;
+  if (typeof settlePlayerXp === 'function') settlePlayerXp({ silent: true });
   backfillItemSockets();
   updateShownRes();
   if (typeof markStatsDirty === 'function') markStatsDirty();

@@ -419,6 +419,10 @@ function migrateSave(data) {
     }
   }
   // 2026-07-30 技能熟練度制：技能點不再依角色等級補建（舊 skillPointBudget 於下方轉換為熟練度等級）。
+  // 經驗值是目前等級的「剩餘經驗」，不是累積總經驗；讀檔先轉回有限非負數，
+  // Worker 在接管 G 後再以當前公式完整結算可能的溢出（見 settlePlayerXp）。
+  var savedXp = Number(data.player.xp);
+  data.player.xp = Number.isFinite(savedXp) && savedXp >= 0 ? savedXp : 0;
   if (data.player.level > MAX_LEVEL) {
     data.player.level = MAX_LEVEL;
     data.player.xp = 0;
