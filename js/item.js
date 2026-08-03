@@ -657,6 +657,7 @@ function itemDetailHTML(it, cmp, opts) {
     var reqRarity = d.minR ? ' <span style="font-size:10.5px;color:' + RARITIES[d.minR].color + '">(' + RARITIES[d.minR].name + '+)</span>' : '';
 
     var baseVal = (d.base + d.base * d.lv * (it.level - 1)) * r.mult;
+    if (typeof isTwoHandItem === 'function' && isTwoHandItem(it)) baseVal *= TWO_HAND_AFFIX_VALUE_MULT;
     var vMin = baseVal * 0.8;
     var vMax = baseVal * 1.2;
     var strMin = d.pct ? Math.round(vMin * 10) / 10 + '%' : Math.round(vMin);
@@ -716,7 +717,7 @@ function itemDetailHTML(it, cmp, opts) {
     if (!def) continue;   // 已從參數表下架的詞條：不渲染（數值仍以凍結值計入屬性與評分）
     var name = esc(def.name.replace('%', ''));
 
-    var limits = getAffixLimits(k, it.level, it.rarity);
+    var limits = getAffixLimits(k, it.level, it.rarity, it);
     // 滿值高亮改看強度值（精確判定，不再靠 0.01 容差比對數值）；太古位置恆視為滿值
     var isMax = !!it.affixes[i].ancient || (Number(it.affixes[i].roll) || 0) >= STRENGTH_ROLL_MAX;
     var limitMult = k === 'loot' ? DROP_RATE_EFFECT_MULT : 1;
@@ -802,7 +803,7 @@ function itemDetailHTML(it, cmp, opts) {
     it.godPassives.forEach(function (gp) {
       var gd = GODFORGE_POOL[gp.key];
       if (!gd) return;
-      var gv = godPassiveValue(gp);
+      var gv = godPassiveValue(gp, it);
       var gpDesc = gp.key === 'greed'
         ? '金幣加成與掉寶率提高 ' + fmt1(gv) + '%／' + fmt1(effectiveDropRateEffect(gv)) + '%'
         : esc(gd.desc).replace('{v}', fmt1(gv));

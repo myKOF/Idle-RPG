@@ -45,9 +45,28 @@ function legendaryClone(value) {
   return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 }
 
+var LEGENDARY_FX_NON_VALUE_KEYS = {
+  chance: true, count: true, bounces: true, hits: true, maxStacks: true,
+  tickSec: true, sec: true, dur: true, cd: true, basicAttackThreshold: true,
+  killExtend: true, double: true, triple: true
+};
+
+function legendaryScaleFxValues(value, mult, key) {
+  if (Array.isArray(value)) return value.map(function (v) { return legendaryScaleFxValues(v, mult, key); });
+  if (!value || typeof value !== 'object') {
+    return typeof value === 'number' && !LEGENDARY_FX_NON_VALUE_KEYS[key] ? value * mult : value;
+  }
+  var out = {};
+  for (var k in value) out[k] = legendaryScaleFxValues(value[k], mult, k);
+  return out;
+}
+
 function legendaryFx(key) {
   var def = PASSIVE_POOL[key];
-  return def && def.fx ? def.fx : {};
+  if (!def || !def.fx) return {};
+  var st = (typeof getStats === 'function') ? getStats() : null;
+  var mult = st && st.legendaryEffectMults ? Number(st.legendaryEffectMults[key]) || 1 : 1;
+  return mult === 1 ? def.fx : legendaryScaleFxValues(def.fx, mult, '');
 }
 
 function legendaryTriggeredSkillLevel(id) {
