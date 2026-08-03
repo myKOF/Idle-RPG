@@ -801,12 +801,26 @@ function buildEvalPanel(params) {
   /* 沒有對手就沒有評估對象。回一個標明 unknown 的空殼而不是 null——
      策略的規則會去讀 panels.eval.*，回 null 會讓所有路徑解析失敗並灌爆 BAD_PATHS。 */
   if (!foe) {
+    /* ⚠️ 這個空殼的欄位必須與下面的正常回傳**一模一樣**，少一個都不行。
+
+       實測後果：`equippedAffixes` 是後來才加的，只加在正常回傳那一份，
+       空殼漏掉。於是每個「沒有對手」的決策點（剛死、正在復活、剛過關），
+       `panels.eval.equippedAffixes` 就解析失敗一次並記進 BAD_PATHS。
+       Codex 的獨立驗證量到 8 場全都有，最嚴重的那一場 167 次。
+
+       行為上其實無害（沒有對手時洗煉規則本來就該按兵不動），但它汙染的是
+       **失效路徑**這個診斷管道——那是用來發現「策略指到已改名欄位」的唯一訊號，
+       被雜訊灌滿之後就再也看不出真正的問題。 */
     return {
       known: false,
+      power: null,
+      foe: null,
+      combat: { known: false },
       tier: evalTierOutlook(),
       resources: evalResources(),
-      combat: { known: false },
+      planAgeSec: null,
       affixRoi: {},
+      equippedAffixes: {},
       slotUpgrades: {},
       model: MODEL_NOTES
     };
