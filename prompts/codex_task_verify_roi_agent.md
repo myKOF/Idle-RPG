@@ -180,3 +180,41 @@ seed 怎麼挑請寫進報告（例如「取 20260901~20260908 連號」），
   本檔已寫成自足格式，開新的可以避開錨定。
 - **要不要先 merge**：**要**。整個任務都在驗證 `c703483`，沒有它無從開始。
   先 `git pull --ff-only` 並確認 `git log` 含該 commit。
+## Codex 實際驗證紀錄（T1–T3）
+
+執行日期：2026-08-03。基準：`d1c7c1e`；改造：目前分支 `0927b4c`（包含 `c703483`）。
+
+T1：18/18 組 `determinism.finalStateHash` 完整 SHA-256 逐字串相同。
+
+| policy | seed | finalStateHash |
+|---|---:|---|
+| baseline-idle-v2 | 4242 | `28f0e31c7cd502e9dda3f19d72bede0f3e93788386e3306520bd53d8b19119bf` |
+| baseline-idle-v2 | 777 | `f0fe33824749af69f9b1ebf8fe12563963e630b1592fd8d64d7b73db1b7c1978` |
+| baseline-idle-v2 | 20260803 | `416415568236a243d9c024c4da2c6502d0c4922c00677748a6e6269f909c3518` |
+| policy-light | 4242 | `db49fbac61044a8bfd5ad508ce44ea418c602535ef4630be8ce9a471e6d40da2` |
+| policy-light | 777 | `b0627c748f3555d3dff66c0b10d69667414a333ec4e9f1db4bf1e480417dc4d3` |
+| policy-light | 20260803 | `b077c89b40c21b09fca106814d48e44fb6cb6505f6b52e226a6e3e4098ad5d5c` |
+| policy-moderate | 4242 | `a034617410dc388d77455cb8b23db87ee231abfded96f0ce5826f30f58972a1b` |
+| policy-moderate | 777 | `9a2e0f45ea19241ae6261f2f0f30ef0e66a5eada323cc756e187b09d74aab95b` |
+| policy-moderate | 20260803 | `baa416df617dc755f566d067d65ab135e112449e144046aa74f9c5e6dc49bf66` |
+| policy-heavy | 4242 | `e8455ff9355143dc5d5defecbb49eb2da49e48d0a4bbe33710e980d63f4a9dec` |
+| policy-heavy | 777 | `5749dab433e6f5d28ff50be731f8de1e5b3e7c3d3ddcb3566f31ece5952dca81` |
+| policy-heavy | 20260803 | `37007e853fa615567576d58c28772c23175b0cf358e89f6f31e9bd48c8e5cf69` |
+| policy-extreme | 4242 | `ff20246cab3dde76571f2510415e8ee133d9d2ff44fc9beb82dfc943a179255b` |
+| policy-extreme | 777 | `6e59d646c392af204a3b794886746dd5876dacc5a41f390999003309aecc3496` |
+| policy-extreme | 20260803 | `4abcc11436583453c5d8a6176b54183586475396a2c219ef0ed1862b7069ee76` |
+| lategame-systems-v1 | 4242 | `c00672317c9616d54039405351b78c05180620dbe072c38a343f294326efa6f7` |
+| lategame-systems-v1 | 777 | `60bdab25dd4e12b0a0050798d4fdd6b72ea022d7f55ece2413ee7e99db06b101` |
+| lategame-systems-v1 | 20260803 | `c02853871d6105e9ad3b6606fc4b412fff1339276bedbf5009c607e1525573a0` |
+
+T2：通過。獨立腳本 `D:\MyGame\Idle-RPG\verify_outputs\t2_readonly_verify.cjs` 以 seed 4242 推進 40×30 秒；評估場呼叫 `eval`／`evalCombat` 各 40 次，與完全不呼叫的完整存檔 SHA-256 均為 `063c448e55bfe972765e7ad9907efe84a602e2716de91a0e0f1117d9c6481c60`；兩次面板 JSON 相同；23 個 evaluator 頂層宣告與遊戲全域宣告零碰撞。原始輸出：`D:\MyGame\Idle-RPG\verify_outputs\t2_readonly_verify.output.json`。
+
+T3：通過。`git diff --stat d1c7c1e..c703483 -- js/` 無輸出，表示 `js/` 沒有被改造 commit 動到。
+
+## Codex 實際驗證紀錄（T4–T5）
+
+T4：使用未挑選過的 seed `20260901`–`20260908`，執行 20 遊戲小時、`policy.extreme` 與 `policy.extreme.roi` 各 8 場。中位數（level / 最高 stage / 最終停留 stage / atk）由 `80.5 / 100 / 91 / 6511.5` 變為 `132.5 / 148 / 129 / 36966.5`；但 `20260903` 由 `86 / 100 / 95 / 4653` 退為 `57 / 50 / 50 / 477`，且最高 stage 最小值仍為 50，故嚴格驗收不通過。完整逐 seed 表與 `snapshots.csv` 證據見 `docs/ROI_AGENT_VERIFICATION_2026-08-03.md`。
+
+T5：不通過。縮時倍率中位數舊策略 `296×`、ROI `165×`，比例 `55.7%`，低於 `70%` 門檻。代表性退步 seed 的 11,646 次 `panels.eval` 實測 `planAgeSec` 為 p50 約 5 秒、p95 約 15 秒、max 約 15 秒；快取有命中，效能退化不是快取完全失效。
+
+T6：跳過。本環境沒有真瀏覽器樣本收集流程，未以靜態檢查冒充交叉驗證。
