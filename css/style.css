@@ -768,7 +768,7 @@ body {
   white-space: nowrap;
 }
 
-.equip-detail-head > span:first-child,
+.equip-detail-head>span:first-child,
 .equip-detail-controls,
 .equip-detail-controls label {
   flex: 0 0 auto;
@@ -993,27 +993,27 @@ textarea#save-io {
   gap: 8px;
 }
 
-.battle-scene.multi-enemy-layout > .vs {
+.battle-scene.multi-enemy-layout>.vs {
   display: none;
 }
 
 /* 我方卡片同步縮小，讓出寬度給棋盤 */
-.battle-scene.multi-enemy-layout > .combatant:not(.enemy-combatant) {
+.battle-scene.multi-enemy-layout>.combatant:not(.enemy-combatant) {
   padding: 12px 6px 8px;
   border-width: 8px;
   align-self: center;
 }
 
-.battle-scene.multi-enemy-layout > .combatant:not(.enemy-combatant) .cb-icon {
+.battle-scene.multi-enemy-layout>.combatant:not(.enemy-combatant) .cb-icon {
   width: 46px;
   height: 46px;
 }
 
-.battle-scene.multi-enemy-layout > .combatant:not(.enemy-combatant) .cb-name {
+.battle-scene.multi-enemy-layout>.combatant:not(.enemy-combatant) .cb-name {
   font-size: 12px;
 }
 
-.battle-scene.multi-enemy-layout > .combatant:not(.enemy-combatant) .cb-level {
+.battle-scene.multi-enemy-layout>.combatant:not(.enemy-combatant) .cb-level {
   font-size: 11px;
 }
 
@@ -1355,35 +1355,61 @@ textarea#save-io {
 .float-txt.enemy-hit-float.enemy-hit-attack {
   /* 玩家普攻：只調整這個區塊，就不會影響技能或任何暴擊字。 */
   color: #ffffff;
-  font-size: 18px;
+  --enemy-hit-font-size: 12px;
+  font-size: var(--enemy-hit-font-size);
+  /* 上浮動畫完成時間；時間越短，視覺上浮速度越快。 */
+  --enemy-hit-rise-duration: 0.8s;
+  /* 數字存在時間；會同步控制淡出動畫與 DOM 移除時間。 */
+  --enemy-hit-lifetime-base: 0.8s;
+  --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 10 !important;
 }
 
 .float-txt.enemy-hit-float.enemy-hit-skill {
   /* 玩家技能：只調整這個區塊，就不會影響普攻或暴擊字。 */
   color: #ffd700;
-  font-size: 18px;
+  --enemy-hit-font-size: 15px;
+  font-size: var(--enemy-hit-font-size);
+  --enemy-hit-rise-duration: 1.s;
+  --enemy-hit-lifetime-base: 1.s;
+  --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 20 !important;
 }
 
 .float-txt.enemy-hit-float.enemy-hit-attack-crit {
   /* 玩家普攻暴擊：與普通普攻完全獨立。 */
   color: #ffffff;
-  font-size: 22px;
+  --enemy-hit-font-size: 16px;
+  font-size: var(--enemy-hit-font-size);
+  --enemy-hit-rise-duration: 1s;
+  --enemy-hit-lifetime-base: 1s;
+  --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 10 !important;
 }
 
 .float-txt.enemy-hit-float.enemy-hit-skill-crit {
   /* 玩家技能暴擊：與普通技能及普攻暴擊完全獨立。 */
   color: #ffd700;
-  font-size: 22px;
+  --enemy-hit-font-size: 20px;
+  font-size: var(--enemy-hit-font-size);
+  --enemy-hit-rise-duration: 1.2s;
+  --enemy-hit-lifetime-base: 1.2s;
+  --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 20 !important;
 }
 
+/* 隨機倍率達 119.5% 以上且本次確實暴擊時，字號在各自基準上加 2px，存在時間加倍。 */
+.float-txt.enemy-hit-float.enemy-hit-attack-crit.enemy-hit-crit-high,
+.float-txt.enemy-hit-float.enemy-hit-skill-crit.enemy-hit-crit-high {
+  font-size: calc(var(--enemy-hit-font-size) + 2px);
+  --enemy-hit-lifetime: calc(var(--enemy-hit-lifetime-base) * 2);
+}
+
 /* 傷害合併顯示時使用的動畫。完整存活時間由 js/ui.js 的
-   FLOAT_TEXT_LIFETIME_MS 控制；此處控制 2 秒內的上浮與淡出。 */
+   --enemy-hit-lifetime 控制；四種分類各自在上方設定自己的速度與壽命。 */
 .float-txt.enemy-hit-float.damage-aggregate {
-  animation: enemyDamageFloatUp 2s ease-out forwards, enemyDamageFloatFade 2s linear forwards;
+  animation: enemyDamageFloatUp var(--enemy-hit-rise-duration, 2s) ease-out forwards,
+    enemyDamageFloatFade var(--enemy-hit-lifetime, 2s) linear forwards;
 }
 
 .float-txt.heal {
@@ -1470,6 +1496,7 @@ textarea#save-io {
 }
 
 @keyframes floatUp {
+
   /* 一般傷害字：從原位置上浮 46px，0.80 秒後透明。 */
   0% {
     transform: translate(-50%, 0);
@@ -1483,6 +1510,7 @@ textarea#save-io {
 }
 
 @keyframes enemyDamageFloatFade {
+
   /* 合併傷害字前 75% 時間保持不透明，最後 25% 淡出。 */
   0% {
     opacity: 1;
@@ -1498,6 +1526,7 @@ textarea#save-io {
 }
 
 @keyframes enemyDamageFloatUp {
+
   /* 合併傷害字在 2 秒內上浮 80px。 */
   0% {
     transform: translate(-50%, 0);
@@ -1509,6 +1538,7 @@ textarea#save-io {
 }
 
 @keyframes playerRecoveryFloatFade {
+
   /* 回復合併字前 75% 時間保持不透明，最後 25% 淡出。 */
   0% {
     opacity: 1;
@@ -1524,6 +1554,7 @@ textarea#save-io {
 }
 
 @keyframes playerRecoveryFloatUp {
+
   /* 回復合併字的上浮距離是 60px。 */
   0% {
     transform: translate(-50%, 0);
@@ -1535,6 +1566,7 @@ textarea#save-io {
 }
 
 @keyframes playerEventFloat {
+
   /* 玩家事件字在 2 秒內上浮 28px。 */
   0% {
     transform: translate(-50%, 0);
@@ -1595,7 +1627,7 @@ textarea#save-io {
   box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.9);
 }
 
-#battle-area > .log {
+#battle-area>.log {
   min-height: 0;
 }
 
@@ -2306,8 +2338,7 @@ textarea#save-io {
 .eq-slot.filled .eq-icon[src*="icon_weapon_"] {
   position: relative;
   z-index: 1;
-  filter: brightness(1.5) contrast(1.2) saturate(1.1)
-    drop-shadow(0 0 2px rgba(255, 255, 255, 0.16));
+  filter: brightness(1.5) contrast(1.2) saturate(1.1) drop-shadow(0 0 2px rgba(255, 255, 255, 0.16));
 }
 
 /* 武器槽是窄長比例；放大圖示，避免正方形素材被 contain 縮成小方塊。 */
@@ -2455,11 +2486,13 @@ textarea#save-io {
     transform: scale(0.55);
     box-shadow: 0 0 0 rgba(125, 211, 252, 0);
   }
+
   12% {
     opacity: 1;
     transform: scale(1);
     box-shadow: 0 0 22px 8px rgba(125, 211, 252, 0.85);
   }
+
   100% {
     opacity: 0;
     transform: scale(1.18);
@@ -3361,20 +3394,20 @@ textarea#save-io {
 /* 我方欄在棋盤版型下只有 132px 寬，原本 12px 的血量數字（例「2.47M+5.94K / 2.47M」）
    會整段撐出血條外，所以血條與數字一起縮。
    （這組覆寫刻意放在 .hp-bar／.hp-text 基準定義之後，讀起來才是「基準 → 版型覆寫」。） */
-.battle-scene.multi-enemy-layout > .combatant:not(.enemy-combatant) .hp-bar {
+.battle-scene.multi-enemy-layout>.combatant:not(.enemy-combatant) .hp-bar {
   height: 16px;
   margin-top: 4px;
 }
 
-.battle-scene.multi-enemy-layout > .combatant:not(.enemy-combatant) .hp-text {
+.battle-scene.multi-enemy-layout>.combatant:not(.enemy-combatant) .hp-text {
   font-size: 9px;
 }
 
-.battle-scene.multi-enemy-layout > .combatant:not(.enemy-combatant) .mp-bar {
+.battle-scene.multi-enemy-layout>.combatant:not(.enemy-combatant) .mp-bar {
   height: 10px;
 }
 
-.battle-scene.multi-enemy-layout > .combatant:not(.enemy-combatant) .mp-bar .hp-text {
+.battle-scene.multi-enemy-layout>.combatant:not(.enemy-combatant) .mp-bar .hp-text {
   font-size: 8px;
 }
 
@@ -5728,7 +5761,9 @@ textarea#save-io {
 }
 
 @keyframes vfxAuraPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.45;
   }
 
@@ -5938,11 +5973,12 @@ textarea#save-io {
 /* 敵人死亡後本體在 2 秒內淡到 opacity: 0.1；float-layer 不套用淡出，
    讓最後一筆傷害字可以完整播放。實體清除倒數由 js/data.js 的
    FIELD_ENEMY_DEATH_CLEAR_DELAY 控制，目前是 2.1 秒。 */
-.enemy-card.is-dead > :not(.float-layer) {
+.enemy-card.is-dead> :not(.float-layer) {
   animation: enemyDeathFade 2s linear forwards;
 }
 
 @keyframes enemyDeathFade {
+
   /* 只控制死亡敵人卡片本體的淡出，不控制傷害浮字。 */
   from {
     opacity: 1;
@@ -5999,12 +6035,12 @@ textarea#save-io {
 
 /* 傷害字從建立起就掛在 mv-float-retained；它是 enemy-combatant 的固定兄弟節點，
    不隨敵人卡片死亡、換波或批次重建而被移除。 */
-.enemy-combatant > .enemy-float-retained {
+.enemy-combatant>.enemy-float-retained {
   z-index: 30;
   overflow: visible;
 }
 
-.enemy-combatant > .enemy-float-retained .float-txt:not(.enemy-hit-float) {
+.enemy-combatant>.enemy-float-retained .float-txt:not(.enemy-hit-float) {
   /* 死亡敵人保留層中，非四種傷害分類飄字的預設大小。 */
   font-size: 14px;
 }
@@ -6923,7 +6959,7 @@ button.nf-part-slot.nf-part-ico {
   display: block !important;
 }
 
-#ui-shell .battle-scene.multi-enemy-layout > .vs {
+#ui-shell .battle-scene.multi-enemy-layout>.vs {
   display: none !important;
 }
 

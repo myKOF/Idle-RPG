@@ -711,8 +711,8 @@ if (index['3-戰鬥核心'] && index['3-戰鬥核心']['敵種傷害抗性']) {
   scalar('formula', 'ENEMY_TYPE_DMG_RED_B', '3-戰鬥核心', '敵種傷害抗性', 1);
   scalar('formula', 'ENEMY_TYPE_DMG_RED_C', '3-戰鬥核心', '敵種傷害抗性', 2);
 }
-inline('formula', 'dmg *= rnd(', P('3-戰鬥核心', '傷害浮動', 0), '浮動-下');
-inlineRegex('formula', /(dmg \*= rnd\(-?[\d.]+, )(-?[\d.]+)/, P('3-戰鬥核心', '傷害浮動', 1), '浮動-上');
+inline('formula', 'var randomDamageMultiplier = rnd(', P('3-戰鬥核心', '傷害浮動', 0), '浮動-下');
+inlineRegex('formula', /(var randomDamageMultiplier = rnd\(-?[\d.]+, )(-?[\d.]+)/, P('3-戰鬥核心', '傷害浮動', 1), '浮動-上');
 numCtx('formula', 'dmg = Math.max(', ', Math.round(dmg))', P('3-戰鬥核心', '最低傷害下限', 0), '最低傷害');
 inline('formula', 'iceSlowChance: ', P('3-元素特效', '冰霜 特效', 0), '元素-冰');
 inline('formula', 'lightningChance: ', P('3-元素特效', '雷電 特效', 0), '元素-雷');

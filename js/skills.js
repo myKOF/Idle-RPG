@@ -1077,7 +1077,7 @@ function skillRtSimpleCast(pEnt, sk, fx, lv, powerPct, targets, floatSel, opts) 
       if (!res.miss) {
         out.dmg += res.dmg;
         if (res.crit) out.crit = true;
-        floatEnemyEvent(t, floatSel, prefix + (res.crit ? '爆擊 ' : '') + fmt(res.dmg), (res.crit ? 'crit ' : 'dmg ') + 'enemy-skill', res.dmg);
+        floatEnemyEvent(t, floatSel, prefix + (res.crit ? '爆擊 ' : '') + fmt(res.dmg), combatDamageFloatClass('enemy-skill', res), res.dmg);
         trackDps(res.dmg);
         if (typeof recordRunDamage === 'function') recordRunDamage(tag, res.dmg);
       } else {
@@ -1446,7 +1446,7 @@ function skillRtOpenField(pEnt, sk, fx, id, lv, st, out) {
       applySkillFinalDamageMultiplier(t, res, entry.snapshot.isFusion);
       if (!res.miss) {
         total += res.dmg;
-        floatEnemyEvent(t, ctx.floatSel, entry.snapshot.emoji + fmt(res.dmg), (res.crit ? 'crit ' : 'dmg ') + 'enemy-skill', res.dmg);
+        floatEnemyEvent(t, ctx.floatSel, entry.snapshot.emoji + fmt(res.dmg), combatDamageFloatClass('enemy-skill', res), res.dmg);
         trackDps(res.dmg);
         if (typeof recordRunDamage === 'function') recordRunDamage(entry.snapshot.tag, res.dmg);
       }
@@ -2648,7 +2648,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
           var dmgStr = fmt(dmgRes.dmg);
           if (dmgRes.crit) dmgStr = '爆擊 ' + dmgStr;
           if (dmgRes.blocked) dmgStr = '格擋 ' + dmgStr;
-          floatEnemyEvent(targetEnt, floatSel, sk.emoji + dmgStr, (dmgRes.crit ? 'crit ' : 'dmg ') + 'enemy-skill', dmgRes.dmg, hitDelayMs);
+          floatEnemyEvent(targetEnt, floatSel, sk.emoji + dmgStr, combatDamageFloatClass('enemy-skill', dmgRes), dmgRes.dmg, hitDelayMs);
           trackDps(dmgRes.dmg);
           if (typeof recordRunDamage === 'function') {
             var statKey = 'skill:' + (typeof statSlot === 'number' ? statSlot : id) + ':' + id + ':' + lv;
