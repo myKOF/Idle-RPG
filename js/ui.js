@@ -3603,7 +3603,7 @@ function nfPartsListHTML(fu, factory) {
       return '<span class="part-chip" style="cursor:pointer; border-color:var(--accent);" data-nf-fid="' + fu.id +
         '" data-nf-partinstall-key="' + key + '"' + pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
         ' data-tip="【點擊裝配】取最高階數值：' + esc(partDesc(best)) +
-        '｜同類型可重複裝配、不佔用零件庫">' + partIconHTML(key) + esc(best.name) + '</span>';
+        '｜同類型可重複裝配、不佔用零件庫">' + partIconHTML(key) + esc(partName(best)) + '</span>';
     }).join('');
   }
   return '<div class="nf-parts-list"><div class="nf-parts-list-head">🔧 選擇零件（熔爐 #' + fu.id + '，' +
