@@ -613,7 +613,17 @@ function rankRoi(state, policy) {
     var r = table[key];
     if (!r) continue;                                  // 這條詞條在身上找不到合法部位
     var score = (Number(r.dOffPct) || 0) * wo + (Number(r.dEhpPct) || 0) * we;
-    ranked.push({ key: key, slotKey: r.slotKey, score: score, dOffPct: r.dOffPct, dEhpPct: r.dEhpPct });
+    /* 同一條詞條落在**太古位置**上的分數。太古位置洗煉只換種類、永遠維持太古，
+       而太古的數值走另一條乘算路徑（見 evaluator.js evalProbeAffix 的註解），
+       所以同樣一次洗煉落在太古位置上明顯比較划算。
+       面板沒給這個欄位時（舊的評估器）退回一般分數，不會因此高估。 */
+    var scoreAnc = (r.dOffPctAncient === undefined)
+      ? score
+      : (Number(r.dOffPctAncient) || 0) * wo + (Number(r.dEhpPctAncient) || 0) * we;
+    ranked.push({
+      key: key, slotKey: r.slotKey, score: score, scoreAncient: scoreAnc,
+      dOffPct: r.dOffPct, dEhpPct: r.dEhpPct
+    });
   }
   /* 決定論：分數相同時以鍵名排序，不能讓物件的鍵順序決定結果。 */
   ranked.sort(function (a, b) {
@@ -2261,23 +2271,42 @@ function decide(state, policy, memo) {
           }
 
           if (!already) {
-            /* 犧牲品：邊際貢獻（依當前攻防權重加權）最低的那一條。
-               太古位置預設不動，理由見 evaluator.js 的 evalEquippedAffixValue。 */
-            var victimAf = null, victimLoss = Infinity;
+            /* ---- 犧牲品：淨收益最大的那一條 ----
+
+               淨收益 = 洗出新詞條的收益 − 犧牲掉這一條的損失。
+
+               ⚠️ 收益不是常數，它**取決於犧牲的是哪一種位置**。
+               遊戲規則（js/item.js rerollSingleAffix）：「太古與否只看位置」——
+               洗太古位置只換詞條種類，永遠維持太古，而太古的數值走另一條乘算路徑
+               （baseV × AFFIX_MAX_VALUE_MULT × ANCIENT_AFFIX_VALUE_MULT，與 roll 無關）。
+               所以同一次洗煉落在太古位置上的期望收益明顯較高，
+               而評估器現在把兩種都算給我們（score / scoreAncient）。
+
+               先前這裡只比損失、而且直接跳過太古位置，於是一批「保證滿值」的格子
+               被永久閒置：實測 8 個存檔的 47 個太古位置有 49% 放著遊戲權重 <= 1 的詞條
+               （生命值 0.05、法力值 0.075、生命恢復 0.6 這一類）。
+
+               keepAncient 仍然預設為真——放行是策略要明確宣告的事。 */
+            var victimAf = null, victimNet = -Infinity;
             for (var raj = 0; raj < affList.length; raj++) {
               var af2 = affList[raj];
-              if (af2.ancient && rrCfg.keepAncient !== false) continue;
+              var isAnc = !!af2.ancient;
+              if (isAnc && rrCfg.keepAncient !== false) continue;
               var loss = (af2.lossOffPct || 0) * roi.weights.offense
                 + (af2.lossEhpPct || 0) * roi.weights.ehp;
-              /* 決定論：損失相同時以鍵名決勝，不讓陣列順序以外的東西影響結果。 */
-              if (loss < victimLoss || (loss === victimLoss && victimAf && af2.key < victimAf.key)) {
-                victimLoss = loss; victimAf = af2;
+              var gain = isAnc
+                ? ((typeof pick.scoreAncient === 'number') ? pick.scoreAncient : pick.score)
+                : pick.score;
+              var net = gain - loss;
+              /* 決定論：淨收益相同時以鍵名決勝，不讓陣列順序以外的東西影響結果。 */
+              if (net > victimNet || (net === victimNet && victimAf && af2.key < victimAf.key)) {
+                victimNet = net; victimAf = af2;
               }
             }
 
             /* 淨期望增益。這是整條規則的守門員：
                新詞條的價值必須明顯高於被犧牲那條，而且高出門檻。 */
-            if (victimAf && (pick.score - victimLoss) >= gate) {
+            if (victimAf && victimNet >= gate) {
               out.push({ name: r.cmd, args: { itemId: tgtItem.id, affixKey: victimAf.key }, ruleId: r.id });
             }
           }

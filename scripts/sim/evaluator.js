@@ -277,12 +277,23 @@ function evalCombatProfile(st, foe, cal) {
    成本：每個候選詞條一次 computeStats。13 個部位 × 各 4~7 條詞條的聚合，
    實測遠低於一次 simStep，而決策點只有每 15 秒一次。 */
 
-/* 造一條「期望強度」的詞條。roll 取區間中點，見 MODEL_NOTES.probeRollRatio。 */
-function evalProbeAffix(key) {
+/* 造一條「期望強度」的詞條。roll 取區間中點，見 MODEL_NOTES.probeRollRatio。
+
+   ancient=true 時 roll 完全不參與計算——太古走的是另一條乘算路徑
+   （js/formula.js affixValueFromStrength）：
+
+     一般   baseV × strengthMult(roll)，strengthMult = 0.8 + roll/MAX × 0.4
+     太古   baseV × AFFIX_MAX_VALUE_MULT × ANCIENT_AFFIX_VALUE_MULT
+
+   代入常數：探針（roll 取中點）＝ baseV × 1.0，一般滿值 ＝ ×1.2，太古 ＝ ×1.62。
+   所以拿一般探針去估「洗太古位置」的收益會**系統性低估 1.62 倍**。
+   這裡不自己算那個倍率——照樣造一條 ancient 的詞條丟給 computeStats，
+   倍率是遊戲算的。 */
+function evalProbeAffix(key, ancient) {
   return {
     key: key,
     roll: Math.round(STRENGTH_ROLL_MAX * MODEL_NOTES.probeRollRatio),
-    ancient: false
+    ancient: !!ancient
   };
 }
 
@@ -350,12 +361,12 @@ function evalSafeItem(item) {
 }
 
 /* 在某件裝備上「多一條詞條」的複本。 */
-function evalItemPlusAffix(item, key) {
+function evalItemPlusAffix(item, key, ancient) {
   if (!item) return null;
   var clone = {};
   for (var k in item) clone[k] = item[k];
   clone.affixes = (item.affixes || []).slice();
-  clone.affixes.push(evalProbeAffix(key));
+  clone.affixes.push(evalProbeAffix(key, ancient));
   return clone;
 }
 
@@ -381,7 +392,7 @@ function evalItemSwapAffix(item, idx, key) {
    回傳的是**百分比增幅**而不是絕對值：策略要比較的是「這一單位預算投哪裡最划算」，
    而攻擊與防禦的絕對值單位不同，不化成比例就沒得比。這正是
    player_strategy.md v2.0 說的「計算 1 單位預算投入各詞條時對 DPS/EHP 的實際增幅百分比」。 */
-function evalAffixRoi(keys, foe, base) {
+function evalAffixRoi(keys, foe, base, ancientTop) {
   var out = {};
   if (!foe || !base) return out;
   var eq = (typeof G !== 'undefined' && G) ? (G.equipment || {}) : {};
@@ -422,11 +433,51 @@ function evalAffixRoi(keys, foe, base) {
     var probe = evalItemPlusAffix(eq[host], key);
     var st2 = computeStats(evalEquipmentWith(host, probe));
     var p2 = evalPower(st2, foe);
+
     out[key] = {
       slotKey: host,
       dOffPct: base.offense > 0 ? (p2.offense / base.offense - 1) * 100 : 0,
       dEhpPct: (base.ehp > 0 && isFinite(base.ehp)) ? (p2.ehp / base.ehp - 1) * 100 : 0
     };
+  }
+
+  /* ---- 洗在**太古位置**上值多少（只算前幾名）----
+
+     遊戲規則（js/item.js rerollSingleAffix）：「太古與否只看位置」——
+     太古位置洗煉只換詞條種類、永遠維持太古；而太古的數值走另一條乘算路徑
+     （baseV × AFFIX_MAX_VALUE_MULT × ANCIENT_AFFIX_VALUE_MULT），與 roll 無關。
+     實測倍率 1.620。只給一個 dOffPct 的話，策略永遠不會知道「洗太古位置比較划算」，
+     於是 8 個存檔的 47 個太古位置有 49% 放著遊戲權重 <= 1 的詞條、一直閒置。
+
+     ⚠️ 但這是**每條詞條多一次 computeStats**。17 條全算的話 evalAffixRoi
+     從 22ms 變 44ms、整份面板 76ms → 98ms（+29%），而這套機制能不能開著跑
+     一直是效能決定的（見 SIM_HARNESS.md 的效能一節）。
+
+     實際上策略只會用到**排名第一**那條的太古估值（rerollByRoi 的 pick）。
+     所以這裡只替前 ancientTop 名補算——名次用未加權的增幅估，
+     與上面挑宿主部位是同一種取捨：估錯的代價只是那一條退回一般分數，
+     而 policy_interpreter 的 rankRoi 對缺欄位的情形本來就退回 score（保守，不會高估）。 */
+  var top = (typeof ancientTop === 'number' && ancientTop >= 0) ? ancientTop : 4;
+  if (top > 0) {
+    var order = [];
+    for (var k2 in out) {
+      if (!out[k2]) continue;
+      order.push({ key: k2, rough: (out[k2].dOffPct || 0) + (out[k2].dEhpPct || 0) });
+    }
+    /* 決定論：粗分相同時以鍵名決勝。 */
+    order.sort(function (a, b) {
+      if (b.rough !== a.rough) return b.rough - a.rough;
+      return a.key < b.key ? -1 : (a.key > b.key ? 1 : 0);
+    });
+    for (var oi = 0; oi < order.length && oi < top; oi++) {
+      var ek = order[oi].key;
+      var slot2 = out[ek].slotKey;
+      var probeA = evalItemPlusAffix(eq[slot2], ek, true);
+      var stA = computeStats(evalEquipmentWith(slot2, probeA));
+      var pA = evalPower(stA, foe);
+      out[ek].dOffPctAncient = base.offense > 0 ? (pA.offense / base.offense - 1) * 100 : 0;
+      out[ek].dEhpPctAncient = (base.ehp > 0 && isFinite(base.ehp)) ? (pA.ehp / base.ehp - 1) * 100 : 0;
+    }
   }
   return out;
 }
@@ -844,7 +895,9 @@ function buildEvalPanel(params) {
   var refreshSec = (typeof params.refreshSec === 'number') ? params.refreshSec : 15;
   var nowGt = (typeof GT === 'number') ? GT : 0;
   if (!evalPlanCache || refreshSec <= 0 || (nowGt - evalPlanCache.at) >= refreshSec || nowGt < evalPlanCache.at) {
-    var affixRoi = evalAffixRoi(params.affixKeys || [], foe, base);
+    /* ancientProbeTop：替前幾名的詞條補算「洗在太古位置上」的增幅。
+       0 = 關掉（面板不給太古欄位，策略會退回一般分數，保守但不會高估）。 */
+    var affixRoi = evalAffixRoi(params.affixKeys || [], foe, base, params.ancientProbeTop);
 
     /* 只對 ROI 前幾名建議的宿主部位探「身上這條詞條值多少」——
        洗煉規則只會用到那幾個，全身探是白花錢。 */

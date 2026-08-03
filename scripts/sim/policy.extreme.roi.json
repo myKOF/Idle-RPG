@@ -803,7 +803,8 @@
       "rerollByRoi": {
         "equipment": "panels.inv.equipment",
         "equippedAffixes": "panels.eval.equippedAffixes",
-        "keepAncient": true
+        "keepAncient": true,
+        "keepAncient_依據": "維持不碰太古位置。放行過（sim_ab_anc，8 seed × 20 小時），配對結果等級 1/8 勝、關卡 3/8 勝，中位等級 688→446——**實測不支持**。機制本身沒錯（太古位置洗煉保證滿值、倍率 1.62 已由評估器驗證），問題出在 ROI 的收益是「如果洗出第一名那條」的最佳值，而實際洗煉是從詞條池隨機擲的；把這個本來就樂觀的估值再乘 1.62，門檻就擋不住了，於是把精華耗在反覆重擲太古位置上（精華結局存量 1,682→272）。要重啟這項就得先把 ROI 的收益改成**池的期望值**而不是最佳值。評估器的太古估值與測試都留著，改好之後把這裡設回 false、並把 evalConfig.ancientProbeTop 開回 4 即可"
       }
     },
     {
@@ -1453,7 +1454,9 @@
     "probeEquippedAffixes": true,
     "probeTopSlots": 3,
     "refreshSec": 15,
-    "refreshSec_依據": "規劃結果的重算間隔（遊戲秒）。45 秒實測會讓規劃太舊：8 個 seed 的下緣整個崩回去（物攻最小值 39,960 → 346、關卡最小值 136 → 50），換到的只是縮時倍率 187x → 222x。取 15 秒。實測成本（Lv.221／關卡150／背包 303 件）：只跑模擬 6.74 ms、加上完整 panels.eval 22.19 ms，其中 refreshSec 是最有效的旋鈕（30→15.06、45→12.28、60→11.00 ms）"
+    "refreshSec_依據": "規劃結果的重算間隔（遊戲秒）。45 秒實測會讓規劃太舊：8 個 seed 的下緣整個崩回去（物攻最小值 39,960 → 346、關卡最小值 136 → 50），換到的只是縮時倍率 187x → 222x。取 15 秒。實測成本（Lv.221／關卡150／背包 303 件）：只跑模擬 6.74 ms、加上完整 panels.eval 22.19 ms，其中 refreshSec 是最有效的旋鈕（30→15.06、45→12.28、60→11.00 ms）",
+    "ancientProbeTop": 0,
+    "ancientProbeTop_依據": "設 0＝不補算太古估值（面板不給該欄位，rankRoi 退回一般分數，保守）。太古洗煉暫時關閉（見 reroll-by-roi 的 keepAncient_依據），開著只是白花每個決策點 7ms。重啟時設 4：前 4 名補算，面板 79→87ms；17 條全補是 98ms 而策略只用得到第一名"
   },
   "roi": {
     "說明": "邊際效益排序。ΔDPS/ΔEHP 由評估器算（呼叫遊戲的 computeStats），這裡只依敗因加權後排序",
