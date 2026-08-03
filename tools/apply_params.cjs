@@ -683,15 +683,15 @@ objFieldML('data', 'STAT_CAPS = {', 'doubleHit', '2-屬性上限', '被動-連�
 objFieldML('data', 'STAT_CAPS = {', 'stun', '2-屬性上限', '被動-暈眩 上限', 0, '上限-暈眩');
 
 /* ---- §3 戰鬥核心 ---- */
-scalar('formula', 'PHYSICAL_RESISTANCE_EXPONENT', '3-戰鬥核心', '物理抗性減傷', 0);
-scalar('formula', 'PHYSICAL_RESISTANCE_BASE', '3-戰鬥核心', '物理抗性減傷', 1);
-scalar('formula', 'PHYSICAL_RESISTANCE_LEVEL_COEF', '3-戰鬥核心', '物理抗性減傷', 2);
-scalar('formula', 'MAGIC_RESISTANCE_EXPONENT', '3-戰鬥核心', '魔法抗性減傷', 0);
-scalar('formula', 'MAGIC_RESISTANCE_BASE', '3-戰鬥核心', '魔法抗性減傷', 1);
-scalar('formula', 'MAGIC_RESISTANCE_LEVEL_COEF', '3-戰鬥核心', '魔法抗性減傷', 2);
-scalar('formula', 'ELEMENTAL_RESISTANCE_EXPONENT', '3-戰鬥核心', '六系元素抗性減傷', 0);
-scalar('formula', 'ELEMENTAL_RESISTANCE_BASE', '3-戰鬥核心', '六系元素抗性減傷', 1);
-scalar('formula', 'ELEMENTAL_RESISTANCE_LEVEL_COEF', '3-戰鬥核心', '六系元素抗性減傷', 2);
+scalar('formula', 'PHYSICAL_RESISTANCE_A', '3-戰鬥核心', '物理抗性減傷', 0);
+scalar('formula', 'PHYSICAL_RESISTANCE_B', '3-戰鬥核心', '物理抗性減傷', 1);
+scalar('formula', 'PHYSICAL_RESISTANCE_C', '3-戰鬥核心', '物理抗性減傷', 2);
+scalar('formula', 'MAGIC_RESISTANCE_A', '3-戰鬥核心', '魔法抗性減傷', 0);
+scalar('formula', 'MAGIC_RESISTANCE_B', '3-戰鬥核心', '魔法抗性減傷', 1);
+scalar('formula', 'MAGIC_RESISTANCE_C', '3-戰鬥核心', '魔法抗性減傷', 2);
+scalar('formula', 'ELEMENTAL_RESISTANCE_A', '3-戰鬥核心', '六系元素抗性減傷', 0);
+scalar('formula', 'ELEMENTAL_RESISTANCE_B', '3-戰鬥核心', '六系元素抗性減傷', 1);
+scalar('formula', 'ELEMENTAL_RESISTANCE_C', '3-戰鬥核心', '六系元素抗性減傷', 2);
 /* 防禦減傷曲線的兩個係數。錨點必須用 inlineRegex 而不是 inline——
    inline 會把前綴原文寫死，於是「常數」被套用之後，「每級係數」的錨點
    'return def / (def + 60 + ' 就再也對不上了（60 已經變成別的值）。
@@ -700,10 +700,11 @@ scalar('formula', 'ELEMENTAL_RESISTANCE_LEVEL_COEF', '3-戰鬥核心', '六系�
    結構型錨點只描述公式形狀，同一條公式裡的參數彼此不會互相打死。 */
 inlineRegex('formula', /(return def \/ \(def \+ )(-?[\d.]+)/, P('3-戰鬥核心', '防禦減傷率', 0), '防減-常數');
 inlineRegex('formula', /(return def \/ \(def \+ -?[\d.]+ \+ )(-?[\d.]+)/, P('3-戰鬥核心', '防禦減傷率', 1), '防減-每級');
-// 敵種傷害抗性（普通敵人/普通菁英/普通BOSS）：a/b；表列缺席時跳過（相容尚未含此列的舊參數表）
+// 敵種傷害抗性（普通敵人/普通菁英/普通BOSS）：a/b/c；表列缺席時跳過（相容尚未含此列的舊參數表）
 if (index['3-戰鬥核心'] && index['3-戰鬥核心']['敵種傷害抗性']) {
   scalar('formula', 'ENEMY_TYPE_DMG_RED_A', '3-戰鬥核心', '敵種傷害抗性', 0);
   scalar('formula', 'ENEMY_TYPE_DMG_RED_B', '3-戰鬥核心', '敵種傷害抗性', 1);
+  scalar('formula', 'ENEMY_TYPE_DMG_RED_C', '3-戰鬥核心', '敵種傷害抗性', 2);
 }
 inline('formula', 'dmg *= rnd(', P('3-戰鬥核心', '傷害浮動', 0), '浮動-下');
 inlineRegex('formula', /(dmg \*= rnd\(-?[\d.]+, )(-?[\d.]+)/, P('3-戰鬥核心', '傷害浮動', 1), '浮動-上');
