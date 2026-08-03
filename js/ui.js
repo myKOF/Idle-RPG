@@ -1409,6 +1409,17 @@ function enemyDamageFloatStyleClass(cls) {
   return '';
 }
 
+/* 從 CSS 讀取各分類的消失時間，讓淡出動畫與 DOM 移除使用同一個設定。 */
+function enemyDamageFloatLifetimeMs(sp) {
+  var fallback = FLOAT_TEXT_LIFETIME_MS;
+  if (!sp || typeof window === 'undefined' || typeof window.getComputedStyle !== 'function') return fallback;
+  var raw = window.getComputedStyle(sp).getPropertyValue('--enemy-hit-lifetime').trim();
+  if (!raw) return fallback;
+  var value = parseFloat(raw);
+  if (!isFinite(value) || value <= 0) return fallback;
+  return /ms$/i.test(raw) ? value : value * 1000;
+}
+
 function enemyDamageFloatInfo(text, value) {
   if (typeof value !== 'number' || !isFinite(value) || value <= 0 || typeof fmt !== 'function') return null;
   var formatted = fmt(value);
@@ -1614,7 +1625,7 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
       existing._damageFloatTotal += damageValue;
       existing._damageFloatHits++;
       existing.textContent = existing._damageFloatPrefix + fmt(existing._damageFloatTotal);
-      scheduleFloatTextRemoval(existing, FLOAT_TEXT_LIFETIME_MS);
+      scheduleFloatTextRemoval(existing, enemyDamageFloatLifetimeMs(existing));
       return;
     }
   }
@@ -1677,7 +1688,7 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
       }
     }
   }
-  scheduleFloatTextRemoval(sp, FLOAT_TEXT_LIFETIME_MS);
+  scheduleFloatTextRemoval(sp, enemyDamageFloatLifetimeMs(sp));
 }
 
 /* ---- 分頁 ---- */
