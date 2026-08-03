@@ -18,13 +18,26 @@ function talentTotalCost(id, lv) {
   return Math.min(lv, TALENT_EFFECT_BREAK_LEVEL) * base + Math.max(0, lv - TALENT_EFFECT_BREAK_LEVEL) * base * 2;
 }
 
+/* 天賦節點清單（轉數 + 定義）。內容只由 TALENT_TREES 與 TALENT_IMPLEMENTED_REINCARNATIONS
+   決定，兩者都是 js/data.js 的靜態設定表（參數表是改寫 data.js 後整頁重載，
+   見 js/param_autoreload.js:52，沒有執行期改寫路徑），所以整份清單建一次就好。
+
+   為什麼要快取：talentStatBonuses 每次 computeStats 都會呼叫它，而 talentDef /
+   talentTurn 還會各自再建一份再 filter 一次。實測 headless 模擬器裡光是天賦查找
+   就佔總 CPU 的 17%——評估器每次規劃要跑約 47 次 computeStats，每一次都把
+   80 個節點的清單重建一遍。
+
+   ⚠️ 回傳的是同一個陣列，呼叫端不得就地改它（現行 8 個呼叫點都是 forEach/filter/map）。 */
+var _TALENT_LIST_CACHE = null;
 function talentList() {
+  if (_TALENT_LIST_CACHE) return _TALENT_LIST_CACHE;
   var list = [];
   for (var turn = 1; turn <= TALENT_IMPLEMENTED_REINCARNATIONS; turn++) {
     (TALENT_TREES[turn] || []).forEach(function (def) {
       list.push({ turn: turn, def: def });
     });
   }
+  _TALENT_LIST_CACHE = list;
   return list;
 }
 
@@ -52,9 +65,15 @@ function talentState() {
   return G.player.talents;
 }
 
+/* 等級取用的唯一一份規則。拆成「吃 levels 表」的版本，是為了讓每次
+   computeStats 只取一次 talentState()——talentStatBonuses 一輪要查約 160 次等級，
+   每次都走 talentState() 的初始化檢查是白付的。規則本身仍然只有這一份。 */
+function talentLevelIn(levels, id) {
+  return clamp(Math.floor(Number(levels ? levels[id] : 0) || 0), 0, TALENT_MAX_LEVEL);
+}
+
 function talentLevel(id) {
-  var v = talentState().levels[id];
-  return clamp(Math.floor(Number(v) || 0), 0, TALENT_MAX_LEVEL);
+  return talentLevelIn(talentState().levels, id);
 }
 
 function potentialLevel(id) {
@@ -83,13 +102,20 @@ function talentLevelValue(def, lv) {
   return TALENT_EFFECT_BREAK_LEVEL * def.low + (lv - TALENT_EFFECT_BREAK_LEVEL) * def.high;
 }
 
-function talentTreeComplete(turn) {
+/* levels 可省略（省略＝當場取）。傳進來是給 talentStatBonuses 用的：
+   它一輪要問 10 個轉數，每個都重取一次 levels 表沒有意義。 */
+function talentTreeComplete(turn, levels) {
   var tree = TALENT_TREES[turn] || [];
-  return tree.length === 8 && tree.every(function (def) { return talentLevel(def.id) >= TALENT_MAX_LEVEL; });
+  if (tree.length !== 8) return false;
+  var lv = levels || talentState().levels;
+  for (var i = 0; i < tree.length; i++) {
+    if (talentLevelIn(lv, tree[i].id) < TALENT_MAX_LEVEL) return false;
+  }
+  return true;
 }
 
-function talentCompleteMultiplier(turn) {
-  return talentTreeComplete(turn) ? 2 : 1;
+function talentCompleteMultiplier(turn, levels) {
+  return talentTreeComplete(turn, levels) ? 2 : 1;
 }
 
 function potentialUnlockedCount() {
@@ -203,13 +229,27 @@ function talentBonusesTemplate() {
   };
 }
 
+/* ⚠️ 這一支在 computeStats 裡，而 computeStats 是全遊戲最熱的路徑
+   （每次屬性刷新、模擬器的每個評估探針各一次）。所以三件事都提到迴圈外：
+   levels 表取一次、節點清單取一次、每一轉的「全滿倍率」算一次。
+
+   改造前每個節點都各自呼叫一次 talentCompleteMultiplier，而它內部要查 8 個節點的
+   等級——80 個節點就是 640 次等級查找，其中 632 次是重複的。
+   輸出逐欄相同（tests/talents-perf-equivalence 以整份 bonuses 與 getStats 反證）。 */
 function talentStatBonuses() {
   var out = talentBonusesTemplate();
-  talentList().forEach(function (entry) {
-    var def = entry.def;
-    var value = talentLevelValue(def, talentLevel(def.id)) * talentCompleteMultiplier(entry.turn);
+  var levels = talentState().levels;
+  var list = talentList();
+  var multByTurn = {};
+  for (var i = 0; i < list.length; i++) {
+    var turn = list[i].turn;
+    if (multByTurn[turn] === undefined) multByTurn[turn] = talentCompleteMultiplier(turn, levels);
+  }
+  for (var j = 0; j < list.length; j++) {
+    var def = list[j].def;
+    var value = talentLevelValue(def, talentLevelIn(levels, def.id)) * multByTurn[list[j].turn];
     if (def.stat !== 'potentialUnlock' && out[def.stat] !== undefined) out[def.stat] += value;
-  });
+  }
   // 潛力技能 V3 不再透過 talentStatBonuses 提供被動數值；
   // 其被動效果（極速之力攻速／混沌雙修）於 computeStats 直接併入，主動效果由 js/potential.js 於戰鬥中施放。
   return out;

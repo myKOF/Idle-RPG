@@ -15,6 +15,12 @@
     "battle",
     "eval"
   ],
+  "panelParams": {
+    "inv": {
+      "items": false,
+      "items_依據": "本策略從不讀 panels.inv.items——換裝走 panels.eval.slotUpgrades（問遊戲『穿上去戰力升不升』），不是背包清單的字典序，所以沒有 bestPerSlot 規則。而那份清單要對每一件跑一次 itemScore：深局背包 300 件時單次 4.4 ms、每 5 遊戲秒一次，實測佔 headless 總 CPU 的 16%，外加 129KB 的序列化與深拷貝。其餘欄位（count / cap / equipmentScores / equipmentRarities / books / expandCost / equipmentEnchantInfo）全部照建，所以背包壓力閥與換裝門檻都不受影響。宣告錯了由 scripts/sim/policy.js 的 assertPanelParams 在載入時擋下，不會靜靜失效"
+    }
+  },
   "lists": {
     "slotList": [
       "weapon",
@@ -1084,7 +1090,7 @@
         "fullRatio": 0.9,
         "belowMaxBy": 1
       },
-      "why": "背包壓力閥：使用率達 90% 時，把低於身上最高品質的庫存一次清掉。背包滿了不只是挑不到東西，而是整條掉落管線停擺——熔爐佇列推不進背包就回堵，新裝備直接丟棄，角色會停在原地打幾十小時而畫面完全正常"
+      "why": "背包壓力閥：使用率達 90% 時，把低於身上最高品質的庫存一次清掉。背包滿了不只是挑不到東西，而是整條掉落管線停擺——熔爐佇列推不進背包就回堵，新裝備直接丟棄，角色會停在原地打幾十小時而畫面完全正常。留著當後備閥：下面的 salvage-dead-stock 跟不上時（例如清單被 maxPerRefresh 截斷）仍然要有人兜底"
     },
     {
       "id": "learn-potential-talents",
@@ -1456,7 +1462,8 @@
     "refreshSec": 15,
     "refreshSec_依據": "規劃結果的重算間隔（遊戲秒）。45 秒實測會讓規劃太舊：8 個 seed 的下緣整個崩回去（物攻最小值 39,960 → 346、關卡最小值 136 → 50），換到的只是縮時倍率 187x → 222x。取 15 秒。實測成本（Lv.221／關卡150／背包 303 件）：只跑模擬 6.74 ms、加上完整 panels.eval 22.19 ms，其中 refreshSec 是最有效的旋鈕（30→15.06、45→12.28、60→11.00 ms）",
     "ancientProbeTop": 0,
-    "ancientProbeTop_依據": "設 0＝不補算太古估值（面板不給該欄位，rankRoi 退回一般分數，保守）。太古洗煉暫時關閉（見 reroll-by-roi 的 keepAncient_依據），開著只是白花每個決策點 7ms。重啟時設 4：前 4 名補算，面板 79→87ms；17 條全補是 98ms 而策略只用得到第一名"
+    "ancientProbeTop_依據": "設 0＝不補算太古估值（面板不給該欄位，rankRoi 退回一般分數，保守）。太古洗煉暫時關閉（見 reroll-by-roi 的 keepAncient_依據），開著只是白花每個決策點 7ms。重啟時設 4：前 4 名補算，面板 79→87ms；17 條全補是 98ms 而策略只用得到第一名",
+    "deadStock_關閉理由": "死庫存清理（panels.eval.deadStock）機制在 scripts/sim/evaluator.js 裡是完整可用的，但這份策略**不啟用**——8 seed × 20 小時的 A/B 實測結果見 docs/SIM_HARNESS.md：等級中位 177 → 110、關卡中位 150 → 100，換到的只有縮時 168x → 183x。兩臂在前 10 小時互有領先、之後往兩個方向分岔，所以那個差距沒有被證實是因果；但也沒有證據支持它有好處，而它換到的速度已經被 itemScore 跨規劃快取（不改行為、雜湊相同）拿走了。要啟用只需在這裡加回 { \"keepPerSlot\": 5, \"maxPerRefresh\": 50 } 並加一條 expand 到 panels.eval.deadStock.items 的 item.salvage 規則"
   },
   "roi": {
     "說明": "邊際效益排序。ΔDPS/ΔEHP 由評估器算（呼叫遊戲的 computeStats），這裡只依敗因加權後排序",

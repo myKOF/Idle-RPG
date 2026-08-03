@@ -484,6 +484,18 @@ function buildInventoryPanel(params) {
   var details = null;
   var i, j;
 
+  /* params.items === false：呼叫端明講「我不看這份清單」，那就別建。
+
+     投影一格要跑一次 itemScore（遍歷詞條、寶石、附魔），深局背包 300 件時
+     整份清單約 4.4 ms——而 AI 模擬器的 ROI 策略每 5 遊戲秒建一次面板卻**從不讀
+     items**（它改用 panels.eval.slotUpgrades 挑換裝）。實測那是 headless 總 CPU
+     的 16%，外加每次 129KB 的序列化與深拷貝，全部丟掉。
+
+     其餘欄位一個都不動：count / cap / equipmentScores / equipmentRarities …
+     都還在，所以「背包有多滿」「身上那件多強」這些判斷不受影響。
+     UI 不傳 params，走的仍然是原本的路徑。 */
+  var wantItems = !(params && params.items === false);
+
   /* params.full：一次要回全部裝備的完整資料。
      這是給關鍵字搜尋用的——它要比對詞條、傳奇特效、太古詞條，就是投影裁掉的那些。
      關鍵字篩選只在內網／本機出現（ui.js 的 isInternalServer()），正式環境的玩家
@@ -505,7 +517,7 @@ function buildInventoryPanel(params) {
   }
 
   return {
-    items: items.map(inventoryCellView),
+    items: wantItems ? items.map(inventoryCellView) : [],
     details: details,
     count: items.length,
     cap: inventoryCapacityNow(),

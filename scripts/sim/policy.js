@@ -26,7 +26,52 @@ const vm = require('vm');
    詳見 policy_interpreter.js 檔頭。 */
 const INTERPRETER = fs.readFileSync(path.join(__dirname, 'policy_interpreter.js'), 'utf8');
 
+/* ---- 面板參數的哨兵 ----
+
+   策略可以宣告「這個面板的某一塊不用建」（panelParams，例如 inv 的 items 清單）。
+   代價是宣告錯了不會壞掉、只會**靜靜壞掉**：路徑解析不到值，規則就永遠不觸發，
+   而報表上看起來只是「AI 沒有換裝」。
+
+   所以宣告成 false 的欄位，一律在載入時檢查策略裡有沒有任何地方指到它，
+   指到了就直接拒絕開跑。
+
+   ⚠️ 比對的是「整個字串**就是**那條路徑（或以它為前綴再接一個點）」，
+   不是子字串掃描。策略檔裡的路徑一律是完整的字串值（`"panels.inv.equipment"`、
+   `{"$path": "..."}`），而各種 `_依據` / `說明` 欄位是散文，裡面很可能為了解釋
+   而提到同一條路徑——子字串掃描會把那種說明也當成使用，於是「寫了註解」就開不了機。 */
+function assertPanelParams(policy) {
+  const pp = policy.panelParams;
+  if (!pp || typeof pp !== 'object') return;
+
+  const banned = [];
+  for (const panel of Object.keys(pp)) {
+    const cfg = pp[panel];
+    if (!cfg || typeof cfg !== 'object') continue;
+    for (const field of Object.keys(cfg)) {
+      if (cfg[field] === false) banned.push('panels.' + panel + '.' + field);
+    }
+  }
+  if (!banned.length) return;
+
+  const walk = (node) => {
+    if (typeof node === 'string') {
+      for (const path of banned) {
+        if (node === path || node.startsWith(path + '.')) {
+          throw new Error(
+            `策略宣告了不建 ${path}（panelParams），但策略裡有規則以 "${node}" 指到它。` +
+            `那條規則會永遠取不到值而靜靜失效——要嘛把宣告拿掉，要嘛把規則改成不需要它。`);
+        }
+      }
+      return;
+    }
+    if (Array.isArray(node)) { node.forEach(walk); return; }
+    if (node && typeof node === 'object') { for (const k of Object.keys(node)) walk(node[k]); }
+  };
+  walk(policy);
+}
+
 function createPolicy(policy) {
+  assertPanelParams(policy);
   /* 空 context：沒有 require / process / console / G / FIELD。
      連 Math.random 都沒有——策略不該有隨機性，否則決定論就斷了。 */
   const ctx = vm.createContext(Object.create(null));
@@ -57,6 +102,12 @@ function createPolicy(policy) {
     /* 策略宣告它需要哪些面板。驅動端只建這幾個——背包面板很大，
        每個決策點都建一次會白白付出序列化成本。 */
     needPanels: policy.needPanels || [],
+
+    /* 建面板時要傳給遊戲的參數（逐面板）。目前唯一的用途是 inv 的
+       { items: false }——不讀那份清單的策略不必付它的錢，見
+       js/worker/sim.worker.js 的 buildInventoryPanel。
+       宣告錯了由上面的 assertPanelParams 在載入時擋下。 */
+    panelParams: policy.panelParams || null,
 
     /* ---- 觀測頻率（與行動頻率分開）----
        decideEveryGameSec 是「玩家多久做一次後勤」；這一個是「玩家多仔細看戰鬥」。
