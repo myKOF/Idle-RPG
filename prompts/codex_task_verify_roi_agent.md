@@ -210,3 +210,11 @@ T1：18/18 組 `determinism.finalStateHash` 完整 SHA-256 逐字串相同。
 T2：通過。獨立腳本 `D:\MyGame\Idle-RPG\verify_outputs\t2_readonly_verify.cjs` 以 seed 4242 推進 40×30 秒；評估場呼叫 `eval`／`evalCombat` 各 40 次，與完全不呼叫的完整存檔 SHA-256 均為 `063c448e55bfe972765e7ad9907efe84a602e2716de91a0e0f1117d9c6481c60`；兩次面板 JSON 相同；23 個 evaluator 頂層宣告與遊戲全域宣告零碰撞。原始輸出：`D:\MyGame\Idle-RPG\verify_outputs\t2_readonly_verify.output.json`。
 
 T3：通過。`git diff --stat d1c7c1e..c703483 -- js/` 無輸出，表示 `js/` 沒有被改造 commit 動到。
+
+## Codex 實際驗證紀錄（T4–T5）
+
+T4：使用未挑選過的 seed `20260901`–`20260908`，執行 20 遊戲小時、`policy.extreme` 與 `policy.extreme.roi` 各 8 場。中位數（level / 最高 stage / 最終停留 stage / atk）由 `80.5 / 100 / 91 / 6511.5` 變為 `132.5 / 148 / 129 / 36966.5`；但 `20260903` 由 `86 / 100 / 95 / 4653` 退為 `57 / 50 / 50 / 477`，且最高 stage 最小值仍為 50，故嚴格驗收不通過。完整逐 seed 表與 `snapshots.csv` 證據見 `docs/ROI_AGENT_VERIFICATION_2026-08-03.md`。
+
+T5：不通過。縮時倍率中位數舊策略 `296×`、ROI `165×`，比例 `55.7%`，低於 `70%` 門檻。代表性退步 seed 的 11,646 次 `panels.eval` 實測 `planAgeSec` 為 p50 約 5 秒、p95 約 15 秒、max 約 15 秒；快取有命中，效能退化不是快取完全失效。
+
+T6：跳過。本環境沒有真瀏覽器樣本收集流程，未以靜態檢查冒充交叉驗證。
