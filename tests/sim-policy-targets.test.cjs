@@ -534,6 +534,65 @@ test('退關不會低於 minStage', () => {
   assert.equal(retreatOf(q.decide(bst(300, 0, 10))).length, 0, '已在下限就不再退');
 });
 
+/* ---- 裝等分段地板不得變成吸收態 ---- */
+
+/* tierPush 的觀測值。分段大小 50：itemLevelHere 是分段起點，nextBreakpointStage 是下一個斷點。 */
+function tst(sec, kills, stage, itemLevelHere) {
+  const s = bst(sec, kills, stage);
+  s.panels.eval = {
+    tier: {
+      stage: stage,
+      itemLevelHere: itemLevelHere,
+      nextBreakpointStage: itemLevelHere + 50,
+      breakpointGain: 1,                       // 低於 minBreakpointGain，不觸發往前推
+      equippedItemLevelMin: itemLevelHere      // 已追平 → 不是 behind，park 不會被拉成 tierBand
+    }
+  };
+  return s;
+}
+function tierGate() {
+  const p = gatePolicy({
+    targetRetreat: { step: 5, everySec: 300, minStage: 1 },
+    tierPush: { source: 'panels.eval.tier', minBreakpointGain: 2 }
+  });
+  p.needPanels.push('eval');
+  return p;
+}
+
+test('站在裝等分段底、又完全打不動時，地板必須讓路', () => {
+  /* 這是實測踩到、而且極貴的一個死鎖。
+
+     退關地板取「當前裝等分段的底」，理由是跌破它掉落裝等會退一階。
+     但分段邊界剛好是 EQUIP_TIER_SIZE 的倍數（50／100／150），角色推關時一定會踩上去；
+     踩上去的那一刻 gStage === tierFloor，`gStage > floorStage` 恆為 false，
+     退關指令再也送不出去——進得去、出不來。
+
+     實測 sim_ab_forge 8 個 seed：7 個在第 5~18 小時停在關卡 **150 或 100**，
+     之後 10 小時只殺 56 隻怪。關卡 150 的怪物血量 14,268,860、防禦 454,009，
+     角色物攻 33,797——一隻要打 9.5 分鐘。牠們不是打不過，是打不完。
+     而 stage.go 整場只送了 22 次，全被地板擋掉。
+
+     站在分段底時這道地板已經沒有東西可保護：底下那一段本來就更差，
+     但「更差的掉落」遠好過「每小時 5.6 隻」。 */
+  const p = tierGate();
+  p.observe(tst(0, 0, 150, 150));
+  for (let t = 10; t <= 300; t += 10) p.observe(tst(t, 0, 150, 150));
+  const cmds = p.decide(tst(300, 0, 150, 150));
+  assert.equal(autoOn(cmds), false);
+  assert.deepEqual(retreatOf(cmds).map((c) => c.args), [{ delta: -5 }],
+    '正好站在分段底（150）時仍必須退得出去，否則那一關就是吸收態');
+});
+
+test('還在分段之內時，地板照常擋住退出分段', () => {
+  /* 讓路只發生在「站在底上」。分段之內退關仍然不得跌破底——
+     那是這道地板本來要防的事（掉落裝等退一階換不回來）。 */
+  const p = tierGate();
+  p.observe(tst(0, 0, 152, 150));
+  for (let t = 10; t <= 300; t += 10) p.observe(tst(t, 0, 152, 150));
+  assert.deepEqual(retreatOf(p.decide(tst(300, 0, 152, 150))).map((c) => c.args), [{ delta: -2 }],
+    '從 152 只能退到分段底 150，不能一口氣退到 147');
+});
+
 test('沒宣告 targetRetreat 時只關閉自動推關，不會退關', () => {
   /* 退關要明確宣告才會發生。宣告了 requireTargets 就自動開始往回跑的話，
      既有策略升級這個機制時行為會無聲改變。 */

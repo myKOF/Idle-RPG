@@ -394,6 +394,124 @@ test('太古位置不當犧牲品——那是可累積的永久投資', () => {
     + '洗在上面的關鍵詞條是可累積的投資');
 });
 
+/* ---- 6c. 太古位置：明確放行時要用太古的估值 ---- */
+
+/* 與 rerollPolicy 相同，但放行洗太古位置。 */
+function ancientRerollPolicy() {
+  const p = createPolicy({
+    name: 'test-reroll-anc',
+    decideEveryGameSec: 60,
+    needPanels: ['eval'],
+    roi: {
+      source: 'panels.eval.affixRoi', minGainPct: 0.5,
+      weights: { neutral: { offense: 1, ehp: 0 } }
+    },
+    track: {
+      monster: 'panels.battle.field.monster', stage: 'view.stage',
+      equipment: 'panels.inv.equipment', equippedScores: 'panels.inv.equipmentScores'
+    },
+    profile: { combat: ['panels.evalCombat.combat'], microRetry: { limit: 0 } },
+    rules: [{
+      id: 'reroll-by-roi', cmd: 'item.rerollAffix',
+      rerollByRoi: {
+        equipment: 'panels.inv.equipment',
+        equippedAffixes: 'panels.eval.equippedAffixes',
+        keepAncient: false
+      }
+    }]
+  });
+  return p;
+}
+
+test('放行之後，放著垃圾的太古位置會被洗掉', () => {
+  /* 實測 8 個存檔的 47 個太古位置有 49% 放著遊戲權重 <= 1 的詞條
+     （生命值 0.05、法力值 0.075、生命恢復 0.6 這一類）。
+     太古位置洗煉只換種類、永遠維持太古，等於一批保證滿值的格子被閒置。 */
+  const cmds = ancientRerollPolicy().decide(rerollState(
+    { atkFlat: { slotKey: 'weapon', dOffPct: 10, dEhpPct: 0, dOffPctAncient: 16.2, dEhpPctAncient: 0 } },
+    {
+      weapon: [
+        { key: 'mpFlat', index: 0, ancient: true, lossOffPct: 0.1, lossEhpPct: 0 },
+        { key: 'critDmg', index: 1, ancient: false, lossOffPct: 4.0, lossEhpPct: 0 }
+      ]
+    }
+  ));
+  assert.equal(cmds.length, 1);
+  assert.equal(cmds[0].args.affixKey, 'mpFlat',
+    '太古位置放著法力值（權重 0.075），洗掉它的淨收益是 16.2−0.1，'
+    + '遠高於洗一般位置的 10−4.0');
+});
+
+test('太古位置放著好詞條就不動——安全性由 ROI 自己守，不是靠 keepAncient', () => {
+  const cmds = ancientRerollPolicy().decide(rerollState(
+    { atkFlat: { slotKey: 'weapon', dOffPct: 10, dEhpPct: 0, dOffPctAncient: 16.2, dEhpPctAncient: 0 } },
+    {
+      weapon: [
+        { key: 'atkPct', index: 0, ancient: true, lossOffPct: 14.0, lossEhpPct: 0 },
+        { key: 'defFlat', index: 1, ancient: false, lossOffPct: 0.2, lossEhpPct: 0 }
+      ]
+    }
+  ));
+  assert.equal(cmds.length, 1);
+  assert.equal(cmds[0].args.affixKey, 'defFlat',
+    '太古位置上的 atkPct 損失 14.0，淨收益 2.2；一般位置的 defFlat 淨收益 9.8，該選後者');
+});
+
+test('太古的收益要用太古的估值，不能拿一般探針的數字充數', () => {
+  /* 這是這一段真正要擋的錯：ROI 表的 dOffPct 是用 roll 取中點的**非太古**探針算的
+     （baseV × 1.0），而太古走的是 baseV × AFFIX_MAX_VALUE_MULT × ANCIENT_AFFIX_VALUE_MULT
+     （＝ ×1.62，與 roll 無關）。用前者去估洗太古的收益會系統性低估，
+     於是永遠判成「不划算」。 */
+  const roiTable = { atkFlat: { slotKey: 'weapon', dOffPct: 5, dEhpPct: 0, dOffPctAncient: 8.1, dEhpPctAncient: 0 } };
+  const aff = { weapon: [{ key: 'mpFlat', index: 0, ancient: true, lossOffPct: 6.0, lossEhpPct: 0 }] };
+
+  assert.equal(ancientRerollPolicy().decide(rerollState(roiTable, aff)).length, 1,
+    '用太古估值：8.1 − 6.0 = 2.1，高於門檻 0.5，應該洗');
+
+  /* 面板沒給太古欄位時（舊評估器）退回一般分數，這時 5 − 6 < 0 就不該洗——
+     退化行為必須是保守的，不能反過來高估。 */
+  const legacy = { atkFlat: { slotKey: 'weapon', dOffPct: 5, dEhpPct: 0 } };
+  assert.equal(ancientRerollPolicy().decide(rerollState(legacy, aff)).length, 0,
+    '沒有太古欄位時要退回一般分數並保守判定');
+});
+
+test('太古的數值倍率完全由遊戲決定，探針只是把 ancient 旗標交給它', () => {
+  /* 這裡分兩層驗：
+
+     第一層（可以精確斷言）——詞條數值本身。
+     js/formula.js affixValueFromStrength：
+       一般  baseV × strengthMult(roll)，strengthMult = 0.8 + roll/MAX × 0.4
+       太古  baseV × AFFIX_MAX_VALUE_MULT × ANCIENT_AFFIX_VALUE_MULT（與 roll 無關）
+     探針的 roll 取中點 ⇒ strengthMult = 1.0，所以倍率就是那兩個常數的乘積。
+
+     第二層（只能斷言方向與量級）——面板的 ΔOff%。
+     增幅百分比不會等比例跟著數值走：affixRoundValue 會四捨五入，
+     而戰力還受爆擊、防禦減免等非線性影響。實測發展成熟的角色是 1.620，
+     但剛開局的小號因為數值小、捨入誤差佔比高，會落在 1.53 左右。
+     把它斷言成精確值只會養出一支跟角色強度有關的脆弱測試。 */
+  const e = createEngine({ seed: 20260901 }).boot(null);
+  e.setEvalParams({ affixKeys: ['atkFlat'], slotUpgrades: { candidatesPerSlot: 1 } });
+  e.stepSeconds(600);
+  const c = e.ctx;
+  const probeRoll = Math.round(c.STRENGTH_ROLL_MAX * 0.5);
+  const expected = c.AFFIX_MAX_VALUE_MULT * c.ANCIENT_AFFIX_VALUE_MULT / c.strengthMult(probeRoll);
+
+  /* 第一層：直接問遊戲的數值函式 */
+  const vNormal = c.affixValueFromStrength('atkFlat', 200, 5, probeRoll, false, 1);
+  const vAncient = c.affixValueFromStrength('atkFlat', 200, 5, probeRoll, true, 1);
+  assert.ok(vNormal > 0, '前提：這條詞條在 lv200 R5 上有基準值');
+  assert.ok(Math.abs(vAncient / vNormal - expected) < 0.01,
+    `太古/一般 的數值倍率應為 ${expected.toFixed(3)}，實際 ${(vAncient / vNormal).toFixed(3)}`);
+
+  /* 第二層：面板要真的把這個差別算進去 */
+  const r = (e.panel('eval').affixRoi || {}).atkFlat;
+  if (!r || !(Math.abs(r.dOffPct) > 1e-9)) return;        // 這個 seed 還沒有合法宿主部位
+  assert.ok(typeof r.dOffPctAncient === 'number', '面板要提供太古位置的增幅');
+  const ratio = r.dOffPctAncient / r.dOffPct;
+  assert.ok(ratio > 1.3 && ratio <= expected + 0.02,
+    `太古位置的增幅要明顯較高、且不得超過數值倍率 ${expected.toFixed(3)}，實際 ${ratio.toFixed(3)}`);
+});
+
 test('第一名的部位沒被探測到時，往下找有探到的名次', () => {
   /* 評估器為了省 computeStats 只探前幾名的宿主部位，而它挑前幾名用的是未加權的增幅，
      這裡的排序卻是依敗因加權過的——兩份名次不一定同一個。 */

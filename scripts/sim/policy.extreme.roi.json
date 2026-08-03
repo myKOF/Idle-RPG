@@ -312,9 +312,10 @@
           "minBreakpointGain": 2,
           "依據": "掉落裝備等級由 equipmentTierLevel 分段（EQUIP_TIER_SIZE=50）：關卡 1~49 掉裝等 1、50~99 掉裝等 50。park [41,45] 是一個每一件掉落都是裝等 1 的區間，而裝等 1 的詞條只剩 base（實測 12.0 對 335.4）。身上裝等追平當前分段之後就不該再留在原地——這一段能掉的都掉過了。跨過斷點的增幅低於 minBreakpointGain 倍時不觸發，避免在沒有斷點可跨的區間亂衝",
           "advanceRequiresTargets": [
-            "deathRate"
+            "deathRate",
+            "killRate"
           ],
-          "advanceRequiresTargets_依據": "只擋前進，不強迫後退。後退交給遊戲自己的死亡退關與 park 下緣——多加一個退關來源只會讓歸因變難"
+          "advanceRequiresTargets_依據": "加上 killRate。原本只看 deathRate——但實測的失敗模式是**打不完**而不是打不過：關卡 150 的怪物血量 14,268,860、防禦 454,009，角色物攻 33,797，一隻要打 9.5 分鐘。角色完全不死，deathRate 因此一路達標，tierPush 就繼續放行往更深處推。「我沒死」不能當成「我推得動」的代理指標，那正是敗因側寫要分開 DPS_TIMEOUT 與 EHP_TOO_LOW 的理由"
         }
       },
       "why": "依 player_strategy.md「前期優先生存任務指南」控制自動推關：裝備品質覆蓋率沒到門檻就關掉自動推關、留在原地掛機把裝備換上來。指南的核心是不要讓關卡跑在裝備前面——推太深只會一直死，死了就掉不到裝備，掉不到裝備就更推不動。先前是無條件每 15 秒送一次「開啟自動推關」，正是指南要防的那件事。覆蓋率只算身上真的有裝備的部位（空部位面板值為 -1，雙手武器會讓 weapon2 永遠空著，算進分母的話門檻永遠到不了、閘門永久關閉）",
@@ -802,7 +803,8 @@
       "rerollByRoi": {
         "equipment": "panels.inv.equipment",
         "equippedAffixes": "panels.eval.equippedAffixes",
-        "keepAncient": true
+        "keepAncient": true,
+        "keepAncient_依據": "維持不碰太古位置。放行過（sim_ab_anc，8 seed × 20 小時），配對結果等級 1/8 勝、關卡 3/8 勝，中位等級 688→446——**實測不支持**。機制本身沒錯（太古位置洗煉保證滿值、倍率 1.62 已由評估器驗證），問題出在 ROI 的收益是「如果洗出第一名那條」的最佳值，而實際洗煉是從詞條池隨機擲的；把這個本來就樂觀的估值再乘 1.62，門檻就擋不住了，於是把精華耗在反覆重擲太古位置上（精華結局存量 1,682→272）。要重啟這項就得先把 ROI 的收益改成**池的期望值**而不是最佳值。評估器的太古估值與測試都留著，改好之後把這裡設回 false、並把 evalConfig.ancientProbeTop 開回 4 即可"
       }
     },
     {
@@ -927,10 +929,18 @@
         "byCategory": {
           "util": [
             "wisdom",
-            "loot"
+            "loot",
+            "fortune",
+            "haste",
+            "clarity"
           ],
           "atk": [
-            "ice"
+            "ice",
+            "fire",
+            "lightning",
+            "dark",
+            "poison",
+            "light"
           ],
           "def": [
             "fireRes",
@@ -938,13 +948,14 @@
             "lightningRes",
             "poisonRes",
             "lightRes",
-            "darkRes"
+            "darkRes",
+            "ctrlRes"
           ]
         },
         "spread": [
           "def"
         ],
-        "maxPerDecision": 4,
+        "maxPerDecision": 6,
         "overrides": [
           {
             "when": [
@@ -959,7 +970,11 @@
             },
             "依據": "遇菁英或BOSS時若生存能力不足則換成生命值提升及冷卻縮短"
           }
-        ]
+        ],
+        "spread_依據": "def 維持輪流取用（六種抗性平均分散）。atk 試過也加進來（sim_ab_ench），8 個 seed 有 5 個等級變差、中位 380→319，所以退回集中在 ice。書單維持補齊是另一回事：同一件裝備不能重複附同一種書，單一本書在結構上填不滿第二格",
+        "byCategory_atk_依據": "ice 仍排第一（維持 player_strategy.md 的原意，冰凍有控場價值），其餘五本是**補位**。實測 20 小時的存檔：武器／手套／護腕／雙戒五個攻擊部位全部停在 1/2 格，而手上躺著 fire×44 lightning×45 dark×41 poison×30 light×28、ice 只剩 9 本。關鍵是同一件裝備不能重複附同一種（遊戲回「已有同類附魔且數值不會提升」），所以單一本書的清單**在結構上就填不滿第二格**。附魔只花 1 點精華，是整份策略最便宜的戰力來源",
+        "byCategory_util_依據": "wisdom（經驗）與 loot（掉寶）維持原優先序，後三本補位。util 只有項鍊與鞋子兩個部位，補位書用得不多，但不補就是空著",
+        "byCategory_def_依據": "補上 ctrlRes（控制抵抗）——手上有 40 本卻不在任何清單裡"
       },
       "why": "依 player_strategy.md 附魔策略：生命值(vigor)→冰凍(ice)→六大屬性抗性平均。遊戲規定每個部位只吃一種類別（enchantCatForType：武器/戒指/手套/護腕＝攻擊，項鍊/鞋子＝功能，其餘＝防禦），所以這份優先序實際上是按類別分工而不是單一排序：功能部位放生命值、攻擊部位放冰凍、防禦部位放六大抗性並輪流分散。部位與類別的對應取自遊戲的面板欄位，策略不自己抄——抄一份遲早跟遊戲脫鉤，而 manualEnchant 只會回「XX 只能使用 OO 類附魔」，看報表不會發現規則從沒生效。項鏈與鞋子平時放經驗(wisdom)與掉寶率(loot)，生存不足時換成生命值(vigor)與冷卻縮短(focus)"
     },
@@ -997,6 +1012,56 @@
       "everySec": 300,
       "cmd": "newforge.addFurnace",
       "why": "熔爐解鎖到當前可開的最大數量"
+    },
+    {
+      "id": "forge-unlock-slots",
+      "everySec": 300,
+      "cmd": "newforge.unlockPartSlot",
+      "forgeSlots": {
+        "furnaces": "panels.newforge.newForge.furnaces",
+        "slotCosts": "panels.newforge.partSlotCost",
+        "gold": "view.gold",
+        "goldRatio": 0.25
+      },
+      "why": "把兩座熔爐的零件格從 3 解到 8。實測 20 小時的存檔兩座爐都是 0/3 格、一個零件都沒裝，而零件庫存每一種都已經是 T7×10（庫存上限）——整個熔爐零件系統整場沒被使用。0 轉、2 座爐時逐格成本 8k/18k/32k/50k/72k 金，單爐 3→8 共 18 萬、兩爐 36 萬，相對於實測結局金幣 61 萬~1,774 萬是小錢。goldRatio 0.25 是保留閥：金幣同時要餵強化與背包擴充"
+    },
+    {
+      "id": "forge-parts",
+      "everySec": 300,
+      "cmd": "newforge.installPart",
+      "uninstallCmd": "newforge.uninstallPart",
+      "forgeParts": {
+        "furnaces": "panels.newforge.newForge.furnaces",
+        "owned": "panels.newforge.ownedParts",
+        "plan": [
+          "extractLens",
+          "scrapForge"
+        ],
+        "rebalance": {
+          "materials": [
+            {
+              "part": "extractLens",
+              "stock": "view.essence",
+              "ref": 50
+            },
+            {
+              "part": "scrapForge",
+              "stock": "view.scrap",
+              "ref": 5000
+            }
+          ],
+          "minRatio": 2,
+          "shiftSlots": 2,
+          "holdRounds": 3,
+          "holdRounds_依據": "同一個判斷要連續成立 3 次（＝15 分鐘）才搬格子。實測 seed20260903 的日誌 16:50 把碎片熔煉爐裝進 1 號爐、16:55 又換回精粹透鏡，整場 308 次安裝／146 次拆卸，大半是這樣來回翻。兩種材料都是攢一批一次花光，庫存訊號本身在跳"
+        },
+        "backlog": {
+          "part": "speedGear",
+          "queueAtLeast": 200,
+          "slots": 2
+        }
+      },
+      "why": "熔爐零件配置（使用者口述的最佳策略）：一座爐 8 格全押精粹透鏡（分解時附魔精華產出率 +20%/階），另一座 8 格全押碎片熔煉爐（分解碎片產量 +20%/階）。零件是快照制、不消耗庫存，所以兩座爐可以各自裝滿同一種。T7 滿格＝該爐 +1120%，等於產出 ×12.2；精華是這份策略的硬上限（實測單場取得約 1,535 點、洗一次 5~6 點、結局存量 8），這是唯一能把上限本身推高的槓桿。rebalance 依兩種材料的滿足率（庫存/ref）微調 2 格——不能用絕對門檻，因為兩種都會被花到見底；也不能用 ref/庫存，那在庫存 0 時會退化成「ref 大的永遠贏」。backlog 是使用者說的另一個極端：產能跟不上打怪速度、產品開始堆積時換上加速齒輪；門檻 200 件（≈200 秒待燒）刻意設高，我自己的 8 個種子熔爐平均使用率只有 36%，不該讓它在沒塞車時吃掉產量格"
     },
     {
       "id": "salvage-below-equipped",
@@ -1389,7 +1454,9 @@
     "probeEquippedAffixes": true,
     "probeTopSlots": 3,
     "refreshSec": 15,
-    "refreshSec_依據": "規劃結果的重算間隔（遊戲秒）。45 秒實測會讓規劃太舊：8 個 seed 的下緣整個崩回去（物攻最小值 39,960 → 346、關卡最小值 136 → 50），換到的只是縮時倍率 187x → 222x。取 15 秒。實測成本（Lv.221／關卡150／背包 303 件）：只跑模擬 6.74 ms、加上完整 panels.eval 22.19 ms，其中 refreshSec 是最有效的旋鈕（30→15.06、45→12.28、60→11.00 ms）"
+    "refreshSec_依據": "規劃結果的重算間隔（遊戲秒）。45 秒實測會讓規劃太舊：8 個 seed 的下緣整個崩回去（物攻最小值 39,960 → 346、關卡最小值 136 → 50），換到的只是縮時倍率 187x → 222x。取 15 秒。實測成本（Lv.221／關卡150／背包 303 件）：只跑模擬 6.74 ms、加上完整 panels.eval 22.19 ms，其中 refreshSec 是最有效的旋鈕（30→15.06、45→12.28、60→11.00 ms）",
+    "ancientProbeTop": 0,
+    "ancientProbeTop_依據": "設 0＝不補算太古估值（面板不給該欄位，rankRoi 退回一般分數，保守）。太古洗煉暫時關閉（見 reroll-by-roi 的 keepAncient_依據），開著只是白花每個決策點 7ms。重啟時設 4：前 4 名補算，面板 79→87ms；17 條全補是 98ms 而策略只用得到第一名"
   },
   "roi": {
     "說明": "邊際效益排序。ΔDPS/ΔEHP 由評估器算（呼叫遊戲的 computeStats），這裡只依敗因加權後排序",

@@ -575,6 +575,63 @@
             align-items: start;
         }
 
+        /* 🧠 技能快照：跨滿三欄放在紙娃娃底下。
+           不做成第四欄是因為那三欄已經各有最小寬度，硬擠會讓裝備詳情卡片
+           窄到讀不了太古詞條——而那正是這個彈窗最主要的用途。 */
+        .skills-panel {
+            grid-column: 1 / -1;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.6);
+        }
+
+        .skills-panel-head {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 18px;
+            align-items: baseline;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+        }
+
+        .skills-panel-title { font-size: 15px; font-weight: 700; color: #a78bfa; }
+        .skills-panel-meta { font-size: 12px; color: #94a3b8; }
+        .skills-panel-meta b { color: #e2e8f0; }
+
+        .skill-section { margin-bottom: 12px; }
+        .skill-section:last-child { margin-bottom: 0; }
+        .skill-section-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+        .skill-chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+        .skill-chip {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 6px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 5px 9px;
+            font-size: 12px;
+            color: #e2e8f0;
+            white-space: nowrap;
+        }
+        /* 裝載中的技能才是真的會用到的——沒裝上的技能等級再高也不影響戰鬥。 */
+        .skill-chip.equipped { border-color: #a78bfa; background: #2e1065; }
+        .skill-chip.fused { border-color: #f59e0b; background: #3b2508; }
+        .skill-chip .sk-lv { color: #94a3b8; font-size: 11px; }
+        /* 已達該技能目前的等級上限：再投點數也不會變強，用顏色標出來 */
+        .skill-chip .sk-lv.maxed { color: #34d399; }
+        .skill-chip .sk-slot { color: #64748b; font-size: 10px; }
+        .skills-empty { color: #64748b; font-size: 12px; }
+
         /* 👈 玩家屬性快照面板樣式 (100% 對齊遊戲內側欄屬性面板版型) */
         .player-stats-panel {
             background: #0f172a;
@@ -675,6 +732,24 @@
 
         .pd-slot .slot-emoji {
             font-size: 26px;
+        }
+
+        /* 部位標示：戒指與武器各有主副兩欄，圖示一模一樣（💍💍／⚔️🛡️），
+           只靠格子位置分辨很容易看錯是哪一只。標在格子底下，四個字以內。 */
+        .pd-slot .slot-name {
+            position: absolute;
+            bottom: -13px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 9px;
+            line-height: 1;
+            color: #94a3b8;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+        .pd-slot.dual-slot .slot-name {
+            color: var(--accent-amber);
+            font-weight: 700;
         }
 
         .pd-slot .anc-stars {
@@ -915,6 +990,12 @@
                     <!-- 批次模式：每個 seed 一個標籤，各自顯示自己的百分比 -->
                     <div id="batchSeedProgress" style="display: none; margin-top: 8px; flex-wrap: wrap; gap: 6px;"></div>
                     <div id="batchSpreadBox" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--panel-border); color: #cbd5e1;"></div>
+                    <!-- 批次完成後可切換要看哪一個 seed；預設是跨 seed 中位數 -->
+                    <div id="batchSeedPicker" style="display: none; margin-top: 10px; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <label for="batchSeedSelect" style="font-size: 12px; color: var(--text-dim);">🔍 檢視對象</label>
+                        <select id="batchSeedSelect" onchange="onBatchSeedChange()" style="min-width: 320px;"></select>
+                        <span id="batchSeedHint" style="font-size: 11px; color: var(--text-dim);"></span>
+                    </div>
                 </div>
             </div>
 
@@ -948,83 +1029,83 @@
             <div class="card-val" id="cardProfileName" style="color: var(--accent-amber); font-size: 18px;">-</div>
         </div>
         <div class="card">
-            <div class="card-label">最終 DPS</div>
+            <div class="card-label" id="lblDps">最終 DPS</div>
             <div class="card-val" id="cardDps" style="font-size: 19px;">-</div>
         </div>
         <div class="card">
-            <div class="card-label">⚔️ 累積殺敵數</div>
+            <div class="card-label" id="lblKills">⚔️ 累積殺敵數</div>
             <div class="card-val" id="cardKills" style="color: var(--accent-rose); font-size: 19px;">-</div>
         </div>
         <div class="card">
-            <div class="card-label">🏆 最高突破關卡</div>
+            <div class="card-label" id="lblStage">🏆 最高突破關卡</div>
             <div class="card-val" id="cardStage">-</div>
         </div>
         <div class="card">
-            <div class="card-label">🌀 最終轉生次數</div>
+            <div class="card-label" id="lblReinc">🌀 最終轉生次數</div>
             <div class="card-val" id="cardReinc" style="color: var(--accent-emerald);">-</div>
         </div>
         <div class="card">
-            <div class="card-label">🗼 最終高塔樓層</div>
+            <div class="card-label" id="lblTowerFloor">🗼 最終高塔樓層</div>
             <div class="card-val" id="cardTowerFloor" style="color: var(--accent-blue);">-</div>
         </div>
         <div class="card">
-            <div class="card-label">🎲 累積洗詞條次數</div>
+            <div class="card-label" id="lblRerolls">🎲 累積洗詞條次數</div>
             <div class="card-val" id="cardRerolls" style="color: #fbbf24; font-size: 19px;">-</div>
         </div>
         <div class="card">
-            <div class="card-label">💎 累積寶石獲得數</div>
+            <div class="card-label" id="lblGems">💎 累積寶石獲得數</div>
             <div class="card-val" id="cardGems" style="color: #34d399; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #818cf8;">
-            <div class="card-label">⚡ 全身裝備太古詞條總數 (玩家全身加總)</div>
+            <div class="card-label" id="lblAncientAffixes">⚡ 全身裝備太古詞條總數 (玩家全身加總)</div>
             <div class="card-val" id="cardAncientAffixes" style="color: #818cf8; font-size: 18px;">-</div>
         </div>
 
         <!-- 6 大裝備品質累積獲取量卡片 -->
         <div class="card" style="border-color: #f59e0b;">
-            <div class="card-label">👑 獲得【神鑄創世】裝備 (法陣6合1+魔塵)</div>
+            <div class="card-label" id="lblObtainedGodforge">👑 獲得【神鑄創世】裝備 (法陣6合1+魔塵)</div>
             <div class="card-val" id="cardObtainedGodforge" style="color: #f59e0b; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #ec4899;">
-            <div class="card-label">✨ 獲得【創世】裝備 (R7)</div>
+            <div class="card-label" id="lblObtainedGenesis">✨ 獲得【創世】裝備 (R7)</div>
             <div class="card-val" id="cardObtainedGenesis" style="color: #ec4899; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #a855f7;">
-            <div class="card-label">🟣 獲得【神話】裝備 (R6)</div>
+            <div class="card-label" id="lblObtainedMythic">🟣 獲得【神話】裝備 (R6)</div>
             <div class="card-val" id="cardObtainedMythic" style="color: #a855f7; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #f97316;">
-            <div class="card-label">🟠 獲得【傳說】裝備 (R5)</div>
+            <div class="card-label" id="lblObtainedLegendary">🟠 獲得【傳說】裝備 (R5)</div>
             <div class="card-val" id="cardObtainedLegendary" style="color: #f97316; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #3b82f6;">
-            <div class="card-label">🔵 獲得【史詩】裝備 (R4)</div>
+            <div class="card-label" id="lblObtainedEpic">🔵 獲得【史詩】裝備 (R4)</div>
             <div class="card-val" id="cardObtainedEpic" style="color: #3b82f6; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #94a3b8;">
-            <div class="card-label">⚪ 獲得【史詩以下】裝備 (R0~R3)</div>
+            <div class="card-label" id="lblObtainedBelowEpic">⚪ 獲得【史詩以下】裝備 (R0~R3)</div>
             <div class="card-val" id="cardObtainedBelowEpic" style="color: #94a3b8;">-</div>
         </div>
 
         <!-- 💰 5 大核心資源累積總獲得量卡片 -->
         <div class="card" style="border-color: #eab308;">
-            <div class="card-label">💰 累積金幣總獲得</div>
+            <div class="card-label" id="lblTotalGoldEarned">💰 累積金幣總獲得</div>
             <div class="card-val" id="cardTotalGoldEarned" style="color: #eab308; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #38bdf8;">
-            <div class="card-label">🧩 累積裝備碎片總獲得</div>
+            <div class="card-label" id="lblTotalStonesEarned">🧩 累積裝備碎片總獲得</div>
             <div class="card-val" id="cardTotalStonesEarned" style="color: #38bdf8; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #a855f7;">
-            <div class="card-label">🔮 累積附魔精華總獲得</div>
+            <div class="card-label" id="lblTotalEssenceEarned">🔮 累積附魔精華總獲得</div>
             <div class="card-val" id="cardTotalEssenceEarned" style="color: #a855f7; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #34d399;">
-            <div class="card-label">✨ 累積魔塵總獲得</div>
+            <div class="card-label" id="lblTotalDustEarned">✨ 累積魔塵總獲得</div>
             <div class="card-val" id="cardTotalDustEarned" style="color: #34d399; font-size: 19px;">-</div>
         </div>
         <div class="card" style="border-color: #818cf8;">
-            <div class="card-label">🌀 累積太古精華總獲得</div>
+            <div class="card-label" id="lblTotalAncientEssenceEarned">🌀 累積太古精華總獲得</div>
             <div class="card-val" id="cardTotalAncientEssenceEarned" style="color: #818cf8; font-size: 19px;">-</div>
         </div>
     </div>
@@ -1152,6 +1233,10 @@
                     👈 點擊紙娃娃上的裝備部位，查看裝備的詳細太古詞條、寶石鑲嵌與數值
                 </div>
             </div>
+            <!-- 🧠 技能快照：裝載欄、已學技能、融合技、天賦 -->
+            <div class="skills-panel" id="skillsSnapshotPanel">
+                <!-- 動態注入 -->
+            </div>
         </div>
     </div>
 </div>
@@ -1193,6 +1278,30 @@
         chest: '胸甲', belt: '腰帶', gloves: '手套', wrist: '護腕',
         legs: '腿甲', boots: '鞋子', ring: '戒指 1', ring2: '戒指 2', amulet: '項鍊'
     };
+
+    /* 一件裝備可能裝在哪幾個欄位是**遊戲的規則**（js/data.js equipSlotsForItem）。
+       這裡只列出「有兩個欄位」的那些，用來在快照上把它們標出來——圖示一模一樣的兩格
+       （💍💍／⚔️🛡️）只靠位置分辨，換裝出錯時第一個要查的就是「這件在哪一欄」。
+       ⚠️ 不寫死清單：讀得到遊戲的 equipSlotsForItem 就用它推導，讀不到才退回預設。 */
+    const DUAL_SLOTS = (() => {
+        const out = {};
+        if (typeof equipSlotsForItem === 'function' && typeof SLOT_LIST !== 'undefined') {
+            for (const s of SLOT_LIST) {
+                try {
+                    const slots = equipSlotsForItem({ slot: s.replace(/\d+$/, ''), weaponType: null });
+                    if (Array.isArray(slots) && slots.length > 1) for (const k of slots) out[k] = true;
+                } catch (e) {}
+            }
+        }
+        if (!Object.keys(out).length) { out.weapon = out.weapon2 = out.ring = out.ring2 = true; }
+        return out;
+    })();
+
+    /* 部位顯示名優先用遊戲的 SLOT_INFO（單一事實來源），拿不到才用本檔的對照表。 */
+    function slotDisplayName(slot) {
+        if (typeof SLOT_INFO !== 'undefined' && SLOT_INFO[slot] && SLOT_INFO[slot].name) return SLOT_INFO[slot].name;
+        return SLOT_CHINESE_NAMES[slot] || slot;
+    }
 
     const SLOT_EMOJIS = {
         weapon: '⚔️', weapon2: '🛡️', helmet: '🪖', shoulder: '🥋',
@@ -1983,6 +2092,9 @@
         renderBatchSeedProgress(null);
         const spreadBox = document.getElementById('batchSpreadBox');
         if (spreadBox) spreadBox.style.display = 'none';
+        const seedPicker = document.getElementById('batchSeedPicker');
+        if (seedPicker) seedPicker.style.display = 'none';
+        batchViewCtx = null;
         if (statusText) {
             statusText.innerText = `🚀 系統正在由零建角跑 ${hours} 小時無作弊測試 (0%)...`;
             statusText.style.color = 'var(--accent-amber)';
@@ -2167,6 +2279,157 @@
         box.style.display = 'flex';
     }
 
+    /* ============ 摘要卡片的資料來源 ============
+
+       批次的卡片一律顯示**被選中的那一個 seed**，19 張卡是同一場的一致畫面。
+       （不混中位數：逐指標取中位會拼出一個沒有任何一場真的長成那樣的角色，
+        「DPS 是 A 場的、寶石是 B 場的」看起來像同一個人，其實不是。）
+       要比較 seed 之間的差距看批次散佈表，要看細節就用下拉選單切換。 */
+
+    /* 一個 seed 的所有卡片指標。來源刻意優先取 run_summary.lootStats——
+       那是遊戲自己的累積計數器（js/stats.js 的 LOOT_STATS），
+       而 snapshots.csv 的 gold/scrap/essence 是**當下庫存**，不是累積獲得。
+       （原本的 CSV 路徑把庫存當成「累積總獲得」在顯示，數字會小一到兩個數量級。） */
+    async function seedCardMetrics(baseDir) {
+        const out = {};
+        const get = async (f) => {
+            const r = await fetch(baseDir + '/' + f + '?t=' + Date.now());
+            return r.ok ? r : null;
+        };
+        const sr = await get('run_summary.json');
+        if (sr) {
+            const s = await sr.json();
+            const ls = s.lootStats || {};
+            const eq = ls.equip || {};
+            const mats = ls.mats || {};
+            out.cardKills = Number(ls.kills) || 0;
+            out.cardTotalGoldEarned = Number(ls.gold) || 0;
+            out.cardTotalStonesEarned = Number(mats.scrap) || 0;
+            out.cardTotalEssenceEarned = Number(mats.essence) || 0;
+            out.cardTotalDustEarned = Number(mats.dust) || 0;
+            out.cardTotalAncientEssenceEarned = Number(mats.ancientEssence) || 0;
+            /* ⚠️ 品質索引直接用 lootStats.equip 的鍵。原本的做法是走一遍存檔的裝備＋背包
+               再自己分組，而那份分組錯開了一階：R4+R5 被算進「傳說(R5)」卡、
+               R3 被算進「史詩(R4)」卡。run_summary.rarityNames 是遊戲給的對照表
+               （3=獨特 4=史詩 5=傳說 6=神話 7=創世 8=神鑄創世），照它取就不會錯。
+               而且 lootStats.equip 是**累積掉落**，與卡片標題的「獲得」一致；
+               走存檔只看得到「現在還留著的」，分解掉的全部漏掉。 */
+            const n = (i) => Number(eq[i]) || 0;
+            out.cardObtainedGodforge = n(8);
+            out.cardObtainedGenesis = n(7);
+            out.cardObtainedMythic = n(6);
+            out.cardObtainedLegendary = n(5);
+            out.cardObtainedEpic = n(4);
+            out.cardObtainedBelowEpic = n(0) + n(1) + n(2) + n(3);
+            let gems = 0;
+            for (const k in (ls.gems || {})) gems += Number(ls.gems[k]) || 0;
+            out.cardGems = gems;
+            let rr = 0;
+            for (const k in (s.commands || {})) {
+                if (k.includes('item.rerollAffix')) rr += Number(s.commands[k].sent) || 0;
+            }
+            out.cardRerolls = rr;
+            if (s.final) {
+                out.cardStage = Number(s.final.stage) || 0;
+                out.cardReinc = Number(s.final.reincarnations) || 0;
+            }
+        }
+        /* DPS 與高塔樓層只有快照有（run_summary.final 沒收） */
+        const cr = await get('snapshots.csv');
+        if (cr) {
+            const lines = (await cr.text()).trim().split('\n');
+            if (lines.length > 1) {
+                const h = lines[0].split(',');
+                const v = lines[lines.length - 1].split(',');
+                const col = (name) => { const i = h.indexOf(name); return i < 0 ? null : Number(v[i]); };
+                out.cardDps = col('dps');
+                out.cardTowerFloor = col('towerFloor');
+            }
+        }
+        /* 太古詞條要數存檔上的實際詞條，沒有別的來源 */
+        const fr = await get('save_final.json');
+        if (fr) {
+            const g = await fr.json();
+            let anc = 0;
+            const walk = (it) => {
+                if (!it || !Array.isArray(it.affixes)) return;
+                it.affixes.forEach((a) => { if (a && (a.ancient || a.isAncient)) anc++; });
+            };
+            for (const k in (g.equipment || {})) walk(g.equipment[k]);
+            out.cardAncientAffixes = anc;
+        }
+        return out;
+    }
+
+    /* 把某一個 seed 的資料填進 19 張卡片。
+       ⚠️ 要排在 loadNativeCsvSnapshotsToApp 之後——它內部會先用 CSV／存檔填一輪，
+       而那條路徑有三個來源錯誤（品質分組錯開一階、「累積總獲得」讀成當下庫存、
+       獲得數走存檔會漏掉已分解的），這裡用 lootStats 覆蓋掉。 */
+    async function applySeedCards(baseDir, label) {
+        let m;
+        try { m = await seedCardMetrics(baseDir); }
+        catch (e) { return; }
+        const setCardVal = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+        const put = (id, fmt) => { const v = m[id]; if (typeof v === 'number' && Number.isFinite(v)) setCardVal(id, fmt(v)); };
+
+        for (const id of ['cardDps', 'cardKills', 'cardTotalGoldEarned', 'cardTotalStonesEarned',
+            'cardTotalEssenceEarned', 'cardTotalDustEarned', 'cardTotalAncientEssenceEarned']) {
+            put(id, formatGameNumber);
+        }
+        for (const id of ['cardStage', 'cardObtainedGodforge', 'cardObtainedGenesis', 'cardObtainedMythic',
+            'cardObtainedLegendary', 'cardObtainedEpic', 'cardObtainedBelowEpic']) {
+            put(id, (v) => Math.round(v).toLocaleString());
+        }
+        const suffixed = { cardReinc: ' 轉', cardTowerFloor: ' 層', cardRerolls: ' 次', cardGems: ' 顆', cardAncientAffixes: ' 條' };
+        for (const id in suffixed) put(id, (v) => Math.round(v).toLocaleString() + suffixed[id]);
+
+        if (label) setCardVal('cardProfileName', label);
+    }
+
+    /* ---- 批次檢視對象切換 ----
+       卡片與圖表一律是**同一個 seed** 的資料。預設落在依等級排序的中位那一場，
+       要看「誰卡住了」「最好的那一場長什麼樣」就用這個下拉選單切換。
+       seed 之間的差距看下面的批次散佈表。 */
+    let batchViewCtx = null;   // { outDir, rows }
+
+    function batchSeedLabel(row) {
+        return `seed ${row.seed}｜Lv.${row.level}・關卡 ${row.stage}・物攻 ${Number(row.atk || 0).toLocaleString()}`;
+    }
+
+    function renderBatchSeedPicker(outDir, rows, pickDir) {
+        batchViewCtx = { outDir, rows };
+        const wrap = document.getElementById('batchSeedPicker');
+        const sel = document.getElementById('batchSeedSelect');
+        if (!wrap || !sel) return;
+        /* 依等級由高到低列出，一眼看得出誰強誰弱。 */
+        const ranked = rows.slice().sort((x, y) => (y.level || 0) - (x.level || 0));
+        sel.innerHTML = ranked.map((r) => {
+            const tag = (r.dir === pickDir) ? '（預設：中位）' : '';
+            return `<option value="${r.dir}">${batchSeedLabel(r)}${tag}</option>`;
+        }).join('');
+        sel.value = pickDir;
+        wrap.style.display = 'flex';
+        const hint = document.getElementById('batchSeedHint');
+        if (hint) hint.innerText = `共 ${rows.length} 個 seed，卡片與圖表都是選中那一場的資料`;
+    }
+
+    async function onBatchSeedChange() {
+        if (!batchViewCtx) return;
+        const sel = document.getElementById('batchSeedSelect');
+        const hint = document.getElementById('batchSeedHint');
+        if (!sel || !sel.value) return;
+        const row = batchViewCtx.rows.find((r) => r.dir === sel.value);
+        if (hint) hint.innerText = '讀取中…';
+        try {
+            const base = './' + batchViewCtx.outDir + '/' + sel.value;
+            await loadNativeCsvSnapshotsToApp(base);
+            await applySeedCards(base, row ? ('🎲 ' + batchSeedLabel(row)) : null);
+            if (hint) hint.innerText = `共 ${batchViewCtx.rows.length} 個 seed，卡片與圖表都是選中那一場的資料`;
+        } catch (e) {
+            if (hint) hint.innerText = '讀取失敗：' + e.message;
+        }
+    }
+
     /* ---- 批次結果 ---- */
     async function loadBatchResults(statusText, hours, seedCount) {
         try {
@@ -2183,8 +2446,13 @@
             const ranked = rows.slice().sort((x, y) => (x.level || 0) - (y.level || 0));
             const pick = ranked[Math.floor((ranked.length - 1) / 2)];
 
-            const base = (b.outDir || 'sim_batch') + '/' + pick.dir;
+            const outDir = b.outDir || 'sim_batch';
+            const base = outDir + '/' + pick.dir;
             await loadNativeCsvSnapshotsToApp('./' + base);
+            /* 一定要排在 loadNativeCsvSnapshotsToApp 之後：它內部會先用 CSV／存檔
+               填一輪卡片，而那條路徑有三個來源錯誤（見 seedCardMetrics 的註解）。 */
+            await applySeedCards('./' + base, '🎲 ' + batchSeedLabel(pick));
+            renderBatchSeedPicker(outDir, rows, pick.dir);
 
             /* 散佈表：這是**跨次模擬的統計量**，不是遊戲數值。
                每個輸入值都直接取自各次的 run_summary.json。 */
@@ -2486,6 +2754,7 @@
             try { renderPlayerStatsPanel(); } catch(e) {}
             try { renderPaperdollGrid(); } catch(e) {}
             try { selectPaperdollSlot('chest'); } catch(e) {}
+            try { renderSkillSnapshotPanel(); } catch(e) {}
         }
     }
 
@@ -2556,6 +2825,115 @@
         container.innerHTML = html;
     }
 
+    /* 🧠 技能快照。
+       與屬性面板同一個資料來源（finalSaveG → window.G），名稱、等級上限、
+       裝載欄格數一律問遊戲的函式（SKILLS / skillMaxLv / loadoutSize），
+       不在這裡抄第二份——抄了就會在遊戲改版後靜靜地顯示錯的東西。 */
+    function renderSkillSnapshotPanel() {
+        const box = document.getElementById('skillsSnapshotPanel');
+        if (!box) return;
+
+        const P = (window.G && window.G.player) || null;
+        if (!P || typeof SKILLS === 'undefined') {
+            box.innerHTML = '<div class="skills-empty">請載入 save_final.json 存檔資料以顯示技能快照。</div>';
+            return;
+        }
+
+        const nameOf = (id) => {
+            const d = SKILLS[id];
+            if (d) return (d.emoji ? d.emoji + ' ' : '') + d.name;
+            /* 融合技的 id 是遊戲產生的（fusion_xxx），要從 fusions 陣列取名字 */
+            const fu = (P.fusions || []).find((f) => f && f.id === id);
+            return fu ? ('🌀 ' + (fu.name || '融合技')) : id;
+        };
+        const maxOf = (id) => {
+            try { return (typeof skillMaxLv === 'function') ? skillMaxLv(id) : null; } catch (e) { return null; }
+        };
+        const chip = (id, lv, cls, slotLabel) => {
+            const max = maxOf(id);
+            const maxed = (max !== null && lv >= max);
+            return `<span class="skill-chip ${cls || ''}">`
+                + (slotLabel ? `<span class="sk-slot">${slotLabel}</span>` : '')
+                + `<span>${nameOf(id)}</span>`
+                + `<span class="sk-lv ${maxed ? 'maxed' : ''}">Lv.${lv}${max !== null ? '/' + max : ''}</span>`
+                + `</span>`;
+        };
+
+        const learned = Object.keys(P.skills || {}).filter((id) => (P.skills[id] || 0) > 0);
+        const loadout = Array.isArray(P.loadout) ? P.loadout : [];
+        const inLoadout = new Set(loadout);
+        const size = (typeof loadoutSize === 'function') ? loadoutSize() : loadout.length;
+        const mastery = (typeof ensureSkillMastery === 'function') ? ensureSkillMastery() : (P.skillMastery || { level: 0 });
+        const ptsAvail = (typeof availableSkillPoints === 'function') ? availableSkillPoints() : (P.skillPoints || 0);
+        const ptsTotal = (typeof totalSkillPoints === 'function') ? totalSkillPoints() : 0;
+
+        let html = `
+            <div class="skills-panel-head">
+                <div class="skills-panel-title">🧠 技能快照 (Skill Snapshot)</div>
+                <div class="skills-panel-meta">📚 熟練度 <b>Lv.${mastery.level || 0}</b></div>
+                <div class="skills-panel-meta">🔢 技能點 <b>${formatGameNumber(ptsAvail)}</b> / ${formatGameNumber(ptsTotal)} 可用</div>
+                <div class="skills-panel-meta">📖 已學 <b>${learned.length}</b> 個</div>
+                <div class="skills-panel-meta">🎯 裝載欄 <b>${loadout.length}</b> / ${size} 格</div>
+            </div>`;
+
+        /* 裝載欄照順序顯示——順序是戰鬥的施放優先序，不是任意排列。 */
+        html += `<div class="skill-section">
+            <div class="skill-section-label">🎯 裝載中（依施放優先序）</div>
+            <div class="skill-chip-row">`;
+        html += loadout.length
+            ? loadout.map((id, i) => chip(id, (P.skills && P.skills[id]) || 0, 'equipped', '#' + (i + 1))).join('')
+            : '<span class="skills-empty">裝載欄是空的</span>';
+        html += `</div></div>`;
+
+        /* 學了卻沒裝上的：這些技能等級再高也不影響戰鬥，是純粹的沉沒點數。 */
+        const bench = learned.filter((id) => !inLoadout.has(id))
+            .sort((a, b) => (P.skills[b] || 0) - (P.skills[a] || 0));
+        html += `<div class="skill-section">
+            <div class="skill-section-label">📖 已學但未裝載（${bench.length} 個 — 不影響戰鬥）</div>
+            <div class="skill-chip-row">`;
+        html += bench.length
+            ? bench.map((id) => chip(id, P.skills[id] || 0)).join('')
+            : '<span class="skills-empty">沒有——已學的技能全部裝上了</span>';
+        html += `</div></div>`;
+
+        const fusions = P.fusions || [];
+        if (fusions.length) {
+            html += `<div class="skill-section">
+                <div class="skill-section-label">🌀 融合技（${fusions.length} 個）</div>
+                <div class="skill-chip-row">`;
+            html += fusions.map((f) => {
+                const lv = (P.skills && P.skills[f.id]) || 0;
+                const parts = (f.components || []).map((cid) => nameOf(cid)).join(' + ');
+                return `<span class="skill-chip fused"><span>${nameOf(f.id)}</span>`
+                    + `<span class="sk-lv">Lv.${lv}</span>`
+                    + (parts ? `<span class="sk-slot">${parts}</span>` : '')
+                    + `</span>`;
+            }).join('');
+            html += `</div></div>`;
+        }
+
+        /* 天賦與潛能只顯示真的點了的——全部列出來會是幾十個 0，把有用的資訊淹掉。 */
+        const tal = (P.talents && P.talents.levels) || {};
+        const pot = (P.talents && P.talents.potentialLevels) || {};
+        const talRows = Object.keys(tal).filter((k) => (tal[k] || 0) > 0);
+        const potRows = Object.keys(pot).filter((k) => (pot[k] || 0) > 0);
+        const talName = (k) => (typeof TALENTS !== 'undefined' && TALENTS[k] && TALENTS[k].name) ? TALENTS[k].name : k;
+        const potName = (k) => (typeof POTENTIAL_SKILLS !== 'undefined' && POTENTIAL_SKILLS[k] && POTENTIAL_SKILLS[k].name) ? POTENTIAL_SKILLS[k].name : k;
+        html += `<div class="skill-section">
+            <div class="skill-section-label">🌟 轉生天賦 / 潛能（只列已點的）</div>
+            <div class="skill-chip-row">`;
+        if (!talRows.length && !potRows.length) {
+            html += `<span class="skills-empty">未點任何天賦或潛能`
+                + `（轉生 ${(P.reincarnations || 0)} 轉；天賦點需要轉生才會產生）</span>`;
+        } else {
+            html += talRows.map((k) => `<span class="skill-chip"><span>${talName(k)}</span><span class="sk-lv">Lv.${tal[k]}</span></span>`).join('');
+            html += potRows.map((k) => `<span class="skill-chip fused"><span>${potName(k)}</span><span class="sk-lv">Lv.${pot[k]}</span></span>`).join('');
+        }
+        html += `</div></div>`;
+
+        box.innerHTML = html;
+    }
+
     function closeEquipmentModal() {
         document.getElementById('equipModalOverlay').style.display = 'none';
     }
@@ -2584,14 +2962,19 @@
             }
 
             const slotEl = document.createElement('div');
-            slotEl.className = `pd-slot slot-${slot} ${selectedEquipSlotKey === slot ? 'selected' : ''}`;
+            /* 雙欄部位（主手/副手、戒指1/戒指2）另外標色：兩格的圖示一模一樣，
+               不標的話只能靠位置猜，而「這件到底在哪一欄」正是換裝出錯時要查的第一件事。 */
+            const dual = DUAL_SLOTS[slot] === true;
+            slotEl.className = `pd-slot slot-${slot}${dual ? ' dual-slot' : ''} ${selectedEquipSlotKey === slot ? 'selected' : ''}`;
             slotEl.style.borderColor = rInfo.color;
             slotEl.style.boxShadow = `inset 0 0 14px ${rInfo.color}40`;
             slotEl.onclick = () => selectPaperdollSlot(slot);
+            slotEl.title = slotDisplayName(slot);
             slotEl.innerHTML = `
                 ${starsStr ? `<div class="anc-stars">${starsStr}</div>` : ''}
                 <div class="slot-emoji">${SLOT_EMOJIS[slot] || '🛡️'}</div>
                 <div style="font-size: 10px; color: ${rInfo.color}; font-weight: bold; margin-top: 2px;">+${eq.upgrade || 0}</div>
+                <div class="slot-name">${slotDisplayName(slot)}</div>
             `;
             grid.appendChild(slotEl);
         });
@@ -2619,14 +3002,23 @@
         const rInfo = rarityInfo(eq.rarity);
         detailPanel.style.borderColor = rInfo.color;
 
+        /* 目前看的是哪一欄。遊戲的 itemDetailHTML 只描述裝備本身（它不知道被裝在哪），
+           而戒指與武器各有主副兩欄——少了這一行就分不出面板上這件是哪一只。 */
+        const dualTag = DUAL_SLOTS[slot]
+            ? ' <span style="color:var(--accent-amber);">（雙欄部位，注意是哪一欄）</span>' : '';
+        const slotBanner = `<div style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">`
+            + `📍 部位：<b style="color:var(--text-main);">${slotDisplayName(slot)}</b>`
+            + `<span style="opacity:.6;"> (${slot})</span>${dualTag}</div>`;
+
         const detailHTMLFn = window.itemDetailHTML || window.uiItemDetailHTML;
         if (typeof detailHTMLFn === 'function') {
             const goldAmount = (window.G && window.G.player) ? window.G.player.gold : 0;
             const essenceAmount = (window.G && window.G.player) ? window.G.player.essence : 0;
             const opts = { showAffixReroll: false, gold: goldAmount, essence: essenceAmount };
-            detailPanel.innerHTML = `<div class="equip-detail-card" style="background: transparent; border: none; box-shadow: none; padding: 0;">${detailHTMLFn(eq, null, opts)}</div>`;
+            detailPanel.innerHTML = slotBanner
+                + `<div class="equip-detail-card" style="background: transparent; border: none; box-shadow: none; padding: 0;">${detailHTMLFn(eq, null, opts)}</div>`;
         } else {
-            const slotName = SLOT_CHINESE_NAMES[slot] || slot;
+            const slotName = slotDisplayName(slot);
             let affixesHtml = '';
             if (eq.affixes) {
                 affixesHtml = eq.affixes.map(af => {
@@ -2636,7 +3028,7 @@
                     return `<div class="it-affix" style="color: ${af.ancient ? '#fbbf24' : '#f8fafc'}">${af.ancient ? '✡ ' : ''}${chName} +${afVal}</div>`;
                 }).join('');
             }
-            detailPanel.innerHTML = `
+            detailPanel.innerHTML = slotBanner + `
                 <div style="color:${rInfo.color}; font-weight: bold; font-size: 16px; margin-bottom: 8px;">【${rInfo.name}的${slotName}】</div>
                 <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">強化等級: +${eq.level || 0} | 裝備品級: Rarity ${eq.rarity}</div>
                 <div class="it-affixes">${affixesHtml}</div>

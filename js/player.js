@@ -295,7 +295,29 @@ function equipItem(it, slotKey, eq) {
     addToInventory(mh);
     blog('🗡️ 裝備副手：已卸下佔用雙欄的 ' + rarityTag(mh), 'info');
   }
+  /* ⚠️ 同一件裝備不得同時佔兩個欄位。
+
+     戒指與武器各有主副兩欄，而「把已經戴在 ring 的那只再裝到 ring2」是完全合法的
+     呼叫（resolveItem 會從裝備欄找到它）。少了這一段的話 eq.ring 與 eq.ring2 會
+     指向**同一個物件**，而且兩次呼叫都回成功、沒有任何警告。
+
+     後果不只是屬性被算兩次：
+       存檔    JSON.stringify 把同一個物件寫成兩份，id 相同
+       讀檔    變成兩個獨立物件共用一個 id
+       之後    resolveItem 回「ambiguous item id（命中 2 個）」——
+               這件裝備從此不能強化、不能洗煉、也不能卸下，永久磚掉
+
+     而且它會自我繁殖：item.unequip 只清掉找到的第一個欄位就 break，
+     接著 addToInventory 讓背包與裝備欄同時持有；下一次換裝再把同一個物件
+     addToInventory 一次，背包裡就出現兩份。
+
+     實測 84 個模擬存檔有 74 個含重複 id（最舊的批次就有），
+     單一存檔中位數 2~19 組。裝到另一個欄位的正確語意是**移動**，不是複製。 */
+  for (var sk in eq) {
+    if (eq[sk] === it && sk !== key) eq[sk] = null;
+  }
   var old = eq[key];
+  if (old === it) old = null;                 // 原地重裝：沒有被換下來的那件
   eq[key] = it;
   if (eq === G.equipment) markStatsDirty(); // 只有動到使用中那套才需重算屬性
   UI.dirty.equip = true; UI.dirty.header = true;

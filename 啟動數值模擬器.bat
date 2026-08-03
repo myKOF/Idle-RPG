@@ -45,7 +45,7 @@ if not errorlevel 1 (
 
 rem Own console window, not start /b: /b ties node to this console and closing
 rem it can take the server down with it.  Log instead of nul so failures show.
-start "Idle-RPG Sim Server (close this window to stop)" /min cmd /c "node tools/sim_server.cjs > %LOG% 2>&1"
+start "蒙地卡羅模擬測試服 - 關閉此視窗即停止伺服器" cmd /c "tools\sim_server_window.bat" "%LOG%" "%PORT%"
 
 rem Poll until the port actually answers.  A fixed 1s wait raced the ~1050ms
 rem cold start and the browser opened first -> ERR_CONNECTION_REFUSED.
