@@ -928,10 +928,18 @@
         "byCategory": {
           "util": [
             "wisdom",
-            "loot"
+            "loot",
+            "fortune",
+            "haste",
+            "clarity"
           ],
           "atk": [
-            "ice"
+            "ice",
+            "fire",
+            "lightning",
+            "dark",
+            "poison",
+            "light"
           ],
           "def": [
             "fireRes",
@@ -939,13 +947,14 @@
             "lightningRes",
             "poisonRes",
             "lightRes",
-            "darkRes"
+            "darkRes",
+            "ctrlRes"
           ]
         },
         "spread": [
           "def"
         ],
-        "maxPerDecision": 4,
+        "maxPerDecision": 6,
         "overrides": [
           {
             "when": [
@@ -960,7 +969,11 @@
             },
             "依據": "遇菁英或BOSS時若生存能力不足則換成生命值提升及冷卻縮短"
           }
-        ]
+        ],
+        "spread_依據": "def 維持輪流取用（六種抗性平均分散）。atk 試過也加進來（sim_ab_ench），8 個 seed 有 5 個等級變差、中位 380→319，所以退回集中在 ice。書單維持補齊是另一回事：同一件裝備不能重複附同一種書，單一本書在結構上填不滿第二格",
+        "byCategory_atk_依據": "ice 仍排第一（維持 player_strategy.md 的原意，冰凍有控場價值），其餘五本是**補位**。實測 20 小時的存檔：武器／手套／護腕／雙戒五個攻擊部位全部停在 1/2 格，而手上躺著 fire×44 lightning×45 dark×41 poison×30 light×28、ice 只剩 9 本。關鍵是同一件裝備不能重複附同一種（遊戲回「已有同類附魔且數值不會提升」），所以單一本書的清單**在結構上就填不滿第二格**。附魔只花 1 點精華，是整份策略最便宜的戰力來源",
+        "byCategory_util_依據": "wisdom（經驗）與 loot（掉寶）維持原優先序，後三本補位。util 只有項鍊與鞋子兩個部位，補位書用得不多，但不補就是空著",
+        "byCategory_def_依據": "補上 ctrlRes（控制抵抗）——手上有 40 本卻不在任何清單裡"
       },
       "why": "依 player_strategy.md 附魔策略：生命值(vigor)→冰凍(ice)→六大屬性抗性平均。遊戲規定每個部位只吃一種類別（enchantCatForType：武器/戒指/手套/護腕＝攻擊，項鍊/鞋子＝功能，其餘＝防禦），所以這份優先序實際上是按類別分工而不是單一排序：功能部位放生命值、攻擊部位放冰凍、防禦部位放六大抗性並輪流分散。部位與類別的對應取自遊戲的面板欄位，策略不自己抄——抄一份遲早跟遊戲脫鉤，而 manualEnchant 只會回「XX 只能使用 OO 類附魔」，看報表不會發現規則從沒生效。項鏈與鞋子平時放經驗(wisdom)與掉寶率(loot)，生存不足時換成生命值(vigor)與冷卻縮短(focus)"
     },
