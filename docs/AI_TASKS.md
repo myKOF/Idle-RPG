@@ -123,6 +123,65 @@ Web Worker 遷移全部完成，無進行中的大型工程。
 
 完成後交給：Claude Review，之後由 Antigravity 進行快速擊殺／切換目標的瀏覽器驗證。
 
+## Codex：修正背景分頁累積傷害浮字（2026-08-03）
+
+狀態：已完成
+
+任務分類：背景分頁 UI 效能與傷害浮字生命週期修正
+
+任務目的：
+
+- 背景分頁不建立或播放累積中的傷害浮字，只保留最新一筆可在切回時顯示。
+- 切回前景時清理背景期間殘留的敵方傷害浮字，避免一次跳出整批歷史數字。
+- Worker 背景事件佇列也只保留最新 float，避免背景掛機過久造成事件／DOM／記憶體累積。
+- 不改變背景在線掛機、欠帳補進度與戰鬥結算結果。
+
+負責 AI：Codex
+
+允許修改檔案：`docs/AI_TASKS.md`、`js/ui.js`、`js/worker/shim.js`、`js/worker/sim.worker.js`、
+`tests/background-idle.test.cjs`、`tests/ui-worker-events.test.cjs`、`tests/damage-float-regression.test.cjs`
+
+禁止修改：Worker Protocol／存檔格式／戰鬥數值公式，以及其他 AI 進行中的檔案。
+
+前置依賴：無；已完成上述允許檔案的衝突預檢，未發現其他副本或分支修改。
+
+驗收方式：背景期間敵方傷害浮字不建立且 Worker 事件佇列不累積歷史 float；切回前景只顯示最新一筆傷害數字；背景模擬與存檔行為維持既有測試結果；相關測試、完整測試與 build 通過。
+
+完成結果：UI 與 Worker shim 均在背景抑制歷史 float；切回時清理既有敵方傷害節點並補播最新一筆；新增背景 UI、Worker 事件佇列與切回回歸測試。定向測試 19/19 通過；完整測試 971 項中 969 通過，2 項既有失敗（`affix-reroll-bias`、`enemy-type-damage`）與本次無關；build 226/226 通過。瀏覽器實機驗證因 in-app Browser runtime 初始化失敗未完成。
+
+完成條件：完成最小範圍修正，補上背景／切回／事件佇列回歸測試，並回報瀏覽器實機驗證限制與已知風險。
+
+完成後交給：Claude Review，之後由 Antigravity 進行長時間背景掛機與切回驗證。
+
+## Codex：移除詞條上限率 100% 硬上限（2026-08-03）
+
+狀態：已完成
+
+任務分類：裝備洗煉公式／屬性上限調整
+
+任務目的：
+
+- 依使用者要求移除詞條上限率的 100% 硬上限。
+- 保留現有洗煉高值偏向公式，讓超過 100% 的詞條上限率可以繼續提高高值段權重。
+- 同步參數表、程式單一來源、公式文件與回歸測試。
+
+負責 AI：Codex
+
+允許修改檔案：`docs/AI_TASKS.md`、`js/data.js`、`config/CSV/game_parameters.csv`、
+`game_formula.md`、`tests/stat-cap-unlimited.test.cjs`
+
+禁止修改：裝備存檔格式、洗煉區間與分段權重公式、其他 AI 進行中的檔案。
+
+前置依賴：無；已完成上述檔案衝突預檢，未發現其他副本或分支修改。
+
+測試要求／結果：詞條上限率無上限回歸測試 6/6 通過；`apply_params --check-anchors` 的 555 個錨點通過；build 226/226 通過；完整測試 972 項中 970 通過，2 項既有失敗（`affix-reroll-bias`、`enemy-type-damage`）與本次無關。
+
+完成結果：`STAT_CAPS.affixCap = 0`、參數表對應值為 0、面板不再將詞條上限率夾在 100%；洗煉分段權重公式維持不變，超過 100% 的詞條上限率可繼續提高高值段權重。
+
+完成條件：`STAT_CAPS.affixCap = 0`、參數表對應值為 0、面板不再將詞條上限率夾在 100%，且公式與既有洗煉行為通過驗證。
+
+完成後交給：Claude Review，之後由使用者確認洗煉體感。
+
 P5 之後的檔案所有權慣例（沿用即可，非硬性）：
 - `js/worker/*`、`js/bridge.js`、`js/storage.js`、`js/main.js`、`js/worker/protocol.js`：Claude
 - `js/ui.js`：Codex

@@ -8,6 +8,7 @@ const root = path.resolve(__dirname, '..');
 const mainSrc = fs.readFileSync(path.join(root, 'js/main.js'), 'utf8');
 const bridgeSrc = fs.readFileSync(path.join(root, 'js/bridge.js'), 'utf8');
 const workerSrc = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
+const shimSrc = fs.readFileSync(path.join(root, 'js/worker/shim.js'), 'utf8');
 const uiSrc = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
 const autoreloadSrc = fs.readFileSync(path.join(root, 'js/param_autoreload.js'), 'utf8');
 
@@ -148,9 +149,16 @@ test('PiP 狀態不再隨 visibility 轉發（休眠機制移除後已無接收�
   assert.doesNotMatch(bridgeSrc, /miniMonitorActive/, 'bridge 不應再讀 ui.js 的 MINI');
 });
 
-test('背景分頁跳過非必要渲染與輪詢，但不丟棄傷害浮字', () => {
-  // 模擬照跑，非必要面板與輪詢省下來；傷害浮字仍必須接收，不能因背景分頁消失。
-  assert.doesNotMatch(uiSrc, /function floatText\([^)]*\) \{\s*if \(uiRenderingSuspended\(\)\) return;/);
+test('背景分頁跳過非必要渲染與輪詢，只保留最新傷害浮字', () => {
+  // 模擬照跑，非必要面板與輪詢省下來；背景不建立歷史浮字，切回只補最新一筆。
+  assert.match(uiSrc, /function rememberBackgroundEnemyFloat\(/);
+  assert.match(uiSrc, /function clearBackgroundEnemyFloats\(/);
+  assert.match(uiSrc, /function showBackgroundLatestEnemyFloat\(/);
+  assert.match(uiSrc, /function floatText\([^)]*\) \{[\s\S]*?uiRenderingSuspended\(\)[\s\S]*?rememberBackgroundEnemyFloat/);
+  assert.match(uiSrc, /function handleVisibilityChange\(\)[\s\S]*?clearBackgroundEnemyFloats\(\)[\s\S]*?showBackgroundLatestEnemyFloat\(\)/);
+  assert.match(shimSrc, /function shimSetBackground\(hidden\)/);
+  assert.match(shimSrc, /kind === 'float' && _shimBackground/);
+  assert.match(workerSrc, /function onVisibility\([\s\S]*?shimSetBackground\(!!\(msg && msg\.hidden\)\)/);
   assert.match(uiSrc, /function renderStatsPanel\([^)]*\) \{\s*if \(uiRenderingSuspended\(\)\) return;/);
   assert.match(mainSrc, /function checkForUpdates\(\) \{\s*if \(typeof document !== 'undefined' && document\.hidden\) return;/);
   assert.match(autoreloadSrc, /function poll\(\) \{\s*if \(document\.hidden\) return;/);
@@ -158,4 +166,23 @@ test('背景分頁跳過非必要渲染與輪詢，但不丟棄傷害浮字', ()
   assert.match(uiSrc, /WorkerBridge\.on\('workerRecovered', hideWorkerDeadNotice\)/);
   assert.match(uiSrc, /id = 'worker-dead-notice'[\s\S]*location\.reload\(\)/);
   assert.doesNotMatch(uiSrc, /UI_WORKER_HEARTBEAT_TIMEOUT_MS|function checkWorkerHealth\(/);
+});
+
+test('Worker 背景事件只保留最新 float，切回時再送出', () => {
+  const context = { self: { window: null }, console };
+  context.self.window = context.self;
+  vm.createContext(context);
+  vm.runInContext(shimSrc, context, { filename: 'js/worker/shim.js' });
+
+  context.shimPushEvent('log', { msg: '保留日誌' });
+  context.shimSetBackground(true);
+  context.shimPushEvent('float', { text: '第一筆' });
+  context.shimPushEvent('float', { text: '最新一筆' });
+  const hiddenEvents = context.shimDrainEvents();
+  assert.equal(hiddenEvents.filter((event) => event.kind === 'float').length, 0);
+
+  context.shimPushEvent('float', { text: '切回前最後一筆' });
+  context.shimSetBackground(false);
+  const visibleEvents = context.shimDrainEvents();
+  assert.equal(visibleEvents.filter((event) => event.kind === 'float').map((event) => event.text).join('|'), '切回前最後一筆');
 });

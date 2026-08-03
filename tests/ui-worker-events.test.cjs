@@ -133,6 +133,23 @@ test('Worker 飄字以 elId 呈現，舊路徑也保留已離場目標的浮字'
   assert.equal(context.PENDING_ENEMY_FLOATS.length, 0);
 });
 
+test('背景 Worker float 不建立 DOM，只記錄最新敵方傷害', () => {
+  const calls = [];
+  const context = {
+    uiRenderingSuspended: () => true,
+    isEnemyHitFloat: () => true,
+    rememberBackgroundEnemyFloat: (...args) => calls.push(['remember', ...args]),
+    floatText: (...args) => calls.push(['floatText', ...args])
+  };
+  vm.runInNewContext(functionBody('handleWorkerUiEvents'), context);
+
+  context.handleWorkerUiEvents([
+    { kind: 'float', elId: 'mv-float-0', text: '10', cls: 'dmg', damageValue: 10 }
+  ]);
+
+  assert.deepEqual(calls, [['remember', 'mv-float-0', '10', 'dmg', 10]]);
+});
+
 test('待建立敵人圖層時不設浮字數量上限，也不丟棄舊目標的浮字', () => {
   const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
   const queueStart = ui.indexOf('function queuePendingEnemyFloat(');

@@ -1498,6 +1498,7 @@ function loadIntoRunningSim(msg) {
    **切回前景時刻意不重設 `_lastTickAt`。** 那正是背景期間累積的時間，
    要讓 loop 把它當成欠帳補完；重設等於把玩家掛機的時間丟掉。 */
 function onVisibility(msg) {
+  if (typeof shimSetBackground === 'function') shimSetBackground(!!(msg && msg.hidden));
   if (msg.hidden) requestPersist(PERSIST_KINDS.SHUTDOWN);
 }
 

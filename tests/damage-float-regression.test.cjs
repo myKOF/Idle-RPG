@@ -61,6 +61,15 @@ test('浮字不再以固定 50 個節點刪除尚未播完的傷害', () => {
   assert.match(ui, /Each float has its own removal timer/);
 });
 
+test('背景期間只保留最新傷害，切回時清除歷史浮字後補播最新一筆', () => {
+  assert.match(ui, /BACKGROUND_LATEST_ENEMY_FLOAT/);
+  assert.match(ui, /function clearBackgroundEnemyFloats\(\)/);
+  assert.match(ui, /PENDING_ENEMY_FLOATS\.length = 0/);
+  assert.match(ui, /function showBackgroundLatestEnemyFloat\(\)/);
+  assert.match(ui, /function handleVisibilityChange\(\)[\s\S]*?showBackgroundLatestEnemyFloat\(\)/);
+  assert.match(ui, /uiRenderingSuspended\(\)[\s\S]*?rememberBackgroundEnemyFloat\(elId, text, cls, damageValue\)/);
+});
+
 test('浮字定位量測時包含 translate(-50%)，並限制在戰鬥容器內', () => {
   assert.match(ui, /var oldTransform = sp\.style\.transform;/);
   assert.match(ui, /sp\.style\.transform = 'translate\(-50%, 0\)'/);

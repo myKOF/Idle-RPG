@@ -31,13 +31,47 @@ function shimDiagReset() {
 /* ---- 事件佇列 ----
    協議規定日誌一律合批進 tick.events，禁止一則一次 postMessage。
    非視覺事件超過上限時丟棄最舊的並計數，避免掛機一整天把記憶體吃光。
-   傷害浮字例外：它們必須送到主執行緒自然淡出，不能因佇列壅塞而消失，
-   因此永遠不會被這個上限丟棄。 */
+   前景傷害浮字例外：它們必須送到主執行緒自然淡出，不能因佇列壅塞而消失；
+   背景則由 shimSetBackground() 降為只保留最新一筆。 */
 var SHIM_EVENT_CAP = 400;
 var _shimEvents = [];
 var _shimEventsDropped = 0;
+var _shimBackground = false;
+var _shimLatestBackgroundFloat = null;
+
+/* 背景分頁仍要持續模擬，但主執行緒可能被瀏覽器大幅降頻。
+   傷害數字是純視覺事件，背景期間只保留最新一筆，避免 Worker 事件佇列
+   與瀏覽器的跨執行緒訊息佇列跟著戰鬥速度無限成長。 */
+function shimSetBackground(hidden) {
+  hidden = !!hidden;
+  if (hidden === _shimBackground) return;
+  if (hidden) {
+    var latest = _shimLatestBackgroundFloat;
+    var kept = [];
+    for (var i = 0; i < _shimEvents.length; i++) {
+      var event = _shimEvents[i];
+      if (event && event.kind === 'float') latest = event;
+      else kept.push(event);
+    }
+    _shimEvents = kept;
+    _shimLatestBackgroundFloat = latest;
+    _shimBackground = true;
+    return;
+  }
+  _shimBackground = false;
+  if (_shimLatestBackgroundFloat) {
+    _shimEvents.push(_shimLatestBackgroundFloat);
+    _shimLatestBackgroundFloat = null;
+  }
+}
 
 function shimPushEvent(kind, data) {
+  data = data || {};
+  data.kind = kind;
+  if (kind === 'float' && _shimBackground) {
+    _shimLatestBackgroundFloat = data;
+    return;
+  }
   if (kind !== 'float') {
     var nonFloatCount = 0;
     for (var i = 0; i < _shimEvents.length; i++) {
@@ -53,14 +87,16 @@ function shimPushEvent(kind, data) {
       }
     }
   }
-  data = data || {};
-  data.kind = kind;
   _shimEvents.push(data);
 }
 
 function shimDrainEvents() {
   var out = _shimEvents;
   _shimEvents = [];
+  if (!_shimBackground && _shimLatestBackgroundFloat) {
+    out.push(_shimLatestBackgroundFloat);
+    _shimLatestBackgroundFloat = null;
+  }
   if (_shimEventsDropped > 0) {
     out.push({ kind: 'notice', key: 'events_dropped', text: '事件佇列溢出，丟棄 ' + _shimEventsDropped + ' 則' });
     _shimEventsDropped = 0;
