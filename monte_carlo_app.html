@@ -575,6 +575,63 @@
             align-items: start;
         }
 
+        /* 🧠 技能快照：跨滿三欄放在紙娃娃底下。
+           不做成第四欄是因為那三欄已經各有最小寬度，硬擠會讓裝備詳情卡片
+           窄到讀不了太古詞條——而那正是這個彈窗最主要的用途。 */
+        .skills-panel {
+            grid-column: 1 / -1;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.6);
+        }
+
+        .skills-panel-head {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 18px;
+            align-items: baseline;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+        }
+
+        .skills-panel-title { font-size: 15px; font-weight: 700; color: #a78bfa; }
+        .skills-panel-meta { font-size: 12px; color: #94a3b8; }
+        .skills-panel-meta b { color: #e2e8f0; }
+
+        .skill-section { margin-bottom: 12px; }
+        .skill-section:last-child { margin-bottom: 0; }
+        .skill-section-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+        .skill-chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+        .skill-chip {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 6px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 5px 9px;
+            font-size: 12px;
+            color: #e2e8f0;
+            white-space: nowrap;
+        }
+        /* 裝載中的技能才是真的會用到的——沒裝上的技能等級再高也不影響戰鬥。 */
+        .skill-chip.equipped { border-color: #a78bfa; background: #2e1065; }
+        .skill-chip.fused { border-color: #f59e0b; background: #3b2508; }
+        .skill-chip .sk-lv { color: #94a3b8; font-size: 11px; }
+        /* 已達該技能目前的等級上限：再投點數也不會變強，用顏色標出來 */
+        .skill-chip .sk-lv.maxed { color: #34d399; }
+        .skill-chip .sk-slot { color: #64748b; font-size: 10px; }
+        .skills-empty { color: #64748b; font-size: 12px; }
+
         /* 👈 玩家屬性快照面板樣式 (100% 對齊遊戲內側欄屬性面板版型) */
         .player-stats-panel {
             background: #0f172a;
@@ -1151,6 +1208,10 @@
                 <div style="color: var(--text-muted); text-align: center; padding: 40px 0;">
                     👈 點擊紙娃娃上的裝備部位，查看裝備的詳細太古詞條、寶石鑲嵌與數值
                 </div>
+            </div>
+            <!-- 🧠 技能快照：裝載欄、已學技能、融合技、天賦 -->
+            <div class="skills-panel" id="skillsSnapshotPanel">
+                <!-- 動態注入 -->
             </div>
         </div>
     </div>
@@ -2486,6 +2547,7 @@
             try { renderPlayerStatsPanel(); } catch(e) {}
             try { renderPaperdollGrid(); } catch(e) {}
             try { selectPaperdollSlot('chest'); } catch(e) {}
+            try { renderSkillSnapshotPanel(); } catch(e) {}
         }
     }
 
@@ -2554,6 +2616,115 @@
         }
         html += `</div>`;
         container.innerHTML = html;
+    }
+
+    /* 🧠 技能快照。
+       與屬性面板同一個資料來源（finalSaveG → window.G），名稱、等級上限、
+       裝載欄格數一律問遊戲的函式（SKILLS / skillMaxLv / loadoutSize），
+       不在這裡抄第二份——抄了就會在遊戲改版後靜靜地顯示錯的東西。 */
+    function renderSkillSnapshotPanel() {
+        const box = document.getElementById('skillsSnapshotPanel');
+        if (!box) return;
+
+        const P = (window.G && window.G.player) || null;
+        if (!P || typeof SKILLS === 'undefined') {
+            box.innerHTML = '<div class="skills-empty">請載入 save_final.json 存檔資料以顯示技能快照。</div>';
+            return;
+        }
+
+        const nameOf = (id) => {
+            const d = SKILLS[id];
+            if (d) return (d.emoji ? d.emoji + ' ' : '') + d.name;
+            /* 融合技的 id 是遊戲產生的（fusion_xxx），要從 fusions 陣列取名字 */
+            const fu = (P.fusions || []).find((f) => f && f.id === id);
+            return fu ? ('🌀 ' + (fu.name || '融合技')) : id;
+        };
+        const maxOf = (id) => {
+            try { return (typeof skillMaxLv === 'function') ? skillMaxLv(id) : null; } catch (e) { return null; }
+        };
+        const chip = (id, lv, cls, slotLabel) => {
+            const max = maxOf(id);
+            const maxed = (max !== null && lv >= max);
+            return `<span class="skill-chip ${cls || ''}">`
+                + (slotLabel ? `<span class="sk-slot">${slotLabel}</span>` : '')
+                + `<span>${nameOf(id)}</span>`
+                + `<span class="sk-lv ${maxed ? 'maxed' : ''}">Lv.${lv}${max !== null ? '/' + max : ''}</span>`
+                + `</span>`;
+        };
+
+        const learned = Object.keys(P.skills || {}).filter((id) => (P.skills[id] || 0) > 0);
+        const loadout = Array.isArray(P.loadout) ? P.loadout : [];
+        const inLoadout = new Set(loadout);
+        const size = (typeof loadoutSize === 'function') ? loadoutSize() : loadout.length;
+        const mastery = (typeof ensureSkillMastery === 'function') ? ensureSkillMastery() : (P.skillMastery || { level: 0 });
+        const ptsAvail = (typeof availableSkillPoints === 'function') ? availableSkillPoints() : (P.skillPoints || 0);
+        const ptsTotal = (typeof totalSkillPoints === 'function') ? totalSkillPoints() : 0;
+
+        let html = `
+            <div class="skills-panel-head">
+                <div class="skills-panel-title">🧠 技能快照 (Skill Snapshot)</div>
+                <div class="skills-panel-meta">📚 熟練度 <b>Lv.${mastery.level || 0}</b></div>
+                <div class="skills-panel-meta">🔢 技能點 <b>${formatGameNumber(ptsAvail)}</b> / ${formatGameNumber(ptsTotal)} 可用</div>
+                <div class="skills-panel-meta">📖 已學 <b>${learned.length}</b> 個</div>
+                <div class="skills-panel-meta">🎯 裝載欄 <b>${loadout.length}</b> / ${size} 格</div>
+            </div>`;
+
+        /* 裝載欄照順序顯示——順序是戰鬥的施放優先序，不是任意排列。 */
+        html += `<div class="skill-section">
+            <div class="skill-section-label">🎯 裝載中（依施放優先序）</div>
+            <div class="skill-chip-row">`;
+        html += loadout.length
+            ? loadout.map((id, i) => chip(id, (P.skills && P.skills[id]) || 0, 'equipped', '#' + (i + 1))).join('')
+            : '<span class="skills-empty">裝載欄是空的</span>';
+        html += `</div></div>`;
+
+        /* 學了卻沒裝上的：這些技能等級再高也不影響戰鬥，是純粹的沉沒點數。 */
+        const bench = learned.filter((id) => !inLoadout.has(id))
+            .sort((a, b) => (P.skills[b] || 0) - (P.skills[a] || 0));
+        html += `<div class="skill-section">
+            <div class="skill-section-label">📖 已學但未裝載（${bench.length} 個 — 不影響戰鬥）</div>
+            <div class="skill-chip-row">`;
+        html += bench.length
+            ? bench.map((id) => chip(id, P.skills[id] || 0)).join('')
+            : '<span class="skills-empty">沒有——已學的技能全部裝上了</span>';
+        html += `</div></div>`;
+
+        const fusions = P.fusions || [];
+        if (fusions.length) {
+            html += `<div class="skill-section">
+                <div class="skill-section-label">🌀 融合技（${fusions.length} 個）</div>
+                <div class="skill-chip-row">`;
+            html += fusions.map((f) => {
+                const lv = (P.skills && P.skills[f.id]) || 0;
+                const parts = (f.components || []).map((cid) => nameOf(cid)).join(' + ');
+                return `<span class="skill-chip fused"><span>${nameOf(f.id)}</span>`
+                    + `<span class="sk-lv">Lv.${lv}</span>`
+                    + (parts ? `<span class="sk-slot">${parts}</span>` : '')
+                    + `</span>`;
+            }).join('');
+            html += `</div></div>`;
+        }
+
+        /* 天賦與潛能只顯示真的點了的——全部列出來會是幾十個 0，把有用的資訊淹掉。 */
+        const tal = (P.talents && P.talents.levels) || {};
+        const pot = (P.talents && P.talents.potentialLevels) || {};
+        const talRows = Object.keys(tal).filter((k) => (tal[k] || 0) > 0);
+        const potRows = Object.keys(pot).filter((k) => (pot[k] || 0) > 0);
+        const talName = (k) => (typeof TALENTS !== 'undefined' && TALENTS[k] && TALENTS[k].name) ? TALENTS[k].name : k;
+        const potName = (k) => (typeof POTENTIAL_SKILLS !== 'undefined' && POTENTIAL_SKILLS[k] && POTENTIAL_SKILLS[k].name) ? POTENTIAL_SKILLS[k].name : k;
+        html += `<div class="skill-section">
+            <div class="skill-section-label">🌟 轉生天賦 / 潛能（只列已點的）</div>
+            <div class="skill-chip-row">`;
+        if (!talRows.length && !potRows.length) {
+            html += `<span class="skills-empty">未點任何天賦或潛能`
+                + `（轉生 ${(P.reincarnations || 0)} 轉；天賦點需要轉生才會產生）</span>`;
+        } else {
+            html += talRows.map((k) => `<span class="skill-chip"><span>${talName(k)}</span><span class="sk-lv">Lv.${tal[k]}</span></span>`).join('');
+            html += potRows.map((k) => `<span class="skill-chip fused"><span>${potName(k)}</span><span class="sk-lv">Lv.${pot[k]}</span></span>`).join('');
+        }
+        html += `</div></div>`;
+
+        box.innerHTML = html;
     }
 
     function closeEquipmentModal() {
