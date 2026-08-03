@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Idle-RPG 測試服控制台</title>
+  <style>
+    :root { color-scheme: dark; font-family: "Segoe UI", "Microsoft JhengHei", sans-serif; }
+    body { margin: 0; min-height: 100vh; background: #101827; color: #e5edf8; }
+    main { width: min(1400px, calc(100% - 48px)); margin: 44px auto; }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    .subtitle { margin: 0 0 28px; color: #8ea4c1; }
+    .card { padding: 22px; border: 1px solid #263752; border-radius: 14px; background: #172338; box-shadow: 0 14px 40px #0003; }
+    .toolbar { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+    label { display: grid; gap: 7px; color: #a9bbd3; font-size: 14px; }
+    input { width: 170px; padding: 11px 12px; border: 1px solid #405674; border-radius: 8px; background: #0e1725; color: #fff; font-size: 16px; }
+    button, a.button { border: 0; border-radius: 8px; padding: 11px 15px; color: #fff; background: #2563eb; font: inherit; cursor: pointer; text-decoration: none; }
+    button:hover, a.button:hover { filter: brightness(1.15); }
+    button.secondary, a.button.secondary { background: #334155; }
+    button.danger { background: #b42335; }
+    button:disabled { cursor: not-allowed; opacity: .55; }
+    h2 { margin: 30px 0 12px; font-size: 19px; }
+    #status { min-height: 22px; margin-top: 16px; color: #9db4d4; }
+    #status.error { color: #ff9c9c; }
+    #servers { overflow-x: auto; }
+    table { width: 100%; min-width: 1180px; border-collapse: collapse; }
+    th, td { padding: 13px 10px; border-bottom: 1px solid #2a3a54; text-align: left; white-space: nowrap; }
+    th { color: #91a8c6; font-size: 13px; font-weight: 600; }
+    td.status-open { min-width: 80px; color: #78e0a5; font-weight: 600; }
+    td.source-cell { min-width: 430px; }
+    td.started-cell { min-width: 190px; }
+    td.actions { min-width: 320px; white-space: nowrap; }
+    .action-group { display: flex; align-items: center; justify-content: flex-start; gap: 8px; min-width: 300px; }
+    .action-group .button, .action-group button { width: 64px; box-sizing: border-box; padding-left: 8px; padding-right: 8px; text-align: center; }
+    .external { margin-left: 8px; color: #b6c5da; font-size: 13px; }
+    .empty { padding: 24px 10px; color: #879bb7; text-align: center; }
+    .hint { margin-top: 18px; color: #8196b2; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Idle-RPG 測試服控制台</h1>
+    <p class="subtitle">在這裡啟動、查看與關閉本機測試服。</p>
+    <section class="card">
+      <div class="toolbar">
+        <label>測試服 Port
+          <input id="port" type="number" min="1" max="65535" value="8123" inputmode="numeric">
+        </label>
+        <button id="start">啟動並開啟瀏覽器</button>
+        <button id="refresh" class="secondary">重新整理</button>
+      </div>
+      <div id="status" role="status"></div>
+      <p class="hint">列表只顯示 Claude、Codex、Antigravity、控制台及使用者自行啟動的開發伺服器。</p>
+      <p class="hint">每個開啟中的服務都有「前往」與「關閉」；外部服務的關閉會終止整個來源程序，可能同時關閉它持有的其他 Port。</p>
+      <h2>目前啟動中的本機測試服</h2>
+      <div id="servers"></div>
+    </section>
+  </main>
+  <script>
+    const portInput = document.getElementById('port');
+    const startButton = document.getElementById('start');
+    const refreshButton = document.getElementById('refresh');
+    const statusBox = document.getElementById('status');
+    const serversBox = document.getElementById('servers');
+
+    function setStatus(message, error = false) {
+      statusBox.textContent = message || '';
+      statusBox.classList.toggle('error', error);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>'"]/g, (character) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      })[character]);
+    }
+
+    function sourceLabel(server) {
+      if (server.managed !== false) return 'Idle-RPG 測試服控制台（Node.js）';
+      if (/test_server_manager\.cjs/i.test(server.commandLine || '')) {
+        return 'Idle-RPG 測試服控制台（Node.js）';
+      }
+      if (/claude/i.test(`${server.processName || ''} ${server.commandLine || ''} ${server.executablePath || ''}`)) {
+        return 'Claude（外部應用程式）';
+      }
+      if (/codex/i.test(`${server.processName || ''} ${server.commandLine || ''} ${server.executablePath || ''}`)) {
+        return 'Codex（外部應用程式）';
+      }
+      if (/antigravity/i.test(server.processName || '')) {
+        return 'Antigravity IDE（外部應用程式）';
+      }
+      if (/^system$/i.test(server.processName || '')) {
+        return 'Windows HTTP.sys 系統代理（實際服務由其他程序提供）';
+      }
+      if (/^(node|nodejs|python|python3|deno|bun|ruby|php|dotnet|java)$/i.test(server.processName || '')) {
+        return `使用者開啟的開發伺服器（${server.processName}）`;
+      }
+      return `${server.processName || '未知應用程式'}（外部應用程式）`;
+    }
+
+    async function request(path, options = {}) {
+      const response = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...options });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+      return data;
+    }
+
+    function renderServers(servers) {
+      if (!servers.length) {
+        serversBox.innerHTML = '<div class="empty">目前沒有偵測到本機 HTTP 測試服。</div>';
+        return;
+      }
+      const rows = servers.map((server) => {
+        const managed = server.managed !== false;
+        const startedAt = server.startedAt ? new Date(server.startedAt).toLocaleString() : '由其他程序啟動';
+        const source = `${sourceLabel(server)}${server.pid ? `，PID ${server.pid}` : ''}`;
+        const canStop = Number(server.pid) > 4;
+        const stopAction = canStop
+          ? `<button class="danger" data-stop="${escapeHtml(server.port)}" data-pid="${escapeHtml(server.pid)}" data-external="${managed ? 'false' : 'true'}" data-source="${escapeHtml(source)}">關閉</button>`
+          : '<span class="external">系統程序不可關閉</span>';
+        const actions = `<div class="action-group"><a class="button secondary" href="${escapeHtml(server.url)}" target="_blank" rel="noreferrer">前往</a>${stopAction}</div>`;
+        return `
+        <tr>
+          <td>${escapeHtml(server.port)}</td>
+          <td class="status-open">開啟中</td>
+          <td class="source-cell" title="${escapeHtml(server.commandLine || '')}">${escapeHtml(source)}</td>
+          <td class="started-cell">${escapeHtml(startedAt)}</td>
+          <td class="actions">${actions}</td>
+        </tr>`;
+      }).join('');
+      serversBox.innerHTML = `<table><thead><tr><th>Port</th><th>狀態</th><th>來源</th><th>啟動時間</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table>`;
+      serversBox.querySelectorAll('[data-stop]').forEach((button) => {
+        button.addEventListener('click', () => stopServer(
+          Number(button.dataset.stop),
+          button.dataset.external === 'true',
+          button.dataset.source || '',
+          Number(button.dataset.pid)
+        ));
+      });
+    }
+
+    async function refresh() {
+      try {
+        renderServers((await request('/api/servers')).servers);
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    }
+
+    async function startServer() {
+      const port = Number(portInput.value);
+      startButton.disabled = true;
+      setStatus('正在啟動測試服……');
+      try {
+        const data = await request('/api/servers/start', { method: 'POST', body: JSON.stringify({ port }) });
+        window.open(data.server.url, '_blank', 'noopener');
+        setStatus(`測試服已啟動：${data.server.url}`);
+        await refresh();
+      } catch (error) {
+        setStatus(error.message, true);
+      } finally {
+        startButton.disabled = false;
+      }
+    }
+
+    async function stopServer(port, external = false, source = '', pid = null) {
+      const message = external
+        ? `這會終止整個外部程序「${source}」，可能同時關閉它持有的其他 Port。確定要關閉嗎？`
+        : `確定要關閉測試服 Port ${port} 嗎？`;
+      if (!window.confirm(message)) return;
+      try {
+        await request('/api/servers/stop', { method: 'POST', body: JSON.stringify({ port, pid }) });
+        setStatus(`已要求關閉 Port ${port}。`);
+        await refresh();
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    }
+
+    startButton.addEventListener('click', startServer);
+    refreshButton.addEventListener('click', refresh);
+    refresh();
+  </script>
+</body>
+</html>

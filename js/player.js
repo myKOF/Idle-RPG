@@ -1,4 +1,8 @@
 'use strict';
+
+var INITIAL_GOLD = 50000;
+var INITIAL_SCRAP = 500;
+var INITIAL_ESSENCE = 100;
 /* ============ 玩家狀態與屬性計算（50+ 屬性系統） ============ */
 
 // 空的一套裝備（所有欄位為 null）
@@ -70,7 +74,7 @@ function newGameState() {
       reincarnations: 0,
       reincarnationTalentPoints: 0,
       talents: { levels: {}, potentialLevels: {} },
-      gold: 50, scrap: 0, essence: 0, ancientEssence: 0, soulOrigin: 0,
+      gold: INITIAL_GOLD, scrap: INITIAL_SCRAP, essence: INITIAL_ESSENCE, ancientEssence: 0, soulOrigin: 0,
       dust: 0,                // 魔塵（神鑄材料）
       magicScroll: 0,         // 魔法卷軸（技能融合材料；取得比照附魔精華、數量 1/10）
       gems: gems,

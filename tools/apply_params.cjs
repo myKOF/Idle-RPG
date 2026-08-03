@@ -164,6 +164,11 @@ const PART_KEYS = { '加速齒輪': 'speedGear', '碎片熔煉爐': 'scrapForge'
 Object.keys(PART_KEYS).forEach(nm => objField('data', PART_KEYS[nm] + ':', 'perTier', '表-自動機組零件', nm, 0, '零件-' + nm));
 
 // 場景倍率：hpMult(0) atkMult(1) defMult(2) aspdMult(3) rewardMult(4)
+// 新遊戲／重新開局的初始資源（由參數表「0-遊戲預設」控制）。
+scalar('player', 'INITIAL_GOLD', '0-遊戲預設', '開場金幣', 0);
+scalar('player', 'INITIAL_SCRAP', '0-遊戲預設', '開場裝備碎片', 0);
+scalar('player', 'INITIAL_ESSENCE', '0-遊戲預設', '開場附魔精華', 0);
+
 const ZONE_KEYS = {
   '草原': 'plains',
   '荒漠': 'desert',
