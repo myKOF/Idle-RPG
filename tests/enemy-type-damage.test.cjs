@@ -100,8 +100,9 @@ test('對屬性敵人抗性依攻擊者屬性標籤套用敵種抗性同曲線�
   const context = loadFormulaContext();
   const a = context.ENEMY_TYPE_DMG_RED_A;
   const b = context.ENEMY_TYPE_DMG_RED_B;
+  const c = context.ENEMY_TYPE_DMG_RED_C;
+  const red = (total) => 1 - a / (1 + Math.pow(total / b, c));
   const level = 30;
-  const red = (total) => total / (total + a + b * level);
   const mkAtk = (attr) => ({ atk: 100000, dmgType: 'phys', level, hit: 100, critRate: 0, attr });
   const defStats = {
     def: 0, mdef: 0, dodge: 0, pRes: 0, mRes: 0, resist: {},
@@ -119,12 +120,13 @@ test('對屬性敵人抗性依攻擊者屬性標籤套用敵種抗性同曲線�
   assert.equal(byIce.dmg, 100000);
 });
 
-test('敵種傷害減免公式 = 減免值 / (減免值 + a + b×攻擊者等級)', () => {
+test('敵種傷害減免公式 = 1 - a / (1 + (減免值 / b)^c)', () => {
   const context = loadFormulaContext();
   const a = context.ENEMY_TYPE_DMG_RED_A;
   const b = context.ENEMY_TYPE_DMG_RED_B;
+  const c = context.ENEMY_TYPE_DMG_RED_C;
   assert.ok(a > 0 && b > 0);
-  assert.equal(context.enemyTypeDamageReduction(1000, 30), 1000 / (1000 + a + b * 30));
+  assert.equal(context.enemyTypeDamageReduction(1000, 30), 1 - a / (1 + Math.pow(1000 / b, c)));
   assert.equal(context.enemyTypeDamageReduction(0, 30), 0);
   assert.equal(context.enemyTypeDamageReduction(-5, 30), 0);
 });
@@ -133,8 +135,9 @@ test('敵種傷害減免依攻擊者敵種選用對應減免值，於全局減�
   const context = loadFormulaContext();
   const a = context.ENEMY_TYPE_DMG_RED_A;
   const b = context.ENEMY_TYPE_DMG_RED_B;
+  const c = context.ENEMY_TYPE_DMG_RED_C;
   const level = 30;
-  const red = (total) => total / (total + a + b * level);
+  const red = (total) => 1 - a / (1 + Math.pow(total / b, c));
   const mkAtk = (flags) => ({ atk: 100000, dmgType: 'phys', level, hit: 100, critRate: 0, ...flags });
   const defStats = {
     def: 0, mdef: 0, dodge: 0, pRes: 0, mRes: 0, resist: {},
@@ -170,6 +173,7 @@ test('屬性面板含 4 個新列，減免 tips 黃字顯示截斷至四位小�
 
   const a = context.ENEMY_TYPE_DMG_RED_A;
   const b = context.ENEMY_TYPE_DMG_RED_B;
+  const c = context.ENEMY_TYPE_DMG_RED_C;
   const st = { level: 10, normalDmgRed: 1000, eliteDmgRed: 250, bossDmgRed: 0 };
   const cases = [
     ['普通敵人傷害抗性', st.normalDmgRed],
@@ -181,7 +185,8 @@ test('屬性面板含 4 個新列，減免 tips 黃字顯示截斷至四位小�
     assert.ok(row, label + ' 面板列需存在');
     const html = row[2](st);
     assert.match(html, /color:#ffd700/);
-    const pct = (Math.floor(total / (total + a + b * st.level) * 100 * 10000) / 10000 || 0).toFixed(4);
+    const red = total > 0 ? 1 - a / (1 + Math.pow(total / b, c)) : 0;
+    const pct = (Math.floor(red * 100 * 10000) / 10000 || 0).toFixed(4);
     assert.ok(html.includes(pct + '%'), label + ' 應顯示 ' + pct + '%（實得：' + html + '）');
   });
 });

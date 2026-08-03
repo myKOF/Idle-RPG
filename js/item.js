@@ -656,10 +656,10 @@ function itemDetailHTML(it, cmp, opts) {
     if (d.slots && d.slots.indexOf(it.slot) < 0 && d.slots.indexOf('all') < 0) continue;
     var reqRarity = d.minR ? ' <span style="font-size:10.5px;color:' + RARITIES[d.minR].color + '">(' + RARITIES[d.minR].name + '+)</span>' : '';
 
-    var baseVal = (d.base + d.base * d.lv * (it.level - 1)) * r.mult;
+    var baseVal = affixBaseValue(k, it.level, it.rarity);
     if (typeof isTwoHandItem === 'function' && isTwoHandItem(it)) baseVal *= TWO_HAND_AFFIX_VALUE_MULT;
     var vMin = baseVal * 0.8;
-    var vMax = baseVal * 1.2;
+    var vMax = baseVal * AFFIX_MAX_VALUE_MULT;
     var strMin = d.pct ? Math.round(vMin * 10) / 10 + '%' : Math.round(vMin);
     var strMax = d.pct ? Math.round(vMax * 10) / 10 + '%' : Math.round(vMax);
 
@@ -725,7 +725,7 @@ function itemDetailHTML(it, cmp, opts) {
     var maxDisplay = def.pct ? pctStr(limits.max * um * limitMult) : fmt(limits.max * um * limitMult);
     var isAncient = !!it.affixes[i].ancient;
     var limitTip = isAncient
-      ? '太古詞條：位置產出時決定、永久固定；數值必為滿值（上限 ×1.35），洗煉只變換詞條種類'
+      ? '太古詞條：位置產出時決定、永久固定；數值必為詞條最大值 × 太古倍率，洗煉只變換詞條種類'
       : '洗煉區間：' + minDisplay + ' ~ ' + maxDisplay;
 
     var valColor = isMax ? '#fbbf24' : '';

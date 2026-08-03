@@ -41,10 +41,10 @@ test('physical and magic resistance convert percentage points before applying cu
   const context = loadFormulaContext();
   const level = 71;
 
-  const expectedPhys = context.resistanceReduction(46.6, level,
-    context.PHYSICAL_RESISTANCE_EXPONENT, context.PHYSICAL_RESISTANCE_BASE, context.PHYSICAL_RESISTANCE_LEVEL_COEF);
-  const expectedMagic = context.resistanceReduction(38.8, level,
-    context.MAGIC_RESISTANCE_EXPONENT, context.MAGIC_RESISTANCE_BASE, context.MAGIC_RESISTANCE_LEVEL_COEF);
+  const expectedPhys = context.resistanceReduction(46.6,
+    context.PHYSICAL_RESISTANCE_A, context.PHYSICAL_RESISTANCE_B, context.PHYSICAL_RESISTANCE_C);
+  const expectedMagic = context.resistanceReduction(38.8,
+    context.MAGIC_RESISTANCE_A, context.MAGIC_RESISTANCE_B, context.MAGIC_RESISTANCE_C);
 
   assert.equal(context.physicalResistanceReduction(46.6, level), expectedPhys);
   assert.equal(context.magicResistanceReduction(38.8, level), expectedMagic);
@@ -78,7 +78,7 @@ test('物理、魔法與元素抗性均不再套用上限，且各自使用獨�
   assert.equal(hit(context, { pRes: highResistance }, { dmgType: 'phys', atk: 100, elemAtk: {} }), expected);
   assert.equal(context.physicalResistanceReduction(1000, 1), context.magicResistanceReduction(1000, 1));
   assert.equal(context.elementalResistanceReduction(1000, 1), context.physicalResistanceReduction(1000, 1));
-  context.PHYSICAL_RESISTANCE_BASE = 0;
-  context.MAGIC_RESISTANCE_BASE = 100;
+  context.PHYSICAL_RESISTANCE_B = 18;
+  context.MAGIC_RESISTANCE_B = 100;
   assert.notEqual(context.physicalResistanceReduction(60, 1), context.magicResistanceReduction(60, 1));
 });

@@ -411,7 +411,7 @@ SCHEMAS.Talents = {
 SCHEMAS.Equipment_Affix = {
   name: 'Equipment_Affix', jsFile: 'data', sheet: 'Equipment_Affix', vars: ['AFFIX_POOL', 'PASSIVE_POOL', 'GODFORGE_POOL', 'SCORE_WEIGHTS'],
   // 「出現部位」欄表頭帶多行中文說明（rowGetter 取第一行對應欄名，其餘為給使用者看的註解）
-  header: ['池', 'id', '名稱', '基礎值', '每級成長', '百分比', '權重', '戰力權重', '最低稀有度',
+  header: ['池', 'id', '名稱', '基礎值', '成長基礎值', '每級成長', '百分比', '權重', '戰力權重', '最低稀有度',
     '出現部位\n空白＝不限（全部部位）\nweapon＝主／副武器；helmet＝頭盔\nshoulder＝肩甲；chest＝胸甲；belt＝腰帶\ngloves＝護手；wrist＝手腕；legs＝護腿\nboots＝靴子；ring＝戒指 I／II；amulet＝項鍊\nall_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在屬性面板）\n多部位用 ; 分隔，例如 ring;amulet＝戒指與項鍊',
     '每階perR', '屬性桶stats', '說明', '效果類型', '關聯技能', '觸發技能', '限定武器類型', '效果參數JSON'],
   extract(src) {
@@ -422,23 +422,23 @@ SCHEMAS.Equipment_Affix = {
     const rows = [];
     Object.keys(AFFIX_POOL).forEach(id => {
       const a = AFFIX_POOL[id];
-      rows.push(['詞條池', id, a.name, numStr(a.base), numStr(a.lv), boolCell(!!a.pct), numStr(a.weight),
+      rows.push(['詞條池', id, a.name, numStr(a.base), numStr(a.growthBase), numStr(a.lv), boolCell(!!a.pct), numStr(a.weight),
         SCORE_WEIGHTS[id] == null ? '' : numStr(SCORE_WEIGHTS[id]),
-        a.minR == null ? '' : numStr(a.minR), a.slots ? joinList(a.slots) : '', '', '', '', '', '', '', '', '']);
+        a.minR == null ? '' : numStr(a.minR), a.slots ? joinList(a.slots) : '', '', '', '', '', '', '', '']);
     });
     // 防呆：SCORE_WEIGHTS 若出現「非詞條 id」的鍵（目前沒有），仍需落表以免 round-trip 遺失
     Object.keys(SCORE_WEIGHTS).forEach(id => {
-      if (!AFFIX_POOL[id]) rows.push(['戰力權重', id, id, '', '', '', '', numStr(SCORE_WEIGHTS[id]), '', '', '', '', '非詞條屬性的戰力權重（僅寶石等來源）。', '', '', '', '', '']);
+      if (!AFFIX_POOL[id]) rows.push(['戰力權重', id, id, '', '', '', '', '', numStr(SCORE_WEIGHTS[id]), '', '', '', '非詞條屬性的戰力權重（僅寶石等來源）。', '', '', '', '', '']);
     });
     Object.keys(PASSIVE_POOL).forEach(id => {
       const p = PASSIVE_POOL[id];
-      rows.push(['傳奇特效', id, p.name, numStr(p.base), '', '', '', '', '', '', numStr(p.perR), '', p.desc,
+      rows.push(['傳奇特效', id, p.name, numStr(p.base), '', '', '', '', '', '', '', numStr(p.perR), '', p.desc,
         p.type || '', p.relatedSkill || '', p.triggerSkill || '',
         p.weaponTypes ? joinList(p.weaponTypes) : '', p.fx ? JSON.stringify(p.fx) : '']);
     });
     Object.keys(GODFORGE_POOL).forEach(id => {
       const g = GODFORGE_POOL[id];
-      rows.push(['神鑄特效', id, g.name, numStr(g.base), '', '', '', '', '', '', '', g.stats ? joinList(g.stats) : '', g.desc, '', '', '', '', '']);
+      rows.push(['神鑄特效', id, g.name, numStr(g.base), '', '', '', '', '', '', '', '', g.stats ? joinList(g.stats) : '', g.desc, '', '', '', '', '']);
     });
     return rows;
   },
@@ -449,8 +449,10 @@ SCHEMAS.Equipment_Affix = {
       const pool = get(r, '池').trim(); const id = get(r, 'id').trim();
       if (id === '') return;
       if (pool === '詞條池') {
-        const o = { name: get(r, '名稱'), base: toNum(get(r, '基礎值')), lv: toNum(get(r, '每級成長')),
-          pct: toBool(get(r, '百分比')), weight: toNum(get(r, '權重')) };
+        const growthBase = get(r, '成長基礎值').trim();
+        const o = { name: get(r, '名稱'), base: toNum(get(r, '基礎值')),
+          growthBase: growthBase === '' ? toNum(get(r, '基礎值')) : toNum(growthBase),
+          lv: toNum(get(r, '每級成長')), pct: toBool(get(r, '百分比')), weight: toNum(get(r, '權重')) };
         if (get(r, '最低稀有度').trim() !== '') o.minR = toNum(get(r, '最低稀有度'));
         const slots = splitList(get(r, '出現部位')); if (slots.length) o.slots = slots;
         affix.push('  ' + id + ': ' + jsLit(o));

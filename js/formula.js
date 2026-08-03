@@ -433,34 +433,37 @@ function defReduction(def, attackerLevel) {
 }
 
 // 元素附傷減免：只套用對應元素抗性，不重複套用魔法抗性
-function resistanceReduction(total, enemyLevel, exponent, base, levelCoef) {
+// 減傷率 = 1 - a / (1 + (抗性值 / b)^c)
+function resistanceReduction(total, a, b, c) {
   // pRes/mRes/elemental resistance are stored as percentage points (46.6 = 46.6%).
-  var resistanceRatio = Math.max(0, Number(total) || 0) / 100;
-  if (resistanceRatio <= 0) return 0;
-  var power = Math.pow(resistanceRatio, Number(exponent));
-  var level = Number(enemyLevel) || 1;
-  var denominator = power + Number(base) + Number(levelCoef) * level;
-  return denominator > 0 ? power / denominator : 0;
+  var resistance = Math.max(0, Number(total) || 0);
+  if (resistance <= 0) return 0;
+  var remainingBase = Number(a);
+  var scale = Number(b);
+  var exponent = Number(c);
+  if (!Number.isFinite(remainingBase) || !Number.isFinite(scale) || !Number.isFinite(exponent) || scale <= 0) return 0;
+  var remaining = remainingBase / (1 + Math.pow(resistance / scale, exponent));
+  return Math.max(0, Math.min(1, 1 - remaining));
 }
 
-var PHYSICAL_RESISTANCE_EXPONENT = 1.5;
-var PHYSICAL_RESISTANCE_BASE = 20;
-var PHYSICAL_RESISTANCE_LEVEL_COEF = 0.1;
-var MAGIC_RESISTANCE_EXPONENT = 1.5;
-var MAGIC_RESISTANCE_BASE = 20;
-var MAGIC_RESISTANCE_LEVEL_COEF = 0.1;
-var ELEMENTAL_RESISTANCE_EXPONENT = 1.5;
-var ELEMENTAL_RESISTANCE_BASE = 20;
-var ELEMENTAL_RESISTANCE_LEVEL_COEF = 0.1;
+var PHYSICAL_RESISTANCE_A = 0.95;
+var PHYSICAL_RESISTANCE_B = 18;
+var PHYSICAL_RESISTANCE_C = 1.4;
+var MAGIC_RESISTANCE_A = 0.95;
+var MAGIC_RESISTANCE_B = 18;
+var MAGIC_RESISTANCE_C = 1.4;
+var ELEMENTAL_RESISTANCE_A = 0.95;
+var ELEMENTAL_RESISTANCE_B = 18;
+var ELEMENTAL_RESISTANCE_C = 1.4;
 
-function physicalResistanceReduction(total, enemyLevel) {
-  return resistanceReduction(total, enemyLevel, PHYSICAL_RESISTANCE_EXPONENT, PHYSICAL_RESISTANCE_BASE, PHYSICAL_RESISTANCE_LEVEL_COEF);
+function physicalResistanceReduction(total) {
+  return resistanceReduction(total, PHYSICAL_RESISTANCE_A, PHYSICAL_RESISTANCE_B, PHYSICAL_RESISTANCE_C);
 }
-function magicResistanceReduction(total, enemyLevel) {
-  return resistanceReduction(total, enemyLevel, MAGIC_RESISTANCE_EXPONENT, MAGIC_RESISTANCE_BASE, MAGIC_RESISTANCE_LEVEL_COEF);
+function magicResistanceReduction(total) {
+  return resistanceReduction(total, MAGIC_RESISTANCE_A, MAGIC_RESISTANCE_B, MAGIC_RESISTANCE_C);
 }
-function elementalResistanceReduction(total, enemyLevel) {
-  return resistanceReduction(total, enemyLevel, ELEMENTAL_RESISTANCE_EXPONENT, ELEMENTAL_RESISTANCE_BASE, ELEMENTAL_RESISTANCE_LEVEL_COEF);
+function elementalResistanceReduction(total) {
+  return resistanceReduction(total, ELEMENTAL_RESISTANCE_A, ELEMENTAL_RESISTANCE_B, ELEMENTAL_RESISTANCE_C);
 }
 
 function elementalResistanceMultiplier(resist, element, enemyLevel) {
@@ -485,15 +488,14 @@ function globalDamageMultiplier(total) {
 }
 
 /* ---- 敵種傷害抗性（普通敵人/普通菁英/普通BOSS，三屬性共用曲線）----
-   減傷率 = 抗性值總合 / (抗性值總合 + a + b × 攻擊者等級)，a/b 與防禦減傷曲線同基準。
+   減傷率 = 1 - a / (1 + (抗性值總合 / b)^c)。
    於 resolveHit 全局減傷之後、最低傷害之前的最末端套用；
    依攻擊者敵種（普通/菁英/BOSS）選用防守方對應的抗性總合。 */
-var ENEMY_TYPE_DMG_RED_A = 750;  // 常數 a
-var ENEMY_TYPE_DMG_RED_B = 0.5;   // 攻擊者每級係數 b
-function enemyTypeDamageReduction(total, attackerLevel) {
-  total = Number(total) || 0;
-  if (total <= 0) return 0;
-  return total / (total + ENEMY_TYPE_DMG_RED_A + ENEMY_TYPE_DMG_RED_B * (Number(attackerLevel) || 1));
+var ENEMY_TYPE_DMG_RED_A = 0.95;
+var ENEMY_TYPE_DMG_RED_B = 4000;
+var ENEMY_TYPE_DMG_RED_C = 1.4;
+function enemyTypeDamageReduction(total) {
+  return resistanceReduction(total, ENEMY_TYPE_DMG_RED_A, ENEMY_TYPE_DMG_RED_B, ENEMY_TYPE_DMG_RED_C);
 }
 
 var SLOW_ASPD_FACTOR = 0.7;   // 減速狀態：攻速 -30%（攻擊冷卻累積 ×0.7）
@@ -1261,7 +1263,7 @@ function equipmentLevelRarityIndex(level) {
 }
 
 /* ---- 詞條數值 ----
-   基準值 = (base + base × lv係數 × (裝備等級-1)) × 稀有度倍率
+   基準值 = (基礎值 + 成長基礎值 × lv係數 × (裝備等級-1)) × 稀有度倍率
    一般產出值 = 基準值 × (0.8 + 強度值/STRENGTH_ROLL_MAX × 0.4)（即洗煉區間 ±20%）
    洗煉值（傳入 affixCap 時）先把 80%~120% 平分為 A/B 兩段，再依權重選段。
 
@@ -1316,12 +1318,14 @@ function affixRerollUnit(affixCap) {
   return Math.random() * total < lowerWeight ? rnd(0, 0.5) : rnd(0.5, 1);
 }
 
-// 詞條基準值（不含隨機、不含強化）＝ (base + base×lv×(裝備等級-1)) × 稀有度倍率
+// 詞條基準值（不含隨機、不含強化）＝ (基礎值 + 成長基礎值×lv×(裝備等級-1)) × 稀有度倍率
 function affixBaseValue(key, itemLevel, rarityIdx) {
   var def = AFFIX_POOL[key];
   var r = RARITIES[rarityIdx];
   if (!def || !r) return 0;
-  return (def.base + def.base * def.lv * ((Number(itemLevel) || 1) - 1)) * r.mult;
+  var base = Number(def.base) || 0;
+  var growthBase = def.growthBase === undefined ? base : (Number(def.growthBase) || 0);
+  return (base + growthBase * (Number(def.lv) || 0) * ((Number(itemLevel) || 1) - 1)) * r.mult;
 }
 // 依詞條定義進位：百分比類留一位小數，其餘取整（產出與顯示共用同一套進位）
 function affixRoundValue(key, v) {
@@ -1339,7 +1343,7 @@ function rollAffixStrength(affixCap) {
 function affixValueFromStrength(key, itemLevel, rarityIdx, roll, ancient, valueMult) {
   var baseV = affixBaseValue(key, itemLevel, rarityIdx);
   if (!baseV) return 0;
-  var v = ancient ? baseV * 1.2 * ANCIENT_AFFIX_VALUE_MULT : baseV * strengthMult(roll);
+  var v = ancient ? baseV * AFFIX_MAX_VALUE_MULT * ANCIENT_AFFIX_VALUE_MULT : baseV * strengthMult(roll);
   v *= Number(valueMult) > 0 ? Number(valueMult) : 1;
   return affixRoundValue(key, v);
 }
@@ -1392,7 +1396,7 @@ function getAffixLimits(key, itemLevel, rarityIdx, item) {
     ? TWO_HAND_AFFIX_VALUE_MULT : 1;
   return {
     min: affixRoundValue(key, baseV * 0.8 * mult),
-    max: affixRoundValue(key, baseV * 1.2 * mult)
+    max: affixRoundValue(key, baseV * AFFIX_MAX_VALUE_MULT * mult)
   };
 }
 

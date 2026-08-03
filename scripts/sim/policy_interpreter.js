@@ -989,8 +989,8 @@ function decide(state, policy, memo) {
           }
           if (invested > 0) {
             /* ⚠️ 裝等必須先看，而且比品質重要。
-               詞條數值 =（base + base×每級成長×(裝等−1)）× 品質倍率（js/item.js affixValue），
-               裝等 1 的詞條只剩 base，等於沒有。只比品質的話，一件裝等 1 的 R4
+               詞條數值 =（基礎值 + 成長基礎值×每級成長×(裝等−1)）× 品質倍率（js/item.js affixValue），
+               裝等 1 的詞條只剩基礎值，等於沒有。只比品質的話，一件裝等 1 的 R4
                會把整個部位鎖到 R6 才放行——實測 100 小時後 ring／ring2／amulet
                三個部位全都停在 R4 裝等 1，其餘九個部位早就是 R5 裝等 100。
 
@@ -1926,7 +1926,7 @@ function decide(state, policy, memo) {
          原因是字典序把**品質**排在**裝等**前面。而遊戲的掉落分段
          （equipmentTierLevel，js/formula.js:1251，EQUIP_TIER_SIZE=50）是
          關卡 1~49 掉裝等 1、50~99 掉裝等 50，同時詞條數值 =
-         (base + base × 每級成長 × (裝等−1)) × 品質倍率。實測同一條 atkFlat：
+         (基礎值 + 成長基礎值 × 每級成長 × (裝等−1)) × 品質倍率。實測同一條 atkFlat：
 
              裝等 1 → 裝等 50   ×27.95
              R2 → R5（裝等 1）   ×2.29

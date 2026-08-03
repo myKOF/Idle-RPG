@@ -399,7 +399,7 @@ function evalAffixRoi(keys, foe, base) {
 
        改成先用**不花 computeStats 的**條件挑出最好的宿主，再精算那一個。
        宿主的好壞由裝等、品質、強化倍率決定（詞條數值 =
-       (base + base×每級成長×(裝等−1)) × 品質倍率 × 強化倍率，js/item.js affixValue），
+       (基礎值 + 成長基礎值×每級成長×(裝等−1)) × 品質倍率 × 強化倍率，js/item.js affixValue），
        這三項都直接讀得到，不必問 computeStats。
 
        挑錯宿主的代價只是 ROI 被低估一點點，挑對的機率很高——
@@ -499,7 +499,7 @@ function evalEquippedAffixValue(foe, base, slotKeys) {
      20 小時 × 10 個 seed，有 5 個 seed 最後全身 13 件都是「R4 史詩、裝等 1」，
      物攻 334，等級 54，卡在關卡 42 動不了。
 
-   因為詞條數值 =（base + base × 每級成長 × (裝等−1)）× 品質倍率，
+   因為詞條數值 =（基礎值 + 成長基礎值 × 每級成長 × (裝等−1)）× 品質倍率，
    而遊戲的掉落分段是 equipmentTierLevel：關卡 1~49 掉裝等 1、50~99 掉裝等 50。
    實測同一條 atkFlat 在 R4：裝等 1 是 12.0，裝等 50 是 335.4（**×28**）；
    而同樣裝等 1 下 R2 → R5 只有 7.0 → 16.0（×2.3）。
