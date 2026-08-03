@@ -41,13 +41,18 @@ test('physical and magic resistance convert percentage points before applying cu
   const context = loadFormulaContext();
   const level = 71;
 
-  const expectedPhys = context.resistanceReduction(46.6,
-    context.PHYSICAL_RESISTANCE_A, context.PHYSICAL_RESISTANCE_B, context.PHYSICAL_RESISTANCE_C);
-  const expectedMagic = context.resistanceReduction(38.8,
-    context.MAGIC_RESISTANCE_A, context.MAGIC_RESISTANCE_B, context.MAGIC_RESISTANCE_C);
+  const expectedPhys = 1 - context.PHYSICAL_RESISTANCE_A /
+    (1 + Math.pow((46.6 / 100) / context.PHYSICAL_RESISTANCE_B, context.PHYSICAL_RESISTANCE_C));
+  const expectedMagic = 1 - context.MAGIC_RESISTANCE_A /
+    (1 + Math.pow((38.8 / 100) / context.MAGIC_RESISTANCE_B, context.MAGIC_RESISTANCE_C));
 
   assert.equal(context.physicalResistanceReduction(46.6, level), expectedPhys);
   assert.equal(context.magicResistanceReduction(38.8, level), expectedMagic);
+
+  const screenshotValue = context.physicalResistanceReduction(141.45);
+  const expectedScreenshotValue = 1 - context.PHYSICAL_RESISTANCE_A /
+    (1 + Math.pow((141.45 / 100) / context.PHYSICAL_RESISTANCE_B, context.PHYSICAL_RESISTANCE_C));
+  assert.equal(screenshotValue, expectedScreenshotValue);
 
   /* 單位：46.6 代表 46.6 個百分點，不是 0.466。兩者不能給出同一個結果，
      否則就是某處多除或少除了 100。 */

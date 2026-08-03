@@ -434,9 +434,10 @@ function defReduction(def, attackerLevel) {
 
 // 元素附傷減免：只套用對應元素抗性，不重複套用魔法抗性
 // 減傷率 = 1 - a / (1 + (抗性值 / b)^c)
-function resistanceReduction(total, a, b, c) {
-  // pRes/mRes/elemental resistance are stored as percentage points (46.6 = 46.6%).
-  var resistance = Math.max(0, Number(total) || 0);
+// percentage=true 時，輸入的 141.45 代表 141.45%，公式內要轉成 1.4145；
+// 定值抗性則維持原數值，不做百分比換算。
+function resistanceReduction(total, a, b, c, percentage) {
+  var resistance = Math.max(0, Number(total) || 0) / (percentage ? 100 : 1);
   if (resistance <= 0) return 0;
   var remainingBase = Number(a);
   var scale = Number(b);
@@ -457,13 +458,13 @@ var ELEMENTAL_RESISTANCE_B = 18;
 var ELEMENTAL_RESISTANCE_C = 1.4;
 
 function physicalResistanceReduction(total) {
-  return resistanceReduction(total, PHYSICAL_RESISTANCE_A, PHYSICAL_RESISTANCE_B, PHYSICAL_RESISTANCE_C);
+  return resistanceReduction(total, PHYSICAL_RESISTANCE_A, PHYSICAL_RESISTANCE_B, PHYSICAL_RESISTANCE_C, true);
 }
 function magicResistanceReduction(total) {
-  return resistanceReduction(total, MAGIC_RESISTANCE_A, MAGIC_RESISTANCE_B, MAGIC_RESISTANCE_C);
+  return resistanceReduction(total, MAGIC_RESISTANCE_A, MAGIC_RESISTANCE_B, MAGIC_RESISTANCE_C, true);
 }
 function elementalResistanceReduction(total) {
-  return resistanceReduction(total, ELEMENTAL_RESISTANCE_A, ELEMENTAL_RESISTANCE_B, ELEMENTAL_RESISTANCE_C);
+  return resistanceReduction(total, ELEMENTAL_RESISTANCE_A, ELEMENTAL_RESISTANCE_B, ELEMENTAL_RESISTANCE_C, true);
 }
 
 function elementalResistanceMultiplier(resist, element, enemyLevel) {
@@ -495,7 +496,7 @@ var ENEMY_TYPE_DMG_RED_A = 0.95;
 var ENEMY_TYPE_DMG_RED_B = 4000;
 var ENEMY_TYPE_DMG_RED_C = 1.4;
 function enemyTypeDamageReduction(total) {
-  return resistanceReduction(total, ENEMY_TYPE_DMG_RED_A, ENEMY_TYPE_DMG_RED_B, ENEMY_TYPE_DMG_RED_C);
+  return resistanceReduction(total, ENEMY_TYPE_DMG_RED_A, ENEMY_TYPE_DMG_RED_B, ENEMY_TYPE_DMG_RED_C, false);
 }
 
 var SLOW_ASPD_FACTOR = 0.7;   // 減速狀態：攻速 -30%（攻擊冷卻累積 ×0.7）
