@@ -66,6 +66,32 @@ test('評估器本身是決定性的：同 seed 兩次得到同一份面板', ()
   assert.equal(snap(), snap(), '評估器有不決定性的來源（例如讀了真實時間或用了亂數）');
 });
 
+test('沒有對手時的空殼與正常回傳的欄位完全一致', () => {
+  /* 這一支盯的是一個實際發生過的靜默失效。
+
+     `equippedAffixes` 是後來才加的欄位，只加在「有對手」那一份回傳，
+     空殼漏掉了。於是每個沒有對手的決策點（剛死、復活中、剛過關）
+     `panels.eval.equippedAffixes` 就解析失敗一次並記進 BAD_PATHS——
+     Codex 的獨立驗證在 8 場 20 小時的模擬裡全都量到，最嚴重一場 167 次。
+
+     行為上無害（沒有對手時洗煉本來就該按兵不動），但它汙染的是「失效路徑」
+     這個診斷管道，而那是發現「策略指到已改名欄位」的唯一訊號。 */
+  const e = boot(4242, 600);
+  const full = e.panel('eval');
+  assert.equal(full.known, true, '前置條件：這一拍應該正在交戰');
+
+  /* 把對手拿掉，逼出空殼。改的是 FIELD.monster 這個執行期參照，不是存檔。 */
+  const saved = e.ctx.FIELD.monster;
+  e.ctx.FIELD.monster = null;
+  const shell = e.panel('eval');
+  e.ctx.FIELD.monster = saved;
+
+  assert.equal(shell.known, false, '拿掉對手之後應該回空殼');
+  assert.deepEqual(Object.keys(shell).sort(), Object.keys(full).sort(),
+    '空殼與正常回傳的欄位集合不同。策略讀得到哪些欄位不該取決於「這一拍有沒有怪」——'
+    + '少一個欄位就會讓對應的規則靜靜失效，並把 BAD_PATHS 灌滿雜訊');
+});
+
 /* ---- 2. 模型係數哨兵 ---- */
 
 test('命中夾值與遊戲的 resolveHit 一致', () => {
@@ -415,6 +441,124 @@ test('敗因翻轉攻防權重：被秒殺時防禦詞條會排到前面', () =>
   assert.equal(pol2.decide(rerollState(roi, affixes))[0].args.itemId, 'b1',
     '診斷成 EHP_TOO_LOW 之後仍然在堆攻擊。'
     + 'player_strategy.md v2.0：「超時就全堆攻，被秒殺才補對應屬性抗性或生命」');
+});
+
+/* ---- 6c. 上限型目標與「撐得住才准往前推」 ---- */
+
+function capPolicy(atMost) {
+  return createPolicy({
+    name: 'test-cap',
+    decideEveryGameSec: 30,
+    needPanels: ['battle'],
+    targets: [{
+      id: 'deathRate', kind: 'ratePerMin',
+      counter: 'panels.battle.lootStats.sources.field.deaths',
+      windowSec: 600, atMost: atMost
+    }],
+    rules: [{
+      id: 'echo', cmd: 'debug.echo',
+      args: {
+        value: { $path: 'ctx.deficit.deathRate.value' },
+        over: { $path: 'ctx.deficit.deathRate.over' },
+        met: { $path: 'ctx.deficit.deathRate.met' },
+        unknown: { $path: 'ctx.deficit.deathRate.unknown' }
+      }
+    }]
+  });
+}
+
+function deathTick(pol, sec, deaths, decide) {
+  const s = {
+    gameTimeSec: sec, view: {},
+    panels: { battle: { lootStats: { sources: { field: { deaths } } } } }
+  };
+  return decide ? pol.decide(s)[0].args : (pol.observe(s), null);
+}
+
+/* 每 60 秒取樣一次，累積 600 秒。
+
+   ⚠️ 取樣間隔不能大於等於 windowSec：sampleRates 把「間隔 >= maxGapSec（預設等於
+   windowSec）」判定為取樣中斷過而重新起算，於是永遠攢不滿視窗、永遠回 unknown。
+   第一版的測試就是每 600 秒才取一次，兩個案例都變成 unknown，
+   而 unknown 的 met 是 true——所以「達標」那一案**假性通過**了。
+   真實策略的 observeEverySec 是 1 秒，不會踩到。 */
+function deathWindow(pol, perMinute) {
+  for (let s = 0; s <= 600; s += 60) deathTick(pol, s, Math.round(perMinute * s / 60), false);
+  return deathTick(pol, 600, Math.round(perMinute * 10), true);
+}
+
+test('atMost 目標：低於上限算達標，超過就 over > 0', () => {
+  const a = deathWindow(capPolicy(0.5), 0.3);
+  assert.equal(a.unknown, false, `視窗應該攢滿了（value=${a.value}）`);
+  assert.equal(a.met, true, `0.3 次/分應該在 0.5 的上限內（實際 ${a.value}）`);
+  assert.equal(a.over, 0);
+
+  const b = deathWindow(capPolicy(0.5), 1.2);
+  assert.equal(b.unknown, false);
+  assert.equal(b.met, false, `1.2 次/分應該超過 0.5 的上限（實際 ${b.value}）`);
+  assert.ok(b.over > 0.6 && b.over < 0.8, `over 應該約為 0.7，實際 ${b.over}`);
+});
+
+test('視窗還沒攢滿時是 unknown，不是「超標」也不是「達標」', () => {
+  const pol = capPolicy(0.5);
+  deathTick(pol, 0, 0, false);
+  const a = deathTick(pol, 10, 5, true);   // 只過了 10 秒，遠短於 windowSec/2
+  assert.equal(a.unknown, true,
+    '資料不足時就下判斷。「還不知道」跟「達標」與「沒達標」是三件不同的事');
+});
+
+test('atLeast 目標的行為完全不變（新增 atMost 不得動到既有語意）', () => {
+  const pol = createPolicy({
+    name: 'test-min', decideEveryGameSec: 30, needPanels: ['equip'],
+    targets: [{ id: 'hit', kind: 'value', path: 'panels.equip.stats.hit', atLeast: 95 }],
+    rules: [{
+      id: 'echo', cmd: 'debug.echo',
+      args: { short: { $path: 'ctx.deficit.hit.short' }, met: { $path: 'ctx.deficit.hit.met' } }
+    }]
+  });
+  const ask = (hit) => pol.decide({ gameTimeSec: 10, view: {}, panels: { equip: { stats: { hit } } } })[0].args;
+  assert.deepEqual(ask(80), { short: 15, met: false });
+  assert.deepEqual(ask(99), { short: 0, met: true });
+});
+
+test('死亡率超標時不准在裝等分段之內繼續往前推', () => {
+  /* 實測動機：seed 20260903 的 ROI 場 20 小時死 1,137 次（對照組 49 次），
+     一路被推到分段深處反覆送死，撿不到裝備也跨不過斷點——
+     這個機制反而擋掉了它自己要促成的那件事。 */
+  /* ⚠️ 不能直接把 ctx.deficit 塞進 state——updateContext 每個決策點都會重建它，
+     塞進去的會被原樣覆蓋掉（第一版就是這樣寫的，測出來永遠是「可以前進」）。
+     要驗閘門就得**真的宣告一個目標**，讓直譯器自己算出缺口。
+     這裡用 kind:'value' 直接餵值，速率取樣的部分由上面兩支測試各自覆蓋。 */
+  const mk = (deathRate) => createPolicy({
+    name: 'test-tierpush', decideEveryGameSec: 30, needPanels: ['eval'],
+    targets: [{ id: 'deathRate', kind: 'value', path: 'panels.probe.deathRate', atMost: 0.5 }],
+    rules: [{
+      id: 'gate', cmd: 'stage.setAutoAdvance',
+      stageGate: {
+        stage: 'view.stage',
+        equippedRarities: 'panels.inv.equipmentRarities',
+        checkpoints: [{ maxStage: 50, minRarity: 4, coverage: 1, park: [41, 45] }, { minRarity: 0, coverage: 0 }],
+        retreatCmd: 'stage.go',
+        tierPush: { source: 'panels.eval.tier', minBreakpointGain: 2, advanceRequiresTargets: ['deathRate'] }
+      }
+    }]
+  }).decide({
+    gameTimeSec: 100,
+    view: { stage: 44 },
+    panels: {
+      probe: deathRate === null ? {} : { deathRate },
+      inv: { equipmentRarities: { weapon: 2, helmet: 2 } },   // 覆蓋率不足 → 品質閘門關著
+      /* 身上裝等 1、當前分段也是 1、斷點在 50 且值 28 倍 → behind，park 被拉到 [41,49] */
+      eval: { tier: { stage: 44, itemLevelHere: 1, nextBreakpointStage: 50, breakpointGain: 27.95, equippedItemLevelMin: 1 } }
+    }
+  }).find((c) => c.name === 'stage.setAutoAdvance');
+
+  assert.equal(mk(0.2).args.on, true,
+    '死亡率在上限內時應該可以繼續往分段深處推——分段之內裝等不變但品質擲骰更好');
+  assert.equal(mk(1.2).args.on, false,
+    '死亡率超標了還在往前推。撐不住的時候推得更深只會死更多、撿更少');
+  assert.equal(mk(null).args.on, false,
+    'unknown 應該當成「先不要前進」——前進是有風險的動作，資料不足時按兵不動，下一拍就有值');
 });
 
 /* ---- 7. 止損 ---- */

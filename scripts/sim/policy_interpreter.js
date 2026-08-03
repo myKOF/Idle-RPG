@@ -776,7 +776,7 @@ function evalTargets(state, policy, memo) {
 
        前提不成立時回報 met＝已達標，讓缺口規則自動讓位給還沒達標的目標。 */
     if (t.when && !testCond(state, t.when)) {
-      out[t.id] = { value: null, target: t.atLeast, short: 0, met: true, waiting: true };
+      out[t.id] = { value: null, target: t.atLeast, cap: t.atMost, short: 0, over: 0, met: true, waiting: true };
       continue;
     }
 
@@ -839,9 +839,34 @@ function evalTargets(state, policy, memo) {
       }
     }
 
-    if (value === null) { out[t.id] = { value: null, target: t.atLeast, short: 0, met: true, unknown: true }; continue; }
-    var short = Math.max(0, (Number(t.atLeast) || 0) - value);
-    out[t.id] = { value: value, target: Number(t.atLeast) || 0, short: short, met: short <= 0, unknown: false };
+    if (value === null) {
+      out[t.id] = { value: null, target: t.atLeast, cap: t.atMost, short: 0, over: 0, met: true, unknown: true };
+      continue;
+    }
+    /* ---- 目標可以是下限、上限，或兩者 ----
+
+       atLeast 是「至少要到這個值」（命中率、詞條條數）。
+       atMost 是「不可以超過這個值」，加進來是為了表達**死亡率**這種目標——
+       它天生是上限，用 atLeast 表達不出來。
+
+       實測動機：Codex 的獨立驗證抓到 seed 20260903 退步，逐 2 小時的曲線顯示
+       ROI 策略 20 小時死了 **1,137 次**，而對照組只有 49 次（23 倍）。
+       角色一直站在打不動的關卡重複送死，於是撿不到裝備、也跨不過裝等斷點——
+       諷刺的是那正是這個機制原本要修的東西。
+       當時沒有任何一道閘門在量「我是不是一直在死」。 */
+    var hasMin = (typeof t.atLeast === 'number');
+    var hasMax = (typeof t.atMost === 'number');
+    var short = hasMin ? Math.max(0, t.atLeast - value) : 0;
+    var over = hasMax ? Math.max(0, value - t.atMost) : 0;
+    out[t.id] = {
+      value: value,
+      target: hasMin ? t.atLeast : null,
+      cap: hasMax ? t.atMost : null,
+      short: short,
+      over: over,
+      met: short <= 0 && over <= 0,
+      unknown: false
+    };
   }
   return out;
 }
@@ -1275,6 +1300,36 @@ function decide(state, policy, memo) {
         var tierFloor = null;
         var tierBand = false;      // park 上緣是否已被拉到裝等分段的頂端（見下方 behind）
 
+        /* ---- 往前推之前先確認撐得住 ----
+
+           ⚠️ 這一條是 Codex 獨立驗證抓出來的，而且抓在最要害的地方。
+
+           實測 seed 20260903：ROI 場 20 小時死 **1,137 次**，對照組只有 49 次（23 倍）。
+           角色一路被推到分段深處反覆送死，於是撿不到裝備、也跨不過裝等斷點——
+           這個機制反而擋掉了它自己要促成的那件事。
+
+           原因是下面那句 `if (!behind && gain >= minGain) passGate = true`：
+           在**第一個裝等分段**（關卡 1~49）裡，掉落的裝等恆為 1，身上的裝等自然也是 1，
+           所以 `behind` 永遠是 false——tierPush 於是無條件放行整個第一段，
+           把角色一路推到分段深處，完全沒有任何一道閘門在問「你打得動嗎」。
+
+           所以 advanceOk 必須同時管住**兩條**前進路徑（放行推關、以及分段內往前走），
+           不能只管其中一條。第一版只管了分段內那條，測出來完全沒有效果。
+
+           只擋前進，不強迫後退——後退交給遊戲自己的死亡退關與 park 下緣。
+           多加一個退關來源只會讓歸因變難，而這一層的退關機制已經有兩個了。
+
+           unknown（視窗還沒攢滿）當成不准前進：前進是有風險的動作，
+           資料不足時按兵不動即可，下一拍就會有值，不會卡死。 */
+        var advanceOk = true;
+        var areq = tierCfg && tierCfg.advanceRequiresTargets;
+        if (areq && areq.length) {
+          for (var ai2 = 0; ai2 < areq.length; ai2++) {
+            var dq2 = state.ctx && state.ctx.deficit && state.ctx.deficit[areq[ai2]];
+            if (!dq2 || dq2.unknown || !dq2.met) { advanceOk = false; break; }
+          }
+        }
+
         if (tier && typeof tier.nextBreakpointStage === 'number') {
           /* 當前分段的底：跌破它，掉落的裝等會退一階，那是換不回來的損失。
              itemLevelHere 就是分段起點（裝等 1 的那一段起點視為關卡 1）。 */
@@ -1290,7 +1345,7 @@ function decide(state, policy, memo) {
              ⚠️ 這裡蓋掉的是**品質覆蓋率**，不是卡關重試。retryWaiting 在下面
              仍然會把它關回去——真的打不過的時候往前送死沒有意義，
              那時該做的是微調重試（見 Bottleneck Profiler）。 */
-          if (!behind && gain >= minGain) passGate = true;
+          if (!behind && gain >= minGain && advanceOk) passGate = true;
 
           /* 落後於當前分段：這一段還有東西可以撿，把 park 上緣拉到分段底部之上。
              舊的固定區間 [41,45] 在這裡會被分段底 [tierFloor, 斷點−1] 取代。 */
@@ -1371,7 +1426,9 @@ function decide(state, policy, memo) {
         /* ⚠️ park 可以不存在（收尾那一段的 checkpoint 通常沒有），所以取值一定要
            在 inPark 之內。少了這道防護會在「沒有安全區間」的關卡段直接拋錯，
            而那是最常見的一段——tests/sim-policy-targets.test.cjs 抓到過。 */
-        var advanceOn = inPark && gStage < (tierBand ? park[1] : park[0]) && !targetBlocked;
+        /* advanceOk 見上方——它同時管住「放行推關」與「分段內往前走」兩條路徑。
+           ⚠️ tierPush 沒設定時 advanceOk 恆為 true，既有策略的行為不變。 */
+        var advanceOn = inPark && gStage < (tierBand ? park[1] : park[0]) && !targetBlocked && advanceOk;
         gArgs[gCfg.argKey || 'on'] = !!(passGate || advanceOn);
         out.push({ name: r.cmd, args: gArgs, ruleId: r.id });
       }

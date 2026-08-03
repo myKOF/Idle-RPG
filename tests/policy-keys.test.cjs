@@ -199,6 +199,14 @@ test('關卡閘門要求的目標必須真的宣告過', () => {
           `${f} 規則 ${rule.id} 的 requireTargets 指到未宣告的目標「${id}」——` +
           '查不到缺口會被當成沒有阻擋，這道閘門不會有任何作用且無徵兆');
       }
+      /* tierPush 的前進條件同理，而且方向相反：查不到缺口時它會被當成「不准前進」，
+         症狀是 AI 停在分段下緣不動——一樣沒有徵兆，只是壞的方向不同。 */
+      const tp = rule.stageGate && rule.stageGate.tierPush;
+      for (const id of (tp && tp.advanceRequiresTargets) || []) {
+        assert.ok(declared[id],
+          `${f} 規則 ${rule.id} 的 tierPush.advanceRequiresTargets 指到未宣告的目標「${id}」——` +
+          '查不到缺口會被當成「不准前進」，AI 會停在裝等分段下緣不動且無徵兆');
+      }
     }
   }
 });
