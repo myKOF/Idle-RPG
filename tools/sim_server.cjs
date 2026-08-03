@@ -23,8 +23,23 @@ const ROOT = path.resolve(__dirname, '..');
 const PORT_BASE = 28342;
 const PORT_TRIES = 10;
 const PORT_FILE = path.join(ROOT, 'sim_server.port');
-/* 身分標記。啟動器比對這個字串，不是比對「有沒有回應」。 */
-const WHOAMI = 'idle-rpg-sim-server';
+/* 身分標記。啟動器比對這個字串，不是比對「有沒有回應」。
+
+   ⚠️ 標記必須帶上**服務的目錄**，光有專案名不夠。
+
+   `D:\MyGame\Idle-RPG\` 底下有五份平行 worktree（claude／codex／antigravity／
+   develop／production），每一份都有自己的「啟動數值模擬器.bat」，而標記若是常數，
+   五份的回答完全一樣。於是從 claude 那份點啟動器時，只要 develop 的伺服器還開著，
+   啟動器就會判定「已經在跑」並直接開瀏覽器——開進的是 **develop 的儀表板**，
+   跑的是 develop 的程式碼。使用者會以為自己在測剛改好的東西。
+
+   這不是假設，同一類的坑在 Live Server 的 5500 埠上實際發生過一次：
+   在那裡驗證剛改的 js/worker/sim.worker.js，測出「修改沒生效」，
+   查了半天才發現 5500 服務的根本不是那個工作目錄。
+
+   加上路徑之後，不同 worktree 的伺服器互相不會被誤認，啟動器會自己往上找空的埠
+   另外開一個。同一份目錄重複點啟動器仍然只會有一個伺服器（標記相同）。 */
+const WHOAMI = 'idle-rpg-sim-server ' + ROOT;
 
 let currentProgress = {
   isSimulating: false,
