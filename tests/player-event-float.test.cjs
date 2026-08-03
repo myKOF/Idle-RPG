@@ -123,10 +123,12 @@ test('敵人傷害浮字維持可讀字號且出現範圍更分散', () => {
   assert.match(ui, /if \(enemyHitFloat\) placeEnemyDamageFloat\(sp, layer, targetLayer\);/);
   assert.match(ui, /if \(panel && !enemyHitFloat\) \{/);
   assert.match(ui, /tokens\.indexOf\('crit'\) >= 0/);
+  assert.match(ui, /tokens\.indexOf\('crit-high-roll'\) >= 0/);
   assert.match(ui, /sp\.className \+= ' enemy-hit-float'/);
   assert.match(ui, /function enemyDamageFloatStyleClass\(cls\)/);
-  assert.match(ui, /return isCrit \? 'enemy-hit-attack-crit' : 'enemy-hit-attack'/);
-  assert.match(ui, /return isCrit \? 'enemy-hit-skill-crit' : 'enemy-hit-skill'/);
+  assert.match(ui, /isCrit \? 'enemy-hit-attack-crit' : 'enemy-hit-attack'/);
+  assert.match(ui, /isCrit \? 'enemy-hit-skill-crit' : 'enemy-hit-skill'/);
+  assert.match(ui, /enemy-hit-crit-high/);
   assert.match(ui, /function enemyDamageFloatLifetimeMs\(sp\)/);
   assert.match(ui, /getPropertyValue\('--enemy-hit-lifetime'\)/);
   assert.match(ui, /scheduleFloatTextRemoval\(existing, enemyDamageFloatLifetimeMs\(existing\)\)/);
@@ -135,10 +137,10 @@ test('敵人傷害浮字維持可讀字號且出現範圍更分散', () => {
   assert.match(ui, /var pct = enemyHitFloat \? 8 \+ Math\.random\(\) \* 84 : 15 \+ Math\.random\(\) \* 70/);
   assert.match(ui, /sp\.style\.top = \(28 \+ Math\.random\(\) \* 44\) \+ '%'/);
   assert.match(ui, /sp\.style\.marginTop = \(enemyHitFloat \? \(Math\.random\(\) \* 24 - 12\) : \(Math\.random\(\) \* 30 - 15\)\) \+ 'px'/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack\s*\{[\s\S]*?font-size:\s*12px[\s\S]*?--enemy-hit-rise-duration:\s*2s[\s\S]*?--enemy-hit-lifetime:\s*2s/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill\s*\{[\s\S]*?font-size:\s*15px[\s\S]*?--enemy-hit-rise-duration:\s*2s[\s\S]*?--enemy-hit-lifetime:\s*2s/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack-crit\s*\{[\s\S]*?font-size:\s*16px[\s\S]*?--enemy-hit-rise-duration:\s*2s[\s\S]*?--enemy-hit-lifetime:\s*2s/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill-crit\s*\{[\s\S]*?font-size:\s*20px[\s\S]*?--enemy-hit-rise-duration:\s*2s[\s\S]*?--enemy-hit-lifetime:\s*2s/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack\s*\{[\s\S]*?--enemy-hit-font-size:\s*12px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-rise-duration:\s*2s[\s\S]*?--enemy-hit-lifetime-base:\s*2s/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill\s*\{[\s\S]*?--enemy-hit-font-size:\s*15px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-rise-duration:\s*2s[\s\S]*?--enemy-hit-lifetime-base:\s*2s/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack-crit\s*\{[\s\S]*?--enemy-hit-font-size:\s*16px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-rise-duration:\s*2s[\s\S]*?--enemy-hit-lifetime-base:\s*2s/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill-crit\s*\{[\s\S]*?--enemy-hit-font-size:\s*20px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-rise-duration:\s*2s[\s\S]*?--enemy-hit-lifetime-base:\s*2s/);
   assert.doesNotMatch(css, /\.float-txt\.enemy-hit-float\.dmg\s*\{/);
   assert.doesNotMatch(css, /\.float-txt\.enemy-hit-float\.enemy-attack\s*\{/);
 });
@@ -181,18 +183,22 @@ test('傷害浮字合併目前為關閉狀態（暫時設定）', () => {
 });
 
 test('敵方區四種傷害樣式獨立，爆擊不改變普攻／技能來源顏色', () => {
-  assert.match(combat, /floatEnemyEvent\(mEnt,\s*floatSel,\s*dmgStr,\s*\(res\.crit \? 'crit ' : 'dmg '\) \+ 'enemy-attack',\s*res\.dmg\)/);
+  assert.match(combat, /floatEnemyEvent\(mEnt,\s*floatSel,\s*dmgStr,\s*combatDamageFloatClass\('enemy-attack',\s*res\),\s*res\.dmg\)/);
   assert.match(combat, /'crit enemy-attack'/);
-  assert.match(skills, /floatEnemyEvent\(targetEnt,\s*floatSel,\s*sk\.emoji \+ dmgStr,\s*\(dmgRes\.crit \? 'crit ' : 'dmg '\) \+ 'enemy-skill',\s*dmgRes\.dmg,\s*hitDelayMs\)/);
+  assert.match(skills, /floatEnemyEvent\(targetEnt,\s*floatSel,\s*sk\.emoji \+ dmgStr,\s*combatDamageFloatClass\('enemy-skill',\s*dmgRes\),\s*dmgRes\.dmg,\s*hitDelayMs\)/);
   assert.match(skills, /'crit enemy-skill'/);
+  assert.match(util, /function combatDamageFloatClass\(source, result, forceCrit\)/);
+  assert.match(util, /crit-high-roll/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack\s*\{[\s\S]*?color:\s*#ffffff/);
   assert.match(css, /\.enemy-combatant\s*\{[\s\S]*?overflow:\s*visible/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack\s*\{[\s\S]*?font-size:\s*12px/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack-crit\s*\{[\s\S]*?font-size:\s*16px/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack\s*\{[\s\S]*?--enemy-hit-font-size:\s*12px/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack-crit\s*\{[\s\S]*?--enemy-hit-font-size:\s*16px/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill\s*\{[\s\S]*?color:\s*#ffd700/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill-crit\s*\{[\s\S]*?color:\s*#ffd700/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack\s*\{[\s\S]*?z-index:\s*10\s*!important/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill\s*\{[\s\S]*?z-index:\s*20\s*!important/);
+  assert.match(css, /\.enemy-hit-attack-crit\.enemy-hit-crit-high,[\s\S]*?\.enemy-hit-skill-crit\.enemy-hit-crit-high[\s\S]*?font-size:\s*calc\(var\(--enemy-hit-font-size\) \+ 2px\)/);
+  assert.match(css, /\.enemy-hit-crit-high[\s\S]*?--enemy-hit-lifetime:\s*calc\(var\(--enemy-hit-lifetime-base\) \* 2\)/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.damage-aggregate\s*\{[\s\S]*?var\(--enemy-hit-rise-duration,\s*2s\)[\s\S]*?var\(--enemy-hit-lifetime,\s*2s\)/);
   assert.doesNotMatch(css, /\.float-txt\.enemy-hit-float\.enemy-attack\s*\{/);
   assert.doesNotMatch(css, /\.float-txt\.enemy-hit-float\.enemy-skill\s*\{/);

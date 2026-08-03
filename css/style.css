@@ -1355,39 +1355,54 @@ textarea#save-io {
 .float-txt.enemy-hit-float.enemy-hit-attack {
   /* 玩家普攻：只調整這個區塊，就不會影響技能或任何暴擊字。 */
   color: #ffffff;
-  font-size: 12px;
+  --enemy-hit-font-size: 12px;
+  font-size: var(--enemy-hit-font-size);
   /* 上浮動畫完成時間；時間越短，視覺上浮速度越快。 */
   --enemy-hit-rise-duration: 2s;
   /* 數字存在時間；會同步控制淡出動畫與 DOM 移除時間。 */
-  --enemy-hit-lifetime: 2s;
+  --enemy-hit-lifetime-base: 2s;
+  --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 10 !important;
 }
 
 .float-txt.enemy-hit-float.enemy-hit-skill {
   /* 玩家技能：只調整這個區塊，就不會影響普攻或暴擊字。 */
   color: #ffd700;
-  font-size: 15px;
+  --enemy-hit-font-size: 15px;
+  font-size: var(--enemy-hit-font-size);
   --enemy-hit-rise-duration: 2s;
-  --enemy-hit-lifetime: 2s;
+  --enemy-hit-lifetime-base: 2s;
+  --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 20 !important;
 }
 
 .float-txt.enemy-hit-float.enemy-hit-attack-crit {
   /* 玩家普攻暴擊：與普通普攻完全獨立。 */
   color: #ffffff;
-  font-size: 16px;
+  --enemy-hit-font-size: 16px;
+  font-size: var(--enemy-hit-font-size);
   --enemy-hit-rise-duration: 2s;
-  --enemy-hit-lifetime: 2s;
+  --enemy-hit-lifetime-base: 2s;
+  --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 10 !important;
 }
 
 .float-txt.enemy-hit-float.enemy-hit-skill-crit {
   /* 玩家技能暴擊：與普通技能及普攻暴擊完全獨立。 */
   color: #ffd700;
-  font-size: 20px;
+  --enemy-hit-font-size: 20px;
+  font-size: var(--enemy-hit-font-size);
   --enemy-hit-rise-duration: 2s;
-  --enemy-hit-lifetime: 2s;
+  --enemy-hit-lifetime-base: 2s;
+  --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 20 !important;
+}
+
+/* 隨機倍率達 119.5% 以上且本次確實暴擊時，字號在各自基準上加 2px，存在時間加倍。 */
+.float-txt.enemy-hit-float.enemy-hit-attack-crit.enemy-hit-crit-high,
+.float-txt.enemy-hit-float.enemy-hit-skill-crit.enemy-hit-crit-high {
+  font-size: calc(var(--enemy-hit-font-size) + 2px);
+  --enemy-hit-lifetime: calc(var(--enemy-hit-lifetime-base) * 2);
 }
 
 /* 傷害合併顯示時使用的動畫。完整存活時間由 js/ui.js 的
