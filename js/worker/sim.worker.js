@@ -13,9 +13,9 @@
 importScripts('protocol.js', 'shim.js');
 importScripts(
   '../util.js', '../data.js', '../formula.js', '../battlefield.js', '../stats.js', '../item.js',
-  '../skills.js', '../talents.js', '../player.js', '../special_rules.js',
+  '../skills.js', '../talents.js', '../player.js?v=20260804-xp-settle', '../special_rules.js',
   '../combat.js', '../legendary.js', '../potential.js', '../tower.js',
-  '../factory.js', '../newforge.js', '../forge.js', '../save.js'
+  '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260804-xp-settle'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
