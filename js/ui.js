@@ -467,6 +467,10 @@ function handleWorkerUiEvents(events) {
       return;
     }
     if (event.kind === 'float') {
+      if (typeof uiRenderingSuspended === 'function' && uiRenderingSuspended()) {
+        rememberBackgroundEnemyFloat(event.elId, event.text, event.cls, event.damageValue);
+        return;
+      }
       floatText(event.elId, event.text, event.cls, event.damageValue, null, uiBattlePanelSnapshot(), event.delayMs);
       return;
     }
@@ -1285,8 +1289,33 @@ var ENEMY_DAMAGE_FLOAT_WINDOW_MS = 4000;
 var ENEMY_DAMAGE_FLOAT_MAX_HITS = 20;
 var PLAYER_RECOVERY_FLOAT_MAX_HITS = 20;
 var PENDING_ENEMY_FLOATS = [];
+var BACKGROUND_LATEST_ENEMY_FLOAT = null;
 var INSTANT_KILL_HP_ANIMATION_MS = 100;
 var ENEMY_FLOAT_LAYOUT_LOAD_LIMIT = 80;
+
+function rememberBackgroundEnemyFloat(elId, text, cls, damageValue) {
+  if (!isEnemyHitFloat(elId, cls)) return;
+  BACKGROUND_LATEST_ENEMY_FLOAT = {
+    elId: elId, text: text, cls: cls, damageValue: damageValue
+  };
+}
+
+function clearBackgroundEnemyFloats() {
+  var floats = document.querySelectorAll ? document.querySelectorAll('.enemy-hit-float') : [];
+  for (var i = 0; i < floats.length; i++) {
+    if (floats[i].parentNode) floats[i].parentNode.removeChild(floats[i]);
+  }
+  // 背景期間不保留「等圖層建立」的歷史傷害，切回只顯示最新一筆。
+  PENDING_ENEMY_FLOATS.length = 0;
+}
+
+function showBackgroundLatestEnemyFloat() {
+  var item = BACKGROUND_LATEST_ENEMY_FLOAT;
+  BACKGROUND_LATEST_ENEMY_FLOAT = null;
+  if (!item) return;
+  floatText(item.elId, item.text, item.cls, item.damageValue, null,
+    typeof uiBattlePanelSnapshot === 'function' ? uiBattlePanelSnapshot() : undefined, 0);
+}
 
 function queuePendingEnemyFloat(elId, text, cls, damageValue, ent) {
   if (!elId || elId.indexOf('mv-float-') !== 0) return false;
@@ -1517,6 +1546,10 @@ function placePlayerRecoveryFloat(sp, layer) {
 }
 
 function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
+  if (typeof uiRenderingSuspended === 'function' && uiRenderingSuspended()) {
+    rememberBackgroundEnemyFloat(elId, text, cls, damageValue);
+    return;
+  }
   /* 顯示延遲（協議 v11）：讓數字對齊「打到人」那一刻——投射物要飛、多段技一段一段打，
      但模擬層是一瞬間把整段結算完的。純顯示時序，戰鬥結果早就定了。
      延遲期間敵人可能已死，但卡片還會留 FIELD_ENEMY_DEATH_CLEAR_DELAY（2.1 秒）才移除，
@@ -4464,7 +4497,12 @@ function markVisibleUiDirty() {
 }
 
 function handleVisibilityChange() {
-  if (uiRenderingSuspended()) return;
+  if (uiRenderingSuspended()) {
+    clearBackgroundEnemyFloats();
+    return;
+  }
+  clearBackgroundEnemyFloats();
+  showBackgroundLatestEnemyFloat();
   markVisibleUiDirty();
   uiTick();
 }
