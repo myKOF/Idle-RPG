@@ -86,8 +86,32 @@ function createPolicy(policy) {
       for (const tg of policy.targets || []) {
         if (tg && tg.kind === 'ratePerMin') add(tg.counter);
       }
+      /* 敗因診斷（policy.profile）要在死掉的那一瞬間附近取樣，所以它指到的面板
+         必須跟著 1Hz 觀測一起建。漏掉的話 cause 只會在決策點被取樣——
+         輕度玩家 60 秒一次，整場交戰會落在兩次取樣之間，敗因永遠是 null，
+         而且完全不會有錯誤訊息（規則只是靜靜地不觸發）。
+
+         ⚠️ 這裡只能放**便宜**的面板。完整的 panels.eval 一次要跑約 47 次
+         computeStats，掛上 1Hz 就是每個遊戲秒全身重算 47 遍——
+         那是這個設計最容易踩的效能陷阱（與背包面板同一類）。 */
+      const pf = policy.profile || {};
+      /* ⚠️ 宣告成陣列時，**只有第一條**會被加進觀測面板。
+
+         陣列的用途是「同一份資料在觀測節奏與決策節奏下住在不同面板」
+         （觀測建便宜的 evalCombat、決策建完整的 eval），直譯器會依序試。
+         但觀測是 1Hz，把完整版也加進來就等於每個遊戲秒跑幾十次 computeStats——
+         那正是這個設計最容易踩的效能陷阱（與背包面板同一類，見 SIM_HARNESS.md）。
+
+         所以約定：**第一條必須是觀測用的那一份，而且必須是便宜的**。 */
+      for (const key of ['combat', 'cause']) {
+        const v = pf[key];
+        add(Array.isArray(v) ? v[0] : v);
+      }
       return out;
     })(),
+    /* 評估器參數（要評估哪些詞條、每個部位精算幾個候選）。
+       它是策略資料，不是引擎設定——不同強度的玩家會評估不同的東西。 */
+    evalConfig: policy.evalConfig || null,
     /* 開跑前的 GM 前置（例如把角色墊到已轉生，才測得到天賦與神鑄）。
        屬於「建立測試前提」，不是推進遊戲；會原文寫進 run_summary.json 公開揭露。 */
     bootstrap: policy.bootstrap || [],

@@ -458,6 +458,11 @@ if (scheduleDeclared && IGNORE_SCHEDULE) {
    --observe-every 可覆蓋；設成與 decideEveryGameSec 相同即還原拆分前的行為。 */
 const observeEvery = OBSERVE_EVERY !== null ? OBSERVE_EVERY : (policy.observeEverySec || 1);
 const observePanels = policy.observePanels || [];
+
+/* 邊際效益評估器的參數（要評估哪些詞條、每個部位精算幾個候選）。
+   由策略宣告、引擎執行——策略拿不到遊戲函式，算不了 ROI；引擎不該決定要算什麼。
+   沒宣告就是空的，panels.eval 仍然會建，只是 affixRoi 是空表。 */
+if (policy.evalConfig) engine.setEvalParams(policy.evalConfig);
 /* 軌跡重播不做觀測：它不判斷任何事，只是照時間表送出真人當初送過的指令。
    多跑一層觀測只會白花時間，也不會改變結果。 */
 const observeOn = !TRACE_PATH && observeEvery > 0 && observeEvery < policy.decideEveryGameSec;
@@ -696,6 +701,25 @@ const summary = {
   trace: TRACE_PATH ? policy.report() : null,
   /* GM 前置一律揭露：讀報告的人要看得出哪些狀態是模擬出來的、哪些是墊出來的。 */
   gmBootstrap: bootstrapLog,
+
+  /* ---- 邊際效益評估器一律揭露 ----
+
+     ⚠️ 這是本 harness 唯一帶有「模型」的地方，所以它的假設必須跟結果一起出現。
+
+     評估器算的 DPS **只含普攻**，不含技能、連擊、範圍攻擊——實測會低估實際輸出
+     約 5 倍。這對 ROI 排序無害（ROI 是比值，常數倍率會約掉），但任何人拿
+     panels.eval.power 當「這隻角色的 DPS」都會錯得很離譜。
+
+     model 裡的兩個係數（命中夾值、探針強度）在遊戲裡是內嵌在 resolveHit 的字面值，
+     沒有具名函式可呼叫，只能宣告在評估器裡。tests/sim-evaluator.test.cjs 有哨兵
+     比對 resolveHit 的原始碼，但那個哨兵盯的是「有沒有同步」，
+     不是「這個模型準不準」——後者要靠這裡的揭露讓讀報告的人自己判斷。 */
+  evaluator: policy.evalConfig ? {
+    enabled: true,
+    config: policy.evalConfig,
+    model: (function () { try { return engine.panel('eval').model; } catch (e) { return null; } })(),
+    警告: 'panels.eval.power 是模型尺度，只含普攻，不是實際 DPS；絕對時間一律經 currentDps() 校正'
+  } : { enabled: false },
   determinism: { finalStateHash: stateHash(saveJson) },
 
   /* ---- 累積掉落統計（遊戲原生 LOOT_STATS，js/stats.js）----

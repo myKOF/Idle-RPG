@@ -26,6 +26,15 @@ const { makeRng } = require('./rng');
 const ROOT = path.resolve(__dirname, '..', '..');
 const WORKER_DIR = path.join(ROOT, 'js', 'worker');
 
+/* ---- 邊際效益評估器（harness 專用，不出貨給玩家） ----
+
+   載進**引擎**的 context（看得到 G / FIELD / 遊戲函式），而不是策略的 context。
+   策略仍然只拿得到它算出來的純資料，隔離一點都沒有放寬——見 evaluator.js 檔頭。
+
+   為什麼不放進 js/worker/sim.worker.js 的 buildPanel：那份程式碼會跟著正式版
+   出貨給真人玩家，而這裡的東西只有 AI 模擬器用得到。 */
+const EVALUATOR = fs.readFileSync(path.join(__dirname, 'evaluator.js'), 'utf8');
+
 /* ---- 5Hz 維護函式：與 sim.worker.js 的 loop() 同步的單一來源 ----
 
    這幾支不在 simStep() 內，但會改變遊戲狀態（刷新寶石商店、解鎖熔爐、記顯示旗標），
@@ -122,6 +131,10 @@ function createEngine(opts) {
     `, ctx, { filename: 'legacy-updateShownRes' });
   }
 
+  /* 評估器要在遊戲載完之後才載入——它呼叫的 computeStats / affixBaseValue /
+     defReduction 全都由上面那趟 importScripts 定義出來。 */
+  vm.runInContext(EVALUATOR, ctx, { filename: 'scripts/sim/evaluator.js' });
+
   const TICK_MS = ctx.TICK_MS;
   const DT = TICK_MS / 1000;
   const EMIT_EVERY = Math.max(1, Math.round(ctx.TICK_EMIT_MS / TICK_MS));
@@ -139,6 +152,7 @@ function createEngine(opts) {
   }
 
   let stepCount = 0;
+  let evalParams = {};   // 由 setEvalParams 設定，見下方 panel()
 
   return {
     ctx,
@@ -230,7 +244,27 @@ function createEngine(opts) {
     cmd(name, args) { return ctx.runCommand(name, args || {}); },
 
     view() { ctx.updateShownRes(); return ctx.buildView(); },
-    panel(name, params) { return ctx.buildPanel(name, params); },
+
+    /* 'eval' 是 harness 自己的面板，不在遊戲的 buildPanel 裡。
+       走同一個 panel() 進入點是刻意的：策略端不需要知道哪些面板是遊戲給的、
+       哪些是評估器給的，兩者在 needPanels 裡長得一模一樣。
+
+       ⚠️ 評估器**只讀不寫**。它呼叫 computeStats(override) 算假設狀態，
+       但 override 是複製出來的裝備表，G 本身一個欄位都沒動——
+       這一點由 tests/sim-evaluator.test.cjs 以存檔雜湊反證（觀測前後雜湊必須相同）。 */
+    panel(name, params) {
+      /* evalCombat 是便宜的那一半（只做敗因側寫），掛在 1Hz 觀測上；
+         eval 是完整版（含換裝精算與詞條 ROI），只在決策點呼叫。
+         分兩個面板名而不是一個參數，是為了讓 policy.js 從宣告的路徑
+         自動推導出「觀測時要建哪些面板」——參數推導不出來。 */
+      if (name === 'evalCombat') return ctx.buildEvalCombatPanel();
+      if (name === 'eval') return ctx.buildEvalPanel(params || evalParams);
+      return ctx.buildPanel(name, params);
+    },
+
+    /* 策略以 policy.evalConfig 宣告要評估哪些詞條、每個部位精算幾個候選。
+       驅動端在開跑前設一次，之後每個決策點沿用——這是策略資料，不是引擎的事。 */
+    setEvalParams(p) { evalParams = p || {}; return this; },
     events() { return ctx.shimDrainEvents(); },
 
     state() { ctx.updateShownRes(); return ctx.G; },

@@ -59,6 +59,8 @@ save_initial.json
 # AI 玩家模擬輸出（存檔／快照／原生事件日誌），每次跑都會重生成
 sim_out*/
 sim_batch*/
+# A/B 對照批次（run_batch.js --out=sim_ab_*）。單次 6 seed × 20 小時就 700 MB 起跳
+sim_ab*/
 
 # 真人 vs AI 曲線對照的輸出（scripts/compare_runs.js）
 compare_runs.json
