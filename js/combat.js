@@ -432,7 +432,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
         var dmgStr = fmt(res.dmg);
         if (res.crit) dmgStr = '爆擊 ' + dmgStr;
         if (res.blocked) dmgStr = '格擋 ' + dmgStr;
-        floatEnemyEvent(mEnt, floatSel, dmgStr, (res.crit ? 'crit ' : 'dmg ') + 'enemy-attack', res.dmg);
+        floatEnemyEvent(mEnt, floatSel, dmgStr, combatDamageFloatClass('enemy-attack', res), res.dmg);
         trackDps(res.dmg);
         recordRunDamage('普攻', res.dmg);
         logMsg += (res.crit ? '<span class="log-hl-good">爆擊</span> ' : '造成 ') + fmt(res.dmg) + ' 傷害。';

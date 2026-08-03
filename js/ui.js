@@ -1400,13 +1400,34 @@ function enemyDamageFloatKey(cls) {
 function enemyDamageFloatStyleClass(cls) {
   var tokens = (cls || '').split(/\s+/);
   var isCrit = tokens.indexOf('crit') >= 0;
+  var isHighCrit = isCrit && tokens.indexOf('crit-high-roll') >= 0;
   if (tokens.indexOf('enemy-attack') >= 0) {
-    return isCrit ? 'enemy-hit-attack-crit' : 'enemy-hit-attack';
+    return (isCrit ? 'enemy-hit-attack-crit' : 'enemy-hit-attack') + (isHighCrit ? ' enemy-hit-crit-high' : '');
   }
   if (tokens.indexOf('enemy-skill') >= 0) {
-    return isCrit ? 'enemy-hit-skill-crit' : 'enemy-hit-skill';
+    return (isCrit ? 'enemy-hit-skill-crit' : 'enemy-hit-skill') + (isHighCrit ? ' enemy-hit-crit-high' : '');
   }
   return '';
+}
+
+/* 從 CSS 讀取各分類的消失時間，讓淡出動畫與 DOM 移除使用同一個設定。 */
+function enemyDamageFloatLifetimeMs(sp) {
+  var fallback = FLOAT_TEXT_LIFETIME_MS;
+  if (!sp || typeof window === 'undefined' || typeof window.getComputedStyle !== 'function') return fallback;
+  var raw = window.getComputedStyle(sp).getPropertyValue('--enemy-hit-lifetime').trim();
+  if (!raw) return fallback;
+  /* getComputedStyle 可能回傳 calc(2s * 2)，先解析簡單的時間×倍數，避免高倍率暴擊被提早移除。 */
+  var calcMatch = raw.match(/^calc\(\s*([0-9]+(?:\.[0-9]+)?)\s*(ms|s)\s*\*\s*([0-9]+(?:\.[0-9]+)?)\s*\)$/i);
+  if (calcMatch) {
+    var baseValue = Number(calcMatch[1]);
+    var multiplier = Number(calcMatch[3]);
+    if (isFinite(baseValue) && isFinite(multiplier) && baseValue > 0 && multiplier > 0) {
+      return (calcMatch[2].toLowerCase() === 'ms' ? baseValue : baseValue * 1000) * multiplier;
+    }
+  }
+  var value = parseFloat(raw);
+  if (!isFinite(value) || value <= 0) return fallback;
+  return /ms$/i.test(raw) ? value : value * 1000;
 }
 
 function enemyDamageFloatInfo(text, value) {
@@ -1614,7 +1635,7 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
       existing._damageFloatTotal += damageValue;
       existing._damageFloatHits++;
       existing.textContent = existing._damageFloatPrefix + fmt(existing._damageFloatTotal);
-      scheduleFloatTextRemoval(existing, FLOAT_TEXT_LIFETIME_MS);
+      scheduleFloatTextRemoval(existing, enemyDamageFloatLifetimeMs(existing));
       return;
     }
   }
@@ -1677,7 +1698,7 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
       }
     }
   }
-  scheduleFloatTextRemoval(sp, FLOAT_TEXT_LIFETIME_MS);
+  scheduleFloatTextRemoval(sp, enemyDamageFloatLifetimeMs(sp));
 }
 
 /* ---- 分頁 ---- */

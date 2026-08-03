@@ -28,6 +28,20 @@ function enemyEventFloatTarget(ent, floatSel) {
   return 'mv-float-0';
 }
 
+/* 普攻／技能的暴擊浮字共用分類；高隨機倍率暴擊額外掛上特殊顯示標記。 */
+function combatDamageFloatClass(source, result, forceCrit) {
+  var isCrit = !!forceCrit || !!(result && result.crit);
+  var cls = (isCrit ? 'crit ' : 'dmg ') + source;
+  var threshold = (typeof CRIT_HIGH_RANDOM_MULTIPLIER === 'number')
+    ? CRIT_HIGH_RANDOM_MULTIPLIER : 1.195;
+  var isHighCrit = !!(result && result.highCritRandomRoll) ||
+    !!(result && result.crit && result.randomDamageMultiplier >= threshold - 1e-12);
+  if (isCrit && isHighCrit) {
+    cls += ' crit-high-roll';
+  }
+  return cls;
+}
+
 /* delayMs（可選）：把浮字延後顯示，讓「數字跳出來」對齊「打到人」那一刻——
    投射物要飛、多段技一段一段打，但模擬層是一瞬間結算完的。純顯示用，不影響戰鬥結果。
    位置放在最後：floatText 的第 5、6 個參數是既有的 ent／battleSnapshot，不能佔用。 */

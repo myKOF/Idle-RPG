@@ -617,7 +617,7 @@ function effectiveMPen(st, ent) { return ((st && st.mPen) || 0) + penBuffValue(e
 
 /* ---- 共用攻擊流程（傷害結算總公式） ----
    結算順序：命中 → 防禦減傷（含破甲/穿透）→ 物/魔抗性 → 技能屬性化（元素抗性＋屬性傷害提升）
-           → ±10% 浮動 → 暴擊 → 元素附加 → 元素特效（屬性化段＋附加段合計判定）
+           → ±20% 浮動 → 暴擊 → 元素附加 → 元素特效（屬性化段＋附加段合計判定）
            → 真實傷害 → 對普通/菁英/BOSS 加成 → 對屬性敵人加成
            → 總傷害額外增幅 → 格擋 → 聖佑 → 全局減傷 → 敵種傷害抗性 → 對屬性敵人抗性
            → 護盾吸收 → 扣血 → 反震
@@ -637,7 +637,9 @@ function effectiveMPen(st, ent) { return ((st && st.mPen) || 0) + penBuffValue(e
            normalDmgRed, eliteDmgRed, bossDmgRed, resVsElem{fire..dark} }
          （tenacity = 防守方韌性%：折減被爆擊機率［暴擊段］與被控場機率［resistCtrl］；
            ccFactor 另含韌性對控場「持續時間」的縮短）
-   回傳 { dmg, crit, miss, blocked, killed, thorns, heal, procs[] }        */
+   回傳 { dmg, crit, miss, blocked, killed, thorns, heal, procs[],
+          randomDamageMultiplier, highCritRandomRoll }                   */
+var CRIT_HIGH_RANDOM_MULTIPLIER = 1.195; // 暴擊且隨機倍率達 119.5% 時，使用高倍率暴擊飄字樣式
 function resolveHit(attacker, defender, aCfg, dCfg) {
   var out = { dmg: 0, crit: false, miss: false, blocked: false, killed: false, thorns: 0, heal: 0, absorbed: 0, procs: [] };
   // 命中率 = clamp(攻擊者命中 - 防守者閃避, 5%, 100%)；玩家命中已含基礎 100%。
@@ -688,13 +690,16 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     }
     dmg = skillElemBase;
   }
-  dmg *= rnd(0.9, 1.1);   // 傷害浮動 ±10%
+  var randomDamageMultiplier = rnd(0.8, 1.2);
+  dmg *= randomDamageMultiplier;   // 傷害浮動 80%～120%
+  out.randomDamageMultiplier = randomDamageMultiplier;
   // 暴擊：傷害 × 暴傷%（基礎 150%）；神鑄特效【破滅】暴擊時機率翻倍
   // 防守方韌性折減被爆擊機率：實際爆擊率 = 攻擊者爆擊率 × (1 - 韌性%)
   //（例：敵方 8% × (1-80%) = 1.6%；怪物無韌性欄位，玩家攻擊端不受影響）
   var effCritRate = Math.max(0, Number(aCfg.critRate) || 0) * (1 - clamp(Number(dCfg.tenacity) || 0, 0, 100) / 100);
   if (chance(effCritRate)) {
     dmg *= (aCfg.critDmg || 150) / 100; out.crit = true;
+    out.highCritRandomRoll = randomDamageMultiplier >= CRIT_HIGH_RANDOM_MULTIPLIER - 1e-12;
     if (aCfg.annihilate && chance(aCfg.annihilate)) { dmg *= 2; out.procs.push('破滅'); }
   }
   // 技能屬性化各段同步吃到浮動與暴擊（供元素特效以最終屬性傷害值判定）
