@@ -98,6 +98,48 @@ test('策略的目標詞條清單裡每個鍵都存在於 AFFIX_POOL', () => {
   }
 });
 
+/* ---- 熔爐零件 ---- */
+
+/* forgeParts 底下所有形態的零件鍵：plan（各爐主力）、rebalance.materials[].part、backlog.part。 */
+function partKeysIn(rule) {
+  const cfg = rule.forgeParts;
+  if (!cfg) return [];
+  const out = [...(cfg.plan || [])];
+  for (const m of (cfg.rebalance && cfg.rebalance.materials) || []) if (m && m.part) out.push(m.part);
+  if (cfg.backlog && cfg.backlog.part) out.push(cfg.backlog.part);
+  return out;
+}
+
+test('熔爐零件策略引用的零件鍵都存在，而且是分解槽零件', () => {
+  /* 兩種都會靜靜失效：
+     鍵名打錯 → newForgeBestOwnedPart 找不到，回「尚無此類型零件」；
+     鍵名對但屬於合成節點（luckCore／rerollModule）→ 回「此零件無法安裝到熔爐」。
+     兩者都只是一句錯誤訊息，模擬照樣跑完，熔爐整場空著。 */
+  for (const f of POLICY_FILES) {
+    for (const rule of loadPolicy(f).rules) {
+      for (const k of partKeysIn(rule)) {
+        const pt = ctx.PART_TYPES[k];
+        assert.ok(pt, `${f} 規則 ${rule.id} 引用了不存在的零件鍵「${k}」（見 js/data.js 的 PART_TYPES）`);
+        assert.equal(pt.node, 'salvage',
+          `${f} 規則 ${rule.id} 的零件「${k}」是 ${pt.node} 節點零件，` +
+          'newForgeInstallPart 只收 salvage 節點的，會整場回「此零件無法安裝到熔爐」');
+      }
+    }
+  }
+});
+
+test('熔爐零件策略必須宣告 uninstallCmd', () => {
+  /* 沒有拆的能力時，規則只能補空格：早期用低階零件填滿之後，
+     即使庫存已經是 T7 也永遠換不上去——快照制不會自己升階。 */
+  for (const f of POLICY_FILES) {
+    for (const rule of loadPolicy(f).rules) {
+      if (!rule.forgeParts) continue;
+      assert.equal(typeof rule.uninstallCmd, 'string',
+        `${f} 規則 ${rule.id} 少了 uninstallCmd——零件是快照制，不能拆就無法把過期的低階零件換成高階的`);
+    }
+  }
+});
+
 test('分段設定的最後一段必須是無上限的 catch-all', () => {
   /* 每一段都寫了 maxLevel 的話，超過最高段的角色會落到「沒有任何一段適用」，
      回傳空清單——等級一過門檻，整條規則就無聲停止運作。 */

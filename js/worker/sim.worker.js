@@ -624,7 +624,47 @@ function buildPanel(name, params) {
     case 'forge':
       return { forge: (typeof forgeState === 'function') ? forgeState() : G.forge };
     case 'newforge':
-      return { newForge: G.newForge };
+      return {
+        newForge: G.newForge,
+        /* 下一格零件格的解鎖金幣（逐爐，與 furnaces 同索引；已達上限為 null）。
+           理由與上面 inv 的 expandCost 完全相同：沒有這個數字，外面只能「先送出
+           再看它回金幣不足」。而且這條成本與**熔爐座數和轉生數連動**
+           （newForgePartSlotCost），抄一份到策略裡遲早會跟遊戲脫鉤。
+           ⚠️ 另開一個陣列而不是塞進 fu——furnaces 就是存檔本體，寫進去會污染存檔。 */
+        partSlotCost: (function () {
+          var nf = G.newForge;
+          if (!nf || typeof newForgePartSlotCost !== 'function') return null;
+          var reinc = (typeof reincarnationCount === 'function') ? reincarnationCount() : 0;
+          var out = [];
+          for (var i = 0; i < nf.furnaces.length; i++) {
+            var fu = nf.furnaces[i];
+            out.push(fu.partSlots >= NEW_FORGE_PART_SLOTS_MAX
+              ? null
+              : newForgePartSlotCost(reinc, fu.partSlots, nf.furnaces.length));
+          }
+          return out;
+        })(),
+        partSlotsMax: (typeof NEW_FORGE_PART_SLOTS_MAX === 'number') ? NEW_FORGE_PART_SLOTS_MAX : null,
+        /* 玩家持有的「分解槽」零件：每種的最高階。
+           熔爐零件是快照制——newForgeInstallPart 一律取該類型最高階的那一顆複製進格子，
+           不消耗庫存、同類型可重複裝滿（newforge.js）。所以外面要判斷
+           「這一格該不該重裝以吃到更高階」只需要這個數字，不必看整個零件庫。
+           只列 node==='salvage' 的：其餘類型 installPart 會直接回「無法安裝到熔爐」。 */
+        ownedParts: (function () {
+          var f = G.factory;
+          if (!f || !f.parts || typeof PART_TYPES === 'undefined') return null;
+          var out = {};
+          for (var i = 0; i < f.parts.length; i++) {
+            var p2 = f.parts[i];
+            if (!p2 || !p2.key) continue;
+            var pt = PART_TYPES[p2.key];
+            if (!pt || pt.node !== 'salvage') continue;
+            var t = Number(p2.tier) || 0;
+            if (!(out[p2.key] >= t)) out[p2.key] = t;
+          }
+          return out;
+        })()
+      };
     case 'factory':
       return { factory: G.factory, salvageSettings: p.salvageSettings };
     case 'tower':

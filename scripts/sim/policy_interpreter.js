@@ -1125,6 +1125,184 @@ function decide(state, policy, memo) {
         var cut = maxRar2 - ((typeof bfCfg.belowMaxBy === 'number') ? bfCfg.belowMaxBy : 1);
         if (cut >= 0) out.push({ name: r.cmd, args: { maxRarity: cut }, ruleId: r.id });
       }
+    } else if (r.forgeSlots) {
+      /* 熔爐零件格解鎖（金幣）。
+
+         為什麼需要：實測 20 小時的存檔，兩座熔爐都是 **0/3 格、一個零件都沒裝**，
+         而零件庫存裡每一種都已經是 T7×10（庫存上限）。整個熔爐零件系統整場沒被用過。
+
+         成本由遊戲給（panels.newforge.partSlotCost，逐爐、已達上限為 null），
+         策略不重算——那條公式與熔爐座數和轉生數連動（formula.js newForgePartSlotCost）。
+         先比對成本再送出，理由同 buyInvUpgrade：不比的話全是金幣不足的空轉。
+
+         goldRatio 是保留閥：金幣同時要餵強化與背包擴充，不能為了解鎖格子把它抽乾。 */
+      var fsCfg = r.forgeSlots;
+      var fsFur = pathVal(state, fsCfg.furnaces) || [];
+      var fsCost = pathVal(state, fsCfg.slotCosts) || [];
+      var fsGold = Number(pathVal(state, fsCfg.gold)) || 0;
+      var fsRatio = (typeof fsCfg.goldRatio === 'number') ? fsCfg.goldRatio : 0.25;
+      for (var fsi = 0; fsi < fsFur.length; fsi++) {
+        var fsFu = fsFur[fsi];
+        var fsC = fsCost[fsi];
+        if (!fsFu || fsFu.id === undefined) continue;
+        if (typeof fsC !== 'number') continue;           // null＝已達上限
+        if (fsC > fsGold * fsRatio) continue;
+        out.push({ name: r.cmd, args: { furnaceId: fsFu.id }, ruleId: r.id });
+        /* 一次只解一格：解完成本會變（指數隨已解鎖格數上升），下個決策點重算即可。
+           同一拍連送兩次會用到過期的成本，第二次多半是空轉。 */
+      }
+    } else if (r.forgeParts) {
+      /* 熔爐零件配置。
+
+         player_strategy.md 的熔爐策略（使用者口述）：
+           一座爐 8 格全押「附魔精華產出」、另一座 8 格全押「裝備碎片產出」，
+           之後依換裝實際消耗掉的材料剩餘，再微調兩爐的零件比例；
+           若產能跟不上打怪速度（產品開始堆積），適度放上加速零件。
+
+         這裡把那三句話拆成三個可觀測的訊號，全部由遊戲的面板提供：
+           基本盤   plan[爐序]      —— 每座爐的主力零件
+           微調     rebalance       —— 只有一種材料見底時，另一座爐讓出 shiftSlots 格
+           加速     backlog         —— 該爐專屬佇列積到門檻才換上加速齒輪
+
+         ⚠️ 零件是**快照制**：安裝時複製「玩家持有的該類型最高階」的數值，
+         不佔用也不消耗庫存，同類型可以重複裝滿、兩座爐可以共用同一批零件
+         （newforge.js newForgeInstallPart）。所以這裡不必做庫存配額，
+         只要格子夠就能裝；但也因為是快照，早期用 T3 裝上去之後不會自己變成 T7——
+         所以下面要比對 tier，過期的快照拆掉重裝。 */
+      var fpCfg = r.forgeParts;
+      var fpFur = pathVal(state, fpCfg.furnaces) || [];
+      var fpOwned = pathVal(state, fpCfg.owned) || {};
+      var fpPlan = fpCfg.plan || [];
+      if (fpPlan.length) {
+        /* ---- 微調：哪一種材料比較緊 ----
+           ⚠️ 不能用「庫存低於某個絕對值」判斷。這份策略把精華與碎片都花到見底
+           （實測 20 小時結局：精華 8、碎片 661），任何絕對門檻都會同時成立，
+           規則等於整場不動——那是我第一版寫錯的地方。
+
+           改比**滿足率** fill = 庫存 / ref：ref 是策略宣告的「這種材料存到多少算寬裕」，
+           作用是把兩種單位換算到同一把尺（洗一次 5~6 精華、強化一次數百碎片，
+           直接比大小沒有意義）。兩邊都見底時仍分得出誰更緊，這正是需要的。
+
+           ⚠️ 一定要用 庫存/ref 而不是 ref/庫存。後者在庫存 0 的時候會退化成
+           「ref 比較大的那一種永遠贏」——開局兩種都是 0，卻會判成碎片緊 100 倍。
+           滿足率沒有這個問題：0/50 與 0/5000 都是 0，分不出來就不動。
+
+           差距要大到 minRatio 倍才搬，免得在兩者相當時來回搬格子。 */
+        var fpShiftTo = null;
+        var fpShift = 0;
+        var rbCfg = fpCfg.rebalance;
+        if (rbCfg && rbCfg.materials && rbCfg.materials.length === 2) {
+          var fill = [];
+          for (var rbi = 0; rbi < rbCfg.materials.length; rbi++) {
+            var mat = rbCfg.materials[rbi];
+            if (!mat || !mat.part) { fill = null; break; }
+            var stock = Number(pathVal(state, mat.stock));
+            var ref = Number(mat.ref) || 0;
+            if (!(stock >= 0) || !(ref > 0)) { fill = null; break; }   // 面板讀不到／沒宣告 ref 就不動
+            fill.push({ part: mat.part, f: stock / ref });
+          }
+          if (fill && fill.length === 2) {
+            var minRatio = (typeof rbCfg.minRatio === 'number') ? rbCfg.minRatio : 2;
+            var rich = fill[0].f >= fill[1].f ? fill[0] : fill[1];
+            var poor = rich === fill[0] ? fill[1] : fill[0];
+            /* rich.f > 0 這個條件擋掉「兩邊都是 0」——那時誰更緊是分不出來的。 */
+            var verdict = (rich.f > 0 && rich.f > poor.f * minRatio) ? poor.part : null;
+
+            /* ---- 遲滯：同一個判斷要連續成立 holdRounds 次才動手 ----
+               兩種材料都是「攢一批、一次花光」的用法，庫存本身在跳，
+               單看一拍的比值會每 5 分鐘翻一次面。實測 seed20260903 的日誌：
+               16:50 把碎片熔煉爐裝進 1 號爐、16:55 又換回精粹透鏡，
+               整場 308 次安裝／146 次拆卸，其中大半是這樣來回搬。
+
+               churn 本身不花資源（零件是快照制），但時間平均下來等於沒有微調過——
+               而且熔爐派工取負載最少者，兩座爐互相讓格子會直接互相抵銷。 */
+            if (!memo.forge) memo.forge = {};
+            var fm = memo.forge[r.id] || (memo.forge[r.id] = { last: null, run: 0, applied: null });
+            if (verdict === fm.last) fm.run++;
+            else { fm.last = verdict; fm.run = 1; }
+            var hold = (typeof rbCfg.holdRounds === 'number') ? Math.max(1, rbCfg.holdRounds) : 3;
+            if (fm.run >= hold) fm.applied = verdict;
+
+            if (fm.applied) {
+              fpShiftTo = fm.applied;
+              fpShift = Math.max(0, Math.floor(Number(rbCfg.shiftSlots) || 0));
+            }
+          }
+        }
+
+        for (var fpi = 0; fpi < fpFur.length; fpi++) {
+          var fu2 = fpFur[fpi];
+          if (!fu2 || fu2.id === undefined) continue;
+          var slots = Math.max(0, Math.floor(Number(fu2.partSlots) || 0));
+          if (!slots) continue;
+          var mine = fpPlan[fpi % fpPlan.length];
+
+          /* 想要的配置：先鋪滿主力零件，再依訊號覆寫前面幾格。 */
+          var want = [];
+          for (var wi = 0; wi < slots; wi++) want.push(mine);
+
+          /* 加速：只在**這一座爐**真的塞車時才換。沒有回堵的爐子加速等於零收益
+             （帶上沒東西可燒），拿產量格去換是純虧。 */
+          var bkCfg = fpCfg.backlog;
+          if (bkCfg && bkCfg.part) {
+            var queued = (fu2.queue ? fu2.queue.length : 0) + (fu2.belt ? fu2.belt.length : 0);
+            if (queued >= (Number(bkCfg.queueAtLeast) || Infinity)) {
+              var bkN = Math.min(slots, Math.max(0, Math.floor(Number(bkCfg.slots) || 0)));
+              for (var bi = 0; bi < bkN; bi++) want[bi] = bkCfg.part;
+            }
+          }
+
+          /* 微調：讓出格子給見底的那一種材料。只有「不是自己主力」的那座爐要讓。 */
+          if (fpShiftTo && fpShift && mine !== fpShiftTo) {
+            var given = 0;
+            for (var si2 = want.length - 1; si2 >= 0 && given < fpShift; si2--) {
+              if (want[si2] !== mine) continue;           // 別動加速格
+              want[si2] = fpShiftTo;
+              given++;
+            }
+          }
+
+          /* ---- 收斂：先拆該拆的，再裝該裝的 ---- */
+          var have = (fu2.parts || []).slice();
+          var need = {};
+          for (var ni = 0; ni < want.length; ni++) need[want[ni]] = (need[want[ni]] || 0) + 1;
+
+          /* uninstallCmd 缺席時退化成「只補空格、不動已裝的」——
+             送 name:undefined 出去會變成一條遊戲不認得的指令，
+             報表上只看得到錯誤計數，看不出是策略少宣告了一個欄位。
+             （policy-keys 的哨兵會擋下這個缺漏，這裡只是不讓它變成髒指令。） */
+          var canDrop = typeof r.uninstallCmd === 'string' && r.uninstallCmd;
+          var drop = [];
+          for (var hi = 0; hi < have.length; hi++) {
+            var hp = have[hi];
+            var keep = false;
+            if (hp && hp.key && need[hp.key] > 0) {
+              /* 快照過期（庫存已有更高階）就拆掉重裝，換得的是整座爐的加成。 */
+              var best = Number(fpOwned[hp.key]);
+              keep = !(best > (Number(hp.tier) || 0));
+            }
+            if (!keep && !canDrop) { need[hp.key] = (need[hp.key] || 0); continue; } // 拆不了：這一格就這樣佔著
+            if (keep) need[hp.key]--;
+            else drop.push(hi);
+          }
+          /* ⚠️ 一定要由大到小送。newForgeUninstallPart 是 splice，
+             先拆小索引會讓後面每一個索引往前位移一格，於是拆錯零件。 */
+          for (var di = drop.length - 1; di >= 0; di--) {
+            out.push({ name: r.uninstallCmd, args: { furnaceId: fu2.id, slotIndex: drop[di] }, ruleId: r.id });
+          }
+          /* 沒有拆的能力時，可裝的上限就是實際空格數，超出的會被遊戲擋下。 */
+          var room = canDrop ? (slots - (have.length - drop.length)) : (slots - have.length);
+
+          /* 裝：剩下的缺口逐個補。裝不裝得成由遊戲判斷（沒有該類型零件會回錯），
+             策略不預判庫存——零件掉落是野外/高塔的事。
+             ⚠️ 拆一定要排在裝前面：格子滿的時候 installPart 直接回「零件格已滿」。 */
+          for (var nk in need) {
+            for (var ai2 = 0; ai2 < need[nk] && room > 0; ai2++, room--) {
+              out.push({ name: r.cmd, args: { furnaceId: fu2.id, partKey: nk }, ruleId: r.id });
+            }
+          }
+        }
+      }
     } else if (r.enchantPriority) {
       /* 依部位可用的附魔類別挑書附上去。
 
@@ -1388,9 +1566,23 @@ function decide(state, policy, memo) {
              差別在於資料來源：舊版的地板是「策略記下來的已知安全關卡」——
              一旦記錯就永遠退不下去。這裡的地板是 equipmentTierLevel 算出來的
              **靜態分段邊界**，與「打不打得動」無關，也不會因為記錯而漂移。
-             跌破它一定更差（掉落裝等退一階），所以它不會造成死鎖，
-             只會把退關限制在同一個裝等分段裡。 */
-          if (tierFloor !== null && tierFloor > floorStage) floorStage = tierFloor;
+             跌破它一定更差（掉落裝等退一階），所以它只會把退關限制在同一段裡。
+
+             ⚠️⚠️ 但上面那句「不會造成死鎖」是錯的，而且錯得很貴。
+             人**正好站在分段底**的時候（gStage === tierFloor），地板等於當前關卡，
+             `gStage > floorStage` 恆為 false——退關永遠送不出去。
+             分段邊界剛好是 EQUIP_TIER_SIZE 的倍數（50/100/150），而角色推關時
+             一定會踩上去，於是那幾關成了吸收態：進得去、出不來。
+
+             實測 sim_ab_forge 8 個 seed：7 個在第 5~18 小時停在關卡 **150 或 100**
+             （兩個都是分段邊界），之後 10 小時只殺 56 隻怪。
+             關卡 150 的怪物防禦 454,009、血量 14,268,860，而角色物攻 33,797——
+             一隻要打 9.5 分鐘。牠們不是打不過，是**打不完**。
+             而 stage.go 整場只送了 22 次，因為地板把它擋掉了。
+
+             站在分段底時，這道地板已經沒有東西可以保護：底下那一段本來就更差，
+             但「更差的掉落」遠好過「每小時 5.6 隻」。所以只在**分段之內**套用它。 */
+          if (tierFloor !== null && tierFloor > floorStage && gStage > tierFloor) floorStage = tierFloor;
           /* ⚠️ 試過在這裡加「不退出當前裝等分段」的地板（tierFloors），實測更差：
              24 小時 × 5 seed，關卡中位數 78 → 50、物攻 4,336 → 716、死亡 11 → 24，
              五個 seed 有三個死鎖在關卡 50。理由就是上面那段註解講的——
