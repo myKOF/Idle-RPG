@@ -814,6 +814,15 @@
                 <div class="tab-desc" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">極速極限決策，最大化資源利用率與試煉衝刺</div>
             </div>
 
+            <!-- 邊際效益版：與「極限玩家」是同一份策略，只有四條規則不同（換裝／洗煉／強化／關卡閘門
+                 改成問評估器要 ΔDPS/ΔEHP）。刻意獨立成一個分頁而不是做成開關——
+                 目前只有極限有 ROI 版，做成開關的話選其他型態勾了會找不到策略檔。
+                 之後每多一份 policy.*.roi.json 就多一個分頁。 -->
+            <div class="profile-tab-btn" id="tab-EXTREME_ROI" onclick="selectProfileUI('EXTREME_ROI')" style="border: 1px solid var(--panel-border); border-radius: 8px; padding: 12px; cursor: pointer; background: var(--input-bg);">
+                <div class="tab-title" style="font-weight: 700; color: var(--accent-purple);">📈 極限玩家（ROI）</div>
+                <div class="tab-desc" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">邊際效益導向：敗因診斷、ΔDPS 選詞條、裝等分段感知</div>
+            </div>
+
             <div class="profile-tab-btn" id="tab-LATEGAME" onclick="selectProfileUI('LATEGAME')" style="border: 1px solid var(--panel-border); border-radius: 8px; padding: 12px; cursor: pointer; background: var(--input-bg);">
                 <div class="tab-title" style="font-weight: 700; color: var(--accent-rose);">⚡ 後期轉生測試 <span>(GM前置)</span></div>
                 <div class="tab-desc" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">GM 墊出轉生，專門驗證天賦與神鑄熔爐</div>
@@ -1731,7 +1740,7 @@
        ⚠️ 這份是給人看的文案，不是模擬的依據——模擬吃的一律是策略檔裡那個值。
        兩邊不同步只會讓提示文字說錯話，不會讓模擬跑錯；真正的數字一律以
        run_summary.json 的 schedule 為準（下面的對照表就是讀它）。 */
-    const PROFILE_DAILY_HOURS = { LIGHT: 2, MODERATE: 4, HEAVY: 8, EXTREME: 24 };
+    const PROFILE_DAILY_HOURS = { LIGHT: 2, MODERATE: 4, HEAVY: 8, EXTREME: 24, EXTREME_ROI: 24 };
 
     /* 「模擬總時長」對有作息的型態是牆鐘時間（含離線），不是玩的時數。
        不講清楚的話，使用者會把輕度玩家 100 小時讀成「玩了 100 小時」，
@@ -1769,7 +1778,7 @@
 
     function selectProfileUI(profileKey) {
         currentSelectedProfile = profileKey;
-        const tabs = ['LIGHT', 'MODERATE', 'HEAVY', 'EXTREME', 'LATEGAME'];
+        const tabs = ['LIGHT', 'MODERATE', 'HEAVY', 'EXTREME', 'EXTREME_ROI', 'LATEGAME'];
         tabs.forEach(t => {
             const el = document.getElementById('tab-' + t);
             if (el) {
@@ -1791,6 +1800,7 @@
             else if (profileKey === 'MODERATE') hoursInput.value = 72;
             else if (profileKey === 'HEAVY') hoursInput.value = 100;
             else if (profileKey === 'EXTREME') hoursInput.value = 500;
+            else if (profileKey === 'EXTREME_ROI') hoursInput.value = 500;
             else if (profileKey === 'LATEGAME') hoursInput.value = 2;
         }
         updateHoursHint();
@@ -1804,6 +1814,9 @@
             case 'MODERATE': return 'scripts/sim/policy.moderate.json';
             case 'HEAVY': return 'scripts/sim/policy.heavy.json';
             case 'EXTREME': return 'scripts/sim/policy.extreme.json';
+            /* 與 EXTREME 是同一份策略，只有四條規則不同（換裝／洗煉／強化／關卡閘門）。
+               要做 A/B 就用這兩個分頁跑同一個 seed 與同一個時長。 */
+            case 'EXTREME_ROI': return 'scripts/sim/policy.extreme.roi.json';
             case 'LATEGAME': return 'scripts/sim/policy.lategame.json';
             default: return 'scripts/sim/policy.default.json';
         }

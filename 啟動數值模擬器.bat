@@ -20,7 +20,14 @@ rem already up and open the browser straight into a 404 with no clue why.
 rem So we verify identity via /__whoami, and the server itself walks up to the
 rem next free port and writes its choice to sim_server.port.
 set PORTFILE=sim_server.port
-set MARK=idle-rpg-sim-server
+rem The identity mark must include the directory being served.  All five parallel
+rem worktrees (claude/codex/antigravity/develop/production) ship this same launcher,
+rem so a bare project name makes them indistinguishable.  Launching from claude while
+rem the develop copy had a server up made this script report "already running" and
+rem open the develop dashboard -- you end up testing code you did not change.
+rem %CD% is this file own directory (see the cd /d at the top) and matches the ROOT
+rem the server reports via /__whoami.
+set MARK=idle-rpg-sim-server %CD%
 set LOG=sim_server.log
 set PORT=28342
 
@@ -82,5 +89,5 @@ exit /b 0
 
 rem ---- probe <port> : errorlevel 0 only when OUR server answers there ----
 :probe
-curl -s --max-time 1 http://127.0.0.1:%~1/__whoami 2>nul | find "%MARK%" > nul
+curl -s --max-time 1 http://127.0.0.1:%~1/__whoami 2>nul | find /i "%MARK%" > nul
 exit /b %errorlevel%
