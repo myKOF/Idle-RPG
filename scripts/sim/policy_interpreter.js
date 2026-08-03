@@ -1946,6 +1946,25 @@ function decide(state, policy, memo) {
       if (!memo.deficitTries) memo.deficitTries = {};
       var targets = policy.targets || [];
 
+      /* ⚠️ 同一個決策點裡，一件裝備只能被洗一次。
+
+         沒有這道協調時，多個目標會**擠在同一件裝備上**，而且各自挑到同一條犧牲品
+         （犧牲品的定義是「第一條不是目標、也不是太古的詞條」，對同一件裝備必然相同）。
+         第一條指令洗掉它之後，後面每一條都會被遊戲回「找不到指定的屬性」。
+
+         實測（6 遊戲小時、seed 20260908）：
+           reroll-for-deficit 送出 61 次、成功 30 次，**31 次（51%）是這個原因**。
+           memo.deficitTries 更直接：jewelXpBonus 28 次有效洗煉全部落在 ring，
+           jewelLoot 27 次也全部落在 ring，jewelGemEff 一次都沒被服務到——
+           三個目標搶同一件戒指，而 ring2 與項鍊整場沒被碰過。
+
+         而 xpBonus／loot／gemEff 這三條詞條**同一件裝備各只能有一條**
+         （AFFIX_POOL 的 slots 是 ring/amulet，minR 4），所以「三個目標擠一件」
+         在結構上永遠湊不滿——實測 8 個 seed 的 xpBonus 全部是 0 條。
+
+         改成一件裝備一拍只服務一個目標，三個目標自然散到 ring／ring2／項鍊上。 */
+      var deficitUsed = {};
+
       for (var ti = 0; ti < targets.length; ti++) {
         var tg2 = targets[ti];
         if (!tg2 || !tg2.affixKey) continue;
@@ -2022,6 +2041,7 @@ function decide(state, policy, memo) {
           var itB = dEquip[slotKey2];
           if (!itB || !itB.id || !itB.affixes || !itB.affixes.length) continue;
           if ((itB.rarity || 0) < (dCfg.minRarity || 0)) continue;
+          if (deficitUsed[itB.id]) continue;                  // 這一拍已經有別的目標在洗它了
 
           var hasIt = false;
           for (var a2 = 0; a2 < itB.affixes.length; a2++) {
@@ -2062,6 +2082,7 @@ function decide(state, policy, memo) {
           }
           if (!victim) continue;
 
+          deficitUsed[itB.id] = true;
           out.push({ name: r.cmd, args: { itemId: itB.id, affixKey: victim }, ruleId: r.id });
           break;                                              // 一次只專注一個部位
         }
@@ -2148,14 +2169,29 @@ function decide(state, policy, memo) {
         epSlots.sort();
 
         var epQuota = (typeof epCfg.maxPerDecision === 'number') ? epCfg.maxPerDecision : 13;
+        /* ⚠️ 同一件背包裝備不得同時被送去兩個部位。
+
+           評估器是**逐部位獨立**精算的，所以一只好戒指必然同時成為 ring 與 ring2
+           的最佳候選（武器主副手同理）。兩條指令都送出去的話，遊戲會先把它裝到
+           ring、再把同一件裝到 ring2——舊的 equipItem 不檢查，兩個欄位就指向同一個
+           物件，存檔寫成兩份、讀回來變成兩個共用 id 的獨立物件，那件裝備從此
+           不能強化／洗煉／卸下（resolveItem 回「ambiguous item id」）。
+
+           實測 84 個模擬存檔有 74 個含重複 id。遊戲端已改成「移動」語意
+           （js/player.js equipItem），但策略也不該送這種指令——第二條必然是
+           把第一條的成果搬走，等於白花一個決策額度。
+           舊的 bestPerSlot 規則本來就有這道 used 去重，換成評估器時漏掉了。 */
+        var epUsed = {};
         for (var epi = 0; epi < epSlots.length && epQuota > 0; epi++) {
           var ep = epTable[epSlots[epi]];
           if (!ep || !ep.itemId || !ep.worth) continue;
+          if (epUsed[ep.itemId]) continue;
           /* 額外的最低增幅門檻。評估器的 worth 已經扣掉插槽與強化成本，
              這裡是策略自己再加一道——換裝會讓寶石與附魔重來一輪，
              增幅太小的話換來換去的間接成本大於帳面收益。 */
           if (typeof epCfg.minGainPct === 'number' && ep.gain < epCfg.minGainPct) continue;
           epQuota--;
+          epUsed[ep.itemId] = true;
           out.push({ name: r.cmd, args: { itemId: ep.itemId, slotKey: epSlots[epi] }, ruleId: r.id });
         }
       }

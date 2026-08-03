@@ -324,6 +324,38 @@ function assertInvariants(view, stats) {
     if (typeof v === 'number' && v < 0) bad.push(`${k} 為負：${v}`);
   }
   if (stats && !(stats.atk > 0 || stats.matk > 0)) bad.push('面板攻擊力為 0');
+
+  /* ---- 同一個 item id 不得出現在兩個地方 ----
+
+     為什麼要有這一條：這個問題存在很久（最舊的批次存檔就有），而且**全程回 ok**。
+     實測 84 個模擬存檔有 74 個含重複 id，單一存檔中位數 2~19 組。
+
+     成因是 equipItem 讓同一個物件同時佔兩個欄位（戒指與武器各有主副兩欄），
+     接著 item.unequip 只清掉找到的第一個欄位就 break、把它 addToInventory，
+     於是背包與裝備欄同時持有；下一次換裝再 addToInventory 一次，背包裡就兩份。
+
+     後果不是只有屬性算兩次：存檔序列化把同一個物件寫成兩份、讀回來是兩個共用 id
+     的獨立物件，之後 resolveItem 一律回「ambiguous item id」——那件裝備從此
+     不能強化、不能洗煉、也不能卸下，而且畫面上完全正常。
+
+     成本：背包上限 1000 件，這裡是每個快照點跑一次（不是每個 tick），
+     建一個 Set 的代價可以忽略。 */
+  const seenIds = new Map();
+  const dupes = [];
+  const noteId = (it, where) => {
+    if (!it || !it.id) return;
+    const prev = seenIds.get(it.id);
+    if (prev !== undefined) {
+      if (dupes.length < 5) dupes.push(`${it.id}（${prev} 與 ${where}）`);
+    } else seenIds.set(it.id, where);
+  };
+  const G = engine.ctx.G;
+  for (const k in (G.equipment || {})) noteId(G.equipment[k], '裝備:' + k);
+  const inv = G.inventory || [];
+  for (let i = 0; i < inv.length; i++) noteId(inv[i], '背包[' + i + ']');
+  if (dupes.length) {
+    bad.push(`同一個 item id 出現在多處（${dupes.length}${dupes.length >= 5 ? '+' : ''} 組）：` + dupes.join('、'));
+  }
   
   // 移植：第 30 秒起 DPS 必須大於 0
   const dps = engine.ctx.currentDps ? engine.ctx.currentDps() : 0;
