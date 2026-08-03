@@ -570,7 +570,109 @@ function evalEquippedAffixValue(foe, base, slotKeys) {
 
    兩者都是**有界**的懲罰，不是否決。docs/SIM_HARNESS.md 記過教訓：
    任何「條件不滿足就永久改變行為」的規則都會變成死鎖。 */
-function evalSlotUpgrades(foe, base, cfg) {
+/* ---- 粗篩：整份背包只評分一次 ----
+
+   精算一次要一次 computeStats，300 件背包 × 13 個部位全精算是 3,900 次。
+   用遊戲的 itemScore 粗篩之後只剩 topN × 13 次。
+
+   ⚠️ itemScore 一定要**先算好放進表裡**，不能寫在 sort 的比較函式裡。
+   比較函式每次比較都會呼叫兩次，13 個部位各排一次序＝上千次重複計算，
+   而 itemScore 內部要遍歷詞條、寶石、附魔。這一行的差別實測是整個面板
+   74 ms → 個位數 ms。
+
+   itemScore 已經含裝等與強化倍率（js/formula.js:1546），是個夠好的粗篩器——
+   它只是不夠格當**最終**裁判：它看不到對手的閃避、抗性與敵種，
+   而那正是「這件裝備對**現在這隻怪**強不強」的關鍵。
+
+   拆成獨立函式是因為換裝精算與死庫存判定用的是**同一份**掃描結果——
+   掃兩次的話不只是慢一倍，兩邊的分數還可能因為中間有人動過背包而不一致。 */
+/* ---- 掃描結果的跨規劃快取 ----
+
+   背包裡的裝備在**待在背包的期間是不動的**：強化、洗煉、鑲嵌、附魔的對象都是
+   身上那套，掉落是新物件，穿上去就離開背包。所以同一件東西的複本、可用部位與
+   評分每 15 秒重算一次是純浪費——而這一項的成本與背包件數成正比，
+   正是「愈到後面愈慢」的來源（策略會把背包上限一路買到 1000 格）。
+
+   實測（深局 0.25 遊戲小時）：背包 850 件時 5.6s → 4.2s，270 件時 3.1s → 2.7s，
+   兩邊的存檔雜湊都完全相同。
+
+   ⚠️ 失效判斷用**物件識別**，不是「記得在改東西的時候去清快取」——
+   後者漏一個寫入點就會靜靜沿用舊分數。這裡把 itemScore 讀到的每一個可變輸入
+   都記下來比對：強化等級／稀有度／裝等是純量，詞條、寶石、附魔、傳奇特效、
+   神鑄特效則比對**陣列與每一個元素的識別**。遊戲改這些東西的方式一律是
+   換掉物件或換掉整個陣列（rerollSingleAffix 指派新物件、rerollItemAffixes 重建陣列、
+   鑲嵌是 sockets[i] = gem、附魔是 push），所以識別比對抓得到全部。
+   比對成本是十來次指標比較，itemScore 則要走完詞條、寶石、附魔三圈。 */
+var _evalBagCache = new WeakMap();
+
+function evalRefsChanged(prev, now) {
+  if (prev === now) return false;                 // 同一個陣列（或都是 undefined）
+  if (!prev || !now || prev.length !== now.length) return true;
+  for (var i = 0; i < prev.length; i++) if (prev[i] !== now[i]) return true;
+  return false;
+}
+
+function evalBagEntryFresh(hit, raw) {
+  var fp = hit.fp;
+  if (fp.upgrade !== (raw.upgrade || 0) || fp.rarity !== raw.rarity || fp.level !== raw.level) return false;
+  if (fp.passive !== raw.passive || fp.enchant !== raw.enchant) return false;
+  if (evalRefsChanged(fp.affixes, raw.affixes)) return false;
+  if (evalRefsChanged(fp.sockets, raw.sockets)) return false;
+  if (evalRefsChanged(fp.enchants, raw.enchants)) return false;
+  if (evalRefsChanged(fp.godPassives, raw.godPassives)) return false;
+  return true;
+}
+
+function evalBagFingerprint(raw) {
+  return {
+    upgrade: raw.upgrade || 0, rarity: raw.rarity, level: raw.level,
+    passive: raw.passive, enchant: raw.enchant,
+    /* 存快照而不是存原陣列：原陣列若被就地 push（附魔）或改元素（鑲嵌），
+       存原參照會連快照一起變，比對就永遠相等。 */
+    affixes: raw.affixes ? raw.affixes.slice() : raw.affixes,
+    sockets: raw.sockets ? raw.sockets.slice() : raw.sockets,
+    enchants: raw.enchants ? raw.enchants.slice() : raw.enchants,
+    godPassives: raw.godPassives ? raw.godPassives.slice() : raw.godPassives
+  };
+}
+
+function evalBagSweep() {
+  var inv = (typeof G !== 'undefined' && G && Array.isArray(G.inventory)) ? G.inventory : [];
+  var safe = [], score = {};
+  for (var i0 = 0; i0 < inv.length; i0++) {
+    var raw = inv[i0];
+    /* locked 與非裝備一律不進來。死庫存清單也是從這裡長出來的，而
+       js/worker/sim.worker.js 的 item.salvage **不檢查 locked**——
+       鎖定保護在這一行，漏掉就會把玩家鎖起來的東西拆掉。 */
+    if (!raw || raw.locked || raw.kind !== 'equip') continue;
+
+    var hit = _evalBagCache.get(raw);
+    if (hit && evalBagEntryFresh(hit, raw)) {
+      score[hit.item.id] = hit.score;
+      safe.push(hit.item);
+      continue;
+    }
+    /* 從這裡開始都是複本。理由見 evalSafeItem——itemScore 會就地正規化
+       舊格式的附魔欄位，直接餵真實物品會改到存檔。 */
+    var cp0 = evalSafeItem(raw);
+    cp0.__slots = equipSlotsForItem(cp0) || [];
+    var sc = itemScore(cp0);
+    score[cp0.id] = sc;
+    safe.push(cp0);
+    _evalBagCache.set(raw, { fp: evalBagFingerprint(raw), item: cp0, score: sc });
+  }
+  return { safe: safe, score: score };
+}
+
+/* 決定論的候選排序：分數高的在前，分數相同時以 id 決勝，不讓背包順序影響結果。 */
+function evalRankCandidates(cands, score) {
+  return cands.sort(function (a, b) {
+    var d = score[b.id] - score[a.id];
+    return d !== 0 ? d : (a.id < b.id ? -1 : (a.id > b.id ? 1 : 0));
+  });
+}
+
+function evalSlotUpgrades(foe, base, cfg, sweep) {
   cfg = cfg || {};
   var out = {};
   if (!foe || !base) return out;
@@ -580,32 +682,9 @@ function evalSlotUpgrades(foe, base, cfg) {
   var upgradeGuard = (typeof cfg.upgradeGuardPctPerLevel === 'number') ? cfg.upgradeGuardPctPerLevel : 0.5;
 
   var eq = (typeof G !== 'undefined' && G) ? (G.equipment || {}) : {};
-  var inv = (typeof G !== 'undefined' && G && Array.isArray(G.inventory)) ? G.inventory : [];
 
-  /* ---- 粗篩：整份背包只評分一次 ----
-
-     精算一次要一次 computeStats，300 件背包 × 13 個部位全精算是 3,900 次。
-     用遊戲的 itemScore 粗篩之後只剩 topN × 13 次。
-
-     ⚠️ itemScore 一定要**先算好放進表裡**，不能寫在 sort 的比較函式裡。
-     比較函式每次比較都會呼叫兩次，13 個部位各排一次序＝上千次重複計算，
-     而 itemScore 內部要遍歷詞條、寶石、附魔。這一行的差別實測是整個面板
-     74 ms → 個位數 ms。
-
-     itemScore 已經含裝等與強化倍率（js/formula.js:1546），是個夠好的粗篩器——
-     它只是不夠格當**最終**裁判：它看不到對手的閃避、抗性與敵種，
-     而那正是「這件裝備對**現在這隻怪**強不強」的關鍵。 */
-  var safe = [], score = {};
-  for (var i0 = 0; i0 < inv.length; i0++) {
-    var raw = inv[i0];
-    if (!raw || raw.locked || raw.kind !== 'equip') continue;
-    /* 從這裡開始都是複本。理由見 evalSafeItem——itemScore 會就地正規化
-       舊格式的附魔欄位，直接餵真實物品會改到存檔。 */
-    var cp0 = evalSafeItem(raw);
-    cp0.__slots = equipSlotsForItem(cp0) || [];
-    score[cp0.id] = itemScore(cp0);
-    safe.push(cp0);
-  }
+  sweep = sweep || evalBagSweep();
+  var safe = sweep.safe, score = sweep.score;
 
   var twoHanded = !!(typeof isTwoHandItem === 'function' && eq.weapon && isTwoHandItem(eq.weapon));
 
@@ -623,12 +702,7 @@ function evalSlotUpgrades(foe, base, cfg) {
       cands.push(it);
     }
     if (!cands.length) continue;
-    cands.sort(function (a, b) {
-      var d = score[b.id] - score[a.id];
-      /* 決定論：分數相同時以 id 決勝，不讓背包順序影響結果。 */
-      return d !== 0 ? d : (a.id < b.id ? -1 : (a.id > b.id ? 1 : 0));
-    });
-    cands = cands.slice(0, topN);
+    cands = evalRankCandidates(cands, score).slice(0, topN);
 
     var cur = eq[slotKey] || null;
     var curSockets = cur && cur.sockets ? cur.sockets.length : 0;
@@ -691,6 +765,78 @@ function evalSlotUpgrades(foe, base, cfg) {
     }
   }
   return out;
+}
+
+/* ---- 死庫存：在每一個穿得上的部位都排不進前 K 名的裝備 ----
+
+   ---- 為什麼要有這個 ----
+
+   背包**唯一**會被清空的時機是策略的壓力閥（salvage-when-bag-full），
+   而它的判斷式是「件數 / 上限 ≥ 0.9」——用的是**比例**。於是背包件數的均衡點
+   由上限決定：上限 325 就填到約 290 才清，而策略會一路把上限買到 1000。
+   實測 20 小時的背包是鋸齒狀的 41→184→58→…→267，平均約 150 件。
+
+   那條規則的目的其實不是管理背包，它自己的註解寫得很清楚：防止掉落管線回堵。
+   「背包平常該維持多小」這件事**從來沒有被設計過**——這是缺口，不是決定。
+   而真人玩家不是這樣玩的：垃圾一進來就拆，只留幾件真的會考慮的。
+
+   ---- 判準為什麼是「排不進前 K 名」而不是「品質／太古數比身上差」 ----
+
+   直覺的判準是「同部位同品質、太古數沒比較多就拆」。實測那會在**裝等分段邊界**
+   出事：R5 裝等 100 帶 1 條太古的一件合計 4,985，而 R5 裝等 150 完全沒有太古的
+   是 6,635（強 33%）——跨過關卡 150 之後掉落的裝等從 100 跳到 150，
+   那條規則會在掉落的瞬間把強 33% 的東西拆掉。這正是 docs/SIM_HARNESS.md
+   記過兩次的形狀：把「通常成立的偏好」寫成了「永遠成立的否決」。
+
+   改成問遊戲：itemScore 是遊戲自己的那把尺（背包滿載捨弱留強用的就是它），
+   裝等與強化倍率本來就含在裡面，所以跨分段會自動排對。
+
+   而且這個判準與換裝決策是**對齊**的：evalSlotUpgrades 只精算每個部位前
+   candidatesPerSlot（預設 2）名，排在 K 名之外的候選本來就永遠不會被精算到。
+   K 取得比 2 大（預設 5）是留給「前面幾件被穿走之後名次往上遞補」的餘裕。
+
+   ⚠️ 兩件不能省的事：
+     - locked 與非裝備不會出現在這裡（evalBagSweep 就擋掉了），而遊戲的
+       item.salvage **不檢查 locked**——那道保護只有這一層。
+     - 清單長度有上限（maxPerRefresh），截斷數量如實回報在 total／truncated。
+       不做無聲截斷：看報表的人必須看得出來「還有幾百件沒列出來」。 */
+function evalDeadStock(sweep, cfg) {
+  if (!cfg) return null;                 // 沒宣告＝機制關閉，行為與改造前完全相同
+  var keepPerSlot = (typeof cfg.keepPerSlot === 'number') ? Math.max(0, cfg.keepPerSlot) : 5;
+  var maxPerRefresh = (typeof cfg.maxPerRefresh === 'number') ? Math.max(0, cfg.maxPerRefresh) : 50;
+
+  var safe = sweep.safe, score = sweep.score;
+  var keep = {};
+
+  for (var s = 0; s < SLOT_LIST.length; s++) {
+    var slotKey = SLOT_LIST[s];
+    var cands = [];
+    for (var i = 0; i < safe.length; i++) {
+      if (safe[i].__slots.indexOf(slotKey) >= 0) cands.push(safe[i]);
+    }
+    if (!cands.length) continue;
+    var ranked = evalRankCandidates(cands, score);
+    for (var r = 0; r < ranked.length && r < keepPerSlot; r++) keep[ranked[r].id] = true;
+  }
+
+  var dead = [];
+  for (var j = 0; j < safe.length; j++) {
+    if (keep[safe[j].id]) continue;
+    dead.push({ id: safe[j].id, score: score[safe[j].id], rarity: safe[j].rarity, level: safe[j].level });
+  }
+  /* 先拆分數最低的：截斷時留下來的才是「最接近會被選中」的那一批。 */
+  dead.sort(function (a, b) {
+    var d = a.score - b.score;
+    return d !== 0 ? d : (a.id < b.id ? -1 : (a.id > b.id ? 1 : 0));
+  });
+
+  return {
+    items: dead.slice(0, maxPerRefresh),
+    total: dead.length,
+    truncated: Math.max(0, dead.length - maxPerRefresh),
+    bagCount: safe.length,
+    keepPerSlot: keepPerSlot
+  };
 }
 
 /* ---- 裝等分段展望：為什麼「往前推一關」有時值 28 倍 ----
@@ -842,6 +988,77 @@ function buildEvalCombatPanel() {
   };
 }
 
+/* ---- 規劃期間的詞條數值記憶化 ----
+
+   為什麼需要：一次規劃要跑約 47 次 computeStats，而每一次都把**全身十三個部位的
+   每一條詞條**從頭算一遍——其中十二個部位在這 47 次之間一個位元都沒變
+   （evalEquipmentWith 只換掉被探的那一格，其餘直接沿用 G.equipment 的同一個物件）。
+   實測 affixValue 與它底下的 affixBaseValue 合計佔 headless 總 CPU 的 16%，
+   而其中絕大多數是同一條詞條被重算了 47 次。
+
+   ---- 為什麼放在這裡而不是 js/formula.js ----
+
+   第一版就是改在 formula.js 的，被既有測試擋下來，而且擋得對：
+   tests/affix-roll-storage.test.cjs 的「調整參數表的基礎值／成長基礎值後，
+   同一強度值算出新數值」會**就地改 AFFIX_POOL.atkFlat.base** 再要求數值跟著變——
+   參數調整回溯生效到舊存檔是設計要求，一個永久快取會靜靜違背它。
+   （另外重排 affixBaseValue 的內文還會讓 apply_params 的錨點對不上那幾格。）
+
+   放在規劃區塊裡就沒有這個問題：安裝與卸載夾住的這一段是**純讀取**的——
+   evalSafeItem 保證流進遊戲函式的都是複本，AFFIX_POOL 更不會在這中間被改。
+   離開這一段就還原成遊戲原本的函式，任何參數調整下一次規劃立刻反映。
+
+   ⚠️ 卸載一定要走 finally。留著沒卸載的話，快取就變成整場有效——
+   那正是上面那條測試在防的事，而且不會有任何錯誤訊息。 */
+var _evalMemoDepth = 0;
+var _evalMemoOrig = null;
+
+function evalMemoInstall() {
+  if (_evalMemoDepth++ > 0) return;
+  _evalMemoOrig = { affixBaseValue: affixBaseValue, affixValue: affixValue };
+  var baseCache = new Map();
+  var valCache = new WeakMap();
+  var origBase = _evalMemoOrig.affixBaseValue;
+  var origVal = _evalMemoOrig.affixValue;
+
+  affixBaseValue = function (key, itemLevel, rarityIdx) {
+    var ck = key + '|' + itemLevel + '|' + rarityIdx;
+    var hit = baseCache.get(ck);
+    if (hit !== undefined) return hit;
+    var v = origBase(key, itemLevel, rarityIdx);
+    baseCache.set(ck, v);
+    return v;
+  };
+
+  /* 指紋涵蓋原函式讀到的每一個輸入（宿主物件、裝等、稀有度、詞條種類、強度值、
+     太古旗標），任何一項對不上就重算。宿主用物件識別比對而不是逐欄比對，
+     因為雙手武器倍率是由宿主的 slot / weaponType 決定的，那兩欄不會就地改。 */
+  affixValue = function (it, a) {
+    if (!a || typeof a !== 'object') return origVal(it, a);
+    /* 缺 roll 的舊格式走原路徑：那條路徑讀的是 a.val，不在指紋裡，也會就地改寫 a。 */
+    if (a.roll === undefined || a.roll === null) return origVal(it, a);
+    var lv = it ? it.level : 1;
+    var ra = it ? it.rarity : 0;
+    var hit = valCache.get(a);
+    if (hit !== undefined && hit.it === it && hit.lv === lv && hit.ra === ra &&
+        hit.key === a.key && hit.roll === a.roll && hit.anc === a.ancient) {
+      return hit.v;
+    }
+    var v = origVal(it, a);
+    valCache.set(a, { it: it, lv: lv, ra: ra, key: a.key, roll: a.roll, anc: a.ancient, v: v });
+    return v;
+  };
+}
+
+function evalMemoUninstall() {
+  if (--_evalMemoDepth > 0) return;
+  _evalMemoDepth = 0;
+  if (!_evalMemoOrig) return;
+  affixBaseValue = _evalMemoOrig.affixBaseValue;
+  affixValue = _evalMemoOrig.affixValue;
+  _evalMemoOrig = null;
+}
+
 function buildEvalPanel(params) {
   params = params || {};
   if (typeof G === 'undefined' || !G) return null;
@@ -873,6 +1090,13 @@ function buildEvalPanel(params) {
       affixRoi: {},
       equippedAffixes: {},
       slotUpgrades: {},
+      /* 機制沒開就是 null（與正常回傳一致）；開了就給一個空的同形物件，
+         否則「剛死、正在復活、剛過關」這些沒有對手的決策點會讓
+         panels.eval.deadStock.items 解析失敗，把 BAD_PATHS 灌成雜訊——
+         上面那段註解記的就是這個坑，不要再犯第二次。 */
+      deadStock: params.deadStock
+        ? { items: [], total: 0, truncated: 0, bagCount: 0, keepPerSlot: 0 }
+        : null,
       model: MODEL_NOTES
     };
   }
@@ -895,31 +1119,42 @@ function buildEvalPanel(params) {
   var refreshSec = (typeof params.refreshSec === 'number') ? params.refreshSec : 15;
   var nowGt = (typeof GT === 'number') ? GT : 0;
   if (!evalPlanCache || refreshSec <= 0 || (nowGt - evalPlanCache.at) >= refreshSec || nowGt < evalPlanCache.at) {
-    /* ancientProbeTop：替前幾名的詞條補算「洗在太古位置上」的增幅。
-       0 = 關掉（面板不給太古欄位，策略會退回一般分數，保守但不會高估）。 */
-    var affixRoi = evalAffixRoi(params.affixKeys || [], foe, base, params.ancientProbeTop);
+    /* 這一整段是純讀取的（流進遊戲函式的裝備一律先過 evalSafeItem），
+       所以詞條數值在這中間不可能變——見 evalMemoInstall 的說明。 */
+    evalMemoInstall();
+    try {
+      /* ancientProbeTop：替前幾名的詞條補算「洗在太古位置上」的增幅。
+         0 = 關掉（面板不給太古欄位，策略會退回一般分數，保守但不會高估）。 */
+      var affixRoi = evalAffixRoi(params.affixKeys || [], foe, base, params.ancientProbeTop);
 
-    /* 只對 ROI 前幾名建議的宿主部位探「身上這條詞條值多少」——
-       洗煉規則只會用到那幾個，全身探是白花錢。 */
-    var probeSlots = [];
-    if (params.probeEquippedAffixes) {
-      var ranked = [];
-      for (var rk in affixRoi) if (affixRoi[rk]) ranked.push(affixRoi[rk]);
-      ranked.sort(function (a, b) {
-        return (b.dOffPct + b.dEhpPct) - (a.dOffPct + a.dEhpPct);
-      });
-      var topSlots = (typeof params.probeTopSlots === 'number') ? params.probeTopSlots : 3;
-      for (var ri2 = 0; ri2 < ranked.length && probeSlots.length < topSlots; ri2++) {
-        if (probeSlots.indexOf(ranked[ri2].slotKey) < 0) probeSlots.push(ranked[ri2].slotKey);
+      /* 只對 ROI 前幾名建議的宿主部位探「身上這條詞條值多少」——
+         洗煉規則只會用到那幾個，全身探是白花錢。 */
+      var probeSlots = [];
+      if (params.probeEquippedAffixes) {
+        var ranked = [];
+        for (var rk in affixRoi) if (affixRoi[rk]) ranked.push(affixRoi[rk]);
+        ranked.sort(function (a, b) {
+          return (b.dOffPct + b.dEhpPct) - (a.dOffPct + a.dEhpPct);
+        });
+        var topSlots = (typeof params.probeTopSlots === 'number') ? params.probeTopSlots : 3;
+        for (var ri2 = 0; ri2 < ranked.length && probeSlots.length < topSlots; ri2++) {
+          if (probeSlots.indexOf(ranked[ri2].slotKey) < 0) probeSlots.push(ranked[ri2].slotKey);
+        }
       }
-    }
 
-    evalPlanCache = {
-      at: nowGt,
-      affixRoi: affixRoi,
-      equippedAffixes: evalEquippedAffixValue(foe, base, probeSlots),
-      slotUpgrades: evalSlotUpgrades(foe, base, params.slotUpgrades)
-    };
+      /* 換裝精算與死庫存判定共用同一份背包掃描：掃兩次不只是慢一倍，
+         兩邊的分數還可能不一致。 */
+      var sweep = evalBagSweep();
+      evalPlanCache = {
+        at: nowGt,
+        affixRoi: affixRoi,
+        equippedAffixes: evalEquippedAffixValue(foe, base, probeSlots),
+        slotUpgrades: evalSlotUpgrades(foe, base, params.slotUpgrades, sweep),
+        deadStock: evalDeadStock(sweep, params.deadStock)
+      };
+    } finally {
+      evalMemoUninstall();
+    }
   }
 
   return {
@@ -937,6 +1172,10 @@ function buildEvalPanel(params) {
     affixRoi: evalPlanCache.affixRoi,
     equippedAffixes: evalPlanCache.equippedAffixes,
     slotUpgrades: evalPlanCache.slotUpgrades,
+    /* 死庫存清單。null＝策略沒宣告 deadStock，這個機制整場關閉。
+       ⚠️ 這份清單的年齡與規劃相同（planAgeSec）——已經被拆掉的 id 會在
+       下一次刷新前留在清單上，重送只會被遊戲回「該裝備不在背包中」，無害。 */
+    deadStock: evalPlanCache.deadStock,
     model: MODEL_NOTES
   };
 }
