@@ -491,6 +491,12 @@ if (scheduleDeclared && IGNORE_SCHEDULE) {
 const observeEvery = OBSERVE_EVERY !== null ? OBSERVE_EVERY : (policy.observeEverySec || 1);
 const observePanels = policy.observePanels || [];
 
+/* 建面板時要傳的參數（策略宣告，見 scripts/sim/policy.js 的 assertPanelParams）。
+   沒宣告就是 undefined＝遊戲的預設行為，與這項改造之前完全相同。 */
+function panelParamsFor(name) {
+  return (policy.panelParams && policy.panelParams[name]) || undefined;
+}
+
 /* 邊際效益評估器的參數（要評估哪些詞條、每個部位精算幾個候選）。
    由策略宣告、引擎執行——策略拿不到遊戲函式，算不了 ROI；引擎不該決定要算什麼。
    沒宣告就是空的，panels.eval 仍然會建，只是 affixRoi 是空表。 */
@@ -556,7 +562,7 @@ try {
           engine.step(chunk);
           left -= chunk;
           const oPanels = {};
-          for (const p of observePanels) oPanels[p] = engine.panel(p);
+          for (const p of observePanels) oPanels[p] = engine.panel(p, panelParamsFor(p));
           policy.observe({ view: engine.view(), panels: oPanels, gameTimeSec: engine.gameTimeSec() });
           observations++;
         }
@@ -568,7 +574,7 @@ try {
          它沒有 G、沒有 FIELD、沒有任何遊戲函式，改不了狀態也讀不到內部值。
          面板只建策略宣告要的那幾個——背包面板很大，每次都建會白付序列化成本。 */
       const panels = {};
-      for (const p of policy.needPanels) panels[p] = engine.panel(p);
+      for (const p of policy.needPanels) panels[p] = engine.panel(p, panelParamsFor(p));
       dispatch(policy.decide({ view: engine.view(), panels, gameTimeSec: engine.gameTimeSec() }));
       decisions++;
 
@@ -797,6 +803,10 @@ const summary = {
     separated: observeOn,
     observations: observations
   },
+  /* 面板投影：策略宣告了哪些面板區塊不建。
+     這會改變**策略看得到什麼**，所以必須跟結果一起揭露——不然事後看兩份報表
+     會以為是同一種觀測條件下跑出來的。沒宣告就是 null＝全部照建。 */
+  panelParams: policy.panelParams || null,
   commands: cmdStats,
 
   /* ---- 哨兵：策略靜靜失效的兩種情況 ----
