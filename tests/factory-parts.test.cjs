@@ -53,9 +53,7 @@ function makePart(id, key, tier) {
     id,
     kind: 'part',
     key,
-    tier,
-    name: 'T' + tier + ' ' + def.name,
-    val: def.perTier * tier
+    tier
   };
 }
 
@@ -89,6 +87,7 @@ test('熔爐零件列表每種類只顯示一行，安裝取最高階級與數�
   const html = context.nfPartsListHTML(fu, context.G.factory);
   assert.match(html, /data-nf-partinstall-key="speedGear"/);
   assert.match(html, /T7 加速齒輪/, '應顯示最高階零件名稱');
+  assert.doesNotMatch(html, /undefined/, '零件名稱應由 key/tier 推導，不得顯示 undefined');
   assert.equal((html.match(/data-nf-partinstall-key="speedGear"/g) || []).length, 1, '每種類只一行');
   assert.match(html, /data-nf-partinstall-key="scrapForge"/);
 });

@@ -306,6 +306,8 @@ var WEAPON_CATEGORIES = {
   offHand: { name: '副手武器' }
 };
 var DEFAULT_WEAPON_TYPE = 'sword1h'; // 舊存檔武器補默認類型（僅主手；裝在副手欄的舊武器由存檔整理改補匕首，保持位置合法）
+var TWO_HAND_AFFIX_VALUE_MULT = 1.8;
+var TWO_HAND_EFFECT_VALUE_MULT = 2.0;
 var WEAPON_TYPES = {
   sword1h:      { name: '單手劍',   cat: 'oneHand', hands: 1, slots: ['weapon'], emoji: '🗡️', basenames: ['短劍', '長劍', '騎士劍'] },
   dagger1h:     { name: '單手匕首', cat: 'oneHand', hands: 1, slots: ['weapon', 'weapon2'], emoji: '🔪', basenames: ['小刀', '彎刃匕首', '刺客匕首'] },

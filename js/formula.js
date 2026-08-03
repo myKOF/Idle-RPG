@@ -112,6 +112,7 @@ function computeStats(equipmentOverride) {
   var resist = { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0, ctrl: 0 };
   var passives = {};
   var legendaryEffects = {};
+  var legendaryEffectMults = {};
   var godAttackMultiplier = 1;
   var elemAtk = { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0 };
   // 附魔元素抗性獨立乘區：不併入 resist 加總桶，最後以 其他來源合計 × (1 + 同系附魔合計%) 套用
@@ -147,14 +148,19 @@ function computeStats(equipmentOverride) {
     if (it.passive) {
       passives[it.passive.key] = (passives[it.passive.key] || 0) + passiveValue(it, it.passive);
       var passiveDef = PASSIVE_POOL[it.passive.key];
-      if (passiveDef && passiveDef.legendary) legendaryEffects[it.passive.key] = true;
+      if (passiveDef && passiveDef.legendary) {
+        legendaryEffects[it.passive.key] = true;
+        if (typeof isTwoHandItem === 'function' && isTwoHandItem(it)) {
+          legendaryEffectMults[it.passive.key] = TWO_HAND_EFFECT_VALUE_MULT;
+        }
+      }
     }
     // 神鑄創世專屬特效：屬性型直接併入聚合桶，觸發型併入 passives 供戰鬥掛勾讀取
     if (it.godPassives) {
       it.godPassives.forEach(function (gp) {
         var gd = GODFORGE_POOL[gp.key];
         if (!gd) return;
-        var gv = godPassiveValue(gp);   // 由強度值當場算出（§6）
+        var gv = godPassiveValue(gp, it);   // 由強度值當場算出（§6）
         if (gd.stats) {
           if (gp.key === 'godMight') {
             godAttackMultiplier *= 1 + gv / 100;
@@ -387,6 +393,7 @@ function computeStats(equipmentOverride) {
   if (passives.stun) passives.stun = capValue(passives.stun, STAT_CAPS.stun);
   st.passives = passives;
   st.legendaryEffects = legendaryEffects;
+  st.legendaryEffectMults = legendaryEffectMults;
   st.skillTriggers = skillTriggers; // 45 新技能被動觸發鍵聚合（無已學相關被動時＝空物件）
   st.talent = talent;
   // 5/9 轉元素天賦：攻擊時附加「當次傷害 × 天賦%」的元素傷害（結算於 resolveHit 元素附加段）；
@@ -1329,10 +1336,11 @@ function rollAffixStrength(affixCap) {
   return Math.round(clamp(affixRerollUnit(affixCap), 0, 1) * STRENGTH_ROLL_MAX);
 }
 // 強度值 → 最終詞條值。太古位置不看強度值：必為滿值再乘太古倍率（倍率日後可調且回溯生效）。
-function affixValueFromStrength(key, itemLevel, rarityIdx, roll, ancient) {
+function affixValueFromStrength(key, itemLevel, rarityIdx, roll, ancient, valueMult) {
   var baseV = affixBaseValue(key, itemLevel, rarityIdx);
   if (!baseV) return 0;
   var v = ancient ? baseV * 1.2 * ANCIENT_AFFIX_VALUE_MULT : baseV * strengthMult(roll);
+  v *= Number(valueMult) > 0 ? Number(valueMult) : 1;
   return affixRoundValue(key, v);
 }
 // 最終詞條值 → 強度值（舊存檔換算用）；沒有基準值可推（詞條已下架／等級稀有度不明）時回 0
@@ -1352,7 +1360,10 @@ function affixValue(it, a) {
   if (!a) return 0;
   if (a.roll === undefined || a.roll === null) ensureAffixRoll(it, a);
   if (a.roll === undefined || a.roll === null) return Number(a.val) || 0;
-  return affixValueFromStrength(a.key, it ? it.level : 1, it ? it.rarity : 0, a.roll, a.ancient);
+  var mult = (typeof isTwoHandItem === 'function' && isTwoHandItem(it))
+    ? TWO_HAND_AFFIX_VALUE_MULT : 1;
+  return affixValueFromStrength(a.key, it ? it.level : 1, it ? it.rarity : 0,
+    a.roll, a.ancient, mult);
 }
 /* 就地把舊格式（只有 val）換算為強度值並移除 val；已有 roll 則不動（冪等，可重複讀檔）。
    ⚠️ 換算用的是「現行參數」推出的基準值，所以只有在調整詞條參數**之前**完成換算才精確
@@ -1375,11 +1386,13 @@ function ensureItemAffixRolls(it) {
 }
 
 // 詞條可能範圍（洗煉區間顯示用）：基準值 × 0.8 ~ × 1.2
-function getAffixLimits(key, itemLevel, rarityIdx) {
+function getAffixLimits(key, itemLevel, rarityIdx, item) {
   var baseV = affixBaseValue(key, itemLevel, rarityIdx);
+  var mult = (typeof isTwoHandItem === 'function' && isTwoHandItem(item))
+    ? TWO_HAND_AFFIX_VALUE_MULT : 1;
   return {
-    min: affixRoundValue(key, baseV * 0.8),
-    max: affixRoundValue(key, baseV * 1.2)
+    min: affixRoundValue(key, baseV * 0.8 * mult),
+    max: affixRoundValue(key, baseV * 1.2 * mult)
   };
 }
 
@@ -1399,7 +1412,9 @@ function passiveValue(it, p) {
   if (!p) return 0;
   var r = it ? Number(it.rarity) : NaN;
   if (!PASSIVE_POOL[p.key] || !isFinite(r)) return Number(p.val) || 0;
-  return passiveValueFor(p.key, r);
+  var mult = (typeof isTwoHandItem === 'function' && isTwoHandItem(it))
+    ? TWO_HAND_EFFECT_VALUE_MULT : 1;
+  return Math.round(passiveValueFor(p.key, r) * mult * 10) / 10;
 }
 // 舊存檔的傳奇特效：數值可推導 → 直接丟掉凍結值（冪等）
 function ensurePassiveSource(it, p) {
@@ -1412,12 +1427,14 @@ function ensurePassiveSource(it, p) {
 
 /* ---- 神鑄創世專屬特效數值 ----
    ＝ base × (80% + 強度值/滿值 × 40%)，與詞條同一套強度值刻度。 */
-function godPassiveValue(gp) {
+function godPassiveValue(gp, item) {
   if (!gp) return 0;
   if (gp.roll === undefined || gp.roll === null) ensureGodPassiveSource(gp);
   var d = GODFORGE_POOL[gp.key];
   if (!d || gp.roll === undefined || gp.roll === null) return Number(gp.val) || 0;
-  return Math.round(d.base * strengthMult(gp.roll) * 10) / 10;
+  var mult = (typeof isTwoHandItem === 'function' && isTwoHandItem(item))
+    ? TWO_HAND_EFFECT_VALUE_MULT : 1;
+  return Math.round(d.base * strengthMult(gp.roll) * mult * 10) / 10;
 }
 // 舊存檔的神鑄特效：val → 強度值（冪等）
 function ensureGodPassiveSource(gp) {
