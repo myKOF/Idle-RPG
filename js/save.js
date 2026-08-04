@@ -393,6 +393,30 @@ function migrateSave(data) {
   if (data.player.reincarnations === 10 && hasGodProgress) {
     data.player.reincarnations = 11;
   }
+  // 關卡改造：補齊新地圖進度，並將舊存檔進度限制在各地圖上限內。
+  Object.keys(ZONES).forEach(function (zoneKey) {
+    if (!data.zoneProgress[zoneKey] || typeof data.zoneProgress[zoneKey] !== 'object') {
+      data.zoneProgress[zoneKey] = { current: 1, best: 1 };
+    }
+    var zp = data.zoneProgress[zoneKey];
+    var cap = zoneMaxStage(zoneKey);
+    zp.best = clamp(Math.floor(Number(zp.best) || 1), 1, cap);
+    zp.current = clamp(Math.floor(Number(zp.current) || 1), 1, zp.best);
+  });
+  var savedZoneDef = ZONES[data.stage.zone];
+  var savedZoneUnlocked = !!savedZoneDef &&
+    (!savedZoneDef.reqReincarnation || Number(data.player.reincarnations) >= savedZoneDef.reqReincarnation) &&
+    (!savedZoneDef.reqZone || Number(data.zoneProgress[savedZoneDef.reqZone] && data.zoneProgress[savedZoneDef.reqZone].best) >= savedZoneDef.reqStage);
+  if (!savedZoneUnlocked) {
+    data.stage.zone = 'plains';
+    data.stage.current = data.zoneProgress.plains.current;
+    data.stage.best = data.zoneProgress.plains.best;
+  } else {
+    var currentCap = zoneMaxStage(data.stage.zone);
+    data.stage.best = clamp(Math.floor(Number(data.stage.best) || 1), 1, currentCap);
+    data.stage.current = clamp(Math.floor(Number(data.stage.current) || 1), 1, data.stage.best);
+    data.zoneProgress[data.stage.zone] = { current: data.stage.current, best: data.stage.best };
+  }
   data.player.reincarnationTalentPoints = Math.max(0, Math.floor(Number(data.player.reincarnationTalentPoints) || 0));
   if (!data.player.talents || typeof data.player.talents !== 'object') data.player.talents = { levels: {}, potentialLevels: {} };
   if (!data.player.talents.levels || typeof data.player.talents.levels !== 'object') data.player.talents.levels = {};
@@ -944,7 +968,7 @@ function applyOfflineProgress(options) {
   var st = getStats();
   var kills = offlineKillCount(elapsed, 0); // 潛力技能 V3 起無離線收益加成（舊 potentialOffline 已移除）
   if (kills < 1) return;
-  var stage = offlineStageFor(G.stage.best);
+  var stage = Math.min(zoneMaxStage(G.stage.zone), offlineStageFor(G.stage.best));
   /* 怪物種類由參數表決定（formula.js §10 OFFLINE_ELITE）。掉落倍率一定要跟著同一個
      旗標走，否則調成普通怪之後會變成「普通怪的經驗、菁英怪的掉落倍率」。 */
   var offElite = offlineUsesElite();
@@ -965,12 +989,15 @@ function applyOfflineProgress(options) {
   // 掉落：與 rollFieldDrops 同一套表與倍率（無戰鬥中增益），逐殺單獨擲骰
   var lootBonus = st.loot;
   var dropMult = (1 + lootBonus / 100) * eliteMult;
-  var rates = dropRatesFor(FIELD_DROP_TABLE, m.level);
-  var gemRates = fieldGemDropRatesFor(m.level);
-  var bookRate = FIELD_BOOK_DROP_PCT * (1 + lootBonus / 100) * rw * eliteMult;
-  var essenceRate = ancientEssenceDropChanceForEnemy(m.level) * eliteMult;
-  var dustRate = fieldDustRate(m.level) * eliteMult;
-  var partRate = FIELD_PART_DROP_PCT * (1 + lootBonus / 100) * rw * eliteMult;
+  var zoneDrop = fieldMaterialConfigFor(G.stage.zone, stage);
+  var rates = fieldDropRatesFor(stage, m.level, G.stage.zone);
+  var gemRates = Array.isArray(zoneDrop.gemRates) ? zoneDrop.gemRates : fieldGemDropRatesFor(m.level);
+  var bookBaseRate = zoneDrop.bookRate !== undefined ? Number(zoneDrop.bookRate) : FIELD_BOOK_DROP_PCT;
+  var bookRate = bookBaseRate * (1 + lootBonus / 100) * rw * eliteMult;
+  var essenceRate = (zoneDrop.ancientEssenceRate !== undefined ? Number(zoneDrop.ancientEssenceRate) : ancientEssenceDropChanceForEnemy(m.level)) * eliteMult;
+  var dustRate = (zoneDrop.dustRate !== undefined ? Number(zoneDrop.dustRate) : fieldDustRate(m.level)) * eliteMult;
+  var partBaseRate = zoneDrop.partRate !== undefined ? Number(zoneDrop.partRate) : FIELD_PART_DROP_PCT;
+  var partRate = partBaseRate * (1 + lootBonus / 100) * rw * eliteMult;
 
   var sum = {
     /* 給彈窗顯示用：怪物種類可由參數表切換，寫死「菁英怪」的話調成普通怪之後會說謊。 */
@@ -1020,7 +1047,7 @@ function applyOfflineProgress(options) {
       }
     }
     // 附魔書（階段 8+）
-    if (stage >= 8) {
+    if (stage >= 8 || zoneDrop.bookRate !== undefined) {
       var bookN = rollDropCount(bookRate);
       for (var bi = 0; bi < bookN; bi++) {
         G.player.books[pick(Object.keys(ENCHANTS))]++;
@@ -1032,7 +1059,7 @@ function applyOfflineProgress(options) {
     // 魔塵（150 級起）
     if (dustRate > 0 && chance(dustRate)) { G.player.dust = (G.player.dust || 0) + 1; sum.dust++; }
     // 自動機組零件（階段 5+）
-    if (stage >= 5) {
+    if (stage >= 5 || zoneDrop.partRate !== undefined) {
       var partN = rollDropCount(partRate);
       for (var pn = 0; pn < partN; pn++) {
         var np = makePart(fieldPartTierFor(stage, true));

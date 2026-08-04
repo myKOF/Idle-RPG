@@ -101,7 +101,11 @@ function newGameState() {
     zoneProgress: {   // 各戰鬥場景獨立進度（stage 為當前場景的即時狀態）
       plains: { current: 1, best: 1 },
       desert: { current: 1, best: 1 },
-      swamp:  { current: 1, best: 1 }
+      swamp:  { current: 1, best: 1 },
+      undead_mountains: { current: 1, best: 1 },
+      god_battlefield: { current: 1, best: 1 },
+      god_chaos: { current: 1, best: 1 },
+      god_sanctuary: { current: 1, best: 1 }
     },
     factory: {
       filter: { actions: ['salvage', 'keep', 'keep', 'keep', 'keep', 'keep', 'keep', 'keep', 'keep'], smartSalvage: false },

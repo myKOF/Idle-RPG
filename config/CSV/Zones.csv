@@ -1,0 +1,8 @@
+order,id,name,realm,max_stage,required_zone,required_stage,required_reincarnation
+1,plains,草原,human,200,,,0
+2,desert,荒漠,human,300,plains,200,0
+3,swamp,沼澤,human,400,desert,300,0
+4,undead_mountains,亡靈山脈,human,500,swamp,400,0
+5,god_battlefield,太古戰場,god,600,undead_mountains,500,11
+6,god_chaos,混沌界,god,700,god_battlefield,600,11
+7,god_sanctuary,永恒神域,god,800,god_chaos,700,11

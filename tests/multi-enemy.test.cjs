@@ -231,7 +231,7 @@ test('可直接前進到目前場景最高階段', () => {
   context.G.stage.best = 280;
   context.G.stage.kills = 7;
   context.stageGoMax();
-  assert.equal(context.G.stage.current, 280);
+  assert.equal(context.G.stage.current, 200);
   assert.equal(context.G.stage.kills, 0);
   assert.equal(context.FIELD.monsters.length, 0);
 });

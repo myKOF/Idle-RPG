@@ -18,7 +18,10 @@ function createTestEnv() {
     UI: { dirty: {} },
     document: { querySelectorAll: () => [], getElementById: () => null },
     window: {},
-    G: { player: { level: 1, reincarnations: 11 }, stage: { current: 1, best: 1, zone: 'plains' }, zoneProgress: { plains: { current: 1, best: 1 } } }
+    G: { player: { level: 1, reincarnations: 11 }, stage: { current: 1, best: 1, zone: 'plains' }, zoneProgress: {
+      plains: { current: 1, best: 200 }, desert: { current: 1, best: 300 }, swamp: { current: 1, best: 400 },
+      undead_mountains: { current: 1, best: 500 }
+    } }
   };
   sandbox.window = sandbox;
 
@@ -32,8 +35,8 @@ function createTestEnv() {
 
 test('神界練功地圖資料與敵人 Monster Pools 正確定義', () => {
   const env = createTestEnv();
-  assert.equal(env.ZONE_LIST.length, 6);
-  assert.equal(JSON.stringify(env.ZONE_LIST), JSON.stringify(['plains', 'desert', 'swamp', 'god_battlefield', 'god_chaos', 'god_sanctuary']));
+  assert.equal(env.ZONE_LIST.length, 7);
+  assert.equal(JSON.stringify(env.ZONE_LIST), JSON.stringify(['plains', 'desert', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary']));
   
   assert.ok(env.ZONES.god_battlefield);
   assert.equal(env.ZONES.god_battlefield.name, '太古戰場');
@@ -55,7 +58,7 @@ test('位面 REALMS 分類與切換測試', () => {
   const env = createTestEnv();
   assert.ok(env.REALMS.human);
   assert.ok(env.REALMS.god);
-  assert.equal(JSON.stringify(env.REALMS.human.zones), JSON.stringify(['plains', 'desert', 'swamp']));
+  assert.equal(JSON.stringify(env.REALMS.human.zones), JSON.stringify(['plains', 'desert', 'swamp', 'undead_mountains']));
   assert.equal(JSON.stringify(env.REALMS.god.zones), JSON.stringify(['god_battlefield', 'god_chaos', 'god_sanctuary']));
 
   // 切換至太古戰場

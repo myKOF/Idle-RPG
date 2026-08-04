@@ -1014,6 +1014,19 @@ var SWAMP_POOL = [
   { name: '深沼水蛇', emoji: '🐍', attr: 'ice' }, { name: '沼澤霸主', emoji: '🐲', magic: true, attr: 'dark' }
 ];
 /* ---- 神界練功場景敵人（11轉及以上解鎖） ---- */
+// ---- 亡靈山脈 NPC ----
+// 新地圖使用獨立 NPC 配置；每個 NPC 的基本能力可再由配置表調整。
+var UNDEAD_MOUNTAINS_POOL = [
+  { id: 'undead_skeleton', name: '骸骨戰士', emoji: '💀', attr: 'dark', appearance: 'skeleton', hpMult: 1.05, atkMult: 1.1, defMult: 1.2 },
+  { id: 'undead_wraith', name: '山脈怨靈', emoji: '👻', attr: 'dark', magic: true, appearance: 'wraith', hpMult: 0.85, atkMult: 1.25, defMult: 0.9 },
+  { id: 'undead_ghoul', name: '腐屍獵犬', emoji: '🐺', attr: 'poison', appearance: 'ghoul', hpMult: 0.9, atkMult: 1.2, defMult: 0.8, aspdMult: 1.2 },
+  { id: 'undead_knight', name: '亡靈騎士', emoji: '🛡️', attr: 'dark', appearance: 'knight', hpMult: 1.35, atkMult: 1.05, defMult: 1.5 },
+  { id: 'undead_banshee', name: '哀嚎女妖', emoji: '🕯️', attr: 'ice', magic: true, appearance: 'banshee', hpMult: 0.8, atkMult: 1.35, defMult: 0.85 },
+  { id: 'undead_golem', name: '墓石巨像', emoji: '🗿', attr: 'earth', appearance: 'golem', hpMult: 1.8, atkMult: 0.9, defMult: 1.8 },
+  { id: 'undead_vampire', name: '血月伯爵', emoji: '🧛', attr: 'dark', magic: true, appearance: 'vampire', hpMult: 1.15, atkMult: 1.4, defMult: 1.05 },
+  { id: 'undead_dragon', name: '骨龍', emoji: '🐉', attr: 'fire', appearance: 'dragon', hpMult: 2, atkMult: 1.5, defMult: 1.4 }
+];
+
 var GOD_BATTLEFIELD_POOL = [
   { name: '太古戰魂', emoji: '👻', attr: 'dark' }, { name: '遠古神兵', emoji: '🗡️', attr: 'light' },
   { name: '破天戰將', emoji: '🛡️', attr: 'light' }, { name: '烈焰神衛', emoji: '💥', magic: true, attr: 'fire' },
@@ -1070,6 +1083,127 @@ var ZONES = {
     hpMult: 60, atkMult: 20, defMult: 15, aspdMult: 2.25, rewardMult: 24, reqZone: 'god_chaos', reqStage: 100
   }
 };
+/* NPC_CONFIG_TABLE 是所有可出現在野外的 NPC 基本資料表。
+   舊場景的既有怪物仍保留原名稱/外觀，並由這裡補上穩定 id；新 NPC 可直接在此表新增。 */
+var NPC_CONFIG_TABLE = {};
+function registerNpcPool(zoneKey, pool) {
+  (pool || []).forEach(function (entry, index) {
+    var id = entry.id || (zoneKey + '_' + (index + 1));
+    entry.id = id;
+    NPC_CONFIG_TABLE[id] = {
+      id: id,
+      name: entry.name,
+      attr: entry.attr || null,
+      magic: !!entry.magic,
+      appearance: entry.appearance || entry.emoji || '',
+      emoji: entry.emoji || '',
+      hpMult: Number(entry.hpMult) > 0 ? Number(entry.hpMult) : 1,
+      atkMult: Number(entry.atkMult) > 0 ? Number(entry.atkMult) : 1,
+      defMult: Number(entry.defMult) > 0 ? Number(entry.defMult) : 1,
+      aspdMult: Number(entry.aspdMult) > 0 ? Number(entry.aspdMult) : 1
+    };
+  });
+}
+registerNpcPool('plains', MONSTER_POOL);
+registerNpcPool('desert', DESERT_POOL);
+registerNpcPool('swamp', SWAMP_POOL);
+registerNpcPool('undead_mountains', UNDEAD_MOUNTAINS_POOL);
+registerNpcPool('god_battlefield', GOD_BATTLEFIELD_POOL);
+registerNpcPool('god_chaos', GOD_CHAOS_POOL);
+registerNpcPool('god_sanctuary', GOD_SANCTUARY_POOL);
+
+function weightedNpcEntries(pool, firstWeight) {
+  return (pool || []).map(function (entry, index) {
+    return { npcId: entry.id, weight: index === 0 && firstWeight ? firstWeight : 1 };
+  });
+}
+var ZONE_ENEMY_TABLES = {
+  plains: weightedNpcEntries(MONSTER_POOL, 30),
+  desert: weightedNpcEntries(DESERT_POOL, 25),
+  swamp: weightedNpcEntries(SWAMP_POOL, 20),
+  undead_mountains: [
+    { npcId: 'undead_skeleton', weight: 35 }, { npcId: 'undead_wraith', weight: 18 },
+    { npcId: 'undead_ghoul', weight: 16 }, { npcId: 'undead_knight', weight: 12 },
+    { npcId: 'undead_banshee', weight: 8 }, { npcId: 'undead_golem', weight: 5 },
+    { npcId: 'undead_vampire', weight: 4 }, { npcId: 'undead_dragon', weight: 2 }
+  ],
+  god_battlefield: weightedNpcEntries(GOD_BATTLEFIELD_POOL, 20),
+  god_chaos: weightedNpcEntries(GOD_CHAOS_POOL, 18),
+  god_sanctuary: weightedNpcEntries(GOD_SANCTUARY_POOL, 15)
+};
+
+var ZONE_LIST = ['plains', 'desert', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary'];
+/*
+var REALMS = {
+  human: { name: '凡人界', emoji: '🌍', zones: ['plains', 'desert', 'swamp', 'undead_mountains'] },
+  god: { name: '神界', emoji: '✨', zones: ['god_battlefield', 'god_chaos', 'god_sanctuary'] }
+};
+// 關卡設計的唯一入口：每張地圖都是有限關卡，後圖要求前圖通關。
+ZONES = {
+  plains: { name: '??', emoji: '?', pool: MONSTER_POOL, enemyTable: ZONE_ENEMY_TABLES.plains, realm: 'human', hpMult: 1, atkMult: 1, defMult: 1, aspdMult: 1, rewardMult: 1, maxStage: 200 },
+  desert: { name: '??', emoji: '??儭?', pool: DESERT_POOL, enemyTable: ZONE_ENEMY_TABLES.desert, realm: 'human', hpMult: 2.2, atkMult: 1.8, defMult: 1.6, aspdMult: 1.5, rewardMult: 1.25, maxStage: 300, reqZone: 'plains', reqStage: 200 },
+  swamp: { name: '瘝潭黎', emoji: '??', pool: SWAMP_POOL, enemyTable: ZONE_ENEMY_TABLES.swamp, realm: 'human', hpMult: 4, atkMult: 2.8, defMult: 2.4, aspdMult: 2, rewardMult: 1.5, maxStage: 400, reqZone: 'desert', reqStage: 300 },
+  undead_mountains: { name: '亡靈山脈', emoji: '⛰️', pool: UNDEAD_MOUNTAINS_POOL, enemyTable: ZONE_ENEMY_TABLES.undead_mountains, realm: 'human', hpMult: 6.5, atkMult: 3.8, defMult: 3.2, aspdMult: 1.8, rewardMult: 2.25, maxStage: 500, reqZone: 'swamp', reqStage: 400 },
+  god_battlefield: { name: '憭芸?啣', emoji: '??', pool: GOD_BATTLEFIELD_POOL, enemyTable: ZONE_ENEMY_TABLES.god_battlefield, realm: 'god', hpMult: 10, atkMult: 5, defMult: 4, aspdMult: 1.75, rewardMult: 4, maxStage: 600, reqZone: 'undead_mountains', reqStage: 500, reqReincarnation: 11 },
+  god_chaos: { name: '瘛瑟???, emoji: '??', pool: GOD_CHAOS_POOL, enemyTable: ZONE_ENEMY_TABLES.god_chaos, realm: 'god', hpMult: 25, atkMult: 10, defMult: 8, aspdMult: 2, rewardMult: 10, maxStage: 700, reqZone: 'god_battlefield', reqStage: 600, reqReincarnation: 11 },
+  god_sanctuary: { name: '瘞豢?蟡?', emoji: '??', pool: GOD_SANCTUARY_POOL, enemyTable: ZONE_ENEMY_TABLES.god_sanctuary, realm: 'god', hpMult: 60, atkMult: 20, defMult: 15, aspdMult: 2.25, rewardMult: 24, maxStage: 800, reqZone: 'god_chaos', reqStage: 700, reqReincarnation: 11 }
+};
+*/
+// ASCII-safe authoritative override (the legacy block above is retained only for migration history).
+ZONE_LIST = ['plains', 'desert', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary'];
+REALMS = {
+  human: { name: '凡人界', emoji: '🌍', zones: ['plains', 'desert', 'swamp', 'undead_mountains'] },
+  god: { name: '神界', emoji: '✨', zones: ['god_battlefield', 'god_chaos', 'god_sanctuary'] }
+};
+ZONES = {
+  plains: { name: '草原', emoji: '🌿', pool: MONSTER_POOL, enemyTable: ZONE_ENEMY_TABLES.plains, realm: 'human', hpMult: 1, atkMult: 1, defMult: 1, aspdMult: 1, rewardMult: 1, maxStage: 200 },
+  desert: { name: '荒漠', emoji: '🏜️', pool: DESERT_POOL, enemyTable: ZONE_ENEMY_TABLES.desert, realm: 'human', hpMult: 2.2, atkMult: 1.8, defMult: 1.6, aspdMult: 1.5, rewardMult: 1.25, maxStage: 300, reqZone: 'plains', reqStage: 200 },
+  swamp: { name: '沼澤', emoji: '🦠', pool: SWAMP_POOL, enemyTable: ZONE_ENEMY_TABLES.swamp, realm: 'human', hpMult: 4, atkMult: 2.8, defMult: 2.4, aspdMult: 2, rewardMult: 1.5, maxStage: 400, reqZone: 'desert', reqStage: 300 },
+  undead_mountains: { name: '亡靈山脈', emoji: '⛰️', pool: UNDEAD_MOUNTAINS_POOL, enemyTable: ZONE_ENEMY_TABLES.undead_mountains, realm: 'human', hpMult: 6.5, atkMult: 3.8, defMult: 3.2, aspdMult: 1.8, rewardMult: 2.25, maxStage: 500, reqZone: 'swamp', reqStage: 400 },
+  god_battlefield: { name: '太古戰場', emoji: '⚔️', pool: GOD_BATTLEFIELD_POOL, enemyTable: ZONE_ENEMY_TABLES.god_battlefield, realm: 'god', hpMult: 10, atkMult: 5, defMult: 4, aspdMult: 1.75, rewardMult: 4, maxStage: 600, reqZone: 'undead_mountains', reqStage: 500, reqReincarnation: 11 },
+  god_chaos: { name: '混沌界', emoji: '🌀', pool: GOD_CHAOS_POOL, enemyTable: ZONE_ENEMY_TABLES.god_chaos, realm: 'god', hpMult: 25, atkMult: 10, defMult: 8, aspdMult: 2, rewardMult: 10, maxStage: 700, reqZone: 'god_battlefield', reqStage: 600, reqReincarnation: 11 },
+  god_sanctuary: { name: '永恒神域', emoji: '✨', pool: GOD_SANCTUARY_POOL, enemyTable: ZONE_ENEMY_TABLES.god_sanctuary, realm: 'god', hpMult: 60, atkMult: 20, defMult: 15, aspdMult: 2.25, rewardMult: 24, maxStage: 800, reqZone: 'god_chaos', reqStage: 700, reqReincarnation: 11 }
+};
+
+function zoneMaxStage(zoneKey) {
+  var zone = ZONES[zoneKey] || ZONES.plains;
+  return Math.max(1, Math.floor(Number(zone.maxStage) || 1));
+}
+function zoneBestProgress(zoneKey) {
+  if (typeof G === 'undefined' || !G) return 1;
+  if (G.stage && G.stage.zone === zoneKey) return Math.max(1, Number(G.stage.best) || 1);
+  return Math.max(1, Number(G.zoneProgress && G.zoneProgress[zoneKey] && G.zoneProgress[zoneKey].best) || 1);
+}
+function isZoneUnlocked(zoneKey) {
+  var zone = ZONES[zoneKey];
+  if (!zone) return false;
+  if (zone.reqReincarnation && (!G || !G.player || Number(G.player.reincarnations) < zone.reqReincarnation)) return false;
+  if (zone.reqZone && zoneBestProgress(zone.reqZone) < (zone.reqStage || zoneMaxStage(zone.reqZone))) return false;
+  return true;
+}
+/* 依地圖與關卡區間的掉落配置。每一列為 [min, max, 裝備0~7機率, gem1~5, 附魔書, 太古精華, 魔塵, 零件]。
+   以資料表集中管理，新增地圖或調整區間不需要改戰鬥公式。 */
+var ZONE_STAGE_DROP_PROFILES = {
+  plains: [[1, 50, [25, 15, 10, 0, 0, 0, 0, 0], [2, 0.5, 0.2, 0, 0], 0, 0, 0, 0], [51, 100, [35, 20, 15, 5, 1, 0, 0, 0], [4, 0.8, 0.3, 0, 0], 2, 0, 0, 0], [101, 150, [40, 30, 20, 10, 2.5, 1, 0, 0], [6, 1.1, 0.4, 0, 0], 4, 0, 0, 0], [151, 200, [50, 40, 30, 15, 5, 2, 0.05, 0], [8, 1.4, 0.5, 0.1, 0], 6, 1, 0, 0]],
+  desert: [[1, 75, [30, 20, 12, 1, 0, 0, 0, 0], [3, 0.7, 0.25, 0, 0], 2, 0, 0, 0], [76, 150, [40, 28, 18, 7, 2, 0.5, 0, 0], [5, 1, 0.4, 0, 0], 4, 0, 0, 0], [151, 225, [48, 36, 25, 12, 4, 1.5, 0.05, 0], [7, 1.3, 0.5, 0.1, 0], 6, 1.5, 0, 0], [226, 300, [55, 45, 34, 18, 6, 2.5, 0.1, 0], [9, 1.7, 0.6, 0.2, 0], 8, 2, 0, 0]],
+  swamp: [[1, 100, [35, 25, 15, 3, 0, 0, 0, 0], [4, 0.8, 0.3, 0, 0], 3, 0, 0, 0], [101, 200, [45, 35, 23, 10, 3, 1, 0, 0], [6, 1.1, 0.4, 0, 0], 5, 1, 0, 0], [201, 300, [52, 42, 30, 15, 5, 2, 0.1, 0], [9, 1.7, 0.6, 0.2, 0], 7, 2, 0, 0], [301, 400, [60, 50, 38, 20, 8, 3.5, 0.2, 0], [12, 2, 0.7, 0.3, 0.2], 9, 3, 1, 0]],
+  undead_mountains: [[1, 125, [38, 28, 18, 5, 1, 0, 0, 0], [5, 1, 0.4, 0, 0], 4, 0, 0, 0], [126, 250, [48, 38, 26, 12, 4, 1, 0.03, 0], [7, 1.3, 0.5, 0.1, 0], 6, 2, 0, 0], [251, 375, [58, 48, 36, 18, 7, 3, 0.12, 0], [10, 1.8, 0.65, 0.2, 0.1], 8, 3, 1, 0], [376, 500, [68, 58, 45, 25, 10, 4.5, 0.25, 0], [14, 2.3, 0.8, 0.4, 0.3], 10, 4, 2, 1]],
+  god_battlefield: [], god_chaos: [], god_sanctuary: []
+};
+['god_battlefield', 'god_chaos', 'god_sanctuary'].forEach(function (zoneKey, zoneIndex) {
+  var max = zoneMaxStage(zoneKey), base = 45 + zoneIndex * 8;
+  ZONE_STAGE_DROP_PROFILES[zoneKey] = [1, 2, 3, 4].map(function (tier) {
+    var min = Math.floor((tier - 1) * max / 4) + 1, end = Math.floor(tier * max / 4);
+    return [min, end, [base + tier * 8, base + tier * 3, base + tier * 2, tier * 10, tier * 3, tier, tier * 0.08, 0], [8 + tier * 3, 1 + tier * 0.7, 0.4 + tier * 0.2, tier * 0.1, tier * 0.08], 5 + tier * 2, 2 + tier, tier, tier * 0.5];
+  });
+});
+var ZONE_STAGE_DROP_TABLE = {};
+Object.keys(ZONE_STAGE_DROP_PROFILES).forEach(function (zoneKey) {
+  ZONE_STAGE_DROP_TABLE[zoneKey] = ZONE_STAGE_DROP_PROFILES[zoneKey].map(function (row) {
+    return { min: row[0], max: row[1], equipmentRates: row[2], materials: { gemRates: row[3], bookRate: row[4], ancientEssenceRate: row[5], dustRate: row[6], partRate: row[7] } };
+  });
+});
+
 function currentZoneDef() {
   return ZONES[(G.stage && G.stage.zone) || 'plains'] || ZONES.plains;
 }
