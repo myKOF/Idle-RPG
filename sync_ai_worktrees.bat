@@ -13,7 +13,7 @@ if not exist "%SYNC_SCRIPT%" (
 )
 
 pushd "%REPO_ROOT%" >nul
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%SYNC_SCRIPT%" %*
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%SYNC_SCRIPT%" -SyncRemoteFirst %*
 set "SYNC_EXIT=%ERRORLEVEL%"
 popd
 
