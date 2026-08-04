@@ -45,6 +45,22 @@ function parseCsv(text) {
   return rows;
 }
 const allRows = parseCsv(fs.readFileSync(CSV_PATH, 'utf8')).filter(r => r.length > 1);
+// 地圖專屬資料由獨立地圖表管理；game_parameters 只保留通用公式與計算參數。
+const ZONES_CSV_PATH = process.env.ZONES_CSV || path.join(ROOT, 'config', 'CSV', 'Zones.csv');
+const zoneRows = parseCsv(fs.readFileSync(ZONES_CSV_PATH, 'utf8')).filter(r => r.length > 1);
+const zoneHeader = zoneRows[0] || [];
+const zoneIdCol = zoneHeader.indexOf('地圖識別碼');
+if (zoneIdCol < 0) throw new Error('Zones.csv 表頭缺少「地圖識別碼」：' + JSON.stringify(zoneHeader));
+const zoneById = {};
+zoneRows.slice(1).forEach(r => { zoneById[r[zoneIdCol]] = r; });
+function ZP(zoneKey, field) {
+  const col = zoneHeader.indexOf(field);
+  const row = zoneById[zoneKey];
+  if (col < 0 || !row || row[col] === undefined || row[col] === '') {
+    throw new Error('Zones.csv 缺少欄位或資料：' + zoneKey + ' / ' + field);
+  }
+  return String(row[col]).trim();
+}
 // 以「表頭名稱」定位欄位，而非寫死位置：日後在中間插欄（例如「變動」）也不會錯位。
 // 「編號」「變動」等註記欄一律忽略，只認「系統分類 / 名稱 / 參數a…」。
 const header = allRows.find(r => r.indexOf('系統分類') >= 0) || allRows[0];
@@ -118,6 +134,13 @@ function objFieldML(file, keyAnchor, field, cat, name, i, label, scopeVar) {
     grp: 2, value: P(cat, name, i), label: (label || keyAnchor) + '.' + field, scopeVar: scopeVar
   });
 }
+function objFieldMLValue(file, keyAnchor, field, value, label, scopeVar) {
+  edits.push({
+    file,
+    re: new RegExp('(' + esc(keyAnchor) + '[\\s\\S]*?\\b' + esc(field) + ':\\s*)(-?[\\d.]+)'),
+    grp: 2, value: String(value), label: (label || keyAnchor) + '.' + field, scopeVar: scopeVar
+  });
+}
 // 內嵌唯一片段： <prefix><num> —— prefix 需在整檔唯一
 function inline(file, prefix, value, label) {
   edits.push({ file, re: new RegExp('(' + esc(prefix) + ')(-?[\\d.]+)'), grp: 2, value: String(value), label });
@@ -163,7 +186,7 @@ Object.keys(RAR_KEYS).forEach(nm => {
 const PART_KEYS = { '加速齒輪': 'speedGear', '碎片熔煉爐': 'scrapForge', '淘金濾網': 'goldSluice', '精粹透鏡': 'extractLens', '拓本回收臂': 'bookScavenger', '複製處理艙': 'duplicator', '知識回收器': 'archivist', '探礦核心': 'prospector', '幸運晶片': 'fortuneChip', '太古精華萃取器': 'ancientEssenceRate', '幸運核心': 'luckCore', '重骰模組': 'rerollModule' };
 Object.keys(PART_KEYS).forEach(nm => objField('data', PART_KEYS[nm] + ':', 'perTier', '表-自動機組零件', nm, 0, '零件-' + nm));
 
-// 場景倍率：hpMult(0) atkMult(1) defMult(2) aspdMult(3) rewardMult(4)
+// 場景倍率改由 config/CSV/Zones.csv 管理；game_parameters 不再是地圖倍率來源。
 // 新遊戲／重新開局的初始資源（由參數表「0-遊戲預設」控制）。
 scalar('player', 'INITIAL_GOLD', '0-遊戲預設', '開場金幣', 0);
 scalar('player', 'INITIAL_SCRAP', '0-遊戲預設', '開場裝備碎片', 0);
@@ -173,17 +196,19 @@ const ZONE_KEYS = {
   '草原': 'plains',
   '荒漠': 'desert',
   '沼澤': 'swamp',
+  '亡靈山脈': 'undead_mountains',
   '太古戰場': 'god_battlefield',
   '混沌界': 'god_chaos',
   '永恒神域': 'god_sanctuary'
 };
 Object.keys(ZONE_KEYS).forEach(nm => {
-  const a = ZONE_KEYS[nm] + ':';
-  objFieldML('data', a, 'hpMult', '4-場景倍率', nm, 0, '場景-' + nm, 'ZONES');
-  objFieldML('data', a, 'atkMult', '4-場景倍率', nm, 1, '場景-' + nm, 'ZONES');
-  objFieldML('data', a, 'defMult', '4-場景倍率', nm, 2, '場景-' + nm, 'ZONES');
-  objFieldML('data', a, 'aspdMult', '4-場景倍率', nm, 3, '場景-' + nm, 'ZONES');
-  objFieldML('data', a, 'rewardMult', '4-場景倍率', nm, 4, '場景-' + nm, 'ZONES');
+  const zoneKey = ZONE_KEYS[nm];
+  const a = zoneKey + ':';
+  objFieldMLValue('data', a, 'hpMult', ZP(zoneKey, '生命倍率'), '場景-' + nm, 'ZONES');
+  objFieldMLValue('data', a, 'atkMult', ZP(zoneKey, '攻擊倍率'), '場景-' + nm, 'ZONES');
+  objFieldMLValue('data', a, 'defMult', ZP(zoneKey, '防禦倍率'), '場景-' + nm, 'ZONES');
+  objFieldMLValue('data', a, 'aspdMult', ZP(zoneKey, '攻速倍率'), '場景-' + nm, 'ZONES');
+  objFieldMLValue('data', a, 'rewardMult', ZP(zoneKey, '經驗金幣獎勵倍率'), '場景-' + nm, 'ZONES');
 });
 
 /* ---- data.js 具名純量常數 ---- */
@@ -899,11 +924,15 @@ function src(f) { return srcCache[f] || (srcCache[f] = fs.readFileSync(FILES[f],
 const results = []; // {label, file, kind, old, new, changed, error}
 // scopeVar: 將搜尋限制在某 var 區塊內（例如 FIELD_DROP_TABLE）以避免同名欄位在他處誤中
 function scopedText(file, scopeVar) {
-  const t = src(file);
+  return scopedTextValue(src(file), scopeVar);
+}
+function scopedTextValue(t, scopeVar) {
   if (!scopeVar) return { text: t, offset: 0 };
-  const m = new RegExp('\\b' + esc(scopeVar) + '\\s*=\\s*[\\[{][\\s\\S]*?[\\]}];').exec(t);
-  if (!m) return { text: t, offset: 0 };
-  return { text: m[0], offset: m.index };
+  const re = new RegExp('\\b' + esc(scopeVar) + '\\s*=\\s*[\\[{][\\s\\S]*?[\\]}];', 'g');
+  let m; let last = null;
+  while ((m = re.exec(t)) !== null) { last = m; if (m.index === re.lastIndex) re.lastIndex++; }
+  if (!last) return { text: t, offset: 0 };
+  return { text: last[0], offset: last.index };
 }
 // 比較兩段文字的數值序列是否相同（忽略空白/格式差異）
 function numsEqual(a, b) {
@@ -1016,8 +1045,7 @@ if (process.argv.includes('--check-anchors')) {
   edits.forEach((e) => {
     let text = perturbed[e.file];
     if (e.scopeVar) {
-      const m = new RegExp('\\b' + esc(e.scopeVar) + '\\s*=\\s*[\\[{][\\s\\S]*?[\\]}];').exec(text);
-      if (m) text = m[0];
+      text = scopedTextValue(text, e.scopeVar).text;
     }
     const re = new RegExp(e.re.source, 'g');
     let n = 0, m2;

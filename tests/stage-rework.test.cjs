@@ -61,6 +61,24 @@ test('NPC 配置表與地圖權重表可選出亡靈山脈指定 NPC', () => {
   assert.ok(c.NPC_CONFIG_TABLE.undead_dragon);
 });
 
+test('NPC CSV 集中所有地圖的基本資料，不重複存放公式倍率', () => {
+  const lines = fs.readFileSync(path.join(root, 'config/CSV/NPC.csv'), 'utf8').replace(/^\uFEFF/, '').trim().split(/\r?\n/);
+  assert.equal(lines.length, 81);
+  assert.equal(lines[0], 'NPC識別碼,NPC名稱,所屬地圖識別碼,屬性,外觀,魔法型（1是／0否）,出現權重');
+  assert.ok(lines.some((line) => line.startsWith('plains_1,史萊姆,plains,')));
+  assert.ok(lines.some((line) => line.startsWith('god_sanctuary_12,永恒神王,god_sanctuary,')));
+  assert.equal(Object.keys(load(['js/util.js', 'js/data.js']).NPC_CONFIG_TABLE).length, 80);
+});
+
+test('地圖表承接場景專屬倍率與所有地圖的分段掉落資料', () => {
+  const zones = fs.readFileSync(path.join(root, 'config/CSV/Zones.csv'), 'utf8').replace(/^\uFEFF/, '').trim().split(/\r?\n/);
+  const drops = fs.readFileSync(path.join(root, 'config/CSV/Zone_Stage_Drops.csv'), 'utf8').replace(/^\uFEFF/, '').trim().split(/\r?\n/);
+  assert.equal(zones[0], '順序,地圖識別碼,地圖名稱,位面,關卡上限,前置地圖識別碼,前置通關關卡,最低轉生次數,生命倍率,攻擊倍率,防禦倍率,攻速倍率,經驗金幣獎勵倍率');
+  assert.match(zones.find((line) => line.includes(',undead_mountains,')), /,6\.5,3\.8,3\.2,1\.8,2\.25$/);
+  assert.equal(drops.length, 29);
+  assert.ok(drops.some((line) => line.startsWith('god_sanctuary,601,800,')));
+});
+
 test('掉落配置依地圖與關卡區間查表，且支援材料欄位', () => {
   const c = load(['js/util.js', 'js/data.js', 'js/formula.js']);
   const early = c.zoneStageDropConfigFor('undead_mountains', 100);
