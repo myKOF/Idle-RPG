@@ -1,6 +1,6 @@
-# Worker 協議 v15
+# Worker 協議 v16
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 15`　最後更新：2026-08-02
+> 協議版本：`WORKER_PROTOCOL_VERSION = 16`　最後更新：2026-08-04
 > **單一資料來源是 `js/worker/protocol.js`。** 本文件是說明；兩者衝突時以程式碼為準。
 >
 > 遷移（P0～P5）已於 2026-07-28 完成，Worker 是模擬與存檔的唯一權威，舊單執行緒路徑已移除。
@@ -156,7 +156,7 @@ v1 用「參數名叫 `itemId` 就自動解析」的慣例會出事——`forgeP
 
 ### 4.4 指令清單
 
-完整清單見 `js/worker/protocol.js` 的 `COMMANDS`，v8 起共 **86 條**
+完整清單見 `js/worker/protocol.js` 的 `COMMANDS`，v16 起共 **87 條**
 （v1 凍結時 67 條，v3 補 14 條、v4 再補 4 條、v8 補 1 條）。
 
 ⚠️ **指令名請以 `protocol.js` 為準，不要憑印象寫。** `WorkerBridge.send()` 會在送出前用
@@ -303,6 +303,7 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 
 | 版本 | 日期 | 變更 |
 | :--- | :--- | :--- |
+| 16 | 2026-08-04 | **熔爐零件升級**：新增 `newforge.upgradePart`，由 Worker 執行零件升級與金幣扣除；指令表 86 → 87 條。 |
 | 15 | 2026-08-02 | **詞條規則外送**：`equip` 面板新增 `affixRules`＝`{詞條鍵: {slots, minR}}`，取自 `AFFIX_POOL`，是靜態遊戲規則。<br>加它的理由：任何「想洗出某條詞條」的一方原本都得自己抄一份可用部位清單，抄錯不會有徵兆。實測踩過——AI 策略手寫的清單裡放了 `weapon`（命中率根本不能出現在武器上）與 `bracers`（遊戲的鍵是 `wrist`），375 次洗煉一條都沒洗出來，而且沒有任何錯誤訊息。規則的唯一來源是 `AFFIX_POOL`，讀它就不會有第二份會過期的副本。<br>指令表未變動（仍 86 條） |
 | 14 | 2026-08-01 | **真人軌跡重播**：`TICK_VIEW_KEYS` 新增 `simT`（模擬時鐘，`js/worker/sim.worker.js` 的 `SIM_T`）。與既有 `gt` 的唯一差別是戰鬥暫停時 `gt` 停住、`simT` 照走。<br>加這個欄位的理由是既有的 `gt` 當不了對齊軸：暫停期間 `simStep` 仍在跑 `factoryTick`/`newForgeTick`/`forgeTick`，狀態有在動而 `gt` 沒記錄到，於是重播與交叉驗證在暫停那一段整批錯開（實測：暫停在 `gt=51.8`，`verify_trace` 到 `gt=55.2` 才 FAIL，分岔點看起來像別的原因）。<br>同時修正 `requestPersist`：決定論測試模式（`?seed=N`）下不再執行**非自願**的落地（`auto`/`folder`/`shutdown`），`manual`/`manualFolder`/`restart` 照常。先前 `onVisibility` 的 `SHUTDOWN` 沒有被擋，測試模式切一次分頁就會用種子化亂數跑出來的狀態蓋掉玩家的 `auto_current`——與 `installTestSeed` 檔頭宣稱的「不落地存檔」不符。<br>指令表未變動（仍 86 條） |
 | 13 | 2026-07-30 | **技能融合系統改造**：`TICK_VIEW_KEYS` 新增 `magicScroll`（魔法卷軸，融合材料）；`skills` 面板快照新增 `mastery`（技能熟練度 `{level, xp, xpMax, maxLevel}`）、`scrolls`（卷軸持有量）、`fusionCosts`（每素材金幣/卷軸費用），`points/budget` 改為熟練度制即時計算（`availableSkillPoints()`/`totalSkillPoints()`，不再讀已移除的 `skillPointBudget` 欄位）。融合記錄改 `{components, seed}` 種子重算制——記錄仍原樣隨面板傳主執行緒，兩端共用 `buildFusionRuntimeDef` 重建，故無新訊息型別；指令表未變動（仍 86 條） |
