@@ -59,14 +59,14 @@ var REROLL_ESSENCE_COST = { 6: 9, 7: 14, 8: 20, 9: REROLL_CHAOS_ESSENCE_COST, 10
 // 表外詞條數量（0/1 或 >10）一律 0 條。擲骰 rollAncientAffixCount → js/formula.js §6。
 var ANCIENT_COUNT_WEIGHTS = {
   2: [92, 7.5, 0.5],
-  3: [78.1, 19.2, 2.4, 0.3],
-  4: [72.11, 22.12, 4.61, 0.96, 0.2],
-  5: [74.35, 18.74, 5.07, 1.37, 0.37, 0.1],
-  6: [76.87, 15.04, 5.28, 1.85, 0.65, 0.23, 0.08],
-  7: [69.92, 18.53, 7.13, 2.74, 1.05, 0.41, 0.16, 0.06],
-  8: [64.22, 21.19, 8.65, 3.53, 1.44, 0.59, 0.24, 0.1, 0.04],
-  9: [59.92, 23.53, 9.72, 4.02, 1.66, 0.69, 0.28, 0.12, 0.05, 0.02],
-  10: [54.72, 26.42, 11.01, 4.59, 1.91, 0.8, 0.33, 0.14, 0.06, 0.02, 0.01]
+  3: [78.10000000000001, 19.2, 2.4, 0.3],
+  4: [72.1136, 22.118399999999998, 4.608, 0.96, 0.2],
+  5: [53.837362, 33.734898, 9.11754, 2.4642, 0.666, 0.18],
+  6: [49.993825599999994, 32.8178384, 11.316495999999999, 3.90224, 1.3456, 0.464, 0.16],
+  7: [36.76497232906253, 38.49187956468749, 15.094854731249995, 5.919550874999999, 2.3213924999999995, 0.9103499999999999, 0.357, 0.13999999999999999],
+  8: [31.631675870386633, 38.43484863416891, 16.85738975182847, 7.3935919964159975, 3.242803507199999, 1.4222822399999997, 0.6238079999999999, 0.27359999999999995, 0.12],
+  9: [25.40754342879985, 39.28797478390151, 18.619893262512562, 8.824593963276097, 4.182272020509998, 1.9821194409999996, 0.9393931, 0.44520999999999994, 0.211, 0.1],
+  10: [18.159999999999986, 40.96, 20.48, 10.24, 5.12, 2.56, 1.28, 0.64, 0.32, 0.16, 0.08]
 };
 var ANCIENT_ESSENCE_ENEMY_MIN_LEVEL = 49;
 var ANCIENT_ESSENCE_ENEMY_BASE_RATE = 1;
@@ -253,11 +253,11 @@ var BF_BOSS_H = 2;             // BOSS 佔格高（列）
    倍率語意比照菁英：相對於同階段普通怪；攻速為絕對值不是倍率。 */
 var FIELD_BOSS_STAGE_INTERVAL = 50;
 var FIELD_BOSS_HP_MULT = 20;      // 生命倍率
-var FIELD_BOSS_ATK_MULT = 6;      // 攻擊倍率
-var FIELD_BOSS_DEF_MULT = 4;      // 物理／魔法防禦倍率
-var FIELD_BOSS_REWARD_MULT = 12;  // 金幣與經驗倍率
-var FIELD_BOSS_DODGE_ADD = 5;     // 閃避加成（百分點）
-var FIELD_BOSS_ASPD = 1.2;        // 攻速（次/秒，絕對值）
+var FIELD_BOSS_ATK_MULT = 5;      // 攻擊倍率
+var FIELD_BOSS_DEF_MULT = 2;      // 物理／魔法防禦倍率
+var FIELD_BOSS_REWARD_MULT = 10;  // 金幣與經驗倍率
+var FIELD_BOSS_DODGE_ADD = 2.5;     // 閃避加成（百分點）
+var FIELD_BOSS_ASPD = 1.5;        // 攻速（次/秒，絕對值）
 var FIELD_BOSS_DROP_MULT = 3;     // 掉落倍率：裝備與材料統一乘此值（比照 ELITE_DROP_MULT）
 
 /* ---- 野外怪物命中／閃避分段成長 ----
@@ -603,17 +603,17 @@ var AFFIX_POOL = {
   resAll: { name: '全屬性抗性%', base: 10, growthBase: 4, lv: 0.02, pct: true, weight: 3, minR: 4, slots: ['helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   ccRed: { name: '控制時間縮減%', base: 10, growthBase: 4, lv: 0.02, pct: true, weight: 3, minR: 4, slots: ['helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   moveSpeed: { name: '移動速度%', base: 3, growthBase: 3, lv: 0.012, pct: true, weight: 4, slots: ['all_lock'] },
-  loot: { name: '掉寶率%', base: 2, growthBase: 3, lv: 0.015, pct: true, weight: 4, minR: 4, slots: ['ring', 'amulet'] },
-  xpBonus: { name: '經驗加成%', base: 2, growthBase: 4, lv: 0.02, pct: true, weight: 4, minR: 4, slots: ['ring', 'amulet'] },
-  goldBonus: { name: '金幣加成%', base: 2, growthBase: 5, lv: 0.025, pct: true, weight: 4, minR: 4, slots: ['ring', 'amulet'] },
-  luck: { name: '幸運值', base: 2, growthBase: 2, lv: 0.1, pct: false, weight: 3, minR: 4, slots: ['helmet', 'ring', 'amulet'] },
+  loot: { name: '掉寶率%', base: 2, growthBase: 2, lv: 0.01, pct: true, weight: 4, minR: 4, slots: ['ring', 'amulet'] },
+  xpBonus: { name: '經驗加成%', base: 2, growthBase: 1, lv: 0.005, pct: true, weight: 4, minR: 4, slots: ['ring', 'amulet'] },
+  goldBonus: { name: '金幣加成%', base: 2, growthBase: 3, lv: 0.015, pct: true, weight: 4, minR: 4, slots: ['ring', 'amulet'] },
+  luck: { name: '幸運值', base: 3, growthBase: 3, lv: 0.2, pct: false, weight: 3, minR: 4, slots: ['helmet', 'ring', 'amulet'] },
   weight: { name: '負重上限', base: 2, growthBase: 2, lv: 0.3, pct: false, weight: 3, minR: 4, slots: ['shoulder', 'chest', 'legs', 'boots', 'ring', 'amulet'] },
-  enhanceSuccess: { name: '強化成功率%', base: 1, growthBase: 3, lv: 0.015, pct: true, weight: 3, minR: 4, slots: ['ring', 'amulet'] },
+  enhanceSuccess: { name: '強化成功率%', base: 3, growthBase: 2, lv: 0.01, pct: true, weight: 3, minR: 4, slots: ['ring', 'amulet'] },
   decomposeYield: { name: '分解高產率%', base: 3, growthBase: 3, lv: 0.015, pct: true, weight: 3, minR: 4, slots: ['all_lock'] },
   hybridMutation: { name: '合成變異率%', base: 2.5, growthBase: 2.5, lv: 0.012, pct: true, weight: 2, minR: 4, slots: ['all_lock'] },
   enrageThreshold: { name: '狂暴閾值+', base: 2, growthBase: 2, lv: 0.08, pct: false, weight: 2, minR: 4, slots: ['all_lock'] },
-  affixCap: { name: '詞條上限率%', base: 3, growthBase: 3, lv: 0.015, pct: true, weight: 2, minR: 4, slots: ['ring', 'amulet'] },
-  gemEff: { name: '寶石鑲嵌效率%', base: 2, growthBase: 5, lv: 0.025, pct: true, weight: 2, minR: 4, slots: ['ring', 'amulet'] }
+  affixCap: { name: '詞條上限率%', base: 3, growthBase: 3, lv: 0.025, pct: true, weight: 2, minR: 4, slots: ['ring', 'amulet'] },
+  gemEff: { name: '寶石鑲嵌效率%', base: 4, growthBase: 4, lv: 0.02, pct: true, weight: 2, minR: 4, slots: ['ring', 'amulet'] }
 };
 
 // ---- 詞條顯示分類（裝備詳情/滑過提示分色用；未列入者一律視為 util 功能類） ----
@@ -1059,15 +1059,15 @@ var ZONES = {
   },
   god_battlefield: {
     name: '太古戰場', emoji: '⚔️', pool: GOD_BATTLEFIELD_POOL, realm: 'god',
-    hpMult: 10, atkMult: 5, defMult: 4, aspdMult: 1.75, rewardMult: 5
+    hpMult: 10, atkMult: 5, defMult: 4, aspdMult: 1.75, rewardMult: 4
   },
   god_chaos: {
     name: '混沌界', emoji: '🌀', pool: GOD_CHAOS_POOL, realm: 'god',
-    hpMult: 25, atkMult: 10, defMult: 8, aspdMult: 2, rewardMult: 12, reqZone: 'god_battlefield', reqStage: 100
+    hpMult: 25, atkMult: 10, defMult: 8, aspdMult: 2, rewardMult: 10, reqZone: 'god_battlefield', reqStage: 100
   },
   god_sanctuary: {
     name: '永恒神域', emoji: '✨', pool: GOD_SANCTUARY_POOL, realm: 'god',
-    hpMult: 60, atkMult: 20, defMult: 15, aspdMult: 2.25, rewardMult: 25, reqZone: 'god_chaos', reqStage: 100
+    hpMult: 60, atkMult: 20, defMult: 15, aspdMult: 2.25, rewardMult: 24, reqZone: 'god_chaos', reqStage: 100
   }
 };
 function currentZoneDef() {
