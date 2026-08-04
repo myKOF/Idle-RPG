@@ -1290,9 +1290,9 @@ var PART_TYPES = {
 };
 var PART_MAX_TIER = 10;
 // 零件升級費用 = a + b × c^升級後目標等級；T5 -> T6 代入 6。
-var PART_UPGRADE_COST_A = 1000;
-var PART_UPGRADE_COST_B = 1000;
-var PART_UPGRADE_COST_C = 2;
+var PART_UPGRADE_COST_A = 20000;
+var PART_UPGRADE_COST_B = 10000;
+var PART_UPGRADE_COST_C = 6;
 var NODE_NAMES = { filter: '篩選節點', salvage: '分解槽', synth: '合成節點', enchant: '附魔節點', upgrade: '強化節點' };
 var PART_SLOTS_PER_NODE = 2;   // 每個可安裝節點的零件槽數（預設；可由 PART_SLOTS 覆寫）
 var PART_SLOTS = { synth: 2 }; // 各節點零件槽數（分解槽使用金幣解鎖，見 formula.js salvageSlotCount）
