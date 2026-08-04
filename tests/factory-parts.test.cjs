@@ -57,36 +57,35 @@ function makePart(id, key, tier) {
   };
 }
 
-test('分解槽可安裝 10 格並支援 T7 零件', () => {
+test('熔爐零件等級上限為 T10，初始可裝配等級為 T1', () => {
   const { context } = loadGameContext();
   context.G = {
     player: { level: 1, scrap: 0 },
     factory: { parts: [], installed: { salvage: [], synth: [] } }
   };
-  assert.equal(context.PART_MAX_TIER, 7);
+  assert.equal(context.PART_MAX_TIER, 10);
   assert.equal(context.slotsForNode('salvage'), 10);
   assert.equal(context.PART_KEEP_PER_KEY, 10);
-  assert.equal(context.makePart(7, 'salvage').tier, 7);
+  // 野外不再生成零件；零件升級改由 factory.partLevels 管理。
+  assert.equal(context.makePart(7, 'salvage'), null);
 });
 
 test('熔爐零件列表每種類只顯示一行，安裝取最高階級與數值（合併版 UI）', () => {
   const { context } = loadGameContext();
-  const parts = [
-    makePart('gear5', 'speedGear', 5),
-    makePart('gear7', 'speedGear', 7),
-    makePart('gear6', 'speedGear', 6),
-    makePart('forge7', 'scrapForge', 7)
-  ];
   context.G = {
     player: { level: 1, scrap: 0 },
-    factory: { parts, installed: { salvage: [], synth: [] } }
+    factory: {
+      parts: [],
+      partLevels: { speedGear: 7, scrapForge: 7 },
+      installed: { salvage: [], synth: [] }
+    }
   };
 
   // 舊分解槽零件列表已移除；同一「每種類一行、取最高階」行為改由熔爐卡片零件列表提供
   const fu = { id: 1, parts: [], partSlots: 3 };
   const html = context.nfPartsListHTML(fu, context.G.factory);
   assert.match(html, /data-nf-partinstall-key="speedGear"/);
-  assert.match(html, /T7 加速齒輪/, '應顯示最高階零件名稱');
+  assert.match(html, /T7 加速齒輪/, '應顯示目前可裝配等級');
   assert.doesNotMatch(html, /undefined/, '零件名稱應由 key/tier 推導，不得顯示 undefined');
   assert.equal((html.match(/data-nf-partinstall-key="speedGear"/g) || []).length, 1, '每種類只一行');
   assert.match(html, /data-nf-partinstall-key="scrapForge"/);
@@ -96,8 +95,8 @@ test('分解槽材料相關零件使用右上角同款材料圖示，非材料�
   const { context } = loadGameContext();
   assert.match(context.partIconHTML('scrapForge'), /images\/icon_scrap\.png/);
   assert.match(context.partIconHTML('ancientEssenceRate'), /images\/icon_ancient_essence\.png/);
-  assert.match(context.partIconHTML('duplicator'), /images\/icon_scrap\.png/);
-  assert.match(context.partIconHTML('duplicator'), /images\/icon_gold\.png/);
+  // 複製處理艙不是單一材料零件，使用自己的單一圖示，不再疊放材料圖示。
+  assert.equal(context.partIconHTML('duplicator'), context.PART_TYPES.duplicator.emoji);
   assert.equal(context.partIconHTML('speedGear'), '⚙️');
 });
 

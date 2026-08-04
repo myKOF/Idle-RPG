@@ -327,3 +327,24 @@ test('真引擎：熔爐面板新增的三個欄位都是遊戲算的，且不�
     '合成節點零件不該列出來——installPart 只收分解槽零件');
   assert.ok(!('partSlotCost' in pan.newForge.furnaces[0]), '不得把衍生欄位寫進存檔物件');
 });
+
+test('真引擎：零件升級後，舊快照要拆下重裝才套用新階級', () => {
+  const e = createEngine({ seed: 8 }).boot(null);
+  const c = e.ctx;
+  const fu = c.G.newForge.furnaces[0];
+  c.ensurePartLevels(c.G.factory);
+  c.G.factory.partLevels.extractLens = 2;
+
+  assert.equal(c.newForgeInstallPart(fu.id, 'extractLens'), null);
+  assert.equal(fu.parts[0].tier, 2, '安裝時應保存當下階級');
+  const before = c.newForgePartBonus(fu, 'extractLens');
+
+  c.G.factory.partLevels.extractLens = 5;
+  assert.equal(fu.parts[0].tier, 2, '升級庫存不應改寫已裝快照');
+  assert.equal(c.newForgePartBonus(fu, 'extractLens'), before, '未重裝前效果應維持舊快照');
+
+  assert.equal(c.newForgeUninstallPart(fu.id, 0), true);
+  assert.equal(c.newForgeInstallPart(fu.id, 'extractLens'), null);
+  assert.equal(fu.parts[0].tier, 5, '重裝後才應使用新階級');
+  assert.ok(c.newForgePartBonus(fu, 'extractLens') > before, '重裝後效果應提升');
+});

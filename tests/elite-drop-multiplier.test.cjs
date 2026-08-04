@@ -51,8 +51,9 @@ test('菁英裝備與材料掉落率均在一般基礎上乘以菁英掉落倍�
   assert.deepEqual(elite.drops.slice(1, 4), [5 * m, 1 * m, 0.5 * m]);
   assert.deepEqual(normal.drops.slice(0, 1), [10]);
   assert.deepEqual(normal.drops.slice(1, 4), [5, 1, 0.5]);
-  assert.deepEqual(elite.drops.slice(4), [4 * m, 0.5 * m]);
-  assert.deepEqual(normal.drops.slice(4), [4, 0.5]);
+  // 野外零件掉落已移除，材料抽樣只保留附魔書率（partRate 不再進入掉落流程）。
+  assert.deepEqual(elite.drops.slice(4), [4 * m]);
+  assert.deepEqual(normal.drops.slice(4), [4]);
   assert.deepEqual(elite.chances, []);
   assert.deepEqual(normal.chances, []);
 });

@@ -11,9 +11,10 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-/* v15（2026-08-02 詞條規則外送）：equip 面板新增 affixRules（每種詞條的可用部位與
+/* v16：新增 newforge.upgradePart（熔爐零件升級），86 → 87
+   v15（2026-08-02 詞條規則外送）：equip 面板新增 affixRules（每種詞條的可用部位與
    品質門檻，取自 AFFIX_POOL）。任何「想洗出某條詞條」的一方不必再自己抄一份部位清單。 */
-var WORKER_PROTOCOL_VERSION = 15;
+var WORKER_PROTOCOL_VERSION = 16;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {

@@ -25,21 +25,21 @@ function loadContext(files) {
 
 /* ---- 自動機組零件 ---- */
 
-test('產出的零件只存 key 與階級；數值與名稱都是算出來的', () => {
+test('野外不再產出零件；可用等級與效果由參數推導', () => {
   const c = loadContext();
   c.G = { factory: { parts: [], installed: {}, salvageSlots: 4 } };
   const p = c.makePart(5, 'salvage');
-  assert.equal(JSON.stringify(Object.keys(p).sort()), JSON.stringify(['id', 'key', 'kind', 'tier']));
-  assert.equal(c.partValue(p), Math.round(c.PART_TYPES[p.key].perTier * 5 * 100) / 100);
-  assert.equal(c.partName(p), 'T5 ' + c.PART_TYPES[p.key].name);
+  assert.equal(p, null);
+  assert.equal(c.partValueForLevel('speedGear', 5), 125);
+  assert.equal(c.partName({ key: 'speedGear', tier: 5 }), 'T5 ' + c.PART_TYPES.speedGear.name);
 });
 
-test('調整 PART_TYPES 的 perTier 後，舊存檔既有零件跟著套用新值', () => {
+test('調整 PART_TYPES 的 base/perLevel 後，舊存檔既有零件跟著套用新值', () => {
   const c = loadContext();
   const p = { id: 'p1', kind: 'part', key: 'speedGear', tier: 3 };
-  assert.equal(c.partValue(p), 75);          // perTier 25 × 3
-  c.PART_TYPES.speedGear.perTier = 30;
-  assert.equal(c.partValue(p), 90);
+  assert.equal(c.partValue(p), 75);          // base 25 + perLevel 25 × (3−1)
+  c.PART_TYPES.speedGear.perLevel = 30;
+  assert.equal(c.partValue(p), 85);
 });
 
 test('舊存檔零件的 val／name 直接丟棄（都可推導），且冪等', () => {
@@ -47,7 +47,7 @@ test('舊存檔零件的 val／name 直接丟棄（都可推導），且冪等',
   const p = { id: 'p1', kind: 'part', key: 'scrapForge', tier: 4, val: 999, name: '亂寫的名字' };
   c.ensurePartSource(p);
   assert.equal(JSON.stringify(Object.keys(p).sort()), JSON.stringify(['id', 'key', 'kind', 'tier']));
-  assert.equal(c.partValue(p), 80);          // perTier 20 × 4
+  assert.equal(c.partValue(p), 80);          // base 20 + perLevel 20 × (4−1)
   assert.equal(c.partName(p), 'T4 碎片熔煉爐');
   const snapshot = JSON.stringify(p);
   c.ensurePartSource(p);
@@ -69,9 +69,9 @@ test('零件加成（partBonus）吃推導值', () => {
   const p = { id: 'p1', kind: 'part', key: 'scrapForge', tier: 6 };
   c.G.factory.parts = [p];
   c.G.factory.installed = { salvage: ['p1'] };
-  assert.equal(c.partBonus('salvage', 'scrapForge'), 120);   // perTier 20 × 6
-  c.PART_TYPES.scrapForge.perTier = 10;
-  assert.equal(c.partBonus('salvage', 'scrapForge'), 60, '改參數後既有零件的加成跟著變');
+  assert.equal(c.partBonus('salvage', 'scrapForge'), 120);   // base 20 + perLevel 20 × (6−1)
+  c.PART_TYPES.scrapForge.perLevel = 10;
+  assert.equal(c.partBonus('salvage', 'scrapForge'), 70, '改參數後既有零件的加成跟著變');
 });
 
 /* ---- 融合寶石 ---- */
@@ -163,10 +163,10 @@ test('存檔載入會換算庫存與插槽內的融合寶石（migrateSave）', 
     assert.equal(Object.prototype.hasOwnProperty.call(fg.stats[0], 'val'), false, '融合寶石未換算：' + fg.id);
     assert.equal(fg.stats[0].mult, 1.5);
   });
-  const p = out.factory.parts[0];
-  assert.equal(Object.prototype.hasOwnProperty.call(p, 'val'), false, '零件 val 未丟棄');
-  assert.equal(Object.prototype.hasOwnProperty.call(p, 'name'), false, '零件 name 未丟棄');
-  assert.equal(c.partValue(p), 50);
+  // 舊零件庫存不再保留；存檔只遷移其最高階到 partLevels。
+  assert.equal(out.factory.parts.length, 0);
+  assert.equal(out.factory.partLevels.speedGear, 2);
+  assert.equal(c.partValueForLevel('speedGear', out.factory.partLevels.speedGear), 50);
 });
 
 test('融合公式在倍率空間與改造前等價（同屬性取 rnd(較小, 較大×2)）', () => {

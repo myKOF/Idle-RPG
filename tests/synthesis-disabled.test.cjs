@@ -52,8 +52,8 @@ test('關閉時合成零件不會生成', () => {
   const part = context.makePart(5, 'synth');
   assert.equal(part, null);
   const randomPart = context.makePart(5);
-  assert.notEqual(randomPart, null);
-  assert.notEqual(context.PART_TYPES[randomPart.key].node, 'synth');
+  // 野外零件掉落與隨機 T1~T7 已移除；零件只由升級面板產生可用等級。
+  assert.equal(randomPart, null);
 });
 
 test('關閉時合成素材不會進入合成暫存區', () => {

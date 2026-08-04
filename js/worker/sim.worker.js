@@ -680,6 +680,20 @@ function buildPanel(name, params) {
           });
           return out;
         })(),
+        /* 策略契約：ownedParts 是目前各分解槽零件可裝配的最高階。
+           保留舊欄位名，避免策略端把缺欄位當成「永遠值得保留」。 */
+        ownedParts: (function () {
+          var f = G.factory, out = {};
+          Object.keys(PART_TYPES).forEach(function (key) {
+            if (PART_TYPES[key].node === 'salvage') out[key] = partLevelFor(key, f && f.partLevels);
+          });
+          (f && f.parts || []).forEach(function (p) {
+            if (!p || !PART_TYPES[p.key] || PART_TYPES[p.key].node !== 'salvage') return;
+            var level = Number(p.level !== undefined ? p.level : p.tier);
+            if (isFinite(level)) out[p.key] = Math.max(Number(out[p.key]) || 0, Math.floor(level));
+          });
+          return out;
+        })(),
         partUpgradeCosts: (function () {
           var f = G.factory, out = {};
           Object.keys(PART_TYPES).forEach(function (key) {

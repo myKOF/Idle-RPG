@@ -23,7 +23,7 @@ const EXPECTED_COMMAND_COUNTS = {
   talent: 8,
   tower: 6,
   forge: 10,
-  newforge: 9,
+  newforge: 10,
   factory: 2,
   stats: 1,
   settings: 1,
@@ -88,7 +88,7 @@ function validArgs(spec) {
   return args;
 }
 
-test('凍結的 Worker 指令表有 86 條且分類數量固定', () => {
+test('凍結的 Worker 指令表有 87 條且分類數量固定', () => {
   // v8：新增 app.handoff（多分頁交接前先落地並停止模擬），85 → 86
   // v9：移除 visibility 的 pip 欄位（背景休眠機制取消），指令表未變動
   // v10：新增 vfx 事件（技能／增益特效），指令表未變動
@@ -97,10 +97,11 @@ test('凍結的 Worker 指令表有 86 條且分類數量固定', () => {
   // v13：技能融合改造——TICK_VIEW_KEYS 新增 magicScroll、skills 面板新增 mastery/scrolls/fusionCosts，指令表未變動
   // v14：真人軌跡重播——TICK_VIEW_KEYS 新增 simT（模擬時鐘，戰鬥暫停時仍前進），指令表未變動
   // v15：equip 面板新增 affixRules（每種詞條的可用部位與品質門檻，取自 AFFIX_POOL），指令表未變動
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 15);
+  // v16：新增 newforge.upgradePart（熔爐零件升級），86 → 87
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 16);
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   const names = Object.keys(protocol.COMMANDS);
-  assert.equal(names.length, 86);
+  assert.equal(names.length, 87);
 
   const counts = {};
   for (const name of names) {

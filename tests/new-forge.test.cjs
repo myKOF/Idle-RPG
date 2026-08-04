@@ -363,7 +363,8 @@ test('帶尾 +N＝各爐專屬佇列真實件數（獨立非共用）；品質�
 
 function mkPart(c, id, key, tier) {
   const pt = c.PART_TYPES[key];
-  return { id, key, tier, val: pt.perTier * tier, name: pt.name + ' T' + tier };
+  // 零件數值改由 game_parameters 的 base + perLevel × (T−1) 推導；此物件只覆蓋舊存檔遷移。
+  return { id, key, tier, val: c.partValueForLevel(key, tier), name: pt.name + ' T' + tier };
 }
 
 test('零件自由裝配：依類型安裝快照、同型可重複裝滿、不佔用零件庫、多爐共用', () => {
@@ -373,7 +374,9 @@ test('零件自由裝配：依類型安裝快照、同型可重複裝滿、不�
   c.addNewForgeFurnace();
   const fu1 = G.newForge.furnaces[0];
   const fu2 = G.newForge.furnaces[1];
-  G.factory.parts.push(mkPart(c, 'sgLow', 'speedGear', 2), mkPart(c, 'sgHigh', 'speedGear', 5), mkPart(c, 'sy', 'luckCore', 3));
+  // 新模型不再消耗零件庫存；所有零件初始 T1，直接使用全域可用等級。
+  G.factory.partLevels.speedGear = 5;
+  G.factory.partLevels.luckCore = 3;
   // 依類型安裝：取最高階（T5）快照
   assert.equal(c.newForgeInstallPart(fu1.id, 'speedGear'), null);
   assert.equal(fu1.parts[0].key, 'speedGear');
@@ -384,15 +387,14 @@ test('零件自由裝配：依類型安裝快照、同型可重複裝滿、不�
   assert.match(String(c.newForgeInstallPart(fu1.id, 'speedGear')), /已滿/, '僅零件格數為上限');
   // 不佔用零件庫：另一爐照樣可裝、零件池原封不動
   assert.equal(c.newForgeInstallPart(fu2.id, 'speedGear'), null);
-  assert.equal(G.factory.parts.length, 3, '安裝不消耗零件');
-  assert.equal(c.isInstalled('sgHigh'), false, '不佔用實例');
-  // 非分解槽零件與未持有類型拒絕
+  assert.equal(G.factory.parts.length, 0, '新熔爐不再維護可消耗的零件庫存');
+  // 非分解槽零件拒絕；所有分解零件初始即有 T1 可裝配
   assert.match(String(c.newForgeInstallPart(fu2.id, 'luckCore')), /無法安裝/);
-  assert.match(String(c.newForgeInstallPart(fu2.id, 'bookScavenger')), /尚無此類型/);
+  assert.equal(c.newForgeInstallPart(fu2.id, 'bookScavenger'), null);
   // 卸下（依格位索引）：僅移除快照
   assert.equal(c.newForgeUninstallPart(fu1.id, 1), true);
   assert.equal(fu1.parts.length, 2);
-  assert.equal(G.factory.parts.length, 3);
+  assert.equal(G.factory.parts.length, 0);
 });
 
 test('加速齒輪快照生效：同型堆疊、速度倍率＝1＋Σ(數值＋固定加成)/100', () => {
@@ -400,7 +402,7 @@ test('加速齒輪快照生效：同型堆疊、速度倍率＝1＋Σ(數值＋�
   const G = freshG(c);
   const fu = G.newForge.furnaces[0];
   const sg = mkPart(c, 'sg1', 'speedGear', 2);
-  G.factory.parts.push(sg);
+  G.factory.partLevels.speedGear = 2;
   c.newForgeInstallPart(fu.id, 'speedGear');
   c.newForgeInstallPart(fu.id, 'speedGear');
   const one = c.effectiveFactoryPartValue('speedGear', sg.val);
