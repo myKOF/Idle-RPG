@@ -223,7 +223,7 @@ var TALENT_TREES = {
    數量上限為棋盤總格數（BF_COLS×BF_ROWS）。
    參數表：4-敵人數量 的小怪五段、一般小怪、菁英與 BOSS 權重列，寫法為
    {數量,權重} 或 {下限~上限,權重}。 */
-var FIELD_ENEMY_COUNT_TABLE = [[1, 5], [2, 5], [3, 5], [4, 8], [5, 10], [6, 20], [7, 10], [8, 10], [9, 10], [10, 5], [11, 5], [12, 4], [13, 3], [14, 2], [15, 1], [16, 0.5]];
+var FIELD_ENEMY_COUNT_TABLE = [[1, 5], [2, 5], [3, 5], [4, 8], [5, 20], [6, 20], [7, 8], [8, 8], [9, 8], [10, 3], [11, 3], [12, 2], [13, 1], [14, 0.5], [15, 0.3], [16, 0.2]];
 var FIELD_PLAINS_EARLY_ENEMY_COUNT_TABLES = [[[1, 90], [2, 90], [3, 10]], [[1, 88], [2, 88], [3, 10], [4, 2]], [[1, 85], [2, 85], [3, 85], [4, 10], [5, 4], [6, 1]], [[1, 80], [2, 80], [3, 80], [4, 12], [5, 6], [6, 2]], [[1, 64], [2, 64], [3, 64], [4, 20], [5, 10], [6, 5], [7, 1], [8, 1], [9, 1]]];
 var FIELD_ELITE_COUNT_TABLE = [[1, 60], [2, 30], [3, 10]];
 var FIELD_BOSS_COUNT_TABLE = [[1, 100]];
@@ -1104,7 +1104,7 @@ var TOWER_BOSS_TRIAL = {                                  // 試煉之塔 1~50 �
   hitBase: 200, hitPerFloor: 70,                          // 命中率 = hitBase + 樓層×hitPerFloor
   hpMult: 20, atkMult: 3, defMult: 10,                    // 生命/攻擊/物魔防 = 基準 × 倍率
   aspd: 3, ctrlRes: 70,                                   // 攻速（次/秒）／控制抵抗%
-  dodgeBase: 20, dodgeCap: 10000000, dodgePerFloor: 40,   // 閃避 = min(base + 樓層×per, cap)%
+  dodgeBase: 8, dodgeCap: 10000000, dodgePerFloor: 20,   // 閃避 = min(base + 樓層×per, cap)%
   elemMult: 3,                                            // 元素附傷 = 總魔攻 × elemMult
   xpMult: 2,                                              // 經驗 = 建議野外階段普通怪經驗 × xpMult
   timeLimit: 60, enrageTime: 40, enrageMult: 3, chargePeriod: 8 // 戰鬥規則：限時/狂暴檢查秒/狂暴倍率/蓄力周期秒
@@ -1115,7 +1115,7 @@ var TOWER_BOSS_HELL = {                                   // 地獄之塔 51~100
   hitBase: 200, hitPerFloor: 70,
   hpMult: 400, atkMult: 15, defMult: 10,
   aspd: 3, ctrlRes: 70,
-  dodgeBase: 20, dodgeCap: 10000000, dodgePerFloor: 40,
+  dodgeBase: 8, dodgeCap: 10000000, dodgePerFloor: 20,
   elemMult: 3,
   xpMult: 2,
   timeLimit: 60, enrageTime: 40, enrageMult: 3, chargePeriod: 8
@@ -1126,7 +1126,7 @@ var TOWER_BOSS_PURGATORY = {                              // 煉獄之塔 101~15
   hitBase: 200, hitPerFloor: 70,
   hpMult: 4000, atkMult: 75, defMult: 10,
   aspd: 3, ctrlRes: 70,
-  dodgeBase: 20, dodgeCap: 10000000, dodgePerFloor: 40,
+  dodgeBase: 8, dodgeCap: 10000000, dodgePerFloor: 20,
   elemMult: 3,
   xpMult: 2,
   timeLimit: 60, enrageTime: 40, enrageMult: 3, chargePeriod: 8
@@ -1393,11 +1393,11 @@ var FIELD_GEM_DROP_TABLE = [ // 野外寶石：依怪物等級，各階級獨立
   { min: 1, rates: [2, 0.5, 0.2, 0, 0] }
 ];
 var BOSS_DROP_TABLE = [    // 高塔 BOSS：依樓層 7 檔（與掉落表加總列逐欄核對：165/232/256/323/538/700/715）
-  { min: 31, rates: [0, 0, 0, 300, 200, 150, 50, 15] },   // 30級含以上（715%）
-  { min: 26, rates: [0, 0, 0, 300, 200, 150, 40, 10] },   // 26~30（700%）
-  { min: 21, rates: [0, 0, 0, 250, 150, 100, 33, 5] },    // 21~25（538%）
-  { min: 16, rates: [0, 0, 0, 150, 100, 50, 20, 2.5] },  // 16~20（322.5%）
-  { min: 11, rates: [0, 0, 0, 100, 100, 50, 5, 1] },    // 11~15（256%）
+  { min: 31, rates: [0, 0, 0, 0, 400, 250, 100, 10] },   // 30級含以上（715%）
+  { min: 26, rates: [0, 0, 0, 0, 350, 200, 50, 5] },   // 26~30（700%）
+  { min: 21, rates: [0, 0, 0, 0, 200, 150, 25, 1] },    // 21~25（538%）
+  { min: 16, rates: [0, 0, 0, 150, 150, 100, 10, 0] },  // 16~20（322.5%）
+  { min: 11, rates: [0, 0, 0, 100, 100, 50, 5, 0] },    // 11~15（256%）
   { min: 6, rates: [0, 0, 100, 100, 20, 10, 2, 0] },    // 6~10（232%）
   { min: 1, rates: [0, 0, 100, 50, 10, 5, 0, 0] }     // 1~5（165%）
 ];
