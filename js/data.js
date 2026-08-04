@@ -608,7 +608,7 @@ var AFFIX_POOL = {
   goldBonus: { name: '金幣加成%', base: 2, growthBase: 3, lv: 0.015, pct: true, weight: 4, minR: 4, slots: ['ring', 'amulet'] },
   luck: { name: '幸運值', base: 3, growthBase: 3, lv: 0.2, pct: false, weight: 3, minR: 4, slots: ['helmet', 'ring', 'amulet'] },
   weight: { name: '負重上限', base: 2, growthBase: 2, lv: 0.3, pct: false, weight: 3, minR: 4, slots: ['shoulder', 'chest', 'legs', 'boots', 'ring', 'amulet'] },
-  enhanceSuccess: { name: '強化成功率%', base: 1, growthBase: 3, lv: 0.015, pct: true, weight: 3, minR: 4, slots: ['ring', 'amulet'] },
+  enhanceSuccess: { name: '強化成功率%', base: 3, growthBase: 2, lv: 0.01, pct: true, weight: 3, minR: 4, slots: ['ring', 'amulet'] },
   decomposeYield: { name: '分解高產率%', base: 3, growthBase: 3, lv: 0.015, pct: true, weight: 3, minR: 4, slots: ['all_lock'] },
   hybridMutation: { name: '合成變異率%', base: 2.5, growthBase: 2.5, lv: 0.012, pct: true, weight: 2, minR: 4, slots: ['all_lock'] },
   enrageThreshold: { name: '狂暴閾值+', base: 2, growthBase: 2, lv: 0.08, pct: false, weight: 2, minR: 4, slots: ['all_lock'] },
