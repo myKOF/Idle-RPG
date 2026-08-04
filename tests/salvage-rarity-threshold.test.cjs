@@ -19,7 +19,12 @@ function loadWorker() {
   context.window = context;
   context.document = {};
   context.importScripts = (...files) => files.forEach((file) => {
-    vm.runInContext(fs.readFileSync(path.join(root, 'js', 'worker', file), 'utf8'), context, { filename: file });
+    /* ⚠️ 真正的 importScripts 收的是 URL：遊戲會掛快取破壞用的查詢字串
+       （例如 '../player.js?v=20260804-xp-settle'），瀏覽器那邊 HTTP server
+       照樣送同一個檔。這裡是 readFileSync，不去掉 `?v=...` 就會 ENOENT。
+       同一個坑也炸過 scripts/sim/engine.js 的墊片，見那裡的註解。 */
+    const clean = String(file).split('#')[0].split('?')[0];
+    vm.runInContext(fs.readFileSync(path.join(root, 'js', 'worker', clean), 'utf8'), context, { filename: clean });
   });
   vm.createContext(context);
   vm.runInContext(fs.readFileSync(path.join(root, 'js', 'worker', 'sim.worker.js'), 'utf8'), context, { filename: 'sim.worker.js' });

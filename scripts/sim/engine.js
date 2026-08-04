@@ -95,7 +95,21 @@ function createEngine(opts) {
     postMessage(msg) { outbox.push(msg); },
     importScripts(...files) {
       for (const f of files) {
-        const abs = path.resolve(WORKER_DIR, f);
+        /* ⚠️ 真正的 importScripts 收的是 **URL**，不是檔案路徑。
+           遊戲會在上面掛快取破壞用的查詢字串，例如
+             importScripts('../player.js?v=20260804-xp-settle')
+           瀏覽器那邊 HTTP server 會照樣送出同一個檔，只是繞過快取；
+           這裡是 fs.readFileSync，`?v=...` 會變成檔名的一部分而直接 ENOENT。
+
+           實測就是這樣炸的：別的分支加了 ?v= 之後，整個模擬器（含儀表板的自測）
+           一律以退出碼 1 失敗，而錯誤訊息是
+             ENOENT: open 'js\player.js?v=20260804-xp-settle'
+           ——看起來像檔案不見了，實際上是墊片沒有做靜態檔案伺服器會做的事。
+
+           所以照 server 的行為把 query 與 fragment 去掉。這是墊片該補的相容性，
+           不是遊戲該遷就 harness——線上用 ?v= 破快取是完全正當的做法。 */
+        const clean = String(f).split('#')[0].split('?')[0];
+        const abs = path.resolve(WORKER_DIR, clean);
         vm.runInContext(fs.readFileSync(abs, 'utf8'), ctx, { filename: path.relative(ROOT, abs) });
       }
     }

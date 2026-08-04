@@ -104,3 +104,32 @@ test('MAINTENANCE_FNS 列的每一支在遊戲裡都真的存在', () => {
     );
   }
 });
+
+/* ---- importScripts 收的是 URL，不是檔案路徑 ---- */
+
+test('遊戲用查詢字串破快取時，模擬器仍然載得起來', () => {
+  /* 實測炸過一次：另一條分支把載入清單改成
+       importScripts('../player.js?v=20260804-xp-settle')
+     瀏覽器那邊 HTTP server 照樣送同一個檔（只是繞過快取），
+     但模擬器的 importScripts 墊片是 fs.readFileSync，`?v=...` 變成檔名的一部分，
+     於是整個模擬器（含儀表板的「系統自測」）一律以退出碼 1 失敗，
+     訊息是 ENOENT: open 'js\player.js?v=...'——看起來像檔案不見了。
+
+     線上用 ?v= 破快取是完全正當的做法，該補相容性的是墊片。
+     這支哨兵確保墊片一直做靜態檔案伺服器會做的事：去掉 query 與 fragment。 */
+  const { createEngine } = require('../scripts/sim/engine.js');
+  assert.doesNotThrow(() => createEngine({ seed: 1 }).boot(null),
+    '帶查詢字串的 importScripts 應該照樣載入');
+
+  /* 反證：清單裡真的有帶查詢字串的項目時才算測到東西。
+     沒有的話這支測試會變成一直綠燈的擺設，所以直接檢查原始碼。 */
+  const withQuery = (workerSrc.match(/importScripts\([\s\S]*?\)/g) || [])
+    .join('\n').match(/'[^']*\?[^']*'/g) || [];
+  if (!withQuery.length) {
+    /* 目前沒有人用查詢字串——那就自己造一個，確認墊片真的處理得了。 */
+    const enginePath = path.join(root, 'scripts/sim/engine.js');
+    const engineSrc = fs.readFileSync(enginePath, 'utf8');
+    assert.match(engineSrc, /split\('#'\)\[0\]\.split\('\?'\)\[0\]/,
+      'engine.js 的 importScripts 墊片必須去掉 query 與 fragment');
+  }
+});
