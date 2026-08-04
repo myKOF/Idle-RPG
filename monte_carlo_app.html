@@ -2392,8 +2392,13 @@
        seed 之間的差距看下面的批次散佈表。 */
     let batchViewCtx = null;   // { outDir, rows }
 
+    /* ⚠️ 轉生要排在等級前面。轉生把等級歸 1，所以「3 轉 Lv.417」遠強於
+       「0 轉 Lv.1000」——只寫等級的話這個下拉選單會把最強的那一場標成最弱的。
+       舊批次沒有這個欄位，缺就當 0 轉，標籤退回原本的樣子。 */
     function batchSeedLabel(row) {
-        return `seed ${row.seed}｜Lv.${row.level}・關卡 ${row.stage}・物攻 ${Number(row.atk || 0).toLocaleString()}`;
+        const rc = Number(row.reincarnations) || 0;
+        const rcPart = rc > 0 ? `${rc} 轉・` : '';
+        return `seed ${row.seed}｜${rcPart}Lv.${row.level}・關卡 ${row.stage}・物攻 ${Number(row.atk || 0).toLocaleString()}`;
     }
 
     function renderBatchSeedPicker(outDir, rows, pickDir) {
@@ -2442,8 +2447,13 @@
             /* 圖表與卡片要挑「中位 seed」，不能拿 rows[0]。
                rows 是依完成順序寫入的，而跑得越差的 seed 越早結束，
                rows[0] 因此系統性地是最弱的一筆——批次散佈寫著最大關卡 150，
-               卡片卻永遠顯示 77。改成依等級排序取中位數那一筆。 */
-            const ranked = rows.slice().sort((x, y) => (x.level || 0) - (y.level || 0));
+               卡片卻永遠顯示 77。改成依進度排序取中位數那一筆。
+
+               ⚠️ 排序鍵不能只用等級：轉生把等級歸 1，0 轉 Lv.1000 會排在
+               3 轉 Lv.417 後面，中位數就挑錯了。先比轉生次數，同轉再比等級。 */
+            const ranked = rows.slice().sort((x, y) =>
+                ((Number(x.reincarnations) || 0) - (Number(y.reincarnations) || 0))
+                || ((x.level || 0) - (y.level || 0)));
             const pick = ranked[Math.floor((ranked.length - 1) / 2)];
 
             const outDir = b.outDir || 'sim_batch';
@@ -2459,9 +2469,11 @@
             const box = document.getElementById('batchSpreadBox');
             if (box) {
                 const sp = (b.spread && b.spread[pick.policy]) || {};
-                const label = { level: '等級', stage: '關卡', atk: '物攻', kills: '擊殺', deaths: '死亡' };
+                const label = { reincarnations: '轉生', level: '等級', stage: '關卡', atk: '物攻', kills: '擊殺', deaths: '死亡' };
+                const pickRc = Number(pick.reincarnations) || 0;
                 let html = `<div style="font-weight:700;color:var(--accent-emerald);margin-bottom:6px;">`
-                    + `🎲 批次 ${rows.length} 個 seed × ${hours} 小時（圖表顯示<b>中位 seed ${pick.seed}</b>：Lv.${pick.level}／關卡 ${pick.stage}，以下為跨 seed 散佈）</div>`
+                    + `🎲 批次 ${rows.length} 個 seed × ${hours} 小時（圖表顯示<b>中位 seed ${pick.seed}</b>：`
+                    + `${pickRc > 0 ? pickRc + ' 轉／' : ''}Lv.${pick.level}／關卡 ${pick.stage}，以下為跨 seed 散佈）</div>`
                     + '<table style="width:100%;font-size:12px;border-collapse:collapse;">'
                     + '<tr style="color:#94a3b8;"><td>指標</td><td style="text-align:right;">最小</td>'
                     + '<td style="text-align:right;">中位數</td><td style="text-align:right;">最大</td></tr>';

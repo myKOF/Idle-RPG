@@ -2012,7 +2012,7 @@ function renderHeader() {
   if ($id('tp-level')) $id('tp-level').textContent = 'Lv.' + p.level;
   var reinc = clamp(Math.floor(Number(p.reincarnations) || 0), 0, REINCARNATION_MAX);
   var currentLevel = Math.max(0, Math.floor(Number(p.level) || 0));
-  var canReincarnate = currentLevel >= REINCARNATION_LEVEL && reinc < REINCARNATION_MAX;
+  var canReincarnate = canReincarnateAt(currentLevel, reinc);
   var reincarnationControls = $id('reincarnation-controls');
   if (reincarnationControls) {
     reincarnationControls.classList.toggle('is-visible', reinc > 0 || canReincarnate);

@@ -150,6 +150,9 @@ async function main() {
          不必自己重推命名規則——推錯了只會得到「載不到檔案」這種難查的症狀。 */
       dir: path.basename(job.out),
       level: s.final.level, stage: s.final.stage,
+      /* ⚠️ 有轉生之後，等級單獨看沒有意義：轉生把等級歸 1，
+         3 轉 Lv.417 遠強於 0 轉 Lv.1000。要比強度看關卡與轉生次數。 */
+      reincarnations: s.final.reincarnations || 0,
       atk: s.final.atk, matk: s.final.matk,
       kills: ls.kills || 0, deaths: ls.deaths || 0,
       cumGold: ls.gold || 0,
@@ -169,10 +172,11 @@ async function main() {
   for (const r of rows) (byPolicy[r.policy] = byPolicy[r.policy] || []).push(r);
 
   console.log('\n──────── 各次結果 ────────');
-  console.log('策略'.padEnd(22) + 'seed'.padStart(6) + '等級'.padStart(7) + '關卡'.padStart(7) +
+  console.log('策略'.padEnd(22) + 'seed'.padStart(6) + '轉生'.padStart(5) + '等級'.padStart(7) + '關卡'.padStart(7) +
               '物攻'.padStart(9) + '擊殺'.padStart(9) + '死亡'.padStart(7) + '  存檔雜湊');
   for (const r of rows) {
-    console.log(r.policy.padEnd(22) + String(r.seed).padStart(6) + String(r.level).padStart(7) +
+    console.log(r.policy.padEnd(22) + String(r.seed).padStart(6) + String(r.reincarnations).padStart(5) +
+      String(r.level).padStart(7) +
       String(r.stage).padStart(7) + String(r.atk).padStart(9) + String(r.kills).padStart(9) +
       String(r.deaths).padStart(7) + '  ' + r.hash);
   }
@@ -180,7 +184,7 @@ async function main() {
   console.log('\n──────── 跨 seed 散佈（最小 / 中位數 / 最大）────────');
   for (const [pol, list] of Object.entries(byPolicy)) {
     console.log(`\n${pol}（${list.length} 個 seed）`);
-    for (const key of ['level', 'stage', 'atk', 'kills', 'deaths']) {
+    for (const key of ['reincarnations', 'level', 'stage', 'atk', 'kills', 'deaths']) {
       const s = stat(list, key);
       if (s) console.log('  ' + key.padEnd(8) + `${s.min} / ${s.median} / ${s.max}`);
     }
@@ -194,7 +198,7 @@ async function main() {
     說明: 'rows 為各次模擬的原生結果；spread 為跨次統計量（不是遊戲數值）。',
     rows,
     spread: Object.fromEntries(Object.entries(byPolicy).map(([p, list]) => [p,
-      Object.fromEntries(['level', 'stage', 'atk', 'kills', 'deaths'].map((k) => [k, stat(list, k)]))]))
+      Object.fromEntries(['reincarnations', 'level', 'stage', 'atk', 'kills', 'deaths'].map((k) => [k, stat(list, k)]))]))
   }, null, 2));
 
   console.log(`\n總耗時 ${elapsed.toFixed(1)}s（${jobs.length} 次模擬，同時 ${CONCURRENCY} 個）`);

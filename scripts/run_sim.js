@@ -314,10 +314,23 @@ function dispatch(cmds) {
 /* ---- 不變量斷言：任一失敗立即停止，不產出「看起來完成」的檔案 ---- */
 const problems = [];
 let lastLevel = 0;
+let lastReinc = 0;
 function assertInvariants(view, stats) {
   const bad = [];
-  if (view.level < lastLevel) bad.push(`等級倒退 ${lastLevel} → ${view.level}`);
+  /* ---- 等級倒退 ----
+
+     轉生會把等級歸 1（js/player.js reincarnate），所以倒退本身不是壞資料——
+     這條不變量成立到現在只是因為策略以前從來沒轉生過，實測 5 個 seed 有 4 個
+     停在 Lv.1000／0 轉。加上轉生規則之後它立刻誤報。
+
+     ⚠️ 不能因此把整條拿掉：轉生以外的等級倒退仍然是存檔壞掉的訊號。
+     判準改成「倒退時轉生次數必須跟著上升」。 */
+  const reincNow = Number(((engine.ctx.G || {}).player || {}).reincarnations) || 0;
+  if (view.level < lastLevel && reincNow <= lastReinc) {
+    bad.push(`等級倒退 ${lastLevel} → ${view.level}（轉生次數沒動，仍是 ${reincNow}）`);
+  }
   lastLevel = view.level;
+  lastReinc = reincNow;
   for (const k of ['gold', 'scrap', 'dust', 'essence', 'ancientEssence', 'level', 'stage']) {
     const v = view[k];
     if (typeof v === 'number' && !Number.isFinite(v)) bad.push(`${k} 不是有限數：${v}`);
