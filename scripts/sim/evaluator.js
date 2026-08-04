@@ -702,6 +702,10 @@ function evalSlotUpgrades(foe, base, cfg, sweep) {
       cands.push(it);
     }
     if (!cands.length) continue;
+    /* 階級判準要看**全部**候選，不能只看 itemScore 前幾名：它是純比較（品質／裝等／
+       太古數），不需要 computeStats 就能篩，只有選中的那一件要算一次。
+       實測 itemScore 的排序對這個決策很不準——真正的贏家排到第 9、第 15 名都有。 */
+    var allCands = cands;
     cands = evalRankCandidates(cands, score).slice(0, topN);
 
     var cur = eq[slotKey] || null;
@@ -791,6 +795,75 @@ function evalSlotUpgrades(foe, base, cfg, sweep) {
         };
       }
     }
+    /* ============ 高一階就直接換：只看洗不掉的東西 ============
+
+       ---- 為什麼上面那套 gain/need 不夠 ----
+
+       gain 是拿**候選當下的隨機骰值**去比**身上那件的骰值**。但一件裝備身上，
+       真正永久固定的只有三樣：品質（決定詞條數與插槽數）、裝等、太古位置數。
+       詞條鍵與數值可以洗、強化可以重堆、寶石可以拔下來重鑲、附魔可以重附。
+       拿可變的部分去做不可逆的決定，等於讓一次幸運骰把整個部位鎖死。
+
+       實測：關卡 128 的角色站在「掉裝等 100」的關卡，身上最弱的部位還是裝等 50
+       （panels.eval.tier 的 equippedItemLevelMin=50 對 itemLevelHere=100）。
+       同一份存檔生 300 件當關史詩護手、連寶石與強化都補過去，只有 6% 的 gain 為正——
+       因為身上那件剛好骰到 atkFlat，而那正是可以洗回來的東西。
+
+       ---- 判準 ----
+
+       候選在「品質」或「裝等」上高一階、而且另一項不更差 → 直接換。
+       唯一的例外是身上那件累積的**太古位置**：太古洗煉必為滿值且永遠維持太古
+       （js/item.js rerollSingleAffix），是唯一無法重建的投資。
+       身上比候選多 ancientKeep 條以上太古時才留下。
+
+       ⚠️ 裝等與品質**同等看待**，不是只看品質。實測同一條 atkFlat：
+       裝等 1→50 是 ×27.95，而 R2→R5（同裝等）只有 ×2.29——裝等的權重更大，
+       只認品質會漏掉更重要的那一半。 */
+    var tierCfg = cfg.tierRule;
+    if (tierCfg && cur) {
+      var keepN = (typeof tierCfg.ancientKeep === 'number') ? tierCfg.ancientKeep : 3;
+      var curAnc = (typeof getItemAncientCount === 'function') ? getItemAncientCount(cur) : 0;
+      var forced = null, forcedRank = null;
+      for (var ti = 0; ti < allCands.length; ti++) {
+        var tc = allCands[ti];
+        var upR = (tc.rarity || 0) - (cur.rarity || 0);
+        var upL = (tc.level || 0) - (cur.level || 0);
+        /* 高一階＝其中一項更好、另一項不更差。一升一降交回上面的 gain/need 判斷。 */
+        if (!((upR > 0 && upL >= 0) || (upL > 0 && upR >= 0))) continue;
+        var tcAnc = (typeof getItemAncientCount === 'function') ? getItemAncientCount(tc) : 0;
+        if (curAnc - tcAnc >= keepN) continue;      // 身上的太古投資夠深，留著
+        /* 同樣高一階時取裝等 → 品質 → 太古數最好的那一件。 */
+        var rank = [tc.level || 0, tc.rarity || 0, tcAnc];
+        if (!forced || rank[0] > forcedRank[0]
+          || (rank[0] === forcedRank[0] && rank[1] > forcedRank[1])
+          || (rank[0] === forcedRank[0] && rank[1] === forcedRank[1] && rank[2] > forcedRank[2])) {
+          forced = tc; forcedRank = rank;
+        }
+      }
+      if (forced) {
+        /* 覆蓋掉 gain/need 的結論，但保留原本的數字供報表判讀——
+           哪些換裝是靠這條放行的，看 forcedByTier 就知道。 */
+        if (!best || best.itemId !== forced.id) {
+          var fSt = computeStats(evalEquipmentWith(slotKey, forced));
+          var fP = evalPower(fSt, foe);
+          best = {
+            itemId: forced.id,
+            gain: (base.offense > 0 ? (fP.offense / base.offense - 1) * 100 : 0)
+              + ((base.ehp > 0 && isFinite(base.ehp)) ? (fP.ehp / base.ehp - 1) * 100 : 0),
+            dOffPct: base.offense > 0 ? (fP.offense / base.offense - 1) * 100 : 0,
+            dEhpPct: (base.ehp > 0 && isFinite(base.ehp)) ? (fP.ehp / base.ehp - 1) * 100 : 0,
+            need: 0,
+            candRarity: forced.rarity, candLevel: forced.level,
+            curRarity: cur.rarity, curLevel: cur.level
+          };
+        }
+        best.worth = true;
+        best.forcedByTier = true;
+        best.curAncient = curAnc;
+        best.candAncient = (typeof getItemAncientCount === 'function') ? getItemAncientCount(forced) : 0;
+      }
+    }
+
     if (best) {
       out[slotKey] = best;
       if (best.worth) used[best.itemId] = true;   // 同一件不要被兩個部位同時選走

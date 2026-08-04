@@ -2227,8 +2227,14 @@ function decide(state, policy, memo) {
           if (epUsed[ep.itemId]) continue;
           /* 額外的最低增幅門檻。評估器的 worth 已經扣掉插槽與強化成本，
              這裡是策略自己再加一道——換裝會讓寶石與附魔重來一輪，
-             增幅太小的話換來換去的間接成本大於帳面收益。 */
-          if (typeof epCfg.minGainPct === 'number' && ep.gain < epCfg.minGainPct) continue;
+             增幅太小的話換來換去的間接成本大於帳面收益。
+
+             ⚠️ 階級判準（forcedByTier）豁免這道門檻。那條規則的前提就是
+             「當下的帳面增幅不算數」——候選是裸的、詞條是隨機骰的，而那些都能
+             事後補回來；它比的是洗不掉的品質與裝等。用當下增幅再擋一次，
+             等於把那條規則整個廢掉（實測那些換裝的 gain 多半是負的）。 */
+          if (!ep.forcedByTier
+            && typeof epCfg.minGainPct === 'number' && ep.gain < epCfg.minGainPct) continue;
           epQuota--;
           epUsed[ep.itemId] = true;
           out.push({ name: r.cmd, args: { itemId: ep.itemId, slotKey: epSlots[epi] }, ruleId: r.id });
@@ -2405,12 +2411,104 @@ function decide(state, policy, memo) {
             var urLimit = (typeof urCap[urRar] === 'number') ? urCap[urRar] : 0;
             if ((urItem.upgrade || 0) >= urLimit) continue;
           }
+
+          /* ---- 極端強化是虧的：先把全身推到同一個水位 ----
+
+             強化成本是指數的（碎片 8×1.35^等級），而成功率在 +17 之後觸底 30%，
+             失敗還要付半額。裝等 100、無成功率加成的期望碎片：
+               +25 累計 440,754   +30 累計 2,004,659   +35 累計 9,017,264
+             **把一件從 +32 推到 +35 要 5,357,090 碎片，那足夠把 12 個部位從 +0
+             推到 +25**。而戰力上 +35 對 +25 是 ×1.22（一件），同樣的材料換到的是
+             ×1.22（十二件）。
+
+             例外：帶著**全域型詞條**的裝備值得推更高——
+               gemEff（寶石鑲嵌效率）放大**全身**已鑲嵌寶石（formula.js 的
+                 gemMult = 1 + gemEff/100，不是只加強自己）；
+               enhanceSuccess（強化成功率）直接降低自己後續每一級的期望成本
+                 （+40% 時推到 +35 的總成本降到 56%）。
+             兩條都只出現在戒指與項鍊、史詩以上——那個部位群天生就是特別投資的目標。 */
+          var urMax = (typeof urCfg.maxUpgrade === 'number') ? urCfg.maxUpgrade : Infinity;
+          var urGlobalKeys = urCfg.globalAffixKeys || [];
+          if (urGlobalKeys.length && urItem.affixes) {
+            for (var ugi = 0; ugi < urItem.affixes.length; ugi++) {
+              var uga = urItem.affixes[ugi];
+              if (uga && uga.key && urGlobalKeys.indexOf(uga.key) >= 0) {
+                urMax = (typeof urCfg.maxUpgradeGlobalAffix === 'number')
+                  ? urCfg.maxUpgradeGlobalAffix : urMax;
+                break;
+              }
+            }
+          }
+          if ((urItem.upgrade || 0) >= urMax) continue;
+
           urQuota--;
           var urArgs = {};
           for (var urak in baseArgs) urArgs[urak] = baseArgs[urak];
           urArgs[urCfg.argKey || 'itemId'] = urItem.id;
           out.push({ name: r.cmd, args: urArgs, ruleId: r.id });
         }
+      }
+    } else if (r.resumeBest) {
+      /* ---- 被打回去就直接切回來，不要重打一遍 ----
+
+         野外死亡會退 FIELD_DEATH_STAGE_RETREAT（目前 10）關。這件事**本身不是損失**，
+         因為關卡可以自由切（stage.goMax 一步跳回 min(best, 地圖上限)）——
+         真人就是這樣玩的：BOSS 打不過立刻退 20 關掛機，覺得能打了馬上切回去。
+
+         損失的是「沒切回去」。實測 20 小時死 456 次、每次退 10 關，而 stage.go 只送了
+         36 次、stage.goMax **一次都沒送過**——角色老老實實把那 10 關重打一遍，
+         一次約 3 分鐘。把兩邊的速率放在一起看就知道為什麼推不動：
+           清怪推關 +3.4 關/分（每波 +1 關 × 自動推關開著 70% 的時間）
+           死亡退關 −3.8 關/分（0.382 次/分 × 10 關）
+         淨值是負的，20 小時大半在做白工。
+
+         ⚠️ 不能無條件切回去，否則就是站在打不過的關卡反覆送死。判準沿用既有的
+         **卡關重試閘門**（ctx.retryWaiting）：上一次沒打過、而且「時間沒到或還沒變強」
+         時不准回去——那正是「覺得能挑戰了」這句話已經實作好的版本。
+         另外還要求宣告的目標達標，語意與 stageGate.requireTargets 一致。 */
+      var rbCfg = r.resumeBest;
+      var rbStage = Number(pathVal(state, rbCfg.stage)) || 0;
+      var rbBest = Number(pathVal(state, rbCfg.best)) || 0;
+      var rbGap = (typeof rbCfg.minGap === 'number') ? rbCfg.minGap : 3;
+      var rbOk = rbBest - rbStage >= rbGap;
+      if (rbOk && state.ctx && state.ctx.retryWaiting) rbOk = false;
+      var rbReq = rbCfg.requireTargets || [];
+      for (var rbi = 0; rbi < rbReq.length && rbOk; rbi++) {
+        var rbD = state.ctx && state.ctx.deficit && state.ctx.deficit[rbReq[rbi]];
+        /* unknown 不算達標：資料不足時不要往前跳，下一拍就有值。 */
+        if (!rbD || rbD.unknown || !rbD.met) rbOk = false;
+      }
+      if (rbOk) out.push({ name: r.cmd, args: baseArgs, ruleId: r.id });
+    } else if (r.switchZone) {
+      /* ---- 打通一張圖就換下一張 ----
+
+         關卡改造之後每張地圖都是有限關卡（草原 200、荒漠 300、沼澤 400、
+         亡靈山脈 500）。打到頂之後 js/combat.js 會把 current 夾在 maxStage、
+         設 mapComplete 並停止出怪——**推關指令照送、遊戲照回 ok，但關卡再也不動**。
+         沒有這條規則的話 AI 會在草原 200 關永久停住而且完全沒有徵兆。
+
+         觸發條件刻意保守：**只有當前這張圖真的打通了才換**。
+         換過去是從那張圖的第 1 關重新開始（怪物倍率更高、掉落裝等歸 1），
+         短期一定是退步；在還推得動的時候換等於自己找罪受。
+         打通之後則沒有別的選擇——留在原地是零產出。
+
+         目標取「已解鎖、且上限比當前這張高」之中 order 最小的那一張：
+         照設計順序走一階，不跳關。解鎖與否一律由遊戲的 isZoneUnlocked 回答。 */
+      var szCfg = r.switchZone;
+      var szZones = pathVal(state, szCfg.zones) || [];
+      var szCur = null;
+      for (var szi = 0; szi < szZones.length; szi++) {
+        if (szZones[szi] && szZones[szi].key === pathVal(state, szCfg.currentZone)) szCur = szZones[szi];
+      }
+      if (szCur && szCur.maxStage > 0 && (szCur.best || 0) >= szCur.maxStage) {
+        var szNext = null;
+        for (var szj = 0; szj < szZones.length; szj++) {
+          var sz = szZones[szj];
+          if (!sz || !sz.unlocked) continue;
+          if (!(sz.maxStage > szCur.maxStage)) continue;
+          if (!szNext || sz.order < szNext.order) szNext = sz;
+        }
+        if (szNext) out.push({ name: r.cmd, args: { zoneKey: szNext.key }, ruleId: r.id });
       }
     } else if (r.argsList) {
       /* 同一條規則要送多組固定參數（例如三個品質各設一次）。 */
