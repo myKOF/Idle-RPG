@@ -33,6 +33,20 @@ function reincarnationRankName(count) {
   var n = count === undefined ? reincarnationCount() : clamp(Math.floor(Number(count) || 0), 0, REINCARNATION_MAX);
   return REINCARNATION_RANKS[n] || REINCARNATION_RANKS[REINCARNATION_RANKS.length - 1];
 }
+/* 可不可以轉生。刻意收 (等級, 轉生次數) 而不是讀 G——
+   ui.js 在主執行緒渲染，那裡沒有 G，它拿到的是 header 面板的快照；
+   Worker 這端則要投影同一個答案給面板。兩邊只有這樣才可能共用同一支判斷。
+
+   ⚠️ 可轉生等級是**參數表的值**（「可轉生等級 參數 a」→ REINCARNATION_LEVEL），
+   使用者會在 Excel 裡改。任何一端自己抄一個 1000 進去，參數表一改就會靜靜地錯，
+   而且錯的形式是「按鈕不亮／AI 不轉生」這種沒有錯誤訊息的沉默失效。
+   真正的閘門在 player.js reincarnate()（那裡要分辨兩種失敗訊息所以分開寫），
+   tests/reincarnate-gate.test.cjs 釘住兩者必須同進同出。 */
+function canReincarnateAt(level, reincarnations) {
+  var lv = Math.max(0, Math.floor(Number(level) || 0));
+  var rc = clamp(Math.floor(Number(reincarnations) || 0), 0, REINCARNATION_MAX);
+  return lv >= REINCARNATION_LEVEL && rc < REINCARNATION_MAX;
+}
 function reincarnationExtraMultiplier(count) {
   var n = count === undefined ? reincarnationCount() : clamp(Math.floor(Number(count) || 0), 0, REINCARNATION_MAX);
   return REINCARNATION_EXTRA_MULTIPLIERS[n] || 0;

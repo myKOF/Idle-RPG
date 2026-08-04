@@ -328,6 +328,21 @@
       "tierPush_退關地板": "退關的地板同時被拉到當前裝等分段的底（見 policy_interpreter.js 的 tierFloor）。跌破分段邊界一定更差，而這個地板是靜態的分段邊界、不是「記下來的已知安全關卡」，所以不會造成死鎖"
     },
     {
+      "id": "reincarnate",
+      "everySec": 30,
+      "if": [
+        [
+          "panels.talents.canReincarnate",
+          "truthy"
+        ]
+      ],
+      "cmd": "player.reincarnate",
+      "why": "到得了可轉生等級就立刻轉生，不等。先前策略完全沒有這條，實測 100 小時 5 個 seed 有 4 個停在 Lv.1000／0 轉——而等級一到上限，之後每一點經驗都被丟掉（js/player.js settlePlayerXp 的 `if (p.level >= MAX_LEVEL) p.xp = 0`），等於升級這條產出管線整段報廢",
+      "為什麼不必等": "常識會說「等級歸 1 一定變弱，要先攢裝備」。實測相反：拿 5 個 seed 的 100 小時終局存檔直接按下轉生，同一瞬間物攻 ×1.77~1.80、生命 ×1.36~1.43、物防 ×1.36~1.45，四個 seed 全部立刻變強。原因在 formula.js 的攻防派生——裝備定值的轉生強化是 flatMult×定值×reincBase^轉生次數，0 轉時定值貢獻 (1+1.2)=2.2 倍、1 轉變成 (1+1.2×2.5)=4.0 倍，而等級只給 4 維主屬性（1000 級 = 2003 點），在關卡 300+ 的百萬級物攻面前是零頭。掉的是 matk/mp/未派生的主屬性，物理流本來就沒在用",
+      "順帶解鎖": "天賦系統、潛力技能、神鑄（FORGE_UNLOCK_REINCARNATION=1）、第 3 座熔爐（每轉 +1）、技能等級上限 10→15。policy 裡的 talent-upgrade-step1/2/3 本來就寫著「reincarnations >= 1」的前提，在沒有這條規則之前它們一次都沒有真正執行過",
+      "門檻不寫死": "條件讀的是遊戲投影的 panels.talents.canReincarnate，不是 level >= 1000。可轉生等級是參數表的值（見 js/formula.js canReincarnateAt 的說明），抄進策略資料的話使用者改 Excel 之後這條會靜靜地失效"
+    },
+    {
       "id": "equip-best-per-slot",
       "everySec": 15,
       "cmd": "item.equip",

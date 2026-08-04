@@ -712,9 +712,14 @@ function buildPanel(name, params) {
       };
     case 'talents':
       // 天賦與潛能等級都在 player.talents 底下（levels / potentialLevels）
+      /* canReincarnate：轉生按鈕的亮燈條件，由遊戲算給面板。
+         門檻（可轉生等級）是參數表的值，不該讓讀面板的一方自己抄一份——
+         AI 策略就是靠這個欄位決定何時送 player.reincarnate。 */
       return {
         talents: p.talents, reincarnations: p.reincarnations,
-        talentPoints: p.reincarnationTalentPoints
+        talentPoints: p.reincarnationTalentPoints,
+        canReincarnate: (typeof canReincarnateAt === 'function')
+          ? canReincarnateAt(p.level, p.reincarnations) : false
       };
     default: return null;
   }
