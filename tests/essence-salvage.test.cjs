@@ -47,7 +47,9 @@ test('附魔精華拆解基礎機率依裝備品質表計算', () => {
 
 test('T7 精粹透鏡每個提供 140% 附魔精華加成，且不再被掉寶率減半', () => {
   const context = loadFormulaContext();
-  assert.equal(context.PART_TYPES.extractLens.perTier, 20);
+  assert.equal(context.PART_TYPES.extractLens.base, 20);
+  assert.equal(context.PART_TYPES.extractLens.perLevel, 20);
+  assert.equal(context.partValueForLevel('extractLens', 7), 140);
   assert.equal(context.effectivePartEffectValue('extractLens', 140), 140);
   assert.equal(context.effectivePartEffectValue('extractLens', 1400), 1400);
   assert.equal(context.PART_TYPES.essenceCoil, undefined);
@@ -94,7 +96,9 @@ test('舊存檔中的淘汰零件會移除已裝備項目並返還碎片', () =>
   state.factory.installed = { salvage: ['sieve', 'lens', 'purifier'], synth: ['coil'] };
 
   const migrated = context.migrateSave(state);
+  // 未載入 newforge 適配層時，save migration 仍保留有效的舊槽位；淘汰零件只會被移除。
   assert.deepEqual(Array.from(migrated.factory.parts, (part) => part.key), ['extractLens']);
+  assert.equal(migrated.factory.partLevels.extractLens, 1);
   assert.deepEqual(JSON.parse(JSON.stringify(migrated.factory.installed)), { salvage: ['lens'], synth: [] });
   assert.equal(migrated.player.scrap, 22);
 });

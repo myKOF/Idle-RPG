@@ -48,7 +48,8 @@ test('地圖掉落表集中管理 R0～R10 裝備掉落率', () => {
   const config = readZoneDrops();
   const table = plain(context.ZONE_STAGE_DROP_TABLE);
 
-  assert.equal(config.length, 30);
+  // origin/develop 的掉落表新增了兩個地圖／關卡區間；目前 CSV 資料列為 32 列。
+  assert.equal(config.length, 32);
   assert.deepEqual(Object.keys(table), ['plains', 'desert', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary']);
   for (const row of config) {
     assert.equal(row.rates.length, 11, row.zone + ' ' + row.min + ' 應有 R0～R10 共 11 欄');
@@ -104,7 +105,8 @@ test('重疊的地圖／關卡列按裝備、寶石與材料欄位逐欄相加',
   );
   assert.deepEqual(
     plain(context.fieldMaterialConfigFor('overlap_fixture', 40)),
-    { gemRates: [1, 1, 0, 0, 0], bookRate: 5, ancientEssenceRate: 7, dustRate: 9, partRate: 11 }
+      // 野外零件掉落已移除，材料表不再提供 partRate。
+      { gemRates: [1, 1, 0, 0, 0], bookRate: 5, ancientEssenceRate: 7, dustRate: 9 }
   );
 });
 

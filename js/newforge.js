@@ -5,7 +5,7 @@
    依各熔爐勾選的品質自動送入傳送帶拆解（由右至左入爐），未勾選/上鎖/神鑄創世＝保留入包。
 
    拆解規則沿用舊分解槽（factory.js doSalvage：碎片/金幣/附魔精華/太古精華與各零件事件），
-   零件加成改由「該熔爐零件格」搭配 factory.partLevels 即時提供（newForgePartBonus）。
+   零件加成改由「該熔爐零件格」保存的 tier 快照提供（newForgePartBonus）；升級後需卸下重裝才套用。
    熔爐可設數量與轉生連動（formula.js newForgeMaxFurnaces）；每爐零件格 3~8，
    金幣逐格解鎖（formula.js newForgePartSlotCost）。全服開放（原本地服限定已解除）。 */
 

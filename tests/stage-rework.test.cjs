@@ -75,7 +75,8 @@ test('地圖表承接場景專屬倍率與所有地圖的分段掉落資料', ()
   const drops = fs.readFileSync(path.join(root, 'config/CSV/Zone_Stage_Drops.csv'), 'utf8').replace(/^\uFEFF/, '').trim().split(/\r?\n/);
   assert.equal(zones[0], '順序,地圖識別碼,地圖名稱,位面,關卡上限,前置地圖識別碼,前置通關關卡,最低轉生次數,生命倍率,攻擊倍率,防禦倍率,攻速倍率,經驗金幣獎勵倍率');
   assert.match(zones.find((line) => line.includes(',undead_mountains,')), /,6\.5,3\.8,3\.2,1\.8,2\.25$/);
-  assert.equal(drops.length, 31);
+  // origin/develop 的 Zone_Stage_Drops.csv 現在包含 32 列資料，另加標題列。
+  assert.equal(drops.length, 33);
   assert.ok(drops.some((line) => line.startsWith('god_sanctuary,601,800,')));
 });
 
@@ -83,8 +84,9 @@ test('掉落配置依地圖與關卡區間查表，且支援材料欄位', () =>
   const c = load(['js/util.js', 'js/data.js', 'js/formula.js']);
   const early = c.zoneStageDropConfigFor('undead_mountains', 100);
   const late = c.zoneStageDropConfigFor('undead_mountains', 400);
-  assert.equal(early.max, 125);
-  assert.equal(late.min, 376);
-  assert.equal(late.materials.bookRate, 10);
-  assert.equal(c.fieldDropRatesFor(400, 400, 'undead_mountains')[6], 0.25);
+  // 亡靈山脈的新版分段為 1~199 與 400~449；數值由集中掉落表決定。
+  assert.equal(early.max, 199);
+  assert.equal(late.min, 400);
+  assert.equal(late.materials.bookRate, 4);
+  assert.equal(c.fieldDropRatesFor(400, 400, 'undead_mountains')[6], 0.3);
 });

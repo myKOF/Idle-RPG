@@ -3629,7 +3629,7 @@ function nfPartSlotsHTML(fu, nf, player) {
   var cells = '';
   for (var s = 0; s < NEW_FORGE_PART_SLOTS_MAX; s++) {
     if (s < fu.partSlots) {
-      var p = fu.parts[s]; // 裝配資料 {key}；等級由全域 partLevels 即時讀取
+      var p = fu.parts[s]; // 裝配資料 {key, tier}；tier 是裝配當下的效果快照
       if (p && PART_TYPES[p.key]) {
         var currentLevel = Number(p.tier !== undefined ? p.tier : ((nf.partLevels && nf.partLevels[p.key]) || 1));
         // 已裝＝正方形小圖示（全稱在 tooltip；點擊依格位索引卸下）
@@ -3663,12 +3663,12 @@ function nfPartsListHTML(fu, factory, nf) {
     var level = levels[key] || 1;
     return '<span class="part-chip" style="cursor:pointer; border-color:var(--accent);" data-nf-fid="' + fu.id +
       '" data-nf-partinstall-key="' + key + '"' + pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
-      ' data-tip="【點擊裝配】T' + level + ' ' + esc(partDesc({ key: key, level: level })) + '；升級後已裝配效果同步提升">' + partIconHTML(key) + esc(partName({ key: key, level: level })) + '</span>';
+      ' data-tip="【點擊裝配】T' + level + ' ' + esc(partDesc({ key: key, level: level })) + '；升級後需卸下重裝才套用新效果">' + partIconHTML(key) + esc(partName({ key: key, level: level })) + '</span>';
   }).join('');
   return '<div class="nf-parts-list"><div class="nf-parts-list-head">🔧 選擇零件（熔爐 #' + fu.id + '，' +
     fu.parts.length + '/' + fu.partSlots + '）<button class="btn sm" data-nf-fid="' + fu.id + '" data-nf-partsopen="1">收起</button></div>' +
     '<div class="chip-row">' + chips + '</div>' +
-    '<div class="hint">選擇零件種類即可裝配；同類型可重複、連續點擊可一次裝滿。升級零件後，所有熔爐中同名零件效果會同步更新。</div></div>';
+    '<div class="hint">選擇零件種類即可裝配；同類型可重複、連續點擊可一次裝滿。已裝配零件是快照，升級後需卸下再裝配才套用新效果。</div></div>';
 }
 
 function nfPartUpgradesHTML(factory, player, nf) {
@@ -3691,7 +3691,7 @@ function nfPartUpgradesHTML(factory, player, nf) {
       '<div class="nf-part-upgrade-action">' + button + '</div></div>';
   }).join('');
   return '<div class="nf-part-upgrades"><div class="sec-title">🔧 零件升級</div>' +
-    '<div class="hint">零件等級上限 T' + PART_MAX_TIER + '；升級費用公式為 a + b × c^升級後等級（例如 T5→T6 代入 6）。滑鼠移到圖示可查看效果，已裝配的同名零件會立即同步。</div>' +
+    '<div class="hint">零件等級上限 T' + PART_MAX_TIER + '；升級費用公式為 a + b × c^升級後等級（例如 T5→T6 代入 6）。滑鼠移到圖示可查看效果，已裝配零件需卸下重裝才套用新等級。</div>' +
     '<div class="nf-part-upgrade-grid">' + rows + '</div></div>';
 }
 
