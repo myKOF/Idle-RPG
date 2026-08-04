@@ -1472,7 +1472,10 @@
     ],
     "affixKeys_依據": "取自本策略既有的 affixWeapon / affixArmor / affixJewel 三份清單的交集與主力項。清單本身不再決定優先序——優先序由 ROI 排出來，清單只決定「要評估哪些」",
     "slotUpgrades": {
-      "candidatesPerSlot": 2
+      "candidatesPerSlot": 2,
+      "rebuildUpgrade": true,
+      "rebuildUpgrade_依據": "換裝比較時把候選補到「它將會達到的強化等級」再問遊戲，而不是拿裸的去比。upgradeMult = 1+0.05×強化，+17 等於 ×1.85 的先天劣勢，而強化是可以重建的、不是候選的缺陷；舊版還在 need 上又收一次 curUpgrade 全額，同一件事算了兩次。後果是投資鎖死：一個部位只要開始堆強化就再也換不掉，跑越久凍得越死（實測 Lv.213 的存檔 13 個部位有 9 個其實有更好的選擇，其中 5 個純賺）。A/B 20 小時 × 5 seed 同 seed 配對：物攻曲線平均 15,272 → 34,631（2.27 倍），4/5 個 seed 物攻與關卡雙贏，中位關卡 141 → 150",
+      "candidatesPerSlot_依據": "維持 2。實測把它拉到 12（配合 rebuildUpgrade）反而更差：換裝指令 1,653 → 3,963，物攻曲線平均 34,631 → 17,724，中位物攻 89,142 → 39,205。多開候選會讓最佳解在每次重算之間跳動，把強化投資反覆丟掉——找得更準不等於換得更好"
     },
     "probeEquippedAffixes": true,
     "probeTopSlots": 3,

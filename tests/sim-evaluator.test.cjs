@@ -750,3 +750,109 @@ test('policy.extreme.roi.json 的每一條 eval 路徑都解得出值', () => {
       `策略指到的 ${pth} 解不出值。規則會靜靜失效，報表只會顯示「這條規則沒送出過」`);
   }
 });
+
+/* ---- 投資鎖死：換裝比較時，強化等級要站在同一條起跑線上 ----
+
+   實測動機：20 小時 × 5 seed，Lv.213 的角色身上還穿著獨特靴子，而背包裡有史詩的。
+   問遊戲才知道評估器沒算錯——當下換過去是 物攻 −10.3%、生命 −19.8%，
+   因為身上那雙有 +11 強化、2 顆寶石、1 個附魔，而候選是裸的。
+
+   但那個比較本身不公平：upgradeMult = 1 + 0.05×強化，+17 等於 ×1.85 的先天劣勢，
+   而強化是**可以重建的**，不是候選的缺陷。舊版把同一件事算了兩次、方向都對候選不利：
+   候選以 +0 去比身上的 +17（①），然後 need 又收 curUpgrade × upgradeGuard（②）。
+   寶石那邊本來就有做同一件事（carried），漏的只有強化。
+
+   後果是一個部位只要開始堆強化就再也換不掉，跑越久凍得越死。
+   實測那份存檔 13 個部位有 9 個其實有更好的選擇，其中 5 個是純賺。
+
+   A/B（20 小時 × 5 seed，同 seed 配對）：物攻曲線平均 15,272 → 34,631（2.27 倍），
+   4/5 個 seed 的物攻與關卡都贏過對照組，中位關卡 141 → 150。
+
+   ⚠️ 這裡每一次探測都必須帶 refreshSec: 0。規劃結果以遊戲時鐘為鍵快取 15 秒，
+   同一秒內改了設定再讀會拿到**舊規劃**——第一版就是這樣寫的，兩組設定測出完全
+   相同的數字而測試照樣綠。 */
+
+function upgradeProbe(e, cfg) {
+  e.setEvalParams({ affixKeys: ['atkFlat'], refreshSec: 0, slotUpgrades: cfg });
+  return e.panel('eval').slotUpgrades || {};
+}
+
+/* 找一個「身上有裝備、且背包裡有同部位候選」的部位。 */
+function slotWithCandidate(c) {
+  const fits = (it, k) => (c.equipSlotsForItem ? c.equipSlotsForItem(it) : []).indexOf(k) >= 0;
+  return Object.keys(c.G.equipment).find((k) => c.G.equipment[k] && c.G.inventory.some((it) => fits(it, k)));
+}
+
+test('rebuildUpgrade：候選與身上那件比在同一個強化等級，need 只收差額', () => {
+  const e = createEngine({ seed: 20260908 }).boot(null);
+  e.stepSeconds(600);          // 讓 foe 與背包長出來，否則 slotUpgrades 會早退回空物件
+  const c = e.ctx;
+  const slot = slotWithCandidate(c);
+  assert.ok(slot, '前提：至少要有一個部位在背包裡有同部位候選');
+
+  c.G.equipment[slot].upgrade = 20;
+  const before = e.saveJson();
+
+  const off = upgradeProbe(e, { candidatesPerSlot: 4, rebuildUpgrade: false })[slot];
+  const on = upgradeProbe(e, { candidatesPerSlot: 4, rebuildUpgrade: true })[slot];
+  assert.equal(e.saveJson(), before, '評估器只讀不寫：兩次探測都不得改動狀態');
+  assert.ok(off && on, `${slot} 兩種設定都要評估得出結果`);
+
+  /* 快取若沒關掉，兩組會是同一份物件——那樣下面的斷言全部空轉。 */
+  assert.ok(off !== on, '兩次探測必須真的各算一次（refreshSec: 0）');
+
+  assert.ok(on.gain > off.gain,
+    `身上 +20、候選裸的，開啟後候選必須評得更高：關閉 ${off.gain.toFixed(2)} → 開啟 ${on.gain.toFixed(2)}`);
+  /* 候選是裸的時候「要重建的差額」剛好等於「身上那件的全額」，兩者相等是對的。 */
+  assert.equal(on.need, off.need, '候選 +0 時差額＝全額，need 應該一樣');
+
+  /* 讓候選自己帶一些強化，差額才看得出來：它帶著的那幾級不用花材料重建。 */
+  for (const it of c.G.inventory) {
+    if ((c.equipSlotsForItem ? c.equipSlotsForItem(it) : []).indexOf(slot) >= 0) it.upgrade = 8;
+  }
+  const off2 = upgradeProbe(e, { candidatesPerSlot: 4, rebuildUpgrade: false })[slot];
+  const on2 = upgradeProbe(e, { candidatesPerSlot: 4, rebuildUpgrade: true })[slot];
+  assert.ok(on2.need < off2.need,
+    `候選已帶 +8 時 need 只該收 (20−8) 的差額：關閉 ${off2.need} → 開啟 ${on2.need}`);
+});
+
+test('rebuildUpgrade 關閉時維持舊語意：need 收身上那件的完整強化等級', () => {
+  const e = createEngine({ seed: 20260908 }).boot(null);
+  e.stepSeconds(600);
+  const c = e.ctx;
+  const slot = slotWithCandidate(c);
+  c.G.equipment[slot].upgrade = 20;
+
+  const off = upgradeProbe(e, { candidatesPerSlot: 4, rebuildUpgrade: false, upgradeGuardPctPerLevel: 0.5 })[slot];
+  assert.ok(off.need >= 20 * 0.5 - 1e-9,
+    `關閉時 need 應含 curUpgrade 全額（20 × 0.5 = 10），實際 ${off.need}`);
+});
+
+test('候選自己帶著的強化不會被抹掉（取 max 而不是直接套身上那件）', () => {
+  /* 取 curUpgrade 而不是 max 的話，背包裡一件已經 +20 的裝備在身上是 +0 時
+     會被當成 +0 評估——它是真的有那些強化，重新裝上不用花任何材料。
+     max 同時保證來回換不會震盪：兩個方向都用同一個等級比，結論一致。 */
+  const e = createEngine({ seed: 20260908 }).boot(null);
+  e.stepSeconds(600);
+  const c = e.ctx;
+  const slot = slotWithCandidate(c);
+  const fits = (it) => (c.equipSlotsForItem ? c.equipSlotsForItem(it) : []).indexOf(slot) >= 0;
+
+  c.G.equipment[slot].upgrade = 0;
+  const cand = c.G.inventory.find(fits);
+
+  cand.upgrade = 0;
+  const plain = upgradeProbe(e, { candidatesPerSlot: 8, rebuildUpgrade: true })[slot];
+  cand.upgrade = 20;
+  const boosted = upgradeProbe(e, { candidatesPerSlot: 8, rebuildUpgrade: true })[slot];
+
+  assert.ok(plain && boosted, '兩次都要評估得出結果');
+  if (boosted.itemId === cand.id && plain.itemId === cand.id) {
+    assert.ok(boosted.gain > plain.gain,
+      '同一件候選帶著 +20 應該比 +0 評得更高——它的強化是真的存在，不該被身上那件的 0 抹掉');
+  } else {
+    /* 候選帶了 +20 之後可能超車成為另一個部位的最佳解，那也是正確行為。 */
+    assert.ok(boosted.gain >= plain.gain,
+      '把某個候選變強之後，這個部位的最佳增幅不該反而變低');
+  }
+});
