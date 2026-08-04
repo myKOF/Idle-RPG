@@ -1101,6 +1101,30 @@ function dropRatesFor(table, lvl) {
   }
   return table[table.length - 1].rates;
 }
+var DROP_RATES_FOR_DEFAULT = dropRatesFor;
+// 關卡改造：掉落先依地圖/關卡區間查表，再由掉寶率與菁英倍率修正。
+var FIELD_DROP_TABLE_DEFAULT = FIELD_DROP_TABLE;
+var FIELD_DROP_TABLE_DEFAULT = FIELD_DROP_TABLE;
+function zoneStageDropConfigFor(zone, stage) {
+  var key = zone || (typeof G !== 'undefined' && G && G.stage ? G.stage.zone : 'plains') || 'plains';
+  var rows = (typeof ZONE_STAGE_DROP_TABLE !== 'undefined' && ZONE_STAGE_DROP_TABLE[key]) || [];
+  var s = Math.max(1, Math.floor(Number(stage) || 1));
+  for (var i = 0; i < rows.length; i++) {
+    if (s >= rows[i].min && s <= rows[i].max) return rows[i];
+  }
+  return rows.length ? rows[rows.length - 1] : null;
+}
+function fieldDropRatesFor(stage, level, zone) {
+  // 測試/外部工具替換 FIELD_DROP_TABLE 時，保留既有覆寫語意。
+  if (FIELD_DROP_TABLE !== FIELD_DROP_TABLE_DEFAULT || dropRatesFor !== DROP_RATES_FOR_DEFAULT) return dropRatesFor(FIELD_DROP_TABLE, level);
+  var cfg = zoneStageDropConfigFor(zone, stage);
+  return cfg && Array.isArray(cfg.equipmentRates) ? cfg.equipmentRates : dropRatesFor(FIELD_DROP_TABLE, level);
+}
+function fieldMaterialConfigFor(zone, stage) {
+  if (FIELD_DROP_TABLE !== FIELD_DROP_TABLE_DEFAULT || dropRatesFor !== DROP_RATES_FOR_DEFAULT) return {};
+  var cfg = zoneStageDropConfigFor(zone, stage);
+  return (cfg && cfg.materials) || {};
+}
 // 機率 → 掉落件數（>100% 規則：150% = 必掉 1 件 + 50% 機率再 1 件）
 function rollDropCount(pct) {
   if (pct <= 0) return 0;

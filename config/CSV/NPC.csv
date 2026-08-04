@@ -1,0 +1,9 @@
+id,name,attribute,appearance,magic,hp_multiplier,atk_multiplier,def_multiplier,aspd_multiplier
+undead_skeleton,骸骨戰士,dark,skeleton,0,1.05,1.1,1.2,1
+undead_wraith,山脈怨靈,dark,wraith,1,0.85,1.25,0.9,1
+undead_ghoul,腐屍獵犬,poison,ghoul,0,0.9,1.2,0.8,1.2
+undead_knight,亡靈騎士,dark,knight,0,1.35,1.05,1.5,1
+undead_banshee,哀嚎女妖,ice,banshee,1,0.8,1.35,0.85,1
+undead_golem,墓石巨像,earth,golem,0,1.8,0.9,1.8,1
+undead_vampire,血月伯爵,dark,vampire,1,1.15,1.4,1.05,1
+undead_dragon,骨龍,fire,dragon,0,2,1.5,1.4,1

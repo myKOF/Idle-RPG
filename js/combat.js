@@ -121,6 +121,7 @@ function markFieldEnemyFloatTargets(enemies) {
 }
 
 function spawnFieldMonster() {
+    if (FIELD.mapComplete) return;
     FIELD._waveClearPending = false;
     var s = G.stage.current;
     var boss = isFieldBossStage(s);       // 野外 BOSS 規則 → formula.js §4（優先於菁英）
@@ -131,15 +132,23 @@ function spawnFieldMonster() {
     var count = rollFieldEnemyCount(boss ? 'boss' : (elite ? 'elite' : 'normal'), s, G.stage.zone || 'plains');
     var enemies = [];
     for (var i = 0; i < count; i++) {
-        var mtype = pick(zn.pool);
-        var mAspd = base.aspd * zn.aspdMult; // 攻速 × 場景攻速倍率（與原始攻速相乘）
+        var enemyTable = zn.enemyTable || [];
+        var enemyPairs = enemyTable.map(function (entry) {
+            return [NPC_CONFIG_TABLE && NPC_CONFIG_TABLE[entry.npcId], Number(entry.weight) || 0];
+        }).filter(function (pair) { return pair[0] && pair[1] > 0; });
+        var mtype = enemyPairs.length ? wpick(enemyPairs) : pick(zn.pool);
+        var hpMult = Number(mtype.hpMult) > 0 ? Number(mtype.hpMult) : 1;
+        var atkMult = Number(mtype.atkMult) > 0 ? Number(mtype.atkMult) : 1;
+        var defMult = Number(mtype.defMult) > 0 ? Number(mtype.defMult) : 1;
+        var npcAspdMult = Number(mtype.aspdMult) > 0 ? Number(mtype.aspdMult) : 1;
+        var mAspd = base.aspd * zn.aspdMult * npcAspdMult; // 攻速 × 場景攻速倍率 × NPC 倍率
         enemies.push({
             // 名稱一律用 NPC 原名，不加「菁英・」前綴；階級改由圖示、名稱顏色與血條樣式表示。
-            name: mtype.name, emoji: mtype.emoji,
+            name: mtype.name, emoji: mtype.emoji, npcId: mtype.id || null, appearance: mtype.appearance || mtype.emoji || '',
             level: base.level,
-            maxHp: base.hp * zn.hpMult, hp: base.hp * zn.hpMult,
-            atk: base.atk * zn.atkMult,
-            def: base.def * zn.defMult, mdef: base.mdef * zn.defMult,
+            maxHp: base.hp * zn.hpMult * hpMult, hp: base.hp * zn.hpMult * hpMult,
+            atk: base.atk * zn.atkMult * atkMult,
+            def: base.def * zn.defMult * defMult, mdef: base.mdef * zn.defMult * defMult,
             magic: !!mtype.magic,          // 魔法系怪物：攻擊對玩家魔防
             attr: mtype.attr || null,      // 屬性標籤（六大屬性；對X屬性傷害加成與 tips 顯示）
             aspd: mAspd, dodge: base.dodge, hit: base.hit, // 命中率隨敵人等級成長 → formula.js §4
@@ -161,6 +170,7 @@ function spawnFieldMonster() {
 function switchZone(zoneKey) {
     if (!ZONES[zoneKey] || G.stage.zone === zoneKey) return;
     var zd = ZONES[zoneKey];
+    if (!isZoneUnlocked(zoneKey)) return;
     if (zd.reqZone) {
         var b = (G.stage.zone === zd.reqZone) ? G.stage.best : ((G.zoneProgress && G.zoneProgress[zd.reqZone] && G.zoneProgress[zd.reqZone].best) || 1);
         if (b < zd.reqStage) return; // 尚未解鎖
@@ -177,6 +187,7 @@ function switchZone(zoneKey) {
     FIELD.monster = null;
     FIELD.monsters = [];
     FIELD._waveClearPending = false;
+    FIELD.mapComplete = false;
     FIELD.respawnCd = 0.5;
     var zn = ZONES[zoneKey];
     blog(zn.emoji + ' 前往【' + zn.name + '】！第 ' + G.stage.current + ' 階段（歷史最高 ' + G.stage.best +
@@ -666,6 +677,7 @@ function fieldTick(dt) {
 
     // 出怪
     if (!liveFieldEnemies().length) {
+        if (FIELD.mapComplete) return;
         if (hasFieldDeathHolds()) return;
         if (FIELD._waveClearPending) {
             completeFieldWave(st);
@@ -773,8 +785,17 @@ function completeFieldWave(st) {
     // 移動速度：縮短推圖間隔；只有整波敵人全部擊殺且死亡資訊清除後才進入下一波。
     FIELD.respawnCd = RESPAWN_DELAY * (1 - st.moveSpeed / 100);
     if (G.stage.autoAdvance) {
-        G.stage.current++;
-        if (G.stage.current > G.stage.best) G.stage.best = G.stage.current;
+        var maxStage = zoneMaxStage(G.stage.zone);
+        if (G.stage.current >= maxStage) {
+            G.stage.current = maxStage;
+            G.stage.best = Math.max(G.stage.best || 1, maxStage);
+            FIELD.mapComplete = true;
+            FIELD.respawnCd = Infinity;
+            blog('🏆 已通關【' + currentZoneDef().name + '】全部 ' + maxStage + ' 關！', 'good');
+        } else {
+            G.stage.current++;
+            if (G.stage.current > G.stage.best) G.stage.best = G.stage.current;
+        }
         blog('🚩 推進至第 ' + G.stage.current + ' 階段！', 'good');
     }
     UI.dirty.battle = true; UI.dirty.header = true;
@@ -864,7 +885,8 @@ function rollFieldDrops(m) {
     var drops = [];
     if (window.recordLootDrop) window.recordLootDrop('field');
     // 菁英掉落：裝備與材料都在一般基礎上乘 ELITE_DROP_MULT（→ formula.js §5，與離線收益共用）。
-    var rates = dropRatesFor(FIELD_DROP_TABLE, m.level);
+    var zoneDrop = fieldMaterialConfigFor(G.stage.zone, s);
+    var rates = fieldDropRatesFor(s, m.level, G.stage.zone);
     // 敵種掉落倍率：BOSS ＞ 菁英 ＞ 普通（BOSS 倍率 → data.js FIELD_BOSS_DROP_MULT）
     var eliteDropMult = m.isBoss ? FIELD_BOSS_DROP_MULT : (m.elite ? ELITE_DROP_MULT : 1);
     var dropMult = (1 + lootBonus / 100) * eliteDropMult;
@@ -892,7 +914,7 @@ function rollFieldDrops(m) {
     //       基礎機率與寶石等級公式 → formula.js §5 =====
     var rw = currentZoneDef().rewardMult;
     // 寶石：依怪物等級查表，各階級獨立判定
-    var gemRates = fieldGemDropRatesFor(m.level);
+    var gemRates = Array.isArray(zoneDrop.gemRates) ? zoneDrop.gemRates : fieldGemDropRatesFor(m.level);
     for (var glv = 0; glv < gemRates.length; glv++) {
         if (!gemRates[glv]) continue;
         var gemN = rollDropCount(gemRates[glv] * (1 + lootBonus / 100) * rw * eliteDropMult);
@@ -905,8 +927,9 @@ function rollFieldDrops(m) {
         }
     }
     // 附魔書（階段 8+）
-    if (s >= 8) {
-        var bookN = rollDropCount(FIELD_BOOK_DROP_PCT * (1 + lootBonus / 100) * rw * eliteDropMult);
+    if (s >= 8 || zoneDrop.bookRate !== undefined) {
+        var bookBaseRate = zoneDrop.bookRate !== undefined ? Number(zoneDrop.bookRate) : FIELD_BOOK_DROP_PCT;
+        var bookN = rollDropCount(bookBaseRate * (1 + lootBonus / 100) * rw * eliteDropMult);
         for (var bi = 0; bi < bookN; bi++) {
             var bk = pick(Object.keys(ENCHANTS));
             G.player.books[bk]++;
@@ -915,7 +938,7 @@ function rollFieldDrops(m) {
         }
     }
     // 太古精華（依參數表設定的敵人等級門檻；獨立機率，不受掉寶率與場景倍率影響）
-    var ancientEssenceRate = ancientEssenceDropChanceForEnemy(m.level) * eliteDropMult;
+    var ancientEssenceRate = (zoneDrop.ancientEssenceRate !== undefined ? Number(zoneDrop.ancientEssenceRate) : ancientEssenceDropChanceForEnemy(m.level)) * eliteDropMult;
     if (ancientEssenceRate > 0 && chance(ancientEssenceRate)) {
         G.player.ancientEssence = (G.player.ancientEssence || 0) + 1;
         if (window.recordLootMat) window.recordLootMat('ancientEssence', 1, 'field');
@@ -924,7 +947,7 @@ function rollFieldDrops(m) {
     }
     // 魔塵（神鑄材料）：150 級起掉落，敵人每高 1 級 +0.1%、上限 5%
     //（fieldDustRate → formula.js §5；不受掉寶率/場景倍率影響）
-    var dustRate = fieldDustRate(m.level) * eliteDropMult;
+    var dustRate = (zoneDrop.dustRate !== undefined ? Number(zoneDrop.dustRate) : fieldDustRate(m.level)) * eliteDropMult;
     if (dustRate > 0 && chance(dustRate)) {
         G.player.dust = (G.player.dust || 0) + 1;
         if (window.recordLootMat) window.recordLootMat('dust', 1, 'field');
@@ -933,8 +956,9 @@ function rollFieldDrops(m) {
         UI.dirty.forge = true;
     }
     // 自動機組零件（階段 5+；材料掉落率同樣乘以菁英 1.5 倍）
-    if (s >= 5) {
-        var partN = rollDropCount(FIELD_PART_DROP_PCT * (1 + lootBonus / 100) * rw * eliteDropMult);
+    if (s >= 5 || zoneDrop.partRate !== undefined) {
+        var partBaseRate = zoneDrop.partRate !== undefined ? Number(zoneDrop.partRate) : FIELD_PART_DROP_PCT;
+        var partN = rollDropCount(partBaseRate * (1 + lootBonus / 100) * rw * eliteDropMult);
         for (var pn = 0; pn < partN; pn++) {
             var np = makePart(fieldPartTierFor(s, m.elite));
             if (!np) continue;
@@ -951,17 +975,19 @@ function rollFieldDrops(m) {
 /* ---- 手動階段控制 ---- */
 function stageGo(delta) {
     var t = G.stage.current + delta;
-    if (t < 1 || t > G.stage.best) return;
+    if (t < 1 || t > Math.min(G.stage.best, zoneMaxStage(G.stage.zone))) return;
     G.stage.current = t;
     G.stage.kills = 0;
     FIELD.monster = null;
     FIELD.monsters = [];
     FIELD._waveClearPending = false;
+    FIELD.mapComplete = false;
     FIELD.respawnCd = 0.3;
     UI.dirty.battle = true;
 }
 function stageGoMax() {
-    stageGo(G.stage.best - G.stage.current);
+    var target = Math.min(G.stage.best, zoneMaxStage(G.stage.zone));
+    stageGo(target - G.stage.current);
 }
 /* ---- 塔戰相關邏輯省略 ---- */
 

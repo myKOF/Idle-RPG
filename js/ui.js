@@ -2374,14 +2374,17 @@ function renderZoneBar() {
   if (!zoneBox) return;
 
   var list = isGodUnlocked
-    ? (activeRlm === 'god' ? ['god_battlefield', 'god_chaos', 'god_sanctuary'] : ['plains', 'desert', 'swamp'])
-    : ['plains', 'desert', 'swamp'];
+    ? (activeRlm === 'god' ? ['god_battlefield', 'god_chaos', 'god_sanctuary'] : ['plains', 'desert', 'swamp', 'undead_mountains'])
+    : ['plains', 'desert', 'swamp', 'undead_mountains'];
 
   var html = list.map(function (z) {
     var zd = ZONES[z];
     if (!zd) return '';
     var locked = false;
-    if (zd.reqZone) {
+    if (zd.reqReincarnation && Number(header.player && header.player.reincarnations) < zd.reqReincarnation) {
+      locked = true;
+    }
+    if (zd.reqZone && !locked) {
       if (zoneBestOf(zd.reqZone) < zd.reqStage) locked = true;
     }
     var ttDesc = z === 'desert' ? '敵人更強；經驗、金幣與材料掉落 ×2' :
@@ -2390,7 +2393,9 @@ function renderZoneBar() {
           z === 'god_chaos' ? '神界混沌；極強虛空生物，經驗與獎勵 ×3.5' :
             z === 'god_sanctuary' ? '神界聖域；諸神降臨，經驗與獎勵 ×5.0' : '';
 
-    if (locked && zd.reqZone && ZONES[zd.reqZone]) {
+    if (locked && zd.reqReincarnation) {
+      ttDesc = '🔒 解鎖條件：需要 ' + zd.reqReincarnation + ' 轉';
+    } else if (locked && zd.reqZone && ZONES[zd.reqZone]) {
       var lockTip = '🔒 解鎖條件：需【' + ZONES[zd.reqZone].name + '】達到第 ' + zd.reqStage + ' 階段';
       ttDesc = lockTip + (ttDesc ? ('\n' + ttDesc) : '');
     }
