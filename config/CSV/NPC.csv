@@ -1,4 +1,4 @@
-id,name,attribute,appearance,magic,hp_multiplier,atk_multiplier,def_multiplier,aspd_multiplier
+NPC識別碼,NPC名稱,屬性,外觀,魔法型（1是／0否）,生命倍率,攻擊倍率,防禦倍率,攻速倍率
 undead_skeleton,骸骨戰士,dark,skeleton,0,1.05,1.1,1.2,1
 undead_wraith,山脈怨靈,dark,wraith,1,0.85,1.25,0.9,1
 undead_ghoul,腐屍獵犬,poison,ghoul,0,0.9,1.2,0.8,1.2
