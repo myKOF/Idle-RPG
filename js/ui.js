@@ -4975,6 +4975,12 @@ function uiGemsPanelSnapshot() {
   return panelData('gems');
 }
 
+function resolveGemsPanelSnapshot(snapshot) {
+  return snapshot && snapshot.gems && typeof snapshot.gems === 'object'
+    ? snapshot
+    : uiGemsPanelSnapshot();
+}
+
 function gemsViewCount(snapshot, type, level) {
   var byType = snapshot && snapshot.gems && snapshot.gems[type];
   return Math.max(0, Number(byType && byType[level]) || 0);
@@ -6563,7 +6569,7 @@ function renderFuseInfo(gemsSnapshot) {
   var selT = $id('fuse-type'), selL = $id('fuse-level');
   var info = $id('fuse-info');
   if (!selT || !selL || !info) return;
-  gemsSnapshot = gemsSnapshot || uiGemsPanelSnapshot();
+  gemsSnapshot = resolveGemsPanelSnapshot(gemsSnapshot);
   if (!gemsSnapshot) return;
   var t = selT.value, lv = parseInt(selL.value, 10) || 1;
   if (t === GEM_TYPE_ALL) {
@@ -6633,7 +6639,7 @@ function removeGemConvertSlot(slots, index, single) {
 function renderGemConvert(gemsSnapshot) {
   var grid = $id('gconv-grid');
   if (!grid) return;
-  gemsSnapshot = gemsSnapshot || uiGemsPanelSnapshot();
+  gemsSnapshot = resolveGemsPanelSnapshot(gemsSnapshot);
   if (!gemsSnapshot) return;
   if (!UI.convertSlots) UI.convertSlots = [];
   var h = '';
@@ -6717,7 +6723,7 @@ function renderGemConvert(gemsSnapshot) {
 function renderGemDismantle(gemsSnapshot) {
   var selT = $id('gdis-type'), selL = $id('gdis-level'), info = $id('gdis-info');
   if (!selT || !selL || !info) return;
-  gemsSnapshot = gemsSnapshot || uiGemsPanelSnapshot();
+  gemsSnapshot = resolveGemsPanelSnapshot(gemsSnapshot);
   if (!gemsSnapshot) return;
   var t = selT.value, lv = parseInt(selL.value, 10) || 2;
   if (GEM_TYPES[t]) {
@@ -6767,7 +6773,7 @@ function gfuseShow(msg, type) {
 function renderGemFusion(gemsSnapshot) {
   var slotBox = $id('gfuse-slots');
   if (!slotBox) return;
-  gemsSnapshot = gemsSnapshot || uiGemsPanelSnapshot();
+  gemsSnapshot = resolveGemsPanelSnapshot(gemsSnapshot);
   if (!gemsSnapshot) return;
   if (!UI.gemFuseSlots) UI.gemFuseSlots = [null, null];
   var h = '';
