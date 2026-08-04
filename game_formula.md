@@ -363,6 +363,8 @@
 
 遊戲執行時由 `ZONE_STAGE_DROP_PROFILES`／`ZONE_STAGE_DROP_TABLE` 載入這份 CSV。裝備、寶石與材料都查目前地圖的關卡區間，不再回讀 `game_parameters.csv` 的野外掉落列；實際機率再乘有效掉寶率、場景倍率與菁英掉落倍率（`ELITE_DROP_MULT`，目前 1.3）。
 
+同一地圖、同一關卡若命中多列，裝備 R0～R10、寶石 R1～R5 與材料掉落率會逐欄相加；因此重疊列可用來追加特定關卡區間的掉落率，不會覆蓋基礎列。
+
 （裝備各品質的實際區間數值請直接查閱 `config/CSV/Zone_Stage_Drops.csv`。）
 
 以上舊的怪物等級表已移除；完整區間數值請直接以 `Zone_Stage_Drops.csv` 為準。

@@ -64,9 +64,12 @@ test('地圖／關卡邊界查表與 CSV 一致，混沌 R9 由 Zone_Stage_Drops
   const context = loadContext();
   const config = readZoneDrops();
   for (const row of config) {
+    const expected = config
+      .filter((candidate) => candidate.zone === row.zone && row.min >= candidate.min && row.min <= candidate.max)
+      .reduce((sum, candidate) => sum.map((value, index) => value + candidate.rates[index]), Array(11).fill(0));
     assert.deepEqual(
       plain(context.fieldDropRatesFor(row.min, 1, row.zone)),
-      row.rates,
+      expected,
       row.zone + ' 關卡 ' + row.min + ' 查表錯誤'
     );
   }
@@ -74,6 +77,35 @@ test('地圖／關卡邊界查表與 CSV 一致，混沌 R9 由 Zone_Stage_Drops
   assert.equal(context.fieldDropRatesFor(551, 1, 'god_battlefield')[9], 1);
   assert.equal(context.fieldDropRatesFor(551, 1, 'god_chaos')[9], 1);
   assert.equal(context.fieldDropRatesFor(601, 1, 'god_sanctuary')[9], 1);
+});
+
+test('重疊的地圖／關卡列按裝備、寶石與材料欄位逐欄相加', () => {
+  const context = loadContext();
+  context.ZONE_STAGE_DROP_TABLE.overlap_fixture = [
+    {
+      min: 20, max: 99,
+      equipmentRates: [35, 20, 15, 5, 1, 0, 0, 0, 0, 0, 0],
+      materials: { gemRates: [1, 0, 0, 0, 0], bookRate: 2, ancientEssenceRate: 3, dustRate: 4, partRate: 5 }
+    },
+    {
+      min: 40, max: 49,
+      equipmentRates: [0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0],
+      materials: { gemRates: [0, 1, 0, 0, 0], bookRate: 3, ancientEssenceRate: 4, dustRate: 5, partRate: 6 }
+    }
+  ];
+
+  assert.deepEqual(
+    plain(context.fieldDropRatesFor(30, 1, 'overlap_fixture')),
+    [35, 20, 15, 5, 1, 0, 0, 0, 0, 0, 0]
+  );
+  assert.deepEqual(
+    plain(context.fieldDropRatesFor(40, 1, 'overlap_fixture')),
+    [35, 20, 15, 5, 3, 0, 0, 0, 0, 0, 0]
+  );
+  assert.deepEqual(
+    plain(context.fieldMaterialConfigFor('overlap_fixture', 40)),
+    { gemRates: [1, 1, 0, 0, 0], bookRate: 5, ancientEssenceRate: 7, dustRate: 9, partRate: 11 }
+  );
 });
 
 test('game_parameters 不再保留地圖掉落重複列', () => {

@@ -110,10 +110,15 @@ function zoneStageDropContent() {
   expectedZones.forEach(zone => {
     if (!grouped[zone] || !grouped[zone].length) throw new Error('Zone_Stage_Drops.csv 缺少地圖：' + zone);
     grouped[zone].sort((a, b) => a[0] - b[0]);
-    for (let i = 1; i < grouped[zone].length; i++) {
-      if (grouped[zone][i - 1][1] + 1 !== grouped[zone][i][0]) {
+    let coveredThrough = 0;
+    for (const row of grouped[zone]) {
+      if (row[0] > row[1]) {
+        throw new Error('Zone_Stage_Drops.csv 關卡區間反向：' + zone);
+      }
+      if (row[0] > coveredThrough + 1) {
         throw new Error('Zone_Stage_Drops.csv 關卡區間不連續：' + zone);
       }
+      coveredThrough = Math.max(coveredThrough, row[1]);
     }
   });
   return expectedZones.map(zone => '  ' + zone + ': ' + JSON.stringify(grouped[zone])).join(',\n');

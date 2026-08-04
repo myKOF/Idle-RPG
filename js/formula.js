@@ -1120,10 +1120,40 @@ function zoneStageDropConfigFor(zone, stage) {
   var key = zone || (typeof G !== 'undefined' && G && G.stage ? G.stage.zone : 'plains') || 'plains';
   var rows = (typeof ZONE_STAGE_DROP_TABLE !== 'undefined' && ZONE_STAGE_DROP_TABLE[key]) || [];
   var s = Math.max(1, Math.floor(Number(stage) || 1));
+  var matches = [];
   for (var i = 0; i < rows.length; i++) {
-    if (s >= rows[i].min && s <= rows[i].max) return rows[i];
+    if (s >= rows[i].min && s <= rows[i].max) matches.push(rows[i]);
   }
-  return rows.length ? rows[rows.length - 1] : null;
+  if (!matches.length) return rows.length ? rows[rows.length - 1] : null;
+
+  // 同一地圖同一關卡可由多列追加掉落；各欄位採加總，不互相覆蓋。
+  var equipmentRates = [];
+  var gemRates = [];
+  var materials = {
+    gemRates: gemRates,
+    bookRate: 0,
+    ancientEssenceRate: 0,
+    dustRate: 0,
+    partRate: 0
+  };
+  for (var m = 0; m < matches.length; m++) {
+    var row = matches[m];
+    var equipment = Array.isArray(row.equipmentRates) ? row.equipmentRates : [];
+    for (var e = 0; e < equipment.length; e++) equipmentRates[e] = (equipmentRates[e] || 0) + (Number(equipment[e]) || 0);
+    var rowMaterials = row.materials || {};
+    var gems = Array.isArray(rowMaterials.gemRates) ? rowMaterials.gemRates : [];
+    for (var g = 0; g < gems.length; g++) gemRates[g] = (gemRates[g] || 0) + (Number(gems[g]) || 0);
+    materials.bookRate += Number(rowMaterials.bookRate) || 0;
+    materials.ancientEssenceRate += Number(rowMaterials.ancientEssenceRate) || 0;
+    materials.dustRate += Number(rowMaterials.dustRate) || 0;
+    materials.partRate += Number(rowMaterials.partRate) || 0;
+  }
+  return {
+    min: matches[0].min,
+    max: matches[0].max,
+    equipmentRates: equipmentRates,
+    materials: materials
+  };
 }
 function fieldDropRatesFor(stage, level, zone) {
   var cfg = zoneStageDropConfigFor(zone, stage);

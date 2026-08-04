@@ -44,8 +44,11 @@ test('地圖／關卡掉落表提供 R1～R5 寶石掉落率', () => {
   const config = readZoneDrops();
   for (const row of config) {
     assert.equal(row.rates.length, 5);
+    const expected = config
+      .filter((candidate) => candidate.zone === row.zone && row.min >= candidate.min && row.min <= candidate.max)
+      .reduce((sum, candidate) => sum.map((value, index) => value + candidate.rates[index]), Array(5).fill(0));
     const cfg = context.zoneStageDropConfigFor(row.zone, row.min);
-    assert.deepEqual(JSON.parse(JSON.stringify(cfg.materials.gemRates)), row.rates, row.zone + ' ' + row.min + ' 寶石率不一致');
+    assert.deepEqual(JSON.parse(JSON.stringify(cfg.materials.gemRates)), expected, row.zone + ' ' + row.min + ' 寶石率不一致');
   }
 });
 
