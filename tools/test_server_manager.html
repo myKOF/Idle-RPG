@@ -13,7 +13,8 @@
     .card { padding: 22px; border: 1px solid #263752; border-radius: 14px; background: #172338; box-shadow: 0 14px 40px #0003; }
     .toolbar { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
     label { display: grid; gap: 7px; color: #a9bbd3; font-size: 14px; }
-    input { width: 170px; padding: 11px 12px; border: 1px solid #405674; border-radius: 8px; background: #0e1725; color: #fff; font-size: 16px; }
+    input, select { width: 170px; padding: 11px 12px; border: 1px solid #405674; border-radius: 8px; background: #0e1725; color: #fff; font-size: 16px; }
+    select { width: 260px; }
     button, a.button { border: 0; border-radius: 8px; padding: 11px 15px; color: #fff; background: #2563eb; font: inherit; cursor: pointer; text-decoration: none; }
     button:hover, a.button:hover { filter: brightness(1.15); }
     button.secondary, a.button.secondary { background: #334155; }
@@ -28,6 +29,7 @@
     th { color: #91a8c6; font-size: 13px; font-weight: 600; }
     td.status-open { min-width: 80px; color: #78e0a5; font-weight: 600; }
     td.source-cell { min-width: 430px; }
+    .source-folder { margin-top: 4px; color: #8196b2; font-size: 12px; }
     td.started-cell { min-width: 190px; }
     td.actions { min-width: 320px; white-space: nowrap; }
     .action-group { display: flex; align-items: center; justify-content: flex-start; gap: 8px; min-width: 300px; }
@@ -46,10 +48,16 @@
         <label>測試服 Port
           <input id="port" type="number" min="1" max="65535" value="8123" inputmode="numeric">
         </label>
+        <label>開服來源資料夾
+          <select id="sourceRoot" disabled>
+            <option>正在載入來源資料夾…</option>
+          </select>
+        </label>
         <button id="start">啟動並開啟瀏覽器</button>
         <button id="refresh" class="secondary">重新整理</button>
       </div>
       <div id="status" role="status"></div>
+      <p class="hint">啟動時會使用上方選定資料夾的遊戲檔案；可在 Codex、Claude、Antigravity 工作區之間切換。</p>
       <p class="hint">列表只顯示 Claude、Codex、Antigravity、控制台及使用者自行啟動的開發伺服器。</p>
       <p class="hint">每個開啟中的服務都有「前往」與「關閉」；外部服務的關閉會終止整個來源程序，可能同時關閉它持有的其他 Port。</p>
       <h2>目前啟動中的本機測試服</h2>
@@ -58,6 +66,7 @@
   </main>
   <script>
     const portInput = document.getElementById('port');
+    const sourceRootInput = document.getElementById('sourceRoot');
     const startButton = document.getElementById('start');
     const refreshButton = document.getElementById('refresh');
     const statusBox = document.getElementById('status');
@@ -75,7 +84,9 @@
     }
 
     function sourceLabel(server) {
-      if (server.managed !== false) return 'Idle-RPG 測試服控制台（Node.js）';
+      if (server.managed !== false) {
+        return `Idle-RPG 測試服控制台（${server.sourceLabel || 'Node.js'}）`;
+      }
       if (/test_server_manager\.cjs/i.test(server.commandLine || '')) {
         return 'Idle-RPG 測試服控制台（Node.js）';
       }
@@ -113,6 +124,9 @@
         const managed = server.managed !== false;
         const startedAt = server.startedAt ? new Date(server.startedAt).toLocaleString() : '由其他程序啟動';
         const source = `${sourceLabel(server)}${server.pid ? `，PID ${server.pid}` : ''}`;
+        const sourceFolder = server.sourceRoot
+          ? `<div class="source-folder">${escapeHtml(server.sourceRoot)}</div>`
+          : '';
         const canStop = Number(server.pid) > 4;
         const stopAction = canStop
           ? `<button class="danger" data-stop="${escapeHtml(server.port)}" data-pid="${escapeHtml(server.pid)}" data-external="${managed ? 'false' : 'true'}" data-source="${escapeHtml(source)}">關閉</button>`
@@ -122,7 +136,7 @@
         <tr>
           <td>${escapeHtml(server.port)}</td>
           <td class="status-open">開啟中</td>
-          <td class="source-cell" title="${escapeHtml(server.commandLine || '')}">${escapeHtml(source)}</td>
+          <td class="source-cell" title="${escapeHtml(server.commandLine || '')}">${escapeHtml(source)}${sourceFolder}</td>
           <td class="started-cell">${escapeHtml(startedAt)}</td>
           <td class="actions">${actions}</td>
         </tr>`;
@@ -146,14 +160,27 @@
       }
     }
 
+    async function loadSources() {
+      const data = await request('/api/sources');
+      sourceRootInput.innerHTML = data.sources.map((source) =>
+        `<option value="${escapeHtml(source.key)}">${escapeHtml(source.label)}：${escapeHtml(source.root)}</option>`
+      ).join('');
+      sourceRootInput.disabled = data.sources.length === 0;
+      if (!data.sources.length) throw new Error('找不到可用的開服來源資料夾。');
+    }
+
     async function startServer() {
       const port = Number(portInput.value);
+      const sourceKey = sourceRootInput.value;
       startButton.disabled = true;
       setStatus('正在啟動測試服……');
       try {
-        const data = await request('/api/servers/start', { method: 'POST', body: JSON.stringify({ port }) });
+        const data = await request('/api/servers/start', {
+          method: 'POST',
+          body: JSON.stringify({ port, sourceKey })
+        });
         window.open(data.server.url, '_blank', 'noopener');
-        setStatus(`測試服已啟動：${data.server.url}`);
+        setStatus(`測試服已啟動：${data.server.sourceLabel || ''}（${data.server.sourceRoot || ''}）${data.server.url}`);
         await refresh();
       } catch (error) {
         setStatus(error.message, true);
@@ -178,7 +205,7 @@
 
     startButton.addEventListener('click', startServer);
     refreshButton.addEventListener('click', refresh);
-    refresh();
+    Promise.all([loadSources(), refresh()]).catch((error) => setStatus(error.message, true));
   </script>
 </body>
 </html>
