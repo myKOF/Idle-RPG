@@ -8,9 +8,6 @@ var FORGE_CHAOS_BASE_RATE = 20;
 var FORGE_CHAOS_GOLD_COST = 500000000;
 var FORGE_CHAOS_DUST_RATE = 3;
 var FORGE_CHAOS_DURATION = 13;
-var CHAOS_FIELD_DROP_MIN_STAGE = 551;
-var CHAOS_FIELD_DROP_PCT = 1;
-var CHAOS_FIELD_DROP_ZONES = { god_battlefield: 1, god_chaos: 1, god_sanctuary: 1 };
 function isGodforgedRarity(rarity) {
   return rarity === GODFORGED_IDX || rarity === CHAOS_GODFORGED_IDX;
 }
@@ -68,10 +65,6 @@ var ANCIENT_COUNT_WEIGHTS = {
   9: [25.40754342879985, 39.28797478390151, 18.619893262512562, 8.824593963276097, 4.182272020509998, 1.9821194409999996, 0.9393931, 0.44520999999999994, 0.211, 0.1],
   10: [18.159999999999986, 40.96, 20.48, 10.24, 5.12, 2.56, 1.28, 0.64, 0.32, 0.16, 0.08]
 };
-var ANCIENT_ESSENCE_ENEMY_MIN_LEVEL = 49;
-var ANCIENT_ESSENCE_ENEMY_BASE_RATE = 1;
-var ANCIENT_ESSENCE_ENEMY_LEVEL_RATE = 0.1;
-var ANCIENT_ESSENCE_ENEMY_RATE_CAP = 10;
 var ANCIENT_ESSENCE_BOSS_BASE_RATE = 10;
 var ANCIENT_ESSENCE_BOSS_LEVEL_RATE = 2;
 var ANCIENT_ESSENCE_BOSS_RATE_CAP = 100;
@@ -507,10 +500,6 @@ var FORGE_EQUIP_DURATION = { 5: 3, 6: 5, 7: 8 };                // 裝備神鑄�
 var FORGE_GEM_BASE_RATE = { 5: 50, 6: 40, 7: 35, 8: 25, 9: 15 }; // 基礎成功率 %（依素材階級）
 var FORGE_GEM_DUST_RATE = 3;                 // 每個魔塵 +3% 成功率（寶石鑄造）
 var FORGE_GEM_DURATION = { 5: 1, 6: 2, 7: 3, 8: 4, 9: 6 };       // 寶石神鑄時間（秒）
-var DUST_FIELD_MIN_LEVEL = 49;              // 野外魔塵掉落的最低敵人等級
-var DUST_FIELD_BASE = 1;                   // 野外魔塵基礎掉落率 %（150 級時）
-var DUST_FIELD_PER_LEVEL = 0.1;              // 敵人每高 1 級的掉落率加成 %
-var DUST_FIELD_CAP = 5;                      // 野外魔塵掉落率上限 %
 var DUST_BOSS_BASE = 2;                      // 高塔 BOSS 魔塵基礎掉落率 %
 var DUST_BOSS_PER_LEVEL = 0.2;               // 高塔樓層每 +1 層的掉落率加成 %
 var DUST_BOSS_CAP = 30;                      // 高塔 BOSS 魔塵掉落率上限 %
@@ -1181,26 +1170,20 @@ function isZoneUnlocked(zoneKey) {
   if (zone.reqZone && zoneBestProgress(zone.reqZone) < (zone.reqStage || zoneMaxStage(zone.reqZone))) return false;
   return true;
 }
-/* 依地圖與關卡區間的掉落配置。每一列為 [min, max, 裝備0~7機率, gem1~5, 附魔書, 太古精華, 魔塵, 零件]。
+/* 依地圖與關卡區間的掉落配置。每一列為 [min, max, 裝備0~10機率, gem1~5, 附魔書, 太古精華, 魔塵]。
    以資料表集中管理，新增地圖或調整區間不需要改戰鬥公式。 */
-var ZONE_STAGE_DROP_PROFILES = {
-  plains: [[1, 50, [25, 15, 10, 0, 0, 0, 0, 0], [2, 0.5, 0.2, 0, 0], 0, 0, 0, 0], [51, 100, [35, 20, 15, 5, 1, 0, 0, 0], [4, 0.8, 0.3, 0, 0], 2, 0, 0, 0], [101, 150, [40, 30, 20, 10, 2.5, 1, 0, 0], [6, 1.1, 0.4, 0, 0], 4, 0, 0, 0], [151, 200, [50, 40, 30, 15, 5, 2, 0.05, 0], [8, 1.4, 0.5, 0.1, 0], 6, 1, 0, 0]],
-  desert: [[1, 75, [30, 20, 12, 1, 0, 0, 0, 0], [3, 0.7, 0.25, 0, 0], 2, 0, 0, 0], [76, 150, [40, 28, 18, 7, 2, 0.5, 0, 0], [5, 1, 0.4, 0, 0], 4, 0, 0, 0], [151, 225, [48, 36, 25, 12, 4, 1.5, 0.05, 0], [7, 1.3, 0.5, 0.1, 0], 6, 1.5, 0, 0], [226, 300, [55, 45, 34, 18, 6, 2.5, 0.1, 0], [9, 1.7, 0.6, 0.2, 0], 8, 2, 0, 0]],
-  swamp: [[1, 100, [35, 25, 15, 3, 0, 0, 0, 0], [4, 0.8, 0.3, 0, 0], 3, 0, 0, 0], [101, 200, [45, 35, 23, 10, 3, 1, 0, 0], [6, 1.1, 0.4, 0, 0], 5, 1, 0, 0], [201, 300, [52, 42, 30, 15, 5, 2, 0.1, 0], [9, 1.7, 0.6, 0.2, 0], 7, 2, 0, 0], [301, 400, [60, 50, 38, 20, 8, 3.5, 0.2, 0], [12, 2, 0.7, 0.3, 0.2], 9, 3, 1, 0]],
-  undead_mountains: [[1, 125, [38, 28, 18, 5, 1, 0, 0, 0], [5, 1, 0.4, 0, 0], 4, 0, 0, 0], [126, 250, [48, 38, 26, 12, 4, 1, 0.03, 0], [7, 1.3, 0.5, 0.1, 0], 6, 2, 0, 0], [251, 375, [58, 48, 36, 18, 7, 3, 0.12, 0], [10, 1.8, 0.65, 0.2, 0.1], 8, 3, 1, 0], [376, 500, [68, 58, 45, 25, 10, 4.5, 0.25, 0], [14, 2.3, 0.8, 0.4, 0.3], 10, 4, 2, 1]],
-  god_battlefield: [], god_chaos: [], god_sanctuary: []
+var ZONE_STAGE_DROP_PROFILES = {  plains: [[1,20,[25,15,10,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0],0,0,0],[21,99,[35,20,15,5,0,0,0,0,0,0,0],[4,0.8,0.3,0,0],1,0,0],[40,49,[0,0,0,0,2,0,0,0,0,0,0],[0,0,0,0,0],0,0,0],[50,99,[0,0,0,0,1,0,0,0,0,0,0],[0,0,0,0,0],0,0,0],[100,149,[40,30,20,10,0,0,0,0,0,0,0],[6,1.1,0.4,0,0],1,0,1],[150,200,[50,40,30,15,2.5,1,0,0,0,0,0],[8,1.4,0.5,0.1,0],2,0,1]],
+  desert: [[1,199,[50,40,30,15,5,0.5,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[200,249,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[250,300,[50,40,30,15,10,3,0.25,0,0,0,0],[12,2,1,0.6,0.1],2,1,1]],
+  swamp: [[1,199,[50,40,30,15,5,1,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[200,249,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[250,349,[50,40,30,15,10,3,0.25,0,0,0,0],[12,2,1,0.6,0.1],3,2,1],[350,400,[50,40,30,15,10,3,0.35,0.1,0,0,0],[12,2,0.7,0.3,0.2],4,3,1]],
+  undead_mountains: [[1,199,[50,40,30,15,5,1,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[200,299,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[300,399,[50,40,30,15,10,3,0.25,0.1,0,0,0],[12,2,1,0.6,0.1],3,2,1],[400,449,[50,40,30,15,10,3,0.3,0.2,0,0,0],[12,2,0.7,0.3,0.2],4,3,1],[450,500,[50,40,30,15,10,3,0.5,0.3,0,0,0],[14,3,1,0.4,0.25],4,3,1]],
+  god_battlefield: [[1,150,[53,48,47,10,3,1,0.08,0,0,0,0],[11,1.7,0.6,0.1,0.08],7,3,1],[151,300,[61,51,49,20,6,2,0.16,0,0,0,0],[14,2.4,0.8,0.2,0.16],9,4,1],[301,450,[69,54,51,30,9,3,0.24,0,0,0,0],[17,3.1,1,0.3,0.24],11,5,1],[451,550,[77,57,53,40,12,4,0.32,0,0,0,0],[20,3.8,1.2,0.4,0.32],13,6,1],[551,600,[77,57,53,40,12,4,0.32,2,0,1,0],[20,3.8,1.2,0.4,0.32],13,6,1]],
+  god_chaos: [[1,175,[61,56,55,10,3,1,0.08,0,0,0,0],[11,1.7,0.6,0.1,0.08],7,3,1],[176,350,[69,59,57,20,6,2,0.16,0,0,0,0],[14,2.4,0.8,0.2,0.16],9,4,1],[351,525,[77,62,59,30,9,3,0.24,0,0,0,0],[17,3.1,1,0.3,0.24],11,5,1],[526,550,[85,65,61,40,12,4,0.32,0,0,0,0],[20,3.8,1.2,0.4,0.32],13,6,1],[551,700,[85,65,61,40,12,4,0.32,2,0,1,0],[20,3.8,1.2,0.4,0.32],13,6,1]],
+  god_sanctuary: [[1,200,[69,64,63,10,3,1,0.08,0,0,0,0],[11,1.7,0.6,0.1,0.08],7,3,1],[201,400,[77,67,65,20,6,2,0.16,0,0,0,0],[14,2.4,0.8,0.2,0.16],9,4,1],[401,600,[85,70,67,30,9,3,0.24,0,0,0,0],[17,3.1,1,0.3,0.24],11,5,1],[601,800,[93,73,69,40,12,4,0.32,2,0,1,0],[20,3.8,1.2,0.4,0.32],13,6,1]]
 };
-['god_battlefield', 'god_chaos', 'god_sanctuary'].forEach(function (zoneKey, zoneIndex) {
-  var max = zoneMaxStage(zoneKey), base = 45 + zoneIndex * 8;
-  ZONE_STAGE_DROP_PROFILES[zoneKey] = [1, 2, 3, 4].map(function (tier) {
-    var min = Math.floor((tier - 1) * max / 4) + 1, end = Math.floor(tier * max / 4);
-    return [min, end, [base + tier * 8, base + tier * 3, base + tier * 2, tier * 10, tier * 3, tier, tier * 0.08, 0], [8 + tier * 3, 1 + tier * 0.7, 0.4 + tier * 0.2, tier * 0.1, tier * 0.08], 5 + tier * 2, 2 + tier, tier, tier * 0.5];
-  });
-});
 var ZONE_STAGE_DROP_TABLE = {};
 Object.keys(ZONE_STAGE_DROP_PROFILES).forEach(function (zoneKey) {
   ZONE_STAGE_DROP_TABLE[zoneKey] = ZONE_STAGE_DROP_PROFILES[zoneKey].map(function (row) {
-    return { min: row[0], max: row[1], equipmentRates: row[2], materials: { gemRates: row[3], bookRate: row[4], ancientEssenceRate: row[5], dustRate: row[6], partRate: row[7] } };
+    return { min: row[0], max: row[1], equipmentRates: row[2], materials: { gemRates: row[3], bookRate: row[4], ancientEssenceRate: row[5], dustRate: row[6] } };
   });
 });
 
@@ -1286,26 +1269,30 @@ function towerTimeLimitWithTalents(floor) {
 var TOWER_ENRAGE_HP = 50;      // 血量高於 50% 觸發（玩家「狂暴閾值」屬性可提高此門檻）；全塔共用
 
 // ---- 自動機組零件 ----
-/* 零件數值 = perTier × 階級（T1~T7）；node 決定可安裝的節點。
-   分解槽零件（node:'salvage'）多樣化：產量倍率、精粹強化、額外材料掉落…
+/* 零件數值 = 基礎值 + 每級增加值 × (等級 - 1)（T1~T10）；node 決定可安裝的節點。
+   分解槽零件（node:'salvage'）多樣化：產量倍率、精粹強化與分解事件；零件不再由野外／高塔掉落。
    效果掛勾在 factory.js 的 doSalvage（以 partBonus('salvage', key) 讀取）。 */
 var PART_TYPES = {
-  // === 分解槽（Salvage）：10 種，涵蓋速度 / 產量 / 精華 / 額外掉落 ===
-  speedGear: { name: '加速齒輪', emoji: '⚙️', node: 'salvage', desc: '分解速度 +{v}%', perTier: 25 },
-  scrapForge: { name: '碎片熔煉爐', emoji: '🔥', node: 'salvage', desc: '分解碎片產量 +{v}%', perTier: 20 },
-  goldSluice: { name: '淘金濾網', emoji: '💰', node: 'salvage', desc: '分解金幣產量 +{v}%', perTier: 25 },
-  extractLens: { name: '精粹透鏡', emoji: '🔬', node: 'salvage', desc: '分解時附魔精華產出率 +{v}%', perTier: 20 },
-  bookScavenger: { name: '拓本回收臂', emoji: '📖', node: 'salvage', desc: '分解時 {v}% 機率回收 1 本附魔書', perTier: 0.4 },
-  duplicator: { name: '複製處理艙', emoji: '♻️', node: 'salvage', desc: '分解時 {v}% 機率產出（碎片＋金幣）翻倍', perTier: 3 },
-  archivist: { name: '知識回收器', emoji: '📚', node: 'salvage', desc: '分解時 {v}% 機率獲得經驗（裝備等級×25）', perTier: 1.5 },
-  prospector: { name: '探礦核心', emoji: '⛏️', node: 'salvage', desc: '分解時 {v}% 機率額外掉落一個自動機組零件', perTier: 0.15 },
-  fortuneChip: { name: '幸運晶片', emoji: '🎰', node: 'salvage', desc: '分解時 {v}% 機率「大豐收」：本次碎片/金幣/精華 ×3', perTier: 0.5 },
-  ancientEssenceRate: { name: '太古精華萃取器', emoji: '🧬', node: 'salvage', desc: '分解太古精華掉落率 +{v}%', perTier: 25 },
+  // === 分解槽（Salvage）：10 種，涵蓋速度 / 產量 / 精華 / 分解事件 ===
+  speedGear: { name: '加速齒輪', emoji: '⚙️', node: 'salvage', desc: '分解速度 +{v}%', base: 25, perLevel: 25 },
+  scrapForge: { name: '碎片熔煉爐', emoji: '🔥', node: 'salvage', desc: '分解碎片產量 +{v}%', base: 20, perLevel: 20 },
+  goldSluice: { name: '淘金濾網', emoji: '💰', node: 'salvage', desc: '分解金幣產量 +{v}%', base: 25, perLevel: 25 },
+  extractLens: { name: '精粹透鏡', emoji: '🔬', node: 'salvage', desc: '分解時附魔精華產出率 +{v}%', base: 20, perLevel: 20 },
+  bookScavenger: { name: '拓本回收臂', emoji: '📖', node: 'salvage', desc: '分解時 {v}% 機率回收 1 本附魔書', base: 0.4, perLevel: 0.4 },
+  duplicator: { name: '複製處理艙', emoji: '♻️', node: 'salvage', desc: '分解時 {v}% 機率產出（碎片＋金幣）翻倍', base: 3, perLevel: 3 },
+  archivist: { name: '知識回收器', emoji: '📚', node: 'salvage', desc: '分解時 {v}% 機率獲得經驗（裝備等級×25）', base: 1.5, perLevel: 1.5 },
+  prospector: { name: '探礦核心', emoji: '⛏️', node: 'salvage', desc: '舊版額外零件掉落效果已停用', base: 0.15, perLevel: 0.15 },
+  fortuneChip: { name: '幸運晶片', emoji: '🎰', node: 'salvage', desc: '分解時 {v}% 機率「大豐收」：本次碎片/金幣/精華 ×3', base: 0.5, perLevel: 0.5 },
+  ancientEssenceRate: { name: '太古精華萃取器', emoji: '🧬', node: 'salvage', desc: '分解太古精華掉落率 +{v}%', base: 25, perLevel: 25 },
   // === 合成節點（Synth） ===
-  luckCore: { name: '幸運核心', emoji: '🍀', node: 'synth', desc: '合成大成功率 +{v}%', perTier: 8 },
-  rerollModule: { name: '重骰模組', emoji: '🎲', node: 'synth', desc: '合成時詞條重骰（取較佳值）機率 +{v}%', perTier: 15 }
+  luckCore: { name: '幸運核心', emoji: '🍀', node: 'synth', desc: '合成大成功率 +{v}%', base: 8, perLevel: 8 },
+  rerollModule: { name: '重骰模組', emoji: '🎲', node: 'synth', desc: '合成時詞條重骰（取較佳值）機率 +{v}%', base: 15, perLevel: 15 }
 };
-var PART_MAX_TIER = 7;
+var PART_MAX_TIER = 10;
+// 零件升級費用 = a + b × c^升級後目標等級；T5 -> T6 代入 6。
+var PART_UPGRADE_COST_A = 1000;
+var PART_UPGRADE_COST_B = 1000;
+var PART_UPGRADE_COST_C = 2;
 var NODE_NAMES = { filter: '篩選節點', salvage: '分解槽', synth: '合成節點', enchant: '附魔節點', upgrade: '強化節點' };
 var PART_SLOTS_PER_NODE = 2;   // 每個可安裝節點的零件槽數（預設；可由 PART_SLOTS 覆寫）
 var PART_SLOTS = { synth: 2 }; // 各節點零件槽數（分解槽使用金幣解鎖，見 formula.js salvageSlotCount）
@@ -1313,7 +1300,7 @@ function slotsForNode(node) {
   if (node === 'salvage') return salvageSlotCount(); // 分解槽使用金幣解鎖至 20 格
   return PART_SLOTS[node] || PART_SLOTS_PER_NODE;
 }
-var PART_KEEP_PER_KEY = 10;    // 零件庫存收斂：每種零件未安裝者最多保留 10 顆
+var PART_KEEP_PER_KEY = 10;    // 舊存檔相容常數；新制不再建立零件庫存
 
 // ---- 生產線 ----
 var CONVEYOR_CAP = 20000;      // 輸送帶固定硬上限；超出的新裝備直接丟棄
@@ -1325,7 +1312,7 @@ var INVENTORY_EXPAND_COST_BASE = 10000;  // a＝基值
 var INVENTORY_EXPAND_COST_MULT = 10000;  // b＝擴充倍數
 var INVENTORY_EXPAND_COST_RATE = 1.02;   // c＝指數底
 var FACTORY_BASE_INTERVAL = 2.0; // 生產線基礎處理間隔（秒/件）
-var SYNTHESIS_ENABLED = false; // 合成節點暫時關閉，連同合成專用零件與其掉落一併停用
+var SYNTHESIS_ENABLED = false; // 合成節點暫時關閉；合成專用零件不進熔爐分解格
 var SYNTH_GREAT_BASE = 5;        // 合成大成功基礎機率 %
 
 function isFactoryNodeEnabled(node) {
@@ -1504,28 +1491,8 @@ function gemShopPrice(lv) { // 商店標價：查上方 GEM_SHOP_TABLE（刷新�
   return 0;
 }
 
-/* ---- 物品掉落表 ----
-   每個品質獨立擲骰（可同時掉多件）；機率 >100%：必掉 floor(p/100) 件，餘數為再掉 1 件的機率。
-   rates 索引 = 品質 0~7（普通~創世）。 */
-var FIELD_DROP_TABLE = [// 野外：依怪物等級（掉落區間與裝備套裝等級分開）
-  { min: 300, rates: [50, 40, 30, 20, 8, 4, 0.2, 0] },
-  { min: 250, rates: [50, 40, 30, 15, 7, 3.5, 0.15, 0] },
-  { min: 200, rates: [50, 40, 30, 15, 6, 3, 0.1, 0] },
-  { min: 150, rates: [50, 40, 30, 15, 5, 2, 0.05, 0] },
-  { min: 100, rates: [40, 30, 20, 10, 2.5, 1, 0, 0] },
-  { min: 50, rates: [35, 20, 15, 5, 1, 0, 0, 0] },
-  { min: 40, rates: [35, 20, 15, 5, 2, 0, 0, 0] },
-  { min: 20, rates: [35, 20, 15, 5, 0, 0, 0, 0] },
-  { min: 1, rates: [25, 15, 10, 0, 0, 0, 0, 0] }];
-var FIELD_GEM_DROP_TABLE = [ // 野外寶石：依怪物等級，各階級獨立判定
-  { min: 301, rates: [14, 2.3, 0.8, 0.4, 0.3] },
-  { min: 251, rates: [12, 2, 0.7, 0.3, 0.2] },
-  { min: 201, rates: [10, 1.7, 0.6, 0.2, 0] },
-  { min: 151, rates: [8, 1.4, 0.5, 0.1, 0] },
-  { min: 101, rates: [6, 1.1, 0.4, 0, 0] },
-  { min: 51, rates: [4, 0.8, 0.3, 0, 0] },
-  { min: 1, rates: [2, 0.5, 0.2, 0, 0] }
-];
+/* ---- 高塔物品掉落表 ----
+   野外裝備與材料掉落統一由 ZONE_STAGE_DROP_PROFILES／Zone_Stage_Drops.csv 管理。 */
 var BOSS_DROP_TABLE = [    // 高塔 BOSS：依樓層 7 檔（與掉落表加總列逐欄核對：165/232/256/323/538/700/715）
   { min: 31, rates: [0, 0, 0, 0, 400, 250, 100, 10] },   // 30級含以上（715%）
   { min: 26, rates: [0, 0, 0, 0, 350, 200, 50, 5] },   // 26~30（700%）

@@ -204,7 +204,9 @@ test('遞迴掃描 UI 呼叫的模擬層 G 相依，無未守衛路徑', () => {
     'reincarnationTotalMultiplier',
     'talentSystemUnlocked',
     'talentUnlocked',
-    'xpForLevel'
+    'xpForLevel',
+    'fieldDropRatesFor',
+    'fieldMaterialConfigFor'
   ]);
   const uiThrowers = uiGDependencies.filter((name) => !reviewedSafeUiDependencies.has(name));
   const report = uiGDependencies.map((name) => {

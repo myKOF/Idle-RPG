@@ -45,6 +45,82 @@ function parseCsv(text) {
   return rows;
 }
 const allRows = parseCsv(fs.readFileSync(CSV_PATH, 'utf8')).filter(r => r.length > 1);
+// 地圖專屬資料由獨立地圖表管理；game_parameters 只保留通用公式與計算參數。
+const ZONES_CSV_PATH = process.env.ZONES_CSV || path.join(ROOT, 'config', 'CSV', 'Zones.csv');
+const zoneRows = parseCsv(fs.readFileSync(ZONES_CSV_PATH, 'utf8')).filter(r => r.length > 1);
+const zoneHeader = zoneRows[0] || [];
+const zoneIdCol = zoneHeader.indexOf('地圖識別碼');
+if (zoneIdCol < 0) throw new Error('Zones.csv 表頭缺少「地圖識別碼」：' + JSON.stringify(zoneHeader));
+const zoneById = {};
+zoneRows.slice(1).forEach(r => { zoneById[r[zoneIdCol]] = r; });
+function ZP(zoneKey, field) {
+  const col = zoneHeader.indexOf(field);
+  const row = zoneById[zoneKey];
+  if (col < 0 || !row || row[col] === undefined || row[col] === '') {
+    throw new Error('Zones.csv 缺少欄位或資料：' + zoneKey + ' / ' + field);
+  }
+  return String(row[col]).trim();
+}
+// 地圖／關卡掉落由獨立表管理；這裡只負責把該表投影到 data.js。
+const ZONE_STAGE_DROPS_CSV_PATH = process.env.ZONE_STAGE_DROPS_CSV || path.join(ROOT, 'config', 'CSV', 'Zone_Stage_Drops.csv');
+const zoneStageDropRows = parseCsv(fs.readFileSync(ZONE_STAGE_DROPS_CSV_PATH, 'utf8')).filter(r => r.length > 1);
+const zoneStageDropHeader = zoneStageDropRows[0] || [];
+const ZD = (name) => {
+  const col = zoneStageDropHeader.indexOf(name);
+  if (col < 0) throw new Error('Zone_Stage_Drops.csv 表頭缺少「' + name + '」：' + JSON.stringify(zoneStageDropHeader));
+  return col;
+};
+const ZD_ZONE = ZD('地圖識別碼');
+const ZD_MIN = ZD('最低關卡');
+const ZD_MAX = ZD('最高關卡');
+const ZD_EQUIP = ZD('裝備掉落率（品質R0至R10）');
+const ZD_GEMS = ZD('寶石掉落率（等級R1至R5）');
+const ZD_BOOK = ZD('技能書掉落率');
+const ZD_ESSENCE = ZD('太古精華掉落率');
+const ZD_DUST = ZD('魔塵掉落率');
+function dropNumber(raw, label) {
+  const n = Number(String(raw).trim());
+  if (!Number.isFinite(n)) throw new Error('Zone_Stage_Drops.csv 數值無法解析：' + label + ' / ' + raw);
+  return n;
+}
+function dropRateList(raw, expected, label) {
+  const values = String(raw).split('|').map((v, i) => dropNumber(v, label + '[' + i + ']'));
+  if (values.length !== expected) throw new Error('Zone_Stage_Drops.csv 欄位數量錯誤：' + label + '（需要 ' + expected + '，實際 ' + values.length + '）');
+  return values;
+}
+function zoneStageDropContent() {
+  const grouped = {};
+  zoneStageDropRows.slice(1).forEach((r, i) => {
+    const zone = String(r[ZD_ZONE] || '').trim();
+    if (!zone) throw new Error('Zone_Stage_Drops.csv 第 ' + (i + 2) + ' 列缺少地圖識別碼');
+    const row = [
+      dropNumber(r[ZD_MIN], zone + '.最低關卡'),
+      dropNumber(r[ZD_MAX], zone + '.最高關卡'),
+      dropRateList(r[ZD_EQUIP], 11, zone + '.裝備掉落率'),
+      dropRateList(r[ZD_GEMS], 5, zone + '.寶石掉落率'),
+      dropNumber(r[ZD_BOOK], zone + '.技能書掉落率'),
+      dropNumber(r[ZD_ESSENCE], zone + '.太古精華掉落率'),
+      dropNumber(r[ZD_DUST], zone + '.魔塵掉落率')
+    ];
+    (grouped[zone] || (grouped[zone] = [])).push(row);
+  });
+  const expectedZones = ['plains', 'desert', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary'];
+  expectedZones.forEach(zone => {
+    if (!grouped[zone] || !grouped[zone].length) throw new Error('Zone_Stage_Drops.csv 缺少地圖：' + zone);
+    grouped[zone].sort((a, b) => a[0] - b[0]);
+    let coveredThrough = 0;
+    for (const row of grouped[zone]) {
+      if (row[0] > row[1]) {
+        throw new Error('Zone_Stage_Drops.csv 關卡區間反向：' + zone);
+      }
+      if (row[0] > coveredThrough + 1) {
+        throw new Error('Zone_Stage_Drops.csv 關卡區間不連續：' + zone);
+      }
+      coveredThrough = Math.max(coveredThrough, row[1]);
+    }
+  });
+  return expectedZones.map(zone => '  ' + zone + ': ' + JSON.stringify(grouped[zone])).join(',\n');
+}
 // 以「表頭名稱」定位欄位，而非寫死位置：日後在中間插欄（例如「變動」）也不會錯位。
 // 「編號」「變動」等註記欄一律忽略，只認「系統分類 / 名稱 / 參數a…」。
 const header = allRows.find(r => r.indexOf('系統分類') >= 0) || allRows[0];
@@ -70,6 +146,11 @@ function P(cat, name, i) {
 
 /* ---------- 編輯清單：每筆 = {file, re(單一群組), value, label} ---------- */
 const edits = [];
+edits.push({
+  file: 'data', scopeVar: 'ZONE_STAGE_DROP_PROFILES',
+  re: /ZONE_STAGE_DROP_PROFILES\s*=\s*\{([\s\S]*?)\n\};/,
+  grp: 1, value: zoneStageDropContent(), label: 'ZONE_STAGE_DROP_PROFILES（Zone_Stage_Drops.csv）', multiGroup: true
+});
 function esc(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 // 具名純量常數： var NAME = <num>;
 function scalarValue(file, varName, value, label) {
@@ -118,6 +199,13 @@ function objFieldML(file, keyAnchor, field, cat, name, i, label, scopeVar) {
     grp: 2, value: P(cat, name, i), label: (label || keyAnchor) + '.' + field, scopeVar: scopeVar
   });
 }
+function objFieldMLValue(file, keyAnchor, field, value, label, scopeVar) {
+  edits.push({
+    file,
+    re: new RegExp('(' + esc(keyAnchor) + '[\\s\\S]*?\\b' + esc(field) + ':\\s*)(-?[\\d.]+)'),
+    grp: 2, value: String(value), label: (label || keyAnchor) + '.' + field, scopeVar: scopeVar
+  });
+}
 // 內嵌唯一片段： <prefix><num> —— prefix 需在整檔唯一
 function inline(file, prefix, value, label) {
   edits.push({ file, re: new RegExp('(' + esc(prefix) + ')(-?[\\d.]+)'), grp: 2, value: String(value), label });
@@ -159,11 +247,14 @@ Object.keys(RAR_KEYS).forEach(nm => {
    game_parameters 內若仍殘留這四組的舊列，一律為「死列」（apply_params 忽略），
    實際數值以上述四表為準（唯一來源）。 */
 
-// 自動機組零件：perTier(0)
+// 自動機組零件：基礎值(0)＋每級增加值(1)
 const PART_KEYS = { '加速齒輪': 'speedGear', '碎片熔煉爐': 'scrapForge', '淘金濾網': 'goldSluice', '精粹透鏡': 'extractLens', '拓本回收臂': 'bookScavenger', '複製處理艙': 'duplicator', '知識回收器': 'archivist', '探礦核心': 'prospector', '幸運晶片': 'fortuneChip', '太古精華萃取器': 'ancientEssenceRate', '幸運核心': 'luckCore', '重骰模組': 'rerollModule' };
-Object.keys(PART_KEYS).forEach(nm => objField('data', PART_KEYS[nm] + ':', 'perTier', '表-自動機組零件', nm, 0, '零件-' + nm));
+Object.keys(PART_KEYS).forEach(nm => {
+  objField('data', PART_KEYS[nm] + ':', 'base', '表-自動機組零件', nm, 0, '零件基礎值-' + nm);
+  objField('data', PART_KEYS[nm] + ':', 'perLevel', '表-自動機組零件', nm, 1, '零件每級增加值-' + nm);
+});
 
-// 場景倍率：hpMult(0) atkMult(1) defMult(2) aspdMult(3) rewardMult(4)
+// 場景倍率改由 config/CSV/Zones.csv 管理；game_parameters 不再是地圖倍率來源。
 // 新遊戲／重新開局的初始資源（由參數表「0-遊戲預設」控制）。
 scalar('player', 'INITIAL_GOLD', '0-遊戲預設', '開場金幣', 0);
 scalar('player', 'INITIAL_SCRAP', '0-遊戲預設', '開場裝備碎片', 0);
@@ -173,28 +264,26 @@ const ZONE_KEYS = {
   '草原': 'plains',
   '荒漠': 'desert',
   '沼澤': 'swamp',
+  '亡靈山脈': 'undead_mountains',
   '太古戰場': 'god_battlefield',
   '混沌界': 'god_chaos',
   '永恒神域': 'god_sanctuary'
 };
 Object.keys(ZONE_KEYS).forEach(nm => {
-  const a = ZONE_KEYS[nm] + ':';
-  objFieldML('data', a, 'hpMult', '4-場景倍率', nm, 0, '場景-' + nm, 'ZONES');
-  objFieldML('data', a, 'atkMult', '4-場景倍率', nm, 1, '場景-' + nm, 'ZONES');
-  objFieldML('data', a, 'defMult', '4-場景倍率', nm, 2, '場景-' + nm, 'ZONES');
-  objFieldML('data', a, 'aspdMult', '4-場景倍率', nm, 3, '場景-' + nm, 'ZONES');
-  objFieldML('data', a, 'rewardMult', '4-場景倍率', nm, 4, '場景-' + nm, 'ZONES');
+  const zoneKey = ZONE_KEYS[nm];
+  const a = zoneKey + ':';
+  objFieldMLValue('data', a, 'hpMult', ZP(zoneKey, '生命倍率'), '場景-' + nm, 'ZONES');
+  objFieldMLValue('data', a, 'atkMult', ZP(zoneKey, '攻擊倍率'), '場景-' + nm, 'ZONES');
+  objFieldMLValue('data', a, 'defMult', ZP(zoneKey, '防禦倍率'), '場景-' + nm, 'ZONES');
+  objFieldMLValue('data', a, 'aspdMult', ZP(zoneKey, '攻速倍率'), '場景-' + nm, 'ZONES');
+  objFieldMLValue('data', a, 'rewardMult', ZP(zoneKey, '經驗金幣獎勵倍率'), '場景-' + nm, 'ZONES');
 });
 
 /* ---- data.js 具名純量常數 ---- */
 scalar('data', 'MAX_AFFIXES', '表-固定參數', '詞條數硬上限', 0);
 scalar('data', 'REROLL_CHAOS_ESSENCE_COST', '7-洗煉', '混沌精華費用', 0);
 scalar('data', 'REROLL_CHAOS_GODFORGED_ESSENCE_COST', '7-洗煉', '神鑄混沌精華費用', 0);
-// 太古常數（2026-07-23 改版：太古詞條產出時決定；舊「野外/高塔太古詞條機率」「太古精華洗煉」已拆線）
-scalar('data', 'ANCIENT_ESSENCE_ENEMY_BASE_RATE', '5-野外材料', '太古精華', 1);
-scalar('data', 'ANCIENT_ESSENCE_ENEMY_LEVEL_RATE', '5-野外材料', '太古精華', 3);
-scalar('data', 'ANCIENT_ESSENCE_ENEMY_RATE_CAP', '5-野外材料', '太古精華', 0);
-scalar('data', 'ANCIENT_ESSENCE_ENEMY_MIN_LEVEL', '5-野外材料', '太古精華', 2);
+// 太古常數（2026-07-23 改版：太古詞條產出時決定；野外掉落率由 Zone_Stage_Drops.csv 管理）
 scalar('data', 'ANCIENT_ESSENCE_BOSS_BASE_RATE', '5-太古詞條', '高塔太古精華機率', 1);
 scalar('data', 'ANCIENT_ESSENCE_BOSS_LEVEL_RATE', '5-太古詞條', '高塔太古精華機率', 3);
 scalar('data', 'ANCIENT_ESSENCE_BOSS_RATE_CAP', '5-太古詞條', '高塔太古精華機率', 0);
@@ -237,21 +326,12 @@ objField('data', 'FORGE_EQUIP_DURATION = {', '5', '6-神鑄', '裝備神鑄時�
 objField('data', 'FORGE_EQUIP_DURATION = {', '6', '6-神鑄', '裝備神鑄時間(秒)', 1, 'FORGE_EQUIP_DURATION');
 objField('data', 'FORGE_EQUIP_DURATION = {', '7', '6-神鑄', '裝備神鑄時間(秒)', 2, 'FORGE_EQUIP_DURATION');
 scalar('data', 'FORGE_CHAOS_DURATION', '6-神鑄', '裝備神鑄混沌時間(秒)', 0);
-scalar('data', 'CHAOS_FIELD_DROP_MIN_STAGE', '5-野外裝備掉落', '混沌裝備', 0);
-scalar('data', 'CHAOS_FIELD_DROP_PCT', '5-野外裝備掉落', '混沌裝備', 1);
-objField('data', 'CHAOS_FIELD_DROP_ZONES = {', 'god_battlefield', '5-野外裝備掉落', '混沌裝備', 2, 'CHAOS_FIELD_DROP_ZONES');
-objField('data', 'CHAOS_FIELD_DROP_ZONES = {', 'god_chaos', '5-野外裝備掉落', '混沌裝備', 3, 'CHAOS_FIELD_DROP_ZONES');
-objField('data', 'CHAOS_FIELD_DROP_ZONES = {', 'god_sanctuary', '5-野外裝備掉落', '混沌裝備', 4, 'CHAOS_FIELD_DROP_ZONES');
 ['0', '1', '2', '3', '4'].forEach((k, idx) => {
   const codeKey = [5, 6, 7, 8, 9][idx];
   objField('data', 'FORGE_GEM_BASE_RATE = {', String(codeKey), '6-神鑄', '寶石神鑄基礎成功率', idx, 'FORGE_GEM_BASE_RATE');
   objField('data', 'FORGE_GEM_DURATION = {', String(codeKey), '6-神鑄', '寶石神鑄時間(秒)', idx, 'FORGE_GEM_DURATION');
 });
-// 魔塵掉落
-scalar('data', 'DUST_FIELD_MIN_LEVEL', '5-野外材料', '魔塵', 2);
-scalar('data', 'DUST_FIELD_BASE', '5-野外材料', '魔塵', 1);
-scalar('data', 'DUST_FIELD_PER_LEVEL', '5-野外材料', '魔塵', 3);
-scalar('data', 'DUST_FIELD_CAP', '5-野外材料', '魔塵', 0);
+// 魔塵掉落由 Zone_Stage_Drops.csv 管理；高塔 BOSS 魔塵仍由 game_parameters 管理。
 scalar('data', 'DUST_BOSS_BASE', '4-高塔BOSS', '高塔 BOSS 魔塵', 1);
 scalar('data', 'DUST_BOSS_PER_LEVEL', '4-高塔BOSS', '高塔 BOSS 魔塵', 2);
 scalar('data', 'DUST_BOSS_CAP', '4-高塔BOSS', '高塔 BOSS 魔塵', 0);
@@ -302,6 +382,9 @@ scalar('data', 'GEM_SHOP_REFRESH_EXPONENT', '8-寶石商店', '手動刷新費�
 scalar('data', 'ENCHANT_ESSENCE_COST', '6-裝備', '手動附魔費用', 1);
 scalar('data', 'PART_MAX_TIER', '表-固定參數', '零件階級上限', 0);
 scalar('data', 'PART_KEEP_PER_KEY', '表-固定參數', '零件庫存保留', 0);
+scalar('data', 'PART_UPGRADE_COST_A', '表-固定參數', '零件升級金錢消耗', 0);
+scalar('data', 'PART_UPGRADE_COST_B', '表-固定參數', '零件升級金錢消耗', 1);
+scalar('data', 'PART_UPGRADE_COST_C', '表-固定參數', '零件升級金錢消耗', 2);
 scalar('data', 'RESPAWN_DELAY', '表-固定參數', '出怪間隔', 0);
 scalar('data', 'REVIVE_DELAY', '表-固定參數', '死亡復活時間', 0);
 scalar('data', 'CONVEYOR_CAP', '7-容量', '輸送帶容量', 0);
@@ -475,47 +558,6 @@ function levelGrowthContent(cat, name) {
   const brackets = params.filter(cell => /^\s*\{/.test(String(cell))).map(parseLevelGrowthBracket);
   if (!brackets.length) throw new Error('CSV 缺少有效等級區間參數：' + cat + ' / ' + name);
   return brackets.join(',\n  ');
-}
-// 野外裝備：各品質的等級 bracket 可能不同（普通～獨特從 20 級切段，史詩以上從 50 級切段）。
-// 將所有品質的分段起點合併，讓 FIELD_DROP_TABLE 同時保留每一個實際邊界。
-{
-  const quals = ['普通', '精良', '稀有', '獨特', '史詩', '傳說', '神話', '創世'];
-  function parseFieldDropBracket(cell) {
-    cell = (cell == null ? '' : String(cell)).trim();
-    const m = /^\{\s*(\d+)\s*(?:~\s*(\d+)|\+)\s*=\s*(-?(?:\d+(?:\.\d*)?|\.\d+))\s*\}$/.exec(cell);
-    if (!m) throw new Error('CSV 野外裝備掉落區間無法解析為數字：「' + cell + '」');
-    return { min: Number(m[1]), max: m[2] ? Number(m[2]) : null, rate: Number(m[3]) };
-  }
-  const bracketsByQuality = quals.map(q => {
-    const cells = index['5-野外裝備掉落'][q + '裝備'];
-    return cells.filter(cell => /^\s*\{/.test(String(cell))).map(parseFieldDropBracket);
-  });
-  const mins = [...new Set(bracketsByQuality.flatMap(brackets => brackets.map(b => b.min)))].sort((a, b) => b - a);
-  const rows = mins.map(min => {
-    const rates = bracketsByQuality.map(brackets => {
-      const bracket = brackets.find(b => min >= b.min && (b.max === null || min <= b.max));
-      if (!bracket) throw new Error('CSV 野外裝備掉落缺少等級 ' + min + ' 的品質區間');
-      return bracket.rate;
-    });
-    return '{ min: ' + min + ', rates: [' + rates.join(', ') + '] }';
-  }).join(',\n  ');
-  edits.push({
-    file: 'data',
-    scopeVar: 'FIELD_DROP_TABLE',
-    re: /FIELD_DROP_TABLE\s*=\s*\[([\s\S]*?)\]\s*;/,
-    grp: 1,
-    value: '// 野外：依怪物等級（掉落區間與裝備套裝等級分開）\n  ' + rows,
-    label: 'FIELD_DROP_TABLE 等級區間',
-    multiGroup: true
-  });
-}
-// 野外寶石：CSV 每 bracket 一列，5 tier；code min 1/51/101/151/201/251/301
-{
-  const brName = { 1: '1~50', 51: '51~100', 101: '101~150', 151: '151~200', 201: '201~250', 251: '251~300', 301: '301+' };
-  Object.keys(brName).forEach(min => {
-    const params = index['5-野外寶石掉落']['怪物等級 ' + brName[min]].slice(0, 5);
-    edits.push({ file: 'data', scopeVar: 'FIELD_GEM_DROP_TABLE', re: new RegExp('min: ' + min + ',\\s*rates:\\s*\\[([^\\]]*)\\]'), grp: 1, value: params.join(', '), label: 'FIELD_GEM min' + min, multiGroup: true });
-  });
 }
 // 高塔裝備：CSV 每品質 7 bracket（1~5..31+）→ code min 1/6/11/16/21/26/31
 {
@@ -821,9 +863,6 @@ inlineRegex('formula', /(function loadoutSize\(\)[\s\S]*?return Math\.min\()(-?[
   P('1-成長經驗', '技能裝載欄', 2), '裝載欄-上限');
 
 /* ---- Batch2a：補接 formula.js 內漏接的可調單值（多值行用正規式避免相依錨點失配） ---- */
-inline('formula', 'FIELD_BOOK_DROP_PCT = ', P('5-野外材料', '附魔書', 0), 'FIELD_BOOK_DROP_PCT');
-inline('formula', 'FIELD_PART_DROP_PCT = ', P('5-野外材料', '自動機組零件', 0), 'FIELD_PART_DROP_PCT');
-numCtx('formula', 'Math.floor((floor - 1) / ', ')', P('5-高塔獎勵', '零件階級', 0), '高塔-零件階級');
 numCtx('formula', 'gold: Math.round(', ' * floor', P('5-高塔獎勵', '金幣', 0), '高塔-金幣');
 numCtx('formula', 'Math.floor(floor / ', ')', P('5-高塔獎勵', '寶石', 0), '高塔-寶石');
 numCtx('formula', 'essence: ', ' + floor', P('5-高塔獎勵', '附魔精華', 0), '高塔-附魔精華');
@@ -897,13 +936,17 @@ const srcCache = {};
 function src(f) { return srcCache[f] || (srcCache[f] = fs.readFileSync(FILES[f], 'utf8')); }
 
 const results = []; // {label, file, kind, old, new, changed, error}
-// scopeVar: 將搜尋限制在某 var 區塊內（例如 FIELD_DROP_TABLE）以避免同名欄位在他處誤中
+// scopeVar: 將搜尋限制在某 var 區塊內（例如 ZONE_STAGE_DROP_PROFILES）以避免同名欄位在他處誤中
 function scopedText(file, scopeVar) {
-  const t = src(file);
+  return scopedTextValue(src(file), scopeVar);
+}
+function scopedTextValue(t, scopeVar) {
   if (!scopeVar) return { text: t, offset: 0 };
-  const m = new RegExp('\\b' + esc(scopeVar) + '\\s*=\\s*[\\[{][\\s\\S]*?[\\]}];').exec(t);
-  if (!m) return { text: t, offset: 0 };
-  return { text: m[0], offset: m.index };
+  const re = new RegExp('\\b' + esc(scopeVar) + '\\s*=\\s*[\\[{][\\s\\S]*?[\\]}];', 'g');
+  let m; let last = null;
+  while ((m = re.exec(t)) !== null) { last = m; if (m.index === re.lastIndex) re.lastIndex++; }
+  if (!last) return { text: t, offset: 0 };
+  return { text: last[0], offset: last.index };
 }
 // 比較兩段文字的數值序列是否相同（忽略空白/格式差異）
 function numsEqual(a, b) {
@@ -1016,8 +1059,7 @@ if (process.argv.includes('--check-anchors')) {
   edits.forEach((e) => {
     let text = perturbed[e.file];
     if (e.scopeVar) {
-      const m = new RegExp('\\b' + esc(e.scopeVar) + '\\s*=\\s*[\\[{][\\s\\S]*?[\\]}];').exec(text);
-      if (m) text = m[0];
+      text = scopedTextValue(text, e.scopeVar).text;
     }
     const re = new RegExp(e.re.source, 'g');
     let n = 0, m2;

@@ -4,40 +4,59 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
+const ROOT = path.resolve(__dirname, '..');
 function loadContext() {
-  const root = path.resolve(__dirname, '..');
   const context = { console, Math };
   vm.createContext(context);
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/data.js'), 'utf8'), context, {
-    filename: 'js/data.js'
-  });
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/formula.js'), 'utf8'), context, {
-    filename: 'js/formula.js'
-  });
+  for (const file of ['js/data.js', 'js/formula.js']) {
+    vm.runInContext(fs.readFileSync(path.join(ROOT, file), 'utf8'), context, { filename: file });
+  }
   return context;
 }
+function parseCsvLine(line) {
+  const out = [];
+  let cur = '', quoted = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (quoted && line[i + 1] === '"') { cur += '"'; i++; }
+      else quoted = !quoted;
+    } else if (ch === ',' && !quoted) { out.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  out.push(cur);
+  return out;
+}
+function readZoneDrops() {
+  const lines = fs.readFileSync(path.join(ROOT, 'config/CSV/Zone_Stage_Drops.csv'), 'utf8').replace(/^\uFEFF/, '').split(/\r?\n/).filter(Boolean);
+  const header = parseCsvLine(lines[0]);
+  const idx = Object.fromEntries(header.map((name, i) => [name, i]));
+  return lines.slice(1).map(parseCsvLine).map((row) => ({
+    zone: row[idx['地圖識別碼']],
+    min: Number(row[idx['最低關卡']]),
+    max: Number(row[idx['最高關卡']]),
+    rates: row[idx['寶石掉落率（等級R1至R5）']].split('|').map(Number)
+  }));
+}
 
-test('野外寶石掉落表依怪物等級與寶石階級套用', () => {
+test('地圖／關卡掉落表提供 R1～R5 寶石掉落率', () => {
   const context = loadContext();
-  // CSV: config/CSV/game_parameters.csv:147-153。
-  assert.deepEqual(JSON.parse(JSON.stringify(context.FIELD_GEM_DROP_TABLE)), [
-    { min: 301, rates: [14, 2.3, 0.8, 0.4, 0.3] },
-    { min: 251, rates: [12, 2, 0.7, 0.3, 0.2] },
-    { min: 201, rates: [10, 1.7, 0.6, 0.2, 0] },
-    { min: 151, rates: [8, 1.4, 0.5, 0.1, 0] },
-    { min: 101, rates: [6, 1.1, 0.4, 0, 0] },
-    { min: 51, rates: [4, 0.8, 0.3, 0, 0] },
-    { min: 1, rates: [2, 0.5, 0.2, 0, 0] }
-  ]);
-  assert.deepEqual(JSON.parse(JSON.stringify(context.fieldGemDropRatesFor(300))), [12, 2, 0.7, 0.3, 0.2]);
-  assert.deepEqual(JSON.parse(JSON.stringify(context.fieldGemDropRatesFor(999))), [14, 2.3, 0.8, 0.4, 0.3]);
+  const config = readZoneDrops();
+  for (const row of config) {
+    assert.equal(row.rates.length, 5);
+    const expected = config
+      .filter((candidate) => candidate.zone === row.zone && row.min >= candidate.min && row.min <= candidate.max)
+      .reduce((sum, candidate) => sum.map((value, index) => value + candidate.rates[index]), Array(5).fill(0));
+    const cfg = context.zoneStageDropConfigFor(row.zone, row.min);
+    assert.deepEqual(JSON.parse(JSON.stringify(cfg.materials.gemRates)), expected, row.zone + ' ' + row.min + ' 寶石率不一致');
+  }
 });
 
-test('寶石掉落改為使用怪物等級表，不再使用固定總機率', () => {
-  const root = path.resolve(__dirname, '..');
-  const formula = fs.readFileSync(path.join(root, 'js/formula.js'), 'utf8');
-  const combat = fs.readFileSync(path.join(root, 'js/combat.js'), 'utf8');
-  assert.doesNotMatch(formula, /FIELD_GEM_DROP_PCT/);
-  assert.doesNotMatch(combat, /fieldGemLevelFor\(s\)/);
-  assert.match(combat, /fieldGemDropRatesFor\(m\.level\)/);
+test('戰鬥程式不再回讀怪物等級寶石掉落表', () => {
+  const combat = fs.readFileSync(path.join(ROOT, 'js/combat.js'), 'utf8');
+  const save = fs.readFileSync(path.join(ROOT, 'js/save.js'), 'utf8');
+  const formula = fs.readFileSync(path.join(ROOT, 'js/formula.js'), 'utf8');
+  assert.doesNotMatch(combat, /fieldGemDropRatesFor/);
+  assert.doesNotMatch(save, /fieldGemDropRatesFor/);
+  assert.doesNotMatch(formula, /FIELD_GEM_DROP_TABLE/);
 });

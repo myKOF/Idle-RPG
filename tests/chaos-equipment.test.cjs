@@ -14,16 +14,14 @@ function loadContext() {
   return context;
 }
 
-test('chaos field drop is restricted by the configured stage and zones', () => {
+test('混沌裝備是地圖掉落表中的 R9，不再使用特殊掉落常數', () => {
   const context = loadContext();
 
-  assert.equal(context.CHAOS_FIELD_DROP_MIN_STAGE, 551);
-  assert.equal(context.CHAOS_FIELD_DROP_PCT, 1);
-  assert.equal(context.chaosFieldDropEligible('god_battlefield', 550), false);
-  assert.equal(context.chaosFieldDropEligible('plains', 551), false);
-  assert.equal(context.chaosFieldDropEligible('god_battlefield', 551), true);
-  assert.equal(context.chaosFieldDropEligible('god_chaos', 700), true);
-  assert.equal(context.chaosFieldDropEligible('god_sanctuary', 700), true);
+  assert.equal(context.fieldDropRatesFor(550, 1, 'god_battlefield')[9], 0);
+  assert.equal(context.fieldDropRatesFor(551, 1, 'god_battlefield')[9], 1);
+  assert.equal(context.fieldDropRatesFor(551, 1, 'god_chaos')[9], 1);
+  assert.equal(context.fieldDropRatesFor(601, 1, 'god_sanctuary')[9], 1);
+  assert.equal(typeof context.CHAOS_FIELD_DROP_PCT, 'undefined');
 });
 
 test('chaos equipment forge uses 20% base and 3% per dust', () => {
@@ -41,7 +39,7 @@ test('chaos equipment forge uses 20% base and 3% per dust', () => {
 test('chaos forge parameters are present in the CSV source of truth', () => {
   const csv = fs.readFileSync(path.resolve(__dirname, '..', 'config/CSV/game_parameters.csv'), 'utf8');
 
-  assert.match(csv, /5-野外裝備掉落,混沌裝備/);
+  assert.doesNotMatch(csv, /5-野外裝備掉落,混沌裝備/);
   assert.match(csv, /6-神鑄,裝備神鑄混沌魔塵加成/);
   assert.match(csv, /6-神鑄,裝備神鑄混沌基礎成功率/);
   assert.match(csv, /6-神鑄,裝備神鑄混沌金幣/);

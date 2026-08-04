@@ -51,8 +51,14 @@ function newForgeDefaultFurnace(id, previousFurnace) {
     belt: [],                                    // 傳送帶（純裝備陣列，帶頭先入爐；自專屬佇列補位）
     timer: 0,
     partSlots: NEW_FORGE_PART_SLOTS_INITIAL,     // 已解鎖零件格數（金幣逐格解鎖至 8）
-    parts: []                                    // 已置入零件快照（提供該爐拆解加成）
+    parts: []                                    // 已置入零件 key（等級由 factory.partLevels 即時提供）
   };
+}
+
+function newPartLevels() {
+  var levels = {};
+  Object.keys(PART_TYPES).forEach(function (key) { levels[key] = 1; });
+  return levels;
 }
 
 function newGameState() {
@@ -117,6 +123,7 @@ function newGameState() {
       conveyor: [],
       synthBuffer: [],
       parts: [],
+      partLevels: newPartLevels(),
       installed: { salvage: [], synth: [] },
       salvageSlots: 10,
       procTimer: 0, enchTimer: 0, upTimer: 0,

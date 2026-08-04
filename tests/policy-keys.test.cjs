@@ -200,17 +200,54 @@ test('關卡閘門的最後一段必須是無上限、且不再設門檻', () =>
    門檻的數字本身不再由測試釘死：地圖掉落表還在調整中，把今天的值寫進斷言
    只會在下一次調整時變成假警報，或更糟——跟著改成錯的期望值一起綠燈。 */
 
-test('有品質門檻的關卡閘門一定要宣告執行期逃生口', () => {
+test('打不開的品質門檻：要嘛掉得出來，要嘛有執行期逃生口', () => {
+  /* ⚠️ 合併說明（ai/claude × ai/codex 對同一支哨兵各改了一版）：
+
+     codex 那一側把斷言改讀 ZONE_STAGE_DROP_TABLE，方向是對的——FIELD_DROP_TABLE
+     已經不是掉落權威了。但條件寫成
+       Object.values(ZONE_STAGE_DROP_TABLE).flat().some(row => row.equipmentRates[r] > 0)
+     問的是「**任何地圖的任何一段**有沒有這個品質」。太古戰場 1~150 的獨特是 10、
+     史詩 3，所以這次真正發生的草原死鎖在那個條件底下**仍然全綠**——同一種瞎，
+     換了個形狀。（訊息也還寫著「怪物 Lv」與「FIELD_DROP_TABLE」，跟實際檢查的不一致。）
+
+     claude 那一側只檢查有沒有宣告逃生口，沒有真的去問掉落表。
+
+     合起來才是完整的：問**角色實際會停下來刷的那一段**掉不掉得出來，
+     掉不出來時允許以執行期逃生口（stageGate.dropRates）作為合法例外——
+     那條逃生口會在執行期問遊戲並放行，所以不再是死鎖。兩者皆無才是真的會卡死。
+
+     為什麼不直接把門檻改成今天的 CSV 值：地圖掉落表還在調整中，
+     把當下的數字寫進斷言，下一次調整不是變成假警報，就是跟著改成錯的期望值一起綠燈。 */
+  const e = createEngine({ seed: 20260807 }).boot(null);
+  /* 新角色從哪張地圖開始，問遊戲，不要寫死 'plains'。 */
+  const startZone = e.state().stage.zone;
+
   for (const f of POLICY_FILES) {
-    for (const rule of loadPolicy(f).rules) {
+    const policy = loadPolicy(f);
+    for (const rule of policy.rules) {
       const cps = (rule.stageGate && rule.stageGate.checkpoints) || [];
-      const gated = cps.some((cp) => cp.minRarity > 0 && cp.coverage > 0);
-      if (!gated) continue;
-      assert.ok(rule.stageGate.dropRates,
-        `${f} 規則 ${rule.id} 設了品質門檻卻沒有 stageGate.dropRates——` +
-        '掉落表一改，門檻就可能變成數學上打不開的門，而且完全沒有徵兆');
-      assert.ok((loadPolicy(f).needPanels || []).includes('battle'),
-        `${f}：dropRates 讀 battle 面板，needPanels 就要宣告`);
+      let lo = 1;
+      let gated = false;
+      for (const cp of cps) {
+        if (cp.minRarity > 0 && cp.coverage > 0) {
+          gated = true;
+          /* 卡住時角色停在哪：park 有設就是 park 的下緣，沒有就是這一段的下緣。 */
+          const at = Array.isArray(cp.park) && cp.park.length ? cp.park[0] : lo;
+          /* 掉落路徑本人那一支（怪物等級＝關卡，見 formula.js monsterStatsFor）。 */
+          const rates = e.ctx.fieldDropRatesFor(at, at, startZone);
+          const droppable = Number(rates[cp.minRarity]) > 0;
+          assert.ok(droppable || rule.stageGate.dropRates,
+            `${f} 規則 ${rule.id}：卡住時會停在【${startZone}】第 ${at} 關，那裡要求 ` +
+            `${ctx.RARITIES[cp.minRarity].name}(R${cp.minRarity})，但該段掉落率是 0，` +
+            '而且沒有宣告 stageGate.dropRates 逃生口——這道閘門永遠打不開，模擬會從此卡死');
+        }
+        if (cp.maxStage === undefined) break;
+        lo = cp.maxStage + 1;
+      }
+      if (gated && rule.stageGate.dropRates) {
+        assert.ok((policy.needPanels || []).includes('battle'),
+          `${f}：dropRates 讀 battle 面板，needPanels 就要宣告`);
+      }
     }
   }
 });

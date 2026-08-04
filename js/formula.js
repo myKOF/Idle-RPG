@@ -1066,13 +1066,13 @@ function bossStatsFor(floor) {
    §5 掉落與獎勵
    ============================================================ */
 
-// 依等級/樓層從掉落表（data.js 的 FIELD_DROP_TABLE / BOSS_DROP_TABLE）取機率列
+// 依地圖／關卡或高塔樓層從掉落表取機率列
 // 掉寶率來源平衡：裝備詞條、附魔、技能與相關分解零件的效果統一減半。
 // 存檔仍保留原始數值，透過此入口計算即可讓既有物品立即套用新規則。
 var DROP_RATE_EFFECT_MULT = 0.5;
 var DROP_RATE_PART_KEYS = {
   ancientEssenceRate: true, duplicator: true,
-  fortuneChip: true, bookScavenger: true, prospector: true
+  fortuneChip: true, bookScavenger: true
 };
 var SPEED_GEAR_FIXED_BONUS = 50;
 function effectiveDropRateEffect(value) {
@@ -1085,21 +1085,61 @@ function effectiveFactoryPartValue(key, value) {
   return key === 'speedGear' ? (Number(value) || 0) + SPEED_GEAR_FIXED_BONUS : value;
 }
 
-/* ---- 自動機組零件的數值與名稱 ----
-   效果值 = perTier × 階級（定值，沒有隨機成分）、名稱 = 'T階 零件名'，兩者都能由
-   { key, tier } 推導，所以存檔不留 val／name（與裝備數值存檔改造同一原則 → §6）。
-   改 PART_TYPES 的 perTier 或改名後，舊存檔既有零件（含熔爐裡的零件快照）跟著套用新值。 */
+/* ---- 自動機組零件的數值、等級與升級費用 ----
+   效果值 = 基礎值 + 每級增加值 × (等級 - 1)。零件等級是全域資料，熔爐只存 key，
+   因此升級後所有熔爐的同名零件會同步套用新值。 */
+function partLevelFor(key, levels) {
+  var pt = PART_TYPES[key];
+  if (!pt) return 0;
+  var source = levels || (typeof G !== 'undefined' && G && G.factory && G.factory.partLevels);
+  var lv = source && Number(source[key]);
+  return clamp(Math.floor(isFinite(lv) ? lv : 1), 1, PART_MAX_TIER);
+}
+function ensurePartLevels(factory) {
+  if (!factory) return {};
+  if (!factory.partLevels || typeof factory.partLevels !== 'object' || Array.isArray(factory.partLevels)) factory.partLevels = {};
+  // 舊版測試工具／存檔可能同時帶有零件實體；載入時取各類型最高階，之後由
+  // sanitizeNewForge 清除實體庫存。新制正常流程的 parts 為空，不會產生額外效果。
+  (factory.parts || []).forEach(function (p) {
+    if (!p || !PART_TYPES[p.key]) return;
+    var oldLevel = Number(p.level !== undefined ? p.level : p.tier);
+    if (isFinite(oldLevel)) {
+      factory.partLevels[p.key] = Math.max(partLevelFor(p.key, factory.partLevels), clamp(Math.floor(oldLevel), 1, PART_MAX_TIER));
+    }
+  });
+  Object.keys(PART_TYPES).forEach(function (key) {
+    factory.partLevels[key] = partLevelFor(key, factory.partLevels);
+  });
+  return factory.partLevels;
+}
+function partValueForLevel(key, level) {
+  var pt = PART_TYPES[key];
+  if (!pt) return 0;
+  var lv = clamp(Math.floor(Number(level) || 1), 1, PART_MAX_TIER);
+  var base = Number(pt.base);
+  var perLevel = Number(pt.perLevel);
+  // 舊版測試／外部工具仍可能只提供 perTier；在遷移期間把它視為每級增加值。
+  if (!isFinite(base)) base = Number(pt.perTier) || 0;
+  if (!isFinite(perLevel)) perLevel = Number(pt.perTier) || 0;
+  return Math.round((base + perLevel * (lv - 1)) * 100) / 100;
+}
+// 升級費用使用「升級後的目標等級」：T5 -> T6 會代入 6。
+function partUpgradeCost(targetLevel) {
+  var lv = Math.max(1, Math.floor(Number(targetLevel) || 1));
+  return Math.max(0, Math.ceil(Number(PART_UPGRADE_COST_A) + Number(PART_UPGRADE_COST_B) * Math.pow(Number(PART_UPGRADE_COST_C), lv)));
+}
 function partValue(p) {
   if (!p) return 0;
   var pt = PART_TYPES[p.key];
   if (!pt) return Number(p.val) || 0;      // 零件已下架：沿用凍結值，不歸零
-  return Math.round(pt.perTier * (Number(p.tier) || 0) * 100) / 100;
+  return partValueForLevel(p.key, p.level !== undefined ? p.level : p.tier);
 }
 function partName(p) {
   if (!p) return '';
   var pt = PART_TYPES[p.key];
   if (!pt) return String(p.name || p.key || '');
-  return 'T' + (Number(p.tier) || 0) + ' ' + pt.name;
+  var level = p.level !== undefined ? p.level : p.tier;
+  return 'T' + clamp(Math.floor(Number(level) || 1), 1, PART_MAX_TIER) + ' ' + pt.name;
 }
 // 舊存檔零件：val 與 name 都可推導 → 直接丟棄（冪等）
 function ensurePartSource(p) {
@@ -1115,27 +1155,44 @@ function dropRatesFor(table, lvl) {
   }
   return table[table.length - 1].rates;
 }
-var DROP_RATES_FOR_DEFAULT = dropRatesFor;
 // 關卡改造：掉落先依地圖/關卡區間查表，再由掉寶率與菁英倍率修正。
-var FIELD_DROP_TABLE_DEFAULT = FIELD_DROP_TABLE;
-var FIELD_DROP_TABLE_DEFAULT = FIELD_DROP_TABLE;
 function zoneStageDropConfigFor(zone, stage) {
   var key = zone || (typeof G !== 'undefined' && G && G.stage ? G.stage.zone : 'plains') || 'plains';
   var rows = (typeof ZONE_STAGE_DROP_TABLE !== 'undefined' && ZONE_STAGE_DROP_TABLE[key]) || [];
   var s = Math.max(1, Math.floor(Number(stage) || 1));
+  var matches = [];
   for (var i = 0; i < rows.length; i++) {
-    if (s >= rows[i].min && s <= rows[i].max) return rows[i];
+    if (s >= rows[i].min && s <= rows[i].max) matches.push(rows[i]);
   }
-  return rows.length ? rows[rows.length - 1] : null;
+  if (!matches.length) return rows.length ? rows[rows.length - 1] : null;
+
+  // 同一地圖同一關卡可由多列追加掉落；各欄位採加總，不互相覆蓋。
+  var equipmentRates = [];
+  var gemRates = [];
+  var materials = { gemRates: gemRates, bookRate: 0, ancientEssenceRate: 0, dustRate: 0 };
+  for (var m = 0; m < matches.length; m++) {
+    var row = matches[m];
+    var equipment = Array.isArray(row.equipmentRates) ? row.equipmentRates : [];
+    for (var e = 0; e < equipment.length; e++) equipmentRates[e] = (equipmentRates[e] || 0) + (Number(equipment[e]) || 0);
+    var rowMaterials = row.materials || {};
+    var gems = Array.isArray(rowMaterials.gemRates) ? rowMaterials.gemRates : [];
+    for (var g = 0; g < gems.length; g++) gemRates[g] = (gemRates[g] || 0) + (Number(gems[g]) || 0);
+    materials.bookRate += Number(rowMaterials.bookRate) || 0;
+    materials.ancientEssenceRate += Number(rowMaterials.ancientEssenceRate) || 0;
+    materials.dustRate += Number(rowMaterials.dustRate) || 0;
+  }
+  return {
+    min: matches[0].min,
+    max: matches[0].max,
+    equipmentRates: equipmentRates,
+    materials: materials
+  };
 }
 function fieldDropRatesFor(stage, level, zone) {
-  // 測試/外部工具替換 FIELD_DROP_TABLE 時，保留既有覆寫語意。
-  if (FIELD_DROP_TABLE !== FIELD_DROP_TABLE_DEFAULT || dropRatesFor !== DROP_RATES_FOR_DEFAULT) return dropRatesFor(FIELD_DROP_TABLE, level);
   var cfg = zoneStageDropConfigFor(zone, stage);
-  return cfg && Array.isArray(cfg.equipmentRates) ? cfg.equipmentRates : dropRatesFor(FIELD_DROP_TABLE, level);
+  return cfg && Array.isArray(cfg.equipmentRates) ? cfg.equipmentRates : [];
 }
 function fieldMaterialConfigFor(zone, stage) {
-  if (FIELD_DROP_TABLE !== FIELD_DROP_TABLE_DEFAULT || dropRatesFor !== DROP_RATES_FOR_DEFAULT) return {};
   var cfg = zoneStageDropConfigFor(zone, stage);
   return (cfg && cfg.materials) || {};
 }
@@ -1177,10 +1234,7 @@ function rollRarity(stage, lootBonus) {
   return wpick(w);
 }
 
-/* ---- 野外材料掉落（基礎機率 %；實際機率 × (1+掉寶率) × 場景倍率，
-       用 rollDropCount 結算 >100% 必掉規則）---- */
-var FIELD_BOOK_DROP_PCT = 4;     // 附魔書（階段 8+）
-var FIELD_PART_DROP_PCT = 0.5;   // 自動機組零件（階段 5+，機率低；菁英掉落率同乘菁英倍率）
+/* ---- 野外材料掉落（基礎機率由 Zone_Stage_Drops.csv 提供） ---- */
 var ELITE_DROP_MULT = 1.3;       // 菁英掉落倍率：裝備與材料都在一般基礎上乘此值（野外與離線收益共用）
 
 /* ---- 太古詞條／太古精華機率 ---- */
@@ -1205,12 +1259,6 @@ function rollAncientAffixCount(affixCount, luck) {
   for (var j = 0; j < adjusted.length; j++) pairs.push([j, adjusted[j] / total]);
   return wpick(pairs);
 }
-function ancientEssenceDropChanceForEnemy(level) {
-  level = Number(level) || 0;
-  if (level < ANCIENT_ESSENCE_ENEMY_MIN_LEVEL) return 0;
-  return Math.min(ANCIENT_ESSENCE_ENEMY_RATE_CAP,
-    ANCIENT_ESSENCE_ENEMY_BASE_RATE + (level - ANCIENT_ESSENCE_ENEMY_MIN_LEVEL) * ANCIENT_ESSENCE_ENEMY_LEVEL_RATE);
-}
 function ancientEssenceDropChanceForBoss(floor) {
   floor = Number(floor) || 0;
   if (floor < 40) return 0;
@@ -1219,16 +1267,6 @@ function ancientEssenceDropChanceForBoss(floor) {
 }
 function ancientEssenceSalvageChanceForRarity(rarity) {
   return ANCIENT_ESSENCE_SALVAGE_CHANCE[rarity] || 0;
-}
-
-// 野外掉落零件的階級：隨階段成長（每 12 階 +1），菁英再 +1，上限 T7
-function fieldPartTierFor(stage, elite) {
-  return clamp(1 + Math.floor(stage / 12) + (elite ? 1 : 0), 1, PART_MAX_TIER);
-}
-
-// 野外寶石掉落率：依怪物等級查表，各階級獨立判定
-function fieldGemDropRatesFor(level) {
-  return dropRatesFor(FIELD_GEM_DROP_TABLE, level);
 }
 
 // 高塔挑戰金幣消耗 = round(a × 樓層^b)，a/b 依樓層分層（TOWER_CHALLENGE_COST_TIERS → data.js）
@@ -1264,21 +1302,13 @@ function demonSeedDropChanceForBoss(floor) {
     DEMON_SEED_BOSS_BASE_RATE + (floor - TOWER_HELL_MAX_FLOOR - 1) * DEMON_SEED_BOSS_PER_FLOOR);
 }
 
-function fieldDustRate(level) {
-  if (level < DUST_FIELD_MIN_LEVEL) return 0;
-  return Math.min(DUST_FIELD_CAP, DUST_FIELD_BASE + (level - DUST_FIELD_MIN_LEVEL) * DUST_FIELD_PER_LEVEL);
-}
-
 /* ---- 高塔通關獎勵 ----
-   零件階級 = 1 + ⌊(樓層-1)/4⌋（上限 T7）；首通必得，重複通關 30%
    金幣 = 200 × 樓層（首通 ×2）
    寶石等級 = 1 + ⌊樓層/4⌋（上限 5，隨機種類 ×2 顆）
    附魔精華 = 3 + 樓層（另附魔書 ×2）
    裝備戰利品等級 = 4 + 樓層×5，經 makeEquipment 取裝備套級（equipmentTierLevel，依 BOSS 掉落表擲骰） */
 function towerRewardFor(floor, firstClear) {
   return {
-    partTier: clamp(1 + Math.floor((floor - 1) / 4), 1, PART_MAX_TIER),
-    partChance: firstClear ? 100 : 30,
     gold: Math.round(200 * floor * (firstClear ? 2 : 1)),
     gemLevel: clamp(1 + Math.floor(floor / 4), 1, GEM_MAX_LEVEL),
     essence: 3 + floor,
@@ -1497,10 +1527,6 @@ function ensureGodPassiveSource(gp) {
 // 神鑄成功率（裝備）= 基礎（依素材品質）+ 魔塵數 × 5%
 function forgeSuccessRateFor(rarity, dustCount) {
   return clamp(forgeBaseRateFor(rarity) + dustCount * forgeDustRateFor(rarity), 0, 100);
-}
-
-function chaosFieldDropEligible(zone, stage) {
-  return Number(stage) >= CHAOS_FIELD_DROP_MIN_STAGE && !!CHAOS_FIELD_DROP_ZONES[zone] && CHAOS_FIELD_DROP_PCT > 0;
 }
 
 // 神鑄成功率（寶石）= 基礎（依素材階級）+ 魔塵數 × 3%

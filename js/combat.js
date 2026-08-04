@@ -900,21 +900,11 @@ function rollFieldDrops(m) {
             drops.push('裝備[' + rarityTag(it) + ']');
         }
     }
-    var zone = (G.stage && G.stage.zone) || '';
-    if (chaosFieldDropEligible(zone, s)) {
-        var chaosN = rollDropCount(CHAOS_FIELD_DROP_PCT * dropMult);
-        for (var ci = 0; ci < chaosN; ci++) {
-            var chaosIt = makeEquipment(s, { rarity: CHAOS_IDX });
-            pushConveyor(chaosIt);
-            if (window.recordLootEquip) window.recordLootEquip(CHAOS_IDX, 1, 'field');
-            drops.push('裝備[' + rarityTag(chaosIt) + ']');
-        }
-    }
     // ===== 材料掉落：場景倍率（荒漠 x2 / 沼澤 x3；>100% 依必掉+餘數規則）
     //       基礎機率與寶石等級公式 → formula.js §5 =====
     var rw = currentZoneDef().rewardMult;
-    // 寶石：依怪物等級查表，各階級獨立判定
-    var gemRates = Array.isArray(zoneDrop.gemRates) ? zoneDrop.gemRates : fieldGemDropRatesFor(m.level);
+    // 寶石：依地圖／關卡區間查表，各階級獨立判定
+    var gemRates = Array.isArray(zoneDrop.gemRates) ? zoneDrop.gemRates : [];
     for (var glv = 0; glv < gemRates.length; glv++) {
         if (!gemRates[glv]) continue;
         var gemN = rollDropCount(gemRates[glv] * (1 + lootBonus / 100) * rw * eliteDropMult);
@@ -926,9 +916,9 @@ function rollFieldDrops(m) {
             drops.push('💎' + gemLabel(gtype, lv));
         }
     }
-    // 附魔書（階段 8+）
+    // 附魔書：基礎率由地圖／關卡掉落表提供
     if (s >= 8 || zoneDrop.bookRate !== undefined) {
-        var bookBaseRate = zoneDrop.bookRate !== undefined ? Number(zoneDrop.bookRate) : FIELD_BOOK_DROP_PCT;
+        var bookBaseRate = Number(zoneDrop.bookRate || 0);
         var bookN = rollDropCount(bookBaseRate * (1 + lootBonus / 100) * rw * eliteDropMult);
         for (var bi = 0; bi < bookN; bi++) {
             var bk = pick(Object.keys(ENCHANTS));
@@ -937,37 +927,22 @@ function rollFieldDrops(m) {
             drops.push('📖' + ENCHANTS[bk].name + '書');
         }
     }
-    // 太古精華（依參數表設定的敵人等級門檻；獨立機率，不受掉寶率與場景倍率影響）
-    var ancientEssenceRate = (zoneDrop.ancientEssenceRate !== undefined ? Number(zoneDrop.ancientEssenceRate) : ancientEssenceDropChanceForEnemy(m.level)) * eliteDropMult;
+    // 太古精華：基礎機率由地圖／關卡掉落表提供，不受掉寶率與場景倍率影響。
+    var ancientEssenceRate = Number(zoneDrop.ancientEssenceRate || 0) * eliteDropMult;
     if (ancientEssenceRate > 0 && chance(ancientEssenceRate)) {
         G.player.ancientEssence = (G.player.ancientEssence || 0) + 1;
         if (window.recordLootMat) window.recordLootMat('ancientEssence', 1, 'field');
         drops.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華">太古精華');
         UI.dirty.header = true;
     }
-    // 魔塵（神鑄材料）：150 級起掉落，敵人每高 1 級 +0.1%、上限 5%
-    //（fieldDustRate → formula.js §5；不受掉寶率/場景倍率影響）
-    var dustRate = (zoneDrop.dustRate !== undefined ? Number(zoneDrop.dustRate) : fieldDustRate(m.level)) * eliteDropMult;
+    // 魔塵（神鑄材料）：基礎機率由地圖／關卡掉落表提供。
+    var dustRate = Number(zoneDrop.dustRate || 0) * eliteDropMult;
     if (dustRate > 0 && chance(dustRate)) {
         G.player.dust = (G.player.dust || 0) + 1;
         if (window.recordLootMat) window.recordLootMat('dust', 1, 'field');
         drops.push('💫魔塵');
         blog('💫 敵人掉落神鑄材料：魔塵 x1（持有 ' + fmt(G.player.dust) + '）', 'loot', 'loot');
         UI.dirty.forge = true;
-    }
-    // 自動機組零件（階段 5+；材料掉落率同樣乘以菁英 1.5 倍）
-    if (s >= 5 || zoneDrop.partRate !== undefined) {
-        var partBaseRate = zoneDrop.partRate !== undefined ? Number(zoneDrop.partRate) : FIELD_PART_DROP_PCT;
-        var partN = rollDropCount(partBaseRate * (1 + lootBonus / 100) * rw * eliteDropMult);
-        for (var pn = 0; pn < partN; pn++) {
-            var np = makePart(fieldPartTierFor(s, m.elite));
-            if (!np) continue;
-            G.factory.parts.push(np);
-            if (window.recordLootMat) window.recordLootMat('part', 1, 'field');
-            drops.push('🔧' + PART_TYPES[np.key].emoji + np.name);
-            if (np.tier >= 3) blog('🔩 敵人掉落自動機組零件：' + PART_TYPES[np.key].emoji + np.name + '（' + partDesc(np) + '）', 'loot');
-        }
-        if (partN) { trimFactoryParts(); UI.dirty.factory = true; } // 收斂零件庫存，防無限成長
     }
     return drops;
 }

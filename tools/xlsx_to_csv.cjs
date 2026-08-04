@@ -21,7 +21,11 @@ const zlib = require('zlib');
 const ROOT = path.resolve(__dirname, '..');
 const XLSX = process.env.PARAMS_XLSX || path.join(ROOT, 'config', 'Excel', 'game_parameters.xlsx');
 const OUT = process.env.PARAMS_CSV_OUT || path.join(ROOT, 'config', 'CSV', 'game_parameters.csv');
-const SHEET_NAME = 'game_parameters';
+const SHEET_NAME = process.env.PARAMS_SHEET || 'game_parameters';
+const configuredMinColumns = Number(process.env.PARAMS_MIN_COLUMNS);
+const MIN_COLUMNS = Number.isFinite(configuredMinColumns)
+  ? Math.max(0, Math.floor(configuredMinColumns))
+  : (SHEET_NAME === 'game_parameters' ? 18 : 0);
 
 /* ---------- 讀 xlsx（ZIP local file header 逐一解壓） ---------- */
 function readZipEntries(buf) {
@@ -240,7 +244,7 @@ function main() {
   rows.forEach(r => { if (r.length > width) width = r.length; });
   const headerLen = rows.length ? rows[0].length : 18;
   if (headerLen > width) width = headerLen;
-  if (width < 18) width = 18; // 6 基本欄（編號/變動/系統分類/名稱/參數化公式/中文說明）+ 參數 a..l
+  if (width < MIN_COLUMNS) width = MIN_COLUMNS;
 
   // 去掉尾端整列全空的列
   while (rows.length && rows[rows.length - 1].every(c => c == null || c === '')) rows.pop();

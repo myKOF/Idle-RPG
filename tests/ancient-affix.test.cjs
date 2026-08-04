@@ -132,12 +132,11 @@ test('單詞條洗煉：太古位置必滿值只換種類，非太古位置不�
   assert.equal(context.G.player.ancientEssence, 5);
 });
 
-test('太古精華掉落與拆解機率維持不變', () => {
+test('太古精華掉落改由地圖／關卡掉落表提供，拆解機率維持不變', () => {
   const context = loadGameContext();
-  assert.equal(context.ancientEssenceDropChanceForEnemy(48), 0);
-  assert.equal(context.ancientEssenceDropChanceForEnemy(49), 1);
-  assert.equal(context.ancientEssenceDropChanceForEnemy(179), 10);
-  assert.equal(context.ancientEssenceDropChanceForEnemy(340), 10);
+  assert.equal(context.zoneStageDropConfigFor('plains', 150).materials.ancientEssenceRate, 0);
+  assert.equal(context.zoneStageDropConfigFor('plains', 151).materials.ancientEssenceRate, 1);
+  assert.equal(context.zoneStageDropConfigFor('god_battlefield', 551).materials.ancientEssenceRate, 6);
   assert.equal(context.ancientEssenceDropChanceForBoss(40), 10);
   assert.equal(context.ancientEssenceDropChanceForBoss(85), 100);
   assert.equal(context.ancientEssenceSalvageChanceForRarity(4), 0.5);

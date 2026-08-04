@@ -5,11 +5,15 @@
 function partBonus(node, key) {
   if (!isFactoryNodeEnabled(node)) return 0;
   var f = G.factory;
+  if (typeof ensurePartLevels === 'function') ensurePartLevels(f);
   var ids = f.installed[node] || [];
   var sum = 0;
   ids.forEach(function (id) {
     var p = findPart(id);
-    if (p && p.key === key) sum += effectiveFactoryPartValue(p.key, partValue(p));
+    if (p && p.key === key) {
+      var level = G.factory.partLevels && G.factory.partLevels[key];
+      sum += effectiveFactoryPartValue(p.key, level !== undefined ? partValueForLevel(p.key, level) : partValue(p));
+    }
   });
   return sum;
 }
@@ -18,12 +22,12 @@ function effectivePartBonus(node, key) {
 }
 function findPart(id) {
   var f = G.factory;
-  for (var i = 0; i < f.parts.length; i++) if (f.parts[i].id === id) return f.parts[i];
+  for (var i = 0; i < (f.parts || []).length; i++) if (f.parts[i].id === id) return f.parts[i];
   return null;
 }
 function bestAvailablePartForInstall(node, key) {
   var best = null;
-  G.factory.parts.forEach(function (p) {
+  (G.factory.parts || []).forEach(function (p) {
     if (!p || p.key !== key || !PART_TYPES[p.key] || PART_TYPES[p.key].node !== node || isInstalled(p.id)) return;
     if (!best || p.tier > best.tier || (p.tier === best.tier && partValue(p) > partValue(best))) best = p;
   });
@@ -69,27 +73,12 @@ function expandSalvageSlot() {
   return null;
 }
 
-/* ---- 零件庫存收斂 ----
-   G.factory.parts 是全遊戲唯一無容量上限的集合，長期前景掛機（野外/高塔/探礦核心
-   持續掉零件）會無限成長，拖慢工廠渲染、膨脹存檔並逼近 localStorage 上限。
-   每種零件只有最高階最有用，故：已安裝者一律保留；未安裝者依（階級→數值）由高至低
-   保留 PART_KEEP_PER_KEY 顆，其餘靜默分解為少量碎片。於各零件掉落點呼叫。 */
+/* ---- 舊版零件庫存相容 ----
+   新制以 G.factory.partLevels 為唯一零件來源；此函式只保留給舊存檔／舊外部工具呼叫，
+   不再由任何掉落流程建立或修剪零件實體。 */
 function trimFactoryParts() {
-  var f = G.factory;
-  var byKey = {};
-  f.parts.forEach(function (p) { (byKey[p.key] || (byKey[p.key] = [])).push(p); });
-  var keep = [], scrapGain = 0;
-  Object.keys(byKey).forEach(function (k) {
-    var installedParts = byKey[k].filter(function (p) { return isInstalled(p.id); });
-    var loose = byKey[k].filter(function (p) { return !isInstalled(p.id); })
-      .sort(function (a, b) { return (b.tier - a.tier) || (partValue(b) - partValue(a)); });
-    keep = keep.concat(installedParts, loose.slice(0, PART_KEEP_PER_KEY));
-    loose.slice(PART_KEEP_PER_KEY).forEach(function (p) { scrapGain += p.tier * 2; });
-  });
-  if (keep.length === f.parts.length) return; // 未超量，無需重建
-  f.parts = keep;
-  if (scrapGain) { G.player.scrap += scrapGain; UI.dirty.header = true; }
-  UI.dirty.factory = true;
+  if (G && G.factory && typeof ensurePartLevels === 'function') ensurePartLevels(G.factory);
+  if (G && G.factory) G.factory.parts = [];
 }
 
 /* ---- 容量公式（conveyorCap、synthBufCap）→ js/formula.js §7 ---- */
@@ -211,16 +200,7 @@ function doSalvage(it, silent, bonus) {
     gainXp(xpG);
     extras.push('📚經驗+' + fmt(xpG));
   }
-  // 探礦核心：額外掉落自動機組零件
-  var pros = eff('prospector');
-  if (pros > 0 && chance(pros)) {
-    var np = makePart(clamp(1 + Math.floor(it.rarity / 2), 1, PART_MAX_TIER));
-    G.factory.parts.push(np);
-    if (window.recordLootMat) window.recordLootMat('part', 1, 'factory');
-    trimFactoryParts(); // 收斂零件庫存，防無限成長
-    extras.push('⛏️' + partName(np));
-    UI.dirty.factory = true;
-  }
+  // 探礦核心的舊「額外掉落零件」效果已移除；零件只透過升級取得。
 
   G.factory.stats.salvaged++;
   UI.dirty.header = true;

@@ -673,23 +673,19 @@ function buildPanel(name, params) {
           return out;
         })(),
         partSlotsMax: (typeof NEW_FORGE_PART_SLOTS_MAX === 'number') ? NEW_FORGE_PART_SLOTS_MAX : null,
-        /* 玩家持有的「分解槽」零件：每種的最高階。
-           熔爐零件是快照制——newForgeInstallPart 一律取該類型最高階的那一顆複製進格子，
-           不消耗庫存、同類型可重複裝滿（newforge.js）。所以外面要判斷
-           「這一格該不該重裝以吃到更高階」只需要這個數字，不必看整個零件庫。
-           只列 node==='salvage' 的：其餘類型 installPart 會直接回「無法安裝到熔爐」。 */
-        ownedParts: (function () {
-          var f = G.factory;
-          if (!f || !f.parts || typeof PART_TYPES === 'undefined') return null;
-          var out = {};
-          for (var i = 0; i < f.parts.length; i++) {
-            var p2 = f.parts[i];
-            if (!p2 || !p2.key) continue;
-            var pt = PART_TYPES[p2.key];
-            if (!pt || pt.node !== 'salvage') continue;
-            var t = Number(p2.tier) || 0;
-            if (!(out[p2.key] >= t)) out[p2.key] = t;
-          }
+        partLevels: (function () {
+          var f = G.factory, out = {};
+          Object.keys(PART_TYPES).forEach(function (key) {
+            out[key] = partLevelFor(key, f && f.partLevels);
+          });
+          return out;
+        })(),
+        partUpgradeCosts: (function () {
+          var f = G.factory, out = {};
+          Object.keys(PART_TYPES).forEach(function (key) {
+            var lv = partLevelFor(key, f && f.partLevels);
+            out[key] = lv >= PART_MAX_TIER ? null : partUpgradeCost(lv + 1);
+          });
           return out;
         })()
       };

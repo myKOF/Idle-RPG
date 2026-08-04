@@ -945,26 +945,7 @@ function rerollSingleAffix(it, affixKey) {
 }
 
 // 自動機組零件生成（node 未指定時「依節點均衡」挑選，避免分解零件過多稀釋合成零件）
-function makePart(tier, node) {
-  tier = clamp(tier, 1, PART_MAX_TIER);
-  if (node && !isFactoryNodeEnabled(node)) return null;
-  var keys = Object.keys(PART_TYPES);
-  if (!node) {
-    var nodeSet = {};
-    keys.forEach(function (k) {
-      if (isFactoryNodeEnabled(PART_TYPES[k].node)) nodeSet[PART_TYPES[k].node] = true;
-    });
-    node = pick(Object.keys(nodeSet));
-  }
-  var pool = keys.filter(function (k) {
-    return PART_TYPES[k].node === node && isFactoryNodeEnabled(PART_TYPES[k].node);
-  });
-  var enabledKeys = keys.filter(function (k) { return isFactoryNodeEnabled(PART_TYPES[k].node); });
-  if (!pool.length && !enabledKeys.length) return null;
-  var key = pick(pool.length ? pool : enabledKeys);
-  // 只存 key 與階級：數值與名稱由 partValue／partName 當場算（js/formula.js §7）
-  return { id: uid(), kind: 'part', key: key, tier: tier };
-}
+function makePart(tier, node) { return null; }
 function partDesc(p) {
   // 小於 1 的機率值保留兩位小數（如 0.15%），其餘一位
   var val = effectivePartEffectValue(p.key, effectiveFactoryPartValue(p.key, partValue(p)));

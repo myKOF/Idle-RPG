@@ -3563,8 +3563,6 @@ function partIconHTML(key) {
     goldSluice: ['icon_gold.png'],
     extractLens: ['icon_essence.png'],
     bookScavenger: ['icon_books.png'],
-    duplicator: ['icon_scrap.png', 'icon_gold.png'],
-    fortuneChip: ['icon_scrap.png', 'icon_gold.png', 'icon_essence.png'],
     ancientEssenceRate: ['icon_ancient_essence.png']
   };
   var icons = iconMap[key];
@@ -3631,12 +3629,13 @@ function nfPartSlotsHTML(fu, nf, player) {
   var cells = '';
   for (var s = 0; s < NEW_FORGE_PART_SLOTS_MAX; s++) {
     if (s < fu.partSlots) {
-      var p = fu.parts[s]; // 快照 {key,tier,val,name}
+      var p = fu.parts[s]; // 裝配資料 {key}；等級由全域 partLevels 即時讀取
       if (p && PART_TYPES[p.key]) {
+        var currentLevel = (nf.partLevels && nf.partLevels[p.key]) || 1;
         // 已裝＝正方形小圖示（全稱在 tooltip；點擊依格位索引卸下）
         cells += '<button class="nf-part-slot nf-part-filled nf-part-ico" data-nf-fid="' + fu.id + '" data-nf-partun="' + s + '"' +
           pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
-          ' data-tip="【點擊卸下】' + esc(partDesc(p)) + '">' + partIconHTML(p.key) + '</button>';
+          ' data-tip="【點擊卸下】T' + currentLevel + ' ' + esc(partDesc({ key: p.key, level: currentLevel })) + '">' + partIconHTML(p.key) + '</button>';
       } else {
         cells += '<button class="nf-part-slot" data-nf-fid="' + fu.id + '" data-nf-partsopen="1"' +
           ' data-tip="【點擊選擇零件】開啟零件列表，可連續安裝">零件' + (s + 1) + '</button>';
@@ -3656,37 +3655,44 @@ function nfPartSlotsHTML(fu, nf, player) {
 }
 
 // 零件選擇列表（點擊零件格開啟；出現在該熔爐卡片下方）：
-// 與舊分解槽相同操作——依種類分組、點擊安裝最高階數值者，列表保持開啟可連續裝滿。
-function nfPartsListHTML(fu, factory) {
-  if (!factory) {
-    var factorySnapshot = uiFactoryPanelSnapshot();
-    factory = factorySnapshot && factorySnapshot.factory;
-  }
-  if (!factory || !Array.isArray(factory.parts)) return '';
-  // 自由裝配：列出持有的所有分解槽零件類型（不論是否已裝於他處），安裝為最高階數值快照
-  var owned = factory.parts.filter(function (p) {
-    var pt = p && PART_TYPES[p.key];
-    return pt && pt.node === 'salvage';
-  });
-  var chips;
-  if (!owned.length) {
-    chips = '<span class="hint" style="font-size:12px;">尚無可用零件（野外/高塔掉落自動機組零件）</span>';
-  } else {
-    var byKey = {};
-    owned.forEach(function (p) { (byKey[p.key] || (byKey[p.key] = [])).push(p); });
-    chips = Object.keys(byKey).map(function (key) {
-      var group = byKey[key];
-      var best = group.slice().sort(function (a, b) { return (b.tier - a.tier) || (partValue(b) - partValue(a)); })[0];
-      return '<span class="part-chip" style="cursor:pointer; border-color:var(--accent);" data-nf-fid="' + fu.id +
-        '" data-nf-partinstall-key="' + key + '"' + pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
-        ' data-tip="【點擊裝配】取最高階數值：' + esc(partDesc(best)) +
-        '｜同類型可重複裝配、不佔用零件庫">' + partIconHTML(key) + esc(partName(best)) + '</span>';
-    }).join('');
-  }
+// 新制只選擇零件種類，裝配時直接使用全域目前等級，不再選擇或複製零件實體。
+function nfPartsListHTML(fu, factory, nf) {
+  var levels = (nf && nf.partLevels) || (factory && factory.partLevels) || {};
+  var keys = Object.keys(PART_TYPES).filter(function (key) { return PART_TYPES[key].node === 'salvage'; });
+  var chips = keys.map(function (key) {
+    var level = levels[key] || 1;
+    return '<span class="part-chip" style="cursor:pointer; border-color:var(--accent);" data-nf-fid="' + fu.id +
+      '" data-nf-partinstall-key="' + key + '"' + pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
+      ' data-tip="【點擊裝配】T' + level + ' ' + esc(partDesc({ key: key, level: level })) + '；升級後已裝配效果同步提升">' + partIconHTML(key) + esc(partName({ key: key, level: level })) + '</span>';
+  }).join('');
   return '<div class="nf-parts-list"><div class="nf-parts-list-head">🔧 選擇零件（熔爐 #' + fu.id + '，' +
     fu.parts.length + '/' + fu.partSlots + '）<button class="btn sm" data-nf-fid="' + fu.id + '" data-nf-partsopen="1">收起</button></div>' +
     '<div class="chip-row">' + chips + '</div>' +
-    '<div class="hint">完全自由裝配：同類型可重複、連續點擊可一次裝滿，不佔用也不消耗零件庫存；點擊已裝格卸下。全部 10 種分解槽零件皆對該熔爐生效（速度/產量/精華/額外掉落）。</div></div>';
+    '<div class="hint">選擇零件種類即可裝配；同類型可重複、連續點擊可一次裝滿。升級零件後，所有熔爐中同名零件效果會同步更新。</div></div>';
+}
+
+function nfPartUpgradesHTML(factory, player, nf) {
+  var levels = (nf && nf.partLevels) || (factory && factory.partLevels) || {};
+  var keys = Object.keys(PART_TYPES);
+  var rows = keys.map(function (key) {
+    var pt = PART_TYPES[key];
+    var level = levels[key] || 1;
+    var cost = level < PART_MAX_TIER ? partUpgradeCost(level + 1) : null;
+    var can = cost !== null && (player.gold || 0) >= cost;
+    var button = level >= PART_MAX_TIER
+      ? '<span class="nf-part-upgrade-max">Max</span>'
+      : '<button class="btn sm nf-part-upgrade-button' + (can ? '' : ' nf-part-poor') + '" data-nf-partupgrade="' + key + '"' +
+        pendingUiButtonAttributes(nodePendingKey('newforge-part-upgrade-' + key)) +
+        ' data-tip="升級消耗金幣：' + fmtFull(cost) + '">升級</button>';
+    return '<div class="nf-part-upgrade-card" data-tip="' + esc(partDesc({ key: key, level: level })) + '">' +
+      '<div class="nf-part-upgrade-level">T' + level + '</div>' +
+      '<div class="nf-part-upgrade-icon">' + partIconHTML(key) + '</div>' +
+      '<div class="nf-part-upgrade-name">' + esc(pt.name) + '</div>' +
+      '<div class="nf-part-upgrade-action">' + button + '</div></div>';
+  }).join('');
+  return '<div class="nf-part-upgrades"><div class="sec-title">🔧 零件升級</div>' +
+    '<div class="hint">零件等級上限 T' + PART_MAX_TIER + '；升級費用公式為 a + b × c^升級後等級（例如 T5→T6 代入 6）。滑鼠移到圖示可查看效果，已裝配的同名零件會立即同步。</div>' +
+    '<div class="nf-part-upgrade-grid">' + rows + '</div></div>';
 }
 
 // 熔爐卡片（圖1）：左側大圖＋右側傳送帶（拆解設定/啟用/摘要/帶視覺）＋零件格
@@ -3707,7 +3713,7 @@ function nfFurnaceHTML(fu, nf, factory, player) {
     '<span class="nf-belt-items" data-nf-belt="' + fu.id + '"></span>' +
     '<span class="nf-belt-more" data-nf-more="' + fu.id + '"></span></div>' +
     nfPartSlotsHTML(fu, nf, player) +
-    (UI.nfPartsOpen && UI.nfPartsOpen[fu.id] ? nfPartsListHTML(fu, factory) : '');
+    (UI.nfPartsOpen && UI.nfPartsOpen[fu.id] ? nfPartsListHTML(fu, factory, nf) : '');
   return '<div class="panel node-card nf-furnace' + (fu.enabled ? '' : ' nf-line-off') + '">' + head +
     '<div class="nf-furnace-body">' +
     '<div class="nf-furnace-left"><img class="nf-furnace-img" src="' + NEW_FORGE_IMAGE + '" alt="' + esc(NEW_FORGE_NAME) + '">' +
@@ -3727,6 +3733,8 @@ function renderNewForge() {
   var qc = $id('nf-queue-count');
   if (qc) qc.textContent = fmtFull(nf.queue.length); // 佇列顯示完整數字，不用簡寫
   renderForgeExtras(factorySnapshot, headerSnapshot); // 附魔書庫存＋強化節點（搬入本頁的面板）
+  var upgradeBox = $id('nf-part-upgrades');
+  if (upgradeBox) upgradeBox.innerHTML = nfPartUpgradesHTML(factory, player, nf);
   var cnt = $id('nf-count');
   if (cnt) {
     var allowed = newForgeMaxFurnaces(Math.max(0, Math.floor(Number(player.reincarnations) || 0)));
@@ -3836,7 +3844,19 @@ function bindNewForgeEvents() {
     }
   });
   tab.addEventListener('click', function (e) {
-    // 零件裝配晶片（span）：點擊依類型裝配最高階數值快照，列表保持開啟可連續裝滿
+    var upgrade = e.target && e.target.closest ? e.target.closest('[data-nf-partupgrade]') : null;
+    if (upgrade) {
+      var upgradeKey = upgrade.getAttribute('data-nf-partupgrade');
+      if (isUiCommandPending(nodePendingKey('newforge-part-upgrade-' + upgradeKey))) return;
+      sendUiCommand('newforge.upgradePart', { partKey: upgradeKey }, {
+        keys: [nodePendingKey('newforge-part-upgrade-' + upgradeKey)],
+        panels: ['newforge', 'factory', 'header']
+      }).catch(function (error) {
+        reportUiCommandFailure('零件升級', error, ['newforge', 'factory', 'header']);
+      });
+      return;
+    }
+    // 零件裝配晶片（span）：點擊依類型裝配目前全域等級，列表保持開啟可連續裝滿
     var chip = e.target && e.target.closest ? e.target.closest('[data-nf-partinstall-key]') : null;
     if (chip) {
       var chipFurnaceId = parseInt(chip.getAttribute('data-nf-fid'), 10);
@@ -6360,13 +6380,15 @@ function showEnemyTooltip(anchorEl) {
     if (dustRate > 0) rewardLines.push('💫 魔塵 (' + fmt1(dustRate) + '%)');
     if (soulOriginRate > 0) rewardLines.push('🧿 魔魂本源 (' + fmt1(soulOriginRate) + '%)');
     if (ancientEssenceRate > 0) rewardLines.push('🧿 太古精華 (' + fmt1(ancientEssenceRate) + '%)');
-    if (rw.partChance > 0) rewardLines.push('⚙️ T' + rw.partTier + ' 零件 (' + rw.partChance + '%)');
 
     dropTip += '<div class="skt-name" style="margin:8px 0 6px;">【可能掉落】</div>' +
       '<div class="skt-desc" style="text-align:left;">' +
       rewardLines.join('<br>') + '</div>';
   } else {
-    var rates = dropRatesFor(FIELD_DROP_TABLE, m.level);
+    var zoneKey = (G.stage && G.stage.zone) || 'plains';
+    var stage = (G.stage && G.stage.current) || 1;
+    var zoneDrop = fieldMaterialConfigFor(zoneKey, stage);
+    var rates = fieldDropRatesFor(stage, m.level, zoneKey);
     var equipStrs = [];
     for (var r = rates.length - 1; r >= 0; r--) {
       if (!rates[r]) continue;
@@ -6377,7 +6399,7 @@ function showEnemyTooltip(anchorEl) {
 
     var dustLine = '';
     if (!towerActive) {
-      var dustRate = fieldDustRate(m.level);
+      var dustRate = Number(zoneDrop.dustRate || 0);
       if (dustRate > 0) dustLine = '💫 魔塵 <span style="color:var(--dim)">(' + fmt1(dustRate) + '%，神鑄材料)</span>';
     }
 

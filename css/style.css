@@ -6671,6 +6671,111 @@ textarea#save-io {
   cursor: pointer;
 }
 
+.nf-part-upgrades {
+  margin-bottom: 12px;
+}
+
+.nf-part-upgrade-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  margin-top: 8px;
+}
+
+.nf-part-upgrade-card {
+  display: flex;
+  flex: 0 0 72px;
+  min-height: 106px;
+  padding: 5px 4px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 3px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.28);
+  text-align: center;
+}
+
+.nf-part-upgrade-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(196, 164, 100, 0.22);
+}
+
+.nf-part-upgrade-level {
+  color: #facc15;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.nf-part-upgrade-icon {
+  display: flex;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-light, var(--border));
+  border-radius: 6px;
+  background: rgba(12, 14, 22, 0.85);
+  font-size: 25px;
+}
+
+.nf-part-upgrade-icon .part-material-icon {
+  width: 1.35em;
+  height: 1.35em;
+  margin: 0 1px;
+}
+
+.nf-part-upgrade-name {
+  width: 100%;
+  min-height: 16px;
+  overflow: hidden;
+  color: var(--dim);
+  font-size: 10px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nf-part-upgrade-action {
+  min-height: 24px;
+  margin-top: auto;
+}
+
+.nf-part-upgrade-button {
+  min-width: 52px;
+  padding: 3px 7px;
+  color: #111;
+  background: #facc15;
+  border-color: #facc15;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.nf-part-upgrade-button:hover {
+  color: #111;
+  background: #fde047;
+  border-color: #fde047;
+}
+
+.nf-part-upgrade-button.nf-part-poor {
+  color: #111;
+  background: #a3a3a3;
+  border-color: #737373;
+}
+
+.nf-part-upgrade-max {
+  display: inline-flex;
+  min-width: 52px;
+  min-height: 24px;
+  align-items: center;
+  justify-content: center;
+  color: #86efac;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .nf-parts-row {
   display: flex;
   gap: 6px;
@@ -6964,7 +7069,15 @@ button.nf-part-slot.nf-part-ico {
 }
 
 #ui-shell .factory-flow {
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  /* 附魔書庫存目前是單一節點，不能沿用三欄版面，否則內容只會佔左側窄欄。 */
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+#ui-shell .factory-flow > .node-card,
+#ui-shell .factory-flow > .node-card .node-body,
+#ui-shell #enc-books {
+  width: 100%;
+  min-width: 0;
 }
 
 #ui-shell .nf-furnace-body {

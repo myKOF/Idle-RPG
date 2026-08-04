@@ -266,7 +266,7 @@ function endTowerFight(win, reason) {
     var firstClear = floor > G.tower.highest;
     if (firstClear) G.tower.highest = floor;
     blog('🏆 通關高塔第 ' + floor + ' 層！', 'good');
-    // 獎勵：自動機組零件 + 資源（獎勵公式 towerRewardFor → formula.js §5）
+    // 獎勵：資源（零件改由熔爐升級取得）
     var rw = towerRewardFor(floor, firstClear);
     var st2 = getStats();
     var xpGain = Math.round((b.xp || 0) * (1 + st2.xpBonus / 100));
@@ -281,16 +281,6 @@ function endTowerFight(win, reason) {
       if (window.recordLootMat) window.recordLootMat('soulOrigin', 1, 'tower');
       result.rewards.push('🧿 魔魂本源 x1');
       UI.dirty.header = true;
-    }
-    if (chance(rw.partChance)) {
-      var part = makePart(rw.partTier);
-      if (part) {
-        G.factory.parts.push(part);
-        if (window.recordLootMat) window.recordLootMat('part', 1, 'tower');
-        trimFactoryParts(); // 收斂零件庫存，防無限成長
-        result.rewards.push(PART_TYPES[part.key].emoji + ' ' + part.name + '（' + partDesc(part) + '）');
-        flog('🔩 獲得自動機組零件：' + part.name, 'good');
-      }
     }
     // 裝備戰利品：依「BOSS 掉落表」各品質獨立擲骰（>100% 必掉 + 餘數機率）
     var bossRates = dropRatesFor(BOSS_DROP_TABLE, floor);

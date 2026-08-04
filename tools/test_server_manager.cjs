@@ -9,6 +9,7 @@ const { execFile, spawn } = require('child_process');
 const ROOT = path.resolve(__dirname, '..');
 const UI_FILE = path.join(__dirname, 'test_server_manager.html');
 const DEFAULT_MANAGER_PORT = 8124;
+const WORKTREE_NAMES = ['codex', 'claude', 'antigravity'];
 const activeServers = new Map();
 let managerPort = null;
 
@@ -20,6 +21,30 @@ function readRecords() {
   return Array.from(activeServers.values())
     .map(({ server, ...record }) => record)
     .sort((a, b) => a.port - b.port);
+}
+
+function getSourceRoots() {
+  const parent = path.dirname(ROOT);
+  const candidates = [ROOT, ...WORKTREE_NAMES.map((name) => path.join(parent, name))];
+  const seen = new Set();
+  return candidates
+    .map((candidate) => path.resolve(candidate))
+    .filter((candidate) => {
+      if (seen.has(candidate) || !fs.existsSync(path.join(candidate, 'index.html'))) return false;
+      seen.add(candidate);
+      return true;
+    })
+    .map((root) => {
+      const key = path.basename(root).toLowerCase();
+      return { key, label: key.charAt(0).toUpperCase() + key.slice(1), root };
+    });
+}
+
+function resolveSourceRoot(sourceKey) {
+  const key = String(sourceKey || path.basename(ROOT)).trim().toLowerCase();
+  const source = getSourceRoots().find((item) => item.key === key);
+  if (!source) throw new Error(`找不到開服來源資料夾：${sourceKey}`);
+  return source;
 }
 
 function runPowerShell(script) {
@@ -165,10 +190,16 @@ async function waitUntilReady(port, timeoutMs = 10000) {
   return false;
 }
 
-async function startServer(port) {
+async function startServer(port, sourceKey) {
   if (!validPort(port)) throw new Error('Port 必須是 1 到 65535 的整數。');
+  const source = resolveSourceRoot(sourceKey);
   const existing = readRecords().find((record) => record.port === port);
-  if (existing) return existing;
+  if (existing) {
+    if (existing.sourceKey && existing.sourceKey !== source.key) {
+      throw new Error(`Port ${port} 已由 ${existing.sourceLabel || existing.sourceKey} 來源啟動，請先關閉它或改用其他 Port。`);
+    }
+    return existing;
+  }
   if (await isPortOpen(port)) throw new Error(`Port ${port} 已被其他程式使用。`);
 
   const record = {
@@ -177,7 +208,10 @@ async function startServer(port) {
     url: `http://127.0.0.1:${port}/`,
     startedAt: new Date().toISOString(),
     managed: true,
-    server: createStaticServer()
+    sourceKey: source.key,
+    sourceLabel: source.label,
+    sourceRoot: source.root,
+    server: createStaticServer(source.root)
   };
   try {
     await listenServer(record.server, port);
@@ -238,7 +272,7 @@ const MIME = {
   '.wav': 'audio/wav', '.ogg': 'audio/ogg'
 };
 
-function createStaticServer() {
+function createStaticServer(root = ROOT) {
   return http.createServer((request, response) => {
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       response.writeHead(405); response.end(); return;
@@ -246,9 +280,9 @@ function createStaticServer() {
     try {
       let pathname = decodeURIComponent(new URL(request.url, 'http://127.0.0.1').pathname);
       if (pathname === '/') pathname = '/index.html';
-      const target = path.resolve(ROOT, `.${pathname}`);
-      const rootPrefix = ROOT.endsWith(path.sep) ? ROOT : ROOT + path.sep;
-      if (target !== ROOT && !target.startsWith(rootPrefix)) {
+      const target = path.resolve(root, `.${pathname}`);
+      const rootPrefix = root.endsWith(path.sep) ? root : root + path.sep;
+      if (target !== root && !target.startsWith(rootPrefix)) {
         response.writeHead(403); response.end(); return;
       }
       const bytes = fs.readFileSync(target);
@@ -303,9 +337,13 @@ function createManager() {
         sendJson(response, 200, { servers: await readAllRecords() });
         return;
       }
+      if (request.method === 'GET' && request.url === '/api/sources') {
+        sendJson(response, 200, { sources: getSourceRoots() });
+        return;
+      }
       if (request.method === 'POST' && request.url === '/api/servers/start') {
         const payload = await bodyJson(request);
-        const record = await startServer(Number(payload.port));
+        const record = await startServer(Number(payload.port), payload.sourceKey);
         sendJson(response, 200, { server: record });
         return;
       }
@@ -362,4 +400,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { createManager, parseArgs, startServer, stopServer, stopExternalServer, readRecords, readAllRecords, discoverLocalServers, isRelevantEndpoint };
+module.exports = { createManager, parseArgs, startServer, stopServer, stopExternalServer, readRecords, readAllRecords, discoverLocalServers, isRelevantEndpoint, getSourceRoots, resolveSourceRoot };

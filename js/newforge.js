@@ -5,7 +5,7 @@
    依各熔爐勾選的品質自動送入傳送帶拆解（由右至左入爐），未勾選/上鎖/神鑄創世＝保留入包。
 
    拆解規則沿用舊分解槽（factory.js doSalvage：碎片/金幣/附魔精華/太古精華與各零件事件），
-   零件加成改由「該熔爐零件格」的快照提供（newForgePartBonus）。
+   零件加成改由「該熔爐零件格」搭配 factory.partLevels 即時提供（newForgePartBonus）。
    熔爐可設數量與轉生連動（formula.js newForgeMaxFurnaces）；每爐零件格 3~8，
    金幣逐格解鎖（formula.js newForgePartSlotCost）。全服開放（原本地服限定已解除）。 */
 
@@ -125,7 +125,7 @@ function newForgeConsumeOne(fu) {
 }
 
 /* ---- 拆解：沿用舊分解槽 doSalvage（碎片/金幣/附魔精華/太古精華、鑲嵌寶石取回、
-   零件事件），零件加成以該熔爐零件格快照計算。 ---- */
+   零件事件），零件加成以該熔爐零件格搭配全域等級計算。 ---- */
 function newForgeSalvage(it, fu) {
   var res = doSalvage(it, false, function (key) { return newForgePartBonus(fu, key); });
   var nf = newForgeState();
@@ -180,32 +180,24 @@ function findNewForgeFurnace(id) {
   return null;
 }
 
-/* ---- 零件自由裝配（快照式）----
-   依「類型」安裝：取玩家持有的該類型最高階零件，複製數值快照 {key,tier,val,name}
-   進零件格——不佔用、不消耗零件庫存，同類型可重複裝滿、多座熔爐可共用同一批零件，
+/* ---- 零件自由裝配（全域等級式）----
+   依「類型」安裝：只記錄零件 key，效果即時讀取 factory.partLevels；
+   同類型可重複裝滿、多座熔爐可共用同一個全域等級，升級後全部同步，
    僅零件格數（partSlots，上限 8）為上限。
    全部 10 種分解槽零件皆對該熔爐生效：加速齒輪（入爐速度）走 newForgeFurnaceSpeed，
    其餘產量/事件類經 newForgeSalvage → doSalvage 套用。 ---- */
-function newForgeBestOwnedPart(key) {
-  var best = null;
-  for (var i = 0; i < G.factory.parts.length; i++) {
-    var p = G.factory.parts[i];
-    if (!p || p.key !== key) continue;
-    if (!best || p.tier > best.tier || (p.tier === best.tier && partValue(p) > partValue(best))) best = p;
-  }
-  return best;
-}
 function newForgeInstallPart(furnaceId, partKey) {
   var fu = findNewForgeFurnace(furnaceId);
   if (!fu) return '找不到熔爐';
   if (fu.parts.length >= fu.partSlots) return '零件格已滿（' + fu.parts.length + '/' + fu.partSlots + '，可用金幣解鎖）';
   var pt = PART_TYPES[partKey];
   if (!pt || pt.node !== 'salvage') return '此零件無法安裝到熔爐（僅限分解槽零件）';
-  var best = newForgeBestOwnedPart(partKey);
-  if (!best) return '尚無此類型零件（野外/高塔掉落自動機組零件）';
-  fu.parts.push({ key: best.key, tier: best.tier }); // 數值與名稱由 partValue／partName 當場算
+  var levels = ensurePartLevels(G.factory);
+  var level = partLevelFor(partKey, levels);
+  if (!level) return '此零件尚未解鎖';
+  fu.parts.push({ key: partKey }); // 等級由全域 partLevels 即時查詢，升級後所有熔爐同步
   UI.dirty.newforge = true;
-  nflog('🔧 已裝配 ' + partName(best) + ' 至熔爐 #' + fu.id, 'good');
+  nflog('🔧 已裝配 ' + partName({ key: partKey, level: level }) + ' 至熔爐 #' + fu.id, 'good');
   return null;
 }
 function newForgeUninstallPart(furnaceId, slotIdx) {
@@ -213,17 +205,33 @@ function newForgeUninstallPart(furnaceId, slotIdx) {
   if (!fu || !fu.parts[slotIdx]) return false;
   var removed = fu.parts.splice(slotIdx, 1)[0];
   UI.dirty.newforge = true;
-  nflog('🔧 已卸下 ' + partName(removed) + '（熔爐 #' + fu.id + '）', 'info');
+  nflog('🔧 已卸下 ' + partName({ key: removed.key, level: partLevelFor(removed.key) }) + '（熔爐 #' + fu.id + '）', 'info');
   return true;
 }
-// 該熔爐零件加成：同類型快照堆疊（同舊分解槽 partBonus 計算方式）
+// 該熔爐零件加成：同類型格位堆疊，數值即時讀取全域等級
 function newForgePartBonus(fu, key) {
   var sum = 0;
   for (var i = 0; i < fu.parts.length; i++) {
     var p = fu.parts[i];
-    if (p && p.key === key) sum += effectiveFactoryPartValue(p.key, partValue(p));
+    if (p && p.key === key) sum += effectiveFactoryPartValue(p.key, partValueForLevel(p.key, partLevelFor(p.key)));
   }
   return sum;
+}
+
+function newForgeUpgradePart(partKey) {
+  var pt = PART_TYPES[partKey];
+  if (!pt) return '未知零件';
+  var levels = ensurePartLevels(G.factory);
+  var current = partLevelFor(partKey, levels);
+  if (current >= PART_MAX_TIER) return '零件已達上限 T' + PART_MAX_TIER;
+  var cost = partUpgradeCost(current + 1);
+  if (G.player.gold < cost) return '金幣不足（需要 ' + fmt(cost) + '）';
+  G.player.gold -= cost;
+  levels[partKey] = current + 1;
+  UI.dirty.header = true;
+  UI.dirty.newforge = true;
+  nflog('⬆️ ' + pt.name + ' 升級至 T' + (current + 1) + '，消耗金幣 ' + fmt(cost), 'good');
+  return null;
 }
 // 熔爐入爐速度倍率：加速齒輪堆疊
 function newForgeFurnaceSpeed(fu) {
@@ -266,6 +274,14 @@ function sanitizeNewForge(data) {
   if (!data) return;
   if (!data.newForge || typeof data.newForge !== 'object') data.newForge = newGameState().newForge;
   var nf = data.newForge;
+  data.factory = data.factory || {};
+  var levels = ensurePartLevels(data.factory);
+  // 舊版零件實體／熔爐快照的最高階轉為全域等級；同類型零件不再各自保存階級。
+  (data.factory.parts || []).forEach(function (p) {
+    if (!p || !PART_TYPES[p.key]) return;
+    var oldLevel = Number(p.level !== undefined ? p.level : p.tier);
+    if (isFinite(oldLevel)) levels[p.key] = Math.max(levels[p.key] || 1, clamp(Math.floor(oldLevel), 1, PART_MAX_TIER));
+  });
   delete nf.intake; // 導入開關已移除：一律導入熔爐
   if (!Array.isArray(nf.queue)) nf.queue = [];
   if (!Array.isArray(nf.furnaces)) nf.furnaces = [];
@@ -338,29 +354,33 @@ function sanitizeNewForge(data) {
     if (!Array.isArray(fu.parts)) fu.parts = [];
     if (fu.id > maxId) maxId = fu.id;
   }
-  // 零件快照清理：舊版 id 字串轉快照（查零件池，失效剔除）、壞快照剔除、超量截斷
+  // 零件資料清理：舊版 id／快照轉成只含 key 的裝配資料，失效剔除、超量截斷
   (function sanitizeParts() {
     var poolById = {};
     ((data.factory && data.factory.parts) || []).forEach(function (p) { if (p && p.id) poolById[p.id] = p; });
     for (var i2 = 0; i2 < nf.furnaces.length; i2++) {
       var fu2 = nf.furnaces[i2];
       fu2.parts = fu2.parts.map(function (e) {
-        if (typeof e === 'string') { // 舊實例制存檔：id → 快照
+        if (typeof e === 'string') { // 舊實例制存檔：id → 零件 key
           var src = poolById[e];
-          return src ? { key: src.key, tier: src.tier } : null;
+          return src ? { key: src.key, level: src.level !== undefined ? src.level : src.tier } : null;
         }
         return e;
       }).filter(function (e) {
         if (!e || typeof e !== 'object') return false;
         var pt = PART_TYPES[e.key];
         if (!pt || pt.node !== 'salvage') return false;
-        e.tier = clamp(Math.floor(Number(e.tier) || 1), 1, PART_MAX_TIER);
-        ensurePartSource(e);   // 舊快照的 val／name 可由 key+階級推導 → 丟棄（partValue／partName）
+        var snapshotLevel = Number(e.level !== undefined ? e.level : e.tier);
+        if (isFinite(snapshotLevel)) levels[e.key] = Math.max(levels[e.key] || 1, clamp(Math.floor(snapshotLevel), 1, PART_MAX_TIER));
         return true;
-      });
+      }).map(function (e) {
+        return e ? { key: e.key } : null;
+      }).filter(function (e) { return !!e; });
       if (fu2.parts.length > fu2.partSlots) fu2.parts.length = fu2.partSlots;
     }
   })();
+  ensurePartLevels(data.factory);
+  data.factory.parts = [];
   // 可設數量與轉生連動：超額熔爐（含硬上限）自尾端裁減，專屬佇列與帶上裝備回總佇列
   var reinc = Math.max(0, Math.floor(Number(data.player && data.player.reincarnations) || 0));
   var allowed = newForgeMaxFurnaces(reinc);
