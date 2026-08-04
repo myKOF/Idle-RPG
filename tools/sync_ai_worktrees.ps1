@@ -3,12 +3,14 @@ param(
     [string]$RepositoryPath,
     [ValidateNotNullOrEmpty()]
     [string]$Remote = 'origin',
-    [switch]$ValidateOnly
+    [switch]$ValidateOnly,
+    [switch]$SyncRemoteFirst
 )
 
 # Usage:
 #   powershell -ExecutionPolicy Bypass -File .\tools\sync_ai_worktrees.ps1 -ValidateOnly
 #   powershell -ExecutionPolicy Bypass -File .\tools\sync_ai_worktrees.ps1
+#   sync_ai_worktrees.bat                         # 預設先同步所有必要的遠端分支
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -135,6 +137,16 @@ try {
     if ($ValidateOnly) {
         Write-Step '預檢完成；未執行 pull、push 或 merge'
         return
+    }
+
+    if ($SyncRemoteFirst) {
+        Write-Step '先 Fetch 所有遠端分支'
+        Invoke-Git -Worktree $developWorktree -GitArguments @('fetch', '--all', '--prune')
+
+        Write-Step '先 Pull 所有必要分支（rebase）'
+        foreach ($branch in $requiredBranches) {
+            Invoke-Git -Worktree $worktrees[$branch] -GitArguments @('pull', '--rebase', $Remote, $branch)
+        }
     }
 
     Write-Step "更新遠端 $Remote"

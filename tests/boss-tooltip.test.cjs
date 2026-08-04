@@ -21,6 +21,19 @@ test('BOSS對戰及高塔結果結算界面具備屬性提示按鈕', () => {
   assert.match(ui, /e\.target\.closest\('#btn-enemy-tip'\) \|\| e\.target\.closest\('#btn-boss-tip'\) \|\| e\.target\.closest\('#btn-tower-result-boss-tip'\)/);
 });
 
+test('野外敵人資訊提示在 Worker 模式使用 header snapshot 的關卡資料', () => {
+  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  const start = ui.indexOf('function showEnemyTooltip(');
+  const end = ui.indexOf('\nfunction hideTooltip()', start);
+  assert.ok(start >= 0 && end > start);
+  const body = ui.slice(start, end);
+
+  assert.match(body, /var headerSnapshot = uiHeaderPanelSnapshot\(\) \|\| \{\};/);
+  assert.match(body, /var zoneKey = \(headerSnapshot\.stage && headerSnapshot\.stage\.zone\) \|\| 'plains';/);
+  assert.match(body, /var stage = \(headerSnapshot\.stage && headerSnapshot\.stage\.current\) \|\| 1;/);
+  assert.doesNotMatch(body, /\bG\.stage\b/);
+});
+
 test('野外怪物閃避率公式串接驗證', () => {
   const formula = fs.readFileSync(path.join(root, 'js/formula.js'), 'utf8');
   const applyParams = fs.readFileSync(path.join(root, 'tools/apply_params.cjs'), 'utf8');

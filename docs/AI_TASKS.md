@@ -73,6 +73,30 @@ Worker 是模擬與存檔的唯一權威，主執行緒不再持有 `G`，舊單
 
 Web Worker 遷移全部完成，無進行中的大型工程。
 
+## Codex：修正野外關卡敵人資訊提示失效（2026-08-04）
+
+狀態：已完成
+
+任務分類：UI 回歸修復／Worker 面板快照
+
+任務目的：修正野外關卡的敵人資訊提示在 Worker 模式下因讀取已不存在的主執行緒 `G.stage` 而失效。
+
+負責 AI：Codex
+
+允許修改：`js/ui.js`、`tests/boss-tooltip.test.cjs`、本任務記錄。
+
+禁止修改：Worker Protocol、遊戲規則與掉落資料、其他 AI 進行中的檔案。
+
+前置依賴：無。
+
+測試要求／結果：`node --test tests/boss-tooltip.test.cjs` 3/3 通過；`npm run build` 235/235 通過；完整 `npm test` 1021/1029 通過，8 項為既存失敗，未涉及本次提示修復。
+
+完成條件：敵人提示改讀 header panel snapshot 的關卡／地圖資料，且不再依賴主執行緒 `G`；測試與建置通過。
+
+完成結果：`showEnemyTooltip()` 改由 `uiHeaderPanelSnapshot()` 取得目前地圖與關卡，Worker 模式下不再因 `G.stage` 未定義而中斷提示內容組裝。
+
+完成後交給：Claude Review，之後由使用者合併至整合分支。
+
 ## Codex：有限關卡與自訂地圖內容改造（2026-08-04）
 
 狀態：已完成，待 Claude Review／使用者合併
@@ -1088,6 +1112,44 @@ Claude Review
 完成後交給：
 
 使用者執行；發生衝突時交由整合者人工處理
+
+## 3.7.1 Codex：整合前先同步所有遠端分支（2026-08-04）
+
+狀態：
+
+進行中
+
+任務名稱：
+
+在一鍵整合流程前先同步所有必要的遠端分支
+
+任務內容：
+
+- `sync_ai_worktrees.bat` 預設要求先執行遠端同步步驟。
+- 先從所有 remote `fetch --all --prune`。
+- 在原本的推送與合併流程前，對 `develop`、`ai/antigravity`、`ai/claude`、`ai/codex` 各自執行 `pull --rebase`。
+- 遠端同步發生衝突時立即停止，不自動 reset 或 abort。
+
+允許修改：
+
+- `sync_ai_worktrees.bat`
+- `tools/sync_ai_worktrees.ps1`
+- `docs/AI_TASKS.md`
+
+禁止修改：
+
+- 遊戲程式、資料、公式與測試
+- `develop` 分支
+
+測試要求：
+
+- PowerShell Parser 語法檢查。
+- `sync_ai_worktrees.bat -ValidateOnly` 不執行 fetch、pull、push 或 merge。
+- 以臨時 Git 環境驗證遠端同步步驟後才進入原本流程。
+
+完成後交給：
+
+使用者執行；發生 rebase 衝突時交由整合者人工處理
 
 ## 3.8 Codex：裝備詳情統一使用 itemDetailHTML
 

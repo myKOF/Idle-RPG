@@ -6294,6 +6294,7 @@ function showEnemyTooltip(anchorEl) {
 
   var isBossTip = (anchorEl.id === 'btn-boss-tip' || anchorEl.id === 'btn-tower-result-boss-tip');
   var workerView = viewState() || {};
+  var headerSnapshot = uiHeaderPanelSnapshot() || {};
   var mayUseTower = isBossTip || !!workerView.towerActive;
   var towerSnapshot = mayUseTower ? uiTowerPanelSnapshot() : null;
   var towerRuntime = towerSnapshot && towerSnapshot.runtime;
@@ -6385,8 +6386,8 @@ function showEnemyTooltip(anchorEl) {
       '<div class="skt-desc" style="text-align:left;">' +
       rewardLines.join('<br>') + '</div>';
   } else {
-    var zoneKey = (G.stage && G.stage.zone) || 'plains';
-    var stage = (G.stage && G.stage.current) || 1;
+    var zoneKey = (headerSnapshot.stage && headerSnapshot.stage.zone) || 'plains';
+    var stage = (headerSnapshot.stage && headerSnapshot.stage.current) || 1;
     var zoneDrop = fieldMaterialConfigFor(zoneKey, stage);
     var rates = fieldDropRatesFor(stage, m.level, zoneKey);
     var equipStrs = [];
