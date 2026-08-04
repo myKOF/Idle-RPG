@@ -257,11 +257,12 @@ var COMMANDS = {
 
   /* -- 熔爐（newforge）--
      furnaceId 由 nf.nextId++ 產生，是數字。
-     newForgeInstallPart(furnaceId, partKey) 收零件「種類鍵」並自動挑同類最高階，
-     不是零件實例 id——沿用現行選料規則，不在遷移期間改變行為。 */
+     newForgeInstallPart(furnaceId, partKey) 收零件「種類鍵」，
+     不是零件實例 id；裝配直接使用 factory.partLevels 的目前等級。 */
   'newforge.addFurnace':      { fn: 'addNewForgeFurnace',      args: {},                          dirty: ['newforge'] },
   'newforge.removeFurnace':   { fn: 'removeNewForgeFurnace',   args: { furnaceId: 'int' },        dirty: ['newforge', 'inv'] },
   'newforge.installPart':     { fn: 'newForgeInstallPart',     args: { furnaceId: 'int', partKey: 'str' }, dirty: ['newforge', 'factory'] },
+  'newforge.upgradePart':     { fn: 'newForgeUpgradePart',     args: { partKey: 'str' }, dirty: ['newforge', 'header'] },
   'newforge.uninstallPart':   { fn: 'newForgeUninstallPart',   args: { furnaceId: 'int', slotIndex: 'int' }, limit: { slotIndex: { min: 0 } }, dirty: ['newforge', 'factory'] },
   'newforge.unlockPartSlot':  { fn: 'unlockNewForgePartSlot',  args: { furnaceId: 'int' },        dirty: ['newforge', 'header'] },
   /* 品質勾選與啟用開關：UI 現行做法是直接改 fu.qualities[] / fu.enabled 再呼叫

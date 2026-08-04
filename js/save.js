@@ -996,14 +996,12 @@ function applyOfflineProgress(options) {
   var bookRate = bookBaseRate * (1 + lootBonus / 100) * rw * eliteMult;
   var essenceRate = Number(zoneDrop.ancientEssenceRate || 0) * eliteMult;
   var dustRate = Number(zoneDrop.dustRate || 0) * eliteMult;
-  var partBaseRate = Number(zoneDrop.partRate || 0);
-  var partRate = partBaseRate * (1 + lootBonus / 100) * rw * eliteMult;
 
   var sum = {
     /* 給彈窗顯示用：怪物種類可由參數表切換，寫死「菁英怪」的話調成普通怪之後會說謊。 */
     elite: offElite,
     seconds: elapsed, stage: stage, zoneName: zn.name, zoneEmoji: zn.emoji, kills: kills,
-    gold: gold, xp: xp, equips: {}, scrap: 0, gems: {}, books: 0, essence: 0, dust: 0, parts: 0
+    gold: gold, xp: xp, equips: {}, scrap: 0, gems: {}, books: 0, essence: 0, dust: 0
   };
   var conveyorFull = false;
   function processOfflineKill() {
@@ -1044,21 +1042,10 @@ function applyOfflineProgress(options) {
     if (essenceRate > 0 && chance(essenceRate)) { G.player.ancientEssence = (G.player.ancientEssence || 0) + 1; sum.essence++; }
     // 魔塵（150 級起）
     if (dustRate > 0 && chance(dustRate)) { G.player.dust = (G.player.dust || 0) + 1; sum.dust++; }
-    // 自動機組零件（階段 5+）
-    if (stage >= 5 || zoneDrop.partRate !== undefined) {
-      var partN = rollDropCount(partRate);
-      for (var pn = 0; pn < partN; pn++) {
-        var np = makePart(fieldPartTierFor(stage, true));
-        if (!np) continue;
-        G.factory.parts.push(np);
-        sum.parts++;
-      }
-    }
   }
 
   function finishOfflineProgress() {
     if (sum.scrap) G.player.scrap += sum.scrap;
-  if (sum.parts && typeof trimFactoryParts === 'function') trimFactoryParts(); // 收斂零件庫存
   UI.dirty.header = true; UI.dirty.factory = true; UI.dirty.gems = true;
 
   var hrs = Math.floor(elapsed / 3600), mins = Math.floor((elapsed % 3600) / 60);

@@ -90,13 +90,12 @@
   }
 
   function gmGivePart(tier, node, count) {
-    for (var i = 0; i < count; i++) {
-      var part = makePart(tier, node || undefined);
-      if (!part) return '此節點目前關閉或不存在：' + (node || '未知');
-      G.factory.parts.push(part);
-    }
+    var keys = Object.keys(PART_TYPES).filter(function (key) { return !node || PART_TYPES[key].node === node; });
+    if (!keys.length) return '此節點目前關閉或不存在：' + (node || '未知');
+    ensurePartLevels(G.factory);
+    keys.forEach(function (key) { G.factory.partLevels[key] = Math.max(G.factory.partLevels[key], tier); });
     gmDirty();
-    return '增加自動機組零件 T' + tier + (node ? '（' + node + '）' : '') + ' x' + count;
+    return '設定自動機組零件至 T' + tier + (node ? '（' + node + '）' : '');
   }
 
   function gmTowerDirty() {

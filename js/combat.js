@@ -944,20 +944,6 @@ function rollFieldDrops(m) {
         blog('💫 敵人掉落神鑄材料：魔塵 x1（持有 ' + fmt(G.player.dust) + '）', 'loot', 'loot');
         UI.dirty.forge = true;
     }
-    // 自動機組零件：基礎率由地圖／關卡掉落表提供
-    if (s >= 5 || zoneDrop.partRate !== undefined) {
-        var partBaseRate = Number(zoneDrop.partRate || 0);
-        var partN = rollDropCount(partBaseRate * (1 + lootBonus / 100) * rw * eliteDropMult);
-        for (var pn = 0; pn < partN; pn++) {
-            var np = makePart(fieldPartTierFor(s, m.elite));
-            if (!np) continue;
-            G.factory.parts.push(np);
-            if (window.recordLootMat) window.recordLootMat('part', 1, 'field');
-            drops.push('🔧' + PART_TYPES[np.key].emoji + np.name);
-            if (np.tier >= 3) blog('🔩 敵人掉落自動機組零件：' + PART_TYPES[np.key].emoji + np.name + '（' + partDesc(np) + '）', 'loot');
-        }
-        if (partN) { trimFactoryParts(); UI.dirty.factory = true; } // 收斂零件庫存，防無限成長
-    }
     return drops;
 }
 

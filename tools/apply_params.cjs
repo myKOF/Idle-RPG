@@ -78,7 +78,6 @@ const ZD_GEMS = ZD('寶石掉落率（等級R1至R5）');
 const ZD_BOOK = ZD('技能書掉落率');
 const ZD_ESSENCE = ZD('太古精華掉落率');
 const ZD_DUST = ZD('魔塵掉落率');
-const ZD_PART = ZD('工坊零件掉落率');
 function dropNumber(raw, label) {
   const n = Number(String(raw).trim());
   if (!Number.isFinite(n)) throw new Error('Zone_Stage_Drops.csv 數值無法解析：' + label + ' / ' + raw);
@@ -101,8 +100,7 @@ function zoneStageDropContent() {
       dropRateList(r[ZD_GEMS], 5, zone + '.寶石掉落率'),
       dropNumber(r[ZD_BOOK], zone + '.技能書掉落率'),
       dropNumber(r[ZD_ESSENCE], zone + '.太古精華掉落率'),
-      dropNumber(r[ZD_DUST], zone + '.魔塵掉落率'),
-      dropNumber(r[ZD_PART], zone + '.工坊零件掉落率')
+      dropNumber(r[ZD_DUST], zone + '.魔塵掉落率')
     ];
     (grouped[zone] || (grouped[zone] = [])).push(row);
   });
@@ -249,9 +247,12 @@ Object.keys(RAR_KEYS).forEach(nm => {
    game_parameters 內若仍殘留這四組的舊列，一律為「死列」（apply_params 忽略），
    實際數值以上述四表為準（唯一來源）。 */
 
-// 自動機組零件：perTier(0)
+// 自動機組零件：基礎值(0)＋每級增加值(1)
 const PART_KEYS = { '加速齒輪': 'speedGear', '碎片熔煉爐': 'scrapForge', '淘金濾網': 'goldSluice', '精粹透鏡': 'extractLens', '拓本回收臂': 'bookScavenger', '複製處理艙': 'duplicator', '知識回收器': 'archivist', '探礦核心': 'prospector', '幸運晶片': 'fortuneChip', '太古精華萃取器': 'ancientEssenceRate', '幸運核心': 'luckCore', '重骰模組': 'rerollModule' };
-Object.keys(PART_KEYS).forEach(nm => objField('data', PART_KEYS[nm] + ':', 'perTier', '表-自動機組零件', nm, 0, '零件-' + nm));
+Object.keys(PART_KEYS).forEach(nm => {
+  objField('data', PART_KEYS[nm] + ':', 'base', '表-自動機組零件', nm, 0, '零件基礎值-' + nm);
+  objField('data', PART_KEYS[nm] + ':', 'perLevel', '表-自動機組零件', nm, 1, '零件每級增加值-' + nm);
+});
 
 // 場景倍率改由 config/CSV/Zones.csv 管理；game_parameters 不再是地圖倍率來源。
 // 新遊戲／重新開局的初始資源（由參數表「0-遊戲預設」控制）。
@@ -381,6 +382,9 @@ scalar('data', 'GEM_SHOP_REFRESH_EXPONENT', '8-寶石商店', '手動刷新費�
 scalar('data', 'ENCHANT_ESSENCE_COST', '6-裝備', '手動附魔費用', 1);
 scalar('data', 'PART_MAX_TIER', '表-固定參數', '零件階級上限', 0);
 scalar('data', 'PART_KEEP_PER_KEY', '表-固定參數', '零件庫存保留', 0);
+scalar('data', 'PART_UPGRADE_COST_A', '表-固定參數', '零件升級金錢消耗', 0);
+scalar('data', 'PART_UPGRADE_COST_B', '表-固定參數', '零件升級金錢消耗', 1);
+scalar('data', 'PART_UPGRADE_COST_C', '表-固定參數', '零件升級金錢消耗', 2);
 scalar('data', 'RESPAWN_DELAY', '表-固定參數', '出怪間隔', 0);
 scalar('data', 'REVIVE_DELAY', '表-固定參數', '死亡復活時間', 0);
 scalar('data', 'CONVEYOR_CAP', '7-容量', '輸送帶容量', 0);
@@ -859,7 +863,6 @@ inlineRegex('formula', /(function loadoutSize\(\)[\s\S]*?return Math\.min\()(-?[
   P('1-成長經驗', '技能裝載欄', 2), '裝載欄-上限');
 
 /* ---- Batch2a：補接 formula.js 內漏接的可調單值（多值行用正規式避免相依錨點失配） ---- */
-numCtx('formula', 'Math.floor((floor - 1) / ', ')', P('5-高塔獎勵', '零件階級', 0), '高塔-零件階級');
 numCtx('formula', 'gold: Math.round(', ' * floor', P('5-高塔獎勵', '金幣', 0), '高塔-金幣');
 numCtx('formula', 'Math.floor(floor / ', ')', P('5-高塔獎勵', '寶石', 0), '高塔-寶石');
 numCtx('formula', 'essence: ', ' + floor', P('5-高塔獎勵', '附魔精華', 0), '高塔-附魔精華');
