@@ -702,6 +702,10 @@ function evalSlotUpgrades(foe, base, cfg, sweep) {
       cands.push(it);
     }
     if (!cands.length) continue;
+    /* 階級判準要看**全部**候選，不能只看 itemScore 前幾名：它是純比較（品質／裝等／
+       太古數），不需要 computeStats 就能篩，只有選中的那一件要算一次。
+       實測 itemScore 的排序對這個決策很不準——真正的贏家排到第 9、第 15 名都有。 */
+    var allCands = cands;
     cands = evalRankCandidates(cands, score).slice(0, topN);
 
     var cur = eq[slotKey] || null;
@@ -721,15 +725,41 @@ function evalSlotUpgrades(foe, base, cfg, sweep) {
     var best = null;
     for (var c = 0; c < cands.length; c++) {
       var cand = cands[c];
-      var probe = cand;
+      /* 一律複製一份再改，原始物件屬於 G.inventory，評估器只讀不寫。 */
+      var probe = {};
+      for (var pk in cand) probe[pk] = cand[pk];
       if (carried.length && cand.sockets && cand.sockets.length) {
-        probe = {};
-        for (var pk in cand) probe[pk] = cand[pk];
         probe.sockets = cand.sockets.slice();
         for (var si = 0, ci = 0; si < probe.sockets.length && ci < carried.length; si++) {
           if (!probe.sockets[si]) probe.sockets[si] = carried[ci++];
         }
       }
+
+      /* ---- 強化等級也要比在同一條起跑線上 ----
+
+         ⚠️ 這裡原本把同一件事算了兩次，方向還都對候選不利：
+           1. 候選以自己的強化等級（掉落品一律 +0）去比身上那件的 +17，
+              而 upgradeMult = 1 + 0.05×強化，+17 等於 ×1.85 的先天劣勢；
+           2. 然後 need 又以「要重建強化」為由再加 curUpgrade × upgradeGuard。
+
+         後果是投資鎖死：一個部位只要開始堆強化，就沒有任何裸掉落追得上，
+         那個部位從此凍結在開始投資時的那一件。跑越久凍得越死。
+         實測 20 小時 Lv.213 的存檔，把候選補到同等強化再問遊戲，
+         13 個部位有 9 個其實有更好的選擇，其中 5 個是純賺（物攻 +6.7%~+20.3%、
+         生命不動）——包含一枚**裝等 1** 的傳說戒指，靠 +35 強化和 4 顆寶石
+         把那個部位鎖了整場。
+
+         正確的模型是分開兩件事：
+           gain 比「候選將會達到的強化等級」——強化是可以重建的，不是候選的缺陷；
+           need 收「重建要花的材料」——那才是真正的成本，而且只該收差額。
+
+         取 max(候選自己的, 身上那件的)：背包裡已經帶著 +11 的那件不該被當成 +0
+         （它是真的有），身上是 +0 時也不該憑空送候選一堆強化。這個對稱性同時
+         擋掉來回換的震盪：兩邊都用同一個等級評估，換過去之後再比一次結論不變。 */
+      if (cfg.rebuildUpgrade) {
+        probe.upgrade = Math.max(cand.upgrade || 0, curUpgrade);
+      }
+
       var st2 = computeStats(evalEquipmentWith(slotKey, probe));
       var p2 = evalPower(st2, foe);
 
@@ -739,11 +769,17 @@ function evalSlotUpgrades(foe, base, cfg, sweep) {
          offenseWeight），這裡只提供兩個分量與一個中性的預設合成分。 */
       var gain = dOff + dEhp;
 
-      /* 門檻：插槽變少、以及要重建的強化等級，各折算成必須跨過的增幅。 */
+      /* 門檻：插槽變少、以及要重建的強化等級，各折算成必須跨過的增幅。
+
+         ⚠️ 重建成本只該收**差額**。開了 rebuildUpgrade 之後 gain 已經把候選算在
+         同一個強化等級上，這裡再收 curUpgrade 全額就又變回雙重計費了。
+         候選自己帶著的強化不用花錢重建，所以扣掉。 */
       var candSockets = cand.sockets ? cand.sockets.length : 0;
       var need = 0;
       if (candSockets < curSockets) need += (curSockets - candSockets) * socketPenalty;
-      need += curUpgrade * upgradeGuard;
+      need += (cfg.rebuildUpgrade
+        ? Math.max(0, curUpgrade - (cand.upgrade || 0))
+        : curUpgrade) * upgradeGuard;
 
       if (!best || gain > best.gain) {
         best = {
@@ -759,6 +795,75 @@ function evalSlotUpgrades(foe, base, cfg, sweep) {
         };
       }
     }
+    /* ============ 高一階就直接換：只看洗不掉的東西 ============
+
+       ---- 為什麼上面那套 gain/need 不夠 ----
+
+       gain 是拿**候選當下的隨機骰值**去比**身上那件的骰值**。但一件裝備身上，
+       真正永久固定的只有三樣：品質（決定詞條數與插槽數）、裝等、太古位置數。
+       詞條鍵與數值可以洗、強化可以重堆、寶石可以拔下來重鑲、附魔可以重附。
+       拿可變的部分去做不可逆的決定，等於讓一次幸運骰把整個部位鎖死。
+
+       實測：關卡 128 的角色站在「掉裝等 100」的關卡，身上最弱的部位還是裝等 50
+       （panels.eval.tier 的 equippedItemLevelMin=50 對 itemLevelHere=100）。
+       同一份存檔生 300 件當關史詩護手、連寶石與強化都補過去，只有 6% 的 gain 為正——
+       因為身上那件剛好骰到 atkFlat，而那正是可以洗回來的東西。
+
+       ---- 判準 ----
+
+       候選在「品質」或「裝等」上高一階、而且另一項不更差 → 直接換。
+       唯一的例外是身上那件累積的**太古位置**：太古洗煉必為滿值且永遠維持太古
+       （js/item.js rerollSingleAffix），是唯一無法重建的投資。
+       身上比候選多 ancientKeep 條以上太古時才留下。
+
+       ⚠️ 裝等與品質**同等看待**，不是只看品質。實測同一條 atkFlat：
+       裝等 1→50 是 ×27.95，而 R2→R5（同裝等）只有 ×2.29——裝等的權重更大，
+       只認品質會漏掉更重要的那一半。 */
+    var tierCfg = cfg.tierRule;
+    if (tierCfg && cur) {
+      var keepN = (typeof tierCfg.ancientKeep === 'number') ? tierCfg.ancientKeep : 3;
+      var curAnc = (typeof getItemAncientCount === 'function') ? getItemAncientCount(cur) : 0;
+      var forced = null, forcedRank = null;
+      for (var ti = 0; ti < allCands.length; ti++) {
+        var tc = allCands[ti];
+        var upR = (tc.rarity || 0) - (cur.rarity || 0);
+        var upL = (tc.level || 0) - (cur.level || 0);
+        /* 高一階＝其中一項更好、另一項不更差。一升一降交回上面的 gain/need 判斷。 */
+        if (!((upR > 0 && upL >= 0) || (upL > 0 && upR >= 0))) continue;
+        var tcAnc = (typeof getItemAncientCount === 'function') ? getItemAncientCount(tc) : 0;
+        if (curAnc - tcAnc >= keepN) continue;      // 身上的太古投資夠深，留著
+        /* 同樣高一階時取裝等 → 品質 → 太古數最好的那一件。 */
+        var rank = [tc.level || 0, tc.rarity || 0, tcAnc];
+        if (!forced || rank[0] > forcedRank[0]
+          || (rank[0] === forcedRank[0] && rank[1] > forcedRank[1])
+          || (rank[0] === forcedRank[0] && rank[1] === forcedRank[1] && rank[2] > forcedRank[2])) {
+          forced = tc; forcedRank = rank;
+        }
+      }
+      if (forced) {
+        /* 覆蓋掉 gain/need 的結論，但保留原本的數字供報表判讀——
+           哪些換裝是靠這條放行的，看 forcedByTier 就知道。 */
+        if (!best || best.itemId !== forced.id) {
+          var fSt = computeStats(evalEquipmentWith(slotKey, forced));
+          var fP = evalPower(fSt, foe);
+          best = {
+            itemId: forced.id,
+            gain: (base.offense > 0 ? (fP.offense / base.offense - 1) * 100 : 0)
+              + ((base.ehp > 0 && isFinite(base.ehp)) ? (fP.ehp / base.ehp - 1) * 100 : 0),
+            dOffPct: base.offense > 0 ? (fP.offense / base.offense - 1) * 100 : 0,
+            dEhpPct: (base.ehp > 0 && isFinite(base.ehp)) ? (fP.ehp / base.ehp - 1) * 100 : 0,
+            need: 0,
+            candRarity: forced.rarity, candLevel: forced.level,
+            curRarity: cur.rarity, curLevel: cur.level
+          };
+        }
+        best.worth = true;
+        best.forcedByTier = true;
+        best.curAncient = curAnc;
+        best.candAncient = (typeof getItemAncientCount === 'function') ? getItemAncientCount(forced) : 0;
+      }
+    }
+
     if (best) {
       out[slotKey] = best;
       if (best.worth) used[best.itemId] = true;   // 同一件不要被兩個部位同時選走

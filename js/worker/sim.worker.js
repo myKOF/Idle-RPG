@@ -619,6 +619,33 @@ function buildPanel(name, params) {
         dropRates: (typeof fieldDropRatesFor === 'function' && G.stage)
           ? fieldDropRatesFor(G.stage.current, G.stage.current, G.stage.zone)
           : null,
+        /* ---- 有哪些地圖、開了沒、各自打得到第幾關 ----
+
+           關卡改造之後每張地圖都是**有限關卡**（草原 200、荒漠 300、沼澤 400、
+           亡靈山脈 500），打到頂就再也推不動，必須換圖。解鎖條件（前置地圖與
+           關卡、轉生數）由遊戲的 isZoneUnlocked 判斷，不能讓讀面板的一方自己抄
+           一份 Zones.csv——那張表使用者會改。
+
+           沒有這個欄位的話 AI 會在草原 200 關永久停住，而且完全沒有徵兆：
+           推關指令照送、遊戲照回 ok，只是 stage.current 再也不動。 */
+        zones: (function () {
+          if (typeof ZONE_LIST === 'undefined' || typeof ZONES === 'undefined') return null;
+          var out = [];
+          for (var zi = 0; zi < ZONE_LIST.length; zi++) {
+            var zk = ZONE_LIST[zi], zd = ZONES[zk];
+            if (!zd) continue;
+            var zp = (G.zoneProgress && G.zoneProgress[zk]) || null;
+            out.push({
+              key: zk,
+              order: zi,
+              maxStage: (typeof zoneMaxStage === 'function') ? zoneMaxStage(zk) : 0,
+              unlocked: (typeof isZoneUnlocked === 'function') ? !!isZoneUnlocked(zk) : false,
+              current: (zk === G.stage.zone) ? G.stage.current : (zp ? zp.current : 0),
+              best: (zk === G.stage.zone) ? G.stage.best : (zp ? zp.best : 0)
+            });
+          }
+          return out;
+        })(),
         runStats: self.RUN_STATS || null, lootStats: self.LOOT_STATS || null
       };
     case 'equip':
