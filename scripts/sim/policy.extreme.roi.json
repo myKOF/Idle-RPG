@@ -254,6 +254,8 @@
       "stageGate": {
         "stage": "view.stage",
         "equippedRarities": "panels.inv.equipmentRarities",
+        "dropRates": "panels.battle.dropRates",
+        "dropRates_依據": "當前這一關掉得出哪些品質，由遊戲的 fieldDropRatesFor 回答（掉落路徑用的是同一支）。品質門檻達不成時就放行——關卡改造把掉落權威從『怪物等級』換成『地圖＋關卡』之後，草原 1~50 關的獨特與史詩掉落率都是 0，而閘門要求 21~40 關 85% 獨特、41~50 關 30% 史詩，兩道都是數學上打不開的門。實測 20 小時 × 5 個 seed 全部退回 34 關，10,185 件掉落裡史詩 0 件，五個 seed 的最高關卡一模一樣是 50。門檻本身不改成今天的 CSV 數字：那張表還在調，抄進來就是再犯一次同樣的錯",
         "argKey": "on",
         "checkpoints": [
           {

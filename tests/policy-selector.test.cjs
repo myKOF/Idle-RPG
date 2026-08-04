@@ -934,3 +934,85 @@ test('洗詞條：只洗不在目標清單的詞條，太古詞條不動', () =>
   assert.deepEqual(cmds.map((c) => c.args.affixKey), ['defPct']);
   assert.deepEqual(cmds.map((c) => c.args.itemId), ['h'], '獨特以下不洗，避免前期吸乾精華');
 });
+
+/* ---- 打不開的品質門檻：執行期逃生口 ----
+
+   閘門的語意是「品質沒到就退回去刷」。但如果那個品質在停下來的那一段
+   **根本掉不出來**，那就不是門檻，是死鎖——等一個永遠不會來的東西。
+
+   實際事故：關卡改造把掉落權威從「怪物等級」換成「地圖＋關卡」之後，
+   草原 1~50 關的獨特與史詩掉落率都是 0，而閘門要求 21~40 關 85% 獨特、
+   41~50 關 30% 史詩。20 小時 × 5 個 seed 全部退回 34 關，
+   10,185 件掉落裡史詩 0 件，五個 seed 的最高關卡一模一樣是 50。
+
+   dropRates 由遊戲投影（panels.battle.dropRates ← fieldDropRatesFor），
+   策略不自己抄掉落表——這裡測的是直譯器怎麼用它。 */
+
+function dropGatePolicy() {
+  return createPolicy({
+    name: 'test', decideEveryGameSec: 1, needPanels: ['inv', 'battle'],
+    rules: [{
+      id: 'gate', cmd: 'stage.setAutoAdvance',
+      stageGate: {
+        stage: 'view.stage',
+        equippedRarities: 'panels.inv.equipmentRarities',
+        dropRates: 'panels.battle.dropRates',
+        argKey: 'on',
+        checkpoints: [{ maxStage: 50, minRarity: 4, coverage: 0.3 }, { minRarity: 0, coverage: 0 }]
+      }
+    }]
+  });
+}
+
+/* 身上全是 R1，離「30% 史詩」差得很遠——閘門本來一定會關。 */
+function dropGateState(rates) {
+  return {
+    gameTimeSec: 10, view: { stage: 34 },
+    panels: {
+      inv: { equipmentRarities: { helmet: 1, chest: 1, boots: 1, weapon: 1 } },
+      battle: { dropRates: rates }
+    }
+  };
+}
+
+test('停下來刷的那一關掉不出門檻要求的品質時，閘門要放行', () => {
+  const cmds = dropGatePolicy().decide(dropGateState([25, 15, 10, 0, 0, 0, 0, 0]));
+  const gate = cmds.find((c) => c.name === 'stage.setAutoAdvance');
+  assert.ok(gate, '閘門規則要送出指令');
+  assert.equal(gate.args.on, true,
+    '史詩掉落率是 0，「30% 史詩」是打不開的門——不放行的話角色會永遠卡在這一關');
+});
+
+test('掉得出來的時候門檻照舊生效，不能變成永遠放行', () => {
+  const cmds = dropGatePolicy().decide(dropGateState([35, 20, 15, 5, 1, 0, 0, 0]));
+  const gate = cmds.find((c) => c.name === 'stage.setAutoAdvance');
+  assert.equal(gate.args.on, false,
+    '史詩掉落率 1 代表門檻達得成，這時就該按原本語意退回去刷');
+});
+
+test('面板拿不到掉落率時維持原本行為，不做沉默放行', () => {
+  /* 沉默放行比沉默卡死更難查：角色會一路往前衝送死，而報表上看不出閘門失效了。 */
+  for (const missing of [null, undefined, []]) {
+    const cmds = dropGatePolicy().decide(dropGateState(missing));
+    const gate = cmds.find((c) => c.name === 'stage.setAutoAdvance');
+    assert.equal(gate.args.on, false, `dropRates=${JSON.stringify(missing)} 時不得改變原本判斷`);
+  }
+});
+
+test('逃生口只鬆綁品質門檻，不碰產出門檻', () => {
+  /* minRarity 為 0 的檢查點沒有品質要求，逃生口不該對它做任何事。 */
+  const p = createPolicy({
+    name: 'test', decideEveryGameSec: 1, needPanels: ['inv', 'battle'],
+    rules: [{
+      id: 'gate', cmd: 'stage.setAutoAdvance',
+      stageGate: {
+        stage: 'view.stage', equippedRarities: 'panels.inv.equipmentRarities',
+        dropRates: 'panels.battle.dropRates', argKey: 'on',
+        checkpoints: [{ maxStage: 50, minRarity: 0, coverage: 1 }, { minRarity: 0, coverage: 0 }]
+      }
+    }]
+  });
+  const cmds = p.decide(dropGateState([25, 15, 10, 0, 0, 0, 0, 0]));
+  const gate = cmds.find((c) => c.name === 'stage.setAutoAdvance');
+  assert.equal(gate.args.on, true, 'coverage 檢查的是「有裝備的部位」，全身 R1 對 minRarity 0 本來就達標');
+});

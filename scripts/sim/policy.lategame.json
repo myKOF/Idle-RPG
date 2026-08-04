@@ -233,6 +233,8 @@
       "stageGate": {
         "stage": "view.stage",
         "equippedRarities": "panels.inv.equipmentRarities",
+        "dropRates": "panels.battle.dropRates",
+        "dropRates_依據": "當前這一關掉得出哪些品質，由遊戲的 fieldDropRatesFor 回答。品質門檻達不成時放行，避免站在原地等一個掉不出來的品質（詳細事故說明見 policy.extreme.roi.json 的同名欄位與 policy_interpreter.js 的註解）",
         "argKey": "on",
         "checkpoints": [
           {

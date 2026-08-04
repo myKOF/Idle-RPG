@@ -180,32 +180,71 @@ test('關卡閘門的最後一段必須是無上限、且不再設門檻', () =>
   }
 });
 
-test('關卡閘門的品質門檻在該關卡區間必須真的掉得出來', () => {
-  /* 這條擋的是一個實際發生過、而且非常昂貴的錯誤：
-     閘門要求 41~50 關達到 30% 史詩，但 FIELD_DROP_TABLE 是按**怪物等級**查表的，
-     而怪物等級＝關卡數（monsterStatsFor 的 level: stage），Lv20~49 的史詩掉落率是 0。
-     結果是一道數學上不可能打開的閘門——101 小時實跑、85,524 次掉落擲骰，
-     史詩一件都沒掉，角色從第 40 小時起卡在 41 關直到跑完，而且完全沒有徵兆。
+/* ---- 打不開的品質門檻 ----
 
-     檢查點取各段的**下緣**（進入這一段時所在的關卡），因為角色就是被卡在那裡。 */
-  let lo = 1;
+   這個坑踩過兩次：
+
+   一、閘門要求 41~50 關達到 30% 史詩，但掉落表按**怪物等級**查（怪物等級＝關卡數），
+       Lv20~49 的史詩掉落率是 0。101 小時實跑、85,524 次擲骰，史詩一件都沒掉，
+       角色從第 40 小時起卡在 41 關。當時就是補了這裡的哨兵擋住它。
+
+   二、關卡改造把掉落權威換成「地圖＋關卡」（js/combat.js 的 fieldDropRatesFor →
+       ZONE_STAGE_DROP_TABLE），草原 1~50 關的獨特與史詩掉落率都是 0。
+       **哨兵沒有失敗，它是瞎了**——還在讀舊的 FIELD_DROP_TABLE。
+       實測 20 小時 × 5 個 seed 全部退回 34 關，五個 seed 的最高關卡一模一樣是 50。
+
+   所以第二次的修法不是「再寫一支更嚴的建置期檢查」——建置期檢查會跟著權威改變
+   而靜靜失效，這正是第二次事故的形狀。改成**執行期問遊戲**（stageGate.dropRates），
+   而這裡改測那條逃生口本身：宣告了沒有、接到的是不是遊戲當下真正在用的那一支。
+
+   門檻的數字本身不再由測試釘死：地圖掉落表還在調整中，把今天的值寫進斷言
+   只會在下一次調整時變成假警報，或更糟——跟著改成錯的期望值一起綠燈。 */
+
+test('有品質門檻的關卡閘門一定要宣告執行期逃生口', () => {
   for (const f of POLICY_FILES) {
     for (const rule of loadPolicy(f).rules) {
       const cps = (rule.stageGate && rule.stageGate.checkpoints) || [];
-      lo = 1;
-      for (const cp of cps) {
-        if (cp.minRarity > 0 && cp.coverage > 0) {
-          const rates = ctx.dropRatesFor(ctx.FIELD_DROP_TABLE, lo);
-          assert.ok(rates[cp.minRarity] > 0,
-            `${f} 規則 ${rule.id}：${lo}~${cp.maxStage === undefined ? '∞' : cp.maxStage} 關要求 ` +
-            `${ctx.RARITIES[cp.minRarity].name}(R${cp.minRarity})，但怪物 Lv${lo} 的該品質掉落率是 0` +
-            `（FIELD_DROP_TABLE）——這道閘門永遠打不開，模擬會從此卡死`);
-        }
-        if (cp.maxStage === undefined) break;
-        lo = cp.maxStage + 1;
-      }
+      const gated = cps.some((cp) => cp.minRarity > 0 && cp.coverage > 0);
+      if (!gated) continue;
+      assert.ok(rule.stageGate.dropRates,
+        `${f} 規則 ${rule.id} 設了品質門檻卻沒有 stageGate.dropRates——` +
+        '掉落表一改，門檻就可能變成數學上打不開的門，而且完全沒有徵兆');
+      assert.ok((loadPolicy(f).needPanels || []).includes('battle'),
+        `${f}：dropRates 讀 battle 面板，needPanels 就要宣告`);
     }
   }
+});
+
+test('逃生口接到的是遊戲當下真正在用的掉落權威', () => {
+  /* 這一支才是第二次事故真正的防線：面板投影必須跟掉落路徑同源。
+     兩者對不上就代表有人換了掉落的算法而沒有帶著面板一起走。 */
+  const e = createEngine({ seed: 20260806 }).boot(null);
+  const g = e.state();
+
+  assert.equal(typeof e.panel('battle').dropRates, 'object',
+    'battle 面板必須投影 dropRates（陣列）——沒有的話策略只能瞎猜');
+
+  for (const stage of [1, 20, 34, 50, 51, 100, 151]) {
+    g.stage.current = stage;
+    const panel = e.panel('battle').dropRates;
+    /* 掉落路徑本人：js/combat.js:889 的 fieldDropRatesFor(關卡, 怪物等級, 地圖)。
+       怪物等級＝關卡（formula.js monsterStatsFor 的 level: stage）。 */
+    const truth = e.ctx.fieldDropRatesFor(stage, stage, g.stage.zone);
+    assert.deepEqual(Array.from(panel), Array.from(truth),
+      `關卡 ${stage}：面板的 dropRates 與掉落路徑用的不是同一份`);
+  }
+});
+
+test('掉落表真的會出現「這一段掉不出這個品質」的情形', () => {
+  /* 逃生口只有在真的踩得到時才有意義。如果整張表任何品質在任何關卡都掉得出來，
+     上面兩支就只是在測空氣——那時應該回頭質疑逃生口還需不需要，而不是繼續留著。
+     實際情形：草原 1~50 關的 [R0..R7] 是 [25,15,10,0,0,0,0,0]。 */
+  const e = createEngine({ seed: 20260806 }).boot(null);
+  const g = e.state();
+  g.stage.current = 1;
+  const rates = e.panel('battle').dropRates;
+  assert.ok(rates.some((v) => !(Number(v) > 0)),
+    '開局那一段每個品質都掉得出來的話，執行期逃生口就永遠不會觸發——請重新檢視是否還需要它');
 });
 
 test('關卡閘門引用的品質索引落在遊戲的 RARITIES 範圍內', () => {

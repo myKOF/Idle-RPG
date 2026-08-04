@@ -603,6 +603,22 @@ function buildPanel(name, params) {
         field: (typeof FIELD !== 'undefined') ? FIELD : null,
         tower: (typeof TOWER !== 'undefined') ? TOWER : null,
         stage: G.stage, zoneProgress: G.zoneProgress,
+        /* ---- 我現在站的這一關，掉得出哪些品質 ----
+
+           呼叫的是掉落路徑本人用的那一支（js/combat.js 的
+           fieldDropRatesFor(關卡, 怪物等級, 地圖)；怪物等級＝關卡，見
+           formula.js monsterStatsFor 的 level: stage）。刻意不投影
+           ZONE_STAGE_DROP_TABLE 原表：那會繞過 fieldDropRatesFor 內部
+           「外部工具替換 FIELD_DROP_TABLE 時保留舊語意」那條覆寫路徑，
+           於是面板說的和實際掉的會不一樣。
+
+           為什麼要有這個欄位：關卡閘門會「品質沒到就退回去刷」，
+           但如果那個品質在停下來的那一段**根本掉不出來**，那就不是門檻，
+           是死鎖——實測 20 小時 × 5 個 seed 全部卡在同一關，10,185 件掉落裡
+           史詩 0 件。門檻能不能達成只有遊戲知道，策略不該自己抄一份掉落表。 */
+        dropRates: (typeof fieldDropRatesFor === 'function' && G.stage)
+          ? fieldDropRatesFor(G.stage.current, G.stage.current, G.stage.zone)
+          : null,
         runStats: self.RUN_STATS || null, lootStats: self.LOOT_STATS || null
       };
     case 'equip':
