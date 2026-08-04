@@ -194,7 +194,12 @@ async function startServer(port, sourceKey) {
   if (!validPort(port)) throw new Error('Port 必須是 1 到 65535 的整數。');
   const source = resolveSourceRoot(sourceKey);
   const existing = readRecords().find((record) => record.port === port);
-  if (existing) return existing;
+  if (existing) {
+    if (existing.sourceKey && existing.sourceKey !== source.key) {
+      throw new Error(`Port ${port} 已由 ${existing.sourceLabel || existing.sourceKey} 來源啟動，請先關閉它或改用其他 Port。`);
+    }
+    return existing;
+  }
   if (await isPortOpen(port)) throw new Error(`Port ${port} 已被其他程式使用。`);
 
   const record = {

@@ -553,6 +553,12 @@ test('index.html/ui.js/main.js/factory.js/gm.js 接線（合併版）', () => {
   assert.ok(!/id="up-enabled"/.test(html), '強化節點界面應被刪除');
   assert.match(html, /id="enc-books"/, '附魔書庫存應搬入熔爐分頁保留');
 
+  const layoutCss = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
+  assert.match(layoutCss, /#ui-shell \.factory-flow \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) !important;/,
+    '附魔書庫存節點應使用完整寬度，不被三欄版面壓縮');
+  assert.match(layoutCss, /#ui-shell #enc-books \{[\s\S]*?width: 100%;/,
+    '附魔書庫存內容應填滿節點寬度');
+
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   assert.match(ui, /UI\.tab === 'newforge'/);
   assert.match(ui, /function renderNewForge/);

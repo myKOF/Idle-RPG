@@ -7069,7 +7069,15 @@ button.nf-part-slot.nf-part-ico {
 }
 
 #ui-shell .factory-flow {
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  /* 附魔書庫存目前是單一節點，不能沿用三欄版面，否則內容只會佔左側窄欄。 */
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+#ui-shell .factory-flow > .node-card,
+#ui-shell .factory-flow > .node-card .node-body,
+#ui-shell #enc-books {
+  width: 100%;
+  min-width: 0;
 }
 
 #ui-shell .nf-furnace-body {
