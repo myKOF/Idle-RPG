@@ -3563,8 +3563,6 @@ function partIconHTML(key) {
     goldSluice: ['icon_gold.png'],
     extractLens: ['icon_essence.png'],
     bookScavenger: ['icon_books.png'],
-    duplicator: ['icon_scrap.png', 'icon_gold.png'],
-    fortuneChip: ['icon_scrap.png', 'icon_gold.png', 'icon_essence.png'],
     ancientEssenceRate: ['icon_ancient_essence.png']
   };
   var icons = iconMap[key];
