@@ -180,9 +180,9 @@ function findNewForgeFurnace(id) {
   return null;
 }
 
-/* ---- 零件自由裝配（全域等級式）----
-   依「類型」安裝：只記錄零件 key，效果即時讀取 factory.partLevels；
-   同類型可重複裝滿、多座熔爐可共用同一個全域等級，升級後全部同步，
+/* ---- 零件自由裝配（快照式）----
+   依「類型」安裝：記錄零件 key 與當下可取得的最高階 tier；
+   同類型可重複裝滿、多座熔爐可共用同一批庫存，升級後由策略拆下重裝，
    僅零件格數（partSlots，上限 8）為上限。
    全部 10 種分解槽零件皆對該熔爐生效：加速齒輪（入爐速度）走 newForgeFurnaceSpeed，
    其餘產量/事件類經 newForgeSalvage → doSalvage 套用。 ---- */
@@ -195,7 +195,7 @@ function newForgeInstallPart(furnaceId, partKey) {
   var levels = ensurePartLevels(G.factory);
   var level = partLevelFor(partKey, levels);
   if (!level) return '此零件尚未解鎖';
-  fu.parts.push({ key: partKey }); // 等級由全域 partLevels 即時查詢，升級後所有熔爐同步
+  fu.parts.push({ key: partKey, tier: level }); // 效果固定為安裝當下的階級
   UI.dirty.newforge = true;
   nflog('🔧 已裝配 ' + partName({ key: partKey, level: level }) + ' 至熔爐 #' + fu.id, 'good');
   return null;
@@ -205,15 +205,15 @@ function newForgeUninstallPart(furnaceId, slotIdx) {
   if (!fu || !fu.parts[slotIdx]) return false;
   var removed = fu.parts.splice(slotIdx, 1)[0];
   UI.dirty.newforge = true;
-  nflog('🔧 已卸下 ' + partName({ key: removed.key, level: partLevelFor(removed.key) }) + '（熔爐 #' + fu.id + '）', 'info');
+  nflog('🔧 已卸下 ' + partName(removed) + '（熔爐 #' + fu.id + '）', 'info');
   return true;
 }
-// 該熔爐零件加成：同類型格位堆疊，數值即時讀取全域等級
+// 該熔爐零件加成：同類型格位堆疊，數值取各格安裝時的 tier 快照
 function newForgePartBonus(fu, key) {
   var sum = 0;
   for (var i = 0; i < fu.parts.length; i++) {
     var p = fu.parts[i];
-    if (p && p.key === key) sum += effectiveFactoryPartValue(p.key, partValueForLevel(p.key, partLevelFor(p.key)));
+    if (p && p.key === key) sum += effectiveFactoryPartValue(p.key, partValue(p));
   }
   return sum;
 }
@@ -354,7 +354,7 @@ function sanitizeNewForge(data) {
     if (!Array.isArray(fu.parts)) fu.parts = [];
     if (fu.id > maxId) maxId = fu.id;
   }
-  // 零件資料清理：舊版 id／快照轉成只含 key 的裝配資料，失效剔除、超量截斷
+  // 零件資料清理：舊版 id／快照轉成 { key, tier }，失效剔除、超量截斷
   (function sanitizeParts() {
     var poolById = {};
     ((data.factory && data.factory.parts) || []).forEach(function (p) { if (p && p.id) poolById[p.id] = p; });
@@ -374,7 +374,11 @@ function sanitizeNewForge(data) {
         if (isFinite(snapshotLevel)) levels[e.key] = Math.max(levels[e.key] || 1, clamp(Math.floor(snapshotLevel), 1, PART_MAX_TIER));
         return true;
       }).map(function (e) {
-        return e ? { key: e.key } : null;
+        if (!e) return null;
+        var tier = Number(e.level !== undefined ? e.level : e.tier);
+        return { key: e.key, tier: isFinite(tier)
+          ? clamp(Math.floor(tier), 1, PART_MAX_TIER)
+          : partLevelFor(e.key, levels) };
       }).filter(function (e) { return !!e; });
       if (fu2.parts.length > fu2.partSlots) fu2.parts.length = fu2.partSlots;
     }

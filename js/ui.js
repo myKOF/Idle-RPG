@@ -3631,7 +3631,7 @@ function nfPartSlotsHTML(fu, nf, player) {
     if (s < fu.partSlots) {
       var p = fu.parts[s]; // 裝配資料 {key}；等級由全域 partLevels 即時讀取
       if (p && PART_TYPES[p.key]) {
-        var currentLevel = (nf.partLevels && nf.partLevels[p.key]) || 1;
+        var currentLevel = Number(p.tier !== undefined ? p.tier : ((nf.partLevels && nf.partLevels[p.key]) || 1));
         // 已裝＝正方形小圖示（全稱在 tooltip；點擊依格位索引卸下）
         cells += '<button class="nf-part-slot nf-part-filled nf-part-ico" data-nf-fid="' + fu.id + '" data-nf-partun="' + s + '"' +
           pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
