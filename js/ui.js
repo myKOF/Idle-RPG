@@ -3683,7 +3683,7 @@ function nfPartUpgradesHTML(factory, player, nf) {
       ? '<span class="nf-part-upgrade-max">Max</span>'
       : '<button class="btn sm nf-part-upgrade-button' + (can ? '' : ' nf-part-poor') + '" data-nf-partupgrade="' + key + '"' +
         pendingUiButtonAttributes(nodePendingKey('newforge-part-upgrade-' + key)) +
-        ' data-tip="升級消耗金幣：' + fmtFull(cost) + '" title="升級消耗金幣：' + fmtFull(cost) + '">升級</button>';
+        ' data-tip="升級消耗金幣：' + fmtFull(cost) + '">升級</button>';
     return '<div class="nf-part-upgrade-card" data-tip="' + esc(partDesc({ key: key, level: level })) + '">' +
       '<div class="nf-part-upgrade-level">T' + level + '</div>' +
       '<div class="nf-part-upgrade-icon">' + partIconHTML(key) + '</div>' +
