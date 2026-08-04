@@ -19,18 +19,19 @@ test('菁英裝備與材料掉落率均在一般基礎上乘以菁英掉落倍�
   const context = loadContext();
   assert.equal(context.ELITE_DROP_MULT, 1.3); // 使用者確認以程式值 1.3 為準（2026-07-17）
   context.G = {
-    stage: { current: 10 },
+    stage: { current: 10, zone: 'test' },
     player: { books: {}, ancientEssence: 0, dust: 0, essence: 0 },
     factory: { parts: [], installed: { salvage: [], synth: [] } }
   };
   context.FIELD = { player: {} };
   context.getStats = () => ({ loot: 0 });
   context.buffVal = () => 0;
-  context.dropRatesFor = (table) => table === context.FIELD_GEM_DROP_TABLE
-    ? [5, 1, 0.5, 0, 0]
-    : [10, 0, 0, 0, 0, 0, 0, 0];
+  context.ZONE_STAGE_DROP_TABLE.test = [{
+    min: 1, max: 10,
+    equipmentRates: [10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    materials: { gemRates: [5, 1, 0.5, 0, 0], bookRate: 4, ancientEssenceRate: 0, dustRate: 0, partRate: 0.5 }
+  }];
   context.currentZoneDef = () => ({ rewardMult: 1 });
-  context.fieldDustRate = () => 0;
   context.rollDropCount = (rate) => { context._dropRates.push(rate); return 0; };
   context.chance = (rate) => { context._chanceRates.push(rate); return false; };
   context.pushConveyor = () => {};

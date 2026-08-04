@@ -58,7 +58,7 @@ test('離線擊殺數依擊殺速率換算，並吃離線預言潛力加成', ()
 test('離線收益逐殺結算：每隻菁英單獨擲骰、金幣經驗依菁英與場景倍率', () => {
   const c = loadGameContext();
   // 每殺必掉 1 件普通裝備：100% × 菁英掉落倍率 1.3 = 130% → ⌊130/100⌋ = 1
-  c.FIELD_DROP_TABLE = [{ min: 1, rates: [100] }];
+  c.ZONE_STAGE_DROP_TABLE.swamp = [{ min: 1, max: 400, equipmentRates: [100], materials: { gemRates: [], bookRate: 0, ancientEssenceRate: 0, dustRate: 0, partRate: 0 } }];
   c.G.stage.zone = 'swamp';
   c.G.stage.best = 256;
   c.G.stage.current = 256;
@@ -84,7 +84,7 @@ test('離線收益逐殺結算：每隻菁英單獨擲骰、金幣經驗依菁�
 
 test('離線收益採用玩家上線時的經驗/金幣/掉寶加成', () => {
   const c = loadGameContext();
-  c.FIELD_DROP_TABLE = [{ min: 1, rates: [100] }];
+  c.ZONE_STAGE_DROP_TABLE.swamp = [{ min: 1, max: 400, equipmentRates: [100], materials: { gemRates: [], bookRate: 0, ancientEssenceRate: 0, dustRate: 0, partRate: 0 } }];
   // 上線時裝備：金幣 +50%、經驗 +100%、掉寶率 200（有效掉寶率折半 → +100%）
   c.G.equipment.helmet = {
     affixes: [{ key: 'goldBonus', val: 50 }, { key: 'xpBonus', val: 100 }, { key: 'loot', val: 200 }],
@@ -106,7 +106,7 @@ test('離線收益採用玩家上線時的經驗/金幣/掉寶加成', () => {
 
 test('有效離線時間上限（OFFLINE_MAX_HOURS），1 分鐘內不計', () => {
   const c = loadGameContext();
-  c.FIELD_DROP_TABLE = [{ min: 1, rates: [] }];
+  c.ZONE_STAGE_DROP_TABLE.swamp = [{ min: 1, max: 400, equipmentRates: [0], materials: { gemRates: [], bookRate: 0, ancientEssenceRate: 0, dustRate: 0, partRate: 0 } }];
   c.G.stage.best = 100;
   // 超過上限 2 小時 → 以 OFFLINE_MAX_HOURS 計（上限值由參數表調整，不寫死）
   c.G.savedAt = Date.now() - (c.OFFLINE_MAX_HOURS + 2) * 3600 * 1000;

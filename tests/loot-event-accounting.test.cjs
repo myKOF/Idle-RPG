@@ -92,11 +92,11 @@ test('270級單一菁英在 958.4% 掉寶率下，一級寶石單次最多結算
   context.getStats = () => ({ loot: 958.4, goldBonus: 0, xpBonus: 0, moveSpeed: 0, passives: {} });
   context.currentZoneDef = () => ({ rewardMult: 3 });
   context.Math.random = () => 0;
-  context.FIELD_DROP_TABLE = [{ min: 1, rates: [0, 0, 0, 0, 0, 0, 0, 0] }];
-  context.FIELD_BOOK_DROP_PCT = 0;
-  context.FIELD_PART_DROP_PCT = 0;
-  context.ancientEssenceDropChanceForEnemy = () => 0;
-  context.fieldDustRate = () => 0;
+  context.ZONE_STAGE_DROP_TABLE.swamp = [{
+    min: 1, max: 400,
+    equipmentRates: Array(11).fill(0),
+    materials: { gemRates: [10, 1, 0.5, 0.1, 0.1], bookRate: 0, ancientEssenceRate: 0, dustRate: 0, partRate: 0 }
+  }];
   context.makeEquipment = () => ({});
   context.pushConveyor = () => {};
   context.addGem = () => {};

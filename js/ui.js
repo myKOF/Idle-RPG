@@ -6366,7 +6366,10 @@ function showEnemyTooltip(anchorEl) {
       '<div class="skt-desc" style="text-align:left;">' +
       rewardLines.join('<br>') + '</div>';
   } else {
-    var rates = dropRatesFor(FIELD_DROP_TABLE, m.level);
+    var zoneKey = (G.stage && G.stage.zone) || 'plains';
+    var stage = (G.stage && G.stage.current) || 1;
+    var zoneDrop = fieldMaterialConfigFor(zoneKey, stage);
+    var rates = fieldDropRatesFor(stage, m.level, zoneKey);
     var equipStrs = [];
     for (var r = rates.length - 1; r >= 0; r--) {
       if (!rates[r]) continue;
@@ -6377,7 +6380,7 @@ function showEnemyTooltip(anchorEl) {
 
     var dustLine = '';
     if (!towerActive) {
-      var dustRate = fieldDustRate(m.level);
+      var dustRate = Number(zoneDrop.dustRate || 0);
       if (dustRate > 0) dustLine = '💫 魔塵 <span style="color:var(--dim)">(' + fmt1(dustRate) + '%，神鑄材料)</span>';
     }
 

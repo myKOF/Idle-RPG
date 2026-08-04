@@ -991,12 +991,12 @@ function applyOfflineProgress(options) {
   var dropMult = (1 + lootBonus / 100) * eliteMult;
   var zoneDrop = fieldMaterialConfigFor(G.stage.zone, stage);
   var rates = fieldDropRatesFor(stage, m.level, G.stage.zone);
-  var gemRates = Array.isArray(zoneDrop.gemRates) ? zoneDrop.gemRates : fieldGemDropRatesFor(m.level);
-  var bookBaseRate = zoneDrop.bookRate !== undefined ? Number(zoneDrop.bookRate) : FIELD_BOOK_DROP_PCT;
+  var gemRates = Array.isArray(zoneDrop.gemRates) ? zoneDrop.gemRates : [];
+  var bookBaseRate = Number(zoneDrop.bookRate || 0);
   var bookRate = bookBaseRate * (1 + lootBonus / 100) * rw * eliteMult;
-  var essenceRate = (zoneDrop.ancientEssenceRate !== undefined ? Number(zoneDrop.ancientEssenceRate) : ancientEssenceDropChanceForEnemy(m.level)) * eliteMult;
-  var dustRate = (zoneDrop.dustRate !== undefined ? Number(zoneDrop.dustRate) : fieldDustRate(m.level)) * eliteMult;
-  var partBaseRate = zoneDrop.partRate !== undefined ? Number(zoneDrop.partRate) : FIELD_PART_DROP_PCT;
+  var essenceRate = Number(zoneDrop.ancientEssenceRate || 0) * eliteMult;
+  var dustRate = Number(zoneDrop.dustRate || 0) * eliteMult;
+  var partBaseRate = Number(zoneDrop.partRate || 0);
   var partRate = partBaseRate * (1 + lootBonus / 100) * rw * eliteMult;
 
   var sum = {
@@ -1020,20 +1020,6 @@ function applyOfflineProgress(options) {
           }
         } else {
           sum.scrap += Math.round(3 * RARITIES[r].salv);
-        }
-      }
-    }
-    if (chaosFieldDropEligible(G.stage && G.stage.zone, stage)) {
-      var chaosN = rollDropCount(CHAOS_FIELD_DROP_PCT * dropMult);
-      for (var ci = 0; ci < chaosN; ci++) {
-        sum.equips[CHAOS_IDX] = (sum.equips[CHAOS_IDX] || 0) + 1;
-        if (!conveyorFull) {
-          if (!pushConveyor(makeEquipment(stage, { rarity: CHAOS_IDX }))) {
-            conveyorFull = true;
-            sum.scrap += Math.round(3 * RARITIES[CHAOS_IDX].salv);
-          }
-        } else {
-          sum.scrap += Math.round(3 * RARITIES[CHAOS_IDX].salv);
         }
       }
     }

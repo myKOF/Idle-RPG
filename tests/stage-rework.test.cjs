@@ -75,7 +75,7 @@ test('地圖表承接場景專屬倍率與所有地圖的分段掉落資料', ()
   const drops = fs.readFileSync(path.join(root, 'config/CSV/Zone_Stage_Drops.csv'), 'utf8').replace(/^\uFEFF/, '').trim().split(/\r?\n/);
   assert.equal(zones[0], '順序,地圖識別碼,地圖名稱,位面,關卡上限,前置地圖識別碼,前置通關關卡,最低轉生次數,生命倍率,攻擊倍率,防禦倍率,攻速倍率,經驗金幣獎勵倍率');
   assert.match(zones.find((line) => line.includes(',undead_mountains,')), /,6\.5,3\.8,3\.2,1\.8,2\.25$/);
-  assert.equal(drops.length, 29);
+  assert.equal(drops.length, 31);
   assert.ok(drops.some((line) => line.startsWith('god_sanctuary,601,800,')));
 });
 

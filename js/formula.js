@@ -1066,7 +1066,7 @@ function bossStatsFor(floor) {
    §5 掉落與獎勵
    ============================================================ */
 
-// 依等級/樓層從掉落表（data.js 的 FIELD_DROP_TABLE / BOSS_DROP_TABLE）取機率列
+// 依地圖／關卡或高塔樓層從掉落表取機率列
 // 掉寶率來源平衡：裝備詞條、附魔、技能與相關分解零件的效果統一減半。
 // 存檔仍保留原始數值，透過此入口計算即可讓既有物品立即套用新規則。
 var DROP_RATE_EFFECT_MULT = 0.5;
@@ -1115,10 +1115,7 @@ function dropRatesFor(table, lvl) {
   }
   return table[table.length - 1].rates;
 }
-var DROP_RATES_FOR_DEFAULT = dropRatesFor;
 // 關卡改造：掉落先依地圖/關卡區間查表，再由掉寶率與菁英倍率修正。
-var FIELD_DROP_TABLE_DEFAULT = FIELD_DROP_TABLE;
-var FIELD_DROP_TABLE_DEFAULT = FIELD_DROP_TABLE;
 function zoneStageDropConfigFor(zone, stage) {
   var key = zone || (typeof G !== 'undefined' && G && G.stage ? G.stage.zone : 'plains') || 'plains';
   var rows = (typeof ZONE_STAGE_DROP_TABLE !== 'undefined' && ZONE_STAGE_DROP_TABLE[key]) || [];
@@ -1129,13 +1126,10 @@ function zoneStageDropConfigFor(zone, stage) {
   return rows.length ? rows[rows.length - 1] : null;
 }
 function fieldDropRatesFor(stage, level, zone) {
-  // 測試/外部工具替換 FIELD_DROP_TABLE 時，保留既有覆寫語意。
-  if (FIELD_DROP_TABLE !== FIELD_DROP_TABLE_DEFAULT || dropRatesFor !== DROP_RATES_FOR_DEFAULT) return dropRatesFor(FIELD_DROP_TABLE, level);
   var cfg = zoneStageDropConfigFor(zone, stage);
-  return cfg && Array.isArray(cfg.equipmentRates) ? cfg.equipmentRates : dropRatesFor(FIELD_DROP_TABLE, level);
+  return cfg && Array.isArray(cfg.equipmentRates) ? cfg.equipmentRates : [];
 }
 function fieldMaterialConfigFor(zone, stage) {
-  if (FIELD_DROP_TABLE !== FIELD_DROP_TABLE_DEFAULT || dropRatesFor !== DROP_RATES_FOR_DEFAULT) return {};
   var cfg = zoneStageDropConfigFor(zone, stage);
   return (cfg && cfg.materials) || {};
 }
@@ -1177,10 +1171,7 @@ function rollRarity(stage, lootBonus) {
   return wpick(w);
 }
 
-/* ---- 野外材料掉落（基礎機率 %；實際機率 × (1+掉寶率) × 場景倍率，
-       用 rollDropCount 結算 >100% 必掉規則）---- */
-var FIELD_BOOK_DROP_PCT = 4;     // 附魔書（階段 8+）
-var FIELD_PART_DROP_PCT = 0.5;   // 自動機組零件（階段 5+，機率低；菁英掉落率同乘菁英倍率）
+/* ---- 野外材料掉落（基礎機率由 Zone_Stage_Drops.csv 提供） ---- */
 var ELITE_DROP_MULT = 1.3;       // 菁英掉落倍率：裝備與材料都在一般基礎上乘此值（野外與離線收益共用）
 
 /* ---- 太古詞條／太古精華機率 ---- */
@@ -1205,12 +1196,6 @@ function rollAncientAffixCount(affixCount, luck) {
   for (var j = 0; j < adjusted.length; j++) pairs.push([j, adjusted[j] / total]);
   return wpick(pairs);
 }
-function ancientEssenceDropChanceForEnemy(level) {
-  level = Number(level) || 0;
-  if (level < ANCIENT_ESSENCE_ENEMY_MIN_LEVEL) return 0;
-  return Math.min(ANCIENT_ESSENCE_ENEMY_RATE_CAP,
-    ANCIENT_ESSENCE_ENEMY_BASE_RATE + (level - ANCIENT_ESSENCE_ENEMY_MIN_LEVEL) * ANCIENT_ESSENCE_ENEMY_LEVEL_RATE);
-}
 function ancientEssenceDropChanceForBoss(floor) {
   floor = Number(floor) || 0;
   if (floor < 40) return 0;
@@ -1224,11 +1209,6 @@ function ancientEssenceSalvageChanceForRarity(rarity) {
 // 野外掉落零件的階級：隨階段成長（每 12 階 +1），菁英再 +1，上限 T7
 function fieldPartTierFor(stage, elite) {
   return clamp(1 + Math.floor(stage / 12) + (elite ? 1 : 0), 1, PART_MAX_TIER);
-}
-
-// 野外寶石掉落率：依怪物等級查表，各階級獨立判定
-function fieldGemDropRatesFor(level) {
-  return dropRatesFor(FIELD_GEM_DROP_TABLE, level);
 }
 
 // 高塔挑戰金幣消耗 = round(a × 樓層^b)，a/b 依樓層分層（TOWER_CHALLENGE_COST_TIERS → data.js）
@@ -1262,11 +1242,6 @@ function demonSeedDropChanceForBoss(floor) {
   if (!isPurgatoryTowerFloor(floor)) return 0;
   return Math.min(DEMON_SEED_BOSS_RATE_CAP,
     DEMON_SEED_BOSS_BASE_RATE + (floor - TOWER_HELL_MAX_FLOOR - 1) * DEMON_SEED_BOSS_PER_FLOOR);
-}
-
-function fieldDustRate(level) {
-  if (level < DUST_FIELD_MIN_LEVEL) return 0;
-  return Math.min(DUST_FIELD_CAP, DUST_FIELD_BASE + (level - DUST_FIELD_MIN_LEVEL) * DUST_FIELD_PER_LEVEL);
 }
 
 /* ---- 高塔通關獎勵 ----
@@ -1497,10 +1472,6 @@ function ensureGodPassiveSource(gp) {
 // 神鑄成功率（裝備）= 基礎（依素材品質）+ 魔塵數 × 5%
 function forgeSuccessRateFor(rarity, dustCount) {
   return clamp(forgeBaseRateFor(rarity) + dustCount * forgeDustRateFor(rarity), 0, 100);
-}
-
-function chaosFieldDropEligible(zone, stage) {
-  return Number(stage) >= CHAOS_FIELD_DROP_MIN_STAGE && !!CHAOS_FIELD_DROP_ZONES[zone] && CHAOS_FIELD_DROP_PCT > 0;
 }
 
 // 神鑄成功率（寶石）= 基礎（依素材階級）+ 魔塵數 × 3%

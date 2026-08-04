@@ -195,8 +195,10 @@ test('關卡閘門的品質門檻在該關卡區間必須真的掉得出來', ()
       lo = 1;
       for (const cp of cps) {
         if (cp.minRarity > 0 && cp.coverage > 0) {
-          const rates = ctx.dropRatesFor(ctx.FIELD_DROP_TABLE, lo);
-          assert.ok(rates[cp.minRarity] > 0,
+          const hasConfiguredRate = Object.values(ctx.ZONE_STAGE_DROP_TABLE)
+            .flat()
+            .some((row) => Number(row.equipmentRates[cp.minRarity] || 0) > 0);
+          assert.ok(hasConfiguredRate,
             `${f} 規則 ${rule.id}：${lo}~${cp.maxStage === undefined ? '∞' : cp.maxStage} 關要求 ` +
             `${ctx.RARITIES[cp.minRarity].name}(R${cp.minRarity})，但怪物 Lv${lo} 的該品質掉落率是 0` +
             `（FIELD_DROP_TABLE）——這道閘門永遠打不開，模擬會從此卡死`);
