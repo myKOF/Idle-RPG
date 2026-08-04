@@ -3663,7 +3663,7 @@ function nfPartsListHTML(fu, factory, nf) {
     var level = levels[key] || 1;
     return '<span class="part-chip" style="cursor:pointer; border-color:var(--accent);" data-nf-fid="' + fu.id +
       '" data-nf-partinstall-key="' + key + '"' + pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
-      ' data-tip="【點擊裝配】使用目前 T' + level + ' 等級；升級後已裝配效果同步提升">' + partIconHTML(key) + esc(partName({ key: key, level: level })) + '</span>';
+      ' data-tip="【點擊裝配】T' + level + ' ' + esc(partDesc({ key: key, level: level })) + '；升級後已裝配效果同步提升">' + partIconHTML(key) + esc(partName({ key: key, level: level })) + '</span>';
   }).join('');
   return '<div class="nf-parts-list"><div class="nf-parts-list-head">🔧 選擇零件（熔爐 #' + fu.id + '，' +
     fu.parts.length + '/' + fu.partSlots + '）<button class="btn sm" data-nf-fid="' + fu.id + '" data-nf-partsopen="1">收起</button></div>' +
