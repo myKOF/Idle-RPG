@@ -19,14 +19,17 @@ function equipSetLabel(i) {
   var n = (typeof G !== 'undefined' && Array.isArray(G.equipSetNames) && G.equipSetNames[i]) ? String(G.equipSetNames[i]).trim() : '';
   return n || equipSetName(i);
 }
-function equipmentSetUnlockedAtLevel(i, level) {
+function equipmentSetUnlockedAtLevel(i, level, reincarnations) {
   var idx = Math.floor(Number(i));
   if (!Number.isFinite(idx) || idx < 0 || idx >= EQUIP_SET_COUNT) return false;
-  return Number(level) >= EQUIP_SET_UNLOCK_LEVELS[idx];
+  var requiredReincarnations = Array.isArray(EQUIP_SET_UNLOCK_REINCARNATIONS)
+    ? Number(EQUIP_SET_UNLOCK_REINCARNATIONS[idx]) || 0
+    : 0;
+  return Number(level) >= EQUIP_SET_UNLOCK_LEVELS[idx] && Number(reincarnations) >= requiredReincarnations;
 }
 function equipmentSetUnlocked(i) {
   if (typeof G === 'undefined' || !G.player) return false;
-  return equipmentSetUnlockedAtLevel(i, G.player.level);
+  return equipmentSetUnlockedAtLevel(i, G.player.level, G.player.reincarnations);
 }
 
 // 熔爐（正式版）：建立一座預設熔爐。第一座只勾選普通，後續熔爐沿用上一座設定。

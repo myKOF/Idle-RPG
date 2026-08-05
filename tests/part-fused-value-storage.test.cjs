@@ -78,7 +78,7 @@ test('零件加成（partBonus）吃推導值', () => {
 
 test('融合結果只存 5 階等值倍率，數值由寶石表當場算', () => {
   const c = loadContext();
-  c.G = { player: { gems: {}, fusedGems: [] } };
+  c.G = { player: { level: 1, reincarnations: 3, gems: {}, fusedGems: [] } };
   c.gemCount = () => 2;
   c.addGem = () => {};
   c.chance = () => true;                       // 融合必成功
@@ -94,7 +94,7 @@ test('融合結果只存 5 階等值倍率，數值由寶石表當場算', () =>
 
 test('素材倍率：5 階＝1 倍，每高 1 階 ×2', () => {
   const c = loadContext();
-  c.G = { player: { gems: {}, fusedGems: [] } };
+  c.G = { player: { level: 1, reincarnations: 3, gems: {}, fusedGems: [] } };
   c.gemCount = () => 2;
   assert.equal(c.normalizeFuseMaterial({ kind: 'plain', type: 'topaz', lv: 5 }).stats[0].mult, 1);
   assert.equal(c.normalizeFuseMaterial({ kind: 'plain', type: 'topaz', lv: 7 }).stats[0].mult, 4);
@@ -171,7 +171,7 @@ test('存檔載入會換算庫存與插槽內的融合寶石（migrateSave）', 
 
 test('融合公式在倍率空間與改造前等價（同屬性取 rnd(較小, 較大×2)）', () => {
   const c = loadContext();
-  c.G = { player: { gems: {}, fusedGems: [] } };
+  c.G = { player: { level: 1, reincarnations: 3, gems: {}, fusedGems: [] } };
   c.gemCount = () => 2;
   c.addGem = () => {};
   c.chance = () => true;

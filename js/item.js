@@ -193,7 +193,17 @@ function degradeFuseMaterial(m) {
 }
 
 /* 執行融合 v2；回傳 { err } 或 { success, result } 或 { success:false, degraded } */
+function gemFusionUnlockedAtLevel(level, reincarnations) {
+  return Number(level) >= GEM_FUSION_UNLOCK_LEVEL &&
+    Number(reincarnations) >= GEM_FUSION_UNLOCK_REINCARNATIONS;
+}
+
+function gemFusionUnlocked() {
+  return gemFusionUnlockedAtLevel(G.player.level, G.player.reincarnations);
+}
+
 function fuseGemsV2(ref1, ref2) {
+  if (!gemFusionUnlocked()) return { err: '寶石融合需達到 3 轉且角色 Lv.1 才開放' };
   var m1 = normalizeFuseMaterial(ref1);
   var m2 = normalizeFuseMaterial(ref2);
   if (!m1 || !m2) return { err: '素材不足（僅限 5 階以上寶石）' };

@@ -481,8 +481,8 @@ function migrateSave(data) {
       var last = data.equipmentSets.length - 1;
       data.equipActive = clamp(Math.floor(Number(data.equipActive) || 0), 0, last);
       data.equipView = clamp(Math.floor(Number(data.equipView) || 0), 0, last);
-      if (!equipmentSetUnlockedAtLevel(data.equipActive, data.player && data.player.level)) data.equipActive = 0;
-      if (!equipmentSetUnlockedAtLevel(data.equipView, data.player && data.player.level)) data.equipView = data.equipActive;
+      if (!equipmentSetUnlockedAtLevel(data.equipActive, data.player && data.player.level, data.player && data.player.reincarnations)) data.equipActive = 0;
+      if (!equipmentSetUnlockedAtLevel(data.equipView, data.player && data.player.level, data.player && data.player.reincarnations)) data.equipView = data.equipActive;
     }
     data.equipment = data.equipmentSets[data.equipActive]; // 重導使用中那套（避免載入後參照脫鉤）
     // 每套自訂名稱：補齊為與套數等長的字串陣列（舊存檔無此欄 → 全空＝用預設）

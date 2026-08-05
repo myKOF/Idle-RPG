@@ -485,7 +485,8 @@ var ASPD_MIN = 0.2;
 var ASPD_CAP = 5;
 var BLOCK_DMG_RED_BASE = 30;
 var GODFORGED_IDX = 8;                       // 神鑄創世稀有度索引
-var EQUIP_SET_UNLOCK_LEVELS = [1, 500, 2000]; // 第 1/2/3 套裝備的解鎖等級
+var EQUIP_SET_UNLOCK_LEVELS = [1, 500, 500]; // 第 1/2/3 套裝備的解鎖等級
+var EQUIP_SET_UNLOCK_REINCARNATIONS = [0, 0, 1]; // 第 1/2/3 套裝備的最低轉生數
 var FORGE_UNLOCK_LEVEL = 1;               // 神鑄系統解鎖等級（條件一：等級 ≥ 此值）；解鎖後永久保留
 var FORGE_UNLOCK_REINCARNATION = 1;          // 神鑄系統解鎖所需轉生次數（條件二：轉生 ≥ 此值）；需與條件一同時滿足
 var FORGE_MIN_RARITY = 5;                    // 可入爐最低品質（傳說）
@@ -1421,6 +1422,8 @@ var FUSE_GOLD_COST = [0, 100, 300, 900, 2700, 8100]; // 金幣費用，依素材
 var GEM_FUSE_BASE_RATE = 60;
 var GEM_FUSE_RATE_DECAY = 10;
 var GEM_FUSE_MIN_RATE = 10;
+var GEM_FUSION_UNLOCK_LEVEL = 1;
+var GEM_FUSION_UNLOCK_REINCARNATIONS = 3;
 
 /* ---- 寶石商店 ----
    商店等級 1~20：刷出數量與寶石階級機率依下方表格；價格依寶石階級。
