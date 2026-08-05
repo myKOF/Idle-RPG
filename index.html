@@ -591,6 +591,9 @@
             <button id="btn-realm-toggle" class="btn sm" style="display:none;" data-tt-title="切換地圖" data-tt-desc="切換凡人界與神界練功地圖">✨ 神界地圖</button>
           </div>
         </div>
+        <!-- 任務快捷列：內容由 ui.js renderQuestBar() 依 tick 視圖與 TASKS 表填入；
+             點擊：可領取時直接領獎，否則開啟任務總覽（#quest-modal） -->
+        <div id="quest-bar" style="display:none"></div>
         <div class="battle-scene-wrapper" style="position: relative; width: 100%;">
           <div id="btn-enemy-tip" class="info-btn">!</div>
           <div class="battle-scene">
@@ -721,6 +724,20 @@
     </div>
   </div>
 
+  <!-- 任務總覽彈窗：清單由 ui.js renderQuestModal() 依 task 面板投影與 TASKS 表填入 -->
+  <div id="quest-modal" class="modal-overlay" style="display:none">
+    <div class="modal-box" style="display:flex; flex-direction:column; max-height:85vh; width:min(560px, 92vw);">
+      <button id="quest-modal-close" class="modal-x" aria-label="關閉">✕</button>
+      <div class="sec-title" style="text-align:center; margin-bottom:8px;">任務總覽</div>
+      <div class="quest-list-head">
+        <span class="quest-col-name">任務條件</span>
+        <span class="quest-col-prog">進度</span>
+        <span class="quest-col-reward">獎勵</span>
+      </div>
+      <div id="quest-modal-list" style="overflow-y:auto; flex:1; max-height:62vh;"></div>
+    </div>
+  </div>
+
   <!-- 挑戰BOSS結算彈窗 -->
   <div id="confirm-modal" class="modal-overlay confirm-modal" style="display:none">
     <div class="modal-box confirm-box">
@@ -788,30 +805,30 @@
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js"></script>
   <script src="js/ui-scale.js"></script>
-  <script src="js/data.js?v=1.0.4"></script>
+  <script src="js/data.js?v=1.0.5"></script>
   <script src="js/formula.js?v=1.0.1"></script>
   <script src="js/battlefield.js"></script>
   <script src="js/vfx.js"></script>
   <script src="js/stats.js?v=1.0.1"></script>
-  <script src="js/item.js"></script>
+  <script src="js/item.js?v=1.0.1"></script>
   <script src="js/skills.js?v=1.0.4"></script>
   <script src="js/talents.js?v=1.0.1"></script>
-  <script src="js/player.js?v=1.0.2"></script>
+  <script src="js/player.js?v=1.0.3"></script>
   <script src="js/combat.js?v=1.0.1"></script>
   <script src="js/potential.js"></script>
   <script src="js/tower.js?v=1.0.1"></script>
-  <script src="js/save.js?v=1.0.2"></script>
-  <script src="js/ui.js?v=1.0.10"></script>
+  <script src="js/save.js?v=1.0.3"></script>
+  <script src="js/ui.js?v=1.0.11"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js"></script>
   <!-- 模擬 Worker 的協議與橋接。bridge.js 於 DOMContentLoaded 開機 -->
-  <script src="js/worker/protocol.js"></script>
+  <script src="js/worker/protocol.js?v=18"></script>
   <script src="js/storage.js"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.1"></script>
+  <script src="js/bridge.js?v=1.0.2"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

@@ -73,6 +73,30 @@ Worker 是模擬與存檔的唯一權威，主執行緒不再持有 `G`，舊單
 
 Web Worker 遷移全部完成，無進行中的大型工程。
 
+## Claude：新增主線任務系統（2026-08-05）
+
+狀態：已完成（待 Antigravity 驗證）
+
+任務分類：新系統／任務與獎勵
+
+任務目的：新增 22 個循序主線任務（設計文檔：神力之巔_記事錄.xlsx「任務」頁籤）。
+戰鬥區上方顯示任務快捷列（進行中黃點／可領取綠點；點擊領獎或開啟任務總覽彈窗）；
+任務參數與文字撥離為第五張配置表（`config/Excel/Task.xlsx` → `config/CSV/Task.csv` → `js/data.js` 的 `TASKS`）。
+
+負責 AI：Claude
+
+修改範圍：`config/Excel/Task.xlsx`、`config/CSV/Task.csv`（新增）、`tools/config_tables.cjs`（Task schema）、
+`套用參數.bat`、`tools/參數表使用說明.md`、`js/tasks.js`（新增，Worker 端）、`js/data.js`（`TASKS`）、
+`js/item.js`（洗煉/合成計數掛勾、`makeEquipment` 支援指定太古條數）、`js/player.js`（`taskState` 與
+`factory.stats.rerolled/gemComposed`）、`js/save.js`（遷移夾限）、`js/worker/protocol.js`（v18：`task` 面板、
+tick 三純量、`task.claim` 指令）、`js/worker/sim.worker.js`、`docs/WORKER_PROTOCOL.md`、`js/bridge.js`（資產版號）、
+`index.html`、`css/style.css`、`js/ui.js`（快捷列與總覽彈窗）、`tests/task-system.test.cjs`（新增）、
+`tests/worker-protocol.test.cjs`（契約同步 v18）。
+
+測試結果：`tests/task-system.test.cjs` 10/10 通過；完整 `npm test` 1057/1057 通過；`npm run build` 238/238 通過。
+
+完成後交給：Antigravity 驗證（驗證重點見任務回報）。
+
 ## Codex：關閉自動推進時仍解鎖下一關（2026-08-05）
 
 狀態：已完成

@@ -277,6 +277,7 @@ function desiredUiPanelSubscriptions() {
   include(UI_PERSISTENT_PANEL_SUBSCRIPTIONS);
   include(UI_PANEL_SUBSCRIPTIONS_BY_TAB[UI.tab]);
   if (UI.statsPanelOpen) include(['battle']);
+  if (UI.questPanelOpen) include(['task']); // 任務總覽開著才訂閱 task 面板
   if (typeof UI_COMMAND_PENDING !== 'undefined' && UI_COMMAND_PENDING) {
     Object.keys(UI_COMMAND_PENDING.byToken).forEach(function (token) {
       include(Object.keys(UI_COMMAND_PENDING.byToken[token].waitPanels));
@@ -827,6 +828,7 @@ function bindWorkerUiState() {
     }
     if (msg.name === 'tower' || msg.name === 'header') showPendingTowerResultModalIfReady();
     if (msg.name === 'battle' && UI.statsPanelOpen) renderStatsPanel();
+    if (msg.name === 'task' && UI.questPanelOpen) renderQuestModal();
     if (msg.name === 'newforge') {
       updateForgeTabGlow();
       showForgeRebuildNotice();
@@ -2646,6 +2648,7 @@ function renderBattle() {
   renderZoneBar();
   refreshStageDisplay();
   refreshCombatPauseButton();
+  renderQuestBar();
 
   var field = battleSnapshot.field || {};
   var p = field.player || {
@@ -9261,6 +9264,26 @@ function initUI() {
       btnSummaryClear.addEventListener('click', resetStatsFromUi);
     }
   }
+
+  /* 任務快捷列與任務總覽彈窗 */
+  var questBar = $id('quest-bar');
+  if (questBar) {
+    questBar.addEventListener('click', function () {
+      var view = viewState() || {};
+      // 可領取→直接領獎並顯示下一個任務；否則開任務總覽
+      if (view.taskIdx >= 0 && view.taskReady) questClaim();
+      else openQuestModal();
+    });
+  }
+  var questModal = $id('quest-modal');
+  if (questModal) {
+    questModal.addEventListener('click', function (e) {
+      if (e.target === questModal) { closeQuestModal(); return; }
+      if (e.target.closest('[data-quest-claim]')) questClaim();
+    });
+    var questClose = $id('quest-modal-close');
+    if (questClose) questClose.addEventListener('click', closeQuestModal);
+  }
 }
 
 
@@ -9474,6 +9497,118 @@ function stopStatsPanelTimer() {
     UI.statsPanelOpen = false;
     refreshUiPanelSubscriptions();
   }
+}
+
+/* ---- 任務快捷列與任務總覽（2026-08-05）----
+   資料來源分兩層：
+   - 快捷列：tick.view 的 taskIdx / taskProg / taskReady（5Hz 純量）＋共載 TASKS 表
+     （js/data.js——名稱、目標數量、獎勵文字兩端讀同一張表，不隨 tick 傳送）。
+   - 總覽彈窗：task 面板投影（每筆任務的進度與領取狀態），開著時每秒重新索取，
+     生命週期比照統計面板（開/關成對處理訂閱）。
+   點擊快捷列：可領取→送 task.claim 直接領獎；未達成→開任務總覽。 */
+var questPanelTimer = null;
+
+function renderQuestBar() {
+  var bar = $id('quest-bar');
+  if (!bar || typeof TASKS === 'undefined') return;
+  var view = viewState() || {};
+  if (typeof view.taskIdx !== 'number') return; // Worker 尚未回報（開機前）
+  var sig = view.taskIdx + '|' + view.taskProg + '|' + (view.taskReady ? 1 : 0);
+  if (UI.questBarSignature === sig) return;
+  UI.questBarSignature = sig;
+
+  bar.style.display = 'flex';
+  var def = view.taskIdx >= 0 ? TASKS[view.taskIdx] : null;
+  bar.classList.toggle('quest-ready', !!(def && view.taskReady));
+  bar.classList.toggle('quest-alldone', !def);
+  if (!def) {
+    bar.innerHTML = '<span class="quest-dot"></span><span class="quest-name">任務已全部完成</span>';
+    bar.setAttribute('data-tt-title', '任務');
+    bar.setAttribute('data-tt-desc', '所有任務皆已完成，點擊開啟任務總覽');
+    return;
+  }
+  bar.innerHTML = '<span class="quest-dot"></span>' +
+    '<span class="quest-name">' + esc(def.name) + '</span>' +
+    '<span class="quest-progress">（' + view.taskProg + ' / ' + def.count + '）</span>' +
+    '<span class="quest-reward">' + esc(def.rewardLabel) + '</span>' +
+    (view.taskReady ? '<span class="quest-state-doing">可領取！</span>' : '');
+  bar.setAttribute('data-tt-title', '任務 ' + def.order + ' / ' + TASKS.length);
+  bar.setAttribute('data-tt-desc', view.taskReady ? '任務已完成，點擊領取獎勵' : '點擊開啟任務總覽');
+}
+
+function questClaim() {
+  sendUiCommand('task.claim', {}, { keys: ['quest-claim'], panels: ['task'] })
+    .then(function (result) {
+      if (result && result.err) { blog('⚠️ ' + result.err, 'warn', 'system'); return; }
+      if (UI.questPanelOpen) {
+        requestPanelData('task', true);
+        renderQuestModal();
+      }
+    }, function (err) {
+      reportUiCommandFailure('任務領取', err, ['task']);
+    });
+}
+
+function openQuestModal() {
+  var modal = $id('quest-modal');
+  if (!modal) return;
+  UI.questPanelOpen = true;
+  refreshUiPanelSubscriptions();
+  requestPanelData('task', true);
+  renderQuestModal();
+  modal.style.display = 'flex';
+  // 開著期間每秒重新索取並重繪：狀態型進度（穿裝/鑲嵌/生命上限）沒有固定髒區訊號
+  if (questPanelTimer) clearInterval(questPanelTimer);
+  questPanelTimer = setInterval(function () {
+    requestPanelData('task', true);
+    renderQuestModal();
+  }, 1000);
+}
+
+function closeQuestModal() {
+  var modal = $id('quest-modal');
+  if (modal) modal.style.display = 'none';
+  if (questPanelTimer) { clearInterval(questPanelTimer); questPanelTimer = null; }
+  if (UI.questPanelOpen) {
+    UI.questPanelOpen = false;
+    refreshUiPanelSubscriptions();
+  }
+}
+
+function renderQuestModal() {
+  var list = $id('quest-modal-list');
+  if (!list || typeof TASKS === 'undefined') return;
+  if (uiRenderingSuspended()) return; // 背景分頁不重建
+  var snapshot = peekUiPanelData('task');
+  var states = (snapshot && snapshot.tasks) || [];
+  var html = '';
+  for (var i = 0; i < TASKS.length; i++) {
+    var def = TASKS[i];
+    var st = states[i] || null;
+    var claimed = !!(st && st.claimed);
+    var current = !!(st && st.current);
+    var ready = !!(st && st.ready);
+    var prog = st ? st.prog : 0;
+    var cls = claimed ? 'claimed' : (current ? 'current' : 'future');
+    var rewardHtml;
+    if (claimed) {
+      rewardHtml = '已完成';
+    } else {
+      rewardHtml = esc(def.rewardLabel);
+      if (current) {
+        rewardHtml += ready
+          ? '<button type="button" class="btn sm quest-claim-btn" data-quest-claim ' +
+            pendingUiButtonAttributes('quest-claim') + '>領取</button>'
+          : '<span class="quest-state-doing">（進行中）</span>';
+      }
+    }
+    html += '<div class="quest-row ' + cls + '">' +
+      '<span class="quest-col-name">' + esc(def.name) + '</span>' +
+      '<span class="quest-col-prog">（' + prog + ' / ' + def.count + '）</span>' +
+      '<span class="quest-col-reward">' + rewardHtml + '</span>' +
+      '</div>';
+  }
+  setHtmlIfChanged(list, html);
 }
 
 // 開啟結算彈窗時，將目前尚未死亡結算的戰鬥統計更新到最上方。
