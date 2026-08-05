@@ -558,6 +558,8 @@ test('index.html/ui.js/main.js/factory.js/gm.js 接線（合併版）', () => {
   assert.match(html, /id="enc-books"/, '附魔書庫存應搬入熔爐分頁保留');
 
   const layoutCss = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
+  assert.match(layoutCss, /\.nf-part-upgrades\s*\{[\s\S]*?margin:\s*0 24px 12px;/,
+    '零件升級區左右內縮須與熔爐 panel 內容區對齊');
   assert.match(layoutCss, /#ui-shell \.factory-flow \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) !important;/,
     '附魔書庫存節點應使用完整寬度，不被三欄版面壓縮');
   assert.match(layoutCss, /#ui-shell #enc-books \{[\s\S]*?width: 100%;/,

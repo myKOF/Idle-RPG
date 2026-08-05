@@ -7762,7 +7762,8 @@ textarea#save-io {
 }
 
 .nf-part-upgrades {
-  margin-bottom: 12px;
+  /* 對齊下方 .nf-furnace panel 的內容區：panel 的 12px 外框＋12px 內距。 */
+  margin: 0 24px 12px;
 }
 
 .nf-part-upgrade-grid {
