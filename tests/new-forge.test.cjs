@@ -359,7 +359,7 @@ test('帶尾 +N＝各爐專屬佇列真實件數（獨立非共用）；品質�
   assert.equal(G.newForge.queue.length, 10);
 });
 
-/* ============ 8. 零件安裝（共用零件池、快照自由裝配） ============ */
+/* ============ 8. 零件安裝（共用零件池、升級同步） ============ */
 
 function mkPart(c, id, key, tier) {
   const pt = c.PART_TYPES[key];
@@ -367,7 +367,7 @@ function mkPart(c, id, key, tier) {
   return { id, key, tier, val: c.partValueForLevel(key, tier), name: pt.name + ' T' + tier };
 }
 
-test('零件自由裝配：依類型安裝快照、同型可重複裝滿、不佔用零件庫、多爐共用', () => {
+test('零件自由裝配：依類型安裝目前等級、同型可重複裝滿、不佔用零件庫、多爐共用', () => {
   const c = loadContext(LOGIC_FILES);
   const G = freshG(c);
   G.player.reincarnations = 1;
@@ -377,7 +377,7 @@ test('零件自由裝配：依類型安裝快照、同型可重複裝滿、不�
   // 新模型不再消耗零件庫存；所有零件初始 T1，直接使用全域可用等級。
   G.factory.partLevels.speedGear = 5;
   G.factory.partLevels.luckCore = 3;
-  // 依類型安裝：取最高階（T5）快照
+  // 依類型安裝：取目前可用最高階（T5）
   assert.equal(c.newForgeInstallPart(fu1.id, 'speedGear'), null);
   assert.equal(fu1.parts[0].key, 'speedGear');
   assert.equal(fu1.parts[0].tier, 5, '應取最高階零件數值');
@@ -391,13 +391,13 @@ test('零件自由裝配：依類型安裝快照、同型可重複裝滿、不�
   // 非分解槽零件拒絕；所有分解零件初始即有 T1 可裝配
   assert.match(String(c.newForgeInstallPart(fu2.id, 'luckCore')), /無法安裝/);
   assert.equal(c.newForgeInstallPart(fu2.id, 'bookScavenger'), null);
-  // 卸下（依格位索引）：僅移除快照
+  // 卸下（依格位索引）：僅移除該種類槽位
   assert.equal(c.newForgeUninstallPart(fu1.id, 1), true);
   assert.equal(fu1.parts.length, 2);
   assert.equal(G.factory.parts.length, 0);
 });
 
-test('加速齒輪快照生效：同型堆疊、速度倍率＝1＋Σ(數值＋固定加成)/100', () => {
+test('加速齒輪效果生效：同型堆疊、速度倍率＝1＋Σ(數值＋固定加成)/100', () => {
   const c = loadContext(LOGIC_FILES);
   const G = freshG(c);
   const fu = G.newForge.furnaces[0];
@@ -406,7 +406,7 @@ test('加速齒輪快照生效：同型堆疊、速度倍率＝1＋Σ(數值＋�
   c.newForgeInstallPart(fu.id, 'speedGear');
   c.newForgeInstallPart(fu.id, 'speedGear');
   const one = c.effectiveFactoryPartValue('speedGear', sg.val);
-  assert.ok(Math.abs(c.newForgeFurnaceSpeed(fu) - (1 + (one * 2) / 100)) < 1e-9, '同型快照效果應堆疊');
+  assert.ok(Math.abs(c.newForgeFurnaceSpeed(fu) - (1 + (one * 2) / 100)) < 1e-9, '同型零件效果應堆疊');
 });
 
 test('sanitize：舊 id 陣列轉快照、無效項剔除、超量截斷', () => {

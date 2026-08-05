@@ -95,6 +95,44 @@ Web Worker 遷移全部完成，無進行中的大型工程。
 
 完成結果：`completeFieldWave()` 在每次野外戰鬥完成後，先將 `stage.best` 推進至下一關（受地圖上限限制），再依 `autoAdvance` 決定是否更新 `stage.current`。
 
+## Codex：第三套裝備改為 1 轉 Lv.500 開放（2026-08-05）
+
+狀態：已完成
+
+任務分類：裝備套裝解鎖／轉生條件
+
+任務目的：將第三套裝備的開放條件由角色 Lv.2000 改為完成 1 轉且角色 Lv.500。
+
+負責 AI：Codex
+
+允許修改：`docs/AI_TASKS.md`、`js/data.js`、`js/player.js`、`js/save.js`、`js/ui.js`、`tests/unlock-thresholds.test.cjs`、`game_formula.md`
+
+禁止修改：Worker Protocol、其他遊戲規則與掉落資料、其他 AI 進行中的檔案。
+
+前置依賴：無。
+
+測試結果：`node --test tests/unlock-thresholds.test.cjs` 3/3 通過；`npm.cmd run build` 235/235 通過。
+
+## Codex：寶石融合改為 3 轉 Lv.1 開放（2026-08-05）
+
+狀態：已完成
+
+任務目的：雙屬性寶石融合（`gem.fuse`／`fuseGemsV2`）改為角色至少 3 轉且 Lv.1 才能使用。
+
+允許修改：`js/data.js`、`js/item.js`、`js/ui.js`、`tests/unlock-thresholds.test.cjs`、`tests/gem-tooltip.test.cjs`、`tests/part-fused-value-storage.test.cjs`、`game_formula.md`
+
+測試結果：解鎖與融合回歸測試通過；`npm.cmd run build` 235/235 通過；完整測試 1027/1035 通過，剩餘 8 項為既有失敗。
+
+## Codex：同步 8 項既有失敗測試至新版規格（2026-08-05）
+
+狀態：已完成
+
+任務目的：將洗煉、太古詞條、敵人傷害、飄字、初始資源、零件升級與 Worker/UI 靜態檢查測試，對齊目前已採用的新版程式與參數契約。
+
+允許修改：`tests/affix-reroll-bias.test.cjs`、`tests/ancient-affix.test.cjs`、`tests/boss-display-state.test.cjs`、`tests/enemy-type-damage.test.cjs`、`tests/multi-enemy.test.cjs`、`tests/new-game-default-resources.test.cjs`、`tests/part-upgrade.test.cjs`、`tests/player-event-float.test.cjs`、`css/style.css`、`game_formula.md`、必要的 `docs/AI_TASKS.md`。
+
+測試結果：8 個原失敗測試已以新版行為重新驗證；完整測試 1035/1035 通過；`npm.cmd run build` 235/235 通過。
+
 ## Codex：修正野外關卡敵人資訊提示失效（2026-08-04）
 
 狀態：已完成

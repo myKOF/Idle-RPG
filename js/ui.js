@@ -2930,9 +2930,10 @@ function renderEquipSetTabs(equipSnapshot, headerSnapshot) {
   var active = equipSnapshot.equipActive || 0;
   var view = (typeof equipSnapshot.equipView === 'number') ? equipSnapshot.equipView : active;
   var playerLevel = headerSnapshot && headerSnapshot.player ? headerSnapshot.player.level : 0;
+  var playerReincarnations = headerSnapshot && headerSnapshot.player ? headerSnapshot.player.reincarnations : 0;
   function unlocked(index) {
     return typeof equipmentSetUnlockedAtLevel === 'function'
-      ? equipmentSetUnlockedAtLevel(index, playerLevel)
+      ? equipmentSetUnlockedAtLevel(index, playerLevel, playerReincarnations)
       : index < equipSnapshot.sets.length;
   }
   var h = '<div class="eqset-tabrow">';
@@ -2965,7 +2966,11 @@ function renameEquipSet(idx) {
   if (!equipSnapshot || !Array.isArray(equipSnapshot.sets)) return;
   idx = clamp(Math.floor(Number(idx) || 0), 0, equipSnapshot.sets.length - 1);
   if (typeof equipmentSetUnlockedAtLevel === 'function' &&
-    !equipmentSetUnlockedAtLevel(idx, headerSnapshot && headerSnapshot.player ? headerSnapshot.player.level : 0)) return;
+    !equipmentSetUnlockedAtLevel(
+      idx,
+      headerSnapshot && headerSnapshot.player ? headerSnapshot.player.level : 0,
+      headerSnapshot && headerSnapshot.player ? headerSnapshot.player.reincarnations : 0
+    )) return;
   var defName = (typeof equipSetName === 'function') ? equipSetName(idx) : ('第' + (idx + 1) + '套');
   var cur = (equipSnapshot.equipSetNames && equipSnapshot.equipSetNames[idx]) || '';
   showConfirmDialog('為「' + defName + '」設定自訂名稱（留空恢復預設）：', function (val) {
@@ -3629,7 +3634,7 @@ function nfPartSlotsHTML(fu, nf, player) {
   var cells = '';
   for (var s = 0; s < NEW_FORGE_PART_SLOTS_MAX; s++) {
     if (s < fu.partSlots) {
-      var p = fu.parts[s]; // 裝配資料 {key, tier}；tier 是裝配當下的效果快照
+      var p = fu.parts[s]; // 裝配資料 {key, tier}；tier 由零件升級同步刷新
       if (p && PART_TYPES[p.key]) {
         var currentLevel = Number(p.tier !== undefined ? p.tier : ((nf.partLevels && nf.partLevels[p.key]) || 1));
         // 已裝＝正方形小圖示（全稱在 tooltip；點擊依格位索引卸下）
@@ -3663,12 +3668,12 @@ function nfPartsListHTML(fu, factory, nf) {
     var level = levels[key] || 1;
     return '<span class="part-chip" style="cursor:pointer; border-color:var(--accent);" data-nf-fid="' + fu.id +
       '" data-nf-partinstall-key="' + key + '"' + pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
-      ' data-tip="【點擊裝配】T' + level + ' ' + esc(partDesc({ key: key, level: level })) + '；升級後需卸下重裝才套用新效果">' + partIconHTML(key) + esc(partName({ key: key, level: level })) + '</span>';
+      ' data-tip="【點擊裝配】T' + level + ' ' + esc(partDesc({ key: key, level: level })) + '；升級後已裝配效果同步刷新">' + partIconHTML(key) + esc(partName({ key: key, level: level })) + '</span>';
   }).join('');
   return '<div class="nf-parts-list"><div class="nf-parts-list-head">🔧 選擇零件（熔爐 #' + fu.id + '，' +
     fu.parts.length + '/' + fu.partSlots + '）<button class="btn sm" data-nf-fid="' + fu.id + '" data-nf-partsopen="1">收起</button></div>' +
     '<div class="chip-row">' + chips + '</div>' +
-    '<div class="hint">選擇零件種類即可裝配；同類型可重複、連續點擊可一次裝滿。已裝配零件是快照，升級後需卸下再裝配才套用新效果。</div></div>';
+    '<div class="hint">選擇零件種類即可裝配；同類型可重複、連續點擊可一次裝滿。升級零件後，所有熔爐中同名零件效果會同步刷新。</div></div>';
 }
 
 function nfPartUpgradesHTML(factory, player, nf) {
@@ -3691,7 +3696,7 @@ function nfPartUpgradesHTML(factory, player, nf) {
       '<div class="nf-part-upgrade-action">' + button + '</div></div>';
   }).join('');
   return '<div class="nf-part-upgrades"><div class="sec-title">🔧 零件升級</div>' +
-    '<div class="hint">零件等級上限 T' + PART_MAX_TIER + '；升級費用公式為 a + b × c^升級後等級（例如 T5→T6 代入 6）。滑鼠移到圖示可查看效果，已裝配零件需卸下重裝才套用新等級。</div>' +
+    '<div class="hint">零件等級上限 T' + PART_MAX_TIER + '；升級費用公式為 a + b × c^升級後等級（例如 T5→T6 代入 6）。滑鼠移到圖示可查看效果，已裝配零件會立即同步新等級。</div>' +
     '<div class="nf-part-upgrade-grid">' + rows + '</div></div>';
 }
 
@@ -6541,7 +6546,7 @@ function renderGems() {
   renderFuseInfo(gemsSnapshot);
   renderGemConvert(gemsSnapshot);
   renderGemDismantle(gemsSnapshot);
-  renderGemFusion(gemsSnapshot);
+  renderGemFusion(gemsSnapshot, headerSnapshot);
   renderGemShop(gemsSnapshot, headerSnapshot);
 }
 
@@ -6770,11 +6775,29 @@ function gfuseShow(msg, type) {
   }).join('');
 }
 /* ---- 寶石融合 v2（雙屬性，5 階以上寶石均可） ---- */
-function renderGemFusion(gemsSnapshot) {
+function renderGemFusion(gemsSnapshot, headerSnapshot) {
   var slotBox = $id('gfuse-slots');
   if (!slotBox) return;
   gemsSnapshot = resolveGemsPanelSnapshot(gemsSnapshot);
   if (!gemsSnapshot) return;
+  headerSnapshot = headerSnapshot || uiHeaderPanelSnapshot();
+  var player = headerSnapshot && headerSnapshot.player;
+  var fusionUnlocked = Number(player && player.level) >= GEM_FUSION_UNLOCK_LEVEL &&
+    uiReincarnationCount(headerSnapshot) >= GEM_FUSION_UNLOCK_REINCARNATIONS;
+  var fusionButton = $id('gfuse-btn');
+  var clearButton = $id('gfuse-clear');
+  if (!fusionUnlocked) {
+    if (fusionButton) fusionButton.disabled = true;
+    if (clearButton) clearButton.disabled = true;
+    slotBox.innerHTML = '<span class="hint">寶石融合需達到 3 轉且角色 Lv.1 才開放</span>';
+    var lockedInfo = $id('gfuse-info');
+    if (lockedInfo) lockedInfo.textContent = '目前尚未開放寶石融合';
+    var lockedPool = $id('gfuse-pool');
+    if (lockedPool) lockedPool.innerHTML = '<span class="hint">達成開放條件後可選擇 5 階以上寶石素材</span>';
+    return;
+  }
+  if (fusionButton) fusionButton.disabled = false;
+  if (clearButton) clearButton.disabled = false;
   if (!UI.gemFuseSlots) UI.gemFuseSlots = [null, null];
   var h = '';
   for (var i = 0; i < 2; i++) {
@@ -8118,6 +8141,13 @@ function initUI() {
   var gfuseBtn = $id('gfuse-btn');
   if (gfuseBtn) {
     gfuseBtn.addEventListener('click', function () {
+      var header = uiHeaderPanelSnapshot();
+      var player = header && header.player;
+      if (Number(player && player.level) < GEM_FUSION_UNLOCK_LEVEL ||
+        uiReincarnationCount(header) < GEM_FUSION_UNLOCK_REINCARNATIONS) {
+        blog('⚠️ 寶石融合需達到 3 轉且角色 Lv.1 才開放', 'warn');
+        return;
+      }
       if (!UI.gemFuseSlots || !UI.gemFuseSlots[0] || !UI.gemFuseSlots[1]) {
         blog('⚠️ 請先放入 2 顆 5 階寶石素材', 'warn');
         return;
@@ -8579,6 +8609,13 @@ function initUI() {
     // 寶石融合 v2：素材放入 / 移出
     var gfp = e.target.closest('[data-gfuse-pick]');
     if (gfp) {
+      var gfHeader = uiHeaderPanelSnapshot();
+      var gfPlayer = gfHeader && gfHeader.player;
+      if (Number(gfPlayer && gfPlayer.level) < GEM_FUSION_UNLOCK_LEVEL ||
+        uiReincarnationCount(gfHeader) < GEM_FUSION_UNLOCK_REINCARNATIONS) {
+        blog('⚠️ 寶石融合需達到 3 轉且角色 Lv.1 才開放', 'warn');
+        return;
+      }
       if (!UI.gemFuseSlots) UI.gemFuseSlots = [null, null];
       var pv = gfp.getAttribute('data-gfuse-pick').split(':');
       var pref = pv[0] === 'plain'

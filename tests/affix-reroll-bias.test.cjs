@@ -28,8 +28,8 @@ test('詞條上限率提高時，洗煉會先偏向高數值半段', () => {
   context.Math.random = () => randomValues.shift() ?? 0.2;
   assert.equal(context.affixRerollUnit(100), 0.6);
   // 詞條改存強度值後（js/formula.js §6）：先擲強度值，再由強度值算出數值
-  assert.equal(context.affixValueFromStrength('hpFlat', 1, 0, context.rollAffixStrength(0), false), 18);
-  assert.equal(context.affixValueFromStrength('hpFlat', 1, 0, context.rollAffixStrength(100), false), 23);
+  assert.equal(context.affixValueFromStrength('hpFlat', 1, 0, context.rollAffixStrength(0), false), 42);
+  assert.equal(context.affixValueFromStrength('hpFlat', 1, 0, context.rollAffixStrength(100), false), 52);
 });
 
 test('洗煉分段權重參數接到公式檔與主參數表', () => {

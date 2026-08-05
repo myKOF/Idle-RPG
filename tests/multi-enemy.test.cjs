@@ -234,7 +234,7 @@ test('戰鬥畫面與敵方 tooltip 使用可見敵人列表，保留死亡待�
   assert.match(ui, /renderBattle[\s\S]*battleSnapshot\.field/);
   assert.match(ui, /enemy\.hp > 0 \|\| \(enemy\._rewarded && Number\(enemy\._deathClearCd\) > 0\)/);
   assert.match(ui, /card\.classList\.toggle\('is-dead', liveEnemy\.hp <= 0\)/);
-  assert.match(css, /\.enemy-card\.is-dead > :not\(\.float-layer\)\s*\{[\s\S]*animation:\s*enemyDeathFade 2s linear forwards/);
+  assert.match(css, /\.enemy-card\.is-dead\s*>\s*:not\(\.float-layer\)\s*\{[\s\S]*animation:\s*enemyDeathFade 2s linear forwards/);
   assert.match(css, /@keyframes enemyDeathFade\s*\{[\s\S]*opacity:\s*1[\s\S]*opacity:\s*0\.1/);
 
   const floatLifetime = Number(ui.match(/var FLOAT_TEXT_LIFETIME_MS = (\d+)/)?.[1]);

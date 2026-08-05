@@ -9,7 +9,7 @@ function loadContext() {
   const context = { console, Math };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/player.js', 'js/forge.js'].forEach((file) => {
+  ['js/util.js', 'js/data.js', 'js/player.js', 'js/forge.js', 'js/item.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   context.reincarnationCount = () => Number(context.G.player.reincarnations || 0);
@@ -18,7 +18,7 @@ function loadContext() {
 
 const saveSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'save.js'), 'utf8');
 
-test('裝備套裝依序在 Lv.1、Lv.500、Lv.2000 開放', () => {
+test('裝備套裝依序在 Lv.1、Lv.500、1轉 Lv.500 開放', () => {
   const context = loadContext();
   context.G = { player: { level: 499, reincarnations: 0 } };
   assert.equal(context.equipmentSetUnlocked(0), true);
@@ -29,12 +29,18 @@ test('裝備套裝依序在 Lv.1、Lv.500、Lv.2000 開放', () => {
   assert.equal(context.equipmentSetUnlocked(1), true);
   assert.equal(context.equipmentSetUnlocked(2), false);
 
-  context.G.player.level = 2000;
+  context.G.player.level = 500;
+  context.G.player.reincarnations = 1;
   assert.equal(context.equipmentSetUnlocked(2), true);
-  assert.equal(context.equipmentSetUnlockedAtLevel(1, 500), true);
-  assert.equal(context.equipmentSetUnlockedAtLevel(2, 500), false);
+  assert.equal(context.equipmentSetUnlockedAtLevel(1, 500, 0), true);
+  assert.equal(context.equipmentSetUnlockedAtLevel(2, 500, 0), false);
+  assert.equal(context.equipmentSetUnlockedAtLevel(2, 500, 1), true);
+  context.G.player.reincarnations = 0;
+  assert.equal(context.equipmentSetUnlocked(2), false);
+  context.G.player.reincarnations = 1;
+  assert.equal(context.equipmentSetUnlocked(2), true);
   assert.match(saveSource, /equipmentSetUnlockedAtLevel/);
-  assert.doesNotMatch(saveSource, /data\.player\.level\s*<\s*2000/);
+  assert.match(saveSource, /data\.player\s*&&\s*data\.player\.reincarnations/);
 });
 
 test('神鑄需達 Lv.1 且 1 轉，開放後永久保留', () => {
@@ -49,4 +55,17 @@ test('神鑄需達 Lv.1 且 1 轉，開放後永久保留', () => {
   context.G.player.level = 1;
   context.G.player.reincarnations = 0;
   assert.equal(context.forgeUnlocked(), true);
+});
+
+test('寶石融合在 3 轉且 Lv.1 開放', () => {
+  const context = loadContext();
+  context.G = { player: { level: 1, reincarnations: 2 } };
+  assert.equal(context.gemFusionUnlockedAtLevel(1, 2), false);
+  assert.equal(context.gemFusionUnlockedAtLevel(1, 3), true);
+  assert.equal(context.gemFusionUnlockedAtLevel(0, 3), false);
+  assert.match(context.fuseGemsV2({}, {}).err, /3 轉/);
+
+  context.G.player.reincarnations = 3;
+  assert.equal(context.gemFusionUnlocked(), true);
+  assert.match(context.fuseGemsV2({}, {}).err, /素材不足/);
 });

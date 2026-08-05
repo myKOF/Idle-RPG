@@ -102,7 +102,7 @@ test('寶石融合素材池使用相同的方形圖示資訊', () => {
   gems.garnet[6] = 1;
   context.UI.gemFuseSlots = [null, null];
 
-  context.renderGemFusion({ gems, fusedGems: [] });
+  context.renderGemFusion({ gems, fusedGems: [] }, { player: { level: 1, reincarnations: 3 } });
 
   const html = elements.get('gfuse-pool').innerHTML;
   assert.match(html, /gem-inventory-cell/);

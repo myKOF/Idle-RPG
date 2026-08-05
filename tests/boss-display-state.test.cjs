@@ -12,8 +12,8 @@ test('高塔傷害飄字會在沒有新傷害後清理，且進場會清除上�
 
   assert.match(ui, /function clearFloatLayer\(elId\)/);
   assert.match(ui, /function clearTowerFloatLayers\(\)/);
-  assert.match(ui, /existing\._damageFloatTotal \+= damageValue;[\s\S]*?scheduleFloatTextRemoval\(existing, FLOAT_TEXT_LIFETIME_MS\)/);
-  assert.match(ui, /layer\.appendChild\(sp\);[\s\S]*?scheduleFloatTextRemoval\(sp, FLOAT_TEXT_LIFETIME_MS\);/);
+  assert.match(ui, /existing\._damageFloatTotal \+= damageValue;[\s\S]*?scheduleFloatTextRemoval\(existing, enemyDamageFloatLifetimeMs\(existing\)\)/);
+  assert.match(ui, /layer\.appendChild\(sp\);[\s\S]*?scheduleFloatTextRemoval\(sp, enemyDamageFloatLifetimeMs\(sp\)\);/);
   assert.match(tower, /if \(typeof clearTowerFloatLayers === 'function'\) clearTowerFloatLayers\(\);/);
   assert.match(combat, /if \(COMBAT_PAUSED && typeof clearTowerFloatLayers === 'function'[\s\S]*?clearTowerFloatLayers\(\);/);
 });
