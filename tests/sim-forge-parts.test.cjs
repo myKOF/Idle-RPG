@@ -328,7 +328,7 @@ test('真引擎：熔爐面板新增的三個欄位都是遊戲算的，且不�
   assert.ok(!('partSlotCost' in pan.newForge.furnaces[0]), '不得把衍生欄位寫進存檔物件');
 });
 
-test('真引擎：零件升級後，舊快照要拆下重裝才套用新階級', () => {
+test('真引擎：零件升級後，所有已裝配同種類零件立即同步新階級', () => {
   const e = createEngine({ seed: 8 }).boot(null);
   const c = e.ctx;
   const fu = c.G.newForge.furnaces[0];
@@ -339,12 +339,8 @@ test('真引擎：零件升級後，舊快照要拆下重裝才套用新階級',
   assert.equal(fu.parts[0].tier, 2, '安裝時應保存當下階級');
   const before = c.newForgePartBonus(fu, 'extractLens');
 
-  c.G.factory.partLevels.extractLens = 5;
-  assert.equal(fu.parts[0].tier, 2, '升級庫存不應改寫已裝快照');
-  assert.equal(c.newForgePartBonus(fu, 'extractLens'), before, '未重裝前效果應維持舊快照');
-
-  assert.equal(c.newForgeUninstallPart(fu.id, 0), true);
-  assert.equal(c.newForgeInstallPart(fu.id, 'extractLens'), null);
-  assert.equal(fu.parts[0].tier, 5, '重裝後才應使用新階級');
-  assert.ok(c.newForgePartBonus(fu, 'extractLens') > before, '重裝後效果應提升');
+  c.G.player.gold = c.partUpgradeCost(3);
+  assert.equal(c.newForgeUpgradePart('extractLens'), null);
+  assert.equal(fu.parts[0].tier, 3, '升級後已裝零件應同步到新階級');
+  assert.ok(c.newForgePartBonus(fu, 'extractLens') > before, '升級後效果應立即提升');
 });

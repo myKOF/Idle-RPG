@@ -50,8 +50,10 @@ test('新遊戲所有零件從 T1 開始，效果使用 base + perLevel', () => 
 
 test('零件升級費用用升級後目標等級計算，且滿級停止', () => {
   const c = loadContext(LOGIC_FILES);
-  assert.equal(c.partUpgradeCost(2), 1000 + 1000 * Math.pow(2, 2));
-  assert.equal(c.partUpgradeCost(6), 1000 + 1000 * Math.pow(2, 6));
+  const expectedCost = (level) => c.PART_UPGRADE_COST_A +
+    c.PART_UPGRADE_COST_B * Math.pow(c.PART_UPGRADE_COST_C, level);
+  assert.equal(c.partUpgradeCost(2), expectedCost(2));
+  assert.equal(c.partUpgradeCost(6), expectedCost(6));
 
   const state = c.newGameState();
   c.G = state;
@@ -66,7 +68,7 @@ test('零件升級費用用升級後目標等級計算，且滿級停止', () =>
   assert.equal(state.player.gold, 100);
 });
 
-test('已裝配零件升級後維持快照，卸下重裝才套用新等級效果', () => {
+test('已裝配零件升級後，所有熔爐同種類效果立即同步', () => {
   const c = loadContext(LOGIC_FILES);
   const state = c.newGameState();
   c.G = state;
@@ -80,14 +82,12 @@ test('已裝配零件升級後維持快照，卸下重裝才套用新等級效�
 
   state.player.gold = c.partUpgradeCost(2);
   assert.equal(c.newForgeUpgradePart('scrapForge'), null);
-  // 熔爐零件是快照制；升級不會回溯已裝配的效果。
-  assert.equal(c.newForgePartBonus(first, 'scrapForge'), 20);
-  assert.equal(c.newForgePartBonus(second, 'scrapForge'), 20);
-  assert.equal(c.newForgeUninstallPart(first.id, 0), true);
-  assert.equal(c.newForgeInstallPart(first.id, 'scrapForge'), null);
+  // 零件升級會同步刷新所有熔爐中同種類已裝配零件。
   assert.equal(c.newForgePartBonus(first, 'scrapForge'), 40);
+  assert.equal(c.newForgePartBonus(second, 'scrapForge'), 40);
   assert.equal(first.parts[0].key, 'scrapForge');
   assert.equal(first.parts[0].tier, 2);
+  assert.equal(second.parts[0].tier, 2);
 });
 
 test('野外、離線與高塔流程不再包含零件掉落或隨機階級', () => {
