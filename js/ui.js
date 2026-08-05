@@ -9295,10 +9295,10 @@ function initUI() {
   /* 任務快捷列與任務總覽彈窗 */
   var questBar = $id('quest-bar');
   if (questBar) {
-    questBar.addEventListener('click', function () {
+    questBar.addEventListener('click', function (e) {
       var view = viewState() || {};
-      // 可領取→直接領獎並顯示下一個任務；否則開任務總覽
-      if (view.taskIdx >= 0 && view.taskReady) questClaim();
+      // 可領取→領獎並觸發領取與飛行特效；否則開任務總覽
+      if (view.taskIdx >= 0 && view.taskReady) questClaim(e ? e.target : questBar);
       else openQuestModal();
     });
   }
@@ -9306,7 +9306,8 @@ function initUI() {
   if (questModal) {
     questModal.addEventListener('click', function (e) {
       if (e.target === questModal) { closeQuestModal(); return; }
-      if (e.target.closest('[data-quest-claim]')) questClaim();
+      var claimBtn = e.target.closest('[data-quest-claim]');
+      if (claimBtn) questClaim(claimBtn);
     });
     var questClose = $id('quest-modal-close');
     if (questClose) questClose.addEventListener('click', closeQuestModal);
@@ -9563,10 +9564,149 @@ function renderQuestBar() {
   bar.setAttribute('data-tt-desc', view.taskReady ? '任務已完成，點擊領取獎勵' : '點擊開啟任務總覽');
 }
 
-function questClaim() {
+function spawnQuestRewardFlyFx(rewardType, sourceEl) {
+  if (typeof document === 'undefined' || !sourceEl || typeof sourceEl.getBoundingClientRect !== 'function') return;
+  
+  // 1. 任務列/點擊目標閃光特效
+  var flashTarget = sourceEl.closest ? (sourceEl.closest('.quest-row') || sourceEl.closest('#quest-bar') || sourceEl) : sourceEl;
+  if (flashTarget && flashTarget.classList) {
+    flashTarget.classList.remove('quest-claim-flash');
+    void flashTarget.offsetWidth; // 強制重繪觸發動畫
+    flashTarget.classList.add('quest-claim-flash');
+    setTimeout(function () {
+      if (flashTarget && flashTarget.classList) flashTarget.classList.remove('quest-claim-flash');
+    }, 700);
+  }
+
+  // 2. 確定起點 (Start Box)
+  var srcRect = sourceEl.getBoundingClientRect();
+  var startX = srcRect.left + srcRect.width / 2;
+  var startY = srcRect.top + srcRect.height / 2;
+
+  // 3. 確定終點與 Icon 內容 (Target Box & Icon Content)
+  var destEl = null;
+  var iconHtml = '';
+  switch (rewardType) {
+    case 'gold':
+      destEl = document.getElementById('r-gold') ? document.getElementById('r-gold').parentElement : null;
+      iconHtml = '<img src="images/icon_gold.png" alt="gold">';
+      break;
+    case 'scrap':
+      destEl = document.getElementById('r-scrap') ? document.getElementById('r-scrap').parentElement : null;
+      iconHtml = '<img src="images/icon_scrap.png" alt="scrap">';
+      break;
+    case 'essence':
+      destEl = document.getElementById('r-essence') ? document.getElementById('r-essence').parentElement : null;
+      iconHtml = '<img src="images/icon_essence.png" alt="essence">';
+      break;
+    case 'gem':
+      destEl = document.getElementById('r-gems') ? document.getElementById('r-gems').parentElement : null;
+      iconHtml = '<img src="images/icon_gems.png" alt="gems">';
+      break;
+    case 'book':
+      destEl = document.getElementById('r-books') ? document.getElementById('r-books').parentElement : null;
+      iconHtml = '<img src="images/icon_books.png" alt="books">';
+      break;
+    case 'skillXp':
+      destEl = document.querySelector('[data-tab="skills"]') || document.getElementById('r-gold');
+      iconHtml = '<span class="fly-emoji">🧠</span>';
+      break;
+    case 'equip':
+    default:
+      destEl = document.getElementById('inv-section-box') || document.querySelector('[data-tab="equip"]');
+      iconHtml = '<span class="fly-emoji">⚔️</span>';
+      break;
+  }
+
+  var endX = window.innerWidth / 2;
+  var endY = 30;
+  if (destEl && typeof destEl.getBoundingClientRect === 'function') {
+    var destRect = destEl.getBoundingClientRect();
+    if (destRect.width > 0 && destRect.height > 0) {
+      endX = destRect.left + destRect.width / 2;
+      endY = destRect.top + destRect.height / 2;
+    }
+  }
+
+  // 4. 動態創建飛行 Icon DOM
+  var flyEl = document.createElement('div');
+  flyEl.className = 'quest-fly-reward';
+  flyEl.innerHTML = iconHtml;
+  flyEl.style.left = startX + 'px';
+  flyEl.style.top = startY + 'px';
+  document.body.appendChild(flyEl);
+
+  // 曲線控制點 (Control Point for Quadratic Bezier)
+  var cpX = (startX + endX) / 2 + (Math.random() - 0.5) * 120;
+  var cpY = Math.min(startY, endY) - 60 - Math.random() * 60;
+
+  var startTime = null;
+  var duration = 750; // 飛行時間 750ms
+
+  function animateFly(timestamp) {
+    if (!startTime) startTime = timestamp;
+    var elapsed = timestamp - startTime;
+    var t = Math.min(1, elapsed / duration);
+
+    // 貝茲曲線計算：B(t) = (1-t)^2 * P0 + 2(1-t)t * P1 + t^2 * P2
+    var invT = 1 - t;
+    var curX = invT * invT * startX + 2 * invT * t * cpX + t * t * endX;
+    var curY = invT * invT * startY + 2 * invT * t * cpY + t * t * endY;
+
+    // 縮放與旋轉效果
+    var scale = t < 0.2 ? (t / 0.2) * 1.3 : (1.3 - (t - 0.2) * 0.4);
+    flyEl.style.left = curX + 'px';
+    flyEl.style.top = curY + 'px';
+    flyEl.style.transform = 'scale(' + scale + ') rotate(' + (t * 360) + 'deg)';
+
+    // 生成長拖尾粒子 (Trail Particle)
+    if (t < 0.95 && Math.random() < 0.75) {
+      var p = document.createElement('div');
+      p.className = 'fly-trail-particle';
+      var pSize = Math.floor(Math.random() * 8) + 6;
+      p.style.width = pSize + 'px';
+      p.style.height = pSize + 'px';
+      p.style.left = (curX + (Math.random() - 0.5) * 8) + 'px';
+      p.style.top = (curY + (Math.random() - 0.5) * 8) + 'px';
+      document.body.appendChild(p);
+      setTimeout(function () {
+        if (p && p.parentNode) p.parentNode.removeChild(p);
+      }, 450);
+    }
+
+    if (t < 1) {
+      requestAnimationFrame(animateFly);
+    } else {
+      // 飛行結束
+      if (flyEl && flyEl.parentNode) flyEl.parentNode.removeChild(flyEl);
+      // 到達目的地觸發脈衝彈跳
+      if (destEl && destEl.classList) {
+        destEl.classList.remove('res-hit-bump');
+        void destEl.offsetWidth;
+        destEl.classList.add('res-hit-bump');
+        setTimeout(function () {
+          if (destEl && destEl.classList) destEl.classList.remove('res-hit-bump');
+        }, 400);
+      }
+    }
+  }
+
+  requestAnimationFrame(animateFly);
+}
+
+function questClaim(sourceEl) {
+  var view = viewState() || {};
+  var taskDef = (view.taskIdx >= 0 && typeof TASKS !== 'undefined') ? TASKS[view.taskIdx] : null;
+  var rewardType = taskDef ? taskDef.rewardType : 'gold';
+
   sendUiCommand('task.claim', {}, { keys: ['quest-claim'], panels: ['task'] })
     .then(function (result) {
       if (result && result.err) { blog('⚠️ ' + result.err, 'warn', 'system'); return; }
+      
+      // 成功領取時觸發特效
+      var triggerEl = sourceEl || document.getElementById('quest-bar');
+      spawnQuestRewardFlyFx(rewardType, triggerEl);
+
       if (UI.questPanelOpen) {
         requestPanelData('task', true);
         renderQuestModal();
