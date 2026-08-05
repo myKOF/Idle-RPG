@@ -110,3 +110,11 @@ test('寶石融合素材池使用相同的方形圖示資訊', () => {
   assert.match(html, /gem-chip-emoji/);
   assert.match(html, /gem-chip-level/);
 });
+
+test('未達開放條件時，寶石融合整個區塊隱藏', () => {
+  const { context, elements } = loadGameContext();
+  const gems = makeGemInventory(context.GEM_TYPES);
+  context.renderGemFusion({ gems, fusedGems: [] }, { player: { level: 1, reincarnations: 2 } });
+
+  assert.equal(elements.get('gem-fusion-panel').style.display, 'none');
+});

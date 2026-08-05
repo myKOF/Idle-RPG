@@ -5,7 +5,7 @@
    依各熔爐勾選的品質自動送入傳送帶拆解（由右至左入爐），未勾選/上鎖/神鑄創世＝保留入包。
 
    拆解規則沿用舊分解槽（factory.js doSalvage：碎片/金幣/附魔精華/太古精華與各零件事件），
-   零件加成改由「該熔爐零件格」保存的 tier 提供（newForgePartBonus）；升級後同步刷新。
+   零件加成改由「該熔爐零件格」保存的 key，搭配 factory.partLevels 即時計算。
    熔爐可設數量與轉生連動（formula.js newForgeMaxFurnaces）；每爐零件格 3~8，
    金幣逐格解鎖（formula.js newForgePartSlotCost）。全服開放（原本地服限定已解除）。 */
 
@@ -180,9 +180,9 @@ function findNewForgeFurnace(id) {
   return null;
 }
 
-/* ---- 零件自由裝配（升級同步）----
-   依「類型」安裝：記錄零件 key 與當下可取得的最高階 tier；
-   同類型可重複裝滿、多座熔爐可共用同一批庫存，升級後同步刷新所有已裝配同類型零件，
+/* ---- 零件自由裝配（全域等級）----
+   依「類型」安裝：只記錄零件 key，效果等級由 factory.partLevels 即時決定；
+   同類型可重複裝滿、多座熔爐可共用同一批庫存，升級後所有已裝配同類型零件自動套用新值，
    僅零件格數（partSlots，上限 8）為上限。
    全部 10 種分解槽零件皆對該熔爐生效：加速齒輪（入爐速度）走 newForgeFurnaceSpeed，
    其餘產量/事件類經 newForgeSalvage → doSalvage 套用。 ---- */
@@ -195,7 +195,7 @@ function newForgeInstallPart(furnaceId, partKey) {
   var levels = ensurePartLevels(G.factory);
   var level = partLevelFor(partKey, levels);
   if (!level) return '此零件尚未解鎖';
-  fu.parts.push({ key: partKey, tier: level }); // tier 會在同類型零件升級時同步刷新
+  fu.parts.push({ key: partKey });
   UI.dirty.newforge = true;
   nflog('🔧 已裝配 ' + partName({ key: partKey, level: level }) + ' 至熔爐 #' + fu.id, 'good');
   return null;
@@ -208,12 +208,15 @@ function newForgeUninstallPart(furnaceId, slotIdx) {
   nflog('🔧 已卸下 ' + partName(removed) + '（熔爐 #' + fu.id + '）', 'info');
   return true;
 }
-// 該熔爐零件加成：同類型格位堆疊，數值取各格目前同步後的 tier
+// 該熔爐零件加成：同類型格位堆疊，數值取 factory.partLevels 的目前等級
 function newForgePartBonus(fu, key) {
+  var factoryLevels = (typeof G !== 'undefined' && G && G.factory) ? G.factory.partLevels : null;
+  var level = partLevelFor(key, factoryLevels);
+  var value = partValueForLevel(key, level);
   var sum = 0;
   for (var i = 0; i < fu.parts.length; i++) {
     var p = fu.parts[i];
-    if (p && p.key === key) sum += effectiveFactoryPartValue(p.key, partValue(p));
+    if (p && p.key === key) sum += effectiveFactoryPartValue(key, value);
   }
   return sum;
 }
@@ -229,16 +232,7 @@ function newForgeUpgradePart(partKey) {
   G.player.gold -= cost;
   var nextLevel = current + 1;
   levels[partKey] = nextLevel;
-  // 零件效果不是一次性快照：升級後所有熔爐同種類的已裝配零件立即同步。
-  var furnaces = G.newForge && Array.isArray(G.newForge.furnaces) ? G.newForge.furnaces : [];
-  for (var fi = 0; fi < furnaces.length; fi++) {
-    var parts = Array.isArray(furnaces[fi].parts) ? furnaces[fi].parts : [];
-    for (var pi = 0; pi < parts.length; pi++) {
-      if (!parts[pi] || parts[pi].key !== partKey) continue;
-      parts[pi].tier = nextLevel;
-      if (parts[pi].level !== undefined) parts[pi].level = nextLevel;
-    }
-  }
+  // 熔爐只保存零件 key；升級後效果由 factory.partLevels 即時計算，無需改寫熔爐存檔。
   UI.dirty.header = true;
   UI.dirty.newforge = true;
   nflog('⬆️ ' + pt.name + ' 升級至 T' + (current + 1) + '，消耗金幣 ' + fmt(cost), 'good');
@@ -365,7 +359,7 @@ function sanitizeNewForge(data) {
     if (!Array.isArray(fu.parts)) fu.parts = [];
     if (fu.id > maxId) maxId = fu.id;
   }
-  // 零件資料清理：舊版 id／快照轉成 { key, tier }，失效剔除、超量截斷
+  // 零件資料清理：舊版 id／快照轉成只含 key 的資料，失效剔除、超量截斷
   (function sanitizeParts() {
     var poolById = {};
     ((data.factory && data.factory.parts) || []).forEach(function (p) { if (p && p.id) poolById[p.id] = p; });
@@ -386,10 +380,7 @@ function sanitizeNewForge(data) {
         return true;
       }).map(function (e) {
         if (!e) return null;
-        var tier = Number(e.level !== undefined ? e.level : e.tier);
-        return { key: e.key, tier: isFinite(tier)
-          ? clamp(Math.floor(tier), 1, PART_MAX_TIER)
-          : partLevelFor(e.key, levels) };
+        return { key: e.key };
       }).filter(function (e) { return !!e; });
       if (fu2.parts.length > fu2.partSlots) fu2.parts.length = fu2.partSlots;
     }

@@ -1174,14 +1174,12 @@ function decide(state, policy, memo) {
            微調     rebalance       —— 只有一種材料見底時，另一座爐讓出 shiftSlots 格
            加速     backlog         —— 該爐專屬佇列積到門檻才換上加速齒輪
 
-         ⚠️ 零件是**快照制**：安裝時複製「玩家持有的該類型最高階」的數值，
-         不佔用也不消耗庫存，同類型可以重複裝滿、兩座爐可以共用同一批零件
-         （newforge.js newForgeInstallPart）。所以這裡不必做庫存配額，
-         只要格子夠就能裝；但也因為是快照，早期用 T3 裝上去之後不會自己變成 T7——
-         所以下面要比對 tier，過期的快照拆掉重裝。 */
+         ⚠️ 熔爐只保存零件種類，不保存階級；效果數值一律由遊戲的全域
+         partLevels 即時計算。零件不佔用也不消耗庫存，同類型可以重複裝滿、
+         兩座爐可以共用同一批零件（newforge.js newForgeInstallPart）。
+         因此這裡不必做庫存配額，也不必因零件升級而拆下重裝。 */
       var fpCfg = r.forgeParts;
       var fpFur = pathVal(state, fpCfg.furnaces) || [];
-      var fpOwned = pathVal(state, fpCfg.owned) || {};
       var fpPlan = fpCfg.plan || [];
       if (fpPlan.length) {
         /* ---- 微調：哪一種材料比較緊 ----
@@ -1224,7 +1222,7 @@ function decide(state, policy, memo) {
                16:50 把碎片熔煉爐裝進 1 號爐、16:55 又換回精粹透鏡，
                整場 308 次安裝／146 次拆卸，其中大半是這樣來回搬。
 
-               churn 本身不花資源（零件是快照制），但時間平均下來等於沒有微調過——
+               churn 本身不花資源，但時間平均下來等於沒有微調過——
                而且熔爐派工取負載最少者，兩座爐互相讓格子會直接互相抵銷。 */
             if (!memo.forge) memo.forge = {};
             var fm = memo.forge[r.id] || (memo.forge[r.id] = { last: null, run: 0, applied: null });
@@ -1287,9 +1285,9 @@ function decide(state, policy, memo) {
             var hp = have[hi];
             var keep = false;
             if (hp && hp.key && need[hp.key] > 0) {
-              /* 快照過期（庫存已有更高階）就拆掉重裝，換得的是整座爐的加成。 */
-              var best = Number(fpOwned[hp.key]);
-              keep = !(best > (Number(hp.tier) || 0));
+              /* 熔爐零件只保存 key；效果等級由遊戲的全域 partLevels 即時計算，
+                 升級後不需要拆下重裝，保留同種類格位即可。 */
+              keep = true;
             }
             if (!keep && !canDrop) { need[hp.key] = (need[hp.key] || 0); continue; } // 拆不了：這一格就這樣佔著
             if (keep) need[hp.key]--;
