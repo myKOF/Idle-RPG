@@ -132,6 +132,13 @@ function bfMarkOccupied(occupied, cell) {
   }
 }
 
+function bfCenteredOrigin(total, size) {
+  // When an even-sized boss is placed on an odd-sized board there is no
+  // single exact center cell; choose the right/bottom of the two closest
+  // origins so the entity's center stays nearest the battlefield center.
+  return Math.max(1, Math.floor((total - size + 1) / 2) + 1);
+}
+
 /* 隨機配格：就地寫入 ent.cell = { col, row, w, h }，回傳「成功配到格」的實體（維持傳入順序）。
    - 佔格大的先配，否則小怪會把 BOSS 需要的 2×2 空間切碎。
    - BOSS 若真的放不下就退回 1×1（寧可縮小佔格，也不要讓敵人整隻消失）。
@@ -144,6 +151,28 @@ function bfPlaceEnemies(enemies) {
   });
   var occupied = {};
   var ok = [];
+
+  // Outdoor boss waves currently contain one boss, but keep this as a
+  // count-based rule so it remains correct if the wave table changes. A
+  // single boss owns the center 2x2 position before other enemies are
+  // packed around it; multiple-boss waves retain the normal random layout.
+  var bosses = list.filter(function (e) { return !!e.isBoss; });
+  if (bosses.length === 1) {
+    var boss = bosses[0];
+    boss.cell = null;
+    var bossSize = bfEntitySize(boss);
+    var centered = {
+      col: bfCenteredOrigin(bfCols(), bossSize.w),
+      row: bfCenteredOrigin(bfRows(), bossSize.h)
+    };
+    if (bfBoxFree(occupied, centered.col, centered.row, bossSize.w, bossSize.h)) {
+      boss.cell = { col: centered.col, row: centered.row, w: bossSize.w, h: bossSize.h };
+      bfMarkOccupied(occupied, boss.cell);
+      ok.push(boss);
+      order = order.filter(function (e) { return e !== boss; });
+    }
+  }
+
   for (var i = 0; i < order.length; i++) {
     var ent = order[i];
     ent.cell = null;
