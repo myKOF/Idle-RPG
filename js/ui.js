@@ -3630,13 +3630,14 @@ function nfBeltChipsHTML(fu) {
 
 // 零件置入格列：已裝＝零件晶片（點擊卸下）、空格＝零件N（點擊開啟零件列表）、
 // 下一格＝🔒解鎖（顯示金幣成本）、其餘＝🔒
-function nfPartSlotsHTML(fu, nf, player) {
+function nfPartSlotsHTML(fu, nf, factory, player) {
   var cells = '';
   for (var s = 0; s < NEW_FORGE_PART_SLOTS_MAX; s++) {
     if (s < fu.partSlots) {
       var p = fu.parts[s]; // 裝配資料只保存 {key}；等級由 nf.partLevels 即時決定
       if (p && PART_TYPES[p.key]) {
-        var currentLevel = Number(nf.partLevels && nf.partLevels[p.key]) || 1;
+        var partLevels = (nf && nf.partLevels) || (factory && factory.partLevels) || {};
+        var currentLevel = Number(partLevels[p.key]) || 1;
         // 已裝＝正方形小圖示（全稱在 tooltip；點擊依格位索引卸下）
         cells += '<button class="nf-part-slot nf-part-filled nf-part-ico" data-nf-fid="' + fu.id + '" data-nf-partun="' + s + '"' +
           pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
@@ -3717,7 +3718,7 @@ function nfFurnaceHTML(fu, nf, factory, player) {
     '<div class="nf-belt"><span class="nf-belt-mouth" data-tip="熔爐入口：帶頭裝備由此入爐拆解">' + NEW_FORGE_EMOJI + '</span>' +
     '<span class="nf-belt-items" data-nf-belt="' + fu.id + '"></span>' +
     '<span class="nf-belt-more" data-nf-more="' + fu.id + '"></span></div>' +
-    nfPartSlotsHTML(fu, nf, player) +
+    nfPartSlotsHTML(fu, nf, factory, player) +
     (UI.nfPartsOpen && UI.nfPartsOpen[fu.id] ? nfPartsListHTML(fu, factory, nf) : '');
   return '<div class="panel node-card nf-furnace' + (fu.enabled ? '' : ' nf-line-off') + '">' + head +
     '<div class="nf-furnace-body">' +

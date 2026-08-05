@@ -566,6 +566,12 @@ test('index.html/ui.js/main.js/factory.js/gm.js 接線（合併版）', () => {
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   assert.match(ui, /UI\.tab === 'newforge'/);
   assert.match(ui, /function renderNewForge/);
+  assert.match(ui, /function nfPartSlotsHTML\(fu, nf, factory, player\)/,
+    '熔爐已裝零件提示必須接收工坊快照中的全域等級');
+  assert.match(ui, /var partLevels = \(nf && nf\.partLevels\) \|\| \(factory && factory\.partLevels\) \|\| \{\};/,
+    '熔爐已裝零件提示必須使用上方零件升級的目前等級');
+  assert.match(ui, /nfPartSlotsHTML\(fu, nf, factory, player\)/,
+    '熔爐渲染必須把工坊快照傳入零件格提示');
   assert.match(ui, /newforge: \['newforge', 'factory', 'header'\]/, '熔爐頁應訂閱三份 Worker panel');
   assert.match(ui, /var newForgeSnapshot = uiNewForgePanelSnapshot\(\);[\s\S]*var factorySnapshot = uiFactoryPanelSnapshot\(\);[\s\S]*var headerSnapshot = uiHeaderPanelSnapshot\(\);/);
   assert.doesNotMatch(ui, /function renderNewForge\(\) \{\s*var nf = G\.newForge;/, '熔爐渲染不得直接讀 G.newForge');
