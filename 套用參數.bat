@@ -7,8 +7,8 @@ echo ================================================
 echo    套用遊戲參數（Excel -^> CSV -^> 遊戲）
 echo ================================================
 echo.
-echo [1/3] 撥離四表（技能/寶石/天賦/裝備詞條）：xlsx -^> CSV -^> 遊戲 ...
-echo       config\Excel\Skills.xlsx / Gems.xlsx / Talents.xlsx / Equipment_Affix.xlsx
+echo [1/3] 撥離五表（技能/寶石/天賦/裝備詞條/任務）：xlsx -^> CSV -^> 遊戲 ...
+echo       config\Excel\Skills.xlsx / Gems.xlsx / Talents.xlsx / Equipment_Affix.xlsx / Task.xlsx
 echo       Remaining Excel files are scanned automatically.
 node tools/config_tables.cjs --sync
 if errorlevel 1 goto cfgsyncfail
@@ -62,6 +62,7 @@ if /I "%~2"=="Skills" exit /b 0
 if /I "%~2"=="Gems" exit /b 0
 if /I "%~2"=="Talents" exit /b 0
 if /I "%~2"=="Equipment_Affix" exit /b 0
+if /I "%~2"=="Task" exit /b 0
 echo       %~2.xlsx  -^>  config\CSV\%~2.csv
 set "PARAMS_XLSX=%~1"
 set "PARAMS_CSV_OUT=%~dp0config\CSV\%~2.csv"
