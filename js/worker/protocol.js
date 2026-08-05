@@ -11,13 +11,17 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-/* v17（2026-08-04 戰鬥特效酷炫化）：VFX 事件新增 elem / cat / variant / delayMs 四個
+/* v18（2026-08-05 主線任務系統）：PANEL_KEYS 新增 task（任務總覽投影）；
+   TICK_VIEW_KEYS 新增 taskIdx / taskProg / taskReady（戰鬥區任務快捷列用的三個純量，
+   任務名稱與獎勵文字由主執行緒讀共載的 TASKS 表——js/data.js，不隨 tick 傳送）；
+   新增指令 task.claim（領取當前任務獎勵並前進到下一個），87 → 88。
+   v17（2026-08-04 戰鬥特效酷炫化）：VFX 事件新增 elem / cat / variant / delayMs 四個
    可選欄位（見 EVENT_KINDS.VFX 註解）；fxKind 新增 curse（敵身詛咒）、chain（連鎖雷鏈）、
    impact（純受擊）三種原型。普攻與天罰開始經由 VFX 事件送出特效。
    v16：新增 newforge.upgradePart（熔爐零件升級），86 → 87
    v15（2026-08-02 詞條規則外送）：equip 面板新增 affixRules（每種詞條的可用部位與
    品質門檻，取自 AFFIX_POOL）。任何「想洗出某條詞條」的一方不必再自己抄一份部位清單。 */
-var WORKER_PROTOCOL_VERSION = 17;
+var WORKER_PROTOCOL_VERSION = 18;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -64,7 +68,7 @@ var MSG_OUT = {
    沿用既有 UI.dirty 的命名，不得新增別名。模擬層現有 158 處 UI.dirty.* 標記
    即為髒區來源，Worker 端據此決定 tick 要附帶哪些面板資料。 */
 var PANEL_KEYS = ['header', 'battle', 'equip', 'inv', 'forge', 'newforge',
-                  'factory', 'tower', 'gems', 'skills', 'talents'];
+                  'factory', 'tower', 'gems', 'skills', 'talents', 'task'];
 
 /* ---- 事件種類（隨 tick 合批送出，禁止一則一次 postMessage）---- */
 var EVENT_KINDS = {
@@ -140,7 +144,11 @@ var PERSIST_KINDS = {
 var TICK_VIEW_KEYS = ['gold', 'scrap', 'essence', 'dust', 'ancientEssence', 'soulOrigin',
                       'demonSeed', 'magicScroll', 'gems', 'books', 'level', 'xp', 'xpMax', 'hp', 'hpMax',
                       'mp', 'mpMax', 'shield', 'stage', 'zone', 'gt', 'simT', 'paused',
-                      'towerActive', 'forgeBusy'];
+                      'towerActive', 'forgeBusy',
+                      /* 任務快捷列（v18）：taskIdx = 目前任務索引（-1 = 全部完成）、
+                         taskProg = 目前進度值、taskReady = 已達成可領取。
+                         目標數量與文字由主執行緒讀共載 TASKS 表，不進高頻視圖。 */
+                      'taskIdx', 'taskProg', 'taskReady'];
 
 /* ---- 指令表 ----
    fn      ：Worker 內實際呼叫的既有函式（沿用現有實作，禁止另寫平行版本）
@@ -292,6 +300,12 @@ var COMMANDS = {
   /* -- 熔爐設定 / 拆解設定 -- */
   'factory.setSalvageSettings': { fn: null, args: { maxRarity: 'int?', maxLevel: 'int?', maxAncient: 'int?' }, dirty: ['factory'] },
   'factory.setAutoEquip':       { fn: null, args: { on: 'bool' },                                 dirty: ['factory'] },
+
+  /* -- 主線任務（v18）--
+     嚴格循序：只有 taskState.idx 那一筆可領。進度與達成判定都在 Worker 端
+     （js/tasks.js taskClaim），未達成回 { err }。獎勵可能發金幣/碎片/精華（header）、
+     裝備（inv）、寶石（gems）、技能經驗（skills），故髒面板涵蓋四者。 */
+  'task.claim':            { fn: 'taskClaim',        args: {},                                    dirty: ['task', 'header', 'inv', 'gems', 'skills'] },
 
   /* -- 統計 --
      RUN_STATS 與 LOOT_STATS 都建立在 Worker 內（combat.js / stats.js），

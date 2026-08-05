@@ -642,6 +642,14 @@ function migrateSave(data) {
 
   data.tower.active = false; // 讀檔時不可能處於高塔戰鬥
   if (!data.settings) data.settings = { compareEq: true };
+
+  /* 主線任務（2026-08-05）：taskState 整個物件缺漏由 mergeDefaults 補 { idx: 0 }，
+     這裡只做防呆夾限（idx 為 0..TASKS.length 的整數；超出上限＝全部領完，合法）。
+     舊存檔的 factory.stats.rerolled / gemComposed 同樣由 mergeDefaults 補 0，
+     語意是「從本版起開始累計」——已在進行中的老玩家從零起算，與設計相符。 */
+  if (!data.taskState || typeof data.taskState !== 'object') data.taskState = { idx: 0 };
+  var taskMax = (typeof TASKS !== 'undefined' && TASKS) ? TASKS.length : 0;
+  data.taskState.idx = clamp(Math.floor(Number(data.taskState.idx) || 0), 0, taskMax);
   
   // 修正舊有裝備名稱前綴（「神鑄創世的」須排最前，避免被「神鑄的/創世的」截半）
   var fixName = function(it) {

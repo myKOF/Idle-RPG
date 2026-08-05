@@ -1,6 +1,6 @@
-# Worker 協議 v17
+# Worker 協議 v18
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 17`　最後更新：2026-08-04
+> 協議版本：`WORKER_PROTOCOL_VERSION = 18`　最後更新：2026-08-05
 > **單一資料來源是 `js/worker/protocol.js`。** 本文件是說明；兩者衝突時以程式碼為準。
 >
 > 遷移（P0～P5）已於 2026-07-28 完成，Worker 是模擬與存檔的唯一權威，舊單執行緒路徑已移除。
@@ -156,8 +156,8 @@ v1 用「參數名叫 `itemId` 就自動解析」的慣例會出事——`forgeP
 
 ### 4.4 指令清單
 
-完整清單見 `js/worker/protocol.js` 的 `COMMANDS`，v16 起共 **87 條**
-（v1 凍結時 67 條，v3 補 14 條、v4 再補 4 條、v8 補 1 條）。
+完整清單見 `js/worker/protocol.js` 的 `COMMANDS`，v18 起共 **88 條**
+（v1 凍結時 67 條，v3 補 14 條、v4 再補 4 條、v8 補 1 條、v16 補 1 條、v18 補 1 條）。
 
 ⚠️ **指令名請以 `protocol.js` 為準，不要憑印象寫。** `WorkerBridge.send()` 會在送出前用
 `validateCommand` 擋掉未知名稱，所以寫錯的名字根本送不出去。實際踩過：驗收報告引用了
@@ -303,6 +303,7 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 
 | 版本 | 日期 | 變更 |
 | :--- | :--- | :--- |
+| 18 | 2026-08-05 | **主線任務系統**：`PANEL_KEYS` 新增 `task`（任務總覽投影，僅回傳每筆任務的 `{idx, prog, claimed, current, ready}` 動態欄位）；`TICK_VIEW_KEYS` 新增 `taskIdx` / `taskProg` / `taskReady`（戰鬥區上方任務快捷列的三個純量）；新增指令 `task.claim`（`fn: taskClaim`，js/tasks.js），87 → **88**。<br>任務定義表 `TASKS` 在共載檔 `js/data.js`（唯一來源 `config/CSV/Task.csv`，經套用參數.bat 回寫），所以名稱、目標數量、獎勵文字**不進協議**——兩端讀同一張表，tick 只送會變動的三個純量，面板只送進度與領取狀態。任務進度邏輯與領獎（js/tasks.js）只在 Worker 端載入；主執行緒不載 tasks.js，比照 factory / newforge。<br>累計型進度（強化/附魔）重用 `G.factory.stats` 既有統計；洗煉與寶石合成兩個新計數 `rerolled` / `gemComposed` 加進同一個 stats 物件，由 item.js 對應成功點遞增——不另設第二套統計家。 |
 | 17 | 2026-08-04 | **戰鬥特效酷炫化**：`vfx` 事件新增四個**可選**欄位——`elem`（元素鍵，顯示層據此挑元素化畫法與受擊特效）、`cat`（技能分類，另有 `basic`＝普攻、`enemy`＝敵方動作）、`variant`（特效變體字串；顯示層不認得就退回原型預設畫法，所以加變體不用動協議）、`delayMs`（整則特效的基礎延遲，追加劍氣／天罰用）。`fxKind` 新增 `curse`（敵身詛咒）、`chain`（連鎖雷鏈，`targets` 順序即彈跳路徑）、`impact`（純受擊反饋）。<br>發送端擴充：普攻與天罰改由 `combat.js` 直接組 `vfx` 事件（劍氣投射＋神雷），普攻浮字開始帶 `delayMs`（與劍氣飛行同一個數，比照技能的 travelMs 同步規則）；雷霆過載與連鎖餘波由 `potential.js` 送 `chain` 事件。<br>理由：舊版七原型只有「顏色」一個維度，火球和暗影箭除了色碼沒有差別，普攻更是完全沒有畫面。畫法仍全部在主執行緒 `js/vfx.js`——模擬層只多描述「是什麼屬性、哪種變體」，不碰任何 DOM 字眼。<br>指令表未變動（仍 87 條） |
 | 16 | 2026-08-04 | **熔爐零件升級**：新增 `newforge.upgradePart`，由 Worker 執行零件升級與金幣扣除；指令表 86 → 87 條。 |
 | 15 | 2026-08-02 | **詞條規則外送**：`equip` 面板新增 `affixRules`＝`{詞條鍵: {slots, minR}}`，取自 `AFFIX_POOL`，是靜態遊戲規則。<br>加它的理由：任何「想洗出某條詞條」的一方原本都得自己抄一份可用部位清單，抄錯不會有徵兆。實測踩過——AI 策略手寫的清單裡放了 `weapon`（命中率根本不能出現在武器上）與 `bracers`（遊戲的鍵是 `wrist`），375 次洗煉一條都沒洗出來，而且沒有任何錯誤訊息。規則的唯一來源是 `AFFIX_POOL`，讀它就不會有第二份會過期的副本。<br>指令表未變動（仍 86 條） |
