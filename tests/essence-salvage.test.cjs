@@ -55,6 +55,13 @@ test('T7 精粹透鏡每個提供 140% 附魔精華加成，且不再被掉寶�
   assert.equal(context.PART_TYPES.essenceCoil, undefined);
   assert.equal(context.PART_TYPES.gemSieve, undefined);
   assert.equal(context.PART_TYPES.gemPurifier, undefined);
+  assert.equal(context.PART_TYPES.bookScavenger, undefined);
+  assert.equal(context.PART_TYPES.duplicator, undefined);
+  assert.equal(context.PART_TYPES.prospector, undefined);
+  assert.equal(context.PART_TYPES.luckCore, undefined);
+  assert.equal(context.PART_TYPES.rerollModule, undefined);
+  assert.equal(context.PART_TYPES.luckHeart.name, '幸運之心');
+  assert.equal(context.PART_TYPES.knowledgeCore.name, '知識核心');
 });
 
 test('傳奇裝備配 1400% 精粹透鏡加成時，拆解精華為 375% 件數判定', () => {
@@ -73,14 +80,14 @@ test('傳奇裝備配 1400% 精粹透鏡加成時，拆解精華為 375% 件數�
   assert.equal(result.essence, 4);
 });
 
-test('裝備分解不再觸發精粹提取或產出寶石', () => {
+test('基礎分解結果不直接附帶零件寶石產出', () => {
   const context = loadFormulaContext();
   const result = context.salvageResult({ rarity: 5, level: 100, affixes: [] }, 0, 0);
   assert.equal(result.gem, undefined);
   assert.equal(result.extracted, undefined);
 
   const factory = fs.readFileSync(path.join(root, 'js/factory.js'), 'utf8');
-  assert.doesNotMatch(factory, /extractChanceNow|gemSieve|recordLootGem|res\.extracted/);
+  assert.doesNotMatch(factory, /extractChanceNow|gemSieve|res\.extracted/);
 });
 
 test('舊存檔中的淘汰零件會移除已裝備項目並返還碎片', () => {
@@ -91,16 +98,31 @@ test('舊存檔中的淘汰零件會移除已裝備項目並返還碎片', () =>
     { id: 'sieve', key: 'gemSieve', tier: 3 },
     { id: 'purifier', key: 'gemPurifier', tier: 2 },
     { id: 'coil', key: 'essenceCoil', tier: 1 },
+    { id: 'book', key: 'bookScavenger', tier: 2 },
+    { id: 'dup', key: 'duplicator', tier: 2 },
+    { id: 'prospector', key: 'prospector', tier: 2 },
+    { id: 'core', key: 'luckCore', tier: 2 },
+    { id: 'reroll', key: 'rerollModule', tier: 2 },
+    { id: 'old-luck', key: 'fortuneChip', tier: 3 },
+    { id: 'old-knowledge', key: 'archivist', tier: 4 },
     { id: 'lens', key: 'extractLens', tier: 1 }
   ];
-  state.factory.installed = { salvage: ['sieve', 'lens', 'purifier'], synth: ['coil'] };
+  state.factory.partLevels.fortuneChip = 2;
+  state.factory.partLevels.archivist = 2;
+  state.factory.partLevels.luckCore = 4;
+  state.factory.installed = { salvage: ['sieve', 'old-luck', 'lens', 'purifier'], synth: ['coil', 'core', 'reroll'] };
 
   const migrated = context.migrateSave(state);
   // 未載入 newforge 適配層時，save migration 仍保留有效的舊槽位；淘汰零件只會被移除。
-  assert.deepEqual(Array.from(migrated.factory.parts, (part) => part.key), ['extractLens']);
+  assert.deepEqual(Array.from(migrated.factory.parts, (part) => part.key), ['luckHeart', 'knowledgeCore', 'extractLens']);
   assert.equal(migrated.factory.partLevels.extractLens, 1);
-  assert.deepEqual(JSON.parse(JSON.stringify(migrated.factory.installed)), { salvage: ['lens'], synth: [] });
-  assert.equal(migrated.player.scrap, 22);
+  assert.equal(migrated.factory.partLevels.luckHeart, 3, '幸運晶片舊等級應遷移為幸運之心');
+  assert.equal(migrated.factory.partLevels.knowledgeCore, 4, '知識回收器舊等級應遷移為知識核心');
+  assert.equal(migrated.factory.partLevels.fortuneChip, undefined);
+  assert.equal(migrated.factory.partLevels.archivist, undefined);
+  assert.equal(migrated.factory.partLevels.luckCore, undefined);
+  assert.deepEqual(JSON.parse(JSON.stringify(migrated.factory.installed)), { salvage: ['old-luck', 'lens'], synth: [] });
+  assert.equal(migrated.player.scrap, 42);
 });
 
 test('野外敵人不再直接掉落附魔精華', () => {

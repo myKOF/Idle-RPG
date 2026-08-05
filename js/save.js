@@ -304,13 +304,20 @@ function migrateSave(data) {
   if (data.factory && Array.isArray(data.factory.conveyor) && data.factory.conveyor.length > conveyorLimit) {
     data.factory.conveyor.length = conveyorLimit;
   }
-  // 移除已淘汰的精華凝結線圈、寶石篩選器、寶石提純器；舊存檔中的零件按既有零件回收規則返還碎片。
+  // 移除已淘汰的零件；舊存檔中的零件按既有零件回收規則返還碎片。
   if (data.factory && Array.isArray(data.factory.parts)) {
-    var deprecatedPartKeys = { essenceCoil: true, gemSieve: true, gemPurifier: true };
+    var deprecatedPartKeys = {
+      essenceCoil: true, gemSieve: true, gemPurifier: true,
+      bookScavenger: true, duplicator: true, prospector: true,
+      luckCore: true, rerollModule: true
+    };
     var removedPartIds = {};
     var deprecatedPartScrap = 0;
     var keptParts = [];
     data.factory.parts.forEach(function (part) {
+      if (part && typeof PART_KEY_MIGRATIONS === 'object' && PART_KEY_MIGRATIONS[part.key]) {
+        part.key = PART_KEY_MIGRATIONS[part.key];
+      }
       if (part && deprecatedPartKeys[part.key]) {
         removedPartIds[part.id] = true;
         deprecatedPartScrap += Math.max(0, Math.floor(Number(part.tier) || 1) * 2);
@@ -332,6 +339,8 @@ function migrateSave(data) {
       });
     }
   }
+  // 零件改名／刪除後，同步清除舊存檔中的全域等級鍵。
+  if (data.factory && typeof ensurePartLevels === 'function') ensurePartLevels(data.factory);
   if (!hadSalvageSlots) {
     var legacySalvageInstalled = data.factory && data.factory.installed && data.factory.installed.salvage;
     data.factory.salvageSlots = clamp(Math.max(SALVAGE_SLOT_LEGACY_DEFAULT, (legacySalvageInstalled || []).length), SALVAGE_SLOT_INITIAL, SALVAGE_SLOT_MAX);

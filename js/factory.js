@@ -156,14 +156,39 @@ function doSalvage(it, silent, bonus) {
   res.scrap = Math.max(1, Math.round(res.scrap * (1 + raw('scrapForge') / 100)));
   res.gold = Math.round(res.gold * (1 + raw('goldSluice') / 100));
   var extras = []; // 額外掉落 / 事件（記入日誌）
-  // 複製處理艙：碎片＋金幣翻倍
-  var dupC = eff('duplicator');
-  if (dupC > 0 && chance(dupC)) { res.scrap *= 2; res.gold *= 2; extras.push('♻️翻倍'); }
-  // 幸運晶片：大豐收（碎片/金幣/精華 ×3）
-  var fc = eff('fortuneChip');
-  if (fc > 0 && chance(fc)) { res.scrap *= 3; res.gold *= 3; res.essence *= 3; extras.push('🎰大豐收×3'); }
 
-  // 入帳
+  // 寶石採集器：成功時先保留掉落，等幸運之心判定後再一次入帳。
+  var gemDrops = [];
+  var gemChance = raw('gemCollector');
+  if (gemChance > 0 && chance(gemChance)) {
+    gemDrops.push({ type: randomGemType(), level: 1, count: 1 });
+  }
+
+  // 知識核心固定取得「當前關卡敵人經驗」的指定百分比，不是額外機率。
+  var xpGain = 0;
+  var knowledgeRate = raw('knowledgeCore');
+  if (knowledgeRate > 0) {
+    var currentStage = Math.max(1, Math.floor(Number(G.stage && G.stage.current) || 1));
+    var currentEnemy = (typeof monsterStatsFor === 'function') ? monsterStatsFor(currentStage, false, false) : null;
+    var currentZone = (typeof currentZoneDef === 'function') ? currentZoneDef() : null;
+    var currentEnemyXp = Number(currentEnemy && currentEnemy.xp) || 0;
+    currentEnemyXp *= Number(currentZone && currentZone.rewardMult) || 1;
+    xpGain = Math.max(0, Math.round(currentEnemyXp * knowledgeRate / 100));
+  }
+
+  // 幸運之心只讓「機率」吃到熔爐核心的額外加成；觸發後則把本次所有產物（含寶石與經驗）乘三。
+  var lucky = raw('luckHeart') > 0 && chance(raw('luckHeart'));
+  if (lucky) {
+    res.scrap *= 3;
+    res.gold *= 3;
+    res.essence *= 3;
+    res.ancientEssence *= 3;
+    xpGain *= 3;
+    gemDrops.forEach(function (drop) { drop.count *= 3; });
+    extras.push('💖幸運之心：所有產物×3');
+  }
+
+  // 入帳（順序固定，日誌可完整列出本次所有實得產物）
   G.player.scrap += res.scrap;
   G.player.gold += res.gold;
   if (window.recordLootMat) window.recordLootMat('scrap', res.scrap, 'factory');
@@ -171,7 +196,7 @@ function doSalvage(it, silent, bonus) {
   if (res.essence) {
     G.player.essence += res.essence;
     if (window.recordLootMat) window.recordLootMat('essence', res.essence, 'factory');
-    // 魔法卷軸（2026-07-30）：與附魔精華同判定（含幸運晶片×3 後的實得量）、數量 1/10（機率式進位）
+    // 魔法卷軸與最終附魔精華量判定，幸運之心也會間接影響卷軸數量。
     var scrollGain = (typeof magicScrollFromEssence === 'function') ? magicScrollFromEssence(res.essence) : 0;
     if (scrollGain > 0) {
       G.player.magicScroll = (G.player.magicScroll || 0) + scrollGain;
@@ -185,33 +210,25 @@ function doSalvage(it, silent, bonus) {
     extras.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華">太古精華x' + res.ancientEssence);
   }
 
-  // 拓本回收臂：回收附魔書
-  var bookB = eff('bookScavenger');
-  if (bookB > 0 && chance(bookB)) {
-    var bk = pick(Object.keys(ENCHANTS));
-    G.player.books[bk] = (G.player.books[bk] || 0) + 1;
-    if (window.recordLootMat) window.recordLootMat('book', 1, 'factory');
-    extras.push('📖' + ENCHANTS[bk].name);
+  for (var gi = 0; gi < gemDrops.length; gi++) {
+    var gemDrop = gemDrops[gi];
+    addGem(gemDrop.type, gemDrop.level, gemDrop.count);
+    if (window.recordLootGem) window.recordLootGem(gemDrop.type, gemDrop.level, gemDrop.count, 'factory');
+    extras.push('💎' + gemLabel(gemDrop.type, gemDrop.level) + 'x' + gemDrop.count);
   }
-  // 知識回收器：分解取得經驗
-  var arch = raw('archivist');
-  if (arch > 0 && chance(arch)) {
-    var xpG = Math.max(1, Math.round(it.level * 25));
-    gainXp(xpG);
-    extras.push('📚經驗+' + fmt(xpG));
+  if (xpGain > 0) {
+    gainXp(xpGain);
+    extras.push('📚經驗+' + fmt(xpGain));
   }
-  // 探礦核心的舊「額外掉落零件」效果已移除；零件只透過升級取得。
 
   G.factory.stats.salvaged++;
   UI.dirty.header = true;
   if (!silent) {
-    var tail = extras.length ? '（' + extras.join('、') + '）' : '';
-    if (res.essence) {
-      flog('🔮 附魔精華回收！' + rarityTag(it) + ' → 碎片x' + res.scrap +
-        '、附魔精華x' + res.essence + tail, 'good');
-    } else {
-      flog('⚒️ 分解 ' + rarityTag(it) + ' → 碎片x' + res.scrap + tail, extras.length ? 'good' : '');
-    }
+    var outputs = ['碎片x' + fmt(res.scrap), '金幣x' + fmt(res.gold)];
+    if (res.essence) outputs.push('附魔精華x' + fmt(res.essence));
+    if (res.ancientEssence) outputs.push('太古精華x' + fmt(res.ancientEssence));
+    if (extras.length) outputs.push.apply(outputs, extras);
+    flog('⚒️ 分解 ' + rarityTag(it) + ' → ' + outputs.join('、'), 'good');
   }
   return res;
 }

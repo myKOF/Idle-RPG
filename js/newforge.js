@@ -208,8 +208,10 @@ function newForgeUninstallPart(furnaceId, slotIdx) {
   nflog('🔧 已卸下 ' + partName(removed) + '（熔爐 #' + fu.id + '）', 'info');
   return true;
 }
-// 該熔爐零件加成：同類型格位堆疊，數值取 factory.partLevels 的目前等級
-function newForgePartBonus(fu, key) {
+// 該熔爐零件加成：同類型格位堆疊，數值取 factory.partLevels 的目前等級。
+// 熔爐核心是額外乘法加成；用 raw helper 計算核心本身，避免核心自我放大。
+function newForgePartRawBonus(fu, key) {
+  if (!fu || !Array.isArray(fu.parts)) return 0;
   var factoryLevels = (typeof G !== 'undefined' && G && G.factory) ? G.factory.partLevels : null;
   var level = partLevelFor(key, factoryLevels);
   var value = partValueForLevel(key, level);
@@ -219,6 +221,12 @@ function newForgePartBonus(fu, key) {
     if (p && p.key === key) sum += effectiveFactoryPartValue(key, value);
   }
   return sum;
+}
+function newForgePartBonus(fu, key) {
+  var sum = newForgePartRawBonus(fu, key);
+  if (key === 'furnaceCore' || sum <= 0) return sum;
+  var coreBonus = newForgePartRawBonus(fu, 'furnaceCore');
+  return sum * (1 + coreBonus / 100);
 }
 
 function newForgeUpgradePart(partKey) {
@@ -368,8 +376,9 @@ function sanitizeNewForge(data) {
       fu2.parts = fu2.parts.map(function (e) {
         if (typeof e === 'string') { // 舊實例制存檔：id → 零件 key
           var src = poolById[e];
-          return src ? { key: src.key, level: src.level !== undefined ? src.level : src.tier } : null;
+          return src ? { key: PART_KEY_MIGRATIONS[src.key] || src.key, level: src.level !== undefined ? src.level : src.tier } : null;
         }
+        if (e && PART_KEY_MIGRATIONS[e.key]) e.key = PART_KEY_MIGRATIONS[e.key];
         return e;
       }).filter(function (e) {
         if (!e || typeof e !== 'object') return false;

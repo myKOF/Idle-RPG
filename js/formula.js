@@ -1071,8 +1071,11 @@ function bossStatsFor(floor) {
 // 存檔仍保留原始數值，透過此入口計算即可讓既有物品立即套用新規則。
 var DROP_RATE_EFFECT_MULT = 0.5;
 var DROP_RATE_PART_KEYS = {
-  ancientEssenceRate: true, duplicator: true,
-  fortuneChip: true, bookScavenger: true
+  ancientEssenceRate: true
+};
+var PART_KEY_MIGRATIONS = {
+  fortuneChip: 'luckHeart',
+  archivist: 'knowledgeCore'
 };
 var SPEED_GEAR_FIXED_BONUS = 50;
 function effectiveDropRateEffect(value) {
@@ -1098,6 +1101,17 @@ function partLevelFor(key, levels) {
 function ensurePartLevels(factory) {
   if (!factory) return {};
   if (!factory.partLevels || typeof factory.partLevels !== 'object' || Array.isArray(factory.partLevels)) factory.partLevels = {};
+  Object.keys(factory.partLevels).forEach(function (key) {
+    var migratedKey = PART_KEY_MIGRATIONS[key];
+    if (!migratedKey) return;
+    var oldLevel = Number(factory.partLevels[key]);
+    if (isFinite(oldLevel)) factory.partLevels[migratedKey] = Math.max(Number(factory.partLevels[migratedKey]) || 1, oldLevel);
+    delete factory.partLevels[key];
+  });
+  // 零件改名／刪除後，舊存檔中的等級鍵不可繼續殘留。
+  Object.keys(factory.partLevels).forEach(function (key) {
+    if (!PART_TYPES[key]) delete factory.partLevels[key];
+  });
   // 舊版測試工具／存檔可能同時帶有零件實體；載入時取各類型最高階，之後由
   // sanitizeNewForge 清除實體庫存。新制正常流程的 parts 為空，不會產生額外效果。
   (factory.parts || []).forEach(function (p) {
@@ -1720,9 +1734,9 @@ function rerollCost(it) {
   };
 }
 
-// 合成大成功率 = 基礎 5% + 幸運核心零件加成（稀有度額外 +1）
+// 合成大成功率：合成功能停用後不再受已刪除的合成零件影響。
 function synthGreatChanceNow() {
-  return SYNTH_GREAT_BASE + partBonus('synth', 'luckCore');
+  return SYNTH_GREAT_BASE;
 }
 
 // 背包擴充費用：a + b × c^購買次數（購買次數 = 已擴充次數 + 1，即本次為第幾次擴充）
