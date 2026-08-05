@@ -4693,10 +4693,18 @@ textarea#save-io {
 .quest-list-head,
 .quest-row {
   display: grid;
-  grid-template-columns: 1fr 110px 170px;
+  grid-template-columns: 1fr 130px 240px;
   gap: 8px;
   align-items: center;
   padding: 5px 8px;
+}
+
+/* 各欄不換行：欄寬已依最長文案配置，極端情況以省略號截斷而非折行 */
+.quest-list-head > span,
+.quest-row > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .quest-list-head {
@@ -4716,12 +4724,17 @@ textarea#save-io {
   color: var(--dim);
 }
 
+/* 已完成：整列改中性灰（--dim 是暖棕灰，與未進行的米金字太接近、區隔不明顯） */
 .quest-row.claimed {
-  color: var(--dim);
+  color: #78786f;
+}
+
+.quest-row.claimed .quest-col-name::before {
+  color: #56564f;
 }
 
 .quest-row.claimed .quest-col-reward {
-  color: var(--dim);
+  color: #78786f;
 }
 
 .quest-row.current {
