@@ -1606,7 +1606,7 @@ textarea#save-io {
   background: url('../images/diablo_panel_tex.png') repeat, var(--panel);
   border: 1px solid var(--border);
   color: var(--text);
-  padding: 2px 6px;
+  padding: 2px 2px 2px 4px;
   border-radius: 2px;
   font-size: 12px;
   cursor: pointer;
@@ -8205,6 +8205,6 @@ button.nf-part-slot.nf-part-ico {
 }
 
 #ui-shell .log-header-actions .btn {
-  padding-left: 10px !important;
-  padding-right: 10px !important;
+  padding-left: 6px !important;
+  padding-right: 6px !important;
 }

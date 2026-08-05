@@ -588,8 +588,6 @@
             <span id="stage-best" class="dim-text">最高1關</span>
           </div>
           <div class="stage-tools">
-            <button id="btn-pip" class="btn sm" data-tt-title="迷你視窗" data-tt-desc="開啟永遠置頂的迷你監控視窗，背景掛機也能看到戰況">📺 迷你視窗</button>
-            <button id="btn-summary" class="btn sm" data-tt-title="統計面板" data-tt-desc="開啟統計面板">📊 統計面板</button>
             <button id="btn-realm-toggle" class="btn sm" style="display:none;" data-tt-title="切換地圖" data-tt-desc="切換凡人界與神界練功地圖">✨ 神界地圖</button>
           </div>
         </div>
@@ -622,8 +620,10 @@
         <div class="log-header">
           <div class="log-title">綜合紀錄</div>
           <div class="log-header-actions">
-            <button id="btn-combat-pause" class="btn sm warn" type="button" data-tt-title="戰鬥控制" data-tt-desc="暫停野外與高塔戰鬥" aria-pressed="false">⏸ 暫停戰鬥</button>
-            <button id="btn-detail-log" class="btn sm" type="button" data-tt-title="詳細日誌" data-tt-desc="開啟完整戰鬥日誌">📜 詳細日誌</button>
+            <button id="btn-pip" class="btn sm" data-tt-title="迷你視窗" data-tt-desc="開啟永遠置頂的迷你監控視窗，背景掛機也能看到戰況" aria-label="迷你視窗">📺</button>
+            <button id="btn-summary" class="btn sm" data-tt-title="統計面板" data-tt-desc="開啟統計面板">📊 統計</button>
+            <button id="btn-combat-pause" class="btn sm warn" type="button" data-tt-title="戰鬥控制" data-tt-desc="暫停野外與高塔戰鬥" aria-pressed="false">⏸ 暫停</button>
+            <button id="btn-detail-log" class="btn sm" type="button" data-tt-title="詳細日誌" data-tt-desc="開啟完整戰鬥日誌">📜 日誌</button>
             <select id="log-filter" class="log-filter">
             <option value="all">全部</option>
             <option value="combat">戰鬥與進度</option>
@@ -654,7 +654,7 @@
           <option value="loot">掉落物</option>
           <option value="system">系統訊息</option>
         </select>
-        <button id="btn-detail-combat-pause" class="btn sm warn" type="button" data-tt-title="戰鬥控制" data-tt-desc="暫停野外與高塔戰鬥" aria-pressed="false">⏸ 暫停戰鬥</button>
+        <button id="btn-detail-combat-pause" class="btn sm warn" type="button" data-tt-title="戰鬥控制" data-tt-desc="暫停野外與高塔戰鬥" aria-pressed="false">⏸ 暫停</button>
         <button id="detail-log-clear" class="btn sm" type="button">清除詳細日誌</button>
       </div>
       <div id="detail-log-content" class="detail-log-content"></div>

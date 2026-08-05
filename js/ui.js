@@ -2459,7 +2459,7 @@ function refreshCombatPauseButton() {
     var pressed = paused ? 'true' : 'false';
     if (el.getAttribute('aria-pressed') === pressed) return;
     el.setAttribute('aria-pressed', pressed);
-    setTextIfChanged(el, paused ? '▶ 繼續戰鬥' : '⏸ 暫停戰鬥');
+    setTextIfChanged(el, paused ? '▶ 繼續' : '⏸ 暫停');
     el.setAttribute('data-tt-title', '戰鬥控制');
     el.setAttribute('data-tt-desc', paused ? '繼續野外與高塔戰鬥' : '暫停野外與高塔戰鬥');
     el.classList.toggle('active', paused);

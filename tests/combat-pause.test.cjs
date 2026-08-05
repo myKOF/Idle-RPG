@@ -73,10 +73,10 @@ test('戰鬥控制列提供暫停按鈕與可辨識的繼續狀態', () => {
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
 
   assert.match(html, /id="btn-combat-pause"/);
-  assert.match(html, /暫停戰鬥/);
+  assert.match(html, /⏸ 暫停/);
   assert.match(ui, /sendUiCommand\('combat\.togglePaused'/);
   assert.match(ui, /aria-pressed/);
-  assert.match(ui, /繼續戰鬥/);
+  assert.match(ui, /▶ 繼續/);
 });
 
 test('戰鬥關卡控制列使用正式 tooltip，不使用原生 title', () => {
@@ -95,7 +95,7 @@ test('戰鬥關卡控制列使用正式 tooltip，不使用原生 title', () => 
   assert.doesNotMatch(ui, /el\.title\s*=/);
 });
 
-test('戰鬥控制版面將自動推進放在原暫停位置，暫停移至綜合紀錄列', () => {
+test('戰鬥控制版面將自動推進放在原暫停位置，暫停、迷你視窗與統計面板移至綜合紀錄列', () => {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const stageStart = html.indexOf('<div id="stage-bar">');
   const stageEnd = html.indexOf('</div>', stageStart);
@@ -106,5 +106,9 @@ test('戰鬥控制版面將自動推進放在原暫停位置，暫停移至綜�
 
   assert.match(stageBar, /id="st-auto"/);
   assert.doesNotMatch(stageBar, /id="btn-combat-pause"/);
+  assert.doesNotMatch(stageBar, /id="btn-pip"/);
+  assert.doesNotMatch(stageBar, /id="btn-summary"/);
   assert.match(logHeader, /id="btn-combat-pause"/);
+  assert.match(logHeader, /id="btn-pip"/);
+  assert.match(logHeader, /id="btn-summary"/);
 });
