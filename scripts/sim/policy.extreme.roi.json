@@ -1185,7 +1185,7 @@
         ],
         "passives": "passivePriority"
       },
-      "why": "技能點的投法：主動只學裝載欄放得下的（名額由遊戲的 panels.skills.loadoutSize 給，不寫死），其餘全投被動。pickAndCastSkill 只走 G.player.loadout，沒裝載的主動技一次都不會被施放，而技能點是 1 級 1 點——學了不裝就是死點。實測一場 Lv.152 的存檔 152 點裡有 37 點（24%）壓在強力斬10／魔法屏障10／二連拳10／再生術6／奧術衝擊1 這些沒裝載的主動上。舊做法是寫死的三份清單（16/27/39 個），而裝載欄是 clamp(4+⌊等級/50⌋,4,20)、1 轉後 20——清單長度與格數是兩套獨立的數字，前期清單第 2~5 名（powerSlash/doubleStrike/manaBarrier/regenerate）在只有 4~5 格時裝得下，Lv.50 後被擠掉，點數就留在原地。always 是不常駐裝載欄但一定要學的：再生術與魔法屏障是打 BOSS 的保命組（見 boss-loadout）"
+      "why": "技能點的投法：主動只學裝載欄放得下的（名額由遊戲的 panels.skills.loadoutSize 給，不寫死），其餘全投被動。pickAndCastSkill 只走 G.player.loadout，沒裝載的主動技一次都不會被施放，而技能點是 1 級 1 點——學了不裝就是死點。實測一場 Lv.152 的存檔 152 點裡有 37 點（24%）壓在強力斬10／魔法屏障10／二連拳10／再生術6／奧術衝擊1 這些沒裝載的主動上。舊做法是寫死的三份清單（16/27/39 個），而裝載欄是 clamp(4+⌊等級/50⌋,4,20)、1 轉後 20——清單長度與格數是兩套獨立的數字，前期清單第 2~5 名（powerSlash/doubleStrike/manaBarrier/regenerate）在只有 4~5 格時裝得下，Lv.50 後被擠掉，點數就留在原地。always 是不常駐裝載欄但一定要學的：再生術與魔法屏障平時不佔格，危險時才換上去（見 danger-loadout）"
     },
     {
       "id": "danger-loadout",
