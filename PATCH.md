@@ -1,5 +1,14 @@
 # PATCH.md
 
+## 調整：雙手武器補償公式改造（2026-08-05）
+
+- **詞條數值倍率 1.8 → 2.0**（`TWO_HAND_AFFIX_VALUE_MULT` → js/data.js；特效倍率維持 2.0）。數值為讀取時當場算（`affixValue`），舊存檔既有雙手武器自動套用新倍率，無須遷移。
+- **數量加成**（新常數 `TWO_HAND_BONUS_AFFIXES=1`、`TWO_HAND_BONUS_ENCHANTS=1`、`TWO_HAND_SOCKET_MULT=1.75`，皆為程式端常數、不入參數表）：雙手武器詞條數 +1、附魔欄位 +1、寶石鑲孔數 ×1.75 捨去（獨特 2→3、史詩 3→5、傳說 4→7、神話 5→8、創世/神鑄 6→10、神鑄混沌 7→12）。套用點：產出 `makeEquipment`（武器類型改在詞條數之前決定）、附魔 `enchantCapFor`、鑲孔 `socketCountFor(rarity, it)`、詞條硬上限新函式 `maxAffixesFor`（= `MAX_AFFIXES`+1，混合合成變異加詞條改用它）；混合合成大成功升階時同步補齊。
+- **太古權重表表外回退**（`rollAncientAffixCount` → js/formula.js）：詞條數超過 `ANCIENT_COUNT_WEIGHTS` 表上限（神鑄混沌雙手 10+1=11）以表內最高列代替，不再一律 0 條；低於下限（0/1）維持 0 條。參數表日後補 11 詞條列即直接生效。
+- **舊存檔遷移**（冪等、非一次性）：新函式 `normalizeTwoHandItemCounts`（js/item.js）由 `migrateSave` 的 `fixLoadedItem` 逐件呼叫（涵蓋裝備欄三套、背包、輸送帶、合成暫存、熔爐佇列/皮帶、神鑄格），既有雙手武器詞條補至「稀有度固定條數+1」、鑲孔走 `ensureSockets` 補格；只補不刪，補的詞條照一般產出擲骰、不重複、必為非太古。
+- 測試：`tests/two-hand-weapon-scaling.test.cjs` 新增 4 項（各稀有度產出數量、硬上限與太古回退、補齊冪等、migrateSave 三容器整合）；`tests/ancient-affix.test.cjs` 表外斷言依新規格更新並固定部位避免骰中雙手的間歇失敗；`tests/sim-dead-stock.test.cjs` 的 bootedEngine 改推進到「有對手」的決策點（固定秒數落點會被任何改動亂數流的功能位移，本次雙手 +1 詞條即觸發）。`npm test` 1043/1043。
+- `game_formula.md` §6.1／§6.1.1（新增「雙手補償」條目）／§6.3／§6.6 同步更新。
+
 ## 改造：技能融合系統改造（2026-07-30）
 
 - **融合佔用制**：素材不再被消耗，改為「佔用」——投入期間不可裝備、不可再融合（`skillUsedInFusion`，由 `fusions[].components` 推導），刪除融合技後釋放；圖標左下 ⚗️ 標示（`.tc-fused`）。

@@ -1253,10 +1253,16 @@ var ELITE_DROP_MULT = 1.3;       // 菁英掉落倍率：裝備與材料都在�
 
 /* ---- 太古詞條／太古精華機率 ---- */
 // 裝備產出時擲骰太古詞條條數：依「詞條數量」查權重表 ANCIENT_COUNT_WEIGHTS（data.js），
-// 權重索引 = 太古條數；表外詞條數量（0/1 或 >10）一律 0 條。位置由呼叫端隨機決定後永久固定。
+// 權重索引 = 太古條數；低於表下限的詞條數量（0/1）一律 0 條。位置由呼叫端隨機決定後永久固定。
+// 超過表上限（雙手詞條 +1 會出現 10+1=11）以表內最高列代替；參數表日後補上該列即直接生效。
 function rollAncientAffixCount(affixCount, luck) {
   var w = ANCIENT_COUNT_WEIGHTS[affixCount];
-  if (!w) return 0;
+  if (!w) {
+    var maxKey = 0;
+    for (var key in ANCIENT_COUNT_WEIGHTS) { if (Number(key) > maxKey) maxKey = Number(key); }
+    if (affixCount > maxKey) w = ANCIENT_COUNT_WEIGHTS[maxKey];
+    if (!w) return 0;
+  }
   var luckTotal = Math.max(0, Number(luck) || 0);
   var luckDenom = Math.max(0, Number(ANCIENT_LUCK_WEIGHT_DENOM) || 0);
   var m = luckDenom > 0
@@ -1835,14 +1841,26 @@ function ensureFusedGemSource(fg) {
   return fg;
 }
 
-// 插槽數：依稀有度表（普通~稀有 1、獨特 2、史詩 3、傳說 4、神話 5、創世/神鑄創世 6）
-function socketCountFor(rarity) {
+// 插槽數：依稀有度表（普通~稀有 1、獨特 2、史詩 3、傳說 4、神話 5、創世/神鑄創世 6）；
+// 帶入物品時，雙手武器 ×1.75 後捨去（TWO_HAND_SOCKET_MULT → js/data.js）
+function socketCountFor(rarity, it) {
   var r = RARITIES[clamp(rarity, 0, RARITIES.length - 1)];
-  return r.sockets;
+  var n = r.sockets;
+  if (it && typeof isTwoHandItem === 'function' && isTwoHandItem(it)) {
+    n = Math.floor(n * TWO_HAND_SOCKET_MULT);
+  }
+  return n;
 }
-// 附魔欄位數：依稀有度表（普通 0、精良~獨特 1、史詩~神話 2、創世/神鑄創世 3）
+// 附魔欄位數：依稀有度表（普通 0、精良~獨特 1、史詩~神話 2、創世/神鑄創世 3）；雙手武器 +1
 function enchantCapFor(it) {
-  return RARITIES[clamp(it.rarity, 0, RARITIES.length - 1)].enchants;
+  var n = RARITIES[clamp(it.rarity, 0, RARITIES.length - 1)].enchants;
+  if (typeof isTwoHandItem === 'function' && isTwoHandItem(it)) n += TWO_HAND_BONUS_ENCHANTS;
+  return n;
+}
+// 詞條數硬上限：參數表 MAX_AFFIXES 為稀有度表基準的安全上限；雙手武器另加詞條數加成
+function maxAffixesFor(it) {
+  var bonus = (typeof isTwoHandItem === 'function' && isTwoHandItem(it)) ? TWO_HAND_BONUS_AFFIXES : 0;
+  return MAX_AFFIXES + bonus;
 }
 
 /* ---- 寶石合成 / 轉換 / 拆解換算（2026-07-09 改版）----
