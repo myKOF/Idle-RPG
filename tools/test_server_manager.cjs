@@ -19,36 +19,24 @@ function validPort(port) {
 
 function readRecords() {
   return Array.from(activeServers.values())
-    .map(({ server, child, ...record }) => record)
+    .map(({ server, ...record }) => record)
     .sort((a, b) => a.port - b.port);
 }
 
 function getSourceRoots() {
   const parent = path.dirname(ROOT);
-  const candidates = [
-    ...[ROOT, ...WORKTREE_NAMES.map((name) => path.join(parent, name))]
-      .map((root) => ({ root })),
-    {
-      key: 'diablo-factory',
-      label: 'Diablo-Factory',
-      root: path.resolve(ROOT, '..', '..', 'Diablo-Factory'),
-      serverScript: 'dev-server.js',
-      defaultPort: 8080,
-      openPath: '/?test=1',
-    },
-  ];
+  const candidates = [ROOT, ...WORKTREE_NAMES.map((name) => path.join(parent, name))];
   const seen = new Set();
   return candidates
-    .map((candidate) => ({ ...candidate, root: path.resolve(candidate.root) }))
+    .map((candidate) => path.resolve(candidate))
     .filter((candidate) => {
-      if (seen.has(candidate.root) || !fs.existsSync(path.join(candidate.root, 'index.html'))) return false;
-      seen.add(candidate.root);
+      if (seen.has(candidate) || !fs.existsSync(path.join(candidate, 'index.html'))) return false;
+      seen.add(candidate);
       return true;
     })
-    .map((candidate) => {
-      const key = candidate.key || path.basename(candidate.root).toLowerCase();
-      const label = candidate.label || key.charAt(0).toUpperCase() + key.slice(1);
-      return { ...candidate, key, label };
+    .map((root) => {
+      const key = path.basename(root).toLowerCase();
+      return { key, label: key.charAt(0).toUpperCase() + key.slice(1), root };
     });
 }
 
@@ -179,19 +167,6 @@ function isPortOpen(port) {
   });
 }
 
-function startCommandServer(source, port) {
-  const scriptPath = path.join(source.root, source.serverScript);
-  return spawn(process.execPath, [scriptPath, String(port)], {
-    cwd: source.root,
-    windowsHide: true,
-    stdio: 'ignore',
-  });
-}
-
-function serverUrl(source, port) {
-  return `http://127.0.0.1:${port}${source.openPath || '/'}`;
-}
-
 function getPage(port) {
   return new Promise((resolve, reject) => {
     const request = http.request({ host: '127.0.0.1', port, path: '/', method: 'HEAD', timeout: 700 }, (response) => {
@@ -227,33 +202,10 @@ async function startServer(port, sourceKey) {
   }
   if (await isPortOpen(port)) throw new Error(`Port ${port} 已被其他程式使用。`);
 
-  if (source.serverScript) {
-    const child = startCommandServer(source, port);
-    const record = {
-      pid: child.pid,
-      port,
-      url: serverUrl(source, port),
-      startedAt: new Date().toISOString(),
-      managed: true,
-      sourceKey: source.key,
-      sourceLabel: source.label,
-      sourceRoot: source.root,
-      child,
-    };
-    if (!await waitUntilReady(port)) {
-      if (Number.isInteger(child.pid)) {
-        try { await terminateExternalProcess(child.pid); } catch (_) {}
-      }
-      throw new Error(`無法啟動 ${source.label} 的 dev server，請檢查 ${source.serverScript}。`);
-    }
-    activeServers.set(port, record);
-    return { ...record, child: undefined };
-  }
-
   const record = {
     pid: process.pid,
     port,
-    url: serverUrl(source, port),
+    url: `http://127.0.0.1:${port}/`,
     startedAt: new Date().toISOString(),
     managed: true,
     sourceKey: source.key,
@@ -274,13 +226,6 @@ async function startServer(port, sourceKey) {
 async function stopServer(port) {
   const record = activeServers.get(port);
   if (!record) throw new Error(`找不到 port ${port} 的測試服。`);
-  if (record.child) {
-    if (record.child.exitCode === null && !record.child.killed) {
-      await terminateExternalProcess(record.pid);
-    }
-    activeServers.delete(port);
-    return { pid: record.pid, port: record.port, url: record.url, startedAt: record.startedAt };
-  }
   await new Promise((resolve, reject) => record.server.close((error) => error ? reject(error) : resolve()));
   activeServers.delete(port);
   return { pid: record.pid, port: record.port, url: record.url, startedAt: record.startedAt };

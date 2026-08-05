@@ -16,11 +16,6 @@ test('測試服控制台提供啟動、列表、開啟與關閉介面', () => {
   assert.match(manager, /sourceKey/);
   assert.match(manager, /\/api\/servers\/stop/);
   assert.match(manager, /createStaticServer/);
-  assert.match(manager, /Diablo-Factory/);
-  assert.match(manager, /dev-server\.js/);
-  assert.match(manager, /startCommandServer/);
-  assert.match(manager, /defaultPort: 8080/);
-  assert.match(manager, /openPath: '\/\?test=1'/);
   assert.match(manager, /server\.close/);
   assert.match(manager, /Get-NetTCPConnection/);
   assert.match(manager, /discoverLocalServers/);
@@ -37,17 +32,5 @@ test('測試服控制台提供啟動、列表、開啟與關閉介面', () => {
   assert.match(html, /data-external/);
   assert.match(html, /前往/);
   assert.match(html, /開啟瀏覽器/);
-  assert.match(html, /dev-server\.js/);
-  assert.match(html, /defaultPort/);
   assert.match(batch, /test_server_manager\.cjs/);
-});
-
-test('測試服來源包含可用的 Diablo-Factory dev server', () => {
-  const managerModule = require(path.join(root, 'tools/test_server_manager.cjs'));
-  const source = managerModule.getSourceRoots().find((item) => item.key === 'diablo-factory');
-
-  assert.ok(source, '應找到 Diablo-Factory 來源');
-  assert.equal(source.defaultPort, 8080);
-  assert.equal(source.serverScript, 'dev-server.js');
-  assert.equal(source.openPath, '/?test=1');
 });
