@@ -7,8 +7,9 @@
    進度來源分兩類：
    - 累計次數：讀 G.factory.stats 既有統計（upgraded / enchanted），洗煉與合成
      兩個新計數（rerolled / gemComposed）由 item.js 對應成功點遞增。
-   - 狀態檢查：每次讀取時依 G 現況計算（身上品質、鑲嵌數、太古數、關卡、技能等級、
-     生命上限），拔下再裝不會重複計數——這正是設計文檔對鑲嵌任務的要求。
+   - 狀態檢查：每次讀取時依 G 現況計算（身上品質、鑲嵌數、太古數、關卡、高塔層數、
+     零件等級、技能等級、生命上限），拔下再裝不會重複計數——這正是設計文檔對鑲嵌任務
+     的要求。
 
    存檔欄位只有 G.taskState = { idx }：idx 為下一個可領取的任務索引（0 起）。
    idx 之前的任務一律視為已領取；任務嚴格循序，僅 idx 那一筆可領。 */
@@ -78,6 +79,21 @@ function taskCountForgeParts() {
   return n;
 }
 
+/* 目前等級最高的零件是幾級（「升級任意零件至 N 級」）。
+   零件等級是全域資料（G.factory.partLevels，見 formula.js partLevelFor），
+   不隨零件有沒有裝在熔爐上而變動；未解鎖的零件視為 0 級，不佔進度。 */
+function taskMaxForgePartLevel() {
+  var levels = G.factory && G.factory.partLevels;
+  if (!levels || typeof levels !== 'object' || typeof PART_TYPES === 'undefined') return 0;
+  var best = 0;
+  var keys = Object.keys(PART_TYPES);
+  for (var i = 0; i < keys.length; i++) {
+    var lv = Math.floor(Number(levels[keys[i]]) || 0);
+    if (lv > best) best = lv;
+  }
+  return Math.max(0, best);
+}
+
 /* ---- 任務進度 ----
    回傳該任務目前的進度值；與 def.count 比較即知是否達成。
    已領取的任務（idx 之前）由呼叫端直接以 count 顯示，不再重算。 */
@@ -95,11 +111,17 @@ function taskProgressFor(def) {
     case 'composeCount': return Math.floor(Number(stats.gemComposed) || 0);
     case 'socketCount': return taskCountSocketedGems();
     case 'forgeParts': return taskCountForgeParts();
+    case 'forgePartLevel': return taskMaxForgePartLevel();
     case 'ancientCount': return taskCountAncientAffixes();
     case 'maxHp': return (typeof getStats === 'function') ? Math.floor(getStats().hp || 0) : 0;
     case 'stageClear':
-      // zoneBestProgress = 該地圖可挑戰的最高關；已通關數 = best - 1
-      return (typeof zoneBestProgress === 'function') ? Math.max(0, zoneBestProgress(def.param) - 1) : 0;
+      /* 讀「實際已通關的最高關」（data.js zoneClearedStage）而不是 best-1：
+         best 在地圖最後一關會被上限夾住，用 best-1 判定的話「打贏草原第 200 關」
+         這種以最後一關為目標的任務永遠差 1，整條任務鏈會卡死。 */
+      return (typeof zoneClearedStage === 'function') ? zoneClearedStage(def.param) : 0;
+    case 'towerFloor':
+      // 高塔已通關的最高層（G.tower.highest，見 tower.js endTowerFight 的 firstClear）
+      return Math.max(0, Math.floor(Number(G.tower && G.tower.highest) || 0));
     case 'skillLevel':
       return (typeof skillLevel === 'function') ? (skillLevel(def.param) || 0) : 0;
     default: return 0;

@@ -414,6 +414,9 @@ function migrateSave(data) {
     var cap = zoneMaxStage(zoneKey);
     zp.best = clamp(Math.floor(Number(zp.best) || 1), 1, cap);
     zp.current = clamp(Math.floor(Number(zp.current) || 1), 1, zp.best);
+    /* cleared＝實際通關的最高關（best 在最後一關會被 cap 夾住，分不出有沒有打贏它）。
+       舊存檔沒有這欄，用 best-1 回推＝改版前 stageClear 的判定值，任務進度不倒退。 */
+    zp.cleared = clamp(Math.max(Math.floor(Number(zp.cleared) || 0), zp.best - 1), 0, cap);
   });
   var savedZoneDef = ZONES[data.stage.zone];
   var savedZoneUnlocked = !!savedZoneDef &&
@@ -427,7 +430,13 @@ function migrateSave(data) {
     var currentCap = zoneMaxStage(data.stage.zone);
     data.stage.best = clamp(Math.floor(Number(data.stage.best) || 1), 1, currentCap);
     data.stage.current = clamp(Math.floor(Number(data.stage.current) || 1), 1, data.stage.best);
-    data.zoneProgress[data.stage.zone] = { current: data.stage.current, best: data.stage.best };
+    /* stage 是目前場景的即時值，zoneProgress 那一份可能較舊（只在切場景時同步）；
+       cleared 取兩者較大者，舊存檔才不會因為 zoneProgress.best 落後而少算通關數。 */
+    var curZp = data.zoneProgress[data.stage.zone] || {};
+    data.zoneProgress[data.stage.zone] = {
+      current: data.stage.current, best: data.stage.best,
+      cleared: clamp(Math.max(Math.floor(Number(curZp.cleared) || 0), data.stage.best - 1), 0, currentCap)
+    };
   }
   data.player.reincarnationTalentPoints = Math.max(0, Math.floor(Number(data.player.reincarnationTalentPoints) || 0));
   if (!data.player.talents || typeof data.player.talents !== 'object') data.player.talents = { levels: {}, potentialLevels: {} };
@@ -542,7 +551,10 @@ function migrateSave(data) {
   // 戰鬥場景系統：舊存檔進度歸入「草原」
   if (!hadZone) {
     data.stage.zone = 'plains';
-    data.zoneProgress.plains = { current: data.stage.current || 1, best: data.stage.best || 1 };
+    data.zoneProgress.plains = {
+      current: data.stage.current || 1, best: data.stage.best || 1,
+      cleared: Math.max(0, (Number(data.stage.best) || 1) - 1)   // 無場景概念的舊存檔：通關數由 best 回推
+    };
   }
   /* ---- 技能融合改造遷移（2026-07-30，逐項冪等）----
      1) 全技能等級夾回新上限（10、轉生後 15）；點數採等級推導制，夾限即自動退點。

@@ -1191,6 +1191,28 @@ function zoneBestProgress(zoneKey) {
   if (G.stage && G.stage.zone === zoneKey) return Math.max(1, Number(G.stage.best) || 1);
   return Math.max(1, Number(G.zoneProgress && G.zoneProgress[zoneKey] && G.zoneProgress[zoneKey].best) || 1);
 }
+/* ---- 該地圖「實際已通關的最高關卡」（zoneProgress[zone].cleared）----
+   best 是「可挑戰的最高關」＝已通關+1，且被地圖上限夾住：打贏草原第 200 關（上限 200）
+   之後 best 仍是 200，和「只打到 199 關」分不出來。任務「通關第 N 關」必須能判定最後
+   一關，所以另存本欄。best 的語意與消費端（推關 UI、離線收益、地圖解鎖）完全不動。
+   舊存檔沒有 cleared：以 best-1 回推——那正是本欄出現前 stageClear 的判定值，
+   既有玩家的任務進度不會倒退（save.js sanitize 也做同一件事，這裡是保險）。 */
+function zoneClearedStage(zoneKey) {
+  if (typeof G === 'undefined' || !G) return 0;
+  var zp = G.zoneProgress && G.zoneProgress[zoneKey];
+  var cleared = zp ? Math.floor(Number(zp.cleared) || 0) : 0;
+  return Math.max(0, cleared, zoneBestProgress(zoneKey) - 1);
+}
+// 通關一關時記錄（只增不減）。cleared 只存在 zoneProgress，不在 G.stage 鏡像一份，
+// 避免多一組「切換場景要記得同步」的狀態。
+function markZoneCleared(zoneKey, stage) {
+  if (typeof G === 'undefined' || !G || !zoneKey) return;
+  if (!G.zoneProgress) G.zoneProgress = {};
+  var zp = G.zoneProgress[zoneKey];
+  if (!zp || typeof zp !== 'object') { zp = { current: 1, best: 1 }; G.zoneProgress[zoneKey] = zp; }
+  var n = Math.max(0, Math.floor(Number(stage) || 0));
+  if (n > (Math.floor(Number(zp.cleared) || 0))) zp.cleared = n;
+}
 function isZoneUnlocked(zoneKey) {
   var zone = ZONES[zoneKey];
   if (!zone) return false;
@@ -1825,7 +1847,7 @@ var TASKS = [
   { order: 6, name: '將全身的裝備替換成獨特品質', type: 'equipSlots', param: '3|0', count: 13, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
   { order: 7, name: '學習治療技能「再生術」', type: 'skillLevel', param: 'regenerate', count: 1, rewardType: 'skillXp', rewardQty: 10000, rewardLabel: '技能經驗值+10000' },
   { order: 8, name: '強化裝備20次', type: 'upgradeCount', count: 20, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
-  { order: 9, name: '挑戰草原第30關成功', type: 'stageClear', param: 'plains', count: 30, rewardType: 'equip', rewardParam: '3|0', rewardQty: 1, rewardLabel: '任意獨特裝備×1' },
+  { order: 9, name: '挑戰草原第30關成功', type: 'stageClear', param: 'plains', count: 30, rewardType: 'equip', rewardParam: '3|1|2', rewardQty: 1, rewardLabel: '任意2太古獨特1級裝備×1' },
   { order: 10, name: '裝備鑲嵌任意寶石8顆', type: 'socketCount', count: 8, rewardType: 'gem', rewardParam: '1', rewardQty: 10, rewardLabel: '任意1級寶石×10' },
   { order: 11, name: '裝備任意附魔2次', type: 'enchantCount', count: 2, rewardType: 'book', rewardParam: 'focus', rewardQty: 1, rewardLabel: '專注附魔×1' },
   { order: 12, name: '熔爐裝配任意零件4個', type: 'forgeParts', count: 4, rewardType: 'essence', rewardQty: 50, rewardLabel: '附魔精華+50' },
@@ -1837,6 +1859,14 @@ var TASKS = [
   { order: 18, name: '生命最大值達5000', type: 'maxHp', count: 5000, rewardType: 'gold', rewardQty: 300000, rewardLabel: '金幣+300000' },
   { order: 19, name: '挑戰草原第50關BOSS成功', type: 'stageClear', param: 'plains', count: 50, rewardType: 'equip', rewardParam: '4|50|2', rewardQty: 1, rewardLabel: '任意2太古史詩50級裝備×1' },
   { order: 20, name: '將全身的裝備替換成50級史詩品質', type: 'equipSlots', param: '4|50', count: 13, rewardType: 'essence', rewardQty: 100, rewardLabel: '附魔精華+100' },
-  { order: 21, name: '擁有5個太古詞條', type: 'ancientCount', count: 5, rewardType: 'essence', rewardQty: 300, rewardLabel: '附魔精華+300' },
-  { order: 22, name: '挑戰草原第100關BOSS成功', type: 'stageClear', param: 'plains', count: 100, rewardType: 'equip', rewardParam: '5|100|3', rewardQty: 1, rewardLabel: '任意3太古傳說100級裝備×1' }
+  { order: 21, name: '擁有5個太古詞條', type: 'ancientCount', count: 6, rewardType: 'essence', rewardQty: 200, rewardLabel: '附魔精華+200' },
+  { order: 22, name: '挑戰草原第100關BOSS成功', type: 'stageClear', param: 'plains', count: 100, rewardType: 'equip', rewardParam: '5|100|3', rewardQty: 1, rewardLabel: '任意3太古傳說100級裝備×1' },
+  { order: 23, name: '強化裝備100次', type: 'upgradeCount', count: 100, rewardType: 'essence', rewardQty: 300, rewardLabel: '附魔精華+300' },
+  { order: 24, name: '挑戰草原第150關BOSS成功', type: 'stageClear', param: 'plains', count: 150, rewardType: 'equip', rewardParam: '5|150|3', rewardQty: 1, rewardLabel: '任意3太古傳說150級裝備×1' },
+  { order: 25, name: '挑戰高塔BOSS第5層成功', type: 'towerFloor', count: 5, rewardType: 'gem', rewardParam: '2', rewardQty: 15, rewardLabel: '任意2級寶石×15' },
+  { order: 26, name: '將全身的裝備替換成150級傳說品質', type: 'equipSlots', param: '5|150', count: 13, rewardType: 'scrap', rewardQty: 50000, rewardLabel: '裝備碎片+50000' },
+  { order: 27, name: '洗煉裝備100次', type: 'rerollCount', count: 100, rewardType: 'essence', rewardQty: 300, rewardLabel: '附魔精華+300' },
+  { order: 28, name: '升級熔爐任意零件至3級', type: 'forgePartLevel', count: 3, rewardType: 'gold', rewardQty: 2000000, rewardLabel: '金幣+2000000' },
+  { order: 29, name: '挑戰草原第200關BOSS成功', type: 'stageClear', param: 'plains', count: 200, rewardType: 'equip', rewardParam: '5|200|3', rewardQty: 1, rewardLabel: '任意3太古傳說200級裝備×1' },
+  { order: 30, name: '挑戰荒漠第200關BOSS成功', type: 'stageClear', param: 'desert', count: 200, rewardType: 'equip', rewardParam: '5|200|4', rewardQty: 1, rewardLabel: '任意4太古傳說200級裝備×1' }
 ];
