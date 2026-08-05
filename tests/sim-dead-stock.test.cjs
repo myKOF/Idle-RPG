@@ -26,6 +26,13 @@ function bootedEngine(seconds) {
   const engine = createEngine({ seed: 20260803 });
   engine.boot(null);
   engine.stepSeconds(seconds || 1800);
+  /* 落點必須是「有對手」的正常決策點：沒有對手（剛死、復活中、剛過關）時
+     eval 面板回 known:false 的空殼，deadStock 是 bagCount 0 的佔位物件，
+     整包斷言會誤判。固定秒數的落點會被任何改動亂數流的功能位移
+     （例：2026-08-05 雙手武器詞條 +1），所以不能靠挑秒數，要推進到條件成立。 */
+  for (let i = 0; i < 300 && !(engine.panel('eval', { refreshSec: 0 }) || {}).known; i++) {
+    engine.stepSeconds(1);
+  }
   return engine;
 }
 

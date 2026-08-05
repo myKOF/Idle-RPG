@@ -33,7 +33,7 @@ test('太古詞條產生率表與規格一致', () => {
   assert.equal(JSON.stringify(context.ANCIENT_COUNT_WEIGHTS), JSON.stringify(SPEC_WEIGHTS));
 });
 
-test('rollAncientAffixCount 依權重擲骰；查無詞條數量列回傳 0', () => {
+test('rollAncientAffixCount 依權重擲骰；表下限外 0 條、超過表上限沿用最高列', () => {
   const context = loadGameContext();
   // 權重對為 [太古條數, 權重%]；stub wpick 取第一個（0 條）與最後一個（N 條）驗證表格接線
   context.wpick = (pairs) => {
@@ -45,16 +45,18 @@ test('rollAncientAffixCount 依權重擲骰；查無詞條數量列回傳 0', ()
   context.wpick = (pairs) => pairs[pairs.length - 1][0];
   assert.equal(context.rollAncientAffixCount(2), 2);
   assert.equal(context.rollAncientAffixCount(10), 10);
-  // 表外詞條數量（0/1/11）一律 0 條
+  // 低於表下限（0/1 詞條）一律 0 條
   assert.equal(context.rollAncientAffixCount(0), 0);
   assert.equal(context.rollAncientAffixCount(1), 0);
-  assert.equal(context.rollAncientAffixCount(11), 0);
+  // 超過表上限（雙手詞條 +1 → 神鑄混沌 10+1=11 詞條）：以表內最高列（10 詞條）代替
+  assert.equal(context.rollAncientAffixCount(11), 10);
 });
 
 test('裝備產出時決定太古條數與位置，太古數值必為滿值 ×1.35', () => {
   const context = loadGameContext();
   context.rollAncientAffixCount = (n) => Math.min(2, n); // 固定擲出 2 條
-  const it = context.makeEquipment(200, { rarity: 6, level: 200 }); // 神話：6 詞條
+  // 固定非武器部位：隨機部位可能骰中雙手武器（詞條 +1），詞條數斷言會間歇失敗
+  const it = context.makeEquipment(200, { rarity: 6, level: 200, slot: 'chest' }); // 神話：6 詞條
   assert.equal(it.affixes.length, 6);
   const ancients = it.affixes.filter((a) => a.ancient);
   assert.equal(ancients.length, 2);

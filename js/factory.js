@@ -350,6 +350,7 @@ function tryHybridSynthesis() {
   if (great && it.rarity < GODFORGED_IDX - 1) {
     it.rarity++;
     ensureSockets(it); // 稀有度提升 → 插槽數同步增加
+    normalizeTwoHandItemCounts(it); // 雙手武器：詞條數同步補至新稀有度基準 +1（非雙手為 no-op）
     it.name = RARITY_PREFIX[it.rarity] + it.name.replace(/^(神鑄創世的|粗糙的|堅實的|精工的|奇異的|大師級|傳世的|神鑄的|創世的|普通的|精良的|稀有的|獨特的|史詩的|傳說的|神話的)/, '');
     // 升至傳說級後補傳奇特效，並遵守武器類型限制。
     if (it.rarity >= PASSIVE_MIN_RARITY && !it.passive) {
@@ -376,7 +377,7 @@ function tryHybridSynthesis() {
       // 變異倍率存為 mult（數值仍由 enchantValue 當場算），×1.5 可疊乘
       if (mens[mi].key === bookKey) { mens[mi].mult = (Number(mens[mi].mult) || 1) * 1.5; break; }
     }
-    if (it.affixes.length < MAX_AFFIXES) {
+    if (it.affixes.length < maxAffixesFor(it)) {
       it.affixes = it.affixes.concat(rollAffixes(1, it.rarity, it.slot)
         .filter(function (na) { return !it.affixes.some(function (a) { return a.key === na.key; }); }));
     }

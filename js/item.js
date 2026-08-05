@@ -368,12 +368,34 @@ function getItemAncientCount(it) {
   return c;
 }
 
-// 補齊插槽陣列（舊存檔裝備 / 稀有度提升後）
+// 補齊插槽陣列（舊存檔裝備 / 稀有度提升後）；雙手武器鑲孔數 ×1.75 捨去（socketCountFor）
 function ensureSockets(it) {
-  var n = socketCountFor(it.rarity);
+  var n = socketCountFor(it.rarity, it);
   if (!it.sockets) it.sockets = [];
   while (it.sockets.length < n) it.sockets.push(null);
   return it.sockets;
+}
+
+/* 雙手武器數量補齊（2026-08-05 雙手改造：詞條 +1、鑲孔 ×1.75 捨去）。
+   舊存檔的既有雙手武器由 migrateSave 逐件呼叫（js/save.js fixLoadedItem）：
+   詞條不足補至「稀有度固定條數＋加成」——只補不刪（舊版表若曾給更多條就保留），
+   補的詞條照一般產出擲骰、不與現有詞條重複、一律非太古（太古位置產出時定終身）；
+   鑲孔走 ensureSockets 只加不減。冪等：數量已達標即 no-op。
+   附魔欄位數與詞條/特效數值倍率都是讀取時當場算（enchantCapFor／affixValue），無須遷移。 */
+function normalizeTwoHandItemCounts(it) {
+  if (typeof isTwoHandItem !== 'function' || !isTwoHandItem(it)) return it;
+  ensureSockets(it);
+  var r = RARITIES[clamp(it.rarity, 0, RARITIES.length - 1)];
+  if (!r || !Array.isArray(it.affixes)) return it;
+  var target = r.affix[0] + TWO_HAND_BONUS_AFFIXES;
+  var guard = 0;
+  while (it.affixes.length < target && guard++ < 50) {
+    var added = rollAffixes(1, it.rarity, it.slot).filter(function (na) {
+      return !it.affixes.some(function (a) { return a.key === na.key; });
+    });
+    if (added.length) it.affixes = it.affixes.concat(added);
+  }
+  return it;
 }
 // 鑲嵌：從庫存取一顆該種類最高等級的寶石放入第一個空槽（含 6~10 階神鑄寶石）
 function socketGem(it, type) {
@@ -464,7 +486,14 @@ function makeEquipment(stage, opts) {
   // 裝備等級分段（equipmentTierLevel → formula.js §6）：1~49 關掉 1 級裝、50~99 關掉 50 級裝、100~149 關掉 100 級裝…
   var lvl = equipmentTierLevel(opts.level || stage);
   var r = RARITIES[rarity];
-  var affixCount = ri(r.affix[0], r.affix[1]);
+  // 武器：決定武器類型（12 種；opts.weaponType 可指定，否則均等隨機）。
+  // 必須先於詞條數決定——雙手武器詞條數 +1（TWO_HAND_BONUS_AFFIXES → data.js）。
+  var weaponType = null;
+  if (slot === 'weapon') {
+    weaponType = (opts.weaponType && WEAPON_TYPES[opts.weaponType]) ? opts.weaponType : pick(Object.keys(WEAPON_TYPES));
+  }
+  var twoHand = !!(weaponType && WEAPON_TYPES[weaponType].cat === 'twoHand');
+  var affixCount = ri(r.affix[0], r.affix[1]) + (twoHand ? TWO_HAND_BONUS_AFFIXES : 0);
   // 玩家屬性：幸運值（洗煉數值取優）；詞條上限率只在洗煉時偏重高數值段
   var luck = 0;
   if (typeof G !== 'undefined' && G && G.player) {
@@ -473,11 +502,6 @@ function makeEquipment(stage, opts) {
   }
   // 太古詞條：產出時依詞條數量擲骰條數（rollAncientAffixCount → formula.js §6），位置隨機後永久固定
   var ancientSet = pickAncientPositions(affixCount, rollAncientAffixCount(affixCount, luck));
-  // 武器：決定武器類型（12 種；opts.weaponType 可指定，否則均等隨機）
-  var weaponType = null;
-  if (slot === 'weapon') {
-    weaponType = (opts.weaponType && WEAPON_TYPES[opts.weaponType]) ? opts.weaponType : pick(Object.keys(WEAPON_TYPES));
-  }
   var it = {
     id: uid(),
     kind: 'equip',

@@ -368,6 +368,8 @@ function migrateSave(data) {
       ensureWeaponMeta(it, slotKey === 'weapon2' ? 'dagger1h' : undefined);
     }
     if (typeof normalizeItemValueSources === 'function') normalizeItemValueSources(it);
+    // 雙手改造（2026-08-05）：既有雙手武器補詞條 +1 與鑲孔 ×1.75（冪等，只補不刪）
+    if (typeof normalizeTwoHandItemCounts === 'function') normalizeTwoHandItemCounts(it);
   };
   Object.keys(data.equipment || {}).forEach(function (slot) { fixLoadedItem(data.equipment[slot], slot); });
   Object.keys(data.equipmentSets || {}).forEach(function (setKey) {
