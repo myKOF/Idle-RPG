@@ -166,7 +166,12 @@ function playCombatVfx(spec) {
     dur: spec.dur, count: spec.count,
     // travelMs 必須一起送：傷害數字的延遲用的是這組數字，投射物動畫沒拿到就會用
     // 預設長度，變成「數字到了子彈還在飛」——與 v11 反過來的走鐘。
-    travelMs: spec.travelMs || null
+    travelMs: spec.travelMs || null,
+    // v17 元素化特效欄位：屬性／分類／變體／基礎延遲（追加劍氣、天罰的錯開時刻）。
+    // 少送任何一個，顯示層都會退回單色預設畫法——所以新增欄位務必同步列在這裡。
+    elem: spec.elem || null, cat: spec.cat || null,
+    variant: spec.variant || null,
+    delayMs: (spec.delayMs > 0) ? spec.delayMs : 0
   });
 }
 

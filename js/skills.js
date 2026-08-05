@@ -1657,7 +1657,12 @@ var SKILL_CATS = {
 
    保留 G 後備是為了不動模擬層既有呼叫點與那 116 支測試。 */
 function skillDef(id, fusions) {
-  if (SKILLS[id]) return SKILLS[id];
+  if (SKILLS[id]) {
+    // SKILL_VFX_OVERRIDE 等處以 sk.id 查表，但靜態表（由 Skills.xlsx 生成）沒有 id 欄位，
+    // 首次取用時回填。融合技與潛力技的動態 def 本來就有 id，不受影響。
+    if (SKILLS[id].id !== id) SKILLS[id].id = id;
+    return SKILLS[id];
+  }
   var fs = fusions ||
     ((typeof G !== 'undefined' && G && G.player) ? G.player.fusions : null) || [];
   for (var i = 0; i < fs.length; i++) if (fs[i].id === id) return resolveFusionRecord(fs[i]);
@@ -2407,14 +2412,50 @@ function skillRtActiveEnemies(fallback) {
    資料推導：範圍決定形狀、系統分類與屬性決定顏色、技能自己的 emoji 當投射物圖案。
    這樣新增技能不必補特效表，改了傷害範圍特效也會跟著變。
 
-   個別技能要特規時再於 SKILL_VFX_OVERRIDE 覆寫，不必動這裡的推導規則。 */
+   個別技能要特規時再於 SKILL_VFX_OVERRIDE 覆寫，不必動這裡的推導規則。
+
+   variant（協議 v17）：特效「變體」——同一原型下的專屬畫法，全部由顯示層（js/vfx.js）
+   解讀；顯示層不認得的 variant 一律退回該原型的預設畫法，因此加新變體不需要動協議。
+   現有變體：
+     meteor     一顆大隕石由天頂砸向整個範圍（傷害數字統一在落地那一刻跳）
+     pillar     目標上方降下光柱，觸地後散開
+     chain      閃電從天劈落，並在敵人之間彈射弧光
+     cyclone    圓形氣旋斬擊在範圍內旋轉
+     bladestorm 亂舞刀光掃過整個範圍
+     nova       冰環爆發＋地面結霜
+     vortex     暗紫旋渦在目標身上收縮引爆
+     venom      綠色毒霧彈＋命中後殘留毒雲泡泡
+     venomburst 疫病炸裂（綠爆＋毒泡）
+     detonate   引爆類的大型爆炸（附帶畫面震動）
+     drain      投射命中後有一縷生命流回我方
+     flamewave  火浪投射（火焰拖尾強化）
+     swordfield 劍域領域：旋轉的劍氣環
+     swordwave  普攻劍氣（由 combat.js 直接發） */
 var SKILL_VFX_OVERRIDE = {
-  // 多刀類：投射物打散成多發，看起來才像「射出一排飛刀」
-  shadowStrike: { fxKind: 'projectile', count: 3 },
-  swiftCuts: { fxKind: 'slash', count: 3 },
-  // 天降類：即使不是全場技，表現上也是從天而降
-  meteor: { fxKind: 'rain' },
-  holySmite: { fxKind: 'rain' }
+  // 物理：範圍斬擊類
+  whirlwind: { variant: 'cyclone' },        // 旋風斬：氣旋在敵陣中旋轉
+  swiftCuts: { variant: 'bladestorm' },     // 疾風連斬：三段刀光亂舞
+  echoBlade: { variant: 'bladestorm' },     // 殘影迴斬：殘影刀光
+  sinDetonate: { variant: 'detonate' },     // 斷罪引爆
+  swordDomain: { variant: 'swordfield' },   // 劍域千鋒：領域＝旋轉劍氣環
+  // 火
+  meteor: { variant: 'meteor' },            // 大隕石砸全場
+  infernoDomain: { variant: 'flamewave' },  // 焚世領域：本體火浪；領域由 elem 自動火焰化
+  // 冰
+  frostNova: { variant: 'nova' },           // 霜之新星：冰環爆發
+  // 雷
+  chainLightning: { variant: 'chain' },     // 連鎖閃電：天雷劈落＋敵間彈射弧光
+  // 毒
+  venomCloud: { variant: 'venom' },         // 劇毒雲霧：毒霧彈＋殘留毒雲
+  plagueBurst: { variant: 'venomburst' },   // 疫爆術
+  // 暗
+  voidRift: { variant: 'vortex' },          // 虛空裂隙：暗漩渦
+  runeShatter: { variant: 'detonate' },     // 碎印湮滅：印記引爆
+  shadowBolt: { variant: 'drain' },         // 暗影箭：吸血流返
+  lifeLink: { variant: 'drain' },           // 生命汲取
+  soulEcho: { variant: 'drain' },           // 汲魂回響
+  // 聖
+  holySmite: { fxKind: 'rain', variant: 'pillar' }  // 聖光審判：光柱降下
 };
 
 function skillVfxColor(sk, fx) {
@@ -2427,12 +2468,18 @@ function skillVfxColor(sk, fx) {
 
 /* 由技能資料推導特效原型：
      沒有傷害段（純增益／治療／護盾）          → selfBuff（我方身上的光暈）
+     沒有傷害段但只作用在敵人身上（純詛咒／減益）→ curse（敵身詛咒符紋）
      全場                                      → rain（天降）
      一直線（1*N 或 N*1）                      → beam（貫穿）
      方框（N*M 皆 >1）                         → burst（爆發）
      單體：物理系 → slash（斬擊）、其餘 → projectile（投射物） */
 function skillVfxKind(sk, fx, shape) {
-  if (!fx || !fx.dmgType) return 'selfBuff';
+  if (!fx || !fx.dmgType) {
+    // 帶自身增益的（戰吼等）以我方光環為主；純詛咒（虛弱詛咒／死亡詛咒）畫在敵人身上
+    var pureDebuff = fx && !fx.buff && !fx.buff2 && !fx.healPctMax && !fx.shieldPctMax &&
+      (fx.debuff || fx.debuff2 || fx.maxHpDotPct || fx.dotPulse);
+    return pureDebuff ? 'curse' : 'selfBuff';
+  }
   var sp = (typeof bfParseShape === 'function') ? bfParseShape(shape) : { kind: 'single', w: 1, h: 1 };
   if (sp.kind === 'all') return 'rain';
   if (sp.kind === 'box') {
@@ -2449,6 +2496,10 @@ function skillVfxSpec(sk, fx, shape, targetIds, cells, extra) {
     fxKind: skillVfxKind(sk, fx, shape),
     glyph: (sk && sk.emoji) || '✨',
     color: skillVfxColor(sk, fx),
+    // 屬性與分類（協議 v17）：顯示層據此挑選元素化畫法（火球拖焰／冰晶碎裂／電花…）
+    // 與受擊特效；缺欄位時顯示層退回 color 單色畫法，因此舊事件仍相容。
+    elem: (typeof skillElemOf === 'function') ? skillElemOf(sk, fx) : null,
+    cat: (sk && sk.cat) || null,
     targets: targetIds || [],
     cells: cells || null,
     dur: 0.5,
@@ -2459,6 +2510,13 @@ function skillVfxSpec(sk, fx, shape, targetIds, cells, extra) {
   if (extra) for (var k2 in extra) spec[k2] = extra[k2];
   if (spec.fxKind === 'rain') spec.dur = 0.75;
   if (spec.fxKind === 'aura') spec.count = 1;
+  // 隕石類：一顆大隕石砸向全場——所有目標共用同一個落地時刻（取最遠者），
+  // 傷害數字也在同一瞬間一起跳，才像「同一顆隕石」而不是逐格點名。
+  if (spec.variant === 'meteor' && spec.travelMs && spec.travelMs.length) {
+    var mMax = 0, mi;
+    for (mi = 0; mi < spec.travelMs.length; mi++) mMax = Math.max(mMax, spec.travelMs[mi] || 0);
+    for (mi = 0; mi < spec.travelMs.length; mi++) spec.travelMs[mi] = mMax;
+  }
   return spec;
 }
 

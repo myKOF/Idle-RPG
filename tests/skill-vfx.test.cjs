@@ -90,7 +90,8 @@ test('個別技能可用 SKILL_VFX_OVERRIDE 特規，不必改推導規則', () 
 
 test('全表覆蓋：每一支主動技與潛力技都推得出特效，且欄位合法', () => {
   const c = loadContext();
-  const KINDS = ['projectile', 'slash', 'burst', 'beam', 'rain', 'aura', 'selfBuff'];
+  // v17 新增 curse（純詛咒／減益畫在敵人身上）；chain/impact 由 combat.js/potential.js 直接組事件，不經推導
+  const KINDS = ['projectile', 'slash', 'burst', 'beam', 'rain', 'aura', 'selfBuff', 'curse'];
   const ids = Object.keys(c.SKILLS);
   assert.ok(ids.length >= 90, '技能表應有 90 支以上');
   const seen = {};

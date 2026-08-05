@@ -5593,9 +5593,10 @@ textarea#save-io {
 }
 
 /* ==========================================================================
-   戰鬥特效（js/vfx.js）
-   規格：所有技能與 buff 都要有簡易特效。原型由技能資料推導，這裡只負責畫。
-   一律只動 transform / opacity，不碰 layout，避免 16 格滿場時掉幀。
+   戰鬥特效（js/vfx.js）v2「酷炫改造」
+   規格：普攻＝劍氣投射；技能依屬性（--vfx-c1 主色/--vfx-c2 亮部/--vfx-glow 光暈）
+   與 variant 元素化；所有命中都補受擊爆點＋卡片震動。
+   一律只動 transform / opacity / filter，不碰 layout，避免 16 格滿場時掉幀。
    ========================================================================== */
 .bf-vfx-layer {
   position: absolute;
@@ -5612,80 +5613,318 @@ textarea#save-io {
   will-change: transform, opacity;
 }
 
-/* 投射物：從我方飛向目標，尾端一縮 */
-.vfx-projectile {
+.vfx span {
+  position: absolute;
+  pointer-events: none;
+}
+
+/* ---- 投射物：外層做位移（等速飛行），core/trail 對齊飛行方向 ---- */
+.vfx-proj {
   left: 0;
   top: 0;
-  font-size: 18px;
-  line-height: 1;
-  filter: drop-shadow(0 0 6px currentColor);
   animation-name: vfxFly;
-  animation-timing-function: cubic-bezier(0.3, 0.1, 0.2, 1);
+  animation-timing-function: cubic-bezier(0.3, 0.1, 0.25, 1);
   animation-fill-mode: both;
 }
 
 @keyframes vfxFly {
   from {
-    transform: translate(var(--vfx-x0), var(--vfx-y0)) translate(-50%, -50%) scale(0.7);
+    transform: translate(var(--vfx-x0), var(--vfx-y0)) translate(-50%, -50%) scale(0.75);
     opacity: 0;
   }
 
-  15% {
+  12% {
+    opacity: 1;
+  }
+
+  92% {
     opacity: 1;
   }
 
   to {
-    transform: translate(var(--vfx-x1), var(--vfx-y1)) translate(-50%, -50%) scale(1.15);
-    opacity: 0;
+    transform: translate(var(--vfx-x1), var(--vfx-y1)) translate(-50%, -50%) scale(1.1);
+    opacity: 0.9;
   }
 }
 
-/* 斬擊：目標身上劃過的一道刀光 */
-.vfx-slash {
-  width: 54px;
-  height: 54px;
-  margin: -27px 0 0 -27px;
-  border-top: 3px solid var(--vfx-color, #fff);
-  border-right: 3px solid transparent;
-  border-bottom: 3px solid transparent;
-  border-left: 3px solid transparent;
-  border-radius: 50%;
-  filter: drop-shadow(0 0 5px var(--vfx-color, #fff));
-  animation-name: vfxSlash;
-  animation-timing-function: ease-out;
-  animation-fill-mode: both;
+.vfx-proj-core {
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%) rotate(var(--vfx-rot, 0rad));
 }
 
-@keyframes vfxSlash {
+.vfx-proj-trail {
+  left: 0;
+  top: 0;
+  width: 36px;
+  height: 6px;
+  border-radius: 3px;
+  transform-origin: 0 50%;
+  transform: rotate(var(--vfx-rot, 0rad)) translateX(-38px) translateY(-50%);
+  background: linear-gradient(90deg, transparent, var(--vfx-c1, #fff));
+  opacity: 0.75;
+  filter: blur(1px);
+}
+
+/* 普攻劍氣：月牙刀光 */
+.vfx-proj-sword .vfx-proj-core {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-right: 5px solid var(--vfx-c2, #fff);
+  filter: drop-shadow(0 0 6px var(--vfx-glow, #fff));
+}
+
+.vfx-proj-sword .vfx-proj-trail {
+  height: 3px;
+  opacity: 0.6;
+}
+
+/* 火球：燃燒核心＋長焰尾（45° 俯衝由 JS 給起點） */
+.vfx-proj-fire .vfx-proj-core {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, var(--vfx-c2, #ffd166), var(--vfx-c1, #fb7233) 60%, transparent 75%);
+  filter: drop-shadow(0 0 8px var(--vfx-glow, #fb7233));
+  animation: vfxCorePulse 0.18s ease-in-out infinite alternate;
+}
+
+.vfx-proj-fire .vfx-proj-trail {
+  width: 52px;
+  height: 10px;
+  transform: rotate(var(--vfx-rot, 0rad)) translateX(-54px) translateY(-50%);
+  background: linear-gradient(90deg, transparent, var(--vfx-c1, #fb7233) 55%, var(--vfx-c2, #ffd166));
+  filter: blur(2px);
+}
+
+.vfx-proj-big .vfx-proj-core {
+  width: 26px;
+  height: 26px;
+}
+
+/* 冰晶彈：稜形晶體＋霧尾 */
+.vfx-proj-ice .vfx-proj-core {
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(135deg, var(--vfx-c2, #e8faff), var(--vfx-c1, #54c7fc));
+  transform: translate(-50%, -50%) rotate(var(--vfx-rot, 0rad)) rotate(45deg);
+  border-radius: 2px;
+  filter: drop-shadow(0 0 6px var(--vfx-glow, #54c7fc));
+}
+
+.vfx-proj-ice .vfx-proj-trail {
+  filter: blur(3px);
+  opacity: 0.55;
+}
+
+/* 電光彈（雷紋刻印等）：亮白核心＋強光暈 */
+.vfx-proj-lightning .vfx-proj-core {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--vfx-c2, #fffbe0);
+  box-shadow: 0 0 10px var(--vfx-glow, #ffd93d), 0 0 22px var(--vfx-glow, #ffd93d);
+  animation: vfxCorePulse 0.1s linear infinite alternate;
+}
+
+/* 毒彈：綠焰彈頭，飛行時上下蛇行 */
+.vfx-proj-poison .vfx-proj-core {
+  width: 15px;
+  height: 15px;
+  border-radius: 50% 50% 50% 0;
+  background: radial-gradient(circle at 40% 40%, var(--vfx-c2, #e0ffb0), var(--vfx-c1, #9ee34a) 65%);
+  filter: drop-shadow(0 0 7px var(--vfx-glow, #9ee34a));
+  animation: vfxWobble 0.24s ease-in-out infinite alternate;
+}
+
+@keyframes vfxWobble {
   from {
-    transform: rotate(-70deg) scale(0.6);
+    transform: translate(-50%, calc(-50% - 4px)) rotate(var(--vfx-rot, 0rad)) rotate(-45deg);
+  }
+
+  to {
+    transform: translate(-50%, calc(-50% + 4px)) rotate(var(--vfx-rot, 0rad)) rotate(-45deg);
+  }
+}
+
+/* 暗影彈：紫黑暗球，內部旋渦自轉 */
+.vfx-proj-dark .vfx-proj-core {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: conic-gradient(var(--vfx-c1, #b76cff), var(--vfx-c2, #2e1046), var(--vfx-c1, #b76cff), var(--vfx-c2, #2e1046), var(--vfx-c1, #b76cff));
+  filter: drop-shadow(0 0 8px var(--vfx-glow, #b76cff));
+  animation: vfxSpin 0.45s linear infinite;
+}
+
+@keyframes vfxSpin {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* 聖光彈：radiant 光球＋十字光 */
+.vfx-proj-light .vfx-proj-core {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff, var(--vfx-c1, #ffe9a8) 70%);
+  box-shadow: 0 0 12px var(--vfx-glow, #ffe9a8), 0 0 26px var(--vfx-glow, #ffe9a8);
+}
+
+.vfx-proj-light .vfx-proj-core::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  background:
+    linear-gradient(0deg, transparent 46%, rgba(255, 255, 255, 0.9) 50%, transparent 54%),
+    linear-gradient(90deg, transparent 46%, rgba(255, 255, 255, 0.9) 50%, transparent 54%);
+  animation: vfxSpinCenter 0.7s linear infinite;
+}
+
+/* 特殊系保留技能圖示當彈體 */
+.vfx-proj-glyph .vfx-proj-core {
+  font-size: 18px;
+  line-height: 1;
+  filter: drop-shadow(0 0 6px var(--vfx-glow, #fff));
+}
+
+.vfx-proj-plain .vfx-proj-core {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--vfx-c2, #fff);
+  box-shadow: 0 0 8px var(--vfx-glow, #fff);
+}
+
+/* 汲取回流的魂息 */
+.vfx-proj-wisp .vfx-proj-core {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--vfx-c2, #fff), var(--vfx-c1, #b76cff) 75%);
+  filter: blur(1px) drop-shadow(0 0 6px var(--vfx-glow, #b76cff));
+}
+
+/* 核心脈動只動 opacity：filter 動畫每幀重算模糊，彈幕齊發時成本會疊上去 */
+@keyframes vfxCorePulse {
+  from {
+    opacity: 0.78;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---- 斬擊：交叉雙刀光 ---- */
+.vfx-slash {
+  width: 58px;
+  height: 58px;
+  margin: -29px 0 0 -29px;
+  transform: rotate(var(--vfx-tilt, 0deg));
+}
+
+.vfx-slash::before,
+.vfx-slash::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: var(--vfx-c1, #fff);
+  filter: drop-shadow(0 0 6px var(--vfx-glow, #fff));
+  animation: vfxSlashArc ease-out both;
+  animation-duration: inherit;
+  animation-delay: inherit;
+}
+
+.vfx-slash::after {
+  border-top-color: var(--vfx-c2, #fff);
+  animation-name: vfxSlashArcB;
+}
+
+@keyframes vfxSlashArc {
+  from {
+    transform: rotate(-80deg) scale(0.5);
     opacity: 0;
   }
 
-  30% {
+  25% {
     opacity: 1;
   }
 
   to {
-    transform: rotate(115deg) scale(1.25);
+    transform: rotate(120deg) scale(1.3);
     opacity: 0;
   }
 }
 
-/* 爆發：以目標為中心擴散的圓環 */
-.vfx-burst {
-  width: 20px;
-  height: 20px;
-  margin: -10px 0 0 -10px;
-  border: 2px solid var(--vfx-color, #fff);
-  border-radius: 50%;
-  box-shadow: 0 0 12px var(--vfx-color, #fff), inset 0 0 8px var(--vfx-color, #fff);
-  animation-name: vfxBurst;
-  animation-timing-function: ease-out;
-  animation-fill-mode: both;
+@keyframes vfxSlashArcB {
+  from {
+    transform: rotate(150deg) scale(0.45);
+    opacity: 0;
+  }
+
+  35% {
+    opacity: 0.95;
+  }
+
+  to {
+    transform: rotate(-60deg) scale(1.2);
+    opacity: 0;
+  }
 }
 
-@keyframes vfxBurst {
+/* ---- 爆發：閃光＋擴散圓環 ---- */
+.vfx-burst {
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+}
+
+.vfx-burst::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--vfx-c2, #fff), var(--vfx-glow, #fff) 45%, transparent 72%);
+  animation: vfxFlash ease-out both;
+  animation-duration: inherit;
+  animation-delay: inherit;
+}
+
+.vfx-burst::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--vfx-c1, #fff);
+  box-shadow: 0 0 12px var(--vfx-glow, #fff), inset 0 0 8px var(--vfx-glow, #fff);
+  animation: vfxRing ease-out both;
+  animation-duration: inherit;
+  animation-delay: inherit;
+}
+
+@keyframes vfxFlash {
+  from {
+    transform: scale(0.3);
+    opacity: 1;
+  }
+
+  to {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+@keyframes vfxRing {
   from {
     transform: scale(0.3);
     opacity: 0.95;
@@ -5697,25 +5936,107 @@ textarea#save-io {
   }
 }
 
-/* 貫穿：從我方拉向目標方向的一道光束 */
-.vfx-beam {
+/* ---- 氣旋（旋風斬）：三重弧刃旋轉掃過敵陣 ---- */
+.vfx-cyclone {
+  width: var(--vfx-size, 120px);
+  height: var(--vfx-size, 120px);
+  animation: vfxCycloneSpin 0.95s cubic-bezier(0.2, 0.4, 0.4, 1) both;
+  filter: drop-shadow(0 0 10px var(--vfx-glow, #fff));
+}
+
+.vfx-cyc-blade {
+  inset: 0;
+  border-radius: 50%;
+  border: 4px solid transparent;
+  border-top-color: var(--vfx-c2, #fff);
+  border-right-color: var(--vfx-c1, #fff);
+  transform: rotate(calc(var(--i, 0) * 120deg));
+  opacity: 0.9;
+}
+
+@keyframes vfxCycloneSpin {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg) scale(0.25);
+    opacity: 0;
+  }
+
+  18% {
+    opacity: 1;
+  }
+
+  80% {
+    opacity: 0.9;
+  }
+
+  to {
+    transform: translate(-50%, -50%) rotate(760deg) scale(1.05);
+    opacity: 0;
+  }
+}
+
+/* ---- 刀光亂舞：白刃連閃 ---- */
+.vfx-bstorm {
+  width: 52px;
   height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--vfx-c2, #fff) 30%, var(--vfx-c1, #fff) 70%, transparent);
+  filter: drop-shadow(0 0 5px var(--vfx-glow, #fff));
+  animation: vfxBstorm 0.4s ease-out both;
+}
+
+@keyframes vfxBstorm {
+  from {
+    transform: translate(-50%, -50%) rotate(var(--vfx-tilt, 0deg)) scaleX(0.1);
+    opacity: 0;
+  }
+
+  30% {
+    opacity: 1;
+  }
+
+  to {
+    transform: translate(-50%, -50%) rotate(var(--vfx-tilt, 0deg)) scaleX(1.35);
+    opacity: 0;
+  }
+}
+
+/* ---- 貫穿光束 ---- */
+.vfx-beam {
+  height: 5px;
   transform-origin: 0 50%;
-  margin-top: -2px;
-  background: linear-gradient(90deg, transparent, var(--vfx-color, #fff) 25%, #fff 55%, var(--vfx-color, #fff) 75%, transparent);
-  box-shadow: 0 0 10px var(--vfx-color, #fff);
+  margin-top: -2.5px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, var(--vfx-c1, #fff) 25%, var(--vfx-c2, #fff) 55%, var(--vfx-c1, #fff) 75%, transparent);
+  box-shadow: 0 0 12px var(--vfx-glow, #fff);
   animation-name: vfxBeam;
   animation-timing-function: ease-out;
   animation-fill-mode: both;
 }
 
+/* 寒冰槍：冰晶稜柱 */
+.vfx-beam-ice {
+  height: 8px;
+  margin-top: -4px;
+  background:
+    repeating-linear-gradient(105deg, transparent 0 10px, rgba(255, 255, 255, 0.5) 10px 13px),
+    linear-gradient(90deg, transparent, var(--vfx-c1, #54c7fc) 20%, var(--vfx-c2, #e8faff) 60%, var(--vfx-c1, #54c7fc));
+}
+
+/* 聖光雷射：細白熾芯＋粗光暈 */
+.vfx-beam-light {
+  height: 3px;
+  margin-top: -1.5px;
+  background: linear-gradient(90deg, transparent, #fff 18%, #fff 85%, transparent);
+  box-shadow: 0 0 6px var(--vfx-glow, #ffe9a8), 0 0 18px var(--vfx-glow, #ffe9a8), 0 0 34px var(--vfx-glow, #ffe9a8);
+}
+
 @keyframes vfxBeam {
   from {
     opacity: 0;
-    filter: brightness(2);
+    filter: brightness(2.2);
   }
 
-  20% {
+  18% {
     opacity: 1;
   }
 
@@ -5724,18 +6045,19 @@ textarea#save-io {
   }
 }
 
-/* 天降：由上而下落進範圍內 */
+/* ---- 天降（預設元素雨） ---- */
 .vfx-rain {
   font-size: 20px;
   line-height: 1;
   margin-left: -10px;
   filter: drop-shadow(0 0 6px currentColor);
-  animation-name: vfxRain;
+  color: var(--vfx-c1, #fff);
+  animation-name: vfxRainDrop;
   animation-timing-function: cubic-bezier(0.4, 0, 0.9, 0.6);
   animation-fill-mode: both;
 }
 
-@keyframes vfxRain {
+@keyframes vfxRainDrop {
   from {
     transform: translateY(calc(var(--vfx-size, 80px) * -1)) scale(0.8);
     opacity: 0;
@@ -5751,43 +6073,578 @@ textarea#save-io {
   }
 }
 
-/* 領域：蓋在格子上的呼吸光暈，持續到領域結束 */
+/* ---- 大隕石：燃燒火團俯衝＋落地大爆 ---- */
+.vfx-meteor {
+  left: 0;
+  top: 0;
+  animation-name: vfxFly;
+  animation-timing-function: cubic-bezier(0.5, 0, 0.85, 0.6);
+  animation-fill-mode: both;
+}
+
+.vfx-meteor .vfx-proj-core {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 38%, #fff6d8, var(--vfx-c2, #ffd166) 30%, var(--vfx-c1, #fb7233) 65%, rgba(120, 30, 0, 0.9));
+  filter: drop-shadow(0 0 16px var(--vfx-glow, #fb7233));
+  animation: vfxCorePulse 0.12s linear infinite alternate;
+}
+
+.vfx-meteor .vfx-proj-trail {
+  width: 110px;
+  height: 22px;
+  transform: rotate(var(--vfx-rot, 2.25rad)) translateX(-116px) translateY(-50%);
+  background: linear-gradient(90deg, transparent, var(--vfx-c1, #fb7233) 55%, var(--vfx-c2, #ffd166));
+  filter: blur(4px);
+  opacity: 0.85;
+}
+
+.vfx-meteor-boom {
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+}
+
+.vfx-meteor-boom::before {
+  content: '';
+  position: absolute;
+  inset: -46px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff8dd, var(--vfx-c2, #ffd166) 35%, var(--vfx-c1, #fb7233) 62%, transparent 78%);
+  animation: vfxFlash 0.55s ease-out both;
+  animation-delay: inherit;
+}
+
+.vfx-meteor-boom::after {
+  content: '';
+  position: absolute;
+  inset: -18px;
+  border-radius: 50%;
+  border: 3px solid var(--vfx-c1, #fb7233);
+  box-shadow: 0 0 22px var(--vfx-glow, #fb7233);
+  animation: vfxRing 0.6s ease-out both;
+  animation-delay: inherit;
+}
+
+.vfx-meteor-boom .vfx-p {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--vfx-c2, #ffd166);
+  filter: drop-shadow(0 0 4px var(--vfx-glow, #fb7233));
+  animation: vfxPart 0.7s ease-out both;
+}
+
+/* 範圍橙光一閃（隕石落地／全場技） */
+.vfx-area-flash {
+  border-radius: 6px;
+  background: radial-gradient(ellipse at center, var(--vfx-glow, rgba(251, 114, 51, 0.8)), transparent 75%);
+  animation: vfxAreaFlash 0.6s ease-out both;
+}
+
+@keyframes vfxAreaFlash {
+  from {
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 0.65;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+/* ---- 光柱審判：天光射下→觸地散開 ---- */
+.vfx-pillar {
+  width: 40px;
+  height: var(--vfx-size, 200px);
+  transform: translate(-50%, calc(-100% + 18px)) scaleY(0);
+  transform-origin: 50% 0;
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, var(--vfx-c2, #fffdf2) 30%, var(--vfx-c1, #ffe9a8) 100%);
+  box-shadow: 0 0 24px var(--vfx-glow, #ffe9a8);
+  animation: vfxPillar 0.8s ease-out both;
+}
+
+@keyframes vfxPillar {
+  0% {
+    transform: translate(-50%, calc(-100% + 18px)) scaleY(0);
+    opacity: 0;
+  }
+
+  22% {
+    transform: translate(-50%, calc(-100% + 18px)) scaleY(1);
+    opacity: 1;
+  }
+
+  70% {
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: translate(-50%, calc(-100% + 18px)) scaleY(1);
+    opacity: 0;
+  }
+}
+
+.vfx-pillar-glow {
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+}
+
+.vfx-pillar-glow::before {
+  content: '';
+  position: absolute;
+  inset: -30px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff, var(--vfx-c1, #ffe9a8) 45%, transparent 75%);
+  animation: vfxFlash 0.6s ease-out both;
+  animation-delay: inherit;
+}
+
+.vfx-pillar-glow .vfx-p {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--vfx-c2, #fffdf2);
+  box-shadow: 0 0 6px var(--vfx-glow, #ffe9a8);
+  animation: vfxPart 0.8s ease-out both;
+}
+
+/* ---- 閃電（SVG 折線） ---- */
+.vfx-bolt {
+  filter: drop-shadow(0 0 7px var(--vfx-glow, #ffd93d));
+  animation: vfxBoltFlash 0.4s linear both;
+}
+
+.vfx-bolt svg {
+  display: block;
+  overflow: visible;
+}
+
+.vfx-bolt-weak {
+  filter: drop-shadow(0 0 4px var(--vfx-glow, #ffd93d));
+  animation-name: vfxBoltFlashWeak;
+}
+
+@keyframes vfxBoltFlash {
+  0% {
+    opacity: 0;
+  }
+
+  6% {
+    opacity: 1;
+  }
+
+  28% {
+    opacity: 0.55;
+  }
+
+  42% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes vfxBoltFlashWeak {
+  0% {
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 0.75;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ---- 領域：呼吸光暈＋元素粒子上升 ---- */
 .vfx-aura {
-  border: 1px solid var(--vfx-color, #fff);
+  border: 1px solid var(--vfx-c1, #fff);
   border-radius: 4px;
-  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--vfx-color, #fff) 22%, transparent), transparent 70%);
-  box-shadow: inset 0 0 18px color-mix(in srgb, var(--vfx-color, #fff) 35%, transparent);
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--vfx-c1, #fff) 22%, transparent), transparent 70%);
+  box-shadow: inset 0 0 18px color-mix(in srgb, var(--vfx-c1, #fff) 35%, transparent);
   animation: vfxAuraPulse 1.6s ease-in-out infinite;
+  overflow: hidden;
 }
 
 @keyframes vfxAuraPulse {
 
   0%,
   100% {
-    opacity: 0.45;
+    opacity: 0.5;
   }
 
   50% {
-    opacity: 0.9;
+    opacity: 0.95;
   }
 }
 
-/* 我方增益：卡片上的一圈光 */
-.vfx-selfbuff {
-  width: 64px;
-  height: 64px;
-  margin: -32px 0 0 -32px;
-  border: 2px solid var(--vfx-color, #fff);
+.vfx-aura-p {
+  bottom: 4px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  box-shadow: 0 0 14px var(--vfx-color, #fff);
-  animation-name: vfxSelfBuff;
-  animation-timing-function: ease-out;
-  animation-fill-mode: both;
+  background: var(--vfx-c1, #fff);
+  filter: drop-shadow(0 0 4px var(--vfx-glow, #fff));
+  opacity: 0;
+  animation: vfxAuraRise 2s linear infinite;
 }
 
-@keyframes vfxSelfBuff {
+@keyframes vfxAuraRise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: translateY(-74px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+/* 焚世領域：火苗 */
+.vfx-aura-fire {
+  background: radial-gradient(ellipse at 50% 90%, color-mix(in srgb, var(--vfx-c1, #fb7233) 34%, transparent), transparent 72%);
+}
+
+.vfx-aura-fire .vfx-aura-p {
+  width: 7px;
+  height: 11px;
+  border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
+  background: linear-gradient(0deg, var(--vfx-c1, #fb7233), var(--vfx-c2, #ffd166));
+  filter: blur(0.6px) drop-shadow(0 0 5px var(--vfx-glow, #fb7233));
+}
+
+/* 劍域千鋒：旋轉劍氣環＋豎劍上升 */
+.vfx-aura-sword::after {
+  content: '';
+  position: absolute;
+  inset: 10%;
+  border-radius: 50%;
+  border: 2px dashed color-mix(in srgb, var(--vfx-c1, #e6ddc8) 75%, transparent);
+  animation: vfxSpinCenter 5s linear infinite;
+}
+
+@keyframes vfxSpinCenter {
   from {
-    transform: scale(1.4);
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vfx-aura-sword .vfx-aura-p {
+  width: 3px;
+  height: 16px;
+  border-radius: 2px;
+  background: linear-gradient(0deg, transparent, var(--vfx-c2, #fff));
+}
+
+/* 毒霧領域：泡泡 */
+.vfx-aura-poison .vfx-aura-p {
+  background: transparent;
+  border: 2px solid var(--vfx-c1, #9ee34a);
+}
+
+/* ---- 我方增益：光環收束＋光點上升 ---- */
+.vfx-selfbuff {
+  width: 68px;
+  height: 68px;
+  margin: -34px 0 0 -34px;
+}
+
+.vfx-selfbuff::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--vfx-c1, #fff);
+  box-shadow: 0 0 16px var(--vfx-glow, #fff), inset 0 0 12px color-mix(in srgb, var(--vfx-c1, #fff) 45%, transparent);
+  animation: vfxSelfBuffRing ease-out both;
+  animation-duration: inherit;
+  animation-delay: inherit;
+}
+
+@keyframes vfxSelfBuffRing {
+  from {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+
+  30% {
+    opacity: 1;
+  }
+
+  to {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+}
+
+.vfx-selfbuff .vfx-p {
+  left: 50%;
+  top: 60%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--vfx-c2, #fff);
+  box-shadow: 0 0 6px var(--vfx-glow, #fff);
+  animation: vfxPart 0.9s ease-out both;
+}
+
+/* ---- 敵身詛咒：符紋迴旋下沉 ---- */
+.vfx-curse {
+  font-size: 20px;
+  line-height: 1;
+  margin: -10px 0 0 -10px;
+  filter: drop-shadow(0 0 8px var(--vfx-glow, #b76cff));
+  animation: vfxCurse 1s ease-in-out both;
+}
+
+.vfx-curse::before {
+  content: '';
+  position: absolute;
+  inset: -16px;
+  border-radius: 50%;
+  border: 2px dashed var(--vfx-c1, #b76cff);
+  animation: vfxSpinCenter 1.2s linear infinite reverse;
+}
+
+.vfx-curse::after {
+  content: '';
+  position: absolute;
+  inset: -22px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent, color-mix(in srgb, var(--vfx-c1, #b76cff) 45%, transparent), transparent 60%);
+  animation: vfxSpinCenter 0.9s linear infinite;
+}
+
+@keyframes vfxCurse {
+  0% {
+    transform: translateY(-14px) scale(0.5);
+    opacity: 0;
+  }
+
+  25% {
+    transform: translateY(0) scale(1.15);
+    opacity: 1;
+  }
+
+  70% {
+    transform: translateY(4px) scale(1);
+    opacity: 0.95;
+  }
+
+  100% {
+    transform: translateY(14px) scale(0.7);
+    opacity: 0;
+  }
+}
+
+/* ---- 受擊爆點 ----
+   ::before＝中心閃光、::after＝擴散圓環、.vfx-p＝噴散粒子（--dx/--dy 由 JS 給）。 */
+.vfx-impact {
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+}
+
+.vfx-impact::before {
+  content: '';
+  position: absolute;
+  inset: -15px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--vfx-c2, #fff), var(--vfx-glow, #fff) 50%, transparent 75%);
+  animation: vfxFlash 0.4s ease-out both;
+  animation-delay: inherit;
+}
+
+.vfx-impact::after {
+  content: '';
+  position: absolute;
+  inset: -9px;
+  border-radius: 50%;
+  border: 2px solid var(--vfx-c1, #fff);
+  animation: vfxRing 0.45s ease-out both;
+  animation-delay: inherit;
+}
+
+.vfx-impact .vfx-p,
+.vfx-meteor-boom .vfx-p,
+.vfx-pillar-glow .vfx-p {
+  left: 50%;
+  top: 50%;
+}
+
+.vfx-impact .vfx-p {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--vfx-c1, #fff);
+  filter: drop-shadow(0 0 4px var(--vfx-glow, #fff));
+  animation: vfxPart 0.55s ease-out both;
+}
+
+@keyframes vfxPart {
+  from {
+    transform: translate(-50%, -50%) translate(0, 0) rotate(var(--rot, 0deg)) scale(1);
+    opacity: 1;
+  }
+
+  to {
+    transform: translate(-50%, -50%) translate(var(--dx, 0px), var(--dy, -20px)) rotate(var(--rot, 0deg)) scale(0.25);
+    opacity: 0;
+  }
+}
+
+/* 火：爆裂火光＋火花 */
+.vfx-impact-fire::before {
+  inset: -20px;
+}
+
+.vfx-impact-fire .vfx-p {
+  width: 6px;
+  height: 6px;
+}
+
+/* 冰：碎裂晶片（稜形） */
+.vfx-impact-ice .vfx-p {
+  width: 8px;
+  height: 8px;
+  border-radius: 1px;
+  background: linear-gradient(135deg, var(--vfx-c2, #e8faff), var(--vfx-c1, #54c7fc));
+}
+
+.vfx-impact-ice::after {
+  border-color: var(--vfx-c2, #e8faff);
+}
+
+/* 雷：電弧火花（短光條亂射）＋觸電微顫由卡片震動表現 */
+.vfx-impact-lightning .vfx-p {
+  width: 13px;
+  height: 2.5px;
+  border-radius: 1px;
+  background: var(--vfx-c2, #fffbe0);
+  box-shadow: 0 0 6px var(--vfx-glow, #ffd93d);
+  animation-duration: 0.4s;
+}
+
+/* 毒：綠泡上飄（空心泡泡） */
+.vfx-impact-poison .vfx-p {
+  width: 9px;
+  height: 9px;
+  background: transparent;
+  border: 2px solid var(--vfx-c1, #9ee34a);
+  animation-duration: 0.9s;
+  animation-timing-function: ease-in-out;
+}
+
+.vfx-impact-poison::before {
+  background: radial-gradient(circle, color-mix(in srgb, var(--vfx-c1, #9ee34a) 65%, transparent), transparent 70%);
+  filter: blur(2px);
+}
+
+/* 聖：金白輝光＋光塵 */
+.vfx-impact-light::before {
+  inset: -22px;
+}
+
+.vfx-impact-light .vfx-p {
+  width: 4px;
+  height: 4px;
+  background: #fff;
+}
+
+/* 暗：紫黑渦爆 */
+.vfx-impact-dark::before {
+  background: conic-gradient(var(--vfx-c1, #b76cff), var(--vfx-c2, #2e1046), var(--vfx-c1, #b76cff), var(--vfx-c2, #2e1046), var(--vfx-c1, #b76cff));
+  border-radius: 50%;
+  animation: vfxVortexIn 0.5s ease-in both;
+  animation-delay: inherit;
+}
+
+/* 物理：斬痕碎屑 */
+.vfx-impact-phys::before {
+  inset: -13px;
+  animation-duration: 0.28s;
+}
+
+.vfx-impact-phys .vfx-p {
+  width: 4px;
+  height: 4px;
+  border-radius: 1px;
+}
+
+/* 敵攻我方：紅爪痕 */
+.vfx-impact-claw::before {
+  background: radial-gradient(circle, rgba(255, 107, 107, 0.7), transparent 70%);
+  inset: -18px;
+}
+
+.vfx-impact-claw::after {
+  display: none;
+}
+
+.vfx-impact-claw .vfx-p {
+  width: 30px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, #ff6b6b 30%, #ffd0d0 55%, #ff6b6b 75%, transparent);
+  animation: vfxClaw 0.4s ease-out both;
+}
+
+@keyframes vfxClaw {
+  from {
+    transform: translate(-50%, -50%) translate(calc(var(--dx, 0px) * -0.6), calc(var(--dy, 0px) * -0.6)) rotate(var(--rot, 0deg)) scaleX(0.2);
+    opacity: 0;
+  }
+
+  25% {
+    opacity: 1;
+  }
+
+  to {
+    transform: translate(-50%, -50%) translate(var(--dx, 0px), var(--dy, 0px)) rotate(var(--rot, 0deg)) scaleX(1.15);
+    opacity: 0;
+  }
+}
+
+/* 暗渦（虛空裂隙）：先收束再炸開 */
+.vfx-impact-vortex::before {
+  content: '';
+  inset: -30px;
+  border-radius: 50%;
+  background: conic-gradient(var(--vfx-c1, #b76cff), var(--vfx-c2, #2e1046), var(--vfx-c1, #b76cff), var(--vfx-c2, #2e1046), var(--vfx-c1, #b76cff));
+  animation: vfxVortexIn 0.55s ease-in both;
+  animation-delay: inherit;
+}
+
+.vfx-impact-vortex::after {
+  inset: -14px;
+  border-width: 3px;
+  animation-duration: 0.5s;
+  animation-delay: inherit;
+}
+
+@keyframes vfxVortexIn {
+  0% {
+    transform: scale(1.7) rotate(0deg);
     opacity: 0;
   }
 
@@ -5795,16 +6652,249 @@ textarea#save-io {
     opacity: 0.95;
   }
 
-  to {
-    transform: scale(0.75);
+  75% {
+    transform: scale(0.45) rotate(520deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1.9) rotate(600deg);
     opacity: 0;
   }
 }
 
+/* 引爆：大閃光＋雙圈震波 */
+.vfx-impact-detonate::before {
+  inset: -34px;
+  animation-duration: 0.55s;
+}
+
+.vfx-impact-detonate::after {
+  inset: -16px;
+  border-width: 3px;
+  box-shadow: 0 0 0 8px color-mix(in srgb, var(--vfx-c1, #fff) 30%, transparent), 0 0 26px var(--vfx-glow, #fff);
+  animation-duration: 0.6s;
+}
+
+.vfx-impact-detonate .vfx-p {
+  width: 7px;
+  height: 7px;
+  animation-duration: 0.7s;
+}
+
+/* 疫病炸裂：綠爆＋泡泡 */
+.vfx-impact-venomburst::before {
+  inset: -26px;
+  background: radial-gradient(circle, var(--vfx-c2, #e0ffb0), color-mix(in srgb, var(--vfx-c1, #9ee34a) 80%, transparent) 45%, transparent 72%);
+  animation-duration: 0.5s;
+}
+
+.vfx-impact-venomburst .vfx-p {
+  width: 9px;
+  height: 9px;
+  background: transparent;
+  border: 2px solid var(--vfx-c1, #9ee34a);
+  animation-duration: 0.85s;
+}
+
+/* 霜之新星：大冰環＋冰晶 */
+.vfx-impact-nova::before {
+  inset: -26px;
+  background: radial-gradient(circle, var(--vfx-c2, #e8faff), color-mix(in srgb, var(--vfx-c1, #54c7fc) 70%, transparent) 50%, transparent 75%);
+}
+
+.vfx-impact-nova::after {
+  inset: -20px;
+  border-width: 3px;
+  border-color: var(--vfx-c2, #e8faff);
+  box-shadow: 0 0 18px var(--vfx-glow, #54c7fc), inset 0 0 12px var(--vfx-glow, #54c7fc);
+  animation-duration: 0.65s;
+}
+
+.vfx-impact-nova .vfx-p {
+  width: 8px;
+  height: 8px;
+  border-radius: 1px;
+  background: linear-gradient(135deg, var(--vfx-c2, #e8faff), var(--vfx-c1, #54c7fc));
+  animation-duration: 0.7s;
+}
+
+/* ---- 殘留毒雲：中毒 DoT 的視覺殘影 ---- */
+.vfx-cloud {
+  width: 64px;
+  height: 44px;
+  margin: -22px 0 0 -32px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--vfx-c1, #9ee34a) 40%, transparent), transparent 70%);
+  filter: blur(3px);
+  animation: vfxCloud 2.5s ease-in-out both;
+}
+
+.vfx-cloud .vfx-p {
+  left: 50%;
+  top: 65%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  border: 2px solid var(--vfx-c1, #9ee34a);
+  filter: none;
+  animation: vfxPart 1s ease-in-out both;
+}
+
+@keyframes vfxCloud {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+
+  18% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+
+  75% {
+    opacity: 0.6;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+}
+
+/* ---- 卡片受擊反饋：震動＋元素色閃光 ---- */
+.enemy-card.vfx-hit,
+.combatant.vfx-hit {
+  animation: vfxCardShake 0.3s ease-out;
+}
+
+.enemy-card.vfx-hit-strong,
+.combatant.vfx-hit-strong {
+  animation: vfxCardShakeStrong 0.42s ease-out;
+}
+
+@keyframes vfxCardShake {
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  20% {
+    transform: translate(-3px, 1px);
+  }
+
+  40% {
+    transform: translate(3px, -1px);
+  }
+
+  60% {
+    transform: translate(-2px, -1px);
+  }
+
+  80% {
+    transform: translate(2px, 1px);
+  }
+}
+
+@keyframes vfxCardShakeStrong {
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  15% {
+    transform: translate(-5px, 3px);
+  }
+
+  30% {
+    transform: translate(5px, -3px);
+  }
+
+  45% {
+    transform: translate(-4px, -2px);
+  }
+
+  60% {
+    transform: translate(4px, 2px);
+  }
+
+  80% {
+    transform: translate(-2px, 1px);
+  }
+}
+
+/* 元素色閃光只用 brightness/saturate（純色彩矩陣、無光柵成本）——
+   drop-shadow 會把整張卡（名字＋血條＋狀態列）當 alpha 形狀取樣，血條與浮字在
+   filter 生效期間每幀變動，全場技 8 張卡同時受擊時等於每幀重算 8 次模糊。
+   元素色的光暈交給受擊爆點（vfx-impact-*）表現，卡片只負責「亮一下」。 */
+.enemy-card.vfx-hit-fire,
+.combatant.vfx-hit-fire {
+  filter: brightness(1.45) saturate(1.25);
+}
+
+.enemy-card.vfx-hit-ice,
+.combatant.vfx-hit-ice {
+  filter: brightness(1.4) saturate(1.2);
+}
+
+.enemy-card.vfx-hit-lightning,
+.combatant.vfx-hit-lightning {
+  filter: brightness(1.6);
+}
+
+.enemy-card.vfx-hit-poison,
+.combatant.vfx-hit-poison {
+  filter: brightness(1.3) saturate(1.35);
+}
+
+.enemy-card.vfx-hit-light,
+.combatant.vfx-hit-light {
+  filter: brightness(1.65);
+}
+
+.enemy-card.vfx-hit-dark,
+.combatant.vfx-hit-dark {
+  filter: brightness(1.15) saturate(1.6);
+}
+
+.enemy-card.vfx-hit:not(.vfx-hit-fire):not(.vfx-hit-ice):not(.vfx-hit-lightning):not(.vfx-hit-poison):not(.vfx-hit-light):not(.vfx-hit-dark),
+.combatant.vfx-hit:not(.vfx-hit-fire):not(.vfx-hit-ice):not(.vfx-hit-lightning):not(.vfx-hit-poison):not(.vfx-hit-light):not(.vfx-hit-dark) {
+  filter: brightness(1.45);
+}
+
+/* ---- 畫面震動（隕石／引爆） ---- */
+.battle-scene.vfx-scene-shake {
+  animation: vfxCardShake 0.32s ease-out;
+}
+
+.battle-scene.vfx-scene-shake-strong {
+  animation: vfxCardShakeStrong 0.5s ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .vfx {
+
+  .vfx,
+  .vfx::before,
+  .vfx::after,
+  .vfx span,
+  .vfx span::before,
+  .vfx span::after,
+  .enemy-card.vfx-hit,
+  .combatant.vfx-hit,
+  .battle-scene.vfx-scene-shake,
+  .battle-scene.vfx-scene-shake-strong {
     animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;
+  }
+
+  /* 投射物是純位移動畫，1ms 化之後（fill-mode both）會以靜態光點停在目標處
+     直到節點回收；減動模式下干脆整個隱藏，命中資訊由受擊爆點與傷害數字傳達。 */
+  .vfx-proj,
+  .vfx-meteor {
+    opacity: 0 !important;
   }
 }
 

@@ -56,7 +56,8 @@ test('敵人尚未建立卡片就被擊殺時，傷害浮字會等卡片建立�
 });
 
 test('我方攻擊被敵方閃避時，MISS 顯示在敵方浮層', () => {
-  assert.match(combat, /floatEnemyEvent\(mEnt,\s*floatSel,\s*'MISS',\s*'miss enemy-dodge'\)/);
+  // v17 起普攻 MISS 也等劍氣飛到才跳（atkHitDelayMs＝飛行＋追加波次錯開）
+  assert.match(combat, /floatEnemyEvent\(mEnt,\s*floatSel,\s*'MISS',\s*'miss enemy-dodge',\s*undefined,\s*atkHitDelayMs\)/);
   assert.doesNotMatch(combat, /floatText\(mEnt\.floatSel \|\| floatSel,\s*'MISS'/);
   // 技能的 MISS 與傷害數字一樣要等「打到人」才跳（多段技逐段錯開）
   assert.match(skills, /floatEnemyEvent\(targetEnt,\s*floatSel,\s*'MISS',\s*'miss enemy-dodge',\s*undefined,\s*hitDelayMs\)/);
@@ -183,7 +184,8 @@ test('傷害浮字合併目前為關閉狀態（暫時設定）', () => {
 });
 
 test('敵方區四種傷害樣式獨立，爆擊不改變普攻／技能來源顏色', () => {
-  assert.match(combat, /floatEnemyEvent\(mEnt,\s*floatSel,\s*dmgStr,\s*combatDamageFloatClass\('enemy-attack',\s*res\),\s*res\.dmg\)/);
+  // v17 起普攻傷害數字與劍氣命中同步（atkHitDelayMs）
+  assert.match(combat, /floatEnemyEvent\(mEnt,\s*floatSel,\s*dmgStr,\s*combatDamageFloatClass\('enemy-attack',\s*res\),\s*res\.dmg,\s*atkHitDelayMs\)/);
   assert.match(combat, /'crit enemy-attack'/);
   assert.match(skills, /floatEnemyEvent\(targetEnt,\s*floatSel,\s*sk\.emoji \+ dmgStr,\s*combatDamageFloatClass\('enemy-skill',\s*dmgRes\),\s*dmgRes\.dmg,\s*hitDelayMs\)/);
   assert.match(skills, /'crit enemy-skill'/);

@@ -98,7 +98,8 @@ test('凍結的 Worker 指令表有 87 條且分類數量固定', () => {
   // v14：真人軌跡重播——TICK_VIEW_KEYS 新增 simT（模擬時鐘，戰鬥暫停時仍前進），指令表未變動
   // v15：equip 面板新增 affixRules（每種詞條的可用部位與品質門檻，取自 AFFIX_POOL），指令表未變動
   // v16：新增 newforge.upgradePart（熔爐零件升級），86 → 87
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 16);
+  // v17：vfx 事件新增 elem/cat/variant/delayMs 可選欄位與 curse/chain/impact 原型（戰鬥特效酷炫化），指令表未變動
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 17);
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   const names = Object.keys(protocol.COMMANDS);
   assert.equal(names.length, 87);

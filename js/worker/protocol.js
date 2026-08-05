@@ -11,10 +11,13 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-/* v16：新增 newforge.upgradePart（熔爐零件升級），86 → 87
+/* v17（2026-08-04 戰鬥特效酷炫化）：VFX 事件新增 elem / cat / variant / delayMs 四個
+   可選欄位（見 EVENT_KINDS.VFX 註解）；fxKind 新增 curse（敵身詛咒）、chain（連鎖雷鏈）、
+   impact（純受擊）三種原型。普攻與天罰開始經由 VFX 事件送出特效。
+   v16：新增 newforge.upgradePart（熔爐零件升級），86 → 87
    v15（2026-08-02 詞條規則外送）：equip 面板新增 affixRules（每種詞條的可用部位與
    品質門檻，取自 AFFIX_POOL）。任何「想洗出某條詞條」的一方不必再自己抄一份部位清單。 */
-var WORKER_PROTOCOL_VERSION = 16;
+var WORKER_PROTOCOL_VERSION = 17;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -84,7 +87,9 @@ var EVENT_KINDS = {
      模擬層只描述「發生了什麼」，不碰任何 DOM——實際畫法完全由主執行緒的 js/vfx.js 決定。
 
      fxKind  特效原型：projectile 投射物／slash 斬擊／burst 爆發／beam 貫穿／
-             rain 天降／aura 領域／selfBuff 我方增益。由 skillVfxSpec() 依技能資料推導。
+             rain 天降／aura 領域／selfBuff 我方增益／curse 敵身詛咒（v17）／
+             chain 連鎖雷鏈（v17，targets 順序即彈跳路徑）／impact 純受擊（v17）。
+             由 skillVfxSpec() 依技能資料推導；普攻與天罰由 combat.js 直接組事件。
              （欄位不能叫 kind——shim 會把事件種類寫進 event.kind，會被蓋掉。）
      targets 目標圖層 id 陣列（mv-float-N／tb-float），定址方式與 FLOAT 一致——
              同樣不得帶實體參照，理由見上。
@@ -94,7 +99,17 @@ var EVENT_KINDS = {
      travelMs（v12 新增）：與 targets 同順序的飛行時間陣列（毫秒）。
              投射物是**等速**飛行，時間＝我方到該目標中心的距離÷速度，所以打第 4 行
              比打第 1 行慢。固定飛行時間會讓近的子彈慢吞吞、遠的又太快。
-             同一組數字也拿去當 FLOAT 的 delayMs，子彈與傷害數字因此必定同時到。 */
+             同一組數字也拿去當 FLOAT 的 delayMs，子彈與傷害數字因此必定同時到。
+     elem（v17，可選）：元素鍵 fire/ice/lightning/poison/light/dark 或 null。
+             顯示層據此挑選元素化畫法（火球拖焰／冰晶碎裂／電花／毒泡／聖光／暗渦）
+             與命中時的受擊特效；null 時退回 color 單色畫法。
+     cat（v17，可選）：技能分類（phys/magic/def/special/fusion/potential）或
+             'basic'（普攻）／'enemy'（敵方動作），供顯示層微調風格。
+     variant（v17，可選）：特效變體字串（meteor/pillar/chain/cyclone/…，清單見
+             js/skills.js SKILL_VFX_OVERRIDE 註解）。顯示層不認得的 variant 一律
+             退回該原型預設畫法，因此新增變體不需要動協議。
+     delayMs（v17，可選）：整則特效的基礎延遲（毫秒）——追加劍氣、天罰神雷等
+             「接在前一段動作之後」的特效用它錯開時刻。 */
   VFX: 'vfx'
 };
 
