@@ -2237,6 +2237,16 @@ function decide(state, policy, memo) {
       var clHas = {};
       for (var cl = 0; cl < clLoadout.length; cl++) clHas[clLoadout[cl]] = true;
 
+      /* 擠掉產出技是**代價**，不是換裝的必要步驟：裝載欄還有空格時，保命技直接
+         裝進空格就好。少了這個判斷會有一格永遠空著——實測 Lv.138（格數
+         clamp(4+⌊138/50⌋,4,20)=6）只裝了 5 個，尋寶直覺 Lv.10/10 學好了坐在板凳上，
+         而空的那一格既沒有輸出也沒有保命。
+         這也是卸下／裝上 3.2 倍不對稱的來源：equip-loadout 每分鐘把尋寶直覺補回空格，
+         danger-loadout 每 5 秒又把它拆掉，兩條規則整場互相拆台。
+         loadoutSize 由遊戲的面板給；拿不到（0）時退回舊行為「一律擠掉」，寧可保守。 */
+      var clSize = Number(clPanel.loadoutSize) || 0;
+      var clSacrifice = [];
+
       var clTiers = clCfg.tiers || [];
       for (var ct = 0; ct < clTiers.length; ct++) {
         var tier = clTiers[ct];
@@ -2256,13 +2266,35 @@ function decide(state, policy, memo) {
           }
           if (!usable) continue;
           for (var ti = 0; ti < tIn.length; ti++) clIn.push(tIn[ti]);
-          for (var to = 0; to < tOut.length; to++) clOut.push(tOut[to]);
+          /* swapOut 進的是**候選**池不是卸下清單——真的裝不下才動它。
+             池子跨階共用且照宣告順序犧牲：只差一格時要先丟尋寶直覺，
+             逐階各自結算的話第一階會用掉空格、第二階反而去擠點金手。 */
+          for (var to = 0; to < tOut.length; to++) clSacrifice.push(tOut[to]);
         } else {
           /* 退場方向不必檢查：把保命技拿下來永遠是安全的，
              補回產出技若還沒學會，下面的 clAdd 會自己擋掉，空格也有 equip-loadout 會填。 */
           for (var ti2 = 0; ti2 < tIn.length; ti2++) clOut.push(tIn[ti2]);
           for (var to2 = 0; to2 < tOut.length; to2++) clIn.push(tOut[to2]);
         }
+      }
+
+      /* 算出這一拍之後裝載欄會佔掉幾格，超過才從候選池裡挑人犧牲。 */
+      var clSeen = {}, clFill = clLoadout.length;
+      for (var cf = 0; cf < clOut.length; cf++) {
+        if (clHas[clOut[cf]] && !clSeen[clOut[cf]]) { clSeen[clOut[cf]] = true; clFill--; }
+      }
+      for (var cg = 0; cg < clIn.length; cg++) {
+        if (!clHas[clIn[cg]] && !clSeen[clIn[cg]] && Number(clLearned[clIn[cg]]) > 0) {
+          clSeen[clIn[cg]] = true; clFill++;
+        }
+      }
+      for (var cs = 0; cs < clSacrifice.length; cs++) {
+        if (clSize > 0 && clFill <= clSize) break;      // 裝得下就別動產出技
+        var clVictim = clSacrifice[cs];
+        if (!clHas[clVictim] || clSeen[clVictim]) continue;
+        clOut.push(clVictim);
+        clSeen[clVictim] = true;
+        clFill--;
       }
 
       /* 要裝上的一律限於「已經學會」的——沒學會的送出去只會被遊戲回「尚未學習」，
