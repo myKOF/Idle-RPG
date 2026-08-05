@@ -175,9 +175,11 @@ function switchZone(zoneKey) {
         var b = (G.stage.zone === zd.reqZone) ? G.stage.best : ((G.zoneProgress && G.zoneProgress[zd.reqZone] && G.zoneProgress[zd.reqZone].best) || 1);
         if (b < zd.reqStage) return; // 尚未解鎖
     }
-    // 保存目前場景進度
+    // 保存目前場景進度（cleared 只住在 zoneProgress，整包覆寫時必須帶著走）
     if (!G.zoneProgress) G.zoneProgress = {};
-    G.zoneProgress[G.stage.zone || 'plains'] = { current: G.stage.current, best: G.stage.best };
+    var fromKey = G.stage.zone || 'plains';
+    var fromZp = G.zoneProgress[fromKey] || {};
+    G.zoneProgress[fromKey] = { current: G.stage.current, best: G.stage.best, cleared: Math.max(0, Math.floor(Number(fromZp.cleared) || 0)) };
     // 載入目標場景進度
     var zp = G.zoneProgress[zoneKey] || { current: 1, best: 1 };
     G.stage.zone = zoneKey;
@@ -822,6 +824,9 @@ function completeFieldWave(st) {
     var nextStage = Math.min(G.stage.current + 1, maxStage);
     // 完成戰鬥即解鎖下一關；自動推進只控制目前是否立刻切換。
     G.stage.best = Math.max(Number(G.stage.best) || 1, nextStage);
+    /* 已通關關卡另外記一筆：best 在最後一關會被 maxStage 夾住，光看 best 無法分辨
+       「打贏最後一關」與「只打到倒數第二關」。任務的 stageClear 讀這一欄。 */
+    markZoneCleared(G.stage.zone, G.stage.current);
     if (G.stage.autoAdvance) {
         if (G.stage.current >= maxStage) {
             G.stage.current = maxStage;

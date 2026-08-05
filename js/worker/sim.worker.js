@@ -770,6 +770,27 @@ function buildPanel(name, params) {
             maxLevel: (typeof SKILL_MASTERY_MAX_LEVEL !== 'undefined') ? SKILL_MASTERY_MAX_LEVEL : 1000
           };
         })(),
+        /* 每個技能的人物等級解鎖門檻（沒有門檻的不列）。
+           純讀取：只呼叫 skillUnlockLevel（讀 SKILLS 的 unlockLv），**不呼叫
+           skillUnlocked**——那一支會把結果 latch 進 G.player.skillUnlocks，
+           建面板就變成寫存檔（同 seed 兩場的雜湊會不同，而症狀只是一串對不上的字串）。
+
+           為什麼要送出來：外面要決定「這幾格裝載欄該學哪幾個主動技」，就得知道
+           清單上第幾個現在真的學得起來。不送的話只能送出去看它回
+           「需人物達到 Lv.100 才解鎖」，而那會讓優先序前面的未解鎖技能永久卡住名額。 */
+        unlockLv: (function () {
+          if (typeof SKILLS === 'undefined' || typeof skillUnlockLevel !== 'function') return null;
+          var out = {};
+          for (var sid in SKILLS) {
+            var need = skillUnlockLevel(sid);
+            if (need > 0) out[sid] = need;
+          }
+          return out;
+        })(),
+        /* 一般技能的等級上限（隨轉生數提高，js/formula.js 的 skillMaxLv 只看轉生數、
+           不看技能定義，所以是單一數字）。沒有這個數字的話，外面只能對著已經滿級的
+           技能一直送升級——實測 3 遊戲小時 18,377 次裡有 16,440 次是「已達最高等級」。 */
+        maxLv: (typeof skillMaxLv === 'function') ? skillMaxLv({}) : null,
         scrolls: p.magicScroll || 0,
         fusionCosts: (typeof fusionGoldCost === 'function') ? {
           goldPerComp: fusionGoldCost(1), scrollPerComp: fusionScrollCost(1)

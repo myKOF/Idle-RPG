@@ -90,3 +90,41 @@ test('掉落配置依地圖與關卡區間查表，且支援材料欄位', () =>
   assert.equal(late.materials.bookRate, 4);
   assert.equal(c.fieldDropRatesFor(400, 400, 'undead_mountains')[6], 0.3);
 });
+
+/* 打贏地圖最後一關時 best 會被 maxStage 夾住，光看 best 分不出「打贏最後一關」與
+   「只打到倒數第二關」。zoneProgress[zone].cleared 專門補這一段，主線任務的
+   stageClear 讀它（js/tasks.js）。 */
+test('通關關卡另記 cleared：最後一關打贏後 best 卡在上限，cleared 才前進', () => {
+  const c = load(['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js']);
+  c.G = {
+    player: { reincarnations: 0 },
+    stage: { current: 199, best: 199, kills: 0, autoAdvance: true, zone: 'plains' },
+    zoneProgress: { plains: { current: 199, best: 199, cleared: 198 } },
+    tower: { active: false }
+  };
+  c.FIELD.player = null;                 // 略過過關回血，本測試只看關卡紀錄
+  const clearOneWave = () => { c.FIELD._waveClearPending = true; c.completeFieldWave({ hp: 100, moveSpeed: 0 }); };
+
+  clearOneWave();                        // 打贏第 199 關
+  assert.equal(c.G.stage.best, 200);
+  assert.equal(c.G.stage.current, 200);
+  assert.equal(c.zoneClearedStage('plains'), 199);
+
+  clearOneWave();                        // 打贏第 200 關（＝草原上限）
+  assert.equal(c.G.stage.best, 200, 'best 被 maxStage 夾住，不會變成 201');
+  assert.equal(c.zoneClearedStage('plains'), 200, 'cleared 記下真正打贏的最後一關');
+});
+
+test('切換場景會把 cleared 一起帶進 zoneProgress，不被整包覆寫清掉', () => {
+  const c = load(['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js']);
+  c.G = {
+    player: { reincarnations: 0 },
+    stage: { current: 200, best: 200, kills: 0, autoAdvance: true, zone: 'plains' },
+    zoneProgress: { plains: { current: 200, best: 200, cleared: 200 }, desert: { current: 1, best: 1, cleared: 0 } },
+    tower: { active: false }
+  };
+  c.switchZone('desert');
+  assert.equal(c.G.stage.zone, 'desert');
+  assert.equal(c.G.zoneProgress.plains.cleared, 200);
+  assert.equal(c.zoneClearedStage('plains'), 200);
+});

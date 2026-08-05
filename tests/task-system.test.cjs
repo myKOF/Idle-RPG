@@ -124,21 +124,28 @@ test('taskClaim：未達成拒絕；達成發獎、idx 前進、日誌', () => {
   assert.equal(c.UI.dirty.task, true);
 });
 
+/* 最後一個任務的內容由 Task.xlsx 決定（會隨企劃增列而變），所以斷言一律從
+   TASKS[last] 反推，不寫死順序與獎勵數字；只固定「型別是 stageClear＋獎勵是 equip」
+   這個前提，前提若被改掉會由 assert 訊息直接指出來。 */
 test('taskClaim：最後一個任務領完後 quick view 回 idx -1', () => {
   const c = loadContext();
-  c.G.taskState.idx = c.TASKS.length - 1; // 任務 22：草原第 100 關
-  c.G.stage.zone = 'plains';
-  c.G.stage.best = 101;
+  const last = c.TASKS[c.TASKS.length - 1];
+  assert.equal(last.type, 'stageClear', '本測試假設最後一個任務是 stageClear');
+  assert.equal(last.rewardType, 'equip', '本測試假設最後一個任務獎勵是 equip');
+  c.G.taskState.idx = c.TASKS.length - 1;
+  c.G.stage.zone = last.param;
+  c.G.zoneProgress[last.param].cleared = last.count;
   const invBefore = c.G.inventory.length;
   const r = c.taskClaim();
-  assert.equal(r.claimed, 22);
+  assert.equal(r.claimed, last.order);
   assert.equal(r.next, null);
-  // 獎勵：3 太古傳說 100 級裝備 ×1，直接入包
-  assert.equal(c.G.inventory.length, invBefore + 1);
+  // 獎勵：equip 參數＝品質|等級|太古數，直接入包
+  const [rarity, level, ancient] = String(last.rewardParam).split('|').map(Number);
+  assert.equal(c.G.inventory.length, invBefore + last.rewardQty);
   const it = c.G.inventory[c.G.inventory.length - 1];
-  assert.equal(it.rarity, 5);
-  assert.equal(it.level, 100);
-  assert.equal(c.getItemAncientCount(it), 3);
+  assert.equal(it.rarity, rarity);
+  assert.equal(it.level, level);
+  assert.equal(c.getItemAncientCount(it), ancient);
   assert.equal(c.taskQuickView().idx, -1);
   // 已領完後再領應拒絕
   assert.ok(c.taskClaim().err);
@@ -212,7 +219,7 @@ test('composeGems 與 consumeRerollResources 遞增對應統計', () => {
 });
 
 /* ---- stageClear / skillLevel 進度 ---- */
-test('stageClear 讀 zoneBestProgress；skillLevel 讀技能等級', () => {
+test('stageClear 讀 zoneClearedStage；skillLevel 讀技能等級', () => {
   const c = loadContext();
   c.G.stage.zone = 'plains';
   c.G.stage.best = 21; // 已通關 20
@@ -225,4 +232,67 @@ test('stageClear 讀 zoneBestProgress；skillLevel 讀技能等級', () => {
   // 開局自帶 manaBarrier 1 級；regenerate 未學 → 0
   assert.equal(c.taskProgressFor({ type: 'skillLevel', param: 'manaBarrier', count: 5 }), 1);
   assert.equal(c.taskProgressFor({ type: 'skillLevel', param: 'regenerate', count: 1 }), 0);
+});
+
+/* ---- stageClear：地圖最後一關（best 被上限夾住，只有 cleared 分得出來）---- */
+test('stageClear：草原第 200 關（＝上限）打贏才算達成，只到 199 關不算', () => {
+  const c = loadContext();
+  const goal = { type: 'stageClear', param: 'plains', count: 200 };
+  c.G.stage.zone = 'plains';
+  // 打贏第 199 關：best 前進到 200（＝上限），cleared 199
+  c.G.stage.best = 200;
+  c.G.zoneProgress.plains.cleared = 199;
+  assert.equal(c.taskProgressFor(goal), 199, 'best 已到上限，但只通關 199 關');
+  // 打贏第 200 關：best 仍被夾在 200，cleared 才前進
+  c.G.zoneProgress.plains.cleared = 200;
+  assert.equal(c.taskProgressFor(goal), 200);
+});
+
+test('zoneClearedStage：舊存檔沒有 cleared 時以 best-1 回推，進度不倒退', () => {
+  const c = loadContext();
+  c.G.stage.zone = 'desert';
+  delete c.G.zoneProgress.plains.cleared;
+  c.G.zoneProgress.plains.best = 151;
+  assert.equal(c.zoneClearedStage('plains'), 150);
+  // markZoneCleared 只增不減
+  c.markZoneCleared('plains', 120);
+  assert.equal(c.zoneClearedStage('plains'), 150);
+  c.markZoneCleared('plains', 180);
+  assert.equal(c.zoneClearedStage('plains'), 180);
+});
+
+/* ---- towerFloor / forgePartLevel ---- */
+test('towerFloor 讀 G.tower.highest；forgePartLevel 讀零件等級最高值', () => {
+  const c = loadContext();
+  const towerGoal = { type: 'towerFloor', count: 5 };
+  assert.equal(c.taskProgressFor(towerGoal), 0); // 開局未挑戰高塔
+  c.G.tower.highest = 5;
+  assert.equal(c.taskProgressFor(towerGoal), 5);
+
+  const partGoal = { type: 'forgePartLevel', count: 3 };
+  assert.equal(c.taskProgressFor(partGoal), 1); // 開局零件皆 1 級
+  c.G.factory.partLevels.goldSluice = 3;
+  assert.equal(c.taskProgressFor(partGoal), 3);
+  // 零件等級是全域的：沒裝在熔爐上也算（與 forgeParts 不同）
+  assert.equal(c.taskProgressFor({ type: 'forgeParts' }), 0);
+});
+
+test('migrateSave：舊存檔補 zoneProgress.cleared（由 best-1 回推）', () => {
+  const c = loadContext();
+  const old = {
+    version: 1, player: { level: 10 }, equipment: {}, inventory: [],
+    stage: { current: 100, best: 120, zone: 'plains' },
+    zoneProgress: { plains: { current: 100, best: 120 } }
+  };
+  const m = c.migrateSave(old);
+  assert.equal(m.zoneProgress.plains.cleared, 119);
+  assert.equal(m.zoneProgress.desert.cleared, 0); // 未開的地圖補 0
+  // 已有 cleared 的存檔不被 best-1 蓋掉（打贏最後一關的情形）
+  const c2 = loadContext();
+  const saved = {
+    version: 1, player: { level: 10 }, equipment: {}, inventory: [],
+    stage: { current: 200, best: 200, zone: 'plains' },
+    zoneProgress: { plains: { current: 200, best: 200, cleared: 200 } }
+  };
+  assert.equal(c2.migrateSave(saved).zoneProgress.plains.cleared, 200);
 });

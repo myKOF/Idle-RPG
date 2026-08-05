@@ -725,9 +725,11 @@ const TASK_GLOSSARY_ROWS = [
   ['composeCount＝累計寶石合成次數（「全部合成」一次合 N 組計 N）。目標參數留空。'],
   ['socketCount＝身上目前同時鑲嵌的寶石數（拔下即減，重複拔裝不累加）。目標參數留空。'],
   ['forgeParts＝所有熔爐目前已裝配的零件總數（卸下即減）。目標參數留空。'],
+  ['forgePartLevel＝目前等級最高的熔爐零件是幾級（任一種零件達 N 級即可；零件等級是全域的，卸下不影響）。目標參數留空。'],
   ['ancientCount＝身上裝備的太古詞條（帶✡星）總數。目標參數留空。'],
   ['maxHp＝生命最大值（屬性面板數值；掉回門檻以下進度也會掉）。目標參數留空。'],
-  ['stageClear＝通關指定地圖第 N 關（N＝目標數量）。目標參數＝地圖識別碼，見下方對照表。⚠️ 目標關卡請低於該地圖最後一關。'],
+  ['stageClear＝通關指定地圖第 N 關（N＝目標數量）。目標參數＝地圖識別碼，見下方對照表。可以指定該地圖的最後一關。'],
+  ['towerFloor＝高塔已通關的最高層數（N＝目標數量）。目標參數留空；層數與塔別無關（試煉/地獄/煉獄同一條層數軸）。'],
   ['skillLevel＝指定技能達到 N 級（N＝目標數量；1＝學會）。目標參數＝技能 id（查 Skills 表第一欄）。'],
   [''],
   ['── 獎勵類型（與獎勵參數格式） ──'],
@@ -761,8 +763,9 @@ const TASK_GLOSSARY_ROWS = [
 
 /* ---- Task ← TASKS（js/data.js）主線任務表（2026-08-05 任務系統） ----
    目標類型：equipSlots（參數=最低品質|最低等級）/ upgradeCount / rerollCount /
-   enchantCount / composeCount / socketCount / forgeParts / ancientCount / maxHp /
-   stageClear（參數=地圖識別碼）/ skillLevel（參數=技能id）。
+   enchantCount / composeCount / socketCount / forgeParts / forgePartLevel /
+   ancientCount / maxHp / stageClear（參數=地圖識別碼）/ towerFloor /
+   skillLevel（參數=技能id）。
    獎勵類型：gold / scrap / essence / skillXp / gem（參數=寶石等級）/
    book（參數=附魔書id）/ equip（參數=品質|等級|太古數；等級 0=依當前關卡、太古空白=自然擲骰）。
    「備註」欄為純說明欄，不寫回 JS（同 Skills 表的「完整描述」欄）。
