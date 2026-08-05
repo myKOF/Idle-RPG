@@ -117,29 +117,27 @@ test('空爐依 plan 逐爐鋪滿：一爐精粹透鏡、一爐碎片熔煉爐',
 
 test('已裝滿且都是最高階時不送任何指令', () => {
   const p = makePolicy([PART_RULE]);
-  const parts = new Array(8).fill(null).map(() => ({ key: 'extractLens', tier: 7 }));
+  const parts = new Array(8).fill(null).map(() => ({ key: 'extractLens' }));
   const cmds = p.decide(st(1, [furnace(1, 8, parts)]));
   assert.equal(cmds.length, 0, '收斂之後應該安靜下來，否則每 5 分鐘刷一輪必然無效的指令');
 });
 
 test('只補缺口：已有 3 個對的零件、8 格 → 只送 5 次安裝，不重裝已對的', () => {
   const p = makePolicy([PART_RULE]);
-  const parts = new Array(3).fill(null).map(() => ({ key: 'extractLens', tier: 7 }));
+  const parts = new Array(3).fill(null).map(() => ({ key: 'extractLens' }));
   const cmds = p.decide(st(1, [furnace(1, 8, parts)]));
   assert.equal(cmdsOf(cmds, 'newforge.uninstallPart').length, 0);
   assert.equal(cmdsOf(cmds, 'newforge.installPart').length, 5);
 });
 
-test('快照過期（庫存有更高階）就拆掉重裝', () => {
-  /* 零件是快照制：安裝當下複製數值，庫存後來掉到 T7 也不會自己升上去
-     （newforge.js newForgeInstallPart）。不重裝的話早期用 T2 填滿的爐子
-     會用 T2 的加成跑完整場。 */
+test('零件升級後不需拆裝，已裝零件直接套用全域等級', () => {
+  /* 熔爐只保存零件種類；零件等級由上方的全域 partLevels 決定，
+     因此升級後不應產生拆下重裝指令。 */
   const p = makePolicy([PART_RULE]);
-  const parts = [{ key: 'extractLens', tier: 2 }, { key: 'extractLens', tier: 7 }];
+  const parts = [{ key: 'extractLens' }, { key: 'extractLens' }];
   const cmds = p.decide(st(1, [furnace(1, 2, parts)], { owned: { extractLens: 7 } }));
-  const un = cmdsOf(cmds, 'newforge.uninstallPart');
-  assert.deepEqual(un.map((c) => c.args.slotIndex), [0], '只有 T2 那一格該拆');
-  assert.equal(cmdsOf(cmds, 'newforge.installPart').length, 1);
+  assert.equal(cmdsOf(cmds, 'newforge.uninstallPart').length, 0);
+  assert.equal(cmdsOf(cmds, 'newforge.installPart').length, 0);
 });
 
 test('拆零件必須由大到小送——splice 會讓後面的索引位移', () => {
@@ -148,10 +146,10 @@ test('拆零件必須由大到小送——splice 會讓後面的索引位移', (
      跟策略宣告不同的零件。 */
   const p = makePolicy([PART_RULE]);
   const parts = [
-    { key: 'goldSluice', tier: 7 },      // 不在 plan 裡 → 拆
-    { key: 'extractLens', tier: 7 },     // 對的 → 留
-    { key: 'goldSluice', tier: 7 },      // 拆
-    { key: 'fortuneChip', tier: 7 }      // 拆
+    { key: 'goldSluice' },      // 不在 plan 裡 → 拆
+    { key: 'extractLens' },     // 對的 → 留
+    { key: 'goldSluice' },      // 拆
+    { key: 'fortuneChip' }      // 拆
   ];
   const cmds = p.decide(st(1, [furnace(1, 4, parts)]));
   const idx = cmdsOf(cmds, 'newforge.uninstallPart').map((c) => c.args.slotIndex);
@@ -163,7 +161,7 @@ test('拆零件必須由大到小送——splice 會讓後面的索引位移', (
 
 test('拆一定排在裝前面——格子滿的時候 installPart 直接被擋', () => {
   const p = makePolicy([PART_RULE]);
-  const parts = new Array(3).fill(null).map(() => ({ key: 'goldSluice', tier: 7 }));
+  const parts = new Array(3).fill(null).map(() => ({ key: 'goldSluice' }));
   const cmds = p.decide(st(1, [furnace(1, 3, parts)]));
   const firstInstall = cmds.findIndex((c) => c.name === 'newforge.installPart');
   const lastUninstall = cmds.map((c) => c.name).lastIndexOf('newforge.uninstallPart');
@@ -197,7 +195,7 @@ test('微調：精華遠比碎片緊時，碎片爐讓出 2 格給精粹透鏡',
 test('微調：判斷還沒站穩就不動手——庫存訊號本身在跳', () => {
   /* 實測 seed20260903 的日誌：16:50 把碎片熔煉爐裝進 1 號爐、16:55 又換回精粹透鏡，
      整場 308 次安裝／146 次拆卸，大半是這樣來回翻。
-     churn 不花資源（零件是快照制），但時間平均下來等於沒有微調過。 */
+     churn 不花資源，但時間平均下來等於沒有微調過。 */
   const p = makePolicy([PART_RULE]);
   const cmds = p.decide(st(1, [furnace(1, 8), furnace(2, 8)], { essence: 10, scrap: 23313 }));
   const f2 = cmdsOf(cmds, 'newforge.installPart')
@@ -328,7 +326,7 @@ test('真引擎：熔爐面板新增的三個欄位都是遊戲算的，且不�
   assert.ok(!('partSlotCost' in pan.newForge.furnaces[0]), '不得把衍生欄位寫進存檔物件');
 });
 
-test('真引擎：零件升級後，所有已裝配同種類零件立即同步新階級', () => {
+test('真引擎：零件升級後，所有已裝配同種類零件立即套用全域等級', () => {
   const e = createEngine({ seed: 8 }).boot(null);
   const c = e.ctx;
   const fu = c.G.newForge.furnaces[0];
@@ -336,11 +334,13 @@ test('真引擎：零件升級後，所有已裝配同種類零件立即同步�
   c.G.factory.partLevels.extractLens = 2;
 
   assert.equal(c.newForgeInstallPart(fu.id, 'extractLens'), null);
-  assert.equal(fu.parts[0].tier, 2, '安裝時應保存當下階級');
+  assert.equal(fu.parts[0].key, 'extractLens', '安裝時只保存零件種類');
+  assert.equal(Object.keys(fu.parts[0]).length, 1);
   const before = c.newForgePartBonus(fu, 'extractLens');
 
   c.G.player.gold = c.partUpgradeCost(3);
   assert.equal(c.newForgeUpgradePart('extractLens'), null);
-  assert.equal(fu.parts[0].tier, 3, '升級後已裝零件應同步到新階級');
+  assert.equal(fu.parts[0].key, 'extractLens', '升級不應改寫熔爐零件資料');
+  assert.equal(Object.keys(fu.parts[0]).length, 1);
   assert.ok(c.newForgePartBonus(fu, 'extractLens') > before, '升級後效果應立即提升');
 });

@@ -3634,9 +3634,9 @@ function nfPartSlotsHTML(fu, nf, player) {
   var cells = '';
   for (var s = 0; s < NEW_FORGE_PART_SLOTS_MAX; s++) {
     if (s < fu.partSlots) {
-      var p = fu.parts[s]; // 裝配資料 {key, tier}；tier 由零件升級同步刷新
+      var p = fu.parts[s]; // 裝配資料只保存 {key}；等級由 nf.partLevels 即時決定
       if (p && PART_TYPES[p.key]) {
-        var currentLevel = Number(p.tier !== undefined ? p.tier : ((nf.partLevels && nf.partLevels[p.key]) || 1));
+        var currentLevel = Number(nf.partLevels && nf.partLevels[p.key]) || 1;
         // 已裝＝正方形小圖示（全稱在 tooltip；點擊依格位索引卸下）
         cells += '<button class="nf-part-slot nf-part-filled nf-part-ico" data-nf-fid="' + fu.id + '" data-nf-partun="' + s + '"' +
           pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
@@ -6776,6 +6776,9 @@ function gfuseShow(msg, type) {
 }
 /* ---- 寶石融合 v2（雙屬性，5 階以上寶石均可） ---- */
 function renderGemFusion(gemsSnapshot, headerSnapshot) {
+  var fusionPanel = $id('gem-fusion-panel');
+  // HTML 初始為隱藏；每次載入／重繪都重新依目前角色條件決定是否顯示。
+  if (fusionPanel) fusionPanel.style.display = 'none';
   var slotBox = $id('gfuse-slots');
   if (!slotBox) return;
   gemsSnapshot = resolveGemsPanelSnapshot(gemsSnapshot);
@@ -6787,15 +6790,10 @@ function renderGemFusion(gemsSnapshot, headerSnapshot) {
   var fusionButton = $id('gfuse-btn');
   var clearButton = $id('gfuse-clear');
   if (!fusionUnlocked) {
-    if (fusionButton) fusionButton.disabled = true;
-    if (clearButton) clearButton.disabled = true;
-    slotBox.innerHTML = '<span class="hint">寶石融合需達到 3 轉且角色 Lv.1 才開放</span>';
-    var lockedInfo = $id('gfuse-info');
-    if (lockedInfo) lockedInfo.textContent = '目前尚未開放寶石融合';
-    var lockedPool = $id('gfuse-pool');
-    if (lockedPool) lockedPool.innerHTML = '<span class="hint">達成開放條件後可選擇 5 階以上寶石素材</span>';
+    UI.gemFuseSlots = [null, null];
     return;
   }
+  if (fusionPanel) fusionPanel.style.display = '';
   if (fusionButton) fusionButton.disabled = false;
   if (clearButton) clearButton.disabled = false;
   if (!UI.gemFuseSlots) UI.gemFuseSlots = [null, null];

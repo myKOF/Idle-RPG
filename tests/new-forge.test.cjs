@@ -380,7 +380,8 @@ test('零件自由裝配：依類型安裝目前等級、同型可重複裝滿�
   // 依類型安裝：取目前可用最高階（T5）
   assert.equal(c.newForgeInstallPart(fu1.id, 'speedGear'), null);
   assert.equal(fu1.parts[0].key, 'speedGear');
-  assert.equal(fu1.parts[0].tier, 5, '應取最高階零件數值');
+  assert.equal(fu1.parts[0].key, 'speedGear', '熔爐只保存零件種類');
+  assert.equal(Object.keys(fu1.parts[0]).length, 1);
   // 同型重複裝滿（不限數量）
   assert.equal(c.newForgeInstallPart(fu1.id, 'speedGear'), null);
   assert.equal(c.newForgeInstallPart(fu1.id, 'speedGear'), null);
@@ -409,7 +410,7 @@ test('加速齒輪效果生效：同型堆疊、速度倍率＝1＋Σ(數值＋�
   assert.ok(Math.abs(c.newForgeFurnaceSpeed(fu) - (1 + (one * 2) / 100)) < 1e-9, '同型零件效果應堆疊');
 });
 
-test('sanitize：舊 id 陣列轉快照、無效項剔除、超量截斷', () => {
+test('sanitize：舊 id 陣列轉成只含 key、無效項剔除、超量截斷', () => {
   const c = loadContext(LOGIC_FILES.concat(['js/save.js']));
   const state = c.newGameState();
   const p1 = mkPart(c, 'p1', 'speedGear', 3);
@@ -419,9 +420,10 @@ test('sanitize：舊 id 陣列轉快照、無效項剔除、超量截斷', () =>
   fu1.parts = ['p1', 'ghost', { bogus: 1 }, { key: 'scrapForge', tier: 2, val: 40, name: '碎片熔煉爐 T2' }];
   c.migrateSave(state);
   assert.equal(fu1.parts.length, 2);
-  assert.equal(fu1.parts[0].key, 'speedGear', '舊 id 應轉為快照');
-  assert.equal(fu1.parts[0].tier, 3);
-  assert.equal(fu1.parts[1].key, 'scrapForge', '合法快照保留');
+  assert.equal(fu1.parts[0].key, 'speedGear', '舊 id 應轉為只含 key 的資料');
+  assert.equal(Object.keys(fu1.parts[0]).length, 1);
+  assert.equal(fu1.parts[1].key, 'scrapForge', '合法零件保留且移除階級快照');
+  assert.equal(Object.keys(fu1.parts[1]).length, 1);
   // 超量截斷（partSlots=3）
   fu1.parts = [1, 2, 3, 4, 5].map(() => ({ key: 'speedGear', tier: 1, val: 25, name: 'x' }));
   c.migrateSave(state);

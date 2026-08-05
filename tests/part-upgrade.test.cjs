@@ -82,12 +82,26 @@ test('已裝配零件升級後，所有熔爐同種類效果立即同步', () =>
 
   state.player.gold = c.partUpgradeCost(2);
   assert.equal(c.newForgeUpgradePart('scrapForge'), null);
-  // 零件升級會同步刷新所有熔爐中同種類已裝配零件。
+  // 熔爐只保存 key；升級後加成直接讀全域等級，因此所有熔爐立即生效。
   assert.equal(c.newForgePartBonus(first, 'scrapForge'), 40);
   assert.equal(c.newForgePartBonus(second, 'scrapForge'), 40);
   assert.equal(first.parts[0].key, 'scrapForge');
-  assert.equal(first.parts[0].tier, 2);
-  assert.equal(second.parts[0].tier, 2);
+  assert.equal(Object.keys(first.parts[0]).length, 1);
+  assert.equal(Object.keys(second.parts[0]).length, 1);
+});
+
+test('載入舊存檔時，熔爐零件快照會正規化為只保存 key', () => {
+  const c = loadContext(LOGIC_FILES.concat(['js/save.js']));
+  const state = c.newGameState();
+  c.G = state;
+  state.factory.partLevels.extractLens = 2;
+  state.newForge.furnaces[0].parts = [{ key: 'extractLens', tier: 1 }];
+
+  c.migrateSave(state);
+
+  assert.equal(state.newForge.furnaces[0].parts[0].key, 'extractLens');
+  assert.equal(Object.keys(state.newForge.furnaces[0].parts[0]).length, 1);
+  assert.equal(c.newForgePartBonus(state.newForge.furnaces[0], 'extractLens'), 40);
 });
 
 test('野外、離線與高塔流程不再包含零件掉落或隨機階級', () => {
