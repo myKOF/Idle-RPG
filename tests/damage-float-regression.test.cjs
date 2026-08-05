@@ -8,6 +8,15 @@ const root = path.resolve(__dirname, '..');
 const combat = fs.readFileSync(path.join(root, 'js', 'combat.js'), 'utf8');
 const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
 
+test('rebuilding enemy cards preserves death fade and removes duplicate float layers', () => {
+  assert.match(ui, /var oldDeathStates = \{\};/);
+  assert.match(ui, /oldCard\._deathFadeStartedAt \|\| Date\.now\(\)/);
+  assert.match(ui, /nextDeathCard\.classList\.add\('is-dead'\)/);
+  assert.match(ui, /nextDeathCard\.children/);
+  assert.match(ui, /if \(oldLayer\.parentNode\) oldLayer\.parentNode\.removeChild\(oldLayer\)/);
+  assert.match(ui, /card\._deathFadeStartedAt = Date\.now\(\)/);
+});
+
 function functionBody(source, name) {
   const start = source.indexOf('function ' + name + '(');
   assert.notEqual(start, -1, 'missing function ' + name);

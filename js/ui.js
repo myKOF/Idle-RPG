@@ -2616,14 +2616,37 @@ function ensureRetainedEnemyFloatLayer(party) {
    floatSel 是同一敵人的穩定識別，不能用目前陣列索引判斷是否同一張卡片。 */
 function rebuildEnemyParty(party, html) {
   var oldLayers = {};
+  var oldDeathStates = {};
   var container = party.parentNode && typeof party.parentNode.appendChild === 'function' ? party.parentNode : party;
   var retained = ensureRetainedEnemyFloatLayer(party);
+  var oldCards = party.querySelectorAll ? party.querySelectorAll('.enemy-card') : [];
+  for (var ci = 0; ci < oldCards.length; ci++) {
+    var oldCard = oldCards[ci];
+    var oldCardLayer = oldCard.querySelector ? oldCard.querySelector('.float-layer') : null;
+    if (!oldCardLayer || !oldCardLayer.id || !oldCard.classList || !oldCard.classList.contains('is-dead')) continue;
+    oldDeathStates[oldCardLayer.id] = { startedAt: oldCard._deathFadeStartedAt || Date.now() };
+  }
   var layers = container.querySelectorAll
     ? container.querySelectorAll('.enemy-card .float-layer, .enemy-float-retained > .float-layer')
     : party.querySelectorAll('.enemy-card .float-layer, .enemy-float-retained > .float-layer');
   for (var i = 0; i < layers.length; i++) oldLayers[layers[i].id] = layers[i];
   party.innerHTML = html;
   retained = ensureRetainedEnemyFloatLayer(party);
+  for (var deathId in oldDeathStates) {
+    if (!Object.prototype.hasOwnProperty.call(oldDeathStates, deathId)) continue;
+    var nextDeathLayer = party.querySelector('#' + deathId);
+    var nextDeathCard = nextDeathLayer && nextDeathLayer.closest ? nextDeathLayer.closest('.enemy-card') : null;
+    if (!nextDeathCard) continue;
+    var deathState = oldDeathStates[deathId];
+    nextDeathCard.classList.add('is-dead');
+    nextDeathCard._deathFadeStartedAt = deathState.startedAt;
+    var elapsed = Math.min(2000, Math.max(0, Date.now() - deathState.startedAt));
+    var children = nextDeathCard.children || [];
+    for (var childIndex = 0; childIndex < children.length; childIndex++) {
+      if (children[childIndex].classList && children[childIndex].classList.contains('float-layer')) continue;
+      children[childIndex].style.animationDelay = '-' + (elapsed / 1000) + 's';
+    }
+  }
   for (var id in oldLayers) {
     if (!Object.prototype.hasOwnProperty.call(oldLayers, id)) continue;
     var nextLayer = party.querySelector('#' + id);
@@ -2632,6 +2655,8 @@ function rebuildEnemyParty(party, html) {
       while (oldLayer.firstChild) nextLayer.appendChild(oldLayer.firstChild);
       var lastMissAt = oldLayer.getAttribute('data-last-miss-at');
       if (lastMissAt !== null) nextLayer.setAttribute('data-last-miss-at', lastMissAt);
+      // Remove the now-empty old layer; duplicate IDs make later float routing nondeterministic.
+      if (oldLayer.parentNode) oldLayer.parentNode.removeChild(oldLayer);
     } else {
       // 敵人死亡倒數結束後，卡片會被移出 party；把它的整個浮字圖層
       // 留在持久層，否則 DOM 重建會連同仍在播放／延遲中的數字一起移除。
@@ -2744,6 +2769,8 @@ function renderBattle() {
       if (status.getAttribute('data-enemy-index') !== String(ci)) status.setAttribute('data-enemy-index', String(ci));
       setHtmlIfChanged(status, entStatus(liveEnemy));
     }
+    if (liveEnemy.hp > 0) card._deathFadeStartedAt = 0;
+    else if (!card.classList.contains('is-dead')) card._deathFadeStartedAt = Date.now();
     // Worker 不會為死亡倒數的每個 tick 都送 Snapshot；只切一次 class，交由 CSS 連續淡出。
     // float-layer 不參與動畫，讓擊殺傷害字在敵人本體淡出期間完整播完。
     card.classList.toggle('is-dead', liveEnemy.hp <= 0);
