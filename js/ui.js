@@ -9653,11 +9653,11 @@ function spawnQuestRewardFlyFx(rewardType, sourceEl) {
     var curX = invT * invT * startX + 2 * invT * t * cpX + t * t * endX;
     var curY = invT * invT * startY + 2 * invT * t * cpY + t * t * endY;
 
-    // 縮放與旋轉效果
+    // 縮放效果（無旋轉）
     var scale = t < 0.2 ? (t / 0.2) * 1.3 : (1.3 - (t - 0.2) * 0.4);
     flyEl.style.left = curX + 'px';
     flyEl.style.top = curY + 'px';
-    flyEl.style.transform = 'scale(' + scale + ') rotate(' + (t * 360) + 'deg)';
+    flyEl.style.transform = 'scale(' + scale + ')';
 
     // 生成長拖尾粒子 (Trail Particle)
     if (t < 0.95 && Math.random() < 0.75) {
