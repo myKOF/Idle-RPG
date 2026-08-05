@@ -1324,6 +1324,7 @@ function queuePendingEnemyFloat(elId, text, cls, damageValue, ent) {
 }
 
 function animatePendingEnemyKill(ent, elId, cls, battleSnapshot) {
+  var cardOverride = arguments[4];
   var target = ent;
   // Worker float events intentionally omit entity references; recover the
   // dead target from the latest battle snapshot before playing the bar tween.
@@ -1336,9 +1337,12 @@ function animatePendingEnemyKill(ent, elId, cls, battleSnapshot) {
   }
   if (!target || target.hp > 0 || !isEnemyHitFloat(elId, cls)) return;
   var layer = $id(elId);
-  var card = layer && layer.closest ? layer.closest('.enemy-card') : null;
+  var card = cardOverride || (layer && layer.closest ? layer.closest('.enemy-card') : null);
   var fill = card && card.querySelector ? card.querySelector('.enemy-hp .hp-fill') : null;
   if (!fill || fill._pendingInstantKillPlayed) return;
+  var now = Date.now();
+  if (fill._instantKillAnimationAt && now - fill._instantKillAnimationAt < INSTANT_KILL_HP_ANIMATION_MS + 200) return;
+  fill._instantKillAnimationAt = now;
   fill._pendingInstantKillPlayed = true;
   fill.style.transition = 'none';
   fill.style.width = '100%';
@@ -1350,6 +1354,18 @@ function animatePendingEnemyKill(ent, elId, cls, battleSnapshot) {
     fill.style.transition = '';
     fill._pendingInstantKillPlayed = false;
   }, INSTANT_KILL_HP_ANIMATION_MS + 50);
+}
+
+function hasRecentEnemyDamageFloat(elId, floats, now) {
+  if (!elId || typeof document === 'undefined' || !document.querySelectorAll) return false;
+  floats = floats || document.querySelectorAll('.enemy-hit-float');
+  now = now || Date.now();
+  for (var i = 0; i < floats.length; i++) {
+    var item = floats[i];
+    if (item._enemyFloatTargetId !== elId) continue;
+    if (!item._enemyFloatCreatedAt || now - item._enemyFloatCreatedAt <= 500) return true;
+  }
+  return false;
 }
 
 function flushPendingEnemyFloats(battleSnapshot) {
@@ -1519,13 +1535,38 @@ function placeFloatAvoidingOverlap(sp, layer, selector, randomTop, randomRange, 
   }];
   gridRows = gridRows || 6;
   gridStep = gridStep || 10;
-  for (var ci = 0; ci < 48; ci++) {
-    var col = ci % 8;
-    var row = Math.floor(ci / 8) % gridRows;
-    candidates.push({
-      left: anchor ? Math.max(4, Math.min(96, anchor.left + anchor.width * 0.5 - 38 + col * 10 + (row % 2 ? 3 : 0))) : 10 + col * 11 + (row % 2 ? 3 : 0),
-      top: anchor ? Math.max(8, Math.min(92, anchor.top + anchor.height * 0.5 - 22 + row * gridStep)) : Math.max(10, randomTop - 4) + row * gridStep
-    });
+  if (anchor && anchorRect) {
+    /* Damage numbers belong to a specific enemy slot.  The retained layer is
+       shared by all enemies, so unrestricted overlap avoidance could choose a
+       visually empty slot hundreds of pixels away from the actual target.
+       Generate every fallback around the target center and let overlap
+       avoidance pick the least crowded nearby position. */
+    var anchorCenterLeft = (anchorRect.left + anchorRect.width * 0.5 - lr.left) / lr.width * 100;
+    var anchorCenterTop = (anchorRect.top + anchorRect.height * 0.5 - lr.top) / lr.height * 100;
+    var maxAnchorOffsetX = Math.max(24, anchorRect.width * 0.8) / lr.width * 100;
+    var maxAnchorOffsetY = Math.max(20, anchorRect.height * 0.75) / lr.height * 100;
+    var nearbyOffsets = [
+      [0, 0], [-1, 0], [1, 0], [0, -1], [0, 1],
+      [-2, 0], [2, 0], [-1, -1], [1, -1], [-1, 1], [1, 1],
+      [-2, -1], [2, -1], [-2, 1], [2, 1], [0, -2], [0, 2],
+      [-3, 0], [3, 0], [-2, -2], [2, -2], [-2, 2], [2, 2]
+    ];
+    for (var ni = 0; ni < nearbyOffsets.length; ni++) {
+      var offset = nearbyOffsets[ni];
+      candidates.push({
+        left: Math.max(4, Math.min(96, anchorCenterLeft + offset[0] * maxAnchorOffsetX / 3)),
+        top: Math.max(8, Math.min(92, anchorCenterTop + offset[1] * maxAnchorOffsetY / 3))
+      });
+    }
+  } else {
+    for (var ci = 0; ci < 48; ci++) {
+      var col = ci % 8;
+      var row = Math.floor(ci / 8) % gridRows;
+      candidates.push({
+        left: 10 + col * 11 + (row % 2 ? 3 : 0),
+        top: Math.max(10, randomTop - 4) + row * gridStep
+      });
+    }
   }
 
   var best = null;
@@ -1622,6 +1663,7 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
   // deleting an active number: rapid multi-hit attacks must remain visible.
   // 不因數量或 opacity 主動清理任何數字；每個節點只由自己的自然淡出
   // 計時器移除，避免大量死亡時一次掃描造成畫面與動畫不同步。
+  if (enemyHitFloat) animatePendingEnemyKill(ent, elId, cls, battleSnapshot);
   var damageInfo = enemyHitFloat ? enemyDamageFloatInfo(text, damageValue) : null;
   var damageKey = damageInfo ? enemyDamageFloatKey(cls) : '';
   var recoveryInfo = playerRecoveryFloatInfo(elId, cls, text, damageValue);
@@ -1634,6 +1676,7 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
       if (existing._enemyFloatTargetId !== elId || existing._damageFloatKey !== damageKey || existing._damageFloatHits >= damageMergeLimit) continue;
       existing._damageFloatTotal += damageValue;
       existing._damageFloatHits++;
+      existing._enemyFloatCreatedAt = Date.now();
       existing.textContent = existing._damageFloatPrefix + fmt(existing._damageFloatTotal);
       scheduleFloatTextRemoval(existing, enemyDamageFloatLifetimeMs(existing));
       return;
@@ -1667,6 +1710,7 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
     sp._damageFloatTotal = damageValue;
     sp._damageFloatHits = 1;
     sp._damageFloatPrefix = damageInfo.prefix;
+    sp._enemyFloatCreatedAt = Date.now();
   }
   if (recoveryKey) {
     sp.className += ' player-recovery-float player-recovery-aggregate';
@@ -2677,13 +2721,21 @@ function renderBattle() {
     UI.battleLayoutDirty = false;
   }
   var cards = party.querySelectorAll('.enemy-card');
+  var recentEnemyDamageFloats = document.querySelectorAll ? document.querySelectorAll('.enemy-hit-float') : [];
+  var recentEnemyDamageAt = Date.now();
   for (var ci = 0; ci < cards.length && ci < enemies.length; ci++) {
     var card = cards[ci];
     var liveEnemy = enemies[ci];
     var fill = card.querySelector('.enemy-hp .hp-fill');
     var hpText = card.querySelector('.enemy-hp .hp-text');
     var status = card.querySelector('.enemy-status');
-    setStyleIfChanged(fill, 'width', clamp(liveEnemy.hp / liveEnemy.maxHp * 100, 0, 100) + '%');
+    var liveEnemyFloatId = enemyFloatLayerId(liveEnemy, ci);
+    var instantKillFloat = liveEnemy.hp <= 0 && hasRecentEnemyDamageFloat(liveEnemyFloatId, recentEnemyDamageFloats, recentEnemyDamageAt);
+    if (instantKillFloat) {
+      animatePendingEnemyKill(liveEnemy, liveEnemyFloatId, 'dmg enemy-attack', battleSnapshot, card);
+    } else {
+      setStyleIfChanged(fill, 'width', clamp(liveEnemy.hp / liveEnemy.maxHp * 100, 0, 100) + '%');
+    }
     setHtmlIfChanged(hpText, fmt(Math.max(0, liveEnemy.hp)) + (liveEnemy.shield > 0.5 ? '<span class="enemy-shield">+' + fmt(Math.max(0, liveEnemy.shield)) + '</span>' : '') + ' / ' + fmt(liveEnemy.maxHp));
     if (status) {
       if (status.getAttribute('data-enemy-index') !== String(ci)) status.setAttribute('data-enemy-index', String(ci));
