@@ -11,7 +11,7 @@ const VALID_ARG_TYPES = new Set([
 ]);
 const EXPECTED_PANEL_KEYS = [
   'header', 'battle', 'equip', 'inv', 'factory', 'forge',
-  'newforge', 'tower', 'gems', 'skills', 'talents'
+  'newforge', 'tower', 'gems', 'skills', 'talents', 'task'
 ];
 const EXPECTED_COMMAND_COUNTS = {
   stage: 4,
@@ -29,12 +29,14 @@ const EXPECTED_COMMAND_COUNTS = {
   settings: 1,
   save: 3,
   app: 1,
-  gm: 1
+  gm: 1,
+  task: 1
 };
 const SIMULATION_FILES = [
   'util.js', 'data.js', 'formula.js', 'stats.js', 'item.js', 'skills.js',
   'talents.js', 'player.js', 'special_rules.js', 'combat.js', 'legendary.js',
-  'potential.js', 'tower.js', 'factory.js', 'newforge.js', 'forge.js', 'save.js'
+  'potential.js', 'tower.js', 'factory.js', 'newforge.js', 'forge.js', 'save.js',
+  'tasks.js'
 ];
 
 function baseType(typeSpec) {
@@ -88,7 +90,7 @@ function validArgs(spec) {
   return args;
 }
 
-test('凍結的 Worker 指令表有 87 條且分類數量固定', () => {
+test('凍結的 Worker 指令表有 88 條且分類數量固定', () => {
   // v8：新增 app.handoff（多分頁交接前先落地並停止模擬），85 → 86
   // v9：移除 visibility 的 pip 欄位（背景休眠機制取消），指令表未變動
   // v10：新增 vfx 事件（技能／增益特效），指令表未變動
@@ -99,10 +101,12 @@ test('凍結的 Worker 指令表有 87 條且分類數量固定', () => {
   // v15：equip 面板新增 affixRules（每種詞條的可用部位與品質門檻，取自 AFFIX_POOL），指令表未變動
   // v16：新增 newforge.upgradePart（熔爐零件升級），86 → 87
   // v17：vfx 事件新增 elem/cat/variant/delayMs 可選欄位與 curse/chain/impact 原型（戰鬥特效酷炫化），指令表未變動
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 17);
+  // v18：主線任務系統——PANEL_KEYS 新增 task、TICK_VIEW_KEYS 新增 taskIdx/taskProg/taskReady、
+  //      新增 task.claim（js/tasks.js taskClaim），87 → 88
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 18);
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   const names = Object.keys(protocol.COMMANDS);
-  assert.equal(names.length, 87);
+  assert.equal(names.length, 88);
 
   const counts = {};
   for (const name of names) {

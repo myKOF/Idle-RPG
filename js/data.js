@@ -1801,3 +1801,42 @@ var STAT_GROUPS = [
     ]
   }
 ];
+
+/* ============ 主線任務表（2026-08-05 任務系統） ============
+   唯一資料來源：config/CSV/Task.csv（config/Excel/Task.xlsx 編輯後跑「套用參數.bat」回寫）。
+   欄位：order 順序（1 起、循序領取）/ name 任務說明 / type 目標類型 / param 目標參數 /
+         count 目標數量 / rewardType 獎勵類型 / rewardParam 獎勵參數 / rewardQty 獎勵數量 /
+         rewardLabel 獎勵顯示文字。
+   目標類型（進度判定在 js/tasks.js，Worker 端執行）：
+     equipSlots   身上部位數（param=最低品質|最低等級；雙手武器視同佔用主副手）
+     upgradeCount / rerollCount / enchantCount / composeCount  累計次數（G.factory.stats）
+     socketCount  身上目前鑲嵌寶石數      forgeParts  熔爐目前已裝配零件數
+     ancientCount 身上太古詞條總數        maxHp       生命最大值
+     stageClear   通關指定地圖第 N 關（param=地圖識別碼）
+     skillLevel   技能達 N 級（param=技能 id；1=學會）
+   獎勵類型：gold / scrap / essence / skillXp / gem（param=寶石等級，隨機種類）/
+     book（param=附魔書 id）/ equip（param=品質|等級|太古數；等級 0=依當前關卡，太古空白=自然擲骰）。 */
+var TASKS = [
+  { order: 1, name: '將全身的裝備穿滿', type: 'equipSlots', param: '0|0', count: 13, rewardType: 'gold', rewardQty: 50000, rewardLabel: '金幣+50000' },
+  { order: 2, name: '將全身的裝備替換成稀有品質', type: 'equipSlots', param: '2|0', count: 13, rewardType: 'gold', rewardQty: 100000, rewardLabel: '金幣+100000' },
+  { order: 3, name: '強化裝備10次', type: 'upgradeCount', count: 10, rewardType: 'scrap', rewardQty: 200, rewardLabel: '裝備碎片+200' },
+  { order: 4, name: '洗煉裝備2次', type: 'rerollCount', count: 2, rewardType: 'essence', rewardQty: 20, rewardLabel: '附魔精華+20' },
+  { order: 5, name: '挑戰草原第20關成功', type: 'stageClear', param: 'plains', count: 20, rewardType: 'equip', rewardParam: '3|1', rewardQty: 1, rewardLabel: '任意獨特1級裝備×1' },
+  { order: 6, name: '將全身的裝備替換成獨特品質', type: 'equipSlots', param: '3|0', count: 13, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
+  { order: 7, name: '學習治療技能「再生術」', type: 'skillLevel', param: 'regenerate', count: 1, rewardType: 'skillXp', rewardQty: 10000, rewardLabel: '技能經驗值+10000' },
+  { order: 8, name: '強化裝備20次', type: 'upgradeCount', count: 20, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
+  { order: 9, name: '挑戰草原第30關成功', type: 'stageClear', param: 'plains', count: 30, rewardType: 'equip', rewardParam: '3|0', rewardQty: 1, rewardLabel: '任意獨特裝備×1' },
+  { order: 10, name: '裝備鑲嵌任意寶石8顆', type: 'socketCount', count: 8, rewardType: 'gem', rewardParam: '1', rewardQty: 10, rewardLabel: '任意1級寶石×10' },
+  { order: 11, name: '裝備任意附魔2次', type: 'enchantCount', count: 2, rewardType: 'book', rewardParam: 'focus', rewardQty: 1, rewardLabel: '專注附魔×1' },
+  { order: 12, name: '熔爐裝配任意零件4個', type: 'forgeParts', count: 4, rewardType: 'essence', rewardQty: 50, rewardLabel: '附魔精華+50' },
+  { order: 13, name: '合成寶石1次', type: 'composeCount', count: 1, rewardType: 'gem', rewardParam: '1', rewardQty: 10, rewardLabel: '任意1級寶石×10' },
+  { order: 14, name: '挑戰草原第40關成功', type: 'stageClear', param: 'plains', count: 40, rewardType: 'equip', rewardParam: '4|1|2', rewardQty: 1, rewardLabel: '任意2太古史詩1級裝備×1' },
+  { order: 15, name: '穿上4件史詩裝備', type: 'equipSlots', param: '4|0', count: 4, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
+  { order: 16, name: '裝備鑲嵌任意寶石16顆', type: 'socketCount', count: 16, rewardType: 'gem', rewardParam: '1', rewardQty: 15, rewardLabel: '任意1級寶石×15' },
+  { order: 17, name: '升級防禦技能「魔法屏障」至5級', type: 'skillLevel', param: 'manaBarrier', count: 5, rewardType: 'skillXp', rewardQty: 50000, rewardLabel: '技能經驗值+50000' },
+  { order: 18, name: '生命最大值達5000', type: 'maxHp', count: 5000, rewardType: 'gold', rewardQty: 300000, rewardLabel: '金幣+300000' },
+  { order: 19, name: '挑戰草原第50關BOSS成功', type: 'stageClear', param: 'plains', count: 50, rewardType: 'equip', rewardParam: '4|50|2', rewardQty: 1, rewardLabel: '任意2太古史詩50級裝備×1' },
+  { order: 20, name: '將全身的裝備替換成50級史詩品質', type: 'equipSlots', param: '4|50', count: 13, rewardType: 'essence', rewardQty: 100, rewardLabel: '附魔精華+100' },
+  { order: 21, name: '擁有5個太古詞條', type: 'ancientCount', count: 5, rewardType: 'essence', rewardQty: 300, rewardLabel: '附魔精華+300' },
+  { order: 22, name: '挑戰草原第100關BOSS成功', type: 'stageClear', param: 'plains', count: 100, rewardType: 'equip', rewardParam: '5|100|3', rewardQty: 1, rewardLabel: '任意3太古傳說100級裝備×1' }
+];

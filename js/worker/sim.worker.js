@@ -5,17 +5,19 @@
    載入順序不可調換：
      protocol.js  訊息與指令契約
      shim.js      window / document / UI.dirty / blog / recordLoot* 替身
-     模擬層 17 支 依照 index.html 原本的順序（有相依關係）
+     模擬層 18 支 依照 index.html 原本的順序（有相依關係；tasks.js 僅 Worker 端載入）
 
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js', 'shim.js');
+importScripts('protocol.js?v=18', 'shim.js');
 importScripts(
-  '../util.js', '../data.js', '../formula.js', '../battlefield.js', '../stats.js', '../item.js',
-  '../skills.js', '../talents.js', '../player.js?v=20260804-xp-settle', '../special_rules.js',
+  '../util.js', '../data.js?v=20260805-tasks', '../formula.js', '../battlefield.js', '../stats.js',
+  '../item.js?v=20260805-tasks',
+  '../skills.js', '../talents.js', '../player.js?v=20260805-tasks', '../special_rules.js',
   '../combat.js', '../legendary.js', '../potential.js', '../tower.js',
-  '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260804-xp-settle'
+  '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260805-tasks',
+  '../tasks.js'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
@@ -399,6 +401,7 @@ function buildView() {
   var st = (G && G.stage) || {};
   var fp = (typeof FIELD !== 'undefined' && FIELD) ? FIELD.player : null;
   var stats = (typeof getStats === 'function') ? getStats() : null;
+  var tv = (G && typeof taskQuickView === 'function') ? taskQuickView() : null;
   // 附魔書在狀態裡是每種一格的物件；頂欄只顯示總數，別把整個物件塞進高頻視圖
   var bookTotal = 0;
   for (var bk in p.books) bookTotal += p.books[bk] || 0;
@@ -428,7 +431,11 @@ function buildView() {
     simT: SIM_T,
     paused: typeof isCombatPaused === 'function' ? !!isCombatPaused() : false,
     towerActive: !!(G && G.tower && G.tower.active),
-    forgeBusy: typeof forgeIsBusy === 'function' ? !!forgeIsBusy() : false
+    forgeBusy: typeof forgeIsBusy === 'function' ? !!forgeIsBusy() : false,
+    /* 任務快捷列（v18）：三個純量；名稱與獎勵文字由主執行緒讀共載 TASKS 表 */
+    taskIdx: tv ? tv.idx : -1,
+    taskProg: tv ? tv.prog : 0,
+    taskReady: tv ? tv.ready : false
   };
 }
 
@@ -768,6 +775,10 @@ function buildPanel(name, params) {
           goldPerComp: fusionGoldCost(1), scrollPerComp: fusionScrollCost(1)
         } : null
       };
+    case 'task':
+      // 任務總覽（v18）：只送動態欄位（進度/已領/可領）；
+      // 名稱、目標數量、獎勵文字由主執行緒讀共載的 TASKS 表（js/data.js）
+      return (typeof taskPanelData === 'function') ? taskPanelData() : null;
     case 'talents':
       // 天賦與潛能等級都在 player.talents 底下（levels / potentialLevels）
       /* canReincarnate：轉生按鈕的亮燈條件，由遊戲算給面板。

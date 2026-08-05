@@ -65,6 +65,8 @@ function composeGems(type, lv) {
   G.player.gold -= cost;
   addGem(type, lv, -GEM_COMPOSE_INPUT_COUNT);
   addGem(type, lv + 1, 1);
+  // 任務進度：累計合成次數（與 upgraded / enchanted 同住 factory.stats）
+  if (G.factory && G.factory.stats) G.factory.stats.gemComposed = (G.factory.stats.gemComposed || 0) + 1;
   UI.dirty.header = true; UI.dirty.gems = true;
   return null;
 }
@@ -500,8 +502,12 @@ function makeEquipment(stage, opts) {
     var pst = getStats();
     luck = pst.luck;
   }
-  // 太古詞條：產出時依詞條數量擲骰條數（rollAncientAffixCount → formula.js §6），位置隨機後永久固定
-  var ancientSet = pickAncientPositions(affixCount, rollAncientAffixCount(affixCount, luck));
+  // 太古詞條：產出時依詞條數量擲骰條數（rollAncientAffixCount → formula.js §6），位置隨機後永久固定。
+  // opts.ancientCount 可指定條數（任務獎勵「任意2太古史詩裝備」用；超過詞條數自然截到上限）
+  var ancientWant = (typeof opts.ancientCount === 'number')
+    ? Math.max(0, Math.floor(opts.ancientCount))
+    : rollAncientAffixCount(affixCount, luck);
+  var ancientSet = pickAncientPositions(affixCount, ancientWant);
   var it = {
     id: uid(),
     kind: 'equip',
@@ -632,6 +638,8 @@ function rerollResourceError(cost) {
 function consumeRerollResources(cost) {
   G.player.gold -= cost.gold;
   G.player.essence -= cost.essence;
+  // 任務進度：累計洗煉次數。整件洗與單條洗都經過這裡，各計 1 次
+  if (G.factory && G.factory.stats) G.factory.stats.rerolled = (G.factory.stats.rerolled || 0) + 1;
 }
 
 // it：特效數值需要裝備稀有度才能算（passiveValue → js/formula.js §6）

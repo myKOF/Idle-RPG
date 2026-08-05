@@ -4515,6 +4515,134 @@ textarea#save-io {
 }
 
 /* ==========================================================================
+   【任務快捷列與任務總覽】Quest Bar & Quest Overview (2026-08-05)
+   說明：戰鬥區關卡列下方的一行任務顯示（進行中黃點／可領取綠點），
+   點擊可領取獎勵或開啟任務總覽彈窗；總覽清單樣式沿用 modal-box 慣例。
+   ========================================================================== */
+#quest-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 10px 3px 6px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.quest-dot {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--warn);
+  box-shadow: 0 0 6px var(--warn);
+}
+
+#quest-bar.quest-ready .quest-dot {
+  background: #56d34f;
+  box-shadow: 0 0 6px #56d34f;
+}
+
+#quest-bar.quest-alldone .quest-dot {
+  background: var(--dim);
+  box-shadow: none;
+}
+
+.quest-name {
+  color: var(--warn);
+  font-weight: bold;
+}
+
+#quest-bar.quest-ready .quest-name {
+  color: #56d34f;
+}
+
+#quest-bar.quest-alldone .quest-name {
+  color: var(--dim);
+  font-weight: normal;
+}
+
+.quest-progress {
+  color: var(--text);
+}
+
+.quest-reward {
+  color: var(--accent);
+  margin-left: 2px;
+}
+
+#quest-bar:hover .quest-name {
+  text-decoration: underline;
+}
+
+/* 任務總覽清單（#quest-modal 內） */
+.quest-list-head,
+.quest-row {
+  display: grid;
+  grid-template-columns: 1fr 110px 170px;
+  gap: 8px;
+  align-items: center;
+  padding: 5px 8px;
+}
+
+.quest-list-head {
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 13.5px;
+  border-bottom: 1px solid var(--border);
+}
+
+.quest-row {
+  font-size: 13px;
+  border-bottom: 1px dashed rgba(82, 64, 42, 0.4);
+}
+
+.quest-row .quest-col-name::before {
+  content: '● ';
+  color: var(--dim);
+}
+
+.quest-row.claimed {
+  color: var(--dim);
+}
+
+.quest-row.claimed .quest-col-reward {
+  color: var(--dim);
+}
+
+.quest-row.current {
+  color: var(--warn);
+  font-weight: bold;
+}
+
+.quest-row.current .quest-col-name::before {
+  color: var(--warn);
+}
+
+.quest-row.current .quest-col-reward {
+  color: var(--accent);
+}
+
+.quest-row.future {
+  color: var(--text);
+}
+
+.quest-row .quest-state-doing {
+  color: #56d34f;
+  font-weight: normal;
+  margin-left: 6px;
+}
+
+.quest-claim-btn {
+  margin-left: 6px;
+  padding: 1px 8px;
+  font-size: 12px;
+}
+
+/* ==========================================================================
    ?�自訂捲軸風?�】Custom Webkit Scrollbars
    說�?：�??�網?��??��?overflow ?�板?��?設捲軸�??�為?��??�屬質�??�細?��??�軸??
    ========================================================================== */

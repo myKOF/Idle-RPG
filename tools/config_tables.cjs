@@ -11,11 +11,12 @@
      node tools/config_tables.cjs --apply            # 試跑：由 CSV 重建 JS 字面值，只報告不寫檔
      node tools/config_tables.cjs --apply --write    # 實際寫回 JS（先備份、寫入後 node --check、失敗還原）
 
-   四表 ↔ JS 字面值：
+   五表 ↔ JS 字面值：
      Skills            ← SKILLS + UNLOCKS（js/skills.js）
      Gems              ← GEM_TYPES（js/data.js）
      Talents           ← TALENT_TREES + POTENTIAL_TALENTS（js/data.js）
      Equipment_Affix   ← AFFIX_POOL + PASSIVE_POOL + GODFORGE_POOL（js/data.js）
+     Task              ← TASKS（js/data.js，2026-08-05 任務系統）
 
    原理：這些是「純資料字面值」（`var NAME = {…};`）。--gen 以字串感知的括號配對
    萃取字面值 → eval（沙盒，僅需 ACCESSORY_SLOTS 前置）→ 依 schema 攤平成表格列。
@@ -696,7 +697,40 @@ function parseJsonCell(s, label) {
   catch (e) { throw new Error(label + ' JSON 解析失敗：' + e.message + '\n  內容：' + s); }
 }
 
-const TABLE_ORDER = ['Skills', 'Gems', 'Talents', 'Equipment_Affix'];
+/* ---- Task ← TASKS（js/data.js）主線任務表（2026-08-05 任務系統） ----
+   目標類型：equipSlots（參數=最低品質|最低等級）/ upgradeCount / rerollCount /
+   enchantCount / composeCount / socketCount / forgeParts / ancientCount / maxHp /
+   stageClear（參數=地圖識別碼）/ skillLevel（參數=技能id）。
+   獎勵類型：gold / scrap / essence / skillXp / gem（參數=寶石等級）/
+   book（參數=附魔書id）/ equip（參數=品質|等級|太古數；等級 0=依當前關卡、太古空白=自然擲骰）。
+   「備註」欄為純說明欄，不寫回 JS（同 Skills 表的「完整描述」欄）。 */
+SCHEMAS.Task = {
+  name: 'Task', jsFile: 'data', sheet: 'Task', vars: ['TASKS'],
+  header: ['順序', '任務說明', '目標類型', '目標參數', '目標數量', '獎勵類型', '獎勵參數', '獎勵數量', '獎勵顯示'],
+  extract(src) {
+    const TASKS = evalLiteral(extractLiteral(src, 'TASKS').literal);
+    return TASKS.map(t => [numStr(t.order), t.name, t.type, t.param || '', numStr(t.count),
+      t.rewardType, t.rewardParam || '', numStr(t.rewardQty), t.rewardLabel || '']);
+  },
+  rebuild(dataRows, header) {
+    const get = rowGetter(header);
+    const entries = dataRows.filter(r => get(r, '順序').trim() !== '').map(r => {
+      const o = { order: Math.floor(toNum(get(r, '順序'))), name: get(r, '任務說明'), type: get(r, '目標類型').trim() };
+      const param = get(r, '目標參數').trim(); if (param !== '') o.param = param;
+      o.count = toNum(get(r, '目標數量'));
+      o.rewardType = get(r, '獎勵類型').trim();
+      const rp = get(r, '獎勵參數').trim(); if (rp !== '') o.rewardParam = rp;
+      o.rewardQty = toNum(get(r, '獎勵數量'));
+      o.rewardLabel = get(r, '獎勵顯示');
+      if (o.type === '') throw new Error('任務 ' + o.order + ' 缺目標類型');
+      if (o.rewardType === '') throw new Error('任務 ' + o.order + ' 缺獎勵類型');
+      return '  ' + jsLit(o);
+    });
+    return { TASKS: 'var TASKS = [\n' + entries.join(',\n') + '\n];' };
+  }
+};
+
+const TABLE_ORDER = ['Skills', 'Gems', 'Talents', 'Equipment_Affix', 'Task'];
 
 /* ===========================================================================
    模式：--gen / --sync / --apply
