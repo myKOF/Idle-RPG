@@ -1051,7 +1051,10 @@ textarea#save-io {
   border-radius: 0;
   padding: 18px 14px 14px;
   text-align: center;
-  overflow: hidden;
+  /* Damage and shield-absorption floats may be wider than the compact
+     multi-enemy combatant. Keep the text visible instead of clipping it at
+     the card edge; background tabs do not render floats at all. */
+  overflow: visible;
   box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.9), 0 5px 15px rgba(0, 0, 0, 0.7);
 }
 
