@@ -856,3 +856,51 @@ test('候選自己帶著的強化不會被抹掉（取 max 而不是直接套身
       '把某個候選變強之後，這個部位的最佳增幅不該反而變低');
   }
 });
+
+/* ---- 減傷類屬性一律走遊戲的曲線，不准自己寫 `1 - 值/100` ----
+
+   踩過的坑：evalIncomingRatio 把 globalDmgRed 當百分比處理（`1 - 值/100`），
+   但它是 `pct: false` 的**定值**（詞條 base 3、每級 +0.35，身上五條就兩千多），
+   而遊戲用的是遞減曲線 globalDamageMultiplier：100 點＝減傷 50%、1000 點＝90.9%。
+
+   後果不是「算得不太準」，是**符號相反**：100 點以上 `1 - 值/100` 就是負數，
+   被 Math.max(0, raw) 夾成 0 → ehp 變 Infinity → 那條詞條的增幅算出來是 −59%。
+   於是 AI 主動避開遊戲裡最強的防禦詞條（weight 9、8 個部位都能出）——
+   實測真人身上 5 條、AI 平均 0.8 條，而修好之後它的 ROI 從最後一名跳到第二名。
+
+   同一段還有敵種減傷（enemyTypeDamageReduction）與格擋減傷（blockDmgReduction），
+   兩者也都是遊戲的曲線函式。 */
+
+test('減傷屬性的 ROI 必須是正的，而且照遊戲的曲線走', () => {
+  const e = createEngine({ seed: 20260910 }).boot(null);
+  e.stepSeconds(600);
+  const c = e.ctx;
+
+  /* 前提：這三支是遊戲的公開函式，評估器該呼叫它們而不是自己推。 */
+  for (const fn of ['globalDamageMultiplier', 'enemyTypeDamageReduction', 'blockDmgReduction']) {
+    assert.equal(typeof c[fn], 'function', `遊戲應提供 ${fn}——評估器要呼叫它，不是自己寫公式`);
+  }
+
+  /* 遊戲說 1000 點全局減傷 ≈ 90% 以上。這裡不釘死數字（曲線參數會調），
+     只確認方向與量級：值越大、承受倍率越小，而且 100 點以上仍是正的減傷。 */
+  const m0 = c.globalDamageMultiplier(0);
+  const m100 = c.globalDamageMultiplier(100);
+  const m1000 = c.globalDamageMultiplier(1000);
+  assert.equal(m0, 1, '0 點不該有減傷');
+  assert.ok(m1000 < m100 && m100 < m0, '減傷應隨值單調遞增');
+  assert.ok(m1000 > 0, '再高也不該把承受倍率變成 0 或負數');
+
+  /* 真正的斷言：把全局減傷加上去，評估器算出的 EHP 增幅必須是正的。
+     舊實作在這裡會回負值（甚至 Infinity），這支測試就是為了擋那個。 */
+  const foe = { level: 100, maxHp: 1e6, atk: 1e4, def: 1e3, mdef: 1e3, dodge: 0, hit: 100, aspd: 1, kind: 'normal' };
+  const base = c.evalPower(c.computeStats(), foe);
+  assert.ok(isFinite(base.ehp) && base.ehp > 0, '前提：基準 EHP 要是有限正數');
+
+  const st2 = c.computeStats();
+  st2.globalDmgRed = (st2.globalDmgRed || 0) + 500;
+  const with500 = c.evalPower(st2, foe);
+  assert.ok(with500.ehp > base.ehp,
+    `加 500 點全局減傷之後 EHP 必須上升：${base.ehp} → ${with500.ehp}`);
+  assert.ok(isFinite(with500.ehp),
+    'EHP 不得變成 Infinity——那代表承受倍率被夾成 0，是把定值當百分比算的徵兆');
+});

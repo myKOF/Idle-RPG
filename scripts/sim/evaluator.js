@@ -170,14 +170,34 @@ function evalIncomingRatio(st, foe) {
   }
 
   /* 全域減傷與敵種減傷。player_strategy.md 的「被秒殺就補對應屬性抗性」
-     要靠這一段才量得出來——沒有它，抗性詞條的 ROI 恆為 0。 */
-  raw *= 1 - (st.globalDmgRed || 0) / 100;
-  var redByKind = { normal: st.normalDmgRed, elite: st.eliteDmgRed, boss: st.bossDmgRed };
-  raw *= 1 - ((redByKind[foe.kind] || 0) / 100);
+     要靠這一段才量得出來——沒有它，抗性詞條的 ROI 恆為 0。
 
-  /* 格擋是機率性的，取期望值。 */
+     ⚠️ 這三項全部要呼叫**遊戲的函式**，不能自己寫 `1 - 值/100`。
+
+     實測踩到的：globalDmgRed 是 `pct: false` 的**定值**（詞條 base 3、每級 +0.35，
+     身上五條就是兩千多），而遊戲用的是遞減曲線 globalDamageMultiplier——
+     100 點＝減傷 50%、1000 點＝90.9%、2260 點＝95.8%。
+     舊寫法 `1 - 值/100` 在 100 點以上就變成負數，被下面的 Math.max(0, raw) 夾成 0，
+     於是 ehp 變成 Infinity、增幅算出來是 **−59%**。
+     結果 AI 主動避開遊戲裡最強的防禦詞條（weight 9、8 個部位都能出）：
+     真人身上 5 條，AI 平均 0.8 條。
+
+     這正是本專案反覆強調的那條線：harness 不重推遊戲公式。
+     這三支都是遊戲的公開函式，直接呼叫就不會有第二份會漂的實作。 */
+  raw *= (typeof globalDamageMultiplier === 'function')
+    ? globalDamageMultiplier(st.globalDmgRed || 0)
+    : 1;
+  var redByKind = { normal: st.normalDmgRed, elite: st.eliteDmgRed, boss: st.bossDmgRed };
+  var kindRed = redByKind[foe.kind] || 0;
+  if (kindRed > 0 && typeof enemyTypeDamageReduction === 'function') {
+    raw *= 1 - enemyTypeDamageReduction(kindRed, lv);
+  }
+
+  /* 格擋是機率性的，取期望值。減傷率一樣走遊戲的 blockDmgReduction 曲線。 */
   var blockP = Math.min(100, Math.max(0, st.blockRate || 0)) / 100;
-  raw *= 1 - blockP * ((st.blockDmgRed || 0) / 100);
+  if (blockP > 0 && typeof blockDmgReduction === 'function') {
+    raw *= 1 - blockP * (blockDmgReduction(st.blockDmgRed || 0) / 100);
+  }
 
   return Math.max(0, raw);
 }

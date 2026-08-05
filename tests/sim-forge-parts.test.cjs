@@ -103,21 +103,56 @@ test('零件格解鎖：一次只解一格——解完成本就變了', () => {
 
 /* ============ 零件配置 ============ */
 
-test('空爐依 plan 逐爐鋪滿：一爐精粹透鏡、一爐碎片熔煉爐', () => {
+/* 每座爐都照同一個比例混裝，不是一爐一種零件。熔爐派工是負載平衡的
+   （newForgeDispatchTarget 挑最閒的），一件裝備落到哪座爐是隨機的——
+   一爐全精華、一爐全碎片的話，同一件裝備只吃得到其中一種加成。
+   使用者實測的最佳配置：附魔精華×4 + 裝備碎片×2 + 寶石採集器×2。 */
+function countBy(list) {
+  const c = {};
+  for (const k of list) c[k] = (c[k] || 0) + 1;
+  return c;
+}
+
+test('空爐依 mix 每爐照同一比例鋪滿', () => {
   const p = makePolicy([PART_RULE]);
   const cmds = p.decide(st(1, [furnace(1, 8), furnace(2, 8)]));
   const inst = cmdsOf(cmds, 'newforge.installPart');
-  const f1 = inst.filter((c) => c.args.furnaceId === 1).map((c) => c.args.partKey);
-  const f2 = inst.filter((c) => c.args.furnaceId === 2).map((c) => c.args.partKey);
-  assert.equal(f1.length, 8);
-  assert.equal(f2.length, 8);
-  assert.ok(f1.every((k) => k === 'extractLens'), '第一爐應全是精粹透鏡：' + f1.join(','));
-  assert.ok(f2.every((k) => k === 'scrapForge'), '第二爐應全是碎片熔煉爐：' + f2.join(','));
+  for (const id of [1, 2]) {
+    const got = countBy(inst.filter((c) => c.args.furnaceId === id).map((c) => c.args.partKey));
+    assert.deepEqual(got, { extractLens: 4, scrapForge: 2, gemCollector: 2 },
+      '爐' + id + ' 應照 4/2/2 混裝：' + JSON.stringify(got));
+  }
+});
+
+test('格數不足時按比例分配，剛好填滿而且不重不漏', () => {
+  /* 早期每爐只有 3 格。4:2:2 攤到 3 格是 1.5 : 0.75 : 0.75，最大餘數法給 1:1:1——
+     三種材料都有產出，比「精華 2 + 碎片 1 + 寶石 0」合理。
+     這裡釘的是「填滿且不超過」，不是特定的分法：分法本身可以再調，
+     但格數對不上會讓遊戲回「零件格已滿」或留空格，那才是 bug。 */
+  const p = makePolicy([PART_RULE]);
+  /* ⚠️ 時間戳要拉開：規則的 everySec 是 300，連續呼叫只有第一次會生效，
+     其餘全部被冷卻擋掉而回傳空陣列——那會讓這支測試看起來像「一格都沒填」。 */
+  let t = 0;
+  for (const slots of [1, 2, 3, 5, 8]) {
+    t += 1000;
+    const got = countBy(cmdsOf(p.decide(st(t, [furnace(1, slots)])), 'newforge.installPart')
+      .map((c) => c.args.partKey));
+    const total = Object.values(got).reduce((a, b) => a + b, 0);
+    assert.equal(total, slots, slots + ' 格應剛好填滿：' + JSON.stringify(got));
+    if (slots === 8) {
+      assert.deepEqual(got, { extractLens: 4, scrapForge: 2, gemCollector: 2 },
+        '8 格時要精確等於宣告的比例：' + JSON.stringify(got));
+    }
+  }
 });
 
 test('已裝滿且都是最高階時不送任何指令', () => {
   const p = makePolicy([PART_RULE]);
-  const parts = new Array(8).fill(null).map(() => ({ key: 'extractLens' }));
+  const parts = [].concat(
+    new Array(4).fill(null).map(() => ({ key: 'extractLens' })),
+    new Array(2).fill(null).map(() => ({ key: 'scrapForge' })),
+    new Array(2).fill(null).map(() => ({ key: 'gemCollector' }))
+  );
   const cmds = p.decide(st(1, [furnace(1, 8, parts)]));
   assert.equal(cmds.length, 0, '收斂之後應該安靜下來，否則每 5 分鐘刷一輪必然無效的指令');
 });
@@ -134,8 +169,9 @@ test('零件升級後不需拆裝，已裝零件直接套用全域等級', () =>
   /* 熔爐只保存零件種類；零件等級由上方的全域 partLevels 決定，
      因此升級後不應產生拆下重裝指令。 */
   const p = makePolicy([PART_RULE]);
-  const parts = [{ key: 'extractLens' }, { key: 'extractLens' }];
-  const cmds = p.decide(st(1, [furnace(1, 2, parts)], { owned: { extractLens: 7 } }));
+  /* 2 格的 mix 是精華 1 + 碎片 1（最大餘數法），所以拿這個組合來測「升級不必重裝」。 */
+  const parts = [{ key: 'extractLens' }, { key: 'scrapForge' }];
+  const cmds = p.decide(st(1, [furnace(1, 2, parts)], { owned: { extractLens: 7, scrapForge: 7 } }));
   assert.equal(cmdsOf(cmds, 'newforge.uninstallPart').length, 0);
   assert.equal(cmdsOf(cmds, 'newforge.installPart').length, 0);
 });
@@ -182,14 +218,30 @@ function decideHeld(p, furnaces, opts) {
   return cmds;
 }
 
-test('微調：精華遠比碎片緊時，碎片爐讓出 2 格給精粹透鏡', () => {
+test('微調：精華遠比碎片緊時，每座爐都讓出 2 格給精粹透鏡', () => {
+  /* ⚠️ 改成混裝之後，「只有不是自己主力的那座爐要讓」這個舊條件永遠不成立
+     （每座爐都同時有兩種材料零件），微調會整條失效。改成從尾端讓出其他種類的格子。 */
   const p = makePolicy([PART_RULE]);
   // 實測 seed20260906 的結局：精華 10、碎片 23,313
   const cmds = decideHeld(p, [furnace(1, 8), furnace(2, 8)], { essence: 10, scrap: 23313 });
-  const f2 = cmdsOf(cmds, 'newforge.installPart')
-    .filter((c) => c.args.furnaceId === 2).map((c) => c.args.partKey);
-  assert.equal(f2.filter((k) => k === 'extractLens').length, 2);
-  assert.equal(f2.filter((k) => k === 'scrapForge').length, 6);
+  for (const id of [1, 2]) {
+    const got = countBy(cmdsOf(cmds, 'newforge.installPart')
+      .filter((c) => c.args.furnaceId === id).map((c) => c.args.partKey));
+    assert.deepEqual(got, { extractLens: 6, gemCollector: 2 },
+      '爐' + id + ' 應由最寬裕的碎片熔煉爐讓出 2 格：' + JSON.stringify(got));
+  }
+});
+
+test('微調只動最寬裕那一種的格子，不牽連不在材料清單裡的零件', () => {
+  /* ⚠️ 這是實跑抓到的：第一版寫成「從尾端讓出其他種類」，於是每一拍都把
+     mix 裡排最後的 gemCollector 換成 extractLens——精華滿足率 0.08、碎片 0.91，
+     微調全程觸發，20 小時下來熔爐 128 格裡寶石採集器一個都不剩，
+     而它根本不在 rebalance.materials 裡，本來就不該被牽連。 */
+  const p = makePolicy([PART_RULE]);
+  const cmds = decideHeld(p, [furnace(1, 8)], { essence: 10, scrap: 23313 });
+  const got = countBy(cmdsOf(cmds, 'newforge.installPart').map((c) => c.args.partKey));
+  assert.equal(got.gemCollector, 2, '寶石採集器不在材料清單裡，不該被讓掉：' + JSON.stringify(got));
+  assert.equal(got.scrapForge, undefined, '讓的應該是最寬裕的碎片格：' + JSON.stringify(got));
 });
 
 test('微調：判斷還沒站穩就不動手——庫存訊號本身在跳', () => {
@@ -198,17 +250,21 @@ test('微調：判斷還沒站穩就不動手——庫存訊號本身在跳', ()
      churn 不花資源，但時間平均下來等於沒有微調過。 */
   const p = makePolicy([PART_RULE]);
   const cmds = p.decide(st(1, [furnace(1, 8), furnace(2, 8)], { essence: 10, scrap: 23313 }));
-  const f2 = cmdsOf(cmds, 'newforge.installPart')
-    .filter((c) => c.args.furnaceId === 2).map((c) => c.args.partKey);
-  assert.ok(f2.every((k) => k === 'scrapForge'), '第一拍應維持基本盤：' + f2.join(','));
+  const got = countBy(cmdsOf(cmds, 'newforge.installPart')
+    .filter((c) => c.args.furnaceId === 2).map((c) => c.args.partKey));
+  assert.deepEqual(got, { extractLens: 4, scrapForge: 2, gemCollector: 2 },
+    '第一拍應維持基本盤：' + JSON.stringify(got));
 });
 
-test('微調：主力爐不會讓格子給自己', () => {
+test('微調：格子不夠讓時就讓幾格算幾格，不會超額', () => {
+  /* 碎片格只有 2 個，shiftSlots 也是 2，剛好讓完；再多要不到就停手，
+     不能因為額度沒用完就去動別種零件。 */
   const p = makePolicy([PART_RULE]);
-  const cmds = decideHeld(p, [furnace(1, 8), furnace(2, 8)], { essence: 10, scrap: 23313 });
-  const f1 = cmdsOf(cmds, 'newforge.installPart')
-    .filter((c) => c.args.furnaceId === 1).map((c) => c.args.partKey);
-  assert.ok(f1.every((k) => k === 'extractLens'), f1.join(','));
+  const cmds = decideHeld(p, [furnace(1, 8)], { essence: 10, scrap: 23313 });
+  const got = countBy(cmdsOf(cmds, 'newforge.installPart').map((c) => c.args.partKey));
+  const total = Object.values(got).reduce((a, b) => a + b, 0);
+  assert.equal(total, 8, '總格數不變：' + JSON.stringify(got));
+  assert.equal(got.extractLens, 6, JSON.stringify(got));
 });
 
 test('微調：兩種都見底時不動——絕對門檻會讓這條規則整場失效', () => {
@@ -217,10 +273,10 @@ test('微調：兩種都見底時不動——絕對門檻會讓這條規則整�
      兩邊同時成立，規則等於沒寫。改比 ref/庫存 的相對緊度就分得出來。 */
   const p = makePolicy([PART_RULE]);
   const cmds = decideHeld(p, [furnace(1, 8), furnace(2, 8)], { essence: 8, scrap: 661 });
-  const f2 = cmdsOf(cmds, 'newforge.installPart')
-    .filter((c) => c.args.furnaceId === 2).map((c) => c.args.partKey);
+  const got = countBy(cmdsOf(cmds, 'newforge.installPart')
+    .filter((c) => c.args.furnaceId === 2).map((c) => c.args.partKey));
   // 滿足率 8/50=0.16 vs 661/5000=0.132，差距未達 minRatio=2 倍 → 維持基本盤
-  assert.ok(f2.every((k) => k === 'scrapForge'), f2.join(','));
+  assert.deepEqual(got, { extractLens: 4, scrapForge: 2, gemCollector: 2 }, JSON.stringify(got));
 });
 
 /* ============ 加速：產能跟不上打怪速度 ============ */
@@ -229,11 +285,12 @@ test('塞車的爐才換加速齒輪，而且只換宣告的格數', () => {
   const p = makePolicy([PART_RULE]);
   const cmds = p.decide(st(1, [furnace(1, 8, [], 300, 30), furnace(2, 8, [], 0, 0)]));
   const inst = cmdsOf(cmds, 'newforge.installPart');
-  const f1 = inst.filter((c) => c.args.furnaceId === 1).map((c) => c.args.partKey);
-  const f2 = inst.filter((c) => c.args.furnaceId === 2).map((c) => c.args.partKey);
-  assert.equal(f1.filter((k) => k === 'speedGear').length, 2);
-  assert.equal(f1.filter((k) => k === 'extractLens').length, 6);
-  assert.equal(f2.filter((k) => k === 'speedGear').length, 0, '沒塞車的爐加速等於零收益');
+  const f1 = countBy(inst.filter((c) => c.args.furnaceId === 1).map((c) => c.args.partKey));
+  const f2 = countBy(inst.filter((c) => c.args.furnaceId === 2).map((c) => c.args.partKey));
+  /* 加速覆寫前面兩格，吃掉的是比重最高的精粹透鏡（4 → 2）。 */
+  assert.equal(f1.speedGear, 2, JSON.stringify(f1));
+  assert.deepEqual(f1, { speedGear: 2, extractLens: 2, scrapForge: 2, gemCollector: 2 }, JSON.stringify(f1));
+  assert.equal(f2.speedGear, undefined, '沒塞車的爐加速等於零收益：' + JSON.stringify(f2));
 });
 
 test('沒塞車就不裝加速——帶上沒東西可燒，拿產量格去換是純虧', () => {
