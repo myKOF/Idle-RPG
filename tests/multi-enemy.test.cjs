@@ -190,7 +190,26 @@ test('多敵人逐一擊殺時各自結算經驗與掉落，全部擊殺後才�
   context.fieldTick(0.02);
   assert.equal(context.FIELD.monsters.length, 0);
   assert.equal(context.G.stage.current, 2);
+  assert.equal(context.G.stage.best, 2);
   assert.equal(context.G.stage.kills, 1);
+});
+
+test('關閉自動推進時完成關卡仍解鎖下一關，但留在目前關卡', () => {
+  const context = loadCombatContext();
+  context.G = {
+    player: { gold: 0 },
+    stage: { current: 40, best: 40, kills: 0, autoAdvance: false, zone: 'plains' },
+    tower: { active: false }
+  };
+  context.FIELD.player = context.newPlayerEntity({ hp: 100, mp: 0, aspd: 1 });
+  context.getStats = () => ({ hp: 100, moveSpeed: 0, passives: {} });
+  context.healPlayer = () => {};
+  context.FIELD._waveClearPending = true;
+
+  context.completeFieldWave(context.getStats());
+
+  assert.equal(context.G.stage.current, 40);
+  assert.equal(context.G.stage.best, 41);
 });
 
 test('普攻擊殺後換目標至少間隔技能 GCD 0.4 秒', () => {
