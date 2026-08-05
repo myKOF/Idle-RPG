@@ -68,6 +68,10 @@ compare_runs.json
 # 真人操作錄製檔（js/recorder.js 匯出，可能有數十 MB）
 scratch/recordings/
 
+# A/B 對照用的暫時策略檔。scripts/sim/policy.*.json 的複本，只差要驗的那幾個欄位，
+# 跑完就沒用了——正式的策略一律在 scripts/sim/ 底下，這裡的不進版控。
+scratch/policy.*.json
+
 # 模擬儀表板伺服器的輸出（啟動數值模擬器.bat 產生，失敗時用來顯示原因）
 sim_server.log
 

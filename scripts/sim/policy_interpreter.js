@@ -1181,7 +1181,10 @@ function decide(state, policy, memo) {
       var fpCfg = r.forgeParts;
       var fpFur = pathVal(state, fpCfg.furnaces) || [];
       var fpPlan = fpCfg.plan || [];
-      if (fpPlan.length) {
+      /* plan（一爐一種）與 mix（每爐同一比例）兩種寫法擇一，有任一個就開工。
+         ⚠️ 這裡原本只看 fpPlan.length——改用 mix 而把 plan 拿掉之後，
+         整條規則會靜靜地一個指令都不送，而報表上只會看到「熔爐 0 格零件」。 */
+      if (fpPlan.length || (fpCfg.mix && fpCfg.mix.length)) {
         /* ---- 微調：哪一種材料比較緊 ----
            ⚠️ 不能用「庫存低於某個絕對值」判斷。這份策略把精華與碎片都花到見底
            （實測 20 小時結局：精華 8、碎片 661），任何絕對門檻都會同時成立，
@@ -1197,6 +1200,7 @@ function decide(state, policy, memo) {
 
            差距要大到 minRatio 倍才搬，免得在兩者相當時來回搬格子。 */
         var fpShiftTo = null;
+        var fpShiftFrom = null;
         var fpShift = 0;
         var rbCfg = fpCfg.rebalance;
         if (rbCfg && rbCfg.materials && rbCfg.materials.length === 2) {
@@ -1233,6 +1237,11 @@ function decide(state, policy, memo) {
 
             if (fm.applied) {
               fpShiftTo = fm.applied;
+              /* 讓格子的來源＝**最寬裕的那一種材料**，不是尾端隨便挑。
+                 從尾端讓的話會系統性地吃掉 mix 裡排最後的那一種：實測
+                 精華滿足率 0.08、碎片 0.91，微調每一拍都觸發，把排在尾端的
+                 兩個寶石採集器換成精粹透鏡，20 小時下來 gemCollector 一個都不剩。 */
+              fpShiftFrom = rich.part;
               fpShift = Math.max(0, Math.floor(Number(rbCfg.shiftSlots) || 0));
             }
           }
@@ -1243,11 +1252,45 @@ function decide(state, policy, memo) {
           if (!fu2 || fu2.id === undefined) continue;
           var slots = Math.max(0, Math.floor(Number(fu2.partSlots) || 0));
           if (!slots) continue;
-          var mine = fpPlan[fpi % fpPlan.length];
+          var mine = fpPlan.length ? fpPlan[fpi % fpPlan.length] : null;
 
-          /* 想要的配置：先鋪滿主力零件，再依訊號覆寫前面幾格。 */
+          /* ---- 想要的配置 ----
+
+             兩種寫法：
+               plan  一座爐一種主力零件（舊寫法，plan[爐序]）
+               mix   每一座爐都照同一個比例混裝（[{part, count}, ...]）
+
+             混裝才是對的：熔爐派工是負載平衡的（newForgeDispatchTarget 挑最閒的），
+             所以一件裝備會落到哪座爐是隨機的。一爐全精華、一爐全碎片的話，
+             同一件裝備只會吃到其中一種加成；每爐都照同一個比例，才是每一件都吃到。
+
+             格數不足 8 時按比例分配（最大餘數法，同餘照宣告順序），
+             這樣早期只有 3 格也會先給比重最高的那一種。 */
           var want = [];
-          for (var wi = 0; wi < slots; wi++) want.push(mine);
+          var fpMix = fpCfg.mix;
+          if (fpMix && fpMix.length) {
+            var totalW = 0;
+            for (var mi = 0; mi < fpMix.length; mi++) totalW += Math.max(0, Number(fpMix[mi].count) || 0);
+            if (totalW > 0) {
+              var alloc = [], used = 0;
+              for (var mj = 0; mj < fpMix.length; mj++) {
+                var exact = slots * (Math.max(0, Number(fpMix[mj].count) || 0) / totalW);
+                var base = Math.floor(exact);
+                alloc.push({ part: fpMix[mj].part, n: base, rem: exact - base, ord: mj });
+                used += base;
+              }
+              /* 餘數大的先拿；完全相同時照宣告順序，維持決定論。 */
+              var rest = alloc.slice().sort(function (a, b) { return (b.rem - a.rem) || (a.ord - b.ord); });
+              for (var ri = 0; used < slots && ri < rest.length; ri++, used++) rest[ri].n++;
+              for (var ak = 0; ak < alloc.length; ak++) {
+                for (var an = 0; an < alloc[ak].n; an++) want.push(alloc[ak].part);
+              }
+            }
+          }
+          if (!want.length) {
+            if (!mine) continue;
+            for (var wi = 0; wi < slots; wi++) want.push(mine);
+          }
 
           /* 加速：只在**這一座爐**真的塞車時才換。沒有回堵的爐子加速等於零收益
              （帶上沒東西可燒），拿產量格去換是純虧。 */
@@ -1260,11 +1303,20 @@ function decide(state, policy, memo) {
             }
           }
 
-          /* 微調：讓出格子給見底的那一種材料。只有「不是自己主力」的那座爐要讓。 */
-          if (fpShiftTo && fpShift && mine !== fpShiftTo) {
+          /* 微調：讓出格子給見底的那一種材料。
+
+             舊寫法是「只有不是自己主力的那座爐要讓」，那個判斷建立在
+             「一座爐一種零件」上；改成混裝之後每座爐都同時有兩種材料零件，
+             條件永遠不成立，微調等於整條失效。
+             改成從尾端把**其他種類**的格子讓出來，混裝與單一主力兩種寫法都適用。 */
+          if (fpShiftTo && fpShiftFrom && fpShift) {
             var given = 0;
             for (var si2 = want.length - 1; si2 >= 0 && given < fpShift; si2--) {
-              if (want[si2] !== mine) continue;           // 別動加速格
+              /* 只動「最寬裕那一種材料」的格子。不能改成「除了目標以外都可以讓」——
+                 那會把 mix 裡排在尾端的種類系統性地吃光（實測 gemCollector 20 小時
+                 一個不剩），而那一種根本不在微調的材料清單裡，本來就不該被牽連。
+                 加速格也自然被排除，因為它不是材料零件。 */
+              if (want[si2] !== fpShiftFrom) continue;
               want[si2] = fpShiftTo;
               given++;
             }
@@ -1355,15 +1407,48 @@ function decide(state, policy, memo) {
         var eItem = eEquip[esk];
         var info = eInfo[esk];
         if (!eItem || !eItem.id || !info || !info.cat) continue;
-        /* cap 0＝普通裝備不能附魔；已放滿就跳過（同鍵覆蓋只有數值會提升時才成立，
-           而裝備不動的話數值不會變，每次都送只會每次都被回絕）。 */
+        /* cap 0＝普通裝備不能附魔。 */
         var cur = eItem.enchants || [];
-        if (!(info.cap > 0) || cur.length >= info.cap) continue;
+        if (!(info.cap > 0)) continue;
 
         var cands = byCat[info.cat] || [];
         if (!cands.length) continue;
         var has = {};
         for (var hi = 0; hi < cur.length; hi++) if (cur[hi] && cur[hi].key) has[cur[hi].key] = true;
+
+        /* ---- 格子滿了：低順位的換掉，不要就這樣佔一輩子 ----
+
+           ⚠️ 這裡原本是「已放滿就跳過」，於是**第一本掉到的書把格子佔死**。
+           實測 2 小時的存檔：鞋子與項鍊各附了 fortune（那是 util 清單的第五順位，
+           只因為它是當下唯一有的書），而真人的同部位是 focus + vigor，
+           冷卻縮減 48% 對 AI 的 0%。附魔書是隨機掉的，所以「先到先得」等於隨機配置。
+
+           拆是免費的：removeEnchantAt 會把那本書退回庫存（js/item.js，只有精華不退，
+           而那筆精華早就花掉了）。所以只要庫存裡有更高順位的書就該換。
+           送出拆的指令即可，下一個決策點自然會用更好的那本補上。 */
+        if (cur.length >= info.cap) {
+          var rmCmd = r.removeCmd;
+          if (!rmCmd) continue;                       // 沒宣告拆的能力：維持舊行為
+          var bestRank = -1;
+          for (var bi2 = 0; bi2 < cands.length; bi2++) {
+            if (has[cands[bi2]]) continue;
+            if ((Number(eBooks[cands[bi2]]) || 0) < 1) continue;
+            bestRank = bi2; break;                    // cands 已是優先序
+          }
+          if (bestRank < 0) continue;                 // 沒有更好的書可用
+          /* 身上最差的那一格：不在清單裡的視為最差（排在清單長度之後）。 */
+          var worstIdx = -1, worstRank = -1;
+          for (var wi2 = 0; wi2 < cur.length; wi2++) {
+            var wk = cur[wi2] && cur[wi2].key;
+            var rk = wk ? cands.indexOf(wk) : -1;
+            if (rk < 0) rk = cands.length;
+            if (rk > worstRank) { worstRank = rk; worstIdx = wi2; }
+          }
+          if (worstIdx < 0 || bestRank >= worstRank) continue;   // 沒有比較好就別動
+          eQuota--;
+          out.push({ name: rmCmd, args: { itemId: eItem.id, index: worstIdx }, ruleId: r.id });
+          continue;
+        }
 
         var start = spreadCats[info.cat] ? (memo.enchantCursor[info.cat] || 0) : 0;
         var bookKey = null;
