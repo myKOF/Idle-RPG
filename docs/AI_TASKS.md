@@ -73,6 +73,47 @@ Worker 是模擬與存檔的唯一權威，主執行緒不再持有 `G`，舊單
 
 Web Worker 遷移全部完成，無進行中的大型工程。
 
+## Codex：將 Diablo-Factory dev server 加入測試服務台（2026-08-05）
+
+狀態：已完成
+
+任務分類：開發工具／本機測試服務啟動
+
+任務目的：在 Idle-RPG 測試服務台加入 `D:\MyGame\Diablo-Factory` 的啟動來源，
+使用其 `dev-server.js` 啟動方式與預設 `?test=1` 測試網址，避免使用者直接開啟已停止的 8080 Port。
+
+負責 AI：Codex
+
+允許修改：`tools/test_server_manager.cjs`、`tools/test_server_manager.html`、
+`tests/test-server-manager.test.cjs`、本任務記錄。
+
+禁止修改：`D:\MyGame\Diablo-Factory` 專案原始碼、Idle-RPG 遊戲邏輯、其他 AI 進行中的檔案。
+
+前置依賴：無；已完成修改前衝突預檢，未偵測到其他副本或分支的修改。
+
+測試要求：測試服務台單元測試、`npm.cmd run build`，並以獨立管理器實際啟動 8080，
+確認 `http://127.0.0.1:8080/?test=1` 可載入後關閉服務。
+
+完成條件：來源下拉選單可選擇 Diablo-Factory；啟動時執行其 dev server，預設 Port 為 8080，
+開啟測試網址並可由服務台關閉；既有 Idle-RPG 測試服啟動流程不受影響。
+
+完成結果：測試服務台新增 Diablo-Factory 來源；切換來源時自動帶入 Port 8080；啟動會執行
+`D:\MyGame\Diablo-Factory\dev-server.js` 並回傳 `http://127.0.0.1:8080/?test=1`；
+服務台可正常關閉該子程序。既有來源仍維持原本的靜態測試服啟動方式。
+
+測試結果：`node --test tests/test-server-manager.test.cjs tests/start-test-server.test.cjs` 3/3 通過；
+`npm.cmd run build` 241/241 通過；實機透過獨立管理器啟動 8080，瀏覽器標題為「暗黑煉金工廠：末日準備中」、
+Console 0 error／warning，並由服務台關閉後確認 8080 已停止監聽。
+
+已知風險：此來源依賴本機固定相對位置 `D:\MyGame\Diablo-Factory`；若該專案搬移或不存在，
+測試服務台會自動不顯示此來源，不影響其他 Idle-RPG 測試服。
+
+需要 Claude Review：否（範圍限於本機測試工具與其回歸測試）。
+
+需要 Antigravity 驗證：否。
+
+完成後交給：主整合工作區。
+
 ## Claude：新增主線任務系統（2026-08-05）
 
 狀態：已完成（待 Antigravity 驗證）

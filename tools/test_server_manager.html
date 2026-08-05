@@ -58,6 +58,7 @@
       </div>
       <div id="status" role="status"></div>
       <p class="hint">啟動時會使用上方選定資料夾的遊戲檔案；可在 Codex、Claude、Antigravity 工作區之間切換。</p>
+      <p class="hint">選擇 Diablo-Factory 時會執行它原本的 <code>dev-server.js</code>，並以 `?test=1` 開啟測試模式。</p>
       <p class="hint">列表只顯示 Claude、Codex、Antigravity、控制台及使用者自行啟動的開發伺服器。</p>
       <p class="hint">每個開啟中的服務都有「前往」與「關閉」；外部服務的關閉會終止整個來源程序，可能同時關閉它持有的其他 Port。</p>
       <h2>目前啟動中的本機測試服</h2>
@@ -163,11 +164,19 @@
     async function loadSources() {
       const data = await request('/api/sources');
       sourceRootInput.innerHTML = data.sources.map((source) =>
-        `<option value="${escapeHtml(source.key)}">${escapeHtml(source.label)}：${escapeHtml(source.root)}</option>`
+        `<option value="${escapeHtml(source.key)}" data-default-port="${escapeHtml(source.defaultPort || '')}">${escapeHtml(source.label)}：${escapeHtml(source.root)}</option>`
       ).join('');
       sourceRootInput.disabled = data.sources.length === 0;
       if (!data.sources.length) throw new Error('找不到可用的開服來源資料夾。');
+      const selected = data.sources.find((source) => source.key === sourceRootInput.value);
+      if (selected?.defaultPort) portInput.value = selected.defaultPort;
     }
+
+    sourceRootInput.addEventListener('change', () => {
+      const selected = sourceRootInput.selectedOptions[0];
+      const defaultPort = Number(selected?.dataset.defaultPort || 0);
+      if (defaultPort > 0) portInput.value = defaultPort;
+    });
 
     async function startServer() {
       const port = Number(portInput.value);
