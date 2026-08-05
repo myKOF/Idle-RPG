@@ -1669,7 +1669,8 @@ function itemScore(it) {
 
 /* ---- 分解產出 ----
    碎片 = (2 + 裝備等級×0.6) × 稀有度分解係數 × rnd(0.85, 1.15)（最低 1）
-   金幣 = (3 + 裝備等級) × 分解係數 × 0.5
+   裝備分解金幣 = round((3 + 裝備等級) × 稀有度分解係數 × 10)。
+   淘金濾網的當前關卡敵人金幣則由 factory.js 另計，作為額外金幣來源。
    附魔精華 = rollDropCount(稀有度基礎機率 × (1 + 精粹透鏡加成總合/100))
    鑲嵌寶石會在分解前取回，但分解本身不產出寶石。 */
 var ANCIENT_AFFIX_SALVAGE_CHANCE = 50;
@@ -1682,7 +1683,7 @@ function salvageResult(it, ancientEssenceBonus, essenceBonus) {
   var r = RARITIES[it.rarity];
   var out = {
     scrap: Math.max(1, Math.round((2 + it.level * 0.6) * r.salv * rnd(0.85, 1.15))),
-    gold: Math.round((3 + it.level) * r.salv * 0.5),
+    gold: Math.round((3 + it.level) * r.salv * 10),
     essence: 0, ancientEssence: 0
   };
   var essenceChance = essenceSalvageChanceForRarity(it.rarity) *

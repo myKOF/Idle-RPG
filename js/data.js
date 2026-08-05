@@ -1285,7 +1285,7 @@ var PART_TYPES = {
   // === 分解槽（Salvage）：10 種，涵蓋速度 / 產量 / 精華 / 分解事件 ===
   speedGear: { name: '加速齒輪', emoji: '⚙️', node: 'salvage', desc: '分解速度 +{v}%', base: 25, perLevel: 25 },
   scrapForge: { name: '碎片熔煉爐', emoji: '🔥', node: 'salvage', desc: '分解碎片產量 +{v}%', base: 20, perLevel: 20 },
-  goldSluice: { name: '淘金濾網', emoji: '💰', node: 'salvage', desc: '分解金幣產量 +{v}%', base: 25, perLevel: 25 },
+  goldSluice: { name: '淘金濾網', emoji: '💰', node: 'salvage', desc: '分解時獲得當前關卡敵人金幣的 {v}%', base: 3, perLevel: 1.5 },
   extractLens: { name: '精粹透鏡', emoji: '🔬', node: 'salvage', desc: '分解時附魔精華產出率 +{v}%', base: 20, perLevel: 20 },
   knowledgeCore: { name: '知識核心', emoji: '📚', node: 'salvage', desc: '分解時獲得當前關卡敵人經驗的 {v}%', base: 3, perLevel: 1.5 },
   gemCollector: { name: '寶石採集器', emoji: '💎', node: 'salvage', desc: '分解時 {v}% 機率獲得 1 級寶石', base: 3, perLevel: 1.5 },

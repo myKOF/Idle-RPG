@@ -816,8 +816,8 @@ inline('formula', '(gemLevel || 0) * ', P('6-裝備', '附魔-防禦/功能類',
 inline('formula', 'Math.min(val, ', P('6-裝備', '附魔-防禦/功能類', 3), '附魔防-上限');
 inlineRegex('formula', /(scrap: Math\.max\(1, Math\.round\(\()(-?[\d.]+)(?= \+ it\.level \* )/, P('6-裝備', '分解-碎片', 0), '分解碎-基');
 inlineRegex('formula', /(scrap: Math\.max\(1, Math\.round\(\(-?[\d.]+ \+ it\.level \* )(-?[\d.]+)/, P('6-裝備', '分解-碎片', 1), '分解碎-每級');
-numCtx('formula', 'Math.round((', ' + it.level) * r.salv', P('6-裝備', '分解-金幣', 0), '分解金-基');
-inline('formula', ' + it.level) * r.salv * ', P('6-裝備', '分解-金幣', 1), '分解金-係數');
+numCtx('formula', 'gold: Math.round((', ' + it.level) * r.salv * ', P('6-裝備', '分解-金幣', 0), '分解金-基');
+inline('formula', ') * r.salv * ', P('6-裝備', '分解-金幣', 1), '分解金-倍率');
 
 /* ---- §7 強化 / 洗煉 ---- */
 numCtx('formula', 'return Math.max(', ', 100 - (nextLevel - 5)', P('7-強化', '基礎成功率', 0), '強化率下限');
