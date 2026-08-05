@@ -90,6 +90,23 @@ test('gem conversion info displays the Shift+left shortcut', () => {
   assert.match(info.textContent + info.innerHTML, /Shift\+左鍵：單顆放入／取下/);
 });
 
+test('DOM change event is not treated as an empty gems snapshot', () => {
+  const { context, elements } = loadUi();
+  context.UI.convertSlots = [];
+  const gemsSnapshot = {
+    gems: { ruby: { 1: 2 } },
+    fusedGems: []
+  };
+  context.panelData = () => gemsSnapshot;
+
+  // addEventListener passes the Event object as the first argument when a
+  // renderer is used directly as the callback.
+  context.renderGemConvert({ type: 'change' });
+
+  assert.match(elements.get('gconv-pool').innerHTML, /data-gconv-pick="ruby:1"/);
+  assert.doesNotMatch(elements.get('gconv-pool').innerHTML, /沒有寶石庫存/);
+});
+
 test('Shift conversion sends the exact gem.convert Worker command', async () => {
   const { context } = loadUi();
   let sent = null;
