@@ -1370,8 +1370,8 @@ textarea#save-io {
   color: #ffd700;
   --enemy-hit-font-size: 15px;
   font-size: var(--enemy-hit-font-size);
-  --enemy-hit-rise-duration: 1.s;
-  --enemy-hit-lifetime-base: 1.s;
+  --enemy-hit-rise-duration: 1s;
+  --enemy-hit-lifetime-base: 1s;
   --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 20 !important;
 }

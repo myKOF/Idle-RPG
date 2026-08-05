@@ -15,18 +15,18 @@ function loadFormulaContext() {
   return context;
 }
 
-test('對普通敵人傷害% 使用 base=3、lv=0.035，三種敵種傷害抗性為物理防禦的 2 倍', () => {
+test('對普通敵人傷害% 使用新版 base=2/growthBase=3，三種敵種抗性使用 base=30/growthBase=6', () => {
   const context = loadFormulaContext();
   const defFlat = context.AFFIX_POOL.defFlat;
   const normalDmg = context.AFFIX_POOL.normalDmg;
   assert.ok(normalDmg);
   assert.equal(normalDmg.name, '對普通敵人傷害%');
   assert.equal(normalDmg.pct, true);
-  assert.equal(normalDmg.base, 3);
+  assert.equal(normalDmg.base, 2);
   assert.equal(normalDmg.lv, 0.035);
-  assert.equal(context.AFFIX_POOL.eliteDmg.base, 4);
+  assert.equal(context.AFFIX_POOL.eliteDmg.base, 2);
   assert.equal(context.AFFIX_POOL.eliteDmg.lv, 0.02);
-  assert.equal(context.AFFIX_POOL.bossDmg.base, 4);
+  assert.equal(context.AFFIX_POOL.bossDmg.base, 2);
   assert.equal(context.AFFIX_POOL.bossDmg.lv, 0.02);
   const RED_NAMES = { normalDmgRed: '普通敵人傷害抗性', eliteDmgRed: '菁英傷害抗性', bossDmgRed: 'BOSS傷害抗性' };
   Object.keys(RED_NAMES).forEach((key) => {
@@ -34,7 +34,8 @@ test('對普通敵人傷害% 使用 base=3、lv=0.035，三種敵種傷害抗性
     assert.ok(def, key + ' 詞條需存在');
     assert.equal(def.name, RED_NAMES[key]);
     assert.equal(def.pct, false);
-    assert.equal(def.base, defFlat.base * 2);
+    assert.equal(def.base, 30);
+    assert.equal(def.growthBase, 6);
     assert.equal(def.lv, defFlat.lv);
   });
   // 顯示分類：加成歸進攻、抗性歸防禦

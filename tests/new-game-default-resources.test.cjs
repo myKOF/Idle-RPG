@@ -25,7 +25,7 @@ test('新遊戲預設資源為 5 萬金幣、500 裝備碎片、100 附魔精華
 
 test('初始資源已登錄於遊戲參數表', () => {
   const csv = fs.readFileSync(path.join(__dirname, '..', 'config/CSV/game_parameters.csv'), 'utf8');
-  assert.match(csv, /353,0,0-遊戲預設,開場金幣,a,[^\n]*,50000,/);
-  assert.match(csv, /354,0,0-遊戲預設,開場裝備碎片,a,[^\n]*,500,/);
-  assert.match(csv, /355,0,0-遊戲預設,開場附魔精華,a,[^\n]*,100,/);
+  assert.match(csv, /355,0,0-遊戲預設,開場金幣,a,[^\n]*,50000,/);
+  assert.match(csv, /356,0,0-遊戲預設,開場裝備碎片,a,[^\n]*,500,/);
+  assert.match(csv, /357,0,0-遊戲預設,開場附魔精華,a,[^\n]*,100,/);
 });
