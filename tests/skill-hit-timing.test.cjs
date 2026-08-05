@@ -89,9 +89,10 @@ test('投射物的動畫長度與傷害數字用同一組飛行時間（不會�
   c.castSkill(player, [target], 'fireball', 1, 'mv-float');
   assert.ok(spec && spec.travelMs && spec.travelMs.length === 1, 'vfx 事件應帶每個目標的飛行時間');
   assert.equal(spec.travelMs[0], Math.round(c.bfTravelSeconds(target) * 1000));
-  // 顯示端拿同一個數字當動畫長度
+  // 顯示端拿同一個數字當動畫長度（v17：受擊爆點的命中時刻 hitAt 也用同一個數）
   const vfx = fs.readFileSync(path.join(root, 'js/vfx.js'), 'utf8');
-  assert.match(vfx, /vfxProjectile\(s, layer, from, pt, delay, travelMs \? travelMs\[t\] : 0\)/);
+  assert.match(vfx, /var tr = \(travelMs && travelMs\[rt\.idxs\[t\]\] > 0\) \? travelMs\[rt\.idxs\[t\]\] : 0;/);
+  assert.match(vfx, /vfxProjectile\(s, layer, from, pt, delay, tr\)/);
   assert.match(vfx, /d\.style\.animationDuration = flight \+ 'ms'/);
   /* shim 是逐欄挑選後才送出事件的，漏掉 travelMs 的話畫面會退回預設飛行時間，
      變成「數字到了子彈還在飛」——實機驗證時就是這樣抓到的。 */

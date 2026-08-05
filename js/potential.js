@@ -63,8 +63,10 @@ function castPotentialSkill(pEnt, target, def, floatSel, loadoutKey) {
   pEnt.skillCds[loadoutKey || ('potential:' + def.id)] = potentialActiveCd(def);
   pEnt.skillGcd = SKILL_GLOBAL_COOLDOWN;
   /* 特效：潛力技不經 castSkill，於此自行送一則。有傷害段（dmgType）的走一般推導，
-     純增益的走 selfBuff；顏色沿用潛力系的專屬色（VFX_CAT_COLORS.potential）。 */
-  if (typeof emitSkillVfx === 'function' && typeof skillVfxSpec === 'function') {
+     純增益的走 selfBuff；顏色沿用潛力系的專屬色（VFX_CAT_COLORS.potential）。
+     雷霆過載（chainLightning）例外：firePotentialLightning 自己送連鎖雷鏈，這裡不再疊一發。 */
+  if (def.mech !== 'chainLightning' &&
+      typeof emitSkillVfx === 'function' && typeof skillVfxSpec === 'function') {
     var pSk = { id: def.id, name: def.name, emoji: def.emoji, cat: 'potential', tags: def.tags || [] };
     var pFx = { dmgType: def.dmgType || null };
     emitSkillVfx(skillVfxSpec(pSk, pFx, null,
@@ -157,6 +159,23 @@ function firePotentialLightning(pEnt, def, live, floatSel, st, boostVal) {
   // 由近而遠連鎖：第一跳打最近的敵人，之後每跳跳到離上一個目標最近的鄰居 → js/battlefield.js
   var chainOrder = (typeof bfChainOrder === 'function')
     ? bfChainOrder(pEnt && pEnt._lockTarget, live, bounces) : [];
+  /* 特效（協議 v17）：把整條彈跳路徑交給顯示層畫成「敵人之間彈射的連鎖雷鏈」；
+     浮字比照每一跳延後一小段，數字跟著弧光一跳一跳出現。 */
+  var hopMs = Math.round(((typeof VFX_HIT_STAGGER_SEC === 'number') ? VFX_HIT_STAGGER_SEC : 0.09) * 1000);
+  if (typeof playCombatVfx === 'function') {
+    var chainIds = [];
+    for (var ci = 0; ci < bounces; ci++) {
+      var ce = chainOrder[ci] || (live.length ? live[ci % live.length] : null);
+      if (ce && ce.hp > 0) chainIds.push(enemyEventFloatTarget(ce, floatSel));
+    }
+    if (chainIds.length) {
+      playCombatVfx({
+        fxKind: 'chain', variant: 'chain', elem: 'lightning', cat: 'potential',
+        glyph: def.emoji || '🌩️', color: '#ffd93d',
+        targets: chainIds, cells: null, dur: 0.4, count: 1
+      });
+    }
+  }
   for (var i = 0; i < bounces; i++) {
     live = live.filter(function (m) { return m && m.hp > 0; });
     if (!live.length) break;
@@ -186,14 +205,15 @@ function firePotentialLightning(pEnt, def, live, floatSel, st, boostVal) {
       dmgVsElem: st.dmgVsElem, isPlayer: true
     };
     var res = resolveHit(pEnt, t, aCfg, monsterDefCfg(t));
+    // 浮字延遲＝該跳序 × 間隔，與連鎖雷鏈的弧光跳點同步
     if (!res.miss) {
-      floatEnemyEvent(t, floatSel, def.emoji + (res.crit ? '爆擊 ' : '') + fmt(res.dmg), combatDamageFloatClass('enemy-skill', res), res.dmg);
+      floatEnemyEvent(t, floatSel, def.emoji + (res.crit ? '爆擊 ' : '') + fmt(res.dmg), combatDamageFloatClass('enemy-skill', res), res.dmg, i * hopMs);
       trackDps(res.dmg);
       if (typeof recordRunDamage === 'function') recordRunDamage(def.name, res.dmg, 'potential:' + def.id, lv);
       out.dmg += res.dmg;
       if (res.killed) out.killed = true;
     } else {
-      floatEnemyEvent(t, floatSel, 'MISS', 'miss enemy-dodge');
+      floatEnemyEvent(t, floatSel, 'MISS', 'miss enemy-dodge', undefined, i * hopMs);
     }
   }
   return out;
@@ -248,13 +268,28 @@ function applyPotentialChainLightning(pEnt, fx, targets, totalDmg, comboReps, fl
     ? skillRtActiveEnemies(targets) : (targets || []).filter(function (m) { return m && m.hp > 0; });
   var first = (targets || []).filter(function (m) { return m && m.hp > 0; })[0] || null;
   var chain = (typeof bfChainOrder === 'function') ? bfChainOrder(first, field, bounces) : [];
+  /* 特效（協議 v17）：連鎖雷鏈弧光沿彈跳路徑跳；浮字逐跳延後同步。 */
+  var hopMs = Math.round(((typeof VFX_HIT_STAGGER_SEC === 'number') ? VFX_HIT_STAGGER_SEC : 0.09) * 1000);
+  if (typeof playCombatVfx === 'function') {
+    var chainIds = [];
+    for (var ci = 0; ci < bounces; ci++) {
+      var ce = chain[ci] || field[ci % Math.max(1, field.length)];
+      if (ce && ce.hp > 0) chainIds.push(enemyEventFloatTarget(ce, floatSel));
+    }
+    if (chainIds.length) {
+      playCombatVfx({
+        fxKind: 'chain', variant: 'chain', elem: 'lightning', cat: 'potential',
+        glyph: '🌩️', color: '#ffd93d', targets: chainIds, cells: null, dur: 0.4, count: 1
+      });
+    }
+  }
   for (var i = 0; i < bounces; i++) {
     var t = chain[i] || field[i % Math.max(1, field.length)];
     if (!t || t.hp <= 0) continue;
     var d = Math.max(1, Math.round(per));
     t.hp -= d;
     out.dmg += d;
-    floatEnemyEvent(t, floatSel, floatPrefix + fmt(d), floatCls, d);
+    floatEnemyEvent(t, floatSel, floatPrefix + fmt(d), floatCls, d, i * hopMs);
     trackDps(d);
     if (typeof recordRunDamage === 'function') recordRunDamage('雷霆過載·連鎖', d); // 列入傷害統計，可與天罰分辨
     if (t.hp <= 0) { t.hp = 0; out.killed = true; }

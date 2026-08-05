@@ -432,18 +432,33 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
     // 45 新技能（periodicField 族）：領域內敵人受指定類型傷害增幅（普攻端；elemAtk 於函式內先淺拷貝防污染）
     if (typeof skillRtFieldAmpACfg === 'function') aCfg = skillRtFieldAmpACfg(aCfg, mEnt);
     if (opts && opts.forceCrit) aCfg.critRate = Math.max(100, aCfg.critRate || 0); // 必定暴擊
+    /* 普攻特效（協議 v17）：不再原地出手——發射一道「劍氣」飛向目標，命中時的受擊反饋
+       由顯示層（js/vfx.js）處理。浮字延遲與劍氣飛行共用同一個數字（比照技能 travelMs），
+       追加攻擊（連擊／連擊數／引動攻擊）的第 N 波劍氣以 opts.vfxDelayMs 依序錯開。
+       純顯示時序：傷害在本函式內當下結算完畢，戰鬥結果不受影響。 */
+    var atkTravelMs = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(mEnt) * 1000) : 0;
+    var atkWaveDelayMs = (opts && opts.vfxDelayMs > 0) ? opts.vfxDelayMs : 0;
+    var atkHitDelayMs = atkWaveDelayMs + atkTravelMs;
+    if (typeof playCombatVfx === 'function') {
+        playCombatVfx({
+            fxKind: 'projectile', variant: 'swordwave', cat: 'basic', elem: null,
+            glyph: '⚔️', color: '#e6ddc8',
+            targets: [enemyEventFloatTarget(mEnt, floatSel)],
+            travelMs: [atkTravelMs], delayMs: atkWaveDelayMs, dur: 0.5, count: 1
+        });
+    }
     var res = resolveHit(pEnt, mEnt, aCfg, monsterDefCfg(mEnt));
     var mName = mEnt.name || '怪物';
     var logMsg = (depth ? '' : '你攻擊 ' + mName + '，');
     var playerFloatSel = playerEventFloatTarget(floatSel);
     if (res.miss) {
-        floatEnemyEvent(mEnt, floatSel, 'MISS', 'miss enemy-dodge');
+        floatEnemyEvent(mEnt, floatSel, 'MISS', 'miss enemy-dodge', undefined, atkHitDelayMs);
         logMsg += (depth ? '<span class="log-hl-bad">攻擊被閃避了！</span>' : '<span class="log-hl-bad">被閃避了！</span>');
     } else {
         var dmgStr = fmt(res.dmg);
         if (res.crit) dmgStr = '爆擊 ' + dmgStr;
         if (res.blocked) dmgStr = '格擋 ' + dmgStr;
-        floatEnemyEvent(mEnt, floatSel, dmgStr, combatDamageFloatClass('enemy-attack', res), res.dmg);
+        floatEnemyEvent(mEnt, floatSel, dmgStr, combatDamageFloatClass('enemy-attack', res), res.dmg, atkHitDelayMs);
         trackDps(res.dmg);
         recordRunDamage('普攻', res.dmg);
         logMsg += (res.crit ? '<span class="log-hl-good">爆擊</span> ' : '造成 ') + fmt(res.dmg) + ' 傷害。';
@@ -480,15 +495,26 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
                 mEnt.hp -= smiteDmg;
                 trackDps(smiteDmg);
                 recordRunDamage('天罰', smiteDmg);
-                floatEnemyEvent(mEnt, floatSel, '⚡' + fmt(smiteDmg), 'crit enemy-attack', smiteDmg);
+                // 天罰特效：劍氣命中那一刻，一道神雷從天頂劈在目標身上
+                if (typeof playCombatVfx === 'function') {
+                    playCombatVfx({
+                        fxKind: 'rain', variant: 'smite', elem: 'lightning', cat: 'basic',
+                        glyph: '⚡', color: '#ffd93d',
+                        targets: [enemyEventFloatTarget(mEnt, floatSel)],
+                        travelMs: [0], delayMs: atkHitDelayMs, dur: 0.4, count: 1
+                    });
+                }
+                floatEnemyEvent(mEnt, floatSel, '⚡' + fmt(smiteDmg), 'crit enemy-attack', smiteDmg, atkHitDelayMs + 90);
                 logMsg += '<span class="log-hl-good">天罰降臨，追加 ' + fmt(smiteDmg) + ' 真實傷害！</span>';
                 if (mEnt.hp <= 0) { mEnt.hp = 0; res.killed = true; res.dmg += smiteDmg; }
             }
         }
     }
     // 連擊（僅一層）；補刀擊殺必須回報給呼叫端（opts.noProc：引動攻擊不再觸發追加攻擊）
+    // 追加攻擊的劍氣以固定間隔錯開（vfxDelayMs），看起來是一波接一波追出去的
+    var atkWaveStepMs = 130;
     if (!res.killed && !depth && !(opts && opts.noProc) && (st.passives.doubleHit || 0) > 0 && chance(st.passives.doubleHit)) {
-        var res2 = doPlayerAttack(pEnt, mEnt, floatSel, 1);
+        var res2 = doPlayerAttack(pEnt, mEnt, floatSel, 1, { vfxDelayMs: atkWaveDelayMs + atkWaveStepMs });
         logMsg += ' <span class="log-hl-good">觸發連擊！</span>追加' + res2.logText;
         if (res2 && res2.killed) { res.killed = true; res.dmg += res2.dmg; }
     }
@@ -496,7 +522,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
     if (!depth && !(opts && opts.noProc) && !res.miss && !res.killed) {
         var comboN = rollComboHits(st);
         for (var cbi = 0; cbi < comboN && !res.killed; cbi++) {
-            var resc = doPlayerAttack(pEnt, mEnt, floatSel, 1);
+            var resc = doPlayerAttack(pEnt, mEnt, floatSel, 1, { vfxDelayMs: atkWaveDelayMs + atkWaveStepMs * (cbi + 1) });
             if (resc) { res.dmg += resc.dmg; if (resc.killed) res.killed = true; }
         }
         if (comboN > 0) logMsg += ' <span class="log-hl-good">連擊數 ×' + comboN + '</span>';
@@ -556,6 +582,14 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
         var dmgStr = fmt(res.dmg);
         if (res.crit) dmgStr = '爆擊 ' + dmgStr;
         floatText(playerFloatSel, dmgStr, isCrit ? 'crit' : 'mdmg');
+        // 我方受擊反饋（協議 v17）：爪痕閃過我方卡片＋卡片震動，由顯示層畫
+        if (typeof playCombatVfx === 'function') {
+            playCombatVfx({
+                fxKind: 'impact', variant: 'claw', elem: null, cat: 'enemy',
+                glyph: '💢', color: '#ff6b6b',
+                targets: [playerFloatSel], travelMs: null, dur: 0.35, count: 1
+            });
+        }
         if (res.blocked) floatPlayerEvent(playerFloatSel, '格擋!', 'defend');
         hpDamage = Math.max(0, res.dmg - (res.absorbed || 0));
         logMsg += (res.crit ? '<span class="log-hl-bad">爆擊</span> ' : '造成 ') + fmt(res.dmg) + (mEnt.magic ? ' 魔法' : '') + ' 傷害。';
