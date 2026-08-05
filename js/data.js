@@ -245,11 +245,11 @@ var BF_BOSS_H = 2;             // BOSS 佔格高（列）
    固定單一敵人、佔 BF_BOSS_W×BF_BOSS_H 格、免疫控場（isBoss → formula.js §3）。
    倍率語意比照菁英：相對於同階段普通怪；攻速為絕對值不是倍率。 */
 var FIELD_BOSS_STAGE_INTERVAL = 50;
-var FIELD_BOSS_HP_MULT = 20;      // 生命倍率
-var FIELD_BOSS_ATK_MULT = 5;      // 攻擊倍率
+var FIELD_BOSS_HP_MULT = 15;      // 生命倍率
+var FIELD_BOSS_ATK_MULT = 4;      // 攻擊倍率
 var FIELD_BOSS_DEF_MULT = 2;      // 物理／魔法防禦倍率
 var FIELD_BOSS_REWARD_MULT = 10;  // 金幣與經驗倍率
-var FIELD_BOSS_DODGE_ADD = 2.5;     // 閃避加成（百分點）
+var FIELD_BOSS_DODGE_ADD = 2;     // 閃避加成（百分點）
 var FIELD_BOSS_ASPD = 1.5;        // 攻速（次/秒，絕對值）
 var FIELD_BOSS_DROP_MULT = 3;     // 掉落倍率：裝備與材料統一乘此值（比照 ELITE_DROP_MULT）
 
