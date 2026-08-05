@@ -818,8 +818,11 @@ function completeFieldWave(st) {
     if (window.recordLootBattle) window.recordLootBattle('field'); // 整波敵人清空 = 一場戰鬥
     // 移動速度：縮短推圖間隔；只有整波敵人全部擊殺且死亡資訊清除後才進入下一波。
     FIELD.respawnCd = RESPAWN_DELAY * (1 - st.moveSpeed / 100);
+    var maxStage = zoneMaxStage(G.stage.zone);
+    var nextStage = Math.min(G.stage.current + 1, maxStage);
+    // 完成戰鬥即解鎖下一關；自動推進只控制目前是否立刻切換。
+    G.stage.best = Math.max(Number(G.stage.best) || 1, nextStage);
     if (G.stage.autoAdvance) {
-        var maxStage = zoneMaxStage(G.stage.zone);
         if (G.stage.current >= maxStage) {
             G.stage.current = maxStage;
             G.stage.best = Math.max(G.stage.best || 1, maxStage);
