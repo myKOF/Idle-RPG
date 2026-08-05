@@ -126,9 +126,22 @@ function sumLeaves(v) {
      { listByLevel: [...] }   依角色等級分段挑清單（見 pickBand）
      { path: "panels.x.y" }   狀態裡某個物件的鍵（或陣列的元素）
    例如「每種寶石 × 等級 1~4 各試一次合成」就是兩項跨乘。 */
+/* learnedIn：只留下「在某張 id→等級 表裡真的有值」的候選。
+
+   為什麼需要：技能點改成只投裝載欄放得下的幾個之後（見 learnPlan），
+   優先序清單裡其餘二十幾個永遠不會被學會，而 equip-loadout 仍照著整份清單送——
+   實測 3 遊戲小時送出 4,860 次、其中 3,232 次是「尚未學習」。
+   不影響正確性（遊戲會擋），但那是白花的成本，而且會把指令統計淹到看不出真正的問題。
+   理由與 nonEmpty 只送「手上真的有貨」的寶石種類完全相同。 */
+function filterLearned(state, spec, ids) {
+  if (!spec.learnedIn) return ids;
+  var table = pathVal(state, spec.learnedIn) || {};
+  return ids.filter(function (id) { return Number(table[id]) > 0; });
+}
+
 function expandCandidates(state, policy, spec) {
-  if (spec.values) return spec.values.slice();
-  if (spec.list) return (policy.lists[spec.list] || []).slice();
+  if (spec.values) return filterLearned(state, spec, spec.values.slice());
+  if (spec.list) return filterLearned(state, spec, (policy.lists[spec.list] || []).slice());
   if (spec.listByLevel) {
     var band = pickBand(state, spec.listByLevel, spec.levelPath);
     if (!band) return [];
@@ -387,6 +400,41 @@ function observeCombat(state, policy, memo) {
   if (m && m.isBoss) mode = 'boss';
   else if (m && m.elite) mode = 'elite';
 
+  /* ---- 玩家自己的血量水位（危險程度的主訊號）----
+
+     「該不該帶保命技」不是「打什麼怪」的函數，是「有沒有在危險」的函數：
+     同一隻小怪，裝備夠強就一路輾過去、不夠強就會掛，兩者要的技能組不一樣。
+     怪物種類只是相關，不是原因——照種類切換會在「打得很順的菁英」上白白
+     犧牲兩格輸出，也會在「打不動的小怪」上完全不作為。
+
+     量法取最保守也最便宜的那一種：**滾動視窗內的最低血量百分比**。
+     真人的講法是「掛一掛會不會死」，那需要很長的統計；最低血量是它的前導指標，
+     而且一個視窗就量得到——低於一半就是已經很危險了。
+
+     用固定桶輪替而不是保留每一筆取樣：觀測是 1Hz，20 遊戲小時就是 72,000 筆，
+     每次都要修剪陣列。桶是 O(1)，代價只是視窗邊界會有一個桶的粒度。 */
+  var hpNow = Number(pathVal(state, 'view.hp'));
+  var hpMax = Number(pathVal(state, 'view.hpMax'));
+  if (hpMax > 0 && isFinite(hpNow)) {
+    var hpCfg = (policy.danger && policy.danger.hpFloor) || {};
+    var winSec = (typeof hpCfg.windowSec === 'number') ? hpCfg.windowSec : 300;
+    var nBuckets = (typeof hpCfg.buckets === 'number') ? hpCfg.buckets : 6;
+    var bucketSec = Math.max(1, winSec / nBuckets);
+    if (!T.hpFloor) T.hpFloor = { buckets: [], at: -1 };
+    var idx = Math.floor(now / bucketSec);
+    var HF = T.hpFloor;
+    if (HF.at !== idx) {
+      /* 換桶：把新桶推進去，超出視窗的丟掉。死亡當下血量是 0，
+         那一筆要算數——它正是「已經不安全」最直接的證據。 */
+      HF.buckets.push(100);
+      while (HF.buckets.length > nBuckets) HF.buckets.shift();
+      HF.at = idx;
+    }
+    var pctNow = 100 * hpNow / hpMax;
+    var last = HF.buckets.length - 1;
+    if (last >= 0 && pctNow < HF.buckets[last]) HF.buckets[last] = pctNow;
+  }
+
   /* 當前對手的閃避。記在這裡而不是決策點現讀，理由有兩個：
        1. 決策點不一定正在交戰（怪物剛死、正在換關），現讀會拿到 null
        2. 這是高頻觀測，取到的是「最近真的在打的那隻」，不是十秒前的殘影
@@ -492,6 +540,10 @@ function updateContext(state, policy, memo) {
        ⚠️ 只補 deficit，不覆寫整個 ctx：呼叫端（測試、或日後別的驅動）可能自己
        塞了 ctx 進來，整包換掉會把它們默默清空。 */
     if (!state.ctx) state.ctx = {};
+    /* 危險程度與 track 無關（它只讀血量水位），兩條路徑都要算——
+       漏了的話，沒宣告 track 的策略會拿到 ctx.danger === undefined，
+       保命技的規則整段空轉而且沒有任何徵兆。理由與下面 roi / stopLoss 相同。 */
+    state.ctx.danger = evalDanger(state, policy, memo, null);
     state.ctx.deficit = evalTargets(state, policy, memo);
     /* ⚠️ 邊際效益與止損跟 track 無關，兩條路徑都要算。
        漏了這一行的話，沒宣告 track 的策略會拿到 ctx.roi === undefined，
@@ -568,10 +620,116 @@ function updateContext(state, policy, memo) {
      （例如有效命中率要用 ctx.enemyDodge）。 */
   state.ctx.deficit = evalTargets(state, policy, memo);
 
+  /* 危險程度。要排在 deficit **之後**：主訊號是死亡率，而那是一個已經宣告過的
+     速率型目標（deathRate），沒有理由再量第二份。 */
+  state.ctx.danger = evalDanger(state, policy, memo, blockRec);
+
   /* 邊際效益排序與止損水位。放在最後：它們要讀 panels.eval，而那個面板
      只在決策點才建（貴），觀測節奏上沒有。 */
   state.ctx.roi = rankRoi(state, policy);
   state.ctx.stopLoss = evalStopLoss(state, policy);
+}
+
+/* ============ 危險程度：保命技該不該上，看的是處境不是怪物種類 ============
+
+   ---- 這一節在修的誤區 ----
+
+   第一版把它做成「小怪＝點金手／尋寶直覺、BOSS＝魔法屏障／再生術」的固定對應。
+   那是錯的模型：同一隻小怪，裝備夠強就一路輾過去、不夠強就會掛；同一隻 BOSS，
+   強到能秒就不需要保命技。**怪物種類與危險程度只是相關，不是因果**。
+   照種類切換的後果是兩頭落空——在打得很順的菁英身上白白犧牲兩格輸出，
+   在打不動的小怪身上完全不作為。實測第一版：菁英太密，每 36 遊戲秒翻一次，
+   而 8 個 seed 的死亡數全部上升。
+
+   ---- 兩個訊號，都取「最壞的那一刻」而不是平均 ----
+
+   1. 玩家血量水位（hpFloorPct）：滾動視窗內的**最低**血量百分比。
+      真人的講法是「掛一掛會不會死」，那要很長的統計才問得出來；
+      最低血量是它的前導指標，一個視窗就量得到。低於一半就是已經很危險。
+      平均血量沒有用——被秒的那一下之前，平均值可能一直很好看。
+
+   2. 卡點的敵人殘血（enemyLeftPct）：`T.attempts[卡住那一關].minHpPct`，
+      也就是「我最好的一次把牠打到剩幾 %」。這個數字**本來就在量**
+      （observeCombat 記，退關時存進 attempts，重試冷卻也是拿它算的），
+      只是從來沒有拿去驅動技能。剩得愈多代表差得愈遠。
+
+   ---- 為什麼要遲滯 ----
+
+   兩個門檻（進入 / 離開）不同，否則血量在門檻附近抖動時會每個決策點拆一次裝一次。
+   離開的門檻要明顯高於進入——「剛好回到 50%」不代表安全，只代表這一個視窗沒被打到。 */
+function evalDanger(state, policy, memo, blockRec) {
+  var cfg = policy.danger;
+  if (!cfg) return null;
+  var T = memo.trk || {};
+
+  /* 視窗還沒攢滿就回 unknown（null），不猜。開場前幾分鐘血量本來就滿，
+     猜「安全」會讓保命技在最需要的前期缺席。 */
+  var floorPct = null;
+  var HF = T.hpFloor;
+  if (HF && HF.buckets && HF.buckets.length) {
+    var need = (typeof cfg.minBuckets === 'number') ? cfg.minBuckets : 2;
+    if (HF.buckets.length >= need) {
+      floorPct = 100;
+      for (var i = 0; i < HF.buckets.length; i++) {
+        if (HF.buckets[i] < floorPct) floorPct = HF.buckets[i];
+      }
+    }
+  }
+
+  var enemyLeftPct = blockRec ? (typeof blockRec.minHpPct === 'number' ? blockRec.minHpPct : null) : null;
+
+  var enterAt = (typeof cfg.enterBelowPct === 'number') ? cfg.enterBelowPct : 50;
+  var leaveAt = (typeof cfg.leaveAbovePct === 'number') ? cfg.leaveAbovePct : 65;
+  var farBehindPct = (typeof cfg.farBehindPct === 'number') ? cfg.farBehindPct : 30;
+
+  /* ---- 主訊號是「會不會死」，血量水位只是前導指標 ----
+
+     使用者的原話是「一般小怪你能掛多久不死？如果這個需要長時間統計的話，
+     那麼用最低剩餘血量也可以」——死亡率是主判準，最低血量是它的替代品。
+     兩者的關係不是二選一：實測一份 Lv.169 的存檔在關卡 150 掛了 33 分鐘，
+     最低血量是 57%（高於 50% 的門檻），但同一個角色在 20 小時裡會死幾百次。
+     只看最低血量會漏掉這種「平常很穩、偶爾被秒」的情況，而那正是最需要保命技的。
+
+     ⚠️ 死亡率讀的是已經宣告過的 deathRate 目標（ratePerMin），不另外量一份——
+     同一件事量兩次遲早會對不上，而且視窗長度也會變成兩個要維護的數字。
+     unknown（視窗還沒攢滿）不算安全也不算危險，交給血量水位判。 */
+  var deathRate = null;
+  if (cfg.deathTarget && state.ctx && state.ctx.deficit) {
+    var dr = state.ctx.deficit[cfg.deathTarget];
+    if (dr && !dr.unknown && typeof dr.value === 'number') deathRate = dr.value;
+  }
+  var dieAt = (typeof cfg.deathsPerMinAt === 'number') ? cfg.deathsPerMinAt : 0;
+
+  /* 上一次的等級留在 memo 裡，遲滯才有記憶。 */
+  if (typeof memo.dangerLevel !== 'number') memo.dangerLevel = 0;
+  var lvl = memo.dangerLevel;
+
+  var hpDanger = (floorPct !== null && floorPct < enterAt);
+  var hpSafe = (floorPct !== null && floorPct >= leaveAt);
+  var dying = (deathRate !== null && deathRate > dieAt);
+
+  if (hpDanger || dying) {
+    /* 第二級要再加一個「而且真的解不掉」的證據：擋在前面的那一關，
+       最好的一次還讓敵人剩 farBehindPct 以上——那是差得遠，不是差一點。 */
+    lvl = (enemyLeftPct !== null && enemyLeftPct >= farBehindPct) ? 2 : 1;
+  } else if (hpSafe) {
+    /* 血量回到離開門檻**而且**沒有在死，才降級。
+       ⚠️ 死亡率 unknown（視窗還沒攢滿）要當成「沒有在死」而不是「不確定所以不降」——
+       當成後者的話，任何取不到死亡計數的情境（剛從存檔開機、剛轉生）
+       都會讓保命技一旦上去就再也拿不下來，而症狀只是「AI 的輸出永遠少兩格」。 */
+    lvl = 0;
+  }
+  /* 其餘情況（遲滯區間、資料不足）維持原狀 */
+  memo.dangerLevel = lvl;
+
+  return {
+    level: lvl,
+    hpFloorPct: floorPct === null ? null : Math.round(floorPct * 10) / 10,
+    deathsPerMin: deathRate === null ? null : Math.round(deathRate * 100) / 100,
+    enemyLeftPct: enemyLeftPct === null ? null : Math.round(enemyLeftPct),
+    /* 揭露門檻，讓 run_summary 讀得出來這一場是用什麼標準判的 */
+    enterBelowPct: enterAt, leaveAbovePct: leaveAt, farBehindPct: farBehindPct
+  };
 }
 
 /* ============ 邊際效益排序（ROI Driven Affix Selection） ============
@@ -1956,10 +2114,21 @@ function decide(state, policy, memo) {
         for (var lo = 0; lo < lsOrder.length; lo++) rankOf[lsOrder[lo]] = lo;
         var WORST = lsOrder.length + 1;          // 不在優先序裡的一律排最後
 
+        /* protect：由別條規則管理的格子，這裡一律不碰。
+
+           ⚠️ 這不是防禦性程式。優先序裡沒有的 id 一律被排成 WORST，而 BOSS 戰
+           換上去的保命技（regenerate / manaBarrier）本來就不在刷圖的優先序裡——
+           不保護的話，boss-loadout 換上去、下一個決策點就被這條當成「最差的」拆掉，
+           兩條規則會在整場 BOSS 戰裡互相拆台，而報表上只看得到指令數變多。 */
+        var lsProtect = {};
+        var lsProtectList = lsCfg.protect || [];
+        for (var lp2 = 0; lp2 < lsProtectList.length; lp2++) lsProtect[lsProtectList[lp2]] = true;
+
         /* 場上最差的那個 */
         var worstId = null, worstRank = -1;
         for (var li = 0; li < lsLoadout.length; li++) {
           var lid = lsLoadout[li];
+          if (lsProtect[lid]) continue;
           var lrank = (rankOf[lid] === undefined) ? WORST : rankOf[lid];
           if (lrank > worstRank) { worstRank = lrank; worstId = lid; }
         }
@@ -1978,6 +2147,192 @@ function decide(state, policy, memo) {
 
         if (better && worstId) {
           out.push({ name: r.cmd, args: { id: worstId }, ruleId: r.id });
+        }
+      }
+    } else if (r.learnPlan) {
+      /* ---- 技能點的投法：主動只學裝載欄放得下的，其餘全投被動 ----
+
+         為什麼需要這條：js/skills.js 的 pickAndCastSkill **只走 G.player.loadout**，
+         沒裝載的主動技一次都不會被施放。而技能點是 1 級 1 點
+         （skills.js 的 spentSkillPoints 直接加總各技能等級），所以學了不裝＝死點。
+
+         舊做法是一份寫死的清單（前期 16 個／中期 27 個／後期 39 個），但裝載欄是
+         loadoutSize() = clamp(4 + ⌊等級/50⌋, 4, 20)、1 轉後 20——**清單長度與格數
+         是兩套獨立的數字**。實測一場 Lv.152 的存檔：152 點裡有 37 點（24%）壓在
+         強力斬 10／魔法屏障 10／二連拳 10／再生術 6／奧術衝擊 1 這些沒裝載的主動上。
+
+         而且前期清單的第 2~5 名正是 powerSlash／doubleStrike／manaBarrier／regenerate：
+         那時候只有 4~5 格，裝得下；Lv.50 之後被更好的擠掉，點數留在原地。
+         「清單順序即投點優先序」在格數固定時沒問題，格數會長就會失真。
+
+         名額一律由**遊戲**給（panels.skills.loadoutSize），不在策略裡寫死。
+
+         送出順序＝投點優先序（點數不足時後面的由遊戲擋下）：
+           1. 主動：優先序清單的前 loadoutSize 個
+           2. always：不常駐裝載欄、但一定要學的（例如 BOSS 戰才換上的保命技）
+           3. 被動：被動不佔裝載欄，學會就常駐，剩下的點全投這裡 */
+      var lpCfg = r.learnPlan;
+      var lpPanel = pathVal(state, lpCfg.skills) || {};
+      var lpSize = Number(lpPanel.loadoutSize) || 0;
+      var lpLearned = lpPanel.skills || {};
+      var lpUnlockLv = lpPanel.unlockLv || {};
+      var lpLevel = Number(pathVal(state, lpCfg.level)) || 0;
+      var lpActives = (policy.lists && policy.lists[lpCfg.actives]) || [];
+      var lpPassives = (policy.lists && policy.lists[lpCfg.passives]) || [];
+      var lpAlways = lpCfg.always || [];
+
+      if (lpSize > 0) {
+        var lpSeen = {};
+        /* 已滿級的不再送。上限由遊戲給（panels.skills.maxLv，隨轉生數提高），
+           不寫死 10——寫死的話轉生後就會停在 10 級而且沒有任何徵兆。 */
+        var lpMax = Number(lpPanel.maxLv) || 0;
+        var lpPush = function (id) {
+          if (!id || lpSeen[id]) return;
+          lpSeen[id] = true;
+          if (lpMax > 0 && Number(lpLearned[id]) >= lpMax) return;
+          out.push({ name: r.cmd, args: { id: id }, ruleId: r.id });
+        };
+        /* 名額只能給「現在真的學得起來」的：優先序前面若是還沒解鎖的高等技能，
+           照位置硬切會讓那幾格永久空著（送出去只會得到「需人物達到 Lv.N 才解鎖」）。
+           已經學會的一律算數——它已經佔著格子了。 */
+        var lpTaken = 0;
+        for (var lpi = 0; lpi < lpActives.length && lpTaken < lpSize; lpi++) {
+          var lpId = lpActives[lpi];
+          var lpNeed = Number(lpUnlockLv[lpId]) || 0;
+          if (!(Number(lpLearned[lpId]) > 0) && lpNeed > lpLevel) continue;
+          lpPush(lpId);
+          lpTaken++;
+        }
+        for (var lpa = 0; lpa < lpAlways.length; lpa++) lpPush(lpAlways[lpa]);
+        for (var lpp = 0; lpp < lpPassives.length; lpp++) lpPush(lpPassives[lpp]);
+      }
+    } else if (r.combatLoadout) {
+      /* ---- 依戰況換裝載欄：打菁英／BOSS 時換上保命技 ----
+
+         BOSS 戰是一場十分鐘的消耗戰，而刷圖是幾秒一隻——兩者要的技能組不一樣。
+         遊戲這邊完全支援：unequipSkillFromLoadout 無條件、無成本、**技能等級保留**，
+         而且冷卻是掛在角色實體上（pEnt.skillCds 以技能 id 為鍵），換上換下不會重置。
+
+         判斷來源是遊戲給的怪物旗標（monster.elite / monster.isBoss），不是策略自己
+         推算關卡——推算會在改版時靜靜失準。
+
+         ⚠️ 收斂條件：只有當「現在的裝載欄與目標不一致」時才送指令。少了這一條，
+         每個決策點都會重送一次卸下＋裝上，指令統計被灌爆而且看不出來有沒有真的切換。
+
+         ⚠️ 卸下要排在裝上前面：裝載欄是滿的，先送裝上只會得到「裝載欄已滿」。
+         同一個決策點內指令是照順序送的，所以一拍就換完。 */
+      var clCfg = r.combatLoadout;
+      var clPanel = pathVal(state, clCfg.skills) || {};
+      var clLoadout = clPanel.loadout || [];
+      var clLearned = clPanel.skills || {};
+      var clIn = [], clOut = [];
+
+      /* ---- 由危險程度分級決定要帶幾個保命技 ----
+
+         不是「打什麼怪」而是「有沒有在危險」——見 evalDanger 的說明。
+         階梯是累積的：等級 1 上第一階，等級 2 連第二階一起上。
+         等級 0 全部退場，兩個產出技回到場上。 */
+      var clLevel = Number(pathVal(state, clCfg.danger));
+      if (!isFinite(clLevel)) clLevel = 0;
+      var clHas = {};
+      for (var cl = 0; cl < clLoadout.length; cl++) clHas[clLoadout[cl]] = true;
+
+      var clTiers = clCfg.tiers || [];
+      for (var ct = 0; ct < clTiers.length; ct++) {
+        var tier = clTiers[ct];
+        var need = (typeof tier.atLeast === 'number') ? tier.atLeast : 1;
+        var wantThis = clLevel >= need;
+        var tIn = tier.swapIn || [], tOut = tier.swapOut || [];
+
+        if (wantThis) {
+          /* ⚠️ 保命技還沒學會就**整階不動**。
+             少了這道檢查會變成「卸下產出技、卻裝不上保命技」——兩格白白空著，
+             既沒有輸出也沒有保命。實測 20 遊戲小時卸下 1,272 次、裝上只有 381 次，
+             差的那 891 次就是這個。
+             （已經在場上的算數：那代表上一拍已經換好了。） */
+          var usable = true;
+          for (var tu = 0; tu < tIn.length; tu++) {
+            if (!clHas[tIn[tu]] && !(Number(clLearned[tIn[tu]]) > 0)) { usable = false; break; }
+          }
+          if (!usable) continue;
+          for (var ti = 0; ti < tIn.length; ti++) clIn.push(tIn[ti]);
+          for (var to = 0; to < tOut.length; to++) clOut.push(tOut[to]);
+        } else {
+          /* 退場方向不必檢查：把保命技拿下來永遠是安全的，
+             補回產出技若還沒學會，下面的 clAdd 會自己擋掉，空格也有 equip-loadout 會填。 */
+          for (var ti2 = 0; ti2 < tIn.length; ti2++) clOut.push(tIn[ti2]);
+          for (var to2 = 0; to2 < tOut.length; to2++) clIn.push(tOut[to2]);
+        }
+      }
+
+      /* 要裝上的一律限於「已經學會」的——沒學會的送出去只會被遊戲回「尚未學習」，
+         而且會讓我們誤以為已經切換過去了，於是永遠不再送卸下。 */
+      var clAdd = [], clRemove = [];
+      for (var ci = 0; ci < clIn.length; ci++) {
+        if (!clHas[clIn[ci]] && Number(clLearned[clIn[ci]]) > 0) clAdd.push(clIn[ci]);
+      }
+      for (var co = 0; co < clOut.length; co++) if (clHas[clOut[co]]) clRemove.push(clOut[co]);
+
+      /* 只在真的要動的時候才動。兩邊都空＝已經是目標狀態。 */
+      if (clRemove.length || clAdd.length) {
+        for (var cr = 0; cr < clRemove.length; cr++) {
+          out.push({ name: clCfg.unequipCmd || 'skill.unequipLoadout', args: { id: clRemove[cr] }, ruleId: r.id });
+        }
+        for (var ca = 0; ca < clAdd.length; ca++) {
+          out.push({ name: r.cmd, args: { id: clAdd[ca] }, ruleId: r.id });
+        }
+      }
+    } else if (r.deleteUnusedSkills) {
+      /* ---- 回收：學了、但永遠不會被施放的主動技，把點數退回來 ----
+
+         js/skills.js 的 deleteSkill 是**全額退還**（「已全額退還 N 技能點」），
+         所以早期學錯的不必認賠——前期只有 4~5 格時裝得下的技能，
+         Lv.50 之後被更好的擠掉，那些點現在可以拿回來重投被動。
+
+         ⚠️ 三道保護，少一道就會刪到不該刪的：
+           1. 現在裝載欄裡的一律不刪（包含 BOSS 戰暫時換上去的）。
+           2. 任何宣告過的清單裡的一律不刪——BOSS 組平時就是「學了沒裝」的狀態，
+              不保護的話它每五分鐘被刪一次、再被 learnPlan 學回來，無限迴圈。
+           3. 融合技的材料一律不刪。deleteSkill **不檢查融合佔用**
+              （equipSkillToLoadout 才檢查），刪掉材料會把融合技一起弄壞。
+         被動也一律不刪：它們不佔裝載欄，學會就一直有效。 */
+      var duCfg = r.deleteUnusedSkills;
+      var duPanel = pathVal(state, duCfg.skills) || {};
+      var duLearned = duPanel.skills || {};
+      var duLoadout = duPanel.loadout || [];
+      var duSize = Number(duPanel.loadoutSize) || 0;
+      var duFusions = duPanel.fusions || [];
+
+      if (duSize > 0) {
+        var duKeep = {};
+        for (var dk = 0; dk < duLoadout.length; dk++) duKeep[duLoadout[dk]] = true;
+        var duActives = (policy.lists && policy.lists[duCfg.actives]) || [];
+        for (var da = 0; da < duActives.length && da < duSize; da++) duKeep[duActives[da]] = true;
+        var duPassives = (policy.lists && policy.lists[duCfg.passives]) || [];
+        for (var dp = 0; dp < duPassives.length; dp++) duKeep[duPassives[dp]] = true;
+        var duAlways = duCfg.always || [];
+        for (var dal = 0; dal < duAlways.length; dal++) duKeep[duAlways[dal]] = true;
+        /* 融合技本身與它的材料都要保住 */
+        for (var df = 0; df < duFusions.length; df++) {
+          var fu = duFusions[df];
+          if (!fu) continue;
+          if (fu.id) duKeep[fu.id] = true;
+          var comps = fu.components || [];
+          for (var dc = 0; dc < comps.length; dc++) {
+            duKeep[typeof comps[dc] === 'string' ? comps[dc] : (comps[dc] && comps[dc].id)] = true;
+          }
+        }
+
+        var duMax = (typeof duCfg.maxPerRun === 'number') ? duCfg.maxPerRun : 3;
+        var duSent = 0;
+        for (var dId in duLearned) {
+          if (duSent >= duMax) break;
+          if (duKeep[dId]) continue;
+          if (!(Number(duLearned[dId]) > 0)) continue;
+          /* 被動不刪：它們不佔裝載欄，學會就常駐。策略層看不到 cat，
+             所以靠「被動清單」宣告——不在清單裡的被動本來也不該被學。 */
+          out.push({ name: r.cmd, args: { id: dId }, ruleId: r.id });
+          duSent++;
         }
       }
     } else if (r.rerollOffTarget) {

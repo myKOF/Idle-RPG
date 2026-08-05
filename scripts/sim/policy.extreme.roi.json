@@ -244,7 +244,18 @@
     ],
     "skillEarly_依據": "技能點極度稀缺，清單順序＝投點順序（點數不足時後面的由遊戲擋下），所以順序就是策略本身。實測改前 Lv.97 時 powerSlash 與 arcaneBurst 都停在 1 級、防禦與被動八個全 10 級、技能點剩 0——等於用 440% 攻擊的一級強力斬打完前 100 級（滿級 1160%）。真人 24 小時存檔是 37 個技能全 Lv.10。排序原則：點金手（金幣引擎，解開強化的瓶頸，收益擴散到每個部位）→ Lv.1 多段技 → 最低限度生存 → Lv.20/50 多段技。",
     "skillMid_依據": "原本這一段（51~100 級）攻擊技掛零，是前期最大的漏洞。Lv.50 解鎖 swiftCuts／preciseThrust／heavySmash 皆為多段x3。",
-    "loadoutPriority_依據": "技能欄同時是資源產出的位置，不只是輸出位。點金手金幣 = goldPer × 技能等級 × 角色等級（js/skills.js:2705），8 級後 goldPer=35；尋寶直覺給 lootUp。真人 24 小時存檔的 12 格裡兩個都在。⚠️ 排進這份清單還不夠——三份 learn 清單裡也要有，沒學會的技能裝不上（實測只改本清單時 A/B 兩組結果完全相同）。"
+    "loadoutPriority_依據": "技能欄同時是資源產出的位置，不只是輸出位。點金手金幣 = goldPer × 技能等級 × 角色等級（js/skills.js:2705），8 級後 goldPer=35；尋寶直覺給 lootUp。真人 24 小時存檔的 12 格裡兩個都在。⚠️ 排進這份清單還不夠——三份 learn 清單裡也要有，沒學會的技能裝不上（實測只改本清單時 A/B 兩組結果完全相同）。",
+    "passivePriority": [
+      "sharpBlade",
+      "brutality",
+      "keenEye",
+      "swiftness",
+      "toughness",
+      "ironSkin",
+      "vampirism",
+      "fortuneFavor"
+    ],
+    "passivePriority_依據": "被動不佔裝載欄、學會即常駐，所以主動配滿裝載欄之後的點數全投這裡。順序＝物理流的邊際收益：利刃專精 atkPct+4/級 → 殘暴 critDmg+8/級 → 銳眼 critRate+2/級 → 迅捷步伐 aspd+2/級 → 堅韌體魄 hpPct+5/級 → 鋼鐵之膚 def/mdef+5/級 → 嗜血本能 lifesteal+1.5/級 → 財運亨通 gold/xp+5/級。刻意不含奧術心智（matkPct，物理流無用）與冥想（法力）——法力確實是施放門檻（js/skills.js:2938 mp 不足直接 continue），但那條路徑不留任何日誌，值不值得投要先有計數器才能回答，在那之前不猜。全部 10 個被動的清單見 js/data.js 的 SKILLS（cat===passive）"
   },
   "rules": [
     {
@@ -1164,25 +1175,64 @@
       "id": "learn-skills",
       "everySec": 10,
       "cmd": "skill.learn",
-      "expand": [
-        {
-          "key": "id",
-          "listByLevel": [
-            {
-              "maxLevel": 50,
-              "list": "skillEarly"
-            },
-            {
-              "maxLevel": 100,
-              "list": "skillMid"
-            },
-            {
-              "list": "skillLate"
-            }
-          ]
-        }
-      ],
-      "why": "依 player_strategy.md 技能升級優先順序分段：前期(≤50)先點生命上限被動與護盾／持續恢復；中期(51~100)把被動技能全點滿；後期(101+)依裝備詞條方向（targetAffixes 為物理向）集中投物理。清單順序即投點優先序，點數不足時後面的由遊戲擋下"
+      "learnPlan": {
+        "skills": "panels.skills",
+        "level": "view.level",
+        "actives": "loadoutPriority",
+        "always": [
+          "regenerate",
+          "manaBarrier"
+        ],
+        "passives": "passivePriority"
+      },
+      "why": "技能點的投法：主動只學裝載欄放得下的（名額由遊戲的 panels.skills.loadoutSize 給，不寫死），其餘全投被動。pickAndCastSkill 只走 G.player.loadout，沒裝載的主動技一次都不會被施放，而技能點是 1 級 1 點——學了不裝就是死點。實測一場 Lv.152 的存檔 152 點裡有 37 點（24%）壓在強力斬10／魔法屏障10／二連拳10／再生術6／奧術衝擊1 這些沒裝載的主動上。舊做法是寫死的三份清單（16/27/39 個），而裝載欄是 clamp(4+⌊等級/50⌋,4,20)、1 轉後 20——清單長度與格數是兩套獨立的數字，前期清單第 2~5 名（powerSlash/doubleStrike/manaBarrier/regenerate）在只有 4~5 格時裝得下，Lv.50 後被擠掉，點數就留在原地。always 是不常駐裝載欄但一定要學的：再生術與魔法屏障是打 BOSS 的保命組（見 boss-loadout）"
+    },
+    {
+      "id": "danger-loadout",
+      "everySec": 5,
+      "cmd": "skill.equipLoadout",
+      "combatLoadout": {
+        "skills": "panels.skills",
+        "danger": "ctx.danger.level",
+        "tiers": [
+          {
+            "atLeast": 1,
+            "swapIn": [
+              "manaBarrier"
+            ],
+            "swapOut": [
+              "treasureSense"
+            ]
+          },
+          {
+            "atLeast": 2,
+            "swapIn": [
+              "regenerate"
+            ],
+            "swapOut": [
+              "midasTouch"
+            ]
+          }
+        ],
+        "unequipCmd": "skill.unequipLoadout"
+      },
+      "why": "依危險程度上保命技，階梯式：等級 1（滾動視窗最低血量 < 50%）換上魔法屏障、擠掉尋寶直覺；等級 2（還加上「擋在前面那一關最好的一次仍讓敵人剩 30% 以上」）再換上再生術、擠掉點金手。安全就全部退場，兩個產出技回到場上。刻意不用「小怪→產出技、BOSS→保命技」的固定對應：同一隻小怪裝備夠強就一路輾過去、不夠強就會掛，怪物種類與危險只是相關不是因果——實測那一版菁英太密（每 36 遊戲秒翻一次），8 個 seed 死亡數全部上升。先擠尋寶直覺再擠點金手：點金手是金幣引擎，收益擴散到強化與背包，優先保留。換裝載欄是免費的（unequipSkillFromLoadout 無條件、等級保留、冷卻掛在角色實體上不會重置）"
+    },
+    {
+      "id": "delete-unused-skills",
+      "everySec": 300,
+      "cmd": "skill.delete",
+      "deleteUnusedSkills": {
+        "skills": "panels.skills",
+        "actives": "loadoutPriority",
+        "passives": "passivePriority",
+        "always": [
+          "regenerate",
+          "manaBarrier"
+        ],
+        "maxPerRun": 3
+      },
+      "why": "把早期學錯、現在永遠不會被施放的主動技退點回來。deleteSkill 是全額退還（js/skills.js:2219「已全額退還 N 技能點」），所以前期只有 4~5 格時裝得下、Lv.50 之後被擠掉的那些點不必認賠。三道保護：現在裝載欄裡的不刪（含 BOSS 戰暫時換上去的）、任何宣告過的清單裡的不刪（BOSS 組平時就是「學了沒裝」，不保護會被刪了又學無限迴圈）、融合技與它的材料不刪（deleteSkill 不檢查融合佔用，刪材料會把融合技一起弄壞）。maxPerRun 限流，讓每次退點後的重投有時間發生"
     },
     {
       "id": "learn-fusions",
@@ -1216,9 +1266,13 @@
       "cmd": "skill.unequipLoadout",
       "loadoutSwap": {
         "skills": "panels.skills",
-        "priority": "loadoutPriority"
+        "priority": "loadoutPriority",
+        "protect": [
+          "regenerate",
+          "manaBarrier"
+        ]
       },
-      "why": "技能欄滿了就卸下優先序最差的，讓 equip-loadout 補上更好的。開局預設的 arcaneBurst（Lv.1 魔法技，物理流用不到）不卸就永久佔位"
+      "why": "技能欄滿了就卸下優先序最差的，讓 equip-loadout 補上更好的。開局預設的 arcaneBurst（Lv.1 魔法技，物理流用不到）不卸就永久佔位。protect 列的是 boss-loadout 在管的格子：BOSS 保命技本來就不在刷圖優先序裡，會被這條當成「最差的」拆掉，兩條規則整場互相拆台"
     },
     {
       "id": "equip-loadout",
@@ -1227,10 +1281,11 @@
       "expand": [
         {
           "key": "id",
-          "list": "loadoutPriority"
+          "list": "loadoutPriority",
+          "learnedIn": "panels.skills.skills"
         }
       ],
-      "why": "把學會的技能真的裝上技能欄。原本六份策略都沒有這條，實測 100 小時後技能欄仍是開局預設的 powerSlash／arcaneBurst(Lv.1)／manaBarrier，學會的 28 個技能一個都沒上場。清單依多段傷害排序（js/skills.js 的 fx.hits），重複／已滿／未學會一律由遊戲擋下"
+      "why": "把學會的技能真的裝上技能欄。原本六份策略都沒有這條，實測 100 小時後技能欄仍是開局預設的 powerSlash／arcaneBurst(Lv.1)／manaBarrier，學會的 28 個技能一個都沒上場。清單依多段傷害排序（js/skills.js 的 fx.hits），重複／已滿／未學會一律由遊戲擋下。learnedIn 只送已學會的：技能點改成只投裝載欄放得下的幾個之後，清單裡其餘二十幾個永遠學不會，不過濾的話實測 3 遊戲小時送 4,860 次、其中 3,232 次是「尚未學習」的空轉"
     },
     {
       "id": "fuse-skills-1",
@@ -1567,5 +1622,19 @@
     "minEssence": 20,
     "leanGainMultiplier": 4,
     "依據": "實測 20 小時送出 52,465 次 item.upgrade，遊戲回「資源不足」51,353 次（98%）。策略完全不看戶頭就一路送，資源永遠在見底邊緣"
+  },
+  "danger": {
+    "說明": "危險程度：保命技該不該上，看的是處境不是怪物種類。兩個訊號都取「最壞的那一刻」——平均值沒有用，被秒的那一下之前平均值可能一直很好看",
+    "hpFloor": {
+      "windowSec": 300,
+      "buckets": 6
+    },
+    "minBuckets": 2,
+    "enterBelowPct": 50,
+    "leaveAbovePct": 65,
+    "farBehindPct": 30,
+    "依據": "進入門檻 50：血量掉到一半就算很危險（使用者判準）。離開門檻 65 而不是 50：兩個門檻相同的話，血量在門檻附近抖動會讓每個決策點都拆一次裝一次；「剛好回到 50%」也不代表安全，只代表這一個視窗沒被打到。farBehindPct 30：擋在前面那一關最好的一次還讓敵人剩 30% 以上就是差得遠（使用者判準），那時才升到第二級。視窗 300 秒 / 6 桶＝50 秒粒度；minBuckets 2 代表攢不滿兩桶就回 unknown 不猜——開場血量本來就滿，猜「安全」會讓保命技在最需要的前期缺席。deathTarget 指向已宣告的 deathRate 目標（ratePerMin，600 秒視窗）——主判準是「掛一掛會不會死」，最低血量只是它的前導指標。實測一份 Lv.169 存檔在關卡 150 掛 33 分鐘的最低血量是 57%（高於 50% 門檻）卻仍會週期性死亡，只看血量水位會漏掉「平常很穩、偶爾被秒」這種最需要保命技的情況。deathsPerMinAt 設 0＝只要這個視窗裡死過就算危險",
+    "deathTarget": "deathRate",
+    "deathsPerMinAt": 0
   }
 }
