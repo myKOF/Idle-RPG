@@ -149,7 +149,7 @@ test('拆零件必須由大到小送——splice 會讓後面的索引位移', (
     { key: 'goldSluice' },      // 不在 plan 裡 → 拆
     { key: 'extractLens' },     // 對的 → 留
     { key: 'goldSluice' },      // 拆
-    { key: 'fortuneChip' }      // 拆
+    { key: 'luckHeart' }        // 拆
   ];
   const cmds = p.decide(st(1, [furnace(1, 4, parts)]));
   const idx = cmdsOf(cmds, 'newforge.uninstallPart').map((c) => c.args.slotIndex);

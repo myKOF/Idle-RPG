@@ -91,12 +91,12 @@ test('熔爐零件列表每種類只顯示一行，安裝取最高階級與數�
   assert.match(html, /data-nf-partinstall-key="scrapForge"/);
 });
 
-test('分解槽材料相關零件使用右上角同款材料圖示，非材料零件保留原圖示', () => {
+test('分解槽材料相關零件使用右上角同款材料圖示，新零件保留單一圖示', () => {
   const { context } = loadGameContext();
   assert.match(context.partIconHTML('scrapForge'), /images\/icon_scrap\.png/);
   assert.match(context.partIconHTML('ancientEssenceRate'), /images\/icon_ancient_essence\.png/);
-  // 複製處理艙不是單一材料零件，使用自己的單一圖示，不再疊放材料圖示。
-  assert.equal(context.partIconHTML('duplicator'), context.PART_TYPES.duplicator.emoji);
+  assert.match(context.partIconHTML('gemCollector'), /images\/icon_gems\.png/);
+  assert.equal(context.partIconHTML('furnaceCore'), context.PART_TYPES.furnaceCore.emoji);
   assert.equal(context.partIconHTML('speedGear'), '⚙️');
 });
 

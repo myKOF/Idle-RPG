@@ -3567,7 +3567,7 @@ function partIconHTML(key) {
     scrapForge: ['icon_scrap.png'],
     goldSluice: ['icon_gold.png'],
     extractLens: ['icon_essence.png'],
-    bookScavenger: ['icon_books.png'],
+    gemCollector: ['icon_gems.png'],
     ancientEssenceRate: ['icon_ancient_essence.png']
   };
   var icons = iconMap[key];

@@ -286,6 +286,38 @@ test('熔爐零件加成：碎片熔煉爐 +100% 使該爐拆解碎片翻倍（�
   assert.equal(c.doSalvage(it3, true).scrap, base.scrap);
 });
 
+test('新增零件效果：知識核心、寶石採集器、幸運之心與熔爐核心', () => {
+  const c = loadContext(LOGIC_FILES);
+  const G = freshG(c);
+  c.rnd = () => 1;
+  c.chance = () => true;
+  const logs = [];
+  c.flog = (message) => logs.push(String(message));
+  G.stage.current = 10;
+  const it = c.makeEquipment(10, { rarity: 2, level: 10 });
+  const beforeScrap = G.player.scrap;
+  const beforeGold = G.player.gold;
+  const beforeXp = G.player.xp;
+  const result = c.doSalvage(it, false, (key) => ({
+    gemCollector: 3,
+    knowledgeCore: 3,
+    luckHeart: 100
+  }[key] || 0));
+  assert.ok(result.scrap > 0);
+  assert.ok(G.player.scrap > beforeScrap);
+  assert.ok(G.player.gold > beforeGold);
+  assert.ok(G.player.xp > beforeXp, '知識核心應直接給予當前關卡敵人經驗百分比');
+  assert.equal(c.totalGemsOfLevel(1), 3, '幸運之心應連同寶石採集器產物一起乘三');
+  assert.match(logs.join('\n'), /金幣x/);
+  assert.match(logs.join('\n'), /經驗\+/);
+
+  G.factory.partLevels.scrapForge = 1;
+  G.factory.partLevels.furnaceCore = 1;
+  const fu = { parts: [{ key: 'scrapForge' }, { key: 'furnaceCore' }, { key: 'furnaceCore' }] };
+  assert.equal(c.newForgePartBonus(fu, 'scrapForge'), 22, '兩顆 T1 熔爐核心應使 20% 效果變為 22%');
+  assert.equal(c.newForgePartBonus(fu, 'furnaceCore'), 10, '熔爐核心本身不應自我放大，且多顆直接疊加');
+});
+
 /* ============ 6. 熔爐數量＝轉生連動 ============ */
 
 test('熔爐上限：0轉2座、轉生後遞增、cap 12；移除熔爐帶內容退回', () => {
@@ -376,7 +408,7 @@ test('零件自由裝配：依類型安裝目前等級、同型可重複裝滿�
   const fu2 = G.newForge.furnaces[1];
   // 新模型不再消耗零件庫存；所有零件初始 T1，直接使用全域可用等級。
   G.factory.partLevels.speedGear = 5;
-  G.factory.partLevels.luckCore = 3;
+  G.factory.partLevels.gemCollector = 3;
   // 依類型安裝：取目前可用最高階（T5）
   assert.equal(c.newForgeInstallPart(fu1.id, 'speedGear'), null);
   assert.equal(fu1.parts[0].key, 'speedGear');
@@ -391,7 +423,7 @@ test('零件自由裝配：依類型安裝目前等級、同型可重複裝滿�
   assert.equal(G.factory.parts.length, 0, '新熔爐不再維護可消耗的零件庫存');
   // 非分解槽零件拒絕；所有分解零件初始即有 T1 可裝配
   assert.match(String(c.newForgeInstallPart(fu2.id, 'luckCore')), /無法安裝/);
-  assert.equal(c.newForgeInstallPart(fu2.id, 'bookScavenger'), null);
+  assert.equal(c.newForgeInstallPart(fu2.id, 'gemCollector'), null);
   // 卸下（依格位索引）：僅移除該種類槽位
   assert.equal(c.newForgeUninstallPart(fu1.id, 1), true);
   assert.equal(fu1.parts.length, 2);
@@ -428,6 +460,26 @@ test('sanitize：舊 id 陣列轉成只含 key、無效項剔除、超量截斷'
   fu1.parts = [1, 2, 3, 4, 5].map(() => ({ key: 'speedGear', tier: 1, val: 25, name: 'x' }));
   c.migrateSave(state);
   assert.equal(fu1.parts.length, 3);
+});
+
+test('舊存檔零件改名／刪除：熔爐只保留新 key 並清掉已下架零件', () => {
+  const c = loadContext(LOGIC_FILES.concat(['js/save.js']));
+  const state = c.newGameState();
+  state.factory.partLevels.fortuneChip = 4;
+  state.factory.partLevels.archivist = 2;
+  state.factory.partLevels.bookScavenger = 7;
+  state.newForge.furnaces[0].parts = [
+    { key: 'fortuneChip', tier: 4 },
+    { key: 'archivist', tier: 2 },
+    { key: 'bookScavenger', tier: 7 }
+  ];
+  c.migrateSave(state);
+  assert.deepEqual(JSON.parse(JSON.stringify(state.newForge.furnaces[0].parts)), [{ key: 'luckHeart' }, { key: 'knowledgeCore' }]);
+  assert.equal(state.factory.partLevels.luckHeart, 4);
+  assert.equal(state.factory.partLevels.knowledgeCore, 2);
+  assert.equal(state.factory.partLevels.bookScavenger, undefined);
+  assert.equal(state.factory.partLevels.fortuneChip, undefined);
+  assert.equal(state.factory.partLevels.archivist, undefined);
 });
 
 /* ============ 9. 存檔遷移（合併版） ============ */
@@ -558,6 +610,8 @@ test('index.html/ui.js/main.js/factory.js/gm.js 接線（合併版）', () => {
   assert.match(html, /id="enc-books"/, '附魔書庫存應搬入熔爐分頁保留');
 
   const layoutCss = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
+  assert.match(layoutCss, /\.nf-part-upgrades\s*\{[\s\S]*?margin:\s*0 24px 12px;/,
+    '零件升級區左右內縮須與熔爐 panel 內容區對齊');
   assert.match(layoutCss, /#ui-shell \.factory-flow \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) !important;/,
     '附魔書庫存節點應使用完整寬度，不被三欄版面壓縮');
   assert.match(layoutCss, /#ui-shell #enc-books \{[\s\S]*?width: 100%;/,

@@ -1279,15 +1279,11 @@ var PART_TYPES = {
   scrapForge: { name: '碎片熔煉爐', emoji: '🔥', node: 'salvage', desc: '分解碎片產量 +{v}%', base: 20, perLevel: 20 },
   goldSluice: { name: '淘金濾網', emoji: '💰', node: 'salvage', desc: '分解金幣產量 +{v}%', base: 25, perLevel: 25 },
   extractLens: { name: '精粹透鏡', emoji: '🔬', node: 'salvage', desc: '分解時附魔精華產出率 +{v}%', base: 20, perLevel: 20 },
-  bookScavenger: { name: '拓本回收臂', emoji: '📖', node: 'salvage', desc: '分解時 {v}% 機率回收 1 本附魔書', base: 0.4, perLevel: 0.4 },
-  duplicator: { name: '複製處理艙', emoji: '♻️', node: 'salvage', desc: '分解時 {v}% 機率產出（碎片＋金幣）翻倍', base: 3, perLevel: 3 },
-  archivist: { name: '知識回收器', emoji: '📚', node: 'salvage', desc: '分解時 {v}% 機率獲得經驗（裝備等級×25）', base: 1.5, perLevel: 1.5 },
-  prospector: { name: '探礦核心', emoji: '⛏️', node: 'salvage', desc: '舊版額外零件掉落效果已停用', base: 0.15, perLevel: 0.15 },
-  fortuneChip: { name: '幸運晶片', emoji: '🎰', node: 'salvage', desc: '分解時 {v}% 機率「大豐收」：本次碎片/金幣/精華 ×3', base: 0.5, perLevel: 0.5 },
+  knowledgeCore: { name: '知識核心', emoji: '📚', node: 'salvage', desc: '分解時獲得當前關卡敵人經驗的 {v}%', base: 3, perLevel: 1.5 },
+  gemCollector: { name: '寶石採集器', emoji: '💎', node: 'salvage', desc: '分解時 {v}% 機率獲得 1 級寶石', base: 3, perLevel: 1.5 },
+  luckHeart: { name: '幸運之心', emoji: '💖', node: 'salvage', desc: '分解時 {v}% 機率使所有產物 ×3', base: 1, perLevel: 0.5 },
   ancientEssenceRate: { name: '太古精華萃取器', emoji: '🧬', node: 'salvage', desc: '分解太古精華掉落率 +{v}%', base: 25, perLevel: 25 },
-  // === 合成節點（Synth） ===
-  luckCore: { name: '幸運核心', emoji: '🍀', node: 'synth', desc: '合成大成功率 +{v}%', base: 8, perLevel: 8 },
-  rerollModule: { name: '重骰模組', emoji: '🎲', node: 'synth', desc: '合成時詞條重骰（取較佳值）機率 +{v}%', base: 15, perLevel: 15 }
+  furnaceCore: { name: '熔爐核心', emoji: '♨️', node: 'salvage', desc: '熔爐上的零件效果額外提升 {v}%', base: 5, perLevel: 2.5 }
 };
 var PART_MAX_TIER = 10;
 // 零件升級費用 = a + b × c^升級後目標等級；T5 -> T6 代入 6。

@@ -248,7 +248,7 @@ Object.keys(RAR_KEYS).forEach(nm => {
    實際數值以上述四表為準（唯一來源）。 */
 
 // 自動機組零件：基礎值(0)＋每級增加值(1)
-const PART_KEYS = { '加速齒輪': 'speedGear', '碎片熔煉爐': 'scrapForge', '淘金濾網': 'goldSluice', '精粹透鏡': 'extractLens', '拓本回收臂': 'bookScavenger', '複製處理艙': 'duplicator', '知識回收器': 'archivist', '探礦核心': 'prospector', '幸運晶片': 'fortuneChip', '太古精華萃取器': 'ancientEssenceRate', '幸運核心': 'luckCore', '重骰模組': 'rerollModule' };
+const PART_KEYS = { '加速齒輪': 'speedGear', '碎片熔煉爐': 'scrapForge', '淘金濾網': 'goldSluice', '精粹透鏡': 'extractLens', '知識核心': 'knowledgeCore', '寶石採集器': 'gemCollector', '幸運之心': 'luckHeart', '太古精華萃取器': 'ancientEssenceRate', '熔爐核心': 'furnaceCore' };
 Object.keys(PART_KEYS).forEach(nm => {
   objField('data', PART_KEYS[nm] + ':', 'base', '表-自動機組零件', nm, 0, '零件基礎值-' + nm);
   objField('data', PART_KEYS[nm] + ':', 'perLevel', '表-自動機組零件', nm, 1, '零件每級增加值-' + nm);
