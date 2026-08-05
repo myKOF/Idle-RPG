@@ -490,7 +490,7 @@ function elementalResistanceMultiplier(resist, element, enemyLevel) {
 // globalDamageReduction 回傳減傷率；globalDamageMultiplier 回傳套用後的
 // 剩餘傷害倍率 = 1 − 減傷率。只在有該詞綴（total>0）時啟用，否則維持原傷害（倍率 1）。
 var GLOBAL_DMG_RED_CAP = 100;   // 全局減傷上限（%）；設 0＝無上限（減傷率自然趨近 100%）
-var GLOBAL_DMG_RED_DENOMINATOR = 100; // 全局減傷曲線分母；越大代表同數值減傷越低。
+var GLOBAL_DMG_RED_DENOMINATOR = 2500; // 全局減傷曲線分母；越大代表同數值減傷越低。
 function globalDamageReduction(total) {
   total = Number(total) || 0;
   if (total <= 0) return 0;
