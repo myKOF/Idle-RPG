@@ -152,10 +152,19 @@ function doSalvage(it, silent, bonus) {
     eff('ancientEssenceRate'),
     raw('extractLens'));
 
-  // 產量倍率：碎片熔煉爐 / 淘金濾網
+  // 裝備分解金幣沿用 salvageResult；淘金濾網只額外取得當前關卡敵人金幣的百分比。
+  var currentStage = Math.max(1, Math.floor(Number(G.stage && G.stage.current) || 1));
+  var currentEnemy = (typeof monsterStatsFor === 'function') ? monsterStatsFor(currentStage, false, false) : null;
+  var currentZone = (typeof currentZoneDef === 'function') ? currentZoneDef() : null;
+  var currentEnemyGold = Number(currentEnemy && currentEnemy.gold) || 0;
+  currentEnemyGold *= Number(currentZone && currentZone.rewardMult) || 1;
+  var goldSluiceGold = Math.round(currentEnemyGold * Math.max(0, Number(raw('goldSluice')) || 0) / 100);
+  res.gold += goldSluiceGold;
+
+  // 產量倍率：碎片熔煉爐
   res.scrap = Math.max(1, Math.round(res.scrap * (1 + raw('scrapForge') / 100)));
-  res.gold = Math.round(res.gold * (1 + raw('goldSluice') / 100));
   var extras = []; // 額外掉落 / 事件（記入日誌）
+  if (goldSluiceGold > 0) extras.push('淘金濾網額外金幣x' + fmt(goldSluiceGold));
 
   // 寶石採集器：成功時先保留掉落，等幸運之心判定後再一次入帳。
   var gemDrops = [];

@@ -243,7 +243,7 @@ test('派發平均分流：同設定多爐依（帶＋專屬佇列）負載較�
 
 /* ============ 5. 入爐拆解（沿用舊分解槽規則＋該爐零件加成） ============ */
 
-test('入爐拆解：doSalvage 舊規則產出碎片/金幣、鑲嵌寶石取回、統計累計', () => {
+test('入爐拆解：doSalvage 依裝備分解與淘金濾網規則產出並取回鑲嵌寶石', () => {
   const c = loadContext(LOGIC_FILES);
   const G = freshG(c);
   c.rnd = () => 1;                 // 固定化：碎片/金幣可精確斷言
@@ -253,6 +253,8 @@ test('入爐拆解：doSalvage 舊規則產出碎片/金幣、鑲嵌寶石取回
   it.sockets = [{ type: 'ruby', level: 2 }, null];
   fu.belt.push(it);
   const scrapBefore = G.player.scrap;
+  G.factory.partLevels.goldSluice = 1;
+  assert.equal(c.newForgeInstallPart(fu.id, 'goldSluice'), null);
   const goldBefore = G.player.gold;
   c.newForgeConsumeOne(fu);
   assert.equal(fu.belt.length, 0);
@@ -260,7 +262,9 @@ test('入爐拆解：doSalvage 舊規則產出碎片/金幣、鑲嵌寶石取回
   // 裝備等級改造後生成等級為套級（10 → 1 級裝）；拆解公式以實際 it.level 驗算
   const expScrap = Math.max(1, Math.round((2 + it.level * 0.6) * salv * 1));
   assert.equal(G.player.scrap - scrapBefore, expScrap, '碎片依 salvageResult 公式');
-  assert.equal(G.player.gold - goldBefore, Math.round((3 + it.level) * salv * 0.5), '金幣依 salvageResult 公式');
+  const expectedBaseGold = Math.round((3 + it.level) * salv * 10);
+  const expectedExtraGold = Math.round(c.monsterStatsFor(G.stage.current, false, false).gold * 0.03);
+  assert.equal(G.player.gold - goldBefore, expectedBaseGold + expectedExtraGold, '裝備分解金幣與淘金濾網額外金幣應分開計算');
   assert.equal(G.player.gems.ruby[2], 1, '鑲嵌寶石應取回');
   assert.equal(G.newForge.stats.salvaged, 1);
   assert.equal(G.factory.stats.salvaged, 1, '沿用 doSalvage → 工廠統計同步累計');
@@ -299,6 +303,7 @@ test('新增零件效果：知識核心、寶石採集器、幸運之心與熔�
   const beforeGold = G.player.gold;
   const beforeXp = G.player.xp;
   const result = c.doSalvage(it, false, (key) => ({
+    goldSluice: 3,
     gemCollector: 3,
     knowledgeCore: 3,
     luckHeart: 100
@@ -316,6 +321,21 @@ test('新增零件效果：知識核心、寶石採集器、幸運之心與熔�
   const fu = { parts: [{ key: 'scrapForge' }, { key: 'furnaceCore' }, { key: 'furnaceCore' }] };
   assert.equal(c.newForgePartBonus(fu, 'scrapForge'), 22, '兩顆 T1 熔爐核心應使 20% 效果變為 22%');
   assert.equal(c.newForgePartBonus(fu, 'furnaceCore'), 10, '熔爐核心本身不應自我放大，且多顆直接疊加');
+});
+
+test('淘金濾網額外金幣不依裝備品質與等級，且不取代裝備分解金幣', () => {
+  const c = loadContext(LOGIC_FILES);
+  const G = freshG(c);
+  c.rnd = () => 1;
+  c.chance = () => false;
+  G.stage.current = 50;
+  const bonus = (key) => key === 'goldSluice' ? 3 : 0;
+  const low = c.doSalvage({ rarity: 0, level: 1, affixes: [] }, true, bonus);
+  const high = c.doSalvage({ rarity: 5, level: 500, affixes: [] }, true, bonus);
+  const enemyGold = Math.round(c.monsterStatsFor(50, false, false).gold * 0.03);
+  assert.equal(low.gold, Math.round((3 + 1) * c.RARITIES[0].salv * 10) + enemyGold);
+  assert.equal(high.gold, Math.round((3 + 500) * c.RARITIES[5].salv * 10) + enemyGold);
+  assert.equal(high.gold - Math.round((3 + 500) * c.RARITIES[5].salv * 10), enemyGold);
 });
 
 /* ============ 6. 熔爐數量＝轉生連動 ============ */
