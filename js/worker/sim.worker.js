@@ -225,12 +225,17 @@ function backfillItemSockets() {
     if (!list) return;
     for (var k in list) {
       var it = list[k];
-      if (it && it.id && seen.indexOf(it) === -1) { seen.push(it); ensureSockets(it); }
+      if (it && it.id && seen.indexOf(it) === -1) {
+        seen.push(it);
+        ensureSockets(it);
+        if (typeof normalizeTwoHandItemCounts === 'function') normalizeTwoHandItemCounts(it);
+      }
     }
   }
   walk(G.inventory);
   walk(G.equipment);
   if (Array.isArray(G.equipmentSets)) G.equipmentSets.forEach(walk);
+  if (typeof newForgeAllQueuedItems === 'function') walk(newForgeAllQueuedItems(G));
 }
 
 /* 寶石商店維護：首次鋪貨與 8 小時定時重置。

@@ -372,12 +372,31 @@ function equipSlotsForItem(it) {
   if (wd) return wd.slots.slice();
   return equipSlotsForType(it.slot);
 }
+function inferWeaponTypeFromName(name) {
+  if (!name || typeof name !== 'string') return null;
+  for (var k in WEAPON_TYPES) {
+    var wt = WEAPON_TYPES[k];
+    if (wt.name && name.indexOf(wt.name) >= 0) return k;
+    if (Array.isArray(wt.basenames)) {
+      for (var i = 0; i < wt.basenames.length; i++) {
+        if (name.indexOf(wt.basenames[i]) >= 0) return k;
+      }
+    }
+  }
+  return null;
+}
+
 // 舊存檔相容：武器補上類型與特殊能力預留欄位。
 // preferType 可指定補的類型（存檔整理對「裝在副手欄」的舊武器傳 dagger1h，保持位置合法；其餘預設單手劍）。
 function ensureWeaponMeta(it, preferType) {
   if (!it || typeof it !== 'object' || slotTypeOf(it.slot || '') !== 'weapon') return it;
-  if (!WEAPON_TYPES[it.weaponType]) {
-    it.weaponType = WEAPON_TYPES[preferType] ? preferType : DEFAULT_WEAPON_TYPE;
+  if (!WEAPON_TYPES[it.weaponType] || (it.weaponType === 'sword1h' && !preferType)) {
+    var inferred = inferWeaponTypeFromName(it.name);
+    if (inferred) {
+      it.weaponType = inferred;
+    } else if (!WEAPON_TYPES[it.weaponType]) {
+      it.weaponType = WEAPON_TYPES[preferType] ? preferType : DEFAULT_WEAPON_TYPE;
+    }
   }
   if (it.weaponAbility === undefined) it.weaponAbility = null;
   return it;

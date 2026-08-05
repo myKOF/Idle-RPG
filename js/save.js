@@ -380,13 +380,14 @@ function migrateSave(data) {
     data.inventory,
     data.factory && data.factory.conveyor,
     data.factory && data.factory.synthBuffer,
-    data.newForge && data.newForge.queue,
     data.forge && data.forge.slots
   ].forEach(function (items) {
     // 注意：不可直接 items.forEach(fixLoadedItem)——forEach 第二參數是索引，會誤當 slotKey
     if (Array.isArray(items)) items.forEach(function (it) { fixLoadedItem(it); });
   });
-  if (data.newForge && Array.isArray(data.newForge.furnaces)) {
+  if (typeof newForgeAllQueuedItems === 'function') {
+    newForgeAllQueuedItems(data).forEach(function (it) { fixLoadedItem(it); });
+  } else if (data.newForge && Array.isArray(data.newForge.furnaces)) {
     data.newForge.furnaces.forEach(function (fu) {
       if (!fu) return;
       if (Array.isArray(fu.queue)) fu.queue.forEach(function (it) { fixLoadedItem(it); });
@@ -502,6 +503,11 @@ function migrateSave(data) {
       data.equipSetNames[ni] = (typeof data.equipSetNames[ni] === 'string') ? data.equipSetNames[ni] : '';
     }
     data.equipSetNames.length = data.equipmentSets.length;
+    if (Array.isArray(data.equipmentSets)) {
+      data.equipmentSets.forEach(function (set) {
+        if (set) Object.keys(set).forEach(function (slot) { fixLoadedItem(set[slot], slot); });
+      });
+    }
   })();
   // 品質擴充至 8 階：篩選規則陣列補齊（新階預設保留）
   if (data.factory && data.factory.filter && data.factory.filter.actions) {
