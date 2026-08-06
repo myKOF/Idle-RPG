@@ -9,7 +9,7 @@
 
 function forgeState() {
   if (!G.forge) {
-    G.forge = { slots: [null, null, null, null, null, null], dustSlots: [false, false, false, false, false, false], autoDust: true, autoForge: false, crafting: null, result: null, log: [], unlockNotified: false };
+    G.forge = { slots: [null, null, null, null, null, null], dustSlots: [false, false, false, false, false, false], autoDust: false, autoForge: true, crafting: null, result: null, log: [], unlockNotified: false };
   }
   if (!G.forge.slots || G.forge.slots.length !== FORGE_SLOTS) {
     G.forge.slots = [null, null, null, null, null, null];
@@ -28,8 +28,9 @@ function forgeState() {
   if (!G.forge.log) G.forge.log = [];
   // 永久開放旗標：舊存檔已有開放通知時，視為已完成解鎖。
   if (!('unlocked' in G.forge)) G.forge.unlocked = !!G.forge.unlockNotified;
+  if (!('autoDust' in G.forge)) G.forge.autoDust = false;
   if (!('autoFill' in G.forge)) G.forge.autoFill = null;
-  if (!('autoForge' in G.forge)) G.forge.autoForge = false;
+  if (!('autoForge' in G.forge)) G.forge.autoForge = true;
   if (!('crafting' in G.forge)) G.forge.crafting = null;
   if (G.forge.crafting && (!G.forge.crafting.startedAt || !G.forge.crafting.durationMs)) G.forge.crafting = null;
   return G.forge;
