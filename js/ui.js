@@ -4788,10 +4788,12 @@ function uiTick() {
   }
 }
 
-// 本地測試服：實時更新物理與魔法總承傷及明細提示 (Tooltip)
+// 本地測試服：實時更新物理與魔法傷害、總承傷及明細提示 (Tooltip)
 function updateDmgAbsorb() {
   var physEl = $id('r-phys-absorb');
   var magicEl = $id('r-magic-absorb');
+  var physDmgEl = $id('r-phys-dmg');
+  var magicDmgEl = $id('r-magic-dmg');
   if (!physEl || !magicEl) return;
 
   var headerSnapshot = uiHeaderPanelSnapshot() || {};
@@ -4801,6 +4803,29 @@ function updateDmgAbsorb() {
   var isActive = true;
   var hp = (isActive && pEnt && typeof pEnt.hp === 'number') ? pEnt.hp : st.hp;
   var shield = (isActive && pEnt && typeof pEnt.shield === 'number') ? pEnt.shield : 0;
+
+  if (physDmgEl) {
+    physDmgEl.textContent = fmt(st.atk || 0);
+    var physDmgParent = physDmgEl.parentNode;
+    if (physDmgParent) {
+      physDmgParent.setAttribute('data-tt-title', '物理傷害 (物傷)');
+      var physDmgDesc = '角色的基礎物理攻擊力。<br><br>' +
+        '<span style="color:#4ade80">物理攻擊總值：</span>' + fmtFull(st.atk || 0);
+      physDmgParent.setAttribute('data-tt-desc', physDmgDesc);
+      physDmgParent.removeAttribute('title');
+    }
+  }
+  if (magicDmgEl) {
+    magicDmgEl.textContent = fmt(st.matk || 0);
+    var magicDmgParent = magicDmgEl.parentNode;
+    if (magicDmgParent) {
+      magicDmgParent.setAttribute('data-tt-title', '魔法傷害 (魔傷)');
+      var magicDmgDesc = '角色的基礎魔法攻擊力。<br><br>' +
+        '<span style="color:#4ade80">魔法攻擊總值：</span>' + fmtFull(st.matk || 0);
+      magicDmgParent.setAttribute('data-tt-desc', magicDmgDesc);
+      magicDmgParent.removeAttribute('title');
+    }
+  }
 
   var attackerLevel = st.level || 1;
   var defMul = 1 + (isActive && pEnt && typeof buffVal === 'function' ? buffVal(pEnt, 'defUp') : 0) / 100;
@@ -4842,9 +4867,9 @@ function updateDmgAbsorb() {
   var physAbsorb = physMult > 0 ? (hp + shield) / physMult : Infinity;
   var magicAbsorb = magicMult > 0 ? (hp + shield) / magicMult : Infinity;
 
-  // 更新 UI：顯示完整數值及簡寫，例如 999,999,999 (999M)
-  physEl.textContent = physAbsorb === Infinity ? '∞' : fmtFull(physAbsorb) + ' (' + fmt(physAbsorb) + ')';
-  magicEl.textContent = magicAbsorb === Infinity ? '∞' : fmtFull(magicAbsorb) + ' (' + fmt(magicAbsorb) + ')';
+  // 更新 UI：只顯示簡寫
+  physEl.textContent = physAbsorb === Infinity ? '∞' : fmt(physAbsorb);
+  magicEl.textContent = magicAbsorb === Infinity ? '∞' : fmt(magicAbsorb);
 
   var formatRed = function (v, startDec) {
     var dec = startDec || 4;
@@ -7459,6 +7484,8 @@ function initUI() {
       wrap.style.fontWeight = 'bold';
       wrap.style.color = '#4ade80';
       wrap.innerHTML =
+        '<span id="r-phys-dmg-span" style="cursor: pointer;">⚔️ 物傷: <b id="r-phys-dmg" style="color: #4ade80;">0</b></span>' +
+        '<span id="r-magic-dmg-span" style="cursor: pointer;">🔮 魔傷: <b id="r-magic-dmg" style="color: #4ade80;">0</b></span>' +
         '<span id="r-phys-span" style="cursor: pointer;">🛡️ 物承: <b id="r-phys-absorb" style="color: #4ade80;">0</b></span>' +
         '<span id="r-magic-span" style="cursor: pointer;">🔮 魔承: <b id="r-magic-absorb" style="color: #4ade80;">0</b></span>';
       fsBtn.parentNode.insertBefore(wrap, fsBtn.nextSibling);
