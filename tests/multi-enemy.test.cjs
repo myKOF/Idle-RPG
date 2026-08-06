@@ -212,6 +212,29 @@ test('關閉自動推進時完成關卡仍解鎖下一關，但留在目前關�
   assert.equal(context.G.stage.best, 41);
 });
 
+test('自動推進打通地圖上限後切到下一張地圖第 1 關', () => {
+  const context = loadCombatContext();
+  context.G = {
+    player: { gold: 0, reincarnations: 0 },
+    stage: { current: 200, best: 200, kills: 0, autoAdvance: true, zone: 'plains' },
+    zoneProgress: { plains: { current: 200, best: 200, cleared: 199 } },
+    tower: { active: false }
+  };
+  context.FIELD.player = context.newPlayerEntity({ hp: 100, mp: 0, aspd: 1 });
+  context.getStats = () => ({ hp: 100, moveSpeed: 0, passives: {} });
+  context.healPlayer = () => {};
+  context.FIELD._waveClearPending = true;
+
+  context.completeFieldWave(context.getStats());
+
+  assert.equal(context.G.stage.zone, 'desert');
+  assert.equal(context.G.stage.current, 1);
+  assert.equal(context.G.stage.best, 1);
+  assert.equal(context.G.zoneProgress.plains.cleared, 200);
+  assert.equal(context.FIELD.mapComplete, false);
+  assert.equal(context.FIELD.monsters.length, 0);
+});
+
 test('普攻擊殺後換目標至少間隔技能 GCD 0.4 秒', () => {
   const context = loadCombatContext();
   const player = { atkCd: 1 / 4.7 };

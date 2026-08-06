@@ -2583,12 +2583,15 @@ textarea#save-io {
   box-shadow: 0 0 15px rgba(255, 255, 255, 0.4) !important;
 }
 
-/* 背包來源選取時，裝備欄對應部位加粗原本的品質邊框，保留品質色不偏黃。 */
+/* 背包來源選取時，裝備欄只呈現對應部位的亮起狀態，不使用白色選取外框。 */
 .eq-slot.inventory-selection-match {
   opacity: 1 !important;
   background: rgba(0, 0, 0, 0.7) !important;
-  /* 加粗原本的 border（顏色由 inline style 的 border-color 決定，即品質色） */
-  border-width: 3px !important;
+  /* 保留原本 2px 內框，粗化改用向外的 outline，避免 box-sizing 將內容往內擠。 */
+  border-width: 2px !important;
+  outline: 2px solid var(--eq-selection-border-color) !important;
+  outline-offset: 0 !important;
+  filter: brightness(1.7) !important;
 }
 
 .eq-slot.filled.dimmed,

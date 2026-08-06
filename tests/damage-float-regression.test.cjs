@@ -17,6 +17,10 @@ test('rebuilding enemy cards preserves death fade and removes duplicate float la
   assert.match(ui, /card\._deathFadeStartedAt = Date\.now\(\)/);
 });
 
+test('敵人淡出期間不因後續快照重設血條為 0 或重播致死動畫', () => {
+  assert.match(ui, /liveEnemy\.hp <= 0 && card\.classList\.contains\('is-dead'\)\) continue;/);
+});
+
 function functionBody(source, name) {
   const start = source.indexOf('function ' + name + '(');
   assert.notEqual(start, -1, 'missing function ' + name);

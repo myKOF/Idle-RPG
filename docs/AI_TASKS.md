@@ -119,6 +119,46 @@ tick 三純量、`task.claim` 指令）、`js/worker/sim.worker.js`、`docs/WORK
 
 完成結果：`completeFieldWave()` 在每次野外戰鬥完成後，先將 `stage.best` 推進至下一關（受地圖上限限制），再依 `autoAdvance` 決定是否更新 `stage.current`。
 
+## Codex：自動推進打通地圖後切換下一張場景（2026-08-06）
+
+狀態：已完成
+
+任務分類：關卡流程／場景自動切換
+
+任務目的：勾選「自動推進」時，打通目前地圖最高關卡後，自動切換至下一張已解鎖場景並從第 1 關開始；沒有下一張可用場景時維持地圖完成狀態。
+
+負責 AI：Codex
+
+允許修改：`docs/AI_TASKS.md`、`js/combat.js`、`tests/multi-enemy.test.cjs`、`tests/stage-rework.test.cjs`
+
+禁止修改：Worker Protocol、關卡／掉落資料、其他 AI 進行中的檔案。
+
+前置依賴：無。
+
+測試結果：定向測試 19/19 通過；`npm run build` 242/242 通過；完整 `npm test` 1088/1088 通過。
+
+完成結果：`completeFieldWave()` 在自動推進打通目前地圖上限時，依 `ZONE_LIST` 找到下一張已解鎖且上限更高的場景並呼叫 `switchZone()`；無下一張可用場景時才維持 `mapComplete` 停止出怪。
+
+## Codex：死亡敵人淡出期間避免血條重繪（2026-08-06）
+
+狀態：已完成
+
+任務分類：戰鬥 UI／死亡動畫
+
+任務目的：敵人進入死亡漸隱至延遲清除期間，後續 Worker 快照不得再次把血條與血量文字重設為 0，也不得重播致死血條動畫。
+
+負責 AI：Codex
+
+允許修改：`docs/AI_TASKS.md`、`js/ui.js`、`tests/damage-float-regression.test.cjs`
+
+禁止修改：Worker Protocol、戰鬥數值、掉落資料、其他 AI 進行中的檔案。
+
+前置依賴：無。
+
+測試結果：定向測試 32/32 通過；`npm run build` 242/242 通過；完整 `npm test` 1089/1089 通過。
+
+完成結果：`renderBattle()` 對已套用 `.is-dead` 且生命值為 0 的卡片直接保留現有死亡淡出視覺，直到卡片被清除或新一波重建。
+
 ## Codex：第三套裝備改為 1 轉 Lv.500 開放（2026-08-05）
 
 狀態：已完成

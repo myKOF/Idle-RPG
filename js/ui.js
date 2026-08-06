@@ -2754,6 +2754,9 @@ function renderBattle() {
   for (var ci = 0; ci < cards.length && ci < enemies.length; ci++) {
     var card = cards[ci];
     var liveEnemy = enemies[ci];
+    // 死亡卡片會保留到 deathClearCd 結束；淡出期間不要再用後續快照把
+    // 血條／文字重設為 0，也不要重播致死血條動畫，避免畫面中途閃動。
+    if (liveEnemy.hp <= 0 && card.classList.contains('is-dead')) continue;
     var fill = card.querySelector('.enemy-hp .hp-fill');
     var hpText = card.querySelector('.enemy-hp .hp-text');
     var status = card.querySelector('.enemy-status');
