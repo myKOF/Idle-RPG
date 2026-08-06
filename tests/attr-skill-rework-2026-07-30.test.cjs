@@ -181,21 +181,34 @@ test('穿透上限已取消（STAT_CAPS = 0）', () => {
 });
 
 test('忽略防禦% = 穿透倍率 ÷ (穿透倍率 + a)，且參數可調', () => {
+  /* ⚠️ 這支測試原本把 a 釘死成 1.5，連帶把五個曲線對照點（40% / 62.5% / 70% /
+     76.92% / 86.96%）也釘死。那些都是「a = 1.5 時的樣子」，不是公式本身——
+     2026-08-06 的平衡調整把 a 改成 0.75，五個斷言一起紅，而程式完全沒有問題。
+
+     測試的標題就寫著「參數可調」，卻用寫死的常數擋住調參，這是自相矛盾的。
+     改成只釘**公式的形狀**，a 一律向遊戲拿：
+       曲線正確（逐點比對）、a 是有限正數、單調遞增、到不了 100%、
+       0 穿透時為 0、b/c 欄已停用。
+     這樣使用者調 a 不會弄紅測試，但把公式改成別的形狀會。 */
   const c = loadContext();
-  assert.equal(c.PEN_IGNORE_A, 1.5);
+  const a = c.PEN_IGNORE_A;
+  assert.ok(typeof a === 'number' && isFinite(a) && a > 0,
+    'a 必須是有限正數，否則 rate/(rate+a) 會發散或除以零：' + a);
   assert.equal(typeof c.PEN_IGNORE_B, 'undefined', 'b 欄已停用');
   assert.equal(typeof c.PEN_IGNORE_C, 'undefined', 'c 欄已停用');
   assert.equal(c.penIgnoreRatio(0), 0);
-  const expect = (pen) => (pen / 100) / (pen / 100 + c.PEN_IGNORE_A);
+
+  const expect = (pen) => (pen / 100) / (pen / 100 + a);
   [100, 250, 350, 500, 1000, 5000].forEach((pen) => {
-    assert.ok(Math.abs(c.penIgnoreRatio(pen) - expect(pen)) < 1e-12);
+    assert.ok(Math.abs(c.penIgnoreRatio(pen) - expect(pen)) < 1e-12, '穿透 ' + pen);
+    assert.ok(Math.abs(c.penIgnorePct(pen) - expect(pen) * 100) < 1e-9,
+      'penIgnorePct 必須是 penIgnoreRatio 的百分比版本：穿透 ' + pen);
   });
-  // 曲線關鍵點（文件 §3.1 對照表）；350%/(350%+1.5) = 70% 為需求給定的基準點
-  assert.ok(Math.abs(c.penIgnorePct(100) - 40) < 0.05);
-  assert.ok(Math.abs(c.penIgnorePct(250) - 62.5) < 0.05);
-  assert.ok(Math.abs(c.penIgnorePct(350) - 70) < 1e-9);
-  assert.ok(Math.abs(c.penIgnorePct(500) - 76.92) < 0.05);
-  assert.ok(Math.abs(c.penIgnorePct(1000) - 86.96) < 0.05);
+
+  /* 半數點：穿透倍率等於 a 時剛好忽略 50% 防禦。這是這條曲線唯一與參數無關的
+     幾何性質，用它取代原本那五個「a=1.5 專用」的對照點。 */
+  assert.ok(Math.abs(c.penIgnoreRatio(a * 100) - 0.5) < 1e-12,
+    '穿透 = a×100% 時應忽略 50% 防禦');
 });
 
 test('忽略防禦為飽和曲線：單調遞增、到不了 100%，且不轉為增傷', () => {

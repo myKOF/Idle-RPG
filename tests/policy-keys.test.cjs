@@ -481,3 +481,53 @@ test('learnPlan 宣告的被動清單必須涵蓋遊戲裡所有被動技', () =
     }
   }
 });
+
+test('保留清單的詞條，在它每一個合法部位上都要受保護', () => {
+  /* rerollOffTarget 按「主副手／飾品／防具」三組各給一份保留清單，但**遊戲的詞條池
+     不照這個分類**：AFFIX_POOL 的 slots 是逐條詞條各自宣告的，傷害類詞條照樣出在
+     頭盔、肩甲、護手、手腕上。
+
+     兩者對不齊的後果是同一條詞條在不同部位待遇相反——武器上受保護、護手上被當垃圾
+     洗掉。而洗煉是不可逆的，等於策略每隔幾分鐘就親手砸掉自己剛拿到的好詞條。
+
+     實測抓到 7 條，其中包含 ROI 排名的前三名（拿一份關卡 200 沙漠 BOSS 的存檔量）：
+       pPen    ΔDPS +40.5%（第 1 名）  合法部位含 gloves/wrist → 兩個都沒保護
+       aspd    ΔDPS +33.2%（第 2 名）  合法部位含 gloves       → 沒保護
+       bossDmg ΔDPS +25.1%（第 3 名）  合法部位含 helmet/shoulder → 都沒保護
+     而評估器建議的最佳宿主部位正好就是 gloves——策略把它自己算出來的第一名，
+     在它自己挑的部位上洗掉。
+
+     這支測試把「清單分組」與「遊戲的 slots」逐一對照，避免再犯。
+     不想保護的詞條做法是**從清單裡拿掉**，不是讓它只在某些部位受保護。 */
+  const ITEM_TYPES = ctx.ITEM_TYPES;
+  for (const f of POLICY_FILES) {
+    const p = loadPolicy(f);
+    for (const rule of p.rules) {
+      const cfg = rule.rerollOffTarget;
+      if (!cfg || !cfg.targetGroups) continue;
+
+      /* 每個部位實際生效的保留集合。沒宣告 slots 的那一組是 catch-all。 */
+      const keepBySlot = {};
+      let fallback = null;
+      for (const g of cfg.targetGroups) {
+        const keys = [];
+        for (const l of g.lists || []) keys.push(...(p.lists[l.list] || []));
+        if (!g.slots) { fallback = keys; continue; }
+        for (const s of g.slots) keepBySlot[s] = (keepBySlot[s] || []).concat(keys);
+      }
+      for (const s of ITEM_TYPES) if (!keepBySlot[s]) keepBySlot[s] = fallback || [];
+
+      const holes = [];
+      for (const key of new Set(Object.values(keepBySlot).flat())) {
+        const def = AFFIX_POOL[key];
+        if (!def) continue;                       // 鍵是否存在由另一支測試把關
+        const legal = (def.slots && def.slots.length) ? def.slots : ITEM_TYPES;
+        const missing = legal.filter((s) => !(keepBySlot[s] || []).includes(key));
+        if (missing.length) holes.push(`${key} 在 ${missing.join('/')} 上沒受保護`);
+      }
+      assert.deepEqual(holes, [],
+        `${f} 規則 ${rule.id}：\n  ` + holes.join('\n  ') +
+        '\n（同一條詞條在不同部位待遇相反，會被自己的洗煉規則砸掉）');
+    }
+  }
+});

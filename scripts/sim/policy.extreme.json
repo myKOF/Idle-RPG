@@ -154,7 +154,8 @@
       "eliteDmg",
       "bossDmg",
       "aoeDmg",
-      "atkFlat"
+      "atkFlat",
+      "blockRate"
     ],
     "affixArmor": [
       "hpPct",
@@ -175,7 +176,13 @@
       "lifesteal",
       "atkFlat",
       "defFlat",
-      "mdefFlat"
+      "mdefFlat",
+      "atkPct",
+      "critRate",
+      "aspd",
+      "pPen",
+      "eliteDmg",
+      "bossDmg"
     ],
     "affixJewel": [
       "gemEff",
@@ -195,7 +202,18 @@
       "bossDmgRed",
       "shieldEff",
       "lifesteal",
-      "atkFlat"
+      "atkFlat",
+      "aoeDmg",
+      "hpFlat",
+      "defPct",
+      "mdefPct",
+      "pRes",
+      "mRes",
+      "blockRate",
+      "blockDmgRed",
+      "tenacity",
+      "defFlat",
+      "mdefFlat"
     ],
     "affixCritDmg": [
       "critDmg"
@@ -859,6 +877,14 @@
                   "falsy"
                 ],
                 "依據": "生存率不足時把對普通敵人的加成／抗性從保留清單移除，讓它們被洗成對菁英/BOSS的"
+              },
+              {
+                "list": "affixVsNormalRed",
+                "when": [
+                  "ctx.desperate",
+                  "falsy"
+                ],
+                "依據": "生存率不足時把對普通敵人的加成／抗性從保留清單移除，讓它們被洗成對菁英/BOSS的"
               }
             ],
             "依據": "項鏈戒指：寶石鑲嵌效率最關鍵，其次掉寶率與經驗加成"
@@ -870,6 +896,22 @@
               },
               {
                 "list": "affixVsNormalRed",
+                "when": [
+                  "ctx.desperate",
+                  "falsy"
+                ],
+                "依據": "生存率不足時把對普通敵人的加成／抗性從保留清單移除，讓它們被洗成對菁英/BOSS的"
+              },
+              {
+                "list": "affixCritDmg",
+                "when": [
+                  "panels.header.stats.critRate",
+                  ">",
+                  50
+                ]
+              },
+              {
+                "list": "affixVsNormal",
                 "when": [
                   "ctx.desperate",
                   "falsy"
