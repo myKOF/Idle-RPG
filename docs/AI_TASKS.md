@@ -117,6 +117,26 @@ tick 三純量、`task.claim` 指令）、`js/worker/sim.worker.js`、`docs/WORK
 
 測試結果：熔爐／UI／Worker 回歸測試 58/58 通過；`npm run build` 244/244 通過。
 
+## Codex：修正零件升級後面板仍顯示 T1（2026-08-06）
+
+狀態：已完成
+
+任務分類：熔爐 UI 投影／零件等級顯示
+
+任務目的：修正熔爐輕量面板投影中的空 `partLevels` 優先於 `factory.partLevels`，導致實際已扣除高階升級費用但畫面仍顯示 T1。
+
+負責 AI：Codex
+
+允許修改：`docs/AI_TASKS.md`、`js/worker/sim.worker.js`、`tests/newforge-panel-performance.test.cjs`
+
+禁止修改：存檔格式、戰鬥數值、升級公式與其他 AI 進行中的檔案。
+
+前置依賴：前一項熔爐面板效能修正已完成。
+
+完成結果：移除 `newForgePanelView` 中錯誤的空零件等級欄位，讓 UI 正確回退使用 `factory.partLevels`；補上回歸斷言。
+
+測試結果：熔爐／零件升級回歸測試 55/55 通過；`npm run build` 244/244 通過。
+
 ## Codex：關閉自動推進時仍解鎖下一關（2026-08-05）
 
 狀態：已完成

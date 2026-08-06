@@ -615,10 +615,7 @@ function newForgePanelView(nf) {
       kept: nf.stats && Number(nf.stats.kept) || 0
     },
     tabSeen: nf.tabSeen,
-    noticeShown: nf.noticeShown,
-    partLevels: nf.partLevels || {},
-    ownedParts: nf.ownedParts || {},
-    partUpgradeCosts: nf.partUpgradeCosts || {}
+    noticeShown: nf.noticeShown
   };
 }
 

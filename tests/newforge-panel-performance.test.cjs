@@ -52,6 +52,8 @@ test('熔爐面板只傳佇列摘要，不複製大量完整裝備物件', () =>
   assert.equal(view.furnaces[0].belt[0].affixes, undefined);
   assert.equal(view.furnaces[0].queue, undefined);
   assert.equal(view.queue, undefined);
+  assert.equal(view.partLevels, undefined,
+    '零件等級不應從 newForge 物件投影；UI 應回退使用 factory.partLevels');
 });
 
 test('零件升級按鈕只在內容變更時重繪，保留 pending 的 disabled 狀態', () => {
