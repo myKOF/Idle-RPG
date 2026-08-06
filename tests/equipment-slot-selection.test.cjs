@@ -67,6 +67,30 @@ test('背包裝備選取仍以裝備目標部位作為裝備欄高亮部位', ()
   assert.equal(context.selectionSlotForItem({ slot: 'weapon' }), 'weapon2');
 });
 
+test('two-hand main/off-hand clicks transfer selection', () => {
+  const context = loadSelectionHelpers();
+  const mainHand = fakeElement(['eq-slot', 'filled'], {
+    'data-id': 'equipped-greatsword', 'data-src': 'equip', 'data-slot': 'weapon'
+  });
+  const offHand = fakeElement(['eq-slot', 'filled', 'twohand-duplicate'], {
+    'data-id': 'equipped-greatsword', 'data-src': 'equip', 'data-slot': 'weapon2'
+  });
+
+  context.UI.sel = { id: 'equipped-greatsword', source: 'equip', slot: 'weapon' };
+  context.selectFilledCell(offHand);
+  assert.deepEqual(JSON.parse(JSON.stringify(context.UI.sel)), {
+    id: 'equipped-greatsword', source: 'equip', slot: 'weapon2'
+  });
+  assert.equal(context.UI.lastEquipSlot, 'weapon2');
+
+  context.selectFilledCell(mainHand);
+  assert.deepEqual(JSON.parse(JSON.stringify(context.UI.sel)), {
+    id: 'equipped-greatsword', source: 'equip', slot: 'weapon'
+  });
+  context.selectFilledCell(mainHand);
+  assert.equal(context.UI.sel, null);
+});
+
 test('inventory equip command preserves the selected equipment slot', async () => {
   const context = {
     UI: { sel: { id: 'ring-new', source: 'inv' } },
@@ -203,6 +227,7 @@ test('空裝備格可點擊，且選取樣式套用於空格', () => {
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
 
   assert.match(ui, /if \(cell\.classList\.contains\('empty'\)\) \{[\s\S]*var emptySlot = cell\.getAttribute\('data-slot'\)[\s\S]*UI\.sel = \{ source: 'equip-slot', slot: emptySlot \}/);
+  assert.match(ui, /selectFilledCell\(cell\)/);
   assert.match(ui, /var selectedEquipSlots = selectionEquipSlotsForItem\(selItem, selectedSlot\)/);
   assert.match(ui, /if \(selectedSlot && selectedEquipSlots\.indexOf\(el\.getAttribute\('data-slot'\)\) >= 0 && el\.classList\.contains\('eq-slot'\)\)/);
   assert.match(ui, /inventory-selection-match/);

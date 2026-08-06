@@ -3457,6 +3457,28 @@ function selectionEquipSlotsForItem(selItem, selectedSlot) {
   return slots;
 }
 
+// 同一件雙手武器會同時渲染在 weapon 與 weapon2；互點兩格時應轉移欄位選取，
+// 只有再次點擊同一格才取消選取。
+function selectFilledCell(cell) {
+  var cid = cell.getAttribute('data-id');
+  var cellSource = cell.getAttribute('data-src');
+  var cellSlot = cell.getAttribute('data-slot');
+  if (UI.sel && UI.sel.id === cid) {
+    if (UI.sel.source === 'equip' && cellSource === 'equip' && UI.sel.slot !== cellSlot) {
+      UI.sel.slot = cellSlot;
+      UI.lastEquipSlot = cellSlot;
+      return;
+    }
+    UI.sel = null;
+    return;
+  }
+  UI.sel = { id: cid, source: cellSource };
+  if (UI.sel.source === 'equip') {
+    UI.lastEquipSlot = cellSlot;
+    UI.sel.slot = cellSlot;
+  }
+}
+
 function updateSelectionUI() {
   var selItem = selectionItemForGrid();
   var selectedSlot = selectionSlotForItem(selItem);
@@ -8644,16 +8666,7 @@ function initUI() {
         }
         UI.lastEquipSlot = emptySlot;
       } else {
-        var cid = cell.getAttribute('data-id');
-        if (UI.sel && UI.sel.id === cid) {
-          UI.sel = null;
-        } else {
-          UI.sel = { id: cid, source: cell.getAttribute('data-src') };
-          if (UI.sel.source === 'equip') {
-            UI.lastEquipSlot = cell.getAttribute('data-slot');
-            UI.sel.slot = cell.getAttribute('data-slot');
-          }
-        }
+        selectFilledCell(cell);
       }
       renderDetail();
       return;
