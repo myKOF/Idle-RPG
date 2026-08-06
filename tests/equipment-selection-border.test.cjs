@@ -37,6 +37,19 @@ test('不得用 filter 提亮——那會把品質色往黃色推', () => {
   assert.doesNotMatch(selectionRule(), /filter:/);
 });
 
+test('神話、創世與神鑄裝備的背包選取匹配使用品質光暈', () => {
+  for (const [className, color] of [
+    ['eff-mythic', '#fde68a'],
+    ['eff-genesis', '#a5f3fc'],
+    ['eff-godforged', '#f5d0fe']
+  ]) {
+    const selector = new RegExp(
+      '\\.eq-slot\\.inventory-selection-match\\[class~="' + className + '"\\]\\s*\\{[\\s\\S]*?box-shadow:[^;]*' + color + '[^;]*!important'
+    );
+    assert.match(css, selector, className + ' should keep a visible selected glow');
+  }
+});
+
 test('不得用 outline——顏色餵不進去，而 border-color 本來就是品質色', () => {
   assert.doesNotMatch(selectionRule(), /outline/);
 });
