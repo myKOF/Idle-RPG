@@ -1886,39 +1886,64 @@ function decide(state, policy, memo) {
           && fpTier && typeof fpTier.farmFloorStage === 'number') {
           if (!memo.gate) memo.gate = {};
           var fgm = memo.gate[r.id] || (memo.gate[r.id] = {});
-          var holdSec = (typeof fpk.pushHoldSec === 'number') ? fpk.pushHoldSec : 900;
-          var holding = (fgm.lastFarmParkAt !== undefined && now - fgm.lastFarmParkAt < holdSec);
-
           var floorS = fpTier.farmFloorStage;
           var nextS = (typeof fpTier.nextFarmStage === 'number') ? fpTier.nextFarmStage : 0;
+          var fpBest = Number(fpTier.best) || 0;
 
-          /* 搬去下一格的條件：不在遲滯期、裝等已追平這一格、宣告的目標都達標、
-             不在卡關重試。任何一項不成立就待在這一格的底部把它刷滿。
-             「裝等落後」就是「這一格還有東西可以撿」——那正是使用者說的
-             「材料跟裝備掉落數的權重比等級高」。 */
-          var behindTier = (fpTier.equippedItemLevelMin !== null
-            && fpTier.equippedItemLevelMin !== undefined
-            && fpTier.equippedItemLevelMin < fpTier.itemLevelHere);
-          var hop = !holding && !behindTier && advanceOk && !targetBlocked
-            && !(state.ctx && state.ctx.retryWaiting) && nextS > gStage;
-          var fpTarget = hop ? nextS : floorS;
+          /* ---- 刷與推是兩個交替的階段，不是同一個條件式 ----
 
-          if (gStage > fpTarget) {
-            /* 退回去是免費的（stageGo 直接跳），所以不設收益門檻——
-               停在同一格的深處沒有任何一項指標是賺的。 */
-            out.push({ name: gCfg.retreatCmd, args: { delta: fpTarget - gStage }, ruleId: r.id });
-            fgm.lastFarmParkAt = now;
-            farmParked = true;
-          } else if (hop && gStage < fpTarget) {
-            /* 往上搬：best 之內直接跳，超出的部分交給自動推關逐關清。
-               best 取 tier.best（＝G.stage.best），那正是 stageGo 用來夾值的同一個數。 */
-            var fpBest = Number(fpTier.best) || 0;
-            var fpJump = Math.min(fpBest, fpTarget);
+             ☠️ 第一版實測大幅退步，錯得很具體，值得寫下來。
+
+             第一版把「往上搬」寫成一個條件式：目標達標且裝等追平才放行，
+             而且自動推關的開關完全交給它。結果 24 小時 × 5 seed 全部卡在關卡 64：
+               等級中位 335 → 87、最高關卡 198 → 64、物攻 263,079 → 83,071
+             （擊殺 +46%、死亡 −27%，所以刷的那一半是對的。）
+
+             原因是 **best 只能靠走出來**。下一格在 50 關之外，而往前走的過程中
+             殺敵速度必然會掉下去，一掉就不達標、一不達標就被拉回底部——
+             一趟 36 關的走法永遠走不完，best 凍在 64 整整 14 小時。
+             「這一分鐘殺得慢」不能當成「放棄這次推關」的理由，真人也不是這樣玩的。
+
+             改成兩個有界的階段輪流，兩邊都只看計時器，沒有任何可能卡住的條件：
+
+               刷（farmSec）  退到這一格的底部，關掉自動推關。掉落與裝備時薪最高的地方
+               推（pushSec）  先跳回 best（免費），然後一路開自動推關把前線往前推
+
+             best 是單向棘輪，推進期拿到的每一關都是永久的；刷的時候掉回底部
+             不會損失這個進度，下一次推進期一句 stage.go 就回到前線。 */
+          if (fgm.fpPhase === undefined) { fgm.fpPhase = 'farm'; fgm.fpAt = now; }
+          var farmSec = (typeof fpk.farmSec === 'number') ? fpk.farmSec : 1800;
+          var pushSec = (typeof fpk.pushSec === 'number') ? fpk.pushSec : 600;
+          var fpSpan = (fgm.fpPhase === 'farm') ? farmSec : pushSec;
+          if (now - fgm.fpAt >= fpSpan) {
+            fgm.fpPhase = (fgm.fpPhase === 'farm') ? 'push' : 'farm';
+            fgm.fpAt = now;
+            /* 進推進期時把目標釘死。⚠️ 不能每一拍重讀 nextFarmStage——
+               一旦真的推進了下一格，nextFarmStage 就變成再下一格，
+               「到站了沒」永遠不成立，推進期只會被計時器收掉。 */
+            if (fgm.fpPhase === 'push') fgm.fpGoal = nextS || 0;
+          }
+          /* 推到目標就提前收工——目的已經達成，再往前是同一格裡最貴的一關。 */
+          if (fgm.fpPhase === 'push' && fgm.fpGoal && gStage >= fgm.fpGoal) {
+            fgm.fpPhase = 'farm'; fgm.fpAt = now;
+          }
+
+          if (fgm.fpPhase === 'farm') {
+            if (gStage > floorS) {
+              /* 退回去是免費的（stageGo 在 [1, min(best, 地圖上限)] 之內直接跳）。 */
+              out.push({ name: gCfg.retreatCmd, args: { delta: floorS - gStage }, ruleId: r.id });
+              farmParked = true;
+            }
+            farmAuto = false;
+          } else {
+            var fpJump = Math.min(fpBest, fgm.fpGoal || fpBest);
             if (fpJump > gStage) {
               out.push({ name: gCfg.retreatCmd, args: { delta: fpJump - gStage }, ruleId: r.id });
             }
+            /* 推進期不看瞬時的殺敵速度（那正是第一版的死因），
+               但卡關重試仍然是硬煞車：真的打不過的時候往前送死沒有意義。 */
+            farmAuto = !(state.ctx && state.ctx.retryWaiting);
           }
-          farmAuto = gStage < fpTarget;
         }
 
         /* 動態退關：產出不足而且這一段沒有指南給的安全區間時，自己往回退。
