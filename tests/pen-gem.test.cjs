@@ -90,6 +90,15 @@ test('穿透寶石的穿透吃得到忽略防禦曲線（不設上限、不會�
   assert.ok(st.pPen >= 1600, '穿透不設上限，10 階寶石的 1600% 應完整計入：' + st.pPen);
 });
 
+test('物理與魔法穿透 tips 的目前忽略防禦顯示至小數點點後四位', () => {
+  const context = loadGameContext();
+  const st = { pPen: 33854, mPen: 33854 };
+  const pDesc = context.penetrationDesc(st, 'pPen', '物理');
+  const mDesc = context.penetrationDesc(st, 'mPen', '魔法');
+  assert.match(pDesc, /目前忽略防禦：\d+\.\d{4}%/);
+  assert.match(mDesc, /目前忽略防禦：\d+\.\d{4}%/);
+});
+
 test('穿透寶石納入戰力評分，並自動進入掉落／商店／合成流程', () => {
   const context = loadGameContext();
   assert.ok(context.SCORE_WEIGHTS.pPen > 0, '穿透應有詞條池權重');

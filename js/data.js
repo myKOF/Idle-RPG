@@ -1728,7 +1728,7 @@ function penetrationDesc(st, key, label) {
     '（穿透倍率 ＝ 穿透% ÷ 100；例：穿透 ' + exPen + '% → ' + effectNum(exPen / 100) + ' ÷ ' +
     effectNum(exPen / 100 + PEN_IGNORE_A) + ' ＝ ' + fmt1(penIgnorePct(exPen)) + '%）；' +
     '忽略防禦隨穿透遞減收斂，不會達到 100%。' +
-    '<br><br><span style="color:#ffd700">目前忽略防禦：' + fmt1(ignore) + '%</span>';
+    '<br><br><span style="color:#ffd700">目前忽略防禦：' + pctStrFloor4(ignore) + '</span>';
 }
 
 /* 吸血／吸魔 tips：不再以造成的傷害計算，改由每秒生命回復／法力恢復換算（formula.js §3）。 */
