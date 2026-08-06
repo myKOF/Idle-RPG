@@ -2596,6 +2596,18 @@ textarea#save-io {
   border-width: 3px !important;
 }
 
+.eq-slot.inventory-selection-match[class~="eff-mythic"] {
+  box-shadow: 0 0 0 3px #fde68a, 0 0 18px rgba(253, 230, 138, 0.78) !important;
+}
+
+.eq-slot.inventory-selection-match[class~="eff-genesis"] {
+  box-shadow: 0 0 0 3px #a5f3fc, 0 0 18px rgba(165, 243, 252, 0.78) !important;
+}
+
+.eq-slot.inventory-selection-match[class~="eff-godforged"] {
+  box-shadow: 0 0 0 3px #f5d0fe, 0 0 18px rgba(245, 208, 254, 0.78) !important;
+}
+
 .eq-slot.filled.dimmed,
 .item-cell.dimmed,
 .item-cell.item-cell-dimmed {
