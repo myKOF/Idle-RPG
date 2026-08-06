@@ -2777,7 +2777,45 @@ textarea#save-io {
   background: linear-gradient(to bottom, rgba(184, 134, 11, 0.9) 0%, rgba(139, 101, 8, 0.95) 45%, var(--panel) 80%);
 }
 
-/* ==========================================================================
+/* 高品質效果會接管 ::after 與 border；雙手武器的副手複製格仍需保留紅色提示。 */
+.eq-slot.eff-mythic.twohand-duplicate,
+.eq-slot.eff-genesis.twohand-duplicate,
+.eq-slot.eff-godforged.twohand-duplicate {
+  outline: 2px solid #f87171;
+  outline-offset: 1px;
+}
+
+.eff-mythic.twohand-duplicate::after,
+.eff-genesis.twohand-duplicate::after {
+  background:
+    linear-gradient(rgba(185, 28, 28, 0.18), rgba(127, 29, 29, 0.14)),
+    linear-gradient(to bottom, rgba(160, 20, 20, 0.9) 0%, rgba(80, 10, 10, 0.95) 45%, var(--panel) 80%);
+}
+
+.eff-godforged.twohand-duplicate::after {
+  background:
+    linear-gradient(rgba(185, 28, 28, 0.18), rgba(127, 29, 29, 0.14)),
+    conic-gradient(from var(--godforged-inner-angle),
+      rgba(0, 0, 0, 0.18) 0deg,
+      rgba(0, 0, 0, 0) 42deg,
+      rgba(0, 0, 0, 0.22) 85deg,
+      rgba(0, 0, 0, 0) 130deg,
+      rgba(0, 0, 0, 0.18) 180deg,
+      rgba(0, 0, 0, 0) 230deg,
+      rgba(0, 0, 0, 0.22) 280deg,
+      rgba(0, 0, 0, 0) 330deg),
+    linear-gradient(to bottom, rgba(184, 134, 11, 0.9) 0%, rgba(139, 101, 8, 0.95) 45%, var(--panel) 80%);
+}
+
+/* 選取狀態仍以白框為最高優先，避免與既有選取提示互相污染。 */
+.eq-slot.selected.eff-mythic.twohand-duplicate,
+.eq-slot.selected.eff-genesis.twohand-duplicate,
+.eq-slot.selected.eff-godforged.twohand-duplicate {
+  outline: 3px solid #fff;
+  outline-offset: 5px;
+}
+
+/* ========================================================================== */
    ?��??�詳細�?�?Tooltip ?�浮窗】Equipment Detail Tooltip Pane
    說�?：Hover 裝�??�物?��?顯示?�浮?��??��?窗樣式�??�含?��??�值、�?條屬?�、寶?�鑲嵌�??��??�屬?��?
    ========================================================================== */
