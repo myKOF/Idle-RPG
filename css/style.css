@@ -2591,7 +2591,7 @@ textarea#save-io {
   border-width: 2px !important;
   outline: 2px solid var(--eq-selection-border-color) !important;
   outline-offset: 0 !important;
-  filter: brightness(1.2) !important;
+  filter: brightness(1.7) !important;
 }
 
 .eq-slot.filled.dimmed,
