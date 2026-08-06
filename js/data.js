@@ -445,7 +445,7 @@ var ACCESSORY_SLOTS = ['ring', 'amulet'];
 /* 屬性數值上限（單一來源）：computeStats 夾限、面板顯示、提示文字、apply_params 一律引用此表。
    改上限只需改這裡（或參數表「2-屬性上限」→ apply_params 寫入此表），夾限與 tip 會一起同步。 */
 var STAT_CAPS = {
-  // 穿透（pPen/mPen）不設上限：實際忽略防禦% 改由 penIgnorePct 的遞減曲線收斂（formula.js §3）。
+  // 穿透（pPen/mPen）不設上限：實際忽略防禦% 改由 penIgnorePct 的遞減曲線收斂，最高 100%（formula.js §3）。
   // 吸血／吸魔不設上限：回復量 = 每秒生命回復／法力恢復 × 此%（formula.js §3）。
   critRate: 0, pPen: 0, mPen: 0, cdr: 60, castSpeed: 50,
   lifesteal: 0, manaSteal: 0, blockRate: 50, blockDmgRed: 50,
@@ -1710,19 +1710,16 @@ function enemyTypeDmgRedDesc(st, key, label) {
     '<br><br><span style="color:#ffd700">目前同級減傷率：' + pctStrFloor4(reduction) + '</span>';
 }
 
-/* 穿透 tips：穿透%本身不設上限，實際忽略防禦% 由 penIgnorePct 的遞減曲線換算（formula.js §3）；
-   黃字顯示目前穿透值換算後的實際忽略防禦%，超過 100% 時另標示溢出增傷倍率。 */
+/* 穿透 tips：穿透%本身不設上限，實際忽略防禦% 由 penIgnorePct 的飽和曲線換算（formula.js §3）；
+   黃字顯示目前穿透值換算後的實際忽略防禦%（趨近但到不了 100%）。 */
 function penetrationDesc(st, key, label) {
   var pen = (st && st[key]) || 0;
   var ignore = penIgnorePct(pen);
-  var s = '造成' + label + '傷害時，無視敵方一定比例的' + label + '防禦。穿透值本身無上限，' +
-    '實際忽略防禦% ＝ ' + effectNum(PEN_IGNORE_A) + '×(穿透% ÷ 100 × ' + effectNum(PEN_IGNORE_B) +
-    ')^' + effectNum(PEN_IGNORE_C) + '（遞減曲線）；超過 100% 的部分轉為增傷。' +
+  return '造成' + label + '傷害時，無視敵方一定比例的' + label + '防禦。穿透值本身無上限，' +
+    '實際忽略防禦% ＝ 穿透倍率 ÷ (穿透倍率 + ' + effectNum(PEN_IGNORE_A) + ')' +
+    '（穿透倍率 ＝ 穿透% ÷ 100；例：穿透 350% → 3.5 ÷ 5 ＝ 70%）；' +
+    '忽略防禦隨穿透遞減收斂，不會達到 100%。' +
     '<br><br><span style="color:#ffd700">目前忽略防禦：' + fmt1(ignore) + '%</span>';
-  if (ignore > 100) {
-    s += '<span style="color:#ffd700">（完全忽略防禦後再 ×' + fmt1(ignore / 100) + ' 增傷）</span>';
-  }
-  return s;
 }
 
 /* 吸血／吸魔 tips：不再以造成的傷害計算，改由每秒生命回復／法力恢復換算（formula.js §3）。 */

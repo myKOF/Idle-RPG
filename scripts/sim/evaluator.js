@@ -107,13 +107,13 @@ function evalHitDamage(st, foe) {
      （js/combat.js playerAtkCfg），所以物理與魔法兩段都要算。 */
   var pIgnore = penIgnoreRatio(st.pPen || 0);
   var pDef = (foe.def || 0) * penDefMultiplier(pIgnore);
-  var pDmg = (st.atk || 0) * (1 - defReduction(pDef, lv)) * penOverflowDmgMultiplier(pIgnore);
+  var pDmg = (st.atk || 0) * (1 - defReduction(pDef, lv));
   pDmg *= 1 - physicalResistanceReduction(0, lv);   // 野怪沒有物理抗性欄位，留著讓公式對齊
   dmg += pDmg;
 
   var mIgnore = penIgnoreRatio(st.mPen || 0);
   var mDef = (foe.mdef || 0) * penDefMultiplier(mIgnore);
-  var mDmg = (st.matk || 0) * (1 - defReduction(mDef, lv)) * penOverflowDmgMultiplier(mIgnore);
+  var mDmg = (st.matk || 0) * (1 - defReduction(mDef, lv));
   mDmg *= 1 - magicResistanceReduction(0, lv);
   dmg += mDmg;
 

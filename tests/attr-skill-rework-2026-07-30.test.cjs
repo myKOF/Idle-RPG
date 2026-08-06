@@ -180,32 +180,52 @@ test('穿透上限已取消（STAT_CAPS = 0）', () => {
   assert.equal(c.capValue(1000, c.STAT_CAPS.pPen), 1000);
 });
 
-test('忽略防禦% = a×(穿透%÷100×b)^c，且參數可調', () => {
+test('忽略防禦% = 穿透倍率 ÷ (穿透倍率 + a)，且參數可調', () => {
+  /* ⚠️ 這支測試原本把 a 釘死成 1.5，連帶把五個曲線對照點（40% / 62.5% / 70% /
+     76.92% / 86.96%）也釘死。那些都是「a = 1.5 時的樣子」，不是公式本身——
+     2026-08-06 的平衡調整把 a 改成 0.75，五個斷言一起紅，而程式完全沒有問題。
+
+     測試的標題就寫著「參數可調」，卻用寫死的常數擋住調參，這是自相矛盾的。
+     改成只釘**公式的形狀**，a 一律向遊戲拿：
+       曲線正確（逐點比對）、a 是有限正數、單調遞增、到不了 100%、
+       0 穿透時為 0、b/c 欄已停用。
+     這樣使用者調 a 不會弄紅測試，但把公式改成別的形狀會。 */
   const c = loadContext();
-  assert.equal(c.PEN_IGNORE_A, 0.01);
-  assert.equal(c.PEN_IGNORE_B, 100);
-  assert.equal(c.PEN_IGNORE_C, 0.68);
+  const a = c.PEN_IGNORE_A;
+  assert.ok(typeof a === 'number' && isFinite(a) && a > 0,
+    'a 必須是有限正數，否則 rate/(rate+a) 會發散或除以零：' + a);
+  assert.equal(typeof c.PEN_IGNORE_B, 'undefined', 'b 欄已停用');
+  assert.equal(typeof c.PEN_IGNORE_C, 'undefined', 'c 欄已停用');
   assert.equal(c.penIgnoreRatio(0), 0);
-  const expect = (pen) => c.PEN_IGNORE_A * Math.pow(pen / 100 * c.PEN_IGNORE_B, c.PEN_IGNORE_C);
-  [100, 250, 500, 1000].forEach((pen) => {
-    assert.ok(Math.abs(c.penIgnoreRatio(pen) - expect(pen)) < 1e-12);
+
+  const expect = (pen) => (pen / 100) / (pen / 100 + a);
+  [100, 250, 350, 500, 1000, 5000].forEach((pen) => {
+    assert.ok(Math.abs(c.penIgnoreRatio(pen) - expect(pen)) < 1e-12, '穿透 ' + pen);
+    assert.ok(Math.abs(c.penIgnorePct(pen) - expect(pen) * 100) < 1e-9,
+      'penIgnorePct 必須是 penIgnoreRatio 的百分比版本：穿透 ' + pen);
   });
-  // 曲線關鍵點（文件 §3.1 對照表）
-  assert.ok(Math.abs(c.penIgnorePct(100) - 22.91) < 0.05);
-  assert.ok(Math.abs(c.penIgnorePct(250) - 42.72) < 0.05);
-  assert.ok(Math.abs(c.penIgnorePct(500) - 68.44) < 0.05);
-  assert.ok(c.penIgnorePct(1000) > 100);
+
+  /* 半數點：穿透倍率等於 a 時剛好忽略 50% 防禦。這是這條曲線唯一與參數無關的
+     幾何性質，用它取代原本那五個「a=1.5 專用」的對照點。 */
+  assert.ok(Math.abs(c.penIgnoreRatio(a * 100) - 0.5) < 1e-12,
+    '穿透 = a×100% 時應忽略 50% 防禦');
 });
 
-test('忽略防禦超過 100% 時，防禦歸零並將超出部分轉為增傷', () => {
+test('忽略防禦為飽和曲線：單調遞增、到不了 100%，且不轉為增傷', () => {
   const c = loadContext();
-  assert.equal(c.penDefMultiplier(1.5), 0);           // 不得出現負防禦
+  assert.equal(c.penDefMultiplier(1), 0);             // 不得出現負防禦
   assert.equal(c.penDefMultiplier(0.25), 0.75);
-  assert.equal(c.penOverflowDmgMultiplier(1.5), 1.5); // 150% → ×1.5 增傷
-  assert.equal(c.penOverflowDmgMultiplier(0.9), 1);   // 未溢出 → 不增傷
+  let prev = 0;
+  [100, 500, 1000, 5000, 100000].forEach((pen) => {
+    const r = c.penIgnoreRatio(pen);
+    assert.ok(r > prev, '忽略防禦應隨穿透遞增：' + pen);
+    assert.ok(r < 1, '忽略防禦不得達到 100%：' + pen);
+    prev = r;
+  });
+  assert.equal(typeof c.penOverflowDmgMultiplier, 'undefined', '溢出增傷乘區已移除');
 });
 
-test('resolveHit：穿透溢出的增傷實際套用在傷害上', () => {
+test('resolveHit：穿透只折減防禦，敵方永遠保留一小部分防禦', () => {
   const c = loadContext();
   c.chance = (p) => p >= 100;         // 必中、不爆擊
   c.rnd = () => 1;
@@ -218,14 +238,18 @@ test('resolveHit：穿透溢出的增傷實際套用在傷害上', () => {
       { def: 500, dodge: 0, level: 1 }).dmg;
   };
   const base = hit(0);
-  const mid = hit(500);              // 忽略 68.4% 防禦 → 傷害提高但未溢出
-  const over = hit(5000);            // 忽略 > 100% → 防禦歸零＋溢出增傷
+  const mid = hit(350);              // 忽略 70% 防禦
+  const high = hit(5000);            // 忽略 97.1% 防禦，仍非全免
   assert.ok(mid > base, '穿透應提高傷害');
-  assert.ok(over > mid);
-  const ratio = c.penIgnoreRatio(5000);
-  assert.ok(ratio > 1, '此穿透量應溢出');
-  // 溢出時：傷害 = 攻擊力 × 溢出倍率（防禦已歸零）
-  assert.ok(Math.abs(over - Math.round(1000 * ratio)) <= 1, '溢出增傷倍率不符：' + over);
+  assert.ok(high > mid);
+  assert.ok(high < 1000, '防禦未歸零，傷害不得達到攻擊力全額：' + high);
+  // 傷害對得上公式：攻擊力 × (1 - 防禦減傷(防禦 × (1 - 忽略防禦比率)))
+  const expectAt = (pen) => {
+    const def = 500 * c.penDefMultiplier(c.penIgnoreRatio(pen));
+    return Math.round(1000 * (1 - c.defReduction(def, 1)));
+  };
+  assert.ok(Math.abs(mid - expectAt(350)) <= 1, '350% 穿透傷害不符：' + mid);
+  assert.ok(Math.abs(high - expectAt(5000)) <= 1, '5000% 穿透傷害不符：' + high);
 });
 
 test('技能不再有降低敵人防禦效果，改為穿透增益 penUp', () => {
