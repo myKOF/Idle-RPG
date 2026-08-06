@@ -156,7 +156,9 @@ try {
     $pushedHeads = @{}
     foreach ($branch in $agentBranches) {
         $worktree = $worktrees[$branch]
-        Invoke-Git -Worktree $worktree -GitArguments @('pull', '--ff-only', $Remote, $branch)
+        # 同上：緊接在 fetch --prune 之後，用 merge 對遠端追蹤參照動作即可，
+        # 不必再 pull 一次（同樣的 FETCH_HEAD 重複項會讓 --ff-only 直接 fatal）。
+        Invoke-Git -Worktree $worktree -GitArguments @('merge', '--ff-only', "$Remote/$branch")
         Invoke-Git -Worktree $worktree -GitArguments @('push', $Remote, "${branch}:${branch}")
         $pushedHeads[$branch] = Get-GitText -Worktree $worktree -GitArguments @('rev-parse', 'HEAD')
     }
@@ -170,7 +172,17 @@ try {
     }
 
     Write-Step '在 develop Worktree 合併所有 AI 分支'
-    Invoke-Git -Worktree $developWorktree -GitArguments @('pull', '--ff-only', $Remote, $developBranch)
+    # 用 merge 而不是 pull：上面幾行才剛 fetch --prune 過，遠端追蹤參照已經是最新的，
+    # 這裡再 pull 只是多一次網路往返，而且會把結果押在 FETCH_HEAD 上。
+    #
+    # 實際踩過：pull 的 fetch 沒有覆蓋掉前一次 fetch --prune 寫進 FETCH_HEAD 的
+    # develop 那一行，於是檔案裡出現兩筆同 SHA、同樣標記為 for-merge 的 develop，
+    # git 回 "fatal: Cannot fast-forward to multiple branches." 而整個同步中止
+    # （當下 develop 與 origin/develop 其實完全相同，0 ahead 0 behind，
+    #   也就是說失敗的是一個本來就沒事要做的步驟）。
+    # merge --ff-only 直接對 $Remote/$developBranch 動作，完全不碰 FETCH_HEAD，
+    # 語意不變而且與下方「fast-forward 回各 AI 分支」那段一致。
+    Invoke-Git -Worktree $developWorktree -GitArguments @('merge', '--ff-only', "$Remote/$developBranch")
     foreach ($branch in $agentBranches) {
         Invoke-Git -Worktree $developWorktree -GitArguments @(
             'merge',
