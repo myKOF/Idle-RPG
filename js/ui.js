@@ -2305,6 +2305,94 @@ function enemyBuffTooltipDesc(anchorEl) {
   return rows.length ? rows.join('') : '<span class="dim-text">目前沒有狀態</span>';
 }
 
+function zoneElementTagsList(z) {
+  var table = (typeof ZONE_ENEMY_TABLES !== 'undefined' && ZONE_ENEMY_TABLES[z]) || null;
+  var pool = (typeof ZONES !== 'undefined' && ZONES[z] && ZONES[z].pool) || null;
+  var weights = {};
+  if (table && Array.isArray(table)) {
+    table.forEach(function (e) {
+      var npc = typeof NPC_CONFIG_TABLE !== 'undefined' ? NPC_CONFIG_TABLE[e.npcId] : null;
+      if (npc && npc.attr) {
+        weights[npc.attr] = (weights[npc.attr] || 0) + (Number(e.weight) || 1);
+      }
+    });
+  } else if (pool && Array.isArray(pool)) {
+    pool.forEach(function (m) {
+      if (m.attr) {
+        weights[m.attr] = (weights[m.attr] || 0) + 1;
+      }
+    });
+  }
+  var sortedAttrs = Object.keys(weights).sort(function (a, b) {
+    return weights[b] - weights[a];
+  });
+  if (sortedAttrs.length === 0) return [];
+  return sortedAttrs.slice(0, 3).map(function (attr) {
+    if (typeof ELEM_INFO === 'undefined' || !ELEM_INFO[attr]) return null;
+    var info = ELEM_INFO[attr];
+    var emoji = (attr === 'poison' ? '🟢' : (attr === 'dark' ? '🟣' : info.emoji));
+    var shortName = info.short || info.name;
+    return { attr: attr, emoji: emoji, shortName: shortName, label: emoji + ' ' + shortName + '屬性' };
+  }).filter(Boolean);
+}
+
+function renderSceneTabs() {
+  var header = uiHeaderPanelSnapshot() || {};
+  var stage = header.stage || {};
+  var cur = stage.zone || 'plains';
+
+  var zoneBox = $id('zone-tabs');
+  if (!zoneBox) return;
+
+  var activeRlm = activeRealm();
+
+  var list = (header.player && header.player.reincarnations >= 11)
+    ? (activeRlm === 'god' ? ['god_battlefield', 'god_chaos', 'god_sanctuary'] : ['plains', 'desert', 'swamp', 'undead_mountains'])
+    : ['plains', 'desert', 'swamp', 'undead_mountains'];
+
+  var html = list.map(function (z) {
+    var zd = ZONES[z];
+    if (!zd) return '';
+    var locked = false;
+    if (zd.reqReincarnation && Number(header.player && header.player.reincarnations) < zd.reqReincarnation) {
+      locked = true;
+    }
+    if (zd.reqZone && !locked) {
+      if (zoneBestOf(zd.reqZone) < zd.reqStage) locked = true;
+    }
+    var elemTags = zoneElementTagsList(z);
+    var elemText = elemTags.length > 0 ? ('主要敵人屬性：' + elemTags.map(function (t) { return t.label; }).join(' ')) : '';
+    var ttDesc = z === 'desert' ? '敵人更強；經驗、金幣與材料掉落 ×2' :
+      z === 'swamp' ? '敵人極強；經驗、金幣與材料掉落 ×3' :
+        z === 'god_battlefield' ? '神界戰場；神級敵人，經驗與獎勵 ×2.5' :
+          z === 'god_chaos' ? '神界混沌；極強虛空生物，經驗與獎勵 ×3.5' :
+            z === 'god_sanctuary' ? '神界聖域；諸神降臨，經驗與獎勵 ×5.0' : '';
+
+    if (elemText) {
+      ttDesc = elemText + (ttDesc ? ('\n' + ttDesc) : '');
+    }
+
+    if (locked && zd.reqReincarnation) {
+      ttDesc = '🔒 解鎖條件：需要 ' + zd.reqReincarnation + ' 轉';
+    } else if (locked && zd.reqZone && ZONES[zd.reqZone]) {
+      var lockTip = '🔒 解鎖條件：需【' + ZONES[zd.reqZone].name + '】達到第 ' + zd.reqStage + ' 階段';
+      ttDesc = lockTip + (ttDesc ? ('\n' + ttDesc) : '');
+    }
+
+    var badgeText = locked
+      ? '🔒'
+      : '(' + fmt(zoneBestOf(z)) + ')';
+    var cls = 'zone-btn' + (locked ? ' locked' : '') + (z === cur ? ' active' : '');
+    var dis = locked ? ' style="opacity:0.5; cursor:not-allowed;"' : ' style="opacity:1; cursor:pointer;"';
+    var ttAttr = ' data-tt-title="' + esc(zd.name) + '" data-tt-desc="' + esc(ttDesc) + '"';
+
+    return '<button class="' + cls + '" data-zone="' + z + '"' + ttAttr + dis + '>' +
+      zd.emoji + ' ' + esc(zd.name) + ' <span class="zone-best">' + badgeText + '</span></button>';
+  }).join('');
+
+  zoneBox.innerHTML = html;
+}
+
 /* ---- 戰鬥畫面 ---- */
 function entStatus(ent) {
   if (!ent) return '';
@@ -6537,7 +6625,43 @@ function showEnemyTooltip(anchorEl) {
   if (!m) return;
 
   var title = isBossTip ? (m.name || '高塔 BOSS') : '敵人情報';
-  var dropTip = '<div class="skt-name" style="margin-bottom:6px;">【' + title + '】</div>' +
+
+  // 頂置區標籤：顯示敵人/地圖屬性標籤 (圖2)
+  var zoneKey = (headerSnapshot.stage && headerSnapshot.stage.zone) || 'plains';
+  var elemBadgeHtml = '';
+
+  if (isBossTip) {
+    var mAttr = m.attr || m.elem || null;
+    if (mAttr && ELEM_INFO[mAttr]) {
+      var info = ELEM_INFO[mAttr];
+      var emoji = (mAttr === 'poison' ? '🟢' : (mAttr === 'dark' ? '🟣' : info.emoji));
+      var shortName = info.short || info.name;
+      elemBadgeHtml = '<span style="padding:1px 6px; font-size:12px; font-weight:normal; border-radius:4px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:var(--text);">' + emoji + ' ' + shortName + '屬性</span>';
+    }
+  } else {
+    var elemTags = zoneElementTagsList(zoneKey);
+    var tagList = [];
+    if (m.attr && ELEM_INFO[m.attr]) {
+      var mAttr = m.attr;
+      var info = ELEM_INFO[mAttr];
+      var emoji = (mAttr === 'poison' ? '🟢' : (mAttr === 'dark' ? '🟣' : info.emoji));
+      var shortName = info.short || info.name;
+      tagList.push(emoji + ' ' + shortName + '屬性');
+    }
+    elemTags.forEach(function (t) {
+      if (tagList.indexOf(t.label) < 0) {
+        tagList.push(t.label);
+      }
+    });
+    if (tagList.length > 0) {
+      elemBadgeHtml = tagList.slice(0, 2).map(function (lbl) {
+        return '<span style="padding:1px 6px; font-size:12px; font-weight:normal; border-radius:4px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:var(--text); margin-left:4px;">' + lbl + '</span>';
+      }).join('');
+    }
+  }
+
+  var dropTip = '<div class="skt-name" style="margin-bottom:6px; display:flex; align-items:center; justify-content:space-between;">' +
+    '<span>【' + title + '】</span>' + (elemBadgeHtml ? '<div style="display:flex; align-items:center;">' + elemBadgeHtml + '</div>' : '') + '</div>' +
     '<div class="skt-desc" style="text-align:left;">' +
     (m.magic ? '🔮 魔法攻擊力：' : '⚔️ 物理攻擊力：') + fmt(m.atk) + '<br>' +
     '⚡ 攻擊速度：' + fmt1(m.aspd) + ' 次/秒<br>' +
@@ -6547,15 +6671,6 @@ function showEnemyTooltip(anchorEl) {
     '🎯 命中率：' + (m.hit || 100) + '%<br>' +
     '🌀 閃避率：' + (m.dodge || 0) + '%<br>' +
     '🧠 控制抵抗：' + (m.ctrlRes || 0) + '%';
-
-  // 屬性標籤（每個敵人必有）：顯示六大屬性，並受玩家「對X屬性敵人傷害」加成影響
-  var mAttr = m.attr || m.elem || null;
-  if (mAttr && ELEM_INFO[mAttr]) {
-    // 「X屬性」語境用 short（火/冰/雷/毒/聖/暗），與「對X屬性敵人傷害」詞條名一致
-    var mAttrShort = ELEM_INFO[mAttr].short || ELEM_INFO[mAttr].name;
-    dropTip += '<br>🌌 屬性：' + ELEM_INFO[mAttr].emoji + ' ' + mAttrShort + '屬性' +
-      '<span style="color:var(--dim)">（受「對' + mAttrShort + '屬性敵人傷害」加成影響）</span>';
-  }
 
   // BOSS 特殊技·元素審判：元素 BOSS 每次攻擊都額外附帶一段元素傷害。
   // 該段傷害先比照魔法傷害吃魔防／魔抗，最後再受玩家對應「屬性抗性」影響。
