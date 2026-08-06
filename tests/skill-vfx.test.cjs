@@ -121,3 +121,27 @@ test('潛力技能也有特效（不經 castSkill，另一條路徑）', () => {
     assert.ok(spec.color, t.id + ' 沒有顏色');
   });
 });
+
+test('高塔領域特效保留 BOSS 錨點，不退回玩家或野外場景', () => {
+  const c = loadContext();
+  let emitted = null;
+  c.playCombatVfx = (spec) => { emitted = spec; };
+  c.resetSkillRT();
+
+  const pEnt = { hp: 1000, mp: 1000, buffs: {}, dots: [], effects: {}, skillCds: {} };
+  const sk = { id: 'towerField', name: '高塔領域', emoji: '🌋', cat: 'magic', tags: ['fire'] };
+  const fx = { dmgType: 'magic', stat: 'matk', field: { name: '高塔領域', dur: 6, tickSec: 1, tickPct: 25 } };
+  const st = {
+    level: 1, critRate: 0, critDmg: 150, hit: 100, passives: {},
+    elemDmgPct: {}, elemDmgUp: {}, eliteDmg: 0, bossDmg: 0, normalDmg: 0,
+    totalDmgPct: 0, dmgVsElem: {}
+  };
+
+  c.skillRtOpenField(pEnt, sk, fx, 'towerField', 1, st, {
+    baseVal: 1000, areaCells: null, vfxTargets: ['tb-float']
+  });
+
+  assert.ok(emitted, '領域應送出特效事件');
+  assert.deepEqual(emitted.targets, ['tb-float'], '高塔領域應以 BOSS 圖層作為特效錨點');
+  assert.equal(emitted.cells, null, '高塔領域仍維持無棋盤格資料');
+});
