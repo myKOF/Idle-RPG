@@ -76,9 +76,12 @@ test('雙手武器裝備成功時，主手與副手都進入閃光狀態', () =>
 test('雙手武器副手 duplicate 使用淡紅提示樣式', () => {
   assert.match(css, /\.eq-slot\.twohand-duplicate\s*\{[\s\S]*border-color:\s*#f87171\s*!important/);
   assert.match(css, /\.eq-slot\.twohand-duplicate::after\s*\{[\s\S]*background:\s*rgba\(185,\s*28,\s*28,/);
-  assert.match(css, /\.eq-slot\.eff-mythic\.twohand-duplicate,[\s\S]*outline:\s*2px\s+solid\s+#f87171/);
-  assert.match(css, /\.eff-mythic\.twohand-duplicate::after,[\s\S]*linear-gradient\(rgba\(185,\s*28,\s*28,\s*0\.18\)/);
-  assert.match(css, /\.eff-godforged\.twohand-duplicate::after\s*\{[\s\S]*linear-gradient\(rgba\(185,\s*28,\s*28,\s*0\.18\)/);
+  assert.match(css, /\.eq-slot\.eff-mythic\.twohand-duplicate\s*\{[\s\S]*outline-color:\s*#fde68a/);
+  assert.match(css, /\.eq-slot\.eff-genesis\.twohand-duplicate\s*\{[\s\S]*outline-color:\s*#a5f3fc/);
+  assert.match(css, /\.eq-slot\.eff-godforged\.twohand-duplicate\s*\{[\s\S]*outline-color:\s*#f5d0fe/);
+  assert.match(css, /\.eff-mythic\.twohand-duplicate::after\s*\{[\s\S]*linear-gradient\(rgba\(253,\s*230,\s*138,\s*0\.28\)/);
+  assert.match(css, /\.eff-genesis\.twohand-duplicate::after\s*\{[\s\S]*linear-gradient\(rgba\(165,\s*243,\s*252,\s*0\.25\)/);
+  assert.match(css, /\.eff-godforged\.twohand-duplicate::after\s*\{[\s\S]*linear-gradient\(rgba\(245,\s*208,\s*254,\s*0\.25\)/);
   assert.match(css, /\.eq-slot\.selected\.eff-mythic\.twohand-duplicate,[\s\S]*outline:\s*3px\s+solid\s+#fff/);
   assert.match(css, /\.eq-slot \.equip-flash-overlay\s*\{[\s\S]*animation:\s*equipSlotFlash\s+2s/);
   assert.match(css, /@keyframes\s+equipSlotFlash\s*\{/);

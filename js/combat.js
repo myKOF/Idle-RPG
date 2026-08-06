@@ -172,8 +172,8 @@ function switchZone(zoneKey) {
     var zd = ZONES[zoneKey];
     if (!isZoneUnlocked(zoneKey)) return;
     if (zd.reqZone) {
-        var b = (G.stage.zone === zd.reqZone) ? G.stage.best : ((G.zoneProgress && G.zoneProgress[zd.reqZone] && G.zoneProgress[zd.reqZone].best) || 1);
-        if (b < zd.reqStage) return; // 尚未解鎖
+        var cleared = zoneClearedStage(zd.reqZone);
+        if (cleared < zd.reqStage) return;
     }
     // 保存目前場景進度（cleared 只住在 zoneProgress，整包覆寫時必須帶著走）
     if (!G.zoneProgress) G.zoneProgress = {};
@@ -202,6 +202,7 @@ function switchZone(zoneKey) {
 function nextAutoAdvanceZone(zoneKey) {
     if (typeof ZONE_LIST === 'undefined' || !Array.isArray(ZONE_LIST)) return null;
     var currentMax = zoneMaxStage(zoneKey);
+    if (typeof zoneClearedStage === 'function' && zoneClearedStage(zoneKey) < currentMax) return null;
     var index = ZONE_LIST.indexOf(zoneKey);
     if (index < 0) return null;
     for (var i = index + 1; i < ZONE_LIST.length; i++) {
@@ -252,7 +253,7 @@ function tickPoison(ent, dt) {
     var legendaryPoisonMult = (ent.maxHp && typeof legendaryDotDamageMultiplier === 'function')
         ? legendaryDotDamageMultiplier(ent) : 1;
     var poisonDamage = ent.poisonDps * dt * globalDamageMultiplierForEntity(ent) * legendaryPoisonMult;
-    ent.hp -= poisonDamage;
+    poisonDamage = applyEnemyHpDamage(ent, poisonDamage);
     logEnemyDirectDamage(ent, '中毒', poisonDamage, ent.hp <= 0);
     if (ent.hp <= 0) { ent.hp = 0; return true; }
     return false;
@@ -342,7 +343,7 @@ function tickDots(ent, dt) {
         var legendaryDotMult = (ent.maxHp && typeof legendaryDotDamageMultiplier === 'function')
             ? legendaryDotDamageMultiplier(ent) : 1;
         var dotDealt = total * dtEff * globalDamageMultiplierForEntity(ent) * legendaryDotMult;
-        ent.hp -= dotDealt;
+        dotDealt = applyEnemyHpDamage(ent, dotDealt);
         logEnemyDirectDamage(ent, '持續傷害' + (dotNames.length ? '（' + dotNames.join('、') + '）' : ''), dotDealt, ent.hp <= 0);
         // 45 新技能（echo 族）：dmgWindow「窗內玩家全部傷害」含你的 DoT 跳動——
         // 僅敵方實體計入（玩家所受 DoT 非玩家輸出，不計）
@@ -431,7 +432,7 @@ function monsterDefCfg(m) {
     return {
         def: m.def * defMul, mdef: (m.mdef || m.def * 0.75) * defMul, level: m.level, dodge: m.dodge || 0,
         resist: m.resist || {}, ctrlRes: m.ctrlRes || 0, maxHp: m.maxHp,
-        isElite: !!m.elite, isBoss: !!m.isBoss, attr: m.attr || null, globalDmgRed: m.globalDmgRed || 0
+        isElite: !!m.elite, isBoss: !!m.isBoss, towerBoss: !!m.towerBoss, attr: m.attr || null, globalDmgRed: m.globalDmgRed || 0
     };
 }
 
@@ -510,7 +511,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
             // 神鑄特效【天罰】：機率降下神雷，造成 250% 物理攻擊的真實傷害（無視防禦）
             if ((st.passives.smite || 0) > 0 && chance(st.passives.smite)) {
                 var smiteDmg = Math.max(1, Math.round(st.atk * 2.5));
-                mEnt.hp -= smiteDmg;
+                smiteDmg = applyEnemyHpDamage(mEnt, smiteDmg);
                 trackDps(smiteDmg);
                 recordRunDamage('天罰', smiteDmg);
                 // 天罰特效：劍氣命中那一刻，一道神雷從天頂劈在目標身上

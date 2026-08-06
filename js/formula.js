@@ -643,13 +643,26 @@ function effectiveMPen(st, ent) { return ((st && st.mPen) || 0) + penBuffValue(e
          （isElite/isBoss = 攻擊者自身敵種，attr = 攻擊者屬性標籤，供防守方敵種/屬性抗性選值）
          （dmgVsElem = 對屬性敵人傷害%合計 {fire..dark}，對 dCfg.attr 對應屬性的敵人生效）
    dCfg: { def, mdef, level, dodge, blockRate, blockDmgRed, pRes, mRes, resist{六元素+ctrl},
-           ctrlRes, ccFactor, tenacity, thornsPct, maxHp, isElite, isBoss, attr,
+           ctrlRes, ccFactor, tenacity, thornsPct, maxHp, isElite, isBoss, towerBoss, attr,
            normalDmgRed, eliteDmgRed, bossDmgRed, resVsElem{fire..dark} }
          （tenacity = 防守方韌性%：折減被爆擊機率［暴擊段］與被控場機率［resistCtrl］；
            ccFactor 另含韌性對控場「持續時間」的縮短）
    回傳 { dmg, crit, miss, blocked, killed, thorns, heal, procs[],
           randomDamageMultiplier, highCritRandomRoll }                   */
 var CRIT_HIGH_RANDOM_MULTIPLIER = 1.195; // 暴擊且隨機倍率達 119.5% 時，使用高倍率暴擊飄字樣式
+var TOWER_BOSS_DAMAGE_CAP_PCT = 20;
+// 高塔 BOSS 的單次生命傷害上限；護盾吸收仍由各傷害流程先處理，只有實際扣血量受限。
+function towerBossHpDamage(ent, damage) {
+  var amount = Math.max(0, Number(damage) || 0);
+  if (!ent || !ent.towerBoss || !(ent.maxHp > 0)) return amount;
+  return Math.min(amount, ent.maxHp * TOWER_BOSS_DAMAGE_CAP_PCT / 100);
+}
+// 非 resolveHit 的直接傷害也必須經過同一個高塔 BOSS 上限。
+function applyEnemyHpDamage(ent, damage) {
+  var amount = towerBossHpDamage(ent, damage);
+  if (ent) ent.hp = Math.max(0, ent.hp - amount);
+  return amount;
+}
 function resolveHit(attacker, defender, aCfg, dCfg) {
   var out = { dmg: 0, crit: false, miss: false, blocked: false, killed: false, thorns: 0, heal: 0, absorbed: 0, procs: [] };
   // 命中率 = clamp(攻擊者命中 - 防守者閃避, 5%, 100%)；玩家命中已含基礎 100%。
@@ -805,6 +818,8 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     }
     dmg -= out.absorbed;
   }
+  dmg = towerBossHpDamage(defender, dmg);
+  out.hpDamage = dmg;
   defender.hp -= dmg;
   out.dmg = dmg + out.absorbed; // 統計上含護盾吸收量
   if (defender.hp <= 0) {

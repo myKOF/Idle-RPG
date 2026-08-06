@@ -301,6 +301,13 @@ function viewState() {
   return UI_WORKER_STATE.view;
 }
 
+function uiHeaderXpMax(player) {
+  var view = viewState() || {};
+  var xpMax = Number(view.xpMax);
+  if (Number.isFinite(xpMax) && xpMax > 0) return xpMax;
+  return xpForLevel(player && player.level);
+}
+
 /* ---- 主執行緒的遊戲時鐘 ----
    GT 的權威在 Worker，但畫面上所有「還剩幾秒」的顯示都要跟它比對：
    狀態圖示（effectActive／dots.until／buffs.until 都是絕對到期時刻）、技能冷卻、復活倒數。
@@ -2085,7 +2092,7 @@ function renderHeader() {
       : (canReincarnate ? (isGodStage ? '目前可進行神階晉升' : '目前可進行轉生') : '等級達到 ' + REINCARNATION_LEVEL + ' 級可使用'));
     reincBtn.removeAttribute('title');
   }
-  var need = xpForLevel(p.level);
+  var need = uiHeaderXpMax(p);
   var isMaxedOut = (p.level >= MAX_LEVEL && reinc >= REINCARNATION_MAX);
   $id('xp-fill').style.width = isMaxedOut ? '100%' : (clamp(p.xp / need * 100, 0, 100) + '%');
   var xpBar = $id('xp-bar');
@@ -3455,6 +3462,28 @@ function selectionEquipSlotsForItem(selItem, selectedSlot) {
     slots.push('weapon2');
   }
   return slots;
+}
+
+// 同一件雙手武器會同時渲染在 weapon 與 weapon2；互點兩格時應轉移欄位選取，
+// 只有再次點擊同一格才取消選取。
+function selectFilledCell(cell) {
+  var cid = cell.getAttribute('data-id');
+  var cellSource = cell.getAttribute('data-src');
+  var cellSlot = cell.getAttribute('data-slot');
+  if (UI.sel && UI.sel.id === cid) {
+    if (UI.sel.source === 'equip' && cellSource === 'equip' && UI.sel.slot !== cellSlot) {
+      UI.sel.slot = cellSlot;
+      UI.lastEquipSlot = cellSlot;
+      return;
+    }
+    UI.sel = null;
+    return;
+  }
+  UI.sel = { id: cid, source: cellSource };
+  if (UI.sel.source === 'equip') {
+    UI.lastEquipSlot = cellSlot;
+    UI.sel.slot = cellSlot;
+  }
 }
 
 function updateSelectionUI() {
@@ -8671,16 +8700,7 @@ function initUI() {
         }
         UI.lastEquipSlot = emptySlot;
       } else {
-        var cid = cell.getAttribute('data-id');
-        if (UI.sel && UI.sel.id === cid) {
-          UI.sel = null;
-        } else {
-          UI.sel = { id: cid, source: cell.getAttribute('data-src') };
-          if (UI.sel.source === 'equip') {
-            UI.lastEquipSlot = cell.getAttribute('data-slot');
-            UI.sel.slot = cell.getAttribute('data-slot');
-          }
-        }
+        selectFilledCell(cell);
       }
       renderDetail();
       return;

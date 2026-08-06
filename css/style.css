@@ -2781,20 +2781,37 @@ textarea#save-io {
 .eq-slot.eff-mythic.twohand-duplicate,
 .eq-slot.eff-genesis.twohand-duplicate,
 .eq-slot.eff-godforged.twohand-duplicate {
-  outline: 2px solid #f87171;
+  outline-width: 3px;
   outline-offset: 1px;
 }
 
-.eff-mythic.twohand-duplicate::after,
+.eq-slot.eff-mythic.twohand-duplicate {
+  outline-color: #fde68a;
+}
+
+.eq-slot.eff-genesis.twohand-duplicate {
+  outline-color: #a5f3fc;
+}
+
+.eq-slot.eff-godforged.twohand-duplicate {
+  outline-color: #f5d0fe;
+}
+
+.eff-mythic.twohand-duplicate::after {
+  background:
+    linear-gradient(rgba(253, 230, 138, 0.28), rgba(250, 204, 21, 0.18)),
+    linear-gradient(to bottom, rgba(160, 20, 20, 0.9) 0%, rgba(80, 10, 10, 0.95) 45%, var(--panel) 80%);
+}
+
 .eff-genesis.twohand-duplicate::after {
   background:
-    linear-gradient(rgba(185, 28, 28, 0.18), rgba(127, 29, 29, 0.14)),
-    linear-gradient(to bottom, rgba(160, 20, 20, 0.9) 0%, rgba(80, 10, 10, 0.95) 45%, var(--panel) 80%);
+    linear-gradient(rgba(165, 243, 252, 0.25), rgba(34, 211, 238, 0.16)),
+    linear-gradient(to bottom, rgba(184, 134, 11, 0.9) 0%, rgba(139, 101, 8, 0.95) 45%, var(--panel) 80%);
 }
 
 .eff-godforged.twohand-duplicate::after {
   background:
-    linear-gradient(rgba(185, 28, 28, 0.18), rgba(127, 29, 29, 0.14)),
+    linear-gradient(rgba(245, 208, 254, 0.25), rgba(217, 70, 239, 0.16)),
     conic-gradient(from var(--godforged-inner-angle),
       rgba(0, 0, 0, 0.18) 0deg,
       rgba(0, 0, 0, 0) 42deg,
@@ -2815,7 +2832,7 @@ textarea#save-io {
   outline-offset: 5px;
 }
 
-/* ========================================================================== */
+/* ==========================================================================
    ?��??�詳細�?�?Tooltip ?�浮窗】Equipment Detail Tooltip Pane
    說�?：Hover 裝�??�物?��?顯示?�浮?��??��?窗樣式�??�含?��??�值、�?條屬?�、寶?�鑲嵌�??��??�屬?��?
    ========================================================================== */

@@ -287,7 +287,7 @@ function applyPotentialChainLightning(pEnt, fx, targets, totalDmg, comboReps, fl
     var t = chain[i] || field[i % Math.max(1, field.length)];
     if (!t || t.hp <= 0) continue;
     var d = Math.max(1, Math.round(per));
-    t.hp -= d;
+    d = applyEnemyHpDamage(t, d);
     out.dmg += d;
     floatEnemyEvent(t, floatSel, floatPrefix + fmt(d), floatCls, d, i * hopMs);
     trackDps(d);
@@ -337,7 +337,7 @@ function tickPotentialRegen(pEnt, st, dt, enemies, floatSel) {
   if (!live.length) return false;
   var t = live[0];
   var d = Math.max(1, Math.round(overflowDmg));
-  t.hp -= d;
+  d = applyEnemyHpDamage(t, d);
   floatEnemyEvent(t, floatSel, '✨' + fmt(d), 'dmg enemy-skill', d);
   trackDps(d);
   // 45 新技能（echo 族）：聖療逆轉溢出真傷計入 dmgWindow 快照窗

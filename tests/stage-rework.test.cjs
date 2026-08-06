@@ -36,15 +36,20 @@ test('地圖解鎖需要前圖通關，神界地圖另需 11 轉', () => {
   c.G = {
     player: { reincarnations: 0 },
     stage: { zone: 'plains', best: 200 },
-    zoneProgress: { plains: { best: 200 } }
+    zoneProgress: { plains: { best: 200, cleared: 199 } }
   };
+  assert.equal(c.isZoneUnlocked('desert'), false);
+  c.G.zoneProgress.plains.cleared = 200;
   assert.equal(c.isZoneUnlocked('desert'), true);
   assert.equal(c.isZoneUnlocked('swamp'), false);
-  c.G.zoneProgress.desert = { best: 300 };
+  c.G.zoneProgress.desert = { best: 300, cleared: 299 };
+  assert.equal(c.isZoneUnlocked('swamp'), false);
+  c.G.zoneProgress.desert.cleared = 300;
   assert.equal(c.isZoneUnlocked('swamp'), true);
-  c.G.zoneProgress.swamp = { best: 400 };
-  c.G.zoneProgress.undead_mountains = { best: 500 };
+  c.G.zoneProgress.swamp = { best: 400, cleared: 400 };
+  c.G.zoneProgress.undead_mountains = { best: 500, cleared: 499 };
   assert.equal(c.isZoneUnlocked('god_battlefield'), false);
+  c.G.zoneProgress.undead_mountains.cleared = 500;
   c.G.player.reincarnations = 11;
   assert.equal(c.isZoneUnlocked('god_battlefield'), true);
 });

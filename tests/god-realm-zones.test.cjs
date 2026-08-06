@@ -19,8 +19,8 @@ function createTestEnv() {
     document: { querySelectorAll: () => [], getElementById: () => null },
     window: {},
     G: { player: { level: 1, reincarnations: 11 }, stage: { current: 1, best: 1, zone: 'plains' }, zoneProgress: {
-      plains: { current: 1, best: 200 }, desert: { current: 1, best: 300 }, swamp: { current: 1, best: 400 },
-      undead_mountains: { current: 1, best: 500 }
+      plains: { current: 1, best: 200, cleared: 200 }, desert: { current: 1, best: 300, cleared: 300 }, swamp: { current: 1, best: 400, cleared: 400 },
+      undead_mountains: { current: 1, best: 500, cleared: 500 }
     } }
   };
   sandbox.window = sandbox;

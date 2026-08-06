@@ -24,6 +24,32 @@ test('高塔 BOSS 經驗為對應普通怪物經驗的 2 倍', () => {
   });
 });
 
+test('高塔 BOSS 單次生命傷害最高為最大生命 20%，至少五次才會死亡', () => {
+  const context = loadFormulaContext();
+  const towerSource = fs.readFileSync(path.join(root, 'js/tower.js'), 'utf8');
+  const combatSource = fs.readFileSync(path.join(root, 'js/combat.js'), 'utf8');
+  assert.match(towerSource, /elite: false, isBoss: true, towerBoss: true/);
+  assert.match(combatSource, /isBoss: !!m\.isBoss, towerBoss: !!m\.towerBoss/);
+  const attacker = {};
+  const attack = { atk: 100000, dmgType: 'phys', level: 1, critRate: 0, hit: 100 };
+  const defense = { def: 0, mdef: 0, level: 1, dodge: 0, resist: {}, maxHp: 1000, isBoss: true, towerBoss: true };
+  const boss = { hp: 1000, maxHp: 1000, shield: 0, towerBoss: true };
+
+  for (let hit = 1; hit <= 5; hit += 1) {
+    const before = boss.hp;
+    const result = context.resolveHit(attacker, boss, attack, defense);
+    assert.equal(before - boss.hp, 200);
+    assert.equal(result.dmg, 200);
+    assert.equal(result.killed, hit === 5);
+  }
+  assert.equal(boss.hp, 0);
+
+  const normalBoss = { hp: 1000, maxHp: 1000, shield: 0 };
+  const normalDefense = { ...defense, towerBoss: false };
+  const normalResult = context.resolveHit(attacker, normalBoss, attack, normalDefense);
+  assert.ok(normalResult.dmg > 200);
+});
+
 test('地獄之塔 51~100 層套用攻擊與生命倍率，並限制魔魂本源掉落規則', () => {
   const context = loadFormulaContext();
   assert.equal(context.isHellTowerFloor(50), false);
