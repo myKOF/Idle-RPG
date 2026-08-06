@@ -186,7 +186,7 @@ test('忽略防禦% = a×(穿透%÷100×b)^c，且參數可調', () => {
   assert.equal(c.PEN_IGNORE_B, 100);
   assert.equal(c.PEN_IGNORE_C, 0.68);
   assert.equal(c.penIgnoreRatio(0), 0);
-  const expect = (pen) => c.PEN_IGNORE_A * Math.pow(pen / 100 * c.PEN_IGNORE_B, c.PEN_IGNORE_C);
+  const expect = (pen) => Math.min(1, c.PEN_IGNORE_A * Math.pow(pen / 100 * c.PEN_IGNORE_B, c.PEN_IGNORE_C));
   [100, 250, 500, 1000].forEach((pen) => {
     assert.ok(Math.abs(c.penIgnoreRatio(pen) - expect(pen)) < 1e-12);
   });
@@ -194,18 +194,20 @@ test('忽略防禦% = a×(穿透%÷100×b)^c，且參數可調', () => {
   assert.ok(Math.abs(c.penIgnorePct(100) - 22.91) < 0.05);
   assert.ok(Math.abs(c.penIgnorePct(250) - 42.72) < 0.05);
   assert.ok(Math.abs(c.penIgnorePct(500) - 68.44) < 0.05);
-  assert.ok(c.penIgnorePct(1000) > 100);
 });
 
-test('忽略防禦超過 100% 時，防禦歸零並將超出部分轉為增傷', () => {
+test('忽略防禦封頂 100%：防禦歸零，且不轉為增傷', () => {
   const c = loadContext();
-  assert.equal(c.penDefMultiplier(1.5), 0);           // 不得出現負防禦
+  assert.equal(c.penDefMultiplier(1), 0);             // 不得出現負防禦
   assert.equal(c.penDefMultiplier(0.25), 0.75);
-  assert.equal(c.penOverflowDmgMultiplier(1.5), 1.5); // 150% → ×1.5 增傷
-  assert.equal(c.penOverflowDmgMultiplier(0.9), 1);   // 未溢出 → 不增傷
+  // 曲線換算超過 100% 的穿透一律夾回 1，不存在溢出乘區
+  assert.equal(c.penIgnoreRatio(1000), 1);
+  assert.equal(c.penIgnoreRatio(5000), 1);
+  assert.equal(c.penIgnorePct(5000), 100);
+  assert.equal(typeof c.penOverflowDmgMultiplier, 'undefined', '溢出增傷乘區已移除');
 });
 
-test('resolveHit：穿透溢出的增傷實際套用在傷害上', () => {
+test('resolveHit：穿透最多把防禦打到歸零，不會再增傷', () => {
   const c = loadContext();
   c.chance = (p) => p >= 100;         // 必中、不爆擊
   c.rnd = () => 1;
@@ -218,14 +220,14 @@ test('resolveHit：穿透溢出的增傷實際套用在傷害上', () => {
       { def: 500, dodge: 0, level: 1 }).dmg;
   };
   const base = hit(0);
-  const mid = hit(500);              // 忽略 68.4% 防禦 → 傷害提高但未溢出
-  const over = hit(5000);            // 忽略 > 100% → 防禦歸零＋溢出增傷
+  const mid = hit(500);              // 忽略 68.4% 防禦 → 傷害提高但未封頂
+  const capped = hit(1000);          // 曲線換算 > 100% → 夾回 100%，防禦歸零
+  const far = hit(5000);             // 再高的穿透不再有任何額外效果
   assert.ok(mid > base, '穿透應提高傷害');
-  assert.ok(over > mid);
-  const ratio = c.penIgnoreRatio(5000);
-  assert.ok(ratio > 1, '此穿透量應溢出');
-  // 溢出時：傷害 = 攻擊力 × 溢出倍率（防禦已歸零）
-  assert.ok(Math.abs(over - Math.round(1000 * ratio)) <= 1, '溢出增傷倍率不符：' + over);
+  assert.ok(capped > mid);
+  // 封頂時：傷害 = 攻擊力（防禦已歸零，無溢出增傷）
+  assert.ok(Math.abs(capped - 1000) <= 1, '封頂傷害應等於攻擊力：' + capped);
+  assert.equal(far, capped, '超過封頂的穿透不得再增傷');
 });
 
 test('技能不再有降低敵人防禦效果，改為穿透增益 penUp', () => {
