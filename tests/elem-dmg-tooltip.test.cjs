@@ -1,4 +1,4 @@
-/* 頂欄物傷/魔傷浮動面板平均屬性提升/對屬性敵平均計算測試 */
+/* 頂欄物傷/魔傷浮動面板最大屬性提升/對屬性敵最大加成計算測試 */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -49,7 +49,7 @@ function loadGameContext() {
   return context;
 }
 
-test('頂欄物傷與魔傷浮動提示正確讀取 st.elemDmgUp 與 st.dmgVsElem 算得 6 系平均值', () => {
+test('頂欄物傷與魔傷浮動提示正確讀取 st.elemDmgUp 與 st.dmgVsElem 的 6 系最大值', () => {
   const ctx = loadGameContext();
 
   const st = {
@@ -75,9 +75,9 @@ test('頂欄物傷與魔傷浮動提示正確讀取 st.elemDmgUp 與 st.dmgVsEle
   assert.ok(physDesc, '物傷應有 data-tt-desc');
   assert.ok(magicDesc, '魔傷應有 data-tt-desc');
 
-  assert.match(physDesc, /對屬性敵平均：<\/span>10\.0%/);
-  assert.match(physDesc, /屬性傷害平均提升：<\/span>38\.8%/);
+  assert.match(physDesc, /對屬性敵最大加成：<\/span>60\.0%/);
+  assert.match(physDesc, /屬性傷害最大提升：<\/span>233\.0%/);
 
-  assert.match(magicDesc, /對屬性敵平均：<\/span>10\.0%/);
-  assert.match(magicDesc, /屬性傷害平均提升：<\/span>38\.8%/);
+  assert.match(magicDesc, /對屬性敵最大加成：<\/span>60\.0%/);
+  assert.match(magicDesc, /屬性傷害最大提升：<\/span>233\.0%/);
 });
