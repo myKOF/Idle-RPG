@@ -83,9 +83,22 @@ test('掉落率在區間之內確實不變——這是整條規則的前提', ()
   assert.equal(ctx.equipmentTierLevel(100), ctx.equipmentTierLevel(149));
 });
 
-/* ============ 2. 規則：退回底部、不震盪、不死鎖 ============ */
+/* ============ 2. 規則：刷與推兩個階段輪流 ============ */
 
-const FARM_PARK = { source: 'panels.eval.tier', pushHoldSec: 900 };
+/* ☠️ 第一版寫成條件式（目標達標且裝等追平才准往上搬，自動推關也交給它），
+   實測 24 小時 × 5 seed 全部卡在關卡 64：等級中位 335 → 87、最高關卡 198 → 64、
+   物攻 263,079 → 83,071。擊殺反而 +46%、死亡 −27%，所以「刷的地方選對了」
+   這一半是成立的，垮掉的是「什麼時候該往前推」。
+
+   原因是 best 只能靠走出來，而往前走的過程中殺敵速度必然會掉；一掉就不達標、
+   一不達標就被拉回底部，於是一趟 50 關的走法永遠走不完。
+
+   現在改成兩個**有界**的階段輪流，兩邊都只看計時器。下面這幾支測試盯的就是
+   「不管處境多糟，兩個階段都一定會輪到」——那是不再死鎖的唯一保證。 */
+
+const FARM_SEC = 1800;
+const PUSH_SEC = 600;
+const FARM_PARK = { source: 'panels.eval.tier', farmSec: FARM_SEC, pushSec: PUSH_SEC };
 
 function gatePolicy(gateExtra) {
   return createPolicy({
@@ -110,8 +123,8 @@ function gatePolicy(gateExtra) {
 
 /* 合成觀測點。tier 的欄位語意與評估器一致（見上半部的真引擎測試）：
    角色在草原 100~149 這一格，下一格是 150，已經到過 145 關。 */
-function fst(sec, stage, tierExtra) {
-  return {
+function fst(sec, stage, tierExtra, ctx) {
+  const s = {
     gameTimeSec: sec,
     view: { stage: stage },
     panels: {
@@ -131,6 +144,8 @@ function fst(sec, stage, tierExtra) {
       }
     }
   };
+  if (ctx) s.ctx = ctx;
+  return s;
 }
 
 function retreats(cmds) { return cmds.filter((c) => c.name === 'stage.go'); }
@@ -139,76 +154,93 @@ function autoOn(cmds) {
   return c ? c.args.on : null;
 }
 
-test('裝等還沒追平這一格：退回底部，delta 剛好落在 floor', () => {
-  /* 「裝等落後」＝這一格還有東西可以撿。使用者說的「材料跟裝備掉落數的
-     權重比等級高」在這裡就是：先把這一格刷滿，不要急著往前。 */
+test('開場是刷：退回這一格的底部，而且關掉自動推關', () => {
   const p = gatePolicy();
-  const r = retreats(p.decide(fst(10, 149, { equippedItemLevelMin: 50 })));
-  assert.equal(r.length, 1);
-  assert.equal(r[0].args.delta, 100 - 149);
-});
-
-test('已經站在底部就不再送退關指令', () => {
-  const p = gatePolicy();
-  const cmds = p.decide(fst(10, 100, { equippedItemLevelMin: 50, farmFloorHpRatio: null }));
-  assert.equal(retreats(cmds).length, 0);
-  assert.equal(autoOn(cmds), false, '待在這一格＝自動推關要關掉');
-});
-
-test('條件都滿足就搬去下一格，而且 best 之內是直接跳', () => {
-  /* stageGo 在 [1, min(best, 地圖上限)] 之內是直接跳（js/combat.js:993），
-     所以搬到已經到過的關卡零成本，只有超出 best 的那一段要逐關清。 */
-  const p = gatePolicy();
-  const cmds = p.decide(fst(10, 100));       // 裝等追平（100）、無目標阻擋
+  const cmds = p.decide(fst(10, 149));
   const r = retreats(cmds);
   assert.equal(r.length, 1);
-  assert.equal(r[0].args.delta, 145 - 100, '先跳到 best，剩下 5 關交給自動推關');
-  assert.equal(autoOn(cmds), true);
-});
-
-test('下一格已在 best 之內時一步到位，之後就把自動推關關掉', () => {
-  const p = gatePolicy();
-  const cmds = p.decide(fst(10, 100, { best: 180 }));
-  assert.equal(retreats(cmds)[0].args.delta, 150 - 100);
-  const arrived = p.decide(fst(20, 150, {
-    best: 180, itemLevelHere: 150, farmFloorStage: 150, nextFarmStage: 200,
-    equippedItemLevelMin: 100, farmFloorHpRatio: null
-  }));
-  assert.equal(retreats(arrived).length, 0);
-  assert.equal(autoOn(arrived), false, '到站就停——繼續往前是同一格裡最貴的一關');
-});
-
-test('地圖打到頂（nextFarmStage 為 null）就待在底部，不亂衝', () => {
-  const p = gatePolicy();
-  const cmds = p.decide(fst(10, 230, {
-    best: 230, itemLevelHere: 200, farmFloorStage: 200,
-    nextFarmStage: null, farmFloorHpRatio: 1.9
-  }));
-  assert.equal(retreats(cmds)[0].args.delta, 200 - 230);
+  assert.equal(r[0].args.delta, 100 - 149);
   assert.equal(autoOn(cmds), false);
 });
 
-test('搬家之後的 pushHoldSec 內不再往上搬，時間到了自動解除', () => {
-  /* 沒有遲滯會震盪：退到底 → 目標達標 → 往上跳 → 打不動 → 再退到底。
-     那趟「打不動」正是要消除的浪費。 */
+test('刷的階段站在底部就不再送退關指令', () => {
   const p = gatePolicy();
-  assert.equal(retreats(p.decide(fst(10, 149, { equippedItemLevelMin: 50 }))).length, 1);
-
-  /* 退完之後裝等追平了（撿到當格裝備），照理可以搬家——但遲滯要擋住。 */
-  assert.equal(retreats(p.decide(fst(20, 100))).length, 0, '剛退回來就往上搬＝震盪');
-  assert.equal(autoOn(p.decide(fst(900, 100))), false, '還在遲滯期內');
-  assert.equal(autoOn(p.decide(fst(911, 100))), true, '遲滯到期應恢復搬家');
+  const cmds = p.decide(fst(10, 100, { farmFloorHpRatio: null }));
+  assert.equal(retreats(cmds).length, 0);
+  assert.equal(autoOn(cmds), false);
 });
 
-test('遲滯只擋往上搬，不擋退關——擋住退關才會死鎖', () => {
-  /* docs/SIM_HARNESS.md 記過兩次死鎖，兩次都是某個下限把退關擋死。
-     這裡在遲滯期內把角色放到格子深處（死亡退關之後又被推上去），
-     退關必須照樣送得出去。 */
+test('farmSec 到期就換成推：先跳回 best，然後開自動推關', () => {
+  /* 跳回 best 是免費的（stageGo 在 [1, min(best, 地圖上限)] 之內直接跳），
+     所以每次推進期都從前線開始，不必把走過的關卡再走一遍。 */
   const p = gatePolicy();
-  p.decide(fst(10, 149, { equippedItemLevelMin: 50 }));
-  const cmds = p.decide(fst(200, 140, { equippedItemLevelMin: 50, farmFloorHpRatio: 11.9 }));
-  assert.equal(retreats(cmds).length, 1, '遲滯期內仍應退得回去');
+  p.decide(fst(10, 149));                                   // 刷：退到 100
+  const cmds = p.decide(fst(10 + FARM_SEC, 100));
+  assert.equal(retreats(cmds)[0].args.delta, 145 - 100, '應該跳回 best');
+  assert.equal(autoOn(cmds), true);
+});
+
+test('推進期不看瞬時殺敵速度——那正是第一版卡在關卡 64 的死因', () => {
+  const p = gatePolicy();
+  p.decide(fst(10, 149));
+  /* 宣告 killRate 目標並且明確不達標。舊版在這裡會被拉回底部，
+     於是 best 永遠推不動；現在推進期只認計時器。 */
+  const blocked = { deficit: { killRate: { met: false, unknown: false } } };
+  const cmds = p.decide(fst(10 + FARM_SEC, 145, {}, blocked));
+  assert.equal(autoOn(cmds), true, '推進期就是要往前推，殺得慢不是放棄的理由');
+});
+
+test('卡關重試仍然是硬煞車：真的打不過就不往前送死', () => {
+  const p = gatePolicy();
+  p.decide(fst(10, 149));
+  const cmds = p.decide(fst(10 + FARM_SEC, 145, {}, { retryWaiting: true }));
+  assert.equal(autoOn(cmds), false);
+});
+
+test('pushSec 到期就換回刷，而且會回到底部', () => {
+  const p = gatePolicy();
+  p.decide(fst(10, 149));                                   // 刷
+  p.decide(fst(10 + FARM_SEC, 100));                        // 轉推
+  const cmds = p.decide(fst(10 + FARM_SEC + PUSH_SEC, 140));
   assert.equal(retreats(cmds)[0].args.delta, 100 - 140);
+  assert.equal(autoOn(cmds), false);
+});
+
+test('推到下一格就提前收工，不繼續往同一格的深處走', () => {
+  /* 到站之後再往前是同一格裡最貴的一關：掉落與裝等都不變，怪物血量卻一路指數成長。 */
+  const p = gatePolicy();
+  p.decide(fst(10, 149));
+  p.decide(fst(10 + FARM_SEC, 100));                        // 轉推
+  const arrived = p.decide(fst(10 + FARM_SEC + 60, 150, {
+    best: 180, itemLevelHere: 150, farmFloorStage: 150, nextFarmStage: 200,
+    farmFloorHpRatio: null
+  }));
+  assert.equal(retreats(arrived).length, 0);
+  assert.equal(autoOn(arrived), false, '到站就轉回刷');
+});
+
+test('兩個階段一定會輪到——這是不再死鎖的唯一保證', () => {
+  /* 把處境設成最糟：目標不達標、裝等落後、站在打不動的深處。
+     第一版在這個狀態下會永遠停在刷；現在必須看得到推進期。 */
+  const p = gatePolicy();
+  const bad = { deficit: { killRate: { met: false, unknown: false } } };
+  const phases = [];
+  for (let t = 10; t <= 10 + (FARM_SEC + PUSH_SEC) * 2; t += 60) {
+    phases.push(autoOn(p.decide(fst(t, 149, { equippedItemLevelMin: 1 }, bad))));
+  }
+  assert.ok(phases.some((x) => x === true), '整整兩輪都沒有推進期＝死鎖');
+  assert.ok(phases.some((x) => x === false), '整整兩輪都沒有刷＝機制沒生效');
+});
+
+test('地圖打到頂（nextFarmStage 為 null）推進期只跳回 best，不亂衝', () => {
+  const p = gatePolicy();
+  const tier = {
+    best: 230, itemLevelHere: 200, farmFloorStage: 200,
+    nextFarmStage: null, farmFloorHpRatio: 1.9
+  };
+  p.decide(fst(10, 230, tier));                             // 刷：退到 200
+  const cmds = p.decide(fst(10 + FARM_SEC, 200, tier));
+  assert.equal(retreats(cmds)[0].args.delta, 230 - 200);
 });
 
 test('沒宣告 farmPark 的策略行為完全不變', () => {

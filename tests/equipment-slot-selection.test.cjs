@@ -207,9 +207,8 @@ test('空裝備格可點擊，且選取樣式套用於空格', () => {
   assert.match(ui, /if \(selectedSlot && selectedEquipSlots\.indexOf\(el\.getAttribute\('data-slot'\)\) >= 0 && el\.classList\.contains\('eq-slot'\)\)/);
   assert.match(ui, /inventory-selection-match/);
   assert.match(css, /\.eq-slot\.empty\s*\{[\s\S]*cursor:\s*pointer/);
-  assert.match(css, /\.eq-slot\.inventory-selection-match\s*\{[\s\S]*border-width:\s*2px\s*!important/);
-  assert.match(css, /\.eq-slot\.inventory-selection-match\s*\{[\s\S]*outline:\s*2px\s+solid\s+var\(--eq-selection-border-color\)/);
-  assert.match(css, /\.eq-slot\.inventory-selection-match\s*\{[\s\S]*outline-offset:\s*0\s*!important/);
   assert.match(css, /\.eq-slot\.inventory-selection-match\s*\{[\s\S]*background:\s*rgba\(0,\s*0,\s*0,\s*0\.7\)/);
-  assert.match(css, /\.eq-slot\.inventory-selection-match\s*\{[\s\S]*filter:\s*brightness\(1\.2\)/);
+  /* 高亮的長相（加粗原本的品質邊框、不提亮、不用 outline）由
+     tests/equipment-selection-border.test.cjs 專責，這裡只確認樣式存在。 */
+  assert.match(css, /\.eq-slot\.inventory-selection-match\s*\{[\s\S]*border-width:\s*3px\s*!important/);
 });

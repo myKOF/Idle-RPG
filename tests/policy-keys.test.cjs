@@ -446,3 +446,38 @@ test('合成寶石必須排在鑲嵌之前（先合成才鑲得到最高品質�
       `${f}：gem-compose 必須排在 socket-gems 前面（目前 ${compose} vs ${socket}）`);
   }
 });
+
+test('learnPlan 宣告的被動清單必須涵蓋遊戲裡所有被動技', () => {
+  /* 被動不佔裝載欄、學會即常駐，所以「主動配滿之後的點數全投被動」這條策略
+     只在**清單涵蓋得夠廣**時才成立。清單短了不會有任何徵兆——技能點就靜靜地
+     堆著，而堆積本身在面板上看起來很正常。
+
+     實測一份 Lv.392 的快照：技能點 118/348 閒置，已學的 23 支全部 10/10
+     （23×10=230，348−230=118）。不是「還沒投完」，是清單學光了沒東西可投——
+     遊戲有 19 個被動，策略只宣告了 8 個（而且舊註解還寫著「全部 10 個被動」，
+     本身就是錯的）。漏掉的 11 個裡包含殺陣反射（暴擊時免費再攻擊）與
+     死神節拍（擊殺減冷卻）這種中後期的主力被動。
+
+     所以這裡拿遊戲當權威逐一比對：日後 SKILLS 新增被動，這支會紅。
+     真的有不想投的（例如物理流的 matkPct），做法是排在清單最後面，
+     不是把它留在清單外——留在外面等於「有剩也不投」，而點數有剩時投什麼都比不投好。 */
+  const passives = Object.keys(SKILLS).filter((k) => SKILLS[k].cat === 'passive');
+  assert.ok(passives.length > 0, '前提：遊戲裡要有被動技');
+
+  for (const f of POLICY_FILES) {
+    const p = loadPolicy(f);
+    for (const rule of p.rules) {
+      const name = rule.learnPlan && rule.learnPlan.passives;
+      if (!name) continue;
+      const list = p.lists[name] || [];
+      const missing = passives.filter((k) => list.indexOf(k) < 0);
+      assert.deepEqual(missing, [],
+        `${f} 的 ${name} 沒有涵蓋這些被動：${missing.join(', ')}` +
+        '——技能點會靜靜地堆著，不會有任何錯誤訊息');
+      const notPassive = list.filter((k) => !SKILLS[k] || SKILLS[k].cat !== 'passive');
+      assert.deepEqual(notPassive, [],
+        `${f} 的 ${name} 有不是被動技的項目：${notPassive.join(', ')}` +
+        '——主動技學了不裝就是死點，那正是這條策略要避免的事');
+    }
+  }
+});
