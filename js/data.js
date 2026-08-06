@@ -1230,7 +1230,7 @@ function isZoneUnlocked(zoneKey) {
   var zone = ZONES[zoneKey];
   if (!zone) return false;
   if (zone.reqReincarnation && (!G || !G.player || Number(G.player.reincarnations) < zone.reqReincarnation)) return false;
-  if (zone.reqZone && zoneBestProgress(zone.reqZone) < (zone.reqStage || zoneMaxStage(zone.reqZone))) return false;
+  if (zone.reqZone && zoneClearedStage(zone.reqZone) < (zone.reqStage || zoneMaxStage(zone.reqZone))) return false;
   return true;
 }
 /* 依地圖與關卡區間的掉落配置。每一列為 [min, max, 裝備0~10機率, gem1~5, 附魔書, 太古精華, 魔塵]。

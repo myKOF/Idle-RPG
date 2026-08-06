@@ -97,6 +97,28 @@ tick 三純量、`task.claim` 指令）、`js/worker/sim.worker.js`、`docs/WORK
 
 完成後交給：Antigravity 驗證（驗證重點見任務回報）。
 
+## Codex：地圖自動推進必須擊敗最後 Boss（2026-08-06）
+
+狀態：已完成
+
+任務分類：地圖解鎖／自動推進規則
+
+任務目的：只有實際擊敗目前地圖最高關卡的 Boss，才允許自動推進切換至下一張地圖第 1 關；僅抵達最高關卡不可解鎖下一張地圖。
+
+負責 AI：Codex
+
+允許修改：`docs/AI_TASKS.md`、`js/data.js`、`js/combat.js`、`js/worker/sim.worker.js`、`js/bridge.js`、`tests/multi-enemy.test.cjs`、`tests/stage-rework.test.cjs`、`tests/god-realm-zones.test.cjs`
+
+禁止修改：戰鬥數值、掉落資料、Worker Protocol 契約與其他 AI 進行中的檔案。
+
+前置依賴：既有自動推進跨地圖功能已完成。
+
+驗收方式：驗證抵達最高關卡但 `cleared` 尚未達上限時不可解鎖／跨圖；擊敗最後 Boss 後可切換至下一張地圖第 1 關。
+
+完成結果：地圖解鎖、手動切圖與自動跨圖均改用前一張地圖實際擊敗的最高關卡 `cleared` 判定；自動推進跨圖另加來源地圖上限檢查。同步更新 Worker 快取版號與相關測試資料。
+
+測試結果：地圖／戰鬥回歸測試 21/21 通過；完整 `npm test` 1125/1125 通過；`npm run build` 245/245 通過。
+
 ## Codex：大量拆解後零件升級點擊延遲（2026-08-06）
 
 狀態：已完成

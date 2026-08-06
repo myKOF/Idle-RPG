@@ -225,6 +225,8 @@ test('自動推進打通地圖上限後切到下一張地圖第 1 關', () => {
   context.healPlayer = () => {};
   context.FIELD._waveClearPending = true;
 
+  assert.equal(context.isZoneUnlocked('desert'), false);
+  assert.equal(context.nextAutoAdvanceZone('plains'), null);
   context.completeFieldWave(context.getStats());
 
   assert.equal(context.G.stage.zone, 'desert');

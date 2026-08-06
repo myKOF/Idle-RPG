@@ -172,8 +172,8 @@ function switchZone(zoneKey) {
     var zd = ZONES[zoneKey];
     if (!isZoneUnlocked(zoneKey)) return;
     if (zd.reqZone) {
-        var b = (G.stage.zone === zd.reqZone) ? G.stage.best : ((G.zoneProgress && G.zoneProgress[zd.reqZone] && G.zoneProgress[zd.reqZone].best) || 1);
-        if (b < zd.reqStage) return; // 尚未解鎖
+        var cleared = zoneClearedStage(zd.reqZone);
+        if (cleared < zd.reqStage) return;
     }
     // 保存目前場景進度（cleared 只住在 zoneProgress，整包覆寫時必須帶著走）
     if (!G.zoneProgress) G.zoneProgress = {};
@@ -202,6 +202,7 @@ function switchZone(zoneKey) {
 function nextAutoAdvanceZone(zoneKey) {
     if (typeof ZONE_LIST === 'undefined' || !Array.isArray(ZONE_LIST)) return null;
     var currentMax = zoneMaxStage(zoneKey);
+    if (typeof zoneClearedStage === 'function' && zoneClearedStage(zoneKey) < currentMax) return null;
     var index = ZONE_LIST.indexOf(zoneKey);
     if (index < 0) return null;
     for (var i = index + 1; i < ZONE_LIST.length; i++) {
