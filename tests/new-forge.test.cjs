@@ -656,7 +656,7 @@ test('index.html/ui.js/main.js/factory.js/gm.js 接線（合併版）', () => {
     assert.match(ui, new RegExp(`sendUiCommand\\('newforge\\.${name}'`), `應送出 newforge.${name}`);
   });
   assert.match(ui, /keys: \[furnacePendingKey\(/, '每座熔爐應以 furnaceId 單飛');
-  assert.match(ui, /fmtFull\(nf\.queue\.length\)/, '佇列應顯示完整數字');
+  assert.match(ui, /fmtFull\(nf\.queueCount !== undefined \? nf\.queueCount : \(nf\.queue \? nf\.queue\.length : 0\)\)/, '佇列顯示應使用輕量摘要數量');
   assert.ok(!/newForgeHostAvailable/.test(ui), '本地服閘門應移除');
   assert.ok(!/renderFactory/.test(ui), '舊生產線渲染應移除');
   assert.match(ui, /function updateForgeTabGlow/, '應有頁籤閃爍控制');

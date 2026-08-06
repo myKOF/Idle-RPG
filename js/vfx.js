@@ -30,6 +30,7 @@ var VFX_MAX_TARGETS = 8;       // 單一事件最多為幾個目標生成特效
 var VFX_LAYER_ID = 'bf-vfx-layer';
 var _vfxNodes = [];
 var _vfxEnabled = true;
+var _vfxGeneration = 0;
 
 /* 元素主題：c1 主色、c2 亮部／輔色、glow 光暈。無屬性事件退回 spec.color 單色。 */
 var VFX_ELEM_THEME = {
@@ -41,7 +42,10 @@ var VFX_ELEM_THEME = {
   dark:      { c1: '#b76cff', c2: '#2e1046', glow: 'rgba(183, 108, 255, 0.9)' }
 };
 
-function vfxSetEnabled(on) { _vfxEnabled = !!on; if (!on) vfxClear(); }
+function vfxSetEnabled(on) {
+  _vfxEnabled = !!on;
+  if (!on) vfxClear();
+}
 
 /* ---- 圖層與座標 ---- */
 /* 特效圖層掛在「事件目標所在」的 .battle-scene 上：野外掛棋盤景、高塔掛塔景。
@@ -73,11 +77,25 @@ function vfxLayer(anchorId) {
 }
 
 function vfxClear() {
+  _vfxGeneration++;
   for (var i = 0; i < _vfxNodes.length; i++) {
     var n = _vfxNodes[i];
     if (n && n.parentNode) n.parentNode.removeChild(n);
   }
   _vfxNodes = [];
+  if (typeof document === 'undefined' || !document.querySelectorAll) return;
+  var hitCards = document.querySelectorAll('.enemy-card, .combatant');
+  for (var ci = 0; ci < hitCards.length; ci++) {
+    var card = hitCards[ci];
+    if (!card.classList) continue;
+    for (var hi = 0; hi < VFX_HIT_CLASSES.length; hi++) card.classList.remove(VFX_HIT_CLASSES[hi]);
+    card._vfxHitUntil = 0;
+  }
+  var scenes = document.querySelectorAll('.battle-scene');
+  for (var si = 0; si < scenes.length; si++) {
+    if (!scenes[si].classList) continue;
+    scenes[si].classList.remove('vfx-scene-shake', 'vfx-scene-shake-strong');
+  }
 }
 
 function vfxTrack(node, ms) {
@@ -193,7 +211,9 @@ var VFX_HIT_CLASSES = ['vfx-hit', 'vfx-hit-strong', 'vfx-hit-fire', 'vfx-hit-ice
   'vfx-hit-lightning', 'vfx-hit-poison', 'vfx-hit-light', 'vfx-hit-dark'];
 function vfxHitReact(targetId, elem, delayMs, strong) {
   if (!targetId) return;
+  var generation = _vfxGeneration;
   setTimeout(function () {
+    if (!_vfxEnabled || generation !== _vfxGeneration) return;
     var el = document.getElementById(targetId);
     var card = (el && el.closest) ? (el.closest('.enemy-card') || el.closest('.combatant')) : null;
     if (!card || !card.classList) return;
@@ -203,12 +223,12 @@ function vfxHitReact(targetId, elem, delayMs, strong) {
     card._vfxHitUntil = until;
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
-        if (card._vfxHitUntil !== until) return;  // 已被更新的一擊接手
+        if (!_vfxEnabled || generation !== _vfxGeneration || card._vfxHitUntil !== until) return;  // 已被更新的一擊接手
         card.classList.add('vfx-hit');
         if (strong) card.classList.add('vfx-hit-strong');
         if (elem && VFX_ELEM_THEME[elem]) card.classList.add('vfx-hit-' + elem);
         setTimeout(function () {
-          if (card._vfxHitUntil !== until) return;
+          if (generation !== _vfxGeneration || card._vfxHitUntil !== until) return;
           for (var j = 0; j < VFX_HIT_CLASSES.length; j++) card.classList.remove(VFX_HIT_CLASSES[j]);
         }, 360);
       });
@@ -218,14 +238,18 @@ function vfxHitReact(targetId, elem, delayMs, strong) {
 
 /* 畫面震動：大爆點（隕石、引爆）時整個戰鬥畫面晃一下。 */
 function vfxSceneShake(layer, delayMs, strong) {
+  var generation = _vfxGeneration;
   setTimeout(function () {
+    if (!_vfxEnabled || generation !== _vfxGeneration) return;
     var scene = (layer && layer.parentNode) ? layer.parentNode : null;
     if (!scene || !scene.classList) return;
     scene.classList.remove('vfx-scene-shake', 'vfx-scene-shake-strong');
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
+        if (!_vfxEnabled || generation !== _vfxGeneration) return;
         scene.classList.add(strong ? 'vfx-scene-shake-strong' : 'vfx-scene-shake');
         setTimeout(function () {
+          if (generation !== _vfxGeneration) return;
           scene.classList.remove('vfx-scene-shake', 'vfx-scene-shake-strong');
         }, strong ? 520 : 340);
       });

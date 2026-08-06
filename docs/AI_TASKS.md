@@ -97,6 +97,46 @@ tick 三純量、`task.claim` 指令）、`js/worker/sim.worker.js`、`docs/WORK
 
 完成後交給：Antigravity 驗證（驗證重點見任務回報）。
 
+## Codex：大量拆解後零件升級點擊延遲（2026-08-06）
+
+狀態：已完成
+
+任務分類：熔爐 UI／Worker 面板效能／點擊可靠性
+
+任務目的：大量裝備快速拆解後，避免數千件佇列裝備完整複製到主執行緒，並避免熔爐頁重建零件升級按鈕造成 pending 狀態看似失效。
+
+負責 AI：Codex
+
+允許修改：`docs/AI_TASKS.md`、`js/worker/sim.worker.js`、`js/ui.js`、`tests/new-forge.test.cjs`、`tests/newforge-panel-performance.test.cjs`
+
+禁止修改：Worker Protocol、戰鬥數值、掉落資料、其他 AI 進行中的檔案。
+
+前置依賴：無。
+
+完成結果：新增熔爐輕量面板投影，只傳佇列數量、傳送帶摘要與零件設定；零件升級區改用內容變更檢查，保留 pending 按鈕的 disabled 狀態。
+
+測試結果：熔爐／UI／Worker 回歸測試 58/58 通過；`npm run build` 244/244 通過。
+
+## Codex：修正零件升級後面板仍顯示 T1（2026-08-06）
+
+狀態：已完成
+
+任務分類：熔爐 UI 投影／零件等級顯示
+
+任務目的：修正熔爐輕量面板投影中的空 `partLevels` 優先於 `factory.partLevels`，導致實際已扣除高階升級費用但畫面仍顯示 T1。
+
+負責 AI：Codex
+
+允許修改：`docs/AI_TASKS.md`、`js/worker/sim.worker.js`、`tests/newforge-panel-performance.test.cjs`
+
+禁止修改：存檔格式、戰鬥數值、升級公式與其他 AI 進行中的檔案。
+
+前置依賴：前一項熔爐面板效能修正已完成。
+
+完成結果：移除 `newForgePanelView` 中錯誤的空零件等級欄位，讓 UI 正確回退使用 `factory.partLevels`；補上回歸斷言。
+
+測試結果：熔爐／零件升級回歸測試 55/55 通過；`npm run build` 244/244 通過。
+
 ## Codex：關閉自動推進時仍解鎖下一關（2026-08-05）
 
 狀態：已完成
@@ -158,6 +198,26 @@ tick 三純量、`task.claim` 指令）、`js/worker/sim.worker.js`、`docs/WORK
 測試結果：定向測試 32/32 通過；`npm run build` 242/242 通過；完整 `npm test` 1089/1089 通過。
 
 完成結果：`renderBattle()` 對已套用 `.is-dead` 且生命值為 0 的卡片直接保留現有死亡淡出視覺，直到卡片被清除或新一波重建。
+
+## Codex：背景切回後清理過期戰鬥特效（2026-08-06）
+
+狀態：已完成
+
+任務分類：戰鬥 UI／背景分頁恢復
+
+任務目的：玩家切到背景分頁一段時間再回來時，不因瀏覽器暫停 CSS animation 與 timer，讓過期的領域、光束、粒子與受擊閃光堆積在戰鬥畫面。
+
+負責 AI：Codex
+
+允許修改：`docs/AI_TASKS.md`、`js/ui.js`、`js/vfx.js`、`tests/vfx-background.test.cjs`
+
+禁止修改：Worker Protocol、戰鬥數值、掉落資料、其他 AI 進行中的檔案。
+
+前置依賴：無。
+
+完成結果：切入背景時停用並清除 VFX 節點、受擊閃光與場景震動，並以 generation 使已排程的延遲 callback 失效；回到前景後重新啟用特效。
+
+測試結果：定向測試 31/31 通過；`npm run build` 243/243 通過；完整 `npm test` 有 1 項與本任務無關的既有裝備欄樣式測試失敗（測試仍期待 `brightness(1.2)`，目前樣式為 `brightness(1.7)`）。
 
 ## Codex：第三套裝備改為 1 轉 Lv.500 開放（2026-08-05）
 
