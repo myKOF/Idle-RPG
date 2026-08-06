@@ -606,7 +606,7 @@ function skillElemMixOf(aCfg) {
    穿透本身不設上限（STAT_CAPS.pPen/mPen = 0），改由這條飽和曲線收斂：
      穿透 100% → 40%｜250% → 62.5%｜350% → 70%｜500% → 76.9%｜1000% → 87%｜3000% → 95.2%
    曲線趨近但到不了 100%：敵方防禦永遠保留一小部分，也不存在溢出增傷。 */
-var PEN_IGNORE_A = 1.5;
+var PEN_IGNORE_A = 0.75;
 function penIgnoreRatio(penPct) {
   var rate = Math.max(0, Number(penPct) || 0) / 100;
   if (rate <= 0) return 0;
