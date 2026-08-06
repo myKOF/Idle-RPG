@@ -1,5 +1,12 @@
 # PATCH.md
 
+## 調整：神鑄系統預設自動鑄造為開啟、預設使用魔塵為關閉（2026-08-06）
+
+- **神鑄預設狀態調整**：
+  - `player.js` 的 `newGameState()` 將 `forge.autoForge` 初始值設為 `true`（自動鑄造預設打勾），`forge.autoDust` 初始值設為 `false`（自動使用魔塵預設關閉）。
+  - `forge.js` 的 `forgeState()` 狀態封裝與屬性補全統一維護為 `autoForge: true` 與 `autoDust: false`。
+- **驗證**：單元測試 1151 項全數通過，`build_check.cjs` 250 個檔案編譯檢查全 OK。
+
 ## 新增：物理／魔法穿透寶石（2026-08-06）
 
 - **兩種新寶石**（`GEM_TYPES` → js/data.js）：`piercePhys` 穿甲寶石（🗡️ `pPen` 物理穿透%）、`pierceMagic` 穿魔寶石（🪄 `mPen` 魔法穿透%）。`base=10` 且 `linear: true`，故 1~10 階為 **10/20/30/40/50/100/200/400/800/1600%**（1~5 階 `base×等級`、6 階起每階 ×2，與元素抗性寶石同一條曲線）。圖示沿用屬性面板的 🗡️／🪄。
