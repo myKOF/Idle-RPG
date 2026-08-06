@@ -159,6 +159,26 @@ tick 三純量、`task.claim` 指令）、`js/worker/sim.worker.js`、`docs/WORK
 
 完成結果：`renderBattle()` 對已套用 `.is-dead` 且生命值為 0 的卡片直接保留現有死亡淡出視覺，直到卡片被清除或新一波重建。
 
+## Codex：背景切回後清理過期戰鬥特效（2026-08-06）
+
+狀態：已完成
+
+任務分類：戰鬥 UI／背景分頁恢復
+
+任務目的：玩家切到背景分頁一段時間再回來時，不因瀏覽器暫停 CSS animation 與 timer，讓過期的領域、光束、粒子與受擊閃光堆積在戰鬥畫面。
+
+負責 AI：Codex
+
+允許修改：`docs/AI_TASKS.md`、`js/ui.js`、`js/vfx.js`、`tests/vfx-background.test.cjs`
+
+禁止修改：Worker Protocol、戰鬥數值、掉落資料、其他 AI 進行中的檔案。
+
+前置依賴：無。
+
+完成結果：切入背景時停用並清除 VFX 節點、受擊閃光與場景震動，並以 generation 使已排程的延遲 callback 失效；回到前景後重新啟用特效。
+
+測試結果：定向測試 31/31 通過；`npm run build` 243/243 通過；完整 `npm test` 有 1 項與本任務無關的既有裝備欄樣式測試失敗（測試仍期待 `brightness(1.2)`，目前樣式為 `brightness(1.7)`）。
+
 ## Codex：第三套裝備改為 1 轉 Lv.500 開放（2026-08-05）
 
 狀態：已完成

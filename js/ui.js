@@ -4653,9 +4653,13 @@ function markVisibleUiDirty() {
 
 function handleVisibilityChange() {
   if (uiRenderingSuspended()) {
+    // 背景分頁會暫停 CSS animation 與 timer；保留這些節點會讓過期的
+    // 領域／光束／粒子在回到前景時一起恢復，形成特效堆積。
+    if (typeof vfxSetEnabled === 'function') vfxSetEnabled(false);
     clearBackgroundEnemyFloats();
     return;
   }
+  if (typeof vfxSetEnabled === 'function') vfxSetEnabled(true);
   clearBackgroundEnemyFloats();
   showBackgroundLatestEnemyFloat();
   markVisibleUiDirty();
