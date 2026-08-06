@@ -505,7 +505,8 @@
       return { ok: true, message: '技能熟練度設定為 Lv.' + level };
     }
     if (command === 'gem') {
-      type = String(args[0] || '').toLowerCase();
+      var rawType = String(args[0] || '');
+      type = GEM_TYPES[rawType] ? rawType : (Object.keys(GEM_TYPES).find(function (k) { return k.toLowerCase() === rawType.toLowerCase(); }) || rawType);
       level = gmNumber(args[1], 1, GEM_FORGE_MAX_LEVEL);
       count = gmNumber(args[2], 1, 1e300);
       if (!GEM_TYPES[type] || level === null || count === null) return { ok: false, message: '格式：gem 寶石key 等級 數量' };
