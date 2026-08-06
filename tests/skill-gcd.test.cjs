@@ -200,6 +200,23 @@ test('傷害範圍 all 的技能命中場上全部敵人', () => {
 
 /* 2026-07-31：護盾技能改為「最大生命 × 技能護盾%」。
    舊式是「目前護盾基準 ×(1 + 技能護盾%)」，標示 34% 實得 134% 最大生命，約為標示的 4 倍。 */
+test('魔法屏障在護盾剩 20% 以下即可提前施放', () => {
+  const context = loadGameContext();
+  const skill = context.skillDef('manaBarrier');
+  const fx = context.effectiveFx('manaBarrier', skill, 1);
+  const stats = context.getStats();
+  const player = playerEntity();
+  player.shield = 201;
+
+  assert.equal(context.skillConditionOk(skill, fx, player, null, stats), false);
+  player.shield = 200;
+  assert.equal(context.skillConditionOk(skill, fx, player, null, stats), true);
+  player.shield = 1;
+  assert.equal(context.skillConditionOk(skill, fx, player, null, stats), true);
+  player.shield = 0;
+  assert.equal(context.skillConditionOk(skill, fx, player, null, stats), true);
+});
+
 test('護盾技能給予最大生命固定比例的護盾，不以目前護盾為基準乘算', () => {
   const context = loadGameContext();
   const lv = 80;

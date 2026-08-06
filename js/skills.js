@@ -2256,6 +2256,7 @@ function unequipSkillFromLoadout(id) {
 }
 
 /* ---- 施放條件（AI）：fx 需傳入等級解析後的效果 ---- */
+var SHIELD_RECAST_THRESHOLD = 0.2;
 function skillConditionOk(sk, fx, pEnt, target, st) {
   var hpPct = pEnt.hp / st.hp * 100;
   switch (sk.ai) {
@@ -2269,7 +2270,8 @@ function skillConditionOk(sk, fx, pEnt, target, st) {
       if (!effectActive(pEnt, 'stun') && !effectActive(pEnt, 'slow') && !hasDots(pEnt)) return false;
       break;
     case 'shield':
-      if ((pEnt.shield || 0) > st.hp * 0.05) return false;
+      var shield = Math.max(0, Number(pEnt.shield) || 0);
+      if (shield > st.hp * SHIELD_RECAST_THRESHOLD) return false;
       break;
   }
   // 傷害/減益類需要目標
