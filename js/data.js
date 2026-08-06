@@ -1442,20 +1442,20 @@ var GEM_TYPES = {
   malachite: { name: '孔雀石', emoji: '💚', stat: 'pRes', statName: '物理抗性%', base: 0.8, pct: true },
   fluorite: { name: '螢石', emoji: '💙', stat: 'mRes', statName: '魔法抗性%', base: 0.8, pct: true },
   // === 對屬性敵人傷害（六大屬性；linear：1~5 階＝base×等級 線性、6 階起每階 ×2）===
-  // base=0.2：Lv1 0.2%、每級 +0.2% 至 Lv5 1.0%，Lv6 起為前一級 ×2（2.0%、4.0%…）。
-  spinel: { name: '尖晶石', emoji: '🔥', stat: 'dmgVsFire', statName: '對火屬性敵人傷害%', base: 0.2, pct: true, linear: true },
-  aquamarine: { name: '海藍寶石', emoji: '❄️', stat: 'dmgVsIce', statName: '對冰屬性敵人傷害%', base: 0.2, pct: true, linear: true },
-  amazonite: { name: '天河石', emoji: '⚡', stat: 'dmgVsLightning', statName: '對雷屬性敵人傷害%', base: 0.2, pct: true, linear: true },
-  peridot: { name: '橄欖石', emoji: '☠️', stat: 'dmgVsPoison', statName: '對毒屬性敵人傷害%', base: 0.2, pct: true, linear: true },
-  citrine: { name: '黃水晶', emoji: '✨', stat: 'dmgVsLight', statName: '對聖屬性敵人傷害%', base: 0.2, pct: true, linear: true },
-  tourmaline: { name: '黑碧璽', emoji: '🌑', stat: 'dmgVsDark', statName: '對暗屬性敵人傷害%', base: 0.2, pct: true, linear: true },
+  // base=1：Lv1 1.0%、每級 +1.0% 至 Lv5 5.0%，Lv6 起為前一級 ×2（10%、20%…）。
+  spinel: { name: '尖晶石', emoji: '🔥', stat: 'dmgVsFire', statName: '對火屬性敵人傷害%', base: 1, pct: true, linear: true },
+  aquamarine: { name: '海藍寶石', emoji: '❄️', stat: 'dmgVsIce', statName: '對冰屬性敵人傷害%', base: 1, pct: true, linear: true },
+  amazonite: { name: '天河石', emoji: '⚡', stat: 'dmgVsLightning', statName: '對雷屬性敵人傷害%', base: 1, pct: true, linear: true },
+  peridot: { name: '橄欖石', emoji: '☠️', stat: 'dmgVsPoison', statName: '對毒屬性敵人傷害%', base: 1, pct: true, linear: true },
+  citrine: { name: '黃水晶', emoji: '✨', stat: 'dmgVsLight', statName: '對聖屬性敵人傷害%', base: 1, pct: true, linear: true },
+  tourmaline: { name: '黑碧璽', emoji: '🌑', stat: 'dmgVsDark', statName: '對暗屬性敵人傷害%', base: 1, pct: true, linear: true },
   // === 屬性傷害提升（六大屬性，2026-07-23 新增；提升「自身」該屬性元素傷害輸出；linear 同上）===
-  coreFire: { name: '焰核寶石', emoji: '🌋', stat: 'elemDmgFire', statName: '火屬性傷害提升%', base: 0.2, pct: true, linear: true },
-  coreIce: { name: '冰核寶石', emoji: '🌨️', stat: 'elemDmgIce', statName: '冰屬性傷害提升%', base: 0.2, pct: true, linear: true },
-  coreLightning: { name: '雷核寶石', emoji: '🌩️', stat: 'elemDmgLightning', statName: '雷屬性傷害提升%', base: 0.2, pct: true, linear: true },
-  corePoison: { name: '毒核寶石', emoji: '🦠', stat: 'elemDmgPoison', statName: '毒屬性傷害提升%', base: 0.2, pct: true, linear: true },
-  coreLight: { name: '聖核寶石', emoji: '🌟', stat: 'elemDmgLight', statName: '聖屬性傷害提升%', base: 0.2, pct: true, linear: true },
-  coreDark: { name: '暗核寶石', emoji: '🌚', stat: 'elemDmgDark', statName: '暗屬性傷害提升%', base: 0.2, pct: true, linear: true },
+  coreFire: { name: '焰核寶石', emoji: '🌋', stat: 'elemDmgFire', statName: '火屬性傷害提升%', base: 1, pct: true, linear: true },
+  coreIce: { name: '冰核寶石', emoji: '🌨️', stat: 'elemDmgIce', statName: '冰屬性傷害提升%', base: 1, pct: true, linear: true },
+  coreLightning: { name: '雷核寶石', emoji: '🌩️', stat: 'elemDmgLightning', statName: '雷屬性傷害提升%', base: 1, pct: true, linear: true },
+  corePoison: { name: '毒核寶石', emoji: '🦠', stat: 'elemDmgPoison', statName: '毒屬性傷害提升%', base: 1, pct: true, linear: true },
+  coreLight: { name: '聖核寶石', emoji: '🌟', stat: 'elemDmgLight', statName: '聖屬性傷害提升%', base: 1, pct: true, linear: true },
+  coreDark: { name: '暗核寶石', emoji: '🌚', stat: 'elemDmgDark', statName: '暗屬性傷害提升%', base: 1, pct: true, linear: true },
   // === 元素抗性寶石（linear：1~5 階每級 +base%、6 階起每階 ×2）===
   // 六系 base=5 → L1~5：5/10/15/20/25%、L6~10：50/100/200/400/800%（L10 +800%）
   // 全系 base=1 → L1~5：1/2/3/4/5%、L6~10：10/20/40/80/160%（L10 +160%，六大屬性一起加）
