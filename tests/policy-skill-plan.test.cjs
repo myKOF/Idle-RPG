@@ -265,3 +265,64 @@ test('unequip-worst-skill 不得拆掉 boss-loadout 換上去的保命技', () =
       `${c.args.id} 是 BOSS 組，protect 應該擋下——不擋的話兩條規則會整場 BOSS 戰互相拆台`);
   }
 });
+
+/* ---- 空格：擠掉產出技是代價，不是換裝的必要步驟 ----
+
+   實測回報的 Lv.138 存檔：裝載欄 5/6（格數 clamp(4+⌊138/50⌋,4,20)=6），
+   魔法屏障在場上、尋寶直覺 Lv.10/10 學好了坐在板凳上、而且**空著一格**。
+   那一格既沒有輸出也沒有保命，純粹是這條規則無條件執行 swapOut 造成的。 */
+
+test('有空格時不擠掉產出技（空一格＝既沒輸出也沒保命）', () => {
+  const policy = policyWithOnly('danger-loadout');
+  const state = makeState((s) => {
+    s.panels.skills.skills = { manaBarrier: 10, midasTouch: 10, treasureSense: 10 };
+    s.panels.skills.loadoutSize = 6;
+    s.panels.skills.loadout = ['midasTouch', 'treasureSense', 'a', 'b', 'c'];  // 5/6，還有一格
+  });
+  driveHp(policy, state, 10, 200);
+  const cmds = decide(policy, state);
+  assert.deepEqual(cmds.filter((c) => c.name === 'skill.unequipLoadout').map((c) => c.args.id), [],
+    '有空格就不該卸下任何產出技');
+  assert.deepEqual(cmds.filter((c) => c.name === 'skill.equipLoadout').map((c) => c.args.id),
+    ['manaBarrier'], '保命技直接裝進空格');
+});
+
+test('裝載欄已滿才擠，且照宣告順序犧牲', () => {
+  const policy = policyWithOnly('danger-loadout');
+  const state = makeState((s) => {
+    s.panels.skills.skills = { manaBarrier: 10, midasTouch: 10, treasureSense: 10 };
+    s.panels.skills.loadoutSize = 5;
+    s.panels.skills.loadout = ['midasTouch', 'treasureSense', 'a', 'b', 'c'];  // 5/5，滿了
+  });
+  driveHp(policy, state, 10, 200);
+  const cmds = decide(policy, state);
+  assert.deepEqual(cmds.filter((c) => c.name === 'skill.unequipLoadout').map((c) => c.args.id),
+    ['treasureSense'], '只犧牲一個，且是宣告順序在前的尋寶直覺');
+  assert.deepEqual(cmds.filter((c) => c.name === 'skill.equipLoadout').map((c) => c.args.id),
+    ['manaBarrier']);
+});
+
+test('只差一格時，犧牲池跨階共用（逐階各自結算會誤殺點金手）', () => {
+  const policy = policyWithOnly('danger-loadout', bothTiers);
+  const state = makeState((s) => {
+    s.panels.skills.skills = { manaBarrier: 10, regenerate: 10, midasTouch: 10, treasureSense: 10 };
+    s.panels.skills.loadoutSize = 6;
+    s.panels.skills.loadout = ['midasTouch', 'treasureSense', 'a', 'b', 'c'];  // 5/6，要進兩個
+  });
+  driveHp(policy, state, 10, 200);
+  const ids = decide(policy, state).filter((c) => c.name === 'skill.unequipLoadout').map((c) => c.args.id);
+  assert.deepEqual(ids, ['treasureSense'],
+    '兩個保命技只需擠掉一個；點金手是金幣引擎，必須是最後才犧牲的那一個');
+});
+
+test('面板沒給 loadoutSize 時退回舊行為（寧可保守，不要多裝裝不上的）', () => {
+  const policy = policyWithOnly('danger-loadout');
+  const state = makeState((s) => {
+    s.panels.skills.skills = { manaBarrier: 10, midasTouch: 10, treasureSense: 10 };
+    s.panels.skills.loadoutSize = 0;                                            // 面板缺這個欄位
+    s.panels.skills.loadout = ['midasTouch', 'treasureSense', 'a', 'b', 'c'];
+  });
+  driveHp(policy, state, 10, 200);
+  const ids = decide(policy, state).filter((c) => c.name === 'skill.unequipLoadout').map((c) => c.args.id);
+  assert.deepEqual(ids, ['treasureSense'], '格數未知就照舊擠掉，避免送出裝不上的指令');
+});
