@@ -962,7 +962,7 @@ function segmentedLevelGrowth(base, level, brackets) {
 function monsterStatsFor(stage, elite, boss) {
   var hp = (20 + stage * 16) * Math.pow(1.06, stage - 1);
   var atk = (2 + stage * 2) * Math.pow(1.04, stage - 1);
-  var def = (2 + stage * 0.5) * Math.pow(1.06, stage - 1);
+  var def = (2 + stage * 0.5) * Math.pow(1.045, stage - 1);
   var gold = (250 + stage) * Math.pow(1.018, stage - 1);
   var xp = (120 + stage) * Math.pow(1.06, stage - 1);
   var m = {
