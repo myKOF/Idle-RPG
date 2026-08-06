@@ -327,7 +327,7 @@ function computeStats(equipmentOverride) {
   st.critRate = capValue(5 + st.agi * PRIMARY_STAT_EFFECTS.agiCritRate + A.critRate, STAT_CAPS.critRate);   // 暴擊率：基礎 5% + 敏捷係數
   st.critDmg = 150 + A.critDmg;                                  // 暴擊傷害：基礎 150%
   st.comboHits = comboHitsFor(st.critRate);                     // 連擊數：暴擊率破 100% 衍生的額外攻擊次數（僅普攻／技能直接傷害，持續傷害不計）
-  // 穿透不設上限（STAT_CAPS.pPen/mPen = 0）：實際忽略防禦% 由 penIgnorePct 的遞減曲線換算，最高 100%（§3）。
+  // 穿透不設上限（STAT_CAPS.pPen/mPen = 0）：實際忽略防禦% 由 penIgnorePct 的飽和曲線換算（§3）。
   st.pPen = capValue(A.pPen, STAT_CAPS.pPen);
   st.mPen = capValue(A.mPen, STAT_CAPS.mPen);
   st.hit = 100 + st.agi * 0 + A.hit;                          // 命中率：基礎 100% + 敏捷×a + 額外加成（無上限；戰鬥結算再 clamp 5~100）
@@ -599,24 +599,22 @@ function skillElemMixOf(aCfg) {
   return null;
 }
 
-/* ---- 穿透 → 忽略防禦（2026-07-30 改版；2026-08-06 取消溢出增傷）----
-   忽略敵人防禦比率 = min(1, a × (總穿透加成率 × b)^c)
-     總穿透加成率 = 總穿透加成% ÷ 100（b = 100 即「以百分點代入」：穿透 250% → 0.01×250^0.68 ＝ 42.7%）
-   a/b/c 由參數表「3-戰鬥核心／穿透忽略防禦」控制。
-   穿透本身不設上限（STAT_CAPS.pPen/mPen = 0），改由這條遞減曲線收斂：
-     穿透 100% → 22.9%｜250% → 42.7%｜500% → 68.4%｜873% 以上 → 100%（封頂）
-   忽略防禦封頂於 100%（敵方防禦歸零），超出的穿透不再有任何效果——不轉增傷。 */
-var PEN_IGNORE_A = 0.01;
-var PEN_IGNORE_B = 100;
-var PEN_IGNORE_C = 0.68;
+/* ---- 穿透 → 忽略防禦（2026-08-06 改版：飽和曲線）----
+   忽略敵人防禦比率 = 穿透倍率 ÷ (穿透倍率 + a)
+     穿透倍率 = 總穿透加成% ÷ 100（穿透 350% → 3.5；a = 1.5 → 3.5 ÷ (3.5 + 1.5) ＝ 70%）
+   a 由參數表「3-戰鬥核心／穿透忽略防禦」控制（a 越大越難忽略防禦）。
+   穿透本身不設上限（STAT_CAPS.pPen/mPen = 0），改由這條飽和曲線收斂：
+     穿透 100% → 40%｜250% → 62.5%｜350% → 70%｜500% → 76.9%｜1000% → 87%｜3000% → 95.2%
+   曲線趨近但到不了 100%：敵方防禦永遠保留一小部分，也不存在溢出增傷。 */
+var PEN_IGNORE_A = 1.5;
 function penIgnoreRatio(penPct) {
   var rate = Math.max(0, Number(penPct) || 0) / 100;
   if (rate <= 0) return 0;
-  return Math.min(1, PEN_IGNORE_A * Math.pow(rate * PEN_IGNORE_B, PEN_IGNORE_C));
+  return clamp(rate / (rate + PEN_IGNORE_A), 0, 1);   // a 設成 0/負值的異常參數夾回 [0,1]
 }
-// 面板／說明用：實際忽略防禦%（最高 100%）
+// 面板／說明用：實際忽略防禦%（趨近但到不了 100%）
 function penIgnorePct(penPct) { return penIgnoreRatio(penPct) * 100; }
-// 有效防禦乘區：忽略 100% 時防禦歸零，不會出現負防禦
+// 有效防禦乘區：忽略防禦比率直接折在防禦上，不會出現負防禦
 function penDefMultiplier(ignoreRatio) { return Math.max(0, 1 - ignoreRatio); }
 /* 有效穿透 = 屬性穿透% + 技能增益 penUp%
    penUp＝技能（破甲擊／旋風斬 M8／法力灼燒 M8）改版後給予的穿透增益，同時作用於物理與魔法穿透。
@@ -664,7 +662,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   // 潛力技能【絕對領域】／【不屈意志】無敵：免疫本次所有傷害。
   if (dCfg.invuln) { out.invuln = true; return out; }
   // 防禦選型（物理/魔法）＋破甲＋穿透：有效防禦 = 防禦 × (1-破甲%) × (1-忽略防禦%)
-  // 忽略防禦% 由穿透經 penIgnoreRatio 換算（不再等於穿透%本身）；最高 100%，超出無額外效果。
+  // 忽略防禦% 由穿透經 penIgnoreRatio 換算（不再等於穿透%本身）；飽和曲線，不會到 100%，也不轉增傷。
   var dmg = 0;
   if (aCfg.dmgType !== 'magic') {
     var pIgnore = penIgnoreRatio(aCfg.pen);

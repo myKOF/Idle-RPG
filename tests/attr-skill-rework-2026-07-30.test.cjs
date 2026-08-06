@@ -180,34 +180,39 @@ test('穿透上限已取消（STAT_CAPS = 0）', () => {
   assert.equal(c.capValue(1000, c.STAT_CAPS.pPen), 1000);
 });
 
-test('忽略防禦% = a×(穿透%÷100×b)^c，且參數可調', () => {
+test('忽略防禦% = 穿透倍率 ÷ (穿透倍率 + a)，且參數可調', () => {
   const c = loadContext();
-  assert.equal(c.PEN_IGNORE_A, 0.01);
-  assert.equal(c.PEN_IGNORE_B, 100);
-  assert.equal(c.PEN_IGNORE_C, 0.68);
+  assert.equal(c.PEN_IGNORE_A, 1.5);
+  assert.equal(typeof c.PEN_IGNORE_B, 'undefined', 'b 欄已停用');
+  assert.equal(typeof c.PEN_IGNORE_C, 'undefined', 'c 欄已停用');
   assert.equal(c.penIgnoreRatio(0), 0);
-  const expect = (pen) => Math.min(1, c.PEN_IGNORE_A * Math.pow(pen / 100 * c.PEN_IGNORE_B, c.PEN_IGNORE_C));
-  [100, 250, 500, 1000].forEach((pen) => {
+  const expect = (pen) => (pen / 100) / (pen / 100 + c.PEN_IGNORE_A);
+  [100, 250, 350, 500, 1000, 5000].forEach((pen) => {
     assert.ok(Math.abs(c.penIgnoreRatio(pen) - expect(pen)) < 1e-12);
   });
-  // 曲線關鍵點（文件 §3.1 對照表）
-  assert.ok(Math.abs(c.penIgnorePct(100) - 22.91) < 0.05);
-  assert.ok(Math.abs(c.penIgnorePct(250) - 42.72) < 0.05);
-  assert.ok(Math.abs(c.penIgnorePct(500) - 68.44) < 0.05);
+  // 曲線關鍵點（文件 §3.1 對照表）；350%/(350%+1.5) = 70% 為需求給定的基準點
+  assert.ok(Math.abs(c.penIgnorePct(100) - 40) < 0.05);
+  assert.ok(Math.abs(c.penIgnorePct(250) - 62.5) < 0.05);
+  assert.ok(Math.abs(c.penIgnorePct(350) - 70) < 1e-9);
+  assert.ok(Math.abs(c.penIgnorePct(500) - 76.92) < 0.05);
+  assert.ok(Math.abs(c.penIgnorePct(1000) - 86.96) < 0.05);
 });
 
-test('忽略防禦封頂 100%：防禦歸零，且不轉為增傷', () => {
+test('忽略防禦為飽和曲線：單調遞增、到不了 100%，且不轉為增傷', () => {
   const c = loadContext();
   assert.equal(c.penDefMultiplier(1), 0);             // 不得出現負防禦
   assert.equal(c.penDefMultiplier(0.25), 0.75);
-  // 曲線換算超過 100% 的穿透一律夾回 1，不存在溢出乘區
-  assert.equal(c.penIgnoreRatio(1000), 1);
-  assert.equal(c.penIgnoreRatio(5000), 1);
-  assert.equal(c.penIgnorePct(5000), 100);
+  let prev = 0;
+  [100, 500, 1000, 5000, 100000].forEach((pen) => {
+    const r = c.penIgnoreRatio(pen);
+    assert.ok(r > prev, '忽略防禦應隨穿透遞增：' + pen);
+    assert.ok(r < 1, '忽略防禦不得達到 100%：' + pen);
+    prev = r;
+  });
   assert.equal(typeof c.penOverflowDmgMultiplier, 'undefined', '溢出增傷乘區已移除');
 });
 
-test('resolveHit：穿透最多把防禦打到歸零，不會再增傷', () => {
+test('resolveHit：穿透只折減防禦，敵方永遠保留一小部分防禦', () => {
   const c = loadContext();
   c.chance = (p) => p >= 100;         // 必中、不爆擊
   c.rnd = () => 1;
@@ -220,14 +225,18 @@ test('resolveHit：穿透最多把防禦打到歸零，不會再增傷', () => {
       { def: 500, dodge: 0, level: 1 }).dmg;
   };
   const base = hit(0);
-  const mid = hit(500);              // 忽略 68.4% 防禦 → 傷害提高但未封頂
-  const capped = hit(1000);          // 曲線換算 > 100% → 夾回 100%，防禦歸零
-  const far = hit(5000);             // 再高的穿透不再有任何額外效果
+  const mid = hit(350);              // 忽略 70% 防禦
+  const high = hit(5000);            // 忽略 97.1% 防禦，仍非全免
   assert.ok(mid > base, '穿透應提高傷害');
-  assert.ok(capped > mid);
-  // 封頂時：傷害 = 攻擊力（防禦已歸零，無溢出增傷）
-  assert.ok(Math.abs(capped - 1000) <= 1, '封頂傷害應等於攻擊力：' + capped);
-  assert.equal(far, capped, '超過封頂的穿透不得再增傷');
+  assert.ok(high > mid);
+  assert.ok(high < 1000, '防禦未歸零，傷害不得達到攻擊力全額：' + high);
+  // 傷害對得上公式：攻擊力 × (1 - 防禦減傷(防禦 × (1 - 忽略防禦比率)))
+  const expectAt = (pen) => {
+    const def = 500 * c.penDefMultiplier(c.penIgnoreRatio(pen));
+    return Math.round(1000 * (1 - c.defReduction(def, 1)));
+  };
+  assert.ok(Math.abs(mid - expectAt(350)) <= 1, '350% 穿透傷害不符：' + mid);
+  assert.ok(Math.abs(high - expectAt(5000)) <= 1, '5000% 穿透傷害不符：' + high);
 });
 
 test('技能不再有降低敵人防禦效果，改為穿透增益 penUp', () => {

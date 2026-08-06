@@ -1710,19 +1710,16 @@ function enemyTypeDmgRedDesc(st, key, label) {
     '<br><br><span style="color:#ffd700">目前同級減傷率：' + pctStrFloor4(reduction) + '</span>';
 }
 
-/* 穿透 tips：穿透%本身不設上限，實際忽略防禦% 由 penIgnorePct 的遞減曲線換算（formula.js §3）；
-   黃字顯示目前穿透值換算後的實際忽略防禦%，達 100%（防禦歸零）時標示已封頂。 */
+/* 穿透 tips：穿透%本身不設上限，實際忽略防禦% 由 penIgnorePct 的飽和曲線換算（formula.js §3）；
+   黃字顯示目前穿透值換算後的實際忽略防禦%（趨近但到不了 100%）。 */
 function penetrationDesc(st, key, label) {
   var pen = (st && st[key]) || 0;
   var ignore = penIgnorePct(pen);
-  var s = '造成' + label + '傷害時，無視敵方一定比例的' + label + '防禦。穿透值本身無上限，' +
-    '實際忽略防禦% ＝ ' + effectNum(PEN_IGNORE_A) + '×(穿透% ÷ 100 × ' + effectNum(PEN_IGNORE_B) +
-    ')^' + effectNum(PEN_IGNORE_C) + '（遞減曲線）；忽略防禦最高 100%，超出的穿透不再有效果。' +
+  return '造成' + label + '傷害時，無視敵方一定比例的' + label + '防禦。穿透值本身無上限，' +
+    '實際忽略防禦% ＝ 穿透倍率 ÷ (穿透倍率 + ' + effectNum(PEN_IGNORE_A) + ')' +
+    '（穿透倍率 ＝ 穿透% ÷ 100；例：穿透 350% → 3.5 ÷ 5 ＝ 70%）；' +
+    '忽略防禦隨穿透遞減收斂，不會達到 100%。' +
     '<br><br><span style="color:#ffd700">目前忽略防禦：' + fmt1(ignore) + '%</span>';
-  if (ignore >= 100) {
-    s += '<span style="color:#ffd700">（已達上限，敵方' + label + '防禦歸零）</span>';
-  }
-  return s;
 }
 
 /* 吸血／吸魔 tips：不再以造成的傷害計算，改由每秒生命回復／法力恢復換算（formula.js §3）。 */
