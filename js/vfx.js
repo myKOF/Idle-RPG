@@ -31,6 +31,17 @@ var VFX_LAYER_ID = 'bf-vfx-layer';
 var _vfxNodes = [];
 var _vfxEnabled = true;
 var _vfxGeneration = 0;
+var VFX_QUALITY_LEVELS = { FULL: 'full', REDUCED: 'reduced', OFF: 'off' };
+var VFX_EVENT_QUEUE_MAX = 48;
+var VFX_FRAME_BUDGET_FULL = 8;
+var VFX_FRAME_BUDGET_REDUCED = 4;
+var VFX_MERGE_WINDOW_MS = 120;
+var _vfxQuality = VFX_QUALITY_LEVELS.FULL;
+var _vfxEventQueue = [];
+var _vfxFlushHandle = 0;
+var _vfxAnchorCache = Object.create(null);
+var _vfxLayerRectCache = null;
+var _vfxLayoutVersion = 0;
 
 /* 元素主題：c1 主色、c2 亮部／輔色、glow 光暈。無屬性事件退回 spec.color 單色。 */
 var VFX_ELEM_THEME = {
@@ -45,6 +56,25 @@ var VFX_ELEM_THEME = {
 function vfxSetEnabled(on) {
   _vfxEnabled = !!on;
   if (!on) vfxClear();
+}
+
+function vfxQuality() {
+  return _vfxQuality;
+}
+
+function vfxSetQuality(level) {
+  var next = level === VFX_QUALITY_LEVELS.REDUCED ? VFX_QUALITY_LEVELS.REDUCED
+    : level === VFX_QUALITY_LEVELS.OFF ? VFX_QUALITY_LEVELS.OFF : VFX_QUALITY_LEVELS.FULL;
+  if (next === _vfxQuality) return;
+  _vfxQuality = next;
+  _vfxEventQueue.length = 0;
+  if (next === VFX_QUALITY_LEVELS.OFF) vfxClear();
+}
+
+function vfxInvalidateLayout() {
+  _vfxLayoutVersion++;
+  _vfxAnchorCache = Object.create(null);
+  _vfxLayerRectCache = null;
 }
 
 /* ---- 圖層與座標 ---- */
@@ -78,6 +108,12 @@ function vfxLayer(anchorId) {
 
 function vfxClear() {
   _vfxGeneration++;
+  _vfxEventQueue.length = 0;
+  if (_vfxFlushHandle) {
+    if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(_vfxFlushHandle);
+    if (typeof clearTimeout === 'function') clearTimeout(_vfxFlushHandle);
+    _vfxFlushHandle = 0;
+  }
   for (var i = 0; i < _vfxNodes.length; i++) {
     var n = _vfxNodes[i];
     if (n && n.parentNode) n.parentNode.removeChild(n);
@@ -122,19 +158,35 @@ function vfxTrack(node, ms) {
 }
 
 /* 目標圖層 id → 相對於特效圖層的中心座標。找不到（敵人已被清掉）回傳 null。 */
+function vfxLayerRect(layer) {
+  if (_vfxLayerRectCache && _vfxLayerRectCache.layer === layer && _vfxLayerRectCache.version === _vfxLayoutVersion) {
+    return _vfxLayerRectCache.rect;
+  }
+  var rect = layer.getBoundingClientRect();
+  _vfxLayerRectCache = { layer: layer, version: _vfxLayoutVersion, rect: rect };
+  return rect;
+}
+
 function vfxPointOf(elId, layer) {
   var el = document.getElementById(elId);
   if (!el || !layer) return null;
   var target = el.closest ? (el.closest('.enemy-card') || el.closest('.combatant') || el) : el;
-  var r = target.getBoundingClientRect();
-  var lr = layer.getBoundingClientRect();
+  var cached = _vfxAnchorCache[elId];
+  var r;
+  if (cached && cached.target === target && cached.layer === layer && cached.version === _vfxLayoutVersion) {
+    r = cached.rect;
+  } else {
+    r = target.getBoundingClientRect();
+    _vfxAnchorCache[elId] = { target: target, layer: layer, version: _vfxLayoutVersion, rect: r };
+  }
+  var lr = vfxLayerRect(layer);
   if (!r.width && !r.height) return null;
   return { x: r.left - lr.left + r.width / 2, y: r.top - lr.top + r.height / 2 };
 }
 
 /* 我方出手點：同一 scene 內我方卡片的右緣中央。 */
 function vfxOriginPoint(layer) {
-  var lr = layer.getBoundingClientRect();
+  var lr = vfxLayerRect(layer);
   var scene = layer.parentNode;
   var me = (scene && scene.querySelector)
     ? scene.querySelector('.combatant:not(.enemy-combatant):not(.boss)') : null;
@@ -150,7 +202,7 @@ function vfxCellsRect(cells, layer) {
   if (!cells || !cells.length) return null;
   var party = document.getElementById('mv-party');
   if (!party) return null;
-  var lr = layer.getBoundingClientRect();
+  var lr = vfxLayerRect(layer);
   var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity, found = 0;
   var guides = party.querySelectorAll('.bf-cell-guide');
   var cols = (typeof battlefieldCols === 'function') ? battlefieldCols() : 4;
@@ -211,6 +263,7 @@ var VFX_HIT_CLASSES = ['vfx-hit', 'vfx-hit-strong', 'vfx-hit-fire', 'vfx-hit-ice
   'vfx-hit-lightning', 'vfx-hit-poison', 'vfx-hit-light', 'vfx-hit-dark'];
 function vfxHitReact(targetId, elem, delayMs, strong) {
   if (!targetId) return;
+  if (_vfxQuality === VFX_QUALITY_LEVELS.REDUCED && !strong) return;
   var generation = _vfxGeneration;
   setTimeout(function () {
     if (!_vfxEnabled || generation !== _vfxGeneration) return;
@@ -238,6 +291,7 @@ function vfxHitReact(targetId, elem, delayMs, strong) {
 
 /* 畫面震動：大爆點（隕石、引爆）時整個戰鬥畫面晃一下。 */
 function vfxSceneShake(layer, delayMs, strong) {
+  if (_vfxQuality !== VFX_QUALITY_LEVELS.FULL) return;
   var generation = _vfxGeneration;
   setTimeout(function () {
     if (!_vfxEnabled || generation !== _vfxGeneration) return;
@@ -285,6 +339,7 @@ function vfxImpact(spec, layer, pt, targetId, delayMs) {
 
   var n = VFX_IMPACT_PARTS[elemKey] || 4;
   if (v === 'detonate' || v === 'nova') n = 7;
+  if (_vfxQuality === VFX_QUALITY_LEVELS.REDUCED) n = 1;
   for (var i = 0; i < n; i++) {
     var s = document.createElement('span');
     s.className = 'vfx-p';
@@ -303,7 +358,7 @@ function vfxImpact(spec, layer, pt, targetId, delayMs) {
   }
   vfxTrack(d, delayMs + life);
 
-  if (v === 'venom') {
+  if (v === 'venom' && _vfxQuality !== VFX_QUALITY_LEVELS.REDUCED) {
     // 殘留毒雲：中毒 DoT 的視覺殘影，泡泡持續冒 2.5 秒
     var cloud = vfxNode('vfx-cloud', layer, spec);
     vfxPlace(cloud, pt);
@@ -657,7 +712,7 @@ function vfxCurse(spec, layer, pt, targetId, delayMs) {
 }
 
 /* ---- 進入點：協議 vfx 事件 → 畫面 ---- */
-function playCombatVfx(spec) {
+function renderCombatVfx(spec) {
   if (!_vfxEnabled || !spec) return;
   if (typeof document === 'undefined' || document.hidden) return;
   var anchorId = (spec.targets && spec.targets.length) ? spec.targets[0] : null;
@@ -804,4 +859,79 @@ function playCombatVfx(spec) {
       }
     }
   }
+}
+
+function vfxSpecForQuality(spec) {
+  if (!spec || _vfxQuality === VFX_QUALITY_LEVELS.OFF) return null;
+  if (_vfxQuality === VFX_QUALITY_LEVELS.FULL) return spec;
+  if (spec.fxKind === 'aura') return null;
+  var out = {};
+  for (var key in spec) out[key] = spec[key];
+  out.count = 1;
+  if (spec.targets && spec.targets.length) {
+    var targetLimit = spec.fxKind === 'chain' || spec.variant === 'chain' ? 2 : 3;
+    out.targets = spec.targets.slice(0, targetLimit);
+  }
+  if (spec.travelMs && spec.travelMs.length && out.targets) {
+    out.travelMs = spec.travelMs.slice(0, out.targets.length);
+  }
+  return out;
+}
+
+function vfxMergeKey(spec) {
+  if (!spec || (spec.fxKind !== 'impact' && spec.cat !== 'basic')) return null;
+  var target = spec.targets && spec.targets.length ? spec.targets[0] : '';
+  return [spec.fxKind || '', spec.cat || '', spec.elem || '', spec.variant || '', target].join('|');
+}
+
+function vfxScheduleFlush() {
+  if (_vfxFlushHandle || !_vfxEventQueue.length) return;
+  var flush = function () {
+    _vfxFlushHandle = 0;
+    vfxFlushQueue();
+  };
+  if (typeof requestAnimationFrame === 'function') _vfxFlushHandle = requestAnimationFrame(flush);
+  else _vfxFlushHandle = setTimeout(flush, 0);
+}
+
+function vfxFlushQueue() {
+  if (!_vfxEnabled || _vfxQuality === VFX_QUALITY_LEVELS.OFF || (typeof document !== 'undefined' && document.hidden)) {
+    _vfxEventQueue.length = 0;
+    return;
+  }
+  var budget = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? VFX_FRAME_BUDGET_REDUCED : VFX_FRAME_BUDGET_FULL;
+  var count = 0;
+  while (_vfxEventQueue.length && count < budget) {
+    var entry = _vfxEventQueue.shift();
+    if (entry && entry.spec) {
+      renderCombatVfx(entry.spec);
+      count++;
+    }
+  }
+  if (_vfxEventQueue.length) vfxScheduleFlush();
+}
+
+function vfxEnqueue(spec) {
+  var now = Date.now();
+  var mergeKey = vfxMergeKey(spec);
+  if (mergeKey) {
+    for (var i = _vfxEventQueue.length - 1; i >= 0; i--) {
+      var queued = _vfxEventQueue[i];
+      if (queued.key === mergeKey && now - queued.queuedAt <= VFX_MERGE_WINDOW_MS) {
+        queued.spec = spec;
+        queued.queuedAt = now;
+        vfxScheduleFlush();
+        return;
+      }
+    }
+  }
+  if (_vfxEventQueue.length >= VFX_EVENT_QUEUE_MAX) _vfxEventQueue.shift();
+  _vfxEventQueue.push({ spec: spec, key: mergeKey, queuedAt: now });
+  vfxScheduleFlush();
+}
+
+function playCombatVfx(spec) {
+  var next = vfxSpecForQuality(spec);
+  if (!next || !_vfxEnabled || (typeof document !== 'undefined' && document.hidden)) return;
+  vfxEnqueue(next);
 }

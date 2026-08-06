@@ -26,6 +26,8 @@ var UI = {
   battleLayoutDirty: true,
   zoneBarSignature: null,
   performanceEventsBound: false,
+  lastInteractionAt: 0,
+  lastBattleRenderAt: 0,
   stageHold: {
     startTimer: null,
     repeatTimer: null,
@@ -1775,6 +1777,7 @@ function switchTab(name) {
     if (!talentSnapshot || talentViewReincarnations(talentSnapshot) < 1) name = 'equip';
   }
   UI.tab = name;
+  syncVfxQualityForTab();
   refreshUiPanelSubscriptions();
   markTabDirty(name);
   // 分頁重新取得最新快照：背景分頁的 dirty 訊號可能已被 Worker 消費，
@@ -2807,6 +2810,7 @@ function renderBattle() {
     if (party.getAttribute('data-enemy-signature') !== 'empty') {
       rebuildEnemyParty(party, guideHtml + '<div class="enemy-empty">' + (view.towerActive ? '（高塔戰鬥中…）' : '🔍 搜索敵人中…') + '</div>');
       party.setAttribute('data-enemy-signature', 'empty');
+      if (typeof vfxInvalidateLayout === 'function') vfxInvalidateLayout();
     }
     flushPendingEnemyFloats(battleSnapshot);
     return;
@@ -2838,6 +2842,7 @@ function renderBattle() {
     rebuildEnemyParty(party, partyHtml);
     party.setAttribute('data-enemy-signature', enemySignature);
     UI.battleLayoutDirty = true;
+    if (typeof vfxInvalidateLayout === 'function') vfxInvalidateLayout();
   }
   if (UI.battleLayoutDirty) {
     fitEnemyNames(party);
@@ -4765,6 +4770,25 @@ function uiRenderingSuspended() {
   return typeof document !== 'undefined' && document.hidden;
 }
 
+var UI_BATTLE_RENDER_IDLE_MS = 400;
+var UI_INPUT_PROTECT_MS = 80;
+
+function noteUiInteraction() {
+  UI.lastInteractionAt = Date.now();
+}
+
+function shouldRenderBattle(now) {
+  if (!UI.dirty.battle) return false;
+  if (now - (UI.lastInteractionAt || 0) < UI_INPUT_PROTECT_MS) return false;
+  var interval = UI.tab === 'tower' ? 200 : UI_BATTLE_RENDER_IDLE_MS;
+  return now - (UI.lastBattleRenderAt || 0) >= interval;
+}
+
+function syncVfxQualityForTab() {
+  if (typeof vfxSetQuality !== 'function') return;
+  vfxSetQuality(UI.tab === 'tower' ? 'full' : 'reduced');
+}
+
 function markVisibleUiDirty() {
   Object.keys(UI.dirty).forEach(function (key) { UI.dirty[key] = true; });
   UI.battleLayoutDirty = true;
@@ -4858,11 +4882,15 @@ function uiTick() {
   _titleTimer += 0.2;
   if (_titleTimer >= 1) { _titleTimer = 0; updateLiveTitle(); }
   if (d.header) { renderHeader(); d.header = false; }
-  renderBattle(); // Battle is always visible
+  var now = Date.now();
+  if (shouldRenderBattle(now)) {
+    renderBattle(); // Keep combat visible, but yield briefly to equipment input.
+    UI.lastBattleRenderAt = now;
+    d.battle = false;
+  }
   refreshBuffTooltip();
   var towerSnapshot = UI.tab === 'tower' ? uiTowerPanelSnapshot() : null;
   if (UI.tab === 'tower' && towerViewActive(towerSnapshot)) renderTowerFight();
-  d.battle = false;
   if (d.equip && UI.tab === 'equip') { renderEquip(); d.equip = false; }
   if (d.inv && UI.tab === 'equip') { renderInventory(); d.inv = false; }
   // 舊生產線頁已移除；零件庫/附魔書/強化統計變動（dirty.factory）一併驅動熔爐頁重繪
@@ -7653,10 +7681,14 @@ function initUI() {
       UI.battleLayoutDirty = true;
       UI.dirty.battle = true;
       UI.dirty.inv = true;
+      if (typeof vfxInvalidateLayout === 'function') vfxInvalidateLayout();
     });
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('pointerdown', noteUiInteraction, true);
+    document.addEventListener('keydown', noteUiInteraction, true);
     UI.performanceEventsBound = true;
   }
+  syncVfxQualityForTab();
 
   // 本地測試服承傷顯示初始化：顯示在全螢幕按鈕右側
   var host = window.location.hostname;
