@@ -977,15 +977,83 @@ function evalDeadStock(sweep, cfg) {
 
    把這個斷點暴露出來，策略才有辦法把「衝過斷點」與「在原地把詞條洗好」
    放在同一把尺上比較——那正是 player_strategy.md v2.0 要的邊際效益導向。 */
+/* 「這一關掉什麼」的簽章：裝等分段 ＋ 各品質掉落率 ＋ 材料掉落率。
+   三者全部由遊戲回答（equipmentTierLevel / fieldDropRatesFor / fieldMaterialConfigFor），
+   評估層不重推任何一條——掉落表還在調，抄進來就是下一次 sync 之後偷偷失準。 */
+function evalFarmSig(s, zone) {
+  var tierL = equipmentTierLevel(s);
+  var rates = fieldDropRatesFor(s, s, zone) || [];
+  var mats = (typeof fieldMaterialConfigFor === 'function') ? (fieldMaterialConfigFor(zone, s) || {}) : {};
+  return tierL + '|' + rates.join(',')
+    + '|' + ((mats.gemRates || []).join(','))
+    + '|' + (mats.bookRate || 0)
+    + '|' + (mats.ancientEssenceRate || 0)
+    + '|' + (mats.dustRate || 0);
+}
+
 function evalTierOutlook() {
   if (typeof equipmentTierLevel !== 'function') return null;
   var stage = (typeof G !== 'undefined' && G && G.stage) ? (G.stage.current || 0) : 0;
   var best = (typeof G !== 'undefined' && G && G.stage) ? (G.stage.best || 0) : 0;
   var size = (typeof EQUIP_TIER_SIZE === 'number') ? EQUIP_TIER_SIZE : 50;
+  var zone = (typeof G !== 'undefined' && G && G.stage) ? (G.stage.zone || 'plains') : 'plains';
 
   var here = equipmentTierLevel(stage);
   var nextStage = (Math.floor(stage / size) + 1) * size;
   var next = equipmentTierLevel(nextStage);
+
+  /* ---- 掛機關卡：同一段裡最便宜的那一關 ----
+
+     關卡改造之後，野外掉落不再由 rollRarity（含 stage×0.006 的連續項）決定，
+     而是 rollFieldDrops → fieldDropRatesFor → ZONE_STAGE_DROP_TABLE 查表
+     （js/combat.js:931）。查表的粒度是**關卡區間**，區間之內完全相同：
+     草原 100~149 每一關都是 R3 10% / R4 1.5%，裝等也都是 100。
+
+     而怪物強度在區間之內是連續指數成長。用遊戲自己的 monsterStatsFor 量：
+
+       100 → 149：血量 ×25.79、防禦 ×25.56、經驗 ×21.25、金幣 ×2.73
+       150 → 199：血量 ×23.01、經驗 ×20.53
+
+     也就是說停在 149 關與停在 100 關，**每一隻怪掉的東西一模一樣**，
+     但殺一隻要多花 25.8 倍的時間。裝備／材料／金幣的時薪差 20 倍以上，
+     連經驗時薪都是負的（21.25 / 25.79 = 0.82）。
+
+     ⚠️ 這推翻了 policy_interpreter.js stageGate 裡那句
+     「分段之內往前推是純賺：關卡愈深品質擲骰愈好」——那是舊 rollRarity 時代的事實。
+
+     floor 的算法：不重推公式，改成拿遊戲的三支函式問「這一關掉什麼」，
+     二分搜出同簽章區間的下界。掉落表改版時這裡自動跟著改。
+     二分法成立是因為兩個階梯函式的等值集都是連續區間，交集也是。 */
+  var farmFloor = stage;
+  var farmNext = null;
+  var farmHpRatio = null;
+  if (stage >= 1 && typeof fieldDropRatesFor === 'function') {
+    var sigHere = evalFarmSig(stage, zone);
+    var lo = 1, hi = stage, mid;
+    while (lo < hi) {
+      mid = Math.floor((lo + hi) / 2);
+      if (evalFarmSig(mid, zone) === sigHere) hi = mid; else lo = mid + 1;
+    }
+    farmFloor = lo;
+
+    /* 下一段的底：同簽章區間的頂 +1。這是「值得搬過去的下一個掛機點」——
+       真人口中的 101 → 151 → 201。超出地圖上限就沒有下一段了（回 null）。 */
+    var zMax = (typeof zoneMaxStage === 'function') ? (zoneMaxStage(zone) || 0) : 0;
+    if (zMax > stage) {
+      var lo2 = stage, hi2 = zMax;
+      while (lo2 < hi2) {
+        mid = Math.ceil((lo2 + hi2) / 2);
+        if (evalFarmSig(mid, zone) === sigHere) lo2 = mid; else hi2 = mid - 1;
+      }
+      if (lo2 < zMax) farmNext = lo2 + 1;
+    }
+
+    if (typeof monsterStatsFor === 'function' && farmFloor < stage) {
+      var hHere = monsterStatsFor(stage, false, false);
+      var hFloor = monsterStatsFor(farmFloor, false, false);
+      if (hFloor && hFloor.hp > 0) farmHpRatio = hHere.hp / hFloor.hp;
+    }
+  }
 
   /* 跨過去值多少：拿同一條代表性詞條在兩個裝等下的基準值相比。
      用 atkFlat 當代表是因為它是分佈最廣的攻擊詞條（11 個部位都能出）。 */
@@ -1006,6 +1074,13 @@ function evalTierOutlook() {
     /* 跨過斷點後同一條詞條會變成幾倍。舊策略看不到這個數字，
        所以它把「停在 41 關洗詞條」與「推到 50 關」當成同一件事。 */
     breakpointGain: ratio,
+    /* 掉落與裝等都不變的前提下，這一段最便宜的關卡（見上方註解）。 */
+    farmFloorStage: farmFloor,
+    /* 下一個掉落／裝等會變好的關卡，也就是下一個掛機點。地圖打到頂時為 null。 */
+    nextFarmStage: farmNext,
+    /* 從這裡退到 floor，怪物血量會少幾倍。掉落率與裝等不變，所以這個倍率
+       直接就是裝備／材料時薪的倍率。null＝已經站在 floor 上。 */
+    farmFloorHpRatio: farmHpRatio,
     /* 身上裝備的裝等是否已經落後於當前關卡能掉的。落後代表換裝規則正在失職。 */
     equippedItemLevelMin: (function () {
       var eq = (typeof G !== 'undefined' && G) ? (G.equipment || {}) : {};
