@@ -588,6 +588,40 @@ function buildInventoryPanel(params) {
   };
 }
 
+/* 熔爐頁只需要佇列數量、傳送帶圖示與零件設定；不要把數千件完整裝備
+   透過 structured clone 傳到主執行緒。大量拆解後，完整 queue 會拖慢 DOM
+   與點擊事件，讓升級按鈕看似沒有反應。 */
+function newForgePanelView(nf) {
+  nf = nf || {};
+  var furnaces = Array.isArray(nf.furnaces) ? nf.furnaces : [];
+  return {
+    queueCount: Array.isArray(nf.queue) ? nf.queue.length : 0,
+    furnaces: furnaces.map(function (fu) {
+      fu = fu || {};
+      return {
+        id: fu.id,
+        enabled: !!fu.enabled,
+        qualities: Array.isArray(fu.qualities) ? fu.qualities.slice() : [],
+        parts: Array.isArray(fu.parts) ? fu.parts.map(function (p) { return p && p.key ? { key: p.key } : null; }).filter(Boolean) : [],
+        partSlots: Number(fu.partSlots) || 0,
+        queueCount: Array.isArray(fu.queue) ? fu.queue.length : 0,
+        belt: (Array.isArray(fu.belt) ? fu.belt : []).slice(0, NEW_FORGE_BELT_SHOW).map(function (it) {
+          return it ? { rarity: it.rarity, slot: it.slot, name: it.name } : null;
+        }).filter(Boolean)
+      };
+    }),
+    stats: {
+      salvaged: nf.stats && Number(nf.stats.salvaged) || 0,
+      kept: nf.stats && Number(nf.stats.kept) || 0
+    },
+    tabSeen: nf.tabSeen,
+    noticeShown: nf.noticeShown,
+    partLevels: nf.partLevels || {},
+    ownedParts: nf.ownedParts || {},
+    partUpgradeCosts: nf.partUpgradeCosts || {}
+  };
+}
+
 function buildPanel(name, params) {
   if (!G) return null;
   var p = G.player || {};
@@ -692,7 +726,7 @@ function buildPanel(name, params) {
       return { forge: (typeof forgeState === 'function') ? forgeState() : G.forge };
     case 'newforge':
       return {
-        newForge: G.newForge,
+        newForge: newForgePanelView(G.newForge),
         /* 下一格零件格的解鎖金幣（逐爐，與 furnaces 同索引；已達上限為 null）。
            理由與上面 inv 的 expandCost 完全相同：沒有這個數字，外面只能「先送出
            再看它回金幣不足」。而且這條成本與**熔爐座數和轉生數連動**

@@ -3822,10 +3822,10 @@ function renderNewForge() {
   var player = headerSnapshot && headerSnapshot.player;
   if (!nf || !factory || !player) return;
   var qc = $id('nf-queue-count');
-  if (qc) qc.textContent = fmtFull(nf.queue.length); // 佇列顯示完整數字，不用簡寫
+  if (qc) qc.textContent = fmtFull(nf.queueCount !== undefined ? nf.queueCount : (nf.queue ? nf.queue.length : 0)); // 佇列顯示完整數字，不用簡寫
   renderForgeExtras(factorySnapshot, headerSnapshot); // 附魔書庫存＋強化節點（搬入本頁的面板）
   var upgradeBox = $id('nf-part-upgrades');
-  if (upgradeBox) upgradeBox.innerHTML = nfPartUpgradesHTML(factory, player, nf);
+  if (upgradeBox) setHtmlIfChanged(upgradeBox, nfPartUpgradesHTML(factory, player, nf));
   var cnt = $id('nf-count');
   if (cnt) {
     var allowed = newForgeMaxFurnaces(Math.max(0, Math.floor(Number(player.reincarnations) || 0)));
@@ -3871,7 +3871,9 @@ function nfUpdateBelts(list, snapshot) {
   for (var m = 0; m < mores.length; m++) {
     var moreNode = mores[m];
     var moreFu = newForgeViewFurnace(snapshot, parseInt(moreNode.getAttribute('data-nf-more'), 10));
-    var wait = (moreFu && moreFu.queue) ? moreFu.queue.length : 0;
+    var wait = moreFu
+      ? (moreFu.queueCount !== undefined ? moreFu.queueCount : (moreFu.queue ? moreFu.queue.length : 0))
+      : 0;
     var text = wait > 0 ? '+' + (wait > 9999 ? '9999' : wait) : '';
     if (moreNode._nfMoreText !== text) {
       moreNode._nfMoreText = text;

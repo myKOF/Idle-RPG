@@ -97,6 +97,26 @@ tick 三純量、`task.claim` 指令）、`js/worker/sim.worker.js`、`docs/WORK
 
 完成後交給：Antigravity 驗證（驗證重點見任務回報）。
 
+## Codex：大量拆解後零件升級點擊延遲（2026-08-06）
+
+狀態：已完成
+
+任務分類：熔爐 UI／Worker 面板效能／點擊可靠性
+
+任務目的：大量裝備快速拆解後，避免數千件佇列裝備完整複製到主執行緒，並避免熔爐頁重建零件升級按鈕造成 pending 狀態看似失效。
+
+負責 AI：Codex
+
+允許修改：`docs/AI_TASKS.md`、`js/worker/sim.worker.js`、`js/ui.js`、`tests/new-forge.test.cjs`、`tests/newforge-panel-performance.test.cjs`
+
+禁止修改：Worker Protocol、戰鬥數值、掉落資料、其他 AI 進行中的檔案。
+
+前置依賴：無。
+
+完成結果：新增熔爐輕量面板投影，只傳佇列數量、傳送帶摘要與零件設定；零件升級區改用內容變更檢查，保留 pending 按鈕的 disabled 狀態。
+
+測試結果：熔爐／UI／Worker 回歸測試 58/58 通過；`npm run build` 244/244 通過。
+
 ## Codex：關閉自動推進時仍解鎖下一關（2026-08-05）
 
 狀態：已完成
