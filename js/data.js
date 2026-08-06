@@ -1284,7 +1284,7 @@ var TOWER_BOSS_TRIAL = {                                  // 試煉之塔 1~50 �
   hitBase: 200, hitPerFloor: 70,                          // 命中率 = hitBase + 樓層×hitPerFloor
   hpMult: 20, atkMult: 3, defMult: 10,                    // 生命/攻擊/物魔防 = 基準 × 倍率
   aspd: 3, ctrlRes: 70,                                   // 攻速（次/秒）／控制抵抗%
-  dodgeBase: 8, dodgeCap: 10000000, dodgePerFloor: 20,   // 閃避 = min(base + 樓層×per, cap)%
+  dodgeBase: 8, dodgeCap: 10000000, dodgePerFloor: 15,   // 閃避 = min(base + 樓層×per, cap)%
   elemMult: 3,                                            // 元素附傷 = 總魔攻 × elemMult
   xpMult: 2,                                              // 經驗 = 建議野外階段普通怪經驗 × xpMult
   timeLimit: 60, enrageTime: 40, enrageMult: 3, chargePeriod: 8 // 戰鬥規則：限時/狂暴檢查秒/狂暴倍率/蓄力周期秒
@@ -1295,7 +1295,7 @@ var TOWER_BOSS_HELL = {                                   // 地獄之塔 51~100
   hitBase: 200, hitPerFloor: 70,
   hpMult: 400, atkMult: 15, defMult: 10,
   aspd: 3, ctrlRes: 70,
-  dodgeBase: 8, dodgeCap: 10000000, dodgePerFloor: 20,
+  dodgeBase: 8, dodgeCap: 10000000, dodgePerFloor: 17,
   elemMult: 3,
   xpMult: 2,
   timeLimit: 60, enrageTime: 40, enrageMult: 3, chargePeriod: 8
