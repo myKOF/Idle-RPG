@@ -1471,8 +1471,11 @@ function skillRtOpenField(pEnt, sk, fx, id, lv, st, out) {
   }
   keep.push(entry);
   SKILL_RT.fields = keep;
-  // 領域特效：蓋在覆蓋到的格子上，持續時間與領域本身一致（同名重放＝重新開一次）
-  emitSkillVfx(skillVfxSpec(sk, fx, null, [], (out && out.areaCells) || null,
+  // 領域特效：蓋在覆蓋到的格子上，持續時間與領域本身一致（同名重放＝重新開一次）。
+  // 高塔沒有棋盤格，必須保留施放當下的目標圖層（tb-float），否則 vfx.js
+  // 會失去 scene/中心座標，退回 mv-party 或玩家欄位。
+  var vfxTargets = (out && Array.isArray(out.vfxTargets)) ? out.vfxTargets : [];
+  emitSkillVfx(skillVfxSpec(sk, fx, null, vfxTargets, (out && out.areaCells) || null,
     { fxKind: 'aura', dur: fDur }));
 }
 
@@ -2587,7 +2590,12 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
   // 技能只佔用技能 GCD；普攻有自己的 atkCd，與技能施放並行，不受技能施放影響。
   pEnt.skillGcd = (rtPre.noGcd || (opts && opts.noGcd)) ? 0 : SKILL_GLOBAL_COOLDOWN; // 45 新技能（freeCast 族）：免 GCD 施放
   // areaCells＝本次施放打在地上的那塊區域（領域類效果據此決定之後每跳打哪些格）
-  var out = { killed: false, dmg: 0, areaCells: placement.cells };
+  var out = {
+    killed: false, dmg: 0, areaCells: placement.cells,
+    // 領域特效稍後才建立，但仍要使用本次施放的實際目標來決定 scene 與中心。
+    // 這對沒有 battlefield cell 的高塔 BOSS 尤其重要（目標圖層即 tb-float）。
+    vfxTargets: targets.map(function (t) { return enemyEventFloatTarget(t, floatSel); })
+  };
   // 特效：施放當下就發（不等結算），因為玩家看到的是「技能放出去了」，
   // 全部被閃避也一樣要有畫面。目標一律轉成浮字圖層 id，不帶實體參照。
   var vfxExtra = { travelMs: skillVfxTravelMs(targets) };
