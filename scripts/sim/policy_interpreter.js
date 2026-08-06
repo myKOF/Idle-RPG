@@ -1835,8 +1835,14 @@ function decide(state, policy, memo) {
              怪物血量 ×25.79              149 關要多花 25.8 倍時間殺一隻
              經驗     ×21.25              成長比血量慢
 
-           所以停在 149 的裝備／材料／金幣時薪只有停在 100 的 1/25.8，
-           連經驗時薪都是 0.82 倍——沒有任何一項是賺的。
+           ⚠️⚠️ 這裡曾經據此推論「時薪差 20 倍」。**實測不成立**：
+           24 小時 × 5 seed 的後 12 小時，對照組 925 隻/時、待在底部 1,042 隻/時，
+           只差 13%。瓶頸是每隻怪固定的 RESPAWN_DELAY 0.8 ＋
+           FIELD_ENEMY_DEATH_CLEAR_DELAY 2.1 ＝ 2.9 秒（1,241 隻/時的硬上限），
+           不是打死一隻要多久——對照組在關卡 189 就吃掉上限的 75%。
+
+           所以底部買到的是「同樣的掉落數、少很多的死亡」，
+           代價是每隻怪 21 倍的經驗。詳細的 A/B 見 docs/SIM_HARNESS.md。
 
            真人的玩法正是這樣：「掛 101、151、201 這種會掉下一級裝備
            且最容易快速殺敵的關卡；材料跟裝備掉落數的權重比等級高，
@@ -2339,7 +2345,16 @@ function decide(state, policy, memo) {
           lpTaken++;
         }
         for (var lpa = 0; lpa < lpAlways.length; lpa++) lpPush(lpAlways[lpa]);
-        for (var lpp = 0; lpp < lpPassives.length; lpp++) lpPush(lpPassives[lpp]);
+        /* 被動也要過濾未解鎖的，理由與上面的主動相同：送出去只會得到
+           「需人物達到 Lv.N 才解鎖」。清單補齊到 19 個之後其中 8 個要 Lv.100~200，
+           不濾的話 Lv.100 以前每次決策都多送 8 條必定落空的指令——
+           不花資源，但會把指令統計灌成雜訊，真正的問題就看不出來了。 */
+        for (var lpp = 0; lpp < lpPassives.length; lpp++) {
+          var lpPid = lpPassives[lpp];
+          var lpPneed = Number(lpUnlockLv[lpPid]) || 0;
+          if (!(Number(lpLearned[lpPid]) > 0) && lpPneed > lpLevel) continue;
+          lpPush(lpPid);
+        }
       }
     } else if (r.combatLoadout) {
       /* ---- 依戰況換裝載欄：打菁英／BOSS 時換上保命技 ----
