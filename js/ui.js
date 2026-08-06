@@ -4840,19 +4840,26 @@ function updateDmgAbsorb() {
   var enemyDmgMult = 1 + maxEnemyDmg / 100;
 
   // 1. 第一種屬性加成：對屬性敵人傷害% (取 6 系平均)
-  var vsElems = ['dmgVsFire', 'dmgVsIce', 'dmgVsLightning', 'dmgVsPoison', 'dmgVsLight', 'dmgVsDark'];
+  var elemKeys = ['fire', 'ice', 'lightning', 'poison', 'light', 'dark'];
   var vsElemSum = 0;
-  for (var i = 0; i < vsElems.length; i++) {
-    vsElemSum += Number(st[vsElems[i]]) || 0;
+  for (var i = 0; i < elemKeys.length; i++) {
+    var k1 = elemKeys[i];
+    var val1 = (st.dmgVsElem && typeof st.dmgVsElem[k1] === 'number')
+      ? st.dmgVsElem[k1]
+      : (Number(st['dmgVs' + k1.charAt(0).toUpperCase() + k1.slice(1)]) || 0);
+    vsElemSum += val1;
   }
   var avgVsElem = vsElemSum / 6;
   var vsElemMult = 1 + avgVsElem / 100;
 
   // 2. 第二種屬性加成：屬性傷害提升% (取 6 系平均)
-  var elemUps = ['elemDmgFire', 'elemDmgIce', 'elemDmgLightning', 'elemDmgPoison', 'elemDmgLight', 'elemDmgDark'];
   var elemUpSum = 0;
-  for (var j = 0; j < elemUps.length; j++) {
-    elemUpSum += Number(st[elemUps[j]]) || 0;
+  for (var j = 0; j < elemKeys.length; j++) {
+    var k2 = elemKeys[j];
+    var val2 = (st.elemDmgUp && typeof st.elemDmgUp[k2] === 'number')
+      ? st.elemDmgUp[k2]
+      : (Number(st['elemDmg' + k2.charAt(0).toUpperCase() + k2.slice(1)]) || 0);
+    elemUpSum += val2;
   }
   var avgElemUp = elemUpSum / 6;
   var elemUpMult = 1 + avgElemUp / 100;
