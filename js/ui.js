@@ -301,6 +301,13 @@ function viewState() {
   return UI_WORKER_STATE.view;
 }
 
+function uiHeaderXpMax(player) {
+  var view = viewState() || {};
+  var xpMax = Number(view.xpMax);
+  if (Number.isFinite(xpMax) && xpMax > 0) return xpMax;
+  return xpForLevel(player && player.level);
+}
+
 /* ---- 主執行緒的遊戲時鐘 ----
    GT 的權威在 Worker，但畫面上所有「還剩幾秒」的顯示都要跟它比對：
    狀態圖示（effectActive／dots.until／buffs.until 都是絕對到期時刻）、技能冷卻、復活倒數。
@@ -2085,7 +2092,7 @@ function renderHeader() {
       : (canReincarnate ? (isGodStage ? '目前可進行神階晉升' : '目前可進行轉生') : '等級達到 ' + REINCARNATION_LEVEL + ' 級可使用'));
     reincBtn.removeAttribute('title');
   }
-  var need = xpForLevel(p.level);
+  var need = uiHeaderXpMax(p);
   var isMaxedOut = (p.level >= MAX_LEVEL && reinc >= REINCARNATION_MAX);
   $id('xp-fill').style.width = isMaxedOut ? '100%' : (clamp(p.xp / need * 100, 0, 100) + '%');
   var xpBar = $id('xp-bar');

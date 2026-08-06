@@ -97,6 +97,7 @@ test('頂欄只讀 Worker header Snapshot 的資源、屬性與 DPS', () => {
   assert.match(renderHeader, /headerSnapshot\.dps/);
   assert.match(renderHeader, /headerSnapshot\.settings/);
   assert.match(renderHeader, /headerSnapshot\.autoEquip/);
+  assert.match(renderHeader, /uiHeaderXpMax\(p\)/);
   assert.doesNotMatch(renderHeader, /\bgetStats\(/);
   assert.doesNotMatch(renderHeader, /\bgetViewStats\(/);
   assert.doesNotMatch(renderHeader, /\bcurrentDps\(/);
@@ -105,6 +106,22 @@ test('頂欄只讀 Worker header Snapshot 的資源、屬性與 DPS', () => {
   assert.match(renderAttrPanel, /headerSnapshot\.equipView/);
   assert.match(renderAttrPanel, /headerSnapshot\.equipActive/);
   assert.doesNotMatch(renderAttrPanel, /\bG\.(?:equipView|equipActive)\b/);
+});
+
+test('Worker header uses the synchronized XP requirement after reincarnation', () => {
+  const body = functionBody('uiHeaderXpMax');
+  const context = {
+    workerView: { xpMax: 35.8e9 },
+    viewState: () => context.workerView,
+    xpForLevel: (level) => level * 10
+  };
+  vm.createContext(context);
+  vm.runInContext(body + '\nthis.uiHeaderXpMax = uiHeaderXpMax;', context);
+
+  assert.equal(context.uiHeaderXpMax({ level: 564, reincarnations: 1 }), 35.8e9);
+
+  context.workerView = {};
+  assert.equal(context.uiHeaderXpMax({ level: 564 }), 5640);
 });
 
 test('背包只有摘要時，其他裝備 tooltip 會等待完整 detailIds', () => {
