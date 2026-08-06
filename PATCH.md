@@ -1,5 +1,15 @@
 # PATCH.md
 
+## 新增：物理／魔法穿透寶石（2026-08-06）
+
+- **兩種新寶石**（`GEM_TYPES` → js/data.js）：`piercePhys` 穿甲寶石（🗡️ `pPen` 物理穿透%）、`pierceMagic` 穿魔寶石（🪄 `mPen` 魔法穿透%）。`base=10` 且 `linear: true`，故 1~10 階為 **10/20/30/40/50/100/200/400/800/1600%**（1~5 階 `base×等級`、6 階起每階 ×2，與元素抗性寶石同一條曲線）。圖示沿用屬性面板的 🗡️／🪄。
+- **零登記成本**：掉落、寶石商店、合成、九宮格轉換、拆解、融合、神鑄與 GM 指令全部以 `GEM_TYPES` 的鍵為單一來源（`randomGemType` = `pick(Object.keys(GEM_TYPES))`），新種類自動涵蓋；`pPen`／`mPen` 已是 `computeStats` 的既有聚合桶，`applyGemStat` 的泛用分支直接命中，戰力評分沿用詞條池的 `SCORE_WEIGHTS`。無存檔影響（新鍵為附加）。
+- **掉落稀釋**：寶石種類由 40 → 42，隨機種類為均勻分佈，既有每種寶石的掉落佔比同步 −4.8%。
+- 參數表：`config_tables --gen Gems` 已重生 `Gems.csv` + `Gems.xlsx`（42 列），`--apply` 試跑語意變更 0（確認日後 `套用參數.bat` 不會把新寶石洗掉）。
+- 順手修掉的錯誤：`penetrationDesc`（js/data.js）的說明範例把 `a=1.5` 的「3.5 ÷ 5 ＝ 70%」寫死，2026-08-06 平衡調整把 a 改成 0.75 之後面板顯示的範例就是錯的；改為由 `PEN_IGNORE_A` 當場計算。formula.js §3 註解與 `game_formula.md` §2／§3.1 的對照數字同步改為現值（a=0.75）並標明「調參後整列會變」。`GM_command.md` 的寶石 key 清單補齊（原本漏列 21 種既有寶石）。
+- **補完 `336559b` 未同步的部分**：該次調整把 12 種屬性傷害寶石的 `base` 由 0.2 改為 1（5 級＝5%），但只動了 `js/data.js`——`Gems.csv`／`Gems.xlsx` 仍是 0.2，代表下一次 `套用參數.bat`（`config_tables --apply --write`）會把這 12 顆寶石默默改回 0.2；`tests/gem-attr-dmg-base.test.cjs` 3 項與 `game_formula.md` §8 也還停在舊值（該 3 項在本次改動前即為紅燈）。本次 `--gen Gems` 已讓表格與程式一致，測試與文件同步更新為 base=1（1~5 階 1/2/3/4/5%、6 階起 10/20/40/80/160%）。
+- 驗證：新增 `tests/pen-gem.test.cjs`（6 項：定義、逐階數值對需求、鑲嵌後實際進 `st.pPen`／`st.mPen`、忽略防禦曲線邊界、戰力評分與隨機來源、Gems 表已同步）。
+
 ## 調整：穿透忽略防禦改為飽和曲線（2026-08-06）
 
 - **公式改為 `忽略防禦比率 = 穿透倍率 ÷ (穿透倍率 + a)`**（`penIgnoreRatio` → js/formula.js §3），穿透倍率 ＝ 總穿透加成% ÷ 100（穿透 350% → 3.5）。`PEN_IGNORE_A` 由 0.01 改為 **1.5**（350% ÷ (350% + 1.5) ＝ 70%），舊次方曲線的 `PEN_IGNORE_B`／`PEN_IGNORE_C` 一併移除（參數表同列 b、c 欄停用歸零，`apply_params` 映射刪除，對應參數總數 549 → 547）。

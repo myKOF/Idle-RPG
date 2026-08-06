@@ -107,24 +107,48 @@ gem 寶石key 等級 數量 （加寶石 / 寶石 key / 寶石等級 1~10 / 數�
 目前寶石 key（每行左側是指令要輸入的 key，右側是遊戲中的中文名稱）：
 
 ```text
-ruby       = 紅寶石
-sapphire   = 藍寶石
-topaz      = 黃玉
-emerald    = 綠寶石
-diamond    = 鑽石
-lapis      = 青金石
-amethyst   = 紫水晶
-garnet     = 石榴石
-opal       = 蛋白石
-onyx       = 黑曜石
-moonstone  = 月光石
-sunstone   = 太陽石
-jade       = 翡翠
-turquoise  = 綠松石
-agate      = 瑪瑙
-pearl      = 珍珠
-malachite  = 孔雀石
-fluorite   = 螢石
+ruby          = 紅寶石
+sapphire      = 藍寶石
+topaz         = 黃玉
+emerald       = 綠寶石
+iolite        = 堇青石
+kyanite       = 藍晶石
+diamond       = 鑽石
+lapis         = 青金石
+amethyst      = 紫水晶
+garnet        = 石榴石
+opal          = 蛋白石
+onyx          = 黑曜石
+moonstone     = 月光石
+catseye       = 貓眼石
+sunstone      = 太陽石
+piercePhys    = 穿甲寶石（物理穿透%）
+pierceMagic   = 穿魔寶石（魔法穿透%）
+jade          = 翡翠
+turquoise     = 綠松石
+agate         = 瑪瑙
+pearl         = 珍珠
+malachite     = 孔雀石
+fluorite      = 螢石
+spinel        = 尖晶石（對火屬性敵人傷害%）
+aquamarine    = 海藍寶石（對冰）
+amazonite     = 天河石（對雷）
+peridot       = 橄欖石（對毒）
+citrine       = 黃水晶（對聖）
+tourmaline    = 黑碧璽（對暗）
+coreFire      = 焰核寶石（火屬性傷害提升%）
+coreIce       = 冰核寶石（冰）
+coreLightning = 雷核寶石（雷）
+corePoison    = 毒核寶石（毒）
+coreLight     = 聖核寶石（聖）
+coreDark      = 暗核寶石（暗）
+wardFire      = 火抗寶石
+wardIce       = 冰抗寶石
+wardLightning = 電抗寶石
+wardPoison    = 毒抗寶石
+wardDark      = 暗抗寶石
+wardLight     = 聖抗寶石
+wardAll       = 全屬性抗性寶石
 ```
 
 範例：

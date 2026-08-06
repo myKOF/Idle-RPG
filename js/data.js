@@ -1434,6 +1434,12 @@ var GEM_TYPES = {
      base 取 1.5＝月光石的 1.5 倍，與詞條池同一對的比例一致（命中 base 3 / 閃避 base 2）。 */
   catseye: { name: '貓眼石', emoji: '👁️', stat: 'hit', statName: '命中率%', base: 1.5, pct: true },
   sunstone: { name: '太陽石', emoji: '☀️', stat: 'luck', statName: '幸運值', base: 1.5, pct: false },
+  /* === 穿透（2026-08-06 新增 2 種；linear 線性曲線）===
+     base=10 → L1~5：10/20/30/40/50%、L6~10：100/200/400/800/1600%。
+     穿透本身無上限，實際忽略防禦%走飽和曲線（formula.js §3），故高階數值可以放大而不會爆掉。
+     面板圖示沿用屬性列的 🗡️／🪄，讓寶石與對應屬性一眼對得上。 */
+  piercePhys: { name: '穿甲寶石', emoji: '🗡️', stat: 'pPen', statName: '物理穿透%', base: 10, pct: true, linear: true },
+  pierceMagic: { name: '穿魔寶石', emoji: '🪄', stat: 'mPen', statName: '魔法穿透%', base: 10, pct: true, linear: true },
   // === 防禦類（2026-07-09 新增 6 種）===
   jade: { name: '翡翠', emoji: '🟩', stat: 'tenacity', statName: '韌性%', base: 1.5, pct: true },
   turquoise: { name: '綠松石', emoji: '🟦', stat: 'blockRate', statName: '格擋率%', base: 1, pct: true },
@@ -1715,9 +1721,12 @@ function enemyTypeDmgRedDesc(st, key, label) {
 function penetrationDesc(st, key, label) {
   var pen = (st && st[key]) || 0;
   var ignore = penIgnorePct(pen);
+  // 範例一律由 PEN_IGNORE_A 當場算：a 是參數表可調值，寫死的示範數字會在調參後變成錯的。
+  var exPen = 350;
   return '造成' + label + '傷害時，無視敵方一定比例的' + label + '防禦。穿透值本身無上限，' +
     '實際忽略防禦% ＝ 穿透倍率 ÷ (穿透倍率 + ' + effectNum(PEN_IGNORE_A) + ')' +
-    '（穿透倍率 ＝ 穿透% ÷ 100；例：穿透 350% → 3.5 ÷ 5 ＝ 70%）；' +
+    '（穿透倍率 ＝ 穿透% ÷ 100；例：穿透 ' + exPen + '% → ' + effectNum(exPen / 100) + ' ÷ ' +
+    effectNum(exPen / 100 + PEN_IGNORE_A) + ' ＝ ' + fmt1(penIgnorePct(exPen)) + '%）；' +
     '忽略防禦隨穿透遞減收斂，不會達到 100%。' +
     '<br><br><span style="color:#ffd700">目前忽略防禦：' + fmt1(ignore) + '%</span>';
 }
