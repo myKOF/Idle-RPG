@@ -73,6 +73,46 @@ Worker 是模擬與存檔的唯一權威，主執行緒不再持有 `G`，舊單
 
 Web Worker 遷移全部完成，無進行中的大型工程。
 
+## Codex：戰鬥特效造成裝備／強化操作延遲（2026-08-06）
+
+狀態：已完成（待 Claude Review／Antigravity 驗證）
+
+任務分類：戰鬥 UI 效能／VFX 降載／裝備操作可靠性
+
+任務目的：戰鬥特效加強後，降低主執行緒在戰鬥期間對裝備、洗煉與強化操作造成的輸入延遲；保留戰鬥計算與操作結果的權威性，不修改戰鬥公式、存檔格式或 Worker Protocol。
+
+負責 AI：Codex
+
+任務內容：
+
+- 新增 VFX 品質分級與裝備／強化互動期間的降級策略。
+- 對純視覺 VFX 事件做限流、合併與低優先級丟棄。
+- 快取戰場特效錨點座標，避免每個特效重複量測 DOM。
+- 降低裝備／背包操作期間不必要的戰鬥與面板重繪。
+- 新增自動化效能契約測試與 Antigravity 唯讀瀏覽器測試用例 Markdown。
+
+技術影響：僅影響主執行緒 VFX 顯示、UI 重繪與純視覺事件排程；Worker 模擬結果、Command ACK、面板權威資料與存檔行為維持不變。
+
+允許修改：`docs/AI_TASKS.md`、`js/vfx.js`、`js/ui.js`、`tests/vfx-performance.test.cjs`、`docs/ANTIGRAVITY_VFX_UI_TEST_CASES.md`。
+
+禁止修改：`js/worker/protocol.js`、`js/worker/sim.worker.js`、`js/bridge.js`、戰鬥公式、數值配置、存檔格式，以及其他 AI 進行中的檔案。
+
+前置依賴：既有 Worker UI／VFX 協議與背景分頁清理流程已完成。
+
+測試要求：執行新增 VFX 效能契約測試、既有 `tests/ui-performance.test.cjs`、`tests/vfx-background.test.cjs`、`tests/skill-vfx.test.cjs`，並執行 `npm.cmd run build`；Antigravity 依新增 Markdown 實際操作驗證戰鬥中切換裝備頁、洗煉、強化、連續操作與 VFX 降級恢復。
+
+實作與測試結果：已完成 VFX Full／Reduced／Off 分級、事件佇列每幀預算、短窗合併、佇列上限、座標快取與版面失效通知；裝備／非戰鬥頁降低戰鬥重繪頻率並加入輸入保護。指定效能／UI／VFX 測試共 26 項通過；完整 `npm.cmd test` 共 1151 項通過；`npm.cmd run build` 通過 250 個檔案檢查。
+
+完成條件：特效高峰期間不阻塞裝備 Command 的輸入處理；Reduced 模式可保留主要命中回饋；VFX 純視覺事件不影響戰鬥結果；自動化測試、Build 與 Antigravity 測試用例文件完成。
+
+需要 Claude Review：是，檢查 Timer／Event 生命週期、UI 狀態一致性與效能回歸。
+
+需要 Antigravity 驗證：是，依 `docs/ANTIGRAVITY_VFX_UI_TEST_CASES.md` 執行唯讀瀏覽器驗證。
+
+完成後交給：Claude Review，之後由使用者合併至整合分支。
+
+已知風險：Canvas／WebGL 遷移不納入本批；若實機效能仍不足，下一批再評估 Canvas VFX 層。不同瀏覽器與 GPU 對 CSS filter／box-shadow 的成本可能不同。
+
 ## Codex：高塔 BOSS 單次傷害上限 20%（2026-08-06）
 
 狀態：已完成
