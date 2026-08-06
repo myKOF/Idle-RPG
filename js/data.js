@@ -1187,12 +1187,12 @@ REALMS = {
 };
 ZONES = {
   plains: { name: '草原', emoji: '🌿', pool: MONSTER_POOL, enemyTable: ZONE_ENEMY_TABLES.plains, realm: 'human', hpMult: 1, atkMult: 1, defMult: 1, aspdMult: 1, rewardMult: 1, maxStage: 200 },
-  desert: { name: '荒漠', emoji: '🏜️', pool: DESERT_POOL, enemyTable: ZONE_ENEMY_TABLES.desert, realm: 'human', hpMult: 2.2, atkMult: 1.8, defMult: 1.6, aspdMult: 1.5, rewardMult: 1.25, maxStage: 300, reqZone: 'plains', reqStage: 200 },
-  swamp: { name: '沼澤', emoji: '🦠', pool: SWAMP_POOL, enemyTable: ZONE_ENEMY_TABLES.swamp, realm: 'human', hpMult: 4, atkMult: 2.8, defMult: 2.4, aspdMult: 2, rewardMult: 1.5, maxStage: 400, reqZone: 'desert', reqStage: 300 },
+  desert: { name: '荒漠', emoji: '🏜️', pool: DESERT_POOL, enemyTable: ZONE_ENEMY_TABLES.desert, realm: 'human', hpMult: 2.2, atkMult: 1.8, defMult: 1.6, aspdMult: 1.4, rewardMult: 1.2, maxStage: 300, reqZone: 'plains', reqStage: 200 },
+  swamp: { name: '沼澤', emoji: '🦠', pool: SWAMP_POOL, enemyTable: ZONE_ENEMY_TABLES.swamp, realm: 'human', hpMult: 4.4, atkMult: 2.8, defMult: 2.4, aspdMult: 1.6, rewardMult: 1.5, maxStage: 400, reqZone: 'desert', reqStage: 300 },
   undead_mountains: { name: '亡靈山脈', emoji: '⛰️', pool: UNDEAD_MOUNTAINS_POOL, enemyTable: ZONE_ENEMY_TABLES.undead_mountains, realm: 'human', hpMult: 6.5, atkMult: 3.8, defMult: 3.2, aspdMult: 1.8, rewardMult: 2.25, maxStage: 500, reqZone: 'swamp', reqStage: 400 },
-  god_battlefield: { name: '太古戰場', emoji: '⚔️', pool: GOD_BATTLEFIELD_POOL, enemyTable: ZONE_ENEMY_TABLES.god_battlefield, realm: 'god', hpMult: 10, atkMult: 5, defMult: 4, aspdMult: 1.75, rewardMult: 4, maxStage: 600, reqZone: 'undead_mountains', reqStage: 500, reqReincarnation: 11 },
-  god_chaos: { name: '混沌界', emoji: '🌀', pool: GOD_CHAOS_POOL, enemyTable: ZONE_ENEMY_TABLES.god_chaos, realm: 'god', hpMult: 25, atkMult: 10, defMult: 8, aspdMult: 2, rewardMult: 10, maxStage: 700, reqZone: 'god_battlefield', reqStage: 600, reqReincarnation: 11 },
-  god_sanctuary: { name: '永恒神域', emoji: '✨', pool: GOD_SANCTUARY_POOL, enemyTable: ZONE_ENEMY_TABLES.god_sanctuary, realm: 'god', hpMult: 60, atkMult: 20, defMult: 15, aspdMult: 2.25, rewardMult: 24, maxStage: 800, reqZone: 'god_chaos', reqStage: 700, reqReincarnation: 11 }
+  god_battlefield: { name: '太古戰場', emoji: '⚔️', pool: GOD_BATTLEFIELD_POOL, enemyTable: ZONE_ENEMY_TABLES.god_battlefield, realm: 'god', hpMult: 10, atkMult: 5, defMult: 4, aspdMult: 2, rewardMult: 4, maxStage: 600, reqZone: 'undead_mountains', reqStage: 500, reqReincarnation: 11 },
+  god_chaos: { name: '混沌界', emoji: '🌀', pool: GOD_CHAOS_POOL, enemyTable: ZONE_ENEMY_TABLES.god_chaos, realm: 'god', hpMult: 25, atkMult: 10, defMult: 8, aspdMult: 2.2, rewardMult: 10, maxStage: 700, reqZone: 'god_battlefield', reqStage: 600, reqReincarnation: 11 },
+  god_sanctuary: { name: '永恒神域', emoji: '✨', pool: GOD_SANCTUARY_POOL, enemyTable: ZONE_ENEMY_TABLES.god_sanctuary, realm: 'god', hpMult: 60, atkMult: 20, defMult: 15, aspdMult: 2.5, rewardMult: 24, maxStage: 800, reqZone: 'god_chaos', reqStage: 700, reqReincarnation: 11 }
 };
 
 function zoneMaxStage(zoneKey) {
@@ -1284,7 +1284,7 @@ var TOWER_BOSS_TRIAL = {                                  // 試煉之塔 1~50 �
   hitBase: 200, hitPerFloor: 70,                          // 命中率 = hitBase + 樓層×hitPerFloor
   hpMult: 20, atkMult: 3, defMult: 10,                    // 生命/攻擊/物魔防 = 基準 × 倍率
   aspd: 3, ctrlRes: 70,                                   // 攻速（次/秒）／控制抵抗%
-  dodgeBase: 8, dodgeCap: 10000000, dodgePerFloor: 20,   // 閃避 = min(base + 樓層×per, cap)%
+  dodgeBase: 8, dodgeCap: 10000000, dodgePerFloor: 15,   // 閃避 = min(base + 樓層×per, cap)%
   elemMult: 3,                                            // 元素附傷 = 總魔攻 × elemMult
   xpMult: 2,                                              // 經驗 = 建議野外階段普通怪經驗 × xpMult
   timeLimit: 60, enrageTime: 40, enrageMult: 3, chargePeriod: 8 // 戰鬥規則：限時/狂暴檢查秒/狂暴倍率/蓄力周期秒
@@ -1295,7 +1295,7 @@ var TOWER_BOSS_HELL = {                                   // 地獄之塔 51~100
   hitBase: 200, hitPerFloor: 70,
   hpMult: 400, atkMult: 15, defMult: 10,
   aspd: 3, ctrlRes: 70,
-  dodgeBase: 8, dodgeCap: 10000000, dodgePerFloor: 20,
+  dodgeBase: 8, dodgeCap: 10000000, dodgePerFloor: 17,
   elemMult: 3,
   xpMult: 2,
   timeLimit: 60, enrageTime: 40, enrageMult: 3, chargePeriod: 8
@@ -1695,9 +1695,9 @@ function resistanceReductionDesc(st, value, reductionFn) {
   return '<br><br><span style="color:#ffd700">目前總減傷：' + pctStrFloor4(reduction) + '</span>';
 }
 
-// 六系元素抗性 tips：附魔抗性為獨立乘區（其他來源合計 ×(1+同系附魔合計%)），有附魔時顯示拆解
+// 六系元素抗性 tips
 function elementResistDesc(st, elem, label) {
-  var s = '降低受到的' + label + '屬性傷害，抗性值越高減傷效果越強。附魔「' + label + '屬性抗性」為額外加成：其他來源合計 ×(1+附魔合計%)。';
+  var s = '降低受到的' + label + '屬性傷害，抗性值越高減傷效果越強。';
   var total = (st.resist && st.resist[elem]) || 0;
   var en = (st.enchantRes && st.enchantRes[elem]) || 0;
   if (en !== 0) {
@@ -1711,31 +1711,22 @@ function elementResistDesc(st, elem, label) {
 // 敵種傷害抗性（普通敵人/普通菁英/普通BOSS）tips：黃字顯示以自身等級為攻擊者等級的目前減傷率（截斷至小數四位）
 function enemyTypeDmgRedDesc(st, key, label) {
   var reduction = enemyTypeDamageReduction(st[key] || 0) * 100;
-  return '受到' + label + '攻擊時，於全局減傷之後的最終階段按「1 - ' + ENEMY_TYPE_DMG_RED_A +
-    ' ÷ (1 + (減免值 ÷ ' + ENEMY_TYPE_DMG_RED_B + ')^' + ENEMY_TYPE_DMG_RED_C + ')」比例減傷；多件裝備直接加總。' +
+  return '受到' + label + '攻擊時降低受到的傷害。' +
     '<br><br><span style="color:#ffd700">目前同級減傷率：' + pctStrFloor4(reduction) + '</span>';
 }
 
-/* 穿透 tips：穿透%本身不設上限，實際忽略防禦% 由 penIgnorePct 的飽和曲線換算（formula.js §3）；
-   黃字顯示目前穿透值換算後的實際忽略防禦%（趨近但到不了 100%）。 */
+/* 穿透 tips：黃字顯示目前穿透值換算後的實際忽略防禦% */
 function penetrationDesc(st, key, label) {
   var pen = (st && st[key]) || 0;
   var ignore = penIgnorePct(pen);
-  // 範例一律由 PEN_IGNORE_A 當場算：a 是參數表可調值，寫死的示範數字會在調參後變成錯的。
-  var exPen = 350;
-  return '造成' + label + '傷害時，無視敵方一定比例的' + label + '防禦。穿透值本身無上限，' +
-    '實際忽略防禦% ＝ 穿透倍率 ÷ (穿透倍率 + ' + effectNum(PEN_IGNORE_A) + ')' +
-    '（穿透倍率 ＝ 穿透% ÷ 100；例：穿透 ' + exPen + '% → ' + effectNum(exPen / 100) + ' ÷ ' +
-    effectNum(exPen / 100 + PEN_IGNORE_A) + ' ＝ ' + fmt1(penIgnorePct(exPen)) + '%）；' +
-    '忽略防禦隨穿透遞減收斂，不會達到 100%。' +
+  return '造成' + label + '傷害時，無視敵方一定比例的' + label + '防禦。' +
     '<br><br><span style="color:#ffd700">目前忽略防禦：' + pctStrFloor4(ignore) + '</span>';
 }
 
-/* 吸血／吸魔 tips：不再以造成的傷害計算，改由每秒生命回復／法力恢復換算（formula.js §3）。 */
+/* 吸血／吸魔 tips */
 function drainDesc(st, key, label, resLabel, perSec, amount) {
   var isHp = key === 'lifesteal';
-  return '攻擊命中時回復' + (isHp ? '生命' : '法力') + '。回復量 ＝ 每秒' + resLabel + ' × ' + label + '%，' +
-    '與造成的傷害無關，且不設上限；超出' + (isHp ? '生命上限' : '法力上限') + '的部分不轉為護盾。' +
+  return '攻擊命中時回復' + (isHp ? '生命' : '法力') + '。' +
     '<br><br><span style="color:#aaa">每秒' + resLabel + '：<span style="color:#fff">' + fmt(perSec) + '</span>' +
     '<br>目前每次回復：<span style="color:#fff">' + fmt(amount) + '</span></span>';
 }
@@ -1758,8 +1749,8 @@ var STAT_GROUPS = [
   },
   {
     title: '進攻屬性', rows: [
-      ['⚔️ 物理攻擊', function (st) { return statFmt(st.atk, null); }, function (st) { return statDesc(st, '影響普攻與多數物理技能的傷害基礎。由力量派生；裝備等「定值加成」會依轉生次數獲得指數強化。', '物理攻擊', 'atk', 'atkPct'); }],
-      ['🔮 魔法攻擊', function (st) { return statFmt(st.matk, null); }, function (st) { return statDesc(st, '影響多數魔法技能的傷害基礎。由智力派生；裝備等「定值加成」會依轉生次數獲得指數強化。', '魔法攻擊', 'matk', 'matkPct'); }],
+      ['⚔️ 物理攻擊', function (st) { return statFmt(st.atk, null); }, function (st) { return statDesc(st, '影響普攻與多數物理技能的傷害基礎。由力量派生。', '物理攻擊', 'atk', 'atkPct'); }],
+      ['🔮 魔法攻擊', function (st) { return statFmt(st.matk, null); }, function (st) { return statDesc(st, '影響多數魔法技能的傷害基礎。由智力派生。', '魔法攻擊', 'matk', 'matkPct'); }],
       ['💥 暴擊率', function (st) { return statFmt(st.critRate, STAT_CAPS.critRate, '%'); }, '攻擊時造成額外暴擊傷害的機率。暴擊率 100% 為完全爆擊，超過 100% 的部分會衍生「連擊數」。' + capText(STAT_CAPS.critRate, '%')],
       ['🔗 連擊數', function (st) { return (st.comboHits || 0) > 0 ? fmt1(st.comboHits) + ' 次' : '—'; }, '暴擊率超過 100% 後衍生：普攻與技能的「直接傷害」會額外追加的攻擊次數。持續傷害不受影響。'],
       ['🩸 暴擊傷害', function (st) { return Math.round(st.critDmg) + '%'; }, '觸發暴擊時的傷害倍率。'],
@@ -1773,44 +1764,39 @@ var STAT_GROUPS = [
       ['🌊 吸魔', function (st) { return statFmt(st.manaSteal, STAT_CAPS.manaSteal, '%.1f'); }, function (st) { return drainDesc(st, 'manaSteal', '吸魔', '法力恢復', playerMpRegenPerSec(st), manaStealAmount(st, st.manaSteal)); }],
       ['👑 對菁英傷害', function (st) { return statFmt(st.eliteDmg, null, '%', true); }, '對菁英怪或首領怪物造成的額外傷害加成。'],
       ['😈 對BOSS傷害', function (st) { return statFmt(st.bossDmg, null, '%', true); }, '專門對首領怪物造成的額外傷害加成。'],
-      ['👤 對普通敵人傷害', function (st) { return statFmt(st.normalDmg, null, '%', true); }, '對普通敵人（非菁英、非BOSS）造成的額外傷害加成，公式與對菁英/BOSS傷害相同。'],
+      ['👤 對普通敵人傷害', function (st) { return statFmt(st.normalDmg, null, '%', true); }, '對普通敵人（非菁英、非BOSS）造成的額外傷害加成。'],
       ['🔥 對火屬性敵人傷害', function (st) { return statFmt(st.dmgVsElem.fire, null, '%', true); }, '對「帶火屬性標籤」的敵人造成的傷害提高。'],
       ['❄️ 對冰屬性敵人傷害', function (st) { return statFmt(st.dmgVsElem.ice, null, '%', true); }, '對「帶冰屬性標籤」的敵人造成的傷害提高。'],
       ['⚡ 對雷屬性敵人傷害', function (st) { return statFmt(st.dmgVsElem.lightning, null, '%', true); }, '對「帶雷屬性標籤」的敵人造成的傷害提高。'],
       ['☠️ 對毒屬性敵人傷害', function (st) { return statFmt(st.dmgVsElem.poison, null, '%', true); }, '對「帶毒屬性標籤」的敵人造成的傷害提高。'],
       ['✨ 對聖屬性敵人傷害', function (st) { return statFmt(st.dmgVsElem.light, null, '%', true); }, '對「帶聖屬性標籤」的敵人造成的傷害提高。'],
       ['🌑 對暗屬性敵人傷害', function (st) { return statFmt(st.dmgVsElem.dark, null, '%', true); }, '對「帶暗屬性標籤」的敵人造成的傷害提高。'],
-      ['🔥 火屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.fire, null, '%', true); }, '自身造成的火屬性元素傷害提高（含附魔固定元素攻擊、技能元素成分與天賦元素附傷）。'],
-      ['❄️ 冰屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.ice, null, '%', true); }, '自身造成的冰屬性元素傷害提高（含附魔固定元素攻擊、技能元素成分與天賦元素附傷）。'],
-      ['⚡ 雷屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.lightning, null, '%', true); }, '自身造成的雷屬性元素傷害提高（含附魔固定元素攻擊、技能元素成分與天賦元素附傷）。'],
-      ['☠️ 毒屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.poison, null, '%', true); }, '自身造成的毒屬性元素傷害提高（含附魔固定元素攻擊、技能元素成分與天賦元素附傷）。'],
-      ['✨ 聖屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.light, null, '%', true); }, '自身造成的聖屬性元素傷害提高（含附魔固定元素攻擊、技能元素成分與天賦元素附傷）。'],
-      ['🌑 暗屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.dark, null, '%', true); }, '自身造成的暗屬性元素傷害提高（含附魔固定元素攻擊、技能元素成分與天賦元素附傷）。'],
+      ['🔥 火屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.fire, null, '%', true); }, '自身造成的火屬性元素傷害提高。'],
+      ['❄️ 冰屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.ice, null, '%', true); }, '自身造成的冰屬性元素傷害提高。'],
+      ['⚡ 雷屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.lightning, null, '%', true); }, '自身造成的雷屬性元素傷害提高。'],
+      ['☠️ 毒屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.poison, null, '%', true); }, '自身造成的毒屬性元素傷害提高。'],
+      ['✨ 聖屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.light, null, '%', true); }, '自身造成的聖屬性元素傷害提高。'],
+      ['🌑 暗屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.dark, null, '%', true); }, '自身造成的暗屬性元素傷害提高。'],
       ['💫 範圍傷害', function (st) { return statFmt(st.aoeDmg, null, '%', true); }, '多目標或範圍技能的總體傷害加成。']
     ]
   },
   {
     title: '防禦屬性', rows: [
-      ['🛡️ 物理防禦', function (st) { return statFmt(st.def, null); }, function (st) { return defenseStatDesc(st, '根據防禦公式降低受到的物理傷害。由力量與耐力派生；定值加成依轉生次數指數強化，百分比加成取自物理防禦%。', '物理防禦', 'def', 'defPct'); }],
-      ['🔰 魔法防禦', function (st) { return statFmt(st.mdef, null); }, function (st) { return defenseStatDesc(st, '根據防禦公式降低受到的魔法傷害。由智力與耐力派生；定值加成依轉生次數指數強化，百分比加成取自魔法防禦%。', '魔法防禦', 'mdef', 'mdefPct'); }],
+      ['🛡️ 物理防禦', function (st) { return statFmt(st.def, null); }, function (st) { return defenseStatDesc(st, '降低受到的物理傷害。由力量與耐力派生。', '物理防禦', 'def', 'defPct'); }],
+      ['🔰 魔法防禦', function (st) { return statFmt(st.mdef, null); }, function (st) { return defenseStatDesc(st, '降低受到的魔法傷害。由智力與耐力派生。', '魔法防禦', 'mdef', 'mdefPct'); }],
       ['🛡️ 全局減傷', function (st) { return statFmt(st.globalDmgRed, null); }, function (st) {
         var reduction = globalDamageReduction(st.globalDmgRed) * 100;
         var capNote = GLOBAL_DMG_RED_CAP > 0 ? '（減傷上限 ' + GLOBAL_DMG_RED_CAP + '%）' : '';
-        return '在最終傷害階段降低受到的所有傷害' + capNote + '。<br><br><span style="color:#ffd700">目前實際減傷：' + pctStrFloor4GlobalDmgRed(reduction) + '</span>';
+        return '降低受到的所有傷害' + capNote + '。<br><br><span style="color:#ffd700">目前實際減傷：' + pctStrFloor4GlobalDmgRed(reduction) + '</span>';
       }],
       ['👤 普通敵人傷害抗性', function (st) { return statFmt(st.normalDmgRed, null); }, function (st) { return enemyTypeDmgRedDesc(st, 'normalDmgRed', '普通敵人（非菁英、非BOSS）'); }],
       ['👑 菁英傷害抗性', function (st) { return statFmt(st.eliteDmgRed, null); }, function (st) { return enemyTypeDmgRedDesc(st, 'eliteDmgRed', '菁英敵人'); }],
       ['😈 BOSS傷害抗性', function (st) { return statFmt(st.bossDmgRed, null); }, function (st) { return enemyTypeDmgRedDesc(st, 'bossDmgRed', 'BOSS'); }],
       ['🧱 格擋率', function (st) { return statFmt(st.blockRate, STAT_CAPS.blockRate, '%'); }, '受到攻擊時，有機率觸發格擋來減輕部分傷害。' + capText(STAT_CAPS.blockRate, '%')],
-      ['🧲 格擋減傷', function (st) { return statFmt(blockDmgReduction(st.blockDmgRed), blockDmgRedTotalCap(), '%'); }, function () { return '成功格擋時能減免的傷害比例（' + BLOCK_DMG_RED_BASE + '% 基礎 + 詞條）。' + capText(blockDmgRedTotalCap(), '%'); }],
+      ['🧲 格擋減傷', function (st) { return statFmt(blockDmgReduction(st.blockDmgRed), blockDmgRedTotalCap(), '%'); }, function () { return '成功格擋時減免的傷害比例。' + capText(blockDmgRedTotalCap(), '%'); }],
       ['💨 閃避率', function (st) { return statFmt(st.evasion, STAT_CAPS.evasion, '%'); }, '完全避開敵人攻擊的機率（受敵方命中率影響）。' + capText(STAT_CAPS.evasion, '%')],
-      ['🦾 韌性', function (st) { return statFmt(st.tenacity, STAT_CAPS.tenacity, '%'); }, function (st) {
-        var t = st.tenacity || 0;
-        return '同時作用於三處：<br>' +
-          '① 降低自身被施加暈眩、減速等控制狀態的機率（與控制抵抗各自獨立擲骰）<br>' +
-          '② 縮短被控場的持續時間（韌性 ' + fmt1(t) + '% → 控場時間縮短 ' + fmt1(t) + '%）<br>' +
-          '③ 降低被敵人爆擊的機率（敵方爆擊率 × (1 - ' + fmt1(t) + '%)）' +
-          capText(STAT_CAPS.tenacity, '%');
+      ['🦾 韌性', function (st) { return statFmt(st.tenacity, STAT_CAPS.tenacity, '%'); }, function () {
+        return '降低被控制狀態命中的機率、縮短受控持續時間，並降低被敵人暴擊的機率。' + capText(STAT_CAPS.tenacity, '%');
       }],
       ['🫧 護盾效率', function (st) { return statFmt(st.shieldEff, null, '%', true); }, '提升護盾的最大吸收上限與獲取量。'],
       ['🗿 物理抗性', function (st) { return statFmt(st.pRes, null, '%'); }, function (st) { return '降低受到的物理傷害，抗性值越高減傷效果越強。' + resistanceReductionDesc(st, st.pRes, physicalResistanceReduction); }],
