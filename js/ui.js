@@ -4833,29 +4833,29 @@ function updateDmgAbsorb() {
   var hp = (isActive && pEnt && typeof pEnt.hp === 'number') ? pEnt.hp : st.hp;
   var shield = (isActive && pEnt && typeof pEnt.shield === 'number') ? pEnt.shield : 0;
 
-  // 輸出端物傷/魔傷極限計算
+  // 輸出端物傷/魔傷計算（包含暴傷、總傷%、敵種加成與六系屬性平均加成）
   var critMult = (st.critDmg || 150) / 100;
   var totalDmgMult = 1 + (st.totalDmgPct || 0) / 100;
   var maxEnemyDmg = Math.max(st.normalDmg || 0, st.eliteDmg || 0, st.bossDmg || 0);
   var enemyDmgMult = 1 + maxEnemyDmg / 100;
 
-  // 1. 第一種屬性加成：對屬性敵人傷害% (dmgVsFire ... dmgVsDark)
+  // 1. 第一種屬性加成：對屬性敵人傷害% (取 6 系平均)
   var vsElems = ['dmgVsFire', 'dmgVsIce', 'dmgVsLightning', 'dmgVsPoison', 'dmgVsLight', 'dmgVsDark'];
-  var maxVsElem = 0;
+  var vsElemSum = 0;
   for (var i = 0; i < vsElems.length; i++) {
-    var v = Number(st[vsElems[i]]) || 0;
-    if (v > maxVsElem) maxVsElem = v;
+    vsElemSum += Number(st[vsElems[i]]) || 0;
   }
-  var vsElemMult = 1 + maxVsElem / 100;
+  var avgVsElem = vsElemSum / 6;
+  var vsElemMult = 1 + avgVsElem / 100;
 
-  // 2. 第二種屬性加成：屬性傷害提升% (elemDmgFire ... elemDmgDark)
+  // 2. 第二種屬性加成：屬性傷害提升% (取 6 系平均)
   var elemUps = ['elemDmgFire', 'elemDmgIce', 'elemDmgLightning', 'elemDmgPoison', 'elemDmgLight', 'elemDmgDark'];
-  var maxElemUp = 0;
+  var elemUpSum = 0;
   for (var j = 0; j < elemUps.length; j++) {
-    var u = Number(st[elemUps[j]]) || 0;
-    if (u > maxElemUp) maxElemUp = u;
+    elemUpSum += Number(st[elemUps[j]]) || 0;
   }
-  var elemUpMult = 1 + maxElemUp / 100;
+  var avgElemUp = elemUpSum / 6;
+  var elemUpMult = 1 + avgElemUp / 100;
 
   var physDmgVal = (st.atk || 0) * critMult * totalDmgMult * enemyDmgMult * vsElemMult * elemUpMult;
   var magicDmgVal = (st.matk || 0) * critMult * totalDmgMult * enemyDmgMult * vsElemMult * elemUpMult;
@@ -4864,16 +4864,16 @@ function updateDmgAbsorb() {
     physDmgEl.textContent = fmt(physDmgVal);
     var physDmgParent = physDmgEl.parentNode;
     if (physDmgParent) {
-      physDmgParent.setAttribute('data-tt-title', '物理單次最大傷害 (物傷)');
-      var physDmgDesc = '角色單次極限物理傷害輸出。<br>' +
-        '公式：基礎物攻 × 暴傷倍率 × 總傷% × 敵種加成% × 對屬性敵% × 屬性提升%<br><br>' +
+      physDmgParent.setAttribute('data-tt-title', '物理單次預期傷害 (物傷)');
+      var physDmgDesc = '角色單次物理傷害輸出（綜合平均水準）。<br>' +
+        '公式：基礎物攻 × 暴傷倍率 × 總傷% × 敵種加成% × 對屬性敵平均% × 屬性提升平均%<br><br>' +
         '<span style="color:#4ade80">基礎物理攻擊：</span>' + fmtFull(st.atk || 0) + '<br>' +
         '<span style="color:#ffd700">暴擊傷害倍率：</span>' + Math.round(st.critDmg || 150) + '%<br>' +
         '<span style="color:#ffd700">總傷害加成：</span>' + (st.totalDmgPct || 0) + '%<br>' +
         '<span style="color:#ffd700">敵種最大加成：</span>' + maxEnemyDmg + '%<br>' +
-        '<span style="color:#ffd700">對屬性敵加成：</span>' + maxVsElem + '%<br>' +
-        '<span style="color:#ffd700">屬性傷害提升：</span>' + maxElemUp + '%<br><br>' +
-        '<span style="color:#ffd700">物理單次最大傷害：</span>' + fmtFull(physDmgVal);
+        '<span style="color:#ffd700">對屬性敵平均：</span>' + avgVsElem.toFixed(1) + '%<br>' +
+        '<span style="color:#ffd700">屬性傷害平均提升：</span>' + avgElemUp.toFixed(1) + '%<br><br>' +
+        '<span style="color:#ffd700">物理單次預期傷害：</span>' + fmtFull(physDmgVal);
       physDmgParent.setAttribute('data-tt-desc', physDmgDesc);
       physDmgParent.removeAttribute('title');
     }
@@ -4882,16 +4882,16 @@ function updateDmgAbsorb() {
     magicDmgEl.textContent = fmt(magicDmgVal);
     var magicDmgParent = magicDmgEl.parentNode;
     if (magicDmgParent) {
-      magicDmgParent.setAttribute('data-tt-title', '魔法單次最大傷害 (魔傷)');
-      var magicDmgDesc = '角色單次極限魔法傷害輸出。<br>' +
-        '公式：基礎魔攻 × 暴傷倍率 × 總傷% × 敵種加成% × 對屬性敵% × 屬性提升%<br><br>' +
+      magicDmgParent.setAttribute('data-tt-title', '魔法單次預期傷害 (魔傷)');
+      var magicDmgDesc = '角色單次魔法傷害輸出（綜合平均水準）。<br>' +
+        '公式：基礎魔攻 × 暴傷倍率 × 總傷% × 敵種加成% × 對屬性敵平均% × 屬性提升平均%<br><br>' +
         '<span style="color:#4ade80">基礎魔法攻擊：</span>' + fmtFull(st.matk || 0) + '<br>' +
         '<span style="color:#ffd700">暴擊傷害倍率：</span>' + Math.round(st.critDmg || 150) + '%<br>' +
         '<span style="color:#ffd700">總傷害加成：</span>' + (st.totalDmgPct || 0) + '%<br>' +
         '<span style="color:#ffd700">敵種最大加成：</span>' + maxEnemyDmg + '%<br>' +
-        '<span style="color:#ffd700">對屬性敵加成：</span>' + maxVsElem + '%<br>' +
-        '<span style="color:#ffd700">屬性傷害提升：</span>' + maxElemUp + '%<br><br>' +
-        '<span style="color:#ffd700">魔法單次最大傷害：</span>' + fmtFull(magicDmgVal);
+        '<span style="color:#ffd700">對屬性敵平均：</span>' + avgVsElem.toFixed(1) + '%<br>' +
+        '<span style="color:#ffd700">屬性傷害平均提升：</span>' + avgElemUp.toFixed(1) + '%<br><br>' +
+        '<span style="color:#ffd700">魔法單次預期傷害：</span>' + fmtFull(magicDmgVal);
       magicDmgParent.setAttribute('data-tt-desc', magicDmgDesc);
       magicDmgParent.removeAttribute('title');
     }
