@@ -2918,6 +2918,43 @@ function decide(state, policy, memo) {
           out.push({ name: r.cmd, args: urArgs, ruleId: r.id });
         }
       }
+    } else if (r.upgradeParts) {
+      /* ---- 零件升級：全域乘數，優先於任何其他熔爐操作 ----
+
+         零件等級存在 factory.partLevels，是**全域**的——升一次所有熔爐的同種零件
+         一起變強（js/newforge.js newForgeUpgradePart 只改 partLevels，不動熔爐存檔）。
+         而它直接決定精華／碎片／寶石的產出率。
+
+         實測 24 小時 × 5 seed：AI 的零件全部停在 1 級（newforge.upgradePart 這條
+         指令一次都沒送過），真人是 extractLens 5 / gemCollector 6 / scrapForge 4。
+         結果分解件數 24,586 對 46,921、結局精華存量 12 對 11,932——
+         而精華不夠正是「40% 的詞條是垃圾卻洗不掉」的病因：
+         洗煉送出 12,328 次只成功 24.8%，失敗的 8,507 次全是「資源不足（需要精華 5）」。
+
+         只升**這座策略真的在用的**零件（mix 宣告的那幾種），照宣告順序輪流升，
+         每個決策點最多送一條——成本會隨等級變，同一拍連送兩次第二次多半空轉。
+         成本由遊戲給（panels.newforge.partUpgradeCosts），策略不重算；
+         goldRatio 是保留閥，金幣同時要餵強化與背包擴充。 */
+      var upCfg = r.upgradeParts;
+      var upLevels = pathVal(state, upCfg.levels) || {};
+      var upCosts = pathVal(state, upCfg.costs) || {};
+      var upGold = Number(pathVal(state, upCfg.gold)) || 0;
+      var upRatio = (typeof upCfg.goldRatio === 'number') ? upCfg.goldRatio : 0.5;
+      var upKeys = upCfg.parts || [];
+      /* 等級最低的先升：全域乘數之間先補短板，比把單一種類推到頂划算。
+         同級時照宣告順序，維持決定論。 */
+      var upBest = null, upBestLv = Infinity, upBestOrd = Infinity;
+      for (var ui = 0; ui < upKeys.length; ui++) {
+        var uk = upKeys[ui];
+        var ulv = Number(upLevels[uk]);
+        var ucost = Number(upCosts[uk]);
+        if (!(ulv >= 0) || !(ucost > 0)) continue;      // 已達上限時遊戲給 null
+        if (ucost > upGold * upRatio) continue;
+        if (ulv < upBestLv || (ulv === upBestLv && ui < upBestOrd)) {
+          upBest = uk; upBestLv = ulv; upBestOrd = ui;
+        }
+      }
+      if (upBest) out.push({ name: r.cmd, args: { partKey: upBest }, ruleId: r.id });
     } else if (r.resumeBest) {
       /* ---- 被打回去就直接切回來，不要重打一遍 ----
 

@@ -55,6 +55,7 @@ const ROI_POLICY = JSON.parse(
 );
 const SLOT_RULE = ROI_POLICY.rules.find((r) => r.id === 'forge-unlock-slots');
 const PART_RULE = ROI_POLICY.rules.find((r) => r.id === 'forge-parts');
+const LEVEL_RULE = ROI_POLICY.rules.find((r) => r.id === 'upgrade-forge-parts');
 
 function makePolicy(rules) {
   return createPolicy({
@@ -298,6 +299,127 @@ test('沒塞車就不裝加速——帶上沒東西可燒，拿產量格去換�
   const cmds = p.decide(st(1, [furnace(1, 8, [], 42, 30)]));   // 實測 seed20260906 的水位
   const f1 = cmdsOf(cmds, 'newforge.installPart').map((c) => c.args.partKey);
   assert.equal(f1.filter((k) => k === 'speedGear').length, 0);
+});
+
+/* ============ 零件等級：全域乘數 ============ */
+
+/* 零件等級存在 factory.partLevels，是全域的——升一次，所有熔爐的同種零件一起變強。
+   實測 24 小時 × 5 seed：AI 的零件全部停在 1 級（newforge.upgradePart 一次都沒送過），
+   真人是 extractLens 5 / gemCollector 6 / scrapForge 4。這是唯一能把材料**產出上限本身**
+   推高的槓桿，其餘熔爐規則都只是在分配既有的量。 */
+
+function lvSt(sec, levels, costs, gold) {
+  return {
+    gameTimeSec: sec,
+    view: { gold: gold === undefined ? 1e9 : gold },
+    panels: { newforge: { partLevels: levels, partUpgradeCosts: costs } }
+  };
+}
+
+function makeLevelPolicy() {
+  return createPolicy({
+    name: 'test-part-level',
+    decideEveryGameSec: 60,
+    needPanels: ['newforge'],
+    rules: [LEVEL_RULE]
+  });
+}
+
+/* 規則的 everySec 是 120，連續呼叫只有第一次會生效。時間戳一律拉開。 */
+const LV_GAP = (LEVEL_RULE.everySec || 1) + 1;
+
+test('零件升級：等級最低的先升——全域乘數之間補短板比推單一種類到頂划算', () => {
+  const p = makeLevelPolicy();
+  const cmds = p.decide(lvSt(LV_GAP,
+    { extractLens: 5, gemCollector: 2, scrapForge: 3 },
+    { extractLens: 1000, gemCollector: 1000, scrapForge: 1000 }));
+  assert.deepEqual(cmds.map((c) => c.args.partKey), ['gemCollector']);
+});
+
+test('零件升級：同級時照宣告順序，維持決定論', () => {
+  const p = makeLevelPolicy();
+  const cmds = p.decide(lvSt(LV_GAP,
+    { extractLens: 1, gemCollector: 1, scrapForge: 1 },
+    { extractLens: 1000, gemCollector: 1000, scrapForge: 1000 }));
+  assert.deepEqual(cmds.map((c) => c.args.partKey), [LEVEL_RULE.upgradeParts.parts[0]]);
+});
+
+test('零件升級：一個決策點最多送一條——成本隨等級變，第二條用的是過期成本', () => {
+  /* 升一級成本 ×6（380K → 2.18M → 12.98M）。同一拍連送兩次，
+     第二次十之八九會被遊戲以「金幣不足」擋下。 */
+  const p = makeLevelPolicy();
+  const cmds = p.decide(lvSt(LV_GAP,
+    { extractLens: 1, gemCollector: 1, scrapForge: 1 },
+    { extractLens: 100, gemCollector: 100, scrapForge: 100 }));
+  assert.equal(cmds.length, 1);
+});
+
+test('零件升級：成本超過金幣的保留比例就不送', () => {
+  /* 金幣同時要餵強化與背包擴充，不能為了升級把它抽乾。 */
+  const p = makeLevelPolicy();
+  const ratio = LEVEL_RULE.upgradeParts.goldRatio;
+  const gold = 1e6;
+  const cmds = p.decide(lvSt(LV_GAP,
+    { extractLens: 1, gemCollector: 1, scrapForge: 1 },
+    { extractLens: gold * ratio + 1, gemCollector: gold * ratio + 1, scrapForge: gold * ratio + 1 },
+    gold));
+  assert.equal(cmds.length, 0);
+});
+
+test('零件升級：買得起的最低階優先，買不起的直接跳過而不是整條停擺', () => {
+  /* gemCollector 最低但太貴。這時應該去升次低而買得起的 scrapForge，
+     不能因為最想升的那個買不起就整拍不動——那等於規則在等一個永遠不來的時機。 */
+  const p = makeLevelPolicy();
+  const cmds = p.decide(lvSt(LV_GAP,
+    { extractLens: 5, gemCollector: 1, scrapForge: 3 },
+    { extractLens: 1000, gemCollector: 9e9, scrapForge: 1000 }));
+  assert.deepEqual(cmds.map((c) => c.args.partKey), ['scrapForge']);
+});
+
+test('零件升級：已達上限（遊戲給 null 成本）不送', () => {
+  const p = makeLevelPolicy();
+  const cmds = p.decide(lvSt(LV_GAP,
+    { extractLens: 10, gemCollector: 10, scrapForge: 10 },
+    { extractLens: null, gemCollector: null, scrapForge: null }));
+  assert.equal(cmds.length, 0);
+});
+
+test('零件升級：只升 mix 真的在用的種類，不碰其他零件', () => {
+  /* 全域等級對沒裝上熔爐的零件毫無作用，升它就是把金幣丟掉。 */
+  const p = makeLevelPolicy();
+  const cmds = p.decide(lvSt(LV_GAP,
+    { extractLens: 5, gemCollector: 5, scrapForge: 5, goldSluice: 1, luckHeart: 1 },
+    { extractLens: 1000, gemCollector: 1000, scrapForge: 1000, goldSluice: 1, luckHeart: 1 }));
+  assert.equal(cmds.length, 1);
+  assert.ok(LEVEL_RULE.upgradeParts.parts.indexOf(cmds[0].args.partKey) >= 0,
+    '升的必須是 mix 宣告的種類：' + cmds[0].args.partKey);
+});
+
+test('真引擎：升級指令的參數名對得上，且成本欄位是遊戲算的', () => {
+  /* 機制對了但 partKey 對不上的話，runCommand 只會回一句中文訊息，
+     模擬照樣跑完、零件照樣停在 1 級——實測 24 小時就是這樣過去的。 */
+  const e = createEngine({ seed: 913 }).boot(null);
+  const c = e.ctx;
+  c.G.player.gold = 1e9;
+
+  const pan = e.panel('newforge');
+  for (const key of LEVEL_RULE.upgradeParts.parts) {
+    assert.equal(pan.partUpgradeCosts[key], c.partUpgradeCost(pan.partLevels[key] + 1),
+      key + ' 的升級成本必須由遊戲的 partUpgradeCost 算，策略端不重推');
+  }
+
+  const p = makeLevelPolicy();
+  const cmds = p.decide({
+    gameTimeSec: LV_GAP,
+    view: { gold: c.G.player.gold },
+    panels: { newforge: pan }
+  });
+  assert.equal(cmds.length, 1);
+  const before = c.G.factory.partLevels ? c.G.factory.partLevels[cmds[0].args.partKey] : undefined;
+  const res = c.runCommand(cmds[0].name, cmds[0].args);
+  const bad = !res.ok ? res.error : (typeof res.result === 'string' ? res.result : null);
+  assert.equal(bad, null, '不該被遊戲拒絕');
+  assert.ok(c.G.factory.partLevels[cmds[0].args.partKey] > (before || 0), '等級應該真的上去了');
 });
 
 /* ============ 真引擎：指令真的被遊戲接受 ============ */
