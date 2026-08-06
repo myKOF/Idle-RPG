@@ -1819,6 +1819,108 @@ function decide(state, policy, memo) {
           out.push({ name: gCfg.retreatCmd, args: { delta: park[1] - gStage }, ruleId: r.id });
         }
 
+        /* ---- 掛機安全關卡：分段之內待在**底部**，不是深處 ----
+
+           ⚠️ 這一段推翻了下方 advanceOn 註解裡的「分段之內往前推是純賺：
+           關卡愈深品質擲骰愈好」。那句話在舊制成立（rollRarity 有 stage×0.006
+           的連續項），關卡改造之後不成立了：野外掉落改走
+           rollFieldDrops → fieldDropRatesFor → ZONE_STAGE_DROP_TABLE 查表
+           （js/combat.js:931），粒度是**關卡區間**，區間之內完全相同。
+
+           用遊戲自己的函式量草原 100~149 這一段（evaluator 的 tier.farmFloorStage
+           就是這樣搜出來的，兩個階梯函式的等值區間取交集）：
+
+             掉落率   R3 10% / R4 1.5%    100 關與 149 關**完全一樣**
+             裝等     100                 一樣
+             怪物血量 ×25.79              149 關要多花 25.8 倍時間殺一隻
+             經驗     ×21.25              成長比血量慢
+
+           所以停在 149 的裝備／材料／金幣時薪只有停在 100 的 1/25.8，
+           連經驗時薪都是 0.82 倍——沒有任何一項是賺的。
+
+           真人的玩法正是這樣：「掛 101、151、201 這種會掉下一級裝備
+           且最容易快速殺敵的關卡；材料跟裝備掉落數的權重比等級高，
+           等級只是在前者都不缺的情況下盡量能衝就衝高」。
+
+           ---- 掛機點是階梯，不是「能推多深推多深」----
+
+           evaluator 的 farmFloorStage / nextFarmStage 把整張圖切成一串掛機點：
+             草原 1 → 21 → 40 → 50 → 100 → 150 → 200
+             荒漠 1 → 50 → 200 → 250 → 300
+           每一格的掉落與裝等都比前一格好，格子**之內**完全相同。
+           所以正確的走法是逐格搬家，而不是在格子裡一路走到打不動。
+
+           舊行為是後者：閘門只問「還推得動嗎」，於是角色停在
+           **它能存活的最深處**——那正是同一格裡時薪最低的一關。
+
+           ---- 為什麼往上跳而不是用自動推關走 ----
+
+           stageGo 在 [1, min(best, 地圖上限)] 之內是**直接跳**（js/combat.js:993），
+           不必逐關重打。所以搬家到已經到過的關卡是零成本的；
+           只有超出 best 的那一段才需要自動推關一關一關清。
+
+           ---- 為什麼需要 pushHoldSec ----
+
+           沒有遲滯會震盪：退到底 → 目標達標 → 往上跳 → 打不動 → 退到底 → ……
+           而那趟「打不動」正是要消除的浪費。退回來之後先刷一段時間
+           （撿裝備、洗詞條、強化）再試。
+
+           遲滯**必須有界**（計時器會到期），不能寫成「變強了才准再試」——
+           docs/SIM_HARNESS.md 記過：任何無界的「條件不滿足就改變行為」
+           最後都變成死鎖。
+
+           ---- 範圍 ----
+
+           只在**沒有指南安全區間**的關卡段接管（!inPark）。前期那幾個
+           寫死的 park 區間是量過的行為，不動它。實際策略裡那是關卡 60 之後，
+           而所有觀察到的浪費也都在那之後。 */
+        var fpk = gCfg.farmPark;
+        var farmParked = false;
+        var farmAuto = null;                 // 非 null 時覆寫自動推關的開關
+        /* ⚠️ 自己宣告 source，不共用 tierPush 的。兩個機制的生命週期不同——
+           tierPush 的 minBreakpointGain=2 在裝等 50 之後就不再成立
+           （100→150 只有 1.496 倍），策略遲早會把 tierPush 拿掉，
+           那時 farmPark 不該跟著一起失效。 */
+        var fpTier = (fpk && fpk.source) ? pathVal(state, fpk.source) : tier;
+        if (fpk && !inPark && !parkRetreat && gCfg.retreatCmd
+          && fpTier && typeof fpTier.farmFloorStage === 'number') {
+          if (!memo.gate) memo.gate = {};
+          var fgm = memo.gate[r.id] || (memo.gate[r.id] = {});
+          var holdSec = (typeof fpk.pushHoldSec === 'number') ? fpk.pushHoldSec : 900;
+          var holding = (fgm.lastFarmParkAt !== undefined && now - fgm.lastFarmParkAt < holdSec);
+
+          var floorS = fpTier.farmFloorStage;
+          var nextS = (typeof fpTier.nextFarmStage === 'number') ? fpTier.nextFarmStage : 0;
+
+          /* 搬去下一格的條件：不在遲滯期、裝等已追平這一格、宣告的目標都達標、
+             不在卡關重試。任何一項不成立就待在這一格的底部把它刷滿。
+             「裝等落後」就是「這一格還有東西可以撿」——那正是使用者說的
+             「材料跟裝備掉落數的權重比等級高」。 */
+          var behindTier = (fpTier.equippedItemLevelMin !== null
+            && fpTier.equippedItemLevelMin !== undefined
+            && fpTier.equippedItemLevelMin < fpTier.itemLevelHere);
+          var hop = !holding && !behindTier && advanceOk && !targetBlocked
+            && !(state.ctx && state.ctx.retryWaiting) && nextS > gStage;
+          var fpTarget = hop ? nextS : floorS;
+
+          if (gStage > fpTarget) {
+            /* 退回去是免費的（stageGo 直接跳），所以不設收益門檻——
+               停在同一格的深處沒有任何一項指標是賺的。 */
+            out.push({ name: gCfg.retreatCmd, args: { delta: fpTarget - gStage }, ruleId: r.id });
+            fgm.lastFarmParkAt = now;
+            farmParked = true;
+          } else if (hop && gStage < fpTarget) {
+            /* 往上搬：best 之內直接跳，超出的部分交給自動推關逐關清。
+               best 取 tier.best（＝G.stage.best），那正是 stageGo 用來夾值的同一個數。 */
+            var fpBest = Number(fpTier.best) || 0;
+            var fpJump = Math.min(fpBest, fpTarget);
+            if (fpJump > gStage) {
+              out.push({ name: gCfg.retreatCmd, args: { delta: fpJump - gStage }, ruleId: r.id });
+            }
+          }
+          farmAuto = gStage < fpTarget;
+        }
+
         /* 動態退關：產出不足而且這一段沒有指南給的安全區間時，自己往回退。
 
            光把自動推關關掉是不夠的——關掉時人在哪就停在哪，而停下來的地方
@@ -1834,7 +1936,7 @@ function decide(state, policy, memo) {
            不見得真的打得動；一旦記錯就成了永遠退不下去的地板，閘門關著、退關被擋，
            整場卡死。改成無條件相信當下的量測：退錯了下一個視窗會把它推回去。 */
         var rtc = gCfg.targetRetreat;
-        if (targetBlocked && rtc && gCfg.retreatCmd && !parkRetreat) {
+        if (targetBlocked && rtc && gCfg.retreatCmd && !parkRetreat && !farmParked) {
           if (!memo.gate) memo.gate = {};
           var gm = memo.gate[r.id] || (memo.gate[r.id] = {});
           var cool = (typeof rtc.everySec === 'number') ? rtc.everySec : 300;
@@ -1894,14 +1996,22 @@ function decide(state, policy, memo) {
            經驗與金幣也愈多。所以在 tierBand 模式下，目標是推到**上緣**而不是下緣。
 
            ⚠️ 只在 tierBand 成立時改變語意。寫死的小區間仍照舊——
-           那些是「指南建議停在這裡」，不是「這一段隨便你跑」。 */
+           那些是「指南建議停在這裡」，不是「這一段隨便你跑」。
+
+           ⚠️⚠️ 上面那句「關卡愈深品質擲骰愈好」在關卡改造之後**已經不成立**
+           （掉落改成依關卡區間查表，區間之內完全相同；見上方 farmPark 那段）。
+           farmPark 只在 !inPark 的關卡段接管，所以這裡的 tierBand 語意不變——
+           兩者的作用範圍是互斥的。 */
         /* ⚠️ park 可以不存在（收尾那一段的 checkpoint 通常沒有），所以取值一定要
            在 inPark 之內。少了這道防護會在「沒有安全區間」的關卡段直接拋錯，
            而那是最常見的一段——tests/sim-policy-targets.test.cjs 抓到過。 */
         /* advanceOk 見上方——它同時管住「放行推關」與「分段內往前走」兩條路徑。
            ⚠️ tierPush 沒設定時 advanceOk 恆為 true，既有策略的行為不變。 */
+        /* ⚠️ park 可能是 null（見上方警告），所有取值都要在 inPark 之內做。 */
         var advanceOn = inPark && gStage < (tierBand ? park[1] : park[0]) && !targetBlocked && advanceOk;
-        gArgs[gCfg.argKey || 'on'] = !!(passGate || advanceOn);
+        /* farmAuto 非 null＝farmPark 接管了這一段（!inPark 時才會發生）。
+           它已經把「該待在哪一格」算完了，自動推關只是「還沒走到就繼續走」。 */
+        gArgs[gCfg.argKey || 'on'] = (farmAuto !== null) ? !!farmAuto : !!(passGate || advanceOn);
         out.push({ name: r.cmd, args: gArgs, ruleId: r.id });
       }
     } else if (r.convertToPreferred) {
