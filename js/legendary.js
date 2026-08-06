@@ -282,7 +282,7 @@ function legendaryInstantBurn(ent, dps, dur, name) {
   var burnFx = legendaryFx('burningLaw');
   var damage = Math.max(1, Math.round(dps * dur * (1 + burnFx.burnDamagePct / 100) *
     legendaryOutgoingDamageMultiplier(pEnt, ent, { isPlayer: true })));
-  ent.hp = Math.max(0, ent.hp - damage);
+  damage = applyEnemyHpDamage(ent, damage);
   if (typeof trackDps === 'function') trackDps(damage);
   if (typeof recordRunDamage === 'function') recordRunDamage('燃燒法則', damage);
   return damage;
@@ -358,7 +358,7 @@ function legendaryDealReflectedBasicAttack(pEnt, target, multiplier, floatSel, l
     target.shield = Math.max(0, target.shield - absorbed);
     damage -= absorbed;
   }
-  target.hp -= damage;
+  damage = applyEnemyHpDamage(target, damage);
   var result = {
     dmg: damage + absorbed,
     absorbed: absorbed,
@@ -459,7 +459,7 @@ function legendaryStartVoidFate(pEnt, floatSel) {
       var enemies = ctx && ctx.getEnemies ? ctx.getEnemies() : legendaryActiveEnemies();
       for (var i = 0; i < enemies.length; i++) {
         var damage = Math.max(1, Math.round(enemies[i].maxHp * hpPct * spec.enemyHpLossPerPlayerPct / 100));
-        enemies[i].hp = Math.max(0, enemies[i].hp - damage);
+        damage = applyEnemyHpDamage(enemies[i], damage);
         if (ctx && typeof ctx.onDamage === 'function') ctx.onDamage(damage);
         if (typeof trackDps === 'function') trackDps(damage);
         if (typeof recordRunDamage === 'function') recordRunDamage('虛無命運', damage);

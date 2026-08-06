@@ -33,7 +33,7 @@ function makeBoss(floor) {
     magic: !!bd.elem,                        // 元素 BOSS 以魔法攻擊（對玩家魔防）
     aspd: bs.aspd, dodge: bs.dodge, hit: bs.hit, // 命中率 = 基礎值 + 樓層×每層值 → formula.js §4
     atkCd: 1.5, effects: {}, ctrlRes: bs.ctrlRes,
-    elite: false, isBoss: true, xp: bs.xp,
+    elite: false, isBoss: true, towerBoss: true, xp: bs.xp,
     elem: bd.elem, attr: bd.attr || bd.elem || null, elemAtk: null, resist: {}, stunCount: 0,
     poisonUntil: 0, poisonDps: 0, shield: 0, buffs: {}, dots: []
   };

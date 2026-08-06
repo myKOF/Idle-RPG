@@ -636,7 +636,7 @@ function skillRtApplyDotOps(targets, fx, lv, st, floatSel, parts, out) {
       }
       if (sum > 0 && dPct > 0) {
         var boom = Math.max(1, Math.round(sum * dPct / 100));
-        t.hp -= boom;
+        boom = applyEnemyHpDamage(t, boom);
         extra += boom;
         floatEnemyEvent(t, floatSel, '💥' + fmt(boom), 'crit enemy-skill', boom);
         trackDps(boom);
@@ -664,7 +664,7 @@ function skillRtApplyDotOps(targets, fx, lv, st, floatSel, parts, out) {
       for (var p2 = 0; p2 < t.dots.length; p2++) if (t.dots[p2].until > GT) dpsSum += t.dots[p2].dps;
       var pulse = Math.round(dpsSum * ticks * power / 100 * globalDamageMultiplierForEntity(t));
       if (pulse > 0) {
-        t.hp -= pulse;
+        pulse = applyEnemyHpDamage(t, pulse);
         extra += pulse;
         floatEnemyEvent(t, floatSel, '🩸' + fmt(pulse), 'dmg enemy-skill', pulse);
         trackDps(pulse);
@@ -698,7 +698,7 @@ function skillRtOverhealToDmg(pEnt, fx, lv, st, healAmt, targets, floatSel, part
   }
   if (!t || effectActive(t, 'invuln')) return;
   var dmg = Math.max(1, Math.round(overflow * pct / 100));
-  t.hp -= dmg;
+  dmg = applyEnemyHpDamage(t, dmg);
   out.dmg = (out.dmg || 0) + dmg;
   floatEnemyEvent(t, floatSel, '⛲' + fmt(dmg), 'crit enemy-skill', dmg);
   trackDps(dmg);
@@ -961,6 +961,7 @@ function applySkillFinalDamageMultiplier(target, result, isFusion) {
   if (!isFusion || !result || result.miss || !(result.dmg > 0)) return result;
   var original = result.dmg;
   var bonus = Math.max(0, Math.round(original * (FUSION_FINAL_DAMAGE_MULTIPLIER - 1)));
+  var absorbed = 0;
   // 追加傷害沿用同一個命中結果，先吃剩餘護盾，再扣生命，避免改動原本 resolveHit 算法。
   if (target && target.hp > 0 && bonus > 0) {
     if (target.shield > 0) {
@@ -975,14 +976,19 @@ function applySkillFinalDamageMultiplier(target, result, isFusion) {
       }
     }
     if (bonus > 0) {
-      target.hp -= bonus;
+      // 融合追加段與本體屬於同一次命中，合計生命傷害仍不得超過 20%。
+      if (target.towerBoss) {
+        bonus = Math.min(bonus, Math.max(0, target.maxHp * TOWER_BOSS_DAMAGE_CAP_PCT / 100 - (result.hpDamage || 0)));
+      }
+      target.hp = Math.max(0, target.hp - bonus);
+      result.hpDamage = (result.hpDamage || 0) + bonus;
       if (target.hp <= 0) {
         target.hp = 0;
         result.killed = true;
       }
     }
   }
-  result.dmg = Math.round(original * FUSION_FINAL_DAMAGE_MULTIPLIER);
+  result.dmg = original + absorbed + bonus;
   return result;
 }
 
@@ -1027,7 +1033,7 @@ function skillRtSimpleCast(pEnt, sk, fx, lv, powerPct, targets, floatSel, opts) 
       if (fx.dmgType === 'true') {
         // 真實傷害：無視防禦/抗性/格擋（比照 castSkill 真傷分支）
         var td = Math.max(1, Math.round(baseVal * rnd(0.95, 1.05)));
-        t.hp -= td;
+        td = applyEnemyHpDamage(t, td);
         res = { dmg: td, killed: t.hp <= 0, miss: false, crit: false };
         if (res.killed) t.hp = 0;
       } else {
@@ -1120,7 +1126,7 @@ function skillRtApplyBrandOps(pEnt, sk, fx, lv, st, targets, floatSel, parts, ou
       if (!matched.length || !(sum > 0) || !(mult > 0)) continue;
       // 真傷直扣（比照 comboDetonate，不吃全局減傷）
       var boom = Math.max(1, Math.round(sum * mult / 100));
-      t.hp -= boom;
+      boom = applyEnemyHpDamage(t, boom);
       extra += boom;
       floatEnemyEvent(t, floatSel, '💥' + fmt(boom), 'crit enemy-skill', boom);
       trackDps(boom);
@@ -1161,11 +1167,11 @@ function skillRtApplyBrandOps(pEnt, sk, fx, lv, st, targets, floatSel, parts, ou
           for (var sw = 0; sw < me.stacks; sw++) {
             var recvT = chain[sw] || pool[sw % pool.length];
             if (!recvT || recvT.hp <= 0) continue;
-            recvT.hp -= wave;
-            extra += wave;
-            floatEnemyEvent(recvT, floatSel, '🌊' + fmt(wave), 'dmg enemy-skill', wave);
-            trackDps(wave);
-            if (typeof recordRunDamage === 'function') recordRunDamage(sk.name + '·餘波', wave);
+            var waveDamage = applyEnemyHpDamage(recvT, wave);
+            extra += waveDamage;
+            floatEnemyEvent(recvT, floatSel, '🌊' + fmt(waveDamage), 'dmg enemy-skill', waveDamage);
+            trackDps(waveDamage);
+            if (typeof recordRunDamage === 'function') recordRunDamage(sk.name + '·餘波', waveDamage);
             if (recvT.hp <= 0) { recvT.hp = 0; out.killed = true; }
           }
         }
@@ -1236,7 +1242,7 @@ function skillRtStigmaDetonate(pEnt, sg, enemies, floatSel, parts, out, ctx) {
     : (stigmaPool.length ? stigmaPool[0] : null);
   var killed = false;
   if (t) {
-    t.hp -= dmg;
+    dmg = applyEnemyHpDamage(t, dmg);
     floatEnemyEvent(t, floatSel, '🪬' + fmt(dmg), 'crit enemy-skill', dmg);
     trackDps(dmg);
     if (typeof recordRunDamage === 'function') recordRunDamage('聖痕引爆', dmg);
@@ -1428,7 +1434,7 @@ function skillRtOpenField(pEnt, sk, fx, id, lv, st, out) {
       if (entry.snapshot.dmgType === 'true') {
         // 真傷領域：直扣（比照 castSkill 真傷分支）
         var td = Math.max(1, Math.round(entry.snapshot.trueTick * rnd(0.95, 1.05)));
-        t.hp -= td;
+        td = applyEnemyHpDamage(t, td);
         res = { dmg: td, killed: t.hp <= 0, miss: false, crit: false };
         if (res.killed) t.hp = 0;
       } else {
@@ -1598,7 +1604,7 @@ function skillRtOnCastMechB(pEnt, sk, fx, id, lv, st, out, targets, floatSel, pa
           ? bfPickPrimary(winPool, ctx.pEnt && ctx.pEnt._lockTarget)
           : (winPool.length ? winPool[0] : null);
         if (!tgt) return;
-        tgt.hp -= boom;
+        boom = applyEnemyHpDamage(tgt, boom);
         floatEnemyEvent(tgt, ctx.floatSel, wEmoji + '🌒' + fmt(boom), 'crit enemy-skill', boom);
         trackDps(boom);
         if (typeof recordRunDamage === 'function') recordRunDamage(wName + '·快照窗', boom);
@@ -2650,7 +2656,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
         if (fx.dmgType === 'true') {
           // 真實傷害：無視防禦/抗性/格擋
           var td = Math.max(1, Math.round(baseVal * rnd(0.95, 1.05)));
-          targetEnt.hp -= td;
+          td = applyEnemyHpDamage(targetEnt, td);
           dmgRes = { dmg: td, killed: targetEnt.hp <= 0, miss: false, crit: false };
           if (dmgRes.killed) targetEnt.hp = 0;
         } else {
@@ -2726,7 +2732,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
       var comboTarget = targets[ci];
       if (fx.comboDetonate && comboTarget.hp > 0 && effectActive(comboTarget, 'slow') && targetHasDot(comboTarget, '燃燒')) {
         var boom = Math.max(1, Math.round(baseVal * fx.comboDetonate / 100));
-        comboTarget.hp -= boom;
+        boom = applyEnemyHpDamage(comboTarget, boom);
         totalDmg += boom;
         floatEnemyEvent(comboTarget, floatSel, '❄️🔥' + fmt(boom), 'crit enemy-skill', boom);
         trackDps(boom);
