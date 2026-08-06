@@ -9724,6 +9724,9 @@ function openQuestModal() {
   requestPanelData('task', true);
   renderQuestModal();
   modal.style.display = 'flex';
+  // 預設捲到最下方，讓玩家直接看到進行中任務
+  var qList = $id('quest-modal-list');
+  if (qList) qList.scrollTop = qList.scrollHeight;
   // 開著期間每秒重新索取並重繪：狀態型進度（穿裝/鑲嵌/生命上限）沒有固定髒區訊號
   if (questPanelTimer) clearInterval(questPanelTimer);
   questPanelTimer = setInterval(function () {

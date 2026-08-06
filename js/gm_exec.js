@@ -596,6 +596,29 @@
       if (typeof saveGame === 'function') saveGame();
       return { ok: true, message: '已要求立即存檔' };
     }
+    if (command === 'task') {
+      if (typeof TASKS === 'undefined') return { ok: false, message: '任務表（TASKS）未載入' };
+      var tMax = TASKS.length;
+      var tNum = gmNumber(args[0], 0, 100000);
+      if (tNum === null) return { ok: false, message: '格式：task 數字（0=重置全部，N=設置至第N個任務，≥' + tMax + '=全部完成）' };
+      if (typeof taskState !== 'function') return { ok: false, message: 'taskState 未載入' };
+      var tSt = taskState();
+      if (tNum === 0) {
+        tSt.idx = 0;
+        gmDirty();
+        if (typeof UI !== 'undefined' && UI.dirty) UI.dirty.task = true;
+        return { ok: true, message: '所有任務已重置（idx=0）' };
+      }
+      // N >= tMax → 全部完成
+      var newIdx = Math.min(tNum, tMax);
+      tSt.idx = newIdx;
+      gmDirty();
+      if (typeof UI !== 'undefined' && UI.dirty) UI.dirty.task = true;
+      if (newIdx >= tMax) {
+        return { ok: true, message: '所有任務設為已完成（idx=' + newIdx + '/' + tMax + '）' };
+      }
+      return { ok: true, message: '任務設置至第 ' + newIdx + ' 個（前 ' + newIdx + ' 個已完成，目前進行中：「' + TASKS[newIdx].name + '」）' };
+    }
     return { ok: false, message: '未知指令：' + command + '（輸入 help 查看文件）' };
   }
 
