@@ -197,6 +197,22 @@ function switchZone(zoneKey) {
     UI.dirty.battle = true;
 }
 
+/* 自動推進到下一張已解鎖且上限更高的地圖；順序以 ZONE_LIST 為準，
+   讓場景配置與自動切圖共用同一份設計順序。 */
+function nextAutoAdvanceZone(zoneKey) {
+    if (typeof ZONE_LIST === 'undefined' || !Array.isArray(ZONE_LIST)) return null;
+    var currentMax = zoneMaxStage(zoneKey);
+    var index = ZONE_LIST.indexOf(zoneKey);
+    if (index < 0) return null;
+    for (var i = index + 1; i < ZONE_LIST.length; i++) {
+        var candidate = ZONE_LIST[i];
+        if (zoneMaxStage(candidate) <= currentMax) continue;
+        if (typeof isZoneUnlocked === 'function' && !isZoneUnlocked(candidate)) continue;
+        return candidate;
+    }
+    return null;
+}
+
 /* ---- 效果（暈眩/減速/中毒/淨化） ----
    攻擊頻率控制類套用「控場遞減」（controlDurationFactor → formula.js §3）；
    成功回傳實際持續秒數（供顯示），遞減歸零或 BOSS 免疫回傳 false。 */
@@ -827,18 +843,29 @@ function completeFieldWave(st) {
     /* 已通關關卡另外記一筆：best 在最後一關會被 maxStage 夾住，光看 best 無法分辨
        「打贏最後一關」與「只打到倒數第二關」。任務的 stageClear 讀這一欄。 */
     markZoneCleared(G.stage.zone, G.stage.current);
+    var switchedZone = false;
     if (G.stage.autoAdvance) {
         if (G.stage.current >= maxStage) {
-            G.stage.current = maxStage;
-            G.stage.best = Math.max(G.stage.best || 1, maxStage);
-            FIELD.mapComplete = true;
-            FIELD.respawnCd = Infinity;
-            blog('🏆 已通關【' + currentZoneDef().name + '】全部 ' + maxStage + ' 關！', 'good');
+            var nextZone = nextAutoAdvanceZone(G.stage.zone);
+            if (nextZone) {
+                blog('🏆 已通關【' + currentZoneDef().name + '】全部 ' + maxStage + ' 關！', 'good');
+                switchZone(nextZone);
+                switchedZone = true;
+                blog('🚩 自動推進至【' + currentZoneDef().name + '】第 ' + G.stage.current + ' 關！', 'good');
+            } else {
+                G.stage.current = maxStage;
+                G.stage.best = Math.max(G.stage.best || 1, maxStage);
+                FIELD.mapComplete = true;
+                FIELD.respawnCd = Infinity;
+                blog('🏆 已通關【' + currentZoneDef().name + '】全部 ' + maxStage + ' 關！', 'good');
+            }
         } else {
             G.stage.current++;
             if (G.stage.current > G.stage.best) G.stage.best = G.stage.current;
         }
-        blog('🚩 推進至第 ' + G.stage.current + ' 階段！', 'good');
+        if (!switchedZone && !FIELD.mapComplete && G.stage.current < maxStage) {
+            blog('🚩 推進至第 ' + G.stage.current + ' 階段！', 'good');
+        }
     }
     UI.dirty.battle = true; UI.dirty.header = true;
 }

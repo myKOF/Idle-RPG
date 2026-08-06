@@ -110,6 +110,9 @@ test('通關關卡另記 cleared：最後一關打贏後 best 卡在上限，cle
   assert.equal(c.G.stage.current, 200);
   assert.equal(c.zoneClearedStage('plains'), 199);
 
+  // 關閉自動推進，讓本測試專注驗證最後一關的 best 夾限與 cleared 記錄；
+  // 自動推進跨場景的行為由 multi-enemy.test.cjs 覆蓋。
+  c.G.stage.autoAdvance = false;
   clearOneWave();                        // 打贏第 200 關（＝草原上限）
   assert.equal(c.G.stage.best, 200, 'best 被 maxStage 夾住，不會變成 201');
   assert.equal(c.zoneClearedStage('plains'), 200, 'cleared 記下真正打贏的最後一關');
