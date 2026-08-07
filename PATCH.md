@@ -1,5 +1,17 @@
 # PATCH.md
 
+## 新增：指定場景及指定關卡 GM 指令（2026-08-07）
+
+- **新增 GM 指令 `stage_jump`（及 `stage` / `set_stage` / `setstage` / `stage_set` / `stageset` / `zone_jump` / `zone` 等別名）**：
+  - `js/gm_exec.js` 新增 `gmJumpStage(raw1, raw2)`。
+  - **語法支援**：`stage_jump [場景] <關卡>` 或 `stage_jump 場景/關卡`（例：`stage_jump 1 50`、`stage 2 150`、`stage 2/150`、`set_stage 5 300`）。
+  - **進度控制與鎖定**：指定目標關卡後，目標場景的最高與當前關卡設為該關卡（`current` 與 `best` 設為該值，`cleared` 設為 `targetStage - 1`）；目標之前的場景全部設為已通關（`cleared = maxStage`）；**目標之後的所有場景與關卡全數重置並鎖定為不可進入**（`isZoneUnlocked` 判定為 `false`）。
+  - **轉生自動補齊**：指定神界場景（如太古戰場）時，若玩家轉生數不足會自動調至神界門檻（11 轉），確保場景正確解鎖。
+- **文件與測試**：
+  - 更新 `GM_command.md` 補齊指令說明、參數格式與範例。
+  - `tests/gm-command.test.cjs` 新增 4 組測試斷言（目標關卡設置、前置通關、後續鎖定、斜線語法、神界轉生解鎖、錯誤參數）。
+- **驗證**：單元測試 194 項全數通過，`build_check.cjs` 驗證通過。
+
 ## 調整：神鑄系統預設自動鑄造為開啟、預設使用魔塵為關閉（2026-08-06）
 
 - **神鑄預設狀態調整**：

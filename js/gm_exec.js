@@ -154,6 +154,97 @@
     return { ok: true, message: '玩家轉生次數已由 ' + before + ' 轉切換為 ' + count + ' 轉' };
   }
 
+  function gmJumpStage(raw1, raw2) {
+    if (typeof ZONES === 'undefined' || !ZONES) return { ok: false, message: '目前找不到關卡進度資料。' };
+    var zoneKeys = (typeof ZONE_LIST !== 'undefined' && ZONE_LIST) ? ZONE_LIST : Object.keys(ZONES);
+    var sceneStr = null;
+    var stageStr = null;
+
+    if (raw1 && String(raw1).indexOf('/') >= 0) {
+      var parts = String(raw1).split('/');
+      sceneStr = parts[0];
+      stageStr = parts[1];
+    } else if (raw1 !== undefined && raw2 !== undefined) {
+      sceneStr = raw1;
+      stageStr = raw2;
+    } else if (raw1 !== undefined) {
+      var parsedZ = gmParseScene(raw1);
+      if (parsedZ) {
+        sceneStr = raw1;
+        stageStr = '1';
+      } else {
+        sceneStr = (G && G.stage && G.stage.zone) || 'plains';
+        stageStr = raw1;
+      }
+    } else {
+      return { ok: false, message: '格式：stage_jump [場景] <關卡>（例：stage_jump 1 50 或 stage_jump desert 100）' };
+    }
+
+    var targetZone = gmParseScene(sceneStr);
+    if (!targetZone) {
+      return { ok: false, message: '無效的場景名稱或編號：' + sceneStr + '（支援 1~' + zoneKeys.length + ' 或 plains/desert/swamp...）' };
+    }
+
+    var maxS = zoneMaxStage(targetZone);
+    var targetStage = gmNumber(stageStr, 1, maxS);
+    if (targetStage === null) {
+      return { ok: false, message: '無效的關卡數字：' + stageStr + '（【' + ZONES[targetZone].name + '】關卡範圍 1~' + maxS + '）' };
+    }
+
+    var targetIdx = zoneKeys.indexOf(targetZone);
+    if (targetIdx < 0) targetIdx = 0;
+
+    if (!G) G = {};
+    if (!G.zoneProgress) G.zoneProgress = {};
+
+    for (var i = 0; i < zoneKeys.length; i++) {
+      var zk = zoneKeys[i];
+      var zDef = ZONES[zk];
+      var zMax = zDef ? Math.max(1, Math.floor(Number(zDef.maxStage) || 1)) : 1;
+      if (i < targetIdx) {
+        G.zoneProgress[zk] = { current: zMax, best: zMax, cleared: zMax };
+      } else if (i === targetIdx) {
+        var clearedVal = Math.max(0, targetStage - 1);
+        G.zoneProgress[zk] = { current: targetStage, best: targetStage, cleared: clearedVal };
+      } else {
+        G.zoneProgress[zk] = { current: 1, best: 1, cleared: 0 };
+      }
+    }
+
+    if (!G.stage) G.stage = { zone: 'plains', current: 1, best: 1, kills: 0 };
+    G.stage.zone = targetZone;
+    G.stage.current = targetStage;
+    G.stage.best = targetStage;
+    G.stage.kills = 0;
+
+    var reqReinc = (ZONES[targetZone] && ZONES[targetZone].reqReincarnation) || 0;
+    if (reqReinc > 0 && (!G.player || (G.player.reincarnations || 0) < reqReinc)) {
+      if (!G.player) G.player = {};
+      G.player.reincarnations = reqReinc;
+    }
+
+    if (typeof FIELD !== 'undefined' && FIELD) {
+      FIELD.monster = null;
+      FIELD.monsters = [];
+      FIELD._waveClearPending = false;
+      FIELD.mapComplete = false;
+      FIELD.respawnCd = 0.5;
+    }
+
+    gmDirty();
+    if (typeof UI !== 'undefined' && UI.dirty) {
+      UI.dirty.battle = true;
+      UI.dirty.header = true;
+    }
+
+    var zn = ZONES[targetZone];
+    return {
+      ok: true,
+      message: '已將最高關卡指定為【' + (zn.emoji || '') + zn.name + '】第 ' + targetStage + ' 階（後續場景與關卡已鎖定）'
+    };
+  }
+
+
   function gmParseScene(raw) {
     var s = String(raw || '').trim().toLowerCase();
     if (typeof ZONES === 'undefined' || !ZONES) return null;
@@ -397,6 +488,10 @@
     }
     if (command === 'inv_expand' || command === 'bag_expand' || command === 'expand_inv') {
       return gmSetInventoryCap(args[0], true);
+    }
+
+    if (command === 'stage_jump' || command === 'stage' || command === 'set_stage' || command === 'setstage' || command === 'stage_set' || command === 'stageset' || command === 'zone_jump' || command === 'zone') {
+      return gmJumpStage(args[0], args[1]);
     }
 
     var isSlashPattern = text.indexOf('/') >= 0;
