@@ -558,7 +558,7 @@
           return gmExecuteMultiKill(zoneKey, stage, count, filterRarity, filterSlot);
         }
       }
-      return { ok: false, message: '格式：場景/關卡數/擊殺數 [品質] [部位] (例：1/500/100 mythic weapon 或 kill 1 500 100 mythic ring)' };
+      return { ok: false, message: '格式：場景/關卡數/擊殺數 [品質] [部位] (例：1/200/100 mythic weapon 或 kill 1 200 100 mythic ring)' };
     }
 
     if (command === 'gold' || command === 'g' || command === 'scrap' || command === 'essence' || command === 'dust') {

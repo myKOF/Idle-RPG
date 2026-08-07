@@ -19,6 +19,8 @@
 - **修正兩個因改名浮現的既有缺陷**：
   - `tools/apply_params.cjs` 的 `multiGroup` 變更偵測只比數字序列，鍵名改名（數值全同）會被判定為無變更而**靜默不套用**；改為數字與非數字骨架都要一致。
   - `js/gm_exec.js` 的 `gmParseScene` 會先把輸入轉小寫再查 `ZONES`，大寫開頭的 `Icefield` 永遠查不到；改為英文 key 不分大小寫比對。
+- **修正 GM 指令說明與錯誤提示中的場景範例關卡數**：
+  - `GM_command.md` 與 `js/gm_exec.js` 舊範例中 `kill 1 500` 關卡數（500 階）超出荒漠 1 號場景上限（200 階），同步更正為符合 1 號場景上限的 `200` 階範例（`kill 1 200 ...`）。
 - **未處理**：舊存檔沒有做 key 遷移（見下方說明）。`docs/AI_TASKS.md`、`docs/SIM_HARNESS.md`、
   `docs/P5_FINAL_ACCEPTANCE_REPORT.md` 與本檔本日之前的紀錄保留原名，不回頭改寫。
 
