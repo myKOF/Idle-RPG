@@ -1665,7 +1665,7 @@ function decide(state, policy, memo) {
            當時補了一支建置期哨兵擋住它。
 
            第二次（關卡改造之後）：遊戲把掉落的權威從「怪物等級」換成
-           「地圖＋關卡」（js/combat.js 的 fieldDropRatesFor），草原 1~50 關的
+           「地圖＋關卡」（js/combat.js 的 fieldDropRatesFor），荒漠 1~50 關的
            獨特與史詩掉落率都是 0——而哨兵還在讀舊的 FIELD_DROP_TABLE，
            **沒有失敗，是瞎了**。實測 20 小時 × 5 個 seed 全部退回 34 關，
            10,185 件掉落裡獨特 2 件、史詩 0 件，五個 seed 的關卡一模一樣是 50。
@@ -1827,7 +1827,7 @@ function decide(state, policy, memo) {
            rollFieldDrops → fieldDropRatesFor → ZONE_STAGE_DROP_TABLE 查表
            （js/combat.js:931），粒度是**關卡區間**，區間之內完全相同。
 
-           用遊戲自己的函式量草原 100~149 這一段（evaluator 的 tier.farmFloorStage
+           用遊戲自己的函式量荒漠 100~149 這一段（evaluator 的 tier.farmFloorStage
            就是這樣搜出來的，兩個階梯函式的等值區間取交集）：
 
              掉落率   R3 10% / R4 1.5%    100 關與 149 關**完全一樣**
@@ -1851,7 +1851,7 @@ function decide(state, policy, memo) {
            ---- 掛機點是階梯，不是「能推多深推多深」----
 
            evaluator 的 farmFloorStage / nextFarmStage 把整張圖切成一串掛機點：
-             草原 1 → 21 → 40 → 50 → 100 → 150 → 200
+             荒漠 1 → 21 → 40 → 50 → 100 → 150 → 200
              荒漠 1 → 50 → 200 → 250 → 300
            每一格的掉落與裝等都比前一格好，格子**之內**完全相同。
            所以正確的走法是逐格搬家，而不是在格子裡一路走到打不動。
@@ -3139,10 +3139,10 @@ function decide(state, policy, memo) {
     } else if (r.switchZone) {
       /* ---- 打通一張圖就換下一張 ----
 
-         關卡改造之後每張地圖都是有限關卡（草原 200、荒漠 300、沼澤 400、
+         關卡改造之後每張地圖都是有限關卡（荒漠 200、冰原 300、沼澤 400、
          亡靈山脈 500）。打到頂之後 js/combat.js 會把 current 夾在 maxStage、
          設 mapComplete 並停止出怪——**推關指令照送、遊戲照回 ok，但關卡再也不動**。
-         沒有這條規則的話 AI 會在草原 200 關永久停住而且完全沒有徵兆。
+         沒有這條規則的話 AI 會在荒漠 200 關永久停住而且完全沒有徵兆。
 
          觸發條件刻意保守：**只有當前這張圖真的打通了才換**。
          換過去是從那張圖的第 1 關重新開始（怪物倍率更高、掉落裝等歸 1），

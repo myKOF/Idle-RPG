@@ -104,7 +104,7 @@ function zoneStageDropContent() {
     ];
     (grouped[zone] || (grouped[zone] = [])).push(row);
   });
-  const expectedZones = ['plains', 'desert', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary'];
+  const expectedZones = ['desert', 'Icefield', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary'];
   expectedZones.forEach(zone => {
     if (!grouped[zone] || !grouped[zone].length) throw new Error('Zone_Stage_Drops.csv 缺少地圖：' + zone);
     grouped[zone].sort((a, b) => a[0] - b[0]);
@@ -261,8 +261,8 @@ scalar('player', 'INITIAL_SCRAP', '0-遊戲預設', '開場裝備碎片', 0);
 scalar('player', 'INITIAL_ESSENCE', '0-遊戲預設', '開場附魔精華', 0);
 
 const ZONE_KEYS = {
-  '草原': 'plains',
   '荒漠': 'desert',
+  '冰原': 'Icefield',
   '沼澤': 'swamp',
   '亡靈山脈': 'undead_mountains',
   '太古戰場': 'god_battlefield',
@@ -502,18 +502,18 @@ function parseCountTuples(cat, name) {
   return out.join(', ');
 }
 arrayContent('data', 'FIELD_ENEMY_COUNT_TABLE', parseCountTuples('4-敵人數量', '小怪 數量權重'), 'FIELD_ENEMY_COUNT_TABLE');
-const PLAINS_EARLY_ENEMY_COUNT_RANGES = ['1~20', '21~40', '41~60', '61~80', '81~100'];
-const plainsEarlyEnemyCountTables = PLAINS_EARLY_ENEMY_COUNT_RANGES.map(range =>
-  parseCountTuples('4-敵人數量', '小怪 數量權重(草原' + range + '關)'));
+const DESERT_EARLY_ENEMY_COUNT_RANGES = ['1~20', '21~40', '41~60', '61~80', '81~100'];
+const desertEarlyEnemyCountTables = DESERT_EARLY_ENEMY_COUNT_RANGES.map(range =>
+  parseCountTuples('4-敵人數量', '小怪 數量權重(荒漠' + range + '關)'));
 /* ⚠️ arrayContent 替換的是既有 `[ ... ]` **裡面**的內容（regex 第 2 組），
    所以這裡只能給「元素們」，不能再自己包一層外括號——包了就會寫成 [[...]]，
    變成長度 1 的陣列：[0] 是整包巢狀表、[1]~[4] 全是 undefined。
    後果是 fieldCountTableFor() 在 1~20 關拿到不是權重表的東西（實測固定出 1 隻怪）、
    21~100 關則因為 undefined 直接掉回後期表，五段分段等於完全沒生效。
    隔壁 FIELD_ENEMY_COUNT_TABLE 傳的是 parseCountTuples() 的回傳值，本來就沒有外括號。 */
-arrayContent('data', 'FIELD_PLAINS_EARLY_ENEMY_COUNT_TABLES',
-  plainsEarlyEnemyCountTables.map(table => '[' + table + ']').join(', '),
-  'FIELD_PLAINS_EARLY_ENEMY_COUNT_TABLES');
+arrayContent('data', 'FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES',
+  desertEarlyEnemyCountTables.map(table => '[' + table + ']').join(', '),
+  'FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES');
 arrayContent('data', 'FIELD_ELITE_COUNT_TABLE', parseCountTuples('4-敵人數量', '菁英 數量權重'), 'FIELD_ELITE_COUNT_TABLE');
 arrayContent('data', 'FIELD_BOSS_COUNT_TABLE', parseCountTuples('4-敵人數量', 'BOSS 數量權重'), 'FIELD_BOSS_COUNT_TABLE');
 // 戰場站位（敵方棋盤）：格數、距離係數、BOSS 佔格 → js/battlefield.js 讀這些常數
@@ -946,6 +946,10 @@ function scopedTextValue(t, scopeVar) {
   if (!last) return { text: t, offset: 0 };
   return { text: last[0], offset: last.index };
 }
+// 抽掉數字與空白後剩下的骨架（鍵名、標點）——用來偵測「數值相同但鍵名不同」的變更
+function nonNumericSkeleton(s) {
+  return String(s).replace(/-?[\d.]+/g, '#').replace(/\s+/g, '');
+}
 // 比較兩段文字的數值序列是否相同（忽略空白/格式差異）
 function numsEqual(a, b) {
   const na = (String(a).match(/-?[\d.]+/g) || []).map(Number);
@@ -977,7 +981,13 @@ edits.forEach(e => {
       results.push({ label: e.label, file: e.file, pos: pos, old: mm[1] + ',' + mm[2], new: e.value + ',' + e.value2, changed: chg, apply: () => applyTwo(e, mm, offset) });
     } else {
       const cur = mm[e.grp];
-      const chg = e.multiGroup ? !numsEqual(cur, e.value) : (Number(cur) !== Number(e.value));
+      /* multiGroup 是整段內容重建，過去只比數字序列（numsEqual）以忽略排版差異。
+         但地圖識別碼改名（plains → desert）這種「數字全同、鍵名不同」的變更會被判成
+         無變更而靜默不套用——2026-08-07 地圖改名時實際踩到。改為數字序列與
+         非數字骨架都要一致才算相同；純空白差異仍視為無變更，不會每次都跳變更。 */
+      const chg = e.multiGroup
+        ? (!numsEqual(cur, e.value) || nonNumericSkeleton(cur) !== nonNumericSkeleton(e.value))
+        : (Number(cur) !== Number(e.value));
       results.push({ label: e.label, file: e.file, pos: pos, old: cur, new: e.value, changed: chg, apply: () => applyOne(e, mm, offset) });
     }
   } catch (err) {

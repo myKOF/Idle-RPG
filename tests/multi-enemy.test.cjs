@@ -77,39 +77,39 @@ test('小怪／菁英／BOSS 各用自己的權重表（菁英不會跟著小怪
   assert.equal(context.fieldCountTableFor('boss'), context.FIELD_BOSS_COUNT_TABLE);
 });
 
-test('草原前 100 關每 20 關套用小怪分段表，菁英固定 1 隻，100 關後恢復正常', () => {
+test('荒漠前 100 關每 20 關套用小怪分段表，菁英固定 1 隻，100 關後恢復正常', () => {
   const context = loadFormulaContext();
   const ranges = [1, 20, 21, 40, 41, 60, 61, 80, 81, 100];
   ranges.forEach((stage) => {
     const index = Math.floor((stage - 1) / 20);
-    assert.equal(context.fieldCountTableFor('normal', stage, 'plains'),
-      context.FIELD_PLAINS_EARLY_ENEMY_COUNT_TABLES[index], '草原第 ' + stage + ' 關小怪分段');
-    assert.deepEqual(JSON.parse(JSON.stringify(context.fieldCountTableFor('elite', stage, 'plains'))), [[1, 1]],
-      '草原第 ' + stage + ' 關菁英應固定 1 隻');
+    assert.equal(context.fieldCountTableFor('normal', stage, 'desert'),
+      context.FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES[index], '荒漠第 ' + stage + ' 關小怪分段');
+    assert.deepEqual(JSON.parse(JSON.stringify(context.fieldCountTableFor('elite', stage, 'desert'))), [[1, 1]],
+      '荒漠第 ' + stage + ' 關菁英應固定 1 隻');
   });
-  assert.equal(context.fieldCountTableFor('normal', 101, 'plains'), context.FIELD_ENEMY_COUNT_TABLE);
-  assert.equal(context.fieldCountTableFor('elite', 101, 'plains'), context.FIELD_ELITE_COUNT_TABLE);
-  assert.equal(context.fieldCountTableFor('normal', 1, 'desert'), context.FIELD_ENEMY_COUNT_TABLE);
-  assert.equal(context.fieldCountTableFor('elite', 1, 'desert'), context.FIELD_ELITE_COUNT_TABLE);
+  assert.equal(context.fieldCountTableFor('normal', 101, 'desert'), context.FIELD_ENEMY_COUNT_TABLE);
+  assert.equal(context.fieldCountTableFor('elite', 101, 'desert'), context.FIELD_ELITE_COUNT_TABLE);
+  assert.equal(context.fieldCountTableFor('normal', 1, 'Icefield'), context.FIELD_ENEMY_COUNT_TABLE);
+  assert.equal(context.fieldCountTableFor('elite', 1, 'Icefield'), context.FIELD_ELITE_COUNT_TABLE);
 
   const combat = loadCombatContext();
   [1, 21, 41, 61, 81].forEach((stage) => {
     combat.G.stage.current = stage;
-    combat.G.stage.zone = 'plains';
+    combat.G.stage.zone = 'desert';
     combat.spawnFieldMonster();
-    const table = combat.FIELD_PLAINS_EARLY_ENEMY_COUNT_TABLES[Math.floor((stage - 1) / 20)];
+    const table = combat.FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES[Math.floor((stage - 1) / 20)];
     const range = weightedRange(table);
     assert.ok(combat.FIELD.monsters.length >= range.min && combat.FIELD.monsters.length <= range.max,
-      '實際出怪未套用草原第 ' + stage + ' 關分段表');
+      '實際出怪未套用荒漠第 ' + stage + ' 關分段表');
   });
   combat.G.stage.current = 10;
   combat.spawnFieldMonster();
-  assert.equal(combat.FIELD.monsters.length, 1, '實際出怪的草原菁英應固定 1 隻');
+  assert.equal(combat.FIELD.monsters.length, 1, '實際出怪的荒漠菁英應固定 1 隻');
   combat.G.stage.current = 101;
   combat.spawnFieldMonster();
   const normalRange = weightedRange(combat.FIELD_ENEMY_COUNT_TABLE);
   assert.ok(combat.FIELD.monsters.length >= normalRange.min && combat.FIELD.monsters.length <= normalRange.max,
-    '草原第 101 關應恢復一般小怪表');
+    '荒漠第 101 關應恢復一般小怪表');
 });
 
 test('出怪依階段敵種選用對應的數量表', () => {
@@ -198,7 +198,7 @@ test('關閉自動推進時完成關卡仍解鎖下一關，但留在目前關�
   const context = loadCombatContext();
   context.G = {
     player: { gold: 0 },
-    stage: { current: 40, best: 40, kills: 0, autoAdvance: false, zone: 'plains' },
+    stage: { current: 40, best: 40, kills: 0, autoAdvance: false, zone: 'desert' },
     tower: { active: false }
   };
   context.FIELD.player = context.newPlayerEntity({ hp: 100, mp: 0, aspd: 1 });
@@ -216,8 +216,8 @@ test('自動推進打通地圖上限後切到下一張地圖第 1 關', () => {
   const context = loadCombatContext();
   context.G = {
     player: { gold: 0, reincarnations: 0 },
-    stage: { current: 200, best: 200, kills: 0, autoAdvance: true, zone: 'plains' },
-    zoneProgress: { plains: { current: 200, best: 200, cleared: 199 } },
+    stage: { current: 200, best: 200, kills: 0, autoAdvance: true, zone: 'desert' },
+    zoneProgress: { desert: { current: 200, best: 200, cleared: 199 } },
     tower: { active: false }
   };
   context.FIELD.player = context.newPlayerEntity({ hp: 100, mp: 0, aspd: 1 });
@@ -225,14 +225,14 @@ test('自動推進打通地圖上限後切到下一張地圖第 1 關', () => {
   context.healPlayer = () => {};
   context.FIELD._waveClearPending = true;
 
-  assert.equal(context.isZoneUnlocked('desert'), false);
-  assert.equal(context.nextAutoAdvanceZone('plains'), null);
+  assert.equal(context.isZoneUnlocked('Icefield'), false);
+  assert.equal(context.nextAutoAdvanceZone('desert'), null);
   context.completeFieldWave(context.getStats());
 
-  assert.equal(context.G.stage.zone, 'desert');
+  assert.equal(context.G.stage.zone, 'Icefield');
   assert.equal(context.G.stage.current, 1);
   assert.equal(context.G.stage.best, 1);
-  assert.equal(context.G.zoneProgress.plains.cleared, 200);
+  assert.equal(context.G.zoneProgress.desert.cleared, 200);
   assert.equal(context.FIELD.mapComplete, false);
   assert.equal(context.FIELD.monsters.length, 0);
 });

@@ -746,7 +746,7 @@ const TASK_GLOSSARY_ROWS = [
   ['0＝普通、1＝精良、2＝稀有、3＝獨特、4＝史詩、5＝傳說、6＝神話、7＝創世、8＝神鑄創世、9＝混沌、10＝神鑄混沌'],
   [''],
   ['── 地圖識別碼對照 ──'],
-  ['plains＝草原、desert＝荒漠、swamp＝沼澤、undead_mountains＝亡靈山脈、god_battlefield＝太古戰場、god_chaos＝混沌界、god_sanctuary＝永恒神域'],
+  ['desert＝荒漠、Icefield＝冰原、swamp＝沼澤、undead_mountains＝亡靈山脈、god_battlefield＝太古戰場、god_chaos＝混沌界、god_sanctuary＝永恒神域'],
   [''],
   ['── 附魔書 id 對照 ──'],
   ['fire＝火焰附魔、ice＝冰凍附魔、lightning＝閃電附魔、poison＝毒液附魔、light＝聖光附魔、dark＝暗影附魔'],

@@ -996,7 +996,7 @@ function evalTierOutlook() {
   var stage = (typeof G !== 'undefined' && G && G.stage) ? (G.stage.current || 0) : 0;
   var best = (typeof G !== 'undefined' && G && G.stage) ? (G.stage.best || 0) : 0;
   var size = (typeof EQUIP_TIER_SIZE === 'number') ? EQUIP_TIER_SIZE : 50;
-  var zone = (typeof G !== 'undefined' && G && G.stage) ? (G.stage.zone || 'plains') : 'plains';
+  var zone = (typeof G !== 'undefined' && G && G.stage) ? (G.stage.zone || 'desert') : 'desert';
 
   var here = equipmentTierLevel(stage);
   var nextStage = (Math.floor(stage / size) + 1) * size;
@@ -1007,7 +1007,7 @@ function evalTierOutlook() {
      關卡改造之後，野外掉落不再由 rollRarity（含 stage×0.006 的連續項）決定，
      而是 rollFieldDrops → fieldDropRatesFor → ZONE_STAGE_DROP_TABLE 查表
      （js/combat.js:931）。查表的粒度是**關卡區間**，區間之內完全相同：
-     草原 100~149 每一關都是 R3 10% / R4 1.5%，裝等也都是 100。
+     荒漠 100~149 每一關都是 R3 10% / R4 1.5%，裝等也都是 100。
 
      而怪物強度在區間之內是連續指數成長。用遊戲自己的 monsterStatsFor 量：
 

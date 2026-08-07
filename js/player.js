@@ -106,13 +106,13 @@ function newGameState() {
     equipSetNames: ['', '', ''],    // 每套自訂名稱（空＝用預設「第X套」）
     equipment: equipment,           // 永遠 = equipmentSets[equipActive]
     inventory: [],
-    stage: { current: 1, best: 1, kills: 0, autoAdvance: true, zone: 'plains' },
+    stage: { current: 1, best: 1, kills: 0, autoAdvance: true, zone: 'desert' },
     /* 各戰鬥場景獨立進度（stage 為當前場景的即時狀態）。
        best＝可挑戰的最高關（＝已通關+1，被地圖上限夾住）；
        cleared＝實際已通關的最高關，用來判定「打贏最後一關」——best 在上限處分不出來。 */
     zoneProgress: {
-      plains: { current: 1, best: 1, cleared: 0 },
       desert: { current: 1, best: 1, cleared: 0 },
+      Icefield: { current: 1, best: 1, cleared: 0 },
       swamp:  { current: 1, best: 1, cleared: 0 },
       undead_mountains: { current: 1, best: 1, cleared: 0 },
       god_battlefield: { current: 1, best: 1, cleared: 0 },

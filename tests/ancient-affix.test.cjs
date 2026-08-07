@@ -136,9 +136,9 @@ test('單詞條洗煉：太古位置必滿值只換種類，非太古位置不�
 
 test('太古精華掉落改由地圖／關卡掉落表提供，拆解機率維持不變', () => {
   const context = loadGameContext();
-  assert.equal(context.zoneStageDropConfigFor('plains', 150).materials.ancientEssenceRate, 0);
-  // 集中掉落表目前 plains 的 150~200 區間太古精華率仍為 0；率值由各地圖分段提供。
-  assert.equal(context.zoneStageDropConfigFor('plains', 151).materials.ancientEssenceRate, 0);
+  assert.equal(context.zoneStageDropConfigFor('desert', 150).materials.ancientEssenceRate, 0);
+  // 集中掉落表目前 desert 的 150~200 區間太古精華率仍為 0；率值由各地圖分段提供。
+  assert.equal(context.zoneStageDropConfigFor('desert', 151).materials.ancientEssenceRate, 0);
   assert.equal(context.zoneStageDropConfigFor('god_battlefield', 551).materials.ancientEssenceRate, 6);
   assert.equal(context.ancientEssenceDropChanceForBoss(40), 10);
   assert.equal(context.ancientEssenceDropChanceForBoss(85), 100);

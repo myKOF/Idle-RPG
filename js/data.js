@@ -217,7 +217,7 @@ var TALENT_TREES = {
    參數表：4-敵人數量 的小怪五段、一般小怪、菁英與 BOSS 權重列，寫法為
    {數量,權重} 或 {下限~上限,權重}。 */
 var FIELD_ENEMY_COUNT_TABLE = [[1, 5], [2, 5], [3, 5], [4, 8], [5, 20], [6, 20], [7, 8], [8, 8], [9, 8], [10, 3], [11, 3], [12, 2], [13, 1], [14, 0.5], [15, 0.3], [16, 0.2]];
-var FIELD_PLAINS_EARLY_ENEMY_COUNT_TABLES = [[[1, 95], [2, 95], [3, 5]], [[1, 90], [2, 90], [3, 10]], [[1, 85], [2, 85], [3, 14], [4, 1]], [[1, 80], [2, 80], [3, 80], [4, 12], [5, 6], [6, 2]], [[1, 64], [2, 64], [3, 64], [4, 20], [5, 10], [6, 5], [7, 1], [8, 1]]];
+var FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES = [[[1, 95], [2, 95], [3, 5]], [[1, 90], [2, 90], [3, 10]], [[1, 85], [2, 85], [3, 14], [4, 1]], [[1, 80], [2, 80], [3, 80], [4, 12], [5, 6], [6, 2]], [[1, 64], [2, 64], [3, 64], [4, 20], [5, 10], [6, 5], [7, 1], [8, 1]]];
 var FIELD_ELITE_COUNT_TABLE = [[1, 60], [2, 30], [3, 10]];
 var FIELD_BOSS_COUNT_TABLE = [[1, 100]];
 
@@ -1016,7 +1016,7 @@ var SKILL = {
 };
 
 // ---- 怪物（magic: 以魔法攻擊，對玩家魔防；attr: 屬性標籤（六大屬性），供「對X屬性敵人傷害」加成與 tips 顯示 ----
-var MONSTER_POOL = [
+var DESERT_POOL = [
   { name: '史萊姆', emoji: '🟢', attr: 'poison' }, { name: '哥布林', emoji: '👺', attr: 'dark' },
   { name: '野狼', emoji: '🐺', attr: 'ice' }, { name: '骷髏兵', emoji: '💀', attr: 'dark' },
   { name: '暗影蝠', emoji: '🦇', magic: true, attr: 'dark' }, { name: '樹妖', emoji: '🌳', magic: true, attr: 'poison' },
@@ -1025,15 +1025,15 @@ var MONSTER_POOL = [
   { name: '牛頭人', emoji: '🐂', attr: 'fire' }, { name: '雙足飛龍', emoji: '🐉', magic: true, attr: 'lightning' }
 ];
 /* ---- 戰鬥場景 ----
-   荒漠/沼澤敵人更強；經驗、金幣、材料（寶石/附魔書/精華）掉落 x2 / x3，
+   冰原/沼澤敵人更強；經驗、金幣、材料（寶石/附魔書/精華）掉落 x2 / x3，
    裝備掉落表不變。各場景獨立保存推進進度與最高階段。 */
-var DESERT_POOL = [
-  { name: '沙漠蠍', emoji: '🦂', attr: 'poison' }, { name: '沙蟲', emoji: '🪱', attr: 'fire' },
-  { name: '木乃伊', emoji: '🧟', magic: true, attr: 'dark' }, { name: '沙漠禿鷹', emoji: '🦅', attr: 'lightning' },
-  { name: '響尾蛇', emoji: '🐍', attr: 'poison' }, { name: '沙魔', emoji: '👹', magic: true, attr: 'dark' },
-  { name: '石化蜥蜴', emoji: '🦎', attr: 'poison' }, { name: '沙漠強盜', emoji: '🏴‍☠️', attr: 'fire' },
-  { name: '火焰精靈', emoji: '🔥', magic: true, attr: 'fire' }, { name: '遠古石像', emoji: '🗿', attr: 'light' },
-  { name: '沙丘巨獸', emoji: '🐫', attr: 'fire' }, { name: '太陽祭司', emoji: '☀️', magic: true, attr: 'light' }
+var ICEFIELD_POOL = [
+  { name: '寒霜狼', emoji: '🐺', attr: 'ice' }, { name: '雪原巨熊', emoji: '🐻‍❄️', attr: 'ice' },
+  { name: '冰原史萊姆', emoji: '🧊', magic: true, attr: 'ice' }, { name: '雷電魔像', emoji: '🗿', attr: 'lightning' },
+  { name: '雪怪', emoji: '🦍', attr: 'ice' }, { name: '冰墓幽靈', emoji: '👻', magic: true, attr: 'ice' },
+  { name: '女妖', emoji: '🧝‍♀️', attr: 'lightning' }, { name: '幽魂', emoji: '🌫️', attr: 'lightning' },
+  { name: '寒冰魔像', emoji: '❄️', magic: true, attr: 'ice' }, { name: '冰晶元素', emoji: '💠', attr: 'ice' },
+  { name: '骷髏弓箭手', emoji: '🏹', attr: 'lightning' }, { name: '寒冰龍王', emoji: '🐉', magic: true, attr: 'ice' }
 ];
 var SWAMP_POOL = [
   { name: '劇毒蛙', emoji: '🐸', attr: 'poison' }, { name: '沼澤鱷', emoji: '🐊', attr: 'dark' },
@@ -1047,14 +1047,18 @@ var SWAMP_POOL = [
 // ---- 亡靈山脈 NPC ----
 // 新地圖使用獨立 NPC 配置；每個 NPC 的基本能力可再由配置表調整。
 var UNDEAD_MOUNTAINS_POOL = [
-  { id: 'undead_skeleton', name: '骸骨戰士', emoji: '💀', attr: 'dark', appearance: 'skeleton', hpMult: 1.05, atkMult: 1.1, defMult: 1.2 },
-  { id: 'undead_wraith', name: '山脈怨靈', emoji: '👻', attr: 'dark', magic: true, appearance: 'wraith', hpMult: 0.85, atkMult: 1.25, defMult: 0.9 },
-  { id: 'undead_ghoul', name: '腐屍獵犬', emoji: '🐺', attr: 'poison', appearance: 'ghoul', hpMult: 0.9, atkMult: 1.2, defMult: 0.8, aspdMult: 1.2 },
-  { id: 'undead_knight', name: '亡靈騎士', emoji: '🛡️', attr: 'dark', appearance: 'knight', hpMult: 1.35, atkMult: 1.05, defMult: 1.5 },
-  { id: 'undead_banshee', name: '哀嚎女妖', emoji: '🕯️', attr: 'ice', magic: true, appearance: 'banshee', hpMult: 0.8, atkMult: 1.35, defMult: 0.85 },
-  { id: 'undead_golem', name: '墓石巨像', emoji: '🗿', attr: 'earth', appearance: 'golem', hpMult: 1.8, atkMult: 0.9, defMult: 1.8 },
-  { id: 'undead_vampire', name: '血月伯爵', emoji: '🧛', attr: 'dark', magic: true, appearance: 'vampire', hpMult: 1.15, atkMult: 1.4, defMult: 1.05 },
-  { id: 'undead_dragon', name: '骨龍', emoji: '🐉', attr: 'fire', appearance: 'dragon', hpMult: 2, atkMult: 1.5, defMult: 1.4 }
+  { id: 'undead_1', name: '骸骨戰士', emoji: '💀', attr: 'dark', appearance: 'skeleton', hpMult: 1.05, atkMult: 1.1, defMult: 1.2 },
+  { id: 'undead_2', name: '山脈怨靈', emoji: '👻', attr: 'dark', magic: true, appearance: 'wraith', hpMult: 0.85, atkMult: 1.25, defMult: 0.9 },
+  { id: 'undead_3', name: '腐屍獵犬', emoji: '🐺', attr: 'poison', appearance: 'ghoul', hpMult: 0.9, atkMult: 1.2, defMult: 0.8, aspdMult: 1.2 },
+  { id: 'undead_4', name: '亡靈騎士', emoji: '🛡️', attr: 'dark', appearance: 'knight', hpMult: 1.35, atkMult: 1.05, defMult: 1.5 },
+  { id: 'undead_5', name: '哀嚎女妖', emoji: '🕯️', attr: 'ice', magic: true, appearance: 'banshee', hpMult: 0.8, atkMult: 1.35, defMult: 0.85 },
+  { id: 'undead_6', name: '墓石巨像', emoji: '🗿', attr: 'earth', appearance: 'golem', hpMult: 1.8, atkMult: 0.9, defMult: 1.8 },
+  { id: 'undead_7', name: '血月伯爵', emoji: '🧛', attr: 'dark', magic: true, appearance: 'vampire', hpMult: 1.15, atkMult: 1.4, defMult: 1.05 },
+  { id: 'undead_8', name: '劇毒腐屍', emoji: '☣️', attr: 'fire', appearance: 'rotting', hpMult: 1.2, atkMult: 1.1, defMult: 1 },
+  { id: 'undead_9', name: '食屍鬼', emoji: '🧟', attr: 'dark', magic: true, appearance: 'devourer', hpMult: 1, atkMult: 1.15, defMult: 0.85, aspdMult: 1.1 },
+  { id: 'undead_10', name: '骷髏法師', emoji: '🧙', attr: 'ice', appearance: 'skeleton_mage', hpMult: 0.85, atkMult: 1.3, defMult: 0.85 },
+  { id: 'undead_11', name: '怨靈', emoji: '🌫️', attr: 'earth', magic: true, appearance: 'lost_soul', hpMult: 0.9, atkMult: 1.3, defMult: 0.9 },
+  { id: 'undead_12', name: '骨龍王', emoji: '🐉', attr: 'dark', appearance: 'dragon', hpMult: 2.2, atkMult: 1.6, defMult: 1.5 }
 ];
 
 var GOD_BATTLEFIELD_POOL = [
@@ -1074,45 +1078,14 @@ var GOD_CHAOS_POOL = [
   { name: '創世餘燼', emoji: '🔥', magic: true, attr: 'fire' }, { name: '混沌大天尊', emoji: '☸️', magic: true, attr: 'dark' }
 ];
 var GOD_SANCTUARY_POOL = [
-  { name: '巡天聖光', emoji: '💫', magic: true, attr: 'light' }, { name: '熾天使', emoji: '👼', magic: true, attr: 'light' },
-  { name: '智天使', emoji: '👼‍♀️', magic: true, attr: 'light' }, { name: '審判使者', emoji: '⚖️', attr: 'light' },
+  { name: '巡天聖光', emoji: '💫', magic: true, attr: 'light' }, { name: '天使', emoji: '👼', magic: true, attr: 'light' },
+  { name: '天使巡狩', emoji: '👼‍♀️', magic: true, attr: 'light' }, { name: '審判使者', emoji: '⚖️', attr: 'light' },
   { name: '聖域守衛', emoji: '🛡️', attr: 'light' }, { name: '曜光巨龍', emoji: '🐉', magic: true, attr: 'light' },
-  { name: '神威巨像', emoji: '🏛️', attr: 'light' }, { name: '永恒靈體', emoji: '🕊️', magic: true, attr: 'light' },
-  { name: '創世執法官', emoji: '📜', magic: true, attr: 'light' }, { name: '神王護衛長', emoji: '👑', attr: 'light' },
-  { name: '諸神榮光', emoji: '🌟', magic: true, attr: 'light' }, { name: '永恒神王', emoji: '🌌', magic: true, attr: 'light' }
+  { name: '巨魔像', emoji: '🏛️', attr: 'light' }, { name: '永恒靈體', emoji: '🕊️', magic: true, attr: 'light' },
+  { name: '聖地執法者', emoji: '📜', magic: true, attr: 'light' }, { name: '神王護衛長', emoji: '👑', attr: 'light' },
+  { name: '智慧晶體', emoji: '🌟', magic: true, attr: 'light' }, { name: '神聖執法官', emoji: '🌌', magic: true, attr: 'light' }
 ];
 
-var ZONE_LIST = ['plains', 'desert', 'swamp', 'god_battlefield', 'god_chaos', 'god_sanctuary'];
-var REALMS = {
-  human: { name: '凡人界', emoji: '🌍', zones: ['plains', 'desert', 'swamp'] },
-  god: { name: '神界', emoji: '✨', zones: ['god_battlefield', 'god_chaos', 'god_sanctuary'] }
-};
-var ZONES = {
-  plains: {
-    name: '草原', emoji: '🌿', pool: MONSTER_POOL, realm: 'human',
-    hpMult: 1, atkMult: 1, defMult: 1, aspdMult: 1, rewardMult: 1
-  },
-  desert: {
-    name: '荒漠', emoji: '🏜️', pool: DESERT_POOL, realm: 'human',
-    hpMult: 2.2, atkMult: 1.8, defMult: 1.6, aspdMult: 1.5, rewardMult: 1.25, reqZone: 'plains', reqStage: 100
-  },
-  swamp: {
-    name: '沼澤', emoji: '🦠', pool: SWAMP_POOL, realm: 'human',
-    hpMult: 4, atkMult: 2.8, defMult: 2.4, aspdMult: 2, rewardMult: 1.5, reqZone: 'desert', reqStage: 100
-  },
-  god_battlefield: {
-    name: '太古戰場', emoji: '⚔️', pool: GOD_BATTLEFIELD_POOL, realm: 'god',
-    hpMult: 10, atkMult: 5, defMult: 4, aspdMult: 1.75, rewardMult: 4
-  },
-  god_chaos: {
-    name: '混沌界', emoji: '🌀', pool: GOD_CHAOS_POOL, realm: 'god',
-    hpMult: 25, atkMult: 10, defMult: 8, aspdMult: 2, rewardMult: 10, reqZone: 'god_battlefield', reqStage: 100
-  },
-  god_sanctuary: {
-    name: '永恒神域', emoji: '✨', pool: GOD_SANCTUARY_POOL, realm: 'god',
-    hpMult: 60, atkMult: 20, defMult: 15, aspdMult: 2.25, rewardMult: 24, reqZone: 'god_chaos', reqStage: 100
-  }
-};
 /* NPC_CONFIG_TABLE 是所有可出現在野外的 NPC 基本資料表。
    舊場景的既有怪物仍保留原名稱/外觀，並由這裡補上穩定 id；新 NPC 可直接在此表新增。 */
 var NPC_CONFIG_TABLE = {};
@@ -1134,8 +1107,8 @@ function registerNpcPool(zoneKey, pool) {
     };
   });
 }
-registerNpcPool('plains', MONSTER_POOL);
 registerNpcPool('desert', DESERT_POOL);
+registerNpcPool('Icefield', ICEFIELD_POOL);
 registerNpcPool('swamp', SWAMP_POOL);
 registerNpcPool('undead_mountains', UNDEAD_MOUNTAINS_POOL);
 registerNpcPool('god_battlefield', GOD_BATTLEFIELD_POOL);
@@ -1148,47 +1121,33 @@ function weightedNpcEntries(pool, firstWeight) {
   });
 }
 var ZONE_ENEMY_TABLES = {
-  plains: weightedNpcEntries(MONSTER_POOL, 30),
-  desert: weightedNpcEntries(DESERT_POOL, 25),
+  desert: weightedNpcEntries(DESERT_POOL, 30),
+  Icefield: weightedNpcEntries(ICEFIELD_POOL, 25),
   swamp: weightedNpcEntries(SWAMP_POOL, 20),
   undead_mountains: [
-    { npcId: 'undead_skeleton', weight: 35 }, { npcId: 'undead_wraith', weight: 18 },
-    { npcId: 'undead_ghoul', weight: 16 }, { npcId: 'undead_knight', weight: 12 },
-    { npcId: 'undead_banshee', weight: 8 }, { npcId: 'undead_golem', weight: 5 },
-    { npcId: 'undead_vampire', weight: 4 }, { npcId: 'undead_dragon', weight: 2 }
+    { npcId: 'undead_1', weight: 35 }, { npcId: 'undead_2', weight: 18 },
+    { npcId: 'undead_3', weight: 16 }, { npcId: 'undead_4', weight: 12 },
+    { npcId: 'undead_5', weight: 8 }, { npcId: 'undead_6', weight: 5 },
+    { npcId: 'undead_7', weight: 4 }, { npcId: 'undead_8', weight: 2 },
+    { npcId: 'undead_9', weight: 8 }, { npcId: 'undead_10', weight: 5 },
+    { npcId: 'undead_11', weight: 4 }, { npcId: 'undead_12', weight: 2 }
   ],
   god_battlefield: weightedNpcEntries(GOD_BATTLEFIELD_POOL, 20),
   god_chaos: weightedNpcEntries(GOD_CHAOS_POOL, 18),
   god_sanctuary: weightedNpcEntries(GOD_SANCTUARY_POOL, 15)
 };
 
-var ZONE_LIST = ['plains', 'desert', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary'];
-/*
-var REALMS = {
-  human: { name: '凡人界', emoji: '🌍', zones: ['plains', 'desert', 'swamp', 'undead_mountains'] },
-  god: { name: '神界', emoji: '✨', zones: ['god_battlefield', 'god_chaos', 'god_sanctuary'] }
-};
 // 關卡設計的唯一入口：每張地圖都是有限關卡，後圖要求前圖通關。
-ZONES = {
-  plains: { name: '??', emoji: '?', pool: MONSTER_POOL, enemyTable: ZONE_ENEMY_TABLES.plains, realm: 'human', hpMult: 1, atkMult: 1, defMult: 1, aspdMult: 1, rewardMult: 1, maxStage: 200 },
-  desert: { name: '??', emoji: '??儭?', pool: DESERT_POOL, enemyTable: ZONE_ENEMY_TABLES.desert, realm: 'human', hpMult: 2.2, atkMult: 1.8, defMult: 1.6, aspdMult: 1.5, rewardMult: 1.25, maxStage: 300, reqZone: 'plains', reqStage: 200 },
-  swamp: { name: '瘝潭黎', emoji: '??', pool: SWAMP_POOL, enemyTable: ZONE_ENEMY_TABLES.swamp, realm: 'human', hpMult: 4, atkMult: 2.8, defMult: 2.4, aspdMult: 2, rewardMult: 1.5, maxStage: 400, reqZone: 'desert', reqStage: 300 },
-  undead_mountains: { name: '亡靈山脈', emoji: '⛰️', pool: UNDEAD_MOUNTAINS_POOL, enemyTable: ZONE_ENEMY_TABLES.undead_mountains, realm: 'human', hpMult: 6.5, atkMult: 3.8, defMult: 3.2, aspdMult: 1.8, rewardMult: 2.25, maxStage: 500, reqZone: 'swamp', reqStage: 400 },
-  god_battlefield: { name: '憭芸?啣', emoji: '??', pool: GOD_BATTLEFIELD_POOL, enemyTable: ZONE_ENEMY_TABLES.god_battlefield, realm: 'god', hpMult: 10, atkMult: 5, defMult: 4, aspdMult: 1.75, rewardMult: 4, maxStage: 600, reqZone: 'undead_mountains', reqStage: 500, reqReincarnation: 11 },
-  god_chaos: { name: '瘛瑟???, emoji: '??', pool: GOD_CHAOS_POOL, enemyTable: ZONE_ENEMY_TABLES.god_chaos, realm: 'god', hpMult: 25, atkMult: 10, defMult: 8, aspdMult: 2, rewardMult: 10, maxStage: 700, reqZone: 'god_battlefield', reqStage: 600, reqReincarnation: 11 },
-  god_sanctuary: { name: '瘞豢?蟡?', emoji: '??', pool: GOD_SANCTUARY_POOL, enemyTable: ZONE_ENEMY_TABLES.god_sanctuary, realm: 'god', hpMult: 60, atkMult: 20, defMult: 15, aspdMult: 2.25, rewardMult: 24, maxStage: 800, reqZone: 'god_chaos', reqStage: 700, reqReincarnation: 11 }
-};
-*/
-// ASCII-safe authoritative override (the legacy block above is retained only for migration history).
-ZONE_LIST = ['plains', 'desert', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary'];
-REALMS = {
-  human: { name: '凡人界', emoji: '🌍', zones: ['plains', 'desert', 'swamp', 'undead_mountains'] },
+// 倍率、關卡上限與前置條件由 config/CSV/Zones.csv 經 tools/apply_params.cjs 投影進來。
+var ZONE_LIST = ['desert', 'Icefield', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary'];
+var REALMS = {
+  human: { name: '凡人界', emoji: '🌍', zones: ['desert', 'Icefield', 'swamp', 'undead_mountains'] },
   god: { name: '神界', emoji: '✨', zones: ['god_battlefield', 'god_chaos', 'god_sanctuary'] }
 };
-ZONES = {
-  plains: { name: '草原', emoji: '🌿', pool: MONSTER_POOL, enemyTable: ZONE_ENEMY_TABLES.plains, realm: 'human', hpMult: 1, atkMult: 1, defMult: 1, aspdMult: 1, rewardMult: 1, maxStage: 200 },
-  desert: { name: '荒漠', emoji: '🏜️', pool: DESERT_POOL, enemyTable: ZONE_ENEMY_TABLES.desert, realm: 'human', hpMult: 2.2, atkMult: 1.8, defMult: 1.6, aspdMult: 1.4, rewardMult: 1.2, maxStage: 300, reqZone: 'plains', reqStage: 200 },
-  swamp: { name: '沼澤', emoji: '🦠', pool: SWAMP_POOL, enemyTable: ZONE_ENEMY_TABLES.swamp, realm: 'human', hpMult: 4.4, atkMult: 2.8, defMult: 2.4, aspdMult: 1.6, rewardMult: 1.5, maxStage: 400, reqZone: 'desert', reqStage: 300 },
+var ZONES = {
+  desert: { name: '荒漠', emoji: '🏜️', pool: DESERT_POOL, enemyTable: ZONE_ENEMY_TABLES.desert, realm: 'human', hpMult: 1, atkMult: 1, defMult: 1, aspdMult: 1, rewardMult: 1, maxStage: 200 },
+  Icefield: { name: '冰原', emoji: '🧊', pool: ICEFIELD_POOL, enemyTable: ZONE_ENEMY_TABLES.Icefield, realm: 'human', hpMult: 2.2, atkMult: 1.8, defMult: 1.6, aspdMult: 1.4, rewardMult: 1.2, maxStage: 300, reqZone: 'desert', reqStage: 200 },
+  swamp: { name: '沼澤', emoji: '🦠', pool: SWAMP_POOL, enemyTable: ZONE_ENEMY_TABLES.swamp, realm: 'human', hpMult: 4.4, atkMult: 2.8, defMult: 2.4, aspdMult: 1.6, rewardMult: 1.5, maxStage: 400, reqZone: 'Icefield', reqStage: 300 },
   undead_mountains: { name: '亡靈山脈', emoji: '⛰️', pool: UNDEAD_MOUNTAINS_POOL, enemyTable: ZONE_ENEMY_TABLES.undead_mountains, realm: 'human', hpMult: 6.5, atkMult: 3.8, defMult: 3.2, aspdMult: 1.8, rewardMult: 2.25, maxStage: 500, reqZone: 'swamp', reqStage: 400 },
   god_battlefield: { name: '太古戰場', emoji: '⚔️', pool: GOD_BATTLEFIELD_POOL, enemyTable: ZONE_ENEMY_TABLES.god_battlefield, realm: 'god', hpMult: 10, atkMult: 5, defMult: 4, aspdMult: 2, rewardMult: 4, maxStage: 600, reqZone: 'undead_mountains', reqStage: 500, reqReincarnation: 11 },
   god_chaos: { name: '混沌界', emoji: '🌀', pool: GOD_CHAOS_POOL, enemyTable: ZONE_ENEMY_TABLES.god_chaos, realm: 'god', hpMult: 25, atkMult: 10, defMult: 8, aspdMult: 2.2, rewardMult: 10, maxStage: 700, reqZone: 'god_battlefield', reqStage: 600, reqReincarnation: 11 },
@@ -1196,7 +1155,7 @@ ZONES = {
 };
 
 function zoneMaxStage(zoneKey) {
-  var zone = ZONES[zoneKey] || ZONES.plains;
+  var zone = ZONES[zoneKey] || ZONES.desert;
   return Math.max(1, Math.floor(Number(zone.maxStage) || 1));
 }
 function zoneBestProgress(zoneKey) {
@@ -1205,7 +1164,7 @@ function zoneBestProgress(zoneKey) {
   return Math.max(1, Number(G.zoneProgress && G.zoneProgress[zoneKey] && G.zoneProgress[zoneKey].best) || 1);
 }
 /* ---- 該地圖「實際已通關的最高關卡」（zoneProgress[zone].cleared）----
-   best 是「可挑戰的最高關」＝已通關+1，且被地圖上限夾住：打贏草原第 200 關（上限 200）
+   best 是「可挑戰的最高關」＝已通關+1，且被地圖上限夾住：打贏荒漠第 200 關（上限 200）
    之後 best 仍是 200，和「只打到 199 關」分不出來。任務「通關第 N 關」必須能判定最後
    一關，所以另存本欄。best 的語意與消費端（推關 UI、離線收益、地圖解鎖）完全不動。
    舊存檔沒有 cleared：以 best-1 回推——那正是本欄出現前 stageClear 的判定值，
@@ -1237,8 +1196,8 @@ function isZoneUnlocked(zoneKey) {
 }
 /* 依地圖與關卡區間的掉落配置。每一列為 [min, max, 裝備0~10機率, gem1~5, 附魔書, 太古精華, 魔塵]。
    以資料表集中管理，新增地圖或調整區間不需要改戰鬥公式。 */
-var ZONE_STAGE_DROP_PROFILES = {  plains: [[1,20,[25,15,10,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0],0,0,0],[21,99,[35,20,15,5,0,0,0,0,0,0,0],[4,0.8,0.3,0,0],1,0,0],[40,49,[0,0,0,0,2,0,0,0,0,0,0],[0,0,0,0,0],0,0,0],[50,99,[0,0,0,0,1,0,0,0,0,0,0],[0,0,0,0,0],0,0,0],[100,149,[40,30,20,10,1.5,0,0,0,0,0,0],[6,1.1,0.4,0,0],1,0,1],[150,200,[50,40,30,15,2.5,1,0,0,0,0,0],[8,1.4,0.5,0.1,0],2,0,1]],
-  desert: [[1,199,[50,40,30,15,5,0.5,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[200,249,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[250,300,[50,40,30,15,10,3,0.25,0,0,0,0],[12,2,1,0.6,0.1],2,1,1]],
+var ZONE_STAGE_DROP_PROFILES = {  desert: [[1,20,[25,15,10,0,0,0,0,0,0,0,0],[4,0.8,0.3,0,0],0,0,0],[21,99,[35,20,15,5,0,0,0,0,0,0,0],[4,0.8,0.3,0,0],1,0,0],[40,49,[0,0,0,0,2,0,0,0,0,0,0],[0,0,0,0,0],0,0,0],[50,99,[0,0,0,0,1,0,0,0,0,0,0],[0,0,0,0,0],0,0,0],[100,149,[40,30,20,10,1.5,0,0,0,0,0,0],[6,1.1,0.4,0,0],1,0,1],[150,200,[50,40,30,15,2.5,1,0,0,0,0,0],[8,1.4,0.5,0.1,0],2,0,1]],
+  Icefield: [[1,199,[50,40,30,15,5,0.5,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[200,249,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[250,300,[50,40,30,15,10,3,0.25,0,0,0,0],[12,2,1,0.6,0.1],2,1,1]],
   swamp: [[1,199,[50,40,30,15,5,1,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[200,249,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[250,349,[50,40,30,15,10,3,0.25,0,0,0,0],[12,2,1,0.6,0.1],3,2,1],[350,400,[50,40,30,15,10,3,0.35,0.1,0,0,0],[12,2,0.7,0.3,0.2],4,3,1]],
   undead_mountains: [[1,199,[50,40,30,15,5,1,0,0,0,0,0],[8,1.4,0.5,0.1,0],1,0,1],[200,299,[50,40,30,15,10,1.5,0.1,0,0,0,0],[10,2,1,0.5,0.1],2,1,1],[300,399,[50,40,30,15,10,3,0.25,0.1,0,0,0],[12,2,1,0.6,0.1],3,2,1],[400,449,[50,40,30,15,10,3,0.3,0.2,0,0,0],[12,2,0.7,0.3,0.2],4,3,1],[450,500,[50,40,30,15,10,3,0.5,0.3,0,0,0],[14,3,1,0.4,0.25],4,3,1]],
   god_battlefield: [[1,150,[53,48,47,10,3,1,0.08,0,0,0,0],[11,1.7,0.6,0.1,0.08],7,3,1],[151,300,[61,51,49,20,6,2,0.16,0,0,0,0],[14,2.4,0.8,0.2,0.16],9,4,1],[301,450,[69,54,51,30,9,3,0.24,0,0,0,0],[17,3.1,1,0.3,0.24],11,5,1],[451,550,[77,57,53,40,12,4,0.32,0,0,0,0],[20,3.8,1.2,0.4,0.32],13,6,1],[551,600,[77,57,53,40,12,4,0.32,2,0,1,0],[20,3.8,1.2,0.4,0.32],13,6,1]],
@@ -1253,7 +1212,7 @@ Object.keys(ZONE_STAGE_DROP_PROFILES).forEach(function (zoneKey) {
 });
 
 function currentZoneDef() {
-  return ZONES[(G.stage && G.stage.zone) || 'plains'] || ZONES.plains;
+  return ZONES[(G.stage && G.stage.zone) || 'desert'] || ZONES.desert;
 }
 
 var RESPAWN_DELAY = 0.8;       // 出怪間隔（秒）
@@ -1850,30 +1809,31 @@ var TASKS = [
   { order: 2, name: '將全身的裝備替換成稀有品質', type: 'equipSlots', param: '2|0', count: 13, rewardType: 'gold', rewardQty: 100000, rewardLabel: '金幣+100000' },
   { order: 3, name: '強化裝備10次', type: 'upgradeCount', count: 10, rewardType: 'scrap', rewardQty: 200, rewardLabel: '裝備碎片+200' },
   { order: 4, name: '洗煉裝備2次', type: 'rerollCount', count: 2, rewardType: 'essence', rewardQty: 20, rewardLabel: '附魔精華+20' },
-  { order: 5, name: '挑戰草原第20關成功', type: 'stageClear', param: 'plains', count: 20, rewardType: 'equip', rewardParam: '3|1', rewardQty: 1, rewardLabel: '任意獨特1級裝備×1' },
+  { order: 5, name: '挑戰荒漠第20關成功', type: 'stageClear', param: 'desert', count: 20, rewardType: 'equip', rewardParam: '3|1', rewardQty: 1, rewardLabel: '任意獨特1級裝備×1' },
   { order: 6, name: '將全身的裝備替換成獨特品質', type: 'equipSlots', param: '3|0', count: 13, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
   { order: 7, name: '學習治療技能「再生術」', type: 'skillLevel', param: 'regenerate', count: 1, rewardType: 'skillXp', rewardQty: 10000, rewardLabel: '技能經驗值+10000' },
   { order: 8, name: '強化裝備20次', type: 'upgradeCount', count: 20, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
-  { order: 9, name: '挑戰草原第30關成功', type: 'stageClear', param: 'plains', count: 30, rewardType: 'equip', rewardParam: '3|1|2', rewardQty: 1, rewardLabel: '任意2太古獨特1級裝備×1' },
+  { order: 9, name: '挑戰荒漠第30關成功', type: 'stageClear', param: 'desert', count: 30, rewardType: 'equip', rewardParam: '3|1|2', rewardQty: 1, rewardLabel: '任意2太古獨特1級裝備×1' },
   { order: 10, name: '裝備鑲嵌任意寶石8顆', type: 'socketCount', count: 8, rewardType: 'gem', rewardParam: '1', rewardQty: 10, rewardLabel: '任意1級寶石×10' },
   { order: 11, name: '裝備任意附魔2次', type: 'enchantCount', count: 2, rewardType: 'book', rewardParam: 'focus', rewardQty: 1, rewardLabel: '專注附魔×1' },
   { order: 12, name: '熔爐裝配任意零件4個', type: 'forgeParts', count: 4, rewardType: 'essence', rewardQty: 50, rewardLabel: '附魔精華+50' },
   { order: 13, name: '合成寶石1次', type: 'composeCount', count: 1, rewardType: 'gem', rewardParam: '1', rewardQty: 10, rewardLabel: '任意1級寶石×10' },
-  { order: 14, name: '挑戰草原第40關成功', type: 'stageClear', param: 'plains', count: 40, rewardType: 'equip', rewardParam: '4|1|2', rewardQty: 1, rewardLabel: '任意2太古史詩1級裝備×1' },
+  { order: 14, name: '挑戰荒漠第40關成功', type: 'stageClear', param: 'desert', count: 40, rewardType: 'equip', rewardParam: '4|1|2', rewardQty: 1, rewardLabel: '任意2太古史詩1級裝備×1' },
   { order: 15, name: '穿上4件史詩裝備', type: 'equipSlots', param: '4|0', count: 4, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
   { order: 16, name: '裝備鑲嵌任意寶石16顆', type: 'socketCount', count: 16, rewardType: 'gem', rewardParam: '1', rewardQty: 15, rewardLabel: '任意1級寶石×15' },
   { order: 17, name: '升級防禦技能「魔法屏障」至5級', type: 'skillLevel', param: 'manaBarrier', count: 5, rewardType: 'skillXp', rewardQty: 50000, rewardLabel: '技能經驗值+50000' },
   { order: 18, name: '生命最大值達5000', type: 'maxHp', count: 5000, rewardType: 'gold', rewardQty: 300000, rewardLabel: '金幣+300000' },
-  { order: 19, name: '挑戰草原第50關BOSS成功', type: 'stageClear', param: 'plains', count: 50, rewardType: 'equip', rewardParam: '4|50|2', rewardQty: 1, rewardLabel: '任意2太古史詩50級裝備×1' },
+  { order: 19, name: '挑戰荒漠第50關BOSS成功', type: 'stageClear', param: 'desert', count: 50, rewardType: 'equip', rewardParam: '4|50|2', rewardQty: 1, rewardLabel: '任意2太古史詩50級裝備×1' },
   { order: 20, name: '將全身的裝備替換成50級史詩品質', type: 'equipSlots', param: '4|50', count: 13, rewardType: 'essence', rewardQty: 100, rewardLabel: '附魔精華+100' },
   { order: 21, name: '擁有5個太古詞條', type: 'ancientCount', count: 6, rewardType: 'essence', rewardQty: 200, rewardLabel: '附魔精華+200' },
-  { order: 22, name: '挑戰草原第100關BOSS成功', type: 'stageClear', param: 'plains', count: 100, rewardType: 'equip', rewardParam: '5|100|3', rewardQty: 1, rewardLabel: '任意3太古傳說100級裝備×1' },
+  { order: 22, name: '挑戰荒漠第100關BOSS成功', type: 'stageClear', param: 'desert', count: 100, rewardType: 'equip', rewardParam: '5|100|3', rewardQty: 1, rewardLabel: '任意3太古傳說100級裝備×1' },
   { order: 23, name: '強化裝備100次', type: 'upgradeCount', count: 100, rewardType: 'essence', rewardQty: 300, rewardLabel: '附魔精華+300' },
-  { order: 24, name: '挑戰草原第150關BOSS成功', type: 'stageClear', param: 'plains', count: 150, rewardType: 'equip', rewardParam: '5|150|3', rewardQty: 1, rewardLabel: '任意3太古傳說150級裝備×1' },
+  { order: 24, name: '挑戰荒漠第150關BOSS成功', type: 'stageClear', param: 'desert', count: 150, rewardType: 'equip', rewardParam: '5|150|3', rewardQty: 1, rewardLabel: '任意3太古傳說150級裝備×1' },
   { order: 25, name: '挑戰高塔BOSS第5層成功', type: 'towerFloor', count: 5, rewardType: 'gem', rewardParam: '2', rewardQty: 15, rewardLabel: '任意2級寶石×15' },
   { order: 26, name: '將全身的裝備替換成150級傳說品質', type: 'equipSlots', param: '5|150', count: 13, rewardType: 'scrap', rewardQty: 50000, rewardLabel: '裝備碎片+50000' },
   { order: 27, name: '洗煉裝備100次', type: 'rerollCount', count: 100, rewardType: 'essence', rewardQty: 300, rewardLabel: '附魔精華+300' },
   { order: 28, name: '升級熔爐任意零件至3級', type: 'forgePartLevel', count: 3, rewardType: 'gold', rewardQty: 2000000, rewardLabel: '金幣+2000000' },
-  { order: 29, name: '挑戰草原第200關BOSS成功', type: 'stageClear', param: 'plains', count: 200, rewardType: 'equip', rewardParam: '5|200|3', rewardQty: 1, rewardLabel: '任意3太古傳說200級裝備×1' },
-  { order: 30, name: '挑戰荒漠第200關BOSS成功', type: 'stageClear', param: 'desert', count: 200, rewardType: 'equip', rewardParam: '5|200|4', rewardQty: 1, rewardLabel: '任意4太古傳說200級裝備×1' }
+  { order: 29, name: '挑戰荒漠第200關BOSS成功', type: 'stageClear', param: 'desert', count: 200, rewardType: 'equip', rewardParam: '5|200|3', rewardQty: 1, rewardLabel: '任意3太古傳說200級裝備×1' },
+  { order: 30, name: '挑戰冰原第300關BOSS成功', type: 'stageClear', param: 'Icefield', count: 300, rewardType: 'equip', rewardParam: '5|300|4', rewardQty: 1, rewardLabel: '任意4太古傳說300級裝備×1' },
+  { order: 31, name: '挑戰沼澤第400關BOSS成功', type: 'stageClear', param: 'swamp', count: 400, rewardType: 'equip', rewardParam: '6|400|4', rewardQty: 1, rewardLabel: '任意4神話傳說400級裝備×1' }
 ];

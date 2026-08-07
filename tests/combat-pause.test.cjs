@@ -87,7 +87,7 @@ test('戰鬥關卡控制列使用正式 tooltip，不使用原生 title', () => 
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
 
   assert.doesNotMatch(combatBlock, /\stitle=/);
-  assert.match(combatBlock, /data-tt-title="荒漠"/);
+  assert.match(combatBlock, /data-tt-title="冰原"/);
   assert.match(combatBlock, /data-tt-title="戰鬥控制"/);
   assert.match(combatBlock, /data-tt-title="迷你視窗"/);
   assert.match(combatBlock, /data-tt-title="統計面板"/);

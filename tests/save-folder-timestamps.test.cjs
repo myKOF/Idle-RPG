@@ -124,7 +124,7 @@ test('folder scan rebuilds manual save metadata from file modified time', async 
   const context = loadSaveContext();
   const fname = 'IC_manual_existing.json';
   context.localStorage.setItem(context.SAVE_INDEX_KEY, JSON.stringify([
-    { id: 'existing_id', kind: 'manual', runId: 1, savedAt: 1000, fname, level: 1, stage: 1, zone: 'plains' },
+    { id: 'existing_id', kind: 'manual', runId: 1, savedAt: 1000, fname, level: 1, stage: 1, zone: 'desert' },
     { id: 'missing_id', kind: 'manual', runId: 1, savedAt: 9999, fname: 'IC_manual_missing.json', level: 99, stage: 99, zone: 'swamp' }
   ]));
   context._saveDir = makeFolder({
@@ -176,7 +176,7 @@ test('manual save writes current game state and records the folder modified time
     player: { level: 5501 },
     stage: { current: 270, zone: 'swamp' }
   };
-  context.idbGetAutoV2 = (cb) => cb(saveData(11, 23, 'plains', 1111));
+  context.idbGetAutoV2 = (cb) => cb(saveData(11, 23, 'desert', 1111));
   context.idbSetAutoV2 = (raw, done) => { context._cachedAuto = raw; if (done) done(); };
 
   const rec = await context.createManualSaveToFolderV2();
@@ -194,7 +194,7 @@ test('manual save writes current game state and records the folder modified time
 test('auto folder sync records the folder modified time in auto metadata', async () => {
   const context = loadSaveContext();
   context._saveDir = makeFolder({}, 12000);
-  context.idbGetAutoV2 = (cb) => cb(saveData(18, 45, 'desert', 3000));
+  context.idbGetAutoV2 = (cb) => cb(saveData(18, 45, 'Icefield', 3000));
 
   await context.syncAutoSaveToFolderV2();
 
@@ -204,5 +204,5 @@ test('auto folder sync records the folder modified time in auto metadata', async
   assert.equal(autoMeta.savedAt, 12000);
   assert.equal(autoMeta.level, 18);
   assert.equal(autoMeta.stage, 45);
-  assert.equal(autoMeta.zone, 'desert');
+  assert.equal(autoMeta.zone, 'Icefield');
 });
