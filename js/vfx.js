@@ -36,9 +36,15 @@ var VFX_EVENT_QUEUE_MAX = 48;
 var VFX_FRAME_BUDGET_FULL = 8;
 var VFX_FRAME_BUDGET_REDUCED = 4;
 var VFX_MERGE_WINDOW_MS = 120;
+var VFX_STALE_EVENT_MS = 1500;
+var VFX_METEOR_MAX_DELAY_MS = 900;
+var VFX_METEOR_MAX_TRAVEL_MS = 450;
+var VFX_NODE_WATCHDOG_MS = 1000;
+var VFX_METEOR_HARD_LIFETIME_MS = 2800;
 var _vfxQuality = VFX_QUALITY_LEVELS.FULL;
 var _vfxEventQueue = [];
 var _vfxFlushHandle = 0;
+var _vfxWatchdogHandle = 0;
 var _vfxAnchorCache = Object.create(null);
 var _vfxLayerRectCache = null;
 var _vfxLayoutVersion = 0;
@@ -114,6 +120,10 @@ function vfxClear() {
     if (typeof clearTimeout === 'function') clearTimeout(_vfxFlushHandle);
     _vfxFlushHandle = 0;
   }
+  if (_vfxWatchdogHandle) {
+    if (typeof clearTimeout === 'function') clearTimeout(_vfxWatchdogHandle);
+    _vfxWatchdogHandle = 0;
+  }
   for (var i = 0; i < _vfxNodes.length; i++) {
     var n = _vfxNodes[i];
     if (n && n.parentNode) n.parentNode.removeChild(n);
@@ -134,7 +144,44 @@ function vfxClear() {
   }
 }
 
+function vfxNodeClassName(node) {
+  if (!node) return '';
+  if (typeof node.className === 'string') return node.className;
+  if (node.className && typeof node.className.baseVal === 'string') return node.className.baseVal;
+  return '';
+}
+
+function vfxRemoveNode(node) {
+  if (node && node.parentNode) node.parentNode.removeChild(node);
+}
+
+function vfxRunNodeWatchdog() {
+  _vfxWatchdogHandle = 0;
+  var now = Date.now();
+  for (var i = _vfxNodes.length - 1; i >= 0; i--) {
+    var node = _vfxNodes[i];
+    if (!node || !node.parentNode || (node._vfxExpiresAt && node._vfxExpiresAt <= now)) {
+      _vfxNodes.splice(i, 1);
+      vfxRemoveNode(node);
+    }
+  }
+  if (_vfxNodes.length) _vfxWatchdogHandle = setTimeout(vfxRunNodeWatchdog, VFX_NODE_WATCHDOG_MS);
+}
+
+function vfxScheduleNodeWatchdog() {
+  if (!_vfxWatchdogHandle && _vfxNodes.length) {
+    _vfxWatchdogHandle = setTimeout(vfxRunNodeWatchdog, VFX_NODE_WATCHDOG_MS);
+  }
+}
+
 function vfxTrack(node, ms) {
+  var ttl = Number(ms);
+  if (!isFinite(ttl) || ttl < 0) ttl = 0;
+  var cls = vfxNodeClassName(node);
+  if (cls.indexOf('vfx-meteor') >= 0 || cls.indexOf('vfx-area-flash') >= 0) {
+    ttl = Math.min(ttl, VFX_METEOR_HARD_LIFETIME_MS);
+  }
+  node._vfxExpiresAt = Date.now() + ttl;
   _vfxNodes.push(node);
   while (_vfxNodes.length > VFX_MAX_NODES) {
     // 撞頂時優先踢短命特效：領域（aura）是長駐視覺狀態，最老≠最該死，
@@ -148,13 +195,14 @@ function vfxTrack(node, ms) {
       }
     }
     var old = _vfxNodes.splice(evict, 1)[0];
-    if (old && old.parentNode) old.parentNode.removeChild(old);
+    vfxRemoveNode(old);
   }
   setTimeout(function () {
     var idx = _vfxNodes.indexOf(node);
     if (idx >= 0) _vfxNodes.splice(idx, 1);
-    if (node.parentNode) node.parentNode.removeChild(node);
-  }, ms);
+    vfxRemoveNode(node);
+  }, ttl);
+  vfxScheduleNodeWatchdog();
 }
 
 /* 目標圖層 id → 相對於特效圖層的中心座標。找不到（敵人已被清掉）回傳 null。 */
@@ -505,7 +553,10 @@ function vfxBeam(spec, layer, from, to) {
 /* 大隕石：一顆燃燒的大火團由敵軍正上方斜落，砸進範圍中心後大爆炸＋全屏震動。
    落地時刻＝travelMs（模擬層已把所有目標統一成同一個值，傷害數字同時跳）。 */
 function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
-  var fall = travelMs > 0 ? travelMs : 450;
+  var fall = travelMs > 0 ? Math.min(VFX_METEOR_MAX_TRAVEL_MS, travelMs) : VFX_METEOR_MAX_TRAVEL_MS;
+  var safeBaseDelay = Number(baseDelay);
+  if (!isFinite(safeBaseDelay) || safeBaseDelay < 0) safeBaseDelay = 0;
+  safeBaseDelay = Math.min(VFX_METEOR_MAX_DELAY_MS, safeBaseDelay);
   var cx = rect.x + rect.w / 2, cy = rect.y + rect.h * 0.45;
   var d = vfxNode('vfx-meteor', layer, spec);
   var mx0 = cx + rect.w * 0.45, my0 = rect.y - 170;
@@ -514,7 +565,7 @@ function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
   d.style.setProperty('--vfx-x1', cx + 'px');
   d.style.setProperty('--vfx-y1', cy + 'px');
   d.style.setProperty('--vfx-rot', Math.atan2(cy - my0, cx - mx0).toFixed(3) + 'rad');
-  d.style.animationDelay = baseDelay + 'ms';
+  d.style.animationDelay = safeBaseDelay + 'ms';
   d.style.animationDuration = fall + 'ms';
   var core = document.createElement('span');
   core.className = 'vfx-proj-core';
@@ -522,9 +573,9 @@ function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
   var trail = document.createElement('span');
   trail.className = 'vfx-proj-trail';
   d.appendChild(trail);
-  vfxTrack(d, baseDelay + fall + 120);
+  vfxTrack(d, safeBaseDelay + fall + 120);
 
-  var hitAt = baseDelay + fall;
+  var hitAt = safeBaseDelay + fall;
   // 爆炸：中心大爆＋全範圍橙光一閃＋震動＋每個目標的火焰受擊
   var boom = vfxNode('vfx-meteor-boom', layer, spec);
   vfxPlace(boom, { x: cx, y: cy });
@@ -861,19 +912,37 @@ function renderCombatVfx(spec) {
   }
 }
 
-function vfxSpecForQuality(spec) {
-  if (!spec || _vfxQuality === VFX_QUALITY_LEVELS.OFF) return null;
-  if (_vfxQuality === VFX_QUALITY_LEVELS.FULL) return spec;
-  if (spec.fxKind === 'aura') return null;
+function vfxNormalizeTiming(spec) {
+  if (!spec || spec.fxKind !== 'rain' || spec.variant !== 'meteor') return spec;
   var out = {};
   for (var key in spec) out[key] = spec[key];
-  out.count = 1;
-  if (spec.targets && spec.targets.length) {
-    var targetLimit = spec.fxKind === 'chain' || spec.variant === 'chain' ? 2 : 3;
-    out.targets = spec.targets.slice(0, targetLimit);
+  var delay = Number(spec.delayMs);
+  if (!isFinite(delay) || delay < 0) delay = 0;
+  out.delayMs = Math.min(VFX_METEOR_MAX_DELAY_MS, delay);
+  if (spec.travelMs && spec.travelMs.length) {
+    out.travelMs = spec.travelMs.map(function (value) {
+      var travel = Number(value);
+      if (!isFinite(travel) || travel < 0) travel = 0;
+      return Math.min(VFX_METEOR_MAX_TRAVEL_MS, travel);
+    });
   }
-  if (spec.travelMs && spec.travelMs.length && out.targets) {
-    out.travelMs = spec.travelMs.slice(0, out.targets.length);
+  return out;
+}
+
+function vfxSpecForQuality(spec) {
+  if (!spec || _vfxQuality === VFX_QUALITY_LEVELS.OFF) return null;
+  var source = vfxNormalizeTiming(spec);
+  if (_vfxQuality === VFX_QUALITY_LEVELS.FULL) return source;
+  if (source.fxKind === 'aura') return null;
+  var out = {};
+  for (var key in source) out[key] = source[key];
+  out.count = 1;
+  if (source.targets && source.targets.length) {
+    var targetLimit = source.fxKind === 'chain' || source.variant === 'chain' ? 2 : 3;
+    out.targets = source.targets.slice(0, targetLimit);
+  }
+  if (source.travelMs && source.travelMs.length && out.targets) {
+    out.travelMs = source.travelMs.slice(0, out.targets.length);
   }
   return out;
 }
@@ -901,12 +970,12 @@ function vfxFlushQueue() {
   }
   var budget = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? VFX_FRAME_BUDGET_REDUCED : VFX_FRAME_BUDGET_FULL;
   var count = 0;
+  var now = Date.now();
   while (_vfxEventQueue.length && count < budget) {
     var entry = _vfxEventQueue.shift();
-    if (entry && entry.spec) {
-      renderCombatVfx(entry.spec);
-      count++;
-    }
+    if (!entry || !entry.spec || now - entry.queuedAt > VFX_STALE_EVENT_MS) continue;
+    renderCombatVfx(entry.spec);
+    count++;
   }
   if (_vfxEventQueue.length) vfxScheduleFlush();
 }
