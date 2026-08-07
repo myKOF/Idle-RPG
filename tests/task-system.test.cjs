@@ -296,3 +296,34 @@ test('migrateSave：舊存檔補 zoneProgress.cleared（由 best-1 回推）', (
   };
   assert.equal(c2.migrateSave(saved).zoneProgress.desert.cleared, 200);
 });
+
+test('migrateSave：地圖改名後將舊 plains/desert 進度搬到荒漠/冰原，且重複讀檔不再搬移', () => {
+  const c = loadContext();
+  const old = {
+    version: 1,
+    player: { level: 10 },
+    equipment: {},
+    inventory: [],
+    stage: { current: 460, best: 460, zone: 'undead_mountains' },
+    zoneProgress: {
+      plains: { current: 200, best: 200, cleared: 200 },
+      desert: { current: 300, best: 300, cleared: 300 },
+      swamp: { current: 400, best: 400, cleared: 400 },
+      undead_mountains: { current: 460, best: 460, cleared: 459 }
+    }
+  };
+
+  const migrated = c.migrateSave(old);
+  assert.equal(migrated.zoneProgress.plains, undefined);
+  assert.equal(migrated.zoneProgress.desert.best, 200);
+  assert.equal(migrated.zoneProgress.desert.cleared, 200);
+  assert.equal(migrated.zoneProgress.Icefield.best, 300);
+  assert.equal(migrated.zoneProgress.Icefield.cleared, 300);
+  assert.equal(migrated.zoneProgress.swamp.best, 400);
+  assert.equal(migrated.zoneProgress.undead_mountains.best, 460);
+  assert.equal(migrated.stage.zone, 'undead_mountains');
+
+  const again = c.migrateSave(migrated);
+  assert.deepEqual(again.zoneProgress.desert, migrated.zoneProgress.desert);
+  assert.deepEqual(again.zoneProgress.Icefield, migrated.zoneProgress.Icefield);
+});

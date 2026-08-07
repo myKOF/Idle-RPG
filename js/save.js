@@ -299,6 +299,43 @@ function migrateSave(data) {
   }
   
   mergeDefaults(data, def);
+  /* 地圖改名相容（2026-08-07）：
+     舊版識別碼是 plains → 現在的 desert、desert → 現在的 Icefield。
+     第二個名稱重用造成 key 碰撞，不能直接把舊 desert 當成新 desert；
+     只要看到舊 plains，就把兩張舊圖按原順序搬到新 key。此段冪等：
+     遷移後會刪除 plains，之後重複讀檔不會再次搬移。 */
+  var legacyZoneProgress = data.zoneProgress;
+  var hasLegacyZoneRename = !!(legacyZoneProgress &&
+    Object.prototype.hasOwnProperty.call(legacyZoneProgress, 'plains'));
+  if (hasLegacyZoneRename || (data.stage && data.stage.zone === 'plains')) {
+    var cloneZoneProgress = function (source) {
+      if (!source || typeof source !== 'object') return null;
+      return {
+        current: Math.max(1, Math.floor(Number(source.current) || 1)),
+        best: Math.max(1, Math.floor(Number(source.best) || 1)),
+        cleared: Math.max(0, Math.floor(Number(source.cleared) || 0))
+      };
+    };
+    var mergeZoneProgressMax = function (left, right) {
+      var a = cloneZoneProgress(left) || { current: 1, best: 1, cleared: 0 };
+      var b = cloneZoneProgress(right);
+      if (!b) return a;
+      return {
+        current: Math.max(a.current, b.current),
+        best: Math.max(a.best, b.best),
+        cleared: Math.max(a.cleared, b.cleared)
+      };
+    };
+    var oldPlainsProgress = cloneZoneProgress(legacyZoneProgress.plains);
+    var oldDesertProgress = cloneZoneProgress(legacyZoneProgress.desert);
+    if (oldPlainsProgress) data.zoneProgress.desert = oldPlainsProgress;
+    if (oldDesertProgress) {
+      data.zoneProgress.Icefield = mergeZoneProgressMax(data.zoneProgress.Icefield, oldDesertProgress);
+    }
+    delete data.zoneProgress.plains;
+    if (data.stage && data.stage.zone === 'plains') data.stage.zone = 'desert';
+    else if (data.stage && data.stage.zone === 'desert') data.stage.zone = 'Icefield';
+  }
   // 輸送帶改為固定 20,000 件；舊存檔超出的尾端項目直接丟棄，避免載入後仍保留巨型積壓。
   var conveyorLimit = typeof CONVEYOR_CAP === 'number' ? CONVEYOR_CAP : 20000;
   if (data.factory && Array.isArray(data.factory.conveyor) && data.factory.conveyor.length > conveyorLimit) {

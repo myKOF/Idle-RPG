@@ -12,16 +12,16 @@
 
 importScripts('protocol.js?v=18', 'shim.js');
 importScripts(
-  '../util.js', '../data.js?v=20260806-zone-boss', '../formula.js', '../battlefield.js', '../stats.js',
+  '../util.js', '../data.js?v=20260807-zone-progress-fix', '../formula.js', '../battlefield.js', '../stats.js',
   '../item.js?v=20260805-tasks',
   '../skills.js?v=20260806-shield-threshold', '../talents.js', '../player.js?v=20260805-tasks', '../special_rules.js',
   '../combat.js', '../legendary.js', '../potential.js', '../tower.js',
-  '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260805-tasks',
+  '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260807-zone-progress-fix',
   '../tasks.js'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
-importScripts('../gm_exec.js');
+importScripts('../gm_exec.js?v=20260807-zone-progress-fix');
 
 /* ---- 決定論測試模式（只在本機、只在網址帶 ?seed=N 時啟用）----
    存在的唯一理由：讓瀏覽器實機跑出來的結果，能和 headless 模擬器

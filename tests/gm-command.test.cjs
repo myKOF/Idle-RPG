@@ -478,3 +478,23 @@ test('stage_jump GM 指令（及 stage/set_stage/zone 等別名）可指定場�
   });
 });
 
+test('stage_jump 的數字場景編號固定依 ZONE_LIST，不受 ZONES 物件插入順序影響', () => {
+  withGMExecContext((context) => {
+    context.ZONE_LIST = ['desert', 'Icefield', 'swamp'];
+    // 故意以非設計順序建立，避免數字場景誤讀成物件插入順序。
+    context.ZONES = {
+      swamp: { name: '沼澤', emoji: '🦠', maxStage: 400 },
+      desert: { name: '荒漠', emoji: '🏜️', maxStage: 200 },
+      Icefield: { name: '冰原', emoji: '🧊', maxStage: 300, reqZone: 'desert', reqStage: 200 }
+    };
+    context.zoneMaxStage = (zKey) => context.ZONES[zKey].maxStage;
+  }, (context, execute) => {
+    const result = execute('stage 2 150');
+    assert.equal(result.ok, true);
+    assert.equal(context.G.stage.zone, 'Icefield');
+    assert.equal(context.G.stage.current, 150);
+    assert.equal(context.G.zoneProgress.desert.best, 200);
+    assert.equal(context.G.zoneProgress.swamp.best, 1);
+  });
+});
+
