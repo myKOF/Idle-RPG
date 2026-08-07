@@ -2471,7 +2471,7 @@ function renderSceneTabs() {
       ? '🔒'
       : '(' + fmt(zoneBestOf(z)) + ')';
     var cls = 'zone-btn' + (locked ? ' locked' : '') + (z === cur ? ' active' : '');
-    var dis = locked ? ' style="opacity:0.5; cursor:not-allowed;"' : ' style="opacity:1; cursor:pointer;"';
+    var dis = locked ? ' style="opacity:0.5; cursor:default;"' : ' style="opacity:1; cursor:pointer;"';
     var ttAttr = ' data-tt-title="' + esc(zd.name) + '" data-tt-desc="' + esc(ttDesc) + '"';
 
     return '<button class="' + cls + '" data-zone="' + z + '"' + ttAttr + dis + '>' +
@@ -2659,7 +2659,7 @@ function renderZoneBar() {
       ? '🔒'
       : '(' + fmt(zoneBestOf(z)) + ')';
     var cls = 'zone-btn' + (locked ? ' locked' : '') + (z === cur ? ' active' : '');
-    var dis = locked ? ' style="opacity:0.5; cursor:not-allowed;"' : ' style="opacity:1; cursor:pointer;"';
+    var dis = locked ? ' style="opacity:0.5; cursor:default;"' : ' style="opacity:1; cursor:pointer;"';
     var ttAttr = ' data-tt-title="' + esc(zd.name) + '" data-tt-desc="' + esc(ttDesc) + '"';
 
     return '<button class="' + cls + '" data-zone="' + z + '"' + ttAttr + dis + '>' +
