@@ -6,6 +6,7 @@
 
 ## 新增：第七種元素屬性「大地 earth」（2026-08-07）
 
+- **實機驗證（Antigravity 2026-08-07）**：完成岩甲護盾、面板屬性、天賦樹 9 節點全滿倍率、NPC 標籤與對地傷害加成、六系回歸、舊存檔相容性與參數表 round-trip 之完整實機測試驗證，撰寫 `docs/EARTH_ELEMENT_TEST_REPORT.md` (EARTH-QA-01) 並通過全數 DoD 標準。
 - **元素本體**：`ELEMENTS` 由六系擴為七系（`earth` 追加在最末——這個陣列的順序就是 UI 排序基準，插在中間會讓既有存檔的顯示順序無故位移）；`ELEM_INFO.earth = { 大地 / 地 / 🪨 / #d2a05c }`。
 - **元素特效（§3.3）**：地＝**岩甲**——25% 機率獲得「該系元素傷害 × 200%」的護盾（`ELEM_PROC.earthShieldChance/earthShieldMult`）。與暗影汲取同構：`resolveHit` 只回報 `out.shield`，實際給盾在 `js/combat.js` 的普攻結算段（新增 `grantShield()`，吃護盾效率%、沿用 `SHIELD_SKILL_CAP_PCT` 上限）。因此**與暗影汲取一樣，目前僅普攻段套用**，技能段兩者皆未接。
 - **抗性／傷害管線**：`resist`／`elemAtk`／`enchantRes`／`dmgVsElem`／`elemDmgUp` 五個表改由 `zeroElemMap()` 依 `ELEMENTS` 生成，`st.resVsElem`／`talentElemMap` 改由 `talentElemBucket(talent, prefix)` 生成——原本是逐處寫死的六個鍵，往後再加屬性不必回頭補七、八個地方。`js/ui.js` 頂欄物傷／魔傷的兩份硬編碼元素陣列與 `/6` 平均分母一併改為跟著 `ELEMENTS`。
