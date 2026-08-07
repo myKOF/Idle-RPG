@@ -996,7 +996,12 @@ function evalTierOutlook() {
   var stage = (typeof G !== 'undefined' && G && G.stage) ? (G.stage.current || 0) : 0;
   var best = (typeof G !== 'undefined' && G && G.stage) ? (G.stage.best || 0) : 0;
   var size = (typeof EQUIP_TIER_SIZE === 'number') ? EQUIP_TIER_SIZE : 50;
-  var zone = (typeof G !== 'undefined' && G && G.stage) ? (G.stage.zone || 'desert') : 'desert';
+  /* 地圖鍵的後備值向遊戲拿，不寫死。2026-08-06 的改名（草原→荒漠、荒漠→冰原）
+     把第一張圖的鍵從 'plains' 換成 'desert'，而這裡原本寫死 'plains'——
+     zone 只要是 falsy 就會查到一張不存在的圖，掉落率查回空陣列，
+     farmFloorStage 直接塌成 1（實測），而且完全不會報錯。 */
+  var zone0 = (typeof ZONE_LIST !== 'undefined' && ZONE_LIST && ZONE_LIST[0]) || '';
+  var zone = (typeof G !== 'undefined' && G && G.stage) ? (G.stage.zone || zone0) : zone0;
 
   var here = equipmentTierLevel(stage);
   var nextStage = (Math.floor(stage / size) + 1) * size;
