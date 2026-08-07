@@ -12,7 +12,7 @@ test('神鑄底部使用兩個可見 checkbox 控制項', () => {
 
   assert.match(html, /<div class="forge-foot">[\s\S]*id="forge-autodust"[\s\S]*id="forge-autoforge"[\s\S]*<\/div>/);
   assert.match(html, /<input type="checkbox" id="forge-autodust">\s*自動使用魔塵/);
-  assert.match(html, /<input type="checkbox" id="forge-autoforge">\s*自動鑄造/);
+  assert.match(html, /<input type="checkbox" id="forge-autoforge" checked>\s*自動鑄造/);
   assert.doesNotMatch(html, /<button[^>]*id="forge-autodust"/);
   assert.doesNotMatch(html, /<button[^>]*id="forge-autoforge"/);
   assert.doesNotMatch(html, /id="forge-autodust">\s*✅/);
@@ -28,4 +28,26 @@ test('神鑄底部使用兩個可見 checkbox 控制項', () => {
   assert.match(inputBlock[1], /height:\s*18px;/);
   assert.match(inputBlock[1], /opacity:\s*1;/);
   assert.doesNotMatch(inputBlock[1], /display:\s*none;/);
+});
+
+test('取消自動使用魔塵時卸下所有法陣上的魔塵', () => {
+  const fs = require('node:fs');
+  const vm = require('node:vm');
+  const context = { console, UI: { dirty: {} }, G: { player: { dust: 10 } } };
+  context.window = context;
+  vm.createContext(context);
+  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/forge.js'].forEach(file => {
+    vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
+  });
+
+  context.G.forge = {
+    dustSlots: [true, true, true, true, true, true],
+    autoDust: true,
+    slots: [null, null, null, null, null, null],
+    log: []
+  };
+
+  // 測試 forgeClearDust
+  context.forgeClearDust();
+  assert.deepEqual(context.G.forge.dustSlots, [false, false, false, false, false, false], '所有魔塵應已被卸下');
 });
