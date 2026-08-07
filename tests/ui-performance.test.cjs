@@ -103,6 +103,17 @@ test('高頻戰鬥欄位使用值變更才寫入的 DOM 輔助函式', () => {
   assert.match(ui, /setHtmlIfChanged\(hpText,/);
 });
 
+test('戰鬥浮字高峰會自動降載，避免每次命中反覆觸發 layout', () => {
+  const ui = uiSource();
+  assert.match(ui, /var ENEMY_FLOAT_LAYOUT_LOAD_LIMIT = 24/);
+  assert.match(ui, /var ENEMY_DAMAGE_FLOAT_AUTO_MERGE_THRESHOLD = 12/);
+  assert.match(ui, /var ENEMY_DAMAGE_FLOAT_AUTO_MERGE_LIMIT = 4/);
+  assert.match(ui, /function enemyDamageFloatActiveCount\(layer\)/);
+  assert.match(ui, /function enemyDamageFloatMergeLimitForLayer\(battleSnapshot, layer\)/);
+  assert.match(ui, /if \(enemyDamageFloatActiveCount\(layer\) > ENEMY_FLOAT_LAYOUT_LOAD_LIMIT\) return/);
+  assert.match(ui, /var damageMergeLimit = enemyDamageFloatMergeLimitForLayer\(battleSnapshot, layer\);[\s\S]*if \(damageMergeLimit > 0\)/);
+});
+
 test('詳細日誌視窗每個 UI tick 最多完整重建一次', () => {
   const ui = uiSource();
   assert.match(ui, /var DETAIL_LOG_RENDER_DIRTY = false;/);

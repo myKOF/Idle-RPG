@@ -76,6 +76,36 @@ Worker 是模擬與存檔的唯一權威，主執行緒不再持有 `G`，舊單
 
 Web Worker 遷移全部完成，無進行中的大型工程。
 
+## Codex：戰鬥中傷害浮字 layout 負載造成操作延遲（2026-08-07）
+
+狀態：已完成（待 Claude Review／Antigravity 驗證）
+
+任務分類：戰鬥 UI 效能／傷害浮字降載／主執行緒輸入延遲
+
+任務目的：處理戰鬥開始後傷害浮字與碰撞避讓造成的同步 layout 負載，讓裝備、洗煉與強化操作維持即時反應；不修改 Worker 戰鬥計算、傷害結果、存檔格式或 Worker Protocol。
+
+負責 AI：Codex
+
+前置依賴：既有 VFX 品質分級、VFX 事件佇列與背景分頁清理流程已完成。
+
+允許修改：`docs/AI_TASKS.md`、`js/ui.js`、`tests/ui-performance.test.cjs`、`tests/player-event-float.test.cjs`、`tests/damage-float-regression.test.cjs`、`tests/ui-worker-events.test.cjs`。
+
+禁止修改：`js/worker/protocol.js`、`js/worker/sim.worker.js`、`js/bridge.js`、戰鬥公式、數值配置、存檔格式，以及其他 AI 進行中的檔案。
+
+具體內容：
+
+- 保留低負載下的多段傷害顯示；浮字數量達到壓力門檻時，自動合併同一目標／來源的視覺數字。
+- 高負載時跳過昂貴的浮字碰撞 layout 量測，改用已設定的快速位置，避免每個命中觸發多次 `getBoundingClientRect()`。
+- 增加效能契約測試，確認降載只影響視覺層，不改變戰鬥事件與數值流程。
+
+驗證方式：執行指定 UI／飄字測試、`npm.cmd run build`，並檢查 `git diff --check`；必要時依 `docs/ANTIGRAVITY_VFX_UI_TEST_CASES.md` 的長時間戰鬥案例實機驗證。
+
+完成內容：低負載維持多段傷害浮字；同一敵人浮字達 12 個時啟用最多 4 段的視覺合併；浮字超過 24 個時跳過碰撞避讓的同步 layout 量測。Worker 事件、戰鬥數值、時序與存檔流程均未修改。
+
+驗證結果：指定測試 52/52 通過；完整測試 1155 通過、2 個既存失敗（魔塵卸下流程、區域提示文字）；`npm.cmd run build` 通過 250 個檔案；`git diff --check` 通過。
+
+完成後交給：Claude Review，之後由使用者合併至整合分支。
+
 ## Codex：隕石特效長時間運行後延遲殘留（2026-08-07）
 
 狀態：已完成（待 Claude Review／Antigravity 驗證）

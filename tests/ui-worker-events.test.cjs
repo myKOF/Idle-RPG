@@ -155,7 +155,7 @@ test('待建立敵人圖層時不設浮字數量上限，也不丟棄舊目標�
   const queueStart = ui.indexOf('function queuePendingEnemyFloat(');
   const queueEnd = ui.indexOf('function animatePendingEnemyKill(', queueStart);
   const flushStart = ui.indexOf('function flushPendingEnemyFloats(');
-  const flushEnd = ui.indexOf('/* ⚠️ 暫時關閉傷害合併', flushStart);
+  const flushEnd = ui.indexOf('function floatText(', flushStart);
   assert.ok(queueStart >= 0 && queueEnd > queueStart);
   assert.ok(flushStart >= 0 && flushEnd > flushStart);
   assert.doesNotMatch(ui.slice(queueStart, queueEnd), /PENDING_ENEMY_FLOATS\.length\s*>\s*50/);
