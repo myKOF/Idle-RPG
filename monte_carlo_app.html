@@ -2759,14 +2759,37 @@
         URL.revokeObjectURL(url);
     }
 
+    /* ⚠️ 這四個面板原本是 `try { ... } catch(e) {}` ——**空的 catch**。
+       任何一個拋錯就靜靜地不畫，容器保持原樣（通常是空白），畫面上沒有任何線索，
+       主控台也沒有。實際回報就是「裝備快照壞了」而完全查不出壞在哪：
+       四個面板互相獨立，壞掉的那一個看起來只是「沒東西」。
+
+       改成把錯誤畫進那個面板自己的容器，並且 console.error 一份。
+       仍然逐個 catch（一個壞掉不該連累另外三個），但不再吞掉。 */
     function openEquipmentSnapshotModal() {
         const modal = document.getElementById('equipModalOverlay');
-        if (modal) {
-            modal.style.display = 'flex';
-            try { renderPlayerStatsPanel(); } catch(e) {}
-            try { renderPaperdollGrid(); } catch(e) {}
-            try { selectPaperdollSlot('chest'); } catch(e) {}
-            try { renderSkillSnapshotPanel(); } catch(e) {}
+        if (!modal) return;
+        modal.style.display = 'flex';
+
+        const panelFail = (containerId, label, err) => {
+            console.error('[裝備快照] ' + label + ' 失敗：', err);
+            const el = document.getElementById(containerId);
+            if (!el) return;
+            el.innerHTML = '<div style="color:var(--accent-rose); padding:16px; font-size:12px; line-height:1.7;">'
+                + '⚠️ <b>' + label + '</b> 產生失敗<br>'
+                + '<code style="color:var(--text-muted); word-break:break-all;">'
+                + String((err && err.message) || err) + '</code><br>'
+                + '<span style="color:var(--text-muted);">完整堆疊見瀏覽器主控台（F12）</span></div>';
+        };
+
+        const steps = [
+            ['playerStatsPanel', '玩家屬性面板', renderPlayerStatsPanel],
+            ['paperdollGrid', '紙娃娃', renderPaperdollGrid],
+            ['itemDetailPanel', '裝備詳情', () => selectPaperdollSlot('chest')],
+            ['skillsSnapshotPanel', '技能快照', renderSkillSnapshotPanel]
+        ];
+        for (const [containerId, label, fn] of steps) {
+            try { fn(); } catch (e) { panelFail(containerId, label, e); }
         }
     }
 
