@@ -111,7 +111,7 @@ test('狀態切換不清空浮字，只重置 MISS 節流狀態', () => {
 });
 
 test('大量敵人浮字只關閉昂貴碰撞量測，不限制或刪除浮字節點', () => {
-  assert.match(ui, /var ENEMY_FLOAT_LAYOUT_LOAD_LIMIT = 80;/);
+  assert.match(ui, /var ENEMY_FLOAT_LAYOUT_LOAD_LIMIT = 24;/);
   assert.match(ui, /totalEnemyFloats > ENEMY_FLOAT_LAYOUT_LOAD_LIMIT/);
   assert.match(ui, /仍建立每一個數字，只略過碰撞避讓/);
   assert.doesNotMatch(ui, /normalFloats\.length\s*>\s*50/);

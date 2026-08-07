@@ -1302,7 +1302,9 @@ var PLAYER_RECOVERY_FLOAT_MAX_HITS = 20;
 var PENDING_ENEMY_FLOATS = [];
 var BACKGROUND_LATEST_ENEMY_FLOAT = null;
 var INSTANT_KILL_HP_ANIMATION_MS = 100;
-var ENEMY_FLOAT_LAYOUT_LOAD_LIMIT = 80;
+/* 碰撞避讓會為每個候選位置讀取一次 layout；戰鬥高峰時這個成本比建立
+   一個浮字本身高很多。超過門檻後保留隨機位置，但不再為了排版量測整層 DOM。 */
+var ENEMY_FLOAT_LAYOUT_LOAD_LIMIT = 24;
 
 function rememberBackgroundEnemyFloat(elId, text, cls, damageValue) {
   if (!isEnemyHitFloat(elId, cls)) return;
@@ -1395,12 +1397,12 @@ function flushPendingEnemyFloats(battleSnapshot) {
   PENDING_ENEMY_FLOATS = keep;
 }
 
-/* ⚠️ 暫時關閉傷害合併（使用者要求：想看實際的多段受擊情況）。
-   合併原本的用途是：連擊數／高攻速時同一個敵人會在極短時間內冒出十幾個數字，
-   合成一個累計值才看得清楚。關掉之後每一段都會單獨飄字，畫面會明顯變吵，
-   而且滿場 16 隻時浮字節點數大增——這是刻意的觀察用設定，不是正式版該有的狀態。
-   要恢復：把 ENEMY_DAMAGE_FLOAT_MERGE_ENABLED 改回 true（下面那段原本的計算完全沒動）。 */
+/* 低負載時保留每段傷害，方便觀察多段受擊；當同一層浮字累積到壓力門檻，
+   自動啟用小幅合併，避免每個命中都觸發一次 DOM 掃描與碰撞排版。這是純
+   視覺降載，Worker 仍然送出完整事件，戰鬥數值與時序不變。 */
 var ENEMY_DAMAGE_FLOAT_MERGE_ENABLED = false;
+var ENEMY_DAMAGE_FLOAT_AUTO_MERGE_THRESHOLD = 12;
+var ENEMY_DAMAGE_FLOAT_AUTO_MERGE_LIMIT = 4;
 
 function enemyDamageFloatMergeLimit(battleSnapshot) {
   if (!ENEMY_DAMAGE_FLOAT_MERGE_ENABLED) return 0; // 0 = 不合併，每段各自飄字
@@ -1409,6 +1411,21 @@ function enemyDamageFloatMergeLimit(battleSnapshot) {
   var aspd = st ? Number(st.aspd) : 0;
   if (!isFinite(comboHits) || !isFinite(aspd) || comboHits <= 0 || aspd <= 0) return 0;
   return Math.min(ENEMY_DAMAGE_FLOAT_MAX_HITS, Math.floor(comboHits * aspd * 2));
+}
+
+function enemyDamageFloatActiveCount(layer) {
+  if (!layer || typeof layer.querySelectorAll !== 'function') return 0;
+  return layer.querySelectorAll('.float-txt.enemy-hit-float').length;
+}
+
+function enemyDamageFloatMergeLimitForLayer(battleSnapshot, layer) {
+  var configuredLimit = enemyDamageFloatMergeLimit(battleSnapshot);
+  if (configuredLimit > 0) return configuredLimit;
+  if (!ENEMY_DAMAGE_FLOAT_MERGE_ENABLED &&
+      enemyDamageFloatActiveCount(layer) >= ENEMY_DAMAGE_FLOAT_AUTO_MERGE_THRESHOLD) {
+    return ENEMY_DAMAGE_FLOAT_AUTO_MERGE_LIMIT;
+  }
+  return 0;
 }
 
 function enemyDamageFloatKey(cls) {
@@ -1627,6 +1644,9 @@ function placeFloatAvoidingOverlap(sp, layer, selector, randomTop, randomRange, 
 }
 
 function placeEnemyDamageFloat(sp, layer) {
+  /* 新節點已先 append，計數包含自己；超過門檻時直接使用 floatText
+     設定的初始位置，避免進入 48 個候選點 × 既有文字的同步 layout 迴圈。 */
+  if (enemyDamageFloatActiveCount(layer) > ENEMY_FLOAT_LAYOUT_LOAD_LIMIT) return;
   placeFloatAvoidingOverlap(sp, layer, '.float-txt.enemy-hit-float', 28, 44, undefined, undefined, arguments[2]);
 }
 
@@ -1680,17 +1700,19 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
   var recoveryInfo = playerRecoveryFloatInfo(elId, cls, text, damageValue);
   var recoveryKey = recoveryInfo ? recoveryInfo.key : '';
   if (damageKey) {
-    var damageMergeLimit = enemyDamageFloatMergeLimit(battleSnapshot);
-    var damageFloats = layer.querySelectorAll('.float-txt.enemy-hit-float');
-    for (var di = damageFloats.length - 1; di >= 0; di--) {
-      var existing = damageFloats[di];
-      if (existing._enemyFloatTargetId !== elId || existing._damageFloatKey !== damageKey || existing._damageFloatHits >= damageMergeLimit) continue;
-      existing._damageFloatTotal += damageValue;
-      existing._damageFloatHits++;
-      existing._enemyFloatCreatedAt = Date.now();
-      existing.textContent = existing._damageFloatPrefix + fmt(existing._damageFloatTotal);
-      scheduleFloatTextRemoval(existing, enemyDamageFloatLifetimeMs(existing));
-      return;
+    var damageMergeLimit = enemyDamageFloatMergeLimitForLayer(battleSnapshot, layer);
+    if (damageMergeLimit > 0) {
+      var damageFloats = layer.querySelectorAll('.float-txt.enemy-hit-float');
+      for (var di = damageFloats.length - 1; di >= 0; di--) {
+        var existing = damageFloats[di];
+        if (existing._enemyFloatTargetId !== elId || existing._damageFloatKey !== damageKey || existing._damageFloatHits >= damageMergeLimit) continue;
+        existing._damageFloatTotal += damageValue;
+        existing._damageFloatHits++;
+        existing._enemyFloatCreatedAt = Date.now();
+        existing.textContent = existing._damageFloatPrefix + fmt(existing._damageFloatTotal);
+        scheduleFloatTextRemoval(existing, enemyDamageFloatLifetimeMs(existing));
+        return;
+      }
     }
   }
   if (recoveryKey) {
