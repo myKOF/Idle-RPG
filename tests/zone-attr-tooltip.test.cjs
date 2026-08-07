@@ -75,3 +75,33 @@ test('敵人情報 Tips 置頂區顯示屬性標籤，下方不再重複顯示 �
   assert.match(showContent, /【敵人情報】.*🟢 毒屬性/s);
   assert.doesNotMatch(showContent, /🌌 屬性：/);
 });
+
+test('renderZoneBar Tips 也包含主要敵人屬性，且前圖 Boss 未擊敗時後續場景為鎖定狀態', () => {
+  const ctx = loadGameContext();
+  ctx.uiHeaderPanelSnapshot = () => ({ stage: { zone: 'swamp', current: 400, best: 400 } });
+  ctx.uiBattlePanelSnapshot = () => ({
+    zoneProgress: { swamp: { current: 400, best: 400, cleared: 399 } }
+  });
+  ctx.$id = (id) => (id === 'zone-bar' ? ctx.mockBox : null);
+
+  ctx.renderZoneBar();
+
+  const html = ctx.mockBox.innerHTML;
+  // 1. 驗證 renderZoneBar 按鈕 Tips 包含主要敵人屬性
+  assert.match(html, /主要敵人屬性：🟢 毒屬性 🟣 暗屬性/);
+
+  // 2. 驗證進入 400 關尚未打敗 Boss (cleared = 399) 時，亡靈山脈為鎖定狀態
+  assert.match(html, /class="zone-btn locked"[^>]*data-zone="undead_mountains"/);
+  assert.match(html, /🔒 解鎖條件：需通關【沼澤】第 400 階段/);
+
+  // 3. 打敗 Boss 400 (cleared = 400) 後解鎖亡靈山脈
+  ctx.UI.zoneBarSignature = null;
+  ctx.uiBattlePanelSnapshot = () => ({
+    zoneProgress: { swamp: { current: 400, best: 400, cleared: 400 } }
+  });
+  ctx.renderZoneBar();
+  const htmlUnlocked = ctx.mockBox.innerHTML;
+  assert.match(htmlUnlocked, /data-zone="undead_mountains"[^>]*class="zone-btn"/);
+  assert.doesNotMatch(htmlUnlocked, /data-zone="undead_mountains"[^>]*class="zone-btn locked"/);
+});
+

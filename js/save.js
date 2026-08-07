@@ -418,10 +418,19 @@ function migrateSave(data) {
        舊存檔沒有這欄，用 best-1 回推＝改版前 stageClear 的判定值，任務進度不倒退。 */
     zp.cleared = clamp(Math.max(Math.floor(Number(zp.cleared) || 0), zp.best - 1), 0, cap);
   });
+  var savedZoneCleared = function(z) {
+    var zp = data.zoneProgress && data.zoneProgress[z];
+    if (!zp) return 0;
+    var cleared = Math.floor(Number(zp.cleared) || 0);
+    var best = Math.floor(Number(zp.best) || 1);
+    return Math.max(cleared, best - 1);
+  };
   var savedZoneDef = ZONES[data.stage.zone];
   var savedZoneUnlocked = !!savedZoneDef &&
-    (!savedZoneDef.reqReincarnation || Number(data.player.reincarnations) >= savedZoneDef.reqReincarnation) &&
-    (!savedZoneDef.reqZone || Number(data.zoneProgress[savedZoneDef.reqZone] && data.zoneProgress[savedZoneDef.reqZone].best) >= savedZoneDef.reqStage);
+    (!savedZoneDef.reqZone && !savedZoneDef.reqReincarnation ? true :
+      (Number(data.zoneProgress[data.stage.zone] && data.zoneProgress[data.stage.zone].best) > 1 ||
+        ((!savedZoneDef.reqReincarnation || Number(data.player.reincarnations) >= savedZoneDef.reqReincarnation) &&
+         (!savedZoneDef.reqZone || savedZoneCleared(savedZoneDef.reqZone) >= savedZoneDef.reqStage))));
   if (!savedZoneUnlocked) {
     data.stage.zone = 'plains';
     data.stage.current = data.zoneProgress.plains.current;

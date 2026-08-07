@@ -1,5 +1,15 @@
 # PATCH.md
 
+## 調整：地圖場景必須打敗前圖 Boss 才解鎖 & 頂欄關卡按鈕 Tips 增加敵人屬性標籤（2026-08-07）
+
+- **Boss 擊敗後解鎖下一個場景**：
+  - 修復之前當玩家進入最後一關（如沼澤第 400 關 Boss 階）但**尚未打敗 Boss** 時，因為最高可挑戰關卡（`best`）等於 400，導致下一個場景（亡靈山脈）過早解除鎖定顯示的可行問題。
+  - `js/ui.js`（`renderSceneTabs` 與 `renderZoneBar`）以及 `js/save.js`（`savedZoneUnlocked`）統一調整為檢查前置場景的**實際通關最高關卡**（`zoneClearedOf(reqZone) >= reqStage`）。現在必須真正擊敗前一地圖的最後 Boss 後，下一個場景才會開通。
+- **關卡按鈕 Tips 補齊敵人屬性標籤**：
+  - `js/ui.js` 的 `renderZoneBar` 在按鈕 Tooltip（`data-tt-desc`）補上主要敵人屬性標籤（如 `主要敵人屬性：🟢 毒屬性 🟣 暗屬性`），與場景列表及敵人情報保持一致。
+  - Tooltip 解鎖條件提示文字更新為 `🔒 解鎖條件：需通關【xxx】第 N 階段`。
+- **驗證**：單元測試 196 項全數通過（新增 `renderZoneBar` 屬性標籤與 Boss 擊敗前後解鎖狀態測試），`build_check.cjs` 通過。
+
 ## 新增：指定場景及指定關卡 GM 指令（2026-08-07）
 
 - **新增 GM 指令 `stage_jump`（及 `stage` / `set_stage` / `setstage` / `stage_set` / `stageset` / `zone_jump` / `zone` 等別名）**：

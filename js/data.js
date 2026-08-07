@@ -1229,6 +1229,8 @@ function markZoneCleared(zoneKey, stage) {
 function isZoneUnlocked(zoneKey) {
   var zone = ZONES[zoneKey];
   if (!zone) return false;
+  if (!zone.reqZone && !zone.reqReincarnation) return true;
+  if (zoneBestProgress(zoneKey) > 1) return true;
   if (zone.reqReincarnation && (!G || !G.player || Number(G.player.reincarnations) < zone.reqReincarnation)) return false;
   if (zone.reqZone && zoneClearedStage(zone.reqZone) < (zone.reqStage || zoneMaxStage(zone.reqZone))) return false;
   return true;

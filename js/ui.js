@@ -2361,7 +2361,7 @@ function renderSceneTabs() {
       locked = true;
     }
     if (zd.reqZone && !locked) {
-      if (zoneBestOf(zd.reqZone) < zd.reqStage) locked = true;
+      if (zoneBestOf(z) <= 1 && zoneClearedOf(zd.reqZone) < zd.reqStage) locked = true;
     }
     var elemTags = zoneElementTagsList(z);
     var elemText = elemTags.length > 0 ? ('主要敵人屬性：' + elemTags.map(function (t) { return t.label; }).join(' ')) : '';
@@ -2376,9 +2376,9 @@ function renderSceneTabs() {
     }
 
     if (locked && zd.reqReincarnation) {
-      ttDesc = '🔒 解鎖條件：需要 ' + zd.reqReincarnation + ' 轉';
+      ttDesc = '🔒 解鎖條件：需要 ' + zd.reqReincarnation + ' 轉' + (elemText ? ('\n' + elemText) : '');
     } else if (locked && zd.reqZone && ZONES[zd.reqZone]) {
-      var lockTip = '🔒 解鎖條件：需【' + ZONES[zd.reqZone].name + '】達到第 ' + zd.reqStage + ' 階段';
+      var lockTip = '🔒 解鎖條件：需通關【' + ZONES[zd.reqZone].name + '】第 ' + zd.reqStage + ' 階段';
       ttDesc = lockTip + (ttDesc ? ('\n' + ttDesc) : '');
     }
 
@@ -2477,10 +2477,30 @@ function zoneBestOf(z) {
   return (battle.zoneProgress && battle.zoneProgress[z] && battle.zoneProgress[z].best) || 1;
 }
 
+// 場景通關最高階段（用於解鎖條件判定：前圖 BOSS 必須被擊敗）
+function zoneClearedOf(z) {
+  var header = peekUiPanelData('header') || {};
+  var stage = header.stage || {};
+  var battle = peekUiPanelData('battle') || {};
+  var zpList = battle.zoneProgressList || [];
+  for (var i = 0; i < zpList.length; i++) {
+    if (zpList[i].key === z) {
+      if (typeof zpList[i].cleared === 'number') return zpList[i].cleared;
+      return Math.max(0, (zpList[i].best || 1) - 1);
+    }
+  }
+  var curZp = (battle.zoneProgress && battle.zoneProgress[z]) || {};
+  var cleared = Math.floor(Number(curZp.cleared) || 0);
+  if (stage.zone === z) {
+    return Math.max(cleared, Math.max(1, Number(stage.best) || 1) - 1);
+  }
+  return Math.max(cleared, Math.max(1, Number(curZp.best) || 1) - 1);
+}
+
 function currentZoneBarSignature() {
   var header = peekUiPanelData('header') || {};
   var parts = [(header.stage && header.stage.zone) || 'plains'];
-  Object.keys(ZONES).forEach(function (z) { parts.push(z + ':' + zoneBestOf(z)); });
+  Object.keys(ZONES).forEach(function (z) { parts.push(z + ':' + zoneBestOf(z) + ':' + zoneClearedOf(z)); });
   return parts.join('|');
 }
 
@@ -2529,18 +2549,24 @@ function renderZoneBar() {
       locked = true;
     }
     if (zd.reqZone && !locked) {
-      if (zoneBestOf(zd.reqZone) < zd.reqStage) locked = true;
+      if (zoneBestOf(z) <= 1 && zoneClearedOf(zd.reqZone) < zd.reqStage) locked = true;
     }
+    var elemTags = zoneElementTagsList(z);
+    var elemText = elemTags.length > 0 ? ('主要敵人屬性：' + elemTags.map(function (t) { return t.label; }).join(' ')) : '';
     var ttDesc = z === 'desert' ? '敵人更強；經驗、金幣與材料掉落 ×2' :
       z === 'swamp' ? '敵人極強；經驗、金幣與材料掉落 ×3' :
         z === 'god_battlefield' ? '神界戰場；神級敵人，經驗與獎勵 ×2.5' :
           z === 'god_chaos' ? '神界混沌；極強虛空生物，經驗與獎勵 ×3.5' :
             z === 'god_sanctuary' ? '神界聖域；諸神降臨，經驗與獎勵 ×5.0' : '';
 
+    if (elemText) {
+      ttDesc = elemText + (ttDesc ? ('\n' + ttDesc) : '');
+    }
+
     if (locked && zd.reqReincarnation) {
-      ttDesc = '🔒 解鎖條件：需要 ' + zd.reqReincarnation + ' 轉';
+      ttDesc = '🔒 解鎖條件：需要 ' + zd.reqReincarnation + ' 轉' + (elemText ? ('\n' + elemText) : '');
     } else if (locked && zd.reqZone && ZONES[zd.reqZone]) {
-      var lockTip = '🔒 解鎖條件：需【' + ZONES[zd.reqZone].name + '】達到第 ' + zd.reqStage + ' 階段';
+      var lockTip = '🔒 解鎖條件：需通關【' + ZONES[zd.reqZone].name + '】第 ' + zd.reqStage + ' 階段';
       ttDesc = lockTip + (ttDesc ? ('\n' + ttDesc) : '');
     }
 
