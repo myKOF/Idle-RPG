@@ -1259,7 +1259,11 @@ var COMMAND_IMPL = {
 
   /* ---- 神鑄 ---- */
   'forge.setAuto': function (a) {
-    forgeState()[a.key] = !!a.on; // key 已由協議的 enum 白名單擋過
+    var fst = forgeState();
+    fst[a.key] = !!a.on; // key 已由協議的 enum 白名單擋過 ('autoDust' | 'autoForge')
+    if (a.key === 'autoDust' && !a.on) {
+      forgeClearDust();
+    }
     UI.dirty.forge = true;
     return true;
   },

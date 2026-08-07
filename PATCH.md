@@ -1,5 +1,11 @@
 # PATCH.md
 
+## 調整：神鑄系統預設自動鑄造為開啟 & 取消自動魔塵時卸下所有魔塵（2026-08-07）
+
+- **靜態 HTML 預設勾選**：`index.html` 的 `#forge-autoforge` 增加 `checked` 屬性，確保靜態頁面與動態狀態一致預設勾選「自動鑄造」。
+- **取消自動使用魔塵時卸下魔塵**：`js/worker/sim.worker.js` 的 `forge.setAuto` 指令當 `key === 'autoDust'` 且 `on === false` 時，自動執行 `forgeClearDust()` 清空/卸下法陣上所有已放置的魔塵。
+- **驗證**：單元測試 197 項全數通過，`build_check.cjs` 驗證 OK。
+
 ## 調整：地圖場景必須打敗前圖 Boss 才解鎖 & 頂欄關卡按鈕 Tips 增加敵人屬性標籤（2026-08-07）
 
 - **Boss 擊敗後解鎖下一個場景**：
