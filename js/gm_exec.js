@@ -248,7 +248,10 @@
   function gmParseScene(raw) {
     var s = String(raw || '').trim().toLowerCase();
     if (typeof ZONES === 'undefined' || !ZONES) return null;
-    var zoneKeys = Object.keys(ZONES);
+    /* 數字場景編號必須跟 UI／自動推進共用 ZONE_LIST；Object.keys(ZONES)
+       只是物件插入順序，地圖改名或工具重生資料時不保證與設計順序一致。 */
+    var zoneKeys = (typeof ZONE_LIST !== 'undefined' && Array.isArray(ZONE_LIST))
+      ? ZONE_LIST : Object.keys(ZONES);
     if (/^\d+$/.test(s)) {
       var idx = parseInt(s, 10) - 1;
       if (idx >= 0 && idx < zoneKeys.length) return zoneKeys[idx];

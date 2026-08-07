@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## Codex：修正 GM 關卡修改後地圖進度不同步（2026-08-07）
+
+- Status: Completed
+- Owner: Codex
+- Task: 修正使用 `stage_jump`／`stage` 等 GM 指令回退場景後，重新推進時前置地圖顯示倒退或與已解鎖後圖不一致的問題。
+- 前置依賴: 無；沿用既有有限關卡、`zoneProgress` 與 Worker 存檔架構。
+- 允許修改: `js/gm_exec.js`、`js/save.js`、`js/worker/sim.worker.js`、`js/bridge.js`、`tests/gm-command.test.cjs`、`tests/task-system.test.cjs`、`PATCH.md`、`docs/AI_TASKS.md`。
+- 禁止修改: Worker Protocol、關卡／掉落權威資料、其他進行中任務檔案。
+- 驗收方式: 舊地圖鍵名存檔遷移後，荒漠／冰原／沼澤／亡靈山脈的進度與當前場景一致；GM 回退後既有前置地圖不倒退；Worker 快取版本更新；定向測試、`npm.cmd test`、`npm.cmd run build` 通過。
+- 完成內容: `migrateSave` 冪等搬移舊 `plains`／`desert` 進度；GM 數字場景固定依 `ZONE_LIST`；同步更新 Worker 資產快取版本；補上遷移與場景順序回歸測試。
+- 測試結果: 定向測試 50/50、完整測試 1190/1190、`npm.cmd run build` 252 個檔案全數通過。
+- 已知風險: 尚未做瀏覽器實機操作驗證；舊瀏覽器頁面需重新載入，才會取得新的 Worker 快取版本並套用舊存檔遷移。
+- 未完成項目: 無。
+- 後續接手者: Claude Code 唯讀 Review；必要時 Antigravity 實機驗證。
+
 ## Codex: combat UI input latency follow-up (2026-08-07)
 
 - Status: Completed
