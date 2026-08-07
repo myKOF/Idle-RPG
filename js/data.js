@@ -153,6 +153,7 @@ var TALENT_TREES = {
     { id: 't5_poison', name: '毒脈共鳴', emoji: '☠️', stat: 'elemPoison', low: 0.5, high: 1, desc: '攻擊時額外附加' },
     { id: 't5_light', name: '聖輝共鳴', emoji: '🌟', stat: 'elemLight', low: 0.5, high: 1, desc: '攻擊時額外附加' },
     { id: 't5_dark', name: '暗影共鳴', emoji: '🌑', stat: 'elemDark', low: 0.5, high: 1, desc: '攻擊時額外附加' },
+    { id: 't5_earth', name: '磐岩共鳴', emoji: '🪨', stat: 'elemEarth', low: 0.5, high: 1, desc: '攻擊時額外附加' },
     { id: 't5_allres', name: '全域壁壘', emoji: '🧿', stat: 'elemRes', low: 1, high: 2, desc: '全屬性抗性額外提高' },
     { id: 't5_global', name: '傷害偏折', emoji: '🌀', stat: 'globalDmgRed', low: 1, high: 2, desc: '全局減傷額外提高' }
   ],
@@ -163,6 +164,7 @@ var TALENT_TREES = {
     { id: 't6_vspoison', name: '淨毒打擊', emoji: '☠️', stat: 'dmgVsPoison', low: 2, high: 4, desc: '對毒屬性敵人傷害提高' },
     { id: 't6_vsdark', name: '驅暗打擊', emoji: '🌑', stat: 'dmgVsDark', low: 2, high: 4, desc: '對暗屬性敵人傷害提高' },
     { id: 't6_vslight', name: '蝕聖打擊', emoji: '🌟', stat: 'dmgVsLight', low: 2, high: 4, desc: '對聖屬性敵人傷害提高' },
+    { id: 't6_vsearth', name: '裂地打擊', emoji: '🪨', stat: 'dmgVsEarth', low: 2, high: 4, desc: '對地屬性敵人傷害提高' },
     { id: 't6_boss', name: '弒王進階', emoji: '👑', stat: 'bossDmg', low: 1, high: 2, desc: '對 BOSS 傷害額外提高' },
     { id: 't6_bossred', name: '屠龍血鎧', emoji: '🐉', stat: 'bossDmgRed', low: 1, high: 2, desc: '對 BOSS 敵人抗性額外提高' }
   ],
@@ -183,6 +185,7 @@ var TALENT_TREES = {
     { id: 't8_rvspoison', name: '禦毒之心', emoji: '☠️', stat: 'resVsPoison', low: 3, high: 6, desc: '對毒屬性敵人抗性提高' },
     { id: 't8_rvsdark', name: '禦暗之心', emoji: '🌑', stat: 'resVsDark', low: 3, high: 6, desc: '對暗屬性敵人抗性提高' },
     { id: 't8_rvslight', name: '禦聖之心', emoji: '🌟', stat: 'resVsLight', low: 3, high: 6, desc: '對聖屬性敵人抗性提高' },
+    { id: 't8_rvsearth', name: '禦地之心', emoji: '🪨', stat: 'resVsEarth', low: 3, high: 6, desc: '對地屬性敵人抗性提高' },
     { id: 't8_boss', name: '弒王極意', emoji: '👑', stat: 'bossDmg', low: 4, high: 8, desc: '對 BOSS 傷害額外提高' },
     { id: 't8_bossred', name: '屠龍聖鎧', emoji: '🐉', stat: 'bossDmgRed', low: 5, high: 10, desc: '對 BOSS 敵人抗性額外提高' }
   ],
@@ -193,6 +196,7 @@ var TALENT_TREES = {
     { id: 't9_poison', name: '毒脈霸體', emoji: '☠️', stat: 'elemPoison', low: 2, high: 4, desc: '攻擊時額外附加' },
     { id: 't9_light', name: '聖輝霸體', emoji: '🌟', stat: 'elemLight', low: 2, high: 4, desc: '攻擊時額外附加' },
     { id: 't9_dark', name: '暗影霸體', emoji: '🌑', stat: 'elemDark', low: 2, high: 4, desc: '攻擊時額外附加' },
+    { id: 't9_earth', name: '磐岩霸體', emoji: '🪨', stat: 'elemEarth', low: 2, high: 4, desc: '攻擊時額外附加' },
     { id: 't9_pres', name: '不壞金身', emoji: '🪨', stat: 'pRes', low: 2, high: 4, desc: '物理抗性總值額外提高' },
     { id: 't9_mres', name: '不滅法身', emoji: '🌌', stat: 'mRes', low: 2, high: 4, desc: '魔法抗性總值額外提高' }
   ],
@@ -597,12 +601,14 @@ var AFFIX_POOL = {
   dmgVsPoison: { name: '對毒屬性敵人傷害%', base: 5, growthBase: 3, lv: 0.025, pct: true, weight: 3, minR: 3, slots: ['weapon', 'ring', 'amulet'] },
   dmgVsLight: { name: '對聖屬性敵人傷害%', base: 5, growthBase: 3, lv: 0.025, pct: true, weight: 3, minR: 3, slots: ['weapon', 'ring', 'amulet'] },
   dmgVsDark: { name: '對暗屬性敵人傷害%', base: 5, growthBase: 3, lv: 0.025, pct: true, weight: 3, minR: 3, slots: ['weapon', 'ring', 'amulet'] },
+  dmgVsEarth: { name: '對地屬性敵人傷害%', base: 5, growthBase: 3, lv: 0.025, pct: true, weight: 3, minR: 3, slots: ['weapon', 'ring', 'amulet'] },
   elemDmgFire: { name: '火屬性傷害提升%', base: 5, growthBase: 2, lv: 0.02, pct: true, weight: 3, minR: 3, slots: ['weapon', 'belt', 'gloves', 'wrist', 'ring', 'amulet'] },
   elemDmgIce: { name: '冰屬性傷害提升%', base: 5, growthBase: 2, lv: 0.02, pct: true, weight: 3, minR: 3, slots: ['weapon', 'belt', 'gloves', 'wrist', 'ring', 'amulet'] },
   elemDmgLightning: { name: '雷屬性傷害提升%', base: 5, growthBase: 2, lv: 0.02, pct: true, weight: 3, minR: 3, slots: ['weapon', 'belt', 'gloves', 'wrist', 'ring', 'amulet'] },
   elemDmgPoison: { name: '毒屬性傷害提升%', base: 5, growthBase: 2, lv: 0.02, pct: true, weight: 3, minR: 3, slots: ['weapon', 'belt', 'gloves', 'wrist', 'ring', 'amulet'] },
   elemDmgLight: { name: '聖屬性傷害提升%', base: 5, growthBase: 2, lv: 0.02, pct: true, weight: 3, minR: 3, slots: ['weapon', 'belt', 'gloves', 'wrist', 'ring', 'amulet'] },
   elemDmgDark: { name: '暗屬性傷害提升%', base: 5, growthBase: 2, lv: 0.02, pct: true, weight: 3, minR: 3, slots: ['weapon', 'belt', 'gloves', 'wrist', 'ring', 'amulet'] },
+  elemDmgEarth: { name: '地屬性傷害提升%', base: 5, growthBase: 2, lv: 0.02, pct: true, weight: 3, minR: 3, slots: ['weapon', 'belt', 'gloves', 'wrist', 'ring', 'amulet'] },
   aoeDmg: { name: '範圍傷害%', base: 2, growthBase: 1, lv: 0.005, pct: true, weight: 4, minR: 4, slots: ['weapon', 'amulet'] },
   blockRate: { name: '格擋率%', base: 1, growthBase: 2.5, lv: 0.012, pct: true, weight: 4, slots: ['weapon', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'amulet'] },
   blockDmgRed: { name: '格擋減傷%', base: 4, growthBase: 4, lv: 0.02, pct: true, weight: 3, minR: 4, slots: ['shoulder', 'chest', 'gloves', 'wrist', 'legs', 'amulet'] },
@@ -617,6 +623,7 @@ var AFFIX_POOL = {
   resPoison: { name: '劇毒抗性%', base: 30, growthBase: 12, lv: 0.06, pct: true, weight: 3, minR: 3, slots: ['helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   resLight: { name: '聖光抗性%', base: 30, growthBase: 12, lv: 0.06, pct: true, weight: 3, minR: 3, slots: ['helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   resDark: { name: '暗影抗性%', base: 30, growthBase: 12, lv: 0.06, pct: true, weight: 3, minR: 3, slots: ['helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
+  resEarth: { name: '大地抗性%', base: 30, growthBase: 12, lv: 0.06, pct: true, weight: 3, minR: 3, slots: ['helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   resAll: { name: '全屬性抗性%', base: 15, growthBase: 3, lv: 0.06, pct: true, weight: 3, minR: 4, slots: ['helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   ccRed: { name: '控制時間縮減%', base: 10, growthBase: 4, lv: 0.02, pct: true, weight: 3, minR: 4, slots: ['helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   moveSpeed: { name: '移動速度%', base: 3, growthBase: 3, lv: 0.012, pct: true, weight: 4, slots: ['all_lock'] },
@@ -659,7 +666,7 @@ var AFFIX_CATS = {
     'hit', 'cdr', 'castSpeed', 'lifesteal', 'manaSteal', 'eliteDmg', 'bossDmg', 'normalDmg', 'aoeDmg'],
   def: ['defFlat', 'defPct', 'mdefFlat', 'mdefPct', 'globalDmgRed', 'normalDmgRed', 'eliteDmgRed', 'bossDmgRed', 'blockRate', 'blockDmgRed', 'evasion',
     'tenacity', 'shieldEff', 'pRes', 'mRes', 'resFire', 'resIce', 'resLightning',
-    'resPoison', 'resLight', 'resDark', 'resAll', 'ccRed']
+    'resPoison', 'resLight', 'resDark', 'resEarth', 'resAll', 'ccRed']
 };
 var AFFIX_CAT_LOOKUP = (function () {
   var m = {};
@@ -896,12 +903,14 @@ var SCORE_WEIGHTS = {
   dmgVsPoison: 0.4,
   dmgVsLight: 0.4,
   dmgVsDark: 0.4,
+  dmgVsEarth: 0.4,
   elemDmgFire: 0.4,
   elemDmgIce: 0.4,
   elemDmgLightning: 0.4,
   elemDmgPoison: 0.4,
   elemDmgLight: 0.4,
   elemDmgDark: 0.4,
+  elemDmgEarth: 0.4,
   aoeDmg: 1.4,
   blockRate: 2,
   blockDmgRed: 1.2,
@@ -916,6 +925,7 @@ var SCORE_WEIGHTS = {
   resPoison: 0.8,
   resLight: 0.8,
   resDark: 0.8,
+  resEarth: 0.8,
   resAll: 0.8,
   ccRed: 1.2,
   moveSpeed: 1.5,
@@ -933,8 +943,10 @@ var SCORE_WEIGHTS = {
 };
 
 // ---- 元素 ----
-// short = 「X屬性」語境用單字（火/冰/雷/毒/聖/暗；light 屬性統一稱「聖」，不再稱「光」）
-var ELEMENTS = ['fire', 'ice', 'lightning', 'poison', 'light', 'dark'];
+// short = 「X屬性」語境用單字（火/冰/雷/毒/聖/暗/地；light 屬性統一稱「聖」，不再稱「光」）
+// earth（2026-08-07 新增）接在最末：ELEMENTS 的順序即 UI 排序基準（js/ui.js 的 indexOf 比較），
+// 插在中間會讓既有存檔的顯示順序無故位移，故一律往後追加。
+var ELEMENTS = ['fire', 'ice', 'lightning', 'poison', 'light', 'dark', 'earth'];
 /* color：戰鬥特效用的主色（js/vfx.js）。與 tips 的文字色分開，特效要的是在暗底上夠亮的顏色。 */
 var ELEM_INFO = {
   fire: { name: '火焰', short: '火', emoji: '🔥', color: '#fb7233' },
@@ -942,7 +954,8 @@ var ELEM_INFO = {
   lightning: { name: '雷電', short: '雷', emoji: '⚡', color: '#ffd93d' },
   poison: { name: '劇毒', short: '毒', emoji: '☠️', color: '#9ee34a' },
   light: { name: '聖光', short: '聖', emoji: '✨', color: '#ffe9a8' },
-  dark: { name: '暗影', short: '暗', emoji: '🌑', color: '#b76cff' }
+  dark: { name: '暗影', short: '暗', emoji: '🌑', color: '#b76cff' },
+  earth: { name: '大地', short: '地', emoji: '🪨', color: '#d2a05c' }
 };
 
 /* 特效時間軸（模擬層與 js/vfx.js 共用）——傷害數字必須跟畫面對得上：
@@ -977,12 +990,14 @@ var ENCHANTS = {
   poison: { name: '毒液附魔', cat: 'atk', elem: 'poison', desc: '附加劇毒傷害，25% 機率使敵人中毒 4 秒', emoji: '🧪' },
   light: { name: '聖光附魔', cat: 'atk', elem: 'light', desc: '附加聖光傷害，20% 機率淨化自身負面狀態', emoji: '🌟' },
   dark: { name: '暗影附魔', cat: 'atk', elem: 'dark', desc: '附加暗影傷害，並汲取其 25% 回復生命', emoji: '🌑' },
+  earth: { name: '磐岩附魔', cat: 'atk', elem: 'earth', desc: '附加大地傷害，25% 機率獲得其 200% 的岩甲護盾', emoji: '🪨' },
   fireRes: { name: '火焰抗性', cat: 'def', desc: '火焰屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '🧯' },
   iceRes: { name: '冰霜抗性', cat: 'def', desc: '冰霜屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '🧊' },
   lightningRes: { name: '雷電抗性', cat: 'def', desc: '雷電屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '🔌' },
   poisonRes: { name: '劇毒抗性', cat: 'def', desc: '劇毒屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '💊' },
   lightRes: { name: '聖光抗性', cat: 'def', desc: '聖屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '🕶️' },
   darkRes: { name: '暗影抗性', cat: 'def', desc: '暗影屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '🕯️' },
+  earthRes: { name: '大地抗性', cat: 'def', desc: '大地屬性抗性額外提高：其他來源合計 ×(1+此值%)', emoji: '🧱' },
   ctrlRes: { name: '控制抵抗', cat: 'def', desc: '機率完全抵抗暈眩與減速', emoji: '🛡️' },
   loot: { name: '尋寶附魔', cat: 'util', desc: '增加裝備掉落率', emoji: '💰' },
   haste: { name: '疾行附魔', cat: 'util', desc: '增加移動速度（縮短推圖間隔）', emoji: '🌀' },
@@ -1002,7 +1017,7 @@ var ENCHANT_ESSENCE_COST = 1; // 每次附魔消耗附魔精華
 // 附魔抗性 → 元素對應
 var ENCHANT_RES_MAP = {
   fireRes: 'fire', iceRes: 'ice', lightningRes: 'lightning',
-  poisonRes: 'poison', lightRes: 'light', darkRes: 'dark'
+  poisonRes: 'poison', lightRes: 'light', darkRes: 'dark', earthRes: 'earth'
 };
 
 // ---- 技能（自動施放） ----
@@ -1015,13 +1030,13 @@ var SKILL = {
   atkScale: 0.3      // 物攻倍率
 };
 
-// ---- 怪物（magic: 以魔法攻擊，對玩家魔防；attr: 屬性標籤（六大屬性），供「對X屬性敵人傷害」加成與 tips 顯示 ----
+// ---- 怪物（magic: 以魔法攻擊，對玩家魔防；attr: 屬性標籤（七大屬性），供「對X屬性敵人傷害」加成與 tips 顯示 ----
 var DESERT_POOL = [
   { name: '史萊姆', emoji: '🟢', attr: 'poison' }, { name: '哥布林', emoji: '👺', attr: 'dark' },
   { name: '野狼', emoji: '🐺', attr: 'ice' }, { name: '骷髏兵', emoji: '💀', attr: 'dark' },
   { name: '暗影蝠', emoji: '🦇', magic: true, attr: 'dark' }, { name: '樹妖', emoji: '🌳', magic: true, attr: 'poison' },
   { name: '蜥蜴戰士', emoji: '🦎', attr: 'poison' }, { name: '半獸人', emoji: '🐗', attr: 'fire' },
-  { name: '幽靈', emoji: '👻', magic: true, attr: 'dark' }, { name: '石像鬼', emoji: '🗿', attr: 'light' },
+  { name: '幽靈', emoji: '👻', magic: true, attr: 'dark' }, { name: '石像鬼', emoji: '🗿', attr: 'earth' },
   { name: '牛頭人', emoji: '🐂', attr: 'fire' }, { name: '雙足飛龍', emoji: '🐉', magic: true, attr: 'lightning' }
 ];
 /* ---- 戰鬥場景 ----
@@ -1038,7 +1053,7 @@ var ICEFIELD_POOL = [
 var SWAMP_POOL = [
   { name: '劇毒蛙', emoji: '🐸', attr: 'poison' }, { name: '沼澤鱷', emoji: '🐊', attr: 'dark' },
   { name: '巨型水蛭', emoji: '🪱', attr: 'dark' }, { name: '瘴氣幽魂', emoji: '👻', magic: true, attr: 'poison' },
-  { name: '食人花', emoji: '🌺', attr: 'poison' }, { name: '泥漿怪', emoji: '🫠', attr: 'poison' },
+  { name: '食人花', emoji: '🌺', attr: 'poison' }, { name: '泥漿怪', emoji: '🫠', attr: 'earth' },
   { name: '毒蚊群', emoji: '🦟', attr: 'poison' }, { name: '沼澤巫婆', emoji: '🧙', magic: true, attr: 'dark' },
   { name: '腐爛樹人', emoji: '🌳', magic: true, attr: 'poison' }, { name: '蜥蜴薩滿', emoji: '🦎', magic: true, attr: 'lightning' },
   { name: '深沼水蛇', emoji: '🐍', attr: 'ice' }, { name: '沼澤霸主', emoji: '🐲', magic: true, attr: 'dark' }
@@ -1064,7 +1079,7 @@ var UNDEAD_MOUNTAINS_POOL = [
 var GOD_BATTLEFIELD_POOL = [
   { name: '太古戰魂', emoji: '👻', attr: 'dark' }, { name: '遠古神兵', emoji: '🗡️', attr: 'light' },
   { name: '破天戰將', emoji: '🛡️', attr: 'light' }, { name: '烈焰神衛', emoji: '💥', magic: true, attr: 'fire' },
-  { name: '狂暴泰坦', emoji: '🗿', attr: 'lightning' }, { name: '神魔殘骸', emoji: '☠️', attr: 'dark' },
+  { name: '狂暴泰坦', emoji: '🗿', attr: 'earth' }, { name: '神魔殘骸', emoji: '☠️', attr: 'dark' },
   { name: '不朽英靈', emoji: '🌟', magic: true, attr: 'light' }, { name: '裁決之劍', emoji: '⚔️', attr: 'light' },
   { name: '滅世魔將', emoji: '👹', magic: true, attr: 'dark' }, { name: '太古龍魂', emoji: '🐉', magic: true, attr: 'lightning' },
   { name: '戰爭主宰', emoji: '🔱', attr: 'light' }, { name: '殞星巨獸', emoji: '☄️', magic: true, attr: 'fire' }
@@ -1081,7 +1096,7 @@ var GOD_SANCTUARY_POOL = [
   { name: '巡天聖光', emoji: '💫', magic: true, attr: 'light' }, { name: '天使', emoji: '👼', magic: true, attr: 'light' },
   { name: '天使巡狩', emoji: '👼‍♀️', magic: true, attr: 'light' }, { name: '審判使者', emoji: '⚖️', attr: 'light' },
   { name: '聖域守衛', emoji: '🛡️', attr: 'light' }, { name: '曜光巨龍', emoji: '🐉', magic: true, attr: 'light' },
-  { name: '巨魔像', emoji: '🏛️', attr: 'light' }, { name: '永恒靈體', emoji: '🕊️', magic: true, attr: 'light' },
+  { name: '巨魔像', emoji: '🏛️', attr: 'earth' }, { name: '永恒靈體', emoji: '🕊️', magic: true, attr: 'light' },
   { name: '聖地執法者', emoji: '📜', magic: true, attr: 'light' }, { name: '神王護衛長', emoji: '👑', attr: 'light' },
   { name: '智慧晶體', emoji: '🌟', magic: true, attr: 'light' }, { name: '神聖執法官', emoji: '🌌', magic: true, attr: 'light' }
 ];
@@ -1408,7 +1423,7 @@ var GEM_TYPES = {
   pearl: { name: '珍珠', emoji: '🤍', stat: 'shieldEff', statName: '護盾效率%', base: 2, pct: true },
   malachite: { name: '孔雀石', emoji: '💚', stat: 'pRes', statName: '物理抗性%', base: 0.8, pct: true },
   fluorite: { name: '螢石', emoji: '💙', stat: 'mRes', statName: '魔法抗性%', base: 0.8, pct: true },
-  // === 對屬性敵人傷害（六大屬性；linear：1~5 階＝base×等級 線性、6 階起每階 ×2）===
+  // === 對屬性敵人傷害（七大屬性；linear：1~5 階＝base×等級 線性、6 階起每階 ×2）===
   // base=1：Lv1 1.0%、每級 +1.0% 至 Lv5 5.0%，Lv6 起為前一級 ×2（10%、20%…）。
   spinel: { name: '尖晶石', emoji: '🔥', stat: 'dmgVsFire', statName: '對火屬性敵人傷害%', base: 1, pct: true, linear: true },
   aquamarine: { name: '海藍寶石', emoji: '❄️', stat: 'dmgVsIce', statName: '對冰屬性敵人傷害%', base: 1, pct: true, linear: true },
@@ -1416,22 +1431,25 @@ var GEM_TYPES = {
   peridot: { name: '橄欖石', emoji: '☠️', stat: 'dmgVsPoison', statName: '對毒屬性敵人傷害%', base: 1, pct: true, linear: true },
   citrine: { name: '黃水晶', emoji: '✨', stat: 'dmgVsLight', statName: '對聖屬性敵人傷害%', base: 1, pct: true, linear: true },
   tourmaline: { name: '黑碧璽', emoji: '🌑', stat: 'dmgVsDark', statName: '對暗屬性敵人傷害%', base: 1, pct: true, linear: true },
-  // === 屬性傷害提升（六大屬性，2026-07-23 新增；提升「自身」該屬性元素傷害輸出；linear 同上）===
+  tigerEye: { name: '虎眼石', emoji: '🪨', stat: 'dmgVsEarth', statName: '對地屬性敵人傷害%', base: 1, pct: true, linear: true },
+  // === 屬性傷害提升（七大屬性，2026-07-23 新增、2026-08-07 補地屬性；提升「自身」該屬性元素傷害輸出；linear 同上）===
   coreFire: { name: '焰核寶石', emoji: '🌋', stat: 'elemDmgFire', statName: '火屬性傷害提升%', base: 1, pct: true, linear: true },
   coreIce: { name: '冰核寶石', emoji: '🌨️', stat: 'elemDmgIce', statName: '冰屬性傷害提升%', base: 1, pct: true, linear: true },
   coreLightning: { name: '雷核寶石', emoji: '🌩️', stat: 'elemDmgLightning', statName: '雷屬性傷害提升%', base: 1, pct: true, linear: true },
   corePoison: { name: '毒核寶石', emoji: '🦠', stat: 'elemDmgPoison', statName: '毒屬性傷害提升%', base: 1, pct: true, linear: true },
   coreLight: { name: '聖核寶石', emoji: '🌟', stat: 'elemDmgLight', statName: '聖屬性傷害提升%', base: 1, pct: true, linear: true },
   coreDark: { name: '暗核寶石', emoji: '🌚', stat: 'elemDmgDark', statName: '暗屬性傷害提升%', base: 1, pct: true, linear: true },
+  coreEarth: { name: '地核寶石', emoji: '🏔️', stat: 'elemDmgEarth', statName: '地屬性傷害提升%', base: 1, pct: true, linear: true },
   // === 元素抗性寶石（linear：1~5 階每級 +base%、6 階起每階 ×2）===
-  // 六系 base=5 → L1~5：5/10/15/20/25%、L6~10：50/100/200/400/800%（L10 +800%）
-  // 全系 base=1 → L1~5：1/2/3/4/5%、L6~10：10/20/40/80/160%（L10 +160%，六大屬性一起加）
+  // 七系 base=5 → L1~5：5/10/15/20/25%、L6~10：50/100/200/400/800%（L10 +800%）
+  // 全系 base=1 → L1~5：1/2/3/4/5%、L6~10：10/20/40/80/160%（L10 +160%，七大屬性一起加）
   wardFire: { name: '火抗寶石', emoji: '🧯', stat: 'resFire', statName: '火焰抗性%', base: 5, pct: true, linear: true },
   wardIce: { name: '冰抗寶石', emoji: '🧊', stat: 'resIce', statName: '冰霜抗性%', base: 5, pct: true, linear: true },
   wardLightning: { name: '電抗寶石', emoji: '🔌', stat: 'resLightning', statName: '雷電抗性%', base: 5, pct: true, linear: true },
   wardPoison: { name: '毒抗寶石', emoji: '💊', stat: 'resPoison', statName: '劇毒抗性%', base: 5, pct: true, linear: true },
   wardDark: { name: '暗抗寶石', emoji: '🕯️', stat: 'resDark', statName: '暗影抗性%', base: 5, pct: true, linear: true },
   wardLight: { name: '聖抗寶石', emoji: '🕶️', stat: 'resLight', statName: '聖光抗性%', base: 5, pct: true, linear: true },
+  wardEarth: { name: '地抗寶石', emoji: '🧱', stat: 'resEarth', statName: '大地抗性%', base: 5, pct: true, linear: true },
   wardAll: { name: '全屬性抗性寶石', emoji: '🌈', stat: 'resAll', statName: '全屬性抗性%', base: 1, pct: true, linear: true }
 };
 // 寶石數值/插槽/附魔欄位公式（gemStatValue、socketCountFor、enchantCapFor）→ js/formula.js §8
@@ -1656,7 +1674,7 @@ function resistanceReductionDesc(st, value, reductionFn) {
   return '<br><br><span style="color:#ffd700">目前總減傷：' + pctStrFloor4(reduction) + '</span>';
 }
 
-// 六系元素抗性 tips
+// 七系元素抗性 tips
 function elementResistDesc(st, elem, label) {
   var s = '降低受到的' + label + '屬性傷害，抗性值越高減傷效果越強。';
   var total = (st.resist && st.resist[elem]) || 0;
@@ -1732,12 +1750,14 @@ var STAT_GROUPS = [
       ['☠️ 對毒屬性敵人傷害', function (st) { return statFmt(st.dmgVsElem.poison, null, '%', true); }, '對「帶毒屬性標籤」的敵人造成的傷害提高。'],
       ['✨ 對聖屬性敵人傷害', function (st) { return statFmt(st.dmgVsElem.light, null, '%', true); }, '對「帶聖屬性標籤」的敵人造成的傷害提高。'],
       ['🌑 對暗屬性敵人傷害', function (st) { return statFmt(st.dmgVsElem.dark, null, '%', true); }, '對「帶暗屬性標籤」的敵人造成的傷害提高。'],
+      ['🪨 對地屬性敵人傷害', function (st) { return statFmt(st.dmgVsElem.earth, null, '%', true); }, '對「帶地屬性標籤」的敵人造成的傷害提高。'],
       ['🔥 火屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.fire, null, '%', true); }, '自身造成的火屬性元素傷害提高。'],
       ['❄️ 冰屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.ice, null, '%', true); }, '自身造成的冰屬性元素傷害提高。'],
       ['⚡ 雷屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.lightning, null, '%', true); }, '自身造成的雷屬性元素傷害提高。'],
       ['☠️ 毒屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.poison, null, '%', true); }, '自身造成的毒屬性元素傷害提高。'],
       ['✨ 聖屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.light, null, '%', true); }, '自身造成的聖屬性元素傷害提高。'],
       ['🌑 暗屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.dark, null, '%', true); }, '自身造成的暗屬性元素傷害提高。'],
+      ['🪨 地屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.earth, null, '%', true); }, '自身造成的地屬性元素傷害提高。'],
       ['💫 範圍傷害', function (st) { return statFmt(st.aoeDmg, null, '%', true); }, '多目標或範圍技能的總體傷害加成。']
     ]
   },
@@ -1768,6 +1788,7 @@ var STAT_GROUPS = [
       ['☠️ 劇毒抗性', function (st) { return statFmt(st.resist.poison, null, '%'); }, function (st) { return elementResistDesc(st, 'poison', '劇毒'); }],
       ['✨ 聖光抗性', function (st) { return statFmt(st.resist.light, null, '%'); }, function (st) { return elementResistDesc(st, 'light', '聖光'); }],
       ['🌑 暗影抗性', function (st) { return statFmt(st.resist.dark, null, '%'); }, function (st) { return elementResistDesc(st, 'dark', '暗影'); }],
+      ['🪨 大地抗性', function (st) { return statFmt(st.resist.earth, null, '%'); }, function (st) { return elementResistDesc(st, 'earth', '大地'); }],
       ['🛡️ 控制抵抗', function (st) { return statFmt(st.resist.ctrl, STAT_CAPS.ctrlRes, '%'); }, '全面降低所有負面異常狀態的命中率。' + capText(STAT_CAPS.ctrlRes, '%')]
     ]
   },

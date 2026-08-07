@@ -62,10 +62,25 @@ function talentPanelSnapshot(context) {
   };
 }
 
-test('天賦資料包含 1～10 轉各 8 個節點與 10 個潛力節點', () => {
+/* 節點數：2026-08-07 新增地屬性後，帶「每個元素一個節點」的 5/6/8/9 轉各為 9 個，
+   其餘六轉維持 8 個。節點數量寫死在測試裡是為了擋住「漏補某一轉」的疏失，
+   所以逐轉列出而不是只檢查「全部相等」。 */
+const TALENT_TREE_SIZES = { 1: 8, 2: 8, 3: 8, 4: 8, 5: 9, 6: 9, 7: 8, 8: 9, 9: 9, 10: 8 };
+
+test('天賦資料包含 1～10 轉節點（元素轉 9 個、其餘 8 個）與 10 個潛力節點', () => {
   const c = loadContext();
   assert.deepEqual(Object.keys(c.TALENT_TREES).map(Number), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-  assert.ok(Object.values(c.TALENT_TREES).every((tree) => tree.length === 8));
+  for (const [turn, size] of Object.entries(TALENT_TREE_SIZES)) {
+    assert.equal(c.TALENT_TREES[turn].length, size, `${turn} 轉節點數應為 ${size}`);
+  }
+  // 元素節點的四轉必須湊齊 ELEMENTS 全部屬性，缺一個就是「該屬性天賦沒補上」
+  for (const [turn, prefix] of [[5, 'elem'], [6, 'dmgVs'], [8, 'resVs'], [9, 'elem']]) {
+    const stats = new Set(c.TALENT_TREES[turn].map((d) => d.stat));
+    for (const e of c.ELEMENTS) {
+      const key = prefix + e.charAt(0).toUpperCase() + e.slice(1);
+      assert.ok(stats.has(key), `${turn} 轉缺少 ${key} 節點`);
+    }
+  }
   assert.equal(c.TALENT_IMPLEMENTED_REINCARNATIONS, 10);
   assert.equal(c.POTENTIAL_TALENTS.length, 10);
   assert.equal(c.TALENT_MAX_LEVEL, 100);

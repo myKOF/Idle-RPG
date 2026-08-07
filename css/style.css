@@ -3868,6 +3868,12 @@ textarea#save-io {
   background: rgba(145, 90, 220, .18);
 }
 
+.skill-tag-earth {
+  color: #f0d7ac;
+  border-color: rgba(205, 155, 90, .48);
+  background: rgba(170, 120, 60, .18);
+}
+
 .sk-desc {
   color: var(--text);
   font-size: 12.5px;
@@ -6090,6 +6096,16 @@ textarea#save-io {
   }
 }
 
+/* 大地彈：稜角岩塊，飛行中翻滾 */
+.vfx-proj-earth .vfx-proj-core {
+  width: 16px;
+  height: 16px;
+  clip-path: polygon(50% 0%, 88% 22%, 100% 62%, 72% 100%, 26% 96%, 0% 56%, 12% 18%);
+  background: linear-gradient(140deg, var(--vfx-c1, #d2a05c), var(--vfx-c2, #6b4526) 72%);
+  filter: drop-shadow(0 0 7px var(--vfx-glow, #d2a05c));
+  animation: vfxSpin 0.6s linear infinite;
+}
+
 /* 聖光彈：radiant 光球＋十字光 */
 .vfx-proj-light .vfx-proj-core {
   width: 14px;
@@ -6900,6 +6916,21 @@ textarea#save-io {
   animation-delay: inherit;
 }
 
+/* 地：岩塊崩碎——碎屑是帶稜角的方塊，與圓形的火/毒粒子區隔 */
+.vfx-impact-earth::before {
+  background: radial-gradient(circle, var(--vfx-c1, #d2a05c) 0%, var(--vfx-c2, #6b4526) 55%, transparent 72%);
+  border-radius: 50%;
+  animation-duration: 0.34s;
+}
+
+.vfx-impact-earth .vfx-p {
+  width: 5px;
+  height: 5px;
+  border-radius: 1px;
+  background: var(--vfx-c1, #d2a05c);
+  box-shadow: 0 0 4px var(--vfx-c2, #6b4526);
+}
+
 /* 物理：斬痕碎屑 */
 .vfx-impact-phys::before {
   inset: -13px;
@@ -7181,8 +7212,13 @@ textarea#save-io {
   filter: brightness(1.15) saturate(1.6);
 }
 
-.enemy-card.vfx-hit:not(.vfx-hit-fire):not(.vfx-hit-ice):not(.vfx-hit-lightning):not(.vfx-hit-poison):not(.vfx-hit-light):not(.vfx-hit-dark),
-.combatant.vfx-hit:not(.vfx-hit-fire):not(.vfx-hit-ice):not(.vfx-hit-lightning):not(.vfx-hit-poison):not(.vfx-hit-light):not(.vfx-hit-dark) {
+.enemy-card.vfx-hit-earth,
+.combatant.vfx-hit-earth {
+  filter: brightness(1.3) saturate(1.3);
+}
+
+.enemy-card.vfx-hit:not(.vfx-hit-fire):not(.vfx-hit-ice):not(.vfx-hit-lightning):not(.vfx-hit-poison):not(.vfx-hit-light):not(.vfx-hit-dark):not(.vfx-hit-earth),
+.combatant.vfx-hit:not(.vfx-hit-fire):not(.vfx-hit-ice):not(.vfx-hit-lightning):not(.vfx-hit-poison):not(.vfx-hit-light):not(.vfx-hit-dark):not(.vfx-hit-earth) {
   filter: brightness(1.45);
 }
 
@@ -7816,7 +7852,7 @@ textarea#save-io {
 
 .talent-grid {
   display: grid;
-  grid-template-columns: repeat(8, minmax(58px, 1fr));
+  grid-template-columns: repeat(9, minmax(58px, 1fr));
   gap: 10px;
 }
 
@@ -8034,7 +8070,7 @@ textarea#save-io {
 
 @media (max-width: 760px) {
   .talent-grid {
-    grid-template-columns: repeat(8, minmax(49px, 1fr));
+    grid-template-columns: repeat(9, minmax(49px, 1fr));
     gap: 5px;
   }
 
@@ -8052,7 +8088,7 @@ textarea#save-io {
 @media (max-width: 520px) {
   .talent-grid {
     overflow-x: auto;
-    grid-template-columns: repeat(8, 56px);
+    grid-template-columns: repeat(9, 56px);
     padding-bottom: 4px;
   }
 }
@@ -8498,7 +8534,7 @@ button.nf-part-slot.nf-part-ico {
 
 #ui-shell .talent-grid {
   overflow-x: visible !important;
-  grid-template-columns: repeat(8, minmax(58px, 1fr)) !important;
+  grid-template-columns: repeat(9, minmax(58px, 1fr)) !important;
   gap: 10px !important;
 }
 

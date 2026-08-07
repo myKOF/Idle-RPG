@@ -1262,6 +1262,15 @@ function decide(state, policy, memo) {
         if (!(rv3 >= 0)) continue;                       // -1＝空部位
         if (minRar === null || rv3 < minRar) minRar = rv3;
       }
+      /* ---- 上限：不准把神鑄素材當垃圾燒掉 ----
+
+         門檻跟著身上最低品質走，全身穿到創世之後就會變成「傳說、神話一起分解」——
+         而神話正是鑄創世的唯一素材，等於自己切斷產線。
+         使用者的分段講法：全身創世之後傳說可以直接拆（背包才不會爆），
+         但神話以上要留著繼續往上鑄。maxThreshold 就是那條界線。 */
+      if (minRar !== null && typeof svCfg.maxThreshold === 'number') {
+        minRar = Math.min(minRar, svCfg.maxThreshold);
+      }
       if (minRar !== null) {
         for (var fi = 0; fi < furnaces.length; fi++) {
           var fu = furnaces[fi];
@@ -3066,6 +3075,103 @@ function decide(state, policy, memo) {
           for (var urak in baseArgs) urArgs[urak] = baseArgs[urak];
           urArgs[urCfg.argKey || 'itemId'] = urItem.id;
           out.push({ name: r.cmd, args: urArgs, ruleId: r.id });
+        }
+      }
+    } else if (r.forgeCraft) {
+      /* ============ 神鑄法陣：六件同品質 → 一件高一階 ============
+
+         實測 48 小時 × 5 seed（2 轉、關卡 301）：累積掉落傳說 2,495 件、神話 175 件，
+         而創世只有 2 件、神鑄創世 0 件——因為 policy.extreme.roi.json 裡
+         **forge.* 規則數是 0**。策略有五條名字帶 forge 的規則，但全部是
+         newforge.*（熔爐＝分解爐），跟神鑄法陣是兩套系統。解鎖條件是
+         `level >= 1 && 轉生 >= 1`（js/forge.js forgeUnlocked），2 轉早就開了。
+
+         ---- 為什麼不用遊戲的自動放入 ----
+
+         forge.setAutoFill 看似省事，但它取的是**評分最低的六件**
+         （forgeAutoFillApply 的 `cands.sort(autoSalvageScore 升冪)`），
+         而產物等級取的是**六件裡最高**那一件（resolveForge 的 maxLv）。
+         兩者剛好相反：直接開自動放入，會穩定鑄出一堆低等神話。
+         鎖裝備也救不了——候選條件是 `!it.locked`，鎖了就完全不會被選中。
+
+         所以改成逐件指定：**等級最高的一件當「等級載體」＋ 等級最低的五件墊檔**。
+         這也讓高等素材的用量從 6 件降到 1 件。
+
+         ⚠️ 失敗隨機吃掉 FORGE_FAIL_CONSUME 件，載體有 3/6 的機率陪葬。
+         這是這條規則的固有成本，不是 bug；魔塵就是用來壓低它的。
+
+         ---- 魔塵 ----
+
+         裝備鑄造每個魔塵 +5%（滿 6 個：傳說 55→85%、神話 40→70%、創世 25→55%），
+         所以裝備一律塞好塞滿。寶石鑄造只有 +3%，而**失敗本身會給 1 個魔塵**
+         （forgeFailureReward），低階寶石鑄造反而是魔塵的產地——
+         使用者的說法是「五級寶石合成六級大量獲取魔塵，寶石只有七級以上才用魔塵」。
+         所以寶石側用 gemDustMinLevel 分界。 */
+      var fcCfg = r.forgeCraft;
+      var fcPan = pathVal(state, fcCfg.source);
+      var fcGold = Number(pathVal(state, fcCfg.gold)) || 0;
+      var fcRatio = (typeof fcCfg.goldRatio === 'number') ? fcCfg.goldRatio : 0.5;
+      if (fcPan && fcPan.unlocked && !fcPan.crafting) {
+        var fcNeed = Number(fcPan.slotsNeeded) || 6;
+        if (fcPan.placed > 0 && fcPan.placed < fcNeed) {
+          /* 半滿的法陣是上一輪沒收乾淨（例如素材被別條規則拿走）。
+             清空重來比硬補可靠——補的時候不知道裡面已經是什麼品質。 */
+          out.push({ name: fcCfg.unloadCmd || 'forge.unloadAll', args: {}, ruleId: r.id });
+        } else if (fcPan.placed >= fcNeed) {
+          out.push({ name: fcCfg.startCmd || 'forge.start', args: {}, ruleId: r.id });
+        } else {
+          /* ---- 挑這一拍要鑄什麼 ----
+             裝備優先於寶石：裝備是目標，寶石只是魔塵與鑲嵌的補給。
+             同為裝備時**品質高的優先**——那自然實現「先把神話燒成創世」，
+             而神話本來就是傳說燒出來的，整條產線會自己往上疊。 */
+          var fcPlaced = false;
+          var fcRar = (fcCfg.rarities || []).slice().sort(function (a, b) { return b - a; });
+          for (var fri = 0; fri < fcRar.length && !fcPlaced; fri++) {
+            var fcE = fcPan.equip && fcPan.equip[fcRar[fri]];
+            if (!fcE || fcE.count < fcNeed) continue;
+            if (!(fcE.cost >= 0) || fcE.cost > fcGold * fcRatio) continue;
+            /* 載體取 top[0]；墊檔從 low 取，並跳過與載體同一件（庫存剛好 6 件時會重疊）。 */
+            var carrier = fcE.top && fcE.top[0];
+            if (!carrier) continue;
+            var picks = [carrier.id];
+            for (var fli = 0; fli < fcE.low.length && picks.length < fcNeed; fli++) {
+              if (fcE.low[fli].id !== carrier.id) picks.push(fcE.low[fli].id);
+            }
+            if (picks.length < fcNeed) continue;          // 面板裁切後湊不滿，下一拍再說
+            for (var fpi = 0; fpi < picks.length; fpi++) {
+              out.push({ name: fcCfg.placeItemCmd || 'forge.placeItem', args: { itemId: picks[fpi] }, ruleId: r.id });
+            }
+            if (fcPan.dustOwned > 0) {
+              out.push({ name: fcCfg.dustCmd || 'forge.autoFillDust', args: {}, ruleId: r.id });
+            }
+            out.push({ name: fcCfg.startCmd || 'forge.start', args: {}, ruleId: r.id });
+            fcPlaced = true;
+          }
+
+          /* ---- 寶石：湊得滿六顆就燒 ---- */
+          var fcGemLv = (fcCfg.gemLevels || []).slice().sort(function (a, b) { return b - a; });
+          var fcDustMin = (typeof fcCfg.gemDustMinLevel === 'number') ? fcCfg.gemDustMinLevel : 7;
+          for (var fgi = 0; fgi < fcGemLv.length && !fcPlaced; fgi++) {
+            var lvKey = fcGemLv[fgi];
+            var fcG = fcPan.gem && fcPan.gem[lvKey];
+            if (!fcG || !fcG.types || !fcG.types.length) continue;
+            if (!(fcG.cost >= 0) || fcG.cost > fcGold * fcRatio) continue;
+            var gType = fcG.types[0];
+            if (!gType || gType.count < fcNeed) continue;
+            for (var gpi = 0; gpi < fcNeed; gpi++) {
+              out.push({
+                name: fcCfg.placeGemCmd || 'forge.placeGem',
+                args: { type: gType.type, level: lvKey }, ruleId: r.id
+              });
+            }
+            /* 低階寶石鑄造刻意**不**放魔塵：失敗才是魔塵的來源，
+               而 +3%/個 的加成拿去餵裝備（+5%/個）更划算。 */
+            if (lvKey >= fcDustMin && fcPan.dustOwned > 0) {
+              out.push({ name: fcCfg.dustCmd || 'forge.autoFillDust', args: {}, ruleId: r.id });
+            }
+            out.push({ name: fcCfg.startCmd || 'forge.start', args: {}, ruleId: r.id });
+            fcPlaced = true;
+          }
         }
       }
     } else if (r.upgradeParts) {

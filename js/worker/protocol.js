@@ -104,7 +104,7 @@ var EVENT_KINDS = {
              投射物是**等速**飛行，時間＝我方到該目標中心的距離÷速度，所以打第 4 行
              比打第 1 行慢。固定飛行時間會讓近的子彈慢吞吞、遠的又太快。
              同一組數字也拿去當 FLOAT 的 delayMs，子彈與傷害數字因此必定同時到。
-     elem（v17，可選）：元素鍵 fire/ice/lightning/poison/light/dark 或 null。
+     elem（v17，可選）：元素鍵 fire/ice/lightning/poison/light/dark/earth 或 null。
              顯示層據此挑選元素化畫法（火球拖焰／冰晶碎裂／電花／毒泡／聖光／暗渦）
              與命中時的受擊特效；null 時退回 color 單色畫法。
      cat（v17，可選）：技能分類（phys/magic/def/special/fusion/potential）或
