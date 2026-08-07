@@ -35,17 +35,23 @@ test('VFX exposes quality tiers and bounded frame scheduling', () => {
   assert.match(vfx, /VFX_FRAME_BUDGET_FULL = 8/);
   assert.match(vfx, /VFX_FRAME_BUDGET_REDUCED = 4/);
   assert.match(vfx, /VFX_MERGE_WINDOW_MS = 120/);
+  assert.match(vfx, /VFX_STALE_EVENT_MS = 1500/);
+  assert.match(vfx, /VFX_METEOR_MAX_DELAY_MS = 900/);
+  assert.match(vfx, /VFX_METEOR_MAX_TRAVEL_MS = 450/);
+  assert.match(vfx, /VFX_NODE_WATCHDOG_MS = 1000/);
+  assert.match(vfx, /VFX_METEOR_HARD_LIFETIME_MS = 2800/);
   assert.match(vfx, /function vfxScheduleFlush\(\)/);
   assert.match(vfx, /function vfxFlushQueue\(\)/);
   assert.match(vfx, /function vfxEnqueue\(spec\)/);
+  assert.match(vfx, /now - entry\.queuedAt > VFX_STALE_EVENT_MS/);
   assert.match(vfx, /if \(_vfxEventQueue\.length >= VFX_EVENT_QUEUE_MAX\) _vfxEventQueue\.shift\(\)/);
 });
 
 test('Reduced VFX removes the most expensive cosmetic work', () => {
   assert.match(vfx, /function vfxSpecForQuality\(spec\)/);
-  assert.match(vfx, /if \(spec\.fxKind === 'aura'\) return null/);
+  assert.match(vfx, /if \(source\.fxKind === 'aura'\) return null/);
   assert.match(vfx, /out\.count = 1/);
-  assert.match(vfx, /targetLimit = spec\.fxKind === 'chain' \|\| spec\.variant === 'chain' \? 2 : 3/);
+  assert.match(vfx, /targetLimit = source\.fxKind === 'chain' \|\| source\.variant === 'chain' \? 2 : 3/);
   assert.match(vfx, /if \(_vfxQuality === VFX_QUALITY_LEVELS\.REDUCED && !strong\) return/);
   assert.match(vfx, /if \(_vfxQuality !== VFX_QUALITY_LEVELS\.FULL\) return/);
   assert.match(vfx, /if \(_vfxQuality === VFX_QUALITY_LEVELS\.REDUCED\) n = 1/);
@@ -75,6 +81,32 @@ test('Quality changes and short-burst events are bounded at runtime', () => {
   context.vfxSetQuality('off');
   assert.equal(context._vfxEventQueue.length, 0);
   assert.equal(context.vfxQuality(), 'off');
+});
+
+test('Meteor timing is bounded, stale events are skipped, and tracked nodes have a watchdog', () => {
+  const context = loadVfx();
+  const safe = context.vfxSpecForQuality({
+    fxKind: 'rain', variant: 'meteor', delayMs: 5000, travelMs: [5000]
+  });
+  assert.equal(safe.delayMs, 900);
+  assert.deepEqual(safe.travelMs, [450]);
+
+  let rendered = 0;
+  context.renderCombatVfx = () => { rendered++; };
+  context._vfxEventQueue.push(
+    { spec: { fxKind: 'rain', variant: 'meteor' }, queuedAt: Date.now() - 2000 },
+    { spec: { fxKind: 'impact' }, queuedAt: Date.now() }
+  );
+  context.vfxFlushQueue();
+  assert.equal(rendered, 1);
+  assert.equal(context._vfxEventQueue.length, 0);
+
+  let removed = false;
+  const parent = { removeChild(node) { removed = true; node.parentNode = null; } };
+  const node = { className: 'vfx-meteor', parentNode: parent };
+  context.vfxTrack(node, 0);
+  context.vfxRunNodeWatchdog();
+  assert.equal(removed, true);
 });
 
 test('Target coordinates are cached and invalidated after layout changes', () => {

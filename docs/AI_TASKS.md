@@ -73,6 +73,41 @@ Worker 是模擬與存檔的唯一權威，主執行緒不再持有 `G`，舊單
 
 Web Worker 遷移全部完成，無進行中的大型工程。
 
+## Codex：隕石特效長時間運行後延遲殘留（2026-08-07）
+
+狀態：已完成（待 Claude Review／Antigravity 驗證）
+
+任務分類：VFX 生命週期／過期事件清理／長時間運行穩定性
+
+任務目的：修正遊戲運行約一小時後隕石特效可能延遲出現、殘留約數秒並與飄字重疊的問題；不修改戰鬥結果、傷害時序或 Worker Protocol。
+
+負責 AI：Codex
+
+任務內容：
+
+- 對隕石特效的延遲與飛行時間做安全上限。
+- VFX 佇列中的過期事件不再補播。
+- 增加特效節點生命週期看門狗，清理已脫離 DOM 或超過硬期限的節點。
+- 補長時間運行與隕石特效回歸測試。
+
+允許修改：`docs/AI_TASKS.md`、`js/vfx.js`、`tests/vfx-performance.test.cjs`。
+
+禁止修改：`js/worker/protocol.js`、`js/worker/sim.worker.js`、`js/bridge.js`、戰鬥公式、數值配置、存檔格式，以及其他 AI 進行中的檔案。
+
+前置依賴：既有 VFX 品質分級、事件佇列與背景分頁清理流程。
+
+完成條件：隕石特效不因佇列延遲而在數秒後集中補播；過期或脫離 DOM 的 VFX 節點可被清理；自動化測試與 Build 通過。
+
+實作與測試結果：已完成隕石延遲／飛行時間上限、過期 VFX 事件跳過、隕石節點硬期限與節點看門狗；指定 VFX／背景清理／技能測試共 17 項通過；`npm.cmd run build` 通過 250 個檔案檢查。完整 `npm.cmd test` 為 1153 通過、1 項既有 `tests/zone-attr-tooltip.test.cjs` class 正則失敗，與本任務修改檔案無關。
+
+需要 Claude Review：是，檢查 Timer、事件佇列與節點生命週期。
+
+需要 Antigravity 驗證：是，依既有 `docs/ANTIGRAVITY_VFX_UI_TEST_CASES.md` 的長時間穩定性案例觀察隕石特效。
+
+完成後交給：Claude Review，之後由使用者合併至整合分支。
+
+已知風險：若實機仍持續出現大量飄字，可能還需要針對 Worker 事件批次與傷害浮字佇列另行降載；本批先限制 VFX 顯示層，不改戰鬥權威資料。
+
 ## Codex：戰鬥特效造成裝備／強化操作延遲（2026-08-06）
 
 狀態：已完成（待 Claude Review／Antigravity 驗證）
