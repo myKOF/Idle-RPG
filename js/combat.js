@@ -1086,11 +1086,23 @@ function generateSummaryHtml(current) {
     var html = '<div class="summary-card"' + (current ? ' data-summary-current="true"' : '') + '>';
     html += '<div class="summary-card-title">------------' + (current ? '目前戰鬥（即時統計）' : '第 ' + RUN_STATS.runCount + ' 場戰鬥') + '--------------</div>';
     html += '<div class="summary-card-row"><span style="color:var(--accent)">最高關數</span>：' + RUN_STATS.maxStage + '</div>';
+    var skillList = [];
     for (var k in RUN_STATS.skills) {
         var sk = RUN_STATS.skills[k];
-        k = displayNames[k] || k;
-        var pct = totalDmg > 0 ? (sk.damage / totalDmg * 100).toFixed(1) : 0;
-        html += '<div class="summary-card-row"><span style="color:var(--accent)">' + k + '</span>：' + fmt(sk.count) + '次，傷害 ' + Math.round(sk.damage).toLocaleString() + ' (' + pct + '%)</div>';
+        skillList.push({
+            name: displayNames[k] || k,
+            count: sk.count,
+            damage: sk.damage
+        });
+    }
+    skillList.sort(function (a, b) {
+        return b.damage - a.damage;
+    });
+
+    for (var i = 0; i < skillList.length; i++) {
+        var item = skillList[i];
+        var pct = totalDmg > 0 ? (item.damage / totalDmg * 100).toFixed(1) : 0;
+        html += '<div class="summary-card-row"><span style="color:var(--accent)">' + item.name + '</span>：' + fmt(item.count) + '次，傷害 ' + fmt(item.damage) + ' (' + pct + '%)</div>';
     }
     html += '</div>';
     return html;

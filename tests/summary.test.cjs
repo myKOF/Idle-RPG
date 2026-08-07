@@ -61,3 +61,28 @@ test('傷害統計不限制技能筆數，超過 11 筆仍全部輸出', () => {
   const html = context.generateSummaryHtml(true);
   for (let i = 0; i < 20; i += 1) assert.match(html, new RegExp('測試技能' + i));
 });
+
+test('傷害統計按傷害由高至低排序且傷害數字使用簡寫', () => {
+  const context = loadCombatContext();
+  context.G = { stage: { current: 1 } };
+  context.RUN_STATS = { runCount: 1, maxStage: 1, skills: {} };
+
+  context.recordRunDamage('低傷害技能', 500, 'skill:low', 1);
+  context.recordRunDamage('高傷害技能', 1500000000, 'skill:high', 1);
+  context.recordRunDamage('中傷害技能', 2000000, 'skill:mid', 1);
+
+  const html = context.generateSummaryHtml(true);
+  // 高傷害 (1.5B) -> 中傷害 (2M) -> 低傷害 (500)
+  const posHigh = html.indexOf('高傷害技能');
+  const posMid = html.indexOf('中傷害技能');
+  const posLow = html.indexOf('低傷害技能');
+
+  assert.ok(posHigh !== -1 && posMid !== -1 && posLow !== -1, '所有技能應在 HTML 中');
+  assert.ok(posHigh < posMid, '高傷害技能應在 mid 上方');
+  assert.ok(posMid < posLow, '中傷害技能應在 low 上方');
+
+  // 簡寫驗證：1.50B, 2.00M, 500
+  assert.match(html, /傷害 1\.50B/);
+  assert.match(html, /傷害 2\.00M/);
+  assert.match(html, /傷害 500/);
+});
