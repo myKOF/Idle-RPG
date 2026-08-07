@@ -120,7 +120,7 @@ test('大量敵人浮字只關閉昂貴碰撞量測，不限制或刪除浮字�
 test('敵方傷害浮字從建立起掛在死亡重建之外的持久層', () => {
   assert.match(ui, /var enemyHitFloat = isEnemyHitFloat\(elId, cls\);/);
   assert.match(ui, /var targetLayer = \$id\(elId\);/);
-  assert.match(ui, /var layer = enemyHitFloat \? \(\$id\('mv-float-retained'\) \|\| targetLayer\) : targetLayer;/);
+  assert.match(ui, /var useRetainedEnemyLayer = enemyHitFloat && elId && elId\.indexOf\('mv-float-'\) === 0;[\s\S]*var layer = useRetainedEnemyLayer \? \(\$id\('mv-float-retained'\) \|\| targetLayer\) : targetLayer;/);
   assert.match(ui, /placeEnemyDamageFloat\(sp, layer, targetLayer\)/);
   assert.match(ui, /_enemyFloatTargetId !== elId/);
 });

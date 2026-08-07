@@ -165,7 +165,7 @@ test('浮字延遲會原樣送到顯示端（協議 v11 的 delayMs）', () => {
   const shim = fs.readFileSync(path.join(root, 'js/worker/shim.js'), 'utf8');
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   assert.match(shim, /delayMs:\s*\(delayMs > 0\) \? delayMs : 0/);
-  assert.match(ui, /floatText\(event\.elId, event\.text, event\.cls, event\.damageValue, null, uiBattlePanelSnapshot\(\), event\.delayMs\)/);
+  assert.match(ui, /function flushWorkerVisualEvents\(\)[\s\S]*floatText\(event\.elId, event\.text, event\.cls, event\.damageValue, null,\s*uiBattlePanelSnapshot\(\), event\.delayMs\)/);
   // 顯示端收到延遲就排程重播，不是丟掉
   assert.match(ui, /if \(delayMs > 0\) \{[\s\S]*?setTimeout\([\s\S]*?floatText\(elId, text, cls, damageValue, ent, battleSnapshot, 0\)/);
 });

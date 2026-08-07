@@ -188,7 +188,7 @@ test('傷害浮字高峰會自動合併並跳過昂貴的碰撞排版', () => {
   assert.match(ui, /var ENEMY_DAMAGE_FLOAT_AUTO_MERGE_LIMIT = 4/);
   assert.match(ui, /function enemyDamageFloatActiveCount\(layer\)/);
   assert.match(ui, /enemyDamageFloatActiveCount\(layer\) >= ENEMY_DAMAGE_FLOAT_AUTO_MERGE_THRESHOLD/);
-  assert.match(ui, /if \(enemyDamageFloatActiveCount\(layer\) > ENEMY_FLOAT_LAYOUT_LOAD_LIMIT\) return/);
+  assert.match(ui, /if \(!ENEMY_FLOAT_LAYOUT_ENABLED\) return/);
   assert.match(ui, /if \(damageMergeLimit > 0\) \{[\s\S]*?damageFloats = layer\.querySelectorAll/);
 });
 

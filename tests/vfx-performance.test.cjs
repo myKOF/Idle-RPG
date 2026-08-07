@@ -123,6 +123,6 @@ test('UI protects equipment input and selects reduced quality outside the battle
   assert.match(ui, /if \(shouldRenderBattle\(now\)\)/);
   assert.match(ui, /document\.addEventListener\('pointerdown', noteUiInteraction, true\)/);
   assert.match(ui, /document\.addEventListener\('keydown', noteUiInteraction, true\)/);
-  assert.match(ui, /vfxSetQuality\(UI\.tab === 'tower' \? 'full' : 'reduced'\)/);
+  assert.match(ui, /vfxSetQuality\('reduced'\)/);
   assert.match(ui, /if \(typeof vfxInvalidateLayout === 'function'\) vfxInvalidateLayout\(\)/);
 });
