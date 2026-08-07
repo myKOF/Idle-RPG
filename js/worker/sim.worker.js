@@ -491,6 +491,98 @@ function inventoryCellView(it) {
   return out;
 }
 
+/* ---- 神鑄法陣投影 ----
+
+   params.craft 為 falsy 時只回原本的 forge 狀態（UI 走這條，行為不變）。
+   宣告 craft 的策略才會付掃背包的成本。
+
+   為什麼要在遊戲這一側算：
+   1. **產物等級 ＝ 六件素材中最高那一件**（js/forge.js resolveForge 的
+      `maxLv = Math.max(maxLv, it.level)`）。所以只要一件高等就夠，另外五件是
+      同品質的垃圾也無所謂。策略要挑「等級最高的一件 ＋ 等級最低的五件」，
+      而背包是策略讀不到的（ROI 策略刻意關掉 panels.inv.items，見 buildInventoryPanel）。
+   2. 成功率、每魔塵加成與金幣成本三者都有 CHAOS 例外分支
+      （forgeBaseRateFor / forgeDustRateFor / forgeGoldCostFor），抄一份到策略裡
+      遲早跟遊戲脫鉤。
+
+   ⚠️ 純讀取：只呼叫遊戲的查詢函式，一個欄位都不寫回 G。 */
+function buildForgePanel(params) {
+  var out = { forge: (typeof forgeState === 'function') ? forgeState() : G.forge };
+  if (!params || !params.craft) return out;
+
+  var keep = Math.max(1, Math.floor(Number(params.keepPerRarity) || (FORGE_SLOTS + 2)));
+  /* ⚠️ 不可以呼叫 forgeUnlocked()——它會**寫入存檔**：條件成立時把
+     f.unlocked = true 快取回 G.forge（js/forge.js:44）。面板必須唯讀，
+     否則「有沒有建過面板」會改變存檔雜湊，決定論一破所有 A/B 比對都失效
+     （tests/sim-forge-craft.test.cjs 以存檔雜湊反證）。
+     所以這裡讀同一組條件但不回寫。 */
+  out.unlocked = !!(out.forge && out.forge.unlocked)
+    || ((G.player && G.player.level) >= FORGE_UNLOCK_LEVEL
+      && (typeof reincarnationCount === 'function' ? reincarnationCount() : 0) >= FORGE_UNLOCK_REINCARNATION);
+  out.slotsNeeded = FORGE_SLOTS;
+  out.minRarity = (typeof FORGE_MIN_RARITY === 'number') ? FORGE_MIN_RARITY : null;
+  out.failConsume = (typeof FORGE_FAIL_CONSUME === 'number') ? FORGE_FAIL_CONSUME : null;
+  out.dustOwned = (G.player && G.player.dust) || 0;
+  out.placed = (typeof forgeItemCount === 'function') ? forgeItemCount() : 0;
+  out.crafting = !!(out.forge && out.forge.crafting);
+
+  /* ---- 裝備：逐品質的候選 ---- */
+  var byR = {};
+  var inv = Array.isArray(G.inventory) ? G.inventory : [];
+  for (var i = 0; i < inv.length; i++) {
+    var it = inv[i];
+    if (!it || it.locked || it.kind === 'gem') continue;          // 與 forgeAutoFillApply 同一組條件
+    var r = it.rarity;
+    if (typeof isForgeableEquipmentRarity === 'function' && !isForgeableEquipmentRarity(r)) continue;
+    var b = byR[r] || (byR[r] = { count: 0, all: [] });
+    b.count++;
+    b.all.push({ id: it.id, level: it.level || 1 });
+  }
+  out.equip = {};
+  for (var rk in byR) {
+    var bucket = byR[rk];
+    /* 等級高的在前。同級時維持原順序即可——決定論只要求「同一份輸入給同一份輸出」。 */
+    bucket.all.sort(function (a, b2) { return b2.level - a.level; });
+    var n = bucket.all.length;
+    out.equip[rk] = {
+      count: bucket.count,
+      /* 等級最高的幾件（挑「等級載體」用）與等級最低的幾件（挑墊檔用）。
+         兩份都裁到 keep 筆，避免深局背包上千件時把面板灌爆。 */
+      top: bucket.all.slice(0, keep),
+      low: bucket.all.slice(Math.max(0, n - keep)).reverse(),
+      base: (typeof forgeBaseRateFor === 'function') ? forgeBaseRateFor(Number(rk)) : null,
+      dustRate: (typeof forgeDustRateFor === 'function') ? forgeDustRateFor(Number(rk)) : null,
+      cost: (typeof forgeGoldCostFor === 'function') ? forgeGoldCostFor(Number(rk)) : null
+    };
+  }
+
+  /* ---- 寶石：逐階級「哪些種類湊得滿六顆」---- */
+  out.gem = {};
+  var gems = (G.player && G.player.gems) || {};
+  for (var type in gems) {
+    var byLv = gems[type] || {};
+    for (var lv in byLv) {
+      var have = Number(byLv[lv]) || 0;
+      if (have < FORGE_SLOTS) continue;
+      if (!(typeof FORGE_GEM_BASE_RATE !== 'undefined' && FORGE_GEM_BASE_RATE[lv] !== undefined)) continue;
+      var slot = out.gem[lv] || (out.gem[lv] = {
+        types: [],
+        base: FORGE_GEM_BASE_RATE[lv],
+        dustRate: (typeof FORGE_GEM_DUST_RATE === 'number') ? FORGE_GEM_DUST_RATE : null,
+        cost: (typeof forgeGemCost === 'function') ? forgeGemCost(Number(lv)) : null
+      });
+      slot.types.push({ type: type, count: have });
+    }
+  }
+  for (var glv in out.gem) {
+    /* 數量多的先燒，並以種類名穩定排序——同數量時的順序不能隨物件列舉順序漂移。 */
+    out.gem[glv].types.sort(function (a, b3) {
+      return (b3.count - a.count) || (a.type < b3.type ? -1 : (a.type > b3.type ? 1 : 0));
+    });
+  }
+  return out;
+}
+
 function buildInventoryPanel(params) {
   var items = Array.isArray(G.inventory) ? G.inventory : [];
   var details = null;
@@ -720,7 +812,7 @@ function buildPanel(name, params) {
     case 'inv':
       return buildInventoryPanel(params);
     case 'forge':
-      return { forge: (typeof forgeState === 'function') ? forgeState() : G.forge };
+      return buildForgePanel(params);
     case 'newforge':
       return {
         newForge: newForgePanelView(G.newForge),

@@ -13,13 +13,19 @@
     "header",
     "inv",
     "battle",
-    "eval"
+    "eval",
+    "forge"
   ],
   "panelParams": {
     "inv": {
       "items": false,
       "items_依據": "本策略從不讀 panels.inv.items——換裝走 panels.eval.slotUpgrades（問遊戲『穿上去戰力升不升』），不是背包清單的字典序，所以沒有 bestPerSlot 規則。而那份清單要對每一件跑一次 itemScore：深局背包 300 件時單次 4.4 ms、每 5 遊戲秒一次，實測佔 headless 總 CPU 的 16%，外加 129KB 的序列化與深拷貝。其餘欄位（count / cap / equipmentScores / equipmentRarities / books / expandCost / equipmentEnchantInfo）全部照建，所以背包壓力閥與換裝門檻都不受影響。宣告錯了由 scripts/sim/policy.js 的 assertPanelParams 在載入時擋下，不會靜靜失效"
-    }
+    },
+    "forge": {
+      "craft": true,
+      "keepPerRarity": 8
+    },
+    "forge_依據": "craft=true 才會掃背包算「哪幾件適合進法陣」；UI 不傳 params，路徑不變。keepPerRarity：每個品質各裁 8 筆（需要 6 件＋備份），深局背包上千件時不把面板灌爆"
   },
   "lists": {
     "slotList": [
@@ -1197,14 +1203,43 @@
       "why": "熔爐零件配置（使用者口述的最佳策略）：一座爐 8 格全押精粹透鏡（分解時附魔精華產出率 +20%/階），另一座 8 格全押碎片熔煉爐（分解碎片產量 +20%/階）。零件是快照制、不消耗庫存，所以兩座爐可以各自裝滿同一種。T7 滿格＝該爐 +1120%，等於產出 ×12.2；精華是這份策略的硬上限（實測單場取得約 1,535 點、洗一次 5~6 點、結局存量 8），這是唯一能把上限本身推高的槓桿。rebalance 依兩種材料的滿足率（庫存/ref）微調 2 格——不能用絕對門檻，因為兩種都會被花到見底；也不能用 ref/庫存，那在庫存 0 時會退化成「ref 大的永遠贏」。backlog 是使用者說的另一個極端：產能跟不上打怪速度、產品開始堆積時換上加速齒輪；門檻 200 件（≈200 秒待燒）刻意設高，我自己的 8 個種子熔爐平均使用率只有 36%，不該讓它在沒塞車時吃掉產量格"
     },
     {
+      "id": "forge-craft",
+      "everySec": 30,
+      "cmd": "forge.start",
+      "forgeCraft": {
+        "source": "panels.forge",
+        "gold": "view.gold",
+        "goldRatio": 0.5,
+        "rarities": [
+          5,
+          6,
+          7
+        ],
+        "gemLevels": [
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "gemDustMinLevel": 7
+      },
+      "why": "實測 48 小時 × 5 seed（2 轉、關卡 301）：累積掉落傳說 2,495 件、神話 175 件，而創世只有 2 件、神鑄創世 0 件——因為這份策略裡 forge.* 規則數是 0。五條名字帶 forge 的規則全部是 newforge.*（熔爐＝分解爐），跟神鑄法陣是兩套系統。解鎖條件是 level>=1 && 轉生>=1（2 轉早就開了）",
+      "不用自動放入_依據": "forge.setAutoFill 取的是評分最低的六件（forgeAutoFillApply 依 autoSalvageScore 升冪），而產物等級取的是六件裡**最高**那一件（resolveForge 的 maxLv）——兩者剛好相反，直接開自動放入會穩定鑄出一堆低等神話。鎖裝備也救不了：候選條件是 !it.locked。改成逐件指定：等級最高的一件當載體 ＋ 等級最低的五件垫檔，高等素材的用量從 6 件降到 1 件",
+      "魔塵_依據": "裝備鑄造每個魔塵 +5%（滿 6 個：傳說 55→85%、神話 40→70%、創世 25→55%），所以裝備一律塑滿。寶石鑄造只有 +3%，而**失敗本身會給 1 個魔塵**（forgeFailureReward），五級實石→6 級基礎成功率 50%，等於每兩次產一個魔塵——使用者：「魔塵不足可用五級實石合成六級來大量獲取，寶石只有超過七級以上才使用魔塵」。所以 gemDustMinLevel=7：低於七級的寶石鑄造不放魔塵，把它留給裝備",
+      "順序_依據": "裝備優先於寶石；同為裝備時品質高的優先，自然實現「先把神話燒成創世」，而神話本來就是傳說燒出來的，整條產線會自己往上疊。排在熔爐規則之前：先把素材拿去鑄，剩下的才交給分解"
+    },
+    {
       "id": "salvage-below-equipped",
       "everySec": 600,
       "cmd": "newforge.setQuality",
       "salvageBelowEquipped": {
         "equippedRarities": "panels.inv.equipmentRarities",
-        "furnaces": "panels.newforge.newForge.furnaces"
+        "furnaces": "panels.newforge.newForge.furnaces",
+        "maxThreshold": 6
       },
-      "why": "最佳分解策略：分解門檻跟著身上最低品質往上升，低於它的裝備不可能升級任何部位。先前是 once:true 開局設一次「只拆R0/R1」就再也不動——101小時實測背包 298 格有 247 件稀有(83%)，背包一滿掉落連熔爐佇列都進不去而被直接丟棄，主手武器 90 小時等不到升級"
+      "why": "最佳分解策略：分解門檻跟著身上最低品質往上升，低於它的裝備不可能升級任何部位。先前是 once:true 開局設一次「只拆R0/R1」就再也不動——101小時實測背包 298 格有 247 件稀有(83%)，背包一滿掉落連熔爐佇列都進不去而被直接丟棄，主手武器 90 小時等不到升級",
+      "maxThreshold_依據": "門檻跟著身上最低品質走，全身創世之後會變成「傳說、神話一起分解」——而神話正是鑄創世的唯一素材，等於自己切斷產線。上限 6 實現使用者的分段：階段一（身上還是 R4/R5）門檻 ≤ 5，傳說留著鑄神話；階段二（全身創世）門檻被夾在 6，傳說直接拆解避免背包爆炸，神話以上繼續往上鑄"
     },
     {
       "id": "salvage-when-bag-full",
