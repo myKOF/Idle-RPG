@@ -103,6 +103,14 @@ var UI_COMMAND_PENDING = {
 
 var WORKER_RESTART_NOTICE_TIMER = 0;
 
+/* Worker 訊息回呼不可同步建立整批戰鬥視覺 DOM，否則 pointer/keyboard 事件
+   只能等整批浮字與特效處理完才有機會執行。視覺事件可延後一個 frame，且
+   超過上限時只丟棄最舊的畫面事件；戰鬥數值仍以 Worker snapshot 為準。 */
+var UI_WORKER_VISUAL_EVENT_QUEUE = [];
+var UI_WORKER_VISUAL_FLUSH_HANDLE = 0;
+var UI_WORKER_VISUAL_QUEUE_MAX = 160;
+var UI_WORKER_VISUAL_FRAME_BUDGET = 6;
+
 function hasOwnUiState(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
@@ -461,6 +469,56 @@ function applyUiSnapshot(snapshot) {
   uiSyncGameTime(snapshot.view);
 }
 
+function scheduleWorkerVisualEventFlush() {
+  if (UI_WORKER_VISUAL_FLUSH_HANDLE || !UI_WORKER_VISUAL_EVENT_QUEUE.length) return;
+  var flush = function () {
+    UI_WORKER_VISUAL_FLUSH_HANDLE = 0;
+    flushWorkerVisualEvents();
+  };
+  if (typeof requestAnimationFrame === 'function') {
+    UI_WORKER_VISUAL_FLUSH_HANDLE = requestAnimationFrame(flush);
+  } else if (typeof setTimeout === 'function') {
+    UI_WORKER_VISUAL_FLUSH_HANDLE = setTimeout(flush, 0);
+  }
+}
+
+function queueWorkerVisualEvent(event) {
+  if (!event) return;
+  if (UI_WORKER_VISUAL_EVENT_QUEUE.length >= UI_WORKER_VISUAL_QUEUE_MAX) {
+    UI_WORKER_VISUAL_EVENT_QUEUE.shift();
+  }
+  UI_WORKER_VISUAL_EVENT_QUEUE.push(event);
+  scheduleWorkerVisualEventFlush();
+}
+
+function flushWorkerVisualEvents() {
+  if (typeof uiRenderingSuspended === 'function' && uiRenderingSuspended()) {
+    for (var hiddenIndex = 0; hiddenIndex < UI_WORKER_VISUAL_EVENT_QUEUE.length; hiddenIndex++) {
+      var hiddenEvent = UI_WORKER_VISUAL_EVENT_QUEUE[hiddenIndex];
+      if (hiddenEvent && hiddenEvent.kind === 'float') {
+        rememberBackgroundEnemyFloat(hiddenEvent.elId, hiddenEvent.text,
+          hiddenEvent.cls, hiddenEvent.damageValue);
+      }
+    }
+    UI_WORKER_VISUAL_EVENT_QUEUE.length = 0;
+    return;
+  }
+
+  var processed = 0;
+  while (UI_WORKER_VISUAL_EVENT_QUEUE.length && processed < UI_WORKER_VISUAL_FRAME_BUDGET) {
+    var event = UI_WORKER_VISUAL_EVENT_QUEUE.shift();
+    if (!event) continue;
+    if (event.kind === 'float') {
+      floatText(event.elId, event.text, event.cls, event.damageValue, null,
+        uiBattlePanelSnapshot(), event.delayMs);
+    } else if (event.kind === 'vfx') {
+      if (typeof playCombatVfx === 'function') playCombatVfx(event);
+    }
+    processed++;
+  }
+  if (UI_WORKER_VISUAL_EVENT_QUEUE.length) scheduleWorkerVisualEventFlush();
+}
+
 function handleWorkerUiEvents(events) {
   (events || []).forEach(function (event) {
     if (!event) return;
@@ -481,12 +539,12 @@ function handleWorkerUiEvents(events) {
         rememberBackgroundEnemyFloat(event.elId, event.text, event.cls, event.damageValue);
         return;
       }
-      floatText(event.elId, event.text, event.cls, event.damageValue, null, uiBattlePanelSnapshot(), event.delayMs);
+      queueWorkerVisualEvent(event);
       return;
     }
     // 技能／增益特效（協議 v10）：實際畫法在 js/vfx.js，這裡只轉交
     if (event.kind === 'vfx') {
-      if (typeof playCombatVfx === 'function') playCombatVfx(event);
+      queueWorkerVisualEvent(event);
       return;
     }
     if (event.kind === 'loot') {
@@ -1302,6 +1360,9 @@ var PLAYER_RECOVERY_FLOAT_MAX_HITS = 20;
 var PENDING_ENEMY_FLOATS = [];
 var BACKGROUND_LATEST_ENEMY_FLOAT = null;
 var INSTANT_KILL_HP_ANIMATION_MS = 100;
+/* 傷害數字使用初始隨機位置即可；碰撞避讓會同步讀取整層 DOM，戰鬥高峰
+   會把點擊事件卡在 layout。保留函式供非傷害浮字與除錯使用，但正式熱路徑關閉。 */
+var ENEMY_FLOAT_LAYOUT_ENABLED = false;
 /* 碰撞避讓會為每個候選位置讀取一次 layout；戰鬥高峰時這個成本比建立
    一個浮字本身高很多。超過門檻後保留隨機位置，但不再為了排版量測整層 DOM。 */
 var ENEMY_FLOAT_LAYOUT_LOAD_LIMIT = 24;
@@ -1644,6 +1705,7 @@ function placeFloatAvoidingOverlap(sp, layer, selector, randomTop, randomRange, 
 }
 
 function placeEnemyDamageFloat(sp, layer) {
+  if (!ENEMY_FLOAT_LAYOUT_ENABLED) return;
   /* 新節點已先 append，計數包含自己；超過門檻時直接使用 floatText
      設定的初始位置，避免進入 48 個候選點 × 既有文字的同步 layout 迴圈。 */
   if (enemyDamageFloatActiveCount(layer) > ENEMY_FLOAT_LAYOUT_LOAD_LIMIT) return;
@@ -1679,7 +1741,8 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
   var targetLayer = $id(elId);
   // 敵方傷害字從建立起就掛在敵方戰鬥容器的持久層，不再掛在會隨死亡
   // 卡片重建的 enemy-card 內。targetLayer 僅用來把數字定位在原目標附近。
-  var layer = enemyHitFloat ? ($id('mv-float-retained') || targetLayer) : targetLayer;
+  var useRetainedEnemyLayer = enemyHitFloat && elId && elId.indexOf('mv-float-') === 0;
+  var layer = useRetainedEnemyLayer ? ($id('mv-float-retained') || targetLayer) : targetLayer;
   if (!layer || layer.offsetParent === null) {
     queuePendingEnemyFloat(elId, text, cls, damageValue, ent);
     return;
@@ -2456,11 +2519,11 @@ function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
     }
 
     var arr = [];
+    var skillsSnapshot = uiSkillsPanelSnapshot();
+    var talentSnapshot = uiTalentPanelSnapshot();
     for (var i = 0; i < lo.length; i++) {
       var entry = lo[i];
       var isPotE = typeof entry === 'string' && entry.indexOf('potential:') === 0;
-      var skillsSnapshot = uiSkillsPanelSnapshot();
-      var talentSnapshot = uiTalentPanelSnapshot();
       var sk = isPotE ? (typeof potentialDef === 'function' ? potentialDef(entry.slice(10)) : null) : skillViewDef(skillsSnapshot, entry);
       if (!sk) continue;
       var cd = uiCountdownRemain((pEnt.skillCds && pEnt.skillCds[entry]) || 0, snapshotGt);
@@ -4834,7 +4897,8 @@ function shouldRenderBattle(now) {
 
 function syncVfxQualityForTab() {
   if (typeof vfxSetQuality !== 'function') return;
-  vfxSetQuality(UI.tab === 'tower' ? 'full' : 'reduced');
+  // 戰鬥中的特效仍保留基本命中效果，但不讓高塔 full tier 佔滿主執行緒。
+  vfxSetQuality('reduced');
 }
 
 function markVisibleUiDirty() {

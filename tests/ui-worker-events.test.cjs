@@ -25,13 +25,22 @@ test('Worker Event 將 flog、log 與 float 接到既有 UI 呈現函式', () =>
   const calls = [];
   const battleSnapshot = { stats: { comboHits: 2, aspd: 3 } };
   const context = {
+    UI_WORKER_VISUAL_EVENT_QUEUE: [],
+    UI_WORKER_VISUAL_FLUSH_HANDLE: 0,
+    UI_WORKER_VISUAL_QUEUE_MAX: 160,
+    UI_WORKER_VISUAL_FRAME_BUDGET: 6,
     addLog: (...args) => calls.push(['addLog', ...args]),
     routeUiLog: (...args) => calls.push(['routeUiLog', ...args]),
     workerTowerActiveForLog: () => true,
     uiBattlePanelSnapshot: () => battleSnapshot,
     floatText: (...args) => calls.push(['floatText', ...args])
   };
-  vm.runInNewContext(functionBody('handleWorkerUiEvents'), context);
+  vm.runInNewContext([
+    functionBody('scheduleWorkerVisualEventFlush'),
+    functionBody('queueWorkerVisualEvent'),
+    functionBody('flushWorkerVisualEvents'),
+    functionBody('handleWorkerUiEvents')
+  ].join('\n'), context);
 
   context.handleWorkerUiEvents([
     { kind: 'flog', msg: '熔爐', cls: 'ok' },
@@ -40,6 +49,7 @@ test('Worker Event 將 flog、log 與 float 接到既有 UI 呈現函式', () =>
     { kind: 'float', elId: 'mv-float-0', text: '10', cls: 'dmg', damageValue: 10 },
     { kind: 'loot', fn: 'recordLootKill', args: [1, 'field'] }
   ]);
+  context.flushWorkerVisualEvents();
 
   assert.deepEqual(calls, [
     ['addLog', 'newforge-log', '熔爐', 'ok', 50],

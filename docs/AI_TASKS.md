@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex: combat UI input latency follow-up (2026-08-07)
+
+- Status: Completed
+- Owner: Codex
+- Scope: `js/ui.js`, combat visual-event scheduling, enemy damage-float placement, tower float routing, VFX quality
+- Acceptance: visual Worker events are frame-budgeted; enemy damage floats do not force synchronous collision layout; tower damage stays in `tb-float`; `npm.cmd test` and `npm.cmd run build` pass
+
 > **地圖改名（2026-08-07）**：本文件以下內容寫於改名前。第 1 張地圖「草原 `plains`」現為「荒漠 `desert`」，
 > 第 2 張「荒漠 `desert`」現為「冰原 `Icefield`」。**`desert` 換了指涉對象**，閱讀舊紀錄時請據此對照（見 PATCH.md）。
 
