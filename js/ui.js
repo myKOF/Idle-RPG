@@ -2397,17 +2397,21 @@ function zoneElementTagsList(z) {
   var table = (typeof ZONE_ENEMY_TABLES !== 'undefined' && ZONE_ENEMY_TABLES[z]) || null;
   var pool = (typeof ZONES !== 'undefined' && ZONES[z] && ZONES[z].pool) || null;
   var weights = {};
+  var totalWeight = 0;
   if (table && Array.isArray(table)) {
     table.forEach(function (e) {
       var npc = typeof NPC_CONFIG_TABLE !== 'undefined' ? NPC_CONFIG_TABLE[e.npcId] : null;
       if (npc && npc.attr) {
-        weights[npc.attr] = (weights[npc.attr] || 0) + (Number(e.weight) || 1);
+        var w = Number(e.weight) || 1;
+        weights[npc.attr] = (weights[npc.attr] || 0) + w;
+        totalWeight += w;
       }
     });
   } else if (pool && Array.isArray(pool)) {
     pool.forEach(function (m) {
       if (m.attr) {
         weights[m.attr] = (weights[m.attr] || 0) + 1;
+        totalWeight += 1;
       }
     });
   }
@@ -2420,7 +2424,16 @@ function zoneElementTagsList(z) {
     var info = ELEM_INFO[attr];
     var emoji = (attr === 'poison' ? '🟢' : (attr === 'dark' ? '🟣' : info.emoji));
     var shortName = info.short || info.name;
-    return { attr: attr, emoji: emoji, shortName: shortName, label: emoji + ' ' + shortName + '屬性' };
+    var pct = totalWeight > 0 ? (weights[attr] / totalWeight * 100) : 0;
+    var pctStrVal = typeof pctStr === 'function' ? pctStr(pct) : ((Math.round(pct * 10) / 10) + '%');
+    return {
+      attr: attr,
+      emoji: emoji,
+      shortName: shortName,
+      pct: pct,
+      pctStr: pctStrVal,
+      label: emoji + ' ' + shortName + '屬性 (' + pctStrVal + ')'
+    };
   }).filter(Boolean);
 }
 

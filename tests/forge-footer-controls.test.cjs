@@ -33,18 +33,21 @@ test('神鑄底部使用兩個可見 checkbox 控制項', () => {
 test('取消自動使用魔塵時卸下所有法陣上的魔塵', () => {
   const fs = require('node:fs');
   const vm = require('node:vm');
-  const context = { console, UI: { dirty: {} }, G: { player: { dust: 10 } } };
+  const context = { console, UI: { dirty: {} } };
   context.window = context;
   vm.createContext(context);
   ['js/util.js', 'js/data.js', 'js/formula.js', 'js/forge.js'].forEach(file => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
 
-  context.G.forge = {
-    dustSlots: [true, true, true, true, true, true],
-    autoDust: true,
-    slots: [null, null, null, null, null, null],
-    log: []
+  context.G = {
+    player: { dust: 10 },
+    forge: {
+      dustSlots: [true, true, true, true, true, true],
+      autoDust: true,
+      slots: [null, null, null, null, null, null],
+      log: []
+    }
   };
 
   // 測試 forgeClearDust
