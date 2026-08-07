@@ -61,7 +61,7 @@ var MODEL_NOTES = {
    不是真實時間——真實時間會讓同 seed 在不同機器上命中不同的快取。 */
 var evalPlanCache = null;
 
-/* 六大屬性。不寫死清單——遊戲的 ELEMENTS 才是唯一來源。 */
+/* 全部元素屬性。不寫死清單——遊戲的 ELEMENTS 才是唯一來源。 */
 function evalElements() {
   return (typeof ELEMENTS !== 'undefined' && ELEMENTS) ? ELEMENTS : [];
 }

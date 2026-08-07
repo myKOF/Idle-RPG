@@ -85,11 +85,30 @@ function basePrimaryFor(level) {
         → 派生出面板上的所有數值（含上限 clamp）
    ============================================================ */
 
+/* 元素零值表：欄位一律跟著 ELEMENTS 走。以前這類表是逐處寫死的六個鍵，
+   新增一個屬性就得記得補七、八個地方，漏一處就是「該屬性抗性永遠是 0」這種安靜的錯。
+   extra 用來塞非元素鍵（例如 resist 的 ctrl）。 */
+function zeroElemMap(extra) {
+  var m = {};
+  for (var i = 0; i < ELEMENTS.length; i++) m[ELEMENTS[i]] = 0;
+  if (extra) for (var k in extra) m[k] = extra[k];
+  return m;
+}
+// 元素 key → 詞條/天賦鍵的駝峰片段（fire → Fire，接在 dmgVs / elemDmg / resVs / elem 之後）
+function elemKeySuffix(e) { return e.charAt(0).toUpperCase() + e.slice(1); }
+// 以 ELEMENTS 為準，把 prefix + 元素名 的天賦鍵攤成 {元素: 值} 表
+function talentElemBucket(talent, prefix) {
+  var m = {};
+  for (var i = 0; i < ELEMENTS.length; i++) {
+    m[ELEMENTS[i]] = (talent && talent[prefix + elemKeySuffix(ELEMENTS[i])]) || 0;
+  }
+  return m;
+}
 // 元素抗性詞條 key（resFire...）→ 元素 key（resAll 為「全屬性抗性」，非單一元素，另行處理）
 function affixResElem(key) {
   if (!/^res[A-Z]/.test(key) || key === 'resAll') return null;
   var e = key.slice(3);
-  return e.charAt(0).toLowerCase() + e.slice(1); // fire / ice / lightning / poison / light / dark
+  return e.charAt(0).toLowerCase() + e.slice(1); // fire / ice / lightning / poison / light / dark / earth
 }
 // 對屬性敵人傷害詞條 key（dmgVsFire...）→ 元素 key
 function affixDmgVsElem(key) {
@@ -123,19 +142,19 @@ function computeStats(equipmentOverride) {
     ccRed: 0, moveSpeed: 0, loot: 0, xpBonus: 0, goldBonus: 0, luck: 0, weight: 0,
     enhanceSuccess: 0, decomposeYield: 0, hybridMutation: 0, enrageThreshold: 0, affixCap: 0, gemEff: 0
   };
-  var resist = { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0, ctrl: 0 };
+  var resist = zeroElemMap({ ctrl: 0 });
   var passives = {};
   var legendaryEffects = {};
   var legendaryEffectMults = {};
   var godAttackMultiplier = 1;
-  var elemAtk = { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0 };
+  var elemAtk = zeroElemMap();
   // 附魔元素抗性獨立乘區：不併入 resist 加總桶，最後以 其他來源合計 × (1 + 同系附魔合計%) 套用
-  var enchantRes = { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0 };
-  // 對屬性敵人傷害（六大屬性；來源：詞條與寶石，加總後於 resolveHit 對帶該屬性的敵人乘 (1+%)）
-  var dmgVsElem = { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0 };
-  // 屬性傷害提升（六大屬性；提升「自身」該屬性元素傷害輸出，於 resolveHit 元素附加段乘 (1+%)；
+  var enchantRes = zeroElemMap();
+  // 對屬性敵人傷害（七大屬性；來源：詞條與寶石，加總後於 resolveHit 對帶該屬性的敵人乘 (1+%)）
+  var dmgVsElem = zeroElemMap();
+  // 屬性傷害提升（七大屬性；提升「自身」該屬性元素傷害輸出，於 resolveHit 元素附加段乘 (1+%)；
   // 聚合管線已通（詞條/寶石/天賦），目前尚無取得來源＝預設 0，供武器專屬能力等後續來源掛入）
-  var elemDmgUp = { fire: 0, ice: 0, lightning: 0, poison: 0, light: 0, dark: 0 };
+  var elemDmgUp = zeroElemMap();
   var socketed = []; // 鑲嵌的寶石（gemEff 需在詞條聚合完成後才知道，先蒐集）
 
   SLOT_LIST.forEach(function (slot) {
@@ -282,13 +301,11 @@ function computeStats(equipmentOverride) {
   A.evasion += talent.evasion || 0;
   // 6 轉「對Ｘ屬性敵人傷害」＝與詞條/寶石的同名加成直接相加。
   ELEMENTS.forEach(function (e3) {
-    var dvKey = 'dmgVs' + e3.charAt(0).toUpperCase() + e3.slice(1);
-    dmgVsElem[e3] += talent[dvKey] || 0;
+    dmgVsElem[e3] += talent['dmgVs' + elemKeySuffix(e3)] || 0;
     // 屬性傷害提升：天賦同名鍵（elemDmgFire…）直接相加（目前無此類天賦，預留管線）。
-    var duKey = 'elemDmg' + e3.charAt(0).toUpperCase() + e3.slice(1);
-    elemDmgUp[e3] += talent[duKey] || 0;
+    elemDmgUp[e3] += talent['elemDmg' + elemKeySuffix(e3)] || 0;
   });
-  // 生命/護盾/物抗/魔抗/全屬性(六元素)抗性/敵種傷害/敵種抗性/全局減傷的「額外」天賦皆為乘算，於派生段套用。
+  // 生命/護盾/物抗/魔抗/全屬性(七元素)抗性/敵種傷害/敵種抗性/全局減傷的「額外」天賦皆為乘算，於派生段套用。
 
   /* ---- 派生公式（st.base = 純等級/四維的基礎值，供屬性面板拆解顯示） ---- */
   var lv = p.level;
@@ -372,8 +389,8 @@ function computeStats(equipmentOverride) {
   // 物抗/魔抗天賦「額外」＝抗性總值 ×(1+天賦%)。
   st.pRes = Math.max(0, Number(A.pRes) || 0) * (1 + (talent.pRes || 0) / 100);
   st.mRes = Math.max(0, Number(A.mRes) || 0) * (1 + (talent.mRes || 0) / 100);
-  // 六系元素抗性 = 其他來源（詞條/寶石）合計 × (1 + 天賦全屬性抗性額外%) × (1 + 同系附魔抗性合計%)；
-  // 天賦「全屬性抗性額外」對六大屬性各自乘算、附魔為獨立乘區。
+  // 七系元素抗性 = 其他來源（詞條/寶石）合計 × (1 + 天賦全屬性抗性額外%) × (1 + 同系附魔抗性合計%)；
+  // 天賦「全屬性抗性額外」對七大屬性各自乘算、附魔為獨立乘區。
   ELEMENTS.forEach(function (e2) {
     var resBase = Math.max(0, Number(resist[e2]) || 0);
     resist[e2] = resBase * (1 + (talent.elemRes || 0) / 100) * (1 + (enchantRes[e2] || 0) / 100);
@@ -384,10 +401,7 @@ function computeStats(equipmentOverride) {
   st.dmgVsElem = dmgVsElem;
   st.elemDmgUp = elemDmgUp; // 屬性傷害提升（自身元素輸出；resolveHit 元素附加段乘區）
   // 8 轉「對Ｘ屬性敵人抗性」＝對帶該屬性標籤敵人的傷害抗性（定值；與敵種抗性共用減傷曲線）。
-  st.resVsElem = {
-    fire: talent.resVsFire || 0, ice: talent.resVsIce || 0, lightning: talent.resVsLightning || 0,
-    poison: talent.resVsPoison || 0, light: talent.resVsLight || 0, dark: talent.resVsDark || 0
-  };
+  st.resVsElem = talentElemBucket(talent, 'resVs');
   // 特殊與機制
   st.ccRed = capValue(A.ccRed, STAT_CAPS.ccRed);                              // 控制時間縮減上限（上限 0＝無上限）
   st.moveSpeed = capValue(A.moveSpeed, STAT_CAPS.moveSpeed);                      // 移動速度上限（縮短出怪間隔；上限 0＝無上限）
@@ -412,10 +426,7 @@ function computeStats(equipmentOverride) {
   st.talent = talent;
   // 5/9 轉元素天賦：攻擊時附加「當次傷害 × 天賦%」的元素傷害（結算於 resolveHit 元素附加段）；
   // 潛力「元素核心」把所有元素附加傷害（含裝備附魔的固定值元素攻擊）乘算提高。
-  var talentElemMap = {
-    fire: talent.elemFire || 0, ice: talent.elemIce || 0, lightning: talent.elemLightning || 0,
-    poison: talent.elemPoison || 0, light: talent.elemLight || 0, dark: talent.elemDark || 0
-  };
+  var talentElemMap = talentElemBucket(talent, 'elem');
   var elemBoost = 1; // 潛力技能 V3 起，舊 potentialElemAtk 已移除。
   var elemDmgPct = {};
   ELEMENTS.forEach(function (e4) {
@@ -578,7 +589,9 @@ var ELEM_PROC = {
   poisonTickMult: 0.5,      // 毒：每秒跳傷＝該系元素傷害 × 此倍率
   poisonDur: 4,             // 毒：中毒秒數
   lightCleanseChance: 20,   // 光：淨化自身負面狀態機率%
-  darkDrainMult: 0.25       // 暗：汲取回復＝該系元素傷害 × 此倍率
+  darkDrainMult: 0.25,      // 暗：汲取回復＝該系元素傷害 × 此倍率
+  earthShieldChance: 25,    // 地：觸發岩甲護盾機率%
+  earthShieldMult: 2        // 地：岩甲護盾量＝該系元素傷害 × 此倍率
 };
 
 /* ---- 技能屬性化：解析本次傷害段的屬性歸屬 ----
@@ -637,14 +650,14 @@ function effectiveMPen(st, ent) { return ((st && st.mPen) || 0) + penBuffValue(e
          （skillElem/skillElemMix = 技能屬性化：本體傷害段整段歸屬該屬性，於防禦/抗性之後、
            浮動與暴擊之前套用元素抗性與屬性傷害提升；因此屬性傷害吃得到暴擊倍率）
          （elemAtk = 固定值元素攻擊；elemDmgPct = 5/9 轉天賦附傷%，按當次傷害附加）
-         （elemDmgUp = 屬性傷害提升% {fire..dark}：自身該屬性元素傷害合計 ×(1+%)，僅玩家攻擊端傳入）
+         （elemDmgUp = 屬性傷害提升% {fire..earth}：自身該屬性元素傷害合計 ×(1+%)，僅玩家攻擊端傳入）
          （eliteDmg/bossDmg/normalDmg = 已含天賦「額外」乘算後的敵種傷害加成總合）
          （totalDmgPct = 7/10 轉天賦「總傷害額外增加」%，攻擊端最終獨立乘區）
          （isElite/isBoss = 攻擊者自身敵種，attr = 攻擊者屬性標籤，供防守方敵種/屬性抗性選值）
-         （dmgVsElem = 對屬性敵人傷害%合計 {fire..dark}，對 dCfg.attr 對應屬性的敵人生效）
+         （dmgVsElem = 對屬性敵人傷害%合計 {fire..earth}，對 dCfg.attr 對應屬性的敵人生效）
    dCfg: { def, mdef, level, dodge, blockRate, blockDmgRed, pRes, mRes, resist{六元素+ctrl},
            ctrlRes, ccFactor, tenacity, thornsPct, maxHp, isElite, isBoss, towerBoss, attr,
-           normalDmgRed, eliteDmgRed, bossDmgRed, resVsElem{fire..dark} }
+           normalDmgRed, eliteDmgRed, bossDmgRed, resVsElem{fire..earth} }
          （tenacity = 防守方韌性%：折減被爆擊機率［暴擊段］與被控場機率［resistCtrl］；
            ccFactor 另含韌性對控場「持續時間」的縮短）
    回傳 { dmg, crit, miss, blocked, killed, thorns, heal, procs[],
@@ -664,7 +677,7 @@ function applyEnemyHpDamage(ent, damage) {
   return amount;
 }
 function resolveHit(attacker, defender, aCfg, dCfg) {
-  var out = { dmg: 0, crit: false, miss: false, blocked: false, killed: false, thorns: 0, heal: 0, absorbed: 0, procs: [] };
+  var out = { dmg: 0, crit: false, miss: false, blocked: false, killed: false, thorns: 0, heal: 0, shield: 0, absorbed: 0, procs: [] };
   // 命中率 = clamp(攻擊者命中 - 防守者閃避, 5%, 100%)；玩家命中已含基礎 100%。
   var attackerHit = Number(aCfg.hit);
   if (!isFinite(attackerHit)) attackerHit = 100;
@@ -761,7 +774,8 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     }
   }
   // 元素特效：以「技能屬性化段＋元素附加段」的該系合計值判定，每系只觸發一次
-  // 冰 減速｜雷 追加連鎖電擊｜毒 中毒｜光 淨化自身｜暗 汲取回復（係數 → ELEM_PROC）
+  // 冰 減速｜雷 追加連鎖電擊｜毒 中毒｜光 淨化自身｜暗 汲取回復｜地 岩甲護盾（係數 → ELEM_PROC）
+  // 暗的回復與地的護盾同樣只回報數值（out.heal / out.shield），實際套用在呼叫端（js/combat.js）。
   if (elemTotals) {
     var ccF = (dCfg.ccFactor === undefined) ? 1 : dCfg.ccFactor;
     for (var pi = 0; pi < ELEMENTS.length; pi++) {
@@ -773,6 +787,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
       else if (pk === 'poison' && chance(ELEM_PROC.poisonChance)) { applyPoison(defender, pv * ELEM_PROC.poisonTickMult, ELEM_PROC.poisonDur); out.procs.push('中毒'); }
       else if (pk === 'light' && chance(ELEM_PROC.lightCleanseChance)) { cleanse(attacker); out.procs.push('淨化'); }
       else if (pk === 'dark') { out.heal += pv * ELEM_PROC.darkDrainMult; } // 暗影汲取
+      else if (pk === 'earth' && chance(ELEM_PROC.earthShieldChance)) { out.shield += pv * ELEM_PROC.earthShieldMult; out.procs.push('岩甲'); }
     }
   }
   // 真實傷害（無視防禦與抗性）= 攻擊力 × 真傷%
@@ -893,6 +908,19 @@ function healPlayer(pEnt, amount, st, opts) {
   var nextShield = Math.min(cap, beforeShield + over * (SHIELD_OVERFLOW_PCT / 100));
   pEnt.shield = Math.max(beforeShield, nextShield);
   refreshShieldMaxAfterGain(pEnt, beforeShield);
+}
+
+/* 直接給予護盾（大地元素特效【岩甲】等非治療來源）。
+   沿用技能護盾上限（最大生命 × SHIELD_SKILL_CAP_PCT%）並吃護盾效率%；
+   既有護盾已超過上限時只維持、不再往上加。 */
+function grantShield(pEnt, amount, st) {
+  if (!pEnt || !(amount > 0) || !st) return 0;
+  var before = Math.max(0, pEnt.shield || 0);
+  var cap = st.hp * (SHIELD_SKILL_CAP_PCT / 100);
+  var next = Math.min(Math.max(before, cap), before + amount * (1 + (st.shieldEff || 0) / 100));
+  pEnt.shield = next;
+  refreshShieldMaxAfterGain(pEnt, before);
+  return Math.max(0, pEnt.shield - before);
 }
 
 /* ---- 吸血／吸魔（2026-07-30 改版）----

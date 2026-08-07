@@ -3513,12 +3513,14 @@ function describeSkill(id, lv, skipFusionDetail, fusions) {
       lightning: '雷光竄流而過，貫穿目標的軀體',
       poison: '劇毒滲入血肉，由內而外地侵蝕',
       light: '聖光降下裁決，灼盡目標的汙穢',
-      dark: '暗影蝕魂而入，噬去目標的生機'
+      dark: '暗影蝕魂而入，噬去目標的生機',
+      earth: '大地轟然隆起，以磐岩之重碾碎目標'
     })[type] || null;
   }
   var ELEM_SYS_FLAVOR = {
     fire: '此技歸屬烈焰一系', ice: '此技歸屬寒霜一系', lightning: '此技歸屬雷霆一系',
-    poison: '此技歸屬劇毒一系', light: '此技承聖光一系加護', dark: '此技行於暗影一系'
+    poison: '此技歸屬劇毒一系', light: '此技承聖光一系加護', dark: '此技行於暗影一系',
+    earth: '此技根植大地一系'
   };
   var sysTag = (Array.isArray(sk.tags) && sk.tags.length) ? sk.tags[0] : null;
   var dmgElem = (typeof skillElemOf === 'function') ? skillElemOf(sk, fx) : sysTag; // 本次傷害的屬性歸屬

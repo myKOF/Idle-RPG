@@ -494,6 +494,11 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
             floatText(playerFloatSel, '+' + fmt(Math.round(healAmt)), 'heal', Math.round(healAmt));
             if (st.lifesteal > 0 || omni > 0 || res.heal) logMsg += '<span class="log-hl-good">汲取回復 ' + fmt(healAmt) + '。</span>';
         }
+        // 大地元素特效【岩甲】：附加的地屬性傷害有機率轉為護盾（resolveHit 只回報數值，實際給盾在這裡）
+        if (res.shield > 0) {
+            var shieldGain = grantShield(pEnt, res.shield, st);
+            if (shieldGain > 0) floatText(playerFloatSel, '🛡️+' + fmt(Math.round(shieldGain)), 'shield');
+        }
         if (st.manaSteal + omni > 0) {
             var mpGain = manaStealAmount(st, st.manaSteal + omni);
             pEnt.mp = Math.min(st.mp, pEnt.mp + mpGain);

@@ -56,7 +56,8 @@ var VFX_ELEM_THEME = {
   lightning: { c1: '#ffd93d', c2: '#fffbe0', glow: 'rgba(255, 217, 61, 0.9)' },
   poison:    { c1: '#9ee34a', c2: '#e0ffb0', glow: 'rgba(158, 227, 74, 0.85)' },
   light:     { c1: '#ffe9a8', c2: '#fffdf2', glow: 'rgba(255, 233, 168, 0.95)' },
-  dark:      { c1: '#b76cff', c2: '#2e1046', glow: 'rgba(183, 108, 255, 0.9)' }
+  dark:      { c1: '#b76cff', c2: '#2e1046', glow: 'rgba(183, 108, 255, 0.9)' },
+  earth:     { c1: '#d2a05c', c2: '#6b4526', glow: 'rgba(210, 160, 92, 0.85)' }
 };
 
 function vfxSetEnabled(on) {
@@ -308,7 +309,7 @@ function vfxStagger() {
    卡片只在敵群「簽章」（身分＋站位）變動時重建，短命 class 掛上去是安全的；
    萬一剛好碰上重建把 class 洗掉，也只是少抖一下，不會殘留。 */
 var VFX_HIT_CLASSES = ['vfx-hit', 'vfx-hit-strong', 'vfx-hit-fire', 'vfx-hit-ice',
-  'vfx-hit-lightning', 'vfx-hit-poison', 'vfx-hit-light', 'vfx-hit-dark'];
+  'vfx-hit-lightning', 'vfx-hit-poison', 'vfx-hit-light', 'vfx-hit-dark', 'vfx-hit-earth'];
 function vfxHitReact(targetId, elem, delayMs, strong) {
   if (!targetId) return;
   if (_vfxQuality === VFX_QUALITY_LEVELS.REDUCED && !strong) return;
@@ -363,12 +364,12 @@ function vfxSceneShake(layer, delayMs, strong) {
    命中那一刻（delayMs 與傷害數字同一個數）在目標身上炸開的元素化爆點：
      fire 火光爆裂＋火花亂飛     ice 冰晶碎裂       lightning 電弧火花
      poison 綠泡上飄             light 聖輝十字     dark 暗紫渦爆
-     phys 白色斬痕碎屑           claw 敵人抓我方的紅爪痕
+     earth 岩塊崩碎               phys 白色斬痕碎屑   claw 敵人抓我方的紅爪痕
    variant 覆寫（單體技的專屬受擊）：
      vortex 暗渦收縮引爆（虛空裂隙）    detonate 大爆炸＋畫面震動（斷罪／碎印）
      venomburst 疫病炸裂               venom 命中後殘留 2.5 秒毒雲泡泡
      nova 冰環爆發＋地面結霜（霜之新星） */
-var VFX_IMPACT_PARTS = { fire: 6, ice: 5, lightning: 5, poison: 4, light: 6, dark: 5, phys: 3, claw: 3 };
+var VFX_IMPACT_PARTS = { fire: 6, ice: 5, lightning: 5, poison: 4, light: 6, dark: 5, earth: 6, phys: 3, claw: 3 };
 function vfxImpact(spec, layer, pt, targetId, delayMs) {
   var v = spec.variant;
   var elemKey = spec.elem || 'phys';

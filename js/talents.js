@@ -106,7 +106,9 @@ function talentLevelValue(def, lv) {
    它一輪要問 10 個轉數，每個都重取一次 levels 表沒有意義。 */
 function talentTreeComplete(turn, levels) {
   var tree = TALENT_TREES[turn] || [];
-  if (tree.length !== 8) return false;
+  // 節點數不再寫死 8：5/6/8/9 轉在 2026-08-07 各補了一個地屬性節點而成為 9 個。
+  // 這個判斷只是「這一轉有節點、且全部滿級」，節點數量本身不該是條件。
+  if (!tree.length) return false;
   var lv = levels || talentState().levels;
   for (var i = 0; i < tree.length; i++) {
     if (talentLevelIn(lv, tree[i].id) < TALENT_MAX_LEVEL) return false;
@@ -215,18 +217,25 @@ function potentialSpentSkillPoints() {
   return spent;
 }
 
+/* ⚠️ 這份範本同時是「白名單」：talentStatBonuses 只累加 out[stat] !== undefined 的欄位，
+   所以漏一個鍵＝那個天賦節點點了也沒有效果，而且不會噴任何錯。
+   元素三族（elemX / dmgVsX / resVsX）因此改由 ELEMENTS 生成，新增屬性時不必回頭補這裡。 */
 function talentBonusesTemplate() {
-  return {
+  var t = {
     strPct: 0, agiPct: 0, intPct: 0, vitPct: 0, defPct: 0, mdefPct: 0,
-    pRes: 0, mRes: 0, elemRes: 0, elemFire: 0, elemIce: 0, elemLightning: 0,
-    elemPoison: 0, elemLight: 0, elemDark: 0, globalDmgRed: 0, critRate: 0,
+    pRes: 0, mRes: 0, elemRes: 0, globalDmgRed: 0, critRate: 0,
     critDmg: 0, evasion: 0, hit: 0, hpPct: 0, shieldEff: 0, normalDmg: 0,
     eliteDmg: 0, bossDmg: 0, normalDmgRed: 0, eliteDmgRed: 0, bossDmgRed: 0,
-    dmgVsFire: 0, dmgVsIce: 0, dmgVsLightning: 0, dmgVsPoison: 0, dmgVsLight: 0, dmgVsDark: 0,
-    resVsFire: 0, resVsIce: 0, resVsLightning: 0, resVsPoison: 0, resVsLight: 0, resVsDark: 0,
     patkPct: 0, matkPct: 0, totalDmgPct: 0, gemEff: 0, skillPhys: 0,
     skillMagic: 0, skillDef: 0, skillSpecial: 0, skillPassive: 0
   };
+  for (var i = 0; i < ELEMENTS.length; i++) {
+    var suffix = ELEMENTS[i].charAt(0).toUpperCase() + ELEMENTS[i].slice(1);
+    t['elem' + suffix] = 0;
+    t['dmgVs' + suffix] = 0;
+    t['resVs' + suffix] = 0;
+  }
+  return t;
 }
 
 /* ⚠️ 這一支在 computeStats 裡，而 computeStats 是全遊戲最熱的路徑

@@ -4,6 +4,22 @@
 > 第 2 張由「荒漠 `desert`」改名為「冰原 `Icefield`」。**`desert` 這個識別碼換了指涉對象**，
 > 本日之前的紀錄、日誌與報告中的「草原」＝現在的荒漠、「荒漠」＝現在的冰原，未回頭改寫。
 
+## 新增：第七種元素屬性「大地 earth」（2026-08-07）
+
+- **元素本體**：`ELEMENTS` 由六系擴為七系（`earth` 追加在最末——這個陣列的順序就是 UI 排序基準，插在中間會讓既有存檔的顯示順序無故位移）；`ELEM_INFO.earth = { 大地 / 地 / 🪨 / #d2a05c }`。
+- **元素特效（§3.3）**：地＝**岩甲**——25% 機率獲得「該系元素傷害 × 200%」的護盾（`ELEM_PROC.earthShieldChance/earthShieldMult`）。與暗影汲取同構：`resolveHit` 只回報 `out.shield`，實際給盾在 `js/combat.js` 的普攻結算段（新增 `grantShield()`，吃護盾效率%、沿用 `SHIELD_SKILL_CAP_PCT` 上限）。因此**與暗影汲取一樣，目前僅普攻段套用**，技能段兩者皆未接。
+- **抗性／傷害管線**：`resist`／`elemAtk`／`enchantRes`／`dmgVsElem`／`elemDmgUp` 五個表改由 `zeroElemMap()` 依 `ELEMENTS` 生成，`st.resVsElem`／`talentElemMap` 改由 `talentElemBucket(talent, prefix)` 生成——原本是逐處寫死的六個鍵，往後再加屬性不必回頭補七、八個地方。`js/ui.js` 頂欄物傷／魔傷的兩份硬編碼元素陣列與 `/6` 平均分母一併改為跟著 `ELEMENTS`。
+- **內容**：附魔 `earth` 磐岩附魔／`earthRes` 大地抗性；詞條 `dmgVsEarth`／`elemDmgEarth`／`resEarth`（數值、權重、部位、`SCORE_WEIGHTS` 全部比照同類六系）；寶石 虎眼石🪨／地核寶石🏔️／地抗寶石🧱；天賦 5 轉磐岩共鳴、6 轉裂地打擊、8 轉禦地之心、9 轉磐岩霸體。屬性面板新增「對地屬性敵人傷害／地屬性傷害提升／大地抗性」三列。
+- **天賦節點數不再是 8**：5/6/8/9 轉因補地屬性而成為 9 個節點，`talentTreeComplete`（js/talents.js）與 `talentViewTreeComplete`（js/ui.js）的 `length === 8` 改為「有節點且全滿」；`.talent-grid` 四處 `repeat(8,…)` 改為 `repeat(9,…)`。**這四轉的「全滿效果加倍」門檻因此由 800 級提高為 900 級**，屬有意的平衡變動。
+- **NPC**：四隻既有怪物改標地屬性——石像鬼🗿（荒漠，原聖）、泥漿怪🫠（沼澤，原毒）、狂暴泰坦🗿（神魔戰場，原雷）、巨魔像🏛️（神聖聖域，原聖）。連同表中本來就填了 `earth` 卻無處生效的墓石巨像與怨靈，全服共 6 隻地屬性 NPC。地圖切頁與敵人情報的屬性標籤由怪物 `attr` 自動彙總，無須另外配置。
+- **修正兩處「安靜失效」**：
+  - `NPC` 表原本就有兩列填 `earth`（墓石巨像、怨靈），但 `earth` 不在 `ELEMENTS` 內——那兩隻的屬性標籤不會顯示，「對地屬性敵人傷害」也永遠打不到任何對象。本次一併生效。
+  - `talentBonusesTemplate()`（js/talents.js）同時是天賦效果的白名單（`talentStatBonuses` 只累加 `out[stat] !== undefined` 的欄位），元素三族的鍵原本寫死六系。新加的地屬性天賦一開始點了完全沒有效果且不噴任何錯——已改為由 `ELEMENTS` 生成 `elemX`／`dmgVsX`／`resVsX`。
+- **設定表**：`Gems`／`Talents`／`Equipment_Affix` 以 `config_tables --gen` 由 JS 重生 CSV＋xlsx（`--apply` 試跑語意變更 0）；`NPC.xlsx` 直接改四個儲存格後以 `xlsx_to_csv` 重生 CSV，避免下次「套用參數.bat」把 CSV 蓋回舊值。
+- **未含**：地屬性技能與地屬性傳奇特效（其餘六系每系都有）——依需求另案處理。
+- **測試**：新增 `tests/earth-element.test.cjs` 11 項——一律以 `ELEMENTS` 為基準逐系檢查（詞條/寶石/附魔三管道齊全、computeStats 各元素表無漏鍵、特效層主題色與 CSS 類別齊全、NPC `attr` 皆為合法元素且 CSV 與 JS 一致），而不是單挑 earth 斷言，否則下次再加屬性一樣不會紅。`tests/talents.test.cjs` 的節點數斷言改為逐轉列出（元素轉 9、其餘 8）。
+- **驗證**：`npm test` 1164 通過／2 失敗（皆為本次改動前既有：`forge-footer-controls`、`zone-attr-tooltip`）；`npm run build` 251 檔零錯誤。實機（隔離埠 8331）確認：屬性面板三列新屬性數值與 tips 正常、9 節點天賦格在 1000px 容器內單列不溢出、地圖屬性標籤已出現 🪨 地屬性（沼澤／神聖聖域），主控台無錯誤。
+
 ## 改名：第一張地圖改為荒漠、第二張改為冰原（2026-08-07）
 
 - **地圖識別碼**：`plains` → `desert`、`desert` → `Icefield`；中文名 草原 → 荒漠、荒漠 → 冰原。

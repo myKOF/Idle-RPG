@@ -4981,8 +4981,8 @@ function updateDmgAbsorb() {
   var maxEnemyDmg = Math.max(st.normalDmg || 0, st.eliteDmg || 0, st.bossDmg || 0);
   var enemyDmgMult = 1 + maxEnemyDmg / 100;
 
-  // 1. 第一種屬性加成：對屬性敵人傷害% (取 6 系最大值)
-  var elemKeys = ['fire', 'ice', 'lightning', 'poison', 'light', 'dark'];
+  // 1. 第一種屬性加成：對屬性敵人傷害% (取全系最大值)
+  var elemKeys = (typeof ELEMENTS !== 'undefined') ? ELEMENTS : ['fire', 'ice', 'lightning', 'poison', 'light', 'dark', 'earth'];
   var maxVsElem = 0;
   for (var i = 0; i < elemKeys.length; i++) {
     var k1 = elemKeys[i];
@@ -4993,7 +4993,7 @@ function updateDmgAbsorb() {
   }
   var vsElemMult = 1 + maxVsElem / 100;
 
-  // 2. 第二種屬性加成：屬性傷害提升% (取 6 系最大值)
+  // 2. 第二種屬性加成：屬性傷害提升% (取全系最大值)
   var maxElemUp = 0;
   for (var j = 0; j < elemKeys.length; j++) {
     var k2 = elemKeys[j];
@@ -5068,14 +5068,14 @@ function updateDmgAbsorb() {
     else typeMaxLabel = ' (普通敵人傷害抗性)';
   }
 
-  // 元素抗性減傷（六大元素取平均）
-  var elems = ['fire', 'ice', 'lightning', 'poison', 'light', 'dark'];
+  // 元素抗性減傷（全部元素取平均；除數跟著元素數走，加屬性不必回頭改分母）
+  var elems = elemKeys;
   var elemRedSum = 0;
   for (var i = 0; i < elems.length; i++) {
     var resVal = (st.resist && st.resist[elems[i]]) || 0;
     elemRedSum += typeof elementalResistanceReduction === 'function' ? elementalResistanceReduction(resVal, attackerLevel) : 0;
   }
-  var rElemAvg = elemRedSum / 6;
+  var rElemAvg = elems.length ? elemRedSum / elems.length : 0;
 
   // 剩餘比例 (1 - 減傷)
   var physMult = (1 - rPhysDef) * (1 - rPhysRes) * (1 - rSanctuary) * (1 - rGlobal) * (1 - rTypeMax) * (1 - rElemAvg);
@@ -5537,7 +5537,8 @@ function talentViewTreeLevelTotal(snapshot, turn) {
 
 function talentViewTreeComplete(snapshot, turn) {
   var tree = TALENT_TREES[turn] || [];
-  return tree.length === 8 && tree.every(function (def) {
+  // 與 talentTreeComplete（js/talents.js）同一判斷：有節點且全滿，不看節點數量。
+  return tree.length > 0 && tree.every(function (def) {
     return talentViewLevel(snapshot, def.id) >= TALENT_MAX_LEVEL;
   });
 }
@@ -5728,7 +5729,7 @@ function talentEffectLabel(def, value) {
   if (def.stat === 'potentialUnlock') return fmt(value) + ' 個潛力節點';
   var elementTalentNames = {
     elemFire: '火焰', elemIce: '寒冰', elemLightning: '雷電',
-    elemPoison: '劇毒', elemLight: '聖光', elemDark: '暗影'
+    elemPoison: '劇毒', elemLight: '聖光', elemDark: '暗影', elemEarth: '大地'
   };
   // 天賦每級可能是小數（總傷害額外 0.5% 等），fmt 會捨去小數 → 一律保留至多 2 位小數
   if (elementTalentNames[def.stat]) return String(Math.round(value * 100) / 100) + '%' + elementTalentNames[def.stat] + '傷害';
