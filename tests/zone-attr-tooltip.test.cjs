@@ -46,7 +46,7 @@ function loadGameContext() {
   return context;
 }
 
-test('地圖切頁 Tips 正確加入主要敵人屬性圖示與文字 (沼澤: 🟢 毒屬性 (77.4%) 🟣 暗屬性 (12.9%))', () => {
+test('地圖切頁 Tips 正確加入主要敵人屬性圖示與文字 (沼澤: 🟢 毒屬性 (50%) 🟣 暗屬性 (46.7%))', () => {
   const ctx = loadGameContext();
   ctx.UI_WORKER_STATE.panels.header = { stage: { zone: 'swamp', current: 1 } };
   ctx.activeRealm = () => 'human';
