@@ -101,7 +101,7 @@ test('renderZoneBar Tips 也包含主要敵人屬性，且前圖 Boss 未擊敗�
   });
   ctx.renderZoneBar();
   const htmlUnlocked = ctx.mockBox.innerHTML;
-  assert.match(htmlUnlocked, /data-zone="undead_mountains"[^>]*class="zone-btn"/);
-  assert.doesNotMatch(htmlUnlocked, /data-zone="undead_mountains"[^>]*class="zone-btn locked"/);
+  assert.match(htmlUnlocked, /class="zone-btn"[^>]*data-zone="undead_mountains"/);
+  assert.doesNotMatch(htmlUnlocked, /class="zone-btn locked"[^>]*data-zone="undead_mountains"/);
 });
 
