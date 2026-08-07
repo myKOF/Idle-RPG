@@ -139,7 +139,7 @@ function saveRecMeta(kind, id, fname) {
   return {
     id: id, kind: kind, runId: G.runId || 1, savedAt: Date.now(), fname: fname,
     level: G.player.level, stage: (G.stage && G.stage.current) || 1,
-    zone: (G.stage && G.stage.zone) || 'plains'
+    zone: (G.stage && G.stage.zone) || 'desert'
   };
 }
 
@@ -432,9 +432,9 @@ function migrateSave(data) {
         ((!savedZoneDef.reqReincarnation || Number(data.player.reincarnations) >= savedZoneDef.reqReincarnation) &&
          (!savedZoneDef.reqZone || savedZoneCleared(savedZoneDef.reqZone) >= savedZoneDef.reqStage))));
   if (!savedZoneUnlocked) {
-    data.stage.zone = 'plains';
-    data.stage.current = data.zoneProgress.plains.current;
-    data.stage.best = data.zoneProgress.plains.best;
+    data.stage.zone = 'desert';
+    data.stage.current = data.zoneProgress.desert.current;
+    data.stage.best = data.zoneProgress.desert.best;
   } else {
     var currentCap = zoneMaxStage(data.stage.zone);
     data.stage.best = clamp(Math.floor(Number(data.stage.best) || 1), 1, currentCap);
@@ -557,10 +557,10 @@ function migrateSave(data) {
       }
     }
   }
-  // 戰鬥場景系統：舊存檔進度歸入「草原」
+  // 戰鬥場景系統：舊存檔進度歸入第一張地圖「荒漠」
   if (!hadZone) {
-    data.stage.zone = 'plains';
-    data.zoneProgress.plains = {
+    data.stage.zone = 'desert';
+    data.zoneProgress.desert = {
       current: data.stage.current || 1, best: data.stage.best || 1,
       cleared: Math.max(0, (Number(data.stage.best) || 1) - 1)   // 無場景概念的舊存檔：通關數由 best 回推
     };
@@ -942,7 +942,7 @@ function importUnknownFromFolder() {
           fname: files[i].name,
           level: (d.player && d.player.level) || 1,
           stage: (d.stage && d.stage.current) || 1,
-          zone: (d.stage && d.stage.zone) || 'plains'
+          zone: (d.stage && d.stage.zone) || 'desert'
         };
         if (!putSaveRecord(folderRec, text)) {
           // 配額不足時只登記本地檔案 metadata，實際內容留在資料夾。
@@ -1268,7 +1268,7 @@ function saveManualMetaListV2(list) {
     clean.push({
       id: r.id, kind: 'manual', runId: r.runId || 1, savedAt: r.savedAt || 0,
       fname: r.fname, level: r.level || 1, stage: r.stage || 1,
-      zone: r.zone || 'plains', folderOnly: true
+      zone: r.zone || 'desert', folderOnly: true
     });
   });
   clean.sort(function (a, b) { return b.savedAt - a.savedAt; });
@@ -1299,7 +1299,7 @@ function autoSaveMetaV2() {
     fname: AUTO_FOLDER_FILE_V2,
     level: (typeof G !== 'undefined' && G && G.player ? G.player.level : 1),
     stage: (typeof G !== 'undefined' && G && G.stage ? G.stage.current : 1),
-    zone: (typeof G !== 'undefined' && G && G.stage ? G.stage.zone : 'plains')
+    zone: (typeof G !== 'undefined' && G && G.stage ? G.stage.zone : 'desert')
   };
 }
 
@@ -1385,7 +1385,7 @@ function readFolderAutoV2(cb) {
         fname: res.fname,
         level: data.player && data.player.level || 1,
         stage: data.stage && data.stage.current || 1,
-        zone: data.stage && data.stage.zone || 'plains'
+        zone: data.stage && data.stage.zone || 'desert'
       };
       writeAutoMetaV2(meta);
       cb({ data: data, savedAt: meta.savedAt, fname: res.fname, source: res.source });
@@ -1418,7 +1418,7 @@ function scanManualMetadataV2() {
           savedAt: Number(file.lastModified) || Number(data.savedAt) || Date.now(), fname: ent.name,
           level: data.player && data.player.level || 1,
           stage: data.stage && data.stage.current || 1,
-          zone: data.stage && data.stage.zone || 'plains', folderOnly: true
+          zone: data.stage && data.stage.zone || 'desert', folderOnly: true
         });
       } catch (e) {}
     }
@@ -1513,7 +1513,7 @@ function syncAutoSaveToFolderV2() {
           fname: AUTO_FOLDER_FILE_V2,
           level: data.player && data.player.level || 1,
           stage: data.stage && data.stage.current || 1,
-          zone: data.stage && data.stage.zone || 'plains'
+          zone: data.stage && data.stage.zone || 'desert'
         });
         if (typeof UI !== 'undefined' && UI.tab === 'settings') {
           if (typeof renderSaveList === 'function') renderSaveList();
@@ -1630,7 +1630,7 @@ function loadSaveRecordV2(id) {
       fname: AUTO_FOLDER_FILE_V2,
       level: data.player && data.player.level || 1,
       stage: data.stage && data.stage.current || 1,
-      zone: data.stage && data.stage.zone || 'plains'
+      zone: data.stage && data.stage.zone || 'desert'
     });
     idbSetAutoV2(raw, function () { location.reload(); });
     return null;

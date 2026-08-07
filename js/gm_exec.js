@@ -173,7 +173,7 @@
         sceneStr = raw1;
         stageStr = '1';
       } else {
-        sceneStr = (G && G.stage && G.stage.zone) || 'plains';
+        sceneStr = (G && G.stage && G.stage.zone) || 'desert';
         stageStr = raw1;
       }
     } else {
@@ -182,7 +182,7 @@
 
     var targetZone = gmParseScene(sceneStr);
     if (!targetZone) {
-      return { ok: false, message: '無效的場景名稱或編號：' + sceneStr + '（支援 1~' + zoneKeys.length + ' 或 plains/desert/swamp...）' };
+      return { ok: false, message: '無效的場景名稱或編號：' + sceneStr + '（支援 1~' + zoneKeys.length + ' 或 desert/Icefield/swamp...）' };
     }
 
     var maxS = zoneMaxStage(targetZone);
@@ -211,7 +211,7 @@
       }
     }
 
-    if (!G.stage) G.stage = { zone: 'plains', current: 1, best: 1, kills: 0 };
+    if (!G.stage) G.stage = { zone: 'desert', current: 1, best: 1, kills: 0 };
     G.stage.zone = targetZone;
     G.stage.current = targetStage;
     G.stage.best = targetStage;
@@ -254,7 +254,10 @@
       if (idx >= 0 && idx < zoneKeys.length) return zoneKeys[idx];
     }
     if (ZONES[s]) return s;
+    /* 地圖識別碼不保證全小寫（例如 Icefield），但 GM 指令允許使用者隨手打小寫，
+       所以英文 key 一律不分大小寫比對；上面的 ZONES[s] 先走完全相符的快路徑。 */
     for (var k in ZONES) {
+      if (k.toLowerCase() === s) return k;
       if (ZONES[k].name === raw || (ZONES[k].name && ZONES[k].name.toLowerCase() === s)) return k;
     }
     return null;

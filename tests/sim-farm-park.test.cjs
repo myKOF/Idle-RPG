@@ -5,7 +5,7 @@
    rollFieldDrops → fieldDropRatesFor → ZONE_STAGE_DROP_TABLE 查表
    （js/combat.js），粒度是**關卡區間**，區間之內完全相同——那句話就反了。
 
-   用遊戲自己的函式量草原 100~149：
+   用遊戲自己的函式量荒漠 100~149：
      掉落率 R3 10% / R4 1.5%、裝等 100 —— 100 關與 149 關一模一樣
      怪物血量 ×25.79、經驗 ×21.25、金幣 ×2.73
    ⚠️ 曾據此推論「時薪差 20 倍」——**實測不成立**。後 12 小時的擊殺速率：
@@ -37,41 +37,41 @@ function tierAt(zone, stage) {
 }
 
 test('farmFloorStage 是「掉落與裝等都不變」的最低關卡', () => {
-  /* 草原 100~149 是一列掉落表，裝等分段也是 100~149，兩者的交集下界＝100。 */
+  /* 荒漠 100~149 是一列掉落表，裝等分段也是 100~149，兩者的交集下界＝100。 */
   for (const s of [100, 120, 149]) {
-    assert.equal(tierAt('plains', s).tier.farmFloorStage, 100, '關卡 ' + s);
+    assert.equal(tierAt('desert', s).tier.farmFloorStage, 100, '關卡 ' + s);
   }
   for (const s of [150, 175, 199]) {
-    assert.equal(tierAt('plains', s).tier.farmFloorStage, 150, '關卡 ' + s);
+    assert.equal(tierAt('desert', s).tier.farmFloorStage, 150, '關卡 ' + s);
   }
 });
 
 test('floor 取兩個階梯的交集：掉落區間與裝等分段不對齊時取較高的那個', () => {
-  /* 荒漠的掉落表第一列是 1~199（一整段），但裝等分段每 50 一階。
+  /* 冰原的掉落表第一列是 1~199（一整段），但裝等分段每 50 一階。
      停在 180 關退到 1 關的話掉落率一樣，裝等卻從 150 掉到 1——不能退。 */
-  const t = tierAt('desert', 180).tier;
+  const t = tierAt('Icefield', 180).tier;
   assert.equal(t.farmFloorStage, 150);
   assert.equal(t.itemLevelHere, 150);
 });
 
 test('floor 認得「多列疊加」的掉落區間，不是只看裝等分段', () => {
-  /* 草原 40~49 是額外疊上去的一列（史詩 +2%），41~49 與 21~39 掉的東西不同，
+  /* 荒漠 40~49 是額外疊上去的一列（史詩 +2%），41~49 與 21~39 掉的東西不同，
      所以 45 關的 floor 是 40 而不是裝等分段的 1。
      只看 equipmentTierLevel 的話會錯退到關卡 1，把那 2% 史詩丟掉。 */
-  assert.equal(tierAt('plains', 45).tier.farmFloorStage, 40);
-  assert.equal(tierAt('plains', 45).tier.itemLevelHere, 1);
+  assert.equal(tierAt('desert', 45).tier.farmFloorStage, 40);
+  assert.equal(tierAt('desert', 45).tier.itemLevelHere, 1);
 });
 
 test('站在 floor 上時 farmFloorHpRatio 是 null，不是 1', () => {
   /* 規則用 `>= minHpRatio` 判斷值不值得退。回 1 的話語意仍然對，
      但 null 更清楚地表示「沒有可退的距離」，而且逼規則走 Number() 的 0 分支。 */
-  const t = tierAt('plains', 150).tier;
+  const t = tierAt('desert', 150).tier;
   assert.equal(t.farmFloorStage, 150);
   assert.equal(t.farmFloorHpRatio, null);
 });
 
 test('farmFloorHpRatio 是遊戲的 monsterStatsFor 算的，不是策略端重推', () => {
-  const { tier, ctx } = tierAt('plains', 149);
+  const { tier, ctx } = tierAt('desert', 149);
   const here = ctx.monsterStatsFor(149, false, false);
   const floor = ctx.monsterStatsFor(tier.farmFloorStage, false, false);
   assert.equal(tier.farmFloorHpRatio, here.hp / floor.hp);
@@ -80,10 +80,10 @@ test('farmFloorHpRatio 是遊戲的 monsterStatsFor 算的，不是策略端重�
 
 test('掉落率在區間之內確實不變——這是整條規則的前提', () => {
   /* 前提垮了規則就只是在自找罪受。所以直接問遊戲，而且比對整個陣列。 */
-  const { ctx } = tierAt('plains', 100);
-  const a = ctx.fieldDropRatesFor(100, 100, 'plains');
-  const b = ctx.fieldDropRatesFor(149, 149, 'plains');
-  assert.deepEqual(a, b, '草原 100 與 149 的掉落率應完全相同');
+  const { ctx } = tierAt('desert', 100);
+  const a = ctx.fieldDropRatesFor(100, 100, 'desert');
+  const b = ctx.fieldDropRatesFor(149, 149, 'desert');
+  assert.deepEqual(a, b, '荒漠 100 與 149 的掉落率應完全相同');
   assert.equal(ctx.equipmentTierLevel(100), ctx.equipmentTierLevel(149));
 });
 
@@ -126,7 +126,7 @@ function gatePolicy(gateExtra) {
 }
 
 /* 合成觀測點。tier 的欄位語意與評估器一致（見上半部的真引擎測試）：
-   角色在草原 100~149 這一格，下一格是 150，已經到過 145 關。 */
+   角色在荒漠 100~149 這一格，下一格是 150，已經到過 145 關。 */
 function fst(sec, stage, tierExtra, ctx) {
   const s = {
     gameTimeSec: sec,
@@ -271,16 +271,16 @@ test('真引擎：算出來的 floor 送進 stage.go 會被接受，且掉落率
   const c = e.ctx;
   c.G.stage.best = 149;
   c.G.stage.current = 149;
-  c.G.stage.zone = 'plains';
-  if (c.G.zoneProgress && c.G.zoneProgress.plains) c.G.zoneProgress.plains.best = 149;
+  c.G.stage.zone = 'desert';
+  if (c.G.zoneProgress && c.G.zoneProgress.desert) c.G.zoneProgress.desert.best = 149;
 
   const tier = e.panel('eval').tier;
-  const before = c.fieldDropRatesFor(c.G.stage.current, c.G.stage.current, 'plains');
+  const before = c.fieldDropRatesFor(c.G.stage.current, c.G.stage.current, 'desert');
 
   const res = c.runCommand('stage.go', { delta: tier.farmFloorStage - c.G.stage.current });
   const bad = !res.ok ? res.error : (typeof res.result === 'string' ? res.result : null);
   assert.equal(bad, null, 'stage.go 不該被遊戲拒絕');
   assert.equal(c.G.stage.current, tier.farmFloorStage);
-  assert.deepEqual(c.fieldDropRatesFor(c.G.stage.current, c.G.stage.current, 'plains'), before,
+  assert.deepEqual(c.fieldDropRatesFor(c.G.stage.current, c.G.stage.current, 'desert'), before,
     '退到 floor 之後掉落率必須完全不變——這是整條規則的前提');
 });

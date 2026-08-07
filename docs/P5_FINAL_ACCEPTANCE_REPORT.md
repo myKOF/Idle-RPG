@@ -1,5 +1,8 @@
 # Web Worker 遷移 P5d：移除舊路徑後的全流程驗收報告
 
+> **地圖改名（2026-08-07）**：本文件以下內容寫於改名前。第 1 張地圖「草原 `plains`」現為「荒漠 `desert`」，
+> 第 2 張「荒漠 `desert`」現為「冰原 `Icefield`」。**`desert` 換了指涉對象**，閱讀舊紀錄時請據此對照（見 PATCH.md）。
+
 > **驗證對象**：P5 階段（移除舊單執行緒路徑、G 權威資料庫完全移入 Worker、`index.html` 移除六支模擬腳本、`?worker=1` 參數收斂為唯一預設路徑）
 > **測試環境**：Chrome / Edge (Chromium Engine v150)、Window 1280x900 (寬度 > 0)、Late-game 800 件裝備存檔 (`save_lategame.json`) / Mid-game 存檔 (`save_midgame.json`)
 > **測試時間**：2026-07-28

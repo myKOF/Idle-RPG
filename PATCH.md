@@ -1,10 +1,26 @@
 # PATCH.md
 
-## 調整：神鑄系統預設自動鑄造為開啟 & 取消自動魔塵時卸下所有魔塵（2026-08-07）
+> **地圖改名（2026-08-07）**：第 1 張地圖由「草原 `plains`」改名為「荒漠 `desert`」，
+> 第 2 張由「荒漠 `desert`」改名為「冰原 `Icefield`」。**`desert` 這個識別碼換了指涉對象**，
+> 本日之前的紀錄、日誌與報告中的「草原」＝現在的荒漠、「荒漠」＝現在的冰原，未回頭改寫。
 
-- **靜態 HTML 預設勾選**：`index.html` 的 `#forge-autoforge` 增加 `checked` 屬性，確保靜態頁面與動態狀態一致預設勾選「自動鑄造」。
-- **取消自動使用魔塵時卸下魔塵**：`js/worker/sim.worker.js` 的 `forge.setAuto` 指令當 `key === 'autoDust'` 且 `on === false` 時，自動執行 `forgeClearDust()` 清空/卸下法陣上所有已放置的魔塵。
-- **驗證**：單元測試 197 項全數通過，`build_check.cjs` 驗證 OK。
+## 改名：第一張地圖改為荒漠、第二張改為冰原（2026-08-07）
+
+- **地圖識別碼**：`plains` → `desert`、`desert` → `Icefield`；中文名 草原 → 荒漠、荒漠 → 冰原。
+- **設定表**（`config/Excel/*.xlsx` → `config/CSV/*.csv`）：`Zones`、`NPC`、`Zone_Stage_Drops`、`Task`
+  由使用者改名後，補上未同步的殘留欄位——`Zones` 的前置地圖識別碼、`Zone_Stage_Drops`
+  誤標到冰原的 50~99 加成列、`Task` 第 5 條仍指向 `plains` 的目標參數、`NPC` 冰原 12 隻仍是沙漠的外觀 emoji。
+  `game_parameters` 的「小怪 數量權重(草原N~M關)」與「4-場景倍率」名稱一併改名（前者被 `apply_params.cjs` 以名稱查表）。
+- **NPC**：亡靈山脈由 8 隻補齊為 12 隻並改用 `undead_1`~`undead_12` 流水編號，與其他地圖一致；
+  新增 4 隻沿用到既有 NPC 的外觀 key，已改為獨立 key。冰原 NPC 名稱、屬性由使用者設定，外觀 emoji 由本次補上。
+- **程式**：`js/data.js` 的 `ZONE_LIST` / `REALMS` / `ZONES` 原本有三份定義（一份是亂碼的註解殘骸、
+  一份被後面覆寫），改名時併為單一權威定義。`FIELD_PLAINS_EARLY_ENEMY_COUNT_TABLES` →
+  `FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES`。
+- **修正兩個因改名浮現的既有缺陷**：
+  - `tools/apply_params.cjs` 的 `multiGroup` 變更偵測只比數字序列，鍵名改名（數值全同）會被判定為無變更而**靜默不套用**；改為數字與非數字骨架都要一致。
+  - `js/gm_exec.js` 的 `gmParseScene` 會先把輸入轉小寫再查 `ZONES`，大寫開頭的 `Icefield` 永遠查不到；改為英文 key 不分大小寫比對。
+- **未處理**：舊存檔沒有做 key 遷移（見下方說明）。`docs/AI_TASKS.md`、`docs/SIM_HARNESS.md`、
+  `docs/P5_FINAL_ACCEPTANCE_REPORT.md` 與本檔本日之前的紀錄保留原名，不回頭改寫。
 
 ## 調整：地圖場景必須打敗前圖 Boss 才解鎖 & 頂欄關卡按鈕 Tips 增加敵人屬性標籤（2026-08-07）
 

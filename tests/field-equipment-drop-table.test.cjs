@@ -50,7 +50,7 @@ test('地圖掉落表集中管理 R0～R10 裝備掉落率', () => {
 
   // origin/develop 的掉落表新增了兩個地圖／關卡區間；目前 CSV 資料列為 32 列。
   assert.equal(config.length, 32);
-  assert.deepEqual(Object.keys(table), ['plains', 'desert', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary']);
+  assert.deepEqual(Object.keys(table), ['desert', 'Icefield', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary']);
   for (const row of config) {
     assert.equal(row.rates.length, 11, row.zone + ' ' + row.min + ' 應有 R0～R10 共 11 欄');
     assert.deepEqual(

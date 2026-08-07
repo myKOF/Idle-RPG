@@ -116,7 +116,7 @@ function taskProgressFor(def) {
     case 'maxHp': return (typeof getStats === 'function') ? Math.floor(getStats().hp || 0) : 0;
     case 'stageClear':
       /* 讀「實際已通關的最高關」（data.js zoneClearedStage）而不是 best-1：
-         best 在地圖最後一關會被上限夾住，用 best-1 判定的話「打贏草原第 200 關」
+         best 在地圖最後一關會被上限夾住，用 best-1 判定的話「打贏荒漠第 200 關」
          這種以最後一關為目標的任務永遠差 1，整條任務鏈會卡死。 */
       return (typeof zoneClearedStage === 'function') ? zoneClearedStage(def.param) : 0;
     case 'towerFloor':

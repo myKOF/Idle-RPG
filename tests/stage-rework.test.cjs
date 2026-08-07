@@ -23,7 +23,7 @@ function load(files) {
 test('七張地圖依序排列並使用 200 起跳、每張增加 100 的有限上限', () => {
   const c = load(['js/util.js', 'js/data.js', 'js/formula.js']);
   assert.deepEqual(JSON.parse(JSON.stringify(c.ZONE_LIST)), [
-    'plains', 'desert', 'swamp', 'undead_mountains',
+    'desert', 'Icefield', 'swamp', 'undead_mountains',
     'god_battlefield', 'god_chaos', 'god_sanctuary'
   ]);
   assert.deepEqual(JSON.parse(JSON.stringify(c.ZONE_LIST.map((z) => c.ZONES[z].maxStage))), [200, 300, 400, 500, 600, 700, 800]);
@@ -35,16 +35,16 @@ test('地圖解鎖需要前圖通關，神界地圖另需 11 轉', () => {
   const c = load(['js/util.js', 'js/data.js', 'js/formula.js']);
   c.G = {
     player: { reincarnations: 0 },
-    stage: { zone: 'plains', best: 200 },
-    zoneProgress: { plains: { best: 200, cleared: 199 } }
+    stage: { zone: 'desert', best: 200 },
+    zoneProgress: { desert: { best: 200, cleared: 199 } }
   };
-  assert.equal(c.isZoneUnlocked('desert'), false);
-  c.G.zoneProgress.plains.cleared = 200;
-  assert.equal(c.isZoneUnlocked('desert'), true);
+  assert.equal(c.isZoneUnlocked('Icefield'), false);
+  c.G.zoneProgress.desert.cleared = 200;
+  assert.equal(c.isZoneUnlocked('Icefield'), true);
   assert.equal(c.isZoneUnlocked('swamp'), false);
-  c.G.zoneProgress.desert = { best: 300, cleared: 299 };
+  c.G.zoneProgress.Icefield = { best: 300, cleared: 299 };
   assert.equal(c.isZoneUnlocked('swamp'), false);
-  c.G.zoneProgress.desert.cleared = 300;
+  c.G.zoneProgress.Icefield.cleared = 300;
   assert.equal(c.isZoneUnlocked('swamp'), true);
   c.G.zoneProgress.swamp = { best: 400, cleared: 400 };
   c.G.zoneProgress.undead_mountains = { best: 500, cleared: 499 };
@@ -60,19 +60,20 @@ test('NPC 配置表與地圖權重表可選出亡靈山脈指定 NPC', () => {
   c.FIELD.player = { _lockTarget: null };
   c.Math.random = () => 0;
   c.spawnFieldMonster();
-  assert.equal(c.FIELD.monsters[0].npcId, 'undead_skeleton');
+  assert.equal(c.FIELD.monsters[0].npcId, 'undead_1');
   assert.equal(c.FIELD.monsters[0].appearance, 'skeleton');
   assert.equal(c.FIELD.monsters[0].attr, 'dark');
-  assert.ok(c.NPC_CONFIG_TABLE.undead_dragon);
+  assert.ok(c.NPC_CONFIG_TABLE.undead_12);
 });
 
 test('NPC CSV 集中所有地圖的基本資料，不重複存放公式倍率', () => {
   const lines = fs.readFileSync(path.join(root, 'config/CSV/NPC.csv'), 'utf8').replace(/^\uFEFF/, '').trim().split(/\r?\n/);
-  assert.equal(lines.length, 81);
+  // 亡靈山脈 2026-08-07 從 8 隻補齊為 12 隻，與其他地圖一致：7 張圖 × 12 隻＋標題列。
+  assert.equal(lines.length, 85);
   assert.equal(lines[0], 'NPC識別碼,NPC名稱,所屬地圖識別碼,屬性,外觀,魔法型（1是／0否）,出現權重');
-  assert.ok(lines.some((line) => line.startsWith('plains_1,史萊姆,plains,')));
-  assert.ok(lines.some((line) => line.startsWith('god_sanctuary_12,永恒神王,god_sanctuary,')));
-  assert.equal(Object.keys(load(['js/util.js', 'js/data.js']).NPC_CONFIG_TABLE).length, 80);
+  assert.ok(lines.some((line) => line.startsWith('desert_1,史萊姆,desert,')));
+  assert.ok(lines.some((line) => line.startsWith('god_sanctuary_12,神聖執法官,god_sanctuary,')));
+  assert.equal(Object.keys(load(['js/util.js', 'js/data.js']).NPC_CONFIG_TABLE).length, 84);
 });
 
 test('地圖表承接場景專屬倍率與所有地圖的分段掉落資料', () => {
@@ -103,8 +104,8 @@ test('通關關卡另記 cleared：最後一關打贏後 best 卡在上限，cle
   const c = load(['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js']);
   c.G = {
     player: { reincarnations: 0 },
-    stage: { current: 199, best: 199, kills: 0, autoAdvance: true, zone: 'plains' },
-    zoneProgress: { plains: { current: 199, best: 199, cleared: 198 } },
+    stage: { current: 199, best: 199, kills: 0, autoAdvance: true, zone: 'desert' },
+    zoneProgress: { desert: { current: 199, best: 199, cleared: 198 } },
     tower: { active: false }
   };
   c.FIELD.player = null;                 // 略過過關回血，本測試只看關卡紀錄
@@ -113,26 +114,26 @@ test('通關關卡另記 cleared：最後一關打贏後 best 卡在上限，cle
   clearOneWave();                        // 打贏第 199 關
   assert.equal(c.G.stage.best, 200);
   assert.equal(c.G.stage.current, 200);
-  assert.equal(c.zoneClearedStage('plains'), 199);
+  assert.equal(c.zoneClearedStage('desert'), 199);
 
   // 關閉自動推進，讓本測試專注驗證最後一關的 best 夾限與 cleared 記錄；
   // 自動推進跨場景的行為由 multi-enemy.test.cjs 覆蓋。
   c.G.stage.autoAdvance = false;
-  clearOneWave();                        // 打贏第 200 關（＝草原上限）
+  clearOneWave();                        // 打贏第 200 關（＝荒漠上限）
   assert.equal(c.G.stage.best, 200, 'best 被 maxStage 夾住，不會變成 201');
-  assert.equal(c.zoneClearedStage('plains'), 200, 'cleared 記下真正打贏的最後一關');
+  assert.equal(c.zoneClearedStage('desert'), 200, 'cleared 記下真正打贏的最後一關');
 });
 
 test('切換場景會把 cleared 一起帶進 zoneProgress，不被整包覆寫清掉', () => {
   const c = load(['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js']);
   c.G = {
     player: { reincarnations: 0 },
-    stage: { current: 200, best: 200, kills: 0, autoAdvance: true, zone: 'plains' },
-    zoneProgress: { plains: { current: 200, best: 200, cleared: 200 }, desert: { current: 1, best: 1, cleared: 0 } },
+    stage: { current: 200, best: 200, kills: 0, autoAdvance: true, zone: 'desert' },
+    zoneProgress: { desert: { current: 200, best: 200, cleared: 200 }, Icefield: { current: 1, best: 1, cleared: 0 } },
     tower: { active: false }
   };
-  c.switchZone('desert');
-  assert.equal(c.G.stage.zone, 'desert');
-  assert.equal(c.G.zoneProgress.plains.cleared, 200);
-  assert.equal(c.zoneClearedStage('plains'), 200);
+  c.switchZone('Icefield');
+  assert.equal(c.G.stage.zone, 'Icefield');
+  assert.equal(c.G.zoneProgress.desert.cleared, 200);
+  assert.equal(c.zoneClearedStage('desert'), 200);
 });

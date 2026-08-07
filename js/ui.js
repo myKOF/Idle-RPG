@@ -2342,7 +2342,7 @@ function zoneElementTagsList(z) {
 function renderSceneTabs() {
   var header = uiHeaderPanelSnapshot() || {};
   var stage = header.stage || {};
-  var cur = stage.zone || 'plains';
+  var cur = stage.zone || 'desert';
 
   var zoneBox = $id('zone-tabs');
   if (!zoneBox) return;
@@ -2350,8 +2350,8 @@ function renderSceneTabs() {
   var activeRlm = activeRealm();
 
   var list = (header.player && header.player.reincarnations >= 11)
-    ? (activeRlm === 'god' ? ['god_battlefield', 'god_chaos', 'god_sanctuary'] : ['plains', 'desert', 'swamp', 'undead_mountains'])
-    : ['plains', 'desert', 'swamp', 'undead_mountains'];
+    ? (activeRlm === 'god' ? ['god_battlefield', 'god_chaos', 'god_sanctuary'] : ['desert', 'Icefield', 'swamp', 'undead_mountains'])
+    : ['desert', 'Icefield', 'swamp', 'undead_mountains'];
 
   var html = list.map(function (z) {
     var zd = ZONES[z];
@@ -2365,7 +2365,7 @@ function renderSceneTabs() {
     }
     var elemTags = zoneElementTagsList(z);
     var elemText = elemTags.length > 0 ? ('主要敵人屬性：' + elemTags.map(function (t) { return t.label; }).join(' ')) : '';
-    var ttDesc = z === 'desert' ? '敵人更強；經驗、金幣與材料掉落 ×2' :
+    var ttDesc = z === 'Icefield' ? '敵人更強；經驗、金幣與材料掉落 ×2' :
       z === 'swamp' ? '敵人極強；經驗、金幣與材料掉落 ×3' :
         z === 'god_battlefield' ? '神界戰場；神級敵人，經驗與獎勵 ×2.5' :
           z === 'god_chaos' ? '神界混沌；極強虛空生物，經驗與獎勵 ×3.5' :
@@ -2499,14 +2499,14 @@ function zoneClearedOf(z) {
 
 function currentZoneBarSignature() {
   var header = peekUiPanelData('header') || {};
-  var parts = [(header.stage && header.stage.zone) || 'plains'];
+  var parts = [(header.stage && header.stage.zone) || 'desert'];
   Object.keys(ZONES).forEach(function (z) { parts.push(z + ':' + zoneBestOf(z) + ':' + zoneClearedOf(z)); });
   return parts.join('|');
 }
 
 function renderZoneBar() {
   var header = peekUiPanelData('header') || {};
-  var cur = (header.stage && header.stage.zone) || 'plains';
+  var cur = (header.stage && header.stage.zone) || 'desert';
   var curZd = ZONES[cur];
   if (curZd && curZd.realm && !UI.userSelectedRealm) {
     UI.activeRealm = curZd.realm;
@@ -2521,7 +2521,7 @@ function renderZoneBar() {
       if (activeRlm === 'god') {
         toggleBtn.textContent = '🌍 凡人界地圖';
         toggleBtn.setAttribute('data-tt-title', '切換至凡人界');
-        toggleBtn.setAttribute('data-tt-desc', '切換為草原、荒漠、沼澤地圖');
+        toggleBtn.setAttribute('data-tt-desc', '切換為荒漠、冰原、沼澤地圖');
       } else {
         toggleBtn.textContent = '✨ 神界地圖';
         toggleBtn.setAttribute('data-tt-title', '切換至神界');
@@ -2538,8 +2538,8 @@ function renderZoneBar() {
   if (!zoneBox) return;
 
   var list = isGodUnlocked
-    ? (activeRlm === 'god' ? ['god_battlefield', 'god_chaos', 'god_sanctuary'] : ['plains', 'desert', 'swamp', 'undead_mountains'])
-    : ['plains', 'desert', 'swamp', 'undead_mountains'];
+    ? (activeRlm === 'god' ? ['god_battlefield', 'god_chaos', 'god_sanctuary'] : ['desert', 'Icefield', 'swamp', 'undead_mountains'])
+    : ['desert', 'Icefield', 'swamp', 'undead_mountains'];
 
   var html = list.map(function (z) {
     var zd = ZONES[z];
@@ -2553,7 +2553,7 @@ function renderZoneBar() {
     }
     var elemTags = zoneElementTagsList(z);
     var elemText = elemTags.length > 0 ? ('主要敵人屬性：' + elemTags.map(function (t) { return t.label; }).join(' ')) : '';
-    var ttDesc = z === 'desert' ? '敵人更強；經驗、金幣與材料掉落 ×2' :
+    var ttDesc = z === 'Icefield' ? '敵人更強；經驗、金幣與材料掉落 ×2' :
       z === 'swamp' ? '敵人極強；經驗、金幣與材料掉落 ×3' :
         z === 'god_battlefield' ? '神界戰場；神級敵人，經驗與獎勵 ×2.5' :
           z === 'god_chaos' ? '神界混沌；極強虛空生物，經驗與獎勵 ×3.5' :
@@ -5175,8 +5175,8 @@ function uiReincarnationCount(headerSnapshot) {
 
 function uiCurrentZoneDef(headerSnapshot) {
   var header = headerSnapshot || uiHeaderPanelSnapshot();
-  var zone = header && header.stage && header.stage.zone || 'plains';
-  return ZONES[zone] || ZONES.plains || { name: zone, emoji: '' };
+  var zone = header && header.stage && header.stage.zone || 'desert';
+  return ZONES[zone] || ZONES.desert || { name: zone, emoji: '' };
 }
 
 function uiPotentialLevelFromSnapshot(talentSnapshot, id, maxLv) {
@@ -6681,7 +6681,7 @@ function showEnemyTooltip(anchorEl) {
   var title = isBossTip ? (m.name || '高塔 BOSS') : '敵人情報';
 
   // 頂置區標籤：顯示敵人/地圖屬性標籤 (圖2)
-  var zoneKey = (headerSnapshot.stage && headerSnapshot.stage.zone) || 'plains';
+  var zoneKey = (headerSnapshot.stage && headerSnapshot.stage.zone) || 'desert';
   var elemBadgeHtml = '';
 
   if (isBossTip) {
@@ -6758,7 +6758,7 @@ function showEnemyTooltip(anchorEl) {
       '<div class="skt-desc" style="text-align:left;">' +
       rewardLines.join('<br>') + '</div>';
   } else {
-    var zoneKey = (headerSnapshot.stage && headerSnapshot.stage.zone) || 'plains';
+    var zoneKey = (headerSnapshot.stage && headerSnapshot.stage.zone) || 'desert';
     var stage = (headerSnapshot.stage && headerSnapshot.stage.current) || 1;
     var zoneDrop = fieldMaterialConfigFor(zoneKey, stage);
     var rates = fieldDropRatesFor(stage, m.level, zoneKey);
@@ -8729,11 +8729,11 @@ function initUI() {
   if (realmToggleBtn) {
     realmToggleBtn.addEventListener('click', function () {
       UI.userSelectedRealm = true;
-      var curZone = ((uiHeaderPanelSnapshot() || {}).stage || {}).zone || 'plains';
+      var curZone = ((uiHeaderPanelSnapshot() || {}).stage || {}).zone || 'desert';
       var isGod = curZone === 'god_battlefield' || curZone === 'god_chaos' || curZone === 'god_sanctuary' || UI.activeRealm === 'god';
       if (isGod) {
         UI.activeRealm = 'human';
-        sendUiCommand('stage.switchZone', { zoneKey: 'plains' }, {
+        sendUiCommand('stage.switchZone', { zoneKey: 'desert' }, {
           keys: [nodePendingKey('zone')], panels: ['battle', 'header']
         });
       } else {

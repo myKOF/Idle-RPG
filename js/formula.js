@@ -1007,11 +1007,11 @@ function fieldCountTableFor(rank, stage, zone) {
   var s = stage == null && typeof G !== 'undefined' && G && G.stage ? G.stage.current : stage;
   s = Math.floor(Number(s) || 0);
   var z = zone == null && typeof G !== 'undefined' && G && G.stage ? G.stage.zone : zone;
-  z = z || 'plains';
-  var plainsEarly = z === 'plains' && s >= 1 && s <= 100;
-  if (plainsEarly && rank === 'elite') return [[1, 1]];
-  if (plainsEarly && rank !== 'boss' && typeof FIELD_PLAINS_EARLY_ENEMY_COUNT_TABLES !== 'undefined') {
-    var earlyTable = FIELD_PLAINS_EARLY_ENEMY_COUNT_TABLES[Math.floor((s - 1) / 20)];
+  z = z || 'desert';
+  var desertEarly = z === 'desert' && s >= 1 && s <= 100;
+  if (desertEarly && rank === 'elite') return [[1, 1]];
+  if (desertEarly && rank !== 'boss' && typeof FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES !== 'undefined') {
+    var earlyTable = FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES[Math.floor((s - 1) / 20)];
     if (earlyTable) return earlyTable;
   }
   if (rank === 'boss' && typeof FIELD_BOSS_COUNT_TABLE !== 'undefined') return FIELD_BOSS_COUNT_TABLE;
@@ -1182,7 +1182,7 @@ function dropRatesFor(table, lvl) {
 }
 // 關卡改造：掉落先依地圖/關卡區間查表，再由掉寶率與菁英倍率修正。
 function zoneStageDropConfigFor(zone, stage) {
-  var key = zone || (typeof G !== 'undefined' && G && G.stage ? G.stage.zone : 'plains') || 'plains';
+  var key = zone || (typeof G !== 'undefined' && G && G.stage ? G.stage.zone : 'desert') || 'desert';
   var rows = (typeof ZONE_STAGE_DROP_TABLE !== 'undefined' && ZONE_STAGE_DROP_TABLE[key]) || [];
   var s = Math.max(1, Math.floor(Number(stage) || 1));
   var matches = [];

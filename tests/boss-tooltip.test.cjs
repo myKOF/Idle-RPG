@@ -29,7 +29,7 @@ test('野外敵人資訊提示在 Worker 模式使用 header snapshot 的關卡�
   const body = ui.slice(start, end);
 
   assert.match(body, /var headerSnapshot = uiHeaderPanelSnapshot\(\) \|\| \{\};/);
-  assert.match(body, /var zoneKey = \(headerSnapshot\.stage && headerSnapshot\.stage\.zone\) \|\| 'plains';/);
+  assert.match(body, /var zoneKey = \(headerSnapshot\.stage && headerSnapshot\.stage\.zone\) \|\| 'desert';/);
   assert.match(body, /var stage = \(headerSnapshot\.stage && headerSnapshot\.stage\.current\) \|\| 1;/);
   assert.doesNotMatch(body, /\bG\.stage\b/);
 });

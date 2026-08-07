@@ -129,7 +129,7 @@ function spawnFieldMonster() {
     var base = monsterStatsFor(s, elite, boss);
     var zn = currentZoneDef();
     // 數量依敵種各自擲骰（小怪／菁英／BOSS 三張權重表 → data.js）
-    var count = rollFieldEnemyCount(boss ? 'boss' : (elite ? 'elite' : 'normal'), s, G.stage.zone || 'plains');
+    var count = rollFieldEnemyCount(boss ? 'boss' : (elite ? 'elite' : 'normal'), s, G.stage.zone || 'desert');
     var enemies = [];
     for (var i = 0; i < count; i++) {
         var enemyTable = zn.enemyTable || [];
@@ -177,7 +177,7 @@ function switchZone(zoneKey) {
     }
     // 保存目前場景進度（cleared 只住在 zoneProgress，整包覆寫時必須帶著走）
     if (!G.zoneProgress) G.zoneProgress = {};
-    var fromKey = G.stage.zone || 'plains';
+    var fromKey = G.stage.zone || 'desert';
     var fromZp = G.zoneProgress[fromKey] || {};
     G.zoneProgress[fromKey] = { current: G.stage.current, best: G.stage.best, cleared: Math.max(0, Math.floor(Number(fromZp.cleared) || 0)) };
     // 載入目標場景進度

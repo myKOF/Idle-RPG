@@ -177,7 +177,7 @@ test('Worker Snapshot 完整但主執行緒 G 為空時 initUI 與 uiTick 不拋
     fmt1: (value) => String(value),
     esc: (value) => String(value),
     pad2: (value) => String(value).padStart(2, '0'),
-    ZONES: { plains: { name: '草原', emoji: '🌿' } },
+    ZONES: { desert: { name: '荒漠', emoji: '🏜️' } },
     REINCARNATION_MAX: 20,
     REINCARNATION_LEVEL: 100,
     REINCARNATION_MAX: 20,
@@ -218,7 +218,7 @@ test('Worker Snapshot 完整但主執行緒 G 為空時 initUI 與 uiTick 不拋
         essence: 0, dust: 0, ancientEssence: 0, soulOrigin: 0, demonSeed: 0,
         gems: {}, books: {}, shownRes: {}
       },
-      stage: { zone: 'plains', current: 1, best: 1, autoAdvance: false },
+      stage: { zone: 'desert', current: 1, best: 1, autoAdvance: false },
       stats: { hp: 1, mp: 1, atk: 0, def: 0, aspd: 1, critRate: 0, lifesteal: 0, hit: 1, loot: 0 },
       viewStats: { hp: 1, mp: 1, atk: 0, def: 0, aspd: 1, critRate: 0, lifesteal: 0, hit: 1, loot: 0 },
       dps: 0, settings: {}, autoEquip: false, equipView: 0, equipActive: 0
@@ -231,7 +231,7 @@ test('Worker Snapshot 完整但主執行緒 G 為空時 initUI 與 uiTick 不拋
         },
         monsters: []
       },
-      tower: null, stage: { zone: 'plains' }, zoneProgress: {}
+      tower: null, stage: { zone: 'desert' }, zoneProgress: {}
     },
     equip: { equipment: {}, sets: [{}], equipActive: 0, equipView: 0, settings: {}, stats: {}, viewStats: {} },
     inv: { items: [], details: {}, count: 0, cap: 100, settings: {}, equipment: {}, viewEquipment: {} },

@@ -119,7 +119,7 @@ function withGMExecContext(configure, run) {
 }
 
 function configureMultiKill(context) {
-  context.ZONES = { plains: { name: '草原', emoji: '🌿', pool: [{ name: '史萊姆' }], rewardMult: 1 } };
+  context.ZONES = { desert: { name: '荒漠', emoji: '🏜️', pool: [{ name: '史萊姆' }], rewardMult: 1 } };
   context.RARITIES = [
     { key: 'common', name: '普通' },
     { key: 'uncommon', name: '精良' },
@@ -285,8 +285,8 @@ test('reincarnation GM 指令可在 0～10 轉間切換並刷新狀態', () => {
 test('連殺 GM 指令 (場景/關卡數/擊殺數) 可一次性發放經驗，填滿背包空間並拆解溢出裝備', () => {
   withGMExecContext((context) => {
     context.ZONES = {
-      plains: { name: '草原', emoji: '🌿', pool: [{ name: '史萊姆' }], rewardMult: 1 },
-      desert: { name: '荒漠', emoji: '🏜️', pool: [{ name: '沙蟲' }], rewardMult: 2 }
+      desert: { name: '荒漠', emoji: '🏜️', pool: [{ name: '史萊姆' }], rewardMult: 1 },
+      Icefield: { name: '冰原', emoji: '🧊', pool: [{ name: '沙蟲' }], rewardMult: 2 }
     };
     context.isEliteStage = () => false;
     context.monsterStatsFor = (stage) => ({ level: stage, gold: 50, xp: 100 });
@@ -411,11 +411,11 @@ test('bag GM 指令（及 inv_cap 別名）可任意擴充背包容量並超越�
 
 test('stage_jump GM 指令（及 stage/set_stage/zone 等別名）可指定場景與關卡，並將後續場景/關卡設為不可進', () => {
   withGMExecContext((context) => {
-    context.ZONE_LIST = ['plains', 'desert', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary'];
+    context.ZONE_LIST = ['desert', 'Icefield', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary'];
     context.ZONES = {
-      plains: { name: '草原', emoji: '🌿', maxStage: 200 },
-      desert: { name: '荒漠', emoji: '🏜️', maxStage: 300, reqZone: 'plains', reqStage: 200 },
-      swamp: { name: '沼澤', emoji: '🦠', maxStage: 400, reqZone: 'desert', reqStage: 300 },
+      desert: { name: '荒漠', emoji: '🏜️', maxStage: 200 },
+      Icefield: { name: '冰原', emoji: '🧊', maxStage: 300, reqZone: 'desert', reqStage: 200 },
+      swamp: { name: '沼澤', emoji: '🦠', maxStage: 400, reqZone: 'Icefield', reqStage: 300 },
       undead_mountains: { name: '亡靈山脈', emoji: '⛰️', maxStage: 500, reqZone: 'swamp', reqStage: 400 },
       god_battlefield: { name: '太古戰場', emoji: '⚔️', maxStage: 600, reqZone: 'undead_mountains', reqStage: 500, reqReincarnation: 11 },
       god_chaos: { name: '混沌界', emoji: '🌀', maxStage: 700, reqZone: 'god_battlefield', reqStage: 600, reqReincarnation: 11 },
@@ -432,34 +432,34 @@ test('stage_jump GM 指令（及 stage/set_stage/zone 等別名）可指定場�
       return true;
     };
   }, (context, execute) => {
-    // 1. 指定荒漠（2號場景）第 150 關
-    const res1 = execute('stage_jump desert 150');
+    // 1. 指定冰原（2號場景）第 150 關
+    const res1 = execute('stage_jump Icefield 150');
     assert.equal(res1.ok, true);
-    assert.equal(context.G.stage.zone, 'desert');
+    assert.equal(context.G.stage.zone, 'Icefield');
     assert.equal(context.G.stage.current, 150);
     assert.equal(context.G.stage.best, 150);
 
-    // 檢查 zoneProgress：前置草原已全通關，荒漠最高 150（已通 149），後續沼澤等全重置為 1/1/0
-    assert.deepEqual(context.G.zoneProgress.plains, { current: 200, best: 200, cleared: 200 });
-    assert.deepEqual(context.G.zoneProgress.desert, { current: 150, best: 150, cleared: 149 });
+    // 檢查 zoneProgress：前置荒漠已全通關，冰原最高 150（已通 149），後續沼澤等全重置為 1/1/0
+    assert.deepEqual(context.G.zoneProgress.desert, { current: 200, best: 200, cleared: 200 });
+    assert.deepEqual(context.G.zoneProgress.Icefield, { current: 150, best: 150, cleared: 149 });
     assert.deepEqual(context.G.zoneProgress.swamp, { current: 1, best: 1, cleared: 0 });
     assert.deepEqual(context.G.zoneProgress.god_sanctuary, { current: 1, best: 1, cleared: 0 });
 
-    // 驗證解鎖判定：荒漠已解鎖，但後續沼澤不可進（LOCKED）
-    assert.equal(context.isZoneUnlocked('plains'), true);
+    // 驗證解鎖判定：冰原已解鎖，但後續沼澤不可進（LOCKED）
     assert.equal(context.isZoneUnlocked('desert'), true);
+    assert.equal(context.isZoneUnlocked('Icefield'), true);
     assert.equal(context.isZoneUnlocked('swamp'), false);
     assert.equal(context.isZoneUnlocked('god_battlefield'), false);
 
-    // 2. 測試數字與斜線語法 `stage 1/50`（草原第 50 關）
+    // 2. 測試數字與斜線語法 `stage 1/50`（荒漠第 50 關）
     const res2 = execute('stage 1/50');
     assert.equal(res2.ok, true);
-    assert.equal(context.G.stage.zone, 'plains');
+    assert.equal(context.G.stage.zone, 'desert');
     assert.equal(context.G.stage.current, 50);
     assert.equal(context.G.stage.best, 50);
-    assert.deepEqual(context.G.zoneProgress.plains, { current: 50, best: 50, cleared: 49 });
-    assert.deepEqual(context.G.zoneProgress.desert, { current: 1, best: 1, cleared: 0 });
-    assert.equal(context.isZoneUnlocked('desert'), false);
+    assert.deepEqual(context.G.zoneProgress.desert, { current: 50, best: 50, cleared: 49 });
+    assert.deepEqual(context.G.zoneProgress.Icefield, { current: 1, best: 1, cleared: 0 });
+    assert.equal(context.isZoneUnlocked('Icefield'), false);
 
     // 3. 測試神界場景與轉生條件判定 `set_stage 5 300`
     context.G.player.reincarnations = 0;
@@ -474,7 +474,7 @@ test('stage_jump GM 指令（及 stage/set_stage/zone 等別名）可指定場�
 
     // 4. 錯誤檢錯處理
     assert.equal(execute('stage_jump invalid_zone 10').ok, false);
-    assert.equal(execute('stage_jump plains 9999').ok, false);
+    assert.equal(execute('stage_jump desert 9999').ok, false);
   });
 });
 

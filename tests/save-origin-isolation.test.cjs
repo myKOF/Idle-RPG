@@ -94,7 +94,7 @@ function loadSaveContext(origin) {
 }
 
 function saveJson(level, stage, savedAt, savedBy) {
-  const d = { version: 1, runId: 1, savedAt, player: { level }, stage: { current: stage, zone: 'plains' } };
+  const d = { version: 1, runId: 1, savedAt, player: { level }, stage: { current: stage, zone: 'desert' } };
   if (savedBy) d.savedBy = savedBy;
   return JSON.stringify(d);
 }

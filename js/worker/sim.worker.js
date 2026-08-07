@@ -664,12 +664,12 @@ function buildPanel(name, params) {
           : null,
         /* ---- 有哪些地圖、開了沒、各自打得到第幾關 ----
 
-           關卡改造之後每張地圖都是**有限關卡**（草原 200、荒漠 300、沼澤 400、
+           關卡改造之後每張地圖都是**有限關卡**（荒漠 200、冰原 300、沼澤 400、
            亡靈山脈 500），打到頂就再也推不動，必須換圖。解鎖條件（前置地圖與
            關卡、轉生數）由遊戲的 isZoneUnlocked 判斷，不能讓讀面板的一方自己抄
            一份 Zones.csv——那張表使用者會改。
 
-           沒有這個欄位的話 AI 會在草原 200 關永久停住，而且完全沒有徵兆：
+           沒有這個欄位的話 AI 會在荒漠 200 關永久停住，而且完全沒有徵兆：
            推關指令照送、遊戲照回 ok，只是 stage.current 再也不動。 */
         zones: (function () {
           if (typeof ZONE_LIST === 'undefined' || typeof ZONES === 'undefined') return null;
@@ -970,7 +970,7 @@ function installStorageGuards() {
     meta.savedAt = fresh.savedAt;
     meta.level = fresh.player.level;
     meta.stage = (fresh.stage && fresh.stage.current) || 1;
-    meta.zone = (fresh.stage && fresh.stage.zone) || 'plains';
+    meta.zone = (fresh.stage && fresh.stage.zone) || 'desert';
     requestPersist(PERSIST_KINDS.RESTART, { state: fresh, meta: meta });
     return true;
   };

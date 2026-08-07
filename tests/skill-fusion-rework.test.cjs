@@ -414,7 +414,7 @@ test('遷移：舊 skillPointBudget → 熟練度、等級夾回上限、舊融�
         fx: { dmgType: 'phys', base: 100, per: 10 }
       }]
     },
-    stage: { current: 1, best: 1, kills: 0, autoAdvance: true, zone: 'plains' }
+    stage: { current: 1, best: 1, kills: 0, autoAdvance: true, zone: 'desert' }
   };
   const out = c.migrateSave(data);
   // 等級夾回 10（0 轉）
