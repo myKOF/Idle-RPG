@@ -102,7 +102,7 @@ Web Worker 遷移全部完成，無進行中的大型工程。
 
 需要 Claude Review：是，檢查 Timer、事件佇列與節點生命週期。
 
-需要 Antigravity 驗證：是，依既有 `docs/ANTIGRAVITY_VFX_UI_TEST_CASES.md` 的長時間穩定性案例觀察隕石特效。
+需要 Antigravity 驗證：是，依 `docs/ANTIGRAVITY_VFX_UI_TEST_CASES.md` 的 `AG-VFX-007` 與新增 `AG-VFX-009` 長時間穩定性案例觀察隕石特效。
 
 完成後交給：Claude Review，之後由使用者合併至整合分支。
 
