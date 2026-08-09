@@ -2757,19 +2757,35 @@ function playerShieldText(entity) {
 }
 
 // 多敵人時名稱維持單行，寬度不足就縮小字體，不使用省略號截斷。
+/* 讀寫分三段，不要交錯。
+
+   原本是逐隻怪「寫 fontSize → 讀 clientWidth/computedStyle/scrollWidth → 寫 fontSize」，
+   每一次讀取都落在寫入之後，於是瀏覽器被迫把整份文件重新排版——次數等於敵人數量。
+   而排版成本取決於整份文件多大，不是敵人多少：裝備頁與神鑄頁各掛著一份九百多格的
+   背包格線時，實測換一波怪要 37～49 ms，全部卡在主執行緒上。
+
+   改成「全部寫完 → 全部讀完 → 全部寫回」，一次換波只重排一次。 */
 function fitEnemyNames(party) {
   if (!party) return;
   var names = party.querySelectorAll('.enemy-name');
-  for (var ni = 0; ni < names.length; ni++) {
+  var ni;
+  for (ni = 0; ni < names.length; ni++) names[ni].style.fontSize = '';
+  var measured = [];
+  for (ni = 0; ni < names.length; ni++) {
     var nameEl = names[ni];
     var card = nameEl.closest ? nameEl.closest('.enemy-card') : null;
     if (!card) continue;
-    nameEl.style.fontSize = '';
-    var available = Math.max(1, card.clientWidth - 6);
-    var baseSize = parseFloat(window.getComputedStyle(nameEl).fontSize) || 10;
-    var naturalWidth = nameEl.scrollWidth;
-    if (naturalWidth > available) {
-      nameEl.style.fontSize = Math.max(6, baseSize * available / naturalWidth) + 'px';
+    measured.push({
+      el: nameEl,
+      available: Math.max(1, card.clientWidth - 6),
+      baseSize: parseFloat(window.getComputedStyle(nameEl).fontSize) || 10,
+      naturalWidth: nameEl.scrollWidth
+    });
+  }
+  for (ni = 0; ni < measured.length; ni++) {
+    var m = measured[ni];
+    if (m.naturalWidth > m.available) {
+      m.el.style.fontSize = Math.max(6, m.baseSize * m.available / m.naturalWidth) + 'px';
     }
   }
 }
@@ -3164,6 +3180,87 @@ function itemCellHTML(it, source, extraClass, pendingKey) {
     '</div>';
 }
 
+/* ---- 格線增量更新 ----
+   背包格線原本每次都整份 `innerHTML` 重建。實測後期背包 934 格：
+   字串組裝 2.6 ms、建立節點 39 ms，接著 applyInventoryVisibleRows 又付 106 ms
+   （整份重建讓版面失效，之後第一次讀取就強制重排），單次 renderInventory 約 210 ms。
+   戰鬥中每掉一件裝備就重建一次，玩家按鈕點下去剛好撞上，就是「半秒才有反應」，
+   而且背包越滿越慢——100 格 12 ms、900 格 190 ms。
+
+   改成逐格比對：把該格產生的 HTML 當成指紋掛在節點上，指紋沒變就完全不碰那個節點。
+   掉一件裝備＝新增一格，其餘九百多格原封不動，版面也不會整份失效。
+
+   ⚠️ 選取態（selected / dimmed / inventory-selection-match）**不可**寫進指紋——
+   那三個 class 由 updateSelectionUI() 在每次渲染後統一重貼；寫進指紋的話，
+   單純換個選取就會讓大量格子指紋改變而整份重建，等於白做。 */
+var _itemCellFactory = null;
+
+function itemCellNodeFromHtml(html) {
+  if (!_itemCellFactory) _itemCellFactory = document.createElement('div');
+  _itemCellFactory.innerHTML = html;
+  var node = _itemCellFactory.firstElementChild;
+  if (!node) return null;
+  _itemCellFactory.removeChild(node);
+  node._cellHtml = html;
+  return node;
+}
+
+/* 測試替身的 DOM（tests/init-ui-smoke.test.cjs）沒有節點層級 API：
+   偵測不到就退回整份寫入，行為與改動前完全一致。 */
+function supportsIncrementalCells(box) {
+  return !!box && box.firstElementChild !== undefined &&
+    typeof box.insertBefore === 'function' &&
+    typeof box.removeChild === 'function' &&
+    typeof box.replaceChild === 'function' &&
+    typeof document !== 'undefined' && typeof document.createElement === 'function';
+}
+
+/* keys[i] 是第 i 格的識別（裝備用 item.id），htmls[i] 是它現在該長的樣子。
+   兩個陣列等長，順序即畫面順序。 */
+function syncItemGridCells(box, keys, htmls) {
+  if (!box) return;
+  if (!supportsIncrementalCells(box)) { box.innerHTML = htmls.join(''); return; }
+
+  var existing = Object.create(null);
+  var scan = box.firstElementChild;
+  while (scan) {
+    if (scan._cellKey && !existing[scan._cellKey]) existing[scan._cellKey] = scan;
+    scan = scan.nextElementSibling;
+  }
+
+  var cursor = box.firstElementChild;
+  for (var i = 0; i < keys.length; i++) {
+    var node = existing[keys[i]];
+    // 認領後就從表上劃掉：萬一同一個 id 出現兩次，第二次要另外建節點，
+    // 而不是把第一次那顆搬過來（那會讓畫面少一格，比重複顯示更難察覺）。
+    if (node) delete existing[keys[i]];
+    if (node && node._cellHtml !== htmls[i]) {
+      var replacement = itemCellNodeFromHtml(htmls[i]);
+      if (replacement) {
+        replacement._cellKey = keys[i];
+        box.replaceChild(replacement, node);
+        if (cursor === node) cursor = replacement;
+        node = replacement;
+      }
+    }
+    if (!node) {
+      node = itemCellNodeFromHtml(htmls[i]);
+      if (!node) continue;
+      node._cellKey = keys[i];
+    }
+    // 位置對就往前走，位置不對就把它搬過來；搬動不影響 cursor 自己的位置。
+    if (node === cursor) cursor = cursor.nextElementSibling;
+    else box.insertBefore(node, cursor);
+  }
+
+  // 尾端剩下的都是這次不需要的（被移除的裝備、上一輪的提示文字、虛擬捲動墊片）
+  while (cursor) {
+    var next = cursor.nextElementSibling;
+    box.removeChild(cursor);
+    cursor = next;
+  }
+}
+
 function renderEquip() {
   var equipSnapshot = uiEquipPanelSnapshot();
   var headerSnapshot = uiHeaderPanelSnapshot();
@@ -3303,13 +3400,41 @@ function inventoryVisibleRows(totalRows, requestedRows) {
   return Math.min(INVENTORY_VISIBLE_ROWS_MAX, total, requested);
 }
 
+/* 排數是**算**出來的，不是量出來的。
+
+   原本逐格讀 offsetTop。這支剛好接在格線重建之後被呼叫，於是第一次讀取就強制整份文件
+   重新版面計算，後面九百多次讀取再各自付一點錢——實測後期背包 934 格時單這一步 106 ms，
+   佔整次 renderInventory 的一半。而它算出來的東西只是「有幾排」，用來夾住可視排數的
+   CSS 變數而已。
+
+   格子等高、沒有跨欄項目，所以 ceil(格數 ÷ 欄數) 與數 offsetTop 的相異值等價；
+   欄數只需讀一次 grid-template-columns，不隨格數增加。 */
 function inventoryGridRowCount(box) {
   if (!box) return 0;
   var cells = box.querySelectorAll('.item-cell');
   if (!cells.length) return 0;
-  var rowTops = {};
-  for (var i = 0; i < cells.length; i++) rowTops[cells[i].offsetTop] = true;
-  return Object.keys(rowTops).length;
+  return Math.max(1, Math.ceil(cells.length / cachedInventoryGridColumnCount(box)));
+}
+
+/* ---- 欄數快取 ----
+   inventoryGridColumnCount() 會讀 getComputedStyle，而這支剛好被排在「格線剛改完」之後，
+   於是那一次讀取要付整份文件重排的錢。裝備頁與神鑄頁各掛一份九百多格的格線時，
+   實測單這一次強制重排 43～61 ms——而它問的只是「一排幾格」。
+
+   欄數只在容器寬度變動時才會變（視窗縮放、全螢幕切換、介面縮放），那些時機都會走到
+   invalidateInventoryGridColumns()，所以快取不會過期。掉一件裝備不改變欄數。 */
+function invalidateInventoryGridColumns() {
+  var boxes = (typeof document !== 'undefined' && document.querySelectorAll)
+    ? document.querySelectorAll('#inventory-grid, #forge-inventory-grid') : [];
+  for (var i = 0; i < boxes.length; i++) boxes[i]._invGridColumns = 0;
+}
+
+function cachedInventoryGridColumnCount(box) {
+  if (box._invGridColumns > 0) return box._invGridColumns;
+  var columns = inventoryGridColumnCount(box);
+  // 容器還沒有寬度時（分頁隱藏中）量到的是 1，不要把它記起來當成正解
+  if (columns > 1) box._invGridColumns = columns;
+  return columns;
 }
 
 function inventoryGridColumnCount(box) {
@@ -3346,12 +3471,8 @@ function applyInventoryVisibleRows(box) {
   box.style.setProperty('--inventory-visible-height', (rows * INVENTORY_GRID_ROW_HEIGHT + (rows - 1) * INVENTORY_GRID_ROW_GAP) + 'px');
 }
 
-function itemMatchesEquipSlot(it, equipSlot) {
-  if (!it || !equipSlot) return false;
-  var list = typeof equipSlotsForItem === 'function' ? equipSlotsForItem(it) : null;
-  if (Array.isArray(list) && list.length) return list.indexOf(equipSlot) >= 0;
-  return equipSlotMatches(it.slot, equipSlot);
-}
+/* itemMatchesEquipSlot() 已移除：唯一的呼叫點是 renderInventory 內自己算 dimmed 的那段，
+   而那段已交還給 updateSelectionUI（它用 DOM 版的 cellMatchesEquipSlot，讀 data-eqslots）。 */
 
 function renderInventory() {
   var invSnapshot = uiInventoryPanelSnapshot();
@@ -3434,48 +3555,44 @@ function renderInventory() {
         applyInventoryVisibleRows(box);
         return;
       }
-      var columns = inventoryGridColumnCount(box);
-      var totalRows = Math.max(1, Math.ceil(displayedItems.length / columns));
-      var rows = inventoryVisibleRows(totalRows, UI.inventoryVisibleRows);
-      var startRow = 0;
-      var previousScrollTop = box.scrollTop;
-      var maxScrollTop = Math.max(0, box.scrollHeight - box.clientHeight);
-      var wasAtScrollEnd = previousScrollTop >= maxScrollTop - 1;
-      if (virtualize && totalRows > rows) {
-        var rowHeight = INVENTORY_GRID_ROW_HEIGHT + INVENTORY_GRID_ROW_GAP;
-        startRow = wasAtScrollEnd
-          ? totalRows - rows
-          : Math.min(Math.max(0, Math.floor(previousScrollTop / rowHeight)), totalRows - rows);
+      /* 欄數、捲動位置與可視高度全都只有虛擬捲動才用得到，而它們**每一個都是版面讀取**：
+         在寫入 DOM 的前後讀取會強制瀏覽器把整份文件重新排版一次。非虛擬路徑不需要這些
+         數字，就不要付這筆錢——格線改成增量更新之後，捲動位置本來就不會被動到。 */
+      var columns = 0, totalRows = 0, rows = 0, startRow = 0;
+      if (virtualize) {
+        columns = inventoryGridColumnCount(box);
+        totalRows = Math.max(1, Math.ceil(displayedItems.length / columns));
+        rows = inventoryVisibleRows(totalRows, UI.inventoryVisibleRows);
+        var previousScrollTop = box.scrollTop;
+        var maxScrollTop = Math.max(0, box.scrollHeight - box.clientHeight);
+        var wasAtScrollEnd = previousScrollTop >= maxScrollTop - 1;
+        if (totalRows > rows) {
+          var rowHeight = INVENTORY_GRID_ROW_HEIGHT + INVENTORY_GRID_ROW_GAP;
+          startRow = wasAtScrollEnd
+            ? totalRows - rows
+            : Math.min(Math.max(0, Math.floor(previousScrollTop / rowHeight)), totalRows - rows);
+        }
       }
       var firstItem = virtualize ? startRow * columns : 0;
       var lastItem = virtualize ? Math.min(displayedItems.length, (startRow + rows) * columns) : displayedItems.length;
-      var selItem = selectionItemForGrid(invSnapshot);
-      var selectedSlot = selectionSlotForItem(selItem);
-      var highlightInventoryBySlot = !!(UI.sel && (UI.sel.source === 'equip-slot' || UI.sel.source === 'equip'));
 
-      var cellsHtml = displayedItems.slice(firstItem, lastItem).map(function (it) {
-        var renderedItem = filterKeyword
-          ? inventoryViewItem(invSnapshot, it.id, true)
-          : it;
-        var extraClass = '';
+      /* 這裡刻意不再算 selected / dimmed：那三個 class 由 renderInventory 尾端的
+         updateSelectionUI() 統一重貼（它是選取態的唯一權威，本來就會覆蓋這裡寫的值）。
+         留在格子 HTML 裡會讓「換個選取」變成「整份格線指紋改變」，增量更新就失效了。 */
+      var cellKeys = [];
+      var cellsHtmlList = [];
+      for (var ii = firstItem; ii < lastItem; ii++) {
+        var it = displayedItems[ii];
+        var dimClass = '';
         if (filterKeyword !== '') {
+          var renderedItem = inventoryViewItem(invSnapshot, it.id, true);
           if (!renderedItem || !itemMatchesKeyword(renderedItem, filterKeyword)) {
-            extraClass += ' item-cell-dimmed';
+            dimClass = ' item-cell-dimmed';
           }
         }
-        if (selItem) {
-          if (UI.sel && UI.sel.source === 'inv' && it.id === selItem.id) {
-            extraClass += ' selected';
-          } else if (highlightInventoryBySlot && selectedSlot) {
-            if (!itemMatchesEquipSlot(it, selectedSlot)) {
-              extraClass += ' dimmed';
-            }
-          } else if (it.slot !== selItem.slot) {
-            extraClass += ' dimmed';
-          }
-        }
-        return itemCellHTML(it, 'inv', extraClass, itemPendingKey(it.id));
-      }).join('');
+        cellKeys.push(it.id);
+        cellsHtmlList.push(itemCellHTML(it, 'inv', dimClass, itemPendingKey(it.id)));
+      }
       if (virtualize) box.setAttribute('data-inventory-total-rows', String(totalRows));
       else box.removeAttribute('data-inventory-total-rows');
       if (virtualize) {
@@ -3483,11 +3600,11 @@ function renderInventory() {
         var topHeight = startRow * virtualRowHeight - INVENTORY_GRID_ROW_GAP;
         var remainingRows = totalRows - startRow - rows;
         var bottomHeight = remainingRows * virtualRowHeight - (remainingRows > 0 ? INVENTORY_GRID_ROW_GAP : 0);
-        box.innerHTML = inventoryVirtualSpacerHTML(topHeight) + cellsHtml + inventoryVirtualSpacerHTML(bottomHeight);
+        box.innerHTML = inventoryVirtualSpacerHTML(topHeight) + cellsHtmlList.join('') +
+          inventoryVirtualSpacerHTML(bottomHeight);
         box.scrollTop = wasAtScrollEnd ? box.scrollHeight : previousScrollTop;
       } else {
-        box.innerHTML = cellsHtml;
-        box.scrollTop = previousScrollTop;
+        syncItemGridCells(box, cellKeys, cellsHtmlList);
       }
     }
   }
@@ -4663,10 +4780,17 @@ function renderForge() {
     if (!inventoryItems.length) {
       grid.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">背包是空的。戰鬥掉落的裝備會先進入生產線輸送帶，「保留」的會送到這裡。</div>';
     } else {
-      grid.innerHTML = inventoryItems.map(function (it2) {
+      /* 與背包頁同樣走增量更新：神鑄頁掛的是第二份完整背包格線（後期同樣九百多格），
+         戰鬥掉落會讓 dirty.inv 一路推到這裡，整份重建一次就是一百多毫秒的凍結。 */
+      var forgeCellKeys = [];
+      var forgeCellHtmls = [];
+      for (var fi = 0; fi < inventoryItems.length; fi++) {
+        var it2 = inventoryItems[fi];
         var ok = isForgeableEquipmentRarity(it2.rarity);
-        return itemCellHTML(it2, 'forgeinv', ok ? '' : ' forge-na', nodePendingKey('forge'));
-      }).join('');
+        forgeCellKeys.push(it2.id);
+        forgeCellHtmls.push(itemCellHTML(it2, 'forgeinv', ok ? '' : ' forge-na', nodePendingKey('forge')));
+      }
+      syncItemGridCells(grid, forgeCellKeys, forgeCellHtmls);
     }
   }
 }
@@ -7807,8 +7931,11 @@ function initUI() {
       UI.battleLayoutDirty = true;
       UI.dirty.battle = true;
       UI.dirty.inv = true;
+      invalidateInventoryGridColumns();
       if (typeof vfxInvalidateLayout === 'function') vfxInvalidateLayout();
     });
+    // 介面縮放（js/ui-scale.js）會改變格線容器寬度，欄數快取一樣得作廢
+    document.addEventListener('fullscreenchange', invalidateInventoryGridColumns);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     document.addEventListener('pointerdown', noteUiInteraction, true);
     document.addEventListener('keydown', noteUiInteraction, true);
