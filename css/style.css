@@ -2913,8 +2913,8 @@ textarea#save-io {
   grid-template-columns: minmax(0, 1fr) 32px;
   align-items: center;
   column-gap: 8px;
-  min-height: 22px;
-  height: 22px;
+  min-height: 18px;
+  height: 18px;
   width: 100%;
 }
 
@@ -2933,8 +2933,8 @@ textarea#save-io {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 22px;
-  height: 22px;
+  min-height: 18px;
+  height: 18px;
 }
 
 .affix-reroll-btn {
