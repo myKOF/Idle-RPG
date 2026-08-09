@@ -1093,6 +1093,34 @@ function evalTierOutlook() {
     farmFloorStage: farmFloor,
     /* 下一個掉落／裝等會變好的關卡，也就是下一個掛機點。地圖打到頂時為 null。 */
     nextFarmStage: farmNext,
+    /* ---- 真的無路可走了嗎 ----
+
+       nextFarmStage 為 null 只代表「這張圖裡沒有更好的掉落區間了」，
+       不代表卡死——通常還能換下一張圖。但下一張圖可能被轉生數鎖著
+       （第五張要 11 轉），這時角色會停在地圖上限重複打最後一關。
+
+       那一關是**同一格裡最貴的**：掉落與裝等跟區間底部一模一樣，
+       怪物血量卻是指數的頂端。可是這種處境下唯一還能前進的軸線是**等級**
+       （練到 1000 才轉得了生，而轉生才解得開下一張圖），
+       而擊殺速率有固定開銷的硬上限、每隻經驗卻隨關卡指數成長——
+       所以這時該待在**打得動的最深處**，不是掉落最划算的底部。
+
+       zoneCapped 就是那個特例的判準：這張圖已經沒有更好的區間，
+       而且沒有任何「已解鎖且上限更高」的圖可以換。解鎖條件一律問遊戲的
+       isZoneUnlocked，不在這裡抄 Zones.csv——那張表使用者會改。 */
+    zoneCapped: (function () {
+      if (farmNext !== null) return false;
+      if (typeof ZONE_LIST === 'undefined' || !ZONE_LIST || typeof zoneMaxStage !== 'function') return false;
+      var here = zoneMaxStage(zone);
+      for (var zi = 0; zi < ZONE_LIST.length; zi++) {
+        var zk = ZONE_LIST[zi];
+        if (zk === zone) continue;
+        if (zoneMaxStage(zk) <= here) continue;
+        if (typeof isZoneUnlocked === 'function' && !isZoneUnlocked(zk)) continue;
+        return false;                       // 還有更高的圖而且解鎖了 → 交給 switchZone
+      }
+      return true;
+    })(),
     /* 從這裡退到 floor，怪物血量會少幾倍。掉落率與裝等不變，所以這個倍率
        直接就是裝備／材料時薪的倍率。null＝已經站在 floor 上。 */
     farmFloorHpRatio: farmHpRatio,

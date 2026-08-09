@@ -1943,7 +1943,23 @@ function decide(state, policy, memo) {
             fgm.fpPhase = 'farm'; fgm.fpAt = now;
           }
 
-          if (fgm.fpPhase === 'farm') {
+          /* ---- 特例：整條推圖流程到頂了 ----
+
+             這張圖沒有更好的掉落區間，而且沒有任何已解鎖、上限更高的圖可以換
+             （第五張要 11 轉，打通第四張之後就會落在這裡）。
+
+             這時「待在底部刷掉落」是錯的：唯一還能前進的軸線是**等級**——
+             練到 1000 才轉得了生，而轉生才解得開下一張圖。
+             而擊殺速率被每隻怪固定的 2.9 秒開銷夾住（見上方 farmPark 的量測），
+             每隻經驗卻隨關卡指數成長，所以經驗時薪由**深度**決定。
+
+             所以整條規則讓開，把去留交回原本的閘門（passGate／advanceOn）——
+             它們會把角色推到打得動的最深處，那正是這個處境要的。
+             ⚠️ 不是「跳到 best 然後不動」：打不動的時候該退的還是要退，
+             而那套判斷閘門本來就有。 */
+          if (fpTier.zoneCapped) {
+            farmAuto = null;                 // 交回 passGate / advanceOn
+          } else if (fgm.fpPhase === 'farm') {
             if (gStage > floorS) {
               /* 退回去是免費的（stageGo 在 [1, min(best, 地圖上限)] 之內直接跳）。 */
               out.push({ name: gCfg.retreatCmd, args: { delta: floorS - gStage }, ruleId: r.id });

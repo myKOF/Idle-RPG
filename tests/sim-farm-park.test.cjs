@@ -236,6 +236,37 @@ test('兩個階段一定會輪到——這是不再死鎖的唯一保證', () =>
   assert.ok(phases.some((x) => x === false), '整整兩輪都沒有刷＝機制沒生效');
 });
 
+test('整條推圖流程到頂時（zoneCapped）讓開，把去留交回原本的閘門', () => {
+  /* 這張圖沒有更好的區間、也沒有已解鎖上限更高的圖可以換
+     （第五張要 11 轉，打通第四張之後就落在這裡）。
+
+     這時「待在底部刷掉落」是錯的：唯一還能前進的軸線是等級——
+     練到 1000 才轉得了生，而轉生才解得開下一張圖。擊殺速率被固定開銷夾住、
+     每隻經驗卻隨關卡指數成長，所以經驗時薪由深度決定。
+
+     規則整條讓開＝farmAuto 回 null，自動推關的開關交還 passGate / advanceOn，
+     而且不再送退關指令。 */
+  const p = gatePolicy();
+  const capped = {
+    best: 200, itemLevelHere: 200, farmFloorStage: 200,
+    nextFarmStage: null, zoneCapped: true, farmFloorHpRatio: 1.9
+  };
+  const cmds = p.decide(fst(10, 195, capped));
+  assert.equal(retreats(cmds).length, 0, '到頂了就不該再把角色往回拉');
+  assert.notEqual(autoOn(cmds), null, '仍要送出自動推關指令，只是由原本的閘門決定開關');
+});
+
+test('地圖打到頂但還有圖可換時，仍照常待在底部', () => {
+  /* zoneCapped 為 false（switchZone 會處理換圖），farmPark 的行為不變。 */
+  const p = gatePolicy();
+  const cmds = p.decide(fst(10, 230, {
+    best: 230, itemLevelHere: 200, farmFloorStage: 200,
+    nextFarmStage: null, zoneCapped: false, farmFloorHpRatio: 1.9
+  }));
+  assert.equal(retreats(cmds)[0].args.delta, 200 - 230);
+  assert.equal(autoOn(cmds), false);
+});
+
 test('地圖打到頂（nextFarmStage 為 null）推進期只跳回 best，不亂衝', () => {
   const p = gatePolicy();
   const tier = {
