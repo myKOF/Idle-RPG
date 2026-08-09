@@ -7,8 +7,8 @@ echo ================================================
 echo    套用遊戲參數（Excel -^> CSV -^> 遊戲）
 echo ================================================
 echo.
-echo [1/3] 撥離五表（技能/寶石/天賦/裝備詞條/任務）：xlsx -^> CSV -^> 遊戲 ...
-echo       config\Excel\Skills.xlsx / Gems.xlsx / Talents.xlsx / Equipment_Affix.xlsx / Task.xlsx
+echo [1/3] 撥離六表（技能/寶石/天賦/裝備詞條/NPC/任務）：xlsx -^> CSV -^> 遊戲 ...
+echo       config\Excel\Skills.xlsx / Gems.xlsx / Talents.xlsx / Equipment_Affix.xlsx / NPC.xlsx / Task.xlsx
 echo       Remaining Excel files are scanned automatically.
 node tools/config_tables.cjs --sync
 if errorlevel 1 goto cfgsyncfail
@@ -31,12 +31,12 @@ pause
 goto end
 :cfgsyncfail
 echo.
-echo [撥離表轉換失敗] 讀不到或無法解析四表 xlsx（可能被 Excel 鎖定）。未修改遊戲。
+echo [撥離表轉換失敗] 讀不到或無法解析六表 xlsx（可能被 Excel 鎖定）。未修改遊戲。
 pause
 goto end
 :cfgapplyfail
 echo.
-echo [撥離表套用失敗] 四表 CSV 格式錯誤或 JSON 無法解析（見上方訊息）。未修改遊戲。
+echo [撥離表套用失敗] 六表 CSV 格式錯誤或 JSON 無法解析（見上方訊息）。未修改遊戲。
 pause
 goto end
 :xlsxfail
@@ -62,6 +62,7 @@ if /I "%~2"=="Skills" exit /b 0
 if /I "%~2"=="Gems" exit /b 0
 if /I "%~2"=="Talents" exit /b 0
 if /I "%~2"=="Equipment_Affix" exit /b 0
+if /I "%~2"=="NPC" exit /b 0
 if /I "%~2"=="Task" exit /b 0
 echo       %~2.xlsx  -^>  config\CSV\%~2.csv
 set "PARAMS_XLSX=%~1"

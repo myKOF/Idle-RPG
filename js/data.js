@@ -1032,73 +1032,109 @@ var SKILL = {
 
 // ---- 怪物（magic: 以魔法攻擊，對玩家魔防；attr: 屬性標籤（七大屬性），供「對X屬性敵人傷害」加成與 tips 顯示 ----
 var DESERT_POOL = [
-  { name: '史萊姆', emoji: '🟢', attr: 'earth' , weight: 10 }, { name: '哥布林', emoji: '👺', attr: 'fire' , weight: 1 },
-  { name: '野狼', emoji: '🐺', attr: 'earth' , weight: 1 }, { name: '骷髏兵', emoji: '💀', attr: 'earth' , weight: 1 },
-  { name: '暗影蝠', emoji: '🦇', magic: true, attr: 'fire' , weight: 1 }, { name: '樹妖', emoji: '🌳', magic: true, attr: 'earth' , weight: 1 },
-  { name: '蜥蜴戰士', emoji: '🦎', attr: 'fire' , weight: 10 }, { name: '半獸人', emoji: '🐗', attr: 'earth' , weight: 1 },
-  { name: '幽靈', emoji: '👻', magic: true, attr: 'dark' , weight: 1 }, { name: '石像鬼', emoji: '🗿', attr: 'earth' , weight: 1 },
-  { name: '牛頭人', emoji: '🐂', attr: 'fire' , weight: 1 }, { name: '雙足飛龍', emoji: '🐉', magic: true, attr: 'fire' , weight: 1 }
+  { name: '史萊姆', emoji: '🟢', attr: 'earth', weight: 10, id: 'desert_1', magic: true },
+  { name: '哥布林', emoji: '👺', attr: 'fire', weight: 1, id: 'desert_2', magic: false },
+  { name: '野狼', emoji: '🐺', attr: 'earth', weight: 1, id: 'desert_3', magic: true },
+  { name: '骷髏兵', emoji: '💀', attr: 'earth', weight: 1, id: 'desert_4', magic: false },
+  { name: '暗影蝠', emoji: '🦇', magic: true, attr: 'fire', weight: 1, id: 'desert_5' },
+  { name: '樹妖', emoji: '🌳', magic: false, attr: 'earth', weight: 1, id: 'desert_6' },
+  { name: '蜥蜴戰士', emoji: '🦎', attr: 'fire', weight: 10, id: 'desert_7', magic: true },
+  { name: '半獸人', emoji: '🐗', attr: 'earth', weight: 1, id: 'desert_8', magic: false },
+  { name: '幽靈', emoji: '👻', magic: true, attr: 'fire', weight: 1, id: 'desert_9' },
+  { name: '石像鬼', emoji: '🗿', attr: 'earth', weight: 1, id: 'desert_10', magic: false },
+  { name: '牛頭人', emoji: '🐂', attr: 'fire', weight: 1, id: 'desert_11', magic: true },
+  { name: '雙足飛龍', emoji: '🐉', magic: false, attr: 'fire', weight: 1, id: 'desert_12' }
 ];
 /* ---- 戰鬥場景 ----
    冰原/沼澤敵人更強；經驗、金幣、材料（寶石/附魔書/精華）掉落 x2 / x3，
    裝備掉落表不變。各場景獨立保存推進進度與最高階段。 */
 var ICEFIELD_POOL = [
-  { name: '寒霜狼', emoji: '🐺', attr: 'lightning' , weight: 10 }, { name: '雪原巨熊', emoji: '🐻‍❄️', attr: 'ice' , weight: 1 },
-  { name: '冰原史萊姆', emoji: '🧊', magic: true, attr: 'ice' , weight: 1 }, { name: '雷電魔像', emoji: '🗿', attr: 'lightning' , weight: 1 },
-  { name: '雪怪', emoji: '🦍', attr: 'ice' , weight: 10 }, { name: '冰墓幽靈', emoji: '👻', magic: true, attr: 'ice' , weight: 1 },
-  { name: '女妖', emoji: '🧝‍♀️', attr: 'dark' , weight: 1 }, { name: '幽魂', emoji: '🌫️', attr: 'lightning' , weight: 1 },
-  { name: '寒冰魔像', emoji: '❄️', magic: true, attr: 'ice' , weight: 1 }, { name: '冰晶元素', emoji: '💠', attr: 'ice' , weight: 1 },
-  { name: '骷髏弓箭手', emoji: '🏹', attr: 'lightning' , weight: 1 }, { name: '寒冰龍王', emoji: '🐉', magic: true, attr: 'ice' , weight: 1 }
+  { name: '寒霜狼', emoji: '🐺', attr: 'lightning', weight: 10, id: 'Icefield_1', magic: true },
+  { name: '雪原巨熊', emoji: '🐻‍❄️', attr: 'ice', weight: 1, id: 'Icefield_2', magic: false },
+  { name: '冰原史萊姆', emoji: '🧊', magic: true, attr: 'ice', weight: 1, id: 'Icefield_3' },
+  { name: '雷電魔像', emoji: '🗿', attr: 'lightning', weight: 1, id: 'Icefield_4', magic: false },
+  { name: '雪怪', emoji: '🦍', attr: 'ice', weight: 10, id: 'Icefield_5', magic: true },
+  { name: '冰墓幽靈', emoji: '👻', magic: false, attr: 'ice', weight: 1, id: 'Icefield_6' },
+  { name: '女妖', emoji: '🧝‍♀️', attr: 'ice', weight: 1, id: 'Icefield_7', magic: true },
+  { name: '幽魂', emoji: '🌫️', attr: 'lightning', weight: 1, id: 'Icefield_8', magic: false },
+  { name: '寒冰魔像', emoji: '❄️', magic: true, attr: 'ice', weight: 1, id: 'Icefield_9' },
+  { name: '冰晶元素', emoji: '💠', attr: 'ice', weight: 1, id: 'Icefield_10', magic: false },
+  { name: '骷髏弓箭手', emoji: '🏹', attr: 'lightning', weight: 1, id: 'Icefield_11', magic: true },
+  { name: '寒冰龍王', emoji: '🐉', magic: false, attr: 'ice', weight: 1, id: 'Icefield_12' }
 ];
 var SWAMP_POOL = [
-  { name: '劇毒蛙', emoji: '🐸', attr: 'poison' , weight: 10 }, { name: '沼澤鱷', emoji: '🐊', attr: 'dark' , weight: 10 },
-  { name: '巨型水蛭', emoji: '🪱', attr: 'dark' , weight: 1 }, { name: '瘴氣幽魂', emoji: '👻', magic: true, attr: 'poison' , weight: 1 },
-  { name: '食人花', emoji: '🌺', attr: 'poison' , weight: 1 }, { name: '泥漿怪', emoji: '🫠', attr: 'earth' , weight: 1 },
-  { name: '毒蚊群', emoji: '🦟', attr: 'poison' , weight: 1 }, { name: '沼澤巫婆', emoji: '🧙', magic: true, attr: 'dark' , weight: 1 },
-  { name: '腐爛樹人', emoji: '🌳', magic: true, attr: 'poison' , weight: 1 }, { name: '蜥蜴薩滿', emoji: '🦎', magic: true, attr: 'dark' , weight: 1 },
-  { name: '深沼水蛇', emoji: '🐍', attr: 'poison' , weight: 1 }, { name: '沼澤霸主', emoji: '🐲', magic: true, attr: 'dark' , weight: 1 }
+  { name: '劇毒蛙', emoji: '🐸', attr: 'poison', weight: 10, id: 'swamp_1', magic: true },
+  { name: '沼澤鱷', emoji: '🐊', attr: 'dark', weight: 10, id: 'swamp_2', magic: false },
+  { name: '巨型水蛭', emoji: '🪱', attr: 'dark', weight: 1, id: 'swamp_3', magic: true },
+  { name: '瘴氣幽魂', emoji: '👻', magic: false, attr: 'poison', weight: 1, id: 'swamp_4' },
+  { name: '食人花', emoji: '🌺', attr: 'poison', weight: 1, id: 'swamp_5', magic: true },
+  { name: '泥漿怪', emoji: '🫠', attr: 'dark', weight: 1, id: 'swamp_6', magic: false },
+  { name: '毒蚊群', emoji: '🦟', attr: 'poison', weight: 1, id: 'swamp_7', magic: true },
+  { name: '沼澤巫婆', emoji: '🧙', magic: false, attr: 'dark', weight: 1, id: 'swamp_8' },
+  { name: '腐爛樹人', emoji: '🌳', magic: true, attr: 'poison', weight: 1, id: 'swamp_9' },
+  { name: '蜥蜴薩滿', emoji: '🦎', magic: false, attr: 'dark', weight: 1, id: 'swamp_10' },
+  { name: '深沼水蛇', emoji: '🐍', attr: 'poison', weight: 1, id: 'swamp_11', magic: true },
+  { name: '沼澤霸主', emoji: '🐲', magic: false, attr: 'dark', weight: 1, id: 'swamp_12' }
 ];
 /* ---- 神界練功場景敵人（11轉及以上解鎖） ---- */
 // ---- 亡靈山脈 NPC ----
 // 新地圖使用獨立 NPC 配置；每個 NPC 的基本能力可再由配置表調整。
 var UNDEAD_MOUNTAINS_POOL = [
-  { id: 'undead_1', name: '骸骨戰士', emoji: '💀', attr: 'dark', appearance: 'skeleton', hpMult: 1.05, atkMult: 1.1, defMult: 1.2 , weight: 10},
-  { id: 'undead_2', name: '山脈怨靈', emoji: '👻', attr: 'dark', magic: true, appearance: 'wraith', hpMult: 0.85, atkMult: 1.25, defMult: 0.9 , weight: 1},
-  { id: 'undead_3', name: '腐屍獵犬', emoji: '🐺', attr: 'poison', appearance: 'ghoul', hpMult: 0.9, atkMult: 1.2, defMult: 0.8, aspdMult: 1.2 , weight: 10},
-  { id: 'undead_4', name: '亡靈騎士', emoji: '🛡️', attr: 'dark', appearance: 'knight', hpMult: 1.35, atkMult: 1.05, defMult: 1.5 , weight: 1},
-  { id: 'undead_5', name: '哀嚎女妖', emoji: '🕯️', attr: 'dark', magic: true, appearance: 'banshee', hpMult: 0.8, atkMult: 1.35, defMult: 0.85 , weight: 1},
-  { id: 'undead_6', name: '墓石巨像', emoji: '🗿', attr: 'earth', appearance: 'golem', hpMult: 1.8, atkMult: 0.9, defMult: 1.8 , weight: 1},
-  { id: 'undead_7', name: '血月伯爵', emoji: '🧛', attr: 'fire', magic: true, appearance: 'vampire', hpMult: 1.15, atkMult: 1.4, defMult: 1.05 , weight: 1},
-  { id: 'undead_8', name: '劇毒腐屍', emoji: '☣️', attr: 'poison', appearance: 'rotting', hpMult: 1.2, atkMult: 1.1, defMult: 1 , weight: 1},
-  { id: 'undead_9', name: '食屍鬼', emoji: '🧟', attr: 'dark', magic: true, appearance: 'devourer', hpMult: 1, atkMult: 1.15, defMult: 0.85, aspdMult: 1.1 , weight: 1},
-  { id: 'undead_10', name: '骷髏法師', emoji: '🧙', attr: 'poison', appearance: 'skeleton_mage', hpMult: 0.85, atkMult: 1.3, defMult: 0.85 , weight: 1},
-  { id: 'undead_11', name: '怨靈', emoji: '🌫️', attr: 'dark', magic: true, appearance: 'lost_soul', hpMult: 0.9, atkMult: 1.3, defMult: 0.9 , weight: 1},
-  { id: 'undead_12', name: '骨龍王', emoji: '🐉', attr: 'dark', appearance: 'dragon', hpMult: 2.2, atkMult: 1.6, defMult: 1.5 , weight: 1}
+  { id: 'undead_1', name: '骸骨戰士', emoji: '💀', attr: 'dark', appearance: 'skeleton', hpMult: 1.05, atkMult: 1.1, defMult: 1.2, weight: 10, magic: true },
+  { id: 'undead_2', name: '山脈怨靈', emoji: '👻', attr: 'dark', magic: false, appearance: 'wraith', hpMult: 0.85, atkMult: 1.25, defMult: 0.9, weight: 1 },
+  { id: 'undead_3', name: '腐屍獵犬', emoji: '🐺', attr: 'poison', appearance: 'ghoul', hpMult: 0.9, atkMult: 1.2, defMult: 0.8, aspdMult: 1.2, weight: 10, magic: true },
+  { id: 'undead_4', name: '亡靈騎士', emoji: '🛡️', attr: 'dark', appearance: 'knight', hpMult: 1.35, atkMult: 1.05, defMult: 1.5, weight: 1, magic: false },
+  { id: 'undead_5', name: '哀嚎女妖', emoji: '🕯️', attr: 'dark', magic: true, appearance: 'banshee', hpMult: 0.8, atkMult: 1.35, defMult: 0.85, weight: 1 },
+  { id: 'undead_6', name: '墓石巨像', emoji: '🗿', attr: 'dark', appearance: 'golem', hpMult: 1.8, atkMult: 0.9, defMult: 1.8, weight: 1, magic: false },
+  { id: 'undead_7', name: '血月伯爵', emoji: '🧛', attr: 'poison', magic: true, appearance: 'vampire', hpMult: 1.15, atkMult: 1.4, defMult: 1.05, weight: 1 },
+  { id: 'undead_8', name: '劇毒腐屍', emoji: '☣️', attr: 'poison', appearance: 'rotting', hpMult: 1.2, atkMult: 1.1, defMult: 1, weight: 1, magic: false },
+  { id: 'undead_9', name: '食屍鬼', emoji: '🧟', attr: 'dark', magic: true, appearance: 'devourer', hpMult: 1, atkMult: 1.15, defMult: 0.85, aspdMult: 1.1, weight: 1 },
+  { id: 'undead_10', name: '骷髏法師', emoji: '🧙', attr: 'poison', appearance: 'skeleton_mage', hpMult: 0.85, atkMult: 1.3, defMult: 0.85, weight: 1, magic: false },
+  { id: 'undead_11', name: '怨靈', emoji: '🌫️', attr: 'dark', magic: true, appearance: 'lost_soul', hpMult: 0.9, atkMult: 1.3, defMult: 0.9, weight: 1 },
+  { id: 'undead_12', name: '骨龍王', emoji: '🐉', attr: 'dark', appearance: 'dragon', hpMult: 2.2, atkMult: 1.6, defMult: 1.5, weight: 1, magic: false }
 ];
 
 var GOD_BATTLEFIELD_POOL = [
-  { name: '太古戰魂', emoji: '👻', attr: 'earth' , weight: 10 }, { name: '遠古神兵', emoji: '🗡️', attr: 'earth' , weight: 1 },
-  { name: '破天戰將', emoji: '🛡️', attr: 'earth' , weight: 1 }, { name: '烈焰神衛', emoji: '💥', magic: true, attr: 'fire' , weight: 1 },
-  { name: '狂暴泰坦', emoji: '🗿', attr: 'earth' , weight: 1 }, { name: '神魔殘骸', emoji: '☠️', attr: 'fire' , weight: 1 },
-  { name: '不朽英靈', emoji: '🌟', magic: true, attr: 'earth' , weight: 1 }, { name: '裁決之劍', emoji: '⚔️', attr: 'fire' , weight: 10 },
-  { name: '滅世魔將', emoji: '👹', magic: true, attr: 'dark' , weight: 1 }, { name: '太古龍魂', emoji: '🐉', magic: true, attr: 'fire' , weight: 1 },
-  { name: '戰爭主宰', emoji: '🔱', attr: 'fire' , weight: 1 }, { name: '殞星巨獸', emoji: '☄️', magic: true, attr: 'fire' , weight: 1 }
+  { name: '太古戰魂', emoji: '👻', attr: 'earth', weight: 10, id: 'god_battlefield_1', magic: true },
+  { name: '遠古神兵', emoji: '🗡️', attr: 'earth', weight: 1, id: 'god_battlefield_2', magic: false },
+  { name: '破天戰將', emoji: '🛡️', attr: 'earth', weight: 1, id: 'god_battlefield_3', magic: true },
+  { name: '烈焰神衛', emoji: '💥', magic: false, attr: 'fire', weight: 1, id: 'god_battlefield_4' },
+  { name: '狂暴泰坦', emoji: '🗿', attr: 'earth', weight: 1, id: 'god_battlefield_5', magic: true },
+  { name: '神魔殘骸', emoji: '☠️', attr: 'fire', weight: 1, id: 'god_battlefield_6', magic: false },
+  { name: '不朽英靈', emoji: '🌟', magic: true, attr: 'earth', weight: 1, id: 'god_battlefield_7' },
+  { name: '裁決之劍', emoji: '⚔️', attr: 'fire', weight: 10, id: 'god_battlefield_8', magic: false },
+  { name: '滅世魔將', emoji: '👹', magic: true, attr: 'fire', weight: 1, id: 'god_battlefield_9' },
+  { name: '太古龍魂', emoji: '🐉', magic: false, attr: 'fire', weight: 1, id: 'god_battlefield_10' },
+  { name: '戰爭主宰', emoji: '🔱', attr: 'fire', weight: 1, id: 'god_battlefield_11', magic: true },
+  { name: '殞星巨獸', emoji: '☄️', magic: false, attr: 'fire', weight: 1, id: 'god_battlefield_12' }
 ];
 var GOD_CHAOS_POOL = [
-  { name: '混沌幼獸', emoji: '🐾', attr: 'lightning' , weight: 10 }, { name: '虛空行者', emoji: '🌌', magic: true, attr: 'ice' , weight: 1 },
-  { name: '時空魔靈', emoji: '⏱️', magic: true, attr: 'ice' , weight: 1 }, { name: '裂縫幻影', emoji: '👥', attr: 'ice' , weight: 1 },
-  { name: '混沌噬魂獸', emoji: '👾', attr: 'lightning' , weight: 1 }, { name: '蝕天巨煞', emoji: '👹', magic: true, attr: 'ice' , weight: 1 },
-  { name: '虛空之眼', emoji: '👁️', magic: true, attr: 'dark' , weight: 1 }, { name: '元素狂暴體', emoji: '⚡', magic: true, attr: 'lightning' , weight: 10 },
-  { name: '混沌使者', emoji: '🔮', magic: true, attr: 'lightning' , weight: 1 }, { name: '星雲魔獸', emoji: '🌌', magic: true, attr: 'ice' , weight: 1 },
-  { name: '創世餘燼', emoji: '🔥', magic: true, attr: 'lightning' , weight: 1 }, { name: '混沌大天尊', emoji: '☸️', magic: true, attr: 'ice' , weight: 1 }
+  { name: '混沌幼獸', emoji: '🐾', attr: 'lightning', weight: 10, id: 'god_chaos_1', magic: true },
+  { name: '虛空行者', emoji: '🌌', magic: false, attr: 'ice', weight: 1, id: 'god_chaos_2' },
+  { name: '時空魔靈', emoji: '⏱️', magic: true, attr: 'ice', weight: 1, id: 'god_chaos_3' },
+  { name: '裂縫幻影', emoji: '👥', attr: 'ice', weight: 1, id: 'god_chaos_4', magic: false },
+  { name: '混沌噬魂獸', emoji: '👾', attr: 'lightning', weight: 1, id: 'god_chaos_5', magic: true },
+  { name: '蝕天巨煞', emoji: '👹', magic: false, attr: 'ice', weight: 1, id: 'god_chaos_6' },
+  { name: '虛空之眼', emoji: '👁️', magic: true, attr: 'lightning', weight: 1, id: 'god_chaos_7' },
+  { name: '元素狂暴體', emoji: '⚡', magic: false, attr: 'lightning', weight: 10, id: 'god_chaos_8' },
+  { name: '混沌使者', emoji: '🔮', magic: true, attr: 'lightning', weight: 1, id: 'god_chaos_9' },
+  { name: '星雲魔獸', emoji: '🌌', magic: false, attr: 'ice', weight: 1, id: 'god_chaos_10' },
+  { name: '創世餘燼', emoji: '🔥', magic: true, attr: 'lightning', weight: 1, id: 'god_chaos_11' },
+  { name: '混沌大天尊', emoji: '☸️', magic: false, attr: 'ice', weight: 1, id: 'god_chaos_12' }
 ];
 var GOD_SANCTUARY_POOL = [
-  { name: '巡天聖光', emoji: '💫', magic: true, attr: 'light' , weight: 10 }, { name: '天使', emoji: '👼', magic: true, attr: 'light' , weight: 5 },
-  { name: '天使巡狩', emoji: '👼‍♀️', magic: true, attr: 'light' , weight: 5 }, { name: '審判使者', emoji: '⚖️', attr: 'fire' , weight: 1 },
-  { name: '聖域守衛', emoji: '🛡️', attr: 'light' , weight: 5 }, { name: '曜光巨龍', emoji: '🐉', magic: true, attr: 'light' , weight: 1 },
-  { name: '巨魔像', emoji: '🏛️', attr: 'earth' , weight: 1 }, { name: '永恒靈體', emoji: '🕊️', magic: true, attr: 'lightning' , weight: 1 },
-  { name: '聖地執法者', emoji: '📜', magic: true, attr: 'light' , weight: 1 }, { name: '神王護衛長', emoji: '👑', attr: 'light' , weight: 1 },
-  { name: '智慧晶體', emoji: '🌟', magic: true, attr: 'ice' , weight: 1 }, { name: '神聖執法官', emoji: '🌌', magic: true, attr: 'light' , weight: 1 }
+  { name: '巡天聖光', emoji: '💫', magic: true, attr: 'light', weight: 10, id: 'god_sanctuary_1' },
+  { name: '天使', emoji: '👼', magic: false, attr: 'light', weight: 5, id: 'god_sanctuary_2' },
+  { name: '天使巡狩', emoji: '👼‍♀️', magic: true, attr: 'fire', weight: 5, id: 'god_sanctuary_3' },
+  { name: '審判使者', emoji: '⚖️', attr: 'ice', weight: 1, id: 'god_sanctuary_4', magic: false },
+  { name: '聖域守衛', emoji: '🛡️', attr: 'light', weight: 5, id: 'god_sanctuary_5', magic: true },
+  { name: '曜光巨龍', emoji: '🐉', magic: false, attr: 'light', weight: 1, id: 'god_sanctuary_6' },
+  { name: '巨靈像', emoji: '🏛️', attr: 'ice', weight: 5, id: 'god_sanctuary_7', magic: true },
+  { name: '永恒靈體', emoji: '🕊️', magic: false, attr: 'fire', weight: 1, id: 'god_sanctuary_8' },
+  { name: '聖地執法者', emoji: '📜', magic: true, attr: 'light', weight: 1, id: 'god_sanctuary_9' },
+  { name: '神王護衛長', emoji: '👑', attr: 'light', weight: 1, id: 'god_sanctuary_10', magic: false },
+  { name: '智慧晶體', emoji: '🌟', magic: true, attr: 'ice', weight: 1, id: 'god_sanctuary_11' },
+  { name: '神聖執法官', emoji: '🌌', magic: false, attr: 'light', weight: 1, id: 'god_sanctuary_12' }
 ];
 
 /* NPC_CONFIG_TABLE 是所有可出現在野外的 NPC 基本資料表。

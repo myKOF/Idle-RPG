@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 
@@ -157,6 +158,20 @@ test('NPC 表有實際帶地屬性標籤的敵人，且 attr 一律是合法元�
   for (const [id, npc] of Object.entries(c.NPC_CONFIG_TABLE)) {
     assert.equal(csvAttr.get(id), npc.attr, `NPC.csv 的 ${id} 屬性與 js/data.js 不一致`);
   }
+});
+
+test('NPC 表已接入套用參數流程，且同步後 dry-run 不再有 JS 差異', () => {
+  const result = spawnSync(process.execPath, ['tools/config_tables.cjs', '--apply', 'NPC'], {
+    cwd: root, encoding: 'utf8'
+  });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.match(result.stdout, /重建字面值 7 個（語意變更 0）/);
+  const c = loadContext(['js/util.js', 'js/data.js']);
+  assert.equal(c.NPC_CONFIG_TABLE.undead_1.hpMult, 1.05);
+  assert.equal(c.NPC_CONFIG_TABLE.undead_3.aspdMult, 1.2);
+  const batch = fs.readFileSync(path.join(root, '套用參數.bat'), 'utf8');
+  assert.match(batch, /NPC\.xlsx/);
+  assert.match(batch, /%~2"=="NPC" exit \/b 0/);
 });
 
 test('特效層每一系元素都有主題色與受擊類別', () => {
