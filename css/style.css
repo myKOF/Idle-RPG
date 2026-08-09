@@ -39,7 +39,7 @@
   --afx-util: #9ae6a0;
 
   /* 裝�?詳�??�板?��?設�? (?��?/px) */
-  --it-affix-gap: 2px;
+  --it-affix-gap: 0px;
   /* 1. ?�屬??詞�?)?��?距顯�?*/
   --it-enchant-gap: 4px;
   /* 2. ?��??��??��?距顯�?*/
@@ -2936,8 +2936,8 @@ textarea#save-io {
 }
 
 .affix-reroll-btn {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   padding: 0;
   font-size: 11px;
   line-height: 1;
