@@ -2951,11 +2951,36 @@ function decide(state, policy, memo) {
                （生命值 0.05、法力值 0.075、生命恢復 0.6 這一類）。
 
                keepAncient 仍然預設為真——放行是策略要明確宣告的事。 */
+            /* ---- 宣告過的詞條目標不得被當成犧牲品 ----
+
+               ⚠️ 這是一個結構性的洞，不是小瑕疵。犧牲品純粹以 ΔDPS/ΔEHP 的損失挑，
+               而**價值不出現在戰鬥面板上的詞條損失恆為 0**——luck、gemEff、loot、
+               xpBonus、enhanceSuccess、cdr 全部如此。於是它們永遠是損失最小的那一條，
+               也就永遠第一個被洗掉：reroll-by-roi 系統性地拆掉 reroll-for-deficit
+               剛湊起來的東西，兩條規則整場互相拆台。
+
+               實測 24 小時 × 5 seed：gemEff / loot / xpBonus 三個目標都宣告了
+               atLeast 3，結果全身合計只有 2 / 5 / 3 條。
+
+               所以只要某個宣告過的詞條目標「再少一條就不達標」，那條就不准動。
+               waiting（前提不成立，例如幸運值只在神話裝以上才算數）不保護——
+               那時它本來就不該佔位置。 */
+            var rrProtect = {};
+            var rrTgts = (policy.targets || []);
+            for (var rti = 0; rti < rrTgts.length; rti++) {
+              var rt = rrTgts[rti];
+              if (!rt || !rt.affixKey || typeof rt.atLeast !== 'number') continue;
+              var rtd = state.ctx && state.ctx.deficit && state.ctx.deficit[rt.id];
+              if (!rtd || rtd.waiting) continue;
+              if (rtd.value === null || rtd.value <= rt.atLeast) rrProtect[rt.affixKey] = true;
+            }
+
             var victimAf = null, victimNet = -Infinity;
             for (var raj = 0; raj < affList.length; raj++) {
               var af2 = affList[raj];
               var isAnc = !!af2.ancient;
               if (isAnc && rrCfg.keepAncient !== false) continue;
+              if (rrProtect[af2.key]) continue;
               var loss = (af2.lossOffPct || 0) * roi.weights.offense
                 + (af2.lossEhpPct || 0) * roi.weights.ehp;
               var gain = isAnc

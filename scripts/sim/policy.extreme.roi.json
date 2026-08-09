@@ -187,7 +187,8 @@
       "critDmg",
       "hit",
       "lifesteal",
-      "cdr"
+      "cdr",
+      "luck"
     ],
     "affixJewel": [
       "gemEff",
@@ -209,7 +210,8 @@
       "shieldEff",
       "lifesteal",
       "loot",
-      "xpBonus"
+      "xpBonus",
+      "luck"
     ],
     "affixCritDmg": [
       "critDmg"
@@ -1631,6 +1633,27 @@
       "atLeast": 60,
       "affixKey": "cdr",
       "說明": "冷卻縮減。上限是遊戲的 STAT_CAPS.cdr=60，所以目標直接訂在上限——真人的說法是「後期冷卻需常態在 60% 上限值」。來源有兩條：專注附魔（focus，util 類別，鞋子與項鍊）與 cdr 詞條（minR 4，頭盔／腰帶／手套／戒指／項鍊）"
+    },
+    {
+      "id": "luckAffix",
+      "kind": "affixCount",
+      "affixKey": "luck",
+      "equipment": "panels.inv.equipment",
+      "slots": [
+        "helmet",
+        "ring",
+        "ring2",
+        "amulet"
+      ],
+      "atLeast": 1,
+      "when": [
+        "panels.inv.equipmentRarityMin",
+        ">=",
+        6
+      ],
+      "說明": "幸運值至少一條（合法部位只有頭盔、戒指、項鏈）。東西都得向遊戲拿：幸運只影響 rollAncientAffixCount，不進戰鬥面板",
+      "為什麼是神話以上_依據": "幸運的乘數 f = 1 + 0.5×luck/(luck+4000) 是**逐項次方**加權（ANCIENT_COUNT_WEIGHTS 第 i 項乘 f^i），所以權重表越長尾巴被拉得越誇張。用遊戲的權重算期望太古條數（幸運 0 → 20000）：R4 四條詞條 +0.18 條、R5 +0.30、R6 神話 +0.44、R7 創世 +0.60、R8 神鑄創世 +0.80、R10 +1.20——絕對增量差 6.7 倍。這正是使用者兩次發言的兩端：「400 級以前不太需要考慮」與「到了神話裝備以上值得投資」。早期堆幸運實測每個投資水位都是淨負（見 docs/SIM_HARNESS.md），那個結論只在 R4/R5 區間成立",
+      "神鑄_依據": "神鑄產物是**全新擲骰**（resolveForge 呼叫 makeEquipment），洗煉累積的太古位置不會繼承——實測 48 小時 A/B，有神鑄的一組太古密度反而低（1.34 對 1.60 條/件）。所以鑄造那一刻的幸運值直接決定 R7/R8 的太古條數，而這兩種品質正好是幸運邊際效益最大的地方"
     }
   ],
   "profile": {

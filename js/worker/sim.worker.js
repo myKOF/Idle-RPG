@@ -649,6 +649,19 @@ function buildInventoryPanel(params) {
       }
       return out;
     })(),
+    /* 身上最低品質（空部位不算）。equipmentRarities 是逐部位的表，
+       而條件式（策略的 targets.when / rules.if）只比得了純量——
+       「全身穿到神話以上了嗎」這種前提沒有這個欄位就表達不出來。
+       全空回 -1，語意與逐部位的空值一致。 */
+    equipmentRarityMin: (function () {
+      var eq = G.equipment || {}, min = null;
+      for (var slot in eq) {
+        if (!eq[slot]) continue;
+        var rv = typeof eq[slot].rarity === 'number' ? eq[slot].rarity : 0;
+        if (min === null || rv < min) min = rv;
+      }
+      return min === null ? -1 : min;
+    })(),
     /* 附魔書庫存（逐種）。view.books 只有總數，決定「這件要附什麼」時不夠用。 */
     books: G.player ? (G.player.books || {}) : {},
     /* 下一次背包擴充的金幣成本；已達上限時為 null。
