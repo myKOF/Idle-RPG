@@ -113,7 +113,23 @@ function runJob(job) {
       finished++;
       const mark = code === 0 ? '✅' : '❌';
       console.log(`  ${mark} [${finished}/${jobs.length}] ${job.tag}${code === 0 ? '' : '  退出碼 ' + code}`);
-      if (code !== 0 && stderr) console.log('     ' + stderr.trim().split('\n').slice(0, 3).join('\n     '));
+      /* ⚠️ 以前是 `if (code !== 0 && stderr)`——stderr 是空的就什麼都不印。
+         行程被外部殺掉（記憶體壓力、OOM）時 stderr 正好是空的，於是整批只留下
+         「❌ 5 次失敗」五個字，查不出跑到哪、為什麼死。實測踩過一次：
+         48 小時 × 5 seed 的對照組全滅，花了 62 分鐘卻沒有任何線索。
+         沒有 stderr 就改印進度檔的最後狀態——那是唯一還留在磁碟上的證據。 */
+      if (code !== 0) {
+        if (stderr) {
+          console.log('     ' + stderr.trim().split('\n').slice(0, 3).join('\n     '));
+        } else {
+          let where = '（無 stderr，可能是被外部終止）';
+          try {
+            const pg = JSON.parse(fs.readFileSync(path.join(job.out, 'sim_progress.json'), 'utf8'));
+            where = `無 stderr；死在 ${pg.currentHour}/${pg.totalHours} 小時（${pg.percent}%）Lv.${pg.level} 關卡 ${pg.stage}`;
+          } catch (e) { /* 進度檔還沒寫出來就死了 */ }
+          console.log('     ' + where);
+        }
+      }
       resolve({ job, code, stderr });
     });
   });
