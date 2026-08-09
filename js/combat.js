@@ -214,6 +214,19 @@ function nextAutoAdvanceZone(zoneKey) {
     return null;
 }
 
+/* 是否還有更後面的地圖配置。下一張可能因前置關卡或轉生條件尚未解鎖，
+   但這不代表目前地圖已經是整個推圖流程的終點。 */
+function hasConfiguredHigherZone(zoneKey) {
+    if (typeof ZONE_LIST === 'undefined' || !Array.isArray(ZONE_LIST)) return false;
+    var currentMax = zoneMaxStage(zoneKey);
+    var index = ZONE_LIST.indexOf(zoneKey);
+    if (index < 0) return false;
+    for (var i = index + 1; i < ZONE_LIST.length; i++) {
+        if (zoneMaxStage(ZONE_LIST[i]) > currentMax) return true;
+    }
+    return false;
+}
+
 /* ---- 效果（暈眩/減速/中毒/淨化） ----
    攻擊頻率控制類套用「控場遞減」（controlDurationFactor → formula.js §3）；
    成功回傳實際持續秒數（供顯示），遞減歸零或 BOSS 免疫回傳 false。 */
@@ -858,6 +871,13 @@ function completeFieldWave(st) {
                 switchZone(nextZone);
                 switchedZone = true;
                 blog('🚩 自動推進至【' + currentZoneDef().name + '】第 ' + G.stage.current + ' 關！', 'good');
+            } else if (hasConfiguredHigherZone(G.stage.zone)) {
+                /* 後續地圖存在但尚未解鎖（例如未達 11 轉）：留在地圖上限，
+                   讓玩家繼續重打最後一關，而不是將整張地圖標成完成後停怪。 */
+                G.stage.current = maxStage;
+                G.stage.best = Math.max(G.stage.best || 1, maxStage);
+                FIELD.mapComplete = false;
+                blog('🔒 後續地圖尚未解鎖，暫留第 ' + maxStage + ' 關重複挑戰。', 'info');
             } else {
                 G.stage.current = maxStage;
                 G.stage.best = Math.max(G.stage.best || 1, maxStage);
