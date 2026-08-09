@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## Codex：修正 NPC 表套用後未回寫 `js/data.js`（2026-08-09）
+
+- Status: Completed
+- Owner: Codex
+- Task: 讓 `config/Excel/NPC.xlsx`／`config/CSV/NPC.csv` 進入既有「套用參數」流程，修改 NPC 名稱、屬性、外觀、魔法型與出現權重後能同步回寫 `js/data.js`，避免刷新後仍使用舊敵人資料。
+- 前置依賴: 無；沿用既有 `config_tables.cjs` 的 xlsx／CSV／JS 字面值回寫架構。
+- 允許修改: `tools/config_tables.cjs`、`套用參數.bat`、`tools/參數表使用說明.md`、`js/data.js`、`js/bridge.js`、`js/worker/sim.worker.js`、`tests/earth-element.test.cjs`、`docs/AI_TASKS.md`。
+- 禁止修改: 戰鬥公式、Worker Protocol、NPC 倍率等非 NPC 表欄位、使用者未要求的其他參數表。
+- 驗收方式: NPC 表 dry-run 能偵測 CSV 與 JS 差異；正式套用後 NPC 屬性與權重一致；NPC 倍率等未列入 CSV 的既有欄位保留；定向測試、`npm.cmd test`、`npm.cmd run build` 通過。
+- 完成內容: 新增 `NPC` schema 與六表套用順序；`套用參數.bat` 會同步 NPC xlsx/CSV 並回寫七張地圖的 NPC pool；套用時保留未列入 NPC 表的戰鬥倍率；更新 Worker 快取版本。
+- 測試結果: NPC／地圖定向測試 23/23、完整測試 1191/1191、`node tools/config_tables.cjs --apply` 語意變更 0、`npm.cmd run build` 252 個檔案全數通過。
+- 已知風險: 使用者需先在 Excel 儲存 `NPC.xlsx` 再執行「套用參數.bat」；已開啟的遊戲頁面需等待自動重載或重新整理，才會取得新 Worker 資產版本。
+- 未完成項目: 無。
+- 後續接手者: Claude Code 唯讀 Review；必要時 Antigravity 實機驗證。
+
 ## Codex：修正 GM 關卡修改後地圖進度不同步（2026-08-07）
 
 - Status: Completed

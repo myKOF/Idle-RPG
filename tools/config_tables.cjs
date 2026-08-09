@@ -1,6 +1,6 @@
 'use strict';
 /* =============================================================================
-   config_tables.cjs — 四系統（技能/寶石/天賦/裝備詞條）配置撥離管線
+   config_tables.cjs — 六系統（技能/寶石/天賦/裝備詞條/NPC/任務）配置撥離管線
    -----------------------------------------------------------------------------
    將 js/skills.js 與 js/data.js 中的內容資料表撥離成獨立、可用 Excel 編輯的
    xlsx + CSV；並能把編輯後的表單「回寫」進遊戲 JS（雙向）。
@@ -11,11 +11,12 @@
      node tools/config_tables.cjs --apply            # 試跑：由 CSV 重建 JS 字面值，只報告不寫檔
      node tools/config_tables.cjs --apply --write    # 實際寫回 JS（先備份、寫入後 node --check、失敗還原）
 
-   五表 ↔ JS 字面值：
+   六表 ↔ JS 字面值：
      Skills            ← SKILLS + UNLOCKS（js/skills.js）
      Gems              ← GEM_TYPES（js/data.js）
      Talents           ← TALENT_TREES + POTENTIAL_TALENTS（js/data.js）
      Equipment_Affix   ← AFFIX_POOL + PASSIVE_POOL + GODFORGE_POOL（js/data.js）
+     NPC               ← 各地圖 NPC pool（js/data.js）
      Task              ← TASKS（js/data.js，2026-08-05 任務系統）
 
    原理：這些是「純資料字面值」（`var NAME = {…};`）。--gen 以字串感知的括號配對
@@ -323,7 +324,7 @@ function writeXlsx(xlsxPath, sheetName, rows, extraSheets) {
 }
 
 /* ===========================================================================
-   四表 schema：extract(把 JS 值攤平成 rows) / rebuild(rows 重建字面值文字)
+   六表 schema：extract(把 JS 值攤平成 rows) / rebuild(rows 重建字面值文字)
    每個 schema：{ name, jsFile, sheet, header, extract(vals)->dataRows, rebuild(dataRows)->{var:newText} }
    dataRows 不含表頭；rows() 皆以表頭名稱定位欄位（容忍使用者調欄序）。
    =========================================================================== */
@@ -334,6 +335,83 @@ function rowGetter(header) {
 }
 
 const SCHEMAS = {};
+
+/* ---- NPC ← 各地圖 NPC pool ----
+   NPC.csv 只管理 NPC 基本資料；hpMult／atkMult／defMult／aspdMult 等戰鬥倍率
+   仍保留在 js/data.js，不讓「表格沒有的欄位」在套用時被清掉。
+   外觀欄沿用既有 NPC.csv 語意：舊地圖填 emoji，亡靈山脈等有獨立外觀 key 的
+   NPC 填 appearance key；套用時依既有物件是否有 appearance 欄位判斷寫回位置。 */
+const NPC_POOL_DEFS = [
+  { zone: 'desert', varName: 'DESERT_POOL' },
+  { zone: 'Icefield', varName: 'ICEFIELD_POOL' },
+  { zone: 'swamp', varName: 'SWAMP_POOL' },
+  { zone: 'undead_mountains', varName: 'UNDEAD_MOUNTAINS_POOL' },
+  { zone: 'god_battlefield', varName: 'GOD_BATTLEFIELD_POOL' },
+  { zone: 'god_chaos', varName: 'GOD_CHAOS_POOL' },
+  { zone: 'god_sanctuary', varName: 'GOD_SANCTUARY_POOL' }
+];
+
+SCHEMAS.NPC = {
+  name: 'NPC', jsFile: 'data', sheet: 'NPC', vars: NPC_POOL_DEFS.map(d => d.varName),
+  header: ['NPC識別碼', 'NPC名稱', '所屬地圖識別碼', '屬性', '外觀', '魔法型（1是／0否）', '出現權重'],
+  extract(src) {
+    const rows = [];
+    NPC_POOL_DEFS.forEach(def => {
+      const pool = evalLiteral(extractLiteral(src, def.varName).literal);
+      pool.forEach((entry, index) => {
+        const id = entry.id || (def.zone + '_' + (index + 1));
+        rows.push([id, entry.name, def.zone, entry.attr || '', entry.appearance || entry.emoji || '',
+          entry.magic ? '1' : '0', numStr(entry.weight == null ? 1 : entry.weight)]);
+      });
+    });
+    return rows;
+  },
+  rebuild(dataRows, header, existingSrc) {
+    if (!existingSrc) throw new Error('NPC 套用缺少 js/data.js 原始內容');
+    const get = rowGetter(header);
+    const rowsByZone = {};
+    const oldById = {};
+    const defByZone = {};
+    NPC_POOL_DEFS.forEach(def => {
+      rowsByZone[def.zone] = [];
+      defByZone[def.zone] = def;
+      const pool = evalLiteral(extractLiteral(existingSrc, def.varName).literal);
+      pool.forEach((entry, index) => {
+        const id = entry.id || (def.zone + '_' + (index + 1));
+        oldById[id] = entry;
+      });
+    });
+    dataRows.forEach((row, index) => {
+      const id = get(row, 'NPC識別碼').trim();
+      if (id === '') return;
+      const zone = get(row, '所屬地圖識別碼').trim();
+      if (!defByZone[zone]) throw new Error('NPC 第 ' + (index + 2) + ' 列的地圖識別碼不存在：' + zone);
+      const old = oldById[id];
+      const o = old ? Object.assign({}, old) : {};
+      o.id = id;
+      o.name = get(row, 'NPC名稱');
+      const attr = get(row, '屬性').trim();
+      if (attr) o.attr = attr; else delete o.attr;
+      const visual = get(row, '外觀');
+      if (old && Object.prototype.hasOwnProperty.call(old, 'appearance')) {
+        o.appearance = visual;
+        if (!o.emoji) o.emoji = visual;
+      } else {
+        o.emoji = visual;
+        delete o.appearance;
+      }
+      o.magic = toBool(get(row, '魔法型（1是／0否）'));
+      o.weight = toNum(get(row, '出現權重'));
+      rowsByZone[zone].push(o);
+    });
+    return NPC_POOL_DEFS.reduce((out, def) => {
+      if (!rowsByZone[def.zone].length) throw new Error('NPC 缺少地圖資料：' + def.zone);
+      out[def.varName] = 'var ' + def.varName + ' = [\n' +
+        rowsByZone[def.zone].map(o => '  ' + jsLit(o)).join(',\n') + '\n];';
+      return out;
+    }, {});
+  }
+};
 
 /* ---- Gems ← GEM_TYPES ---- */
 SCHEMAS.Gems = {
@@ -797,7 +875,7 @@ SCHEMAS.Task = {
   }
 };
 
-const TABLE_ORDER = ['Skills', 'Gems', 'Talents', 'Equipment_Affix', 'Task'];
+const TABLE_ORDER = ['Skills', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Task'];
 
 /* ===========================================================================
    模式：--gen / --sync / --apply
@@ -816,7 +894,7 @@ function cmdGen(only) {
     writeXlsx(xlsxPathOf(name), sc.sheet, rows, sc.extraSheets);
     console.log('  ✔ ' + name + '：' + dataRows.length + ' 列 → CSV + xlsx');
   });
-  console.log('[gen] 已由 JS 產生' + (only ? '「' + only + '」表' : '四表') + '。');
+  console.log('[gen] 已由 JS 產生' + (only ? '「' + only + '」表' : '六表') + '。');
 }
 
 function cmdSync() {
@@ -848,7 +926,7 @@ function cmdApply(only) {
     const header = allRows[0];
     const dataRows = allRows.slice(1);
     let rebuilt;
-    try { rebuilt = sc.rebuild(dataRows, header); }
+    try { rebuilt = sc.rebuild(dataRows, header, srcMap[sc.jsFile]); }
     catch (e) { console.error('  ✗ ' + name + ' 重建失敗：' + e.message); hadError = true; return; }
     Object.keys(rebuilt).forEach(varName => {
       let loc;
@@ -915,6 +993,6 @@ if (mode === 'gen') cmdGen(only);
 else if (mode === 'sync') cmdSync();
 else if (mode === 'apply') cmdApply(only);
 else {
-  console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills|Gems|Talents|Equipment_Affix]');
+  console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills|Gems|Talents|Equipment_Affix|NPC|Task]');
   process.exit(1);
 }
