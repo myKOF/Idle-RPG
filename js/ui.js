@@ -2393,7 +2393,7 @@ function enemyBuffTooltipDesc(anchorEl) {
   return rows.length ? rows.join('') : '<span class="dim-text">目前沒有狀態</span>';
 }
 
-function zoneElementTagsList(z) {
+function zoneElementTagsList(z, maxCount) {
   var table = (typeof ZONE_ENEMY_TABLES !== 'undefined' && ZONE_ENEMY_TABLES[z]) || null;
   var pool = (typeof ZONES !== 'undefined' && ZONES[z] && ZONES[z].pool) || null;
   var weights = {};
@@ -2419,7 +2419,8 @@ function zoneElementTagsList(z) {
     return weights[b] - weights[a];
   });
   if (sortedAttrs.length === 0) return [];
-  return sortedAttrs.slice(0, 3).map(function (attr) {
+  var limit = typeof maxCount === 'number' ? maxCount : 3;
+  return sortedAttrs.slice(0, limit).map(function (attr) {
     if (typeof ELEM_INFO === 'undefined' || !ELEM_INFO[attr]) return null;
     var info = ELEM_INFO[attr];
     var emoji = (attr === 'poison' ? '🟢' : (attr === 'dark' ? '🟣' : info.emoji));
@@ -6917,23 +6918,19 @@ function showEnemyTooltip(anchorEl) {
       elemBadgeHtml = '<span style="padding:1px 6px; font-size:12px; font-weight:normal; border-radius:4px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:var(--text);">' + emoji + ' ' + shortName + '屬性</span>';
     }
   } else {
-    var elemTags = zoneElementTagsList(zoneKey);
+    /* 以場景權重標籤作為唯一來源，保留目前敵人的屬性在第一個位置。
+       舊邏輯先加入無百分比的 m.attr，再加入同屬性的加權標籤，會造成
+       「暗屬性」與「暗屬性 (56.7%)」同時出現。 */
+    var elemTags = zoneElementTagsList(zoneKey, Infinity);
+    var currentAttr = m.attr || null;
     var tagList = [];
-    if (m.attr && ELEM_INFO[m.attr]) {
-      var mAttr = m.attr;
-      var info = ELEM_INFO[mAttr];
-      var emoji = (mAttr === 'poison' ? '🟢' : (mAttr === 'dark' ? '🟣' : info.emoji));
-      var shortName = info.short || info.name;
-      tagList.push(emoji + ' ' + shortName + '屬性');
-    }
     elemTags.forEach(function (t) {
-      if (tagList.indexOf(t.label) < 0) {
-        tagList.push(t.label);
-      }
+      if (t.attr === currentAttr) tagList.unshift(t);
+      else tagList.push(t);
     });
     if (tagList.length > 0) {
-      elemBadgeHtml = tagList.slice(0, 2).map(function (lbl) {
-        return '<span style="padding:1px 6px; font-size:12px; font-weight:normal; border-radius:4px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:var(--text); margin-left:4px;">' + lbl + '</span>';
+      elemBadgeHtml = tagList.slice(0, 2).map(function (tag) {
+        return '<span style="padding:1px 6px; font-size:12px; font-weight:normal; border-radius:4px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:var(--text); margin-left:4px;">' + tag.label + '</span>';
       }).join('');
     }
   }

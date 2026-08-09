@@ -73,7 +73,10 @@ test('敵人情報 Tips 置頂區顯示屬性標籤，下方不再重複顯示 �
 
   const showContent = ctx.mockTip.innerHTML;
   assert.ok(showContent, '應有 Tooltip 內容');
-  assert.match(showContent, /【敵人情報】.*🟢 毒屬性/s);
+  assert.match(showContent, /【敵人情報】.*🟢 毒屬性 \(\d+(\.\d+)?%\)/s);
+  assert.doesNotMatch(showContent, /🟢 毒屬性<\/span>/);
+  assert.doesNotMatch(showContent, /🟢 毒屬性<\/span>[\s\S]*🟢 毒屬性 \(/);
+  assert.doesNotMatch(showContent, /🟣 暗屬性<\/span>/);
   assert.doesNotMatch(showContent, /🌌 屬性：/);
 });
 
