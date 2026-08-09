@@ -18,7 +18,7 @@ test('equipment affix reroll buttons render in a fixed right action column', () 
 test('equipment affix rows reserve a stable right-side button column', () => {
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
 
-  assert.match(css, /--it-affix-gap:\s*0px/);
+  assert.match(css, /--it-affix-gap:\s*1px/);
   assert.match(css, /\.it-affixes\s*{[\s\S]*width:\s*100%/);
   assert.match(css, /\.it-affix-row\s*{[\s\S]*display:\s*grid/);
   assert.match(css, /\.it-affix-row\s*{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*32px/);
