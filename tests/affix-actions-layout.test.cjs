@@ -22,7 +22,10 @@ test('equipment affix rows reserve a stable right-side button column', () => {
   assert.match(css, /\.it-affix-row\s*{[\s\S]*display:\s*grid/);
   assert.match(css, /\.it-affix-row\s*{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*32px/);
   assert.match(css, /\.it-affix-row\s*{[\s\S]*width:\s*100%/);
+  assert.match(css, /\.it-affix-row\s*{[\s\S]*min-height:\s*22px[\s\S]*height:\s*22px/);
+  assert.match(css, /\.it-affix-text\s*{[\s\S]*white-space:\s*nowrap/);
   assert.match(css, /\.it-affix-action\s*{[\s\S]*justify-content:\s*center/);
+  assert.match(css, /\.it-affix-action\s*{[\s\S]*min-height:\s*22px[\s\S]*height:\s*22px/);
   assert.match(css, /\.affix-reroll-btn\s*{[\s\S]*width:\s*22px/);
   assert.match(css, /\.affix-reroll-btn\s*{[\s\S]*height:\s*22px/);
 });

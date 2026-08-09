@@ -2063,7 +2063,7 @@ textarea#save-io {
 
 .equip-top-layout {
   display: grid;
-  grid-template-columns: minmax(0, 796px) minmax(200px, 210px);
+  grid-template-columns: minmax(0, 810px) minmax(200px, 224px);
   gap: 10px;
   align-items: start;
   background: transparent;
@@ -2871,6 +2871,7 @@ textarea#save-io {
   color: var(--dim);
   font-size: 13px;
   margin-bottom: 8px;
+  white-space: nowrap;
 }
 
 .it-affix {
@@ -2910,13 +2911,14 @@ textarea#save-io {
   grid-template-columns: minmax(0, 1fr) 32px;
   align-items: center;
   column-gap: 8px;
-  min-height: 15px;
-  height: 15px;
+  min-height: 22px;
+  height: 22px;
   width: 100%;
 }
 
 .it-affix-text {
   min-width: 0;
+  white-space: nowrap;
 }
 
 /* 滑�??�側洗�??��??��??�確標示它�?對�??��?條�?*/
@@ -2929,8 +2931,8 @@ textarea#save-io {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 15px;
-  height: 15px;
+  min-height: 22px;
+  height: 22px;
 }
 
 .affix-reroll-btn {
@@ -5220,9 +5222,9 @@ textarea:disabled,
 
 /* 裝�?詳�??��?：固定寬度�??��?風格?��??�景 */
 .equip-detail-card {
-  width: 306px !important;
-  min-width: 306px !important;
-  max-width: 306px !important;
+  width: 320px !important;
+  min-width: 320px !important;
+  max-width: 320px !important;
   box-sizing: border-box !important;
   border: 1px solid var(--accent) !important;
   border-radius: 6px !important;
@@ -8500,7 +8502,7 @@ button.nf-part-slot.nf-part-ico {
 }
 
 #ui-shell .equip-top-layout {
-  grid-template-columns: minmax(0, 796px) minmax(200px, 210px) !important;
+  grid-template-columns: minmax(0, 810px) minmax(200px, 224px) !important;
 }
 
 #ui-shell .battle-scene {
