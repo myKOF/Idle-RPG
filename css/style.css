@@ -2079,7 +2079,7 @@ textarea#save-io {
    ?��??��??��?例�??��?裝�??�永?�到不�??�大後�?尺寸??*/
 .equip-layout {
   display: grid;
-  grid-template-columns: minmax(300px, 400px) minmax(290px, 1fr);
+  grid-template-columns: minmax(300px, 338px) minmax(304px, 1fr);
   gap: 8px;
   margin-bottom: 0;
 }
@@ -2240,8 +2240,8 @@ textarea#save-io {
 /* 裝�??�右?��?寶石／�?魔�??�示?�：固定�?度�??��??��??��?下推??*/
 .equip-material-panel {
   min-width: 0;
-  margin-left: 14px;
-  width: calc(100% - 14px);
+  margin-left: 0;
+  width: 100%;
   height: 465px;
   max-height: 465px;
   margin-top: 30px;
@@ -8498,11 +8498,11 @@ button.nf-part-slot.nf-part-ico {
 }
 
 #ui-shell .equip-layout {
-  grid-template-columns: minmax(300px, 400px) minmax(290px, 1fr) !important;
+  grid-template-columns: minmax(300px, 338px) minmax(304px, 1fr) !important;
 }
 
 #ui-shell .equip-top-layout {
-  grid-template-columns: minmax(0, 810px) minmax(200px, 224px) !important;
+  grid-template-columns: minmax(0, 810px) minmax(200px, 210px) !important;
 }
 
 #ui-shell .battle-scene {
