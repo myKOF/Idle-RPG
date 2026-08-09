@@ -18,7 +18,7 @@ test('equipment affix reroll buttons render in a fixed right action column', () 
 test('equipment affix rows reserve a stable right-side button column', () => {
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
 
-  assert.match(css, /--it-affix-gap:\s*1px/);
+  assert.match(css, /--it-affix-gap:\s*2px/);
   assert.match(css, /\.it-affixes\s*{[\s\S]*width:\s*100%/);
   assert.match(css, /\.it-affix-row\s*{[\s\S]*display:\s*grid/);
   assert.match(css, /\.it-affix-row\s*{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*32px/);
@@ -29,4 +29,12 @@ test('equipment affix rows reserve a stable right-side button column', () => {
   assert.match(css, /\.it-affix-action\s*{[\s\S]*min-height:\s*22px[\s\S]*height:\s*22px/);
   assert.match(css, /\.affix-reroll-btn\s*{[\s\S]*width:\s*16px/);
   assert.match(css, /\.affix-reroll-btn\s*{[\s\S]*height:\s*16px/);
+});
+
+test('equipment effect text keeps a 2px wrapped-line gap', () => {
+  const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
+
+  assert.match(css, /--it-effect-line-gap:\s*2px/);
+  assert.match(css, /\.it-passive\s*{[\s\S]*line-height:\s*calc\(1em\s*\+\s*var\(--it-effect-line-gap\)\)/);
+  assert.match(css, /\.it-godpassive\s*{[\s\S]*line-height:\s*calc\(1em\s*\+\s*var\(--it-effect-line-gap\)\)/);
 });
