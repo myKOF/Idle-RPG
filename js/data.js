@@ -1349,7 +1349,7 @@ var PART_TYPES = {
   extractLens: { name: '精粹透鏡', emoji: '🔬', node: 'salvage', desc: '分解時附魔精華產出率 +{v}%', base: 20, perLevel: 20 },
   knowledgeCore: { name: '知識核心', emoji: '📚', node: 'salvage', desc: '分解時獲得當前關卡敵人經驗的 {v}%', base: 3, perLevel: 1.5 },
   gemCollector: { name: '寶石採集器', emoji: '💎', node: 'salvage', desc: '分解時 {v}% 機率獲得 1 級寶石', base: 3, perLevel: 1.5 },
-  luckHeart: { name: '幸運之心', emoji: '💖', node: 'salvage', desc: '分解時 {v}% 機率使所有產物 ×3', base: 1, perLevel: 0.5 },
+  luckHeart: { name: '幸運之心', emoji: '💖', node: 'salvage', desc: '分解時 {v}% 機率使所有產物 ×3', base: 3, perLevel: 1.5 },
   ancientEssenceRate: { name: '太古精華萃取器', emoji: '🧬', node: 'salvage', desc: '分解太古精華掉落率 +{v}%', base: 25, perLevel: 25 },
   furnaceCore: { name: '熔爐核心', emoji: '♨️', node: 'salvage', desc: '熔爐上的零件效果額外提升 {v}%', base: 5, perLevel: 2.5 }
 };
