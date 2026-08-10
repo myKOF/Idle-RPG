@@ -1632,6 +1632,22 @@
       "atLeast": 60,
       "affixKey": "cdr",
       "說明": "冷卻縮減。上限是遊戲的 STAT_CAPS.cdr=60，所以目標直接訂在上限——真人的說法是「後期冷卻需常態在 60% 上限值」。來源有兩條：專注附魔（focus，util 類別，鞋子與項鍊）與 cdr 詞條（minR 4，頭盔／腰帶／手套／戒指／項鍊）"
+    },
+    {
+      "id": "jewelEnhanceSuccess",
+      "kind": "affixCount",
+      "affixKey": "enhanceSuccess",
+      "equipment": "panels.inv.equipment",
+      "slots": [
+        "amulet",
+        "ring",
+        "ring2"
+      ],
+      "atLeast": 1,
+      "說明": "強化成功率至少一條。合法部位只有戒指與項鏈（AFFIX_POOL.enhanceSuccess.slots）",
+      "依據": "實測 48 小時 × 5 seed：全身 60 件裝備裡 enhanceSuccess **0 條**。它在保留清單裡（不會被洗掉），但沒人去追——而 ROI 也追不了：它的價值不出現在 ΔDPS/ΔEHP 上，排序永遠是 0。只有宣告成目標才會有規則主動去湊",
+      "價值_依據": "使用者：「強化成功率只要出一條，就能大幅降低強化材料消耗」。算過：+30% 成功率時，強化到 +25 的期望碎片從 440,754 降到 273,643。實測身上強化等級中位正好卡在 maxUpgrade 的 25（平均 24.5），而帶 globalAffixKeys 的那幾件能到 39——成功率就是那道天花板",
+      "為什麼是 1_依據": "合法部位只有戒指×2 與項鏈，而那三個部位已經要湊 gemEff/loot/xpBonus 三個 atLeast 3 的目標。要得太多只會讓所有目標一起湊不滿；先拿一條，下一輪再看要不要加"
     }
   ],
   "profile": {
