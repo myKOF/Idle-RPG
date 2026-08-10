@@ -217,10 +217,35 @@ function vfxLayerRect(layer) {
   return rect;
 }
 
+function vfxPointTarget(elId, el) {
+  /* 高塔的 tb-float 只是浮字層；整個 .combatant boss 會被 grid 拉滿整欄，
+     取它的中心會把命中爆點與投射物終點推到血條／狀態列附近。
+     座標錨點要改用 BOSS 圖像，受擊震動仍由 vfxHitReact 另外尋找 combatant。 */
+  if (elId === 'tb-float') {
+    var bossVisualHost = document.getElementById('tb-emoji');
+    if (bossVisualHost) {
+      var visual = bossVisualHost.querySelector
+        ? bossVisualHost.querySelector('img, span')
+        : null;
+      if (visual && visual.getBoundingClientRect) {
+        var vr = visual.getBoundingClientRect();
+        if (vr.width || vr.height) return visual;
+      }
+      if (bossVisualHost.getBoundingClientRect) {
+        var hr = bossVisualHost.getBoundingClientRect();
+        if (hr.width || hr.height) return bossVisualHost;
+      }
+    }
+  }
+  return el && el.closest
+    ? (el.closest('.enemy-card') || el.closest('.combatant') || el)
+    : el;
+}
+
 function vfxPointOf(elId, layer) {
   var el = document.getElementById(elId);
   if (!el || !layer) return null;
-  var target = el.closest ? (el.closest('.enemy-card') || el.closest('.combatant') || el) : el;
+  var target = vfxPointTarget(elId, el);
   var cached = _vfxAnchorCache[elId];
   var r;
   if (cached && cached.target === target && cached.layer === layer && cached.version === _vfxLayoutVersion) {

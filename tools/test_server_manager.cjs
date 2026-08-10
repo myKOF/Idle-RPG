@@ -3,6 +3,7 @@
 const fs = require('fs');
 const http = require('http');
 const net = require('net');
+const os = require('os');
 const path = require('path');
 const { execFile, spawn } = require('child_process');
 
@@ -10,16 +11,57 @@ const ROOT = path.resolve(__dirname, '..');
 const UI_FILE = path.join(__dirname, 'test_server_manager.html');
 const DEFAULT_MANAGER_PORT = 8124;
 const WORKTREE_NAMES = ['codex', 'claude', 'antigravity'];
+const REGISTRY_FILE = path.join(
+  os.tmpdir(),
+  `idle-rpg-test-servers-${path.basename(ROOT).toLowerCase().replace(/[^a-z0-9_-]/g, '_')}.json`
+);
 const activeServers = new Map();
 let managerPort = null;
+let registryLoaded = false;
 
 function validPort(port) {
   return Number.isInteger(port) && port >= 1 && port <= 65535;
 }
 
+function stripRuntimeFields(record) {
+  const { server, child, ...serializable } = record;
+  return serializable;
+}
+
+function loadRegistry() {
+  if (registryLoaded) return;
+  registryLoaded = true;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(REGISTRY_FILE, 'utf8'));
+    if (!Array.isArray(parsed)) return;
+    for (const record of parsed) {
+      if (!record || !validPort(Number(record.port))) continue;
+      activeServers.set(Number(record.port), {
+        ...record,
+        port: Number(record.port),
+        managed: true,
+      });
+    }
+  } catch (_) {
+    // No registry is normal on the first launch.
+  }
+}
+
+function persistRegistry() {
+  const records = Array.from(activeServers.values()).map(stripRuntimeFields);
+  const temporaryFile = `${REGISTRY_FILE}.${process.pid}.tmp`;
+  try {
+    fs.writeFileSync(temporaryFile, JSON.stringify(records, null, 2), 'utf8');
+    fs.renameSync(temporaryFile, REGISTRY_FILE);
+  } catch (_) {
+    try { fs.unlinkSync(temporaryFile); } catch (_) {}
+  }
+}
+
 function readRecords() {
+  loadRegistry();
   return Array.from(activeServers.values())
-    .map(({ server, ...record }) => record)
+    .map(stripRuntimeFields)
     .sort((a, b) => a.port - b.port);
 }
 
@@ -149,7 +191,17 @@ async function discoverLocalServers() {
 }
 
 async function readAllRecords() {
-  const managed = readRecords().map((record) => ({ ...record, managed: true }));
+  const managed = [];
+  let registryChanged = false;
+  for (const record of readRecords()) {
+    if (await isManagedRecordAlive(record)) {
+      managed.push({ ...record, managed: true });
+    } else {
+      activeServers.delete(record.port);
+      registryChanged = true;
+    }
+  }
+  if (registryChanged) persistRegistry();
   const external = await discoverLocalServers();
   return [...managed, ...external].sort((a, b) => a.port - b.port);
 }
@@ -165,6 +217,17 @@ function isPortOpen(port) {
     socket.once('error', () => done(false));
     socket.setTimeout(400, () => done(false));
   });
+}
+
+async function isManagedRecordAlive(record) {
+  if (!validPort(record.port) || !Number.isInteger(Number(record.pid))) return false;
+  const probe = await probeHttp(record.port);
+  if (!probe) return false;
+  if (process.platform !== 'win32') return true;
+
+  const endpoints = (await listListeningPorts()).filter((item) => item.port === record.port);
+  if (endpoints.length === 0) return true;
+  return endpoints.some((item) => item.pid === Number(record.pid));
 }
 
 function getPage(port) {
@@ -191,19 +254,34 @@ async function waitUntilReady(port, timeoutMs = 10000) {
 }
 
 async function startServer(port, sourceKey) {
-  if (!validPort(port)) throw new Error('Port 必須是 1 到 65535 的整數。');
+  if (!validPort(port)) throw new Error('Port must be an integer from 1 to 65535.');
   const source = resolveSourceRoot(sourceKey);
   const existing = readRecords().find((record) => record.port === port);
   if (existing) {
     if (existing.sourceKey && existing.sourceKey !== source.key) {
       throw new Error(`Port ${port} 已由 ${existing.sourceLabel || existing.sourceKey} 來源啟動，請先關閉它或改用其他 Port。`);
     }
-    return existing;
+    if (await isManagedRecordAlive(existing)) return existing;
+    activeServers.delete(port);
+    persistRegistry();
   }
   if (await isPortOpen(port)) throw new Error(`Port ${port} 已被其他程式使用。`);
 
+  const child = spawn(process.execPath, [
+    __filename,
+    '--server',
+    '--server-port', String(port),
+    '--server-root', source.root,
+  ], {
+    cwd: ROOT,
+    detached: true,
+    stdio: 'ignore',
+    windowsHide: true,
+  });
+  child.unref();
+
   const record = {
-    pid: process.pid,
+    pid: child.pid,
     port,
     url: `http://127.0.0.1:${port}/`,
     startedAt: new Date().toISOString(),
@@ -211,23 +289,26 @@ async function startServer(port, sourceKey) {
     sourceKey: source.key,
     sourceLabel: source.label,
     sourceRoot: source.root,
-    server: createStaticServer(source.root)
+    child,
   };
   try {
-    await listenServer(record.server, port);
+    if (!await waitUntilReady(port)) throw new Error(`Port ${port} test server did not become ready.`);
   } catch (error) {
-    if (error.code === 'EADDRINUSE') throw new Error(`Port ${port} 已被其他程式使用。`);
+    try { await terminateProcess(child.pid); } catch (_) {}
     throw error;
   }
   activeServers.set(port, record);
+  persistRegistry();
   return readRecords().find((item) => item.port === port);
 }
 
 async function stopServer(port) {
+  loadRegistry();
   const record = activeServers.get(port);
   if (!record) throw new Error(`找不到 port ${port} 的測試服。`);
-  await new Promise((resolve, reject) => record.server.close((error) => error ? reject(error) : resolve()));
+  await terminateProcess(record.pid);
   activeServers.delete(port);
+  persistRegistry();
   return { pid: record.pid, port: record.port, url: record.url, startedAt: record.startedAt };
 }
 
@@ -237,6 +318,18 @@ function terminateExternalProcess(pid) {
       if (error) reject(new Error(`無法關閉外部程序 PID ${pid}。`));
       else resolve();
     });
+  });
+}
+
+function terminateProcess(pid) {
+  if (process.platform === 'win32') return terminateExternalProcess(pid);
+  return new Promise((resolve, reject) => {
+    try {
+      process.kill(pid);
+      resolve();
+    } catch (error) {
+      reject(error);
+    }
   });
 }
 
@@ -350,7 +443,7 @@ function createManager() {
       if (request.method === 'POST' && request.url === '/api/servers/stop') {
         const payload = await bodyJson(request);
         const port = Number(payload.port);
-        const record = activeServers.has(port)
+        const record = readRecords().some((item) => item.port === port)
           ? await stopServer(port)
           : await stopExternalServerByPid(port, payload.pid);
         sendJson(response, 200, { stopped: record });
@@ -364,14 +457,55 @@ function createManager() {
 }
 
 function parseArgs(args) {
-  const options = { port: DEFAULT_MANAGER_PORT, open: false, quiet: false };
+  const options = {
+    port: DEFAULT_MANAGER_PORT,
+    open: false,
+    quiet: false,
+    launchManager: false,
+    server: false,
+    serverPort: null,
+    serverRoot: ROOT,
+  };
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--open') options.open = true;
+    if (args[i] === '--server') options.server = true;
+    else if (args[i] === '--launch-manager') options.launchManager = true;
+    else if (args[i] === '--open') options.open = true;
     else if (args[i] === '--quiet') options.quiet = true;
     else if (args[i] === '--port') options.port = Number(args[++i]);
+    else if (args[i] === '--server-port') options.serverPort = Number(args[++i]);
+    else if (args[i] === '--server-root') options.serverRoot = path.resolve(args[++i]);
+  }
+  if (options.server) {
+    if (!validPort(options.serverPort)) throw new Error('Server port must be an integer from 1 to 65535.');
+    return options;
   }
   if (!validPort(options.port)) throw new Error('Manager port 必須是 1 到 65535 的整數。');
   return options;
+}
+
+function launchDetachedManager(options) {
+  const childArgs = [__filename, '--port', String(options.port)];
+  if (options.open) childArgs.push('--open');
+  if (options.quiet) childArgs.push('--quiet');
+  const child = spawn(process.execPath, childArgs, {
+    cwd: ROOT,
+    detached: true,
+    stdio: 'ignore',
+    windowsHide: true,
+  });
+  child.unref();
+}
+
+function runStandaloneServer(options) {
+  const server = createStaticServer(options.serverRoot);
+  server.once('error', (error) => {
+    console.error(error.message || error);
+    process.exitCode = 1;
+  });
+  server.listen(options.serverPort, '127.0.0.1');
+  const shutdown = () => server.close(() => process.exit(0));
+  process.once('SIGTERM', shutdown);
+  process.once('SIGINT', shutdown);
 }
 
 function listenOnAvailablePort(server, port, open, quiet) {
@@ -393,7 +527,9 @@ function listenOnAvailablePort(server, port, open, quiet) {
 if (require.main === module) {
   try {
     const options = parseArgs(process.argv.slice(2));
-    listenOnAvailablePort(createManager(), options.port, options.open, options.quiet);
+    if (options.server) runStandaloneServer(options);
+    else if (options.launchManager) launchDetachedManager(options);
+    else listenOnAvailablePort(createManager(), options.port, options.open, options.quiet);
   } catch (error) {
     console.error(error.message || error);
     process.exitCode = 1;

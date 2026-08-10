@@ -17,6 +17,12 @@ test('測試服控制台提供啟動、列表、開啟與關閉介面', () => {
   assert.match(manager, /\/api\/servers\/stop/);
   assert.match(manager, /createStaticServer/);
   assert.match(manager, /server\.close/);
+  assert.match(manager, /REGISTRY_FILE/);
+  assert.match(manager, /persistRegistry/);
+  assert.match(manager, /spawn\(process\.execPath/);
+  assert.match(manager, /detached: true/);
+  assert.match(manager, /--server/);
+  assert.match(manager, /launchDetachedManager/);
   assert.match(manager, /Get-NetTCPConnection/);
   assert.match(manager, /discoverLocalServers/);
   assert.match(manager, /isRelevantEndpoint/);
@@ -33,4 +39,6 @@ test('測試服控制台提供啟動、列表、開啟與關閉介面', () => {
   assert.match(html, /前往/);
   assert.match(html, /開啟瀏覽器/);
   assert.match(batch, /test_server_manager\.cjs/);
+  assert.match(batch, /--launch-manager/);
+  assert.match(batch, /-notmatch '--server'/);
 });
