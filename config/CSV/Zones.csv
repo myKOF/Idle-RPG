@@ -1,8 +1,8 @@
 ﻿順序,地圖識別碼,地圖名稱,位面,關卡上限,前置地圖識別碼,前置通關關卡,最低轉生次數,生命倍率,攻擊倍率,防禦倍率,攻速倍率,經驗金幣獎勵倍率
 1,desert,荒漠,human,200,,,0,1,1,1,1,1
-2,Icefield,冰原,human,300,desert,200,0,2.2,1.8,1.6,1.4,1.2
-3,swamp,沼澤,human,400,Icefield,300,0,4.4,2.8,2.4,1.6,1.5
-4,undead_mountains,亡靈山脈,human,500,swamp,400,0,6.5,3.8,3.2,1.8,2.25
-5,god_battlefield,太古戰場,god,600,undead_mountains,500,11,10,5,4,2,4
-6,god_chaos,混沌界,god,700,god_battlefield,600,11,25,10,8,2.2,10
-7,god_sanctuary,永恒神域,god,800,god_chaos,700,11,60,20,15,2.5,24
+2,Icefield,冰原,human,300,desert,200,0,2.2,2,1.6,1.4,1.2
+3,swamp,沼澤,human,400,Icefield,300,0,4.4,3.5,2.4,1.6,1.5
+4,undead_mountains,亡靈山脈,human,500,swamp,400,0,10,5.5,3.2,1.8,2.25
+5,god_battlefield,太古戰場,god,600,undead_mountains,500,11,25,8,4,2,4
+6,god_chaos,混沌界,god,700,god_battlefield,600,11,60,15,8,2.2,10
+7,god_sanctuary,永恒神域,god,800,god_chaos,700,11,150,40,20,2.5,24
