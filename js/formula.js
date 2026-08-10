@@ -455,9 +455,11 @@ function computeStats(equipmentOverride) {
 
    兩個係數取自參數表「3-戰鬥核心／防禦減傷率」，由 tools/apply_params.cjs 寫入，
    不在這裡複述數值——複述的那一份不會跟著參數表變，只會變成謊話。 */
+var DEF_REDUCTION_CONST = 10000;   // 參數表「3-戰鬥核心／防禦減傷率」a
+var DEF_REDUCTION_PER_LEVEL = 100; // 同上 b
 function defReduction(def, attackerLevel) {
   if (def <= 0) return 0;
-  return def / (def + 10000 + 100 * attackerLevel);
+  return def / (def + DEF_REDUCTION_CONST + DEF_REDUCTION_PER_LEVEL * attackerLevel);
 }
 
 // 元素附傷減免：只套用對應元素抗性，不重複套用魔法抗性
@@ -520,6 +522,11 @@ function globalDamageMultiplier(total) {
    減傷率 = 1 - a / (1 + (抗性值總合 / b)^c)。
    於 resolveHit 全局減傷之後、最低傷害之前的最末端套用；
    依攻擊者敵種（普通/菁英/BOSS）選用防守方對應的抗性總合。 */
+var DAMAGE_VARIANCE_MIN = 0.8;            // 參數表「3-戰鬥核心／傷害浮動」a
+var DAMAGE_VARIANCE_MAX = 1.2;            // 同上 b
+var DAMAGE_MIN = 1;                       // 參數表「3-戰鬥核心／最低傷害下限」
+var GODFORGED_SANCTUARY_RED_CAP = 50;     // 參數表「3-戰鬥核心／聖佑(神鑄)減傷上限」
+var GODFORGED_UNDYING_COOLDOWN_SEC = 60;  // 參數表「3-戰鬥核心／不朽(神鑄)回復」b
 var ENEMY_TYPE_DMG_RED_A = 0.95;
 var ENEMY_TYPE_DMG_RED_B = 4000;
 var ENEMY_TYPE_DMG_RED_C = 1.4;
@@ -729,7 +736,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     }
     dmg = skillElemBase;
   }
-  var randomDamageMultiplier = rnd(0.8, 1.2);
+  var randomDamageMultiplier = rnd(DAMAGE_VARIANCE_MIN, DAMAGE_VARIANCE_MAX);
   dmg *= randomDamageMultiplier;   // 傷害浮動 80%～120%
   out.randomDamageMultiplier = randomDamageMultiplier;
   // 暴擊：傷害 × 暴傷%（基礎值見屬性表）；神鑄特效【破滅】暴擊時機率翻倍
@@ -815,7 +822,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     out.blocked = true;
   }
   // 神鑄特效【聖佑】：受到的所有傷害按比例降低（上限見特效設定）
-  if (dCfg.dmgRed) dmg *= 1 - clamp(dCfg.dmgRed, 0, 50) / 100;
+  if (dCfg.dmgRed) dmg *= 1 - clamp(dCfg.dmgRed, 0, GODFORGED_SANCTUARY_RED_CAP) / 100;
   // 全局減傷：所有既有傷害計算完成後才套用，之後才進入最低傷害與護盾結算。
   if (dCfg.globalDmgRed) dmg *= globalDamageMultiplier(dCfg.globalDmgRed);
   // 敵種傷害抗性：依攻擊者敵種（普通/菁英/BOSS）選用對應抗性值，於全局減傷之後的最末端套用。
@@ -825,7 +832,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   // 對屬性敵人抗性（8 轉天賦）：攻擊者帶屬性標籤時，依對應抗性值套用敵種抗性同曲線的減傷。
   var attrRedTotal = (dCfg.resVsElem && aCfg.attr) ? (dCfg.resVsElem[aCfg.attr] || 0) : 0;
   if (attrRedTotal > 0) dmg *= 1 - enemyTypeDamageReduction(attrRedTotal, aCfg.level || 1);
-  dmg = Math.max(1, Math.round(dmg));   // 最低傷害 1
+  dmg = Math.max(DAMAGE_MIN, Math.round(dmg));   // 最低傷害由參數表決定
   // 護盾吸收
   if (defender.shield && defender.shield > 0) {
     out.absorbed = Math.min(defender.shield, dmg);
@@ -842,7 +849,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   out.dmg = dmg + out.absorbed; // 統計上含護盾吸收量
   if (defender.hp <= 0) {
     // 神鑄特效【不朽】：致命攻擊時機率保留 1 點生命並回復一定比例最大生命（有內部冷卻）
-    if (dCfg.undying && (!defender._undyingAt || GT - defender._undyingAt >= 60) && chance(dCfg.undying)) {
+    if (dCfg.undying && (!defender._undyingAt || GT - defender._undyingAt >= GODFORGED_UNDYING_COOLDOWN_SEC) && chance(dCfg.undying)) {
       defender._undyingAt = GT;
       defender.hp = Math.max(1, Math.round((dCfg.maxHp || 1) * 0.3));
       out.procs.push('不朽');
@@ -991,16 +998,16 @@ function segmentedLevelGrowth(base, level, brackets) {
 }
 
 function monsterStatsFor(stage, elite, boss) {
-  var hp = (20 + stage * 16) * Math.pow(1.06, stage - 1);
-  var atk = (2 + stage * 2) * Math.pow(1.04, stage - 1);
-  var def = (2 + stage * 0.5) * Math.pow(1.045, stage - 1);
-  var gold = (250 + stage) * Math.pow(1.018, stage - 1);
-  var xp = (120 + stage) * Math.pow(1.06, stage - 1);
+  var hp = (FIELD_MONSTER_GROWTH.hpA + stage * FIELD_MONSTER_GROWTH.hpB) * Math.pow(FIELD_MONSTER_GROWTH.hpC, stage - 1);
+  var atk = (FIELD_MONSTER_GROWTH.atkA + stage * FIELD_MONSTER_GROWTH.atkB) * Math.pow(FIELD_MONSTER_GROWTH.atkC, stage - 1);
+  var def = (FIELD_MONSTER_GROWTH.defA + stage * FIELD_MONSTER_GROWTH.defB) * Math.pow(FIELD_MONSTER_GROWTH.defC, stage - 1);
+  var gold = (FIELD_MONSTER_GROWTH.goldA + stage) * Math.pow(FIELD_MONSTER_GROWTH.goldC, stage - 1);
+  var xp = (FIELD_MONSTER_GROWTH.xpA + stage) * Math.pow(FIELD_MONSTER_GROWTH.xpC, stage - 1);
   var m = {
     level: stage, hp: hp, atk: atk,
     def: def,                 // 物理防禦
     mdef: def * 0.75,         // 魔法防禦
-    aspd: 1,
+    aspd: FIELD_MONSTER_GROWTH.aspd,
     dodge: segmentedLevelGrowth(FIELD_MONSTER_DODGE_BASE, stage, FIELD_MONSTER_DODGE_GROWTH),
     hit: segmentedLevelGrowth(FIELD_MONSTER_HIT_BASE, stage, FIELD_MONSTER_HIT_GROWTH),
     gold: gold, xp: xp, elite: !!elite && !boss, isBoss: !!boss

@@ -645,23 +645,21 @@ objFieldML('data', 'XP_LEVEL_COEF = {', 'c', '1-成長經驗', '升級所需經�
 // 基礎四維：基底 + (等級-1) × 每級增加
 objFieldML('data', 'PRIMARY_STAT_GROWTH = {', 'base', '1-成長經驗', '等級基礎四維', 0, '四維-a（基底）');
 objFieldML('data', 'PRIMARY_STAT_GROWTH = {', 'perLevel', '1-成長經驗', '等級基礎四維', 1, '四維-b（每級）');
-// 野外怪物成長：形如 var X = (a + stage [* b]) * Math.pow(c, stage - 1)。
-// b/c 錨點以正規式「萬用」掉同一行的 a（與 b）值，避免調整某一項後其它項錨點失配。
-inline('formula', 'var hp = (', P('4-野外怪物', '生命', 0), 'hp-a');
-edits.push({ file: 'formula', re: /(var hp = \([\d.]+ \+ stage \* )([\d.]+)/, grp: 2, value: P('4-野外怪物', '生命', 1), label: 'hp-b' });
-edits.push({ file: 'formula', re: /(var hp = \([\d.]+ \+ stage \* [\d.]+\) \* Math\.pow\()([\d.]+)/, grp: 2, value: P('4-野外怪物', '生命', 2), label: 'hp-c' });
-inline('formula', 'var atk = (', P('4-野外怪物', '攻擊', 0), 'atk-a');
-edits.push({ file: 'formula', re: /(var atk = \([\d.]+ \+ stage \* )([\d.]+)/, grp: 2, value: P('4-野外怪物', '攻擊', 1), label: 'atk-b' });
-edits.push({ file: 'formula', re: /(var atk = \([\d.]+ \+ stage \* [\d.]+\) \* Math\.pow\()([\d.]+)/, grp: 2, value: P('4-野外怪物', '攻擊', 2), label: 'atk-c' });
-inline('formula', 'var def = (', P('4-野外怪物', '物理防禦', 0), 'def-a');
-edits.push({ file: 'formula', re: /(var def = \([\d.]+ \+ stage \* )([\d.]+)/, grp: 2, value: P('4-野外怪物', '物理防禦', 1), label: 'def-b' });
-edits.push({ file: 'formula', re: /(var def = \([\d.]+ \+ stage \* [\d.]+\) \* Math\.pow\()([\d.]+)/, grp: 2, value: P('4-野外怪物', '物理防禦', 2), label: 'def-c' });
-inline('formula', 'var gold = (', P('4-野外怪物', '金幣', 0), 'gold-a');
-edits.push({ file: 'formula', re: /(var gold = \([\d.]+ \+ stage\) \* Math\.pow\()([\d.]+)/, grp: 2, value: P('4-野外怪物', '金幣', 2), label: 'gold-c' });
-inline('formula', 'var xp = (', P('4-野外怪物', '經驗', 0), 'xp2-a');
-edits.push({ file: 'formula', re: /(var xp = \([\d.]+ \+ stage\) \* Math\.pow\()([\d.]+)/, grp: 2, value: P('4-野外怪物', '經驗', 2), label: 'xp2-c' });
-// 野外怪物攻速：只鎖定 monsterStatsFor 內的 aspd 欄位。
-edits.push({ file: 'formula', re: /(function monsterStatsFor[\s\S]*?aspd:\s*)(-?[\d.]+)(,)/, grp: 2, value: P('4-野外怪物', '攻擊速度', 0), label: 'mob-aspd' });
+// 野外怪物成長：各項 = (a + 關卡 × b) × c^(關卡-1)；係數見 data.js FIELD_MONSTER_GROWTH。
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'hpA', '4-野外怪物', '生命', 0, 'hp-a');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'hpB', '4-野外怪物', '生命', 1, 'hp-b');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'hpC', '4-野外怪物', '生命', 2, 'hp-c');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'atkA', '4-野外怪物', '攻擊', 0, 'atk-a');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'atkB', '4-野外怪物', '攻擊', 1, 'atk-b');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'atkC', '4-野外怪物', '攻擊', 2, 'atk-c');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'defA', '4-野外怪物', '物理防禦', 0, 'def-a');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'defB', '4-野外怪物', '物理防禦', 1, 'def-b');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'defC', '4-野外怪物', '物理防禦', 2, 'def-c');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'goldA', '4-野外怪物', '金幣', 0, 'gold-a');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'goldC', '4-野外怪物', '金幣', 2, 'gold-c');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'xpA', '4-野外怪物', '經驗', 0, 'xp2-a');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'xpC', '4-野外怪物', '經驗', 2, 'xp2-c');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'aspd', '4-野外怪物', '攻擊速度', 0, 'mob-aspd');
 // 野外怪物命中／閃避：基礎值 + 各等級區間的每級增加值累加。
 scalar('data', 'FIELD_MONSTER_DODGE_BASE', '4-野外怪物', '閃避率', 0);
 arrayContent('data', 'FIELD_MONSTER_DODGE_GROWTH', levelGrowthContent('4-野外怪物', '閃避率'), '怪物閃避分段成長');
@@ -745,23 +743,23 @@ scalar('formula', 'ELEMENTAL_RESISTANCE_C', '3-戰鬥核心', '六系元素抗�
    實際發生過：2026-08-02 的參數套用把常數從 60 改成 10000，下一次試跑就報
    「防減-每級：錨點匹配 0 次」，那個參數從此靜靜地套不進去。
    結構型錨點只描述公式形狀，同一條公式裡的參數彼此不會互相打死。 */
-inlineRegex('formula', /(return def \/ \(def \+ )(-?[\d.]+)/, P('3-戰鬥核心', '防禦減傷率', 0), '防減-常數');
-inlineRegex('formula', /(return def \/ \(def \+ -?[\d.]+ \+ )(-?[\d.]+)/, P('3-戰鬥核心', '防禦減傷率', 1), '防減-每級');
+scalar('formula', 'DEF_REDUCTION_CONST', '3-戰鬥核心', '防禦減傷率', 0);
+scalar('formula', 'DEF_REDUCTION_PER_LEVEL', '3-戰鬥核心', '防禦減傷率', 1);
 // 敵種傷害抗性（普通敵人/普通菁英/普通BOSS）：a/b/c；表列缺席時跳過（相容尚未含此列的舊參數表）
 if (index['3-戰鬥核心'] && index['3-戰鬥核心']['敵種傷害抗性']) {
   scalar('formula', 'ENEMY_TYPE_DMG_RED_A', '3-戰鬥核心', '敵種傷害抗性', 0);
   scalar('formula', 'ENEMY_TYPE_DMG_RED_B', '3-戰鬥核心', '敵種傷害抗性', 1);
   scalar('formula', 'ENEMY_TYPE_DMG_RED_C', '3-戰鬥核心', '敵種傷害抗性', 2);
 }
-inline('formula', 'var randomDamageMultiplier = rnd(', P('3-戰鬥核心', '傷害浮動', 0), '浮動-下');
-inlineRegex('formula', /(var randomDamageMultiplier = rnd\(-?[\d.]+, )(-?[\d.]+)/, P('3-戰鬥核心', '傷害浮動', 1), '浮動-上');
-numCtx('formula', 'dmg = Math.max(', ', Math.round(dmg))', P('3-戰鬥核心', '最低傷害下限', 0), '最低傷害');
-inline('formula', 'iceSlowChance: ', P('3-元素特效', '冰霜 特效', 0), '元素-冰');
-inline('formula', 'lightningChance: ', P('3-元素特效', '雷電 特效', 0), '元素-雷');
-inline('formula', 'poisonChance: ', P('3-元素特效', '劇毒 特效', 0), '元素-毒');
-inline('formula', 'lightCleanseChance: ', P('3-元素特效', '聖光 特效', 0), '元素-光');
-numCtx('formula', 'clamp(dCfg.dmgRed, 0, ', ')', P('3-戰鬥核心', '聖佑(神鑄)減傷上限', 0), '聖佑上限');
-inline('formula', 'GT - defender._undyingAt >= ', P('3-戰鬥核心', '不朽(神鑄)回復', 1), '不朽秒數');
+scalar('formula', 'DAMAGE_VARIANCE_MIN', '3-戰鬥核心', '傷害浮動', 0);
+scalar('formula', 'DAMAGE_VARIANCE_MAX', '3-戰鬥核心', '傷害浮動', 1);
+scalar('formula', 'DAMAGE_MIN', '3-戰鬥核心', '最低傷害下限', 0);
+objFieldML('formula', 'ELEM_PROC = {', 'iceSlowChance', '3-元素特效', '冰霜 特效', 0, '元素-冰');
+objFieldML('formula', 'ELEM_PROC = {', 'lightningChance', '3-元素特效', '雷電 特效', 0, '元素-雷');
+objFieldML('formula', 'ELEM_PROC = {', 'poisonChance', '3-元素特效', '劇毒 特效', 0, '元素-毒');
+objFieldML('formula', 'ELEM_PROC = {', 'lightCleanseChance', '3-元素特效', '聖光 特效', 0, '元素-光');
+scalar('formula', 'GODFORGED_SANCTUARY_RED_CAP', '3-戰鬥核心', '聖佑(神鑄)減傷上限', 0);
+scalar('formula', 'GODFORGED_UNDYING_COOLDOWN_SEC', '3-戰鬥核心', '不朽(神鑄)回復', 1);
 
 /* ---- §4 高塔 BOSS ---- */
 // 挑戰金幣消耗分層：CSV 以 {下限~上限,a=係數,b=指數} 逐段表示 → 重建 TOWER_CHALLENGE_COST_TIERS。
