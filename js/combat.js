@@ -124,8 +124,10 @@ function spawnFieldMonster() {
     if (FIELD.mapComplete) return;
     FIELD._waveClearPending = false;
     var s = G.stage.current;
-    var boss = isFieldBossStage(s);       // 野外 BOSS 規則 → formula.js §4（優先於菁英）
-    var elite = !boss && isEliteStage(s); // 菁英規則 → formula.js §4
+    /* 野外 BOSS 規則 → formula.js §4（優先於菁英）；每個 BOSS 只能打一次，
+       該關通關後 BOSS 不再出現（isFieldBossDefeated → data.js），退回菁英規則。 */
+    var boss = isFieldBossStage(s) && !isFieldBossDefeated(G.stage.zone, s);
+    var elite = !boss && isEliteStage(s); // 菁英規則 → formula.js §4（打過的 BOSS 階由此接手）
     var base = monsterStatsFor(s, elite, boss);
     var zn = currentZoneDef();
     // 數量依敵種各自擲骰（小怪／菁英／BOSS 三張權重表 → data.js）

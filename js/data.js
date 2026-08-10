@@ -245,9 +245,10 @@ var BF_BOSS_W = 2;             // BOSS 佔格寬（行）
 var BF_BOSS_H = 2;             // BOSS 佔格高（列）
 
 /* ---- 野外 BOSS ----
-   每 FIELD_BOSS_STAGE_INTERVAL 階出現一次，優先於菁英階段（第 50 階出 BOSS 而非菁英）；
+   每 FIELD_BOSS_STAGE_INTERVAL 階出現一次，優先於菁英階段（BOSS 階必同時是菁英階）；
    固定單一敵人、佔 BF_BOSS_W×BF_BOSS_H 格、免疫控場（isBoss → formula.js §3）。
-   倍率語意比照菁英：相對於同階段普通怪；攻速為絕對值不是倍率。 */
+   倍率語意比照菁英：相對於同階段普通怪；攻速為絕對值不是倍率。
+   每個 BOSS 每張地圖只能打一次：該關通關後不再出 BOSS，退回菁英規則（isFieldBossDefeated）。 */
 var FIELD_BOSS_STAGE_INTERVAL = 50;
 var FIELD_BOSS_HP_MULT = 15;      // 生命倍率
 var FIELD_BOSS_ATK_MULT = 4;      // 攻擊倍率
@@ -1257,6 +1258,15 @@ function markZoneCleared(zoneKey, stage) {
   if (!zp || typeof zp !== 'object') { zp = { current: 1, best: 1 }; G.zoneProgress[zoneKey] = zp; }
   var n = Math.max(0, Math.floor(Number(stage) || 0));
   if (n > (Math.floor(Number(zp.cleared) || 0))) zp.cleared = n;
+}
+/* ---- 野外 BOSS 是否已被打過（每個 BOSS 每張地圖只打一次）----
+   BOSS 階通關後 BOSS 不再出現，該關退回菁英規則（→ combat.js spawnFieldMonster）。
+   判定直接讀「該地圖已通關的最高關」，不另存一份 BOSS 擊殺記錄：推關是逐關前進的，
+   「已通關第 N 關」與「打贏第 N 關的 BOSS」是同一件事，多存一份就多一份要同步的狀態，
+   舊存檔也不必 Migration。轉生保留關卡進度，所以打過的 BOSS 轉生後同樣不再出現。 */
+function isFieldBossDefeated(zoneKey, stage) {
+  var s = Math.floor(Number(stage) || 0);
+  return s > 0 && zoneClearedStage(zoneKey) >= s;
 }
 function isZoneUnlocked(zoneKey) {
   var zone = ZONES[zoneKey];

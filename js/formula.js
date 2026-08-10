@@ -1012,7 +1012,7 @@ function monsterStatsFor(stage, elite, boss) {
     hit: segmentedLevelGrowth(FIELD_MONSTER_HIT_BASE, stage, FIELD_MONSTER_HIT_GROWTH),
     gold: gold, xp: xp, elite: !!elite && !boss, isBoss: !!boss
   };
-  // 野外 BOSS 優先於菁英（第 50 階同時符合兩者時出 BOSS）；倍率 → data.js FIELD_BOSS_*
+  // 野外 BOSS 優先於菁英（同一階同時符合兩者時出 BOSS）；倍率 → data.js FIELD_BOSS_*
   if (boss) {
     m.hp *= FIELD_BOSS_HP_MULT; m.atk *= FIELD_BOSS_ATK_MULT;
     m.def *= FIELD_BOSS_DEF_MULT; m.mdef *= FIELD_BOSS_DEF_MULT;
@@ -1073,7 +1073,9 @@ function rollFieldEnemyCount(rank, stage, zone) {
   return Math.max(1, Math.min(n, cap));
 }
 
-// 野外 BOSS 階段：階段為 FIELD_BOSS_STAGE_INTERVAL 的倍數；與菁英階段重疊時 BOSS 優先。
+/* 野外 BOSS 階段：階段為 FIELD_BOSS_STAGE_INTERVAL 的倍數；與菁英階段重疊時 BOSS 優先。
+   這裡只回答「這一階是不是 BOSS 階」；BOSS 是否還沒被打過要另外問 isFieldBossDefeated
+   （data.js，需要地圖通關進度），兩者都成立才出 BOSS。 */
 function isFieldBossStage(stage) {
   var iv = Math.floor(Number(FIELD_BOSS_STAGE_INTERVAL) || 0);
   var s = Math.floor(Number(stage) || 0);

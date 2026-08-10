@@ -131,6 +131,59 @@ test('通關關卡另記 cleared：最後一關打贏後 best 卡在上限，cle
   assert.equal(c.zoneClearedStage('desert'), 200, 'cleared 記下真正打贏的最後一關');
 });
 
+/* 野外 BOSS 每張地圖只能打一次：BOSS 階通關後不再出 BOSS，退回既有菁英規則。
+   「打過了沒」直接讀 zoneProgress[zone].cleared，不另存 BOSS 擊殺記錄（data.js
+   isFieldBossDefeated）。 */
+function bossRuleContext(zoneProgress) {
+  const c = load(['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js']);
+  c.G = {
+    player: { reincarnations: 0 },
+    stage: { current: 1, best: 1, kills: 0, autoAdvance: false, zone: 'desert' },
+    zoneProgress: zoneProgress,
+    tower: { active: false }
+  };
+  c.FIELD.player = { _lockTarget: null };
+  c.Math.random = () => 0;
+  return c;
+}
+function spawnAt(c, zone, stage) {
+  c.G.stage.zone = zone;
+  c.G.stage.current = stage;
+  c.spawnFieldMonster();
+  return c.FIELD.monsters[0];
+}
+
+test('野外 BOSS 只能打一次：該關通關後同一階退回菁英', () => {
+  const bossStage = 50;
+  assert.equal(bossRuleContext({}).isFieldBossStage(bossStage), true, '前提：測試用的關卡是 BOSS 階');
+
+  const pending = bossRuleContext({ desert: { current: bossStage, best: bossStage, cleared: bossStage - 1 } });
+  const boss = spawnAt(pending, 'desert', bossStage);
+  assert.equal(boss.isBoss, true, '沒打過就照常出 BOSS');
+  assert.equal(boss.elite, false);
+
+  const defeated = bossRuleContext({ desert: { current: bossStage, best: bossStage + 1, cleared: bossStage } });
+  const after = spawnAt(defeated, 'desert', bossStage);
+  assert.equal(after.isBoss, false, '打過的 BOSS 不再出現');
+  assert.equal(after.elite, true, 'BOSS 消失後由菁英規則接手（BOSS 階必同時是菁英階）');
+});
+
+test('野外 BOSS 一次性判定逐張地圖獨立，且不影響菁英階', () => {
+  const bossStage = 50;
+  const c = bossRuleContext({
+    desert: { current: bossStage, best: bossStage + 1, cleared: bossStage },
+    Icefield: { current: bossStage, best: bossStage, cleared: bossStage - 1 }
+  });
+  assert.equal(c.isFieldBossDefeated('desert', bossStage), true);
+  assert.equal(c.isFieldBossDefeated('Icefield', bossStage), false);
+  assert.equal(spawnAt(c, 'Icefield', bossStage).isBoss, true, '別張地圖的同一階仍要出 BOSS');
+
+  // 菁英規則不受本次改動影響：非 BOSS 階的菁英關，通關後照樣出菁英
+  const eliteStage = 10;
+  assert.equal(c.isEliteStage(eliteStage), true);
+  assert.equal(spawnAt(c, 'desert', eliteStage).elite, true, '打過的菁英關仍是菁英');
+});
+
 test('切換場景會把 cleared 一起帶進 zoneProgress，不被整包覆寫清掉', () => {
   const c = load(['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js']);
   c.G = {

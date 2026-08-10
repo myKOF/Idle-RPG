@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## Claude：野外 BOSS 每張地圖只能打一次（2026-08-10）
+
+- Status: 已完成
+- Owner: Claude
+- Scope: `js/data.js`、`js/combat.js`、`js/gm_exec.js`、`js/formula.js`（註釋）、`js/bridge.js`、`js/worker/sim.worker.js`、`index.html`、`tests/stage-rework.test.cjs`、`game_formula.md`、`docs/AI_TASKS.md`
+- Task: 野外每 `FIELD_BOSS_STAGE_INTERVAL` 階的 BOSS 改為只能打一次；該關通關後不再出 BOSS，同一階退回菁英規則（菁英規則不變）。
+- 技術決策: 「打過了沒」直接讀既有的 `zoneProgress[zone].cleared`（`zoneClearedStage`），不新增存檔欄位、不需 Migration——推關逐關前進，「已通關第 N 關」與「打贏第 N 關的 BOSS」是同一件事。
+- Acceptance: 未通關的 BOSS 階照常出 BOSS；通關後同一階出菁英；判定逐張地圖獨立；非 BOSS 的菁英階行為不變；GM 連殺的敵種判定與出怪同規格；回歸測試與 build 通過。
+- Dependencies: 無
+- Verification: `node --test tests/stage-rework.test.cjs` 10/10；`npm.cmd test`；`npm.cmd run build`。
+- 已知風險: 轉生保留關卡進度，因此打過的 BOSS 轉生後也不會回來（經使用者確認的一次性語意）；地圖最後一關若是 BOSS 階，通關後重複挑戰的收益由 BOSS 降為菁英。
+
 ## Codex：修正強化成功／失敗浮字消失（2026-08-10）
 - Status: Completed
 - Owner: Codex
