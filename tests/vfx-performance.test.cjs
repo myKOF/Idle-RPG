@@ -6,16 +6,17 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const vfx = fs.readFileSync(path.join(root, 'js', 'vfx.js'), 'utf8');
+const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
 const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
 
-function loadVfx() {
+function loadVfx(documentOverride) {
   const context = {
     console,
     Math,
     Date,
     Object,
     Infinity,
-    document: {
+    document: documentOverride || {
       hidden: false,
       getElementById() { return null; },
       querySelectorAll() { return []; }
@@ -114,6 +115,41 @@ test('Target coordinates are cached and invalidated after layout changes', () =>
   assert.match(vfx, /_vfxLayerRectCache\.version === _vfxLayoutVersion/);
   assert.match(vfx, /_vfxAnchorCache\[elId\] = \{ target: target, layer: layer, version: _vfxLayoutVersion, rect: r \}/);
   assert.match(vfx, /function vfxInvalidateLayout\(\)[\s\S]*_vfxAnchorCache = Object\.create\(null\)/);
+});
+
+test('高塔 VFX 以 BOSS 圖像作為座標錨點，不使用整張 BOSS 卡片中心', () => {
+  const floatLayer = {};
+  const image = {
+    getBoundingClientRect() { return { left: 300, top: 80, width: 84, height: 84 }; }
+  };
+  const bossVisualHost = {
+    querySelector(selector) {
+      assert.equal(selector, 'img, span');
+      return image;
+    }
+  };
+  const doc = {
+    hidden: false,
+    getElementById(id) {
+      if (id === 'tb-float') return floatLayer;
+      if (id === 'tb-emoji') return bossVisualHost;
+      return null;
+    },
+    querySelectorAll() { return []; }
+  };
+  const context = loadVfx(doc);
+  const layer = {
+    getBoundingClientRect() { return { left: 100, top: 20, width: 700, height: 400 }; }
+  };
+
+  const point = context.vfxPointOf('tb-float', layer);
+  assert.equal(point.x, 242);
+  assert.equal(point.y, 102);
+});
+
+test('普攻劍氣月牙朝向飛行方向', () => {
+  assert.match(css, /\.vfx-proj-sword \.vfx-proj-core[\s\S]*?border-left: 5px solid/);
+  assert.doesNotMatch(css, /\.vfx-proj-sword \.vfx-proj-core[\s\S]*?border-right: 5px solid/);
 });
 
 test('UI protects equipment input and selects reduced quality outside the battle tab', () => {

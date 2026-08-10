@@ -6030,7 +6030,8 @@ textarea:disabled,
   height: 26px;
   border-radius: 50%;
   border: 3px solid transparent;
-  border-right: 5px solid var(--vfx-c2, #fff);
+  /* 月牙尖端朝飛行方向；普攻投射物由我方往右側敵人飛行。 */
+  border-left: 5px solid var(--vfx-c2, #fff);
   filter: drop-shadow(0 0 6px var(--vfx-glow, #fff));
 }
 
