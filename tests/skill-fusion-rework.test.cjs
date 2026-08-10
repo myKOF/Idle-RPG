@@ -320,18 +320,29 @@ test('fuseSkills：未學習但已解鎖的素材可融合；未解鎖/被動/�
   assert.match(c.fuseSkills(['powerSlash', 'iceLance']) || '', /魔法卷軸不足/);
 });
 
-/* ================= 8) 等級上限 10／轉生 +5 ================= */
+/* ================= 8) 等級上限查轉生對照表 =================
 
-test('skillMaxLv：一般/被動/融合技一律 10；轉生後 15', () => {
+   期望值出處：config/Excel/game_parameters.xlsx 工作表「1-轉生對照表」轉生 0~20 次各列的
+   param e＝全部技能等級上限（含被動／融合／潛力），經 tools/apply_params.cjs 套進
+   js/data.js 的 REINCARNATION_SKILL_MAX_LEVELS（改參數請改 xlsx，改 config/CSV 會被沖掉）。
+   依 AI_RULES.md 9.1 例外，測試刻意釘住目前數值，參數表一動這裡就會紅。
+   2026-08-10（commit 3d5a323）起改為隨轉數成長：0 轉 10、每轉 +2、10 轉起封頂 30
+   （原設定為 0 轉 10、1 轉以上一律 15）。 */
+
+test('skillMaxLv：一般/被動/融合技共用轉生對照表上限，隨轉數成長', () => {
   const c = loadGameContext();
-  assert.equal(c.skillMaxLv(c.SKILLS.powerSlash), 10);
+  assert.equal(c.skillMaxLv(c.SKILLS.powerSlash), 10);           // 0 轉＝param e
   assert.equal(c.skillMaxLv(c.SKILLS.toughness), 10);
-  assert.equal(c.skillMaxLv({ cat: 'fusion', maxLv: 40 }), 10); // 記錄凍結 maxLv 不再採用
+  assert.equal(c.skillMaxLv({ cat: 'fusion', maxLv: 40 }), 10);  // 記錄凍結 maxLv 不再採用
   c.G.player.reincarnations = 1;
-  assert.equal(c.skillMaxLv(c.SKILLS.powerSlash), 15);
-  assert.equal(c.skillMaxLv({ cat: 'fusion' }), 15);
+  assert.equal(c.skillMaxLv(c.SKILLS.powerSlash), 12);
+  assert.equal(c.skillMaxLv({ cat: 'fusion' }), 12);             // 融合技與一般技能共用同一上限
   c.G.player.reincarnations = 7;
-  assert.equal(c.skillMaxLv(c.SKILLS.toughness), 15); // 轉生後固定 +5，不隨轉數續增
+  assert.equal(c.skillMaxLv(c.SKILLS.toughness), 24);            // 每轉 +2，續增到封頂為止
+  c.G.player.reincarnations = 10;
+  assert.equal(c.skillMaxLv(c.SKILLS.powerSlash), 30);
+  c.G.player.reincarnations = 20;
+  assert.equal(c.skillMaxLv(c.SKILLS.powerSlash), 30);           // 10 轉起封頂，不再續增
 });
 
 /* ================= 9) 技能熟練度 ================= */
