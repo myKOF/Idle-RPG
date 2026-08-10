@@ -277,6 +277,8 @@ var FIELD_MONSTER_GROWTH = {
   xpA: 120, xpC: 1.06,
   aspd: 1
 };
+/* 野外菁英倍率（相對同階段普通怪）。BOSS 用的是同區的 FIELD_BOSS_*。 */
+var FIELD_ELITE = { hpMult: 4, atkMult: 2, rewardMult: 2, dodgeAdd: 1.5, aspd: 1 };
 var FIELD_MONSTER_DODGE_BASE = 5;
 var FIELD_MONSTER_DODGE_GROWTH = [{ min: 1, max: 49, rate: 0.5 },
   { min: 50, max: 99, rate: 0.65 },

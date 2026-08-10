@@ -1019,7 +1019,9 @@ function monsterStatsFor(stage, elite, boss) {
     m.gold *= FIELD_BOSS_REWARD_MULT; m.xp *= FIELD_BOSS_REWARD_MULT;
     m.dodge += FIELD_BOSS_DODGE_ADD; m.aspd = FIELD_BOSS_ASPD;
   } else if (elite) {
-    m.hp *= 4; m.atk *= 2; m.gold *= 2; m.xp *= 2; m.dodge += 1.5; m.aspd = 1;
+    m.hp *= FIELD_ELITE.hpMult; m.atk *= FIELD_ELITE.atkMult;
+    m.gold *= FIELD_ELITE.rewardMult; m.xp *= FIELD_ELITE.rewardMult;
+    m.dodge += FIELD_ELITE.dodgeAdd; m.aspd = FIELD_ELITE.aspd;
   }
   return m;
 }
@@ -1281,18 +1283,34 @@ function newForgePartSlotCost(reinc, unlocked, furnaceCount) {
 /* ---- 稀有度擲骰（非掉落表路徑：合成產物等用）----
    權重加成 b = 1 + 掉寶加成/200 + 階段×0.006（各稀有度有權重與加成上限；
    史詩 8 階起、傳說 15 階起、神話 25 階起、創世 40 階起才可能出現） */
+/* 各稀有度的基礎權重與加成上限，以及權重加成 b 的兩個係數。
+   欄位名刻意各自唯一（xxxWeight / xxxCap），套用參數表的錨點才能綁到單一欄位。
+   出現門檻（minStage）目前參數表是文字欄（「階段 8+」），未接自動套用，先具名收在這裡。 */
+var RARITY_ROLL = {
+  bonusDivisor: 200, bonusPerStage: 0.006,
+  commonWeight: 55,                                          // 普通無加成上限
+  uncommonWeight: 25, uncommonCap: 2,
+  rareWeight: 12, rareCap: 2.5,
+  uniqueWeight: 5.5, uniqueCap: 3,
+  epicWeight: 1.8, epicCap: 3.5, epicMinStage: 8,
+  legendaryWeight: 0.35, legendaryCap: 4, legendaryMinStage: 15,
+  mythicWeight: 0.08, mythicCap: 4.5, mythicMinStage: 25,
+  genesisWeight: 0.015, genesisCap: 5, genesisMinStage: 40
+};
+
 function rollRarity(stage, lootBonus) {
   var s = stage || 1;
-  var b = 1 + effectiveDropRateEffect(lootBonus || 0) / 200 + s * 0.006;
+  var R = RARITY_ROLL;
+  var b = 1 + effectiveDropRateEffect(lootBonus || 0) / R.bonusDivisor + s * R.bonusPerStage;
   var w = [
-    [0, 55],
-    [1, 25 * Math.min(b, 2)],
-    [2, 12 * Math.min(b, 2.5)],
-    [3, 5.5 * Math.min(b, 3)],                       // 獨特（紫）
-    [4, (s >= 8 ? 1.8 : 0) * Math.min(b, 3.5)],      // 史詩（金）
-    [5, (s >= 15 ? 0.35 : 0) * Math.min(b, 4)],      // 傳說（橘）
-    [6, (s >= 25 ? 0.08 : 0) * Math.min(b, 4.5)],    // 神話（紅）
-    [7, (s >= 40 ? 0.015 : 0) * Math.min(b, 5)]      // 創世（暗金）
+    [0, R.commonWeight],
+    [1, R.uncommonWeight * Math.min(b, R.uncommonCap)],
+    [2, R.rareWeight * Math.min(b, R.rareCap)],
+    [3, R.uniqueWeight * Math.min(b, R.uniqueCap)],                                    // 獨特（紫）
+    [4, (s >= R.epicMinStage ? R.epicWeight : 0) * Math.min(b, R.epicCap)],            // 史詩（金）
+    [5, (s >= R.legendaryMinStage ? R.legendaryWeight : 0) * Math.min(b, R.legendaryCap)], // 傳說（橘）
+    [6, (s >= R.mythicMinStage ? R.mythicWeight : 0) * Math.min(b, R.mythicCap)],      // 神話（紅）
+    [7, (s >= R.genesisMinStage ? R.genesisWeight : 0) * Math.min(b, R.genesisCap)]    // 創世（暗金）
   ];
   return wpick(w);
 }
@@ -1544,7 +1562,18 @@ function getAffixLimits(key, itemLevel, rarityIdx, item) {
 }
 
 // 強化倍率：每 +1 全詞條數值提高固定百分比（比率見下方算式）
-function upgradeMult(item) { return 1 + 0.05 * (item.upgrade || 0); }
+/* 附魔威力：攻擊類 = (基底 + 裝備等級×每級) × 稀有度倍率 × (1 + 每寶石等級×寶石等級)；
+   防禦／功能類 = 基底 + 稀有度×每階 + 寶石等級×每寶石等級（%，有上限）。 */
+var ENCHANT_ATK = { base: 5, perLevel: 1.2, perGemLevel: 0.15 };
+var ENCHANT_DEF = { base: 8, perRarity: 4, perGemLevel: 3, cap: 60 };
+/* 分解產出：碎片 = (基底 + 等級×每級) × 稀有度分解倍率 × 隨機；金幣 = (基底 + 等級) × 稀有度分解倍率 × 倍率。 */
+var SALVAGE_SCRAP = { base: 2, perLevel: 0.6 };
+var SALVAGE_GOLD = { base: 3, mult: 10 };
+/* 戰力評分的兩個乘區（參數表「6-裝備／戰力評分」a／b）。 */
+var ITEM_SCORE_GODFORGED_PER_PASSIVE = 0.15;
+var ITEM_SCORE_PER_RARITY = 0.06;
+var UPGRADE_VALUE_MULT = 0.05;   // 參數表「6-裝備／強化倍率」：每 +1 全詞條數值提高的比率
+function upgradeMult(item) { return 1 + UPGRADE_VALUE_MULT * (item.upgrade || 0); }
 
 // 傳奇特效數值 = base + perR × (稀有度 - 傳說級)
 function passiveValueFor(key, rarity) {
@@ -1614,7 +1643,8 @@ function forgeGemCost(level) {
    防禦/功能類 = 8 + 稀有度×4 + 寶石等級×3（%，上限 60） */
 function enchantPower(item, gemLevel) {
   var r = RARITIES[item.rarity];
-  var v = (5 + item.level * 1.2) * r.mult * (1 + 0.15 * (gemLevel || 0));
+  var v = (ENCHANT_ATK.base + item.level * ENCHANT_ATK.perLevel) * r.mult *
+    (1 + ENCHANT_ATK.perGemLevel * (gemLevel || 0));
   return Math.round(v);
 }
 function enchantValueFor(item, bookKey, gemLevel) {
@@ -1625,8 +1655,9 @@ function enchantValueFor(item, bookKey, gemLevel) {
     return v;
   }
   // 抗性 / 功能類：百分比，隨稀有度與寶石成長，設定上限
-  var val = Math.round((8 + item.rarity * 4 + (gemLevel || 0) * 3) * 10) / 10;
-  return Math.min(val, 60);
+  var val = Math.round((ENCHANT_DEF.base + item.rarity * ENCHANT_DEF.perRarity +
+    (gemLevel || 0) * ENCHANT_DEF.perGemLevel) * 10) / 10;
+  return Math.min(val, ENCHANT_DEF.cap);
 }
 
 /* ---- 附魔數值的唯一讀取入口 ----
@@ -1706,13 +1737,13 @@ function itemScore(it) {
     }
   }
   if (it.passive) s *= 1.15;
-  if (it.godPassives && it.godPassives.length) s *= 1 + 0.15 * it.godPassives.length; // 神鑄創世專屬特效
+  if (it.godPassives && it.godPassives.length) s *= 1 + ITEM_SCORE_GODFORGED_PER_PASSIVE * it.godPassives.length; // 神鑄創世專屬特效
   var ens = itemEnchants(it);
   for (var ei = 0; ei < ens.length; ei++) {
     var e = ENCHANTS[ens[ei].key];
     if (e) s += (e.cat === 'atk') ? enchantValue(it, ens[ei]) * 1.2 : enchantValue(it, ens[ei]) * 2;
   }
-  s *= 1 + it.rarity * 0.06;
+  s *= 1 + it.rarity * ITEM_SCORE_PER_RARITY;
   return s;
 }
 
@@ -1731,8 +1762,8 @@ function essenceSalvageChanceForRarity(rarity) {
 function salvageResult(it, ancientEssenceBonus, essenceBonus) {
   var r = RARITIES[it.rarity];
   var out = {
-    scrap: Math.max(1, Math.round((2 + it.level * 0.6) * r.salv * rnd(0.85, 1.15))),
-    gold: Math.round((3 + it.level) * r.salv * 10),
+    scrap: Math.max(1, Math.round((SALVAGE_SCRAP.base + it.level * SALVAGE_SCRAP.perLevel) * r.salv * rnd(0.85, 1.15))),
+    gold: Math.round((SALVAGE_GOLD.base + it.level) * r.salv * SALVAGE_GOLD.mult),
     essence: 0, ancientEssence: 0
   };
   var essenceChance = essenceSalvageChanceForRarity(it.rarity) *
