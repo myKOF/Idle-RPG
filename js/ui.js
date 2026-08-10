@@ -1455,19 +1455,60 @@ function hasRecentEnemyDamageFloat(elId, floats, now) {
    同一幀之內圖層不會忽然被掛上或拿掉，所以每幀量一次就夠，其餘直接查節點上的快取。
    時戳用 16 ms 分桶（約一幀）；就算跨幀誤判，最壞情況也只是某個浮字晚一幀顯示，
    走的仍是 queuePendingEnemyFloat 這條既有路徑。 */
-function uiFrameBucket() {
-  var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-  return Math.floor(now / 16);
+/* ---- 浮字幾何的版面版本 ----
+   與 js/vfx.js 的 _vfxLayoutVersion 同樣的概念：圖層與面板的位置只在版面真的變動時
+   才會變——換波重建敵人卡片、視窗縮放、切分頁、分頁重新顯示。那些時機是可以枚舉的，
+   所以快取可以一直有效到下次失效。
+
+   第一版用 16 ms 分桶（一幀）當版本，實測只去重了約 1.6 倍：232 個浮字仍讀了
+   145 次 offsetParent 與 122 次 getBoundingClientRect，因為浮字是散在很多幀裡出現的。
+
+   仍保留 1 秒的保險上限：萬一有我沒列到的版面變動來源，最多錯一秒就自己修正，
+   而錯的後果只是某個浮字的水平裁切位置偏一點，不影響戰鬥或狀態。 */
+var UI_FLOAT_LAYOUT_VERSION = 0;
+var UI_FLOAT_LAYOUT_MAX_AGE_MS = 1000;
+var _floatTextWidthCache = Object.create(null);
+var _floatTextWidthCount = 0;
+var FLOAT_TEXT_WIDTH_CACHE_MAX = 400;
+
+function uiInvalidateFloatLayout() {
+  UI_FLOAT_LAYOUT_VERSION++;
+  _floatTextWidthCache = Object.create(null);
+  _floatTextWidthCount = 0;
+}
+
+function floatCacheFresh(node, versionKey, stampKey, now) {
+  return node[versionKey] === UI_FLOAT_LAYOUT_VERSION &&
+    (now - node[stampKey]) < UI_FLOAT_LAYOUT_MAX_AGE_MS;
 }
 
 function floatLayerAttached(layer) {
   if (!layer) return false;
-  var bucket = uiFrameBucket();
-  if (layer._floatAttachedBucket === bucket) return layer._floatAttached;
+  var now = uiNowMs();
+  if (floatCacheFresh(layer, '_floatAttachedVer', '_floatAttachedAt', now)) return layer._floatAttached;
   var attached = layer.offsetParent !== null;
-  layer._floatAttachedBucket = bucket;
+  layer._floatAttachedVer = UI_FLOAT_LAYOUT_VERSION;
+  layer._floatAttachedAt = now;
   layer._floatAttached = attached;
   return attached;
+}
+
+/* 浮字寬度：同樣的 class 與同樣的文字，寬度一定一樣。
+   實測 103 次 offsetParent 之外還有 103 次 offsetWidth，全是為了知道「這串字多寬」。
+   快取隨版面版本一起作廢（介面縮放會改變量到的像素數），並設上限避免無限成長。 */
+function floatTextWidth(sp) {
+  var key = sp.className.length + ':' + sp.className + ':' + sp.textContent;
+  var cached = _floatTextWidthCache[key];
+  if (cached !== undefined) return cached;
+  var width = sp.offsetWidth;
+  /* 量到 0 不要記：那代表這一刻還沒排版（圖層剛建立、分頁剛切過來）。
+     記下去會讓之後每個同樣文字的浮字都拿到 0，裁切算出來的位置全部偏掉，
+     而且要等版面版本前進才會自己修好。 */
+  if (width > 0 && _floatTextWidthCount < FLOAT_TEXT_WIDTH_CACHE_MAX) {
+    _floatTextWidthCache[key] = width;
+    _floatTextWidthCount++;
+  }
+  return width;
 }
 
 /* 浮字裁切用的容器幾何（圖層矩形 + 面板可視左右界），同樣每幀只量一次。
@@ -1483,14 +1524,15 @@ function floatLayerAttached(layer) {
    剩下真正需要浮字自己在場才能量的只有 sp.offsetWidth（文字寬度），
    每個浮字從 4 次讀取降為 1 次。 */
 function floatClipGeometry(layer, panel) {
-  var bucket = uiFrameBucket();
-  if (layer._floatClipBucket === bucket && layer._floatClipPanel === panel) return layer._floatClip;
+  var now = uiNowMs();
+  if (floatCacheFresh(layer, '_floatClipVer', '_floatClipAt', now) && layer._floatClipPanel === panel) return layer._floatClip;
   var lr = layer.getBoundingClientRect();
   var pr = panel.getBoundingClientRect();
   // overflow:hidden 以 padding box 裁切：面板可視範圍 = 邊框內側
   var clipLeft = pr.left + panel.clientLeft;
   var geometry = { left: lr.left, width: lr.width, clipLeft: clipLeft, clipRight: clipLeft + panel.clientWidth };
-  layer._floatClipBucket = bucket;
+  layer._floatClipVer = UI_FLOAT_LAYOUT_VERSION;
+  layer._floatClipAt = now;
   layer._floatClipPanel = panel;
   layer._floatClip = geometry;
   return geometry;
@@ -1923,7 +1965,7 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
   if (recoveryKey) placePlayerRecoveryFloat(sp, layer);
   // 敵方傷害浮字允許超出敵方框線；玩家事件與其他浮字仍維持在面板範圍內。
   if (clipGeometry && clipGeometry.width > 0) {
-    var w = sp.offsetWidth;   // 唯一必須現場量的東西：這串文字有多寬
+    var w = floatTextWidth(sp);   // 這串文字有多寬（同 class 同文字只量一次）
     var centerX = clipGeometry.left + clipGeometry.width * pct / 100;
     var minC = clipGeometry.clipLeft + w / 2 + 1;
     var maxC = clipGeometry.clipRight - w / 2 - 1;
@@ -1968,6 +2010,7 @@ function switchTab(name) {
     var forgeGrid = $id('forge-inventory-grid');
     if (forgeGrid && forgeGrid.children.length) forgeGrid.innerHTML = '';
   }
+  uiInvalidateFloatLayout();   // 切分頁會改變版面，浮字幾何快取要作廢
   syncVfxQualityForTab();
   refreshUiPanelSubscriptions();
   markTabDirty(name);
@@ -3057,6 +3100,7 @@ function renderBattle() {
     if (party.getAttribute('data-enemy-signature') !== 'empty') {
       rebuildEnemyParty(party, guideHtml + '<div class="enemy-empty">' + (view.towerActive ? '（高塔戰鬥中…）' : '🔍 搜索敵人中…') + '</div>');
       party.setAttribute('data-enemy-signature', 'empty');
+      uiInvalidateFloatLayout();
       if (typeof vfxInvalidateLayout === 'function') vfxInvalidateLayout();
     }
     flushPendingEnemyFloats(battleSnapshot);
@@ -3089,7 +3133,8 @@ function renderBattle() {
     rebuildEnemyParty(party, partyHtml);
     party.setAttribute('data-enemy-signature', enemySignature);
     UI.battleLayoutDirty = true;
-    if (typeof vfxInvalidateLayout === 'function') vfxInvalidateLayout();
+    uiInvalidateFloatLayout();
+      if (typeof vfxInvalidateLayout === 'function') vfxInvalidateLayout();
   }
   if (UI.battleLayoutDirty) {
     fitEnemyNames(party);
@@ -5185,6 +5230,8 @@ function handleVisibilityChange() {
   clearBackgroundEnemyFloats();
   showBackgroundLatestEnemyFloat();
   markVisibleUiDirty();
+  // 回到前景時版面可能已經不同（視窗被縮放過、裝置旋轉），浮字幾何快取一律作廢
+  uiInvalidateFloatLayout();
   uiTick();
 }
 
@@ -8058,6 +8105,7 @@ function initUI() {
       UI.dirty.battle = true;
       UI.dirty.inv = true;
       invalidateInventoryGridColumns();
+      uiInvalidateFloatLayout();
       if (typeof vfxInvalidateLayout === 'function') vfxInvalidateLayout();
     });
     // 介面縮放（js/ui-scale.js）會改變格線容器寬度，欄數快取一樣得作廢
