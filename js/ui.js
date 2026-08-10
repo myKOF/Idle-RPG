@@ -757,7 +757,7 @@ function sendUiCommand(commandName, args, options) {
     var entry = UI_COMMAND_PENDING.byToken[token];
     if (!entry) return result;
     var resultError = typeof uiCommandResultError === 'function'
-      ? uiCommandResultError(result)
+      ? uiCommandResultError(result, commandName)
       : null;
     if (resultError || !Object.keys(entry.waitPanels).length) {
       releaseUiPendingToken(token);
@@ -4149,7 +4149,7 @@ function detailAction(act, actBtn) {
     keys: [itemPendingKey(it.id)],
     panels: panels
   }).then(function (result) {
-    var resultError = typeof uiCommandResultError === 'function' ? uiCommandResultError(result) : null;
+    var resultError = typeof uiCommandResultError === 'function' ? uiCommandResultError(result, commandName) : null;
     if (resultError) {
       if (actBtn && (String(resultError).indexOf('資源不足') >= 0 || String(resultError).indexOf('不足') >= 0 || resultError === 'poor')) {
         showFloatingText(actBtn, '材料不足', '#fca5a5');
@@ -6077,8 +6077,12 @@ function pendingUiButtonAttributes(key) {
     (isUiCommandPending(key) ? ' disabled' : '');
 }
 
-function uiCommandResultError(result) {
-  if (typeof result === 'string') return result || null;
+function uiCommandResultError(result, commandName) {
+  if (typeof result === 'string') {
+    // item.upgrade uses status strings as successful command results.
+    if (commandName === 'item.upgrade' && (result === 'ok' || result === 'fail' || result === 'poor')) return null;
+    return result || null;
+  }
   return result && result.err ? result.err : null;
 }
 

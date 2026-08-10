@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## Codex：修正強化成功／失敗浮字消失（2026-08-10）
+- Status: Completed
+- Owner: Codex
+- Scope: `js/ui.js`, `index.html`, `tests/ui-worker-panels.test.cjs`, `docs/AI_TASKS.md`
+- Task: 修正 Worker `item.upgrade` 回傳的 `ok`／`fail`／`poor` 被 UI 共用錯誤判定誤當成錯誤，導致強化結果浮字不再顯示。
+- Acceptance: 強化成功、失敗與材料不足都能正常顯示按鈕上方浮字；其他 UI 指令的字串錯誤判定不受影響；回歸測試與 build 通過。
+- Dependencies: 無
+- Verification: `node --test tests/ui-worker-panels.test.cjs --test-name-pattern "Worker panel|item\\.upgrade"` 通過 7/7；`npm.cmd run build` 通過 254 個檔案檢查。
+- Full test note: `npm.cmd test` 通過 1205 項，另有既存 `tests/stage-rework.test.cjs` 1 項倍率期待值失敗，與本次修改無關。
+
 ## Codex：修正 NPC 表套用後未回寫 `js/data.js`（2026-08-09）
 
 - Status: Completed
