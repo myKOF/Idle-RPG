@@ -1584,6 +1584,11 @@ function clearTowerFloatLayers() {
 function placeFloatAvoidingOverlap(sp, layer, selector, randomTop, randomRange, gridRows, gridStep, anchorLayer) {
   var lr = layer.getBoundingClientRect();
   if (!lr.width || !lr.height) return;
+  /* 裁切範圍在最後才用得到，但要在這裡先讀完。
+     它是容器的幾何，與浮字擺哪裡無關；留到後面讀的話，那次讀取會落在「剛寫完
+     sp 的 left/top」之後，等於再付一次強制重排。所有容器類的讀取都集中在函式開頭。 */
+  var clipNode = layer.closest ? layer.closest('#combat-area') : null;
+  var clipRect = clipNode && clipNode.getBoundingClientRect ? clipNode.getBoundingClientRect() : null;
 
   var existingRects = [];
   var existingFloats = layer.querySelectorAll(selector);
@@ -1658,14 +1663,35 @@ function placeFloatAvoidingOverlap(sp, layer, selector, randomTop, randomRange, 
     }
   }
 
+  /* ---- 候選位置用算的，不要逐個量 ----
+     原本每個候選點都做「寫 left/top → 讀 getBoundingClientRect」。那是讀寫交錯，
+     每一次讀取都強制瀏覽器把**整份文件**重新排版一次，而候選點有 24（貼身）到
+     49 個（格狀）——一個傷害數字最多 49 輪重排，每幀最多 6 個視覺事件。
+
+     重排的成本取決於文件多大，不是浮字多大：後期背包把上千個格子掛在版面樹上時，
+     這裡就會把主執行緒整個吃掉，玩家看到的就是「戰鬥中按鈕要等一秒」，
+     而清空背包後同一段程式碼卻很順——這正是回報的現象。
+
+     .float-txt 是 white-space: nowrap 的絕對定位元素（css/style.css），
+     寬高與 left/top 無關，換位置只是平移。所以只要量一次，其餘候選點的矩形
+     直接由圖層矩形與百分比算出來，結果與逐個量測完全相同（不是近似）。 */
+  sp.style.left = candidates[0].left + '%';
+  sp.style.top = candidates[0].top + '%';
+  sp.style.marginTop = '0px';
+  var baseRect = sp.getBoundingClientRect();
+  var floatW = baseRect.width, floatH = baseRect.height;
+  // 量測期間 transform 固定是 translate(-50%, 0)，所以水平以候選點為中心
+  var rectForCandidate = function (c) {
+    var cx = lr.left + c.left / 100 * lr.width;
+    var cy = lr.top + c.top / 100 * lr.height;
+    return { left: cx - floatW / 2, right: cx + floatW / 2, top: cy, bottom: cy + floatH };
+  };
+
   var best = null;
   var bestOverlap = Infinity;
   for (var pi = 0; pi < candidates.length; pi++) {
     var candidate = candidates[pi];
-    sp.style.left = candidate.left + '%';
-    sp.style.top = candidate.top + '%';
-    sp.style.marginTop = '0px';
-    var candidateRect = sp.getBoundingClientRect();
+    var candidateRect = rectForCandidate(candidate);
     var overlap = 0;
     for (var ri = 0; ri < existingRects.length; ri++) {
       var occupied = existingRects[ri];
@@ -1686,11 +1712,9 @@ function placeFloatAvoidingOverlap(sp, layer, selector, randomTop, randomRange, 
     sp.style.top = best.top + '%';
     sp.style.marginTop = '0px';
     // 允許浮字跨出敵人卡片，但不要讓長數字超出整個戰鬥容器或視窗邊界。
-    // 此時仍維持 translate(-50%, 0)，所以 getBoundingClientRect() 是實際顯示寬度。
-    var clipNode = layer.closest ? layer.closest('#combat-area') : null;
-    var clipRect = clipNode && clipNode.getBoundingClientRect ? clipNode.getBoundingClientRect() : null;
+    // 位置同樣用算的：clipRect 在函式開頭就讀好了，這裡不再讀 DOM。
     if (clipRect && clipRect.width > 0) {
-      var placedRect = sp.getBoundingClientRect();
+      var placedRect = rectForCandidate(best);
       var shift = 0;
       if (placedRect.left < clipRect.left) shift = clipRect.left - placedRect.left;
       if (placedRect.right > clipRect.right) shift = clipRect.right - placedRect.right;
