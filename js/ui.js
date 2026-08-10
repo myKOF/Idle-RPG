@@ -3619,6 +3619,36 @@ function inventoryGridTotalRowCount(box) {
 
    改成 grid-row: span N：墊片佔掉 N 條軌道與其間的間隙，尺寸與「那 N 排格子都在」
    完全相同，而且是由格線自己算的，不必在 JS 這邊重算一次列高與間隙。 */
+/* ---- 虛擬捲動的視窗計算（背包頁與神鑄頁共用）----
+   依目前捲動位置決定「這次要掛哪一段」，上下各多留 INVENTORY_VIRTUAL_BUFFER_ROWS 排
+   當緩衝，讓一般速度的捲動不會先看到空白再補上。
+
+   唯一的版面讀取是 box.scrollTop；**絕對不寫** scrollTop——渲染時寫回捲動位置會與
+   使用者的拖曳互搶，那正是虛擬捲動當初被關掉的原因。捲動高度由墊片負責
+   （見 inventoryVirtualSpacerHTML）。 */
+function virtualGridWindow(box, itemCount, visibleRows, scrollTop) {
+  var columns = Math.max(1, cachedInventoryGridColumnCount(box));
+  var totalRows = Math.max(1, Math.ceil(itemCount / columns));
+  var rows = Math.max(1, visibleRows);
+  var rowHeight = INVENTORY_GRID_ROW_HEIGHT + INVENTORY_GRID_ROW_GAP;
+  var maxStartRow = Math.max(0, totalRows - rows);
+  /* 呼叫端若已經在「還沒寫入任何 DOM」時先讀好捲動位置就傳進來——渲染中途才讀
+     等於在自己剛造成的髒版面上強制重排一次。renderInventory 就是這樣：
+     擴充按鈕的 innerHTML、格數文字、篩選框顯示三個寫入都排在前面。 */
+  var top = (typeof scrollTop === 'number') ? scrollTop : box.scrollTop;
+  var startRow = Math.min(maxStartRow,
+    Math.max(0, Math.floor(top / rowHeight) - INVENTORY_VIRTUAL_BUFFER_ROWS));
+  var endRow = Math.min(totalRows, startRow + rows + INVENTORY_VIRTUAL_BUFFER_ROWS * 2);
+  return {
+    columns: columns,
+    totalRows: totalRows,
+    first: startRow * columns,
+    last: Math.min(itemCount, endRow * columns),
+    topRows: startRow,
+    bottomRows: Math.max(0, totalRows - endRow)
+  };
+}
+
 function inventoryVirtualSpacerHTML(rows) {
   if (!(rows > 0)) return '';
   return '<div aria-hidden="true" style="grid-column: 1 / -1; grid-row: span ' +
@@ -3641,6 +3671,14 @@ function renderInventory() {
   var invSnapshot = uiInventoryPanelSnapshot();
   var headerSnapshot = uiHeaderPanelSnapshot();
   if (!invSnapshot || !headerSnapshot || !headerSnapshot.player) return;
+  /* 版面讀取要排在所有 DOM 寫入之前。虛擬捲動的視窗需要知道現在捲到哪，而這支後面
+     會寫擴充按鈕的 innerHTML、格數文字與篩選框顯示——那之後再讀就是強制重排一次，
+     每次渲染都付。這裡先讀好再往下走。 */
+  var gridBox = $id('inventory-grid');
+  var entryScrollTop = gridBox ? gridBox.scrollTop : 0;
+  // 同一批讀完：可視寬度與是否已排版，後面的虛擬捲動守衛用得到
+  var entryClientWidth = gridBox ? gridBox.clientWidth : 0;
+  var entryLaidOut = !!(gridBox && gridBox.offsetParent);
   var cap = Number(invSnapshot.cap) || 0;
   var player = headerSnapshot.player;
   var btn = $id('inv-expand');
@@ -3721,28 +3759,22 @@ function renderInventory() {
       box.removeAttribute('data-inventory-total-rows');
       box.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">沒有符合篩選條件的裝備。</div>';
     } else {
-      if (virtualize && (!box.clientWidth || !box.offsetParent)) {
+      // 用進入時讀好的那批值，不要在這裡重讀——這裡已經在本函式的 DOM 寫入之後了
+      if (virtualize && (!entryClientWidth || !entryLaidOut)) {
         applyInventoryVisibleRows(box);
         return;
       }
       /* 欄數、捲動位置與可視高度全都只有虛擬捲動才用得到，而它們**每一個都是版面讀取**：
          在寫入 DOM 的前後讀取會強制瀏覽器把整份文件重新排版一次。非虛擬路徑不需要這些
          數字，就不要付這筆錢——格線改成增量更新之後，捲動位置本來就不會被動到。 */
-      var columns = 0, totalRows = 0, rows = 0, startRow = 0, endRow = 0;
-      if (virtualize) {
-        columns = cachedInventoryGridColumnCount(box);
-        totalRows = Math.max(1, Math.ceil(displayedItems.length / columns));
-        rows = inventoryVisibleRows(totalRows, UI.inventoryVisibleRows);
-        var rowHeight = INVENTORY_GRID_ROW_HEIGHT + INVENTORY_GRID_ROW_GAP;
-        /* 唯一需要的版面讀取：目前捲到哪。上下各多掛 BUFFER 排當緩衝。
-           ⚠️ 這裡**不寫** scrollTop——見上方 virtualize 的說明。 */
-        var maxStartRow = Math.max(0, totalRows - rows);
-        startRow = Math.min(maxStartRow,
-          Math.max(0, Math.floor(box.scrollTop / rowHeight) - INVENTORY_VIRTUAL_BUFFER_ROWS));
-        endRow = Math.min(totalRows, startRow + rows + INVENTORY_VIRTUAL_BUFFER_ROWS * 2);
-      }
-      var firstItem = virtualize ? startRow * columns : 0;
-      var lastItem = virtualize ? Math.min(displayedItems.length, endRow * columns) : displayedItems.length;
+      var window_ = virtualize
+        ? virtualGridWindow(box, displayedItems.length, inventoryVisibleRows(
+            Math.ceil(displayedItems.length / cachedInventoryGridColumnCount(box)), UI.inventoryVisibleRows),
+            entryScrollTop)
+        : null;
+      var totalRows = window_ ? window_.totalRows : 0;
+      var firstItem = window_ ? window_.first : 0;
+      var lastItem = window_ ? Math.min(displayedItems.length, window_.last) : displayedItems.length;
 
       /* 這裡刻意不再算 selected / dimmed：那三個 class 由 renderInventory 尾端的
          updateSelectionUI() 統一重貼（它是選取態的唯一權威，本來就會覆蓋這裡寫的值）。
@@ -3767,8 +3799,8 @@ function renderInventory() {
            直接以跨列數表達（見 inventoryVirtualSpacerHTML——不能用 height）。
            墊片與格子走同一套增量比對，跨列數變了才換節點；歸零時不放進清單，
            syncItemGridCells 的尾端清理會把舊墊片移除。 */
-        var skippedTopRows = startRow;
-        var skippedBottomRows = Math.max(0, totalRows - endRow);
+        var skippedTopRows = window_.topRows;
+        var skippedBottomRows = window_.bottomRows;
         if (skippedTopRows > 0) {
           cellKeys.unshift('__inv-spacer-top');
           cellsHtmlList.unshift(inventoryVirtualSpacerHTML(skippedTopRows));
@@ -4955,19 +4987,68 @@ function renderForge() {
     if (!inventoryItems.length) {
       grid.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">背包是空的。戰鬥掉落的裝備會先進入生產線輸送帶，「保留」的會送到這裡。</div>';
     } else {
-      /* 與背包頁同樣走增量更新：神鑄頁掛的是第二份完整背包格線（後期同樣九百多格），
-         戰鬥掉落會讓 dirty.inv 一路推到這裡，整份重建一次就是一百多毫秒的凍結。 */
-      var forgeCellKeys = [];
-      var forgeCellHtmls = [];
-      for (var fi = 0; fi < inventoryItems.length; fi++) {
-        var it2 = inventoryItems[fi];
-        var ok = isForgeableEquipmentRarity(it2.rarity);
-        forgeCellKeys.push(it2.id);
-        forgeCellHtmls.push(itemCellHTML(it2, 'forgeinv', ok ? '' : ' forge-na', nodePendingKey('forge')));
-      }
-      syncItemGridCells(grid, forgeCellKeys, forgeCellHtmls);
+      renderForgeInventoryCells(grid, inventoryItems);
     }
   }
+}
+
+/* 神鑄頁的背包格線：與背包頁同一套增量更新＋虛擬捲動。
+
+   它是第二份完整背包格線，後期同樣上千格；掛著的每一格都會讓整份文件的樣式重算與
+   版面計算變貴，而那筆錢是戰鬥中每一次浮字、特效、換波都要付的。
+
+   容器是 max-height + overflow-y: auto（css/style.css #forge-inventory-grid），
+   沒有像背包頁那樣的「可展開排數」設定，所以可視排數直接由容器高度換算。 */
+function renderForgeInventoryCells(grid, inventoryItems) {
+  var virtualize = inventoryItems.length > INVENTORY_VIRTUAL_MIN_ITEMS;
+  var rowHeight = INVENTORY_GRID_ROW_HEIGHT + INVENTORY_GRID_ROW_GAP;
+  var window_ = null;
+  if (virtualize) {
+    var visibleRows = Math.max(1, Math.ceil((grid.clientHeight || 250) / rowHeight));
+    window_ = virtualGridWindow(grid, inventoryItems.length, visibleRows);
+  }
+  var first = window_ ? window_.first : 0;
+  var last = window_ ? Math.min(inventoryItems.length, window_.last) : inventoryItems.length;
+
+  var keys = [];
+  var htmls = [];
+  for (var i = first; i < last; i++) {
+    var it = inventoryItems[i];
+    var ok = isForgeableEquipmentRarity(it.rarity);
+    keys.push(it.id);
+    htmls.push(itemCellHTML(it, 'forgeinv', ok ? '' : ' forge-na', nodePendingKey('forge')));
+  }
+  if (window_) {
+    if (window_.topRows > 0) {
+      keys.unshift('__forge-spacer-top');
+      htmls.unshift(inventoryVirtualSpacerHTML(window_.topRows));
+    }
+    if (window_.bottomRows > 0) {
+      keys.push('__forge-spacer-bottom');
+      htmls.push(inventoryVirtualSpacerHTML(window_.bottomRows));
+    }
+  }
+  syncItemGridCells(grid, keys, htmls);
+  bindForgeInventoryVirtualScroll(grid);
+}
+
+/* 捲動時只重畫格線，不要整支 renderForge 重跑——那會把法陣、素材、按鈕全部重建，
+   在捲動的每一幀做那件事比虛擬捲動省下來的還貴。 */
+function bindForgeInventoryVirtualScroll(grid) {
+  if (grid.__forgeVirtualScrollBound) return;
+  grid.__forgeVirtualScrollBound = true;
+  grid.addEventListener('scroll', function () {
+    if (UI.tab !== 'forge' || UI.forgeInvTab === 'gems') return;
+    if (grid.__forgeVirtualScrollFrame) return;
+    var schedule = typeof requestAnimationFrame === 'function'
+      ? requestAnimationFrame : function (fn) { return setTimeout(fn, 0); };
+    grid.__forgeVirtualScrollFrame = schedule(function () {
+      grid.__forgeVirtualScrollFrame = 0;
+      var snapshot = uiInventoryPanelSnapshot();
+      var items = snapshot && snapshot.items;
+      if (items && items.length) renderForgeInventoryCells(grid, items);
+    });
+  }, { passive: true });
 }
 
 /* ---- 高塔分頁 ---- */
@@ -5664,24 +5745,45 @@ function inventoryViewItems(snapshot) {
 // Compare only fields used by itemCellHTML.  Inventory detail responses keep
 // these summaries unchanged, so the existing grid can remain mounted while
 // the requested full item is added to `details`.
+/* 附魔欄位比對：格子上只用得到「有幾條」與「第一條是什麼」（見 itemCellHTML），
+   所以比這兩件事就夠，不需要序列化。
+
+   原本走的是通用的 JSON.stringify 比對，而**每一件裝備都有 enchants 陣列**
+   （itemEnchants 會把舊的 enchant 欄位就地遷移成陣列，沒有附魔的就是空陣列），
+   面板每次回應都是新的一份深拷貝、參考永遠不相等，於是 1208 件裝備要跑 2416 次
+   JSON.stringify——只為了確認兩個空陣列一樣。實測光這支就要 4.3 ms，而它在戰鬥中
+   每秒被呼叫數次。 */
+function inventoryEnchantsEqual(av, bv) {
+  var aLen = av ? av.length : 0;
+  var bLen = bv ? bv.length : 0;
+  if (aLen !== bLen) return false;
+  for (var i = 0; i < aLen; i++) {
+    var ae = av[i], be = bv[i];
+    if (ae === be) continue;
+    if (!ae || !be || ae.key !== be.key) return false;
+  }
+  return true;
+}
+
 function inventoryGridSnapshotEqual(previous, next) {
   if (!previous || !next || Number(previous.count) !== Number(next.count) ||
     Number(previous.cap) !== Number(next.cap)) return false;
   var a = inventoryViewItems(previous);
   var b = inventoryViewItems(next);
   if (a.length !== b.length) return false;
+  /* 純量欄位逐一比對；enchant／enchants 是唯二可能是物件的欄位，另外處理。 */
   var fields = ['id', 'rarity', 'slot', 'level', 'upgrade', 'synthesized',
-    'locked', 'name', 'weaponType', 'enchant', 'enchants', 'kind', 'ancientCount'];
+    'locked', 'name', 'weaponType', 'kind', 'ancientCount'];
   for (var i = 0; i < a.length; i++) {
-    if (!a[i] || !b[i]) return false;
+    var ai = a[i], bi = b[i];
+    if (!ai || !bi) return false;
     for (var j = 0; j < fields.length; j++) {
       var field = fields[j];
-      var av = a[i][field], bv = b[i][field];
-      if (av === bv) continue;
-      if (((av && typeof av === 'object') || (bv && typeof bv === 'object')) &&
-        JSON.stringify(av) === JSON.stringify(bv)) continue;
-      return false;
+      if (ai[field] !== bi[field]) return false;
     }
+    if (ai.enchant !== bi.enchant &&
+      !inventoryEnchantsEqual(ai.enchant ? [ai.enchant] : null, bi.enchant ? [bi.enchant] : null)) return false;
+    if (!inventoryEnchantsEqual(ai.enchants, bi.enchants)) return false;
   }
   return true;
 }

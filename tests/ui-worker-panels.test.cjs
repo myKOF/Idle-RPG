@@ -89,7 +89,17 @@ test('裝備與背包頁由 Worker panel 投影渲染並以 Command 修改狀態
      上下墊片撐出完整捲動高度，而且 **renderInventory 一行都不准寫 scrollTop**。
      最後這條是防止舊 bug 復活的關鍵，比原本的形狀斷言更嚴格。 */
   assert.match(ui, /var virtualize = inventoryItems\.length > INVENTORY_VIRTUAL_MIN_ITEMS;/);
-  assert.match(ui, /startRow = Math\.min\(maxStartRow,[\s\S]*?Math\.floor\(box\.scrollTop \/ rowHeight\) - INVENTORY_VIRTUAL_BUFFER_ROWS\)\);/);
+  assert.match(ui, /startRow = Math\.min\(maxStartRow,[\s\S]*?Math\.floor\(top \/ rowHeight\) - INVENTORY_VIRTUAL_BUFFER_ROWS\)\);/);
+  /* 版面讀取必須排在所有 DOM 寫入之前。渲染中途才讀捲動位置，等於在自己剛造成的
+     髒版面上強制重排一次，而那筆成本隨文件大小成長——這是實際量到過的迴歸來源。 */
+  const scrollReadAt = renderInventory.indexOf('gridBox.scrollTop');
+  const firstWriteAt = Math.min.apply(null, ['innerHTML =', 'textContent =', 'style.display =']
+    .map((token) => {
+      const at = renderInventory.indexOf(token);
+      return at < 0 ? Number.MAX_SAFE_INTEGER : at;
+    }));
+  assert.ok(scrollReadAt >= 0, 'renderInventory 應在進入時就讀好捲動位置');
+  assert.ok(scrollReadAt < firstWriteAt, 'renderInventory 必須在任何 DOM 寫入之前讀取捲動位置');
   assert.match(ui, /cellKeys\.unshift\('__inv-spacer-top'\);[\s\S]*?cellKeys\.push\('__inv-spacer-bottom'\);/);
   // 原始碼不得含控制字元（這條斷言是被真的踩到才加的：墊片鍵值曾誤植 NUL 位元組）
   var controlCharIndex = Array.prototype.findIndex.call(ui, function (ch) {
