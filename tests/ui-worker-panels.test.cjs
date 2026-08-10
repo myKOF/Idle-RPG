@@ -82,8 +82,22 @@ test('裝備與背包頁由 Worker panel 投影渲染並以 Command 修改狀態
   assert.match(ui, /function selectionItemForGrid\(invSnapshot\)[\s\S]*?inventoryViewItem\(invSnapshot \|\| uiInventoryPanelSnapshot\(\), UI\.sel\.id, false\)/);
   assert.match(ui, /function updateSelectionUI\(\) \{\s*var selItem = selectionItemForGrid\(\);/);
   assert.match(ui, /if \(UI\.inventoryScrolling\) updateSelectionUI\(\);\s*else renderDetail\(\);/);
-  assert.match(ui, /var wasAtScrollEnd = previousScrollTop >= maxScrollTop - 1[\s\S]*?startRow = wasAtScrollEnd[\s\S]*?box\.scrollTop = wasAtScrollEnd \? box\.scrollHeight/);
-  assert.match(ui, /var virtualize = false;/);
+  /* ---- 虛擬捲動 ----
+     舊斷言盯的是「寫死 virtualize = false」與那段把 box.scrollTop 寫回去的程式碼。
+     後者正是「拖曳捲軸到底時視窗會跳」的成因（渲染與使用者的拖曳互搶捲動位置），
+     虛擬捲動當初就是為了它被關掉的。現在改成：超過門檻才虛擬化、視窗由捲動位置推導、
+     上下墊片撐出完整捲動高度，而且 **renderInventory 一行都不准寫 scrollTop**。
+     最後這條是防止舊 bug 復活的關鍵，比原本的形狀斷言更嚴格。 */
+  assert.match(ui, /var virtualize = inventoryItems\.length > INVENTORY_VIRTUAL_MIN_ITEMS;/);
+  assert.match(ui, /startRow = Math\.min\(maxStartRow,[\s\S]*?Math\.floor\(box\.scrollTop \/ rowHeight\) - INVENTORY_VIRTUAL_BUFFER_ROWS\)\);/);
+  assert.match(ui, /cellKeys\.unshift\('__inv-spacer-top'\);[\s\S]*?cellKeys\.push\('__inv-spacer-bottom'\);/);
+  // 原始碼不得含控制字元（這條斷言是被真的踩到才加的：墊片鍵值曾誤植 NUL 位元組）
+  var controlCharIndex = Array.prototype.findIndex.call(ui, function (ch) {
+    var code = ch.charCodeAt(0);
+    return code < 32 && code !== 9 && code !== 10 && code !== 13;
+  });
+  assert.equal(controlCharIndex, -1, 'js/ui.js 不得含控制字元，出現在位置 ' + controlCharIndex);
+  assert.doesNotMatch(renderInventory, /box\.scrollTop\s*=/);
 });
 
 test('頂欄只讀 Worker header Snapshot 的資源、屬性與 DPS', () => {
