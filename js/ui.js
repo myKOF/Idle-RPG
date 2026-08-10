@@ -759,7 +759,25 @@ function sendUiCommand(commandName, args, options) {
     var resultError = typeof uiCommandResultError === 'function'
       ? uiCommandResultError(result, commandName)
       : null;
-    if (resultError || !Object.keys(entry.waitPanels).length) {
+    if (resultError) {
+      releaseUiPendingToken(token);
+      /* 指令被模擬層拒絕時**一定要說出來**。
+
+         模擬層是用「回傳字串」表示拒絕（例如 doForge 回
+         '金幣不足（需要 …，持有 …）'），而不是拋例外，所以這個 Promise 是 resolve 的——
+         呼叫端接的 .catch() 永遠不會觸發。實際後果：玩家按下神鑄的「鑄造」，
+         按鈕解鎖、法陣不動、畫面一個字都沒有，看起來就是按鈕壞了。
+         61 個 sendUiCommand 呼叫點裡只有 11 個自己檢查回傳值，其餘全是靜默失敗。
+
+         所以預設就回報。已經自己回報的呼叫端傳 silentResultError: true 退出，
+         避免同一件事講兩次。萬一有漏掉的，症狀是訊息重複一行——看得見、也無害，
+         比靜默好得多。 */
+      if (!(options && options.silentResultError)) {
+        reportUiCommandFailure(uiCommandLabel(commandName), resultError, Object.keys(entry.waitPanels));
+      }
+      return result;
+    }
+    if (!Object.keys(entry.waitPanels).length) {
       releaseUiPendingToken(token);
       return result;
     }
@@ -4146,6 +4164,7 @@ function detailAction(act, actBtn) {
   }
   if (!commandName) return;
   sendUiCommand(commandName, args, {
+    silentResultError: true,  // 下方 .then 自行回報（含材料不足的浮動提示）
     keys: [itemPendingKey(it.id)],
     panels: panels
   }).then(function (result) {
@@ -4184,6 +4203,7 @@ function salvageAllUnlocked(maxRarity, maxLevel, maxAncient) {
   if (typeof maxLevel === 'number' && !isNaN(maxLevel) && maxLevel > 0) args.maxLevel = maxLevel;
   if (typeof maxAncient === 'number' && !isNaN(maxAncient)) args.maxAncient = maxAncient;
   sendUiCommand('item.salvageBulk', args, {
+    silentResultError: true,  // 下方 .then 自行回報
     keys: [nodePendingKey('salvage-bulk')],
     panels: ['inv', 'equip', 'header', 'gems']
   }).then(function (result) {
@@ -6092,6 +6112,28 @@ function requestUiPanels(keys) {
   });
 }
 
+/* 指令名 → 給玩家看的動作名稱。查不到就退回指令名本身：訊息會醜一點，
+   但仍然說得出「哪個動作失敗、為什麼」，比什麼都不說好。 */
+var UI_COMMAND_LABELS = {
+  'forge.start': '開始神鑄', 'forge.cancel': '取消神鑄', 'forge.unloadAll': '神鑄全部取回',
+  'forge.placeItem': '放入神鑄素材', 'forge.placeGem': '放入神鑄寶石',
+  'forge.removeItem': '取回神鑄素材', 'forge.toggleDust': '神鑄魔塵', 'forge.autoFillDust': '自動放入魔塵',
+  'forge.setAuto': '神鑄自動設定', 'forge.setAutoFill': '神鑄自動放入設定',
+  'item.equip': '裝備', 'item.unequip': '卸下', 'item.salvage': '分解', 'item.setLock': '鎖定',
+  'item.upgrade': '強化', 'item.enchant': '附魔', 'item.removeEnchant': '移除附魔',
+  'item.rerollAffix': '洗煉', 'gem.socket': '鑲嵌', 'gem.unsocket': '取下寶石',
+  'newforge.addFurnace': '新增熔爐', 'newforge.removeFurnace': '移除熔爐',
+  'newforge.installPart': '裝配零件', 'newforge.uninstallPart': '卸下零件',
+  'newforge.upgradePart': '零件升級', 'newforge.unlockPartSlot': '解鎖零件格',
+  'tower.start': '挑戰高塔', 'tower.startAuto': '高塔連續挑戰', 'tower.flee': '撤出高塔',
+  'player.buyInvUpgrade': '擴充背包', 'player.switchEquipSet': '切換套裝',
+  'task.claim': '領取任務獎勵', 'stage.goMax': '前往最高關卡', 'stage.switchZone': '切換地圖'
+};
+
+function uiCommandLabel(commandName) {
+  return UI_COMMAND_LABELS[commandName] || String(commandName || '操作');
+}
+
 function reportUiCommandFailure(prefix, error, panels) {
   var restartMessage = error && error.message ? String(error.message) : String(error || '');
   if (restartMessage.indexOf('worker-restart:') === 0) return;
@@ -6103,6 +6145,7 @@ function reportUiCommandFailure(prefix, error, panels) {
 function sendGemUiCommand(commandName, args, pendingRef, panels, onSuccess) {
   panels = panels || ['gems', 'header'];
   return sendUiCommand(commandName, args, {
+    silentResultError: true,  // 下方 .then 自行回報
     keys: nodePendingKey(pendingRef),
     panels: panels
   }).then(function (result) {
@@ -6129,6 +6172,7 @@ function runTalentUiAction(commandName, id, legacyAction) {
 
   var panels = ['talents', 'header'];
   sendUiCommand(commandName, { id: id }, {
+    silentResultError: true,  // 下方 .then 自行回報
     keys: nodePendingKey('talent:' + id),
     panels: panels
   }).then(function (result) {
@@ -6544,6 +6588,7 @@ function skillViewDescription(id, def, level, skipFusionDetail, isPotential, fus
 
 function runSkillUiAction(commandName, id, pendingRef, legacyAction, panels, onSuccess) {
   sendUiCommand(commandName, { id: id }, {
+    silentResultError: true,  // 下方 .then 自行回報
     keys: nodePendingKey(pendingRef),
     panels: panels
   }).then(function (result) {
@@ -8316,6 +8361,7 @@ function initUI() {
         '・裝備、技能、資源與關卡進度保留。\n\n確定要進行' + actTitle + '嗎？',
         function () {
           sendUiCommand('player.reincarnate', {}, {
+            silentResultError: true,  // 下方 .then 自行回報
             keys: [nodePendingKey('reincarnate')],
             panels: ['header', 'equip', 'inv', 'skills', 'talents']
           }).then(function (result) {
@@ -8699,6 +8745,7 @@ function initUI() {
               from: fromIndex,
               to: toIndex
             }, {
+              silentResultError: true,  // 下方 .then 自行回報
               keys: pendingKey,
               panels: []
             }).then(function (result) {
@@ -8825,6 +8872,7 @@ function initUI() {
         return nodePendingKey('skill:' + id);
       });
       sendUiCommand('skill.fuse', { ids: fusionIds }, {
+        silentResultError: true,  // 下方 .then 自行回報
         keys: fusionKeys,
         panels: ['skills']
       }).then(function (result) {
@@ -9706,6 +9754,7 @@ function initUI() {
   function sortInventory() {
     var workerSortIndex = (UI.inventorySortIndex + 1) % INV_SORT_MODES.length;
     sendUiCommand('player.setInvSort', { index: workerSortIndex }, {
+      silentResultError: true,  // 下方 .then 自行回報
       keys: [nodePendingKey('inv-sort')],
       panels: ['inv']
     }).then(function (result) {
@@ -9945,6 +9994,7 @@ function initUI() {
         return;
       }
       sendUiCommand('save.toFolder', { label: folderRes.dirName || '' }, {
+        silentResultError: true,  // 下方 .then 自行丟出
         keys: [nodePendingKey('save-folder')],
         panels: []
       }).then(function (result) {
@@ -10243,6 +10293,7 @@ function clearStatsSummaryDom() {
 function resetStatsFromUi() {
 
   return sendUiCommand('stats.reset', {}, {
+    silentResultError: true,  // 下方 .then 自行回報
     keys: [nodePendingKey('stats')],
     panels: ['battle']
   }).then(function (result) {
