@@ -1933,7 +1933,8 @@ function shopRefreshCost() {
   return Math.round(GEM_SHOP_REFRESH_BASE * Math.pow(resetNo, GEM_SHOP_REFRESH_EXPONENT));
 }
 
-// 寶石商店升級費用 = 10000 + 商店等級^3 × 4000000；Lv.20 已滿級
+// 寶石商店升級費用 = 基礎值 + 係數 × 商店目前等級^指數；達 GEM_SHOP_MAX_LEVEL 時為 0
+// ⚠️ 係數目前直接寫在下面的算式裡，沒有走具名常數／配置表（與同區的 shopRefreshCost 不同）
 function gemShopUpgradeCost(level) {
   level = clamp(level || 1, 1, GEM_SHOP_MAX_LEVEL);
   if (level >= GEM_SHOP_MAX_LEVEL) return 0;
