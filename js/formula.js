@@ -2001,7 +2001,7 @@ var SKILL_CAST_LOCK = 0;       // 舊參數保留供參數表相容；技能不�
 var SKILL_GLOBAL_COOLDOWN = 0.4; // 技能共用冷卻（秒；固定值，不受冷卻縮減影響）
 
 // 裝載欄：參數表「技能裝載欄」＝clamp(b + ⌊等級/a⌋, b, c)；1 轉後解鎖全部上限。
-var LOADOUT_SIZE = { perLevels: 50, min: 4, base: 4, max: 20 };
+var LOADOUT_SIZE = { perLevels: 50, min: 4, base: 4, max: 10 };
 function loadoutSize() {
   if (typeof reincarnationCount === 'function' && reincarnationCount() >= 1) return LOADOUT_SIZE.max;
   var lvl = (typeof G !== 'undefined' && G.player && G.player.level) ? G.player.level : 1;

@@ -1779,7 +1779,7 @@ var SKILLS = {
   vampirism: { name: '嗜血本能', emoji: '🧛', cat: 'passive', tags: [], unlockLv: 20, flavor: '吸血提升。', fx: { passive: { lifesteal: 1.5 } } },
   meditation: { name: '冥想', emoji: '🧘', cat: 'passive', tags: [], unlockLv: 20, flavor: '法力上限與回復提升。', fx: { passive: { mpFlat: 20, mpRegen: 1 } } },
   ironSkin: { name: '鋼鐵之膚', emoji: '🛡️', cat: 'passive', tags: [], unlockLv: 50, flavor: '物理與魔法防禦提升。', fx: { passive: { defPct: 5, mdefPct: 5 } } },
-  fortuneFavor: { name: '財運亨通', emoji: '🍀', cat: 'passive', tags: [], unlockLv: 50, flavor: '金幣與經驗獲取提升。', fx: { passive: { goldBonus: 5, xpBonus: 5 } } },
+  fortuneFavor: { name: '財運亨通', emoji: '🍀', cat: 'passive', tags: [], unlockLv: 50, flavor: '金幣與經驗獲取提升。', fx: { passive: { goldBonus: 1, xpBonus: 1 } } },
   phantomEcho: { name: '殘響法則', emoji: '🔁', cat: 'passive', tags: [], unlockLv: 50, flavor: '每一次出手，都可能留下殘響。', fx: { passiveEcho: { pct: { base: 15, per: 1 }, powerPct: 30, delay: 2 } } },
   reaperTempo: { name: '死神節拍', emoji: '🪦', cat: 'passive', tags: [], unlockLv: 100, flavor: '死神的節拍，催促下一次收割。', fx: { passiveKillCd: { sec: { base: 1, per: 0.05 }, icdSec: 2 } } },
   battleReflex: { name: '殺陣反射', emoji: '🥷', cat: 'passive', tags: [], unlockLv: 100, flavor: '殺意所至，身隨影動。', fx: { passiveProc: { on: 'crit', pct: { base: 20, per: 1 }, do: 'freeAttack' } } },
