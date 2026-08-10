@@ -308,8 +308,10 @@
   function gmExecuteMultiKill(zoneKey, stage, count, filterRarity, filterSlot) {
     if (typeof ZONES === 'undefined' || !ZONES[zoneKey]) return { ok: false, message: '無效的場景名稱或編號。' };
     var zn = ZONES[zoneKey];
-    // 敵種判定與出怪同規格（→ js/combat.js spawnFieldMonster）：BOSS 階段優先於菁英，名稱不加階級前綴
-    var boss = typeof isFieldBossStage === 'function' ? isFieldBossStage(stage) : false;
+    /* 敵種判定與出怪同規格（→ js/combat.js spawnFieldMonster）：BOSS 階段優先於菁英，名稱不加階級前綴；
+       打過的 BOSS 關同樣退回菁英，GM 連殺才不會在已通關的關卡發出實際打不到的 BOSS 掉落。 */
+    var boss = typeof isFieldBossStage === 'function' && isFieldBossStage(stage) &&
+      !(typeof isFieldBossDefeated === 'function' && isFieldBossDefeated(zoneKey, stage));
     var elite = !boss && (typeof isEliteStage === 'function' ? isEliteStage(stage) : false);
     var base = typeof monsterStatsFor === 'function' ? monsterStatsFor(stage, elite, boss) : { level: stage, hp: 100, gold: 10, xp: 10 };
     var mtype = (zn.pool && zn.pool.length) ? zn.pool[0] : { name: '怪物' };
