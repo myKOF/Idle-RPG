@@ -46,5 +46,10 @@ test('skills.js 技能命中改吃玩家命中率、保留 100 地板', () => {
 
 test('玩家命中派生值包含基礎 100%', () => {
   const formula = fs.readFileSync(path.join(root, 'js/formula.js'), 'utf8');
-  assert.match(formula, /st\.hit\s*=\s*100\s*\+\s*st\.agi\s*\*\s*0\s*\+\s*A\.hit/);
+  const data = fs.readFileSync(path.join(root, 'js/data.js'), 'utf8');
+  /* 係數已移進 data.js 的具名物件：套用參數表的錨點改綁「物件名＋欄位名」，
+     不再改寫 formula.js 算式裡的字面值（那種錨點會被任何一次重構無聲打斷）。
+     斷言因此拆成兩段：算式形狀，以及基礎值仍然是 100。 */
+  assert.match(formula, /st\.hit\s*=\s*DERIVED_COEF\.hitBase\s*\+\s*st\.agi\s*\*\s*PRIMARY_STAT_EFFECTS\.agiHit\s*\+\s*A\.hit/);
+  assert.match(data, /hitBase:\s*100\b/);
 });

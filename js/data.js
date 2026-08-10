@@ -492,6 +492,7 @@ var PRIMARY_STAT_EFFECTS = {
   agiCritRate: 0.00001,
   agiAspdPct: 0,
   agiEvasion: 0.0000035,
+  agiHit: 0,        // 命中率每點敏捷（原本內嵌在 formula.js 的 st.hit 算式裡）
   intMp: 2,
   intMpRegen: 0.004,
   intMatk: 1,
@@ -507,8 +508,21 @@ var DERIVED_COEF = {
   atkBase: 20, atkFlatMult: 1.2, atkReincBase: 2.5,
   matkBase: 16, matkFlatMult: 1.2, matkReincBase: 2.5,
   defBase: 3, defFlatMult: 0.75, defReincBase: 2.4,
-  mdefBase: 2, mdefFlatMult: 0.75, mdefReincBase: 2.4
+  mdefBase: 2, mdefFlatMult: 0.75, mdefReincBase: 2.4,
+  /* 以下原本是 computeStats 裡的內嵌字面值，套用參數表時靠「錨定程式碼片段」改寫
+     （例如錨點 'st.base.mp = '）。那種錨點綁的是程式碼長相，任何一次重構都可能讓它
+     0 命中，而套用參數只會安靜地少套幾個值。收進這裡之後錨點改綁欄位名。 */
+  hpBase: 500, hpPerLevel: 50,
+  mpBase: 100,
+  mpRegenBase: 5,
+  critRateBase: 5, critDmgBase: 150,
+  hitBase: 100
 };
+/* 升級所需經驗 = 係數 × 等級^次方 + 常數（再乘轉生倍率、加轉生基礎值）。
+   參數表「1-成長經驗／升級所需經驗」的 a / b / c。 */
+var XP_LEVEL_COEF = { a: 20, b: 3, c: 40 };
+/* 等級基礎四維 = 基底 +（等級-1）× 每級增加。參數表「1-成長經驗／等級基礎四維」的 a / b。 */
+var PRIMARY_STAT_GROWTH = { base: 5, perLevel: 2 };
 // 連擊數係數：連擊數 = a·ln(暴擊率−100) + b·(暴擊率−100) + c（暴擊率 ≤100% 時為 0；由參數表「2-屬性派生／連擊數」控制）
 var COMBO_HITS_COEF = { a: 0.875, b: 0.0025, c: 0.05 };
 var ASPD_BASE = 1.0;

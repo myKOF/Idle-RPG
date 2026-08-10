@@ -70,12 +70,15 @@ function reincarnationExpBaseAdd(count) {
 
 // 升到下一級所需經驗 =（係數 × 等級^次方 + 常數）× 轉生經驗倍率（各轉倍數累積連乘）＋ 升級經驗基礎增加值（依轉生次數）
 // 係數／次方／常數取自參數表「1-成長經驗／升級所需經驗」，由 tools/apply_params.cjs 寫入。
-function xpForLevel(l) { return Math.floor((20 * Math.pow(l, 3) + 40) * reincarnationExpMultiplier() + reincarnationExpBaseAdd()); }
+function xpForLevel(l) {
+  return Math.floor((XP_LEVEL_COEF.a * Math.pow(l, XP_LEVEL_COEF.b) + XP_LEVEL_COEF.c) *
+    reincarnationExpMultiplier() + reincarnationExpBaseAdd());
+}
 
 /* 等級基礎四維主屬性（不含裝備）：力/敏/智/耐 相同
    = 5 + (等級 - 1) × 2 */
 function basePrimaryFor(level) {
-  var v = 5 + (level - 1) * 2;
+  var v = PRIMARY_STAT_GROWTH.base + (level - 1) * PRIMARY_STAT_GROWTH.perLevel;
   return { str: v, agi: v, int: v, vit: v };
 }
 
@@ -318,15 +321,15 @@ function computeStats(equipmentOverride) {
   st.int = Math.round(rawInt * reincMult); st.vit = Math.round(rawVit * reincMult);
   // 基礎：生命 = (基底 + (等級-1)×每級 + 耐力×vitHp + 定值) × (1 + 生命%) × (1 + 天賦生命%［生命洪流，獨立乘區］)
   st.base = {};
-  st.base.hp = 500 + (lv - 1) * 50 + rawVit * PRIMARY_STAT_EFFECTS.vitHp;
+  st.base.hp = DERIVED_COEF.hpBase + (lv - 1) * DERIVED_COEF.hpPerLevel + rawVit * PRIMARY_STAT_EFFECTS.vitHp;
   var rawHp = (st.base.hp + A.hpFlat) * (1 + A.hpPct / 100);
   st.hp = Math.round(rawHp * reincMult * (1 + (talent.hpPct || 0) / 100));
   st.hpRegen = A.hpRegen;                                    // 額外生命恢復/秒（另有 BASE_HP_REGEN_PCT%/秒 基礎回復）
   // 法力 =（基底 + 原始智力×intMp + 定值）×轉生倍率；法力恢復另依原有公式計算
-  st.base.mp = 100 + rawInt * PRIMARY_STAT_EFFECTS.intMp;
+  st.base.mp = DERIVED_COEF.mpBase + rawInt * PRIMARY_STAT_EFFECTS.intMp;
   var rawMp = st.base.mp + A.mpFlat;
   st.mp = Math.round(rawMp * reincMult);
-  st.mpRegen = 5 + st.int * PRIMARY_STAT_EFFECTS.intMpRegen + A.mpRegen;
+  st.mpRegen = DERIVED_COEF.mpRegenBase + st.int * PRIMARY_STAT_EFFECTS.intMpRegen + A.mpRegen;
   // 進攻／防禦定值的轉生指數強化：flatMult × 定值 × reincBase^轉生次數（0 轉時 = flatMult×定值）
   var reincN = reincarnationCount();
   st.reincFlatBonus = {
@@ -341,13 +344,13 @@ function computeStats(equipmentOverride) {
   // 魔攻 = (matkBase + 魔攻定值 + 轉生定值強化 + 智力×intMatk) × (1 + 魔攻%) × (1 + 天賦魔攻%［奧能賁張，獨立乘區］)
   st.base.matk = DERIVED_COEF.matkBase + st.int * PRIMARY_STAT_EFFECTS.intMatk;
   st.matk = Math.round((st.base.matk + A.matkFlat + st.reincFlatBonus.matk) * (1 + A.matkPct / 100) * godAttackMultiplier * (1 + (talent.matkPct || 0) / 100));
-  st.critRate = capValue(5 + st.agi * PRIMARY_STAT_EFFECTS.agiCritRate + A.critRate, STAT_CAPS.critRate);   // 暴擊率：基礎 5% + 敏捷係數
-  st.critDmg = 150 + A.critDmg;                                  // 暴擊傷害：基礎 150%
+  st.critRate = capValue(DERIVED_COEF.critRateBase + st.agi * PRIMARY_STAT_EFFECTS.agiCritRate + A.critRate, STAT_CAPS.critRate);   // 暴擊率：基礎 5% + 敏捷係數
+  st.critDmg = DERIVED_COEF.critDmgBase + A.critDmg;                                  // 暴擊傷害：基礎 150%
   st.comboHits = comboHitsFor(st.critRate);                     // 連擊數：暴擊率破 100% 衍生的額外攻擊次數（僅普攻／技能直接傷害，持續傷害不計）
   // 穿透不設上限（STAT_CAPS.pPen/mPen = 0）：實際忽略防禦% 由 penIgnorePct 的飽和曲線換算（§3）。
   st.pPen = capValue(A.pPen, STAT_CAPS.pPen);
   st.mPen = capValue(A.mPen, STAT_CAPS.mPen);
-  st.hit = 100 + st.agi * 0 + A.hit;                          // 命中率：基礎 100% + 敏捷×a + 額外加成（無上限；戰鬥結算再 clamp 5~100）
+  st.hit = DERIVED_COEF.hitBase + st.agi * PRIMARY_STAT_EFFECTS.agiHit + A.hit;                          // 命中率：基礎 100% + 敏捷×a + 額外加成（無上限；戰鬥結算再 clamp 5~100）
   // 攻速：基礎攻速、敏捷係數與上限皆由 data.js 控制。
   // 潛力技能【極速之力】＝主動 buff：施放後於效果期間由戰鬥端以 potentialVelocityFactor 解除攻速上限（js/potential.js）。
   st.aspdBonusBase = A.aspdPct + st.agi * PRIMARY_STAT_EFFECTS.agiAspdPct; // 玩家原始攻速加成%（未夾 5 次/秒上限；供極速之力倍率與提示）
