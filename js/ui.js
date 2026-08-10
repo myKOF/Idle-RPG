@@ -4937,6 +4937,13 @@ function renderForge() {
   $id('forge-autodust').disabled = forgeBusy;
   var goBtn = $id('forge-go');
   if (goBtn) {
+    /* 費用直接寫在按鈕上（金幣圖示＋簡寫數值）。原本只有面板上方那行小字寫著「金幣消耗」，
+       玩家的視線在按鈕上，按下去才發現不夠——而那個失敗以前還是靜默的。
+       素材沒放滿時沒有費用可算（rate 為 null），維持純文字。 */
+    var goLabel = rate
+      ? '鑄造 <img src="images/icon_gold.png" class="res-icon">' + fmt(rate.cost)
+      : '鑄造';
+    setHtmlIfChanged(goBtn, goLabel);
     if (forgeBusy || forgeViewItemCount(f) < FORGE_SLOTS) {
       goBtn.disabled = true;
       goBtn.style.background = '#4b5563';
@@ -9831,10 +9838,23 @@ function initUI() {
     forgeGoBtn.addEventListener('click', function () {
 
       sendUiCommand('forge.start', {}, {
+        silentResultError: true,  // 下方自行處理：金幣不足改用按鈕上方的浮動提示
         keys: [nodePendingKey('forge')],
         panels: ['forge', 'inv', 'gems']
-      }).catch(function (error) {
-        reportUiCommandFailure('開始神鑄', error, ['forge', 'inv', 'gems']);
+      }).then(function (result) {
+        var resultError = typeof uiCommandResultError === 'function'
+          ? uiCommandResultError(result, 'forge.start') : null;
+        if (!resultError) return;
+        /* 與強化按鈕一致：「資源不足」這種看一眼就懂的原因，用按鈕上方的浮動字講，
+           玩家的視線本來就在按鈕上。其餘原因（素材不符、已有鑄造進行中…）需要完整
+           句子才說得清楚，仍然寫進日誌。 */
+        if (String(resultError).indexOf('金幣不足') >= 0) {
+          showFloatingText(forgeGoBtn, '金幣不足', '#fca5a5');
+        } else {
+          reportUiCommandFailure(uiCommandLabel('forge.start'), resultError, ['forge', 'inv', 'gems']);
+        }
+      }, function (error) {
+        reportUiCommandFailure(uiCommandLabel('forge.start'), error, ['forge', 'inv', 'gems']);
       });
     });
     $id('forge-unload').addEventListener('click', function () {
