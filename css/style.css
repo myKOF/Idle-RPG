@@ -2562,6 +2562,28 @@ textarea#save-io {
   transition: opacity 0.2s, filter 0.2s, box-shadow 0.2s;
 }
 
+/* ---- 捲動格線：畫面外的格子不參與版面與繪製 ----
+   後期背包上千格全部掛在版面樹上，而**每一次**強制版面重算都要把它們重新量一遍。
+   付這筆錢的不只是背包本身：戰鬥浮字定位、特效錨點、換波時量敵人名稱寬度、
+   工具提示定位，全都會被連累。回報者機器上（背包 1836 格）實測 46 秒內強制重算
+   335 次，主執行緒 89.9% 的時間被卡住，而其中大部分不落在任何 JS 函式裡——
+   那是瀏覽器自己的樣式重算與版面計算。
+
+   content-visibility: auto 讓瀏覽器跳過捲動範圍外的格子（可視範圍約 60 格）。
+   兩個格線的軌道都是固定 58px（grid-template-columns / grid-auto-rows），
+   被跳過的格子照樣由軌道撐滿一格，捲軸長度與每一格的位置都不變。
+
+   ⚠️ 刻意**不加** contain-intrinsic-size。看起來該加，實測會壞：格子尺寸本來就由
+   軌道決定、不靠內容，補一個替代尺寸反而讓已渲染的格子從 38.67px 變 41.33px 高、
+   捲動總高從 4925px 變 4929px。不寫的話逐格 rect 與 scrollHeight 都與加規則前完全相同。
+
+   ⚠️ 只給這兩個「會捲動且格數上千」的容器。.item-cell 在別處（神鑄法陣槽等）
+   數量都是個位數。不支援的瀏覽器會忽略這一行，行為與加之前相同。 */
+#inventory-grid .item-cell,
+#forge-inventory-grid .item-cell {
+  content-visibility: auto;
+}
+
 .item-cell:hover {
   filter: brightness(1.3);
 }

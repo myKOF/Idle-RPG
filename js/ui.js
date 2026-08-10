@@ -1450,15 +1450,45 @@ function hasRecentEnemyDamageFloat(elId, floats, now) {
    同一幀之內圖層不會忽然被掛上或拿掉，所以每幀量一次就夠，其餘直接查節點上的快取。
    時戳用 16 ms 分桶（約一幀）；就算跨幀誤判，最壞情況也只是某個浮字晚一幀顯示，
    走的仍是 queuePendingEnemyFloat 這條既有路徑。 */
+function uiFrameBucket() {
+  var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  return Math.floor(now / 16);
+}
+
 function floatLayerAttached(layer) {
   if (!layer) return false;
-  var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-  var bucket = Math.floor(now / 16);
+  var bucket = uiFrameBucket();
   if (layer._floatAttachedBucket === bucket) return layer._floatAttached;
   var attached = layer.offsetParent !== null;
   layer._floatAttachedBucket = bucket;
   layer._floatAttached = attached;
   return attached;
+}
+
+/* 浮字裁切用的容器幾何（圖層矩形 + 面板可視左右界），同樣每幀只量一次。
+
+   這組數字**與浮字無關**，只取決於圖層與面板；但原本是在 layer.appendChild(sp)
+   **之後**才讀，於是每一個浮字都要付一輪強制重排，而且是四次讀取
+   （layer.getBoundingClientRect、panel.getBoundingClientRect、panel.clientWidth、
+   sp.offsetWidth）。回報者機器上的實測：46 秒內 floatText 名下
+   getBoundingClientRect 72 次、clientWidth 36 次、offsetWidth 36 次，
+   正好是 36 個浮字 × 4 次；而 floatText 總共佔掉 2496 ms。
+
+   改成在建立浮字之前先讀好並依幀快取，同一幀後續的浮字直接查表。
+   剩下真正需要浮字自己在場才能量的只有 sp.offsetWidth（文字寬度），
+   每個浮字從 4 次讀取降為 1 次。 */
+function floatClipGeometry(layer, panel) {
+  var bucket = uiFrameBucket();
+  if (layer._floatClipBucket === bucket && layer._floatClipPanel === panel) return layer._floatClip;
+  var lr = layer.getBoundingClientRect();
+  var pr = panel.getBoundingClientRect();
+  // overflow:hidden 以 padding box 裁切：面板可視範圍 = 邊框內側
+  var clipLeft = pr.left + panel.clientLeft;
+  var geometry = { left: lr.left, width: lr.width, clipLeft: clipLeft, clipRight: clipLeft + panel.clientWidth };
+  layer._floatClipBucket = bucket;
+  layer._floatClipPanel = panel;
+  layer._floatClip = geometry;
+  return geometry;
 }
 
 function flushPendingEnemyFloats(battleSnapshot) {
@@ -1853,6 +1883,11 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
       return;
     }
   }
+  /* 容器幾何先讀（見 floatClipGeometry）：一旦浮字掛進 DOM，之後任何一次讀取
+     都是強制重排。這裡先讀完，後面就只剩 sp.offsetWidth 需要現場量。 */
+  var clipPanel = layer.closest ? layer.closest('.combatant') : null;
+  var clipGeometry = (clipPanel && !enemyHitFloat) ? floatClipGeometry(layer, clipPanel) : null;
+
   var sp = document.createElement('span');
   var enemyStyleClass = enemyHitFloat ? enemyDamageFloatStyleClass(cls) : '';
   sp.className = 'float-txt ' + (cls || '') + (enemyStyleClass ? ' ' + enemyStyleClass : '');
@@ -1881,24 +1916,16 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
   layer.appendChild(sp);
   if (enemyHitFloat) placeEnemyDamageFloat(sp, layer, targetLayer);
   if (recoveryKey) placePlayerRecoveryFloat(sp, layer);
-  var panel = layer.closest('.combatant');
   // 敵方傷害浮字允許超出敵方框線；玩家事件與其他浮字仍維持在面板範圍內。
-  if (panel && !enemyHitFloat) {
-    var lr = layer.getBoundingClientRect();
-    if (lr.width > 0) {
-      var pr = panel.getBoundingClientRect();
-      // overflow:hidden 以 padding box 裁切：面板可視範圍 = 邊框內側
-      var clipLeft = pr.left + panel.clientLeft;
-      var clipRight = clipLeft + panel.clientWidth;
-      var w = sp.offsetWidth;
-      var centerX = lr.left + lr.width * pct / 100;
-      var minC = clipLeft + w / 2 + 1;
-      var maxC = clipRight - w / 2 - 1;
-      if (maxC < minC) { minC = maxC = (clipLeft + clipRight) / 2; } // 面板比字窄時置中
-      var clamped = Math.min(maxC, Math.max(minC, centerX));
-      if (Math.abs(clamped - centerX) > 0.5) {
-        sp.style.left = ((clamped - lr.left) / lr.width * 100) + '%';
-      }
+  if (clipGeometry && clipGeometry.width > 0) {
+    var w = sp.offsetWidth;   // 唯一必須現場量的東西：這串文字有多寬
+    var centerX = clipGeometry.left + clipGeometry.width * pct / 100;
+    var minC = clipGeometry.clipLeft + w / 2 + 1;
+    var maxC = clipGeometry.clipRight - w / 2 - 1;
+    if (maxC < minC) { minC = maxC = (clipGeometry.clipLeft + clipGeometry.clipRight) / 2; } // 面板比字窄時置中
+    var clamped = Math.min(maxC, Math.max(minC, centerX));
+    if (Math.abs(clamped - centerX) > 0.5) {
+      sp.style.left = ((clamped - clipGeometry.left) / clipGeometry.width * 100) + '%';
     }
   }
   scheduleFloatTextRemoval(sp, enemyDamageFloatLifetimeMs(sp));
