@@ -119,7 +119,7 @@ function forgeDustCount() {
   return n;
 }
 
-// 自動使用魔塵：依持有量由第一格起補滿（上限 6 格）
+// 自動使用魔塵：依持有量由第一格起補滿（格數上限見 FORGE_SLOTS）
 function forgeAutoFillDust() {
   var f = forgeState();
   var n = Math.min(FORGE_SLOTS, G.player.dust || 0);

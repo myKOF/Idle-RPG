@@ -349,7 +349,7 @@ function computeStats(equipmentOverride) {
   st.mPen = capValue(A.mPen, STAT_CAPS.mPen);
   st.hit = 100 + st.agi * 0 + A.hit;                          // 命中率：基礎 100% + 敏捷×a + 額外加成（無上限；戰鬥結算再 clamp 5~100）
   // 攻速：基礎攻速、敏捷係數與上限皆由 data.js 控制。
-  // 潛力技能【極速之力】＝主動 buff：施放後 6 秒內由戰鬥端以 potentialVelocityFactor 解除 5 次/秒上限（js/potential.js）。
+  // 潛力技能【極速之力】＝主動 buff：施放後於效果期間由戰鬥端以 potentialVelocityFactor 解除攻速上限（js/potential.js）。
   st.aspdBonusBase = A.aspdPct + st.agi * PRIMARY_STAT_EFFECTS.agiAspdPct; // 玩家原始攻速加成%（未夾 5 次/秒上限；供極速之力倍率與提示）
   st.aspd = ASPD_CAP > 0
     ? clamp(ASPD_BASE * (1 + st.aspdBonusBase / 100), ASPD_MIN, ASPD_CAP)
@@ -380,7 +380,7 @@ function computeStats(equipmentOverride) {
   st.blockRate = capValue(A.blockRate, STAT_CAPS.blockRate);                      // 格擋率上限（上限 0＝無上限）
   st.blockDmgRed = capValue(A.blockDmgRed, STAT_CAPS.blockDmgRed);                  // 額外格擋減傷上限（總減傷 = 格擋基礎減傷 + 此值；上限 0＝不夾上限）
   st.evasion = capValue(st.agi * PRIMARY_STAT_EFFECTS.agiEvasion + A.evasion, STAT_CAPS.evasion);          // 閃避：敏捷係數（上限 0＝無上限）
-  // 韌性（上限 STAT_CAPS.tenacity＝80%）：同時作用於「被控場機率」（resistCtrl）、
+  // 韌性（上限見 STAT_CAPS.tenacity）：同時作用於「被控場機率」（resistCtrl）、
   // 「被控場持續時間」（ccFactor）與「被爆擊機率」（resolveHit 暴擊段）三處。
   st.tenacity = capValue(A.tenacity, STAT_CAPS.tenacity);
   // 護盾總值額外（護盾脈衝）＝獨立乘區：與其他護盾效率% 連乘後折算回單一效率值，供既有護盾公式沿用。
@@ -678,7 +678,7 @@ function applyEnemyHpDamage(ent, damage) {
 }
 function resolveHit(attacker, defender, aCfg, dCfg) {
   var out = { dmg: 0, crit: false, miss: false, blocked: false, killed: false, thorns: 0, heal: 0, shield: 0, absorbed: 0, procs: [] };
-  // 命中率 = clamp(攻擊者命中 - 防守者閃避, 5%, 100%)；玩家命中已含基礎 100%。
+  // 命中率 = clamp(攻擊者命中 - 防守者閃避, 下限, 上限)；玩家命中已含基礎值。
   var attackerHit = Number(aCfg.hit);
   if (!isFinite(attackerHit)) attackerHit = 100;
   var defenderDodge = Number(dCfg.dodge);
@@ -729,9 +729,9 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   var randomDamageMultiplier = rnd(0.8, 1.2);
   dmg *= randomDamageMultiplier;   // 傷害浮動 80%～120%
   out.randomDamageMultiplier = randomDamageMultiplier;
-  // 暴擊：傷害 × 暴傷%（基礎 150%）；神鑄特效【破滅】暴擊時機率翻倍
+  // 暴擊：傷害 × 暴傷%（基礎值見屬性表）；神鑄特效【破滅】暴擊時機率翻倍
   // 防守方韌性折減被爆擊機率：實際爆擊率 = 攻擊者爆擊率 × (1 - 韌性%)
-  //（例：敵方 8% × (1-80%) = 1.6%；怪物無韌性欄位，玩家攻擊端不受影響）
+  //（敵方暴擊率 × (1 - 玩家韌性)；怪物無韌性欄位，玩家攻擊端不受影響）
   var effCritRate = Math.max(0, Number(aCfg.critRate) || 0) * (1 - clamp(Number(dCfg.tenacity) || 0, 0, 100) / 100);
   if (chance(effCritRate)) {
     dmg *= (aCfg.critDmg || 150) / 100; out.crit = true;
@@ -811,7 +811,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     dmg *= 1 - blockDmgReduction(dCfg.blockDmgRed || 0) / 100;
     out.blocked = true;
   }
-  // 神鑄特效【聖佑】：受到的所有傷害按比例降低（上限 50%）
+  // 神鑄特效【聖佑】：受到的所有傷害按比例降低（上限見特效設定）
   if (dCfg.dmgRed) dmg *= 1 - clamp(dCfg.dmgRed, 0, 50) / 100;
   // 全局減傷：所有既有傷害計算完成後才套用，之後才進入最低傷害與護盾結算。
   if (dCfg.globalDmgRed) dmg *= globalDamageMultiplier(dCfg.globalDmgRed);
@@ -838,7 +838,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   defender.hp -= dmg;
   out.dmg = dmg + out.absorbed; // 統計上含護盾吸收量
   if (defender.hp <= 0) {
-    // 神鑄特效【不朽】：致命攻擊時機率保留 1 點生命並回復 30% 最大生命（60 秒內限一次）
+    // 神鑄特效【不朽】：致命攻擊時機率保留 1 點生命並回復一定比例最大生命（有內部冷卻）
     if (dCfg.undying && (!defender._undyingAt || GT - defender._undyingAt >= 60) && chance(dCfg.undying)) {
       defender._undyingAt = GT;
       defender.hp = Math.max(1, Math.round((dCfg.maxHp || 1) * 0.3));
@@ -1339,12 +1339,12 @@ function towerChallengeCost(floor) {
   return Math.round(t.a * Math.pow(f, t.b));
 }
 
-// 高塔 BOSS 魔塵掉落率 = min(30%, 2% + 樓層 × 0.2%)
+// 高塔 BOSS 魔塵掉落率 = min(上限, 基礎率 + 樓層 × 每層增量)
 function bossDustRate(floor) {
   return Math.min(DUST_BOSS_CAP, DUST_BOSS_BASE + floor * DUST_BOSS_PER_LEVEL);
 }
 
-// 地獄之塔魔魂本源掉落率 = 5% +（樓層 - 51）× 1%；只在 51~100 樓生效。
+// 地獄之塔魔魂本源掉落率 = 基礎率 +（樓層 - 起始樓層）× 每層增量；只在地獄之塔區間生效。
 function hellSoulOriginDropChance(floor) {
   floor = Math.floor(Number(floor) || 0);
   if (!isHellTowerFloor(floor) && !isPurgatoryTowerFloor(floor)) return 0;
@@ -1352,8 +1352,8 @@ function hellSoulOriginDropChance(floor) {
     (floor - TOWER_TRIAL_MAX_FLOOR - 1) * TOWER_HELL_SOUL_ORIGIN_PER_FLOOR);
 }
 
-// 野外魔塵掉落率 = min(5%, 0.1% + (敵人等級 - 150) × 0.1%)；150 級以下不掉落
-// 煉獄之塔 BOSS 魔種掉落率 = min(100%, 10% + (樓層-101) × 2%)
+// 野外魔塵掉落率 = min(上限, 基礎率 + (敵人等級 - 起始等級) × 每級增量)；起始等級以下不掉落
+// 煉獄之塔 BOSS 魔種掉落率 = min(上限, 基礎率 + (樓層 - 起始樓層) × 每層增量)
 function demonSeedDropChanceForBoss(floor) {
   floor = Math.floor(Number(floor) || 0);
   if (!isPurgatoryTowerFloor(floor)) return 0;
@@ -1533,7 +1533,7 @@ function getAffixLimits(key, itemLevel, rarityIdx, item) {
   };
 }
 
-// 強化倍率：每 +1 全詞條數值 +5%
+// 強化倍率：每 +1 全詞條數值提高固定百分比（比率見下方算式）
 function upgradeMult(item) { return 1 + 0.05 * (item.upgrade || 0); }
 
 // 傳奇特效數值 = base + perR × (稀有度 - 傳說級)
@@ -1583,17 +1583,17 @@ function ensureGodPassiveSource(gp) {
   return gp;
 }
 
-// 神鑄成功率（裝備）= 基礎（依素材品質）+ 魔塵數 × 5%
+// 神鑄成功率（裝備）= 基礎（依素材品質）+ 魔塵數 × 每魔塵加成
 function forgeSuccessRateFor(rarity, dustCount) {
   return clamp(forgeBaseRateFor(rarity) + dustCount * forgeDustRateFor(rarity), 0, 100);
 }
 
-// 神鑄成功率（寶石）= 基礎（依素材階級）+ 魔塵數 × 3%
+// 神鑄成功率（寶石）= 基礎（依素材階級）+ 魔塵數 × 每魔塵加成
 function forgeGemSuccessRateFor(level, dustCount) {
   return clamp((FORGE_GEM_BASE_RATE[level] || 0) + dustCount * FORGE_GEM_DUST_RATE, 0, 100);
 }
 
-// 寶石神鑄金幣費用 = 1000000 + (素材階級 - 5) × 1000000
+// 寶石神鑄金幣費用 = 基礎值 + (素材階級 - 起始階級) × 每階增量
 function forgeGemCost(level) {
   return 1000000 + (level - GEM_MAX_LEVEL) * 1000000;
 }
@@ -1747,7 +1747,7 @@ function salvageResult(it, ancientEssenceBonus, essenceBonus) {
    §7 強化 / 洗煉 / 合成 / 生產線容量
    ============================================================ */
 
-// 強化基礎成功率：+5 以內必成，之後每級 -6%，下限 30%
+// 強化基礎成功率：低強化段必成，之後每級遞減固定百分點，並有下限
 function upgradeSuccessBase(nextLevel) {
   if (nextLevel <= 5) return 100;
   return Math.max(30, 100 - (nextLevel - 5) * 6);
@@ -1762,7 +1762,7 @@ function upgradeCost(it) {
     scrap: Math.round(8 * Math.pow(1.35, lv) * (1 + it.level * 0.04))
   };
 }
-// 實際強化成功率 = 基礎 + 「強化成功率」屬性（上限 100%）；失敗損失半數材料
+// 實際強化成功率 = 基礎 + 「強化成功率」屬性（夾在上限內）；失敗損失半數材料
 function upgradeSuccessChance(it) {
   var next = (it.upgrade || 0) + 1;
   return Math.min(100, upgradeSuccessBase(next) + getStats().enhanceSuccess);
@@ -1796,8 +1796,8 @@ function inventoryExpandCost(upg) {
 function conveyorCap() { return CONVEYOR_CAP; }                              // 輸送帶固定上限
 function synthBufCap() { return SYNTH_BUFFER_CAP + Math.floor(getStats().weight / 2); } // 暫存區 = 30 + 負重/2
 
-// 分解槽零件安裝格數：目前初始 10 格，使用金幣逐格解鎖，最高 20 格。
-// 舊存檔沒有 salvageSlots 欄位時由 migrateSave 保留既有 10 格。
+// 分解槽零件安裝格數：由初始格數起，使用金幣逐格解鎖至上限（兩者見 data.js）。
+// 舊存檔沒有 salvageSlots 欄位時由 migrateSave 保留既有格數。
 var SALVAGE_SLOT_MAX = 20;
 var SALVAGE_SLOT_INITIAL = 10;
 var SALVAGE_SLOT_LEGACY_DEFAULT = 10;
@@ -1912,7 +1912,7 @@ var GEM_DISMANTLE_KEEP = 0.7;  // 拆解保留比例（損失 30%）
 
 // 1 顆 lv 級寶石換算多少顆 1 級寶石
 function gemL1Worth(lv) { return Math.pow(GEM_COMPOSE_INPUT_COUNT, lv - 1); }
-// 一般寶石拆解產出（同種 1 級寶石）= ⌊合成比例^(等級-1) × 0.7⌋（3 合 1 時，5 級 → ⌊81×0.7⌋ = 56 顆）
+// 一般寶石拆解產出（同種 1 級寶石）= ⌊合成比例^(等級-1) × 回收率⌋
 function gemDismantleYield(lv) { return Math.floor(gemL1Worth(lv) * GEM_DISMANTLE_KEEP); }
 /* 融合寶石拆解：融合素材樹的葉子都是 5 階寶石（3 合 1 時各值 81 顆 1 級）。
    fg.leaves 記錄素材 5 階總數（融合時雙方相加；不計成功率，一律視為 100%）
@@ -1922,12 +1922,12 @@ function gemDismantleYield(lv) { return Math.floor(gemL1Worth(lv) * GEM_DISMANTL
 function fusedGemL1Worth(fg) { return gemL1Worth(GEM_MAX_LEVEL) * (fg.leaves || ((fg.fusions || 0) + 1)); }
 function fusedGemDismantleYield(fg) { return Math.floor(fusedGemL1Worth(fg) * GEM_DISMANTLE_KEEP); }
 
-// 寶石融合成功率 = 60% - 10% ×（雙方累計成功融合次數），最低 10%
+// 寶石融合成功率 = 基礎率 - 每次遞減 ×（雙方累計成功融合次數），並有下限
 function gemFuseRate(m1, m2) {
   return Math.max(GEM_FUSE_MIN_RATE, GEM_FUSE_BASE_RATE - GEM_FUSE_RATE_DECAY * ((m1 ? m1.fusions : 0) + (m2 ? m2.fusions : 0)));
 }
 
-// 商店手動刷新費用 = 5000 ×（下一次重置序號 ^ 2.5）；次數每 8 小時重置
+// 商店手動刷新費用 = 基礎費用 ×（下一次重置序號 ^ 指數）；次數每隔固定時間重置
 function shopRefreshCost() {
   var resetNo = (gemShop().refreshCount || 0) + 1;
   return Math.round(GEM_SHOP_REFRESH_BASE * Math.pow(resetNo, GEM_SHOP_REFRESH_EXPONENT));
@@ -1989,7 +1989,7 @@ function skillMaxLv(def) {
 // 技能傷害倍率（%）= base + per × (等級-1)
 function skillValue(sk, lv) { return (sk.fx.base || 0) + (sk.fx.per || 0) * (lv - 1); }
 // 實際冷卻 = 技能冷卻 × (1 - 冷卻縮減%)
-// 實際冷卻 = 技能冷卻 × (1 - 冷卻縮減%)；extraCdr 為潛力【時間坍縮】施放時的額外 CDR（突破 60%，總 CDR 夾 90%）。
+// 實際冷卻 = 技能冷卻 × (1 - 冷卻縮減%)；extraCdr 為潛力【時間坍縮】施放時的額外 CDR（突破一般上限，總 CDR 另有上限）。
 function skillCdFor(sk, extraCdr) {
   var cdr = Math.min(90, (getStats().cdr || 0) + (Number(extraCdr) || 0));
   return sk.cd * (1 - cdr / 100);
@@ -2108,7 +2108,7 @@ var OFFLINE_KILL_INTERVAL = 10;   // 擊殺速率：每隔此秒數擊殺 1 隻�
 var OFFLINE_ELITE = 1;            // 離線怪物種類：1＝菁英（經驗掉落較高，並套用菁英掉落倍率）0＝普通
 
 // 離線計算等級 = max(1, ⌊(歷史最高階段 × 比例 − 扣減) / 取整單位⌋ × 取整單位)
-// 例（預設值）：沼澤最高 256 → 256 − 10 = 246 → 捨去到 10 的倍數 → 240 級沼澤菁英怪
+// 流程：取該圖最高關卡 → 減去偏移 → 捨去到整數倍 → 得到菁英怪等級
 function offlineStageFor(best) {
   var b = Math.max(1, Math.floor(Number(best) || 1));
   /* 取整單位若被設成 0 或負數，除法會得到 Infinity/NaN 而不是「不取整」。

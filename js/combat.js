@@ -37,7 +37,7 @@ function newPlayerEntity(st) {
 }
 
 // 普攻擊殺後換目標的最短間隔沿用技能 GCD；attackRate 用來換算成 atkCd 計時器單位，
-// 確保攻速增益或減速不會把實際 0.4 秒間隔縮短或意外延長。
+// 確保攻速增益或減速不會把實際的固定間隔縮短或意外延長。
 function applyBasicAttackKillGap(pEnt, attackRate) {
     if (!pEnt) return;
     var gapSec = (typeof SKILL_GLOBAL_COOLDOWN === 'number') ? SKILL_GLOBAL_COOLDOWN : 0.4;
@@ -382,7 +382,7 @@ function globalDamageMultiplierForEntity(ent) {
 function playerAtkCfg(pEnt) {
     var st = getStats();
     var atkMul = 1 + buffVal(pEnt, 'atkUp') / 100;
-    // 神鑄特效【神怒】：生命低於 30% 時，造成的傷害提高
+    // 神鑄特效【神怒】：生命低於門檻時，造成的傷害提高
     if (pEnt && (st.passives.godWrath || 0) > 0 && pEnt.hp < st.hp * 0.3) {
         atkMul *= 1 + st.passives.godWrath / 100;
     }
@@ -526,7 +526,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
                 applyEffect(mEnt, 'slow', 3);
                 logMsg += '<span class="log-hl-good">附加減速！</span>';
             }
-            // 神鑄特效【天罰】：機率降下神雷，造成 250% 物理攻擊的真實傷害（無視防禦）
+            // 神鑄特效【天罰】：機率降下神雷，造成物理攻擊倍數的真實傷害（無視防禦）
             if ((st.passives.smite || 0) > 0 && chance(st.passives.smite)) {
                 var smiteDmg = Math.max(1, Math.round(st.atk * 2.5));
                 smiteDmg = applyEnemyHpDamage(mEnt, smiteDmg);
@@ -776,13 +776,13 @@ function fieldTick(dt) {
         combatDebugAuditFieldDeaths(debugFieldTick, 'potential overheal damage');
         if (regenKilled) { onFieldDeaths(); enemies = liveFieldEnemies(); if (!enemies.length) return; }
     }
-    // 潛力【雷霆過載】持續轟擊（增益期間每 1 秒一輪；持續效果，不受暈眩影響）
+    // 潛力【雷霆過載】持續轟擊（增益期間依固定間隔一輪；持續效果，不受暈眩影響）
     if (typeof tickPotentialOverdrive === 'function') {
         var odRes = tickPotentialOverdrive(p, enemies, 'mv-float');
         combatDebugAuditFieldDeaths(debugFieldTick, 'potential overdrive');
         if (odRes && odRes.killed) { onFieldDeaths(); enemies = liveFieldEnemies(); if (!enemies.length) return; }
     }
-    // 玩家行動（減速 -30%；時間扭曲等攻速增益加速）
+    // 玩家行動（受減速時依減速比例放慢；時間扭曲等攻速增益加速）
     //（45 新技能共用排程器已上移至「出怪」空場檢查之前，避免波次間隙排程停擺）
     if (!effectActive(p, 'stun')) {
         // 技能優先（依裝載順序；含裝載的潛力技能）
@@ -794,7 +794,7 @@ function fieldTick(dt) {
             if (!enemies.length) return;
         }
         if (p.hp <= 0) { onPlayerFieldDeath(); return; } // 狂暴打擊等自傷技能
-        // 潛力【極速之力】：施放期間以倍率放大攻擊頻率（突破 5 次/秒上限）
+        // 潛力【極速之力】：施放期間以倍率放大攻擊頻率（突破一般攻速上限）
         var playerAttackRate = slowFactor(p) * (1 + buffVal(p, 'aspdUp') / 100) *
             (typeof potentialVelocityFactor === 'function' ? potentialVelocityFactor(p, st) : 1) *
             (typeof legendaryAttackSpeedMultiplier === 'function' ? legendaryAttackSpeedMultiplier(p, st) : 1);
@@ -995,7 +995,7 @@ function rollFieldDrops(m) {
             drops.push('裝備[' + rarityTag(it) + ']');
         }
     }
-    // ===== 材料掉落：場景倍率（荒漠 x2 / 沼澤 x3；>100% 依必掉+餘數規則）
+    // ===== 材料掉落：場景倍率由地圖表提供；>100% 依必掉+餘數規則
     //       基礎機率與寶石等級公式 → formula.js §5 =====
     var rw = currentZoneDef().rewardMult;
     // 寶石：依地圖／關卡區間查表，各階級獨立判定

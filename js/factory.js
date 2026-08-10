@@ -59,7 +59,7 @@ function uninstallPart(node, id) {
   if (idx >= 0) { arr.splice(idx, 1); UI.dirty.factory = true; }
 }
 
-// 分解槽擴充：依目前已解鎖格數支付金幣，最多 20 格。
+// 分解槽擴充：依目前已解鎖格數支付金幣，上限見 data.js。
 function expandSalvageSlot() {
   var current = salvageSlotCount();
   if (current >= SALVAGE_SLOT_MAX) return '分解槽已達上限（' + SALVAGE_SLOT_MAX + ' 格）';

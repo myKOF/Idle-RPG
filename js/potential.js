@@ -21,12 +21,12 @@
    ・時空凝滯：期間所有敵人靜止＋玩家所有直接傷害 +值%。時間靜止為最終大絕，
      直接寫入 stun 時戳「不可被免疫」（無視 BOSS 控場免疫與控場遞減）。 */
 
-// 不屈意志內部冷卻（秒）＝ 90 − 值（下限 1）；不受冷卻縮減影響。
+// 不屈意志內部冷卻（秒）＝ 基準秒數 − 效果值（有下限）；不受冷卻縮減影響。
 function potentialUndyingCd() {
   return Math.max(1, 90 - potentialSkillValue('lastStandUndying'));
 }
 
-// 潛力主動技能實際冷卻：吃一般冷卻縮減（夾 60%），不受時間坍縮的突破效果影響。
+// 潛力主動技能實際冷卻：吃一般冷卻縮減（夾在一般上限內），不受時間坍縮的突破效果影響。
 function potentialActiveCd(def) {
   var cdr = (typeof getStats === 'function') ? Math.min(60, getStats().cdr || 0) : 0;
   return Math.max(0.1, (def.cd || 0) * (1 - cdr / 100));
