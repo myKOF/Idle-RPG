@@ -80,7 +80,14 @@ test('地圖表承接場景專屬倍率與所有地圖的分段掉落資料', ()
   const zones = fs.readFileSync(path.join(root, 'config/CSV/Zones.csv'), 'utf8').replace(/^\uFEFF/, '').trim().split(/\r?\n/);
   const drops = fs.readFileSync(path.join(root, 'config/CSV/Zone_Stage_Drops.csv'), 'utf8').replace(/^\uFEFF/, '').trim().split(/\r?\n/);
   assert.equal(zones[0], '順序,地圖識別碼,地圖名稱,位面,關卡上限,前置地圖識別碼,前置通關關卡,最低轉生次數,生命倍率,攻擊倍率,防禦倍率,攻速倍率,經驗金幣獎勵倍率');
-  assert.match(zones.find((line) => line.includes(',undead_mountains,')), /,6\.5,3\.8,3\.2,1\.8,2\.25$/);
+  /* 期望值＝Zones.csv 目前的設定。場景倍率 2026-08-10 從主參數表撥離到這張表之後，
+     這裡是唯一來源；js/data.js 的 ZONES 由 apply_params 依此表回寫。
+     測試釘住數值是刻意的（AI_RULES.md 9.1 的例外）：倍率被調整時這條會紅，
+     讓「數值改了」變成一個需要有人明確同意的動作。
+     荒漠是基準圖，五個倍率恆為 1，一併盯著——它若被改動代表整張表對錯了欄。 */
+  assert.match(zones.find((line) => line.includes(',desert,')), /,1,1,1,1,1$/);
+  assert.match(zones.find((line) => line.includes(',undead_mountains,')), /,10,5\.5,3\.2,1\.8,2\.25$/);
+  assert.match(zones.find((line) => line.includes(',god_sanctuary,')), /,150,40,20,2\.5,24$/);
   // origin/develop 的 Zone_Stage_Drops.csv 現在包含 32 列資料，另加標題列。
   assert.equal(drops.length, 33);
   assert.ok(drops.some((line) => line.startsWith('god_sanctuary,601,800,')));
