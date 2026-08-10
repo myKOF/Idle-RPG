@@ -1401,7 +1401,7 @@ var NEW_FORGE_NAME = '鍛造熔爐';
 var NEW_FORGE_EMOJI = '🔥';
 var NEW_FORGE_DESC = '專門處理裝備及礦石';
 var NEW_FORGE_IMAGE = 'images/furnace_LV1.png'; // 熔爐大圖（統一）
-// 零件置入格：每爐初始 3 格、金幣逐格解鎖至 8 格（成本公式 → formula.js newForgePartSlotCost）
+// 零件置入格：每爐由初始格數起、金幣逐格解鎖至上限（格數見下方常數；成本公式 → formula.js newForgePartSlotCost）
 var NEW_FORGE_PART_SLOTS_INITIAL = 3;
 var NEW_FORGE_PART_SLOTS_MAX = 8;
 var NEW_FORGE_SLOT_COST_REINC = 50000; // 50000×轉生²
@@ -1454,7 +1454,7 @@ var GEM_TYPES = {
   malachite: { name: '孔雀石', emoji: '💚', stat: 'pRes', statName: '物理抗性%', base: 0.8, pct: true },
   fluorite: { name: '螢石', emoji: '💙', stat: 'mRes', statName: '魔法抗性%', base: 0.8, pct: true },
   // === 對屬性敵人傷害（七大屬性；linear：1~5 階＝base×等級 線性、6 階起每階 ×2）===
-  // base=1：Lv1 1.0%、每級 +1.0% 至 Lv5 5.0%，Lv6 起為前一級 ×2（10%、20%…）。
+  // 低階段每級加上 base（線性），超過分界等級後改為前一級 ×2（指數）。
   spinel: { name: '尖晶石', emoji: '🔥', stat: 'dmgVsFire', statName: '對火屬性敵人傷害%', base: 1, pct: true, linear: true },
   aquamarine: { name: '海藍寶石', emoji: '❄️', stat: 'dmgVsIce', statName: '對冰屬性敵人傷害%', base: 1, pct: true, linear: true },
   amazonite: { name: '天河石', emoji: '⚡', stat: 'dmgVsLightning', statName: '對雷屬性敵人傷害%', base: 1, pct: true, linear: true },
@@ -1471,8 +1471,8 @@ var GEM_TYPES = {
   coreDark: { name: '暗核寶石', emoji: '🌚', stat: 'elemDmgDark', statName: '暗屬性傷害提升%', base: 1, pct: true, linear: true },
   coreEarth: { name: '地核寶石', emoji: '🏔️', stat: 'elemDmgEarth', statName: '地屬性傷害提升%', base: 1, pct: true, linear: true },
   // === 元素抗性寶石（linear：1~5 階每級 +base%、6 階起每階 ×2）===
-  // 七系 base=5 → L1~5：5/10/15/20/25%、L6~10：50/100/200/400/800%（L10 +800%）
-  // 全系 base=1 → L1~5：1/2/3/4/5%、L6~10：10/20/40/80/160%（L10 +160%，七大屬性一起加）
+  // 七系與全系共用同一條曲線，只有 base 不同：低階段線性、高階段逐級翻倍。
+  // 全系的效果同時套用到七大屬性。
   wardFire: { name: '火抗寶石', emoji: '🧯', stat: 'resFire', statName: '火焰抗性%', base: 5, pct: true, linear: true },
   wardIce: { name: '冰抗寶石', emoji: '🧊', stat: 'resIce', statName: '冰霜抗性%', base: 5, pct: true, linear: true },
   wardLightning: { name: '電抗寶石', emoji: '🔌', stat: 'resLightning', statName: '雷電抗性%', base: 5, pct: true, linear: true },

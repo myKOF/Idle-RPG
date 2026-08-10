@@ -162,7 +162,7 @@ function normalizeFuseMaterial(ref) {
     if (lv < GEM_MAX_LEVEL || lv > GEM_FORGE_MAX_LEVEL) return null;
     if (gemCount(ref.type, lv) < 1) return null;
     return {
-      // 5 階＝1 倍，每高 1 階數值 ×2（與 gemStatValue 的 6 階起規則一致）
+      // 分界階＝1 倍，每高 1 階數值翻倍（與 gemStatValue 的高階規則一致）
       stats: [{ type: ref.type, mult: Math.pow(2, lv - GEM_MAX_LEVEL) }], fusions: 0,
       leaves: Math.pow(2, lv - GEM_MAX_LEVEL), ref: ref
     };
@@ -184,7 +184,7 @@ function consumeFuseMaterial(m) {
   if (m.ref.kind === 'plain') addGem(m.ref.type, m.ref.lv || GEM_MAX_LEVEL, -1);
   else removeFusedGem(m.ref.id);
 }
-// 失敗降解：4~8 顆 1 級或 2~4 顆 2 級同屬性寶石（各 50%）
+// 失敗降解：退回一批低階同屬性寶石，顆數與階級依機率二選一
 function degradeFuseMaterial(m) {
   var type = pick(m.stats).type;
   var out;
@@ -231,7 +231,7 @@ function fuseGemsV2(ref1, ref2) {
       m2.stats.forEach(function (s) { if (s.type === t) v2 = fusedMaterialMult(s); });
       var v;
       if (v1 !== null && v2 !== null) {
-        // 同屬性：介於兩者之間，上限為較大值的 2 倍
+        // 同屬性：介於兩者之間，並以較大值的固定倍數為上限
         v = rnd(Math.min(v1, v2), Math.max(v1, v2) * 2);
       } else {
         // 單方屬性：數值隨機（不一定更高）

@@ -1262,7 +1262,7 @@ function idbSetAutoV2(raw, done) {
   var seq = ++_autoWriteSeqV2;
   _autoRawV2 = raw;
   encodeSavePayloadV2(raw).then(function (payload) {
-    // 每 15 秒可能觸發一次存檔；只寫入最新快照，避免壓縮較慢時排隊保存大量舊快照。
+    // 依自動存檔間隔可能觸發存檔；只寫入最新快照，避免壓縮較慢時排隊保存大量舊快照。
     if (seq !== _autoWriteSeqV2) { if (done) done(); return; }
     idbKV(function (db) {
       if (!db) { if (done) done(); return; }

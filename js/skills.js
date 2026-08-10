@@ -554,7 +554,7 @@ function skillRtApplyDamageAmps(pEnt, sk, fx, id, lv, st, targets, pre, parts, f
     if (pendAdd > 0) ch.pendingCastConsumed = true; // 本次施放的疊層已計入引爆消耗（施放後不再疊入）
     parts.push('<span class="log-hl-good">疊滿引爆 +' + fmt1(bm) + '%！</span>');
   }
-  // --- resourceConvert：mpDump（奧能梭哈）——耗盡全部剩餘 MP，每 10 點被耗 MP 增傷 ---
+  // --- resourceConvert：mpDump（奧能梭哈）——耗盡全部剩餘 MP，依每單位被耗 MP 增傷 ---
   if (fx.mpDump) {
     var dumped = Math.max(0, pEnt.mp || 0);
     if (dumped > 0) {
