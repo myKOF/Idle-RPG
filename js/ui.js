@@ -922,6 +922,11 @@ var INVENTORY_VISIBLE_ROWS_DEFAULT = 6;
 var INVENTORY_VISIBLE_ROWS_MAX = 9;
 var INVENTORY_GRID_ROW_HEIGHT = 58;
 var INVENTORY_GRID_ROW_GAP = 6;
+/* 超過這個件數才啟用虛擬捲動。前期背包幾十格，全部掛著比記帳便宜，
+   也不必為了少數格子承擔視窗計算的風險；後期才需要。 */
+var INVENTORY_VIRTUAL_MIN_ITEMS = 150;
+/* 可視範圍上下各多掛幾排，讓一般速度的捲動不會先看到空白再補上。 */
+var INVENTORY_VIRTUAL_BUFFER_ROWS = 4;
 
 /* ---- 日誌 ---- */
 var DETAIL_LOG_HISTORY = [];
@@ -1952,6 +1957,17 @@ function switchTab(name) {
     if (!talentSnapshot || talentViewReincarnations(talentSnapshot) < 1) name = 'equip';
   }
   UI.tab = name;
+  /* 離開神鑄頁就把它那份背包格線清掉。
+
+     神鑄頁掛的是第二份完整背包格線（後期同樣上千格），而 renderForge 只在
+     UI.tab === 'forge' 時才跑——也就是說離開之後它不會再更新，卻會永遠留在 DOM 裡。
+     實測進過一次神鑄頁，全文件節點就從 5443 變成 9896，而每一次樣式重算與版面計算的
+     單價都取決於節點數，等於在裝備頁戰鬥時一直付這筆錢。
+     回到神鑄頁時 renderForge 會整個重建，所以清掉沒有任何副作用。 */
+  if (name !== 'forge') {
+    var forgeGrid = $id('forge-inventory-grid');
+    if (forgeGrid && forgeGrid.children.length) forgeGrid.innerHTML = '';
+  }
   syncVfxQualityForTab();
   refreshUiPanelSubscriptions();
   markTabDirty(name);
@@ -3548,9 +3564,20 @@ function inventoryGridTotalRowCount(box) {
   return isNaN(stored) ? inventoryGridRowCount(box) : stored;
 }
 
-function inventoryVirtualSpacerHTML(height) {
-  if (!(height > 0)) return '';
-  return '<div aria-hidden="true" style="grid-column: 1 / -1; height: ' + Math.ceil(height) + 'px; pointer-events: none;"></div>';
+/* 虛擬捲動的墊片：用「跨幾列」表示，不要用 height。
+
+   #inventory-grid 有 grid-auto-rows: 58px（css/style.css），格線軌道的高度是釘死的，
+   所以在墊片上寫 height: 2000px 完全沒有用——它會被夾在一列 58px 裡，捲動高度直接塌掉。
+   實測：捲到不同位置時 scrollHeight 會從 5949 一路縮到 3133，捲軸長度隨捲動而變，
+   拖曳時當然會跳。這正是虛擬捲動當初被關掉的真正原因（舊註解把它歸咎於
+   「virtual-window reordering」，其實是墊片撐不出高度）。
+
+   改成 grid-row: span N：墊片佔掉 N 條軌道與其間的間隙，尺寸與「那 N 排格子都在」
+   完全相同，而且是由格線自己算的，不必在 JS 這邊重算一次列高與間隙。 */
+function inventoryVirtualSpacerHTML(rows) {
+  if (!(rows > 0)) return '';
+  return '<div aria-hidden="true" style="grid-column: 1 / -1; grid-row: span ' +
+    Math.ceil(rows) + '; pointer-events: none;"></div>';
 }
 
 function applyInventoryVisibleRows(box) {
@@ -3595,10 +3622,17 @@ function renderInventory() {
   var filterKeyword = (kwInput && isInternal && kwInput.style.display !== 'none') ? kwInput.value.trim() : '';
 
   var inventoryItems = inventoryViewItems(invSnapshot);
-    // The inventory cap is 1000 cells; keeping the complete grid mounted is
-    // both small enough for the UI and avoids virtual-window reordering when
-    // the user drags the scrollbar to the bottom.
-    var virtualize = false;
+  /* ---- 只把可視範圍的格子掛進 DOM ----
+     後期背包 1800 格全部掛著時，付錢的不只是背包本身：**每一次**樣式重算或版面計算
+     都要把它們重新算一遍，於是戰鬥浮字定位、特效錨點、換波量敵人名稱、工具提示定位
+     全部被連累。回報者機器上實測，長工作總計 51 秒裡只有約 6.7 秒落在 JS 函式內，
+     其餘四十幾秒是瀏覽器自己的樣式／版面／繪製——那筆錢的單價就是節點數。
+
+     這個旗標原本寫死 false，註解說是為了避免「拖曳捲軸到底時視窗會跳」。那個跳動的
+     真正成因是舊實作**在渲染時把 box.scrollTop 寫回去**（還特別處理「捲到底」的情況），
+     等於渲染跟使用者的拖曳互相搶捲動位置。現在不再碰 scrollTop：上下兩塊墊片撐出與
+     全部掛載時完全相同的捲動高度，捲動位置自然就是對的，不需要任何修正。 */
+  var virtualize = inventoryItems.length > INVENTORY_VIRTUAL_MIN_ITEMS;
   if (!inventoryItems.length) {
     box.removeAttribute('data-inventory-total-rows');
     box.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">背包是空的。戰鬥掉落的裝備會先進入生產線輸送帶，「保留」的會送到這裡。</div>';
@@ -3649,23 +3683,21 @@ function renderInventory() {
       /* 欄數、捲動位置與可視高度全都只有虛擬捲動才用得到，而它們**每一個都是版面讀取**：
          在寫入 DOM 的前後讀取會強制瀏覽器把整份文件重新排版一次。非虛擬路徑不需要這些
          數字，就不要付這筆錢——格線改成增量更新之後，捲動位置本來就不會被動到。 */
-      var columns = 0, totalRows = 0, rows = 0, startRow = 0;
+      var columns = 0, totalRows = 0, rows = 0, startRow = 0, endRow = 0;
       if (virtualize) {
-        columns = inventoryGridColumnCount(box);
+        columns = cachedInventoryGridColumnCount(box);
         totalRows = Math.max(1, Math.ceil(displayedItems.length / columns));
         rows = inventoryVisibleRows(totalRows, UI.inventoryVisibleRows);
-        var previousScrollTop = box.scrollTop;
-        var maxScrollTop = Math.max(0, box.scrollHeight - box.clientHeight);
-        var wasAtScrollEnd = previousScrollTop >= maxScrollTop - 1;
-        if (totalRows > rows) {
-          var rowHeight = INVENTORY_GRID_ROW_HEIGHT + INVENTORY_GRID_ROW_GAP;
-          startRow = wasAtScrollEnd
-            ? totalRows - rows
-            : Math.min(Math.max(0, Math.floor(previousScrollTop / rowHeight)), totalRows - rows);
-        }
+        var rowHeight = INVENTORY_GRID_ROW_HEIGHT + INVENTORY_GRID_ROW_GAP;
+        /* 唯一需要的版面讀取：目前捲到哪。上下各多掛 BUFFER 排當緩衝。
+           ⚠️ 這裡**不寫** scrollTop——見上方 virtualize 的說明。 */
+        var maxStartRow = Math.max(0, totalRows - rows);
+        startRow = Math.min(maxStartRow,
+          Math.max(0, Math.floor(box.scrollTop / rowHeight) - INVENTORY_VIRTUAL_BUFFER_ROWS));
+        endRow = Math.min(totalRows, startRow + rows + INVENTORY_VIRTUAL_BUFFER_ROWS * 2);
       }
       var firstItem = virtualize ? startRow * columns : 0;
-      var lastItem = virtualize ? Math.min(displayedItems.length, (startRow + rows) * columns) : displayedItems.length;
+      var lastItem = virtualize ? Math.min(displayedItems.length, endRow * columns) : displayedItems.length;
 
       /* 這裡刻意不再算 selected / dimmed：那三個 class 由 renderInventory 尾端的
          updateSelectionUI() 統一重貼（它是選取態的唯一權威，本來就會覆蓋這裡寫的值）。
@@ -3684,19 +3716,26 @@ function renderInventory() {
         cellKeys.push(it.id);
         cellsHtmlList.push(itemCellHTML(it, 'inv', dimClass, itemPendingKey(it.id)));
       }
-      if (virtualize) box.setAttribute('data-inventory-total-rows', String(totalRows));
-      else box.removeAttribute('data-inventory-total-rows');
       if (virtualize) {
-        var virtualRowHeight = INVENTORY_GRID_ROW_HEIGHT + INVENTORY_GRID_ROW_GAP;
-        var topHeight = startRow * virtualRowHeight - INVENTORY_GRID_ROW_GAP;
-        var remainingRows = totalRows - startRow - rows;
-        var bottomHeight = remainingRows * virtualRowHeight - (remainingRows > 0 ? INVENTORY_GRID_ROW_GAP : 0);
-        box.innerHTML = inventoryVirtualSpacerHTML(topHeight) + cellsHtmlList.join('') +
-          inventoryVirtualSpacerHTML(bottomHeight);
-        box.scrollTop = wasAtScrollEnd ? box.scrollHeight : previousScrollTop;
+        box.setAttribute('data-inventory-total-rows', String(totalRows));
+        /* 墊片撐出「彷彿全部格子都在」的捲動高度：上面跳過幾排、下面還剩幾排，
+           直接以跨列數表達（見 inventoryVirtualSpacerHTML——不能用 height）。
+           墊片與格子走同一套增量比對，跨列數變了才換節點；歸零時不放進清單，
+           syncItemGridCells 的尾端清理會把舊墊片移除。 */
+        var skippedTopRows = startRow;
+        var skippedBottomRows = Math.max(0, totalRows - endRow);
+        if (skippedTopRows > 0) {
+          cellKeys.unshift('__inv-spacer-top');
+          cellsHtmlList.unshift(inventoryVirtualSpacerHTML(skippedTopRows));
+        }
+        if (skippedBottomRows > 0) {
+          cellKeys.push('__inv-spacer-bottom');
+          cellsHtmlList.push(inventoryVirtualSpacerHTML(skippedBottomRows));
+        }
       } else {
-        syncItemGridCells(box, cellKeys, cellsHtmlList);
+        box.removeAttribute('data-inventory-total-rows');
       }
+      syncItemGridCells(box, cellKeys, cellsHtmlList);
     }
   }
   applyInventoryVisibleRows(box);
