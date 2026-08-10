@@ -125,7 +125,11 @@ test('敵人傷害浮字維持可讀字號且出現範圍更分散', () => {
   assert.match(ui, /damage-aggregate/);
   assert.match(ui, /function placeEnemyDamageFloat\(sp, layer\)/);
   assert.match(ui, /if \(enemyHitFloat\) placeEnemyDamageFloat\(sp, layer, targetLayer\);/);
-  assert.match(ui, /if \(panel && !enemyHitFloat\) \{/);
+  /* 「敵方傷害浮字不裁切、其他浮字裁切在面板內」這個規則不變，
+     只是條件搬到 clipGeometry 的計算上——容器幾何改成在浮字掛進 DOM 之前先讀
+     並依幀快取（見 js/ui.js floatClipGeometry）。 */
+  assert.match(ui, /var clipGeometry = \(clipPanel && !enemyHitFloat\) \? floatClipGeometry\(layer, clipPanel\) : null;/);
+  assert.match(ui, /if \(clipGeometry && clipGeometry\.width > 0\) \{/);
   assert.match(ui, /tokens\.indexOf\('crit'\) >= 0/);
   assert.match(ui, /tokens\.indexOf\('crit-high-roll'\) >= 0/);
   assert.match(ui, /sp\.className \+= ' enemy-hit-float'/);

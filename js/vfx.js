@@ -82,6 +82,7 @@ function vfxInvalidateLayout() {
   _vfxLayoutVersion++;
   _vfxAnchorCache = Object.create(null);
   _vfxLayerRectCache = null;
+  _vfxOriginCache = null;
 }
 
 /* ---- 圖層與座標 ---- */
@@ -233,17 +234,29 @@ function vfxPointOf(elId, layer) {
   return { x: r.left - lr.left + r.width / 2, y: r.top - lr.top + r.height / 2 };
 }
 
-/* 我方出手點：同一 scene 內我方卡片的右緣中央。 */
+/* 我方出手點：同一 scene 內我方卡片的右緣中央。
+
+   走與 vfxLayerRect／vfxPointOf 相同的版面版本快取——我方卡片的位置只在版面失效時
+   才會變，但這支原本每次施法都重量一次。回報者機器上實測 46 秒內 29 次強制重排
+   出自這裡，而強制重排的成本取決於整份文件多大（後期背包上千格）。 */
+var _vfxOriginCache = null;
 function vfxOriginPoint(layer) {
   var lr = vfxLayerRect(layer);
+  if (_vfxOriginCache && _vfxOriginCache.layer === layer && _vfxOriginCache.version === _vfxLayoutVersion) {
+    return _vfxOriginCache.point;
+  }
   var scene = layer.parentNode;
   var me = (scene && scene.querySelector)
     ? scene.querySelector('.combatant:not(.enemy-combatant):not(.boss)') : null;
+  var point;
   if (me) {
     var r = me.getBoundingClientRect();
-    return { x: r.right - lr.left - 4, y: r.top - lr.top + r.height / 2 };
+    point = { x: r.right - lr.left - 4, y: r.top - lr.top + r.height / 2 };
+  } else {
+    point = { x: -12, y: lr.height / 2 };
   }
-  return { x: -12, y: lr.height / 2 };
+  _vfxOriginCache = { layer: layer, version: _vfxLayoutVersion, point: point };
+  return point;
 }
 
 /* 棋盤格 [{col,row}] → 相對特效圖層的矩形（用實際的格線方框量，不自己算格寬）。 */
