@@ -1937,7 +1937,7 @@ function shopRefreshCost() {
 function gemShopUpgradeCost(level) {
   level = clamp(level || 1, 1, GEM_SHOP_MAX_LEVEL);
   if (level >= GEM_SHOP_MAX_LEVEL) return 0;
-  return 10000 + Math.pow(level, 3) * 4000000;
+  return 100000 + Math.pow(level, 3.5) * 4000000;
 }
 
 /* ============================================================
