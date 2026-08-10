@@ -42,9 +42,15 @@
     var stack = '';
     try { stack = new Error().stack || ''; } catch (e) { return '(no-stack)'; }
     var lines = stack.split('\n');
-    for (var i = 2; i < lines.length && i < 8; i++) {
-      var m = /at\s+([A-Za-z_$][\w$.]*)\s/.exec(lines[i]);
-      if (m && m[1].indexOf('blame') < 0 && m[1].indexOf('lagprobe') < 0) return m[1];
+    /* 用「檔名」跳過本檔自己的框架，不要用函式名。
+       第一版是比對函式名裡有沒有 blame／lagprobe，結果攔截器本身叫 countLayout，
+       兩個條件都不符合，於是每一列都歸戶到 countLayout——報告等於白做。
+       本檔的框架一定帶 lagprobe.js，用它判斷不會漏。 */
+    for (var i = 1; i < lines.length && i < 12; i++) {
+      if (lines[i].indexOf('lagprobe.js') >= 0) continue;
+      var m = /at\s+(?:new\s+|async\s+)?([A-Za-z_$][\w$.]*)\s/.exec(lines[i]);
+      if (m) return m[1];
+      if (/at\s+(?:https?:|<|\()/.test(lines[i])) return '(匿名回呼)';
     }
     return '(anonymous)';
   }

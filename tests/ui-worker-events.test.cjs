@@ -127,6 +127,8 @@ test('Worker 飄字以 elId 呈現，舊路徑也保留已離場目標的浮字'
     ],
     fieldEnemyList: () => [{ id: 'current' }],
     $id: () => ({ offsetParent: {} }),
+    // 圖層可見性判斷已抽成 floatLayerAttached（同一幀內快取 offsetParent）
+    floatLayerAttached: (layer) => !!layer && layer.offsetParent !== null,
     animatePendingEnemyKill: (...args) => calls.push(['animate', ...args]),
     floatText: (...args) => calls.push(['float', ...args])
   };
