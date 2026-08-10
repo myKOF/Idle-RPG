@@ -1442,13 +1442,32 @@ function hasRecentEnemyDamageFloat(elId, floats, now) {
   return false;
 }
 
+/* ---- 圖層是否已經掛在畫面上（同一幀只問一次）----
+   `offsetParent` 是版面讀取：問一次就強制瀏覽器把整份文件重排，而成本取決於
+   **整份文件多大**——回報者的機器上（背包 1668 格）30 秒內這個判斷被問了 58 次，
+   是 floatText 佔掉 1625 ms 的兩大來源之一。
+
+   同一幀之內圖層不會忽然被掛上或拿掉，所以每幀量一次就夠，其餘直接查節點上的快取。
+   時戳用 16 ms 分桶（約一幀）；就算跨幀誤判，最壞情況也只是某個浮字晚一幀顯示，
+   走的仍是 queuePendingEnemyFloat 這條既有路徑。 */
+function floatLayerAttached(layer) {
+  if (!layer) return false;
+  var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  var bucket = Math.floor(now / 16);
+  if (layer._floatAttachedBucket === bucket) return layer._floatAttached;
+  var attached = layer.offsetParent !== null;
+  layer._floatAttachedBucket = bucket;
+  layer._floatAttached = attached;
+  return attached;
+}
+
 function flushPendingEnemyFloats(battleSnapshot) {
   if (!PENDING_ENEMY_FLOATS.length) return;
   var keep = [];
   for (var i = 0; i < PENDING_ENEMY_FLOATS.length; i++) {
     var item = PENDING_ENEMY_FLOATS[i];
     var layer = $id(item.elId);
-    if (!layer || layer.offsetParent === null) {
+    if (!floatLayerAttached(layer)) {
       keep.push(item);
       continue;
     }
@@ -1515,10 +1534,30 @@ function enemyDamageFloatStyleClass(cls) {
   return '';
 }
 
-/* 從 CSS 讀取各分類的消失時間，讓淡出動畫與 DOM 移除使用同一個設定。 */
+/* 從 CSS 讀取各分類的消失時間，讓淡出動畫與 DOM 移除使用同一個設定。
+
+   ---- 為什麼要快取 ----
+   getComputedStyle 會強制瀏覽器重算樣式，成本取決於**整份文件多大**，不是這個
+   浮字多大。回報者的機器上（背包 1668 格）實測 30 秒內這裡被問了 62 次，
+   而 floatText 整體佔掉 1625 ms、主執行緒 91.6% 的時間被卡住。
+
+   而它每次問到的都是同一個答案：--enemy-hit-lifetime 只由浮字自己的 class 決定
+   （css/style.css 的 .enemy-hit-* 四個分類各自設定，沒有從祖先繼承的來源），
+   所以同一組 class 問一次就夠，往後直接查表。 */
+var _enemyFloatLifetimeCache = Object.create(null);
+
 function enemyDamageFloatLifetimeMs(sp) {
   var fallback = FLOAT_TEXT_LIFETIME_MS;
   if (!sp || typeof window === 'undefined' || typeof window.getComputedStyle !== 'function') return fallback;
+  var cacheKey = sp.className || '';
+  var cached = _enemyFloatLifetimeCache[cacheKey];
+  if (cached !== undefined) return cached;
+  var result = computeEnemyDamageFloatLifetimeMs(sp, fallback);
+  _enemyFloatLifetimeCache[cacheKey] = result;
+  return result;
+}
+
+function computeEnemyDamageFloatLifetimeMs(sp, fallback) {
   var raw = window.getComputedStyle(sp).getPropertyValue('--enemy-hit-lifetime').trim();
   if (!raw) return fallback;
   /* getComputedStyle 可能回傳 calc(2s * 2)，先解析簡單的時間×倍數，避免高倍率暴擊被提早移除。 */
@@ -1767,7 +1806,7 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
   // 卡片重建的 enemy-card 內。targetLayer 僅用來把數字定位在原目標附近。
   var useRetainedEnemyLayer = enemyHitFloat && elId && elId.indexOf('mv-float-') === 0;
   var layer = useRetainedEnemyLayer ? ($id('mv-float-retained') || targetLayer) : targetLayer;
-  if (!layer || layer.offsetParent === null) {
+  if (!floatLayerAttached(layer)) {
     queuePendingEnemyFloat(elId, text, cls, damageValue, ent);
     return;
   } // 新敵人尚未完成畫面建立時，先保留傷害字

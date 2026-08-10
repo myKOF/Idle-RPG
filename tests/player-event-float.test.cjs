@@ -51,7 +51,10 @@ test('敵人尚未建立卡片就被擊殺時，傷害浮字會等卡片建立�
   assert.match(ui, /function animatePendingEnemyKill\(ent, elId, cls, battleSnapshot\)/);
   assert.match(ui, /fill\.style\.width = '100%';[\s\S]*?fill\.style\.transition = 'width ' \+ INSTANT_KILL_HP_ANIMATION_MS \+ 'ms linear';[\s\S]*?fill\.style\.width = '0%';/);
   assert.match(ui, /function flushPendingEnemyFloats\(battleSnapshot\)/);
-  assert.match(ui, /if \(!layer \|\| layer\.offsetParent === null\) \{[\s\S]*?queuePendingEnemyFloat\(elId, text, cls, damageValue, ent\)/);
+  /* 圖層還沒掛上就先排隊，這個行為不變；只是判斷改由 floatLayerAttached 做，
+     它把 offsetParent 這個版面讀取在同一幀內快取起來（見 js/ui.js 該函式說明）。 */
+  assert.match(ui, /if \(!floatLayerAttached\(layer\)\) \{[\s\S]*?queuePendingEnemyFloat\(elId, text, cls, damageValue, ent\)/);
+  assert.match(ui, /function floatLayerAttached\(layer\)[\s\S]*?layer\.offsetParent !== null/);
   assert.match(ui, /flushPendingEnemyFloats\(battleSnapshot\);/);
 });
 
