@@ -2527,6 +2527,24 @@
         }
     });
 
+    /* 切到背景的那一刻補送一次心跳。
+
+       輪詢用的是 setInterval，而 Chrome 對背景分頁會逐段節流：隱藏約 10 秒後
+       降到每秒一次、5 分鐘後對齊到整分鐘（intensive throttling）、再往後可能
+       直接凍結。sendBeacon 不走計時器，所以這一發一定送得出去——
+       等於把看門狗的倒數在「即將被節流」的瞬間重新歸零，換到最大的餘裕。
+
+       ⚠️ 只補一次，不是解法本身：真正撐住長時模擬的是伺服器端把門檻放寬
+       （tools/sim_server.cjs 的 WATCHDOG_MS）。這裡只是讓那個門檻從
+       「頁面最後一次成功輪詢」改成「頁面最後一次確定還活著」起算。 */
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState !== 'hidden') return;
+        const btn = document.getElementById('btnCancelSim');
+        if (btn && btn.style.display !== 'none') {
+            try { navigator.sendBeacon('/sim_heartbeat'); } catch (e) {}
+        }
+    });
+
         /* baseDir 預設是單跑的 sim_out；批次完成後會傳入 sim_batch/<某個 seed> 的目錄。
        先前寫死 './sim_out/'，於是批次跑完仍然載入上一次單跑的結果——
        畫面顯示「2 小時完成」卻配著 10 小時的舊數據，比沒更新更容易誤導。 */

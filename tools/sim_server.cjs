@@ -58,9 +58,23 @@ let currentChild = null;
    超過門檻仍在跑就中止。頁面 unload 時另外會用 sendBeacon 主動送 /cancel_sim，
    那條是正常關閉的即時路徑；看門狗負責瀏覽器當掉、斷電、強制關閉這些收不到通知的情況。
 
-   ⚠️ 門檻刻意放到 90 秒：分頁切到背景時瀏覽器會把計時器降頻到每分鐘一次，
-   門檻太短會在使用者只是切去別的分頁時誤砍模擬。 */
-const WATCHDOG_MS = 90000;
+   ⚠️⚠️ 門檻曾經是 90 秒，理由寫著「背景分頁會降頻到每分鐘一次，90 秒夠了」——
+   **不夠**。實測把儀表板切到背景跑長時模擬，經常被誤判成「已關閉」而中止。
+
+   Chrome 對背景分頁的節流有三段，而不是單一的「每分鐘一次」：
+     隱藏約 10 秒後   計時器降到每秒一次
+     隱藏 5 分鐘後    進入 intensive throttling，計時器**對齊到整分鐘**觸發，
+                      實際間隔可能剛好等於或略超過 60 秒
+     再往後           分頁可能被**凍結**（freeze），計時器完全停止
+
+   也就是說 90 秒只比節流後的間隔多 30 秒的餘裕，抖動一下就破；
+   一旦進入凍結，再長的門檻也擋不住，但那時使用者多半也不在乎了。
+
+   看門狗真正的職責是「瀏覽器當掉／斷電／強制關閉」這種收不到通知的情況，
+   而正常關閉走的是 pagehide 的 sendBeacon /cancel_sim（即時，不受節流影響）。
+   所以門檻可以放得很寬——孤兒模擬多跑十分鐘沒有任何代價，
+   而誤砍一個跑了兩小時的批次代價很大。 */
+const WATCHDOG_MS = 600000;   // 10 分鐘
 let lastPollAt = 0;
 
 setInterval(() => {
@@ -170,6 +184,16 @@ const server = http.createServer((req, res) => {
       }
     }
     return res.end(JSON.stringify(currentProgress));
+  }
+
+  /* 1.4 純心跳。儀表板切到背景的那一刻用 sendBeacon 送一發，
+     把看門狗的倒數歸零——那正是計時器即將被節流的時刻。
+     只更新 lastPollAt，不回傳任何狀態，所以 sendBeacon 不必讀回應。
+     ⚠️ sendBeacon 一律送 POST，這裡不能只收 GET。 */
+  if (pathname === '/sim_heartbeat') {
+    lastPollAt = Date.now();
+    res.writeHead(204, { 'Access-Control-Allow-Origin': '*' });
+    return res.end();
   }
 
   // 1.5 取消執行中的模擬
