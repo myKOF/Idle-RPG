@@ -322,16 +322,16 @@ test('fuseSkills：未學習但已解鎖的素材可融合；未解鎖/被動/�
 
 /* ================= 8) 等級上限 10／轉生 +5 ================= */
 
-test('skillMaxLv：一般/被動/融合技一律 10；轉生後 15', () => {
+test('skillMaxLv：一般/被動/融合技一律 10；轉生後依 REINCARNATION_SKILL_MAX_LEVELS 成長', () => {
   const c = loadGameContext();
   assert.equal(c.skillMaxLv(c.SKILLS.powerSlash), 10);
   assert.equal(c.skillMaxLv(c.SKILLS.toughness), 10);
   assert.equal(c.skillMaxLv({ cat: 'fusion', maxLv: 40 }), 10); // 記錄凍結 maxLv 不再採用
   c.G.player.reincarnations = 1;
-  assert.equal(c.skillMaxLv(c.SKILLS.powerSlash), 15);
-  assert.equal(c.skillMaxLv({ cat: 'fusion' }), 15);
+  assert.equal(c.skillMaxLv(c.SKILLS.powerSlash), c.REINCARNATION_SKILL_MAX_LEVELS[1]);
+  assert.equal(c.skillMaxLv({ cat: 'fusion' }), c.REINCARNATION_SKILL_MAX_LEVELS[1]);
   c.G.player.reincarnations = 7;
-  assert.equal(c.skillMaxLv(c.SKILLS.toughness), 15); // 轉生後固定 +5，不隨轉數續增
+  assert.equal(c.skillMaxLv(c.SKILLS.toughness), c.REINCARNATION_SKILL_MAX_LEVELS[7]);
 });
 
 /* ================= 9) 技能熟練度 ================= */

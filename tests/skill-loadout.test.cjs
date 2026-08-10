@@ -32,12 +32,12 @@ test('未轉生玩家技能裝載欄依等級成長與上限計算', () => {
   context.G.player.level = 250;
   assert.equal(context.loadoutSize(), 9);
   context.G.player.level = 9999;
-  assert.equal(context.loadoutSize(), 20);
+  assert.equal(context.loadoutSize(), context.LOADOUT_SIZE.max);
 });
 
-test('1 轉以上玩家不論等級皆解鎖全數 20 格裝載欄位', () => {
+test('1 轉以上玩家不論等級皆解鎖全數格裝載欄位上限', () => {
   const context = loadFormulaContext();
   context.reincarnationCount = () => 1;
   context.G.player.level = 1;
-  assert.equal(context.loadoutSize(), 20);
+  assert.equal(context.loadoutSize(), context.LOADOUT_SIZE.max);
 });

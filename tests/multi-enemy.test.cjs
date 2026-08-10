@@ -101,45 +101,41 @@ test('菁英數量表逐張地圖選用，未列出的地圖走 500 關之後那
   assert.ok(maxes[maxes.length - 1] < weightedRange(context.FIELD_ENEMY_COUNT_TABLE).max);
 });
 
-test('荒漠小怪分段表每段各自生效，分段涵蓋範圍之後恢復一般小怪表', () => {
+test('荒漠前 100 關每 20 關套用小怪分段表，菁英走荒漠地圖菁英表，100 关後恢復正常', () => {
   const context = loadFormulaContext();
-  const span = context.FIELD_DESERT_EARLY_STAGE_SPAN;
-  const lastEarlyStage = context.FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES.length * span;
-  const ranges = [1, span, span + 1, lastEarlyStage - 1, lastEarlyStage];
+  const ranges = [1, 20, 21, 40, 41, 60, 61, 80, 81, 100];
   ranges.forEach((stage) => {
-    const index = Math.floor((stage - 1) / span);
+    const index = Math.floor((stage - 1) / 20);
     assert.equal(context.fieldCountTableFor('normal', stage, 'desert'),
       context.FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES[index], '荒漠第 ' + stage + ' 關小怪分段');
-    // 菁英不吃小怪的分段表，整張荒漠都用荒漠菁英表
-    assert.equal(context.fieldCountTableFor('elite', stage, 'desert'), context.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert,
-      '荒漠第 ' + stage + ' 關菁英應用荒漠菁英表');
+    assert.equal(context.fieldCountTableFor('elite', stage, 'desert'),
+      context.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert, '荒漠第 ' + stage + ' 關菁英應走荒漠菁英表');
   });
-  assert.equal(context.fieldCountTableFor('normal', lastEarlyStage + 1, 'desert'), context.FIELD_ENEMY_COUNT_TABLE);
-  assert.equal(context.fieldCountTableFor('elite', lastEarlyStage + 1, 'desert'), context.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert);
+  assert.equal(context.fieldCountTableFor('normal', 101, 'desert'), context.FIELD_ENEMY_COUNT_TABLE);
+  assert.equal(context.fieldCountTableFor('elite', 101, 'desert'), context.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert);
   assert.equal(context.fieldCountTableFor('normal', 1, 'Icefield'), context.FIELD_ENEMY_COUNT_TABLE);
   assert.equal(context.fieldCountTableFor('elite', 1, 'Icefield'), context.FIELD_ELITE_COUNT_TABLE_BY_ZONE.Icefield);
 
   const combat = loadCombatContext();
-  combat.G.stage.zone = 'desert';
-  combat.G.zoneProgress = { desert: { current: 1, best: 1, cleared: 0 } };
-  for (let index = 0; index < combat.FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES.length; index++) {
-    const stage = index * span + 1;
+  [1, 21, 41, 61, 81].forEach((stage) => {
     combat.G.stage.current = stage;
+    combat.G.stage.zone = 'desert';
     combat.spawnFieldMonster();
-    const range = weightedRange(combat.FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES[index]);
+    const table = combat.FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES[Math.floor((stage - 1) / 20)];
+    const range = weightedRange(table);
     assert.ok(combat.FIELD.monsters.length >= range.min && combat.FIELD.monsters.length <= range.max,
       '實際出怪未套用荒漠第 ' + stage + ' 關分段表');
-  }
+  });
   combat.G.stage.current = 10;
   combat.spawnFieldMonster();
   const desertEliteRange = weightedRange(combat.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert);
   assert.ok(combat.FIELD.monsters.length >= desertEliteRange.min && combat.FIELD.monsters.length <= desertEliteRange.max,
     '實際出怪的荒漠菁英應落在荒漠菁英表的範圍內');
-  combat.G.stage.current = lastEarlyStage + 1;
+  combat.G.stage.current = 101;
   combat.spawnFieldMonster();
   const normalRange = weightedRange(combat.FIELD_ENEMY_COUNT_TABLE);
   assert.ok(combat.FIELD.monsters.length >= normalRange.min && combat.FIELD.monsters.length <= normalRange.max,
-    '荒漠第 ' + (lastEarlyStage + 1) + ' 關應恢復一般小怪表');
+    '荒漠第 101 關應恢復一般小怪表');
 });
 
 test('出怪依階段敵種選用對應的數量表', () => {
