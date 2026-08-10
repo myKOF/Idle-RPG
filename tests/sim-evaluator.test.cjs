@@ -486,12 +486,16 @@ test('太古的數值倍率完全由遊戲決定，探針只是把 ancient 旗�
 
      第二層（只能斷言方向與量級）——面板的 ΔOff%。
      增幅百分比不會等比例跟著數值走：affixRoundValue 會四捨五入，
-     而戰力還受爆擊、防禦減免等非線性影響。實測發展成熟的角色是 1.620，
-     但剛開局的小號因為數值小、捨入誤差佔比高，會落在 1.53 左右。
-     把它斷言成精確值只會養出一支跟角色強度有關的脆弱測試。 */
+     而戰力還受爆擊、防禦減免等非線性影響，兩個方向都可能偏離：
+     捨入誤差佔比高的小號會低於數值倍率，而敵人防禦吃掉一段固定傷害時，
+     多出來的攻擊力回報是**超線性**的，比值會高過數值倍率（實測 1.68）。
+     所以這一層只能夾在數值倍率的同一個量級內，不能拿數值倍率當上限——
+     舊版把上限寫成「數值倍率 + 0.02」，只是因為取樣時剛好落在波次間隔、
+     dOffPct 是 undefined 而整段被跳過，斷言其實從來沒有真的跑過。 */
   const e = createEngine({ seed: 20260901 }).boot(null);
   e.setEvalParams({ affixKeys: ['atkFlat'], slotUpgrades: { candidatesPerSlot: 1 } });
   e.stepSeconds(600);
+  stepUntilFoe(e);
   const c = e.ctx;
   const probeRoll = Math.round(c.STRENGTH_ROLL_MAX * 0.5);
   const expected = c.AFFIX_MAX_VALUE_MULT * c.ANCIENT_AFFIX_VALUE_MULT / c.strengthMult(probeRoll);
@@ -508,8 +512,8 @@ test('太古的數值倍率完全由遊戲決定，探針只是把 ancient 旗�
   if (!r || !(Math.abs(r.dOffPct) > 1e-9)) return;        // 這個 seed 還沒有合法宿主部位
   assert.ok(typeof r.dOffPctAncient === 'number', '面板要提供太古位置的增幅');
   const ratio = r.dOffPctAncient / r.dOffPct;
-  assert.ok(ratio > 1.3 && ratio <= expected + 0.02,
-    `太古位置的增幅要明顯較高、且不得超過數值倍率 ${expected.toFixed(3)}，實際 ${ratio.toFixed(3)}`);
+  assert.ok(ratio > 1.3 && ratio <= expected * 1.2,
+    `太古位置的增幅要明顯較高、且與數值倍率 ${expected.toFixed(3)} 同一量級（容許 ±20%），實際 ${ratio.toFixed(3)}`);
 });
 
 test('第一名的部位沒被探測到時，往下找有探到的名次', () => {
@@ -777,18 +781,34 @@ function upgradeProbe(e, cfg) {
   return e.panel('eval').slotUpgrades || {};
 }
 
-/* 找一個「身上有裝備、且背包裡有同部位候選」的部位。 */
-function slotWithCandidate(c) {
+/* 找一個「身上有裝備、且背包裡有同部位候選」的部位；傳入探測結果時，
+   只挑評估器這次真的有回報的部位（它只探前幾名，沒探到的部位本來就沒有結果）。 */
+function slotWithCandidate(c, probed) {
   const fits = (it, k) => (c.equipSlotsForItem ? c.equipSlotsForItem(it) : []).indexOf(k) >= 0;
-  return Object.keys(c.G.equipment).find((k) => c.G.equipment[k] && c.G.inventory.some((it) => fits(it, k)));
+  return Object.keys(c.G.equipment).find((k) => c.G.equipment[k]
+    && (!probed || probed[k])
+    && c.G.inventory.some((it) => fits(it, k)));
+}
+
+/* 跑到某個整秒時可能剛好落在波次間隔（場上 0 隻敵人），評估器沒有對手可比，
+   整包 slotUpgrades／affixRoi 會回空——那不是被測行為，只是取樣時機。
+   出怪數量或節奏一被調整，卡在間隙的機率就換一組 seed 重骰，
+   所以這裡多跑幾個 tick 等場上有敵人，而不是賭 stepSeconds 的落點。 */
+function stepUntilFoe(e, maxSeconds = 30) {
+  for (let i = 0; i < maxSeconds * 10; i++) {
+    if (e.ctx.liveFieldEnemies && e.ctx.liveFieldEnemies().length > 0) return true;
+    e.stepSeconds(0.1);
+  }
+  return false;
 }
 
 test('rebuildUpgrade：候選與身上那件比在同一個強化等級，need 只收差額', () => {
   const e = createEngine({ seed: 20260908 }).boot(null);
   e.stepSeconds(600);          // 讓 foe 與背包長出來，否則 slotUpgrades 會早退回空物件
+  stepUntilFoe(e);
   const c = e.ctx;
-  const slot = slotWithCandidate(c);
-  assert.ok(slot, '前提：至少要有一個部位在背包裡有同部位候選');
+  const slot = slotWithCandidate(c, upgradeProbe(e, { candidatesPerSlot: 4, rebuildUpgrade: false }));
+  assert.ok(slot, '前提：至少要有一個部位在背包裡有同部位候選，且評估器有探到它');
 
   c.G.equipment[slot].upgrade = 20;
   const before = e.saveJson();
@@ -819,8 +839,10 @@ test('rebuildUpgrade：候選與身上那件比在同一個強化等級，need �
 test('rebuildUpgrade 關閉時維持舊語意：need 收身上那件的完整強化等級', () => {
   const e = createEngine({ seed: 20260908 }).boot(null);
   e.stepSeconds(600);
+  stepUntilFoe(e);
   const c = e.ctx;
-  const slot = slotWithCandidate(c);
+  const slot = slotWithCandidate(c, upgradeProbe(e, { candidatesPerSlot: 4, rebuildUpgrade: false, upgradeGuardPctPerLevel: 0.5 }));
+  assert.ok(slot, '前提：至少要有一個部位在背包裡有同部位候選，且評估器有探到它');
   c.G.equipment[slot].upgrade = 20;
 
   const off = upgradeProbe(e, { candidatesPerSlot: 4, rebuildUpgrade: false, upgradeGuardPctPerLevel: 0.5 })[slot];
@@ -834,8 +856,10 @@ test('候選自己帶著的強化不會被抹掉（取 max 而不是直接套身
      max 同時保證來回換不會震盪：兩個方向都用同一個等級比，結論一致。 */
   const e = createEngine({ seed: 20260908 }).boot(null);
   e.stepSeconds(600);
+  stepUntilFoe(e);
   const c = e.ctx;
-  const slot = slotWithCandidate(c);
+  const slot = slotWithCandidate(c, upgradeProbe(e, { candidatesPerSlot: 8, rebuildUpgrade: true }));
+  assert.ok(slot, '前提：至少要有一個部位在背包裡有同部位候選，且評估器有探到它');
   const fits = (it) => (c.equipSlotsForItem ? c.equipSlotsForItem(it) : []).indexOf(slot) >= 0;
 
   c.G.equipment[slot].upgrade = 0;

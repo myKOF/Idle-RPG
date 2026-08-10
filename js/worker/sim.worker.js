@@ -12,7 +12,7 @@
 
 importScripts('protocol.js?v=18', 'shim.js');
 importScripts(
-  '../util.js', '../data.js?v=20260810-field-boss-once', '../formula.js', '../battlefield.js', '../stats.js',
+  '../util.js', '../data.js?v=20260810-elite-count-by-zone', '../formula.js?v=20260810-elite-count-by-zone', '../battlefield.js', '../stats.js',
   '../item.js?v=20260805-tasks',
   '../skills.js?v=20260806-shield-threshold', '../talents.js', '../player.js?v=20260805-tasks', '../special_rules.js',
   '../combat.js?v=20260810-field-boss-once', '../legendary.js', '../potential.js', '../tower.js',

@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## Claude：菁英每波數量改為逐張地圖設定（2026-08-10）
+
+- Status: 已完成
+- Owner: Claude
+- Scope: `config/CSV/game_parameters.csv`（由 xlsx 重新產生）、`tools/apply_params.cjs`、`js/data.js`、`js/formula.js`、`js/bridge.js`、`js/worker/sim.worker.js`、`index.html`、`tests/multi-enemy.test.cjs`、`game_formula.md`、`tools/參數表使用說明.md`、`docs/AI_TASKS.md`
+- Task: 使用者在 `game_parameters.xlsx` 把「菁英 數量權重」拆成荒漠／冰原／沼澤／亡靈山脈四列＋「500關之後」一列，並把「小怪 數量權重」改名為「小怪 數量權重100關之後」。接線讓菁英每波數量依地圖選表。
+- 技術決策: 新增 `FIELD_ELITE_COUNT_TABLE_BY_ZONE`（鍵為地圖識別碼），未列出的地圖沿用 `FIELD_ELITE_COUNT_TABLE`＝「500關之後」那一列；列名與地圖識別碼的對應集中在 `apply_params.cjs` 的 `ELITE_COUNT_ZONE_ROWS`。同時移除 `fieldCountTableFor` 裡「荒漠前 100 關菁英固定 1 隻」的寫死規則——該區間已由荒漠那一列涵蓋。
+- Acceptance: 四張具名地圖各用自己的表、神界三圖走 500 關之後那張；小怪分段與 BOSS 表不變；`apply_params` 試跑 0 變更 0 錨點問題且總數 545→546；`--check-anchors` 全數命中一次；回歸測試與 build 通過。
+- Dependencies: 使用者已更新 `config/Excel/game_parameters.xlsx`（CSV 以 `tools/xlsx_to_csv.cjs` 從 xlsx 重新產生，未手改）
+- 順帶修正: `tests/sim-evaluator.test.cjs` 4 項對「取樣時機」敏感的斷言。`stepSeconds(600)` 可能剛好落在波次間隔（場上 0 隻敵人），評估器整包回空；出怪節奏一改就換一組 seed 中獎。改為跑到場上有敵人再取樣，並只挑評估器真的探到的部位。太古探針那條的上限（數值倍率 +0.02）本來就是錯的——敵人防禦讓攻擊力回報超線性，實測一直是 1.68，只因為過去每次都落在間隙、斷言被 early return 跳過才沒被發現；改成夾在數值倍率的同一量級（±20%）。
+- 已知風險: 神界三圖的菁英數量上限由 3 提高到 8，配合棋盤 4×4 上限；荒漠 1~100 關菁英由固定 1 隻改為 1~3 隻，早期難度會上升。
+
 ## Claude：野外 BOSS 每張地圖只能打一次（2026-08-10）
 
 - Status: 已完成
