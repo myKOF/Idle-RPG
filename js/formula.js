@@ -1040,22 +1040,27 @@ function isPurgatoryTowerFloor(floor) {
   return floor > TOWER_HELL_MAX_FLOOR && floor <= TOWER_PURGATORY_MAX_FLOOR;
 }
 
-/* 普通關卡敵人數量：權重見參數表「4-敵人數量」（預設 1 隻 60%、2 隻 25%、3 隻 10%、4 隻 5%）。
-   權重 0 的列先濾掉——wpick 在浮點誤差下會回傳陣列最後一項，留著會讓「權重 0 的 16 隻」
-   有極小機率被抽中。最後再夾到棋盤總格數，避免出怪數超過站得下的格子。 */
+/* 每波敵人數量的權重表挑選（表本體與參數表對應 → data.js §每波敵人數量）：
+     小怪  荒漠前 FIELD_DESERT_EARLY_* 涵蓋的關卡走分段表，其餘走 FIELD_ENEMY_COUNT_TABLE
+     菁英  逐張地圖各一張（FIELD_ELITE_COUNT_TABLE_BY_ZONE），未列出的地圖走 FIELD_ELITE_COUNT_TABLE
+     BOSS  FIELD_BOSS_COUNT_TABLE
+   權重 0 的列由 rollFieldEnemyCount 濾掉，數量再夾到棋盤總格數。 */
 function fieldCountTableFor(rank, stage, zone) {
   var s = stage == null && typeof G !== 'undefined' && G && G.stage ? G.stage.current : stage;
   s = Math.floor(Number(s) || 0);
   var z = zone == null && typeof G !== 'undefined' && G && G.stage ? G.stage.zone : zone;
   z = z || 'desert';
-  var desertEarly = z === 'desert' && s >= 1 && s <= 100;
-  if (desertEarly && rank === 'elite') return [[1, 1]];
-  if (desertEarly && rank !== 'boss' && typeof FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES !== 'undefined') {
-    var earlyTable = FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES[Math.floor((s - 1) / 20)];
+  if (rank === 'boss' && typeof FIELD_BOSS_COUNT_TABLE !== 'undefined') return FIELD_BOSS_COUNT_TABLE;
+  if (rank === 'elite') {
+    var zoneEliteTable = (typeof FIELD_ELITE_COUNT_TABLE_BY_ZONE !== 'undefined')
+      ? FIELD_ELITE_COUNT_TABLE_BY_ZONE[z] : null;
+    if (zoneEliteTable) return zoneEliteTable;
+    if (typeof FIELD_ELITE_COUNT_TABLE !== 'undefined') return FIELD_ELITE_COUNT_TABLE;
+  }
+  if (z === 'desert' && s >= 1 && typeof FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES !== 'undefined') {
+    var earlyTable = FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES[Math.floor((s - 1) / FIELD_DESERT_EARLY_STAGE_SPAN)];
     if (earlyTable) return earlyTable;
   }
-  if (rank === 'boss' && typeof FIELD_BOSS_COUNT_TABLE !== 'undefined') return FIELD_BOSS_COUNT_TABLE;
-  if (rank === 'elite' && typeof FIELD_ELITE_COUNT_TABLE !== 'undefined') return FIELD_ELITE_COUNT_TABLE;
   return FIELD_ENEMY_COUNT_TABLE;
 }
 

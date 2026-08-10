@@ -510,7 +510,7 @@ function parseCountTuples(cat, name) {
   if (!out.length) throw new Error('數量權重全空：' + cat + ' / ' + name);
   return out.join(', ');
 }
-arrayContent('data', 'FIELD_ENEMY_COUNT_TABLE', parseCountTuples('4-敵人數量', '小怪 數量權重'), 'FIELD_ENEMY_COUNT_TABLE');
+arrayContent('data', 'FIELD_ENEMY_COUNT_TABLE', parseCountTuples('4-敵人數量', '小怪 數量權重100關之後'), 'FIELD_ENEMY_COUNT_TABLE');
 const DESERT_EARLY_ENEMY_COUNT_RANGES = ['1~20', '21~40', '41~60', '61~80', '81~100'];
 const desertEarlyEnemyCountTables = DESERT_EARLY_ENEMY_COUNT_RANGES.map(range =>
   parseCountTuples('4-敵人數量', '小怪 數量權重(荒漠' + range + '關)'));
@@ -523,7 +523,23 @@ const desertEarlyEnemyCountTables = DESERT_EARLY_ENEMY_COUNT_RANGES.map(range =>
 arrayContent('data', 'FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES',
   desertEarlyEnemyCountTables.map(table => '[' + table + ']').join(', '),
   'FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES');
-arrayContent('data', 'FIELD_ELITE_COUNT_TABLE', parseCountTuples('4-敵人數量', '菁英 數量權重'), 'FIELD_ELITE_COUNT_TABLE');
+/* 菁英數量逐張地圖一列。列名是「菁英 數量權重(地圖名+關卡區間)」，這裡把它對到地圖識別碼；
+   沒有列在這裡的地圖（神界三圖）吃「500關之後」那一列＝ FIELD_ELITE_COUNT_TABLE。
+   整個物件一次重建，錨點綁的是物件名（比照 ZONE_STAGE_DROP_PROFILES），不綁程式碼形狀。 */
+const ELITE_COUNT_ZONE_ROWS = [
+  ['desert', '菁英 數量權重(荒漠1~200關)'],
+  ['Icefield', '菁英 數量權重(冰原1~300關)'],
+  ['swamp', '菁英 數量權重(沼澤1~400關)'],
+  ['undead_mountains', '菁英 數量權重(亡靈山脈1~500關)']
+];
+edits.push({
+  file: 'data', scopeVar: 'FIELD_ELITE_COUNT_TABLE_BY_ZONE',
+  re: /FIELD_ELITE_COUNT_TABLE_BY_ZONE\s*=\s*\{([\s\S]*?)\n\};/,
+  grp: 1, multiGroup: true, label: 'FIELD_ELITE_COUNT_TABLE_BY_ZONE',
+  value: ELITE_COUNT_ZONE_ROWS.map(pair =>
+    '  ' + pair[0] + ': [' + parseCountTuples('4-敵人數量', pair[1]) + ']').join(',\n')
+});
+arrayContent('data', 'FIELD_ELITE_COUNT_TABLE', parseCountTuples('4-敵人數量', '菁英 數量權重500關之後'), 'FIELD_ELITE_COUNT_TABLE');
 arrayContent('data', 'FIELD_BOSS_COUNT_TABLE', parseCountTuples('4-敵人數量', 'BOSS 數量權重'), 'FIELD_BOSS_COUNT_TABLE');
 // 戰場站位（敵方棋盤）：格數、距離係數、BOSS 佔格 → js/battlefield.js 讀這些常數
 scalar('data', 'BF_COLS', '4-戰場站位', '棋盤格數', 0);

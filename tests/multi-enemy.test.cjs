@@ -71,50 +71,81 @@ test('小怪／菁英／BOSS 各用自己的權重表（菁英不會跟著小怪
     assert.ok(context.rollFieldEnemyCount('boss') <= weightedRange(context.FIELD_BOSS_COUNT_TABLE).max,
       'BOSS 數量超出自己的表');
   }
-  // 未指定敵種時沿用小怪表（既有呼叫端不受影響）
+  // 未指定敵種時沿用小怪表（既有呼叫端不受影響）；菁英未指定地圖時走預設地圖那張
   assert.equal(context.fieldCountTableFor(), context.FIELD_ENEMY_COUNT_TABLE);
-  assert.equal(context.fieldCountTableFor('elite'), context.FIELD_ELITE_COUNT_TABLE);
+  assert.equal(context.fieldCountTableFor('elite'), context.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert);
   assert.equal(context.fieldCountTableFor('boss'), context.FIELD_BOSS_COUNT_TABLE);
 });
 
-test('荒漠前 100 關每 20 關套用小怪分段表，菁英固定 1 隻，100 關後恢復正常', () => {
+/* 菁英數量逐張地圖分開（參數表「4-敵人數量」的菁英各列）。
+   這裡只釘「哪一張地圖用哪一張表」的對應關係；數量期望值一律由表推導，
+   權重被調整時不該誤報成測試失敗。 */
+test('菁英數量表逐張地圖選用，未列出的地圖走 500 關之後那張', () => {
   const context = loadFormulaContext();
-  const ranges = [1, 20, 21, 40, 41, 60, 61, 80, 81, 100];
+  const byZone = context.FIELD_ELITE_COUNT_TABLE_BY_ZONE;
+  ['desert', 'Icefield', 'swamp', 'undead_mountains'].forEach((zone) => {
+    assert.ok(byZone[zone], zone + ' 缺少菁英數量表');
+    assert.equal(context.fieldCountTableFor('elite', 10, zone), byZone[zone], zone + ' 應用自己的菁英表');
+  });
+  ['god_battlefield', 'god_chaos', 'god_sanctuary'].forEach((zone) => {
+    assert.equal(context.fieldCountTableFor('elite', 10, zone), context.FIELD_ELITE_COUNT_TABLE,
+      zone + ' 未單獨列出，應走「500關之後」那張');
+  });
+  // 每張地圖的上限只增不減：越後面的地圖菁英同時湧上來的越多
+  const maxes = ['desert', 'Icefield', 'swamp', 'undead_mountains'].map((z) => weightedRange(byZone[z]).max)
+    .concat(weightedRange(context.FIELD_ELITE_COUNT_TABLE).max);
+  for (let i = 1; i < maxes.length; i++) {
+    assert.ok(maxes[i] >= maxes[i - 1], '菁英數量上限不應在後面的地圖變少：' + JSON.stringify(maxes));
+  }
+  // 菁英上限仍必須低於小怪，否則整波菁英根本打不動
+  assert.ok(maxes[maxes.length - 1] < weightedRange(context.FIELD_ENEMY_COUNT_TABLE).max);
+});
+
+test('荒漠小怪分段表每段各自生效，分段涵蓋範圍之後恢復一般小怪表', () => {
+  const context = loadFormulaContext();
+  const span = context.FIELD_DESERT_EARLY_STAGE_SPAN;
+  const lastEarlyStage = context.FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES.length * span;
+  const ranges = [1, span, span + 1, lastEarlyStage - 1, lastEarlyStage];
   ranges.forEach((stage) => {
-    const index = Math.floor((stage - 1) / 20);
+    const index = Math.floor((stage - 1) / span);
     assert.equal(context.fieldCountTableFor('normal', stage, 'desert'),
       context.FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES[index], '荒漠第 ' + stage + ' 關小怪分段');
-    assert.deepEqual(JSON.parse(JSON.stringify(context.fieldCountTableFor('elite', stage, 'desert'))), [[1, 1]],
-      '荒漠第 ' + stage + ' 關菁英應固定 1 隻');
+    // 菁英不吃小怪的分段表，整張荒漠都用荒漠菁英表
+    assert.equal(context.fieldCountTableFor('elite', stage, 'desert'), context.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert,
+      '荒漠第 ' + stage + ' 關菁英應用荒漠菁英表');
   });
-  assert.equal(context.fieldCountTableFor('normal', 101, 'desert'), context.FIELD_ENEMY_COUNT_TABLE);
-  assert.equal(context.fieldCountTableFor('elite', 101, 'desert'), context.FIELD_ELITE_COUNT_TABLE);
+  assert.equal(context.fieldCountTableFor('normal', lastEarlyStage + 1, 'desert'), context.FIELD_ENEMY_COUNT_TABLE);
+  assert.equal(context.fieldCountTableFor('elite', lastEarlyStage + 1, 'desert'), context.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert);
   assert.equal(context.fieldCountTableFor('normal', 1, 'Icefield'), context.FIELD_ENEMY_COUNT_TABLE);
-  assert.equal(context.fieldCountTableFor('elite', 1, 'Icefield'), context.FIELD_ELITE_COUNT_TABLE);
+  assert.equal(context.fieldCountTableFor('elite', 1, 'Icefield'), context.FIELD_ELITE_COUNT_TABLE_BY_ZONE.Icefield);
 
   const combat = loadCombatContext();
-  [1, 21, 41, 61, 81].forEach((stage) => {
+  combat.G.stage.zone = 'desert';
+  combat.G.zoneProgress = { desert: { current: 1, best: 1, cleared: 0 } };
+  for (let index = 0; index < combat.FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES.length; index++) {
+    const stage = index * span + 1;
     combat.G.stage.current = stage;
-    combat.G.stage.zone = 'desert';
     combat.spawnFieldMonster();
-    const table = combat.FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES[Math.floor((stage - 1) / 20)];
-    const range = weightedRange(table);
+    const range = weightedRange(combat.FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES[index]);
     assert.ok(combat.FIELD.monsters.length >= range.min && combat.FIELD.monsters.length <= range.max,
       '實際出怪未套用荒漠第 ' + stage + ' 關分段表');
-  });
+  }
   combat.G.stage.current = 10;
   combat.spawnFieldMonster();
-  assert.equal(combat.FIELD.monsters.length, 1, '實際出怪的荒漠菁英應固定 1 隻');
-  combat.G.stage.current = 101;
+  const desertEliteRange = weightedRange(combat.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert);
+  assert.ok(combat.FIELD.monsters.length >= desertEliteRange.min && combat.FIELD.monsters.length <= desertEliteRange.max,
+    '實際出怪的荒漠菁英應落在荒漠菁英表的範圍內');
+  combat.G.stage.current = lastEarlyStage + 1;
   combat.spawnFieldMonster();
   const normalRange = weightedRange(combat.FIELD_ENEMY_COUNT_TABLE);
   assert.ok(combat.FIELD.monsters.length >= normalRange.min && combat.FIELD.monsters.length <= normalRange.max,
-    '荒漠第 101 關應恢復一般小怪表');
+    '荒漠第 ' + (lastEarlyStage + 1) + ' 關應恢復一般小怪表');
 });
 
 test('出怪依階段敵種選用對應的數量表', () => {
   const context = loadCombatContext();
-  const eliteMax = weightedRange(context.FIELD_ELITE_COUNT_TABLE).max;
+  // 這個 context 沒指定地圖＝預設地圖，菁英數量看的是該地圖那張表
+  const eliteMax = weightedRange(context.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert).max;
 
   context.G.stage.current = 1;   // 小怪
   for (let i = 0; i < 60; i++) {
