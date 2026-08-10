@@ -206,19 +206,23 @@ function objFieldMLValue(file, keyAnchor, field, value, label, scopeVar) {
     grp: 2, value: String(value), label: (label || keyAnchor) + '.' + field, scopeVar: scopeVar
   });
 }
-// 內嵌唯一片段： <prefix><num> —— prefix 需在整檔唯一
-function inline(file, prefix, value, label) {
-  edits.push({ file, re: new RegExp('(' + esc(prefix) + ')(-?[\\d.]+)'), grp: 2, value: String(value), label });
-}
-// 結構型內嵌數值：錨點只描述公式結構，不把目前程式裡的數值寫死。
-// 這樣某個參數先被套用後，同一公式中的其他參數仍能在下一次套用時找到。
-function inlineRegex(file, re, value, label) {
-  edits.push({ file, re, grp: 2, value: String(value), label });
-}
-// 前後文夾住數字： <before><num><after> —— 三段合起來需在整檔唯一（用於同一數值多處出現時精準定位）
-function numCtx(file, before, after, value, label) {
-  edits.push({ file, re: new RegExp('(' + esc(before) + ')(-?[\\d.]+)(' + esc(after) + ')'), grp: 2, value: String(value), label });
-}
+/* ---- 已移除：inline / inlineRegex / numCtx（2026-08-10）----
+   這三個 helper 是「錨定程式碼片段」的寫法：inline 綁前綴字串（'st.base.mp = '）、
+   inlineRegex 綁整條正規式、numCtx 綁前後文夾住的數字。
+
+   全部 101 條這類錨點已改成 scalar / objFieldML（綁變數名或「物件名＋欄位名」），
+   helper 本身一併刪掉，避免下一個人照著舊範例再寫一條回來。
+
+   為什麼非拿掉不可：它們綁的是「程式碼長什麼樣子」，任何一次正常重構都可能讓錨點
+   0 命中，而 apply_params 對 0 命中只在試跑輸出列一行——真正套用時會**安靜地**
+   少套那個值，程式、測試、Review 全部看不出異常。實際發生過三次：
+     - 寶石商店升級費用：把字面值抽成常數後三條錨點同時失聯
+     - 附魔攻擊基底／每級：改寫算式時被打斷，且打斷處與改動處不在同一行
+     - 技能裝載欄 4 條：改寫 loadoutSize 後一起失聯
+
+   若日後真的遇到「值無法具名」的情況（例如要改的不是數字而是整段結構），
+   請優先考慮 arrayContent，或先把值具名再接；要重新引入形狀比對，
+   請連同「為什麼這個值不能具名」一起寫在 commit 訊息裡。 */
 // 整段陣列內容重建： var NAME = [<content>]; —— content 為新的內部字串
 function arrayContent(file, varName, contentStr, label) {
   edits.push({ file, re: new RegExp('(\\b' + esc(varName) + '\\s*=\\s*\\[)([\\s\\S]*?)(\\];)'), grp: 2, value: contentStr, label: label || varName, multiGroup: true });
