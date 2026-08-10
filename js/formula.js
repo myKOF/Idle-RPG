@@ -2039,14 +2039,15 @@ function skillMasteryXpForLevel(l) {
 }
 
 /* 各類技能等級上限（2026-07-30 技能融合改造）：
-   所有技能（含融合技/被動技）統一走 CSV 轉生對照表 param e＝10 級、轉生後 15 級；
-   融合技不再使用記錄內凍結的 maxLv（素材加總+20 舊制欄位僅為存檔相容保留）。 */
+   所有技能（含融合技/被動技）統一查轉生對照表（參數表「1-轉生對照表」param e，
+   見 REINCARNATION_SKILL_MAX_LEVELS）；融合技不再使用記錄內凍結的 maxLv
+   （素材加總+20 舊制欄位僅為存檔相容保留）。 */
 function skillMaxLv(def) {
   var rc = reincarnationCount();
   if (typeof REINCARNATION_SKILL_MAX_LEVELS !== 'undefined' && REINCARNATION_SKILL_MAX_LEVELS[rc] !== undefined) {
     return REINCARNATION_SKILL_MAX_LEVELS[rc];
   }
-  return 10 + (rc > 0 ? 5 : 0);
+  return 10 + (rc > 0 ? 5 : 0);   // 對照表載入失敗時的保底值，不代表目前參數表設定
 }
 
 // 技能傷害倍率（%）= base + per × (等級-1)
