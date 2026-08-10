@@ -378,6 +378,11 @@ scalar('data', 'GEM_FUSE_MIN_RATE', '8-寶石', '寶石融合成功率', 0);
 inline('data', 'GEM_SHOP_MAX_LEVEL = ', 20, 'GEM_SHOP_MAX_LEVEL');
 scalar('data', 'GEM_SHOP_REFRESH_BASE', '8-寶石商店', '手動刷新費用', 0);
 scalar('data', 'GEM_SHOP_REFRESH_EXPONENT', '8-寶石商店', '手動刷新費用', 1);
+// 升級費用：參數表早就有「8-寶石商店／升級費用」這一列（a + 等級^b × c），但一直沒接上，
+// 於是係數寫死在 formula.js 裡，改參數表不會生效。2026-08-10 補接。
+scalar('data', 'GEM_SHOP_UPGRADE_BASE', '8-寶石商店', '升級費用', 0);
+scalar('data', 'GEM_SHOP_UPGRADE_EXPONENT', '8-寶石商店', '升級費用', 1);
+scalar('data', 'GEM_SHOP_UPGRADE_COEF', '8-寶石商店', '升級費用', 2);
 // 其他 data.js 常數
 scalar('data', 'ENCHANT_ESSENCE_COST', '6-裝備', '手動附魔費用', 1);
 scalar('data', 'PART_MAX_TIER', '表-固定參數', '零件階級上限', 0);
@@ -844,9 +849,13 @@ inline('formula', 'g.base * GEM_MAX_LEVEL * (1 + ', P('8-寶石', '能力數值(
 inline('formula', 'base5 * Math.pow(', P('8-寶石', '能力數值(6~10階神鑄)', 0), '寶石神鑄底');
 numCtx('formula', 'return ', ' + (level - GEM_MAX_LEVEL)', P('6-神鑄', '寶石神鑄金幣', 0), '寶石神鑄金-基');
 inline('formula', '(level - GEM_MAX_LEVEL) * ', P('6-神鑄', '寶石神鑄金幣', 0), '寶石神鑄金-每階');
-inlineRegex('formula', /(return )(-?[\d.]+)(?= \+ Math\.pow\(level, [\d.]+\) \* )/, P('8-寶石商店', '升級費用', 0), '寶店升級-基');
-inline('formula', 'Math.pow(level, ', P('8-寶石商店', '升級費用', 1), '寶店升級-次方');
-inlineRegex('formula', /(Math\.pow\(level, [\d.]+\) \* )(-?[\d.]+)/, P('8-寶石商店', '升級費用', 2), '寶店升級-係數');
+/* 寶石商店升級費用改由 data.js 的三個具名常數承接（見上方 GEM_SHOP_UPGRADE_* 的 scalar），
+   原本這裡是三條 inline／inlineRegex 錨點，直接改寫 formula.js 算式裡的字面值。
+
+   為什麼換掉：那種錨點綁的是「程式碼長什麼樣子」。`Math.pow(level, ` 這個錨點連
+   「有沒有別的函式也這樣寫」都分不出來，而且任何人把字面值抽成常數（正是本次做的事）
+   錨點就 0 命中——套用參數表會安靜地少套三個值，只有仔細看試跑輸出才會發現。
+   改成具名常數之後，錨點綁的是變數名，與算式怎麼寫無關。 */
 
 /* ---- §9 技能 ---- */
 inlineRegex('formula', /(var cost = Math\.floor\()(-?[\d.]+)(?= \* lv \+ Math\.pow\()/, P('9-技能', '升級費用', 0), '技升-係數');

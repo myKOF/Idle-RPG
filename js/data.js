@@ -1562,6 +1562,10 @@ var GEM_SHOP_TIER_TABLE = [
 ];
 var GEM_SHOP_REFRESH_BASE = 5000;
 var GEM_SHOP_REFRESH_EXPONENT = 2.5;
+// 升級費用（參數表「8-寶石商店／升級費用」的 a / b / c）；公式見 formula.js gemShopUpgradeCost
+var GEM_SHOP_UPGRADE_BASE = 100000;
+var GEM_SHOP_UPGRADE_EXPONENT = 3.5;
+var GEM_SHOP_UPGRADE_COEF = 4000000;
 function gemShopPrice(lv) { // 商店標價：查上方 GEM_SHOP_TABLE（刷新費用公式 shopRefreshCost → js/formula.js §8）
   for (var i = 0; i < GEM_SHOP_TABLE.length; i++) if (GEM_SHOP_TABLE[i].lv === lv) return GEM_SHOP_TABLE[i].price;
   return 0;
