@@ -334,6 +334,22 @@ git log --grep "^\[Claude\]"
 - 保持可驗證
 - 保持容易 Review
 
+## 8.1 改了 js 檔就要 bump 快取版本（必要）
+
+`index.html` 的 script 標籤帶版本查詢字串，例如 `<script src="js/ui.js?v=1.0.11">`。
+那是這個零建置專案唯一的快取破壞機制。
+
+**改了某支 js 檔，就必須把 index.html 裡對應的 `?v=` 加一。**
+
+沒加的話：URL 完全沒變，瀏覽器會繼續用快取裡的舊檔，測試者拿到的是舊程式。
+而 `js/main.js` 的更新橫幅是比對 index.html 的指紋——沒動 index.html 就連提示都不會跳，
+測試者不會知道自己在跑舊版，回報的現象與程式碼對不起來，會把時間全部浪費在錯誤的方向上。
+（2026-08-10 實際發生過：背包效能修正因為漏 bump，測試者仍在跑舊版，
+單一則 Worker 訊息在主執行緒花掉 819 ms。）
+
+同理，改了 `js/worker/*.js` 要更新 `js/bridge.js` 的 `WORKER_ASSET_VERSION`；
+改了 `js/worker/protocol.js` 的協議內容要更新 `WORKER_PROTOCOL_VERSION`。
+
 若發現更好的設計：
 
 不得直接大幅重構。
