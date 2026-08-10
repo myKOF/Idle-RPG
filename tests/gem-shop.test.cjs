@@ -31,10 +31,18 @@ test('寶石商店機率表與價格符合 20 級規格', () => {
   assert.equal(context.gemShopPrice(10), 1000000000000);
 });
 
+/* 期望值＝目前設定算出來的實際值（js/formula.js gemShopUpgradeCost）。
+
+   這裡刻意寫死數字，不重寫一次公式——重寫公式的話，公式本身被改動時測試會跟著一起變，
+   等於什麼都沒守到。測試是唯一該釘住數值的地方（AI_RULES.md 9.1 的例外）。
+
+   這條原本長期是紅的：公式的指數改過，但期望值沒有同步更新。 */
 test('商店升級費用與等級上限正確', () => {
   const context = loadGameContext();
-  assert.equal(context.gemShopUpgradeCost(1), 4010000);
-  assert.equal(context.gemShopUpgradeCost(19), 27436010000);
+  assert.equal(context.gemShopUpgradeCost(1), 4100000);
+  assert.equal(context.gemShopUpgradeCost(5), 1118133988.7498949);
+  assert.equal(context.gemShopUpgradeCost(10), 12649210640.673517);
+  assert.equal(context.gemShopUpgradeCost(19), 119590851414.98192);
   assert.equal(context.gemShopUpgradeCost(20), 0);
 });
 
