@@ -213,10 +213,12 @@ test('統計清除在 Worker 模式送 stats.reset 並等待 battle Snapshot 重
   ].join('\n'), context);
 
   assert.equal(await context.resetStatsFromUi(), true);
+  /* silentResultError：這支自己在 .then 裡呼叫 reportUiCommandFailure，
+     所以要求 sendUiCommand 不要再回報一次（見 js/ui.js sendUiCommand 的說明）。 */
   assert.deepEqual(JSON.parse(JSON.stringify(calls)), [{
     name: 'stats.reset',
     args: {},
-    options: { keys: ['node:stats'], panels: ['battle'] }
+    options: { silentResultError: true, keys: ['node:stats'], panels: ['battle'] }
   }]);
   assert.equal(list.innerHTML, '');
 });

@@ -70,12 +70,15 @@ function reincarnationExpBaseAdd(count) {
 
 // 升到下一級所需經驗 =（係數 × 等級^次方 + 常數）× 轉生經驗倍率（各轉倍數累積連乘）＋ 升級經驗基礎增加值（依轉生次數）
 // 係數／次方／常數取自參數表「1-成長經驗／升級所需經驗」，由 tools/apply_params.cjs 寫入。
-function xpForLevel(l) { return Math.floor((20 * Math.pow(l, 3) + 40) * reincarnationExpMultiplier() + reincarnationExpBaseAdd()); }
+function xpForLevel(l) {
+  return Math.floor((XP_LEVEL_COEF.a * Math.pow(l, XP_LEVEL_COEF.b) + XP_LEVEL_COEF.c) *
+    reincarnationExpMultiplier() + reincarnationExpBaseAdd());
+}
 
 /* 等級基礎四維主屬性（不含裝備）：力/敏/智/耐 相同
    = 5 + (等級 - 1) × 2 */
 function basePrimaryFor(level) {
-  var v = 5 + (level - 1) * 2;
+  var v = PRIMARY_STAT_GROWTH.base + (level - 1) * PRIMARY_STAT_GROWTH.perLevel;
   return { str: v, agi: v, int: v, vit: v };
 }
 
@@ -318,15 +321,15 @@ function computeStats(equipmentOverride) {
   st.int = Math.round(rawInt * reincMult); st.vit = Math.round(rawVit * reincMult);
   // 基礎：生命 = (基底 + (等級-1)×每級 + 耐力×vitHp + 定值) × (1 + 生命%) × (1 + 天賦生命%［生命洪流，獨立乘區］)
   st.base = {};
-  st.base.hp = 500 + (lv - 1) * 50 + rawVit * PRIMARY_STAT_EFFECTS.vitHp;
+  st.base.hp = DERIVED_COEF.hpBase + (lv - 1) * DERIVED_COEF.hpPerLevel + rawVit * PRIMARY_STAT_EFFECTS.vitHp;
   var rawHp = (st.base.hp + A.hpFlat) * (1 + A.hpPct / 100);
   st.hp = Math.round(rawHp * reincMult * (1 + (talent.hpPct || 0) / 100));
   st.hpRegen = A.hpRegen;                                    // 額外生命恢復/秒（另有 BASE_HP_REGEN_PCT%/秒 基礎回復）
   // 法力 =（基底 + 原始智力×intMp + 定值）×轉生倍率；法力恢復另依原有公式計算
-  st.base.mp = 100 + rawInt * PRIMARY_STAT_EFFECTS.intMp;
+  st.base.mp = DERIVED_COEF.mpBase + rawInt * PRIMARY_STAT_EFFECTS.intMp;
   var rawMp = st.base.mp + A.mpFlat;
   st.mp = Math.round(rawMp * reincMult);
-  st.mpRegen = 5 + st.int * PRIMARY_STAT_EFFECTS.intMpRegen + A.mpRegen;
+  st.mpRegen = DERIVED_COEF.mpRegenBase + st.int * PRIMARY_STAT_EFFECTS.intMpRegen + A.mpRegen;
   // 進攻／防禦定值的轉生指數強化：flatMult × 定值 × reincBase^轉生次數（0 轉時 = flatMult×定值）
   var reincN = reincarnationCount();
   st.reincFlatBonus = {
@@ -341,13 +344,13 @@ function computeStats(equipmentOverride) {
   // 魔攻 = (matkBase + 魔攻定值 + 轉生定值強化 + 智力×intMatk) × (1 + 魔攻%) × (1 + 天賦魔攻%［奧能賁張，獨立乘區］)
   st.base.matk = DERIVED_COEF.matkBase + st.int * PRIMARY_STAT_EFFECTS.intMatk;
   st.matk = Math.round((st.base.matk + A.matkFlat + st.reincFlatBonus.matk) * (1 + A.matkPct / 100) * godAttackMultiplier * (1 + (talent.matkPct || 0) / 100));
-  st.critRate = capValue(5 + st.agi * PRIMARY_STAT_EFFECTS.agiCritRate + A.critRate, STAT_CAPS.critRate);   // 暴擊率：基礎 5% + 敏捷係數
-  st.critDmg = 150 + A.critDmg;                                  // 暴擊傷害：基礎 150%
+  st.critRate = capValue(DERIVED_COEF.critRateBase + st.agi * PRIMARY_STAT_EFFECTS.agiCritRate + A.critRate, STAT_CAPS.critRate);   // 暴擊率：基礎 5% + 敏捷係數
+  st.critDmg = DERIVED_COEF.critDmgBase + A.critDmg;                                  // 暴擊傷害：基礎 150%
   st.comboHits = comboHitsFor(st.critRate);                     // 連擊數：暴擊率破 100% 衍生的額外攻擊次數（僅普攻／技能直接傷害，持續傷害不計）
   // 穿透不設上限（STAT_CAPS.pPen/mPen = 0）：實際忽略防禦% 由 penIgnorePct 的飽和曲線換算（§3）。
   st.pPen = capValue(A.pPen, STAT_CAPS.pPen);
   st.mPen = capValue(A.mPen, STAT_CAPS.mPen);
-  st.hit = 100 + st.agi * 0 + A.hit;                          // 命中率：基礎 100% + 敏捷×a + 額外加成（無上限；戰鬥結算再 clamp 5~100）
+  st.hit = DERIVED_COEF.hitBase + st.agi * PRIMARY_STAT_EFFECTS.agiHit + A.hit;                          // 命中率：基礎 100% + 敏捷×a + 額外加成（無上限；戰鬥結算再 clamp 5~100）
   // 攻速：基礎攻速、敏捷係數與上限皆由 data.js 控制。
   // 潛力技能【極速之力】＝主動 buff：施放後於效果期間由戰鬥端以 potentialVelocityFactor 解除攻速上限（js/potential.js）。
   st.aspdBonusBase = A.aspdPct + st.agi * PRIMARY_STAT_EFFECTS.agiAspdPct; // 玩家原始攻速加成%（未夾 5 次/秒上限；供極速之力倍率與提示）
@@ -452,9 +455,11 @@ function computeStats(equipmentOverride) {
 
    兩個係數取自參數表「3-戰鬥核心／防禦減傷率」，由 tools/apply_params.cjs 寫入，
    不在這裡複述數值——複述的那一份不會跟著參數表變，只會變成謊話。 */
+var DEF_REDUCTION_CONST = 10000;   // 參數表「3-戰鬥核心／防禦減傷率」a
+var DEF_REDUCTION_PER_LEVEL = 100; // 同上 b
 function defReduction(def, attackerLevel) {
   if (def <= 0) return 0;
-  return def / (def + 10000 + 100 * attackerLevel);
+  return def / (def + DEF_REDUCTION_CONST + DEF_REDUCTION_PER_LEVEL * attackerLevel);
 }
 
 // 元素附傷減免：只套用對應元素抗性，不重複套用魔法抗性
@@ -517,6 +522,11 @@ function globalDamageMultiplier(total) {
    減傷率 = 1 - a / (1 + (抗性值總合 / b)^c)。
    於 resolveHit 全局減傷之後、最低傷害之前的最末端套用；
    依攻擊者敵種（普通/菁英/BOSS）選用防守方對應的抗性總合。 */
+var DAMAGE_VARIANCE_MIN = 0.8;            // 參數表「3-戰鬥核心／傷害浮動」a
+var DAMAGE_VARIANCE_MAX = 1.2;            // 同上 b
+var DAMAGE_MIN = 1;                       // 參數表「3-戰鬥核心／最低傷害下限」
+var GODFORGED_SANCTUARY_RED_CAP = 50;     // 參數表「3-戰鬥核心／聖佑(神鑄)減傷上限」
+var GODFORGED_UNDYING_COOLDOWN_SEC = 60;  // 參數表「3-戰鬥核心／不朽(神鑄)回復」b
 var ENEMY_TYPE_DMG_RED_A = 0.95;
 var ENEMY_TYPE_DMG_RED_B = 4000;
 var ENEMY_TYPE_DMG_RED_C = 1.4;
@@ -726,7 +736,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     }
     dmg = skillElemBase;
   }
-  var randomDamageMultiplier = rnd(0.8, 1.2);
+  var randomDamageMultiplier = rnd(DAMAGE_VARIANCE_MIN, DAMAGE_VARIANCE_MAX);
   dmg *= randomDamageMultiplier;   // 傷害浮動 80%～120%
   out.randomDamageMultiplier = randomDamageMultiplier;
   // 暴擊：傷害 × 暴傷%（基礎值見屬性表）；神鑄特效【破滅】暴擊時機率翻倍
@@ -812,7 +822,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     out.blocked = true;
   }
   // 神鑄特效【聖佑】：受到的所有傷害按比例降低（上限見特效設定）
-  if (dCfg.dmgRed) dmg *= 1 - clamp(dCfg.dmgRed, 0, 50) / 100;
+  if (dCfg.dmgRed) dmg *= 1 - clamp(dCfg.dmgRed, 0, GODFORGED_SANCTUARY_RED_CAP) / 100;
   // 全局減傷：所有既有傷害計算完成後才套用，之後才進入最低傷害與護盾結算。
   if (dCfg.globalDmgRed) dmg *= globalDamageMultiplier(dCfg.globalDmgRed);
   // 敵種傷害抗性：依攻擊者敵種（普通/菁英/BOSS）選用對應抗性值，於全局減傷之後的最末端套用。
@@ -822,7 +832,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   // 對屬性敵人抗性（8 轉天賦）：攻擊者帶屬性標籤時，依對應抗性值套用敵種抗性同曲線的減傷。
   var attrRedTotal = (dCfg.resVsElem && aCfg.attr) ? (dCfg.resVsElem[aCfg.attr] || 0) : 0;
   if (attrRedTotal > 0) dmg *= 1 - enemyTypeDamageReduction(attrRedTotal, aCfg.level || 1);
-  dmg = Math.max(1, Math.round(dmg));   // 最低傷害 1
+  dmg = Math.max(DAMAGE_MIN, Math.round(dmg));   // 最低傷害由參數表決定
   // 護盾吸收
   if (defender.shield && defender.shield > 0) {
     out.absorbed = Math.min(defender.shield, dmg);
@@ -839,7 +849,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   out.dmg = dmg + out.absorbed; // 統計上含護盾吸收量
   if (defender.hp <= 0) {
     // 神鑄特效【不朽】：致命攻擊時機率保留 1 點生命並回復一定比例最大生命（有內部冷卻）
-    if (dCfg.undying && (!defender._undyingAt || GT - defender._undyingAt >= 60) && chance(dCfg.undying)) {
+    if (dCfg.undying && (!defender._undyingAt || GT - defender._undyingAt >= GODFORGED_UNDYING_COOLDOWN_SEC) && chance(dCfg.undying)) {
       defender._undyingAt = GT;
       defender.hp = Math.max(1, Math.round((dCfg.maxHp || 1) * 0.3));
       out.procs.push('不朽');
@@ -988,16 +998,16 @@ function segmentedLevelGrowth(base, level, brackets) {
 }
 
 function monsterStatsFor(stage, elite, boss) {
-  var hp = (20 + stage * 16) * Math.pow(1.06, stage - 1);
-  var atk = (2 + stage * 2) * Math.pow(1.04, stage - 1);
-  var def = (2 + stage * 0.5) * Math.pow(1.045, stage - 1);
-  var gold = (250 + stage) * Math.pow(1.018, stage - 1);
-  var xp = (120 + stage) * Math.pow(1.06, stage - 1);
+  var hp = (FIELD_MONSTER_GROWTH.hpA + stage * FIELD_MONSTER_GROWTH.hpB) * Math.pow(FIELD_MONSTER_GROWTH.hpC, stage - 1);
+  var atk = (FIELD_MONSTER_GROWTH.atkA + stage * FIELD_MONSTER_GROWTH.atkB) * Math.pow(FIELD_MONSTER_GROWTH.atkC, stage - 1);
+  var def = (FIELD_MONSTER_GROWTH.defA + stage * FIELD_MONSTER_GROWTH.defB) * Math.pow(FIELD_MONSTER_GROWTH.defC, stage - 1);
+  var gold = (FIELD_MONSTER_GROWTH.goldA + stage) * Math.pow(FIELD_MONSTER_GROWTH.goldC, stage - 1);
+  var xp = (FIELD_MONSTER_GROWTH.xpA + stage) * Math.pow(FIELD_MONSTER_GROWTH.xpC, stage - 1);
   var m = {
     level: stage, hp: hp, atk: atk,
     def: def,                 // 物理防禦
     mdef: def * 0.75,         // 魔法防禦
-    aspd: 1,
+    aspd: FIELD_MONSTER_GROWTH.aspd,
     dodge: segmentedLevelGrowth(FIELD_MONSTER_DODGE_BASE, stage, FIELD_MONSTER_DODGE_GROWTH),
     hit: segmentedLevelGrowth(FIELD_MONSTER_HIT_BASE, stage, FIELD_MONSTER_HIT_GROWTH),
     gold: gold, xp: xp, elite: !!elite && !boss, isBoss: !!boss
@@ -1009,7 +1019,9 @@ function monsterStatsFor(stage, elite, boss) {
     m.gold *= FIELD_BOSS_REWARD_MULT; m.xp *= FIELD_BOSS_REWARD_MULT;
     m.dodge += FIELD_BOSS_DODGE_ADD; m.aspd = FIELD_BOSS_ASPD;
   } else if (elite) {
-    m.hp *= 4; m.atk *= 2; m.gold *= 2; m.xp *= 2; m.dodge += 1.5; m.aspd = 1;
+    m.hp *= FIELD_ELITE.hpMult; m.atk *= FIELD_ELITE.atkMult;
+    m.gold *= FIELD_ELITE.rewardMult; m.xp *= FIELD_ELITE.rewardMult;
+    m.dodge += FIELD_ELITE.dodgeAdd; m.aspd = FIELD_ELITE.aspd;
   }
   return m;
 }
@@ -1271,18 +1283,34 @@ function newForgePartSlotCost(reinc, unlocked, furnaceCount) {
 /* ---- 稀有度擲骰（非掉落表路徑：合成產物等用）----
    權重加成 b = 1 + 掉寶加成/200 + 階段×0.006（各稀有度有權重與加成上限；
    史詩 8 階起、傳說 15 階起、神話 25 階起、創世 40 階起才可能出現） */
+/* 各稀有度的基礎權重與加成上限，以及權重加成 b 的兩個係數。
+   欄位名刻意各自唯一（xxxWeight / xxxCap），套用參數表的錨點才能綁到單一欄位。
+   出現門檻（minStage）目前參數表是文字欄（「階段 8+」），未接自動套用，先具名收在這裡。 */
+var RARITY_ROLL = {
+  bonusDivisor: 200, bonusPerStage: 0.006,
+  commonWeight: 55,                                          // 普通無加成上限
+  uncommonWeight: 25, uncommonCap: 2,
+  rareWeight: 12, rareCap: 2.5,
+  uniqueWeight: 5.5, uniqueCap: 3,
+  epicWeight: 1.8, epicCap: 3.5, epicMinStage: 8,
+  legendaryWeight: 0.35, legendaryCap: 4, legendaryMinStage: 15,
+  mythicWeight: 0.08, mythicCap: 4.5, mythicMinStage: 25,
+  genesisWeight: 0.015, genesisCap: 5, genesisMinStage: 40
+};
+
 function rollRarity(stage, lootBonus) {
   var s = stage || 1;
-  var b = 1 + effectiveDropRateEffect(lootBonus || 0) / 200 + s * 0.006;
+  var R = RARITY_ROLL;
+  var b = 1 + effectiveDropRateEffect(lootBonus || 0) / R.bonusDivisor + s * R.bonusPerStage;
   var w = [
-    [0, 55],
-    [1, 25 * Math.min(b, 2)],
-    [2, 12 * Math.min(b, 2.5)],
-    [3, 5.5 * Math.min(b, 3)],                       // 獨特（紫）
-    [4, (s >= 8 ? 1.8 : 0) * Math.min(b, 3.5)],      // 史詩（金）
-    [5, (s >= 15 ? 0.35 : 0) * Math.min(b, 4)],      // 傳說（橘）
-    [6, (s >= 25 ? 0.08 : 0) * Math.min(b, 4.5)],    // 神話（紅）
-    [7, (s >= 40 ? 0.015 : 0) * Math.min(b, 5)]      // 創世（暗金）
+    [0, R.commonWeight],
+    [1, R.uncommonWeight * Math.min(b, R.uncommonCap)],
+    [2, R.rareWeight * Math.min(b, R.rareCap)],
+    [3, R.uniqueWeight * Math.min(b, R.uniqueCap)],                                    // 獨特（紫）
+    [4, (s >= R.epicMinStage ? R.epicWeight : 0) * Math.min(b, R.epicCap)],            // 史詩（金）
+    [5, (s >= R.legendaryMinStage ? R.legendaryWeight : 0) * Math.min(b, R.legendaryCap)], // 傳說（橘）
+    [6, (s >= R.mythicMinStage ? R.mythicWeight : 0) * Math.min(b, R.mythicCap)],      // 神話（紅）
+    [7, (s >= R.genesisMinStage ? R.genesisWeight : 0) * Math.min(b, R.genesisCap)]    // 創世（暗金）
   ];
   return wpick(w);
 }
@@ -1366,12 +1394,14 @@ function demonSeedDropChanceForBoss(floor) {
    寶石等級 = 1 + ⌊樓層/4⌋（上限 5，隨機種類 ×2 顆）
    附魔精華 = 3 + 樓層（另附魔書 ×2）
    裝備戰利品等級 = 4 + 樓層×5，經 makeEquipment 取裝備套級（equipmentTierLevel，依 BOSS 掉落表擲骰） */
+/* 高塔通關獎勵：金幣 = 每層金幣 × 樓層（首殺加倍）；寶石階級 = 1 + ⌊樓層 ÷ 每階層數⌋；精華 = 基底 + 樓層。 */
+var TOWER_REWARD = { goldPerFloor: 200, gemFloorsPerLevel: 4, essenceBase: 3, itemLevelBase: 4, itemLevelPerFloor: 5 };
 function towerRewardFor(floor, firstClear) {
   return {
-    gold: Math.round(200 * floor * (firstClear ? 2 : 1)),
-    gemLevel: clamp(1 + Math.floor(floor / 4), 1, GEM_MAX_LEVEL),
-    essence: 3 + floor,
-    itemLevel: 4 + floor * 5
+    gold: Math.round(TOWER_REWARD.goldPerFloor * floor * (firstClear ? 2 : 1)),
+    gemLevel: clamp(1 + Math.floor(floor / TOWER_REWARD.gemFloorsPerLevel), 1, GEM_MAX_LEVEL),
+    essence: TOWER_REWARD.essenceBase + floor,
+    itemLevel: TOWER_REWARD.itemLevelBase + floor * TOWER_REWARD.itemLevelPerFloor
   };
 }
 
@@ -1534,7 +1564,18 @@ function getAffixLimits(key, itemLevel, rarityIdx, item) {
 }
 
 // 強化倍率：每 +1 全詞條數值提高固定百分比（比率見下方算式）
-function upgradeMult(item) { return 1 + 0.05 * (item.upgrade || 0); }
+/* 附魔威力：攻擊類 = (基底 + 裝備等級×每級) × 稀有度倍率 × (1 + 每寶石等級×寶石等級)；
+   防禦／功能類 = 基底 + 稀有度×每階 + 寶石等級×每寶石等級（%，有上限）。 */
+var ENCHANT_ATK = { base: 5, perLevel: 1.2, perGemLevel: 0.15 };
+var ENCHANT_DEF = { base: 8, perRarity: 4, perGemLevel: 3, cap: 60 };
+/* 分解產出：碎片 = (基底 + 等級×每級) × 稀有度分解倍率 × 隨機；金幣 = (基底 + 等級) × 稀有度分解倍率 × 倍率。 */
+var SALVAGE_SCRAP = { base: 2, perLevel: 0.6 };
+var SALVAGE_GOLD = { base: 3, mult: 10 };
+/* 戰力評分的兩個乘區（參數表「6-裝備／戰力評分」a／b）。 */
+var ITEM_SCORE_GODFORGED_PER_PASSIVE = 0.15;
+var ITEM_SCORE_PER_RARITY = 0.06;
+var UPGRADE_VALUE_MULT = 0.05;   // 參數表「6-裝備／強化倍率」：每 +1 全詞條數值提高的比率
+function upgradeMult(item) { return 1 + UPGRADE_VALUE_MULT * (item.upgrade || 0); }
 
 // 傳奇特效數值 = base + perR × (稀有度 - 傳說級)
 function passiveValueFor(key, rarity) {
@@ -1594,8 +1635,9 @@ function forgeGemSuccessRateFor(level, dustCount) {
 }
 
 // 寶石神鑄金幣費用 = 基礎值 + (素材階級 - 起始階級) × 每階增量
+var FORGE_GEM_COST = { base: 1000000, perTier: 1000000 };
 function forgeGemCost(level) {
-  return 1000000 + (level - GEM_MAX_LEVEL) * 1000000;
+  return FORGE_GEM_COST.base + (level - GEM_MAX_LEVEL) * FORGE_GEM_COST.perTier;
 }
 
 /* ---- 附魔數值 ----
@@ -1604,7 +1646,8 @@ function forgeGemCost(level) {
    防禦/功能類 = 8 + 稀有度×4 + 寶石等級×3（%，上限 60） */
 function enchantPower(item, gemLevel) {
   var r = RARITIES[item.rarity];
-  var v = (5 + item.level * 1.2) * r.mult * (1 + 0.15 * (gemLevel || 0));
+  var v = (ENCHANT_ATK.base + item.level * ENCHANT_ATK.perLevel) * r.mult *
+    (1 + ENCHANT_ATK.perGemLevel * (gemLevel || 0));
   return Math.round(v);
 }
 function enchantValueFor(item, bookKey, gemLevel) {
@@ -1615,8 +1658,9 @@ function enchantValueFor(item, bookKey, gemLevel) {
     return v;
   }
   // 抗性 / 功能類：百分比，隨稀有度與寶石成長，設定上限
-  var val = Math.round((8 + item.rarity * 4 + (gemLevel || 0) * 3) * 10) / 10;
-  return Math.min(val, 60);
+  var val = Math.round((ENCHANT_DEF.base + item.rarity * ENCHANT_DEF.perRarity +
+    (gemLevel || 0) * ENCHANT_DEF.perGemLevel) * 10) / 10;
+  return Math.min(val, ENCHANT_DEF.cap);
 }
 
 /* ---- 附魔數值的唯一讀取入口 ----
@@ -1696,13 +1740,13 @@ function itemScore(it) {
     }
   }
   if (it.passive) s *= 1.15;
-  if (it.godPassives && it.godPassives.length) s *= 1 + 0.15 * it.godPassives.length; // 神鑄創世專屬特效
+  if (it.godPassives && it.godPassives.length) s *= 1 + ITEM_SCORE_GODFORGED_PER_PASSIVE * it.godPassives.length; // 神鑄創世專屬特效
   var ens = itemEnchants(it);
   for (var ei = 0; ei < ens.length; ei++) {
     var e = ENCHANTS[ens[ei].key];
     if (e) s += (e.cat === 'atk') ? enchantValue(it, ens[ei]) * 1.2 : enchantValue(it, ens[ei]) * 2;
   }
-  s *= 1 + it.rarity * 0.06;
+  s *= 1 + it.rarity * ITEM_SCORE_PER_RARITY;
   return s;
 }
 
@@ -1721,8 +1765,8 @@ function essenceSalvageChanceForRarity(rarity) {
 function salvageResult(it, ancientEssenceBonus, essenceBonus) {
   var r = RARITIES[it.rarity];
   var out = {
-    scrap: Math.max(1, Math.round((2 + it.level * 0.6) * r.salv * rnd(0.85, 1.15))),
-    gold: Math.round((3 + it.level) * r.salv * 10),
+    scrap: Math.max(1, Math.round((SALVAGE_SCRAP.base + it.level * SALVAGE_SCRAP.perLevel) * r.salv * rnd(0.85, 1.15))),
+    gold: Math.round((SALVAGE_GOLD.base + it.level) * r.salv * SALVAGE_GOLD.mult),
     essence: 0, ancientEssence: 0
   };
   var essenceChance = essenceSalvageChanceForRarity(it.rarity) *
@@ -1747,19 +1791,23 @@ function salvageResult(it, ancientEssenceBonus, essenceBonus) {
    §7 強化 / 洗煉 / 合成 / 生產線容量
    ============================================================ */
 
-// 強化基礎成功率：低強化段必成，之後每級遞減固定百分點，並有下限
+/* 強化基礎成功率：低強化段必成（免費段），之後每級遞減固定百分點，並有下限。 */
+var UPGRADE_SUCCESS = { guaranteedUpTo: 5, full: 100, decayPerLevel: 6, floor: 30 };
 function upgradeSuccessBase(nextLevel) {
-  if (nextLevel <= 5) return 100;
-  return Math.max(30, 100 - (nextLevel - 5) * 6);
+  if (nextLevel <= UPGRADE_SUCCESS.guaranteedUpTo) return UPGRADE_SUCCESS.full;
+  return Math.max(UPGRADE_SUCCESS.floor,
+    UPGRADE_SUCCESS.full - (nextLevel - UPGRADE_SUCCESS.guaranteedUpTo) * UPGRADE_SUCCESS.decayPerLevel);
 }
-/* 強化費用（隨強化等級指數成長、隨裝備等級線性放大）：
-   金幣 = 25 × 1.45^強化等級 × (1 + 裝備等級×0.08)
-   碎片 = 8 × 1.35^強化等級 × (1 + 裝備等級×0.04) */
+/* 強化費用：係數 × 底^強化等級 × (1 + 裝備等級 × 每級)，金幣與碎片各一組。
+   ⚠️ 這裡原本的註釋寫死了係數，而且與程式碼已經不一致（註釋 1.45／0.08，實際 1.3／0.2）——
+      正是 AI_RULES 9.1 要防的情況：註釋看起來像權威來源，讀的人不會回頭核對。 */
+var UPGRADE_COST_GOLD = { coef: 25, base: 1.3, perLevel: 0.2 };
+var UPGRADE_COST_SCRAP = { coef: 8, base: 1.35, perLevel: 0.04 };
 function upgradeCost(it) {
   var lv = it.upgrade || 0;
   return {
-    gold: Math.round(25 * Math.pow(1.3, lv) * (1 + it.level * 0.2)),
-    scrap: Math.round(8 * Math.pow(1.35, lv) * (1 + it.level * 0.04))
+    gold: Math.round(UPGRADE_COST_GOLD.coef * Math.pow(UPGRADE_COST_GOLD.base, lv) * (1 + it.level * UPGRADE_COST_GOLD.perLevel)),
+    scrap: Math.round(UPGRADE_COST_SCRAP.coef * Math.pow(UPGRADE_COST_SCRAP.base, lv) * (1 + it.level * UPGRADE_COST_SCRAP.perLevel))
   };
 }
 // 實際強化成功率 = 基礎 + 「強化成功率」屬性（夾在上限內）；失敗損失半數材料
@@ -1768,14 +1816,14 @@ function upgradeSuccessChance(it) {
   return Math.min(100, upgradeSuccessBase(next) + getStats().enhanceSuccess);
 }
 
-/* 洗煉費用（整件或單詞條同價）：
-   金幣 = 40 × 1.7^稀有度 × (1 + 裝備等級×0.15)
-   精華 = 普通～傳說沿用 1 + 稀有度；神話／創世／神鑄創世固定為 9／14／20 */
+/* 洗煉費用（整件或單詞條同價）：金幣 = 係數 × 底^稀有度 × (1 + 裝備等級 × 每級)；
+   精華沿用 REROLL_ESSENCE_COST 的逐稀有度表，表上沒有的稀有度退回 1 + 稀有度。 */
+var REROLL_COST_GOLD = { coef: 40, base: 1.7, perLevel: 0.15 };
 function rerollCost(it) {
   var essence = REROLL_ESSENCE_COST[it.rarity];
   if (essence === undefined) essence = 1 + it.rarity;
   return {
-    gold: Math.round(40 * Math.pow(1.7, it.rarity) * (1 + it.level * 0.15)),
+    gold: Math.round(REROLL_COST_GOLD.coef * Math.pow(REROLL_COST_GOLD.base, it.rarity) * (1 + it.level * REROLL_COST_GOLD.perLevel)),
     essence: essence
   };
 }
@@ -1830,6 +1878,9 @@ function salvageSlotUnlockCost(currentSlots) {
    1~5 階（一般）= base × 等級 × (1 + 0.2 × (等級-1))
    6~10 階（神鑄）= 五階數值 × 2^(階級-5)（每高 1 階能力 ×2）
    linear 標記（對屬性敵人傷害／屬性傷害提升等寶石）：1~5 階 = base × 等級（線性，無超線性放大）；6 階起同樣每階 ×2 */
+/* 寶石能力數值：一般階 = 基底 × 階級 × (1 + 每階增量 × (階級-1))；
+   神鑄階（超過一般上限）以一般上限的值為底，每高一階乘以 forgeBase。 */
+var GEM_VALUE = { perLevel: 0.2, forgeBase: 2 };
 function gemStatValue(type, level) {
   var g = GEM_TYPES[type];
   if (g.linear) {
@@ -1838,10 +1889,10 @@ function gemStatValue(type, level) {
     return Math.round(g.base * level * 100) / 100;
   }
   if (level > GEM_MAX_LEVEL) {
-    var base5 = g.base * GEM_MAX_LEVEL * (1 + 0.2 * (GEM_MAX_LEVEL - 1));
-    return Math.round(base5 * Math.pow(2, level - GEM_MAX_LEVEL) * 10) / 10;
+    var base5 = g.base * GEM_MAX_LEVEL * (1 + GEM_VALUE.perLevel * (GEM_MAX_LEVEL - 1));
+    return Math.round(base5 * Math.pow(GEM_VALUE.forgeBase, level - GEM_MAX_LEVEL) * 10) / 10;
   }
-  return Math.round(g.base * level * (1 + 0.2 * (level - 1)) * 10) / 10;
+  return Math.round(g.base * level * (1 + GEM_VALUE.perLevel * (level - 1)) * 10) / 10;
 }
 /* ---- 融合寶石的屬性數值 ----
    融合寶石的數值來自整條融合樹的隨機遞迴（每次融合取 rnd(較小值, 較大值×2)），
@@ -1933,12 +1984,12 @@ function shopRefreshCost() {
   return Math.round(GEM_SHOP_REFRESH_BASE * Math.pow(resetNo, GEM_SHOP_REFRESH_EXPONENT));
 }
 
-// 寶石商店升級費用 = 基礎值 + 係數 × 商店目前等級^指數；達 GEM_SHOP_MAX_LEVEL 時為 0
-// ⚠️ 係數目前直接寫在下面的算式裡，沒有走具名常數／配置表（與同區的 shopRefreshCost 不同）
+// 寶石商店升級費用 = GEM_SHOP_UPGRADE_BASE + 商店目前等級^GEM_SHOP_UPGRADE_EXPONENT
+//                     × GEM_SHOP_UPGRADE_COEF；達 GEM_SHOP_MAX_LEVEL 時為 0
 function gemShopUpgradeCost(level) {
   level = clamp(level || 1, 1, GEM_SHOP_MAX_LEVEL);
   if (level >= GEM_SHOP_MAX_LEVEL) return 0;
-  return 100000 + Math.pow(level, 3.5) * 4000000;
+  return GEM_SHOP_UPGRADE_BASE + Math.pow(level, GEM_SHOP_UPGRADE_EXPONENT) * GEM_SHOP_UPGRADE_COEF;
 }
 
 /* ============================================================
@@ -1950,15 +2001,20 @@ var SKILL_CAST_LOCK = 0;       // 舊參數保留供參數表相容；技能不�
 var SKILL_GLOBAL_COOLDOWN = 0.4; // 技能共用冷卻（秒；固定值，不受冷卻縮減影響）
 
 // 裝載欄：參數表「技能裝載欄」＝clamp(b + ⌊等級/a⌋, b, c)；1 轉後解鎖全部上限。
+var LOADOUT_SIZE = { perLevels: 50, min: 4, base: 4, max: 10 };
 function loadoutSize() {
-  if (typeof reincarnationCount === 'function' && reincarnationCount() >= 1) return 20;
+  if (typeof reincarnationCount === 'function' && reincarnationCount() >= 1) return LOADOUT_SIZE.max;
   var lvl = (typeof G !== 'undefined' && G.player && G.player.level) ? G.player.level : 1;
-  return Math.min(20, Math.max(4, 4 + Math.floor(lvl / 50)));
+  return Math.min(LOADOUT_SIZE.max, Math.max(LOADOUT_SIZE.min,
+    LOADOUT_SIZE.base + Math.floor(lvl / LOADOUT_SIZE.perLevels)));
 }
 
 // 技能升級金幣費用 = 20000 × 當前等級 + 20^(1 + 當前等級/10)
+/* 技能升級費用 = 係數 × 等級 + 底^(1 + 等級 ÷ 除數)。 */
+var SKILL_UPGRADE_COST = { coef: 1000, base: 20, divisor: 10 };
+var SKILL_MANA_PER_LEVEL = 0.1;   // 一般技能法力消耗：每級加成比率
 function skillUpgradeCost(lv) {
-  var cost = Math.floor(1000 * lv + Math.pow(20, 1 + lv / 10));
+  var cost = Math.floor(SKILL_UPGRADE_COST.coef * lv + Math.pow(SKILL_UPGRADE_COST.base, 1 + lv / SKILL_UPGRADE_COST.divisor));
   return Math.min(5000000, cost);
 }
 
@@ -2013,7 +2069,7 @@ function skillBaseManaCost(def) {
 function skillManaCost(def, level) {
   if (!def || def.cat === 'passive') return 0;
   var lv = Math.max(1, Number(level) || 1);
-  return Math.max(0, Math.round(skillBaseManaCost(def) * (1 + 0.1 * (lv - 1))));
+  return Math.max(0, Math.round(skillBaseManaCost(def) * (1 + SKILL_MANA_PER_LEVEL * (lv - 1))));
 }
 // buff/heal 等 {base,per} 縮放通用式 = base + per × (等級-1)
 function scaleAt(def, lv) { return def.base + def.per * (lv - 1); }

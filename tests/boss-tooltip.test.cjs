@@ -40,10 +40,13 @@ test('野外怪物閃避率公式串接驗證', () => {
 
   // 確保 monsterStatsFor 內部的 dodge 使用公式並與 params 對接
   assert.match(formula, /dodge:\s*segmentedLevelGrowth\(FIELD_MONSTER_DODGE_BASE,\s*stage,\s*FIELD_MONSTER_DODGE_GROWTH\)/);
-  assert.match(formula, /m\.dodge\s*\+=\s*\d+/);
+  /* 菁英閃避加成改讀 data.js 的具名欄位（FIELD_ELITE.dodgeAdd）。
+     原本是內嵌字面值 `m.dodge += 1.5;`，套用參數表靠 numCtx 夾住那個數字改寫——
+     那種錨點會被任何一次重構無聲打斷，所以整批改成綁欄位名。 */
+  assert.match(formula, /m\.dodge\s*\+=\s*FIELD_ELITE\.dodgeAdd/);
 
   // 確保 apply_params.cjs 有對接 4-野外怪物 閃避率 及 菁英閃避累加 規則
   assert.match(applyParams, /scalar\('data',\s*'FIELD_MONSTER_DODGE_BASE',\s*'4-野外怪物',\s*'閃避率',\s*0\)/);
   assert.match(applyParams, /arrayContent\('data',\s*'FIELD_MONSTER_DODGE_GROWTH',\s*levelGrowthContent\('4-野外怪物',\s*'閃避率'\)/);
-  assert.match(applyParams, /numCtx\('formula',\s*'m\.dodge \+= ',\s*';',\s*P\('4-野外怪物',\s*'菁英倍率',\s*3\),\s*'菁英-閃避'\)/);
+  assert.match(applyParams, /objFieldML\('data',\s*'FIELD_ELITE = \{',\s*'dodgeAdd',\s*'4-野外怪物',\s*'菁英倍率',\s*3,\s*'菁英-閃避'\)/);
 });

@@ -90,7 +90,7 @@ var REINCARNATION_EXTRA_MULTIPLIERS = [0, 1.5, 2.5, 3.5, 5, 7, 10, 14, 18, 24, 3
 var REINCARNATION_EXP_BASE_ADD = [0, 500000, 1500000, 3000000, 6000000, 12000000, 24000000, 48000000, 96000000, 192000000, 384000000, 768000000, 1536000000, 3072000000, 6144000000, 12288000000, 24576000000, 49152000000, 98304000000, 196608000000, 393216000000];
 var REINCARNATION_EXP_MULTIPLIERS = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 1e11, 1e13, 1e15, 1e17, 1e19, 1e21, 1e23, 1e25, 1e27, 1e29, 1e33];
 // 2026-07-30 技能融合改造：所有技能（含融合技/被動/潛力）上限 10 級，轉生後（任一轉數）+5 = 15 級。
-var REINCARNATION_SKILL_MAX_LEVELS = [10, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15];
+var REINCARNATION_SKILL_MAX_LEVELS = [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30];
 // 融合技上限增加值：改制後融合技與一般技能共用同一上限，本表歸零（保留參數表錨點相容）。
 var REINCARNATION_FUSION_MAX_LEVELS = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
@@ -266,6 +266,20 @@ var FIELD_MONSTER_HIT_GROWTH = [{ min: 1, max: 49, rate: 0.5 },
   { min: 150, max: 199, rate: 1.4 },
   { min: 200, max: 299, rate: 1.8 },
   { min: 300, rate: 2 }];
+/* 野外怪物成長：各項 = (a + 關卡 × b) × c^(關卡-1)。金幣與經驗沒有 b（係數為 1）。
+   原本這些係數內嵌在 formula.js 的 monsterStatsFor 算式裡，套用參數表時靠正規式
+   錨定「var hp = (…」這種程式碼片段改寫；改成具名欄位後錨點綁的是欄位名。 */
+var FIELD_MONSTER_GROWTH = {
+  hpA: 20, hpB: 16, hpC: 1.06,
+  atkA: 2, atkB: 2, atkC: 1.04,
+  defA: 2, defB: 0.5, defC: 1.045,
+  goldA: 250, goldC: 1.018,
+  xpA: 120, xpC: 1.06,
+  aspd: 1
+};
+/* 野外菁英倍率（相對同階段普通怪）。BOSS 用的是同區的 FIELD_BOSS_*。 */
+var FIELD_ELITE = { hpMult: 4, atkMult: 2, rewardMult: 2, dodgeAdd: 1.5, aspd: 1 };
+var MONSTER_DEFAULT_HIT = 100;   // 怪物固定命中（怪物資料未提供 hit 時的預設；參數表「3-戰鬥核心／怪物固定戰鬥值」）
 var FIELD_MONSTER_DODGE_BASE = 5;
 var FIELD_MONSTER_DODGE_GROWTH = [{ min: 1, max: 49, rate: 0.5 },
   { min: 50, max: 99, rate: 0.65 },
@@ -492,6 +506,7 @@ var PRIMARY_STAT_EFFECTS = {
   agiCritRate: 0.00001,
   agiAspdPct: 0,
   agiEvasion: 0.0000035,
+  agiHit: 0,        // 命中率每點敏捷（原本內嵌在 formula.js 的 st.hit 算式裡）
   intMp: 2,
   intMpRegen: 0.004,
   intMatk: 1,
@@ -507,8 +522,21 @@ var DERIVED_COEF = {
   atkBase: 20, atkFlatMult: 1.2, atkReincBase: 2.5,
   matkBase: 16, matkFlatMult: 1.2, matkReincBase: 2.5,
   defBase: 3, defFlatMult: 0.75, defReincBase: 2.4,
-  mdefBase: 2, mdefFlatMult: 0.75, mdefReincBase: 2.4
+  mdefBase: 2, mdefFlatMult: 0.75, mdefReincBase: 2.4,
+  /* 以下原本是 computeStats 裡的內嵌字面值，套用參數表時靠「錨定程式碼片段」改寫
+     （例如錨點 'st.base.mp = '）。那種錨點綁的是程式碼長相，任何一次重構都可能讓它
+     0 命中，而套用參數只會安靜地少套幾個值。收進這裡之後錨點改綁欄位名。 */
+  hpBase: 500, hpPerLevel: 50,
+  mpBase: 100,
+  mpRegenBase: 5,
+  critRateBase: 5, critDmgBase: 150,
+  hitBase: 100
 };
+/* 升級所需經驗 = 係數 × 等級^次方 + 常數（再乘轉生倍率、加轉生基礎值）。
+   參數表「1-成長經驗／升級所需經驗」的 a / b / c。 */
+var XP_LEVEL_COEF = { a: 20, b: 3, c: 40 };
+/* 等級基礎四維 = 基底 +（等級-1）× 每級增加。參數表「1-成長經驗／等級基礎四維」的 a / b。 */
+var PRIMARY_STAT_GROWTH = { base: 5, perLevel: 2 };
 // 連擊數係數：連擊數 = a·ln(暴擊率−100) + b·(暴擊率−100) + c（暴擊率 ≤100% 時為 0；由參數表「2-屬性派生／連擊數」控制）
 var COMBO_HITS_COEF = { a: 0.875, b: 0.0025, c: 0.05 };
 var ASPD_BASE = 1.0;
@@ -1562,6 +1590,10 @@ var GEM_SHOP_TIER_TABLE = [
 ];
 var GEM_SHOP_REFRESH_BASE = 5000;
 var GEM_SHOP_REFRESH_EXPONENT = 2.5;
+// 升級費用（參數表「8-寶石商店／升級費用」的 a / b / c）；公式見 formula.js gemShopUpgradeCost
+var GEM_SHOP_UPGRADE_BASE = 100000;
+var GEM_SHOP_UPGRADE_EXPONENT = 3.5;
+var GEM_SHOP_UPGRADE_COEF = 4000000;
 function gemShopPrice(lv) { // 商店標價：查上方 GEM_SHOP_TABLE（刷新費用公式 shopRefreshCost → js/formula.js §8）
   for (var i = 0; i < GEM_SHOP_TABLE.length; i++) if (GEM_SHOP_TABLE[i].lv === lv) return GEM_SHOP_TABLE[i].price;
   return 0;

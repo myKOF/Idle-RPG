@@ -177,7 +177,7 @@ meditation,passive,,20,冥想,🧘,,,,,法力上限與回復提升。,"{""passiv
 說明：法力上限與回復提升。"
 ironSkin,passive,,50,鋼鐵之膚,🛡️,,,,,物理與魔法防禦提升。,"{""passive"":{""defPct"":5,""mdefPct"":5}}",,"效果：被動：物理防禦 +5%、魔法防禦 +5%
 說明：物理與魔法防禦提升。"
-fortuneFavor,passive,,50,財運亨通,🍀,,,,,金幣與經驗獲取提升。,"{""passive"":{""goldBonus"":5,""xpBonus"":5}}",,"效果：被動：金幣獲取 +5%、經驗獲取 +5%
+fortuneFavor,passive,,50,財運亨通,🍀,,,,,金幣與經驗獲取提升。,"{""passive"":{""goldBonus"":1,""xpBonus"":1}}",,"效果：被動：金幣獲取 +1%、經驗獲取 +1%
 說明：金幣與經驗獲取提升。"
 phantomEcho,passive,,50,殘響法則,🔁,,,,,每一次出手，都可能留下殘響。,"{""passiveEcho"":{""pct"":{""base"":15,""per"":1},""powerPct"":30,""delay"":2}}","{""4"":{""passiveEcho"":{""pct"":{""base"":15,""per"":1},""powerPct"":45,""delay"":2}},""8"":{""passiveEcho"":{""pct"":{""base"":15,""per"":1},""powerPct"":45,""delay"":2,""secondPct"":25,""secondPowerPct"":50}}}","效果：被動：傷害技能施放 2 秒後，15% 機率以 45% 威力回響（不再連鎖）；成功時 25% 機率追加第二響（×50% 威力）
 說明：每一次出手，都可能留下殘響。"

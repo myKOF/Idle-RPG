@@ -206,19 +206,23 @@ function objFieldMLValue(file, keyAnchor, field, value, label, scopeVar) {
     grp: 2, value: String(value), label: (label || keyAnchor) + '.' + field, scopeVar: scopeVar
   });
 }
-// 內嵌唯一片段： <prefix><num> —— prefix 需在整檔唯一
-function inline(file, prefix, value, label) {
-  edits.push({ file, re: new RegExp('(' + esc(prefix) + ')(-?[\\d.]+)'), grp: 2, value: String(value), label });
-}
-// 結構型內嵌數值：錨點只描述公式結構，不把目前程式裡的數值寫死。
-// 這樣某個參數先被套用後，同一公式中的其他參數仍能在下一次套用時找到。
-function inlineRegex(file, re, value, label) {
-  edits.push({ file, re, grp: 2, value: String(value), label });
-}
-// 前後文夾住數字： <before><num><after> —— 三段合起來需在整檔唯一（用於同一數值多處出現時精準定位）
-function numCtx(file, before, after, value, label) {
-  edits.push({ file, re: new RegExp('(' + esc(before) + ')(-?[\\d.]+)(' + esc(after) + ')'), grp: 2, value: String(value), label });
-}
+/* ---- 已移除：inline / inlineRegex / numCtx（2026-08-10）----
+   這三個 helper 是「錨定程式碼片段」的寫法：inline 綁前綴字串（'st.base.mp = '）、
+   inlineRegex 綁整條正規式、numCtx 綁前後文夾住的數字。
+
+   全部 101 條這類錨點已改成 scalar / objFieldML（綁變數名或「物件名＋欄位名」），
+   helper 本身一併刪掉，避免下一個人照著舊範例再寫一條回來。
+
+   為什麼非拿掉不可：它們綁的是「程式碼長什麼樣子」，任何一次正常重構都可能讓錨點
+   0 命中，而 apply_params 對 0 命中只在試跑輸出列一行——真正套用時會**安靜地**
+   少套那個值，程式、測試、Review 全部看不出異常。實際發生過三次：
+     - 寶石商店升級費用：把字面值抽成常數後三條錨點同時失聯
+     - 附魔攻擊基底／每級：改寫算式時被打斷，且打斷處與改動處不在同一行
+     - 技能裝載欄 4 條：改寫 loadoutSize 後一起失聯
+
+   若日後真的遇到「值無法具名」的情況（例如要改的不是數字而是整段結構），
+   請優先考慮 arrayContent，或先把值具名再接；要重新引入形狀比對，
+   請連同「為什麼這個值不能具名」一起寫在 commit 訊息裡。 */
 // 整段陣列內容重建： var NAME = [<content>]; —— content 為新的內部字串
 function arrayContent(file, varName, contentStr, label) {
   edits.push({ file, re: new RegExp('(\\b' + esc(varName) + '\\s*=\\s*\\[)([\\s\\S]*?)(\\];)'), grp: 2, value: contentStr, label: label || varName, multiGroup: true });
@@ -367,7 +371,7 @@ scalar('data', 'TOWER_HELL_SOUL_ORIGIN_PER_FLOOR', '4-高塔BOSS', '魔魂本源
 scalar('data', 'DEMON_SEED_BOSS_RATE_CAP', '4-高塔BOSS', '魔種(煉獄之塔)', 0);
 scalar('data', 'DEMON_SEED_BOSS_BASE_RATE', '4-高塔BOSS', '魔種(煉獄之塔)', 1);
 scalar('data', 'DEMON_SEED_BOSS_PER_FLOOR', '4-高塔BOSS', '魔種(煉獄之塔)', 2);
-inline('data', 'TOWER_ENRAGE_HP = ', 50, 'TOWER_ENRAGE_HP'); // 狂暴血量門檻（無對應可調 CSV 欄，固定內嵌；全塔共用）
+scalarValue('data', 'TOWER_ENRAGE_HP', 50, 'TOWER_ENRAGE_HP'); // 狂暴血量門檻（無對應可調 CSV 欄，固定內嵌；全塔共用）
 // 寶石相關
 scalar('data', 'GEM_MAX_LEVEL', '表-固定參數', '寶石一般上限 / 神鑄上限', 0);
 scalar('data', 'GEM_FORGE_MAX_LEVEL', '表-固定參數', '寶石一般上限 / 神鑄上限', 1);
@@ -375,9 +379,14 @@ scalar('data', 'GEM_COMPOSE_INPUT_COUNT', '8-寶石', '寶石合成(手動)', 0)
 scalar('data', 'GEM_FUSE_BASE_RATE', '8-寶石', '寶石融合成功率', 1);
 scalar('data', 'GEM_FUSE_RATE_DECAY', '8-寶石', '寶石融合成功率', 2);
 scalar('data', 'GEM_FUSE_MIN_RATE', '8-寶石', '寶石融合成功率', 0);
-inline('data', 'GEM_SHOP_MAX_LEVEL = ', 20, 'GEM_SHOP_MAX_LEVEL');
+scalarValue('data', 'GEM_SHOP_MAX_LEVEL', 20, 'GEM_SHOP_MAX_LEVEL');
 scalar('data', 'GEM_SHOP_REFRESH_BASE', '8-寶石商店', '手動刷新費用', 0);
 scalar('data', 'GEM_SHOP_REFRESH_EXPONENT', '8-寶石商店', '手動刷新費用', 1);
+// 升級費用：參數表早就有「8-寶石商店／升級費用」這一列（a + 等級^b × c），但一直沒接上，
+// 於是係數寫死在 formula.js 裡，改參數表不會生效。2026-08-10 補接。
+scalar('data', 'GEM_SHOP_UPGRADE_BASE', '8-寶石商店', '升級費用', 0);
+scalar('data', 'GEM_SHOP_UPGRADE_EXPONENT', '8-寶石商店', '升級費用', 1);
+scalar('data', 'GEM_SHOP_UPGRADE_COEF', '8-寶石商店', '升級費用', 2);
 // 其他 data.js 常數
 scalar('data', 'ENCHANT_ESSENCE_COST', '6-裝備', '手動附魔費用', 1);
 scalar('data', 'PART_MAX_TIER', '表-固定參數', '零件階級上限', 0);
@@ -604,11 +613,11 @@ scalar('formula', 'BASE_HP_REGEN_PCT', '2-屬性派生', '野外基礎生命恢�
 scalar('formula', 'WAVE_CLEAR_HEAL_PCT', '3-戰鬥核心', '過關回復', 0);
 scalar('formula', 'DROP_RATE_EFFECT_MULT', '5-掉落通則', '掉寶率效果折半', 0);
 scalar('formula', 'SPEED_GEAR_FIXED_BONUS', '5-掉落通則', '加速齒輪固定加成', 0);
-inline('formula', 'ANCIENT_AFFIX_SALVAGE_CHANCE = ', 50, 'ANCIENT_AFFIX_SALVAGE_CHANCE'); // 每條太古詞條的拆解判定機率
-inline('formula', 'SALVAGE_SLOT_MAX = ', 20, 'SALVAGE_SLOT_MAX');
-inline('formula', 'SALVAGE_SLOT_INITIAL = ', 10, 'SALVAGE_SLOT_INITIAL');
-inline('formula', 'SALVAGE_SLOT_UNLOCK_GOLD_BASE = ', P('7-分解槽', '分解槽解鎖費用', 0), 'SALVAGE_SLOT_UNLOCK_GOLD_BASE');
-inline('formula', 'SALVAGE_SLOT_UNLOCK_GOLD_RATE = ', P('7-分解槽', '分解槽解鎖費用', 1), 'SALVAGE_SLOT_UNLOCK_GOLD_RATE');
+scalarValue('formula', 'ANCIENT_AFFIX_SALVAGE_CHANCE', 50, 'ANCIENT_AFFIX_SALVAGE_CHANCE'); // 每條太古詞條的拆解判定機率
+scalarValue('formula', 'SALVAGE_SLOT_MAX', 20, 'SALVAGE_SLOT_MAX');
+scalarValue('formula', 'SALVAGE_SLOT_INITIAL', 10, 'SALVAGE_SLOT_INITIAL');
+scalar('formula', 'SALVAGE_SLOT_UNLOCK_GOLD_BASE', '7-分解槽', '分解槽解鎖費用', 0);
+scalar('formula', 'SALVAGE_SLOT_UNLOCK_GOLD_RATE', '7-分解槽', '分解槽解鎖費用', 1);
 scalar('formula', 'FUSE_FACTOR', '9-融合', '素材繼承比例', 0);
 scalar('formula', 'FUSION_MUTATION_CHANCE', '9-融合', '變異觸發率', 0);
 scalar('formula', 'FUSION_CD_FACTOR', '9-融合', '融合冷卻', 0);
@@ -634,32 +643,27 @@ arrayContent('formula', 'ESSENCE_SALVAGE_CHANCE_BY_RARITY',
 
 /* ---- formula.js 內嵌係數（唯一片段） ---- */
 // 升級經驗：係數 × 等級^次方 + 常數
-inline('formula', 'Math.floor((', P('1-成長經驗', '升級所需經驗', 0), 'xp-a（係數）');
-inline('formula', ' * Math.pow(l, ', P('1-成長經驗', '升級所需經驗', 1), 'xp-b（次方）');
-// xp-c（常數）：錨點不綁定次方值（次方＝xp-b 可被調整），以 Math.pow(l, <任意>) + 為前綴。
-edits.push({ file: 'formula', re: /(Math\.pow\(l, -?[\d.]+\) \+ )(-?[\d.]+)/, grp: 2, value: P('1-成長經驗', '升級所需經驗', 2), label: 'xp-c（常數）' });
+objFieldML('data', 'XP_LEVEL_COEF = {', 'a', '1-成長經驗', '升級所需經驗', 0, 'xp-a（係數）');
+objFieldML('data', 'XP_LEVEL_COEF = {', 'b', '1-成長經驗', '升級所需經驗', 1, 'xp-b（次方）');
+objFieldML('data', 'XP_LEVEL_COEF = {', 'c', '1-成長經驗', '升級所需經驗', 2, 'xp-c（常數）');
 // 基礎四維：基底 + (等級-1) × 每級增加
-inline('formula', 'var v = ', P('1-成長經驗', '等級基礎四維', 0), '四維-a（基底）');
-/* 每級增加的錨點不能綁基底值——基底一旦被前一條套用改掉，這一條就再也對不上，
-   而且是靜靜地對不上（見下方防禦減傷曲線那兩行的說明）。 */
-inlineRegex('formula', /(var v = -?[\d.]+ \+ \(level - 1\) \* )(-?[\d.]+)/, P('1-成長經驗', '等級基礎四維', 1), '四維-b（每級）');
-// 野外怪物成長：形如 var X = (a + stage [* b]) * Math.pow(c, stage - 1)。
-// b/c 錨點以正規式「萬用」掉同一行的 a（與 b）值，避免調整某一項後其它項錨點失配。
-inline('formula', 'var hp = (', P('4-野外怪物', '生命', 0), 'hp-a');
-edits.push({ file: 'formula', re: /(var hp = \([\d.]+ \+ stage \* )([\d.]+)/, grp: 2, value: P('4-野外怪物', '生命', 1), label: 'hp-b' });
-edits.push({ file: 'formula', re: /(var hp = \([\d.]+ \+ stage \* [\d.]+\) \* Math\.pow\()([\d.]+)/, grp: 2, value: P('4-野外怪物', '生命', 2), label: 'hp-c' });
-inline('formula', 'var atk = (', P('4-野外怪物', '攻擊', 0), 'atk-a');
-edits.push({ file: 'formula', re: /(var atk = \([\d.]+ \+ stage \* )([\d.]+)/, grp: 2, value: P('4-野外怪物', '攻擊', 1), label: 'atk-b' });
-edits.push({ file: 'formula', re: /(var atk = \([\d.]+ \+ stage \* [\d.]+\) \* Math\.pow\()([\d.]+)/, grp: 2, value: P('4-野外怪物', '攻擊', 2), label: 'atk-c' });
-inline('formula', 'var def = (', P('4-野外怪物', '物理防禦', 0), 'def-a');
-edits.push({ file: 'formula', re: /(var def = \([\d.]+ \+ stage \* )([\d.]+)/, grp: 2, value: P('4-野外怪物', '物理防禦', 1), label: 'def-b' });
-edits.push({ file: 'formula', re: /(var def = \([\d.]+ \+ stage \* [\d.]+\) \* Math\.pow\()([\d.]+)/, grp: 2, value: P('4-野外怪物', '物理防禦', 2), label: 'def-c' });
-inline('formula', 'var gold = (', P('4-野外怪物', '金幣', 0), 'gold-a');
-edits.push({ file: 'formula', re: /(var gold = \([\d.]+ \+ stage\) \* Math\.pow\()([\d.]+)/, grp: 2, value: P('4-野外怪物', '金幣', 2), label: 'gold-c' });
-inline('formula', 'var xp = (', P('4-野外怪物', '經驗', 0), 'xp2-a');
-edits.push({ file: 'formula', re: /(var xp = \([\d.]+ \+ stage\) \* Math\.pow\()([\d.]+)/, grp: 2, value: P('4-野外怪物', '經驗', 2), label: 'xp2-c' });
-// 野外怪物攻速：只鎖定 monsterStatsFor 內的 aspd 欄位。
-edits.push({ file: 'formula', re: /(function monsterStatsFor[\s\S]*?aspd:\s*)(-?[\d.]+)(,)/, grp: 2, value: P('4-野外怪物', '攻擊速度', 0), label: 'mob-aspd' });
+objFieldML('data', 'PRIMARY_STAT_GROWTH = {', 'base', '1-成長經驗', '等級基礎四維', 0, '四維-a（基底）');
+objFieldML('data', 'PRIMARY_STAT_GROWTH = {', 'perLevel', '1-成長經驗', '等級基礎四維', 1, '四維-b（每級）');
+// 野外怪物成長：各項 = (a + 關卡 × b) × c^(關卡-1)；係數見 data.js FIELD_MONSTER_GROWTH。
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'hpA', '4-野外怪物', '生命', 0, 'hp-a');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'hpB', '4-野外怪物', '生命', 1, 'hp-b');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'hpC', '4-野外怪物', '生命', 2, 'hp-c');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'atkA', '4-野外怪物', '攻擊', 0, 'atk-a');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'atkB', '4-野外怪物', '攻擊', 1, 'atk-b');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'atkC', '4-野外怪物', '攻擊', 2, 'atk-c');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'defA', '4-野外怪物', '物理防禦', 0, 'def-a');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'defB', '4-野外怪物', '物理防禦', 1, 'def-b');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'defC', '4-野外怪物', '物理防禦', 2, 'def-c');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'goldA', '4-野外怪物', '金幣', 0, 'gold-a');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'goldC', '4-野外怪物', '金幣', 2, 'gold-c');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'xpA', '4-野外怪物', '經驗', 0, 'xp2-a');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'xpC', '4-野外怪物', '經驗', 2, 'xp2-c');
+objFieldML('data', 'FIELD_MONSTER_GROWTH = {', 'aspd', '4-野外怪物', '攻擊速度', 0, 'mob-aspd');
 // 野外怪物命中／閃避：基礎值 + 各等級區間的每級增加值累加。
 scalar('data', 'FIELD_MONSTER_DODGE_BASE', '4-野外怪物', '閃避率', 0);
 arrayContent('data', 'FIELD_MONSTER_DODGE_GROWTH', levelGrowthContent('4-野外怪物', '閃避率'), '怪物閃避分段成長');
@@ -667,14 +671,12 @@ scalar('data', 'FIELD_MONSTER_HIT_BASE', '4-野外怪物', '命中率', 0);
 arrayContent('data', 'FIELD_MONSTER_HIT_GROWTH', levelGrowthContent('4-野外怪物', '命中率'), '怪物命中分段成長');
 
 /* ---- §2 玩家屬性派生（computeStats） ---- */
-inlineRegex('formula', /(st\.base\.hp\s*=\s*)(-?[\d.]+)(?=\s*\+\s*\(lv\s*-\s*1\)\s*\*\s*)/,
-  P('2-屬性派生', '生命上限', 0), 'hp基底');
-inlineRegex('formula', /(st\.base\.hp\s*=\s*-?[\d.]+\s*\+\s*\(lv\s*-\s*1\)\s*\*\s*)(-?[\d.]+)/,
-  P('2-屬性派生', '生命上限', 1), 'hp每級');
+objFieldML('data', 'DERIVED_COEF = {', 'hpBase', '2-屬性派生', '生命上限', 0, 'hp基底');
+objFieldML('data', 'DERIVED_COEF = {', 'hpPerLevel', '2-屬性派生', '生命上限', 1, 'hp每級');
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'vitHp', '2-屬性派生', '生命上限', 2, 'hp每耐');
-inline('formula', 'st.base.mp = ', P('2-屬性派生', '法力上限', 0), 'mp基底');
+objFieldML('data', 'DERIVED_COEF = {', 'mpBase', '2-屬性派生', '法力上限', 0, 'mp基底');
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'intMp', '2-屬性派生', '法力上限', 1, 'mp每智');
-inline('formula', 'st.mpRegen = ', P('2-屬性派生', '法力恢復/秒', 0), 'mpregen基底');
+objFieldML('data', 'DERIVED_COEF = {', 'mpRegenBase', '2-屬性派生', '法力恢復/秒', 0, 'mpregen基底');
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'intMpRegen', '2-屬性派生', '法力恢復/秒', 1, 'mpregen每智');
 // 物攻/魔攻 = (a + 定值 + b×定值×c^轉生次數 + 主屬×d) × (1+對應%)；物防/魔防另有耐力×e、共用攻擊%
 objFieldML('data', 'DERIVED_COEF = {', 'atkBase', '2-屬性派生', '物理攻擊', 0, 'atk基底a');
@@ -695,15 +697,15 @@ objFieldML('data', 'DERIVED_COEF = {', 'mdefFlatMult', '2-屬性派生', '魔法
 objFieldML('data', 'DERIVED_COEF = {', 'mdefReincBase', '2-屬性派生', '魔法防禦', 2, 'mdef轉生指數底c');
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'intMdef', '2-屬性派生', '魔法防禦', 3, 'mdef每智d');
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'vitMdef', '2-屬性派生', '魔法防禦', 4, 'mdef每耐e');
-inline('formula', 'st.critRate = capValue(', P('2-屬性派生', '暴擊率', 0), '暴擊率基底');
+objFieldML('data', 'DERIVED_COEF = {', 'critRateBase', '2-屬性派生', '暴擊率', 0, '暴擊率基底');
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'agiCritRate', '2-屬性派生', '暴擊率', 1, '暴擊率每敏');
-inline('formula', 'st.critDmg = ', P('2-屬性派生', '暴擊傷害', 0), '暴傷基底');
+objFieldML('data', 'DERIVED_COEF = {', 'critDmgBase', '2-屬性派生', '暴擊傷害', 0, '暴傷基底');
 objFieldML('data', 'COMBO_HITS_COEF = {', 'a', '2-屬性派生', '連擊數', 0, '連擊數-a');
 objFieldML('data', 'COMBO_HITS_COEF = {', 'b', '2-屬性派生', '連擊數', 1, '連擊數-b');
 objFieldML('data', 'COMBO_HITS_COEF = {', 'c', '2-屬性派生', '連擊數', 2, '連擊數-c');
 scalar('data', 'ASPD_BASE', '2-屬性派生', '攻擊速度', 0);
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'agiAspdPct', '2-屬性派生', '攻擊速度', 1, '攻速每敏');
-inline('formula', 'st.hit = 100 + st.agi * ', P('2-屬性派生', '命中率', 0), '命中每敏');
+objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'agiHit', '2-屬性派生', '命中率', 0, '命中每敏');
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'agiEvasion', '2-屬性派生', '閃避率', 0, '閃避每敏');
 objFieldML('data', 'PRIMARY_STAT_EFFECTS = {', 'strWeight', '2-屬性派生', '負重上限', 0, '負重每力');
 
@@ -745,23 +747,23 @@ scalar('formula', 'ELEMENTAL_RESISTANCE_C', '3-戰鬥核心', '六系元素抗�
    實際發生過：2026-08-02 的參數套用把常數從 60 改成 10000，下一次試跑就報
    「防減-每級：錨點匹配 0 次」，那個參數從此靜靜地套不進去。
    結構型錨點只描述公式形狀，同一條公式裡的參數彼此不會互相打死。 */
-inlineRegex('formula', /(return def \/ \(def \+ )(-?[\d.]+)/, P('3-戰鬥核心', '防禦減傷率', 0), '防減-常數');
-inlineRegex('formula', /(return def \/ \(def \+ -?[\d.]+ \+ )(-?[\d.]+)/, P('3-戰鬥核心', '防禦減傷率', 1), '防減-每級');
+scalar('formula', 'DEF_REDUCTION_CONST', '3-戰鬥核心', '防禦減傷率', 0);
+scalar('formula', 'DEF_REDUCTION_PER_LEVEL', '3-戰鬥核心', '防禦減傷率', 1);
 // 敵種傷害抗性（普通敵人/普通菁英/普通BOSS）：a/b/c；表列缺席時跳過（相容尚未含此列的舊參數表）
 if (index['3-戰鬥核心'] && index['3-戰鬥核心']['敵種傷害抗性']) {
   scalar('formula', 'ENEMY_TYPE_DMG_RED_A', '3-戰鬥核心', '敵種傷害抗性', 0);
   scalar('formula', 'ENEMY_TYPE_DMG_RED_B', '3-戰鬥核心', '敵種傷害抗性', 1);
   scalar('formula', 'ENEMY_TYPE_DMG_RED_C', '3-戰鬥核心', '敵種傷害抗性', 2);
 }
-inline('formula', 'var randomDamageMultiplier = rnd(', P('3-戰鬥核心', '傷害浮動', 0), '浮動-下');
-inlineRegex('formula', /(var randomDamageMultiplier = rnd\(-?[\d.]+, )(-?[\d.]+)/, P('3-戰鬥核心', '傷害浮動', 1), '浮動-上');
-numCtx('formula', 'dmg = Math.max(', ', Math.round(dmg))', P('3-戰鬥核心', '最低傷害下限', 0), '最低傷害');
-inline('formula', 'iceSlowChance: ', P('3-元素特效', '冰霜 特效', 0), '元素-冰');
-inline('formula', 'lightningChance: ', P('3-元素特效', '雷電 特效', 0), '元素-雷');
-inline('formula', 'poisonChance: ', P('3-元素特效', '劇毒 特效', 0), '元素-毒');
-inline('formula', 'lightCleanseChance: ', P('3-元素特效', '聖光 特效', 0), '元素-光');
-numCtx('formula', 'clamp(dCfg.dmgRed, 0, ', ')', P('3-戰鬥核心', '聖佑(神鑄)減傷上限', 0), '聖佑上限');
-inline('formula', 'GT - defender._undyingAt >= ', P('3-戰鬥核心', '不朽(神鑄)回復', 1), '不朽秒數');
+scalar('formula', 'DAMAGE_VARIANCE_MIN', '3-戰鬥核心', '傷害浮動', 0);
+scalar('formula', 'DAMAGE_VARIANCE_MAX', '3-戰鬥核心', '傷害浮動', 1);
+scalar('formula', 'DAMAGE_MIN', '3-戰鬥核心', '最低傷害下限', 0);
+objFieldML('formula', 'ELEM_PROC = {', 'iceSlowChance', '3-元素特效', '冰霜 特效', 0, '元素-冰');
+objFieldML('formula', 'ELEM_PROC = {', 'lightningChance', '3-元素特效', '雷電 特效', 0, '元素-雷');
+objFieldML('formula', 'ELEM_PROC = {', 'poisonChance', '3-元素特效', '劇毒 特效', 0, '元素-毒');
+objFieldML('formula', 'ELEM_PROC = {', 'lightCleanseChance', '3-元素特效', '聖光 特效', 0, '元素-光');
+scalar('formula', 'GODFORGED_SANCTUARY_RED_CAP', '3-戰鬥核心', '聖佑(神鑄)減傷上限', 0);
+scalar('formula', 'GODFORGED_UNDYING_COOLDOWN_SEC', '3-戰鬥核心', '不朽(神鑄)回復', 1);
 
 /* ---- §4 高塔 BOSS ---- */
 // 挑戰金幣消耗分層：CSV 以 {下限~上限,a=係數,b=指數} 逐段表示 → 重建 TOWER_CHALLENGE_COST_TIERS。
@@ -778,105 +780,104 @@ inline('formula', 'GT - defender._undyingAt >= ', P('3-戰鬥核心', '不朽(�
 }
 
 /* ---- §5 稀有度擲骰（rollRarity） ---- */
-inline('formula', 'effectiveDropRateEffect(lootBonus || 0) / ', P('5-稀有度擲骰', '權重加成 b', 0), '權重加成除數');
-inline('formula', ' + s * ', P('5-稀有度擲骰', '權重加成 b', 1), '權重加成每階');
+objFieldML('formula', 'RARITY_ROLL = {', 'bonusDivisor', '5-稀有度擲骰', '權重加成 b', 0, '權重加成除數');
+objFieldML('formula', 'RARITY_ROLL = {', 'bonusPerStage', '5-稀有度擲骰', '權重加成 b', 1, '權重加成每階');
 /* 稀有度權重表：每一列形如 [稀有度索引, 權重 * Math.min(b, 上限)]，
    高稀有度另有解鎖階段門檻 (s >= 門檻 ? 權重 : 0)。
 
    ⚠️ 「上限」的錨點不能綁權重值。綁了的話，權重一被套用，上限就再也對不上——
    而且是靜靜地對不上，那個參數從此形同從參數表消失。實測擾動全表時，
    這裡的 7 個上限全部失配。結構型錨點只認公式形狀，彼此不會互相打死。 */
-numCtx('formula', '[0, ', ']', P('5-稀有度擲骰', '普通 權重', 0), '權重-普通');
-numCtx('formula', '[1, ', ' * Math.min', P('5-稀有度擲骰', '精良 權重', 0), '權重-精良');
-inlineRegex('formula', /(\[1, -?[\d.]+ \* Math\.min\(b, )(-?[\d.]+)/, P('5-稀有度擲骰', '精良 權重', 2), '上限-精良');
-numCtx('formula', '[2, ', ' * Math.min', P('5-稀有度擲骰', '稀有 權重', 0), '權重-稀有');
-inlineRegex('formula', /(\[2, -?[\d.]+ \* Math\.min\(b, )(-?[\d.]+)/, P('5-稀有度擲骰', '稀有 權重', 2), '上限-稀有');
-numCtx('formula', '[3, ', ' * Math.min', P('5-稀有度擲骰', '獨特 權重', 0), '權重-獨特');
-inlineRegex('formula', /(\[3, -?[\d.]+ \* Math\.min\(b, )(-?[\d.]+)/, P('5-稀有度擲骰', '獨特 權重', 2), '上限-獨特');
+objFieldML('formula', 'RARITY_ROLL = {', 'commonWeight', '5-稀有度擲骰', '普通 權重', 0, '權重-普通');
+objFieldML('formula', 'RARITY_ROLL = {', 'uncommonWeight', '5-稀有度擲骰', '精良 權重', 0, '權重-精良');
+objFieldML('formula', 'RARITY_ROLL = {', 'uncommonCap', '5-稀有度擲骰', '精良 權重', 2, '上限-精良');
+objFieldML('formula', 'RARITY_ROLL = {', 'rareWeight', '5-稀有度擲骰', '稀有 權重', 0, '權重-稀有');
+objFieldML('formula', 'RARITY_ROLL = {', 'rareCap', '5-稀有度擲骰', '稀有 權重', 2, '上限-稀有');
+objFieldML('formula', 'RARITY_ROLL = {', 'uniqueWeight', '5-稀有度擲骰', '獨特 權重', 0, '權重-獨特');
+objFieldML('formula', 'RARITY_ROLL = {', 'uniqueCap', '5-稀有度擲骰', '獨特 權重', 2, '上限-獨特');
 /* 史詩以上多一層階段門檻。門檻值本身也是參數（權重欄位 1），所以連它一起萬用掉。 */
-numCtx('formula', '(s >= 8 ? ', ' : 0)', P('5-稀有度擲骰', '史詩 權重', 0), '權重-史詩');
-inlineRegex('formula', /(\[4, \(s >= [\d.]+ \? -?[\d.]+ : 0\) \* Math\.min\(b, )(-?[\d.]+)/, P('5-稀有度擲骰', '史詩 權重', 2), '上限-史詩');
-numCtx('formula', '(s >= 15 ? ', ' : 0)', P('5-稀有度擲骰', '傳說 權重', 0), '權重-傳說');
-inlineRegex('formula', /(\[5, \(s >= [\d.]+ \? -?[\d.]+ : 0\) \* Math\.min\(b, )(-?[\d.]+)/, P('5-稀有度擲骰', '傳說 權重', 2), '上限-傳說');
-numCtx('formula', '(s >= 25 ? ', ' : 0)', P('5-稀有度擲骰', '神話 權重', 0), '權重-神話');
-inlineRegex('formula', /(\[6, \(s >= [\d.]+ \? -?[\d.]+ : 0\) \* Math\.min\(b, )(-?[\d.]+)/, P('5-稀有度擲骰', '神話 權重', 2), '上限-神話');
-numCtx('formula', '(s >= 40 ? ', ' : 0)', P('5-稀有度擲骰', '創世 權重', 0), '權重-創世');
-inlineRegex('formula', /(\[7, \(s >= [\d.]+ \? -?[\d.]+ : 0\) \* Math\.min\(b, )(-?[\d.]+)/, P('5-稀有度擲骰', '創世 權重', 2), '上限-創世');
+objFieldML('formula', 'RARITY_ROLL = {', 'epicWeight', '5-稀有度擲骰', '史詩 權重', 0, '權重-史詩');
+objFieldML('formula', 'RARITY_ROLL = {', 'epicCap', '5-稀有度擲骰', '史詩 權重', 2, '上限-史詩');
+objFieldML('formula', 'RARITY_ROLL = {', 'legendaryWeight', '5-稀有度擲骰', '傳說 權重', 0, '權重-傳說');
+objFieldML('formula', 'RARITY_ROLL = {', 'legendaryCap', '5-稀有度擲骰', '傳說 權重', 2, '上限-傳說');
+objFieldML('formula', 'RARITY_ROLL = {', 'mythicWeight', '5-稀有度擲骰', '神話 權重', 0, '權重-神話');
+objFieldML('formula', 'RARITY_ROLL = {', 'mythicCap', '5-稀有度擲骰', '神話 權重', 2, '上限-神話');
+objFieldML('formula', 'RARITY_ROLL = {', 'genesisWeight', '5-稀有度擲骰', '創世 權重', 0, '權重-創世');
+objFieldML('formula', 'RARITY_ROLL = {', 'genesisCap', '5-稀有度擲骰', '創世 權重', 2, '上限-創世');
 
 /* ---- §6 裝備 ---- */
-numCtx('formula', 'return 1 + ', ' * (item.upgrade', P('6-裝備', '強化倍率', 0), '強化倍率');
+scalar('formula', 'UPGRADE_VALUE_MULT', '6-裝備', '強化倍率', 0);
 // 附魔攻擊類：v = (base + item.level * per)。base 與 per 互不硬編（任一被調整，另一錨點也不會失配）；
 // 以「+ item.level *」限定只中 §6 附魔攻那行，不誤中同檔另一處 `var v = (def.base + ...`。
-edits.push({ file: 'formula', re: /(var v = \()([\d.]+)( \+ item\.level \* [\d.]+)/, grp: 2, value: P('6-裝備', '附魔-攻擊類', 0), label: '附魔攻-基' });
-edits.push({ file: 'formula', re: /(var v = \([\d.]+ \+ item\.level \* )([\d.]+)/, grp: 2, value: P('6-裝備', '附魔-攻擊類', 1), label: '附魔攻-每級' });
-numCtx('formula', '(1 + ', ' * (gemLevel || 0))', P('6-裝備', '附魔-攻擊類', 2), '附魔攻-每寶石');
-inlineRegex('formula', /(var val = Math\.round\(\()(-?[\d.]+)(?= \+ item\.rarity \* )/, P('6-裝備', '附魔-防禦/功能類', 0), '附魔防-基');
-inline('formula', ' + item.rarity * ', P('6-裝備', '附魔-防禦/功能類', 1), '附魔防-每階');
-inline('formula', '(gemLevel || 0) * ', P('6-裝備', '附魔-防禦/功能類', 2), '附魔防-每寶石');
-inline('formula', 'Math.min(val, ', P('6-裝備', '附魔-防禦/功能類', 3), '附魔防-上限');
-inlineRegex('formula', /(scrap: Math\.max\(1, Math\.round\(\()(-?[\d.]+)(?= \+ it\.level \* )/, P('6-裝備', '分解-碎片', 0), '分解碎-基');
-inlineRegex('formula', /(scrap: Math\.max\(1, Math\.round\(\(-?[\d.]+ \+ it\.level \* )(-?[\d.]+)/, P('6-裝備', '分解-碎片', 1), '分解碎-每級');
-numCtx('formula', 'gold: Math.round((', ' + it.level) * r.salv * ', P('6-裝備', '分解-金幣', 0), '分解金-基');
-inline('formula', ') * r.salv * ', P('6-裝備', '分解-金幣', 1), '分解金-倍率');
+objFieldML('formula', 'ENCHANT_ATK = {', 'base', '6-裝備', '附魔-攻擊類', 0, '附魔攻-基');
+objFieldML('formula', 'ENCHANT_ATK = {', 'perLevel', '6-裝備', '附魔-攻擊類', 1, '附魔攻-每級');
+objFieldML('formula', 'ENCHANT_ATK = {', 'perGemLevel', '6-裝備', '附魔-攻擊類', 2, '附魔攻-每寶石');
+objFieldML('formula', 'ENCHANT_DEF = {', 'base', '6-裝備', '附魔-防禦/功能類', 0, '附魔防-基');
+objFieldML('formula', 'ENCHANT_DEF = {', 'perRarity', '6-裝備', '附魔-防禦/功能類', 1, '附魔防-每階');
+objFieldML('formula', 'ENCHANT_DEF = {', 'perGemLevel', '6-裝備', '附魔-防禦/功能類', 2, '附魔防-每寶石');
+objFieldML('formula', 'ENCHANT_DEF = {', 'cap', '6-裝備', '附魔-防禦/功能類', 3, '附魔防-上限');
+objFieldML('formula', 'SALVAGE_SCRAP = {', 'base', '6-裝備', '分解-碎片', 0, '分解碎-基');
+objFieldML('formula', 'SALVAGE_SCRAP = {', 'perLevel', '6-裝備', '分解-碎片', 1, '分解碎-每級');
+objFieldML('formula', 'SALVAGE_GOLD = {', 'base', '6-裝備', '分解-金幣', 0, '分解金-基');
+objFieldML('formula', 'SALVAGE_GOLD = {', 'mult', '6-裝備', '分解-金幣', 1, '分解金-倍率');
 
 /* ---- §7 強化 / 洗煉 ---- */
-numCtx('formula', 'return Math.max(', ', 100 - (nextLevel - 5)', P('7-強化', '基礎成功率', 0), '強化率下限');
-inline('formula', '100 - (nextLevel - 5) * ', P('7-強化', '基礎成功率', 1), '強化率遞減');
+objFieldML('formula', 'UPGRADE_SUCCESS = {', 'floor', '7-強化', '基礎成功率', 0, '強化率下限');
+objFieldML('formula', 'UPGRADE_SUCCESS = {', 'decayPerLevel', '7-強化', '基礎成功率', 1, '強化率遞減');
 /* 強化／洗煉費用：形如 <資源>: Math.round(係數 * Math.pow(底, 指數變數) * (1 + it.level * 每級))
    三個參數同在一行，錨點一律萬用掉其他兩個，否則套用其中一個就會打死另外兩個。
    以 lv / it.rarity 這個指數變數區分強化與洗煉，兩者的行形狀在其餘部分相同。 */
-inlineRegex('formula', /(gold: Math\.round\()(-?[\d.]+)(?= \* Math\.pow\([\d.]+, lv\))/, P('7-強化', '金幣費用', 0), '強化金-係數');
-inlineRegex('formula', /(gold: Math\.round\(-?[\d.]+ \* Math\.pow\()(-?[\d.]+)(?=, lv\))/, P('7-強化', '金幣費用', 1), '強化金-底');
-inlineRegex('formula', /(gold: Math\.round\(-?[\d.]+ \* Math\.pow\([\d.]+, lv\) \* \(1 \+ it\.level \* )(-?[\d.]+)/, P('7-強化', '金幣費用', 2), '強化金-每級');
-inlineRegex('formula', /(scrap: Math\.round\()(-?[\d.]+)(?= \* Math\.pow\([\d.]+, lv\))/, P('7-強化', '碎片費用', 0), '強化碎-係數');
-inlineRegex('formula', /(scrap: Math\.round\(-?[\d.]+ \* Math\.pow\()(-?[\d.]+)(?=, lv\))/, P('7-強化', '碎片費用', 1), '強化碎-底');
-inlineRegex('formula', /(scrap: Math\.round\(-?[\d.]+ \* Math\.pow\([\d.]+, lv\) \* \(1 \+ it\.level \* )(-?[\d.]+)/, P('7-強化', '碎片費用', 2), '強化碎-每級');
-inlineRegex('formula', /(gold: Math\.round\()(-?[\d.]+)(?= \* Math\.pow\([\d.]+, it\.rarity\))/, P('7-洗煉', '金幣費用', 0), '洗煉金-係數');
-inlineRegex('formula', /(gold: Math\.round\(-?[\d.]+ \* Math\.pow\()(-?[\d.]+)(?=, it\.rarity\))/, P('7-洗煉', '金幣費用', 1), '洗煉金-底');
-inlineRegex('formula', /(gold: Math\.round\(-?[\d.]+ \* Math\.pow\([\d.]+, it\.rarity\) \* \(1 \+ it\.level \* )(-?[\d.]+)/, P('7-洗煉', '金幣費用', 2), '洗煉金-每級');
+objFieldML('formula', 'UPGRADE_COST_GOLD = {', 'coef', '7-強化', '金幣費用', 0, '強化金-係數');
+objFieldML('formula', 'UPGRADE_COST_GOLD = {', 'base', '7-強化', '金幣費用', 1, '強化金-底');
+objFieldML('formula', 'UPGRADE_COST_GOLD = {', 'perLevel', '7-強化', '金幣費用', 2, '強化金-每級');
+objFieldML('formula', 'UPGRADE_COST_SCRAP = {', 'coef', '7-強化', '碎片費用', 0, '強化碎-係數');
+objFieldML('formula', 'UPGRADE_COST_SCRAP = {', 'base', '7-強化', '碎片費用', 1, '強化碎-底');
+objFieldML('formula', 'UPGRADE_COST_SCRAP = {', 'perLevel', '7-強化', '碎片費用', 2, '強化碎-每級');
+objFieldML('formula', 'REROLL_COST_GOLD = {', 'coef', '7-洗煉', '金幣費用', 0, '洗煉金-係數');
+objFieldML('formula', 'REROLL_COST_GOLD = {', 'base', '7-洗煉', '金幣費用', 1, '洗煉金-底');
+objFieldML('formula', 'REROLL_COST_GOLD = {', 'perLevel', '7-洗煉', '金幣費用', 2, '洗煉金-每級');
 scalar('formula', 'AFFIX_REROLL_LOWER_WEIGHT', '7-洗煉', '數值洗煉分段權重', 0);
 scalar('formula', 'AFFIX_REROLL_UPPER_BASE_WEIGHT', '7-洗煉', '數值洗煉分段權重', 1);
 scalar('formula', 'AFFIX_REROLL_BIAS_EXPONENT', '7-洗煉', '數值洗煉分段權重', 2);
 
 /* ---- §8 寶石 ---- */
-inline('formula', 'g.base * level * (1 + ', P('8-寶石', '能力數值(1~5階)', 0), '寶石係數a');
-inline('formula', 'g.base * GEM_MAX_LEVEL * (1 + ', P('8-寶石', '能力數值(1~5階)', 0), '寶石係數b');
-inline('formula', 'base5 * Math.pow(', P('8-寶石', '能力數值(6~10階神鑄)', 0), '寶石神鑄底');
-numCtx('formula', 'return ', ' + (level - GEM_MAX_LEVEL)', P('6-神鑄', '寶石神鑄金幣', 0), '寶石神鑄金-基');
-inline('formula', '(level - GEM_MAX_LEVEL) * ', P('6-神鑄', '寶石神鑄金幣', 0), '寶石神鑄金-每階');
-inlineRegex('formula', /(return )(-?[\d.]+)(?= \+ Math\.pow\(level, [\d.]+\) \* )/, P('8-寶石商店', '升級費用', 0), '寶店升級-基');
-inline('formula', 'Math.pow(level, ', P('8-寶石商店', '升級費用', 1), '寶店升級-次方');
-inlineRegex('formula', /(Math\.pow\(level, [\d.]+\) \* )(-?[\d.]+)/, P('8-寶石商店', '升級費用', 2), '寶店升級-係數');
+objFieldML('formula', 'GEM_VALUE = {', 'perLevel', '8-寶石', '能力數值(1~5階)', 0, '寶石每階增量');
+objFieldML('formula', 'GEM_VALUE = {', 'forgeBase', '8-寶石', '能力數值(6~10階神鑄)', 0, '寶石神鑄底');
+objFieldML('formula', 'FORGE_GEM_COST = {', 'base', '6-神鑄', '寶石神鑄金幣', 0, '寶石神鑄金-基');
+objFieldML('formula', 'FORGE_GEM_COST = {', 'perTier', '6-神鑄', '寶石神鑄金幣', 0, '寶石神鑄金-每階');
+/* 寶石商店升級費用改由 data.js 的三個具名常數承接（見上方 GEM_SHOP_UPGRADE_* 的 scalar），
+   原本這裡是三條 inline／inlineRegex 錨點，直接改寫 formula.js 算式裡的字面值。
+
+   為什麼換掉：那種錨點綁的是「程式碼長什麼樣子」。`Math.pow(level, ` 這個錨點連
+   「有沒有別的函式也這樣寫」都分不出來，而且任何人把字面值抽成常數（正是本次做的事）
+   錨點就 0 命中——套用參數表會安靜地少套三個值，只有仔細看試跑輸出才會發現。
+   改成具名常數之後，錨點綁的是變數名，與算式怎麼寫無關。 */
 
 /* ---- §9 技能 ---- */
-inlineRegex('formula', /(var cost = Math\.floor\()(-?[\d.]+)(?= \* lv \+ Math\.pow\()/, P('9-技能', '升級費用', 0), '技升-係數');
-inline('formula', ' + Math.pow(', P('9-技能', '升級費用', 1), '技升-底');
-inline('formula', '1 + lv / ', P('9-技能', '升級費用', 2), '技升-除數');
-inline('formula', 'skillBaseManaCost(def) * (1 + ', P('9-技能', '一般技能法力消耗', 0), '法力每級');
-inlineRegex('formula', /(function loadoutSize\(\)[\s\S]*?Math\.floor\(lvl\s*\/\s*)(-?[\d.]+)(?=\s*\)\s*\)\s*\)\s*;)/,
-  P('1-成長經驗', '技能裝載欄', 0), '裝載欄-每級');
-inlineRegex('formula', /(function loadoutSize\(\)[\s\S]*?return Math\.min\(-?[\d.]+\s*,\s*Math\.max\()(-?[\d.]+)(?=\s*,\s*-?[\d.]+\s*\+\s*Math\.floor\(lvl\s*\/\s*-?[\d.]+\s*\)\s*\)\s*\)\s*;)/,
-  P('1-成長經驗', '技能裝載欄', 1), '裝載欄-下限');
-inlineRegex('formula', /(function loadoutSize\(\)[\s\S]*?return Math\.min\(-?[\d.]+\s*,\s*Math\.max\(-?[\d.]+\s*,\s*)(-?[\d.]+)(?=\s*\+\s*Math\.floor\(lvl\s*\/\s*-?[\d.]+\s*\)\s*\)\s*\)\s*;)/,
-  P('1-成長經驗', '技能裝載欄', 1), '裝載欄-基準');
-inlineRegex('formula', /(function loadoutSize\(\)[\s\S]*?return Math\.min\()(-?[\d.]+)(?=\s*,\s*Math\.max\()/,
-  P('1-成長經驗', '技能裝載欄', 2), '裝載欄-上限');
+objFieldML('formula', 'SKILL_UPGRADE_COST = {', 'coef', '9-技能', '升級費用', 0, '技升-係數');
+objFieldML('formula', 'SKILL_UPGRADE_COST = {', 'base', '9-技能', '升級費用', 1, '技升-底');
+objFieldML('formula', 'SKILL_UPGRADE_COST = {', 'divisor', '9-技能', '升級費用', 2, '技升-除數');
+scalar('formula', 'SKILL_MANA_PER_LEVEL', '9-技能', '一般技能法力消耗', 0);
+objFieldML('formula', 'LOADOUT_SIZE = {', 'perLevels', '1-成長經驗', '技能裝載欄', 0, '裝載欄-每級');
+objFieldML('formula', 'LOADOUT_SIZE = {', 'min', '1-成長經驗', '技能裝載欄', 1, '裝載欄-下限');
+objFieldML('formula', 'LOADOUT_SIZE = {', 'base', '1-成長經驗', '技能裝載欄', 1, '裝載欄-基準');
+objFieldML('formula', 'LOADOUT_SIZE = {', 'max', '1-成長經驗', '技能裝載欄', 2, '裝載欄-上限');
 
 /* ---- Batch2a：補接 formula.js 內漏接的可調單值（多值行用正規式避免相依錨點失配） ---- */
-numCtx('formula', 'gold: Math.round(', ' * floor', P('5-高塔獎勵', '金幣', 0), '高塔-金幣');
-numCtx('formula', 'Math.floor(floor / ', ')', P('5-高塔獎勵', '寶石', 0), '高塔-寶石');
-numCtx('formula', 'essence: ', ' + floor', P('5-高塔獎勵', '附魔精華', 0), '高塔-附魔精華');
-edits.push({ file: 'formula', re: /(itemLevel: )([\d.]+)( \+ floor)/, grp: 2, value: P('5-高塔獎勵', '裝備戰利品等級', 0), label: '高塔-裝備等級底' });
-edits.push({ file: 'formula', re: /(itemLevel: [\d.]+ \+ floor \* )([\d.]+)/, grp: 2, value: P('5-高塔獎勵', '裝備戰利品等級', 1), label: '高塔-裝備等級係數' });
-numCtx('formula', 's *= 1 + ', ' * it.godPassives.length', P('6-裝備', '戰力評分', 0), '戰力-神鑄每條');
-numCtx('formula', 's *= 1 + it.rarity * ', ';', P('6-裝備', '戰力評分', 1), '戰力-稀有度');
+objFieldML('formula', 'TOWER_REWARD = {', 'goldPerFloor', '5-高塔獎勵', '金幣', 0, '高塔-金幣');
+objFieldML('formula', 'TOWER_REWARD = {', 'gemFloorsPerLevel', '5-高塔獎勵', '寶石', 0, '高塔-寶石');
+objFieldML('formula', 'TOWER_REWARD = {', 'essenceBase', '5-高塔獎勵', '附魔精華', 0, '高塔-附魔精華');
+objFieldML('formula', 'TOWER_REWARD = {', 'itemLevelBase', '5-高塔獎勵', '裝備戰利品等級', 0, '高塔-裝備等級底');
+objFieldML('formula', 'TOWER_REWARD = {', 'itemLevelPerFloor', '5-高塔獎勵', '裝備戰利品等級', 1, '高塔-裝備等級係數');
+scalar('formula', 'ITEM_SCORE_GODFORGED_PER_PASSIVE', '6-裝備', '戰力評分', 0);
+scalar('formula', 'ITEM_SCORE_PER_RARITY', '6-裝備', '戰力評分', 1);
 // 背包擴充費用：a + b × c^購買次數（具名常數；a/b/c＝參數 0/1/2）
 scalar('data', 'INVENTORY_EXPAND_COST_BASE', '7-容量', '背包擴充費用', 0);
 scalar('data', 'INVENTORY_EXPAND_COST_MULT', '7-容量', '背包擴充費用', 1);
 scalar('data', 'INVENTORY_EXPAND_COST_RATE', '7-容量', '背包擴充費用', 2);
-inline('formula', 'GEM_CONVERT_SLOTS = ', P('8-寶石', '寶石轉換(九宮格)', 0), 'GEM_CONVERT_SLOTS');
-inline('formula', 'GEM_CONVERT_STACK = ', P('8-寶石', '寶石轉換(九宮格)', 1), 'GEM_CONVERT_STACK');
-inline('formula', 'GEM_DISMANTLE_KEEP = ', P('8-寶石', '寶石拆解(一般)', 0), 'GEM_DISMANTLE_KEEP');
+scalar('formula', 'GEM_CONVERT_SLOTS', '8-寶石', '寶石轉換(九宮格)', 0);
+scalar('formula', 'GEM_CONVERT_STACK', '8-寶石', '寶石轉換(九宮格)', 1);
+scalar('formula', 'GEM_DISMANTLE_KEEP', '8-寶石', '寶石拆解(一般)', 0);
 
 /* ---- Batch2b：跨檔（formula/combat/item）補接 ---- */
 // 護盾（單一常數；使用者採表格值：溢出轉護盾 1%、護盾上限 10%）
@@ -884,14 +885,13 @@ scalar('formula', 'SHIELD_OVERFLOW_PCT', '3-戰鬥核心', '溢出治療轉護�
 scalar('formula', 'SHIELD_HEAL_CAP_PCT', '3-戰鬥核心', '護盾上限(治療轉化)', 0);
 scalar('formula', 'SHIELD_SKILL_CAP_PCT', '3-戰鬥核心', '護盾上限(技能給予)', 0);
 // 菁英倍率（formula.js；金幣與經驗共用參數 c）
-numCtx('formula', 'm.hp *= ', ';', P('4-野外怪物', '菁英倍率', 0), '菁英-生命');
-numCtx('formula', 'm.atk *= ', ';', P('4-野外怪物', '菁英倍率', 1), '菁英-攻擊');
-numCtx('formula', 'm.gold *= ', ';', P('4-野外怪物', '菁英倍率', 2), '菁英-金幣');
-numCtx('formula', 'm.xp *= ', ';', P('4-野外怪物', '菁英倍率', 2), '菁英-經驗');
-numCtx('formula', 'm.dodge += ', ';', P('4-野外怪物', '菁英倍率', 3), '菁英-閃避');
-numCtx('formula', 'm.aspd = ', ';', P('4-野外怪物', '菁英倍率', 4), '菁英-攻速');
+objFieldML('data', 'FIELD_ELITE = {', 'hpMult', '4-野外怪物', '菁英倍率', 0, '菁英-生命');
+objFieldML('data', 'FIELD_ELITE = {', 'atkMult', '4-野外怪物', '菁英倍率', 1, '菁英-攻擊');
+objFieldML('data', 'FIELD_ELITE = {', 'rewardMult', '4-野外怪物', '菁英倍率', 2, '菁英-獎勵');
+objFieldML('data', 'FIELD_ELITE = {', 'dodgeAdd', '4-野外怪物', '菁英倍率', 3, '菁英-閃避');
+objFieldML('data', 'FIELD_ELITE = {', 'aspd', '4-野外怪物', '菁英倍率', 4, '菁英-攻速');
 // 怪物命中 fallback（monsterAtkCfg：hit: m.hit || a；實際命中率由「4-野外怪物/命中率」與「4-高塔BOSS/命中率」的 m.hit 驅動，此處僅為保底預設值）
-numCtx('combat', 'hit: m.hit || ', ',', P('3-戰鬥核心', '怪物固定戰鬥值', 0), '怪物-命中');
+scalar('data', 'MONSTER_DEFAULT_HIT', '3-戰鬥核心', '怪物固定戰鬥值', 0);
 // 敵人爆擊（formula.js §4；2026-07-30 起依敵種區分，取代原「怪物固定戰鬥值」的暴擊a/暴傷b）
 scalar('formula', 'ENEMY_CRIT_RATE_NORMAL', '3-戰鬥核心', '敵人爆擊', 0);
 scalar('formula', 'ENEMY_CRIT_RATE_ELITE', '3-戰鬥核心', '敵人爆擊', 1);
@@ -905,7 +905,7 @@ scalar('formula', 'ELITE_DROP_MULT', '4-野外怪物', '野外菁英掉落倍率
 scalar('item', 'GEM_SHOP_REFRESH_HOURS', '8-寶石商店', '刷新週期', 0);
 // 技能點（2026-07-30 熟練度制）：a=基礎點數(skills.js SKILL_POINT_BASE，須與 player.js 初始 skills 數量一致)；b 已停用（升級不再給點）；
 // c=舊制上限常數（data.js SKILL_POINT_BUDGET_CAP，改制後僅保留相容）
-numCtx('skills', 'var SKILL_POINT_BASE = ', ';', P('1-成長經驗', '技能點總預算', 0), '技能點-基礎');
+scalar('skills', 'SKILL_POINT_BASE', '1-成長經驗', '技能點總預算', 0);
 scalar('data', 'SKILL_POINT_BUDGET_CAP', '1-成長經驗', '技能點總預算', 2);
 // 技能熟練度（2026-07-30）：經驗需求 ⌊a×L^b+c⌋；上限等級與擊殺經驗率（formula.js §9）
 scalar('formula', 'SKILL_MASTERY_XP_A', '1-成長經驗', '技能熟練度經驗需求', 0);
