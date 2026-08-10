@@ -46,6 +46,7 @@ test('裝備與背包頁由 Worker panel 投影渲染並以 Command 修改狀態
   const renderInventory = functionBody('renderInventory');
   const keywordFilter = functionBody('updateInventoryKeywordFilter');
   const detailAction = functionBody('detailAction');
+  const sendUiCommand = functionBody('sendUiCommand');
 
   assert.match(ui, /equip:\s*\['equip', 'inv', 'gems', 'header'\]/);
   assert.match(renderEquip, /uiEquipPanelSnapshot\(\)/);
@@ -73,6 +74,8 @@ test('裝備與背包頁由 Worker panel 投影渲染並以 Command 修改狀態
   }
 
   assert.match(detailAction, /if \(!it \|\| act === 'tosynth'\) return/);
+  assert.match(detailAction, /uiCommandResultError\(result, commandName\)/);
+  assert.match(sendUiCommand, /uiCommandResultError\(result, commandName\)/);
   assert.match(ui, /sendUiCommand\('settings\.set', \{ key: 'compareEq'/);
   assert.match(ui, /sendUiCommand\('factory\.setAutoEquip'/);
   assert.match(ui, /var cell = e\.target\.closest\('\.item-cell, \.eq-slot'\);[\s\S]*?hideTooltip\(\);[\s\S]*?UI\.pendingItemTooltip = null;/);
@@ -108,6 +111,58 @@ test('裝備與背包頁由 Worker panel 投影渲染並以 Command 修改狀態
   });
   assert.equal(controlCharIndex, -1, 'js/ui.js 不得含控制字元，出現在位置 ' + controlCharIndex);
   assert.doesNotMatch(renderInventory, /box\.scrollTop\s*=/);
+});
+
+test('item.upgrade status strings are not treated as UI command errors', () => {
+  const context = {};
+  vm.createContext(context);
+  vm.runInContext(
+    functionBody('uiCommandResultError') +
+      '\nthis.uiCommandResultError = uiCommandResultError;',
+    context
+  );
+
+  assert.equal(context.uiCommandResultError('ok', 'item.upgrade'), null);
+  assert.equal(context.uiCommandResultError('fail', 'item.upgrade'), null);
+  assert.equal(context.uiCommandResultError('poor', 'item.upgrade'), null);
+  assert.equal(context.uiCommandResultError('ok', 'item.equip'), 'ok');
+  assert.equal(context.uiCommandResultError('資源不足', 'item.upgrade'), '資源不足');
+  assert.equal(context.uiCommandResultError({ err: '找不到裝備' }, 'item.upgrade'), '找不到裝備');
+});
+
+test('item.upgrade status results reach floating text feedback', async () => {
+  const floatingTexts = [];
+  const result = { value: 'ok' };
+  const button = {};
+  const context = {
+    findSelItem: () => ({ id: 'item-1' }),
+    uiHeaderPanelSnapshot: () => ({ player: { gold: 1, scrap: 1 } }),
+    upgradeCost: () => ({ gold: 0, scrap: 0 }),
+    itemPendingKey: (id) => 'item:' + id,
+    sendUiCommand: () => Promise.resolve(result.value),
+    showFloatingText: (target, text, color) => floatingTexts.push({ target, text, color }),
+    hasOwnUiState: () => false,
+    reportUiCommandFailure: () => { throw new Error('upgrade status was misclassified as an error'); }
+  };
+  vm.createContext(context);
+  vm.runInContext(
+    functionBody('uiCommandResultError') + '\n' +
+      functionBody('detailAction') +
+      '\nthis.detailAction = detailAction;',
+    context
+  );
+
+  for (const [status, text, color] of [
+    ['ok', '升級成功', '#7dd3fc'],
+    ['fail', '升級失敗', '#fca5a5'],
+    ['poor', '材料不足', '#fca5a5']
+  ]) {
+    result.value = status;
+    floatingTexts.length = 0;
+    context.detailAction('upgrade', button);
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.deepEqual(floatingTexts, [{ target: button, text, color }]);
+  }
 });
 
 test('頂欄只讀 Worker header Snapshot 的資源、屬性與 DPS', () => {
