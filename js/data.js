@@ -279,6 +279,7 @@ var FIELD_MONSTER_GROWTH = {
 };
 /* 野外菁英倍率（相對同階段普通怪）。BOSS 用的是同區的 FIELD_BOSS_*。 */
 var FIELD_ELITE = { hpMult: 4, atkMult: 2, rewardMult: 2, dodgeAdd: 1.5, aspd: 1 };
+var MONSTER_DEFAULT_HIT = 100;   // 怪物固定命中（怪物資料未提供 hit 時的預設；參數表「3-戰鬥核心／怪物固定戰鬥值」）
 var FIELD_MONSTER_DODGE_BASE = 5;
 var FIELD_MONSTER_DODGE_GROWTH = [{ min: 1, max: 49, rate: 0.5 },
   { min: 50, max: 99, rate: 0.65 },

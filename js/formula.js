@@ -1394,12 +1394,14 @@ function demonSeedDropChanceForBoss(floor) {
    寶石等級 = 1 + ⌊樓層/4⌋（上限 5，隨機種類 ×2 顆）
    附魔精華 = 3 + 樓層（另附魔書 ×2）
    裝備戰利品等級 = 4 + 樓層×5，經 makeEquipment 取裝備套級（equipmentTierLevel，依 BOSS 掉落表擲骰） */
+/* 高塔通關獎勵：金幣 = 每層金幣 × 樓層（首殺加倍）；寶石階級 = 1 + ⌊樓層 ÷ 每階層數⌋；精華 = 基底 + 樓層。 */
+var TOWER_REWARD = { goldPerFloor: 200, gemFloorsPerLevel: 4, essenceBase: 3, itemLevelBase: 4, itemLevelPerFloor: 5 };
 function towerRewardFor(floor, firstClear) {
   return {
-    gold: Math.round(200 * floor * (firstClear ? 2 : 1)),
-    gemLevel: clamp(1 + Math.floor(floor / 4), 1, GEM_MAX_LEVEL),
-    essence: 3 + floor,
-    itemLevel: 4 + floor * 5
+    gold: Math.round(TOWER_REWARD.goldPerFloor * floor * (firstClear ? 2 : 1)),
+    gemLevel: clamp(1 + Math.floor(floor / TOWER_REWARD.gemFloorsPerLevel), 1, GEM_MAX_LEVEL),
+    essence: TOWER_REWARD.essenceBase + floor,
+    itemLevel: TOWER_REWARD.itemLevelBase + floor * TOWER_REWARD.itemLevelPerFloor
   };
 }
 
@@ -1633,8 +1635,9 @@ function forgeGemSuccessRateFor(level, dustCount) {
 }
 
 // 寶石神鑄金幣費用 = 基礎值 + (素材階級 - 起始階級) × 每階增量
+var FORGE_GEM_COST = { base: 1000000, perTier: 1000000 };
 function forgeGemCost(level) {
-  return 1000000 + (level - GEM_MAX_LEVEL) * 1000000;
+  return FORGE_GEM_COST.base + (level - GEM_MAX_LEVEL) * FORGE_GEM_COST.perTier;
 }
 
 /* ---- 附魔數值 ----
@@ -1788,19 +1791,23 @@ function salvageResult(it, ancientEssenceBonus, essenceBonus) {
    §7 強化 / 洗煉 / 合成 / 生產線容量
    ============================================================ */
 
-// 強化基礎成功率：低強化段必成，之後每級遞減固定百分點，並有下限
+/* 強化基礎成功率：低強化段必成（免費段），之後每級遞減固定百分點，並有下限。 */
+var UPGRADE_SUCCESS = { guaranteedUpTo: 5, full: 100, decayPerLevel: 6, floor: 30 };
 function upgradeSuccessBase(nextLevel) {
-  if (nextLevel <= 5) return 100;
-  return Math.max(30, 100 - (nextLevel - 5) * 6);
+  if (nextLevel <= UPGRADE_SUCCESS.guaranteedUpTo) return UPGRADE_SUCCESS.full;
+  return Math.max(UPGRADE_SUCCESS.floor,
+    UPGRADE_SUCCESS.full - (nextLevel - UPGRADE_SUCCESS.guaranteedUpTo) * UPGRADE_SUCCESS.decayPerLevel);
 }
-/* 強化費用（隨強化等級指數成長、隨裝備等級線性放大）：
-   金幣 = 25 × 1.45^強化等級 × (1 + 裝備等級×0.08)
-   碎片 = 8 × 1.35^強化等級 × (1 + 裝備等級×0.04) */
+/* 強化費用：係數 × 底^強化等級 × (1 + 裝備等級 × 每級)，金幣與碎片各一組。
+   ⚠️ 這裡原本的註釋寫死了係數，而且與程式碼已經不一致（註釋 1.45／0.08，實際 1.3／0.2）——
+      正是 AI_RULES 9.1 要防的情況：註釋看起來像權威來源，讀的人不會回頭核對。 */
+var UPGRADE_COST_GOLD = { coef: 25, base: 1.3, perLevel: 0.2 };
+var UPGRADE_COST_SCRAP = { coef: 8, base: 1.35, perLevel: 0.04 };
 function upgradeCost(it) {
   var lv = it.upgrade || 0;
   return {
-    gold: Math.round(25 * Math.pow(1.3, lv) * (1 + it.level * 0.2)),
-    scrap: Math.round(8 * Math.pow(1.35, lv) * (1 + it.level * 0.04))
+    gold: Math.round(UPGRADE_COST_GOLD.coef * Math.pow(UPGRADE_COST_GOLD.base, lv) * (1 + it.level * UPGRADE_COST_GOLD.perLevel)),
+    scrap: Math.round(UPGRADE_COST_SCRAP.coef * Math.pow(UPGRADE_COST_SCRAP.base, lv) * (1 + it.level * UPGRADE_COST_SCRAP.perLevel))
   };
 }
 // 實際強化成功率 = 基礎 + 「強化成功率」屬性（夾在上限內）；失敗損失半數材料
@@ -1809,14 +1816,14 @@ function upgradeSuccessChance(it) {
   return Math.min(100, upgradeSuccessBase(next) + getStats().enhanceSuccess);
 }
 
-/* 洗煉費用（整件或單詞條同價）：
-   金幣 = 40 × 1.7^稀有度 × (1 + 裝備等級×0.15)
-   精華 = 普通～傳說沿用 1 + 稀有度；神話／創世／神鑄創世固定為 9／14／20 */
+/* 洗煉費用（整件或單詞條同價）：金幣 = 係數 × 底^稀有度 × (1 + 裝備等級 × 每級)；
+   精華沿用 REROLL_ESSENCE_COST 的逐稀有度表，表上沒有的稀有度退回 1 + 稀有度。 */
+var REROLL_COST_GOLD = { coef: 40, base: 1.7, perLevel: 0.15 };
 function rerollCost(it) {
   var essence = REROLL_ESSENCE_COST[it.rarity];
   if (essence === undefined) essence = 1 + it.rarity;
   return {
-    gold: Math.round(40 * Math.pow(1.7, it.rarity) * (1 + it.level * 0.15)),
+    gold: Math.round(REROLL_COST_GOLD.coef * Math.pow(REROLL_COST_GOLD.base, it.rarity) * (1 + it.level * REROLL_COST_GOLD.perLevel)),
     essence: essence
   };
 }
@@ -1871,6 +1878,9 @@ function salvageSlotUnlockCost(currentSlots) {
    1~5 階（一般）= base × 等級 × (1 + 0.2 × (等級-1))
    6~10 階（神鑄）= 五階數值 × 2^(階級-5)（每高 1 階能力 ×2）
    linear 標記（對屬性敵人傷害／屬性傷害提升等寶石）：1~5 階 = base × 等級（線性，無超線性放大）；6 階起同樣每階 ×2 */
+/* 寶石能力數值：一般階 = 基底 × 階級 × (1 + 每階增量 × (階級-1))；
+   神鑄階（超過一般上限）以一般上限的值為底，每高一階乘以 forgeBase。 */
+var GEM_VALUE = { perLevel: 0.2, forgeBase: 2 };
 function gemStatValue(type, level) {
   var g = GEM_TYPES[type];
   if (g.linear) {
@@ -1879,10 +1889,10 @@ function gemStatValue(type, level) {
     return Math.round(g.base * level * 100) / 100;
   }
   if (level > GEM_MAX_LEVEL) {
-    var base5 = g.base * GEM_MAX_LEVEL * (1 + 0.2 * (GEM_MAX_LEVEL - 1));
-    return Math.round(base5 * Math.pow(2, level - GEM_MAX_LEVEL) * 10) / 10;
+    var base5 = g.base * GEM_MAX_LEVEL * (1 + GEM_VALUE.perLevel * (GEM_MAX_LEVEL - 1));
+    return Math.round(base5 * Math.pow(GEM_VALUE.forgeBase, level - GEM_MAX_LEVEL) * 10) / 10;
   }
-  return Math.round(g.base * level * (1 + 0.2 * (level - 1)) * 10) / 10;
+  return Math.round(g.base * level * (1 + GEM_VALUE.perLevel * (level - 1)) * 10) / 10;
 }
 /* ---- 融合寶石的屬性數值 ----
    融合寶石的數值來自整條融合樹的隨機遞迴（每次融合取 rnd(較小值, 較大值×2)），
@@ -1991,15 +2001,20 @@ var SKILL_CAST_LOCK = 0;       // 舊參數保留供參數表相容；技能不�
 var SKILL_GLOBAL_COOLDOWN = 0.4; // 技能共用冷卻（秒；固定值，不受冷卻縮減影響）
 
 // 裝載欄：參數表「技能裝載欄」＝clamp(b + ⌊等級/a⌋, b, c)；1 轉後解鎖全部上限。
+var LOADOUT_SIZE = { perLevels: 50, min: 4, base: 4, max: 20 };
 function loadoutSize() {
-  if (typeof reincarnationCount === 'function' && reincarnationCount() >= 1) return 20;
+  if (typeof reincarnationCount === 'function' && reincarnationCount() >= 1) return LOADOUT_SIZE.max;
   var lvl = (typeof G !== 'undefined' && G.player && G.player.level) ? G.player.level : 1;
-  return Math.min(20, Math.max(4, 4 + Math.floor(lvl / 50)));
+  return Math.min(LOADOUT_SIZE.max, Math.max(LOADOUT_SIZE.min,
+    LOADOUT_SIZE.base + Math.floor(lvl / LOADOUT_SIZE.perLevels)));
 }
 
 // 技能升級金幣費用 = 20000 × 當前等級 + 20^(1 + 當前等級/10)
+/* 技能升級費用 = 係數 × 等級 + 底^(1 + 等級 ÷ 除數)。 */
+var SKILL_UPGRADE_COST = { coef: 1000, base: 20, divisor: 10 };
+var SKILL_MANA_PER_LEVEL = 0.1;   // 一般技能法力消耗：每級加成比率
 function skillUpgradeCost(lv) {
-  var cost = Math.floor(1000 * lv + Math.pow(20, 1 + lv / 10));
+  var cost = Math.floor(SKILL_UPGRADE_COST.coef * lv + Math.pow(SKILL_UPGRADE_COST.base, 1 + lv / SKILL_UPGRADE_COST.divisor));
   return Math.min(5000000, cost);
 }
 
@@ -2054,7 +2069,7 @@ function skillBaseManaCost(def) {
 function skillManaCost(def, level) {
   if (!def || def.cat === 'passive') return 0;
   var lv = Math.max(1, Number(level) || 1);
-  return Math.max(0, Math.round(skillBaseManaCost(def) * (1 + 0.1 * (lv - 1))));
+  return Math.max(0, Math.round(skillBaseManaCost(def) * (1 + SKILL_MANA_PER_LEVEL * (lv - 1))));
 }
 // buff/heal 等 {base,per} 縮放通用式 = base + per × (等級-1)
 function scaleAt(def, lv) { return def.base + def.per * (lv - 1); }

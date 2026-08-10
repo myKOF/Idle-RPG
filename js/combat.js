@@ -435,7 +435,7 @@ function monsterAtkCfg(m, mult) {
         dmgType: m.magic ? 'magic' : 'phys', level: m.level,
         // 敵人爆擊：爆擊率依敵種（普通/菁英/BOSS）、爆傷共用，數值 → formula.js §4 ENEMY_CRIT_*
         critRate: enemyCritRateFor(m), critDmg: ENEMY_CRIT_DMG_PCT,
-        hit: m.hit || 100, elemAtk: ea, globalDmgRed: m.globalDmgRed || 0,
+        hit: m.hit || MONSTER_DEFAULT_HIT, elemAtk: ea, globalDmgRed: m.globalDmgRed || 0,
         isElite: !!m.elite, isBoss: !!m.isBoss, // 攻擊者敵種：供玩家的敵種傷害抗性選值
         attr: m.attr || null // 攻擊者屬性標籤：供玩家的對屬性敵人抗性選值
     };
