@@ -131,7 +131,7 @@ function onPlayerHitTaken(dmg, blocked, pEnt, floatSel, absorbed) {
    七族的引擎邏輯（含各自被動觸發鍵消費，讀 getStats().skillTriggers）。
    數值 SSOT：全部讀技能 fx JSON（經 fxVal/fxResolveDeep 解析）＋ js/data.js 通用上限常數，
    引擎本身不寫死任何技能專屬數值。掛點：castSkill（施放前置/乘算區/施放後結算）、
-   doPlayerAttack（普攻命中/擊殺）、onPlayerHitTaken（受擊）、tickDots（跳速）、onFieldKill（濺射）。 */
+   doPlayerAttack（普攻命中/擊殺）、onPlayerHitTaken（受擊）、tickStatuses（跳速）、onFieldKill（濺射）。 */
 
 /* ---- 內部冷卻（icd）小工具：時戳存 SKILL_RT.icd，擊殺類觸發皆須經此 ---- */
 function skillRtIcdReady(key) {
@@ -672,7 +672,7 @@ function skillRtApplyDotOps(targets, fx, lv, st, floatSel, parts, out) {
         if (t.hp <= 0) { t.hp = 0; out.killed = true; }
       }
     }
-    // dotHaste（萬創崩裂 M8）：目標 DoT 跳速標記（tickDots 讀取；掛敵人實體、時戳自然過期）
+    // dotHaste（萬創崩裂 M8）：目標 DoT 跳速標記（tickStatuses 讀取；掛敵人實體、時戳自然過期）
     if (fx.dotHaste) {
       t._dotHasteMult = fx.dotHaste.mult || 1;
       t._dotHasteUntil = GT + (fx.dotHaste.dur || 0);
@@ -902,7 +902,7 @@ function skillRtOnSkillCast(pEnt, sk, fx, id, lv, st, out, targets, floatSel, pa
 /* ---- echo 族：dmgWindow 快照窗累計 ----
    「窗內玩家全部傷害」統一寫入端：castSkill 施放後（out.dmg 總量，含折入的引動/重播傷害）、
    doPlayerAttack depth 0（普攻含連擊折入值）、排程器結算（回響/領域跳傷/聖痕/快照窗轟出）、
-   敵方 DoT 跳動（combat.js tickDots）、潛力技能（castPotentialSkill 本體／雷霆過載連鎖與
+   敵方 DoT 跳動（combat.js tickStatuses）、潛力技能（castPotentialSkill 本體／雷霆過載連鎖與
    持續轟擊／聖療逆轉溢傷，js/potential.js）各一次。 */
 function skillRtAccWindowDamage(dmg) {
   if (!SKILL_RT || !SKILL_RT.dmgWindows.length) return;

@@ -3,7 +3,7 @@
 
 // 野外戰鬥狀態
 var FIELD = {
-    player: null,      // { hp, mp, shield, atkCd, skillCd, effects:{}, poisonUntil, poisonDps }
+    player: null,      // { hp, mp, shield, atkCd, skillCd, effects:{}, buffs:{}, dots:[] }
     monster: null,
     monsters: [],
     respawnCd: 0,
@@ -33,7 +33,7 @@ function toggleCombatPaused() {
 }
 
 function newPlayerEntity(st) {
-    return { hp: st.hp, mp: st.mp, shield: 0, shieldMax: 0, shieldMaxVersion: SHIELD_MAX_VERSION, atkCd: 1 / st.aspd, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {}, poisonUntil: 0, poisonDps: 0, _lastStandAt: 0 };
+    return { hp: st.hp, mp: st.mp, shield: 0, shieldMax: 0, shieldMaxVersion: SHIELD_MAX_VERSION, atkCd: 1 / st.aspd, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {}, _lastStandAt: 0 };
 }
 
 // 普攻擊殺後換目標的最短間隔沿用技能 GCD；attackRate 用來換算成 atkCd 計時器單位，
@@ -157,7 +157,7 @@ function spawnFieldMonster() {
             elite: elite, isBoss: boss,
             gold: base.gold * zn.rewardMult, xp: base.xp * zn.rewardMult, // 金幣/經驗 x場景倍率
             atkCd: 1 / mAspd, effects: {}, ctrlRes: 0, _spawnAt: GT, // 控場遞減計時起點 → formula.js §3
-            poisonUntil: 0, poisonDps: 0, shield: 0, buffs: {}, dots: []
+            shield: 0, buffs: {}, dots: []
         });
     }
     // 站位：隨機配到 4×4 棋盤的空格（BOSS 佔 2×2）；棋盤放不下的敵人直接捨棄 → js/battlefield.js
@@ -229,8 +229,13 @@ function hasConfiguredHigherZone(zoneKey) {
     return false;
 }
 
-/* ---- 效果（暈眩/減速/中毒/淨化） ----
-   攻擊頻率控制類套用「控場遞減」（controlDurationFactor → formula.js §3）；
+/* ---- 持續型效果的低階寫入器（控場 / 持續傷害 / 增益減益） ----
+   授權入口是 js/status.js 的 applyStatus（狀態表是唯一的狀態定義來源）；
+   本節只負責「戰鬥規則」——控場遞減、BOSS 控制免疫、無敵免疫、同名取高——
+   以及把實例寫進 effects／dots／buffs 三個索引。每筆實例都帶 sid 指回狀態表，
+   舊呼叫點沒帶 sid 時由鍵值／名稱反查補上（statusIdByKey／statusIdByName）。 */
+
+/* 攻擊頻率控制類套用「控場遞減」（controlDurationFactor → formula.js §3）；
    成功回傳實際持續秒數（供顯示），遞減歸零或 BOSS 免疫回傳 false。 */
 function applyEffect(ent, key, dur) {
     if (key !== 'invuln' && effectActive(ent, 'invuln')) return false; // 無敵：免疫負面效果（暈眩/減速等）
@@ -246,12 +251,12 @@ function applyEffect(ent, key, dur) {
 function effectActive(ent, key) { return (ent.effects[key] || 0) > GT; }
 // 減速攻速倍率公式 slowFactor → js/formula.js §3
 
+/* 中毒不再自成一套（原 poisonDps／poisonUntil 已移除）：它就是狀態表的 poison，
+   與其他持續傷害走同一條 dots 索引、同一支 tickStatuses。 */
 function applyPoison(ent, dps, dur) {
-    if (effectActive(ent, 'invuln')) return; // 無敵：免疫中毒
-    ent.poisonDps = Math.max(ent.poisonDps || 0, dps);
-    ent.poisonUntil = GT + dur;
+    return applyDot(ent, dps, dur, '中毒', 'poison');
 }
-function poisonActive(ent) { return (ent.poisonUntil || 0) > GT; }
+function poisonActive(ent) { return statusActive(ent, 'poison'); }
 // 直接扣血的持續傷害原本只更新 HP，沒有留下戰鬥日誌，導致敵人可能在沒有任何
 // 傷害行的情況下死亡。只對敵方實體記錄，避免把玩家承受的 DoT 誤報成玩家輸出。
 function logEnemyDirectDamage(ent, source, damage, killed) {
@@ -261,27 +266,28 @@ function logEnemyDirectDamage(ent, source, damage, killed) {
     blog('☠️ ' + target + ' 受到' + (source || '直接傷害') + '，' + shown +
         ' 傷害' + (killed ? '（擊殺）' : '') + '。', 'log-player-skill', 'combat');
 }
-// 中毒跳傷（無視防禦）；回傳是否致死
-function tickPoison(ent, dt) {
-    if (effectActive(ent, 'invuln')) return false; // 無敵：持續傷害不生效
-    if (!poisonActive(ent)) return false;
-    var legendaryPoisonMult = (ent.maxHp && typeof legendaryDotDamageMultiplier === 'function')
-        ? legendaryDotDamageMultiplier(ent) : 1;
-    var poisonDamage = ent.poisonDps * dt * globalDamageMultiplierForEntity(ent) * legendaryPoisonMult;
-    poisonDamage = applyEnemyHpDamage(ent, poisonDamage);
-    logEnemyDirectDamage(ent, '中毒', poisonDamage, ent.hp <= 0);
-    if (ent.hp <= 0) { ent.hp = 0; return true; }
-    return false;
-}
+/* 淨化：只清除負面狀態（狀態表 kind＝debuff／ctrl），不誤傷自身增益。
+   改造前是把 effects 整包清空，連潛力技能的「無敵」也會被自己的聖光淨化打掉。 */
 function cleanse(ent) {
-    ent.effects = {};
-    ent.poisonUntil = 0;
+    if (!ent) return;
+    var k;
+    if (ent.effects) {
+        for (k in ent.effects) {
+            if (statusIsDebuff(statusIdByKey(k)) || k === 'stun' || k === 'slow') ent.effects[k] = 0;
+        }
+    }
+    if (ent.buffs) {
+        for (k in ent.buffs) {
+            var cb = ent.buffs[k];
+            if (cb && statusIsDebuff(cb.sid || statusIdByKey(k))) cb.until = 0;
+        }
+    }
     ent.dots = [];
 }
 
 /* ---- 增益 / 減益（技能系統用） ----
    攻速類減益同樣套用「控場遞減」；成功回傳實際持續秒數，歸零/免疫回傳 false。 */
-function applyBuff(ent, key, val, dur) {
+function applyBuff(ent, key, val, dur, sid) {
     if ((key === 'atkDown' || key === 'defDown') && effectActive(ent, 'invuln')) return false; // 無敵：免疫敵方減益
     if (isBossControlImmune(ent) && isAttackFrequencyControlKey(key)) return false;
     if (isAttackFrequencyControlKey(key)) {
@@ -291,7 +297,8 @@ function applyBuff(ent, key, val, dur) {
     if (!ent.buffs) ent.buffs = {};
     // 45 新技能基建（buffExtend 族）：補存原始持續 dur 與累計延長 ext（累計延長 ≤ dur × BUFF_EXTEND_CAP_PCT%）；
     // 重新施放＝全新一筆，ext 歸零；既有讀取（val/until）不受影響。
-    ent.buffs[key] = { val: val, until: GT + dur, dur: dur, ext: 0 };
+    // sid＝狀態表 ID（未帶時由增益鍵反查），供 UI 取狀態圖標與名稱。
+    ent.buffs[key] = { val: val, until: GT + dur, dur: dur, ext: 0, sid: sid || statusIdByKey(key) };
     return dur;
 }
 function buffVal(ent, key) {
@@ -305,12 +312,21 @@ function activeBuffKeys(ent) {
     return out;
 }
 
-/* ---- 通用持續傷害（流血/燃燒/詛咒…；同名疊加取高） ---- */
-function applyDot(ent, dps, dur, name) {
+/* ---- 持續傷害（流血/燃燒/中毒/詛咒…；同名疊加取高） ----
+   dps＝每秒傷害；interval＝作用間隔（秒，來自狀態表；0＝不分段連續結算）。
+   儲存採 dps 而非「每跳量」，既有的 DoT 引爆（剩餘總值＝dps×剩餘秒數）、轉移與延長
+   機制才不必改算法；每跳實際傷害＝dps×interval，由 tickStatuses 結算。 */
+function applyDot(ent, dps, dur, name, sid, interval) {
     if (effectActive(ent, 'invuln')) return; // 無敵：免疫持續傷害
     if (typeof legendaryInstantBurn === 'function') {
         var instantBurn = legendaryInstantBurn(ent, dps, dur, name);
         if (instantBurn !== null) return instantBurn;
+    }
+    sid = sid || statusIdByName(name);
+    // 未指定間隔就吃狀態表；表上查不到（融合技隨機命名的 DoT）採連續結算，行為與改造前相同
+    if (interval === undefined || interval === null) {
+        var sdef = statusDef(sid);
+        interval = sdef ? sdef.interval : 0;
     }
     if (!ent.dots) ent.dots = [];
     for (var i = 0; i < ent.dots.length; i++) {
@@ -320,46 +336,67 @@ function applyDot(ent, dps, dur, name) {
             // 45 新技能基建（buffExtend 族）：重新塗抹＝原始持續刷新、累計延長歸零
             ent.dots[i].dur = dur;
             ent.dots[i].ext = 0;
+            ent.dots[i].sid = sid;
+            ent.dots[i].interval = interval;
             return;
         }
     }
     // 45 新技能基建（buffExtend 族）：補存原始持續 dur 與累計延長 ext（延長上限依據）
-    ent.dots.push({ dps: dps, until: GT + dur, name: name, dur: dur, ext: 0 });
+    // acc＝距離下次作用已累積的秒數
+    ent.dots.push({ dps: dps, until: GT + dur, name: name, dur: dur, ext: 0, sid: sid, interval: interval, acc: 0 });
 }
 function hasDots(ent) {
-    if (poisonActive(ent)) return true;
-    if (!ent.dots) return false;
+    if (!ent || !ent.dots) return false;
     for (var i = 0; i < ent.dots.length; i++) if (ent.dots[i].until > GT) return true;
     return false;
 }
-// 回傳是否致死
-function tickDots(ent, dt) {
+/* 持續傷害結算：依各狀態的「作用間隔」分段跳傷；回傳是否致死。
+   間隔 0＝連續結算。到期時把不足一次間隔的餘額補跳，總傷害維持 dps×持續時間
+   （＝改造前的總量，只是改成一跳一跳給），本次改造對數值平衡因此是中性的。 */
+function tickStatuses(ent, dt) {
     if (effectActive(ent, 'invuln')) return false; // 無敵：持續傷害不生效
     if (!ent.dots || !ent.dots.length) return false;
+    // 45 新技能（dotSynergy 族）：DoT 跳動加速——僅對敵方實體生效（以 maxHp 欄位辨識敵人；
+    // 玩家實體無 maxHp，所受 DoT 不受影響）。dotHaste＝目標旗標（時戳自然過期）、
+    // passiveDotHaste（蝕骨頻率）＝全域倍率；持續時間不變，跳得更密＝等效總傷提高。
+    var dtEff = dt;
+    if (ent.maxHp) {
+        if ((ent._dotHasteUntil || 0) > GT && ent._dotHasteMult > 0) dtEff *= ent._dotHasteMult;
+        var _dotTrig = (typeof getStats === 'function') ? getStats().skillTriggers : null;
+        if (_dotTrig && _dotTrig.passiveDotHaste && _dotTrig.passiveDotHaste.mult > 0) {
+            dtEff *= _dotTrig.passiveDotHaste.mult;
+        }
+    }
     var total = 0;
     var dotNames = [];
-    ent.dots = ent.dots.filter(function (d) { return d.until > GT; });
+    var live = [];
     for (var i = 0; i < ent.dots.length; i++) {
-        total += ent.dots[i].dps;
-        if (ent.dots[i].name && dotNames.indexOf(ent.dots[i].name) < 0) dotNames.push(ent.dots[i].name);
-    }
-    if (total > 0) {
-        // 45 新技能（dotSynergy 族）：DoT 跳動加速——僅對敵方實體生效（以 maxHp 欄位辨識敵人；
-        // 玩家實體無 maxHp，所受 DoT 不受影響）。dotHaste＝目標旗標（時戳自然過期）、
-        // passiveDotHaste（蝕骨頻率）＝全域倍率；持續時間不變，等效總傷隨跳速提高。
-        var dtEff = dt;
-        if (ent.maxHp) {
-            if ((ent._dotHasteUntil || 0) > GT && ent._dotHasteMult > 0) dtEff *= ent._dotHasteMult;
-            var _dotTrig = (typeof getStats === 'function') ? getStats().skillTriggers : null;
-            if (_dotTrig && _dotTrig.passiveDotHaste && _dotTrig.passiveDotHaste.mult > 0) {
-                dtEff *= _dotTrig.passiveDotHaste.mult;
-            }
+        var d = ent.dots[i];
+        var expired = !(d.until > GT);
+        var elapsed = (d.acc || 0) + dtEff;
+        var seconds = 0; // 本幀實際結算的秒數
+        if (!(d.interval > 0)) {
+            seconds = expired ? 0 : dtEff;              // 不分段：連續結算
+        } else {
+            while (elapsed >= d.interval) { seconds += d.interval; elapsed -= d.interval; }
+            if (expired && elapsed > 0) { seconds += elapsed; elapsed = 0; } // 到期補跳餘額
         }
+        d.acc = expired ? 0 : elapsed;
+        if (seconds > 0 && d.dps > 0) {
+            total += d.dps * seconds;
+            if (d.name && dotNames.indexOf(d.name) < 0) dotNames.push(d.name);
+        }
+        if (!expired) live.push(d);
+    }
+    ent.dots = live;
+    if (total > 0) {
         var legendaryDotMult = (ent.maxHp && typeof legendaryDotDamageMultiplier === 'function')
             ? legendaryDotDamageMultiplier(ent) : 1;
-        var dotDealt = total * dtEff * globalDamageMultiplierForEntity(ent) * legendaryDotMult;
+        var dotDealt = total * globalDamageMultiplierForEntity(ent) * legendaryDotMult;
         dotDealt = applyEnemyHpDamage(ent, dotDealt);
-        logEnemyDirectDamage(ent, '持續傷害' + (dotNames.length ? '（' + dotNames.join('、') + '）' : ''), dotDealt, ent.hp <= 0);
+        // 單一狀態直接報狀態名（例：「受到中毒」），多個才合併報「持續傷害（流血、燃燒）」
+        logEnemyDirectDamage(ent, dotNames.length === 1 ? dotNames[0]
+            : '持續傷害' + (dotNames.length ? '（' + dotNames.join('、') + '）' : ''), dotDealt, ent.hp <= 0);
         // 45 新技能（echo 族）：dmgWindow「窗內玩家全部傷害」含你的 DoT 跳動——
         // 僅敵方實體計入（玩家所受 DoT 非玩家輸出，不計）
         if (ent.maxHp && typeof skillRtAccWindowDamage === 'function') skillRtAccWindowDamage(dotDealt);
@@ -741,7 +778,7 @@ function fieldTick(dt) {
     tickSkillCds(p, dt); // 潛力技能冷卻共用 skillCds（鍵 'potential:<id>'），一併在此遞減
 
     // 持續傷害（玩家：中毒 / 詛咒等）
-    if (tickPoison(p, dt) || tickDots(p, dt)) { onPlayerFieldDeath(); return; }
+    if (tickStatuses(p, dt)) { onPlayerFieldDeath(); return; }
 
     var clearedDeaths = tickFieldDeathClears(dt);
     var debugFieldTick = combatDebugFieldSnapshot(fieldEnemyList());
@@ -797,7 +834,7 @@ function fieldTick(dt) {
 
     // 持續傷害（怪物：中毒 / 流血 / 燃燒 / 詛咒）
     for (var di = 0; di < enemies.length; di++) {
-        if (tickPoison(enemies[di], dt) || tickDots(enemies[di], dt)) onFieldKill(enemies[di]);
+        if (tickStatuses(enemies[di], dt)) onFieldKill(enemies[di]);
     }
     combatDebugAuditFieldDeaths(debugFieldTick, 'poison/dots');
     enemies = liveFieldEnemies();

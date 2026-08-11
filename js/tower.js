@@ -146,8 +146,8 @@ function towerTick(dt) {
   tickSkillCds(p, dt); // 潛力技能冷卻共用 skillCds（鍵 'potential:<id>'），一併在此遞減
 
   // 持續傷害
-  if (tickPoison(p, dt) || tickDots(p, dt)) { endTowerFight(false, 'death'); return; }
-  if (tickPoison(b, dt) || tickDots(b, dt)) { endTowerFight(true); return; }
+  if (tickStatuses(p, dt)) { endTowerFight(false, 'death'); return; }
+  if (tickStatuses(b, dt)) { endTowerFight(true); return; }
 
   // 潛力【聖療逆轉】溢出傷害（持續效果）
   if (typeof tickPotentialRegen === 'function' && tickPotentialRegen(p, st, dt, [b], 'tb-float')) { endTowerFight(true); return; }
