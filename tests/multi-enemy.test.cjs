@@ -166,6 +166,65 @@ test('出怪依階段敵種選用對應的數量表', () => {
   }
 });
 
+test('敵人生成當輪立即出手，即使被玩家秒殺也至少完成一次攻擊', () => {
+  const context = loadCombatContext();
+  const events = [];
+  context.G = {
+    player: { gold: 0 },
+    stage: { current: 1, best: 1, kills: 0, autoAdvance: true, zone: 'desert' },
+    tower: { active: false }
+  };
+  context.FIELD = {
+    player: context.newPlayerEntity({ hp: 100, mp: 0, aspd: 1 }),
+    monster: null,
+    monsters: [],
+    respawnCd: 0,
+    reviveCd: 0,
+    dpsWindow: [],
+    _waveClearPending: false,
+    mapComplete: false
+  };
+  context.FIELD.player.atkCd = 0;
+  context.getStats = () => ({
+    hp: 100, mp: 0, aspd: 1, moveSpeed: 0,
+    passives: {}, skillTriggers: {}
+  });
+  context.playerHpRegenPerSec = () => 0;
+  context.playerMpRegenPerSec = () => 0;
+  context.tickSkillCds = () => {};
+  context.pickAndCastSkill = () => null;
+  context.rollFieldEnemyCount = () => 1;
+  context.isFieldBossStage = () => false;
+  context.isFieldBossDefeated = () => false;
+  context.isEliteStage = () => false;
+  context.monsterStatsFor = () => ({
+    level: 1, hp: 10, atk: 10, def: 0, mdef: 0, aspd: 100, dodge: 0, hit: 100, gold: 0, xp: 0
+  });
+  context.currentZoneDef = () => ({
+    pool: [{ name: '測試怪', emoji: '👾', id: 'test', magic: false, aspdMult: 1 }],
+    enemyTable: [], hpMult: 1, atkMult: 1, defMult: 1, aspdMult: 1, rewardMult: 1
+  });
+  context.doMonsterAttack = (enemy, player) => {
+    events.push('enemy');
+    player.hp -= 1;
+    return { dmg: 1 };
+  };
+  context.doPlayerAttack = (player, enemy) => {
+    events.push('player');
+    enemy.hp = 0;
+    return { killed: true };
+  };
+  // 避免本測試進入完整掉落結算；只保留「玩家已在同一輪擊殺敵人」的狀態。
+  context.onFieldDeaths = () => {
+    context.FIELD.monsters.forEach((enemy) => { if (enemy.hp <= 0) enemy._rewarded = true; });
+  };
+
+  context.fieldTick(0.1);
+
+  assert.deepEqual(events, ['enemy', 'player'], '新敵人應先在生成當輪攻擊，再被玩家擊殺');
+  assert.equal(context.FIELD.player.hp, 99, '即使敵人被秒殺，玩家仍應承受首擊');
+});
+
 test('多敵人逐一擊殺時各自結算經驗與掉落，全部擊殺後才推進', () => {
   const context = loadCombatContext();
   const xp = [];
