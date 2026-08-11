@@ -40,5 +40,6 @@ test('測試服控制台提供啟動、列表、開啟與關閉介面', () => {
   assert.match(html, /開啟瀏覽器/);
   assert.match(batch, /test_server_manager\.cjs/);
   assert.match(batch, /--launch-manager/);
-  assert.match(batch, /-notmatch '--server'/);
+  assert.match(batch, /Invoke-RestMethod -Uri \('http:\/\/127\.0\.0\.1:' \+ \$port \+ '\/api\/servers'\)/);
+  assert.doesNotMatch(batch, /Get-CimInstance Win32_Process[\s\S]*test_server_manager\\\.cjs/);
 });

@@ -1511,6 +1511,31 @@ function floatLayerAttached(layer) {
   return attached;
 }
 
+function enemyFloatTargetPresent(elId, ent, battleSnapshot) {
+  var field = battleSnapshot && battleSnapshot.field;
+  var enemies = null;
+  if (field) {
+    enemies = Array.isArray(field.monsters) ? field.monsters : (field.monster ? [field.monster] : []);
+  } else if (typeof fieldEnemyList === 'function') {
+    enemies = fieldEnemyList();
+  }
+  if (!enemies) return !!ent;
+  for (var i = 0; i < enemies.length; i++) {
+    var enemy = enemies[i];
+    if (!enemy) continue;
+    if (enemy === ent || (enemy.floatSel && enemy.floatSel === elId)) return true;
+  }
+  return false;
+}
+
+function enemyFloatTargetState(elId, ent, battleSnapshot) {
+  if (!elId || elId.indexOf('mv-float-') !== 0) return 'ready';
+  var targetLayer = $id(elId);
+  var targetCard = targetLayer && targetLayer.closest ? targetLayer.closest('.enemy-card') : null;
+  if (targetCard && floatLayerAttached(targetLayer)) return 'ready';
+  return enemyFloatTargetPresent(elId, ent, battleSnapshot) ? 'pending' : 'stale';
+}
+
 /* 浮字寬度：同樣的 class 與同樣的文字，寬度一定一樣。
    實測 103 次 offsetParent 之外還有 103 次 offsetWidth，全是為了知道「這串字多寬」。
    快取隨版面版本一起作廢（介面縮放會改變量到的像素數），並設上限避免無限成長。 */
@@ -1561,8 +1586,12 @@ function flushPendingEnemyFloats(battleSnapshot) {
   var keep = [];
   for (var i = 0; i < PENDING_ENEMY_FLOATS.length; i++) {
     var item = PENDING_ENEMY_FLOATS[i];
+    var targetState = enemyFloatTargetState(item.elId, item.ent, battleSnapshot);
+    if (targetState === 'stale') continue;
     var layer = $id(item.elId);
-    if (!floatLayerAttached(layer)) {
+    var retainedLayer = item.elId && item.elId.indexOf('mv-float-') === 0
+      ? ($id('mv-float-retained') || layer) : layer;
+    if (targetState !== 'ready' || !floatLayerAttached(retainedLayer)) {
       keep.push(item);
       continue;
     }
@@ -1897,6 +1926,14 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
   }
   var enemyHitFloat = isEnemyHitFloat(elId, cls);
   var targetLayer = $id(elId);
+  if (enemyHitFloat && elId && elId.indexOf('mv-float-') === 0) {
+    var targetState = enemyFloatTargetState(elId, ent, battleSnapshot);
+    if (targetState === 'stale') return;
+    if (targetState !== 'ready') {
+      queuePendingEnemyFloat(elId, text, cls, damageValue, ent);
+      return;
+    }
+  }
   // 敵方傷害字從建立起就掛在敵方戰鬥容器的持久層，不再掛在會隨死亡
   // 卡片重建的 enemy-card 內。targetLayer 僅用來把數字定位在原目標附近。
   var useRetainedEnemyLayer = enemyHitFloat && elId && elId.indexOf('mv-float-') === 0;

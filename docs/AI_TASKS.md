@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Codex：修正測試服控制台重開時誤關閉其他 AI 測試服（2026-08-11）
+
+- Status: Completed
+- Owner: Codex
+- Task: 重新開啟測試服控制台時，只關閉舊控制台程序，不得因掃描 `test_server_manager.cjs` 而連帶終止 Claude、Codex、Antigravity 已啟動的測試服。
+- 允許修改: `啟動測試服.bat`、`tests/test-server-manager.test.cjs`、`docs/AI_TASKS.md`
+- 禁止修改: 遊戲核心、測試服服務端實作與其他 AI 進行中任務檔案。
+- 驗收方式: 啟動器保留以 `/api/servers` 辨識並關閉舊控制台；移除廣泛終止 `test_server_manager.cjs` 程序的行為；定向測試與 build 通過。
+- 前置依賴: 無。
+- Verification: `node --test tests/test-server-manager.test.cjs tests/start-test-server.test.cjs` 2/2；`node --check tools/test_server_manager.cjs`；`npm.cmd run build` 259/259。完整 `npm.cmd test` 1236/1239，3 項為本次範圍外既存失敗。
+- 完成內容: 移除批次檔依命令列廣泛終止 `test_server_manager.cjs` 的程序掃描，只保留以控制台 API 辨識舊控制台並關閉的流程；補上回歸斷言，確保不會恢復誤殺行為。
+- 已知風險: 尚未以三個 AI 同時開啟測試服後實際重跑批次檔；需在使用者環境重開控制台確認舊版與新版測試服都仍列出。
+- 後續接手者: 使用者合併至整合分支；必要時進行實機重開控制台驗證。
+
 ## Claude：菁英每波數量改為逐張地圖設定（2026-08-10）
 
 - Status: 已完成

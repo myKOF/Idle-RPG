@@ -125,15 +125,21 @@ test('Worker 飄字以 elId 呈現，舊路徑也保留已離場目標的浮字'
       { elId: 'mv-float-0', text: '10', cls: 'dmg', damageValue: 10, ent: null },
       { elId: 'mv-float-1', text: '20', cls: 'dmg', damageValue: 20, ent: staleEnemy }
     ],
-    fieldEnemyList: () => [{ id: 'current' }],
-    $id: () => ({ offsetParent: {} }),
+    $id: () => ({ offsetParent: {}, closest: () => ({}) }),
     // 圖層可見性判斷已抽成 floatLayerAttached（同一幀內快取 offsetParent）
     floatLayerAttached: (layer) => !!layer && layer.offsetParent !== null,
     animatePendingEnemyKill: (...args) => calls.push(['animate', ...args]),
     floatText: (...args) => calls.push(['float', ...args])
   };
-  vm.runInNewContext(functionBody('flushPendingEnemyFloats'), context);
-  const battleSnapshot = { stats: { comboHits: 2, aspd: 3 } };
+  vm.runInNewContext([
+    functionBody('enemyFloatTargetPresent'),
+    functionBody('enemyFloatTargetState'),
+    functionBody('flushPendingEnemyFloats')
+  ].join('\n'), context);
+  const battleSnapshot = {
+    stats: { comboHits: 2, aspd: 3 },
+    field: { monsters: [{ floatSel: 'mv-float-0' }, { floatSel: 'mv-float-1' }] }
+  };
   context.flushPendingEnemyFloats(battleSnapshot);
 
   assert.deepEqual(calls, [
