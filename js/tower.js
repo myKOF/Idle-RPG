@@ -35,7 +35,7 @@ function makeBoss(floor) {
     atkCd: 1.5, effects: {}, ctrlRes: bs.ctrlRes,
     elite: false, isBoss: true, towerBoss: true, xp: bs.xp,
     elem: bd.elem, attr: bd.attr || bd.elem || null, elemAtk: null, resist: {}, stunCount: 0,
-    poisonUntil: 0, poisonDps: 0, shield: 0, buffs: {}, dots: []
+    shield: 0, buffs: {}, dots: []
   };
   if (bd.elem) {
     b.elemAtk = {};
