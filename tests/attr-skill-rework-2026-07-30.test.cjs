@@ -181,33 +181,41 @@ test('穿透上限已取消（STAT_CAPS = 0）', () => {
 });
 
 test('忽略防禦% = 穿透倍率 ÷ (穿透倍率 + a)，且參數可調', () => {
-  /* ⚠️ 這支測試原本把 a 釘死成 1.5，連帶把五個曲線對照點（40% / 62.5% / 70% /
-     76.92% / 86.96%）也釘死。那些都是「a = 1.5 時的樣子」，不是公式本身——
-     2026-08-06 的平衡調整把 a 改成 0.75，五個斷言一起紅，而程式完全沒有問題。
+  /* 期望值出處：參數表「3-戰鬥核心／忽略防禦」param a，經 tools/apply_params.cjs
+     套進 js/formula.js 的 PEN_IGNORE_A（改參數請改 xlsx，改 config/CSV 會被沖掉）。
 
-     測試的標題就寫著「參數可調」，卻用寫死的常數擋住調參，這是自相矛盾的。
-     改成只釘**公式的形狀**，a 一律向遊戲拿：
-       曲線正確（逐點比對）、a 是有限正數、單調遞增、到不了 100%、
-       0 穿透時為 0、b/c 欄已停用。
-     這樣使用者調 a 不會弄紅測試，但把公式改成別的形狀會。 */
+     依 AI_RULES.md 9.1 例外，測試**刻意釘住目前數值**：參數表一動這裡就會紅，
+     這是預期行為——確認新值是有意調整後，把期望值一併更新。
+     2026-08-06（穿透平衡性調整）起：a = 0.75（原為 1.5）。
+
+     ⚠️ 我一度把這支改成「只釘公式形狀、a 向遊戲拿」，理由是「標題寫著參數可調
+     卻用常數擋住調參」。**那個判斷跟專案慣例相反**：9.1 管的是註釋不該寫死數值
+     （註釋不會被驗證，改了就變成謊話），而測試恰恰相反——釘住數值是刻意的哨兵，
+     讓調參的人被強制看見「這個改動影響到誰」。已改回。 */
   const c = loadContext();
-  const a = c.PEN_IGNORE_A;
-  assert.ok(typeof a === 'number' && isFinite(a) && a > 0,
-    'a 必須是有限正數，否則 rate/(rate+a) 會發散或除以零：' + a);
+  assert.equal(c.PEN_IGNORE_A, 0.75);
   assert.equal(typeof c.PEN_IGNORE_B, 'undefined', 'b 欄已停用');
   assert.equal(typeof c.PEN_IGNORE_C, 'undefined', 'c 欄已停用');
   assert.equal(c.penIgnoreRatio(0), 0);
 
-  const expect = (pen) => (pen / 100) / (pen / 100 + a);
+  const expect = (pen) => (pen / 100) / (pen / 100 + c.PEN_IGNORE_A);
   [100, 250, 350, 500, 1000, 5000].forEach((pen) => {
     assert.ok(Math.abs(c.penIgnoreRatio(pen) - expect(pen)) < 1e-12, '穿透 ' + pen);
     assert.ok(Math.abs(c.penIgnorePct(pen) - expect(pen) * 100) < 1e-9,
       'penIgnorePct 必須是 penIgnoreRatio 的百分比版本：穿透 ' + pen);
   });
 
-  /* 半數點：穿透倍率等於 a 時剛好忽略 50% 防禦。這是這條曲線唯一與參數無關的
-     幾何性質，用它取代原本那五個「a=1.5 專用」的對照點。 */
-  assert.ok(Math.abs(c.penIgnoreRatio(a * 100) - 0.5) < 1e-12,
+  // 曲線關鍵點（a = 0.75）
+  assert.ok(Math.abs(c.penIgnorePct(100) - 57.14) < 0.05);
+  assert.ok(Math.abs(c.penIgnorePct(250) - 76.92) < 0.05);
+  assert.ok(Math.abs(c.penIgnorePct(350) - 82.35) < 0.05);
+  assert.ok(Math.abs(c.penIgnorePct(500) - 86.96) < 0.05);
+  assert.ok(Math.abs(c.penIgnorePct(1000) - 93.02) < 0.05);
+
+  /* 半數點：穿透倍率等於 a 時剛好忽略 50% 防禦。這是這條曲線**與參數無關**的
+     幾何性質，跟上面釘死的數值不衝突——一個抓「數值被改了」，
+     一個抓「公式被改成別的形狀」。 */
+  assert.ok(Math.abs(c.penIgnoreRatio(c.PEN_IGNORE_A * 100) - 0.5) < 1e-12,
     '穿透 = a×100% 時應忽略 50% 防禦');
 });
 
