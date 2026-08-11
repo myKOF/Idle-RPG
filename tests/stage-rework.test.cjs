@@ -84,10 +84,10 @@ test('地圖表承接場景專屬倍率與所有地圖的分段掉落資料', ()
      這裡是唯一來源；js/data.js 的 ZONES 由 apply_params 依此表回寫。
      測試釘住數值是刻意的（AI_RULES.md 9.1 的例外）：倍率被調整時這條會紅，
      讓「數值改了」變成一個需要有人明確同意的動作。
-     荒漠是基準圖，五個倍率恆為 1，一併盯著——它若被改動代表整張表對錯了欄。 */
-  assert.match(zones.find((line) => line.includes(',desert,')), /,1,1,1,1,1$/);
-  assert.match(zones.find((line) => line.includes(',undead_mountains,')), /,10,5\.5,3\.2,1\.8,2\.25$/);
-  assert.match(zones.find((line) => line.includes(',god_sanctuary,')), /,150,40,20,2\.5,24$/);
+     2026-08-11（使用者確認）：荒漠不再是全 1 的基準圖，前兩個倍率調成 0.8。 */
+  assert.match(zones.find((line) => line.includes(',desert,')), /,0\.8,0\.8,1,1,1$/);
+  assert.match(zones.find((line) => line.includes(',undead_mountains,')), /,20,50,10,1\.8,2\.25$/);
+  assert.match(zones.find((line) => line.includes(',god_sanctuary,')), /,500,8000,100,2\.5,24$/);
   // origin/develop 的 Zone_Stage_Drops.csv 現在包含 32 列資料，另加標題列。
   assert.equal(drops.length, 33);
   assert.ok(drops.some((line) => line.startsWith('god_sanctuary,601,800,')));
@@ -101,7 +101,8 @@ test('掉落配置依地圖與關卡區間查表，且支援材料欄位', () =>
   assert.equal(early.max, 199);
   assert.equal(late.min, 400);
   assert.equal(late.materials.bookRate, 4);
-  assert.equal(c.fieldDropRatesFor(400, 400, 'undead_mountains')[6], 0.3);
+  /* 2026-08-11（使用者確認）：神話（R6）掉落率 0.3 → 0.25。 */
+  assert.equal(c.fieldDropRatesFor(400, 400, 'undead_mountains')[6], 0.25);
 });
 
 /* 打贏地圖最後一關時 best 會被 maxStage 夾住，光看 best 分不出「打贏最後一關」與
