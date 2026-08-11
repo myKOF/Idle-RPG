@@ -6992,12 +6992,23 @@ function showTalentTooltip(ref, anchorEl) {
   tip.style.left = x + 'px';
   tip.style.top = y + 'px';
 }
+function statTooltipHTML(title, desc) {
+  return '<div class="skt-name">' + title + '</div>' +
+    '<div class="skt-desc">' + desc + '</div>';
+}
+
 function showStatTooltip(title, desc, anchorEl) {
   var tip = $id('sk-tooltip');
   if (!tip) return;
+  var h = statTooltipHTML(title, desc);
+  /* 同一個錨點、同樣的內容、而且提示還開著 → 只是重複觸發，位置不必重算。
+
+     定位要讀三次版面（錨點矩形 + 提示寬高），而這支被重複呼叫的次數遠超過玩家
+     實際 hover 的次數：renderHeader 每個 tick（5 Hz）都會刷新開著的資源提示，
+     資源數字又每 tick 變動、在游標底下重畫還會再觸發一次 mouseover。
+     回報者機器上實測 30 秒內 222 次，佔掉全部強制版面讀取的 80%。 */
+  if (UI.tooltipAnchor === anchorEl && tip.style.display === 'block' && tip.innerHTML === h) return;
   UI.tooltipAnchor = anchorEl;
-  var h = '<div class="skt-name">' + title + '</div>';
-  h += '<div class="skt-desc">' + desc + '</div>';
   tip.innerHTML = h;
   tip.style.display = 'block';
   var r = anchorEl.getBoundingClientRect();
@@ -7056,12 +7067,19 @@ function showEnemyBuffTooltip(anchorEl) {
   tip.style.left = x + 'px';
   tip.style.top = y + 'px';
 }
+/* 資源提示要跟著數字更新，但**只更新內容、不重新定位**。
+
+   這支由 renderHeader 呼叫，而 renderHeader 每個 tick 都跑（5 Hz）。原本它走完整的
+   showStatTooltip，等於滑鼠停在資源圖示上時，提示每秒被重建並重新定位五次，
+   每次定位讀三次版面。錨點是同一顆圖示、沒有移動，位置根本不需要重算；
+   會變的只有數字。setHtmlIfChanged 讓數字沒變時連 DOM 都不寫。 */
 function refreshOpenResourceTooltip() {
   var tip = $id('sk-tooltip');
   var anchorEl = UI.tooltipAnchor;
   if (!tip || tip.style.display !== 'block' || !anchorEl || !anchorEl.classList ||
     !anchorEl.classList.contains('res') || !document.documentElement.contains(anchorEl)) return;
-  showStatTooltip(anchorEl.getAttribute('data-tt-title') || '', anchorEl.getAttribute('data-tt-desc') || '', anchorEl);
+  setHtmlIfChanged(tip, statTooltipHTML(anchorEl.getAttribute('data-tt-title') || '',
+    anchorEl.getAttribute('data-tt-desc') || ''));
 }
 function refreshBuffTooltip() {
   var tip = $id('sk-tooltip');
