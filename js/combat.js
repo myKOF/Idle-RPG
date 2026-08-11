@@ -661,6 +661,23 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
     return res;
 }
 
+// 執行一次野外敵人攻擊。新波生成時也會走這個入口，讓首次攻擊不必等下一個 tick。
+function fieldMonsterAttack(m, p) {
+    if (!m || m.hp <= 0 || effectActive(m, 'stun')) return false;
+    var attackTarget = (typeof legendaryChooseEnemyAttackTarget === 'function')
+        ? legendaryChooseEnemyAttackTarget(p) : p;
+    var mres = doMonsterAttack(m, attackTarget, 'pv-float');
+    // 45 新技能：受擊觸發統一入口（野外；閃避/無敵不計，格擋計入並帶旗標；absorbed 供破盾判定）
+    if (attackTarget === p && typeof onPlayerHitTaken === 'function' && mres && !mres.miss && !mres.invuln) {
+        onPlayerHitTaken(mres.dmg || 0, !!mres.blocked, p, 'pv-float', mres.absorbed || 0);
+    }
+    // 潛力【時間結界】：敵攻速降低 → 拉長攻擊間隔（降低後攻速 = 原攻速/(1+降低%)）
+    m.atkCd += (1 / m.aspd) * (1 + buffVal(m, 'enemyAspdDown') / 100);
+    if (p.hp <= 0) { onPlayerFieldDeath(); return true; }
+    if (m.hp <= 0) onFieldKill(m); // 反震擊殺
+    return false;
+}
+
 function trackDps(dmg) {
     FIELD.dpsWindow.push([GT, dmg]);
     while (FIELD.dpsWindow.length && FIELD.dpsWindow[0][0] < GT - 10) FIELD.dpsWindow.shift();
@@ -748,7 +765,8 @@ function fieldTick(dt) {
         if (legendaryTick && legendaryTick.playerKilled) { onPlayerFieldDeath(); return; }
     }
 
-    // 出怪
+    // 出怪。新波在本輪繼續往下走，讓敵人能在生成當下完成首次攻擊。
+    var spawnedEnemies = null;
     if (!liveFieldEnemies().length) {
         if (FIELD.mapComplete) return;
         if (hasFieldDeathHolds()) return;
@@ -758,10 +776,24 @@ function fieldTick(dt) {
         }
         if (clearedDeaths) return;
         FIELD.respawnCd -= dt;
-        if (FIELD.respawnCd <= 0) spawnFieldMonster();
-        return;
+        if (FIELD.respawnCd <= 0) {
+            spawnFieldMonster();
+            spawnedEnemies = liveFieldEnemies();
+        } else {
+            return;
+        }
     }
     var enemies = liveFieldEnemies();
+
+    // 新敵人先出手一次，再進入原本的玩家行動順序；即使玩家隨後在同一輪秒殺，
+    // 這次攻擊也已經完成，不會因敵人先被移除而漏掉整波的第一擊。
+    if (spawnedEnemies && spawnedEnemies.length) {
+        for (var si = 0; si < spawnedEnemies.length; si++) {
+            if (fieldMonsterAttack(spawnedEnemies[si], p)) return;
+        }
+        enemies = liveFieldEnemies();
+        if (!enemies.length) return;
+    }
 
     // 持續傷害（怪物：中毒 / 流血 / 燃燒 / 詛咒）
     for (var di = 0; di < enemies.length; di++) {
@@ -821,21 +853,12 @@ function fieldTick(dt) {
     enemies = liveFieldEnemies();
     for (var mi = 0; mi < enemies.length; mi++) {
         var m = enemies[mi];
+        // 這些敵人在本輪生成時已完成首擊；生成點位於本輪時間的末端，
+        // 不應再把同一個 dt 重算一次，避免高攻速敵人同輪連攻兩次。
+        if (spawnedEnemies && spawnedEnemies.indexOf(m) >= 0) continue;
         if (!effectActive(m, 'stun')) {
             m.atkCd -= dt * slowFactor(m);
-            if (m.atkCd <= 0) {
-                var attackTarget = (typeof legendaryChooseEnemyAttackTarget === 'function')
-                    ? legendaryChooseEnemyAttackTarget(p) : p;
-                var mres = doMonsterAttack(m, attackTarget, 'pv-float');
-                // 45 新技能：受擊觸發統一入口（野外；閃避/無敵不計，格擋計入並帶旗標；absorbed 供破盾判定）
-                if (attackTarget === p && typeof onPlayerHitTaken === 'function' && mres && !mres.miss && !mres.invuln) {
-                    onPlayerHitTaken(mres.dmg || 0, !!mres.blocked, p, 'pv-float', mres.absorbed || 0);
-                }
-                // 潛力【時間結界】：敵攻速降低 → 拉長攻擊間隔（降低後攻速 = 原攻速/(1+降低%)）
-                m.atkCd += (1 / m.aspd) * (1 + buffVal(m, 'enemyAspdDown') / 100);
-                if (p.hp <= 0) { onPlayerFieldDeath(); return; }
-                if (m.hp <= 0) onFieldKill(m); // 反震擊殺
-            }
+            if (m.atkCd <= 0 && fieldMonsterAttack(m, p)) return;
         }
     }
     combatDebugAuditFieldDeaths(debugFieldTick, 'enemy attack/thorns');

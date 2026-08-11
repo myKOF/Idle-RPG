@@ -1,5 +1,22 @@
 # AI_TASKS.md
 
+## Codex：敵人生成後首次攻擊延遲（2026-08-11）
+
+- Status: Completed
+- Owner: Codex
+- Task: 敵人生成當下即與玩家進行首次攻擊；即使玩家在同一輪立即擊殺敵人，敵人仍至少完成一次攻擊判定。
+- 前置依賴: 無；沿用既有 `fieldTick()` 戰鬥順序與 Worker 載入的 `js/combat.js`。
+- 允許修改: `js/combat.js`、`tests/multi-enemy.test.cjs`、`docs/AI_TASKS.md`
+- 禁止修改: Worker Protocol、戰鬥數值配置、存檔格式、其他 AI 進行中任務檔案。
+- 驗收方式: 新波生成後同一個 field tick 內完成首次敵方攻擊；玩家可在該輪擊殺敵人時，仍可觀察到至少一次敵方傷害；既有多敵人與完整測試、build 通過。
+- 測試要求: 新增首次攻擊時序回歸測試，執行定向測試、`npm.cmd test`、`npm.cmd run build` 與 `git diff --check`。
+- Verification: `node --test tests/multi-enemy.test.cjs` 15/15；`npm.cmd run build` 260/260；`git diff --check` 通過。完整 `npm.cmd test` 1242 項中 1241 通過，唯一失敗為既有 `tests/stage-rework.test.cjs` 場景倍率斷言（期待 5.5、目前資料為 10），與本任務無關。
+- 完成內容: `fieldTick()` 出怪後不再立即返回；新波敵人同一輪先完成一次攻擊，再進入玩家行動。首次攻擊與既有週期攻擊共用 `fieldMonsterAttack()`，並避免生成輪的高攻速敵人重複攻擊。
+- 已知風險: 尚未進行瀏覽器實機長時間掛機驗證；Worker 會載入相同的 `js/combat.js`，建置與測試已確認載入語法正常。
+- 未完成項目: 無。
+- 後續接手者: Claude Code 唯讀 Review；必要時以瀏覽器確認敵人生成瞬間的實際傷害飄字與玩家血量。
+
+
 ## Codex：修正測試服控制台重開時誤關閉其他 AI 測試服（2026-08-11）
 
 - Status: Completed
