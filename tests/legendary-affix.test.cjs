@@ -36,7 +36,7 @@ function loadLegendaryContext() {
   const context = loadContext([
     'js/util.js',
     'js/data.js',
-    'js/formula.js', 'js/battlefield.js',
+    'js/status.js', 'js/formula.js', 'js/battlefield.js',
     'js/combat.js',
     'js/skills.js',
     'js/legendary.js'
@@ -122,7 +122,7 @@ test('附檔 31 個傳奇特效皆有執行期路由，戰鬥與技能主流程�
 });
 
 test('傳奇特效只會進入指定武器類型的隨機池', () => {
-  const context = loadContext(['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/item.js']);
+  const context = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/item.js']);
   const sword = { kind: 'equip', slot: 'weapon', weaponType: 'sword1h' };
   const axe = { kind: 'equip', slot: 'weapon', weaponType: 'axe2h' };
   const chest = { kind: 'equip', slot: 'chest' };

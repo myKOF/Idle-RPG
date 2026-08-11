@@ -229,13 +229,13 @@ test('敵方區四種傷害樣式獨立，爆擊不改變普攻／技能來源�
 test('玩家技能取得護盾與所有自身 buff 時會顯示玩家事件浮字', () => {
   assert.match(skills, /function playerBuffFloatClass\(key\)/);
   assert.match(skills, /function showPlayerBuffFloat\(floatSel,\s*buff,\s*lv,\s*mult\)/); // 5 轉昇華天賦倍率同步顯示
-  assert.match(skills, /playerBuffFloatClass\(buff\.key\)/);
+  assert.match(skills, /playerBuffFloatClass\(statusRefKey\(buff\)\)/);
   assert.match(skills, /floatPlayerEvent\(floatSel,\s*'🛡️\+' \+ fmt\(gainedShield\)/);
   // 2026-07-30 技能融合改造：buff 施加改走 skillFxBuffList 迴圈（支援融合技不限數量的 buffList）
   assert.match(skills, /skillFxBuffList\(fx\)\.forEach\(function \(bf\) \{/);
-  assert.match(skills, /showPlayerBuffFloat\(floatSel,\s*bf,\s*lv,\s*fxMult\)/);
+  assert.match(skills, /showPlayerBuffFloat\(floatSel,\s*ref,\s*lv,\s*fxMult\)/);
   assert.match(skills, /floatPlayerEvent\(floatSel,\s*'✨淨化',\s*'special'\)/);
-  assert.match(skills, /floatPlayerEvent\(floatSel,\s*'再生 ' \+ fx\.hotDur \+ '秒',\s*'heal'\)/);
+  assert.match(skills, /floatPlayerEvent\(floatSel,\s*statusRefName\(ref\) \+ ' ' \+ refDur \+ '秒',\s*'heal'\)/);
   assert.match(skills, /floatPlayerEvent\(floatSel,\s*'法力 \+' \+ fmt\(mpGain\),\s*'mana',\s*mpGain\)/);
 });
 

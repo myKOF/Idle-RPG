@@ -28,7 +28,7 @@ function loadGameContext() {
   };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js'].forEach((file) => {
+  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   context.G = {
@@ -486,8 +486,11 @@ test('45 筆 fx 實際值抽樣（對照 PLAN.md §3 定案表）', () => {
   assertClose(c.fxVal(S.plagueBurst.fx.dotDetonate.pct, 1), 80);
   assert.equal(S.plagueBurst.fx.dotDetonate.cap, 100);
   assert.equal(S.plagueBurst.fx.requiresTargetDot, true);
-  assert.equal(S.plagueBurst.fx.dot.pct, 40);
-  assert.equal(S.plagueBurst.fx.dot.dur, 6);
+  // 2026-08-11 技能及狀態改造：持續傷害改以狀態引用表達（狀態定義在 config/Excel/Status.xlsx）
+  const plagueRef = c.skillStatusRefs(S.plagueBurst.fx)[0];
+  assert.equal(plagueRef.id, 'plague');
+  assert.equal(c.statusRefAmount(plagueRef, 1), 40);
+  assert.equal(c.statusRefDur(plagueRef), 6);
   // 聖盾崩華：引爆護盾 60%、上限 matk×10
   assert.equal(S.aegisBurst.fx.shieldBurst.convertPct, 60);
   assert.equal(S.aegisBurst.fx.shieldBurst.capAtkMult, 10);

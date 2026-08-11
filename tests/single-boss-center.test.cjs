@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, '..');
 function loadBattlefield() {
   const context = { console, Math: Object.create(Math) };
   vm.createContext(context);
-  for (const file of ['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js']) {
+  for (const file of ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js']) {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   }
   context.Math.random = () => 0;

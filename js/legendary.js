@@ -163,7 +163,11 @@ function legendaryPrepareSkillCast(pEnt, targets, id, sk, fx, lv, st, opts) {
 
   if (legendaryHas(st, 'whirlwindBleed') && id === 'whirlwind') {
     var bleed = legendaryFx('whirlwindBleed').skillDot;
-    out.fx.dot = { pct: bleed.tickPowerPct, dur: bleed.dur, name: bleed.name };
+    // 以狀態引用追加（不可直接寫 fx.dot：技能 fx 一旦有 status 陣列，舊欄位就不再被讀取）；
+    // concat 產生新陣列，避免污染 SKILLS 上的共用定義
+    out.fx.status = (out.fx.status || []).concat([
+      { id: statusIdByName(bleed.name), name: bleed.name, base: bleed.tickPowerPct, dur: bleed.dur }
+    ]);
   }
   if (legendaryHas(st, 'stormSigilChain') && id === 'stormSigil') {
     var sigilFx = legendaryFx('stormSigilChain');

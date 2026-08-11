@@ -30,7 +30,7 @@ function loadContext(files) {
 }
 
 const LOGIC_FILES = [
-  'js/util.js', 'js/data.js', 'js/formula.js', 'js/item.js',
+  'js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js',
   'js/player.js', 'js/factory.js', 'js/newforge.js'
 ];
 
@@ -105,7 +105,7 @@ test('載入舊存檔時，熔爐零件快照會正規化為只保存 key', () =
 });
 
 test('野外、離線與高塔流程不再包含零件掉落或隨機階級', () => {
-  ['js/combat.js', 'js/save.js', 'js/tower.js'].forEach((file) => {
+  ['js/status.js', 'js/combat.js', 'js/save.js', 'js/tower.js'].forEach((file) => {
     const source = fs.readFileSync(path.join(root, file), 'utf8');
     assert.doesNotMatch(source, /fieldPartTierFor|partRate|partChance/);
   });

@@ -19,7 +19,7 @@ function loadContext(files) {
 const contextFiles = [
   'js/util.js',
   'js/data.js',
-  'js/formula.js',
+  'js/status.js', 'js/formula.js',
   'js/item.js',
   'js/newforge.js',
   'js/player.js',

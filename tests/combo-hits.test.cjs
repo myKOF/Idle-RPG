@@ -12,7 +12,7 @@ function loadFormula(randFn) {
   if (randFn) fakeMath.random = randFn;
   const context = { console, Math: fakeMath, window: {} };
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js'].forEach((f) => {
+  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js'].forEach((f) => {
     vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), context, { filename: f });
   });
   return context;

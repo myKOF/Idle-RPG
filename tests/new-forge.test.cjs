@@ -31,7 +31,7 @@ function loadContext(files, hostname) {
   return context;
 }
 
-const LOGIC_FILES = ['js/util.js', 'js/data.js', 'js/formula.js', 'js/item.js', 'js/player.js', 'js/factory.js', 'js/newforge.js'];
+const LOGIC_FILES = ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js', 'js/player.js', 'js/factory.js', 'js/newforge.js'];
 
 function freshG(context) {
   context.G = context.newGameState();
@@ -64,7 +64,7 @@ test('合併版常數：零件格 3~8、熔爐上限 12/轉生連動、統一大
 /* ============ 2. 公式 ============ */
 
 test('newForgeMaxFurnaces：0轉=2、每轉+1、上限12', () => {
-  const c = loadContext(['js/util.js', 'js/data.js', 'js/formula.js']);
+  const c = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js']);
   assert.equal(c.newForgeMaxFurnaces(0), 2);
   assert.equal(c.newForgeMaxFurnaces(1), 3);
   assert.equal(c.newForgeMaxFurnaces(5), 7);
@@ -73,7 +73,7 @@ test('newForgeMaxFurnaces：0轉=2、每轉+1、上限12', () => {
 });
 
 test('newForgePartSlotCost：50000×轉生²＋2000×(已解鎖-1)^(熔爐數)', () => {
-  const c = loadContext(['js/util.js', 'js/data.js', 'js/formula.js']);
+  const c = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js']);
   // 0轉、2座熔爐、已解鎖3格 → 第4格：2000×2^2 = 8000
   assert.equal(c.newForgePartSlotCost(0, 3, 2), 8000);
   // 0轉、2座、已解鎖4 → 第5格：2000×3^2 = 18000

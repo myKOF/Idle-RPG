@@ -12,7 +12,7 @@ function loadContext() {
     G: { player: { gold: 0, gems: { ruby: { 1: 1000 }, opal: { 1: 0 } } } }
   };
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/item.js'].forEach((file) => {
+  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   context.G = { player: { gold: 0, gems: { ruby: { 1: 1000 }, opal: { 1: 0 } } } };

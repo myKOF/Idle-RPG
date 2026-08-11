@@ -14,7 +14,7 @@ function loadItemContext() {
   const context = { console, UI: { dirty: {} } };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/item.js'].forEach((file) => {
+  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   // 刻意不定義 G：讀到就是 ReferenceError，測試會直接失敗

@@ -9,7 +9,7 @@ function loadGameContext() {
   const context = { console, UI: { dirty: {} } };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/item.js'].forEach((file) => {
+  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/item.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   return context;
@@ -194,7 +194,7 @@ test('舊「洗煉洗出太古／太古精華消耗」機制已全面拆除', ()
   assert.doesNotMatch(ui, /toggle-ancient-essence/);
   assert.doesNotMatch(ui, /useAncientEssence/);
   assert.doesNotMatch(html, /toggle-ancient-essence/);
-  ['js/combat.js', 'js/tower.js', 'js/save.js', 'js/forge.js'].forEach((f) => {
+  ['js/status.js', 'js/combat.js', 'js/tower.js', 'js/save.js', 'js/forge.js'].forEach((f) => {
     assert.doesNotMatch(read(f), /ancientRate/, f + ' 不應再傳 ancientRate');
   });
 });

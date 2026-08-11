@@ -373,15 +373,19 @@ function tickStatuses(ent, dt) {
     for (var i = 0; i < ent.dots.length; i++) {
         var d = ent.dots[i];
         var expired = !(d.until > GT);
-        var elapsed = (d.acc || 0) + dtEff;
         var seconds = 0; // 本幀實際結算的秒數
-        if (!(d.interval > 0)) {
-            seconds = expired ? 0 : dtEff;              // 不分段：連續結算
+        if (expired) {
+            // 到期：只補「存續期間已累積、還沒跳出來」的餘額，不多算本幀
+            seconds = d.acc || 0;
+            d.acc = 0;
+        } else if (!(d.interval > 0)) {
+            seconds = dtEff;                            // 不分段：連續結算
+            d.acc = 0;
         } else {
+            var elapsed = (d.acc || 0) + dtEff;
             while (elapsed >= d.interval) { seconds += d.interval; elapsed -= d.interval; }
-            if (expired && elapsed > 0) { seconds += elapsed; elapsed = 0; } // 到期補跳餘額
+            d.acc = elapsed;
         }
-        d.acc = expired ? 0 : elapsed;
         if (seconds > 0 && d.dps > 0) {
             total += d.dps * seconds;
             if (d.name && dotNames.indexOf(d.name) < 0) dotNames.push(d.name);

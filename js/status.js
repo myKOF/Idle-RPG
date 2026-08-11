@@ -53,31 +53,31 @@ var STATUS = {
 
   stun: { name: '暈眩', icon: '😵', kind: 'ctrl', effect: 'ctrl', key: 'stun', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 1, interval: 0, stack: 'refresh', maxStacks: 1, desc: '無法行動；持續時間受控場遞減與韌性影響。' },
   slow: { name: '減速', icon: '🐌', kind: 'ctrl', effect: 'ctrl', key: 'slow', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 3, interval: 0, stack: 'refresh', maxStacks: 1, desc: '攻擊速度下降；持續時間受控場遞減與韌性影響。' },
-  invuln: { name: '無敵', icon: '✨', kind: 'buff', effect: 'ctrl', key: 'invuln', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 3, interval: 0, stack: 'refresh', maxStacks: 1, desc: '免疫一切傷害與負面狀態。' },
+  invuln: { name: '無敵結界（免疫一切傷害與負面效果）', icon: '✨', kind: 'buff', effect: 'ctrl', key: 'invuln', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 3, interval: 0, stack: 'refresh', maxStacks: 1, desc: '免疫一切傷害與負面狀態。' },
 
   regen: { name: '再生', icon: '💚', kind: 'buff', effect: 'hot', key: 'hot', elem: '', dmgSource: 'maxHp', dmg: 2.5, capStat: '', capMult: 0, val: 0, dur: 6, interval: 0, stack: 'strongest', maxStacks: 1, desc: '每秒回復最大生命的一定比例。' },
 
-  atkUp: { name: '攻擊提升', icon: '⚔️', kind: 'buff', effect: 'stat', key: 'atkUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 15, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '攻擊力提高。' },
-  defUp: { name: '防禦提升', icon: '🛡️', kind: 'buff', effect: 'stat', key: 'defUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 40, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '防禦力提高。' },
-  aspdUp: { name: '攻速提升', icon: '⚡', kind: 'buff', effect: 'stat', key: 'aspdUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 25, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '攻擊速度提高。' },
-  evasionUp: { name: '閃避提升', icon: '🌀', kind: 'buff', effect: 'stat', key: 'evasionUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 25, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '閃避提高。' },
-  critDmgUp: { name: '爆傷提升', icon: '💥', kind: 'buff', effect: 'stat', key: 'critDmgUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 40, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '爆擊傷害提高。' },
-  blockUp: { name: '格擋提升', icon: '🔰', kind: 'buff', effect: 'stat', key: 'blockUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 12, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '格擋率提高。' },
-  thornsUp: { name: '反震提升', icon: '🌵', kind: 'buff', effect: 'stat', key: 'thornsUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 15, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '反震傷害提高。' },
-  lootUp: { name: '掉寶提升', icon: '🎁', kind: 'buff', effect: 'stat', key: 'lootUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 15, dur: 10, interval: 0, stack: 'refresh', maxStacks: 1, desc: '掉寶率提高。' },
-  penUp: { name: '穿透提升', icon: '🗡️', kind: 'buff', effect: 'stat', key: 'penUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 25, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '物理與魔法穿透提高。' },
-  allDmgUp: { name: '所有傷害提升', icon: '🌌', kind: 'buff', effect: 'stat', key: 'allDmgUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【時空凝滯】：所有傷害提高。' },
-  velocitySurge: { name: '極速之力', icon: '💨', kind: 'buff', effect: 'stat', key: 'velocitySurge', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【極速之力】：攻速提高。' },
-  lightningOverload: { name: '雷霆過載', icon: '🌩️', kind: 'buff', effect: 'stat', key: 'lightningOverload', elem: 'lightning', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【雷霆過載】：雷電傷害提高。' },
-  chronoCdr: { name: '時間坍縮', icon: '⏱️', kind: 'buff', effect: 'stat', key: 'chronoCdr', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【時間坍縮】：冷卻縮減。' },
-  sacredInvert: { name: '聖療逆轉', icon: '🕊️', kind: 'buff', effect: 'stat', key: 'sacredInvert', elem: 'light', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【聖療逆轉】：回復與溢傷轉換。' },
+  atkUp: { name: '攻擊', icon: '⚔️', kind: 'buff', effect: 'stat', key: 'atkUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 15, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '攻擊力提高。' },
+  defUp: { name: '防禦', icon: '🛡️', kind: 'buff', effect: 'stat', key: 'defUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 40, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '防禦力提高。' },
+  aspdUp: { name: '攻速', icon: '⚡', kind: 'buff', effect: 'stat', key: 'aspdUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 25, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '攻擊速度提高。' },
+  evasionUp: { name: '閃避', icon: '🌀', kind: 'buff', effect: 'stat', key: 'evasionUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 25, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '閃避提高。' },
+  critDmgUp: { name: '爆傷', icon: '💥', kind: 'buff', effect: 'stat', key: 'critDmgUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 40, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '爆擊傷害提高。' },
+  blockUp: { name: '格擋', icon: '🔰', kind: 'buff', effect: 'stat', key: 'blockUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 12, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '格擋率提高。' },
+  thornsUp: { name: '反震', icon: '🌵', kind: 'buff', effect: 'stat', key: 'thornsUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 15, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '反震傷害提高。' },
+  lootUp: { name: '掉寶', icon: '🎁', kind: 'buff', effect: 'stat', key: 'lootUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 15, dur: 10, interval: 0, stack: 'refresh', maxStacks: 1, desc: '掉寶率提高。' },
+  penUp: { name: '物理/魔法穿透', icon: '🗡️', kind: 'buff', effect: 'stat', key: 'penUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 25, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '物理與魔法穿透提高。' },
+  allDmgUp: { name: '時空凝滯·所有傷害', icon: '🌌', kind: 'buff', effect: 'stat', key: 'allDmgUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【時空凝滯】：所有傷害提高。' },
+  velocitySurge: { name: '極速之力·攻速', icon: '💨', kind: 'buff', effect: 'stat', key: 'velocitySurge', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【極速之力】：攻速提高。' },
+  lightningOverload: { name: '雷霆過載·雷電傷害', icon: '🌩️', kind: 'buff', effect: 'stat', key: 'lightningOverload', elem: 'lightning', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【雷霆過載】：雷電傷害提高。' },
+  chronoCdr: { name: '時間坍縮·冷卻縮減', icon: '⏱️', kind: 'buff', effect: 'stat', key: 'chronoCdr', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【時間坍縮】：冷卻縮減。' },
+  sacredInvert: { name: '聖療逆轉·回復/溢傷', icon: '🕊️', kind: 'buff', effect: 'stat', key: 'sacredInvert', elem: 'light', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【聖療逆轉】：回復與溢傷轉換。' },
   legendaryDarkUp: { name: '暗影強化', icon: '🌑', kind: 'buff', effect: 'stat', key: 'legendaryDarkUp', elem: 'dark', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '傳奇特效：暗屬性傷害提高。' },
   legendaryGuardRed: { name: '守護減傷', icon: '🛡️', kind: 'buff', effect: 'stat', key: 'legendaryGuardRed', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '傳奇特效：受到的傷害降低。' },
   legendaryLightShieldRed: { name: '聖盾減傷', icon: '🔆', kind: 'buff', effect: 'stat', key: 'legendaryLightShieldRed', elem: 'light', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '傳奇特效：受到的傷害降低。' },
 
-  atkDown: { name: '攻擊下降', icon: '⚔️', kind: 'debuff', effect: 'stat', key: 'atkDown', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 18, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '目標攻擊力下降。' },
-  defDown: { name: '防禦下降', icon: '🛡️', kind: 'debuff', effect: 'stat', key: 'defDown', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '目標防禦力下降（舊存檔融合技快照相容保留，新設計改用穿透提升）。' },
-  enemyAspdDown: { name: '攻速下降', icon: '⏳', kind: 'debuff', effect: 'stat', key: 'enemyAspdDown', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【時間結界】：目標攻擊速度下降。' }
+  atkDown: { name: '攻擊', icon: '⚔️', kind: 'debuff', effect: 'stat', key: 'atkDown', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 18, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '目標攻擊力下降。' },
+  defDown: { name: '防禦', icon: '🛡️', kind: 'debuff', effect: 'stat', key: 'defDown', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '目標防禦力下降（舊存檔融合技快照相容保留，新設計改用穿透提升）。' },
+  enemyAspdDown: { name: '時間結界·攻速', icon: '⏳', kind: 'debuff', effect: 'stat', key: 'enemyAspdDown', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【時間結界】：目標攻擊速度下降。' }
 };
 
 /* ---- 反查索引 ----
@@ -217,4 +217,117 @@ function statusRemain(ent, sid) {
   var list = statusEntries(ent);
   for (var i = 0; i < list.length; i++) if (list[i].sid === sid) return Math.max(0, list[i].remain);
   return 0;
+}
+
+/* ===========================================================================
+   技能 ↔ 狀態的橋接：把技能 fx 解析成一份「狀態引用清單」
+   ---------------------------------------------------------------------------
+   授權格式（Skills 表的「基礎fx(JSON)」）：
+     "status": [ { "id": "burn", "base": 35, "dur": 5 },
+                 { "id": "atkUp", "base": 12, "per": 4, "dur": 6 } ]
+     id       狀態表的狀態ID（必填）
+     base     覆寫狀態表的預設效果值——dot＝每次作用占技能傷害%（或占目標最大生命%）、
+              hot＝每秒回復最大生命%、stat＝增減幅度%；未填＝吃狀態表
+     per      每技能等級的增量（沿用全專案 scaleAt 語意：base + per×(等級-1)）
+     dur      覆寫持續時間（秒）；未填＝吃狀態表
+     interval 覆寫作用間隔（秒）；未填＝吃狀態表
+   欄位刻意與技能 fx 既有的 {base, per, dur} 慣例一致，讓引用本身就能當增益定義用。
+
+   舊格式（dot／dotList／maxHpDotPct／stunDur／slowDur／buff／buff2／buffList／
+   debuff／debuff2／debuffList／hotPct）仍能讀，統一在這裡翻成同一份清單——
+   結算、說明文字與融合技都只認這份，不留第二條結算路徑。
+   =========================================================================== */
+
+/* 舊格式的增益／減益項 → 狀態引用（key 即狀態表的效果鍵值）。 */
+function statusRefFromBuff(entry, self) {
+  if (!entry || !entry.key) return null;
+  return { id: statusIdByKey(entry.key), key: entry.key, base: entry.base, per: entry.per,
+    dur: entry.dur, self: self };
+}
+
+function skillStatusRefs(fx) {
+  if (!fx) return [];
+  if (Array.isArray(fx.status)) {
+    // 補上效果鍵值：既有呼叫端（增益結算、說明文字、融合池）以 key 辨識增益種類
+    for (var n = 0; n < fx.status.length; n++) {
+      var r = fx.status[n];
+      if (r && !r.key) { var rd = statusDef(r.id); if (rd && rd.key) r.key = rd.key; }
+    }
+    return fx.status;
+  }
+  var out = [];
+  var i;
+  if (fx.dot) out.push({ id: statusIdByName(fx.dot.name), name: fx.dot.name, base: fx.dot.pct, dur: fx.dot.dur });
+  if (Array.isArray(fx.dotList)) {
+    for (i = 0; i < fx.dotList.length; i++) {
+      out.push({ id: statusIdByName(fx.dotList[i].name), name: fx.dotList[i].name,
+        base: fx.dotList[i].pct, dur: fx.dotList[i].dur });
+    }
+  }
+  if (fx.maxHpDotPct) out.push({ id: 'deathCurse', base: fx.maxHpDotPct.base, per: fx.maxHpDotPct.per, dur: fx.dotDur });
+  if (fx.stunDur) out.push({ id: 'stun', dur: fx.stunDur });
+  if (fx.slowDur) out.push({ id: 'slow', dur: fx.slowDur });
+  if (fx.hotPct) out.push({ id: 'regen', key: 'hot', base: fx.hotPct.base, per: fx.hotPct.per, dur: fx.hotDur, self: true });
+  var buffs = [fx.buff, fx.buff2].concat(Array.isArray(fx.buffList) ? fx.buffList : []);
+  for (i = 0; i < buffs.length; i++) { var b = statusRefFromBuff(buffs[i], true); if (b) out.push(b); }
+  var debuffs = [fx.debuff, fx.debuff2].concat(Array.isArray(fx.debuffList) ? fx.debuffList : []);
+  for (i = 0; i < debuffs.length; i++) { var d = statusRefFromBuff(debuffs[i], false); if (d) out.push(d); }
+  return out;
+}
+
+/* 引用指向的狀態定義；查無定義（融合技隨機命名的臨時 DoT）補一份臨時定義，
+   讓結算流程不必到處判斷 null。 */
+function statusRefDef(ref) {
+  var def = statusDef(ref && ref.id);
+  if (def) return def;
+  return { name: (ref && ref.name) || '持續傷害', icon: '🩸', kind: 'debuff', effect: 'dot',
+    key: (ref && ref.key) || '', elem: '', dmgSource: 'skill', dmg: 0, capStat: '', capMult: 0,
+    val: 0, dur: 0, interval: 0, stack: 'strongest', maxStacks: 1, desc: '' };
+}
+function statusRefEffect(ref) { return statusRefDef(ref).effect; }
+function statusRefKey(ref) { return (ref && ref.key) || statusRefDef(ref).key; }
+function statusRefName(ref) { return statusRefDef(ref).name; }
+function statusRefIcon(ref) { return statusRefDef(ref).icon; }
+/* 作用對象：狀態表分類為增益＝施法者自身，其餘（減益／控場）＝敵方；
+   引用可用 self 欄強制指定（相容舊格式的解析結果）。 */
+function statusRefIsSelf(ref) {
+  if (ref && ref.self !== undefined) return !!ref.self;
+  return statusRefDef(ref).kind === 'buff';
+}
+/* 引用的 Lv.1 效果值（未覆寫就吃狀態表：dot／hot 取「狀態傷害」、stat 取「效果數值」）。 */
+function statusRefBase(ref) {
+  var def = statusRefDef(ref);
+  var base = ref && ref.base;
+  if (base === undefined || base === null || base === '') base = (def.effect === 'stat') ? def.val : def.dmg;
+  return Number(base) || 0;
+}
+/* 指定技能等級下的效果值（沿用 scaleAt 語意）。 */
+function statusRefAmount(ref, lv) {
+  return statusRefBase(ref) + (Number(ref && ref.per) || 0) * (Math.max(1, Number(lv) || 1) - 1);
+}
+function statusRefDur(ref) {
+  var d = ref && ref.dur;
+  if (d === undefined || d === null || d === '') d = statusRefDef(ref).dur;
+  return Number(d) || 0;
+}
+
+/* 依引用授予狀態；效果值與持續時間由引用（技能）覆寫、其餘一律吃狀態表。
+   ctx：{ base：本次技能傷害（dot 換算基準）、mult：效果倍率、stats：施法者屬性 }。 */
+function applyStatusRef(ent, ref, lv, ctx) {
+  if (!ent || !ref) return false;
+  ctx = ctx || {};
+  var def = statusRefDef(ref);
+  var amount = statusRefAmount(ref, lv);
+  var dur = statusRefDur(ref);
+  if (!(dur > 0)) return false;
+  if (!statusDef(ref.id)) {
+    // 狀態表上沒有的臨時持續傷害（融合技隨機命名）：沿用舊行為以名稱塗抹、連續結算
+    if (def.effect !== 'dot') return false;
+    return applyDot(ent, statusNum(ctx.base, 0) * amount / 100 * statusNum(ctx.mult, 1),
+      dur, def.name, '', ref.interval);
+  }
+  var sub = { base: ctx.base, mult: ctx.mult, stats: ctx.stats, dur: dur, interval: ref.interval };
+  if (def.effect === 'stat' || def.effect === 'hot') sub.val = amount;
+  else sub.dmg = amount;
+  return applyStatus(ent, ref.id, sub);
 }

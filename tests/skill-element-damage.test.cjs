@@ -14,7 +14,7 @@ function loadFormulaContext() {
   const context = { console, UI: { dirty: {} } };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js'].forEach((file) => {
+  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   context.rnd = () => 1;                                       // 關閉 ±10% 浮動
@@ -31,7 +31,7 @@ function loadSkillsContext() {
   };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/skills.js'].forEach((file) => {
+  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/skills.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   context.G = { player: { level: 1, reincarnations: 0, skills: {}, talents: { levels: {}, potentialLevels: {} }, loadout: [], fusions: [] } };

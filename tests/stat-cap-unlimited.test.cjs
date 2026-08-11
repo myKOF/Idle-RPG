@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, '..');
 function loadContext() {
   const context = { console, Math };
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/formula.js'].forEach((file) => {
+  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   return context;

@@ -21,7 +21,7 @@ function loadGameContext() {
   };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js'].forEach((file) => {
+  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   context.G = {
@@ -192,8 +192,8 @@ test('buff 數值：於「上限一半 ~ 上限」均分 4 檔；dur 沿用素�
   const capOf = {};
   ['ironWall', 'timeWarp'].forEach((id) => {
     const fx = c.effectiveFx(id, c.SKILLS[id], 10);
-    [fx.buff, fx.buff2].forEach((b) => {
-      if (b) capOf[b.key] = { v: c.scaleAt(b, 10), dur: b.dur };
+    c.skillFxBuffList(fx).forEach((b) => {
+      capOf[c.statusRefKey(b)] = { v: c.statusRefAmount(b, 10), dur: c.statusRefDur(b) };
     });
   });
   for (let s = 1; s <= 120; s++) {
@@ -201,8 +201,8 @@ test('buff 數值：於「上限一半 ~ 上限」均分 4 檔；dur 沿用素�
     const buffs = c.skillFxBuffList(fx);
     assert.ok(buffs.length >= 1, '至少取 1 個效果');
     buffs.forEach((b) => {
-      const cap = capOf[b.key];
-      assert.ok(cap, '未知 buff key：' + b.key);
+      const cap = capOf[c.statusRefKey(b)];
+      assert.ok(cap, '未知 buff key：' + c.statusRefKey(b));
       const atMax = b.base + b.per * 9;
       const tiers = [0, 1, 2, 3].map((i) => cap.v / 2 + (cap.v / 2) * (i / 3));
       assert.ok(tiers.some((t) => Math.abs(atMax - t) < 0.4),
@@ -402,7 +402,7 @@ function loadSaveContext() {
   };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/item.js', 'js/skills.js', 'js/player.js', 'js/save.js'].forEach((file) => {
+  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/item.js', 'js/skills.js', 'js/player.js', 'js/save.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   return context;

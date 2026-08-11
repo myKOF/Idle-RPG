@@ -20,7 +20,7 @@ const read = (f) => fs.readFileSync(path.join(root, f), 'utf8');
 const contextFiles = [
   'js/util.js',
   'js/data.js',
-  'js/formula.js',
+  'js/status.js', 'js/formula.js',
   'js/item.js',
   'js/skills.js',
   'js/player.js',

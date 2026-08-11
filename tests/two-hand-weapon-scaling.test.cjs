@@ -31,7 +31,7 @@ function item(over) {
 }
 
 test('two-handed weapon affix values use the 2x multiplier', () => {
-  const c = loadContext(['js/util.js', 'js/data.js', 'js/formula.js']);
+  const c = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js']);
   assert.equal(c.TWO_HAND_AFFIX_VALUE_MULT, 2.0);
   const oneHand = item();
   const twoHand = item({ weaponType: 'axe2h' });
@@ -47,7 +47,7 @@ test('two-handed weapon affix values use the 2x multiplier', () => {
 });
 
 test('two-handed weapon passive and godforged values use the 2x multiplier', () => {
-  const c = loadContext(['js/util.js', 'js/data.js', 'js/formula.js']);
+  const c = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js']);
   const oneHand = item();
   const twoHand = item({ weaponType: 'greatsword2h' });
 
@@ -58,7 +58,7 @@ test('two-handed weapon passive and godforged values use the 2x multiplier', () 
 });
 
 test('two-handed legendary effect numeric values are doubled without changing timing/count fields', () => {
-  const c = loadContext(['js/util.js', 'js/data.js', 'js/formula.js', 'js/legendary.js']);
+  const c = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/legendary.js']);
   c.getStats = () => ({ legendaryEffectMults: { mountainSunderer: 2 } });
 
   const fx = c.legendaryFx('mountainSunderer');
@@ -70,7 +70,7 @@ test('two-handed legendary effect numeric values are doubled without changing ti
 });
 
 test('computeStats records the two-handed multiplier for legendary effects and godforged values', () => {
-  const c = loadContext(['js/util.js', 'js/data.js', 'js/formula.js', 'js/item.js', 'js/player.js']);
+  const c = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js', 'js/player.js']);
   c.G = c.newGameState();
   const baseline = c.computeStats();
   c.G.equipment.weapon = item({
@@ -104,7 +104,7 @@ const TWO_HAND_EXPECTED = [
 ];
 
 test('two-handed weapons gain +1 affix, +1 enchant slot, and floor(1.75x) sockets at creation', () => {
-  const c = loadContext(['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/item.js']);
+  const c = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/item.js']);
   c.RARITIES.forEach((r, i) => {
     const twoHand = c.makeEquipment(100, { rarity: i, level: 100, slot: 'weapon', weaponType: 'greatsword2h' });
     assert.equal(twoHand.affixes.length, TWO_HAND_EXPECTED[i][0], r.name + ' 詞條數');
@@ -119,7 +119,7 @@ test('two-handed weapons gain +1 affix, +1 enchant slot, and floor(1.75x) socket
 });
 
 test('affix hard cap allows the two-hand bonus; ancient roll falls back to the highest table row', () => {
-  const c = loadContext(['js/util.js', 'js/data.js', 'js/formula.js']);
+  const c = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js']);
   assert.equal(c.maxAffixesFor(item({ weaponType: 'axe2h' })), c.MAX_AFFIXES + c.TWO_HAND_BONUS_AFFIXES);
   assert.equal(c.maxAffixesFor(item()), c.MAX_AFFIXES);
 
@@ -135,7 +135,7 @@ test('affix hard cap allows the two-hand bonus; ancient roll falls back to the h
 });
 
 test('normalizeTwoHandItemCounts tops up existing two-hand weapons idempotently', () => {
-  const c = loadContext(['js/util.js', 'js/data.js', 'js/formula.js', 'js/item.js']);
+  const c = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js']);
   const twoHand = item({
     weaponType: 'greatsword2h',
     rarity: 6,
@@ -171,7 +171,7 @@ test('migrateSave tops up two-hand weapons in equipment, inventory, and conveyor
   } };
   c.window = c;
   vm.createContext(c);
-  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js',
+  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js',
     'js/player.js', 'js/item.js', 'js/save.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), c, { filename: file });
   });
