@@ -4603,10 +4603,24 @@ function bindNewForgeEvents() {
     if (el.hasAttribute('data-nf-unlockslot')) {
       {
         sendUiCommand('newforge.unlockPartSlot', { furnaceId: fu.id }, {
+          silentResultError: true,
           keys: [furnacePendingKey(fu.id)],
           panels: ['newforge', 'header']
+        }).then(function (result) {
+          var resultError = typeof uiCommandResultError === 'function'
+            ? uiCommandResultError(result, 'newforge.unlockPartSlot') : null;
+          if (!resultError) return;
+          if (String(resultError).indexOf('金幣不足') >= 0) {
+            showFloatingText(el, '金幣不足', '#fca5a5');
+          } else {
+            reportUiCommandFailure('熔爐解鎖零件格', resultError, ['newforge', 'header']);
+          }
         }).catch(function (error) {
-          reportUiCommandFailure('熔爐解鎖零件格', error, ['newforge', 'header']);
+          if (String(error).indexOf('金幣不足') >= 0) {
+            showFloatingText(el, '金幣不足', '#fca5a5');
+          } else {
+            reportUiCommandFailure('熔爐解鎖零件格', error, ['newforge', 'header']);
+          }
         });
 
       }

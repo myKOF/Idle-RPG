@@ -1454,9 +1454,10 @@ var NEW_FORGE_IMAGE = 'images/furnace_LV1.png'; // 熔爐大圖（統一）
 // 零件置入格：每爐由初始格數起、金幣逐格解鎖至上限（格數見下方常數；成本公式 → formula.js newForgePartSlotCost）
 var NEW_FORGE_PART_SLOTS_INITIAL = 3;
 var NEW_FORGE_PART_SLOTS_MAX = 8;
-var NEW_FORGE_SLOT_COST_REINC = 50000; // 50000×轉生²
-var NEW_FORGE_SLOT_COST_BASE = 2000;  // 2000×(已解鎖-1)^(熔爐數)
-var NEW_FORGE_SLOT_COST_EXP = 0;
+var NEW_FORGE_SLOT_COST_A = 10000;
+var NEW_FORGE_SLOT_COST_B = 10000;
+var NEW_FORGE_SLOT_COST_C = 2;
+var NEW_FORGE_SLOT_COST_D = 3;
 
 // ---- 寶石 ----
 /* GEM_MAX_LEVEL = 一般系統上限（掉落/商店/合成/轉換/拆解/融合皆以此為限）。

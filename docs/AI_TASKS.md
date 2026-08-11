@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Codex：熔爐零件分解槽解鎖費用與不足提示（2026-08-11）
+
+- Status: Completed
+- Owner: Codex
+- Task: 將熔爐零件格解鎖費用改為 `⌊(a + b × 零件解鎖數量^c) × 熔爐數量^d⌋`；前 3 格免費，解鎖第 4 格時零件解鎖數量為 4。金幣不足時在解鎖按鈕上方顯示「金幣不足」浮字。
+- 參數：`a=10000`、`b=10000`、`c=2`、`d=3`，來源為「7-分解槽／分解槽解鎖費用」。
+- Scope: `config/Excel/game_parameters.xlsx`、`config/CSV/game_parameters.csv`、`js/data.js`、`js/formula.js`、`js/newforge.js`、`js/ui.js`、`tools/apply_params.cjs`、`tests/new-forge.test.cjs`、`tests/sim-forge-parts.test.cjs`、`tests/ui-worker-panels.test.cjs`、`game_formula.md`、`docs/AI_TASKS.md`
+- Verification: `node --test tests/new-forge.test.cjs tests/sim-forge-parts.test.cjs tests/ui-worker-panels.test.cjs` 64/64；`npm.cmd test` 1256/1256；`npm.cmd run build` 262/262；`node tools/apply_params.cjs --check-anchors` 551/551；dry-run 0 變更；`git diff --check` 通過。
+
 ## Codex：洗煉附魔精華費用依裝備等級縮放（2026-08-11）
 
 - Status: Completed

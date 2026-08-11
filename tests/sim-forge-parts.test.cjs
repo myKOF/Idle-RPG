@@ -74,7 +74,7 @@ function cmdsOf(list, name) {
 
 test('零件格解鎖：成本在金幣的保留比例內才送，逐爐各送一次', () => {
   const p = makePolicy([SLOT_RULE]);
-  const cmds = p.decide(st(1, [furnace(1, 3), furnace(2, 3)], { gold: 100000, slotCosts: [8000, 8000] }));
+  const cmds = p.decide(st(1, [furnace(1, 3), furnace(2, 3)], { gold: 10000000, slotCosts: [1360000, 1360000] }));
   const unlock = cmdsOf(cmds, 'newforge.unlockPartSlot');
   assert.deepEqual(unlock.map((c) => c.args.furnaceId), [1, 2]);
 });
@@ -98,7 +98,7 @@ test('零件格解鎖：一次只解一格——解完成本就變了', () => {
   /* newForgePartSlotCost 隨已解鎖格數指數上升，同一拍連送兩次的第二次
      用的是過期成本，多半是空轉。 */
   const p = makePolicy([SLOT_RULE]);
-  const cmds = p.decide(st(1, [furnace(1, 3)], { slotCosts: [8000] }));
+  const cmds = p.decide(st(1, [furnace(1, 3)], { slotCosts: [20000] }));
   assert.equal(cmdsOf(cmds, 'newforge.unlockPartSlot').length, 1);
 });
 
@@ -439,7 +439,7 @@ test('真引擎：兩座熔爐從 0/3 空格收斂到滿格，加成不再是 0'
 
   /* 開局沒有零件也沒有金幣，先把前提補上——測的是策略會不會用，
      不是零件掉不掉得到。金幣直接給，零件用遊戲自己的產生函式。 */
-  c.G.player.gold = 5e6;
+  c.G.player.gold = 1e9;
   for (const key of ['extractLens', 'scrapForge', 'speedGear']) {
     c.G.factory.parts.push({ id: 'test-' + key, key: key, tier: 7 });
   }

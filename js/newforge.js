@@ -251,7 +251,7 @@ function newForgeFurnaceSpeed(fu) {
   return 1 + newForgePartBonus(fu, 'speedGear') / 100;
 }
 
-/* ---- 零件格解鎖：金幣 = 50000×轉生² + 10000×(已解鎖-1)^(4＋熔爐數) ---- */
+/* ---- 零件格解鎖：金幣 = (a + b×零件解鎖數量^c)×熔爐數量^d ---- */
 function unlockNewForgePartSlot(furnaceId) {
   var nf = newForgeState();
   var fu = findNewForgeFurnace(furnaceId);

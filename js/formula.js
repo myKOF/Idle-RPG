@@ -1280,11 +1280,16 @@ function newForgeMaxFurnaces(reinc) {
   var r = Math.max(0, Math.floor(Number(reinc) || 0));
   return clamp(NEW_FORGE_BASE_FURNACES + NEW_FORGE_FURNACE_PER_REINC * r, NEW_FORGE_BASE_FURNACES, NEW_FORGE_MAX);
 }
-// 熔爐零件格解鎖金幣 = 50000×轉生² + 2000×(該爐已解鎖格數-1)^(熔爐數量)；上限 8 格
+// 熔爐零件格解鎖金幣 = (a + b×零件解鎖數量^c)×熔爐數量^d；上限 8 格。
+// 零件解鎖數量採解鎖後的目標格數（第 4 格就代入 4）；reinc 僅保留舊呼叫介面。
 function newForgePartSlotCost(reinc, unlocked, furnaceCount) {
-  var r = Math.max(0, Math.floor(Number(reinc) || 0));
-  return NEW_FORGE_SLOT_COST_REINC * r * r +
-    NEW_FORGE_SLOT_COST_BASE * Math.pow(Math.max(1, unlocked - 1), NEW_FORGE_SLOT_COST_EXP + Math.max(0, furnaceCount));
+  var current = Math.max(NEW_FORGE_PART_SLOTS_INITIAL,
+    Math.floor(Number(unlocked) || NEW_FORGE_PART_SLOTS_INITIAL));
+  var unlockCount = current + 1;
+  var furnaces = Math.max(1, Math.floor(Number(furnaceCount) || 1));
+  return Math.floor((NEW_FORGE_SLOT_COST_A +
+    NEW_FORGE_SLOT_COST_B * Math.pow(unlockCount, NEW_FORGE_SLOT_COST_C)) *
+    Math.pow(furnaces, NEW_FORGE_SLOT_COST_D));
 }
 
 /* ---- 稀有度擲骰（非掉落表路徑：合成產物等用）----

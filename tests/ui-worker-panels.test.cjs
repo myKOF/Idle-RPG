@@ -165,6 +165,47 @@ test('item.upgrade status results reach floating text feedback', async () => {
   }
 });
 
+test('熔爐零件格金幣不足時在按鈕上方顯示浮字', async () => {
+  const floatingTexts = [];
+  const calls = [];
+  const button = {
+    hasAttribute: (name) => name === 'data-nf-unlockslot',
+    getAttribute: (name) => name === 'data-nf-fid' ? '1' : null,
+    closest: (selector) => selector === 'button' ? button : null
+  };
+  let clickHandler;
+  const tab = {
+    querySelector: () => null,
+    addEventListener: (name, handler) => {
+      if (name === 'click') clickHandler = handler;
+    }
+  };
+  const context = {
+    document: { addEventListener: () => {} },
+    $id: (id) => id === 'tab-newforge' ? tab : null,
+    uiNewForgePanelSnapshot: () => ({}),
+    newForgeViewFurnace: () => ({ id: 1 }),
+    furnacePendingKey: (id) => 'furnace:' + id,
+    isUiCommandPending: () => false,
+    sendUiCommand: (name, args, options) => {
+      calls.push({ name, args, options });
+      return Promise.resolve('金幣不足（需要 170000，持有 0）');
+    },
+    uiCommandResultError: (result) => typeof result === 'string' ? result : null,
+    showFloatingText: (target, text, color) => floatingTexts.push({ target, text, color }),
+    reportUiCommandFailure: (label, error) => assert.fail(label + ': ' + error)
+  };
+  vm.createContext(context);
+  vm.runInContext(functionBody('bindNewForgeEvents') + '\nthis.bindNewForgeEvents = bindNewForgeEvents;', context);
+  context.bindNewForgeEvents();
+  assert.equal(typeof clickHandler, 'function');
+  clickHandler({ target: button });
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.deepEqual(floatingTexts, [{ target: button, text: '金幣不足', color: '#fca5a5' }]);
+  assert.equal(calls[0].options.silentResultError, true);
+});
+
 test('頂欄只讀 Worker header Snapshot 的資源、屬性與 DPS', () => {
   const renderHeader = functionBody('renderHeader');
   const renderAttrPanel = functionBody('renderAttrPanel');
