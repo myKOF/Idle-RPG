@@ -232,7 +232,10 @@ test('護盾技能給予最大生命固定比例的護盾，不以目前護盾�
     passives: {}
   });
   // 期望值由技能表推導，調整 manaBarrier 數值不該讓本測試變紅
-  const pct = context.scaleAt(context.mergedSkillFx('manaBarrier').shieldPctMax, lv);
+  // 2026-08-11：護盾改為有持續時間的狀態，數值改由狀態引用取得（→ config/Excel/Status.xlsx）
+  const shieldRef = context.skillStatusRefs(context.mergedSkillFx('manaBarrier'))
+    .find((r) => context.statusRefEffect(r) === 'shield');
+  const pct = context.statusRefAmount(shieldRef, lv);
   const expected = 1000 * pct / 100;
 
   const player = playerEntity();

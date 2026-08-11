@@ -287,7 +287,7 @@ function cleanse(ent) {
 
 /* ---- 增益 / 減益（技能系統用） ----
    攻速類減益同樣套用「控場遞減」；成功回傳實際持續秒數，歸零/免疫回傳 false。 */
-function applyBuff(ent, key, val, dur, sid) {
+function applyBuff(ent, key, val, dur, sid, stackCfg) {
     if ((key === 'atkDown' || key === 'defDown') && effectActive(ent, 'invuln')) return false; // 無敵：免疫敵方減益
     if (isBossControlImmune(ent) && isAttackFrequencyControlKey(key)) return false;
     if (isAttackFrequencyControlKey(key)) {
@@ -295,10 +295,14 @@ function applyBuff(ent, key, val, dur, sid) {
         if (dur <= 0) return false;
     }
     if (!ent.buffs) ent.buffs = {};
+    var prev = ent.buffs[key];
+    var st = stackStep(stackCfg, prev && prev.until > GT ? prev : null, val);
     // 45 新技能基建（buffExtend 族）：補存原始持續 dur 與累計延長 ext（累計延長 ≤ dur × BUFF_EXTEND_CAP_PCT%）；
     // 重新施放＝全新一筆，ext 歸零；既有讀取（val/until）不受影響。
     // sid＝狀態表 ID（未帶時由增益鍵反查），供 UI 取狀態圖標與名稱。
-    ent.buffs[key] = { val: val, until: GT + dur, dur: dur, ext: 0, sid: sid || statusIdByKey(key) };
+    // unit／stacks＝疊層規則用（單層值與層數；val 恆為 unit × stacks）。
+    ent.buffs[key] = { val: st.value, until: GT + dur, dur: dur, ext: 0, sid: sid || statusIdByKey(key),
+        unit: st.unit, stacks: st.stacks };
     return dur;
 }
 function buffVal(ent, key) {
@@ -312,11 +316,52 @@ function activeBuffKeys(ent) {
     return out;
 }
 
-/* ---- 持續傷害（流血/燃燒/中毒/詛咒…；同名疊加取高） ----
+/* ---- 疊加規則（狀態表 stack 欄）----
+   refresh   ＝ 後蓋前（增益的預設）
+   strongest ＝ 單層值取高並重新計時（持續傷害的預設）
+   stack     ＝ 單層值取高、層數 +1 至上限；實際效果值＝單層值 × 層數
+   prev＝目前生效中的同一筆（沒有就傳 null）；回傳 { value, unit, stacks }。 */
+function stackStep(cfg, prev, incoming) {
+    var rule = (cfg && cfg.rule) || 'refresh';
+    if (rule === 'stack') {
+        var max = Math.max(1, Math.floor((cfg && cfg.max) || 1));
+        var unit = prev ? Math.max(prev.unit || prev.val || prev.dps || 0, incoming) : incoming;
+        var stacks = Math.min(max, (prev ? (prev.stacks || 1) : 0) + 1);
+        return { value: unit * stacks, unit: unit, stacks: stacks };
+    }
+    if (rule === 'strongest' && prev) {
+        var keep = Math.max(prev.unit || prev.val || prev.dps || 0, incoming);
+        return { value: keep, unit: keep, stacks: 1 };
+    }
+    return { value: incoming, unit: incoming, stacks: 1 };
+}
+
+/* ---- 吸收護盾（狀態表 shield）----
+   護盾量＝施法者最大生命 × pctOfMaxHp%，吃護盾效率並受技能護盾上限限制（→ formula.js §3）。
+   取 max 而非累加：同一護盾技能重放只把護盾補回該比例，不疊高。
+   granted 記在 ent.buffs.shield.val，到期時由 tickStatuses 回收「還沒被打掉的部分」。 */
+function applyShield(ent, pctOfMaxHp, dur, sid, stats, stackCfg) {
+    if (!ent || !(dur > 0)) return false;
+    var maxHp = (stats && stats.hp) || ent.maxHp || 0;
+    if (!(maxHp > 0) || !(pctOfMaxHp > 0)) return false;
+    var before = Math.max(0, ent.shield || 0);
+    var prev = ent.buffs && ent.buffs.shield && ent.buffs.shield.until > GT ? ent.buffs.shield : null;
+    var step = stackStep(stackCfg, prev, pctOfMaxHp);
+    var pct = step.value * (1 + ((stats && stats.shieldEff) || 0) / 100);
+    var target = Math.min(maxHp * (pct / 100), maxHp * (SHIELD_SKILL_CAP_PCT / 100));
+    ent.shield = Math.max(before, target);
+    refreshShieldMaxAfterGain(ent, before);
+    if (!ent.buffs) ent.buffs = {};
+    ent.buffs.shield = { val: Math.max(0, ent.shield), until: GT + dur, dur: dur, ext: 0, sid: sid || 'shield',
+        unit: step.unit, stacks: step.stacks };
+    return dur;
+}
+
+/* ---- 持續傷害（流血/燃燒/中毒/詛咒…；疊加規則見 stackStep） ----
    dps＝每秒傷害；interval＝作用間隔（秒，來自狀態表；0＝不分段連續結算）。
    儲存採 dps 而非「每跳量」，既有的 DoT 引爆（剩餘總值＝dps×剩餘秒數）、轉移與延長
    機制才不必改算法；每跳實際傷害＝dps×interval，由 tickStatuses 結算。 */
-function applyDot(ent, dps, dur, name, sid, interval) {
+function applyDot(ent, dps, dur, name, sid, interval, stackCfg) {
     if (effectActive(ent, 'invuln')) return; // 無敵：免疫持續傷害
     if (typeof legendaryInstantBurn === 'function') {
         var instantBurn = legendaryInstantBurn(ent, dps, dur, name);
@@ -328,22 +373,32 @@ function applyDot(ent, dps, dur, name, sid, interval) {
         var sdef = statusDef(sid);
         interval = sdef ? sdef.interval : 0;
     }
+    if (stackCfg === undefined || stackCfg === null) {
+        var sdef2 = statusDef(sid);
+        stackCfg = sdef2 ? { rule: sdef2.stack, max: sdef2.maxStacks } : { rule: 'strongest' };
+    }
     if (!ent.dots) ent.dots = [];
     for (var i = 0; i < ent.dots.length; i++) {
         if (ent.dots[i].name === name) {
-            ent.dots[i].dps = Math.max(ent.dots[i].dps, dps);
-            ent.dots[i].until = GT + dur;
+            var cur = ent.dots[i];
+            var step2 = stackStep(stackCfg, cur.until > GT ? cur : null, dps);
+            cur.dps = step2.value;
+            cur.unit = step2.unit;
+            cur.stacks = step2.stacks;
+            cur.until = GT + dur;
             // 45 新技能基建（buffExtend 族）：重新塗抹＝原始持續刷新、累計延長歸零
-            ent.dots[i].dur = dur;
-            ent.dots[i].ext = 0;
-            ent.dots[i].sid = sid;
-            ent.dots[i].interval = interval;
+            cur.dur = dur;
+            cur.ext = 0;
+            cur.sid = sid;
+            cur.interval = interval;
             return;
         }
     }
     // 45 新技能基建（buffExtend 族）：補存原始持續 dur 與累計延長 ext（延長上限依據）
-    // acc＝距離下次作用已累積的秒數
-    ent.dots.push({ dps: dps, until: GT + dur, name: name, dur: dur, ext: 0, sid: sid, interval: interval, acc: 0 });
+    // acc＝距離下次作用已累積的秒數；unit／stacks＝疊層規則用
+    var step3 = stackStep(stackCfg, null, dps);
+    ent.dots.push({ dps: step3.value, until: GT + dur, name: name, dur: dur, ext: 0, sid: sid,
+        interval: interval, acc: 0, unit: step3.unit, stacks: step3.stacks });
 }
 function hasDots(ent) {
     if (!ent || !ent.dots) return false;
@@ -354,6 +409,7 @@ function hasDots(ent) {
    間隔 0＝連續結算。到期時把不足一次間隔的餘額補跳，總傷害維持 dps×持續時間
    （＝改造前的總量，只是改成一跳一跳給），本次改造對數值平衡因此是中性的。 */
 function tickStatuses(ent, dt) {
+    tickShieldExpiry(ent);
     if (effectActive(ent, 'invuln')) return false; // 無敵：持續傷害不生效
     if (!ent.dots || !ent.dots.length) return false;
     // 45 新技能（dotSynergy 族）：DoT 跳動加速——僅對敵方實體生效（以 maxHp 欄位辨識敵人；
@@ -407,6 +463,21 @@ function tickStatuses(ent, dt) {
         if (ent.hp <= 0) { ent.hp = 0; return true; }
     }
     return false;
+}
+
+/* 護盾到期：回收「當初給的量裡還沒被打掉的部分」。
+   其他來源（岩甲、聖痕等）另外加上來的護盾若已被吸收，回收量會相應變少——
+   與傳奇【聖盾】既有的回收寫法一致（js/legendary.js）。 */
+function tickShieldExpiry(ent) {
+    if (!ent || !ent.buffs || !ent.buffs.shield) return;
+    var sb = ent.buffs.shield;
+    if (sb.until > GT) return;
+    var remove = Math.min(Math.max(0, ent.shield || 0), Math.max(0, sb.val || 0));
+    delete ent.buffs.shield;
+    if (remove <= 0) return;
+    ent.shield = Math.max(0, (ent.shield || 0) - remove);
+    if (ent.shield <= 0) { ent.shieldMax = 0; ent.shieldMaxVersion = SHIELD_MAX_VERSION; }
+    if (typeof UI !== 'undefined' && UI.dirty) UI.dirty.battle = true;
 }
 
 function globalDamageMultiplierForEntity(ent) {
