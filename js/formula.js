@@ -1280,11 +1280,16 @@ function newForgeMaxFurnaces(reinc) {
   var r = Math.max(0, Math.floor(Number(reinc) || 0));
   return clamp(NEW_FORGE_BASE_FURNACES + NEW_FORGE_FURNACE_PER_REINC * r, NEW_FORGE_BASE_FURNACES, NEW_FORGE_MAX);
 }
-// 熔爐零件格解鎖金幣 = 50000×轉生² + 2000×(該爐已解鎖格數-1)^(熔爐數量)；上限 8 格
+// 熔爐零件格解鎖金幣 = (a + b×零件解鎖數量^c)×熔爐數量^d；上限 8 格。
+// 零件解鎖數量採解鎖後的目標格數（第 4 格就代入 4）；reinc 僅保留舊呼叫介面。
 function newForgePartSlotCost(reinc, unlocked, furnaceCount) {
-  var r = Math.max(0, Math.floor(Number(reinc) || 0));
-  return NEW_FORGE_SLOT_COST_REINC * r * r +
-    NEW_FORGE_SLOT_COST_BASE * Math.pow(Math.max(1, unlocked - 1), NEW_FORGE_SLOT_COST_EXP + Math.max(0, furnaceCount));
+  var current = Math.max(NEW_FORGE_PART_SLOTS_INITIAL,
+    Math.floor(Number(unlocked) || NEW_FORGE_PART_SLOTS_INITIAL));
+  var unlockCount = current + 1;
+  var furnaces = Math.max(1, Math.floor(Number(furnaceCount) || 1));
+  return Math.floor((NEW_FORGE_SLOT_COST_A +
+    NEW_FORGE_SLOT_COST_B * Math.pow(unlockCount, NEW_FORGE_SLOT_COST_C)) *
+    Math.pow(furnaces, NEW_FORGE_SLOT_COST_D));
 }
 
 /* ---- 稀有度擲骰（非掉落表路徑：合成產物等用）----
@@ -1824,11 +1829,13 @@ function upgradeSuccessChance(it) {
 }
 
 /* 洗煉費用（整件或單詞條同價）：金幣 = 係數 × 底^稀有度 × (1 + 裝備等級 × 每級)；
-   精華沿用 REROLL_ESSENCE_COST 的逐稀有度表，表上沒有的稀有度退回 1 + 稀有度。 */
+   精華 = 基礎精華費用 × 裝備等級 ÷ 除數，無條件捨去。基礎費用沿用
+   REROLL_ESSENCE_COST 的逐稀有度表，表上沒有的稀有度退回 1 + 稀有度。 */
 var REROLL_COST_GOLD = { coef: 40, base: 1.7, perLevel: 0.15 };
 function rerollCost(it) {
-  var essence = REROLL_ESSENCE_COST[it.rarity];
-  if (essence === undefined) essence = 1 + it.rarity;
+  var baseEssence = REROLL_ESSENCE_COST[it.rarity];
+  if (baseEssence === undefined) baseEssence = 1 + it.rarity;
+  var essence = Math.floor(baseEssence * it.level / REROLL_ESSENCE_LEVEL_DIVISOR);
   return {
     gold: Math.round(REROLL_COST_GOLD.coef * Math.pow(REROLL_COST_GOLD.base, it.rarity) * (1 + it.level * REROLL_COST_GOLD.perLevel)),
     essence: essence

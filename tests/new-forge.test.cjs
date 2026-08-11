@@ -49,9 +49,10 @@ test('合併版常數：零件格 3~8、熔爐上限 12/轉生連動、統一大
   assert.equal(c.NEW_FORGE_PART_SLOTS_INITIAL, 3);
   assert.equal(c.NEW_FORGE_PART_SLOTS_MAX, 8, '零件格上限應提升為 8');
   assert.equal(c.NEW_FORGE_FURNACE_QUEUE_CAP, 9999, '每爐專屬佇列上限（+N 顯示封頂同值）');
-  assert.equal(c.NEW_FORGE_SLOT_COST_REINC, 50000);
-  assert.equal(c.NEW_FORGE_SLOT_COST_BASE, 2000);
-  assert.equal(c.NEW_FORGE_SLOT_COST_EXP, 0);
+  assert.equal(c.NEW_FORGE_SLOT_COST_A, 10000);
+  assert.equal(c.NEW_FORGE_SLOT_COST_B, 10000);
+  assert.equal(c.NEW_FORGE_SLOT_COST_C, 2);
+  assert.equal(c.NEW_FORGE_SLOT_COST_D, 3);
   assert.equal(c.NEW_FORGE_IMAGE, 'images/furnace_LV1.png');
   assert.ok(fs.existsSync(path.join(root, 'images/furnace_LV1.png')), '缺少 furnace_LV1.png');
   // 專屬材料/產出/配方表已全數移除（拆解改用舊分解槽規則）
@@ -72,16 +73,16 @@ test('newForgeMaxFurnaces：0轉=2、每轉+1、上限12', () => {
   assert.equal(c.newForgeMaxFurnaces(99), 12);
 });
 
-test('newForgePartSlotCost：50000×轉生²＋2000×(已解鎖-1)^(熔爐數)', () => {
+test('newForgePartSlotCost：(a＋b×零件解鎖數量^c)×熔爐數量^d', () => {
   const c = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js']);
-  // 0轉、2座熔爐、已解鎖3格 → 第4格：2000×2^2 = 8000
-  assert.equal(c.newForgePartSlotCost(0, 3, 2), 8000);
-  // 0轉、2座、已解鎖4 → 第5格：2000×3^2 = 18000
-  assert.equal(c.newForgePartSlotCost(0, 4, 2), 18000);
-  // 2轉、3座、已解鎖3 → 50000×4 + 2000×2^3 = 200000 + 16000
-  assert.equal(c.newForgePartSlotCost(2, 3, 3), 200000 + 2000 * Math.pow(2, 3));
-  // 第 8 格（已解鎖 7）：0轉、1座 → 2000×6^1
-  assert.equal(c.newForgePartSlotCost(0, 7, 1), 2000 * Math.pow(6, 1));
+  // 2座熔爐、解鎖第4格時零件解鎖數量=4： (10000 + 10000×4^2)×2^3 = 1360000
+  assert.equal(c.newForgePartSlotCost(0, 3, 2), 1360000);
+  // 2座、解鎖第5格時零件解鎖數量=5： (10000 + 10000×5^2)×2^3 = 2080000
+  assert.equal(c.newForgePartSlotCost(0, 4, 2), 2080000);
+  // 轉生不再影響費用；3座、解鎖第4格： (10000 + 10000×4^2)×3^3 = 4590000
+  assert.equal(c.newForgePartSlotCost(99, 3, 3), 4590000);
+  // 解鎖第8格：1座 → (10000 + 10000×8^2)×1^3 = 650000
+  assert.equal(c.newForgePartSlotCost(0, 7, 1), 650000);
 });
 
 /* ============ 3. 裝備導入（全服一律進熔爐佇列） ============ */
@@ -369,8 +370,8 @@ test('零件格：初始3、金幣逐格解鎖至8；金幣不足/已滿拒絕',
   const c = loadContext(LOGIC_FILES);
   const G = freshG(c);
   const fu = G.newForge.furnaces[0];
-  const cost = c.newForgePartSlotCost(0, 3, 1); // 2000×2^1
-  assert.equal(cost, 2000 * Math.pow(2, 1));
+  const cost = c.newForgePartSlotCost(0, 3, 1); // (10000＋10000×4^2)×1^3
+  assert.equal(cost, 170000);
   G.player.gold = cost - 1;
   assert.match(String(c.unlockNewForgePartSlot(fu.id)), /金幣不足/);
   assert.equal(fu.partSlots, 3);

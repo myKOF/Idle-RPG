@@ -287,6 +287,7 @@ Object.keys(ZONE_KEYS).forEach(nm => {
 scalar('data', 'MAX_AFFIXES', '表-固定參數', '詞條數硬上限', 0);
 scalar('data', 'REROLL_CHAOS_ESSENCE_COST', '7-洗煉', '混沌精華費用', 0);
 scalar('data', 'REROLL_CHAOS_GODFORGED_ESSENCE_COST', '7-洗煉', '神鑄混沌精華費用', 0);
+scalar('data', 'REROLL_ESSENCE_LEVEL_DIVISOR', '7-洗煉', '精華費用', 3);
 // 太古常數（2026-07-23 改版：太古詞條產出時決定；野外掉落率由 Zone_Stage_Drops.csv 管理）
 scalar('data', 'ANCIENT_ESSENCE_BOSS_BASE_RATE', '5-太古詞條', '高塔太古精華機率', 1);
 scalar('data', 'ANCIENT_ESSENCE_BOSS_LEVEL_RATE', '5-太古詞條', '高塔太古精華機率', 3);
@@ -632,8 +633,13 @@ scalar('formula', 'SPEED_GEAR_FIXED_BONUS', '5-掉落通則', '加速齒輪固�
 scalarValue('formula', 'ANCIENT_AFFIX_SALVAGE_CHANCE', 50, 'ANCIENT_AFFIX_SALVAGE_CHANCE'); // 每條太古詞條的拆解判定機率
 scalarValue('formula', 'SALVAGE_SLOT_MAX', 20, 'SALVAGE_SLOT_MAX');
 scalarValue('formula', 'SALVAGE_SLOT_INITIAL', 10, 'SALVAGE_SLOT_INITIAL');
-scalar('formula', 'SALVAGE_SLOT_UNLOCK_GOLD_BASE', '7-分解槽', '分解槽解鎖費用', 0);
-scalar('formula', 'SALVAGE_SLOT_UNLOCK_GOLD_RATE', '7-分解槽', '分解槽解鎖費用', 1);
+// 舊分解槽已退役；保留相容公式的固定值，不讓新版熔爐參數改變舊存檔行為。
+scalarValue('formula', 'SALVAGE_SLOT_UNLOCK_GOLD_BASE', 10000, 'SALVAGE_SLOT_UNLOCK_GOLD_BASE');
+scalarValue('formula', 'SALVAGE_SLOT_UNLOCK_GOLD_RATE', 3, 'SALVAGE_SLOT_UNLOCK_GOLD_RATE');
+scalar('data', 'NEW_FORGE_SLOT_COST_A', '7-分解槽', '分解槽解鎖費用', 0);
+scalar('data', 'NEW_FORGE_SLOT_COST_B', '7-分解槽', '分解槽解鎖費用', 1);
+scalar('data', 'NEW_FORGE_SLOT_COST_C', '7-分解槽', '分解槽解鎖費用', 2);
+scalar('data', 'NEW_FORGE_SLOT_COST_D', '7-分解槽', '分解槽解鎖費用', 3);
 scalar('formula', 'FUSE_FACTOR', '9-融合', '素材繼承比例', 0);
 scalar('formula', 'FUSION_MUTATION_CHANCE', '9-融合', '變異觸發率', 0);
 scalar('formula', 'FUSION_CD_FACTOR', '9-融合', '融合冷卻', 0);

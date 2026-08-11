@@ -48,6 +48,7 @@ var RARITIES = [
 var PASSIVE_MIN_RARITY = 5; // 傳說級（含）以上附帶傳奇特效
 var MAX_AFFIXES = 10; // 單件裝備詞條數安全硬上限（目前稀有度表最高 10 條）
 var EQUIP_TIER_SIZE = 50; // 裝備等級分段大小：來源等級 1~49 → 1 級裝，之後每 50 級一套（50/100/150…；equipmentTierLevel → formula.js §6）
+var REROLL_ESSENCE_LEVEL_DIVISOR = 50; // 洗煉精華費用的裝備等級除數（參數表「7-洗煉／精華費用」d）
 var REROLL_ESSENCE_COST = { 6: 9, 7: 14, 8: 20, 9: REROLL_CHAOS_ESSENCE_COST, 10: REROLL_CHAOS_GODFORGED_ESSENCE_COST }; // 神話／創世／神鑄與混沌系列洗煉精華費用
 
 /* ---- 太古詞條與太古精華 ---- */
@@ -1453,9 +1454,10 @@ var NEW_FORGE_IMAGE = 'images/furnace_LV1.png'; // 熔爐大圖（統一）
 // 零件置入格：每爐由初始格數起、金幣逐格解鎖至上限（格數見下方常數；成本公式 → formula.js newForgePartSlotCost）
 var NEW_FORGE_PART_SLOTS_INITIAL = 3;
 var NEW_FORGE_PART_SLOTS_MAX = 8;
-var NEW_FORGE_SLOT_COST_REINC = 50000; // 50000×轉生²
-var NEW_FORGE_SLOT_COST_BASE = 2000;  // 2000×(已解鎖-1)^(熔爐數)
-var NEW_FORGE_SLOT_COST_EXP = 0;
+var NEW_FORGE_SLOT_COST_A = 10000;
+var NEW_FORGE_SLOT_COST_B = 10000;
+var NEW_FORGE_SLOT_COST_C = 2;
+var NEW_FORGE_SLOT_COST_D = 3;
 
 // ---- 寶石 ----
 /* GEM_MAX_LEVEL = 一般系統上限（掉落/商店/合成/轉換/拆解/融合皆以此為限）。

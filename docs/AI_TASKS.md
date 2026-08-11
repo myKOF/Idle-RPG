@@ -1,5 +1,30 @@
 # AI_TASKS.md
 
+## Codex：熔爐零件分解槽解鎖費用與不足提示（2026-08-11）
+
+- Status: Completed
+- Owner: Codex
+- Task: 將熔爐零件格解鎖費用改為 `⌊(a + b × 零件解鎖數量^c) × 熔爐數量^d⌋`；前 3 格免費，解鎖第 4 格時零件解鎖數量為 4。金幣不足時在解鎖按鈕上方顯示「金幣不足」浮字。
+- 參數：`a=10000`、`b=10000`、`c=2`、`d=3`，來源為「7-分解槽／分解槽解鎖費用」。
+- Scope: `config/Excel/game_parameters.xlsx`、`config/CSV/game_parameters.csv`、`js/data.js`、`js/formula.js`、`js/newforge.js`、`js/ui.js`、`tools/apply_params.cjs`、`tests/new-forge.test.cjs`、`tests/sim-forge-parts.test.cjs`、`tests/ui-worker-panels.test.cjs`、`game_formula.md`、`docs/AI_TASKS.md`
+- Verification: `node --test tests/new-forge.test.cjs tests/sim-forge-parts.test.cjs tests/ui-worker-panels.test.cjs` 64/64；`npm.cmd test` 1256/1256；`npm.cmd run build` 262/262；`node tools/apply_params.cjs --check-anchors` 551/551；dry-run 0 變更；`git diff --check` 通過。
+
+## Codex：洗煉附魔精華費用依裝備等級縮放（2026-08-11）
+
+- Status: Completed
+- Owner: Codex
+- Task: 將洗煉附魔精華費用改為「基礎精華費用 × 裝備等級 / d」，結果無條件捨去；目前參數表 `d=50`。
+- 前置依賴: 使用者已更新 `config/Excel/game_parameters.xlsx` 與 `config/CSV/game_parameters.csv` 的「7-洗煉／精華費用」第 4 個參數為 50。
+- 允許修改: `js/data.js`、`js/formula.js`、`tools/apply_params.cjs`、`tests/reroll-cost.test.cjs`、`game_formula.md`、`docs/AI_TASKS.md`；保留使用者既有參數表變更。
+- 禁止修改: Worker Protocol、存檔格式、其他 AI 進行中任務檔案。
+- 驗收方式: 普通～傳說、神話／創世／神鑄與混沌系列均依裝備等級縮放；非整數結果無條件捨去；參數錨點與既有功能測試通過。
+- 測試要求: `node --test tests/reroll-cost.test.cjs`、完整 `npm.cmd test`、`npm.cmd run build`、`node tools/apply_params.cjs --check-anchors` 與 `git diff --check`。
+- Verification: `node --test tests/reroll-cost.test.cjs` 3/3；完整 `npm.cmd test` 1255/1255；`npm.cmd run build` 262/262；`node tools/apply_params.cjs --check-anchors` 547/547；dry-run 變更 0；`git diff --check` 通過。
+- 完成內容: 新增 `REROLL_ESSENCE_LEVEL_DIVISOR` 參數並接入 `apply_params`；`rerollCost` 對所有基礎精華費用套用 `Math.floor(基礎費用 × 裝備等級 / d)`；同步更新測試與公式文件。
+- 已知風險: `d=50` 時 1～49 級普通裝備的精華費用會依無條件捨去結果為 0，這是目前指定公式的直接結果。
+- 未完成項目: 無。
+- 後續接手者: 使用者合併至整合分支；必要時以瀏覽器確認低等級裝備顯示 0 精華且可正常執行洗煉。
+
 ## Codex：敵人生成後首次攻擊延遲（2026-08-11）
 
 - Status: Completed
