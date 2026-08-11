@@ -101,7 +101,7 @@ test('菁英數量表逐張地圖選用，未列出的地圖走 500 關之後那
   assert.ok(maxes[maxes.length - 1] < weightedRange(context.FIELD_ENEMY_COUNT_TABLE).max);
 });
 
-test('荒漠前 100 關每 20 關套用小怪分段表，菁英走荒漠地圖菁英表，100 关後恢復正常', () => {
+test('荒漠前 100 關每 20 關套用小怪分段表，菁英走荒漠地圖菁英表，100 關後恢復正常', () => {
   const context = loadFormulaContext();
   const ranges = [1, 20, 21, 40, 41, 60, 61, 80, 81, 100];
   ranges.forEach((stage) => {
