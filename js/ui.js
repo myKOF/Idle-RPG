@@ -2492,6 +2492,11 @@ function buffSignedValueHtml(val, colorVar) {
   return '<span class="buff-val" style="color:' + colorVar + '">' + text + '</span>';
 }
 
+/* 疊層後綴：層數 >1 才顯示（例：🔥燃燒×3）。層數由狀態表的疊加規則決定（→ js/status.js）。 */
+function statusStackSuffix(entry) {
+  return (entry && entry.stacks > 1) ? '×' + entry.stacks : '';
+}
+
 function buffRemainHtml(remain) {
   return '<span class="buff-remain">' + Math.max(0, Math.ceil(remain || 0)) + 's</span>';
 }
@@ -2564,8 +2569,12 @@ function enemyBuffTooltipDesc(anchorEl) {
   for (var i = 0; i < list.length; i++) {
     var e = list[i];
     var down = e.kind === 'debuff';
-    var valHtml = e.val ? buffSignedValueHtml(e.val, down ? 'var(--danger)' : 'var(--good)') : '';
-    rows.push(combatStatusRow(e.icon, e.name + (e.val ? (down ? '↓' : '↑') : ''), valHtml, Math.ceil(e.remain)));
+    // 護盾顯示剩餘吸收量（不是百分比），所以不套 +/− 號的增益樣式
+    var valHtml = e.effect === 'shield'
+      ? '<span class="buff-val">' + fmt(e.val) + '</span>'
+      : (e.val ? buffSignedValueHtml(e.val, down ? 'var(--danger)' : 'var(--good)') : '');
+    var arrow = (e.effect === 'stat' && e.val) ? (down ? '↓' : '↑') : '';
+    rows.push(combatStatusRow(e.icon, e.name + arrow + statusStackSuffix(e), valHtml, Math.ceil(e.remain)));
   }
   return rows.length ? rows.join('') : '<span class="dim-text">目前沒有狀態</span>';
 }
@@ -2681,7 +2690,7 @@ function entStatus(ent) {
   for (var i = 0; i < list.length; i++) {
     var e = list[i];
     // 只有屬性增減（stat）才標升降箭頭；持續傷害／持續回復／控場的名稱本身就說明了方向
-    s.push(e.icon + e.name + (e.effect === 'stat' ? (e.kind === 'debuff' ? '↓' : '↑') : ''));
+    s.push(e.icon + e.name + (e.effect === 'stat' ? (e.kind === 'debuff' ? '↓' : '↑') : '') + statusStackSuffix(e));
   }
   return s.join(' ');
 }

@@ -1685,7 +1685,7 @@ function skillDef(id, fusions) {
    elems:{元素:權重} 融合技多屬性權重（合計 1）、elemOverride 強制改屬性（特規）
    dot:{pct,dur,name} 以技能值為基準的每秒跳傷
    stunDur/slowDur、selfDmgPct、healPctOfDmg、healPctMax、hotPct+hotDur
-   shieldPctMax、buff/debuff:{key,base,per,dur}、goldPer、mpRestore
+   status:[{id,base,per,dur}] 狀態引用、goldPer、mpRestore
    neverMiss、critBonus、execBelow+execMult、maxHpDotPct（詛咒）
    ai：施放條件 hurt30/50/70、debuffed、always（預設有敵人就放）
    被動：fx.passive = { 屬性桶: 每級數值 }、fx.elemMult = 每級元素傷% */
@@ -1734,7 +1734,7 @@ var SKILLS = {
   rimeTide: { name: '凜冬迴潮', emoji: '🌬️', cat: 'magic', tags: ['ice'], unlockLv: 300, cost: 26, cd: 12, flavor: '凜冬迴潮，捲回流逝的時間。', fx: { dmgType: 'magic', stat: 'matk', base: 260, per: 55, cdShift: { sec: { base: 1.5, per: 0.1 } } } },
   healWound: { name: '治癒術', emoji: '💚', cat: 'def', tags: [], unlockLv: 1, cost: 30, cd: 12, ai: 'hurt70', flavor: '溫暖的光輝癒合傷口。', fx: { healPctMax: { base: 15, per: 4 } } },
   regenerate: { name: '再生術', emoji: '🌿', cat: 'def', tags: [], unlockLv: 1, cost: 28, cd: 15, ai: 'hurt80', flavor: '持續再生的自然之力。', fx: { status: [{ id: 'regen', base: 2.5, per: 0.7, dur: 6 }] } },
-  manaBarrier: { name: '魔法屏障', emoji: '🛡️', cat: 'def', tags: [], unlockLv: 1, cost: 30, cd: 15, ai: 'shield', flavor: '展開吸收傷害的屏障。', fx: { shieldPctMax: { base: 18, per: 4 } } },
+  manaBarrier: { name: '魔法屏障', emoji: '🛡️', cat: 'def', tags: [], unlockLv: 1, cost: 30, cd: 15, ai: 'shield', flavor: '展開吸收傷害的屏障。', fx: { status: [{ id: 'shield', base: 18, per: 4 }] } },
   ironWall: { name: '鐵壁', emoji: '🏰', cat: 'def', tags: [], unlockLv: 1, cost: 25, cd: 18, ai: 'hurt50', flavor: '硬化全身抵禦攻擊。', fx: { status: [{ id: 'defUp', base: 40, per: 10, dur: 6 }] } },
   purify: { name: '淨化術', emoji: '✨', cat: 'def', tags: [], unlockLv: 20, cost: 15, cd: 10, ai: 'debuffed', flavor: '洗去身上的負面狀態。', fx: { selfCleanse: true, healPctMax: { base: 5, per: 1.5 } } },
   lifeLink: { name: '生命汲取', emoji: '🧛', cat: 'def', tags: ['dark'], unlockLv: 20, cost: 22, cd: 10, flavor: '奪取敵人的生命力。', fx: { dmgType: 'magic', stat: 'matk', base: 220, per: 50, healPctOfDmg: 100 } },
@@ -1748,7 +1748,7 @@ var SKILLS = {
   soulEcho: { name: '汲魂回響', emoji: '🔔', cat: 'def', tags: ['dark'], unlockLv: 100, cost: 24, cd: 12, flavor: '傷痛的回響，化作汲魂的甘露。', fx: { dmgType: 'magic', stat: 'matk', base: 200, per: 45, healPctOfDmg: 60, healEcho: { dur: 2, pct: { base: 40, per: 2 } } } },
   holyLitany: { name: '連禱聖言', emoji: '📜', cat: 'def', tags: ['light'], unlockLv: 150, cost: 20, cd: 18, flavor: '聖言連禱，為守護者開路。', fx: { healPctMax: { base: 6, per: 1.5 }, freeNext: { count: 1, dur: 6, scope: 'cat:def', ampPct: { base: 30, per: 2 } } } },
   sustainHymn: { name: '續光聖詠', emoji: '🎐', cat: 'def', tags: ['light'], unlockLv: 150, cost: 22, cd: 15, flavor: '聖詠不歇，恩澤長存。', fx: { healPctMax: { base: 5, per: 1.2 }, buffExtend: { sec: 2 } } },
-  bastionCycle: { name: '壁壘迴環', emoji: '♻️', cat: 'def', tags: [], unlockLv: 150, cost: 28, cd: 20, ai: 'shield', flavor: '壁壘每一次震響，都是反攻的號角。', fx: { shieldPctMax: { base: 10, per: 2.5 }, cdOnHitTaken: { sec: 0.4, icdSec: 0.5 } } },
+  bastionCycle: { name: '壁壘迴環', emoji: '♻️', cat: 'def', tags: [], unlockLv: 150, cost: 28, cd: 20, ai: 'shield', flavor: '壁壘每一次震響，都是反攻的號角。', fx: { cdOnHitTaken: { sec: 0.4, icdSec: 0.5 }, status: [{ id: 'shield', base: 10, per: 2.5 }] } },
   martyrCharge: { name: '蓄怒之盾', emoji: '😤', cat: 'def', tags: [], unlockLv: 200, cost: 16, cd: 7, flavor: '承受吧——怒火終將百倍奉還。', fx: { dmgType: 'phys', stat: 'atk', base: 140, per: 30, charge: { name: '蓄怒', add: 1, max: 4, dur: 15, source: 'hitTaken', burst: { multPct: { base: 200, per: 6 }, scope: 'self' } } } },
   sanctify: { name: '聖化禱言', emoji: '🙏', cat: 'def', tags: ['light'], unlockLv: 200, cost: 25, cd: 22, flavor: '受聖化的禱言，讓守護亦能傷人。', fx: { healPctMax: { base: 8, per: 2 }, skillAmp: { scope: 'cat:def', pct: { base: 20, per: 4 }, dur: 8 } } },
   timeWarp: { name: '時間扭曲', emoji: '⏳', cat: 'special', tags: [], unlockLv: 1, cost: 35, cd: 20, flavor: '加速自身的時間流。', fx: { status: [{ id: 'aspdUp', base: 25, per: 7, dur: 6 }] } },
@@ -1839,13 +1839,13 @@ var UNLOCKS = {
   rimeTide: { 4: { cdResetOnKill: { pct: 30, selfReset: true, icdSec: 3 } }, 8: { cdShift: { sec: { base: 2.5, per: 0.1 } }, cdResetOnKill: { pct: 30, selfReset: true, icdSec: 3 }, cdResetOnKill2: { othersPct: 20, icdSec: 3 } } },
   healWound: { 4: { selfCleanse: true }, 8: { status: [{ id: 'defUp', base: 15, per: 3, dur: 4 }] } },
   regenerate: { 4: { status: [{ id: 'regen', base: 2.5, per: 0.7, dur: 8 }] }, 8: { status: [{ id: 'regen', base: 4, per: 1, dur: 8 }] } },
-  manaBarrier: { 4: { shieldPctMax: { base: 24, per: 5 } }, 8: { shieldPctMax: { base: 28, per: 6 }, status: [{ id: 'blockUp', base: 10, per: 2, dur: 6 }] } },
+  manaBarrier: { 4: { status: [{ id: 'shield', base: 24, per: 5 }] }, 8: { status: [{ id: 'shield', base: 28, per: 6 }, { id: 'blockUp', base: 10, per: 2, dur: 6 }] } },
   ironWall: { 4: { status: [{ id: 'defUp', base: 40, per: 10, dur: 6 }, { id: 'thornsUp', base: 8, per: 2, dur: 6 }] }, 8: { status: [{ id: 'defUp', base: 55, per: 12, dur: 8 }, { id: 'thornsUp', base: 8, per: 2, dur: 6 }] } },
   purify: { 4: { healPctMax: { base: 8, per: 2 } }, 8: { status: [{ id: 'evasionUp', base: 15, per: 3, dur: 3 }] } },
   lifeLink: { 4: { healPctOfDmg: 130 }, 8: { healPctOfDmg: 150, status: [{ id: 'corrode', base: 30, dur: 4 }] } },
   sanctuary: { 4: { status: [{ id: 'evasionUp', base: 25, per: 5, dur: 5 }, { id: 'defUp', base: 15, per: 3, dur: 5 }] }, 8: { status: [{ id: 'evasionUp', base: 35, per: 6, dur: 6 }, { id: 'defUp', base: 15, per: 3, dur: 5 }] } },
   secondWind: { 4: { mpRestore: 40 }, 8: { mpRestore: 50, healPctMax: { base: 16, per: 4 } } },
-  reflectShield: { 4: { shieldPctMax: { base: 8, per: 2 } }, 8: { status: [{ id: 'thornsUp', base: 25, per: 6, dur: 8 }, { id: 'blockUp', base: 12, per: 4, dur: 6 }] } },
+  reflectShield: { 4: { status: [{ id: 'shield', base: 8, per: 2 }, { id: 'thornsUp', base: 15, per: 5, dur: 6 }, { id: 'blockUp', base: 12, per: 4, dur: 6 }] }, 8: { status: [{ id: 'shield', base: 8, per: 2 }, { id: 'thornsUp', base: 25, per: 6, dur: 8 }, { id: 'blockUp', base: 12, per: 4, dur: 6 }] } },
   lastStand: { 4: { status: [{ id: 'atkUp', base: 15, per: 5, dur: 6 }, { id: 'aspdUp', base: 15, per: 3, dur: 6 }] }, 8: { healPctMax: { base: 30, per: 6 } } },
   aegisBurst: { 4: { shieldBurst: { convertPct: 85, capAtkMult: 10 } }, 8: { shieldBurst: { convertPct: 85, capAtkMult: 10, stunDur: 1 } } },
   overflowVerdict: { 4: { overhealDmg: { pct: { base: 40, per: 2 }, cap: 90, windowSec: 6 } }, 8: { overhealDmg: { pct: { base: 70, per: 2 }, cap: 90, windowSec: 6 } } },
@@ -2430,8 +2430,7 @@ function skillVfxKind(sk, fx, shape) {
     var vfxRefs = skillStatusRefs(fx);
     var vfxHasSelf = vfxRefs.some(function (r) { return statusRefIsSelf(r); });
     var vfxHasEnemy = vfxRefs.some(function (r) { return !statusRefIsSelf(r); });
-    var pureDebuff = fx && !vfxHasSelf && !fx.healPctMax && !fx.shieldPctMax &&
-      (vfxHasEnemy || fx.dotPulse);
+    var pureDebuff = fx && !vfxHasSelf && !fx.healPctMax && (vfxHasEnemy || fx.dotPulse);
     return pureDebuff ? 'curse' : 'selfBuff';
   }
   var sp = (typeof bfParseShape === 'function') ? bfParseShape(shape) : { kind: 'single', w: 1, h: 1 };
@@ -2771,28 +2770,26 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
     floatPlayerEvent(floatSel, '回復 +' + fmt(hv), 'heal', hv);
     parts.push('<span class="log-hl-good">回復 ' + fmt(hv) + ' 生命</span>');
   }
-  if (fx.shieldPctMax) {
-    var beforeShield = Math.max(0, pEnt.shield || 0);
-    var shieldPct = scaleAt(fx.shieldPctMax, lv) * (1 + st.shieldEff / 100) * fxMult;
-    // 技能護盾 = 最大生命 × 技能護盾%，上限 SHIELD_SKILL_CAP_PCT%
-    // （→ formula.js §3；參數表「3-戰鬥核心/護盾上限(技能給予)」）
-    var targetShield = Math.min(st.hp * (shieldPct / 100), st.hp * (SHIELD_SKILL_CAP_PCT / 100));
-    // 取 max 而非累加：同一護盾技能重放只把護盾補回該比例，不疊高。
-    pEnt.shield = Math.max(beforeShield, targetShield);
-    refreshShieldMaxAfterGain(pEnt, beforeShield);
-    var gainedShield = Math.max(0, pEnt.shield - beforeShield);
-    if (gainedShield > 0) floatPlayerEvent(floatSel, '🛡️+' + fmt(gainedShield), 'shield');
-    parts.push('<span class="log-hl-good">' + (gainedShield > 0 ? '獲得 ' + fmt(gainedShield) + ' 護盾' : '護盾維持 ' + fmt(beforeShield)) + '</span>');
-  }
   if (fx.selfCleanse) { cleanse(pEnt); floatPlayerEvent(floatSel, '✨淨化', 'special'); parts.push('淨化負面狀態'); }
   if (fx.mpRestore) { var mpGain = Math.round(fx.mpRestore * fxMult); pEnt.mp = Math.min(st.mp, pEnt.mp + mpGain); floatPlayerEvent(floatSel, '法力 +' + fmt(mpGain), 'mana', mpGain); parts.push('回復 ' + mpGain + ' 法力'); }
-  // 自身狀態（增益／持續回復）：同樣以狀態引用授予，數值與持續時間可由技能覆寫
+  // 自身狀態（增益／持續回復／護盾）：同樣以狀態引用授予，數值與持續時間可由技能覆寫
   skillStatusRefs(fx).forEach(function (ref) {
     if (!statusRefIsSelf(ref)) return;
     var refEffect = statusRefEffect(ref);
-    if (refEffect !== 'stat' && refEffect !== 'hot') return;
-    if (!applyStatusRef(pEnt, ref, lv, { mult: fxMult })) return;
+    if (refEffect !== 'stat' && refEffect !== 'hot' && refEffect !== 'shield') return;
     var refDur = statusRefDur(ref);
+    if (refEffect === 'shield') {
+      // 護盾量與上限規則在 applyShield（js/combat.js）；這裡只負責浮字與日誌
+      var beforeSkillShield = Math.max(0, pEnt.shield || 0);
+      if (!applyStatusRef(pEnt, ref, lv, { mult: fxMult, stats: st })) return;
+      var gainedShield = Math.max(0, (pEnt.shield || 0) - beforeSkillShield);
+      if (gainedShield > 0) floatPlayerEvent(floatSel, '🛡️+' + fmt(gainedShield), 'shield');
+      parts.push('<span class="log-hl-good">' +
+        (gainedShield > 0 ? '獲得 ' + fmt(gainedShield) + ' 護盾' : '護盾維持 ' + fmt(beforeSkillShield)) +
+        '（' + refDur + '秒）</span>');
+      return;
+    }
+    if (!applyStatusRef(pEnt, ref, lv, { mult: fxMult })) return;
     if (refEffect === 'hot') {
       floatPlayerEvent(floatSel, statusRefName(ref) + ' ' + refDur + '秒', 'heal');
       parts.push('<span class="log-hl-good">持續' + statusRefName(ref) + ' ' + refDur + ' 秒</span>');
@@ -2961,6 +2958,9 @@ function fusionDotRefs(fx) {
 function fusionHasHotRef(fx) {
   return skillStatusRefs(fx).some(function (r) { return statusRefEffect(r) === 'hot'; });
 }
+function fusionHasShieldRef(fx) {
+  return skillStatusRefs(fx).some(function (r) { return statusRefEffect(r) === 'shield'; });
+}
 
 var FUSION_MUTATIONS = [
   { key: 'iceFireSong', name: '冰與火之歌', desc: '目標同時處於減速（冰）與燃燒狀態時，引發冰爆追加 100% 傷害',
@@ -2984,8 +2984,12 @@ var FUSION_MUTATIONS = [
     req: function (fx) { return fx.dmgType && fx.dmgType !== 'true'; },
     apply: function (fx) { fx.execBelow = Math.max(fx.execBelow || 0, 25); fx.execMult = Math.max(fx.execMult || 0, 2); } },
   { key: 'guardEmber', name: '守護餘燼', desc: '融合的殘餘能量凝為屏障：施放時額外獲得最大生命 8% 的護盾',
-    req: function (fx) { return !!(fx.shieldPctMax || fx.healPctMax || skillFxBuffList(fx).length); },
-    apply: function (fx) { if (!fx.shieldPctMax) fx.shieldPctMax = { base: 8, per: 1 }; } },
+    req: function (fx) { return !!(fusionHasShieldRef(fx) || fx.healPctMax || skillFxBuffList(fx).length); },
+    apply: function (fx) {
+      if (fusionHasShieldRef(fx)) return;
+      if (!Array.isArray(fx.status)) fx.status = [];
+      fx.status.push({ id: 'shield', key: 'shield', base: 8, per: 1, self: true });
+    } },
   { key: 'manaVortex', name: '法力漩渦', desc: '融合亂流回饋法力：施放後回復 30 點法力',
     req: function () { return true; },
     apply: function (fx) { fx.mpRestore = (fx.mpRestore || 0) + 30; } }
@@ -3104,7 +3108,7 @@ var FUSION_EFFECT_KEYS = [
   'hits', 'status', 'execBelow', 'execMult',
   'healPctOfDmg', 'mpRestore', 'mpOnCrit', 'goldPer', 'critBonus', 'neverMiss',
   'selfCleanse', 'gamble', 'selfDmgPct', 'doubleCastPct',
-  'healPctMax', 'shieldPctMax',
+  'healPctMax',
   'brand', 'detonate', 'charge', 'echo', 'field', 'skillAmp', 'skillAmp2',
   'cdShift', 'freeNext', 'dotPulse', 'dotHaste', 'dotDetonate', 'comboWindow', 'dmgWindow',
   'healEcho', 'overhealDmg', 'stigma', 'hpSacrifice', 'mpDump', 'replayBest',
@@ -3448,15 +3452,21 @@ function describeStatusRefs(fx, lv, p, statStr, scaleStr, damageSection) {
       if (isSelf) return;
       if (def.effect === 'dot') {
         var unit = def.dmgSource === 'maxHp' ? '% 敵方最大生命' : '% 技能傷害';
+        var stackMax = statusRefMaxStacks(ref);
         p.push('附加' + def.name + '（' + everyStr + ' ' + scaleStr(ref, lv) + unit +
-          '，' + durStr + ' 秒' + (def.capStat ? '，有上限' : '') + '）');
+          '，' + durStr + ' 秒' + (def.capStat ? '，有上限' : '') +
+          (stackMax > 1 ? '，可疊 ' + statStr(stackMax) + ' 層' : '') + '）');
       } else if (def.effect === 'ctrl') {
         p.push(def.name + ' ' + durStr + ' 秒');
       }
       return;
     }
-    if (isSelf && def.effect === 'hot') {
+    if (!isSelf) return;
+    if (def.effect === 'hot') {
       p.push(everyStr + def.name + ' ' + scaleStr(ref, lv) + '% 生命，持續 ' + durStr + ' 秒');
+    } else if (def.effect === 'shield') {
+      p.push('獲得相當於最大生命 ' + scaleStr(ref, lv) + '% 的' + def.name +
+        '，持續 ' + durStr + ' 秒（被打完或時間到就消失）');
     }
   });
 }
@@ -3557,7 +3567,6 @@ function describeSkill(id, lv, skipFusionDetail, fusions) {
     describeStatusRefs(fx, lv, p, statStr, scaleStr, true);
   }
   if (fx.healPctMax) p.push('回復 ' + scaleStr(fx.healPctMax, lv) + '% 最大生命');
-  if (fx.shieldPctMax) p.push('獲得相當於最大生命 ' + scaleStr(fx.shieldPctMax, lv) + '% 的護盾（不隨時間消失，被打完為止）');
   if (fx.selfCleanse) p.push('淨化自身負面狀態');
   if (fx.mpRestore) p.push('回復 ' + statStr(fx.mpRestore) + ' 法力');
   skillFxBuffList(fx).forEach(function (bf, bi) {

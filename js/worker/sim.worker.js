@@ -12,11 +12,11 @@
 
 importScripts('protocol.js?v=18', 'shim.js');
 importScripts(
-  '../util.js', '../data.js?v=20260810-elite-count-by-zone', '../status.js?v=20260811-status-system', '../formula.js?v=20260811-loadout-cap-clamp', '../battlefield.js', '../stats.js',
+  '../util.js', '../data.js?v=20260810-elite-count-by-zone', '../status.js?v=20260811-status-shield-stack', '../formula.js?v=20260811-loadout-cap-clamp', '../battlefield.js', '../stats.js',
   '../item.js?v=20260805-tasks',
   '../skills.js?v=20260811-loadout-cap-clamp', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260811-loadout-cap-clamp', '../special_rules.js',
-  '../combat.js?v=20260811-status-system', '../legendary.js', '../potential.js', '../tower.js',
+  '../combat.js?v=20260811-status-shield-stack', '../legendary.js', '../potential.js', '../tower.js',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260811-loadout-cap-clamp',
   '../tasks.js'
 );

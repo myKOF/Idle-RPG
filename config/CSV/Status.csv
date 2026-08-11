@@ -9,6 +9,7 @@ stun,暈眩,😵,ctrl,ctrl,stun,,,0,,0,0,1,0,refresh,1,無法行動；持續時�
 slow,減速,🐌,ctrl,ctrl,slow,,,0,,0,0,3,0,refresh,1,攻擊速度下降；持續時間受控場遞減與韌性影響。
 invuln,無敵結界（免疫一切傷害與負面效果）,✨,buff,ctrl,invuln,,,0,,0,0,3,0,refresh,1,免疫一切傷害與負面狀態。
 regen,再生,💚,buff,hot,hot,,maxHp,2.5,,0,0,6,0,strongest,1,每秒回復最大生命的一定比例。
+shield,護盾,🛡️,buff,shield,shield,,maxHp,18,,0,0,15,0,strongest,1,吸收傷害的屏障，占施法者最大生命一定比例；被打完或時間到就消失（時間到時未用完的部分一併消失）。
 atkUp,攻擊,⚔️,buff,stat,atkUp,,,0,,0,15,6,0,refresh,1,攻擊力提高。
 defUp,防禦,🛡️,buff,stat,defUp,,,0,,0,40,6,0,refresh,1,防禦力提高。
 aspdUp,攻速,⚡,buff,stat,aspdUp,,,0,,0,25,6,0,refresh,1,攻擊速度提高。

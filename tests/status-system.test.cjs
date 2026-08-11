@@ -43,14 +43,16 @@ test('狀態表涵蓋使用者指定的必要欄位，且每一列都填得合�
     // 使用者指定的七個必要欄位：狀態ID / 名稱 / 圖標 / 效果 / 傷害 / 持續時間 / 作用間隔
     assert.ok(s.name, id + ' 缺狀態名稱');
     assert.ok(s.icon, id + ' 缺狀態圖標');
-    assert.ok(['dot', 'hot', 'stat', 'ctrl'].includes(s.effect), id + ' 的狀態效果不合法：' + s.effect);
+    assert.ok(['dot', 'hot', 'stat', 'ctrl', 'shield'].includes(s.effect), id + ' 的狀態效果不合法：' + s.effect);
     assert.equal(typeof s.dmg, 'number', id + ' 的狀態傷害必須是數字');
     assert.ok(s.dur > 0, id + ' 的持續時間必須大於 0');
     assert.equal(typeof s.interval, 'number', id + ' 的作用間隔必須是數字');
     assert.ok(['buff', 'debuff', 'ctrl'].includes(s.kind), id + ' 的狀態分類不合法');
-    if (s.effect === 'stat' || s.effect === 'ctrl' || s.effect === 'hot') {
+    if (s.effect !== 'dot') {
       assert.ok(s.key, id + ' 的狀態效果是 ' + s.effect + '，必須有效果鍵值');
     }
+    assert.ok(['refresh', 'strongest', 'stack'].includes(s.stack), id + ' 的疊加規則不合法：' + s.stack);
+    if (s.stack === 'stack') assert.ok(s.maxStacks > 1, id + ' 疊加規則為 stack，最大疊層必須大於 1');
   });
   // 火球術的例子：一次性魔法火屬性傷害 ＋ 火屬性持續傷害狀態
   assert.equal(c.STATUS.burn.effect, 'dot');
@@ -182,4 +184,140 @@ test('淨化只清負面狀態，不誤清自身增益', () => {
   assert.equal(c.statusActive(p, 'burn'), false, '負面持續傷害要清掉');
   assert.equal(c.statusActive(p, 'atkUp'), true, '自身增益要保留');
   assert.equal(c.statusActive(p, 'invuln'), true, '無敵要保留');
+});
+
+/* ---- 5) 護盾：有持續時間的狀態（2026-08-11） ---- */
+
+test('護盾＝占施法者最大生命%，吃護盾效率，重放不疊高', () => {
+  const c = loadContext();
+  const p = { hp: 500, shield: 0, effects: {}, buffs: {}, dots: [] };
+  c.GT = 0;
+  const st = { hp: 1000, shieldEff: 0 };
+  c.applyStatus(p, 'shield', { val: 20, dur: 15, stats: st });
+  assert.equal(p.shield, 200, '1000 × 20%');
+  // 重放：取 max 不累加
+  c.applyStatus(p, 'shield', { val: 20, dur: 15, stats: st });
+  assert.equal(p.shield, 200);
+  // 護盾效率 +50%
+  c.applyStatus(p, 'shield', { val: 20, dur: 15, stats: { hp: 1000, shieldEff: 50 } });
+  assert.equal(p.shield, 300);
+});
+
+test('護盾到期會消失，未用完的部分一併回收', () => {
+  const c = loadContext();
+  const p = { hp: 500, shield: 0, effects: {}, buffs: {}, dots: [] };
+  c.GT = 0;
+  c.applyStatus(p, 'shield', { val: 20, dur: 5, stats: { hp: 1000, shieldEff: 0 } });
+  assert.equal(p.shield, 200);
+  assert.equal(c.statusActive(p, 'shield'), true);
+
+  c.GT = 4; c.tickStatuses(p, 0.1);
+  assert.equal(p.shield, 200, '未到期不該消失');
+
+  c.GT = 5.1; c.tickStatuses(p, 0.1);
+  assert.equal(p.shield, 0, '到期後未用完的護盾要消失');
+  assert.equal(p.shieldMax, 0);
+  assert.equal(c.statusActive(p, 'shield'), false);
+});
+
+test('護盾被打掉一部分後到期，只回收還沒被打掉的量', () => {
+  const c = loadContext();
+  const p = { hp: 500, shield: 0, effects: {}, buffs: {}, dots: [] };
+  c.GT = 0;
+  c.applyStatus(p, 'shield', { val: 20, dur: 5, stats: { hp: 1000, shieldEff: 0 } });
+  p.shield -= 120;                       // 吸收掉 120，剩 80
+  c.GT = 5.1; c.tickStatuses(p, 0.1);
+  assert.equal(p.shield, 0);
+});
+
+test('護盾在狀態列以剩餘吸收量顯示，打完就不列', () => {
+  const c = loadContext();
+  const p = { hp: 500, shield: 0, effects: {}, buffs: {}, dots: [] };
+  c.GT = 0;
+  c.applyStatus(p, 'shield', { val: 20, dur: 10, stats: { hp: 1000, shieldEff: 0 } });
+  const row = c.statusEntries(p).find((x) => x.sid === 'shield');
+  assert.ok(row, '狀態列要有護盾');
+  assert.equal(row.val, 200, '顯示剩餘吸收量');
+  assert.equal(row.effect, 'shield');
+  p.shield = 0;
+  assert.equal(c.statusEntries(p).some((x) => x.sid === 'shield'), false, '打完就不列');
+});
+
+test('魔法屏障＝護盾狀態（實際資料驗證）', () => {
+  const c = loadContext();
+  const fx = c.effectiveFx('manaBarrier', c.SKILLS.manaBarrier, 8);
+  const ref = c.skillStatusRefs(fx).find((r) => c.statusRefEffect(r) === 'shield');
+  assert.ok(ref, '魔法屏障應引用護盾狀態');
+  assert.equal(ref.id, 'shield');
+  assert.ok(c.statusRefDur(ref) > 0, '護盾要有持續時間');
+});
+
+/* ---- 6) 疊層（stack 疊加規則） ---- */
+
+test('stack 規則：層數累加至上限，效果值＝單層值 × 層數', () => {
+  const c = loadContext();
+  const e = enemy(100000);
+  c.GT = 0;
+  const cfg = { rule: 'stack', max: 3 };
+  c.applyDot(e, 10, 10, '疊層測試', '', 1, cfg);
+  assert.equal(e.dots[0].stacks, 1);
+  assert.equal(e.dots[0].dps, 10);
+  c.applyDot(e, 10, 10, '疊層測試', '', 1, cfg);
+  assert.equal(e.dots[0].stacks, 2);
+  assert.equal(e.dots[0].dps, 20);
+  c.applyDot(e, 10, 10, '疊層測試', '', 1, cfg);
+  c.applyDot(e, 10, 10, '疊層測試', '', 1, cfg);
+  assert.equal(e.dots[0].stacks, 3, '不超過最大疊層');
+  assert.equal(e.dots[0].dps, 30);
+});
+
+test('stack 規則：單層值取高（高等級重塗會拉高每一層）', () => {
+  const c = loadContext();
+  const e = enemy(100000);
+  c.GT = 0;
+  const cfg = { rule: 'stack', max: 3 };
+  c.applyDot(e, 10, 10, '疊層測試', '', 1, cfg);
+  c.applyDot(e, 25, 10, '疊層測試', '', 1, cfg);
+  assert.equal(e.dots[0].unit, 25);
+  assert.equal(e.dots[0].stacks, 2);
+  assert.equal(e.dots[0].dps, 50, '單層 25 × 2 層');
+});
+
+test('stack 規則同樣適用於增益（單層值 × 層數）', () => {
+  const c = loadContext();
+  const p = { hp: 100, effects: {}, buffs: {}, dots: [] };
+  c.GT = 0;
+  const cfg = { rule: 'stack', max: 4 };
+  c.applyBuff(p, 'atkUp', 5, 10, 'atkUp', cfg);
+  c.applyBuff(p, 'atkUp', 5, 10, 'atkUp', cfg);
+  c.applyBuff(p, 'atkUp', 5, 10, 'atkUp', cfg);
+  assert.equal(c.buffVal(p, 'atkUp'), 15);
+  assert.equal(c.statusEntries(p).find((x) => x.sid === 'atkUp').stacks, 3);
+});
+
+test('未指定疊加規則時維持原行為：持續傷害取高、增益後蓋前', () => {
+  const c = loadContext();
+  const e = enemy(100000);
+  const p = { hp: 100, effects: {}, buffs: {}, dots: [] };
+  c.GT = 0;
+  c.applyDot(e, 30, 10, '燃燒');          // 狀態表 burn＝strongest
+  c.applyDot(e, 10, 10, '燃燒');
+  assert.equal(e.dots[0].dps, 30, '取高');
+  assert.equal(e.dots[0].stacks, 1);
+  c.applyBuff(p, 'atkUp', 30, 10);        // 狀態表 atkUp＝refresh
+  c.applyBuff(p, 'atkUp', 10, 10);
+  assert.equal(c.buffVal(p, 'atkUp'), 10, '後蓋前');
+});
+
+test('狀態表把疊加規則設成 stack 就會生效（不必改程式）', () => {
+  const c = loadContext();
+  const e = enemy(100000);
+  c.GT = 0;
+  c.STATUS.bleed.stack = 'stack';
+  c.STATUS.bleed.maxStacks = 5;
+  c.applyStatus(e, 'bleed', { base: 100, dmg: 10, dur: 10 });
+  c.applyStatus(e, 'bleed', { base: 100, dmg: 10, dur: 10 });
+  const dot = e.dots.find((d) => d.sid === 'bleed');
+  assert.equal(dot.stacks, 2);
+  assert.equal(dot.dps, 20, '單層 10 × 2 層');
 });

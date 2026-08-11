@@ -31,17 +31,18 @@ var STATUS_DEFAULT_INTERVAL = 1;
      name        狀態名稱（戰鬥日誌與 UI 顯示）
      icon        狀態圖標
      kind        狀態分類：buff＝增益／debuff＝減益／ctrl＝控場（決定 UI 配色與淨化範圍）
-     effect      狀態效果：dot＝持續傷害／hot＝持續回復／stat＝屬性增減／ctrl＝行動限制
-     key         效果鍵值：stat→增益鍵（atkUp…）；ctrl→效果鍵（stun/slow/invuln）；dot/hot 留空
+     effect      狀態效果：dot＝持續傷害／hot＝持續回復／stat＝屬性增減／ctrl＝行動限制／shield＝吸收護盾
+     key         效果鍵值：stat→增益鍵（atkUp…）；ctrl→效果鍵（stun/slow/invuln）；hot→hot；shield→shield；dot 留空
      elem        傷害屬性（fire/ice/lightning/poison/light/dark；空＝無屬性）
-     dmgSource   傷害來源：skill＝占技能傷害%／maxHp＝占目標最大生命%／value＝直接數值
+     dmgSource   傷害來源：skill＝占技能傷害%／maxHp＝占最大生命%（護盾＝占施法者最大生命%）／value＝直接數值
      dmg         狀態傷害：每次作用的量，依 dmgSource 解讀（stat/ctrl 不使用）
      capStat     傷害上限參照屬性（空＝無上限），capMult＝倍率；上限＝施法者該屬性 × 倍率
      val         效果數值：stat 的增減幅度%（dot/hot/ctrl 不使用）
      dur         持續時間（秒）
      interval    作用間隔時間（秒）；0＝不分段
-     stack       疊加規則：refresh＝重新計時／strongest＝取高並重新計時／stack＝疊層
-     maxStacks   最大疊層（stack 規則用）
+     stack       疊加規則：refresh＝重新計時（後蓋前）／strongest＝取高並重新計時／
+                 stack＝疊層（單層值取高、層數 +1 至上限，實際效果＝單層值 × 層數）
+     maxStacks   最大疊層（stack 規則用；其餘規則填 1）
      desc        說明 */
 var STATUS = {
   bleed: { name: '流血', icon: '🩸', kind: 'debuff', effect: 'dot', key: '', elem: '', dmgSource: 'skill', dmg: 25, capStat: '', capMult: 0, val: 0, dur: 5, interval: 1, stack: 'strongest', maxStacks: 1, desc: '傷口持續失血，每次作用造成技能傷害的一部分。' },
@@ -56,6 +57,7 @@ var STATUS = {
   invuln: { name: '無敵結界（免疫一切傷害與負面效果）', icon: '✨', kind: 'buff', effect: 'ctrl', key: 'invuln', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 3, interval: 0, stack: 'refresh', maxStacks: 1, desc: '免疫一切傷害與負面狀態。' },
 
   regen: { name: '再生', icon: '💚', kind: 'buff', effect: 'hot', key: 'hot', elem: '', dmgSource: 'maxHp', dmg: 2.5, capStat: '', capMult: 0, val: 0, dur: 6, interval: 0, stack: 'strongest', maxStacks: 1, desc: '每秒回復最大生命的一定比例。' },
+  shield: { name: '護盾', icon: '🛡️', kind: 'buff', effect: 'shield', key: 'shield', elem: '', dmgSource: 'maxHp', dmg: 18, capStat: '', capMult: 0, val: 0, dur: 15, interval: 0, stack: 'strongest', maxStacks: 1, desc: '吸收傷害的屏障，占施法者最大生命一定比例；被打完或時間到就消失（時間到時未用完的部分一併消失）。' },
 
   atkUp: { name: '攻擊', icon: '⚔️', kind: 'buff', effect: 'stat', key: 'atkUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 15, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '攻擊力提高。' },
   defUp: { name: '防禦', icon: '🛡️', kind: 'buff', effect: 'stat', key: 'defUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 40, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '防禦力提高。' },
@@ -94,6 +96,11 @@ var STATUS_BY_NAME = {};
 })();
 
 function statusDef(sid) { return (sid && STATUS[sid]) || null; }
+/* 疊加規則傳給低階寫入器；未指定＝維持各容器原本的行為（持續傷害取高、增益後蓋前）。 */
+function statusStackCfg(def) {
+  if (!def || def.stack !== 'stack') return def ? { rule: def.stack } : null;
+  return { rule: 'stack', max: Math.max(1, Math.floor(Number(def.maxStacks) || 1)) };
+}
 function statusIdByKey(key) { return STATUS_BY_KEY[key] || (STATUS[key] ? key : ''); }
 function statusIdByName(name) { return STATUS_BY_NAME[name] || ''; }
 function statusName(sid, fallback) { var d = statusDef(sid); return d ? d.name : (fallback || ''); }
@@ -149,9 +156,14 @@ function applyStatus(ent, sid, ctx) {
         statusNum(ctx.interval, def.interval));
     case 'hot':
     case 'stat':
-      return applyBuff(ent, def.key, statusNum(ctx.val, def.effect === 'hot' ? def.dmg : def.val) * mult, dur, sid);
+      return applyBuff(ent, def.key, statusNum(ctx.val, def.effect === 'hot' ? def.dmg : def.val) * mult, dur, sid,
+        statusStackCfg(def));
     case 'ctrl':
       return applyEffect(ent, def.key, dur, sid);
+    case 'shield':
+      // 護盾量＝施法者最大生命 × 效果值%（吃護盾效率與技能護盾上限，規則在 js/combat.js）
+      return applyShield(ent, statusNum(ctx.val, def.dmg) * mult, dur, sid,
+        ctx.stats, statusStackCfg(def));
   }
   return false;
 }
@@ -163,6 +175,13 @@ function statusEntries(ent) {
   var out = [];
   if (!ent) return out;
   var k, sid, def;
+  // 護盾：以剩餘吸收量顯示；打完了就不列（時間還沒到也一樣）
+  if (ent.buffs && ent.buffs.shield && ent.buffs.shield.until > GT && (ent.shield || 0) > 0) {
+    def = statusDef('shield');
+    out.push({ sid: 'shield', name: def.name, icon: def.icon, kind: def.kind, effect: 'shield',
+      until: ent.buffs.shield.until, remain: ent.buffs.shield.until - GT,
+      val: Math.max(0, ent.shield || 0), dps: 0, stacks: 1 });
+  }
   if (ent.effects) {
     for (k in ent.effects) {
       if (!((ent.effects[k] || 0) > GT)) continue;
@@ -170,7 +189,7 @@ function statusEntries(ent) {
       def = statusDef(sid);
       out.push({ sid: sid, name: def ? def.name : k, icon: def ? def.icon : '❗',
         kind: def ? def.kind : 'ctrl', effect: def ? def.effect : 'ctrl',
-        until: ent.effects[k], remain: ent.effects[k] - GT, val: 0, dps: 0 });
+        until: ent.effects[k], remain: ent.effects[k] - GT, val: 0, dps: 0, stacks: 1 });
     }
   }
   if (ent.dots) {
@@ -181,18 +200,19 @@ function statusEntries(ent) {
       def = statusDef(sid);
       out.push({ sid: sid, name: def ? def.name : (d.name || '持續傷害'), icon: def ? def.icon : '🩸',
         kind: def ? def.kind : 'debuff', effect: 'dot',
-        until: d.until, remain: d.until - GT, val: 0, dps: d.dps || 0 });
+        until: d.until, remain: d.until - GT, val: 0, dps: d.dps || 0, stacks: d.stacks || 1 });
     }
   }
   if (ent.buffs) {
     for (k in ent.buffs) {
       var b = ent.buffs[k];
       if (!b || !(b.until > GT)) continue;
+      if (k === 'shield') continue; // 護盾已在上方以剩餘吸收量列出
       sid = b.sid || statusIdByKey(k);
       def = statusDef(sid);
       out.push({ sid: sid, name: def ? def.name : k, icon: def ? def.icon : '💪',
         kind: def ? def.kind : 'buff', effect: def ? def.effect : 'stat',
-        until: b.until, remain: b.until - GT, val: b.val || 0, dps: 0 });
+        until: b.until, remain: b.until - GT, val: b.val || 0, dps: 0, stacks: b.stacks || 1 });
     }
   }
   return out;
@@ -203,6 +223,10 @@ function statusActive(ent, sid) {
   var def = statusDef(sid);
   if (!ent || !def) return false;
   if (def.effect === 'ctrl') return (ent.effects && (ent.effects[def.key] || 0) > GT) || false;
+  if (def.effect === 'shield') {
+    var sb = ent.buffs && ent.buffs.shield;
+    return !!(sb && sb.until > GT && (ent.shield || 0) > 0);
+  }
   if (def.effect === 'stat' || def.effect === 'hot') {
     var b = ent.buffs && ent.buffs[def.key];
     return !!(b && b.until > GT);
@@ -237,7 +261,7 @@ function statusRemain(ent, sid) {
    欄位刻意與技能 fx 既有的 {base, per, dur} 慣例一致，讓引用本身就能當增益定義用。
 
    舊格式（dot／dotList／maxHpDotPct／stunDur／slowDur／buff／buff2／buffList／
-   debuff／debuff2／debuffList／hotPct）仍能讀，統一在這裡翻成同一份清單——
+   debuff／debuff2／debuffList／hotPct／shieldPctMax）仍能讀，統一在這裡翻成同一份清單——
    結算、說明文字與融合技都只認這份，不留第二條結算路徑。
    =========================================================================== */
 
@@ -271,6 +295,7 @@ function skillStatusRefs(fx) {
   if (fx.stunDur) out.push({ id: 'stun', dur: fx.stunDur });
   if (fx.slowDur) out.push({ id: 'slow', dur: fx.slowDur });
   if (fx.hotPct) out.push({ id: 'regen', key: 'hot', base: fx.hotPct.base, per: fx.hotPct.per, dur: fx.hotDur, self: true });
+  if (fx.shieldPctMax) out.push({ id: 'shield', key: 'shield', base: fx.shieldPctMax.base, per: fx.shieldPctMax.per, self: true });
   var buffs = [fx.buff, fx.buff2].concat(Array.isArray(fx.buffList) ? fx.buffList : []);
   for (i = 0; i < buffs.length; i++) { var b = statusRefFromBuff(buffs[i], true); if (b) out.push(b); }
   var debuffs = [fx.debuff, fx.debuff2].concat(Array.isArray(fx.debuffList) ? fx.debuffList : []);
@@ -304,6 +329,11 @@ function statusRefBase(ref) {
   if (base === undefined || base === null || base === '') base = (def.effect === 'stat') ? def.val : def.dmg;
   return Number(base) || 0;
 }
+/* 引用指向的狀態是否可疊層（供技能說明文字標示）。 */
+function statusRefMaxStacks(ref) {
+  var def = statusRefDef(ref);
+  return def.stack === 'stack' ? Math.max(1, Math.floor(Number(def.maxStacks) || 1)) : 1;
+}
 /* 指定技能等級下的效果值（沿用 scaleAt 語意）。 */
 function statusRefAmount(ref, lv) {
   return statusRefBase(ref) + (Number(ref && ref.per) || 0) * (Math.max(1, Number(lv) || 1) - 1);
@@ -330,7 +360,7 @@ function applyStatusRef(ent, ref, lv, ctx) {
       dur, def.name, '', ref.interval);
   }
   var sub = { base: ctx.base, mult: ctx.mult, stats: ctx.stats, dur: dur, interval: ref.interval };
-  if (def.effect === 'stat' || def.effect === 'hot') sub.val = amount;
+  if (def.effect === 'stat' || def.effect === 'hot' || def.effect === 'shield') sub.val = amount;
   else sub.dmg = amount;
   return applyStatus(ent, ref.id, sub);
 }
