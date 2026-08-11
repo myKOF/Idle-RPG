@@ -48,6 +48,54 @@ test('敵人浮字識別碼在陣列重排後保持穩定', () => {
   assert.equal(second.floatSel, secondId);
 });
 
+test('沒有敵人卡片時，保留浮字層不會提前顯示傷害數字', () => {
+  const calls = [];
+  const retained = { offsetParent: {} };
+  const context = {
+    UI_FLOAT_LAYOUT_VERSION: 0,
+    UI_FLOAT_LAYOUT_MAX_AGE_MS: 1000,
+    PENDING_ENEMY_FLOATS: [{ elId: 'mv-float-0', text: '爆擊 374P', cls: 'crit enemy-skill', damageValue: 374 }],
+    uiNowMs: () => 0,
+    $id: id => id === 'mv-float-retained' ? retained : null,
+    animatePendingEnemyKill: () => calls.push('animate'),
+    floatText: () => calls.push('float')
+  };
+  vm.runInNewContext([
+    functionBody(ui, 'floatLayerAttached'),
+    functionBody(ui, 'enemyFloatTargetPresent'),
+    functionBody(ui, 'enemyFloatTargetState'),
+    functionBody(ui, 'flushPendingEnemyFloats')
+  ].join('\n'), context);
+
+  context.flushPendingEnemyFloats({ field: { monsters: [] } });
+  assert.deepEqual(calls, []);
+  assert.equal(context.PENDING_ENEMY_FLOATS.length, 0);
+});
+
+test('沒有目前敵人時，即時 Worker 傷害事件也不會建立浮字', () => {
+  const calls = [];
+  const context = {
+    PENDING_ENEMY_FLOATS: [],
+    uiRenderingSuspended: () => false,
+    isEnemyHitFloat: () => true,
+    $id: id => id === 'mv-float-retained' ? { offsetParent: {} } : null,
+    queuePendingEnemyFloat: (...args) => calls.push(['queue', ...args]),
+    document: { createElement: () => { throw new Error('不應建立浮字 DOM'); } }
+  };
+  vm.runInNewContext([
+    functionBody(ui, 'floatLayerAttached'),
+    functionBody(ui, 'enemyFloatTargetPresent'),
+    functionBody(ui, 'enemyFloatTargetState'),
+    functionBody(ui, 'floatText')
+  ].join('\n'), context);
+
+  context.floatText('mv-float-0', '爆擊 374P', 'crit enemy-skill', 374, null, {
+    field: { monsters: [] }
+  });
+  assert.deepEqual(calls, []);
+  assert.deepEqual(context.PENDING_ENEMY_FLOATS, []);
+});
+
 test('敵人卡片重建會依穩定浮字圖層識別碼保留舊節點', () => {
   assert.match(ui, /function enemyFloatLayerId\(enemy, index\)/);
   assert.match(ui, /function ensureRetainedEnemyFloatLayer\(party\)/);
