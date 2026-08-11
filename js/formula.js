@@ -1323,7 +1323,7 @@ function rollRarity(stage, lootBonus) {
 }
 
 /* ---- 野外材料掉落（基礎機率由 Zone_Stage_Drops.csv 提供） ---- */
-var ELITE_DROP_MULT = 1.3;       // 菁英掉落倍率：裝備與材料都在一般基礎上乘此值（野外與離線收益共用）
+var ELITE_DROP_MULT = 1.5;       // 菁英掉落倍率：裝備與材料都在一般基礎上乘此值（野外與離線收益共用）
 
 /* ---- 太古詞條／太古精華機率 ---- */
 // 裝備產出時擲骰太古詞條條數：依「詞條數量」查權重表 ANCIENT_COUNT_WEIGHTS（data.js），
