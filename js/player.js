@@ -77,6 +77,10 @@ function newGameState() {
     version: 1,
     runId: 1,           // 第幾局（重新開局 +1；每局的自動存檔各自獨立，舊存檔以 mergeDefaults 補 1）
 
+    /* 一次性遷移完成旗標：新帳號預先標記完成，遷移只作用於舊存檔。
+       登錄與清理條件見 ONE_TIME_MIGRATIONS.md。 */
+    loadoutCapClampV1: true,   // 裝載欄上限下修後裁切超額格數
+
     savedAt: Date.now(),
     player: {
       level: 1, xp: 0,

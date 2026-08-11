@@ -6495,24 +6495,15 @@ function skillViewDef(snapshot, id) {
   return null;
 }
 
-/* 2026-07-30 技能融合改造：全部技能（含融合技/被動）統一上限 10、轉生後 15，
-   與模擬層 skillMaxLv 同步（融合技不再用記錄凍結的 maxLv）。 */
+/* 2026-07-30 技能融合改造：全部技能（含融合技/被動）共用轉生對照表的上限，
+   與模擬層 skillMaxLv 同走 formula.js 的 skillMaxLvForRc（融合技不再用記錄凍結的 maxLv）。
+   這裡吃的是快照傳來的轉數，不是 G，所以不能直接呼叫 skillMaxLv()。 */
 function skillViewMaxLevel(def, reincarnations) {
-  var rc = Math.max(0, Math.floor(Number(reincarnations) || 0));
-  if (typeof REINCARNATION_SKILL_MAX_LEVELS !== 'undefined' &&
-    REINCARNATION_SKILL_MAX_LEVELS[rc] !== undefined) {
-    return REINCARNATION_SKILL_MAX_LEVELS[rc];
-  }
-  return 10 + (rc > 0 ? 5 : 0);
+  return skillMaxLvForRc(reincarnations);
 }
 
 function skillViewPotentialMaxLevel(reincarnations) {
-  var rc = Math.max(0, Math.floor(Number(reincarnations) || 0));
-  if (typeof REINCARNATION_SKILL_MAX_LEVELS !== 'undefined' &&
-    REINCARNATION_SKILL_MAX_LEVELS[rc] !== undefined) {
-    return REINCARNATION_SKILL_MAX_LEVELS[rc];
-  }
-  return 10 + (rc > 0 ? 5 : 0);
+  return skillMaxLvForRc(reincarnations);
 }
 
 function skillViewUnlockReason(snapshot, headerSnapshot, id, def) {
@@ -8342,10 +8333,9 @@ function initUI() {
       var isGodAction = count >= 10;
       var actTitle = isGodAction ? '晉階' : '轉生';
 
-      var curSkillMax = (typeof REINCARNATION_SKILL_MAX_LEVELS !== 'undefined' && REINCARNATION_SKILL_MAX_LEVELS[count] !== undefined)
-        ? REINCARNATION_SKILL_MAX_LEVELS[count] : (20 + Math.min(10, count) * 10);
-      var nextSkillMax = (typeof REINCARNATION_SKILL_MAX_LEVELS !== 'undefined' && REINCARNATION_SKILL_MAX_LEVELS[nextCount] !== undefined)
-        ? REINCARNATION_SKILL_MAX_LEVELS[nextCount] : (20 + Math.min(10, nextCount) * 10);
+      // 轉生確認窗要顯示「這次轉生技能上限 +幾」，一律查表（超出表尾＝已封頂，差值自然為 0）
+      var curSkillMax = skillMaxLvForRc(count);
+      var nextSkillMax = skillMaxLvForRc(nextCount);
       var skillAdd = Math.max(0, nextSkillMax - curSkillMax);
 
       var curFusionAdd = (typeof REINCARNATION_FUSION_MAX_LEVELS !== 'undefined' && REINCARNATION_FUSION_MAX_LEVELS[count] !== undefined)

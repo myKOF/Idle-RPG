@@ -2009,11 +2009,18 @@ var SKILL_GLOBAL_COOLDOWN = 0.4; // 技能共用冷卻（秒；固定值，不�
 
 // 裝載欄：參數表「技能裝載欄」＝clamp(b + ⌊等級/a⌋, b, c)；1 轉後解鎖全部上限。
 var LOADOUT_SIZE = { perLevels: 50, min: 4, base: 4, max: 10 };
-function loadoutSize() {
-  if (typeof reincarnationCount === 'function' && reincarnationCount() >= 1) return LOADOUT_SIZE.max;
-  var lvl = (typeof G !== 'undefined' && G.player && G.player.level) ? G.player.level : 1;
+/* 純函式版本：不讀 G，讓讀檔遷移（save.js）能對「存檔裡的」等級與轉數算格數。
+   loadoutSize() 是它讀取現況 G 的包裝，兩者必須是同一套規則——分成兩份算法遲早會飄。 */
+function loadoutSizeFor(level, reincarnations) {
+  if ((Math.floor(Number(reincarnations)) || 0) >= 1) return LOADOUT_SIZE.max;
+  var lvl = Math.max(1, Math.floor(Number(level)) || 1);
   return Math.min(LOADOUT_SIZE.max, Math.max(LOADOUT_SIZE.min,
     LOADOUT_SIZE.base + Math.floor(lvl / LOADOUT_SIZE.perLevels)));
+}
+function loadoutSize() {
+  var rc = (typeof reincarnationCount === 'function') ? reincarnationCount() : 0;
+  var lvl = (typeof G !== 'undefined' && G.player && G.player.level) ? G.player.level : 1;
+  return loadoutSizeFor(lvl, rc);
 }
 
 // 技能升級金幣費用 = 20000 × 當前等級 + 20^(1 + 當前等級/10)
@@ -2038,16 +2045,36 @@ function skillMasteryXpForLevel(l) {
   return Math.floor(SKILL_MASTERY_XP_A * Math.pow(l, SKILL_MASTERY_XP_B) + SKILL_MASTERY_XP_C);
 }
 
+/* 技能等級上限的唯一入口：查轉生對照表（參數表「1-轉生對照表」param e，
+   見 js/data.js 的 REINCARNATION_SKILL_MAX_LEVELS）。
+
+   保底一律從表本身取值，不另寫公式：
+   - 轉數超出表長 → 取表尾。表尾本來就是封頂設計，往外推沒有依據。
+   - 轉數為負／非數字 → 取表首。
+   - 整張表不存在 → 只可能是 data.js 沒載入，此時回傳 SKILL_MAX_LV_NO_TABLE。
+     這個常數不是遊戲設定值，改參數表不必動它。
+
+   改制前 formula/talents/ui/save/skills 七處各自查表、各自帶著寫死的 fallback，
+   而且是兩種互不相同的舊制公式（一種是「未轉生固定值、轉生後再加固定值」，
+   另一種是轉生面板專用的等差式）。參數表改制後兩種都成了錯的，
+   偏偏只在對照表沒載入時才走到——不會報錯，安靜地給出對不上的數字。
+   tests/skill-max-level-lookup.test.cjs 會掃 js/ 擋住任何一種寫死公式復活
+   （所以這裡也不把舊算式原樣寫出來）。 */
+var SKILL_MAX_LV_NO_TABLE = 10;
+function skillMaxLvForRc(rc) {
+  if (typeof REINCARNATION_SKILL_MAX_LEVELS === 'undefined' ||
+    !REINCARNATION_SKILL_MAX_LEVELS || !REINCARNATION_SKILL_MAX_LEVELS.length) {
+    return SKILL_MAX_LV_NO_TABLE;
+  }
+  var i = Math.max(0, Math.floor(Number(rc)) || 0);
+  return REINCARNATION_SKILL_MAX_LEVELS[Math.min(i, REINCARNATION_SKILL_MAX_LEVELS.length - 1)];
+}
+
 /* 各類技能等級上限（2026-07-30 技能融合改造）：
-   所有技能（含融合技/被動技）統一查轉生對照表（參數表「1-轉生對照表」param e，
-   見 REINCARNATION_SKILL_MAX_LEVELS）；融合技不再使用記錄內凍結的 maxLv
+   所有技能（含融合技/被動技）共用上表；融合技不再使用記錄內凍結的 maxLv
    （素材加總+20 舊制欄位僅為存檔相容保留）。 */
 function skillMaxLv(def) {
-  var rc = reincarnationCount();
-  if (typeof REINCARNATION_SKILL_MAX_LEVELS !== 'undefined' && REINCARNATION_SKILL_MAX_LEVELS[rc] !== undefined) {
-    return REINCARNATION_SKILL_MAX_LEVELS[rc];
-  }
-  return 10 + (rc > 0 ? 5 : 0);   // 對照表載入失敗時的保底值，不代表目前參數表設定
+  return skillMaxLvForRc(reincarnationCount());
 }
 
 // 技能傷害倍率（%）= base + per × (等級-1)

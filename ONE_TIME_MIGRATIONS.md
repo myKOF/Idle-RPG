@@ -1,6 +1,12 @@
 # 一次性遷移與外部存檔特別處理
 
-> **狀態：全部已於 2026-07-28 移除。本文件保留為紀錄與規範，目前沒有生效中的一次性遷移。**
+> **狀態：目前生效中的一次性遷移只有 `loadoutCapClampV1`（2026-08-11 新增，見下方登錄）。**
+> 在那之前的全部遷移已於 2026-07-28 移除。
+>
+> ⚠️ 本文件下方仍列著 `equipSetPotentialLimitV1`、`externalGoldRecoveryV1`、
+> `normalDmgAffixScaleV2`～`V4` 等條目，但 2026-08-11 以 `grep` 確認
+> **`js/` 底下沒有任何對應程式碼**——它們是 2026-07-28 清除時未一併移除的過期紀錄，
+> 不是生效中的遷移。要看「現在有哪些」，以 `grep -rn "ONE-TIME MIGRATION" js/` 為準。
 >
 > 移除原因：Web Worker 大重構結束、內測通過後會更新至外部並**刪檔重來**，
 > 因此不再需要相容任何既有存檔。`js/save.js` 的 12 個帶旗標遷移區塊與
@@ -56,6 +62,40 @@
 - 刪除遷移程式時，不能連同仍在使用的永久性存檔相容處理一併刪除。
 
 ## 目前登錄與規劃中的遷移
+
+### `loadoutCapClampV1`：技能裝載欄上限下修後裁切超額格數
+
+**狀態：已實作（2026-08-11）。以程式碼為準——`js/save.js` 的 `ONE-TIME MIGRATION: loadoutCapClampV1` 區塊、`js/player.js` 的 `loadoutCapClampV1: true`、`js/worker/sim.worker.js` 的 `_loadoutCapClampNotice` 公告。**
+
+**目的**：裝載欄上限由參數表「1-成長經驗／技能裝載欄」param c 下修（20 → 10）。
+裝備時的檢查（`js/skills.js` 的 `equipSkillToLoadout`）只擋「再裝上去」，不會回頭裁切既有內容，
+所以舊存檔裝著超過現行上限的技能時，那些格子會一直掛著並持續生效。
+
+**執行時機**：
+
+- `migrateSave(data)` 中，**排在技能融合改造遷移「裝載欄清出被融合佔用素材」之後**。
+  順序不能反：先裁再清會讓最終格數少於上限。
+- 以 `data.loadoutCapClampV1` 為完成標記，於 `mergeDefaults` 前捕捉 `hadLoadoutCapClampV1`
+  （新帳號由 `newGameState()` 預帶 `true`，merge 也會把它補進舊存檔，補完再判斷就永遠是 true）。
+
+**處理範圍**：
+
+- 只動 `data.player.loadout`：長度超過 `loadoutSizeFor(等級, 轉生次數)` 時 `slice(0, 上限)`，保留排在前面的格子。
+- 上限用 `js/formula.js` 的 `loadoutSizeFor(level, reincarnations)`——`loadoutSize()` 讀的是全域 `G`，
+  遷移階段存檔還沒掛上 `G`，必須用這個純函式版本對「存檔裡的」等級與轉數計算。
+- 有裁切時設 `data._loadoutCapClampNotice`，由 Worker 的 BOOTED notices 公告一次。
+
+**保留資料**：技能等級、已學狀態、技能點、熟練度、融合記錄完全不動——只是把技能從裝載欄卸下，玩家可自行重排。
+
+**為何是旗標式而非冪等正規化**：裁切後長度就已合法，重跑確實是 no-op；
+但玩家日後可能在等級不足時手動排出較多格子（或上限再度調整），
+讀檔一再修剪會變成持續干預正常遊戲流程，違反「一次性遷移不可改變新存檔的正常遊戲流程」。
+
+**測試方式**：`tests/loadout-cap-clamp-migration.test.cjs` 驗證超額裁切、保留前段、
+未超額不動、重複讀檔冪等、新帳號不觸發、公告文字、與融合素材清出的先後順序。
+
+**日後清理**：所有外部存檔皆完成遷移後，移除 `js/save.js` 的區塊與 `hadLoadoutCapClampV1` 捕捉、
+`js/player.js` 的預置旗標、`js/worker/sim.worker.js` 的公告分支與本測試檔，並保留本紀錄註明已下線。
 
 ### `gemAttrDmgBaseV1`：六屬性傷害寶石數值下修（base 0.5→0.2）融合寶石快照縮放
 

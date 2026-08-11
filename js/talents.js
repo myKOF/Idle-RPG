@@ -167,11 +167,7 @@ function potentialUnlocked(id) {
 
 /* 潛力技能 V3：等級上限比照一般技能（讀取 CSV 轉生對照表 param e）。 */
 function potentialSkillMaxLv() {
-  var rc = reincarnationCountSafe();
-  if (typeof REINCARNATION_SKILL_MAX_LEVELS !== 'undefined' && REINCARNATION_SKILL_MAX_LEVELS[rc] !== undefined) {
-    return REINCARNATION_SKILL_MAX_LEVELS[rc];
-  }
-  return 10 + (rc > 0 ? 5 : 0); // 2026-07-30 改制 fallback：上限10、轉生+5（正常走上方查表）
+  return skillMaxLvForRc(reincarnationCountSafe());
 }
 
 /* 潛力技能當前生效數值 = base + per × 等級（等級已夾在 0~上限；不再另設數值上限）。 */

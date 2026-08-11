@@ -288,6 +288,10 @@ function migrateSave(data) {
   var hadForgeRebuildNotice = !!(data.newForge && data.newForge.noticeShown !== undefined);
   // 三套裝備遷移旗標：須在 mergeDefaults 前判斷（否則 mergeDefaults 會補上空的 equipmentSets 使舊存檔誤判）
   var hadEquipmentSets = Array.isArray(data.equipmentSets) && data.equipmentSets.length > 0;
+  /* 裝載欄上限下修的一次性遷移旗標：須在 mergeDefaults 前判斷。
+     newGameState() 已預帶 loadoutCapClampV1: true，merge 會把它補進舊存檔，
+     補完再判斷就永遠是 true、遷移一次也不會跑。 */
+  var hadLoadoutCapClampV1 = !!(data.loadoutCapClampV1);
   var originalEquipment = (data.equipment && typeof data.equipment === 'object') ? data.equipment : null; // 保留真正裝備參照
   var def = newGameState();
   
@@ -497,11 +501,8 @@ function migrateSave(data) {
     if (data.player && data.player.reincarnations < 3) {
       data.player.talents.potentialLevels = {};
     } else {
-      // 潛力技能：只保留現有潛力技能鍵並依等級上限（2026-07-30 改制：10、轉生後 15）夾限；舊版潛力鍵一律清除。
-      var potRc = Number(data.player.reincarnations) || 0;
-      var potMaxLv = (typeof REINCARNATION_SKILL_MAX_LEVELS !== 'undefined' && REINCARNATION_SKILL_MAX_LEVELS[potRc] !== undefined)
-        ? REINCARNATION_SKILL_MAX_LEVELS[potRc]
-        : (10 + (potRc > 0 ? 5 : 0));
+      // 潛力技能：只保留現有潛力技能鍵並依轉生對照表的等級上限夾限；舊版潛力鍵一律清除。
+      var potMaxLv = skillMaxLvForRc(data.player.reincarnations);
       var cleaned = {};
       POTENTIAL_TALENTS.forEach(function (def) {
         cleaned[def.id] = clamp(Math.floor(Number(data.player.talents.potentialLevels[def.id]) || 0), 0, potMaxLv);
@@ -603,14 +604,11 @@ function migrateSave(data) {
     };
   }
   /* ---- 技能融合改造遷移（2026-07-30，逐項冪等）----
-     1) 全技能等級夾回新上限（10、轉生後 15）；點數採等級推導制，夾限即自動退點。
+     1) 全技能等級夾回轉生對照表的上限；點數採等級推導制，夾限即自動退點。
      2) 舊融合記錄補 seed（改用種子演算法重算）＋ algo:2；能重建者移除 fx 快照。
      3) 舊 skillPointBudget → skillMastery.level（扣 SKILL_POINT_BASE 基礎點、保底已花費），欄位移除。
      4) 裝載欄清出被融合佔用的素材技能。 */
-  var mgRc = Number(data.player.reincarnations) || 0;
-  var mgCapLv = (typeof REINCARNATION_SKILL_MAX_LEVELS !== 'undefined' && REINCARNATION_SKILL_MAX_LEVELS[mgRc] !== undefined)
-    ? REINCARNATION_SKILL_MAX_LEVELS[mgRc]
-    : (10 + (mgRc > 0 ? 5 : 0));
+  var mgCapLv = skillMaxLvForRc(data.player.reincarnations);
   var mgClamped = 0;
   for (var skId in data.player.skills) {
     var skLv = Math.max(0, Math.floor(Number(data.player.skills[skId]) || 0));
@@ -619,7 +617,7 @@ function migrateSave(data) {
     else data.player.skills[skId] = skLv;
   }
   if (mgClamped > 0) {
-    data._skillCapClampNotice = '技能等級上限改制（10 級、轉生後 15 級）：' + mgClamped + ' 個技能已夾回上限，超出的技能點已自動退還';
+    data._skillCapClampNotice = '技能等級上限調整為 ' + mgCapLv + ' 級：' + mgClamped + ' 個技能已夾回上限，超出的技能點已自動退還';
   }
   // 融合記錄：補種子＋清除舊 fx 快照（能重建者）；種子補上後結果即固定，重複讀檔不再變動。
   if (data.player.fusions && data.player.fusions.length) {
@@ -642,6 +640,25 @@ function migrateSave(data) {
       data.player.loadout = data.player.loadout.filter(function (id) { return !mgOccupied[id]; });
     }
   }
+  /* ONE-TIME MIGRATION: loadoutCapClampV1
+     裝載欄上限由參數表「1-成長經驗／技能裝載欄」param c 下修（20 → 10），
+     舊存檔可能裝著超過現行上限的技能。裝備時的檢查只擋「再裝上去」，不會回頭裁切，
+     所以超額的格子會一直掛著生效。這裡在讀檔時裁掉，保留排在前面的格子。
+
+     只卸下、不動技能本身：等級、學習狀態、熟練度都不變，玩家可以自己重排。
+     必須排在上面融合素材清出之後——先裁再清會讓格數少於上限。
+     旗標式而非冪等：裁切後長度就合法了，重跑本來就是 no-op；但玩家之後
+     「等級不足卻手動排了較多格」的狀況不該被讀檔一再修剪，所以只做一次。 */
+  if (!hadLoadoutCapClampV1 && Array.isArray(data.player.loadout)) {
+    var loCap = loadoutSizeFor(data.player.level, data.player.reincarnations);
+    if (data.player.loadout.length > loCap) {
+      var loDropped = data.player.loadout.length - loCap;
+      data.player.loadout = data.player.loadout.slice(0, loCap);
+      data._loadoutCapClampNotice = '技能裝載欄上限調整為 ' + loCap + ' 格：已卸下超出的 ' +
+        loDropped + ' 個技能（技能等級與已學狀態不變，可重新調整裝載）';
+    }
+  }
+  data.loadoutCapClampV1 = true;
   // 技能點改制：舊 skillPointBudget → 熟練度等級（總點數 = 基礎點數 + 熟練度 + 天賦加成）。
   // 基礎點數以 skills.js 的 SKILL_POINT_BASE 為準，不得寫死：它等於開局自帶技能數，會隨初始技能調整。
   var spBase = (typeof SKILL_POINT_BASE === 'number') ? SKILL_POINT_BASE : 2;
