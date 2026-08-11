@@ -133,6 +133,8 @@ test('initUI 可在 Worker 面板尚未抵達時安全啟動', () => {
   };
   context.window.window = context.window;
   vm.createContext(context);
+  // 狀態表與列舉器：ui.js 的狀態列與提示框直接讀狀態表（js/status.js）
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'status.js'), 'utf8'), context, { filename: 'js/status.js' });
   vm.runInContext(fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8'), context, { filename: 'js/ui.js' });
 
   // initUI 的開機時機早於任何 PANEL 回應，刻意保持面板快取為空。
@@ -210,6 +212,8 @@ test('Worker Snapshot 完整但主執行緒 G 為空時 initUI 與 uiTick 不拋
   ]) {
     vm.runInContext(fs.readFileSync(path.join(root, 'js', file), 'utf8'), context, { filename: 'js/' + file });
   }
+  // 狀態表與列舉器：ui.js 的狀態列與提示框直接讀狀態表（js/status.js）
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'status.js'), 'utf8'), context, { filename: 'js/status.js' });
   vm.runInContext(fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8'), context, { filename: 'js/ui.js' });
   context.UI_WORKER_STATE.panels = {
     header: {

@@ -14,6 +14,7 @@ test('高塔BOSS免疫會改變攻擊頻率的控制效果，但保留傷害類�
     isBossControlImmune: (ent) => !!(ent && ent.isBoss),
     isAttackFrequencyControlKey: (key) => ['stun', 'slow', 'aspdDown', 'attackSpeedDown'].includes(key)
   });
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'status.js'), 'utf8'), context);
   vm.runInContext(fs.readFileSync(path.join(root, 'js', 'combat.js'), 'utf8'), context);
 
   const boss = { isBoss: true, effects: {}, buffs: {} };
@@ -33,8 +34,8 @@ test('技能施放與被動控制都會排除高塔BOSS', () => {
   const tower = fs.readFileSync(path.join(root, 'js', 'tower.js'), 'utf8');
   assert.match(combat, /!isBossControlImmune\(mEnt\)[\s\S]*?applyEffect\(mEnt, 'stun'/);
   assert.match(combat, /!isBossControlImmune\(mEnt\)[\s\S]*?applyEffect\(mEnt, 'slow'/);
-  assert.match(skills, /fx\.stunDur && !isBossControlImmune\(effectTarget\)/);
-  assert.match(skills, /fx\.slowDur && !isBossControlImmune\(effectTarget\)/);
-  assert.match(skills, /if \(applyBuff\(target, debuff\.key/);
+  // 2026-08-11 技能及狀態改造：控場改由狀態引用授予，BOSS 免疫與控場抵抗在同一個閘門
+  assert.match(skills, /statusRefEffect\(sref\) === 'ctrl'[\s\S]*?isBossControlImmune\(effectTarget\) \|\| resistCtrl\(monsterDefCfg\(effectTarget\)\)/);
+  assert.match(skills, /if \(applyStatusRef\(target, ref, lv/);
   assert.match(tower, /控制免疫：暈眩、緩速/);
 });

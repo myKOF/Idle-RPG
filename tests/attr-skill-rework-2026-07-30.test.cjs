@@ -17,7 +17,7 @@ const read = (f) => fs.readFileSync(path.join(root, f), 'utf8');
 function loadContext() {
   const context = { console, Math };
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/formula.js'].forEach((file) => {
+  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js'].forEach((file) => {
     vm.runInContext(read(file), context, { filename: file });
   });
   return context;
@@ -264,12 +264,13 @@ test('技能不再有降低敵人防禦效果，改為穿透增益 penUp', () =>
   const skills = read('js/skills.js');
   const skillsCsv = read('config/CSV/Skills.csv');
   // 技能定義與里程碑皆不得再出現 defDown（僅保留 buffLabel／浮字分類的相容對照）
-  assert.doesNotMatch(skills, /debuff2?: \{ key: 'defDown'/);
+  // 2026-08-11 技能及狀態改造：增益改以狀態引用 status:[{id:'penUp',…}] 表達（→ config/Excel/Status.xlsx）
+  assert.doesNotMatch(skills, /id: 'defDown'/);
   assert.ok(!skillsCsv.includes('defDown'), 'Skills 表仍有 defDown');
-  assert.match(skills, /armorBreak:.*buff: \{ key: 'penUp', base: 25, per: 5, dur: 5 \}/);
-  assert.match(skills, /whirlwind: {5}\{ 4: \{ slowDur: 2 \}, 8: \{ slowDur: 3, buff: \{ key: 'penUp'/);
-  assert.match(skills, /manaBurn: {6}\{ 4: \{ mpOnCrit: 35 \}, 8: \{ mpOnCrit: 40, buff: \{ key: 'penUp'/);
-  assert.match(skills, /penUp: '物理\/魔法穿透'/);
+  assert.match(skills, /armorBreak:.*status: \[\{ id: 'penUp', base: 25, per: 5, dur: 5 \}\]/);
+  assert.match(skills, /whirlwind: \{ 4: \{ status: \[\{ id: 'slow', dur: 2 \}\] \}, 8: \{ status: \[\{ id: 'slow', dur: 3 \}, \{ id: 'penUp'/);
+  assert.match(skills, /manaBurn: \{ 4: \{ mpOnCrit: 35 \}, 8: \{ mpOnCrit: 40, status: \[\{ id: 'penUp'/);
+  assert.match(read('js/status.js'), /penUp: \{ name: '物理\/魔法穿透'/);
 });
 
 test('penUp 增益同時加成物理與魔法穿透，且各攻擊來源都吃得到', () => {
@@ -290,5 +291,5 @@ test('penUp 增益同時加成物理與魔法穿透，且各攻擊來源都吃�
 test('傷害技的附帶增益不受「增益不重複疊放」閘門限制', () => {
   // 2026-07-30 技能融合改造：增益改走 skillFxBuffList 存取器（支援融合技 buffList），閘門語意不變
   const skills = read('js/skills.js');
-  assert.match(skills, /if \(firstBuff && !fx\.dmgType && buffVal\(pEnt, firstBuff\.key\) > 0\) return false;/);
+  assert.match(skills, /if \(firstBuff && !fx\.dmgType && buffVal\(pEnt, statusRefKey\(firstBuff\)\) > 0\) return false;/);
 });

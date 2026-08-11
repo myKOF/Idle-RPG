@@ -17,7 +17,7 @@ function loadContext(files) {
   const context = { console, UI: { dirty: {} } };
   context.window = context;
   vm.createContext(context);
-  (files || ['js/util.js', 'js/data.js', 'js/formula.js', 'js/item.js']).forEach((file) => {
+  (files || ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js']).forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   return context;
@@ -149,7 +149,7 @@ test('沒有 roll 的詞條在任何讀取點都會就地自癒（漏掃容器�
 });
 
 test('存檔載入會掃過所有裝備容器（migrateSave → fixLoadedItem）', () => {
-  const c = loadContext(['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js',
+  const c = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js',
     'js/item.js', 'js/skills.js', 'js/talents.js', 'js/player.js', 'js/newforge.js', 'js/save.js']);
   const legacy = () => ({
     id: 'x' + Math.random(), kind: 'equip', name: '獨特的胸甲', slot: 'chest', rarity: 3, level: 50, upgrade: 0,

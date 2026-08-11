@@ -131,7 +131,7 @@ function onPlayerHitTaken(dmg, blocked, pEnt, floatSel, absorbed) {
    七族的引擎邏輯（含各自被動觸發鍵消費，讀 getStats().skillTriggers）。
    數值 SSOT：全部讀技能 fx JSON（經 fxVal/fxResolveDeep 解析）＋ js/data.js 通用上限常數，
    引擎本身不寫死任何技能專屬數值。掛點：castSkill（施放前置/乘算區/施放後結算）、
-   doPlayerAttack（普攻命中/擊殺）、onPlayerHitTaken（受擊）、tickDots（跳速）、onFieldKill（濺射）。 */
+   doPlayerAttack（普攻命中/擊殺）、onPlayerHitTaken（受擊）、tickStatuses（跳速）、onFieldKill（濺射）。 */
 
 /* ---- 內部冷卻（icd）小工具：時戳存 SKILL_RT.icd，擊殺類觸發皆須經此 ---- */
 function skillRtIcdReady(key) {
@@ -672,7 +672,7 @@ function skillRtApplyDotOps(targets, fx, lv, st, floatSel, parts, out) {
         if (t.hp <= 0) { t.hp = 0; out.killed = true; }
       }
     }
-    // dotHaste（萬創崩裂 M8）：目標 DoT 跳速標記（tickDots 讀取；掛敵人實體、時戳自然過期）
+    // dotHaste（萬創崩裂 M8）：目標 DoT 跳速標記（tickStatuses 讀取；掛敵人實體、時戳自然過期）
     if (fx.dotHaste) {
       t._dotHasteMult = fx.dotHaste.mult || 1;
       t._dotHasteUntil = GT + (fx.dotHaste.dur || 0);
@@ -902,7 +902,7 @@ function skillRtOnSkillCast(pEnt, sk, fx, id, lv, st, out, targets, floatSel, pa
 /* ---- echo 族：dmgWindow 快照窗累計 ----
    「窗內玩家全部傷害」統一寫入端：castSkill 施放後（out.dmg 總量，含折入的引動/重播傷害）、
    doPlayerAttack depth 0（普攻含連擊折入值）、排程器結算（回響/領域跳傷/聖痕/快照窗轟出）、
-   敵方 DoT 跳動（combat.js tickDots）、潛力技能（castPotentialSkill 本體／雷霆過載連鎖與
+   敵方 DoT 跳動（combat.js tickStatuses）、潛力技能（castPotentialSkill 本體／雷霆過載連鎖與
    持續轟擊／聖療逆轉溢傷，js/potential.js）各一次。 */
 function skillRtAccWindowDamage(dmg) {
   if (!SKILL_RT || !SKILL_RT.dmgWindows.length) return;
@@ -1693,15 +1693,15 @@ var SKILLS = {
   powerSlash: { name: '強力斬', emoji: '🗡️', cat: 'phys', tags: [], unlockLv: 1, cost: 15, cd: 6, flavor: '蓄力揮出沉重的一擊。', fx: { dmgType: 'phys', stat: 'atk', base: 360, per: 80 } },
   doubleStrike: { name: '二連擊', emoji: '⚔️', cat: 'phys', tags: [], unlockLv: 1, cost: 20, cd: 8, flavor: '快速的兩段斬擊。', fx: { dmgType: 'phys', stat: 'atk', base: 210, per: 44, hits: 2 } },
   whirlwind: { name: '旋風斬', emoji: '🌪️', cat: 'phys', tags: [], unlockLv: 1, cost: 25, cd: 10, shape: '3*3', flavor: '旋轉身軀橫掃周遭。', fx: { dmgType: 'phys', stat: 'atk', base: 505, per: 110 } },
-  armorBreak: { name: '破甲擊', emoji: '🔨', cat: 'phys', tags: [], unlockLv: 1, cost: 20, cd: 12, flavor: '重擊敵人的護甲弱點。', fx: { dmgType: 'phys', stat: 'atk', base: 300, per: 60, buff: { key: 'penUp', base: 25, per: 5, dur: 5 } } },
+  armorBreak: { name: '破甲擊', emoji: '🔨', cat: 'phys', tags: [], unlockLv: 1, cost: 20, cd: 12, flavor: '重擊敵人的護甲弱點。', fx: { dmgType: 'phys', stat: 'atk', base: 300, per: 60, status: [{ id: 'penUp', base: 25, per: 5, dur: 5 }] } },
   executeStrike: { name: '處決', emoji: '💀', cat: 'phys', tags: [], unlockLv: 20, cost: 30, cd: 15, flavor: '對瀕死敵人給予終結。', fx: { dmgType: 'phys', stat: 'atk', base: 500, per: 110, execBelow: 30, execMult: 2 } },
-  rendWound: { name: '撕裂', emoji: '🩸', cat: 'phys', tags: [], unlockLv: 20, cost: 18, cd: 10, flavor: '造成難以癒合的傷口。', fx: { dmgType: 'phys', stat: 'atk', base: 240, per: 50, dot: { pct: 25, dur: 5, name: '流血' } } },
-  stunBlow: { name: '震盪重擊', emoji: '💫', cat: 'phys', tags: [], unlockLv: 20, cost: 25, cd: 14, flavor: '猛擊敵人使其暈眩。', fx: { dmgType: 'phys', stat: 'atk', base: 320, per: 65, stunDur: 1.5 } },
+  rendWound: { name: '撕裂', emoji: '🩸', cat: 'phys', tags: [], unlockLv: 20, cost: 18, cd: 10, flavor: '造成難以癒合的傷口。', fx: { dmgType: 'phys', stat: 'atk', base: 240, per: 50, status: [{ id: 'bleed', base: 25, dur: 5 }] } },
+  stunBlow: { name: '震盪重擊', emoji: '💫', cat: 'phys', tags: [], unlockLv: 20, cost: 25, cd: 14, flavor: '猛擊敵人使其暈眩。', fx: { dmgType: 'phys', stat: 'atk', base: 320, per: 65, status: [{ id: 'stun', dur: 1.5 }] } },
   berserkStrike: { name: '狂暴打擊', emoji: '😤', cat: 'phys', tags: [], unlockLv: 20, cost: 20, cd: 12, flavor: '不顧自身安危的猛攻。', fx: { dmgType: 'phys', stat: 'atk', base: 840, per: 170, selfDmgPct: 5 } },
   preciseThrust: { name: '精準突刺', emoji: '🎯', cat: 'phys', tags: [], unlockLv: 50, cost: 15, cd: 8, flavor: '絕不落空的致命突刺。', fx: { dmgType: 'phys', stat: 'atk', base: 300, per: 65, neverMiss: true, critBonus: 30 } },
-  heavySmash: { name: '泰山壓頂', emoji: '🪨', cat: 'phys', tags: [], unlockLv: 50, cost: 28, cd: 13, flavor: '沉重的壓制性打擊。', fx: { dmgType: 'phys', stat: 'atk', base: 600, per: 130, slowDur: 3 } },
+  heavySmash: { name: '泰山壓頂', emoji: '🪨', cat: 'phys', tags: [], unlockLv: 50, cost: 28, cd: 13, flavor: '沉重的壓制性打擊。', fx: { dmgType: 'phys', stat: 'atk', base: 600, per: 130, status: [{ id: 'slow', dur: 3 }] } },
   swiftCuts: { name: '疾風連斬', emoji: '🍃', cat: 'phys', tags: [], unlockLv: 50, cost: 32, cd: 16, shape: '3*3', flavor: '化作疾風的三段斬。', fx: { dmgType: 'phys', stat: 'atk', base: 165, per: 35, hits: 3 } },
-  counterStance: { name: '反擊架勢', emoji: '🔄', cat: 'phys', tags: [], unlockLv: 100, cost: 22, cd: 18, flavor: '擺出以牙還牙的架勢。', fx: { buff: { key: 'thornsUp', base: 12, per: 4, dur: 6 } } },
+  counterStance: { name: '反擊架勢', emoji: '🔄', cat: 'phys', tags: [], unlockLv: 100, cost: 22, cd: 18, flavor: '擺出以牙還牙的架勢。', fx: { status: [{ id: 'thornsUp', base: 12, per: 4, dur: 6 }] } },
   soulBrandFlurry: { name: '烙魂連斬', emoji: '🪓', cat: 'phys', tags: [], unlockLv: 100, cost: 28, cd: 12, flavor: '三連斬光落下，將敵人的魂魄烙上戰印。', fx: { dmgType: 'phys', stat: 'atk', base: 145, per: 32, hits: 3, brand: { name: '魂痕', storePct: 30, dur: 8, maxStacks: 3 } } },
   sinDetonate: { name: '斷罪引爆', emoji: '🧨', cat: 'phys', tags: [], unlockLv: 100, cost: 36, cd: 16, flavor: '一擊定罪，引爆所有烙印的宿命。', fx: { dmgType: 'phys', stat: 'atk', base: 560, per: 110, detonate: { brand: 'any', multPct: { base: 120, per: 3 }, resetCd: { id: 'soulBrandFlurry', pct: 25 } } } },
   echoBlade: { name: '殘影迴斬', emoji: '🌒', cat: 'phys', tags: [], unlockLv: 150, cost: 32, cd: 15, shape: '2*2', flavor: '斬擊的殘影在剎那之後追上真實。', fx: { dmgType: 'phys', stat: 'atk', base: 520, per: 100, dmgWindow: { dur: 2, pct: 35 } } },
@@ -1712,36 +1712,36 @@ var SKILLS = {
   mindflowChain: { name: '連環戰訣', emoji: '🔗', cat: 'phys', tags: [], unlockLv: 300, cost: 10, cd: 15, flavor: '招式相連，戰意不絕。', fx: { comboWindow: { dur: 3, pct: { base: 25, per: 1 } } } },
   swordDomain: { name: '劍域千鋒', emoji: '🗡️', cat: 'phys', tags: [], unlockLv: 300, cost: 30, cd: 18, flavor: '千鋒出鞘，方圓皆為劍之領域。', fx: { dmgType: 'phys', stat: 'atk', base: 220, per: 45, field: { name: '劍域', dur: 6, tickSec: 1, tickPct: 25 } } },
   arcaneBurst: { name: '奧術衝擊', emoji: '🌠', cat: 'magic', tags: ['light'], unlockLv: 1, cost: 30, cd: 10, flavor: '釋放純粹的奧術能量。', fx: { dmgType: 'magic', stat: 'matk', base: 330, per: 75 } },
-  fireball: { name: '火球術', emoji: '🔥', cat: 'magic', tags: ['fire'], unlockLv: 1, cost: 25, cd: 9, flavor: '投出灼熱的火球並點燃敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 360, per: 80, dot: { pct: 20, dur: 4, name: '燃燒' } } },
-  iceLance: { name: '寒冰槍', emoji: '❄️', cat: 'magic', tags: ['ice'], unlockLv: 1, cost: 25, cd: 9, shape: '1*3', flavor: '冰冷的長槍刺穿敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 330, per: 70, slowDur: 3 } },
+  fireball: { name: '火球術', emoji: '🔥', cat: 'magic', tags: ['fire'], unlockLv: 1, cost: 25, cd: 9, flavor: '投出灼熱的火球並點燃敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 360, per: 80, status: [{ id: 'burn', base: 20, dur: 4 }] } },
+  iceLance: { name: '寒冰槍', emoji: '❄️', cat: 'magic', tags: ['ice'], unlockLv: 1, cost: 25, cd: 9, shape: '1*3', flavor: '冰冷的長槍刺穿敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 330, per: 70, status: [{ id: 'slow', dur: 3 }] } },
   chainLightning: { name: '連鎖閃電', emoji: '⚡', cat: 'magic', tags: ['lightning'], unlockLv: 1, cost: 28, cd: 11, flavor: '躍動的閃電連續劈落。', fx: { dmgType: 'magic', stat: 'matk', base: 190, per: 40, hits: 2 } },
-  venomCloud: { name: '劇毒雲霧', emoji: '☠️', cat: 'magic', tags: ['poison'], unlockLv: 20, cost: 26, cd: 12, flavor: '瀰漫的毒霧侵蝕敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 200, per: 40, dot: { pct: 40, dur: 6, name: '中毒' } } },
+  venomCloud: { name: '劇毒雲霧', emoji: '☠️', cat: 'magic', tags: ['poison'], unlockLv: 20, cost: 26, cd: 12, flavor: '瀰漫的毒霧侵蝕敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 200, per: 40, status: [{ id: 'poison', base: 40, dur: 6 }] } },
   holySmite: { name: '聖光審判', emoji: '🌟', cat: 'magic', tags: ['light'], unlockLv: 20, cost: 25, cd: 10, flavor: '聖光降下裁決並潔淨己身。', fx: { dmgType: 'magic', stat: 'matk', base: 340, per: 70, selfCleanse: true } },
   shadowBolt: { name: '暗影箭', emoji: '🌑', cat: 'magic', tags: ['dark'], unlockLv: 20, cost: 25, cd: 10, flavor: '汲取生命的暗影之矢。', fx: { dmgType: 'magic', stat: 'matk', base: 320, per: 70, healPctOfDmg: 30 } },
   arcaneBarrage: { name: '奧術彈幕', emoji: '💫', cat: 'magic', tags: ['light'], unlockLv: 20, cost: 40, cd: 15, flavor: '傾瀉四發奧術飛彈。', fx: { dmgType: 'magic', stat: 'matk', base: 135, per: 30, hits: 4 } },
   meteor: { name: '隕石術', emoji: '☄️', cat: 'magic', tags: ['fire'], unlockLv: 50, cost: 60, cd: 25, shape: 'all', flavor: '呼喚天降隕石毀滅一切。', fx: { dmgType: 'magic', stat: 'matk', base: 1260, per: 255 } },
   manaBurn: { name: '法力灼燒', emoji: '🔮', cat: 'magic', tags: ['light'], unlockLv: 50, cost: 20, cd: 8, flavor: '以法力引發劇烈爆燃，爆擊時返還法力。', fx: { dmgType: 'magic', stat: 'matk', base: 320, per: 70, mpOnCrit: 20 } },
-  frostNova: { name: '霜之新星', emoji: '🧊', cat: 'magic', tags: ['ice'], unlockLv: 50, cost: 30, cd: 14, flavor: '迸發的冰環凍結敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 260, per: 55, stunDur: 1 } },
+  frostNova: { name: '霜之新星', emoji: '🧊', cat: 'magic', tags: ['ice'], unlockLv: 50, cost: 30, cd: 14, flavor: '迸發的冰環凍結敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 260, per: 55, status: [{ id: 'stun', dur: 1 }] } },
   voidRift: { name: '虛空裂隙', emoji: '🕳️', cat: 'magic', tags: ['dark'], unlockLv: 100, cost: 45, cd: 18, flavor: '撕開無視一切防禦的虛空。', fx: { dmgType: 'true', stat: 'matk', base: 325, per: 70 } },
   stormSigil: { name: '雷紋刻印', emoji: '⛈️', cat: 'magic', tags: ['lightning'], unlockLv: 100, cost: 24, cd: 9, flavor: '雷紋入體，蓄勢待鳴。', fx: { dmgType: 'magic', stat: 'matk', base: 260, per: 55, brand: { name: '雷印', storePct: 35, dur: 8, maxStacks: 1 } } },
   runeShatter: { name: '碎印湮滅', emoji: '💥', cat: 'magic', tags: ['dark'], unlockLv: 100, cost: 30, cd: 12, flavor: '碎印之刻，湮滅隨行。', fx: { dmgType: 'magic', stat: 'matk', base: 300, per: 65, detonate: { brand: 'any', multPct: { base: 150, per: 3 }, chainPct: 60 } } },
   emberEcho: { name: '燼焰回響', emoji: '🎆', cat: 'magic', tags: ['fire'], unlockLv: 150, cost: 32, cd: 13, shape: '3*3', flavor: '燼焰未熄，烈火再臨。', fx: { dmgType: 'magic', stat: 'matk', base: 330, per: 70, echo: { delay: 2, powerPct: 40, repeat: 1 } } },
   infernoDomain: { name: '焚世領域', emoji: '🌋', cat: 'magic', tags: ['fire'], unlockLv: 150, cost: 45, cd: 20, flavor: '焚世之火，燎盡八荒。', fx: { dmgType: 'magic', stat: 'matk', base: 240, per: 50, field: { name: '焚世領域', dur: 6, tickSec: 1, tickPct: 25, elem: 'fire', takenAmpPct: 15 } } },
-  plagueBurst: { name: '疫爆術', emoji: '🦠', cat: 'magic', tags: ['poison'], unlockLv: 150, cost: 28, cd: 14, flavor: '讓蔓延的疫病在一瞬間齊聲炸裂。', fx: { dmgType: 'magic', stat: 'matk', base: 200, per: 42, dotDetonate: { pct: { base: 80, per: 1 }, cap: 100 }, dot: { pct: 40, dur: 6, name: '瘟疫' }, requiresTargetDot: true } },
+  plagueBurst: { name: '疫爆術', emoji: '🦠', cat: 'magic', tags: ['poison'], unlockLv: 150, cost: 28, cd: 14, flavor: '讓蔓延的疫病在一瞬間齊聲炸裂。', fx: { dmgType: 'magic', stat: 'matk', base: 200, per: 42, dotDetonate: { pct: { base: 80, per: 1 }, cap: 100 }, requiresTargetDot: true, status: [{ id: 'plague', base: 40, dur: 6 }] } },
   frostResonance: { name: '霜晶共鳴', emoji: '🌨️', cat: 'magic', tags: ['ice'], unlockLv: 200, cost: 22, cd: 8, flavor: '霜晶共鳴，凜冬將至。', fx: { dmgType: 'magic', stat: 'matk', base: 240, per: 50, charge: { name: '霜晶', add: 1, max: 4, dur: 20, source: 'cast', burst: { multPct: 180, scope: 'self' } } } },
   astralConduit: { name: '星辰引導', emoji: '🔯', cat: 'magic', tags: ['light'], unlockLv: 200, cost: 20, cd: 15, flavor: '引導星辰之力，注入下一式。', fx: { skillAmp: { scope: 'next', pct: { base: 30, per: 3 }, dur: 8, uses: 1, refundPct: 40 } } },
   bloodSurge: { name: '瀝血狂濤', emoji: '🩸', cat: 'magic', tags: ['dark'], unlockLv: 300, cost: 25, cd: 16, flavor: '以血為潮，掀起狂濤。', fx: { dmgType: 'magic', stat: 'matk', base: 300, per: 65, hpSacrifice: { hpPct: 15, ampPct: { base: 80, per: 2 } } } },
   rimeTide: { name: '凜冬迴潮', emoji: '🌬️', cat: 'magic', tags: ['ice'], unlockLv: 300, cost: 26, cd: 12, flavor: '凜冬迴潮，捲回流逝的時間。', fx: { dmgType: 'magic', stat: 'matk', base: 260, per: 55, cdShift: { sec: { base: 1.5, per: 0.1 } } } },
   healWound: { name: '治癒術', emoji: '💚', cat: 'def', tags: [], unlockLv: 1, cost: 30, cd: 12, ai: 'hurt70', flavor: '溫暖的光輝癒合傷口。', fx: { healPctMax: { base: 15, per: 4 } } },
-  regenerate: { name: '再生術', emoji: '🌿', cat: 'def', tags: [], unlockLv: 1, cost: 28, cd: 15, ai: 'hurt80', flavor: '持續再生的自然之力。', fx: { hotPct: { base: 2.5, per: 0.7 }, hotDur: 6 } },
+  regenerate: { name: '再生術', emoji: '🌿', cat: 'def', tags: [], unlockLv: 1, cost: 28, cd: 15, ai: 'hurt80', flavor: '持續再生的自然之力。', fx: { status: [{ id: 'regen', base: 2.5, per: 0.7, dur: 6 }] } },
   manaBarrier: { name: '魔法屏障', emoji: '🛡️', cat: 'def', tags: [], unlockLv: 1, cost: 30, cd: 15, ai: 'shield', flavor: '展開吸收傷害的屏障。', fx: { shieldPctMax: { base: 18, per: 4 } } },
-  ironWall: { name: '鐵壁', emoji: '🏰', cat: 'def', tags: [], unlockLv: 1, cost: 25, cd: 18, ai: 'hurt50', flavor: '硬化全身抵禦攻擊。', fx: { buff: { key: 'defUp', base: 40, per: 10, dur: 6 } } },
+  ironWall: { name: '鐵壁', emoji: '🏰', cat: 'def', tags: [], unlockLv: 1, cost: 25, cd: 18, ai: 'hurt50', flavor: '硬化全身抵禦攻擊。', fx: { status: [{ id: 'defUp', base: 40, per: 10, dur: 6 }] } },
   purify: { name: '淨化術', emoji: '✨', cat: 'def', tags: [], unlockLv: 20, cost: 15, cd: 10, ai: 'debuffed', flavor: '洗去身上的負面狀態。', fx: { selfCleanse: true, healPctMax: { base: 5, per: 1.5 } } },
   lifeLink: { name: '生命汲取', emoji: '🧛', cat: 'def', tags: ['dark'], unlockLv: 20, cost: 22, cd: 10, flavor: '奪取敵人的生命力。', fx: { dmgType: 'magic', stat: 'matk', base: 220, per: 50, healPctOfDmg: 100 } },
-  sanctuary: { name: '庇護所', emoji: '⛪', cat: 'def', tags: [], unlockLv: 20, cost: 30, cd: 20, ai: 'hurt40', flavor: '神聖領域護佑己身。', fx: { buff: { key: 'evasionUp', base: 25, per: 5, dur: 5 } } },
+  sanctuary: { name: '庇護所', emoji: '⛪', cat: 'def', tags: [], unlockLv: 20, cost: 30, cd: 20, ai: 'hurt40', flavor: '神聖領域護佑己身。', fx: { status: [{ id: 'evasionUp', base: 25, per: 5, dur: 5 }] } },
   secondWind: { name: '回春氣息', emoji: '💨', cat: 'def', tags: [], unlockLv: 20, cost: 0, cd: 25, ai: 'hurt30', flavor: '危急時的求生本能（不耗魔）。', fx: { healPctMax: { base: 10, per: 3 }, mpRestore: 20 } },
-  reflectShield: { name: '反射護盾', emoji: '🪞', cat: 'def', tags: [], unlockLv: 50, cost: 28, cd: 18, flavor: '反彈傷害的光盾。', fx: { buff: { key: 'thornsUp', base: 15, per: 5, dur: 6 }, buff2: { key: 'blockUp', base: 12, per: 4, dur: 6 } } },
-  lastStand: { name: '背水一戰', emoji: '🚩', cat: 'def', tags: [], unlockLv: 50, cost: 35, cd: 30, ai: 'hurt25', flavor: '絕境中爆發的鬥志。', fx: { healPctMax: { base: 20, per: 5 }, buff: { key: 'atkUp', base: 15, per: 5, dur: 6 } } },
+  reflectShield: { name: '反射護盾', emoji: '🪞', cat: 'def', tags: [], unlockLv: 50, cost: 28, cd: 18, flavor: '反彈傷害的光盾。', fx: { status: [{ id: 'thornsUp', base: 15, per: 5, dur: 6 }, { id: 'blockUp', base: 12, per: 4, dur: 6 }] } },
+  lastStand: { name: '背水一戰', emoji: '🚩', cat: 'def', tags: [], unlockLv: 50, cost: 35, cd: 30, ai: 'hurt25', flavor: '絕境中爆發的鬥志。', fx: { healPctMax: { base: 20, per: 5 }, status: [{ id: 'atkUp', base: 15, per: 5, dur: 6 }] } },
   aegisBurst: { name: '聖盾崩華', emoji: '💠', cat: 'def', tags: ['light'], unlockLv: 50, cost: 26, cd: 14, flavor: '聖盾崩華之瞬，守護化為鋒芒。', fx: { dmgType: 'magic', stat: 'matk', base: 180, per: 40, shieldBurst: { convertPct: 60, capAtkMult: 10 } } },
   overflowVerdict: { name: '溢流聖罰', emoji: '⛲', cat: 'def', tags: ['light'], unlockLv: 100, cost: 30, cd: 16, flavor: '滿溢的聖光，即是裁罰。', fx: { healPctMax: { base: 12, per: 3 }, overhealDmg: { pct: { base: 40, per: 2 }, cap: 90 } } },
   stigmaCycle: { name: '聖痕輪迴', emoji: '🪬', cat: 'def', tags: ['light'], unlockLv: 100, cost: 24, cd: 9, flavor: '承受的苦難，終將輪迴為裁決。', fx: { dmgType: 'magic', stat: 'matk', base: 200, per: 45, stigma: { storePct: 35, dur: 8, capMaxHpPct: 20, multPct: 130 } } },
@@ -1751,15 +1751,15 @@ var SKILLS = {
   bastionCycle: { name: '壁壘迴環', emoji: '♻️', cat: 'def', tags: [], unlockLv: 150, cost: 28, cd: 20, ai: 'shield', flavor: '壁壘每一次震響，都是反攻的號角。', fx: { shieldPctMax: { base: 10, per: 2.5 }, cdOnHitTaken: { sec: 0.4, icdSec: 0.5 } } },
   martyrCharge: { name: '蓄怒之盾', emoji: '😤', cat: 'def', tags: [], unlockLv: 200, cost: 16, cd: 7, flavor: '承受吧——怒火終將百倍奉還。', fx: { dmgType: 'phys', stat: 'atk', base: 140, per: 30, charge: { name: '蓄怒', add: 1, max: 4, dur: 15, source: 'hitTaken', burst: { multPct: { base: 200, per: 6 }, scope: 'self' } } } },
   sanctify: { name: '聖化禱言', emoji: '🙏', cat: 'def', tags: ['light'], unlockLv: 200, cost: 25, cd: 22, flavor: '受聖化的禱言，讓守護亦能傷人。', fx: { healPctMax: { base: 8, per: 2 }, skillAmp: { scope: 'cat:def', pct: { base: 20, per: 4 }, dur: 8 } } },
-  timeWarp: { name: '時間扭曲', emoji: '⏳', cat: 'special', tags: [], unlockLv: 1, cost: 35, cd: 20, flavor: '加速自身的時間流。', fx: { buff: { key: 'aspdUp', base: 25, per: 7, dur: 6 } } },
+  timeWarp: { name: '時間扭曲', emoji: '⏳', cat: 'special', tags: [], unlockLv: 1, cost: 35, cd: 20, flavor: '加速自身的時間流。', fx: { status: [{ id: 'aspdUp', base: 25, per: 7, dur: 6 }] } },
   midasTouch: { name: '點金手', emoji: '🪙', cat: 'special', tags: [], unlockLv: 1, cost: 25, cd: 20, flavor: '揮出將敵人化為財富的一擊。', fx: { dmgType: 'phys', stat: 'atk', base: 200, per: 40, goldPer: 15 } },
-  treasureSense: { name: '尋寶直覺', emoji: '🔍', cat: 'special', tags: [], unlockLv: 1, cost: 30, cd: 30, flavor: '嗅出寶物的氣息。', fx: { buff: { key: 'lootUp', base: 15, per: 5, dur: 10 } } },
-  weakenCurse: { name: '虛弱詛咒', emoji: '📉', cat: 'special', tags: ['dark'], unlockLv: 1, cost: 22, cd: 15, flavor: '削弱敵人的力量。', fx: { debuff: { key: 'atkDown', base: 18, per: 4, dur: 6 } } },
-  deathCurse: { name: '死亡詛咒', emoji: '⚰️', cat: 'special', tags: ['dark'], unlockLv: 20, cost: 40, cd: 20, flavor: '以敵人生命為薪的詛咒。', fx: { maxHpDotPct: { base: 2.4, per: 0.8 }, dotDur: 5 } },
-  blinkDodge: { name: '瞬身', emoji: '🌀', cat: 'special', tags: [], unlockLv: 20, cost: 20, cd: 16, flavor: '殘影閃避致命攻擊。', fx: { buff: { key: 'evasionUp', base: 35, per: 7, dur: 3 } } },
+  treasureSense: { name: '尋寶直覺', emoji: '🔍', cat: 'special', tags: [], unlockLv: 1, cost: 30, cd: 30, flavor: '嗅出寶物的氣息。', fx: { status: [{ id: 'lootUp', base: 15, per: 5, dur: 10 }] } },
+  weakenCurse: { name: '虛弱詛咒', emoji: '📉', cat: 'special', tags: ['dark'], unlockLv: 1, cost: 22, cd: 15, flavor: '削弱敵人的力量。', fx: { status: [{ id: 'atkDown', base: 18, per: 4, dur: 6 }] } },
+  deathCurse: { name: '死亡詛咒', emoji: '⚰️', cat: 'special', tags: ['dark'], unlockLv: 20, cost: 40, cd: 20, flavor: '以敵人生命為薪的詛咒。', fx: { status: [{ id: 'deathCurse', base: 2.4, per: 0.8, dur: 5 }] } },
+  blinkDodge: { name: '瞬身', emoji: '🌀', cat: 'special', tags: [], unlockLv: 20, cost: 20, cd: 16, flavor: '殘影閃避致命攻擊。', fx: { status: [{ id: 'evasionUp', base: 35, per: 7, dur: 3 }] } },
   mpSiphon: { name: '法力虹吸', emoji: '🌊', cat: 'special', tags: ['light'], unlockLv: 20, cost: 0, cd: 12, flavor: '從敵人身上抽取法力（不耗魔）。', fx: { dmgType: 'magic', stat: 'matk', base: 160, per: 30, mpRestore: 25 } },
-  overload: { name: '超載', emoji: '💥', cat: 'special', tags: [], unlockLv: 20, cost: 30, cd: 22, flavor: '讓每次爆擊更加致命。', fx: { buff: { key: 'critDmgUp', base: 40, per: 12, dur: 6 } } },
-  warcry: { name: '戰吼', emoji: '📣', cat: 'special', tags: [], unlockLv: 50, cost: 25, cd: 18, flavor: '震天的吼聲鼓舞自己、震懾敵人。', fx: { buff: { key: 'atkUp', base: 12, per: 4, dur: 6 }, debuff: { key: 'atkDown', base: 8, per: 2, dur: 6 } } },
+  overload: { name: '超載', emoji: '💥', cat: 'special', tags: [], unlockLv: 20, cost: 30, cd: 22, flavor: '讓每次爆擊更加致命。', fx: { status: [{ id: 'critDmgUp', base: 40, per: 12, dur: 6 }] } },
+  warcry: { name: '戰吼', emoji: '📣', cat: 'special', tags: [], unlockLv: 50, cost: 25, cd: 18, flavor: '震天的吼聲鼓舞自己、震懾敵人。', fx: { status: [{ id: 'atkUp', base: 12, per: 4, dur: 6 }, { id: 'atkDown', base: 8, per: 2, dur: 6 }] } },
   gamble: { name: '孤注一擲', emoji: '🎲', cat: 'special', tags: [], unlockLv: 50, cost: 30, cd: 15, flavor: '傷害在 50%~250% 之間隨機。', fx: { dmgType: 'phys', stat: 'atk', base: 375, per: 85, gamble: true } },
   fateRoulette: { name: '命運輪盤', emoji: '🎰', cat: 'special', tags: ['light'], unlockLv: 50, cost: 35, cd: 18, flavor: '命運的輪盤，永遠轉向出乎意料的一格。', fx: { dmgType: 'magic', stat: 'matk', base: 180, per: 35, proc: { on: 'hit', pct: 100, do: 'castRandom', powerPct: { base: 50, per: 2 } } } },
   bestReplay: { name: '昔日重演', emoji: '📽️', cat: 'special', tags: ['light'], unlockLv: 100, cost: 30, cd: 14, flavor: '昔日的輝煌，此刻重演。', fx: { dmgType: 'magic', stat: 'matk', base: 300, per: 60, replayBest: { powerPct: { base: 40, per: 2 }, window: 6, repeat: 1 } } },
@@ -1795,152 +1795,95 @@ var SKILLS = {
    前期升級只加基礎數值；達到指定等級解鎖附加效果；更高等級強化該效果。
    欄位為淺層覆蓋（同名欄位以高等級版本為準）。                        */
 var UNLOCKS = {
-  // 物理
-  powerSlash:    { 4: { stunDur: 0.5 }, 8: { stunDur: 1, critBonus: 15 } },
-  doubleStrike:  { 4: { hits: 3 }, 8: { hits: 3, healPctOfDmg: 12 } },
-  whirlwind:     { 4: { slowDur: 2 }, 8: { slowDur: 3, buff: { key: 'penUp', base: 10, per: 2, dur: 4 } } },
-  armorBreak:    { 4: { buff: { key: 'penUp', base: 35, per: 6, dur: 6 } }, 8: { buff: { key: 'penUp', base: 45, per: 7, dur: 8 }, stunDur: 0.5 } },
+  powerSlash: { 4: { status: [{ id: 'stun', dur: 0.5 }] }, 8: { critBonus: 15, status: [{ id: 'stun', dur: 1 }] } },
+  doubleStrike: { 4: { hits: 3 }, 8: { hits: 3, healPctOfDmg: 12 } },
+  whirlwind: { 4: { status: [{ id: 'slow', dur: 2 }] }, 8: { status: [{ id: 'slow', dur: 3 }, { id: 'penUp', base: 10, per: 2, dur: 4 }] } },
+  armorBreak: { 4: { status: [{ id: 'penUp', base: 35, per: 6, dur: 6 }] }, 8: { status: [{ id: 'stun', dur: 0.5 }, { id: 'penUp', base: 45, per: 7, dur: 8 }] } },
   executeStrike: { 4: { execBelow: 40 }, 8: { execBelow: 50, execMult: 2.5 } },
-  rendWound:     { 4: { dot: { pct: 40, dur: 6, name: '流血' } }, 8: { dot: { pct: 55, dur: 7, name: '流血' }, healPctOfDmg: 15 } },
-  stunBlow:      { 4: { stunDur: 2 }, 8: { stunDur: 2.5, debuff: { key: 'atkDown', base: 10, per: 2, dur: 4 } } },
+  rendWound: { 4: { status: [{ id: 'bleed', base: 40, dur: 6 }] }, 8: { healPctOfDmg: 15, status: [{ id: 'bleed', base: 55, dur: 7 }] } },
+  stunBlow: { 4: { status: [{ id: 'stun', dur: 2 }] }, 8: { status: [{ id: 'stun', dur: 2.5 }, { id: 'atkDown', base: 10, per: 2, dur: 4 }] } },
   berserkStrike: { 4: { critBonus: 20 }, 8: { selfDmgPct: 3, critBonus: 35 } },
   preciseThrust: { 4: { critBonus: 50 }, 8: { critBonus: 50, execBelow: 25, execMult: 1.8 } },
-  heavySmash:    { 4: { slowDur: 4 }, 8: { slowDur: 4, stunDur: 1 } },
-  swiftCuts:     { 4: { hits: 4 }, 8: { hits: 5, dot: { pct: 15, dur: 3, name: '流血' } } },
-  counterStance: { 4: { buff2: { key: 'blockUp', base: 10, per: 3, dur: 6 } }, 8: { buff: { key: 'thornsUp', base: 20, per: 6, dur: 8 } } },
-  // 魔法
-  arcaneBurst:   { 4: { mpOnCrit: 15 }, 8: { mpOnCrit: 15, doubleCastPct: 15 } },
-  fireball:      { 4: { dot: { pct: 35, dur: 5, name: '燃燒' } }, 8: { dot: { pct: 45, dur: 6, name: '燃燒' } } },
-  iceLance:      { 4: { slowDur: 4 }, 8: { slowDur: 4, stunDur: 0.8 } },
-  chainLightning:{ 4: { hits: 3 }, 8: { hits: 3, doubleCastPct: 20 } },
-  venomCloud:    { 4: { dot: { pct: 55, dur: 7, name: '中毒' } }, 8: { dot: { pct: 65, dur: 8, name: '中毒' }, debuff: { key: 'atkDown', base: 12, per: 2, dur: 5 } } },
-  holySmite:     { 4: { healPctMax: { base: 4, per: 1 } }, 8: { healPctMax: { base: 6, per: 1.5 }, buff: { key: 'atkUp', base: 8, per: 2, dur: 5 } } },
-  shadowBolt:    { 4: { healPctOfDmg: 45 }, 8: { healPctOfDmg: 55, dot: { pct: 25, dur: 4, name: '侵蝕' } } },
+  heavySmash: { 4: { status: [{ id: 'slow', dur: 4 }] }, 8: { status: [{ id: 'stun', dur: 1 }, { id: 'slow', dur: 4 }] } },
+  swiftCuts: { 4: { hits: 4 }, 8: { hits: 5, status: [{ id: 'bleed', base: 15, dur: 3 }] } },
+  counterStance: { 4: { status: [{ id: 'thornsUp', base: 12, per: 4, dur: 6 }, { id: 'blockUp', base: 10, per: 3, dur: 6 }] }, 8: { status: [{ id: 'thornsUp', base: 20, per: 6, dur: 8 }, { id: 'blockUp', base: 10, per: 3, dur: 6 }] } },
+  soulBrandFlurry: { 4: { brand: { name: '魂痕', storePct: 30, dur: 8, maxStacks: 5 } }, 8: { brand: { name: '魂痕', storePct: 45, dur: 10, maxStacks: 5 } } },
+  sinDetonate: { 4: { detonate: { brand: 'any', multPct: { base: 120, per: 3 }, stunDur: 1, resetCd: { id: 'soulBrandFlurry', pct: 25 } } }, 8: { detonate: { brand: 'any', multPct: { base: 150, per: 3 }, stunDur: 1, resetCd: { id: 'soulBrandFlurry', pct: 40 } } } },
+  echoBlade: { 4: { dmgWindow: { dur: 2, pct: 50 } }, 8: { dmgWindow: { dur: 3, pct: 50 } } },
+  warSpiritEngine: { 4: { charge: { name: '鬥氣', add: 1, addCrit: 2, max: 3, dur: 15, source: 'attackHit', burst: { multPct: { base: 120, per: 5 }, scope: 'next' } } }, 8: { charge: { name: '鬥氣', add: 1, addCrit: 2, max: 3, dur: 15, source: 'attackHit', burst: { multPct: { base: 150, per: 5 }, scope: 'next', keepStacks: 1 } } } },
+  pursuitDecree: { 4: { cdShift: { sec: { base: 1.5, per: 0.1 } } }, 8: { cdShift: { sec: { base: 1.5, per: 0.1 }, extraPct: 10 } } },
+  warOverture: { 4: { skillAmp: { scope: 'next', dur: 8, uses: 2, perCdSec: { base: 4, per: 0.1 }, cap: 120 } }, 8: { skillAmp: { scope: 'next', dur: 8, uses: 2, perCdSec: { base: 4, per: 0.1 }, cap: 120, cdrPct: 20, cdrMinCd: 15 } } },
+  woundCollapse: { 4: { dotPulse: { ticks: 3, powerPct: { base: 100, per: 3 } } }, 8: { dotPulse: { ticks: 3, powerPct: { base: 100, per: 3 } }, dotHaste: { mult: 2, dur: 3 } } },
+  mindflowChain: { 4: { comboWindow: { dur: 4, pct: { base: 25, per: 1 } } }, 8: { comboWindow: { dur: 4, pct: { base: 25, per: 1 }, noGcd: true } } },
+  swordDomain: { 4: { field: { name: '劍域', dur: 6, tickSec: 1, tickPct: 25, takenAmpPct: 10 } }, 8: { field: { name: '劍域', dur: 6, tickSec: 0.6, tickPct: 25, takenAmpPct: 10 } } },
+  arcaneBurst: { 4: { mpOnCrit: 15 }, 8: { mpOnCrit: 15, doubleCastPct: 15 } },
+  fireball: { 4: { status: [{ id: 'burn', base: 35, dur: 5 }] }, 8: { status: [{ id: 'burn', base: 45, dur: 6 }] } },
+  iceLance: { 4: { status: [{ id: 'slow', dur: 4 }] }, 8: { status: [{ id: 'stun', dur: 0.8 }, { id: 'slow', dur: 4 }] } },
+  chainLightning: { 4: { hits: 3 }, 8: { hits: 3, doubleCastPct: 20 } },
+  venomCloud: { 4: { status: [{ id: 'poison', base: 55, dur: 7 }] }, 8: { status: [{ id: 'poison', base: 65, dur: 8 }, { id: 'atkDown', base: 12, per: 2, dur: 5 }] } },
+  holySmite: { 4: { healPctMax: { base: 4, per: 1 } }, 8: { healPctMax: { base: 6, per: 1.5 }, status: [{ id: 'atkUp', base: 8, per: 2, dur: 5 }] } },
+  shadowBolt: { 4: { healPctOfDmg: 45 }, 8: { healPctOfDmg: 55, status: [{ id: 'corrode', base: 25, dur: 4 }] } },
   arcaneBarrage: { 4: { hits: 5 }, 8: { hits: 6, mpOnCrit: 10 } },
-  meteor:        { 4: { dot: { pct: 30, dur: 5, name: '燃燒' } }, 8: { dot: { pct: 40, dur: 6, name: '燃燒' }, stunDur: 1.2 } },
-  manaBurn:      { 4: { mpOnCrit: 35 }, 8: { mpOnCrit: 40, buff: { key: 'penUp', base: 15, per: 3, dur: 5 } } },
-  frostNova:     { 4: { stunDur: 1.5 }, 8: { stunDur: 1.5, slowDur: 4 } },
-  voidRift:      { 4: { execBelow: 30, execMult: 1.5 }, 8: { execBelow: 30, execMult: 1.5, doubleCastPct: 15 } },
-  // 防禦與治療
-  healWound:     { 4: { selfCleanse: true }, 8: { buff: { key: 'defUp', base: 15, per: 3, dur: 4 } } },
-  regenerate:    { 4: { hotDur: 8 }, 8: { hotPct: { base: 4, per: 1 }, hotDur: 8 } },
-  manaBarrier:   { 4: { shieldPctMax: { base: 24, per: 5 } }, 8: { shieldPctMax: { base: 28, per: 6 }, buff: { key: 'blockUp', base: 10, per: 2, dur: 6 } } },
-  ironWall:      { 4: { buff2: { key: 'thornsUp', base: 8, per: 2, dur: 6 } }, 8: { buff: { key: 'defUp', base: 55, per: 12, dur: 8 } } },
-  purify:        { 4: { healPctMax: { base: 8, per: 2 } }, 8: { buff: { key: 'evasionUp', base: 15, per: 3, dur: 3 } } },
-  lifeLink:      { 4: { healPctOfDmg: 130 }, 8: { healPctOfDmg: 150, dot: { pct: 30, dur: 4, name: '侵蝕' } } },
-  sanctuary:     { 4: { buff2: { key: 'defUp', base: 15, per: 3, dur: 5 } }, 8: { buff: { key: 'evasionUp', base: 35, per: 6, dur: 6 } } },
-  secondWind:    { 4: { mpRestore: 40 }, 8: { mpRestore: 50, healPctMax: { base: 16, per: 4 } } },
-  reflectShield: { 4: { shieldPctMax: { base: 8, per: 2 } }, 8: { buff: { key: 'thornsUp', base: 25, per: 6, dur: 8 } } },
-  lastStand:     { 4: { buff2: { key: 'aspdUp', base: 15, per: 3, dur: 6 } }, 8: { healPctMax: { base: 30, per: 6 } } },
-  // 特殊
-  timeWarp:      { 4: {}, 8: { buff: { key: 'aspdUp', base: 40, per: 9, dur: 7 } } },
-  midasTouch:    { 4: { goldPer: 25 }, 8: { goldPer: 35, buff: { key: 'lootUp', base: 15, per: 3, dur: 5 } } },
-  treasureSense: { 4: { buff: { key: 'lootUp', base: 22.5, per: 6, dur: 12 } }, 8: { goldPer: 5 } },
-  weakenCurse:   { 4: { slowDur: 2 }, 8: { debuff: { key: 'atkDown', base: 28, per: 5, dur: 8 } } },
-  deathCurse:    { 4: { dotDur: 7 }, 8: { maxHpDotPct: { base: 1.8, per: 0.5 }, dotDur: 7 } },
-  blinkDodge:    { 4: { buff: { key: 'evasionUp', base: 45, per: 8, dur: 4 } }, 8: {} },
-  mpSiphon:      { 4: { mpRestore: 40 }, 8: { mpRestore: 45, debuff: { key: 'atkDown', base: 10, per: 2, dur: 4 } } },
-  overload:      { 4: {}, 8: { buff: { key: 'critDmgUp', base: 60, per: 15, dur: 8 } } },
-  warcry:        { 4: { debuff: { key: 'atkDown', base: 12, per: 3, dur: 6 } }, 8: { buff: { key: 'atkUp', base: 18, per: 5, dur: 8 } } },
-  gamble:        { 4: { critBonus: 20 }, 8: { critBonus: 20, execBelow: 35, execMult: 2 } },
-  /* ---- 45 新技能 × 11 機制族：里程碑（M4/M8；2026-07-23 定案表）----
-     淺層覆蓋＝整個 fx 鍵替換，故每筆里程碑均「完整重申」該鍵全部欄位；
-     雙 scope 第二鍵（skillAmp2/buffExtend2/proc2/cdResetOnKill2）於 M8 同時重申兩鍵避免覆蓋丟失。 */
-  // 物理
-  soulBrandFlurry:{ 4: { brand: { name: '魂痕', storePct: 30, dur: 8, maxStacks: 5 } },
-    8: { brand: { name: '魂痕', storePct: 45, dur: 10, maxStacks: 5 } } },
-  sinDetonate:   { 4: { detonate: { brand: 'any', multPct: { base: 120, per: 3 }, stunDur: 1, resetCd: { id: 'soulBrandFlurry', pct: 25 } } },
-    8: { detonate: { brand: 'any', multPct: { base: 150, per: 3 }, stunDur: 1, resetCd: { id: 'soulBrandFlurry', pct: 40 } } } },
-  echoBlade:     { 4: { dmgWindow: { dur: 2, pct: 50 } },
-    8: { dmgWindow: { dur: 3, pct: 50 } } },
-  warSpiritEngine:{ 4: { charge: { name: '鬥氣', add: 1, addCrit: 2, max: 3, dur: 15, source: 'attackHit', burst: { multPct: { base: 120, per: 5 }, scope: 'next' } } },
-    8: { charge: { name: '鬥氣', add: 1, addCrit: 2, max: 3, dur: 15, source: 'attackHit', burst: { multPct: { base: 150, per: 5 }, scope: 'next', keepStacks: 1 } } } },
-  pursuitDecree: { 4: { cdShift: { sec: { base: 1.5, per: 0.1 } } },
-    8: { cdShift: { sec: { base: 1.5, per: 0.1 }, extraPct: 10 } } },
-  warOverture:   { 4: { skillAmp: { scope: 'next', dur: 8, uses: 2, perCdSec: { base: 4, per: 0.1 }, cap: 120 } },
-    8: { skillAmp: { scope: 'next', dur: 8, uses: 2, perCdSec: { base: 4, per: 0.1 }, cap: 120, cdrPct: 20, cdrMinCd: 15 } } },
-  woundCollapse: { 4: { dotPulse: { ticks: 3, powerPct: { base: 100, per: 3 } } },
-    8: { dotPulse: { ticks: 3, powerPct: { base: 100, per: 3 } }, dotHaste: { mult: 2, dur: 3 } } },
-  mindflowChain: { 4: { comboWindow: { dur: 4, pct: { base: 25, per: 1 } } },
-    8: { comboWindow: { dur: 4, pct: { base: 25, per: 1 }, noGcd: true } } },
-  swordDomain:   { 4: { field: { name: '劍域', dur: 6, tickSec: 1, tickPct: 25, takenAmpPct: 10 } },
-    8: { field: { name: '劍域', dur: 6, tickSec: 0.6, tickPct: 25, takenAmpPct: 10 } } },
-  // 魔法
-  stormSigil:    { 4: { brand: { name: '雷印', storePct: 35, dur: 8, maxStacks: 2 } },
-    8: { brand: { name: '雷印', storePct: 45, dur: 12, maxStacks: 3 } } },
-  runeShatter:   { 4: { detonate: { brand: 'any', multPct: { base: 200, per: 3 }, chainPct: 60, stunDur: 0.8 } },
-    8: { detonate: { brand: 'any', multPct: { base: 200, per: 3 }, chainPct: 60, stunDur: 0.8, healPctMaxPerStack: 4 } } },
-  emberEcho:     { 4: { echo: { delay: 2, powerPct: 60, repeat: 1 } },
-    8: { echo: { delay: 2, powerPct: 60, repeat: 2 } } },
-  infernoDomain: { 4: { field: { name: '焚世領域', dur: 8, tickSec: 1, tickPct: 25, elem: 'fire', takenAmpPct: 15 } },
-    8: { field: { name: '焚世領域', dur: 8, tickSec: 0.8, tickPct: 35, elem: 'fire', takenAmpPct: 15 } } },
-  plagueBurst:   { 4: { dotDetonate: { pct: { base: 80, per: 1 }, cap: 100, stunDur: 0.8 } },
-    8: { dotDetonate: { pct: { base: 80, per: 1 }, cap: 100, stunDur: 0.8, reapplyPct: 40 } } },
-  frostResonance:{ 4: { charge: { name: '霜晶', add: 2, max: 4, dur: 20, source: 'cast', burst: { multPct: 180, scope: 'self' } } },
-    8: { charge: { name: '霜晶', add: 2, max: 4, dur: 20, source: 'cast', burst: { multPct: 260, scope: 'self', stunDur: 1.2 } } } },
-  astralConduit: { 4: { skillAmp: { scope: 'next', pct: { base: 30, per: 3 }, dur: 8, uses: 2, refundPct: 40 } },
-    8: { skillAmp: { scope: 'next', pct: { base: 30, per: 3 }, dur: 8, uses: 2, refundPct: 40, cdrPct: 30 } } },
-  bloodSurge:    { 4: { hpSacrifice: { hpPct: 15, ampPct: { base: 80, per: 2 }, hotRefundPct: 50, hotDur: 6 } },
-    8: { hpSacrifice: { hpPct: 15, ampPct: { base: 80, per: 2 }, hotRefundPct: 50, hotDur: 6, dmgToShieldPct: 15 } } },
-  rimeTide:      { 4: { cdResetOnKill: { pct: 30, selfReset: true, icdSec: 3 } },
-    8: { cdShift: { sec: { base: 2.5, per: 0.1 } }, cdResetOnKill: { pct: 30, selfReset: true, icdSec: 3 }, cdResetOnKill2: { othersPct: 20, icdSec: 3 } } },
-  // 防禦與治療
-  aegisBurst:    { 4: { shieldBurst: { convertPct: 85, capAtkMult: 10 } },
-    8: { shieldBurst: { convertPct: 85, capAtkMult: 10, stunDur: 1 } } },
-  overflowVerdict:{ 4: { overhealDmg: { pct: { base: 40, per: 2 }, cap: 90, windowSec: 6 } },
-    8: { overhealDmg: { pct: { base: 70, per: 2 }, cap: 90, windowSec: 6 } } },
-  stigmaCycle:   { 4: { stigma: { storePct: 35, dur: 8, capMaxHpPct: 35, multPct: 130 } },
-    8: { stigma: { storePct: 35, dur: 8, capMaxHpPct: 35, multPct: 130, shieldPct: 130, stunDur: 1 } } },
-  soulEcho:      { 4: { healEcho: { dur: 2, pct: { base: 60, per: 2 } } },
-    8: { healEcho: { dur: 4, pct: { base: 60, per: 2 } } } },
-  holyLitany:    { 4: { freeNext: { count: 2, dur: 6, scope: 'cat:def', ampPct: { base: 30, per: 2 } } },
-    8: { freeNext: { count: 2, dur: 6, scope: 'cat:def', ampPct: { base: 30, per: 2 }, cdHalf: true } } },
-  sustainHymn:   { 4: { buffExtend: { sec: 3 } },
-    8: { buffExtend: { sec: 3 }, buffExtend2: { sec: 3 } } },
-  bastionCycle:  { 4: { cdOnHitTaken: { sec: 0.6, icdSec: 0.5 } },
-    8: { cdOnHitTaken: { sec: 0.6, icdSec: 0.5, onBreak: 2 } } },
-  martyrCharge:  { 4: { charge: { name: '蓄怒', add: 1, addBlock: 2, max: 4, dur: 15, source: 'hitTaken', burst: { multPct: { base: 200, per: 6 }, scope: 'self' } } },
-    8: { charge: { name: '蓄怒', add: 1, addBlock: 2, max: 4, dur: 15, source: 'hitTaken', burst: { multPct: { base: 200, per: 6 }, scope: 'self', anyMultPct: 60 } } } },
-  sanctify:      { 4: { skillAmp: { scope: 'cat:def', pct: { base: 20, per: 4 }, dur: 10 } },
-    8: { skillAmp: { scope: 'all', pct: { base: 20, per: 4 }, dur: 10 } } },
-  // 特殊
-  fateRoulette:  { 4: { proc: { on: 'hit', pct: 100, do: 'castRandom', powerPct: { base: 70, per: 2 } } },
-    8: { proc: { on: 'hit', pct: 100, do: 'castRandom', powerPct: { base: 70, per: 2 } }, proc2: { on: 'hit', pct: 35, do: 'castRandom', powerPct: { base: 70, per: 2 } } } },
-  bestReplay:    { 4: { replayBest: { powerPct: { base: 40, per: 2 }, window: 6, repeat: 2 } },
-    8: { replayBest: { powerPct: { base: 65, per: 2 }, window: 10, repeat: 2 } } },
-  chronoPilfer:  { 4: { cdShift: { sec: { base: 3, per: 0.2 }, focus: 'longest', onKillRepeat: { icdSec: 2 } } },
-    8: { cdShift: { sec: { base: 3, per: 0.2 }, focus: 'longest', onKillRepeat: { icdSec: 2 }, zeroSelfCdrPct: 50 } } },
-  gamblerChips:  { 4: { charge: { name: '籌碼', addRange: [2, 4], max: 5, dur: 15, source: 'cast', burst: { multPct: { base: 150, per: 4 }, scope: 'next' } } },
-    8: { charge: { name: '籌碼', addRange: [2, 4], max: 5, dur: 20, source: 'cast', burst: { multPct: { base: 180, per: 4 }, scope: 'next' } } } },
-  omniBrand:     { 4: { brand: { name: '萬象印', storePct: 35, dur: 10, maxStacks: 2 } },
-    8: { brand: { name: '萬象印', storePct: 35, dur: 10, maxStacks: 2 }, detonate: { brand: 'any', multPct: { base: 200, per: 5 }, stunDur: 1, healPctMax: 3 } } },
-  arcaneAllIn:   { 4: { mpDump: { pctPer10Mp: { base: 3, per: 0.15 } } },
-    8: { mpDump: { pctPer10Mp: { base: 3, per: 0.15 } }, freeNext: { count: 1, dur: 6 } } },
-  flowSurge:     { 4: { freeNext: { count: 2, dur: { base: 5, per: 0.3 }, noGcd: true } },
-    8: { freeNext: { count: 4, dur: { base: 5, per: 0.3 }, noGcd: true } } },
-  comboResonance:{ 4: { skillAmp: { scope: 'multiHit', pct: { base: 35, per: 4 }, dur: 14 } },
-    8: { skillAmp: { scope: 'multiHit', pct: { base: 35, per: 4 }, dur: 14 }, skillAmp2: { scope: 'next', pct: 30, uses: 1 } } },
-  chronoAnchor:  { 4: { buffExtend2: { sec: 1.5 } },
-    8: { buffExtend: { sec: { base: 3, per: 0.15 } }, buffExtend2: { sec: 1.5 } } },
-  // 被動
-  phantomEcho:   { 4: { passiveEcho: { pct: { base: 15, per: 1 }, powerPct: 45, delay: 2 } },
-    8: { passiveEcho: { pct: { base: 15, per: 1 }, powerPct: 45, delay: 2, secondPct: 25, secondPowerPct: 50 } } },
-  reaperTempo:   { 4: { passiveKillCd: { sec: { base: 1, per: 0.05 }, icdSec: 2, selfResetPct: 15 } },
-    8: { passiveKillCd: { sec: { base: 1, per: 0.05 }, icdSec: 2, selfResetPct: 15, inclBasic: true } } },
-  battleReflex:  { 4: { passiveProc: { on: 'crit', pct: { base: 20, per: 1 }, do: 'freeAttack', forceCrit: true } },
-    8: { passiveProc: { on: 'crit', pct: { base: 20, per: 1 }, do: 'freeAttack', forceCrit: true, recastPct: 20, recastPowerPct: 40 } } },
-  virulentPulse: { 4: { dotAmpPer: 6 },
-    8: { dotAmpPer: 6, dotSplashOnKill: 50 } },
-  zeroCadence:   { 4: { passiveNthFree: { n: 4, ampPct: { base: 40, per: 4 } } },
-    8: { passiveNthFree: { n: 4, ampPct: { base: 40, per: 4 }, noGcd: true } } },
-  afterimagePursuit:{ 4: { passiveExtraHit: { minHits: 2, powerPct: { base: 30, per: 2 }, count: 1, neverMiss: true } },
-    8: { passiveExtraHit: { minHits: 2, powerPct: { base: 30, per: 2 }, count: 2, neverMiss: true } } },
-  bulwarkFeedback:{ 4: { passiveDefFeedback: { pct: { base: 25, per: 3 }, stacks: 2 } },
-    8: { passiveDefFeedback: { pct: { base: 25, per: 3 }, stacks: 2, cdRefund: 2 } } },
-  huntSigil:     { 4: { passiveBrandAmp: { storeBonus: { base: 20, per: 1 }, keepPct: 40 } },
-    8: { passiveBrandAmp: { storeBonus: { base: 20, per: 1 }, keepPct: 40, transferOnKill: true } } },
-  lingeringGlow: { 4: { passiveCastExtend: { sec: { base: 0.4, per: 0.05 }, alsoDots: 0.5 } },
-    8: { passiveCastExtend: { sec: { base: 0.4, per: 0.05 }, alsoDots: 0.5, lowThreshold2x: true } } }
+  meteor: { 4: { status: [{ id: 'burn', base: 30, dur: 5 }] }, 8: { status: [{ id: 'burn', base: 40, dur: 6 }, { id: 'stun', dur: 1.2 }] } },
+  manaBurn: { 4: { mpOnCrit: 35 }, 8: { mpOnCrit: 40, status: [{ id: 'penUp', base: 15, per: 3, dur: 5 }] } },
+  frostNova: { 4: { status: [{ id: 'stun', dur: 1.5 }] }, 8: { status: [{ id: 'stun', dur: 1.5 }, { id: 'slow', dur: 4 }] } },
+  voidRift: { 4: { execBelow: 30, execMult: 1.5 }, 8: { execBelow: 30, execMult: 1.5, doubleCastPct: 15 } },
+  stormSigil: { 4: { brand: { name: '雷印', storePct: 35, dur: 8, maxStacks: 2 } }, 8: { brand: { name: '雷印', storePct: 45, dur: 12, maxStacks: 3 } } },
+  runeShatter: { 4: { detonate: { brand: 'any', multPct: { base: 200, per: 3 }, chainPct: 60, stunDur: 0.8 } }, 8: { detonate: { brand: 'any', multPct: { base: 200, per: 3 }, chainPct: 60, stunDur: 0.8, healPctMaxPerStack: 4 } } },
+  emberEcho: { 4: { echo: { delay: 2, powerPct: 60, repeat: 1 } }, 8: { echo: { delay: 2, powerPct: 60, repeat: 2 } } },
+  infernoDomain: { 4: { field: { name: '焚世領域', dur: 8, tickSec: 1, tickPct: 25, elem: 'fire', takenAmpPct: 15 } }, 8: { field: { name: '焚世領域', dur: 8, tickSec: 0.8, tickPct: 35, elem: 'fire', takenAmpPct: 15 } } },
+  plagueBurst: { 4: { dotDetonate: { pct: { base: 80, per: 1 }, cap: 100, stunDur: 0.8 } }, 8: { dotDetonate: { pct: { base: 80, per: 1 }, cap: 100, stunDur: 0.8, reapplyPct: 40 } } },
+  frostResonance: { 4: { charge: { name: '霜晶', add: 2, max: 4, dur: 20, source: 'cast', burst: { multPct: 180, scope: 'self' } } }, 8: { charge: { name: '霜晶', add: 2, max: 4, dur: 20, source: 'cast', burst: { multPct: 260, scope: 'self', stunDur: 1.2 } } } },
+  astralConduit: { 4: { skillAmp: { scope: 'next', pct: { base: 30, per: 3 }, dur: 8, uses: 2, refundPct: 40 } }, 8: { skillAmp: { scope: 'next', pct: { base: 30, per: 3 }, dur: 8, uses: 2, refundPct: 40, cdrPct: 30 } } },
+  bloodSurge: { 4: { hpSacrifice: { hpPct: 15, ampPct: { base: 80, per: 2 }, hotRefundPct: 50, hotDur: 6 } }, 8: { hpSacrifice: { hpPct: 15, ampPct: { base: 80, per: 2 }, hotRefundPct: 50, hotDur: 6, dmgToShieldPct: 15 } } },
+  rimeTide: { 4: { cdResetOnKill: { pct: 30, selfReset: true, icdSec: 3 } }, 8: { cdShift: { sec: { base: 2.5, per: 0.1 } }, cdResetOnKill: { pct: 30, selfReset: true, icdSec: 3 }, cdResetOnKill2: { othersPct: 20, icdSec: 3 } } },
+  healWound: { 4: { selfCleanse: true }, 8: { status: [{ id: 'defUp', base: 15, per: 3, dur: 4 }] } },
+  regenerate: { 4: { status: [{ id: 'regen', base: 2.5, per: 0.7, dur: 8 }] }, 8: { status: [{ id: 'regen', base: 4, per: 1, dur: 8 }] } },
+  manaBarrier: { 4: { shieldPctMax: { base: 24, per: 5 } }, 8: { shieldPctMax: { base: 28, per: 6 }, status: [{ id: 'blockUp', base: 10, per: 2, dur: 6 }] } },
+  ironWall: { 4: { status: [{ id: 'defUp', base: 40, per: 10, dur: 6 }, { id: 'thornsUp', base: 8, per: 2, dur: 6 }] }, 8: { status: [{ id: 'defUp', base: 55, per: 12, dur: 8 }, { id: 'thornsUp', base: 8, per: 2, dur: 6 }] } },
+  purify: { 4: { healPctMax: { base: 8, per: 2 } }, 8: { status: [{ id: 'evasionUp', base: 15, per: 3, dur: 3 }] } },
+  lifeLink: { 4: { healPctOfDmg: 130 }, 8: { healPctOfDmg: 150, status: [{ id: 'corrode', base: 30, dur: 4 }] } },
+  sanctuary: { 4: { status: [{ id: 'evasionUp', base: 25, per: 5, dur: 5 }, { id: 'defUp', base: 15, per: 3, dur: 5 }] }, 8: { status: [{ id: 'evasionUp', base: 35, per: 6, dur: 6 }, { id: 'defUp', base: 15, per: 3, dur: 5 }] } },
+  secondWind: { 4: { mpRestore: 40 }, 8: { mpRestore: 50, healPctMax: { base: 16, per: 4 } } },
+  reflectShield: { 4: { shieldPctMax: { base: 8, per: 2 } }, 8: { status: [{ id: 'thornsUp', base: 25, per: 6, dur: 8 }, { id: 'blockUp', base: 12, per: 4, dur: 6 }] } },
+  lastStand: { 4: { status: [{ id: 'atkUp', base: 15, per: 5, dur: 6 }, { id: 'aspdUp', base: 15, per: 3, dur: 6 }] }, 8: { healPctMax: { base: 30, per: 6 } } },
+  aegisBurst: { 4: { shieldBurst: { convertPct: 85, capAtkMult: 10 } }, 8: { shieldBurst: { convertPct: 85, capAtkMult: 10, stunDur: 1 } } },
+  overflowVerdict: { 4: { overhealDmg: { pct: { base: 40, per: 2 }, cap: 90, windowSec: 6 } }, 8: { overhealDmg: { pct: { base: 70, per: 2 }, cap: 90, windowSec: 6 } } },
+  stigmaCycle: { 4: { stigma: { storePct: 35, dur: 8, capMaxHpPct: 35, multPct: 130 } }, 8: { stigma: { storePct: 35, dur: 8, capMaxHpPct: 35, multPct: 130, shieldPct: 130, stunDur: 1 } } },
+  soulEcho: { 4: { healEcho: { dur: 2, pct: { base: 60, per: 2 } } }, 8: { healEcho: { dur: 4, pct: { base: 60, per: 2 } } } },
+  holyLitany: { 4: { freeNext: { count: 2, dur: 6, scope: 'cat:def', ampPct: { base: 30, per: 2 } } }, 8: { freeNext: { count: 2, dur: 6, scope: 'cat:def', ampPct: { base: 30, per: 2 }, cdHalf: true } } },
+  sustainHymn: { 4: { buffExtend: { sec: 3 } }, 8: { buffExtend: { sec: 3 }, buffExtend2: { sec: 3 } } },
+  bastionCycle: { 4: { cdOnHitTaken: { sec: 0.6, icdSec: 0.5 } }, 8: { cdOnHitTaken: { sec: 0.6, icdSec: 0.5, onBreak: 2 } } },
+  martyrCharge: { 4: { charge: { name: '蓄怒', add: 1, addBlock: 2, max: 4, dur: 15, source: 'hitTaken', burst: { multPct: { base: 200, per: 6 }, scope: 'self' } } }, 8: { charge: { name: '蓄怒', add: 1, addBlock: 2, max: 4, dur: 15, source: 'hitTaken', burst: { multPct: { base: 200, per: 6 }, scope: 'self', anyMultPct: 60 } } } },
+  sanctify: { 4: { skillAmp: { scope: 'cat:def', pct: { base: 20, per: 4 }, dur: 10 } }, 8: { skillAmp: { scope: 'all', pct: { base: 20, per: 4 }, dur: 10 } } },
+  timeWarp: { 4: {  }, 8: { status: [{ id: 'aspdUp', base: 40, per: 9, dur: 7 }] } },
+  midasTouch: { 4: { goldPer: 25 }, 8: { goldPer: 35, status: [{ id: 'lootUp', base: 15, per: 3, dur: 5 }] } },
+  treasureSense: { 4: { status: [{ id: 'lootUp', base: 22.5, per: 6, dur: 12 }] }, 8: { goldPer: 5 } },
+  weakenCurse: { 4: { status: [{ id: 'slow', dur: 2 }, { id: 'atkDown', base: 18, per: 4, dur: 6 }] }, 8: { status: [{ id: 'slow', dur: 2 }, { id: 'atkDown', base: 28, per: 5, dur: 8 }] } },
+  deathCurse: { 4: { status: [{ id: 'deathCurse', base: 2.4, per: 0.8, dur: 7 }] }, 8: { status: [{ id: 'deathCurse', base: 1.8, per: 0.5, dur: 7 }] } },
+  blinkDodge: { 4: { status: [{ id: 'evasionUp', base: 45, per: 8, dur: 4 }] }, 8: {  } },
+  mpSiphon: { 4: { mpRestore: 40 }, 8: { mpRestore: 45, status: [{ id: 'atkDown', base: 10, per: 2, dur: 4 }] } },
+  overload: { 4: {  }, 8: { status: [{ id: 'critDmgUp', base: 60, per: 15, dur: 8 }] } },
+  warcry: { 4: { status: [{ id: 'atkUp', base: 12, per: 4, dur: 6 }, { id: 'atkDown', base: 12, per: 3, dur: 6 }] }, 8: { status: [{ id: 'atkUp', base: 18, per: 5, dur: 8 }, { id: 'atkDown', base: 12, per: 3, dur: 6 }] } },
+  gamble: { 4: { critBonus: 20 }, 8: { critBonus: 20, execBelow: 35, execMult: 2 } },
+  fateRoulette: { 4: { proc: { on: 'hit', pct: 100, do: 'castRandom', powerPct: { base: 70, per: 2 } } }, 8: { proc: { on: 'hit', pct: 100, do: 'castRandom', powerPct: { base: 70, per: 2 } }, proc2: { on: 'hit', pct: 35, do: 'castRandom', powerPct: { base: 70, per: 2 } } } },
+  bestReplay: { 4: { replayBest: { powerPct: { base: 40, per: 2 }, window: 6, repeat: 2 } }, 8: { replayBest: { powerPct: { base: 65, per: 2 }, window: 10, repeat: 2 } } },
+  chronoPilfer: { 4: { cdShift: { sec: { base: 3, per: 0.2 }, focus: 'longest', onKillRepeat: { icdSec: 2 } } }, 8: { cdShift: { sec: { base: 3, per: 0.2 }, focus: 'longest', onKillRepeat: { icdSec: 2 }, zeroSelfCdrPct: 50 } } },
+  gamblerChips: { 4: { charge: { name: '籌碼', addRange: [2, 4], max: 5, dur: 15, source: 'cast', burst: { multPct: { base: 150, per: 4 }, scope: 'next' } } }, 8: { charge: { name: '籌碼', addRange: [2, 4], max: 5, dur: 20, source: 'cast', burst: { multPct: { base: 180, per: 4 }, scope: 'next' } } } },
+  omniBrand: { 4: { brand: { name: '萬象印', storePct: 35, dur: 10, maxStacks: 2 } }, 8: { brand: { name: '萬象印', storePct: 35, dur: 10, maxStacks: 2 }, detonate: { brand: 'any', multPct: { base: 200, per: 5 }, stunDur: 1, healPctMax: 3 } } },
+  arcaneAllIn: { 4: { mpDump: { pctPer10Mp: { base: 3, per: 0.15 } } }, 8: { mpDump: { pctPer10Mp: { base: 3, per: 0.15 } }, freeNext: { count: 1, dur: 6 } } },
+  flowSurge: { 4: { freeNext: { count: 2, dur: { base: 5, per: 0.3 }, noGcd: true } }, 8: { freeNext: { count: 4, dur: { base: 5, per: 0.3 }, noGcd: true } } },
+  comboResonance: { 4: { skillAmp: { scope: 'multiHit', pct: { base: 35, per: 4 }, dur: 14 } }, 8: { skillAmp: { scope: 'multiHit', pct: { base: 35, per: 4 }, dur: 14 }, skillAmp2: { scope: 'next', pct: 30, uses: 1 } } },
+  chronoAnchor: { 4: { buffExtend2: { sec: 1.5 } }, 8: { buffExtend: { sec: { base: 3, per: 0.15 } }, buffExtend2: { sec: 1.5 } } },
+  phantomEcho: { 4: { passiveEcho: { pct: { base: 15, per: 1 }, powerPct: 45, delay: 2 } }, 8: { passiveEcho: { pct: { base: 15, per: 1 }, powerPct: 45, delay: 2, secondPct: 25, secondPowerPct: 50 } } },
+  reaperTempo: { 4: { passiveKillCd: { sec: { base: 1, per: 0.05 }, icdSec: 2, selfResetPct: 15 } }, 8: { passiveKillCd: { sec: { base: 1, per: 0.05 }, icdSec: 2, selfResetPct: 15, inclBasic: true } } },
+  battleReflex: { 4: { passiveProc: { on: 'crit', pct: { base: 20, per: 1 }, do: 'freeAttack', forceCrit: true } }, 8: { passiveProc: { on: 'crit', pct: { base: 20, per: 1 }, do: 'freeAttack', forceCrit: true, recastPct: 20, recastPowerPct: 40 } } },
+  virulentPulse: { 4: { dotAmpPer: 6 }, 8: { dotAmpPer: 6, dotSplashOnKill: 50 } },
+  zeroCadence: { 4: { passiveNthFree: { n: 4, ampPct: { base: 40, per: 4 } } }, 8: { passiveNthFree: { n: 4, ampPct: { base: 40, per: 4 }, noGcd: true } } },
+  afterimagePursuit: { 4: { passiveExtraHit: { minHits: 2, powerPct: { base: 30, per: 2 }, count: 1, neverMiss: true } }, 8: { passiveExtraHit: { minHits: 2, powerPct: { base: 30, per: 2 }, count: 2, neverMiss: true } } },
+  bulwarkFeedback: { 4: { passiveDefFeedback: { pct: { base: 25, per: 3 }, stacks: 2 } }, 8: { passiveDefFeedback: { pct: { base: 25, per: 3 }, stacks: 2, cdRefund: 2 } } },
+  huntSigil: { 4: { passiveBrandAmp: { storeBonus: { base: 20, per: 1 }, keepPct: 40 } }, 8: { passiveBrandAmp: { storeBonus: { base: 20, per: 1 }, keepPct: 40, transferOnKill: true } } },
+  lingeringGlow: { 4: { passiveCastExtend: { sec: { base: 0.4, per: 0.05 }, alsoDots: 0.5 } }, 8: { passiveCastExtend: { sec: { base: 0.4, per: 0.05 }, alsoDots: 0.5, lowThreshold2x: true } } }
 };
 
 /* ---- 潛力技能（V3；主動＝需裝入裝載欄施放、被動＝學會即常駐；經 3/4/7/10 轉「潛力」天賦節點解鎖）----
@@ -2287,7 +2230,8 @@ function skillConditionOk(sk, fx, pEnt, target, st) {
   var hasTarget = Array.isArray(target)
     ? target.some(function (ent) { return ent && ent.hp > 0; })
     : !!(target && target.hp > 0);
-  if ((fx.dmgType || skillFxDebuffList(fx).length || fx.maxHpDotPct) && !hasTarget) return false;
+  var enemyStatusRefs = skillStatusRefs(fx).filter(function (r) { return !statusRefIsSelf(r); });
+  if ((fx.dmgType || enemyStatusRefs.length) && !hasTarget) return false;
   // 45 新技能（dotSynergy 族）：requiresTargetDot——所有存活目標身上皆無 DoT 時不施放（萬創崩裂等）
   if (fx.requiresTargetDot) {
     var dotTargetOk = Array.isArray(target)
@@ -2299,7 +2243,7 @@ function skillConditionOk(sk, fx, pEnt, target, st) {
      傷害技的增益是附帶效果（破甲擊等的穿透增益），若因增益還在就不施放，等於白丟一次輸出，
      因此傷害技不受此閘門限制。 */
   var firstBuff = skillFxBuffList(fx)[0];
-  if (firstBuff && !fx.dmgType && buffVal(pEnt, firstBuff.key) > 0) return false;
+  if (firstBuff && !fx.dmgType && buffVal(pEnt, statusRefKey(firstBuff)) > 0) return false;
   return true;
 }
 
@@ -2327,35 +2271,30 @@ function skillEffectTalentMultiplier(sk) {
 
 /* ---- 增益/減益清單存取（2026-07-30 融合改造）----
    一般技能沿用 fx.buff/fx.buff2/fx.debuff/fx.debuff2 固定欄位；
-   融合技的隨機結果不限數量，改放 fx.buffList/fx.debuffList 陣列。
-   消費端（施放/說明/AI 條件）一律經由這兩個存取器，兩種形態皆支援。 */
+   授權格式改為 fx.status 狀態引用陣列（→ js/status.js skillStatusRefs）；
+   舊格式（buff/buff2/buffList/debuff/debuff2/debuffList）由橋接層翻成同一份清單。
+   消費端（施放/說明/AI 條件/融合池）一律經由這兩個存取器，回傳的就是狀態引用本身。 */
 function skillFxBuffList(fx) {
-  var list = [];
-  if (!fx) return list;
-  if (fx.buff) list.push(fx.buff);
-  if (fx.buff2) list.push(fx.buff2);
-  if (Array.isArray(fx.buffList)) list = list.concat(fx.buffList);
-  return list;
+  return skillStatusRefs(fx).filter(function (r) {
+    return statusRefIsSelf(r) && statusRefEffect(r) === 'stat';
+  });
 }
 function skillFxDebuffList(fx) {
-  var list = [];
-  if (!fx) return list;
-  if (fx.debuff) list.push(fx.debuff);
-  if (fx.debuff2) list.push(fx.debuff2);
-  if (Array.isArray(fx.debuffList)) list = list.concat(fx.debuffList);
-  return list;
+  return skillStatusRefs(fx).filter(function (r) {
+    return !statusRefIsSelf(r) && statusRefEffect(r) === 'stat';
+  });
 }
 
 function applySkillDebuffs(targets, fx, lv, parts, mult) {
   mult = mult || 1;
-  var debuffs = skillFxDebuffList(fx);
-  debuffs.forEach(function (debuff) {
+  skillFxDebuffList(fx).forEach(function (ref) {
     var applied = false;
     targets.forEach(function (target) {
       if (target.hp <= 0) return;
-      if (applyBuff(target, debuff.key, scaleAt(debuff, lv) * mult, debuff.dur)) applied = true;
+      if (applyStatusRef(target, ref, lv, { mult: mult })) applied = true;
     });
-    if (applied) parts.push('<span class="log-hl-bad">敵方' + buffLabel(debuff.key) + ' -' + fmt1(scaleAt(debuff, lv) * mult) + '%</span>');
+    if (applied) parts.push('<span class="log-hl-bad">敵方' + statusRefName(ref) + ' -' +
+      fmt1(statusRefAmount(ref, lv) * mult) + '%</span>');
   });
 }
 
@@ -2370,7 +2309,8 @@ function playerBuffFloatClass(key) {
 
 function showPlayerBuffFloat(floatSel, buff, lv, mult) {
   if (!buff) return;
-  floatPlayerEvent(floatSel, buffLabel(buff.key) + ' +' + fmt1(skillBuffDisplayValue(buff, lv, mult)) + '%', playerBuffFloatClass(buff.key));
+  floatPlayerEvent(floatSel, statusRefName(buff) + ' +' + fmt1(skillBuffDisplayValue(buff, lv, mult)) + '%',
+    playerBuffFloatClass(statusRefKey(buff)));
 }
 
 function showPlayerShieldGainAfterHeal(floatSel, pEnt, beforeShield) {
@@ -2487,8 +2427,11 @@ function skillVfxColor(sk, fx) {
 function skillVfxKind(sk, fx, shape) {
   if (!fx || !fx.dmgType) {
     // 帶自身增益的（戰吼等）以我方光環為主；純詛咒（虛弱詛咒／死亡詛咒）畫在敵人身上
-    var pureDebuff = fx && !fx.buff && !fx.buff2 && !fx.healPctMax && !fx.shieldPctMax &&
-      (fx.debuff || fx.debuff2 || fx.maxHpDotPct || fx.dotPulse);
+    var vfxRefs = skillStatusRefs(fx);
+    var vfxHasSelf = vfxRefs.some(function (r) { return statusRefIsSelf(r); });
+    var vfxHasEnemy = vfxRefs.some(function (r) { return !statusRefIsSelf(r); });
+    var pureDebuff = fx && !vfxHasSelf && !fx.healPctMax && !fx.shieldPctMax &&
+      (vfxHasEnemy || fx.dotPulse);
     return pureDebuff ? 'curse' : 'selfBuff';
   }
   var sp = (typeof bfParseShape === 'function') ? bfParseShape(shape) : { kind: 'single', w: 1, h: 1 };
@@ -2777,41 +2720,33 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
       }
       if (fx.mpOnCrit && anyCrit) { pEnt.mp = Math.min(st.mp, pEnt.mp + fx.mpOnCrit); parts.push('返還 ' + fx.mpOnCrit + ' 法力'); }
       if (fx.goldPer) { var gg = Math.round(fx.goldPer * lv * st.level * fxMult); G.player.gold += gg; if (window.recordLootGold) window.recordLootGold(gg, 'skill'); parts.push('<span class="log-hl-good">獲得 ' + fmt(gg) + ' 金幣</span>'); UI.dirty.header = true; }
+      // 一次性傷害結算完畢 → 授予技能引用的敵方狀態（持續傷害／控場）。
+      // 狀態的名稱、圖標、屬性、作用間隔一律讀狀態表；技能只覆寫效果值與持續時間。
+      var hitStatusRefs = skillStatusRefs(fx).filter(function (r) {
+        var e = statusRefEffect(r);
+        return !statusRefIsSelf(r) && (e === 'dot' || e === 'ctrl');
+      });
       for (var ei = 0; ei < targets.length; ei++) {
         var effectTarget = targets[ei];
         if (effectTarget.hp <= 0) continue;
-        if (fx.dot) {
-          var instantDot = applyDot(effectTarget, baseVal * fx.dot.pct / 100, fx.dot.dur, fx.dot.name);
+        for (var sri = 0; sri < hitStatusRefs.length; sri++) {
+          var sref = hitStatusRefs[sri];
+          if (statusRefEffect(sref) === 'ctrl') {
+            if (isBossControlImmune(effectTarget) || resistCtrl(monsterDefCfg(effectTarget))) continue;
+            var ctrlApplied = applyStatusRef(effectTarget, sref, lv, {}); // 控場遞減 → 顯示實際秒數
+            parts.push(ctrlApplied
+              ? '<span class="log-hl-good">' + statusRefName(sref) + ' ' + fmt1(ctrlApplied) + ' 秒</span>'
+              : statusRefName(sref) + '無效（控場遞減）');
+            continue;
+          }
+          // 持續傷害：傳奇【瞬燃】會把整段 DoT 當場引爆，回傳的即時傷害要計入本次總傷
+          var instantDot = applyStatusRef(effectTarget, sref, lv, { base: baseVal, mult: fxMult, stats: st });
           if (instantDot > 0) {
             totalDmg += instantDot;
             out.dmg = totalDmg;
             if (effectTarget.hp <= 0) out.killed = true;
           }
-          parts.push('附加' + fx.dot.name);
-        }
-        if (fx.dotList) {
-          for (var dl = 0; dl < fx.dotList.length; dl++) {
-            var dd = fx.dotList[dl];
-            var instantListDot = applyDot(effectTarget, baseVal * dd.pct / 100, dd.dur, dd.name);
-            if (instantListDot > 0) {
-              totalDmg += instantListDot;
-              out.dmg = totalDmg;
-              if (effectTarget.hp <= 0) out.killed = true;
-            }
-            parts.push('附加' + dd.name);
-          }
-        }
-        if (fx.stunDur && !isBossControlImmune(effectTarget) && !resistCtrl(monsterDefCfg(effectTarget))) {
-          var stunApplied = applyEffect(effectTarget, 'stun', fx.stunDur); // 控場遞減 → 顯示實際秒數
-          parts.push(stunApplied ? '<span class="log-hl-good">暈眩 ' + fmt1(stunApplied) + ' 秒</span>' : '暈眩無效（控場遞減）');
-        }
-        if (fx.slowDur && !isBossControlImmune(effectTarget) && !resistCtrl(monsterDefCfg(effectTarget))) {
-          parts.push(applyEffect(effectTarget, 'slow', fx.slowDur) ? '減速' : '減速無效（控場遞減）');
-        }
-        if (fx.maxHpDotPct) {
-          var cdps = Math.min(effectTarget.maxHp * scaleAt(fx.maxHpDotPct, lv) / 100, st.matk * 6) * fxMult;
-          applyDot(effectTarget, cdps, fx.dotDur || 5, '詛咒');
-          parts.push('<span class="log-hl-bad">附加死亡詛咒</span>');
+          parts.push('附加' + statusRefName(sref));
         }
       }
       applySkillDebuffs(targets, fx, lv, parts, fxMult);
@@ -2836,11 +2771,6 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
     floatPlayerEvent(floatSel, '回復 +' + fmt(hv), 'heal', hv);
     parts.push('<span class="log-hl-good">回復 ' + fmt(hv) + ' 生命</span>');
   }
-  if (fx.hotPct) {
-    applyBuff(pEnt, 'hot', scaleAt(fx.hotPct, lv) * fxMult, fx.hotDur);
-    floatPlayerEvent(floatSel, '再生 ' + fx.hotDur + '秒', 'heal');
-    parts.push('<span class="log-hl-good">持續再生 ' + fx.hotDur + ' 秒</span>');
-  }
   if (fx.shieldPctMax) {
     var beforeShield = Math.max(0, pEnt.shield || 0);
     var shieldPct = scaleAt(fx.shieldPctMax, lv) * (1 + st.shieldEff / 100) * fxMult;
@@ -2856,19 +2786,41 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
   }
   if (fx.selfCleanse) { cleanse(pEnt); floatPlayerEvent(floatSel, '✨淨化', 'special'); parts.push('淨化負面狀態'); }
   if (fx.mpRestore) { var mpGain = Math.round(fx.mpRestore * fxMult); pEnt.mp = Math.min(st.mp, pEnt.mp + mpGain); floatPlayerEvent(floatSel, '法力 +' + fmt(mpGain), 'mana', mpGain); parts.push('回復 ' + mpGain + ' 法力'); }
-  skillFxBuffList(fx).forEach(function (bf) {
-    applyBuff(pEnt, bf.key, scaleAt(bf, lv) * fxMult, bf.dur);
-    showPlayerBuffFloat(floatSel, bf, lv, fxMult);
-    parts.push('<span class="log-hl-good">' + buffLabel(bf.key) + ' +' + fmt1(skillBuffDisplayValue(bf, lv, fxMult)) + '%（' + bf.dur + '秒）</span>');
+  // 自身狀態（增益／持續回復）：同樣以狀態引用授予，數值與持續時間可由技能覆寫
+  skillStatusRefs(fx).forEach(function (ref) {
+    if (!statusRefIsSelf(ref)) return;
+    var refEffect = statusRefEffect(ref);
+    if (refEffect !== 'stat' && refEffect !== 'hot') return;
+    if (!applyStatusRef(pEnt, ref, lv, { mult: fxMult })) return;
+    var refDur = statusRefDur(ref);
+    if (refEffect === 'hot') {
+      floatPlayerEvent(floatSel, statusRefName(ref) + ' ' + refDur + '秒', 'heal');
+      parts.push('<span class="log-hl-good">持續' + statusRefName(ref) + ' ' + refDur + ' 秒</span>');
+      return;
+    }
+    showPlayerBuffFloat(floatSel, ref, lv, fxMult);
+    parts.push('<span class="log-hl-good">' + statusRefName(ref) + ' +' +
+      fmt1(skillBuffDisplayValue(ref, lv, fxMult)) + '%（' + refDur + '秒）</span>');
   });
   if (!fx.dmgType) applySkillDebuffs(targets, fx, lv, parts, fxMult);
-  if (!fx.dmgType && fx.maxHpDotPct) {
+  // 無傷害段技能（虛弱詛咒／死亡詛咒等）：敵方持續傷害與控場同樣要結算
+  if (!fx.dmgType) {
+    var ncRefs = skillStatusRefs(fx).filter(function (r) {
+      var e = statusRefEffect(r);
+      return !statusRefIsSelf(r) && (e === 'dot' || e === 'ctrl');
+    });
+    var ncApplied = [];
     for (var nci = 0; nci < targets.length; nci++) {
       if (targets[nci].hp <= 0) continue;
-      var ncdps = Math.min(targets[nci].maxHp * scaleAt(fx.maxHpDotPct, lv) / 100, st.matk * 6) * fxMult;
-      applyDot(targets[nci], ncdps, fx.dotDur || 5, '詛咒');
+      for (var nri = 0; nri < ncRefs.length; nri++) {
+        var ncRef = ncRefs[nri];
+        if (statusRefEffect(ncRef) === 'ctrl' &&
+          (isBossControlImmune(targets[nci]) || resistCtrl(monsterDefCfg(targets[nci])))) continue;
+        if (!applyStatusRef(targets[nci], ncRef, lv, { base: 0, mult: fxMult, stats: st })) continue;
+        if (ncApplied.indexOf(statusRefName(ncRef)) < 0) ncApplied.push(statusRefName(ncRef));
+      }
     }
-    parts.push('<span class="log-hl-bad">附加死亡詛咒</span>');
+    if (ncApplied.length) parts.push('<span class="log-hl-bad">附加' + ncApplied.join('、') + '</span>');
   }
   // 45 新技能（dotSynergy 族）：無傷害段技能（萬創崩裂等）比照 maxHpDotPct 雙分支結算 DoT 引爆/額外跳動/跳速
   if (!fx.dmgType) {
@@ -3002,22 +2954,32 @@ function tickSkillCds(pEnt, dt) {
    數值後讀檔自動生效，不必重新融合）。 */
 
 // 變異效果池（req 檢查與融合結果的關聯性；apply 直接改寫 fx；由種子流決定、不入存檔）
+/* 融合變異用的狀態引用篩選：變異要就地改數值，所以取的是引用本身（fx.status 的元素）。 */
+function fusionDotRefs(fx) {
+  return skillStatusRefs(fx).filter(function (r) { return statusRefEffect(r) === 'dot'; });
+}
+function fusionHasHotRef(fx) {
+  return skillStatusRefs(fx).some(function (r) { return statusRefEffect(r) === 'hot'; });
+}
+
 var FUSION_MUTATIONS = [
   { key: 'iceFireSong', name: '冰與火之歌', desc: '目標同時處於減速（冰）與燃燒狀態時，引發冰爆追加 100% 傷害',
     req: function (fx) { return fx.elems && fx.elems.fire && fx.elems.ice; },
     apply: function (fx) { fx.comboDetonate = 100; } },
   { key: 'lifeResonance', name: '生命共鳴', desc: '此技能傷害的 25% 額外轉化為生命回復',
-    req: function (fx) { return fx.dmgType && (fx.healPctMax || fx.hotPct || fx.healPctOfDmg); },
+    req: function (fx) { return fx.dmgType && (fx.healPctMax || fusionHasHotRef(fx) || fx.healPctOfDmg); },
     apply: function (fx) { fx.healPctOfDmg = (fx.healPctOfDmg || 0) + 25; } },
   { key: 'thunderEcho', name: '雷鳴回響', desc: '雷霆之力殘響不散：25% 機率雙重施法',
     req: function (fx) { return fx.elems && fx.elems.lightning; },
     apply: function (fx) { fx.doubleCastPct = (fx.doubleCastPct || 0) + 25; } },
   { key: 'venomBloom', name: '劇毒綻放', desc: '所有持續傷害效果威力 +50%',
-    req: function (fx) { return fx.dotList && fx.dotList.length; },
-    apply: function (fx) { fx.dotList.forEach(function (d) { d.pct = Math.round(d.pct * 1.5); }); } },
+    req: function (fx) { return fusionDotRefs(fx).length > 0; },
+    apply: function (fx) {
+      fusionDotRefs(fx).forEach(function (r) { r.base = Math.round(statusRefBase(r) * 1.5 * 10) / 10; });
+    } },
   { key: 'timeRipple', name: '時空漣漪', desc: '附帶的增益效果持續時間變為兩倍',
     req: function (fx) { return skillFxBuffList(fx).length > 0; },
-    apply: function (fx) { skillFxBuffList(fx).forEach(function (bf) { bf.dur *= 2; }); } },
+    apply: function (fx) { skillFxBuffList(fx).forEach(function (bf) { bf.dur = statusRefDur(bf) * 2; }); } },
   { key: 'reapInstinct', name: '收割本能', desc: '嗜血的融合本能：目標血量低於 25% 時傷害 x2',
     req: function (fx) { return fx.dmgType && fx.dmgType !== 'true'; },
     apply: function (fx) { fx.execBelow = Math.max(fx.execBelow || 0, 25); fx.execMult = Math.max(fx.execMult || 0, 2); } },
@@ -3043,14 +3005,14 @@ function fusionName(comps, fx) {
   if (!chars.length) {
     if (fx.stat === 'matk') chars.push('奧');
     else if (fx.dmgType) chars.push('武');
-    if (fx.healPctMax || fx.hotPct) chars.push('聖');
+    if (fx.healPctMax || fusionHasHotRef(fx)) chars.push('聖');
     if (skillFxBuffList(fx).length) chars.push('靈');
   }
   chars = chars.slice(0, 3);
   var suffix = fx.dmgType === 'true' ? '虛空奧義'
     : (fx.dmgType === 'both' ? '雙極奧義'
       : (fx.dmgType === 'magic' ? '衝擊彈'
-        : (fx.dmgType ? '斬擊' : (fx.healPctMax || fx.hotPct ? '聖歌' : '祕法'))));
+        : (fx.dmgType ? '斬擊' : (fx.healPctMax || fusionHasHotRef(fx) ? '聖歌' : '祕法'))));
   return (chars.join('') || '混沌') + '融合·' + suffix;
 }
 
@@ -3126,7 +3088,9 @@ function fusionRescaleDeep(v, matLv) {
   if (typeof v === 'object') {
     if (v.base !== undefined || v.per !== undefined) {
       var resolved = scaleAt({ base: Number(v.base) || 0, per: Number(v.per) || 0 }, Math.max(1, matLv));
-      return fusionScaledDef(resolved);
+      var keep = {};
+      for (var ek in v) if (ek !== 'base' && ek !== 'per') keep[ek] = v[ek];
+      return fusionScaledDef(resolved, keep);
     }
     var out = Array.isArray(v) ? [] : {};
     for (var k in v) out[k] = fusionRescaleDeep(v[k], matLv);
@@ -3137,10 +3101,10 @@ function fusionRescaleDeep(v, matLv) {
 /* 特效包鍵集：傷害核心（dmgType/stat/base/per）、屬性（elems）、增益減益（另走效果池）
    之外可被融合技繼承的欄位；「效果融合」以素材為單位整包取捨。 */
 var FUSION_EFFECT_KEYS = [
-  'hits', 'dot', 'dotList', 'stunDur', 'slowDur', 'execBelow', 'execMult',
+  'hits', 'status', 'execBelow', 'execMult',
   'healPctOfDmg', 'mpRestore', 'mpOnCrit', 'goldPer', 'critBonus', 'neverMiss',
   'selfCleanse', 'gamble', 'selfDmgPct', 'doubleCastPct',
-  'healPctMax', 'hotPct', 'hotDur', 'shieldPctMax', 'maxHpDotPct', 'dotDur',
+  'healPctMax', 'shieldPctMax',
   'brand', 'detonate', 'charge', 'echo', 'field', 'skillAmp', 'skillAmp2',
   'cdShift', 'freeNext', 'dotPulse', 'dotHaste', 'dotDetonate', 'comboWindow', 'dmgWindow',
   'healEcho', 'overhealDmg', 'stigma', 'hpSacrifice', 'mpDump', 'replayBest',
@@ -3271,8 +3235,12 @@ function fusionGenerateFx(comps, seed) {
       var bdef = fusionScaledDef(val, { key: sel.key, dur: sel.dur });
       (sel.kind === 'buff' ? buffs : debuffs).push(bdef);
     }
-    if (buffs.length) fx.buffList = buffs;
-    if (debuffs.length) fx.debuffList = debuffs;
+    // 融合出的增益／減益一律以狀態引用表達，與一般技能同格式（→ js/status.js）
+    if (buffs.length || debuffs.length) {
+      if (!Array.isArray(fx.status)) fx.status = [];
+      buffs.forEach(function (b) { b.id = statusIdByKey(b.key); b.self = true; fx.status.push(b); });
+      debuffs.forEach(function (b) { b.id = statusIdByKey(b.key); b.self = false; fx.status.push(b); });
+    }
   }
 
   /* 5) 特效：每個素材的特效包（FUSION_EFFECT_KEYS＋傷害範圍 shape）整包為單位，
@@ -3284,7 +3252,11 @@ function fusionGenerateFx(comps, seed) {
     for (i = 0; i < FUSION_EFFECT_KEYS.length; i++) {
       k = FUSION_EFFECT_KEYS[i];
       if (c.fx[k] === undefined) continue;
-      b[k] = fusionRescaleDeep(c.fx[k], c.maxLv);
+      // 狀態引用：只有帶等級成長（per）的才折算成融合成長曲線，其餘照抄——
+      // 與改造前一致（舊格式的 dot/stunDur/slowDur 是純量、hotPct/maxHpDotPct 才是 {base,per}）
+      b[k] = (k === 'status' && Array.isArray(c.fx[k]))
+        ? c.fx[k].map(function (r) { return r && r.per !== undefined ? fusionRescaleDeep(r, c.maxLv) : fusionRescaleDeep(r, 1); })
+        : fusionRescaleDeep(c.fx[k], c.maxLv);
       has = true;
     }
     if (c.def.shape) { b._shape = c.def.shape; has = true; }
@@ -3463,19 +3435,39 @@ function deleteFusion(id) {
 }
 
 /* ---- 說明文字生成 ---- */
+/* 技能附帶狀態的說明句：名稱、單位與作用間隔全部取自狀態表，說明文字不再各寫一份。
+   damageSection＝true 時只輸出敵方持續傷害與控場（接在傷害句之後），false 時只輸出
+   持續回復（接在治療句之後）——增益／減益另由 skillFxBuffList／skillFxDebuffList 輸出。 */
+function describeStatusRefs(fx, lv, p, statStr, scaleStr, damageSection) {
+  skillStatusRefs(fx).forEach(function (ref) {
+    var def = statusRefDef(ref);
+    var isSelf = statusRefIsSelf(ref);
+    var durStr = statStr(statusRefDur(ref));
+    var everyStr = def.interval > 0 ? ('每 ' + statStr(def.interval) + ' 秒') : '每秒';
+    if (damageSection) {
+      if (isSelf) return;
+      if (def.effect === 'dot') {
+        var unit = def.dmgSource === 'maxHp' ? '% 敵方最大生命' : '% 技能傷害';
+        p.push('附加' + def.name + '（' + everyStr + ' ' + scaleStr(ref, lv) + unit +
+          '，' + durStr + ' 秒' + (def.capStat ? '，有上限' : '') + '）');
+      } else if (def.effect === 'ctrl') {
+        p.push(def.name + ' ' + durStr + ' 秒');
+      }
+      return;
+    }
+    if (isSelf && def.effect === 'hot') {
+      p.push(everyStr + def.name + ' ' + scaleStr(ref, lv) + '% 生命，持續 ' + durStr + ' 秒');
+    }
+  });
+}
+
+/* 增益鍵的顯示名稱：狀態表是唯一來源（表上查無的鍵才回傳原鍵，供除錯辨識）。 */
 function buffLabel(key) {
-  return ({ atkUp: '攻擊', defUp: '防禦', aspdUp: '攻速', evasionUp: '閃避', critDmgUp: '爆傷',
-    lootUp: '掉寶', thornsUp: '反震', blockUp: '格擋', hot: '再生',
-    penUp: '物理/魔法穿透',
-    atkDown: '攻擊', defDown: '防禦',
-    // 潛力技能增益
-    velocitySurge: '極速之力·攻速', lightningOverload: '雷霆過載·雷電傷害', chronoCdr: '時間坍縮·冷卻縮減',
-    sacredInvert: '聖療逆轉·回復/溢傷', allDmgUp: '時空凝滯·所有傷害', enemyAspdDown: '時間結界·攻速',
-    invuln: '無敵結界（免疫一切傷害與負面效果）' })[key] || key;
+  return statusName(statusIdByKey(key), key);
 }
 function skillBuffDisplayValue(defObj, lvArg, mult) {
-  var value = scaleAt(defObj, lvArg) * (mult || 1);
-  return defObj && defObj.key === 'lootUp' ? effectiveDropRateEffect(value) : value;
+  var value = statusRefAmount(defObj, lvArg) * (mult || 1);
+  return statusRefKey(defObj) === 'lootUp' ? effectiveDropRateEffect(value) : value;
 }
 /* 技能完整說明（傷害數值、成長、附加效果）。**純函式，不讀 G**——
    融合技的定義由 fusions 傳入（技能面板快照就有），省略才回頭讀 G。
@@ -3562,23 +3554,19 @@ function describeSkill(id, lv, skipFusionDetail, fusions) {
     if (fx.healPctOfDmg) p.push('汲取傷害的 ' + statStr(fx.healPctOfDmg) + '% 為生命');
     if (fx.mpOnCrit) p.push('爆擊返還 ' + statStr(fx.mpOnCrit) + ' 法力');
     if (fx.goldPer) p.push('掠奪金幣');
-    if (fx.dot) p.push('附加' + fx.dot.name + '（每秒 ' + statStr(fx.dot.pct) + '% 技能傷害，' + statStr(fx.dot.dur) + ' 秒）');
-    if (fx.dotList) fx.dotList.forEach(function (dd) { p.push('附加' + dd.name + '（每秒 ' + statStr(dd.pct) + '%，' + statStr(dd.dur) + ' 秒）'); });
-    if (fx.stunDur) p.push('暈眩 ' + statStr(fx.stunDur) + ' 秒');
-    if (fx.slowDur) p.push('減速 ' + statStr(fx.slowDur) + ' 秒');
+    describeStatusRefs(fx, lv, p, statStr, scaleStr, true);
   }
   if (fx.healPctMax) p.push('回復 ' + scaleStr(fx.healPctMax, lv) + '% 最大生命');
-  if (fx.hotPct) p.push('每秒再生 ' + scaleStr(fx.hotPct, lv) + '% 生命，持續 ' + statStr(fx.hotDur) + ' 秒');
   if (fx.shieldPctMax) p.push('獲得相當於最大生命 ' + scaleStr(fx.shieldPctMax, lv) + '% 的護盾（不隨時間消失，被打完為止）');
   if (fx.selfCleanse) p.push('淨化自身負面狀態');
   if (fx.mpRestore) p.push('回復 ' + statStr(fx.mpRestore) + ' 法力');
   skillFxBuffList(fx).forEach(function (bf, bi) {
-    p.push((bi === 0 ? '自身' : '') + buffLabel(bf.key) + ' +' + scaleStr(bf, lv) + '%，持續 ' + statStr(bf.dur) + ' 秒');
+    p.push((bi === 0 ? '自身' : '') + statusRefName(bf) + ' +' + scaleStr(bf, lv) + '%，持續 ' + statStr(statusRefDur(bf)) + ' 秒');
   });
   skillFxDebuffList(fx).forEach(function (df) {
-    p.push('敵方' + buffLabel(df.key) + ' -' + scaleStr(df, lv) + '%，持續 ' + statStr(df.dur) + ' 秒');
+    p.push('敵方' + statusRefName(df) + ' -' + scaleStr(df, lv) + '%，持續 ' + statStr(statusRefDur(df)) + ' 秒');
   });
-  if (fx.maxHpDotPct) p.push('每秒造成敵方最大生命 ' + scaleStr(fx.maxHpDotPct, lv) + '% 的詛咒傷害（' + statStr(fx.dotDur || 5) + '秒，有上限）');
+  describeStatusRefs(fx, lv, p, statStr, scaleStr, false);
 
   /* ---- 45 新技能 × 11 機制族：fx 說明分支 ----
      取值統一走 fxVal（純量或 {base,per} 皆可）；有 per 成長＝藍字 growStr、固定值＝橘字 statStr。 */

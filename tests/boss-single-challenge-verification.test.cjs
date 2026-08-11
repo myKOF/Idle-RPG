@@ -16,7 +16,7 @@ function loadGameContext(initialZoneProgress) {
   };
   context.window = context;
   vm.createContext(context);
-  const files = ['js/util.js', 'js/data.js', 'js/formula.js', 'js/player.js', 'js/battlefield.js', 'js/combat.js', 'js/tasks.js', 'js/save.js'];
+  const files = ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/player.js', 'js/battlefield.js', 'js/combat.js', 'js/tasks.js', 'js/save.js'];
   for (const file of files) {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   }

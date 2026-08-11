@@ -21,7 +21,7 @@ function load(files) {
 }
 
 test('七張地圖依序排列並使用 200 起跳、每張增加 100 的有限上限', () => {
-  const c = load(['js/util.js', 'js/data.js', 'js/formula.js']);
+  const c = load(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js']);
   assert.deepEqual(JSON.parse(JSON.stringify(c.ZONE_LIST)), [
     'desert', 'Icefield', 'swamp', 'undead_mountains',
     'god_battlefield', 'god_chaos', 'god_sanctuary'
@@ -32,7 +32,7 @@ test('七張地圖依序排列並使用 200 起跳、每張增加 100 的有限�
 });
 
 test('地圖解鎖需要前圖通關，神界地圖另需 11 轉', () => {
-  const c = load(['js/util.js', 'js/data.js', 'js/formula.js']);
+  const c = load(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js']);
   c.G = {
     player: { reincarnations: 0 },
     stage: { zone: 'desert', best: 200 },
@@ -55,7 +55,7 @@ test('地圖解鎖需要前圖通關，神界地圖另需 11 轉', () => {
 });
 
 test('NPC 配置表與地圖權重表可選出亡靈山脈指定 NPC', () => {
-  const c = load(['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js']);
+  const c = load(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js']);
   c.G = { player: { reincarnations: 0 }, stage: { current: 1, best: 1, zone: 'undead_mountains' }, tower: { active: false } };
   c.FIELD.player = { _lockTarget: null };
   c.Math.random = () => 0;
@@ -94,7 +94,7 @@ test('地圖表承接場景專屬倍率與所有地圖的分段掉落資料', ()
 });
 
 test('掉落配置依地圖與關卡區間查表，且支援材料欄位', () => {
-  const c = load(['js/util.js', 'js/data.js', 'js/formula.js']);
+  const c = load(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js']);
   const early = c.zoneStageDropConfigFor('undead_mountains', 100);
   const late = c.zoneStageDropConfigFor('undead_mountains', 400);
   // 亡靈山脈的新版分段為 1~199 與 400~449；數值由集中掉落表決定。
@@ -108,7 +108,7 @@ test('掉落配置依地圖與關卡區間查表，且支援材料欄位', () =>
    「只打到倒數第二關」。zoneProgress[zone].cleared 專門補這一段，主線任務的
    stageClear 讀它（js/tasks.js）。 */
 test('通關關卡另記 cleared：最後一關打贏後 best 卡在上限，cleared 才前進', () => {
-  const c = load(['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js']);
+  const c = load(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js']);
   c.G = {
     player: { reincarnations: 0 },
     stage: { current: 199, best: 199, kills: 0, autoAdvance: true, zone: 'desert' },
@@ -135,7 +135,7 @@ test('通關關卡另記 cleared：最後一關打贏後 best 卡在上限，cle
    「打過了沒」直接讀 zoneProgress[zone].cleared，不另存 BOSS 擊殺記錄（data.js
    isFieldBossDefeated）。 */
 function bossRuleContext(zoneProgress) {
-  const c = load(['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js']);
+  const c = load(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js']);
   c.G = {
     player: { reincarnations: 0 },
     stage: { current: 1, best: 1, kills: 0, autoAdvance: false, zone: 'desert' },
@@ -185,7 +185,7 @@ test('野外 BOSS 一次性判定逐張地圖獨立，且不影響菁英階', ()
 });
 
 test('切換場景會把 cleared 一起帶進 zoneProgress，不被整包覆寫清掉', () => {
-  const c = load(['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js']);
+  const c = load(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js']);
   c.G = {
     player: { reincarnations: 0 },
     stage: { current: 200, best: 200, kills: 0, autoAdvance: true, zone: 'desert' },

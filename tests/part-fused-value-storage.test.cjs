@@ -17,7 +17,7 @@ function loadContext(files) {
   const context = { console, UI: { dirty: {} } };
   context.window = context;
   vm.createContext(context);
-  (files || ['js/util.js', 'js/data.js', 'js/formula.js', 'js/item.js']).forEach((file) => {
+  (files || ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js']).forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   return context;
@@ -63,7 +63,7 @@ test('零件已下架時沿用凍結值與原名，不崩', () => {
 });
 
 test('零件加成（partBonus）吃推導值', () => {
-  const c = loadContext(['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js',
+  const c = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js',
     'js/item.js', 'js/skills.js', 'js/talents.js', 'js/player.js', 'js/factory.js']);
   c.G = c.newGameState();
   const p = { id: 'p1', kind: 'part', key: 'scrapForge', tier: 6 };
@@ -140,7 +140,7 @@ test('融合寶石換算冪等；雙屬性只換算未換算過的那個', () =>
 });
 
 test('存檔載入會換算庫存與插槽內的融合寶石（migrateSave）', () => {
-  const c = loadContext(['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js',
+  const c = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js',
     'js/item.js', 'js/skills.js', 'js/talents.js', 'js/player.js', 'js/newforge.js', 'js/save.js']);
   const legacyFused = (id) => ({
     id: id, level: 5, fusions: 1, leaves: 2,

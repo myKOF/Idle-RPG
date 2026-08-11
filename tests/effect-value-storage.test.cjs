@@ -18,7 +18,7 @@ function loadContext(files) {
   const context = { console, UI: { dirty: {} } };
   context.window = context;
   vm.createContext(context);
-  (files || ['js/util.js', 'js/data.js', 'js/formula.js', 'js/item.js']).forEach((file) => {
+  (files || ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js']).forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   return context;
@@ -119,7 +119,7 @@ test('舊存檔的神鑄特效：val → 強度值且數值不變', () => {
 });
 
 test('神力（godMight）乘區吃算出來的數值', () => {
-  const c = loadContext(['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js',
+  const c = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js',
     'js/item.js', 'js/skills.js', 'js/talents.js', 'js/player.js']);
   c.G = c.newGameState();
   c.G.player.level = 100;
@@ -218,7 +218,7 @@ test('normalizeItemValueSources 冪等：重複讀檔不再變動', () => {
 });
 
 test('存檔載入會一併換算特效與附魔（migrateSave → fixLoadedItem）', () => {
-  const c = loadContext(['js/util.js', 'js/data.js', 'js/formula.js', 'js/battlefield.js',
+  const c = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js',
     'js/item.js', 'js/skills.js', 'js/talents.js', 'js/player.js', 'js/newforge.js', 'js/save.js']);
   const save = c.newGameState();
   save.version = 1;

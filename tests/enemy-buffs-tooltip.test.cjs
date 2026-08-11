@@ -19,11 +19,11 @@ test('敵方狀態列可顯示即時狀態與增減益詳情', () => {
   assert.match(css, /\.enemy-status\[data-enemy-buff-tip\],[\s\S]*?#tb-status\[data-enemy-buff-tip\]\s*\{[\s\S]*cursor:\s*pointer/);
 });
 
+/* 2026-08-11 技能及狀態改造：控制、持續傷害、增益減益統一由狀態層列舉（statusEntries），
+   UI 不再逐一判斷 effects／dots／buffs，圖標與名稱一律取自狀態表。 */
 test('敵方 tooltip 詳情涵蓋控制、持續傷害與增減益', () => {
-  assert.match(ui, /effectActive\(ent,\s*'stun'\)/);
-  assert.match(ui, /effectActive\(ent,\s*'slow'\)/);
-  assert.match(ui, /poisonActive\(ent\)/);
-  assert.match(ui, /ent\.dots/);
-  assert.match(ui, /activeBuffKeys\(ent\)/);
-  assert.match(ui, /buffLabel\(key\)/);
+  assert.match(ui, /function enemyBuffTooltipDesc\(anchorEl\)/);
+  assert.match(ui, /var list = statusEntries\(ent\);/);
+  assert.match(ui, /combatStatusRow\(e\.icon, e\.name/);
+  assert.doesNotMatch(ui, /var BUFF_TIP_EMOJI = \{/, 'UI 不應再自帶第二份狀態圖標對照表');
 });

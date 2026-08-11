@@ -2,7 +2,7 @@
 /* =============================================================================
    config_tables.cjs — 六系統（技能/寶石/天賦/裝備詞條/NPC/任務）配置撥離管線
    -----------------------------------------------------------------------------
-   將 js/skills.js 與 js/data.js 中的內容資料表撥離成獨立、可用 Excel 編輯的
+   將 js/skills.js、js/data.js 與 js/status.js 中的內容資料表撥離成獨立、可用 Excel 編輯的
    xlsx + CSV；並能把編輯後的表單「回寫」進遊戲 JS（雙向）。
 
    模式：
@@ -11,8 +11,9 @@
      node tools/config_tables.cjs --apply            # 試跑：由 CSV 重建 JS 字面值，只報告不寫檔
      node tools/config_tables.cjs --apply --write    # 實際寫回 JS（先備份、寫入後 node --check、失敗還原）
 
-   六表 ↔ JS 字面值：
+   七表 ↔ JS 字面值：
      Skills            ← SKILLS + UNLOCKS（js/skills.js）
+     Status            ← STATUS（js/status.js，2026-08-11 技能及狀態改造）
      Gems              ← GEM_TYPES（js/data.js）
      Talents           ← TALENT_TREES + POTENTIAL_TALENTS（js/data.js）
      Equipment_Affix   ← AFFIX_POOL + PASSIVE_POOL + GODFORGE_POOL（js/data.js）
@@ -34,7 +35,8 @@ const CSV_DIR = path.join(ROOT, 'config', 'CSV');
 const XLSX_DIR = path.join(ROOT, 'config', 'Excel');
 const JS = {
   data: path.join(ROOT, 'js', 'data.js'),
-  skills: path.join(ROOT, 'js', 'skills.js')
+  skills: path.join(ROOT, 'js', 'skills.js'),
+  status: path.join(ROOT, 'js', 'status.js')
 };
 const WRITE = process.argv.includes('--write');
 
@@ -682,20 +684,37 @@ const FX_GLOSSARY_ROWS = [
   ['潛力技能不使用此欄；']
 ];
 
+/* 「完整描述」是給人看的註記欄，不寫回 JS。--gen 會整份重建表格，若不特別保留就會被清空
+   （同 Task 表的「備註」欄）——因此重建時從現有 CSV 依 id 帶回來。 */
+function skillFullDescMap() {
+  const map = {};
+  try {
+    const rows = csvParse(readUtf8(csvPathOf('Skills')));
+    if (!rows.length) return map;
+    const idIdx = rows[0].findIndex(h => String(h).split('\n')[0].trim() === 'id');
+    const dIdx = rows[0].findIndex(h => String(h).split('\n')[0].trim() === '完整描述');
+    if (idIdx < 0 || dIdx < 0) return map;
+    rows.slice(1).forEach(r => { const id = (r[idIdx] || '').trim(); if (id) map[id] = r[dIdx] || ''; });
+  } catch (e) { /* 沒有現成 CSV（首次 bootstrap）就留空 */ }
+  return map;
+}
+
 SCHEMAS.Skills = {
   name: 'Skills', jsFile: 'skills', sheet: 'Skills', vars: ['SKILLS', 'UNLOCKS', 'POTENTIAL_TALENTS'],
   extraSheets: [{ name: '變量定義', rows: FX_GLOSSARY_ROWS }],
-  header: ['id', '系統分類', '標籤', '解鎖等級', '名稱', 'icon圖號', '施法消耗', '冷卻', '施放AI', '傷害範圍', '說明文字', '基礎fx(JSON)', '里程碑fx(JSON)'],
+  header: ['id', '系統分類', '標籤', '解鎖等級', '名稱', 'icon圖號', '施法消耗', '冷卻', '施放AI', '傷害範圍', '說明文字', '基礎fx(JSON)', '里程碑fx(JSON)', '完整描述'],
   extract(src) {
     const SKILLS = evalLiteral(extractLiteral(src, 'SKILLS').literal);
     const UNLOCKS = evalLiteral(extractLiteral(src, 'UNLOCKS').literal);
     const POTENTIAL_TALENTS = evalLiteral(extractLiteral(src, 'POTENTIAL_TALENTS').literal);
+    const fullDesc = skillFullDescMap();
     const rows = Object.keys(SKILLS).map(id => {
       const s = SKILLS[id];
       const un = UNLOCKS[id];
         return [id, s.cat, joinList(skillTagsForConfig(s, id)), skillUnlockLevelForConfig(s, id), s.name, s.emoji,
         s.cost == null ? '' : numStr(s.cost), s.cd == null ? '' : numStr(s.cd),
-        s.ai || '', s.shape || '', s.flavor || '', JSON.stringify(s.fx), un ? JSON.stringify(un) : ''];
+        s.ai || '', s.shape || '', s.flavor || '', JSON.stringify(s.fx), un ? JSON.stringify(un) : '',
+        fullDesc[id] || ''];
     });
     // 潛力技能 V3（系統分類=potential；列順序＝解鎖順序）：與一般技能同格式——
     // 共用欄放 名稱/icon/冷卻/說明文字(風味)，其餘機制參數（type/base/per/dur/dmgType/mech/en/desc）收進「基礎fx(JSON)」。
@@ -709,7 +728,7 @@ SCHEMAS.Skills = {
       fx.mech = t.mech || '';
       if (t.en) fx.en = t.en;
       if (t.desc) fx.desc = t.desc;
-       rows.push([t.id, 'potential', joinList(skillTagsForConfig(t)), skillUnlockLevelForConfig(t, t.id), t.name, t.emoji, '', t.cd == null ? '' : numStr(t.cd), '', t.shape || '', t.flavor || '', JSON.stringify(fx), '']);
+       rows.push([t.id, 'potential', joinList(skillTagsForConfig(t)), skillUnlockLevelForConfig(t, t.id), t.name, t.emoji, '', t.cd == null ? '' : numStr(t.cd), '', t.shape || '', t.flavor || '', JSON.stringify(fx), '', fullDesc[t.id] || '']);
     });
     return rows;
   },
@@ -875,7 +894,126 @@ SCHEMAS.Task = {
   }
 };
 
-const TABLE_ORDER = ['Skills', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Task'];
+/* ---- Status ← STATUS（js/status.js）狀態表（2026-08-11 技能及狀態改造） ----
+   技能＝一次性效果、狀態＝有持續時間的效果。本表是全遊戲狀態的唯一定義來源：
+   持續傷害、持續回復、控場、增益／減益的名稱、圖標、數值、持續時間與作用間隔都在這裡調。
+   技能引用狀態時可覆寫「狀態傷害」與「持續時間」（保留各技能與里程碑的成長曲線），
+   其餘欄位一律以本表為準。第二頁「欄位定義」＝ STATUS_GLOSSARY_ROWS（說明頁，程式不讀取）。 */
+const STATUS_EFFECT_KINDS = ['dot', 'hot', 'stat', 'ctrl'];
+const STATUS_GLOSSARY_ROWS = [
+  ['狀態ID'],
+  ['用途：狀態的唯一識別碼，技能的「基礎fx(JSON)」以 status 陣列用這個 ID 引用；'],
+  ['注意：這是鑰匙欄，改了會被當成新狀態，已引用它的技能會找不到狀態；'],
+  [''],
+  ['狀態名稱 / 狀態圖標'],
+  ['用途：戰鬥日誌、敵我狀態列與技能說明文字顯示用；程式端不再有第二份對照表，改這裡就會全部一起改；'],
+  [''],
+  ['狀態分類'],
+  ['buff＝增益（我方有利）；debuff＝減益（負面）；ctrl＝控場（限制行動）；'],
+  ['用途：決定 UI 配色，以及「淨化」會清掉哪些狀態（只清 debuff 與 ctrl）；'],
+  [''],
+  ['狀態效果'],
+  ['dot＝持續傷害（每次作用扣血）；'],
+  ['hot＝持續回復（每秒回復最大生命%）；'],
+  ['stat＝屬性增減（攻擊、防禦、閃避…）；'],
+  ['ctrl＝行動限制（暈眩、減速、無敵）；'],
+  [''],
+  ['效果鍵值'],
+  ['狀態效果＝stat 時填增益鍵：atkUp/defUp/aspdUp/evasionUp/critDmgUp/blockUp/thornsUp/lootUp/penUp/atkDown/defDown/enemyAspdDown 等；'],
+  ['狀態效果＝ctrl 時填 stun（暈眩）/slow（減速）/invuln（無敵）；'],
+  ['狀態效果＝hot 時固定填 hot；dot 留空；'],
+  ['注意：這是接線鍵，對應戰鬥程式讀取的欄位，不要自行改名；'],
+  [''],
+  ['傷害屬性'],
+  ['fire＝火／ice＝冰／lightning＝雷／poison＝毒／light＝聖／dark＝暗；空白＝無屬性；'],
+  ['用途：持續傷害的屬性歸屬（顯示與分類用）；'],
+  [''],
+  ['傷害來源'],
+  ['skill＝占「施放當下的技能傷害」百分比（燃燒、流血、中毒…）；'],
+  ['maxHp＝占「目標最大生命」百分比（死亡詛咒）；'],
+  ['value＝直接數值（不經百分比換算）；'],
+  [''],
+  ['狀態傷害'],
+  ['每次作用的量，依「傷害來源」解讀（skill/maxHp 填百分比數字，value 填數值）；'],
+  ['狀態效果＝hot 時＝每秒回復的最大生命%；stat／ctrl 不使用本欄；'],
+  ['技能可在自己的 fx 覆寫本欄（例：火球術的燃燒 20%、隕石術的燃燒 30%）；'],
+  [''],
+  ['傷害上限參照 / 傷害上限倍率'],
+  ['上限＝施法者的該項屬性 × 倍率（例：matk 與 6 ＝ 魔攻 ×6）；參照欄留空＝無上限；'],
+  ['用途：避免「占最大生命%」型的持續傷害在高血量敵人身上暴衝；'],
+  [''],
+  ['效果數值'],
+  ['狀態效果＝stat 時的增減幅度%（例：攻擊提升 15 ＝ 攻擊力 +15%）；dot／hot／ctrl 不使用；'],
+  ['技能可在自己的 fx 覆寫本欄；'],
+  [''],
+  ['持續時間'],
+  ['狀態生效的秒數；技能可在自己的 fx 覆寫（保留里程碑成長）；'],
+  ['注意：控場類（暈眩、減速）的實際秒數還會再乘上控場遞減與目標韌性；'],
+  [''],
+  ['作用間隔時間'],
+  ['持續傷害每隔幾秒結算一次（例：1 ＝ 每秒跳一次傷害）；'],
+  ['0＝不分段，改為連續結算（每一幀依比例扣血）；stat／ctrl 類填 0；'],
+  ['注意：狀態到期時會把不足一次間隔的餘額補跳，所以「總傷害＝狀態傷害×(持續時間÷作用間隔)」恆成立，'],
+  ['　　　調整作用間隔只改變跳傷的節奏，不改變總量；'],
+  [''],
+  ['疊加規則 / 最大疊層'],
+  ['refresh＝重新計時（後蓋前）；strongest＝取高並重新計時（目前持續傷害採用）；stack＝疊層；'],
+  ['最大疊層＝疊加規則為 stack 時的上限，其餘填 1；'],
+  [''],
+  ['── 新增狀態注意 ──'],
+  ['1. 新增一列即可新增狀態；要讓技能用到它，還要在 Skills 表該技能的「基礎fx(JSON)」加 status 引用，'],
+  ['   例：{"dmgType":"magic","stat":"matk","base":300,"per":60,"status":[{"id":"burn"}]}；'],
+  ['2. status 陣列可帶 dmg／dur／val 覆寫本表預設值，例 {"id":"burn","dmg":35,"dur":5}；不帶就吃本表的值；'],
+  ['3. 狀態效果＝stat／ctrl 的「效果鍵值」必須是程式認得的鍵，不能自創；dot／hot 則可自由新增。']
+];
+
+SCHEMAS.Status = {
+  name: 'Status', jsFile: 'status', sheet: 'Status', vars: ['STATUS'],
+  extraSheets: [{ name: '欄位定義', rows: STATUS_GLOSSARY_ROWS }],
+  header: ['狀態ID', '狀態名稱', '狀態圖標', '狀態分類', '狀態效果', '效果鍵值', '傷害屬性', '傷害來源',
+    '狀態傷害', '傷害上限參照', '傷害上限倍率', '效果數值', '持續時間', '作用間隔時間', '疊加規則', '最大疊層', '說明'],
+  extract(src) {
+    const STATUS = evalLiteral(extractLiteral(src, 'STATUS').literal);
+    return Object.keys(STATUS).map(id => {
+      const s = STATUS[id];
+      return [id, s.name, s.icon, s.kind, s.effect, s.key || '', s.elem || '', s.dmgSource || '',
+        numStr(s.dmg || 0), s.capStat || '', numStr(s.capMult || 0), numStr(s.val || 0),
+        numStr(s.dur || 0), numStr(s.interval || 0), s.stack || 'refresh', numStr(s.maxStacks || 1), s.desc || ''];
+    });
+  },
+  rebuild(dataRows, header) {
+    const get = rowGetter(header);
+    const entries = dataRows.filter(r => get(r, '狀態ID').trim() !== '').map(r => {
+      const id = get(r, '狀態ID').trim();
+      const effect = get(r, '狀態效果').trim();
+      const key = get(r, '效果鍵值').trim();
+      if (STATUS_EFFECT_KINDS.indexOf(effect) < 0) {
+        throw new Error('狀態「' + id + '」的狀態效果必須是 ' + STATUS_EFFECT_KINDS.join('/') + '，目前是「' + effect + '」');
+      }
+      if ((effect === 'stat' || effect === 'ctrl' || effect === 'hot') && key === '') {
+        throw new Error('狀態「' + id + '」的狀態效果是 ' + effect + '，必須填「效果鍵值」');
+      }
+      const o = {
+        name: get(r, '狀態名稱'), icon: get(r, '狀態圖標'),
+        kind: get(r, '狀態分類').trim() || 'debuff', effect: effect, key: key,
+        elem: get(r, '傷害屬性').trim(), dmgSource: get(r, '傷害來源').trim(),
+        dmg: toNum(get(r, '狀態傷害').trim() || '0'),
+        capStat: get(r, '傷害上限參照').trim(), capMult: toNum(get(r, '傷害上限倍率').trim() || '0'),
+        val: toNum(get(r, '效果數值').trim() || '0'),
+        dur: toNum(get(r, '持續時間').trim() || '0'),
+        interval: toNum(get(r, '作用間隔時間').trim() || '0'),
+        stack: get(r, '疊加規則').trim() || 'refresh',
+        maxStacks: toNum(get(r, '最大疊層').trim() || '1'),
+        desc: get(r, '說明')
+      };
+      return '  ' + id + ': ' + jsLit(o);
+    });
+    if (!entries.length) throw new Error('Status 表沒有任何狀態列');
+    return { STATUS: 'var STATUS = {\n' + entries.join(',\n') + '\n};' };
+  }
+};
+
+const TABLE_ORDER = ['Skills', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Task'];
 
 /* ===========================================================================
    模式：--gen / --sync / --apply
@@ -884,7 +1022,7 @@ function csvPathOf(name) { return path.join(CSV_DIR, name + '.csv'); }
 function xlsxPathOf(name) { return path.join(XLSX_DIR, name + '.xlsx'); }
 
 function cmdGen(only) {
-  const srcMap = { data: readUtf8(JS.data), skills: readUtf8(JS.skills) };
+  const srcMap = { data: readUtf8(JS.data), skills: readUtf8(JS.skills), status: readUtf8(JS.status) };
   TABLE_ORDER.forEach(name => {
     if (only && name !== only) return; // --gen <表名>：只重生指定表，不動其他表
     const sc = SCHEMAS[name];
@@ -894,7 +1032,7 @@ function cmdGen(only) {
     writeXlsx(xlsxPathOf(name), sc.sheet, rows, sc.extraSheets);
     console.log('  ✔ ' + name + '：' + dataRows.length + ' 列 → CSV + xlsx');
   });
-  console.log('[gen] 已由 JS 產生' + (only ? '「' + only + '」表' : '六表') + '。');
+  console.log('[gen] 已由 JS 產生' + (only ? '「' + only + '」表' : '七表') + '。');
 }
 
 function cmdSync() {
@@ -911,8 +1049,8 @@ function cmdSync() {
 }
 
 function cmdApply(only) {
-  const srcMap = { data: readUtf8(JS.data), skills: readUtf8(JS.skills) };
-  const newSrc = { data: srcMap.data, skills: srcMap.skills };
+  const srcMap = { data: readUtf8(JS.data), skills: readUtf8(JS.skills), status: readUtf8(JS.status) };
+  const newSrc = { data: srcMap.data, skills: srcMap.skills, status: srcMap.status };
   const changes = []; // {name, var, changed}
   let hadError = false;
 
@@ -993,6 +1131,6 @@ if (mode === 'gen') cmdGen(only);
 else if (mode === 'sync') cmdSync();
 else if (mode === 'apply') cmdApply(only);
 else {
-  console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills|Gems|Talents|Equipment_Affix|NPC|Task]');
+  console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills|Status|Gems|Talents|Equipment_Affix|NPC|Task]');
   process.exit(1);
 }

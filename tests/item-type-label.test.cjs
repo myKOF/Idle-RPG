@@ -13,7 +13,7 @@ function loadContext() {
   context.window = context;
   vm.createContext(context);
 
-  for (const file of ['js/util.js', 'js/data.js', 'js/formula.js']) {
+  for (const file of ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js']) {
     vm.runInContext(
       fs.readFileSync(path.join(root, file), 'utf8'),
       context,

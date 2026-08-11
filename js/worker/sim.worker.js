@@ -5,18 +5,18 @@
    載入順序不可調換：
      protocol.js  訊息與指令契約
      shim.js      window / document / UI.dirty / blog / recordLoot* 替身
-     模擬層 18 支 依照 index.html 原本的順序（有相依關係；tasks.js 僅 Worker 端載入）
+     模擬層 19 支 依照 index.html 原本的順序（有相依關係；tasks.js 僅 Worker 端載入）
 
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
 importScripts('protocol.js?v=18', 'shim.js');
 importScripts(
-  '../util.js', '../data.js?v=20260810-elite-count-by-zone', '../formula.js?v=20260811-loadout-cap-clamp', '../battlefield.js', '../stats.js',
+  '../util.js', '../data.js?v=20260810-elite-count-by-zone', '../status.js?v=20260811-status-system', '../formula.js?v=20260811-loadout-cap-clamp', '../battlefield.js', '../stats.js',
   '../item.js?v=20260805-tasks',
   '../skills.js?v=20260811-loadout-cap-clamp', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260811-loadout-cap-clamp', '../special_rules.js',
-  '../combat.js?v=20260810-field-boss-once', '../legendary.js', '../potential.js', '../tower.js',
+  '../combat.js?v=20260811-status-system', '../legendary.js', '../potential.js', '../tower.js',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260811-loadout-cap-clamp',
   '../tasks.js'
 );

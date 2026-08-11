@@ -34,7 +34,7 @@ function loadContext() {
   const files = [
     'js/util.js',
     'js/data.js',
-    'js/formula.js',
+    'js/status.js', 'js/formula.js',
     'js/battlefield.js',
     'js/item.js',
     'js/skills.js',

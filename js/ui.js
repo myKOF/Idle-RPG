@@ -2472,28 +2472,11 @@ function renderAttrPanel(st, headerSnapshot) {
   if (activeBuffsEl) activeBuffsEl.innerHTML = activeBuffsHtml();
 }
 
-var BUFF_TIP_EMOJI = {
-  atkUp: '⚔️',
-  defUp: '🛡️',
-  aspdUp: '⚡',
-  evasionUp: '🌀',
-  critDmgUp: '💥',
-  blockUp: '🔰',
-  thornsUp: '🌵',
-  lootUp: '🎁',
-  hot: '💚',
-  penUp: '🗡️',
-  atkDown: '⚔️',
-  defDown: '🛡️',
-  // 潛力技能增益
-  velocitySurge: '⚡',
-  lightningOverload: '🌩️',
-  chronoCdr: '🕳️',
-  sacredInvert: '✨',
-  allDmgUp: '🌀',
-  enemyAspdDown: '⏱️',
-  invuln: '🛡️'
-};
+/* 增益鍵 → 狀態圖標：唯一來源是狀態表（js/status.js STATUS，由 config/Excel/Status.xlsx 撥離），
+   UI 不再自帶第二份對照表；表上查不到的鍵才用通用圖示。 */
+function buffTipEmoji(key) {
+  return (typeof statusIcon === 'function') ? statusIcon(statusIdByKey(key), '💪') : '💪';
+}
 
 function currentCombatPlayerEntity() {
   var battle = peekUiPanelData('battle');
@@ -2521,7 +2504,7 @@ function activeBuffsHtml() {
     var b = buffs[i];
     var label = buffLabel(b.key);
     h += '<div class="active-buff-row"><span class="active-buff-main">' +
-      (BUFF_TIP_EMOJI[b.key] || '💪') + ' ' + esc(label) + '</span><span class="active-buff-side">' +
+      buffTipEmoji(b.key) + ' ' + esc(label) + '</span><span class="active-buff-side">' +
       (b.noVal ? '' : buffSignedValueHtml(b.val) + ' ') + buffRemainHtml(b.remain) + '</span></div>';
   }
   return h;
@@ -2533,7 +2516,7 @@ function buffTooltipDesc() {
   var rows = [];
   for (var i = 0; i < buffs.length; i++) {
     var b = buffs[i];
-    rows.push('<div class="buff-tip-row"><span>' + (BUFF_TIP_EMOJI[b.key] || '💪') + ' ' +
+    rows.push('<div class="buff-tip-row"><span>' + buffTipEmoji(b.key) + ' ' +
       esc(buffLabel(b.key)) + '</span><span>' + (b.noVal ? '' : buffSignedValueHtml(b.val) + ' ') +
       buffRemainHtml(b.remain) + '</span></div>');
   }
@@ -2572,27 +2555,17 @@ function combatStatusRow(icon, label, valueHtml, remain) {
     (valueHtml || '') + (remain ? ' ' + buffRemainHtml(remain) : '') + '</span></div>';
 }
 
+/* 敵人狀態提示：整份清單由狀態層列舉（statusEntries），圖標與名稱全部來自狀態表。 */
 function enemyBuffTooltipDesc(anchorEl) {
   var ent = currentCombatEnemyEntity(anchorEl);
   if (!ent) return '<span class="dim-text">目前沒有狀態</span>';
+  var list = statusEntries(ent);
   var rows = [];
-  if (ent.effects && effectActive(ent, 'stun')) rows.push(combatStatusRow('😵', '暈眩', '', combatStatusRemain(ent.effects.stun)));
-  if (ent.effects && effectActive(ent, 'slow')) rows.push(combatStatusRow('🐌', '減速', '', combatStatusRemain(ent.effects.slow)));
-  if (poisonActive(ent)) rows.push(combatStatusRow('☠️', '中毒', '', combatStatusRemain(ent.poisonUntil)));
-  if (ent.dots) {
-    for (var i = 0; i < ent.dots.length; i++) {
-      var dot = ent.dots[i];
-      if (dot && dot.until > GT) rows.push(combatStatusRow('🩸', dot.name || '持續傷害', '', combatStatusRemain(dot.until)));
-    }
-  }
-  var keys = activeBuffKeys(ent);
-  for (var k = 0; k < keys.length; k++) {
-    var key = keys[k];
-    var buff = ent.buffs && ent.buffs[key];
-    if (!buff || buff.until <= GT) continue;
-    var down = key === 'atkDown' || key === 'defDown' || key === 'enemyAspdDown';
-    rows.push(combatStatusRow(BUFF_TIP_EMOJI[key] || (down ? '📉' : '💪'), buffLabel(key) + (down ? '↓' : '↑'),
-      buffSignedValueHtml(buff.val, down ? 'var(--danger)' : 'var(--good)'), combatStatusRemain(buff.until)));
+  for (var i = 0; i < list.length; i++) {
+    var e = list[i];
+    var down = e.kind === 'debuff';
+    var valHtml = e.val ? buffSignedValueHtml(e.val, down ? 'var(--danger)' : 'var(--good)') : '';
+    rows.push(combatStatusRow(e.icon, e.name + (e.val ? (down ? '↓' : '↑') : ''), valHtml, Math.ceil(e.remain)));
   }
   return rows.length ? rows.join('') : '<span class="dim-text">目前沒有狀態</span>';
 }
@@ -2700,22 +2673,15 @@ function renderSceneTabs() {
 }
 
 /* ---- 戰鬥畫面 ---- */
+/* 戰鬥畫面的狀態列：同樣只列舉狀態層，圖標與名稱來自狀態表。 */
 function entStatus(ent) {
   if (!ent) return '';
+  var list = statusEntries(ent);
   var s = [];
-  if (effectActive(ent, 'stun')) s.push('😵暈眩');
-  if (effectActive(ent, 'slow')) s.push('🐌減速');
-  if (poisonActive(ent)) s.push('☠️中毒');
-  if (ent.dots) {
-    for (var i = 0; i < ent.dots.length; i++) {
-      if (ent.dots[i].until > GT) s.push('🩸' + ent.dots[i].name);
-    }
-  }
-  var bks = activeBuffKeys(ent);
-  for (var b = 0; b < bks.length; b++) {
-    var k = bks[b];
-    if (k === 'atkDown' || k === 'defDown' || k === 'enemyAspdDown') s.push('📉' + buffLabel(k) + '↓');
-    else s.push('💪' + buffLabel(k) + '↑');
+  for (var i = 0; i < list.length; i++) {
+    var e = list[i];
+    // 只有屬性增減（stat）才標升降箭頭；持續傷害／持續回復／控場的名稱本身就說明了方向
+    s.push(e.icon + e.name + (e.effect === 'stat' ? (e.kind === 'debuff' ? '↓' : '↑') : ''));
   }
   return s.join(' ');
 }
@@ -7610,19 +7576,32 @@ function renderGemConvert(gemsSnapshot) {
   gemsSnapshot = resolveGemsPanelSnapshot(gemsSnapshot);
   if (!gemsSnapshot) return;
   if (!UI.convertSlots) UI.convertSlots = [];
-  var h = '';
+  /* ---- 九宮格與下方庫存池都必須逐格比對，不能整份 innerHTML 重建 ----
+
+     瀏覽器只有在 mousedown 與 mouseup 落在**同一個節點**上時才會發出 click。
+     整份重建會把使用者正壓著的那個節點換掉，那一下點擊於是無聲消失——沒有錯誤、
+     沒有延遲，就是「沒反應」。
+
+     而重建發生得很頻繁：戰鬥中寶石一直掉，每次 dirty.gems 都會重畫這一區；
+     每次成功放入／取下也會重畫一次。所以症狀是隨機的——有時一下就中，
+     有時連點十下全被吃掉。回報的正是這個。
+
+     改成 syncItemGridCells 之後，內容沒變的格子連碰都不碰，節點身分得以保留。 */
+  var slotKeys = [];
+  var slotHtmls = [];
   for (var i = 0; i < GEM_CONVERT_SLOTS; i++) {
     var s = UI.convertSlots[i];
+    slotKeys.push('gconv-slot:' + i);
     if (s) {
-      h += '<div class="gconv-slot filled" data-gconv-slot="' + i + '" title="點擊取出">' +
+      slotHtmls.push('<div class="gconv-slot filled" data-gconv-slot="' + i + '" title="點擊取出">' +
         '<div class="gconv-emoji">' + GEM_TYPES[s.type].emoji + '</div>' +
         '<div class="gconv-label">' + esc(GEM_NAMES[s.lv] + GEM_TYPES[s.type].name) + '</div>' +
-        '<div class="gconv-n">×' + s.n + '</div></div>';
+        '<div class="gconv-n">×' + s.n + '</div></div>');
     } else {
-      h += '<div class="gconv-slot"></div>';
+      slotHtmls.push('<div class="gconv-slot"></div>');
     }
   }
-  grid.innerHTML = h;
+  syncItemGridCells(grid, slotKeys, slotHtmls);
   // 轉換結果預覽
   var targetSel = $id('gconv-target');
   var target = targetSel ? targetSel.value : null;
@@ -7684,7 +7663,9 @@ function renderGemConvert(gemsSnapshot) {
       '<span class="gem-chip-level">' + lv + '</span></span>';
   });
 
-  pool.innerHTML = chips.length ? chips.join('') : '<span class="hint">沒有寶石庫存</span>';
+  // 逐格比對，理由同上方九宮格：整份重建會把使用者正壓著的 chip 換掉，那一下點擊就消失
+  if (!chips.length) pool.innerHTML = '<span class="hint">沒有寶石庫存</span>';
+  else syncItemGridCells(pool, gemItems.map(function (item) { return item.type + ':' + item.lv; }), chips);
 }
 
 /* ---- 寶石拆解 ---- */
@@ -7811,11 +7792,13 @@ function renderGemFusion(gemsSnapshot, headerSnapshot) {
   // 素材池（5 階以上一般寶石，高階神鑄寶石一併列出）
   var pool = $id('gfuse-pool');
   var chips = [];
+  var chipKeys = [];
   for (var flv = GEM_MAX_LEVEL; flv <= GEM_FORGE_MAX_LEVEL; flv++) {
     for (var t in GEM_TYPES) {
       var n = gemsViewCount(gemsSnapshot, t, flv);
       if (n > 0) {
         var fcol = GEM_TIER_COLORS[flv] || '#ffd700';
+        chipKeys.push('plain:' + t + ':' + flv);
         chips.push('<span class="gem-chip gem-inventory-cell" data-gfuse-pick="plain:' + t + ':' + flv + '" style="border-color:' + fcol + '" ' +
           'data-tip="' + esc(gemLabel(t, flv) + '｜' + GEM_TYPES[t].statName.replace('%', '') + ' +' +
             (GEM_TYPES[t].pct ? pctStr(gemStatValue(t, flv)) : fmt(gemStatValue(t, flv))) + '｜點擊放入融合槽') + '">' +
@@ -7827,12 +7810,15 @@ function renderGemFusion(gemsSnapshot, headerSnapshot) {
   }
   gemsViewFused(gemsSnapshot).forEach(function (fg) {
     var emojis = fg.stats.map(function (s) { return GEM_TYPES[s.type].emoji; }).join('');
+    chipKeys.push('fused:' + fg.id);
     chips.push('<span class="gem-chip fused-chip gem-inventory-cell" data-gfuse-pick="fused:' + fg.id + '" data-tip="' + esc(fusedGemLabel(fg)) + '｜已成功融合 ' + (fg.fusions || 0) + ' 次（下次成功率遞減）">' +
       '<span class="gem-chip-count">×1</span>' +
       '<span class="gem-chip-emoji">' + emojis + '</span>' +
       '<span class="gem-chip-level" style="color:#f0abfc">融' + (fg.fusions || 0) + '</span></span>');
   });
-  pool.innerHTML = chips.length ? chips.join('') : '<span class="hint">沒有 5 階以上寶石 — 可透過寶石升階、寶石合成、商店或神鑄取得</span>';
+  // 逐格比對，理由同轉換頁：整份重建會把使用者正壓著的 chip 換掉，那一下點擊就消失
+  if (!chips.length) pool.innerHTML = '<span class="hint">沒有 5 階以上寶石 — 可透過寶石升階、寶石合成、商店或神鑄取得</span>';
+  else syncItemGridCells(pool, chipKeys, chips);
 }
 
 /* ---- 寶石商店 ---- */

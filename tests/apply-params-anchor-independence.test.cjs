@@ -42,7 +42,7 @@ test('每個參數的錨點都不依賴其他參數的現值', () => {
 test('--check-anchors 不得寫入任何檔案', () => {
   /* 這支檢查會被放進 npm test，而 npm test 是平行跑的。
      它一旦碰檔案，其他測試就會讀到中間狀態——那正是這支測試最初的寫法所犯的錯。 */
-  const targets = ['js/formula.js', 'js/data.js', 'js/combat.js', 'js/item.js', 'js/skills.js',
+  const targets = ['js/status.js', 'js/formula.js', 'js/data.js', 'js/combat.js', 'js/item.js', 'js/skills.js',
     'config/CSV/game_parameters.csv'].map((p) => path.join(root, p));
   const before = targets.map((f) => fs.readFileSync(f));
 

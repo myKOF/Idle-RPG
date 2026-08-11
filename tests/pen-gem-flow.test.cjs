@@ -28,7 +28,7 @@ function loadFullGameContext() {
     'js/util.js',
     'js/data.js',
     'js/player.js',
-    'js/formula.js',
+    'js/status.js', 'js/formula.js',
     'js/stats.js',
     'js/item.js',
     'js/gm_exec.js'

@@ -43,7 +43,7 @@ test('新手提示的品質範圍等於 1 號熔爐的實際預設，不是寫�
   // 用真正的 newForgeDefaultFurnace 產生預設爐，避免文案與預設值各自漂移
   const simCtx = { console, window: {} };
   vm.createContext(simCtx);
-  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/item.js', 'js/player.js'].forEach((f) => {
+  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js', 'js/player.js'].forEach((f) => {
     vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), simCtx, { filename: f });
   });
   const defaultFurnace = simCtx.newForgeDefaultFurnace(1);

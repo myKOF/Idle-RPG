@@ -36,7 +36,7 @@ test('取消自動使用魔塵時卸下所有法陣上的魔塵', () => {
   const context = { console, UI: { dirty: {} } };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/formula.js', 'js/forge.js'].forEach(file => {
+  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/forge.js'].forEach(file => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
 
