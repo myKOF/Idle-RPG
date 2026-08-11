@@ -287,6 +287,7 @@ Object.keys(ZONE_KEYS).forEach(nm => {
 scalar('data', 'MAX_AFFIXES', '表-固定參數', '詞條數硬上限', 0);
 scalar('data', 'REROLL_CHAOS_ESSENCE_COST', '7-洗煉', '混沌精華費用', 0);
 scalar('data', 'REROLL_CHAOS_GODFORGED_ESSENCE_COST', '7-洗煉', '神鑄混沌精華費用', 0);
+scalar('data', 'REROLL_ESSENCE_LEVEL_DIVISOR', '7-洗煉', '精華費用', 3);
 // 太古常數（2026-07-23 改版：太古詞條產出時決定；野外掉落率由 Zone_Stage_Drops.csv 管理）
 scalar('data', 'ANCIENT_ESSENCE_BOSS_BASE_RATE', '5-太古詞條', '高塔太古精華機率', 1);
 scalar('data', 'ANCIENT_ESSENCE_BOSS_LEVEL_RATE', '5-太古詞條', '高塔太古精華機率', 3);

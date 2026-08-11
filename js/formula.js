@@ -1824,11 +1824,13 @@ function upgradeSuccessChance(it) {
 }
 
 /* 洗煉費用（整件或單詞條同價）：金幣 = 係數 × 底^稀有度 × (1 + 裝備等級 × 每級)；
-   精華沿用 REROLL_ESSENCE_COST 的逐稀有度表，表上沒有的稀有度退回 1 + 稀有度。 */
+   精華 = 基礎精華費用 × 裝備等級 ÷ 除數，無條件捨去。基礎費用沿用
+   REROLL_ESSENCE_COST 的逐稀有度表，表上沒有的稀有度退回 1 + 稀有度。 */
 var REROLL_COST_GOLD = { coef: 40, base: 1.7, perLevel: 0.15 };
 function rerollCost(it) {
-  var essence = REROLL_ESSENCE_COST[it.rarity];
-  if (essence === undefined) essence = 1 + it.rarity;
+  var baseEssence = REROLL_ESSENCE_COST[it.rarity];
+  if (baseEssence === undefined) baseEssence = 1 + it.rarity;
+  var essence = Math.floor(baseEssence * it.level / REROLL_ESSENCE_LEVEL_DIVISOR);
   return {
     gold: Math.round(REROLL_COST_GOLD.coef * Math.pow(REROLL_COST_GOLD.base, it.rarity) * (1 + it.level * REROLL_COST_GOLD.perLevel)),
     essence: essence
