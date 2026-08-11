@@ -684,20 +684,37 @@ const FX_GLOSSARY_ROWS = [
   ['潛力技能不使用此欄；']
 ];
 
+/* 「完整描述」是給人看的註記欄，不寫回 JS。--gen 會整份重建表格，若不特別保留就會被清空
+   （同 Task 表的「備註」欄）——因此重建時從現有 CSV 依 id 帶回來。 */
+function skillFullDescMap() {
+  const map = {};
+  try {
+    const rows = csvParse(readUtf8(csvPathOf('Skills')));
+    if (!rows.length) return map;
+    const idIdx = rows[0].findIndex(h => String(h).split('\n')[0].trim() === 'id');
+    const dIdx = rows[0].findIndex(h => String(h).split('\n')[0].trim() === '完整描述');
+    if (idIdx < 0 || dIdx < 0) return map;
+    rows.slice(1).forEach(r => { const id = (r[idIdx] || '').trim(); if (id) map[id] = r[dIdx] || ''; });
+  } catch (e) { /* 沒有現成 CSV（首次 bootstrap）就留空 */ }
+  return map;
+}
+
 SCHEMAS.Skills = {
   name: 'Skills', jsFile: 'skills', sheet: 'Skills', vars: ['SKILLS', 'UNLOCKS', 'POTENTIAL_TALENTS'],
   extraSheets: [{ name: '變量定義', rows: FX_GLOSSARY_ROWS }],
-  header: ['id', '系統分類', '標籤', '解鎖等級', '名稱', 'icon圖號', '施法消耗', '冷卻', '施放AI', '傷害範圍', '說明文字', '基礎fx(JSON)', '里程碑fx(JSON)'],
+  header: ['id', '系統分類', '標籤', '解鎖等級', '名稱', 'icon圖號', '施法消耗', '冷卻', '施放AI', '傷害範圍', '說明文字', '基礎fx(JSON)', '里程碑fx(JSON)', '完整描述'],
   extract(src) {
     const SKILLS = evalLiteral(extractLiteral(src, 'SKILLS').literal);
     const UNLOCKS = evalLiteral(extractLiteral(src, 'UNLOCKS').literal);
     const POTENTIAL_TALENTS = evalLiteral(extractLiteral(src, 'POTENTIAL_TALENTS').literal);
+    const fullDesc = skillFullDescMap();
     const rows = Object.keys(SKILLS).map(id => {
       const s = SKILLS[id];
       const un = UNLOCKS[id];
         return [id, s.cat, joinList(skillTagsForConfig(s, id)), skillUnlockLevelForConfig(s, id), s.name, s.emoji,
         s.cost == null ? '' : numStr(s.cost), s.cd == null ? '' : numStr(s.cd),
-        s.ai || '', s.shape || '', s.flavor || '', JSON.stringify(s.fx), un ? JSON.stringify(un) : ''];
+        s.ai || '', s.shape || '', s.flavor || '', JSON.stringify(s.fx), un ? JSON.stringify(un) : '',
+        fullDesc[id] || ''];
     });
     // 潛力技能 V3（系統分類=potential；列順序＝解鎖順序）：與一般技能同格式——
     // 共用欄放 名稱/icon/冷卻/說明文字(風味)，其餘機制參數（type/base/per/dur/dmgType/mech/en/desc）收進「基礎fx(JSON)」。
@@ -711,7 +728,7 @@ SCHEMAS.Skills = {
       fx.mech = t.mech || '';
       if (t.en) fx.en = t.en;
       if (t.desc) fx.desc = t.desc;
-       rows.push([t.id, 'potential', joinList(skillTagsForConfig(t)), skillUnlockLevelForConfig(t, t.id), t.name, t.emoji, '', t.cd == null ? '' : numStr(t.cd), '', t.shape || '', t.flavor || '', JSON.stringify(fx), '']);
+       rows.push([t.id, 'potential', joinList(skillTagsForConfig(t)), skillUnlockLevelForConfig(t, t.id), t.name, t.emoji, '', t.cd == null ? '' : numStr(t.cd), '', t.shape || '', t.flavor || '', JSON.stringify(fx), '', fullDesc[t.id] || '']);
     });
     return rows;
   },

@@ -158,7 +158,7 @@ function applyStatus(ent, sid, ctx) {
 
 /* ---- 統一列舉：實體身上生效中的所有狀態 ----
    UI 的狀態列、提示框與戰鬥日誌一律用這支，圖標與名稱直接來自狀態表。
-   回傳 [{ sid, name, icon, kind, until, remain, val, dps }]，順序：控場 → 持續傷害 → 增益／減益。 */
+   回傳 [{ sid, name, icon, kind, effect, until, remain, val, dps }]，順序：控場 → 持續傷害 → 增益／減益。 */
 function statusEntries(ent) {
   var out = [];
   if (!ent) return out;
@@ -169,7 +169,8 @@ function statusEntries(ent) {
       sid = statusIdByKey(k);
       def = statusDef(sid);
       out.push({ sid: sid, name: def ? def.name : k, icon: def ? def.icon : '❗',
-        kind: def ? def.kind : 'ctrl', until: ent.effects[k], remain: ent.effects[k] - GT, val: 0, dps: 0 });
+        kind: def ? def.kind : 'ctrl', effect: def ? def.effect : 'ctrl',
+        until: ent.effects[k], remain: ent.effects[k] - GT, val: 0, dps: 0 });
     }
   }
   if (ent.dots) {
@@ -179,7 +180,8 @@ function statusEntries(ent) {
       sid = d.sid || statusIdByName(d.name);
       def = statusDef(sid);
       out.push({ sid: sid, name: def ? def.name : (d.name || '持續傷害'), icon: def ? def.icon : '🩸',
-        kind: def ? def.kind : 'debuff', until: d.until, remain: d.until - GT, val: 0, dps: d.dps || 0 });
+        kind: def ? def.kind : 'debuff', effect: 'dot',
+        until: d.until, remain: d.until - GT, val: 0, dps: d.dps || 0 });
     }
   }
   if (ent.buffs) {
@@ -189,7 +191,8 @@ function statusEntries(ent) {
       sid = b.sid || statusIdByKey(k);
       def = statusDef(sid);
       out.push({ sid: sid, name: def ? def.name : k, icon: def ? def.icon : '💪',
-        kind: def ? def.kind : 'buff', until: b.until, remain: b.until - GT, val: b.val || 0, dps: 0 });
+        kind: def ? def.kind : 'buff', effect: def ? def.effect : 'stat',
+        until: b.until, remain: b.until - GT, val: b.val || 0, dps: 0 });
     }
   }
   return out;

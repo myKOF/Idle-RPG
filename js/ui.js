@@ -2680,7 +2680,8 @@ function entStatus(ent) {
   var s = [];
   for (var i = 0; i < list.length; i++) {
     var e = list[i];
-    s.push(e.icon + e.name + (e.kind === 'ctrl' ? '' : (e.kind === 'debuff' ? '↓' : '↑')));
+    // 只有屬性增減（stat）才標升降箭頭；持續傷害／持續回復／控場的名稱本身就說明了方向
+    s.push(e.icon + e.name + (e.effect === 'stat' ? (e.kind === 'debuff' ? '↓' : '↑') : ''));
   }
   return s.join(' ');
 }
