@@ -654,7 +654,7 @@ var AFFIX_POOL = {
   blockDmgRed: { name: '格擋減傷%', base: 4, growthBase: 4, lv: 0.02, pct: true, weight: 3, minR: 4, slots: ['shoulder', 'chest', 'gloves', 'wrist', 'legs', 'amulet'] },
   evasion: { name: '閃避率%', base: 2, growthBase: 2, lv: 0.01, pct: true, weight: 4, slots: ['helmet', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   tenacity: { name: '韌性%', base: 4, growthBase: 4, lv: 0.02, pct: true, weight: 3, minR: 4, slots: ['helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
-  shieldEff: { name: '護盾效率%', base: 2, growthBase: 5, lv: 0.025, pct: true, weight: 3, minR: 3, slots: ['helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
+  shieldEff: { name: '護盾效率%', base: 5, growthBase: 2, lv: 0.015, pct: true, weight: 3, minR: 3, slots: ['helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   pRes: { name: '物理抗性%', base: 30, growthBase: 10, lv: 0.04, pct: true, weight: 3, minR: 3, slots: ['helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   mRes: { name: '魔法抗性%', base: 30, growthBase: 10, lv: 0.04, pct: true, weight: 3, minR: 3, slots: ['helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   resFire: { name: '火焰抗性%', base: 30, growthBase: 12, lv: 0.06, pct: true, weight: 3, minR: 3, slots: ['helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
