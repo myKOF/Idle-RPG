@@ -4668,21 +4668,85 @@ function forgeInventoryTab(forge) {
   return UI.forgeInvTab || 'items';
 }
 
+/* 選單骨架只建一次，之後只換內容。
+
+   這裡原本每次重繪都整份 menu.innerHTML 重寫，連底下的「確定 / 關閉」按鈕都一起換掉。
+   瀏覽器只有在 mousedown 與 mouseup 落在同一個節點上時才發出 click，所以選單開著的期間
+   只要撞上一次重繪（戰鬥中掉寶、鑄造進度、自動放入補料都會觸發），那一下點擊就消失。
+
+   #fam-stop 一律建出來、以 display 控制顯示，才不會因為「自動放入」開關切換而重建操作列。 */
+var FAM_SHELL_HTML = '<div class="fam-title"></div><div class="fam-list"></div>' +
+  '<div class="fam-foot">' +
+  '<button id="fam-confirm" class="btn sm" disabled>確定</button>' +
+  '<button id="fam-stop" class="btn sm warn" style="display:none">取消自動放入</button>' +
+  '<button id="fam-close" class="btn sm">關閉</button></div>';
+
+function famEnsureShell(menu) {
+  if (menu.querySelector('.fam-list') && menu.querySelector('#fam-confirm')) return false;
+  menu.innerHTML = FAM_SHELL_HTML;
+  var forgeKey = nodePendingKey('forge');
+  bindUiPendingControl(menu.querySelector('#fam-confirm'), forgeKey);
+  bindUiPendingControl(menu.querySelector('#fam-stop'), forgeKey);
+  return true;
+}
+
+/* 高度換算要讀 getBoundingClientRect / getComputedStyle / offsetHeight，是強制同步版面，
+   而選單開著時每次 renderForge 都會重跑——戰鬥中一秒好幾次。只在版面真的可能變動時重算：
+   骨架剛建好、背包切頁換了、或全域版面版本前進（切分頁 / 視窗縮放）。
+   1 秒保險上限的理由同浮字幾何快取，見 UI_FLOAT_LAYOUT_MAX_AGE_MS。 */
+function famSyncHeight(menu, invTab, force) {
+  var stage = $id('forge-stage');
+  if (!stage || !menu.parentElement) return;
+  var now = uiNowMs();
+  if (!force && menu._famHeightTab === invTab &&
+      menu._famHeightVer === UI_FLOAT_LAYOUT_VERSION &&
+      (now - menu._famHeightAt) < UI_FLOAT_LAYOUT_MAX_AGE_MS) return;
+  menu._famHeightTab = invTab;
+  menu._famHeightVer = UI_FLOAT_LAYOUT_VERSION;
+  menu._famHeightAt = now;
+  // 法陣區為 overflow:hidden：選單往上展開的最大高度以「按鈕底～法陣頂」為限，
+  // 超出改由素材清單內卷軸承接，標題與操作列不隨清單移動。
+  var avail = menu.parentElement.getBoundingClientRect().bottom - stage.getBoundingClientRect().top - 10;
+  var menuHeight = Math.max(160, Math.min(400, Math.floor(avail)));
+  menu.style.maxHeight = menuHeight + 'px';
+  // 寶石清單使用明確高度，確保 footer 不會被素材內容擠出選單。
+  menu.style.height = invTab === 'gems' ? menuHeight + 'px' : '';
+  var famList = menu.querySelector('.fam-list');
+  if (famList && invTab === 'gems') {
+    var famTitle = menu.querySelector('.fam-title');
+    var famFoot = menu.querySelector('.fam-foot');
+    var menuCss = window.getComputedStyle(menu);
+    var titleCss = window.getComputedStyle(famTitle);
+    var footCss = window.getComputedStyle(famFoot);
+    var verticalPadding = (parseFloat(menuCss.paddingTop) || 0) + (parseFloat(menuCss.paddingBottom) || 0);
+    var titleMargin = parseFloat(titleCss.marginBottom) || 0;
+    var footMargin = parseFloat(footCss.marginTop) || 0;
+    var measuredHeight = menu.clientHeight
+      ? menu.clientHeight - verticalPadding - famTitle.offsetHeight - titleMargin - famFoot.offsetHeight - footMargin
+      : menuHeight - 100;
+    famList.style.flex = '0 0 auto';
+    famList.style.height = Math.max(40, Math.floor(measuredHeight)) + 'px';
+  } else if (famList) {
+    famList.style.flex = '';
+    famList.style.height = '';
+  }
+}
+
 /* 神鑄「自動放入」選單：依目前背包切頁列出可選素材。
    裝備頁＝三種品質（品質色字）；寶石頁＝所有持有的五～九階寶石（emoji 小圖示＋屬性）。
    持有不足 6 者半透明不可選；UI.forgeAutoPick 為選單中的暫選項。 */
 function renderForgeAutoMenu(forge, inventorySnapshot, gemsSnapshot) {
   var menu = $id('forge-auto-menu');
   if (!menu) return;
-  // 重建前記住素材清單卷軸位置：自動鑄造運行中觸發的同步重繪不可把清單刷回頂部
-  var prevList = menu.querySelector('.fam-list');
-  var prevScrollTop = prevList ? prevList.scrollTop : 0;
   if (!forge || !inventorySnapshot || !gemsSnapshot) return;
+  var rebuilt = famEnsureShell(menu);
   var invTab = forgeInventoryTab(forge);
   menu.classList.toggle('fam-gem-mode', invTab === 'gems');
-  var pick = UI.forgeAutoPick;
   var title = '';
-  var rows = '';
+  /* picked 不寫進每一列的 HTML：那是選取態，改由 famApplyPickHighlight 統一重貼。
+     寫進去的話單純換個選取就會讓兩列的指紋改變而被換掉，等於白做（同 syncItemGridCells 的告誡）。 */
+  var rowKeys = [];
+  var rowHtmls = [];
   if (invTab === 'gems') {
     title = '💎 自動放入寶石（五～九階）';
     var gemOptions = [];
@@ -4701,14 +4765,14 @@ function renderForgeAutoMenu(forge, inventorySnapshot, gemsSnapshot) {
       var gem = gemOptions[gi];
       var gd = GEM_TYPES[gem.type];
       var val = gd.pct ? pctStr(gemStatValue(gem.type, gem.level)) : fmt(gemStatValue(gem.type, gem.level));
-      var gPicked = pick && pick.kind === 'gem' && pick.type === gem.type && pick.level === gem.level;
       var col = GEM_TIER_COLORS[gem.level] || '#f5c542';
-      rows += '<div class="fam-opt' + (gem.canForge ? '' : ' fam-dim') + (gPicked ? ' picked' : '') + '"' +
+      rowKeys.push('gem:' + gem.type + ':' + gem.level);
+      rowHtmls.push('<div class="fam-opt' + (gem.canForge ? '' : ' fam-dim') + '"' +
         ' data-fam-gem="' + gem.type + ':' + gem.level + '"' +
         ' style="color:' + col + '">' +
         '<span>' + gd.emoji + '</span>' +
         '<span>' + esc(GEM_NAMES[gem.level] + gd.name) + '（' + esc(gd.statName.replace('%', '')) + ' +' + val + '）</span>' +
-        '<span class="fam-cnt">×' + fmt(gem.count) + (gem.canForge ? '' : '｜不足6') + '</span></div>';
+        '<span class="fam-cnt">×' + fmt(gem.count) + (gem.canForge ? '' : '｜不足6') + '</span></div>');
     }
   } else {
     title = '🎒 自動放入裝備（取未上鎖、評分最低 6 件）';
@@ -4721,57 +4785,30 @@ function renderForgeAutoMenu(forge, inventorySnapshot, gemsSnapshot) {
         if (it && it.rarity === r && !it.locked) cnt++;
       }
       var rok = cnt >= FORGE_SLOTS;
-      var rPicked = pick && pick.kind === 'equip' && pick.rarity === r;
-      rows += '<div class="fam-opt' + (rok ? '' : ' fam-dim') + (rPicked ? ' picked' : '') + '"' +
+      rowKeys.push('equip:' + r);
+      rowHtmls.push('<div class="fam-opt' + (rok ? '' : ' fam-dim') + '"' +
         ' data-fam-equip="' + r + '"' +
         ' style="color:' + RARITIES[r].color + '">' +
         '<span>' + esc(RARITIES[r].name) + '裝備</span>' +
-        '<span class="fam-cnt">持有 ' + cnt + (rok ? '' : '｜不足6') + '</span></div>';
+        '<span class="fam-cnt">持有 ' + cnt + (rok ? '' : '｜不足6') + '</span></div>');
     }
   }
-  var emptyText = invTab === 'gems'
-    ? '沒有五階以上的寶石（十階已是最高，不可鑄造）'
-    : '目前沒有可自動放入的裝備';
-  menu.innerHTML = '<div class="fam-title">' + title + '</div>' +
-    '<div class="fam-list">' + (rows || '<div class="fam-empty">' + emptyText + '</div>') + '</div>' +
-    '<div class="fam-foot">' +
-    '<button id="fam-confirm" class="btn sm"' + pendingUiButtonAttributes(nodePendingKey('forge')) +
-    (pick ? '' : ' disabled') + '>確定</button>' +
-    (forge.autoFill ? '<button id="fam-stop" class="btn sm warn"' +
-      pendingUiButtonAttributes(nodePendingKey('forge')) + '>取消自動放入</button>' : '') +
-    '<button id="fam-close" class="btn sm">關閉</button></div>';
-  // 法陣區為 overflow:hidden：選單往上展開的最大高度以「按鈕底～法陣頂」為限，
-  // 超出改由素材清單內卷軸承接，標題與操作列不隨清單移動。
-  var stage = $id('forge-stage');
-  if (stage && menu.parentElement) {
-    var avail = menu.parentElement.getBoundingClientRect().bottom - stage.getBoundingClientRect().top - 10;
-    var menuHeight = Math.max(160, Math.min(400, Math.floor(avail)));
-    menu.style.maxHeight = menuHeight + 'px';
-    // 寶石清單使用明確高度，確保 footer 不會被素材內容擠出選單。
-    menu.style.height = invTab === 'gems' ? menuHeight + 'px' : '';
-    var famList = menu.querySelector('.fam-list');
-    if (famList && invTab === 'gems') {
-      var famTitle = menu.querySelector('.fam-title');
-      var famFoot = menu.querySelector('.fam-foot');
-      var menuCss = window.getComputedStyle(menu);
-      var titleCss = window.getComputedStyle(famTitle);
-      var footCss = window.getComputedStyle(famFoot);
-      var verticalPadding = (parseFloat(menuCss.paddingTop) || 0) + (parseFloat(menuCss.paddingBottom) || 0);
-      var titleMargin = parseFloat(titleCss.marginBottom) || 0;
-      var footMargin = parseFloat(footCss.marginTop) || 0;
-      var measuredHeight = menu.clientHeight
-        ? menu.clientHeight - verticalPadding - famTitle.offsetHeight - titleMargin - famFoot.offsetHeight - footMargin
-        : menuHeight - 100;
-      famList.style.flex = '0 0 auto';
-      famList.style.height = Math.max(40, Math.floor(measuredHeight)) + 'px';
-    } else if (famList) {
-      famList.style.flex = '';
-      famList.style.height = '';
-    }
+  if (!rowKeys.length) {
+    rowKeys.push('__fam-empty');
+    rowHtmls.push('<div class="fam-empty">' + (invTab === 'gems'
+      ? '沒有五階以上的寶石（十階已是最高，不可鑄造）'
+      : '目前沒有可自動放入的裝備') + '</div>');
   }
-  // 還原重建前的卷軸位置（clamp 交由瀏覽器處理，超出時自動停在最底）
-  var newList = menu.querySelector('.fam-list');
-  if (newList && prevScrollTop > 0) newList.scrollTop = prevScrollTop;
+  setTextIfChanged(menu.querySelector('.fam-title'), title);
+  // 清單節點本身留著，卷軸位置自然保住，不必再存一份 scrollTop 回寫
+  syncItemGridCells(menu.querySelector('.fam-list'), rowKeys, rowHtmls);
+  famApplyPickHighlight(menu);
+  var stopBtn = menu.querySelector('#fam-stop');
+  if (stopBtn) {
+    setStyleIfChanged(stopBtn, 'display', forge.autoFill ? '' : 'none');
+    stopBtn.disabled = isUiCommandPending(nodePendingKey('forge'));
+  }
+  famSyncHeight(menu, invTab, rebuilt);
 }
 
 /* 點選素材時就地更新高亮與確定鈕，不重建選單（保留清單卷軸位置）。 */
@@ -4790,8 +4827,10 @@ function famApplyPickHighlight(menu) {
     }
     el.classList.toggle('picked', isPicked);
   }
+  /* 確定鈕的 disabled 有兩個來源：沒選素材、以及指令送出中（data-ui-pending-key 那一套）。
+     選單不再整份重建之後，這裡是唯一會動它的地方，所以兩個條件都要在這裡合起來算。 */
   var confirmBtn = menu.querySelector('#fam-confirm');
-  if (confirmBtn) confirmBtn.disabled = !pick;
+  if (confirmBtn) confirmBtn.disabled = !pick || isUiCommandPending(nodePendingKey('forge'));
 }
 
 function renderForgeProgress(forge, inventorySnapshot, gemsSnapshot) {
@@ -4849,12 +4888,21 @@ function renderForge() {
   var player = headerSnapshot && headerSnapshot.player;
   if (!f || !inventorySnapshot || !gemsSnapshot || !player) return;
   var forgeBusy = !!f.crafting;
+  /* 法陣的六個素材槽、六個魔塵符位與中央產物全都是可點的，不可整份 innerHTML 重建。
+
+     瀏覽器只有在 mousedown 與 mouseup 落在**同一個節點**上時才會發出 click。
+     戰鬥中每掉一件裝備、每次鑄造進度變動都會重繪一次法陣，重建把玩家正壓著的
+     那一格換掉，那一下點擊就無聲消失——與寶石九宮格是同一個病。 */
+  var hexKeys = [];
+  var hexHtmls = [];
   var h = '';
   // 六個素材槽（裝備或寶石，二擇一模式）
   for (var i = 0; i < FORGE_SLOTS; i++) {
     var p = FORGE_SLOT_POS[i];
     var it = f.slots[i];
     var style = 'left:' + p.x + '%;top:' + p.y + '%;';
+    h = '';
+    hexKeys.push('slot:' + i);
     if (it && it.kind === 'gem') {
       var gcol = GEM_TIER_COLORS[it.level] || '#f5c542';
       var gdefS = GEM_TYPES[it.type];
@@ -4877,6 +4925,7 @@ function renderForge() {
     } else {
       h += '<div class="forge-slot empty" data-forge-slot="' + i + '" data-tip="點擊下方背包中的裝備（傳說/神話/創世）或寶石（五階以上）放入" style="' + style + '"></div>';
     }
+    hexHtmls.push(h);
   }
   // 六個魔塵符位（各自獨立：點哪格亮哪格）
   var dustN = forgeViewDustCount(f, player);
@@ -4890,11 +4939,14 @@ function renderForge() {
   for (var di = 0; di < FORGE_SLOTS; di++) {
     var dp = FORGE_DUST_POS[di];
     var lit = !!f.dustSlots[di];
-    h += '<div class="forge-dust' + (lit ? ' lit' : '') + '" data-forge-dust="' + di + '" data-tip="' +
+    hexKeys.push('dust:' + di);
+    hexHtmls.push('<div class="forge-dust' + (lit ? ' lit' : '') + '" data-forge-dust="' + di + '" data-tip="' +
       (lit ? '點擊取下魔塵' : '點擊放入魔塵（+' + equipDustRate + '% 成功率）') + '"' +
-      pendingUiButtonAttributes(nodePendingKey('forge')) + ' style="left:' + dp.x + '%;top:' + dp.y + '%;">💫</div>';
+      pendingUiButtonAttributes(nodePendingKey('forge')) + ' style="left:' + dp.x + '%;top:' + dp.y + '%;">💫</div>');
   }
   // 中央產物（上次鑄造成功的裝備或寶石）
+  h = '';
+  hexKeys.push('center');
   if (f.result && f.result.kind === 'gem' && GEM_TYPES[f.result.type]) {
     var gc = GEM_TIER_COLORS[f.result.level] || '#f5c542';
     var gname = gemLabel(f.result.type, f.result.level);
@@ -4912,21 +4964,22 @@ function renderForge() {
   } else {
     h += '<div class="forge-center empty" data-tip="鑄造成功的裝備/寶石會顯示在此"></div>';
   }
-  hex.innerHTML = h;
+  hexHtmls.push(h);
+  syncItemGridCells(hex, hexKeys, hexHtmls);
   // 成功率與金幣消耗（依模式：裝備 / 寶石）
   var rate = forgeViewRateInfo(f, player);
   var rateEl = $id('forge-rate');
   if (rate) {
-    rateEl.innerHTML = (rate.mode === 'gem' ? '💎 寶石' : '') + '鑄造成功率：<b style="color:#ffd700">' + fmt1(rate.base) + '%</b>' +
+    setHtmlIfChanged(rateEl, (rate.mode === 'gem' ? '💎 寶石' : '') + '鑄造成功率：<b style="color:#ffd700">' + fmt1(rate.base) + '%</b>' +
       (rate.dust > 0 ? ' <b style="color:#4ade80">+ ' + fmt1(rate.dust) + '%</b>' : '') +
-      '　<span class="dim-text">金幣消耗：<img src="images/icon_gold.png" class="res-icon">' + fmt(rate.cost) + '｜失敗獲得魔塵 x1</span>';
+      '　<span class="dim-text">金幣消耗：<img src="images/icon_gold.png" class="res-icon">' + fmt(rate.cost) + '｜失敗獲得魔塵 x1</span>');
   } else {
-    rateEl.innerHTML = '<span class="dim-text">放入 6 件相同品質的裝備（傳說 55%｜神話 40%｜創世 25%）或 6 顆同種同階寶石（五階 45% ~ 九階 5%）</span>';
+    setHtmlIfChanged(rateEl, '<span class="dim-text">放入 6 件相同品質的裝備（傳說 55%｜神話 40%｜創世 25%）或 6 顆同種同階寶石（五階 45% ~ 九階 5%）</span>');
   }
   // 法陣紀錄
-  $id('forge-log').innerHTML = f.log.map(function (l) {
+  setHtmlIfChanged($id('forge-log'), f.log.map(function (l) {
     return '<div class="forge-log-line ' + l.cls + '">' + esc(l.msg) + '</div>';
-  }).join('');
+  }).join(''));
   // 自動魔塵與持有量
   var autoDustInput = $id('forge-autodust');
   var autoForgeInput = $id('forge-autoforge');
@@ -4990,8 +5043,12 @@ function renderForge() {
   if (tabGemsBtn) tabGemsBtn.disabled = forgeBusy;
   var grid = $id('forge-inventory-grid');
   if (invTab === 'gems') {
-    $id('forge-inv-count').textContent = fmt(forgeViewTotalGems(gemsSnapshot));
-    var gh = '';
+    setTextIfChanged($id('forge-inv-count'), fmt(forgeViewTotalGems(gemsSnapshot)));
+    /* 逐格比對，理由同法陣：這一格是「點擊放入法陣」的來源，戰鬥中寶石一直掉、
+       數量一直變，整份重建會把玩家正壓著的那一格換掉，那一下點擊就消失。
+       裝備切頁走 renderForgeInventoryCells，早就是增量更新了，寶石切頁先前漏了。 */
+    var gemKeys = [];
+    var gemHtmls = [];
     for (var glv = GEM_FORGE_MAX_LEVEL; glv >= 1; glv--) {
       for (var gt2 in GEM_TYPES) {
         var gn = forgeViewGemCount(gemsSnapshot, gt2, glv);
@@ -5000,17 +5057,22 @@ function renderForge() {
         var gcol2 = GEM_TIER_COLORS[glv] || '#f5c542';
         var gdef = GEM_TYPES[gt2];
         var gval = gdef.pct ? pctStr(gemStatValue(gt2, glv)) : fmt(gemStatValue(gt2, glv));
-        gh += '<div class="item-cell forge-gem-cell' + (gok ? '' : ' forge-na') + '" data-forge-gem="' + gt2 + ':' + glv + '" ' +
+        gemKeys.push(gt2 + ':' + glv);
+        gemHtmls.push('<div class="item-cell forge-gem-cell' + (gok ? '' : ' forge-na') + '" data-forge-gem="' + gt2 + ':' + glv + '" ' +
           pendingUiButtonAttributes(nodePendingKey('forge')) +
           ' data-tip="' + esc(gemLabel(gt2, glv) + '｜' + gdef.statName.replace('%', '') + ' +' + gval + '｜持有 ' + gn + ' 顆' +
             (gok ? '（點擊放入法陣）' : (glv < GEM_MAX_LEVEL ? '（五階以上才可鑄造）' : '（十階已是最高階級）'))) + '" ' +
           'style="border-color:' + gcol2 + ';box-shadow:inset 0 0 12px ' + gcol2 + '33">' +
           '<span class="ic-emoji">' + gdef.emoji + '</span>' +
           '<span class="ic-lv">' + glv + '</span>' +
-          '<span class="gem-cnt">x' + fmt(gn) + '</span></div>';
+          '<span class="gem-cnt">x' + fmt(gn) + '</span></div>');
       }
     }
-    grid.innerHTML = gh || '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">尚無寶石。戰鬥掉落與寶石商店可取得寶石。</div>';
+    if (!gemKeys.length) {
+      gemKeys.push('__forge-gem-empty');
+      gemHtmls.push('<div class="hint" style="grid-column: 1 / -1; padding: 10px;">尚無寶石。戰鬥掉落與寶石商店可取得寶石。</div>');
+    }
+    syncItemGridCells(grid, gemKeys, gemHtmls);
   } else {
     var inventoryItems = inventorySnapshot.items || [];
     $id('forge-inv-count').textContent = inventorySnapshot.count + '/' + inventorySnapshot.cap;
