@@ -26,17 +26,20 @@ function loadCombatContext() {
   return context;
 }
 
-test('驗證 1：四張具名地圖與神界三圖菁英關出怪數量範圍（神界上限 8 隻）', () => {
+test('驗證 1：四張具名地圖與神界三圖菁英關出怪數量範圍（神界上限 11 隻）', () => {
   const ctx = loadCombatContext();
 
+  /* 依 AI_RULES.md 9.1 例外，測試刻意釘住目前數值：參數一動這裡就會紅，
+     這是預期行為——確認新值是有意調整後，把期望值一併更新。
+     2026-08-10（使用者確認）：亡靈山脈 7 → 9、神界三圖 8 → 11。 */
   const zoneExpectations = {
     desert: { min: 1, max: 3, table: ctx.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert },
     Icefield: { min: 1, max: 4, table: ctx.FIELD_ELITE_COUNT_TABLE_BY_ZONE.Icefield },
     swamp: { min: 1, max: 6, table: ctx.FIELD_ELITE_COUNT_TABLE_BY_ZONE.swamp },
-    undead_mountains: { min: 1, max: 7, table: ctx.FIELD_ELITE_COUNT_TABLE_BY_ZONE.undead_mountains },
-    god_realm_1: { min: 1, max: 8, table: ctx.FIELD_ELITE_COUNT_TABLE },
-    god_realm_2: { min: 1, max: 8, table: ctx.FIELD_ELITE_COUNT_TABLE },
-    god_realm_3: { min: 1, max: 8, table: ctx.FIELD_ELITE_COUNT_TABLE }
+    undead_mountains: { min: 1, max: 9, table: ctx.FIELD_ELITE_COUNT_TABLE_BY_ZONE.undead_mountains },
+    god_realm_1: { min: 1, max: 11, table: ctx.FIELD_ELITE_COUNT_TABLE },
+    god_realm_2: { min: 1, max: 11, table: ctx.FIELD_ELITE_COUNT_TABLE },
+    god_realm_3: { min: 1, max: 11, table: ctx.FIELD_ELITE_COUNT_TABLE }
   };
 
   Object.entries(zoneExpectations).forEach(([zone, exp]) => {

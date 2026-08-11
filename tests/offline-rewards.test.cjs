@@ -100,8 +100,10 @@ test('離線收益採用玩家上線時的經驗/金幣/掉寶加成', () => {
   const rw = c.ZONES.swamp.rewardMult;
   assert.equal(summary.gold, Math.round(m.gold * rw * 1.5) * kills); // 金幣加成 +50%
   assert.equal(summary.xp, Math.round(m.xp * rw * 2) * kills);       // 經驗加成 +100%
-  // 掉寶：100% × (1 + 100%) × 菁英 1.3 = 260% → 每殺必掉 2 件
-  assert.equal(summary.equips[0], kills * 2);
+  /* 掉寶：100% × (1 + 100%) × 菁英 ELITE_DROP_MULT = 300% → 每殺必掉 3 件。
+     依 AI_RULES.md 9.1 例外釘住目前數值；2026-08-10 菁英倍率 1.3 → 1.5（使用者確認），
+     此處從 260%（2 件）變成 300%（3 件）。 */
+  assert.equal(summary.equips[0], kills * 3);
 });
 
 test('有效離線時間上限（OFFLINE_MAX_HOURS），1 分鐘內不計', () => {

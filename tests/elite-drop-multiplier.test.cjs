@@ -15,9 +15,13 @@ function loadContext() {
   return context;
 }
 
-test('菁英裝備與材料掉落率均在一般基礎上乘以菁英掉落倍率（ELITE_DROP_MULT=1.3）', () => {
+test('菁英裝備與材料掉落率均在一般基礎上乘以菁英掉落倍率（ELITE_DROP_MULT=1.5）', () => {
   const context = loadContext();
-  assert.equal(context.ELITE_DROP_MULT, 1.3); // 使用者確認以程式值 1.3 為準（2026-07-17）
+  /* 依 AI_RULES.md 9.1 例外，測試刻意釘住目前數值：參數一動這裡就會紅，
+     這是預期行為——確認新值是有意調整後，把期望值一併更新。
+     2026-07-17：使用者確認以程式值 1.3 為準。
+     2026-08-10：平衡調整為 1.5（使用者確認）。 */
+  assert.equal(context.ELITE_DROP_MULT, 1.5);
   context.G = {
     stage: { current: 10, zone: 'test' },
     player: { books: {}, ancientEssence: 0, dust: 0, essence: 0 },
