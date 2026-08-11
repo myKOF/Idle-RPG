@@ -12,11 +12,12 @@
 
 importScripts('protocol.js?v=18', 'shim.js');
 importScripts(
-  '../util.js', '../data.js?v=20260810-elite-count-by-zone', '../formula.js?v=20260810-elite-count-by-zone', '../battlefield.js', '../stats.js',
+  '../util.js', '../data.js?v=20260810-elite-count-by-zone', '../formula.js?v=20260811-loadout-cap-clamp', '../battlefield.js', '../stats.js',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260806-shield-threshold', '../talents.js', '../player.js?v=20260805-tasks', '../special_rules.js',
+  '../skills.js?v=20260811-loadout-cap-clamp', '../talents.js?v=20260811-loadout-cap-clamp',
+  '../player.js?v=20260811-loadout-cap-clamp', '../special_rules.js',
   '../combat.js?v=20260810-field-boss-once', '../legendary.js', '../potential.js', '../tower.js',
-  '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260807-zone-progress-fix',
+  '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260811-loadout-cap-clamp',
   '../tasks.js'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -1642,11 +1643,16 @@ function boot(msg) {
       (typeof availableSkillPoints === 'function' ? availableSkillPoints() : 0) + ' 點。', cls: 'info' });
     delete G._skillPointRepairNotice;
   }
-  // 2026-07-30 技能融合改造：等級上限夾回通知（10 級、轉生後 15 級）
+  // 2026-07-30 技能融合改造：技能等級上限夾回通知（上限值由轉生對照表決定，訊息在 save.js 組好）
   if (G._skillCapClampNotice) {
     notices.push({ key: '_skillCapClampNotice', text: '📏 ' + G._skillCapClampNotice + '；目前可用技能點 ' +
       (typeof availableSkillPoints === 'function' ? availableSkillPoints() : 0) + ' 點。', cls: 'info' });
     delete G._skillCapClampNotice;
+  }
+  // ONE-TIME MIGRATION: loadoutCapClampV1 的公告（裝載欄上限下修，超額格數已卸下）
+  if (G._loadoutCapClampNotice) {
+    notices.push({ key: '_loadoutCapClampNotice', text: '🎒 ' + G._loadoutCapClampNotice + '。', cls: 'warn' });
+    delete G._loadoutCapClampNotice;
   }
   if (G._talentRespecNotice) {
     notices.push({ key: '_talentRespecNotice', text: '🌟 ' + G._talentRespecNotice +

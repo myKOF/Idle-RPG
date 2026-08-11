@@ -3111,10 +3111,10 @@ function fusionEnumCombos(shares) {
   walk(0, {}, 0);
   return bySize;
 }
-/* 融合成長折算：隨機結果值 V 為滿級（10 級基準）值 → Lv.1 = V × FUSION_LV1_RATIO 線性成長。
-   基準固定取未轉生上限（10），轉生上限 15 時滿級可超出 V（與一般技能成長同理）。 */
+/* 融合成長折算：隨機結果值 V 為滿級基準值 → Lv.1 = V × FUSION_LV1_RATIO 線性成長。
+   基準固定取未轉生上限（skillMaxLvForRc(0)）；轉生後上限更高，滿級可超出 V（與一般技能成長同理）。 */
 function fusionScaledDef(maxVal, extra) {
-  var refMax = (typeof REINCARNATION_SKILL_MAX_LEVELS !== 'undefined' && REINCARNATION_SKILL_MAX_LEVELS[0]) || 10;
+  var refMax = skillMaxLvForRc(0);
   var out = extra || {};
   out.base = Math.round(maxVal * FUSION_LV1_RATIO * 10) / 10;
   out.per = Math.round(maxVal * (1 - FUSION_LV1_RATIO) / Math.max(1, refMax - 1) * 100) / 100;
@@ -3337,12 +3337,12 @@ function applyFusionMutationByKey(fx, key) {
 }
 
 /* 素材滿級快照組裝（規格：融合數值一律以素材最高等級計算，與素材當前等級無關）。
-   基準等級固定取「未轉生上限」（10 級）：讓重算不依賴 G（主執行緒 tooltip 與 Worker
-   結果必然一致），融合數值也不因轉生跳動——轉生收益由融合技自身上限 +5 的成長承接。
+   基準等級固定取「未轉生上限」（skillMaxLvForRc(0)）：讓重算不依賴 G（主執行緒 tooltip
+   與 Worker 結果必然一致），融合數值也不因轉生跳動——轉生收益由融合技自身上限成長承接。
    任一素材定義不存在 → null（呼叫端退回存檔快照）。 */
 function fusionComps(ids) {
   if (!Array.isArray(ids) || !ids.length) return null;
-  var refLv = (typeof REINCARNATION_SKILL_MAX_LEVELS !== 'undefined' && REINCARNATION_SKILL_MAX_LEVELS[0]) || 10;
+  var refLv = skillMaxLvForRc(0);
   var comps = [];
   for (var i = 0; i < ids.length; i++) {
     var d = (typeof SKILLS !== 'undefined') ? SKILLS[ids[i]] : null;
