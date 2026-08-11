@@ -6932,7 +6932,8 @@ function renderSkillModal() {
     h += '<div style="visibility: hidden;"></div>';
   }
 
-  if (lv > 0) {
+  // 融合技即使尚未學習（Lv.0）也必須能刪除，因為刪除本身會釋放素材技能。
+  if (lv > 0 || isFusion) {
     var deleteRef = isPotential ? 'potential:' + id : id;
     h += '<button class="btn sm danger" data-skill-delete="' + deleteRef + '"' + pendingAttrs + '>🗑️ 刪除</button>';
   } else {
