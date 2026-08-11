@@ -92,12 +92,20 @@
   } catch (e) {}
 
   /* ---- 各渲染函式耗時 ---- */
+  /* 觀察名單。漏掉一支的代價是「那條路徑在報告裡完全不存在」，而讀報告的人會把
+     「沒出現」誤讀成「很快」。實際發生過：回報寶石頁卡頓，但點寶石放進九宮格走的是
+     renderGemConvert，當時不在名單上，於是整份報告看起來寶石頁毫無問題。
+     新增頁面渲染函式時記得一併加進來。 */
   var TARGETS = ['renderHeader', 'renderBattle', 'renderInventory', 'renderEquip', 'renderDetail',
-    'renderForge', 'renderNewForge', 'renderGems', 'renderSkills', 'renderTalents', 'renderTower',
-    'renderTowerFight', 'renderStatsPanel', 'updateSelectionUI', 'syncItemGridCells',
+    'renderForge', 'renderForgeInventoryCells', 'renderNewForge', 'renderSkills', 'renderTalents',
+    'renderTower', 'renderTowerFight', 'renderStatsPanel', 'updateSelectionUI', 'syncItemGridCells',
     'inventoryGridSnapshotEqual', 'applyInventoryVisibleRows', 'fitEnemyNames', 'rebuildEnemyParty',
     'flushWorkerVisualEvents', 'handleWorkerUiEvents', 'flushPendingLogDom', 'playCombatVfx',
-    'floatText', 'placeFloatAvoidingOverlap', 'showItemTooltip', 'renderAttrPanel', 'uiTick'];
+    'floatText', 'placeFloatAvoidingOverlap', 'showItemTooltip', 'showStatTooltip',
+    'renderAttrPanel', 'uiTick',
+    // 寶石頁：整支與各子區塊分開量，才看得出是哪一塊慢
+    'renderGems', 'renderGemConvert', 'renderGemFusion', 'renderGemShop', 'renderGemDismantle',
+    'renderFuseInfo', 'updateShopCountdown'];
 
   function wrapAll() {
     TARGETS.forEach(function (name) {
