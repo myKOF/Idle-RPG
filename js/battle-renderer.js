@@ -33,6 +33,10 @@ var BattleRenderer = (function () {
   var FX_AURA_MAX_SEC = 6;         // 領域／旋風類的顯示上限（秒）——原本吃技能的實際持續時間，
                                    // 長效領域會讓那塊半透明方框在畫面上留很久，看起來像沒清乾淨
   var FX_WATCHDOG_MS = 1000;       // 看門狗掃描間隔
+  var PLAYER_RUN_SPEED = 300;      // 角色追擊目標的跑速（px/秒）
+  var PLAYER_ADVANCE_SPEED = 90;   // 空場時向前推進的速度
+  var PLAYER_REACH = 52;           // 近戰距離：跑到這麼近就停下來打
+  var ENEMY_RUN_SPEED = 260;       // 敵人朝角色逼近的跑速
   var MAX_FLOATS = 60;           // 同時存在的飄字上限
   var FLOAT_MERGE_MS = 160;      // 同目標同類傷害的合併窗（DOM 版邏輯的簡化版）
   var LASTPOS_KEEP_MS = 3000;    // 實體移除後保留座標，讓遲到的飄字仍有落點
@@ -120,6 +124,8 @@ var BattleRenderer = (function () {
        格數多的時候必須把內圈往回收，否則所有環都擠在外側那一圈細細的環帶裡
        （10 欄時環距只剩十幾像素，敵人會整片疊在一起）。 */
     var inner = Math.max(0.18, 0.46 - Math.max(0, cols - 4) * 0.04);
+    /* cx/cy＝陣型中心＝玩家目前的世界座標。玩家會在世界裡跑動，
+       所有格位都是相對他的偏移，敵人因此會一直朝他逼近（而不是站在固定舞台上）。 */
     return { cols: cols, rows: rows, cx: c.x, cy: c.y, rx: rx, ry: ry, inner: inner };
   }
   /* 名目格尺寸：只拿來決定精靈與血條大小，不參與定位 */
@@ -156,8 +162,9 @@ var BattleRenderer = (function () {
   var _cellLayoutKey = '';
   function cellLayout() {
     var m = boardMetrics();
-    var key = m.cols + 'x' + m.rows + '@' + Math.round(m.rx) + ',' + Math.round(m.ry) +
-      ',' + Math.round(m.cx) + ',' + Math.round(m.cy);
+    /* 快取鍵刻意不含中心座標：中心是玩家的世界位置，每幀都在動，
+       含進去等於每幀重算整份站位表。存的是相對偏移，查詢時再加上中心。 */
+    var key = m.cols + 'x' + m.rows + '@' + Math.round(m.rx) + ',' + Math.round(m.ry);
     if (_cellLayout && _cellLayoutKey === key) return _cellLayout;
 
     var rowStep = Math.PI * 2 / m.rows;
@@ -173,8 +180,8 @@ var BattleRenderer = (function () {
         var k = m.inner + (1 - m.inner) * t;
         pts.push({
           col: c, row: r, band: band, ang: ang, k: k,
-          x: m.cx + Math.cos(ang) * m.rx * k,
-          y: m.cy + Math.sin(ang) * m.ry * k
+          x: Math.cos(ang) * m.rx * k,      // 相對陣型中心的偏移
+          y: Math.sin(ang) * m.ry * k
         });
       }
     }
@@ -195,14 +202,14 @@ var BattleRenderer = (function () {
       }
       for (i = 0; i < pts.length; i++) {
         var p = pts[i];
-        var nx = (p.x - m.cx) / m.rx, ny = (p.y - m.cy) / m.ry;
+        var nx = p.x / m.rx, ny = p.y / m.ry;
         var nk = Math.sqrt(nx * nx + ny * ny) || 0.001;
         var lo = m.inner + (1 - m.inner) * Math.max(0, p.band - ringGap * 0.35);
         var hi = m.inner + (1 - m.inner) * Math.min(1.02, p.band + ringGap * 0.35);
         p.k = Math.max(lo, Math.min(hi, nk));
         p.ang = Math.atan2(ny, nx);
-        p.x = m.cx + Math.cos(p.ang) * m.rx * p.k;
-        p.y = m.cy + Math.sin(p.ang) * m.ry * p.k;
+        p.x = Math.cos(p.ang) * m.rx * p.k;
+        p.y = Math.sin(p.ang) * m.ry * p.k;
       }
     }
 
@@ -230,19 +237,23 @@ var BattleRenderer = (function () {
       }
     }
     if (!best) return { x: m.cx, y: m.cy - 40, ang: -Math.PI / 2, k: 1 };
-    return { x: best.x, y: best.y, ang: best.ang, k: best.k };
+    return { x: m.cx + best.x, y: m.cy + best.y, ang: best.ang, k: best.k };
   }
   /* 實體腳底錨點（極座標版沒有「格子下緣」，改用名目格高的一小段往下壓） */
   function cellAnchor(cell) {
     var c = cellCenter(cell.col, cell.row, cell.w, cell.h);
     return { x: c.x, y: c.y + cellSize().h * 0.18, ang: c.ang, k: c.k };
   }
+  /* 玩家的世界座標。鏡頭永遠對準他，所以他在畫面上永遠置中——
+     置中是鏡頭跟隨的結果，不是把角色釘死在畫面中間。 */
   function playerPos() {
-    return { x: S.W * 0.5, y: S.H * 0.54 };
+    var p = S.player;
+    if (p && typeof p.wx === 'number') return { x: p.wx, y: p.wy };
+    return { x: 0, y: 0 };
   }
   /* 投射物起點：跟著玩家目前位置（近戰突進時玩家會離開原位） */
   function playerMuzzle() {
-    var p = S.player && S.player.root ? { x: S.player.root.x, y: S.player.root.y } : playerPos();
+    var p = playerPos();
     return { x: p.x, y: p.y - 52 };
   }
   /* 區域特效的落點：極座標下「一塊 n×n 格」不再是螢幕上的矩形，
@@ -357,19 +368,17 @@ var BattleRenderer = (function () {
   }
 
   /* ---- 地面 ----
-     類倖存者的暗色地面：斜向網點 + 依地圖染色。玩家推進（換波）時向左捲動製造行進感。 */
-  var ZONE_TINT = {
-    desert: 0xa08858, Icefield: 0x6888a8, swamp: 0x689860,
-    undead_mountains: 0x8870a0, god_battlefield: 0xa070a0, god_chaos: 0x9068b0, god_sanctuary: 0x7088b0
-  };
-  function groundTexture() {
+     可四方連續的地板貼圖，以 TilingSprite 平鋪，tilePosition 跟著鏡頭反向捲動＝貼在世界座標上。
+     圖檔在 images/ground/（tools/gen_ground_tiles.py 產生，正式圖直接換同名檔案即可）：
+       ground_<地圖識別碼>.png 優先，沒有就用 ground_default.png，
+       兩者都載不到才退回下面這張程序化的暫代圖。 */
+  function groundFallbackTexture() {
     var c = document.createElement('canvas');
     c.width = c.height = 96;
     var g = c.getContext('2d');
-    g.fillStyle = '#232733';
+    g.fillStyle = '#3a3a42';
     g.fillRect(0, 0, 96, 96);
-    /* 錯落的亮點 + 十字格線：乘上地圖染色（multiply 效果的 tint）後仍要看得見 */
-    g.fillStyle = 'rgba(255,255,255,0.16)';
+    g.fillStyle = 'rgba(255,255,255,0.06)';
     for (var y = 0; y < 4; y++) {
       for (var x = 0; x < 4; x++) {
         g.beginPath();
@@ -377,18 +386,34 @@ var BattleRenderer = (function () {
         g.fill();
       }
     }
-    g.strokeStyle = 'rgba(255,255,255,0.09)';
+    g.strokeStyle = 'rgba(0,0,0,0.18)';
     g.lineWidth = 1;
-    g.beginPath();
-    g.moveTo(0, 48); g.lineTo(96, 48);
-    g.moveTo(48, 0); g.lineTo(48, 96);
-    g.stroke();
+    g.strokeRect(0.5, 0.5, 95, 95);
     return PIXI.Texture.from(c);
+  }
+  var _groundTexCache = {};
+  function loadGroundTexture(zoneKey) {
+    var name = zoneKey ? ('ground_' + zoneKey) : 'ground_default';
+    if (_groundTexCache[name] === 'failed') return;
+    if (_groundTexCache[name]) { applyGroundTexture(_groundTexCache[name]); return; }
+    _groundTexCache[name] = 'loading';
+    PIXI.Assets.load('images/ground/' + name + '.png').then(function (tex) {
+      _groundTexCache[name] = tex;
+      if (S.zoneKey === zoneKey || name === 'ground_default') applyGroundTexture(tex);
+    }).catch(function () {
+      _groundTexCache[name] = 'failed';
+      if (name !== 'ground_default') loadGroundTexture(null);   // 退回通用底圖
+    });
+  }
+  function applyGroundTexture(tex) {
+    if (!S.groundTile || S.groundTile.destroyed || !tex || typeof tex === 'string') return;
+    S.groundTile.texture = tex;
+    S.groundTile.tint = 0xffffff;   // 用圖本身的顏色，不再靠染色
   }
   function syncZone(zoneKey) {
     if (zoneKey === S.zoneKey) return;
     S.zoneKey = zoneKey;
-    if (S.groundTile) S.groundTile.tint = ZONE_TINT[zoneKey] || 0x8890a8;
+    loadGroundTexture(zoneKey);
   }
 
   /* ============ 實體 ============ */
@@ -538,7 +563,7 @@ var BattleRenderer = (function () {
       sheetName: sheetName, curAnim: sheetName ? 'idle' : '', baseAnim: 'idle',
       isBoss: isBoss, isElite: isElite, visScale: visScale,
       barW: barW, hitHeight: isBoss ? sz.h * 1.9 : 64 * visScale,
-      x: 0, y: 0, tx: 0, ty: 0,
+      wx: 0, wy: 0, tx: 0, ty: 0,     // 世界座標；tx/ty 是跟著玩家移動的槽位
       state: 'entering',              // entering → idle → dying → gone
       bobPhase: Math.random() * Math.PI * 2,
       wobble: 0.7 + Math.random() * 0.5,
@@ -556,19 +581,17 @@ var BattleRenderer = (function () {
       dieAt: 0
     };
 
-    var anchor = data.cell ? cellAnchor(data.cell) : { x: S.W * 0.78, y: S.H * 0.5, ang: 0 };
+    var anchor = data.cell ? cellAnchor(data.cell) : { x: playerPos().x + 220, y: playerPos().y, ang: 0 };
     ent.tx = anchor.x; ent.ty = anchor.y;
-    /* 進場起點：沿自己的方位角、就在畫面邊緣外一點點——四面八方都可能來人。
-       刻意貼近邊緣（而不是老遠的畫面外）：進場時間是固定的，起點拉太遠會變成
-       瞬移般衝進來，也讓「還沒進畫面就開打」的空窗變長。 */
+    /* 進場起點：沿自己的方位角、從畫面邊緣外一點點跑進來——四面八方都可能來人。
+       起點是世界座標，鏡頭跟著玩家跑時牠們一樣是「從畫面外進來」。 */
     var bm = boardMetrics();
     var ang = (typeof anchor.ang === 'number') ? anchor.ang : 0;
-    var outK = 1.06 + Math.random() * 0.12;
-    ent.sx = bm.cx + Math.cos(ang) * bm.rx * outK;
-    ent.sy = bm.cy + Math.sin(ang) * bm.ry * outK;
-    ent.x = ent.sx; ent.y = ent.sy;
-    root.x = ent.x; root.y = ent.y;
-    root.zIndex = ent.y;
+    var outK = 1.08 + Math.random() * 0.16;
+    ent.wx = bm.cx + Math.cos(ang) * Math.max(bm.rx, S.W * 0.55) * outK;
+    ent.wy = bm.cy + Math.sin(ang) * Math.max(bm.ry, S.H * 0.55) * outK;
+    root.x = ent.wx; root.y = ent.wy;
+    root.zIndex = ent.wy;
 
     S.layers.entity.addChild(root);
     drawHpBar(ent);
@@ -688,9 +711,8 @@ var BattleRenderer = (function () {
     reviveText.visible = false;
     root.addChild(reviveText);
 
-    var p = playerPos();
-    root.x = p.x; root.y = p.y;
-    root.zIndex = p.y;
+    root.x = 0; root.y = 0;
+    root.zIndex = 0;
     S.layers.entity.addChild(root);
     S.player = {
       id: 'pv-float', root: root, body: body, bodyWrap: bodyWrap,
@@ -698,8 +720,8 @@ var BattleRenderer = (function () {
       sheetName: 'player', curAnim: 'idle', baseAnim: 'idle',
       hitHeight: 100, walking: false, dead: false,
       flash: 0, jolt: 0, lunge: 0, facing: 1,
-      /* 近戰突進：out 撲出去、back 收回來，home 是站樁點 */
-      dash: null,
+      /* 世界座標。角色會在世界裡跑動追打目標，鏡頭跟著他。 */
+      wx: 0, wy: 0,
       vitalsShown: ''
     };
     drawPlayerVitals();
@@ -735,35 +757,16 @@ var BattleRenderer = (function () {
     p.mpText.text = fmtNum(mp) + ' / ' + fmtNum(mpMax);
   }
 
-  /* 物理＝近戰突進、魔法＝原地施法（遠程投射物另由特效處理） */
-  function playerAttackAnim(kind, targetId, travelMs) {
+  /* 出手動作。近戰不再「瞬間衝過去再彈回原位」——角色平常就會跑向目標
+     （見 tickWorld 的追擊移動），出手時只播揮擊動作與一點前傾。 */
+  function playerAttackAnim(kind, targetId) {
     var p = S.player;
     if (!p || p.dead) return;
     var melee = kind !== 'cast';
     var name = melee ? ('attack' + (1 + Math.floor(Math.random() * 3))) : 'attack2';
     p.baseAnim = p.walking ? 'walk' : 'idle';
     playAnim(p, name, p.baseAnim);
-    if (melee && targetId) startPlayerDash(targetId, travelMs);
-    else p.lunge = 0.22;
-  }
-
-  /* 近戰突進：朝目標撲到身前，停一下再退回站樁點。
-     out 的長度對齊該次攻擊的 travelMs（傷害數字也用同一個延遲），刀到＝數字跳。 */
-  function startPlayerDash(targetId, travelMs) {
-    var p = S.player;
-    if (!p || p.dead) return;
-    var home = playerPos();
-    var to = posOf(targetId);
-    var dx = to.x - home.x, dy = (to.y + 22) - home.y;
-    var dist = Math.sqrt(dx * dx + dy * dy) || 1;
-    var stop = Math.max(0, dist - 52);            // 停在目標身前
-    var out = Math.max(0.1, Math.min(0.34, (travelMs || 170) / 1000));
-    p.facing = dx < 0 ? -1 : 1;
-    p.dash = {
-      hx: home.x, hy: home.y,
-      tx: home.x + dx / dist * stop, ty: home.y + dy / dist * stop,
-      t: 0, out: out, hold: 0.06, back: 0.2
-    };
+    p.lunge = melee ? 0.18 : 0.12;
   }
 
   /* ============ reconcile（PANEL battle，約 5Hz） ============ */
@@ -855,7 +858,7 @@ var BattleRenderer = (function () {
         p.dead = dead;
         p.root.rotation = dead ? -Math.PI / 2 : 0;
         p.body.tint = dead ? 0x777777 : 0xffffff;
-        if (dead) { p.dash = null; p.lunge = 0; }
+        if (dead) { p.lunge = 0; }
         else playAnim(p, 'idle');
       }
       /* 倒地倒數：狀態列收進彈出面板後，畫面上只剩這一條告訴玩家發生什麼事。
@@ -1235,7 +1238,7 @@ var BattleRenderer = (function () {
         t += dt;
         if (t < 0) return true;
         var to = posOf(targetId);
-        var from = fromPt || { x: to.x + (Math.random() * 60 - 30), y: -20 };
+        var from = fromPt || { x: to.x + (Math.random() * 60 - 30), y: to.y - S.H * 0.55 };
         redraws += dt;
         if (redraws > 0.05 || g._empty !== false) {
           g._empty = false;
@@ -1323,7 +1326,9 @@ var BattleRenderer = (function () {
         node.anchor.set(0.5);
         var tx = rect.x + Math.random() * rect.w;
         var ty = rect.y + Math.random() * rect.h;
-        node.x = tx + 40; node.y = -20;
+        /* 起點在目標正上方（世界座標）：鏡頭會移動，不能再用「畫面頂端」當天空 */
+        var sky = ty - S.H * 0.6;
+        node.x = tx + 40; node.y = sky;
         S.layers.fx.addChild(node);
         var t = -(idx * 0.08), dur = 0.5;
         addFx({
@@ -1333,7 +1338,7 @@ var BattleRenderer = (function () {
             if (t < 0) return true;
             var k = Math.min(1, t / dur);
             node.x = lerp(tx + 40, tx, k);
-            node.y = lerp(-20, ty, k);
+            node.y = lerp(sky, ty, k);
             if (k >= 1) { spawnImpact(tx, ty, spec, false); return false; }
             return true;
           }
@@ -1352,7 +1357,8 @@ var BattleRenderer = (function () {
     glow.anchor.set(0.5); glow.scale.set(2.2); glow.blendMode = 'add';
     glow.tint = 0xffb347;
     node.addChild(glow); node.addChild(core);
-    node.x = cx + 180; node.y = -40;
+    var mSky = cy - S.H * 0.7;   // 目標上方的世界座標；鏡頭會動，不能用畫面頂端
+    node.x = cx + 180; node.y = mSky;
     S.layers.fx.addChild(node);
     var t = 0, dur = Math.min(0.45, Math.max(0.2, (spec.travelMs && spec.travelMs[0] || 350) / 1000));
     addFx({
@@ -1361,7 +1367,7 @@ var BattleRenderer = (function () {
         t += dt;
         var k = Math.min(1, t / dur);
         node.x = lerp(cx + 180, cx, k);
-        node.y = lerp(-40, cy, k);
+        node.y = lerp(mSky, cy, k);
         if (!REDUCED_MOTION && Math.random() < 0.6) spawnTrailDot(node.x, node.y, theme);
         if (k >= 1) {
           spawnImpact(cx, cy, spec, true);
@@ -1534,7 +1540,7 @@ var BattleRenderer = (function () {
         S.player.facing = (tp.x < S.player.root.x) ? -1 : 1;
       }
       if (meleeCat && contactFx && firstTarget) {
-        playerAttackAnim('melee', firstTarget, (spec.travelMs && spec.travelMs[0]) || 0);
+        playerAttackAnim('melee', firstTarget);
       } else {
         playerAttackAnim(spec.cat === 'magic' || spec.fxKind === 'rain' || spec.fxKind === 'beam' ? 'cast' : 'melee');
       }
@@ -1720,6 +1726,9 @@ var BattleRenderer = (function () {
     }
     var st = floatStyle(ev.elId, ev.cls, ev.text || '');
     var pt = posOf(ev.elId);
+    /* 玩家身上的字（護盾吸收、回復、承傷）往上抬到頭頂再高一截：
+       貼著身體會把角色整個蓋住，尤其護盾吸收那種長字串。 */
+    if (ev.elId === 'pv-float') pt = { x: pt.x, y: pt.y - 62 };
     var node = new PIXI.Text({
       text: ev.text || '',
       style: {
@@ -1751,58 +1760,83 @@ var BattleRenderer = (function () {
     if (S.paused) dt = 0;
     var t = nowMs();
 
-    /* 畫面震動 */
-    var world = S.layers.world;
-    if (S.shake > 0.2 && dt > 0) {
-      S.shake *= Math.pow(0.0025, dt);   // 快速衰減
-      world.x = (Math.random() * 2 - 1) * S.shake;
-      world.y = (Math.random() * 2 - 1) * S.shake * 0.6;
-    } else {
-      world.x = 0; world.y = 0;
+    /* 離玩家最近、還活著的敵人。玩家會朝它跑過去打——與模擬層「普攻打最近目標」
+     同一個直覺，畫面上看起來才不會打著遠處那隻。 */
+  function nearestEnemyEntity() {
+    var p = S.player;
+    if (!p) return null;
+    var best = null, bestD = Infinity;
+    for (var id in S.entities) {
+      if (!Object.prototype.hasOwnProperty.call(S.entities, id)) continue;
+      var e = S.entities[id];
+      if (e.state === 'dying' || e.state === 'gone') continue;
+      if (!e.data || !(e.data.hp > 0)) continue;
+      var dx = e.wx - p.wx, dy = e.wy - p.wy;
+      var d = dx * dx + dy * dy;
+      if (d < bestD) { bestD = d; best = e; }
     }
+    return best;
+  }
 
-    /* 地面推進感：玩家走路時捲動 */
-    if (S.groundTile && dt > 0 && S.player && S.player.walking) {
-      S.groundTile.tilePosition.x -= 90 * dt;
-    }
-
-    /* 玩家 */
+  /* ---- 玩家：在世界裡跑動 ----
+       沒有目標就往前推進，有目標就跑過去打，打完不回原位（下一個目標在哪就往哪跑）。
+       這是「回合制感」的解法：角色一直在移動，鏡頭跟著他，畫面不會一頓一頓。 */
     var p = S.player;
     if (p && dt > 0) {
-      var home = playerPos();
-      if (p.dash) {
-        /* 近戰突進：撲出去 → 短暫停留 → 收回站樁點 */
-        var d = p.dash;
-        d.t += dt;
-        var total = d.out + d.hold + d.back;
-        var px, py;
-        if (d.t < d.out) {
-          var ok = d.t / d.out;
-          ok = 1 - (1 - ok) * (1 - ok);                 // ease-out：出刀快
-          px = lerp(d.hx, d.tx, ok); py = lerp(d.hy, d.ty, ok);
-        } else if (d.t < d.out + d.hold) {
-          px = d.tx; py = d.ty;
+      var target = nearestEnemyEntity();
+      var moving = false;
+      if (!p.dead) {
+        if (target) {
+          var tdx = target.wx - p.wx, tdy = (target.wy - 14) - p.wy;
+          var tdist = Math.sqrt(tdx * tdx + tdy * tdy) || 1;
+          if (tdist > PLAYER_REACH) {
+            var step = Math.min(tdist - PLAYER_REACH, PLAYER_RUN_SPEED * dt);
+            p.wx += tdx / tdist * step;
+            p.wy += tdy / tdist * step;
+            moving = step > 0.5;
+          }
+          p.facing = tdx < 0 ? -1 : 1;
         } else {
-          var bk = Math.min(1, (d.t - d.out - d.hold) / d.back);
-          bk = bk * bk;                                  // ease-in：收刀慢起步
-          px = lerp(d.tx, d.hx, bk); py = lerp(d.ty, d.hy, bk);
-        }
-        p.root.x = px; p.root.y = py;
-        p.root.zIndex = py;
-        if (d.t >= total) { p.dash = null; p.root.x = home.x; p.root.y = home.y; p.root.zIndex = home.y; }
-      } else if (p.lunge > 0) {
-        p.lunge = Math.max(0, p.lunge - dt);
-        p.bodyWrap.x = Math.sin((0.22 - p.lunge) / 0.22 * Math.PI) * 16 * p.facing;
-      } else {
-        p.bodyWrap.x = 0;
-        if (p.root.x !== home.x || p.root.y !== home.y) {
-          p.root.x = home.x; p.root.y = home.y; p.root.zIndex = home.y;
+          /* 空場：繼續向前推進（前方＝右），地板會跟著往後捲 */
+          p.wx += PLAYER_ADVANCE_SPEED * dt;
+          p.facing = 1;
+          moving = true;
         }
       }
+      if (moving !== p.walking) {
+        p.walking = moving;
+        p.baseAnim = moving ? 'walk' : 'idle';
+        if (!p.curAnim || p.curAnim === 'idle' || p.curAnim === 'walk') playAnim(p, p.baseAnim);
+      }
+      if (p.lunge > 0) {
+        p.lunge = Math.max(0, p.lunge - dt);
+        p.bodyWrap.x = Math.sin((0.18 - p.lunge) / 0.18 * Math.PI) * 14 * p.facing;
+      } else {
+        p.bodyWrap.x = 0;
+      }
+      p.root.x = p.wx;
+      p.root.y = p.wy;
+      p.root.zIndex = p.wy;
       /* 面向目標：序列幀只有朝右一版，往左打就水平翻面 */
       if (!p.dead) p.bodyWrap.scale.x = p.facing < 0 ? -1 : 1;
       updateFlashJolt(p, dt);
       drawPlayerVitals();
+    }
+
+    /* ---- 鏡頭：即時對準玩家 ----
+       world 整層平移，玩家因此永遠在畫面正中央；地板是螢幕座標，
+       靠 tilePosition 反向捲動假裝自己釘在世界上。 */
+    var world = S.layers.world;
+    var cam = playerPos();
+    if (S.shake > 0.2 && dt > 0) S.shake *= Math.pow(0.0025, dt);
+    else if (dt > 0) S.shake = 0;
+    var shx = S.shake > 0.2 ? (Math.random() * 2 - 1) * S.shake : 0;
+    var shy = S.shake > 0.2 ? (Math.random() * 2 - 1) * S.shake * 0.6 : 0;
+    world.x = S.W / 2 - cam.x + shx;
+    world.y = S.H / 2 - cam.y + shy;
+    if (S.groundTile) {
+      S.groundTile.tilePosition.x = -cam.x + shx;
+      S.groundTile.tilePosition.y = -cam.y + shy;
     }
 
     /* 敵人 */
@@ -1811,32 +1845,40 @@ var BattleRenderer = (function () {
       var e = S.entities[id];
       if (dt <= 0) continue;
 
+      /* 站位＝玩家世界座標 + 這一格的相對偏移。玩家在跑，槽位就跟著跑，
+         敵人於是持續朝他逼近——這就是「從畫面外自然跑向角色」的來源，
+         不需要任何「快速站位」的瞬移。 */
+      var slot = e.data && e.data.cell ? cellAnchor(e.data.cell) : { x: playerPos().x + 220, y: playerPos().y };
+      e.tx = slot.x; e.ty = slot.y;
+
       if (e.state === 'entering') {
-        /* 進場：在 enterDur 內從畫面外走到定位。用 dt 累積而非牆鐘，
-           暫停時會一起凍住；抵達時刻與模擬層的 _enterCd 歸零同步。 */
+        /* 進場：朝槽位跑。速度由「剩餘距離 ÷ 剩餘時間」決定，
+           所以無論玩家跑到哪，牠都會在模擬層的 _enterCd 歸零那一刻抵達。 */
         e.enterT += dt;
-        var ek = Math.min(1, e.enterT / e.enterDur);
-        var ease = 1 - (1 - ek) * (1 - ek);          // 先快後慢，像煞住腳步
-        e.x = lerp(e.sx, e.tx, ease);
-        e.y = lerp(e.sy, e.ty, ease);
+        var remain = Math.max(0.001, e.enterDur - e.enterT);
+        var edx = e.tx - e.wx, edy = e.ty - e.wy;
+        var edist = Math.sqrt(edx * edx + edy * edy);
+        var estep = Math.min(edist, (edist / remain) * dt);
+        if (edist > 0.001) { e.wx += edx / edist * estep; e.wy += edy / edist * estep; }
         /* 行走擺動：小怪左右搖 + 輕微縮放跳動（類倖存者小怪步態） */
         e.bodyWrap.rotation = Math.sin(t / 90 * e.wobble) * 0.09;
         e.bodyWrap.scale.y = 1 + Math.sin(t / 80 * e.wobble) * 0.05;
-        if (ek >= 1) {
-          e.x = e.tx; e.y = e.ty;
+        if (e.enterT >= e.enterDur) {
           e.bodyWrap.rotation = 0;
           e.bodyWrap.scale.y = 1;
           e.state = 'idle';
         }
       } else if (e.state === 'idle') {
-        /* 錨點跟隨（格位變動時平滑走過去） */
-        var ddx = e.tx - e.x, ddy = e.ty - e.y;
+        /* 追擊：槽位跟著玩家移動，敵人就一直跟上來 */
+        var ddx = e.tx - e.wx, ddy = e.ty - e.wy;
         var dd = Math.sqrt(ddx * ddx + ddy * ddy);
-        if (dd > 2) {
-          var vv = Math.max(60, dd * 3);
-          e.x += ddx / dd * Math.min(dd, vv * dt);
-          e.y += ddy / dd * Math.min(dd, vv * dt);
+        if (dd > 3) {
+          var vv = Math.min(ENEMY_RUN_SPEED, Math.max(70, dd * 3));
+          var dstep = Math.min(dd, vv * dt);
+          e.wx += ddx / dd * dstep;
+          e.wy += ddy / dd * dstep;
           e.bodyWrap.rotation = Math.sin(t / 90 * e.wobble) * 0.07;
+          e.bodyWrap.scale.y = 1 + Math.sin(t / 80 * e.wobble) * 0.04;
         } else {
           /* 待機呼吸：縮放 + 微搖，讓場面一直是活的 */
           e.bobPhase += dt * (2 + e.wobble);
@@ -1849,7 +1891,7 @@ var BattleRenderer = (function () {
           var dur = e.lungeDur || 0.3;
           var lk = Math.sin((1 - e.lunge / dur) * Math.PI);
           var pc = playerPos();
-          var ldx = pc.x - e.x, ldy = (pc.y - 26) - e.y;
+          var ldx = pc.x - e.wx, ldy = (pc.y - 26) - e.wy;
           var ldist = Math.sqrt(ldx * ldx + ldy * ldy) || 1;
           var reach = Math.min(ldist * 0.55, 64) * lk;
           e.dashX = ldx / ldist * reach;
@@ -1867,7 +1909,7 @@ var BattleRenderer = (function () {
           e.bodyWrap.scale.y = 1 - dk * 0.5;
           e.bodyWrap.scale.x = 1 + dk * 0.18;
           e.root.alpha = 1 - dk;
-          e.root.y = e.y + dk * 6;
+          e.root.y = e.wy + dk * 6;
           if (dk >= 1) { destroyEntity(id); continue; }
         } else {
           /* 非死亡消失（換關）：快速淡出 */
@@ -1877,9 +1919,9 @@ var BattleRenderer = (function () {
       }
 
       updateFlashJolt(e, dt);
-      e.root.x = e.x + (e.dashX || 0) + (e.jolt > 0 ? (Math.random() * 2 - 1) * 5 : 0);
+      e.root.x = e.wx + (e.dashX || 0) + (e.jolt > 0 ? (Math.random() * 2 - 1) * 5 : 0);
       if (e.state !== 'dying') {
-        e.root.y = e.y + (e.dashY || 0) + (e.jolt > 0 ? (Math.random() * 2 - 1) * 3 : 0);
+        e.root.y = e.wy + (e.dashY || 0) + (e.jolt > 0 ? (Math.random() * 2 - 1) * 3 : 0);
       }
       e.root.zIndex = e.root.y + (e.isBoss ? 1000 : 0);
     }
@@ -1946,18 +1988,25 @@ var BattleRenderer = (function () {
   /* ============ 佈景 ============ */
   function buildScene() {
     var app = S.app;
-    var world = new PIXI.Container();
-    var ground = new PIXI.TilingSprite({ texture: groundTexture(), width: S.W, height: S.H });
-    ground.tint = 0x8890a8;
-    world.addChild(ground);
+    /* 三層結構（鏡頭跟隨角色）：
+         bg     螢幕座標。地板用 TilingSprite 鋪滿畫布，tilePosition 反向跟著鏡頭捲動，
+                看起來就是釘在世界上的地板；暗角也在這層。
+         world  世界座標。實體、特效、飄字都放這裡，整層依鏡頭平移
+                （所以角色永遠在畫面中央，是鏡頭跟著他，不是他被釘在中間）。
+         overlay 螢幕座標。BOSS 血條、空場提示、暫停遮罩。 */
+    var bg = new PIXI.Container();
+    var ground = new PIXI.TilingSprite({ texture: groundFallbackTexture(), width: S.W, height: S.H });
+    bg.addChild(ground);
     S.groundTile = ground;
+    loadGroundTexture(null);
 
     /* 暗角 */
-    var vig = new PIXI.Graphics();
-    drawVignette(vig);
-    world.addChild(vig);
+    var vig = new PIXI.Sprite(vignetteTexture());
+    vig.width = S.W; vig.height = S.H;
+    bg.addChild(vig);
     S.vignette = vig;
 
+    var world = new PIXI.Container();
     var zone = new PIXI.Container();
     var entity = new PIXI.Container();
     entity.sortableChildren = true;
@@ -1965,8 +2014,10 @@ var BattleRenderer = (function () {
     var floatLayer = new PIXI.Container();
     var overlay = new PIXI.Container();
     world.addChild(zone); world.addChild(entity); world.addChild(fx); world.addChild(floatLayer);
+    app.stage.addChild(bg);
     app.stage.addChild(world);
     app.stage.addChild(overlay);
+    S.bgLayer = bg;
 
     /* 空場提示 */
     var emptyText = new PIXI.Text({
@@ -1995,19 +2046,28 @@ var BattleRenderer = (function () {
     S.layers = { world: world, zone: zone, entity: entity, fx: fx, float: floatLayer, overlay: overlay };
     layoutScene();
   }
-  function drawVignette(g) {
-    g.clear();
-    var steps = 5;
-    for (var i = 0; i < steps; i++) {
-      g.rect(0, 0, S.W, S.H).stroke({
-        color: 0x000000, width: 30 + i * 22, alpha: 0.05, alignment: 1
-      });
-    }
+  /* 暗角：用一張放射漸層貼圖拉伸覆蓋畫布。
+     原本是層層描邊，換成有紋理的地板後那些邊會變成一塊生硬的暗色方框。 */
+  var _vignetteTex = null;
+  function vignetteTexture() {
+    if (_vignetteTex) return _vignetteTex;
+    var c = document.createElement('canvas');
+    c.width = c.height = 256;
+    var g = c.getContext('2d');
+    var grad = g.createRadialGradient(128, 128, 40, 128, 128, 150);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(0.62, 'rgba(0,0,0,0.10)');
+    grad.addColorStop(1, 'rgba(0,0,0,0.55)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 256, 256);
+    _vignetteTex = PIXI.Texture.from(c);
+    return _vignetteTex;
   }
   function layoutScene() {
     if (!S.layers) return;
-    if (S.groundTile) { S.groundTile.width = S.W; S.groundTile.height = S.H; }
-    if (S.vignette) drawVignette(S.vignette);
+    /* 地板鋪滿畫布再多一格，鏡頭移動時邊緣不會露出底色 */
+    if (S.groundTile) { S.groundTile.width = S.W + 256; S.groundTile.height = S.H + 256; S.groundTile.x = -128; S.groundTile.y = -128; }
+    if (S.vignette) { S.vignette.width = S.W; S.vignette.height = S.H; }
     if (S.emptyText) { S.emptyText.x = S.W * 0.62; S.emptyText.y = S.H * 0.5; }
     if (S.pauseVeil) {
       S.pauseVeil.bg.clear();
@@ -2015,21 +2075,7 @@ var BattleRenderer = (function () {
       S.pauseVeil.text.x = S.W / 2; S.pauseVeil.text.y = S.H / 2;
     }
     if (S.bossBar) { S.bossBar.root.x = S.W / 2; }
-    if (S.player) {
-      var pp = playerPos();
-      S.player.root.x = pp.x; S.player.root.y = pp.y;
-      S.player.root.zIndex = pp.y;
-    }
-    /* 格位錨點依新尺寸重算 */
-    for (var id in S.entities) {
-      if (!Object.prototype.hasOwnProperty.call(S.entities, id)) continue;
-      var e = S.entities[id];
-      if (e.data && e.data.cell) {
-        var a = cellAnchor(e.data.cell);
-        e.tx = a.x; e.ty = a.y;
-        if (e.state === 'idle') { e.x = a.x; e.y = a.y; }
-      }
-    }
+    /* 槽位每幀由 tickWorld 依玩家位置重算，這裡不需要再覆寫實體座標 */
   }
 
   /* ============ 尺寸與解析度 ============ */
@@ -2212,11 +2258,11 @@ var BattleRenderer = (function () {
       }
       return {
         cells: cells,
-        player: p ? { x: Math.round(p.root.x), y: Math.round(p.root.y), dashing: !!p.dash, facing: p.facing, anim: p.curAnim } : null,
+        player: p ? { x: Math.round(p.wx), y: Math.round(p.wy), walking: !!p.walking, facing: p.facing, anim: p.curAnim } : null,
         home: playerPos(),
         entities: Object.keys(S.entities).map(function (id) {
           var e = S.entities[id];
-          return { id: id, x: Math.round(e.root.x), y: Math.round(e.root.y), state: e.state, lunge: +(e.lunge || 0).toFixed(2), magic: !!(e.data && e.data.magic) };
+          return { id: id, x: Math.round(e.wx), y: Math.round(e.wy), state: e.state, lunge: +(e.lunge || 0).toFixed(2), magic: !!(e.data && e.data.magic) };
         })
       };
     }
