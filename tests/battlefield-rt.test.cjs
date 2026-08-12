@@ -41,36 +41,38 @@ function loadGameContext() {
   return context;
 }
 
-function enemy(col, row, extra) {
+/* 座標制（2026-08-12）：敵人帶 pos={x,y}，我方在原點。
+   原本的 (col,row) 參數保留成「大致方位」，換算成座標即可，測試語意不變。 */
+function enemy(x, y, extra) {
   return Object.assign({
     hp: 100000, maxHp: 100000, def: 0, mdef: 0, dodge: 0, resist: {}, ctrlRes: 0,
     elite: false, isBoss: false, buffs: {}, dots: [], effects: {}, shield: 0,
-    cell: { col, row, w: 1, h: 1 }
+    pos: { x: x, y: y }
   }, extra || {});
 }
 
-test('領域只打施放當下覆蓋到的格子，區域外的敵人不受影響', () => {
+test('領域只打施放當下覆蓋到的那塊圓，區域外的敵人不受影響', () => {
   const c = loadGameContext();
   c.resetSkillRT();
   const pEnt = { hp: 1000, mp: 1000, buffs: {}, dots: [], effects: {}, skillCds: {} };
-  const inside = enemy(1, 2);
-  const outside = enemy(4, 4);
+  const inside = enemy(100, 0);
+  const outside = enemy(600, 0);
 
-  // 以 2×2 區域開一個領域：覆蓋 c1r2 附近，打不到 c4r4
+  // 在 (100,0) 開一個半徑 120 的領域：涵蓋 inside，打不到 outside
   const sk = { name: '測試領域', emoji: '🌀', tags: [] };
   const fx = { dmgType: 'phys', stat: 'atk', field: { tickPct: 100, dur: 10, tickSec: 1 } };
-  const out = { baseVal: 1000, areaCells: [{ col: 1, row: 1 }, { col: 2, row: 1 }, { col: 1, row: 2 }, { col: 2, row: 2 }] };
+  const out = { baseVal: 1000, area: { x: 100, y: 0, r: 120 } };
   c.skillRtOpenField(pEnt, sk, fx, 'testField', 1, c.getStats(), out);
 
   const entry = c.SKILL_RT.fields[0];
-  assert.ok(entry.cellSet, '領域必須記住覆蓋的格子');
+  assert.ok(entry.area, '領域必須記住覆蓋的區域');
   entry.onTick({ pEnt, getEnemies: () => [inside, outside], floatSel: 'mv-float' });
 
   assert.ok(inside.hp < 100000, '站在領域裡的敵人要吃到跳傷');
   assert.equal(outside.hp, 100000, '領域外的敵人不該吃到跳傷');
 });
 
-test('沒有格位資訊時領域維持全場語意（高塔單體 BOSS 不受影響）', () => {
+test('沒有座標時領域維持全場語意（高塔單體 BOSS 不受影響）', () => {
   const c = loadGameContext();
   c.resetSkillRT();
   const pEnt = { hp: 1000, mp: 1000, buffs: {}, dots: [], effects: {}, skillCds: {} };
@@ -78,22 +80,22 @@ test('沒有格位資訊時領域維持全場語意（高塔單體 BOSS 不受�
   const sk = { name: '測試領域', emoji: '🌀', tags: [] };
   const fx = { dmgType: 'phys', stat: 'atk', field: { tickPct: 100, dur: 10, tickSec: 1 } };
 
-  c.skillRtOpenField(pEnt, sk, fx, 'testField', 1, c.getStats(), { baseVal: 1000, areaCells: null });
+  c.skillRtOpenField(pEnt, sk, fx, 'testField', 1, c.getStats(), { baseVal: 1000, area: null });
   const entry = c.SKILL_RT.fields[0];
-  assert.equal(entry.cellSet, null);
+  assert.equal(entry.area, null);
   entry.onTick({ pEnt, getEnemies: () => [boss], floatSel: 'tb-float' });
-  assert.ok(boss.hp < 100000, '無格位資訊時仍照原本的全場語意結算');
+  assert.ok(boss.hp < 100000, '無座標時仍照原本的全場語意結算');
 });
 
 test('領域的受傷增幅只加在站在領域裡的敵人身上', () => {
   const c = loadGameContext();
   c.resetSkillRT();
-  const inside = enemy(1, 2);
-  const outside = enemy(4, 4);
+  const inside = enemy(100, 0);
+  const outside = enemy(600, 0);
   c.SKILL_RT.fields.push({
     name: '增幅領域', until: c.GT + 10, tickSec: 1, nextAt: c.GT + 1,
     takenAmpPct: 100, ampKey: 'phys',
-    cellSet: c.bfCellSet([{ col: 1, row: 2 }])
+    area: { x: 100, y: 0, r: 120 }
   });
 
   const ampInside = c.skillRtFieldAmpACfg({ atk: 100, dmgType: 'phys', isPlayer: true }, inside);
@@ -116,10 +118,10 @@ test('DoT 濺射與印記轉移交給離死者最近的敵人，不再全場隨�
   };
   c.getStats = () => stats;
 
-  const dead = enemy(1, 1, { hp: 0 });
+  const dead = enemy(200, 0, { hp: 0 });
   dead.dots = [{ dps: 100, until: c.GT + 5, name: '流血', dur: 5, ext: 0 }];
-  const near = enemy(2, 1);   // 與死者相鄰
-  const far = enemy(4, 4);    // 對角最遠
+  const near = enemy(250, 0);   // 就在死者旁邊
+  const far = enemy(700, 0);    // 場上最遠
 
   for (let i = 0; i < 30; i++) {
     near.dots = []; far.dots = [];
@@ -131,9 +133,9 @@ test('DoT 濺射與印記轉移交給離死者最近的敵人，不再全場隨�
 
 test('連鎖由近而遠擴散：第一跳打主目標，之後跳到最近的鄰居', () => {
   const c = loadGameContext();
-  const a = enemy(1, 2);   // 主目標
-  const b = enemy(2, 2);   // 與 a 相鄰
-  const far = enemy(4, 4); // 最遠
+  const a = enemy(100, 0);   // 主目標（離我方最近）
+  const b = enemy(180, 0);   // 就在 a 旁邊
+  const far = enemy(700, 0); // 最遠
   const order = c.bfChainOrder(a, [a, b, far], 3);
   assert.equal(order.length, 3);
   assert.equal(order[0], a, '第一跳打主目標');
@@ -143,8 +145,8 @@ test('連鎖由近而遠擴散：第一跳打主目標，之後跳到最近的�
 
 test('連鎖的下一跳一定往外跳，不會停在原地', () => {
   const c = loadGameContext();
-  const a = enemy(1, 2);
-  const b = enemy(2, 2);
+  const a = enemy(100, 0);
+  const b = enemy(180, 0);
   assert.equal(c.bfChainNext(a, [a, b]), b, '有其他敵人時必須跳走');
   assert.equal(c.bfChainNext(a, [a]), a, '場上只剩自己時仍打自己（維持打滿次數）');
   assert.equal(c.bfChainNext(null, [b, a]), a, '沒有起點時從離我方最近的開始');

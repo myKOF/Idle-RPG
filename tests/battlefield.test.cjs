@@ -1,3 +1,10 @@
+/* 戰場座標（js/battlefield.js）
+   2026-08-12 改造：格子 → 連續座標。我方永遠在原點，敵人帶 pos={x,y}，
+   每個 tick 朝我方逼近，走到接觸距離才停、才打得到人。
+
+   這裡鎖住的是「規則」而不是某組數字：距離怎麼算、誰會被選成目標、
+   打不打得到、範圍技涵蓋誰、逼近會不會收斂。常數一律從 context 讀，
+   參數調整不該讓這些測試誤報。 */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -18,195 +25,228 @@ function loadBattlefield(randomSeq) {
   return context;
 }
 
-function enemy(col, row, extra) {
-  return Object.assign({ hp: 100, maxHp: 100, cell: { col, row, w: 1, h: 1 } }, extra || {});
+function at(x, y, extra) {
+  return Object.assign({ hp: 100, maxHp: 100, pos: { x, y } }, extra || {});
 }
 
-/* 棋盤大小（BF_COLS/BF_ROWS）是參數表可調值——使用者把它從 4×4 改成 10×10 之後，
-   任何寫死 4 的期望值都會誤報成測試失敗。期望值一律由常數推導。 */
-test('距離表與規格一致：距離 = BF_DIST_PER_COL×(行-1) + (中央列 ? 中央 : 外側)', () => {
+/* ---- 距離 ---- */
+
+test('距離＝到原點的直線距離扣掉體型；越近數字越小', () => {
   const c = loadBattlefield();
-  for (let row = 1; row <= c.BF_ROWS; row++) {
-    for (let col = 1; col <= c.BF_COLS; col++) {
-      const base = c.bfIsCenterRow(row) ? c.BF_DIST_CENTER_ROW : c.BF_DIST_OUTER_ROW;
-      assert.equal(c.bfCellDistance(col, row), c.BF_DIST_PER_COL * (col - 1) + base, `c${col} r${row}`);
-    }
-  }
-  // 越靠右越遠、中央列比外側列近：這兩條才是規格本身
-  assert.ok(c.bfCellDistance(2, 1) > c.bfCellDistance(1, 1), '越往右應該越遠');
-  const centerRow = Math.ceil(c.BF_ROWS / 2);
-  assert.ok(c.bfIsCenterRow(centerRow), '正中間那一列應該算中央列');
-  assert.ok(c.bfCellDistance(1, centerRow) <= c.bfCellDistance(1, 1), '中央列應該不比外側列遠');
+  const near = at(100, 0);
+  const far = at(300, 0);
+  assert.equal(c.bfEntityDistance(near), 100 - c.BF_BODY_RADIUS);
+  assert.equal(c.bfEntityDistance(far), 300 - c.BF_BODY_RADIUS);
+  assert.ok(c.bfEntityDistance(near) < c.bfEntityDistance(far));
+  // 方向不影響距離：四面八方等距的敵人一樣近
+  const d = c.bfEntityDistance(at(0, 100));
+  assert.equal(Math.round(d), Math.round(c.bfEntityDistance(at(100, 0))));
+  assert.equal(Math.round(c.bfEntityDistance(at(70.71, 70.71))), Math.round(d));
 });
 
-test('BOSS 佔 2×2，距離取所佔格中最近的一格', () => {
+test('BOSS 體型較大，同樣的中心距離下牠比較近（邊緣先碰到我方）', () => {
   const c = loadBattlefield();
-  const boss = enemy(2, 1, { isBoss: true, cell: { col: 2, row: 1, w: 2, h: 2 } });
-  const cells = c.bfEntityCells(boss);
-  assert.equal(cells.length, 4);
-  const nearest = Math.min.apply(null, cells.map((cell) => c.bfCellDistance(cell.col, cell.row)));
-  assert.equal(c.bfEntityDistance(boss), nearest);
+  const mob = at(200, 0);
+  const boss = at(200, 0, { isBoss: true });
+  assert.ok(c.BF_BOSS_RADIUS > c.BF_BODY_RADIUS);
+  assert.ok(c.bfEntityDistance(boss) < c.bfEntityDistance(mob));
 });
 
-test('配格不重疊、不出界，BOSS 佔滿 2×2', () => {
+test('沒有座標的實體視為最遠，不會插隊搶走普攻目標', () => {
   const c = loadBattlefield();
-  for (let round = 0; round < 200; round++) {
-    const list = [{ hp: 1, isBoss: true }, { hp: 1 }, { hp: 1 }, { hp: 1 }];
-    const placed = c.bfPlaceEnemies(list);
-    assert.equal(placed.length, 4);
-    const used = {};
-    placed.forEach((e) => {
-      const cells = c.bfEntityCells(e);
-      assert.equal(cells.length, e.isBoss ? 4 : 1);
-      cells.forEach((cell) => {
-        assert.ok(cell.col >= 1 && cell.col <= c.BF_COLS && cell.row >= 1 && cell.row <= c.BF_ROWS, '格位出界');
-        const key = cell.col + ',' + cell.row;
-        assert.ok(!used[key], '格位重疊：' + key);
-        used[key] = true;
-      });
-    });
-  }
+  const ghost = { hp: 100, maxHp: 100 };          // 例如高塔 BOSS，走另一條路徑
+  const real = at(400, 0);
+  assert.equal(c.bfEntityDistance(ghost), Infinity);
+  assert.equal(c.bfPickPrimary([ghost, real], null), real);
 });
 
-test('棋盤塞滿時多餘的敵人不會配到格（由呼叫端捨棄）', () => {
+/* ---- 攻擊距離（座標制新增；改造前完全不存在）---- */
+
+test('走到近戰距離內才打得到；遠處的敵人打不到人', () => {
+  const c = loadBattlefield();
+  const close = at(c.BF_MELEE_RANGE + c.BF_BODY_RADIUS - 5, 0);
+  const away = at(c.BF_MELEE_RANGE + c.BF_BODY_RADIUS + 60, 0);
+  assert.equal(c.bfInAttackRange(close), true);
+  assert.equal(c.bfInAttackRange(away), false);
+  assert.equal(c.bfPlayerCanReach(close), true);
+  assert.equal(c.bfPlayerCanReach(away), false);
+});
+
+test('魔法系敵人是遠程：同樣的距離，物理打不到、魔法打得到', () => {
+  const c = loadBattlefield();
+  const d = (c.BF_MELEE_RANGE + c.BF_RANGED_RANGE) / 2 + c.BF_BODY_RADIUS;
+  assert.ok(c.BF_RANGED_RANGE > c.BF_MELEE_RANGE);
+  assert.equal(c.bfInAttackRange(at(d, 0)), false);
+  assert.equal(c.bfInAttackRange(at(d, 0, { magic: true })), true);
+});
+
+test('沒有座標時不擋攻擊（高塔沿用舊行為）', () => {
+  const c = loadBattlefield();
+  assert.equal(c.bfInAttackRange({ hp: 100 }), true);
+  assert.equal(c.bfPlayerCanReach({ hp: 100 }), true);
+});
+
+/* ---- 生成與容量 ---- */
+
+test('生成站位落在生成半徑上，且彼此不重疊', () => {
+  const c = loadBattlefield();
+  const list = [];
+  for (let i = 0; i < 8; i++) list.push({ hp: 1 });
+  const placed = c.bfPlaceEnemies(list);
+  assert.equal(placed.length, 8);
+  placed.forEach((e) => {
+    const d = Math.sqrt(e.pos.x * e.pos.x + e.pos.y * e.pos.y);
+    assert.ok(Math.abs(d - c.BF_SPAWN_DIST) <= c.BF_SPAWN_DIST * 0.1,
+      '生成距離 ' + Math.round(d) + ' 應落在 BF_SPAWN_DIST 附近');
+  });
+});
+
+test('補波時把既有敵人算進容量，超過上限的不會生出來', () => {
   const c = loadBattlefield();
   const cap = c.bfCellCount();
-  const list = [];
-  for (let i = 0; i < cap + 4; i++) list.push({ hp: 1 });
-  const placed = c.bfPlaceEnemies(list);
-  assert.equal(placed.length, cap);
+  const standing = [];
+  for (let i = 0; i < cap; i++) standing.push(at(300, i));
+  assert.equal(c.bfFreeCellCount(standing), 0);
+  const more = [{ hp: 1 }, { hp: 1 }];
+  assert.equal(c.bfPlaceEnemies(more, standing).length, 0, '滿場時不得再生');
+  assert.equal(c.bfPlaceEnemies(more, standing.slice(0, cap - 1)).length, 1, '只剩一個名額就只生一隻');
 });
 
-test('BOSS 放不下 2×2 時退回 1×1，不會整隻消失', () => {
+/* ---- 逼近與推擠 ---- */
+
+test('每個 tick 朝我方逼近，走到接觸距離就停住不再前進', () => {
   const c = loadBattlefield();
-  // 3×3 棋盤只容得下一個 2×2（任何落點都會蓋住正中央），第二個 BOSS 必然放不下
-  c.BF_COLS = 3;
-  c.BF_ROWS = 3;
-  const first = { hp: 1, isBoss: true };
-  const second = { hp: 1, isBoss: true };
-  const placed = c.bfPlaceEnemies([first, second]);
-  assert.equal(placed.length, 2, '兩隻都要配到格');
-  const sizes = [c.bfEntityCells(first).length, c.bfEntityCells(second).length].sort();
-  assert.deepEqual(sizes, [1, 4], '一隻維持 2×2、另一隻退回 1×1');
+  const e = at(400, 0);
+  const stop = c.BF_CONTACT_DIST + c.BF_BODY_RADIUS;
+  for (let i = 0; i < 200; i++) c.bfTickApproach([e], 0.1);
+  const d = Math.sqrt(e.pos.x * e.pos.x + e.pos.y * e.pos.y);
+  assert.ok(Math.abs(d - stop) < 1, '應該停在接觸距離 ' + stop + '，實際 ' + d.toFixed(1));
+  // 停住之後不會再往前（不會穿過我方）
+  c.bfTickApproach([e], 0.1);
+  assert.ok(Math.sqrt(e.pos.x * e.pos.x + e.pos.y * e.pos.y) >= stop - 0.5);
 });
 
-test('普攻選最近的敵人；同距離時隨機挑一個', () => {
+test('逼近速度符合 BF_ENEMY_SPEED', () => {
   const c = loadBattlefield();
-  const near1 = enemy(1, 2);
-  const near2 = enemy(1, 3);
-  const far = enemy(4, 1);
-  const picked = {};
-  for (let i = 0; i < 300; i++) picked[c.bfPickPrimary([far, near1, near2], null) === near1 ? 'a' : 'b'] = true;
-  assert.ok(picked.a && picked.b, '同距離的兩隻都要有機會被選到');
-  for (let i = 0; i < 50; i++) {
-    assert.notEqual(c.bfPickPrimary([far, near1, near2], null), far, '不該選到較遠的敵人');
-  }
+  const e = at(400, 0);
+  c.bfTickApproach([e], 1);
+  assert.equal(Math.round(e.pos.x), 400 - c.BF_ENEMY_SPEED);
 });
 
-test('鎖定的目標只要還活著就不換，死亡後才重新選', () => {
+test('進場中的敵人不參與逼近（還沒進畫面）', () => {
   const c = loadBattlefield();
-  const locked = enemy(4, 1);   // 刻意鎖最遠的那隻
-  const nearer = enemy(1, 2);
-  const pool = [nearer, locked];
-  assert.equal(c.bfPickPrimary(pool, locked), locked, '鎖定中不該改打更近的敵人');
-  locked.hp = 0;
-  assert.equal(c.bfPickPrimary(pool, locked), nearer, '目標死亡後改打最近的敵人');
+  const e = at(400, 0, { _enterCd: 0.3 });
+  c.bfTickApproach([e], 1);
+  assert.equal(e.pos.x, 400);
 });
 
-test('傷害範圍設定字串解析：A*B ＝ 直向 A 格 × 橫向 B 格', () => {
+test('同伴互相推開，不會疊在同一點', () => {
   const c = loadBattlefield();
-  // vm 內建立的物件與本測試不同 realm，deepEqual 會因原型不同而失敗——逐欄比對
-  const shapeOf = (raw) => { const s = c.bfParseShape(raw); return s.kind + ':' + s.h + 'x' + s.w; };
-  assert.equal(shapeOf(''), 'single:1x1');
-  assert.equal(shapeOf(undefined), 'single:1x1');
-  assert.equal(shapeOf('1x1'), 'single:1x1');
-  assert.equal(shapeOf('2x2'), 'box:2x2');
-  assert.equal(shapeOf('3*3'), 'box:3x3');
-  assert.equal(shapeOf('1*3'), 'box:1x3', '直向1、橫向3＝往前貫穿的直線');
-  assert.equal(shapeOf('3*1'), 'box:3x1', '直向3、橫向1＝擋在面前的橫牆');
-  assert.equal(shapeOf('all'), 'all:0x0');
-  assert.equal(shapeOf('全體'), 'all:0x0');
+  const a = at(100, 0);
+  const b = at(102, 0);
+  for (let i = 0; i < 40; i++) c.bfTickApproach([a, b], 0.05);
+  const dx = a.pos.x - b.pos.x, dy = a.pos.y - b.pos.y;
+  const gap = Math.sqrt(dx * dx + dy * dy);
+  assert.ok(gap >= c.BF_BODY_RADIUS * 2 - 1, '兩隻應被推開到體型不重疊，實際間距 ' + gap.toFixed(1));
 });
 
-test('1*3 由左往右貫穿：打到同一直向位置的整排，不碰其他直向位置', () => {
+/* ---- 選敵 ---- */
+
+test('普攻選最近的敵人；鎖定後直到目標死亡才換', () => {
   const c = loadBattlefield();
-  const near = enemy(1, 2);
-  const mid = enemy(2, 2);
-  const farSameRow = enemy(3, 2);
-  const otherRow = enemy(2, 3);
-  const hit = c.bfAreaTargets(near, [near, mid, farSameRow, otherRow], '1*3');
-  assert.ok(hit.indexOf(near) >= 0);
-  assert.ok(hit.indexOf(mid) >= 0);
-  assert.ok(hit.indexOf(farSameRow) >= 0);
-  assert.ok(hit.indexOf(otherRow) < 0, '貫穿線不該打到別的直向位置');
+  const near = at(80, 0);
+  const far = at(300, 0);
+  assert.equal(c.bfPickPrimary([near, far], null), near);
+  // 鎖定遠的那隻：只要還活著就不換
+  assert.equal(c.bfPickPrimary([near, far], far), far);
+  far.hp = 0;
+  assert.equal(c.bfPickPrimary([near, far], far), near);
 });
 
-test('3*1 是一道橫牆：打到同一橫向位置的整列', () => {
+test('同距離時隨機挑一個（不是永遠挑同一隻）', () => {
   const c = loadBattlefield();
-  const a = enemy(1, 1);
-  const b = enemy(1, 2);
-  const cc = enemy(1, 3);
-  const behind = enemy(2, 2);
-  const hit = c.bfAreaTargets(b, [a, b, cc, behind], '3*1');
-  assert.ok(hit.indexOf(a) >= 0);
-  assert.ok(hit.indexOf(b) >= 0);
-  assert.ok(hit.indexOf(cc) >= 0);
-  assert.ok(hit.indexOf(behind) < 0, '橫牆不該打到後面那一行');
+  const a = at(100, 0), b = at(-100, 0);
+  const seen = new Set();
+  for (let i = 0; i < 200; i++) seen.add(c.bfPickPrimary([a, b], null));
+  assert.equal(seen.size, 2, '同距離應該兩隻都有機會被選到');
 });
 
-test('範圍展開：單體只回主目標，all 回全場', () => {
+test('連鎖由近而遠往外擴散，不會原地打同一隻', () => {
   const c = loadBattlefield();
-  const a = enemy(1, 2), b = enemy(2, 2), dead = enemy(3, 3, { hp: 0 });
-  const single = c.bfAreaTargets(a, [a, b], 'single');
-  assert.equal(single.length, 1);
-  assert.equal(single[0], a);
-  const all = c.bfAreaTargets(a, [a, b, dead], 'all');
-  assert.equal(all.length, 2, '死亡敵人不計入');
+  const a = at(60, 0), b = at(90, 0), d = at(400, 0);
+  const order = c.bfChainOrder(a, [a, b, d], 3);
+  assert.equal(order.length, 3);
+  assert.equal(order[0], a, '第一跳打在起點身上');
+  assert.equal(order[1], b, '第二跳跳到最近的鄰居');
+  assert.equal(order[2], d);
 });
 
-test('範圍展開：方框取命中最多的落點，佔多格的 BOSS 只算一次', () => {
+/* ---- 範圍 ---- */
+
+test('範圍設定值解析沿用既有寫法（資料表不必改）', () => {
   const c = loadBattlefield();
-  const primary = enemy(1, 2);
-  const near = enemy(2, 2);
-  const boss = enemy(2, 3, { isBoss: true, cell: { col: 2, row: 3, w: 2, h: 2 } });
-  const far = enemy(4, 1);
-  const hit = c.bfAreaTargets(primary, [primary, near, boss, far], '3x3');
-  assert.ok(hit.indexOf(primary) >= 0, '一定要蓋住主目標');
-  assert.ok(hit.indexOf(far) < 0, '方框外的敵人不該被命中');
-  assert.equal(hit.filter((e) => e === boss).length, 1, 'BOSS 佔多格仍只算命中 1 次');
+  assert.equal(c.bfParseShape('').kind, 'single');
+  assert.equal(c.bfParseShape('single').kind, 'single');
+  assert.equal(c.bfParseShape('all').kind, 'all');
+  const box = c.bfParseShape('3*3');
+  assert.equal(box.kind, 'box');
+  assert.equal(box.n, 3);
+  assert.equal(c.bfParseShape('1*3').n, 3);
+  assert.equal(c.bfParseShape(2).n, 2);
 });
 
-test('未配格的敵人視為最遠，不會插隊搶走普攻目標', () => {
+test('n×n 換算成半徑：越大的範圍打到越遠的敵人', () => {
   const c = loadBattlefield();
-  const noCell = { hp: 100, maxHp: 100 };
-  const placed = enemy(4, 1);
-  assert.equal(c.bfEntityDistance(noCell), Infinity);
-  assert.equal(c.bfPickPrimary([noCell, placed], null), placed);
+  const r2 = c.bfShapeRadius(c.bfParseShape('2*2'));
+  const r3 = c.bfShapeRadius(c.bfParseShape('3*3'));
+  assert.ok(r3 > r2 && r2 > 0);
+  assert.equal(r3, 3 * c.BF_UNIT / 2);
 });
 
-test('野外 BOSS 階段：每 50 階一次，且優先於菁英', () => {
+test('範圍以主目標為圓心展開：圈內的打到、圈外的打不到', () => {
   const c = loadBattlefield();
-  assert.equal(c.isFieldBossStage(50), true);
-  assert.equal(c.isFieldBossStage(100), true);
-  assert.equal(c.isFieldBossStage(40), false);
-  assert.equal(c.isFieldBossStage(0), false);
-  // 第 50 階同時符合菁英規則，BOSS 數值必須蓋過菁英
-  assert.equal(c.isEliteStage(50), true);
-  const boss = c.monsterStatsFor(50, true, true);
-  const elite = c.monsterStatsFor(50, true, false);
-  assert.equal(boss.isBoss, true);
-  assert.equal(boss.elite, false);
-  assert.ok(boss.hp > elite.hp);
-  assert.equal(boss.aspd, c.FIELD_BOSS_ASPD);
+  const primary = at(200, 0);
+  const inside = at(200 + c.BF_UNIT, 0);          // 距圓心一個身位，3*3（半徑1.5身位）打得到
+  const outside = at(200 + c.BF_UNIT * 4, 0);
+  const res = c.bfAreaPlacement(primary, [primary, inside, outside], '3*3');
+  assert.ok(res.area && res.area.r > 0);
+  assert.equal(res.area.x, 200);
+  assert.ok(res.targets.indexOf(primary) >= 0);
+  assert.ok(res.targets.indexOf(inside) >= 0, '圈內的敵人應該被打到');
+  assert.equal(res.targets.indexOf(outside), -1, '圈外的敵人不該被打到');
 });
 
-test('敵人數量不超過棋盤格數（三種敵種都一樣）', () => {
+test('單體不產生區域；全體打到所有存活敵人', () => {
   const c = loadBattlefield();
-  c.Math.random = Math.random;
-  ['normal', 'elite', 'boss'].forEach((rank) => {
-    for (let i = 0; i < 1500; i++) {
-      const n = c.rollFieldEnemyCount(rank);
-      assert.ok(n >= 1 && n <= c.bfCellCount(), rank + ' 抽到 ' + n + '，超出棋盤格數');
-    }
-  });
+  const a = at(100, 0), b = at(500, 200), dead = at(150, 0, { hp: 0 });
+  const single = c.bfAreaPlacement(a, [a, b], 'single');
+  assert.equal(single.area, null);
+  assert.deepEqual(single.targets.length, 1);
+  const all = c.bfAreaPlacement(a, [a, b, dead], 'all');
+  assert.equal(all.targets.length, 2, '死掉的不算');
+});
+
+test('領域記住的是圓，之後每跳重問誰站在裡面', () => {
+  const c = loadBattlefield();
+  const area = { x: 0, y: 0, r: 100 };
+  const inside = at(50, 0);
+  const outside = at(400, 0);
+  assert.equal(c.bfEntityInArea(inside, area), true);
+  assert.equal(c.bfEntityInArea(outside, area), false);
+  // 走進來就算數（領域是打在地上的一塊區域）
+  outside.pos.x = 60;
+  assert.equal(c.bfEntityInArea(outside, area), true);
+  assert.equal(c.bfEntityInArea(inside, null), true, 'area 為 null＝不設限');
+});
+
+/* ---- 投射物飛行時間 ---- */
+
+test('投射物飛行時間隨距離增加，並夾在上下限之間', () => {
+  const c = loadBattlefield();
+  const near = c.bfTravelSeconds(at(60, 0));
+  const mid = c.bfTravelSeconds(at(400, 0));
+  assert.ok(near <= mid);
+  assert.ok(near >= c.VFX_TRAVEL_MIN_SEC - 1e-9);
+  assert.ok(mid <= c.VFX_TRAVEL_MAX_SEC + 1e-9);
+  assert.ok(c.bfTravelSeconds(at(99999, 0)) <= c.VFX_TRAVEL_MAX_SEC + 1e-9);
 });

@@ -138,10 +138,10 @@ test('高塔領域特效保留 BOSS 錨點，不退回玩家或野外場景', ()
   };
 
   c.skillRtOpenField(pEnt, sk, fx, 'towerField', 1, st, {
-    baseVal: 1000, areaCells: null, vfxTargets: ['tb-float']
+    baseVal: 1000, area: null, vfxTargets: ['tb-float']
   });
 
   assert.ok(emitted, '領域應送出特效事件');
   assert.deepEqual(emitted.targets, ['tb-float'], '高塔領域應以 BOSS 圖層作為特效錨點');
-  assert.equal(emitted.cells, null, '高塔領域仍維持無棋盤格資料');
+  assert.equal(emitted.area, null, '高塔領域仍維持無區域資料（座標制：area）');
 });

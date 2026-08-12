@@ -31,7 +31,7 @@ function loadGameContext(initialZoneProgress) {
   return context;
 }
 
-test('驗證 1: 第一次到 50 關出 BOSS、打贏推進至 51；手動退回 50 關出菁英怪（骷髏頭圖示、非 2x2）', () => {
+test('驗證 1: 第一次到 50 關出 BOSS、打贏推進至 51；手動退回 50 關出菁英怪（骷髏頭圖示、體型較小）', () => {
   const c = loadGameContext({ desert: { current: 50, best: 50, cleared: 49 } });
   c.G.stage.current = 50;
   c.G.stage.best = 50;
@@ -41,8 +41,8 @@ test('驗證 1: 第一次到 50 關出 BOSS、打贏推進至 51；手動退回 
   const m1 = c.FIELD.monsters[0];
   assert.equal(m1.isBoss, true, '第一次進入 50 關應出 BOSS');
   assert.equal(m1.elite, false);
-  assert.equal(c.bfEntitySize(m1).w, 2, 'BOSS 為 2x2');
-  assert.equal(c.bfEntitySize(m1).h, 2);
+  // 座標制：BOSS 的差別在體型半徑，不再是佔幾格
+  assert.equal(c.bfEntityRadius(m1), c.BF_BOSS_RADIUS, 'BOSS 應為 BOSS 體型');
 
   // 打贏 50 關 BOSS
   c.FIELD._waveClearPending = true;
@@ -57,7 +57,8 @@ test('驗證 1: 第一次到 50 關出 BOSS、打贏推進至 51；手動退回 
   const m2 = c.FIELD.monsters[0];
   assert.equal(m2.isBoss, false, '手動退回 50 關不應再出 BOSS');
   assert.equal(m2.elite, true, '應出菁英怪');
-  assert.notEqual(c.bfEntitySize(m2).w, 2, '菁英怪非 2x2');
+  // 座標制：BOSS 與菁英的差別在體型半徑，不再是佔幾格
+  assert.equal(c.bfEntityRadius(m2), c.BF_BODY_RADIUS, '菁英怪體型不該是 BOSS 尺寸');
 });
 
 test('驗證 2: 50 關 BOSS 戰中死亡退階 -> 回到 50 關時 BOSS 仍在', () => {

@@ -143,11 +143,12 @@ function skillTargetingContext() {
   });
   return context;
 }
-function targetingEnemy(col, row, extra) {
+/* 座標制（2026-08-12）：敵人帶 pos={x,y}，我方在原點。 */
+function targetingEnemy(x, y, extra) {
   const e = {
     hp: 10000, maxHp: 10000, def: 0, mdef: 0, dodge: 0, resist: {},
     ctrlRes: 0, elite: false, isBoss: false, buffs: {}, dots: [], effects: {}, shield: 0,
-    cell: { col, row, w: 1, h: 1 }
+    pos: { x: x, y: y }
   };
   return Object.assign(e, extra || {});
 }
@@ -157,8 +158,8 @@ function targetingPlayer() {
 
 test('未指定傷害範圍的技能只打一個目標，且挑最近的敵人', () => {
   const context = skillTargetingContext();
-  const far = targetingEnemy(4, 1);
-  const near = targetingEnemy(1, 2);
+  const far = targetingEnemy(600, 0);
+  const near = targetingEnemy(100, 0);
   const enemies = [far, near]; // 陣列順序刻意放反：確認依距離挑目標，不是取第一隻
 
   const result = context.castSkill(targetingPlayer(), enemies, 'powerSlash', 1, 'float-layer');
@@ -167,13 +168,15 @@ test('未指定傷害範圍的技能只打一個目標，且挑最近的敵人',
   assert.ok(near.hp < 10000, '最近的敵人才是單體技的目標');
 });
 
-test('傷害範圍 3x3 的技能命中方框內全部敵人，BOSS 佔多格仍只算一次', () => {
+test('傷害範圍 3x3 的技能命中圈內全部敵人，體型較大的 BOSS 仍只算一次', () => {
   const context = skillTargetingContext();
   context.SKILLS.powerSlash.shape = '3x3';
-  const a = targetingEnemy(1, 2);
-  const b = targetingEnemy(2, 3);
-  const boss = targetingEnemy(2, 1, { isBoss: true, cell: { col: 2, row: 1, w: 2, h: 2 } });
-  const outside = targetingEnemy(4, 4);
+  /* 3*3 換算成半徑 1.5 個身位（BF_UNIT×1.5＝90）：以主目標 a 為圓心，
+     b 與 boss 在圈內，outside 在圈外。 */
+  const a = targetingEnemy(100, 0);
+  const b = targetingEnemy(150, 0);
+  const boss = targetingEnemy(120, 40, { isBoss: true });
+  const outside = targetingEnemy(600, 0);
   const enemies = [a, b, boss, outside];
 
   context.castSkill(targetingPlayer(), enemies, 'powerSlash', 1, 'float-layer');
@@ -181,7 +184,7 @@ test('傷害範圍 3x3 的技能命中方框內全部敵人，BOSS 佔多格仍�
   assert.ok(a.hp < 10000);
   assert.ok(b.hp < 10000);
   assert.ok(boss.hp < 10000);
-  assert.equal(outside.hp, 10000, '方框外的敵人不該被打到');
+  assert.equal(outside.hp, 10000, '圈外的敵人不該被打到');
   // 三名目標平攤：每名受到的傷害相同，且 BOSS 沒有因為佔 4 格而被打 4 次
   assert.equal(Math.round(10000 - a.hp), Math.round(10000 - boss.hp));
 });

@@ -36,7 +36,6 @@ var BattleRenderer = (function () {
   var PLAYER_RUN_SPEED = 300;      // 角色追擊目標的跑速（px/秒）
   var PLAYER_ADVANCE_SPEED = 135;  // 空場時向前推進的速度（原 90，×1.5）
   var PLAYER_REACH = 52;           // 近戰距離：跑到這麼近就停下來打
-  var ENEMY_RUN_SPEED = 260;       // 敵人朝角色逼近的跑速
   var ENEMY_CONTACT_GAP = 34;      // 敵人出手時衝到離角色這麼近（＝接觸）
   var ENEMY_MAX_CHARGE = 460;      // 單次衝刺的最大距離，避免從畫面另一頭瞬間貼臉
   var MAX_FLOATS = 60;           // 同時存在的飄字上限
@@ -121,131 +120,39 @@ var BattleRenderer = (function () {
     var c = playerPos();
     var rx = Math.max(90, S.W * 0.5 - 52);
     var ry = Math.max(72, Math.min(S.H * 0.5 - 62, rx * 0.74));
-    /* inner＝最內環的半徑比例（第一環離玩家多遠）。
-       格數少的時候留一個身位，免得第一行站到玩家身上；
-       格數多的時候必須把內圈往回收，否則所有環都擠在外側那一圈細細的環帶裡
-       （10 欄時環距只剩十幾像素，敵人會整片疊在一起）。 */
-    var inner = Math.max(0.18, 0.46 - Math.max(0, cols - 4) * 0.04);
-    /* cx/cy＝陣型中心＝玩家目前的世界座標。玩家會在世界裡跑動，
-       所有格位都是相對他的偏移，敵人因此會一直朝他逼近（而不是站在固定舞台上）。 */
-    return { cols: cols, rows: rows, cx: c.x, cy: c.y, rx: rx, ry: ry, inner: inner };
+    return { cols: cols, rows: rows, cx: c.x, cy: c.y, rx: rx, ry: ry };
   }
   /* 名目格尺寸：只拿來決定精靈與血條大小，不參與定位 */
   function cellSize() {
     var m = boardMetrics();
     return { w: Math.max(52, m.rx / m.cols * 1.15), h: Math.max(46, m.ry / m.rows * 1.35) };
   }
-  /* 密度縮放：棋盤格數越多，每個敵人可用的空間越小，精靈與血條就要跟著縮。
-     不縮的話 10×10 會是一百隻原尺寸的怪疊在同一塊畫布上，誰在打誰都看不出來。
-     1 = 目前 4×4 的尺寸；下限 0.5，再小就看不清是什麼怪。 */
+  /* 密度縮放：容量越大，每隻可用的空間越小，精靈與血條就要跟著縮。 */
   function densityScale() {
     var m = boardMetrics();
     var w = m.rx * 2 / m.cols, h = m.ry * 2 / m.rows;
     return Math.max(0.5, Math.min(1, Math.min(w / 82, h / 78)));
   }
-  /* 格位雜湊 → [0,1)。同一格每次都得到同一個數，所以站位穩定；
-     salt 用來取不同用途的獨立亂數（角度／半徑／每環旋轉）。 */
-  function cellHash(col, row, salt) {
-    var h = (Math.imul(col | 0, 73856093) ^ Math.imul(row | 0, 19349663) ^ Math.imul(salt | 0, 83492791)) >>> 0;
-    h ^= h >>> 13;
-    h = Math.imul(h, 1274126177) >>> 0;
-    h ^= h >>> 16;
-    return (h >>> 8) / 16777216;
-  }
 
-  /* 站位表：把整個棋盤散成一組「錯落但不擠在一起」的固定座標。
-       1. 每格先用格位雜湊給一個抖動過的極座標（打散旋臂）
-       2. 幾輪鬆弛：距離太近的兩點互相推開
-       3. 每輪推完把半徑夾回自己那一環的範圍，維持「col 越小離玩家越近」
-          （普攻打最近的目標，畫面上看起來也得真的是最近那一隻）
-     結果依畫布尺寸快取：同一格每次都落在同一點，站位才不會逐幀跳動。
-     純顯示用，不影響任何命中或選敵判定。 */
-  var _cellLayout = null;
-  var _cellLayoutKey = '';
-  function cellLayout() {
-    var m = boardMetrics();
-    /* 快取鍵刻意不含中心座標：中心是玩家的世界位置，每幀都在動，
-       含進去等於每幀重算整份站位表。存的是相對偏移，查詢時再加上中心。 */
-    var key = m.cols + 'x' + m.rows + '@' + Math.round(m.rx) + ',' + Math.round(m.ry);
-    if (_cellLayout && _cellLayoutKey === key) return _cellLayout;
-
-    var rowStep = Math.PI * 2 / m.rows;
-    var ringGap = m.cols > 1 ? (1 / (m.cols - 1)) : 1;
-    var pts = [];
-    var c, r, i, j;
-    for (c = 1; c <= m.cols; c++) {
-      var band = m.cols > 1 ? (c - 1) / (m.cols - 1) : 0;
-      var ringSpin = cellHash(c, 0, 11) * rowStep;   // 整環轉一個固定角度，各環才不會對齊
-      for (r = 1; r <= m.rows; r++) {
-        var ang = (r - 1) * rowStep + ringSpin + (cellHash(c, r, 23) - 0.5) * rowStep * 0.8 - Math.PI / 2;
-        var t = Math.max(0, Math.min(1.02, band + (cellHash(c, r, 37) - 0.5) * ringGap * 0.6));
-        var k = m.inner + (1 - m.inner) * t;
-        pts.push({
-          col: c, row: r, band: band, ang: ang, k: k,
-          x: Math.cos(ang) * m.rx * k,      // 相對陣型中心的偏移
-          y: Math.sin(ang) * m.ry * k
-        });
-      }
+  /* 敵人的畫面座標＝角色世界座標 + 模擬層給的相對座標。
+     站位、逼近、推擠現在全部由模擬層負責（js/battlefield.js 座標制），
+     顯示層只是把它畫出來——這樣「看起來貼到臉了」與「打得到」必定一致。 */
+  function entityWorldPos(data) {
+    var pc = playerPos();
+    if (data && data.pos && isFinite(data.pos.x)) {
+      return { x: pc.x + data.pos.x, y: pc.y + data.pos.y };
     }
-
-    /* 最小間距跟著精靈實際大小走：格數多、精靈縮小時，門檻也要跟著降，
-       否則 100 個點永遠滿足不了 58px，鬆弛只會把所有點推到最外圈擠成一圈。 */
-    var minDist = Math.max(26, Math.min(58 * densityScale(), Math.min(m.rx, m.ry) * 0.32));
-    for (var pass = 0; pass < 6; pass++) {
-      for (i = 0; i < pts.length; i++) {
-        for (j = i + 1; j < pts.length; j++) {
-          var dx = pts[j].x - pts[i].x, dy = pts[j].y - pts[i].y;
-          var d = Math.sqrt(dx * dx + dy * dy) || 0.001;
-          if (d >= minDist) continue;
-          var push = (minDist - d) / 2, ux = dx / d, uy = dy / d;
-          pts[i].x -= ux * push; pts[i].y -= uy * push;
-          pts[j].x += ux * push; pts[j].y += uy * push;
-        }
-      }
-      for (i = 0; i < pts.length; i++) {
-        var p = pts[i];
-        var nx = p.x / m.rx, ny = p.y / m.ry;
-        var nk = Math.sqrt(nx * nx + ny * ny) || 0.001;
-        var lo = m.inner + (1 - m.inner) * Math.max(0, p.band - ringGap * 0.35);
-        var hi = m.inner + (1 - m.inner) * Math.min(1.02, p.band + ringGap * 0.35);
-        p.k = Math.max(lo, Math.min(hi, nk));
-        p.ang = Math.atan2(ny, nx);
-        p.x = Math.cos(p.ang) * m.rx * p.k;
-        p.y = Math.sin(p.ang) * m.ry * p.k;
-      }
-    }
-
-    var map = {};
-    for (i = 0; i < pts.length; i++) map[pts[i].col + ',' + pts[i].row] = pts[i];
-    _cellLayoutKey = key;
-    _cellLayout = map;
-    return map;
+    return { x: pc.x + 220, y: pc.y };
   }
 
-  function cellCenter(col, row, w, h) {
-    var m = boardMetrics();
-    var layout = cellLayout();
-    var ci = Math.round(Number(col) || 1), ri = Math.round(Number(row) || 1);
-    var ww = Math.max(1, w || 1), hh = Math.max(1, h || 1);
-    var best = layout[ci + ',' + ri];
-    if (ww > 1 || hh > 1) {
-      /* 佔多格（BOSS）：取涵蓋格子中最外圈的那一格。
-         用平均值會把 2×2 的中心算到棋盤正中央——那裡站著玩家。 */
-      for (var c = 0; c < ww; c++) {
-        for (var r = 0; r < hh; r++) {
-          var q = layout[(ci + c) + ',' + (ri + r)];
-          if (q && (!best || q.k > best.k)) best = q;
-        }
-      }
-    }
-    if (!best) return { x: m.cx, y: m.cy - 40, ang: -Math.PI / 2, k: 1 };
-    return { x: m.cx + best.x, y: m.cy + best.y, ang: best.ang, k: best.k };
+  /* 範圍技的落點：模擬層給圓（世界相對座標），換成畫面矩形供既有特效沿用。 */
+  function areaRect(area) {
+    if (!area) return null;
+    var pc = playerPos();
+    var r = isFinite(area.r) ? area.r : Math.max(S.W, S.H);
+    return { x: pc.x + area.x - r, y: pc.y + area.y - r, w: r * 2, h: r * 2 };
   }
-  /* 實體腳底錨點（極座標版沒有「格子下緣」，改用名目格高的一小段往下壓） */
-  function cellAnchor(cell) {
-    var c = cellCenter(cell.col, cell.row, cell.w, cell.h);
-    return { x: c.x, y: c.y + cellSize().h * 0.18, ang: c.ang, k: c.k };
-  }
+
   /* 玩家的世界座標。鏡頭永遠對準他，所以他在畫面上永遠置中——
      置中是鏡頭跟隨的結果，不是把角色釘死在畫面中間。 */
   function playerPos() {
@@ -258,26 +165,6 @@ var BattleRenderer = (function () {
     var p = playerPos();
     return { x: p.x, y: p.y - 52 };
   }
-  /* 區域特效的落點：極座標下「一塊 n×n 格」不再是螢幕上的矩形，
-     改取所有涵蓋格子實際位置的外接矩形。 */
-  function cellsRect(cells) {
-    if (!cells || !cells.length) return null;
-    var sz = cellSize();
-    var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    for (var i = 0; i < cells.length; i++) {
-      var p = cellCenter(cells[i].col, cells[i].row, 1, 1);
-      if (p.x < minX) minX = p.x;
-      if (p.x > maxX) maxX = p.x;
-      if (p.y < minY) minY = p.y;
-      if (p.y > maxY) maxY = p.y;
-    }
-    var padX = sz.w * 0.5, padY = sz.h * 0.5;
-    return {
-      x: minX - padX, y: minY - padY,
-      w: (maxX - minX) + padX * 2, h: (maxY - minY) + padY * 2
-    };
-  }
-
   /* elId → 目前世界座標（實體活著追實體，死了用殘留座標，再不行用棋盤中央） */
   function posOf(elId) {
     if (elId === 'pv-float' && S.player) return { x: S.player.root.x, y: S.player.root.y - 46 };
@@ -570,9 +457,6 @@ var BattleRenderer = (function () {
       isBoss: isBoss, isElite: isElite, visScale: visScale,
       barW: barW, hitHeight: isBoss ? sz.h * 1.9 : 64 * visScale,
       wx: 0, wy: 0, tx: 0, ty: 0,     // 世界座標；tx/ty 是逼近目標（角色本人）
-      /* 停止半徑：走到離角色這麼近就不再前進。每隻略有差異，圍出來才是一圈人牆
-         而不是全部疊在同一個點上。BOSS 體型大，站遠一點。 */
-      stopRadius: (isBoss ? 92 : 40) * (0.85 + Math.random() * 0.4),
       state: 'entering',              // entering → idle → dying → gone
       bobPhase: Math.random() * Math.PI * 2,
       wobble: 0.7 + Math.random() * 0.5,
@@ -590,15 +474,10 @@ var BattleRenderer = (function () {
       dieAt: 0
     };
 
-    var anchor = data.cell ? cellAnchor(data.cell) : { x: playerPos().x + 220, y: playerPos().y, ang: 0 };
-    ent.tx = anchor.x; ent.ty = anchor.y;
-    /* 進場起點：沿自己的方位角、從畫面邊緣外一點點跑進來——四面八方都可能來人。
-       起點是世界座標，鏡頭跟著玩家跑時牠們一樣是「從畫面外進來」。 */
-    var bm = boardMetrics();
-    var ang = (typeof anchor.ang === 'number') ? anchor.ang : 0;
-    var outK = 1.08 + Math.random() * 0.16;
-    ent.wx = bm.cx + Math.cos(ang) * Math.max(bm.rx, S.W * 0.55) * outK;
-    ent.wy = bm.cy + Math.sin(ang) * Math.max(bm.ry, S.H * 0.55) * outK;
+    /* 站位完全由模擬層決定（座標制）：這裡只是把 pos 換算成畫面世界座標。 */
+    var at = entityWorldPos(data);
+    ent.wx = at.x; ent.wy = at.y;
+    ent.tx = at.x; ent.ty = at.y;
     root.x = ent.wx; root.y = ent.wy;
     root.zIndex = ent.wy;
 
@@ -827,11 +706,10 @@ var BattleRenderer = (function () {
           if (alive && ent.state === 'idle' && d.atkCd > prevCd + 0.15) enemyAttackAnim(ent);
           ent.lastAtkCd = d.atkCd;
         }
-        /* 格位變動（新一波重排）→ 更新目標錨點 */
-        if (d.cell) {
-          var a = cellAnchor(d.cell);
-          ent.tx = a.x; ent.ty = a.y;
-        }
+        /* 模擬層每個 tick 都在移動敵人；這裡只把最新座標記下來，
+           tickWorld 再平滑地追過去（面板 5Hz，直接跳會一格一格閃）。 */
+        var np = entityWorldPos(d);
+        ent.tx = np.x; ent.ty = np.y;
       }
       drawHpBar(ent);
       var stTxt = statusTextOf(d);
@@ -1540,7 +1418,7 @@ var BattleRenderer = (function () {
       return;
     }
     var targets = Array.isArray(spec.targets) ? spec.targets.slice(0, 8) : [];
-    var rect = cellsRect(spec.cells);
+    var rect = areaRect(spec.area);
     var count = Math.min(5, Math.max(1, spec.count || 1));
     var stagger = ((typeof VFX_HIT_STAGGER_SEC === 'number') ? VFX_HIT_STAGGER_SEC : 0.09) * 1000;
 
@@ -1787,32 +1665,6 @@ var BattleRenderer = (function () {
     }
   }
 
-  /* 敵人之間互相推開，避免全部疊在角色身上。
-     只推 x/y（不動 dashX/dashY，那是出手衝刺的臨時位移）。 */
-  function separateEntities() {
-    var list = [];
-    for (var id in S.entities) {
-      if (!Object.prototype.hasOwnProperty.call(S.entities, id)) continue;
-      var e = S.entities[id];
-      if (e.state === 'dying' || e.state === 'gone') continue;
-      list.push(e);
-    }
-    var minD = Math.max(22, 44 * densityScale());
-    for (var i = 0; i < list.length; i++) {
-      for (var j = i + 1; j < list.length; j++) {
-        var a = list[i], b = list[j];
-        var dx = b.wx - a.wx, dy = b.wy - a.wy;
-        var d2 = dx * dx + dy * dy;
-        if (d2 >= minD * minD) continue;
-        var d = Math.sqrt(d2) || 0.001;
-        var push = (minD - d) * 0.5;
-        var ux = dx / d, uy = dy / d;
-        a.wx -= ux * push; a.wy -= uy * push;
-        b.wx += ux * push; b.wy += uy * push;
-      }
-    }
-  }
-
   /* ============ 每幀更新 ============ */
   function tickWorld(ticker) {
     var dt = Math.min(0.05, (ticker.deltaMS || 16.7) / 1000);
@@ -1917,53 +1769,34 @@ var BattleRenderer = (function () {
       var e = S.entities[id];
       if (dt <= 0) continue;
 
-      /* 目標＝角色本人，不是格位槽。
-         ⚠️ 用「跟著玩家平移的格位槽」當目標會追不到：玩家往前跑，槽位也往前退，
-         兩者以相同速度移動，距離永遠收斂不了（實測在 144~293px 之間拉鋸，
-         於是遠處那圈敵人一邊「跟著」一邊隔空攻擊）。
-         改成直接朝角色逼近、到接觸距離就停，再靠彼此推開排成一圈人牆。
-         棋盤格在這裡只剩一個用途：決定牠從哪個方位進場。 */
-      var pcHere = playerPos();
-      e.tx = pcHere.x; e.ty = pcHere.y - 8;
+      /* 站位、逼近、推擠全部由模擬層負責（js/battlefield.js 座標制）。
+         這裡只做「平滑跟上」：面板 5Hz，直接把座標貼上去會一格一格閃。
+         跟隨速度足夠快，看起來就是模擬層那隻在跑。 */
+      var followK = Math.min(1, dt * 14);
+      var movedX = (e.tx - e.wx) * followK;
+      var movedY = (e.ty - e.wy) * followK;
+      e.wx += movedX;
+      e.wy += movedY;
+      var movedLen = Math.sqrt(movedX * movedX + movedY * movedY);
+
+      if (e.state === 'entering' || movedLen > 0.6 * dt * 60) {
+        /* 走路擺動：小怪左右搖 + 輕微縮放跳動（類倖存者小怪步態） */
+        e.bodyWrap.rotation = Math.sin(t / 90 * e.wobble) * 0.08;
+        e.bodyWrap.scale.y = 1 + Math.sin(t / 80 * e.wobble) * 0.045;
+      } else if (e.state === 'idle') {
+        /* 待機呼吸：縮放 + 微搖，讓場面一直是活的 */
+        e.bobPhase += dt * (2 + e.wobble);
+        e.bodyWrap.scale.y = 1 + Math.sin(e.bobPhase) * 0.035;
+        e.bodyWrap.rotation = Math.sin(e.bobPhase * 0.7) * 0.03;
+      }
 
       if (e.state === 'entering') {
-        /* 進場：朝槽位跑。速度由「剩餘距離 ÷ 剩餘時間」決定，
-           所以無論玩家跑到哪，牠都會在模擬層的 _enterCd 歸零那一刻抵達。 */
         e.enterT += dt;
-        var remain = Math.max(0.001, e.enterDur - e.enterT);
-        var edx = e.tx - e.wx, edy = e.ty - e.wy;
-        var edist = Math.sqrt(edx * edx + edy * edy);
-        /* 進場只跑「到接觸距離為止」的那一段，剩下的交給 idle 的逼近邏輯 */
-        var eneed = Math.max(0, edist - e.stopRadius);
-        var estep = Math.min(eneed, (eneed / remain) * dt);
-        if (edist > 0.001 && estep > 0) { e.wx += edx / edist * estep; e.wy += edy / edist * estep; }
-        /* 行走擺動：小怪左右搖 + 輕微縮放跳動（類倖存者小怪步態） */
-        e.bodyWrap.rotation = Math.sin(t / 90 * e.wobble) * 0.09;
-        e.bodyWrap.scale.y = 1 + Math.sin(t / 80 * e.wobble) * 0.05;
-        if (e.enterT >= e.enterDur) {
-          e.bodyWrap.rotation = 0;
-          e.bodyWrap.scale.y = 1;
-          e.state = 'idle';
-        }
-      } else if (e.state === 'idle') {
-        /* 逼近：一路走到接觸距離才停。停下之後由下面的互斥推擠排成人牆，
-           擠不進去的自然被推到外圈——不需要任何預先算好的站位。 */
-        var ddx = e.tx - e.wx, ddy = e.ty - e.wy;
-        var dd = Math.sqrt(ddx * ddx + ddy * ddy);
-        if (dd > e.stopRadius) {
-          var vv = Math.min(ENEMY_RUN_SPEED, Math.max(70, (dd - e.stopRadius) * 3));
-          var dstep = Math.min(dd - e.stopRadius, vv * dt);
-          e.wx += ddx / dd * dstep;
-          e.wy += ddy / dd * dstep;
-          e.bodyWrap.rotation = Math.sin(t / 90 * e.wobble) * 0.07;
-          e.bodyWrap.scale.y = 1 + Math.sin(t / 80 * e.wobble) * 0.04;
-        } else {
-          /* 待機呼吸：縮放 + 微搖，讓場面一直是活的 */
-          e.bobPhase += dt * (2 + e.wobble);
-          e.bodyWrap.scale.y = 1 + Math.sin(e.bobPhase) * 0.035;
-          e.bodyWrap.rotation = Math.sin(e.bobPhase * 0.7) * 0.03;
-        }
-        /* 近戰突進：整個往玩家方向撲過去再回位（魔法系怪不撲，改射投射物） */
+        if (e.enterT >= e.enterDur) e.state = 'idle';
+      }
+
+      if (e.state === 'idle') {
+        /* 出手時往玩家撲一下（純表演；模擬層已經確認打得到才會出手）。 */
         if (e.lunge > 0) {
           e.lunge = Math.max(0, e.lunge - dt);
           var dur = e.lungeDur || 0.3;
@@ -1971,15 +1804,15 @@ var BattleRenderer = (function () {
           var pc = playerPos();
           var ldx = pc.x - e.wx, ldy = (pc.y - 26) - e.wy;
           var ldist = Math.sqrt(ldx * ldx + ldy * ldy) || 1;
-          /* 補完整段距離、只留一個接觸間隙：出手就要真的碰到人。
-             上限擋住「從畫面另一頭瞬間貼臉」的極端狀況。 */
           var reach = Math.min(Math.max(0, ldist - ENEMY_CONTACT_GAP), ENEMY_MAX_CHARGE) * lk;
           e.dashX = ldx / ldist * reach;
           e.dashY = ldy / ldist * reach;
         } else {
           e.dashX = 0; e.dashY = 0;
         }
-      } else if (e.state === 'dying') {
+      }
+
+      if (e.state === 'dying') {
         /* 死亡進度用 dt 累積：暫停時屍體凍結，不會在解除暫停時瞬間消失 */
         e.dieT = (e.dieT || 0) + dt;
         var dieT = e.dieT;
@@ -2009,8 +1842,6 @@ var BattleRenderer = (function () {
     /* ---- 互斥推擠 ----
        全部朝角色擠過去，不推開就會整群疊成一坨。推完形成一圈人牆，
        擠不進內圈的自然被排到外圈——這是「站位」唯一的來源，沒有預先算好的格子。 */
-    if (dt > 0) separateEntities();
-
     /* 特效 */
     if (dt > 0) {
       for (var i = S.fx.length - 1; i >= 0; i--) {
@@ -2328,21 +2159,7 @@ var BattleRenderer = (function () {
     _app: function () { return S.app; },
     _debug: function () {
       var p = S.player;
-      var m = boardMetrics();
-      var cells = [];
-      for (var c = 1; c <= m.cols; c++) {
-        for (var r = 1; r <= m.rows; r++) {
-          var pt = cellCenter(c, r, 1, 1);
-          cells.push({
-            col: c, row: r,
-            x: Math.round(pt.x), y: Math.round(pt.y),
-            ang: Math.round(Math.atan2(pt.y - m.cy, pt.x - m.cx) * 180 / Math.PI),
-            r: Math.round(Math.sqrt(Math.pow(pt.x - m.cx, 2) + Math.pow(pt.y - m.cy, 2)))
-          });
-        }
-      }
       return {
-        cells: cells,
         player: p ? { x: Math.round(p.wx), y: Math.round(p.wy), walking: !!p.walking, facing: p.facing, anim: p.curAnim } : null,
         home: playerPos(),
         entities: Object.keys(S.entities).map(function (id) {

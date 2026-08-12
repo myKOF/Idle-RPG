@@ -31,11 +31,12 @@ function loadContext() {
   return context;
 }
 
-function enemy(col, row) {
+/* 座標制（2026-08-12）：敵人帶 pos={x,y}，我方在原點；距離＝直線距離。 */
+function enemy(x, y) {
   return {
     hp: 1e9, maxHp: 1e9, def: 0, mdef: 0, dodge: 0, resist: {}, ctrlRes: 0,
     elite: false, isBoss: false, buffs: {}, dots: [], effects: {}, shield: 0,
-    cell: { col, row, w: 1, h: 1 }
+    pos: { x: x, y: y }
   };
 }
 
@@ -50,9 +51,9 @@ function captureFloats(context) {
 
 test('投射物是等速飛行：距離越遠飛越久，不是固定時間', () => {
   const c = loadContext();
-  const near = enemy(1, 2);   // 第 1 行、中央列 → 最近
-  const mid = enemy(2, 2);
-  const far = enemy(4, 1);    // 第 4 行、外側列 → 最遠
+  const near = enemy(80, 0);    // 最近
+  const mid = enemy(200, 0);
+  const far = enemy(340, 0);    // 最遠（刻意避開飛行時間上限，正比關係才驗得出來）
   const tNear = c.bfTravelSeconds(near);
   const tMid = c.bfTravelSeconds(mid);
   const tFar = c.bfTravelSeconds(far);
@@ -65,15 +66,15 @@ test('投射物是等速飛行：距離越遠飛越久，不是固定時間', ()
 });
 
 test('打遠處的敵人，傷害數字比打近處的晚跳出來', () => {
-  function delayOf(cell) {
+  function delayOf(x, y) {
     const c = loadContext();
     const floats = captureFloats(c);
     const player = { hp: 1000, mp: 1000, atkCd: 0, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {} };
-    c.castSkill(player, [enemy(cell.col, cell.row)], 'fireball', 1, 'mv-float');
+    c.castSkill(player, [enemy(x, y)], 'fireball', 1, 'mv-float');
     return floats.filter((f) => /enemy-skill/.test(f.cls))[0].delayMs;
   }
-  const near = delayOf({ col: 1, row: 2 });   // 第 1 行、中央列
-  const far = delayOf({ col: 4, row: 1 });    // 第 4 行、外側列
+  const near = delayOf(80, 0);
+  const far = delayOf(340, 0);
   assert.ok(far > near, '打遠的敵人數字應該較晚：近 ' + near + 'ms／遠 ' + far + 'ms');
   // 不是固定值——v11 的做法是不管遠近都 500ms，那正是使用者回報「不順」的原因
   assert.notEqual(near, far);
@@ -85,7 +86,7 @@ test('投射物的動畫長度與傷害數字用同一組飛行時間（不會�
   let spec = null;
   c.playCombatVfx = (s) => { spec = s; };
   captureFloats(c);
-  const target = enemy(4, 1);
+  const target = enemy(340, 0);
   c.castSkill(player, [target], 'fireball', 1, 'mv-float');
   assert.ok(spec && spec.travelMs && spec.travelMs.length === 1, 'vfx 事件應帶每個目標的飛行時間');
   assert.equal(spec.travelMs[0], Math.round(c.bfTravelSeconds(target) * 1000));
@@ -109,7 +110,7 @@ test('投射物技能：傷害數字延後到子彈飛到才跳出', () => {
   assert.ok(sk, '火球術應存在');
   assert.equal(c.skillVfxKind(sk, c.effectiveFx('fireball', sk, 1), sk.shape), 'projectile');
 
-  c.castSkill(player, [enemy(1, 2)], 'fireball', 1, 'mv-float');
+  c.castSkill(player, [enemy(80, 0)], 'fireball', 1, 'mv-float');
   const dmg = floats.filter((f) => /enemy-skill/.test(f.cls));
   assert.ok(dmg.length >= 1, '應該有傷害浮字');
   assert.ok(dmg[0].delayMs > 0, '投射物的傷害數字不能在發射當下就跳出來');
@@ -123,7 +124,7 @@ test('近戰技能：當場命中，數字不延後', () => {
   const sk = c.SKILLS.powerSlash;
   assert.equal(c.skillVfxKind(sk, c.effectiveFx('powerSlash', sk, 1), sk.shape), 'slash');
 
-  c.castSkill(player, [enemy(1, 2)], 'powerSlash', 1, 'mv-float');
+  c.castSkill(player, [enemy(80, 0)], 'powerSlash', 1, 'mv-float');
   const dmg = floats.filter((f) => /enemy-skill/.test(f.cls));
   assert.equal(dmg[0].delayMs, 0, '斬擊是當場發生，不該延後');
 });
@@ -136,7 +137,7 @@ test('多段技：每一段各自一個傷害數字，且逐段錯開', () => {
   const fx = c.effectiveFx('arcaneBarrage', c.SKILLS.arcaneBarrage, 1);
   assert.equal(fx.hits, 6);
 
-  c.castSkill(player, [enemy(1, 2)], 'arcaneBarrage', 1, 'mv-float');
+  c.castSkill(player, [enemy(80, 0)], 'arcaneBarrage', 1, 'mv-float');
   const dmg = floats.filter((f) => /enemy-skill/.test(f.cls));
   assert.equal(dmg.length, 6, '6 段應該有 6 個獨立的傷害數字，不是一個總和');
 
@@ -152,7 +153,7 @@ test('延遲只是顯示時序，不影響傷害結算', () => {
   const c = loadContext();
   captureFloats(c);
   const player = { hp: 1000, mp: 1000, atkCd: 0, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {} };
-  const target = enemy(1, 2);
+  const target = enemy(80, 0);
   const before = target.hp;
   const out = c.castSkill(player, [target], 'arcaneBarrage', 1, 'mv-float');
   // 呼叫回來的當下血量就已經扣完了——延遲的是數字，不是傷害

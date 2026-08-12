@@ -222,17 +222,21 @@ test('敵人走進畫面前不參戰，抵達當輪立即出手，即使被玩�
     context.FIELD.monsters.forEach((enemy) => { if (enemy.hp <= 0) enemy._rewarded = true; });
   };
 
-  // 生成當輪：敵人還在畫面外走進來，雙方都不該動作
+  // 生成當輪：敵人在生成圓上，離我方還很遠，雙方都打不到對方
   context.fieldTick(0.1);
-  assert.deepEqual(events, [], '進場中的敵人不得攻擊，也不得被攻擊');
-  assert.equal(context.FIELD.player.hp, 100, '進場中的敵人不該打到玩家');
+  assert.deepEqual(events, [], '還沒走近的敵人不得攻擊，也不得被攻擊');
+  assert.equal(context.FIELD.player.hp, 100, '遠處的敵人不該打到玩家');
   assert.equal(context.FIELD.monsters.length, 1);
-  assert.ok(context.FIELD.monsters[0]._enterCd > 0, '應該還在進場倒數');
-  assert.equal(context.FIELD.monsters[0].hp, 10, '進場中的敵人不該被玩家打到');
+  const mob = context.FIELD.monsters[0];
+  assert.ok(Math.sqrt(mob.pos.x * mob.pos.x + mob.pos.y * mob.pos.y) > context.BF_MELEE_RANGE,
+    '生成時應該在攻擊距離之外');
+  assert.equal(mob.hp, 10, '走不到面前的敵人不該被玩家打到');
 
-  // 走完進場倒數的那一輪：敵人先出手，再被玩家擊殺
-  context.fieldTick(context.FIELD_ENEMY_ENTER_DELAY + context.FIELD_ENEMY_ENTER_STAGGER);
-  assert.deepEqual(events, ['enemy', 'player'], '抵達當輪應先攻擊，再被玩家擊殺');
+  /* 讓牠一路走進來。踏進攻擊距離的那一輪：敵人先出手，再被玩家擊殺。
+     這條保證要綁在「剛進入射程」，因為雙方射程相同而玩家的回合在前——
+     不特別處理的話高 DPS 玩家永遠不會吃到傷害。 */
+  for (let i = 0; i < 200 && !events.length; i++) context.fieldTick(0.1);
+  assert.deepEqual(events, ['enemy', 'player'], '進入射程的那一輪應先攻擊，再被玩家擊殺');
   assert.equal(context.FIELD.player.hp, 99, '即使敵人被秒殺，玩家仍應承受首擊');
 });
 
