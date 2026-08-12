@@ -621,11 +621,12 @@ body {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
-  max-width: 1720px;
+  /* 戰鬥改造：側欄貼緊左緣、整體佔滿畫面寬，把省下的空間讓給戰鬥區 */
+  max-width: none;
   width: 100%;
   margin: 0 auto;
-  gap: 16px;
-  padding: 0 0 0 16px;
+  gap: 12px;
+  padding: 0;
 }
 
 #workspace-area {
@@ -656,17 +657,17 @@ body {
 }
 
 #combat-area {
-  flex: 0 0 500px;
-  width: 500px;
+  /* 戰鬥改造：戰鬥區佔畫面約 45%（原固定 500px），給即時戰鬥畫面更大的舞台 */
+  flex: 0 0 45%;
+  width: 45%;
   min-width: 500px;
-  max-width: 500px;
+  max-width: none;
   height: 100%;
   min-height: 0;
   max-height: 100%;
   display: flex;
   flex-direction: row;
   gap: 16px;
-  min-width: 0;
   border: 12px solid var(--border);
   border-image: url('../images/diablo_frame_9slice.png') 30 stretch;
   border-radius: 0;
@@ -1092,7 +1093,9 @@ textarea#save-io {
 }
 
 /* ?�家增�?詳�??��?（左上�?綠色，�??�人?�報???��?稱�? */
-.combatant .buff-btn {
+/* #player-hud：Canvas 戰鬥模式下 buff 鈕會被搬出 .combatant，主題樣式要跟著走 */
+.combatant .buff-btn,
+#player-hud .buff-btn {
   top: 6px;
   left: 6px;
   right: auto;
@@ -1103,7 +1106,8 @@ textarea#save-io {
   font-size: 12px;
 }
 
-.combatant .buff-btn:hover {
+.combatant .buff-btn:hover,
+#player-hud .buff-btn:hover {
   background: var(--good);
   color: #10141f;
 }
@@ -8488,13 +8492,14 @@ button.nf-part-slot.nf-part-ico {
 
 #ui-shell #game-layout {
   width: 100% !important;
-  max-width: 1720px !important;
+  /* 戰鬥改造：佔滿 1920 設計寬（原 1720 置中），側欄貼齊左緣 */
+  max-width: 1920px !important;
   height: 850px !important;
   min-height: 850px !important;
   flex: none !important;
   flex-direction: row !important;
-  padding: 0 0 0 16px !important;
-  gap: 16px !important;
+  padding: 0 !important;
+  gap: 12px !important;
 }
 
 #ui-shell #stats-sidebar {
@@ -8510,10 +8515,11 @@ button.nf-part-slot.nf-part-ico {
 }
 
 #ui-shell #combat-area {
-  flex: 0 0 500px !important;
-  width: 500px !important;
-  min-width: 500px !important;
-  max-width: 500px !important;
+  /* 戰鬥改造：864px ＝ 1920 設計寬的 45%，滿足「戰鬥區佔畫面 40%~50%」 */
+  flex: 0 0 864px !important;
+  width: 864px !important;
+  min-width: 864px !important;
+  max-width: 864px !important;
   height: 100% !important;
   min-height: 0 !important;
   max-height: 100% !important;
@@ -8597,4 +8603,177 @@ button.nf-part-slot.nf-part-ico {
 #ui-shell .log-header-actions .btn {
   padding-left: 6px !important;
   padding-right: 6px !important;
+}
+
+/* ==========================================================================
+   Canvas 戰鬥模式（PixiJS 表現層，js/battle-renderer.js）
+   說明：初始化成功時 body 掛上 .battle-canvas-mode——野外 DOM 戰鬥場景隱藏、
+   畫布佔滿戰鬥區；玩家 HUD、暫停/迷你視窗按鈕與戰況抽屜以 DOM 疊在畫布上
+   （DOM/CSS 做 UI、Canvas 做戰鬥表現的混合方案）。
+   初始化失敗（?canvas=0 / WebGL 不可用）時 body 沒有這個 class，
+   本區所有規則不生效，原 DOM 戰鬥畫面照舊。
+   ========================================================================== */
+#battle-canvas-host {
+  display: none;
+}
+
+body.battle-canvas-mode #combat-area .battle-scene-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+body.battle-canvas-mode #battle-canvas-host {
+  display: block;
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  border: 2px solid rgba(120, 90, 50, 0.55);
+  border-radius: 4px;
+  background: #0b0d12;
+}
+
+/* 野外 DOM 戰鬥場景整個讓位給畫布（高塔的場景在 #tower-fight 內，不受影響） */
+body.battle-canvas-mode #combat-area .battle-scene-wrapper > .battle-scene {
+  display: none !important;
+}
+
+.battle-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+/* 敵情提示鈕移到畫布左上角（原本靠 DOM 場景定位） */
+body.battle-canvas-mode #combat-area .battle-scene-wrapper > #btn-enemy-tip {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 30;
+}
+
+/* ---- 玩家 HUD（DOM 疊在畫布左下） ---- */
+#player-hud {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  width: 240px;
+  z-index: 20;
+  padding: 8px 10px;
+  background: rgba(8, 6, 5, 0.72);
+  border: 1px solid rgba(120, 90, 50, 0.55);
+  border-radius: 6px;
+  backdrop-filter: blur(2px);
+}
+
+#player-hud .hp-bar {
+  margin-top: 0;
+  height: 16px;
+}
+
+#player-hud .hp-bar .hp-text {
+  font-size: 10px;
+}
+
+#player-hud .mp-bar {
+  margin-top: 4px;
+  height: 10px;
+}
+
+#player-hud .mp-bar .hp-text {
+  font-size: 8.5px;
+}
+
+#player-hud .cb-skill {
+  margin-top: 4px;
+}
+
+#player-hud .cb-status {
+  margin-top: 2px;
+  min-height: 0;
+}
+
+#player-hud .buff-btn {
+  position: absolute;
+  top: -10px;
+  left: auto;
+  right: -6px;
+}
+
+/* ---- 畫布右上角按鈕列：暫停、迷你視窗、戰況抽屜 ---- */
+#battle-canvas-buttons {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 30;
+  display: flex;
+  gap: 6px;
+}
+
+#battle-canvas-buttons .btn {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+#btn-battle-info.active {
+  background: rgba(120, 90, 50, 0.75);
+}
+
+/* ---- 戰況抽屜：原封收納綜合紀錄、統計、詳細日誌與篩選 ---- */
+#battle-info-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(430px, 58%);
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  background: rgba(10, 8, 6, 0.94);
+  border-left: 2px solid rgba(120, 90, 50, 0.6);
+  box-shadow: -8px 0 18px rgba(0, 0, 0, 0.6);
+  transform: translateX(102%);
+  transition: transform 0.22s ease-out;
+  padding: 10px 12px;
+}
+
+#battle-info-drawer.open {
+  transform: translateX(0);
+}
+
+.battle-info-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  /* 右側留白：畫布右上角的 ⏸/📺/📊 按鈕列（z-index 30）疊在抽屜（25）上方，
+     不留白的話關閉鈕 ✕ 會被整排按鈕蓋住點不到 */
+  padding-right: 140px;
+}
+
+.battle-info-drawer-head .modal-x {
+  position: static;
+}
+
+#battle-info-drawer-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 抽屜內的綜合紀錄要吃滿剩餘高度（原本在 #battle-area 底部同樣是 flex:1） */
+#battle-info-drawer-body > .log {
+  flex: 1;
+  min-height: 0;
+}
+
+/* 抽屜內按鈕列可以換行，寬度比原本窄 */
+#battle-info-drawer-body .log-header {
+  flex-wrap: wrap;
+}
+
+#battle-info-drawer-body .log-header-actions {
+  flex-wrap: wrap;
 }

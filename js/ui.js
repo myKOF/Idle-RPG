@@ -512,7 +512,12 @@ function flushWorkerVisualEvents() {
       floatText(event.elId, event.text, event.cls, event.damageValue, null,
         uiBattlePanelSnapshot(), event.delayMs);
     } else if (event.kind === 'vfx') {
-      if (typeof playCombatVfx === 'function') playCombatVfx(event);
+      /* Canvas 戰鬥模式：野外特效交給 PixiJS 渲染器；高塔（tb/tp 定址）維持 DOM 特效 */
+      if (typeof BattleRenderer !== 'undefined' && BattleRenderer.wantsVfx(event)) {
+        BattleRenderer.onVfx(event);
+      } else if (typeof playCombatVfx === 'function') {
+        playCombatVfx(event);
+      }
     }
     processed++;
   }
@@ -1909,6 +1914,13 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
     rememberBackgroundEnemyFloat(elId, text, cls, damageValue);
     return;
   }
+  /* Canvas 戰鬥模式：野外目標（pv-float / mv-float-N）的飄字交給 PixiJS 渲染器，
+     延遲與合併都在那邊處理；高塔目標（tp/tb-float）維持下面的 DOM 路徑。
+     放在暫停偵測之後：背景分頁仍走「只記最新」的既有路徑，回前景時再經這裡轉交。 */
+  if (typeof BattleRenderer !== 'undefined' && BattleRenderer.wantsFloat(elId)) {
+    BattleRenderer.onFloat({ elId: elId, text: text, cls: cls, damageValue: damageValue, delayMs: delayMs });
+    return;
+  }
   /* 顯示延遲（協議 v11）：讓數字對齊「打到人」那一刻——投射物要飛、多段技一段一段打，
      但模擬層是一瞬間把整段結算完的。純顯示時序，戰鬥結果早就定了。
      延遲期間敵人可能已死，但卡片還會留 FIELD_ENEMY_DEATH_CLEAR_DELAY（2.1 秒）才移除，
@@ -3117,6 +3129,10 @@ function renderBattle() {
   });
   var party = $id('mv-party');
   if (!party) return;
+  /* Canvas 戰鬥模式：敵方畫面（棋盤、卡片、死亡淡出）整個由 PixiJS 渲染器負責，
+     它自己訂閱 battle 面板（約 5Hz，比本函式的 400ms 節流更即時）。
+     上面的玩家 HUD（血魔條、技能列、狀態）更新仍照舊執行——節點已移入 #player-hud。 */
+  if (typeof BattleRenderer !== 'undefined' && BattleRenderer.active()) return;
   var scene = party.closest ? party.closest('.battle-scene') : null;
   // 新版戰鬥：敵方固定 4×4 棋盤，版面不再隨敵人數量變動——我方永遠靠左，棋盤永遠佔滿右側。
   if (scene) scene.classList.add('multi-enemy');
@@ -8372,6 +8388,71 @@ function bindStageHoldButton(id, delta) {
 }
 
 
+/* ---- Canvas 戰鬥模式（PixiJS 表現層）----
+   初始化成功後才動 DOM：把玩家 HUD 元件移入 #player-hud、暫停/迷你視窗按鈕移到
+   畫布右上角、綜合紀錄與統計整組收進側拉抽屜（#battle-info-drawer），一顆 📊 按鈕開關。
+   初始化失敗（?canvas=0、PIXI 缺檔、WebGL 不可用）時什麼都不動，原 DOM 戰鬥畫面照舊。 */
+function initBattleCanvasMode() {
+  if (typeof BattleRenderer === 'undefined') return;
+  var host = $id('battle-canvas-host');
+  if (!host) return;
+  BattleRenderer.init(host).then(function (ok) {
+    if (!ok) return;
+    document.body.classList.add('battle-canvas-mode');
+
+    /* 玩家 HUD：把野外玩家卡片上的血魔條、技能列、狀態、增益提示鈕搬進覆蓋層。
+       節點用搬的（appendChild），id 與既有事件綁定全部保留；renderBattle 照常更新。 */
+    var hud = $id('player-hud');
+    var pvCard = document.querySelector('#combat-area .battle-scene > .combatant:not(.enemy-combatant)');
+    if (hud && pvCard) {
+      var buffBtn = pvCard.querySelector('.buff-btn');
+      var hpBar = pvCard.querySelector('.hp-bar');
+      var mpBar = pvCard.querySelector('.mp-bar');
+      var skill = pvCard.querySelector('#pv-skill');
+      var statusEl = pvCard.querySelector('#pv-status');
+      if (hpBar) hud.appendChild(hpBar);
+      if (mpBar) hud.appendChild(mpBar);
+      if (skill) hud.appendChild(skill);
+      if (statusEl) hud.appendChild(statusEl);
+      if (buffBtn) hud.appendChild(buffBtn);
+    }
+
+    /* 綜合紀錄 + 統計/日誌/篩選 → 側拉抽屜；暫停與迷你視窗按鈕 → 畫布右上角 */
+    var drawerBody = $id('battle-info-drawer-body');
+    var logHeader = document.querySelector('#battle-area > .log-header');
+    var battleLog = $id('battle-log');
+    if (drawerBody && logHeader && battleLog) {
+      drawerBody.appendChild(logHeader);
+      drawerBody.appendChild(battleLog);
+    }
+    var btnRow = $id('battle-canvas-buttons');
+    var pauseBtn = $id('btn-combat-pause');
+    var pipBtn = $id('btn-pip');
+    var infoBtn = $id('btn-battle-info');
+    if (btnRow) {
+      if (pauseBtn) btnRow.insertBefore(pauseBtn, infoBtn || null);
+      if (pipBtn) btnRow.insertBefore(pipBtn, infoBtn || null);
+    }
+    var drawer = $id('battle-info-drawer');
+    if (infoBtn && drawer) {
+      infoBtn.addEventListener('click', function () {
+        var open = drawer.classList.toggle('open');
+        infoBtn.classList.toggle('active', open);
+      });
+      var drawerClose = $id('battle-info-drawer-close');
+      if (drawerClose) drawerClose.addEventListener('click', function () {
+        drawer.classList.remove('open');
+        infoBtn.classList.remove('active');
+      });
+    }
+    /* 版面大改後所有幾何快取作廢 */
+    uiInvalidateFloatLayout();
+    if (typeof vfxInvalidateLayout === 'function') vfxInvalidateLayout();
+    UI.dirty.battle = true;
+    UI.battleLayoutDirty = true;
+  });
+}
+
 function initUI() {
   bindWorkerUiState();
   updateTalentTabVisibility();
@@ -8392,6 +8473,7 @@ function initUI() {
     UI.performanceEventsBound = true;
   }
   syncVfxQualityForTab();
+  initBattleCanvasMode();
 
   // 本地測試服承傷顯示初始化：顯示在全螢幕按鈕右側
   var host = window.location.hostname;
