@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## Codex：戰鬥改版後裝備詳情與寶石鑲嵌版面修正（2026-08-12）
+
+- Status: Completed
+- Owner: Codex
+- Task: 加寬裝備功能區，縮減裝備詳情卡與右側寶石素材欄，避免兩者在新版戰鬥版面重疊；裝備詳情文字縮小 1 號，寶石素材固定每列 4 顆。
+- Dependencies: 無；已完成 `css/style.css`、`tests/equipment-detail-layout.test.cjs` 與本任務紀錄的衝突預檢。
+- Scope: `css/style.css`、`tests/equipment-detail-layout.test.cjs`、`tests/ui-fixed-canvas.test.cjs`、`docs/AI_TASKS.md`
+- Forbidden: Worker Protocol、存檔格式、戰鬥公式、數值配置與其他非本次 UI 版面檔案。
+- Verification: 版面 CSS 回歸測試 5/5 通過、`npm.cmd run build` 264 個檔案通過、1920×900 瀏覽器實測詳情與素材欄不重疊且寶石每列 4 顆；`git diff --check` 通過。
+- Known risk: 完整回歸測試 1275/1276 通過；唯一失敗為既有 `tests/multi-enemy.test.cjs` 菁英數量表單調性測試，與本次版面修改無關。
+- Handoff: Claude Code Review；使用者合併前以瀏覽器確認 1920×900 戰鬥畫布中的裝備頁不重疊。
+
 ## Codex：熔爐零件分解槽解鎖費用與不足提示（2026-08-11）
 
 - Status: Completed

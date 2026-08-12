@@ -2069,7 +2069,7 @@ textarea#save-io {
 
 .equip-top-layout {
   display: grid;
-  grid-template-columns: minmax(0, 810px) minmax(200px, 224px);
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 190px);
   gap: 10px;
   align-items: start;
   background: transparent;
@@ -2085,7 +2085,7 @@ textarea#save-io {
    ?��??��??��?例�??��?裝�??�永?�到不�??�大後�?尺寸??*/
 .equip-layout {
   display: grid;
-  grid-template-columns: minmax(300px, 338px) minmax(304px, 1fr);
+  grid-template-columns: minmax(300px, 320px) minmax(264px, 1fr);
   gap: 8px;
   margin-bottom: 0;
 }
@@ -2285,7 +2285,7 @@ textarea#save-io {
 
 .equip-material-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 32px);
+  grid-template-columns: repeat(4, 32px);
   gap: 5px;
   align-items: center;
 }
@@ -5242,6 +5242,34 @@ textarea:disabled,
   box-sizing: border-box !important;
 }
 
+/* 功能區收窄後，裝備詳情維持完整資訊但縮小一號，避免擠壓右側鑲嵌素材欄。 */
+#detail-pane .it-name {
+  font-size: 15px;
+}
+
+#detail-pane .it-syn,
+#detail-pane .it-sub,
+#detail-pane .it-score {
+  font-size: 12px;
+}
+
+#detail-pane .it-affix,
+#detail-pane .it-passive {
+  font-size: 14px;
+}
+
+#detail-pane .it-enchant {
+  font-size: 13px;
+}
+
+#detail-pane .it-godpassive {
+  font-size: 13.5px;
+}
+
+#detail-pane .socket {
+  font-size: 12.5px;
+}
+
 #detail-pane.has-detail {
   border: 1px solid var(--accent) !important;
   background: rgba(15, 10, 5, 0.85) !important;
@@ -5250,9 +5278,9 @@ textarea:disabled,
 
 /* 裝�?詳�??��?：固定寬度�??��?風格?��??�景 */
 .equip-detail-card {
-  width: 320px !important;
-  min-width: 320px !important;
-  max-width: 320px !important;
+  width: 280px !important;
+  min-width: 280px !important;
+  max-width: 280px !important;
   box-sizing: border-box !important;
   border: 1px solid var(--accent) !important;
   border-radius: 6px !important;
@@ -8515,11 +8543,11 @@ button.nf-part-slot.nf-part-ico {
 }
 
 #ui-shell #combat-area {
-  /* 戰鬥改造：864px ＝ 1920 設計寬的 45%，滿足「戰鬥區佔畫面 40%~50%」 */
-  flex: 0 0 864px !important;
-  width: 864px !important;
-  min-width: 864px !important;
-  max-width: 864px !important;
+  /* 戰鬥改造：816px ＝ 1920 設計寬的約 42.5%，將空間讓給裝備功能區。 */
+  flex: 0 0 816px !important;
+  width: 816px !important;
+  min-width: 816px !important;
+  max-width: 816px !important;
   height: 100% !important;
   min-height: 0 !important;
   max-height: 100% !important;
@@ -8529,11 +8557,11 @@ button.nf-part-slot.nf-part-ico {
 }
 
 #ui-shell .equip-layout {
-  grid-template-columns: minmax(300px, 338px) minmax(304px, 1fr) !important;
+  grid-template-columns: minmax(300px, 320px) minmax(264px, 1fr) !important;
 }
 
 #ui-shell .equip-top-layout {
-  grid-template-columns: minmax(0, 810px) minmax(200px, 210px) !important;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 190px) !important;
 }
 
 #ui-shell .battle-scene {

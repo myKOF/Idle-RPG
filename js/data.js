@@ -1967,6 +1967,11 @@ var TASKS = [
   { order: 27, name: '洗煉裝備100次', type: 'rerollCount', count: 100, rewardType: 'essence', rewardQty: 300, rewardLabel: '附魔精華+300' },
   { order: 28, name: '升級熔爐任意零件至3級', type: 'forgePartLevel', count: 3, rewardType: 'gold', rewardQty: 2000000, rewardLabel: '金幣+2000000' },
   { order: 29, name: '挑戰荒漠第200關BOSS成功', type: 'stageClear', param: 'desert', count: 200, rewardType: 'equip', rewardParam: '5|200|3', rewardQty: 1, rewardLabel: '任意3太古傳說200級裝備×1' },
-  { order: 30, name: '挑戰冰原第300關BOSS成功', type: 'stageClear', param: 'Icefield', count: 300, rewardType: 'equip', rewardParam: '5|300|4', rewardQty: 1, rewardLabel: '任意4太古傳說300級裝備×1' },
-  { order: 31, name: '挑戰沼澤第400關BOSS成功', type: 'stageClear', param: 'swamp', count: 400, rewardType: 'equip', rewardParam: '6|400|4', rewardQty: 1, rewardLabel: '任意4神話傳說400級裝備×1' }
+  { order: 30, name: '升級熔爐任意零件至4級', type: 'forgePartLevel', count: 4, rewardType: 'gold', rewardQty: 2000000, rewardLabel: '金幣+3000000' },
+  { order: 31, name: '挑戰冰原第250關BOSS成功', type: 'stageClear', param: 'Icefield', count: 250, rewardType: 'equip', rewardParam: '5|250|4', rewardQty: 1, rewardLabel: '任意4太古傳說250級裝備×1' },
+  { order: 32, name: '挑戰冰原第300關BOSS成功', type: 'stageClear', param: 'Icefield', count: 300, rewardType: 'equip', rewardParam: '5|300|4', rewardQty: 1, rewardLabel: '任意4太古傳說300級裝備×1' },
+  { order: 33, name: '挑戰沼澤第350關BOSS成功', type: 'stageClear', param: 'swamp', count: 350, rewardType: 'equip', rewardParam: '6|350|4', rewardQty: 1, rewardLabel: '任意4太古神話350級裝備×1' },
+  { order: 34, name: '挑戰沼澤第400關BOSS成功', type: 'stageClear', param: 'swamp', count: 400, rewardType: 'equip', rewardParam: '6|400|4', rewardQty: 1, rewardLabel: '任意4太古神話400級裝備×1' },
+  { order: 35, name: '挑戰亡靈山脈第450關BOSS成功', type: 'stageClear', param: 'undead_mountains', count: 450, rewardType: 'equip', rewardParam: '7|450|4', rewardQty: 1, rewardLabel: '任意4太古創世450級裝備×1' },
+  { order: 36, name: '挑戰亡靈山脈第500關BOSS成功', type: 'stageClear', param: 'undead_mountains', count: 500, rewardType: 'equip', rewardParam: '7|500|4', rewardQty: 1, rewardLabel: '任意4太古創世500級裝備×1' }
 ];

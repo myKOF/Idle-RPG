@@ -5,18 +5,21 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 
-test('裝備詳情加寬、寶石資訊不換行且素材面板保留五欄', () => {
+test('裝備功能區加寬、詳情縮窄且素材寶石固定四欄', () => {
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
 
-  assert.match(css, /\.equip-layout\s*\{[\s\S]*grid-template-columns:\s*minmax\(300px,\s*338px\)\s+minmax\(304px,\s*1fr\)/);
+  assert.match(css, /\.equip-layout\s*\{[\s\S]*grid-template-columns:\s*minmax\(300px,\s*320px\)\s+minmax\(264px,\s*1fr\)/);
   assert.match(css, /#equip-grid\s*\{[\s\S]*max-width:\s*400px/);
-  assert.match(css, /\.equip-detail-card\s*\{[\s\S]*width:\s*320px\s*!important[\s\S]*min-width:\s*320px\s*!important[\s\S]*max-width:\s*320px\s*!important/);
+  assert.match(css, /\.equip-detail-card\s*\{[\s\S]*width:\s*280px\s*!important[\s\S]*min-width:\s*280px\s*!important[\s\S]*max-width:\s*280px\s*!important/);
+  assert.match(css, /#detail-pane\s+\.it-affix\s*,[\s\S]*font-size:\s*14px/);
   assert.match(css, /\.it-sub\s*\{[\s\S]*white-space:\s*nowrap/);
   assert.match(css, /\.it-sockets\s+\.socket\s*\{[\s\S]*white-space:\s*nowrap/);
   assert.match(css, /\.equip-material-panel\s*\{[\s\S]*margin-left:\s*0[\s\S]*width:\s*100%/);
-  assert.match(css, /\.equip-top-layout\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*810px\)\s+minmax\(200px,\s*224px\)/);
-  assert.match(css, /#ui-shell \.equip-layout\s*\{[\s\S]*grid-template-columns:\s*minmax\(300px,\s*338px\)\s+minmax\(304px,\s*1fr\)\s*!important/);
-  assert.match(css, /#ui-shell \.equip-top-layout\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*810px\)\s+minmax\(200px,\s*210px\)\s*!important/);
+  assert.match(css, /\.equip-material-grid\s*\{[\s\S]*grid-template-columns:\s*repeat\(4,\s*32px\)/);
+  assert.match(css, /\.equip-top-layout\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+minmax\(180px,\s*190px\)/);
+  assert.match(css, /#ui-shell \.equip-layout\s*\{[\s\S]*grid-template-columns:\s*minmax\(300px,\s*320px\)\s+minmax\(264px,\s*1fr\)\s*!important/);
+  assert.match(css, /#ui-shell \.equip-top-layout\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+minmax\(180px,\s*190px\)\s*!important/);
+  assert.match(css, /#ui-shell #combat-area\s*\{[\s\S]*flex:\s*0\s+0\s+816px\s*!important[\s\S]*width:\s*816px\s*!important/);
 });
 
 test('裝備評分移到裝備等級列右側，避免遮住裝備名稱', () => {
