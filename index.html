@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>無限征途：合成之巔</title>
-  <link rel="stylesheet" href="css/style.css?v=1.0.3">
+  <link rel="stylesheet" href="css/style.css?v=1.0.4">
   <link rel="stylesheet" href="css/inventory-offset.css">
 </head>
 
@@ -600,7 +600,9 @@
                初始化成功時 body 會掛上 battle-canvas-mode，下方 .battle-scene 隱藏；
                失敗（?canvas=0 / WebGL 不可用）時本容器維持 display:none，原畫面照舊。 -->
           <div id="battle-canvas-host">
-            <div id="player-hud"></div>
+            <!-- 左上角：💪 增益鈕（由 ui.js 從玩家卡片搬進來）＋ 它開關的玩家資訊面板 -->
+            <div id="battle-buff-btn-slot"></div>
+            <div id="player-info-popup"></div>
             <div id="battle-canvas-buttons">
               <button id="btn-battle-info" class="btn sm" type="button" data-tt-title="戰況資訊" data-tt-desc="開啟統計面板、綜合紀錄、詳細日誌與日誌篩選">📊</button>
             </div>
@@ -821,25 +823,25 @@
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js"></script>
   <script src="js/ui-scale.js"></script>
-  <script src="js/data.js?v=1.0.13"></script>
+  <script src="js/data.js?v=1.0.14"></script>
   <script src="js/status.js?v=1.0.2"></script>
-  <script src="js/formula.js?v=1.0.10"></script>
-  <script src="js/battlefield.js"></script>
+  <script src="js/formula.js?v=1.0.11"></script>
+  <script src="js/battlefield.js?v=1.0.1"></script>
   <script src="js/vfx.js?v=1.0.2"></script>
   <!-- PixiJS（本地 vendor，零建置專案不用 CDN）＋ Canvas 戰鬥渲染器。
        渲染器只在主執行緒跑，模擬層與 Worker 完全不知道它存在。 -->
   <script src="js/vendor/pixi.min.js"></script>
-  <script src="js/battle-renderer.js?v=1.0.0"></script>
+  <script src="js/battle-renderer.js?v=1.0.1"></script>
   <script src="js/stats.js?v=1.0.1"></script>
   <script src="js/item.js?v=1.0.2"></script>
   <script src="js/skills.js?v=1.0.10"></script>
   <script src="js/talents.js?v=1.0.2"></script>
   <script src="js/player.js?v=1.0.4"></script>
-  <script src="js/combat.js?v=1.0.7"></script>
+  <script src="js/combat.js?v=1.0.8"></script>
   <script src="js/potential.js"></script>
   <script src="js/tower.js?v=1.0.1"></script>
   <script src="js/save.js?v=1.0.5"></script>
-  <script src="js/ui.js?v=1.0.28"></script>
+  <script src="js/ui.js?v=1.0.29"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js"></script>
