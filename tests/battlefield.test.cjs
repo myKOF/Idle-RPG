@@ -22,19 +22,21 @@ function enemy(col, row, extra) {
   return Object.assign({ hp: 100, maxHp: 100, cell: { col, row, w: 1, h: 1 } }, extra || {});
 }
 
-test('距離表與規格一致：距離 = 2×(行-1) + (中央列 ? 1 : 2)', () => {
+/* 棋盤大小（BF_COLS/BF_ROWS）是參數表可調值——使用者把它從 4×4 改成 10×10 之後，
+   任何寫死 4 的期望值都會誤報成測試失敗。期望值一律由常數推導。 */
+test('距離表與規格一致：距離 = BF_DIST_PER_COL×(行-1) + (中央列 ? 中央 : 外側)', () => {
   const c = loadBattlefield();
-  const expected = [
-    [2, 4, 6, 8],
-    [1, 3, 5, 7],
-    [1, 3, 5, 7],
-    [2, 4, 6, 8]
-  ];
-  for (let row = 1; row <= 4; row++) {
-    for (let col = 1; col <= 4; col++) {
-      assert.equal(c.bfCellDistance(col, row), expected[row - 1][col - 1], `c${col} r${row}`);
+  for (let row = 1; row <= c.BF_ROWS; row++) {
+    for (let col = 1; col <= c.BF_COLS; col++) {
+      const base = c.bfIsCenterRow(row) ? c.BF_DIST_CENTER_ROW : c.BF_DIST_OUTER_ROW;
+      assert.equal(c.bfCellDistance(col, row), c.BF_DIST_PER_COL * (col - 1) + base, `c${col} r${row}`);
     }
   }
+  // 越靠右越遠、中央列比外側列近：這兩條才是規格本身
+  assert.ok(c.bfCellDistance(2, 1) > c.bfCellDistance(1, 1), '越往右應該越遠');
+  const centerRow = Math.ceil(c.BF_ROWS / 2);
+  assert.ok(c.bfIsCenterRow(centerRow), '正中間那一列應該算中央列');
+  assert.ok(c.bfCellDistance(1, centerRow) <= c.bfCellDistance(1, 1), '中央列應該不比外側列遠');
 });
 
 test('BOSS 佔 2×2，距離取所佔格中最近的一格', () => {
@@ -42,8 +44,8 @@ test('BOSS 佔 2×2，距離取所佔格中最近的一格', () => {
   const boss = enemy(2, 1, { isBoss: true, cell: { col: 2, row: 1, w: 2, h: 2 } });
   const cells = c.bfEntityCells(boss);
   assert.equal(cells.length, 4);
-  // 佔 c2r1 / c3r1 / c2r2 / c3r2，其中 c2r2 是中央列，距離 3
-  assert.equal(c.bfEntityDistance(boss), 3);
+  const nearest = Math.min.apply(null, cells.map((cell) => c.bfCellDistance(cell.col, cell.row)));
+  assert.equal(c.bfEntityDistance(boss), nearest);
 });
 
 test('配格不重疊、不出界，BOSS 佔滿 2×2', () => {
@@ -57,7 +59,7 @@ test('配格不重疊、不出界，BOSS 佔滿 2×2', () => {
       const cells = c.bfEntityCells(e);
       assert.equal(cells.length, e.isBoss ? 4 : 1);
       cells.forEach((cell) => {
-        assert.ok(cell.col >= 1 && cell.col <= 4 && cell.row >= 1 && cell.row <= 4, '格位出界');
+        assert.ok(cell.col >= 1 && cell.col <= c.BF_COLS && cell.row >= 1 && cell.row <= c.BF_ROWS, '格位出界');
         const key = cell.col + ',' + cell.row;
         assert.ok(!used[key], '格位重疊：' + key);
         used[key] = true;
@@ -68,10 +70,11 @@ test('配格不重疊、不出界，BOSS 佔滿 2×2', () => {
 
 test('棋盤塞滿時多餘的敵人不會配到格（由呼叫端捨棄）', () => {
   const c = loadBattlefield();
+  const cap = c.bfCellCount();
   const list = [];
-  for (let i = 0; i < 20; i++) list.push({ hp: 1 });
+  for (let i = 0; i < cap + 4; i++) list.push({ hp: 1 });
   const placed = c.bfPlaceEnemies(list);
-  assert.equal(placed.length, 16); // 4×4 = 16 格
+  assert.equal(placed.length, cap);
 });
 
 test('BOSS 放不下 2×2 時退回 1×1，不會整隻消失', () => {

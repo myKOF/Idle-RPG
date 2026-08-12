@@ -64,8 +64,9 @@ test('場上達到同時上限後補波直接跳過，不會憑空產生放不�
   const context = loadCombatContext();
   const cap = context.fieldMaxLiveEnemiesFor(context.G.stage.current, context.G.stage.zone);
   assert.ok(cap >= 1 && cap <= context.bfCellCount(), '同時上限必須落在 1~棋盤格數之間');
+  // 每波只補幾隻，棋盤格數可由參數表放大（10×10＝100 格），迴圈上限要夠寬
   let guard = 0;
-  while (context.liveFieldEnemies().length < cap && guard++ < 60) {
+  while (context.liveFieldEnemies().length < cap && guard++ < 500) {
     if (!context.spawnFieldMonster(true).length) break;
   }
   assert.equal(context.liveFieldEnemies().length, cap, '應該補到同時上限為止');
@@ -87,12 +88,16 @@ test('同時上限可依地圖與關卡區分，且不會超過棋盤格數', ()
   assert.equal(context.fieldMaxLiveEnemiesFor(50, 'desert'), 12);
   // 填超過棋盤格數也不會真的生出那麼多——放不下的本來就會被丟掉
   assert.equal(context.fieldMaxLiveEnemiesFor(1, 'swamp'), context.bfCellCount());
-  // 沒列到的地圖、缺欄位、填 0 一律退回預設值
-  assert.equal(context.fieldMaxLiveEnemiesFor(1, 'Icefield'), context.FIELD_MAX_LIVE_ENEMIES);
-  context.ZONE_STAGE_WAVE_PROFILES = { desert: [[1, 9999, 2]] };
-  assert.equal(context.fieldMaxLiveEnemiesFor(1, 'desert'), context.FIELD_MAX_LIVE_ENEMIES);
+  // 沒列到的地圖 → 預設常數
+  assert.equal(context.fieldMaxLiveEnemiesFor(1, 'Icefield'),
+    Math.min(context.FIELD_MAX_LIVE_ENEMIES, context.bfCellCount()));
+  /* 填 0 或缺欄位＝不額外限制（＝棋盤格數）。這條很重要：把棋盤放大之後，
+     這一欄若還留著改版前的舊數字，敵人會卡在那個數字上不再增加。 */
   context.ZONE_STAGE_WAVE_PROFILES = { desert: [[1, 9999, 2, 0]] };
-  assert.equal(context.fieldMaxLiveEnemiesFor(1, 'desert'), context.FIELD_MAX_LIVE_ENEMIES);
+  assert.equal(context.fieldMaxLiveEnemiesFor(1, 'desert'), context.bfCellCount());
+  context.ZONE_STAGE_WAVE_PROFILES = { desert: [[1, 9999, 2]] };
+  assert.equal(context.fieldMaxLiveEnemiesFor(1, 'desert'),
+    Math.min(context.FIELD_MAX_LIVE_ENEMIES, context.bfCellCount()));
 });
 
 test('fieldTick 每隔一個波次間隔補一波，不等場上清空', () => {
@@ -203,7 +208,7 @@ test('參數表預設值涵蓋所有地圖，數值合理', () => {
       assert.equal(row.length, 4, zone + ' 每列必須是 [最低關卡, 最高關卡, 間隔秒數, 同時上限隻數]');
       assert.ok(row[0] >= 1 && row[1] >= row[0], zone + ' 關卡區間不合法');
       assert.ok(row[2] > 0 && row[2] <= 60, zone + ' 間隔秒數超出合理範圍');
-      assert.ok(row[3] >= 1 && row[3] <= 99, zone + ' 同時上限隻數超出合理範圍');
+      assert.ok(row[3] >= 0 && row[3] <= 999, zone + ' 同時上限隻數超出合理範圍（0＝不額外限制）');
     });
   });
 });

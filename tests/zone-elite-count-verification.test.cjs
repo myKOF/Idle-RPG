@@ -31,12 +31,15 @@ test('驗證 1：四張具名地圖與神界三圖菁英關出怪數量範圍（
 
   /* 依 AI_RULES.md 9.1 例外，測試刻意釘住目前數值：參數一動這裡就會紅，
      這是預期行為——確認新值是有意調整後，把期望值一併更新。
-     2026-08-10（使用者確認）：亡靈山脈 7 → 9、神界三圖 8 → 11。 */
+     2026-08-10（使用者確認）：亡靈山脈 7 → 9、神界三圖 8 → 11。
+     2026-08-12（使用者「調整出敵數量」提交）：亡靈山脈 9 → 30。
+     ⚠️ 30 隻要棋盤放得下才抽得到——BF_COLS×BF_ROWS 已由使用者調成 10×10（100 格）；
+     若日後把棋盤縮回 4×4，這裡會被 bfCellCount() 夾成 16 而再次變紅。 */
   const zoneExpectations = {
     desert: { min: 1, max: 3, table: ctx.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert },
     Icefield: { min: 1, max: 4, table: ctx.FIELD_ELITE_COUNT_TABLE_BY_ZONE.Icefield },
     swamp: { min: 1, max: 6, table: ctx.FIELD_ELITE_COUNT_TABLE_BY_ZONE.swamp },
-    undead_mountains: { min: 1, max: 9, table: ctx.FIELD_ELITE_COUNT_TABLE_BY_ZONE.undead_mountains },
+    undead_mountains: { min: 1, max: 30, table: ctx.FIELD_ELITE_COUNT_TABLE_BY_ZONE.undead_mountains },
     god_realm_1: { min: 1, max: 11, table: ctx.FIELD_ELITE_COUNT_TABLE },
     god_realm_2: { min: 1, max: 11, table: ctx.FIELD_ELITE_COUNT_TABLE },
     god_realm_3: { min: 1, max: 11, table: ctx.FIELD_ELITE_COUNT_TABLE }
@@ -124,11 +127,12 @@ test('驗證 3：小怪分段（荒漠每 20 關）與 BOSS 固定 1 隻不變',
   });
 });
 
-test('驗證 4：棋盤放不下時的夾限（菁英 8 隻仍受 4x4 及可用格數上限約束）', () => {
+test('驗證 4：棋盤放不下時的夾限（出怪數必受可用格數上限約束）', () => {
   const ctx = loadCombatContext();
 
-  // 1. 預設 4x4 棋盤，格數上限為 16 (bfCellCount())
-  assert.equal(ctx.bfCellCount(), 16);
+  /* 棋盤大小是參數表可調值（BF_COLS/BF_ROWS，使用者已改成 10×10），
+     這裡只驗「夾限有生效」，格數本身由常數推導，不寫死。 */
+  assert.equal(ctx.bfCellCount(), ctx.BF_COLS * ctx.BF_ROWS);
 
   // 即使在神界三圖（權重上限 8 隻），出怪數必然 <= 16
   for (let i = 0; i < 500; i++) {
