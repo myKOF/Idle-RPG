@@ -9,7 +9,8 @@ test('UI uses a fixed reference canvas instead of responsive reflow', () => {
   assert.match(css, /#ui-stage\s*\{[\s\S]*position:\s*fixed/);
   assert.match(css, /#ui-shell\s*\{[\s\S]*width:\s*1920px[\s\S]*height:\s*900px/);
   assert.match(css, /#ui-shell #game-layout\s*\{[\s\S]*flex-direction:\s*row\s*!important/);
-  assert.match(css, /#ui-shell #combat-area\s*\{[\s\S]*width:\s*500px\s*!important/);
+  // 戰鬥改造：戰鬥區 864px ＝ 1920 設計寬的 45%（需求：戰鬥區佔畫面 40%~50%）
+  assert.match(css, /#ui-shell #combat-area\s*\{[\s\S]*width:\s*864px\s*!important/);
   // 高塔沿用三欄；野外的 4×4 棋盤版型（.multi-enemy-layout）另有一組固定欄寬
   assert.match(css, /#ui-shell \.battle-scene\s*\{[\s\S]*grid-template-columns:\s*202px auto minmax\(0, 1fr\)\s*!important/);
   assert.match(css, /#ui-shell \.battle-scene\.multi-enemy-layout\s*\{[\s\S]*grid-template-columns:\s*132px minmax\(0, 1fr\)\s*!important/);

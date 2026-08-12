@@ -40,7 +40,8 @@ test('普通與菁英波次都依數量表生成 1～4 隻敵人', () => {
    舊的 enemy-count-1~4 專用排版已移除，改由 enemy-grid 與 enemy.cell 決定落點。 */
 test('戰鬥區寬度固定；棋盤版型把我方縮到左側，其餘空間全給敵方', () => {
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
-  assert.match(css, /#combat-area\s*\{[\s\S]*flex:\s*0\s+0\s+500px/);
+  // 戰鬥改造：基礎版面改佔 45% 寬（固定畫布 #ui-shell 內對應 864px），仍不隨敵人數量變動
+  assert.match(css, /#combat-area\s*\{[\s\S]*flex:\s*0\s+0\s+45%/);
   // 高塔沿用原本的 202px／VS／BOSS 三欄
   assert.match(css, /\.battle-scene\s*\{[\s\S]*grid-template-columns:\s*202px\s+auto\s+minmax\(0,\s*1fr\)/);
   // 野外棋盤版型：我方一欄 + 敵方一欄，且固定畫布（#ui-shell）的 !important 覆寫要同步分開
