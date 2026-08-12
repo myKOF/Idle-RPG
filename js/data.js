@@ -1314,13 +1314,13 @@ Object.keys(ZONE_STAGE_DROP_PROFILES).forEach(function (zoneKey) {
    間隔越小＝補得越勤；同時上限＝場上最多站幾隻（棋盤只有 BF_COLS×BF_ROWS 格，
    上限再高也不會超過格數）。上限是難度的煞車：沒有它，清不完的怪會一路堆到滿盤，
    新角色在前幾關就會被打死到完全推不動。找不到對應區間時退回下面兩個預設值。 */
-var ZONE_STAGE_WAVE_PROFILES = {  desert: [[1,9999,2,16]],
-  Icefield: [[1,9999,2,16]],
-  swamp: [[1,9999,2,16]],
-  undead_mountains: [[1,9999,2,16]],
-  god_battlefield: [[1,9999,2,16]],
-  god_chaos: [[1,9999,2,16]],
-  god_sanctuary: [[1,9999,2,16]]
+var ZONE_STAGE_WAVE_PROFILES = {  desert: [[1,9999,2,0]],
+  Icefield: [[1,9999,2,0]],
+  swamp: [[1,9999,2,0]],
+  undead_mountains: [[1,9999,2,0]],
+  god_battlefield: [[1,9999,2,0]],
+  god_chaos: [[1,9999,2,0]],
+  god_sanctuary: [[1,9999,2,0]]
 };
 
 function currentZoneDef() {

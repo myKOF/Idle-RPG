@@ -115,14 +115,25 @@ var BattleRenderer = (function () {
     var c = playerPos();
     var rx = Math.max(90, S.W * 0.5 - 52);
     var ry = Math.max(72, Math.min(S.H * 0.5 - 62, rx * 0.74));
-    /* inner＝最內環的半徑比例。太小的話第一行的敵人會疊在玩家身上，
-       名條與血條也會糊成一團，所以留出一個身位。 */
-    return { cols: cols, rows: rows, cx: c.x, cy: c.y, rx: rx, ry: ry, inner: 0.46 };
+    /* inner＝最內環的半徑比例（第一環離玩家多遠）。
+       格數少的時候留一個身位，免得第一行站到玩家身上；
+       格數多的時候必須把內圈往回收，否則所有環都擠在外側那一圈細細的環帶裡
+       （10 欄時環距只剩十幾像素，敵人會整片疊在一起）。 */
+    var inner = Math.max(0.18, 0.46 - Math.max(0, cols - 4) * 0.04);
+    return { cols: cols, rows: rows, cx: c.x, cy: c.y, rx: rx, ry: ry, inner: inner };
   }
   /* 名目格尺寸：只拿來決定精靈與血條大小，不參與定位 */
   function cellSize() {
     var m = boardMetrics();
     return { w: Math.max(52, m.rx / m.cols * 1.15), h: Math.max(46, m.ry / m.rows * 1.35) };
+  }
+  /* 密度縮放：棋盤格數越多，每個敵人可用的空間越小，精靈與血條就要跟著縮。
+     不縮的話 10×10 會是一百隻原尺寸的怪疊在同一塊畫布上，誰在打誰都看不出來。
+     1 = 目前 4×4 的尺寸；下限 0.5，再小就看不清是什麼怪。 */
+  function densityScale() {
+    var m = boardMetrics();
+    var w = m.rx * 2 / m.cols, h = m.ry * 2 / m.rows;
+    return Math.max(0.5, Math.min(1, Math.min(w / 82, h / 78)));
   }
   /* 格位雜湊 → [0,1)。同一格每次都得到同一個數，所以站位穩定；
      salt 用來取不同用途的獨立亂數（角度／半徑／每環旋轉）。 */
@@ -168,7 +179,9 @@ var BattleRenderer = (function () {
       }
     }
 
-    var minDist = Math.max(58, Math.min(m.rx, m.ry) * 0.32);
+    /* 最小間距跟著精靈實際大小走：格數多、精靈縮小時，門檻也要跟著降，
+       否則 100 個點永遠滿足不了 58px，鬆弛只會把所有點推到最外圈擠成一圈。 */
+    var minDist = Math.max(26, Math.min(58 * densityScale(), Math.min(m.rx, m.ry) * 0.32));
     for (var pass = 0; pass < 6; pass++) {
       for (i = 0; i < pts.length; i++) {
         for (j = i + 1; j < pts.length; j++) {
@@ -434,7 +447,9 @@ var BattleRenderer = (function () {
   function makeEnemy(data) {
     var isBoss = !!data.isBoss;
     var isElite = !isBoss && !!data.elite;
-    var visScale = isBoss ? 1 : (isElite ? 1.28 : 1);
+    /* 密度縮放：棋盤格數越多，每隻可用的空間越小，整體跟著縮 */
+    var dScale = densityScale();
+    var visScale = (isBoss ? 1 : (isElite ? 1.28 : 1)) * dScale;
 
     var root = new PIXI.Container();
     var sz = cellSize();
@@ -484,32 +499,36 @@ var BattleRenderer = (function () {
     }
 
     /* 血條 + 名字（在腳下，不干擾本體動作） */
-    var barW = isBoss ? sz.w * 1.5 : (isElite ? 60 : 48);
+    var barW = isBoss ? sz.w * 1.5 : (isElite ? 60 : 48) * dScale;
     var hpBar = new PIXI.Graphics();
     hpBar.y = 7;
     root.addChild(hpBar);
 
     var elemEmoji = (data.attr && typeof ELEM_INFO !== 'undefined' && ELEM_INFO[data.attr])
       ? ELEM_INFO[data.attr].emoji : '';
+    /* 名條與狀態列同樣依密度縮放；格數多的時候不縮，字會糊成一片連在一起。
+       字級有下限 8px，再小就完全看不出寫什麼了。 */
+    var nameSize = Math.max(8, Math.round((isBoss ? 14 : 11) * dScale));
+    var statusSize = Math.max(8, Math.round(11 * dScale));
     var name = new PIXI.Text({
       text: 'Lv.' + data.level + ' ' + elemEmoji + (data.name || ''),
       style: {
-        fontFamily: 'sans-serif', fontSize: isBoss ? 14 : 11, fontWeight: 'bold',
+        fontFamily: 'sans-serif', fontSize: nameSize, fontWeight: 'bold',
         fill: isBoss ? '#ffb3b3' : (isElite ? '#d9b3ff' : '#cfd6e4'),
         stroke: { color: '#000000', width: 3 }
       }
     });
     name.anchor.set(0.5, 0);
-    name.y = 14;
+    name.y = 8 + 6 * dScale;
     name.alpha = 0.92;
     root.addChild(name);
 
     var status = new PIXI.Text({
       text: '',
-      style: { fontFamily: 'sans-serif', fontSize: 11, fill: '#ffffff', stroke: { color: '#000', width: 2 } }
+      style: { fontFamily: 'sans-serif', fontSize: statusSize, fill: '#ffffff', stroke: { color: '#000', width: 2 } }
     });
     status.anchor.set(0.5, 0);
-    status.y = isBoss ? 32 : 28;
+    status.y = (isBoss ? 32 : 28) * Math.max(0.7, dScale);
     root.addChild(status);
 
     var ent = {

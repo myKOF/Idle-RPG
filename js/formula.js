@@ -1068,16 +1068,17 @@ function fieldWaveIntervalFor(stage, zone) {
   return Math.max(0.2, value);
 }
 
-/* 場上同時最多站幾隻。這是難度的煞車：清不完的怪會一路堆積，沒有上限的話
-   新角色在前幾關就會被打死到完全推不動（實測 headless 模擬全程卡在復活倒數）。
-   再高也不會超過棋盤格數——放不下的敵人本來就會在配格時被丟掉。 */
+/* 場上同時最多站幾隻。這是難度的煞車：清不完的怪會一路堆積，要壓低壓力就調小它。
+   填 0（或留空、缺欄位）＝不額外限制，直接用棋盤格數。
+   ⚠️ 這個「0＝不限」很重要：把棋盤從 4×4 放大到 10×10 之後，若這一欄還留著改版前
+   的舊數字，敵人就會卡在那個數字上不再增加，而且完全看不出是被哪裡擋住。
+   任何情況下都不會超過棋盤格數——放不下的敵人本來就會在配格時被丟掉。 */
 function fieldMaxLiveEnemiesFor(stage, zone) {
-  var fallback = (typeof FIELD_MAX_LIVE_ENEMIES === 'number' && FIELD_MAX_LIVE_ENEMIES > 0)
-    ? FIELD_MAX_LIVE_ENEMIES : 8;
+  var cells = (typeof bfCellCount === 'function') ? bfCellCount() : 16;
   var row = fieldWaveProfileRow(stage, zone);
-  var value = (row && row.length > 3) ? Number(row[3]) : fallback;
-  if (!isFinite(value) || value <= 0) value = fallback;
-  var cells = (typeof bfCellCount === 'function') ? bfCellCount() : value;
+  var value = (row && row.length > 3) ? Number(row[3]) : NaN;
+  if (!isFinite(value) && typeof FIELD_MAX_LIVE_ENEMIES === 'number') value = FIELD_MAX_LIVE_ENEMIES;
+  if (!isFinite(value) || value <= 0) value = cells;   // 0／空白／壞值＝不額外限制
   return Math.max(1, Math.min(Math.floor(value), cells));
 }
 

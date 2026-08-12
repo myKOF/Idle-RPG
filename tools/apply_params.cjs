@@ -174,7 +174,7 @@ function zoneStageWaveContent() {
     const cap = num(r[CCAP], zone + '.同時上限隻數');
     if (min > max) throw new Error('Zone_Stage_Waves.csv 關卡區間反向：' + zone + ' ' + min + '~' + max);
     if (!(sec > 0)) throw new Error('Zone_Stage_Waves.csv 出怪間隔必須大於 0：' + zone + ' = ' + sec);
-    if (!(cap >= 1)) throw new Error('Zone_Stage_Waves.csv 同時上限隻數必須至少 1：' + zone + ' = ' + cap);
+    if (!(cap >= 0)) throw new Error('Zone_Stage_Waves.csv 同時上限隻數不得為負（0＝不額外限制）：' + zone + ' = ' + cap);
     (grouped[zone] || (grouped[zone] = [])).push([min, max, sec, cap]);
   });
   const expectedZones = ['desert', 'Icefield', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary'];
