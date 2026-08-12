@@ -34,7 +34,7 @@ var BattleRenderer = (function () {
                                    // 長效領域會讓那塊半透明方框在畫面上留很久，看起來像沒清乾淨
   var FX_WATCHDOG_MS = 1000;       // 看門狗掃描間隔
   var PLAYER_RUN_SPEED = 300;      // 角色追擊目標的跑速（px/秒）
-  var PLAYER_ADVANCE_SPEED = 90;   // 空場時向前推進的速度
+  var PLAYER_ADVANCE_SPEED = 135;  // 空場時向前推進的速度（原 90，×1.5）
   var PLAYER_REACH = 52;           // 近戰距離：跑到這麼近就停下來打
   var ENEMY_RUN_SPEED = 260;       // 敵人朝角色逼近的跑速
   var MAX_FLOATS = 60;           // 同時存在的飄字上限
@@ -283,8 +283,12 @@ var BattleRenderer = (function () {
     if (ent) return { x: ent.root.x, y: ent.root.y - ent.hitHeight * 0.55 };
     var last = S.lastPos[elId];
     if (last && nowMs() - last.at < LASTPOS_KEEP_MS) return { x: last.x, y: last.y };
-    var m = boardMetrics();
-    return { x: m.cx, y: m.cy - 40 };
+    /* 目標已經不在（延遲期間被打死、或生成當下就被秒殺沒來得及建實體）：
+       退到「角色面前一個身位」。不能退到陣型中心——中心就是玩家自己，
+       斬擊與爆點會直接炸在自己身上。 */
+    var pp = playerPos();
+    var face = (S.player && S.player.facing < 0) ? -1 : 1;
+    return { x: pp.x + face * (PLAYER_REACH + 14), y: pp.y - 24 };
   }
 
   /* ---- 序列幀載入 ----
@@ -665,11 +669,11 @@ var BattleRenderer = (function () {
   function makePlayer() {
     var root = new PIXI.Container();
     var shadow = new PIXI.Graphics();
-    shadow.ellipse(0, 0, 34, 11).fill({ color: 0x000000, alpha: 0.4 });
+    shadow.ellipse(0, 0, 24, 8).fill({ color: 0x000000, alpha: 0.4 });
     root.addChild(shadow);
     var bodyWrap = new PIXI.Container();
     var body = makeAnimSprite('player', 'idle');
-    body.scale.set(1.55);
+    body.scale.set(1.09);   // 原 1.55，縮小約 30%
     bodyWrap.addChild(body);
     root.addChild(bodyWrap);
 
@@ -707,7 +711,7 @@ var BattleRenderer = (function () {
       }
     });
     reviveText.anchor.set(0.5, 1);
-    reviveText.y = -104;
+    reviveText.y = -76;   // 跟著角色縮小後的身高
     reviveText.visible = false;
     root.addChild(reviveText);
 
@@ -718,7 +722,7 @@ var BattleRenderer = (function () {
       id: 'pv-float', root: root, body: body, bodyWrap: bodyWrap,
       vitals: vitals, hpText: hpText, mpText: mpText, reviveText: reviveText,
       sheetName: 'player', curAnim: 'idle', baseAnim: 'idle',
-      hitHeight: 100, walking: false, dead: false,
+      hitHeight: 70, walking: false, dead: false,
       flash: 0, jolt: 0, lunge: 0, facing: 1,
       /* 世界座標。角色會在世界裡跑動追打目標，鏡頭跟著他。 */
       wx: 0, wy: 0,
@@ -1549,11 +1553,26 @@ var BattleRenderer = (function () {
     switch (spec.fxKind) {
       case 'projectile':
         targets.forEach(function (id, ti) {
+          var travel = (spec.travelMs && spec.travelMs[ti]) || (spec.dur ? spec.dur * 1000 : 300);
           for (var c = 0; c < count; c++) {
             (function (cc) {
+              /* 普攻不發射飛行子彈：它在畫面上已經是近戰（角色會跑到目標身前再揮），
+                 再飛一道劍氣過去會變成「明明貼著臉還射子彈」。
+                 模擬層送來的仍是 projectile（高塔那邊是靜態場景，飛行劍氣在那裡才合理），
+                 所以只在這裡改畫法，不動協議也不動 DOM 後備路徑。
+                 延遲仍沿用 travelMs——傷害數字用同一個延遲，刀到＝數字跳。 */
+              if (spec.cat === 'basic') {
+                setTimeout(function () {
+                  if (fxGate()) return;
+                  var pt = posOf(id);
+                  spawnSlash(pt.x, pt.y, spec, true);
+                  spawnImpact(pt.x, pt.y, spec, false);
+                  hitReact(id, spec.elem, false);
+                }, travel + cc * stagger + ti * 40);
+                return;
+              }
               setTimeout(function () {
                 if (fxGate()) return;
-                var travel = (spec.travelMs && spec.travelMs[ti]) || (spec.dur ? spec.dur * 1000 : 300);
                 spawnProjectile(id, travel, spec, function (pt) {
                   spawnImpact(pt.x, pt.y, spec, spec.variant === 'detonate');
                   hitReact(id, spec.elem, spec.variant === 'detonate');
