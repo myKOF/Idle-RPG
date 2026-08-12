@@ -98,51 +98,66 @@ var BattleRenderer = (function () {
   /* ---- 世界座標 ----
      棋盤（BF_COLS×BF_ROWS，預設 4×4）鋪在畫面右側 62%，col 1 靠玩家。
      玩家站左側約 17% 寬、垂直置中。實體座標一律以「腳底」為原點。 */
+  /* 玩家站畫面正中央；敵人從四面八方逼近。
+     棋盤格 (col,row) 對應到「以玩家為圓心」的極座標：
+       col → 距離環（col 1 最靠近玩家，與 bfCellDistance 的語意一致）
+       row → 方位角（row 1 正上方，順時鐘均分一圈）
+     每往外一環再錯開半格角度，避免同一方位排成一條放射狀直線。
+     模擬層只認 (col,row)、不知道畫面怎麼擺，所以版型可以在這裡自由決定。 */
   function boardMetrics() {
-    var left = S.W * 0.34, right = S.W * 0.985;
-    var top = S.H * 0.14, bottom = S.H * 0.92;
     var cols = (typeof BF_COLS === 'number' && BF_COLS > 0) ? BF_COLS : 4;
     var rows = (typeof BF_ROWS === 'number' && BF_ROWS > 0) ? BF_ROWS : 4;
-    return {
-      left: left, top: top,
-      cw: (right - left) / cols, ch: (bottom - top) / rows,
-      cols: cols, rows: rows
-    };
+    var c = playerPos();
+    var rx = Math.max(90, S.W * 0.5 - 52);
+    var ry = Math.max(72, Math.min(S.H * 0.5 - 62, rx * 0.74));
+    return { cols: cols, rows: rows, cx: c.x, cy: c.y, rx: rx, ry: ry, inner: 0.36 };
+  }
+  /* 名目格尺寸：只拿來決定精靈與血條大小，不參與定位 */
+  function cellSize() {
+    var m = boardMetrics();
+    return { w: Math.max(52, m.rx / m.cols * 1.15), h: Math.max(46, m.ry / m.rows * 1.35) };
   }
   function cellCenter(col, row, w, h) {
     var m = boardMetrics();
-    return {
-      x: m.left + (col - 1 + (w || 1) / 2) * m.cw,
-      y: m.top + (row - 1 + (h || 1) / 2) * m.ch
-    };
+    var colC = (Number(col) || 1) + ((w || 1) - 1) / 2;
+    var rowC = (Number(row) || 1) + ((h || 1) - 1) / 2;
+    var t = m.cols > 1 ? (colC - 1) / (m.cols - 1) : 0;
+    var k = m.inner + (1 - m.inner) * Math.max(0, Math.min(1, t));
+    var ang = ((rowC - 1) / m.rows) * Math.PI * 2          // 方位
+      + ((colC - 1) / m.cols) * (Math.PI / m.rows)          // 每環錯開半格
+      - Math.PI / 2;                                        // row 1 朝正上方
+    return { x: m.cx + Math.cos(ang) * m.rx * k, y: m.cy + Math.sin(ang) * m.ry * k, ang: ang, k: k };
   }
-  /* 實體腳底錨點：格子中心再往下半格，讓身體站在格內 */
+  /* 實體腳底錨點（極座標版沒有「格子下緣」，改用名目格高的一小段往下壓） */
   function cellAnchor(cell) {
     var c = cellCenter(cell.col, cell.row, cell.w, cell.h);
-    var m = boardMetrics();
-    return { x: c.x, y: c.y + m.ch * (cell.h || 1) * 0.30 };
+    return { x: c.x, y: c.y + cellSize().h * 0.18, ang: c.ang, k: c.k };
   }
   function playerPos() {
-    return { x: S.W * 0.17, y: S.H * 0.60 };
+    return { x: S.W * 0.5, y: S.H * 0.54 };
   }
-  function playerMuzzle() { // 投射物起點（武器高度）
-    var p = playerPos();
-    return { x: p.x + 34, y: p.y - 52 };
+  /* 投射物起點：跟著玩家目前位置（近戰突進時玩家會離開原位） */
+  function playerMuzzle() {
+    var p = S.player && S.player.root ? { x: S.player.root.x, y: S.player.root.y } : playerPos();
+    return { x: p.x, y: p.y - 52 };
   }
+  /* 區域特效的落點：極座標下「一塊 n×n 格」不再是螢幕上的矩形，
+     改取所有涵蓋格子實際位置的外接矩形。 */
   function cellsRect(cells) {
     if (!cells || !cells.length) return null;
-    var m = boardMetrics();
-    var minC = 99, maxC = -99, minR = 99, maxR = -99;
+    var sz = cellSize();
+    var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (var i = 0; i < cells.length; i++) {
-      var c = cells[i];
-      if (c.col < minC) minC = c.col;
-      if (c.col > maxC) maxC = c.col;
-      if (c.row < minR) minR = c.row;
-      if (c.row > maxR) maxR = c.row;
+      var p = cellCenter(cells[i].col, cells[i].row, 1, 1);
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxY) maxY = p.y;
     }
+    var padX = sz.w * 0.5, padY = sz.h * 0.5;
     return {
-      x: m.left + (minC - 1) * m.cw, y: m.top + (minR - 1) * m.ch,
-      w: (maxC - minC + 1) * m.cw, h: (maxR - minR + 1) * m.ch
+      x: minX - padX, y: minY - padY,
+      w: (maxX - minX) + padX * 2, h: (maxY - minY) + padY * 2
     };
   }
 
@@ -154,7 +169,7 @@ var BattleRenderer = (function () {
     var last = S.lastPos[elId];
     if (last && nowMs() - last.at < LASTPOS_KEEP_MS) return { x: last.x, y: last.y };
     var m = boardMetrics();
-    return { x: m.left + m.cw * m.cols / 2, y: m.top + m.ch * m.rows / 2 };
+    return { x: m.cx, y: m.cy - 40 };
   }
 
   /* ---- 序列幀載入 ----
@@ -331,11 +346,11 @@ var BattleRenderer = (function () {
     var visScale = isBoss ? 1 : (isElite ? 1.28 : 1);
 
     var root = new PIXI.Container();
-    var m = boardMetrics();
+    var sz = cellSize();
 
     /* 陰影 */
     var shadow = new PIXI.Graphics();
-    var shw = (isBoss ? m.cw * 1.5 : m.cw * 0.5) * 0.5;
+    var shw = (isBoss ? sz.w * 1.4 : sz.w * 0.5) * 0.5;
     shadow.ellipse(0, 0, shw, shw * 0.32).fill({ color: 0x000000, alpha: 0.35 });
     root.addChild(shadow);
 
@@ -358,7 +373,7 @@ var BattleRenderer = (function () {
     if (isBoss && S.sheets.boss) {
       sheetName = 'boss';
       body = makeAnimSprite('boss', 'idle');
-      var targetH = m.ch * 1.75;
+      var targetH = sz.h * 2.1;
       body.scale.set(targetH / body.texture.height);
     } else {
       body = makeMobBody(data, visScale);
@@ -378,7 +393,7 @@ var BattleRenderer = (function () {
     }
 
     /* 血條 + 名字（在腳下，不干擾本體動作） */
-    var barW = isBoss ? m.cw * 1.6 : (isElite ? 60 : 48);
+    var barW = isBoss ? sz.w * 1.5 : (isElite ? 60 : 48);
     var hpBar = new PIXI.Graphics();
     hpBar.y = 7;
     root.addChild(hpBar);
@@ -412,7 +427,7 @@ var BattleRenderer = (function () {
       hpBar: hpBar, nameText: name, statusText: status,
       sheetName: sheetName, curAnim: sheetName ? 'idle' : '', baseAnim: 'idle',
       isBoss: isBoss, isElite: isElite, visScale: visScale,
-      barW: barW, hitHeight: isBoss ? m.ch * 1.6 : 64 * visScale,
+      barW: barW, hitHeight: isBoss ? sz.h * 1.9 : 64 * visScale,
       x: 0, y: 0, tx: 0, ty: 0,
       state: 'entering',              // entering → idle → dying → gone
       bobPhase: Math.random() * Math.PI * 2,
@@ -421,17 +436,21 @@ var BattleRenderer = (function () {
       bornAt: nowMs(),
       hpShown: -1, shieldShown: -1,
       lastAtkCd: (typeof data.atkCd === 'number') ? data.atkCd : 0,
-      lunge: 0,                        // 攻擊突進動畫進度（秒）
-      flash: 0, flashColor: 0xffffff,  // 受擊閃光剩餘秒數
+      lunge: 0,                        // 攻擊突進：0~1 進度（朝玩家撲擊）
+      lungeDur: 0,
+      flash: 0,                        // 受擊染色剩餘秒數
       jolt: 0,                          // 受擊抖動剩餘秒數
       dieAt: 0
     };
 
-    var anchor = data.cell ? cellAnchor(data.cell) : { x: S.W * 0.8, y: S.H * 0.5 };
+    var anchor = data.cell ? cellAnchor(data.cell) : { x: S.W * 0.78, y: S.H * 0.5, ang: 0 };
     ent.tx = anchor.x; ent.ty = anchor.y;
-    /* 進場：從右側畫面外走進來（帶一點行高抖動） */
-    ent.x = S.W + 50 + Math.random() * 80;
-    ent.y = anchor.y + (Math.random() * 20 - 10);
+    /* 進場：沿著自己的方位角從畫面外走進來——四面八方都可能來人 */
+    var bm = boardMetrics();
+    var ang = (typeof anchor.ang === 'number') ? anchor.ang : 0;
+    var outK = 1.75 + Math.random() * 0.35;
+    ent.x = bm.cx + Math.cos(ang) * bm.rx * outK;
+    ent.y = bm.cy + Math.sin(ang) * bm.ry * outK;
     root.x = ent.x; root.y = ent.y;
     root.zIndex = ent.y;
 
@@ -502,6 +521,8 @@ var BattleRenderer = (function () {
   }
 
   /* ---- 玩家 ---- */
+  var PLAYER_BAR_W = 88;
+
   function makePlayer() {
     var root = new PIXI.Container();
     var shadow = new PIXI.Graphics();
@@ -512,25 +533,121 @@ var BattleRenderer = (function () {
     body.scale.set(1.55);
     bodyWrap.addChild(body);
     root.addChild(bodyWrap);
+
+    /* 生命／法力條：跟著角色走，畫在腳下（與敵人同一套視覺語言） */
+    var vitals = new PIXI.Graphics();
+    vitals.y = 6;
+    root.addChild(vitals);
+    var hpText = new PIXI.Text({
+      text: '',
+      style: {
+        fontFamily: 'sans-serif', fontSize: 9, fontWeight: 'bold',
+        fill: '#ffffff', stroke: { color: '#000000', width: 2 }
+      }
+    });
+    hpText.anchor.set(0.5, 0.5);
+    hpText.y = 6 + 5;
+    root.addChild(hpText);
+    var mpText = new PIXI.Text({
+      text: '',
+      style: {
+        fontFamily: 'sans-serif', fontSize: 8, fontWeight: 'bold',
+        fill: '#dbeafe', stroke: { color: '#000000', width: 2 }
+      }
+    });
+    mpText.anchor.set(0.5, 0.5);
+    mpText.y = 6 + 16;
+    root.addChild(mpText);
+
+    /* 復活倒數：技能與狀態列都收進彈出面板後，倒地資訊只剩畫面上這一條 */
+    var reviveText = new PIXI.Text({
+      text: '',
+      style: {
+        fontFamily: 'sans-serif', fontSize: 13, fontWeight: 'bold',
+        fill: '#ff9b9b', stroke: { color: '#000000', width: 3 }
+      }
+    });
+    reviveText.anchor.set(0.5, 1);
+    reviveText.y = -104;
+    reviveText.visible = false;
+    root.addChild(reviveText);
+
     var p = playerPos();
     root.x = p.x; root.y = p.y;
     root.zIndex = p.y;
     S.layers.entity.addChild(root);
     S.player = {
       id: 'pv-float', root: root, body: body, bodyWrap: bodyWrap,
+      vitals: vitals, hpText: hpText, mpText: mpText, reviveText: reviveText,
       sheetName: 'player', curAnim: 'idle', baseAnim: 'idle',
       hitHeight: 100, walking: false, dead: false,
-      flash: 0, flashColor: 0xffffff, jolt: 0, lunge: 0
+      flash: 0, jolt: 0, lunge: 0, facing: 1,
+      /* 近戰突進：out 撲出去、back 收回來，home 是站樁點 */
+      dash: null,
+      vitalsShown: ''
     };
+    drawPlayerVitals();
   }
-  function playerAttackAnim(kind) {
+
+  /* 生命／法力條（資料來自 5Hz 的 TICK view，不必等面板） */
+  function drawPlayerVitals() {
+    var p = S.player;
+    if (!p || !p.vitals || p.vitals.destroyed) return;
+    var v = S.vitals;
+    if (!v) return;
+    var hpMax = Math.max(1, v.hpMax || 1), mpMax = Math.max(1, v.mpMax || 1);
+    var hp = Math.max(0, v.hp || 0), mp = Math.max(0, v.mp || 0);
+    var sig = Math.round(hp) + '/' + Math.round(hpMax) + '|' + Math.round(mp) + '/' +
+      Math.round(mpMax) + '|' + Math.round(v.shield || 0);
+    if (p.vitalsShown === sig) return;
+    p.vitalsShown = sig;
+
+    var w = PLAYER_BAR_W, hpH = 10, mpH = 7, gap = 2;
+    var g = p.vitals;
+    g.clear();
+    g.roundRect(-w / 2 - 1, -1, w + 2, hpH + gap + mpH + 2, 2).fill({ color: 0x000000, alpha: 0.78 });
+    var hpPct = Math.max(0, Math.min(1, hp / hpMax));
+    if (hpPct > 0) g.roundRect(-w / 2, 0, w * hpPct, hpH, 1.5).fill(0xc0392b);
+    var mpPct = Math.max(0, Math.min(1, mp / mpMax));
+    if (mpPct > 0) g.roundRect(-w / 2, hpH + gap, w * mpPct, mpH, 1.5).fill(0x2f7fd0);
+    var sh = Math.max(0, v.shield || 0);
+    if (sh > 0.5) {
+      var sp = Math.max(0.05, Math.min(1, sh / hpMax));
+      g.roundRect(-w / 2, -4, w * sp, 3, 1).fill({ color: 0x8ecbff, alpha: 0.95 });
+    }
+    p.hpText.text = fmtNum(hp) + ' / ' + fmtNum(hpMax);
+    p.mpText.text = fmtNum(mp) + ' / ' + fmtNum(mpMax);
+  }
+
+  /* 物理＝近戰突進、魔法＝原地施法（遠程投射物另由特效處理） */
+  function playerAttackAnim(kind, targetId, travelMs) {
     var p = S.player;
     if (!p || p.dead) return;
-    var name = kind === 'cast' ? 'attack2'
-      : 'attack' + (1 + Math.floor(Math.random() * 3));
+    var melee = kind !== 'cast';
+    var name = melee ? ('attack' + (1 + Math.floor(Math.random() * 3))) : 'attack2';
     p.baseAnim = p.walking ? 'walk' : 'idle';
     playAnim(p, name, p.baseAnim);
-    p.lunge = 0.22;
+    if (melee && targetId) startPlayerDash(targetId, travelMs);
+    else p.lunge = 0.22;
+  }
+
+  /* 近戰突進：朝目標撲到身前，停一下再退回站樁點。
+     out 的長度對齊該次攻擊的 travelMs（傷害數字也用同一個延遲），刀到＝數字跳。 */
+  function startPlayerDash(targetId, travelMs) {
+    var p = S.player;
+    if (!p || p.dead) return;
+    var home = playerPos();
+    var to = posOf(targetId);
+    var dx = to.x - home.x, dy = (to.y + 22) - home.y;
+    var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    var stop = Math.max(0, dist - 52);            // 停在目標身前
+    var out = Math.max(0.1, Math.min(0.34, (travelMs || 170) / 1000));
+    p.facing = dx < 0 ? -1 : 1;
+    p.dash = {
+      hx: home.x, hy: home.y,
+      tx: home.x + dx / dist * stop, ty: home.y + dy / dist * stop,
+      t: 0, out: out, hold: 0.06, back: 0.2
+    };
   }
 
   /* ============ reconcile（PANEL battle，約 5Hz） ============ */
@@ -623,12 +740,25 @@ var BattleRenderer = (function () {
     var p = S.player;
     if (p) {
       var fp = field.player || {};
-      var dead = (fp.reviveCd || 0) > 0;
+      var reviveLeft = Number(fp.reviveCd) || 0;
+      var dead = reviveLeft > 0;
       if (dead !== p.dead) {
         p.dead = dead;
         p.root.rotation = dead ? -Math.PI / 2 : 0;
         p.body.tint = dead ? 0x777777 : 0xffffff;
-        if (!dead) playAnim(p, 'idle');
+        if (dead) { p.dash = null; p.lunge = 0; }
+        else playAnim(p, 'idle');
+      }
+      /* 倒地倒數：狀態列收進彈出面板後，畫面上只剩這一條告訴玩家發生什麼事。
+         面板 5Hz 才來一次，這裡照快照時間扣掉已經過的秒數（同 ui.js 的做法）。 */
+      if (p.reviveText) {
+        p.reviveText.visible = dead;
+        if (dead) {
+          var left = (typeof uiCountdownRemain === 'function')
+            ? uiCountdownRemain(reviveLeft, panel.gt) : reviveLeft;
+          p.reviveText.text = '💀 復活中 ' + (Math.round(Math.max(0, left) * 10) / 10) + 's';
+          p.reviveText.rotation = Math.PI / 2;   // 角色倒地時 root 轉了 90°，字要轉回來
+        }
       }
       /* 高塔戰期間野外空場是常態，不要一直播走路（畫布上仍是野外畫面） */
       var walking = !dead && !anyLive && !S.towerActive;
@@ -649,9 +779,20 @@ var BattleRenderer = (function () {
     }
   }
 
+  /* 敵人出手：物理系撲上來近戰，魔法系原地放投射物（需求：物理近戰、魔法遠程） */
   function enemyAttackAnim(ent) {
-    ent.lunge = 0.3;
     if (ent.isBoss && ent.sheetName) playAnim(ent, 'attack', 'idle');
+    if (ent.data && ent.data.magic) {
+      var from = { x: ent.root.x, y: ent.root.y - ent.hitHeight * 0.5 };
+      spawnProjectile('pv-float', 260, {
+        elem: ent.data.attr || null, cat: 'enemy', color: '#c084fc'
+      }, function (pt) {
+        spawnImpact(pt.x, pt.y, { elem: ent.data.attr || null, color: '#c084fc' }, false);
+      }, from);
+      return;
+    }
+    ent.lungeDur = 0.34;
+    ent.lunge = ent.lungeDur;
   }
 
   function startDeath(ent, realDeath) {
@@ -764,9 +905,9 @@ var BattleRenderer = (function () {
   }
 
   /* 投射物：追蹤目標實體（等速、travelMs 由協議帶來） */
-  function spawnProjectile(targetId, travelMs, spec, onArrive) {
+  function spawnProjectile(targetId, travelMs, spec, onArrive, fromOverride) {
     var theme = themeOf(spec);
-    var from = playerMuzzle();
+    var from = fromOverride || playerMuzzle();
     var node = new PIXI.Container();
     var core;
     if (spec.glyph && (spec.fxKind === 'projectile' || spec.variant === 'glyph')) {
@@ -1217,9 +1358,22 @@ var BattleRenderer = (function () {
     var count = Math.min(5, Math.max(1, spec.count || 1));
     var stagger = ((typeof VFX_HIT_STAGGER_SEC === 'number') ? VFX_HIT_STAGGER_SEC : 0.09) * 1000;
 
-    /* 玩家出手動作：非敵方事件都算玩家出招 */
+    /* 玩家出手動作（非敵方事件都算玩家出招）。
+       物理（普攻／物理技）用接觸型特效時＝近戰，角色會撲到目標身前再揮；
+       魔法與投射／光束／天降類＝原地施法，由投射物負責跑完距離。 */
     if (spec.cat !== 'enemy') {
-      playerAttackAnim(spec.cat === 'magic' || spec.fxKind === 'rain' || spec.fxKind === 'beam' ? 'cast' : 'melee');
+      var contactFx = spec.fxKind === 'slash' || spec.fxKind === 'impact' || spec.fxKind === 'burst';
+      var meleeCat = spec.cat === 'basic' || spec.cat === 'phys';
+      var firstTarget = targets.length ? targets[0] : null;
+      if (firstTarget) {
+        var tp = posOf(firstTarget);
+        S.player.facing = (tp.x < S.player.root.x) ? -1 : 1;
+      }
+      if (meleeCat && contactFx && firstTarget) {
+        playerAttackAnim('melee', firstTarget, (spec.travelMs && spec.travelMs[0]) || 0);
+      } else {
+        playerAttackAnim(spec.cat === 'magic' || spec.fxKind === 'rain' || spec.fxKind === 'beam' ? 'cast' : 'melee');
+      }
     }
 
     switch (spec.fxKind) {
@@ -1451,13 +1605,40 @@ var BattleRenderer = (function () {
     /* 玩家 */
     var p = S.player;
     if (p && dt > 0) {
-      if (p.lunge > 0) {
+      var home = playerPos();
+      if (p.dash) {
+        /* 近戰突進：撲出去 → 短暫停留 → 收回站樁點 */
+        var d = p.dash;
+        d.t += dt;
+        var total = d.out + d.hold + d.back;
+        var px, py;
+        if (d.t < d.out) {
+          var ok = d.t / d.out;
+          ok = 1 - (1 - ok) * (1 - ok);                 // ease-out：出刀快
+          px = lerp(d.hx, d.tx, ok); py = lerp(d.hy, d.ty, ok);
+        } else if (d.t < d.out + d.hold) {
+          px = d.tx; py = d.ty;
+        } else {
+          var bk = Math.min(1, (d.t - d.out - d.hold) / d.back);
+          bk = bk * bk;                                  // ease-in：收刀慢起步
+          px = lerp(d.tx, d.hx, bk); py = lerp(d.ty, d.hy, bk);
+        }
+        p.root.x = px; p.root.y = py;
+        p.root.zIndex = py;
+        if (d.t >= total) { p.dash = null; p.root.x = home.x; p.root.y = home.y; p.root.zIndex = home.y; }
+      } else if (p.lunge > 0) {
         p.lunge = Math.max(0, p.lunge - dt);
-        p.bodyWrap.x = Math.sin((0.22 - p.lunge) / 0.22 * Math.PI) * 16;
+        p.bodyWrap.x = Math.sin((0.22 - p.lunge) / 0.22 * Math.PI) * 16 * p.facing;
       } else {
         p.bodyWrap.x = 0;
+        if (p.root.x !== home.x || p.root.y !== home.y) {
+          p.root.x = home.x; p.root.y = home.y; p.root.zIndex = home.y;
+        }
       }
+      /* 面向目標：序列幀只有朝右一版，往左打就水平翻面 */
+      if (!p.dead) p.bodyWrap.scale.x = p.facing < 0 ? -1 : 1;
       updateFlashJolt(p, dt);
+      drawPlayerVitals();
     }
 
     /* 敵人 */
@@ -1499,13 +1680,19 @@ var BattleRenderer = (function () {
           e.bodyWrap.scale.y = 1 + Math.sin(e.bobPhase) * 0.035;
           e.bodyWrap.rotation = Math.sin(e.bobPhase * 0.7) * 0.03;
         }
-        /* 攻擊突進：朝玩家方向撲一下 */
+        /* 近戰突進：整個往玩家方向撲過去再回位（魔法系怪不撲，改射投射物） */
         if (e.lunge > 0) {
           e.lunge = Math.max(0, e.lunge - dt);
-          var lk = Math.sin((0.3 - e.lunge) / 0.3 * Math.PI);
-          e.bodyWrap.x = -lk * 20;
+          var dur = e.lungeDur || 0.3;
+          var lk = Math.sin((1 - e.lunge / dur) * Math.PI);
+          var pc = playerPos();
+          var ldx = pc.x - e.x, ldy = (pc.y - 26) - e.y;
+          var ldist = Math.sqrt(ldx * ldx + ldy * ldy) || 1;
+          var reach = Math.min(ldist * 0.55, 64) * lk;
+          e.dashX = ldx / ldist * reach;
+          e.dashY = ldy / ldist * reach;
         } else {
-          e.bodyWrap.x = 0;
+          e.dashX = 0; e.dashY = 0;
         }
       } else if (e.state === 'dying') {
         /* 死亡進度用 dt 累積：暫停時屍體凍結，不會在解除暫停時瞬間消失 */
@@ -1527,9 +1714,11 @@ var BattleRenderer = (function () {
       }
 
       updateFlashJolt(e, dt);
-      e.root.x = e.x + (e.jolt > 0 ? (Math.random() * 2 - 1) * 5 : 0);
-      if (e.state !== 'dying') e.root.y = e.y + (e.jolt > 0 ? (Math.random() * 2 - 1) * 3 : 0);
-      e.root.zIndex = e.y + (e.isBoss ? 1000 : 0);
+      e.root.x = e.x + (e.dashX || 0) + (e.jolt > 0 ? (Math.random() * 2 - 1) * 5 : 0);
+      if (e.state !== 'dying') {
+        e.root.y = e.y + (e.dashY || 0) + (e.jolt > 0 ? (Math.random() * 2 - 1) * 3 : 0);
+      }
+      e.root.zIndex = e.root.y + (e.isBoss ? 1000 : 0);
     }
 
     /* 特效 */
@@ -1712,6 +1901,10 @@ var BattleRenderer = (function () {
       var view = msg && msg.view;
       if (!view) return;
       S.towerActive = !!view.towerActive;
+      /* 玩家血魔條的資料源：高頻視圖就有 hp/hpMax/mp/mpMax/shield，不必等面板 */
+      S.vitals = {
+        hp: view.hp, hpMax: view.hpMax, mp: view.mp, mpMax: view.mpMax, shield: view.shield
+      };
       var paused = !!view.paused;
       if (paused !== S.paused) {
         S.paused = paused;
@@ -1829,8 +2022,19 @@ var BattleRenderer = (function () {
     onVfx: onVfx,
     syncBattle: syncBattle,
     status: status,
-    /* 測試／除錯用：取 Pixi Application（headless 驗證時手動推 ticker、抽畫面）。
-       正式流程不得依賴。 */
-    _app: function () { return S.app; }
+    /* 測試／除錯用：取 Pixi Application（headless 驗證時手動推 ticker、抽畫面）
+       與內部狀態快照。正式流程不得依賴。 */
+    _app: function () { return S.app; },
+    _debug: function () {
+      var p = S.player;
+      return {
+        player: p ? { x: Math.round(p.root.x), y: Math.round(p.root.y), dashing: !!p.dash, facing: p.facing, anim: p.curAnim } : null,
+        home: playerPos(),
+        entities: Object.keys(S.entities).map(function (id) {
+          var e = S.entities[id];
+          return { id: id, x: Math.round(e.root.x), y: Math.round(e.root.y), state: e.state, lunge: +(e.lunge || 0).toFixed(2), magic: !!(e.data && e.data.magic) };
+        })
+      };
+    }
   };
 })();

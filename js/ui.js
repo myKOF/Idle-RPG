@@ -8400,21 +8400,31 @@ function initBattleCanvasMode() {
     if (!ok) return;
     document.body.classList.add('battle-canvas-mode');
 
-    /* 玩家 HUD：把野外玩家卡片上的血魔條、技能列、狀態、增益提示鈕搬進覆蓋層。
-       節點用搬的（appendChild），id 與既有事件綁定全部保留；renderBattle 照常更新。 */
-    var hud = $id('player-hud');
+    /* 玩家資訊：血魔條改由畫布畫在角色腳下（資料走 TICK view），
+       DOM 的 #pv-hp／#pv-mp 留在隱藏的 .battle-scene 裡讓 renderBattle 照常寫、不再顯示。
+       技能列與狀態列搬進彈出面板，只在點左上角的 💪 鈕時出現。
+       節點用搬的（appendChild），id 與既有事件綁定全部保留。 */
+    var infoPop = $id('player-info-popup');
     var pvCard = document.querySelector('#combat-area .battle-scene > .combatant:not(.enemy-combatant)');
-    if (hud && pvCard) {
-      var buffBtn = pvCard.querySelector('.buff-btn');
-      var hpBar = pvCard.querySelector('.hp-bar');
-      var mpBar = pvCard.querySelector('.mp-bar');
-      var skill = pvCard.querySelector('#pv-skill');
+    if (infoPop && pvCard) {
       var statusEl = pvCard.querySelector('#pv-status');
-      if (hpBar) hud.appendChild(hpBar);
-      if (mpBar) hud.appendChild(mpBar);
-      if (skill) hud.appendChild(skill);
-      if (statusEl) hud.appendChild(statusEl);
-      if (buffBtn) hud.appendChild(buffBtn);
+      var skill = pvCard.querySelector('#pv-skill');
+      if (statusEl) infoPop.appendChild(statusEl);
+      if (skill) infoPop.appendChild(skill);
+    }
+    var buffBtn = pvCard ? pvCard.querySelector('.buff-btn') : null;
+    var buffSlot = $id('battle-buff-btn-slot');
+    if (buffBtn && buffSlot && infoPop) {
+      /* 這顆鈕原本是 hover／點擊叫出增益 tooltip（data-buff-tip）。
+         現在它的職責改成「開關玩家資訊面板」，兩者同時綁會一次跳出兩層浮層，
+         所以拿掉 tooltip 屬性；面板裡的 #pv-status 仍帶 data-buff-tip，
+         滑到增益圖示上照樣看得到詳細說明。 */
+      buffBtn.removeAttribute('data-buff-tip');
+      buffSlot.appendChild(buffBtn);
+      buffBtn.addEventListener('click', function () {
+        var open = infoPop.classList.toggle('open');
+        buffBtn.classList.toggle('active', open);
+      });
     }
 
     /* 綜合紀錄 + 統計/日誌/篩選 → 側拉抽屜；暫停與迷你視窗按鈕 → 畫布右上角 */

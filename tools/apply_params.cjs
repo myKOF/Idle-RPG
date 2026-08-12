@@ -144,6 +144,44 @@ function P(cat, name, i) {
   return v.trim();
 }
 
+/* 野外出怪波次間隔：同樣是「地圖 × 關卡區間」的獨立表，處理方式比照掉落表。
+   缺表時不中止（這張表是 2026-08 波次串流改造才加的，舊工作副本可能還沒有），
+   直接跳過該筆編輯，data.js 保留原本的預設值。 */
+const ZONE_STAGE_WAVES_CSV_PATH = process.env.ZONE_STAGE_WAVES_CSV || path.join(ROOT, 'config', 'CSV', 'Zone_Stage_Waves.csv');
+function zoneStageWaveContent() {
+  if (!fs.existsSync(ZONE_STAGE_WAVES_CSV_PATH)) return null;
+  const rows = parseCsv(fs.readFileSync(ZONE_STAGE_WAVES_CSV_PATH, 'utf8')).filter(r => r.length > 1);
+  const header = rows[0] || [];
+  const col = (name) => {
+    const i = header.indexOf(name);
+    if (i < 0) throw new Error('Zone_Stage_Waves.csv 表頭缺少「' + name + '」：' + JSON.stringify(header));
+    return i;
+  };
+  const CZONE = col('地圖識別碼'), CMIN = col('最低關卡'), CMAX = col('最高關卡'), CSEC = col('出怪間隔秒數');
+  const num = (raw, label) => {
+    const n = Number(String(raw).trim());
+    if (!Number.isFinite(n)) throw new Error('Zone_Stage_Waves.csv 數值無法解析：' + label + ' / ' + raw);
+    return n;
+  };
+  const grouped = {};
+  rows.slice(1).forEach((r, i) => {
+    const zone = String(r[CZONE] || '').trim();
+    if (!zone) throw new Error('Zone_Stage_Waves.csv 第 ' + (i + 2) + ' 列缺少地圖識別碼');
+    const min = num(r[CMIN], zone + '.最低關卡');
+    const max = num(r[CMAX], zone + '.最高關卡');
+    const sec = num(r[CSEC], zone + '.出怪間隔秒數');
+    if (min > max) throw new Error('Zone_Stage_Waves.csv 關卡區間反向：' + zone + ' ' + min + '~' + max);
+    if (!(sec > 0)) throw new Error('Zone_Stage_Waves.csv 出怪間隔必須大於 0：' + zone + ' = ' + sec);
+    (grouped[zone] || (grouped[zone] = [])).push([min, max, sec]);
+  });
+  const expectedZones = ['desert', 'Icefield', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary'];
+  expectedZones.forEach(zone => {
+    if (!grouped[zone] || !grouped[zone].length) throw new Error('Zone_Stage_Waves.csv 缺少地圖：' + zone);
+    grouped[zone].sort((a, b) => a[0] - b[0]);
+  });
+  return expectedZones.map(zone => '  ' + zone + ': ' + JSON.stringify(grouped[zone])).join(',\n');
+}
+
 /* ---------- 編輯清單：每筆 = {file, re(單一群組), value, label} ---------- */
 const edits = [];
 edits.push({
@@ -151,6 +189,14 @@ edits.push({
   re: /ZONE_STAGE_DROP_PROFILES\s*=\s*\{([\s\S]*?)\n\};/,
   grp: 1, value: zoneStageDropContent(), label: 'ZONE_STAGE_DROP_PROFILES（Zone_Stage_Drops.csv）', multiGroup: true
 });
+const zoneStageWaveValue = zoneStageWaveContent();
+if (zoneStageWaveValue !== null) {
+  edits.push({
+    file: 'data', scopeVar: 'ZONE_STAGE_WAVE_PROFILES',
+    re: /ZONE_STAGE_WAVE_PROFILES\s*=\s*\{([\s\S]*?)\n\};/,
+    grp: 1, value: zoneStageWaveValue, label: 'ZONE_STAGE_WAVE_PROFILES（Zone_Stage_Waves.csv）', multiGroup: true
+  });
+}
 function esc(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 // 具名純量常數： var NAME = <num>;
 function scalarValue(file, varName, value, label) {

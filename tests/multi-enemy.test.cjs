@@ -225,7 +225,10 @@ test('敵人生成當輪立即出手，即使被玩家秒殺也至少完成一�
   assert.equal(context.FIELD.player.hp, 99, '即使敵人被秒殺，玩家仍應承受首擊');
 });
 
-test('多敵人逐一擊殺時各自結算經驗與掉落，全部擊殺後才推進', () => {
+/* 2026-08 波次串流改版：敵人改成每隔幾秒補一波、不等場上清空，
+   推進判定因此從「整波清空」改為「殺滿本關配額」（fieldStageQuota）。
+   本測試改測新語意：逐一擊殺各自結算，殺滿配額後的下一個 tick 推進。 */
+test('多敵人逐一擊殺時各自結算經驗與掉落，殺滿本關配額才推進', () => {
   const context = loadCombatContext();
   const xp = [];
   context.G = {
@@ -233,6 +236,12 @@ test('多敵人逐一擊殺時各自結算經驗與掉落，全部擊殺後才�
     stage: { current: 1, best: 1, kills: 0, autoAdvance: true },
     tower: { active: false }
   };
+  // 配額寫死成 2，才不會因為參數表調整權重就誤報失敗
+  context.FIELD.quotaStage = 1;
+  context.FIELD.stageQuota = 2;
+  context.FIELD.stageKills = 0;
+  // 這裡要測的是擊殺結算與推進，不是補怪；補怪另有 wave-streaming.test.cjs
+  context.spawnFieldMonster = () => [];
   context.FIELD.player = context.newPlayerEntity({ hp: 100, mp: 0, aspd: 1 });
   context.getStats = () => ({ hp: 100, goldBonus: 0, xpBonus: 0, moveSpeed: 0, passives: {} });
   context.healPlayer = () => {};
@@ -270,14 +279,14 @@ test('多敵人逐一擊殺時各自結算經驗與掉落，全部擊殺後才�
   assert.equal(context.G.stage.current, 1);
   assert.equal(context.G.stage.kills, 0);
 
+  // 殺滿配額（2 隻）→ 下一個 tick 就推進，不必等屍體淡出
   context.fieldTick(context.FIELD_ENEMY_DEATH_CLEAR_DELAY - 0.01);
-  assert.equal(context.FIELD.monsters.length, 1);
-  assert.equal(context.G.stage.current, 1);
-  context.fieldTick(0.02);
-  assert.equal(context.FIELD.monsters.length, 0);
   assert.equal(context.G.stage.current, 2);
   assert.equal(context.G.stage.best, 2);
   assert.equal(context.G.stage.kills, 1);
+  assert.equal(context.FIELD.monsters.length, 1); // 屍體仍在淡出
+  context.fieldTick(0.02);
+  assert.equal(context.FIELD.monsters.length, 0); // 屍體清除
 });
 
 test('關閉自動推進時完成關卡仍解鎖下一關，但留在目前關卡', () => {

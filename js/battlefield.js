@@ -143,13 +143,19 @@ function bfCenteredOrigin(total, size) {
    - 佔格大的先配，否則小怪會把 BOSS 需要的 2×2 空間切碎。
    - BOSS 若真的放不下就退回 1×1（寧可縮小佔格，也不要讓敵人整隻消失）。
    - 棋盤塞滿後仍配不到格的實體不會被回傳，由呼叫端決定捨棄。 */
-function bfPlaceEnemies(enemies) {
+function bfPlaceEnemies(enemies, keepPlaced) {
   var list = (enemies || []).filter(function (e) { return !!e; });
   var order = list.slice().sort(function (a, b) {
     var sa = bfEntitySize(a), sb = bfEntitySize(b);
     return (sb.w * sb.h) - (sa.w * sa.h);
   });
   var occupied = {};
+  /* keepPlaced（波次串流用）：已經站在場上的敵人不重新配格，只把它們佔的格子標成已用，
+     新的一波填進剩下的空格。不傳＝維持原本「整批重配」的行為（換關、死亡重來、測試）。 */
+  for (var ki = 0; ki < (keepPlaced || []).length; ki++) {
+    var kept = keepPlaced[ki];
+    if (kept && kept.cell) bfMarkOccupied(occupied, kept.cell);
+  }
   var ok = [];
 
   // Outdoor boss waves currently contain one boss, but keep this as a
@@ -189,6 +195,24 @@ function bfPlaceEnemies(enemies) {
     ok.push(ent);
   }
   return list.filter(function (e) { return ok.indexOf(e) >= 0; });
+}
+
+/* 棋盤還剩幾格可用。波次串流一次不能生超過空格數——多生出來的會在配格時被丟掉，
+   白白消耗浮字序號與擲骰。placed 傳「已經在場上、要保留站位」的實體。 */
+function bfFreeCellCount(placed) {
+  var occupied = {};
+  var used = 0;
+  for (var i = 0; i < (placed || []).length; i++) {
+    var ent = placed[i];
+    if (!ent || !ent.cell) continue;
+    for (var c = 0; c < (ent.cell.w || 1); c++) {
+      for (var r = 0; r < (ent.cell.h || 1); r++) {
+        var key = bfCellKey(ent.cell.col + c, ent.cell.row + r);
+        if (!occupied[key]) { occupied[key] = true; used++; }
+      }
+    }
+  }
+  return Math.max(0, bfCellCount() - used);
 }
 
 /* ---- 選敵 ---- */
