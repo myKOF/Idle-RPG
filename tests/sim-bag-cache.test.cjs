@@ -23,6 +23,10 @@ function bootedEngine() {
   const engine = createEngine({ seed: 20260804 });
   engine.boot(null);
   engine.stepSeconds(1800);
+  /* 停在「正在交戰」的那一拍：沒有對手時 panel('eval') 只回空殼，
+     背包分數整份取不到，測試會卡在前置條件而不是它要驗的快取失效。
+     波次串流改造後角色可能剛好停在復活倒數或換波空檔，所以要多推幾秒。 */
+  for (let i = 0; i < 240 && !engine.panel('eval', PARAMS).known; i++) engine.stepSeconds(1);
   return engine;
 }
 

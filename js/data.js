@@ -1308,25 +1308,36 @@ Object.keys(ZONE_STAGE_DROP_PROFILES).forEach(function (zoneKey) {
 
 /* ---- 野外出怪波次間隔（秒）：以地圖 × 關卡區間區分 ----
    由 config/Excel/Zone_Stage_Waves.xlsx 管理（套用參數.bat 會轉成 CSV 再寫回這裡）。
-   每列 = [最低關卡, 最高關卡, 出怪間隔秒數]。
+   每列 = [最低關卡, 最高關卡, 出怪間隔秒數, 同時上限隻數]。
    語意：每隔這麼久就補一波敵人，**不等場上清空**——清不完就會愈積愈多，
    撐不住被打死就退關（見 js/combat.js 的 fieldTick 波次串流）。
-   數字越小＝壓力越大。找不到對應區間時退回 FIELD_WAVE_SPAWN_INTERVAL。 */
-var ZONE_STAGE_WAVE_PROFILES = {  desert: [[1,9999,2]],
-  Icefield: [[1,9999,2]],
-  swamp: [[1,9999,2]],
-  undead_mountains: [[1,9999,2]],
-  god_battlefield: [[1,9999,2]],
-  god_chaos: [[1,9999,2]],
-  god_sanctuary: [[1,9999,2]]
+   間隔越小＝補得越勤；同時上限＝場上最多站幾隻（棋盤只有 BF_COLS×BF_ROWS 格，
+   上限再高也不會超過格數）。上限是難度的煞車：沒有它，清不完的怪會一路堆到滿盤，
+   新角色在前幾關就會被打死到完全推不動。找不到對應區間時退回下面兩個預設值。 */
+var ZONE_STAGE_WAVE_PROFILES = {  desert: [[1,9999,2,16]],
+  Icefield: [[1,9999,2,16]],
+  swamp: [[1,9999,2,16]],
+  undead_mountains: [[1,9999,2,16]],
+  god_battlefield: [[1,9999,2,16]],
+  god_chaos: [[1,9999,2,16]],
+  god_sanctuary: [[1,9999,2,16]]
 };
 
 function currentZoneDef() {
   return ZONES[(G.stage && G.stage.zone) || 'desert'] || ZONES.desert;
 }
 
+/* 新怪從畫面外走進戰場所需的時間（秒）。這段期間敵人「還沒進場」：
+   不能被攻擊、也不會攻擊，走到定位才加入戰鬥（走到的當下立刻補上第一擊）。
+   沒有這段的話，模擬層在敵人剛生成的那一瞬間就開打，但畫面上牠還在螢幕外，
+   高等一刀秒殺時整場戰鬥會發生在看不見的地方。
+   顯示層（js/battle-renderer.js）用同一個數字當進場動畫長度，兩邊必定同步。 */
+var FIELD_ENEMY_ENTER_DELAY = 0.45;
+var FIELD_ENEMY_ENTER_STAGGER = 0.08; // 同一波每隻再錯開一點，不要整排同時抵達
+
 var RESPAWN_DELAY = 0.8;       // 空場時的補怪間隔（秒）；波次串流另有自己的間隔（見下）
 var FIELD_WAVE_SPAWN_INTERVAL = 2.0; // 出怪波次間隔預設值（秒）；各地圖／關卡的實際值見 ZONE_STAGE_WAVE_PROFILES
+var FIELD_MAX_LIVE_ENEMIES = 8;      // 場上同時存在的敵人上限預設值（同上表可逐地圖／關卡覆寫）
 var FIELD_ENEMY_DEATH_CLEAR_DELAY = 2.1; // 野外敵人死亡後保留戰鬥資訊時間（秒）；須長於 2 秒傷害飄字動畫
 var REVIVE_DELAY = 3.0;        // 死亡復活時間（秒）
 var FIELD_DEATH_STAGE_RETREAT = 10; // 野外死亡退回階段數
