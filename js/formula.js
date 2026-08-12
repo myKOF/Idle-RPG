@@ -1040,6 +1040,29 @@ function isPurgatoryTowerFloor(floor) {
   return floor > TOWER_HELL_MAX_FLOOR && floor <= TOWER_PURGATORY_MAX_FLOOR;
 }
 
+/* 這一關每隔幾秒補一波敵人（表本體 → data.js ZONE_STAGE_WAVE_PROFILES，
+   由 config/Excel/Zone_Stage_Waves.xlsx 管理）。找不到地圖或關卡區間時退回
+   FIELD_WAVE_SPAWN_INTERVAL；數值一律夾到 0.2 秒以上，避免表填 0 造成每 tick 出怪。 */
+function fieldWaveIntervalFor(stage, zone) {
+  var fallback = (typeof FIELD_WAVE_SPAWN_INTERVAL === 'number' && FIELD_WAVE_SPAWN_INTERVAL > 0)
+    ? FIELD_WAVE_SPAWN_INTERVAL : 2;
+  var s = stage == null && typeof G !== 'undefined' && G && G.stage ? G.stage.current : stage;
+  s = Math.floor(Number(s) || 0);
+  var z = zone == null && typeof G !== 'undefined' && G && G.stage ? G.stage.zone : zone;
+  z = z || 'desert';
+  var rows = (typeof ZONE_STAGE_WAVE_PROFILES !== 'undefined') ? ZONE_STAGE_WAVE_PROFILES[z] : null;
+  var value = fallback;
+  if (rows && rows.length) {
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      if (!row) continue;
+      if (s >= Number(row[0]) && s <= Number(row[1])) { value = Number(row[2]); break; }
+    }
+  }
+  if (!isFinite(value) || value <= 0) value = fallback;
+  return Math.max(0.2, value);
+}
+
 /* 每波敵人數量的權重表挑選（表本體與參數表對應 → data.js §每波敵人數量）：
      小怪  荒漠前 FIELD_DESERT_EARLY_* 涵蓋的關卡走分段表，其餘走 FIELD_ENEMY_COUNT_TABLE
      菁英  逐張地圖各一張（FIELD_ELITE_COUNT_TABLE_BY_ZONE），未列出的地圖走 FIELD_ELITE_COUNT_TABLE

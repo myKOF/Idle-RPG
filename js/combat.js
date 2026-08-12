@@ -120,9 +120,39 @@ function markFieldEnemyFloatTargets(enemies) {
     }
 }
 
-function spawnFieldMonster() {
-    if (FIELD.mapComplete) return;
-    FIELD._waveClearPending = false;
+/* 場上還有沒有活著的 BOSS。BOSS 關一關只有一隻，串流補波時要跳過，
+   否則每隔幾秒就多冒一隻 BOSS（而且 isFieldBossDefeated 要通關才會標記）。 */
+function hasLiveFieldBoss() {
+    var live = liveFieldEnemies();
+    for (var i = 0; i < live.length; i++) if (live[i].isBoss) return true;
+    return false;
+}
+
+/* ---- 波次串流下的關卡推進 ----
+   出怪改成「每隔幾秒補一波、不等清場」之後，場上幾乎不會空，
+   原本「整波清空才算過關」的判定永遠不會成立、關卡會卡住不動。
+   改用擊殺數：每關要殺的隻數＝該關原本一波的隻數（同一張權重表擲骰），殺滿即過關。
+   單關的產出與推進節奏因此維持不變，多出來的敵人是壓力，不是額外的關卡進度。
+   配額綁在關卡編號上：推關、換地圖、死亡退關都會讓編號改變，計數自動重置。 */
+function fieldStageQuota() {
+    if (FIELD.quotaStage !== G.stage.current || !(FIELD.stageQuota > 0)) {
+        FIELD.quotaStage = G.stage.current;
+        FIELD.stageKills = 0;
+        var s = G.stage.current;
+        var isBoss = isFieldBossStage(s) && !isFieldBossDefeated(G.stage.zone, s);
+        var isElite = !isBoss && isEliteStage(s);
+        FIELD.stageQuota = Math.max(1, rollFieldEnemyCount(
+            isBoss ? 'boss' : (isElite ? 'elite' : 'normal'), s, G.stage.zone || 'desert'));
+    }
+    return FIELD.stageQuota;
+}
+
+/* append=true：波次串流補怪——保留場上既有敵人與站位，只把新的一波填進空格。
+   不帶參數＝原本的「整批換波」行為（死亡重來、測試直接呼叫）。
+   回傳這一波實際站上棋盤的敵人（沒有空位時回傳空陣列）。 */
+function spawnFieldMonster(append) {
+    if (FIELD.mapComplete) return [];
+    if (!append) FIELD._waveClearPending = false;
     var s = G.stage.current;
     /* 野外 BOSS 規則 → formula.js §4（優先於菁英）；每個 BOSS 只能打一次，
        該關通關後 BOSS 不再出現（isFieldBossDefeated → data.js），退回菁英規則。 */
@@ -132,6 +162,18 @@ function spawnFieldMonster() {
     var zn = currentZoneDef();
     // 數量依敵種各自擲骰（小怪／菁英／BOSS 三張權重表 → data.js）
     var count = rollFieldEnemyCount(boss ? 'boss' : (elite ? 'elite' : 'normal'), s, G.stage.zone || 'desert');
+    /* 串流補波：一次最多只能生「棋盤剩幾格」那麼多隻，超過的在配格時會被丟掉，
+       白白吃掉浮字序號與掉落擲骰。屍體不佔格（它們只是還在播淡出）。 */
+    var standing = append ? liveFieldEnemies() : [];
+    if (append) {
+        var cellsEach = boss
+            ? Math.max(1, Number(typeof BF_BOSS_W !== 'undefined' ? BF_BOSS_W : 2) || 1) *
+              Math.max(1, Number(typeof BF_BOSS_H !== 'undefined' ? BF_BOSS_H : 2) || 1)
+            : 1;
+        var free = (typeof bfFreeCellCount === 'function') ? bfFreeCellCount(standing) : count;
+        count = Math.min(count, Math.floor(free / cellsEach));
+        if (count < 1) return [];   // 棋盤滿了：這一波跳過，下一個間隔再試
+    }
     var enemies = [];
     for (var i = 0; i < count; i++) {
         var enemyTable = zn.enemyTable || [];
@@ -161,11 +203,19 @@ function spawnFieldMonster() {
         });
     }
     // 站位：隨機配到 4×4 棋盤的空格（BOSS 佔 2×2）；棋盤放不下的敵人直接捨棄 → js/battlefield.js
-    FIELD.monsters = bfPlaceEnemies(enemies);
-    if (FIELD.player) FIELD.player._lockTarget = null; // 新一波＝重新選目標，順便釋放上一波的實體參照
+    var placed = bfPlaceEnemies(enemies, standing);
+    if (append) {
+        // 串流補波：接在既有清單後面（含還在淡出的屍體），不動場上任何人的站位；
+        // 也不清普攻鎖定——目標還活著，沒有理由因為旁邊來了新怪就改打別隻。
+        FIELD.monsters = fieldEnemyList().concat(placed);
+    } else {
+        FIELD.monsters = placed;
+        if (FIELD.player) FIELD.player._lockTarget = null; // 整批換波＝重新選目標，順便釋放上一波的實體參照
+    }
     markFieldEnemyFloatTargets(FIELD.monsters);
     syncFieldPrimary();
     UI.dirty.battle = true;
+    return placed;
 }
 
 /* ---- 場景切換：各場景獨立保存進度與最高階段 ---- */
@@ -855,7 +905,7 @@ function fieldTick(dt) {
     // 持續傷害（玩家：中毒 / 詛咒等）
     if (tickStatuses(p, dt)) { onPlayerFieldDeath(); return; }
 
-    var clearedDeaths = tickFieldDeathClears(dt);
+    tickFieldDeathClears(dt);
     var debugFieldTick = combatDebugFieldSnapshot(fieldEnemyList());
 
     // 45 新技能共用排程器（echo／periodicField／dmgWindow／healWindow／聖痕到期結算；tower.js 塔戰 tick 鏡射）——
@@ -877,25 +927,30 @@ function fieldTick(dt) {
         if (legendaryTick && legendaryTick.playerKilled) { onPlayerFieldDeath(); return; }
     }
 
-    // 出怪。新波在本輪繼續往下走，讓敵人能在生成當下完成首次攻擊。
+    /* 過關結算：改由「這一關殺滿配額」觸發（見 fieldStageQuota），不再等場上清空——
+       波次串流之下場面幾乎不會空，等清空等於永遠不推進。 */
+    if (FIELD._waveClearPending) completeFieldWave(st);
+
+    /* 出怪：波次串流。每隔 fieldWaveIntervalFor（地圖 × 關卡，可調參數表）補一波，
+       不管上一波清了沒——敵人會愈積愈多，撐不住被打死就退關（設計如此）。
+       BOSS 還活著時不補波：BOSS 一關只有一隻，補下去會變成每幾秒多一隻 BOSS。
+       新波在本輪繼續往下走，讓敵人能在生成當下完成首次攻擊。 */
     var spawnedEnemies = null;
-    if (!liveFieldEnemies().length) {
-        if (FIELD.mapComplete) return;
-        if (hasFieldDeathHolds()) return;
-        if (FIELD._waveClearPending) {
-            completeFieldWave(st);
-            return;
+    if (!FIELD.mapComplete && !hasLiveFieldBoss()) {
+        FIELD.spawnCd = (typeof FIELD.spawnCd === 'number') ? FIELD.spawnCd - dt : 0;
+        /* 場上真的空了就別讓玩家乾等一整個波次間隔：改用原本的空場補怪間隔
+           （RESPAWN_DELAY，受移動速度縮短），兩者取快的那個。 */
+        if (!liveFieldEnemies().length && !hasFieldDeathHolds() && FIELD.spawnCd > FIELD.respawnCd) {
+            FIELD.spawnCd = FIELD.respawnCd;
         }
-        if (clearedDeaths) return;
-        FIELD.respawnCd -= dt;
-        if (FIELD.respawnCd <= 0) {
-            spawnFieldMonster();
-            spawnedEnemies = liveFieldEnemies();
-        } else {
-            return;
+        if (FIELD.spawnCd <= 0) {
+            var added = spawnFieldMonster(true);
+            FIELD.spawnCd = fieldWaveIntervalFor(G.stage.current, G.stage.zone);
+            if (added && added.length) spawnedEnemies = added;
         }
     }
     var enemies = liveFieldEnemies();
+    if (!enemies.length) return;
 
     // 新敵人先出手一次，再進入原本的玩家行動順序；即使玩家隨後在同一輪秒殺，
     // 這次攻擊也已經完成，不會因敵人先被移除而漏掉整波的第一擊。
@@ -1030,6 +1085,10 @@ function completeFieldWave(st) {
             blog('🚩 推進至第 ' + G.stage.current + ' 階段！', 'good');
         }
     }
+    /* 這一關的擊殺配額重新起算。自動推進關掉時關卡編號不變，
+       只靠 fieldStageQuota 的關卡比對不會重置，必須在這裡明確歸零。 */
+    FIELD.stageKills = 0;
+    FIELD.quotaStage = null;
     UI.dirty.battle = true; UI.dirty.header = true;
 }
 
@@ -1072,11 +1131,12 @@ function onFieldKill(m) {
     FIELD.monsters = enemies;
     markFieldEnemyFloatTargets(enemies);
     syncFieldPrimary();
-    if (liveFieldEnemies().length) {
-        UI.dirty.battle = true;
-        return;
-    }
-    FIELD._waveClearPending = true;
+    /* 過關進度：波次串流之下不能再用「場上清空」判定（場面幾乎不會空），
+       改成累計擊殺數達到本關配額。先讀一次配額，讓它在關卡剛換過時把計數歸零，
+       否則這一刀的擊殺會被隨後的重置吃掉。 */
+    var quota = fieldStageQuota();
+    FIELD.stageKills = (Number(FIELD.stageKills) || 0) + 1;
+    if (FIELD.stageKills >= quota) FIELD._waveClearPending = true;
     UI.dirty.battle = true; UI.dirty.header = true;
 }
 

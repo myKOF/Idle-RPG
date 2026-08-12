@@ -1306,11 +1306,27 @@ Object.keys(ZONE_STAGE_DROP_PROFILES).forEach(function (zoneKey) {
   });
 });
 
+/* ---- 野外出怪波次間隔（秒）：以地圖 × 關卡區間區分 ----
+   由 config/Excel/Zone_Stage_Waves.xlsx 管理（套用參數.bat 會轉成 CSV 再寫回這裡）。
+   每列 = [最低關卡, 最高關卡, 出怪間隔秒數]。
+   語意：每隔這麼久就補一波敵人，**不等場上清空**——清不完就會愈積愈多，
+   撐不住被打死就退關（見 js/combat.js 的 fieldTick 波次串流）。
+   數字越小＝壓力越大。找不到對應區間時退回 FIELD_WAVE_SPAWN_INTERVAL。 */
+var ZONE_STAGE_WAVE_PROFILES = {  desert: [[1,9999,2]],
+  Icefield: [[1,9999,2]],
+  swamp: [[1,9999,2]],
+  undead_mountains: [[1,9999,2]],
+  god_battlefield: [[1,9999,2]],
+  god_chaos: [[1,9999,2]],
+  god_sanctuary: [[1,9999,2]]
+};
+
 function currentZoneDef() {
   return ZONES[(G.stage && G.stage.zone) || 'desert'] || ZONES.desert;
 }
 
-var RESPAWN_DELAY = 0.8;       // 出怪間隔（秒）
+var RESPAWN_DELAY = 0.8;       // 空場時的補怪間隔（秒）；波次串流另有自己的間隔（見下）
+var FIELD_WAVE_SPAWN_INTERVAL = 2.0; // 出怪波次間隔預設值（秒）；各地圖／關卡的實際值見 ZONE_STAGE_WAVE_PROFILES
 var FIELD_ENEMY_DEATH_CLEAR_DELAY = 2.1; // 野外敵人死亡後保留戰鬥資訊時間（秒）；須長於 2 秒傷害飄字動畫
 var REVIVE_DELAY = 3.0;        // 死亡復活時間（秒）
 var FIELD_DEATH_STAGE_RETREAT = 10; // 野外死亡退回階段數

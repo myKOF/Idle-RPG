@@ -10,8 +10,12 @@ const path = require('path');
 const zlib = require('zlib');
 
 const ROOT = path.resolve(__dirname, '..');
-const CSV_PATH = path.join(ROOT, 'config', 'CSV', 'game_parameters.csv');
-const XLSX_PATH = path.join(ROOT, 'config', 'Excel', 'game_parameters.xlsx');
+/* 預設轉主參數表；帶一個表名參數就轉同名的那張（例如 Zone_Stage_Waves）：
+     node tools/csv_to_xlsx.cjs                    → game_parameters
+     node tools/csv_to_xlsx.cjs Zone_Stage_Waves   → Zone_Stage_Waves */
+const TABLE_NAME = (process.argv[2] || 'game_parameters').replace(/\.(csv|xlsx)$/i, '');
+const CSV_PATH = path.join(ROOT, 'config', 'CSV', TABLE_NAME + '.csv');
+const XLSX_PATH = path.join(ROOT, 'config', 'Excel', TABLE_NAME + '.xlsx');
 
 function parseCSV(text) {
   const rows = [];
@@ -153,7 +157,7 @@ function buildXlsx(rows) {
   const workbookXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <sheets>
-    <sheet name="game_parameters" sheetId="1" r:id="rId1"/>
+    <sheet name="${TABLE_NAME}" sheetId="1" r:id="rId1"/>
     <sheet name="計算表" sheetId="2" r:id="rId2"/>
   </sheets>
 </workbook>`;
@@ -272,11 +276,11 @@ function main() {
     console.log('✅ [csv_to_xlsx] 成功將 ' + rows.length + ' 列資料轉寫至 ' + path.relative(ROOT, XLSX_PATH));
   } catch (err) {
     if (err.code === 'EBUSY' || err.code === 'EPERM') {
-      const tempPath = path.join(ROOT, 'config', 'Excel', 'game_parameters_updated.xlsx');
+      const tempPath = path.join(ROOT, 'config', 'Excel', TABLE_NAME + '_updated.xlsx');
       fs.writeFileSync(tempPath, zipBuf);
-      console.log('⚠️ [csv_to_xlsx] 檢測到 game_parameters.xlsx 正被 Excel 開啟鎖定中！');
+      console.log('⚠️ [csv_to_xlsx] 檢測到 ' + TABLE_NAME + '.xlsx 正被 Excel 開啟鎖定中！');
       console.log('  最新擴充好的 ' + rows.length + ' 列資料已先轉寫至：' + path.relative(ROOT, tempPath));
-      console.log('  請在 Excel 關閉後，將該檔案替換/儲存為 game_parameters.xlsx。');
+      console.log('  請在 Excel 關閉後，將該檔案替換/儲存為 ' + TABLE_NAME + '.xlsx。');
     } else {
       throw err;
     }
