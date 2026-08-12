@@ -37,6 +37,8 @@ var BattleRenderer = (function () {
   var PLAYER_ADVANCE_SPEED = 135;  // 空場時向前推進的速度（原 90，×1.5）
   var PLAYER_REACH = 52;           // 近戰距離：跑到這麼近就停下來打
   var ENEMY_RUN_SPEED = 260;       // 敵人朝角色逼近的跑速
+  var ENEMY_CONTACT_GAP = 34;      // 敵人出手時衝到離角色這麼近（＝接觸）
+  var ENEMY_MAX_CHARGE = 460;      // 單次衝刺的最大距離，避免從畫面另一頭瞬間貼臉
   var MAX_FLOATS = 60;           // 同時存在的飄字上限
   var FLOAT_MERGE_MS = 160;      // 同目標同類傷害的合併窗（DOM 版邏輯的簡化版）
   var LASTPOS_KEEP_MS = 3000;    // 實體移除後保留座標，讓遲到的飄字仍有落點
@@ -567,7 +569,10 @@ var BattleRenderer = (function () {
       sheetName: sheetName, curAnim: sheetName ? 'idle' : '', baseAnim: 'idle',
       isBoss: isBoss, isElite: isElite, visScale: visScale,
       barW: barW, hitHeight: isBoss ? sz.h * 1.9 : 64 * visScale,
-      wx: 0, wy: 0, tx: 0, ty: 0,     // 世界座標；tx/ty 是跟著玩家移動的槽位
+      wx: 0, wy: 0, tx: 0, ty: 0,     // 世界座標；tx/ty 是逼近目標（角色本人）
+      /* 停止半徑：走到離角色這麼近就不再前進。每隻略有差異，圍出來才是一圈人牆
+         而不是全部疊在同一個點上。BOSS 體型大，站遠一點。 */
+      stopRadius: (isBoss ? 92 : 40) * (0.85 + Math.random() * 0.4),
       state: 'entering',              // entering → idle → dying → gone
       bobPhase: Math.random() * Math.PI * 2,
       wobble: 0.7 + Math.random() * 0.5,
@@ -725,7 +730,7 @@ var BattleRenderer = (function () {
       hitHeight: 70, walking: false, dead: false,
       flash: 0, jolt: 0, lunge: 0, facing: 1,
       /* 世界座標。角色會在世界裡跑動追打目標，鏡頭跟著他。 */
-      wx: 0, wy: 0,
+      wx: 0, wy: 0, chaseId: null,
       vitalsShown: ''
     };
     drawPlayerVitals();
@@ -900,7 +905,10 @@ var BattleRenderer = (function () {
     }
   }
 
-  /* 敵人出手：物理系撲上來近戰，魔法系原地放投射物（需求：物理近戰、魔法遠程） */
+  /* 敵人出手：物理系衝進接觸距離再揮，魔法系原地放投射物（需求：物理近戰、魔法遠程）。
+     ⚠️ 模擬層沒有攻擊距離的概念——不管站在哪一格都打得到玩家。
+     所以「打得到」這件事在畫面上必須由這裡負責：出手就是整隻衝到玩家身前，
+     否則遠處那圈敵人看起來就是在隔空互毆。 */
   function enemyAttackAnim(ent) {
     if (ent.isBoss && ent.sheetName) playAnim(ent, 'attack', 'idle');
     if (ent.data && ent.data.magic) {
@@ -912,7 +920,11 @@ var BattleRenderer = (function () {
       }, from);
       return;
     }
-    ent.lungeDur = 0.34;
+    /* 衝刺時間隨距離拉長，遠的那隻才不會像瞬移過來 */
+    var pc = playerPos();
+    var dx = pc.x - ent.wx, dy = (pc.y - 26) - ent.wy;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    ent.lungeDur = Math.max(0.28, Math.min(0.8, 0.24 + dist / 900));
     ent.lunge = ent.lungeDur;
   }
 
@@ -1542,6 +1554,8 @@ var BattleRenderer = (function () {
       if (firstTarget) {
         var tp = posOf(firstTarget);
         S.player.facing = (tp.x < S.player.root.x) ? -1 : 1;
+        /* 近戰類的出手才改追擊對象：遠程技打誰都可以，不該把角色拖著跑 */
+        if (meleeCat && S.entities[firstTarget]) S.player.chaseId = firstTarget;
       }
       if (meleeCat && contactFx && firstTarget) {
         playerAttackAnim('melee', firstTarget);
@@ -1773,6 +1787,32 @@ var BattleRenderer = (function () {
     }
   }
 
+  /* 敵人之間互相推開，避免全部疊在角色身上。
+     只推 x/y（不動 dashX/dashY，那是出手衝刺的臨時位移）。 */
+  function separateEntities() {
+    var list = [];
+    for (var id in S.entities) {
+      if (!Object.prototype.hasOwnProperty.call(S.entities, id)) continue;
+      var e = S.entities[id];
+      if (e.state === 'dying' || e.state === 'gone') continue;
+      list.push(e);
+    }
+    var minD = Math.max(22, 44 * densityScale());
+    for (var i = 0; i < list.length; i++) {
+      for (var j = i + 1; j < list.length; j++) {
+        var a = list[i], b = list[j];
+        var dx = b.wx - a.wx, dy = b.wy - a.wy;
+        var d2 = dx * dx + dy * dy;
+        if (d2 >= minD * minD) continue;
+        var d = Math.sqrt(d2) || 0.001;
+        var push = (minD - d) * 0.5;
+        var ux = dx / d, uy = dy / d;
+        a.wx -= ux * push; a.wy -= uy * push;
+        b.wx += ux * push; b.wy += uy * push;
+      }
+    }
+  }
+
   /* ============ 每幀更新 ============ */
   function tickWorld(ticker) {
     var dt = Math.min(0.05, (ticker.deltaMS || 16.7) / 1000);
@@ -1781,6 +1821,19 @@ var BattleRenderer = (function () {
 
     /* 離玩家最近、還活著的敵人。玩家會朝它跑過去打——與模擬層「普攻打最近目標」
      同一個直覺，畫面上看起來才不會打著遠處那隻。 */
+  /* 追擊目標：優先用「模擬層這一刀實際打的那隻」（由 VFX 事件的 targets[0] 得知）。
+     自己猜最近的會猜錯——模擬層算的是棋盤格距離，畫面上的世界距離經過抖動與
+     鏡頭移動早就不一樣了，於是常常跑向 A 卻在打 B，看起來就是隔空攻擊。 */
+  function chaseTargetEntity() {
+    var p = S.player;
+    if (!p) return null;
+    var locked = p.chaseId ? S.entities[p.chaseId] : null;
+    if (locked && locked.state !== 'dying' && locked.state !== 'gone' &&
+        locked.data && locked.data.hp > 0) return locked;
+    p.chaseId = null;
+    return nearestEnemyEntity();
+  }
+
   function nearestEnemyEntity() {
     var p = S.player;
     if (!p) return null;
@@ -1802,7 +1855,7 @@ var BattleRenderer = (function () {
        這是「回合制感」的解法：角色一直在移動，鏡頭跟著他，畫面不會一頓一頓。 */
     var p = S.player;
     if (p && dt > 0) {
-      var target = nearestEnemyEntity();
+      var target = chaseTargetEntity();
       var moving = false;
       if (!p.dead) {
         if (target) {
@@ -1864,11 +1917,14 @@ var BattleRenderer = (function () {
       var e = S.entities[id];
       if (dt <= 0) continue;
 
-      /* 站位＝玩家世界座標 + 這一格的相對偏移。玩家在跑，槽位就跟著跑，
-         敵人於是持續朝他逼近——這就是「從畫面外自然跑向角色」的來源，
-         不需要任何「快速站位」的瞬移。 */
-      var slot = e.data && e.data.cell ? cellAnchor(e.data.cell) : { x: playerPos().x + 220, y: playerPos().y };
-      e.tx = slot.x; e.ty = slot.y;
+      /* 目標＝角色本人，不是格位槽。
+         ⚠️ 用「跟著玩家平移的格位槽」當目標會追不到：玩家往前跑，槽位也往前退，
+         兩者以相同速度移動，距離永遠收斂不了（實測在 144~293px 之間拉鋸，
+         於是遠處那圈敵人一邊「跟著」一邊隔空攻擊）。
+         改成直接朝角色逼近、到接觸距離就停，再靠彼此推開排成一圈人牆。
+         棋盤格在這裡只剩一個用途：決定牠從哪個方位進場。 */
+      var pcHere = playerPos();
+      e.tx = pcHere.x; e.ty = pcHere.y - 8;
 
       if (e.state === 'entering') {
         /* 進場：朝槽位跑。速度由「剩餘距離 ÷ 剩餘時間」決定，
@@ -1877,8 +1933,10 @@ var BattleRenderer = (function () {
         var remain = Math.max(0.001, e.enterDur - e.enterT);
         var edx = e.tx - e.wx, edy = e.ty - e.wy;
         var edist = Math.sqrt(edx * edx + edy * edy);
-        var estep = Math.min(edist, (edist / remain) * dt);
-        if (edist > 0.001) { e.wx += edx / edist * estep; e.wy += edy / edist * estep; }
+        /* 進場只跑「到接觸距離為止」的那一段，剩下的交給 idle 的逼近邏輯 */
+        var eneed = Math.max(0, edist - e.stopRadius);
+        var estep = Math.min(eneed, (eneed / remain) * dt);
+        if (edist > 0.001 && estep > 0) { e.wx += edx / edist * estep; e.wy += edy / edist * estep; }
         /* 行走擺動：小怪左右搖 + 輕微縮放跳動（類倖存者小怪步態） */
         e.bodyWrap.rotation = Math.sin(t / 90 * e.wobble) * 0.09;
         e.bodyWrap.scale.y = 1 + Math.sin(t / 80 * e.wobble) * 0.05;
@@ -1888,12 +1946,13 @@ var BattleRenderer = (function () {
           e.state = 'idle';
         }
       } else if (e.state === 'idle') {
-        /* 追擊：槽位跟著玩家移動，敵人就一直跟上來 */
+        /* 逼近：一路走到接觸距離才停。停下之後由下面的互斥推擠排成人牆，
+           擠不進去的自然被推到外圈——不需要任何預先算好的站位。 */
         var ddx = e.tx - e.wx, ddy = e.ty - e.wy;
         var dd = Math.sqrt(ddx * ddx + ddy * ddy);
-        if (dd > 3) {
-          var vv = Math.min(ENEMY_RUN_SPEED, Math.max(70, dd * 3));
-          var dstep = Math.min(dd, vv * dt);
+        if (dd > e.stopRadius) {
+          var vv = Math.min(ENEMY_RUN_SPEED, Math.max(70, (dd - e.stopRadius) * 3));
+          var dstep = Math.min(dd - e.stopRadius, vv * dt);
           e.wx += ddx / dd * dstep;
           e.wy += ddy / dd * dstep;
           e.bodyWrap.rotation = Math.sin(t / 90 * e.wobble) * 0.07;
@@ -1912,7 +1971,9 @@ var BattleRenderer = (function () {
           var pc = playerPos();
           var ldx = pc.x - e.wx, ldy = (pc.y - 26) - e.wy;
           var ldist = Math.sqrt(ldx * ldx + ldy * ldy) || 1;
-          var reach = Math.min(ldist * 0.55, 64) * lk;
+          /* 補完整段距離、只留一個接觸間隙：出手就要真的碰到人。
+             上限擋住「從畫面另一頭瞬間貼臉」的極端狀況。 */
+          var reach = Math.min(Math.max(0, ldist - ENEMY_CONTACT_GAP), ENEMY_MAX_CHARGE) * lk;
           e.dashX = ldx / ldist * reach;
           e.dashY = ldy / ldist * reach;
         } else {
@@ -1944,6 +2005,11 @@ var BattleRenderer = (function () {
       }
       e.root.zIndex = e.root.y + (e.isBoss ? 1000 : 0);
     }
+
+    /* ---- 互斥推擠 ----
+       全部朝角色擠過去，不推開就會整群疊成一坨。推完形成一圈人牆，
+       擠不進內圈的自然被排到外圈——這是「站位」唯一的來源，沒有預先算好的格子。 */
+    if (dt > 0) separateEntities();
 
     /* 特效 */
     if (dt > 0) {
