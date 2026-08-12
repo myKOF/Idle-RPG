@@ -104,8 +104,10 @@ var BattleRenderer = (function () {
   /* 玩家站畫面正中央；敵人從四面八方逼近。
      棋盤格 (col,row) 對應到「以玩家為圓心」的極座標：
        col → 距離環（col 1 最靠近玩家，與 bfCellDistance 的語意一致）
-       row → 方位角（row 1 正上方，順時鐘均分一圈）
-     每往外一環再錯開半格角度，避免同一方位排成一條放射狀直線。
+       row → 方位角（順時鐘均分一圈）
+     ⚠️ 只用「row 決定角度、每環固定錯開半格」會排出四條旋臂（風車），一眼就看得出是公式。
+     所以每一格再套一份**由格位算出來的固定抖動**：角度與半徑各偏移一點，
+     看起來像隨機散開，但同一格永遠落在同一個位置（不會逐幀跳動、AoE 落點也才算得準）。
      模擬層只認 (col,row)、不知道畫面怎麼擺，所以版型可以在這裡自由決定。 */
   function boardMetrics() {
     var cols = (typeof BF_COLS === 'number' && BF_COLS > 0) ? BF_COLS : 4;
@@ -122,16 +124,100 @@ var BattleRenderer = (function () {
     var m = boardMetrics();
     return { w: Math.max(52, m.rx / m.cols * 1.15), h: Math.max(46, m.ry / m.rows * 1.35) };
   }
+  /* 格位雜湊 → [0,1)。同一格每次都得到同一個數，所以站位穩定；
+     salt 用來取不同用途的獨立亂數（角度／半徑／每環旋轉）。 */
+  function cellHash(col, row, salt) {
+    var h = (Math.imul(col | 0, 73856093) ^ Math.imul(row | 0, 19349663) ^ Math.imul(salt | 0, 83492791)) >>> 0;
+    h ^= h >>> 13;
+    h = Math.imul(h, 1274126177) >>> 0;
+    h ^= h >>> 16;
+    return (h >>> 8) / 16777216;
+  }
+
+  /* 站位表：把整個棋盤散成一組「錯落但不擠在一起」的固定座標。
+       1. 每格先用格位雜湊給一個抖動過的極座標（打散旋臂）
+       2. 幾輪鬆弛：距離太近的兩點互相推開
+       3. 每輪推完把半徑夾回自己那一環的範圍，維持「col 越小離玩家越近」
+          （普攻打最近的目標，畫面上看起來也得真的是最近那一隻）
+     結果依畫布尺寸快取：同一格每次都落在同一點，站位才不會逐幀跳動。
+     純顯示用，不影響任何命中或選敵判定。 */
+  var _cellLayout = null;
+  var _cellLayoutKey = '';
+  function cellLayout() {
+    var m = boardMetrics();
+    var key = m.cols + 'x' + m.rows + '@' + Math.round(m.rx) + ',' + Math.round(m.ry) +
+      ',' + Math.round(m.cx) + ',' + Math.round(m.cy);
+    if (_cellLayout && _cellLayoutKey === key) return _cellLayout;
+
+    var rowStep = Math.PI * 2 / m.rows;
+    var ringGap = m.cols > 1 ? (1 / (m.cols - 1)) : 1;
+    var pts = [];
+    var c, r, i, j;
+    for (c = 1; c <= m.cols; c++) {
+      var band = m.cols > 1 ? (c - 1) / (m.cols - 1) : 0;
+      var ringSpin = cellHash(c, 0, 11) * rowStep;   // 整環轉一個固定角度，各環才不會對齊
+      for (r = 1; r <= m.rows; r++) {
+        var ang = (r - 1) * rowStep + ringSpin + (cellHash(c, r, 23) - 0.5) * rowStep * 0.8 - Math.PI / 2;
+        var t = Math.max(0, Math.min(1.02, band + (cellHash(c, r, 37) - 0.5) * ringGap * 0.6));
+        var k = m.inner + (1 - m.inner) * t;
+        pts.push({
+          col: c, row: r, band: band, ang: ang, k: k,
+          x: m.cx + Math.cos(ang) * m.rx * k,
+          y: m.cy + Math.sin(ang) * m.ry * k
+        });
+      }
+    }
+
+    var minDist = Math.max(58, Math.min(m.rx, m.ry) * 0.32);
+    for (var pass = 0; pass < 6; pass++) {
+      for (i = 0; i < pts.length; i++) {
+        for (j = i + 1; j < pts.length; j++) {
+          var dx = pts[j].x - pts[i].x, dy = pts[j].y - pts[i].y;
+          var d = Math.sqrt(dx * dx + dy * dy) || 0.001;
+          if (d >= minDist) continue;
+          var push = (minDist - d) / 2, ux = dx / d, uy = dy / d;
+          pts[i].x -= ux * push; pts[i].y -= uy * push;
+          pts[j].x += ux * push; pts[j].y += uy * push;
+        }
+      }
+      for (i = 0; i < pts.length; i++) {
+        var p = pts[i];
+        var nx = (p.x - m.cx) / m.rx, ny = (p.y - m.cy) / m.ry;
+        var nk = Math.sqrt(nx * nx + ny * ny) || 0.001;
+        var lo = m.inner + (1 - m.inner) * Math.max(0, p.band - ringGap * 0.35);
+        var hi = m.inner + (1 - m.inner) * Math.min(1.02, p.band + ringGap * 0.35);
+        p.k = Math.max(lo, Math.min(hi, nk));
+        p.ang = Math.atan2(ny, nx);
+        p.x = m.cx + Math.cos(p.ang) * m.rx * p.k;
+        p.y = m.cy + Math.sin(p.ang) * m.ry * p.k;
+      }
+    }
+
+    var map = {};
+    for (i = 0; i < pts.length; i++) map[pts[i].col + ',' + pts[i].row] = pts[i];
+    _cellLayoutKey = key;
+    _cellLayout = map;
+    return map;
+  }
+
   function cellCenter(col, row, w, h) {
     var m = boardMetrics();
-    var colC = (Number(col) || 1) + ((w || 1) - 1) / 2;
-    var rowC = (Number(row) || 1) + ((h || 1) - 1) / 2;
-    var t = m.cols > 1 ? (colC - 1) / (m.cols - 1) : 0;
-    var k = m.inner + (1 - m.inner) * Math.max(0, Math.min(1, t));
-    var ang = ((rowC - 1) / m.rows) * Math.PI * 2          // 方位
-      + ((colC - 1) / m.cols) * (Math.PI / m.rows)          // 每環錯開半格
-      - Math.PI / 2;                                        // row 1 朝正上方
-    return { x: m.cx + Math.cos(ang) * m.rx * k, y: m.cy + Math.sin(ang) * m.ry * k, ang: ang, k: k };
+    var layout = cellLayout();
+    var ci = Math.round(Number(col) || 1), ri = Math.round(Number(row) || 1);
+    var ww = Math.max(1, w || 1), hh = Math.max(1, h || 1);
+    var best = layout[ci + ',' + ri];
+    if (ww > 1 || hh > 1) {
+      /* 佔多格（BOSS）：取涵蓋格子中最外圈的那一格。
+         用平均值會把 2×2 的中心算到棋盤正中央——那裡站著玩家。 */
+      for (var c = 0; c < ww; c++) {
+        for (var r = 0; r < hh; r++) {
+          var q = layout[(ci + c) + ',' + (ri + r)];
+          if (q && (!best || q.k > best.k)) best = q;
+        }
+      }
+    }
+    if (!best) return { x: m.cx, y: m.cy - 40, ang: -Math.PI / 2, k: 1 };
+    return { x: best.x, y: best.y, ang: best.ang, k: best.k };
   }
   /* 實體腳底錨點（極座標版沒有「格子下緣」，改用名目格高的一小段往下壓） */
   function cellAnchor(cell) {
@@ -2092,7 +2178,21 @@ var BattleRenderer = (function () {
     _app: function () { return S.app; },
     _debug: function () {
       var p = S.player;
+      var m = boardMetrics();
+      var cells = [];
+      for (var c = 1; c <= m.cols; c++) {
+        for (var r = 1; r <= m.rows; r++) {
+          var pt = cellCenter(c, r, 1, 1);
+          cells.push({
+            col: c, row: r,
+            x: Math.round(pt.x), y: Math.round(pt.y),
+            ang: Math.round(Math.atan2(pt.y - m.cy, pt.x - m.cx) * 180 / Math.PI),
+            r: Math.round(Math.sqrt(Math.pow(pt.x - m.cx, 2) + Math.pow(pt.y - m.cy, 2)))
+          });
+        }
+      }
       return {
+        cells: cells,
         player: p ? { x: Math.round(p.root.x), y: Math.round(p.root.y), dashing: !!p.dash, facing: p.facing, anim: p.curAnim } : null,
         home: playerPos(),
         entities: Object.keys(S.entities).map(function (id) {
