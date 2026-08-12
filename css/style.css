@@ -846,6 +846,7 @@ body {
   font-weight: bold;
   box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8), 0 2px 5px rgba(0, 0, 0, 0.5);
   text-shadow: 1px 1px 1px #000;
+  white-space: nowrap;
 }
 
 .btn:hover {
@@ -2539,7 +2540,42 @@ textarea#save-io {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 6px;
+  flex-wrap: nowrap;
   margin-bottom: 8px;
+}
+
+.inv-head .sec-title {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.inv-head .btn,
+.inv-head .dropdown,
+.inv-head .input {
+  white-space: nowrap !important;
+  flex-shrink: 0;
+}
+
+.inv-head .btn.sm {
+  padding: 2px 6px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.inv-head .dropdown.sm {
+  font-size: 12px !important;
+  padding: 2px 14px 2px 5px !important;
+  height: 25px !important;
+}
+
+.inv-head .input.sm {
+  font-size: 12px !important;
+  height: 25px !important;
+  padding: 2px 5px !important;
 }
 
 #inventory-grid {

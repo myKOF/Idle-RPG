@@ -1,5 +1,12 @@
 # PATCH.md
 
+## UI 樣式：背包頂部工具列按鈕與篩選菜單單行防換行佈局（Antigravity 2026-08-12）
+
+- **按鈕與菜單單行不換行**：
+  - 為全站 `.btn` 通用樣式新增 `white-space: nowrap;`，並為背包頂部工具列 `.inv-head` 下所有控制項（`#inv-expand`、`#inv-ancient-filter`、`#inv-rarity-filter`、`#inv-sort`、`#btn-salvage-settings` 等）強制設定 `white-space: nowrap !important;` 與 `flex-shrink: 0;`，切記絕不安插換行或文字截斷。
+  - 適度縮減 `.inv-head` 下按鈕與篩選選單之 padding（如 `2px 14px 2px 5px`）與字號 (font-size 12px / height 25px)，大幅壓縮橫向佈局空間，使所有按鈕與篩選菜單能於一橫行內完整排開。
+- ** Do Verification**：`node --test "tests/*.test.cjs"` 與 `node tools/build_check.cjs` 驗證通過。
+
 ## 驗證：舊存檔遷移裁切、公告彈窗、轉生確認窗技能上限與持久化落盤（Antigravity 2026-08-11）
 
 - **真的舊存檔裁切與狀態保留**：
