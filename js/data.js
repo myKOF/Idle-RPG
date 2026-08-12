@@ -248,8 +248,8 @@ var FIELD_BOSS_COUNT_TABLE = [[1, 100]];
        r3  1  3  5  7
        r4  2  4  6  8
    格位判定與選敵邏輯 → js/battlefield.js */
-var BF_COLS = 4;               // 敵方棋盤行數（由左至右，越右越遠）
-var BF_ROWS = 4;               // 敵方棋盤列數
+var BF_COLS = 7;               // 敵方棋盤行數（由左至右，越右越遠）
+var BF_ROWS = 7;               // 敵方棋盤列數
 var BF_DIST_PER_COL = 2;       // 每往右一行增加的距離
 var BF_DIST_CENTER_ROW = 1;    // 中央列的基礎距離
 var BF_DIST_OUTER_ROW = 2;     // 外側列的基礎距離
