@@ -29,6 +29,10 @@ var BattleRenderer = (function () {
 
   /* ---- 常數 ---- */
   var MAX_FX = 140;              // 特效物件上限（與 DOM 版 VFX_MAX_NODES 同精神）
+  var FX_HARD_LIFETIME_MS = 3000;  // 特效節點的硬性壽命（牆鐘）；領域類另外指定
+  var FX_AURA_MAX_SEC = 6;         // 領域／旋風類的顯示上限（秒）——原本吃技能的實際持續時間，
+                                   // 長效領域會讓那塊半透明方框在畫面上留很久，看起來像沒清乾淨
+  var FX_WATCHDOG_MS = 1000;       // 看門狗掃描間隔
   var MAX_FLOATS = 60;           // 同時存在的飄字上限
   var FLOAT_MERGE_MS = 160;      // 同目標同類傷害的合併窗（DOM 版邏輯的簡化版）
   var LASTPOS_KEEP_MS = 3000;    // 實體移除後保留座標，讓遲到的飄字仍有落點
@@ -73,6 +77,7 @@ var BattleRenderer = (function () {
     imgTex: {},               // 敵人圖檔快取：src -> Texture | 'loading' | 'failed'
     enterSeq: 0,              // 進場錯開序號（每波歸零）
     groundTile: null,
+    watchdogTimer: 0,
     emptyText: null,
     pauseVeil: null,
     resizeObs: null
@@ -771,9 +776,14 @@ var BattleRenderer = (function () {
       }
     }
 
-    /* 空場提示（高塔戰期間野外空場是常態，提示語照 DOM 版分開） */
+    /* 空場提示（高塔戰期間野外空場是常態，提示語照 DOM 版分開）。
+       屍體還在淡出時不顯示：畫面上明明有東西卻寫「搜索敵人中」很怪。 */
     if (S.emptyText) {
-      S.emptyText.visible = !anyLive;
+      var hasAnyEntity = false;
+      for (var ek in S.entities) {
+        if (Object.prototype.hasOwnProperty.call(S.entities, ek)) { hasAnyEntity = true; break; }
+      }
+      S.emptyText.visible = !anyLive && !hasAnyEntity;
       var emptyMsg = S.towerActive ? '（高塔戰鬥中…）' : '🔍 搜索敵人中…';
       if (S.emptyText.text !== emptyMsg) S.emptyText.text = emptyMsg;
     }
@@ -852,8 +862,13 @@ var BattleRenderer = (function () {
   }
 
   /* ============ 特效系統 ============ */
-  function addFx(fx, prio) {
+  function addFx(fx, prio, maxLifeMs) {
     fx.prio = prio || 0;
+    /* 硬性壽命（牆鐘）。每個特效的 update() 自己會算完就收，但那是靠 rAF 推的：
+       分頁切到背景、瀏覽器節流、或某個 update 因為外部狀態卡住不回 false，
+       節點就會永遠留在畫面上。這條時限與 update 無關，時間到一律清掉。 */
+    fx.bornAt = nowMs();
+    fx.maxLife = maxLifeMs || FX_HARD_LIFETIME_MS;
     if (S.fx.length >= MAX_FX) {
       /* 滿了先踢低優先級（粒子），跟 DOM 版先踢非 aura 的精神一致 */
       for (var i = 0; i < S.fx.length; i++) {
@@ -872,6 +887,48 @@ var BattleRenderer = (function () {
   function killFx(fx) {
     if (fx.node && !fx.node.destroyed) fx.node.destroy({ children: true });
     fx.dead = true;
+  }
+
+  /* 全部清空：分頁切背景、Worker 重啟、暫停解除後的補救都用這支。 */
+  function clearAllFx() {
+    for (var i = 0; i < S.fx.length; i++) killFx(S.fx[i]);
+    S.fx.length = 0;
+    sweepOrphanFxNodes();
+  }
+
+  /* 孤兒節點清掃：特效層裡任何「沒有被 S.fx 追蹤」的顯示物件一律移除。
+     這是最後一道保險——不管是哪條路徑漏掉了回收（例外、提早 return、
+     未來新增的特效忘了走 addFx），畫面都不會殘留一堆小圖示與圈點。 */
+  function sweepOrphanFxNodes() {
+    if (!S.layers) return;
+    var tracked = [];
+    for (var i = 0; i < S.fx.length; i++) if (S.fx[i].node) tracked.push(S.fx[i].node);
+    var layers = [S.layers.fx, S.layers.zone];
+    for (var li = 0; li < layers.length; li++) {
+      var layer = layers[li];
+      if (!layer || !layer.children) continue;
+      for (var ci = layer.children.length - 1; ci >= 0; ci--) {
+        var child = layer.children[ci];
+        if (tracked.indexOf(child) >= 0) continue;
+        if (!child.destroyed) child.destroy({ children: true });
+        else layer.removeChildAt(ci);
+      }
+    }
+  }
+
+  /* 看門狗：用 setInterval（牆鐘）而不是 rAF。rAF 在背景分頁會停擺，
+     正是特效卡住不消失的那個情境，所以清理不能掛在同一條時間軸上。 */
+  function fxWatchdog() {
+    if (!S.ready) return;
+    var now = nowMs();
+    for (var i = S.fx.length - 1; i >= 0; i--) {
+      var fx = S.fx[i];
+      if (fx.dead || (now - fx.bornAt) > fx.maxLife) {
+        killFx(fx);
+        S.fx.splice(i, 1);
+      }
+    }
+    sweepOrphanFxNodes();
   }
 
   function spawnParticles(x, y, count, theme, speed) {
@@ -1100,25 +1157,28 @@ var BattleRenderer = (function () {
     var g = new PIXI.Graphics();
     node.addChild(g);
     S.layers.zone.addChild(node);
-    var t = 0, dur = Math.min(60, Math.max(1, spec.dur || 4));
+    /* 顯示時間刻意不吃技能的實際持續時間：長效領域會讓這塊半透明方框在畫面上
+       留很久，看起來就像沒清乾淨的殘留物。收尾再淡出，不要直接消失。 */
+    var t = 0, dur = Math.min(FX_AURA_MAX_SEC, Math.max(1, spec.dur || 4));
     var partAcc = 0;
     addFx({
       node: node,
       update: function (dt) {
         t += dt;
-        var pulse = 0.16 + Math.sin(t * 3.2) * 0.05;
+        var fade = t > dur - 0.5 ? Math.max(0, (dur - t) / 0.5) : 1;
+        var pulse = (0.16 + Math.sin(t * 3.2) * 0.05) * fade;
         g.clear();
         g.roundRect(rect.x + 3, rect.y + 3, rect.w - 6, rect.h - 6, 10)
           .fill({ color: theme.c2, alpha: pulse })
-          .stroke({ color: theme.c1, width: 2, alpha: 0.5 + Math.sin(t * 3.2) * 0.2 });
+          .stroke({ color: theme.c1, width: 2, alpha: (0.5 + Math.sin(t * 3.2) * 0.2) * fade });
         partAcc += dt;
-        if (partAcc > 0.3 && !REDUCED_MOTION) {
+        if (partAcc > 0.3 && !REDUCED_MOTION && fade > 0.5) {
           partAcc = 0;
           spawnRiser(rect.x + Math.random() * rect.w, rect.y + rect.h * (0.4 + Math.random() * 0.6), theme, spec.glyph);
         }
         return t < dur;
       }
-    }, 2);
+    }, 2, dur * 1000 + 500);
   }
   function spawnRiser(x, y, theme, glyph) {
     var node;
@@ -1289,7 +1349,7 @@ var BattleRenderer = (function () {
       node.addChild(b);
       blades.push(b);
     }
-    var t = 0, dur = Math.min(6, Math.max(0.8, spec.dur || 1.6));
+    var t = 0, dur = Math.min(FX_AURA_MAX_SEC, Math.max(0.8, spec.dur || 1.6));
     addFx({
       node: node,
       update: function (dt) {
@@ -1298,7 +1358,7 @@ var BattleRenderer = (function () {
         node.alpha = t > dur - 0.3 ? (dur - t) / 0.3 : 1;
         return t < dur;
       }
-    }, 2);
+    }, 2, dur * 1000 + 500);
   }
   function spawnBladestorm(rect, spec) {
     if (!rect) return;
@@ -1914,13 +1974,19 @@ var BattleRenderer = (function () {
     WorkerBridge.on(MSG_OUT.PANEL, function (msg) {
       if (msg && msg.name === 'battle') syncBattle(msg.data);
     });
+    /* 分頁切到背景：rAF 停擺，這時候還活著的特效會整批凍在畫面上，
+       回到前景時就是一堆殘留的小圖示與圈點。乾脆直接清掉（與 DOM 版
+       handleVisibilityChange 呼叫 vfxSetEnabled(false) 的處置一致）。 */
+    document.addEventListener('visibilitychange', function () {
+      if (documentHidden()) clearAllFx();
+    });
+
     WorkerBridge.on('workerRestarting', function () {
       /* Worker 重啟＝所有舊身分作廢：FIELD_ENEMY_FLOAT_SEQ 是 Worker 內全域，
          重啟後從 mv-float-0 重新發號，舊實體若留著會被新怪的同名 id 誤認成
          「同一隻」而只更新血量、不換外觀（BOSS 大血條也會掛錯對象）。
          全部清掉，等新 Worker 的第一張 battle 面板重建。 */
-      for (var i = 0; i < S.fx.length; i++) killFx(S.fx[i]);
-      S.fx.length = 0;
+      clearAllFx();
       for (var j = 0; j < S.floats.length; j++) killFx(S.floats[j]);
       S.floats.length = 0;
       S.floatMerge = {};
@@ -1986,6 +2052,7 @@ var BattleRenderer = (function () {
         S.resizeObs.observe(host);
       }
       window.addEventListener('resize', resize, { passive: true });
+      S.watchdogTimer = setInterval(fxWatchdog, FX_WATCHDOG_MS);
       S.ready = true;
       /* 開機時 battle 面板可能已經在手上（bridge 比渲染器先跑），先同步一次 */
       if (typeof peekUiPanelData === 'function') {
