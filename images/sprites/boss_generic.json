@@ -1,0 +1,25 @@
+{
+  "image": "boss_generic.png",
+  "frameWidth": 144,
+  "frameHeight": 144,
+  "anims": {
+    "idle": {
+      "fps": 6,
+      "loop": true,
+      "row": 0,
+      "frames": 4
+    },
+    "attack": {
+      "fps": 12,
+      "loop": false,
+      "row": 1,
+      "frames": 5
+    },
+    "hurt": {
+      "fps": 10,
+      "loop": false,
+      "row": 2,
+      "frames": 2
+    }
+  }
+}

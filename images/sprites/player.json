@@ -1,0 +1,37 @@
+{
+  "image": "player.png",
+  "frameWidth": 96,
+  "frameHeight": 96,
+  "anims": {
+    "idle": {
+      "fps": 5,
+      "loop": true,
+      "row": 0,
+      "frames": 4
+    },
+    "walk": {
+      "fps": 10,
+      "loop": true,
+      "row": 1,
+      "frames": 6
+    },
+    "attack1": {
+      "fps": 14,
+      "loop": false,
+      "row": 2,
+      "frames": 5
+    },
+    "attack2": {
+      "fps": 14,
+      "loop": false,
+      "row": 3,
+      "frames": 5
+    },
+    "attack3": {
+      "fps": 14,
+      "loop": false,
+      "row": 4,
+      "frames": 5
+    }
+  }
+}
