@@ -166,7 +166,10 @@ test('出怪依階段敵種選用對應的數量表', () => {
   }
 });
 
-test('敵人生成當輪立即出手，即使被玩家秒殺也至少完成一次攻擊', () => {
+/* 2026-08 進場判定：新怪要先走進畫面（_enterCd）才能攻擊或被攻擊，
+   所以「至少完成一次攻擊」的保證從「生成當輪」移到「抵達當輪」——
+   進場期間打不到牠，牠一定活得到抵達那一刻。 */
+test('敵人走進畫面前不參戰，抵達當輪立即出手，即使被玩家秒殺也至少完成一次攻擊', () => {
   const context = loadCombatContext();
   const events = [];
   context.G = {
@@ -219,9 +222,17 @@ test('敵人生成當輪立即出手，即使被玩家秒殺也至少完成一�
     context.FIELD.monsters.forEach((enemy) => { if (enemy.hp <= 0) enemy._rewarded = true; });
   };
 
+  // 生成當輪：敵人還在畫面外走進來，雙方都不該動作
   context.fieldTick(0.1);
+  assert.deepEqual(events, [], '進場中的敵人不得攻擊，也不得被攻擊');
+  assert.equal(context.FIELD.player.hp, 100, '進場中的敵人不該打到玩家');
+  assert.equal(context.FIELD.monsters.length, 1);
+  assert.ok(context.FIELD.monsters[0]._enterCd > 0, '應該還在進場倒數');
+  assert.equal(context.FIELD.monsters[0].hp, 10, '進場中的敵人不該被玩家打到');
 
-  assert.deepEqual(events, ['enemy', 'player'], '新敵人應先在生成當輪攻擊，再被玩家擊殺');
+  // 走完進場倒數的那一輪：敵人先出手，再被玩家擊殺
+  context.fieldTick(context.FIELD_ENEMY_ENTER_DELAY + context.FIELD_ENEMY_ENTER_STAGGER);
+  assert.deepEqual(events, ['enemy', 'player'], '抵達當輪應先攻擊，再被玩家擊殺');
   assert.equal(context.FIELD.player.hp, 99, '即使敵人被秒殺，玩家仍應承受首擊');
 });
 

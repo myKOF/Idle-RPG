@@ -67,6 +67,43 @@ function liveFieldEnemies() {
     return fieldEnemyList().filter(function (m) { return m && m.hp > 0; });
 }
 
+/* 「已經進場」＝走到定位、可以打人也可以被打。
+   進場中的敵人仍然活著（liveFieldEnemies 看得到，所以它照樣佔格、照樣顯示、
+   也算在補波的空格計算裡），只是還沒加入戰鬥。 */
+function fieldEnemyEntering(m) {
+    return !!(m && m._enterCd > 0);
+}
+function fieldCombatReady(m) {
+    return !!(m && m.hp > 0 && !(m._enterCd > 0));
+}
+/* 可交戰的敵人：選目標、範圍展開、持續傷害、技能排程器一律只看這一份。 */
+function combatFieldEnemies() {
+    return fieldEnemyList().filter(fieldCombatReady);
+}
+
+/* 進場倒數，回傳「本輪剛走到定位」的敵人。
+   抵達的當下 atkCd 歸零並立刻補一擊（由 fieldTick 在玩家行動之前執行）：
+   原本「新怪至少完成一次攻擊、即使被秒殺也算數」的保證因此完整保留——
+   只是從「生成當輪」移到「抵達當輪」。進場期間牠不會被打死，一定活得到那一刻。
+   這條保證不能省：少了它，高 DPS 玩家會在每隻怪抵達的瞬間秒殺，永遠不吃傷害，
+   波次串流「撐不住就會失敗」的壓力設計就整個失效。 */
+function tickFieldEnterDelays(dt) {
+    var enemies = fieldEnemyList();
+    var arrived = [];
+    for (var i = 0; i < enemies.length; i++) {
+        var m = enemies[i];
+        if (!m || !(m._enterCd > 0)) continue;
+        m._enterCd -= dt;
+        if (m._enterCd <= 0) {
+            m._enterCd = 0;
+            m.atkCd = 0;
+            arrived.push(m);
+        }
+    }
+    if (arrived.length) UI.dirty.battle = true;
+    return arrived;
+}
+
 function isFieldEnemyVisible(m) {
     return !!(m && (m.hp > 0 || (m._rewarded && (m._deathClearCd || 0) > 0)));
 }
@@ -171,8 +208,11 @@ function spawnFieldMonster(append) {
               Math.max(1, Number(typeof BF_BOSS_H !== 'undefined' ? BF_BOSS_H : 2) || 1)
             : 1;
         var free = (typeof bfFreeCellCount === 'function') ? bfFreeCellCount(standing) : count;
-        count = Math.min(count, Math.floor(free / cellsEach));
-        if (count < 1) return [];   // 棋盤滿了：這一波跳過，下一個間隔再試
+        /* 同時上限（參數表可逐地圖／關卡調）：清不完的怪會一直堆，沒有煞車的話
+           新角色前幾關就會被打死到推不動。棋盤格數是另一道硬上限。 */
+        var room = fieldMaxLiveEnemiesFor(s, G.stage.zone) - standing.length;
+        count = Math.min(count, room, Math.floor(free / cellsEach));
+        if (count < 1) return [];   // 場上滿了：這一波跳過，下一個間隔再試
     }
     var enemies = [];
     for (var i = 0; i < count; i++) {
@@ -199,6 +239,9 @@ function spawnFieldMonster(append) {
             elite: elite, isBoss: boss,
             gold: base.gold * zn.rewardMult, xp: base.xp * zn.rewardMult, // 金幣/經驗 x場景倍率
             atkCd: 1 / mAspd, effects: {}, ctrlRes: 0, _spawnAt: GT, // 控場遞減計時起點 → formula.js §3
+            /* 進場倒數：走進畫面前不可攻擊也不可被攻擊（→ fieldCombatReady）。
+               同一波逐隻錯開，避免整排同時抵達。 */
+            _enterCd: FIELD_ENEMY_ENTER_DELAY + i * FIELD_ENEMY_ENTER_STAGGER,
             shield: 0, buffs: {}, dots: []
         });
     }
@@ -906,6 +949,7 @@ function fieldTick(dt) {
     if (tickStatuses(p, dt)) { onPlayerFieldDeath(); return; }
 
     tickFieldDeathClears(dt);
+    var arrivedEnemies = tickFieldEnterDelays(dt);   // 進場倒數：走到定位才加入戰鬥
     var debugFieldTick = combatDebugFieldSnapshot(fieldEnemyList());
 
     // 45 新技能共用排程器（echo／periodicField／dmgWindow／healWindow／聖痕到期結算；tower.js 塔戰 tick 鏡射）——
@@ -913,13 +957,13 @@ function fieldTick(dt) {
     // 領域補跳 while 迴圈會在新一波出怪的第一個 tick 把間隙內漏掉的每跳一次性全灌到新敵人身上（等效免費爆發）。
     // 空場時回響/領域跳傷/快照窗轟出自然落空（fizzle）、聖痕期滿仍照時給盾，行為與高塔恆有 BOSS 一致。
     if (typeof tickSkillSchedulers === 'function') {
-        tickSkillSchedulers(dt, { pEnt: p, getEnemies: liveFieldEnemies, floatSel: 'mv-float', onDeaths: onFieldDeaths });
+        tickSkillSchedulers(dt, { pEnt: p, getEnemies: combatFieldEnemies, floatSel: 'mv-float', onDeaths: onFieldDeaths });
         combatDebugAuditFieldDeaths(debugFieldTick, 'skill scheduler');
     }
     if (typeof tickLegendaryEffects === 'function') {
         var legendaryTick = tickLegendaryEffects(dt, {
             pEnt: p,
-            getEnemies: liveFieldEnemies,
+            getEnemies: combatFieldEnemies,
             floatSel: 'mv-float',
             onDeaths: onFieldDeaths
         });
@@ -949,16 +993,20 @@ function fieldTick(dt) {
             if (added && added.length) spawnedEnemies = added;
         }
     }
-    var enemies = liveFieldEnemies();
+    /* 以下所有戰鬥行為都只認「已經走進畫面」的敵人（→ fieldCombatReady）：
+       選目標、範圍展開、持續傷害、敵人出手全部排除進場中的那些。
+       新怪不再於生成當輪先出手——牠這時還在螢幕外；改成走到定位當下把
+       atkCd 歸零立刻補一擊（見 tickFieldEnterDelays），保證仍不會漏掉首擊。 */
+    var enemies = combatFieldEnemies();
     if (!enemies.length) return;
 
-    // 新敵人先出手一次，再進入原本的玩家行動順序；即使玩家隨後在同一輪秒殺，
-    // 這次攻擊也已經完成，不會因敵人先被移除而漏掉整波的第一擊。
-    if (spawnedEnemies && spawnedEnemies.length) {
-        for (var si = 0; si < spawnedEnemies.length; si++) {
-            if (fieldMonsterAttack(spawnedEnemies[si], p)) return;
+    /* 剛走到定位的敵人先出手一次，再進入玩家行動順序。
+       即使玩家隨後在同一輪把牠秒殺，這一擊也已經完成（見 tickFieldEnterDelays）。 */
+    if (arrivedEnemies && arrivedEnemies.length) {
+        for (var ai = 0; ai < arrivedEnemies.length; ai++) {
+            if (arrivedEnemies[ai].hp > 0 && fieldMonsterAttack(arrivedEnemies[ai], p)) return;
         }
-        enemies = liveFieldEnemies();
+        enemies = combatFieldEnemies();
         if (!enemies.length) return;
     }
 
@@ -967,7 +1015,7 @@ function fieldTick(dt) {
         if (tickStatuses(enemies[di], dt)) onFieldKill(enemies[di]);
     }
     combatDebugAuditFieldDeaths(debugFieldTick, 'poison/dots');
-    enemies = liveFieldEnemies();
+    enemies = combatFieldEnemies();
     if (!enemies.length) return;
 
     // 潛力【聖療逆轉】溢出傷害（持續效果，不受暈眩影響）
@@ -975,13 +1023,13 @@ function fieldTick(dt) {
     if (typeof tickPotentialRegen === 'function') {
         regenKilled = tickPotentialRegen(p, st, dt, enemies, 'mv-float');
         combatDebugAuditFieldDeaths(debugFieldTick, 'potential overheal damage');
-        if (regenKilled) { onFieldDeaths(); enemies = liveFieldEnemies(); if (!enemies.length) return; }
+        if (regenKilled) { onFieldDeaths(); enemies = combatFieldEnemies(); if (!enemies.length) return; }
     }
     // 潛力【雷霆過載】持續轟擊（增益期間依固定間隔一輪；持續效果，不受暈眩影響）
     if (typeof tickPotentialOverdrive === 'function') {
         var odRes = tickPotentialOverdrive(p, enemies, 'mv-float');
         combatDebugAuditFieldDeaths(debugFieldTick, 'potential overdrive');
-        if (odRes && odRes.killed) { onFieldDeaths(); enemies = liveFieldEnemies(); if (!enemies.length) return; }
+        if (odRes && odRes.killed) { onFieldDeaths(); enemies = combatFieldEnemies(); if (!enemies.length) return; }
     }
     // 玩家行動（受減速時依減速比例放慢；時間扭曲等攻速增益加速）
     //（45 新技能共用排程器已上移至「出怪」空場檢查之前，避免波次間隙排程停擺）
@@ -991,7 +1039,7 @@ function fieldTick(dt) {
         combatDebugAuditFieldDeaths(debugFieldTick, 'skill cast');
         if (sres && sres.killed) {
             onFieldDeaths();
-            enemies = liveFieldEnemies();
+            enemies = combatFieldEnemies();
             if (!enemies.length) return;
         }
         if (p.hp <= 0) { onPlayerFieldDeath(); return; } // 狂暴打擊等自傷技能
@@ -1002,7 +1050,7 @@ function fieldTick(dt) {
         p.atkCd -= dt * playerAttackRate;
         if (p.atkCd <= 0) {
             // 普攻打離我方最近的敵人（同距離隨機挑一個）；鎖定後直到該目標死亡才換 → js/battlefield.js
-            var primary = bfPickPrimary(liveFieldEnemies(), p._lockTarget);
+            var primary = bfPickPrimary(combatFieldEnemies(), p._lockTarget);
             p.atkCd += 1 / st.aspd;
             if (primary) {
                 p._lockTarget = primary;
@@ -1012,16 +1060,18 @@ function fieldTick(dt) {
                     applyBasicAttackKillGap(p, playerAttackRate);
                     onFieldDeaths();
                 }
-                if (!liveFieldEnemies().length) return;
+                if (!combatFieldEnemies().length) return;
             }
         }
     }
     // 怪物攻擊
-    enemies = liveFieldEnemies();
+    enemies = combatFieldEnemies();
     for (var mi = 0; mi < enemies.length; mi++) {
         var m = enemies[mi];
-        // 這些敵人在本輪生成時已完成首擊；生成點位於本輪時間的末端，
-        // 不應再把同一個 dt 重算一次，避免高攻速敵人同輪連攻兩次。
+        /* 本輪剛抵達的敵人已經在上面出過手，不要用同一個 dt 再算一次
+           （高攻速敵人會同輪連攻兩下）。本輪剛「生成」的還在進場，
+           combatFieldEnemies 已經篩掉，這裡一併防呆。 */
+        if (arrivedEnemies && arrivedEnemies.indexOf(m) >= 0) continue;
         if (spawnedEnemies && spawnedEnemies.indexOf(m) >= 0) continue;
         if (!effectActive(m, 'stun')) {
             m.atkCd -= dt * slowFactor(m);
@@ -1096,7 +1146,7 @@ function onFieldKill(m) {
     if (!m || m._rewarded) return;
     // 45 新技能（dotSynergy 族）：dotSplashOnKill（蝕骨頻率 M8）——敵人死亡時，
     // 其身上 DoT 剩餘的一部分濺射到隨機另一存活敵人（須在清理死亡實體前結算）
-    if (typeof skillRtOnEnemyDeath === 'function') skillRtOnEnemyDeath(m, liveFieldEnemies());
+    if (typeof skillRtOnEnemyDeath === 'function') skillRtOnEnemyDeath(m, combatFieldEnemies());
     m.hp = 0;
     m._rewarded = true;
     // 普攻鎖定的目標死了就解鎖，下一次出手重新挑最近的（順便別把死掉的實體參照留在快照裡）

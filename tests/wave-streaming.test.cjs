@@ -60,18 +60,39 @@ test('補波不會重配既有敵人的站位，新怪只填空格', () => {
   });
 });
 
-test('棋盤塞滿後補波直接跳過，不會憑空產生放不下的敵人', () => {
+test('場上達到同時上限後補波直接跳過，不會憑空產生放不下的敵人', () => {
   const context = loadCombatContext();
-  const cap = context.bfCellCount();
+  const cap = context.fieldMaxLiveEnemiesFor(context.G.stage.current, context.G.stage.zone);
+  assert.ok(cap >= 1 && cap <= context.bfCellCount(), '同時上限必須落在 1~棋盤格數之間');
   let guard = 0;
   while (context.liveFieldEnemies().length < cap && guard++ < 60) {
     if (!context.spawnFieldMonster(true).length) break;
   }
-  assert.equal(context.bfFreeCellCount(context.liveFieldEnemies()), 0, '應該已經塞滿');
+  assert.equal(context.liveFieldEnemies().length, cap, '應該補到同時上限為止');
   const full = context.FIELD.monsters.length;
   // 陣列來自 vm 沙箱，原型不同，不能用 deepEqual 比對；看長度即可
   assert.equal(context.spawnFieldMonster(true).length, 0, '滿場時補波必須什麼都不生');
   assert.equal(context.FIELD.monsters.length, full, '滿場時不得增加任何敵人');
+});
+
+/* 同時上限是難度的煞車：沒有它，清不完的怪會一路堆到棋盤滿格，
+   新角色在前幾關就會被打死到完全推不動（headless 模擬實測全程卡在復活倒數）。 */
+test('同時上限可依地圖與關卡區分，且不會超過棋盤格數', () => {
+  const context = loadCombatContext();
+  context.ZONE_STAGE_WAVE_PROFILES = {
+    desert: [[1, 49, 2, 4], [50, 9999, 2, 12]],
+    swamp: [[1, 9999, 2, 999]]
+  };
+  assert.equal(context.fieldMaxLiveEnemiesFor(10, 'desert'), 4);
+  assert.equal(context.fieldMaxLiveEnemiesFor(50, 'desert'), 12);
+  // 填超過棋盤格數也不會真的生出那麼多——放不下的本來就會被丟掉
+  assert.equal(context.fieldMaxLiveEnemiesFor(1, 'swamp'), context.bfCellCount());
+  // 沒列到的地圖、缺欄位、填 0 一律退回預設值
+  assert.equal(context.fieldMaxLiveEnemiesFor(1, 'Icefield'), context.FIELD_MAX_LIVE_ENEMIES);
+  context.ZONE_STAGE_WAVE_PROFILES = { desert: [[1, 9999, 2]] };
+  assert.equal(context.fieldMaxLiveEnemiesFor(1, 'desert'), context.FIELD_MAX_LIVE_ENEMIES);
+  context.ZONE_STAGE_WAVE_PROFILES = { desert: [[1, 9999, 2, 0]] };
+  assert.equal(context.fieldMaxLiveEnemiesFor(1, 'desert'), context.FIELD_MAX_LIVE_ENEMIES);
 });
 
 test('fieldTick 每隔一個波次間隔補一波，不等場上清空', () => {
@@ -155,8 +176,8 @@ test('波次間隔可依地圖與關卡區分，且表壞掉時退回預設值',
   const context = loadCombatContext();
   // 表本體由 config/Excel/Zone_Stage_Waves.xlsx 管理，這裡只驗查表行為
   context.ZONE_STAGE_WAVE_PROFILES = {
-    desert: [[1, 49, 3], [50, 9999, 1.5]],
-    swamp: [[1, 9999, 0.8]]
+    desert: [[1, 49, 3, 8], [50, 9999, 1.5, 8]],
+    swamp: [[1, 9999, 0.8, 8]]
   };
   assert.equal(context.fieldWaveIntervalFor(10, 'desert'), 3);
   assert.equal(context.fieldWaveIntervalFor(50, 'desert'), 1.5);
@@ -179,9 +200,10 @@ test('參數表預設值涵蓋所有地圖，數值合理', () => {
     const rows = context.ZONE_STAGE_WAVE_PROFILES[zone];
     assert.ok(Array.isArray(rows) && rows.length, '缺少地圖：' + zone);
     rows.forEach((row) => {
-      assert.equal(row.length, 3, zone + ' 每列必須是 [最低關卡, 最高關卡, 間隔秒數]');
+      assert.equal(row.length, 4, zone + ' 每列必須是 [最低關卡, 最高關卡, 間隔秒數, 同時上限隻數]');
       assert.ok(row[0] >= 1 && row[1] >= row[0], zone + ' 關卡區間不合法');
       assert.ok(row[2] > 0 && row[2] <= 60, zone + ' 間隔秒數超出合理範圍');
+      assert.ok(row[3] >= 1 && row[3] <= 99, zone + ' 同時上限隻數超出合理範圍');
     });
   });
 });

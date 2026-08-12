@@ -158,6 +158,7 @@ function zoneStageWaveContent() {
     return i;
   };
   const CZONE = col('地圖識別碼'), CMIN = col('最低關卡'), CMAX = col('最高關卡'), CSEC = col('出怪間隔秒數');
+  const CCAP = col('同時上限隻數');
   const num = (raw, label) => {
     const n = Number(String(raw).trim());
     if (!Number.isFinite(n)) throw new Error('Zone_Stage_Waves.csv 數值無法解析：' + label + ' / ' + raw);
@@ -170,9 +171,11 @@ function zoneStageWaveContent() {
     const min = num(r[CMIN], zone + '.最低關卡');
     const max = num(r[CMAX], zone + '.最高關卡');
     const sec = num(r[CSEC], zone + '.出怪間隔秒數');
+    const cap = num(r[CCAP], zone + '.同時上限隻數');
     if (min > max) throw new Error('Zone_Stage_Waves.csv 關卡區間反向：' + zone + ' ' + min + '~' + max);
     if (!(sec > 0)) throw new Error('Zone_Stage_Waves.csv 出怪間隔必須大於 0：' + zone + ' = ' + sec);
-    (grouped[zone] || (grouped[zone] = [])).push([min, max, sec]);
+    if (!(cap >= 1)) throw new Error('Zone_Stage_Waves.csv 同時上限隻數必須至少 1：' + zone + ' = ' + cap);
+    (grouped[zone] || (grouped[zone] = [])).push([min, max, sec, cap]);
   });
   const expectedZones = ['desert', 'Icefield', 'swamp', 'undead_mountains', 'god_battlefield', 'god_chaos', 'god_sanctuary'];
   expectedZones.forEach(zone => {

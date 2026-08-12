@@ -1040,27 +1040,45 @@ function isPurgatoryTowerFloor(floor) {
   return floor > TOWER_HELL_MAX_FLOOR && floor <= TOWER_PURGATORY_MAX_FLOOR;
 }
 
-/* 這一關每隔幾秒補一波敵人（表本體 → data.js ZONE_STAGE_WAVE_PROFILES，
-   由 config/Excel/Zone_Stage_Waves.xlsx 管理）。找不到地圖或關卡區間時退回
-   FIELD_WAVE_SPAWN_INTERVAL；數值一律夾到 0.2 秒以上，避免表填 0 造成每 tick 出怪。 */
-function fieldWaveIntervalFor(stage, zone) {
-  var fallback = (typeof FIELD_WAVE_SPAWN_INTERVAL === 'number' && FIELD_WAVE_SPAWN_INTERVAL > 0)
-    ? FIELD_WAVE_SPAWN_INTERVAL : 2;
+/* 波次串流的兩個數字（表本體 → data.js ZONE_STAGE_WAVE_PROFILES，
+   由 config/Excel/Zone_Stage_Waves.xlsx 管理，每列 [最低關, 最高關, 間隔秒數, 同時上限]）。
+   共用同一支查表：找不到地圖或關卡區間就退回預設值。 */
+function fieldWaveProfileRow(stage, zone) {
   var s = stage == null && typeof G !== 'undefined' && G && G.stage ? G.stage.current : stage;
   s = Math.floor(Number(s) || 0);
   var z = zone == null && typeof G !== 'undefined' && G && G.stage ? G.stage.zone : zone;
   z = z || 'desert';
   var rows = (typeof ZONE_STAGE_WAVE_PROFILES !== 'undefined') ? ZONE_STAGE_WAVE_PROFILES[z] : null;
-  var value = fallback;
-  if (rows && rows.length) {
-    for (var i = 0; i < rows.length; i++) {
-      var row = rows[i];
-      if (!row) continue;
-      if (s >= Number(row[0]) && s <= Number(row[1])) { value = Number(row[2]); break; }
-    }
+  if (!rows || !rows.length) return null;
+  for (var i = 0; i < rows.length; i++) {
+    var row = rows[i];
+    if (!row) continue;
+    if (s >= Number(row[0]) && s <= Number(row[1])) return row;
   }
+  return null;
+}
+
+/* 這一關每隔幾秒補一波敵人。數值一律夾到 0.2 秒以上，避免表填 0 造成每個 tick 都出怪。 */
+function fieldWaveIntervalFor(stage, zone) {
+  var fallback = (typeof FIELD_WAVE_SPAWN_INTERVAL === 'number' && FIELD_WAVE_SPAWN_INTERVAL > 0)
+    ? FIELD_WAVE_SPAWN_INTERVAL : 2;
+  var row = fieldWaveProfileRow(stage, zone);
+  var value = row ? Number(row[2]) : fallback;
   if (!isFinite(value) || value <= 0) value = fallback;
   return Math.max(0.2, value);
+}
+
+/* 場上同時最多站幾隻。這是難度的煞車：清不完的怪會一路堆積，沒有上限的話
+   新角色在前幾關就會被打死到完全推不動（實測 headless 模擬全程卡在復活倒數）。
+   再高也不會超過棋盤格數——放不下的敵人本來就會在配格時被丟掉。 */
+function fieldMaxLiveEnemiesFor(stage, zone) {
+  var fallback = (typeof FIELD_MAX_LIVE_ENEMIES === 'number' && FIELD_MAX_LIVE_ENEMIES > 0)
+    ? FIELD_MAX_LIVE_ENEMIES : 8;
+  var row = fieldWaveProfileRow(stage, zone);
+  var value = (row && row.length > 3) ? Number(row[3]) : fallback;
+  if (!isFinite(value) || value <= 0) value = fallback;
+  var cells = (typeof bfCellCount === 'function') ? bfCellCount() : value;
+  return Math.max(1, Math.min(Math.floor(value), cells));
 }
 
 /* 每波敵人數量的權重表挑選（表本體與參數表對應 → data.js §每波敵人數量）：

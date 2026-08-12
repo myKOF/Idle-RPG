@@ -45,6 +45,17 @@ function boot(seed, sec) {
   return e;
 }
 
+/* 需要「正在交戰的那一拍」的測試用這支。
+   固定秒數不保證停在交戰中：波次串流改造後角色可能剛好在復活倒數或換波空檔
+   （見 js/combat.js 的進場判定與波次串流），那時 panel('eval') 只回空殼。
+   多推幾秒找到有對手的一拍即可——測試要的是「有對手」，不是某個特定時刻。 */
+function bootInCombat(seed, sec, params) {
+  const e = boot(seed, sec);
+  for (let i = 0; i < 240 && !e.panel('eval', params).known; i++) e.stepSeconds(1);
+  assert.equal(e.panel('eval', params).known, true, '前置條件：找不到正在交戰的一拍');
+  return e;
+}
+
 /* ---- 1. 唯讀性與決定論 ---- */
 
 test('評估器是唯讀的：跑過與沒跑過，存檔逐位元組相同', () => {
@@ -76,7 +87,7 @@ test('沒有對手時的空殼與正常回傳的欄位完全一致', () => {
 
      行為上無害（沒有對手時洗煉本來就該按兵不動），但它汙染的是「失效路徑」
      這個診斷管道，而那是發現「策略指到已改名欄位」的唯一訊號。 */
-  const e = boot(4242, 600);
+  const e = bootInCombat(4242, 600);
   const full = e.panel('eval');
   assert.equal(full.known, true, '前置條件：這一拍應該正在交戰');
 
@@ -136,7 +147,7 @@ test('跨過裝等斷點的增幅遠大於跨一個品質階', () => {
 /* ---- 4. ROI 排序真的隨面板改變 ---- */
 
 test('暴擊率低時爆傷的邊際效益接近零', () => {
-  const e = boot(4242, 600);
+  const e = bootInCombat(4242, 600);
   const roi = e.panel('eval').affixRoi;
   const st = e.ctx.getStats();
   assert.ok(st.critRate < 20, '前置條件：這一場的暴擊率應該還很低');

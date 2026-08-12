@@ -36,7 +36,6 @@ var BattleRenderer = (function () {
   var MAX_FLOATS = 60;           // 同時存在的飄字上限
   var FLOAT_MERGE_MS = 160;      // 同目標同類傷害的合併窗（DOM 版邏輯的簡化版）
   var LASTPOS_KEEP_MS = 3000;    // 實體移除後保留座標，讓遲到的飄字仍有落點
-  var ENTER_STAGGER_MS = 70;     // 一波敵人進場的錯開間隔
 
   /* 元素主題色：優先沿用 js/vfx.js 的 VFX_ELEM_THEME，載入順序異常時退回內建表。 */
   var FALLBACK_THEME = {
@@ -75,7 +74,6 @@ var BattleRenderer = (function () {
     shake: 0,                 // 畫面震動剩餘強度（px）
     sheets: {},               // name -> { tex, manifest, anims: {name: [Texture]} }
     imgTex: {},               // 敵人圖檔快取：src -> Texture | 'loading' | 'failed'
-    enterSeq: 0,              // 進場錯開序號（每波歸零）
     groundTile: null,
     watchdogTimer: 0,
     emptyText: null,
@@ -115,7 +113,9 @@ var BattleRenderer = (function () {
     var c = playerPos();
     var rx = Math.max(90, S.W * 0.5 - 52);
     var ry = Math.max(72, Math.min(S.H * 0.5 - 62, rx * 0.74));
-    return { cols: cols, rows: rows, cx: c.x, cy: c.y, rx: rx, ry: ry, inner: 0.36 };
+    /* inner＝最內環的半徑比例。太小的話第一行的敵人會疊在玩家身上，
+       名條與血條也會糊成一團，所以留出一個身位。 */
+    return { cols: cols, rows: rows, cx: c.x, cy: c.y, rx: rx, ry: ry, inner: 0.46 };
   }
   /* 名目格尺寸：只拿來決定精靈與血條大小，不參與定位 */
   function cellSize() {
@@ -437,9 +437,12 @@ var BattleRenderer = (function () {
       state: 'entering',              // entering → idle → dying → gone
       bobPhase: Math.random() * Math.PI * 2,
       wobble: 0.7 + Math.random() * 0.5,
-      enterDelay: (S.enterSeq++) * ENTER_STAGGER_MS,
       bornAt: nowMs(),
       hpShown: -1, shieldShown: -1,
+      /* 進場長度直接吃模擬層的 _enterCd：走到定位的那一刻，牠在模擬層也剛好
+         變成可攻擊／可被攻擊，畫面與規則必定同步（見 js/combat.js 進場倒數）。 */
+      enterDur: Math.max(0.1, Number(data._enterCd) || 0.45),
+      enterT: 0,
       lastAtkCd: (typeof data.atkCd === 'number') ? data.atkCd : 0,
       lunge: 0,                        // 攻擊突進：0~1 進度（朝玩家撲擊）
       lungeDur: 0,
@@ -450,12 +453,15 @@ var BattleRenderer = (function () {
 
     var anchor = data.cell ? cellAnchor(data.cell) : { x: S.W * 0.78, y: S.H * 0.5, ang: 0 };
     ent.tx = anchor.x; ent.ty = anchor.y;
-    /* 進場：沿著自己的方位角從畫面外走進來——四面八方都可能來人 */
+    /* 進場起點：沿自己的方位角、就在畫面邊緣外一點點——四面八方都可能來人。
+       刻意貼近邊緣（而不是老遠的畫面外）：進場時間是固定的，起點拉太遠會變成
+       瞬移般衝進來，也讓「還沒進畫面就開打」的空窗變長。 */
     var bm = boardMetrics();
     var ang = (typeof anchor.ang === 'number') ? anchor.ang : 0;
-    var outK = 1.75 + Math.random() * 0.35;
-    ent.x = bm.cx + Math.cos(ang) * bm.rx * outK;
-    ent.y = bm.cy + Math.sin(ang) * bm.ry * outK;
+    var outK = 1.06 + Math.random() * 0.12;
+    ent.sx = bm.cx + Math.cos(ang) * bm.rx * outK;
+    ent.sy = bm.cy + Math.sin(ang) * bm.ry * outK;
+    ent.x = ent.sx; ent.y = ent.sy;
     root.x = ent.x; root.y = ent.y;
     root.zIndex = ent.y;
 
@@ -671,16 +677,9 @@ var BattleRenderer = (function () {
     var list = Array.isArray(field.monsters) ? field.monsters : (field.monster ? [field.monster] : []);
     var seen = {};
     var anyLive = false;
-    var newWave = true;
+
     for (var i = 0; i < list.length; i++) {
       var d = list[i];
-      if (!d || !d.floatSel) continue;
-      if (S.entities[d.floatSel]) { newWave = false; break; }
-    }
-    if (newWave) S.enterSeq = 0;
-
-    for (i = 0; i < list.length; i++) {
-      d = list[i];
       if (!d || !d.floatSel) continue;
       var alive = d.hp > 0;
       var dyingHold = !alive && d._rewarded && Number(d._deathClearCd) > 0;
@@ -1708,22 +1707,21 @@ var BattleRenderer = (function () {
       if (dt <= 0) continue;
 
       if (e.state === 'entering') {
-        /* 進場錯開用 dt 累積而非牆鐘：暫停時 dt=0，隊伍不會在解除暫停瞬間全部同時湧入 */
-        e.enterWait = (e.enterWait || 0) + dt * 1000;
-        if (e.enterWait < e.enterDelay) continue;
-        /* 進場行走：向錨點移動，速度與剩餘距離掛鉤（先快後慢） */
-        var dx = e.tx - e.x, dy = e.ty - e.y;
-        var dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 3) {
+        /* 進場：在 enterDur 內從畫面外走到定位。用 dt 累積而非牆鐘，
+           暫停時會一起凍住；抵達時刻與模擬層的 _enterCd 歸零同步。 */
+        e.enterT += dt;
+        var ek = Math.min(1, e.enterT / e.enterDur);
+        var ease = 1 - (1 - ek) * (1 - ek);          // 先快後慢，像煞住腳步
+        e.x = lerp(e.sx, e.tx, ease);
+        e.y = lerp(e.sy, e.ty, ease);
+        /* 行走擺動：小怪左右搖 + 輕微縮放跳動（類倖存者小怪步態） */
+        e.bodyWrap.rotation = Math.sin(t / 90 * e.wobble) * 0.09;
+        e.bodyWrap.scale.y = 1 + Math.sin(t / 80 * e.wobble) * 0.05;
+        if (ek >= 1) {
           e.x = e.tx; e.y = e.ty;
+          e.bodyWrap.rotation = 0;
+          e.bodyWrap.scale.y = 1;
           e.state = 'idle';
-        } else {
-          var v = Math.max(130, dist * 2.6);
-          e.x += dx / dist * v * dt;
-          e.y += dy / dist * v * dt;
-          /* 行走擺動：小怪左右搖 + 輕微縮放跳動（類倖存者小怪步態） */
-          e.bodyWrap.rotation = Math.sin(t / 90 * e.wobble) * 0.09;
-          e.bodyWrap.scale.y = 1 + Math.sin(t / 80 * e.wobble) * 0.05;
         }
       } else if (e.state === 'idle') {
         /* 錨點跟隨（格位變動時平滑走過去） */
