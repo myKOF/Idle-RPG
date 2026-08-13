@@ -2033,7 +2033,7 @@ var BattleRenderer = (function () {
     app.stage.addChild(overlay);
     S.bgLayer = bg;
 
-    /* 死亡時獨立覆蓋黑色暗角：中心透明區由大逐步縮小，外圍因此像紅色視野迷霧
+    /* 死亡時獨立覆蓋黑色暗角：中心透明區由大逐步縮小，外圍因此像淡紅色視野迷霧
        從四周壓向倒地的玩家。用螢幕座標層，避免鏡頭移動時迷霧跟著世界漂移。 */
     var deathFogCanvas = document.createElement('canvas');
     deathFogCanvas.width = deathFogCanvas.height = 512;
@@ -2101,9 +2101,10 @@ var BattleRenderer = (function () {
     g.clearRect(0, 0, c.width, c.height);
     var grad = g.createRadialGradient(center, center, inner, center, center, outer);
     grad.addColorStop(0, 'rgba(180, 0, 20, 0)');
-    grad.addColorStop(0.45, 'rgba(180, 0, 20, 0.28)');
-    grad.addColorStop(0.78, 'rgba(180, 0, 20, 0.70)');
-    grad.addColorStop(1, 'rgba(180, 0, 20, 0.90)');
+    /* 最高不透明度 10%，保留紅色警示感但不遮住戰鬥畫面。 */
+    grad.addColorStop(0.45, 'rgba(180, 0, 20, 0.03)');
+    grad.addColorStop(0.78, 'rgba(180, 0, 20, 0.07)');
+    grad.addColorStop(1, 'rgba(180, 0, 20, 0.10)');
     g.fillStyle = grad;
     g.fillRect(0, 0, c.width, c.height);
     if (S.deathFogTex.source && typeof S.deathFogTex.source.update === 'function') {

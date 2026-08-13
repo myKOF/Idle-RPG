@@ -108,16 +108,31 @@ async function listListeningPorts() {
     Get-Process | ForEach-Object { $processNames[[int]$_.Id] = $_.ProcessName }
     $processDetails = @{}
     Get-CimInstance Win32_Process | ForEach-Object { $processDetails[[int]$_.ProcessId] = $_ }
+    $httpListenerProcesses = @{}
+    foreach ($process in $processDetails.Values) {
+      $commandLine = [string]$process.CommandLine
+      $scriptMatch = [regex]::Match($commandLine, '(?i)serve\\.ps1')
+      $portMatch = [regex]::Match($commandLine, '(?i)(?:^|\\s)-Port\\s+(\\d+)(?:\\s|$)')
+      if ($scriptMatch.Success -and $portMatch.Success) {
+        $httpListenerProcesses[[int]$portMatch.Groups[1].Value] = $process
+      }
+    }
     Get-NetTCPConnection -State Listen |
       Where-Object { $_.LocalAddress -in @('127.0.0.1', '0.0.0.0', '::1', '::') } |
       ForEach-Object {
+        $ownerPid = [int]$_.OwningProcess
+        $owner = $processDetails[$ownerPid]
+        if ($ownerPid -eq 4 -and $httpListenerProcesses.ContainsKey([int]$_.LocalPort)) {
+          $owner = $httpListenerProcesses[[int]$_.LocalPort]
+          $ownerPid = [int]$owner.ProcessId
+        }
         [pscustomobject]@{
           LocalAddress = $_.LocalAddress
           LocalPort = $_.LocalPort
-          OwningProcess = $_.OwningProcess
-          ProcessName = $processNames[[int]$_.OwningProcess]
-          CommandLine = $processDetails[[int]$_.OwningProcess].CommandLine
-          ExecutablePath = $processDetails[[int]$_.OwningProcess].ExecutablePath
+          OwningProcess = $ownerPid
+          ProcessName = $processNames[$ownerPid]
+          CommandLine = $owner.CommandLine
+          ExecutablePath = $owner.ExecutablePath
         }
       } |
       ConvertTo-Json -Compress
@@ -159,6 +174,8 @@ function isRelevantEndpoint(endpoint) {
   const details = `${processName} ${endpoint.commandLine || ''} ${endpoint.executablePath || ''}`.toLowerCase();
   if (/claude|codex|antigravity/.test(details)) return true;
   if (/idle-rpg/.test(details)) return true;
+  if (/serve\.ps1/.test(details) && /(?:^|\s)-port\s+\d+(?:\s|$)/.test(details)) return true;
+  if (/^system$/i.test(processName)) return true;
   return /^(node|nodejs|python|python3|deno|bun|ruby|php|dotnet|java)$/i.test(processName);
 }
 
@@ -185,6 +202,8 @@ async function discoverLocalServers() {
       statusCode: probe.statusCode,
       server: probe.server,
       processName: endpoint.processName,
+      commandLine: endpoint.commandLine,
+      executablePath: endpoint.executablePath,
     };
   }));
   return discovered.filter(Boolean);

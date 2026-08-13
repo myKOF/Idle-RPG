@@ -1,5 +1,38 @@
 # AI_TASKS.md
 
+## Codex：死亡紅色視野迷霧降至 10% 透明度（2026-08-13）
+
+- Status: Completed
+- Owner: Codex
+- Task: 將死亡狀態紅色視野迷霧的最高不透明度調整為 10%，保留中心收縮動畫與死亡倒計時。
+- Dependencies: 既有死亡倒地、倒數與紅色視野收縮功能已完成；已完成目標檔案衝突預檢。
+- Scope: `js/battle-renderer.js`、`index.html`、`tests/player-event-float.test.cjs`、`docs/AI_TASKS.md`
+- Verification: 定向測試 21/21；build 265/265；瀏覽器 `canvas=1` 實測已由鮮紅降為淡紅，倒計時與人物仍清楚；不修改 Worker Protocol、存檔格式或戰鬥數值。
+- Known risk: 完整測試未重跑；本次僅涉及 PixiJS canvas 視覺透明度。
+- Handoff: Claude Code 唯讀 Review；使用者確認淡紅色死亡畫面後合併。
+
+## Codex：修正刷新時遺漏 PowerShell HttpListener 測試服（2026-08-13）
+
+- Status: Completed
+- Owner: Codex
+- Task: 修正測試服控制台重新整理後遺漏 `8321` 這類由 `.claude/serve.ps1` 啟動的本機測試服。
+- 原因: Windows `System.Net.HttpListener` 的 TCP 監聽由 HTTP.sys 以 System PID 4 持有，原掃描器只依 TCP 擁有程序判斷，因而把可正常回應的測試服排除。
+- Scope: `tools/test_server_manager.cjs`、`tools/test_server_manager.html`、`tests/test-server-manager.test.cjs`、`docs/AI_TASKS.md`
+- Verification: 定向測試 3/3；`node --check tools/test_server_manager.cjs` 通過；`npm.cmd run build` 265/265；`git diff --check` 通過。完整 `npm.cmd test` 為 1302/1303，唯一失敗是既有 `tests/multi-enemy.test.cjs` 菁英數量表單調性回歸，與本次測試服控制台修改無關。
+- Known risk: 未修改 HTTP.sys 本身；若其他非遊戲服務也使用 System PID 4 且可回應 HTTP，控制台可能將其列為外部服務，但不會允許關閉系統 PID。
+- Handoff: 使用者重新開啟控制台並按「重新整理」，確認 `8321` 顯示；必要時以列表的「關閉」測試該 PowerShell 服務可被定向停止。
+
+## Codex：死亡 UI 間距與倒數字級調整（2026-08-13）
+
+- Status: Completed
+- Owner: Codex
+- Task: 血條與人物增加 2px 間距；死亡復活倒計時移至人物頭頂上方並放大為 24px。
+- Dependencies: 前一項死亡倒地、倒數與紅色視野收縮功能已完成；已完成目標檔案衝突預檢。
+- Scope: `js/battle-renderer.js`、`index.html`、`tests/player-event-float.test.cjs`、`docs/AI_TASKS.md`
+- Verification: 定向測試 21/21；build 265/265；瀏覽器 `canvas=1` 實測看到放大倒數位於倒地人物頭頂，無需修改 Worker Protocol、存檔格式或戰鬥數值。
+- Known risk: 完整測試 1301 通過、1 失敗，仍是既有且與本次 UI 修改無關的 `tests/multi-enemy.test.cjs` 菁英數量回歸。
+- Handoff: Claude Code 唯讀 Review；使用者確認死亡畫面後合併。
+
 ## Codex：玩家死亡倒地、復活倒計時與紅色視野收縮（2026-08-13）
 
 - Status: Completed

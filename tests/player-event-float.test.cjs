@@ -127,6 +127,10 @@ test('玩家死亡時紅色視野迷霧由外向中心收縮，復活後恢復�
   assert.match(renderer, /function drawDeathFog\(k\)/);
   assert.match(renderer, /createRadialGradient\(center,\s*center,\s*inner/);
   assert.match(renderer, /rgba\(180, 0, 20, 0\)/);
+  assert.match(renderer, /rgba\(180, 0, 20, 0\.03\)/);
+  assert.match(renderer, /rgba\(180, 0, 20, 0\.07\)/);
+  assert.match(renderer, /rgba\(180, 0, 20, 0\.10\)/);
+  assert.doesNotMatch(renderer, /rgba\(180, 0, 20, 0\.(?:2[89]|[3-9]\d)\)/);
   assert.match(renderer, /inner\s*=\s*\(0\.42\s*-\s*0\.40\s*\*\s*k\)/);
   assert.match(renderer, /S\.deathFog\.visible\s*=\s*dead/);
   assert.match(renderer, /S\.vignette\.visible\s*=\s*!dead/);
