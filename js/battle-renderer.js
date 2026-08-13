@@ -169,35 +169,61 @@ var BattleRenderer = (function () {
     return { x: pp.x + face * (PLAYER_REACH + 14), y: pp.y - 24 };
   }
 
-  /* 面板 5Hz，兩包之間的位置要靠外推補出來，而外推速度＝位移 ÷ 經過時間。
-     這裡的「經過時間」必須用模擬層的時鐘（panel.gt），不能用封包到達的時間差：
-     封包到達會抖（同一批訊息常常擠在一起送），用它算出來的速度就會忽大忽小，
-     畫面上就是移動忽快忽慢。gt 是模擬層拍快照的時刻，位移與它必定成正比。
+  /* ---- 位置內插緩衝 ----
+     模擬層的座標是 5Hz 的離散取樣，畫面要 60fps 連續播放，中間必須自己補。
 
-     另外，停下來的那一包要立刻把速度歸零，否則會照舊速度衝過頭再被拉回來，
-     那一下回拉看起來就是頓一下。 */
-  function trackVelocity(ent, x, y, gt) {
-    var dgt = (isFinite(gt) && isFinite(ent.posGt)) ? (gt - ent.posGt) : NaN;
-    if (!isFinite(dgt) || dgt <= 0.001 || dgt > 1) {
-      var nowT = nowMs();
-      dgt = ent.posAt ? Math.max(0.05, Math.min(0.5, (nowT - ent.posAt) / 1000)) : NaN;
-      ent.posAt = nowT;
-    } else {
-      ent.posAt = nowMs();
+     一開始用的是「外推」：估出速度，兩包之間自己往前走，再柔性修正回權威座標。
+     實測發現行不通——面板的到達間隔並不穩定（量到 200／300ms 交替），
+     而渲染幀時間也會抖，於是「補了多少」與「該補多少」永遠對不齊，
+     修正項每包都在追趕或回拉，畫面上就是移動忽快忽慢。
+
+     改用內插緩衝（遊戲連線同步的標準做法）：畫面固定播放 POS_BUFFER_MS 之前
+     的狀態，在兩個真實取樣之間線性內插。位置因此是「當下時刻的純函數」——
+     掉幀、封包早到晚到都不影響播放速度，速度完全等於模擬層的速度。
+     代價是畫面比模擬層晚 POS_BUFFER_MS，但敵人、我方、鏡頭一起延遲，
+     而且這是自動戰鬥、玩家不用瞄準，看不出來。
+
+     緩衝長度要蓋得住最大的到達間隔（實測 300ms），否則會播到沒有資料的地方。 */
+  var POS_BUFFER_MS = 360;
+  var POS_MAX_EXTRAP_MS = 240;   // 資料斷了才短暫外推，避免整個畫面凍住
+  var POS_KEEP = 16;             // 每個實體保留幾個取樣（5Hz × 16 ≈ 3 秒）
+
+  function posTrack(ent, x, y) {
+    if (!ent.samples) ent.samples = [];
+    var t = nowMs();
+    var last = ent.samples[ent.samples.length - 1];
+    if (last && t - last.t < 1) { last.x = x; last.y = y; return; }   // 同一毫秒內連續兩包
+    ent.samples.push({ t: t, x: x, y: y });
+    while (ent.samples.length > POS_KEEP) ent.samples.shift();
+  }
+
+  /* 取 renderT 這一刻該畫在哪。夾在兩個取樣之間就內插；
+     比最舊的還舊（剛生出來）就用最舊的；比最新的還新（資料斷了）就短暫外推。 */
+  function posSolve(ent, renderT) {
+    var sm = ent.samples;
+    if (!sm || !sm.length) return { x: ent.wx, y: ent.wy };
+    if (sm.length === 1 || renderT <= sm[0].t) return { x: sm[0].x, y: sm[0].y };
+    var newest = sm[sm.length - 1];
+    if (renderT >= newest.t) {
+      var prev = sm[sm.length - 2];
+      var span = newest.t - prev.t;
+      var over = Math.min(renderT - newest.t, POS_MAX_EXTRAP_MS);
+      if (span <= 0) return { x: newest.x, y: newest.y };
+      var k = over / span;
+      return { x: newest.x + (newest.x - prev.x) * k, y: newest.y + (newest.y - prev.y) * k };
     }
-    var dx = x - ent.tx, dy = y - ent.ty;
-    if (isFinite(dgt)) {
-      if (Math.sqrt(dx * dx + dy * dy) < 0.5) {
-        ent.velX = 0; ent.velY = 0;              // 這一包沒動＝停下來了
-      } else {
-        /* 輕度平滑：模擬層 10Hz、面板 5Hz，取樣本身還是有一點抖動。 */
-        ent.velX = ent.velX * 0.3 + (dx / dgt) * 0.7;
-        ent.velY = ent.velY * 0.3 + (dy / dgt) * 0.7;
+    for (var i = sm.length - 1; i > 0; i--) {
+      var b = sm[i], a = sm[i - 1];
+      if (renderT >= a.t && renderT <= b.t) {
+        var f = (b.t - a.t) > 0 ? (renderT - a.t) / (b.t - a.t) : 1;
+        return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f };
       }
     }
-    ent.posGt = gt;
-    ent.tx = x; ent.ty = y;
+    return { x: newest.x, y: newest.y };
   }
+
+  /* 目前這一幀要播放的時刻。 */
+  function renderClock() { return nowMs() - POS_BUFFER_MS; }
 
   /* ---- 序列幀載入 ----
      幀定義 JSON：{ image, frameWidth, frameHeight, anims: { name: { row, frames, fps, loop } } }
@@ -475,9 +501,8 @@ var BattleRenderer = (function () {
       sheetName: sheetName, curAnim: sheetName ? 'idle' : '', baseAnim: 'idle',
       isBoss: isBoss, isElite: isElite, visScale: visScale,
       barW: barW, hitHeight: isBoss ? sz.h * 1.9 : 64 * visScale,
-      wx: 0, wy: 0,                   // 畫面上的世界座標（外推後的結果）
-      tx: 0, ty: 0,                   // 模擬層最新的權威座標
-      velX: 0, velY: 0, posAt: 0, posGt: NaN,   // 外推用：速度與上一次取樣的模擬時刻
+      wx: 0, wy: 0,                   // 畫面上的世界座標（內插後的結果）
+      samples: null,                  // 模擬層座標的取樣緩衝（見 posTrack/posSolve）
       state: 'entering',              // entering → idle → dying → gone
       bobPhase: Math.random() * Math.PI * 2,
       wobble: 0.7 + Math.random() * 0.5,
@@ -499,7 +524,7 @@ var BattleRenderer = (function () {
     var home = playerPos();
     var sp = (data && data.pos && isFinite(data.pos.x)) ? data.pos : { x: home.x + 220, y: home.y };
     ent.wx = sp.x; ent.wy = sp.y;
-    ent.tx = sp.x; ent.ty = sp.y;
+    posTrack(ent, sp.x, sp.y);
     root.x = ent.wx; root.y = ent.wy;
     root.zIndex = ent.wy;
 
@@ -630,9 +655,9 @@ var BattleRenderer = (function () {
       sheetName: 'player', curAnim: 'idle', baseAnim: 'idle',
       hitHeight: 70, walking: false, dead: false, stillFor: 99,
       flash: 0, jolt: 0, lunge: 0, facing: 1,
-      /* 世界座標。tx/ty 是模擬層給的權威座標，wx/wy 是逐幀外推後畫出來的位置；
+      /* 世界座標。samples 是模擬層座標的取樣緩衝，wx/wy 是內插後畫出來的位置；
          鏡頭對準 wx/wy，所以角色永遠在畫面正中央。 */
-      wx: 0, wy: 0, tx: 0, ty: 0, velX: 0, velY: 0, posAt: 0, posGt: NaN,
+      wx: 0, wy: 0, samples: null,
       vitalsShown: ''
     };
     drawPlayerVitals();
@@ -729,11 +754,9 @@ var BattleRenderer = (function () {
           if (alive && ent.state === 'idle' && d.atkCd > prevCd + 0.15) enemyAttackAnim(ent);
           ent.lastAtkCd = d.atkCd;
         }
-        /* 模擬層每個 tick 都在移動敵人，但面板 5Hz 才送一次。
-           記下新的權威座標，並用「與上一次的位移÷間隔」估出速度，
-           讓 tickWorld 在兩次更新之間自己把中間的位置補出來（見外推）。
-           我方與敵人現在都是絕對座標，兩邊各自外推，不會互相拖著跑。 */
-        if (d.pos && isFinite(d.pos.x)) trackVelocity(ent, d.pos.x, d.pos.y, panel.gt);
+        /* 模擬層每個 tick 都在移動敵人，但面板 5Hz 才送一次：
+           把座標存進內插緩衝，由 tickWorld 依播放時刻取出中間值（見 posSolve）。 */
+        if (d.pos && isFinite(d.pos.x)) posTrack(ent, d.pos.x, d.pos.y);
       }
       drawHpBar(ent);
       var stTxt = statusTextOf(d);
@@ -788,10 +811,9 @@ var BattleRenderer = (function () {
          走路／站立動畫改看「實際有沒有位移」，不再猜「場上有沒有敵人」。 */
       var pp = field.playerPos;
       if (pp && isFinite(pp.x) && isFinite(pp.y)) {
-        if (!p.posAt) { p.wx = pp.x; p.wy = pp.y; p.tx = pp.x; p.ty = pp.y; }  // 第一次直接就位
-        trackVelocity(p, pp.x, pp.y, panel.gt);
+        if (!p.samples || !p.samples.length) { p.wx = pp.x; p.wy = pp.y; }   // 第一次直接就位
+        posTrack(p, pp.x, pp.y);
       }
-      if (dead || S.towerActive) { p.velX = 0; p.velY = 0; }
     }
 
     /* 空場提示（高塔戰期間野外空場是常態，提示語照 DOM 版分開）。
@@ -1693,6 +1715,7 @@ var BattleRenderer = (function () {
     var dt = Math.min(0.05, (ticker.deltaMS || 16.7) / 1000);
     if (S.paused) dt = 0;
     var t = nowMs();
+    var rClock = renderClock();      // 這一幀要播放的模擬時刻（見內插緩衝）
 
   /* ---- 玩家：把模擬層算好的座標畫出來 ----
      跑向誰、跑多快、停在哪，全部是模擬層的事（js/battlefield.js bfTickPlayer）。
@@ -1704,21 +1727,17 @@ var BattleRenderer = (function () {
     if (p && dt > 0) {
       var moving = false;
       if (!p.dead) {
-        var pPredX = p.velX * dt, pPredY = p.velY * dt;
-        p.wx += pPredX;
-        p.wy += pPredY;
-        var pCorrK = Math.min(1, dt * 6);
-        var pCorrX = (p.tx - p.wx) * pCorrK, pCorrY = (p.ty - p.wy) * pCorrK;
-        p.wx += pCorrX;
-        p.wy += pCorrY;
-        var pStep = Math.sqrt((pPredX + pCorrX) * (pPredX + pCorrX) + (pPredY + pCorrY) * (pPredY + pCorrY));
+        var pAt = posSolve(p, rClock);
+        var pdx = pAt.x - p.wx, pdy = pAt.y - p.wy;
+        p.wx = pAt.x; p.wy = pAt.y;
+        var pStep = Math.sqrt(pdx * pdx + pdy * pdy);
         /* 動畫遲滯：一有位移就立刻切走路，但要連續靜止一小段才切回站立。
            少了這段，位移在門檻上下抖動時走路／站立會逐幀互閃，
            看起來就像一下走路一下跑步。 */
         if (pStep > 0.5 * dt * 60) p.stillFor = 0;
         else p.stillFor = (p.stillFor || 0) + dt;
         moving = p.stillFor < 0.22;
-        if (pStep > 0.6) p.facing = (pPredX + pCorrX) < 0 ? -1 : 1;
+        if (pStep > 0.6) p.facing = pdx < 0 ? -1 : 1;
       }
       if (moving !== p.walking) {
         p.walking = moving;
@@ -1767,20 +1786,13 @@ var BattleRenderer = (function () {
       var e = S.entities[id];
       if (dt <= 0) continue;
 
-      /* 站位與逼近由模擬層決定（js/battlefield.js 座標制），但**面板只有 5Hz**：
-         每 200ms 才來一個新座標。單純「追過去」會變成每 200ms 走一段就停，
-         也就是一格一格跳；玩家是渲染器自己逐幀算的，所以只有敵人在抖。
-
-         解法是外推：用前後兩次面板算出速度，兩次更新之間自己按速度前進，
-         再用一個柔性修正把誤差拉回權威座標。等於把 5Hz 的取樣補成逐幀連續。 */
-      var predX = e.velX * dt, predY = e.velY * dt;
-      e.wx += predX;
-      e.wy += predY;
-      var corrK = Math.min(1, dt * 6);
-      var corrX = (e.tx - e.wx) * corrK, corrY = (e.ty - e.wy) * corrK;
-      e.wx += corrX;
-      e.wy += corrY;
-      var movedLen = Math.sqrt((predX + corrX) * (predX + corrX) + (predY + corrY) * (predY + corrY));
+      /* 站位與逼近由模擬層決定（js/battlefield.js 座標制），面板只有 5Hz。
+         這裡照內插緩衝播放（見 posSolve）：畫面比模擬層晚一點點，
+         換來完全等速的移動——這是「一格一格跳」與「忽快忽慢」的共同解。 */
+      var eAt = posSolve(e, rClock);
+      var edx = eAt.x - e.wx, edy = eAt.y - e.wy;
+      e.wx = eAt.x; e.wy = eAt.y;
+      var movedLen = Math.sqrt(edx * edx + edy * edy);
 
       if (e.state === 'entering' || movedLen > 0.6 * dt * 60) {
         /* 走路擺動：小怪左右搖 + 輕微縮放跳動（類倖存者小怪步態） */
