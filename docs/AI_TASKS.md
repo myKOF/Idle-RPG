@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## Codex：死亡紅色視野迷霧降至 10% 透明度（2026-08-13）
+
+- Status: Completed
+- Owner: Codex
+- Task: 將死亡狀態紅色視野迷霧的最高不透明度調整為 10%，保留中心收縮動畫與死亡倒計時。
+- Dependencies: 既有死亡倒地、倒數與紅色視野收縮功能已完成；已完成目標檔案衝突預檢。
+- Scope: `js/battle-renderer.js`、`index.html`、`tests/player-event-float.test.cjs`、`docs/AI_TASKS.md`
+- Verification: 定向測試 21/21；build 265/265；瀏覽器 `canvas=1` 實測已由鮮紅降為淡紅，倒計時與人物仍清楚；不修改 Worker Protocol、存檔格式或戰鬥數值。
+- Known risk: 完整測試未重跑；本次僅涉及 PixiJS canvas 視覺透明度。
+- Handoff: Claude Code 唯讀 Review；使用者確認淡紅色死亡畫面後合併。
+
 ## Codex：修正刷新時遺漏 PowerShell HttpListener 測試服（2026-08-13）
 
 - Status: Completed
