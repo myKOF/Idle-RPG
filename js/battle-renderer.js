@@ -653,7 +653,7 @@ var BattleRenderer = (function () {
       id: 'pv-float', root: root, body: body, bodyWrap: bodyWrap,
       vitals: vitals, hpText: hpText, mpText: mpText, reviveText: reviveText,
       sheetName: 'player', curAnim: 'idle', baseAnim: 'idle',
-      hitHeight: 70, walking: false, dead: false, stillFor: 99,
+      hitHeight: 70, walking: false, dead: false, stillFor: 99, fallK: 0,
       flash: 0, jolt: 0, lunge: 0, facing: 1,
       /* 世界座標。samples 是模擬層座標的取樣緩衝，wx/wy 是內插後畫出來的位置；
          鏡頭對準 wx/wy，所以角色永遠在畫面正中央。 */
@@ -789,11 +789,15 @@ var BattleRenderer = (function () {
       var reviveLeft = Number(fp.reviveCd) || 0;
       var dead = reviveLeft > 0;
       if (dead !== p.dead) {
+        /* 倒地與起身都要有過程：瞬間翻 90 度看起來像穿模，不像被打倒。
+           實際的角度由 tickWorld 逐幀補間（見 p.fallK）。 */
         p.dead = dead;
-        p.root.rotation = dead ? -Math.PI / 2 : 0;
-        p.body.tint = dead ? 0x777777 : 0xffffff;
-        if (dead) { p.lunge = 0; }
-        else playAnim(p, 'idle');
+        if (dead) {
+          p.lunge = 0;
+          playAnim(p, 'idle');
+        } else {
+          playAnim(p, 'idle');
+        }
       }
       /* 倒地倒數：狀態列收進彈出面板後，畫面上只剩這一條告訴玩家發生什麼事。
          面板 5Hz 才來一次，這裡照快照時間扣掉已經過的秒數（同 ui.js 的做法）。 */
@@ -803,7 +807,6 @@ var BattleRenderer = (function () {
           var left = (typeof uiCountdownRemain === 'function')
             ? uiCountdownRemain(reviveLeft, panel.gt) : reviveLeft;
           p.reviveText.text = '💀 復活中 ' + (Math.round(Math.max(0, left) * 10) / 10) + 's';
-          p.reviveText.rotation = Math.PI / 2;   // 角色倒地時 root 轉了 90°，字要轉回來
         }
       }
       /* 我方座標由模擬層給（FIELD.playerPos ←→ js/battlefield.js bfPlayerPos）。
@@ -816,16 +819,11 @@ var BattleRenderer = (function () {
       }
     }
 
-    /* 空場提示（高塔戰期間野外空場是常態，提示語照 DOM 版分開）。
-       屍體還在淡出時不顯示：畫面上明明有東西卻寫「搜索敵人中」很怪。 */
+    /* 空場提示只剩高塔那一句。野外的「搜索敵人中…」已移除：
+       角色本來就在往前走，空場是過場而不是狀態，不需要文字說明。 */
     if (S.emptyText) {
-      var hasAnyEntity = false;
-      for (var ek in S.entities) {
-        if (Object.prototype.hasOwnProperty.call(S.entities, ek)) { hasAnyEntity = true; break; }
-      }
-      S.emptyText.visible = !anyLive && !hasAnyEntity;
-      var emptyMsg = S.towerActive ? '（高塔戰鬥中…）' : '🔍 搜索敵人中…';
-      if (S.emptyText.text !== emptyMsg) S.emptyText.text = emptyMsg;
+      S.emptyText.visible = !!S.towerActive && !anyLive;
+      if (S.emptyText.visible && S.emptyText.text !== '（高塔戰鬥中…）') S.emptyText.text = '（高塔戰鬥中…）';
     }
   }
 
@@ -1731,6 +1729,26 @@ var BattleRenderer = (function () {
      敵人卻是照模擬層座標畫的，於是「看到的距離」與「打得到的距離」會分家。 */
     var p = S.player;
     if (p && dt > 0) {
+      /* 倒地／起身：fallK 0＝站著、1＝完全倒下。倒下快一點（被打倒），
+         起身慢一點（撐起來），中間帶一點回彈，看起來才像個動作。 */
+      var fallTarget = p.dead ? 1 : 0;
+      var fallSpeed = p.dead ? 3.2 : 2.4;
+      if (p.fallK !== fallTarget) {
+        var stepK = fallSpeed * dt;
+        p.fallK = (p.fallK < fallTarget) ? Math.min(fallTarget, p.fallK + stepK)
+                                         : Math.max(fallTarget, p.fallK - stepK);
+      }
+      if (p.fallK > 0) {
+        var ease = p.fallK * p.fallK * (3 - 2 * p.fallK);            // smoothstep
+        var bounce = Math.sin(Math.min(1, p.fallK) * Math.PI) * 0.12;  // 倒下與起身途中的一點回彈
+        p.root.rotation = -(Math.PI / 2) * ease * p.facing - bounce * p.facing;
+        p.body.tint = 0x777777;
+      } else if (p.root.rotation !== 0) {
+        p.root.rotation = 0;
+        p.body.tint = 0xffffff;
+      }
+      if (p.reviveText && p.reviveText.visible) p.reviveText.rotation = -p.root.rotation;
+
       var moving = false;
       if (!p.dead) {
         var pAt = posSolve(p, rClock);
@@ -1956,9 +1974,9 @@ var BattleRenderer = (function () {
     app.stage.addChild(overlay);
     S.bgLayer = bg;
 
-    /* 空場提示 */
+    /* 空場提示（只在高塔戰期間顯示；野外的「搜索敵人中…」已移除） */
     var emptyText = new PIXI.Text({
-      text: '🔍 搜索敵人中…',
+      text: '（高塔戰鬥中…）',
       style: { fontFamily: 'sans-serif', fontSize: 15, fill: '#8b93a3', stroke: { color: '#000', width: 3 } }
     });
     emptyText.anchor.set(0.5);

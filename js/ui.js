@@ -3144,7 +3144,8 @@ function renderBattle() {
   var guideHtml = battlefieldGuideHtml();
   if (!enemies.length) {
     if (party.getAttribute('data-enemy-signature') !== 'empty') {
-      rebuildEnemyParty(party, guideHtml + '<div class="enemy-empty">' + (view.towerActive ? '（高塔戰鬥中…）' : '🔍 搜索敵人中…') + '</div>');
+      /* 野外空場不再顯示「搜索敵人中」：空場只是波次之間的過場，不是狀態。 */
+      rebuildEnemyParty(party, guideHtml + (view.towerActive ? '<div class="enemy-empty">（高塔戰鬥中…）</div>' : ''));
       party.setAttribute('data-enemy-signature', 'empty');
       uiInvalidateFloatLayout();
       if (typeof vfxInvalidateLayout === 'function') vfxInvalidateLayout();
@@ -8052,7 +8053,7 @@ function miniSnapshot() {
     s.eHp = clamp(enemy.hp / enemy.maxHp * 100, 0, 100);
     s.eHpText = fmt(Math.max(0, enemy.hp)) + ' / ' + fmt(enemy.maxHp);
   } else {
-    s.eName = '⏳ 搜索敵人中…';
+    s.eName = '';   // 空場不再顯示「搜索敵人中」
   }
   var lines = document.querySelectorAll('#battle-log .log-line');
   for (var i = 0; i < Math.min(2, lines.length); i++) s.logs.push(lines[i].textContent);

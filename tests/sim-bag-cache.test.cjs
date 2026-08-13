@@ -97,9 +97,16 @@ test('洗煉（換掉詞條物件）→ 分數跟著變', () => {
 
 test('整份詞條陣列被換掉（全洗）→ 分數跟著變', () => {
   const engine = bootedEngine();
-  const it = pickItem(engine);
+  /* 同 pickScoringAffix 的理由：整份換掉之後真值要真的變，這支測試才有意義。
+     背包裡第一件裝備的詞條可能全都是對評分權重為 0 的屬性。 */
+  const pick = pickScoringAffix(engine);
+  const it = pick.item;
   const before = scores(engine)[it.id];
-  it.affixes = it.affixes.map((a) => ({ key: a.key, roll: 1000, ancient: !!a.ancient }));
+  /* 整份陣列換成新物件（全洗的做法），其中那條會影響評分的詞條給不同的 roll——
+     全部一律寫 1000 的話，剛好本來就是 1000 的那條等於沒變，測不到東西。 */
+  it.affixes = it.affixes.map((a, i) => (i === pick.index
+    ? { key: a.key, roll: pick.flipped.roll, ancient: !!a.ancient }
+    : { key: a.key, roll: a.roll, ancient: !!a.ancient }));
   assert.notEqual(scores(engine)[it.id], before);
 });
 

@@ -370,7 +370,9 @@ test('後續地圖尚未解鎖時，亡靈山脈 500 關通關後留在 500 關�
   assert.equal(context.G.stage.best, 500);
   assert.equal(context.G.zoneProgress.undead_mountains.cleared, 500);
   assert.equal(context.FIELD.mapComplete, false);
-  assert.equal(context.FIELD.respawnCd, context.RESPAWN_DELAY);
+  /* 過關之後下一波要隔 FIELD_STAGE_SWITCH_DELAY 才出現（不清場、也不立刻補怪）。
+     這個延遲比 RESPAWN_DELAY 長，所以會蓋過它。 */
+  assert.equal(context.FIELD.respawnCd, context.FIELD_STAGE_SWITCH_DELAY);
 });
 
 test('真正最後一張地圖通關後仍標記完成並停止出怪', () => {

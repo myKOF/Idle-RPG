@@ -261,6 +261,28 @@ function spawnFieldMonster(append) {
     return placed;
 }
 
+/* 切換關卡／地圖之後，下一波要隔一段時間才出現——場上既有的敵人留著，
+   新的一波不要在切換的瞬間憑空冒出來（設計要求：不突然出現、也不突然消失）。
+   spawnCd 與 respawnCd 都要壓住：空場時波次邏輯會拿 respawnCd 當捷徑覆蓋 spawnCd。 */
+function holdFieldSpawn(sec) {
+    var s = Math.max(0, Number(sec) || 0);
+    FIELD.spawnCd = Math.max(Number(FIELD.spawnCd) || 0, s);
+    FIELD.respawnCd = Math.max(Number(FIELD.respawnCd) || 0, s);
+}
+
+/* 陣亡後場上的敵人不會立刻消失：定格 FIELD_DEATH_DESPAWN_DELAY 秒後整批移除，
+   顯示層看到牠們從清單裡不見（且不是被打死）就會播淡出。 */
+function tickFieldDeathDespawn(dt) {
+    if (!(FIELD.despawnCd > 0)) return;
+    FIELD.despawnCd -= dt;
+    if (FIELD.despawnCd > 0) return;
+    FIELD.despawnCd = 0;
+    FIELD.monster = null;
+    FIELD.monsters = [];
+    if (FIELD.player) FIELD.player._lockTarget = null;
+    UI.dirty.battle = true;
+}
+
 /* ---- 場景切換：各場景獨立保存進度與最高階段 ---- */
 function switchZone(zoneKey) {
     if (!ZONES[zoneKey] || G.stage.zone === zoneKey) return;
@@ -281,11 +303,10 @@ function switchZone(zoneKey) {
     G.stage.current = zp.current || 1;
     G.stage.best = zp.best || 1;
     G.stage.kills = 0;
-    FIELD.monster = null;
-    FIELD.monsters = [];
+    /* 場上既有的敵人留著，不因換圖而憑空消失（只有陣亡才會清場）。 */
     FIELD._waveClearPending = false;
     FIELD.mapComplete = false;
-    FIELD.respawnCd = 0.5;
+    holdFieldSpawn(FIELD_STAGE_SWITCH_DELAY);
     var zn = ZONES[zoneKey];
     blog(zn.emoji + ' 前往【' + zn.name + '】！第 ' + G.stage.current + ' 階段（歷史最高 ' + G.stage.best +
         (zn.rewardMult > 1 ? '，非裝備掉落 x' + zn.rewardMult : '') + '）', 'info');
@@ -931,6 +952,7 @@ function fieldTick(dt) {
 
     // 死亡復活
     if (FIELD.reviveCd > 0) {
+        tickFieldDeathDespawn(dt);   // 陣亡定格中的敵人：時間到就整批淡出
         FIELD.reviveCd -= dt;
         if (FIELD.reviveCd <= 0) {
             p.hp = st.hp; p.mp = st.mp; p.shield = 0; p.shieldMax = 0; p.shieldMaxVersion = SHIELD_MAX_VERSION;
@@ -1160,6 +1182,8 @@ function completeFieldWave(st) {
             blog('🚩 推進至第 ' + G.stage.current + ' 階段！', 'good');
         }
     }
+    /* 推進到下一關之後，下一波隔幾秒才出現（場上還沒打完的敵人照樣留著）。 */
+    if (!FIELD.mapComplete) holdFieldSpawn(FIELD_STAGE_SWITCH_DELAY);
     /* 這一關的擊殺配額重新起算。自動推進關掉時關卡編號不變，
        只靠 fieldStageQuota 的關卡比對不會重置，必須在這裡明確歸零。 */
     FIELD.stageKills = 0;
@@ -1234,8 +1258,9 @@ function onPlayerFieldDeath() {
     blog('☠️ 你被擊倒了…退回第 ' + retreatStage + ' 階段繼續挑戰（' + REVIVE_DELAY + ' 秒後復活）', 'bad');
     if (window.recordLootDeath) window.recordLootDeath('field');
     flushRunSummary(retreatStage);
-    FIELD.monster = null;
-    FIELD.monsters = [];
+    /* 場上的敵人不立刻消失：定格幾秒後才整批淡出（見 tickFieldDeathDespawn）。
+       這是唯一會清場的情況——切關、換圖都不清。 */
+    FIELD.despawnCd = FIELD_DEATH_DESPAWN_DELAY;
     FIELD._waveClearPending = false;
     FIELD.reviveCd = REVIVE_DELAY;
     G.stage.kills = 0;
@@ -1320,11 +1345,10 @@ function stageGo(delta) {
     if (t < 1 || t > Math.min(G.stage.best, zoneMaxStage(G.stage.zone))) return;
     G.stage.current = t;
     G.stage.kills = 0;
-    FIELD.monster = null;
-    FIELD.monsters = [];
+    /* 手動切關同樣不清場：已經出現的敵人打完為止。 */
     FIELD._waveClearPending = false;
     FIELD.mapComplete = false;
-    FIELD.respawnCd = 0.3;
+    holdFieldSpawn(FIELD_STAGE_SWITCH_DELAY);
     UI.dirty.battle = true;
 }
 function stageGoMax() {

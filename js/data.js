@@ -1346,6 +1346,13 @@ var BF_RANGED_RANGE = 320;     // 魔法系敵人的攻擊距離
 var BF_BODY_RADIUS = 20;       // 一般敵人的體型半徑
 var BF_BOSS_RADIUS = 52;       // BOSS 體型半徑（邊緣較早進入接觸距離）
 
+/* 切換關卡／地圖之後，下一波敵人要隔幾秒才出現。場上既有的敵人不受影響——
+   設計要求是「不突然出現、也不突然消失」。 */
+var FIELD_STAGE_SWITCH_DELAY = 3.0;
+
+/* 陣亡之後，場上的敵人定格幾秒才整批淡出（唯一會清場的情況）。 */
+var FIELD_DEATH_DESPAWN_DELAY = 3.0;
+
 /* 新怪從畫面外走進戰場所需的時間（秒）。這段期間敵人「還沒進場」：
    不能被攻擊、也不會攻擊，走到定位才加入戰鬥（走到的當下立刻補上第一擊）。
    沒有這段的話，模擬層在敵人剛生成的那一瞬間就開打，但畫面上牠還在螢幕外，
@@ -1358,7 +1365,7 @@ var RESPAWN_DELAY = 0.8;       // 空場時的補怪間隔（秒）；波次串�
 var FIELD_WAVE_SPAWN_INTERVAL = 2.0; // 出怪波次間隔預設值（秒）；各地圖／關卡的實際值見 ZONE_STAGE_WAVE_PROFILES
 var FIELD_MAX_LIVE_ENEMIES = 8;      // 場上同時存在的敵人上限預設值（同上表可逐地圖／關卡覆寫）
 var FIELD_ENEMY_DEATH_CLEAR_DELAY = 2.1; // 野外敵人死亡後保留戰鬥資訊時間（秒）；須長於 2 秒傷害飄字動畫
-var REVIVE_DELAY = 3.0;        // 死亡復活時間（秒）
+var REVIVE_DELAY = 5.0;        // 死亡復活時間（秒）
 var FIELD_DEATH_STAGE_RETREAT = 10; // 野外死亡退回階段數
 
 // ---- BOSS 高塔（元素 BOSS 以魔法攻擊） ----
