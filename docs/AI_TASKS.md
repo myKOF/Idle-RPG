@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## Codex：修正防禦減傷公式僅作用於我方（2026-08-13）
+
+- Status: Completed
+- Owner: Codex
+- Task: 敵人承受玩家攻擊時維持舊版防禦減傷公式；僅我方承受敵人攻擊時套用物理／魔法同類型攻防差值公式。
+- Dependencies: 使用者補充規則；上一版公式已合併，已完成衝突預檢且無其他修改來源。
+- Scope: `js/formula.js`、`scripts/sim/evaluator.js`、`game_formula.md`、`config/CSV/game_parameters.csv`、`index.html`、`tests/defense-reduction.test.cjs`、`tests/attr-skill-rework-2026-07-30.test.cjs`、`docs/AI_TASKS.md`
+- Verification: 新增我方／敵方雙向回歸測試；執行定向測試、完整測試、建置與參數同步檢查。
+- Handoff: Claude Code 唯讀 Review；使用者確認敵人可恢復正常受傷。
+
 ## Codex：調整物理／魔法防禦減傷公式（2026-08-13）
 
 - Status: Completed

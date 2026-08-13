@@ -451,17 +451,28 @@ function computeStats(equipmentOverride) {
    §3 戰鬥核心
    ============================================================ */
 
-/* 防禦減傷率 = (1 + max(0, 同類型攻擊 - 防禦)) ×
+/* 敵人承受傷害的防禦減傷率 =
    防禦 / (防禦 + 常數 + 每級係數 × 攻擊者等級)
 
-   物理攻擊只與物理防禦比較，魔法攻擊只與魔法防禦比較；攻防差值不會為負。
+   我方承受傷害的防禦減傷率另套用 playerDefReduction()：
+   (1 + max(0, 同類型攻擊 - 防禦)) ×
+   防禦 / (防禦 + 常數 + 每級係數 × 攻擊者等級)
+
+   物理攻擊只與物理防禦比較，魔法攻擊只與魔法防禦比較；我方攻防差值不會為負。
    基礎防禦曲線仍為遞減曲線，分母隨攻擊者等級線性成長。
 
    兩個係數取自參數表「3-戰鬥核心／防禦減傷率」，由 tools/apply_params.cjs 寫入，
    不在這裡複述數值——複述的那一份不會跟著參數表變，只會變成謊話。 */
 var DEF_REDUCTION_CONST = 10000;   // 參數表「3-戰鬥核心／防禦減傷率」a
 var DEF_REDUCTION_PER_LEVEL = 100; // 同上 b
-function defReduction(def, attackerLevel, attackerAttack) {
+function defReduction(def, attackerLevel) {
+  var defense = Math.max(0, Number(def) || 0);
+  if (defense <= 0) return 0;
+  return defense /
+    (defense + DEF_REDUCTION_CONST + DEF_REDUCTION_PER_LEVEL * attackerLevel);
+}
+
+function playerDefReduction(def, attackerLevel, attackerAttack) {
   var defense = Math.max(0, Number(def) || 0);
   if (defense <= 0) return 0;
   var attack = Math.max(0, Number(attackerAttack) || 0);
@@ -711,7 +722,10 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   if (aCfg.dmgType !== 'magic') {
     var pIgnore = penIgnoreRatio(aCfg.pen);
     var pDef = (dCfg.def || 0) * (1 - (aCfg.sunder || 0) / 100) * penDefMultiplier(pIgnore);
-    var pDmg = (aCfg.atk || 0) * (1 - defReduction(pDef, aCfg.level || 1, aCfg.atk));
+    var pReduction = dCfg.isPlayer
+      ? playerDefReduction(pDef, aCfg.level || 1, aCfg.atk)
+      : defReduction(pDef, aCfg.level || 1);
+    var pDmg = (aCfg.atk || 0) * (1 - pReduction);
     pDmg *= 1 - physicalResistanceReduction(dCfg.pRes, aCfg.level || 1);   // 物理抗性：結算防禦後套用抗性曲線
     dmg += pDmg;
   }
@@ -720,7 +734,10 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     var mIgnore = penIgnoreRatio(mPen);
     var baseMAtk = (aCfg.dmgType === 'both') ? (aCfg.matk || 0) : (aCfg.atk || 0);
     var mDef = (dCfg.mdef || 0) * (1 - (aCfg.sunder || 0) / 100) * penDefMultiplier(mIgnore);
-    var mDmg = baseMAtk * (1 - defReduction(mDef, aCfg.level || 1, baseMAtk));
+    var mReduction = dCfg.isPlayer
+      ? playerDefReduction(mDef, aCfg.level || 1, baseMAtk)
+      : defReduction(mDef, aCfg.level || 1);
+    var mDmg = baseMAtk * (1 - mReduction);
     mDmg *= 1 - magicResistanceReduction(dCfg.mRes, aCfg.level || 1);   // 魔法抗性：結算防禦後套用抗性曲線
     dmg += mDmg;
   }
@@ -777,7 +794,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
       var elemMIgnore = penIgnoreRatio(elemMPen);
       var elemMDef = (dCfg.mdef || 0) * (1 - (aCfg.sunder || 0) / 100) * penDefMultiplier(elemMIgnore);
       var elemMagicAttack = aCfg.dmgType === 'both' ? (aCfg.matk || aCfg.atk || 0) : (aCfg.atk || 0);
-      elemMagicMit = (1 - defReduction(elemMDef, aCfg.level || 1, elemMagicAttack)) *
+      elemMagicMit = (1 - playerDefReduction(elemMDef, aCfg.level || 1, elemMagicAttack)) *
         (1 - magicResistanceReduction(dCfg.mRes, aCfg.level || 1));
     }
     for (var i = 0; i < ELEMENTS.length; i++) {
