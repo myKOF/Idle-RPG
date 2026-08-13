@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
 const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
+const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
 
 test('玩家血條上方有不影響排版的護盾條', () => {
   assert.match(html, /<div class="hp-bar">\s*<div class="shield-bar" id="pv-shield"><\/div>\s*<div class="hp-fill player" id="pv-hp"><\/div>/);
@@ -46,4 +47,11 @@ test('玩家護盾同時顯示獨立護盾條與血量文字數值', () => {
   assert.doesNotMatch(ui, /stats\.hp \* 0\.5/);
   assert.match(ui, /setHtmlIfChanged\(\$id\('pv-hptext'\),\s*fmt\(Math\.max\(0,\s*p\.hp\)\) \+ playerShieldText\(p\) \+ ' \/ ' \+ fmt\(st\.hp\)\)/);
   assert.match(ui, /setHtmlIfChanged\(\$id\('tp-hptext'\),\s*fmt\(Math\.max\(0,\s*p\.hp\)\) \+ playerShieldText\(p\) \+ ' \/ ' \+ fmt\(st\.hp\)\)/);
+});
+
+test('Canvas 玩家護盾條以護盾最大值為分母，不以最大生命鎖住滿格', () => {
+  assert.match(renderer, /playerShieldMax:\s*0/);
+  assert.match(renderer, /var shieldMax = S\.playerShieldMax > 0 \? S\.playerShieldMax : Math\.max\(0, v\.shield \|\| 0\)/);
+  assert.match(renderer, /sh \/ Math\.max\(1, shieldMax\)/);
+  assert.doesNotMatch(renderer, /sh \/ hpMax/);
 });
