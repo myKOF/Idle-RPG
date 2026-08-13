@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## Codex：修正我方護盾條未隨高頻數值扣減（2026-08-13）
+
+- Status: Completed
+- Owner: Codex
+- Task: 戰鬥 HUD 優先讀取 TICK 高頻視圖中的玩家血量、魔力與護盾，避免低頻 battle panel 快照讓護盾條寬度停留在舊值。
+- Scope: `js/ui.js`、`index.html`、`tests/player-shield-bar.test.cjs`、`docs/AI_TASKS.md`
+- Forbidden: 護盾計算、戰鬥公式、Worker Protocol、存檔格式與其他非 UI 規則。
+- Verification: `node --test tests/player-shield-bar.test.cjs tests/shield-max.test.cjs tests/skill-gcd.test.cjs tests/skill-mechanics.test.cjs tests/status-system.test.cjs` 50/50；`node --check js/ui.js` 通過；build 266/266。
+- Known risk: `shieldMax` 仍沿用 battle panel 快照，僅即時覆寫目前護盾值；本次不改變護盾上限規則。
+- Handoff: Claude Code 唯讀 Review；使用者確認戰鬥中護盾條會隨受擊逐步縮短。
+
 ## Codex：戰鬥特效七系色票與敵方屬性區分（2026-08-13）
 
 - Status: Completed

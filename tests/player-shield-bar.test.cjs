@@ -40,6 +40,8 @@ test('玩家護盾同時顯示獨立護盾條與血量文字數值', () => {
   assert.doesNotMatch(ui, /function currentShieldSkillCap\(stats\)/);
   assert.match(ui, /var shieldMax = playerShieldMax\(entity\)/);
   assert.match(ui, /setStyleIfChanged\(shieldBar,\s*'width',\s*clamp\(shield \/ shieldMax \* 100,\s*0,\s*100\) \+ '%'\)/);
+  assert.match(ui, /var panelPlayer = field\.player/);
+  assert.match(ui, /if \(typeof view\.shield === 'number' && isFinite\(view\.shield\)\) p\.shield = view\.shield/);
   assert.doesNotMatch(ui, /shieldBar\.style\.width = clamp\(shield \/ stats\.hp \* 100/);
   assert.doesNotMatch(ui, /stats\.hp \* 0\.5/);
   assert.match(ui, /setHtmlIfChanged\(\$id\('pv-hptext'\),\s*fmt\(Math\.max\(0,\s*p\.hp\)\) \+ playerShieldText\(p\) \+ ' \/ ' \+ fmt\(st\.hp\)\)/);

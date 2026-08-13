@@ -3106,12 +3106,21 @@ function renderBattle() {
   renderQuestBar();
 
   var field = battleSnapshot.field || {};
-  var p = field.player || {
+  var panelPlayer = field.player;
+  var p = panelPlayer ? Object.assign({}, panelPlayer) : {
     hp: view.hp || 0, maxHp: view.hpMax || 1,
     mp: view.mp || 0, maxMp: view.mpMax || 1,
     shield: view.shield || 0,
     effects: {}, buffs: {}, dots: [], skillCds: {}
   };
+  /* battle panel 是低頻快照，戰鬥中的血／魔／護盾則由 TICK 高頻視圖更新。
+     只合併這幾個即時數值，保留 panel 的狀態、技能冷卻與 shieldMax，避免
+     護盾數值已減少但條寬仍停在舊快照。 */
+  if (typeof view.hp === 'number' && isFinite(view.hp)) p.hp = view.hp;
+  if (typeof view.mp === 'number' && isFinite(view.mp)) p.mp = view.mp;
+  if (typeof view.shield === 'number' && isFinite(view.shield)) p.shield = view.shield;
+  if (typeof view.hpMax === 'number' && isFinite(view.hpMax) && view.hpMax > 0) p.maxHp = view.hpMax;
+  if (typeof view.mpMax === 'number' && isFinite(view.mpMax) && view.mpMax > 0) p.maxMp = view.mpMax;
   if (p) {
     var php = clamp(p.hp / st.hp * 100, 0, 100);
     setStyleIfChanged($id('pv-hp'), 'width', php + '%');
