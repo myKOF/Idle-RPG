@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## Codex：我方承傷改為先扣防禦再套減傷（2026-08-13）
+
+- Status: Completed
+- Owner: Codex
+- Task: 我方承受物理／魔法攻擊時，先以 `max(0, 同類型攻擊 - 有效防禦)` 計算傷害基底，再套用原本的防禦減傷率；敵方承傷維持舊公式。
+- Dependencies: 使用者補充規則；已完成目標檔案衝突預檢且無其他修改來源。
+- Scope: `js/formula.js`、`scripts/sim/evaluator.js`、`game_formula.md`、`config/CSV/game_parameters.csv`、`index.html`、`tests/defense-reduction.test.cjs`、`docs/AI_TASKS.md`
+- Verification: 新增先扣防禦與雙向回歸測試；執行定向測試、完整測試、建置與參數同步檢查。
+- Handoff: Claude Code 唯讀 Review；使用者確認承傷數值符合預期。
+
 ## Codex：修正防禦減傷公式僅作用於我方（2026-08-13）
 
 - Status: Completed

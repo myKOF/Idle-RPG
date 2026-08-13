@@ -164,12 +164,14 @@ function evalIncomingRatio(st, foe) {
   var raw = 1;   // 以「敵方 1 點攻擊力」為單位
 
   if (foe.magic) {
-    /* 敵人攻擊玩家：我方魔防使用新版同類型攻防差值公式。 */
-    raw *= 1 - playerDefReduction(st.mdef || 0, lv, foe.atk || 0);
+    /* 敵人攻擊玩家：先扣我方魔防，再套原本的魔防減傷率。 */
+    raw *= playerDamageAfterDefense(foe.atk || 0, st.mdef || 0, lv) /
+      Math.max(1, foe.atk || 0);
     raw *= 1 - magicResistanceReduction(st.mRes || 0, lv);
   } else {
-    /* 敵人攻擊玩家：我方物防使用新版同類型攻防差值公式。 */
-    raw *= 1 - playerDefReduction(st.def || 0, lv, foe.atk || 0);
+    /* 敵人攻擊玩家：先扣我方物防，再套原本的物防減傷率。 */
+    raw *= playerDamageAfterDefense(foe.atk || 0, st.def || 0, lv) /
+      Math.max(1, foe.atk || 0);
     raw *= 1 - physicalResistanceReduction(st.pRes || 0, lv);
   }
 
