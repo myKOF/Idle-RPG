@@ -186,7 +186,15 @@ function towerTick(dt) {
   }
 
   // 玩家行動（減速 -30%；攻速增益加速）
-  if (!effectActive(p, 'stun')) {
+  var skillCastTick = (typeof tickSkillCast === 'function') ? tickSkillCast(p, dt) : null;
+  if (skillCastTick && skillCastTick.completed) {
+    TOWER.dmgDealt += Math.max(0, skillCastTick.dmg || 0);
+    if (skillCastTick.killed) { endTowerFight(true); return; }
+    if (p.hp <= 0) { endTowerFight(false, 'death'); return; }
+  }
+
+  if (!effectActive(p, 'stun') &&
+      (typeof skillCastInProgress !== 'function' || !skillCastInProgress(p))) {
     var sres = pickAndCastSkill(p, b, 'tb-float');
     if (sres) {
       // 使用攻擊結果的實際輸出，包含護盾吸收與擊殺時超出生命的溢出傷害。

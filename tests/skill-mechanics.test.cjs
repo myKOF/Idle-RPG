@@ -398,6 +398,7 @@ test('freeNext：免費施放跳過扣魔與 MP 門檻，用罄自動清除', ()
   // 授予 freeNext：skillRtWouldBeFree 旁路 MP 門檻、castSkill 不扣魔
   c.SKILL_RT.freeCasts = { count: 1, until: 100, scope: null };
   const result = c.pickAndCastSkill(p, enemy, 'mv-float');
+  c.tickSkillCast(p, 0.4);
   assert.ok(result && typeof result === 'object');
   assert.equal(p.mp, 0); // 免費施放：MP 不變（未扣成負數）
   assert.ok(enemy.hp < 10000); // 傷害照常結算

@@ -337,3 +337,14 @@ test('投射物飛行時間隨距離增加，並夾在上下限之間', () => {
   assert.ok(mid <= c.VFX_TRAVEL_MAX_SEC + 1e-9);
   assert.ok(c.bfTravelSeconds(at(99999, 0)) <= c.VFX_TRAVEL_MAX_SEC + 1e-9);
 });
+
+test('施法期間我方不移動', () => {
+  const c = loadBattlefield();
+  const enemy = at(9000, 0);
+  const player = { _skillCastRemaining: 0.4 };
+  assert.equal(c.bfTickPlayer([enemy], 1, null, player), false);
+  assert.equal(c.bfPlayerPos().x, 0);
+  player._skillCastRemaining = 0;
+  assert.equal(c.bfTickPlayer([enemy], 1, null, player), true);
+  assert.equal(Math.round(c.bfPlayerPos().x), c.BF_PLAYER_SPEED);
+});

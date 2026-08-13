@@ -347,7 +347,9 @@ test("pickAndCastSkill：裝載 'sg:' 鍵可施放；equipSkillToLoadout 驗證�
   const p = playerEnt();
   const m = enemy(1e9, 40, 0);
   const out = c.pickAndCastSkill(p, [m], 'mv-float');
-  assert.ok(out && out.dmg > 0, '裝載後應可經由統一施放迴圈施放');
+  const completed = c.tickSkillCast(p, 0.4);
+  assert.ok(out && out.casting, '裝載後應可經由統一施放迴圈施放');
+  assert.ok(completed.dmg > 0, '完成施法後應套用技能傷害');
   assert.equal(calls.length, 1);
 });
 

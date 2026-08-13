@@ -33,7 +33,7 @@ function toggleCombatPaused() {
 }
 
 function newPlayerEntity(st) {
-    return { hp: st.hp, mp: st.mp, shield: 0, shieldMax: 0, shieldMaxVersion: SHIELD_MAX_VERSION, atkCd: 1 / st.aspd, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {}, _lastStandAt: 0 };
+    return { hp: st.hp, mp: st.mp, shield: 0, shieldMax: 0, shieldMaxVersion: SHIELD_MAX_VERSION, atkCd: 1 / st.aspd, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {}, _lastStandAt: 0, _skillCastRemaining: 0, _skillCastId: '' };
 }
 
 // 普攻擊殺後換目標的最短間隔沿用技能 GCD；attackRate 用來換算成 atkCd 計時器單位，
@@ -989,7 +989,18 @@ function fieldTick(dt) {
        卻是模擬層算的，兩邊就會脫節——那正是「我方一動、整群敵人跟著平移」的成因。
        FIELD.playerPos 是 bfPlayerPos() 本人的參照（就地改寫），面板序列化時自然帶到最新值。 */
     if (typeof bfPlayerPos === 'function' && FIELD.playerPos !== bfPlayerPos()) FIELD.playerPos = bfPlayerPos();
-    if (typeof bfTickPlayer === 'function') bfTickPlayer(fieldEnemyList(), dt, p._lockTarget);
+    var skillCastTick = (typeof tickSkillCast === 'function') ? tickSkillCast(p, dt) : null;
+    var playerMoveDt = dt;
+    if (skillCastTick && skillCastTick.casting) playerMoveDt = 0;
+    if (skillCastTick && skillCastTick.completed) {
+        if (skillCastTick.killed) {
+            onFieldDeaths();
+            if (!combatFieldEnemies().length) return;
+        }
+        if (p.hp <= 0) { onPlayerFieldDeath(); return; }
+        playerMoveDt = skillCastTick.remainingDt;
+    }
+    if (typeof bfTickPlayer === 'function') bfTickPlayer(fieldEnemyList(), playerMoveDt, p._lockTarget, p);
     /* 逼近與推擠：敵人朝我方走、走到接觸距離就停，同伴之間互相推開。
        這是「要走到面前才打得到」的前提（→ js/battlefield.js 座標制）。
        回傳「本輪剛踏進攻擊距離」的敵人，牠們稍後會先出手（見下方首擊保證）。 */
@@ -1080,7 +1091,8 @@ function fieldTick(dt) {
     }
     // 玩家行動（受減速時依減速比例放慢；時間扭曲等攻速增益加速）
     //（45 新技能共用排程器已上移至「出怪」空場檢查之前，避免波次間隙排程停擺）
-    if (!effectActive(p, 'stun')) {
+    if (!effectActive(p, 'stun') &&
+        (typeof skillCastInProgress !== 'function' || !skillCastInProgress(p))) {
         // 技能優先（依裝載順序；含裝載的潛力技能）
         var sres = pickAndCastSkill(p, enemies, 'mv-float');
         combatDebugAuditFieldDeaths(debugFieldTick, 'skill cast');

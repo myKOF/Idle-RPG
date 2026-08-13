@@ -60,6 +60,7 @@ function playerEntity() {
     shield: 0,
     atkCd: 0,
     skillCds: {},
+    skillGcd: 0,
     buffs: {},
     dots: [],
     effects: {}
@@ -72,22 +73,29 @@ test('skill global cooldown prevents casting another skill for a fixed 0.4 secon
 
   const first = context.pickAndCastSkill(player, null, 'float-layer');
   assert.equal(first && typeof first, 'object');
-  assert.equal(player.skillGcd, 0.4);
-  assert.equal(player.skillCds.timeWarp, 8);
+  assert.equal(first.casting, true);
+  assert.equal(player._skillCastRemaining, 0.4);
+  assert.equal(player.skillGcd, 0);
+  assert.equal(player.skillCds.timeWarp || 0, 0);
   assert.equal(player.atkCd, 0, '技能施放不應增加普攻計時器');
 
   const blocked = context.pickAndCastSkill(player, null, 'float-layer');
   assert.equal(blocked, null);
   assert.equal(player.skillCds.treasureSense || 0, 0);
 
-  context.tickSkillCds(player, 0.39);
-  assert.ok(player.skillGcd > 0);
+  context.tickSkillCast(player, 0.39);
   assert.equal(context.pickAndCastSkill(player, null, 'float-layer'), null);
 
-  context.tickSkillCds(player, 0.01);
+  const completed = context.tickSkillCast(player, 0.01);
+  assert.equal(completed.completed, true);
+  assert.equal(player.skillCds.timeWarp, 8);
+  assert.equal(player.skillGcd, 0.4);
+  context.tickSkillCds(player, 0.4);
   assert.equal(player.skillGcd, 0);
   const second = context.pickAndCastSkill(player, null, 'float-layer');
   assert.equal(second && typeof second, 'object');
+  assert.equal(second.casting, true);
+  context.tickSkillCast(player, 0.4);
   assert.equal(player.skillGcd, 0.4);
   assert.equal(player.skillCds.treasureSense, 12);
   assert.equal(player.atkCd, 0, '技能 GCD 與普攻計時器應彼此獨立');
@@ -116,6 +124,7 @@ test('技能依冷卻歸零先後輪轉，前排短 CD 不會在首輪壟斷後�
 
   for (let i = 0; i < ids.length; i += 1) {
     assert.ok(context.pickAndCastSkill(player, target, 'float-layer'));
+    context.tickSkillCast(player, 0.4);
     context.tickSkillCds(player, 0.4);
   }
 
@@ -205,6 +214,26 @@ test('傷害範圍 all 的技能命中場上全部敵人', () => {
   assert.equal(enemies[1].hp, enemies[2].hp);
   assert.equal(Math.round(10000 - enemies[0].hp), Math.round(singleDamage * 2),
     '範圍傷害加成應套用在每個目標，不能因目標數量除分');
+});
+
+test('技能可用 castTime: 0 明確略過預設施法停頓', () => {
+  const context = loadGameContext();
+  context.G.player.skills = { powerSlash: 1 };
+  context.G.player.loadout = ['powerSlash'];
+  context.getStats = () => ({
+    cdr: 0, castSpeed: 0, hp: 1000, mp: 1000, atk: 100, matk: 100,
+    aoeDmg: 0, critRate: 0, critDmg: 150, pPen: 0, mPen: 0,
+    passives: {}, lifesteal: 0, manaSteal: 0, shieldEff: 0
+  });
+  context.SKILLS.powerSlash.fx.castTime = 0;
+  const player = playerEntity();
+  const target = { hp: 10000, maxHp: 10000, def: 0, mdef: 0, dodge: 0, resist: {},
+    ctrlRes: 0, elite: false, isBoss: false, buffs: {}, dots: [], effects: {}, shield: 0 };
+
+  const result = context.pickAndCastSkill(player, target, 'float-layer');
+  assert.equal(result.casting, undefined);
+  assert.equal(player._skillCastRemaining || 0, 0);
+  assert.ok(target.hp < 10000);
 });
 
 /* 2026-07-31：護盾技能改為「最大生命 × 技能護盾%」。

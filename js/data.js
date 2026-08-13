@@ -1068,7 +1068,7 @@ var SKILL = {
   name: '奧術衝擊', emoji: '🌠',
   cost: 30,          // MP 消耗
   baseCd: 10,        // 基礎冷卻（受 CDR 影響）
-  castTime: 0.8,     // 舊基礎技能資料欄位；現行技能不以施法時間延後普攻
+  castTime: 0.8,     // 舊基礎技能資料欄位；現行技能施法規則由 js/skills.js 統一處理
   matkScale: 1.5,    // 魔攻倍率
   atkScale: 0.3      // 物攻倍率
 };
