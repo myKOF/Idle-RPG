@@ -39,12 +39,12 @@ test('防禦減傷依同類型攻防差值計算，且差值下限為 0', () => 
   const level = 10;
 
   assert.equal(
-    context.defReduction(defense, level, 50),
-    context.defReduction(defense, level, 0),
+    context.playerDefReduction(defense, level, 50),
+    context.playerDefReduction(defense, level, 0),
     '攻擊低於防禦時不得產生負的攻防差值'
   );
   assert.equal(
-    context.defReduction(defense, level, 125),
+    context.playerDefReduction(defense, level, 125),
     expectedReduction(context, defense, level, 125)
   );
 });
@@ -64,7 +64,8 @@ test('both 攻擊分別使用物理攻擊／物防與魔法攻擊／魔防', () 
     level: attackerLevel
   }, {
     def: physicalDefense,
-    mdef: magicDefense
+    mdef: magicDefense,
+    isPlayer: true
   });
   const expected = Math.round(
     physicalAttack * (1 - expectedReduction(context, physicalDefense, attackerLevel, physicalAttack)) +
@@ -72,4 +73,23 @@ test('both 攻擊分別使用物理攻擊／物防與魔法攻擊／魔防', () 
   );
 
   assert.equal(actual, expected);
+});
+
+test('敵人承受傷害仍使用舊版防禦減傷公式', () => {
+  const context = loadContext();
+  const attackerLevel = 1;
+  const attack = 220;
+  const defense = 100;
+  const actual = resolve(context, {
+    atk: attack,
+    matk: 0,
+    dmgType: 'phys',
+    level: attackerLevel
+  }, { def: defense, isPlayer: false });
+  const expected = Math.round(attack * (1 - context.defReduction(defense, attackerLevel)));
+
+  assert.equal(actual, expected);
+  assert.notEqual(actual, Math.round(
+    attack * (1 - context.playerDefReduction(defense, attackerLevel, attack))
+  ), '敵方不應套用我方新版攻防差值公式');
 });

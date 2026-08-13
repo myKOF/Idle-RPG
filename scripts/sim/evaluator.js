@@ -107,13 +107,15 @@ function evalHitDamage(st, foe) {
      （js/combat.js playerAtkCfg），所以物理與魔法兩段都要算。 */
   var pIgnore = penIgnoreRatio(st.pPen || 0);
   var pDef = (foe.def || 0) * penDefMultiplier(pIgnore);
-  var pDmg = (st.atk || 0) * (1 - defReduction(pDef, lv, st.atk));
+  /* 玩家攻擊敵人：敵方防禦維持舊公式。 */
+  var pDmg = (st.atk || 0) * (1 - defReduction(pDef, lv));
   pDmg *= 1 - physicalResistanceReduction(0, lv);   // 野怪沒有物理抗性欄位，留著讓公式對齊
   dmg += pDmg;
 
   var mIgnore = penIgnoreRatio(st.mPen || 0);
   var mDef = (foe.mdef || 0) * penDefMultiplier(mIgnore);
-  var mDmg = (st.matk || 0) * (1 - defReduction(mDef, lv, st.matk));
+  /* 玩家攻擊敵人：敵方防禦維持舊公式。 */
+  var mDmg = (st.matk || 0) * (1 - defReduction(mDef, lv));
   mDmg *= 1 - magicResistanceReduction(0, lv);
   dmg += mDmg;
 
@@ -162,10 +164,12 @@ function evalIncomingRatio(st, foe) {
   var raw = 1;   // 以「敵方 1 點攻擊力」為單位
 
   if (foe.magic) {
-    raw *= 1 - defReduction(st.mdef || 0, lv, foe.atk || 0);
+    /* 敵人攻擊玩家：我方魔防使用新版同類型攻防差值公式。 */
+    raw *= 1 - playerDefReduction(st.mdef || 0, lv, foe.atk || 0);
     raw *= 1 - magicResistanceReduction(st.mRes || 0, lv);
   } else {
-    raw *= 1 - defReduction(st.def || 0, lv, foe.atk || 0);
+    /* 敵人攻擊玩家：我方物防使用新版同類型攻防差值公式。 */
+    raw *= 1 - playerDefReduction(st.def || 0, lv, foe.atk || 0);
     raw *= 1 - physicalResistanceReduction(st.pRes || 0, lv);
   }
 
