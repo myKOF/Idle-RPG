@@ -843,7 +843,9 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
         // 敵人爆擊（res.crit，敵種爆擊率 × (1-玩家韌性)）與重擊/狂暴倍率（mult>1）共用爆擊樣式；
         // 但只有 res.crit 是真正的爆擊，才標「爆擊」字樣。
         var isCrit = !!res.crit || !!(mult && mult > 1);
-        var dmgStr = fmt(res.dmg);
+        /* 我方被扣血一律帶負號：畫面上同一時間還有吸血、吸魔、護盾吸收等
+           好幾個數字，沒有正負號分不出哪個是在扣血。 */
+        var dmgStr = '-' + fmt(res.dmg);
         if (res.crit) dmgStr = '爆擊 ' + dmgStr;
         floatText(playerFloatSel, dmgStr, isCrit ? 'crit' : 'mdmg');
         // 我方受擊反饋（協議 v17）：爪痕閃過我方卡片＋卡片震動，由顯示層畫
@@ -1191,7 +1193,13 @@ function onFieldKill(m) {
     m.hp = 0;
     m._rewarded = true;
     // 普攻鎖定的目標死了就解鎖，下一次出手重新挑最近的（順便別把死掉的實體參照留在快照裡）
-    if (FIELD.player && FIELD.player._lockTarget === m) FIELD.player._lockTarget = null;
+    if (FIELD.player && FIELD.player._lockTarget === m) {
+        FIELD.player._lockTarget = null;
+        /* 換目標的空檔：打死一隻之後不要在同一個 tick 就轉頭砍下一隻。
+           壓在普攻冷卻上（技能有自己的冷卻與 GCD，不受這裡影響）。 */
+        var switchCd = (typeof TARGET_SWITCH_DELAY === 'number') ? TARGET_SWITCH_DELAY : 0;
+        if (switchCd > 0) FIELD.player.atkCd = Math.max(Number(FIELD.player.atkCd) || 0, switchCd);
+    }
     if (typeof legendaryOnEnemyKill === 'function') legendaryOnEnemyKill(FIELD.player);
     m._deathClearCd = FIELD_ENEMY_DEATH_CLEAR_DELAY;
     var st = getStats();
