@@ -122,15 +122,16 @@ test('技能依冷卻歸零先後輪轉，前排短 CD 不會在首輪壟斷後�
   assert.deepEqual(calls, ids);
 });
 
-test('多敵人技能傷害依範圍傷害與敵人數量分攤', () => {
+test('多敵人範圍技能每個目標承受完整傷害，不依目標數分攤', () => {
   const context = loadGameContext();
-  assert.equal(context.skillDamageShare(10000, 100, 4), 5000);
-  assert.equal(context.skillDamageShare(10000, 50, 2), 7500);
-  assert.equal(context.skillDamageShare(10000, 100, 1), 10000);
+  assert.equal(context.skillDamagePerTarget(10000, 100, 4), 20000);
+  assert.equal(context.skillDamagePerTarget(10000, 50, 2), 15000);
+  assert.equal(context.skillDamagePerTarget(10000, 100, 1), 10000);
+  assert.equal(context.skillDamageShare(10000, 100, 4), 20000, '舊函式名稱也不得恢復分攤');
 });
 
 /* 新版戰鬥：技能一律要指定範圍，未填＝單體。
-   單體技只打一個目標，且目標挑法與普攻相同（最近優先），不再對全場平攤傷害。 */
+   單體技只打一個目標，且目標挑法與普攻相同（最近優先）。 */
 function skillTargetingContext() {
   const context = loadGameContext();
   context.Math.random = () => 0.5;
@@ -185,13 +186,16 @@ test('傷害範圍 3x3 的技能命中圈內全部敵人，體型較大的 BOSS 
   assert.ok(b.hp < 10000);
   assert.ok(boss.hp < 10000);
   assert.equal(outside.hp, 10000, '圈外的敵人不該被打到');
-  // 三名目標平攤：每名受到的傷害相同，且 BOSS 沒有因為佔 4 格而被打 4 次
+  // 每名目標受到相同的完整範圍傷害，且 BOSS 沒有因為佔 4 格而被打 4 次
   assert.equal(Math.round(10000 - a.hp), Math.round(10000 - boss.hp));
 });
 
 test('傷害範圍 all 的技能命中場上全部敵人', () => {
   const context = skillTargetingContext();
   context.SKILLS.powerSlash.shape = 'all';
+  const single = targetingEnemy(2, 2);
+  context.castSkill(targetingPlayer(), [single], 'powerSlash', 1, 'float-layer');
+  const singleDamage = 10000 - single.hp;
   const enemies = [targetingEnemy(1, 2), targetingEnemy(4, 1), targetingEnemy(3, 4)];
 
   context.castSkill(targetingPlayer(), enemies, 'powerSlash', 1, 'float-layer');
@@ -199,6 +203,8 @@ test('傷害範圍 all 的技能命中場上全部敵人', () => {
   enemies.forEach((e) => assert.ok(e.hp < 10000));
   assert.equal(enemies[0].hp, enemies[1].hp);
   assert.equal(enemies[1].hp, enemies[2].hp);
+  assert.equal(Math.round(10000 - enemies[0].hp), Math.round(singleDamage * 2),
+    '範圍傷害加成應套用在每個目標，不能因目標數量除分');
 });
 
 /* 2026-07-31：護盾技能改為「最大生命 × 技能護盾%」。
