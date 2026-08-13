@@ -596,10 +596,36 @@ function parseCountTuples(cat, name) {
   if (!out.length) throw new Error('數量權重全空：' + cat + ' / ' + name);
   return out.join(', ');
 }
-arrayContent('data', 'FIELD_ENEMY_COUNT_TABLE', parseCountTuples('4-敵人數量', '小怪 數量權重100關之後'), 'FIELD_ENEMY_COUNT_TABLE');
-const DESERT_EARLY_ENEMY_COUNT_RANGES = ['1~20', '21~40', '41~60', '61~80', '81~100'];
-const desertEarlyEnemyCountTables = DESERT_EARLY_ENEMY_COUNT_RANGES.map(range =>
-  parseCountTuples('4-敵人數量', '小怪 數量權重(荒漠' + range + '關)'));
+/* 荒漠小怪分段：列名自己帶區間（「小怪 數量權重(荒漠101~150關)」），
+   這裡掃出所有符合的列並依起點排序——在 Excel 增減區間、改寬度都不必動程式。
+   後備列是「小怪 數量權重<N>關之後」，N 也一起讀出來對帳。 */
+const ENEMY_COUNT_CAT = '4-敵人數量';
+const enemyCountRowNames = Object.keys(index[ENEMY_COUNT_CAT] || {});
+const desertSegments = enemyCountRowNames
+  .map(n => { const m = /^小怪 數量權重\(荒漠(\d+)~(\d+)關\)$/.exec(n); return m ? { name: n, min: +m[1], max: +m[2] } : null; })
+  .filter(Boolean)
+  .sort((a, b) => a.min - b.min);
+if (!desertSegments.length) throw new Error('找不到任何「小怪 數量權重(荒漠a~b關)」列');
+desertSegments.forEach((r, i) => {
+  if (r.min > r.max) throw new Error('荒漠小怪分段的區間反向：' + r.name);
+  if (i > 0 && r.min !== desertSegments[i - 1].max + 1) {
+    throw new Error('荒漠小怪分段不連續：' + desertSegments[i - 1].name + ' 之後應該從第 ' +
+      (desertSegments[i - 1].max + 1) + ' 關接上，實際是 ' + r.name);
+  }
+});
+const fallbackRowName = enemyCountRowNames.find(n => /^小怪 數量權重\d+關之後$/.test(n));
+if (!fallbackRowName) throw new Error('找不到「小怪 數量權重<N>關之後」這一列');
+const fallbackFrom = Number(/^小怪 數量權重(\d+)關之後$/.exec(fallbackRowName)[1]);
+const lastSegEnd = desertSegments[desertSegments.length - 1].max;
+if (fallbackFrom !== lastSegEnd + 1) {
+  /* 只警告不中斷：後備表本來就是「其餘全部」，名字對不上不會壞掉，
+     但會讓看表的人以為某段有專屬設定，實際上走的是後備表。 */
+  console.warn('⚠️ ' + fallbackRowName + ' 與最後一段（結束於第 ' + lastSegEnd +
+    ' 關）對不上；第 ' + (lastSegEnd + 1) + '~' + (fallbackFrom - 1) + ' 關會走後備表。');
+}
+arrayContent('data', 'FIELD_ENEMY_COUNT_TABLE', parseCountTuples(ENEMY_COUNT_CAT, fallbackRowName), 'FIELD_ENEMY_COUNT_TABLE');
+const desertEarlyEnemyCountTables = desertSegments.map(r =>
+  r.min + ', ' + r.max + ', [' + parseCountTuples(ENEMY_COUNT_CAT, r.name) + ']');
 /* ⚠️ arrayContent 替換的是既有 `[ ... ]` **裡面**的內容（regex 第 2 組），
    所以這裡只能給「元素們」，不能再自己包一層外括號——包了就會寫成 [[...]]，
    變成長度 1 的陣列：[0] 是整包巢狀表、[1]~[4] 全是 undefined。
@@ -607,7 +633,7 @@ const desertEarlyEnemyCountTables = DESERT_EARLY_ENEMY_COUNT_RANGES.map(range =>
    21~100 關則因為 undefined 直接掉回後期表，五段分段等於完全沒生效。
    隔壁 FIELD_ENEMY_COUNT_TABLE 傳的是 parseCountTuples() 的回傳值，本來就沒有外括號。 */
 arrayContent('data', 'FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES',
-  desertEarlyEnemyCountTables.map(table => '[' + table + ']').join(', '),
+  desertEarlyEnemyCountTables.map(row => '[' + row + ']').join(', '),
   'FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES');
 /* 菁英數量逐張地圖一列。列名是「菁英 數量權重(地圖名+關卡區間)」，這裡把它對到地圖識別碼；
    沒有列在這裡的地圖（神界三圖）吃「500關之後」那一列＝ FIELD_ELITE_COUNT_TABLE。

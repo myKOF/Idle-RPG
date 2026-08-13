@@ -100,16 +100,20 @@ test('驗證 2：荒漠 1~100 關菁英不再固定 1 隻，並確認早期難�
   assert.ok(countFreq[1] + countFreq[2] > countFreq[3] * 5, '3 隻菁英出現機率應遠低於 1~2 隻');
 });
 
-test('驗證 3：小怪分段（荒漠每 20 關）與 BOSS 固定 1 隻不變', () => {
+test('驗證 3：小怪分段（荒漠，區間由列名決定）與 BOSS 固定 1 隻不變', () => {
   const ctx = loadCombatContext();
 
-  // 小怪分段（每 20 關）
-  for (let s = 1; s <= 100; s++) {
-    const idx = Math.floor((s - 1) / 20);
-    const expectedTable = ctx.FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES[idx];
-    assert.equal(ctx.fieldCountTableFor('normal', s, 'desert'), expectedTable, `荒漠第 ${s} 關小怪分段表`);
+  /* 分段表每一列自帶 [最低關卡, 最高關卡, 權重表]，不再是固定 20 關一段——
+     101~150 這種寬度不同的區間才表達得出來。 */
+  const rows = ctx.FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES;
+  const lastEnd = rows[rows.length - 1][1];
+  for (let s = 1; s <= lastEnd; s++) {
+    const row = rows.find((r) => s >= r[0] && s <= r[1]);
+    assert.ok(row, `荒漠第 ${s} 關應該落在某一段裡（分段不得有斷點）`);
+    assert.equal(ctx.fieldCountTableFor('normal', s, 'desert'), row[2], `荒漠第 ${s} 關小怪分段表`);
   }
-  assert.equal(ctx.fieldCountTableFor('normal', 101, 'desert'), ctx.FIELD_ENEMY_COUNT_TABLE, '第 101 關恢復一般小怪表');
+  assert.equal(ctx.fieldCountTableFor('normal', lastEnd + 1, 'desert'), ctx.FIELD_ENEMY_COUNT_TABLE,
+    `第 ${lastEnd + 1} 關恢復一般小怪表`);
 
   // BOSS 固定 1 隻
   const bossStages = [50, 100, 150, 200];

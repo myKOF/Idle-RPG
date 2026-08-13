@@ -1139,9 +1139,15 @@ function fieldCountTableFor(rank, stage, zone) {
     if (zoneEliteTable) return zoneEliteTable;
     if (typeof FIELD_ELITE_COUNT_TABLE !== 'undefined') return FIELD_ELITE_COUNT_TABLE;
   }
+  /* 荒漠分段表：每一列自帶關卡區間（[最低, 最高, 權重表]），逐列比對。
+     舊版用「固定 20 關一段」的索引，寬度不一致的區間表達不出來。 */
   if (z === 'desert' && s >= 1 && typeof FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES !== 'undefined') {
-    var earlyTable = FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES[Math.floor((s - 1) / FIELD_DESERT_EARLY_STAGE_SPAN)];
-    if (earlyTable) return earlyTable;
+    var rows = FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES;
+    for (var ri = 0; ri < rows.length; ri++) {
+      var row = rows[ri];
+      if (!row || row.length < 3) continue;
+      if (s >= Number(row[0]) && s <= Number(row[1]) && row[2] && row[2].length) return row[2];
+    }
   }
   return FIELD_ENEMY_COUNT_TABLE;
 }
