@@ -764,7 +764,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
                 if (typeof playCombatVfx === 'function') {
                     playCombatVfx({
                         fxKind: 'rain', variant: 'smite', elem: 'lightning', cat: 'basic',
-                        glyph: '⚡', color: '#ffd93d',
+                        glyph: '⚡', color: '#f2b705',
                         targets: [enemyEventFloatTarget(mEnt, floatSel)],
                         travelMs: [0], delayMs: atkHitDelayMs, dur: 0.4, count: 1
                     });
@@ -849,11 +849,14 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
         var dmgStr = '-' + fmt(res.dmg);
         if (res.crit) dmgStr = '爆擊 ' + dmgStr;
         floatText(playerFloatSel, dmgStr, isCrit ? 'crit' : 'mdmg');
-        // 我方受擊反饋（協議 v17）：爪痕閃過我方卡片＋卡片震動，由顯示層畫
+        // 我方受擊反饋（協議 v17）：爪痕閃過我方卡片＋卡片震動，由顯示層畫。
+        // 敵人的 attr 是敵方技能／攻擊的視覺屬性來源；無屬性敵人仍退回紅色爪痕。
+        var enemyVfxElem = (mEnt && mEnt.attr && typeof ELEM_INFO !== 'undefined' && ELEM_INFO[mEnt.attr])
+            ? mEnt.attr : null;
         if (typeof playCombatVfx === 'function') {
             playCombatVfx({
-                fxKind: 'impact', variant: 'claw', elem: null, cat: 'enemy',
-                glyph: '💢', color: '#ff6b6b',
+                fxKind: 'impact', variant: 'claw', elem: enemyVfxElem, cat: 'enemy',
+                glyph: '💢', color: enemyVfxElem ? ELEM_INFO[enemyVfxElem].color : '#ff6b6b',
                 targets: [playerFloatSel], travelMs: null, dur: 0.35, count: 1
             });
         }

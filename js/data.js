@@ -990,13 +990,13 @@ var SCORE_WEIGHTS = {
 var ELEMENTS = ['fire', 'ice', 'lightning', 'poison', 'light', 'dark', 'earth'];
 /* color：戰鬥特效用的主色（js/vfx.js）。與 tips 的文字色分開，特效要的是在暗底上夠亮的顏色。 */
 var ELEM_INFO = {
-  fire: { name: '火焰', short: '火', emoji: '🔥', color: '#fb7233' },
-  ice: { name: '冰霜', short: '冰', emoji: '❄️', color: '#54c7fc' },
-  lightning: { name: '雷電', short: '雷', emoji: '⚡', color: '#ffd93d' },
-  poison: { name: '劇毒', short: '毒', emoji: '☠️', color: '#9ee34a' },
-  light: { name: '聖光', short: '聖', emoji: '✨', color: '#ffe9a8' },
-  dark: { name: '暗影', short: '暗', emoji: '🌑', color: '#b76cff' },
-  earth: { name: '大地', short: '地', emoji: '🪨', color: '#d2a05c' }
+  fire: { name: '火焰', short: '火', emoji: '🔥', color: '#e63924' },
+  ice: { name: '冰霜', short: '冰', emoji: '❄️', color: '#4da6ff' },
+  lightning: { name: '雷電', short: '雷', emoji: '⚡', color: '#f2b705' },
+  poison: { name: '劇毒', short: '毒', emoji: '☠️', color: '#4caf2b' },
+  light: { name: '聖光', short: '聖', emoji: '✨', color: '#ffe47a' },
+  dark: { name: '暗影', short: '暗', emoji: '🌑', color: '#6f2da8' },
+  earth: { name: '大地', short: '地', emoji: '🪨', color: '#ad7444' }
 };
 
 /* 特效時間軸（模擬層與 js/vfx.js 共用）——傷害數字必須跟畫面對得上：

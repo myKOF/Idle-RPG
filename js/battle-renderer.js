@@ -45,13 +45,13 @@ var BattleRenderer = (function () {
 
   /* 元素主題色：優先沿用 js/vfx.js 的 VFX_ELEM_THEME，載入順序異常時退回內建表。 */
   var FALLBACK_THEME = {
-    fire:      { c1: '#ff9a3c', c2: '#ff3c1e', glow: '#ffb347' },
-    ice:       { c1: '#9bd7ff', c2: '#2e9bd6', glow: '#c9ecff' },
-    lightning: { c1: '#ffe75e', c2: '#b17aff', glow: '#fff3a0' },
-    poison:    { c1: '#9ee65e', c2: '#3f9e2e', glow: '#c6ff8a' },
-    light:     { c1: '#fff2b0', c2: '#ffd75e', glow: '#ffffff' },
-    dark:      { c1: '#b17aff', c2: '#4a2a7a', glow: '#d9b3ff' },
-    earth:     { c1: '#d6b06a', c2: '#8a6a3a', glow: '#e8cf9a' }
+    light:     { c1: '#ffe47a', c2: '#fffef4', glow: '#fff3a3' },
+    dark:      { c1: '#6f2da8', c2: '#1a0c2e', glow: '#913dcc' },
+    fire:      { c1: '#e63924', c2: '#ffd447', glow: '#ff6a2a' },
+    ice:       { c1: '#4da6ff', c2: '#f2fbff', glow: '#79d8ff' },
+    lightning: { c1: '#f2b705', c2: '#fff8b0', glow: '#ffd23f' },
+    earth:     { c1: '#ad7444', c2: '#5b3a27', glow: '#c48a55' },
+    poison:    { c1: '#4caf2b', c2: '#d8ff8a', glow: '#76d83b' }
   };
   function themeOf(spec) {
     var table = (typeof VFX_ELEM_THEME !== 'undefined' && VFX_ELEM_THEME) || FALLBACK_THEME;
@@ -1019,19 +1019,55 @@ var BattleRenderer = (function () {
   }
 
   /* 投射物：追蹤目標實體（等速、travelMs 由協議帶來） */
+  function projectileCore(spec, theme) {
+    var core = new PIXI.Graphics();
+    var elem = spec && spec.elem;
+    if (elem === 'lightning') {
+      /* 雷電不是圓球：用金黃色折線＋白色芯線，與 DOM 版的雷紋形狀一致。 */
+      core.moveTo(-13, -5).lineTo(-5, 4).lineTo(1, -4).lineTo(8, 5).lineTo(13, -2)
+        .stroke({ color: theme.c1, width: 5, alpha: 0.95, cap: 'round', join: 'round' });
+      core.moveTo(-13, -5).lineTo(-5, 4).lineTo(1, -4).lineTo(8, 5).lineTo(13, -2)
+        .stroke({ color: theme.c2, width: 1.8, alpha: 1, cap: 'round', join: 'round' });
+      return core;
+    }
+    if (elem === 'ice') {
+      /* 冰晶：四角菱形，而不是一般圓形彈體。 */
+      core.poly([-9, 0, 0, -11, 9, 0, 0, 11]).fill(theme.c1)
+        .stroke({ color: theme.c2, width: 2, alpha: 0.95 });
+      return core;
+    }
+    if (elem === 'earth') {
+      /* 大地：土色方塊，內縮一層亮面增加立體感。 */
+      core.rect(-8, -8, 16, 16).fill(theme.c1)
+        .stroke({ color: theme.c2, width: 2, alpha: 0.9 });
+      core.rect(-4, -5, 7, 6).fill({ color: theme.c2, alpha: 0.55 });
+      return core;
+    }
+    if (elem === 'poison') {
+      /* 毒液：下垂液滴輪廓，核心仍保留亮綠高光。 */
+      core.poly([-2, -9, 7, -1, 4, 7, -3, 8, -8, 1]).fill(theme.c1)
+        .stroke({ color: theme.c2, width: 1.5, alpha: 0.9 });
+      core.circle(-2, -2, 2.5).fill(theme.c2);
+      return core;
+    }
+    var r = spec.variant === 'meteor' ? 10 : (spec.cat === 'basic' ? 5 : 6.5);
+    core.circle(0, 0, r).fill(theme.c1);
+    core.circle(0, 0, r * 0.55).fill(theme.c2);
+    return core;
+  }
+
   function spawnProjectile(targetId, travelMs, spec, onArrive, fromOverride) {
     var theme = themeOf(spec);
     var from = fromOverride || playerMuzzle();
     var node = new PIXI.Container();
     var core;
-    if (spec.glyph && (spec.fxKind === 'projectile' || spec.variant === 'glyph')) {
+    var glyphOnly = spec.glyph && (spec.variant === 'glyph' ||
+      (!spec.elem && (spec.cat === 'special' || spec.cat === 'potential' || spec.cat === 'fusion')));
+    if (glyphOnly) {
       core = new PIXI.Text({ text: spec.glyph, style: { fontSize: 20 } });
       core.anchor.set(0.5);
     } else {
-      core = new PIXI.Graphics();
-      var r = spec.variant === 'meteor' ? 10 : (spec.cat === 'basic' ? 5 : 6.5);
-      core.circle(0, 0, r).fill(theme.c1);
-      core.circle(0, 0, r * 0.55).fill('#ffffff');
+      core = projectileCore(spec, theme);
     }
     var glow = new PIXI.Sprite(glowTexture());
     glow.anchor.set(0.5);
@@ -1272,8 +1308,14 @@ var BattleRenderer = (function () {
     var n = REDUCED_MOTION ? 2 : 5;
     for (var i = 0; i < n; i++) {
       (function (idx) {
-        var node = new PIXI.Text({ text: spec.glyph || '❄', style: { fontSize: 16 } });
-        node.anchor.set(0.5);
+        var node;
+        if (spec.elem) {
+          node = projectileCore(spec, theme);
+          node.scale.set(0.82);
+        } else {
+          node = new PIXI.Text({ text: spec.glyph || '❄', style: { fontSize: 16 } });
+          node.anchor.set(0.5);
+        }
         var tx = rect.x + Math.random() * rect.w;
         var ty = rect.y + Math.random() * rect.h;
         /* 起點在目標正上方（世界座標）：鏡頭會移動，不能再用「畫面頂端」當天空 */
@@ -1305,7 +1347,7 @@ var BattleRenderer = (function () {
     core.circle(0, 0, 7).fill('#ffffff');
     var glow = new PIXI.Sprite(glowTexture());
     glow.anchor.set(0.5); glow.scale.set(2.2); glow.blendMode = 'add';
-    glow.tint = 0xffb347;
+    glow.tint = parseInt(String(theme.glow).replace('#', '0x')) || 0xffffff;
     node.addChild(glow); node.addChild(core);
     var mSky = cy - S.H * 0.7;   // 目標上方的世界座標；鏡頭會動，不能用畫面頂端
     node.x = cx + 180; node.y = mSky;

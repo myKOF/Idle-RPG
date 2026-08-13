@@ -171,7 +171,7 @@ function firePotentialLightning(pEnt, def, live, floatSel, st, boostVal) {
     if (chainIds.length) {
       playCombatVfx({
         fxKind: 'chain', variant: 'chain', elem: 'lightning', cat: 'potential',
-        glyph: def.emoji || '🌩️', color: '#ffd93d',
+        glyph: def.emoji || '🌩️', color: '#f2b705',
         targets: chainIds, cells: null, dur: 0.4, count: 1
       });
     }
@@ -279,7 +279,7 @@ function applyPotentialChainLightning(pEnt, fx, targets, totalDmg, comboReps, fl
     if (chainIds.length) {
       playCombatVfx({
         fxKind: 'chain', variant: 'chain', elem: 'lightning', cat: 'potential',
-        glyph: '🌩️', color: '#ffd93d', targets: chainIds, cells: null, dur: 0.4, count: 1
+        glyph: '🌩️', color: '#f2b705', targets: chainIds, cells: null, dur: 0.4, count: 1
       });
     }
   }

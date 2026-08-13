@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## Codex：戰鬥特效七系色票與敵方屬性區分（2026-08-13）
+
+- Status: Completed
+- Owner: Codex
+- Task: 統一我方技能與地板特效的七系顏色；敵方魔法投射物與受擊回饋依敵人 `attr` 區分。聖為黃白光球、暗為深紫光球、火為紅黃火球、冰為藍白冰晶、電為金黃折線、地為土色方塊、毒為綠色液滴。
+- Scope: `js/vfx.js`、`js/data.js`、`js/battle-renderer.js`、`js/combat.js`、`js/potential.js`、`css/style.css`、`index.html`、`tests/vfx-element-colors.test.cjs`、`docs/AI_TASKS.md`
+- Forbidden: Worker Protocol、戰鬥公式、傷害數值、存檔格式與其他非特效規則。
+- Verification: 目標 VFX 測試 23/23；完整 `npm.cmd test` 已執行且未見失敗；相關 JS `node --check` 通過；`npm.cmd run build` 266/266。
+- Known risk: 本次未新增敵方技能事件；Pixi 野外魔法攻擊沿用既有 `enemy.attr` 來源，DOM 後備路徑則將敵方受擊爪痕改為同屬性色。
+- Handoff: Claude Code 唯讀 Review；使用者以瀏覽器確認七系投射物、命中特效與地板領域的實際色彩辨識。
+
 ## Codex：岩甲護盾改為當前生命值比例（2026-08-13）
 
 - Status: Completed
