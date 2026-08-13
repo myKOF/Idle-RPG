@@ -181,7 +181,7 @@ test('敵人走進畫面前不參戰，抵達當輪立即出手，即使被玩�
     player: context.newPlayerEntity({ hp: 100, mp: 0, aspd: 1 }),
     monster: null,
     monsters: [],
-    respawnCd: 0,
+    spawnCd: 0,
     reviveCd: 0,
     dpsWindow: [],
     _waveClearPending: false,
@@ -370,9 +370,9 @@ test('後續地圖尚未解鎖時，亡靈山脈 500 關通關後留在 500 關�
   assert.equal(context.G.stage.best, 500);
   assert.equal(context.G.zoneProgress.undead_mountains.cleared, 500);
   assert.equal(context.FIELD.mapComplete, false);
-  /* 過關之後下一波要隔 FIELD_STAGE_SWITCH_DELAY 才出現（不清場、也不立刻補怪）。
-     這個延遲比 RESPAWN_DELAY 長，所以會蓋過它。 */
-  assert.equal(context.FIELD.respawnCd, context.FIELD_STAGE_SWITCH_DELAY);
+  /* 過關之後下一波要隔 FIELD_STAGE_SWITCH_DELAY（參數表「出怪間隔」的 b）才出現，
+     場上既有的敵人照樣留著。出怪只看 spawnCd 一個計時器。 */
+  assert.equal(context.FIELD.spawnCd, context.FIELD_STAGE_SWITCH_DELAY);
 });
 
 test('真正最後一張地圖通關後仍標記完成並停止出怪', () => {
@@ -394,7 +394,7 @@ test('真正最後一張地圖通關後仍標記完成並停止出怪', () => {
   assert.equal(context.G.stage.current, 800);
   assert.equal(context.G.zoneProgress.god_sanctuary.cleared, 800);
   assert.equal(context.FIELD.mapComplete, true);
-  assert.equal(context.FIELD.respawnCd, Infinity);
+  assert.equal(context.FIELD.spawnCd, Infinity, '整張地圖打完就停止出怪');
 });
 
 test('普攻擊殺後換目標至少間隔技能 GCD 0.4 秒', () => {

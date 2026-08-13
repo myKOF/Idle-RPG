@@ -1314,13 +1314,13 @@ Object.keys(ZONE_STAGE_DROP_PROFILES).forEach(function (zoneKey) {
    間隔越小＝補得越勤；同時上限＝場上最多站幾隻（棋盤只有 BF_COLS×BF_ROWS 格，
    上限再高也不會超過格數）。上限是難度的煞車：沒有它，清不完的怪會一路堆到滿盤，
    新角色在前幾關就會被打死到完全推不動。找不到對應區間時退回下面兩個預設值。 */
-var ZONE_STAGE_WAVE_PROFILES = {  desert: [[1,9999,2,0]],
-  Icefield: [[1,9999,2,0]],
-  swamp: [[1,9999,2,0]],
-  undead_mountains: [[1,9999,2,0]],
-  god_battlefield: [[1,9999,2,0]],
-  god_chaos: [[1,9999,2,0]],
-  god_sanctuary: [[1,9999,2,0]]
+var ZONE_STAGE_WAVE_PROFILES = {  desert: [[1,9999,0,0]],
+  Icefield: [[1,9999,0,0]],
+  swamp: [[1,9999,0,0]],
+  undead_mountains: [[1,9999,0,0]],
+  god_battlefield: [[1,9999,0,0]],
+  god_chaos: [[1,9999,0,0]],
+  god_sanctuary: [[1,9999,0,0]]
 };
 
 function currentZoneDef() {
@@ -1346,8 +1346,10 @@ var BF_RANGED_RANGE = 320;     // 魔法系敵人的攻擊距離
 var BF_BODY_RADIUS = 20;       // 一般敵人的體型半徑
 var BF_BOSS_RADIUS = 52;       // BOSS 體型半徑（邊緣較早進入接觸距離）
 
-/* 切換關卡／地圖之後，下一波敵人要隔幾秒才出現。場上既有的敵人不受影響——
-   設計要求是「不突然出現、也不突然消失」。 */
+/* ---- 出怪間隔（參數表「表-固定參數／出怪間隔」一列兩個值）----
+   a＝同一關內每一波的間隔、b＝切換到下一關（或換地圖）之後的間隔。
+   兩者都是純定值：舊版的「× (1-移動速度%)」已取消，移動速度不再影響出怪節奏。
+   地圖／關卡要個別指定間隔時填 Zone_Stage_Waves 表，該表填 0 就沿用這裡的 a。 */
 var FIELD_STAGE_SWITCH_DELAY = 3.0;
 
 /* 陣亡之後，場上的敵人定格幾秒才整批淡出（唯一會清場的情況）。 */
@@ -1361,8 +1363,7 @@ var FIELD_DEATH_DESPAWN_DELAY = 3.0;
 var FIELD_ENEMY_ENTER_DELAY = 0.45;
 var FIELD_ENEMY_ENTER_STAGGER = 0.08; // 同一波每隻再錯開一點，不要整排同時抵達
 
-var RESPAWN_DELAY = 0.8;       // 空場時的補怪間隔（秒）；波次串流另有自己的間隔（見下）
-var FIELD_WAVE_SPAWN_INTERVAL = 2.0; // 出怪波次間隔預設值（秒）；各地圖／關卡的實際值見 ZONE_STAGE_WAVE_PROFILES
+var FIELD_WAVE_SPAWN_INTERVAL = 2.0; // 同一關內每一波的出怪間隔（秒）＝參數表 a；地圖／關卡可用 ZONE_STAGE_WAVE_PROFILES 覆蓋
 var FIELD_MAX_LIVE_ENEMIES = 8;      // 場上同時存在的敵人上限預設值（同上表可逐地圖／關卡覆寫）
 var FIELD_ENEMY_DEATH_CLEAR_DELAY = 2.1; // 野外敵人死亡後保留戰鬥資訊時間（秒）；須長於 2 秒傷害飄字動畫
 var REVIVE_DELAY = 5.0;        // 死亡復活時間（秒）

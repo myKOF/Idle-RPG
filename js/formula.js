@@ -407,7 +407,10 @@ function computeStats(equipmentOverride) {
   st.resVsElem = talentElemBucket(talent, 'resVs');
   // 特殊與機制
   st.ccRed = capValue(A.ccRed, STAT_CAPS.ccRed);                              // 控制時間縮減上限（上限 0＝無上限）
-  st.moveSpeed = capValue(A.moveSpeed, STAT_CAPS.moveSpeed);                      // 移動速度上限（縮短出怪間隔；上限 0＝無上限）
+  /* ⚠️ 2026-08-13：出怪間隔改為純定值（參數表「出怪間隔」a／b），不再乘 (1-移動速度%)，
+     而這是移動速度原本唯一的作用——目前這個屬性**沒有任何效果**，等重新定位。
+     最自然的去處是我方在戰場上的實際移動速度（BF_PLAYER_SPEED），座標化之後角色真的會跑。 */
+  st.moveSpeed = capValue(A.moveSpeed, STAT_CAPS.moveSpeed);                      // 移動速度上限（上限 0＝無上限）
   st.loot = effectiveDropRateEffect(A.loot);
   st.xpBonus = A.xpBonus;
   st.goldBonus = A.goldBonus;

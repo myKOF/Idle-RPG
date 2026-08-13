@@ -228,7 +228,7 @@
       FIELD.monsters = [];
       FIELD._waveClearPending = false;
       FIELD.mapComplete = false;
-      FIELD.respawnCd = 0.5;
+      FIELD.spawnCd = 0.5;
     }
 
     gmDirty();

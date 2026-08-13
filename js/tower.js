@@ -450,7 +450,7 @@ function finishTowerFight() {
   if (typeof resetSkillRT === 'function') resetSkillRT();
   // 野外重生
   if (FIELD.player) FIELD.player.hp = getStats().hp;
-  FIELD.monster = null; FIELD.monsters = []; FIELD._waveClearPending = false; FIELD.respawnCd = 0.5;
+  FIELD.monster = null; FIELD.monsters = []; FIELD._waveClearPending = false; FIELD.spawnCd = 0.5;
   UI.dirty.tower = true; UI.dirty.battle = true; UI.dirty.header = true; UI.dirty.factory = true;
 }
 

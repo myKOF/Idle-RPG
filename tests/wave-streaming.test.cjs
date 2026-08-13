@@ -192,6 +192,28 @@ test('波次間隔可依地圖與關卡區分，且表壞掉時退回預設值',
   assert.ok(context.fieldWaveIntervalFor(1, 'desert') >= 0.2);
 });
 
+test('出怪間隔分兩段：同關內用參數 a、切換關卡後用參數 b', () => {
+  const context = loadCombatContext();
+  /* 同一關內：一波出完，下一波隔 fieldWaveIntervalFor（表填 0 就退回參數 a）。 */
+  context.ZONE_STAGE_WAVE_PROFILES = { desert: [[1, 9999, 0, 0]] };
+  assert.equal(context.fieldWaveIntervalFor(1, 'desert'), context.FIELD_WAVE_SPAWN_INTERVAL,
+    '地圖表填 0＝沿用參數表的 a');
+  /* 切換關卡：改用參數 b，且不清場。 */
+  context.holdFieldSpawn(context.FIELD_STAGE_SWITCH_DELAY);
+  assert.equal(context.FIELD.spawnCd, context.FIELD_STAGE_SWITCH_DELAY);
+  assert.notEqual(context.FIELD_STAGE_SWITCH_DELAY, context.FIELD_WAVE_SPAWN_INTERVAL,
+    '兩段間隔是各自獨立的參數，預設值不該相同');
+});
+
+test('出怪間隔不再受移動速度影響（純定值）', () => {
+  /* 舊公式是「a 秒 × (1-移動速度%)」。移動速度多寡都不該改變出怪節奏。 */
+  const context = loadCombatContext();
+  assert.equal(typeof context.RESPAWN_DELAY, 'undefined', '舊的 RESPAWN_DELAY 已移除');
+  const src = require('node:fs').readFileSync(
+    require('node:path').resolve(__dirname, '..', 'js', 'combat.js'), 'utf8');
+  assert.equal(/moveSpeed/.test(src), false, 'combat.js 不該再有任何 moveSpeed 參與出怪計時');
+});
+
 test('參數表預設值涵蓋所有地圖，數值合理', () => {
   const context = loadCombatContext();
   const zones = ['desert', 'Icefield', 'swamp', 'undead_mountains',
@@ -202,7 +224,8 @@ test('參數表預設值涵蓋所有地圖，數值合理', () => {
     rows.forEach((row) => {
       assert.equal(row.length, 4, zone + ' 每列必須是 [最低關卡, 最高關卡, 間隔秒數, 同時上限隻數]');
       assert.ok(row[0] >= 1 && row[1] >= row[0], zone + ' 關卡區間不合法');
-      assert.ok(row[2] > 0 && row[2] <= 60, zone + ' 間隔秒數超出合理範圍');
+      /* 0＝沿用參數表「出怪間隔」的 a（與同時上限隻數的 0＝不額外限制同一慣例）。 */
+      assert.ok(row[2] >= 0 && row[2] <= 60, zone + ' 間隔秒數超出合理範圍（0＝沿用參數表預設值）');
       assert.ok(row[3] >= 0 && row[3] <= 999, zone + ' 同時上限隻數超出合理範圍（0＝不額外限制）');
     });
   });

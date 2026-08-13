@@ -6,7 +6,7 @@ var FIELD = {
     player: null,      // { hp, mp, shield, atkCd, skillCd, effects:{}, buffs:{}, dots:[] }
     monster: null,
     monsters: [],
-    respawnCd: 0,
+    spawnCd: 0,
     reviveCd: 0,
     dpsWindow: []      // [ [GT, dmg], ... ] 供 DPS 顯示
 };
@@ -263,11 +263,10 @@ function spawnFieldMonster(append) {
 
 /* 切換關卡／地圖之後，下一波要隔一段時間才出現——場上既有的敵人留著，
    新的一波不要在切換的瞬間憑空冒出來（設計要求：不突然出現、也不突然消失）。
-   spawnCd 與 respawnCd 都要壓住：空場時波次邏輯會拿 respawnCd 當捷徑覆蓋 spawnCd。 */
+   出怪只看 FIELD.spawnCd 一個計時器：一波出完就填「同關內間隔」（參數 a），
+   切換關卡則填「換關間隔」（參數 b）。 */
 function holdFieldSpawn(sec) {
-    var s = Math.max(0, Number(sec) || 0);
-    FIELD.spawnCd = Math.max(Number(FIELD.spawnCd) || 0, s);
-    FIELD.respawnCd = Math.max(Number(FIELD.respawnCd) || 0, s);
+    FIELD.spawnCd = Math.max(0, Number(sec) || 0);
 }
 
 /* 陣亡後場上的敵人不會立刻消失：定格 FIELD_DEATH_DESPAWN_DELAY 秒後整批移除，
@@ -1018,11 +1017,6 @@ function fieldTick(dt) {
     var spawnedEnemies = null;
     if (!FIELD.mapComplete && !hasLiveFieldBoss()) {
         FIELD.spawnCd = (typeof FIELD.spawnCd === 'number') ? FIELD.spawnCd - dt : 0;
-        /* 場上真的空了就別讓玩家乾等一整個波次間隔：改用原本的空場補怪間隔
-           （RESPAWN_DELAY，受移動速度縮短），兩者取快的那個。 */
-        if (!liveFieldEnemies().length && !hasFieldDeathHolds() && FIELD.spawnCd > FIELD.respawnCd) {
-            FIELD.spawnCd = FIELD.respawnCd;
-        }
         if (FIELD.spawnCd <= 0) {
             var added = spawnFieldMonster(true);
             FIELD.spawnCd = fieldWaveIntervalFor(G.stage.current, G.stage.zone);
@@ -1142,8 +1136,6 @@ function completeFieldWave(st) {
     }
     G.stage.kills++;
     if (window.recordLootBattle) window.recordLootBattle('field'); // 整波敵人清空 = 一場戰鬥
-    // 移動速度：縮短推圖間隔；只有整波敵人全部擊殺且死亡資訊清除後才進入下一波。
-    FIELD.respawnCd = RESPAWN_DELAY * (1 - st.moveSpeed / 100);
     var maxStage = zoneMaxStage(G.stage.zone);
     var nextStage = Math.min(G.stage.current + 1, maxStage);
     // 完成戰鬥即解鎖下一關；自動推進只控制目前是否立刻切換。
@@ -1171,7 +1163,7 @@ function completeFieldWave(st) {
                 G.stage.current = maxStage;
                 G.stage.best = Math.max(G.stage.best || 1, maxStage);
                 FIELD.mapComplete = true;
-                FIELD.respawnCd = Infinity;
+                FIELD.spawnCd = Infinity;
                 blog('🏆 已通關【' + currentZoneDef().name + '】全部 ' + maxStage + ' 關！', 'good');
             }
         } else {

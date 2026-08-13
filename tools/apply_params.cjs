@@ -173,7 +173,9 @@ function zoneStageWaveContent() {
     const sec = num(r[CSEC], zone + '.出怪間隔秒數');
     const cap = num(r[CCAP], zone + '.同時上限隻數');
     if (min > max) throw new Error('Zone_Stage_Waves.csv 關卡區間反向：' + zone + ' ' + min + '~' + max);
-    if (!(sec > 0)) throw new Error('Zone_Stage_Waves.csv 出怪間隔必須大於 0：' + zone + ' = ' + sec);
+    /* 0＝沿用參數表「出怪間隔」的 a（見 fieldWaveIntervalFor 的退回邏輯），
+       與同一張表的「同時上限隻數」0＝不額外限制同一個慣例。負數才是填錯。 */
+    if (!(sec >= 0)) throw new Error('Zone_Stage_Waves.csv 出怪間隔不得為負（0＝沿用參數表的預設值）：' + zone + ' = ' + sec);
     if (!(cap >= 0)) throw new Error('Zone_Stage_Waves.csv 同時上限隻數不得為負（0＝不額外限制）：' + zone + ' = ' + cap);
     (grouped[zone] || (grouped[zone] = [])).push([min, max, sec, cap]);
   });
@@ -444,7 +446,11 @@ scalar('data', 'PART_KEEP_PER_KEY', '表-固定參數', '零件庫存保留', 0)
 scalar('data', 'PART_UPGRADE_COST_A', '表-固定參數', '零件升級金錢消耗', 0);
 scalar('data', 'PART_UPGRADE_COST_B', '表-固定參數', '零件升級金錢消耗', 1);
 scalar('data', 'PART_UPGRADE_COST_C', '表-固定參數', '零件升級金錢消耗', 2);
-scalar('data', 'RESPAWN_DELAY', '表-固定參數', '出怪間隔', 0);
+/* 出怪間隔一列兩個值：a＝同一關內每一波的間隔，b＝切換到下一關之後的間隔。
+   （原本這一列是 RESPAWN_DELAY「空場補怪間隔 × (1-移動速度%)」，已取消：
+     間隔改為純定值，不再受移動速度影響。） */
+scalar('data', 'FIELD_WAVE_SPAWN_INTERVAL', '表-固定參數', '出怪間隔', 0);
+scalar('data', 'FIELD_STAGE_SWITCH_DELAY', '表-固定參數', '出怪間隔', 1);
 scalar('data', 'REVIVE_DELAY', '表-固定參數', '死亡復活時間', 0);
 scalar('data', 'CONVEYOR_CAP', '7-容量', '輸送帶容量', 0);
 scalar('data', 'SYNTH_BUFFER_CAP', '7-容量', '合成暫存區', 0);

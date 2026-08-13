@@ -1,8 +1,8 @@
 ﻿地圖識別碼,最低關卡,最高關卡,出怪間隔秒數,同時上限隻數
-desert,1,9999,2,0
-Icefield,1,9999,2,0
-swamp,1,9999,2,0
-undead_mountains,1,9999,2,0
-god_battlefield,1,9999,2,0
-god_chaos,1,9999,2,0
-god_sanctuary,1,9999,2,0
+desert,1,9999,0,0
+Icefield,1,9999,0,0
+swamp,1,9999,0,0
+undead_mountains,1,9999,0,0
+god_battlefield,1,9999,0,0
+god_chaos,1,9999,0,0
+god_sanctuary,1,9999,0,0

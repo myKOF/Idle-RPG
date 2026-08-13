@@ -12,11 +12,11 @@
 
 importScripts('protocol.js?v=18', 'shim.js');
 importScripts(
-  '../util.js', '../data.js?v=20260813-stage-keep', '../status.js?v=20260811-status-shield-stack', '../formula.js?v=20260813-stage-keep', '../battlefield.js?v=20260813-stage-keep', '../stats.js',
+  '../util.js', '../data.js?v=20260813-spawn-ab', '../status.js?v=20260811-status-shield-stack', '../formula.js?v=20260813-spawn-ab', '../battlefield.js?v=20260813-spawn-ab', '../stats.js',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260813-stage-keep', '../talents.js?v=20260811-loadout-cap-clamp',
+  '../skills.js?v=20260813-spawn-ab', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260811-loadout-cap-clamp', '../special_rules.js',
-  '../combat.js?v=20260813-stage-keep', '../legendary.js', '../potential.js', '../tower.js',
+  '../combat.js?v=20260813-spawn-ab', '../legendary.js', '../potential.js', '../tower.js',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260811-loadout-cap-clamp',
   '../tasks.js'
 );
