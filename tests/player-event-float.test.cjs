@@ -107,6 +107,21 @@ test('玩家倒地只旋轉本體，血條與死亡倒數維持水平並顯示�
   assert.doesNotMatch(renderer, /p\.reviveText\.text\s*=.*Math\.round\(.*\*\s*10/);
 });
 
+test('血條與死亡倒數的畫面間距及字級符合死亡 UI 規格', () => {
+  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
+  const reviveStart = renderer.indexOf('var reviveText = new PIXI.Text({');
+  const reviveEnd = renderer.indexOf('S.layers.overlay.addChild(reviveText);', reviveStart);
+  assert.ok(reviveStart >= 0 && reviveEnd > reviveStart, '找不到死亡倒數 HUD 建立區塊');
+  const reviveHud = renderer.slice(reviveStart, reviveEnd);
+
+  assert.match(renderer, /vitals\.y\s*=\s*8/);
+  assert.match(renderer, /hpText\.y\s*=\s*8\s*\+\s*5/);
+  assert.match(renderer, /mpText\.y\s*=\s*8\s*\+\s*16/);
+  assert.match(reviveHud, /fontSize:\s*24/);
+  assert.match(reviveHud, /reviveText\.y\s*=\s*-104/);
+  assert.match(renderer, /p\.reviveText\.y\s*=\s*world\.y\s*\+\s*p\.root\.y\s*-\s*104/);
+});
+
 test('玩家死亡時紅色視野迷霧由外向中心收縮，復活後恢復黑色暗角', () => {
   const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
   assert.match(renderer, /function drawDeathFog\(k\)/);

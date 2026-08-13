@@ -1369,7 +1369,7 @@ var FIELD_ENEMY_DEATH_CLEAR_DELAY = 2.1; // 野外敵人死亡後保留戰鬥資
 var REVIVE_DELAY = 5.0;        // 死亡復活時間（秒）
 /* 擊殺目標後隔多久才對下一隻出手（秒）。沒有這個間隔的話，一刀清掉一隻就會
    在同一個 tick 轉頭砍下一隻，看起來像瞬移連斬。0＝不等待。 */
-var TARGET_SWITCH_DELAY = 0.4;
+var TARGET_SWITCH_DELAY = 0.6;
 var FIELD_DEATH_STAGE_RETREAT = 10; // 野外死亡退回階段數
 
 // ---- BOSS 高塔（元素 BOSS 以魔法攻擊） ----
@@ -1980,28 +1980,41 @@ var TASKS = [
   { order: 10, name: '裝備鑲嵌任意寶石8顆', type: 'socketCount', count: 8, rewardType: 'gem', rewardParam: '1', rewardQty: 10, rewardLabel: '任意1級寶石×10' },
   { order: 11, name: '裝備任意附魔2次', type: 'enchantCount', count: 2, rewardType: 'book', rewardParam: 'focus', rewardQty: 1, rewardLabel: '專注附魔×1' },
   { order: 12, name: '熔爐裝配任意零件4個', type: 'forgeParts', count: 4, rewardType: 'essence', rewardQty: 50, rewardLabel: '附魔精華+50' },
-  { order: 13, name: '合成寶石1次', type: 'composeCount', count: 1, rewardType: 'gem', rewardParam: '1', rewardQty: 10, rewardLabel: '任意1級寶石×10' },
+  { order: 13, name: '合成寶石2次', type: 'composeCount', count: 2, rewardType: 'gem', rewardParam: '1', rewardQty: 10, rewardLabel: '任意1級寶石×10' },
   { order: 14, name: '挑戰荒漠第40關成功', type: 'stageClear', param: 'desert', count: 40, rewardType: 'equip', rewardParam: '4|1|2', rewardQty: 1, rewardLabel: '任意2太古史詩1級裝備×1' },
   { order: 15, name: '穿上4件史詩裝備', type: 'equipSlots', param: '4|0', count: 4, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
   { order: 16, name: '裝備鑲嵌任意寶石16顆', type: 'socketCount', count: 16, rewardType: 'gem', rewardParam: '1', rewardQty: 15, rewardLabel: '任意1級寶石×15' },
   { order: 17, name: '升級防禦技能「魔法屏障」至5級', type: 'skillLevel', param: 'manaBarrier', count: 5, rewardType: 'skillXp', rewardQty: 50000, rewardLabel: '技能經驗值+50000' },
   { order: 18, name: '生命最大值達5000', type: 'maxHp', count: 5000, rewardType: 'gold', rewardQty: 300000, rewardLabel: '金幣+300000' },
   { order: 19, name: '挑戰荒漠第50關BOSS成功', type: 'stageClear', param: 'desert', count: 50, rewardType: 'equip', rewardParam: '4|50|2', rewardQty: 1, rewardLabel: '任意2太古史詩50級裝備×1' },
-  { order: 20, name: '將全身的裝備替換成50級史詩品質', type: 'equipSlots', param: '4|50', count: 13, rewardType: 'essence', rewardQty: 100, rewardLabel: '附魔精華+100' },
-  { order: 21, name: '擁有5個太古詞條', type: 'ancientCount', count: 6, rewardType: 'essence', rewardQty: 200, rewardLabel: '附魔精華+200' },
-  { order: 22, name: '挑戰荒漠第100關BOSS成功', type: 'stageClear', param: 'desert', count: 100, rewardType: 'equip', rewardParam: '5|100|3', rewardQty: 1, rewardLabel: '任意3太古傳說100級裝備×1' },
-  { order: 23, name: '強化裝備100次', type: 'upgradeCount', count: 100, rewardType: 'essence', rewardQty: 300, rewardLabel: '附魔精華+300' },
-  { order: 24, name: '挑戰荒漠第150關BOSS成功', type: 'stageClear', param: 'desert', count: 150, rewardType: 'equip', rewardParam: '5|150|3', rewardQty: 1, rewardLabel: '任意3太古傳說150級裝備×1' },
-  { order: 25, name: '挑戰高塔BOSS第5層成功', type: 'towerFloor', count: 5, rewardType: 'gem', rewardParam: '2', rewardQty: 15, rewardLabel: '任意2級寶石×15' },
-  { order: 26, name: '將全身的裝備替換成150級傳說品質', type: 'equipSlots', param: '5|150', count: 13, rewardType: 'scrap', rewardQty: 50000, rewardLabel: '裝備碎片+50000' },
-  { order: 27, name: '洗煉裝備100次', type: 'rerollCount', count: 100, rewardType: 'essence', rewardQty: 300, rewardLabel: '附魔精華+300' },
-  { order: 28, name: '升級熔爐任意零件至3級', type: 'forgePartLevel', count: 3, rewardType: 'gold', rewardQty: 2000000, rewardLabel: '金幣+2000000' },
-  { order: 29, name: '挑戰荒漠第200關BOSS成功', type: 'stageClear', param: 'desert', count: 200, rewardType: 'equip', rewardParam: '5|200|3', rewardQty: 1, rewardLabel: '任意3太古傳說200級裝備×1' },
-  { order: 30, name: '升級熔爐任意零件至4級', type: 'forgePartLevel', count: 4, rewardType: 'gold', rewardQty: 2000000, rewardLabel: '金幣+3000000' },
-  { order: 31, name: '挑戰冰原第250關BOSS成功', type: 'stageClear', param: 'Icefield', count: 250, rewardType: 'equip', rewardParam: '5|250|4', rewardQty: 1, rewardLabel: '任意4太古傳說250級裝備×1' },
-  { order: 32, name: '挑戰冰原第300關BOSS成功', type: 'stageClear', param: 'Icefield', count: 300, rewardType: 'equip', rewardParam: '5|300|4', rewardQty: 1, rewardLabel: '任意4太古傳說300級裝備×1' },
-  { order: 33, name: '挑戰沼澤第350關BOSS成功', type: 'stageClear', param: 'swamp', count: 350, rewardType: 'equip', rewardParam: '6|350|4', rewardQty: 1, rewardLabel: '任意4太古神話350級裝備×1' },
-  { order: 34, name: '挑戰沼澤第400關BOSS成功', type: 'stageClear', param: 'swamp', count: 400, rewardType: 'equip', rewardParam: '6|400|4', rewardQty: 1, rewardLabel: '任意4太古神話400級裝備×1' },
-  { order: 35, name: '挑戰亡靈山脈第450關BOSS成功', type: 'stageClear', param: 'undead_mountains', count: 450, rewardType: 'equip', rewardParam: '7|450|4', rewardQty: 1, rewardLabel: '任意4太古創世450級裝備×1' },
-  { order: 36, name: '挑戰亡靈山脈第500關BOSS成功', type: 'stageClear', param: 'undead_mountains', count: 500, rewardType: 'equip', rewardParam: '7|500|4', rewardQty: 1, rewardLabel: '任意4太古創世500級裝備×1' }
+  { order: 20, name: '將4件裝備替換成50級史詩品質', type: 'equipSlots', param: '4|50', count: 4, rewardType: 'essence', rewardQty: 100, rewardLabel: '附魔精華+100' },
+  { order: 21, name: '強化裝備30次', type: 'upgradeCount', count: 30, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
+  { order: 22, name: '將8件裝備替換成50級史詩品質', type: 'equipSlots', param: '4|50', count: 8, rewardType: 'essence', rewardQty: 200, rewardLabel: '附魔精華+200' },
+  { order: 23, name: '強化裝備30次', type: 'upgradeCount', count: 30, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
+  { order: 24, name: '將13件裝備替換成50級史詩品質', type: 'equipSlots', param: '4|50', count: 13, rewardType: 'essence', rewardQty: 400, rewardLabel: '附魔精華+400' },
+  { order: 25, name: '強化裝備40次', type: 'upgradeCount', count: 30, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
+  { order: 26, name: '裝備鑲嵌任意寶石10顆', type: 'socketCount', count: 10, rewardType: 'gem', rewardParam: '1', rewardQty: 40, rewardLabel: '任意1級寶石×40' },
+  { order: 27, name: '擁有5個太古詞條', type: 'ancientCount', count: 6, rewardType: 'essence', rewardQty: 200, rewardLabel: '附魔精華+200' },
+  { order: 28, name: '挑戰荒漠第100關BOSS成功', type: 'stageClear', param: 'desert', count: 100, rewardType: 'equip', rewardParam: '4|100|3', rewardQty: 1, rewardLabel: '任意3太古史詩100級裝備×1' },
+  { order: 20, name: '將4件裝備替換成100級史詩品質', type: 'equipSlots', param: '4|100', count: 4, rewardType: 'essence', rewardQty: 100, rewardLabel: '附魔精華+100' },
+  { order: 21, name: '強化裝備30次', type: 'upgradeCount', count: 30, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
+  { order: 22, name: '將8件裝備替換成100級史詩品質', type: 'equipSlots', param: '4|100', count: 8, rewardType: 'essence', rewardQty: 200, rewardLabel: '附魔精華+200' },
+  { order: 23, name: '強化裝備30次', type: 'upgradeCount', count: 30, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
+  { order: 24, name: '將13件裝備替換成100級史詩品質', type: 'equipSlots', param: '4|100', count: 13, rewardType: 'essence', rewardQty: 400, rewardLabel: '附魔精華+400' },
+  { order: 25, name: '強化裝備40次', type: 'upgradeCount', count: 30, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
+  { order: 26, name: '裝備鑲嵌任意寶石20顆', type: 'socketCount', count: 10, rewardType: 'gem', rewardParam: '1', rewardQty: 40, rewardLabel: '任意1級寶石×40' },
+  { order: 27, name: '強化裝備100次', type: 'upgradeCount', count: 100, rewardType: 'essence', rewardQty: 300, rewardLabel: '附魔精華+300' },
+  { order: 28, name: '挑戰荒漠第150關BOSS成功', type: 'stageClear', param: 'desert', count: 150, rewardType: 'equip', rewardParam: '5|150|3', rewardQty: 1, rewardLabel: '任意3太古傳說150級裝備×1' },
+  { order: 29, name: '挑戰高塔BOSS第5層成功', type: 'towerFloor', count: 5, rewardType: 'gem', rewardParam: '2', rewardQty: 15, rewardLabel: '任意2級寶石×15' },
+  { order: 30, name: '將全身的裝備替換成150級傳說品質', type: 'equipSlots', param: '5|150', count: 13, rewardType: 'scrap', rewardQty: 50000, rewardLabel: '裝備碎片+50000' },
+  { order: 31, name: '洗煉裝備100次', type: 'rerollCount', count: 100, rewardType: 'essence', rewardQty: 300, rewardLabel: '附魔精華+300' },
+  { order: 32, name: '升級熔爐任意零件至3級', type: 'forgePartLevel', count: 3, rewardType: 'gold', rewardQty: 2000000, rewardLabel: '金幣+2000000' },
+  { order: 33, name: '挑戰荒漠第200關BOSS成功', type: 'stageClear', param: 'desert', count: 200, rewardType: 'equip', rewardParam: '5|200|3', rewardQty: 1, rewardLabel: '任意3太古傳說200級裝備×1' },
+  { order: 34, name: '升級熔爐任意零件至4級', type: 'forgePartLevel', count: 4, rewardType: 'gold', rewardQty: 2000000, rewardLabel: '金幣+3000000' },
+  { order: 35, name: '挑戰冰原第250關BOSS成功', type: 'stageClear', param: 'Icefield', count: 250, rewardType: 'equip', rewardParam: '5|250|4', rewardQty: 1, rewardLabel: '任意4太古傳說250級裝備×1' },
+  { order: 36, name: '挑戰冰原第300關BOSS成功', type: 'stageClear', param: 'Icefield', count: 300, rewardType: 'equip', rewardParam: '5|300|4', rewardQty: 1, rewardLabel: '任意4太古傳說300級裝備×1' },
+  { order: 37, name: '挑戰沼澤第350關BOSS成功', type: 'stageClear', param: 'swamp', count: 350, rewardType: 'equip', rewardParam: '6|350|4', rewardQty: 1, rewardLabel: '任意4太古神話350級裝備×1' },
+  { order: 38, name: '挑戰沼澤第400關BOSS成功', type: 'stageClear', param: 'swamp', count: 400, rewardType: 'equip', rewardParam: '6|400|4', rewardQty: 1, rewardLabel: '任意4太古神話400級裝備×1' },
+  { order: 39, name: '挑戰亡靈山脈第450關BOSS成功', type: 'stageClear', param: 'undead_mountains', count: 450, rewardType: 'equip', rewardParam: '7|450|4', rewardQty: 1, rewardLabel: '任意4太古創世450級裝備×1' },
+  { order: 40, name: '挑戰亡靈山脈第500關BOSS成功', type: 'stageClear', param: 'undead_mountains', count: 500, rewardType: 'equip', rewardParam: '7|500|4', rewardQty: 1, rewardLabel: '任意4太古創世500級裝備×1' }
 ];

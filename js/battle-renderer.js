@@ -614,7 +614,7 @@ var BattleRenderer = (function () {
 
     /* 生命／法力條：跟著角色走，畫在腳下（與敵人同一套視覺語言） */
     var vitals = new PIXI.Graphics();
-    vitals.y = 6;
+    vitals.y = 8;
     root.addChild(vitals);
     var hpText = new PIXI.Text({
       text: '',
@@ -624,7 +624,7 @@ var BattleRenderer = (function () {
       }
     });
     hpText.anchor.set(0.5, 0.5);
-    hpText.y = 6 + 5;
+    hpText.y = 8 + 5;
     root.addChild(hpText);
     var mpText = new PIXI.Text({
       text: '',
@@ -634,19 +634,19 @@ var BattleRenderer = (function () {
       }
     });
     mpText.anchor.set(0.5, 0.5);
-    mpText.y = 6 + 16;
+    mpText.y = 8 + 16;
     root.addChild(mpText);
 
     /* 復活倒數：技能與狀態列都收進彈出面板後，倒地資訊只剩畫面上這一條 */
     var reviveText = new PIXI.Text({
       text: '',
       style: {
-        fontFamily: 'sans-serif', fontSize: 13, fontWeight: 'bold',
-        fill: '#ff9b9b', stroke: { color: '#000000', width: 3 }
+        fontFamily: 'sans-serif', fontSize: 24, fontWeight: 'bold',
+        fill: '#ff9b9b', stroke: { color: '#000000', width: 4 }
       }
     });
     reviveText.anchor.set(0.5, 1);
-    reviveText.y = -76;   // 跟著角色縮小後的身高
+    reviveText.y = -104;   // 顯示在角色頭頂上方
     reviveText.visible = false;
     /* 倒數是 HUD，不放進會旋轉的角色 root，也讓死亡迷霧不會蓋掉文字。 */
     S.layers.overlay.addChild(reviveText);
@@ -1860,7 +1860,7 @@ var BattleRenderer = (function () {
     if (p && p.reviveText && p.reviveText.visible) {
       /* reviveText 在 overlay 上，跟著鏡頭中的玩家位置更新但永遠保持水平。 */
       p.reviveText.x = world.x + p.root.x;
-      p.reviveText.y = world.y + p.root.y - 76;
+      p.reviveText.y = world.y + p.root.y - 104;
     }
 
     /* 敵人 */
