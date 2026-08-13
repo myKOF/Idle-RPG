@@ -104,6 +104,10 @@ test('fieldTick 每隔一個波次間隔補一波，不等場上清空', () => {
   context.pickAndCastSkill = () => false;    // 技能層（skills.js）不在本測試的載入清單內
   context.doPlayerAttack = () => false;      // 玩家不出手：只觀察出怪
   context.fieldMonsterAttack = () => false;  // 敵人不出手：不受傷害流程干擾
+  /* 間隔釘成單一值：參數表可以填候選陣列（每波隨機抽），那樣這支測試量到的
+     interval 與模擬層下一波實際用的值會是不同的抽樣，時序假設就不成立。 */
+  context.FIELD_WAVE_SPAWN_INTERVAL = 2;
+  context.ZONE_STAGE_WAVE_PROFILES = { desert: [[1, 9999, 0, 0]] };
 
   const interval = context.fieldWaveIntervalFor(context.G.stage.current, context.G.stage.zone);
   assert.ok(interval > 0);
@@ -174,7 +178,9 @@ test('推進改由擊殺配額觸發：殺滿才過關，沒殺滿不過關', ()
 
 test('波次間隔可依地圖與關卡區分，且表壞掉時退回預設值', () => {
   const context = loadCombatContext();
-  // 表本體由 config/Excel/Zone_Stage_Waves.xlsx 管理，這裡只驗查表行為
+  // 這支只驗查表行為，把預設值釘成單一數值（參數表也可以填候選陣列，另有專門的測試）
+  context.FIELD_WAVE_SPAWN_INTERVAL = 2;
+  // 表本體由 config/Excel/Zone_Stage_Waves.xlsx 管理
   context.ZONE_STAGE_WAVE_PROFILES = {
     desert: [[1, 49, 3, 8], [50, 9999, 1.5, 8]],
     swamp: [[1, 9999, 0.8, 8]]
@@ -196,13 +202,50 @@ test('出怪間隔分兩段：同關內用參數 a、切換關卡後用參數 b'
   const context = loadCombatContext();
   /* 同一關內：一波出完，下一波隔 fieldWaveIntervalFor（表填 0 就退回參數 a）。 */
   context.ZONE_STAGE_WAVE_PROFILES = { desert: [[1, 9999, 0, 0]] };
-  assert.equal(context.fieldWaveIntervalFor(1, 'desert'), context.FIELD_WAVE_SPAWN_INTERVAL,
-    '地圖表填 0＝沿用參數表的 a');
+  context.FIELD_WAVE_SPAWN_INTERVAL = 2.5;
+  assert.equal(context.fieldWaveIntervalFor(1, 'desert'), 2.5, '地圖表填 0＝沿用參數表的 a');
   /* 切換關卡：改用參數 b，且不清場。 */
   context.holdFieldSpawn(context.FIELD_STAGE_SWITCH_DELAY);
   assert.equal(context.FIELD.spawnCd, context.FIELD_STAGE_SWITCH_DELAY);
   assert.notEqual(context.FIELD_STAGE_SWITCH_DELAY, context.FIELD_WAVE_SPAWN_INTERVAL,
     '兩段間隔是各自獨立的參數，預設值不該相同');
+});
+
+test('出怪間隔的 a 可以填一組候選值，每波等機率抽一個', () => {
+  const context = loadCombatContext();
+  context.ZONE_STAGE_WAVE_PROFILES = { desert: [[1, 9999, 0, 0]] };
+  context.FIELD_WAVE_SPAWN_INTERVAL = [1, 2, 3, 5, 7];
+
+  /* 等機率＝把 [0,1) 均分成 N 段，第 k 段對到第 k 個值。
+     用固定的 random 序列逐段驗，比統計分布穩定，也不會偶發性紅。 */
+  const picks = [0.0, 0.19, 0.2, 0.39, 0.4, 0.59, 0.6, 0.79, 0.8, 0.999].map((r) => {
+    context.Math.random = () => r;
+    return context.fieldWaveIntervalFor(1, 'desert');
+  });
+  assert.deepEqual(picks, [1, 1, 2, 2, 3, 3, 5, 5, 7, 7]);
+
+  /* 每一個值都抽得到，而且只會抽到表裡有的值。 */
+  const seen = new Set();
+  for (let i = 0; i < 400; i++) {
+    context.Math.random = () => i / 400;
+    seen.add(context.fieldWaveIntervalFor(1, 'desert'));
+  }
+  assert.deepEqual([...seen].sort((a, b) => a - b), [1, 2, 3, 5, 7]);
+
+  /* 地圖表若指定了自己的秒數，仍然優先於參數表的候選值。 */
+  context.ZONE_STAGE_WAVE_PROFILES = { desert: [[1, 9999, 4.5, 0]] };
+  context.Math.random = () => 0;
+  assert.equal(context.fieldWaveIntervalFor(1, 'desert'), 4.5);
+});
+
+test('候選值格式壞掉時退回安全值，不會變成每個 tick 出怪', () => {
+  const context = loadCombatContext();
+  context.ZONE_STAGE_WAVE_PROFILES = { desert: [[1, 9999, 0, 0]] };
+  [[], [0, -1], ['x'], null].forEach((bad) => {
+    context.FIELD_WAVE_SPAWN_INTERVAL = bad;
+    const v = context.fieldWaveIntervalFor(1, 'desert');
+    assert.ok(v >= 0.2, '壞值 ' + JSON.stringify(bad) + ' 應該退回安全值，實際 ' + v);
+  });
 });
 
 test('出怪間隔不再受移動速度影響（純定值）', () => {

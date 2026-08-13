@@ -1363,13 +1363,16 @@ var FIELD_DEATH_DESPAWN_DELAY = 3.0;
 var FIELD_ENEMY_ENTER_DELAY = 0.45;
 var FIELD_ENEMY_ENTER_STAGGER = 0.08; // 同一波每隻再錯開一點，不要整排同時抵達
 
-var FIELD_WAVE_SPAWN_INTERVAL = 2.0; // 同一關內每一波的出怪間隔（秒）＝參數表 a；地圖／關卡可用 ZONE_STAGE_WAVE_PROFILES 覆蓋
+/* 同一關內每一波的出怪間隔（秒）＝參數表「出怪間隔」的 a。
+   可以是單一數值，也可以是一組候選值（參數表填 {0.75,1,2}）：是陣列就每波等機率抽一個。
+   地圖／關卡要個別指定時用 ZONE_STAGE_WAVE_PROFILES 覆蓋（該表填 0＝沿用這裡）。 */
+var FIELD_WAVE_SPAWN_INTERVAL = [0.75, 1, 1.5, 1.75, 2, 3, 4, 5];
 var FIELD_MAX_LIVE_ENEMIES = 8;      // 場上同時存在的敵人上限預設值（同上表可逐地圖／關卡覆寫）
 var FIELD_ENEMY_DEATH_CLEAR_DELAY = 2.1; // 野外敵人死亡後保留戰鬥資訊時間（秒）；須長於 2 秒傷害飄字動畫
 var REVIVE_DELAY = 5.0;        // 死亡復活時間（秒）
 /* 擊殺目標後隔多久才對下一隻出手（秒）。沒有這個間隔的話，一刀清掉一隻就會
    在同一個 tick 轉頭砍下一隻，看起來像瞬移連斬。0＝不等待。 */
-var TARGET_SWITCH_DELAY = 0.6;
+var TARGET_SWITCH_DELAY = 1;
 var FIELD_DEATH_STAGE_RETREAT = 10; // 野外死亡退回階段數
 
 // ---- BOSS 高塔（元素 BOSS 以魔法攻擊） ----
