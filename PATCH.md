@@ -1,5 +1,15 @@
 # PATCH.md
 
+## UI 功能：物傷、魔傷、物承、魔承 Tips 實時刷新機制（Antigravity 2026-08-13）
+
+- **實時 Tooltip 內文刷新**：
+  - 新增/擴充 `refreshOpenStatTooltip()` 函式，支援帶有 `data-tt-title` 與 `data-tt-desc` 屬性的提示框，於玩家 Hover 浮動提示開啟期間實時動態刷新 Tooltip 內文。
+  - 將 `refreshOpenStatTooltip()` 加入 `updateUi()` 主渲染迴圈每 tick 執行，解決先前物理傷害 (物傷)、魔法傷害 (魔傷)、物理總承傷 (物承)、魔法總承傷 (魔承) Tooltip 僅在 Hover 瞬間開啟時讀取一次快照、而在戰鬥血量/護盾/增益變動時無法實時更新的問題。
+  - 使用 `setHtmlIfChanged` 進行無縫內文替換，無文字變動時不會引發額外 DOM 操作或版面重新計算。
+- **單元測試與 DoD 驗證**：
+  - 於 `tests/elem-dmg-tooltip.test.cjs` 新增實時 Tooltip 刷新單元測試，模擬戰鬥扣血情境驗證 `sk-tooltip` 在提示開啟狀態下可自動即時連動刷新（2/2 PASS）。
+  - `node tools/build_check.cjs` 266 個檔案語法與構建檢查 100% OK 通過。
+
 ## UI 樣式：背包頂部工具列按鈕與篩選菜單單行防換行佈局（Antigravity 2026-08-12）
 
 - **按鈕與菜單單行不換行**：

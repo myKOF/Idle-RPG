@@ -81,3 +81,74 @@ test('頂欄物傷與魔傷浮動提示正確讀取 st.elemDmgUp 與 st.dmgVsEle
   assert.match(magicDesc, /對屬性敵最大加成：<\/span>60\.0%/);
   assert.match(magicDesc, /屬性傷害最大提升：<\/span>233\.0%/);
 });
+
+test('refreshOpenStatTooltip 在提示開啟時能實時刷新物傷、魔傷、物承、魔承 Tooltip 內容', () => {
+  const createMockParentNode = () => {
+    const attrs = {};
+    return {
+      hasAttribute: (attr) => attr in attrs,
+      getAttribute: (attr) => attrs[attr] || null,
+      setAttribute: (attr, val) => { attrs[attr] = val; },
+      removeAttribute: (attr) => { delete attrs[attr]; },
+      classList: { contains: () => false }
+    };
+  };
+
+  const physAnchor = createMockParentNode();
+  const magicAnchor = createMockParentNode();
+  const physDmgAnchor = createMockParentNode();
+  const magicDmgAnchor = createMockParentNode();
+
+  const skTooltip = {
+    id: 'sk-tooltip',
+    style: { display: 'block' },
+    innerHTML: ''
+  };
+
+  const domMap = {
+    'sk-tooltip': skTooltip,
+    'r-phys-absorb': { parentNode: physAnchor },
+    'r-magic-absorb': { parentNode: magicAnchor },
+    'r-phys-dmg': { parentNode: physDmgAnchor },
+    'r-magic-dmg': { parentNode: magicDmgAnchor }
+  };
+
+  const ctx = {
+    console,
+    location: { hostname: 'localhost' },
+    UI: { dirty: {}, tooltipAnchor: physAnchor },
+    document: {
+      getElementById: (id) => domMap[id] || null,
+      querySelector: () => null,
+      querySelectorAll: () => [],
+      documentElement: { contains: () => true }
+    }
+  };
+  ctx.window = ctx;
+  vm.createContext(ctx);
+  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js', 'js/ui.js'].forEach((file) => {
+    vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), ctx, { filename: file });
+  });
+
+  ctx.UI.tooltipAnchor = physAnchor;
+
+  let currentHp = 1000;
+  ctx.uiHeaderPanelSnapshot = () => ({ stats: { hp: 10000, atk: 100, def: 50, level: 1 } });
+  ctx.uiBattlePanelSnapshot = () => ({ field: { player: { hp: currentHp, shield: 200 } } });
+
+  // 第一次算：當前血量 1,000
+  ctx.updateDmgAbsorb();
+  ctx.refreshOpenStatTooltip();
+
+  assert.ok(skTooltip.innerHTML.includes('1,000'), '內文應包含當前血量 1,000');
+  assert.ok(skTooltip.innerHTML.includes('200'), '內文應包含當前護盾 200');
+
+  // 戰鬥扣血變 500
+  currentHp = 500;
+  ctx.updateDmgAbsorb();
+  ctx.refreshOpenStatTooltip();
+
+  // 驗證內文實時刷新為 500
+  assert.ok(skTooltip.innerHTML.includes('500'), '內文應實時刷新為當前血量 500');
+});
+

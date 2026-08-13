@@ -5580,6 +5580,7 @@ function uiTick() {
   if (isLocal) {
     updateDmgAbsorb();
   }
+  refreshOpenStatTooltip();
 }
 
 // 本地測試服：實時更新物理與魔法傷害、總承傷及明細提示 (Tooltip)
@@ -7189,13 +7190,17 @@ function showEnemyBuffTooltip(anchorEl) {
    showStatTooltip，等於滑鼠停在資源圖示上時，提示每秒被重建並重新定位五次，
    每次定位讀三次版面。錨點是同一顆圖示、沒有移動，位置根本不需要重算；
    會變的只有數字。setHtmlIfChanged 讓數字沒變時連 DOM 都不寫。 */
-function refreshOpenResourceTooltip() {
+function refreshOpenStatTooltip() {
   var tip = $id('sk-tooltip');
   var anchorEl = UI.tooltipAnchor;
-  if (!tip || tip.style.display !== 'block' || !anchorEl || !anchorEl.classList ||
-    !anchorEl.classList.contains('res') || !document.documentElement.contains(anchorEl)) return;
-  setHtmlIfChanged(tip, statTooltipHTML(anchorEl.getAttribute('data-tt-title') || '',
-    anchorEl.getAttribute('data-tt-desc') || ''));
+  if (!tip || tip.style.display !== 'block' || !anchorEl || !document.documentElement.contains(anchorEl)) return;
+  if ((anchorEl.getAttribute && anchorEl.getAttribute('data-tt-title')) || (anchorEl.classList && anchorEl.classList.contains('res'))) {
+    setHtmlIfChanged(tip, statTooltipHTML(anchorEl.getAttribute('data-tt-title') || '',
+      anchorEl.getAttribute('data-tt-desc') || ''));
+  }
+}
+function refreshOpenResourceTooltip() {
+  refreshOpenStatTooltip();
 }
 function refreshBuffTooltip() {
   var tip = $id('sk-tooltip');
