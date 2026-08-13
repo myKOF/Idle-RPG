@@ -17,10 +17,9 @@ function loadContext() {
   return context;
 }
 
-function expectedReduction(context, defense, attackerLevel, attackerAttack) {
-  const gap = Math.max(0, attackerAttack - defense);
-  return (1 + gap) * defense /
-    (defense + context.DEF_REDUCTION_CONST + context.DEF_REDUCTION_PER_LEVEL * attackerLevel);
+function expectedPlayerDamage(context, attack, defense, attackerLevel) {
+  return Math.max(0, attack - defense) *
+    (1 - context.defReduction(defense, attackerLevel));
 }
 
 function resolve(context, attackerCfg, defenderCfg) {
@@ -33,19 +32,19 @@ function resolve(context, attackerCfg, defenderCfg) {
   return result.dmg;
 }
 
-test('防禦減傷依同類型攻防差值計算，且差值下限為 0', () => {
+test('我方承傷先扣同類型防禦，再套用舊版防禦減傷率', () => {
   const context = loadContext();
   const defense = 100;
   const level = 10;
 
   assert.equal(
-    context.playerDefReduction(defense, level, 50),
-    context.playerDefReduction(defense, level, 0),
+    context.playerDamageAfterDefense(50, defense, level),
+    0,
     '攻擊低於防禦時不得產生負的攻防差值'
   );
   assert.equal(
-    context.playerDefReduction(defense, level, 125),
-    expectedReduction(context, defense, level, 125)
+    context.playerDamageAfterDefense(125, defense, level),
+    expectedPlayerDamage(context, 125, defense, level)
   );
 });
 
@@ -68,8 +67,8 @@ test('both 攻擊分別使用物理攻擊／物防與魔法攻擊／魔防', () 
     isPlayer: true
   });
   const expected = Math.round(
-    physicalAttack * (1 - expectedReduction(context, physicalDefense, attackerLevel, physicalAttack)) +
-    magicAttack * (1 - expectedReduction(context, magicDefense, attackerLevel, magicAttack))
+    expectedPlayerDamage(context, physicalAttack, physicalDefense, attackerLevel) +
+    expectedPlayerDamage(context, magicAttack, magicDefense, attackerLevel)
   );
 
   assert.equal(actual, expected);
@@ -90,6 +89,6 @@ test('敵人承受傷害仍使用舊版防禦減傷公式', () => {
 
   assert.equal(actual, expected);
   assert.notEqual(actual, Math.round(
-    attack * (1 - context.playerDefReduction(defense, attackerLevel, attack))
-  ), '敵方不應套用我方新版攻防差值公式');
+    expectedPlayerDamage(context, attack, defense, attackerLevel)
+  ), '敵方不應套用我方新增的先扣防禦層');
 });
