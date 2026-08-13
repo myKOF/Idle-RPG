@@ -55,3 +55,13 @@ test('Canvas 玩家護盾條以護盾最大值為分母，不以最大生命鎖�
   assert.match(renderer, /sh \/ Math\.max\(1, shieldMax\)/);
   assert.doesNotMatch(renderer, /sh \/ hpMax/);
 });
+
+test('Canvas 玩家血條、法力條與護盾條位於敵人及所有浮字之上', () => {
+  assert.match(renderer, /world\.addChild\(zone\); world\.addChild\(entity\); world\.addChild\(fx\); world\.addChild\(floatLayer\);\s*world\.addChild\(playerHud\);/);
+  assert.match(renderer, /playerHud:\s*playerHud/);
+  assert.match(renderer, /S\.layers\.playerHud\.addChild\(vitals\)/);
+  assert.match(renderer, /S\.layers\.playerHud\.addChild\(hpText\)/);
+  assert.match(renderer, /S\.layers\.playerHud\.addChild\(mpText\)/);
+  assert.match(renderer, /hud:\s*S\.layers\.playerHud/);
+  assert.match(renderer, /if \(p\.hud\) \{\s*p\.hud\.x = p\.root\.x;\s*p\.hud\.y = p\.root\.y;/);
+});
