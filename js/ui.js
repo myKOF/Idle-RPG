@@ -3118,7 +3118,8 @@ function renderBattle() {
     renderPlayerShieldBar('pv', p, st);
     setHtmlIfChanged($id('pv-hptext'), fmt(Math.max(0, p.hp)) + playerShieldText(p) + ' / ' + fmt(st.hp));
     // 倒數一律扣掉「快照拍照到現在」經過的時間，才會是逐幀前進的碼錶
-    var reviveLeft = uiCountdownRemain(p.reviveCd, battleSnapshot.gt);
+    /* 復活倒數在 FIELD 上，不在玩家實體上（見 js/combat.js onPlayerFieldDeath）。 */
+    var reviveLeft = uiCountdownRemain(field.reviveCd, battleSnapshot.gt);
     setTextIfChanged($id('pv-status'), reviveLeft > 0 ? ('💀 復活中 ' + fmt1(reviveLeft) + 's') : entStatus(p));
     renderMpSkill(p, 'pv', st, battleSnapshot.gt);
   }

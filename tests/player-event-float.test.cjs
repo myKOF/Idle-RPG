@@ -77,6 +77,23 @@ test('我方受到的傷害帶負號，回復類飄字不得用紅色', () => {
   assert.match(playerBlock, /cls\.indexOf\('mp'\) >= 0[\s\S]*?#5fb2ff/);
 });
 
+test('復活倒數讀 FIELD.reviveCd，不是玩家實體上的欄位', () => {
+  /* 這是 2026-08-13 的實際 bug：模擬層寫 FIELD.reviveCd，顯示層卻讀
+     field.player.reviveCd——玩家實體（newPlayerEntity）根本沒有這個欄位，
+     於是 dead 永遠是 false，倒地動作與 5 秒倒數都不會出現，而且不報錯。 */
+  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
+  const uiSrc = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
+  const combatSrc = fs.readFileSync(path.join(root, 'js', 'combat.js'), 'utf8');
+
+  assert.match(combatSrc, /FIELD\.reviveCd = REVIVE_DELAY;/, '前提：倒數寫在 FIELD 上');
+  assert.doesNotMatch(combatSrc, /player\.reviveCd\s*=/, '玩家實體上不該有 reviveCd');
+
+  assert.match(renderer, /Number\(field\.reviveCd\) \|\| 0/);
+  assert.doesNotMatch(renderer, /fp\.reviveCd/);
+  assert.match(uiSrc, /uiCountdownRemain\(field\.reviveCd, battleSnapshot\.gt\)/);
+  assert.doesNotMatch(uiSrc, /uiCountdownRemain\(p\.reviveCd/);
+});
+
 test('飄字不重疊：新的字會避開畫面上還在的字', () => {
   const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
   assert.match(renderer, /function placeFloatNode\(node, baseX, baseY\)/);

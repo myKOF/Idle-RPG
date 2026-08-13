@@ -785,8 +785,10 @@ var BattleRenderer = (function () {
     /* 玩家：復活倒數 → 倒地；沒有活敵 → 走路推進 */
     var p = S.player;
     if (p) {
-      var fp = field.player || {};
-      var reviveLeft = Number(fp.reviveCd) || 0;
+      /* 復活倒數住在 FIELD 上（js/combat.js：FIELD.reviveCd = REVIVE_DELAY），
+         不在玩家實體上。舊版讀 field.player.reviveCd，那個欄位根本不存在，
+         於是 dead 永遠是 false——倒地動作與倒數都不會出現。 */
+      var reviveLeft = Number(field.reviveCd) || 0;
       var dead = reviveLeft > 0;
       if (dead !== p.dead) {
         /* 倒地與起身都要有過程：瞬間翻 90 度看起來像穿模，不像被打倒。
@@ -2237,7 +2239,13 @@ var BattleRenderer = (function () {
     _debug: function () {
       var p = S.player;
       return {
-        player: p ? { x: Math.round(p.wx), y: Math.round(p.wy), walking: !!p.walking, facing: p.facing, anim: p.curAnim } : null,
+        player: p ? {
+          x: Math.round(p.wx), y: Math.round(p.wy), walking: !!p.walking, facing: p.facing, anim: p.curAnim,
+          /* 倒地驗證用：dead 是否觸發、倒下進度、實際旋轉角度、倒數文字 */
+          dead: !!p.dead, fallK: +(p.fallK || 0).toFixed(2),
+          rotDeg: Math.round((p.root.rotation || 0) * 180 / Math.PI),
+          reviveText: (p.reviveText && p.reviveText.visible) ? String(p.reviveText.text) : null
+        } : null,
         home: playerPos(),
         entities: Object.keys(S.entities).map(function (id) {
           var e = S.entities[id];
