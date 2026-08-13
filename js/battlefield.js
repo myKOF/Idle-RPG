@@ -421,3 +421,97 @@ function bfAreaTargets(primary, enemies, shape) {
 
 /* 全場技。 */
 function bfAllTargets(enemies) { return bfLiveList(enemies); }
+
+/* ---- 新版技能幾何（2026-08-13 技能改造）----
+   新版技能以「米」描述距離（設計基準：近戰攻擊距離＝5 米），
+   換算恆等式：1 米 ＝ 近戰攻擊距離 ÷ SG 基準米數。調整 BF_MELEE_RANGE 時比例自動跟隨。
+   ⚠️ 所有查詢對「沒有座標的實體」（高塔 BOSS）一律退化為單體語意：
+   由呼叫端先以 bfPos(primary) 判斷幾何是否可用，不可用時只打主目標。 */
+var BF_MELEE_METERS = 5; // 設計文檔的近戰距離假設（米）
+function bfMeterPx(m) { return (Number(m) || 0) * bfMeleeRange() / BF_MELEE_METERS; }
+
+/* 我方指向某實體的方位角（弧度）；無座標回傳 null。 */
+function bfAngleTo(ent) {
+  var p = bfPos(ent);
+  if (!p) return null;
+  var c = bfPlayerPos();
+  var dx = p.x - c.x, dy = p.y - c.y;
+  if (dx * dx + dy * dy < 0.000001) return 0;
+  return Math.atan2(dy, dx);
+}
+
+/* 直線（貫穿）命中：從我方出發、沿 angle 方向長 lenPx 的線段，
+   命中「身體圓與線段相交」的所有存活敵人，依線上投影距離由近到遠回傳。
+   halfWidthPx 為線的半寬（預設 0＝細線，僅靠敵人體型半徑判定）。 */
+function bfLineTargets(angle, lenPx, enemies, halfWidthPx) {
+  if (angle === null || angle === undefined || !(lenPx > 0)) return [];
+  var hw = Math.max(0, Number(halfWidthPx) || 0);
+  var c = bfPlayerPos();
+  var ux = Math.cos(angle), uy = Math.sin(angle);
+  var deco = [];
+  var live = bfLiveList(enemies);
+  for (var i = 0; i < live.length; i++) {
+    var p = bfPos(live[i]);
+    if (!p) continue;
+    var dx = p.x - c.x, dy = p.y - c.y;
+    var along = dx * ux + dy * uy;                    // 線上投影距離
+    var r = bfEntityRadius(live[i]) + hw;
+    if (along < -r || along > lenPx + r) continue;    // 線段前後範圍外
+    var clamped = Math.max(0, Math.min(lenPx, along));
+    var cx = c.x + ux * clamped, cy = c.y + uy * clamped;
+    var ox = p.x - cx, oy = p.y - cy;
+    if (Math.sqrt(ox * ox + oy * oy) > r) continue;   // 離線段最近點太遠
+    deco.push({ ent: live[i], d: along });
+  }
+  deco.sort(function (a, b) { return a.d - b.d; });
+  return deco.map(function (x) { return x.ent; });
+}
+
+/* 扇形命中：以我方為圓心、centerAngle 為中軸、全張角 spreadDeg（度）、半徑 rangePx，
+   回傳扇形內的存活敵人（依距離由近到遠）。 */
+function bfConeTargets(centerAngle, spreadDeg, rangePx, enemies) {
+  if (centerAngle === null || centerAngle === undefined) return [];
+  var half = Math.max(0, Number(spreadDeg) || 0) * Math.PI / 360; // 全張角的一半（弧度）
+  var deco = [];
+  var live = bfLiveList(enemies);
+  for (var i = 0; i < live.length; i++) {
+    var ent = live[i];
+    var ang = bfAngleTo(ent);
+    if (ang === null) continue;
+    var diff = Math.abs(ang - centerAngle);
+    if (diff > Math.PI) diff = Math.PI * 2 - diff;
+    if (diff > half) continue;
+    var d = bfEntityDistance(ent);
+    if (rangePx > 0 && d > rangePx) continue;
+    deco.push({ ent: ent, d: d });
+  }
+  deco.sort(function (a, b) { return a.d - b.d; });
+  return deco.map(function (x) { return x.ent; });
+}
+
+/* 離 from（實體）最近的至多 count 個「其他」存活敵人（依邊緣距離）；
+   maxGapPx > 0 時只收在該距離內的。from 無座標時退化為「離我方最近」排序。 */
+function bfNearestOthers(from, enemies, count, maxGapPx) {
+  var live = bfLiveList(enemies);
+  var cands = [];
+  for (var i = 0; i < live.length; i++) if (live[i] !== from) cands.push(live[i]);
+  if (!cands.length || !(count > 0)) return [];
+  var useGap = from && bfPos(from);
+  var deco = cands.map(function (ent) {
+    return { ent: ent, d: useGap ? bfEntityGap(from, ent) : bfEntityDistance(ent), r: Math.random() };
+  });
+  deco.sort(function (a, b) { return (a.d - b.d) || (a.r - b.r); });
+  var out = [];
+  for (var j = 0; j < deco.length && out.length < count; j++) {
+    if (maxGapPx > 0 && deco[j].d > maxGapPx) break; // 已依距離排序，超出即可停
+    out.push(deco[j].ent);
+  }
+  return out;
+}
+
+/* 以某實體為中心、半徑 rPx 的圓內所有存活敵人（含中心實體自己）。 */
+function bfTargetsAround(center, enemies, rPx) {
+  var p = bfPos(center);
+  if (!p) return center && center.hp > 0 ? [center] : [];
+  return bfEnemiesInArea({ x: p.x, y: p.y, r: Math.max(0, Number(rPx) || 0) }, bfLiveList(enemies));
+}

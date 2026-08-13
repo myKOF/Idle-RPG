@@ -195,10 +195,12 @@ function towerTick(dt) {
       if (p.hp <= 0) { endTowerFight(false, 'death'); return; } // 自傷技能
     }
     // 潛力【極速之力】：施放期間以倍率放大攻擊頻率（突破 5 次/秒上限）
+    // 新版技能【狂風斬】攻速乘算與【暴風之舞】普攻暫停：與 combat.js 野外掛點鏡射
     p.atkCd -= dt * slowFactor(p) * (1 + buffVal(p, 'aspdUp') / 100) *
       (typeof potentialVelocityFactor === 'function' ? potentialVelocityFactor(p, st) : 1) *
-      (typeof legendaryAttackSpeedMultiplier === 'function' ? legendaryAttackSpeedMultiplier(p, st) : 1);
-    if (p.atkCd <= 0) {
+      (typeof legendaryAttackSpeedMultiplier === 'function' ? legendaryAttackSpeedMultiplier(p, st) : 1) *
+      (typeof skill2AspdFactor === 'function' ? skill2AspdFactor(p) : 1);
+    if (p.atkCd <= 0 && !((typeof skill2StormActive === 'function') && skill2StormActive())) {
       var res = doPlayerAttack(p, b, 'tb-float');
       TOWER.dmgDealt += Math.max(0, (res.dmg || 0));
       p.atkCd += 1 / st.aspd;

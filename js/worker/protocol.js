@@ -11,7 +11,11 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-/* v18（2026-08-05 主線任務系統）：PANEL_KEYS 新增 task（任務總覽投影）；
+/* v19（2026-08-13 新版主動技能系統）：新增指令 skill2.learn／skill2.downgrade
+   （6 群組 × 7 階的新版技能——升級花金幣、階層循序解鎖；定義表 SKILLS2 在共載檔
+   js/skills2.js，兩端讀同一張表，故名稱／說明／費用公式**不進協議**；skills 面板
+   快照新增 skills2 欄位＝{ tierMax, levels }，僅投影會變動的各階等級），88 → 90。
+   v18（2026-08-05 主線任務系統）：PANEL_KEYS 新增 task（任務總覽投影）；
    TICK_VIEW_KEYS 新增 taskIdx / taskProg / taskReady（戰鬥區任務快捷列用的三個純量，
    任務名稱與獎勵文字由主執行緒讀共載的 TASKS 表——js/data.js，不隨 tick 傳送）；
    新增指令 task.claim（領取當前任務獎勵並前進到下一個），87 → 88。
@@ -21,7 +25,7 @@
    v16：新增 newforge.upgradePart（熔爐零件升級），86 → 87
    v15（2026-08-02 詞條規則外送）：equip 面板新增 affixRules（每種詞條的可用部位與
    品質門檻，取自 AFFIX_POOL）。任何「想洗出某條詞條」的一方不必再自己抄一份部位清單。 */
-var WORKER_PROTOCOL_VERSION = 18;
+var WORKER_PROTOCOL_VERSION = 19;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -238,6 +242,12 @@ var COMMANDS = {
   'skill.equipLoadout':    { fn: 'equipSkillToLoadout', args: { id: 'str' },                      dirty: ['skills', 'battle'] },
   'skill.unequipLoadout':  { fn: 'unequipSkillFromLoadout', args: { id: 'str' },                  dirty: ['skills', 'battle'] },
   'skill.reorderLoadout':  { fn: null,                  args: { from: 'int', to: 'int' },         dirty: ['skills', 'battle'] },
+
+  /* -- 新版技能群組（v19，js/skills2.js）--
+     group 是群組定義鍵（SKILLS2 的鍵）、tier 是階索引 0~6；裝載沿用
+     skill.equipLoadout／skill.unequipLoadout（id 帶 'sg:' 前綴，比照 'potential:'）。 */
+  'skill2.learn':          { fn: 'skills2Learn',        args: { group: 'str', tier: 'int' }, limit: { tier: { min: 0, max: 6 } }, dirty: ['skills', 'header'] },
+  'skill2.downgrade':      { fn: 'skills2Downgrade',    args: { group: 'str', tier: 'int' }, limit: { tier: { min: 0, max: 6 } }, dirty: ['skills', 'header'] },
 
   /* -- 天賦與潛能 --
      id 是天賦定義鍵（def.id），不是實例 id，不需要解析成物件。 */

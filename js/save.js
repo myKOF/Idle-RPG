@@ -686,6 +686,33 @@ function migrateSave(data) {
     data._skillPointRepairNotice = '技能投入 ' + spSpentAll + ' 點超過總點數上限，可用技能點已保護為 0；既有技能未刪除';
   }
   delete data.player.skillPointBudget; // 改制後不再使用（新點數權威 = skillMastery）
+  /* ---- 新版技能群組（skills2）結構常態化（2026-08-13，冪等）----
+     等級一律整數並夾在 0..SG_TIER_MAX_LV；陣列長度補齊至階數；
+     「前一階至少 Lv.1 才解鎖下一階」的門檻在讀檔時重新落實（手改存檔／未來調表防護）。
+     未知群組 id 保留不動（表改名時不吃資料）；裝載欄僅清掉指向未知群組的 'sg:' 鍵。 */
+  if (data.player.skills2 && data.player.skills2.levels && typeof SKILLS2 !== 'undefined') {
+    var sgLevels = data.player.skills2.levels;
+    for (var sgGid in sgLevels) {
+      var sgDef2 = SKILLS2[sgGid];
+      if (!sgDef2 || !Array.isArray(sgLevels[sgGid])) continue;
+      var sgArr = sgLevels[sgGid];
+      var sgMax = (typeof SG_TIER_MAX_LV === 'number') ? SG_TIER_MAX_LV : 10;
+      for (var sgI = 0; sgI < sgDef2.tiers.length; sgI++) {
+        var sgV = Math.floor(Number(sgArr[sgI]) || 0);
+        if (!isFinite(sgV)) sgV = 0;
+        sgArr[sgI] = Math.max(0, Math.min(sgMax, sgV));
+      }
+      sgArr.length = sgDef2.tiers.length;
+      if (sgArr[0] < 1) sgArr[0] = 1; // 第 1 階預設開啟（先保底，再做解鎖級聯）
+      for (sgI = 1; sgI < sgDef2.tiers.length; sgI++) if (sgArr[sgI - 1] < 1) sgArr[sgI] = 0;
+    }
+    if (Array.isArray(data.player.loadout)) {
+      data.player.loadout = data.player.loadout.filter(function (loId) {
+        if (typeof loId !== 'string' || loId.indexOf('sg:') !== 0) return true;
+        return !!SKILLS2[loId.slice(3)];
+      });
+    }
+  }
   /* ---- 融合寶石「融合次數」改為世代制（2026-07-09 修正）----
      舊定義 fusions = 融合事件總數（兩顆融合1次的再融合 → 3，玩家預期 2）。
      新定義 fusions = 世代（max+1），另補 leaves = 素材 5 階總數（拆解成本用）。
