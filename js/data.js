@@ -1341,7 +1341,7 @@ var BF_CONTACT_DIST = 46;      // 走到這麼近就停（接觸）
    也就拉不出「後面的追兵一隻一隻趕上來」的隊形。 */
 var BF_PLAYER_SPEED = 300;     // 我方移動速度（追擊與空場推進共用）
 var BF_ENEMY_SPEED = 210;      // 敵人逼近速度
-var BF_MELEE_RANGE = 62;       // 近戰攻擊距離（雙方共用）
+var BF_MELEE_RANGE = 50;       // 近戰攻擊距離（雙方共用；只比停止距離 46 多一點＝真的貼上才打得到）
 var BF_RANGED_RANGE = 320;     // 魔法系敵人的攻擊距離
 var BF_BODY_RADIUS = 20;       // 一般敵人的體型半徑
 var BF_BOSS_RADIUS = 52;       // BOSS 體型半徑（邊緣較早進入接觸距離）

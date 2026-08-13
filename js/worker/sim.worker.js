@@ -12,11 +12,11 @@
 
 importScripts('protocol.js?v=18', 'shim.js');
 importScripts(
-  '../util.js', '../data.js?v=20260813-speeds-split', '../status.js?v=20260811-status-shield-stack', '../formula.js?v=20260813-speeds-split', '../battlefield.js?v=20260813-speeds-split', '../stats.js',
+  '../util.js', '../data.js?v=20260813-melee-tighten', '../status.js?v=20260811-status-shield-stack', '../formula.js?v=20260813-melee-tighten', '../battlefield.js?v=20260813-melee-tighten', '../stats.js',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260813-speeds-split', '../talents.js?v=20260811-loadout-cap-clamp',
+  '../skills.js?v=20260813-melee-tighten', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260811-loadout-cap-clamp', '../special_rules.js',
-  '../combat.js?v=20260813-speeds-split', '../legendary.js', '../potential.js', '../tower.js',
+  '../combat.js?v=20260813-melee-tighten', '../legendary.js', '../potential.js', '../tower.js',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260811-loadout-cap-clamp',
   '../tasks.js'
 );

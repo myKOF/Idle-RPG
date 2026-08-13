@@ -184,7 +184,7 @@ var BattleRenderer = (function () {
      而且這是自動戰鬥、玩家不用瞄準，看不出來。
 
      緩衝長度要蓋得住最大的到達間隔（實測 300ms），否則會播到沒有資料的地方。 */
-  var POS_BUFFER_MS = 360;
+  var POS_BUFFER_MS = 240;
   var POS_MAX_EXTRAP_MS = 240;   // 資料斷了才短暫外推，避免整個畫面凍住
   var POS_KEEP = 16;             // 每個實體保留幾個取樣（5Hz × 16 ≈ 3 秒）
 
@@ -1458,6 +1458,10 @@ var BattleRenderer = (function () {
     /* 背景分頁不畫特效（與 DOM 版 vfxSetEnabled(false) 同精神）；
        setTimeout 排進來的延遲段也會走到這裡被擋掉。 */
     if (documentHidden()) return;
+    /* 事件要和畫面走同一個時鐘：位置是延後 POS_BUFFER_MS 播放的，
+       特效若照原速播，就會在「敵人畫面上還沒走到」的時候先打出來——
+       看起來就是隔空攻擊。延遲量與位置緩衝相同，兩者必定對齊。 */
+    if (!spec._buffered) { spec._buffered = true; spec.delayMs = (spec.delayMs || 0) + POS_BUFFER_MS; }
     var baseDelay = Math.max(0, spec.delayMs || 0);
     if (baseDelay > 0) {
       setTimeout(function () { spec.delayMs = 0; onVfx(spec); }, baseDelay);
@@ -1651,10 +1655,12 @@ var BattleRenderer = (function () {
   function onFloat(ev) {
     if (!S.ready || !ev) return;
     if (documentHidden()) return;   // 背景分頁：ui.js 已改走「只記最新」路徑，這裡擋 setTimeout 殘留
+    /* 與特效同理：飄字要落在「畫面上那一刻」的實體身上（見 onVfx 的說明）。 */
+    if (!ev._buffered) { ev._buffered = true; ev.delayMs = (ev.delayMs || 0) + POS_BUFFER_MS; }
     var delay = Math.max(0, ev.delayMs || 0);
     if (delay > 0) {
       setTimeout(function () {
-        onFloat({ elId: ev.elId, text: ev.text, cls: ev.cls, damageValue: ev.damageValue });
+        onFloat({ elId: ev.elId, text: ev.text, cls: ev.cls, damageValue: ev.damageValue, _buffered: true });
       }, delay);
       return;
     }

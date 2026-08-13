@@ -47,7 +47,7 @@ function bfContactDist() { return bfNum('BF_CONTACT_DIST', 46); }     // 走到�
 function bfPlayerSpeed() { return bfNum('BF_PLAYER_SPEED', 300); }
 /* 敵人跑速是獨立的值，不由我方換算——兩邊要能分開調。 */
 function bfEnemySpeed() { return bfNum('BF_ENEMY_SPEED', 210); }
-function bfMeleeRange() { return bfNum('BF_MELEE_RANGE', 62); }       // 近戰攻擊距離
+function bfMeleeRange() { return bfNum('BF_MELEE_RANGE', 50); }       // 近戰攻擊距離
 function bfRangedRange() { return bfNum('BF_RANGED_RANGE', 320); }    // 魔法系敵人的攻擊距離
 function bfBodyRadius() { return bfNum('BF_BODY_RADIUS', 20); }
 function bfBossRadius() { return bfNum('BF_BOSS_RADIUS', 52); }
@@ -240,8 +240,8 @@ function bfTickPlayer(enemies, dt, preferred) {
      速度看起來忽快忽慢。改成：站著時要真的快脫離射程才起步，一旦起步就
      一路跑進內側才停。 */
   var d = bfEntityDistance(target);
-  var startAt = bfMeleeRange() * 0.95;
-  var stopAt = bfMeleeRange() * 0.7;
+  var startAt = bfMeleeRange() * 0.95;      // 快脫離射程才起步
+  var stopAt = bfContactDist() * 0.8;       // 停在敵人站定的位置再往內一點＝真的貼上
   if (!BF_PLAYER_CHASING && d <= startAt) return false;   // 站著打
   if (d <= stopAt) { BF_PLAYER_CHASING = false; return false; }
   BF_PLAYER_CHASING = true;
