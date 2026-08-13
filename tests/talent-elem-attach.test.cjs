@@ -20,9 +20,9 @@ function loadFormulaContext() {
   return context;
 }
 
-function hit(context, aCfg, dCfg) {
+function hit(context, aCfg, dCfg, attacker = { hp: 400 }) {
   const defender = { hp: 1e9, shield: 0, effects: {}, dots: [] };
-  return context.resolveHit({}, defender, Object.assign({
+  return context.resolveHit(attacker, defender, Object.assign({
     atk: 10000, dmgType: 'magic', level: 1, hit: 100
   }, aCfg), Object.assign({ dodge: 0, mdef: 0, mRes: 0, resist: {} }, dCfg));
 }
@@ -63,7 +63,7 @@ test('六系並存各自結算：對應元素抗性獨立減免、暗影汲取�
   const r = hit(c, { elemDmgPct: all }, { resist: { fire: 50 } });
   const expectedFire = 100 * (1 - c.elementalResistanceReduction(50, 1));
   assert.equal(r.dmg, Math.round(10000 + expectedFire + 100 * 5));
-  assert.equal(r.heal, 100 * 0.25);          // 暗影汲取元傷 25%
+  assert.equal(r.heal, 400 * c.ELEM_PROC.darkDrainMult); // 暗影汲取＝攻擊者當前生命 25%
 });
 
 test('固定值元素攻擊（裝備附魔）與天賦附傷%疊加', () => {

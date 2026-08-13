@@ -38,9 +38,9 @@ function loadSkillsContext() {
   return context;
 }
 
-function hit(context, aCfg, dCfg) {
+function hit(context, aCfg, dCfg, attacker = { hp: 2000, effects: {} }) {
   const defender = { hp: 1e12, shield: 0, effects: {}, dots: [] };
-  return context.resolveHit({ hp: 1e12, effects: {} }, defender, Object.assign({
+  return context.resolveHit(attacker, defender, Object.assign({
     atk: 1000, dmgType: 'magic', level: 1, hit: 100, critRate: 0, critDmg: 150
   }, aCfg), Object.assign({ dodge: 0, def: 0, mdef: 0, mRes: 0, pRes: 0, resist: {} }, dCfg));
 }
@@ -88,13 +88,15 @@ test('skillElemMix：融合技依權重拆成各屬性分別結算，權重自�
 test('元素特效：技能屬性化段與元素附加段合併後每系只判定一次', () => {
   const c = loadFormulaContext();
   c.chance = (pct) => (Number(pct) || 0) > 0;   // 元素特效必觸發（暴擊率 0 仍不暴擊）
-  // 暗屬性技能 1000 ＋ 裝備固定暗屬性攻擊 500；暗影汲取回復＝合計 ×25%，且只結算一次
+  // 暗屬性技能 1000 ＋ 裝備固定暗屬性攻擊 500；暗影汲取回復＝攻擊者當前生命 ×25%，且只結算一次
   const res = hit(c, { skillElem: 'dark', elemAtk: { dark: 500 }, critRate: 0 }, {});
   assert.equal(res.dmg, 1500);
-  assert.equal(res.heal, 1500 * c.ELEM_PROC.darkDrainMult);
+  assert.equal(res.heal, 2000 * c.ELEM_PROC.darkDrainMult);
   // 只有元素附加段時，仍以該段值判定
   const onlyAttach = hit(c, { atk: 0, elemAtk: { dark: 500 } }, {});
-  assert.equal(onlyAttach.heal, 500 * c.ELEM_PROC.darkDrainMult);
+  assert.equal(onlyAttach.heal, 2000 * c.ELEM_PROC.darkDrainMult);
+  const higherDamage = hit(c, { skillElem: 'dark', elemAtk: { dark: 1500 }, critRate: 0 }, {});
+  assert.equal(higherDamage.heal, res.heal, '暗影汲取不應隨造成傷害增加');
 });
 
 test('無屬性標籤的技能不做屬性化，維持純物理結算', () => {
