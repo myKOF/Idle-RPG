@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## Codex：玩家死亡倒地、復活倒計時與紅色視野收縮（2026-08-13）
+
+- Status: Completed
+- Verification result: 定向測試 20/20；build 265/265；完整測試 1300/1301，唯一失敗為既有且與本任務無關的 `tests/multi-enemy.test.cjs` 菁英數量回歸。瀏覽器 `canvas=1` 實測無 console 錯誤，確認死亡倒數、紅色中心收縮迷霧與水平血條。
+- Known risk: 本次只調整 PixiJS canvas 戰鬥渲染路徑；`?canvas=0` 的 DOM fallback 未變更。既有完整測試失敗仍需另案處理。
+- Owner: Codex
+- Task: 玩家死亡後播放倒地動作時，血條／法力條維持水平；在死亡狀態顯示整數復活倒計時 `5`～`1`，直到復活完成；死亡期間將戰鬥畫面的黑色視野暗角轉為紅色，並逐漸收縮至中心。
+- Dependencies: 既有 `FIELD.reviveCd` 復活倒數與 PixiJS 戰鬥渲染器；已完成目標檔案衝突預檢且沒有其他修改來源。
+- Scope: `js/battle-renderer.js`、`index.html`、`tests/player-event-float.test.cjs`、`docs/AI_TASKS.md`
+- Forbidden: Worker Protocol、存檔格式、戰鬥數值與復活規則、使用者既有的 `config/Excel/game_parameters.xlsx` 修改，以及其他非本次需求檔案。
+- Verification: 新增倒地血條固定、整數倒計時與死亡視野動畫的靜態回歸斷言；執行定向測試、完整測試、build、`git diff --check`。
+- Handoff: Claude Code 唯讀 Review；使用者合併前以瀏覽器確認死亡畫面與復活瞬間。
+
 ## Codex：我方承傷改為先扣防禦再套減傷（2026-08-13）
 
 - Status: Completed

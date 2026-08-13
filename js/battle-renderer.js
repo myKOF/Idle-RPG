@@ -81,6 +81,10 @@ var BattleRenderer = (function () {
     sheets: {},               // name -> { tex, manifest, anims: {name: [Texture]} }
     imgTex: {},               // 敵人圖檔快取：src -> Texture | 'loading' | 'failed'
     groundTile: null,
+    vignette: null,
+    deathFog: null,
+    deathFogCanvas: null,
+    deathFogTex: null,
     watchdogTimer: 0,
     emptyText: null,
     pauseVeil: null,
@@ -644,7 +648,8 @@ var BattleRenderer = (function () {
     reviveText.anchor.set(0.5, 1);
     reviveText.y = -76;   // 跟著角色縮小後的身高
     reviveText.visible = false;
-    root.addChild(reviveText);
+    /* 倒數是 HUD，不放進會旋轉的角色 root，也讓死亡迷霧不會蓋掉文字。 */
+    S.layers.overlay.addChild(reviveText);
 
     root.x = 0; root.y = 0;
     root.zIndex = 0;
@@ -658,7 +663,7 @@ var BattleRenderer = (function () {
       /* 世界座標。samples 是模擬層座標的取樣緩衝，wx/wy 是內插後畫出來的位置；
          鏡頭對準 wx/wy，所以角色永遠在畫面正中央。 */
       wx: 0, wy: 0, samples: null,
-      vitalsShown: ''
+      vitalsShown: '', deathFogK: 0, deathFogDuration: 1, deathFogDrawnK: -1
     };
     drawPlayerVitals();
   }
@@ -794,6 +799,11 @@ var BattleRenderer = (function () {
         /* 倒地與起身都要有過程：瞬間翻 90 度看起來像穿模，不像被打倒。
            實際的角度由 tickWorld 逐幀補間（見 p.fallK）。 */
         p.dead = dead;
+        p.deathFogK = 0;
+        p.deathFogDuration = Math.max(1, reviveLeft);
+        updateDeathFog(p.deathFogK);
+        if (S.deathFog) S.deathFog.visible = dead;
+        if (S.vignette) S.vignette.visible = !dead;
         if (dead) {
           p.lunge = 0;
           playAnim(p, 'idle');
@@ -808,7 +818,7 @@ var BattleRenderer = (function () {
         if (dead) {
           var left = (typeof uiCountdownRemain === 'function')
             ? uiCountdownRemain(reviveLeft, panel.gt) : reviveLeft;
-          p.reviveText.text = '💀 復活中 ' + (Math.round(Math.max(0, left) * 10) / 10) + 's';
+          p.reviveText.text = '💀 復活倒數 ' + Math.max(1, Math.ceil(Math.max(0, left)));
         }
       }
       /* 我方座標由模擬層給（FIELD.playerPos ←→ js/battlefield.js bfPlayerPos）。
@@ -1781,13 +1791,17 @@ var BattleRenderer = (function () {
       if (p.fallK > 0) {
         var ease = p.fallK * p.fallK * (3 - 2 * p.fallK);            // smoothstep
         var bounce = Math.sin(Math.min(1, p.fallK) * Math.PI) * 0.12;  // 倒下與起身途中的一點回彈
-        p.root.rotation = -(Math.PI / 2) * ease * p.facing - bounce * p.facing;
+        /* 只翻轉角色本體；血條、法力條與文字都留在 root 上保持水平。 */
+        p.bodyWrap.rotation = -(Math.PI / 2) * ease * p.facing - bounce * p.facing;
         p.body.tint = 0x777777;
-      } else if (p.root.rotation !== 0) {
-        p.root.rotation = 0;
+      } else if (p.bodyWrap.rotation !== 0) {
+        p.bodyWrap.rotation = 0;
         p.body.tint = 0xffffff;
       }
-      if (p.reviveText && p.reviveText.visible) p.reviveText.rotation = -p.root.rotation;
+      if (p.dead) {
+        p.deathFogK = Math.min(1, (p.deathFogK || 0) + dt / Math.max(1, p.deathFogDuration || 1));
+        updateDeathFog(p.deathFogK);
+      }
 
       var moving = false;
       if (!p.dead) {
@@ -1842,6 +1856,11 @@ var BattleRenderer = (function () {
       var perX = (gtx && gtx.width) || 128, perY = (gtx && gtx.height) || 128;
       S.groundTile.tilePosition.x = -(cam.x % perX) + shx;
       S.groundTile.tilePosition.y = -(cam.y % perY) + shy;
+    }
+    if (p && p.reviveText && p.reviveText.visible) {
+      /* reviveText 在 overlay 上，跟著鏡頭中的玩家位置更新但永遠保持水平。 */
+      p.reviveText.x = world.x + p.root.x;
+      p.reviveText.y = world.y + p.root.y - 76;
     }
 
     /* 敵人 */
@@ -2014,6 +2033,17 @@ var BattleRenderer = (function () {
     app.stage.addChild(overlay);
     S.bgLayer = bg;
 
+    /* 死亡時獨立覆蓋黑色暗角：中心透明區由大逐步縮小，外圍因此像紅色視野迷霧
+       從四周壓向倒地的玩家。用螢幕座標層，避免鏡頭移動時迷霧跟著世界漂移。 */
+    var deathFogCanvas = document.createElement('canvas');
+    deathFogCanvas.width = deathFogCanvas.height = 512;
+    var deathFog = new PIXI.Sprite(PIXI.Texture.from(deathFogCanvas));
+    deathFog.visible = false;
+    overlay.addChild(deathFog);
+    S.deathFogCanvas = deathFogCanvas;
+    S.deathFogTex = deathFog.texture;
+    S.deathFog = deathFog;
+
     /* 空場提示（只在高塔戰期間顯示；野外的「搜索敵人中…」已移除） */
     var emptyText = new PIXI.Text({
       text: '（高塔戰鬥中…）',
@@ -2039,6 +2069,7 @@ var BattleRenderer = (function () {
     S.pauseVeil = { root: veil, bg: veilBg, text: veilText };
 
     S.layers = { world: world, zone: zone, entity: entity, fx: fx, float: floatLayer, overlay: overlay };
+    drawDeathFog(0);
     layoutScene();
   }
   /* 暗角：用一張放射漸層貼圖拉伸覆蓋畫布。
@@ -2058,11 +2089,51 @@ var BattleRenderer = (function () {
     _vignetteTex = PIXI.Texture.from(c);
     return _vignetteTex;
   }
+  function drawDeathFog(k) {
+    if (!S.deathFogCanvas || !S.deathFogTex) return;
+    k = Math.max(0, Math.min(1, Number(k) || 0));
+    /* 以正方形貼圖等比覆蓋畫布，讓中心視野保持圓形；內圈半徑隨 k 收縮。 */
+    var c = S.deathFogCanvas;
+    var g = c.getContext('2d');
+    var center = c.width / 2;
+    var inner = (0.42 - 0.40 * k) * center;
+    var outer = inner + (0.20 - 0.04 * k) * center;
+    g.clearRect(0, 0, c.width, c.height);
+    var grad = g.createRadialGradient(center, center, inner, center, center, outer);
+    grad.addColorStop(0, 'rgba(180, 0, 20, 0)');
+    grad.addColorStop(0.45, 'rgba(180, 0, 20, 0.28)');
+    grad.addColorStop(0.78, 'rgba(180, 0, 20, 0.70)');
+    grad.addColorStop(1, 'rgba(180, 0, 20, 0.90)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, c.width, c.height);
+    if (S.deathFogTex.source && typeof S.deathFogTex.source.update === 'function') {
+      S.deathFogTex.source.update();
+    } else if (typeof S.deathFogTex.update === 'function') {
+      S.deathFogTex.update();
+    }
+  }
+  function updateDeathFog(k) {
+    var p = S.player;
+    if (!p || !S.deathFog) return;
+    k = Math.max(0, Math.min(1, Number(k) || 0));
+    /* 不必每個 rAF 都重繪 Canvas；約 60 段已足夠讓 5 秒動畫平順。 */
+    var bucket = Math.round(k * 60) / 60;
+    if (p.deathFogDrawnK === bucket) return;
+    p.deathFogDrawnK = bucket;
+    drawDeathFog(bucket);
+  }
   function layoutScene() {
     if (!S.layers) return;
     /* 地板鋪滿畫布再多一格，鏡頭移動時邊緣不會露出底色 */
     if (S.groundTile) { S.groundTile.width = S.W + 256; S.groundTile.height = S.H + 256; S.groundTile.x = -128; S.groundTile.y = -128; }
     if (S.vignette) { S.vignette.width = S.W; S.vignette.height = S.H; }
+    if (S.deathFog) {
+      var fogSize = Math.max(S.W, S.H);
+      S.deathFog.width = fogSize;
+      S.deathFog.height = fogSize;
+      S.deathFog.x = (S.W - fogSize) / 2;
+      S.deathFog.y = (S.H - fogSize) / 2;
+    }
     if (S.emptyText) { S.emptyText.x = S.W * 0.62; S.emptyText.y = S.H * 0.5; }
     if (S.pauseVeil) {
       S.pauseVeil.bg.clear();
@@ -2243,7 +2314,7 @@ var BattleRenderer = (function () {
           x: Math.round(p.wx), y: Math.round(p.wy), walking: !!p.walking, facing: p.facing, anim: p.curAnim,
           /* 倒地驗證用：dead 是否觸發、倒下進度、實際旋轉角度、倒數文字 */
           dead: !!p.dead, fallK: +(p.fallK || 0).toFixed(2),
-          rotDeg: Math.round((p.root.rotation || 0) * 180 / Math.PI),
+          rotDeg: Math.round((p.bodyWrap.rotation || 0) * 180 / Math.PI),
           reviveText: (p.reviveText && p.reviveText.visible) ? String(p.reviveText.text) : null
         } : null,
         home: playerPos(),

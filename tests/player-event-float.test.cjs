@@ -94,6 +94,30 @@ test('復活倒數讀 FIELD.reviveCd，不是玩家實體上的欄位', () => {
   assert.doesNotMatch(uiSrc, /uiCountdownRemain\(p\.reviveCd/);
 });
 
+test('玩家倒地只旋轉本體，血條與死亡倒數維持水平並顯示整數秒', () => {
+  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
+  const playerTickStart = renderer.indexOf('var p = S.player;');
+  const playerTickEnd = renderer.indexOf('/* ---- 鏡頭：即時對準玩家 ----', playerTickStart);
+  assert.ok(playerTickStart >= 0 && playerTickEnd > playerTickStart, '找不到玩家逐幀更新區塊');
+  const playerTick = renderer.slice(playerTickStart, playerTickEnd);
+
+  assert.match(playerTick, /p\.bodyWrap\.rotation\s*=\s*-\(Math\.PI\s*\/\s*2\)/);
+  assert.doesNotMatch(playerTick, /p\.root\.rotation/);
+  assert.match(renderer, /p\.reviveText\.text\s*=\s*'💀 復活倒數 '\s*\+\s*Math\.max\(1,\s*Math\.ceil/);
+  assert.doesNotMatch(renderer, /p\.reviveText\.text\s*=.*Math\.round\(.*\*\s*10/);
+});
+
+test('玩家死亡時紅色視野迷霧由外向中心收縮，復活後恢復黑色暗角', () => {
+  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
+  assert.match(renderer, /function drawDeathFog\(k\)/);
+  assert.match(renderer, /createRadialGradient\(center,\s*center,\s*inner/);
+  assert.match(renderer, /rgba\(180, 0, 20, 0\)/);
+  assert.match(renderer, /inner\s*=\s*\(0\.42\s*-\s*0\.40\s*\*\s*k\)/);
+  assert.match(renderer, /S\.deathFog\.visible\s*=\s*dead/);
+  assert.match(renderer, /S\.vignette\.visible\s*=\s*!dead/);
+  assert.match(renderer, /p\.deathFogK\s*=\s*Math\.min\(1,\s*\(p\.deathFogK\s*\|\|\s*0\)/);
+});
+
 test('飄字不重疊：新的字會避開畫面上還在的字', () => {
   const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
   assert.match(renderer, /function placeFloatNode\(node, baseX, baseY\)/);
