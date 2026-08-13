@@ -1336,8 +1336,7 @@ function currentZoneDef() {
 var BF_UNIT = 60;              // 一個「身位」的長度；範圍技的 n×n 換算成半徑用
 var BF_SPAWN_DIST = 440;       // 生成時離我方多遠（畫面外一點）
 var BF_CONTACT_DIST = 46;      // 走到這麼近就停（接觸）
-var BF_PLAYER_SPEED = 190;     // 我方追擊跑速（單位/秒）——速度的基準值
-var BF_PLAYER_IDLE_SPEED = 135;// 空場時往前推進的速度
+var BF_PLAYER_SPEED = 190;     // 我方移動速度（追擊與空場推進共用；速度的基準值）
 var BF_ENEMY_SPEED_RATIO = 0.8;// 敵人跑速 = 我方跑速 × 這個比例（慢一點才追得出隊形）
 var BF_MELEE_RANGE = 62;       // 近戰攻擊距離（雙方共用）
 var BF_RANGED_RANGE = 320;     // 魔法系敵人的攻擊距離

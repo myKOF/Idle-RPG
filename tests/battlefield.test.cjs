@@ -179,7 +179,23 @@ test('場上沒有敵人時往前推進（地板才會捲動，不是呆站）',
   const c = loadBattlefield();
   const moved = c.bfTickPlayer([], 1);
   assert.equal(moved, true);
-  assert.equal(Math.round(c.bfPlayerPos().x), c.BF_PLAYER_IDLE_SPEED);
+  assert.equal(Math.round(c.bfPlayerPos().x), c.BF_PLAYER_SPEED,
+    '推進與追擊共用同一個速度，否則畫面上會忽快忽慢');
+});
+
+test('起步與停步用不同門檻：站著打的時候不會被推擠推得一直補小步', () => {
+  const c = loadBattlefield();
+  /* 站定之後，把目標稍微推遠一點點（仍在射程內）——不該重新起步。 */
+  const e = at(300, 0, { _enterCd: 0 });
+  let guard = 0;
+  while (c.bfTickPlayer([e], 0.05) && guard++ < 500);
+  const restX = c.bfPlayerPos().x;
+  e.pos.x += c.BF_MELEE_RANGE * 0.2;
+  assert.equal(c.bfTickPlayer([e], 0.05), false, '射程內的小幅推擠不該讓我方起步');
+  assert.equal(c.bfPlayerPos().x, restX);
+  /* 真的脫離射程才重新起步。 */
+  e.pos.x += c.BF_MELEE_RANGE;
+  assert.equal(c.bfTickPlayer([e], 0.05), true, '脫離射程就要追上去');
 });
 
 test('敵人追的是我方當前位置，不會跟著我方平移', () => {

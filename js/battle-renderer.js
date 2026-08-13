@@ -169,6 +169,36 @@ var BattleRenderer = (function () {
     return { x: pp.x + face * (PLAYER_REACH + 14), y: pp.y - 24 };
   }
 
+  /* 面板 5Hz，兩包之間的位置要靠外推補出來，而外推速度＝位移 ÷ 經過時間。
+     這裡的「經過時間」必須用模擬層的時鐘（panel.gt），不能用封包到達的時間差：
+     封包到達會抖（同一批訊息常常擠在一起送），用它算出來的速度就會忽大忽小，
+     畫面上就是移動忽快忽慢。gt 是模擬層拍快照的時刻，位移與它必定成正比。
+
+     另外，停下來的那一包要立刻把速度歸零，否則會照舊速度衝過頭再被拉回來，
+     那一下回拉看起來就是頓一下。 */
+  function trackVelocity(ent, x, y, gt) {
+    var dgt = (isFinite(gt) && isFinite(ent.posGt)) ? (gt - ent.posGt) : NaN;
+    if (!isFinite(dgt) || dgt <= 0.001 || dgt > 1) {
+      var nowT = nowMs();
+      dgt = ent.posAt ? Math.max(0.05, Math.min(0.5, (nowT - ent.posAt) / 1000)) : NaN;
+      ent.posAt = nowT;
+    } else {
+      ent.posAt = nowMs();
+    }
+    var dx = x - ent.tx, dy = y - ent.ty;
+    if (isFinite(dgt)) {
+      if (Math.sqrt(dx * dx + dy * dy) < 0.5) {
+        ent.velX = 0; ent.velY = 0;              // 這一包沒動＝停下來了
+      } else {
+        /* 輕度平滑：模擬層 10Hz、面板 5Hz，取樣本身還是有一點抖動。 */
+        ent.velX = ent.velX * 0.3 + (dx / dgt) * 0.7;
+        ent.velY = ent.velY * 0.3 + (dy / dgt) * 0.7;
+      }
+    }
+    ent.posGt = gt;
+    ent.tx = x; ent.ty = y;
+  }
+
   /* ---- 序列幀載入 ----
      幀定義 JSON：{ image, frameWidth, frameHeight, anims: { name: { row, frames, fps, loop } } }
      正式圖替換時只要維持這個結構即可，程式不用改。 */
@@ -447,7 +477,7 @@ var BattleRenderer = (function () {
       barW: barW, hitHeight: isBoss ? sz.h * 1.9 : 64 * visScale,
       wx: 0, wy: 0,                   // 畫面上的世界座標（外推後的結果）
       tx: 0, ty: 0,                   // 模擬層最新的權威座標
-      velX: 0, velY: 0, posAt: 0,     // 由前後兩次面板估出的速度（外推用）
+      velX: 0, velY: 0, posAt: 0, posGt: NaN,   // 外推用：速度與上一次取樣的模擬時刻
       state: 'entering',              // entering → idle → dying → gone
       bobPhase: Math.random() * Math.PI * 2,
       wobble: 0.7 + Math.random() * 0.5,
@@ -598,11 +628,11 @@ var BattleRenderer = (function () {
       id: 'pv-float', root: root, body: body, bodyWrap: bodyWrap,
       vitals: vitals, hpText: hpText, mpText: mpText, reviveText: reviveText,
       sheetName: 'player', curAnim: 'idle', baseAnim: 'idle',
-      hitHeight: 70, walking: false, dead: false,
+      hitHeight: 70, walking: false, dead: false, stillFor: 99,
       flash: 0, jolt: 0, lunge: 0, facing: 1,
       /* 世界座標。tx/ty 是模擬層給的權威座標，wx/wy 是逐幀外推後畫出來的位置；
          鏡頭對準 wx/wy，所以角色永遠在畫面正中央。 */
-      wx: 0, wy: 0, tx: 0, ty: 0, velX: 0, velY: 0, posAt: 0,
+      wx: 0, wy: 0, tx: 0, ty: 0, velX: 0, velY: 0, posAt: 0, posGt: NaN,
       vitalsShown: ''
     };
     drawPlayerVitals();
@@ -703,16 +733,7 @@ var BattleRenderer = (function () {
            記下新的權威座標，並用「與上一次的位移÷間隔」估出速度，
            讓 tickWorld 在兩次更新之間自己把中間的位置補出來（見外推）。
            我方與敵人現在都是絕對座標，兩邊各自外推，不會互相拖著跑。 */
-        if (d.pos && isFinite(d.pos.x)) {
-          var nowT = nowMs();
-          var gap = Math.max(0.05, Math.min(0.5, (nowT - (ent.posAt || nowT)) / 1000));
-          if (ent.posAt) {
-            ent.velX = (d.pos.x - ent.tx) / gap;
-            ent.velY = (d.pos.y - ent.ty) / gap;
-          }
-          ent.posAt = nowT;
-          ent.tx = d.pos.x; ent.ty = d.pos.y;
-        }
+        if (d.pos && isFinite(d.pos.x)) trackVelocity(ent, d.pos.x, d.pos.y, panel.gt);
       }
       drawHpBar(ent);
       var stTxt = statusTextOf(d);
@@ -767,16 +788,8 @@ var BattleRenderer = (function () {
          走路／站立動畫改看「實際有沒有位移」，不再猜「場上有沒有敵人」。 */
       var pp = field.playerPos;
       if (pp && isFinite(pp.x) && isFinite(pp.y)) {
-        var pNow = nowMs();
-        var pGap = Math.max(0.05, Math.min(0.5, (pNow - (p.posAt || pNow)) / 1000));
-        if (p.posAt) {
-          p.velX = (pp.x - p.tx) / pGap;
-          p.velY = (pp.y - p.ty) / pGap;
-        } else {
-          p.wx = pp.x; p.wy = pp.y;     // 第一次：直接就位，不要從原點滑過去
-        }
-        p.posAt = pNow;
-        p.tx = pp.x; p.ty = pp.y;
+        if (!p.posAt) { p.wx = pp.x; p.wy = pp.y; p.tx = pp.x; p.ty = pp.y; }  // 第一次直接就位
+        trackVelocity(p, pp.x, pp.y, panel.gt);
       }
       if (dead || S.towerActive) { p.velX = 0; p.velY = 0; }
     }
@@ -1699,7 +1712,12 @@ var BattleRenderer = (function () {
         p.wx += pCorrX;
         p.wy += pCorrY;
         var pStep = Math.sqrt((pPredX + pCorrX) * (pPredX + pCorrX) + (pPredY + pCorrY) * (pPredY + pCorrY));
-        moving = pStep > 0.4 * dt * 60;
+        /* 動畫遲滯：一有位移就立刻切走路，但要連續靜止一小段才切回站立。
+           少了這段，位移在門檻上下抖動時走路／站立會逐幀互閃，
+           看起來就像一下走路一下跑步。 */
+        if (pStep > 0.5 * dt * 60) p.stillFor = 0;
+        else p.stillFor = (p.stillFor || 0) + dt;
+        moving = p.stillFor < 0.22;
         if (pStep > 0.6) p.facing = (pPredX + pCorrX) < 0 ? -1 : 1;
       }
       if (moving !== p.walking) {

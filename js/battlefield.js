@@ -42,8 +42,9 @@ function bfNum(name, fallback) {
 function bfUnit() { return bfNum('BF_UNIT', 60); }                    // 一個「身位」
 function bfSpawnDist() { return bfNum('BF_SPAWN_DIST', 440); }        // 生成時離我方多遠
 function bfContactDist() { return bfNum('BF_CONTACT_DIST', 46); }     // 走到這麼近就停
-function bfPlayerSpeed() { return bfNum('BF_PLAYER_SPEED', 190); }    // 我方追擊跑速（單位/秒）
-function bfPlayerIdleSpeed() { return bfNum('BF_PLAYER_IDLE_SPEED', 135); }  // 空場時往前推進的速度
+/* 我方只有一種速度：不是在移動就是站著。追擊與空場推進共用同一個值——
+   兩段速度會讓畫面看起來忽快忽慢，像一下走路一下跑步。 */
+function bfPlayerSpeed() { return bfNum('BF_PLAYER_SPEED', 190); }
 /* 敵人跑速由我方跑速導出：慢一點，我方才跑得掉、追兵才會拉出前後隊形。 */
 function bfEnemySpeed() { return bfPlayerSpeed() * bfNum('BF_ENEMY_SPEED_RATIO', 0.8); }
 function bfMeleeRange() { return bfNum('BF_MELEE_RANGE', 62); }       // 近戰攻擊距離
@@ -55,8 +56,9 @@ function bfBossRadius() { return bfNum('BF_BOSS_RADIUS', 52); }
    全場座標的原點。這個物件會被就地改寫（不重新指派），
    讓 combat.js 把它掛進 FIELD 之後，面板每次序列化都拿到最新值。 */
 var BF_PLAYER = { x: 0, y: 0 };
+var BF_PLAYER_CHASING = false;     // 起步／停步的遲滯狀態（見 bfTickPlayer）
 function bfPlayerPos() { return BF_PLAYER; }
-function bfResetPlayer() { BF_PLAYER.x = 0; BF_PLAYER.y = 0; return BF_PLAYER; }
+function bfResetPlayer() { BF_PLAYER.x = 0; BF_PLAYER.y = 0; BF_PLAYER_CHASING = false; return BF_PLAYER; }
 
 /* 體型半徑：BOSS 比較大，所以「邊緣」比中心更早進入接觸距離。 */
 function bfEntityRadius(ent) {
@@ -223,7 +225,8 @@ function bfTickPlayer(enemies, dt, preferred) {
   var live = bfLiveList(enemies).filter(function (e) { return !!bfPos(e); });
   if (!live.length) {
     /* 空場：往前方（+x）推進，地板會跟著往後捲，不會呆站著等下一波。 */
-    home.x += bfPlayerIdleSpeed() * dt;
+    home.x += bfPlayerSpeed() * dt;
+    BF_PLAYER_CHASING = true;
     return true;
   }
   /* 追的目標要與「這一刀實際打誰」一致（combat.js 的鎖定目標），
@@ -232,11 +235,17 @@ function bfTickPlayer(enemies, dt, preferred) {
     ? preferred : bfPickPrimary(live, null);
   if (!target) return false;
 
-  /* 停在射程內側一點，不要正好停在邊界上——邊界上任何抖動都會讓
-     「打得到／打不到」反覆切換，看起來就是一步一停。 */
-  var want = bfMeleeRange() * 0.8;
-  var gap = bfEntityDistance(target) - want;
-  if (gap <= 0) return false;
+  /* 起步與停步用兩個不同的門檻（遲滯）。只用一個門檻的話，敵人被推擠而
+     來回跨過那條線時，我方就會每個 tick 補一小步——畫面上是持續的微小抽動，
+     速度看起來忽快忽慢。改成：站著時要真的快脫離射程才起步，一旦起步就
+     一路跑進內側才停。 */
+  var d = bfEntityDistance(target);
+  var startAt = bfMeleeRange() * 0.95;
+  var stopAt = bfMeleeRange() * 0.7;
+  if (!BF_PLAYER_CHASING && d <= startAt) return false;   // 站著打
+  if (d <= stopAt) { BF_PLAYER_CHASING = false; return false; }
+  BF_PLAYER_CHASING = true;
+  var gap = d - stopAt;
   var p = target.pos;
   var dx = p.x - home.x, dy = p.y - home.y;
   var len = Math.sqrt(dx * dx + dy * dy);
@@ -244,6 +253,9 @@ function bfTickPlayer(enemies, dt, preferred) {
   var step = Math.min(gap, bfPlayerSpeed() * dt);
   home.x += (dx / len) * step;
   home.y += (dy / len) * step;
+  /* 這一步就走到定位了：當下就解除追擊狀態，不要拖到下一個 tick——
+     中間那一格空窗會讓「已經站定卻仍算在追」，遲滯就少了半拍。 */
+  if (gap - step <= 0.0001) BF_PLAYER_CHASING = false;
   return step > 0.0001;
 }
 
