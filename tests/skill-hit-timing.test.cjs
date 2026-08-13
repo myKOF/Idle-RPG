@@ -116,6 +116,25 @@ test('投射物技能：傷害數字延後到子彈飛到才跳出', () => {
   assert.ok(dmg[0].delayMs > 0, '投射物的傷害數字不能在發射當下就跳出來');
 });
 
+test('隕石改為 4*4 後仍使用隕石特效，並以主目標為落點', () => {
+  const c = loadContext();
+  const player = { hp: 1000, mp: 1000, atkCd: 0, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {} };
+  const meteor = c.skillDef('meteor');
+  meteor.shape = '4*4';
+  let spec = null;
+  c.playCombatVfx = (s) => { spec = s; };
+
+  const primary = enemy(80, 0);
+  const outside = enemy(340, 0);
+  c.castSkill(player, [primary, outside], 'meteor', 1, 'mv-float');
+
+  assert.ok(spec, '隕石施放後應送出特效事件');
+  assert.equal(spec.fxKind, 'rain', '隕石不能因 4*4 被通用範圍推導改成 burst');
+  assert.equal(spec.variant, 'meteor');
+  assert.equal(spec.area.x, primary.pos.x, '4*4 隕石應以主目標為中心');
+  assert.equal(spec.targets.length, 1, '範圍外目標不應成為隕石落點目標');
+});
+
 test('近戰技能：當場命中，數字不延後', () => {
   const c = loadContext();
   const floats = captureFloats(c);

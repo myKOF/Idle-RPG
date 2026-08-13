@@ -2386,8 +2386,8 @@ function skillRtActiveEnemies(fallback) {
 
 /* ---- 技能特效（新版戰鬥「每個技能與 buff 都要有簡易特效」）----
    模擬層只負責「發生了什麼」，畫法在 js/vfx.js。特效種類**不逐一手寫**，而是由技能既有的
-   資料推導：範圍決定形狀、系統分類與屬性決定顏色、技能自己的 emoji 當投射物圖案。
-   這樣新增技能不必補特效表，改了傷害範圍特效也會跟著變。
+   預設特效原型由範圍決定形狀、系統分類與屬性決定顏色、技能自己的 emoji 當投射物圖案。
+   指定技能若有專用特效，則由 SKILL_VFX_OVERRIDE 固定畫法；範圍只負責提供實際目標與落點。
 
    個別技能要特規時再於 SKILL_VFX_OVERRIDE 覆寫，不必動這裡的推導規則。
 
@@ -2417,7 +2417,7 @@ var SKILL_VFX_OVERRIDE = {
   sinDetonate: { variant: 'detonate' },     // 斷罪引爆
   swordDomain: { variant: 'swordfield' },   // 劍域千鋒：領域＝旋轉劍氣環
   // 火
-  meteor: { variant: 'meteor' },            // 大隕石砸全場
+  meteor: { fxKind: 'rain', variant: 'meteor' }, // 隕石固定使用天降；落點由 all／方框的實際目標決定
   infernoDomain: { variant: 'flamewave' },  // 焚世領域：本體火浪；領域由 elem 自動火焰化
   // 冰
   frostNova: { variant: 'nova' },           // 霜之新星：冰環爆發
@@ -2490,7 +2490,7 @@ function skillVfxSpec(sk, fx, shape, targetIds, area, extra) {
   if (extra) for (var k2 in extra) spec[k2] = extra[k2];
   if (spec.fxKind === 'rain') spec.dur = 0.75;
   if (spec.fxKind === 'aura') spec.count = 1;
-  // 隕石類：一顆大隕石砸向全場——所有目標共用同一個落地時刻（取最遠者），
+  // 隕石類：一顆大隕石砸向本次技能的實際落點——所有目標共用同一個落地時刻（取最遠者），
   // 傷害數字也在同一瞬間一起跳，才像「同一顆隕石」而不是逐格點名。
   if (spec.variant === 'meteor' && spec.travelMs && spec.travelMs.length) {
     var mMax = 0, mi;
