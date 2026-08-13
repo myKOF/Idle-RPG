@@ -163,6 +163,7 @@ function playCombatVfx(spec) {
   shimPushEvent('vfx', {
     fxKind: spec.fxKind, glyph: spec.glyph, color: spec.color,
     targets: spec.targets || [], cells: spec.cells || null,
+    area: spec.area || null,
     dur: spec.dur, count: spec.count,
     // travelMs 必須一起送：傷害數字的延遲用的是這組數字，投射物動畫沒拿到就會用
     // 預設長度，變成「數字到了子彈還在飛」——與 v11 反過來的走鐘。

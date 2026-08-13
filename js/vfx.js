@@ -751,7 +751,7 @@ function vfxBolt(spec, layer, from, to, delayMs, weak) {
   var minX = Math.min(from.x, to.x) - 26, minY = Math.min(from.y, to.y) - 26;
   var w = Math.max(8, Math.abs(to.x - from.x)) + 52, h = Math.max(8, Math.abs(to.y - from.y)) + 52;
   var segs = 6;
-  var pts = [];
+  var coords = [];
   var nx = -(to.y - from.y), ny = (to.x - from.x);
   var nl = Math.sqrt(nx * nx + ny * ny) || 1;
   for (var i = 0; i <= segs; i++) {
@@ -763,17 +763,30 @@ function vfxBolt(spec, layer, from, to, delayMs, weak) {
       px += nx / nl * off;
       py += ny / nl * off;
     }
-    pts.push((px - minX).toFixed(1) + ',' + (py - minY).toFixed(1));
+    coords.push({ x: px - minX, y: py - minY });
   }
   var d = vfxNode('vfx-bolt' + (weak ? ' vfx-bolt-weak' : ''), layer, spec);
   d.style.left = minX + 'px';
   d.style.top = minY + 'px';
   d.style.animationDelay = delayMs + 'ms';
-  var pl = pts.join(' ');
+  var svgLines = [];
+  for (var si = 0; si < coords.length - 1; si++) {
+    var taper = si / (coords.length - 1);
+    var outer = (weak ? 5.2 : 12) - (weak ? 3.2 : 9.5) * taper;
+    var inner = (weak ? 1.8 : 4.4) - (weak ? 0.8 : 3.4) * taper;
+    var a = coords[si], b = coords[si + 1];
+    svgLines.push('<line x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) +
+      '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1) +
+      '" stroke="var(--vfx-c2, #fffbe0)" stroke-width="' + Math.max(2, outer).toFixed(1) +
+      '" stroke-linecap="round"/>');
+    svgLines.push('<line x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) +
+      '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1) +
+      '" stroke="var(--vfx-c1, #ffd93d)" stroke-width="' + Math.max(0.8, inner).toFixed(1) +
+      '" stroke-linecap="round"/>');
+  }
   d.innerHTML = '<svg width="' + Math.round(w) + '" height="' + Math.round(h) + '" viewBox="0 0 ' +
     Math.round(w) + ' ' + Math.round(h) + '">' +
-    '<polyline points="' + pl + '" fill="none" stroke="var(--vfx-c2, #fffbe0)" stroke-width="' + (weak ? 2.4 : 4.5) + '" stroke-linejoin="round"/>' +
-    '<polyline points="' + pl + '" fill="none" stroke="var(--vfx-c1, #ffd93d)" stroke-width="' + (weak ? 1 : 1.8) + '" stroke-linejoin="round"/>' +
+    svgLines.join('') +
     '</svg>';
   vfxTrack(d, delayMs + 420);
 }
