@@ -1367,6 +1367,9 @@ var FIELD_WAVE_SPAWN_INTERVAL = 2.0; // 同一關內每一波的出怪間隔（�
 var FIELD_MAX_LIVE_ENEMIES = 8;      // 場上同時存在的敵人上限預設值（同上表可逐地圖／關卡覆寫）
 var FIELD_ENEMY_DEATH_CLEAR_DELAY = 2.1; // 野外敵人死亡後保留戰鬥資訊時間（秒）；須長於 2 秒傷害飄字動畫
 var REVIVE_DELAY = 5.0;        // 死亡復活時間（秒）
+/* 擊殺目標後隔多久才對下一隻出手（秒）。沒有這個間隔的話，一刀清掉一隻就會
+   在同一個 tick 轉頭砍下一隻，看起來像瞬移連斬。0＝不等待。 */
+var TARGET_SWITCH_DELAY = 0.4;
 var FIELD_DEATH_STAGE_RETREAT = 10; // 野外死亡退回階段數
 
 // ---- BOSS 高塔（元素 BOSS 以魔法攻擊） ----

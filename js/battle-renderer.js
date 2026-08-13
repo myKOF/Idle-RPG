@@ -1621,16 +1621,25 @@ var BattleRenderer = (function () {
     var s = { size: 15, fill: '#ffffff', stroke: '#000000', weight: 'bold', rise: 44, life: 0.9 };
     var isCrit = cls.indexOf('crit') >= 0;
     var isHigh = cls.indexOf('crit-high-roll') >= 0;
-    if (elId === 'pv-float') {
-      /* 玩家側：受傷紅、回復綠、其他事件藍白 */
-      if (cls.indexOf('player-event') >= 0) {
-        if (/^\+/.test(text)) { s.fill = '#7dff9a'; }
-        else if (cls.indexOf('defend') >= 0 || cls.indexOf('dodge') >= 0) { s.fill = '#9aa5b1'; s.size = 13; }
-        else { s.fill = '#9ecbff'; }
-      } else {
+    if (elId === 'pv-float' || elId === 'tp-float') {
+      /* 我方身上的字：**紅色是「我方被扣血」的專屬顏色**，其他一律不得用紅。
+         舊版是看「有沒有 player-event 這個類別」來決定紅不紅，但吸血／吸魔／
+         岩甲護盾走的是 floatText（沒有那個類別），於是回血也被塗成紅色，
+         玩家看到滿畫面紅字會以為自己在狂掉血。改成看語意分類。 */
+      var isDamageToUs = cls.indexOf('mdmg') >= 0 || /^\s*(爆擊\s*)?-/.test(text);
+      if (isDamageToUs) {
         s.fill = '#ff6b6b'; s.size = 16;
+        if (isCrit) { s.size += 4; s.fill = '#ff3b3b'; }
+        return s;
       }
-      if (isCrit) { s.size += 4; s.fill = '#ff4747'; }
+      if (cls.indexOf('heal') >= 0) { s.fill = '#6dfb8f'; return s; }              // 回血：綠
+      if (cls.indexOf('mp') >= 0) { s.fill = '#5fb2ff'; return s; }                // 回魔：藍
+      if (cls.indexOf('shield') >= 0) { s.fill = '#8fd8ff'; s.size = 14; return s; } // 護盾：淺藍
+      if (cls.indexOf('dodge') >= 0 || cls.indexOf('defend') >= 0) { s.fill = '#9aa5b1'; s.size = 13; return s; }
+      if (cls.indexOf('debuff') >= 0) { s.fill = '#c58cff'; return s; }            // 中了負面：紫
+      if (cls.indexOf('buff') >= 0 || cls.indexOf('attack') >= 0) { s.fill = '#ffd75e'; return s; }
+      if (/^\+/.test(text)) { s.fill = '#6dfb8f'; return s; }                      // 沒標類別但是 +：當回復
+      s.fill = '#9ecbff';
       return s;
     }
     /* 敵方側：普攻白、技能金、暴擊放大 */
@@ -1650,6 +1659,36 @@ var BattleRenderer = (function () {
     var base = (cls || '').replace(/crit-high-roll/, '').trim();
     return elId + '|' + base;
   }
+  /* 找一個不會壓到別人的位置。
+     同一瞬間常有三四個字落在同一點（傷害、護盾吸收、吸血、吸魔），
+     舊版只給 ±18px 的隨機抖動，數字一多必然疊成一團看不清楚。
+     這裡改成實際做碰撞檢查：疊到了就往上讓一行，讓滿了就往旁邊挪一欄。 */
+  function placeFloatNode(node, baseX, baseY) {
+    node.x = baseX + (Math.random() * 16 - 8);
+    node.y = baseY;
+    var w = node.width || 20, h = node.height || 16;
+    var lane = 0;
+    for (var pass = 0; pass < 12; pass++) {
+      var hit = null;
+      for (var i = S.floats.length - 1, seen = 0; i >= 0 && seen < 16; i--, seen++) {
+        var o = S.floats[i];
+        if (!o || o.dead || !o.node || o.node.destroyed) continue;
+        var ow = o.node.width || 20, oh = o.node.height || 16;
+        /* anchor 是 (0.5, 1)：x 是中心、y 是底邊 */
+        if (Math.abs(o.node.x - node.x) >= (w + ow) / 2 - 2) continue;
+        if (node.y - h >= o.node.y || o.node.y - oh >= node.y) continue;
+        hit = o; break;
+      }
+      if (!hit) break;
+      node.y = hit.node.y - (hit.node.height || 16) - 3;
+      if (baseY - node.y > 96) {           // 這一欄疊太高了，換一欄重來
+        lane++;
+        node.x = baseX + (lane % 2 ? 1 : -1) * (34 + Math.floor(lane / 2) * 30);
+        node.y = baseY;
+      }
+    }
+  }
+
   function onFloat(ev) {
     if (!S.ready || !ev) return;
     if (documentHidden()) return;   // 背景分頁：ui.js 已改走「只記最新」路徑，這裡擋 setTimeout 殘留
@@ -1697,8 +1736,7 @@ var BattleRenderer = (function () {
       }
     });
     node.anchor.set(0.5, 1);
-    node.x = pt.x + (Math.random() * 36 - 18);
-    node.y = pt.y - 8 + (Math.random() * 14 - 7);
+    placeFloatNode(node, pt.x, pt.y - 8);
     S.layers.float.addChild(node);
     var prefixMatch = /^([^0-9]*)/.exec(ev.text || '');
     var f = {

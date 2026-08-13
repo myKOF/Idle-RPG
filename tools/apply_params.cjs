@@ -217,14 +217,17 @@ function scalar(file, varName, cat, name, i) {
    每跑一次套用參數就整個中斷，連其他 550 個參數也套不進去。
    跳過的項目會列在最後，不會安靜消失。 */
 const skippedParams = [];
-function scalarOpt(file, varName, cat, name, i) {
+function scalarOpt(file, varName, cat, name, i, allowZero) {
   const row = index[cat] && index[cat][name];
   const raw = row ? row[i] : undefined;
-  if (raw === undefined || String(raw).trim() === '' || String(raw).trim() === '0') {
+  const txt = raw === undefined ? '' : String(raw).trim();
+  /* allowZero：0 是這個參數的有效值（例如「換目標間隔 0 秒＝不等待」）時傳 true，
+     否則把 0 當成空格跳過——多數參數填 0 的意思是「這一格沒用到」。 */
+  if (txt === '' || (!allowZero && txt === '0')) {
     skippedParams.push(`${cat} / ${name} 參數#${i} → ${varName}`);
     return;
   }
-  scalarValue(file, varName, String(raw).trim(), varName);
+  scalarValue(file, varName, txt, varName);
 }
 function rangeBound(file, varName, cat, name, i, bound) {
   const raw = P(cat, name, i);
@@ -452,6 +455,8 @@ scalar('data', 'PART_UPGRADE_COST_C', '表-固定參數', '零件升級金錢消
 scalar('data', 'FIELD_WAVE_SPAWN_INTERVAL', '表-固定參數', '出怪間隔', 0);
 scalar('data', 'FIELD_STAGE_SWITCH_DELAY', '表-固定參數', '出怪間隔', 1);
 scalar('data', 'REVIVE_DELAY', '表-固定參數', '死亡復活時間', 0);
+/* 換目標間隔：這一列是後加的，Excel 主檔補上之前用 scalarOpt 跳過（0 是有效值，要 allowZero）。 */
+scalarOpt('data', 'TARGET_SWITCH_DELAY', '表-固定參數', '換目標間隔', 0, true);
 scalar('data', 'CONVEYOR_CAP', '7-容量', '輸送帶容量', 0);
 scalar('data', 'SYNTH_BUFFER_CAP', '7-容量', '合成暫存區', 0);
 scalar('data', 'INVENTORY_CAP', '7-容量', '背包容量', 0);        // a＝初始格數

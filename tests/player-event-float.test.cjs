@@ -43,6 +43,58 @@ test('怪物攻擊玩家時，閃避、格擋、護盾吸收與附加效果會�
   assert.match(combat, /res\.procs\.forEach\(function \(proc\)/);
 });
 
+test('我方受到的傷害帶負號，回復類飄字不得用紅色', () => {
+  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
+
+  /* 數字前面要有負號：畫面上同時會有吸血、吸魔、護盾吸收好幾個數字，
+     沒有正負號分不出哪一個在扣血。 */
+  assert.match(combat, /var dmgStr = '-' \+ fmt\(res\.dmg\);/);
+
+  /* 顏色不能再用「有沒有 player-event 這個類別」判斷——吸血／吸魔／岩甲護盾
+     走的是 floatText（沒有那個類別），舊規則會把回血塗成紅色。 */
+  const styleStart = renderer.indexOf('function floatStyle(');
+  const styleEnd = renderer.indexOf('function floatMergeKey(', styleStart);
+  assert.ok(styleStart >= 0 && styleEnd > styleStart, '找不到 floatStyle');
+  const style = renderer.slice(styleStart, styleEnd);
+  const playerBlock = style.slice(style.indexOf("elId === 'pv-float'"), style.indexOf('/* 敵方側'));
+  assert.match(playerBlock, /isDamageToUs/);
+
+  const redIdx = playerBlock.indexOf('#ff6b6b');
+  const healIdx = playerBlock.indexOf("cls.indexOf('heal')");
+  assert.ok(redIdx >= 0, '我方扣血仍然要用紅色');
+  assert.ok(healIdx > redIdx, '扣血那一段要在回復分支之前就 return');
+  /* 「紅」以顏色本身判定，不比對字面：R 很高而 G、B 都低就是紅色。
+     這樣之後換色號也擋得住，而黃色 #ffd75e（G 高）不會被誤判。 */
+  const reddish = (hex) => {
+    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+    return r >= 0xd0 && g <= 0x80 && b <= 0x80;
+  };
+  const tailColors = playerBlock.slice(healIdx).match(/#[0-9a-f]{6}/ig) || [];
+  tailColors.forEach((hex) => {
+    assert.equal(reddish(hex), false, '扣血以外的分支不得用紅色，卻出現 ' + hex);
+  });
+  assert.match(playerBlock, /cls\.indexOf\('heal'\) >= 0[\s\S]*?#6dfb8f/);
+  assert.match(playerBlock, /cls\.indexOf\('mp'\) >= 0[\s\S]*?#5fb2ff/);
+});
+
+test('飄字不重疊：新的字會避開畫面上還在的字', () => {
+  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
+  assert.match(renderer, /function placeFloatNode\(node, baseX, baseY\)/);
+  assert.match(renderer, /placeFloatNode\(node, pt\.x, pt\.y - 8\);/);
+  /* 不能只靠隨機抖動：同一點同時落下三四個字時，隨機位移必然還是會疊在一起 */
+  assert.doesNotMatch(renderer, /node\.x = pt\.x \+ \(Math\.random\(\) \* 36 - 18\)/);
+});
+
+test('擊殺目標之後要隔一段時間才對下一隻出手（TARGET_SWITCH_DELAY）', () => {
+  const data = fs.readFileSync(path.join(root, 'js', 'data.js'), 'utf8');
+  const csv = fs.readFileSync(path.join(root, 'config', 'CSV', 'game_parameters.csv'), 'utf8');
+  assert.match(data, /var TARGET_SWITCH_DELAY = [\d.]+;/);
+  assert.match(csv, /表-固定參數,換目標間隔,/, '參數表要有這一列，數值才調得動');
+  /* 鎖定目標死掉的當下就要把普攻冷卻壓住，不能等下一輪選目標才處理——
+     那時候這一個 tick 已經打出去了。 */
+  assert.match(combat, /FIELD\.player\.atkCd = Math\.max\(Number\(FIELD\.player\.atkCd\) \|\| 0, switchCd\)/);
+});
+
 test('敵人尚未建立卡片就被擊殺時，傷害浮字會等卡片建立後補顯示', () => {
   assert.match(util, /floatText\(enemyEventFloatTarget\(ent, floatSel\), text, cls, damageValue, ent, undefined, delayMs\)/);
   assert.match(ui, /var PENDING_ENEMY_FLOATS = \[\];/);
