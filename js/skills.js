@@ -13,8 +13,17 @@
    敵人側印記等狀態掛敵人實體（純 JSON 資料、until 時戳自然過期）；
    時間基準沿用 applyBuff/applyDot 同一時鐘 GT（js/util.js 遊戲時鐘，秒）。
    欄位一律由 resetSkillRT() 重建，戰鬥/關卡切換與讀檔進入點呼叫（比照 skillCds 重置位置）。 */
+var SKILL_CAST_DEFAULT_SEC = 0.4;
+var SKILL_CAST_RT = [];
 var SKILL_RT = null;
 function resetSkillRT() {
+  for (var castI = 0; castI < SKILL_CAST_RT.length; castI++) {
+    if (SKILL_CAST_RT[castI] && SKILL_CAST_RT[castI].pEnt) {
+      SKILL_CAST_RT[castI].pEnt._skillCastRemaining = 0;
+      SKILL_CAST_RT[castI].pEnt._skillCastId = '';
+    }
+  }
+  SKILL_CAST_RT = [];
   SKILL_RT = {
     amps: [],         // skillAmp 族：{scope,pct,until,uses,refundPct,perCdSec,cap,cdrPct,srcId} 待消耗增幅清單
     charges: {},      // stackCharge 族：name → {stacks,max,until,burst,srcId} 疊層狀態
@@ -2901,9 +2910,104 @@ function markSkillReady(pEnt, id) {
 }
 
 // 依冷卻歸零先後挑一個可施放的技能（每 tick 至多一個）；同時就緒時沿用裝載順序
+/* Normal active skills use a short cast lock.  A skill/effect can opt out
+   explicitly with castTime: 0; triggered casts can use noCastLock. */
+function skillCastTimeFor(def, fx, lv, opts) {
+  if (opts && opts.noCastLock) return 0;
+  var raw;
+  if (fx && fx.castTime !== undefined) raw = fx.castTime;
+  else if (def && def.castTime !== undefined) raw = def.castTime;
+  else if (def && def.fx && def.fx.castTime !== undefined) raw = def.fx.castTime;
+  if (typeof raw === 'function') raw = raw(lv || 1);
+  if (raw && typeof raw === 'object') {
+    raw = Number(raw.base) + Number(raw.per || 0) * Math.max(0, (lv || 1) - 1);
+  }
+  if (raw === undefined) return SKILL_CAST_DEFAULT_SEC;
+  var sec = Number(raw);
+  return isFinite(sec) && sec >= 0 ? sec : SKILL_CAST_DEFAULT_SEC;
+}
+
+function skillCastJobFor(pEnt) {
+  for (var i = 0; i < SKILL_CAST_RT.length; i++) {
+    if (SKILL_CAST_RT[i] && SKILL_CAST_RT[i].pEnt === pEnt) return SKILL_CAST_RT[i];
+  }
+  return null;
+}
+
+function skillCastInProgress(pEnt) {
+  var job = skillCastJobFor(pEnt);
+  return !!(job && job.remaining > 0);
+}
+
+function executeSkillCastJob(job) {
+  if (!job) return null;
+  if (job.kind === 'skill2') return castSkill2(job.pEnt, job.target, job.skillId, job.floatSel, job.opts);
+  if (job.kind === 'potential') {
+    return castPotentialSkill(job.pEnt, job.target, job.def, job.floatSel, job.loadoutKey);
+  }
+  return castSkill(job.pEnt, job.target, job.skillId, job.lv, job.floatSel, job.statSlot, job.opts);
+}
+
+function beginSkillCast(job) {
+  var pEnt = job && job.pEnt;
+  if (!pEnt || skillCastInProgress(pEnt)) return null;
+  var sec = skillCastTimeFor(job.def, job.fx, job.lv, job.opts);
+  if (!(sec > 0)) return executeSkillCastJob(job);
+
+  var entry = {
+    pEnt: pEnt,
+    remaining: sec,
+    kind: job.kind,
+    target: job.target,
+    skillId: job.skillId,
+    lv: job.lv,
+    floatSel: job.floatSel,
+    statSlot: job.statSlot,
+    def: job.def,
+    loadoutKey: job.loadoutKey,
+    opts: job.opts
+  };
+  SKILL_CAST_RT.push(entry);
+  pEnt._skillCastRemaining = sec;
+  pEnt._skillCastId = job.skillId || (job.loadoutKey || '');
+  return { casting: true, castTime: sec, skillId: pEnt._skillCastId, killed: false, dmg: 0 };
+}
+
+function tickSkillCast(pEnt, dt) {
+  var entry = skillCastJobFor(pEnt);
+  if (!entry) {
+    if (pEnt) {
+      pEnt._skillCastRemaining = 0;
+      pEnt._skillCastId = '';
+    }
+    return null;
+  }
+  var elapsed = Math.max(0, Number(dt) || 0);
+  var before = entry.remaining;
+  entry.remaining -= elapsed;
+  if (entry.remaining > 1e-6) {
+    pEnt._skillCastRemaining = entry.remaining;
+    return { casting: true, castTime: entry.remaining, skillId: pEnt._skillCastId };
+  }
+
+  var index = SKILL_CAST_RT.indexOf(entry);
+  if (index >= 0) SKILL_CAST_RT.splice(index, 1);
+  pEnt._skillCastRemaining = 0;
+  pEnt._skillCastId = '';
+  var result = executeSkillCastJob(entry) || { killed: false, dmg: 0 };
+  return {
+    completed: true,
+    result: result,
+    killed: !!result.killed,
+    dmg: Number(result.dmg) || 0,
+    remainingDt: Math.max(0, elapsed - before)
+  };
+}
+
 function pickAndCastSkill(pEnt, target, floatSel) {
   var st = getStats();
   if (!pEnt.skillCds) pEnt.skillCds = {};
+  if (skillCastInProgress(pEnt)) return null;
   if ((pEnt.skillGcd || 0) > 0) return null;
   ensureSkillReadyOrder(pEnt);
   var lo = G.player.loadout || [];
@@ -2954,12 +3058,23 @@ function pickAndCastSkill(pEnt, target, floatSel) {
   candidates.sort(function (a, b) { return a.readyAt - b.readyAt || a.slot - b.slot; });
   var choice = candidates[0];
   if (choice.sgId) {
-    return castSkill2(pEnt, target, choice.sgId, floatSel);
+    return beginSkillCast({
+      kind: 'skill2', pEnt: pEnt, target: target, skillId: choice.sgId,
+      floatSel: floatSel, def: (typeof SKILLS2 !== 'undefined') ? SKILLS2[choice.sgId] : null
+    });
   }
   if (choice.potentialDef && typeof castPotentialSkill === 'function') {
-    return castPotentialSkill(pEnt, target, choice.potentialDef, floatSel, choice.id);
+    return beginSkillCast({
+      kind: 'potential', pEnt: pEnt, target: target, skillId: choice.id,
+      floatSel: floatSel, def: choice.potentialDef, loadoutKey: choice.id
+    });
   }
-  return castSkill(pEnt, target, choice.id, choice.lv, floatSel, choice.slot);
+  var choiceDef = skillDef(choice.id);
+  return beginSkillCast({
+    kind: 'skill', pEnt: pEnt, target: target, skillId: choice.id,
+    lv: choice.lv, floatSel: floatSel, statSlot: choice.slot,
+    def: choiceDef, fx: effectiveFx(choice.id, choiceDef, choice.lv)
+  });
 }
 function tickSkillCds(pEnt, dt) {
   if (pEnt.skillGcd > 0) {

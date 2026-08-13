@@ -219,7 +219,11 @@ function bfTickApproach(enemies, dt) {
    顯示層一旦自作主張，敵人的座標又是模擬層算的，兩邊就會對不起來——
    2026-08-13 之前「我方一動，整群敵人跟著平移」正是這樣來的。
    回傳 true 表示這個 tick 有在移動（顯示層據此切走路動畫）。 */
-function bfTickPlayer(enemies, dt, preferred) {
+function bfTickPlayer(enemies, dt, preferred, pEnt) {
+  if (pEnt && Number(pEnt._skillCastRemaining) > 0) {
+    BF_PLAYER_CHASING = false;
+    return false;
+  }
   if (!(dt > 0)) return false;
   var home = bfPlayerPos();
   var live = bfLiveList(enemies).filter(function (e) { return !!bfPos(e); });
