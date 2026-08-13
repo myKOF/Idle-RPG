@@ -6146,13 +6146,13 @@ textarea:disabled,
   opacity: 0.55;
 }
 
-/* 電光彈（雷紋刻印等）：亮白核心＋強光暈 */
+/* 電光彈：金黃色閃電折線＋白色芯線 */
 .vfx-proj-lightning .vfx-proj-core {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--vfx-c2, #fffbe0);
-  box-shadow: 0 0 10px var(--vfx-glow, #ffd93d), 0 0 22px var(--vfx-glow, #ffd93d);
+  width: 28px;
+  height: 18px;
+  background: linear-gradient(135deg, var(--vfx-c2, #fff8b0), var(--vfx-c1, #f2b705));
+  clip-path: polygon(0 18%, 28% 48%, 43% 18%, 66% 56%, 100% 28%, 70% 78%, 54% 48%, 34% 84%, 8% 48%);
+  filter: drop-shadow(0 0 5px var(--vfx-glow, #ffd23f));
   animation: vfxCorePulse 0.1s linear infinite alternate;
 }
 
@@ -7045,8 +7045,40 @@ textarea:disabled,
 
 /* 敵攻我方：紅爪痕 */
 .vfx-impact-claw::before {
-  background: radial-gradient(circle, rgba(255, 107, 107, 0.7), transparent 70%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--vfx-c1, #ff6b6b) 70%, transparent), transparent 70%);
   inset: -18px;
+}
+
+.vfx-aura-light {
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--vfx-c1) 32%, transparent), transparent 70%);
+}
+
+.vfx-aura-dark {
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--vfx-c1) 30%, transparent), transparent 72%);
+}
+
+.vfx-aura-ice .vfx-aura-p {
+  width: 8px;
+  height: 8px;
+  border-radius: 1px;
+  background: linear-gradient(135deg, var(--vfx-c2), var(--vfx-c1));
+  transform: rotate(45deg);
+}
+
+.vfx-aura-lightning .vfx-aura-p {
+  width: 17px;
+  height: 9px;
+  background: linear-gradient(135deg, var(--vfx-c2), var(--vfx-c1));
+  clip-path: polygon(0 12%, 38% 45%, 53% 10%, 100% 58%, 67% 48%, 52% 90%, 31% 54%);
+  filter: drop-shadow(0 0 4px var(--vfx-glow));
+}
+
+.vfx-aura-earth .vfx-aura-p {
+  width: 8px;
+  height: 8px;
+  border-radius: 1px;
+  background: var(--vfx-c1);
+  box-shadow: inset 2px 2px 0 var(--vfx-c2), 0 0 4px var(--vfx-glow);
 }
 
 .vfx-impact-claw::after {
@@ -7057,7 +7089,7 @@ textarea:disabled,
   width: 30px;
   height: 3px;
   border-radius: 2px;
-  background: linear-gradient(90deg, transparent, #ff6b6b 30%, #ffd0d0 55%, #ff6b6b 75%, transparent);
+  background: linear-gradient(90deg, transparent, var(--vfx-c1, #ff6b6b) 30%, var(--vfx-c2, #ffd0d0) 55%, var(--vfx-c1, #ff6b6b) 75%, transparent);
   animation: vfxClaw 0.4s ease-out both;
 }
 

@@ -49,15 +49,17 @@ var _vfxAnchorCache = Object.create(null);
 var _vfxLayerRectCache = null;
 var _vfxLayoutVersion = 0;
 
-/* 元素主題：c1 主色、c2 亮部／輔色、glow 光暈。無屬性事件退回 spec.color 單色。 */
+/* 元素主題：c1 主色、c2 亮部／輔色、glow 光暈。
+   這組色票同時供 DOM CSS 與 PixiJS 使用，所以 glow 採十六進位色碼，
+   不用 rgba；無屬性事件才退回 spec.color 單色。 */
 var VFX_ELEM_THEME = {
-  fire:      { c1: '#fb7233', c2: '#ffd166', glow: 'rgba(251, 114, 51, 0.85)' },
-  ice:       { c1: '#54c7fc', c2: '#e8faff', glow: 'rgba(84, 199, 252, 0.85)' },
-  lightning: { c1: '#ffd93d', c2: '#fffbe0', glow: 'rgba(255, 217, 61, 0.9)' },
-  poison:    { c1: '#9ee34a', c2: '#e0ffb0', glow: 'rgba(158, 227, 74, 0.85)' },
-  light:     { c1: '#ffe9a8', c2: '#fffdf2', glow: 'rgba(255, 233, 168, 0.95)' },
-  dark:      { c1: '#b76cff', c2: '#2e1046', glow: 'rgba(183, 108, 255, 0.9)' },
-  earth:     { c1: '#d2a05c', c2: '#6b4526', glow: 'rgba(210, 160, 92, 0.85)' }
+  light:     { c1: '#ffe47a', c2: '#fffef4', glow: '#fff3a3' },
+  dark:      { c1: '#6f2da8', c2: '#1a0c2e', glow: '#913dcc' },
+  fire:      { c1: '#e63924', c2: '#ffd447', glow: '#ff6a2a' },
+  ice:       { c1: '#4da6ff', c2: '#f2fbff', glow: '#79d8ff' },
+  lightning: { c1: '#f2b705', c2: '#fff8b0', glow: '#ffd23f' },
+  earth:     { c1: '#ad7444', c2: '#5b3a27', glow: '#c48a55' },
+  poison:    { c1: '#4caf2b', c2: '#d8ff8a', glow: '#76d83b' }
 };
 
 function vfxSetEnabled(on) {
