@@ -210,6 +210,31 @@ function scalarValue(file, varName, value, label) {
 function scalar(file, varName, cat, name, i) {
   scalarValue(file, varName, P(cat, name, i), varName);
 }
+/* 陣列格式：{1,2,3,5,7} → [1, 2, 3, 5, 7]（遊戲端每次隨機抽一個，機率均等）。
+   刻意排除含 ~ 的寫法：那是 rangeBound 的區間格式（{下限~上限}），不是清單。 */
+function numberListLiteral(raw) {
+  const txt = String(raw).trim();
+  const m = /^\{\s*([^}~]*?)\s*\}$/.exec(txt);
+  if (!m) return null;
+  const parts = m[1].split(/[,;、]/).map(x => x.trim()).filter(x => x !== '');
+  if (!parts.length) return null;
+  const nums = parts.map(x => {
+    const n = Number(x);
+    if (!Number.isFinite(n)) throw new Error('參數陣列含非數值：' + txt + '（' + x + '）');
+    return n;
+  });
+  return '[' + nums.join(', ') + ']';
+}
+/* 這一格可以填單一數值，也可以填 {a,b,c} 陣列。程式端兩種都要吃得下。 */
+function scalarOrList(file, varName, cat, name, i) {
+  const raw = P(cat, name, i);
+  const list = numberListLiteral(raw);
+  edits.push({
+    file,
+    re: new RegExp('(\\b' + esc(varName) + '\\s*=\\s*)(\\[[^\\]]*\\]|-?[\\d.]+)'),
+    grp: 2, value: list || String(raw).trim(), label: varName
+  });
+}
 /* 參數表還沒有這一列（或這一格是空的）時跳過，不中斷整份套用。
 
    為什麼需要：CSV 是由 config/Excel/game_parameters.xlsx 產生的（套用參數.bat 第 2 步），
@@ -452,7 +477,7 @@ scalar('data', 'PART_UPGRADE_COST_C', '表-固定參數', '零件升級金錢消
 /* 出怪間隔一列兩個值：a＝同一關內每一波的間隔，b＝切換到下一關之後的間隔。
    （原本這一列是 RESPAWN_DELAY「空場補怪間隔 × (1-移動速度%)」，已取消：
      間隔改為純定值，不再受移動速度影響。） */
-scalar('data', 'FIELD_WAVE_SPAWN_INTERVAL', '表-固定參數', '出怪間隔', 0);
+scalarOrList('data', 'FIELD_WAVE_SPAWN_INTERVAL', '表-固定參數', '出怪間隔', 0);
 scalar('data', 'FIELD_STAGE_SWITCH_DELAY', '表-固定參數', '出怪間隔', 1);
 scalar('data', 'REVIVE_DELAY', '表-固定參數', '死亡復活時間', 0);
 /* 換目標間隔：這一列是後加的，Excel 主檔補上之前用 scalarOpt 跳過（0 是有效值，要 allowZero）。 */
@@ -1067,9 +1092,16 @@ edits.forEach(e => {
          但地圖識別碼改名（plains → desert）這種「數字全同、鍵名不同」的變更會被判成
          無變更而靜默不套用——2026-08-07 地圖改名時實際踩到。改為數字序列與
          非數字骨架都要一致才算相同；純空白差異仍視為無變更，不會每次都跳變更。 */
+      /* 數值對數值就照數字比（2.0 與 2 視為相同）；只要有一邊不是純數字
+         （例如候選值陣列 [0.75, 1, 2]）就改比字串，忽略空白差異。
+         照數字比的話 Number('[...]') 是 NaN，NaN !== NaN 恆成立，
+         每跑一次都會報「將變更」，內容卻一模一樣。 */
+      const plainNum = (v) => /^-?[\d.]+$/.test(String(v).trim());
       const chg = e.multiGroup
         ? (!numsEqual(cur, e.value) || nonNumericSkeleton(cur) !== nonNumericSkeleton(e.value))
-        : (Number(cur) !== Number(e.value));
+        : (plainNum(cur) && plainNum(e.value)
+            ? Number(cur) !== Number(e.value)
+            : String(cur).replace(/\s+/g, '') !== String(e.value).replace(/\s+/g, ''));
       results.push({ label: e.label, file: e.file, pos: pos, old: cur, new: e.value, changed: chg, apply: () => applyOne(e, mm, offset) });
     }
   } catch (err) {

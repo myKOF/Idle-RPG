@@ -1078,14 +1078,32 @@ function fieldWaveProfileRow(stage, zone) {
   return null;
 }
 
-/* 這一關每隔幾秒補一波敵人。數值一律夾到 0.2 秒以上，避免表填 0 造成每個 tick 都出怪。 */
+/* 出怪間隔可以是單一數值，也可以是一組候選值：參數表填 {0.75,1,1.5,2} 時，
+   apply_params 會寫成陣列，這裡每次**等機率**抽一個。
+   節奏不固定，玩家就無法背拍子，壓力來得比較自然。 */
+function pickWaveInterval(value, fallback) {
+  if (Object.prototype.toString.call(value) === '[object Array]') {
+    var pool = [];
+    for (var i = 0; i < value.length; i++) {
+      var n = Number(value[i]);
+      if (isFinite(n) && n > 0) pool.push(n);
+    }
+    if (!pool.length) return fallback;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+  var v = Number(value);
+  return (isFinite(v) && v > 0) ? v : fallback;
+}
+
+/* 這一關每隔幾秒補一波敵人。數值一律夾到 0.2 秒以上，避免表填 0 造成每個 tick 都出怪。
+   地圖表（Zone_Stage_Waves）填 0 就沿用參數表的 a。 */
 function fieldWaveIntervalFor(stage, zone) {
-  var fallback = (typeof FIELD_WAVE_SPAWN_INTERVAL === 'number' && FIELD_WAVE_SPAWN_INTERVAL > 0)
-    ? FIELD_WAVE_SPAWN_INTERVAL : 2;
+  var fallback = 2;
   var row = fieldWaveProfileRow(stage, zone);
-  var value = row ? Number(row[2]) : fallback;
-  if (!isFinite(value) || value <= 0) value = fallback;
-  return Math.max(0.2, value);
+  var zoneVal = row ? Number(row[2]) : NaN;
+  if (isFinite(zoneVal) && zoneVal > 0) return Math.max(0.2, zoneVal);
+  var base = (typeof FIELD_WAVE_SPAWN_INTERVAL !== 'undefined') ? FIELD_WAVE_SPAWN_INTERVAL : fallback;
+  return Math.max(0.2, pickWaveInterval(base, fallback));
 }
 
 /* 場上同時最多站幾隻。這是難度的煞車：清不完的怪會一路堆積，要壓低壓力就調小它。
