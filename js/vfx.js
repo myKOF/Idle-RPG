@@ -480,6 +480,63 @@ function vfxProjectileCls(spec) {
   return 'vfx-proj-plain';
 }
 
+function vfxLerp(a, b, t) { return a + (b - a) * t; }
+
+function vfxBarrageProjectile(spec, layer, from, to, side, lane, delayMs, travelMs) {
+  var flight = travelMs > 0 ? travelMs : Math.round((spec.dur || 0.55) * 1000);
+  var start = {
+    x: from.x + side * (12 + lane * 8),
+    y: from.y + 10 + lane * 7
+  };
+  var turn = {
+    x: start.x + side * (48 + lane * 18),
+    y: start.y - 16 - lane * 8
+  };
+  var d = vfxNode('vfx-proj ' + vfxProjectileCls(spec) + ' vfx-proj-barrage', layer, spec);
+  d.style.animation = 'none';
+  var core = document.createElement('span');
+  core.className = 'vfx-proj-core';
+  d.appendChild(core);
+  var trail = document.createElement('span');
+  trail.className = 'vfx-proj-trail';
+  d.appendChild(trail);
+  var generation = _vfxGeneration;
+  var startedAt = Date.now() + Math.max(0, delayMs || 0);
+  function frame() {
+    if (!_vfxEnabled || generation !== _vfxGeneration || !d.parentNode) return;
+    var elapsed = Date.now() - startedAt;
+    if (elapsed < 0) {
+      (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : function (fn) { return setTimeout(fn, 16); })(frame);
+      return;
+    }
+    var k = Math.min(1, elapsed / Math.max(1, flight));
+    var x, y, q;
+    if (k < 0.38) {
+      q = k / 0.38;
+      q = q * q * (3 - 2 * q);
+      x = vfxLerp(start.x, turn.x, q);
+      y = vfxLerp(start.y, turn.y, q);
+    } else {
+      q = (k - 0.38) / 0.62;
+      q = q * q;
+      x = vfxLerp(turn.x, to.x, q);
+      y = vfxLerp(turn.y, to.y, q);
+    }
+    var aheadX = k < 0.38 ? turn.x : to.x;
+    var aheadY = k < 0.38 ? turn.y : to.y;
+    d.style.left = x + 'px';
+    d.style.top = y + 'px';
+    d.style.setProperty('--vfx-rot', Math.atan2(aheadY - y, aheadX - x).toFixed(3) + 'rad');
+    d.style.transform = 'translate(-50%, -50%)';
+    d.style.opacity = String(k >= 1 ? 0 : 1);
+    if (k < 1) {
+      (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : function (fn) { return setTimeout(fn, 16); })(frame);
+    }
+  }
+  vfxTrack(d, Math.max(0, delayMs || 0) + flight + 220);
+  frame();
+}
+
 function vfxProjectile(spec, layer, from, to, delayMs, travelMs) {
   var flight = travelMs > 0 ? travelMs : Math.round((spec.dur || 0.5) * 1000);
   var fromPt = from;
@@ -600,7 +657,7 @@ function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
   safeBaseDelay = Math.min(VFX_METEOR_MAX_DELAY_MS, safeBaseDelay);
   var cx = rect.x + rect.w / 2, cy = rect.y + rect.h * 0.45;
   var d = vfxNode('vfx-meteor', layer, spec);
-  var mx0 = cx + rect.w * 0.45, my0 = rect.y - 170;
+  var mx0 = cx, my0 = rect.y - 190;
   d.style.setProperty('--vfx-x0', mx0 + 'px');
   d.style.setProperty('--vfx-y0', my0 + 'px');
   d.style.setProperty('--vfx-x1', cx + 'px');
@@ -634,10 +691,14 @@ function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
   vfxTrack(boom, hitAt + 1000);
 
   var flash = vfxNode('vfx-area-flash', layer, spec);
-  flash.style.left = rect.x + 'px';
-  flash.style.top = rect.y + 'px';
-  flash.style.width = rect.w + 'px';
-  flash.style.height = rect.h + 'px';
+  var waveSize = Math.max(80, Math.min(rect.w, rect.h) * 0.95);
+  flash.style.left = (cx - waveSize / 2) + 'px';
+  flash.style.top = (cy - waveSize / 2) + 'px';
+  flash.style.width = waveSize + 'px';
+  flash.style.height = waveSize + 'px';
+  flash.style.borderRadius = '50%';
+  flash.style.border = '3px solid var(--vfx-c1, #fb7233)';
+  flash.style.boxSizing = 'border-box';
   flash.style.animationDelay = hitAt + 'ms';
   vfxTrack(flash, hitAt + 700);
 
@@ -835,6 +896,22 @@ function renderCombatVfx(spec) {
       idxs.push(i);
     }
     return { pts: pts, ids: ids, idxs: idxs };
+  }
+
+  if (s.variant === 'arcane-barrage' || (s.glyph === '💫' && s.cat === 'magic')) {
+    var barrage = resolveTargets();
+    if (!barrage.pts.length) return;
+    var barrageFrom = vfxPointOf('pv-float', layer) || vfxOriginPoint(layer);
+    for (var bi = 0; bi < barrage.pts.length; bi++) {
+      var barrageTravel = (travelMs && travelMs[barrage.idxs[bi]] > 0) ? travelMs[barrage.idxs[bi]] : 0;
+      for (var lane = 0; lane < 3; lane++) {
+        vfxBarrageProjectile(s, layer, barrageFrom, barrage.pts[bi], -1, lane,
+          baseDelay + bi * 40 + lane * 35, barrageTravel);
+        vfxBarrageProjectile(s, layer, barrageFrom, barrage.pts[bi], 1, lane,
+          baseDelay + bi * 40 + lane * 35, barrageTravel);
+      }
+    }
+    return;
   }
 
   if (kind === 'chain' || s.variant === 'chain') {

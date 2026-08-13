@@ -1722,7 +1722,7 @@ var SKILLS = {
   arcaneBurst: { name: '奧術衝擊', emoji: '🌠', cat: 'magic', tags: ['light'], unlockLv: 1, cost: 30, cd: 10, flavor: '釋放純粹的奧術能量。', fx: { dmgType: 'magic', stat: 'matk', base: 330, per: 75 } },
   fireball: { name: '火球術', emoji: '🔥', cat: 'magic', tags: ['fire'], unlockLv: 1, cost: 25, cd: 9, flavor: '投出灼熱的火球並點燃敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 360, per: 80, status: [{ id: 'burn', base: 20, dur: 4 }] } },
   iceLance: { name: '寒冰槍', emoji: '❄️', cat: 'magic', tags: ['ice'], unlockLv: 1, cost: 25, cd: 9, shape: '1*3', flavor: '冰冷的長槍刺穿敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 330, per: 70, status: [{ id: 'slow', dur: 3 }] } },
-  chainLightning: { name: '連鎖閃電', emoji: '⚡', cat: 'magic', tags: ['lightning'], unlockLv: 1, cost: 28, cd: 11, flavor: '躍動的閃電連續劈落。', fx: { dmgType: 'magic', stat: 'matk', base: 190, per: 40, hits: 2 } },
+  chainLightning: { name: '連鎖閃電', emoji: '⚡', cat: 'magic', tags: ['lightning'], unlockLv: 1, cost: 28, cd: 11, flavor: '躍動的閃電連續劈落。', fx: { dmgType: 'magic', stat: 'matk', base: 190, per: 40, hits: 3 } },
   venomCloud: { name: '劇毒雲霧', emoji: '☠️', cat: 'magic', tags: ['poison'], unlockLv: 20, cost: 26, cd: 12, flavor: '瀰漫的毒霧侵蝕敵人。', fx: { dmgType: 'magic', stat: 'matk', base: 200, per: 40, status: [{ id: 'poison', base: 40, dur: 6 }] } },
   holySmite: { name: '聖光審判', emoji: '🌟', cat: 'magic', tags: ['light'], unlockLv: 20, cost: 25, cd: 10, flavor: '聖光降下裁決並潔淨己身。', fx: { dmgType: 'magic', stat: 'matk', base: 340, per: 70, selfCleanse: true } },
   shadowBolt: { name: '暗影箭', emoji: '🌑', cat: 'magic', tags: ['dark'], unlockLv: 20, cost: 25, cd: 10, flavor: '汲取生命的暗影之矢。', fx: { dmgType: 'magic', stat: 'matk', base: 320, per: 70, healPctOfDmg: 30 } },
@@ -2403,6 +2403,7 @@ function skillRtActiveEnemies(fallback) {
      swordfield 劍域領域：旋轉的劍氣環
      swordwave  普攻劍氣（由 combat.js 直接發） */
 var SKILL_VFX_OVERRIDE = {
+  arcaneBarrage: { variant: 'arcane-barrage' },
   // 物理：範圍斬擊類
   whirlwind: { variant: 'cyclone' },        // 旋風斬：氣旋在敵陣中旋轉
   swiftCuts: { variant: 'bladestorm' },     // 疾風連斬：三段刀光亂舞
