@@ -311,7 +311,11 @@ function vfxCellsRect(cells, layer) {
 }
 
 /* 目標點退化矩形：高塔戰沒有棋盤格，範圍特效以目標卡片為中心畫。 */
-function vfxRectAround(pt) {
+function vfxRectAround(pt, area) {
+  var r = area && Number(area.r);
+  if (isFinite(r) && r > 0) {
+    return { x: pt.x - r, y: pt.y - r, w: r * 2, h: r * 2, r: r };
+  }
   return { x: pt.x - 70, y: pt.y - 80, w: 140, h: 160 };
 }
 
@@ -655,7 +659,7 @@ function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
   var safeBaseDelay = Number(baseDelay);
   if (!isFinite(safeBaseDelay) || safeBaseDelay < 0) safeBaseDelay = 0;
   safeBaseDelay = Math.min(VFX_METEOR_MAX_DELAY_MS, safeBaseDelay);
-  var cx = rect.x + rect.w / 2, cy = rect.y + rect.h * 0.45;
+  var cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
   var d = vfxNode('vfx-meteor', layer, spec);
   var mx0 = cx, my0 = rect.y - 190;
   d.style.setProperty('--vfx-x0', mx0 + 'px');
@@ -691,7 +695,7 @@ function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
   vfxTrack(boom, hitAt + 1000);
 
   var flash = vfxNode('vfx-area-flash', layer, spec);
-  var waveSize = Math.max(80, Math.min(rect.w, rect.h) * 0.95);
+  var waveSize = Math.min(rect.w, rect.h);
   flash.style.left = (cx - waveSize / 2) + 'px';
   flash.style.top = (cy - waveSize / 2) + 'px';
   flash.style.width = waveSize + 'px';
@@ -980,7 +984,7 @@ function renderCombatVfx(spec) {
       // 高塔戰沒有棋盤格：以目標卡片為中心的退化矩形
       var fallbackPt = vfxPointOf(anchorId, layer);
       if (!fallbackPt) return;
-      rect = vfxRectAround(fallbackPt);
+      rect = vfxRectAround(fallbackPt, s.variant === 'meteor' ? spec.area : null);
     }
     if (kind === 'aura') { vfxAura(s, layer, rect); return; }
     if (s.variant === 'meteor') {

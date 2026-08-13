@@ -144,7 +144,18 @@ var BattleRenderer = (function () {
   function areaRect(area) {
     if (!area) return null;
     var r = isFinite(area.r) ? area.r : Math.max(S.W, S.H);
-    return { x: area.x - r, y: area.y - r, w: r * 2, h: r * 2 };
+    return { x: area.x - r, y: area.y - r, w: r * 2, h: r * 2, r: r };
+  }
+
+  /* 範圍矩形由模擬層的圓形半徑換來；特效必須沿用同一個半徑，不能再套
+     另一組固定縮放值，否則 4*4 的傷害範圍與畫面震波會對不起來。 */
+  function rectRadius(rect) {
+    if (!rect) return 0;
+    var r = Number(rect.r);
+    if (isFinite(r) && r > 0) return r;
+    var w = Math.abs(Number(rect.w));
+    var h = Math.abs(Number(rect.h));
+    return isFinite(w) && isFinite(h) ? Math.min(w, h) * 0.5 : 0;
   }
 
   /* 玩家的世界座標。鏡頭永遠對準他，所以他在畫面上永遠置中——
@@ -1454,7 +1465,7 @@ var BattleRenderer = (function () {
         if (!REDUCED_MOTION && Math.random() < 0.6) spawnTrailDot(node.x, node.y, theme);
         if (k >= 1) {
           spawnImpact(cx, cy, spec, true);
-          spawnFireShockwave(cx, cy, Math.min(rect.w, rect.h) * 0.48, theme);
+          spawnFireShockwave(cx, cy, rectRadius(rect), theme);
           addShake(8);
           return false;
         }
@@ -1467,7 +1478,8 @@ var BattleRenderer = (function () {
     g.x = cx; g.y = cy;
     S.layers.fx.addChild(g);
     var t = 0, dur = 0.5;
-    radius = Math.max(54, radius || 80);
+    radius = Number(radius);
+    if (!isFinite(radius) || radius <= 0) radius = 80;
     addFx({
       node: g,
       update: function (dt) {
