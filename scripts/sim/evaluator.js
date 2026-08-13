@@ -107,13 +107,13 @@ function evalHitDamage(st, foe) {
      （js/combat.js playerAtkCfg），所以物理與魔法兩段都要算。 */
   var pIgnore = penIgnoreRatio(st.pPen || 0);
   var pDef = (foe.def || 0) * penDefMultiplier(pIgnore);
-  var pDmg = (st.atk || 0) * (1 - defReduction(pDef, lv));
+  var pDmg = (st.atk || 0) * (1 - defReduction(pDef, lv, st.atk));
   pDmg *= 1 - physicalResistanceReduction(0, lv);   // 野怪沒有物理抗性欄位，留著讓公式對齊
   dmg += pDmg;
 
   var mIgnore = penIgnoreRatio(st.mPen || 0);
   var mDef = (foe.mdef || 0) * penDefMultiplier(mIgnore);
-  var mDmg = (st.matk || 0) * (1 - defReduction(mDef, lv));
+  var mDmg = (st.matk || 0) * (1 - defReduction(mDef, lv, st.matk));
   mDmg *= 1 - magicResistanceReduction(0, lv);
   dmg += mDmg;
 
@@ -162,10 +162,10 @@ function evalIncomingRatio(st, foe) {
   var raw = 1;   // 以「敵方 1 點攻擊力」為單位
 
   if (foe.magic) {
-    raw *= 1 - defReduction(st.mdef || 0, lv);
+    raw *= 1 - defReduction(st.mdef || 0, lv, foe.atk || 0);
     raw *= 1 - magicResistanceReduction(st.mRes || 0, lv);
   } else {
-    raw *= 1 - defReduction(st.def || 0, lv);
+    raw *= 1 - defReduction(st.def || 0, lv, foe.atk || 0);
     raw *= 1 - physicalResistanceReduction(st.pRes || 0, lv);
   }
 
@@ -199,7 +199,11 @@ function evalIncomingRatio(st, foe) {
     raw *= 1 - blockP * (blockDmgReduction(st.blockDmgRed || 0) / 100);
   }
 
-  return Math.max(0, raw);
+  /* 實戰 resolveHit 在所有減傷套用後，仍會以 DAMAGE_MIN 作為最低傷害。
+     新版防禦公式的攻防差值可能讓單一防禦段的減傷率超過 100%，
+     模擬器也必須保留這個最低承傷比例，否則會把 EHP 算成 Infinity。 */
+  var minRatio = DAMAGE_MIN / Math.max(1, foe.atk || 0);
+  return Math.max(minRatio, raw);
 }
 
 /* ---- 戰力純量 ----

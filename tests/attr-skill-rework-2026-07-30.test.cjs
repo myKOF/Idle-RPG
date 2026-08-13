@@ -233,7 +233,7 @@ test('忽略防禦為飽和曲線：單調遞增、到不了 100%，且不轉為
   assert.equal(typeof c.penOverflowDmgMultiplier, 'undefined', '溢出增傷乘區已移除');
 });
 
-test('resolveHit：穿透只折減防禦，敵方永遠保留一小部分防禦', () => {
+test('resolveHit：穿透折減同類型防禦後套用新版攻防差值公式', () => {
   const c = loadContext();
   c.chance = (p) => p >= 100;         // 必中、不爆擊
   c.rnd = () => 1;
@@ -242,20 +242,22 @@ test('resolveHit：穿透只折減防禦，敵方永遠保留一小部分防禦'
   const hit = (pen) => {
     const defender = { hp: 1e9, shield: 0 };
     return c.resolveHit({ hp: 100 }, defender,
-      { atk: 1000, dmgType: 'phys', critRate: 0, hit: 100, pen: pen },
+      { atk: 100, dmgType: 'phys', critRate: 0, hit: 100, pen: pen },
       { def: 500, dodge: 0, level: 1 }).dmg;
   };
   const base = hit(0);
   const mid = hit(350);              // 忽略 70% 防禦
   const high = hit(5000);            // 忽略 97.1% 防禦，仍非全免
-  assert.ok(mid > base, '穿透應提高傷害');
-  assert.ok(high > mid);
-  assert.ok(high < 1000, '防禦未歸零，傷害不得達到攻擊力全額：' + high);
-  // 傷害對得上公式：攻擊力 × (1 - 防禦減傷(防禦 × (1 - 忽略防禦比率)))
+  // 傷害對得上公式：攻擊力 × (1 - 防禦減傷(防禦 × (1 - 忽略防禦比率), 攻擊力))
   const expectAt = (pen) => {
     const def = 500 * c.penDefMultiplier(c.penIgnoreRatio(pen));
-    return Math.round(1000 * (1 - c.defReduction(def, 1)));
+    return Math.round(100 * (1 - c.defReduction(def, 1, 100)));
   };
+  assert.equal(base, expectAt(0));
+  assert.equal(mid, expectAt(350));
+  assert.equal(high, expectAt(5000));
+  assert.notEqual(mid, base, '穿透應改變有效防禦與攻防差值');
+  assert.ok(high < 100, '防禦減傷後傷害不得超過攻擊力：' + high);
   assert.ok(Math.abs(mid - expectAt(350)) <= 1, '350% 穿透傷害不符：' + mid);
   assert.ok(Math.abs(high - expectAt(5000)) <= 1, '5000% 穿透傷害不符：' + high);
 });

@@ -927,7 +927,7 @@ test('減傷屬性的 ROI 必須是正的，而且照遊戲的曲線走', () => 
 
   /* 真正的斷言：把全局減傷加上去，評估器算出的 EHP 增幅必須是正的。
      舊實作在這裡會回負值（甚至 Infinity），這支測試就是為了擋那個。 */
-  const foe = { level: 100, maxHp: 1e6, atk: 1e4, def: 1e3, mdef: 1e3, dodge: 0, hit: 100, aspd: 1, kind: 'normal' };
+  const foe = { level: 100, maxHp: 1e6, atk: 100, def: 1e3, mdef: 1e3, dodge: 0, hit: 100, aspd: 1, kind: 'normal' };
   const base = c.evalPower(c.computeStats(), foe);
   assert.ok(isFinite(base.ehp) && base.ehp > 0, '前提：基準 EHP 要是有限正數');
 

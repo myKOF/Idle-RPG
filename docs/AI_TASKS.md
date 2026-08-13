@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## Codex：調整物理／魔法防禦減傷公式（2026-08-13）
+
+- Status: Completed
+- Owner: Codex
+- Task: 將防禦減傷改為 `(1 + max(0, 敵方同類型攻擊 - 我方同類型防禦)) × 我方同類型防禦 / (我方同類型防禦 + a + b × 攻擊者等級)`；物理攻擊使用物防，魔法攻擊使用魔防，`both` 攻擊分別計算兩段。
+- Dependencies: Claude 已完成 `index.html` 戰場移動相關合併；本次已重新完成目標檔案衝突預檢且無衝突來源。
+- Scope: `js/formula.js`、`scripts/sim/evaluator.js`、`config/CSV/game_parameters.csv`、`game_formula.md`、`index.html`、`tests/defense-reduction.test.cjs`、`tests/attr-skill-rework-2026-07-30.test.cjs`、`docs/AI_TASKS.md`
+- Forbidden: Worker Protocol、存檔格式、其他 AI 進行中任務檔案，以及未相關的戰鬥規則或參數。
+- Verification: 新增物理／魔法差值與下限回歸測試；執行定向測試、完整 `npm.cmd test`、`npm.cmd run build`、`git diff --check`。
+- Known risk: 新公式未額外封頂減傷率；實戰仍由最低傷害下限避免負傷害。完整測試另有既有 `tests/multi-enemy.test.cjs` 菁英數量表失敗，與本任務無關。
+- Handoff: Claude Code 唯讀 Review；使用者合併前確認戰鬥承傷與輸出行為。
+
 ## Codex：戰鬥改版後裝備詳情與寶石鑲嵌版面修正（2026-08-12）
 
 - Status: Completed
