@@ -44,9 +44,9 @@ function bfSpawnDist() { return bfNum('BF_SPAWN_DIST', 440); }        // 生成�
 function bfContactDist() { return bfNum('BF_CONTACT_DIST', 46); }     // 走到這麼近就停
 /* 我方只有一種速度：不是在移動就是站著。追擊與空場推進共用同一個值——
    兩段速度會讓畫面看起來忽快忽慢，像一下走路一下跑步。 */
-function bfPlayerSpeed() { return bfNum('BF_PLAYER_SPEED', 190); }
-/* 敵人跑速由我方跑速導出：慢一點，我方才跑得掉、追兵才會拉出前後隊形。 */
-function bfEnemySpeed() { return bfPlayerSpeed() * bfNum('BF_ENEMY_SPEED_RATIO', 0.8); }
+function bfPlayerSpeed() { return bfNum('BF_PLAYER_SPEED', 300); }
+/* 敵人跑速是獨立的值，不由我方換算——兩邊要能分開調。 */
+function bfEnemySpeed() { return bfNum('BF_ENEMY_SPEED', 210); }
 function bfMeleeRange() { return bfNum('BF_MELEE_RANGE', 62); }       // 近戰攻擊距離
 function bfRangedRange() { return bfNum('BF_RANGED_RANGE', 320); }    // 魔法系敵人的攻擊距離
 function bfBodyRadius() { return bfNum('BF_BODY_RADIUS', 20); }

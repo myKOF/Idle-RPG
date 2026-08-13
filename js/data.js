@@ -1336,8 +1336,11 @@ function currentZoneDef() {
 var BF_UNIT = 60;              // 一個「身位」的長度；範圍技的 n×n 換算成半徑用
 var BF_SPAWN_DIST = 440;       // 生成時離我方多遠（畫面外一點）
 var BF_CONTACT_DIST = 46;      // 走到這麼近就停（接觸）
-var BF_PLAYER_SPEED = 190;     // 我方移動速度（追擊與空場推進共用；速度的基準值）
-var BF_ENEMY_SPEED_RATIO = 0.8;// 敵人跑速 = 我方跑速 × 這個比例（慢一點才追得出隊形）
+/* 移動速度：我方與敵人各自獨立，互不換算——兩邊的手感要能分開調。
+   唯一的設計前提是敵人要比我方慢，否則我方永遠脫離不了包圍，
+   也就拉不出「後面的追兵一隻一隻趕上來」的隊形。 */
+var BF_PLAYER_SPEED = 300;     // 我方移動速度（追擊與空場推進共用）
+var BF_ENEMY_SPEED = 210;      // 敵人逼近速度
 var BF_MELEE_RANGE = 62;       // 近戰攻擊距離（雙方共用）
 var BF_RANGED_RANGE = 320;     // 魔法系敵人的攻擊距離
 var BF_BODY_RADIUS = 20;       // 一般敵人的體型半徑

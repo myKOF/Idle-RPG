@@ -127,13 +127,11 @@ test('每個 tick 朝我方逼近，走到接觸距離就停住不再前進', ()
   assert.ok(Math.sqrt(e.pos.x * e.pos.x + e.pos.y * e.pos.y) >= stop - 0.5);
 });
 
-test('敵人跑速＝我方跑速 × BF_ENEMY_SPEED_RATIO', () => {
+test('敵人跑速符合 BF_ENEMY_SPEED（與我方速度各自獨立）', () => {
   const c = loadBattlefield();
   const e = at(400, 0);
   c.bfTickApproach([e], 1);
-  const speed = c.BF_PLAYER_SPEED * c.BF_ENEMY_SPEED_RATIO;
-  assert.equal(Math.round(e.pos.x), Math.round(400 - speed));
-  assert.ok(speed < c.BF_PLAYER_SPEED, '敵人要比我方慢，否則永遠拉不開距離');
+  assert.equal(Math.round(e.pos.x), Math.round(400 - c.BF_ENEMY_SPEED));
 });
 
 test('進場中的敵人不參與逼近（還沒進畫面）', () => {
