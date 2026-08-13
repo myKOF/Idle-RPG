@@ -468,7 +468,7 @@ function skillRtPreCast(pEnt, sk, fx, id, lv, st) {
 }
 
 /* ---- 傷害乘算統一區（castSkill baseVal 段、lightningOverdrive 增幅旁呼叫）----
-   回傳 { mult 乘算倍率, flat 追加固定傷害 }；呼叫端 baseVal = baseVal × mult ＋ flat（flat 另行分攤）。
+   回傳 { mult 乘算倍率, flat 追加固定傷害 }；呼叫端 baseVal = baseVal × mult ＋ flat。
    處理順序：skillAmp 消耗 → 連段窗 → 守勢反哺 → stackCharge 疊滿引爆 → resourceConvert（mpDump／
    shieldBurst／hpSacrifice）→ dotAmpPer。全部乘算統一於此、不散落。 */
 function skillRtApplyDamageAmps(pEnt, sk, fx, id, lv, st, targets, pre, parts, floatSel) {
@@ -1000,7 +1000,7 @@ function applySkillFinalDamageMultiplier(target, result, isFusion) {
 }
 
 /* ---- 簡化傷害段（echo／procCast／replayBest／passiveExtraHit 共用重放器）----
-   以技能當級數值 × powerPct% 威力結算：混沌雙修/AOE 分攤/技能效果天賦倍率/神怒/雷霆過載照吃，
+   以技能當級數值 × powerPct% 威力結算：混沌雙修/範圍傷害加成（每個命中目標各自套用，不依目標數分攤）/技能效果天賦倍率/神怒/雷霆過載照吃，
    之後走 resolveHit 全規格（真傷技能比照 castSkill 直扣分支）。
    opts = { hits 段數覆蓋, neverMiss 必中, prefix 浮字前綴, tag 傷害統計名, depth 遞迴深度 }；
    回傳 { dmg, killed, crit }。本函式不寫入 dmgWindow 累計（由呼叫端統一決定，避免重複計入）。 */
@@ -1013,7 +1013,7 @@ function skillRtSimpleCast(pEnt, sk, fx, lv, powerPct, targets, floatSel, opts) 
   var live = skillResolveTargets(pEnt, targets, sk, fx, opts);
   if (!live.length) return out;
   var st = getStats();
-  // 攻擊基準：比照 castSkill——互補加成（混沌雙修）→ AOE 分攤 → 技能效果天賦倍率 → 神怒 → 雷霆過載 → 威力%
+  // 攻擊基準：比照 castSkill——互補加成（混沌雙修）→ 範圍傷害加成（不分攤）→ 技能效果天賦倍率 → 神怒 → 雷霆過載 → 威力%
   var atkStat;
   if (fx.dmgType === 'both') {
     atkStat = ((st.atk || 0) + (st.matk || 0)) * FUSION_BOTH_STAT_FACTOR; // 融合技雙屬性（比照 castSkill）
@@ -1021,7 +1021,7 @@ function skillRtSimpleCast(pEnt, sk, fx, lv, powerPct, targets, floatSel, opts) 
     atkStat = (st[fx.stat] || st.atk);
     if ((st.crossCore || 0) > 0) atkStat += ((fx.stat === 'atk') ? (st.matk || 0) : (st.atk || 0)) * st.crossCore / 100;
   }
-  var baseVal = skillDamageShare(((fx.base || 0) + (fx.per || 0) * (lv - 1)) / 100 * atkStat, st.aoeDmg || 0, live.length);
+  var baseVal = skillDamagePerTarget(((fx.base || 0) + (fx.per || 0) * (lv - 1)) / 100 * atkStat, st.aoeDmg || 0, live.length);
   baseVal *= skillEffectTalentMultiplier(sk);
   if ((st.passives.godWrath || 0) > 0 && pEnt.hp < st.hp * 0.3) baseVal *= 1 + st.passives.godWrath / 100;
   // §3.5 系別判定統一：雷電系＝skillElemOf（帶 lightning 標籤即算，即使無元素成分）
@@ -2267,10 +2267,16 @@ function skillConditionOk(sk, fx, pEnt, target, st) {
   return true;
 }
 
-// 多敵人時，技能總傷害先套用範圍傷害，再平均分配給所有敵人；單敵人維持原始傷害。
-function skillDamageShare(baseDamage, aoePct, targetCount) {
+// 多目標範圍技能：每個命中目標各自承受完整傷害，不因目標數量分攤。
+// 保留原有規則：範圍傷害加成只在實際命中多個目標時套用，單體傷害維持原值。
+function skillDamagePerTarget(baseDamage, aoePct, targetCount) {
   var count = Math.max(1, targetCount || 1);
-  return count > 1 ? baseDamage * (1 + aoePct / 100) / count : baseDamage;
+  return count > 1 ? baseDamage * (1 + (Number(aoePct) || 0) / 100) : baseDamage;
+}
+
+// 舊名稱保留給外部/舊存檔相容；語意已改為每目標完整傷害，不再除以目標數。
+function skillDamageShare(baseDamage, aoePct, targetCount) {
+  return skillDamagePerTarget(baseDamage, aoePct, targetCount);
 }
 
 /* 技能效果天賦倍率（4 轉昇華天賦，talentSkillEffectMultiplier → talents.js）：
@@ -2595,7 +2601,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
       }
     }
     var rawBaseVal = ((fx.base || 0) + (fx.per || 0) * (lv - 1)) / 100 * atkStat;
-    var baseVal = skillDamageShare(rawBaseVal, st.aoeDmg || 0, targetCount);
+    var baseVal = skillDamagePerTarget(rawBaseVal, st.aoeDmg || 0, targetCount);
     baseVal *= fxMult;
     // 神鑄特效【神怒】：生命低於 30% 時技能傷害同步提高
     if ((st.passives.godWrath || 0) > 0 && pEnt.hp < st.hp * 0.3) baseVal *= 1 + st.passives.godWrath / 100;
@@ -2606,9 +2612,9 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
       ? buffVal(pEnt, 'lightningOverload') : 0;
     if (loBoost > 0) baseVal *= 1 + loBoost / 100;
     // === 45 新技能：傷害乘算統一區（skillAmp 消耗／連段窗／守勢反哺／stackCharge 引爆／resourceConvert／dotAmpPer；
-    //     lightningOverdrive 增幅旁，全部乘算集中於 baseVal 段）；flat（護盾引爆追加傷害）比照技能傷害分攤 ===
+    //     lightningOverdrive 增幅旁，全部乘算集中於 baseVal 段）；flat（護盾引爆追加傷害）每個命中目標完整套用 ===
     var rtAmp = skillRtApplyDamageAmps(pEnt, sk, fx, id, lv, st, targets, rtPre, parts, floatSel);
-    baseVal = baseVal * rtAmp.mult + skillDamageShare(rtAmp.flat * fxMult, st.aoeDmg || 0, targetCount);
+    baseVal = baseVal * rtAmp.mult + skillDamagePerTarget(rtAmp.flat * fxMult, st.aoeDmg || 0, targetCount);
     out.baseVal = baseVal; // 45 新技能（periodicField 族）：領域每跳傷害的施放快照基準值
     var hits = (fx.hits || 1) * Math.max(1, legendaryPrep.repeat || 1);
     // 雙重施法（奧術過載等）：追加一段
