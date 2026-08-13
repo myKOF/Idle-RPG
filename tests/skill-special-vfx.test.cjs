@@ -14,7 +14,7 @@ const shim = read('js/worker/shim.js');
 test('三個指定技能使用專用 VFX 與命中規格', () => {
   assert.match(skills, /chainLightning:[\s\S]*?hits:\s*3/);
   assert.match(skills, /arcaneBarrage:\s*\{\s*variant:\s*'arcane-barrage'/);
-  assert.match(skills, /meteor:\s*\{\s*variant:\s*'meteor'/);
+  assert.match(skills, /meteor:\s*\{\s*fxKind:\s*'rain',\s*variant:\s*'meteor'/);
 
   assert.match(vfx, /function vfxBarrageProjectile\(/);
   assert.match(vfx, /var mx0 = cx, my0 = rect\.y - 190/);

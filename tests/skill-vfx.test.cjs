@@ -82,10 +82,25 @@ test('count 夾在 1~5：段數再多也不會生成一堆節點', () => {
 
 test('個別技能可用 SKILL_VFX_OVERRIDE 特規，不必改推導規則', () => {
   const c = loadContext();
-  const meteor = c.SKILLS.meteor;
+  const meteor = c.skillDef('meteor');
   assert.ok(meteor, '隕石術應存在');
   const spec = c.skillVfxSpec(meteor, c.effectiveFx('meteor', meteor, 1), meteor.shape, ['mv-float-0'], null);
   assert.equal(spec.fxKind, 'rain', '隕石術被覆寫為天降');
+});
+
+test('隕石專用特效不隨範圍值改變，all 與方框只改變落點', () => {
+  const c = loadContext();
+  const meteor = c.skillDef('meteor');
+  const fx = c.effectiveFx('meteor', meteor, 1);
+  const all = c.skillVfxSpec(meteor, fx, 'all', ['mv-float-0', 'mv-float-1'], { x: 0, y: 0, r: Infinity });
+  const box = c.skillVfxSpec(meteor, fx, '4*4', ['mv-float-0'], { x: 120, y: 60, r: 120 });
+
+  assert.equal(all.fxKind, 'rain');
+  assert.equal(box.fxKind, 'rain');
+  assert.equal(all.variant, 'meteor');
+  assert.equal(box.variant, 'meteor');
+  assert.equal(all.area.x, 0, 'all 的落點仍由場景中心提供');
+  assert.equal(box.area.x, 120, '4*4 的落點仍由主目標提供');
 });
 
 test('全表覆蓋：每一支主動技與潛力技都推得出特效，且欄位合法', () => {
