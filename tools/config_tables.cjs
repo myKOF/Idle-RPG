@@ -11,8 +11,9 @@
      node tools/config_tables.cjs --apply            # 試跑：由 CSV 重建 JS 字面值，只報告不寫檔
      node tools/config_tables.cjs --apply --write    # 實際寫回 JS（先備份、寫入後 node --check、失敗還原）
 
-   七表 ↔ JS 字面值：
+   八表 ↔ JS 字面值：
      Skills            ← SKILLS + UNLOCKS（js/skills.js）
+     Skills2           ← SKILLS2（js/skills2.js，2026-08-13 新版主動技能系統）
      Status            ← STATUS（js/status.js，2026-08-11 技能及狀態改造）
      Gems              ← GEM_TYPES（js/data.js）
      Talents           ← TALENT_TREES + POTENTIAL_TALENTS（js/data.js）
@@ -36,6 +37,7 @@ const XLSX_DIR = path.join(ROOT, 'config', 'Excel');
 const JS = {
   data: path.join(ROOT, 'js', 'data.js'),
   skills: path.join(ROOT, 'js', 'skills.js'),
+  skills2: path.join(ROOT, 'js', 'skills2.js'),
   status: path.join(ROOT, 'js', 'status.js')
 };
 const WRITE = process.argv.includes('--write');
@@ -1020,7 +1022,95 @@ SCHEMAS.Status = {
   }
 };
 
-const TABLE_ORDER = ['Skills', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Task'];
+/* ---- Skills2 ← SKILLS2（js/skills2.js）新版主動技能群組（2026-08-13 技能改造第一批） ----
+   6 群組 × 7 階；同群組前端顯示為同一個技能。每列＝一階；群組層欄位（名稱／圖標／
+   冷卻／消耗）取自該群組「階數=1」那一列，其餘列的群組欄位僅供閱讀對照。
+   「效果參數(JSON)」鍵值慣例：<鍵>＝Lv.1 基準值、<鍵>Per＝每級增量（值＝基準＋增量×(等級-1)）。
+   「效果說明模板」內的 {鍵} 於遊戲顯示時代入目前等級的計算值。
+   第二頁「欄位定義」＝ SKILLS2_GLOSSARY_ROWS（說明頁，程式不讀取）。 */
+const SKILLS2_GLOSSARY_ROWS = [
+  ['群組ID'],
+  ['用途：技能群組唯一識別碼（裝載欄鍵為 sg:<群組ID>、存檔等級以此為鍵）；'],
+  ['注意：這是鑰匙欄，改了會被當成新群組，玩家已投資的等級會對不上；'],
+  [''],
+  ['階數'],
+  ['1~7；第 1 階為技能本體（預設開啟 Lv.1），前一階至少 Lv.1 才可投資下一階；'],
+  ['每階上限 10 級（固定，不隨轉生提高）；'],
+  [''],
+  ['冷卻時間 / 施法消耗'],
+  ['整個群組共用（同群組是同一個技能）；只需填在階數=1 那一列，其餘列僅供對照；'],
+  [''],
+  ['效果參數(JSON)'],
+  ['各階的數值參數。命名慣例：<鍵>＝Lv.1 基準值、<鍵>Per＝每級增量，值＝基準＋增量×(等級-1)；'],
+  ['常用鍵：pct＝傷害/效果百分比、chance＝機率%、add＝追加次數/目標數（小數部分以機率觸發）、'],
+  ['　　　　count＝目標/次數、m＝距離（米，近戰攻擊距離=5米換算）、sec＝秒數、deg＝角度、'],
+  ['　　　　dotPct＝每跳傷害%（占技能傷害）、dotSec＝持續秒數、dotGap＝作用間隔秒、'],
+  ['　　　　gapPct＝間隔縮短%、times＝連擊次數、max＝連鎖上限、cr/cd＝爆擊率/爆擊傷害%、hits＝段數；'],
+  ['注意：鍵名是程式接線，不能自創或改名；只調數字即可；'],
+  [''],
+  ['升級金幣基數 / 升級金幣倍率'],
+  ['升到下一級費用＝基數 × 倍率^目前等級（取整）；'],
+  [''],
+  ['效果說明模板'],
+  ['遊戲內顯示的說明文字；{鍵} 會代入目前等級的計算值（鍵名同「效果參數(JSON)」）。']
+];
+SCHEMAS.Skills2 = {
+  name: 'Skills2', jsFile: 'skills2', sheet: 'Skills2', vars: ['SKILLS2'],
+  extraSheets: [{ name: '欄位定義', rows: SKILLS2_GLOSSARY_ROWS }],
+  header: ['群組ID', '群組名稱', '群組圖標', '冷卻時間', '施法消耗', '階數', '階段名稱',
+    '效果參數(JSON)', '升級金幣基數', '升級金幣倍率', '效果說明模板'],
+  extract(src) {
+    const SKILLS2 = evalLiteral(extractLiteral(src, 'SKILLS2').literal);
+    const rows = [];
+    Object.keys(SKILLS2).forEach(gid => {
+      const g = SKILLS2[gid];
+      (g.tiers || []).forEach((t, i) => {
+        rows.push([gid, g.name, g.emoji, numStr(g.cd), numStr(g.cost), String(i + 1), t.name,
+          JSON.stringify(t.fx || {}), numStr(t.goldBase || 0), numStr(t.goldGrow || 1), t.desc || '']);
+      });
+    });
+    return rows;
+  },
+  rebuild(dataRows, header) {
+    const get = rowGetter(header);
+    const groups = {};
+    const order = [];
+    dataRows.filter(r => get(r, '群組ID').trim() !== '').forEach(r => {
+      const gid = get(r, '群組ID').trim();
+      const tierIdx = Math.floor(toNum(get(r, '階數')));
+      if (!(tierIdx >= 1)) throw new Error('Skills2 群組「' + gid + '」有一列缺「階數」');
+      if (!groups[gid]) {
+        groups[gid] = { name: '', emoji: '', cd: 0, cost: 0, tiers: [] };
+        order.push(gid);
+      }
+      if (tierIdx === 1) {
+        groups[gid].name = get(r, '群組名稱');
+        groups[gid].emoji = get(r, '群組圖標');
+        groups[gid].cd = toNum(get(r, '冷卻時間'));
+        groups[gid].cost = toNum(get(r, '施法消耗'));
+      }
+      const fxRaw = get(r, '效果參數(JSON)').trim();
+      let fx;
+      try { fx = fxRaw ? JSON.parse(fxRaw) : {}; }
+      catch (e) { throw new Error('Skills2 群組「' + gid + '」第 ' + tierIdx + ' 階「效果參數(JSON)」解析失敗：' + e.message); }
+      groups[gid].tiers[tierIdx - 1] = {
+        name: get(r, '階段名稱'), fx,
+        goldBase: toNum(get(r, '升級金幣基數')), goldGrow: toNum(get(r, '升級金幣倍率')),
+        desc: get(r, '效果說明模板')
+      };
+    });
+    order.forEach(gid => {
+      const g = groups[gid];
+      if (!g.tiers.length) throw new Error('Skills2 群組「' + gid + '」沒有任何階');
+      g.tiers.forEach((t, i) => { if (!t) throw new Error('Skills2 群組「' + gid + '」缺第 ' + (i + 1) + ' 階'); });
+      if (!g.name) throw new Error('Skills2 群組「' + gid + '」階數=1 那一列缺「群組名稱」');
+    });
+    const entries = order.map(gid => '  ' + (isIdentKey(gid) ? gid : quoteStr(gid)) + ': ' + jsLit(groups[gid]));
+    return { SKILLS2: 'var SKILLS2 = {\n' + entries.join(',\n') + '\n};' };
+  }
+};
+
+const TABLE_ORDER = ['Skills', 'Skills2', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Task'];
 
 /* ===========================================================================
    模式：--gen / --sync / --apply
@@ -1029,7 +1119,7 @@ function csvPathOf(name) { return path.join(CSV_DIR, name + '.csv'); }
 function xlsxPathOf(name) { return path.join(XLSX_DIR, name + '.xlsx'); }
 
 function cmdGen(only) {
-  const srcMap = { data: readUtf8(JS.data), skills: readUtf8(JS.skills), status: readUtf8(JS.status) };
+  const srcMap = { data: readUtf8(JS.data), skills: readUtf8(JS.skills), skills2: readUtf8(JS.skills2), status: readUtf8(JS.status) };
   TABLE_ORDER.forEach(name => {
     if (only && name !== only) return; // --gen <表名>：只重生指定表，不動其他表
     const sc = SCHEMAS[name];
@@ -1056,8 +1146,8 @@ function cmdSync() {
 }
 
 function cmdApply(only) {
-  const srcMap = { data: readUtf8(JS.data), skills: readUtf8(JS.skills), status: readUtf8(JS.status) };
-  const newSrc = { data: srcMap.data, skills: srcMap.skills, status: srcMap.status };
+  const srcMap = { data: readUtf8(JS.data), skills: readUtf8(JS.skills), skills2: readUtf8(JS.skills2), status: readUtf8(JS.status) };
+  const newSrc = { data: srcMap.data, skills: srcMap.skills, skills2: srcMap.skills2, status: srcMap.status };
   const changes = []; // {name, var, changed}
   let hadError = false;
 
@@ -1138,6 +1228,6 @@ if (mode === 'gen') cmdGen(only);
 else if (mode === 'sync') cmdSync();
 else if (mode === 'apply') cmdApply(only);
 else {
-  console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills|Status|Gems|Talents|Equipment_Affix|NPC|Task]');
+  console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills|Skills2|Status|Gems|Talents|Equipment_Affix|NPC|Task]');
   process.exit(1);
 }

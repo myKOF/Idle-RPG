@@ -2762,13 +2762,18 @@ function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
     for (var i = 0; i < lo.length; i++) {
       var entry = lo[i];
       var isPotE = typeof entry === 'string' && entry.indexOf('potential:') === 0;
-      var sk = isPotE ? (typeof potentialDef === 'function' ? potentialDef(entry.slice(10)) : null) : skillViewDef(skillsSnapshot, entry);
+      var isSgE = typeof entry === 'string' && entry.indexOf('sg:') === 0;
+      var sk = isSgE
+        ? (typeof SKILLS2 !== 'undefined' ? SKILLS2[entry.slice(3)] : null)
+        : (isPotE ? (typeof potentialDef === 'function' ? potentialDef(entry.slice(10)) : null) : skillViewDef(skillsSnapshot, entry));
       if (!sk) continue;
       var cd = uiCountdownRemain((pEnt.skillCds && pEnt.skillCds[entry]) || 0, snapshotGt);
-      var lv = isPotE
-        ? uiPotentialLevelFromSnapshot(talentSnapshot, sk.id)
-        : skillViewLevel(skillsSnapshot, entry);
-      arr.push({ sk: sk, lv: lv, cd: cd, cost: isPotE ? 0 : skillManaCost(sk, lv) });
+      var lv = isSgE
+        ? sgUiTotalLevel(sgUiLevels(skillsSnapshot, entry.slice(3)))
+        : (isPotE
+          ? uiPotentialLevelFromSnapshot(talentSnapshot, sk.id)
+          : skillViewLevel(skillsSnapshot, entry));
+      arr.push({ sk: sk, lv: lv, cd: cd, cost: isSgE ? (Number(sk.cost) || 0) : (isPotE ? 0 : skillManaCost(sk, lv)) });
     }
 
     arr.sort(function (a, b) {
@@ -6733,6 +6738,21 @@ function skillViewDescription(id, def, level, skipFusionDetail, isPotential, fus
 }
 
 
+/* 新版技能群組指令（skill2.learn／skill2.downgrade：參數是 group+tier，不是 id）。 */
+function runSkill2UiAction(commandName, group, tier) {
+  var panels = ['skills', 'header'];
+  sendUiCommand(commandName, { group: group, tier: tier }, {
+    silentResultError: true,
+    keys: nodePendingKey('sg:' + group),
+    panels: panels
+  }).then(function (result) {
+    var error = uiCommandResultError(result);
+    if (error) reportUiCommandFailure('技能操作失敗', error, panels);
+  }, function (error) {
+    reportUiCommandFailure('技能操作失敗', error, panels);
+  });
+}
+
 function runSkillUiAction(commandName, id, pendingRef, legacyAction, panels, onSuccess) {
   sendUiCommand(commandName, { id: id }, {
     silentResultError: true,  // 下方 .then 自行回報
@@ -6828,11 +6848,17 @@ function renderSkills() {
   for (var i = 0; i < cap; i++) {
     var id0 = lo[i];
     var isPot0 = typeof id0 === 'string' && id0.indexOf('potential:') === 0;
-    var d0 = id0 ? (isPot0 ? potentialDef(id0.slice(10)) : skillViewDef(skillsSnapshot, id0)) : null;
+    var isSg0 = typeof id0 === 'string' && id0.indexOf('sg:') === 0;
+    var d0 = id0
+      ? (isSg0 ? (typeof SKILLS2 !== 'undefined' ? SKILLS2[id0.slice(3)] : null)
+        : (isPot0 ? potentialDef(id0.slice(10)) : skillViewDef(skillsSnapshot, id0)))
+      : null;
     if (d0) {
-      var loadoutLevel = isPot0
-        ? talentViewPotentialLevel(talentSnapshot, d0.id, skillViewPotentialMaxLevel(reincarnations))
-        : skillViewLevel(skillsSnapshot, id0);
+      var loadoutLevel = isSg0
+        ? sgUiTotalLevel(sgUiLevels(skillsSnapshot, id0.slice(3)))
+        : (isPot0
+          ? talentViewPotentialLevel(talentSnapshot, d0.id, skillViewPotentialMaxLevel(reincarnations))
+          : skillViewLevel(skillsSnapshot, id0));
       lh += '<span class="loadout-slot filled" draggable="' + (loadoutPending ? 'false' : 'true') + '" data-index="' + i + '" data-skill-unequip="' + id0 + '" data-sk="' + id0 + '" data-ui-pending-key="' + loadoutPendingKey + '"' + (loadoutPending ? ' aria-disabled="true"' : '') + '>' +
         d0.emoji + ' ' + esc(d0.name) + ' Lv.' + loadoutLevel + '</span>';
     } else {
@@ -6852,6 +6878,31 @@ function renderSkills() {
 
   // 技能樹（每系一棵，技能不受前置投入點數限制）
   var h = '';
+  // 新版技能群組（技能改造第一批，js/skills2.js）：同群組顯示為一個技能，
+  // 投資各階持續強化；與舊技能並行調教，舊系統驗收後另案刪除。
+  if (typeof SKILLS2 !== 'undefined') {
+    var sgCells = [];
+    var sgLoadout = skillViewLoadout(skillsSnapshot);
+    for (var sgGid in SKILLS2) {
+      var sgG = SKILLS2[sgGid];
+      var sgRef = 'sg:' + sgGid;
+      var sgLvs = sgUiLevels(skillsSnapshot, sgGid);
+      var sgEquipped = sgLoadout.indexOf(sgRef) >= 0;
+      var sgCls = 'tree-cell learned' + (UI.selSkill === sgRef ? ' selected' : '') + (sgEquipped ? ' equipped' : '');
+      sgCells.push('<div class="' + sgCls + '" data-sk="' + sgRef + '">' +
+        '<span class="tc-emoji">' + sgG.emoji + '</span>' +
+        '<span class="tc-lv">' + sgUiTotalLevel(sgLvs) + '</span>' +
+        (sgEquipped ? '<span class="tc-eq">⚔</span>' : '') +
+        '</div>');
+    }
+    var sgRows = '';
+    for (var sgR = 0; sgR < sgCells.length; sgR += 6) {
+      sgRows += '<div class="tree-row">' + sgCells.slice(sgR, sgR + 6).join('') + '</div>';
+    }
+    h += '<div class="tree-panel sg-skill-panel"><div class="tree-title">🌟 新版技能 ' +
+      '<span class="dim-text">調教中：同群組為同一個技能，升級各階持續強化（花費金幣；第 1 階預設開啟）</span></div>' +
+      sgRows + '</div>';
+  }
   for (var cat in SKILL_CATS) {
     var cells = [];
     for (var id in SKILLS) {
@@ -6886,6 +6937,70 @@ function renderSkills() {
 function potentialSkillId(ref) {
   if (typeof ref !== 'string' || ref.indexOf('potential:') !== 0) return null;
   return ref.slice('potential:'.length);
+}
+
+/* ---- 新版技能群組（'sg:<群組id>'，js/skills2.js）---- */
+function sgGroupIdOf(ref) {
+  if (typeof ref !== 'string' || ref.indexOf('sg:') !== 0) return null;
+  return ref.slice(3);
+}
+/* 快照 → 生效等級（正規化交給共載的 sgEffectiveLevels；主執行緒沒有 G，一律吃快照）。 */
+function sgUiLevels(skillsSnapshot, gid) {
+  var raw = (skillsSnapshot && skillsSnapshot.skills2) ? skillsSnapshot.skills2.levels : null;
+  return (typeof sgEffectiveLevels === 'function') ? sgEffectiveLevels(raw, gid) : null;
+}
+function sgUiTotalLevel(lvs) {
+  var s = 0;
+  for (var i = 0; i < (lvs ? lvs.length : 0); i++) s += lvs[i] || 0;
+  return s;
+}
+
+/* 新版技能群組的升級彈窗內容（沿用 #skill-modal 外殼）。 */
+function renderSkill2Modal(body, gid, skillsSnapshot, headerSnapshot) {
+  var g = SKILLS2[gid];
+  var lvs = sgUiLevels(skillsSnapshot, gid) || [];
+  var ref = 'sg:' + gid;
+  var gold = Number(headerSnapshot && headerSnapshot.player && headerSnapshot.player.gold) || 0;
+  var pendingAttrs = pendingUiButtonAttributes(nodePendingKey(ref));
+  var inLoadout = skillViewLoadout(skillsSnapshot).indexOf(ref) >= 0;
+  var tierMax = (typeof SG_TIER_MAX_LV === 'number') ? SG_TIER_MAX_LV : 10;
+  var h = '<div class="skd-head"><span class="skd-emoji">' + g.emoji + '</span><b>' + esc(g.name) + '</b> ' +
+    '<span class="dim-text">總 Lv.' + sgUiTotalLevel(lvs) + '｜新版技能</span>' +
+    '<span class="sk-meta">🔵 ' + (Number(g.cost) || 0) + ' MP　⏱️ ' + g.cd + 's</span></div>';
+  h += '<div class="skill-tags"><span class="skill-tag skill-tag-category">新版技能（同群組進化）</span></div>';
+  h += '<div class="skill-modal-copy sg-tier-list">';
+  for (var i = 0; i < g.tiers.length; i++) {
+    var lv = lvs[i] || 0;
+    var locked = i > 0 && (lvs[i - 1] || 0) < 1;
+    var atCap = lv >= tierMax;
+    var cost = (typeof skills2UpgradeCost === 'function') ? skills2UpgradeCost(gid, i, lv) : 0;
+    var canUp = !locked && !atCap;
+    var rowCls = 'sg-tier-row' + (lv > 0 ? ' sg-tier-on' : (locked ? ' sg-tier-locked' : ' sg-tier-off'));
+    h += '<div class="' + rowCls + '">';
+    h += '<div class="sg-tier-info"><b>第' + (i + 1) + '階【' + esc(g.tiers[i].name) + '】</b> ' +
+      '<span class="dim-text">Lv.' + lv + '/' + tierMax + (locked ? '｜🔒 前一階需至少 Lv.1' : '') + '</span>' +
+      '<div class="sg-tier-desc">' + describeSkill2Tier(gid, i, lv) + '</div>' +
+      (lv > 0 && !atCap ? '<div class="sg-tier-next dim-text">下一級：' + describeSkill2Tier(gid, i, lv + 1) + '</div>' : '') +
+      '</div>';
+    h += '<div class="sg-tier-actions">';
+    if (canUp) {
+      h += '<button class="btn sm" data-skill2-learn="' + gid + ':' + i + '" data-tip="花費 ' + fmt(cost) + ' 金幣"' +
+        pendingAttrs + (gold < cost ? ' disabled' : '') + '>⬆️ ' + fmt(cost) + '</button>';
+    } else if (atCap) {
+      h += '<span class="sg-tier-max">已滿級</span>';
+    }
+    if (lv > (i === 0 ? 1 : 0)) {
+      h += '<button class="btn sm warn" data-skill2-downgrade="' + gid + ':' + i + '" data-tip="降 1 級（不退還金幣）"' + pendingAttrs + '>⬇️</button>';
+    }
+    h += '</div></div>';
+  }
+  h += '</div>';
+  h += '<div class="detail-actions skill-modal-actions">';
+  h += inLoadout
+    ? '<button class="btn sm warn" data-skill-unequip="' + ref + '"' + pendingAttrs + '>卸下</button>'
+    : '<button class="btn sm" data-skill-equip="' + ref + '"' + pendingAttrs + '>⚔️ 裝備</button>';
+  h += '</div>';
+  body.innerHTML = h;
 }
 
 function openSkillModal(id) {
@@ -6946,6 +7061,13 @@ function renderSkillModal() {
   var headerSnapshot = arguments[2] || uiHeaderPanelSnapshot();
   if (!skillsSnapshot || !talentSnapshot || !headerSnapshot) return;
   var ref = UI.selSkill;
+  // 新版技能群組（'sg:'）：獨立版面（7 階清單），沿用同一個彈窗外殼
+  var sgModalGid = sgGroupIdOf(ref);
+  if (sgModalGid !== null) {
+    if (typeof SKILLS2 === 'undefined' || !SKILLS2[sgModalGid]) { closeSkillModal(); return; }
+    renderSkill2Modal(body, sgModalGid, skillsSnapshot, headerSnapshot);
+    return;
+  }
   var potentialId = potentialSkillId(ref);
   var isPotential = potentialId !== null;
   var id = isPotential ? potentialId : ref;
@@ -7056,6 +7178,19 @@ function renderSkillModal() {
   body.innerHTML = h;
 }
 
+/* 提示框定位（技能／新版技能群組共用）：優先顯示在圖示右側，貼邊時翻到左側/上方。 */
+function positionSkTooltip(tip, anchorEl) {
+  var r = anchorEl.getBoundingClientRect();
+  var tw = tip.offsetWidth, th = tip.offsetHeight;
+  var x = r.right + 10, y = r.top;
+  if (x + tw > window.innerWidth - 8) x = r.left - tw - 10;
+  if (x < 8) x = 8;
+  if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
+  if (y < 8) y = 8;
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+}
+
 /* ---- 技能懸停提示 ---- */
 function showSkillTooltip(ref, anchorEl) {
   var tip = $id('sk-tooltip');
@@ -7064,6 +7199,22 @@ function showSkillTooltip(ref, anchorEl) {
   var talentSnapshot = uiTalentPanelSnapshot();
   var headerSnapshot = uiHeaderPanelSnapshot();
   if (!skillsSnapshot || !talentSnapshot || !headerSnapshot) return;
+  // 新版技能群組（data-sk="sg:<群組id>"）：整組現況一覽
+  var sgTipGid = sgGroupIdOf(ref);
+  if (sgTipGid !== null) {
+    if (typeof SKILLS2 === 'undefined' || !SKILLS2[sgTipGid]) return;
+    var sgG = SKILLS2[sgTipGid];
+    var sgLvs = sgUiLevels(skillsSnapshot, sgTipGid);
+    var sgH = '<div class="skt-name">' + sgG.emoji + ' ' + esc(sgG.name) +
+      ' <span class="dim-text">總 Lv.' + sgUiTotalLevel(sgLvs) + '｜新版技能</span></div>';
+    sgH += '<div class="skt-meta">🔵 ' + (Number(sgG.cost) || 0) + ' MP　⏱️ ' + sgG.cd + 's</div>';
+    sgH += '<div class="skt-desc sg-tier-list">' + describeSkill2Group(sgTipGid, sgLvs) + '</div>';
+    sgH += '<div class="skt-hint">點擊開啟升級面板</div>';
+    tip.innerHTML = sgH;
+    tip.style.display = 'block';
+    positionSkTooltip(tip, anchorEl);
+    return;
+  }
   // 潛力技能沿用同一個技能提示元件（data-sk="potential:id"）。
   var potId = (typeof potentialSkillId === 'function') ? potentialSkillId(ref) : null;
   var isPotential = potId !== null;
@@ -7096,16 +7247,7 @@ function showSkillTooltip(ref, anchorEl) {
   h += '<div class="skt-hint">點擊開啟升級面板</div>';
   tip.innerHTML = h;
   tip.style.display = 'block';
-  // 定位：優先顯示在圖示右側，貼邊時翻到左側/上方
-  var r = anchorEl.getBoundingClientRect();
-  var tw = tip.offsetWidth, th = tip.offsetHeight;
-  var x = r.right + 10, y = r.top;
-  if (x + tw > window.innerWidth - 8) x = r.left - tw - 10;
-  if (x < 8) x = 8;
-  if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
-  if (y < 8) y = 8;
-  tip.style.left = x + 'px';
-  tip.style.top = y + 'px';
+  positionSkTooltip(tip, anchorEl);
 }
 function showTalentTooltip(ref, anchorEl) {
   var tip = $id('sk-tooltip');
@@ -8704,6 +8846,19 @@ function initUI() {
           reportUiCommandFailure('換穿裝備套', error, ['equip', 'inv', 'header']);
         });
       }
+      return;
+    }
+    // 新版技能群組：各階升級／降級（屬性值格式 "群組id:階索引"）
+    var s2l = e.target.closest('[data-skill2-learn]');
+    if (s2l) {
+      var s2lRef = String(s2l.getAttribute('data-skill2-learn')).split(':');
+      runSkill2UiAction('skill2.learn', s2lRef[0], Math.floor(Number(s2lRef[1]) || 0));
+      return;
+    }
+    var s2d = e.target.closest('[data-skill2-downgrade]');
+    if (s2d) {
+      var s2dRef = String(s2d.getAttribute('data-skill2-downgrade')).split(':');
+      runSkill2UiAction('skill2.downgrade', s2dRef[0], Math.floor(Number(s2dRef[1]) || 0));
       return;
     }
     var mx = e.target.closest('[data-skill-max]');

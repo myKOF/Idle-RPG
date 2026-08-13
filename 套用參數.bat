@@ -59,6 +59,8 @@ goto :eof
 
 :sync_remaining_xlsx
 if /I "%~2"=="Skills" exit /b 0
+if /I "%~2"=="Skills2" exit /b 0
+if /I "%~2"=="Status" exit /b 0
 if /I "%~2"=="Gems" exit /b 0
 if /I "%~2"=="Talents" exit /b 0
 if /I "%~2"=="Equipment_Affix" exit /b 0
