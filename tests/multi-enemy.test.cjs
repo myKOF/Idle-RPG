@@ -101,27 +101,41 @@ test('菁英數量表逐張地圖選用，未列出的地圖走 500 關之後那
   assert.ok(maxes[maxes.length - 1] < weightedRange(context.FIELD_ENEMY_COUNT_TABLE).max);
 });
 
-test('荒漠前 100 關每 20 關套用小怪分段表，菁英走荒漠地圖菁英表，100 關後恢復正常', () => {
+test('荒漠小怪分段表由列名帶區間，區間外恢復後備表', () => {
+  /* 分段不再是「固定 20 關一段」：每一列自帶 [最低關卡, 最高關卡, 權重表]，
+     所以 101~150 這種寬度不同的區間也表達得出來（見 data.js 該常數的說明）。 */
   const context = loadFormulaContext();
-  const ranges = [1, 20, 21, 40, 41, 60, 61, 80, 81, 100];
-  ranges.forEach((stage) => {
-    const index = Math.floor((stage - 1) / 20);
-    assert.equal(context.fieldCountTableFor('normal', stage, 'desert'),
-      context.FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES[index], '荒漠第 ' + stage + ' 關小怪分段');
-    assert.equal(context.fieldCountTableFor('elite', stage, 'desert'),
-      context.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert, '荒漠第 ' + stage + ' 關菁英應走荒漠菁英表');
+  const rows = context.FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES;
+  const tableOfStage = (stage) => {
+    const row = rows.find((r) => stage >= r[0] && stage <= r[1]);
+    return row ? row[2] : null;
+  };
+  /* 每一段的頭尾都要對到自己那張表 */
+  rows.forEach((r) => {
+    [r[0], r[1]].forEach((stage) => {
+      assert.equal(context.fieldCountTableFor('normal', stage, 'desert'), r[2],
+        '荒漠第 ' + stage + ' 關小怪分段');
+      assert.equal(context.fieldCountTableFor('elite', stage, 'desert'),
+        context.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert, '荒漠第 ' + stage + ' 關菁英應走荒漠菁英表');
+    });
   });
-  assert.equal(context.fieldCountTableFor('normal', 101, 'desert'), context.FIELD_ENEMY_COUNT_TABLE);
-  assert.equal(context.fieldCountTableFor('elite', 101, 'desert'), context.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert);
+  /* 區間必須連續、不重疊，否則中間那段會靜默掉到後備表 */
+  rows.forEach((r, i) => {
+    assert.ok(r[0] <= r[1], '區間反向：' + JSON.stringify(r.slice(0, 2)));
+    if (i > 0) assert.equal(r[0], rows[i - 1][1] + 1, '分段必須連續：' + rows[i - 1][1] + ' → ' + r[0]);
+  });
+  const lastEnd = rows[rows.length - 1][1];
+  assert.equal(context.fieldCountTableFor('normal', lastEnd + 1, 'desert'), context.FIELD_ENEMY_COUNT_TABLE);
+  assert.equal(context.fieldCountTableFor('elite', lastEnd + 1, 'desert'), context.FIELD_ELITE_COUNT_TABLE_BY_ZONE.desert);
   assert.equal(context.fieldCountTableFor('normal', 1, 'Icefield'), context.FIELD_ENEMY_COUNT_TABLE);
   assert.equal(context.fieldCountTableFor('elite', 1, 'Icefield'), context.FIELD_ELITE_COUNT_TABLE_BY_ZONE.Icefield);
 
   const combat = loadCombatContext();
-  [1, 21, 41, 61, 81].forEach((stage) => {
+  rows.map((r) => r[0]).forEach((stage) => {
     combat.G.stage.current = stage;
     combat.G.stage.zone = 'desert';
     combat.spawnFieldMonster();
-    const table = combat.FIELD_DESERT_EARLY_ENEMY_COUNT_TABLES[Math.floor((stage - 1) / 20)];
+    const table = tableOfStage(stage);
     const range = weightedRange(table);
     assert.ok(combat.FIELD.monsters.length >= range.min && combat.FIELD.monsters.length <= range.max,
       '實際出怪未套用荒漠第 ' + stage + ' 關分段表');
