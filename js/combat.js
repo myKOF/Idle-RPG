@@ -239,6 +239,7 @@ function spawnFieldMonster(append) {
             elite: elite, isBoss: boss,
             gold: base.gold * zn.rewardMult, xp: base.xp * zn.rewardMult, // 金幣/經驗 x場景倍率
             atkCd: 1 / mAspd, effects: {}, ctrlRes: 0, _spawnAt: GT, // 控場遞減計時起點 → formula.js §3
+            _stage: s,   // 這一隻屬於哪一關（過關配額只認本關的擊殺，見 onFieldKill）
             /* 進場倒數：走進畫面前不可攻擊也不可被攻擊（→ fieldCombatReady）。
                同一波逐隻錯開，避免整排同時抵達。 */
             _enterCd: FIELD_ENEMY_ENTER_DELAY + i * FIELD_ENEMY_ENTER_STAGGER,
@@ -1232,10 +1233,18 @@ function onFieldKill(m) {
     syncFieldPrimary();
     /* 過關進度：波次串流之下不能再用「場上清空」判定（場面幾乎不會空），
        改成累計擊殺數達到本關配額。先讀一次配額，讓它在關卡剛換過時把計數歸零，
-       否則這一刀的擊殺會被隨後的重置吃掉。 */
+       否則這一刀的擊殺會被隨後的重置吃掉。
+
+       ⚠️ 只有「這一關生出來的」敵人才算數。換關之後不再清場（設計如此），
+       上一關的殘留會繼續留在場上；若不分關計數，BOSS 關（配額只有 1）
+       會在 BOSS 還沒生出來的那幾秒內，被玩家順手清掉的殘留直接推過去——
+       實測快速清怪時 50 關的 BOSS 完全不會出現。
+       舊存檔在改版當下已在場上的敵人沒有這個欄位，一律照算，避免卡關。 */
     var quota = fieldStageQuota();
-    FIELD.stageKills = (Number(FIELD.stageKills) || 0) + 1;
-    if (FIELD.stageKills >= quota) FIELD._waveClearPending = true;
+    if (m._stage === undefined || m._stage === G.stage.current) {
+        FIELD.stageKills = (Number(FIELD.stageKills) || 0) + 1;
+        if (FIELD.stageKills >= quota) FIELD._waveClearPending = true;
+    }
     UI.dirty.battle = true; UI.dirty.header = true;
 }
 
