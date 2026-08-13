@@ -615,9 +615,9 @@ var ELEM_PROC = {
   poisonTickMult: 0.5,      // 毒：每秒跳傷＝該系元素傷害 × 此倍率
   poisonDur: 4,             // 毒：中毒秒數
   lightCleanseChance: 20,   // 光：淨化自身負面狀態機率%
-  darkDrainMult: 0.25,      // 暗：汲取回復＝該系元素傷害 × 此倍率
+  darkDrainMult: 0.25,      // 暗：汲取回復＝攻擊者當前生命值 × 此倍率
   earthShieldChance: 25,    // 地：觸發岩甲護盾機率%
-  earthShieldMult: 2        // 地：岩甲護盾量＝該系元素傷害 × 此倍率
+  earthShieldMult: 0.02     // 地：岩甲護盾量＝攻擊者當前生命值 × 此倍率
 };
 
 /* ---- 技能屬性化：解析本次傷害段的屬性歸屬 ----
@@ -713,6 +713,8 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   if (!chance(hitChance)) { out.miss = true; return out; }
   // 潛力技能【絕對領域】／【不屈意志】無敵：免疫本次所有傷害。
   if (dCfg.invuln) { out.invuln = true; return out; }
+  // Recovery procs are based on the attacker's current HP, never on dealt damage.
+  var attackerCurrentHp = Math.max(0, Number(attacker && attacker.hp) || 0);
   // 防禦選型（物理/魔法）＋破甲＋穿透：有效防禦 = 防禦 × (1-破甲%) × (1-忽略防禦%)
   // 忽略防禦% 由穿透經 penIgnoreRatio 換算（不再等於穿透%本身）；飽和曲線，不會到 100%，也不轉增傷。
   var dmg = 0;
@@ -816,8 +818,8 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
       else if (pk === 'lightning' && chance(ELEM_PROC.lightningChance)) { dmg += pv * ELEM_PROC.lightningChainMult; out.procs.push('連鎖電擊'); }
       else if (pk === 'poison' && chance(ELEM_PROC.poisonChance)) { applyPoison(defender, pv * ELEM_PROC.poisonTickMult, ELEM_PROC.poisonDur); out.procs.push('中毒'); }
       else if (pk === 'light' && chance(ELEM_PROC.lightCleanseChance)) { cleanse(attacker); out.procs.push('淨化'); }
-      else if (pk === 'dark') { out.heal += pv * ELEM_PROC.darkDrainMult; } // 暗影汲取
-      else if (pk === 'earth' && chance(ELEM_PROC.earthShieldChance)) { out.shield += pv * ELEM_PROC.earthShieldMult; out.procs.push('岩甲'); }
+      else if (pk === 'dark') { out.heal += attackerCurrentHp * ELEM_PROC.darkDrainMult; } // 暗影汲取
+      else if (pk === 'earth' && chance(ELEM_PROC.earthShieldChance)) { out.shield += attackerCurrentHp * ELEM_PROC.earthShieldMult; out.procs.push('岩甲'); }
     }
   }
   // 真實傷害（無視防禦與抗性）= 攻擊力 × 真傷%

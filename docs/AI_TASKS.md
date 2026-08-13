@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## Codex：岩甲護盾改為當前生命值比例（2026-08-13）
+
+- Status: Completed
+- Owner: Codex
+- Task: 元素特效回復不再以造成傷害值計算；暗影汲取保留 25% 比例但改以攻擊者當前生命值為基準，岩甲將舊有 200% 傷害倍率換算為當前生命值 2% 護盾。
+- Dependencies: 使用者補充的新公式；已完成目標檔案衝突預檢且無其他修改來源。
+- Scope: `js/formula.js`、`js/data.js`、`js/worker/sim.worker.js`、`js/bridge.js`、`index.html`、`tests/earth-element.test.cjs`、`tests/skill-element-damage.test.cjs`、`tests/talent-elem-attach.test.cjs`、`game_formula.md`、`docs/AI_TASKS.md`
+- Forbidden: 獨立技能表中明確命名的 `healPctOfDmg`／`dmgToShieldPct` 規則、Worker Protocol、存檔格式，以及其他 AI 進行中任務檔案。
+- Verification: 定向元素測試 29/29；完整測試 1304/1305（唯一失敗為既有 `tests/multi-enemy.test.cjs` 菁英數量表單調性斷言）；build 265/265；`node --check`、`node tools/apply_params.cjs --check-anchors` 554/554、`git diff --check` 通過；主頁與 Worker 快取版本已同步更新。
+- Known risk: `js/skills.js` 中明確命名的 `healPctOfDmg`／`dmgToShieldPct` 與聖痕盾仍保留原本的獨立技能設計；若要將所有獨立技能也改成當前生命值比例，需要另行確認各技能的新百分比。
+- Handoff: Claude Code 唯讀 Review；重新整理測試服頁面後以新版本載入元素公式，確認岩甲數值符合當前生命值 2%。
+
+
 ## Codex：死亡紅色視野迷霧降至 10% 透明度（2026-08-13）
 
 - Status: Completed

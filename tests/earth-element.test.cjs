@@ -37,9 +37,9 @@ function loadStatsContext() {
   return context;
 }
 
-function hit(context, aCfg, dCfg) {
+function hit(context, aCfg, dCfg, attacker = { hp: 1000 }) {
   const defender = { hp: 1e9, shield: 0, effects: {}, dots: [] };
-  return context.resolveHit({}, defender, Object.assign({
+  return context.resolveHit(attacker, defender, Object.assign({
     atk: 10000, dmgType: 'magic', level: 1, hit: 100
   }, aCfg), Object.assign({ dodge: 0, mdef: 0, mRes: 0, resist: {} }, dCfg));
 }
@@ -120,13 +120,18 @@ test('對地屬性敵人傷害% 只對帶 earth 標籤的敵人生效', () => {
   assert.equal(hit(c, aCfg, {}).dmg, 1000);
 });
 
-test('元素特效【岩甲】：地屬性傷害有機率轉為護盾，只回報不直接給盾', () => {
+test('元素特效【岩甲】：以攻擊者當前生命值比例產生護盾，不讀取造成傷害', () => {
   const c = loadFormulaContext();
   // chance 樁只在 ≥100 時成立 → 先確認預設機率下不會誤觸發
   assert.equal(hit(c, { atk: 0, elemAtk: { earth: 200 } }, {}).shield, 0);
   c.ELEM_PROC.earthShieldChance = 100;
-  const r = hit(c, { atk: 0, elemAtk: { earth: 200 } }, {});
-  assert.equal(r.shield, 200 * c.ELEM_PROC.earthShieldMult);
+  assert.equal(c.ELEM_PROC.earthShieldMult, 0.02);
+  const r = hit(c, { atk: 0, elemAtk: { earth: 200 } }, {}, { hp: 1000 });
+  const higherDamage = hit(c, { atk: 0, elemAtk: { earth: 2000 } }, {}, { hp: 1000 });
+  const lowerCurrentHp = hit(c, { atk: 0, elemAtk: { earth: 2000 } }, {}, { hp: 400 });
+  assert.equal(r.shield, 1000 * c.ELEM_PROC.earthShieldMult);
+  assert.equal(higherDamage.shield, r.shield, '大地傷害提高不應提高岩甲護盾');
+  assert.equal(lowerCurrentHp.shield, 400 * c.ELEM_PROC.earthShieldMult, '護盾應依當前生命值計算');
   assert.ok(r.procs.includes('岩甲'));
   // resolveHit 不該就地改動任何實體的護盾（給盾在 js/combat.js）
   assert.match(fs.readFileSync(path.join(root, 'js/combat.js'), 'utf8'), /grantShield\(pEnt, res\.shield, st\)/);
