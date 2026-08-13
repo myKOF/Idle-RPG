@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## Codex：修正 Canvas 護盾條以最大生命為分母（2026-08-13）
+
+- Status: Completed
+- Owner: Codex
+- Task: Canvas 戰鬥 HUD 的護盾條改用本次護盾 `shieldMax` 計算比例，避免護盾高於最大生命時被 clamp 在滿格。
+- Scope: `js/battle-renderer.js`、`index.html`、`tests/player-shield-bar.test.cjs`、`docs/AI_TASKS.md`
+- Forbidden: 護盾計算、戰鬥公式、存檔格式與其他非 UI 規則。
+- Verification: `node --test tests/player-shield-bar.test.cjs tests/shield-max.test.cjs` 5/5；`node --check js/battle-renderer.js` 通過；build 266/266。
+- Known risk: `shieldMax` 由 battle panel 提供，護盾目前值仍由 TICK 高頻視圖提供；未新增 Worker Protocol 欄位。
+- Handoff: Claude Code 唯讀 Review；使用者確認護盾高於最大生命時，受到部分傷害也會立即縮短護盾條。
+
 ## Codex：修正我方護盾條未隨高頻數值扣減（2026-08-13）
 
 - Status: Completed

@@ -71,6 +71,7 @@ var BattleRenderer = (function () {
     towerActive: false,
     zoneKey: '',
     player: null,             // 玩家實體
+    playerShieldMax: 0,       // 本次護盾條的分母（由 battle panel 的 shieldMax 提供）
     bossBar: null,            // 場上 BOSS 的頂部大血條
     entities: {},             // floatSel -> enemy entity
     lastPos: {},              // floatSel -> { x, y, at }（實體移除後短暫保留）
@@ -676,8 +677,11 @@ var BattleRenderer = (function () {
     if (!v) return;
     var hpMax = Math.max(1, v.hpMax || 1), mpMax = Math.max(1, v.mpMax || 1);
     var hp = Math.max(0, v.hp || 0), mp = Math.max(0, v.mp || 0);
+    /* 護盾可能大於最大生命；用 shieldMax 才能讓 200% → 100% 的護盾也能
+       從滿格逐步縮短，而不是被 hpMax 當分母鎖在 100%。 */
+    var shieldMax = S.playerShieldMax > 0 ? S.playerShieldMax : Math.max(0, v.shield || 0);
     var sig = Math.round(hp) + '/' + Math.round(hpMax) + '|' + Math.round(mp) + '/' +
-      Math.round(mpMax) + '|' + Math.round(v.shield || 0);
+      Math.round(mpMax) + '|' + Math.round(v.shield || 0) + '/' + Math.round(shieldMax);
     if (p.vitalsShown === sig) return;
     p.vitalsShown = sig;
 
@@ -691,7 +695,7 @@ var BattleRenderer = (function () {
     if (mpPct > 0) g.roundRect(-w / 2, hpH + gap, w * mpPct, mpH, 1.5).fill(0x2f7fd0);
     var sh = Math.max(0, v.shield || 0);
     if (sh > 0.5) {
-      var sp = Math.max(0.05, Math.min(1, sh / hpMax));
+      var sp = Math.max(0.05, Math.min(1, sh / Math.max(1, shieldMax)));
       g.roundRect(-w / 2, -4, w * sp, 3, 1).fill({ color: 0x8ecbff, alpha: 0.95 });
     }
     p.hpText.text = fmtNum(hp) + ' / ' + fmtNum(hpMax);
@@ -716,6 +720,10 @@ var BattleRenderer = (function () {
     var field = panel.field || {};
     var stage = panel.stage || {};
     syncZone(stage.zone || '');
+    var panelPlayer = field.player;
+    if (panelPlayer && typeof panelPlayer.shieldMax === 'number' && isFinite(panelPlayer.shieldMax)) {
+      S.playerShieldMax = Math.max(0, panelPlayer.shieldMax);
+    }
 
     /* 殘留座標表清理：鍵是單調遞增的 mv-float-N，過期即刪，不清會無限增長 */
     for (var lp in S.lastPos) {
@@ -2249,6 +2257,7 @@ var BattleRenderer = (function () {
       S.floats.length = 0;
       S.floatMerge = {};
       S.lastPos = {};
+      S.playerShieldMax = 0;
       for (var id in S.entities) {
         if (Object.prototype.hasOwnProperty.call(S.entities, id)) destroyEntity(id);
       }
