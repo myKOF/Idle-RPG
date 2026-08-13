@@ -1,6 +1,7 @@
 /* 戰場座標（js/battlefield.js）
-   2026-08-12 改造：格子 → 連續座標。我方永遠在原點，敵人帶 pos={x,y}，
-   每個 tick 朝我方逼近，走到接觸距離才停、才打得到人。
+   2026-08-12 改造：格子 → 連續座標。敵人帶 pos={x,y}，每個 tick 朝我方逼近，
+   走到接觸距離才停、才打得到人。
+   2026-08-13 改造：我方也有座標、自己會跑（bfTickPlayer），敵人追的是他的當前位置。
 
    這裡鎖住的是「規則」而不是某組數字：距離怎麼算、誰會被選成目標、
    打不打得到、範圍技涵蓋誰、逼近會不會收斂。常數一律從 context 讀，
@@ -126,11 +127,13 @@ test('每個 tick 朝我方逼近，走到接觸距離就停住不再前進', ()
   assert.ok(Math.sqrt(e.pos.x * e.pos.x + e.pos.y * e.pos.y) >= stop - 0.5);
 });
 
-test('逼近速度符合 BF_ENEMY_SPEED', () => {
+test('敵人跑速＝我方跑速 × BF_ENEMY_SPEED_RATIO', () => {
   const c = loadBattlefield();
   const e = at(400, 0);
   c.bfTickApproach([e], 1);
-  assert.equal(Math.round(e.pos.x), 400 - c.BF_ENEMY_SPEED);
+  const speed = c.BF_PLAYER_SPEED * c.BF_ENEMY_SPEED_RATIO;
+  assert.equal(Math.round(e.pos.x), Math.round(400 - speed));
+  assert.ok(speed < c.BF_PLAYER_SPEED, '敵人要比我方慢，否則永遠拉不開距離');
 });
 
 test('進場中的敵人不參與逼近（還沒進畫面）', () => {
@@ -148,6 +151,76 @@ test('同伴互相推開，不會疊在同一點', () => {
   const dx = a.pos.x - b.pos.x, dy = a.pos.y - b.pos.y;
   const gap = Math.sqrt(dx * dx + dy * dy);
   assert.ok(gap >= c.BF_BODY_RADIUS * 2 - 1, '兩隻應被推開到體型不重疊，實際間距 ' + gap.toFixed(1));
+});
+
+/* ---- 我方移動 ---- */
+
+test('我方會朝目標跑，進到近戰距離就停下來', () => {
+  const c = loadBattlefield();
+  const e = at(500, 0, { _enterCd: 0 });
+  let guard = 0;
+  while (c.bfTickPlayer([e], 0.05) && guard++ < 500);
+  assert.ok(guard < 500, '應該追得上（我方比敵人快）');
+  assert.ok(c.bfPlayerCanReach(e), '停下來時要打得到');
+  const stoppedAt = c.bfPlayerPos().x;
+  c.bfTickPlayer([e], 0.05);
+  assert.equal(c.bfPlayerPos().x, stoppedAt, '停下來之後不該再往前擠');
+  assert.ok(c.bfEntityDistance(e) < c.BF_MELEE_RANGE,
+    '要停在射程內側一點，正好停在邊界上會讓打得到／打不到反覆切換');
+});
+
+test('我方跑速符合 BF_PLAYER_SPEED', () => {
+  const c = loadBattlefield();
+  c.bfTickPlayer([at(9000, 0)], 1);
+  assert.equal(Math.round(c.bfPlayerPos().x), c.BF_PLAYER_SPEED);
+});
+
+test('場上沒有敵人時往前推進（地板才會捲動，不是呆站）', () => {
+  const c = loadBattlefield();
+  const moved = c.bfTickPlayer([], 1);
+  assert.equal(moved, true);
+  assert.equal(Math.round(c.bfPlayerPos().x), c.BF_PLAYER_IDLE_SPEED);
+});
+
+test('敵人追的是我方當前位置，不會跟著我方平移', () => {
+  /* 2026-08-13 之前敵人存的是「相對我方」的座標，我方一動整群就跟著滑，
+     像黏在身上。這支測試鎖住：我方往前跑 → 後面那隻被拉開（相對位置改變）
+     → 我方停下後牠再自己追上來。 */
+  const c = loadBattlefield();
+  const chaser = at(-300, 0, { _enterCd: 0 });  // 我方後方
+  const bait = at(600, 0, { _enterCd: 0 });     // 指定成追擊目標，我方會朝右邊跑
+  const before = c.bfEntityDistance(chaser);
+  const offsetBefore = chaser.pos.x - c.bfPlayerPos().x;
+
+  for (let i = 0; i < 10; i++) { c.bfTickPlayer([chaser, bait], 0.05, bait); c.bfTickApproach([chaser, bait], 0.05); }
+  const pulled = c.bfEntityDistance(chaser);
+  assert.ok(pulled > before, '我方跑走時後面那隻應該被拉開，實際 ' + before.toFixed(0) + ' → ' + pulled.toFixed(0));
+  assert.ok(Math.abs((chaser.pos.x - c.bfPlayerPos().x) - offsetBefore) > 10,
+    '相對位置必須改變——維持不變就代表敵人被綁在我方身上一起平移');
+
+  for (let i = 0; i < 300; i++) { c.bfTickPlayer([chaser, bait], 0.05, bait); c.bfTickApproach([chaser, bait], 0.05); }
+  assert.ok(c.bfEntityDistance(chaser) <= c.bfStopDistance(chaser) + 5, '我方停下之後追兵要追得上');
+});
+
+test('追兵會拉出前後隊形：近的先到，遠的還在路上', () => {
+  const c = loadBattlefield();
+  const near = at(300, 0, { _enterCd: 0 });
+  const far = at(900, 0, { _enterCd: 0 });
+  for (let i = 0; i < 20; i++) { c.bfTickPlayer([near, far], 0.05); c.bfTickApproach([near, far], 0.05); }
+  assert.ok(c.bfInAttackRange(near), '近的那隻應該已經接戰');
+  assert.ok(!c.bfInAttackRange(far), '遠的那隻應該還在追');
+});
+
+test('我方移動後，生成的新敵人圍著我方而不是原點', () => {
+  const c = loadBattlefield();
+  c.bfTickPlayer([], 3);                       // 空場推進一段
+  const home = c.bfPlayerPos();
+  assert.ok(home.x > 100, '前提：我方確實離開了原點');
+  const e = { hp: 100, maxHp: 100 };
+  c.bfPlaceEnemies([e]);
+  const d = Math.sqrt((e.pos.x - home.x) ** 2 + (e.pos.y - home.y) ** 2);
+  assert.ok(Math.abs(d - c.BF_SPAWN_DIST) <= c.BF_SPAWN_DIST * 0.1,
+    '應該生在我方周圍的生成圓上，實際離我方 ' + Math.round(d));
 });
 
 /* ---- 選敵 ---- */

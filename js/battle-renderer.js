@@ -33,9 +33,10 @@ var BattleRenderer = (function () {
   var FX_AURA_MAX_SEC = 6;         // 領域／旋風類的顯示上限（秒）——原本吃技能的實際持續時間，
                                    // 長效領域會讓那塊半透明方框在畫面上留很久，看起來像沒清乾淨
   var FX_WATCHDOG_MS = 1000;       // 看門狗掃描間隔
-  var PLAYER_RUN_SPEED = 300;      // 角色追擊目標的跑速（px/秒）
-  var PLAYER_ADVANCE_SPEED = 135;  // 空場時向前推進的速度（原 90，×1.5）
-  var PLAYER_REACH = 52;           // 近戰距離：跑到這麼近就停下來打
+  /* 角色的跑速與追擊邏輯已經**不在這裡**：位移由模擬層產生（js/battlefield.js
+     bfTickPlayer），顯示層只把座標畫出來。這裡只留一個「面前一個身位」的長度，
+     給找不到目標時的特效落點用。 */
+  var PLAYER_REACH = 52;
   var ENEMY_CONTACT_GAP = 34;      // 敵人出手時衝到離角色這麼近（＝接觸）
   var ENEMY_MAX_CHARGE = 460;      // 單次衝刺的最大距離，避免從畫面另一頭瞬間貼臉
   var MAX_FLOATS = 60;           // 同時存在的飄字上限
@@ -134,23 +135,11 @@ var BattleRenderer = (function () {
     return Math.max(0.5, Math.min(1, Math.min(w / 82, h / 78)));
   }
 
-  /* 敵人的畫面座標＝角色世界座標 + 模擬層給的相對座標。
-     站位、逼近、推擠現在全部由模擬層負責（js/battlefield.js 座標制），
-     顯示層只是把它畫出來——這樣「看起來貼到臉了」與「打得到」必定一致。 */
-  function entityWorldPos(data) {
-    var pc = playerPos();
-    if (data && data.pos && isFinite(data.pos.x)) {
-      return { x: pc.x + data.pos.x, y: pc.y + data.pos.y };
-    }
-    return { x: pc.x + 220, y: pc.y };
-  }
-
-  /* 範圍技的落點：模擬層給圓（世界相對座標），換成畫面矩形供既有特效沿用。 */
+  /* 範圍技的落點：模擬層給圓（世界絕對座標），換成畫面矩形供既有特效沿用。 */
   function areaRect(area) {
     if (!area) return null;
-    var pc = playerPos();
     var r = isFinite(area.r) ? area.r : Math.max(S.W, S.H);
-    return { x: pc.x + area.x - r, y: pc.y + area.y - r, w: r * 2, h: r * 2 };
+    return { x: area.x - r, y: area.y - r, w: r * 2, h: r * 2 };
   }
 
   /* 玩家的世界座標。鏡頭永遠對準他，所以他在畫面上永遠置中——
@@ -456,7 +445,9 @@ var BattleRenderer = (function () {
       sheetName: sheetName, curAnim: sheetName ? 'idle' : '', baseAnim: 'idle',
       isBoss: isBoss, isElite: isElite, visScale: visScale,
       barW: barW, hitHeight: isBoss ? sz.h * 1.9 : 64 * visScale,
-      wx: 0, wy: 0, tx: 0, ty: 0,     // 世界座標；tx/ty 是逼近目標（角色本人）
+      wx: 0, wy: 0,                   // 畫面上的世界座標（外推後的結果）
+      tx: 0, ty: 0,                   // 模擬層最新的權威座標
+      velX: 0, velY: 0, posAt: 0,     // 由前後兩次面板估出的速度（外推用）
       state: 'entering',              // entering → idle → dying → gone
       bobPhase: Math.random() * Math.PI * 2,
       wobble: 0.7 + Math.random() * 0.5,
@@ -474,10 +465,11 @@ var BattleRenderer = (function () {
       dieAt: 0
     };
 
-    /* 站位完全由模擬層決定（座標制）：這裡只是把 pos 換算成畫面世界座標。 */
-    var at = entityWorldPos(data);
-    ent.wx = at.x; ent.wy = at.y;
-    ent.tx = at.x; ent.ty = at.y;
+    /* 站位完全由模擬層決定（座標制）：pos 是世界絕對座標，直接就位。 */
+    var home = playerPos();
+    var sp = (data && data.pos && isFinite(data.pos.x)) ? data.pos : { x: home.x + 220, y: home.y };
+    ent.wx = sp.x; ent.wy = sp.y;
+    ent.tx = sp.x; ent.ty = sp.y;
     root.x = ent.wx; root.y = ent.wy;
     root.zIndex = ent.wy;
 
@@ -608,8 +600,9 @@ var BattleRenderer = (function () {
       sheetName: 'player', curAnim: 'idle', baseAnim: 'idle',
       hitHeight: 70, walking: false, dead: false,
       flash: 0, jolt: 0, lunge: 0, facing: 1,
-      /* 世界座標。角色會在世界裡跑動追打目標，鏡頭跟著他。 */
-      wx: 0, wy: 0, chaseId: null,
+      /* 世界座標。tx/ty 是模擬層給的權威座標，wx/wy 是逐幀外推後畫出來的位置；
+         鏡頭對準 wx/wy，所以角色永遠在畫面正中央。 */
+      wx: 0, wy: 0, tx: 0, ty: 0, velX: 0, velY: 0, posAt: 0,
       vitalsShown: ''
     };
     drawPlayerVitals();
@@ -706,10 +699,20 @@ var BattleRenderer = (function () {
           if (alive && ent.state === 'idle' && d.atkCd > prevCd + 0.15) enemyAttackAnim(ent);
           ent.lastAtkCd = d.atkCd;
         }
-        /* 模擬層每個 tick 都在移動敵人；這裡只把最新座標記下來，
-           tickWorld 再平滑地追過去（面板 5Hz，直接跳會一格一格閃）。 */
-        var np = entityWorldPos(d);
-        ent.tx = np.x; ent.ty = np.y;
+        /* 模擬層每個 tick 都在移動敵人，但面板 5Hz 才送一次。
+           記下新的權威座標，並用「與上一次的位移÷間隔」估出速度，
+           讓 tickWorld 在兩次更新之間自己把中間的位置補出來（見外推）。
+           我方與敵人現在都是絕對座標，兩邊各自外推，不會互相拖著跑。 */
+        if (d.pos && isFinite(d.pos.x)) {
+          var nowT = nowMs();
+          var gap = Math.max(0.05, Math.min(0.5, (nowT - (ent.posAt || nowT)) / 1000));
+          if (ent.posAt) {
+            ent.velX = (d.pos.x - ent.tx) / gap;
+            ent.velY = (d.pos.y - ent.ty) / gap;
+          }
+          ent.posAt = nowT;
+          ent.tx = d.pos.x; ent.ty = d.pos.y;
+        }
       }
       drawHpBar(ent);
       var stTxt = statusTextOf(d);
@@ -759,15 +762,23 @@ var BattleRenderer = (function () {
           p.reviveText.rotation = Math.PI / 2;   // 角色倒地時 root 轉了 90°，字要轉回來
         }
       }
-      /* 高塔戰期間野外空場是常態，不要一直播走路（畫布上仍是野外畫面） */
-      var walking = !dead && !anyLive && !S.towerActive;
-      if (walking !== p.walking) {
-        p.walking = walking;
-        p.baseAnim = walking ? 'walk' : 'idle';
-        if (!p.curAnim || p.curAnim === 'idle' || p.curAnim === 'walk') {
-          playAnim(p, p.baseAnim);
+      /* 我方座標由模擬層給（FIELD.playerPos ←→ js/battlefield.js bfPlayerPos）。
+         與敵人一樣估速度做外推，把 5Hz 的取樣補成逐幀連續；
+         走路／站立動畫改看「實際有沒有位移」，不再猜「場上有沒有敵人」。 */
+      var pp = field.playerPos;
+      if (pp && isFinite(pp.x) && isFinite(pp.y)) {
+        var pNow = nowMs();
+        var pGap = Math.max(0.05, Math.min(0.5, (pNow - (p.posAt || pNow)) / 1000));
+        if (p.posAt) {
+          p.velX = (pp.x - p.tx) / pGap;
+          p.velY = (pp.y - p.ty) / pGap;
+        } else {
+          p.wx = pp.x; p.wy = pp.y;     // 第一次：直接就位，不要從原點滑過去
         }
+        p.posAt = pNow;
+        p.tx = pp.x; p.ty = pp.y;
       }
+      if (dead || S.towerActive) { p.velX = 0; p.velY = 0; }
     }
 
     /* 空場提示（高塔戰期間野外空場是常態，提示語照 DOM 版分開）。
@@ -1430,10 +1441,9 @@ var BattleRenderer = (function () {
       var meleeCat = spec.cat === 'basic' || spec.cat === 'phys';
       var firstTarget = targets.length ? targets[0] : null;
       if (firstTarget) {
+        /* 出手當下先面向目標；跑不跑過去由模擬層決定，這裡只管朝向。 */
         var tp = posOf(firstTarget);
         S.player.facing = (tp.x < S.player.root.x) ? -1 : 1;
-        /* 近戰類的出手才改追擊對象：遠程技打誰都可以，不該把角色拖著跑 */
-        if (meleeCat && S.entities[firstTarget]) S.player.chaseId = firstTarget;
       }
       if (meleeCat && contactFx && firstTarget) {
         playerAttackAnim('melee', firstTarget);
@@ -1671,61 +1681,26 @@ var BattleRenderer = (function () {
     if (S.paused) dt = 0;
     var t = nowMs();
 
-    /* 離玩家最近、還活著的敵人。玩家會朝它跑過去打——與模擬層「普攻打最近目標」
-     同一個直覺，畫面上看起來才不會打著遠處那隻。 */
-  /* 追擊目標：優先用「模擬層這一刀實際打的那隻」（由 VFX 事件的 targets[0] 得知）。
-     自己猜最近的會猜錯——模擬層算的是棋盤格距離，畫面上的世界距離經過抖動與
-     鏡頭移動早就不一樣了，於是常常跑向 A 卻在打 B，看起來就是隔空攻擊。 */
-  function chaseTargetEntity() {
-    var p = S.player;
-    if (!p) return null;
-    var locked = p.chaseId ? S.entities[p.chaseId] : null;
-    if (locked && locked.state !== 'dying' && locked.state !== 'gone' &&
-        locked.data && locked.data.hp > 0) return locked;
-    p.chaseId = null;
-    return nearestEnemyEntity();
-  }
-
-  function nearestEnemyEntity() {
-    var p = S.player;
-    if (!p) return null;
-    var best = null, bestD = Infinity;
-    for (var id in S.entities) {
-      if (!Object.prototype.hasOwnProperty.call(S.entities, id)) continue;
-      var e = S.entities[id];
-      if (e.state === 'dying' || e.state === 'gone') continue;
-      if (!e.data || !(e.data.hp > 0)) continue;
-      var dx = e.wx - p.wx, dy = e.wy - p.wy;
-      var d = dx * dx + dy * dy;
-      if (d < bestD) { bestD = d; best = e; }
-    }
-    return best;
-  }
-
-  /* ---- 玩家：在世界裡跑動 ----
-       沒有目標就往前推進，有目標就跑過去打，打完不回原位（下一個目標在哪就往哪跑）。
-       這是「回合制感」的解法：角色一直在移動，鏡頭跟著他，畫面不會一頓一頓。 */
+  /* ---- 玩家：把模擬層算好的座標畫出來 ----
+     跑向誰、跑多快、停在哪，全部是模擬層的事（js/battlefield.js bfTickPlayer）。
+     顯示層在這裡只做兩件事：把 5Hz 的取樣補成逐幀連續（外推，作法同敵人），
+     以及決定面向與走路動畫。
+     ⚠️ 不要讓角色在這裡自己移動。顯示層自作主張的位移不會回饋給模擬層，
+     敵人卻是照模擬層座標畫的，於是「看到的距離」與「打得到的距離」會分家。 */
     var p = S.player;
     if (p && dt > 0) {
-      var target = chaseTargetEntity();
       var moving = false;
       if (!p.dead) {
-        if (target) {
-          var tdx = target.wx - p.wx, tdy = (target.wy - 14) - p.wy;
-          var tdist = Math.sqrt(tdx * tdx + tdy * tdy) || 1;
-          if (tdist > PLAYER_REACH) {
-            var step = Math.min(tdist - PLAYER_REACH, PLAYER_RUN_SPEED * dt);
-            p.wx += tdx / tdist * step;
-            p.wy += tdy / tdist * step;
-            moving = step > 0.5;
-          }
-          p.facing = tdx < 0 ? -1 : 1;
-        } else {
-          /* 空場：繼續向前推進（前方＝右），地板會跟著往後捲 */
-          p.wx += PLAYER_ADVANCE_SPEED * dt;
-          p.facing = 1;
-          moving = true;
-        }
+        var pPredX = p.velX * dt, pPredY = p.velY * dt;
+        p.wx += pPredX;
+        p.wy += pPredY;
+        var pCorrK = Math.min(1, dt * 6);
+        var pCorrX = (p.tx - p.wx) * pCorrK, pCorrY = (p.ty - p.wy) * pCorrK;
+        p.wx += pCorrX;
+        p.wy += pCorrY;
+        var pStep = Math.sqrt((pPredX + pCorrX) * (pPredX + pCorrX) + (pPredY + pCorrY) * (pPredY + pCorrY));
+        moving = pStep > 0.4 * dt * 60;
+        if (pStep > 0.6) p.facing = (pPredX + pCorrX) < 0 ? -1 : 1;
       }
       if (moving !== p.walking) {
         p.walking = moving;
@@ -1759,8 +1734,13 @@ var BattleRenderer = (function () {
     world.x = S.W / 2 - cam.x + shx;
     world.y = S.H / 2 - cam.y + shy;
     if (S.groundTile) {
-      S.groundTile.tilePosition.x = -cam.x + shx;
-      S.groundTile.tilePosition.y = -cam.y + shy;
+      /* 貼圖是可四方連續的，所以取一個週期的餘數就好。角色的世界座標會隨著
+         推進一路長大（一場下來幾十萬），直接丟給 tilePosition 會踩到 float32
+         的精度上限，地板開始抖；取餘數之後畫面完全一樣，數值永遠是小數。 */
+      var gtx = S.groundTile.texture;
+      var perX = (gtx && gtx.width) || 128, perY = (gtx && gtx.height) || 128;
+      S.groundTile.tilePosition.x = -(cam.x % perX) + shx;
+      S.groundTile.tilePosition.y = -(cam.y % perY) + shy;
     }
 
     /* 敵人 */
@@ -1769,15 +1749,20 @@ var BattleRenderer = (function () {
       var e = S.entities[id];
       if (dt <= 0) continue;
 
-      /* 站位、逼近、推擠全部由模擬層負責（js/battlefield.js 座標制）。
-         這裡只做「平滑跟上」：面板 5Hz，直接把座標貼上去會一格一格閃。
-         跟隨速度足夠快，看起來就是模擬層那隻在跑。 */
-      var followK = Math.min(1, dt * 14);
-      var movedX = (e.tx - e.wx) * followK;
-      var movedY = (e.ty - e.wy) * followK;
-      e.wx += movedX;
-      e.wy += movedY;
-      var movedLen = Math.sqrt(movedX * movedX + movedY * movedY);
+      /* 站位與逼近由模擬層決定（js/battlefield.js 座標制），但**面板只有 5Hz**：
+         每 200ms 才來一個新座標。單純「追過去」會變成每 200ms 走一段就停，
+         也就是一格一格跳；玩家是渲染器自己逐幀算的，所以只有敵人在抖。
+
+         解法是外推：用前後兩次面板算出速度，兩次更新之間自己按速度前進，
+         再用一個柔性修正把誤差拉回權威座標。等於把 5Hz 的取樣補成逐幀連續。 */
+      var predX = e.velX * dt, predY = e.velY * dt;
+      e.wx += predX;
+      e.wy += predY;
+      var corrK = Math.min(1, dt * 6);
+      var corrX = (e.tx - e.wx) * corrK, corrY = (e.ty - e.wy) * corrK;
+      e.wx += corrX;
+      e.wy += corrY;
+      var movedLen = Math.sqrt((predX + corrX) * (predX + corrX) + (predY + corrY) * (predY + corrY));
 
       if (e.state === 'entering' || movedLen > 0.6 * dt * 60) {
         /* 走路擺動：小怪左右搖 + 輕微縮放跳動（類倖存者小怪步態） */

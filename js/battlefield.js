@@ -15,10 +15,16 @@
    站在最後一行的敵人照樣打得到玩家。畫面上就是雙方隔空互毆。
 
    現在改成連續座標：
-     - 我方永遠在原點 (0,0)，敵人帶 ent.pos = { x, y }（單位≈像素）。
+     - 我方與敵人都有絕對座標 { x, y }（單位≈像素），玩家起點是原點。
+     - 我方會自己朝目標跑（bfTickPlayer），敵人各自追我方的**當前**位置。
      - 敵人每個 tick 朝我方逼近，走到接觸距離就停，並與同伴互相推開。
      - 距離＝真正的歐幾里得距離；能不能攻擊要看距離（bfInAttackRange）。
      - 範圍技從「n×n 方框」改成以主目標為中心的圓（半徑由 n 換算）。
+
+   ---- 2026-08-13：我方也有座標 ----
+   前一版我方恆在原點、敵人存的是「相對我方」的座標，於是我方一移動，
+   整群敵人就跟著平移，像黏在身上。現在我方是場上的一個實體：
+   自己跑向目標，敵人追的是他當下的位置——跑得慢的自然被拉開，再逐一追上來。
    棋盤常數 BF_COLS/BF_ROWS 只剩一個用途：兩者相乘＝**場上同時容納的敵人上限**。 */
 
 /* ---- 容量（BF_COLS×BF_ROWS 的唯一剩餘用途）---- */
@@ -36,11 +42,21 @@ function bfNum(name, fallback) {
 function bfUnit() { return bfNum('BF_UNIT', 60); }                    // 一個「身位」
 function bfSpawnDist() { return bfNum('BF_SPAWN_DIST', 440); }        // 生成時離我方多遠
 function bfContactDist() { return bfNum('BF_CONTACT_DIST', 46); }     // 走到這麼近就停
-function bfEnemySpeed() { return bfNum('BF_ENEMY_SPEED', 150); }      // 逼近速度（單位/秒）
+function bfPlayerSpeed() { return bfNum('BF_PLAYER_SPEED', 190); }    // 我方追擊跑速（單位/秒）
+function bfPlayerIdleSpeed() { return bfNum('BF_PLAYER_IDLE_SPEED', 135); }  // 空場時往前推進的速度
+/* 敵人跑速由我方跑速導出：慢一點，我方才跑得掉、追兵才會拉出前後隊形。 */
+function bfEnemySpeed() { return bfPlayerSpeed() * bfNum('BF_ENEMY_SPEED_RATIO', 0.8); }
 function bfMeleeRange() { return bfNum('BF_MELEE_RANGE', 62); }       // 近戰攻擊距離
 function bfRangedRange() { return bfNum('BF_RANGED_RANGE', 320); }    // 魔法系敵人的攻擊距離
 function bfBodyRadius() { return bfNum('BF_BODY_RADIUS', 20); }
 function bfBossRadius() { return bfNum('BF_BOSS_RADIUS', 52); }
+
+/* ---- 我方座標 ----
+   全場座標的原點。這個物件會被就地改寫（不重新指派），
+   讓 combat.js 把它掛進 FIELD 之後，面板每次序列化都拿到最新值。 */
+var BF_PLAYER = { x: 0, y: 0 };
+function bfPlayerPos() { return BF_PLAYER; }
+function bfResetPlayer() { BF_PLAYER.x = 0; BF_PLAYER.y = 0; return BF_PLAYER; }
 
 /* 體型半徑：BOSS 比較大，所以「邊緣」比中心更早進入接觸距離。 */
 function bfEntityRadius(ent) {
@@ -57,7 +73,9 @@ function bfPos(ent) {
 function bfEntityDistance(ent) {
   var p = bfPos(ent);
   if (!p) return Infinity;
-  return Math.max(0, Math.sqrt(p.x * p.x + p.y * p.y) - bfEntityRadius(ent));
+  var c = bfPlayerPos();
+  var dx = p.x - c.x, dy = p.y - c.y;
+  return Math.max(0, Math.sqrt(dx * dx + dy * dy) - bfEntityRadius(ent));
 }
 
 /* 停止距離：走到這裡就不再前進（接觸距離 + 自己的體型）。 */
@@ -85,7 +103,9 @@ function bfPlayerCanReach(ent) {
 function bfTravelDistance(ent) {
   var p = bfPos(ent);
   if (!p) return bfSpawnDist();
-  return Math.sqrt(p.x * p.x + p.y * p.y);
+  var c = bfPlayerPos();
+  var dx = p.x - c.x, dy = p.y - c.y;
+  return Math.sqrt(dx * dx + dy * dy);
 }
 function bfTravelSeconds(ent) {
   var cellsPerSec = (typeof VFX_PROJECTILE_SPEED_CELLS === 'number' && VFX_PROJECTILE_SPEED_CELLS > 0)
@@ -115,7 +135,8 @@ function bfPlaceEnemies(enemies, keepPlaced) {
     var bestAng = Math.random() * Math.PI * 2, bestScore = -Infinity;
     for (var t = 0; t < 6; t++) {
       var ang = Math.random() * Math.PI * 2;
-      var x = Math.cos(ang) * dist, y = Math.sin(ang) * dist;
+      var c0 = bfPlayerPos();
+      var x = c0.x + Math.cos(ang) * dist, y = c0.y + Math.sin(ang) * dist;
       var worst = Infinity;
       for (var j = 0; j < placedNow.length; j++) {
         var q = bfPos(placedNow[j]);
@@ -126,7 +147,8 @@ function bfPlaceEnemies(enemies, keepPlaced) {
       }
       if (worst > bestScore) { bestScore = worst; bestAng = ang; }
     }
-    ent.pos = { x: Math.cos(bestAng) * dist, y: Math.sin(bestAng) * dist };
+    var home = bfPlayerPos();
+    ent.pos = { x: home.x + Math.cos(bestAng) * dist, y: home.y + Math.sin(bestAng) * dist };
     ok.push(ent);
     placedNow.push(ent);
   }
@@ -147,18 +169,21 @@ function bfTickApproach(enemies, dt) {
   var live = bfLiveList(enemies);
   var i, j;
   var speed = bfEnemySpeed();
+  var home = bfPlayerPos();
   var justInRange = [];
   for (i = 0; i < live.length; i++) {
     var ent = live[i];
     var p = bfPos(ent);
     if (!p) continue;
     if (ent._enterCd > 0) continue;            // 還在進場：不參與逼近，也還不能被打
-    var d = Math.sqrt(p.x * p.x + p.y * p.y);
+    /* 追的是我方**當前**座標，不是出生時的方位——我方跑走就得重新追。 */
+    var dx0 = p.x - home.x, dy0 = p.y - home.y;
+    var d = Math.sqrt(dx0 * dx0 + dy0 * dy0);
     var stop = bfStopDistance(ent);
-    if (d > stop) {
+    if (d > stop && d > 0.0001) {
       var step = Math.min(d - stop, speed * dt);
-      p.x -= (p.x / d) * step;
-      p.y -= (p.y / d) * step;
+      p.x -= (dx0 / d) * step;
+      p.y -= (dy0 / d) * step;
     }
     /* 剛踏進攻擊距離的那一刻記一筆。
        「新怪至少完成一次攻擊」的保證要綁在這裡：雙方射程相同、而玩家的回合在前，
@@ -184,6 +209,42 @@ function bfTickApproach(enemies, dt) {
     }
   }
   return justInRange;
+}
+
+/* ---- 我方移動（每個 tick 呼叫一次）----
+   朝目標跑，進到近戰距離就停下來打；場上一個敵人都沒有時繼續往前推進。
+   ⚠️ 我方的位移必須由這裡產生，顯示層不得自己讓角色跑：
+   顯示層一旦自作主張，敵人的座標又是模擬層算的，兩邊就會對不起來——
+   2026-08-13 之前「我方一動，整群敵人跟著平移」正是這樣來的。
+   回傳 true 表示這個 tick 有在移動（顯示層據此切走路動畫）。 */
+function bfTickPlayer(enemies, dt, preferred) {
+  if (!(dt > 0)) return false;
+  var home = bfPlayerPos();
+  var live = bfLiveList(enemies).filter(function (e) { return !!bfPos(e); });
+  if (!live.length) {
+    /* 空場：往前方（+x）推進，地板會跟著往後捲，不會呆站著等下一波。 */
+    home.x += bfPlayerIdleSpeed() * dt;
+    return true;
+  }
+  /* 追的目標要與「這一刀實際打誰」一致（combat.js 的鎖定目標），
+     否則會出現跑向 A 卻在打 B 的隔空攻擊。 */
+  var target = (preferred && preferred.hp > 0 && bfPos(preferred) && live.indexOf(preferred) >= 0)
+    ? preferred : bfPickPrimary(live, null);
+  if (!target) return false;
+
+  /* 停在射程內側一點，不要正好停在邊界上——邊界上任何抖動都會讓
+     「打得到／打不到」反覆切換，看起來就是一步一停。 */
+  var want = bfMeleeRange() * 0.8;
+  var gap = bfEntityDistance(target) - want;
+  if (gap <= 0) return false;
+  var p = target.pos;
+  var dx = p.x - home.x, dy = p.y - home.y;
+  var len = Math.sqrt(dx * dx + dy * dy);
+  if (len <= 0.0001) return false;
+  var step = Math.min(gap, bfPlayerSpeed() * dt);
+  home.x += (dx / len) * step;
+  home.y += (dy / len) * step;
+  return step > 0.0001;
 }
 
 /* ---- 選敵 ---- */
@@ -328,7 +389,10 @@ function bfAreaPlacement(primary, enemies, shape) {
   var live = bfLiveList(enemies);
   if (live.indexOf(primary) < 0) live.push(primary);
   var sp = bfParseShape(shape);
-  if (sp.kind === 'all') return { area: { x: 0, y: 0, r: Infinity }, targets: live };
+  if (sp.kind === 'all') {
+    var home2 = bfPlayerPos();
+    return { area: { x: home2.x, y: home2.y, r: Infinity }, targets: live };
+  }
   if (sp.kind !== 'box') return { area: null, targets: [primary] };
   var p = bfPos(primary);
   if (!p) return { area: null, targets: [primary] };

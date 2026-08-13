@@ -953,6 +953,12 @@ function fieldTick(dt) {
 
     tickFieldDeathClears(dt);
     var arrivedEnemies = tickFieldEnterDelays(dt);   // 進場倒數：走到定位才加入戰鬥
+    /* 我方移動：朝鎖定目標跑，進到近戰距離就停下來打（→ js/battlefield.js）。
+       位移一律由模擬層產生，顯示層只負責畫。顯示層若自己讓角色跑，敵人的座標
+       卻是模擬層算的，兩邊就會脫節——那正是「我方一動、整群敵人跟著平移」的成因。
+       FIELD.playerPos 是 bfPlayerPos() 本人的參照（就地改寫），面板序列化時自然帶到最新值。 */
+    if (typeof bfPlayerPos === 'function' && FIELD.playerPos !== bfPlayerPos()) FIELD.playerPos = bfPlayerPos();
+    if (typeof bfTickPlayer === 'function') bfTickPlayer(fieldEnemyList(), dt, p._lockTarget);
     /* 逼近與推擠：敵人朝我方走、走到接觸距離就停，同伴之間互相推開。
        這是「要走到面前才打得到」的前提（→ js/battlefield.js 座標制）。
        回傳「本輪剛踏進攻擊距離」的敵人，牠們稍後會先出手（見下方首擊保證）。 */

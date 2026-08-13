@@ -1328,14 +1328,17 @@ function currentZoneDef() {
 }
 
 /* ---- 戰場座標（2026-08-12：格子 → 連續座標）----
-   我方永遠在原點，敵人帶 pos={x,y}（單位≈像素），每個 tick 朝我方逼近，
-   走到接觸距離才停、才打得到人。細節見 js/battlefield.js 檔頭。
+   我方與敵人都帶 pos={x,y}（單位≈像素）。敵人每個 tick 朝我方**當前**位置逼近，
+   走到接觸距離才停、才打得到人；我方也會自己跑（bfTickPlayer）。
+   細節見 js/battlefield.js 檔頭。
    ⚠️ 這幾個值目前寫死在程式裡（使用者選擇「先寫死一個值」），
    定調之後再搬進參數表；BF_COLS×BF_ROWS 現在只代表「場上同時容納幾隻」。 */
 var BF_UNIT = 60;              // 一個「身位」的長度；範圍技的 n×n 換算成半徑用
 var BF_SPAWN_DIST = 440;       // 生成時離我方多遠（畫面外一點）
 var BF_CONTACT_DIST = 46;      // 走到這麼近就停（接觸）
-var BF_ENEMY_SPEED = 150;      // 敵人逼近速度（單位/秒）
+var BF_PLAYER_SPEED = 190;     // 我方追擊跑速（單位/秒）——速度的基準值
+var BF_PLAYER_IDLE_SPEED = 135;// 空場時往前推進的速度
+var BF_ENEMY_SPEED_RATIO = 0.8;// 敵人跑速 = 我方跑速 × 這個比例（慢一點才追得出隊形）
 var BF_MELEE_RANGE = 62;       // 近戰攻擊距離（雙方共用）
 var BF_RANGED_RANGE = 320;     // 魔法系敵人的攻擊距離
 var BF_BODY_RADIUS = 20;       // 一般敵人的體型半徑
