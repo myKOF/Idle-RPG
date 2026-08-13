@@ -616,7 +616,7 @@ var BattleRenderer = (function () {
     /* 生命／法力條：跟著角色走，畫在腳下（與敵人同一套視覺語言） */
     var vitals = new PIXI.Graphics();
     vitals.y = 8;
-    root.addChild(vitals);
+    S.layers.playerHud.addChild(vitals);
     var hpText = new PIXI.Text({
       text: '',
       style: {
@@ -626,7 +626,7 @@ var BattleRenderer = (function () {
     });
     hpText.anchor.set(0.5, 0.5);
     hpText.y = 8 + 5;
-    root.addChild(hpText);
+    S.layers.playerHud.addChild(hpText);
     var mpText = new PIXI.Text({
       text: '',
       style: {
@@ -636,7 +636,7 @@ var BattleRenderer = (function () {
     });
     mpText.anchor.set(0.5, 0.5);
     mpText.y = 8 + 16;
-    root.addChild(mpText);
+    S.layers.playerHud.addChild(mpText);
 
     /* 復活倒數：技能與狀態列都收進彈出面板後，倒地資訊只剩畫面上這一條 */
     var reviveText = new PIXI.Text({
@@ -658,6 +658,7 @@ var BattleRenderer = (function () {
     S.player = {
       id: 'pv-float', root: root, body: body, bodyWrap: bodyWrap,
       vitals: vitals, hpText: hpText, mpText: mpText, reviveText: reviveText,
+      hud: S.layers.playerHud,
       sheetName: 'player', curAnim: 'idle', baseAnim: 'idle',
       hitHeight: 70, walking: false, dead: false, stillFor: 99, fallK: 0,
       flash: 0, jolt: 0, lunge: 0, facing: 1,
@@ -1901,6 +1902,10 @@ var BattleRenderer = (function () {
       p.root.x = p.wx;
       p.root.y = p.wy;
       p.root.zIndex = p.wy;
+      if (p.hud) {
+        p.hud.x = p.root.x;
+        p.hud.y = p.root.y;
+      }
       /* 面向目標：序列幀只有朝右一版，往左打就水平翻面 */
       if (!p.dead) p.bodyWrap.scale.x = p.facing < 0 ? -1 : 1;
       updateFlashJolt(p, dt);
@@ -2097,8 +2102,12 @@ var BattleRenderer = (function () {
     entity.sortableChildren = true;
     var fx = new PIXI.Container();
     var floatLayer = new PIXI.Container();
+    /* 玩家三條狀態條必須在所有敵人、敵方血條／名稱與傷害浮字之上，
+       但仍跟著 world 一起移動，避免被任何戰鬥表現層蓋住。 */
+    var playerHud = new PIXI.Container();
     var overlay = new PIXI.Container();
     world.addChild(zone); world.addChild(entity); world.addChild(fx); world.addChild(floatLayer);
+    world.addChild(playerHud);
     app.stage.addChild(bg);
     app.stage.addChild(world);
     app.stage.addChild(overlay);
@@ -2139,7 +2148,10 @@ var BattleRenderer = (function () {
     overlay.addChild(veil);
     S.pauseVeil = { root: veil, bg: veilBg, text: veilText };
 
-    S.layers = { world: world, zone: zone, entity: entity, fx: fx, float: floatLayer, overlay: overlay };
+    S.layers = {
+      world: world, zone: zone, entity: entity, fx: fx, float: floatLayer,
+      playerHud: playerHud, overlay: overlay
+    };
     drawDeathFog(0);
     layoutScene();
   }
