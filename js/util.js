@@ -21,6 +21,15 @@ function floatPlayerEvent(floatSel, text, cls, value) {
   floatText(playerEventFloatTarget(floatSel), text, 'player-event' + extra, value);
 }
 
+/* 技能施放提示只傳既有 float 事件欄位，不另開一套 UI 通道。
+   方向在模擬層決定，讓 DOM 與 Canvas 顯示同一個左右結果。 */
+function floatPlayerSkillCast(floatSel, skill) {
+  if (typeof floatText !== 'function' || !skill) return;
+  var direction = Math.random() < 0.5 ? 'left' : 'right';
+  floatText(playerEventFloatTarget(floatSel), (skill.emoji || '✨') + (skill.name || ''),
+    'player-event skill-cast skill-cast-' + direction);
+}
+
 function enemyEventFloatTarget(ent, floatSel) {
   if (ent && ent.floatSel) return ent.floatSel;
   if (floatSel === 'tb-float') return 'tb-float';

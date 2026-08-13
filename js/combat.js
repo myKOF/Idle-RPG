@@ -865,7 +865,7 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
         logMsg += (res.crit ? '<span class="log-hl-bad">爆擊</span> ' : '造成 ') + fmt(res.dmg) + (mEnt.magic ? ' 魔法' : '') + ' 傷害。';
         if (res.blocked) logMsg += '<span class="log-hl-good">你格擋了部分傷害！</span>';
         if (res.absorbed) {
-            floatPlayerEvent(playerFloatSel, '🛡️護盾吸收 ' + fmt(res.absorbed), 'shield');
+            floatPlayerEvent(playerFloatSel, '🛡️吸收 ' + fmt(res.absorbed), 'shield');
             logMsg += '<span class="log-hl-good">生命減少 ' + fmt(hpDamage) + '，護盾吸收 ' + fmt(res.absorbed) + '。</span>';
         }
         if (res.procs.length) {

@@ -39,7 +39,7 @@ test('怪物攻擊玩家時，閃避、格擋、護盾吸收與附加效果會�
   assert.match(monsterAttack, /floatText\(playerFloatSel,\s*dmgStr,\s*isCrit \? 'crit' : 'mdmg'\)/);
   assert.match(combat, /floatPlayerEvent\(playerFloatSel,\s*'閃避!',\s*'dodge defend'\)/);
   assert.match(combat, /floatPlayerEvent\(playerFloatSel,\s*'格擋!'/);
-  assert.match(combat, /floatPlayerEvent\(playerFloatSel,\s*'🛡️護盾吸收 ' \+ fmt\(res\.absorbed\)/);
+  assert.match(combat, /floatPlayerEvent\(playerFloatSel,\s*'🛡️吸收 ' \+ fmt\(res\.absorbed\)/);
   assert.match(combat, /res\.procs\.forEach\(function \(proc\)/);
 });
 
@@ -254,9 +254,9 @@ test('敵人傷害浮字維持可讀字號且出現範圍更分散', () => {
   assert.match(ui, /scheduleFloatTextRemoval\(existing, enemyDamageFloatLifetimeMs\(existing\)\)/);
   assert.match(ui, /scheduleFloatTextRemoval\(sp, enemyDamageFloatLifetimeMs\(sp\)\)/);
   assert.match(ui, /var enemyStyleClass = enemyHitFloat \? enemyDamageFloatStyleClass\(cls\) : ''/);
-  assert.match(ui, /var pct = enemyHitFloat \? 8 \+ Math\.random\(\) \* 84 : 15 \+ Math\.random\(\) \* 70/);
+  assert.match(ui, /var pct = enemyHitFloat \? 8 \+ Math\.random\(\) \* 84 :[\s\S]*?15 \+ Math\.random\(\) \* 70/);
   assert.match(ui, /sp\.style\.top = \(28 \+ Math\.random\(\) \* 44\) \+ '%'/);
-  assert.match(ui, /sp\.style\.marginTop = \(enemyHitFloat \? \(Math\.random\(\) \* 24 - 12\) : \(Math\.random\(\) \* 30 - 15\)\) \+ 'px'/);
+  assert.match(ui, /sp\.style\.marginTop = \(enemyHitFloat \? \(Math\.random\(\) \* 24 - 12\) :[\s\S]*?Math\.random\(\) \* 30 - 15/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack\s*\{[\s\S]*?--enemy-hit-font-size:\s*12px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-rise-duration:\s*0\.8s[\s\S]*?--enemy-hit-lifetime-base:\s*0\.8s/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill\s*\{[\s\S]*?--enemy-hit-font-size:\s*15px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-rise-duration:\s*1s[\s\S]*?--enemy-hit-lifetime-base:\s*1s/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack-crit\s*\{[\s\S]*?--enemy-hit-font-size:\s*16px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-rise-duration:\s*1s[\s\S]*?--enemy-hit-lifetime-base:\s*1s/);
@@ -357,4 +357,24 @@ test('玩家事件浮字依效果類型使用不同顏色', () => {
   assert.match(css, /\.float-txt\.player-event\.special\s*\{[\s\S]*?color:\s*#facc15/);
   assert.match(css, /\.float-txt\.player-event\.defense,[\s\S]*?\.float-txt\.player-event\.heal\s*\{[\s\S]*?color:\s*#4ade80/);
   assert.match(css, /\.float-txt\.player-event\.debuff\s*\{[\s\S]*?color:\s*#fb7185/);
+});
+
+test('我方飄字依承傷／增益分成紅區與藍區，技能名稱從中心向左右隨機滑出', () => {
+  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
+  const potential = fs.readFileSync(path.join(root, 'js', 'potential.js'), 'utf8');
+  assert.match(util, /function floatPlayerSkillCast\(floatSel, skill\)/);
+  assert.match(util, /skill-cast-' \+ direction/);
+  assert.match(ui, /function playerFloatStyleClass\(elId, text, cls\)/);
+  assert.match(ui, /return isDamage \? 'player-damage' : 'player-benefit'/);
+  assert.match(ui, /if \(isPlayerDamage\) placePlayerDamageFloat\(sp, layer\)/);
+  assert.match(ui, /else if \(isPlayerBenefit\) placePlayerBenefitFloat\(sp, layer\)/);
+  assert.match(css, /\.float-txt\.player-damage\s*\{[\s\S]*?color:\s*#ff6b6b/);
+  assert.match(css, /\.float-txt\.player-benefit\s*\{[\s\S]*?top:\s*6%/);
+  assert.match(css, /\.float-txt\.player-event\.skill-cast\s*\{[\s\S]*?color:\s*#ffd43b/);
+  assert.match(css, /@keyframes\s+skillCastFloatLeft\s*\{[\s\S]*?translate\(calc\(-50% - 76px\)/);
+  assert.match(css, /@keyframes\s+skillCastFloatRight\s*\{[\s\S]*?translate\(calc\(-50% \+ 76px\)/);
+  assert.match(skills, /floatPlayerSkillCast\(floatSel, sk\)/);
+  assert.match(potential, /floatPlayerSkillCast\(floatSel, def\)/);
+  assert.match(renderer, /cls\.indexOf\('skill-cast'\) >= 0/);
+  assert.match(renderer, /drift: castLeft \? -72 : \(castRight \? 72 : 0\)/);
 });

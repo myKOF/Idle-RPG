@@ -1688,6 +1688,10 @@ var BattleRenderer = (function () {
          舊版是看「有沒有 player-event 這個類別」來決定紅不紅，但吸血／吸魔／
          岩甲護盾走的是 floatText（沒有那個類別），於是回血也被塗成紅色，
          玩家看到滿畫面紅字會以為自己在狂掉血。改成看語意分類。 */
+      if (cls.indexOf('skill-cast') >= 0) {
+        s.fill = '#ffd43b'; s.size = 20; s.rise = 0; s.life = 1.05;
+        return s;
+      }
       var isDamageToUs = cls.indexOf('mdmg') >= 0 || /^\s*(爆擊\s*)?-/.test(text);
       if (isDamageToUs) {
         s.fill = '#ff6b6b'; s.size = 16;
@@ -1787,9 +1791,22 @@ var BattleRenderer = (function () {
     }
     var st = floatStyle(ev.elId, ev.cls, ev.text || '');
     var pt = posOf(ev.elId);
-    /* 玩家身上的字（護盾吸收、回復、承傷）往上抬到頭頂再高一截：
-       貼著身體會把角色整個蓋住，尤其護盾吸收那種長字串。 */
-    if (ev.elId === 'pv-float') pt = { x: pt.x, y: pt.y - 62 };
+    var playerTarget = ev.elId === 'pv-float' || ev.elId === 'tp-float';
+    var playerDamage = playerTarget &&
+      (String(ev.cls || '').indexOf('mdmg') >= 0 || /^\s*(爆擊\s*)?-/.test(String(ev.text || '')));
+    var skillCast = playerTarget && String(ev.cls || '').indexOf('skill-cast') >= 0;
+    /* 玩家事件分區：有益效果在角色頭頂藍區，承傷在身體紅區；技能名稱從身體中心出現。 */
+    if (playerTarget && S.player) {
+      if (skillCast) {
+        pt = { x: S.player.root.x, y: S.player.root.y - 34 };
+      } else if (playerDamage) {
+        pt = { x: S.player.root.x + (Math.random() * 60 - 30),
+          y: S.player.root.y - 12 + Math.random() * 30 };
+      } else {
+        pt = { x: S.player.root.x + (Math.random() * 72 - 36),
+          y: S.player.root.y - 96 + Math.random() * 26 };
+      }
+    }
     var node = new PIXI.Text({
       text: ev.text || '',
       style: {
@@ -1801,11 +1818,14 @@ var BattleRenderer = (function () {
     placeFloatNode(node, pt.x, pt.y - 8);
     S.layers.float.addChild(node);
     var prefixMatch = /^([^0-9]*)/.exec(ev.text || '');
+    var castLeft = String(ev.cls || '').indexOf('skill-cast-left') >= 0;
+    var castRight = String(ev.cls || '').indexOf('skill-cast-right') >= 0;
     var f = {
       node: node, t: 0, life: st.life, rise: st.rise,
       bornAt: nowMs(), hits: 1, total: isFinite(val) ? val : 0,
       prefix: prefixMatch ? prefixMatch[1] : '',
-      pop: (ev.cls || '').indexOf('crit') >= 0 ? 0.18 : 0
+      pop: (ev.cls || '').indexOf('crit') >= 0 ? 0.18 : 0,
+      drift: castLeft ? -72 : (castRight ? 72 : 0)
     };
     S.floats.push(f);
     if (mergeable) {
@@ -2009,6 +2029,7 @@ var BattleRenderer = (function () {
         f.t += dt;
         var fk = Math.min(1, f.t / f.life);
         f.node.y -= (f.rise / f.life) * dt;
+        if (f.drift) f.node.x += (f.drift / f.life) * dt;
         f.node.alpha = fk < 0.15 ? fk / 0.15 : (1 - (fk - 0.15) / 0.85);
         if (f.pop > 0) {
           var pk = Math.min(1, f.t / f.pop);

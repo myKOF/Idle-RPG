@@ -1495,6 +1495,42 @@ textarea#save-io {
   font-size: 17px;
 }
 
+/* 玩家承傷與有益數字分區：紅區靠近角色身體，藍區位於角色頭頂。 */
+.float-txt.player-damage {
+  top: 42%;
+  z-index: 8;
+  color: #ff6b6b;
+  font-size: 16px;
+}
+
+.float-txt.player-damage.crit {
+  color: #ff3b3b;
+  font-size: 20px;
+}
+
+.float-txt.player-benefit {
+  top: 6%;
+  z-index: 9;
+}
+
+/* 技能施放提示由角色中心向隨機一側平移；方向 class 由 util.js 產生。 */
+.float-txt.player-event.skill-cast {
+  top: 50%;
+  left: 50% !important;
+  z-index: 11;
+  color: #ffd43b;
+  font-size: 20px;
+  animation-duration: 1.05s;
+}
+
+.float-txt.player-event.skill-cast-left {
+  animation-name: skillCastFloatLeft;
+}
+
+.float-txt.player-event.skill-cast-right {
+  animation-name: skillCastFloatRight;
+}
+
 /* 玩家生命／MP 回復合併字的動畫；目前與合併傷害字同樣使用 2 秒動畫。 */
 .float-txt.player-recovery-float {
   z-index: 7;
@@ -1585,6 +1621,30 @@ textarea#save-io {
 
   100% {
     transform: translate(-50%, -28px);
+    opacity: 0;
+  }
+}
+
+@keyframes skillCastFloatLeft {
+  0% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(calc(-50% - 76px), -8px);
+    opacity: 0;
+  }
+}
+
+@keyframes skillCastFloatRight {
+  0% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(calc(-50% + 76px), -8px);
     opacity: 0;
   }
 }
