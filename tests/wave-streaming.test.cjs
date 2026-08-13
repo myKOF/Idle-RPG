@@ -146,6 +146,40 @@ test('BOSS 還活著時不補波（避免每個間隔多冒一隻 BOSS）', () =
   assert.equal(context.liveFieldEnemies().length, 1, 'BOSS 戰期間不得補波');
 });
 
+test('過關配額只認本關生出來的敵人（否則 BOSS 關會被殘留怪推過去）', () => {
+  /* 2026-08-13 的實際 bug：換關之後不再清場（設計如此），上一關的殘留會留在場上。
+     BOSS 關的配額只有 1，而 BOSS 要等切換後的間隔才生出來——玩家在那幾秒內
+     順手清掉一隻殘留，配額就滿了，關卡直接跳過，BOSS 從頭到尾沒出現過。 */
+  const context = loadCombatContext();
+  context.getStats = () => ({ hp: 100, goldBonus: 0, xpBonus: 0, moveSpeed: 0, passives: {} });
+  context.gainXp = () => {};
+  context.rollFieldDrops = () => [];
+  context.G.stage.current = 49;
+  context.G.stage.best = 49;
+  context.G.zoneProgress = { desert: { current: 49, best: 49, cleared: 48 } };
+
+  context.spawnFieldMonster();                       // 第 49 關的一波
+  const leftovers = context.FIELD.monsters.slice();
+  assert.ok(leftovers.length >= 1);
+  leftovers.forEach((m) => assert.equal(m._stage, 49, '敵人要記得自己屬於哪一關'));
+
+  context.G.stage.current = 50;                      // 推進到 BOSS 關（殘留照舊留在場上）
+  context.FIELD.quotaStage = null;
+  assert.equal(context.fieldStageQuota(), context.rollFieldEnemyCount('boss', 50, 'desert'));
+
+  leftovers.forEach((m) => { m.hp = 0; context.onFieldKill(m); });
+  assert.equal(context.FIELD._waveClearPending, false, '殺殘留不該推進 BOSS 關');
+  assert.equal(context.FIELD.stageKills, 0);
+
+  /* 這一關自己生出來的（BOSS）死掉才算數。 */
+  const boss = context.spawnFieldMonster(true)[0];
+  assert.equal(boss._stage, 50);
+  assert.ok(boss.isBoss, '第 50 關第一波應該是 BOSS');
+  boss.hp = 0;
+  context.onFieldKill(boss);
+  assert.equal(context.FIELD._waveClearPending, true, '打死 BOSS 才過關');
+});
+
 test('推進改由擊殺配額觸發：殺滿才過關，沒殺滿不過關', () => {
   const context = loadCombatContext();
   context.FIELD.player = context.newPlayerEntity({ hp: 100, mp: 0, aspd: 1 });
