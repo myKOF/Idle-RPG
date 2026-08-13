@@ -6996,9 +6996,12 @@ function renderSkill2Modal(body, gid, skillsSnapshot, headerSnapshot) {
   }
   h += '</div>';
   h += '<div class="detail-actions skill-modal-actions">';
+  /* 裝備／卸下走通用 [data-skill-equip] 處理器，其 pending 鍵是 'skill:' + ref——
+     必須用同一把鍵，鎖定與再渲染判斷才對得上（升級／降級按鈕才是 'sg:' 鍵）。 */
+  var equipPendingAttrs = pendingUiButtonAttributes(nodePendingKey('skill:' + ref));
   h += inLoadout
-    ? '<button class="btn sm warn" data-skill-unequip="' + ref + '"' + pendingAttrs + '>卸下</button>'
-    : '<button class="btn sm" data-skill-equip="' + ref + '"' + pendingAttrs + '>⚔️ 裝備</button>';
+    ? '<button class="btn sm warn" data-skill-unequip="' + ref + '"' + equipPendingAttrs + '>卸下</button>'
+    : '<button class="btn sm" data-skill-equip="' + ref + '"' + equipPendingAttrs + '>⚔️ 裝備</button>';
   h += '</div>';
   body.innerHTML = h;
 }
