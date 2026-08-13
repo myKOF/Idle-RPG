@@ -782,6 +782,13 @@ function sgTickStorm(ctx) {
   var stm = SKILL2_RT.storm;
   if (!stm) return;
   if (stm.until <= GT || skills2Levels('dualdance')[6] < 1) { SKILL2_RT.storm = null; return; }
+  /* 化身期間普攻是「取消」不是「延後」（2026-08-14 審查修正）：
+     戰鬥迴圈的普攻閘門只擋出手、計時器仍在倒數，若放任累積欠帳，
+     化身結束後會以 tick 頻率把整段欠帳連發出去（遠超攻速上限），
+     等於退還「期間無法普攻」的設計代價。每 tick 夾回 0，結束後從頭起算。 */
+  if (ctx.pEnt.atkCd < 0) ctx.pEnt.atkCd = 0;
+  /* 暈眩中不揮舞（比照一般技能施放被暈眩擋下）；節拍照走、錯過的不補發。 */
+  var stunned = (typeof effectActive === 'function') && effectActive(ctx.pEnt, 'stun');
   var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
   if (!stm.tgt || stm.tgt.hp <= 0 ||
       (typeof bfPos === 'function' && bfPos(stm.tgt) && typeof bfPlayerCanReach === 'function' && bfPlayerCanReach(stm.tgt))) {
@@ -793,6 +800,7 @@ function sgTickStorm(ctx) {
   while (stm.nextAt <= GT && stm.until > GT && guard < 50) {
     guard++;
     stm.nextAt += Math.max(0.1, stm.gap);
+    if (stunned) continue;
     var res = castSkill2(ctx.pEnt, enemies, 'dualdance', ctx.floatSel, { storm: true });
     if (res) {
       if (ctx.onDamage) ctx.onDamage(res.dmg);
@@ -834,8 +842,9 @@ function sgTickBloodDots(dt, ctx) {
           }
         }
         // 零日感染：每次作用時，機率立即造成剩餘持續傷害並清除該狀態
+        // 剩餘值含 tickStatuses 已累積、尚未跳出的殘額（d.acc 秒），與到期補跳的總量守恆一致
         if (zeroLv > 0 && chance(sgVal(t[6].fx, 'chance', zeroLv))) {
-          var remain = Math.max(0, d.dps * (d.until - GT));
+          var remain = Math.max(0, d.dps * ((d.until - GT) + (d.acc || 0)));
           if (remain > 0) {
             var zOut = { killed: false, dmg: 0, crit: false };
             sgDerivedHit(e, remain, 'bloodblade', ctx.floatSel, zOut, '💥', 0);

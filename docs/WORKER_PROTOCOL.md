@@ -156,8 +156,8 @@ v1 用「參數名叫 `itemId` 就自動解析」的慣例會出事——`forgeP
 
 ### 4.4 指令清單
 
-完整清單見 `js/worker/protocol.js` 的 `COMMANDS`，v18 起共 **88 條**
-（v1 凍結時 67 條，v3 補 14 條、v4 再補 4 條、v8 補 1 條、v16 補 1 條、v18 補 1 條）。
+完整清單見 `js/worker/protocol.js` 的 `COMMANDS`，v19 起共 **90 條**
+（v1 凍結時 67 條，v3 補 14 條、v4 再補 4 條、v8 補 1 條、v16 補 1 條、v18 補 1 條、v19 補 2 條）。
 
 ⚠️ **指令名請以 `protocol.js` 為準，不要憑印象寫。** `WorkerBridge.send()` 會在送出前用
 `validateCommand` 擋掉未知名稱，所以寫錯的名字根本送不出去。實際踩過：驗收報告引用了

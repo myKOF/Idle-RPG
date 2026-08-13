@@ -14,7 +14,7 @@ importScripts('protocol.js?v=19', 'shim.js');
 importScripts(
   '../util.js', '../data.js?v=20260813-earth-recovery', '../status.js?v=20260813-skills2-rework', '../formula.js?v=20260813-earth-recovery', '../battlefield.js?v=20260813-skills2-rework', '../stats.js',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260813-skills2-rework', '../skills2.js?v=20260813-skills2-rework', '../talents.js?v=20260811-loadout-cap-clamp',
+  '../skills.js?v=20260813-skills2-rework', '../skills2.js?v=20260814-skills2-fix', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260813-skills2-rework', '../special_rules.js',
   '../combat.js?v=20260813-skills2-rework', '../legendary.js', '../potential.js', '../tower.js?v=20260813-skills2-rework',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260813-skills2-rework',
