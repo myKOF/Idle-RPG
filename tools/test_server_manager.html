@@ -87,6 +87,9 @@
       if (server.managed !== false) {
         return `Idle-RPG 測試服控制台（${server.sourceLabel || 'Node.js'}）`;
       }
+      if (/serve\.ps1/i.test(`${server.processName || ''} ${server.commandLine || ''} ${server.executablePath || ''}`)) {
+        return 'Idle-RPG 測試服（PowerShell）';
+      }
       if (/test_server_manager\.cjs/i.test(server.commandLine || '')) {
         return 'Idle-RPG 測試服控制台（Node.js）';
       }

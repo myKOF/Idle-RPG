@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## Codex：修正刷新時遺漏 PowerShell HttpListener 測試服（2026-08-13）
+
+- Status: Completed
+- Owner: Codex
+- Task: 修正測試服控制台重新整理後遺漏 `8321` 這類由 `.claude/serve.ps1` 啟動的本機測試服。
+- 原因: Windows `System.Net.HttpListener` 的 TCP 監聽由 HTTP.sys 以 System PID 4 持有，原掃描器只依 TCP 擁有程序判斷，因而把可正常回應的測試服排除。
+- Scope: `tools/test_server_manager.cjs`、`tools/test_server_manager.html`、`tests/test-server-manager.test.cjs`、`docs/AI_TASKS.md`
+- Verification: 定向測試 3/3；`node --check tools/test_server_manager.cjs` 通過；`npm.cmd run build` 265/265；`git diff --check` 通過。完整 `npm.cmd test` 為 1302/1303，唯一失敗是既有 `tests/multi-enemy.test.cjs` 菁英數量表單調性回歸，與本次測試服控制台修改無關。
+- Known risk: 未修改 HTTP.sys 本身；若其他非遊戲服務也使用 System PID 4 且可回應 HTTP，控制台可能將其列為外部服務，但不會允許關閉系統 PID。
+- Handoff: 使用者重新開啟控制台並按「重新整理」，確認 `8321` 顯示；必要時以列表的「關閉」測試該 PowerShell 服務可被定向停止。
+
 ## Codex：死亡 UI 間距與倒數字級調整（2026-08-13）
 
 - Status: Completed
