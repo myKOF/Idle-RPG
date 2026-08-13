@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## Codex：死亡 UI 間距與倒數字級調整（2026-08-13）
+
+- Status: Completed
+- Owner: Codex
+- Task: 血條與人物增加 2px 間距；死亡復活倒計時移至人物頭頂上方並放大為 24px。
+- Dependencies: 前一項死亡倒地、倒數與紅色視野收縮功能已完成；已完成目標檔案衝突預檢。
+- Scope: `js/battle-renderer.js`、`index.html`、`tests/player-event-float.test.cjs`、`docs/AI_TASKS.md`
+- Verification: 定向測試 21/21；build 265/265；瀏覽器 `canvas=1` 實測看到放大倒數位於倒地人物頭頂，無需修改 Worker Protocol、存檔格式或戰鬥數值。
+- Known risk: 完整測試 1301 通過、1 失敗，仍是既有且與本次 UI 修改無關的 `tests/multi-enemy.test.cjs` 菁英數量回歸。
+- Handoff: Claude Code 唯讀 Review；使用者確認死亡畫面後合併。
+
 ## Codex：玩家死亡倒地、復活倒計時與紅色視野收縮（2026-08-13）
 
 - Status: Completed
