@@ -1283,12 +1283,20 @@ var BattleRenderer = (function () {
       ]);
     }
     pts.push([x1, y1]);
-    g.moveTo(pts[0][0], pts[0][1]);
-    for (i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]);
-    g.stroke({ color: theme.c1, width: 4, alpha: alpha, cap: 'round', join: 'round' });
-    g.moveTo(pts[0][0], pts[0][1]);
-    for (i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]);
-    g.stroke({ color: '#ffffff', width: 1.6, alpha: alpha, cap: 'round', join: 'round' });
+    /* 從天頂劈下：起點粗、接近目標時收細，讓落雷有重量感。 */
+    var last = pts.length - 1;
+    for (i = 0; i < last; i++) {
+      var q = i / last;
+      var outerWidth = 13 - 10.5 * q;
+      g.moveTo(pts[i][0], pts[i][1]).lineTo(pts[i + 1][0], pts[i + 1][1])
+        .stroke({ color: theme.c1, width: Math.max(2.5, outerWidth), alpha: alpha, cap: 'round', join: 'round' });
+    }
+    for (i = 0; i < last; i++) {
+      var coreQ = i / last;
+      var coreWidth = 4.8 - 3.9 * coreQ;
+      g.moveTo(pts[i][0], pts[i][1]).lineTo(pts[i + 1][0], pts[i + 1][1])
+        .stroke({ color: '#ffffff', width: Math.max(0.9, coreWidth), alpha: alpha, cap: 'round', join: 'round' });
+    }
   }
   function spawnBolt(fromPt, targetId, spec, delaySec) {
     var theme = themeOf(spec);
@@ -1376,7 +1384,13 @@ var BattleRenderer = (function () {
 
   /* 天降（rain）＋流星（meteor 變體） */
   function spawnRain(rect, spec) {
-    if (!rect) { rect = { x: S.W * 0.4, y: S.H * 0.2, w: S.W * 0.4, h: S.H * 0.5 }; }
+    if (!rect) {
+      var targetId = spec.targets && spec.targets.length ? spec.targets[0] : null;
+      var target = targetId ? posOf(targetId) : null;
+      rect = target && isFinite(target.x) && isFinite(target.y)
+        ? { x: target.x - 96, y: target.y - 120, w: 192, h: 240 }
+        : { x: S.W * 0.4, y: S.H * 0.2, w: S.W * 0.4, h: S.H * 0.5 };
+    }
     var theme = themeOf(spec);
     if (spec.variant === 'meteor') {
       spawnMeteor(rect, spec);
@@ -1429,7 +1443,7 @@ var BattleRenderer = (function () {
     var mSky = cy - S.H * 0.7;   // 目標上方的世界座標；鏡頭會動，不能用畫面頂端
     node.x = cx; node.y = mSky;
     S.layers.fx.addChild(node);
-    var t = 0, dur = Math.min(0.45, Math.max(0.2, (spec.travelMs && spec.travelMs[0] || 350) / 1000));
+    var t = 0, dur = Math.min(0.8, Math.max(0.5, (spec.travelMs && spec.travelMs[0] || 500) / 1000));
     addFx({
       node: node,
       update: function (dt) {
@@ -1451,7 +1465,7 @@ var BattleRenderer = (function () {
   function spawnFireShockwave(cx, cy, radius, theme) {
     var g = new PIXI.Graphics();
     g.x = cx; g.y = cy;
-    S.layers.zone.addChild(g);
+    S.layers.fx.addChild(g);
     var t = 0, dur = 0.5;
     radius = Math.max(54, radius || 80);
     addFx({
