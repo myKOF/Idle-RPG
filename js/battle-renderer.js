@@ -1112,6 +1112,74 @@ var BattleRenderer = (function () {
       }
     }, 1);
   }
+  /* 奧術彈幕：六顆光球先向玩家左右後方散開，過彎後以加速度追向目標。 */
+  function spawnBarrageMissile(targetId, spec, side, lane, delaySec, travelMs) {
+    var theme = themeOf(spec);
+    var origin = playerMuzzle();
+    var rear = (S.player && S.player.facing < 0) ? 1 : -1;
+    var start = {
+      x: origin.x + rear * 14 + side * (10 + lane * 8),
+      y: origin.y + 8 + lane * 7
+    };
+    var turn = {
+      x: start.x + rear * (34 + lane * 10) + side * (48 + lane * 18),
+      y: start.y - 16 - lane * 8
+    };
+    var node = new PIXI.Container();
+    var core = projectileCore(spec, theme);
+    var glow = new PIXI.Sprite(glowTexture());
+    glow.anchor.set(0.5);
+    glow.tint = parseInt(String(theme.glow).replace('#', '0x')) || 0xffffff;
+    glow.alpha = 0.75;
+    glow.scale.set(0.72);
+    glow.blendMode = 'add';
+    node.addChild(glow); node.addChild(core);
+    node.x = start.x; node.y = start.y;
+    S.layers.fx.addChild(node);
+
+    var dur = Math.max(0.42, (travelMs || (spec.dur ? spec.dur * 1000 : 360)) / 1000);
+    var t = -(delaySec || 0), trailAcc = 0;
+    addFx({
+      node: node,
+      update: function (dt) {
+        t += dt;
+        if (t < 0) { node.visible = false; return true; }
+        node.visible = true;
+        var k = Math.min(1, t / dur);
+        var x, y, q;
+        if (k < 0.38) {
+          q = k / 0.38;
+          q = q * q * (3 - 2 * q);
+          x = lerp(start.x, turn.x, q);
+          y = lerp(start.y, turn.y, q);
+        } else {
+          q = (k - 0.38) / 0.62;
+          q = q * q;
+          var target = posOf(targetId);
+          x = lerp(turn.x, target.x, q);
+          y = lerp(turn.y, target.y, q);
+        }
+        var targetNow = posOf(targetId);
+        var aheadX = k < 0.38 ? turn.x : targetNow.x;
+        var aheadY = k < 0.38 ? turn.y : targetNow.y;
+        node.x = x; node.y = y;
+        node.rotation = Math.atan2(aheadY - y, aheadX - x);
+        trailAcc += dt;
+        if (trailAcc > 0.035 && !REDUCED_MOTION) {
+          trailAcc = 0;
+          spawnTrailDot(x, y, theme);
+        }
+        if (k >= 1) {
+          var hit = posOf(targetId);
+          spawnImpact(hit.x, hit.y, spec, false);
+          hitReact(targetId, spec.elem, false);
+          return false;
+        }
+        return true;
+      }
+    }, 1);
+  }
+
   function spawnTrailDot(x, y, theme) {
     var g = new PIXI.Graphics();
     g.circle(0, 0, 2.2).fill(theme.c2);
@@ -1352,14 +1420,14 @@ var BattleRenderer = (function () {
     var cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
     var node = new PIXI.Container();
     var core = new PIXI.Graphics();
-    core.circle(0, 0, 13).fill(theme.c1);
-    core.circle(0, 0, 7).fill('#ffffff');
+    core.circle(0, 0, 22).fill(theme.c1);
+    core.circle(0, 0, 11).fill('#fff6d8');
     var glow = new PIXI.Sprite(glowTexture());
-    glow.anchor.set(0.5); glow.scale.set(2.2); glow.blendMode = 'add';
+    glow.anchor.set(0.5); glow.scale.set(3.2); glow.blendMode = 'add';
     glow.tint = parseInt(String(theme.glow).replace('#', '0x')) || 0xffffff;
     node.addChild(glow); node.addChild(core);
     var mSky = cy - S.H * 0.7;   // 目標上方的世界座標；鏡頭會動，不能用畫面頂端
-    node.x = cx + 180; node.y = mSky;
+    node.x = cx; node.y = mSky;
     S.layers.fx.addChild(node);
     var t = 0, dur = Math.min(0.45, Math.max(0.2, (spec.travelMs && spec.travelMs[0] || 350) / 1000));
     addFx({
@@ -1367,12 +1435,12 @@ var BattleRenderer = (function () {
       update: function (dt) {
         t += dt;
         var k = Math.min(1, t / dur);
-        node.x = lerp(cx + 180, cx, k);
+        node.x = cx;
         node.y = lerp(mSky, cy, k);
         if (!REDUCED_MOTION && Math.random() < 0.6) spawnTrailDot(node.x, node.y, theme);
         if (k >= 1) {
           spawnImpact(cx, cy, spec, true);
-          spawnAreaFlash(rect, theme);
+          spawnFireShockwave(cx, cy, Math.min(rect.w, rect.h) * 0.48, theme);
           addShake(8);
           return false;
         }
@@ -1380,7 +1448,31 @@ var BattleRenderer = (function () {
       }
     }, 2);
   }
+  function spawnFireShockwave(cx, cy, radius, theme) {
+    var g = new PIXI.Graphics();
+    g.x = cx; g.y = cy;
+    S.layers.zone.addChild(g);
+    var t = 0, dur = 0.5;
+    radius = Math.max(54, radius || 80);
+    addFx({
+      node: g,
+      update: function (dt) {
+        t += dt;
+        var k = t / dur;
+        g.clear();
+        g.circle(0, 0, 8 + radius * k)
+          .fill({ color: theme.c1, alpha: 0.18 * (1 - k) })
+          .stroke({ color: theme.c2, width: Math.max(1, 7 * (1 - k)), alpha: 0.92 * (1 - k) });
+        g.circle(0, 0, 5 + radius * k * 0.72)
+          .stroke({ color: theme.c1, width: Math.max(1, 3 * (1 - k)), alpha: 0.75 * (1 - k) });
+        return t < dur;
+      }
+    }, 1);
+  }
+
+  /* 我方增益／敵身詛咒 */
   function spawnAreaFlash(rect, theme) {
+    if (!rect) return;
     var g = new PIXI.Graphics();
     S.layers.zone.addChild(g);
     var t = 0, dur = 0.5;
@@ -1397,7 +1489,6 @@ var BattleRenderer = (function () {
     }, 1);
   }
 
-  /* 我方增益／敵身詛咒 */
   function spawnSelfBuff(spec) {
     var p = playerPos();
     var theme = themeOf(spec);
@@ -1552,8 +1643,27 @@ var BattleRenderer = (function () {
       }
     }
 
+    if (spec.variant === 'arcane-barrage' || (spec.glyph === '💫' && spec.cat === 'magic')) {
+      targets.forEach(function (id, ti) {
+        var travel = (spec.travelMs && spec.travelMs[ti]) || (spec.dur ? spec.dur * 1000 : 420);
+        for (var lane = 0; lane < 3; lane++) {
+          spawnBarrageMissile(id, spec, -1, lane, (baseDelay + ti * 40 + lane * 35) / 1000, travel);
+          spawnBarrageMissile(id, spec, 1, lane, (baseDelay + ti * 40 + lane * 35) / 1000, travel);
+        }
+      });
+      return;
+    }
+
     switch (spec.fxKind) {
       case 'projectile':
+        if (spec.variant === 'chain') {
+          targets.forEach(function (id, ti) {
+            for (var strike = 0; strike < 3; strike++) {
+              spawnBolt(null, id, spec, (strike * stagger + ti * 40) / 1000);
+            }
+          });
+          break;
+        }
         targets.forEach(function (id, ti) {
           var travel = (spec.travelMs && spec.travelMs[ti]) || (spec.dur ? spec.dur * 1000 : 300);
           for (var c = 0; c < count; c++) {
