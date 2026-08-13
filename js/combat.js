@@ -869,6 +869,9 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
 // 執行一次野外敵人攻擊。新波生成時也會走這個入口，讓首次攻擊不必等下一個 tick。
 function fieldMonsterAttack(m, p) {
     if (!m || m.hp <= 0 || effectActive(m, 'stun')) return false;
+    /* 打不到就不打。座標制改版前這裡沒有任何距離判定——站在戰場最遠端的敵人
+       照樣打得到玩家，畫面上就是隔空互毆。魔法系是遠程，其餘要貼到近戰距離。 */
+    if (typeof bfInAttackRange === 'function' && !bfInAttackRange(m)) return false;
     var attackTarget = (typeof legendaryChooseEnemyAttackTarget === 'function')
         ? legendaryChooseEnemyAttackTarget(p) : p;
     var mres = doMonsterAttack(m, attackTarget, 'pv-float');
@@ -950,6 +953,17 @@ function fieldTick(dt) {
 
     tickFieldDeathClears(dt);
     var arrivedEnemies = tickFieldEnterDelays(dt);   // 進場倒數：走到定位才加入戰鬥
+    /* 我方移動：朝鎖定目標跑，進到近戰距離就停下來打（→ js/battlefield.js）。
+       位移一律由模擬層產生，顯示層只負責畫。顯示層若自己讓角色跑，敵人的座標
+       卻是模擬層算的，兩邊就會脫節——那正是「我方一動、整群敵人跟著平移」的成因。
+       FIELD.playerPos 是 bfPlayerPos() 本人的參照（就地改寫），面板序列化時自然帶到最新值。 */
+    if (typeof bfPlayerPos === 'function' && FIELD.playerPos !== bfPlayerPos()) FIELD.playerPos = bfPlayerPos();
+    if (typeof bfTickPlayer === 'function') bfTickPlayer(fieldEnemyList(), dt, p._lockTarget);
+    /* 逼近與推擠：敵人朝我方走、走到接觸距離就停，同伴之間互相推開。
+       這是「要走到面前才打得到」的前提（→ js/battlefield.js 座標制）。
+       回傳「本輪剛踏進攻擊距離」的敵人，牠們稍後會先出手（見下方首擊保證）。 */
+    var reachedEnemies = (typeof bfTickApproach === 'function')
+      ? bfTickApproach(fieldEnemyList(), dt) : [];
     var debugFieldTick = combatDebugFieldSnapshot(fieldEnemyList());
 
     // 45 新技能共用排程器（echo／periodicField／dmgWindow／healWindow／聖痕到期結算；tower.js 塔戰 tick 鏡射）——
@@ -1000,12 +1014,19 @@ function fieldTick(dt) {
     var enemies = combatFieldEnemies();
     if (!enemies.length) return;
 
-    /* 剛走到定位的敵人先出手一次，再進入玩家行動順序。
-       即使玩家隨後在同一輪把牠秒殺，這一擊也已經完成（見 tickFieldEnterDelays）。 */
-    if (arrivedEnemies && arrivedEnemies.length) {
-        for (var ai = 0; ai < arrivedEnemies.length; ai++) {
-            if (arrivedEnemies[ai].hp > 0 && fieldMonsterAttack(arrivedEnemies[ai], p)) return;
+    /* 首擊保證：剛走進攻擊距離（或剛結束進場）的敵人先出手一次，再輪到玩家。
+       即使玩家隨後在同一輪把牠秒殺，這一擊也已經完成。
+       少了這條，雙方射程相同又是玩家先動，高 DPS 玩家會永遠不吃傷害。 */
+    var firstStrikers = (arrivedEnemies || []).concat(reachedEnemies || []);
+    if (firstStrikers.length) {
+        var struck = [];
+        for (var ai = 0; ai < firstStrikers.length; ai++) {
+            var fs = firstStrikers[ai];
+            if (!fs || fs.hp <= 0 || struck.indexOf(fs) >= 0) continue;
+            struck.push(fs);
+            if (fieldMonsterAttack(fs, p)) return;
         }
+        firstStrikers = struck;
         enemies = combatFieldEnemies();
         if (!enemies.length) return;
     }
@@ -1051,8 +1072,12 @@ function fieldTick(dt) {
         if (p.atkCd <= 0) {
             // 普攻打離我方最近的敵人（同距離隨機挑一個）；鎖定後直到該目標死亡才換 → js/battlefield.js
             var primary = bfPickPrimary(combatFieldEnemies(), p._lockTarget);
-            p.atkCd += 1 / st.aspd;
-            if (primary) {
+            /* 普攻是近戰：目標還沒走到面前就不出手，也不進入冷卻——
+               等牠走進距離的那一刻立刻補上這一擊。
+               （座標制改版前只挑「最近的」而完全不看距離，所以會隔空砍人） */
+            var inReach = primary && (typeof bfPlayerCanReach !== 'function' || bfPlayerCanReach(primary));
+            if (primary && inReach) {
+                p.atkCd += 1 / st.aspd;
                 p._lockTarget = primary;
                 var res = doPlayerAttack(p, primary, primary.floatSel || 'mv-float');
                 combatDebugAuditFieldDeaths(debugFieldTick, 'basic attack');
@@ -1071,7 +1096,7 @@ function fieldTick(dt) {
         /* 本輪剛抵達的敵人已經在上面出過手，不要用同一個 dt 再算一次
            （高攻速敵人會同輪連攻兩下）。本輪剛「生成」的還在進場，
            combatFieldEnemies 已經篩掉，這裡一併防呆。 */
-        if (arrivedEnemies && arrivedEnemies.indexOf(m) >= 0) continue;
+        if (firstStrikers.length && firstStrikers.indexOf(m) >= 0) continue;
         if (spawnedEnemies && spawnedEnemies.indexOf(m) >= 0) continue;
         if (!effectActive(m, 'stun')) {
             m.atkCd -= dt * slowFactor(m);

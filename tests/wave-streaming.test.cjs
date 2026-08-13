@@ -35,28 +35,23 @@ function loadCombatContext() {
   return context;
 }
 
-test('補波不會重配既有敵人的站位，新怪只填空格', () => {
+test('補波不會動到既有敵人的座標，新怪各自生在生成圓上', () => {
   const context = loadCombatContext();
   context.spawnFieldMonster();                       // 整批出一波（原行為）
   const firstWave = context.FIELD.monsters.slice();
   assert.ok(firstWave.length >= 1);
-  const before = firstWave.map((m) => `${m.floatSel}@${m.cell.col},${m.cell.row}`);
+  const before = firstWave.map((m) => `${m.floatSel}@${Math.round(m.pos.x)},${Math.round(m.pos.y)}`);
 
   const added = context.spawnFieldMonster(true);     // 串流補一波
-  const after = firstWave.map((m) => `${m.floatSel}@${m.cell.col},${m.cell.row}`);
-  assert.deepEqual(after, before, '既有敵人的格位不得因為補波而改變');
+  const after = firstWave.map((m) => `${m.floatSel}@${Math.round(m.pos.x)},${Math.round(m.pos.y)}`);
+  assert.deepEqual(after, before, '既有敵人的座標不得因為補波而改變');
   assert.equal(context.FIELD.monsters.length, firstWave.length + added.length);
 
-  // 新怪不得與既有敵人重疊
-  const used = new Set();
-  context.FIELD.monsters.forEach((m) => {
-    for (let c = 0; c < (m.cell.w || 1); c++) {
-      for (let r = 0; r < (m.cell.h || 1); r++) {
-        const key = `${m.cell.col + c},${m.cell.row + r}`;
-        assert.equal(used.has(key), false, '格位重疊：' + key);
-        used.add(key);
-      }
-    }
+  // 新怪一律生在生成圓上（之後才朝我方逼近）
+  added.forEach((m) => {
+    const d = Math.sqrt(m.pos.x * m.pos.x + m.pos.y * m.pos.y);
+    assert.ok(Math.abs(d - context.BF_SPAWN_DIST) <= context.BF_SPAWN_DIST * 0.1,
+      '新怪應生在生成圓上，實際距離 ' + Math.round(d));
   });
 });
 

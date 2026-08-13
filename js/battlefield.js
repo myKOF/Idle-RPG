@@ -1,6 +1,6 @@
 'use strict';
-/* ============ 戰場格位（敵方棋盤 + 選敵 + 範圍展開） ============
-   本檔是「誰站在哪一格、該打誰、範圍打到誰」的唯一真實來源。
+/* ============ 戰場座標（站位 + 逼近 + 選敵 + 範圍展開） ============
+   本檔是「誰站在哪、該打誰、打不打得到、範圍打到誰」的唯一真實來源。
    模擬層（combat.js／skills.js）與顯示層都只呼叫這裡，不得自行實作第二套距離或選敵規則。
 
    必須能在三種環境載入且行為一致：
@@ -9,210 +9,254 @@
      3. Node 測試 vm.runInContext
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 UI。
 
-   格位座標一律 1-based：col 1 = 最靠近我方那一行，row 1 = 最上面那一列。
-   棋盤尺寸與距離係數 → js/data.js（BF_* 常數，可由參數表調整）。 */
+   ---- 2026-08-12：格子 → 連續座標 ----
+   舊版把戰場切成 BF_COLS×BF_ROWS 的棋盤，敵人配到一格就站著不動，
+   距離只有「第幾行」這種粗顆粒，而且**完全沒有攻擊距離的概念**：
+   站在最後一行的敵人照樣打得到玩家。畫面上就是雙方隔空互毆。
 
-/* ---- 尺寸與距離 ---- */
+   現在改成連續座標：
+     - 我方與敵人都有絕對座標 { x, y }（單位≈像素），玩家起點是原點。
+     - 我方會自己朝目標跑（bfTickPlayer），敵人各自追我方的**當前**位置。
+     - 敵人每個 tick 朝我方逼近，走到接觸距離就停，並與同伴互相推開。
+     - 距離＝真正的歐幾里得距離；能不能攻擊要看距離（bfInAttackRange）。
+     - 範圍技從「n×n 方框」改成以主目標為中心的圓（半徑由 n 換算）。
+
+   ---- 2026-08-13：我方也有座標 ----
+   前一版我方恆在原點、敵人存的是「相對我方」的座標，於是我方一移動，
+   整群敵人就跟著平移，像黏在身上。現在我方是場上的一個實體：
+   自己跑向目標，敵人追的是他當下的位置——跑得慢的自然被拉開，再逐一追上來。
+   棋盤常數 BF_COLS/BF_ROWS 只剩一個用途：兩者相乘＝**場上同時容納的敵人上限**。 */
+
+/* ---- 容量（BF_COLS×BF_ROWS 的唯一剩餘用途）---- */
 function bfCols() { return Math.max(1, Number(typeof BF_COLS !== 'undefined' ? BF_COLS : 4) || 4); }
 function bfRows() { return Math.max(1, Number(typeof BF_ROWS !== 'undefined' ? BF_ROWS : 4) || 4); }
 function bfCellCount() { return bfCols() * bfRows(); }
 
-/* 中央列：我方站在棋盤左側正中，因此最靠近的是中間那一（兩）列。
-   偶數列取中間兩列，奇數列取正中一列。 */
-function bfIsCenterRow(row) {
-  return Math.abs(Number(row) - (bfRows() + 1) / 2) <= 0.5;
+/* ---- 座標常數（→ js/data.js，可由參數表調整）---- */
+function bfNum(name, fallback) {
+  var v = (typeof self !== 'undefined' && self && self[name] !== undefined) ? self[name]
+    : (typeof globalThis !== 'undefined' && globalThis[name] !== undefined) ? globalThis[name] : undefined;
+  v = Number(v);
+  return isFinite(v) && v > 0 ? v : fallback;
+}
+function bfUnit() { return bfNum('BF_UNIT', 60); }                    // 一個「身位」
+function bfSpawnDist() { return bfNum('BF_SPAWN_DIST', 440); }        // 生成時離我方多遠
+function bfContactDist() { return bfNum('BF_CONTACT_DIST', 46); }     // 走到這麼近就停
+/* 我方只有一種速度：不是在移動就是站著。追擊與空場推進共用同一個值——
+   兩段速度會讓畫面看起來忽快忽慢，像一下走路一下跑步。 */
+function bfPlayerSpeed() { return bfNum('BF_PLAYER_SPEED', 300); }
+/* 敵人跑速是獨立的值，不由我方換算——兩邊要能分開調。 */
+function bfEnemySpeed() { return bfNum('BF_ENEMY_SPEED', 210); }
+function bfMeleeRange() { return bfNum('BF_MELEE_RANGE', 50); }       // 近戰攻擊距離
+function bfRangedRange() { return bfNum('BF_RANGED_RANGE', 320); }    // 魔法系敵人的攻擊距離
+function bfBodyRadius() { return bfNum('BF_BODY_RADIUS', 20); }
+function bfBossRadius() { return bfNum('BF_BOSS_RADIUS', 52); }
+
+/* ---- 我方座標 ----
+   全場座標的原點。這個物件會被就地改寫（不重新指派），
+   讓 combat.js 把它掛進 FIELD 之後，面板每次序列化都拿到最新值。 */
+var BF_PLAYER = { x: 0, y: 0 };
+var BF_PLAYER_CHASING = false;     // 起步／停步的遲滯狀態（見 bfTickPlayer）
+function bfPlayerPos() { return BF_PLAYER; }
+function bfResetPlayer() { BF_PLAYER.x = 0; BF_PLAYER.y = 0; BF_PLAYER_CHASING = false; return BF_PLAYER; }
+
+/* 體型半徑：BOSS 比較大，所以「邊緣」比中心更早進入接觸距離。 */
+function bfEntityRadius(ent) {
+  return (ent && ent.isBoss) ? bfBossRadius() : bfBodyRadius();
 }
 
-/* 單一格子到我方的距離：越小越近（數值語意見 data.js 的距離表註解）。 */
-function bfCellDistance(col, row) {
-  var perCol = Number(typeof BF_DIST_PER_COL !== 'undefined' ? BF_DIST_PER_COL : 2) || 0;
-  var center = Number(typeof BF_DIST_CENTER_ROW !== 'undefined' ? BF_DIST_CENTER_ROW : 1) || 0;
-  var outer = Number(typeof BF_DIST_OUTER_ROW !== 'undefined' ? BF_DIST_OUTER_ROW : 2) || 0;
-  return perCol * (Number(col) - 1) + (bfIsCenterRow(row) ? center : outer);
+function bfPos(ent) {
+  if (ent && ent.pos && isFinite(ent.pos.x) && isFinite(ent.pos.y)) return ent.pos;
+  return null;
 }
 
-/* 佔格：BOSS 為 BF_BOSS_W×BF_BOSS_H，其餘（含菁英）為 1×1。
-   已配好格的實體以 ent.cell 上的實際佔格為準（放不下時會退回 1×1）。 */
-function bfEntitySize(ent) {
-  if (ent && ent.cell && ent.cell.w > 0 && ent.cell.h > 0) return { w: ent.cell.w, h: ent.cell.h };
-  if (ent && ent.isBoss) {
-    return {
-      w: Math.max(1, Number(typeof BF_BOSS_W !== 'undefined' ? BF_BOSS_W : 2) || 1),
-      h: Math.max(1, Number(typeof BF_BOSS_H !== 'undefined' ? BF_BOSS_H : 2) || 1)
-    };
-  }
-  return { w: 1, h: 1 };
-}
-
-/* 實體佔用的所有格子；未配格回傳空陣列。 */
-function bfEntityCells(ent) {
-  var out = [];
-  if (!ent || !ent.cell) return out;
-  var size = bfEntitySize(ent);
-  for (var c = 0; c < size.w; c++) {
-    for (var r = 0; r < size.h; r++) {
-      out.push({ col: ent.cell.col + c, row: ent.cell.row + r });
-    }
-  }
-  return out;
-}
-
-/* 實體距離＝所佔格子中最近的那一格（BOSS 以最靠前的格子算）。
-   未配格的實體視為最遠，避免它插隊搶走普攻目標。 */
+/* 實體到我方的距離（扣掉體型：大隻的邊緣先碰到我方）。
+   沒有座標的實體（高塔 BOSS 走另一條路徑）視為最遠，不會搶走普攻目標。 */
 function bfEntityDistance(ent) {
-  var cells = bfEntityCells(ent);
-  if (!cells.length) return Infinity;
-  var best = Infinity;
-  for (var i = 0; i < cells.length; i++) {
-    var d = bfCellDistance(cells[i].col, cells[i].row);
-    if (d < best) best = d;
-  }
-  return best;
+  var p = bfPos(ent);
+  if (!p) return Infinity;
+  var c = bfPlayerPos();
+  var dx = p.x - c.x, dy = p.y - c.y;
+  return Math.max(0, Math.sqrt(dx * dx + dy * dy) - bfEntityRadius(ent));
 }
 
-/* 我方到某個敵人「中心」的直線距離，單位是格。
-   投射物的飛行時間＝這個距離 ÷ 速度，所以打第 1 行的敵人比打第 4 行快得多——
-   固定飛行時間會讓近的子彈慢吞吞、遠的又太快，傷害數字自然對不上命中的那一刻。
-   我方視為棋盤左側外一格、對齊中央列（與距離表的設定一致）。 */
-function bfPlayerAnchor() {
-  return { col: 0, row: (bfRows() + 1) / 2 };
+/* 停止距離：走到這裡就不再前進（接觸距離 + 自己的體型）。 */
+function bfStopDistance(ent) {
+  return bfContactDist() + bfEntityRadius(ent);
 }
+
+/* 打不打得到。魔法系敵人是遠程，其餘要貼到近戰距離。
+   ⚠️ 這是改造前完全不存在的判定——舊版任何位置都打得到。 */
+function bfInAttackRange(ent) {
+  if (!ent) return false;
+  if (!bfPos(ent)) return true;                 // 沒有座標（高塔）＝沿用舊行為，不擋
+  var range = (ent.magic ? bfRangedRange() : bfMeleeRange());
+  return bfEntityDistance(ent) <= range;
+}
+
+/* 我方能不能打到這個目標（普攻是近戰）。 */
+function bfPlayerCanReach(ent) {
+  if (!ent) return false;
+  if (!bfPos(ent)) return true;
+  return bfEntityDistance(ent) <= bfMeleeRange();
+}
+
+/* 投射物飛行距離／時間。速度沿用參數表的「每秒幾格」，換算成座標單位。 */
 function bfTravelDistance(ent) {
-  if (!ent || !ent.cell) return bfCols();      // 無格位資訊（高塔 BOSS）：以整個棋盤寬度當距離
-  var size = bfEntitySize(ent);
-  var center = { col: ent.cell.col + (size.w - 1) / 2, row: ent.cell.row + (size.h - 1) / 2 };
-  var me = bfPlayerAnchor();
-  var dc = center.col - me.col;
-  var dr = center.row - me.row;
-  return Math.sqrt(dc * dc + dr * dr);
+  var p = bfPos(ent);
+  if (!p) return bfSpawnDist();
+  var c = bfPlayerPos();
+  var dx = p.x - c.x, dy = p.y - c.y;
+  return Math.sqrt(dx * dx + dy * dy);
 }
-
-/* 投射物飛到該敵人所需的秒數（夾在上下限之間，避免太近瞬間到、太遠拖太久）。 */
 function bfTravelSeconds(ent) {
-  var speed = (typeof VFX_PROJECTILE_SPEED_CELLS === 'number' && VFX_PROJECTILE_SPEED_CELLS > 0)
+  var cellsPerSec = (typeof VFX_PROJECTILE_SPEED_CELLS === 'number' && VFX_PROJECTILE_SPEED_CELLS > 0)
     ? VFX_PROJECTILE_SPEED_CELLS : 14;
   var min = (typeof VFX_TRAVEL_MIN_SEC === 'number') ? VFX_TRAVEL_MIN_SEC : 0.06;
   var max = (typeof VFX_TRAVEL_MAX_SEC === 'number') ? VFX_TRAVEL_MAX_SEC : 0.45;
-  var sec = bfTravelDistance(ent) / speed;
+  var sec = bfTravelDistance(ent) / (cellsPerSec * bfUnit());
   return Math.min(max, Math.max(min, sec));
 }
 
-/* 格位序號（0-based，左上到右下逐列）；供顯示層對位與除錯用。 */
-function bfCellIndex(cell) {
-  if (!cell) return -1;
-  return (cell.row - 1) * bfCols() + (cell.col - 1);
-}
-
-/* ---- 配格 ---- */
-function bfCellKey(col, row) { return col + ',' + row; }
-
-function bfBoxFree(occupied, col, row, w, h) {
-  if (col < 1 || row < 1 || col + w - 1 > bfCols() || row + h - 1 > bfRows()) return false;
-  for (var c = 0; c < w; c++) {
-    for (var r = 0; r < h; r++) {
-      if (occupied[bfCellKey(col + c, row + r)]) return false;
-    }
-  }
-  return true;
-}
-
-function bfFreeAnchors(occupied, w, h) {
-  var out = [];
-  for (var col = 1; col + w - 1 <= bfCols(); col++) {
-    for (var row = 1; row + h - 1 <= bfRows(); row++) {
-      if (bfBoxFree(occupied, col, row, w, h)) out.push({ col: col, row: row });
-    }
-  }
-  return out;
-}
-
-function bfMarkOccupied(occupied, cell) {
-  for (var c = 0; c < cell.w; c++) {
-    for (var r = 0; r < cell.h; r++) occupied[bfCellKey(cell.col + c, cell.row + r)] = true;
-  }
-}
-
-function bfCenteredOrigin(total, size) {
-  // When an even-sized boss is placed on an odd-sized board there is no
-  // single exact center cell; choose the right/bottom of the two closest
-  // origins so the entity's center stays nearest the battlefield center.
-  return Math.max(1, Math.floor((total - size + 1) / 2) + 1);
-}
-
-/* 隨機配格：就地寫入 ent.cell = { col, row, w, h }，回傳「成功配到格」的實體（維持傳入順序）。
-   - 佔格大的先配，否則小怪會把 BOSS 需要的 2×2 空間切碎。
-   - BOSS 若真的放不下就退回 1×1（寧可縮小佔格，也不要讓敵人整隻消失）。
-   - 棋盤塞滿後仍配不到格的實體不會被回傳，由呼叫端決定捨棄。 */
+/* ---- 生成站位 ---- */
+/* 在離我方 bfSpawnDist() 的圓周上找一個角度，盡量與已在場的同伴錯開。
+   就地寫入 ent.pos，回傳成功站上場的實體（超過容量的不回傳，由呼叫端捨棄）。 */
 function bfPlaceEnemies(enemies, keepPlaced) {
   var list = (enemies || []).filter(function (e) { return !!e; });
-  var order = list.slice().sort(function (a, b) {
-    var sa = bfEntitySize(a), sb = bfEntitySize(b);
-    return (sb.w * sb.h) - (sa.w * sa.h);
-  });
-  var occupied = {};
-  /* keepPlaced（波次串流用）：已經站在場上的敵人不重新配格，只把它們佔的格子標成已用，
-     新的一波填進剩下的空格。不傳＝維持原本「整批重配」的行為（換關、死亡重來、測試）。 */
-  for (var ki = 0; ki < (keepPlaced || []).length; ki++) {
-    var kept = keepPlaced[ki];
-    if (kept && kept.cell) bfMarkOccupied(occupied, kept.cell);
-  }
+  var standing = (keepPlaced || []).filter(function (e) { return !!e && bfPos(e); });
+  var capacity = bfCellCount();
+  var room = Math.max(0, capacity - standing.length);
   var ok = [];
+  var placedNow = standing.slice();
 
-  // Outdoor boss waves currently contain one boss, but keep this as a
-  // count-based rule so it remains correct if the wave table changes. A
-  // single boss owns the center 2x2 position before other enemies are
-  // packed around it; multiple-boss waves retain the normal random layout.
-  var bosses = list.filter(function (e) { return !!e.isBoss; });
-  if (bosses.length === 1) {
-    var boss = bosses[0];
-    boss.cell = null;
-    var bossSize = bfEntitySize(boss);
-    var centered = {
-      col: bfCenteredOrigin(bfCols(), bossSize.w),
-      row: bfCenteredOrigin(bfRows(), bossSize.h)
-    };
-    if (bfBoxFree(occupied, centered.col, centered.row, bossSize.w, bossSize.h)) {
-      boss.cell = { col: centered.col, row: centered.row, w: bossSize.w, h: bossSize.h };
-      bfMarkOccupied(occupied, boss.cell);
-      ok.push(boss);
-      order = order.filter(function (e) { return e !== boss; });
+  for (var i = 0; i < list.length && ok.length < room; i++) {
+    var ent = list[i];
+    var dist = bfSpawnDist() * (0.94 + Math.random() * 0.14);
+    /* 挑一個「離現有同伴最遠」的角度：連抽幾個候選取最好的，
+       比純亂數不容易整群擠在同一側，也不必做完整的碰撞解算。 */
+    var bestAng = Math.random() * Math.PI * 2, bestScore = -Infinity;
+    for (var t = 0; t < 6; t++) {
+      var ang = Math.random() * Math.PI * 2;
+      var c0 = bfPlayerPos();
+      var x = c0.x + Math.cos(ang) * dist, y = c0.y + Math.sin(ang) * dist;
+      var worst = Infinity;
+      for (var j = 0; j < placedNow.length; j++) {
+        var q = bfPos(placedNow[j]);
+        if (!q) continue;
+        var dx = q.x - x, dy = q.y - y;
+        var d = dx * dx + dy * dy;
+        if (d < worst) worst = d;
+      }
+      if (worst > bestScore) { bestScore = worst; bestAng = ang; }
     }
-  }
-
-  for (var i = 0; i < order.length; i++) {
-    var ent = order[i];
-    ent.cell = null;
-    var size = bfEntitySize(ent);
-    var spots = bfFreeAnchors(occupied, size.w, size.h);
-    if (!spots.length && (size.w > 1 || size.h > 1)) {
-      size = { w: 1, h: 1 };
-      spots = bfFreeAnchors(occupied, 1, 1);
-    }
-    if (!spots.length) continue;
-    var at = spots[Math.floor(Math.random() * spots.length)];
-    ent.cell = { col: at.col, row: at.row, w: size.w, h: size.h };
-    bfMarkOccupied(occupied, ent.cell);
+    var home = bfPlayerPos();
+    ent.pos = { x: home.x + Math.cos(bestAng) * dist, y: home.y + Math.sin(bestAng) * dist };
     ok.push(ent);
+    placedNow.push(ent);
   }
-  return list.filter(function (e) { return ok.indexOf(e) >= 0; });
+  return ok;
 }
 
-/* 棋盤還剩幾格可用。波次串流一次不能生超過空格數——多生出來的會在配格時被丟掉，
-   白白消耗浮字序號與擲骰。placed 傳「已經在場上、要保留站位」的實體。 */
+/* 還能再放幾隻（波次串流用）。座標制沒有格子，容量就是 BF_COLS×BF_ROWS。 */
 function bfFreeCellCount(placed) {
-  var occupied = {};
-  var used = 0;
-  for (var i = 0; i < (placed || []).length; i++) {
-    var ent = placed[i];
-    if (!ent || !ent.cell) continue;
-    for (var c = 0; c < (ent.cell.w || 1); c++) {
-      for (var r = 0; r < (ent.cell.h || 1); r++) {
-        var key = bfCellKey(ent.cell.col + c, ent.cell.row + r);
-        if (!occupied[key]) { occupied[key] = true; used++; }
-      }
+  var n = 0;
+  for (var i = 0; i < (placed || []).length; i++) if (placed[i]) n++;
+  return Math.max(0, bfCellCount() - n);
+}
+
+/* ---- 逼近與推擠（每個 tick 呼叫一次）----
+   敵人朝我方走，走到停止距離就不再前進；同伴之間互相推開，避免整群疊在一點。
+   這是「要走到面前才打得到」得以成立的前提。 */
+function bfTickApproach(enemies, dt) {
+  var live = bfLiveList(enemies);
+  var i, j;
+  var speed = bfEnemySpeed();
+  var home = bfPlayerPos();
+  var justInRange = [];
+  for (i = 0; i < live.length; i++) {
+    var ent = live[i];
+    var p = bfPos(ent);
+    if (!p) continue;
+    if (ent._enterCd > 0) continue;            // 還在進場：不參與逼近，也還不能被打
+    /* 追的是我方**當前**座標，不是出生時的方位——我方跑走就得重新追。 */
+    var dx0 = p.x - home.x, dy0 = p.y - home.y;
+    var d = Math.sqrt(dx0 * dx0 + dy0 * dy0);
+    var stop = bfStopDistance(ent);
+    if (d > stop && d > 0.0001) {
+      var step = Math.min(d - stop, speed * dt);
+      p.x -= (dx0 / d) * step;
+      p.y -= (dy0 / d) * step;
+    }
+    /* 剛踏進攻擊距離的那一刻記一筆。
+       「新怪至少完成一次攻擊」的保證要綁在這裡：雙方射程相同、而玩家的回合在前，
+       不特別處理的話高 DPS 玩家會在敵人進入射程的同一個 tick 先把牠秒掉，
+       敵人永遠打不到人——波次串流「撐不住就會失敗」的壓力設計就失效了。 */
+    var nowIn = bfInAttackRange(ent);
+    if (nowIn && !ent._wasInRange) justInRange.push(ent);
+    ent._wasInRange = nowIn;
+  }
+  /* 互斥推擠：兩隻靠太近就各退一半。只做一輪，靠每個 tick 累積收斂。 */
+  for (i = 0; i < live.length; i++) {
+    for (j = i + 1; j < live.length; j++) {
+      var a = bfPos(live[i]), b = bfPos(live[j]);
+      if (!a || !b) continue;
+      var minD = bfEntityRadius(live[i]) + bfEntityRadius(live[j]);
+      var dx = b.x - a.x, dy = b.y - a.y;
+      var dd = Math.sqrt(dx * dx + dy * dy);
+      if (dd >= minD || dd <= 0.0001) continue;
+      var push = (minD - dd) * 0.5;
+      var ux = dx / dd, uy = dy / dd;
+      a.x -= ux * push; a.y -= uy * push;
+      b.x += ux * push; b.y += uy * push;
     }
   }
-  return Math.max(0, bfCellCount() - used);
+  return justInRange;
+}
+
+/* ---- 我方移動（每個 tick 呼叫一次）----
+   朝目標跑，進到近戰距離就停下來打；場上一個敵人都沒有時繼續往前推進。
+   ⚠️ 我方的位移必須由這裡產生，顯示層不得自己讓角色跑：
+   顯示層一旦自作主張，敵人的座標又是模擬層算的，兩邊就會對不起來——
+   2026-08-13 之前「我方一動，整群敵人跟著平移」正是這樣來的。
+   回傳 true 表示這個 tick 有在移動（顯示層據此切走路動畫）。 */
+function bfTickPlayer(enemies, dt, preferred) {
+  if (!(dt > 0)) return false;
+  var home = bfPlayerPos();
+  var live = bfLiveList(enemies).filter(function (e) { return !!bfPos(e); });
+  if (!live.length) {
+    /* 空場：往前方（+x）推進，地板會跟著往後捲，不會呆站著等下一波。 */
+    home.x += bfPlayerSpeed() * dt;
+    BF_PLAYER_CHASING = true;
+    return true;
+  }
+  /* 追的目標要與「這一刀實際打誰」一致（combat.js 的鎖定目標），
+     否則會出現跑向 A 卻在打 B 的隔空攻擊。 */
+  var target = (preferred && preferred.hp > 0 && bfPos(preferred) && live.indexOf(preferred) >= 0)
+    ? preferred : bfPickPrimary(live, null);
+  if (!target) return false;
+
+  /* 起步與停步用兩個不同的門檻（遲滯）。只用一個門檻的話，敵人被推擠而
+     來回跨過那條線時，我方就會每個 tick 補一小步——畫面上是持續的微小抽動，
+     速度看起來忽快忽慢。改成：站著時要真的快脫離射程才起步，一旦起步就
+     一路跑進內側才停。 */
+  var d = bfEntityDistance(target);
+  var startAt = bfMeleeRange() * 0.95;      // 快脫離射程才起步
+  var stopAt = bfContactDist() * 0.8;       // 停在敵人站定的位置再往內一點＝真的貼上
+  if (!BF_PLAYER_CHASING && d <= startAt) return false;   // 站著打
+  if (d <= stopAt) { BF_PLAYER_CHASING = false; return false; }
+  BF_PLAYER_CHASING = true;
+  var gap = d - stopAt;
+  var p = target.pos;
+  var dx = p.x - home.x, dy = p.y - home.y;
+  var len = Math.sqrt(dx * dx + dy * dy);
+  if (len <= 0.0001) return false;
+  var step = Math.min(gap, bfPlayerSpeed() * dt);
+  home.x += (dx / len) * step;
+  home.y += (dy / len) * step;
+  /* 這一步就走到定位了：當下就解除追擊狀態，不要拖到下一個 tick——
+     中間那一格空窗會讓「已經站定卻仍算在追」，遲滯就少了半拍。 */
+  if (gap - step <= 0.0001) BF_PLAYER_CHASING = false;
+  return step > 0.0001;
 }
 
 /* ---- 選敵 ---- */
@@ -225,7 +269,7 @@ function bfLiveList(enemies) {
   return out;
 }
 
-/* 依距離排序的存活敵人；距離相同者隨機排列（規格：同距離隨機選一個）。 */
+/* 依距離排序的存活敵人；距離相同者隨機排列。 */
 function bfSortedTargets(enemies) {
   var deco = bfLiveList(enemies).map(function (ent) {
     return { ent: ent, d: bfEntityDistance(ent), r: Math.random() };
@@ -241,21 +285,14 @@ function bfPickPrimary(enemies, locked) {
   return sorted.length ? sorted[0] : null;
 }
 
-/* 兩個實體之間的格距（Chebyshev，含斜角）：0＝重疊、1＝相鄰。
-   用於連鎖／濺射這類「從某個敵人往旁邊擴散」的效果，與「離我方多遠」的 bfEntityDistance 不同。 */
+/* 兩個實體之間的邊緣距離（連鎖／濺射用；與「離我方多遠」的 bfEntityDistance 不同）。 */
 function bfEntityGap(a, b) {
-  var ca = bfEntityCells(a), cb = bfEntityCells(b);
-  if (!ca.length || !cb.length) return Infinity;
-  var best = Infinity;
-  for (var i = 0; i < ca.length; i++) {
-    for (var j = 0; j < cb.length; j++) {
-      var d = Math.max(Math.abs(ca[i].col - cb[j].col), Math.abs(ca[i].row - cb[j].row));
-      if (d < best) best = d;
-    }
-  }
-  return best;
+  var pa = bfPos(a), pb = bfPos(b);
+  if (!pa || !pb) return Infinity;
+  var dx = pa.x - pb.x, dy = pa.y - pb.y;
+  return Math.max(0, Math.sqrt(dx * dx + dy * dy) - bfEntityRadius(a) - bfEntityRadius(b));
 }
-function bfIsAdjacent(a, b) { return bfEntityGap(a, b) === 1; }
+function bfIsAdjacent(a, b) { return bfEntityGap(a, b) <= bfContactDist(); }
 
 /* 離 from 最近的「其他」存活敵人；同距離隨機。from 為空時退回離我方最近的那一個。 */
 function bfNearestOther(from, enemies) {
@@ -269,9 +306,7 @@ function bfNearestOther(from, enemies) {
   return deco[0].ent;
 }
 
-/* 連鎖的下一跳（給「一次算一跳」的呼叫端用，例如排程式的傳奇連鎖）：
-   離 from 最近的其他敵人；from 為空時取離我方最近的；場上只剩 from 自己時回傳 from。
-   與 bfChainOrder 的差別：這支一定會往外跳，不會停在 from 身上。 */
+/* 連鎖的下一跳。 */
 function bfChainNext(from, enemies) {
   var live = bfLiveList(enemies);
   if (!live.length) return null;
@@ -281,15 +316,12 @@ function bfChainNext(from, enemies) {
   return live.indexOf(from) >= 0 ? from : bfPickPrimary(live, null);
 }
 
-/* 連鎖順序：從 from 出發，每一跳跳到「離上一個目標最近、且本輪還沒跳過」的敵人。
-   全部跳過之後重置（允許循環），因此場上只有一個敵人時會回傳同一個 count 次——
-   與改造前「round-robin 打滿次數」的行為一致，只是多敵人時改為由近而遠擴散。 */
+/* 連鎖順序：從 from 出發，每一跳跳到「離上一個目標最近、且本輪還沒跳過」的敵人。 */
 function bfChainOrder(from, enemies, count) {
   var live = bfLiveList(enemies);
   if (!live.length || !(count > 0)) return [];
   var order = [];
   var used = [];
-  // from 只是幾何起點，不一定是候選（例如印記餘波由主目標往外彈，主目標自己不再挨一次）
   var cur = from || null;
   for (var i = 0; i < count; i++) {
     var pool = [];
@@ -297,16 +329,15 @@ function bfChainOrder(from, enemies, count) {
     if (!pool.length) {
       used = [];
       pool = live.slice();
-      // 循環一輪之後別又原地打同一隻（場上只剩一隻時例外，維持打滿次數）
       if (pool.length > 1 && cur) pool = pool.filter(function (e) { return e !== cur; });
     }
     var next;
     if (!cur) {
-      next = bfPickPrimary(pool, null);           // 起點：離我方最近的
+      next = bfPickPrimary(pool, null);
     } else if (pool.indexOf(cur) >= 0) {
-      next = cur;                                  // 起點本身還沒跳過：第一跳打在主目標身上
+      next = cur;
     } else {
-      next = bfNearestOther(cur, pool) || pool[0]; // 之後往最近的鄰居擴散
+      next = bfNearestOther(cur, pool) || pool[0];
     }
     if (!next) break;
     order.push(next);
@@ -317,12 +348,9 @@ function bfChainOrder(from, enemies, count) {
 }
 
 /* ---- 範圍 ---- */
-/* 技能範圍設定值 → { kind: 'single' | 'box' | 'all', h 直向格數, w 橫向格數, n 相容用 }
-   寫法「A*B」＝直向 A 格 × 橫向 B 格（第一個數字是直向、第二個是橫向）：
-     1*3 ＝ 直向 1 格、橫向 3 格 → 由左往右貫穿的一直線
-     3*1 ＝ 直向 3 格、橫向 1 格 → 擋在面前的一道橫牆
-     3*3 ＝ 3×3 方框
-   另接受：空值／'single'／'1x1'／'單體'（單體）、'all'／'全體'（全場）、單一數字 N（N×N）。 */
+/* 技能範圍設定值 → { kind: 'single' | 'box' | 'all', h, w, n }
+   沿用既有寫法（'3*3'、'1*3'、'all'、單一數字 N），資料表不必改。
+   座標制下 n×n 會換算成「半徑 = n × 身位 ÷ 2」的圓（見 bfShapeRadius）。 */
 function bfParseShape(raw) {
   var single = { kind: 'single', h: 1, w: 1, n: 1 };
   if (raw === null || raw === undefined || raw === '') return single;
@@ -343,97 +371,53 @@ function bfParseShape(raw) {
   return single;
 }
 
-function bfEnemiesInBox(col, row, w, h, live) {
+/* n×n 方框 → 圓的半徑。取長邊，換算成身位再取一半。 */
+function bfShapeRadius(sp) {
+  if (!sp || sp.kind !== 'box') return 0;
+  return Math.max(sp.w, sp.h) * bfUnit() / 2;
+}
+
+/* 實體是否落在某個圓形區域內（領域類效果每跳都要重問一次）。 */
+function bfEntityInArea(ent, area) {
+  if (!area) return true;
+  var p = bfPos(ent);
+  if (!p) return false;
+  var dx = p.x - area.x, dy = p.y - area.y;
+  return Math.sqrt(dx * dx + dy * dy) - bfEntityRadius(ent) <= area.r;
+}
+
+function bfEnemiesInArea(area, live) {
   var out = [];
-  for (var i = 0; i < live.length; i++) {
-    var cells = bfEntityCells(live[i]);
-    for (var c = 0; c < cells.length; c++) {
-      if (cells[c].col >= col && cells[c].col < col + w &&
-          cells[c].row >= row && cells[c].row < row + h) {
-        // 佔多格的單位（BOSS）受範圍傷害仍只算命中 1 次 → 以實體去重
-        out.push(live[i]);
-        break;
-      }
-    }
-  }
+  for (var i = 0; i < live.length; i++) if (bfEntityInArea(live[i], area)) out.push(live[i]);
   return out;
 }
 
-function bfBoxCells(col, row, w, h) {
-  var out = [];
-  for (var c = 0; c < w; c++) for (var r = 0; r < h; r++) out.push({ col: col + c, row: row + r });
-  return out;
-}
-function bfAllCells() {
-  var out = [];
-  for (var col = 1; col <= bfCols(); col++) for (var row = 1; row <= bfRows(); row++) out.push({ col: col, row: row });
-  return out;
-}
-/* 格子清單 → 查表用的集合；bfEntityInCells 判斷實體是否有任一格落在集合內。 */
-function bfCellSet(cells) {
-  var set = {};
-  for (var i = 0; i < (cells || []).length; i++) set[bfCellKey(cells[i].col, cells[i].row)] = true;
-  return set;
-}
-function bfEntityInCells(ent, cellSet) {
-  if (!cellSet) return true;
-  var cells = bfEntityCells(ent);
-  for (var i = 0; i < cells.length; i++) if (cellSet[bfCellKey(cells[i].col, cells[i].row)]) return true;
-  return false;
-}
-
-/* 範圍落點：回傳 { cells 覆蓋到的格子, targets 實際被命中的實體（已依實體去重）}。
-   box：在所有「包含主目標任一格」的 n×n 方框中，取命中敵人最多的那一個；
-        同樣多時取整體距離較近者，仍相同則隨機——偶數方框（2×2）沒有唯一中心，
-        用這條規則統一決定落點，避免各呼叫端自己猜。
-   cells 是「打在地上的那塊區域」：領域類效果要記住它，之後每跳都打站在那塊區域裡的敵人。 */
+/* 範圍落點：回傳 { area: { x, y, r } | null, targets }。
+   圓心取「以主目標為中心」——座標制下不再需要舊版那套「找命中最多的方框錨點」，
+   主目標本來就是圓心，周圍的敵人自然被涵蓋。
+   area 是「打在地上的那塊區域」：領域類效果要記住它，之後每跳都打站在裡面的敵人。 */
 function bfAreaPlacement(primary, enemies, shape) {
-  if (!primary || primary.hp <= 0) return { cells: [], targets: [] };
+  if (!primary || primary.hp <= 0) return { area: null, targets: [] };
   var live = bfLiveList(enemies);
   if (live.indexOf(primary) < 0) live.push(primary);
   var sp = bfParseShape(shape);
-  if (sp.kind === 'all') return { cells: bfAllCells(), targets: live };
-  if (sp.kind !== 'box') return { cells: bfEntityCells(primary), targets: [primary] };
-  var w = Math.min(sp.w, bfCols());   // 橫向格數
-  var h = Math.min(sp.h, bfRows());   // 直向格數
-  if (w <= 1 && h <= 1) return { cells: bfEntityCells(primary), targets: [primary] };
-  var anchors = [];
-  var cells = bfEntityCells(primary);
-  var seen = {};
-  for (var i = 0; i < cells.length; i++) {
-    for (var dc = 0; dc < w; dc++) {
-      for (var dr = 0; dr < h; dr++) {
-        var col = Math.min(Math.max(cells[i].col - dc, 1), bfCols() - w + 1);
-        var row = Math.min(Math.max(cells[i].row - dr, 1), bfRows() - h + 1);
-        var key = bfCellKey(col, row);
-        if (seen[key]) continue;
-        seen[key] = true;
-        anchors.push({ col: col, row: row });
-      }
-    }
+  if (sp.kind === 'all') {
+    var home2 = bfPlayerPos();
+    return { area: { x: home2.x, y: home2.y, r: Infinity }, targets: live };
   }
-  if (!anchors.length) return { cells: bfEntityCells(primary), targets: [primary] };
-  var best = null;
-  for (var a = 0; a < anchors.length; a++) {
-    var hit = bfEnemiesInBox(anchors[a].col, anchors[a].row, w, h, live);
-    if (hit.indexOf(primary) < 0) continue; // 一定要蓋住主目標
-    var dist = 0;
-    for (var k = 0; k < hit.length; k++) dist += bfEntityDistance(hit[k]);
-    var cand = { at: anchors[a], hit: hit, dist: dist, r: Math.random() };
-    if (!best || cand.hit.length > best.hit.length ||
-        (cand.hit.length === best.hit.length &&
-          (cand.dist < best.dist || (cand.dist === best.dist && cand.r < best.r)))) {
-      best = cand;
-    }
-  }
-  if (!best) return { cells: bfEntityCells(primary), targets: [primary] };
-  return { cells: bfBoxCells(best.at.col, best.at.row, w, h), targets: best.hit };
+  if (sp.kind !== 'box') return { area: null, targets: [primary] };
+  var p = bfPos(primary);
+  if (!p) return { area: null, targets: [primary] };
+  var area = { x: p.x, y: p.y, r: bfShapeRadius(sp) };
+  var hit = bfEnemiesInArea(area, live);
+  if (hit.indexOf(primary) < 0) hit.push(primary);
+  return { area: area, targets: hit };
 }
 
-/* 範圍展開：只要命中清單時用這支（等同 bfAreaPlacement().targets）。 */
+/* 範圍展開：只要命中清單時用這支。 */
 function bfAreaTargets(primary, enemies, shape) {
   return bfAreaPlacement(primary, enemies, shape).targets;
 }
 
-/* 全場技（規格：以 4×4 中心為目標施放，對所有敵人造成傷害）。 */
+/* 全場技。 */
 function bfAllTargets(enemies) { return bfLiveList(enemies); }

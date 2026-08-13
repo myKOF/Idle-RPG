@@ -19,7 +19,7 @@ function resetSkillRT() {
     amps: [],         // skillAmp 族：{scope,pct,until,uses,refundPct,perCdSec,cap,cdrPct,srcId} 待消耗增幅清單
     charges: {},      // stackCharge 族：name → {stacks,max,until,burst,srcId} 疊層狀態
     echoQueue: [],    // echo/procCast 族：{at,resolve} 延遲結算佇列（at=GT 時戳，到期由 tickSkillSchedulers 出列）
-    fields: [],       // periodicField 族：{name,until,tickSec,nextAt,onTick,onExpire,elem,takenAmpPct,cellSet,snapshot} 領域清單
+    fields: [],       // periodicField 族：{name,until,tickSec,nextAt,onTick,onExpire,elem,takenAmpPct,area,snapshot} 領域清單
     dmgWindows: [],   // echo 傷害快照窗：{until,pct,acc,resolve}（窗內玩家全部傷害累計、期滿一次轟出）
     healWindows: [],  // healEcho 治療回響窗：{until,pct,acc,resolve}（窗內所受傷害累計、期滿回療）
     nthCastCount: 0,  // freeCast 族（零式節律/passiveNthFree）：技能施放計數
@@ -927,7 +927,7 @@ function skillRtFieldAmpACfg(aCfg, target) {
     var f = SKILL_RT.fields[i];
     if (!f || !(f.takenAmpPct > 0) || f.until <= GT) continue;
     // 增幅只對「站在領域裡」的敵人生效；未帶目標（呼叫端沒有單一受擊者）時維持原本的無條件增幅
-    if (target && f.cellSet && typeof bfEntityInCells === 'function' && !bfEntityInCells(target, f.cellSet)) continue;
+    if (target && f.area && typeof bfEntityInArea === 'function' && !bfEntityInArea(target, f.area)) continue;
     var m = 1 + f.takenAmpPct / 100;
     var k = f.ampKey;
     if (k === 'phys' || k === 'magic') {
@@ -1377,7 +1377,7 @@ function skillRtRollProc(pEnt, sk, fx, id, lv, st, out, targets, floatSel, parts
 /* ---- periodicField 族：開領域（同名領域重新施放＝取代刷新，不疊多份）----
    快照＝施放當下的每跳攻擊值（本次施放最終 baseVal × tickPct%）與攻擊組態（爆擊/穿透/元素等定格）；
    之後每 tickSec 由 tickSkillSchedulers 以快照對「站在領域覆蓋格子裡」的存活敵各結算一次
-   resolveHit（真傷技能直扣）；覆蓋格子取自 out.areaCells（castSkill 的範圍落點）。
+   resolveHit（真傷技能直扣）；覆蓋區域取自 out.area（castSkill 的範圍落點）。
    takenAmpPct 由 skillRtFieldAmpACfg 於各傷害端套用；ampKey＝field.elem（元素領域）或技能 dmgType。 */
 function skillRtOpenField(pEnt, sk, fx, id, lv, st, out) {
   var fcfg = fx.field;
@@ -1415,15 +1415,16 @@ function skillRtOpenField(pEnt, sk, fx, id, lv, st, out) {
     elem: fcfg.elem || null,
     takenAmpPct: fcfg.takenAmpPct || 0,
     ampKey: fcfg.elem || fx.dmgType, // takenAmpPct 增幅的傷害類型鍵（元素鍵或 phys/magic）
-    // 領域是「打在地上的一塊區域」：施放當下記住覆蓋的格子，之後每跳打站在那些格子裡的敵人。
-    // 沒有格位資訊（高塔單體 BOSS、未載入格位模組）時 cellSet 為 null＝不設限，維持原本的全場語意。
-    cellSet: (out && out.areaCells && typeof bfCellSet === 'function') ? bfCellSet(out.areaCells) : null,
+    // 領域是「打在地上的一塊區域」：施放當下記住那個圓（圓心＋半徑），
+    // 之後每跳打站在圓裡的敵人。座標制改版前這裡記的是覆蓋的格子。
+    // 沒有座標（高塔單體 BOSS）時 area 為 null＝不設限，維持原本的全場語意。
+    area: (out && out.area) || null,
     snapshot: { aCfg: snapACfg, elemAtk: snapElem, emoji: sk.emoji, tag: sk.name + '·領域', dmgType: fx.dmgType, trueTick: fx.dmgType === 'true' ? tickAtk : 0, isFusion: sk.cat === 'fusion' }
   };
   entry.onTick = function (ctx) {
     var all = ctx.getEnemies ? ctx.getEnemies() : [];
-    var live = entry.cellSet
-      ? all.filter(function (e) { return bfEntityInCells(e, entry.cellSet); })
+    var live = entry.area
+      ? all.filter(function (e) { return bfEntityInArea(e, entry.area); })
       : all;
     if (!live.length) return;
     var total = 0, killed = false;
@@ -1475,7 +1476,7 @@ function skillRtOpenField(pEnt, sk, fx, id, lv, st, out) {
   // 高塔沒有棋盤格，必須保留施放當下的目標圖層（tb-float），否則 vfx.js
   // 會失去 scene/中心座標，退回 mv-party 或玩家欄位。
   var vfxTargets = (out && Array.isArray(out.vfxTargets)) ? out.vfxTargets : [];
-  emitSkillVfx(skillVfxSpec(sk, fx, null, vfxTargets, (out && out.areaCells) || null,
+  emitSkillVfx(skillVfxSpec(sk, fx, null, vfxTargets, (out && out.area) || null,
     { fxKind: 'aura', dur: fDur }));
 }
 
@@ -2330,14 +2331,14 @@ function showPlayerShieldGainAfterHeal(floatSel, pEnt, beforeShield) {
 function skillResolvePlacement(pEnt, target, sk, fx, opts) {
   if (!Array.isArray(target)) {
     var one = (target && target.hp > 0) ? [target] : [];
-    return { targets: one, cells: null };
+    return { targets: one, area: null };
   }
   var pool = target.filter(function (ent) { return ent && ent.hp > 0; });
-  if (!pool.length) return { targets: [], cells: null };
-  if ((opts && opts.exactTargets) || typeof bfAreaPlacement !== 'function') return { targets: pool, cells: null };
+  if (!pool.length) return { targets: [], area: null };
+  if ((opts && opts.exactTargets) || typeof bfAreaPlacement !== 'function') return { targets: pool, area: null };
   var shape = (fx && fx.shape) || (sk && sk.shape) || 'single';
   var primary = bfPickPrimary(pool, pEnt && pEnt._lockTarget);
-  if (!primary) return { targets: [], cells: null };
+  if (!primary) return { targets: [], area: null };
   return bfAreaPlacement(primary, pool, shape);
 }
 function skillResolveTargets(pEnt, target, sk, fx, opts) {
@@ -2443,8 +2444,8 @@ function skillVfxKind(sk, fx, shape) {
 }
 
 /* 回傳可直接送上協議的特效事件內容（純資料，不含實體參照）。
-   targetIds 由呼叫端以 enemyEventFloatTarget 解析完成；cells 為範圍落點（非區域類傳 null）。 */
-function skillVfxSpec(sk, fx, shape, targetIds, cells, extra) {
+   targetIds 由呼叫端以 enemyEventFloatTarget 解析完成；area 為範圍落點的圓（非區域類傳 null）。 */
+function skillVfxSpec(sk, fx, shape, targetIds, area, extra) {
   var spec = {
     fxKind: skillVfxKind(sk, fx, shape),
     glyph: (sk && sk.emoji) || '✨',
@@ -2454,7 +2455,7 @@ function skillVfxSpec(sk, fx, shape, targetIds, cells, extra) {
     elem: (typeof skillElemOf === 'function') ? skillElemOf(sk, fx) : null,
     cat: (sk && sk.cat) || null,
     targets: targetIds || [],
-    cells: cells || null,
+    area: area || null,
     dur: 0.5,
     count: Math.max(1, Math.min(5, (fx && fx.hits) || 1))
   };
@@ -2531,9 +2532,9 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
   }
   // 技能只佔用技能 GCD；普攻有自己的 atkCd，與技能施放並行，不受技能施放影響。
   pEnt.skillGcd = (rtPre.noGcd || (opts && opts.noGcd)) ? 0 : SKILL_GLOBAL_COOLDOWN; // 45 新技能（freeCast 族）：免 GCD 施放
-  // areaCells＝本次施放打在地上的那塊區域（領域類效果據此決定之後每跳打哪些格）
+  // area＝本次施放打在地上的那塊圓形區域（領域類效果據此決定之後每跳打誰）
   var out = {
-    killed: false, dmg: 0, areaCells: placement.cells,
+    killed: false, dmg: 0, area: placement.area,
     // 領域特效稍後才建立，但仍要使用本次施放的實際目標來決定 scene 與中心。
     // 這對沒有 battlefield cell 的高塔 BOSS 尤其重要（目標圖層即 tb-float）。
     vfxTargets: targets.map(function (t) { return enemyEventFloatTarget(t, floatSel); })
@@ -2544,7 +2545,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
   if (!targets.length) vfxExtra.targets = [playerEventFloatTarget(floatSel)];
   var vfxSpec = skillVfxSpec(sk, fx, (fx && fx.shape) || (sk && sk.shape),
     targets.map(function (t) { return enemyEventFloatTarget(t, floatSel); }),
-    placement.cells, vfxExtra);
+    placement.area, vfxExtra);
   emitSkillVfx(vfxSpec);
   var logMsg = sk.emoji + ' 你施放【' + sk.name + ' Lv.' + lv + '】，';
   var parts = [];

@@ -45,6 +45,29 @@ function pickItem(engine) {
   return it;
 }
 
+/* 找一條「改了之後真的會改變 itemScore」的詞條。
+   不能假設 affixes[0] 就算數：同一件裝備上可能掛著對評分權重為 0 的屬性
+   （實測掉到一雙 int/defPct 的靴子，改 int 分數完全不動），
+   那樣測到的就只是「改了沒差的東西沒差」，快取失效根本沒被驗到。
+   判斷基準用**不經快取**的 ctx.itemScore，這樣「真值變了」是前提，
+   「面板（走快取）跟著變」才是被測的性質。 */
+function pickScoringAffix(engine) {
+  const truth = (it) => engine.ctx.itemScore(it);
+  for (const it of (engine.ctx.G.inventory || [])) {
+    if (!it || it.locked || it.kind !== 'equip' || !it.affixes || !it.affixes.length) continue;
+    for (let i = 0; i < it.affixes.length; i++) {
+      const old = it.affixes[i];
+      const flipped = { key: old.key, roll: (old.roll || 0) === 0 ? 1000 : 0, ancient: !!old.ancient };
+      const base = truth(it);
+      it.affixes[i] = flipped;
+      const moved = truth(it) !== base;
+      it.affixes[i] = old;
+      if (moved) return { item: it, index: i, flipped: flipped };
+    }
+  }
+  assert.fail('前提：背包裡要有一條改了會影響評分的詞條');
+}
+
 test('同一份狀態問兩次，分數一致（快取本身沒有把值弄壞）', () => {
   const engine = bootedEngine();
   const a = scores(engine);
@@ -64,13 +87,12 @@ test('強化等級改變 → 分數跟著變', () => {
 
 test('洗煉（換掉詞條物件）→ 分數跟著變', () => {
   const engine = bootedEngine();
-  const it = pickItem(engine);
-  const before = scores(engine)[it.id];
   /* rerollSingleAffix 的做法：就地指派一個**新的**詞條物件（js/item.js）。
      這裡照同樣的形狀改，驗證識別比對抓得到。 */
-  const old = it.affixes[0];
-  it.affixes[0] = { key: old.key, roll: Math.max(0, (old.roll || 0) === 0 ? 1000 : 0), ancient: !!old.ancient };
-  assert.notEqual(scores(engine)[it.id], before, '詞條換了物件，分數必須跟著變');
+  const pick = pickScoringAffix(engine);
+  const before = scores(engine)[pick.item.id];
+  pick.item.affixes[pick.index] = pick.flipped;
+  assert.notEqual(scores(engine)[pick.item.id], before, '詞條換了物件，分數必須跟著變');
 });
 
 test('整份詞條陣列被換掉（全洗）→ 分數跟著變', () => {
