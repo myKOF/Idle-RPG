@@ -2546,6 +2546,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
   var vfxSpec = skillVfxSpec(sk, fx, (fx && fx.shape) || (sk && sk.shape),
     targets.map(function (t) { return enemyEventFloatTarget(t, floatSel); }),
     placement.area, vfxExtra);
+  floatPlayerSkillCast(floatSel, sk);
   emitSkillVfx(vfxSpec);
   var logMsg = sk.emoji + ' 你施放【' + sk.name + ' Lv.' + lv + '】，';
   var parts = [];

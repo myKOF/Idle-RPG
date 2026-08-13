@@ -1728,6 +1728,17 @@ function playerRecoveryFloatInfo(elId, cls, text, value) {
   return { key: key, prefix: text.slice(0, numberAt) };
 }
 
+/* 玩家浮字分區：承傷落在角色身體附近；其餘事件（護盾、回血、回魔、增益、
+   閃避與格擋）落在角色頭頂的藍色區域。技能施放提示另走角色中心動畫。 */
+function playerFloatStyleClass(elId, text, cls) {
+  if (elId !== 'pv-float' && elId !== 'tp-float') return '';
+  var tokens = (cls || '').split(/\s+/);
+  if (tokens.indexOf('skill-cast') >= 0) return 'skill-cast-float';
+  var isDamage = tokens.indexOf('mdmg') >= 0 ||
+    /^\s*(?:爆擊\s*)?-/.test(String(text || ''));
+  return isDamage ? 'player-damage' : 'player-benefit';
+}
+
 function scheduleFloatTextRemoval(sp, lifetimeMs) {
   if (sp._floatRemovalTimer) clearTimeout(sp._floatRemovalTimer);
   sp._floatRemovalTimer = setTimeout(function () {
@@ -1905,8 +1916,18 @@ function placeEnemyDamageFloat(sp, layer) {
 }
 
 function placePlayerRecoveryFloat(sp, layer) {
-  // 回復值只在玩家血條／魔力條附近飄動，不跑到頭像、名稱或狀態列。
-  placeFloatAvoidingOverlap(sp, layer, '.float-txt', 48, 18, 3, 8);
+  // 舊名稱保留給測試與相容呼叫；回復事件現在統一放在玩家上方藍色區域。
+  placeFloatAvoidingOverlap(sp, layer, '.float-txt.player-benefit', 6, 28, 4, 8);
+}
+
+function placePlayerDamageFloat(sp, layer) {
+  // 承傷數字集中在角色身體／血條附近，但每次仍在紅色區域內隨機落點。
+  placeFloatAvoidingOverlap(sp, layer, '.float-txt.player-damage', 42, 32, 4, 9);
+}
+
+function placePlayerBenefitFloat(sp, layer) {
+  // 有益數字在角色頭頂的藍色區域隨機排列，避免蓋住角色本體。
+  placeFloatAvoidingOverlap(sp, layer, '.float-txt.player-benefit', 6, 28, 4, 8);
 }
 
 function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
@@ -2004,13 +2025,24 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
 
   var sp = document.createElement('span');
   var enemyStyleClass = enemyHitFloat ? enemyDamageFloatStyleClass(cls) : '';
-  sp.className = 'float-txt ' + (cls || '') + (enemyStyleClass ? ' ' + enemyStyleClass : '');
+  var playerStyleClass = playerFloatStyleClass(elId, text, cls);
+  sp.className = 'float-txt ' + (cls || '') +
+    (enemyStyleClass ? ' ' + enemyStyleClass : '') +
+    (playerStyleClass ? ' ' + playerStyleClass : '');
   if (enemyHitFloat) sp.className += ' enemy-hit-float';
   sp.textContent = text;
-  var pct = enemyHitFloat ? 8 + Math.random() * 84 : 15 + Math.random() * 70;
+  var isPlayerDamage = playerStyleClass === 'player-damage';
+  var isPlayerBenefit = playerStyleClass === 'player-benefit';
+  var isSkillCastFloat = playerStyleClass === 'skill-cast-float';
+  var pct = enemyHitFloat ? 8 + Math.random() * 84 :
+    (isSkillCastFloat ? 50 : 15 + Math.random() * 70);
   sp.style.left = pct + '%';
   if (enemyHitFloat) sp.style.top = (28 + Math.random() * 44) + '%';
-  sp.style.marginTop = (enemyHitFloat ? (Math.random() * 24 - 12) : (Math.random() * 30 - 15)) + 'px';
+  else if (isPlayerDamage) sp.style.top = (42 + Math.random() * 32) + '%';
+  else if (isPlayerBenefit) sp.style.top = (6 + Math.random() * 28) + '%';
+  else if (isSkillCastFloat) sp.style.top = '50%';
+  sp.style.marginTop = (enemyHitFloat ? (Math.random() * 24 - 12) :
+    (isSkillCastFloat ? 0 : Math.random() * 30 - 15)) + 'px';
   if (damageKey) {
     sp.className += ' damage-aggregate';
     sp._enemyFloatTargetId = elId;
@@ -2029,7 +2061,8 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
   }
   layer.appendChild(sp);
   if (enemyHitFloat) placeEnemyDamageFloat(sp, layer, targetLayer);
-  if (recoveryKey) placePlayerRecoveryFloat(sp, layer);
+  if (isPlayerDamage) placePlayerDamageFloat(sp, layer);
+  else if (isPlayerBenefit) placePlayerBenefitFloat(sp, layer);
   // 敵方傷害浮字允許超出敵方框線；玩家事件與其他浮字仍維持在面板範圍內。
   if (clipGeometry && clipGeometry.width > 0) {
     var w = floatTextWidth(sp);   // 這串文字有多寬（同 class 同文字只量一次）

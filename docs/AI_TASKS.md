@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## Codex：戰鬥飄字分區與技能施放名稱顯示（2026-08-13）
+
+- Status: Completed
+- Completion: Implemented player damage/benefit float zones, shield text "吸收", and directional yellow skill-cast labels.
+- Verification: Targeted float/VFX tests 39/39 passed; build 266/266 passed; full suite 1312/1313 passed with one unrelated existing multi-enemy regression.
+- Known risk: Browser/Pixi visual placement should receive a final manual confirmation in the running game.
+- Handoff: Ready for review and merge; do not merge or push develop without user approval.
+- Owner: Codex
+- Task: 將我方承傷數字固定在角色身體附近的紅色區域隨機顯示；護盾吸收、回血、回魔與其他對我方有益的數字移到角色上方藍色區域隨機顯示；護盾吸收文字改為「吸收」；一般技能與潛力技能施放時，以技能圖示加黃色技能名稱從角色中心向左或右隨機平移後消失。
+- Dependencies: 既有 DOM 戰鬥飄字、PixiJS Canvas 戰鬥渲染器與 Worker visual event 流程；不需變更 Worker Protocol 欄位、存檔格式或戰鬥公式。
+- Scope: `js/util.js`、`js/ui.js`、`js/combat.js`、`js/skills.js`、`js/potential.js`、`js/battle-renderer.js`、`css/style.css`、`index.html`、`tests/player-event-float.test.cjs`、`docs/AI_TASKS.md`
+- Forbidden: Worker Protocol、存檔格式、戰鬥數值與其他 AI 進行中任務檔案。
+- Verification: 定向玩家事件／技能測試、相關 JS 語法檢查、`npm.cmd run build`、完整回歸測試（記錄既有失敗）、`git diff --check`；必要時以 DOM 與 Canvas 兩種模式實機確認位置及動畫。
+- Handoff: Claude Code 唯讀 Review；使用者合併前以瀏覽器確認紅／藍區域與技能名稱動畫。
+
 ## Codex：修正 Canvas 護盾條以最大生命為分母（2026-08-13）
 
 - Status: Completed
