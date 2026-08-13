@@ -616,7 +616,9 @@ function playerAtkCfg(pEnt) {
     }
     return {
         atk: st.atk * atkMul, matk: st.matk * atkMul, dmgType: 'both', level: st.level,
-        critRate: st.critRate, critDmg: st.critDmg + buffVal(pEnt, 'critDmgUp'), hit: st.hit,
+        // 新版技能【狂暴之舞】：爆擊率／爆擊傷害增益（sgCritUp／sgCritDmgUp，普攻同樣受惠）
+        critRate: st.critRate + buffVal(pEnt, 'sgCritUp'),
+        critDmg: st.critDmg + buffVal(pEnt, 'critDmgUp') + buffVal(pEnt, 'sgCritDmgUp'), hit: st.hit,
         sunder: st.passives.sunder || 0, pen: effectivePPen(st, pEnt), mPen: effectiveMPen(st, pEnt),
         trueDmgPct: st.passives.trueDmg || 0, elemAtk: st.elemAtk, elemDmgPct: st.elemDmgPct,
         elemDmgUp: (typeof legendaryElementDamageUp === 'function') ? legendaryElementDamageUp(st, pEnt) : st.elemDmgUp,
@@ -691,6 +693,8 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
     var aCfg = playerAtkCfg(pEnt);
     // 45 新技能（periodicField 族）：領域內敵人受指定類型傷害增幅（普攻端；elemAtk 於函式內先淺拷貝防污染）
     if (typeof skillRtFieldAmpACfg === 'function') aCfg = skillRtFieldAmpACfg(aCfg, mEnt);
+    // 新版技能【虛弱】：流血中的敵人受到的傷害提高（js/skills2.js；普攻端）
+    if (typeof skill2VulnACfg === 'function') aCfg = skill2VulnACfg(aCfg, mEnt);
     if (opts && opts.forceCrit) aCfg.critRate = Math.max(100, aCfg.critRate || 0); // 必定暴擊
     /* 普攻特效（協議 v17）：不再原地出手——發射一道「劍氣」飛向目標，命中時的受擊反饋
        由顯示層（js/vfx.js）處理。浮字延遲與劍氣飛行共用同一個數字（比照技能 travelMs），
@@ -1087,11 +1091,15 @@ function fieldTick(dt) {
         }
         if (p.hp <= 0) { onPlayerFieldDeath(); return; } // 狂暴打擊等自傷技能
         // 潛力【極速之力】：施放期間以倍率放大攻擊頻率（突破一般攻速上限）
+        // 新版技能【狂風斬】：同樣突破上限的攻速乘算（js/skills2.js skill2AspdFactor）
         var playerAttackRate = slowFactor(p) * (1 + buffVal(p, 'aspdUp') / 100) *
             (typeof potentialVelocityFactor === 'function' ? potentialVelocityFactor(p, st) : 1) *
-            (typeof legendaryAttackSpeedMultiplier === 'function' ? legendaryAttackSpeedMultiplier(p, st) : 1);
+            (typeof legendaryAttackSpeedMultiplier === 'function' ? legendaryAttackSpeedMultiplier(p, st) : 1) *
+            (typeof skill2AspdFactor === 'function' ? skill2AspdFactor(p) : 1);
         p.atkCd -= dt * playerAttackRate;
-        if (p.atkCd <= 0) {
+        // 新版技能【暴風之舞】化身中：無法普攻（可施放技能）
+        var stormLock = (typeof skill2StormActive === 'function') && skill2StormActive();
+        if (p.atkCd <= 0 && !stormLock) {
             // 普攻打離我方最近的敵人（同距離隨機挑一個）；鎖定後直到該目標死亡才換 → js/battlefield.js
             var primary = bfPickPrimary(combatFieldEnemies(), p._lockTarget);
             /* 普攻是近戰：目標還沒走到面前就不出手，也不進入冷卻——
@@ -1456,7 +1464,9 @@ function flushRunSummary(nextMaxStage) {
 /* ---- 玩家技能增益取得 ---- */
 var PLAYER_BUFF_ORDER = ['atkUp', 'defUp', 'aspdUp', 'evasionUp', 'critDmgUp', 'blockUp', 'thornsUp', 'lootUp', 'hot',
     // 潛力技能增益（極速之力/雷霆過載/時間坍縮/聖療逆轉/時空凝滯）
-    'velocitySurge', 'lightningOverload', 'chronoCdr', 'sacredInvert', 'allDmgUp'];
+    'velocitySurge', 'lightningOverload', 'chronoCdr', 'sacredInvert', 'allDmgUp',
+    // 新版技能增益（狂風斬/狂暴之舞/暴風之舞，js/skills2.js）
+    'sgGale', 'sgCritUp', 'sgCritDmgUp', 'sgStorm'];
 
 function activePlayerBuffs(ent) {
     if (!ent) return [];

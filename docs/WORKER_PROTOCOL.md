@@ -1,6 +1,6 @@
-# Worker 協議 v18
+# Worker 協議 v19
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 18`　最後更新：2026-08-05
+> 協議版本：`WORKER_PROTOCOL_VERSION = 19`　最後更新：2026-08-13
 > **單一資料來源是 `js/worker/protocol.js`。** 本文件是說明；兩者衝突時以程式碼為準。
 >
 > 遷移（P0～P5）已於 2026-07-28 完成，Worker 是模擬與存檔的唯一權威，舊單執行緒路徑已移除。
@@ -303,6 +303,7 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 
 | 版本 | 日期 | 變更 |
 | :--- | :--- | :--- |
+| 19 | 2026-08-13 | **新版主動技能系統（技能改造第一批）**：新增指令 `skill2.learn` / `skill2.downgrade`（`fn: skills2Learn / skills2Downgrade`，js/skills2.js；args `{group, tier}`，tier 限 0~6），88 → **90**。`skills` 面板快照新增 `skills2` 欄位＝`{ tierMax, levels: {群組id: [各階等級]} }`。<br>6 群組 × 7 階；同群組在前端顯示為同一個技能。定義表 `SKILLS2` 在共載檔 `js/skills2.js`（唯一來源 `config/Excel/Skills2.xlsx` ↔ `config/CSV/Skills2.csv`，經 config_tables.cjs 回寫），所以名稱、各階說明模板、費用公式**不進協議**——兩端讀同一張表，面板只投影會變動的各階等級。裝載沿用 `skill.equipLoadout` / `skill.unequipLoadout`（id 帶 `'sg:'` 前綴，比照 `'potential:'` 的並行前例），施放沿用 pickAndCastSkill 的統一迴圈與冷卻表（`pEnt.skillCds['sg:<群組id>']`）。舊技能系統完全不動——與新系統並行供調教，之後另案刪除。 |
 | 18 | 2026-08-05 | **主線任務系統**：`PANEL_KEYS` 新增 `task`（任務總覽投影，僅回傳每筆任務的 `{idx, prog, claimed, current, ready}` 動態欄位）；`TICK_VIEW_KEYS` 新增 `taskIdx` / `taskProg` / `taskReady`（戰鬥區上方任務快捷列的三個純量）；新增指令 `task.claim`（`fn: taskClaim`，js/tasks.js），87 → **88**。<br>任務定義表 `TASKS` 在共載檔 `js/data.js`（唯一來源 `config/CSV/Task.csv`，經套用參數.bat 回寫），所以名稱、目標數量、獎勵文字**不進協議**——兩端讀同一張表，tick 只送會變動的三個純量，面板只送進度與領取狀態。任務進度邏輯與領獎（js/tasks.js）只在 Worker 端載入；主執行緒不載 tasks.js，比照 factory / newforge。<br>累計型進度（強化/附魔）重用 `G.factory.stats` 既有統計；洗煉與寶石合成兩個新計數 `rerolled` / `gemComposed` 加進同一個 stats 物件，由 item.js 對應成功點遞增——不另設第二套統計家。 |
 | 17 | 2026-08-04 | **戰鬥特效酷炫化**：`vfx` 事件新增四個**可選**欄位——`elem`（元素鍵，顯示層據此挑元素化畫法與受擊特效）、`cat`（技能分類，另有 `basic`＝普攻、`enemy`＝敵方動作）、`variant`（特效變體字串；顯示層不認得就退回原型預設畫法，所以加變體不用動協議）、`delayMs`（整則特效的基礎延遲，追加劍氣／天罰用）。`fxKind` 新增 `curse`（敵身詛咒）、`chain`（連鎖雷鏈，`targets` 順序即彈跳路徑）、`impact`（純受擊反饋）。<br>發送端擴充：普攻與天罰改由 `combat.js` 直接組 `vfx` 事件（劍氣投射＋神雷），普攻浮字開始帶 `delayMs`（與劍氣飛行同一個數，比照技能的 travelMs 同步規則）；雷霆過載與連鎖餘波由 `potential.js` 送 `chain` 事件。<br>理由：舊版七原型只有「顏色」一個維度，火球和暗影箭除了色碼沒有差別，普攻更是完全沒有畫面。畫法仍全部在主執行緒 `js/vfx.js`——模擬層只多描述「是什麼屬性、哪種變體」，不碰任何 DOM 字眼。<br>指令表未變動（仍 87 條） |
 | 16 | 2026-08-04 | **熔爐零件升級**：新增 `newforge.upgradePart`，由 Worker 執行零件升級與金幣扣除；指令表 86 → 87 條。 |

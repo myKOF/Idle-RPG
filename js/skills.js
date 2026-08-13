@@ -32,6 +32,7 @@ function resetSkillRT() {
     overhealWin: null // resourceConvert 溢流聖罰 M4 轉傷窗：{until,pct}（窗內其他治療技的溢出比照轉真傷）
   };
   if (typeof resetLegendaryRT === 'function') resetLegendaryRT();
+  if (typeof resetSkill2RT === 'function') resetSkill2RT(); // 新版技能系統（js/skills2.js）：重置時機完全跟隨本函式
 }
 resetSkillRT(); // 載入即建立初始狀態
 
@@ -99,6 +100,9 @@ function tickSkillSchedulers(dt, ctx) {
       skillRtStigmaDetonate(ctx.pEnt, sg, ctx.getEnemies ? ctx.getEnemies() : [], ctx.floatSel, null, null, ctx);
     }
   }
+  // 6) 新版技能系統排程（js/skills2.js）：暴風之舞自動施放、血刃斬感染判定——
+  //    鏈結於此讓野外／高塔兩處鏡射掛點自然生效（含「空場提前返回之前」的時序保證）
+  if (typeof tickSkill2 === 'function') tickSkill2(dt, ctx);
 }
 
 /* ---- 受擊觸發統一入口（野外與高塔「玩家被敵人命中結算」兩處呼叫）----
@@ -779,6 +783,9 @@ function skillRtExtendTargetDots(targets, sec, low2x) {
    掛點：combat.js onFieldKill（野外；高塔單體 BOSS 無轉移/濺射對象，自然不觸發）。 */
 function skillRtOnEnemyDeath(deadEnt, liveEnemies) {
   if (!deadEnt) return;
+  // 新版技能系統（js/skills2.js）：死亡屍爆——與本函式的結算各自獨立，
+  // 先行呼叫（本函式下方有 pool 為空等提前返回，鏈在尾端會被跳過）
+  if (typeof skills2OnEnemyDeath === 'function') skills2OnEnemyDeath(deadEnt, liveEnemies);
   var st = typeof getStats === 'function' ? getStats() : null;
   var trig = (st && st.skillTriggers) || {};
   var pool = [];
@@ -2176,6 +2183,18 @@ function deleteSkill(id) {
 }
 
 function equipSkillToLoadout(id) {
+  // 新版技能群組（'sg:<群組id>'，js/skills2.js）：第 1 階預設開啟即可裝載。
+  if (typeof id === 'string' && id.indexOf('sg:') === 0) {
+    var sgId = id.slice(3);
+    if (typeof SKILLS2 === 'undefined' || !SKILLS2[sgId]) return '未知技能群組';
+    if (typeof skills2Castable === 'function' && !skills2Castable(sgId)) return '尚未學習';
+    var sgLo = G.player.loadout;
+    if (sgLo.indexOf(id) >= 0) return '已在裝載欄';
+    if (sgLo.length >= loadoutSize()) return '裝載欄已滿（' + loadoutSize() + ' 格，依參數表計算）';
+    sgLo.push(id);
+    UI.dirty.skills = true;
+    return null;
+  }
   // 潛力技能（'potential:<id>'）：僅主動可施放型可裝載；被動潛力學會即常駐、無需裝備。
   if (typeof id === 'string' && id.indexOf('potential:') === 0) {
     var pid = id.slice(10);
@@ -2656,6 +2675,8 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
           }
           // 45 新技能（periodicField 族）：領域內敵人受指定類型傷害增幅（技能傷害端；只對站在領域裡的目標）
           aCfg = skillRtFieldAmpACfg(aCfg, targetEnt);
+          // 新版技能【虛弱】：流血中的敵人受到的傷害提高（js/skills2.js；技能傷害端）
+          if (typeof skill2VulnACfg === 'function') aCfg = skill2VulnACfg(aCfg, targetEnt);
           dmgRes = resolveHit(pEnt, targetEnt, aCfg, monsterDefCfg(targetEnt));
         }
         applySkillFinalDamageMultiplier(targetEnt, dmgRes, sk.cat === 'fusion');
@@ -2882,6 +2903,22 @@ function pickAndCastSkill(pEnt, target, floatSel) {
   var candidates = [];
   for (var i = 0; i < lo.length; i++) {
     var id = lo[i];
+    // 新版技能群組（裝載欄鍵 'sg:<群組id>'，js/skills2.js）：依冷卻／法力／存活目標施放，沿用同一套排序。
+    // 前綴用字面值（比照 'potential:'）——本檔可能在未載入 skills2.js 的測試環境單獨執行。
+    if (typeof id === 'string' && id.indexOf('sg:') === 0) {
+      if ((pEnt.skillCds[id] || 0) > 0) continue;
+      var sgId = id.slice(3);
+      var sgDef = (typeof SKILLS2 !== 'undefined') ? SKILLS2[sgId] : null;
+      if (!sgDef || typeof castSkill2 !== 'function' ||
+          typeof skills2Castable !== 'function' || !skills2Castable(sgId)) continue;
+      var sgLive = Array.isArray(target)
+        ? target.some(function (ent) { return ent && ent.hp > 0; })
+        : !!(target && target.hp > 0);
+      if (!sgLive) continue;
+      if (pEnt.mp < (Number(sgDef.cost) || 0)) continue;
+      candidates.push({ id: id, sgId: sgId, slot: i, readyAt: pEnt._skillReadyOrder[id] });
+      continue;
+    }
     // 潛力技能（裝載欄鍵 'potential:<id>'）：無法力消耗，依冷卻與存活目標施放，其餘沿用同一套排序。
     if (typeof id === 'string' && id.indexOf('potential:') === 0) {
       if ((pEnt.skillCds[id] || 0) > 0) continue;
@@ -2909,6 +2946,9 @@ function pickAndCastSkill(pEnt, target, floatSel) {
   if (!candidates.length) return null;
   candidates.sort(function (a, b) { return a.readyAt - b.readyAt || a.slot - b.slot; });
   var choice = candidates[0];
+  if (choice.sgId) {
+    return castSkill2(pEnt, target, choice.sgId, floatSel);
+  }
   if (choice.potentialDef && typeof castPotentialSkill === 'function') {
     return castPotentialSkill(pEnt, target, choice.potentialDef, floatSel, choice.id);
   }

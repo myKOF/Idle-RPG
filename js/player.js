@@ -101,7 +101,11 @@ function newGameState() {
       skillPoints: 0,
       skillMastery: { level: 0, xp: 0 }, // 技能熟練度：打怪/道具給經驗，每級 1 技能點，0~1000 級
       loadout: ['powerSlash', 'arcaneBurst', 'manaBarrier'],
-      fusions: []   // 玩家自創的融合技定義（{components, seed} 種子重算制）
+      fusions: [],  // 玩家自創的融合技定義（{components, seed} 種子重算制）
+      /* 新版技能群組（2026-08-13 技能改造，js/skills2.js）：
+         levels = { 群組id: [各階等級] }。空字典＝各群組採預設（第 1 階 Lv.1、其餘 0），
+         內容於升級時才建立——避免 mergeDefaults 深合併把玩家調過的值「復活」回預設。 */
+      skills2: { levels: {} }
 
     },
     equipmentSets: equipmentSets,   // 三套裝備

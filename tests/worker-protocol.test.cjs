@@ -20,6 +20,7 @@ const EXPECTED_COMMAND_COUNTS = {
   gem: 14,
   player: 6,
   skill: 9,
+  skill2: 2,
   talent: 8,
   tower: 6,
   forge: 10,
@@ -34,7 +35,7 @@ const EXPECTED_COMMAND_COUNTS = {
 };
 const SIMULATION_FILES = [
   'util.js', 'data.js', 'formula.js', 'stats.js', 'item.js', 'skills.js',
-  'talents.js', 'player.js', 'special_rules.js', 'combat.js', 'legendary.js',
+  'skills2.js', 'talents.js', 'player.js', 'special_rules.js', 'combat.js', 'legendary.js',
   'potential.js', 'tower.js', 'factory.js', 'newforge.js', 'forge.js', 'save.js',
   'tasks.js'
 ];
@@ -90,7 +91,7 @@ function validArgs(spec) {
   return args;
 }
 
-test('凍結的 Worker 指令表有 88 條且分類數量固定', () => {
+test('凍結的 Worker 指令表有 90 條且分類數量固定', () => {
   // v8：新增 app.handoff（多分頁交接前先落地並停止模擬），85 → 86
   // v9：移除 visibility 的 pip 欄位（背景休眠機制取消），指令表未變動
   // v10：新增 vfx 事件（技能／增益特效），指令表未變動
@@ -103,10 +104,12 @@ test('凍結的 Worker 指令表有 88 條且分類數量固定', () => {
   // v17：vfx 事件新增 elem/cat/variant/delayMs 可選欄位與 curse/chain/impact 原型（戰鬥特效酷炫化），指令表未變動
   // v18：主線任務系統——PANEL_KEYS 新增 task、TICK_VIEW_KEYS 新增 taskIdx/taskProg/taskReady、
   //      新增 task.claim（js/tasks.js taskClaim），87 → 88
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 18);
+  // v19：新版主動技能系統——新增 skill2.learn / skill2.downgrade（js/skills2.js），
+  //      skills 面板新增 skills2 欄位（tierMax + 各群組各階等級），88 → 90
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 19);
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   const names = Object.keys(protocol.COMMANDS);
-  assert.equal(names.length, 88);
+  assert.equal(names.length, 90);
 
   const counts = {};
   for (const name of names) {

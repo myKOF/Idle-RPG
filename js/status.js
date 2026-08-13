@@ -79,7 +79,15 @@ var STATUS = {
 
   atkDown: { name: '攻擊', icon: '⚔️', kind: 'debuff', effect: 'stat', key: 'atkDown', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 18, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '目標攻擊力下降。' },
   defDown: { name: '防禦', icon: '🛡️', kind: 'debuff', effect: 'stat', key: 'defDown', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '目標防禦力下降（舊存檔融合技快照相容保留，新設計改用穿透提升）。' },
-  enemyAspdDown: { name: '時間結界·攻速', icon: '⏳', kind: 'debuff', effect: 'stat', key: 'enemyAspdDown', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【時間結界】：目標攻擊速度下降。' }
+  enemyAspdDown: { name: '時間結界·攻速', icon: '⏳', kind: 'debuff', effect: 'stat', key: 'enemyAspdDown', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【時間結界】：目標攻擊速度下降。' },
+
+  sgBleed: { name: '血刃流血', icon: '🩸', kind: 'debuff', effect: 'dot', key: '', elem: '', dmgSource: 'skill', dmg: 30, capStat: '', capMult: 0, val: 0, dur: 5, interval: 1, stack: 'strongest', maxStacks: 1, desc: '新版技能【血刃斬】：每次作用造成技能傷害一定比例的傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。' },
+  sgPoison: { name: '血刃劇毒', icon: '☠️', kind: 'debuff', effect: 'dot', key: '', elem: 'poison', dmgSource: 'skill', dmg: 25, capStat: '', capMult: 0, val: 0, dur: 4, interval: 0.5, stack: 'strongest', maxStacks: 1, desc: '新版技能【血毒刃】：毒屬性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。' },
+  sgIronBleed: { name: '鐵血裂傷', icon: '🗡️', kind: 'debuff', effect: 'dot', key: '', elem: '', dmgSource: 'maxHp', dmg: 3.5, capStat: '', capMult: 0, val: 0, dur: 3, interval: 0.35, stack: 'refresh', maxStacks: 1, desc: '新版技能【鐵血之舞】：占最大生命比例的流血；自身流血直接扣生命、不吃護盾。' },
+  sgGale: { name: '狂風', icon: '💨', kind: 'buff', effect: 'stat', key: 'sgGale', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 20, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【狂風斬】：攻速額外提高（突破攻速上限、與自身攻速相乘）。' },
+  sgFrenzyCr: { name: '狂暴·爆擊率', icon: '🔥', kind: 'buff', effect: 'stat', key: 'sgCritUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 50, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【狂暴之舞】：爆擊率提高。' },
+  sgFrenzyCd: { name: '狂暴·爆擊傷害', icon: '💥', kind: 'buff', effect: 'stat', key: 'sgCritDmgUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 200, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【狂暴之舞】：爆擊傷害提高。' },
+  sgStorm: { name: '暴風化身', icon: '🌪️', kind: 'buff', effect: 'stat', key: 'sgStorm', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 3, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【暴風之舞】：化身暴風，期間自動施放雙刀亂舞、無法普攻。' }
 };
 
 /* ---- 反查索引 ----

@@ -10,14 +10,14 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=18', 'shim.js');
+importScripts('protocol.js?v=19', 'shim.js');
 importScripts(
-  '../util.js', '../data.js?v=20260813-earth-recovery', '../status.js?v=20260811-status-shield-stack', '../formula.js?v=20260813-earth-recovery', '../battlefield.js?v=20260813-desert-101-150', '../stats.js',
+  '../util.js', '../data.js?v=20260813-earth-recovery', '../status.js?v=20260813-skills2-rework', '../formula.js?v=20260813-earth-recovery', '../battlefield.js?v=20260813-skills2-rework', '../stats.js',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260813-desert-101-150', '../talents.js?v=20260811-loadout-cap-clamp',
-  '../player.js?v=20260811-loadout-cap-clamp', '../special_rules.js',
-  '../combat.js?v=20260813-desert-101-150', '../legendary.js', '../potential.js', '../tower.js',
-  '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260811-loadout-cap-clamp',
+  '../skills.js?v=20260813-skills2-rework', '../skills2.js?v=20260813-skills2-rework', '../talents.js?v=20260811-loadout-cap-clamp',
+  '../player.js?v=20260813-skills2-rework', '../special_rules.js',
+  '../combat.js?v=20260813-skills2-rework', '../legendary.js', '../potential.js', '../tower.js?v=20260813-skills2-rework',
+  '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260813-skills2-rework',
   '../tasks.js'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -897,6 +897,9 @@ function buildPanel(name, params) {
         skills: p.skills, unlocks: p.skillUnlocks, loadout: p.loadout,
         loadoutSize: (typeof loadoutSize === 'function') ? loadoutSize() : 0,
         fusions: p.fusions,
+        /* 新版技能群組（v19，js/skills2.js）：只投影會變動的各階等級；
+           名稱／說明／費用公式由兩端共載的 SKILLS2 表與純函式計算，不進協議。 */
+        skills2: (typeof skills2PanelView === 'function') ? skills2PanelView() : null,
         points: (typeof availableSkillPoints === 'function') ? availableSkillPoints() : p.skillPoints,
         budget: (typeof totalSkillPoints === 'function') ? totalSkillPoints() : 0,
         mastery: (function () {

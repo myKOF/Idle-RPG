@@ -1,5 +1,35 @@
 # AI_TASKS.md
 
+## Claude：新版主動技能系統（技能改造第一批）（2026-08-13）
+
+- Status: Review（實作與驗證完成，待使用者調教與合併）
+- Verification: 定向測試 tests/skill2-system.test.cjs 18/18、協議契約 tests/worker-protocol.test.cjs 8/8（v19：88→90 條指令）；
+  完整 `npm.cmd test` 僅剩既有的 tests/multi-enemy.test.cjs 菁英數量表失敗（與本任務無關）；
+  `npm.cmd run build` 268/268；`node tools/apply_params.cjs` 三項檢查 554/554 全數命中；`git diff --check` 通過；
+  瀏覽器實測（localhost:8330，本 worktree）：新版技能面板、7 階彈窗、裝備、實戰自動施放、
+  skill2.learn／downgrade 指令與循序解鎖驗證、console 零錯誤。
+- 調教入口: `config/Excel/Skills2.xlsx`（每階一列；第二頁「欄位定義」有完整參數說明）→ 雙擊「套用參數.bat」。
+  雙刀亂舞的冷卻時間設計文檔未給值，暫定 20 秒（表內可調）。
+- Owner: Claude
+- Task: 依「神力之巔_記事錄.xlsx／技能」頁籤實作新版主動技能系統：6 個技能群組 × 7 階
+  （突刺／迴旋斬／飛刀／疾風斬／血刃斬／雙刀亂舞）。同群組在前端顯示為同一個技能持續進化；
+  每階上限 10 級且不隨轉生提高；前一階至少 1 級才可投資下一階，第 1 階預設開啟。
+  舊技能系統完全不動（並行運作，裝載欄鍵前綴 `sg:`），待使用者調教完畢後另案刪除舊技能。
+- Dependencies: 戰場連續座標改版（2026-08-13）已完成；衝突預檢（check-conflicts.ps1）全部副本乾淨。
+- Scope: `js/skills2.js`（新增）、`js/battlefield.js`（直線／扇形／最近 N 敵幾何查詢）、
+  `js/skills.js`（pickAndCastSkill／equipSkillToLoadout／resetSkillRT／tickSkillSchedulers 的 `sg:` 分支與鏈結）、
+  `js/combat.js`（普攻暫停閘門、攻速乘算、虛弱增傷、playerAtkCfg 新增益鍵）、`js/tower.js`（同鏡射）、
+  `js/status.js`（新狀態列）、`js/player.js`（`player.skills2` 預設）、`js/save.js`（結構常態化）、
+  `js/worker/protocol.js`（v19：skill2.learn／skill2.downgrade）、`js/worker/sim.worker.js`（skills 面板投影＋importScripts）、
+  `js/bridge.js`（Worker 資產版號）、`js/ui.js`、`index.html`、`css/style.css`、
+  `tools/config_tables.cjs`（SCHEMAS.Skills2）、`套用參數.bat`、`config/Excel/Skills2.xlsx`（新增）、
+  `config/CSV/Skills2.csv`（新增）、`config/Excel/Status.xlsx`、`config/CSV/Status.csv`、
+  `docs/WORKER_PROTOCOL.md`、`tools/參數表使用說明.md`、`game_formula.md`、`tests/skill2-*.test.cjs`、`docs/AI_TASKS.md`
+- Forbidden: 舊技能資料與行為（SKILLS／UNLOCKS／融合／潛力）、存檔格式版本、Worker 職責邊界、其他 AI 進行中任務檔案。
+- Verification: 新增 skill2 定向測試（幾何、階層解鎖、施放機制、DoT／屍爆／感染、存檔常態化、協議契約）；
+  完整 `npm.cmd test`（不得新增失敗）；`npm.cmd run build`；`node tools/apply_params.cjs` 三項檢查；`git diff --check`。
+- Handoff: 使用者以 Excel（config/Excel/Skills2.xlsx）調參後執行「套用參數.bat」；Antigravity 實機驗證施放與特效。
+
 ## Codex：戰鬥飄字分區與技能施放名稱顯示（2026-08-13）
 
 - Status: Completed

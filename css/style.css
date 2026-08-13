@@ -4247,6 +4247,32 @@ textarea:disabled,
   width: min(460px, 92vw);
 }
 
+/* ---- 新版技能群組（技能改造第一批）：升級彈窗的階列與提示框 ---- */
+.sg-tier-list .sg-tier-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  margin: 4px 0;
+  border: 1px solid var(--border, #444);
+  border-radius: 6px;
+}
+.sg-tier-row .sg-tier-info { flex: 1; min-width: 0; }
+.sg-tier-row .sg-tier-desc { font-size: 12px; margin-top: 2px; }
+.sg-tier-row .sg-tier-next { font-size: 11px; margin-top: 2px; }
+.sg-tier-row .sg-tier-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+  flex: 0 0 auto;
+}
+.sg-tier-row .sg-tier-max { color: var(--good, #7f7); font-size: 12px; white-space: nowrap; }
+.sg-tier-locked { opacity: 0.55; }
+.sg-tier-off .sg-tier-desc { color: var(--dim, #999); }
+#sk-tooltip .sg-tier-list > div { margin: 2px 0; }
+#sk-tooltip .sg-tier-locked, #sk-tooltip .sg-tier-off { color: var(--dim, #999); }
+
 #skill-modal-body {
   display: grid;
   grid-template-rows: 48px 24px 140px 28px 66px;
