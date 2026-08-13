@@ -1354,11 +1354,11 @@ var BF_BOSS_RADIUS = 52;       // BOSS 體型半徑（邊緣較早進入接觸�
 var FIELD_ENEMY_ENTER_DELAY = 0.45;
 var FIELD_ENEMY_ENTER_STAGGER = 0.08; // 同一波每隻再錯開一點，不要整排同時抵達
 
-var RESPAWN_DELAY = 0.8;       // 空場時的補怪間隔（秒）；波次串流另有自己的間隔（見下）
+var RESPAWN_DELAY = 2;       // 空場時的補怪間隔（秒）；波次串流另有自己的間隔（見下）
 var FIELD_WAVE_SPAWN_INTERVAL = 2.0; // 出怪波次間隔預設值（秒）；各地圖／關卡的實際值見 ZONE_STAGE_WAVE_PROFILES
 var FIELD_MAX_LIVE_ENEMIES = 8;      // 場上同時存在的敵人上限預設值（同上表可逐地圖／關卡覆寫）
 var FIELD_ENEMY_DEATH_CLEAR_DELAY = 2.1; // 野外敵人死亡後保留戰鬥資訊時間（秒）；須長於 2 秒傷害飄字動畫
-var REVIVE_DELAY = 3.0;        // 死亡復活時間（秒）
+var REVIVE_DELAY = 5;        // 死亡復活時間（秒）
 var FIELD_DEATH_STAGE_RETREAT = 10; // 野外死亡退回階段數
 
 // ---- BOSS 高塔（元素 BOSS 以魔法攻擊） ----
