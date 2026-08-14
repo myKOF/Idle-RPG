@@ -10,6 +10,13 @@
    安全邊界不變：只接受本機 hostname，不依賴任何可被前端覆寫的旗標。 */
 
 (function () {
+  /* ---- GM 測試旗標（2026-08-14 技能檢驗流程規範）----
+     掛全域讓 js/formula.js 的掛點（鎖血下限、屬性覆寫）能以 typeof 讀到。
+     執行期狀態、不入存檔：重新整理（Worker 重建）即全部清除。 */
+  var GM_GLOBAL = (typeof self !== 'undefined') ? self
+    : ((typeof window !== 'undefined') ? window : globalThis);
+  if (!GM_GLOBAL.GM_TEST) GM_GLOBAL.GM_TEST = { god: false, statOverride: null };
+
   // 安全邊界：不依賴「是否為開發模式」等可被前端變數覆寫的旗標，只接受本機 hostname。
   function isGMHost() {
     var loc = (typeof window !== 'undefined' && window.location) ||
@@ -779,6 +786,114 @@
         return { ok: true, message: '所有任務設為已完成（idx=' + newIdx + '/' + tMax + '）' };
       }
       return { ok: true, message: '任務設置至第 ' + newIdx + ' 個（前 ' + newIdx + ' 個已完成，目前進行中：「' + TASKS[newIdx].name + '」）' };
+    }
+    /* ---- 技能測試指令（2026-08-14 技能檢驗流程規範 → docs/SKILL_TEST_SPEC.md）---- */
+    if (command === 'god' || command === 'lockhp') {
+      var godRaw = String(args[0] === undefined ? '1' : args[0]).toLowerCase();
+      if (['1', '0', 'on', 'off', 'true', 'false'].indexOf(godRaw) < 0) {
+        return { ok: false, message: '格式：god [1|0]（鎖血開關；省略參數＝開）' };
+      }
+      GM_GLOBAL.GM_TEST.god = (godRaw === '1' || godRaw === 'on' || godRaw === 'true');
+      return { ok: true, message: GM_GLOBAL.GM_TEST.god ? '鎖血開啟：我方生命最低保留 1，不會死亡' : '鎖血關閉' };
+    }
+    if (command === 'statset' || command === 'stat') {
+      // 屬性基準覆寫：套在 computeStats 所有上限夾制之後（固定值，不受裝備影響）
+      var STAT_KEYS = {
+        aspd: 'aspd', cdr: 'cdr', atk: 'atk', matk: 'matk', hit: 'hit',
+        crit: 'critRate', critrate: 'critRate', critdmg: 'critDmg', aoe: 'aoeDmg', aoedmg: 'aoeDmg'
+      };
+      key = String(args[0] || '').trim().toLowerCase();
+      if (key === 'clear' || key === 'off') {
+        GM_GLOBAL.GM_TEST.statOverride = null;
+        if (typeof markStatsDirty === 'function') markStatsDirty();
+        gmDirty();
+        return { ok: true, message: '屬性覆寫已全部清除（恢復裝備計算值）' };
+      }
+      if (!STAT_KEYS[key]) {
+        return { ok: false, message: '格式：statset 欄位 數值｜statset clear（欄位：' + Object.keys(STAT_KEYS).join('/') + '）' };
+      }
+      var statVal = gmNumber(args[1], 0, 1e300);
+      if (statVal === null) return { ok: false, message: '格式：statset ' + key + ' 數值（非負數）' };
+      if (!GM_GLOBAL.GM_TEST.statOverride) GM_GLOBAL.GM_TEST.statOverride = {};
+      GM_GLOBAL.GM_TEST.statOverride[STAT_KEYS[key]] = statVal;
+      if (typeof markStatsDirty === 'function') markStatsDirty();
+      gmDirty();
+      return { ok: true, message: '屬性覆寫：' + STAT_KEYS[key] + ' = ' + statVal + '（statset clear 可清除）' };
+    }
+    if (command === 'maxstats' || command === 'testmode') {
+      // 技能測試基準組：攻速頂到上限、冷卻縮減頂到屬性上限、命中拉滿去除 MISS 噪音
+      var msAspd = (typeof ASPD_CAP === 'number') ? ASPD_CAP : 5;
+      var msCdr = (typeof STAT_CAPS !== 'undefined' && STAT_CAPS && Number(STAT_CAPS.cdr) > 0) ? Number(STAT_CAPS.cdr) : 90;
+      if (!GM_GLOBAL.GM_TEST.statOverride) GM_GLOBAL.GM_TEST.statOverride = {};
+      GM_GLOBAL.GM_TEST.statOverride.aspd = msAspd;
+      GM_GLOBAL.GM_TEST.statOverride.cdr = msCdr;
+      GM_GLOBAL.GM_TEST.statOverride.hit = 999;
+      if (typeof markStatsDirty === 'function') markStatsDirty();
+      gmDirty();
+      return { ok: true, message: '測試基準組：攻速 ' + msAspd + '（上限）、冷卻縮減 ' + msCdr + '%（上限）、命中 999（statset clear 可清除）' };
+    }
+    if (command === 'spawn' || command === 'arena') {
+      var spawnFirst = String(args[0] || '').toLowerCase();
+      if (spawnFirst === 'off' || spawnFirst === 'clear' || spawnFirst === '0') {
+        if (typeof gmArenaOff !== 'function') return { ok: false, message: '戰鬥模組未載入（gmArenaOff）' };
+        gmArenaOff();
+        return { ok: true, message: '演武場關閉：已清場並恢復自然出怪' };
+      }
+      count = gmNumber(args[0], 1, 32);
+      if (count === null) return { ok: false, message: '格式：spawn 數量(1~32) [small|elite|boss] [血量倍率]｜spawn off' };
+      var kindRaw = String(args[1] || 'small').toLowerCase();
+      var kind = { small: 'small', normal: 'small', mob: 'small', '小怪': 'small', elite: 'elite', '菁英': 'elite', boss: 'boss' }[kindRaw];
+      if (!kind) return { ok: false, message: '敵種只能是 small、elite 或 boss' };
+      var spawnHpx = args[2] !== undefined ? gmNumber(args[2], 0.01, 1e6) : 1;
+      if (spawnHpx === null) return { ok: false, message: '血量倍率範圍 0.01~1000000' };
+      if (typeof gmArenaSpawn !== 'function') return { ok: false, message: '戰鬥模組未載入（gmArenaSpawn）' };
+      if (G.tower && G.tower.active) return { ok: false, message: '高塔戰鬥中不可使用演武場出怪' };
+      var spawned = gmArenaSpawn(count, kind, spawnHpx);
+      return { ok: true, message: '演武場：生成 ' + spawned + ' 隻' + (kind === 'boss' ? 'BOSS' : (kind === 'elite' ? '菁英' : '小怪')) +
+        '（血量 ×' + spawnHpx + '；自然出怪與過關結算已暫停，spawn off 恢復）' };
+    }
+    if (command === 'sglv') {
+      // 新版技能群組等級直設（測試用，不扣金幣；正規化沿用 sgEffectiveLevels 的循序解鎖規則）
+      if (typeof SKILLS2 === 'undefined' || typeof sgEffectiveLevels !== 'function') {
+        return { ok: false, message: '新版技能模組未載入（SKILLS2）' };
+      }
+      var sgTarget = String(args[0] || '').trim();
+      var sgLvRaw = String(args[1] || '').trim().toLowerCase();
+      var sgGids = sgTarget === 'all' ? Object.keys(SKILLS2) : [sgTarget];
+      if (sgTarget !== 'all' && !SKILLS2[sgTarget]) {
+        return { ok: false, message: '未知群組：' + sgTarget + '（可用：all、' + Object.keys(SKILLS2).join('、') + '）' };
+      }
+      var sgMax = (typeof SG_TIER_MAX_LV === 'number') ? SG_TIER_MAX_LV : 10;
+      var sgArr = null;
+      if (sgLvRaw === 'max') {
+        sgArr = null; // 逐群組以階數展開全滿
+      } else if (/^\d+(,\d+)*$/.test(sgLvRaw)) {
+        sgArr = sgLvRaw.split(',').map(function (x) { return Math.max(0, Math.min(sgMax, Math.floor(Number(x) || 0))); });
+      } else {
+        return { ok: false, message: '格式：sglv 群組|all 等級（單一數字＝各階同值、逗號列表＝逐階、max＝全滿）' };
+      }
+      if (!G.player.skills2) G.player.skills2 = { levels: {} };
+      if (!G.player.skills2.levels) G.player.skills2.levels = {};
+      var sgMsgs = [];
+      for (var sgI = 0; sgI < sgGids.length; sgI++) {
+        var sgGid = sgGids[sgI];
+        var tierCount = SKILLS2[sgGid].tiers.length;
+        var raw;
+        if (sgArr === null) {
+          raw = []; for (var tI = 0; tI < tierCount; tI++) raw.push(sgMax);
+        } else if (sgArr.length === 1) {
+          raw = []; for (var tJ = 0; tJ < tierCount; tJ++) raw.push(sgArr[0]);
+        } else {
+          raw = sgArr.slice(0, tierCount);
+        }
+        var rawMap = {}; rawMap[sgGid] = raw;
+        var normalized = sgEffectiveLevels(rawMap, sgGid); // 循序解鎖與上限正規化
+        G.player.skills2.levels[sgGid] = normalized;
+        sgMsgs.push(SKILLS2[sgGid].name + ' [' + normalized.join(',') + ']');
+      }
+      if (typeof markStatsDirty === 'function') markStatsDirty();
+      gmDirty();
+      return { ok: true, message: '新版技能等級設定：' + sgMsgs.join('；') };
     }
     return { ok: false, message: '未知指令：' + command + '（輸入 help 查看文件）' };
   }

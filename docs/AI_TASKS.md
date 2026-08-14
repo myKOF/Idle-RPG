@@ -1,5 +1,24 @@
 # AI_TASKS.md
 
+## Claude：技能檢驗流程規範＋GM 測試指令（2026-08-14）
+
+- Status: Review（規範與指令完成；index.html／sim.worker.js 的快取版號因 Codex 特效工程佔用檔案，待使用者裁決後補）
+- Verification: 定向測試 tests/gm-skill-test-tools.test.cjs 4/4；相關回歸 74/75（唯一失敗為既有
+  multi-enemy 菁英數量表，與本次無關）；build 274/274；瀏覽器實測（localhost:8330）五指令端到端全部生效
+  （god／maxstats／statset atk／sglv max／spawn 20×1000，演武場不補怪不推關，測後已還原）。
+- Owner: Claude
+- Task: 建立給各 Agent 的技能測試規範 `docs/SKILL_TEST_SPEC.md`（基礎／數值／特效／平衡／環境五類驗證＋
+  md 表格報告模板），並補齊規範可執行所需的 GM 測試指令：`god`（鎖血）、`statset`／`maxstats`
+  （屬性基準覆寫）、`spawn`（演武場出怪：暫停自然出怪與過關結算、指定數量/敵種/血量倍率）、
+  `sglv`（新版技能等級直設）。
+- Scope: `docs/SKILL_TEST_SPEC.md`（新增）、`js/gm_exec.js`、`js/combat.js`（演武場出怪與閘門）、
+  `js/formula.js`（鎖血下限與屬性覆寫掛點）、`GM_command.md`、`tests/gm-skill-test-tools.test.cjs`（新增）、
+  `docs/AI_TASKS.md`
+- Forbidden: `index.html`／`js/worker/sim.worker.js`／`js/skills2.js`（Codex 特效工程未提交修改佔用中，
+  快取版號更新待使用者裁決後補）；存檔格式；Worker Protocol。
+- Verification: 新增 GM 測試工具定向測試；`npm.cmd run build`；`git diff --check`。
+- Handoff: 各 Agent 依 `docs/SKILL_TEST_SPEC.md` 執行技能測試並輸出報告至 `docs/skill-tests/`。
+
 ## Codex：調整戰鬥飄字與飛行子彈速度（2026-08-14）
 
 - 狀態：已完成（待 Claude Review／Antigravity 驗證）
