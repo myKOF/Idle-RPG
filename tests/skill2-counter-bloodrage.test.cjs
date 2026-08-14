@@ -314,6 +314,73 @@ test('血飲術：狂怒期間敵人受傷→自身扣血（穿護盾）；GM �
   assert.equal(p2.hp, 1000, '未投資血飲術不反噬');
 });
 
+/* ---- 7) 審查修正（2026-08-14 對抗式審查）---- */
+
+test('致命一擊不觸發反擊（與反震「致命擊不反傷」一致；避免死者反殺領獎）', () => {
+  const c = loadContext();
+  const calls = stubHits(c);
+  c.GT = 0;
+  c.G.player.skills2.levels.counter = [10, 10, 10, 10, 10, 10, 10];
+  c.chance = () => true;
+  const p = playerEnt();
+  const m = enemy(1e9, 40, 0);
+  // 這一擊打死玩家（res.killed）
+  c.skills2OnPlayerDamaged(m, p, 1000, true, hitRes({ killed: true }), 'pv-float');
+  assert.equal(calls.length, 0, '致命一擊不得反擊');
+  // 玩家已經是 0 血（後續同 tick 的其他受擊事件）也不反擊
+  p.hp = 0;
+  c.skills2OnPlayerDamaged(m, p, 50, true, hitRes(), 'pv-float');
+  assert.equal(calls.length, 0, '死亡狀態不得反擊');
+  assert.equal(p.shield, 0, '死者不得獲得反擊盾');
+});
+
+test('狂化連殺 killCombo 與狂血盛宴延時都有上限（表定 killMax／maxSec）', () => {
+  const c = loadContext();
+  stubHits(c);
+  c.GT = 0;
+  c.G.player.skills2.levels.bloodrage = [1, 1, 1, 1, 1, 1, 1];
+  const p = playerEnt();
+  const m = enemy(1e9, 40, 0);
+  c.castSkill2(p, [m], 'bloodrage', 'mv-float');
+  const t = c.SKILLS2.bloodrage.tiers;
+  const killMax = Number(t[3].fx.killMax);
+  const maxSec = Number(t[6].fx.maxSec);
+  assert.ok(killMax > 0 && maxSec > 0, '上限必須是表定參數');
+  const base = Number(t[0].fx.sec);
+  for (let i = 0; i < 2000; i++) c.skills2OnEnemyDeath(enemy(0, 50, 0), []);
+  // 連擊加成 = 基準(0.5) + 累積上限
+  assert.equal(c.skill2ComboBonus(), Number(t[3].fx.add) + killMax, 'killCombo 應被夾在上限');
+  assert.ok(c.SKILL2_RT.rage.until <= c.GT + base + maxSec + 1e-9, '狂怒剩餘時間應被夾在「基礎+上限」');
+  assert.ok(c.skill2RageActive(), '夾上限後狂怒仍在持續中');
+});
+
+test('狂怒 RT 為權威：resetSkill2RT 撤掉殘留增益，且攻速因子不吃殘留值', () => {
+  const c = loadContext();
+  stubHits(c);
+  c.GT = 0;
+  c.G.player.skills2.levels.bloodrage = [10, 0, 0, 0, 0, 0, 0];
+  const p = playerEnt();
+  const m = enemy(1e9, 40, 0);
+  c.castSkill2(p, [m], 'bloodrage', 'mv-float');
+  assert.ok(c.skill2AspdFactor(p) > 1, '狂怒中攻速乘算生效');
+  // 死亡／讀檔／進出高塔：resetSkillRT → resetSkill2RT
+  c.resetSkill2RT();
+  assert.equal(p.buffs.sgBloodrage, undefined, '重置時應撤掉跟隨 RT 的增益');
+  assert.equal(c.skill2AspdFactor(p), 1, '重置後不得殘留攻速加成');
+  // 即使增益被其他路徑留下，RT 沒了就不給值
+  c.applyStatus(p, 'sgBloodrage', { val: 38, dur: 99 });
+  assert.equal(c.skill2AspdFactor(p), 1, 'RT 才是權威：殘留增益不得生效');
+});
+
+test('普攻路徑補上玩家死亡判定（血飲術反噬致死不得被下一 tick 回血抵銷）', () => {
+  const combat = fs.readFileSync(path.join(root, 'js/combat.js'), 'utf8');
+  const tower = fs.readFileSync(path.join(root, 'js/tower.js'), 'utf8');
+  // 野外：普攻結算後、空場提前返回之前必須判死
+  assert.match(combat, /doPlayerAttack\(p, primary[\s\S]{0,600}?if \(p\.hp <= 0\) \{ onPlayerFieldDeath\(\); return; \}[\s\S]{0,200}?if \(!combatFieldEnemies\(\)\.length\) return;/);
+  // 高塔：普攻結算後判死
+  assert.match(tower, /doPlayerAttack\(p, b, 'tb-float'\)[\s\S]{0,400}?if \(p\.hp <= 0\) \{ endTowerFight\(false, 'death'\); return; \}/);
+});
+
 test('血飲術通知掛鉤：resolveHit（玩家攻擊端）與 applyEnemyHpDamage 都會回報敵人受傷', () => {
   const c = loadContext();
   c.GT = 0;
