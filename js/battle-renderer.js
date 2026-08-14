@@ -575,6 +575,8 @@ var BattleRenderer = (function () {
     if (ent.isBoss && S.bossBar) drawBossBar(ent);
   }
 
+  var BOSS_BAR_Y = 68; // 避開頂部任務快捷列（y: 8~42），讓 BOSS 標籤與血條完整顯示
+
   function ensureBossBar(ent) {
     if (S.bossBar) return;
     var c = new PIXI.Container();
@@ -589,7 +591,7 @@ var BattleRenderer = (function () {
     label.anchor.set(0.5, 0);
     label.y = -22;
     c.addChild(g); c.addChild(label);
-    c.x = S.W / 2; c.y = 30;
+    c.x = S.W / 2; c.y = BOSS_BAR_Y;
     S.layers.overlay.addChild(c);
     S.bossBar = { root: c, g: g, label: label, forId: ent.id };
   }
@@ -2492,7 +2494,7 @@ var BattleRenderer = (function () {
       S.pauseVeil.bg.rect(0, 0, S.W, S.H).fill({ color: 0x000000, alpha: 0.45 });
       S.pauseVeil.text.x = S.W / 2; S.pauseVeil.text.y = S.H / 2;
     }
-    if (S.bossBar) { S.bossBar.root.x = S.W / 2; }
+    if (S.bossBar) { S.bossBar.root.x = S.W / 2; S.bossBar.root.y = BOSS_BAR_Y; }
     /* 槽位每幀由 tickWorld 依玩家位置重算，這裡不需要再覆寫實體座標 */
   }
 
