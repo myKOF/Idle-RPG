@@ -1,5 +1,47 @@
 # AI_TASKS.md
 
+## Codex：以 Phaser flares 粒子重製火球與殞石外觀（2026-08-14）
+
+- 狀態：已完成
+- 任務分類：戰鬥技能 VFX／DOM 與 Canvas 視覺重製
+- 負責 AI：Codex
+- 任務內容：納入 Phaser 範例實際使用的 `flares.png`／`flares.json`，以 white frame 的多層 flare 粒子重做火球術與殞石術；保留火球直線與殞石 60°、1 大＋4 小、慢 30% 的既有時序。
+- 允許修改：`images/flares.png`、`images/flares.json`、`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`index.html`、`tests/skill-special-vfx.test.cjs`、`docs/AI_TASKS.md`
+- 禁止修改：戰鬥傷害、目標選擇、Worker Protocol、存檔格式與技能數值。
+- 前置依賴：使用者提供的 Phaser 範例原始碼已確認；前一版僅使用圓形漸層，與範例的 flare 粒子外觀不一致。
+- 驗收方式：DOM 與 PixiJS 皆使用同一張 `flares.png` white frame；火球具有白芯／黃身／橙紅外焰與後方火星；殞石維持 60° 路徑與 1 大＋4 小伴隨；相關測試、語法檢查、Build 與 `git diff --check` 通過。
+- 驗證結果：`node --check` 檢查 `js/skills.js`、`js/vfx.js`、`js/battle-renderer.js` 通過；定向測試 29/29 通過；`npm.cmd run build` 通過（278 個檔案）；`git diff --check` 通過。
+- 已知風險：本機瀏覽器先前無法載入 localhost 進行畫面驗證；仍需由使用者在實機確認最終尺寸與粒子密度。
+- 完成後交給：使用者確認。
+
+## Codex：放大火球與殞石群並強化色彩差異（2026-08-14）
+
+- 狀態：已完成
+- 任務分類：戰鬥技能 VFX／尺寸與可讀性調整
+- 負責 AI：Codex
+- 任務內容：將火球與大殞石本體放大約一倍；殞石由 1 顆大殞石加 4 顆小殞石組成，小殞石改用偏橙紅色以提高辨識度與氣勢；殞石飛行速度再降低 30%，並同步延後傷害數字。
+- 允許修改：`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`index.html`、`tests/skill-special-vfx.test.cjs`、`docs/AI_TASKS.md`
+- 禁止修改：戰鬥傷害、目標選擇、Worker Protocol、存檔格式與技能數值。
+- 前置依賴：上一版 Phaser 火球／殞石 VFX 已完成；本次目標檔案衝突預檢未發現其他副本或分支修改。
+- 驗收方式：DOM 與 PixiJS 的火球／大殞石尺寸約為上一版 2 倍；殞石事件可見 1 大＋4 小，且大小殞石有明顯色差；殞石飛行時間為原本的約 1/0.7 倍，傷害數字同步；相關測試、語法檢查、Build 與 `git diff --check` 通過。
+- 驗證結果：技能／VFX 定向測試 29/29 通過；`node --check` 檢查 `js/skills.js`、`js/vfx.js`、`js/battle-renderer.js` 通過；`npm.cmd run build` 通過（278 個檔案）；`git diff --check` 通過。
+- 已知風險：本機瀏覽器先前無法載入 localhost 進行畫面驗證；目前依靜態檢查與單元測試完成，實機視覺仍建議使用者確認。
+- 完成後交給：使用者確認。
+
+## Codex：依 Phaser 粒子範例調整火球與殞石 VFX（2026-08-14）
+
+- 狀態：已完成
+- 任務分類：戰鬥技能 VFX／DOM 與 Canvas
+- 負責 AI：Codex
+- 任務內容：參考 Phaser `createFlameRegion` 的粒子設定（黃／橙／紅火焰色票、短命火星、ADD 光暈、縮放淡出），將火球術改為單顆直線火球，將殞石術改為右上方 60° 大火球搭配 4 顆小火球斜向砸向目標。
+- 允許修改：`js/skills.js`、`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`index.html`、`tests/skill-special-vfx.test.cjs`、`docs/AI_TASKS.md`
+- 禁止修改：戰鬥傷害、目標選擇、Worker Protocol、存檔格式與技能數值。
+- 前置依賴：Phaser 範例原始碼已由使用者提供的網址確認；DOM／PixiJS 技能 VFX 分流已存在；目標檔案衝突預檢未發現其他副本或分支修改。
+- 驗收方式：火球術只建立一顆我方→敵方直線火球；殞石術建立一顆大火球與 4 顆小火球，均以 60° 右上→左下路徑進場；相關測試、語法檢查、Build 與 `git diff --check` 通過。
+- 驗證結果：技能／VFX 定向測試 33/33 通過；`node --check` 檢查 `js/skills.js`、`js/vfx.js`、`js/battle-renderer.js` 通過；`npm.cmd run build` 通過（278 個檔案）；`git diff --check` 通過。
+- 已知風險：本機瀏覽器因環境限制無法載入 localhost 進行畫面驗證；目前依 Phaser 原始碼與既有渲染器的靜態／單元驗證完成，實機視覺仍建議使用者確認。
+- 完成後交給：使用者確認。
+
 ## Codex：依影片調整傷害飄字動畫（2026-08-14）
 
 - 狀態：已完成

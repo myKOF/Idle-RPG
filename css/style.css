@@ -6644,27 +6644,77 @@ textarea:disabled,
   opacity: 0.6;
 }
 
-/* 火球：燃燒核心＋長焰尾（45° 俯衝由 JS 給起點） */
-.vfx-proj-fire .vfx-proj-core {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, var(--vfx-c2, #ffd166), var(--vfx-c1, #fb7233) 60%, transparent 75%);
-  filter: drop-shadow(0 0 8px var(--vfx-glow, #fb7233));
-  animation: vfxCorePulse 0.18s ease-in-out infinite alternate;
+/* Phaser flare 粒子：使用官方 flares.png 的 white frame 當 alpha mask。
+   這裡不是把整張 atlas 當背景顯示，而是裁出 x=392、y=2、128×128 的 white
+   frame，再用 background-color 著色。多個不同大小的 flare 重疊後，才會形成
+   範例裡「白芯／黃身／橙紅外焰／上方火星」的火舌形狀。 */
+.vfx-flare {
+  left: 0;
+  top: 0;
+  width: 128px;
+  height: 128px;
+  background-color: var(--flare-color, #facc22);
+  -webkit-mask-image: url('../images/flares.png');
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: -392px -2px;
+  -webkit-mask-size: 652px 132px;
+  mask-image: url('../images/flares.png');
+  mask-repeat: no-repeat;
+  mask-position: -392px -2px;
+  mask-size: 652px 132px;
+  transform-origin: 50% 50%;
+  transform: translate(-50%, -50%) rotate(var(--vfx-rot, 0rad))
+    translate(var(--flare-x, 0px), var(--flare-y, 0px))
+    scale(var(--flare-sx, 1), var(--flare-sy, 1));
+  filter: drop-shadow(0 0 8px var(--flare-color, #facc22));
+  mix-blend-mode: screen;
+  pointer-events: none;
 }
 
-.vfx-proj-fire .vfx-proj-trail {
-  width: 52px;
-  height: 10px;
-  transform: rotate(var(--vfx-rot, 0rad)) translateX(-54px) translateY(-50%);
-  background: linear-gradient(90deg, transparent, var(--vfx-c1, #fb7233) 55%, var(--vfx-c2, #ffd166));
-  filter: blur(2px);
+.vfx-flare-outer {
+  z-index: 1;
+  opacity: 0.78;
+  filter: blur(1px) drop-shadow(0 0 15px #f83600);
 }
+
+.vfx-flare-orange { z-index: 2; opacity: 0.88; }
+.vfx-flare-yellow { z-index: 3; opacity: 0.96; }
+.vfx-flare-white {
+  z-index: 4;
+  opacity: 1;
+  filter: drop-shadow(0 0 5px #fff6d8);
+}
+
+.vfx-flare-tail {
+  z-index: 0;
+  opacity: 0.82;
+  animation: vfxFlareTail 0.62s ease-out both;
+}
+
+.vfx-flare-spark {
+  z-index: 0;
+  opacity: 0;
+  animation: vfxFlareSpark 0.72s ease-out both;
+}
+
+@keyframes vfxFlareTail {
+  0% { opacity: 0.1; transform: translate(-50%, -50%) rotate(var(--vfx-rot, 0rad)) translate(var(--flare-x), var(--flare-y)) scale(0.35, 0.42); }
+  20% { opacity: 0.86; }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--vfx-rot, 0rad)) translate(calc(var(--flare-x) - 20px), calc(var(--flare-y) - 8px)) scale(0.08, 0.12); }
+}
+
+@keyframes vfxFlareSpark {
+  0% { opacity: 0; }
+  22% { opacity: 0.95; }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--vfx-rot, 0rad)) translate(calc(var(--flare-x) - 30px), calc(var(--flare-y) - 22px)) scale(0.02, 0.03); }
+}
+
+/* 火球術由 JS 從我方到敵方直線飛行；火焰的方向由 flare 粒子本身對齊飛行角度。 */
+.vfx-proj-fire .vfx-proj-trail { display: none; }
 
 .vfx-proj-big .vfx-proj-core {
-  width: 26px;
-  height: 26px;
+  width: 52px;
+  height: 52px;
 }
 
 /* 冰晶彈：稜形晶體＋霧尾 */
@@ -7165,21 +7215,43 @@ textarea:disabled,
 }
 
 .vfx-meteor .vfx-proj-core {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 38% 38%, #fff6d8, var(--vfx-c2, #ffd166) 30%, var(--vfx-c1, #fb7233) 65%, rgba(120, 30, 0, 0.9));
-  filter: drop-shadow(0 0 16px var(--vfx-glow, #fb7233));
-  animation: vfxCorePulse 0.12s linear infinite alternate;
+  display: none;
 }
 
 .vfx-meteor .vfx-proj-trail {
-  width: 110px;
-  height: 22px;
-  transform: rotate(var(--vfx-rot, 2.25rad)) translateX(-116px) translateY(-50%);
-  background: linear-gradient(90deg, transparent, var(--vfx-c1, #fb7233) 55%, var(--vfx-c2, #ffd166));
-  filter: blur(4px);
-  opacity: 0.85;
+  display: none;
+}
+
+/* 殞石伴隨的小火球：共用同一條 60° 斜向飛行路徑，但由 JS 將 flare 群縮小。 */
+.vfx-meteor-small .vfx-proj-core,
+.vfx-meteor-small .vfx-proj-trail { display: none; }
+
+/* Phaser 範例的 particle emitter 火星：短命、由尾焰後方散出，使用 transform／opacity。 */
+.vfx-meteor-ember {
+  left: 0;
+  top: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #facc22;
+  box-shadow: 0 0 7px #f89800;
+  animation: vfxMeteorEmber 0.58s ease-out both;
+}
+
+@keyframes vfxMeteorEmber {
+  0% {
+    transform: translate(var(--ember-x, -20px), var(--ember-y, 0px)) scale(0.45);
+    opacity: 0;
+  }
+
+  18% {
+    opacity: 0.95;
+  }
+
+  100% {
+    transform: translate(calc(var(--ember-x, -20px) - 22px), calc(var(--ember-y, 0px) - 12px)) scale(0);
+    opacity: 0;
+  }
 }
 
 .vfx-meteor-boom {
