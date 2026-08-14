@@ -1382,6 +1382,7 @@ function isEnemyHitFloat(elId, cls) {
 }
 
 var FLOAT_TEXT_LIFETIME_MS = 2000;
+var SKILL_CAST_TOTAL_FLOAT_LIFETIME_MS = FLOAT_TEXT_LIFETIME_MS * 2;
 var ENEMY_DAMAGE_FLOAT_WINDOW_MS = 4000;
 var ENEMY_DAMAGE_FLOAT_MAX_HITS = 20;
 var PLAYER_RECOVERY_FLOAT_MAX_HITS = 20;
@@ -2034,6 +2035,7 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
   var isPlayerDamage = playerStyleClass === 'player-damage';
   var isPlayerBenefit = playerStyleClass === 'player-benefit';
   var isSkillCastFloat = playerStyleClass === 'skill-cast-float';
+  var isSkillCastTotalFloat = isSkillCastFloat && String(cls || '').indexOf('skill-cast-total') >= 0;
   var pct = enemyHitFloat ? 8 + Math.random() * 84 :
     (isSkillCastFloat ? 50 : 15 + Math.random() * 70);
   sp.style.left = pct + '%';
@@ -2075,7 +2077,11 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
       sp.style.left = ((clamped - clipGeometry.left) / clipGeometry.width * 100) + '%';
     }
   }
-  scheduleFloatTextRemoval(sp, enemyDamageFloatLifetimeMs(sp));
+  if (isSkillCastTotalFloat) {
+    scheduleFloatTextRemoval(sp, SKILL_CAST_TOTAL_FLOAT_LIFETIME_MS);
+  } else {
+    scheduleFloatTextRemoval(sp, enemyDamageFloatLifetimeMs(sp));
+  }
 }
 
 /* ---- 分頁 ---- */

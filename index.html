@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>無限征途：合成之巔</title>
-  <link rel="stylesheet" href="css/style.css?v=1.0.9">
+  <link rel="stylesheet" href="css/style.css?v=1.0.10">
   <link rel="stylesheet" href="css/inventory-offset.css">
 </head>
 
@@ -821,7 +821,7 @@
          save                   SaveStorage 重用其 I/O 與存檔索引
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
-  <script src="js/util.js"></script>
+  <script src="js/util.js?v=1.0.1"></script>
   <script src="js/ui-scale.js"></script>
   <script src="js/data.js?v=1.0.26"></script>
   <script src="js/status.js?v=1.0.3"></script>
@@ -831,19 +831,19 @@
   <!-- PixiJS（本地 vendor，零建置專案不用 CDN）＋ Canvas 戰鬥渲染器。
        渲染器只在主執行緒跑，模擬層與 Worker 完全不知道它存在。 -->
   <script src="js/vendor/pixi.min.js"></script>
-  <script src="js/battle-renderer.js?v=1.6.11"></script>
+  <script src="js/battle-renderer.js?v=1.6.12"></script>
   <script src="js/stats.js?v=1.0.1"></script>
   <script src="js/item.js?v=1.0.2"></script>
-  <script src="js/skills.js?v=1.0.14"></script>
+  <script src="js/skills.js?v=1.0.15"></script>
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
-  <script src="js/skills2.js?v=1.0.2"></script>
+  <script src="js/skills2.js?v=1.0.3"></script>
   <script src="js/talents.js?v=1.0.2"></script>
   <script src="js/player.js?v=1.0.5"></script>
   <script src="js/combat.js?v=1.0.19"></script>
-  <script src="js/potential.js"></script>
+  <script src="js/potential.js?v=1.0.1"></script>
   <script src="js/tower.js?v=1.0.3"></script>
   <script src="js/save.js?v=1.0.6"></script>
-  <script src="js/ui.js?v=1.0.36"></script>
+  <script src="js/ui.js?v=1.0.37"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js"></script>

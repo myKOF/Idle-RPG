@@ -74,8 +74,8 @@ function castPotentialSkill(pEnt, target, def, floatSel, loadoutKey) {
       null,
       targets.length && def.dmgType ? null : { targets: [playerEventFloatTarget(floatSel)] }));
   }
-  floatPlayerSkillCast(floatSel, def);
   var res = firePotentialActive(pEnt, def, targets, floatSel, st);
+  floatPlayerSkillCast(floatSel, def, res && res.dmg);
   // 45 新技能（echo 族）：dmgWindow「窗內玩家全部傷害」——潛力主動技傷害計入快照窗
   //（潛力施放不經 castSkill，於此統一寫入；typeof 守衛防載入順序問題）
   if (res && res.dmg > 0 && typeof skillRtAccWindowDamage === 'function') skillRtAccWindowDamage(res.dmg);
