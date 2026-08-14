@@ -1049,6 +1049,8 @@ function fieldTick(dt) {
 
     // 死亡復活
     if (FIELD.reviveCd > 0) {
+        // 死亡期間技能仍在走冷卻；否則 UI 以 GT 顯示的倒數會在下一份快照回到死亡瞬間的舊值。
+        tickSkillCds(p, dt);
         tickFieldDeathDespawn(dt);   // 陣亡定格中的敵人：時間到就整批淡出
         FIELD.reviveCd -= dt;
         if (FIELD.reviveCd <= 0) {

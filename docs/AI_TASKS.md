@@ -1,5 +1,24 @@
 # AI_TASKS.md
 
+## Codex：角色死亡期間技能列冷卻持續倒數（2026-08-14）
+
+- 狀態：已完成（待使用者確認）
+- 任務分類：戰鬥 UI／技能冷卻 Timer 修正
+- 負責 AI：Codex
+- 任務內容：修正角色死亡復活倒數期間技能列冷卻反覆回到舊值的問題；死亡期間沿用既有 `tickSkillCds` 持續扣減技能冷卻，讓 Worker 快照與 UI 倒數一致。
+- 技術影響：只調整野外死亡分支的技能冷卻計時；不修改技能冷卻公式、施放規則、存檔格式或 Worker Protocol。
+- 允許修改：`docs/AI_TASKS.md`、`js/combat.js`、`js/worker/sim.worker.js`、`js/bridge.js`、`index.html`、`tests/skill-cooldown-death.test.cjs`
+- 禁止修改：`js/worker/protocol.js`、技能數值與公式、存檔格式、其他 AI 進行中任務檔案。
+- 前置依賴：既有 `FIELD.reviveCd` 死亡復活流程與 `tickSkillCds` 已存在；目標檔案衝突預檢無來源。
+- 測試要求：死亡期間技能冷卻回歸測試、`node --check js/combat.js`、`npm.cmd run build`、相關完整測試、`git diff --check`。
+- 完成條件：死亡期間技能冷卻持續遞減並在復活時保留已經過的倒數，不再由快照反覆帶回死亡瞬間的舊值。
+- 需要 Claude Review：否，屬單一戰鬥 Timer 小修正；若測試發現跨模組風險再回報。
+- 需要 Antigravity 驗證：建議，確認角色死亡後技能列數字持續下降且不跳回舊值。
+- 完成後交給：使用者確認後合併至整合分支。
+- 驗證結果：新增死亡冷卻回歸測試 1/1；相關死亡／技能／UI 測試 32/32；`npm.cmd run build` 276/276；完整 `npm.cmd test` 1363/1364，唯一失敗為既有 `tests/multi-enemy.test.cjs` 菁英數量表單調性斷言，與本任務無關；相關 JS `node --check` 與 `git diff --check` 通過。
+- 已知風險：尚未由瀏覽器實機確認死亡畫面上的技能列體感；邏輯回歸已覆蓋死亡 5 秒期間的冷卻遞減與復活銜接。
+- 未完成項目：無。
+
 ## Claude：技能檢驗流程規範＋GM 測試指令（2026-08-14）
 
 - Status: Review（規範與指令完成；index.html／sim.worker.js 的快取版號因 Codex 特效工程佔用檔案，待使用者裁決後補）
