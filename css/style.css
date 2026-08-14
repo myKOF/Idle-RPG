@@ -4358,12 +4358,7 @@ textarea:disabled,
   cursor: pointer;
   opacity: .58;
   filter: grayscale(.9);
-  transition: transform .1s, opacity .1s, border-color .1s, box-shadow .1s;
-}
-
-.sg-stage-node:hover {
-  transform: scale(1.06);
-  opacity: .9;
+  transition: opacity .1s, border-color .1s, box-shadow .1s;
 }
 
 .sg-stage-node.sg-stage-unlocked {

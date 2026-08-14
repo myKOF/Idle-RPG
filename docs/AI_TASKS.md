@@ -1,5 +1,21 @@
 # AI_TASKS.md
 
+## Codex：移除新版技能經驗刷新時的節點放大效果（2026-08-14）
+
+- 狀態：已完成（待 Claude Review／Antigravity 驗證）
+- 任務分類：新版技能 UI 視覺修正
+- 負責 AI：Codex
+- 任務內容：移除新版技能階段節點因滑鼠 hover 產生的放大／縮小效果，避免技能經驗更新重繪時呈現被點擊的視覺誤感。
+- 技術影響：只調整新版技能節點 CSS 與樣式版號，不改技能經驗、升級規則、解鎖狀態、Worker Protocol 或存檔格式。
+- 允許修改：`docs/AI_TASKS.md`、`css/style.css`、`index.html`、`tests/skill2-ui.test.cjs`。
+- 禁止修改：`js/skills2.js` 的技能數值與引擎邏輯、`js/ui.js`、Worker Protocol、存檔格式、戰鬥公式、其他 AI 進行中的檔案。
+- 前置依賴：新版技能樹橫向階段 UI 已完成，節點樣式位於 `css/style.css` 的 `.sg-stage-node` 區段。
+- 測試要求／結果：新版 UI 定向測試 5/5 通過；`npm.cmd run build` 通過；瀏覽器實測技能頁節點 `transform: none`、畫面正常；Console error/warning 0；`git diff --check` 通過。
+- 完成條件：技能節點 hover 與技能經驗刷新不再造成 scale 變化，其餘互動與狀態樣式維持正常。
+- 完成後交給：Claude Code 唯讀 Review，之後由使用者合併至整合分支。
+- 已知風險：本次未修改技能經驗、升級或解鎖邏輯；完整回歸的既有 `multi-enemy` 失敗與本任務無關。
+
+
 ## Codex：新版技能樹橫向階段與舊版升級彈窗（2026-08-14）
 
 - 狀態：已完成（待 Claude Review／Antigravity 驗證）
