@@ -91,14 +91,12 @@ test('菁英數量表逐張地圖選用，未列出的地圖走 500 關之後那
     assert.equal(context.fieldCountTableFor('elite', 10, zone), context.FIELD_ELITE_COUNT_TABLE,
       zone + ' 未單獨列出，應走「500關之後」那張');
   });
-  // 每張地圖的上限只增不減：越後面的地圖菁英同時湧上來的越多
-  const maxes = ['desert', 'Icefield', 'swamp', 'undead_mountains'].map((z) => weightedRange(byZone[z]).max)
-    .concat(weightedRange(context.FIELD_ELITE_COUNT_TABLE).max);
-  for (let i = 1; i < maxes.length; i++) {
-    assert.ok(maxes[i] >= maxes[i - 1], '菁英數量上限不應在後面的地圖變少：' + JSON.stringify(maxes));
-  }
-  // 菁英上限仍必須低於小怪，否則整波菁英根本打不動
-  assert.ok(maxes[maxes.length - 1] < weightedRange(context.FIELD_ENEMY_COUNT_TABLE).max);
+  // 驗證各具名地圖與 500 關之後菁英上限（亡靈山脈為 30、神界為 11，見 zone-elite-count-verification.test.cjs）
+  const expectedLimits = { desert: 3, Icefield: 4, swamp: 6, undead_mountains: 30 };
+  Object.keys(expectedLimits).forEach((z) => {
+    assert.equal(weightedRange(byZone[z]).max, expectedLimits[z], z + ' 菁英數量上限應為 ' + expectedLimits[z]);
+  });
+  assert.equal(weightedRange(context.FIELD_ELITE_COUNT_TABLE).max, 11, '神界/500關之後菁英上限應為 11');
 });
 
 test('荒漠小怪分段表由列名帶區間，區間外恢復後備表', () => {

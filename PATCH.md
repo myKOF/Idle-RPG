@@ -1,5 +1,21 @@
 # PATCH.md
 
+## 技能特效重做：連鎖閃電天雷彈射與電紋刻印巨型紫電/雷印法陣（Antigravity 2026-08-14）
+
+- **連鎖閃電（Chain Lightning）特效全面重構**：
+  - **天頂大型天雷（Mega Thunder Strike）**：首個目標從天頂劈下震撼大型落雷，具備多段碎形擬真折線、三層 SVG 筆刷（外層電漿光暈、中層金色雷光、內層高亮白芯）與向外自然延伸的分叉副電弧（Branching Arcs）。
+  - **地表雷暴衝擊與電漿火花**：命中瞬間在目標腳下擴散高能電漿光環（`vfx-lightning-ground-ring`）與多方飛濺的雷電火花粒子（`vfx-lightning-spark`）。
+  - **閃電鏈（Chain Arcs）彈射機制**：首個目標命中後，以 110ms 間隔依序向另外 2 個目標（第 2、第 3 個目標）彈射連續弧光，每跳均同步產生雷擊受擊與爆點反饋；場上目標不足 3 個時向周圍隨機敵卡引導氛圍彈射弧光。
+- **電紋刻印（雷紋刻印 / stormSigil）巨型紫電與雷印法陣**：
+  - **天頂巨型紫色電雷（Giant Purple Thunder）**：施放技能或敵人被疊加「雷印」時，從天頂劈下一道巨型紫色裂空電雷（`#c084fc` / `#fdf4ff` / `#9333ea`），具備深紫光暈與紫色碎雷分叉。
+  - **雙層紫色雷印法陣（Storm Sigil Rune Ring）**：目標身上浮現旋轉的紫色雷電符紋圈（外層虛線雷圈、內層紫光核心與符文），旋轉 0.7s 並向內收縮烙印進目標體內（`vfxSigilImplode`），配合紫色電漿擴散波與紫色雷花。
+- **雙渲染管線支援**：
+  - DOM/CSS/SVG 管線（`js/vfx.js` 與 `css/style.css`）與 Canvas/PixiJS 即時戰鬥渲染器（`js/battle-renderer.js`）同步實作。
+- **測試與 DoD 驗證**：
+  - `tests/skill-special-vfx.test.cjs` 包含連鎖閃電與電紋刻印（紫雷/雷印）斷言驗證。
+  - `node --test "tests/*.test.cjs"` 與 `node tools/build_check.cjs` 驗證通過。
+
+
 ## 新版主動技能系統：依 SKILL TEST SPEC 完成 6 群組全套測試與測試報告（Antigravity 2026-08-14）
 
 - **完成全群組完整技能測試（6 群組 × 7 階）**：

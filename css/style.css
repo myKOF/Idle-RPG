@@ -7498,13 +7498,23 @@ textarea:disabled,
 
 /* ---- 閃電（SVG 折線） ---- */
 .vfx-bolt {
-  filter: drop-shadow(0 0 7px var(--vfx-glow, #ffd93d));
-  animation: vfxBoltFlash 0.4s linear both;
+  filter: drop-shadow(0 0 8px var(--vfx-glow, #ffd93d)) drop-shadow(0 0 16px var(--vfx-c1, #f2b705));
+  animation: vfxBoltFlash 0.38s cubic-bezier(0.1, 0.9, 0.2, 1) both;
 }
 
 .vfx-bolt svg {
   display: block;
   overflow: visible;
+}
+
+.vfx-bolt-mega {
+  filter: drop-shadow(0 0 12px var(--vfx-glow, #ffd93d)) drop-shadow(0 0 24px var(--vfx-c1, #f2b705)) drop-shadow(0 0 36px #ffffff);
+  animation: vfxBoltFlashMega 0.45s ease-out both;
+}
+
+.vfx-bolt-purple {
+  filter: drop-shadow(0 0 10px #c084fc) drop-shadow(0 0 22px #9333ea) drop-shadow(0 0 35px #581c87);
+  animation: vfxBoltFlashPurple 0.5s ease-out both;
 }
 
 .vfx-bolt-weak {
@@ -7515,20 +7525,71 @@ textarea:disabled,
 @keyframes vfxBoltFlash {
   0% {
     opacity: 0;
+    transform: scale(1.02);
   }
+  8% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  24% {
+    opacity: 0.6;
+  }
+  38% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 0.75;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
 
+@keyframes vfxBoltFlashMega {
+  0% {
+    opacity: 0;
+    filter: brightness(2.2);
+  }
   6% {
     opacity: 1;
+    filter: brightness(2);
   }
-
-  28% {
-    opacity: 0.55;
+  20% {
+    opacity: 0.7;
+    filter: brightness(1.4);
   }
-
-  42% {
+  35% {
     opacity: 1;
+    filter: brightness(1.8);
   }
+  70% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+  }
+}
 
+@keyframes vfxBoltFlashPurple {
+  0% {
+    opacity: 0;
+    filter: brightness(2.4);
+  }
+  8% {
+    opacity: 1;
+    filter: brightness(2);
+  }
+  25% {
+    opacity: 0.65;
+  }
+  40% {
+    opacity: 1;
+    filter: brightness(1.6);
+  }
+  75% {
+    opacity: 0.4;
+  }
   100% {
     opacity: 0;
   }
@@ -7538,12 +7599,160 @@ textarea:disabled,
   0% {
     opacity: 0;
   }
-
   10% {
     opacity: 0.75;
   }
-
   100% {
+    opacity: 0;
+  }
+}
+
+/* ---- 雷擊地面衝擊波與電漿火花 ---- */
+.vfx-lightning-impact-wrap {
+  position: absolute;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.vfx-lightning-ground-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 64px;
+  height: 28px;
+  margin: -14px 0 0 -32px;
+  border-radius: 50%;
+  border: 2px solid var(--vfx-c2, #fffbe0);
+  box-shadow: 0 0 12px var(--vfx-glow, #ffd93d), inset 0 0 8px var(--vfx-c1, #f2b705);
+  animation: vfxLightningRingExpand 0.4s ease-out both;
+}
+
+.vfx-lightning-ground-ring.vfx-purple-ring {
+  border-color: #f5d0fe;
+  box-shadow: 0 0 16px #c084fc, inset 0 0 10px #9333ea;
+}
+
+@keyframes vfxLightningRingExpand {
+  0% {
+    transform: scale(0.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+.vfx-lightning-spark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--vfx-c2, #fffbe0);
+  box-shadow: 0 0 6px var(--vfx-glow, #ffd93d);
+  animation: vfxLightningSparkFly 0.45s ease-out both;
+}
+
+.vfx-lightning-spark.vfx-purple-spark {
+  background: #fdf4ff;
+  box-shadow: 0 0 8px #c084fc;
+}
+
+@keyframes vfxLightningSparkFly {
+  0% {
+    transform: translate(0, 0) scale(1.4);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx), var(--dy)) scale(0.2);
+    opacity: 0;
+  }
+}
+
+/* ---- 紫色雷印法陣（電紋刻印烙印特效） ---- */
+.vfx-storm-sigil-wrap {
+  position: absolute;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  width: 72px;
+  height: 72px;
+}
+
+.vfx-storm-sigil-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px dashed #c084fc;
+  box-shadow: 0 0 15px #9333ea, inset 0 0 12px #a855f7;
+  animation: vfxSigilSpin 0.7s linear both, vfxSigilImplode 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.vfx-storm-sigil-inner {
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  border: 2px solid #fdf4ff;
+  background: radial-gradient(circle, rgba(192, 132, 252, 0.45) 0%, rgba(147, 51, 234, 0.15) 60%, transparent 80%);
+  animation: vfxSigilSpinReverse 0.7s linear both, vfxSigilImplode 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.vfx-storm-sigil-rune {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 20px;
+  color: #fdf4ff;
+  text-shadow: 0 0 10px #c084fc, 0 0 18px #9333ea;
+  animation: vfxSigilRunePulse 0.7s ease-out both;
+}
+
+@keyframes vfxSigilSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(180deg); }
+}
+
+@keyframes vfxSigilSpinReverse {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-180deg); }
+}
+
+@keyframes vfxSigilImplode {
+  0% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+  15% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(1);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(0.35);
+    opacity: 0;
+  }
+}
+
+@keyframes vfxSigilRunePulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+  }
+  20% {
+    transform: translate(-50%, -50%) scale(1.3);
+    opacity: 1;
+  }
+  65% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0.2);
     opacity: 0;
   }
 }

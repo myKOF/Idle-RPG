@@ -1044,67 +1044,192 @@ function vfxRainDrops(spec, layer, rect) {
 }
 
 /* ---- 閃電（SVG 折線）----
-   vfxBolt 是所有「雷鏈／天雷」的共用幾何原件：在 from→to 之間切成 6 段，
-   每個中間節點沿法線加入小幅隨機偏移，形成不規則閃電；外層是粗色描邊，
-   內層是白色亮芯。weak=true 時縮小線寬，專門用於單目標時的氛圍彈射。 */
-function vfxBolt(spec, layer, from, to, delayMs, weak) {
-  var minX = Math.min(from.x, to.x) - 26, minY = Math.min(from.y, to.y) - 26;
-  var w = Math.max(8, Math.abs(to.x - from.x)) + 52, h = Math.max(8, Math.abs(to.y - from.y)) + 52;
-  var segs = 6;
+   vfxBolt 是所有「雷鏈／天雷／紫雷」的共用幾何原件：在 from→to 之間擬真折線，
+   支援弱化弧光（weak）、大型天雷（mega）、巨型紫雷（purple）。
+   在 mega / purple 模式下額外生成分叉副電弧（branch arcs），並使用分層 SVG 筆刷
+   （outer 輝光、mid 電漿、core 亮芯）。 */
+function vfxBolt(spec, layer, from, to, delayMs, opts) {
+  var isWeak = opts === true || (opts && opts.weak);
+  var isMega = opts && opts.mega;
+  var isPurple = (opts && opts.purple) || (spec && (spec.variant === 'purple-thunder' || spec.variant === 'storm-sigil'));
+  var minX = Math.min(from.x, to.x) - 40, minY = Math.min(from.y, to.y) - 40;
+  var w = Math.max(12, Math.abs(to.x - from.x)) + 80, h = Math.max(12, Math.abs(to.y - from.y)) + 80;
+  var segs = isMega || isPurple ? 8 : 6;
   var coords = [];
   var nx = -(to.y - from.y), ny = (to.x - from.x);
   var nl = Math.sqrt(nx * nx + ny * ny) || 1;
+  var maxOff = Math.min(48, nl * 0.35);
+
   for (var i = 0; i <= segs; i++) {
     var t = i / segs;
     var px = from.x + (to.x - from.x) * t;
     var py = from.y + (to.y - from.y) * t;
     if (i > 0 && i < segs) {
-      var off = (Math.random() - 0.5) * Math.min(36, nl * 0.3);
+      var off = (Math.random() - 0.5) * maxOff;
       px += nx / nl * off;
       py += ny / nl * off;
     }
     coords.push({ x: px - minX, y: py - minY });
   }
-  var d = vfxNode('vfx-bolt' + (weak ? ' vfx-bolt-weak' : ''), layer, spec);
+
+  var className = 'vfx-bolt';
+  if (isWeak) className += ' vfx-bolt-weak';
+  else if (isPurple) className += ' vfx-bolt-purple';
+  else if (isMega) className += ' vfx-bolt-mega';
+
+  var d = vfxNode(className, layer, spec);
   d.style.left = minX + 'px';
   d.style.top = minY + 'px';
   d.style.animationDelay = delayMs + 'ms';
+
+  var c1 = isPurple ? '#c084fc' : (spec && spec.color ? spec.color : 'var(--vfx-c1, #ffd93d)');
+  var c2 = isPurple ? '#fdf4ff' : 'var(--vfx-c2, #fffbe0)';
+  var glowColor = isPurple ? '#9333ea' : 'var(--vfx-glow, #ffd23f)';
+
   var svgLines = [];
+
+  // 主幹繪製（三層：光暈、電漿、亮芯）
   for (var si = 0; si < coords.length - 1; si++) {
     var taper = si / (coords.length - 1);
-    var outer = (weak ? 5.2 : 12) - (weak ? 3.2 : 9.5) * taper;
-    var inner = (weak ? 1.8 : 4.4) - (weak ? 0.8 : 3.4) * taper;
+    var outer = isPurple ? (22 - 13 * taper) : (isMega ? (18 - 11 * taper) : (isWeak ? 5.2 - 3.2 * taper : 12 - 9.5 * taper));
+    var inner = isPurple ? (6.5 - 3.8 * taper) : (isMega ? (5.5 - 3.2 * taper) : (isWeak ? 1.8 - 0.8 * taper : 4.4 - 3.4 * taper));
     var a = coords[si], b = coords[si + 1];
+
+    // 外層光暈
     svgLines.push('<line x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) +
       '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1) +
-      '" stroke="var(--vfx-c2, #fffbe0)" stroke-width="' + Math.max(2, outer).toFixed(1) +
+      '" stroke="' + glowColor + '" stroke-width="' + Math.max(3, outer * 1.3).toFixed(1) +
+      '" stroke-linecap="round" opacity="0.6"/>');
+
+    // 中層電漿主色
+    svgLines.push('<line x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) +
+      '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1) +
+      '" stroke="' + c1 + '" stroke-width="' + Math.max(1.8, outer).toFixed(1) +
       '" stroke-linecap="round"/>');
+
+    // 內層極致白芯
     svgLines.push('<line x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) +
       '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1) +
-      '" stroke="var(--vfx-c1, #ffd93d)" stroke-width="' + Math.max(0.8, inner).toFixed(1) +
+      '" stroke="' + c2 + '" stroke-width="' + Math.max(0.8, inner).toFixed(1) +
       '" stroke-linecap="round"/>');
   }
+
+  // 分叉副電弧（針對 mega 或 purple，在節點生出向外的自然分叉）
+  if ((isMega || isPurple) && coords.length > 4) {
+    var branchIdxs = [2, 4];
+    for (var bi = 0; bi < branchIdxs.length; bi++) {
+      var bIdx = branchIdxs[bi];
+      if (bIdx < coords.length - 1) {
+        var startP = coords[bIdx];
+        var side = (bi % 2 === 0) ? 1 : -1;
+        var bLen = 22 + Math.random() * 20;
+        var bp1 = {
+          x: startP.x + (nx / nl * side * bLen * 0.6) + (Math.random() * 10 - 5),
+          y: startP.y + (ny / nl * side * bLen * 0.6) + 12
+        };
+        var bp2 = {
+          x: bp1.x + (nx / nl * side * bLen * 0.5) + (Math.random() * 10 - 5),
+          y: bp1.y + 16
+        };
+        svgLines.push('<line x1="' + startP.x.toFixed(1) + '" y1="' + startP.y.toFixed(1) +
+          '" x2="' + bp1.x.toFixed(1) + '" y2="' + bp1.y.toFixed(1) +
+          '" stroke="' + c1 + '" stroke-width="3" stroke-linecap="round" opacity="0.85"/>');
+        svgLines.push('<line x1="' + startP.x.toFixed(1) + '" y1="' + startP.y.toFixed(1) +
+          '" x2="' + bp1.x.toFixed(1) + '" y2="' + bp1.y.toFixed(1) +
+          '" stroke="' + c2 + '" stroke-width="1.2" stroke-linecap="round"/>');
+        svgLines.push('<line x1="' + bp1.x.toFixed(1) + '" y1="' + bp1.y.toFixed(1) +
+          '" x2="' + bp2.x.toFixed(1) + '" y2="' + bp2.y.toFixed(1) +
+          '" stroke="' + c1 + '" stroke-width="2" stroke-linecap="round" opacity="0.75"/>');
+      }
+    }
+  }
+
   d.innerHTML = '<svg width="' + Math.round(w) + '" height="' + Math.round(h) + '" viewBox="0 0 ' +
     Math.round(w) + ' ' + Math.round(h) + '">' +
     svgLines.join('') +
     '</svg>';
-  vfxTrack(d, delayMs + 420);
+  vfxTrack(d, delayMs + (isPurple ? 520 : (isMega ? 460 : 420)));
 }
 
-/* 連鎖雷鏈的完整流程：
-   1. ptList／idList 必須保持同一個 targets 順序；每個 index 是同一個目標的座標與 DOM id。
-   2. 第一個目標從畫面上方被 strikes 道天雷連劈，適合連鎖閃電或多段雷擊。
-   3. 後續目標依 targets 順序，從上一個目標的位置畫到下一個目標，形成逐跳彈射。
-   4. 每一跳另外補一個 lightning impact，讓落點與閃電線同時有爆點與卡片受擊反饋。
-   5. 若只有一個目標，傷害事件沒有第二個座標可連線，便只向畫面上其他敵卡補
-      1～2 道 weak 氛圍弧光；這些弧光純視覺、不代表額外傷害。
+/* 雷擊地表衝擊與電漿火花 */
+function vfxLightningGroundImpact(spec, layer, pt, delayMs, isPurple) {
+  var wrap = vfxNode('vfx-lightning-impact-wrap', layer, spec);
+  vfxPlace(wrap, pt);
+  wrap.style.animationDelay = delayMs + 'ms';
 
-   這裡不重新挑選目標，也不計算鏈傷害；彈射路徑與傷害清單都由模擬層先決定。 */
+  var ring = document.createElement('span');
+  ring.className = 'vfx-lightning-ground-ring' + (isPurple ? ' vfx-purple-ring' : '');
+  ring.style.animationDelay = delayMs + 'ms';
+  wrap.appendChild(ring);
+
+  var sparkCount = isPurple ? 10 : 8;
+  for (var i = 0; i < sparkCount; i++) {
+    var sp = document.createElement('span');
+    sp.className = 'vfx-lightning-spark' + (isPurple ? ' vfx-purple-spark' : '');
+    var ang = (Math.PI * 2 * i / sparkCount) + (Math.random() * 0.5 - 0.25);
+    var dist = 28 + Math.random() * (isPurple ? 42 : 32);
+    sp.style.setProperty('--dx', (Math.cos(ang) * dist).toFixed(1) + 'px');
+    sp.style.setProperty('--dy', (Math.sin(ang) * dist * 0.65).toFixed(1) + 'px');
+    sp.style.animationDelay = (delayMs + (i % 3) * 16) + 'ms';
+    wrap.appendChild(sp);
+  }
+  vfxTrack(wrap, delayMs + 550);
+}
+
+/* 巨型紫色電雷（電紋刻印／雷印烙印）：
+   1. 從天頂劈下一道巨型紫色裂空電雷（粗壯、深紫外焰、亮紫電漿、白紫亮芯）。
+   2. 地表擴散紫色電漿衝擊環與紫色火花。
+   3. 目標身上浮現雙層紫色雷印法陣（Storm Sigil Ring），旋轉並向內收縮烙印。
+   4. 目標卡片觸發紫色雷擊受擊反饋與震動。 */
+function vfxPurpleThunder(spec, layer, pt, targetId, delayMs) {
+  var pSpec = Object.assign({}, spec, { elem: 'lightning', variant: 'purple-thunder', color: '#c084fc' });
+  var skyOrigin = { x: pt.x + (Math.random() * 30 - 15), y: -70 };
+
+  // 1. 巨型紫色天雷
+  vfxBolt(pSpec, layer, skyOrigin, pt, delayMs, { purple: true, mega: true });
+
+  // 2. 地表雷擊衝擊與紫電火花
+  vfxLightningGroundImpact(pSpec, layer, pt, delayMs + 40, true);
+
+  // 3. 紫色雷印法陣
+  var sigilWrap = vfxNode('vfx-storm-sigil-wrap', layer, pSpec);
+  vfxPlace(sigilWrap, pt);
+  sigilWrap.style.animationDelay = (delayMs + 60) + 'ms';
+
+  var outerRing = document.createElement('div');
+  outerRing.className = 'vfx-storm-sigil-ring';
+  outerRing.style.animationDelay = (delayMs + 60) + 'ms';
+  sigilWrap.appendChild(outerRing);
+
+  var innerRing = document.createElement('div');
+  innerRing.className = 'vfx-storm-sigil-inner';
+  innerRing.style.animationDelay = (delayMs + 60) + 'ms';
+  sigilWrap.appendChild(innerRing);
+
+  var rune = document.createElement('div');
+  rune.className = 'vfx-storm-sigil-rune';
+  rune.textContent = '⚡';
+  rune.style.animationDelay = (delayMs + 60) + 'ms';
+  sigilWrap.appendChild(rune);
+
+  vfxTrack(sigilWrap, delayMs + 800);
+
+  // 4. 卡片受擊反饋與場景微震
+  vfxSceneShake(layer, delayMs + 50, false);
+  if (targetId) {
+    vfxHitReact(targetId, 'lightning', delayMs + 50, true);
+  }
+}
+
+/* 連鎖閃電的完整流程：
+   1. ptList／idList 保持 targets 順序；
+   2. 第一個目標從畫面上方被大型天雷直劈（Mega Thunder Bolt），觸發地表雷擊衝擊波。
+   3. 命中後，以閃電鏈形式再彈射到另外兩個目標（第 2、第 3 個目標）。
+   4. 每一跳彈射都伴隨雷光火花爆點與受擊反饋。
+   5. 若場上目標不足 3 個，自動向周圍其他敵卡引導氛圍彈射弧光。 */
 function vfxChain(spec, layer, ptList, idList, baseDelay, strikes) {
   if (!ptList.length) return;
   if (spec.variant === 'knife-bounce' || spec.variant === 'poison-spread') {
-    /* 飛刀／毒感染共用 chain 原型，但不畫雷：每一跳改用短投射物，
-       命中點再補對應元素爆點。 */
     var pathHop = vfxStagger();
     for (var pathI = 1; pathI < ptList.length; pathI++) {
       var pathTravel = (spec.travelMs && spec.travelMs[pathI] > 0) ? spec.travelMs[pathI] : 0;
@@ -1118,39 +1243,64 @@ function vfxChain(spec, layer, ptList, idList, baseDelay, strikes) {
     }
     return;
   }
-  var hop = vfxStagger();
+
+  var hop = Math.max(110, vfxStagger());
   var n = Math.max(1, strikes || 1);
-  /* 第一個目標的天雷段數用同一個 hop 間隔錯開，讓每一道落雷都能和浮字節奏對齊。 */
+
+  // 1. 首個目標：大型天雷從天頂劈下
   for (var st = 0; st < n; st++) {
-    vfxBolt(spec, layer, { x: ptList[0].x + 34 - st * 16, y: -60 }, ptList[0], baseDelay + st * hop, false);
-    vfxImpact({ elem: 'lightning', variant: null, color: spec.color }, layer, ptList[0], idList[0], baseDelay + st * hop + 50);
+    var strikeDelay = baseDelay + st * hop;
+    var skyPt = { x: ptList[0].x + (st === 0 ? 28 : (st % 2 === 1 ? -24 : 32)), y: -70 };
+    vfxBolt(spec, layer, skyPt, ptList[0], strikeDelay, { mega: true });
+    vfxLightningGroundImpact(spec, layer, ptList[0], strikeDelay + 40, false);
+    vfxImpact({ elem: 'lightning', variant: null, color: spec.color }, layer, ptList[0], idList[0], strikeDelay + 50);
   }
-  for (var i = 1; i < ptList.length; i++) {
-    /* 從上一跳到目前跳的連線；第三跳之後使用弱化弧光，控制滿場節點數。 */
-    vfxBolt(spec, layer, ptList[i - 1], ptList[i], baseDelay + i * hop, i > 2);
-    vfxImpact({ elem: 'lightning', variant: null, color: spec.color }, layer, ptList[i], idList[i], baseDelay + i * hop + 40);
+
+  // 2. 命中後，以閃電鏈形式彈射到後續目標（最多另外兩個目標，即 targets 1 和 2）
+  var maxChainBounces = Math.min(ptList.length, 3);
+  for (var i = 1; i < maxChainBounces; i++) {
+    var bounceDelay = baseDelay + (n - 1) * hop + i * hop;
+    vfxBolt(spec, layer, ptList[i - 1], ptList[i], bounceDelay, { mega: false });
+    vfxLightningGroundImpact(spec, layer, ptList[i], bounceDelay + 30, false);
+    vfxImpact({ elem: 'lightning', variant: null, color: spec.color }, layer, ptList[i], idList[i], bounceDelay + 40);
   }
-  if (ptList.length === 1) {
-    /* 單目標時找不到真正的下一跳，只補不帶傷害的背景弧光，避免畫面看起來像
-       雷鏈完全沒有延伸，同時不捏造不存在的命中事件。 */
+
+  // 如果原本傳入的 targets 超過 3 個，繼續用細弧光彈射剩餘目標
+  for (var j = 3; j < ptList.length; j++) {
+    var extraDelay = baseDelay + (n - 1) * hop + j * hop;
+    vfxBolt(spec, layer, ptList[j - 1], ptList[j], extraDelay, { weak: true });
+    vfxImpact({ elem: 'lightning', variant: null, color: spec.color }, layer, ptList[j], idList[j], extraDelay + 40);
+  }
+
+  // 3. 若目標不足 3 個（如只有 1 個或 2 個敵人），向畫面其他敵卡補彈射弧光
+  if (ptList.length < 3) {
     var scene = layer.parentNode;
     var cards = scene ? scene.querySelectorAll('.enemy-card') : [];
     var lr = layer.getBoundingClientRect();
     var added = 0;
-    for (var c = 0; c < cards.length && added < 2; c++) {
+    var needed = 3 - ptList.length;
+    var lastPt = ptList[ptList.length - 1];
+
+    for (var c = 0; c < cards.length && added < needed; c++) {
       var r = cards[c].getBoundingClientRect();
       if (!r.width) continue;
       var cpt = { x: r.left - lr.left + r.width / 2, y: r.top - lr.top + r.height / 2 };
-      if (Math.abs(cpt.x - ptList[0].x) < 4 && Math.abs(cpt.y - ptList[0].y) < 4) continue;
+      var isExisting = ptList.some(function (p) {
+        return Math.abs(p.x - cpt.x) < 6 && Math.abs(p.y - cpt.y) < 6;
+      });
+      if (isExisting) continue;
       added++;
-      vfxBolt(spec, layer, ptList[0], cpt, baseDelay + (n - 1) * hop + added * hop, true);
+      var ambientDelay = baseDelay + (n - 1) * hop + (ptList.length - 1 + added) * hop;
+      vfxBolt(spec, layer, lastPt, cpt, ambientDelay, { weak: true });
+      lastPt = cpt;
     }
   }
 }
 
 /* 天罰／單發神雷：一道天雷直劈目標；與 vfxChain 共用 vfxBolt，但沒有後續跳。 */
 function vfxSmite(spec, layer, pt, targetId, delayMs) {
-  vfxBolt(spec, layer, { x: pt.x + 26, y: -50 }, pt, delayMs, false);
+  vfxBolt(spec, layer, { x: pt.x + 26, y: -50 }, pt, delayMs, { mega: true });
+  vfxLightningGroundImpact(spec, layer, pt, delayMs + 30, false);
   vfxImpact({ elem: 'lightning', variant: null, color: spec.color }, layer, pt, targetId, delayMs + 40);
 }
 
@@ -1281,6 +1431,15 @@ function renderCombatVfx(spec) {
       chStrikes = count;
     }
     vfxChain(s, layer, ch.pts, ch.ids, chBase, chStrikes, travelMs);
+    return;
+  }
+
+  /* 紫色巨雷／電紋刻印：天頂劈下巨型紫雷＋地面紫色法陣與衝擊波 */
+  if (s.variant === 'purple-thunder' || s.variant === 'storm-sigil') {
+    var ptList = resolveTargets();
+    for (var pti = 0; pti < ptList.pts.length; pti++) {
+      vfxPurpleThunder(s, layer, ptList.pts[pti], ptList.ids[pti], baseDelay + pti * 80);
+    }
     return;
   }
 

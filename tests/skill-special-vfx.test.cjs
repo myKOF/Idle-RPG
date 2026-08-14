@@ -56,6 +56,17 @@ test('三個指定技能使用專用 VFX 與命中規格', () => {
   assert.match(vfx, /function vfxBuildFlareFlame\(parent, small, sizeScale, trailScale\)/);
   assert.equal(fs.existsSync(path.join(root, 'images', 'flares.png')), true);
   assert.equal(fs.existsSync(path.join(root, 'images', 'flares.json')), true);
-  assert.match(renderer, /var outerWidth = 13 - 10\.5 \* q/);
+  assert.match(renderer, /var outerWidth = isPurple \? \(22 - 13 \* q\) : \(isMega \? \(18 - 12 \* q\) : \(13 - 10\.5 \* q\)\);/);
   assert.match(shim, /area: spec\.area \|\| null/);
+
+  // 連鎖閃電與電紋刻印（紫雷/雷印）斷言
+  assert.match(skills, /stormSigil:\s*\{\s*fxKind:\s*'rain',\s*variant:\s*'purple-thunder'\s*\}/);
+  assert.match(vfx, /function vfxPurpleThunder\(/);
+  assert.match(vfx, /function vfxLightningGroundImpact\(/);
+  assert.match(vfx, /variant === 'purple-thunder' \|\| s\.variant === 'storm-sigil'/);
+  assert.match(renderer, /function spawnPurpleThunder\(/);
+  assert.match(read('css/style.css'), /\.vfx-bolt-mega/);
+  assert.match(read('css/style.css'), /\.vfx-bolt-purple/);
+  assert.match(read('css/style.css'), /\.vfx-storm-sigil-ring/);
+  assert.match(read('css/style.css'), /\.vfx-lightning-ground-ring/);
 });
