@@ -1,5 +1,24 @@
 # AI_TASKS.md
 
+## Codex：戰鬥技能格 tooltip 重複觸發與重繪（2026-08-14）
+
+- 狀態：已完成（待使用者確認）
+- 任務分類：戰鬥 UI／tooltip 與 DOM 更新修正
+- 負責 AI：Codex
+- 任務內容：修正滑鼠停在戰鬥技能格時，技能格因戰鬥刷新被反覆替換、tooltip 被重複觸發與閃動的問題；保留同一技能格 DOM 節點，只更新冷卻與狀態內容，並忽略同一錨點的重複 hover 事件。
+- 技術影響：只調整戰鬥技能列 DOM 更新與技能 tooltip hover 防抖；不修改戰鬥結果、技能冷卻公式、存檔格式或 Worker Protocol。
+- 允許修改：`docs/AI_TASKS.md`、`js/ui.js`、`index.html`、`tests/battle-skill-hover.test.cjs`
+- 禁止修改：戰鬥數值與公式、存檔格式、Worker Protocol、非本次 tooltip／技能列範圍的程式，以及其他 AI 進行中任務檔案。
+- 前置依賴：既有 `renderBattleSkillBar`、技能 tooltip 事件委派與 RAF 冷卻更新流程已存在；目標檔案衝突預檢無來源。
+- 測試要求：技能列 tooltip／DOM 保留回歸測試、相關 JS `node --check`、`npm.cmd run build`、完整 `npm.cmd test`、`git diff --check`。
+- 完成條件：滑鼠停留在同一技能格時 tooltip 維持顯示且不反覆重建；冷卻數字仍持續更新；真正換技能或槽位狀態改變時仍能正確更新。
+- 需要 Claude Review：否，屬單一 UI DOM／事件小修正；若驗證發現跨模組風險再回報。
+- 需要 Antigravity 驗證：建議，確認戰鬥中 hover 技能格時 tooltip 與技能格不閃動。
+- 完成後交給：使用者確認後合併至整合分支。
+- 驗證結果：新增技能格 hover／DOM 保留回歸測試 4/4；相關 UI／tooltip 測試 28/28；node --check js/ui.js 通過；npm.cmd run build 通過（277/277）；git diff --check 通過。npm.cmd test 已執行約 31 分鐘，未見 assertion failure 但未輸出最終統計，為避免無限等待已中止，不能視為完整測試通過。
+- 已知風險：尚未完成瀏覽器實機 hover 驗證；完整測試未取得最終統計。
+- 未完成項目：無程式實作未完成；完整全量測試需另行在可接受時間內重跑。
+
 ## Codex：角色死亡期間技能列冷卻持續倒數（2026-08-14）
 
 - 狀態：已完成（待使用者確認）

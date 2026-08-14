@@ -2811,6 +2811,107 @@ function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
    - 未解鎖槽位（index >= loadoutSize）：置灰 + 🔒 + 解鎖條件 tips
    - 已解鎖未裝備（index < loadoutSize 且無技能）：空槽 ＋ 點擊跳轉技能頁
    - 已裝備技能：Emoji / 圖示、等級角標、圓形 CD 倒計時遮罩 (conic-gradient) 與碼錶文字、點擊跳轉技能頁 */
+function battleSkillSlotKey(state) {
+  return JSON.stringify([state.kind, state.index, state.entry || '']);
+}
+
+function battleSkillSlotMarkup(state) {
+  if (state.kind === 'locked') {
+    return '<div class="battle-skill-slot locked" data-battle-skill-key="' + esc(state.key) + '" data-slot-index="' + state.index + '" data-tt-title="技能槽 #' + (state.index + 1) + '（未解鎖）" data-tt-desc="' + esc(state.lockDesc) + '">' +
+      '<span class="bss-lock">🔒</span>' +
+      '<span class="bss-slot-num">' + (state.index + 1) + '</span>' +
+      '</div>';
+  }
+  if (state.kind === 'empty') {
+    return '<div class="battle-skill-slot empty" data-battle-skill-key="' + esc(state.key) + '" data-slot-index="' + state.index + '" data-skill-slot-action="goto-skills" data-tt-title="技能槽 #' + (state.index + 1) + '（未裝備）" data-tt-desc="點擊前往技能頁裝備技能">' +
+      '<span class="bss-empty-plus">＋</span>' +
+      '<span class="bss-slot-num">' + (state.index + 1) + '</span>' +
+      '</div>';
+  }
+
+  var snapAttrs = state.isOnCd
+    ? ' data-snap-cd="' + state.rawCdVal + '" data-snap-gt="' + (state.snapshotGt || 0) + '" data-total-cd="' + state.totalCd + '"'
+    : '';
+  return '<div class="' + state.slotCls + '" data-battle-skill-key="' + esc(state.key) + '" data-slot-index="' + state.index + '" data-sk="' + esc(state.entry) + '" data-skill-id="' + esc(state.entry) + '" data-skill-slot-action="goto-skills"' + snapAttrs + '>' +
+    '<span class="bss-emoji">' + (state.emoji || '⚔️') + '</span>' +
+    (state.lv > 0 ? '<span class="bss-lv">' + state.lv + '</span>' : '') +
+    '<div class="bss-cd-mask" style="--cd-deg:' + state.cdDeg + ';"></div>' +
+    '<span class="bss-cd-text">' + state.cdText + '</span>' +
+    (state.isNoMp ? '<span class="bss-nomp-tag">無魔</span>' : '') +
+    '</div>';
+}
+
+function syncBattleSkillSlot(slot, state) {
+  if (!slot) return;
+  slot.setAttribute('data-battle-skill-key', state.key);
+  slot.setAttribute('data-slot-index', state.index);
+
+  if (state.kind === 'locked') {
+    slot.className = 'battle-skill-slot locked';
+    slot.setAttribute('data-tt-title', '技能槽 #' + (state.index + 1) + '（未解鎖）');
+    slot.setAttribute('data-tt-desc', state.lockDesc);
+    return;
+  }
+  if (state.kind === 'empty') {
+    slot.className = 'battle-skill-slot empty';
+    slot.setAttribute('data-skill-slot-action', 'goto-skills');
+    slot.setAttribute('data-tt-title', '技能槽 #' + (state.index + 1) + '（未裝備）');
+    slot.setAttribute('data-tt-desc', '點擊前往技能頁裝備技能');
+    return;
+  }
+
+  slot.className = state.slotCls;
+  slot.setAttribute('data-sk', state.entry);
+  slot.setAttribute('data-skill-id', state.entry);
+  slot.setAttribute('data-skill-slot-action', 'goto-skills');
+  if (state.isOnCd) {
+    slot.setAttribute('data-snap-cd', state.rawCdVal);
+    slot.setAttribute('data-snap-gt', state.snapshotGt || 0);
+    slot.setAttribute('data-total-cd', state.totalCd);
+  } else {
+    slot.removeAttribute('data-snap-cd');
+    slot.removeAttribute('data-snap-gt');
+    slot.removeAttribute('data-total-cd');
+  }
+
+  var emoji = slot.querySelector('.bss-emoji');
+  if (emoji) setTextIfChanged(emoji, state.emoji || '⚔️');
+  var mask = slot.querySelector('.bss-cd-mask');
+  if (!mask) {
+    mask = document.createElement('div');
+    mask.className = 'bss-cd-mask';
+    slot.insertBefore(mask, slot.querySelector('.bss-cd-text') || null);
+  }
+  if (mask.style.getPropertyValue('--cd-deg') !== state.cdDeg) {
+    mask.style.setProperty('--cd-deg', state.cdDeg);
+  }
+  var lvEl = slot.querySelector('.bss-lv');
+  if (state.lv > 0) {
+    if (!lvEl) {
+      lvEl = document.createElement('span');
+      lvEl.className = 'bss-lv';
+      slot.insertBefore(lvEl, mask);
+    }
+    setTextIfChanged(lvEl, state.lv);
+  } else if (lvEl) {
+    lvEl.remove();
+  }
+  var cdTextEl = slot.querySelector('.bss-cd-text');
+  if (cdTextEl) setTextIfChanged(cdTextEl, state.cdText);
+
+  var noMpTag = slot.querySelector('.bss-nomp-tag');
+  if (state.isNoMp) {
+    if (!noMpTag) {
+      noMpTag = document.createElement('span');
+      noMpTag.className = 'bss-nomp-tag';
+      noMpTag.textContent = '無魔';
+      slot.appendChild(noMpTag);
+    }
+  } else if (noMpTag) {
+    noMpTag.remove();
+  }
+}
+
 function renderBattleSkillBar(pEnt, snapshotGt) {
   var bar = $id('battle-skill-bar');
   if (!bar) return;
@@ -2831,26 +2932,24 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
   }
 
   var TOTAL_SLOTS = 10;
-  var h = '';
+  var states = [];
 
   for (var i = 0; i < TOTAL_SLOTS; i++) {
     var isUnlocked = i < cap;
     if (!isUnlocked) {
       var reqLv = (i - 4 + 1) * 50;
       var lockDesc = '角色達到 Lv.' + reqLv + ' 或 1 轉解鎖全部技能格';
-      h += '<div class="battle-skill-slot locked" data-slot-index="' + i + '" data-tt-title="技能槽 #' + (i + 1) + '（未解鎖）" data-tt-desc="' + esc(lockDesc) + '">' +
-        '<span class="bss-lock">🔒</span>' +
-        '<span class="bss-slot-num">' + (i + 1) + '</span>' +
-        '</div>';
+      var lockedState = { kind: 'locked', index: i, lockDesc: lockDesc };
+      lockedState.key = battleSkillSlotKey(lockedState);
+      states.push(lockedState);
       continue;
     }
 
     var entry = lo[i];
     if (!entry) {
-      h += '<div class="battle-skill-slot empty" data-slot-index="' + i + '" data-skill-slot-action="goto-skills" data-tt-title="技能槽 #' + (i + 1) + '（未裝備）" data-tt-desc="點擊前往技能頁裝備技能">' +
-        '<span class="bss-empty-plus">＋</span>' +
-        '<span class="bss-slot-num">' + (i + 1) + '</span>' +
-        '</div>';
+      var emptyState = { kind: 'empty', index: i };
+      emptyState.key = battleSkillSlotKey(emptyState);
+      states.push(emptyState);
       continue;
     }
 
@@ -2861,10 +2960,9 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
       : (isPotE ? (typeof potentialDef === 'function' ? potentialDef(entry.slice(10)) : null) : skillViewDef(skillsSnapshot, entry));
 
     if (!sk) {
-      h += '<div class="battle-skill-slot empty" data-slot-index="' + i + '" data-skill-slot-action="goto-skills" data-tt-title="技能槽 #' + (i + 1) + '（未裝備）" data-tt-desc="點擊前往技能頁裝備技能">' +
-        '<span class="bss-empty-plus">＋</span>' +
-        '<span class="bss-slot-num">' + (i + 1) + '</span>' +
-        '</div>';
+      var invalidState = { kind: 'empty', index: i };
+      invalidState.key = battleSkillSlotKey(invalidState);
+      states.push(invalidState);
       continue;
     }
 
@@ -2889,19 +2987,34 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
     var isOnCd = cd > 0;
     var isNoMp = !isOnCd && pEnt && pEnt.mp !== undefined && pEnt.mp < cost;
     var slotCls = 'battle-skill-slot equipped' + (isOnCd ? ' on-cd' : '') + (isNoMp ? ' no-mp' : (!isOnCd ? ' ready' : ''));
-
-    var snapAttrs = isOnCd ? (' data-snap-cd="' + rawCdVal + '" data-snap-gt="' + (snapshotGt || 0) + '" data-total-cd="' + totalCd + '"') : '';
-
-    h += '<div class="' + slotCls + '" data-slot-index="' + i + '" data-sk="' + esc(entry) + '" data-skill-id="' + esc(entry) + '" data-skill-slot-action="goto-skills"' + snapAttrs + '>' +
-      '<span class="bss-emoji">' + (sk.emoji || '⚔️') + '</span>' +
-      (lv > 0 ? '<span class="bss-lv">' + lv + '</span>' : '') +
-      '<div class="bss-cd-mask" style="--cd-deg:' + cdDeg + ';"></div>' +
-      '<span class="bss-cd-text">' + cdText + '</span>' +
-      (isNoMp ? '<span class="bss-nomp-tag">無魔</span>' : '') +
-      '</div>';
+    var equippedState = {
+      kind: 'equipped', index: i, entry: entry, emoji: sk.emoji || '⚔️', lv: lv,
+      rawCdVal: rawCdVal, snapshotGt: snapshotGt, totalCd: totalCd,
+      cdDeg: cdDeg, cdText: cdText, isOnCd: isOnCd, isNoMp: isNoMp, slotCls: slotCls
+    };
+    equippedState.key = battleSkillSlotKey(equippedState);
+    states.push(equippedState);
   }
 
-  setHtmlIfChanged(bar, h);
+  for (var si = 0; si < states.length; si++) {
+    var state = states[si];
+    var slot = bar.children[si];
+    if (!slot || slot.getAttribute('data-battle-skill-key') !== state.key) {
+      if (slot && UI.tooltipAnchor === slot) hideTooltip();
+      var holder = document.createElement('div');
+      holder.innerHTML = battleSkillSlotMarkup(state);
+      var replacement = holder.firstElementChild;
+      if (slot) bar.replaceChild(replacement, slot);
+      else bar.appendChild(replacement);
+      slot = replacement;
+    }
+    syncBattleSkillSlot(slot, state);
+  }
+  while (bar.children.length > states.length) {
+    var removed = bar.lastElementChild;
+    if (UI.tooltipAnchor === removed) hideTooltip();
+    bar.removeChild(removed);
+  }
   startBattleSkillBarAnimation();
 }
 
@@ -7413,6 +7526,15 @@ function positionSkTooltip(tip, anchorEl) {
   tip.style.top = y + 'px';
 }
 
+function showSkillTooltipHTML(tip, html, anchorEl) {
+  if (!tip || !anchorEl) return;
+  if (UI.tooltipAnchor === anchorEl && tip.style.display === 'block' && tip.innerHTML === html) return;
+  UI.tooltipAnchor = anchorEl;
+  setHtmlIfChanged(tip, html);
+  tip.style.display = 'block';
+  positionSkTooltip(tip, anchorEl);
+}
+
 /* ---- 技能懸停提示 ---- */
 function showSkillTooltip(ref, anchorEl) {
   var tip = $id('sk-tooltip');
@@ -7437,9 +7559,7 @@ function showSkillTooltip(ref, anchorEl) {
       sgH += '<div class="skt-desc">' + describeSkill2Tier(sgTipGid, sgTipTier, sgLvs[sgTipTier] || 0) + '</div>';
       if (sgLocked) sgH += '<div class="skt-lock skill-unlock-hint">🔒 前一階需至少 Lv.1 才能解鎖</div>';
       sgH += '<div class="skt-hint">點擊查看升級面板</div>';
-      tip.innerHTML = sgH;
-      tip.style.display = 'block';
-      positionSkTooltip(tip, anchorEl);
+      showSkillTooltipHTML(tip, sgH, anchorEl);
       return;
     }
     var sgH = '<div class="skt-name">' + sgG.emoji + ' ' + esc(sgG.name) +
@@ -7447,9 +7567,7 @@ function showSkillTooltip(ref, anchorEl) {
     sgH += '<div class="skt-meta">🔵 ' + (Number(sgG.cost) || 0) + ' MP　⏱️ ' + sgG.cd + 's</div>';
     sgH += '<div class="skt-desc sg-tier-list">' + describeSkill2Group(sgTipGid, sgLvs) + '</div>';
     sgH += '<div class="skt-hint">點擊開啟升級面板</div>';
-    tip.innerHTML = sgH;
-    tip.style.display = 'block';
-    positionSkTooltip(tip, anchorEl);
+    showSkillTooltipHTML(tip, sgH, anchorEl);
     return;
   }
   // 潛力技能沿用同一個技能提示元件（data-sk="potential:id"）。
@@ -7482,9 +7600,7 @@ function showSkillTooltip(ref, anchorEl) {
     skillsSnapshot && skillsSnapshot.fusions) + '</div>';
   if (lock) h += '<div class="skt-lock skill-unlock-hint">🔒 ' + esc(lock) + '</div>';
   h += '<div class="skt-hint">點擊開啟升級面板</div>';
-  tip.innerHTML = h;
-  tip.style.display = 'block';
-  positionSkTooltip(tip, anchorEl);
+  showSkillTooltipHTML(tip, h, anchorEl);
 }
 function showTalentTooltip(ref, anchorEl) {
   var tip = $id('sk-tooltip');
@@ -9497,7 +9613,12 @@ function initUI() {
       return;
     }
     var cell = e.target.closest('[data-sk]');
-    if (cell) { showSkillTooltip(cell.getAttribute('data-sk'), cell); return; }
+    if (cell) {
+      // mouseover 會在技能格子內部元素之間冒泡；同一格不應重新計算 tooltip。
+      if (e.relatedTarget && cell.contains && cell.contains(e.relatedTarget)) return;
+      showSkillTooltip(cell.getAttribute('data-sk'), cell);
+      return;
+    }
     var statRow = e.target.closest('.stat-row[data-tt-title]');
     if (statRow) { showStatTooltip(statRow.getAttribute('data-tt-title'), statRow.getAttribute('data-tt-desc'), statRow); return; }
     var tf = e.target.closest('[data-tower-tip]');
@@ -9526,6 +9647,8 @@ function initUI() {
       e.target.closest('.eq-slot.filled[data-id]') ||
       e.target.closest('.forge-slot.filled[data-forge-slot]') ||
       e.target.closest('.battle-skill-slot')) {
+      var outTipCell = e.target.closest('[data-sk]') || e.target.closest('.battle-skill-slot');
+      if (outTipCell && e.relatedTarget && outTipCell.contains && outTipCell.contains(e.relatedTarget)) return;
       hideTooltip();
     }
   });
