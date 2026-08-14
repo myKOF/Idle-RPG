@@ -1291,8 +1291,22 @@ function vfxChain(spec, layer, ptList, idList, baseDelay, strikes) {
       if (isExisting) continue;
       added++;
       var ambientDelay = baseDelay + (n - 1) * hop + (ptList.length - 1 + added) * hop;
-      vfxBolt(spec, layer, lastPt, cpt, ambientDelay, { weak: true });
+      vfxBolt(spec, layer, lastPt, cpt, ambientDelay, { weak: false, mega: false });
       lastPt = cpt;
+    }
+
+    while (added < needed) {
+      added++;
+      var ambAngle = (added === 1 ? -0.85 : 0.85) + (Math.random() * 0.4 - 0.2);
+      var ambDist = 70 + Math.random() * 35;
+      var groundCpt = {
+        x: lastPt.x + Math.cos(ambAngle) * ambDist,
+        y: lastPt.y + Math.sin(ambAngle) * ambDist + 15
+      };
+      var ambDelay = baseDelay + (n - 1) * hop + (ptList.length - 1 + added) * hop;
+      vfxBolt(spec, layer, lastPt, groundCpt, ambDelay, { weak: false, mega: false });
+      vfxLightningGroundImpact(spec, layer, groundCpt, ambDelay + 30, false);
+      lastPt = groundCpt;
     }
   }
 }
