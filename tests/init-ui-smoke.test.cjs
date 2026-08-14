@@ -52,7 +52,25 @@ function fakeElement() {
     removeEventListener: () => {},
     appendChild: (child) => { element.children.push(child); element.childNodes.push(child); return child; },
     insertBefore: (child) => { element.children.push(child); element.childNodes.push(child); return child; },
-    removeChild: () => {},
+    /* removeChild／replaceChild 必須真的動到 children：DOM 差異更新的程式常以
+       「還有多餘節點就移除」這種條件迴圈收尾（例：renderBattleSkillBar），
+       空實作會讓條件永遠成立而無限迴圈——本測試曾因此卡到 5000 秒逾時。 */
+    removeChild: (child) => {
+      const ci = element.children.indexOf(child);
+      if (ci >= 0) element.children.splice(ci, 1);
+      const ni = element.childNodes.indexOf(child);
+      if (ni >= 0) element.childNodes.splice(ni, 1);
+      return child;
+    },
+    replaceChild: (next, old) => {
+      const ci = element.children.indexOf(old);
+      if (ci >= 0) element.children[ci] = next; else element.children.push(next);
+      const ni = element.childNodes.indexOf(old);
+      if (ni >= 0) element.childNodes[ni] = next; else element.childNodes.push(next);
+      return old;
+    },
+    get firstElementChild() { return element.children.length ? element.children[0] : null; },
+    get lastElementChild() { return element.children.length ? element.children[element.children.length - 1] : null; },
     querySelector: () => null,
     querySelectorAll: () => [],
     setAttribute: (name, value) => { element[name] = String(value); },

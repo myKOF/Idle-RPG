@@ -3020,8 +3020,12 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
     }
     syncBattleSkillSlot(slot, state);
   }
-  while (bar.children.length > states.length) {
+  /* 收掉多餘節點：次數先算好再跑，不要用「還有多餘就繼續」的條件迴圈——
+     一旦 removeChild 沒真的移除（測試假 DOM、被 patch 的容器），條件永遠成立就是無限迴圈。 */
+  var extraSlots = bar.children.length - states.length;
+  for (var ri = 0; ri < extraSlots; ri++) {
     var removed = bar.lastElementChild;
+    if (!removed) break;
     if (UI.tooltipAnchor === removed) hideTooltip();
     bar.removeChild(removed);
   }
