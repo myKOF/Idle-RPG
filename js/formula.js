@@ -444,6 +444,12 @@ function computeStats(equipmentOverride) {
   st.crossCore = (typeof potentialSkillActive === 'function' && potentialSkillActive('dualCoreFusion')) ? potentialSkillValue('dualCoreFusion') : 0;
   st.elemAtk = elemAtk;
   st.A = A;
+  /* GM 測試屬性覆寫（僅本機 GM 指令 statset／maxstats；旗標存執行期 GM_TEST，
+     不入存檔、重新整理即清除 → js/gm_exec.js）。放在所有上限夾制之後：
+     技能測試要的是「固定基準值」，不受裝備與其他加成影響，跨存檔可比較。 */
+  if (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.statOverride) {
+    for (var gmKey in GM_TEST.statOverride) st[gmKey] = GM_TEST.statOverride[gmKey];
+  }
   return st;
 }
 
@@ -699,7 +705,12 @@ function towerBossHpDamage(ent, damage) {
 // 非 resolveHit 的直接傷害也必須經過同一個高塔 BOSS 上限。
 function applyEnemyHpDamage(ent, damage) {
   var amount = towerBossHpDamage(ent, damage);
-  if (ent) ent.hp = Math.max(0, ent.hp - amount);
+  if (ent) {
+    /* GM 鎖血（僅本機 GM 指令 god → js/gm_exec.js）：我方生命最低鎖 1。
+       只對玩家戰鬥實體生效——實體判別沿用 tickStatuses 慣例（敵人才有 maxHp）。 */
+    var gmFloor = (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.god && !(ent.maxHp > 0)) ? 1 : 0;
+    ent.hp = Math.max(gmFloor, ent.hp - amount);
+  }
   return amount;
 }
 function resolveHit(attacker, defender, aCfg, dCfg) {
@@ -868,6 +879,8 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   dmg = towerBossHpDamage(defender, dmg);
   out.hpDamage = dmg;
   defender.hp -= dmg;
+  // GM 鎖血（僅本機 GM 指令 god）：我方生命最低鎖 1，不進入下方致死分支
+  if (dCfg.isPlayer && typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.god && defender.hp < 1) defender.hp = 1;
   out.dmg = dmg + out.absorbed; // 統計上含護盾吸收量
   if (defender.hp <= 0) {
     // 神鑄特效【不朽】：致命攻擊時機率保留 1 點生命並回復一定比例最大生命（有內部冷卻）

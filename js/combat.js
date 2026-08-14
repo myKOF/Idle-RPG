@@ -285,6 +285,71 @@ function spawnFieldMonster(append) {
     return placed;
 }
 
+/* ---- GM 演武場（技能測試模式；僅由本機 GM 指令 spawn 呼叫 → js/gm_exec.js）----
+   技能平衡測試需要「場上敵人數量完全受控」：進入演武場後暫停自然出怪與過關結算
+   （fieldTick 內的兩道 _gmArena 閘門），場面由指令重建。
+   - 旗標與敵人都存 FIELD（執行期狀態，不入存檔）；重新整理或 spawn off 即恢復正常出怪。
+   - 敵人 _stage = -1：擊殺不計入過關配額（onFieldKill 只認 _stage === 當前關卡）。
+   - 站位直接寫 pos 均勻圍圈，繞過棋盤容量上限（測試允許同場超過自然上限的敵人數）。
+   - hpMult 放大生命做「木樁」：量測 DPS 時目標不會頻繁死亡重生干擾數據。 */
+function gmArenaSpawn(count, kind, hpMult) {
+    count = Math.max(1, Math.floor(Number(count) || 1));
+    var boss = kind === 'boss';
+    var elite = !boss && kind === 'elite';
+    var mult = Number(hpMult) > 0 ? Number(hpMult) : 1;
+    var s = G.stage.current;
+    var base = monsterStatsFor(s, elite, boss);
+    var zn = currentZoneDef();
+    var home = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : { x: 0, y: 0 };
+    var ringDist = (typeof bfContactDist === 'function') ? bfContactDist() * 2.5 : 120;
+    var enemies = [];
+    for (var i = 0; i < count; i++) {
+        var enemyTable = zn.enemyTable || [];
+        var enemyPairs = enemyTable.map(function (entry) {
+            return [NPC_CONFIG_TABLE && NPC_CONFIG_TABLE[entry.npcId], Number(entry.weight) || 0];
+        }).filter(function (pair) { return pair[0] && pair[1] > 0; });
+        var mtype = enemyPairs.length ? wpick(enemyPairs) : pick(zn.pool);
+        var npcHpMult = Number(mtype.hpMult) > 0 ? Number(mtype.hpMult) : 1;
+        var npcAtkMult = Number(mtype.atkMult) > 0 ? Number(mtype.atkMult) : 1;
+        var npcDefMult = Number(mtype.defMult) > 0 ? Number(mtype.defMult) : 1;
+        var mAspd = base.aspd * zn.aspdMult * (Number(mtype.aspdMult) > 0 ? Number(mtype.aspdMult) : 1);
+        var ang = Math.PI * 2 * i / count;
+        enemies.push({
+            name: mtype.name, emoji: mtype.emoji, npcId: mtype.id || null, appearance: mtype.appearance || mtype.emoji || '',
+            level: base.level,
+            maxHp: base.hp * zn.hpMult * npcHpMult * mult, hp: base.hp * zn.hpMult * npcHpMult * mult,
+            atk: base.atk * zn.atkMult * npcAtkMult,
+            def: base.def * zn.defMult * npcDefMult, mdef: base.mdef * zn.defMult * npcDefMult,
+            magic: !!mtype.magic, attr: mtype.attr || null,
+            aspd: mAspd, dodge: base.dodge, hit: base.hit,
+            elite: elite, isBoss: boss,
+            gold: base.gold * zn.rewardMult, xp: base.xp * zn.rewardMult,
+            atkCd: 1 / mAspd, effects: {}, ctrlRes: 0, _spawnAt: GT,
+            _stage: -1,     // 演武場敵人不計入過關配額
+            _enterCd: 0,    // 立即參戰：測試不等進場動畫
+            pos: { x: home.x + Math.cos(ang) * ringDist, y: home.y + Math.sin(ang) * ringDist },
+            shield: 0, buffs: {}, dots: []
+        });
+    }
+    FIELD._gmArena = true;
+    FIELD._waveClearPending = false;
+    FIELD.monsters = enemies;
+    if (FIELD.player) FIELD.player._lockTarget = null; // 整批換場＝重新選目標
+    markFieldEnemyFloatTargets(enemies);
+    syncFieldPrimary();
+    UI.dirty.battle = true;
+    return enemies.length;
+}
+function gmArenaOff() {
+    FIELD._gmArena = false;
+    FIELD.monsters = [];
+    FIELD.monster = null;
+    FIELD.spawnCd = 0;
+    if (FIELD.player) FIELD.player._lockTarget = null;
+    syncFieldPrimary();
+    UI.dirty.battle = true;
+}
+
 /* 切換關卡／地圖之後，下一波要隔一段時間才出現——場上既有的敵人留著，
    新的一波不要在切換的瞬間憑空冒出來（設計要求：不突然出現、也不突然消失）。
    出怪只看 FIELD.spawnCd 一個計時器：一波出完就填「同關內間隔」（參數 a），
@@ -1056,15 +1121,17 @@ function fieldTick(dt) {
     }
 
     /* 過關結算：改由「這一關殺滿配額」觸發（見 fieldStageQuota），不再等場上清空——
-       波次串流之下場面幾乎不會空，等清空等於永遠不推進。 */
-    if (FIELD._waveClearPending) completeFieldWave(st);
+       波次串流之下場面幾乎不會空，等清空等於永遠不推進。
+       GM 演武場（技能測試模式）暫停過關結算：測試擊殺不推進關卡。 */
+    if (FIELD._waveClearPending && !FIELD._gmArena) completeFieldWave(st);
 
     /* 出怪：波次串流。每隔 fieldWaveIntervalFor（地圖 × 關卡，可調參數表）補一波，
        不管上一波清了沒——敵人會愈積愈多，撐不住被打死就退關（設計如此）。
        BOSS 還活著時不補波：BOSS 一關只有一隻，補下去會變成每幾秒多一隻 BOSS。
-       新波在本輪繼續往下走，讓敵人能在生成當下完成首次攻擊。 */
+       新波在本輪繼續往下走，讓敵人能在生成當下完成首次攻擊。
+       GM 演武場暫停自然出怪：場上敵人數量完全由 spawn 指令控制。 */
     var spawnedEnemies = null;
-    if (!FIELD.mapComplete && !hasLiveFieldBoss()) {
+    if (!FIELD.mapComplete && !hasLiveFieldBoss() && !FIELD._gmArena) {
         FIELD.spawnCd = (typeof FIELD.spawnCd === 'number') ? FIELD.spawnCd - dt : 0;
         if (FIELD.spawnCd <= 0) {
             var added = spawnFieldMonster(true);
