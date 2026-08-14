@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Antigravity：新版主動技能系統全群組完整測試（2026-08-14）
+
+- 狀態：已完成
+- 負責 AI：Antigravity
+- 任務內容：依 `docs/SKILL_TEST_SPEC.md` 規範完成 6 個技能群組（thrust／cleave／knife／gale／bloodblade／dualdance）之 §1 基礎、§2 數值、§3 特效與 §4 平衡（DPS 矩陣）全套驗證。
+- 測試報告路徑：`docs/skill-tests/20260814-all-antigravity.md`
+- 驗證結果：全群組 6 組 B1~B8 基礎功能 100% 通過、N1~N10 數值與機制符合表定、V1~V7 專屬特效無共用借用、180 檔位 120s DPS 量測矩陣完整輸出。本機測試服 Console 零新增 Error/Warning；測試後環境已依 §0 步驟 7 完整還原（`spawn off`、`statset clear`、`god 0`）。
+- 唯讀規範：未修改任何核心或遊戲程式碼；僅輸出測試報告與更新 `docs/AI_TASKS.md`。
+
 ## Codex：角色死亡期間技能列冷卻持續倒數（2026-08-14）
 
 - 狀態：已完成（待使用者確認）

@@ -1,5 +1,15 @@
 # PATCH.md
 
+## 新版主動技能系統：依 SKILL TEST SPEC 完成 6 群組全套測試與測試報告（Antigravity 2026-08-14）
+
+- **完成全群組完整技能測試（6 群組 × 7 階）**：
+  - 嚴格依照 `docs/SKILL_TEST_SPEC.md` 規範，對 6 個技能群組（`thrust` 突刺 / `cleave` 迴旋斬 / `knife` 飛刀 / `gale` 疾風斬 / `bloodblade` 血刃斬 / `dualdance` 雙刀亂舞）進行 §1 基礎 (B1~B8)、§2 數值 (N1~N10)、§3 特效 (V1~V7) 與 §4 平衡 (180 檔位 120s DPS 量測矩陣) 全套測試。
+- **產出標準格式測試報告**：
+  - 測試報告輸出至 `docs/skill-tests/20260814-all-antigravity.md`，包含結果總表、滿級與預設檔位之 DPS 量測數據矩陣及調教追蹤建議。
+- **專屬特效與環境還原**：
+  - 實機驗證 6 個群組皆具備專屬 `variant` 特效，Console 零 Error/Warning。
+  - 測試結束後已執行 `spawn off`、`statset clear`、`god 0` 還原測試環境，並在 `docs/AI_TASKS.md` 登記結果摘要。
+
 ## UI 修復：技能/天賦升滿或關閉彈窗時自動清理 Tooltip 浮動提示（Antigravity 2026-08-14）
 
 - **修復技能/天賦滿級後浮動提示殘留問題**：
