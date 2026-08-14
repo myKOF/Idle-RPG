@@ -2800,6 +2800,104 @@ function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
     }
     setHtmlIfChanged(skillEl, h);
   }
+  if (prefix === 'pv') {
+    renderBattleSkillBar(pEnt, snapshotGt);
+  }
+}
+
+/* ---- 戰鬥區技能欄（2026-08-14 戰鬥界面改造）----
+   固定 10 個技能槽位（置於戰鬥區下方中央）：
+   - 未解鎖槽位（index >= loadoutSize）：置灰 + 🔒 + 解鎖條件 tips
+   - 已解鎖未裝備（index < loadoutSize 且無技能）：空槽 ＋ 點擊跳轉技能頁
+   - 已裝備技能：Emoji / 圖示、等級角標、圓形 CD 倒計時遮罩 (conic-gradient) 與碼錶文字、點擊跳轉技能頁 */
+function renderBattleSkillBar(pEnt, snapshotGt) {
+  var bar = $id('battle-skill-bar');
+  if (!bar) return;
+  var skillsSnapshot = uiSkillsPanelSnapshot();
+  var talentSnapshot = uiTalentPanelSnapshot();
+  var headerSnapshot = uiHeaderPanelSnapshot();
+  var player = (headerSnapshot && headerSnapshot.player) || {};
+  var reincarnations = skillViewReincarnations(headerSnapshot, talentSnapshot);
+  var lvl = player.level || 1;
+
+  var cap = (skillsSnapshot && typeof skillsSnapshot.loadoutSize === 'number')
+    ? skillsSnapshot.loadoutSize
+    : (typeof loadoutSizeFor === 'function' ? loadoutSizeFor(lvl, reincarnations) : 4);
+
+  var lo = skillViewLoadout(skillsSnapshot);
+  if (!lo.length && player.loadout && player.loadout.length) {
+    lo = player.loadout;
+  }
+
+  var TOTAL_SLOTS = 10;
+  var h = '';
+
+  for (var i = 0; i < TOTAL_SLOTS; i++) {
+    var isUnlocked = i < cap;
+    if (!isUnlocked) {
+      var reqLv = (i - 4 + 1) * 50;
+      var lockDesc = '角色達到 Lv.' + reqLv + ' 或 1 轉解鎖全部技能格';
+      h += '<div class="battle-skill-slot locked" data-slot-index="' + i + '" data-tt-title="技能槽 #' + (i + 1) + '（未解鎖）" data-tt-desc="' + esc(lockDesc) + '">' +
+        '<span class="bss-lock">🔒</span>' +
+        '<span class="bss-slot-num">' + (i + 1) + '</span>' +
+        '</div>';
+      continue;
+    }
+
+    var entry = lo[i];
+    if (!entry) {
+      h += '<div class="battle-skill-slot empty" data-slot-index="' + i + '" data-skill-slot-action="goto-skills" data-tt-title="技能槽 #' + (i + 1) + '（未裝備）" data-tt-desc="點擊前往技能頁裝備技能">' +
+        '<span class="bss-empty-plus">＋</span>' +
+        '<span class="bss-slot-num">' + (i + 1) + '</span>' +
+        '</div>';
+      continue;
+    }
+
+    var isPotE = typeof entry === 'string' && entry.indexOf('potential:') === 0;
+    var isSgE = typeof entry === 'string' && entry.indexOf('sg:') === 0;
+    var sk = isSgE
+      ? (typeof SKILLS2 !== 'undefined' ? SKILLS2[entry.slice(3)] : null)
+      : (isPotE ? (typeof potentialDef === 'function' ? potentialDef(entry.slice(10)) : null) : skillViewDef(skillsSnapshot, entry));
+
+    if (!sk) {
+      h += '<div class="battle-skill-slot empty" data-slot-index="' + i + '" data-skill-slot-action="goto-skills" data-tt-title="技能槽 #' + (i + 1) + '（未裝備）" data-tt-desc="點擊前往技能頁裝備技能">' +
+        '<span class="bss-empty-plus">＋</span>' +
+        '<span class="bss-slot-num">' + (i + 1) + '</span>' +
+        '</div>';
+      continue;
+    }
+
+    var cd = pEnt ? uiCountdownRemain((pEnt.skillCds && pEnt.skillCds[entry]) || 0, snapshotGt) : 0;
+    var lv = isSgE
+      ? sgUiTotalLevel(sgUiLevels(skillsSnapshot, entry.slice(3)))
+      : (isPotE
+        ? uiPotentialLevelFromSnapshot(talentSnapshot, sk.id)
+        : skillViewLevel(skillsSnapshot, entry));
+    var cost = isSgE ? (Number(sk.cost) || 0) : (isPotE ? 0 : (typeof skillManaCost === 'function' ? skillManaCost(sk, lv) : (Number(sk.cost) || 0)));
+    var rawCd = Number(sk.cd) || 5;
+    var eqSnapshot = uiEquipPanelSnapshot();
+    var pStats = (eqSnapshot && eqSnapshot.stats) || (typeof uiViewStats === 'function' ? uiViewStats() : null);
+    var pCdr = Math.min(90, Math.max(0, (pStats && Number(pStats.cdr)) || 0));
+    var baseCd = rawCd * (1 - pCdr / 100);
+    var totalCd = Math.max(0.1, Number(baseCd) || 5);
+    var cdRatio = clamp(cd / totalCd, 0, 1);
+    var cdDeg = (cdRatio * 360).toFixed(1) + 'deg';
+    var cdText = cd > 0 ? (cd >= 10 ? Math.ceil(cd) + 's' : fmt1(cd) + 's') : '';
+
+    var isOnCd = cd > 0;
+    var isNoMp = !isOnCd && pEnt && pEnt.mp !== undefined && pEnt.mp < cost;
+    var slotCls = 'battle-skill-slot equipped' + (isOnCd ? ' on-cd' : '') + (isNoMp ? ' no-mp' : (!isOnCd ? ' ready' : ''));
+
+    h += '<div class="' + slotCls + '" data-slot-index="' + i + '" data-sk="' + esc(entry) + '" data-skill-id="' + esc(entry) + '" data-skill-slot-action="goto-skills">' +
+      '<span class="bss-emoji">' + (sk.emoji || '⚔️') + '</span>' +
+      (lv > 0 ? '<span class="bss-lv">' + lv + '</span>' : '') +
+      '<div class="bss-cd-mask" style="--cd-deg:' + cdDeg + ';"></div>' +
+      '<span class="bss-cd-text">' + cdText + '</span>' +
+      (isNoMp ? '<span class="bss-nomp-tag">無魔</span>' : '') +
+      '</div>';
+  }
+
+  setHtmlIfChanged(bar, h);
 }
 
 // 場景最高階段（當前場景以即時值為準）
@@ -9347,8 +9445,26 @@ function initUI() {
       e.target.closest('[data-tip]') || e.target.closest('[data-buff-tip]') ||
       e.target.closest('[data-enemy-buff-tip]') || e.target.closest('.item-cell[data-id]') ||
       e.target.closest('.eq-slot.filled[data-id]') ||
-      e.target.closest('.forge-slot.filled[data-forge-slot]')) {
+      e.target.closest('.forge-slot.filled[data-forge-slot]') ||
+      e.target.closest('.battle-skill-slot')) {
       hideTooltip();
+    }
+  });
+
+  // 戰鬥區技能欄點擊跳轉技能頁
+  document.addEventListener('click', function (e) {
+    var bss = e.target.closest('.battle-skill-slot');
+    if (!bss || bss.classList.contains('locked')) return;
+    if (bss.getAttribute('data-skill-slot-action') === 'goto-skills') {
+      var tabBtn = document.querySelector('.tab-btn[data-tab="skills"]');
+      if (tabBtn) tabBtn.click();
+      var skId = bss.getAttribute('data-skill-id');
+      if (skId) {
+        try {
+          var targetCell = document.querySelector('.tree-cell[data-sk="' + CSS.escape(skId) + '"]');
+          if (targetCell) targetCell.click();
+        } catch (_) {}
+      }
     }
   });
 

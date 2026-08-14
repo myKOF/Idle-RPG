@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>無限征途：合成之巔</title>
-  <link rel="stylesheet" href="css/style.css?v=1.0.10">
+  <link rel="stylesheet" href="css/style.css?v=1.0.12">
   <link rel="stylesheet" href="css/inventory-offset.css">
 </head>
 
@@ -591,10 +591,10 @@
             <button id="btn-realm-toggle" class="btn sm" style="display:none;" data-tt-title="切換地圖" data-tt-desc="切換凡人界與神界練功地圖">✨ 神界地圖</button>
           </div>
         </div>
-        <!-- 任務快捷列：內容由 ui.js renderQuestBar() 依 tick 視圖與 TASKS 表填入；
-             點擊：可領取時直接領獎，否則開啟任務總覽（#quest-modal） -->
-        <div id="quest-bar" style="display:none"></div>
         <div class="battle-scene-wrapper" style="position: relative; width: 100%;">
+          <!-- 任務快捷列：內容由 ui.js renderQuestBar() 依 tick 視圖與 TASKS 表填入；
+               搬遷至戰鬥區頂部中央；點擊：可領取時直接領獎，否則開啟任務總覽（#quest-modal） -->
+          <div id="quest-bar" style="display:none"></div>
           <div id="btn-enemy-tip" class="info-btn">!</div>
           <!-- Canvas 戰鬥模式（js/battle-renderer.js）：PixiJS 畫布動態插入為第一個子節點。
                初始化成功時 body 會掛上 battle-canvas-mode，下方 .battle-scene 隱藏；
@@ -636,6 +636,8 @@
             <div class="enemy-party enemy-count-0" id="mv-party"></div>
             <div class="float-layer enemy-float-retained" id="mv-float-retained"></div>
           </div>
+          <!-- 戰鬥區技能欄：戰鬥區下方中央固定顯示 10 個技能圖示與冷卻碼錶 -->
+          <div id="battle-skill-bar"></div>
         </div>
       </div>
         <div class="log-header">
@@ -843,7 +845,7 @@
   <script src="js/potential.js?v=1.0.1"></script>
   <script src="js/tower.js?v=1.0.3"></script>
   <script src="js/save.js?v=1.0.6"></script>
-  <script src="js/ui.js?v=1.0.37"></script>
+  <script src="js/ui.js?v=1.0.38"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js"></script>
