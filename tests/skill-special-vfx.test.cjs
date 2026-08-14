@@ -23,6 +23,9 @@ test('三個指定技能使用專用 VFX 與命中規格', () => {
   assert.match(vfx, /var fall = Math\.round\(rawFall \/ meteorSpeed\)/);
   assert.match(vfx, /var diagonalRise = diagonalRun \* Math\.tan\(Math\.PI \/ 3\)/);
   assert.match(vfx, /var smallOffsets = \[-0\.22, -0\.04, 0\.16, 0\.32\]/);
+  assert.match(vfx, /vfxBuildFlareFlame\(d, false, 0\.65, 1\)/);
+  assert.match(vfx, /vfxBuildFlareFlame\(d, !!small, 1, 1\.35\)/);
+  assert.match(vfx, /function vfxMeteorShockwave\(/);
   assert.match(vfx, /flash\.style\.borderRadius = '50%'/);
   assert.match(read('css/style.css'), /\.vfx-area-flash[\s\S]*?transform-origin: 50% 50%/);
   assert.match(read('css/style.css'), /@keyframes vfxAreaFlash[\s\S]*?transform: scale\(1\)/);
@@ -35,8 +38,10 @@ test('三個指定技能使用專用 VFX 與命中規格', () => {
   assert.match(renderer, /var smallTheme = \{ c1: '#ef4b16', c2: '#ffd166', glow: '#ff7a1a' \}/);
   assert.match(renderer, /function loadFireFlare\(\)/);
   assert.match(renderer, /new PIXI\.Rectangle\(392, 2, 128, 128\)/);
-  assert.match(renderer, /function flameProjectile\(theme, small\)/);
-  assert.match(renderer, /core = flameProjectile\(theme, false\)/);
+  assert.match(renderer, /function flameProjectile\(theme, small, sizeScale, trailScale\)/);
+  assert.match(renderer, /core = flameProjectile\(theme, false, 0\.65, 1\)/);
+  assert.match(renderer, /var flame = flameProjectile\(theme, scale && scale < 1, 1, 1\.35\)/);
+  assert.match(renderer, /g\.ellipse\(0, 0, 10 \+ radius/);
   assert.match(renderer, /var dur = Math\.min\(1\.15, Math\.max\(0\.7, meteorTravel \/ 1000 \/ 0\.70\)\)/);
   assert.match(renderer, /if \(spec\.variant === 'arcane-barrage'/);
   assert.match(renderer, /for \(var lane = 0; lane < 3; lane\+\+\)[\s\S]*spawnBarrageMissile\(id, spec, -1, lane[\s\S]*spawnBarrageMissile\(id, spec, 1, lane/);
@@ -46,7 +51,9 @@ test('三個指定技能使用專用 VFX 與命中規格', () => {
   assert.match(renderer, /spawnFireShockwave\(cx, cy/);
   assert.match(read('css/style.css'), /\.vfx-meteor-small \.vfx-proj-core/);
   assert.match(read('css/style.css'), /-webkit-mask-image: url\('\.\.\/images\/flares\.png'\)/);
-  assert.match(vfx, /function vfxBuildFlareFlame\(parent, small\)/);
+  assert.match(read('css/style.css'), /\.vfx-meteor-shockwave[\s\S]*?@keyframes vfxShockwaveRing/);
+  assert.match(read('css/style.css'), /@keyframes vfxShockwaveParticle/);
+  assert.match(vfx, /function vfxBuildFlareFlame\(parent, small, sizeScale, trailScale\)/);
   assert.equal(fs.existsSync(path.join(root, 'images', 'flares.png')), true);
   assert.equal(fs.existsSync(path.join(root, 'images', 'flares.json')), true);
   assert.match(renderer, /var outerWidth = 13 - 10\.5 \* q/);

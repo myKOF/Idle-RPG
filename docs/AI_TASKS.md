@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Codex：延長殞石拖尾、重做落地震波並縮小火球（2026-08-14）
+
+- 狀態：已完成
+- 任務分類：戰鬥技能 VFX／DOM 與 Canvas 視覺微調
+- 負責 AI：Codex
+- 任務內容：殞石術拖尾延長 35%；參考 Phaser Particle Fountain 的徑向粒子爆散與淡出方式重做落地震波；火球術整體縮小 35%。
+- 允許修改：`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`index.html`、`tests/skill-special-vfx.test.cjs`、`docs/AI_TASKS.md`
+- 禁止修改：戰鬥傷害、目標選擇、Worker Protocol、存檔格式與技能數值。
+- 前置依賴：Phaser flare 粒子已納入專案；DOM／Canvas 皆已使用同一套火焰素材。
+- 驗收方式：殞石尾焰長度為原本 1.35 倍；火球 flare 群與 Canvas 光暈為原本 0.65 倍；落地顯示多層橢圓震波、徑向火星與塵土；測試、語法檢查、Build 與 `git diff --check` 通過。
+- 驗證結果：定向測試 29/29 通過；`node --check` 檢查 `js/vfx.js`、`js/battle-renderer.js`、`js/skills.js` 通過；`npm.cmd run build` 通過（278 個檔案）；`git diff --check` 通過。
+- 已知風險：本機瀏覽器先前無法載入 localhost 進行畫面驗證；仍需由使用者確認實機的震波密度與尺寸。
+- 完成後交給：使用者確認。
+
 ## Codex：以 Phaser flares 粒子重製火球與殞石外觀（2026-08-14）
 
 - 狀態：已完成
