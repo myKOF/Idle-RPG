@@ -12,9 +12,9 @@
   - **雙層紫色雷印法陣（Storm Sigil Rune Ring）**：目標身上浮現旋轉的紫色雷電符紋圈（外層虛線雷圈、內層紫光核心與符文），旋轉 0.7s 並向內收縮烙印進目標體內（`vfxSigilImplode`），配合紫色電漿擴散波與紫色雷花。
 - **雙渲染管線支援**：
   - DOM/CSS/SVG 管線（`js/vfx.js` 與 `css/style.css`）與 Canvas/PixiJS 即時戰鬥渲染器（`js/battle-renderer.js`）同步實作。
-- **測試與 DoD 驗證**：
-  - `tests/skill-special-vfx.test.cjs` 包含連鎖閃電與電紋刻印（紫雷/雷印）斷言驗證。
-  - `node --test "tests/*.test.cjs"` 與 `node tools/build_check.cjs` 驗證通過。
+- **修復敵方遠程子彈與一般投射物抵達後殘留於人物中心的問題**：
+  - 原本 `spawnProjectile` 在 `k >= 1`（抵達目標）時寫死了保留 2.4 秒，導致敵人連續遠程射擊玩家時，大量魔法子彈的 Glow Sprite 堆疊在人物中心形成不會消失的光點。
+  - 修正為一般投射物與敵方攻擊子彈抵達目標瞬間立即銷毀，火球術粒子停止生成並於 0.4 秒內平滑淡出。
 
 
 ## 新版主動技能系統：依 SKILL TEST SPEC 完成 6 群組全套測試與測試報告（Antigravity 2026-08-14）
