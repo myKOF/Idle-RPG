@@ -258,10 +258,10 @@ test('敵人傷害浮字維持可讀字號且出現範圍更分散', () => {
   assert.match(ui, /var pct = enemyHitFloat \? 8 \+ Math\.random\(\) \* 84 :[\s\S]*?15 \+ Math\.random\(\) \* 70/);
   assert.match(ui, /sp\.style\.top = \(28 \+ Math\.random\(\) \* 44\) \+ '%'/);
   assert.match(ui, /sp\.style\.marginTop = \(enemyHitFloat \? \(Math\.random\(\) \* 24 - 12\) :[\s\S]*?Math\.random\(\) \* 30 - 15/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack\s*\{[\s\S]*?--enemy-hit-font-size:\s*12px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-rise-duration:\s*0\.8s[\s\S]*?--enemy-hit-lifetime-base:\s*0\.8s/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill\s*\{[\s\S]*?--enemy-hit-font-size:\s*15px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-rise-duration:\s*1s[\s\S]*?--enemy-hit-lifetime-base:\s*1s/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack-crit\s*\{[\s\S]*?--enemy-hit-font-size:\s*16px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-rise-duration:\s*1s[\s\S]*?--enemy-hit-lifetime-base:\s*1s/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill-crit\s*\{[\s\S]*?--enemy-hit-font-size:\s*20px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-rise-duration:\s*1\.2s[\s\S]*?--enemy-hit-lifetime-base:\s*1\.2s/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack\s*\{[\s\S]*?--enemy-hit-font-size:\s*12px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-rise-duration:\s*0\.8s[\s\S]*?--enemy-hit-lifetime-base:\s*0\.5925926s/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill\s*\{[\s\S]*?--enemy-hit-font-size:\s*15px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-lifetime-base:\s*0\.8333333s/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack-crit\s*\{[\s\S]*?--enemy-hit-font-size:\s*16px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-lifetime-base:\s*0\.7407407s/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill-crit\s*\{[\s\S]*?--enemy-hit-font-size:\s*20px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-lifetime-base:\s*1s/);
   assert.doesNotMatch(css, /\.float-txt\.enemy-hit-float\.dmg\s*\{/);
   assert.doesNotMatch(css, /\.float-txt\.enemy-hit-float\.enemy-attack\s*\{/);
 });
@@ -400,10 +400,11 @@ test('skill cast summary formats total damage and keeps the doubled lifetime con
   assert.equal(calls[0][1], '✨Buff');
   assert.equal(calls[0][3], undefined);
 
-  assert.match(ui, /var SKILL_CAST_TOTAL_FLOAT_LIFETIME_MS = FLOAT_TEXT_LIFETIME_MS \* 2/);
+  assert.match(ui, /var SKILL_CAST_TOTAL_FLOAT_SPEED_FACTOR = 0\.7/);
+  assert.match(ui, /var SKILL_CAST_TOTAL_FLOAT_LIFETIME_MS = FLOAT_TEXT_LIFETIME_MS \* 2 \/ SKILL_CAST_TOTAL_FLOAT_SPEED_FACTOR/);
   assert.match(ui, /if \(isSkillCastTotalFloat\)\s*\{[\s\S]*?scheduleFloatTextRemoval\(sp, SKILL_CAST_TOTAL_FLOAT_LIFETIME_MS\)/);
-  assert.match(css, /\.float-txt\.player-event\.skill-cast-total\s*\{[\s\S]*?animation-duration:\s*2\.1s/);
-  assert.match(renderer, /skill-cast-total.*\? 2\.1 : 1\.05/);
+  assert.match(css, /\.float-txt\.player-event\.skill-cast-total\s*\{[\s\S]*?animation-duration:\s*3s/);
+  assert.match(renderer, /skill-cast-total.*\? 3 : 1\.05/);
   assert.match(skills2, /floatPlayerSkillCast\(floatSel, \{ emoji: g\.emoji, name: g\.name \}, out\.dmg\)/);
   assert.ok(skills.indexOf('floatPlayerSkillCast(floatSel, sk, out.dmg)') > skills.indexOf('out.dmg = totalDmg;'));
 });

@@ -1087,6 +1087,16 @@ var BattleRenderer = (function () {
     return core;
   }
 
+  function projectileSpeedMultiplier() {
+    return (typeof VFX_PROJECTILE_SPEED_MULTIPLIER === 'number' && VFX_PROJECTILE_SPEED_MULTIPLIER > 0)
+      ? VFX_PROJECTILE_SPEED_MULTIPLIER : 0.75;
+  }
+
+  function projectileTravelMs(travelMs, fallbackMs) {
+    if (travelMs > 0) return travelMs;
+    return (fallbackMs > 0 ? fallbackMs : 300) / projectileSpeedMultiplier();
+  }
+
   function spawnProjectile(targetId, travelMs, spec, onArrive, fromOverride) {
     var theme = themeOf(spec);
     var from = fromOverride || playerMuzzle();
@@ -1111,7 +1121,7 @@ var BattleRenderer = (function () {
     node.x = from.x; node.y = from.y;
     S.layers.fx.addChild(node);
 
-    var dur = Math.max(60, travelMs || (spec.dur ? spec.dur * 1000 : 300)) / 1000;
+    var dur = Math.max(60, projectileTravelMs(travelMs, spec.dur ? spec.dur * 1000 : 300)) / 1000;
     var t = 0, trailAcc = 0;
     addFx({
       node: node,
@@ -1160,7 +1170,8 @@ var BattleRenderer = (function () {
     node.x = start.x; node.y = start.y;
     S.layers.fx.addChild(node);
 
-    var dur = Math.max(0.42, (travelMs || (spec.dur ? spec.dur * 1000 : 360)) / 1000);
+    var dur = Math.max(0.42 / projectileSpeedMultiplier(),
+      projectileTravelMs(travelMs, spec.dur ? spec.dur * 1000 : 360) / 1000);
     var t = -(delaySec || 0), trailAcc = 0;
     addFx({
       node: node,
@@ -1714,7 +1725,7 @@ var BattleRenderer = (function () {
 
     if (spec.variant === 'arcane-barrage' || (spec.glyph === '💫' && spec.cat === 'magic')) {
       targets.forEach(function (id, ti) {
-        var travel = (spec.travelMs && spec.travelMs[ti]) || (spec.dur ? spec.dur * 1000 : 420);
+        var travel = projectileTravelMs(spec.travelMs && spec.travelMs[ti], spec.dur ? spec.dur * 1000 : 420);
         for (var lane = 0; lane < 3; lane++) {
           spawnBarrageMissile(id, spec, -1, lane, (baseDelay + ti * 40 + lane * 35) / 1000, travel);
           spawnBarrageMissile(id, spec, 1, lane, (baseDelay + ti * 40 + lane * 35) / 1000, travel);
@@ -1734,7 +1745,7 @@ var BattleRenderer = (function () {
           break;
         }
         targets.forEach(function (id, ti) {
-          var travel = (spec.travelMs && spec.travelMs[ti]) || (spec.dur ? spec.dur * 1000 : 300);
+          var travel = projectileTravelMs(spec.travelMs && spec.travelMs[ti], spec.dur ? spec.dur * 1000 : 300);
           for (var c = 0; c < count; c++) {
             (function (cc) {
               /* 普攻不發射飛行子彈：它在畫面上已經是近戰（角色會跑到目標身前再揮），
@@ -1900,7 +1911,7 @@ var BattleRenderer = (function () {
               (function (hopIndex) {
                 var fromId = targets[hopIndex - 1];
                 var toId = targets[hopIndex];
-                var travel = (spec.travelMs && spec.travelMs[hopIndex]) || 120;
+                var travel = projectileTravelMs(spec.travelMs && spec.travelMs[hopIndex], 120);
                 setTimeout(function () {
                   if (fxGate()) return;
                   spawnProjectile(toId, travel, spec, function (pt) {
@@ -1960,7 +1971,7 @@ var BattleRenderer = (function () {
          玩家看到滿畫面紅字會以為自己在狂掉血。改成看語意分類。 */
       if (cls.indexOf('skill-cast') >= 0) {
         s.fill = '#ffd43b'; s.size = 20; s.rise = 0;
-        s.life = cls.indexOf('skill-cast-total') >= 0 ? 2.1 : 1.05;
+        s.life = cls.indexOf('skill-cast-total') >= 0 ? 3 : 1.05;
         return s;
       }
       var isDamageToUs = cls.indexOf('mdmg') >= 0 || /^\s*(爆擊\s*)?-/.test(text);
@@ -1984,10 +1995,18 @@ var BattleRenderer = (function () {
       s.fill = '#9aa5b1'; s.size = 13; s.life = 0.7;
       return s;
     }
-    if (cls.indexOf('skill') >= 0) { s.fill = '#ffd75e'; s.size = 17; }
+    var isSkillDamage = cls.indexOf('enemy-skill') >= 0;
+    var isAttackDamage = cls.indexOf('enemy-attack') >= 0;
+    if (isSkillDamage) { s.fill = '#ffd75e'; s.size = 17; }
     if (isCrit) {
       s.fill = '#ffb347'; s.size = isHigh ? 26 : 21; s.rise = 58; s.life = 1.15;
       if (isHigh) s.fill = '#ff7b3c';
+    }
+    if (isSkillDamage || isAttackDamage) {
+      var baseLife = isSkillDamage ? (isCrit ? 1.2 : 1) : (isCrit ? 1 : 0.8);
+      var fadeSpeed = isSkillDamage ? 1.2 : 1.35;
+      s.life = baseLife / fadeSpeed;
+      if (isHigh && isCrit) s.life *= 2;
     }
     return s;
   }

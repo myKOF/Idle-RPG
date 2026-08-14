@@ -1,5 +1,24 @@
 # AI_TASKS.md
 
+## Codex：調整戰鬥飄字與飛行子彈速度（2026-08-14）
+
+- 狀態：已完成（待 Claude Review／Antigravity 驗證）
+- 任務分類：戰鬥 UI／VFX 顯示節奏調整
+- 負責 AI：Codex
+- 任務內容：普攻／普攻暴擊白色傷害字的消失速度提高 35%；技能／技能暴擊黃色傷害字的消失速度提高 20%；技能名稱加數字的施放提示消失速度降低 30%；所有飛行子彈速度降低 25%。
+- 技術影響：只調整 DOM／Canvas 浮字顯示壽命、技能施放提示動畫及投射物飛行時間；不修改戰鬥結果、傷害公式、存檔格式或 Worker Protocol。
+- 允許修改：`docs/AI_TASKS.md`、`css/style.css`、`js/ui.js`、`js/data.js`、`js/battlefield.js`、`js/vfx.js`、`js/battle-renderer.js`、`index.html`、`tests/player-event-float.test.cjs`、`tests/battlefield.test.cjs`、`tests/skill-hit-timing.test.cjs`、`tests/skill2-ui.test.cjs`。
+- 禁止修改：戰鬥數值與傷害公式、存檔格式、Worker Protocol、非本次顯示／VFX 節奏範圍的程式，以及其他 AI 進行中任務檔案。
+- 前置依賴：既有四類敵方傷害浮字分類、DOM／Canvas 渲染路徑與 `bfTravelSeconds` 投射物時間計算已完成；目標檔案衝突預檢無來源。
+- 測試要求：浮字分類與技能施放動畫定向測試、投射物飛行時間測試、相關 JS `node --check`、`npm.cmd run build`、完整 `npm.cmd test`（記錄既有失敗）、`git diff --check`。
+- 完成條件：四類傷害字與技能名稱加數字的視覺／移除時間符合倍率；DOM 與 Canvas 投射物都套用 25% 減速；快取版號同步；測試、Build 與風險回報完成。
+- 需要 Claude Review：是，確認 DOM／Canvas 兩條顯示路徑的倍率一致且未改動戰鬥結果。
+- 需要 Antigravity 驗證：建議，確認白／黃傷害字、技能名稱加數字與各類飛行子彈的實機體感。
+- 完成後交給：Claude Code 唯讀 Review，之後由使用者合併至整合分支。
+- 驗證結果：定向測試 62/62 通過；資產版號同步測試 5/5 通過；`npm.cmd run build` 通過（273 個檔案）；完整 `npm.cmd test` 為 1355/1356 通過，唯一失敗為既有 `tests/multi-enemy.test.cjs` 的菁英數量表回歸，與本次修改無關；相關 JS `node --check` 與 `git diff --check` 通過。
+- 已知風險：未具備瀏覽器實機操作環境，DOM／Canvas 的最終視覺體感需由使用者或 Antigravity 確認。
+- 未完成項目：無。
+
 ## Codex：修正換目標間隔計時起點（2026-08-14）
 
 - 狀態：已完成，等待使用者確認

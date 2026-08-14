@@ -111,9 +111,9 @@ function bfTravelDistance(ent) {
 }
 function bfTravelSeconds(ent) {
   var cellsPerSec = (typeof VFX_PROJECTILE_SPEED_CELLS === 'number' && VFX_PROJECTILE_SPEED_CELLS > 0)
-    ? VFX_PROJECTILE_SPEED_CELLS : 14;
-  var min = (typeof VFX_TRAVEL_MIN_SEC === 'number') ? VFX_TRAVEL_MIN_SEC : 0.06;
-  var max = (typeof VFX_TRAVEL_MAX_SEC === 'number') ? VFX_TRAVEL_MAX_SEC : 0.45;
+    ? VFX_PROJECTILE_SPEED_CELLS : 10.5;
+  var min = (typeof VFX_TRAVEL_MIN_SEC === 'number') ? VFX_TRAVEL_MIN_SEC : 0.08;
+  var max = (typeof VFX_TRAVEL_MAX_SEC === 'number') ? VFX_TRAVEL_MAX_SEC : 0.6;
   var sec = bfTravelDistance(ent) / (cellsPerSec * bfUnit());
   return Math.min(max, Math.max(min, sec));
 }

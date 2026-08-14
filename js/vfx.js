@@ -494,8 +494,18 @@ function vfxProjectileCls(spec) {
 
 function vfxLerp(a, b, t) { return a + (b - a) * t; }
 
+function vfxProjectileSpeedMultiplier() {
+  return (typeof VFX_PROJECTILE_SPEED_MULTIPLIER === 'number' && VFX_PROJECTILE_SPEED_MULTIPLIER > 0)
+    ? VFX_PROJECTILE_SPEED_MULTIPLIER : 0.75;
+}
+
+function vfxProjectileFlightMs(travelMs, fallbackDurationSec) {
+  if (travelMs > 0) return travelMs;
+  return Math.round((fallbackDurationSec || 0) * 1000 / vfxProjectileSpeedMultiplier());
+}
+
 function vfxBarrageProjectile(spec, layer, from, to, side, lane, delayMs, travelMs) {
-  var flight = travelMs > 0 ? travelMs : Math.round((spec.dur || 0.55) * 1000);
+  var flight = vfxProjectileFlightMs(travelMs, spec.dur || 0.55);
   var start = {
     x: from.x + side * (12 + lane * 8),
     y: from.y + 10 + lane * 7
@@ -554,7 +564,7 @@ function vfxBarrageProjectile(spec, layer, from, to, side, lane, delayMs, travel
 }
 
 function vfxProjectile(spec, layer, from, to, delayMs, travelMs) {
-  var flight = travelMs > 0 ? travelMs : Math.round((spec.dur || 0.5) * 1000);
+  var flight = vfxProjectileFlightMs(travelMs, spec.dur || 0.5);
   var fromPt = from;
   if (spec.elem === 'fire' && spec.variant !== 'flamewave') {
     // 45° 俯衝：起點在目標左上方，水平垂直等距；貼到上緣就沿 45° 斜線往右推
