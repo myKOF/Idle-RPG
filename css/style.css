@@ -4943,17 +4943,207 @@ textarea:disabled,
    點擊可領取獎勵或開啟任務總覽彈窗；總覽清單樣式沿用 modal-box 慣例。
    ========================================================================== */
 #quest-bar {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 3px 10px 3px 6px;
-  margin-bottom: 8px;
+  padding: 4px 14px;
+  margin-bottom: 0;
   font-size: 13px;
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
+  max-width: min(520px, 62%);
   overflow: hidden;
+  text-overflow: ellipsis;
+  background: rgba(16, 13, 10, 0.88);
+  border: 1px solid rgba(130, 95, 45, 0.65);
+  border-radius: 20px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+#quest-bar:hover {
+  background: rgba(28, 22, 16, 0.96);
+  border-color: var(--accent);
+  box-shadow: 0 4px 18px rgba(251, 191, 36, 0.35);
+  transform: translateX(-50%) scale(1.02);
+}
+
+/* ==========================================================================
+   【戰鬥區技能欄】Battle Skill Bar (10 Slots & Circular CD Mask)
+   ========================================================================== */
+#battle-skill-bar {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(14, 11, 8, 0.85);
+  border: 1px solid rgba(130, 95, 45, 0.6);
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  pointer-events: auto;
+  user-select: none;
+  max-width: 96%;
+}
+
+.battle-skill-slot {
   position: relative;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 8px;
+  background: rgba(26, 20, 15, 0.92);
+  border: 1.5px solid rgba(120, 90, 50, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: transform 0.1s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.battle-skill-slot:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+}
+
+.battle-skill-slot.locked {
+  background: rgba(16, 16, 16, 0.75);
+  border-color: rgba(70, 70, 70, 0.5);
+  cursor: help;
+  filter: grayscale(0.85);
+  opacity: 0.65;
+}
+
+.battle-skill-slot.locked:hover {
+  transform: none;
+  border-color: rgba(120, 120, 120, 0.7);
+  box-shadow: none;
+}
+
+.battle-skill-slot .bss-lock {
+  font-size: 17px;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+.battle-skill-slot .bss-slot-num {
+  position: absolute;
+  bottom: 1px;
+  right: 3px;
+  font-size: 8px;
+  font-weight: bold;
+  color: rgba(200, 180, 140, 0.5);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.battle-skill-slot.empty {
+  border: 1.5px dashed rgba(140, 110, 70, 0.4);
+  background: rgba(20, 15, 10, 0.45);
+}
+
+.battle-skill-slot.empty .bss-empty-plus {
+  font-size: 16px;
+  font-weight: bold;
+  color: rgba(200, 170, 120, 0.4);
+  line-height: 1;
+}
+
+.battle-skill-slot.equipped {
+  background: radial-gradient(circle at center, rgba(45, 35, 25, 0.95) 0%, rgba(20, 15, 10, 0.95) 100%);
+  border-color: rgba(190, 145, 75, 0.75);
+}
+
+.battle-skill-slot.equipped.ready {
+  border-color: #56d34f;
+  box-shadow: 0 0 6px rgba(86, 211, 79, 0.25);
+}
+
+.battle-skill-slot .bss-emoji {
+  font-size: 22px;
+  line-height: 1;
+  z-index: 1;
+}
+
+.battle-skill-slot .bss-lv {
+  position: absolute;
+  top: 1px;
+  left: 2px;
+  font-size: 9px;
+  font-weight: bold;
+  color: #fbbf24;
+  text-shadow: 0 1px 2px #000;
+  line-height: 1;
+  z-index: 3;
+}
+
+/* 圓形 CD 倒數遮罩：使用 conic-gradient 扇形轉圈 */
+.battle-skill-slot .bss-cd-mask {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: conic-gradient(rgba(0, 0, 0, 0.78) 0deg, rgba(0, 0, 0, 0.78) var(--cd-deg, 0deg), transparent var(--cd-deg, 0deg), transparent 360deg);
+  pointer-events: none;
+  display: none;
+  z-index: 2;
+}
+
+.battle-skill-slot.on-cd .bss-cd-mask {
+  display: block;
+}
+
+/* 碼錶倒計時文字 */
+.battle-skill-slot .bss-cd-text {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 1px 3px #000, 0 0 6px #000;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.battle-skill-slot.on-cd .bss-cd-text {
+  display: flex;
+}
+
+.battle-skill-slot.no-mp .bss-emoji {
+  opacity: 0.45;
+  filter: grayscale(0.5);
+}
+
+.battle-skill-slot .bss-nomp-tag {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  font-size: 8px;
+  font-weight: bold;
+  color: #ef4444;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 1px 2px;
+  border-radius: 2px;
+  line-height: 1;
+  z-index: 3;
 }
 
 /* 任務列/按鈕領取閃光特效 */

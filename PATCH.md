@@ -1,6 +1,24 @@
 # PATCH.md
 
-## GM 指令：新增指定品質全身 13 件裝備套裝指令 equipset（Antigravity 2026-08-14）
+## 戰鬥界面改造：任務列頂部搬遷與底部 10 技能圖示、CD 扇形遮罩與倒計時碼錶（Antigravity 2026-08-14）
+
+- **任務快捷列搬遷至戰鬥區頂部中央**：
+  - 將 `#quest-bar` 移入 `.battle-scene-wrapper` 戰鬥場景頂部中央，採用深色半透明玻璃擬態膠囊樣式與圓角光澤，與左右兩側的增益/控制按鈕完美整合。
+- **戰鬥區底部加入 10 個技能圖示列（`#battle-skill-bar`）**：
+  - 居中排列固定 10 個技能槽位（`.battle-skill-slot`），具備自適應大小與響應式排版。
+  - **未解鎖格子**：置灰、降透明度、顯示鎖頭 🔒，並附帶 Tooltip 顯示解鎖門檻（如「未解鎖：角色達到 Lv.50 或 1 轉解鎖全部技能格」）。
+  - **未裝備格子**：顯示虛線空槽與 `＋` 樣式，點擊直接跳轉至技能分頁（`switchTab('skills')`）。
+  - **已裝備格子**：顯示技能 Emoji / 圖示與等級角標 `Lv.X`，無冷卻時顯示就緒狀態；冷卻時以 CSS `conic-gradient` 顯示扇形圓形 CD 倒數遮罩與即時碼錶倒數秒數（如 `2.4s`）。
+  - 點擊已裝備格子可切換至技能頁並自動選中該技能。
+- **戰鬥區技能欄 60fps 絲滑碼錶與圓形 CD 遮罩**：
+  - 新增 `startBattleSkillBarAnimation()` 與 `updateBattleSkillBarCds()` 逐幀動態器（`requestAnimationFrame`），每次有技能進入冷卻時自動啟動 60fps 高頻即時計算。
+  - 精確計算當前遊戲時鐘經過的毫秒數，逐幀平滑更新 `--cd-deg`（0~360度扇形無階梯轉圈）與倒數秒數文字，冷卻歸零瞬間無縫切換至 ready 就緒狀態。
+- **測試與 DoD 驗證**：
+  - 新增 `tests/battle-ui-rework.test.cjs` 驗證 HTML 結構、CSS 定位與 `renderBattleSkillBar` 渲染邏輯（3/3 PASS）。
+  - 遞迴 G 相依掃描 `tests/ui-worker-g-dependency.test.cjs` 100% 通過，無未守衛 G 物件依賴。
+  - `node tools/build_check.cjs` 273 個檔案語法與編譯檢查 100% OK 通過。
+  - `node tools/apply_params.cjs` 參數表錨點對應總數 554 一致無變更。
+
 
 - **新增 GM 指令 `equipset`（及別名 `suit`、`set`、`fullset`、`full_set`、`equip_set`、`gearset`、`gear_set`）**：
   - 支援指令格式：`equipset <品質> [等級]`（如 `equipset mythic 500`、`equipset 創世`、`suit godforged 1000`、`set 6 100`）。
