@@ -3336,6 +3336,7 @@ function renderBattle() {
     var reviveLeft = uiCountdownRemain(field.reviveCd, battleSnapshot.gt);
     setTextIfChanged($id('pv-status'), reviveLeft > 0 ? ('💀 復活中 ' + fmt1(reviveLeft) + 's') : entStatus(p));
     renderMpSkill(p, 'pv', st, battleSnapshot.gt);
+    renderBattleSkillBar(p, battleSnapshot.gt);
   }
   // 與戰鬥引擎共用敵人集合，避免相容欄位仍有目標時畫面誤判為空。
   var enemies = Array.isArray(field.monsters) ? field.monsters.slice() : (field.monster ? [field.monster] : []);
