@@ -2100,7 +2100,7 @@ function gemShopUpgradeCost(level) {
 
 var SKILL_MAX_LV = 10;         // 一般技能等級上限（保留給外部參照）
 var SKILL_CAST_LOCK = 0;       // 舊參數保留供參數表相容；技能不再改動普攻 atkCd
-var SKILL_GLOBAL_COOLDOWN = 0.4; // 技能共用冷卻（秒；固定值，不受冷卻縮減影響）
+var SKILL_GLOBAL_COOLDOWN = 0.2; // 技能共用冷卻（秒；固定值，不受冷卻縮減影響）
 
 // 裝載欄：參數表「技能裝載欄」＝clamp(b + ⌊等級/a⌋, b, c)；1 轉後解鎖全部上限。
 var LOADOUT_SIZE = { perLevels: 50, min: 4, base: 4, max: 10 };
