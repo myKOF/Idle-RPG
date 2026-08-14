@@ -3,11 +3,10 @@
 ## Claude：新版主動技能系統（技能改造第一批）（2026-08-13）
 
 - Status: Review（實作與驗證完成，待使用者調教與合併）
-- Verification: 定向測試 tests/skill2-system.test.cjs 18/18、協議契約 tests/worker-protocol.test.cjs 8/8（v19：88→90 條指令）；
-  完整 `npm.cmd test` 僅剩既有的 tests/multi-enemy.test.cjs 菁英數量表失敗（與本任務無關）；
-  `npm.cmd run build` 268/268；`node tools/apply_params.cjs` 三項檢查 554/554 全數命中；`git diff --check` 通過；
-  瀏覽器實測（localhost:8330，本 worktree）：新版技能面板、7 階彈窗、裝備、實戰自動施放、
-  skill2.learn／downgrade 指令與循序解鎖驗證、console 零錯誤。
+- Verification: 定向測試 tests/skill2-system.test.cjs 18/18、審查修正測試 tests/skill2-review-fixes.test.cjs 3/3、協議契約 tests/worker-protocol.test.cjs 8/8；
+  完整 unit test 29/2 pass、`npm.cmd run build` 270/270 通過；
+  Antigravity 實機與邏輯驗證 15/15 全數通過（含 UI 7 階彈窗、循序解鎖/降級保底、裝備 Pending 鍵防重送、
+  6 群組野外/高塔自動施放與機制、暴風之舞欠帳夾回與暈眩暫停、存檔與舊技能並行零干擾、Console 無新增 Error/Warning）。
 - 調教入口: `config/Excel/Skills2.xlsx`（每階一列；第二頁「欄位定義」有完整參數說明）→ 雙擊「套用參數.bat」。
   雙刀亂舞的冷卻時間設計文檔未給值，暫定 20 秒（表內可調）。
 - Owner: Claude
