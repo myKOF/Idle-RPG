@@ -2538,6 +2538,9 @@ function skillVfxImpactDelayMs(spec, hitIndex, targetIndex) {
     var list = spec.travelMs;
     var per = (list && list[targetIndex || 0] >= 0) ? list[targetIndex || 0] / 1000 : null;
     travelSec = (per === null) ? (spec.dur || 0) : per;
+    /* 殞石本體在顯示層固定慢 30%；傷害數字也延後同樣比例，
+       讓「火球抵達／爆炸／數字跳出」仍是同一個視覺時刻。 */
+    if (spec.variant === 'meteor') travelSec /= 0.70;
   }
   return Math.round((travelSec + Math.max(0, hitIndex || 0) * stagger) * 1000);
 }

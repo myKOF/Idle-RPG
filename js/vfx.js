@@ -46,6 +46,7 @@ var VFX_MERGE_WINDOW_MS = 120;
 var VFX_STALE_EVENT_MS = 1500;
 var VFX_METEOR_MAX_DELAY_MS = 900;
 var VFX_METEOR_MAX_TRAVEL_MS = 450;
+var VFX_METEOR_SPEED_MULTIPLIER = 0.70; // 30% 慢速：滅世殞石需要比一般天降更有壓迫感
 var VFX_NODE_WATCHDOG_MS = 1000;
 var VFX_METEOR_HARD_LIFETIME_MS = 2800;
 var _vfxQuality = VFX_QUALITY_LEVELS.FULL;
@@ -527,8 +528,9 @@ function vfxImpact(spec, layer, pt, targetId, delayMs) {
 
 /* ---- 投射物 ----
    元素化彈體：外層節點做 x0→x1 位移（等速，時長＝travelMs），內層 core／trail
-   以 --vfx-rot 對齊飛行方向。火屬性從畫面上方 45° 俯衝（「火球從畫面 45 度飛向敵方」），
-    glyph 模式（特殊／潛力／融合系）保留技能 emoji 當彈體。
+   以 --vfx-rot 對齊飛行方向。火球術是我方到敵方的直線；殞石術由 vfxMeteor
+   另外建立 60° 天降路徑。火焰彈體使用 Phaser 範例同款 flares.png 的白色 flare
+   粒子，透過多層色票與縮放／淡出組成火舌，而不是單一圓形漸層。
    vfxBarrageProjectile 是多線彈幕；vfxProjectile 是一般單線投射物，兩者都只
    表現視覺飛行，命中時機由 renderCombatVfx 的 travelMs／delayMs 對齊。 */
 function vfxProjectileCls(spec) {
@@ -556,6 +558,55 @@ function vfxProjectileSpeedMultiplier() {
 function vfxProjectileFlightMs(travelMs, fallbackDurationSec) {
   if (travelMs > 0) return travelMs;
   return Math.round((fallbackDurationSec || 0) * 1000 / vfxProjectileSpeedMultiplier());
+}
+
+/*
+ * Phaser 範例的核心其實是「許多 flare 粒子重疊」：每顆粒子會從發射點向後方
+ * 飄散、縮小並淡出，顏色再依序經過黃／橙／紅。DOM 路徑直接以 flares.png 的
+ * white frame 作為 alpha mask，這裡只建立粒子與參數；實際的遮罩、色彩與發光
+ * 交給 CSS，Canvas 路徑則在 battle-renderer.js 使用同一張圖。這樣兩種渲染器
+ * 不會再各自畫出一顆形狀完全不同的圓球。
+ */
+function vfxFlare(parent, cls, x, y, scaleX, scaleY, color, delayMs) {
+  var s = document.createElement('span');
+  s.className = 'vfx-flare ' + cls;
+  s.style.setProperty('--flare-x', x.toFixed(1) + 'px');
+  s.style.setProperty('--flare-y', y.toFixed(1) + 'px');
+  s.style.setProperty('--flare-sx', scaleX.toFixed(3));
+  s.style.setProperty('--flare-sy', scaleY.toFixed(3));
+  s.style.setProperty('--flare-color', color);
+  s.style.animationDelay = Math.round(delayMs || 0) + 'ms';
+  parent.appendChild(s);
+  return s;
+}
+
+/* 建立一顆「白芯、黃身、橙紅外焰、後方火星」的 flare 火球。
+   small 僅縮小幾何，不改變色彩順序，讓殞石群看起來是同一種火焰的大小變體。 */
+function vfxBuildFlareFlame(parent, small) {
+  var k = small ? 0.58 : 1;
+  vfxFlare(parent, 'vfx-flare-outer', 0, 0, 0.86 * k, 0.98 * k, '#f83600', 0);
+  vfxFlare(parent, 'vfx-flare-orange', 3 * k, 3 * k, 0.68 * k, 0.82 * k, '#f89800', 0);
+  vfxFlare(parent, 'vfx-flare-yellow', 7 * k, 7 * k, 0.51 * k, 0.65 * k, '#facc22', 0);
+  vfxFlare(parent, 'vfx-flare-white', 10 * k, 9 * k, 0.27 * k, 0.36 * k, '#fff6d8', 0);
+
+  /* 固定的後方粒子排列比隨機散點更接近範例 advance:2000 的穩定火焰柱，
+     同時避免每次命中都重新排出完全不同的形狀。 */
+  var tail = [
+    [-22, -8, 0.46, 0.62, '#f89800'], [-38, 6, 0.38, 0.54, '#f83600'],
+    [-52, -10, 0.32, 0.46, '#f89800'], [-66, 8, 0.25, 0.38, '#9f0404'],
+    [-79, -4, 0.19, 0.29, '#f83600'], [-91, 12, 0.14, 0.22, '#9f0404']
+  ];
+  for (var i = 0; i < tail.length; i++) {
+    var p = tail[i];
+    vfxFlare(parent, 'vfx-flare-tail', p[0] * k, p[1] * k, p[2] * k, p[3] * k, p[4], i * 18);
+  }
+  var sparks = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? (small ? 3 : 5) : (small ? 5 : 9);
+  for (var si = 0; si < sparks; si++) {
+    var sx = (-28 - (si * 17) % 78) * k;
+    var sy = (((si * 29) % 31) - 15) * k;
+    vfxFlare(parent, 'vfx-flare-spark', sx, sy, (0.08 + (si % 3) * 0.025) * k,
+      (0.11 + (si % 2) * 0.035) * k, si % 2 ? '#f83600' : '#facc22', 60 + si * 34);
+  }
 }
 
 /* 彈幕專用投射物：同一目標建立左右兩側、三條 lane 的交錯彈道，
@@ -639,10 +690,14 @@ function vfxProjectile(spec, layer, from, to, delayMs, travelMs) {
   if (projClass === 'vfx-proj-glyph' || projClass === 'vfx-proj-knife') {
     core.textContent = spec.glyph || (projClass === 'vfx-proj-knife' ? '🔪' : '✨');
   }
-  d.appendChild(core);
-  var trail = document.createElement('span');
-  trail.className = 'vfx-proj-trail';
-  d.appendChild(trail);
+  if (spec.variant === 'fireball') {
+    vfxBuildFlareFlame(d, false);
+  } else {
+    d.appendChild(core);
+    var trail = document.createElement('span');
+    trail.className = 'vfx-proj-trail';
+    d.appendChild(trail);
+  }
   vfxTrack(d, delayMs + flight + 160);
 
   if (spec.variant === 'drain') {
@@ -825,12 +880,7 @@ function vfxMeteorProjectile(spec, layer, from, to, delayMs, flight, small) {
   d.style.setProperty('--vfx-rot', Math.atan2(to.y - from.y, to.x - from.x).toFixed(3) + 'rad');
   d.style.animationDelay = delayMs + 'ms';
   d.style.animationDuration = flight + 'ms';
-  var core = document.createElement('span');
-  core.className = 'vfx-proj-core';
-  d.appendChild(core);
-  var trail = document.createElement('span');
-  trail.className = 'vfx-proj-trail';
-  d.appendChild(trail);
+  vfxBuildFlareFlame(d, !!small);
   if (_vfxQuality !== VFX_QUALITY_LEVELS.REDUCED) {
     var emberCount = small ? 2 : 4;
     for (var ei = 0; ei < emberCount; ei++) {
@@ -849,7 +899,9 @@ function vfxMeteorProjectile(spec, layer, from, to, delayMs, flight, small) {
    落地時刻＝travelMs（模擬層已把所有目標統一成同一個值，傷害數字同時跳）。 */
 function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
   /* 先限制外部延遲與飛行時間，避免長時間運行後過期隕石集中補播。 */
-  var fall = travelMs > 0 ? Math.min(VFX_METEOR_MAX_TRAVEL_MS, travelMs) : VFX_METEOR_MAX_TRAVEL_MS;
+  var meteorSpeed = VFX_METEOR_SPEED_MULTIPLIER > 0 ? VFX_METEOR_SPEED_MULTIPLIER : 1;
+  var rawFall = travelMs > 0 ? Math.min(VFX_METEOR_MAX_TRAVEL_MS, travelMs) : VFX_METEOR_MAX_TRAVEL_MS;
+  var fall = Math.round(rawFall / meteorSpeed);
   var safeBaseDelay = Number(baseDelay);
   if (!isFinite(safeBaseDelay) || safeBaseDelay < 0) safeBaseDelay = 0;
   safeBaseDelay = Math.min(VFX_METEOR_MAX_DELAY_MS, safeBaseDelay);
@@ -858,9 +910,9 @@ function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
   var diagonalRise = diagonalRun * Math.tan(Math.PI / 3);
   var mainFrom = { x: cx + diagonalRun, y: cy - diagonalRise };
   vfxMeteorProjectile(spec, layer, mainFrom, { x: cx, y: cy }, safeBaseDelay, fall, false);
-  /* 小火球總共 3 顆，透過略微不同的起點與延遲形成伴隨感，
+  /* 小火球總共 4 顆，透過略微不同的起點與延遲形成伴隨感，
      但將總飛行時間對齊主火球，避免小火球落地後才出現命中反饋。 */
-  var smallOffsets = [-0.18, 0.1, 0.28];
+  var smallOffsets = [-0.22, -0.04, 0.16, 0.32];
   for (var si = 0; si < smallOffsets.length; si++) {
     var ratio = 0.78 + si * 0.12;
     var smallFrom = {

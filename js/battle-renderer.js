@@ -89,6 +89,7 @@ var BattleRenderer = (function () {
     deathFog: null,
     deathFogCanvas: null,
     deathFogTex: null,
+    fireFlareTex: null,          // Phaser 範例 flares.png 的 white frame（火球／殞石共用）
     watchdogTimer: 0,
     emptyText: null,
     pauseVeil: null,
@@ -322,6 +323,63 @@ var BattleRenderer = (function () {
     g.fillRect(0, 0, 64, 64);
     _glowTex = PIXI.Texture.from(c);
     return _glowTex;
+  }
+
+  /* 讀取 Phaser 範例使用的 flares.png，裁出 atlas 中名為 white 的 128×128 frame。
+     範例的「火焰」不是單一素材，而是這張柔光粒子被連續發射、縮小、染色後的
+     疊影；Canvas 版也沿用同一張圖，避免 DOM 與 Pixi 的火球輪廓再次分家。 */
+  function loadFireFlare() {
+    return PIXI.Assets.load('images/flares.png').then(function (tex) {
+      tex.source.scaleMode = 'linear';
+      S.fireFlareTex = new PIXI.Texture({
+        source: tex.source,
+        frame: new PIXI.Rectangle(392, 2, 128, 128)
+      });
+    });
+  }
+
+  function flareSprite(theme, x, y, scaleX, scaleY, tint, alpha, node) {
+    var sp = new PIXI.Sprite(S.fireFlareTex || glowTexture());
+    sp.anchor.set(0.5);
+    sp.x = x;
+    sp.y = y;
+    sp.scale.set(scaleX, scaleY);
+    sp.tint = cssColorToInt(tint, 0xffffff);
+    sp.alpha = alpha;
+    sp.blendMode = 'add';
+    node.addChild(sp);
+    return sp;
+  }
+
+  /* 以同一組固定粒子位置重現 Phaser 的 advance emitter：白芯在前方，
+     黃／橙／紅粒子向飛行反方向拉長，最後用少量 flare 火星補足火焰柱。 */
+  function flameProjectile(theme, small) {
+    var node = new PIXI.Container();
+    var k = small ? 0.58 : 1;
+    flareSprite(theme, 0, 0, 0.86 * k, 0.98 * k, '#f83600', 0.78, node);
+    flareSprite(theme, 3 * k, 3 * k, 0.68 * k, 0.82 * k, '#f89800', 0.88, node);
+    flareSprite(theme, 7 * k, 7 * k, 0.51 * k, 0.65 * k, '#facc22', 0.96, node);
+    flareSprite(theme, 10 * k, 9 * k, 0.27 * k, 0.36 * k, '#fff6d8', 1, node);
+    var tail = [
+      [-22, -8, 0.46, 0.62, '#f89800'], [-38, 6, 0.38, 0.54, '#f83600'],
+      [-52, -10, 0.32, 0.46, '#f89800'], [-66, 8, 0.25, 0.38, '#9f0404'],
+      [-79, -4, 0.19, 0.29, '#f83600'], [-91, 12, 0.14, 0.22, '#9f0404']
+    ];
+    for (var i = 0; i < tail.length; i++) {
+      var p = tail[i];
+      flareSprite(theme, p[0] * k, p[1] * k, p[2] * k, p[3] * k, p[4], 0.82, node);
+    }
+    if (!REDUCED_MOTION) {
+      var sparks = small ? 4 : 8;
+      for (var si = 0; si < sparks; si++) {
+        flareSprite(theme, (-28 - (si * 17) % 78) * k,
+          ((((si * 29) % 31) - 15) * k),
+          (0.08 + (si % 3) * 0.025) * k,
+          (0.11 + (si % 2) * 0.035) * k,
+          si % 2 ? '#f83600' : '#facc22', 0.72, node);
+      }
+    }
+    return node;
   }
 
   /* ---- 地面 ----
@@ -1081,7 +1139,9 @@ var BattleRenderer = (function () {
       core.circle(-2, -2, 2.5).fill(theme.c2);
       return core;
     }
-    var r = spec.variant === 'meteor' ? 10 : (spec.cat === 'basic' ? 5 : 6.5);
+    /* 火球術核心放大到原本約兩倍；一般元素投射物維持原尺寸。 */
+    var r = spec.variant === 'meteor' ? 10 :
+      (spec.variant === 'fireball' ? 13 : (spec.cat === 'basic' ? 5 : 6.5));
     core.circle(0, 0, r).fill(theme.c1);
     core.circle(0, 0, r * 0.55).fill(theme.c2);
     return core;
@@ -1108,14 +1168,18 @@ var BattleRenderer = (function () {
     if (glyphOnly) {
       core = new PIXI.Text({ text: spec.glyph, style: { fontSize: 20 } });
       core.anchor.set(0.5);
+    } else if (spec.variant === 'fireball') {
+      /* 火球不再用圓形 Graphics：改用 Phaser white flare 多層疊影，
+         與 DOM 版共用相同粒子排列。 */
+      core = flameProjectile(theme, false);
     } else {
       core = projectileCore(spec, theme);
     }
     var glow = new PIXI.Sprite(glowTexture());
     glow.anchor.set(0.5);
     glow.tint = parseInt(String(theme.glow).replace('#', '0x')) || 0xffffff;
-    glow.alpha = 0.8;
-    glow.scale.set(0.9);
+    glow.alpha = spec.variant === 'fireball' ? 0.28 : 0.8;
+    glow.scale.set(spec.variant === 'fireball' ? 1.5 : 0.9);
     glow.blendMode = 'add';
     node.addChild(glow); node.addChild(core);
     node.x = from.x; node.y = from.y;
@@ -1565,15 +1629,17 @@ var BattleRenderer = (function () {
   }
   function spawnMeteorProjectile(spec, theme, from, to, scale, dur, delaySec, onArrive) {
     var node = new PIXI.Container();
-    var core = new PIXI.Graphics();
-    core.circle(0, 0, 22).fill(theme.c1);
-    core.circle(0, 0, 11).fill('#fff6d8');
+    /* 隕石與火球術共用 Phaser flare 疊影；small 由呼叫端透過 scale 傳入，
+       因此大隕石是白芯／黃身／紅外焰，小隕石則保持同色階但體積較小。 */
+    var flame = flameProjectile(theme, scale && scale < 1);
     var glow = new PIXI.Sprite(glowTexture());
-    glow.anchor.set(0.5); glow.scale.set(3.2); glow.blendMode = 'add';
+    glow.anchor.set(0.5); glow.scale.set(scale && scale < 1 ? 2.5 : 4.8); glow.blendMode = 'add';
+    glow.alpha = 0.22;
     glow.tint = parseInt(String(theme.glow).replace('#', '0x')) || 0xffffff;
-    node.addChild(glow); node.addChild(core);
+    node.addChild(glow); node.addChild(flame);
     node.scale.set(scale || 1);
     node.x = from.x; node.y = from.y;
+    node.rotation = Math.atan2(to.y - from.y, to.x - from.x);
     S.layers.fx.addChild(node);
     var t = -(Math.max(0, delaySec || 0));
     addFx({
@@ -1603,13 +1669,16 @@ var BattleRenderer = (function () {
     var run = Math.max(150, Math.min(230, rect.h + 120));
     var rise = run * Math.tan(Math.PI / 3);
     var mainFrom = { x: cx + run, y: cy - rise };
-    var dur = Math.min(0.8, Math.max(0.5, (spec.travelMs && spec.travelMs[0] || 500) / 1000));
+    var meteorTravel = (spec.travelMs && spec.travelMs[0]) || 500;
+    /* 與 DOM vfxMeteor、技能傷害浮字相同：殞石固定慢 30%。 */
+    var dur = Math.min(1.15, Math.max(0.7, meteorTravel / 1000 / 0.70));
     spawnMeteorProjectile(spec, theme, mainFrom, { x: cx, y: cy }, 1, dur, 0, function () {
       spawnImpact(cx, cy, spec, true);
       spawnFireShockwave(cx, cy, rectRadius(rect), theme);
       addShake(8);
     });
-    var smallOffsets = [-0.18, 0.1, 0.28];
+    var smallOffsets = [-0.22, -0.04, 0.16, 0.32];
+    var smallTheme = { c1: '#ef4b16', c2: '#ffd166', glow: '#ff7a1a' };
     for (var si = 0; si < smallOffsets.length; si++) {
       var ratio = 0.78 + si * 0.12;
       var smallFrom = {
@@ -1618,7 +1687,7 @@ var BattleRenderer = (function () {
       };
       var delaySec = (36 + si * 42) / 1000;
       var smallDur = Math.max(0.18, dur - delaySec - 0.02);
-      spawnMeteorProjectile(spec, theme, smallFrom, { x: cx, y: cy }, 0.52, smallDur, delaySec, null);
+      spawnMeteorProjectile(spec, smallTheme, smallFrom, { x: cx, y: cy }, 0.52, smallDur, delaySec, null);
     }
   }
   function spawnFireShockwave(cx, cy, radius, theme) {
@@ -2737,7 +2806,8 @@ var BattleRenderer = (function () {
     }).then(function () {
       return Promise.all([
         loadSheet('player', 'images/sprites/player'),
-        loadSheet('boss', 'images/sprites/boss_generic')
+        loadSheet('boss', 'images/sprites/boss_generic'),
+        loadFireFlare()
       ]);
     }).then(function () {
       S.app = app;
