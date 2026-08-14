@@ -16,7 +16,7 @@ importScripts(
   '../item.js?v=20260805-tasks',
   '../skills.js?v=20260814-skill-min-interval', '../skills2.js?v=20260814-poison-spread-count', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260814-skill-min-interval', '../special_rules.js',
-  '../combat.js?v=20260814-skill-test-gm', '../legendary.js', '../potential.js?v=20260814-skill-min-interval', '../tower.js?v=20260813-skills2-rework',
+  '../combat.js?v=20260814-death-skill-cd', '../legendary.js', '../potential.js?v=20260814-skill-min-interval', '../tower.js?v=20260813-skills2-rework',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260813-skills2-rework',
   '../tasks.js'
 );
