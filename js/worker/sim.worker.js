@@ -12,17 +12,17 @@
 
 importScripts('protocol.js?v=19', 'shim.js');
 importScripts(
-  '../util.js?v=20260814-skill-summary', '../data.js?v=20260813-earth-recovery', '../status.js?v=20260813-skills2-rework', '../formula.js?v=20260814-skill-min-interval-v2', '../battlefield.js?v=20260813-skills2-rework', '../stats.js',
+  '../util.js?v=20260814-skill-summary', '../data.js?v=20260813-earth-recovery', '../status.js?v=20260813-skills2-rework', '../formula.js?v=20260814-skill-test-gm', '../battlefield.js?v=20260813-skills2-rework', '../stats.js',
   '../item.js?v=20260805-tasks',
   '../skills.js?v=20260814-skill-min-interval', '../skills2.js?v=20260814-poison-spread-count', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260814-skill-min-interval', '../special_rules.js',
-  '../combat.js?v=20260814-skill-min-interval', '../legendary.js', '../potential.js?v=20260814-skill-min-interval', '../tower.js?v=20260813-skills2-rework',
+  '../combat.js?v=20260814-skill-test-gm', '../legendary.js', '../potential.js?v=20260814-skill-min-interval', '../tower.js?v=20260813-skills2-rework',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260813-skills2-rework',
   '../tasks.js'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
-importScripts('../gm_exec.js?v=20260814-gm-equipset');
+importScripts('../gm_exec.js?v=20260814-skill-test-gm');
 
 /* ---- 決定論測試模式（只在本機、只在網址帶 ?seed=N 時啟用）----
    存在的唯一理由：讓瀏覽器實機跑出來的結果，能和 headless 模擬器
