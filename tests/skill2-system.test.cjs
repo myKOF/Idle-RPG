@@ -50,7 +50,7 @@ function enemy(hp, x, y, name) {
   };
 }
 function playerEnt() {
-  return { hp: 1000, mp: 100, shield: 0, shieldMax: 0, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {}, _lockTarget: null };
+  return { hp: 1000, mp: 100, shield: 0, shieldMax: 0, skillCds: {}, buffs: {}, dots: [], effects: {}, _lockTarget: null };
 }
 /* vm 內建立的陣列與宿主的 Array 原型不同，strict deepEqual 會因原型不相等而失敗；
    數值陣列一律先轉純資料再比。 */
@@ -201,7 +201,7 @@ test('bfConeTargets：全張角與半徑過濾；bfNearestOthers：距離排序�
 
 /* ---- 5) 施放機制 ---- */
 
-test('突刺：Lv.1 對主目標 1 次命中；冷卻與 GCD 寫入；法力扣除', () => {
+test('突刺：Lv.1 對主目標 1 次命中；自身冷卻寫入；法力扣除', () => {
   const c = loadContext();
   const calls = stubHits(c);
   c.chance = () => false; // 關掉所有機率觸發
@@ -212,7 +212,8 @@ test('突刺：Lv.1 對主目標 1 次命中；冷卻與 GCD 寫入；法力扣�
   assert.equal(out.dmg, 100);
   assert.equal(p.mp, 100 - c.SKILLS2.thrust.cost);
   assert.ok(p.skillCds['sg:thrust'] > 0, '應寫入群組冷卻');
-  assert.equal(p.skillGcd, c.SKILL_GLOBAL_COOLDOWN);
+  assert.equal(p.skillGcd, undefined, '技能 2 不應建立共用 GCD');
+  assert.ok(p.skillCds['sg:thrust'] >= c.SKILL_MIN_CAST_INTERVAL, '自身冷卻不得低於技能最低施放間隔');
 });
 
 test('突刺·連刺與超連刺：次數合成（機率全開時 (1+add)×2 段）', () => {

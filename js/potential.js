@@ -1,7 +1,7 @@
 'use strict';
 /* ============ 潛力技能（戰鬥效果模組 V3）============
    主動潛力技能：與一般技能相同，需裝入「裝載欄」（鍵值 'potential:<id>'）才會施放；
-                冷卻共用 pEnt.skillCds、施放共用 pickAndCastSkill（skills.js）與技能 GCD 節奏；普攻同步進行。
+                冷卻共用 pEnt.skillCds、施放共用 pickAndCastSkill（skills.js）；普攻同步進行。
    被動潛力技能：混沌雙修（crossCore）於 computeStats 併入；
                 不屈意志（免死）於 resolveHit 致命段處理。皆學會即常駐、無需裝備。
    數值 potentialSkillValue / 上限 potentialSkillMaxLv / 是否生效 potentialSkillActive → js/talents.js
@@ -29,7 +29,9 @@ function potentialUndyingCd() {
 // 潛力主動技能實際冷卻：吃一般冷卻縮減（夾在一般上限內），不受時間坍縮的突破效果影響。
 function potentialActiveCd(def) {
   var cdr = (typeof getStats === 'function') ? Math.min(60, getStats().cdr || 0) : 0;
-  return Math.max(0.1, (def.cd || 0) * (1 - cdr / 100));
+  var cooldown = (def.cd || 0) * (1 - cdr / 100);
+  return (typeof skillCooldownWithMinimum === 'function')
+    ? skillCooldownWithMinimum(cooldown) : Math.max(0.4, cooldown);
 }
 
 // 可施放（可裝入裝載欄）的潛力機制；被動 crossCore 與被動觸發 undyingGuard 不在此列。
@@ -53,7 +55,7 @@ function potentialEquippable(def) {
 
 /* 由 pickAndCastSkill（skills.js）呼叫：施放裝載欄中的潛力技能。
    冷卻寫入 pEnt.skillCds[loadoutKey]（與一般技能共用 tick 與就緒排序），
-   並套用共用技能 GCD。回傳 { killed, dmg }（與 castSkill 相同介面）。 */
+   並只寫入自身冷卻。回傳 { killed, dmg }（與 castSkill 相同介面）。 */
 function castPotentialSkill(pEnt, target, def, floatSel, loadoutKey) {
   var st = getStats();
   var targets = Array.isArray(target)
@@ -61,7 +63,6 @@ function castPotentialSkill(pEnt, target, def, floatSel, loadoutKey) {
     : (target && target.hp > 0 ? [target] : []);
   if (!pEnt.skillCds) pEnt.skillCds = {};
   pEnt.skillCds[loadoutKey || ('potential:' + def.id)] = potentialActiveCd(def);
-  pEnt.skillGcd = SKILL_GLOBAL_COOLDOWN;
   /* 特效：潛力技不經 castSkill，於此自行送一則。有傷害段（dmgType）的走一般推導，
      純增益的走 selfBuff；顏色沿用潛力系的專屬色（VFX_CAT_COLORS.potential）。
      雷霆過載（chainLightning）例外：firePotentialLightning 自己送連鎖雷鏈，這裡不再疊一發。 */

@@ -2100,7 +2100,17 @@ function gemShopUpgradeCost(level) {
 
 var SKILL_MAX_LV = 10;         // 一般技能等級上限（保留給外部參照）
 var SKILL_CAST_LOCK = 0;       // 舊參數保留供參數表相容；技能不再改動普攻 atkCd
-var SKILL_GLOBAL_COOLDOWN = 0.2; // 技能共用冷卻（秒；固定值，不受冷卻縮減影響）
+var SKILL_MIN_CAST_INTERVAL = 0.4; // 每個技能自身冷卻的最低施放間隔（秒；固定值，不受冷卻縮減影響）
+
+function skillMinimumInterval() {
+  return (typeof SKILL_MIN_CAST_INTERVAL === 'number' &&
+    isFinite(SKILL_MIN_CAST_INTERVAL) && SKILL_MIN_CAST_INTERVAL > 0)
+    ? SKILL_MIN_CAST_INTERVAL : 0.4;
+}
+
+function skillCooldownWithMinimum(cooldown) {
+  return Math.max(skillMinimumInterval(), Math.max(0, Number(cooldown) || 0));
+}
 
 // 裝載欄：參數表「技能裝載欄」＝clamp(b + ⌊等級/a⌋, b, c)；1 轉後解鎖全部上限。
 var LOADOUT_SIZE = { perLevels: 50, min: 4, base: 4, max: 10 };
@@ -2174,8 +2184,8 @@ function skillMaxLv(def) {
 
 // 技能傷害倍率（%）= base + per × (等級-1)
 function skillValue(sk, lv) { return (sk.fx.base || 0) + (sk.fx.per || 0) * (lv - 1); }
-// 實際冷卻 = 技能冷卻 × (1 - 冷卻縮減%)
-// 實際冷卻 = 技能冷卻 × (1 - 冷卻縮減%)；extraCdr 為潛力【時間坍縮】施放時的額外 CDR（突破一般上限，總 CDR 另有上限）。
+// 技能冷卻基準值 = 技能冷卻 × (1 - 冷卻縮減%)；實際寫入時再套用每技能最低施放間隔。
+// extraCdr 為潛力【時間坍縮】施放時的額外 CDR（突破一般上限，總 CDR 另有上限）。
 function skillCdFor(sk, extraCdr) {
   var cdr = Math.min(90, (getStats().cdr || 0) + (Number(extraCdr) || 0));
   return sk.cd * (1 - cdr / 100);

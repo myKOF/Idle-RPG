@@ -27,7 +27,7 @@ function loadGameContext() {
   context.window = context;
   vm.createContext(context);
 
-  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js'].forEach((file) => {
+  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js', 'js/potential.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
 
@@ -60,14 +60,13 @@ function playerEntity() {
     shield: 0,
     atkCd: 0,
     skillCds: {},
-    skillGcd: 0,
     buffs: {},
     dots: [],
     effects: {}
   };
 }
 
-test('skill global cooldown prevents casting another skill for a fixed 0.4 seconds', () => {
+test('different skills can cast back-to-back while each skill keeps its own cooldown', () => {
   const context = loadGameContext();
   const player = playerEntity();
 
@@ -75,7 +74,6 @@ test('skill global cooldown prevents casting another skill for a fixed 0.4 secon
   assert.equal(first && typeof first, 'object');
   assert.equal(first.casting, true);
   assert.equal(player._skillCastRemaining, 0.4);
-  assert.equal(player.skillGcd, 0);
   assert.equal(player.skillCds.timeWarp || 0, 0);
   assert.equal(player.atkCd, 0, '技能施放不應增加普攻計時器');
 
@@ -89,16 +87,13 @@ test('skill global cooldown prevents casting another skill for a fixed 0.4 secon
   const completed = context.tickSkillCast(player, 0.01);
   assert.equal(completed.completed, true);
   assert.equal(player.skillCds.timeWarp, 8);
-  assert.equal(player.skillGcd, 0.4);
-  context.tickSkillCds(player, 0.4);
-  assert.equal(player.skillGcd, 0);
   const second = context.pickAndCastSkill(player, null, 'float-layer');
   assert.equal(second && typeof second, 'object');
   assert.equal(second.casting, true);
   context.tickSkillCast(player, 0.4);
-  assert.equal(player.skillGcd, 0.4);
   assert.equal(player.skillCds.treasureSense, 12);
-  assert.equal(player.atkCd, 0, '技能 GCD 與普攻計時器應彼此獨立');
+  assert.equal(player.skillGcd, undefined);
+  assert.equal(player.atkCd, 0, '技能自身冷卻與普攻計時器應彼此獨立');
 });
 
 test('技能依冷卻歸零先後輪轉，前排短 CD 不會在首輪壟斷後排技能', () => {
@@ -116,7 +111,6 @@ test('技能依冷卻歸零先後輪轉，前排短 CD 不會在首輪壟斷後�
   context.castSkill = (player, target, id) => {
     calls.push(id);
     player.skillCds[id] = context.skillCdFor(context.skillDef(id));
-    player.skillGcd = 0.4;
     return {};
   };
   const player = playerEntity();
@@ -214,6 +208,21 @@ test('傷害範圍 all 的技能命中場上全部敵人', () => {
   assert.equal(enemies[1].hp, enemies[2].hp);
   assert.equal(Math.round(10000 - enemies[0].hp), Math.round(singleDamage * 2),
     '範圍傷害加成應套用在每個目標，不能因目標數量除分');
+});
+
+test('the same skill is still blocked by its own cooldown and receives the minimum interval', () => {
+  const context = loadGameContext();
+  context.G.player.loadout = ['timeWarp'];
+  const player = playerEntity();
+
+  const first = context.pickAndCastSkill(player, null, 'float-layer');
+  assert.equal(first && first.casting, true);
+  context.tickSkillCast(player, 0.4);
+  assert.equal(player.skillCds.timeWarp, 8);
+  assert.equal(context.pickAndCastSkill(player, null, 'float-layer'), null);
+  assert.equal(player.skillGcd, undefined);
+  assert.equal(context.skillCooldownWithMinimum(0.1), context.SKILL_MIN_CAST_INTERVAL);
+  assert.equal(context.potentialActiveCd({ cd: 0.1 }), context.SKILL_MIN_CAST_INTERVAL);
 });
 
 test('技能可用 castTime: 0 明確略過預設施法停頓', () => {
