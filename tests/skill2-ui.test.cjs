@@ -54,6 +54,6 @@ test('新版階段彈窗沿用舊版單技能結構，未解鎖階段不產生�
 
 test('技能頁文字與資產版號已更新', () => {
   assert.match(html, /亮起階段代表已解鎖，灰色階段仍可查看但不能升級/);
-  assert.match(html, /css\/style\.css\?v=1\.0\.8/);
+  assert.match(html, /css\/style\.css\?v=1\.0\.9/);
   assert.match(html, /js\/ui\.js\?v=1\.0\.36/);
 });

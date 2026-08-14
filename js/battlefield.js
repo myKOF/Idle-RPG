@@ -427,12 +427,14 @@ function bfAreaTargets(primary, enemies, shape) {
 function bfAllTargets(enemies) { return bfLiveList(enemies); }
 
 /* ---- 新版技能幾何（2026-08-13 技能改造）----
-   新版技能以「米」描述距離（設計基準：近戰攻擊距離＝5 米），
-   換算恆等式：1 米 ＝ 近戰攻擊距離 ÷ SG 基準米數。調整 BF_MELEE_RANGE 時比例自動跟隨。
+   新版技能以「米」描述距離；系統距離單位固定以 10 單位代表 1 米，
+   所以設計表中的 7 米就是 70 個系統距離單位。技能是否能起手仍由
+   bfPlayerCanReach() 以普攻的近戰距離判定，技能本身的貫穿／範圍則可依表格延伸。
    ⚠️ 所有查詢對「沒有座標的實體」（高塔 BOSS）一律退化為單體語意：
    由呼叫端先以 bfPos(primary) 判斷幾何是否可用，不可用時只打主目標。 */
 var BF_MELEE_METERS = 5; // 設計文檔的近戰距離假設（米）
-function bfMeterPx(m) { return (Number(m) || 0) * bfMeleeRange() / BF_MELEE_METERS; }
+var BF_SYSTEM_UNITS_PER_METER = 10;
+function bfMeterPx(m) { return (Number(m) || 0) * BF_SYSTEM_UNITS_PER_METER; }
 
 /* 我方指向某實體的方位角（弧度）；無座標回傳 null。 */
 function bfAngleTo(ent) {
