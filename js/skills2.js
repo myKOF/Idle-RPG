@@ -34,120 +34,12 @@ var SG_TIER_COUNT = 7;        // 每群組階數
    fx 參數命名慣例：<鍵> 為 Lv.1 基準值、<鍵>Per 為每級增量（值＝基準 + 增量×(等級-1)）。
    desc 內的 {鍵} 於顯示時代入目前等級的計算值。 */
 var SKILLS2 = {
-  thrust: {
-    name: '突刺', emoji: '🗡️', cd: 14, cost: 25,
-    tiers: [
-      { name: '突刺', fx: { pct: 300, pctPer: 30 }, goldBase: 100000, goldGrow: 1.5,
-        desc: '對敵人造成 1 次 {pct}% 物理傷害' },
-      { name: '連刺', fx: { chance: 10, chancePer: 5 }, goldBase: 200000, goldGrow: 1.5,
-        desc: '有 {chance}% 的機率造成 2 次突刺' },
-      { name: '傷害強化', fx: { pct: 30, pctPer: 10 }, goldBase: 400000, goldGrow: 1.5,
-        desc: '進一步強化突刺傷害，額外 +{pct}% 物理傷害（與第 1 階累加）' },
-      { name: '超連刺', fx: { add: 1, addPer: 0.25 }, goldBase: 800000, goldGrow: 1.5,
-        desc: '突刺次數額外 +{add} 次（不足 1 次的部分以機率觸發）' },
-      { name: '擴散', fx: { pct: 20, pctPer: 5, count: 2 }, goldBase: 1500000, goldGrow: 1.5,
-        desc: '突刺造成的傷害有 {pct}% 會擴散至周圍的 {count} 個敵人' },
-      { name: '貫穿突刺', fx: { m: 7, mPer: 0.5 }, goldBase: 3000000, goldGrow: 1.5,
-        desc: '突刺造成一直線傷害，貫穿路徑上所有敵人，貫穿距離 {m} 米' },
-      { name: '終極突刺', fx: { pct: 10, pctPer: 5, deg: 30 }, goldBase: 5000000, goldGrow: 1.5,
-        desc: '向 3 個方向（正前與左右各 {deg} 度）同時突刺，且物理傷害額外 +{pct}%' }
-    ]
-  },
-  cleave: {
-    name: '迴旋斬', emoji: '🪓', cd: 20, cost: 30,
-    tiers: [
-      { name: '迴旋斬', fx: { pct: 200, pctPer: 20, count: 3 }, goldBase: 100000, goldGrow: 1.5,
-        desc: '對前方 {count} 個敵人造成 1 次 {pct}% 物理傷害' },
-      { name: '強化斬', fx: { add: 1, addPer: 0.5 }, goldBase: 200000, goldGrow: 1.5,
-        desc: '斬擊的敵人數量額外 +{add} 個（不足 1 個的部分以機率觸發）' },
-      { name: '傷害強化', fx: { pct: 20, pctPer: 8 }, goldBase: 400000, goldGrow: 1.5,
-        desc: '進一步強化斬擊傷害，額外 +{pct}% 物理傷害' },
-      { name: '連斬', fx: { chance: 25, chancePer: 2.5, times: 2, timesPer: 0.25 }, goldBase: 800000, goldGrow: 1.5,
-        desc: '斬擊時有 {chance}% 機率連續劈出共 {times} 次斬擊（不足 1 次的部分以機率觸發）' },
-      { name: '暈眩擊', fx: { chance: 25, chancePer: 1, sec: 1, secPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5,
-        desc: '斬擊時有 {chance}% 機率擊暈敵人 {sec} 秒' },
-      { name: '震碎斬', fx: { m: 7, mPer: 0.5 }, goldBase: 3000000, goldGrow: 1.5,
-        desc: '斬擊會向前飛出 {m} 米距離，命中路徑上的敵人' },
-      { name: '迴身雙連斬', fx: { pct: 10, pctPer: 5 }, goldBase: 5000000, goldGrow: 1.5,
-        desc: '同時朝後方 180 度使出順劈斬，且物理傷害額外 +{pct}%' }
-    ]
-  },
-  knife: {
-    name: '飛刀', emoji: '🔪', cd: 16, cost: 28,
-    tiers: [
-      { name: '飛刀', fx: { pct: 250, pctPer: 25, count: 3, deg: 60 }, goldBase: 100000, goldGrow: 1.5,
-        desc: '朝前方 {deg} 度扇形內丟出 {count} 把飛刀，每把造成 {pct}% 物理傷害' },
-      { name: '強化飛刀', fx: { pct: 20, pctPer: 10 }, goldBase: 200000, goldGrow: 1.5,
-        desc: '飛刀傷害進一步提升，額外 +{pct}% 物理傷害' },
-      { name: '彈射飛刀', fx: { pct: 30, pctPer: 5, count: 1 }, goldBase: 400000, goldGrow: 1.5,
-        desc: '每把飛刀會在附近的 {count} 個敵人間彈跳，每次彈射造成 {pct}% 技能傷害' },
-      { name: '強化彈射', fx: { add: 1, addPer: 0.25 }, goldBase: 800000, goldGrow: 1.5,
-        desc: '飛刀彈射的敵人數量額外 +{add}（不足 1 次的部分以機率觸發）' },
-      { name: '迴旋飛刀', fx: { count: 5, countPer: 0.25 }, goldBase: 1500000, goldGrow: 1.5,
-        desc: '改為向周圍的 {count} 個敵人丟出飛刀（全圓形範圍鎖敵；不足 1 個的部分以機率觸發）' },
-      { name: '連鎖彈射', fx: { chance: 20, chancePer: 2, max: 4 }, goldBase: 3000000, goldGrow: 1.5,
-        desc: '飛刀彈射後有 {chance}% 機率再次彈射，最多連續 {max} 次' },
-      { name: '神速飛刀', fx: { sec: 0.1, secPer: 0.02 }, goldBase: 5000000, goldGrow: 1.5,
-        desc: '每把飛刀（含彈射）爆擊時，使本技能冷卻時間 -{sec} 秒' }
-    ]
-  },
-  gale: {
-    name: '疾風斬', emoji: '💨', cd: 20, cost: 30,
-    tiers: [
-      { name: '疾風斬', fx: { pct: 250, pctPer: 20, hits: 2 }, goldBase: 100000, goldGrow: 1.5,
-        desc: '對敵人造成連續 {hits} 次 {pct}% 物理傷害（同一目標）' },
-      { name: '疾風連斬', fx: { add: 1, addPer: 0.2 }, goldBase: 200000, goldGrow: 1.5,
-        desc: '斬擊次數額外 +{add}（不足 1 次的部分以機率觸發）' },
-      { name: '強化斬擊', fx: { pct: 15, pctPer: 4 }, goldBase: 400000, goldGrow: 1.5,
-        desc: '進一步強化斬擊傷害，額外 +{pct}% 物理傷害' },
-      { name: '擴散', fx: { pct: 50, pctPer: 5, m: 10 }, goldBase: 800000, goldGrow: 1.5,
-        desc: '每次斬擊額外對 {m} 米內最近的 1 個敵人造成 {pct}% 技能傷害；附近沒有敵人時改對原目標造成' },
-      { name: '狂風斬', fx: { pct: 20, pctPer: 5, sec: 5 }, goldBase: 1500000, goldGrow: 1.5,
-        desc: '施放疾風斬使你的攻速額外提高 {pct}%，持續 {sec} 秒（突破攻速上限，與自身攻速相乘）' },
-      { name: '極速斬', fx: { sec: 1, secPer: 0.3 }, goldBase: 3000000, goldGrow: 1.5,
-        desc: '疾風斬的冷卻時間 -{sec} 秒' },
-      { name: '超神斬', fx: { pct: 200, pctPer: 20, m: 5 }, goldBase: 5000000, goldGrow: 1.5,
-        desc: '疾風斬的傷害由目標周圍 {m} 米內的所有敵人均分，且傷害額外 +{pct}%' }
-    ]
-  },
-  bloodblade: {
-    name: '血刃斬', emoji: '🩸', cd: 30, cost: 40,
-    tiers: [
-      { name: '血刃斬', fx: { pct: 200, pctPer: 15, dotPct: 30, dotSec: 5, dotGap: 1 }, goldBase: 100000, goldGrow: 1.5,
-        desc: '對敵人造成 1 次 {pct}% 物理傷害，並附加流血：每 {dotGap} 秒造成技能傷害 {dotPct}% 的傷害，持續 {dotSec} 秒' },
-      { name: '強化流血', fx: { sec: 0.5, secPer: 0.1, gapPct: 10, gapPctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5,
-        desc: '流血持續時間 +{sec} 秒，且流血作用間隔縮短 {gapPct}%（跳得更快、總傷更高）' },
-      { name: '虛弱', fx: { pct: 10, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5,
-        desc: '流血中的敵人受到的傷害提高 {pct}%' },
-      { name: '血毒刃', fx: { dotPct: 25, dotPctPer: 3, dotSec: 4, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5,
-        desc: '敵人流血的同時也會中毒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的毒屬性傷害，持續 {dotSec} 秒' },
-      { name: '毒霧感染', fx: { chance: 10, chancePer: 1 }, goldBase: 1500000, goldGrow: 1.5,
-        desc: '血毒刃的毒在每次作用時，有 {chance}% 機率傳染給附近的 1 個敵人' },
-      { name: '死亡屍爆', fx: { pct: 50, pctPer: 5, count: 2 }, goldBase: 3000000, goldGrow: 1.5,
-        desc: '流血或中毒狀態的敵人死亡時爆炸，對附近 {count} 個敵人造成 {pct}% 技能傷害' },
-      { name: '零日感染', fx: { chance: 20, chancePer: 2, pct: 20, pctPer: 2 }, goldBase: 5000000, goldGrow: 1.5,
-        desc: '流血與中毒在每次作用時有 {chance}% 機率立即造成剩餘的持續傷害並清除該狀態，且流血與中毒傷害 +{pct}%' }
-    ]
-  },
-  dualdance: {
-    name: '雙刀亂舞', emoji: '⚔️', cd: 20, cost: 35,
-    tiers: [
-      { name: '雙刀亂舞', fx: { pct: 300, pctPer: 25, count: 2 }, goldBase: 100000, goldGrow: 1.5,
-        desc: '對附近 {count} 個敵人各造成 1 次 {pct}% 物理傷害（只有 1 個敵人時全部打向同一目標）' },
-      { name: '疾風亂舞', fx: { add: 1, addPer: 0.2 }, goldBase: 200000, goldGrow: 1.5,
-        desc: '額外攻擊附近 {add} 個敵人（不足 1 個的部分以機率觸發）' },
-      { name: '強化雙刀', fx: { pct: 25, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5,
-        desc: '進一步強化雙刀傷害，額外 +{pct}% 物理傷害' },
-      { name: '狂暴之舞', fx: { cr: 50, crPer: 10, cd: 200, cdPer: 40, sec: 6 }, goldBase: 800000, goldGrow: 1.5,
-        desc: '施放後爆擊率 +{cr}%、爆擊傷害 +{cd}%，持續 {sec} 秒' },
-      { name: '鐵血之舞', fx: { pct: 3.5, pctPer: 0.35, sec: 3, gap: 0.35, m: 5 }, goldBase: 1500000, goldGrow: 1.5,
-        desc: '施放時使你與 {m} 米內的所有敵人流血：每 {gap} 秒造成最大生命 {pct}% 的傷害，持續 {sec} 秒（自身流血直接扣生命，無法被護盾吸收）' },
-      { name: '嗜血狂化', fx: { pct: 2, pctPer: 0.2 }, goldBase: 3000000, goldGrow: 1.5,
-        desc: '施放時生命值或護盾每減少 1%，本次技能傷害提升 {pct}%（無護盾時視為護盾 -100%）' },
-      { name: '暴風之舞', fx: { sec: 3, secPer: 0.3, gap: 0.35 }, goldBase: 5000000, goldGrow: 1.5,
-        desc: '化身暴風在敵人間穿梭 {sec} 秒：每 {gap} 秒自動施放 1 次雙刀亂舞；期間無法普攻但可施放技能' }
-    ]
-  }
+  thrust: { name: '突刺', emoji: '🗡️', cd: 5, cost: 25, tiers: [{ name: '突刺', fx: { pct: 300, pctPer: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '對敵人造成 1 次 {pct}% 物理傷害' }, { name: '連刺', fx: { chance: 10, chancePer: 5 }, goldBase: 200000, goldGrow: 1.5, desc: '有 {chance}% 的機率造成 2 次突刺' }, { name: '傷害強化', fx: { pct: 30, pctPer: 10 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化突刺傷害，額外 +{pct}% 物理傷害（與第 1 階累加）' }, { name: '超連刺', fx: { add: 1, addPer: 0.25 }, goldBase: 800000, goldGrow: 1.5, desc: '突刺次數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '擴散', fx: { pct: 20, pctPer: 5, count: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '突刺造成的傷害有 {pct}% 會擴散至周圍的 {count} 個敵人' }, { name: '貫穿突刺', fx: { m: 7, mPer: 0.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '突刺造成一直線傷害，貫穿路徑上所有敵人，貫穿距離 {m} 米' }, { name: '終極突刺', fx: { pct: 10, pctPer: 5, deg: 30 }, goldBase: 5000000, goldGrow: 1.5, desc: '向 3 個方向（正前與左右各 {deg} 度）同時突刺，且物理傷害額外 +{pct}%' }] },
+  cleave: { name: '迴旋斬', emoji: '🪓', cd: 8, cost: 30, tiers: [{ name: '迴旋斬', fx: { pct: 200, pctPer: 20, count: 3 }, goldBase: 100000, goldGrow: 1.5, desc: '對前方 {count} 個敵人造成 1 次 {pct}% 物理傷害' }, { name: '強化斬', fx: { add: 1, addPer: 0.5 }, goldBase: 200000, goldGrow: 1.5, desc: '斬擊的敵人數量額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '傷害強化', fx: { pct: 20, pctPer: 8 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化斬擊傷害，額外 +{pct}% 物理傷害' }, { name: '連斬', fx: { chance: 25, chancePer: 2.5, times: 2, timesPer: 0.25 }, goldBase: 800000, goldGrow: 1.5, desc: '斬擊時有 {chance}% 機率連續劈出共 {times} 次斬擊（不足 1 次的部分以機率觸發）' }, { name: '暈眩擊', fx: { chance: 25, chancePer: 1, sec: 1, secPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '斬擊時有 {chance}% 機率擊暈敵人 {sec} 秒' }, { name: '震碎斬', fx: { m: 7, mPer: 0.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '斬擊會向前飛出 {m} 米距離，命中路徑上的敵人' }, { name: '迴身雙連斬', fx: { pct: 10, pctPer: 5 }, goldBase: 5000000, goldGrow: 1.5, desc: '同時朝後方 180 度使出順劈斬，且物理傷害額外 +{pct}%' }] },
+  knife: { name: '飛刀', emoji: '🔪', cd: 4, cost: 28, tiers: [{ name: '飛刀', fx: { pct: 250, pctPer: 25, count: 3, deg: 60 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方 {deg} 度扇形內丟出 {count} 把飛刀，每把造成 {pct}% 物理傷害' }, { name: '強化飛刀', fx: { pct: 20, pctPer: 10 }, goldBase: 200000, goldGrow: 1.5, desc: '飛刀傷害進一步提升，額外 +{pct}% 物理傷害' }, { name: '彈射飛刀', fx: { pct: 30, pctPer: 5, count: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '每把飛刀會在附近的 {count} 個敵人間彈跳，每次彈射造成 {pct}% 技能傷害' }, { name: '強化彈射', fx: { add: 1, addPer: 0.25 }, goldBase: 800000, goldGrow: 1.5, desc: '飛刀彈射的敵人數量額外 +{add}（不足 1 次的部分以機率觸發）' }, { name: '迴旋飛刀', fx: { count: 5, countPer: 0.25 }, goldBase: 1500000, goldGrow: 1.5, desc: '改為向周圍的 {count} 個敵人丟出飛刀（全圓形範圍鎖敵；不足 1 個的部分以機率觸發）' }, { name: '連鎖彈射', fx: { chance: 20, chancePer: 2, max: 4 }, goldBase: 3000000, goldGrow: 1.5, desc: '飛刀彈射後有 {chance}% 機率再次彈射，最多連續 {max} 次' }, { name: '神速飛刀', fx: { sec: 0.1, secPer: 0.02 }, goldBase: 5000000, goldGrow: 1.5, desc: '每把飛刀（含彈射）爆擊時，使本技能冷卻時間 -{sec} 秒' }] },
+  gale: { name: '疾風斬', emoji: '💨', cd: 6, cost: 30, tiers: [{ name: '疾風斬', fx: { pct: 250, pctPer: 20, hits: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '對敵人造成連續 {hits} 次 {pct}% 物理傷害（同一目標）' }, { name: '疾風連斬', fx: { add: 1, addPer: 0.2 }, goldBase: 200000, goldGrow: 1.5, desc: '斬擊次數額外 +{add}（不足 1 次的部分以機率觸發）' }, { name: '強化斬擊', fx: { pct: 15, pctPer: 4 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化斬擊傷害，額外 +{pct}% 物理傷害' }, { name: '擴散', fx: { pct: 50, pctPer: 5, m: 10 }, goldBase: 800000, goldGrow: 1.5, desc: '每次斬擊額外對 {m} 米內最近的 1 個敵人造成 {pct}% 技能傷害；附近沒有敵人時改對原目標造成' }, { name: '狂風斬', fx: { pct: 20, pctPer: 5, sec: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '施放疾風斬使你的攻速額外提高 {pct}%，持續 {sec} 秒（突破攻速上限，與自身攻速相乘）' }, { name: '極速斬', fx: { sec: 1, secPer: 0.3 }, goldBase: 3000000, goldGrow: 1.5, desc: '疾風斬的冷卻時間 -{sec} 秒' }, { name: '超神斬', fx: { pct: 200, pctPer: 20, m: 5 }, goldBase: 5000000, goldGrow: 1.5, desc: '疾風斬的傷害由目標周圍 {m} 米內的所有敵人均分，且傷害額外 +{pct}%' }] },
+  bloodblade: { name: '血刃斬', emoji: '🩸', cd: 8, cost: 40, tiers: [{ name: '血刃斬', fx: { pct: 200, pctPer: 15, dotPct: 30, dotSec: 5, dotGap: 1 }, goldBase: 100000, goldGrow: 1.5, desc: '對敵人造成 1 次 {pct}% 物理傷害，並附加流血：每 {dotGap} 秒造成技能傷害 {dotPct}% 的傷害，持續 {dotSec} 秒' }, { name: '強化流血', fx: { sec: 0.5, secPer: 0.1, gapPct: 10, gapPctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '流血持續時間 +{sec} 秒，且流血作用間隔縮短 {gapPct}%（跳得更快、總傷更高）' }, { name: '虛弱', fx: { pct: 10, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '流血中的敵人受到的傷害提高 {pct}%' }, { name: '血毒刃', fx: { dotPct: 25, dotPctPer: 3, dotSec: 4, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '敵人流血的同時也會中毒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的毒屬性傷害，持續 {dotSec} 秒' }, { name: '毒霧感染', fx: { chance: 10, chancePer: 1 }, goldBase: 1500000, goldGrow: 1.5, desc: '血毒刃的毒在每次作用時，有 {chance}% 機率傳染給附近的 1 個敵人' }, { name: '死亡屍爆', fx: { pct: 50, pctPer: 5, count: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '流血或中毒狀態的敵人死亡時爆炸，對附近 {count} 個敵人造成 {pct}% 技能傷害' }, { name: '零日感染', fx: { chance: 20, chancePer: 2, pct: 20, pctPer: 2 }, goldBase: 5000000, goldGrow: 1.5, desc: '流血與中毒在每次作用時有 {chance}% 機率立即造成剩餘的持續傷害並清除該狀態，且流血與中毒傷害 +{pct}%' }] },
+  dualdance: { name: '雙刀亂舞', emoji: '⚔️', cd: 10, cost: 35, tiers: [{ name: '雙刀亂舞', fx: { pct: 300, pctPer: 25, count: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '對附近 {count} 個敵人各造成 1 次 {pct}% 物理傷害（只有 1 個敵人時全部打向同一目標）' }, { name: '疾風亂舞', fx: { add: 1, addPer: 0.2 }, goldBase: 200000, goldGrow: 1.5, desc: '額外攻擊附近 {add} 個敵人（不足 1 個的部分以機率觸發）' }, { name: '強化雙刀', fx: { pct: 25, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化雙刀傷害，額外 +{pct}% 物理傷害' }, { name: '狂暴之舞', fx: { cr: 50, crPer: 10, cd: 200, cdPer: 40, sec: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '施放後爆擊率 +{cr}%、爆擊傷害 +{cd}%，持續 {sec} 秒' }, { name: '鐵血之舞', fx: { pct: 3.5, pctPer: 0.35, sec: 3, gap: 0.35, m: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '施放時使你與 {m} 米內的所有敵人流血：每 {gap} 秒造成最大生命 {pct}% 的傷害，持續 {sec} 秒（自身流血直接扣生命，無法被護盾吸收）' }, { name: '嗜血狂化', fx: { pct: 2, pctPer: 0.2 }, goldBase: 3000000, goldGrow: 1.5, desc: '施放時生命值或護盾每減少 1%，本次技能傷害提升 {pct}%（無護盾時視為護盾 -100%）' }, { name: '暴風之舞', fx: { sec: 3, secPer: 0.3, gap: 0.35 }, goldBase: 5000000, goldGrow: 1.5, desc: '化身暴風在敵人間穿梭 {sec} 秒：每 {gap} 秒自動施放 1 次雙刀亂舞；期間無法普攻但可施放技能' }] }
 };
 
 /* ---- 執行期狀態（絕不掛 G＝保證不入存檔） ----
