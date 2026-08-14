@@ -6652,6 +6652,7 @@ function openTalentModal(kind, id) {
 }
 
 function closeTalentModal() {
+  hideTooltip();
   var overlay = $id('talent-modal');
   if (overlay) overlay.style.display = 'none';
   UI.selTalent = null;
@@ -6700,6 +6701,7 @@ function renderTalentModal() {
   var body = $id('talent-modal-body');
   var overlay = $id('talent-modal');
   if (!body || !overlay || overlay.style.display === 'none') return;
+  if (UI.tooltipAnchor && body.contains(UI.tooltipAnchor)) hideTooltip();
   var snapshot = arguments[0] || uiTalentPanelSnapshot();
   if (!snapshot) return;
   var sel = UI.selTalent;
@@ -7172,6 +7174,7 @@ function sgSkillGroupRowHTML(gid, lvs, loadout) {
 
 /* 新版技能群組的升級彈窗內容（沿用 #skill-modal 外殼）。 */
 function renderSkill2Modal(body, gid, skillsSnapshot, headerSnapshot) {
+  if (UI.tooltipAnchor && body.contains(UI.tooltipAnchor)) hideTooltip();
   var g = SKILLS2[gid];
   var lvs = sgUiLevels(skillsSnapshot, gid) || [];
   var ref = 'sg:' + gid;
@@ -7229,6 +7232,7 @@ function openSkillModal(id) {
   renderSkillModal();
 }
 function closeSkillModal() {
+  hideTooltip();
   var overlay = $id('skill-modal');
   if (overlay) overlay.style.display = 'none';
   UI.selSkill = null;
@@ -7273,6 +7277,7 @@ function renderSkillModal() {
   var body = $id('skill-modal-body');
   var overlay = $id('skill-modal');
   if (!body || !overlay || overlay.style.display === 'none') return;
+  if (UI.tooltipAnchor && body.contains(UI.tooltipAnchor)) hideTooltip();
   var skillsSnapshot = arguments[0] || uiSkillsPanelSnapshot();
   var talentSnapshot = arguments[1] || uiTalentPanelSnapshot();
   var headerSnapshot = arguments[2] || uiHeaderPanelSnapshot();
@@ -7600,7 +7605,16 @@ function showEnemyBuffTooltip(anchorEl) {
 function refreshOpenStatTooltip() {
   var tip = $id('sk-tooltip');
   var anchorEl = UI.tooltipAnchor;
-  if (!tip || tip.style.display !== 'block' || !anchorEl || !document.documentElement.contains(anchorEl)) return;
+  if (!tip || tip.style.display !== 'block') return;
+  if (!anchorEl || !document.documentElement.contains(anchorEl)) {
+    hideTooltip();
+    return;
+  }
+  var modalParent = anchorEl.closest ? anchorEl.closest('.modal-overlay, .modal, #skill-modal, #talent-modal') : null;
+  if (modalParent && modalParent.style.display === 'none') {
+    hideTooltip();
+    return;
+  }
   if ((anchorEl.getAttribute && anchorEl.getAttribute('data-tt-title')) || (anchorEl.classList && anchorEl.classList.contains('res'))) {
     setHtmlIfChanged(tip, statTooltipHTML(anchorEl.getAttribute('data-tt-title') || '',
       anchorEl.getAttribute('data-tt-desc') || ''));
@@ -11251,6 +11265,7 @@ function openQuestModal() {
 }
 
 function closeQuestModal() {
+  hideTooltip();
   var modal = $id('quest-modal');
   if (modal) modal.style.display = 'none';
   if (questPanelTimer) { clearInterval(questPanelTimer); questPanelTimer = null; }

@@ -1,5 +1,18 @@
 # PATCH.md
 
+## UI 修復：技能/天賦升滿或關閉彈窗時自動清理 Tooltip 浮動提示（Antigravity 2026-08-14）
+
+- **修復技能/天賦滿級後浮動提示殘留問題**：
+  - 當玩家在技能升級彈窗中點擊升級或一鍵滿級時，按鈕重繪為「已滿級」DOM 節點，導致原按鈕無 `mouseout` 事件，Tooltip 懸停提示（如「花費 20.5M 金幣」）殘留於畫面的問題。
+  - 在 `renderSkillModal`、`renderSkill2Modal` 與 `renderTalentModal` 重繪前，若 `UI.tooltipAnchor` 位於彈窗容器內，自動執行 `hideTooltip()` 清理舊提示。
+- **修復關閉彈窗時 Tooltip 懸浮殘留問題**：
+  - `closeSkillModal()`、`closeTalentModal()` 與 `closeQuestModal()` 關閉彈窗時同步執行 `hideTooltip()`，確保浮動提示不會懸浮在畫面上。
+- **即時掃描與防禦式清理**：
+  - 在 `refreshOpenStatTooltip()` 主迴圈 tick 檢測中，若 `UI.tooltipAnchor` 已從 DOM 脫離或所屬彈窗已被隱藏（`display: none`），自動觸發 `hideTooltip()` 清除殘留 Tooltip。
+- **測試與 DoD 驗證**：
+  - 新增 `tests/tooltip-modal-close.test.cjs` 驗證彈窗關閉與重繪時 Tooltip 的清理機制。
+  - `node --test "tests/*.test.cjs"` 與 `node tools/build_check.cjs` 驗證 100% PASS。
+
 ## 戰鬥畫面優化：下移 BOSS 頂部大血條避免被任務快捷列遮擋（Antigravity 2026-08-14）
 
 - **調整 `js/battle-renderer.js` BOSS 頂部大血條座標**：
