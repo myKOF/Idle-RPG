@@ -1,5 +1,25 @@
 # AI_TASKS.md
 
+## Codex：修正換目標間隔計時起點（2026-08-14）
+
+- 狀態：已完成，等待使用者確認
+- 任務分類：戰鬥目標切換／Timer 行為修正
+- 負責 AI：Codex
+- 任務內容：修正 `config/CSV/game_parameters.csv` 的「換目標間隔」在擊殺目標後的計時語意；擊殺後應先等待參數指定秒數，再重新選取、轉向並追擊下一個敵人。
+- 技術影響：只調整野外戰鬥玩家目標切換與移動閘門；保留既有普攻冷卻、技能冷卻、傷害公式、Worker Protocol 與存檔格式。
+- 允許修改：`docs/AI_TASKS.md`、`js/combat.js`、`index.html`、`tests/multi-enemy.test.cjs`
+- 禁止修改：`config/CSV/game_parameters.csv` 的數值、戰鬥公式、存檔格式、Worker Protocol、其他 AI 進行中的檔案。
+- 前置依賴：既有 `TARGET_SWITCH_DELAY` 參數與普攻擊殺換目標流程已存在；目標檔案衝突預檢無來源。
+- 測試要求：換目標 Timer 回歸測試、相關 JS `node --check`、`npm.cmd run build`、完整 `npm.cmd test`、`git diff --check`。
+- 完成條件：擊殺後在等待時間內不移動／不重新選目標；等待結束後才可轉向下一個敵人；既有攻擊與技能流程不回歸。
+- 需要 Claude Review：否，屬單一戰鬥 Timer 小修正；如測試發現跨模組風險再回報。
+- 需要 Antigravity 驗證：建議，確認實機體感為「擊殺→原地等待→轉向」。
+- 驗證結果：新增換目標回歸測試通過；`node --check js/combat.js` 通過；`npm.cmd run build` 通過（272 個檔案）；完整 `npm.cmd test` 為 1349/1350，唯一失敗是既有 `tests/multi-enemy.test.cjs` 菁英數量表單調性斷言，與本次修改無關；`git diff --check` 通過。
+- 已知風險：技能仍依自己的冷卻規則運作；本次修正的是普攻鎖定目標的移動／重新選取時機，尚未完成瀏覽器實機體感驗證。
+- 未完成項目：無。
+- 後續接手者：使用者確認「擊殺→等待→轉向」體感後合併至整合分支。
+
+
 ## Codex：新版技能近戰距離與技能特效優化（2026-08-14）
 
 - 狀態：已完成
