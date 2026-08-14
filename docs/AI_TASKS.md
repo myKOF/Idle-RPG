@@ -2890,3 +2890,23 @@ Commit：
 驗證報告：`docs/ROI_AGENT_VERIFICATION_2026-08-03.md`
 
 完成後交給：主整合工作區。
+
+## 任務：新版技能第二批——反擊（counter，被動）＋嗜血狂怒（bloodrage，爆發）
+
+使用者需求：依「神力之巔_記事錄.xlsx／技能」頁籤新增的兩個技能，用新版技能系統（js/skills2.js 8 群組 × 7 階版型）實作，不另造系統。
+
+任務狀態：已完成（待 Antigravity 實機驗證）
+
+任務分類：新功能
+
+負責 AI：Claude
+
+任務內容：SKILLS2 新增 counter／bloodrage 兩群組（各 7 階）；反擊引擎（受傷機率反擊、招架、強化反擊、反擊盾、破甲疊層、二次反擊、狂化反殺）掛在 doMonsterAttack 收斂點（野外＋高塔共用）；嗜血狂怒（攻速/爆傷/總傷/反震乘算、連擊加成、擊殺疊連擊與延時、血飲術反噬）以 SKILL2_RT.rage 為權威、sgBloodrage 增益跟隨；formula.js 新增玩家攻擊端狂怒最終乘區與「敵人受傷」通知掛鉤（血飲術）；被動群組不可施放/不可裝載（UI 以「被動」標示取代裝備鈕）；statset 白名單新增 block/blockred（招架/破甲測試用）。
+
+技術影響：js/skills2.js、js/status.js（+sgBloodrage/sgArmorBrk）、js/combat.js（反擊鉤子、爆傷/反震/連擊接線、sgDefBrk 併入減防）、js/formula.js（狂怒乘區＋受傷通知）、js/legendary.js（預覽命中標記 _sgPreview）、js/skills.js、js/save.js、js/ui.js、js/gm_exec.js、config Skills2/Status 表（56/40 列，round-trip 0 變更）、index.html 與 worker 版號。
+
+測試要求：tests/skill2-counter-bloodrage.test.cjs（新增 12 項）；skill2-system 群組清單釘值更新；combo-hits 接線釘值更新；skill2-ui 版號釘值更新。npm test 1375/1376（唯一失敗＝既有 multi-enemy 菁英數量表，與本次無關）；build 277/277。
+
+已知風險：設計文檔「狂暴」升級效果寫「每級+30%普攻傷害」與效果欄（爆傷乘算）不一致，暫按同組模式訂每級 +2%（Skills2 表可調），待使用者裁決；專屬特效（counter-riposte/armor-break/bloodrage-aura/counter-sweep 變體）僅發事件、視覺待 Codex/Antigravity 補。
+
+完成後交給：使用者（merge ai/claude → develop 時注意 combat.js/index.html/bridge.js 與 Codex 進行中修改的重疊）。
