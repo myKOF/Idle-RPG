@@ -1009,11 +1009,11 @@ var VFX_HIT_STAGGER_SEC = 0.09;   // 多段傷害每一段之間的間隔
 
 /* 投射物是「等速飛行」而不是「固定飛行時間」：飛行秒數 = 我方到敵人中心的距離 ÷ 速度。
    固定時間的話，打第 1 行的子彈會慢吞吞、打第 4 行的又太快，數字跟命中永遠對不上。
-   單位是「格/秒」——棋盤 4 格寬，所以最近約 0.07 秒、最遠（右上/右下角）約 0.3 秒。
-   上下限用來避免貼臉時瞬間到、以及極端棋盤設定下拖太久。 */
-var VFX_PROJECTILE_SPEED_CELLS = 14;
-var VFX_TRAVEL_MIN_SEC = 0.06;
-var VFX_TRAVEL_MAX_SEC = 0.45;
+   單位是「格/秒」；上下限用來避免貼臉時瞬間到、以及極端棋盤設定下拖太久。 */
+var VFX_PROJECTILE_SPEED_MULTIPLIER = 0.75;
+var VFX_PROJECTILE_SPEED_CELLS = 14 * VFX_PROJECTILE_SPEED_MULTIPLIER;
+var VFX_TRAVEL_MIN_SEC = 0.06 / VFX_PROJECTILE_SPEED_MULTIPLIER;
+var VFX_TRAVEL_MAX_SEC = 0.45 / VFX_PROJECTILE_SPEED_MULTIPLIER;
 
 /* 無屬性技能的特效主色：依技能系統分類取色（js/vfx.js 與 skillVfxSpec 共用）。 */
 var VFX_CAT_COLORS = {

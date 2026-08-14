@@ -1369,8 +1369,8 @@ textarea#save-io {
   font-size: var(--enemy-hit-font-size);
   /* 上浮動畫完成時間；時間越短，視覺上浮速度越快。 */
   --enemy-hit-rise-duration: 0.8s;
-  /* 數字存在時間；會同步控制淡出動畫與 DOM 移除時間。 */
-  --enemy-hit-lifetime-base: 0.8s;
+  /* 數字存在時間；以原本存活時間除以需求的消失速度倍率。 */
+  --enemy-hit-lifetime-base: 0.5925926s;
   --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 10 !important;
 }
@@ -1381,7 +1381,7 @@ textarea#save-io {
   --enemy-hit-font-size: 15px;
   font-size: var(--enemy-hit-font-size);
   --enemy-hit-rise-duration: 1s;
-  --enemy-hit-lifetime-base: 1s;
+  --enemy-hit-lifetime-base: 0.8333333s;
   --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 20 !important;
 }
@@ -1392,7 +1392,7 @@ textarea#save-io {
   --enemy-hit-font-size: 16px;
   font-size: var(--enemy-hit-font-size);
   --enemy-hit-rise-duration: 1s;
-  --enemy-hit-lifetime-base: 1s;
+  --enemy-hit-lifetime-base: 0.7407407s;
   --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 10 !important;
 }
@@ -1403,7 +1403,7 @@ textarea#save-io {
   --enemy-hit-font-size: 20px;
   font-size: var(--enemy-hit-font-size);
   --enemy-hit-rise-duration: 1.2s;
-  --enemy-hit-lifetime-base: 1.2s;
+  --enemy-hit-lifetime-base: 1s;
   --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 20 !important;
 }
@@ -1524,7 +1524,7 @@ textarea#save-io {
 }
 
 .float-txt.player-event.skill-cast-total {
-  animation-duration: 2.1s;
+  animation-duration: 3s;
 }
 
 .float-txt.player-event.skill-cast-left {

@@ -65,6 +65,17 @@ test('投射物是等速飛行：距離越遠飛越久，不是固定時間', ()
   assert.ok(tNear >= c.VFX_TRAVEL_MIN_SEC && tFar <= c.VFX_TRAVEL_MAX_SEC);
 });
 
+test('投射物速度統一降低 25%，且上下限同步延長', () => {
+  const c = loadContext();
+  const target = enemy(340, 0);
+  assert.equal(c.VFX_PROJECTILE_SPEED_MULTIPLIER, 0.75);
+  assert.equal(c.VFX_PROJECTILE_SPEED_CELLS, 10.5);
+  assert.equal(c.VFX_TRAVEL_MIN_SEC, 0.08);
+  assert.equal(c.VFX_TRAVEL_MAX_SEC, 0.6);
+  assert.equal(c.bfTravelSeconds(target), c.bfTravelDistance(target) /
+    (c.VFX_PROJECTILE_SPEED_CELLS * c.BF_UNIT));
+});
+
 test('打遠處的敵人，傷害數字比打近處的晚跳出來', () => {
   function delayOf(x, y) {
     const c = loadContext();
@@ -95,6 +106,7 @@ test('投射物的動畫長度與傷害數字用同一組飛行時間（不會�
   assert.match(vfx, /var tr = \(travelMs && travelMs\[rt\.idxs\[t\]\] > 0\) \? travelMs\[rt\.idxs\[t\]\] : 0;/);
   assert.match(vfx, /vfxProjectile\(s, layer, from, pt, delay, tr\)/);
   assert.match(vfx, /d\.style\.animationDuration = flight \+ 'ms'/);
+  assert.match(vfx, /function vfxProjectileFlightMs\(travelMs, fallbackDurationSec\)/);
   /* shim 是逐欄挑選後才送出事件的，漏掉 travelMs 的話畫面會退回預設飛行時間，
      變成「數字到了子彈還在飛」——實機驗證時就是這樣抓到的。 */
   const shim = fs.readFileSync(path.join(root, 'js/worker/shim.js'), 'utf8');
