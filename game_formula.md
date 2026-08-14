@@ -866,9 +866,9 @@ BOSS 裝備實際機率 = 表值 × `(1 + 有效掉寶率% / 100)`；每個品�
 | 多敵人技能傷害 | 當目標數 `N>1`：每個命中目標各自承受 `原始傷害 × (1 + 範圍傷害%)`，不因 `N` 分攤；單一目標不套用範圍傷害加成，也不除以目標數。技能另有明確固定總量設計時，依該技能效果結算 |
 | 多段技能 | 上式為**每段**傷害，段數 `hits` 段各自結算（暴擊、閃避獨立判定） |
 | 普攻目標 | 一次只攻擊一名敵人，不套用範圍傷害；目前鎖定第一名存活敵人，死亡後才切換 |
-| 實際冷卻 | `技能冷卻 × (1 - 冷卻縮減%)` |
+| 實際冷卻 | `max(技能最低施放間隔, 技能冷卻 × (1 - 冷卻縮減%))`；先計算各技能自身冷卻，再套用最低值 |
 | 施放硬直 | `0 秒`；普攻計時器與技能施放並行，不因技能施放而延後 |
-| 技能共用冷卻(GCD) | `0.4 秒`（固定值，不受冷卻縮減影響；限制技能彼此的最短施放間隔，普攻擊殺後換目標也沿用此間隔） |
+| 技能最低施放間隔 | `0.4 秒`（固定值，不受冷卻縮減影響；各技能只套用在自己的冷卻上，不會阻塞其他技能，普攻擊殺後換目標也沿用此間隔） |
 | 升級費用 | `⌊20000 × 當前等級 + 20^(1 + 當前等級/10)⌋` 金幣（上限 5,000,000；降級全額退還該級費用） |
 | 等級上限 | **全部技能**（一般/被動/融合/潛力）`10`；轉生後（任一轉數）`15`（2026-07-30 改制） |
 | 里程碑 | **2026-07-30 改制：移除 4/8 級門檻**——`UNLOCKS` 表的附加/強化效果自 Lv.1 全數附加（依門檻由小到大淺覆蓋，最高檔為最終值）；`effectiveFx` 不再看等級 |
@@ -936,7 +936,7 @@ BOSS 裝備實際機率 = 表值 × `(1 + 有效掉寶率% / 100)`；每個品�
 | resourceConvert（資源轉換） | `mpDump:{pctPer10Mp}`、`shieldBurst:{convertPct,capAtkMult,stunDur}`、`hpSacrifice:{hpPct,ampPct,hotRefundPct,dmgToShieldPct}`、`overhealDmg:{pct,cap,windowSec}` | `mpDump`：耗盡全部 MP，每 10 點被耗 MP 本技 +pct%；`shieldBurst`：引爆當前護盾 convertPct% 化追加傷害（護盾實際消耗，上限 `魔攻 × SHIELD_BURST_ATK_MULT_CAP`）；`hpSacrifice`：獻祭當前生命 hpPct%（不致死）換本技 +ampPct%；`overhealDmg`：本次治療溢出 × pct% 轉真傷（≤ `OVERHEAL_DMG_CAP_PCT`；`windowSec` 開轉傷窗，窗內其他治療技溢出比照轉傷，狀態存 `SKILL_RT.overhealWin`） |
 | stackCharge（疊層引爆） | `charge:{name,add/addRange/addCrit/addBlock,max,dur,source:'cast'/'attackHit'/'hitTaken',burst:{multPct,anyMultPct,scope,stunDur,keepStacks}}` | 各輸入源（施放/普攻命中/被打格擋）疊層存 `SKILL_RT.charges`；疊滿後下一次符合 scope 的技能在乘算區 ×(1+multPct%) 並消耗層數（`keepStacks` 留層；`anyMultPct`＝任意技可引爆的折減倍率）；`source:'cast'`＋`scope:'self'` 引擎（霜晶共鳴）疊滿判定計入本次施放將疊的層數——疊到滿層的那一次施放即引爆 |
 | dotSynergy（DoT 互動） | `dotDetonate:{pct,cap,reapplyPct,stunDur}`、`dotPulse:{ticks,powerPct}`、`dotHaste:{mult,dur}`、`dotAmpPer`、`requiresTargetDot`、`dotSplashOnKill` | `dotDetonate`：目標剩餘 DoT 總值 × pct% 真傷直扣並結清（pct ≤ `DOT_DETONATE_CAP_PCT`；`reapplyPct` 引爆後以 N% 重新點燃）；`dotPulse`：所有 DoT 立即額外跳 ticks 次、每跳 powerPct%（不清空不耗秒）；`dotHaste`：跳動頻率 ×mult（持續時間不變，`tickDots` 乘 dt）；`dotAmpPer`：目標每 1 個 DoT 你對其技能 +N%；`requiresTargetDot`：目標無 DoT 不施放（castAI 條件）；`dotSplashOnKill`：死亡時 DoT 剩餘 N% 濺射隨機存活敵 |
-| freeCast（免費施放） | `freeNext:{count,dur,scope,ampPct,noGcd,cdHalf}`、`passiveNthFree:{n,ampPct,noGcd}` | 接下來 N 個（scope 內）技能 0 耗魔（扣魔行檢查遞減，狀態存 `SKILL_RT.freeCasts`）；`ampPct` 免費那次加乘、`noGcd` 免 0.4 秒 GCD、`cdHalf` 冷卻減半；**0 耗魔技能不消耗免費次數**（免費對其無收益）；`passiveNthFree`：每第 n 次技能施放免費（計數 `SKILL_RT.nthCastCount`） |
+| freeCast（免費施放） | `freeNext:{count,dur,scope,ampPct,noGcd,cdHalf}`、`passiveNthFree:{n,ampPct,noGcd}` | 接下來 N 個（scope 內）技能 0 耗魔（扣魔行檢查遞減，狀態存 `SKILL_RT.freeCasts`）；`ampPct` 免費那次加乘、`cdHalf` 冷卻減半；`noGcd` 為舊資料相容欄位，現在不再影響施放節奏；**0 耗魔技能不消耗免費次數**（免費對其無收益）；`passiveNthFree`：每第 n 次技能施放免費（計數 `SKILL_RT.nthCastCount`） |
 | buffExtend（時光延續） | `buffExtend:{sec,scope:'selfBuffs',lowThreshold2x}`、`buffExtend2:{scope:'targetDots'}`、`passiveCastExtend:{sec,alsoDots,lowThreshold2x}` | 迭代自身增益／目標 DoT 的 `until` +sec 秒；**每個增益/DoT 累計延長 ≤ 原始持續 × `BUFF_EXTEND_CAP_PCT`%**（依 applyBuff/applyDot 補存的 `dur`/`ext` 欄計）；`lowThreshold2x`＝剩餘 < `BUFF_EXTEND_LOW_REMAIN_SEC`（2）秒時延長加倍 |
 | periodicField（領域） | `field:{name,dur,tickSec,tickPct,elem,takenAmpPct}` | 施放時快照傷害，每 tickSec 秒以 tickPct% 打全場（下限 0.1 秒防死迴圈）；域內敵人受指定類傷害 +takenAmpPct%；領域清單存 `SKILL_RT.fields`，與 echo 共用 `tickSkillSchedulers` 排程器（塔內同樣鏡射） |
 
@@ -995,11 +995,11 @@ BOSS 裝備實際機率 = 表值 × `(1 + 有效掉寶率% / 100)`；每個品�
 | 傷害結算 | 每次命中走與舊技能同一條 `resolveHit` 管線（防禦、爆擊、格擋、護盾、敵種倍率、裝備元素攻擊、虛弱增傷）；「N% 技能傷害」的衍生命中＝`攻擊力 × 群組傷害% × N%` 再走 `resolveHit`；「傷害的 N% 擴散」＝實際造成傷害 × N% 直接扣血（不再過防禦） |
 | 小數次數／目標數 | 整數部分保底、小數部分為額外 1 次的機率（`sgRollCount`） |
 | 距離（米） | `1 米 ＝ 近戰攻擊距離 ÷ 5`（設計基準：近戰＝5 米；`bfMeterPx`，調整 `BF_MELEE_RANGE` 比例自動跟隨） |
-| 冷卻 | `max(GCD, (群組冷卻 − 極速斬固定縮減) × 全域 CDR)`；神速飛刀的爆擊縮冷卻直接扣減冷卻中的剩餘秒數 |
+| 冷卻 | `max(技能最低施放間隔, (群組冷卻 − 極速斬固定縮減) × 全域 CDR)`；神速飛刀的爆擊縮冷卻直接扣減冷卻中的剩餘秒數 |
 | 流血／中毒 | 每跳傷害＝`技能傷害基準 × dotPct%`；作用間隔可被強化流血縮短（**跳更快＝總傷更高**，以 dps＝每跳÷間隔覆寫狀態表換算）；狀態列 `sgBleed`／`sgPoison`／`sgIronBleed`（Status 表） |
 | 攻速增益（狂風斬） | 突破攻速上限：與 `potentialVelocityFactor` 同一乘算區（普攻頻率 × (1 + 狂風%)），不進入 `st.aspd` 的上限夾制 |
 | 嗜血狂化 | 本次傷害 × `(1 + (生命損失% + 護盾損失%) × 每1%加成%)`；無護盾視為護盾損失 100% |
-| 暴風之舞 | 化身期間每隔固定秒數自動施放 1 次雙刀亂舞（不扣魔、不進冷卻、不占 GCD、不重複觸發化身）；期間無法普攻、可施放其他技能 |
+| 暴風之舞 | 化身期間每隔固定秒數自動施放 1 次雙刀亂舞（不扣魔、不進自身冷卻、不重複觸發化身）；期間無法普攻、可施放其他技能 |
 
 ---
 
@@ -1026,7 +1026,7 @@ BOSS 裝備實際機率 = 表值 × `(1 + 有效掉寶率% / 100)`；每個品�
 
 - **資料**：`js/skills.js` 的 `POTENTIAL_TALENTS`（10 個，欄位 `type/cd/base/per/dmgType/dur/mech`；2026-07-21 由 data.js 移入，隨 **Skills.xlsx** 調適——`系統分類=potential` 的列，數值欄＝冷卻/基礎值/每級值/持續秒，列順序＝解鎖順序）。舊版被動數值型潛力（時空折疊、第二命題…）整批刪除，其接線（`potentialCdr/Revive/LootDup/InvCap/ElemAtk/Execute/ShieldOverflow/ManaRefund/TowerTime/Offline`）全數移除。
 - **等級與消耗**：**比照一般技能，無各自數值上限**——等級上限 `potentialSkillMaxLv` = `10`、轉生後 `15`（2026-07-30 改制，走「轉生對照表」param e）；升 1 級消耗 1 點既有技能點，金幣公式沿用 `skillUpgradeCost(Lv) = min(5,000,000, floor(5,000 × Lv + 20^(1 + Lv/10)))`。當前效果值 `potentialSkillValue = base + per × Lv`（不再夾數值上限）。
-- **施放**（2026-07-21 改版：裝載欄模型）：**主動**潛力技能與一般技能相同，需裝入「裝載欄」才會施放——裝載鍵＝`'potential:<id>'`，共用 `pickAndCastSkill` 的施放排序與技能 GCD；普攻計時器與技能施放並行，不受施放影響。冷卻共用 `pEnt.skillCds`（實際冷卻＝`cd ×(1 − min(CDR,60%)/100)`，不受時間坍縮突破影響），無法力消耗、需有存活目標；**被動**（極速之力、混沌雙修）與**被動觸發**（不屈意志）學會即常駐，無需裝備（升級面板顯示「🌀 常駐」）。潛力等級歸零（降級/刪除）時自動卸下裝載。
+- **施放**（2026-07-21 改版：裝載欄模型）：**主動**潛力技能與一般技能相同，需裝入「裝載欄」才會施放——裝載鍵＝`'potential:<id>'`，共用 `pickAndCastSkill` 的施放排序；普攻計時器與技能施放並行，不受施放影響。冷卻共用 `pEnt.skillCds`（實際冷卻＝`max(技能最低施放間隔, cd ×(1 − min(CDR,60%)/100))`，不受時間坍縮突破影響），無法力消耗、需有存活目標；**被動**（極速之力、混沌雙修）與**被動觸發**（不屈意志）學會即常駐，無需裝備（升級面板顯示「🌀 常駐」）。潛力等級歸零（降級/刪除）時自動卸下裝載。
 - **顯示**：潛力技能沿用一般技能的提示與升級面板（`data-sk="potential:id"` → `showSkillTooltip` / `openSkillModal` / `describeSkill` → `describePotentialSkill`），不另寫一套。
 
 | 技能 | 類型 | cd(s) | 每級(per) | 機制與公式 |

@@ -2550,7 +2550,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
     ? legendaryPrepareSkillCast(pEnt, targets, id, sk, fx, lv, st, opts)
     : { fx: fx, effectMult: 1, cdMult: 1, manaCost: null, repeat: 1 };
   fx = legendaryPrep.fx;
-  // 45 新技能：施放前置（freeCast 族免費判定／零式節律計數／連段窗判定）——必須在扣魔與寫入冷卻/GCD 前完成
+  // 45 新技能：施放前置（freeCast 族免費判定／零式節律計數／連段窗判定）——必須在扣魔與寫入自身冷卻前完成
   var rtPre = skillRtPreCast(pEnt, sk, fx, id, lv, st);
   var isFreeCast = rtPre.free || !!(opts && opts.free);
   var manaCost = legendaryPrep.manaCost === null
@@ -2562,11 +2562,11 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
   }
   if (!pEnt.skillCds) pEnt.skillCds = {};
   if (!(opts && opts.noCooldown)) {
-    pEnt.skillCds[id] = skillCdFor(sk, buffVal(pEnt, 'chronoCdr')) * (legendaryPrep.cdMult || 1); // 潛力【時間坍縮】：施放時額外 CDR
-    if (rtPre.cdHalf) pEnt.skillCds[id] *= 0.5; // 45 新技能（freeCast 族）：受惠技冷卻減半（連禱聖言 M8）
+    var cooldown = skillCdFor(sk, buffVal(pEnt, 'chronoCdr')) * (legendaryPrep.cdMult || 1); // 潛力【時間坍縮】：施放時額外 CDR
+    if (rtPre.cdHalf) cooldown *= 0.5; // 45 新技能（freeCast 族）：受惠技冷卻減半（連禱聖言 M8）
+    pEnt.skillCds[id] = (typeof skillCooldownWithMinimum === 'function')
+      ? skillCooldownWithMinimum(cooldown) : Math.max(0.4, cooldown);
   }
-  // 技能只佔用技能 GCD；普攻有自己的 atkCd，與技能施放並行，不受技能施放影響。
-  pEnt.skillGcd = (rtPre.noGcd || (opts && opts.noGcd)) ? 0 : SKILL_GLOBAL_COOLDOWN; // 45 新技能（freeCast 族）：免 GCD 施放
   // area＝本次施放打在地上的那塊圓形區域（領域類效果據此決定之後每跳打誰）
   var out = {
     killed: false, dmg: 0, area: placement.area,
@@ -3009,7 +3009,6 @@ function pickAndCastSkill(pEnt, target, floatSel) {
   var st = getStats();
   if (!pEnt.skillCds) pEnt.skillCds = {};
   if (skillCastInProgress(pEnt)) return null;
-  if ((pEnt.skillGcd || 0) > 0) return null;
   ensureSkillReadyOrder(pEnt);
   var lo = G.player.loadout || [];
   var candidates = [];
@@ -3087,10 +3086,6 @@ function pickAndCastSkill(pEnt, target, floatSel) {
   });
 }
 function tickSkillCds(pEnt, dt) {
-  if (pEnt.skillGcd > 0) {
-    pEnt.skillGcd = Math.max(0, pEnt.skillGcd - dt);
-    if (pEnt.skillGcd < 1e-6) pEnt.skillGcd = 0;
-  }
   if (pEnt.skillCds) {
     for (var k in pEnt.skillCds) {
       if (pEnt.skillCds[k] > 0) {
@@ -3793,7 +3788,7 @@ function describeSkill(id, lv, skipFusionDetail, fusions) {
   pushAmpDesc(fx.skillAmp);
   pushAmpDesc(fx.skillAmp2);
   if (fx.comboWindow) p.push('開啟 ' + fxNumStr(fx.comboWindow.dur, lv) + ' 秒連段窗：窗內施放技能傷害 +' +
-    fxNumStr(fx.comboWindow.pct, lv) + '% 並重開新窗（斷檔失效）' + (fx.comboWindow.noGcd ? '；連段中免技能共用冷卻' : ''));
+    fxNumStr(fx.comboWindow.pct, lv) + '% 並重開新窗（斷檔失效）');
   // stackCharge 族：疊層引擎＋疊滿引爆
   if (fx.charge) {
     var chd = fx.charge;
@@ -3855,7 +3850,6 @@ function describeSkill(id, lv, skipFusionDetail, fusions) {
     var fns = (fnd.dur ? fxNumStr(fnd.dur, lv) + ' 秒內' : '') + '接下來 ' + fxNumStr(fnd.count, lv) + ' 個' +
       (fnd.scope ? scopeLabel(fnd.scope) : '技能') + ' 0 耗魔';
     if (fnd.ampPct) fns += '，效果 +' + fxNumStr(fnd.ampPct, lv) + '%';
-    if (fnd.noGcd) fns += '，免技能共用冷卻';
     if (fnd.cdHalf) fns += '，冷卻減半';
     p.push(fns);
   }
@@ -3950,7 +3944,7 @@ function describeSkill(id, lv, skipFusionDetail, fusions) {
   if (fx.passiveDotHaste) p.push('你的持續傷害跳動頻率 ×' + fxNumStr(fx.passiveDotHaste.mult, lv) + '（持續時間不變、等效總傷提高）');
   if (fx.dotSplashOnKill) p.push('目標死亡時，其身上持續傷害以 ' + fxNumStr(fx.dotSplashOnKill, lv) + '% 強度濺射至隨機存活敵人（剩餘時間照搬）');
   if (fx.passiveNthFree) p.push('每第 ' + statStr(fx.passiveNthFree.n) + ' 次技能施放免費，且該次效果 +' +
-    fxNumStr(fx.passiveNthFree.ampPct, lv) + '%' + (fx.passiveNthFree.noGcd ? '；免費那次免技能共用冷卻' : ''));
+    fxNumStr(fx.passiveNthFree.ampPct, lv) + '%');
   if (fx.passiveExtraHit) {
     var pxd = fx.passiveExtraHit;
     p.push('多段技能（' + statStr(pxd.minHits || 2) + ' 段以上）追加 ' + statStr(pxd.count || 1) + ' 段幻影斬（每段 ' +

@@ -763,7 +763,7 @@ scalarOpt('formula', 'OFFLINE_STAGE_ROUND', '10-離線', '計算等級', 1);
 scalarOpt('formula', 'OFFLINE_STAGE_RATIO', '10-離線', '計算等級', 2);
 scalarOpt('formula', 'OFFLINE_ELITE', '10-離線', '怪物種類', 0);
 scalar('formula', 'SKILL_CAST_LOCK', '9-技能', '施放硬直', 0);
-scalar('formula', 'SKILL_GLOBAL_COOLDOWN', '9-技能', '技能共用冷卻(GCD)', 0);
+scalar('formula', 'SKILL_MIN_CAST_INTERVAL', '9-技能', '技能最低施放間隔', 0);
 // ESSENCE_SALVAGE_CHANCE_BY_RARITY = [0.1,0.5,1,2,4,8,20,100,100]
 arrayContent('formula', 'ESSENCE_SALVAGE_CHANCE_BY_RARITY',
   index['6-分解精華機率']['附魔精華拆解機率'].slice(0, 9).join(', '), 'ESSENCE_SALVAGE_CHANCE_BY_RARITY');

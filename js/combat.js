@@ -33,7 +33,7 @@ function toggleCombatPaused() {
 }
 
 function newPlayerEntity(st) {
-    return { hp: st.hp, mp: st.mp, shield: 0, shieldMax: 0, shieldMaxVersion: SHIELD_MAX_VERSION, atkCd: 1 / st.aspd, _targetSwitchCd: 0, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {}, _lastStandAt: 0, _skillCastRemaining: 0, _skillCastId: '' };
+    return { hp: st.hp, mp: st.mp, shield: 0, shieldMax: 0, shieldMaxVersion: SHIELD_MAX_VERSION, atkCd: 1 / st.aspd, _targetSwitchCd: 0, skillCds: {}, buffs: {}, dots: [], effects: {}, _lastStandAt: 0, _skillCastRemaining: 0, _skillCastId: '' };
 }
 
 function targetSwitchDelaySeconds() {
@@ -58,11 +58,11 @@ function tickTargetSwitchDelay(pEnt, dt) {
     return pEnt._targetSwitchCd <= 0;
 }
 
-// 普攻擊殺後換目標的最短間隔沿用技能 GCD；attackRate 用來換算成 atkCd 計時器單位，
+// 普攻擊殺後換目標的最短間隔沿用技能最低施放間隔；attackRate 用來換算成 atkCd 計時器單位，
 // 確保攻速增益或減速不會把實際的固定間隔縮短或意外延長。
 function applyBasicAttackKillGap(pEnt, attackRate) {
     if (!pEnt) return;
-    var gapSec = (typeof SKILL_GLOBAL_COOLDOWN === 'number') ? SKILL_GLOBAL_COOLDOWN : 0.4;
+    var gapSec = (typeof skillMinimumInterval === 'function') ? skillMinimumInterval() : 0.4;
     var rate = (typeof attackRate === 'number' && attackRate > 0) ? attackRate : 1;
     pEnt.atkCd = Math.max(pEnt.atkCd || 0, gapSec * rate);
     applyTargetSwitchDelay(pEnt, targetSwitchDelaySeconds());
@@ -1248,7 +1248,7 @@ function onFieldKill(m) {
     if (FIELD.player && FIELD.player._lockTarget === m) {
         FIELD.player._lockTarget = null;
         /* 換目標的空檔：打死一隻之後不要在同一個 tick 就轉頭砍下一隻。
-           壓在普攻冷卻上（技能有自己的冷卻與 GCD，不受這裡影響）。 */
+           壓在普攻冷卻上（技能各自使用自身冷卻，不受這裡影響）。 */
         var switchCd = targetSwitchDelaySeconds();
         if (switchCd > 0) {
             FIELD.player.atkCd = Math.max(Number(FIELD.player.atkCd) || 0, switchCd);

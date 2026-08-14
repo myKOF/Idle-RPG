@@ -281,7 +281,6 @@ function reincarnate() {
     FIELD.player.shieldMax = 0;
     FIELD.player.shieldMaxVersion = SHIELD_MAX_VERSION;
     FIELD.player.skillCds = {};
-    FIELD.player.skillGcd = 0;
     // 45 新技能：轉生重置技能冷卻時，一併清空技能執行期狀態（比照 skillCds）
     if (typeof resetSkillRT === 'function') resetSkillRT();
   }

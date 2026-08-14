@@ -164,7 +164,7 @@ function skills2PanelView() {
    =========================================================================== */
 
 /* 本群組目前冷卻秒數：基礎冷卻（極速斬先扣固定秒數）→ 全域 CDR（skillCdFor，含 90% 上限）
-   → 下限為技能共同冷卻（GCD）。 */
+   → 套用該技能自身的最低施放間隔。 */
 function skills2Cooldown(gid, lvs, pEnt) {
   var g = SKILLS2[gid];
   var base = Number(g.cd) || 10;
@@ -172,8 +172,8 @@ function skills2Cooldown(gid, lvs, pEnt) {
   var cd = (typeof skillCdFor === 'function')
     ? skillCdFor({ cd: base }, (typeof buffVal === 'function' ? buffVal(pEnt, 'chronoCdr') : 0))
     : base;
-  var floor = (typeof SKILL_GLOBAL_COOLDOWN === 'number') ? SKILL_GLOBAL_COOLDOWN : 0.4;
-  return Math.max(floor, cd);
+  return (typeof skillCooldownWithMinimum === 'function')
+    ? skillCooldownWithMinimum(cd) : Math.max(0.4, cd);
 }
 
 /* 虛弱（血刃斬第 3 階）：流血中的敵人受到的傷害提高。
@@ -317,7 +317,7 @@ function sgStaggerMs(hitIndex) {
 
 /* ---- 施放總入口 ----
    pEnt 玩家戰鬥實體、target 為敵人陣列（野外）或單一實體（高塔）、gid 群組 id。
-   opts.storm＝暴風之舞自動施放（不扣魔、不進冷卻、不占 GCD、不重複觸發暴風）。
+   opts.storm＝暴風之舞自動施放（不扣魔、不進自身冷卻、不重複觸發暴風）。
    回傳 { killed, dmg, crit } 或 null（無法施放）。 */
 function castSkill2(pEnt, target, gid, floatSel, opts) {
   var g = SKILLS2[gid];
@@ -345,7 +345,6 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
     pEnt.mp = Math.max(0, pEnt.mp - (Number(g.cost) || 0));
     if (!pEnt.skillCds) pEnt.skillCds = {};
     pEnt.skillCds[SG_PREFIX + gid] = skills2Cooldown(gid, lvs, pEnt);
-    pEnt.skillGcd = (typeof SKILL_GLOBAL_COOLDOWN === 'number') ? SKILL_GLOBAL_COOLDOWN : 0.4;
   }
 
   var out = { killed: false, dmg: 0, crit: false };

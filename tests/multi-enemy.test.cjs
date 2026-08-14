@@ -411,7 +411,7 @@ test('真正最後一張地圖通關後仍標記完成並停止出怪', () => {
   assert.equal(context.FIELD.spawnCd, Infinity, '整張地圖打完就停止出怪');
 });
 
-test('普攻擊殺後換目標至少間隔技能 GCD 0.4 秒', () => {
+test('普攻擊殺後換目標至少間隔技能最低施放間隔 0.4 秒', () => {
   const context = loadCombatContext();
   const player = { atkCd: 1 / 4.7 };
 
