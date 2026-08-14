@@ -11073,8 +11073,7 @@ function renderQuestBar() {
   bar.innerHTML = '<span class="quest-dot"></span>' +
     '<span class="quest-name">' + esc(def.name) + '</span>' +
     '<span class="quest-progress">（' + view.taskProg + ' / ' + def.count + '）</span>' +
-    '<span class="quest-reward">' + esc(def.rewardLabel) + '</span>' +
-    (view.taskReady ? '<span class="quest-state-doing">可領取！</span>' : '');
+    '<span class="quest-reward">' + esc(def.rewardLabel) + '</span>';
   bar.setAttribute('data-tt-title', '任務 ' + def.order + ' / ' + TASKS.length);
   bar.setAttribute('data-tt-desc', view.taskReady ? '任務已完成，點擊領取獎勵' : '點擊開啟任務總覽');
 }
