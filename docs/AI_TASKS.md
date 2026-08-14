@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## Codex：補充戰鬥特效模組註釋（2026-08-14）
+
+- 狀態：已完成
+- 任務分類：程式碼可讀性／VFX 維護文件
+- 負責 AI：Codex
+- 任務內容：在不改變執行行為的前提下，補充 `js/vfx.js` 各主要區塊、事件分派、品質降載、節點生命週期與閃電鏈彈射流程的詳細註釋。
+- 允許修改：`docs/AI_TASKS.md`、`js/vfx.js`
+- 禁止修改：VFX 執行邏輯、Worker Protocol、戰鬥公式、數值配置、存檔格式及其他 AI 進行中的檔案。
+- 前置依賴：已完成 `js/vfx.js` 與 `docs/AI_TASKS.md` 的衝突預檢，未發現其他副本或分支的修改來源。
+- 測試要求：`node --check js/vfx.js`、VFX／技能相關定向測試、`git diff --check`。
+- 完成條件：主要函式責任、DOM 座標／節點生命週期、閃電鏈第一跳與後續彈射、Canvas／DOM 事件入口及 Full／Reduced／Off 行為均有清楚註釋，且功能測試結果不變。
+- 驗證結果：`node --check js/vfx.js` 通過；VFX／技能定向測試 28/28 通過；`npm.cmd run build` 通過（278 個檔案）；`git diff --check` 通過。
+- 已知風險：未修改執行邏輯；瀏覽器實機畫面仍沿用既有 VFX 行為，沒有新增視覺回歸風險。
+- 完成後交給：使用者確認。
+
 ## Antigravity：新版主動技能系統全群組完整測試（2026-08-14）
 
 - 狀態：已完成
