@@ -1,5 +1,12 @@
 # PATCH.md
 
+## 戰鬥畫面優化：下移 BOSS 頂部大血條避免被任務快捷列遮擋（Antigravity 2026-08-14）
+
+- **調整 `js/battle-renderer.js` BOSS 頂部大血條座標**：
+  - 將 BOSS 頂部大血條容器的 Y 座標由 `30px` 調整為 `68px`（`BOSS_BAR_Y = 68`），在視窗 resize 時同步更新。
+  - BOSS 名稱標籤（`y: -22px`，實際位置約 `y: 46px`）與血條本體（`y: 68px`）完整下移至頂部任務快捷列（`#quest-bar`，佔據 `y: 8~42px`）下方，避免被任務條遮擋。
+  - 快取版本升級：`index.html` 之 `battle-renderer.js` 快取版本號 bump 至 `v=1.6.14`。
+
 ## 任務快捷列優化：移除「可領取！」文字避免覆蓋右側控制按鈕（Antigravity 2026-08-14）
 
 - **優化 `#quest-bar` 任務快捷列顯示**：
