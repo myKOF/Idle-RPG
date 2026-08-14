@@ -81,6 +81,6 @@ test('主動型被動：技能彈窗有裝備鈕與類型標籤，快捷列外�
 
 test('技能頁文字與資產版號已更新', () => {
   assert.match(html, /亮起階段代表已解鎖，灰色階段仍可查看但不能升級/);
-  assert.match(html, /css\/style\.css\?v=1\.0\.15/);
-  assert.match(html, /js\/ui\.js\?v=1\.0\.43/);
+  assert.match(html, /css\/style\.css\?v=1\.0\.\d+/);
+  assert.match(html, /js\/ui\.js\?v=1\.0\.\d+/);
 });

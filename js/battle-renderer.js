@@ -1470,57 +1470,129 @@ var BattleRenderer = (function () {
     }, 1);
   }
 
-  /* 閃電折線（連鎖/天雷） */
-  function boltPath(g, x0, y0, x1, y1, theme, alpha) {
-    var seg = 6;
+  /* 閃電折線（連鎖/天雷/巨型紫雷） */
+  function boltPath(g, x0, y0, x1, y1, theme, alpha, isMega, isPurple) {
+    var seg = isMega || isPurple ? 8 : 6;
     var pts = [[x0, y0]];
+    var dx = x1 - x0, dy = y1 - y0;
+    var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    var nx = -dy / dist, ny = dx / dist;
+    var maxJitter = Math.min(36, dist * 0.28);
+
     for (var i = 1; i < seg; i++) {
       var k = i / seg;
+      var jitter = (Math.random() * 2 - 1) * maxJitter;
       pts.push([
-        lerp(x0, x1, k) + (Math.random() * 22 - 11),
-        lerp(y0, y1, k) + (Math.random() * 22 - 11)
+        lerp(x0, x1, k) + nx * jitter,
+        lerp(y0, y1, k) + ny * jitter
       ]);
     }
     pts.push([x1, y1]);
-    /* 從天頂劈下：起點粗、接近目標時收細，讓落雷有重量感。 */
+
+    var c1 = isPurple ? 0xc084fc : (parseInt(String(theme.c1).replace('#', '0x')) || 0xffd93d);
+    var cGlow = isPurple ? 0x9333ea : (parseInt(String(theme.glow).replace('#', '0x')) || 0xffb703);
+    var cCore = isPurple ? 0xfdf4ff : 0xffffff;
+
     var last = pts.length - 1;
+    // 1. 外層光暈
     for (i = 0; i < last; i++) {
       var q = i / last;
-      var outerWidth = 13 - 10.5 * q;
+      var outerWidth = isPurple ? (22 - 13 * q) : (isMega ? (18 - 12 * q) : (13 - 10.5 * q));
       g.moveTo(pts[i][0], pts[i][1]).lineTo(pts[i + 1][0], pts[i + 1][1])
-        .stroke({ color: theme.c1, width: Math.max(2.5, outerWidth), alpha: alpha, cap: 'round', join: 'round' });
+        .stroke({ color: cGlow, width: Math.max(3, outerWidth * 1.3), alpha: alpha * 0.6, cap: 'round', join: 'round' });
     }
+    // 2. 中層主色電漿
+    for (i = 0; i < last; i++) {
+      var q2 = i / last;
+      var midWidth = isPurple ? (14 - 9 * q2) : (isMega ? (11 - 7 * q2) : (7 - 4.5 * q2));
+      g.moveTo(pts[i][0], pts[i][1]).lineTo(pts[i + 1][0], pts[i + 1][1])
+        .stroke({ color: c1, width: Math.max(1.8, midWidth), alpha: alpha * 0.95, cap: 'round', join: 'round' });
+    }
+    // 3. 內層極致白芯
     for (i = 0; i < last; i++) {
       var coreQ = i / last;
-      var coreWidth = 4.8 - 3.9 * coreQ;
+      var coreWidth = isPurple ? (5.5 - 3.2 * coreQ) : (isMega ? (4.8 - 3 * coreQ) : (3 - 2 * coreQ));
       g.moveTo(pts[i][0], pts[i][1]).lineTo(pts[i + 1][0], pts[i + 1][1])
-        .stroke({ color: '#ffffff', width: Math.max(0.9, coreWidth), alpha: alpha, cap: 'round', join: 'round' });
+        .stroke({ color: cCore, width: Math.max(0.8, coreWidth), alpha: alpha, cap: 'round', join: 'round' });
+    }
+
+    // 4. 分叉電弧（針對 mega 或 purple）
+    if ((isMega || isPurple) && pts.length > 4) {
+      var bIdx = 2;
+      var sp = pts[bIdx];
+      var bp1 = [sp[0] + nx * 24 + (Math.random() * 8 - 4), sp[1] + ny * 24 + 14];
+      var bp2 = [bp1[0] + nx * 16, bp1[1] + 18];
+      g.moveTo(sp[0], sp[1]).lineTo(bp1[0], bp1[1]).lineTo(bp2[0], bp2[1])
+        .stroke({ color: c1, width: 2.2, alpha: alpha * 0.85, cap: 'round' });
     }
   }
-  function spawnBolt(fromPt, targetId, spec, delaySec) {
+
+  function spawnBolt(fromPt, targetId, spec, delaySec, isMega, isPurple) {
     var theme = themeOf(spec);
     var g = new PIXI.Graphics();
     S.layers.fx.addChild(g);
-    var t = -(delaySec || 0), dur = 0.24, redraws = 0;
+    var t = -(delaySec || 0), dur = isPurple ? 0.32 : (isMega ? 0.28 : 0.24), redraws = 0;
     addFx({
       node: g,
       update: function (dt) {
         t += dt;
         if (t < 0) return true;
         var to = posOf(targetId);
-        var from = fromPt || { x: to.x + (Math.random() * 60 - 30), y: to.y - S.H * 0.55 };
+        var from = fromPt || { x: to.x + (Math.random() * 40 - 20), y: to.y - S.H * 0.65 };
         redraws += dt;
-        if (redraws > 0.05 || g._empty !== false) {
+        if (redraws > 0.04 || g._empty !== false) {
           g._empty = false;
           redraws = 0;
           g.clear();
-          boltPath(g, from.x, from.y, to.x, to.y, theme, Math.max(0, 1 - t / dur));
+          boltPath(g, from.x, from.y, to.x, to.y, theme, Math.max(0, 1 - t / dur), !!isMega, !!isPurple);
         }
-        if (t >= dur * 0.4 && !g._hit) {
+        if (t >= dur * 0.35 && !g._hit) {
           g._hit = true;
-          spawnImpact(to.x, to.y, spec, false);
-          hitReact(targetId, spec.elem || 'lightning', false);
+          spawnImpact(to.x, to.y, spec, !!(isMega || isPurple));
+          hitReact(targetId, spec.elem || 'lightning', !!(isMega || isPurple));
+          if (isMega || isPurple) addShake(isPurple ? 5 : 3);
         }
+        return t < dur;
+      }
+    }, 1);
+  }
+
+  /* 巨型紫色電雷 ＆ 紫色雷印法陣（電紋刻印） */
+  function spawnPurpleThunder(targetId, spec, delaySec) {
+    var purpleSpec = Object.assign({}, spec, { elem: 'lightning', variant: 'purple-thunder', color: '#c084fc' });
+    var theme = { c1: '#c084fc', c2: '#fdf4ff', glow: '#9333ea' };
+    var to = posOf(targetId);
+    var from = { x: to.x + (Math.random() * 30 - 15), y: to.y - S.H * 0.7 };
+
+    // 1. 巨型紫雷劈下
+    spawnBolt(from, targetId, purpleSpec, delaySec, true, true);
+
+    // 2. 紫色雷印法陣（旋轉與收縮烙印）
+    var g = new PIXI.Graphics();
+    g.x = to.x; g.y = to.y;
+    S.layers.fx.addChild(g);
+    var t = -(delaySec || 0), dur = 0.65;
+    addFx({
+      node: g,
+      update: function (dt) {
+        t += dt;
+        if (t < 0) return true;
+        var curTo = posOf(targetId);
+        g.x = curTo.x; g.y = curTo.y;
+        var k = Math.min(1, t / dur);
+        var scale = k < 0.2 ? (0.8 + k / 0.2 * 0.4) : (1.2 * (1 - (k - 0.2) / 0.8 * 0.7));
+        var alpha = k < 0.15 ? k / 0.15 : (1 - (k - 0.15) / 0.85);
+        g.clear();
+        g.rotation = t * 6;
+        // 外圈雷印
+        g.circle(0, 0, 28 * scale)
+          .stroke({ color: 0xc084fc, width: 2, alpha: alpha * 0.9 });
+        // 內圈符文四芒星
+        var r = 16 * scale;
+        g.moveTo(-r, 0).lineTo(r, 0).moveTo(0, -r).lineTo(0, r)
+          .stroke({ color: 0xfdf4ff, width: 2.5, alpha: alpha });
+        g.circle(0, 0, 6 * scale)
+          .fill({ color: 0x9333ea, alpha: alpha * 0.7 });
         return t < dur;
       }
     }, 1);
@@ -2076,6 +2148,12 @@ var BattleRenderer = (function () {
         });
         break;
       case 'rain':
+        if (spec.variant === 'purple-thunder' || spec.variant === 'storm-sigil') {
+          targets.forEach(function (id, ti) {
+            spawnPurpleThunder(id, spec, ti * 0.08);
+          });
+          break;
+        }
         spawnRain(rect, spec);
         targets.forEach(function (id, ti) {
           setTimeout(function () {
@@ -2096,7 +2174,7 @@ var BattleRenderer = (function () {
         targets.forEach(function (id, ti) { spawnCurse(id, spec, ti * 0.05); });
         break;
       case 'chain':
-        /* targets 順序即彈跳路徑：天雷打第一個，之後逐跳 */
+        /* targets 順序即彈跳路徑：首個目標劈下大型天雷，命中後以閃電鏈依序彈射到另外 2 個目標 */
         if (targets.length) {
           if (spec.variant === 'knife-bounce' || spec.variant === 'poison-spread') {
             for (var kb = 1; kb < targets.length; kb++) {
@@ -2115,15 +2193,28 @@ var BattleRenderer = (function () {
             }
             break;
           }
-          spawnBolt(null, targets[0], spec, 0);
-          for (var h = 1; h < targets.length; h++) {
+          // 1. 首目標大型天雷劈下
+          spawnBolt(null, targets[0], spec, 0, true, false);
+          // 2. 依序向另外 2 個目標（最多 3 個目標）彈射
+          var maxBounces = Math.min(targets.length, 3);
+          for (var h = 1; h < maxBounces; h++) {
             (function (hh) {
               var fromId = targets[hh - 1];
               setTimeout(function () {
                 if (fxGate()) return;
-                spawnBolt(posOf(fromId), targets[hh], spec, 0);
-              }, 90 * hh);
+                spawnBolt(posOf(fromId), targets[hh], spec, 0, false, false);
+              }, 110 * hh);
             })(h);
+          }
+          // 超過 3 個目標時其餘細弧光彈射
+          for (var hExtra = 3; hExtra < targets.length; hExtra++) {
+            (function (he) {
+              var fromId2 = targets[he - 1];
+              setTimeout(function () {
+                if (fxGate()) return;
+                spawnBolt(posOf(fromId2), targets[he], spec, 0, false, false);
+              }, 110 * he);
+            })(hExtra);
           }
         }
         break;

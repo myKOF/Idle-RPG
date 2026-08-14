@@ -2435,6 +2435,7 @@ var SKILL_VFX_OVERRIDE = {
   frostNova: { variant: 'nova' },           // 霜之新星：冰環爆發
   // 雷
   chainLightning: { variant: 'chain' },     // 連鎖閃電：天雷劈落＋敵間彈射弧光
+  stormSigil: { fxKind: 'rain', variant: 'purple-thunder' }, // 雷紋刻印（電紋刻印）：天降巨型紫雷＋雷印法陣
   // 毒
   venomCloud: { variant: 'venom' },         // 劇毒雲霧：毒霧彈＋殘留毒雲
   plagueBurst: { variant: 'venomburst' },   // 疫爆術
