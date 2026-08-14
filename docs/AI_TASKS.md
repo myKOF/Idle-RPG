@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex：毒霧感染新增傳染數量參數（2026-08-14）
+- 狀態：已完成
+- 任務內容：毒霧感染新增 `count` 參數，血毒刃毒作用時依參數傳染附近敵人；同步 Excel／CSV／JS 與測試。
+- 允許修改：`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`、`js/skills2.js`、`index.html`、`js/worker/sim.worker.js`、`tests/skill2-system.test.cjs`、`docs/AI_TASKS.md`。
+- 驗證：技能相關測試 28/28、Build 通過、Skills2 config apply dry-run 語意變更 0。
+- 禁止修改：Worker Protocol、存檔格式及本需求以外的技能邏輯。
+
 ## Codex | Cleave VFX follow-up | 2026-08-14
 - Status: Completed
 - Scope: Large cast-point cleave arcs in DOM/Pixi paths; normal impact-only target feedback; 震碎斬 12 m (120 units) slow wave at 30% projectile speed with path-hit timing; 迴身雙連斬 front/back arcs.

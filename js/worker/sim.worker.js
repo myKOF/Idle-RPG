@@ -14,7 +14,7 @@ importScripts('protocol.js?v=19', 'shim.js');
 importScripts(
   '../util.js?v=20260814-skill-summary', '../data.js?v=20260813-earth-recovery', '../status.js?v=20260813-skills2-rework', '../formula.js?v=20260814-skill-min-interval-v2', '../battlefield.js?v=20260813-skills2-rework', '../stats.js',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260814-skill-min-interval', '../skills2.js?v=20260814-cleave-vfx', '../talents.js?v=20260811-loadout-cap-clamp',
+  '../skills.js?v=20260814-skill-min-interval', '../skills2.js?v=20260814-poison-spread-count', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260814-skill-min-interval', '../special_rules.js',
   '../combat.js?v=20260814-skill-min-interval', '../legendary.js', '../potential.js?v=20260814-skill-min-interval', '../tower.js?v=20260813-skills2-rework',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260813-skills2-rework',
