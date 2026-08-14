@@ -66,6 +66,29 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.match(vfx, /projClass === 'vfx-proj-knife'[\s\S]*?spec\.glyph/);
   assert.match(renderer, /spec\.variant === 'knife'[\s\S]*?spec\.variant === 'knife-bounce'/);
   assert.match(css, /\.vfx-proj-knife \.vfx-proj-core[\s\S]*?background: none/);
-  assert.match(vfx, /vfx-slash-cleave-back/);
-  assert.match(renderer, /spawnSlash\(backFrom\.x, backFrom\.y, spec, true, backAngle\)/);
+  assert.match(vfx, /vfxCleaveArc\([\s\S]*?vfx-cleave-arc-back/);
+  assert.match(renderer, /spawnCleaveArc\([\s\S]*?frontAngle \+ Math\.PI/);
+  assert.match(vfx, /vfxCleaveWave\([\s\S]*?, 120\)/);
+  assert.match(renderer, /spawnCleaveWave\([\s\S]*?, 120\)/);
+  assert.match(vfx, /VFX_CLEAVE_WAVE_SPEED_RATIO = 0\.3/);
+  assert.match(renderer, /CLEAVE_WAVE_SPEED_RATIO = 0\.3/);
+  assert.match(vfx, /vfxImpact\([\s\S]*?cHitDelay \+ 90/);
+  assert.match(renderer, /spawnImpact\(pt\.x, pt\.y, spec, false\)/);
+  const vfxCleaveStart = vfx.indexOf("if (kind === 'slash' && (s.variant === 'cleave'");
+  const vfxCleaveEnd = vfx.indexOf('\n    return;', vfxCleaveStart);
+  const rendererCleaveStart = renderer.indexOf("if (spec.variant === 'cleave'");
+  const rendererCleaveEnd = renderer.indexOf('\n          break;', rendererCleaveStart);
+  assert.ok(vfxCleaveStart >= 0 && vfxCleaveEnd > vfxCleaveStart);
+  assert.ok(rendererCleaveStart >= 0 && rendererCleaveEnd > rendererCleaveStart);
+  assert.doesNotMatch(vfx.slice(vfxCleaveStart, vfxCleaveEnd), /vfxSlash\(/);
+  assert.doesNotMatch(renderer.slice(rendererCleaveStart, rendererCleaveEnd), /spawnSlash\(/);
+});
+
+test('震碎斬距離使用 12 米（120 系統距離單位）', () => {
+  const skills2 = read('js/skills2.js');
+  const csv = read('config/CSV/Skills2.csv');
+  const cleaveCsvLine = csv.split(/\r?\n/).find((line) => line.includes(',6,震碎斬,'));
+  assert.match(skills2, /name: '震碎斬', fx: \{ m: 12, mPer: 0\.5 \}/);
+  assert.ok(cleaveCsvLine && cleaveCsvLine.includes('""m"":12'), 'Skills2 CSV 應使用 12 米');
+  assert.match(read('js/battlefield.js'), /BF_SYSTEM_UNITS_PER_METER = 10/);
 });

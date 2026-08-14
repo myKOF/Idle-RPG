@@ -1282,6 +1282,73 @@ var BattleRenderer = (function () {
 
   /* 新版技能直線刀光：固定 70 個系統距離單位（7 米），從玩家向目標方向貫穿。
      angleOffset 用於終極突刺的左右 30 度刀線，以及迴身斬的 180 度後斬。 */
+  /* 迴旋斬的施放點大型弧斬；敵人位置只畫普通命中反應。 */
+  function spawnCleaveArc(x, y, spec, rotation, delaySec) {
+    var theme = themeOf(spec);
+    var g = new PIXI.Graphics();
+    g.x = x; g.y = y;
+    g.rotation = typeof rotation === 'number' ? rotation : 0;
+    S.layers.fx.addChild(g);
+    var t = -(delaySec || 0), dur = Math.max(0.38, spec.dur || 0.5), R = 86;
+    addFx({
+      node: g,
+      update: function (dt) {
+        t += dt;
+        g.visible = t >= 0;
+        if (t < 0) return true;
+        var k = Math.min(1, t / dur);
+        var head = -0.92 + k * 1.95;
+        var fade = k > 0.68 ? 1 - (k - 0.68) / 0.32 : 1;
+        g.clear();
+        g.arc(0, 0, R, head - 1.15, head, false)
+          .stroke({ color: theme.c1, width: 11 * fade, alpha: 0.95 * fade, cap: 'round' });
+        g.arc(0, 0, R * 0.82, head - 0.95, head, false)
+          .stroke({ color: theme.c2, width: 4 * fade, alpha: fade, cap: 'round' });
+        return t < dur;
+      }
+    }, 1);
+  }
+
+  var CLEAVE_WAVE_SPEED_RATIO = 0.3;
+  function cleaveWaveDurationSec() {
+    return Math.max(0.9, projectileTravelMs(0, 300) / 1000 / CLEAVE_WAVE_SPEED_RATIO);
+  }
+  function spawnCleaveWave(spec, angle, delaySec, length) {
+    var theme = themeOf(spec);
+    var from = playerMuzzle();
+    var node = new PIXI.Graphics();
+    node.x = from.x; node.y = from.y; node.rotation = angle;
+    S.layers.fx.addChild(node);
+    var dur = cleaveWaveDurationSec();
+    var t = -(delaySec || 0), trailAcc = 0;
+    var lineLength = Math.max(48, Number(length) || 120);
+    addFx({
+      node: node,
+      update: function (dt) {
+        t += dt;
+        node.visible = t >= 0;
+        if (t < 0) return true;
+        var k = Math.min(1, t / dur);
+        var eased = k * k * (3 - 2 * k);
+        node.x = from.x + Math.cos(angle) * lineLength * eased;
+        node.y = from.y + Math.sin(angle) * lineLength * eased;
+        var fade = k > 0.78 ? 1 - (k - 0.78) / 0.22 : 1;
+        node.alpha = fade;
+        node.clear();
+        node.arc(0, 0, 30, -1.12, 1.12, false)
+          .stroke({ color: theme.c1, width: 10 * fade, alpha: 0.95 * fade, cap: 'round' });
+        node.arc(0, 0, 22, -0.9, 0.9, false)
+          .stroke({ color: theme.c2, width: 3.5 * fade, alpha: fade, cap: 'round' });
+        trailAcc += dt;
+        if (trailAcc > 0.035 && !REDUCED_MOTION) {
+          trailAcc = 0;
+          spawnTrailDot(node.x - Math.cos(angle) * 16, node.y - Math.sin(angle) * 16, theme);
+        }
+        return t < dur;
+      }
+    }, 1, dur * 1000 + 300);
+  }
+
   function spawnThrustLine(targetId, spec, angleOffset, delaySec, length) {
     var theme = themeOf(spec);
     var from = playerMuzzle();
@@ -1795,36 +1862,38 @@ var BattleRenderer = (function () {
           });
           break;
         }
-        if (spec.variant === 'cleave-shockwave' || spec.variant === 'cleave-back' || spec.variant === 'cleave-dual') {
+        if (spec.variant === 'cleave' || spec.variant === 'cleave-shockwave' || spec.variant === 'cleave-back' || spec.variant === 'cleave-dual') {
           var drawForward = spec.variant === 'cleave-shockwave' || spec.variant === 'cleave-dual';
           var drawBack = spec.variant === 'cleave-back' || spec.variant === 'cleave-dual';
+          var frontAngle = targets.length
+            ? Math.atan2(posOf(targets[0]).y - playerMuzzle().y,
+              posOf(targets[0]).x - playerMuzzle().x)
+            : ((S.player && S.player.facing < 0) ? Math.PI : 0);
           for (var clc = 0; clc < count; clc++) {
             var clDelay = (baseDelay + clc * stagger) / 1000;
-            if (drawForward && targets.length) spawnThrustLine(targets[0], spec, 0, clDelay, 70);
-            if (drawBack && targets.length) spawnThrustLine(targets[0], spec, Math.PI, clDelay, 70);
-            if (drawBack) {
-              (function (backDelay, backAngle) {
-                setTimeout(function () {
-                  if (fxGate()) return;
-                  var backFrom = playerMuzzle();
-                  spawnSlash(backFrom.x, backFrom.y, spec, true, backAngle);
-                }, Math.max(0, backDelay * 1000));
-              })(clDelay, targets.length
-                ? Math.atan2(posOf(targets[0]).y - playerMuzzle().y,
-                  posOf(targets[0]).x - playerMuzzle().x) + Math.PI
-                : Math.PI);
-            }
+            var cleaveFrom = playerMuzzle();
+            spawnCleaveArc(cleaveFrom.x, cleaveFrom.y, spec, frontAngle, clDelay);
+            if (drawForward) spawnCleaveWave(spec, frontAngle, clDelay, 120);
+            if (drawBack) spawnCleaveArc(cleaveFrom.x, cleaveFrom.y, spec, frontAngle + Math.PI, clDelay);
           }
           targets.forEach(function (id, ti) {
+            var cleaveFromForHits = playerMuzzle();
+            var targetPt = posOf(id);
+            var targetDx = targetPt.x - cleaveFromForHits.x;
+            var targetDy = targetPt.y - cleaveFromForHits.y;
+            var targetAlong = targetDx * Math.cos(frontAngle) + targetDy * Math.sin(frontAngle);
+            var waveHitDelay = drawForward
+              ? Math.round(cleaveWaveDurationSec() * 1000 * Math.max(0, Math.min(1, targetAlong / 120)))
+              : 90;
             for (var clHit = 0; clHit < count; clHit++) {
-              (function (hitIndex) {
+              (function (hitIndex, hitDelay) {
                 setTimeout(function () {
                   if (fxGate()) return;
                   var pt = posOf(id);
-                  spawnSlash(pt.x, pt.y, spec, false);
+                  spawnImpact(pt.x, pt.y, spec, false);
                   hitReact(id, spec.elem, false);
-                }, baseDelay + hitIndex * stagger + ti * 35);
-              })(clHit);
+                }, baseDelay + hitIndex * stagger + hitDelay + ti * 35);
+              })(clHit, waveHitDelay);
             }
           });
           break;
