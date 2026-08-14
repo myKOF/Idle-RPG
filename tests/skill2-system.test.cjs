@@ -289,7 +289,8 @@ test('毒霧感染：傳染數量由 count 參數控制', () => {
   const near2 = enemy(1e9, 60, 0);
   const near3 = enemy(1e9, 70, 0);
   c.castSkill2(p, [source], 'bloodblade', 'mv-float');
-  assert.equal(c.SKILLS2.bloodblade.tiers[4].fx.count, 1, '毒霧感染應有 count 參數');
+  // 釘住表定值（表是唯一權威——Skills2.xlsx 調整後此處需同步）
+  assert.equal(c.SKILLS2.bloodblade.tiers[4].fx.count, 2, '毒霧感染應有 count 參數（表定 2）');
 
   const spreadEvents = [];
   c.sgEmitVfx = (gid, targets, floatSel, spec) => {
