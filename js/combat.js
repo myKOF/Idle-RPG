@@ -490,7 +490,7 @@ function cleanse(ent) {
 /* ---- 增益 / 減益（技能系統用） ----
    攻速類減益同樣套用「控場遞減」；成功回傳實際持續秒數，歸零/免疫回傳 false。 */
 function applyBuff(ent, key, val, dur, sid, stackCfg) {
-    if ((key === 'atkDown' || key === 'defDown') && effectActive(ent, 'invuln')) return false; // 無敵：免疫敵方減益
+    if ((key === 'atkDown' || key === 'defDown' || key === 'sgDefBrk') && effectActive(ent, 'invuln')) return false; // 無敵：免疫敵方減益
     if (isBossControlImmune(ent) && isAttackFrequencyControlKey(key)) return false;
     if (isAttackFrequencyControlKey(key)) {
         dur *= controlDurationFactor(ent);
@@ -705,8 +705,11 @@ function playerAtkCfg(pEnt) {
     return {
         atk: st.atk * atkMul, matk: st.matk * atkMul, dmgType: 'both', level: st.level,
         // 新版技能【狂暴之舞】：爆擊率／爆擊傷害增益（sgCritUp／sgCritDmgUp，普攻同樣受惠）
+        // 新版技能【嗜血狂怒·狂暴】：爆擊傷害乘算（js/skills2.js，狂怒期間生效）
         critRate: st.critRate + buffVal(pEnt, 'sgCritUp'),
-        critDmg: st.critDmg + buffVal(pEnt, 'critDmgUp') + buffVal(pEnt, 'sgCritDmgUp'), hit: st.hit,
+        critDmg: (st.critDmg + buffVal(pEnt, 'critDmgUp') + buffVal(pEnt, 'sgCritDmgUp')) *
+            ((typeof skill2RageCritDmgFactor === 'function') ? skill2RageCritDmgFactor() : 1),
+        hit: st.hit,
         sunder: st.passives.sunder || 0, pen: effectivePPen(st, pEnt), mPen: effectiveMPen(st, pEnt),
         trueDmgPct: st.passives.trueDmg || 0, elemAtk: st.elemAtk, elemDmgPct: st.elemDmgPct,
         elemDmgUp: (typeof legendaryElementDamageUp === 'function') ? legendaryElementDamageUp(st, pEnt) : st.elemDmgUp,
@@ -737,7 +740,10 @@ function playerDefCfg(pEnt) {
         undyingGuardCd: (typeof potentialUndyingCd === 'function' ? potentialUndyingCd() : 90),
         normalDmgRed: st.normalDmgRed, eliteDmgRed: st.eliteDmgRed, bossDmgRed: st.bossDmgRed, // 敵種傷害抗性 → formula.js §3
         resVsElem: st.resVsElem, // 對屬性敵人抗性（8 轉天賦）→ formula.js §3
-        thornsPct: (st.passives.thorns || 0) + buffVal(pEnt, 'thornsUp'), maxHp: st.hp, isPlayer: true
+        // 新版技能【嗜血反震】：反震傷害乘算（js/skills2.js，狂怒期間生效）
+        thornsPct: ((st.passives.thorns || 0) + buffVal(pEnt, 'thornsUp')) *
+            ((typeof skill2RageThornsFactor === 'function') ? skill2RageThornsFactor() : 1),
+        maxHp: st.hp, isPlayer: true
     };
 }
 function monsterAtkCfg(m, mult) {
@@ -759,7 +765,8 @@ function monsterAtkCfg(m, mult) {
     };
 }
 function monsterDefCfg(m) {
-    var defMul = 1 - buffVal(m, 'defDown') / 100;
+    // 新版技能【破甲擊】sgDefBrk（獨立鍵、可疊層）與舊 defDown 減益加總；下限 0＝防禦最多被剝光、不為負
+    var defMul = Math.max(0, 1 - (buffVal(m, 'defDown') + buffVal(m, 'sgDefBrk')) / 100);
     return {
         def: m.def * defMul, mdef: (m.mdef || m.def * 0.75) * defMul, level: m.level, dodge: m.dodge || 0,
         resist: m.resist || {}, ctrlRes: m.ctrlRes || 0, maxHp: m.maxHp,
@@ -876,8 +883,10 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
         if (res2 && res2.killed) { res.killed = true; res.dmg += res2.dmg; }
     }
     // 連擊數（暴擊率破 100% 衍生）：主攻擊命中後追加整段普攻；僅主攻擊（depth 0）觸發，遞迴帶深度避免再觸連擊/連擊被動
+    // 新版技能【狂化連殺】：狂怒期間基礎連擊數加成＋期間擊殺累積（js/skills2.js）
     if (!depth && !(opts && opts.noProc) && !res.miss && !res.killed) {
-        var comboN = rollComboHits(st);
+        var comboBonus = (typeof skill2ComboBonus === 'function') ? skill2ComboBonus() : 0;
+        var comboN = rollComboHits(comboBonus > 0 ? { comboHits: (st.comboHits || 0) + comboBonus } : st);
         for (var cbi = 0; cbi < comboN && !res.killed; cbi++) {
             var resc = doPlayerAttack(pEnt, mEnt, floatSel, 1, { vfxDelayMs: atkWaveDelayMs + atkWaveStepMs * (cbi + 1) });
             if (resc) { res.dmg += resc.dmg; if (resc.killed) res.killed = true; }
@@ -969,6 +978,10 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
     }
     if (typeof legendaryOnPlayerDamaged === 'function') {
         legendaryOnPlayerDamaged(mEnt, pEnt, hpDamage, !!res.blocked, res, floatSel);
+    }
+    // 新版技能【反擊】被動（js/skills2.js）：受傷機率反擊／格擋必反／破甲擊，野外與高塔共用此收斂點
+    if (typeof skills2OnPlayerDamaged === 'function') {
+        skills2OnPlayerDamaged(mEnt, pEnt, hpDamage, !!res.blocked, res, floatSel);
     }
     if (res.thorns) {
         floatEnemyEvent(mEnt, THORN_FLOAT_MAP[floatSel] || floatSel, '反傷 ' + fmt(res.thorns), 'defend');
@@ -1577,8 +1590,8 @@ function flushRunSummary(nextMaxStage) {
 var PLAYER_BUFF_ORDER = ['atkUp', 'defUp', 'aspdUp', 'evasionUp', 'critDmgUp', 'blockUp', 'thornsUp', 'lootUp', 'hot',
     // 潛力技能增益（極速之力/雷霆過載/時間坍縮/聖療逆轉/時空凝滯）
     'velocitySurge', 'lightningOverload', 'chronoCdr', 'sacredInvert', 'allDmgUp',
-    // 新版技能增益（狂風斬/狂暴之舞/暴風之舞，js/skills2.js）
-    'sgGale', 'sgCritUp', 'sgCritDmgUp', 'sgStorm'];
+    // 新版技能增益（狂風斬/狂暴之舞/暴風之舞/嗜血狂怒，js/skills2.js）
+    'sgGale', 'sgCritUp', 'sgCritDmgUp', 'sgStorm', 'sgBloodrage'];
 
 function activePlayerBuffs(ent) {
     if (!ent) return [];

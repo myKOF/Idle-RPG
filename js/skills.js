@@ -2196,6 +2196,7 @@ function equipSkillToLoadout(id) {
   if (typeof id === 'string' && id.indexOf('sg:') === 0) {
     var sgId = id.slice(3);
     if (typeof SKILLS2 === 'undefined' || !SKILLS2[sgId]) return '未知技能群組';
+    if (typeof skills2IsPassive === 'function' && skills2IsPassive(sgId)) return '被動技能恆時生效，無需裝載';
     if (typeof skills2Castable === 'function' && !skills2Castable(sgId)) return '尚未學習';
     var sgLo = G.player.loadout;
     if (sgLo.indexOf(id) >= 0) return '已在裝載欄';
@@ -3022,6 +3023,8 @@ function pickAndCastSkill(pEnt, target, floatSel) {
       var sgDef = (typeof SKILLS2 !== 'undefined') ? SKILLS2[sgId] : null;
       if (!sgDef || typeof castSkill2 !== 'function' ||
           typeof skills2Castable !== 'function' || !skills2Castable(sgId)) continue;
+      // 被動群組（反擊）不可施放：手改存檔塞進裝載欄也不佔用出手節奏
+      if (typeof skills2IsPassive === 'function' && skills2IsPassive(sgId)) continue;
       var sgLive = Array.isArray(target)
         ? target.some(function (ent) { return ent && ent.hp > 0; })
         : !!(target && target.hp > 0);

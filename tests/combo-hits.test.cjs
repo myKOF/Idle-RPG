@@ -80,9 +80,11 @@ test('computeStats 派生 st.comboHits（原始碼接線）', () => {
 
 test('combat.js 普攻追加連擊段（僅主攻擊、遞迴 depth）', () => {
   const combat = fs.readFileSync(path.join(root, 'js/combat.js'), 'utf8');
-  assert.match(combat, /rollComboHits\(st\)/);
+  // 新版技能【狂化連殺】（2026-08-14）：擲骰帶入 skill2ComboBonus 加成，未啟用時原樣走 st
+  assert.match(combat, /skill2ComboBonus/);
+  assert.match(combat, /rollComboHits\(comboBonus > 0 \? \{ comboHits: \(st\.comboHits \|\| 0\) \+ comboBonus \} : st\)/);
   // 僅 depth 0 觸發，且遞迴時帶入更深 depth 避免再觸連擊
-  assert.match(combat, /!depth[\s\S]*?rollComboHits\(st\)/);
+  assert.match(combat, /!depth[\s\S]*?rollComboHits\(/);
 });
 
 test('skills.js 技能直接傷害段外包連擊迴圈（持續傷害不受影響）', () => {

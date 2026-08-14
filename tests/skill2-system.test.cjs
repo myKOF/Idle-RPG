@@ -70,14 +70,16 @@ function stubHits(c, opts) {
 
 /* ---- 1) 定義表 ---- */
 
-test('SKILLS2：6 個群組、每組 7 階、欄位齊全且說明模板的參數鍵都存在', () => {
+test('SKILLS2：8 個群組、每組 7 階、欄位齊全且說明模板的參數鍵都存在', () => {
   const c = loadContext();
   const gids = Object.keys(c.SKILLS2);
-  assert.deepEqual(gids, ['thrust', 'cleave', 'knife', 'gale', 'bloodblade', 'dualdance']);
+  assert.deepEqual(gids, ['thrust', 'cleave', 'knife', 'gale', 'bloodblade', 'dualdance', 'counter', 'bloodrage']);
   gids.forEach((gid) => {
     const g = c.SKILLS2[gid];
+    const isPassive = c.skills2IsPassive(gid);
     assert.ok(g.name && g.emoji, gid + ' 缺名稱/圖標');
-    assert.ok(g.cd > 0 && g.cost >= 0, gid + ' 冷卻/消耗不合法');
+    // 被動群組（counter）無冷卻無耗魔；主動群組必須有正冷卻
+    assert.ok(isPassive ? (g.cd === 0 && g.cost === 0) : (g.cd > 0 && g.cost >= 0), gid + ' 冷卻/消耗不合法');
     assert.equal(g.tiers.length, c.SG_TIER_COUNT, gid + ' 階數不是 ' + c.SG_TIER_COUNT);
     g.tiers.forEach((t, i) => {
       assert.ok(t.name, gid + ' 第 ' + (i + 1) + ' 階缺名稱');

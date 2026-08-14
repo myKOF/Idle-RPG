@@ -87,7 +87,9 @@ var STATUS = {
   sgGale: { name: '狂風', icon: '💨', kind: 'buff', effect: 'stat', key: 'sgGale', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 20, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【狂風斬】：攻速額外提高（突破攻速上限、與自身攻速相乘）。' },
   sgFrenzyCr: { name: '狂暴·爆擊率', icon: '🔥', kind: 'buff', effect: 'stat', key: 'sgCritUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 50, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【狂暴之舞】：爆擊率提高。' },
   sgFrenzyCd: { name: '狂暴·爆擊傷害', icon: '💥', kind: 'buff', effect: 'stat', key: 'sgCritDmgUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 200, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【狂暴之舞】：爆擊傷害提高。' },
-  sgStorm: { name: '暴風化身', icon: '🌪️', kind: 'buff', effect: 'stat', key: 'sgStorm', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 3, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【暴風之舞】：化身暴風，期間自動施放雙刀亂舞、無法普攻。' }
+  sgStorm: { name: '暴風化身', icon: '🌪️', kind: 'buff', effect: 'stat', key: 'sgStorm', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 3, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【暴風之舞】：化身暴風，期間自動施放雙刀亂舞、無法普攻。' },
+  sgBloodrage: { name: '嗜血狂怒', icon: '💢', kind: 'buff', effect: 'stat', key: 'sgBloodrage', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 20, dur: 8, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【嗜血狂怒】：攻速乘算提高（突破攻速上限）；期間各階狂怒效果生效。' },
+  sgArmorBrk: { name: '破甲', icon: '⚒️', kind: 'debuff', effect: 'stat', key: 'sgDefBrk', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 25, dur: 4, interval: 0, stack: 'stack', maxStacks: 4, desc: '新版技能【破甲擊】：防禦降低（可疊層，疊層時重置時間；獨立鍵、與舊 defDown 減益加總計算）。' }
 };
 
 /* ---- 反查索引 ----
