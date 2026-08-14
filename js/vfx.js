@@ -561,53 +561,87 @@ function vfxProjectileFlightMs(travelMs, fallbackDurationSec) {
 }
 
 /*
- * Phaser 範例的核心其實是「許多 flare 粒子重疊」：每顆粒子會從發射點向後方
- * 飄散、縮小並淡出，顏色再依序經過黃／橙／紅。DOM 路徑直接以 flares.png 的
- * white frame 作為 alpha mask，這裡只建立粒子與參數；實際的遮罩、色彩與發光
- * 交給 CSS，Canvas 路徑則在 battle-renderer.js 使用同一張圖。這樣兩種渲染器
- * 不會再各自畫出一顆形狀完全不同的圓球。
+ * Phaser 範例的粒子設定，逐項保留在 DOM 版：white frame、四色 color、
+ * quad.out 色彩插值、lifespan 2400、scale 0.70→0、speed 100、advance 2000、
+ * ADD 混合。原範例的 -100°～-80° 是向上發射；移植到投射物後，改成飛行反方向
+ * ±10°，再由外層飛行角度旋轉，因此拖尾會和 60° 落下軌跡保持同一條軸線。
  */
-function vfxFlare(parent, cls, x, y, scaleX, scaleY, color, delayMs) {
-  var s = document.createElement('span');
-  s.className = 'vfx-flare ' + cls;
-  s.style.setProperty('--flare-x', x.toFixed(1) + 'px');
-  s.style.setProperty('--flare-y', y.toFixed(1) + 'px');
-  s.style.setProperty('--flare-sx', scaleX.toFixed(3));
-  s.style.setProperty('--flare-sy', scaleY.toFixed(3));
-  s.style.setProperty('--flare-color', color);
-  s.style.animationDelay = Math.round(delayMs || 0) + 'ms';
-  parent.appendChild(s);
-  return s;
+var VFX_FLARE_COLORS = [0xfacc22, 0xf89800, 0xf83600, 0x9f0404];
+var VFX_FLARE_LIFESPAN_MS = 2400;
+var VFX_FLARE_SPEED = 100;
+var VFX_FLARE_ADVANCE_MS = 2000;
+var VFX_FLARE_START_SCALE = 0.70;
+
+function vfxFlareColorAt(progress) {
+  var q = Math.max(0, Math.min(1, progress));
+  q = 1 - (1 - q) * (1 - q); // Phaser colorEase: quad.out
+  var pos = q * (VFX_FLARE_COLORS.length - 1);
+  var idx = Math.min(VFX_FLARE_COLORS.length - 2, Math.floor(pos));
+  var local = pos - idx;
+  var a = VFX_FLARE_COLORS[idx], b = VFX_FLARE_COLORS[idx + 1];
+  var ar = (a >> 16) & 255, ag = (a >> 8) & 255, ab = a & 255;
+  var br = (b >> 16) & 255, bg = (b >> 8) & 255, bb = b & 255;
+  return 'rgb(' + Math.round(ar + (br - ar) * local) + ',' +
+    Math.round(ag + (bg - ag) * local) + ',' + Math.round(ab + (bb - ab) * local) + ')';
 }
 
-/* 建立一顆「白芯、黃身、橙紅外焰、後方火星」的 flare 火球。
-   small 僅縮小幾何，不改變色彩順序，讓殞石群看起來是同一種火焰的大小變體。 */
-function vfxBuildFlareFlame(parent, small, sizeScale, trailScale) {
-  var k = (small ? 0.58 : 1) * (typeof sizeScale === 'number' ? sizeScale : 1);
-  var tailK = typeof trailScale === 'number' ? trailScale : 1;
-  vfxFlare(parent, 'vfx-flare-outer', 0, 0, 0.86 * k, 0.98 * k, '#f83600', 0);
-  vfxFlare(parent, 'vfx-flare-orange', 3 * k, 3 * k, 0.68 * k, 0.82 * k, '#f89800', 0);
-  vfxFlare(parent, 'vfx-flare-yellow', 7 * k, 7 * k, 0.51 * k, 0.65 * k, '#facc22', 0);
-  vfxFlare(parent, 'vfx-flare-white', 10 * k, 9 * k, 0.27 * k, 0.36 * k, '#fff6d8', 0);
+/* 以真正的 emitter 方式建立火焰：先 advance 2000ms 預填粒子，之後依固定頻率
+   持續生成；每顆粒子都有自己的角度、生命週期、位置、縮放與色彩。 */
+function vfxBuildFlareFlame(parent, small, sizeScale) {
+  var emitter = document.createElement('span');
+  emitter.className = 'vfx-flare-emitter';
+  parent.appendChild(emitter);
+  var size = (typeof sizeScale === 'number' ? sizeScale : 1) * (small ? 0.58 : 1);
+  var count = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? (small ? 8 : 14) : (small ? 14 : 26);
+  var interval = VFX_FLARE_ADVANCE_MS / count;
+  var particles = [];
+  var accumulator = 0;
+  var lastAt = Date.now();
+  var generation = _vfxGeneration;
 
-  /* 固定的後方粒子排列比隨機散點更接近範例 advance:2000 的穩定火焰柱，
-     同時避免每次命中都重新排出完全不同的形狀。 */
-  var tail = [
-    [-22, -8, 0.46, 0.62, '#f89800'], [-38, 6, 0.38, 0.54, '#f83600'],
-    [-52, -10, 0.32, 0.46, '#f89800'], [-66, 8, 0.25, 0.38, '#9f0404'],
-    [-79, -4, 0.19, 0.29, '#f83600'], [-91, 12, 0.14, 0.22, '#9f0404']
-  ];
-  for (var i = 0; i < tail.length; i++) {
-    var p = tail[i];
-    vfxFlare(parent, 'vfx-flare-tail', p[0] * k * tailK, p[1] * k, p[2] * k, p[3] * k, p[4], i * 18);
+  function spawn(ageMs) {
+    var p = document.createElement('span');
+    p.className = 'vfx-flare vfx-emitter-particle';
+    p._age = ageMs;
+    p._angle = Math.PI + ((Math.random() * 20 - 10) * Math.PI / 180);
+    p._scale = size * VFX_FLARE_START_SCALE;
+    emitter.appendChild(p);
+    particles.push(p);
   }
-  var sparks = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? (small ? 3 : 5) : (small ? 5 : 9);
-  for (var si = 0; si < sparks; si++) {
-    var sx = (-28 - (si * 17) % 78) * k * tailK;
-    var sy = (((si * 29) % 31) - 15) * k;
-    vfxFlare(parent, 'vfx-flare-spark', sx, sy, (0.08 + (si % 3) * 0.025) * k,
-      (0.11 + (si % 2) * 0.035) * k, si % 2 ? '#f83600' : '#facc22', 60 + si * 34);
+
+  /* Phaser advance:2000：先把過去兩秒已發射的粒子補進畫面。 */
+  for (var i = 0; i < count; i++) spawn((i + 0.5) * interval);
+
+  function update(now) {
+    if (!_vfxEnabled || generation !== _vfxGeneration || !parent.parentNode) return;
+    var dt = Math.max(0, Math.min(80, now - lastAt));
+    lastAt = now;
+    accumulator += dt;
+    while (accumulator >= interval) {
+      accumulator -= interval;
+      spawn(0);
+    }
+    for (var pi = particles.length - 1; pi >= 0; pi--) {
+      var p = particles[pi];
+      p._age += dt;
+      if (p._age >= VFX_FLARE_LIFESPAN_MS) {
+        if (p.parentNode) p.parentNode.removeChild(p);
+        particles.splice(pi, 1);
+        continue;
+      }
+      var life = p._age / VFX_FLARE_LIFESPAN_MS;
+      var distance = VFX_FLARE_SPEED * p._age / 1000;
+      var scale = p._scale * Math.cos(life * Math.PI * 0.5);
+      p.style.setProperty('--flare-x', (Math.cos(p._angle) * distance).toFixed(2) + 'px');
+      p.style.setProperty('--flare-y', (Math.sin(p._angle) * distance).toFixed(2) + 'px');
+      p.style.setProperty('--flare-sx', scale.toFixed(3));
+      p.style.setProperty('--flare-sy', scale.toFixed(3));
+      p.style.setProperty('--flare-color', vfxFlareColorAt(life));
+      p.style.opacity = String(Math.max(0, 1 - life));
+    }
+    (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : function (fn) { return setTimeout(fn, 16); })(update);
   }
+  update(lastAt);
 }
 
 /* 彈幕專用投射物：同一目標建立左右兩側、三條 lane 的交錯彈道，
@@ -692,15 +726,15 @@ function vfxProjectile(spec, layer, from, to, delayMs, travelMs) {
     core.textContent = spec.glyph || (projClass === 'vfx-proj-knife' ? '🔪' : '✨');
   }
   if (spec.variant === 'fireball') {
-    /* 火球術縮小 35%；殞石術另由自己的呼叫端延長尾焰。 */
-    vfxBuildFlareFlame(d, false, 0.65, 1);
+    /* 火球術只改變 emitter 尺寸為 65%，粒子形狀與生命週期仍遵循 Phaser。 */
+    vfxBuildFlareFlame(d, false, 0.65);
   } else {
     d.appendChild(core);
     var trail = document.createElement('span');
     trail.className = 'vfx-proj-trail';
     d.appendChild(trail);
   }
-  vfxTrack(d, delayMs + flight + 160);
+  vfxTrack(d, delayMs + flight + VFX_FLARE_LIFESPAN_MS + 160);
 
   if (spec.variant === 'drain') {
     // 汲取類：命中後一縷魂息流回我方
@@ -870,9 +904,8 @@ function vfxBeam(spec, layer, from, to) {
 /* ---- 天降 ----
    天降類特效通常同時包含本體、落地爆炸、範圍閃光與命中反饋，
    所以各函式會分別登記節點，讓每一層都能被生命週期管理。 */
-/* 建立一顆沿固定路徑飛行的火球；主火球與伴隨的小火球共用這個函式，
-   只有尺寸、起點與延遲不同。Phaser 範例的 particle emitter 參數（火焰色票、
-   ADD 光暈、短生命週期）在 CSS 的核心／尾焰／餘燼中對應呈現。 */
+/* 建立一個沿固定路徑飛行的 Phaser-style emitter；主殞石與小殞石只改變
+   emitter 的數量與尺寸，形狀、色彩與粒子生命週期保持一致。 */
 function vfxMeteorProjectile(spec, layer, from, to, delayMs, flight, small) {
   var d = vfxNode('vfx-meteor' + (small ? ' vfx-meteor-small' : ''), layer, spec);
   d.style.setProperty('--vfx-x0', from.x + 'px');
@@ -882,20 +915,9 @@ function vfxMeteorProjectile(spec, layer, from, to, delayMs, flight, small) {
   d.style.setProperty('--vfx-rot', Math.atan2(to.y - from.y, to.x - from.x).toFixed(3) + 'rad');
   d.style.animationDelay = delayMs + 'ms';
   d.style.animationDuration = flight + 'ms';
-  /* 殞石拖尾拉長 35%，本體大小仍由 small 的 0.58 倍控制。 */
-  vfxBuildFlareFlame(d, !!small, 1, 1.35);
-  if (_vfxQuality !== VFX_QUALITY_LEVELS.REDUCED) {
-    var emberCount = small ? 2 : 4;
-    for (var ei = 0; ei < emberCount; ei++) {
-      var ember = document.createElement('span');
-      ember.className = 'vfx-meteor-ember';
-      ember.style.setProperty('--ember-x', (-20 - Math.random() * 38).toFixed(1) + 'px');
-      ember.style.setProperty('--ember-y', (Math.random() * 22 - 11).toFixed(1) + 'px');
-      ember.style.animationDelay = (delayMs + ei * 24) + 'ms';
-      d.appendChild(ember);
-    }
-  }
-  vfxTrack(d, delayMs + flight + 140);
+  /* 殞石只改變 emitter 的方向、數量、尺寸與速度；不再額外拉扁或拉長尾焰。 */
+  vfxBuildFlareFlame(d, !!small, 1);
+  vfxTrack(d, delayMs + flight + VFX_FLARE_LIFESPAN_MS + 140);
 }
 
 /*

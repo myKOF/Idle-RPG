@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Codex：以 Phaser emitter 規則重製火球與殞石粒子（2026-08-14）
+
+- 狀態：已完成
+- 任務分類：戰鬥技能 VFX／DOM 與 Canvas 粒子系統
+- 負責 AI：Codex
+- 任務內容：依使用者提供的 Phaser 範例，移植 `white` flare 粒子的 `color`、`quad.out`、`lifespan: 2400`、`scale: 0.70→0`、`speed: 100`、`advance: 2000` 與 ADD 混合規則；火球與殞石只保留技能需求的方向、數量、尺寸與速度差異。
+- 允許修改：`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`index.html`、`tests/skill-special-vfx.test.cjs`、`docs/AI_TASKS.md`
+- 禁止修改：戰鬥傷害、目標選擇、Worker Protocol、存檔格式與技能數值。
+- 前置依賴：Phaser 的 `flares.png`／`flares.json` 已納入專案；DOM 與 PixiJS 已有共用 white frame 載入方式。
+- 驗收方式：DOM 與 PixiJS 皆使用逐顆粒子 emitter，命中後仍保留 2.4 秒完整淡出；火球維持直線，殞石維持 60°、1 大＋4 小與慢 30%；語法檢查、定向測試、Build 與 `git diff --check` 通過。
+- 驗證結果：定向測試 29/29 通過；`node --check` 檢查 `js/vfx.js`、`js/battle-renderer.js`、`js/skills.js` 通過；`npm.cmd run build` 通過（278 個檔案）；`git diff --check` 通過。
+- 已知風險：本機瀏覽器先前無法載入 localhost；實機仍需確認粒子密度與螢幕縮放下的視覺比例。
+- 完成後交給：使用者確認。
+
 ## Codex：延長殞石拖尾、重做落地震波並縮小火球（2026-08-14）
 
 - 狀態：已完成
