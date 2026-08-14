@@ -1,5 +1,23 @@
 # AI_TASKS.md
 
+## Codex：新版技能樹橫向階段與舊版升級彈窗（2026-08-14）
+
+- 狀態：已完成（待 Claude Review／Antigravity 驗證）
+- 任務分類：新版技能 UI 版面與互動改造
+- 負責 AI：Codex
+- 任務內容：將新版主動技能由六個群組圖示改為每個群組一列、七階由左至右排列，階段間加入進階箭頭；已解鎖階段高亮，未解鎖階段置灰但可查看；新版階段點擊後沿用舊版技能的單技能升級彈窗樣式，未解鎖階段不得升級。
+- 技術影響：只調整技能面板的 DOM/CSS 顯示與新版階段彈窗的 UI 行為，不改新版技能數值、升級規則、Worker Protocol、存檔格式或舊技能引擎。
+- 允許修改：`docs/AI_TASKS.md`、`js/ui.js`、`css/style.css`、`index.html`、`tests/skill2-ui.test.cjs`。
+- 禁止修改：`js/skills2.js` 的技能數值與引擎邏輯、Worker Protocol、存檔格式、戰鬥公式、其他 AI 進行中的檔案。
+- 前置依賴：新版主動技能系統已完成並提供 `SKILLS2`、`sgEffectiveLevels`、`describeSkill2Tier` 與既有 `skill2.learn`／`skill2.downgrade` 指令。
+- 測試要求／結果：新版 UI 與技能定向測試 27/27 通過；`node --check js/ui.js` 通過；`npm.cmd run build` 271/271 通過；瀏覽器實測 6 群組橫向七階鏈、箭頭、亮灰狀態與未解鎖查看流程；Console error/warning 0；`git diff --check` 通過；完整 `npm.cmd test` 1343/1344 通過，唯一失敗為既有 `tests/multi-enemy.test.cjs` 菁英數量表單調性斷言。
+- 完成條件：六個群組各自呈現七階橫向箭頭鏈；階段亮／灰狀態符合解鎖規則；點擊未解鎖階段可查看但無升級按鈕；已解鎖階段可在舊版彈窗樣式升級／降級；現有舊技能 UI 不回歸。
+- 需要 Claude Review：是，確認新版階段解鎖狀態與舊版彈窗共用行為。
+- 需要 Antigravity 驗證：是，實機確認 6 群組橫向排列、箭頭、亮灰狀態及彈窗互動。
+- 完成後交給：Claude Code 唯讀 Review，之後由使用者合併至整合分支。
+- 已知風險：完整回歸仍有與本任務無關的既有 `multi-enemy` 失敗；新版技能列已在 1280×720 實測收斂為不需水平捲軸，窄視窗則保留水平捲動能力。
+
+
 ## Claude：新版主動技能系統（技能改造第一批）（2026-08-13）
 
 - Status: Done（實作、Review、Antigravity 實機驗證完成且已合併 develop；後續為使用者的 Excel 數值調教）

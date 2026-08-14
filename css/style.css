@@ -4273,6 +4273,195 @@ textarea:disabled,
 #sk-tooltip .sg-tier-list > div { margin: 2px 0; }
 #sk-tooltip .sg-tier-locked, #sk-tooltip .sg-tier-off { color: var(--dim, #999); }
 
+/* 新版技能樹：每個群組一列，七階由左至右以箭頭表示進階方向。 */
+.sg-skill-panel {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.sg-skill-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sg-group-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 4px;
+  border: 1px solid rgba(185, 138, 45, .45);
+  background: rgba(0, 0, 0, .28);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.sg-group-label {
+  display: flex;
+  flex: 0 0 88px;
+  min-height: 58px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px 6px;
+  border-left: 3px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.sg-group-label:hover,
+.sg-group-equipped {
+  border-left-color: var(--accent);
+  color: var(--accent);
+}
+
+.sg-group-emoji {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.sg-group-name {
+  font-size: 14px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.sg-group-total {
+  color: var(--dim);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.sg-stage-track {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+}
+
+.sg-stage-node {
+  position: relative;
+  display: flex;
+  flex: 0 0 56px;
+  width: 56px;
+  height: 58px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  box-sizing: border-box;
+  border: 2px solid #5f5f5f;
+  background: rgba(75, 75, 75, .42);
+  color: #8f8f8f;
+  cursor: pointer;
+  opacity: .58;
+  filter: grayscale(.9);
+  transition: transform .1s, opacity .1s, border-color .1s, box-shadow .1s;
+}
+
+.sg-stage-node:hover {
+  transform: scale(1.06);
+  opacity: .9;
+}
+
+.sg-stage-node.sg-stage-unlocked {
+  border-color: #74c9e8;
+  background: rgba(75, 170, 215, .25);
+  color: var(--text);
+  opacity: 1;
+  filter: none;
+}
+
+.sg-stage-node.sg-stage-learned {
+  box-shadow: 0 0 8px rgba(116, 201, 232, .55), inset 0 0 10px rgba(116, 201, 232, .18);
+}
+
+.sg-stage-node.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+.sg-stage-node.sg-stage-equipped {
+  outline: 2px solid #facc15;
+  outline-offset: 2px;
+}
+
+.sg-stage-emoji {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.sg-stage-tier {
+  font-size: 10px;
+  line-height: 1.1;
+}
+
+.sg-stage-name {
+  max-width: 52px;
+  overflow: hidden;
+  font-size: 9px;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sg-stage-level {
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: bold;
+  line-height: 1.1;
+}
+
+.sg-stage-locked .sg-stage-emoji,
+.sg-stage-locked .sg-stage-level {
+  filter: grayscale(1);
+  color: #777;
+}
+
+.sg-stage-eq {
+  position: absolute;
+  top: -7px;
+  left: -7px;
+  color: #facc15;
+  font-size: 11px;
+}
+
+.sg-stage-arrow {
+  flex: 0 0 16px;
+  color: #1f8cb7;
+  font-size: 25px;
+  font-weight: bold;
+  line-height: 1;
+  text-shadow: 1px 1px 0 #07141b, 0 0 5px rgba(31, 140, 183, .5);
+}
+
+.sg-modal-locked-action {
+  min-height: 26px;
+  padding: 4px 6px;
+  box-sizing: border-box;
+  color: var(--dim);
+  font-size: 11px;
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .sg-group-label {
+    flex-basis: 76px;
+  }
+
+  .sg-stage-node {
+    flex-basis: 52px;
+    width: 52px;
+    height: 54px;
+  }
+
+  .sg-stage-name {
+    max-width: 48px;
+  }
+}
+
 #skill-modal-body {
   display: grid;
   grid-template-rows: 48px 24px 140px 28px 66px;
