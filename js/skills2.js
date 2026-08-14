@@ -28,10 +28,20 @@
 var SG_PREFIX = 'sg:';
 var SG_TIER_MAX_LV = 10;      // 每階等級上限（固定，不隨轉生提高）
 var SG_TIER_COUNT = 7;        // 每群組階數
-/* 被動群組（引擎接線，不入參數表——每個群組的效果本來就是程式碼）：
-   不可裝載、不可施放、無冷卻無耗魔；等級一到效果即恆時生效。 */
+/* 主動型被動群組（2026-08-14 技能類型擴充；引擎接線，不入參數表）：
+   效果被動觸發、永遠不會被主動施放（不佔出手節奏、無冷卻無耗魔），
+   但**必須裝配到技能列才生效**——佔用一個技能格就是這類技能的代價。
+   與純被動的差別在此：學了不等於生效，卸下即失效。 */
 var SG_PASSIVE = { counter: true };
 function skills2IsPassive(gid) { return !!SG_PASSIVE[gid]; }
+
+/* 主動型被動目前是否生效：已學習（第 1 階至少 Lv.1）且已裝配在技能列。
+   讀 G＝Worker 端唯一權威；主執行緒 UI 走面板快照自行判斷（js/ui.js）。 */
+function skills2PassiveActive(gid) {
+  if (!skills2IsPassive(gid) || !skills2Castable(gid)) return false;
+  var lo = (typeof G !== 'undefined' && G && G.player && G.player.loadout) ? G.player.loadout : null;
+  return !!lo && lo.indexOf(SG_PREFIX + gid) >= 0;
+}
 
 /* ---- 群組定義表（撥離：config/CSV/Skills2.csv → 本字面值） ----
    群組欄位：name 名稱／emoji 圖標／cd 冷卻秒數／cost 施法法力消耗
@@ -801,7 +811,7 @@ function sgCastBloodrage(pEnt, st, g, lvs, pool, primary, floatSel, out) {
 }
 
 /* ===========================================================================
-   反擊（counter）：被動群組——受擊時觸發，不裝載、不施放。
+   反擊（counter）：主動型被動——受擊時觸發，需裝配技能列才生效、永不主動施放。
    掛點：combat.js doMonsterAttack（野外與高塔敵攻玩家的唯一收斂點）於
    legendaryOnPlayerDamaged 旁鏈結呼叫，簽名與其一致。
    規則：T1 受傷機率反擊、T2 格擋必反（同一擊可同時成立、各自結算）；
@@ -815,6 +825,7 @@ function skills2OnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) {
   if (!SKILL2_RT || !mEnt || !pEnt) return;
   if (res && (res.miss || res.invuln || res.killed)) return;
   if (!(pEnt.hp > 0)) return;
+  if (!skills2PassiveActive('counter')) return; // 主動型被動：沒裝在技能列就不生效
   var lvs = skills2Levels('counter');
   if (!lvs || lvs[0] < 1) return;
   var t = SKILLS2.counter.tiers;

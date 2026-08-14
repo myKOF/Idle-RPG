@@ -2196,7 +2196,8 @@ function equipSkillToLoadout(id) {
   if (typeof id === 'string' && id.indexOf('sg:') === 0) {
     var sgId = id.slice(3);
     if (typeof SKILLS2 === 'undefined' || !SKILLS2[sgId]) return '未知技能群組';
-    if (typeof skills2IsPassive === 'function' && skills2IsPassive(sgId)) return '被動技能恆時生效，無需裝載';
+    /* 主動型被動（反擊）同樣要裝載才生效——這類技能的代價就是佔一個技能格，
+       因此走與主動技能完全相同的裝載規則（只是永遠不會被施放）。 */
     if (typeof skills2Castable === 'function' && !skills2Castable(sgId)) return '尚未學習';
     var sgLo = G.player.loadout;
     if (sgLo.indexOf(id) >= 0) return '已在裝載欄';
@@ -3023,7 +3024,7 @@ function pickAndCastSkill(pEnt, target, floatSel) {
       var sgDef = (typeof SKILLS2 !== 'undefined') ? SKILLS2[sgId] : null;
       if (!sgDef || typeof castSkill2 !== 'function' ||
           typeof skills2Castable !== 'function' || !skills2Castable(sgId)) continue;
-      // 被動群組（反擊）不可施放：手改存檔塞進裝載欄也不佔用出手節奏
+      // 主動型被動（反擊）：裝在技能列只為生效，永不主動施放、不佔用出手節奏
       if (typeof skills2IsPassive === 'function' && skills2IsPassive(sgId)) continue;
       var sgLive = Array.isArray(target)
         ? target.some(function (ent) { return ent && ent.hp > 0; })

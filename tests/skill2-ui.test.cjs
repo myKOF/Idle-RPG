@@ -52,8 +52,35 @@ test('新版階段彈窗沿用舊版單技能結構，未解鎖階段不產生�
   assert.match(modal, /data-skill2-learn="' \+ gid \+ ':' \+ selectedTier/);
 });
 
+test('主動型被動：技能彈窗有裝備鈕與類型標籤，快捷列外框旋轉流動', () => {
+  const start = ui.indexOf('function renderSkill2Modal(');
+  const end = ui.indexOf('function openSkillModal(', start);
+  const modal = ui.slice(start, end);
+  // 需裝配才生效 → 一定要有裝備／卸下鈕（不能像純被動那樣拿掉）
+  assert.match(modal, /isPassiveGroup/);
+  assert.match(modal, /data-skill-equip="' \+ ref/);
+  assert.match(modal, /data-skill-unequip="' \+ ref/);
+  assert.match(modal, /skill-tag-passive/);
+  assert.match(modal, /主動型被動/);
+
+  // 戰鬥快捷列：主動型被動帶 active-passive class，且不套冷卻／無魔狀態
+  const barStart = ui.indexOf('function renderBattleSkillBar(');
+  const barEnd = ui.indexOf('function startBattleSkillBarAnimation(', barStart);
+  const bar = ui.slice(barStart, barEnd);
+  assert.match(bar, /isActivePassive = isSgE && \(typeof skills2IsPassive === 'function'\) && skills2IsPassive\(entry\.slice\(3\)\)/);
+  assert.match(bar, /isActivePassive \? ' active-passive ready'/);
+  assert.match(bar, /var isOnCd = !isActivePassive && cd > 0/);
+
+  // CSS：旋轉流動外框（conic-gradient ＋ 無限旋轉動畫），並提供減少動態的替代呈現
+  assert.match(css, /\.battle-skill-slot\.active-passive::before\s*\{[\s\S]*?conic-gradient/);
+  assert.match(css, /\.battle-skill-slot\.active-passive::before\s*\{[\s\S]*?animation:\s*bss-passive-spin[\s\S]*?infinite/);
+  assert.match(css, /@keyframes bss-passive-spin\s*\{[\s\S]*?rotate\(360deg\)/);
+  assert.match(css, /\.battle-skill-slot\.active-passive::after\s*\{[\s\S]*?inset:\s*2px/);
+  assert.match(css, /prefers-reduced-motion[\s\S]*?\.battle-skill-slot\.active-passive::before\s*\{[\s\S]*?animation:\s*none/);
+});
+
 test('技能頁文字與資產版號已更新', () => {
   assert.match(html, /亮起階段代表已解鎖，灰色階段仍可查看但不能升級/);
-  assert.match(html, /css\/style\.css\?v=1\.0\.14/);
-  assert.match(html, /js\/ui\.js\?v=1\.0\.42/);
+  assert.match(html, /css\/style\.css\?v=1\.0\.15/);
+  assert.match(html, /js\/ui\.js\?v=1\.0\.43/);
 });

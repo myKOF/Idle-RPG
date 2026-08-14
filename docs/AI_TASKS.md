@@ -2941,3 +2941,25 @@ Commit：
 備註：設計文檔「狂暴」的升級欄寫「每級+30%普攻傷害」與效果欄（爆傷乘算）不一致，實作暫訂每級 +2% 爆傷；**2026-08-14 使用者確認 +2% 爆傷為正確值**（文檔升級欄為筆誤），數值已定案，不需再改。
 
 完成後交給：使用者（merge ai/claude → develop 時注意 combat.js/index.html/bridge.js 與 Codex 進行中修改的重疊）。
+
+## 任務：新增技能類型「主動型被動」（反擊改制）
+
+使用者需求：把反擊改成新的技能類型——雖是被動效果，但需裝配到技能列才生效；UI 要有裝備按鈕，戰鬥快捷列該類技能的外框要有旋轉流動提示。
+
+任務狀態：已完成（待實機回饋）
+
+任務分類：新功能／技能系統
+
+負責 AI：Claude
+
+任務內容：js/skills2.js 定義主動型被動（SG_PASSIVE 標記 + skills2PassiveActive 判定：已學習且在 loadout 才生效），反擊引擎入口加裝配判定；skills.js 恢復可裝載（施放端仍永遠跳過）、save.js 不再從裝載欄剔除；ui.js 技能彈窗恢復裝備/卸下鈕並標「主動型被動·需裝配技能列」、未裝配時顯示提醒、裝載欄標 🌀、戰鬥快捷列該格帶 active-passive class（不套冷卻/無魔、不顯示碼錶）；css/style.css 新增 conic-gradient 旋轉外框動畫（bss-passive-spin）＋ skill-tag-passive 標籤，並提供 prefers-reduced-motion 靜態替代。
+
+技術影響：js/skills2.js、js/skills.js、js/save.js、js/ui.js、css/style.css、index.html 與 worker/bridge 版號。
+
+測試要求：skill2-counter-bloodrage 首項改為「可裝載、永不施放、未裝配不生效、卸下即失效」，其餘反擊測試補裝配前提（16 項全過）；skill2-ui 新增「主動型被動 UI＋旋轉外框 CSS」釘值測試。
+
+實機驗證：卸下後 10 秒反擊次數停在 72 不動；重新裝上 10 秒內衝到 525 次（傷害 1.117 億），快捷列該格 class 為 `battle-skill-slot equipped active-passive ready`、無碼錶、::before 動畫 bss-passive-spin 為 running；console 零錯誤。
+
+已知風險：反擊佔用技能格會改變既有配裝平衡（原本學了就生效），數值調教需重新評估。
+
+完成後交給：使用者／Antigravity 依 SKILL_TEST_SPEC 驗證。

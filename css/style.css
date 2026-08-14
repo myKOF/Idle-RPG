@@ -3962,6 +3962,13 @@ textarea#save-io {
   color: #fff;
 }
 
+/* 主動型被動：技能詳情的類型標籤（配色與快捷列的旋轉外框同一組紫青） */
+.skill-tag-passive {
+  color: #ddd6fe;
+  border-color: rgba(139, 92, 246, .55);
+  background: rgba(139, 92, 246, .18);
+}
+
 .skill-tag-fire {
   color: #ffd2ad;
   border-color: rgba(255, 145, 70, .48);
@@ -5073,6 +5080,52 @@ textarea:disabled,
 .battle-skill-slot.equipped.ready {
   border-color: #56d34f;
   box-shadow: 0 0 6px rgba(86, 211, 79, 0.25);
+}
+
+/* 主動型被動技能（2026-08-14）：裝上即生效、不會主動施放，
+   以「旋轉流動外框」與一般主動技能區分。作法是讓一圈 conic-gradient 在底層轉，
+   再用 ::after 蓋住內部，只露出邊框那一圈（槽位本身 overflow:hidden 負責裁圓角）。 */
+.battle-skill-slot.equipped.active-passive {
+  border-color: rgba(139, 92, 246, 0.55);
+}
+
+.battle-skill-slot.active-passive::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background: conic-gradient(from 0deg,
+      transparent 0deg,
+      rgba(34, 211, 238, 0.95) 40deg,
+      rgba(139, 92, 246, 0.95) 90deg,
+      transparent 150deg,
+      transparent 360deg);
+  animation: bss-passive-spin 2.6s linear infinite;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.battle-skill-slot.active-passive::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 6px;
+  background: radial-gradient(circle at center, rgba(45, 35, 25, 0.97) 0%, rgba(20, 15, 10, 0.97) 100%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+@keyframes bss-passive-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 會暈眩的玩家把動畫關掉：改以靜態光暈標示同一件事 */
+@media (prefers-reduced-motion: reduce) {
+  .battle-skill-slot.active-passive::before {
+    animation: none;
+    background: rgba(139, 92, 246, 0.85);
+  }
 }
 
 .battle-skill-slot .bss-emoji {

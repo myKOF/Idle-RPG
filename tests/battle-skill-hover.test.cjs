@@ -40,5 +40,6 @@ test('同一技能 tooltip 不會因重複 hover 事件重建或重新定位', (
 });
 
 test('ui.js 快取版號已同步更新', () => {
-  assert.match(html, /js\/ui\.js\?v=1\.0\.42/);
+  // 2026-08-14 主動型被動：ui.js 一併改動 → 1.0.42 → 1.0.43
+  assert.match(html, /js\/ui\.js\?v=1\.0\.43/);
 });

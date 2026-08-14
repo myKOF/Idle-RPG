@@ -709,9 +709,9 @@ function migrateSave(data) {
     if (Array.isArray(data.player.loadout)) {
       data.player.loadout = data.player.loadout.filter(function (loId) {
         if (typeof loId !== 'string' || loId.indexOf('sg:') !== 0) return true;
-        if (!SKILLS2[loId.slice(3)]) return false;
-        // 被動群組（反擊）恆時生效、不佔裝載欄（手改存檔防護）
-        return !(typeof skills2IsPassive === 'function' && skills2IsPassive(loId.slice(3)));
+        /* 主動型被動（反擊）同樣佔裝載欄（裝上才生效），故與主動群組一視同仁，
+           只清掉指向未知群組的鍵。 */
+        return !!SKILLS2[loId.slice(3)];
       });
     }
   }
