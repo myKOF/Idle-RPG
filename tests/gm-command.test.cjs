@@ -498,3 +498,99 @@ test('stage_jump 的數字場景編號固定依 ZONE_LIST，不受 ZONES 物件�
   });
 });
 
+test('equipset GM 指令可一鍵發放指定品質與等級的全身 13 件部位套裝', () => {
+  withGMExecContext((context) => {
+    context.RARITIES = [
+      { key: 'common', name: '普通' },
+      { key: 'uncommon', name: '精良' },
+      { key: 'rare', name: '稀有' },
+      { key: 'unique', name: '獨特' },
+      { key: 'epic', name: '史詩' },
+      { key: 'legendary', name: '傳說' },
+      { key: 'mythic', name: '神話' },
+      { key: 'genesis', name: '創世' },
+      { key: 'godforged', name: '神鑄創世' }
+    ];
+    context.SLOT_INFO = {
+      weapon: { name: '主手' },
+      weapon2: { name: '副手' },
+      helmet: { name: '頭盔' },
+      shoulder: { name: '肩甲' },
+      chest: { name: '胸甲' },
+      belt: { name: '腰帶' },
+      gloves: { name: '護手' },
+      wrist: { name: '手腕' },
+      legs: { name: '護腿' },
+      boots: { name: '靴子' },
+      ring: { name: '戒指' },
+      ring2: { name: '戒指Ⅱ' },
+      amulet: { name: '項鍊' }
+    };
+    context.G.player.level = 80;
+    context.makeEquipment = (level, opts) => ({
+      id: Math.random(),
+      level: opts.level || level,
+      rarity: opts.rarity,
+      slot: opts.slot,
+      weaponType: opts.weaponType
+    });
+  }, (context, execute) => {
+    // 1. 指定品質與等級：equipset mythic 150
+    const res1 = execute('equipset mythic 150');
+    assert.equal(res1.ok, true);
+    assert.equal(context.G.inventory.length, 13);
+    assert.ok(res1.message.includes('神話'));
+    assert.ok(res1.message.includes('13 件'));
+
+    const items = context.G.inventory;
+    assert.ok(items.every((it) => it.rarity === 6)); // mythic is index 6
+    assert.ok(items.every((it) => it.level === 150));
+
+    // 核對 13 件部件
+    assert.equal(items[0].slot, 'weapon'); // 主手
+    assert.ok(['sword1h', 'dagger1h', 'wand1h', 'magicSword1h'].includes(items[0].weaponType));
+
+    assert.equal(items[1].slot, 'weapon'); // 副手
+    assert.ok(['shield', 'focus', 'spellbook', 'orb', 'dagger1h'].includes(items[1].weaponType));
+
+    assert.equal(items[2].slot, 'helmet');
+    assert.equal(items[3].slot, 'shoulder');
+    assert.equal(items[4].slot, 'chest');
+    assert.equal(items[5].slot, 'belt');
+    assert.equal(items[6].slot, 'gloves');
+    assert.equal(items[7].slot, 'wrist');
+    assert.equal(items[8].slot, 'legs');
+    assert.equal(items[9].slot, 'boots');
+    assert.equal(items[10].slot, 'ring');
+    assert.equal(items[11].slot, 'ring');
+    assert.equal(items[12].slot, 'amulet');
+
+    // 2. 未指定等級時預設使用玩家等級（G.player.level = 80）
+    context.G.inventory = [];
+    const res2 = execute('suit genesis');
+    assert.equal(res2.ok, true);
+    assert.equal(context.G.inventory.length, 13);
+    assert.ok(context.G.inventory.every((it) => it.rarity === 7)); // genesis is index 7
+    assert.ok(context.G.inventory.every((it) => it.level === 80));
+
+    // 3. 別名測試：set / fullset / equip_set
+    context.G.inventory = [];
+    assert.equal(execute('set legendary 50').ok, true);
+    assert.equal(context.G.inventory.length, 13);
+
+    context.G.inventory = [];
+    assert.equal(execute('fullset 5 50').ok, true);
+    assert.equal(context.G.inventory.length, 13);
+
+    context.G.inventory = [];
+    assert.equal(execute('equip_set 0 10').ok, true);
+    assert.equal(context.G.inventory.length, 13);
+
+    // 4. 錯誤處理
+    assert.equal(execute('equipset').ok, false);
+    assert.equal(execute('equipset invalid_rarity 100').ok, false);
+    assert.equal(execute('equipset mythic abc').ok, false);
+  });
+});
+
+
