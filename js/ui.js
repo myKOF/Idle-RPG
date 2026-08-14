@@ -7189,10 +7189,13 @@ function renderSkill2Modal(body, gid, skillsSnapshot, headerSnapshot) {
   var tierMax = (typeof SG_TIER_MAX_LV === 'number') ? SG_TIER_MAX_LV : 10;
   var atCap = lv >= tierMax;
   var cost = (typeof skills2UpgradeCost === 'function') ? skills2UpgradeCost(gid, selectedTier, lv) : 0;
+  // 被動群組（反擊）：無冷卻無耗魔、不裝載，恆時生效
+  var isPassiveGroup = (typeof skills2IsPassive === 'function') && skills2IsPassive(gid);
   var h = '<div class="skd-head"><span class="skd-emoji">' + g.emoji + '</span><b>' + esc(tier.name) + '</b> ' +
     '<span class="dim-text">總 Lv.' + sgUiTotalLevel(lvs) + '｜第' + (selectedTier + 1) + '階｜新版技能</span>' +
-    '<span class="sk-meta">🔵 ' + (Number(g.cost) || 0) + ' MP　⏱️ ' + g.cd + 's</span></div>';
-  h += '<div class="skill-tags"><span class="skill-tag skill-tag-category">新版技能（同群組進化）</span></div>';
+    '<span class="sk-meta">' + (isPassiveGroup ? '🌀 被動技能' : '🔵 ' + (Number(g.cost) || 0) + ' MP　⏱️ ' + g.cd + 's') + '</span></div>';
+  h += '<div class="skill-tags"><span class="skill-tag skill-tag-category">新版技能（同群組進化）</span>' +
+    (isPassiveGroup ? '<span class="skill-tag skill-tag-element">被動·恆時生效</span>' : '') + '</div>';
   h += '<div class="skill-modal-copy">' +
     '<div class="sk-desc">第' + (selectedTier + 1) + '階【' + esc(tier.name) + '】　Lv.' + lv + '/' + tierMax + '</div>' +
     '<div class="sk-desc">' + describeSkill2Tier(gid, selectedTier, lv) + '</div>' +
@@ -7214,11 +7217,16 @@ function renderSkill2Modal(body, gid, skillsSnapshot, headerSnapshot) {
   } else {
     h += '<div style="visibility:hidden"></div>';
   }
-  /* 裝備／卸下仍以群組參照 sg:<群組id>，階段參照只決定目前查看哪一階。 */
-  var equipPendingAttrs = pendingUiButtonAttributes(nodePendingKey('skill:' + ref));
-  h += inLoadout
-    ? '<button class="btn sm warn" data-skill-unequip="' + ref + '"' + equipPendingAttrs + '>卸下</button>'
-    : '<button class="btn sm" data-skill-equip="' + ref + '"' + equipPendingAttrs + '>⚔️ 裝備</button>';
+  /* 裝備／卸下仍以群組參照 sg:<群組id>，階段參照只決定目前查看哪一階；
+     被動群組不裝載，以標示取代裝備鈕。 */
+  if (isPassiveGroup) {
+    h += '<div style="text-align:center; padding:4px; color:var(--dim); font-size:12px;">🌀 被動：恆時生效</div>';
+  } else {
+    var equipPendingAttrs = pendingUiButtonAttributes(nodePendingKey('skill:' + ref));
+    h += inLoadout
+      ? '<button class="btn sm warn" data-skill-unequip="' + ref + '"' + equipPendingAttrs + '>卸下</button>'
+      : '<button class="btn sm" data-skill-equip="' + ref + '"' + equipPendingAttrs + '>⚔️ 裝備</button>';
+  }
   h += '</div>';
   body.innerHTML = h;
 }
@@ -7433,7 +7441,9 @@ function showSkillTooltip(ref, anchorEl) {
       var sgLocked = !sgStageUnlocked(sgLvs, sgTipTier);
       var sgH = '<div class="skt-name">' + sgG.emoji + ' ' + esc(sgTier.name) +
         ' <span class="dim-text">第' + (sgTipTier + 1) + '階｜Lv.' + (sgLvs[sgTipTier] || 0) + '/' + SG_TIER_MAX_LV + '</span></div>';
-      sgH += '<div class="skt-meta">' + esc(sgG.name) + '　🔵 ' + (Number(sgG.cost) || 0) + ' MP　⏱️ ' + sgG.cd + 's</div>';
+      sgH += '<div class="skt-meta">' + esc(sgG.name) + '　' +
+        ((typeof skills2IsPassive === 'function' && skills2IsPassive(sgTipGid))
+          ? '🌀 被動技能' : '🔵 ' + (Number(sgG.cost) || 0) + ' MP　⏱️ ' + sgG.cd + 's') + '</div>';
       sgH += '<div class="skt-desc">' + describeSkill2Tier(sgTipGid, sgTipTier, sgLvs[sgTipTier] || 0) + '</div>';
       if (sgLocked) sgH += '<div class="skt-lock skill-unlock-hint">🔒 前一階需至少 Lv.1 才能解鎖</div>';
       sgH += '<div class="skt-hint">點擊查看升級面板</div>';
@@ -7444,7 +7454,9 @@ function showSkillTooltip(ref, anchorEl) {
     }
     var sgH = '<div class="skt-name">' + sgG.emoji + ' ' + esc(sgG.name) +
       ' <span class="dim-text">總 Lv.' + sgUiTotalLevel(sgLvs) + '｜新版技能</span></div>';
-    sgH += '<div class="skt-meta">🔵 ' + (Number(sgG.cost) || 0) + ' MP　⏱️ ' + sgG.cd + 's</div>';
+    sgH += '<div class="skt-meta">' +
+      ((typeof skills2IsPassive === 'function' && skills2IsPassive(sgTipGid))
+        ? '🌀 被動技能（恆時生效，無需裝載）' : '🔵 ' + (Number(sgG.cost) || 0) + ' MP　⏱️ ' + sgG.cd + 's') + '</div>';
     sgH += '<div class="skt-desc sg-tier-list">' + describeSkill2Group(sgTipGid, sgLvs) + '</div>';
     sgH += '<div class="skt-hint">點擊開啟升級面板</div>';
     tip.innerHTML = sgH;

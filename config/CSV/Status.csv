@@ -37,3 +37,5 @@ sgGale,狂風,💨,buff,stat,sgGale,,,0,,0,20,5,0,refresh,1,新版技能【狂�
 sgFrenzyCr,狂暴·爆擊率,🔥,buff,stat,sgCritUp,,,0,,0,50,6,0,refresh,1,新版技能【狂暴之舞】：爆擊率提高。
 sgFrenzyCd,狂暴·爆擊傷害,💥,buff,stat,sgCritDmgUp,,,0,,0,200,6,0,refresh,1,新版技能【狂暴之舞】：爆擊傷害提高。
 sgStorm,暴風化身,🌪️,buff,stat,sgStorm,,,0,,0,0,3,0,refresh,1,新版技能【暴風之舞】：化身暴風，期間自動施放雙刀亂舞、無法普攻。
+sgBloodrage,嗜血狂怒,💢,buff,stat,sgBloodrage,,,0,,0,20,8,0,refresh,1,新版技能【嗜血狂怒】：攻速乘算提高（突破攻速上限）；期間各階狂怒效果生效。
+sgArmorBrk,破甲,⚒️,debuff,stat,sgDefBrk,,,0,,0,25,4,0,stack,4,新版技能【破甲擊】：防禦降低（可疊層，疊層時重置時間；獨立鍵、與舊 defDown 減益加總計算）。

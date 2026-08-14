@@ -710,6 +710,11 @@ function applyEnemyHpDamage(ent, damage) {
        只對玩家戰鬥實體生效——實體判別沿用 tickStatuses 慣例（敵人才有 maxHp）。 */
     var gmFloor = (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.god && !(ent.maxHp > 0)) ? 1 : 0;
     ent.hp = Math.max(gmFloor, ent.hp - amount);
+    // 新版技能【血飲術】反噬：持續傷害／衍生傷害等直接扣血也是「敵人受傷」
+    //（僅敵方實體＝有 maxHp；玩家自身流血不通知，天然阻斷遞迴）
+    if (amount > 0 && ent.maxHp > 0 && typeof skills2OnEnemyDamaged === 'function') {
+      skills2OnEnemyDamaged(ent, amount);
+    }
   }
   return amount;
 }
@@ -848,6 +853,10 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   if (typeof legendaryOutgoingDamageMultiplier === 'function') {
     dmg *= legendaryOutgoingDamageMultiplier(attacker, defender, aCfg);
   }
+  // 新版技能【嗜血狂怒】最終輸出乘區（狂怒／血飲術／狂血盛宴，js/skills2.js；僅玩家攻擊端）
+  if (aCfg.isPlayer && typeof skill2RageDamageMultiplier === 'function') {
+    dmg *= skill2RageDamageMultiplier(attacker);
+  }
   // 格擋（機率減傷）：機率與減傷上限共用 STAT_CAPS，0 代表不設上限。
   var blockChance = capValue(dCfg.blockRate || 0, STAT_CAPS.blockRate);
   if (blockChance > 0 && chance(blockChance)) {
@@ -899,10 +908,18 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
       defender.hp = 0; out.killed = true;
     }
   }
+  // 新版技能【血飲術】反噬：玩家攻擊端的敵方受傷事件通知（js/skills2.js，未啟用時零成本）
+  if (aCfg.isPlayer && out.dmg > 0 && typeof skills2OnEnemyDamaged === 'function') {
+    skills2OnEnemyDamaged(defender, out.dmg);
+  }
   // 反震（防守方被動）= 防守方最大生命 × 反震%
   if (dCfg.thornsPct && !out.killed) {
     out.thorns = Math.max(1, Math.round(dCfg.maxHp * dCfg.thornsPct / 100 * globalDamageMultiplier(aCfg.globalDmgRed)));
     attacker.hp -= out.thorns;
+    // 反震也是「敵人受傷」：血飲術反噬同樣通知（防守方為玩家＝攻擊者為敵人）
+    if (dCfg.isPlayer && typeof skills2OnEnemyDamaged === 'function') {
+      skills2OnEnemyDamaged(attacker, out.thorns);
+    }
   }
   return out;
 }

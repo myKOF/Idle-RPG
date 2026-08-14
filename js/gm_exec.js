@@ -800,7 +800,9 @@
       // 屬性基準覆寫：套在 computeStats 所有上限夾制之後（固定值，不受裝備影響）
       var STAT_KEYS = {
         aspd: 'aspd', cdr: 'cdr', atk: 'atk', matk: 'matk', hit: 'hit',
-        crit: 'critRate', critrate: 'critRate', critdmg: 'critDmg', aoe: 'aoeDmg', aoedmg: 'aoeDmg'
+        crit: 'critRate', critrate: 'critRate', critdmg: 'critDmg', aoe: 'aoeDmg', aoedmg: 'aoeDmg',
+        // 反擊測試（2026-08-14 技能第二批）：招架／破甲擊依賴格擋觸發
+        block: 'blockRate', blockrate: 'blockRate', blockred: 'blockDmgRed'
       };
       key = String(args[0] || '').trim().toLowerCase();
       if (key === 'clear' || key === 'off') {

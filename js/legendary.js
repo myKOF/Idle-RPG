@@ -345,6 +345,7 @@ function legendaryPreviewBasicAttack(pEnt, target) {
   if (target.effects) previewTarget.effects = legendaryClone(target.effects);
   if (target.buffs) previewTarget.buffs = legendaryClone(target.buffs);
   if (target.dots) previewTarget.dots = legendaryClone(target.dots);
+  previewTarget._sgPreview = true; // 預覽命中：blood 反噬等「敵人受傷」掛鉤須忽略（js/skills2.js）
   var result = resolveHit(pEnt, previewTarget, playerAtkCfg(pEnt), monsterDefCfg(target));
   return result && !result.miss ? result : null;
 }
