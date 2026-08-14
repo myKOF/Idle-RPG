@@ -387,16 +387,19 @@ var BattleRenderer = (function () {
 
     /* Phaser advance:2000：先把過去兩秒已發射的粒子補進畫面。 */
     for (var i = 0; i < count; i++) spawn((i + 0.5) * interval);
+    node._flameStop = false;
     node._flameUpdate = function (dt) {
       var safeDt = Math.max(0, Math.min(0.08, dt));
-      accumulator += safeDt;
-      while (accumulator >= interval) {
-        accumulator -= interval;
-        spawn(0);
+      if (!node._flameStop) {
+        accumulator += safeDt;
+        while (accumulator >= interval) {
+          accumulator -= interval;
+          spawn(0);
+        }
       }
       for (var pi = particles.length - 1; pi >= 0; pi--) {
         var p = particles[pi];
-        p._age += safeDt;
+        p._age += safeDt * (node._flameStop ? 2.5 : 1);
         if (p._age >= 2.4) {
           if (p.parent) node.removeChild(p);
           p.destroy();
@@ -410,7 +413,7 @@ var BattleRenderer = (function () {
         p.y = Math.sin(p._angle) * distance;
         p.scale.set(scale, scale);
         p.tint = flameColorIntAt(life);
-        p.alpha = Math.max(0, 1 - life);
+        p.alpha = Math.max(0, (1 - life) * (node._flameStop ? 0.7 : 1));
       }
     };
     return node;
@@ -1245,12 +1248,15 @@ var BattleRenderer = (function () {
             arrived = true;
             if (onArrive) onArrive(posOf(targetId));
           }
-          /* 飛行結束後保留 emitter 2.4 秒，讓 advance 預填與尾端粒子完整淡出。 */
-          return t < dur + 2.4;
+          if (spec && spec.variant === 'fireball') {
+            if (core) core._flameStop = true;
+            return t < dur + 0.4;
+          }
+          return false;
         }
         return true;
       }
-    }, 1, Math.max(FX_HARD_LIFETIME_MS, dur * 1000 + 2500));
+    }, 1, dur * 1000 + 600);
   }
   /* 奧術彈幕：六顆光球先向玩家左右後方散開，過彎後以加速度追向目標。 */
   function spawnBarrageMissile(targetId, spec, side, lane, delaySec, travelMs) {
@@ -1772,12 +1778,12 @@ var BattleRenderer = (function () {
             arrived = true;
             if (onArrive) onArrive(to.x, to.y);
           }
-          /* 抵達後保留 emitter 2.4 秒，完整呈現 advance 預填粒子的淡出。 */
-          return t < dur + 2.4;
+          if (flame) flame._flameStop = true;
+          return t < dur + 0.45;
         }
         return true;
       }
-    }, scale && scale < 1 ? 0 : 2, dur * 1000 + (delaySec || 0) * 1000 + 3000);
+    }, scale && scale < 1 ? 0 : 2, dur * 1000 + (delaySec || 0) * 1000 + 800);
   }
 
   function spawnMeteor(rect, spec) {
