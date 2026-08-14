@@ -514,7 +514,9 @@ function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     ? knives.map(function (e) { return Math.round(bfTravelSeconds(e) * 1000); })
     : null;
   /* targets 一個代表一把刀；count 必須固定為 1，否則顯示層會把每把刀再複製 kCount 次。 */
-  sgEmitVfx('knife', knives, floatSel, { fxKind: 'projectile', count: 1, travelMs: travelMs });
+  sgEmitVfx('knife', knives, floatSel, {
+    fxKind: 'projectile', variant: 'knife', count: 1, travelMs: travelMs
+  });
 
   var bouncePct = lvs[2] > 0 ? sgVal(t[2].fx, 'pct', lvs[2]) : 0;
   var cdrSec = lvs[6] > 0 ? sgVal(t[6].fx, 'sec', lvs[6]) : 0;

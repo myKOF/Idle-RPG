@@ -484,7 +484,7 @@ function vfxImpact(spec, layer, pt, targetId, delayMs) {
 function vfxProjectileCls(spec) {
   var v = spec.variant;
   if (v === 'swordwave') return 'vfx-proj-sword';
-  if (v === 'knife-bounce') return 'vfx-proj-knife';
+  if (v === 'knife' || v === 'knife-bounce') return 'vfx-proj-knife';
   if (v === 'venom') return 'vfx-proj-poison';
   if (v === 'flamewave') return 'vfx-proj-fire vfx-proj-big';
   if (spec.elem && VFX_ELEM_THEME[spec.elem]) return 'vfx-proj-' + spec.elem;
@@ -504,10 +504,14 @@ function vfxBarrageProjectile(spec, layer, from, to, side, lane, delayMs, travel
     x: start.x + side * (48 + lane * 18),
     y: start.y - 16 - lane * 8
   };
-  var d = vfxNode('vfx-proj ' + vfxProjectileCls(spec) + ' vfx-proj-barrage', layer, spec);
+  var projClass = vfxProjectileCls(spec);
+  var d = vfxNode('vfx-proj ' + projClass + ' vfx-proj-barrage', layer, spec);
   d.style.animation = 'none';
   var core = document.createElement('span');
   core.className = 'vfx-proj-core';
+  if (projClass === 'vfx-proj-glyph' || projClass === 'vfx-proj-knife') {
+    core.textContent = spec.glyph || (projClass === 'vfx-proj-knife' ? '🔪' : '✨');
+  }
   d.appendChild(core);
   var trail = document.createElement('span');
   trail.className = 'vfx-proj-trail';
@@ -559,7 +563,8 @@ function vfxProjectile(spec, layer, from, to, delayMs, travelMs) {
     if (fromPt.y < -36) { fromPt.x = to.x - (to.y + 36); fromPt.y = -36; }
   }
   var dx = to.x - fromPt.x, dy = to.y - fromPt.y;
-  var d = vfxNode('vfx-proj ' + vfxProjectileCls(spec), layer, spec);
+  var projClass = vfxProjectileCls(spec);
+  var d = vfxNode('vfx-proj ' + projClass, layer, spec);
   d.style.setProperty('--vfx-x0', fromPt.x + 'px');
   d.style.setProperty('--vfx-y0', fromPt.y + 'px');
   d.style.setProperty('--vfx-x1', to.x + 'px');
@@ -569,7 +574,9 @@ function vfxProjectile(spec, layer, from, to, delayMs, travelMs) {
   d.style.animationDuration = flight + 'ms';
   var core = document.createElement('span');
   core.className = 'vfx-proj-core';
-  if (vfxProjectileCls(spec) === 'vfx-proj-glyph') core.textContent = spec.glyph || '✨';
+  if (projClass === 'vfx-proj-glyph' || projClass === 'vfx-proj-knife') {
+    core.textContent = spec.glyph || (projClass === 'vfx-proj-knife' ? '🔪' : '✨');
+  }
   d.appendChild(core);
   var trail = document.createElement('span');
   trail.className = 'vfx-proj-trail';
@@ -594,10 +601,11 @@ function vfxProjectile(spec, layer, from, to, delayMs, travelMs) {
 }
 
 /* ---- 斬擊：交叉雙刀光 ---- */
-function vfxSlash(spec, layer, pt, delayMs) {
-  var d = vfxNode('vfx-slash', layer, spec);
+function vfxSlash(spec, layer, pt, delayMs, tiltDeg, extraClass) {
+  var d = vfxNode('vfx-slash' + (extraClass ? ' ' + extraClass : ''), layer, spec);
   vfxPlace(d, pt);
-  d.style.setProperty('--vfx-tilt', (Math.random() * 50 - 25).toFixed(0) + 'deg');
+  var tilt = typeof tiltDeg === 'number' ? tiltDeg : (Math.random() * 50 - 25);
+  d.style.setProperty('--vfx-tilt', tilt.toFixed(0) + 'deg');
   d.style.animationDelay = delayMs + 'ms';
   d.style.animationDuration = Math.round((spec.dur || 0.5) * 1000) + 'ms';
   vfxTrack(d, delayMs + (spec.dur || 0.5) * 1000 + 160);
@@ -1099,13 +1107,18 @@ function renderCombatVfx(spec) {
 
   /* 震碎斬的前方飛出刀光、迴身雙連斬的後方刀光；同時存在時兩者都畫。 */
   if (kind === 'slash' && (s.variant === 'cleave-shockwave' || s.variant === 'cleave-back' || s.variant === 'cleave-dual')) {
-    if (!rt.pts.length) return;
     var drawForward = s.variant === 'cleave-shockwave' || s.variant === 'cleave-dual';
     var drawBack = s.variant === 'cleave-back' || s.variant === 'cleave-dual';
     for (var cc = 0; cc < count; cc++) {
       var cleaveDelay = baseDelay + cc * stagger;
-      if (drawForward) vfxThrustLine(s, layer, from, rt.pts[0], cleaveDelay, 0, 70);
-      if (drawBack) vfxThrustLine(s, layer, from, rt.pts[0], cleaveDelay, Math.PI, 70);
+      if (drawForward && rt.pts.length) vfxThrustLine(s, layer, from, rt.pts[0], cleaveDelay, 0, 70);
+      if (drawBack && rt.pts.length) vfxThrustLine(s, layer, from, rt.pts[0], cleaveDelay, Math.PI, 70);
+      if (drawBack && from) {
+        var backAngle = rt.pts.length
+          ? Math.atan2(rt.pts[0].y - from.y, rt.pts[0].x - from.x) * 180 / Math.PI + 180
+          : 180;
+        vfxSlash(s, layer, from, cleaveDelay, backAngle, 'vfx-slash-cleave-back');
+      }
     }
     for (var cti = 0; cti < rt.pts.length; cti++) {
       for (var ccc = 0; ccc < count; ccc++) {

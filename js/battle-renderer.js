@@ -1045,7 +1045,7 @@ var BattleRenderer = (function () {
   function projectileCore(spec, theme) {
     var core = new PIXI.Graphics();
     var elem = spec && spec.elem;
-    if (spec && spec.variant === 'knife-bounce') {
+    if (spec && (spec.variant === 'knife' || spec.variant === 'knife-bounce')) {
       core.moveTo(-14, 0).lineTo(-4, -5).lineTo(14, 0).lineTo(-4, 5).closePath()
         .fill(theme.c1)
         .stroke({ color: theme.c2, width: 2, alpha: 0.95 });
@@ -1091,6 +1091,7 @@ var BattleRenderer = (function () {
     var node = new PIXI.Container();
     var core;
     var glyphOnly = spec.glyph && (spec.variant === 'glyph' ||
+      spec.variant === 'knife' || spec.variant === 'knife-bounce' ||
       (!spec.elem && (spec.cat === 'special' || spec.cat === 'potential' || spec.cat === 'fusion')));
     if (glyphOnly) {
       core = new PIXI.Text({ text: spec.glyph, style: { fontSize: 20 } });
@@ -1243,11 +1244,11 @@ var BattleRenderer = (function () {
   }
 
   /* 斬擊弧線 */
-  function spawnSlash(x, y, spec, big) {
+  function spawnSlash(x, y, spec, big, rotation) {
     var theme = themeOf(spec);
     var g = new PIXI.Graphics();
     g.x = x; g.y = y;
-    g.rotation = -0.5 + Math.random();
+    g.rotation = typeof rotation === 'number' ? rotation : (-0.5 + Math.random());
     S.layers.fx.addChild(g);
     var t = 0, dur = 0.24, R = big ? 54 : 36;
     addFx({
@@ -1782,13 +1783,24 @@ var BattleRenderer = (function () {
           break;
         }
         if (spec.variant === 'cleave-shockwave' || spec.variant === 'cleave-back' || spec.variant === 'cleave-dual') {
-          if (!targets.length) break;
           var drawForward = spec.variant === 'cleave-shockwave' || spec.variant === 'cleave-dual';
           var drawBack = spec.variant === 'cleave-back' || spec.variant === 'cleave-dual';
           for (var clc = 0; clc < count; clc++) {
             var clDelay = (baseDelay + clc * stagger) / 1000;
-            if (drawForward) spawnThrustLine(targets[0], spec, 0, clDelay, 70);
-            if (drawBack) spawnThrustLine(targets[0], spec, Math.PI, clDelay, 70);
+            if (drawForward && targets.length) spawnThrustLine(targets[0], spec, 0, clDelay, 70);
+            if (drawBack && targets.length) spawnThrustLine(targets[0], spec, Math.PI, clDelay, 70);
+            if (drawBack) {
+              (function (backDelay, backAngle) {
+                setTimeout(function () {
+                  if (fxGate()) return;
+                  var backFrom = playerMuzzle();
+                  spawnSlash(backFrom.x, backFrom.y, spec, true, backAngle);
+                }, Math.max(0, backDelay * 1000));
+              })(clDelay, targets.length
+                ? Math.atan2(posOf(targets[0]).y - playerMuzzle().y,
+                  posOf(targets[0]).x - playerMuzzle().x) + Math.PI
+                : Math.PI);
+            }
           }
           targets.forEach(function (id, ti) {
             for (var clHit = 0; clHit < count; clHit++) {
