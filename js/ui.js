@@ -2867,7 +2867,8 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
       continue;
     }
 
-    var cd = pEnt ? uiCountdownRemain((pEnt.skillCds && pEnt.skillCds[entry]) || 0, snapshotGt) : 0;
+    var rawCdVal = (pEnt && pEnt.skillCds && pEnt.skillCds[entry]) || 0;
+    var cd = pEnt ? uiCountdownRemain(rawCdVal, snapshotGt) : 0;
     var lv = isSgE
       ? sgUiTotalLevel(sgUiLevels(skillsSnapshot, entry.slice(3)))
       : (isPotE
@@ -2888,7 +2889,9 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
     var isNoMp = !isOnCd && pEnt && pEnt.mp !== undefined && pEnt.mp < cost;
     var slotCls = 'battle-skill-slot equipped' + (isOnCd ? ' on-cd' : '') + (isNoMp ? ' no-mp' : (!isOnCd ? ' ready' : ''));
 
-    h += '<div class="' + slotCls + '" data-slot-index="' + i + '" data-sk="' + esc(entry) + '" data-skill-id="' + esc(entry) + '" data-skill-slot-action="goto-skills">' +
+    var snapAttrs = isOnCd ? (' data-snap-cd="' + rawCdVal + '" data-snap-gt="' + (snapshotGt || 0) + '" data-total-cd="' + totalCd + '"') : '';
+
+    h += '<div class="' + slotCls + '" data-slot-index="' + i + '" data-sk="' + esc(entry) + '" data-skill-id="' + esc(entry) + '" data-skill-slot-action="goto-skills"' + snapAttrs + '>' +
       '<span class="bss-emoji">' + (sk.emoji || '⚔️') + '</span>' +
       (lv > 0 ? '<span class="bss-lv">' + lv + '</span>' : '') +
       '<div class="bss-cd-mask" style="--cd-deg:' + cdDeg + ';"></div>' +
@@ -2898,6 +2901,66 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
   }
 
   setHtmlIfChanged(bar, h);
+  startBattleSkillBarAnimation();
+}
+
+/* 戰鬥區技能欄 60fps 絲滑碼錶與圓形 CD 倒數動態器 */
+var _battleSkillBarAnimFrame = null;
+function startBattleSkillBarAnimation() {
+  if (_battleSkillBarAnimFrame) return;
+  if (typeof requestAnimationFrame !== 'function') return;
+
+  function step() {
+    _battleSkillBarAnimFrame = null;
+    var hasActiveCd = updateBattleSkillBarCds();
+    if (hasActiveCd) {
+      _battleSkillBarAnimFrame = requestAnimationFrame(step);
+    }
+  }
+  _battleSkillBarAnimFrame = requestAnimationFrame(step);
+}
+
+function updateBattleSkillBarCds() {
+  var bar = $id('battle-skill-bar');
+  if (!bar) return false;
+  var hasActive = false;
+  var slots = bar.children;
+  if (!slots || !slots.length) return false;
+
+  for (var i = 0; i < slots.length; i++) {
+    var slot = slots[i];
+    var snapCd = Number(slot.getAttribute('data-snap-cd')) || 0;
+    var snapGt = Number(slot.getAttribute('data-snap-gt')) || 0;
+    var totalCd = Number(slot.getAttribute('data-total-cd')) || 5;
+    if (snapCd <= 0) continue;
+
+    var cd = uiCountdownRemain(snapCd, snapGt);
+    var mask = slot.querySelector('.bss-cd-mask');
+    var text = slot.querySelector('.bss-cd-text');
+
+    if (cd > 0) {
+      hasActive = true;
+      var cdRatio = clamp(cd / totalCd, 0, 1);
+      var cdDeg = (cdRatio * 360).toFixed(1) + 'deg';
+      var cdText = cd >= 10 ? Math.ceil(cd) + 's' : fmt1(cd) + 's';
+      if (mask) mask.style.setProperty('--cd-deg', cdDeg);
+      if (text) text.textContent = cdText;
+      if (!slot.classList.contains('on-cd')) {
+        slot.classList.add('on-cd');
+        slot.classList.remove('ready');
+      }
+    } else {
+      slot.removeAttribute('data-snap-cd');
+      slot.removeAttribute('data-snap-gt');
+      if (mask) mask.style.setProperty('--cd-deg', '0deg');
+      if (text) text.textContent = '';
+      if (slot.classList.contains('on-cd')) {
+        slot.classList.remove('on-cd');
+        slot.classList.add('ready');
+      }
+    }
+  }
+  return hasActive;
 }
 
 // 場景最高階段（當前場景以即時值為準）

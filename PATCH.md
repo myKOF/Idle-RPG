@@ -10,6 +10,9 @@
   - **未裝備格子**：顯示虛線空槽與 `＋` 樣式，點擊直接跳轉至技能分頁（`switchTab('skills')`）。
   - **已裝備格子**：顯示技能 Emoji / 圖示與等級角標 `Lv.X`，無冷卻時顯示就緒狀態；冷卻時以 CSS `conic-gradient` 顯示扇形圓形 CD 倒數遮罩與即時碼錶倒數秒數（如 `2.4s`）。
   - 點擊已裝備格子可切換至技能頁並自動選中該技能。
+- **戰鬥區技能欄 60fps 絲滑碼錶與圓形 CD 遮罩**：
+  - 新增 `startBattleSkillBarAnimation()` 與 `updateBattleSkillBarCds()` 逐幀動態器（`requestAnimationFrame`），每次有技能進入冷卻時自動啟動 60fps 高頻即時計算。
+  - 精確計算當前遊戲時鐘經過的毫秒數，逐幀平滑更新 `--cd-deg`（0~360度扇形無階梯轉圈）與倒數秒數文字，冷卻歸零瞬間無縫切換至 ready 就緒狀態。
 - **測試與 DoD 驗證**：
   - 新增 `tests/battle-ui-rework.test.cjs` 驗證 HTML 結構、CSS 定位與 `renderBattleSkillBar` 渲染邏輯（3/3 PASS）。
   - 遞迴 G 相依掃描 `tests/ui-worker-g-dependency.test.cjs` 100% 通過，無未守衛 G 物件依賴。
