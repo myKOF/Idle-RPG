@@ -7290,6 +7290,84 @@ textarea:disabled,
   animation: vfxPart 0.7s ease-out both;
 }
 
+/* 殞石落地震波：三層橢圓環＋Particle Fountain 式徑向火星／塵土爆散。 */
+.vfx-meteor-shockwave {
+  width: 0;
+  height: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.vfx-shockwave-ring {
+  left: 0;
+  top: 0;
+  width: 44px;
+  height: 18px;
+  margin: -9px 0 0 -22px;
+  border: 4px solid var(--vfx-c2, #ffd166);
+  border-radius: 50%;
+  box-shadow: 0 0 12px var(--vfx-glow, #ff7a1a), inset 0 0 8px var(--vfx-c1, #fb7233);
+  animation: vfxShockwaveRing 0.78s cubic-bezier(0.12, 0.72, 0.22, 1) both;
+  animation-delay: inherit;
+}
+
+@keyframes vfxShockwaveRing {
+  0% {
+    opacity: 0;
+    transform: scale(0.12, 0.22);
+  }
+  14% { opacity: 1; }
+  100% {
+    opacity: 0;
+    transform: scale(var(--ring-sx, 3), var(--ring-sy, 5));
+  }
+}
+
+.vfx-shockwave-particle {
+  left: 0;
+  top: 0;
+  width: var(--particle-size, 6px);
+  height: var(--particle-size, 6px);
+  margin: calc(var(--particle-size, 6px) * -0.5) 0 0 calc(var(--particle-size, 6px) * -0.5);
+  border-radius: 50%;
+  background: var(--vfx-c2, #ffd166);
+  box-shadow: 0 0 8px var(--vfx-glow, #ff7a1a);
+  animation: vfxShockwaveParticle 0.72s cubic-bezier(0.2, 0.5, 0.3, 1) both;
+  animation-delay: inherit;
+}
+
+@keyframes vfxShockwaveParticle {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.3);
+  }
+  16% { opacity: 1; }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx, 0px), calc(var(--dy, 0px) + 28px)) scale(0.08);
+  }
+}
+
+.vfx-shockwave-dust {
+  left: 0;
+  top: 0;
+  width: 28px;
+  height: 9px;
+  margin: -4px 0 0 -14px;
+  border-radius: 50%;
+  background: var(--vfx-c1, #fb7233);
+  filter: blur(3px);
+  opacity: 0;
+  animation: vfxShockwaveDust 0.86s ease-out both;
+  animation-delay: inherit;
+}
+
+@keyframes vfxShockwaveDust {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.35, 0.5); }
+  18% { opacity: 0.7; }
+  100% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(2.6, 0.75); }
+}
+
 /* 範圍橙光一閃（隕石落地／全場技） */
 .vfx-area-flash {
   border-radius: 6px;

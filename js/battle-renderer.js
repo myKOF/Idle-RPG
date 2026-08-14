@@ -353,9 +353,10 @@ var BattleRenderer = (function () {
 
   /* 以同一組固定粒子位置重現 Phaser 的 advance emitter：白芯在前方，
      黃／橙／紅粒子向飛行反方向拉長，最後用少量 flare 火星補足火焰柱。 */
-  function flameProjectile(theme, small) {
+  function flameProjectile(theme, small, sizeScale, trailScale) {
     var node = new PIXI.Container();
-    var k = small ? 0.58 : 1;
+    var k = (small ? 0.58 : 1) * (typeof sizeScale === 'number' ? sizeScale : 1);
+    var tailK = typeof trailScale === 'number' ? trailScale : 1;
     flareSprite(theme, 0, 0, 0.86 * k, 0.98 * k, '#f83600', 0.78, node);
     flareSprite(theme, 3 * k, 3 * k, 0.68 * k, 0.82 * k, '#f89800', 0.88, node);
     flareSprite(theme, 7 * k, 7 * k, 0.51 * k, 0.65 * k, '#facc22', 0.96, node);
@@ -367,12 +368,12 @@ var BattleRenderer = (function () {
     ];
     for (var i = 0; i < tail.length; i++) {
       var p = tail[i];
-      flareSprite(theme, p[0] * k, p[1] * k, p[2] * k, p[3] * k, p[4], 0.82, node);
+      flareSprite(theme, p[0] * k * tailK, p[1] * k, p[2] * k, p[3] * k, p[4], 0.82, node);
     }
     if (!REDUCED_MOTION) {
       var sparks = small ? 4 : 8;
       for (var si = 0; si < sparks; si++) {
-        flareSprite(theme, (-28 - (si * 17) % 78) * k,
+        flareSprite(theme, (-28 - (si * 17) % 78) * k * tailK,
           ((((si * 29) % 31) - 15) * k),
           (0.08 + (si % 3) * 0.025) * k,
           (0.11 + (si % 2) * 0.035) * k,
@@ -1171,7 +1172,7 @@ var BattleRenderer = (function () {
     } else if (spec.variant === 'fireball') {
       /* 火球不再用圓形 Graphics：改用 Phaser white flare 多層疊影，
          與 DOM 版共用相同粒子排列。 */
-      core = flameProjectile(theme, false);
+      core = flameProjectile(theme, false, 0.65, 1);
     } else {
       core = projectileCore(spec, theme);
     }
@@ -1179,7 +1180,7 @@ var BattleRenderer = (function () {
     glow.anchor.set(0.5);
     glow.tint = parseInt(String(theme.glow).replace('#', '0x')) || 0xffffff;
     glow.alpha = spec.variant === 'fireball' ? 0.28 : 0.8;
-    glow.scale.set(spec.variant === 'fireball' ? 1.5 : 0.9);
+    glow.scale.set(spec.variant === 'fireball' ? 0.975 : 0.9);
     glow.blendMode = 'add';
     node.addChild(glow); node.addChild(core);
     node.x = from.x; node.y = from.y;
@@ -1631,7 +1632,7 @@ var BattleRenderer = (function () {
     var node = new PIXI.Container();
     /* 隕石與火球術共用 Phaser flare 疊影；small 由呼叫端透過 scale 傳入，
        因此大隕石是白芯／黃身／紅外焰，小隕石則保持同色階但體積較小。 */
-    var flame = flameProjectile(theme, scale && scale < 1);
+    var flame = flameProjectile(theme, scale && scale < 1, 1, 1.35);
     var glow = new PIXI.Sprite(glowTexture());
     glow.anchor.set(0.5); glow.scale.set(scale && scale < 1 ? 2.5 : 4.8); glow.blendMode = 'add';
     glow.alpha = 0.22;
@@ -1694,20 +1695,46 @@ var BattleRenderer = (function () {
     var g = new PIXI.Graphics();
     g.x = cx; g.y = cy;
     S.layers.fx.addChild(g);
-    var t = 0, dur = 0.5;
+    var t = 0, dur = 0.86;
     radius = Number(radius);
     if (!isFinite(radius) || radius <= 0) radius = 80;
+    var burst = [];
+    var burstCount = REDUCED_MOTION ? 9 : 18;
+    for (var bi = 0; bi < burstCount; bi++) {
+      burst.push({
+        angle: Math.PI * 2 * (bi / burstCount) + (bi % 3) * 0.12,
+        distance: radius * (0.42 + (bi % 5) * 0.075),
+        size: 2 + (bi % 3) * 1.2,
+        delay: (bi % 5) * 0.018
+      });
+    }
     addFx({
       node: g,
       update: function (dt) {
         t += dt;
         var k = t / dur;
         g.clear();
-        g.circle(0, 0, 8 + radius * k)
-          .fill({ color: theme.c1, alpha: 0.18 * (1 - k) })
-          .stroke({ color: theme.c2, width: Math.max(1, 7 * (1 - k)), alpha: 0.92 * (1 - k) });
-        g.circle(0, 0, 5 + radius * k * 0.72)
-          .stroke({ color: theme.c1, width: Math.max(1, 3 * (1 - k)), alpha: 0.75 * (1 - k) });
+        var flashK = Math.min(1, t / 0.18);
+        g.ellipse(0, 0, 11 + radius * 0.22 * flashK, 5 + radius * 0.07 * flashK)
+          .fill({ color: theme.c2, alpha: 0.3 * (1 - flashK) });
+        for (var ri = 0; ri < 3; ri++) {
+          var rk = Math.max(0, Math.min(1, (k - ri * 0.075) / 0.925));
+          if (rk <= 0) continue;
+          var ringAlpha = 0.92 * (1 - rk);
+          g.ellipse(0, 0, 10 + radius * rk * (0.78 + ri * 0.16),
+            4 + radius * rk * (0.22 + ri * 0.05))
+            .stroke({ color: ri === 0 ? theme.c2 : theme.c1,
+              width: Math.max(1, 5 - rk * 4), alpha: ringAlpha });
+        }
+        for (var pi = 0; pi < burst.length; pi++) {
+          var bp = burst[pi];
+          var pk = Math.max(0, Math.min(1, (t - bp.delay) / 0.62));
+          if (pk <= 0) continue;
+          var px = Math.cos(bp.angle) * bp.distance * pk;
+          var py = Math.sin(bp.angle) * bp.distance * pk * 0.48 + 28 * pk * pk - 10;
+          g.circle(px, py, Math.max(0.5, bp.size * (1 - pk)))
+            .fill({ color: pi % 2 ? theme.c1 : theme.c2, alpha: 0.95 * (1 - pk) });
+        }
         return t < dur;
       }
     }, 1);

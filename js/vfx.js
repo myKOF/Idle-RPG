@@ -582,8 +582,9 @@ function vfxFlare(parent, cls, x, y, scaleX, scaleY, color, delayMs) {
 
 /* 建立一顆「白芯、黃身、橙紅外焰、後方火星」的 flare 火球。
    small 僅縮小幾何，不改變色彩順序，讓殞石群看起來是同一種火焰的大小變體。 */
-function vfxBuildFlareFlame(parent, small) {
-  var k = small ? 0.58 : 1;
+function vfxBuildFlareFlame(parent, small, sizeScale, trailScale) {
+  var k = (small ? 0.58 : 1) * (typeof sizeScale === 'number' ? sizeScale : 1);
+  var tailK = typeof trailScale === 'number' ? trailScale : 1;
   vfxFlare(parent, 'vfx-flare-outer', 0, 0, 0.86 * k, 0.98 * k, '#f83600', 0);
   vfxFlare(parent, 'vfx-flare-orange', 3 * k, 3 * k, 0.68 * k, 0.82 * k, '#f89800', 0);
   vfxFlare(parent, 'vfx-flare-yellow', 7 * k, 7 * k, 0.51 * k, 0.65 * k, '#facc22', 0);
@@ -598,11 +599,11 @@ function vfxBuildFlareFlame(parent, small) {
   ];
   for (var i = 0; i < tail.length; i++) {
     var p = tail[i];
-    vfxFlare(parent, 'vfx-flare-tail', p[0] * k, p[1] * k, p[2] * k, p[3] * k, p[4], i * 18);
+    vfxFlare(parent, 'vfx-flare-tail', p[0] * k * tailK, p[1] * k, p[2] * k, p[3] * k, p[4], i * 18);
   }
   var sparks = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? (small ? 3 : 5) : (small ? 5 : 9);
   for (var si = 0; si < sparks; si++) {
-    var sx = (-28 - (si * 17) % 78) * k;
+    var sx = (-28 - (si * 17) % 78) * k * tailK;
     var sy = (((si * 29) % 31) - 15) * k;
     vfxFlare(parent, 'vfx-flare-spark', sx, sy, (0.08 + (si % 3) * 0.025) * k,
       (0.11 + (si % 2) * 0.035) * k, si % 2 ? '#f83600' : '#facc22', 60 + si * 34);
@@ -691,7 +692,8 @@ function vfxProjectile(spec, layer, from, to, delayMs, travelMs) {
     core.textContent = spec.glyph || (projClass === 'vfx-proj-knife' ? '🔪' : '✨');
   }
   if (spec.variant === 'fireball') {
-    vfxBuildFlareFlame(d, false);
+    /* 火球術縮小 35%；殞石術另由自己的呼叫端延長尾焰。 */
+    vfxBuildFlareFlame(d, false, 0.65, 1);
   } else {
     d.appendChild(core);
     var trail = document.createElement('span');
@@ -880,7 +882,8 @@ function vfxMeteorProjectile(spec, layer, from, to, delayMs, flight, small) {
   d.style.setProperty('--vfx-rot', Math.atan2(to.y - from.y, to.x - from.x).toFixed(3) + 'rad');
   d.style.animationDelay = delayMs + 'ms';
   d.style.animationDuration = flight + 'ms';
-  vfxBuildFlareFlame(d, !!small);
+  /* 殞石拖尾拉長 35%，本體大小仍由 small 的 0.58 倍控制。 */
+  vfxBuildFlareFlame(d, !!small, 1, 1.35);
   if (_vfxQuality !== VFX_QUALITY_LEVELS.REDUCED) {
     var emberCount = small ? 2 : 4;
     for (var ei = 0; ei < emberCount; ei++) {
@@ -893,6 +896,48 @@ function vfxMeteorProjectile(spec, layer, from, to, delayMs, flight, small) {
     }
   }
   vfxTrack(d, delayMs + flight + 140);
+}
+
+/*
+ * 殞石落地的衝擊波：參考 Phaser Particle Fountain 的徑向粒子邏輯，
+ * 讓粒子由落點向外噴散並在短時間內縮小、淡出；同時用三層橢圓環模擬
+ * 地面受力的波紋。這和技能傷害範圍是兩回事，只負責落地瞬間的視覺重量感。
+ */
+function vfxMeteorShockwave(spec, layer, pt, radius, delayMs) {
+  var d = vfxNode('vfx-meteor-shockwave', layer, spec);
+  vfxPlace(d, pt);
+  radius = Number(radius);
+  if (!isFinite(radius) || radius <= 0) radius = 80;
+  var ringCount = 3;
+  for (var ri = 0; ri < ringCount; ri++) {
+    var ring = document.createElement('span');
+    ring.className = 'vfx-shockwave-ring';
+    ring.style.setProperty('--ring-sx', (radius / 22 * (0.78 + ri * 0.16)).toFixed(2));
+    ring.style.setProperty('--ring-sy', (radius / 11 * (0.66 + ri * 0.12)).toFixed(2));
+    ring.style.animationDelay = (delayMs + ri * 62) + 'ms';
+    d.appendChild(ring);
+  }
+  var particleCount = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 9 : 18;
+  for (var i = 0; i < particleCount; i++) {
+    var angle = Math.PI * 2 * (i / particleCount) + (i % 3) * 0.12;
+    var distance = radius * (0.42 + (i % 5) * 0.075);
+    var p = document.createElement('span');
+    p.className = 'vfx-shockwave-particle';
+    p.style.setProperty('--dx', (Math.cos(angle) * distance).toFixed(1) + 'px');
+    p.style.setProperty('--dy', (Math.sin(angle) * distance * 0.48 - 10 - (i % 4) * 5).toFixed(1) + 'px');
+    p.style.setProperty('--particle-size', (4 + (i % 3) * 2) + 'px');
+    p.style.animationDelay = (delayMs + (i % 5) * 18) + 'ms';
+    d.appendChild(p);
+  }
+  for (var di = 0; di < 6; di++) {
+    var dust = document.createElement('span');
+    dust.className = 'vfx-shockwave-dust';
+    dust.style.setProperty('--dx', ((di - 2.5) * radius * 0.23).toFixed(1) + 'px');
+    dust.style.setProperty('--dy', (-(8 + (di % 3) * 4)).toFixed(1) + 'px');
+    dust.style.animationDelay = (delayMs + 80 + di * 22) + 'ms';
+    d.appendChild(dust);
+  }
+  vfxTrack(d, delayMs + 980);
 }
 
 /* 大隕石：右上方以 60° 斜線砸向範圍中心，並由幾顆較小火球伴隨進場。
@@ -952,6 +997,8 @@ function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
   flash.style.boxSizing = 'border-box';
   flash.style.animationDelay = hitAt + 'ms';
   vfxTrack(flash, hitAt + 700);
+
+  vfxMeteorShockwave(spec, layer, { x: cx, y: cy }, rectRadius(rect), hitAt);
 
   vfxSceneShake(layer, hitAt, true);
   for (var t = 0; t < (targetIds || []).length; t++) {
