@@ -2936,6 +2936,8 @@ Commit：
 
 測試要求：tests/skill2-counter-bloodrage.test.cjs（新增 12 項）；skill2-system 群組清單釘值更新；combo-hits 接線釘值更新；skill2-ui 版號釘值更新。npm test 1375/1376（唯一失敗＝既有 multi-enemy 菁英數量表，與本次無關）；build 277/277。
 
-已知風險：設計文檔「狂暴」升級效果寫「每級+30%普攻傷害」與效果欄（爆傷乘算）不一致，暫按同組模式訂每級 +2%（Skills2 表可調），待使用者裁決；專屬特效（counter-riposte/armor-break/bloodrage-aura/counter-sweep 變體）僅發事件、視覺待 Codex/Antigravity 補。
+已知風險：專屬特效（counter-riposte/armor-break/bloodrage-aura/counter-sweep 變體）僅發事件、視覺待 Codex/Antigravity 補。
+
+備註：設計文檔「狂暴」的升級欄寫「每級+30%普攻傷害」與效果欄（爆傷乘算）不一致，實作暫訂每級 +2% 爆傷；**2026-08-14 使用者確認 +2% 爆傷為正確值**（文檔升級欄為筆誤），數值已定案，不需再改。
 
 完成後交給：使用者（merge ai/claude → develop 時注意 combat.js/index.html/bridge.js 與 Codex 進行中修改的重疊）。
