@@ -4358,12 +4358,7 @@ textarea:disabled,
   cursor: pointer;
   opacity: .58;
   filter: grayscale(.9);
-  transition: transform .1s, opacity .1s, border-color .1s, box-shadow .1s;
-}
-
-.sg-stage-node:hover {
-  transform: scale(1.06);
-  opacity: .9;
+  transition: opacity .1s, border-color .1s, box-shadow .1s;
 }
 
 .sg-stage-node.sg-stage-unlocked {
@@ -6515,6 +6510,22 @@ textarea:disabled,
   box-shadow: 0 0 8px var(--vfx-glow, #fff);
 }
 
+/* 飛刀彈射：短促的刀刃菱形，與一般魔法圓彈區分。 */
+.vfx-proj-knife .vfx-proj-core {
+  width: 24px;
+  height: 8px;
+  border-radius: 1px 7px 1px 7px;
+  background: linear-gradient(90deg, transparent, var(--vfx-c2, #fff) 32%, var(--vfx-c1, #f97316) 78%, transparent);
+  box-shadow: 0 0 8px var(--vfx-glow, #fff);
+  transform: translate(-50%, -50%) rotate(var(--vfx-rot, 0rad));
+}
+
+.vfx-proj-knife .vfx-proj-trail {
+  width: 28px;
+  height: 3px;
+  opacity: 0.65;
+}
+
 /* 汲取回流的魂息 */
 .vfx-proj-wisp .vfx-proj-core {
   width: 10px;
@@ -6856,6 +6867,51 @@ textarea:disabled,
   animation: vfxAreaFlash 0.6s ease-out both;
 }
 
+/* 突刺／震碎斬：從玩家位置向前拉出可辨識的直線刀光。 */
+.vfx-thrust-line {
+  width: var(--vfx-length, 70px);
+  height: 9px;
+  transform-origin: 0 50%;
+  transform: rotate(var(--vfx-angle, 0rad)) scaleX(0.1);
+  border-radius: 50%;
+  background: linear-gradient(90deg, var(--vfx-c2, #fff) 0%, var(--vfx-c1, #f97316) 58%, transparent 100%);
+  box-shadow: 0 0 8px var(--vfx-glow, #fff), 0 0 18px var(--vfx-c1, #f97316);
+  animation: vfxThrustLine ease-out both;
+  animation-duration: inherit;
+  animation-delay: inherit;
+}
+
+.vfx-thrust-line::before,
+.vfx-thrust-line::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 2px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.95;
+}
+
+.vfx-thrust-line::before {
+  width: 36%;
+  filter: blur(1px);
+}
+
+.vfx-thrust-line::after {
+  width: 12px;
+  transform: translateX(calc(var(--vfx-length, 70px) - 34px));
+  background: var(--vfx-c2, #fff);
+  box-shadow: 0 0 9px var(--vfx-c2, #fff);
+}
+
+@keyframes vfxThrustLine {
+  0% { transform: rotate(var(--vfx-angle, 0rad)) scaleX(0.08); opacity: 0; }
+  18% { transform: rotate(var(--vfx-angle, 0rad)) scaleX(1); opacity: 1; }
+  70% { transform: rotate(var(--vfx-angle, 0rad)) scaleX(1); opacity: 0.9; }
+  100% { transform: rotate(var(--vfx-angle, 0rad)) scaleX(1.04); opacity: 0; }
+}
+
 @keyframes vfxAreaFlash {
   from {
     opacity: 0;
@@ -7149,6 +7205,33 @@ textarea:disabled,
   border-radius: 50%;
   background: conic-gradient(from 0deg, transparent, color-mix(in srgb, var(--vfx-c1, #b76cff) 45%, transparent), transparent 60%);
   animation: vfxSpinCenter 0.9s linear infinite;
+}
+
+.vfx-curse-bleed {
+  color: #ff4d5f;
+  filter: drop-shadow(0 0 8px #ff334d);
+}
+
+.vfx-curse-bleed::before {
+  border-color: #ff596d;
+}
+
+.vfx-curse-poison {
+  color: #b5ff65;
+  filter: drop-shadow(0 0 8px #55d83b);
+}
+
+.vfx-curse-poison::before {
+  border-color: #73df4f;
+}
+
+.vfx-impact-bleed::before {
+  background: radial-gradient(circle, #ffced5, #ff405c 52%, transparent 75%);
+}
+
+.vfx-impact-zero::after {
+  border-color: var(--vfx-c2, #d8ff8a);
+  box-shadow: 0 0 0 8px color-mix(in srgb, var(--vfx-c1, #76d83b) 30%, transparent), 0 0 26px var(--vfx-glow, #76d83b);
 }
 
 @keyframes vfxCurse {

@@ -29,6 +29,16 @@ test('新版技能階段依解鎖狀態亮起或置灰，但灰色節點仍保�
   assert.match(css, /\.sg-stage-locked \.sg-stage-emoji/);
 });
 
+test('新版技能節點不因 hover 或重繪產生放大縮小效果', () => {
+  const nodeStart = css.indexOf('.sg-stage-node {');
+  const unlockedStart = css.indexOf('.sg-stage-node.sg-stage-unlocked {', nodeStart);
+  assert.ok(nodeStart >= 0 && unlockedStart > nodeStart);
+  const nodeBlock = css.slice(nodeStart, unlockedStart);
+  assert.doesNotMatch(css, /\.sg-stage-node:hover\s*\{/);
+  assert.doesNotMatch(nodeBlock, /transform\s*:/);
+  assert.match(nodeBlock, /transition:\s*opacity/);
+});
+
 test('新版階段彈窗沿用舊版單技能結構，未解鎖階段不產生升級按鈕', () => {
   const start = ui.indexOf('function renderSkill2Modal(');
   const end = ui.indexOf('function openSkillModal(', start);
@@ -44,6 +54,6 @@ test('新版階段彈窗沿用舊版單技能結構，未解鎖階段不產生�
 
 test('技能頁文字與資產版號已更新', () => {
   assert.match(html, /亮起階段代表已解鎖，灰色階段仍可查看但不能升級/);
-  assert.match(html, /css\/style\.css\?v=1\.0\.7/);
+  assert.match(html, /css\/style\.css\?v=1\.0\.9/);
   assert.match(html, /js\/ui\.js\?v=1\.0\.36/);
 });

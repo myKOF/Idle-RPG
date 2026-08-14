@@ -1,5 +1,39 @@
 # AI_TASKS.md
 
+## Codex：新版技能近戰距離與技能特效優化（2026-08-14）
+
+- 狀態：已完成
+- 任務分類：新版主動技能戰鬥特效與攻擊距離調整
+- 負責 AI：Codex
+- 任務內容：依 `C:/Users/user/OneDrive/Desktop/神力之巔_記事錄.xlsx` 的「技能」工作表，將 6 組新版主動技能統一限制為普攻近戰距離，並補齊突刺貫穿／三向刀光、迴旋斬飛出斬擊、飛刀扇形與彈射、連續斬擊、流血中毒、屍爆及暴風之舞等肉眼可辨識的戰鬥特效。
+- 技術影響：只調整新版技能的目標距離與 VFX 事件／DOM／PixiJS 畫法；沿用既有 Worker Protocol `variant` 欄位，不改存檔格式、技能數值、傷害公式或舊技能系統。
+- 允許修改：`docs/AI_TASKS.md`、`js/skills.js`、`js/skills2.js`、`js/battlefield.js`、`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`index.html`、`tests/skill2-vfx.test.cjs`
+- 禁止修改：`js/worker/protocol.js`、存檔格式、舊技能數值與融合規則、新版技能數值 SSOT、其他 AI 進行中任務檔案。
+- 前置依賴：新版主動技能系統、連續座標戰場、DOM／PixiJS VFX 管線已完成；Excel「技能」工作表已讀取並完成視覺檢查；目標檔案衝突預檢無來源。
+- 測試要求：新版技能 VFX／近戰距離定向測試、相關 JS `node --check`、`npm.cmd run build`、完整 `npm.cmd test`（記錄既有失敗）、`git diff --check`；可行時以測試服確認 DOM 與 Canvas 兩種渲染路徑。
+- 完成條件：所有新版技能的目標選取不再使用遠程射程；表格明示的貫穿、三向、飛出、旋轉、連段、彈射、流血／中毒／屍爆等效果具有對應可辨識特效；測試與建置完成並回報風險。
+- 需要 Claude Review：是，確認技能特效與攻擊距離沒有改動數值規則。
+- 需要 Antigravity 驗證：是，實機確認近戰距離、突刺刀光、彈射路徑、旋風與 DoT／屍爆畫面。
+- 完成後交給：Claude Code 唯讀 Review，之後由使用者合併至整合分支。
+- 驗證結果：新版技能相關測試 29/29 通過；`npm.cmd run build` 通過（272 個檔案）；完整 `npm.cmd test` 僅剩既有 `tests/multi-enemy.test.cjs` 的菁英數量表回歸失敗，與本次技能／特效修改無關；`git diff --check` 無錯誤。
+- 已知風險：低畫質或 Canvas fallback 會依特效預算裁減粒子；沒有座標的高塔 BOSS 仍依既有架構退化為單體命中，無法呈現真實路徑幾何。
+
+## Codex：移除新版技能經驗刷新時的節點放大效果（2026-08-14）
+
+- 狀態：已完成（待 Claude Review／Antigravity 驗證）
+- 任務分類：新版技能 UI 視覺修正
+- 負責 AI：Codex
+- 任務內容：移除新版技能階段節點因滑鼠 hover 產生的放大／縮小效果，避免技能經驗更新重繪時呈現被點擊的視覺誤感。
+- 技術影響：只調整新版技能節點 CSS 與樣式版號，不改技能經驗、升級規則、解鎖狀態、Worker Protocol 或存檔格式。
+- 允許修改：`docs/AI_TASKS.md`、`css/style.css`、`index.html`、`tests/skill2-ui.test.cjs`。
+- 禁止修改：`js/skills2.js` 的技能數值與引擎邏輯、`js/ui.js`、Worker Protocol、存檔格式、戰鬥公式、其他 AI 進行中的檔案。
+- 前置依賴：新版技能樹橫向階段 UI 已完成，節點樣式位於 `css/style.css` 的 `.sg-stage-node` 區段。
+- 測試要求／結果：新版 UI 定向測試 5/5 通過；`npm.cmd run build` 通過；瀏覽器實測技能頁節點 `transform: none`、畫面正常；Console error/warning 0；`git diff --check` 通過。
+- 完成條件：技能節點 hover 與技能經驗刷新不再造成 scale 變化，其餘互動與狀態樣式維持正常。
+- 完成後交給：Claude Code 唯讀 Review，之後由使用者合併至整合分支。
+- 已知風險：本次未修改技能經驗、升級或解鎖邏輯；完整回歸的既有 `multi-enemy` 失敗與本任務無關。
+
+
 ## Codex：新版技能樹橫向階段與舊版升級彈窗（2026-08-14）
 
 - 狀態：已完成（待 Claude Review／Antigravity 驗證）

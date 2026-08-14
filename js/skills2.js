@@ -325,11 +325,20 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
   var st = getStats();
   var lvs = skills2Levels(gid);
   var storm = !!(opts && opts.storm);
-  var pool = Array.isArray(target)
+  var rawPool = Array.isArray(target)
     ? target.filter(function (e) { return e && e.hp > 0; })
     : ((target && target.hp > 0) ? [target] : []);
-  if (!pool.length) return null;
-  var primary = (typeof bfPickPrimary === 'function') ? bfPickPrimary(pool, pEnt._lockTarget) : pool[0];
+  /* 所有新版主動技能都以普攻近戰距離起手；但 pool 必須保留完整敵群，讓
+     貫穿 7 米、範圍擴散與周圍敵人等階段仍能命中近戰線段外的目標。 */
+  if (!rawPool.length) return null;
+  var reachable = rawPool.filter(function (e) {
+    return typeof bfPlayerCanReach !== 'function' || bfPlayerCanReach(e);
+  });
+  if (!reachable.length) return null;
+  /* 後續幾何與範圍技能仍需看到完整存活敵群；只有起手主目標用 reachable。 */
+  var pool = rawPool;
+  var primary = (typeof bfPickPrimary === 'function')
+    ? bfPickPrimary(reachable, pEnt._lockTarget) : reachable[0];
   if (!primary) return null;
 
   if (!storm) {
@@ -376,7 +385,19 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     dirs = [0, -dg, dg];
   }
   var lineLen = pierceLen > 0 ? pierceLen : bfMeterPx(BF_MELEE_METERS);
-  sgEmitVfx('thrust', [primary], floatSel, { fxKind: 'slash', count: Math.min(5, reps) });
+  var planned = [primary];
+  if (geomOk && (pierceLen > 0 || dirs.length > 1)) {
+    for (var pdi = 0; pdi < dirs.length; pdi++) {
+      var preview = bfLineTargets(baseAngle + dirs[pdi], lineLen, pool);
+      for (var pti = 0; pti < preview.length; pti++) {
+        if (planned.indexOf(preview[pti]) < 0) planned.push(preview[pti]);
+      }
+    }
+  }
+  var thrustVariant = dirs.length > 1 ? 'thrust-triple' : (pierceLen > 0 ? 'thrust-pierce' : 'thrust');
+  sgEmitVfx('thrust', planned, floatSel, {
+    fxKind: 'slash', variant: thrustVariant, count: Math.min(5, reps)
+  });
   var hitIdx = 0;
   for (var r = 0; r < reps; r++) {
     for (var di = 0; di < dirs.length; di++) {
@@ -433,7 +454,11 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       if (targets.indexOf(back[bi]) < 0) targets.push(back[bi]);
     }
   }
-  sgEmitVfx('cleave', targets, floatSel, { fxKind: 'slash', count: Math.min(5, slashes) });
+  var cleaveVariant = (lvs[5] > 0 && lvs[6] > 0) ? 'cleave-dual'
+    : (lvs[5] > 0 ? 'cleave-shockwave' : (lvs[6] > 0 ? 'cleave-back' : 'cleave'));
+  sgEmitVfx('cleave', targets, floatSel, {
+    fxKind: 'slash', variant: cleaveVariant, count: Math.min(5, slashes)
+  });
   var stunChance = lvs[4] > 0 ? sgVal(t[4].fx, 'chance', lvs[4]) : 0;
   var stunSec = lvs[4] > 0 ? sgVal(t[4].fx, 'sec', lvs[4]) : 0;
   for (var s = 0; s < slashes; s++) {
@@ -468,7 +493,7 @@ function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     if (geomOk) {
       // 以主目標為中軸的扇形，隨機挑選其餘目標
       var cone = bfConeTargets(bfAngleTo(primary), Number(t[0].fx.deg) || 60,
-        (typeof bfRangedRange === 'function') ? bfRangedRange() : 0, pool);
+        (typeof bfMeleeRange === 'function') ? bfMeleeRange() : 0, pool);
       var cands = [];
       for (var ci = 0; ci < cone.length; ci++) if (cone[ci] !== primary) cands.push(cone[ci]);
       // 洗牌取前 kCount-1 個
@@ -488,7 +513,8 @@ function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var travelMs = (typeof bfTravelSeconds === 'function')
     ? knives.map(function (e) { return Math.round(bfTravelSeconds(e) * 1000); })
     : null;
-  sgEmitVfx('knife', knives, floatSel, { fxKind: 'projectile', count: Math.min(5, kCount), travelMs: travelMs });
+  /* targets 一個代表一把刀；count 必須固定為 1，否則顯示層會把每把刀再複製 kCount 次。 */
+  sgEmitVfx('knife', knives, floatSel, { fxKind: 'projectile', count: 1, travelMs: travelMs });
 
   var bouncePct = lvs[2] > 0 ? sgVal(t[2].fx, 'pct', lvs[2]) : 0;
   var cdrSec = lvs[6] > 0 ? sgVal(t[6].fx, 'sec', lvs[6]) : 0;
@@ -523,6 +549,11 @@ function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       if (!next) next = (typeof bfNearestOther === 'function') ? bfNearestOther(cur, pool) : null;
       if (!next || next.hp <= 0) break;
       visited.push(next);
+      sgEmitVfx('knife', [cur, next], floatSel, {
+        fxKind: 'chain', variant: 'knife-bounce', count: 1,
+        travelMs: [0, (typeof bfTravelSeconds === 'function')
+          ? Math.round(bfTravelSeconds(next) * 1000) : 0]
+      });
       var bres = sgHitOne(pEnt, st, next, dmgVal * bouncePct / 100, 'knife', floatSel, out,
         delay + sgStaggerMs(b));
       if (bres && bres.crit) onCrit();
@@ -551,7 +582,9 @@ function sgCastGale(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     shareTargets = geomOk ? bfTargetsAround(primary, pool, bfMeterPx(sgVal(t[6].fx, 'm', lvs[6]))) : [primary];
     if (!shareTargets.length) shareTargets = [primary];
   }
-  sgEmitVfx('gale', shareMode ? shareTargets : [primary], floatSel, { fxKind: 'slash', count: Math.min(5, hits), variant: 'bladestorm' });
+  sgEmitVfx('gale', shareMode ? shareTargets : [primary], floatSel, {
+    fxKind: 'slash', count: Math.min(5, hits), variant: 'gale-slashes'
+  });
   for (var h = 0; h < hits; h++) {
     if (shareMode) {
       // 超神斬：本段傷害 ×(1+加成) 後由範圍內敵人均分
@@ -595,13 +628,16 @@ function sgCastBloodblade(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var bleedDur = (Number(t[0].fx.dotSec) || 5) + (lvs[1] > 0 ? sgVal(t[1].fx, 'sec', lvs[1]) : 0);
   var bleedTick = baseVal * sgVal(t[0].fx, 'dotPct', lvs[0]) / 100 * zeroBonus;
   applyStatus(primary, 'sgBleed', { dps: bleedTick / bleedGap, dur: bleedDur, interval: bleedGap });
-  sgEmitVfx('bloodblade', [primary], floatSel, { fxKind: 'curse' });
+  sgEmitVfx('bloodblade', [primary], floatSel, { fxKind: 'curse', variant: 'bleed' });
 
   // 血毒刃：流血的同時中毒（毒屬性）
   if (lvs[3] > 0) {
     var pGap = Math.max(0.1, Number(t[3].fx.dotGap) || 0.5);
     var pTick = baseVal * sgVal(t[3].fx, 'dotPct', lvs[3]) / 100 * zeroBonus;
     applyStatus(primary, 'sgPoison', { dps: pTick / pGap, dur: Number(t[3].fx.dotSec) || 4, interval: pGap });
+    sgEmitVfx('bloodblade', [primary], floatSel, {
+      fxKind: 'curse', variant: 'poison', elem: 'poison'
+    });
   }
 }
 
@@ -621,7 +657,9 @@ function sgCastDualdance(pEnt, st, g, lvs, pool, primary, floatSel, out, storm) 
     (lvs[1] > 0 ? sgRollCount(sgVal(t[1].fx, 'add', lvs[1])) : 0));
   var targets = bfSortedTargets(pool).slice(0, strikes);
   if (!targets.length) targets = [primary];
-  sgEmitVfx('dualdance', targets, floatSel, { fxKind: 'slash', count: Math.min(5, strikes), variant: storm ? 'cyclone' : undefined });
+  sgEmitVfx('dualdance', targets, floatSel, {
+    fxKind: 'slash', count: Math.min(5, strikes), variant: storm ? 'dual-storm' : 'dual-slash'
+  });
   for (var s = 0; s < strikes; s++) {
     var tgt = targets[s % targets.length];
     sgHitOne(pEnt, st, tgt, dmgVal, 'dualdance', floatSel, out, sgStaggerMs(s));
@@ -653,7 +691,9 @@ function sgCastDualdance(pEnt, st, g, lvs, pool, primary, floatSel, out, storm) 
     var stormGap = Math.max(0.1, Number(t[6].fx.gap) || 0.35);
     SKILL2_RT.storm = { until: GT + stormDur, nextAt: GT + stormGap, gap: stormGap, tgt: null };
     applyBuff(pEnt, 'sgStorm', 1, stormDur, 'sgStorm');
-    sgEmitVfx('dualdance', targets, floatSel, { fxKind: 'aura', variant: 'cyclone', dur: Math.min(6, stormDur) });
+    sgEmitVfx('dualdance', targets, floatSel, {
+      fxKind: 'aura', variant: 'cyclone', dur: Math.min(6, stormDur)
+    });
   }
 }
 
@@ -728,11 +768,18 @@ function sgTickBloodDots(dt, ctx) {
           var near = bfNearestOthers(e, enemies, enemies.length);
           for (var ni = 0; ni < near.length; ni++) {
             if (near[ni].hp > 0 && !sgHasDot(near[ni], 'sgPoison')) {
+              sgEmitVfx('bloodblade', [e, near[ni]], ctx.floatSel, {
+                fxKind: 'chain', variant: 'poison-spread', elem: 'poison', count: 1
+              });
               applyStatus(near[ni], 'sgPoison', { dps: d.dps, dur: Math.max(0.2, d.until - GT), interval: gap });
               break;
             }
           }
         }
+        sgEmitVfx('bloodblade', [e], ctx.floatSel, {
+          fxKind: 'impact', variant: sids[si] === 'sgPoison' ? 'poison-tick' : 'bleed-tick',
+          elem: sids[si] === 'sgPoison' ? 'poison' : null
+        });
         // 零日感染：每次作用時，機率立即造成剩餘持續傷害並清除該狀態
         // 剩餘值含 tickStatuses 已累積、尚未跳出的殘額（d.acc 秒），與到期補跳的總量守恆一致
         if (zeroLv > 0 && chance(sgVal(t[6].fx, 'chance', zeroLv))) {
@@ -742,6 +789,9 @@ function sgTickBloodDots(dt, ctx) {
             sgDerivedHit(e, remain, 'bloodblade', ctx.floatSel, zOut, '💥', 0);
             if (ctx.onDamage) ctx.onDamage(zOut.dmg);
             if (zOut.killed && ctx.onDeaths) ctx.onDeaths();
+            sgEmitVfx('bloodblade', [e], ctx.floatSel, {
+              fxKind: 'burst', variant: 'zero-infection', elem: 'poison'
+            });
           }
           // 直接移除實例（剩餘值已立即生效；不走到期流程，避免補跳殘餘）
           var di2 = e.dots.indexOf(d);
@@ -773,7 +823,9 @@ function skills2OnEnemyDeath(deadEnt, enemies) {
   var pEnt = (typeof FIELD !== 'undefined' && FIELD && FIELD.player) ? FIELD.player : null;
   if (!pEnt) return;
   var out = { killed: false, dmg: 0, crit: false };
-  sgEmitVfx('bloodblade', [deadEnt], 'mv-float', { fxKind: 'burst', elem: 'poison' });
+  sgEmitVfx('bloodblade', [deadEnt], 'mv-float', {
+    fxKind: 'burst', variant: 'blood-explosion', elem: 'poison'
+  });
   for (var i = 0; i < victims.length; i++) {
     sgHitOne(pEnt, st, victims[i], boomVal, 'bloodblade', 'mv-float', out, sgStaggerMs(i));
   }

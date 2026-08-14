@@ -321,6 +321,9 @@ function vfxRectAround(pt, area) {
 
 /* ---- 節點工廠 ---- */
 function vfxTheme(spec) {
+  if (spec && (spec.variant === 'bleed' || spec.variant === 'bleed-tick')) {
+    return { c1: '#d92846', c2: '#ffd0d8', glow: '#ff4962' };
+  }
   var t = (spec && spec.elem) ? VFX_ELEM_THEME[spec.elem] : null;
   if (t) return t;
   var c = (spec && spec.color) || '#ffffff';
@@ -424,6 +427,10 @@ function vfxImpact(spec, layer, pt, targetId, delayMs) {
   else if (v === 'vortex') { cls = 'vfx-impact vfx-impact-vortex'; strong = true; life = 1000; }
   else if (v === 'detonate') { cls = 'vfx-impact vfx-impact-detonate'; strong = true; life = 1000; }
   else if (v === 'venomburst') { cls = 'vfx-impact vfx-impact-venomburst'; strong = true; }
+  else if (v === 'blood-explosion') { cls = 'vfx-impact vfx-impact-detonate'; strong = true; life = 1000; }
+  else if (v === 'zero-infection') { cls = 'vfx-impact vfx-impact-poison vfx-impact-zero'; strong = true; life = 900; }
+  else if (v === 'bleed-tick') { cls = 'vfx-impact vfx-impact-phys vfx-impact-bleed'; }
+  else if (v === 'poison-tick') { cls = 'vfx-impact vfx-impact-poison'; }
   else if (v === 'nova') { cls = 'vfx-impact vfx-impact-nova'; strong = true; life = 1000; }
   else cls = 'vfx-impact vfx-impact-' + elemKey;
   var d = vfxNode(cls, layer, spec);
@@ -431,7 +438,7 @@ function vfxImpact(spec, layer, pt, targetId, delayMs) {
   d.style.animationDelay = delayMs + 'ms';
 
   var n = VFX_IMPACT_PARTS[elemKey] || 4;
-  if (v === 'detonate' || v === 'nova') n = 7;
+  if (v === 'detonate' || v === 'blood-explosion' || v === 'zero-infection' || v === 'nova') n = 7;
   if (_vfxQuality === VFX_QUALITY_LEVELS.REDUCED) n = 1;
   for (var i = 0; i < n; i++) {
     var s = document.createElement('span');
@@ -466,7 +473,7 @@ function vfxImpact(spec, layer, pt, targetId, delayMs) {
     }
     vfxTrack(cloud, delayMs + 2600);
   }
-  if (v === 'detonate') vfxSceneShake(layer, delayMs, false);
+  if (v === 'detonate' || v === 'blood-explosion') vfxSceneShake(layer, delayMs, false);
   vfxHitReact(targetId, spec.elem || null, delayMs, strong);
 }
 
@@ -477,6 +484,7 @@ function vfxImpact(spec, layer, pt, targetId, delayMs) {
 function vfxProjectileCls(spec) {
   var v = spec.variant;
   if (v === 'swordwave') return 'vfx-proj-sword';
+  if (v === 'knife-bounce') return 'vfx-proj-knife';
   if (v === 'venom') return 'vfx-proj-poison';
   if (v === 'flamewave') return 'vfx-proj-fire vfx-proj-big';
   if (spec.elem && VFX_ELEM_THEME[spec.elem]) return 'vfx-proj-' + spec.elem;
@@ -593,6 +601,30 @@ function vfxSlash(spec, layer, pt, delayMs) {
   d.style.animationDelay = delayMs + 'ms';
   d.style.animationDuration = Math.round((spec.dur || 0.5) * 1000) + 'ms';
   vfxTrack(d, delayMs + (spec.dur || 0.5) * 1000 + 160);
+}
+
+/* 直線突刺／飛出斬擊：固定 70 個系統距離單位（7 米）的刀光，
+   從玩家位置沿目標方向貫穿；三向突刺由 angleOffset 產生三道刀光。 */
+function vfxThrustLine(spec, layer, from, to, delayMs, angleOffset, lengthPx) {
+  if (!from || !to) return;
+  var dx = to.x - from.x, dy = to.y - from.y;
+  var angle = Math.atan2(dy, dx) + (Number(angleOffset) || 0);
+  var d = vfxNode('vfx-thrust-line', layer, spec);
+  vfxPlace(d, from);
+  d.style.setProperty('--vfx-length', Math.max(48, Number(lengthPx) || 70) + 'px');
+  d.style.setProperty('--vfx-angle', angle.toFixed(3) + 'rad');
+  d.style.animationDelay = Math.max(0, delayMs || 0) + 'ms';
+  d.style.animationDuration = Math.round(Math.max(0.22, spec.dur || 0.38) * 1000) + 'ms';
+  vfxTrack(d, Math.max(0, delayMs || 0) + Math.max(0.22, spec.dur || 0.38) * 1000 + 180);
+}
+
+/* 近戰彈射：第一組飛刀已從玩家飛出，後續只畫目前命中點到下一個目標的短刀光。 */
+function vfxKnifeBounce(spec, layer, from, to, delayMs, travelMs) {
+  if (!from || !to) return;
+  var next = {};
+  for (var key in spec) next[key] = spec[key];
+  next.variant = 'knife-bounce';
+  vfxProjectile(next, layer, from, to, delayMs, travelMs);
 }
 
 /* ---- 爆發（單點） ---- */
@@ -799,6 +831,20 @@ function vfxBolt(spec, layer, from, to, delayMs, weak) {
    在敵人之間彈射；單目標時向場上其他敵人卡片彈 1~2 道弱化弧光（純視覺氛圍，不帶數字）。 */
 function vfxChain(spec, layer, ptList, idList, baseDelay, strikes) {
   if (!ptList.length) return;
+  if (spec.variant === 'knife-bounce' || spec.variant === 'poison-spread') {
+    var pathHop = vfxStagger();
+    for (var pathI = 1; pathI < ptList.length; pathI++) {
+      var pathTravel = (spec.travelMs && spec.travelMs[pathI] > 0) ? spec.travelMs[pathI] : 0;
+      vfxKnifeBounce(spec, layer, ptList[pathI - 1], ptList[pathI],
+        baseDelay + (pathI - 1) * pathHop, pathTravel);
+      vfxImpact({
+        elem: spec.variant === 'poison-spread' ? 'poison' : null,
+        variant: null, color: spec.color
+      }, layer, ptList[pathI], idList[pathI],
+        baseDelay + (pathI - 1) * pathHop + Math.max(40, pathTravel));
+    }
+    return;
+  }
   var hop = vfxStagger();
   var n = Math.max(1, strikes || 1);
   for (var st = 0; st < n; st++) {
@@ -873,12 +919,15 @@ function vfxSelfBuff(spec, layer, pt, delayMs) {
 
 /* ---- 敵身詛咒：暗紫符紋迴旋下沉 ---- */
 function vfxCurse(spec, layer, pt, targetId, delayMs) {
-  var d = vfxNode('vfx-curse', layer, spec);
+  var curseClass = 'vfx-curse';
+  if (spec.variant === 'bleed') curseClass += ' vfx-curse-bleed';
+  if (spec.variant === 'poison') curseClass += ' vfx-curse-poison';
+  var d = vfxNode(curseClass, layer, spec);
   vfxPlace(d, pt);
   d.style.animationDelay = delayMs + 'ms';
-  d.textContent = spec.glyph || '☠️';
+  d.textContent = spec.variant === 'bleed' ? '🩸' : (spec.variant === 'poison' ? '☠️' : (spec.glyph || '☠️'));
   vfxTrack(d, delayMs + 1100);
-  vfxHitReact(targetId, spec.elem || 'dark', delayMs + 150, false);
+  vfxHitReact(targetId, spec.elem || (spec.variant === 'bleed' ? null : 'dark'), delayMs + 150, false);
 }
 
 /* ---- 進入點：協議 vfx 事件 → 畫面 ---- */
@@ -894,7 +943,8 @@ function renderCombatVfx(spec) {
   var baseDelay = spec.delayMs > 0 ? spec.delayMs : 0;
   var s = {
     fxKind: kind, glyph: spec.glyph || '✨', color: spec.color || '#fff',
-    elem: spec.elem || null, cat: spec.cat || null, variant: spec.variant || null, dur: dur
+    elem: spec.elem || null, cat: spec.cat || null, variant: spec.variant || null, dur: dur,
+    travelMs: spec.travelMs || null
   };
   var travelMs = spec.travelMs || null;   // 每個目標各自的飛行時間（毫秒）
   var targets = (spec.targets || []).slice(0, VFX_MAX_TARGETS);
@@ -942,7 +992,7 @@ function renderCombatVfx(spec) {
       chBase += (travelMs && travelMs[0] > 0) ? travelMs[0] : 0;
       chStrikes = count;
     }
-    vfxChain(s, layer, ch.pts, ch.ids, chBase, chStrikes);
+    vfxChain(s, layer, ch.pts, ch.ids, chBase, chStrikes, travelMs);
     return;
   }
 
@@ -986,7 +1036,11 @@ function renderCombatVfx(spec) {
       if (!fallbackPt) return;
       rect = vfxRectAround(fallbackPt, s.variant === 'meteor' ? spec.area : null);
     }
-    if (kind === 'aura') { vfxAura(s, layer, rect); return; }
+    if (kind === 'aura') {
+      if (s.variant === 'cyclone') vfxCyclone(s, layer, rect);
+      else vfxAura(s, layer, rect);
+      return;
+    }
     if (s.variant === 'meteor') {
       vfxMeteor(s, layer, rect, targets, travelMs && travelMs.length ? travelMs[0] : 0, baseDelay);
       return;
@@ -995,6 +1049,14 @@ function renderCombatVfx(spec) {
     var rd = resolveTargets();
     for (var ri = 0; ri < rd.pts.length && ri < 4; ri++) {
       vfxHitReact(rd.ids[ri], s.elem, baseDelay + 300 + ri * 60, false);
+    }
+    return;
+  }
+
+  if (kind === 'burst' && (s.variant === 'blood-explosion' || s.variant === 'zero-infection')) {
+    var dotBurst = resolveTargets();
+    for (var dbi = 0; dbi < dotBurst.pts.length; dbi++) {
+      vfxImpact(s, layer, dotBurst.pts[dbi], dotBurst.ids[dbi], baseDelay + dbi * 40);
     }
     return;
   }
@@ -1016,6 +1078,55 @@ function renderCombatVfx(spec) {
   var rt = resolveTargets();
   var from = vfxOriginPoint(layer);
   var stagger = vfxStagger();
+
+  /* 新版主動技能專用近戰畫法：固定 70 系統單位的直線刀光，
+     讓貫穿突刺與三向終極突刺不再只是目標身上的普通交叉斬。 */
+  if (kind === 'slash' && (s.variant === 'thrust-pierce' || s.variant === 'thrust-triple' || s.variant === 'thrust')) {
+    if (!rt.pts.length) return;
+    var thrustOffsets = s.variant === 'thrust-triple' ? [0, -30 * Math.PI / 180, 30 * Math.PI / 180] : [0];
+    for (var tc = 0; tc < count; tc++) {
+      var thrustDelay = baseDelay + tc * stagger;
+      for (var td = 0; td < thrustOffsets.length; td++) {
+        vfxThrustLine(s, layer, from, rt.pts[0], thrustDelay, thrustOffsets[td], 70);
+      }
+      for (var tti = 0; tti < rt.pts.length; tti++) {
+        vfxImpact({ elem: s.elem, variant: null, color: s.color }, layer,
+          rt.pts[tti], rt.ids[tti], thrustDelay + 100 + tti * 24);
+      }
+    }
+    return;
+  }
+
+  /* 震碎斬的前方飛出刀光、迴身雙連斬的後方刀光；同時存在時兩者都畫。 */
+  if (kind === 'slash' && (s.variant === 'cleave-shockwave' || s.variant === 'cleave-back' || s.variant === 'cleave-dual')) {
+    if (!rt.pts.length) return;
+    var drawForward = s.variant === 'cleave-shockwave' || s.variant === 'cleave-dual';
+    var drawBack = s.variant === 'cleave-back' || s.variant === 'cleave-dual';
+    for (var cc = 0; cc < count; cc++) {
+      var cleaveDelay = baseDelay + cc * stagger;
+      if (drawForward) vfxThrustLine(s, layer, from, rt.pts[0], cleaveDelay, 0, 70);
+      if (drawBack) vfxThrustLine(s, layer, from, rt.pts[0], cleaveDelay, Math.PI, 70);
+    }
+    for (var cti = 0; cti < rt.pts.length; cti++) {
+      for (var ccc = 0; ccc < count; ccc++) {
+        var cHitDelay = baseDelay + ccc * stagger + cti * 35;
+        vfxSlash(s, layer, rt.pts[cti], cHitDelay);
+        vfxHitReact(rt.ids[cti], s.elem, cHitDelay + 70, false);
+      }
+    }
+    return;
+  }
+
+  /* 疾風斬多段：在近戰目標周圍連續閃出刀光，清楚表現多段斬擊。 */
+  if (kind === 'slash' && s.variant === 'gale-slashes') {
+    for (var gti = 0; gti < rt.pts.length; gti++) {
+      var galeRect = vfxRectAround(rt.pts[gti], { r: 52 });
+      vfxBladestorm(s, layer, galeRect, count);
+      vfxHitReact(rt.ids[gti], s.elem, baseDelay + 120, false);
+    }
+    return;
+  }
+
   for (var t = 0; t < rt.pts.length; t++) {
     var pt = rt.pts[t];
     var tid = rt.ids[t];

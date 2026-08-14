@@ -55,6 +55,9 @@ var BattleRenderer = (function () {
   };
   function themeOf(spec) {
     var table = (typeof VFX_ELEM_THEME !== 'undefined' && VFX_ELEM_THEME) || FALLBACK_THEME;
+    if (spec && (spec.variant === 'bleed' || spec.variant === 'bleed-tick')) {
+      return { c1: '#d92846', c2: '#ffd0d8', glow: '#ff4962' };
+    }
     var t = spec && spec.elem && table[spec.elem];
     if (t) return t;
     var c = (spec && spec.color) || '#9ecbff';
@@ -1042,6 +1045,12 @@ var BattleRenderer = (function () {
   function projectileCore(spec, theme) {
     var core = new PIXI.Graphics();
     var elem = spec && spec.elem;
+    if (spec && spec.variant === 'knife-bounce') {
+      core.moveTo(-14, 0).lineTo(-4, -5).lineTo(14, 0).lineTo(-4, 5).closePath()
+        .fill(theme.c1)
+        .stroke({ color: theme.c2, width: 2, alpha: 0.95 });
+      return core;
+    }
     if (elem === 'lightning') {
       /* 雷電不是圓球：用金黃色折線＋白色芯線，與 DOM 版的雷紋形狀一致。 */
       core.moveTo(-13, -5).lineTo(-5, 4).lineTo(1, -4).lineTo(8, 5).lineTo(13, -2)
@@ -1252,6 +1261,37 @@ var BattleRenderer = (function () {
           .stroke({ color: theme.c1, width: 7 * (1 - k * 0.6), alpha: 1 - k, cap: 'round' });
         g.arc(0, 0, R * 0.8, sweep - 0.7, sweep, false)
           .stroke({ color: '#ffffff', width: 3 * (1 - k), alpha: 0.8 * (1 - k), cap: 'round' });
+        return t < dur;
+      }
+    }, 1);
+  }
+
+  /* 新版技能直線刀光：固定 70 個系統距離單位（7 米），從玩家向目標方向貫穿。
+     angleOffset 用於終極突刺的左右 30 度刀線，以及迴身斬的 180 度後斬。 */
+  function spawnThrustLine(targetId, spec, angleOffset, delaySec, length) {
+    var theme = themeOf(spec);
+    var from = playerMuzzle();
+    var to = posOf(targetId);
+    var dx = to.x - from.x, dy = to.y - from.y;
+    var angle = Math.atan2(dy, dx) + (angleOffset || 0);
+    var g = new PIXI.Graphics();
+    g.x = from.x; g.y = from.y; g.rotation = angle;
+    S.layers.fx.addChild(g);
+    var t = -(delaySec || 0), dur = 0.28;
+    var lineLength = Math.max(48, Number(length) || 70);
+    addFx({
+      node: g,
+      update: function (dt) {
+        t += dt;
+        if (t < 0) return true;
+        var k = Math.min(1, t / dur);
+        var grow = k < 0.2 ? k / 0.2 : 1;
+        var fade = k > 0.58 ? 1 - (k - 0.58) / 0.42 : 1;
+        g.clear();
+        g.moveTo(0, 0).lineTo(lineLength * grow, 0)
+          .stroke({ color: theme.c1, width: 10 * fade, alpha: 0.9 * fade, cap: 'round' });
+        g.moveTo(2, 0).lineTo(lineLength * grow, 0)
+          .stroke({ color: theme.c2, width: 3.5 * fade, alpha: fade, cap: 'round' });
         return t < dur;
       }
     }, 1);
@@ -1721,6 +1761,57 @@ var BattleRenderer = (function () {
         });
         break;
       case 'slash':
+        if (spec.variant === 'thrust-pierce' || spec.variant === 'thrust-triple' || spec.variant === 'thrust') {
+          if (!targets.length) break;
+          var thrustOffsets = spec.variant === 'thrust-triple'
+            ? [0, -30 * Math.PI / 180, 30 * Math.PI / 180] : [0];
+          for (var trc = 0; trc < count; trc++) {
+            for (var tro = 0; tro < thrustOffsets.length; tro++) {
+              spawnThrustLine(targets[0], spec, thrustOffsets[tro],
+                (baseDelay + trc * stagger) / 1000, 70);
+            }
+          }
+          targets.forEach(function (id, ti) {
+            setTimeout(function () {
+              if (fxGate()) return;
+              var pt = posOf(id);
+              spawnImpact(pt.x, pt.y, spec, false);
+              hitReact(id, spec.elem, false);
+            }, baseDelay + 100 + ti * 24);
+          });
+          break;
+        }
+        if (spec.variant === 'cleave-shockwave' || spec.variant === 'cleave-back' || spec.variant === 'cleave-dual') {
+          if (!targets.length) break;
+          var drawForward = spec.variant === 'cleave-shockwave' || spec.variant === 'cleave-dual';
+          var drawBack = spec.variant === 'cleave-back' || spec.variant === 'cleave-dual';
+          for (var clc = 0; clc < count; clc++) {
+            var clDelay = (baseDelay + clc * stagger) / 1000;
+            if (drawForward) spawnThrustLine(targets[0], spec, 0, clDelay, 70);
+            if (drawBack) spawnThrustLine(targets[0], spec, Math.PI, clDelay, 70);
+          }
+          targets.forEach(function (id, ti) {
+            for (var clHit = 0; clHit < count; clHit++) {
+              (function (hitIndex) {
+                setTimeout(function () {
+                  if (fxGate()) return;
+                  var pt = posOf(id);
+                  spawnSlash(pt.x, pt.y, spec, false);
+                  hitReact(id, spec.elem, false);
+                }, baseDelay + hitIndex * stagger + ti * 35);
+              })(clHit);
+            }
+          });
+          break;
+        }
+        if (spec.variant === 'gale-slashes') {
+          targets.forEach(function (id) {
+            var pt = posOf(id);
+            spawnBladestorm({ x: pt.x - 52, y: pt.y - 52, w: 104, h: 104 }, spec);
+            hitReact(id, spec.elem, false);
+          });
+          break;
+        }
         targets.forEach(function (id, ti) {
           for (var c = 0; c < count; c++) {
             (function (cc) {
@@ -1740,6 +1831,17 @@ var BattleRenderer = (function () {
         });
         break;
       case 'burst':
+        if (spec.variant === 'blood-explosion' || spec.variant === 'zero-infection') {
+          targets.forEach(function (id, ti) {
+            setTimeout(function () {
+              if (fxGate()) return;
+              var pt = posOf(id);
+              spawnImpact(pt.x, pt.y, spec, true);
+              hitReact(id, spec.elem, true);
+            }, baseDelay + ti * 40);
+          });
+          break;
+        }
         targets.forEach(function (id, ti) {
           setTimeout(function () {
             if (fxGate()) return;
@@ -1779,6 +1881,23 @@ var BattleRenderer = (function () {
       case 'chain':
         /* targets 順序即彈跳路徑：天雷打第一個，之後逐跳 */
         if (targets.length) {
+          if (spec.variant === 'knife-bounce' || spec.variant === 'poison-spread') {
+            for (var kb = 1; kb < targets.length; kb++) {
+              (function (hopIndex) {
+                var fromId = targets[hopIndex - 1];
+                var toId = targets[hopIndex];
+                var travel = (spec.travelMs && spec.travelMs[hopIndex]) || 120;
+                setTimeout(function () {
+                  if (fxGate()) return;
+                  spawnProjectile(toId, travel, spec, function (pt) {
+                    spawnImpact(pt.x, pt.y, spec, false);
+                    hitReact(toId, spec.elem, false);
+                  }, posOf(fromId));
+                }, baseDelay + (hopIndex - 1) * stagger);
+              })(kb);
+            }
+            break;
+          }
           spawnBolt(null, targets[0], spec, 0);
           for (var h = 1; h < targets.length; h++) {
             (function (hh) {

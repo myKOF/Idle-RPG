@@ -3026,6 +3026,15 @@ function pickAndCastSkill(pEnt, target, floatSel) {
         ? target.some(function (ent) { return ent && ent.hp > 0; })
         : !!(target && target.hp > 0);
       if (!sgLive) continue;
+      /* 新版主動技能全部是近戰：只有普攻近戰距離內已有目標時才開始吟唱，
+         否則讓 battlefield.js 繼續驅動玩家追擊，避免遠距離先鎖住施法而停在原地。 */
+      var sgReachable = Array.isArray(target)
+        ? target.some(function (ent) {
+            return ent && ent.hp > 0 &&
+              (typeof bfPlayerCanReach !== 'function' || bfPlayerCanReach(ent));
+          })
+        : (typeof bfPlayerCanReach !== 'function' || bfPlayerCanReach(target));
+      if (!sgReachable) continue;
       if (pEnt.mp < (Number(sgDef.cost) || 0)) continue;
       candidates.push({ id: id, sgId: sgId, slot: i, readyAt: pEnt._skillReadyOrder[id] });
       continue;
