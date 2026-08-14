@@ -38,7 +38,7 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   const css = read('css/style.css');
 
   for (const variant of [
-    'thrust-pierce', 'thrust-triple', 'cleave-shockwave', 'knife-bounce',
+    'thrust-pierce', 'thrust-triple', 'cleave-shockwave', 'cleave-back', 'cleave-dual', 'knife', 'knife-bounce',
     'gale-slashes', 'bleed-tick', 'poison-tick', 'blood-explosion',
     'zero-infection', 'dual-storm'
   ]) {
@@ -46,7 +46,7 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   }
 
   for (const variant of [
-    'thrust-pierce', 'thrust-triple', 'cleave-shockwave', 'knife-bounce',
+    'thrust-pierce', 'thrust-triple', 'cleave-shockwave', 'cleave-back', 'cleave-dual', 'knife', 'knife-bounce',
     'gale-slashes', 'bleed-tick', 'poison-tick', 'blood-explosion',
     'zero-infection', 'cyclone'
   ]) {
@@ -63,4 +63,9 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.match(renderer, /spawnThrustLine\([\s\S]*?, 70\)/);
   assert.match(css, /\.vfx-thrust-line[\s\S]*?@keyframes vfxThrustLine/);
   assert.match(css, /\.vfx-proj-knife/);
+  assert.match(vfx, /projClass === 'vfx-proj-knife'[\s\S]*?spec\.glyph/);
+  assert.match(renderer, /spec\.variant === 'knife'[\s\S]*?spec\.variant === 'knife-bounce'/);
+  assert.match(css, /\.vfx-proj-knife \.vfx-proj-core[\s\S]*?background: none/);
+  assert.match(vfx, /vfx-slash-cleave-back/);
+  assert.match(renderer, /spawnSlash\(backFrom\.x, backFrom\.y, spec, true, backAngle\)/);
 });

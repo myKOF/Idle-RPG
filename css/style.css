@@ -6514,13 +6514,17 @@ textarea:disabled,
   box-shadow: 0 0 8px var(--vfx-glow, #fff);
 }
 
-/* 飛刀彈射：短促的刀刃菱形，與一般魔法圓彈區分。 */
+/* 飛刀：直接沿用飛刀技能 icon，並依飛行方向旋轉；彈射與首發保持同一個刀身。 */
 .vfx-proj-knife .vfx-proj-core {
-  width: 24px;
-  height: 8px;
-  border-radius: 1px 7px 1px 7px;
-  background: linear-gradient(90deg, transparent, var(--vfx-c2, #fff) 32%, var(--vfx-c1, #f97316) 78%, transparent);
-  box-shadow: 0 0 8px var(--vfx-glow, #fff);
+  display: block;
+  width: auto;
+  height: auto;
+  font-size: 22px;
+  line-height: 1;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  filter: drop-shadow(0 0 5px var(--vfx-glow, #fff)) drop-shadow(0 0 2px #fff);
   transform: translate(-50%, -50%) rotate(var(--vfx-rot, 0rad));
 }
 
@@ -6528,6 +6532,13 @@ textarea:disabled,
   width: 28px;
   height: 3px;
   opacity: 0.65;
+}
+
+.vfx-slash-cleave-back {
+  width: 78px;
+  height: 78px;
+  margin: -39px 0 0 -39px;
+  transform: rotate(var(--vfx-tilt, 180deg)) scale(1.2);
 }
 
 /* 汲取回流的魂息 */
