@@ -1237,6 +1237,10 @@ function fieldTick(dt) {
                     applyBasicAttackKillGap(p, playerAttackRate);
                     onFieldDeaths();
                 }
+                /* 普攻期間也可能把自己打死（新版技能【血飲術】反噬：敵人每次受傷都扣自身生命），
+                   與上方技能施放段同樣補判——少了它，0 血玩家會被下一 tick 的基礎回復救回，
+                   死亡從未成立（下面的空場提前返回也會跳過怪物攻擊那條唯一的判死路徑）。 */
+                if (p.hp <= 0) { onPlayerFieldDeath(); return; }
                 if (!combatFieldEnemies().length) return;
             }
         }

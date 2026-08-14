@@ -14,9 +14,9 @@ importScripts('protocol.js?v=19', 'shim.js');
 importScripts(
   '../util.js?v=20260814-skill-summary', '../data.js?v=20260813-earth-recovery', '../status.js?v=20260814-skill2-counter-bloodrage', '../formula.js?v=20260814-skill2-counter-bloodrage', '../battlefield.js?v=20260813-skills2-rework', '../stats.js',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260814-skill2-counter-bloodrage', '../skills2.js?v=20260814-skill2-counter-bloodrage', '../talents.js?v=20260811-loadout-cap-clamp',
+  '../skills.js?v=20260814-skill2-counter-bloodrage', '../skills2.js?v=20260814-skill2-review-fixes', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260814-skill-min-interval', '../special_rules.js',
-  '../combat.js?v=20260814-skill2-counter-bloodrage', '../legendary.js?v=20260814-skill2-counter-bloodrage', '../potential.js?v=20260814-skill-min-interval', '../tower.js?v=20260813-skills2-rework',
+  '../combat.js?v=20260814-skill2-review-fixes', '../legendary.js?v=20260814-skill2-counter-bloodrage', '../potential.js?v=20260814-skill-min-interval', '../tower.js?v=20260814-skill2-review-fixes',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260814-skill2-counter-bloodrage',
   '../tasks.js'
 );

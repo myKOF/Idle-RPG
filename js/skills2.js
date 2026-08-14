@@ -47,7 +47,7 @@ var SKILLS2 = {
   bloodblade: { name: '血刃斬', emoji: '🩸', cd: 8, cost: 40, tiers: [{ name: '血刃斬', fx: { pct: 200, pctPer: 15, dotPct: 30, dotSec: 5, dotGap: 1 }, goldBase: 100000, goldGrow: 1.5, desc: '對敵人造成 1 次 {pct}% 物理傷害，並附加流血：每 {dotGap} 秒造成技能傷害 {dotPct}% 的傷害，持續 {dotSec} 秒' }, { name: '強化流血', fx: { sec: 0.5, secPer: 0.1, gapPct: 10, gapPctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '流血持續時間 +{sec} 秒，且流血作用間隔縮短 {gapPct}%（跳得更快、總傷更高）' }, { name: '虛弱', fx: { pct: 10, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '流血中的敵人受到的傷害提高 {pct}%' }, { name: '血毒刃', fx: { dotPct: 25, dotPctPer: 3, dotSec: 6, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '敵人流血的同時也會中毒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的毒屬性傷害，持續 {dotSec} 秒' }, { name: '毒霧感染', fx: { chance: 30, chancePer: 2, count: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '血毒刃的毒在每次作用時，有 {chance}% 機率傳染給附近的 {count} 個敵人' }, { name: '死亡屍爆', fx: { pct: 50, pctPer: 5, count: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '流血或中毒狀態的敵人死亡時爆炸，對附近 {count} 個敵人造成 {pct}% 技能傷害' }, { name: '零日感染', fx: { chance: 20, chancePer: 2, pct: 20, pctPer: 2 }, goldBase: 5000000, goldGrow: 1.5, desc: '流血與中毒在每次作用時有 {chance}% 機率立即造成剩餘的持續傷害並清除該狀態，且流血與中毒傷害 +{pct}%' }] },
   dualdance: { name: '雙刀亂舞', emoji: '⚔️', cd: 10, cost: 35, tiers: [{ name: '雙刀亂舞', fx: { pct: 300, pctPer: 25, count: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '對附近 {count} 個敵人各造成 1 次 {pct}% 物理傷害（只有 1 個敵人時全部打向同一目標）' }, { name: '疾風亂舞', fx: { add: 1, addPer: 0.2 }, goldBase: 200000, goldGrow: 1.5, desc: '額外攻擊附近 {add} 個敵人（不足 1 個的部分以機率觸發）' }, { name: '強化雙刀', fx: { pct: 25, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化雙刀傷害，額外 +{pct}% 物理傷害' }, { name: '狂暴之舞', fx: { cr: 50, crPer: 10, cd: 200, cdPer: 40, sec: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '施放後爆擊率 +{cr}%、爆擊傷害 +{cd}%，持續 {sec} 秒' }, { name: '鐵血之舞', fx: { pct: 3.5, pctPer: 0.35, sec: 3, gap: 0.35, m: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '施放時使你與 {m} 米內的所有敵人流血：每 {gap} 秒造成最大生命 {pct}% 的傷害，持續 {sec} 秒（自身流血直接扣生命，無法被護盾吸收）' }, { name: '嗜血狂化', fx: { pct: 2, pctPer: 0.2 }, goldBase: 3000000, goldGrow: 1.5, desc: '施放時生命值或護盾每減少 1%，本次技能傷害提升 {pct}%（無護盾時視為護盾 -100%）' }, { name: '暴風之舞', fx: { sec: 3, secPer: 0.3, gap: 0.35 }, goldBase: 5000000, goldGrow: 1.5, desc: '化身暴風在敵人間穿梭 {sec} 秒：每 {gap} 秒自動施放 1 次雙刀亂舞；期間無法普攻但可施放技能' }] },
   counter: { name: '反擊', emoji: '🛡️', cd: 0, cost: 0, tiers: [{ name: '反擊', fx: { chance: 35, pct: 50, pctPer: 5 }, goldBase: 100000, goldGrow: 1.5, desc: '被動：受到傷害時有 {chance}% 機率對攻擊者反擊，造成 {pct}% 普攻傷害' }, { name: '招架', fx: { mult: 300, multPer: 30 }, goldBase: 200000, goldGrow: 1.5, desc: '格擋時必定對敵人反擊，造成「格擋減傷值 × {mult}%」的普攻傷害' }, { name: '強化反擊', fx: { pct: 30, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步提升反擊傷害，額外 +{pct}% 反擊普攻傷害' }, { name: '反擊盾', fx: { pct: 1, pctPer: 0.1 }, goldBase: 800000, goldGrow: 1.5, desc: '觸發反擊時，回復自身最大生命 {pct}% 的護盾' }, { name: '破甲擊', fx: { chance: 35, def: 25, sec: 4, secPer: 0.4, max: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '格擋時有 {chance}% 機率造成破甲：防禦 -{def}%，持續 {sec} 秒，最多疊 {max} 層（疊層時重置時間）' }, { name: '二次反擊', fx: { chance: 50, chancePer: 5, count: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '反擊時有 {chance}% 機率再追加 {count} 次反擊（追加反擊不會再觸發反擊）' }, { name: '狂化反殺', fx: { pct: 100, pctPer: 10, count: 2, m: 80 }, goldBase: 5000000, goldGrow: 1.5, desc: '每次反擊時，額外對 {m} 米內隨機 {count} 個敵人反擊，造成 {pct}% 普攻傷害（不會再觸發反擊）' }] },
-  bloodrage: { name: '嗜血狂怒', emoji: '💢', cd: 60, cost: 50, tiers: [{ name: '嗜血狂怒', fx: { pct: 20, pctPer: 2, sec: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '攻速額外 +{pct}%（乘算，不受攻速上限限制），持續 {sec} 秒' }, { name: '狂暴', fx: { pct: 20, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '狂怒期間爆擊傷害額外 +{pct}%（乘算）' }, { name: '狂怒', fx: { pct: 20, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '狂怒期間總傷害額外 +{pct}%（乘算）' }, { name: '狂化連殺', fx: { add: 0.5, addPer: 0.1, kill: 0.1 }, goldBase: 800000, goldGrow: 1.5, desc: '狂怒期間基礎連擊數 +{add}，且每擊殺 1 個敵人再 +{kill}（不足 1 次的部分以機率觸發）' }, { name: '嗜血反震', fx: { pct: 20, pctPer: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '狂怒期間反震傷害提高 {pct}%（乘算，可與其它反震加成疊加）' }, { name: '血飲術', fx: { pct: 30, pctPer: 3, self: 1, m: 80 }, goldBase: 3000000, goldGrow: 1.5, desc: '狂怒期間傷害額外提高 {pct}%（乘算），但 {m} 米內的敵人每次受傷都會使你損失最大生命 {self}%（直接扣血，無法被護盾吸收）' }, { name: '狂血盛宴', fx: { sec: 0.5, pct: 1, pctPer: 0.1 }, goldBase: 5000000, goldGrow: 1.5, desc: '狂怒期間每擊殺 1 個敵人，持續時間延長 {sec} 秒；且生命值每減少 1%，傷害額外 +{pct}%（乘算，無限疊加）' }] }
+  bloodrage: { name: '嗜血狂怒', emoji: '💢', cd: 60, cost: 50, tiers: [{ name: '嗜血狂怒', fx: { pct: 20, pctPer: 2, sec: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '攻速額外 +{pct}%（乘算，不受攻速上限限制），持續 {sec} 秒' }, { name: '狂暴', fx: { pct: 20, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '狂怒期間爆擊傷害額外 +{pct}%（乘算）' }, { name: '狂怒', fx: { pct: 20, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '狂怒期間總傷害額外 +{pct}%（乘算）' }, { name: '狂化連殺', fx: { add: 0.5, addPer: 0.1, kill: 0.1, killMax: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '狂怒期間基礎連擊數 +{add}，且每擊殺 1 個敵人再 +{kill}（累計上限 +{killMax}；不足 1 次的部分以機率觸發）' }, { name: '嗜血反震', fx: { pct: 20, pctPer: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '狂怒期間反震傷害提高 {pct}%（乘算，可與其它反震加成疊加）' }, { name: '血飲術', fx: { pct: 30, pctPer: 3, self: 1, m: 80 }, goldBase: 3000000, goldGrow: 1.5, desc: '狂怒期間傷害額外提高 {pct}%（乘算），但 {m} 米內的敵人每次受傷都會使你損失最大生命 {self}%（直接扣血，無法被護盾吸收）' }, { name: '狂血盛宴', fx: { sec: 0.5, pct: 1, pctPer: 0.1, maxSec: 20 }, goldBase: 5000000, goldGrow: 1.5, desc: '狂怒期間每擊殺 1 個敵人，持續時間延長 {sec} 秒（累計上限 {maxSec} 秒）；且生命值每減少 1%，傷害額外 +{pct}%（乘算，無限疊加）' }] }
 };
 
 /* ---- 執行期狀態（絕不掛 G＝保證不入存檔） ----
@@ -55,6 +55,12 @@ var SKILLS2 = {
    重置時機（開戰／死亡／讀檔／塔戰進出）與舊系統完全一致。 */
 var SKILL2_RT = null;
 function resetSkill2RT() {
+  /* 先把「跟隨 RT 的增益」從實體上撤掉再清狀態：RT 是權威、增益只是投影，
+     兩者不同步時玩家會在狂怒早已結束後仍帶著圖示與增益值（死亡復活保留同一個
+     戰鬥實體、提前離塔亦然；cleanse 只清減益，不會動到它）。 */
+  if (SKILL2_RT && SKILL2_RT.rage && SKILL2_RT.rage.pEnt && SKILL2_RT.rage.pEnt.buffs) {
+    delete SKILL2_RT.rage.pEnt.buffs.sgBloodrage;
+  }
   SKILL2_RT = {
     storm: null, // 暴風之舞化身狀態：{ until, nextAt, gap, tgt }（tgt 為當前衝鋒目標實體）
     rage: null   // 嗜血狂怒爆發狀態：{ until, pEnt, killCombo }（pEnt＝施放時的玩家實體，
@@ -206,8 +212,9 @@ function skill2VulnACfg(aCfg, target) {
    掛點：combat.js／tower.js 的普攻頻率乘算區（potentialVelocityFactor 旁）。 */
 function skill2AspdFactor(pEnt) {
   if (typeof buffVal !== 'function') return 1;
-  return (1 + Math.max(0, buffVal(pEnt, 'sgGale')) / 100) *
-         (1 + Math.max(0, buffVal(pEnt, 'sgBloodrage')) / 100);
+  // 狂怒的攻速以 RT 為權威（增益只是投影）：殘留的增益不得繼續給值
+  var rage = skill2RageActive() ? Math.max(0, buffVal(pEnt, 'sgBloodrage')) : 0;
+  return (1 + Math.max(0, buffVal(pEnt, 'sgGale')) / 100) * (1 + rage / 100);
 }
 
 /* 暴風之舞化身中：無法普攻（可施放技能）。掛點：combat.js／tower.js 普攻閘門。 */
@@ -799,10 +806,15 @@ function sgCastBloodrage(pEnt, st, g, lvs, pool, primary, floatSel, out) {
    legendaryOnPlayerDamaged 旁鏈結呼叫，簽名與其一致。
    規則：T1 受傷機率反擊、T2 格擋必反（同一擊可同時成立、各自結算）；
    T6 追加與 T7 範圍反殺「不會再觸發反擊」＝只增加打擊次數、不進入再判定。
+   致命一擊不反擊：與 resolveHit 反震段的既有規則一致（formula.js `!out.killed`）。
+   這道防護不只是語意——本函式內部會呼叫 onFieldDeaths() 立即結算擊殺獎勵，
+   死者反殺拿到的經驗若讓玩家升級（升級會回滿血），呼叫端的 hp<=0 判死就會失效，
+   整個死亡流程被無聲取消。
    =========================================================================== */
 function skills2OnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) {
   if (!SKILL2_RT || !mEnt || !pEnt) return;
-  if (res && (res.miss || res.invuln)) return;
+  if (res && (res.miss || res.invuln || res.killed)) return;
+  if (!(pEnt.hp > 0)) return;
   var lvs = skills2Levels('counter');
   if (!lvs || lvs[0] < 1) return;
   var t = SKILLS2.counter.tiers;
@@ -1052,15 +1064,28 @@ function skills2OnEnemyDeath(deadEnt, enemies) {
 }
 
 /* 嗜血狂怒的擊殺效果：期間每殺 1 敵——T4 連擊數累加、T7 延長持續時間並同步刷新
-   sgBloodrage 增益（權威在 SKILL2_RT.rage.until，增益圖示與攻速值跟隨）。 */
+   sgBloodrage 增益（權威在 SKILL2_RT.rage.until，增益圖示與攻速值跟隨）。
+   兩者都設上限（表定 killMax／maxSec）：野外是波次串流，殺速夠快時無上限版本會讓
+   狂怒永不結束、killCombo 隨掛機時間線性成長——每次普攻展開上百段完整攻擊，
+   單體 DPS 與每 tick 運算量一起失控。上限是可調參數，設計上要放行就把值調高。 */
 function sgRageOnKill() {
   var lvs = skill2RageLevels();
   if (!lvs) return;
   var rt = SKILL2_RT.rage;
   var t = SKILLS2.bloodrage.tiers;
-  if (lvs[3] > 0) rt.killCombo = (rt.killCombo || 0) + (Number(t[3].fx.kill) || 0);
+  if (lvs[3] > 0) {
+    var comboMax = Number(t[3].fx.killMax) || 0;
+    rt.killCombo = (rt.killCombo || 0) + (Number(t[3].fx.kill) || 0);
+    if (comboMax > 0) rt.killCombo = Math.min(rt.killCombo, comboMax);
+  }
   if (lvs[6] > 0) {
+    var maxSec = Number(t[6].fx.maxSec) || 0;
     rt.until += Number(t[6].fx.sec) || 0;
+    // 累計延長上限：狂怒剩餘時間不得超過「基礎持續 + maxSec」
+    if (maxSec > 0) {
+      var capUntil = GT + (Number(t[0].fx.sec) || 8) + maxSec;
+      if (rt.until > capUntil) rt.until = capUntil;
+    }
     if (rt.pEnt) {
       applyStatus(rt.pEnt, 'sgBloodrage', {
         val: sgVal(t[0].fx, 'pct', lvs[0]), dur: Math.max(0.1, rt.until - GT)
