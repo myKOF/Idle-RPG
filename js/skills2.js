@@ -346,9 +346,6 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
     if (!pEnt.skillCds) pEnt.skillCds = {};
     pEnt.skillCds[SG_PREFIX + gid] = skills2Cooldown(gid, lvs, pEnt);
     pEnt.skillGcd = (typeof SKILL_GLOBAL_COOLDOWN === 'number') ? SKILL_GLOBAL_COOLDOWN : 0.4;
-    if (typeof floatPlayerSkillCast === 'function') {
-      floatPlayerSkillCast(floatSel, { emoji: g.emoji, name: g.name });
-    }
   }
 
   var out = { killed: false, dmg: 0, crit: false };
@@ -360,6 +357,9 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
     case 'bloodblade': sgCastBloodblade(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     case 'dualdance': sgCastDualdance(pEnt, st, g, lvs, pool, primary, floatSel, out, storm); break;
     default: return null;
+  }
+  if (!storm && typeof floatPlayerSkillCast === 'function') {
+    floatPlayerSkillCast(floatSel, { emoji: g.emoji, name: g.name }, out.dmg);
   }
   if (typeof blog === 'function' && !storm) {
     blog(g.emoji + ' 你施放【' + g.name + ' Lv.' + sgTotalLevel(lvs) + '】，造成 ' + fmt(out.dmg) + ' 傷害');

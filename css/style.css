@@ -1523,6 +1523,10 @@ textarea#save-io {
   animation-duration: 1.05s;
 }
 
+.float-txt.player-event.skill-cast-total {
+  animation-duration: 2.1s;
+}
+
 .float-txt.player-event.skill-cast-left {
   animation-name: skillCastFloatLeft;
 }

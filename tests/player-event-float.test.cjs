@@ -9,6 +9,7 @@ const util = fs.readFileSync(path.join(root, 'js', 'util.js'), 'utf8');
 const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
 const combat = fs.readFileSync(path.join(root, 'js', 'combat.js'), 'utf8');
 const skills = fs.readFileSync(path.join(root, 'js', 'skills.js'), 'utf8');
+const skills2 = fs.readFileSync(path.join(root, 'js', 'skills2.js'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
 
 test('玩家事件浮字使用頭像區專用位置，不和傷害數字共用位置', () => {
@@ -362,7 +363,7 @@ test('玩家事件浮字依效果類型使用不同顏色', () => {
 test('我方飄字依承傷／增益分成紅區與藍區，技能名稱從中心向左右隨機滑出', () => {
   const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
   const potential = fs.readFileSync(path.join(root, 'js', 'potential.js'), 'utf8');
-  assert.match(util, /function floatPlayerSkillCast\(floatSel, skill\)/);
+  assert.match(util, /function floatPlayerSkillCast\(floatSel, skill, totalDamage\)/);
   assert.match(util, /skill-cast-' \+ direction/);
   assert.match(ui, /function playerFloatStyleClass\(elId, text, cls\)/);
   assert.match(ui, /return isDamage \? 'player-damage' : 'player-benefit'/);
@@ -373,8 +374,36 @@ test('我方飄字依承傷／增益分成紅區與藍區，技能名稱從中�
   assert.match(css, /\.float-txt\.player-event\.skill-cast\s*\{[\s\S]*?color:\s*#ffd43b/);
   assert.match(css, /@keyframes\s+skillCastFloatLeft\s*\{[\s\S]*?translate\(calc\(-50% - 76px\)/);
   assert.match(css, /@keyframes\s+skillCastFloatRight\s*\{[\s\S]*?translate\(calc\(-50% \+ 76px\)/);
-  assert.match(skills, /floatPlayerSkillCast\(floatSel, sk\)/);
-  assert.match(potential, /floatPlayerSkillCast\(floatSel, def\)/);
+  assert.match(skills, /floatPlayerSkillCast\(floatSel, sk, out\.dmg\)/);
+  assert.match(potential, /floatPlayerSkillCast\(floatSel, def, res && res\.dmg\)/);
   assert.match(renderer, /cls\.indexOf\('skill-cast'\) >= 0/);
   assert.match(renderer, /drift: castLeft \? -72 : \(castRight \? 72 : 0\)/);
+});
+
+test('skill cast summary formats total damage and keeps the doubled lifetime contract', () => {
+  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
+  const calls = [];
+  const context = {
+    floatText: (...args) => calls.push(args)
+  };
+  vm.runInNewContext(util, context);
+
+  context.floatPlayerSkillCast('pv-float', { emoji: '🗡️', name: 'Pierce' }, 12345);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0][0], 'pv-float');
+  assert.equal(calls[0][1], '🗡️Pierce 12.3K');
+  assert.match(calls[0][2], /player-event skill-cast skill-cast-total skill-cast-(left|right)/);
+  assert.equal(calls[0][3], 12345);
+
+  calls.length = 0;
+  context.floatPlayerSkillCast('pv-float', { emoji: '✨', name: 'Buff' }, 0);
+  assert.equal(calls[0][1], '✨Buff');
+  assert.equal(calls[0][3], undefined);
+
+  assert.match(ui, /var SKILL_CAST_TOTAL_FLOAT_LIFETIME_MS = FLOAT_TEXT_LIFETIME_MS \* 2/);
+  assert.match(ui, /if \(isSkillCastTotalFloat\)\s*\{[\s\S]*?scheduleFloatTextRemoval\(sp, SKILL_CAST_TOTAL_FLOAT_LIFETIME_MS\)/);
+  assert.match(css, /\.float-txt\.player-event\.skill-cast-total\s*\{[\s\S]*?animation-duration:\s*2\.1s/);
+  assert.match(renderer, /skill-cast-total.*\? 2\.1 : 1\.05/);
+  assert.match(skills2, /floatPlayerSkillCast\(floatSel, \{ emoji: g\.emoji, name: g\.name \}, out\.dmg\)/);
+  assert.ok(skills.indexOf('floatPlayerSkillCast(floatSel, sk, out.dmg)') > skills.indexOf('out.dmg = totalDmg;'));
 });

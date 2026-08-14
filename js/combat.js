@@ -33,7 +33,29 @@ function toggleCombatPaused() {
 }
 
 function newPlayerEntity(st) {
-    return { hp: st.hp, mp: st.mp, shield: 0, shieldMax: 0, shieldMaxVersion: SHIELD_MAX_VERSION, atkCd: 1 / st.aspd, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {}, _lastStandAt: 0, _skillCastRemaining: 0, _skillCastId: '' };
+    return { hp: st.hp, mp: st.mp, shield: 0, shieldMax: 0, shieldMaxVersion: SHIELD_MAX_VERSION, atkCd: 1 / st.aspd, _targetSwitchCd: 0, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {}, _lastStandAt: 0, _skillCastRemaining: 0, _skillCastId: '' };
+}
+
+function targetSwitchDelaySeconds() {
+    return (typeof TARGET_SWITCH_DELAY === 'number' && TARGET_SWITCH_DELAY > 0)
+        ? TARGET_SWITCH_DELAY : 0;
+}
+
+function applyTargetSwitchDelay(pEnt, delaySec) {
+    if (!pEnt || !(delaySec > 0)) return;
+    pEnt._targetSwitchCd = Math.max(Number(pEnt._targetSwitchCd) || 0, delaySec);
+}
+
+function tickTargetSwitchDelay(pEnt, dt) {
+    if (!pEnt) return true;
+    var remaining = Number(pEnt._targetSwitchCd) || 0;
+    if (!(remaining > 0)) {
+        pEnt._targetSwitchCd = 0;
+        return true;
+    }
+    var elapsed = Number(dt) || 0;
+    pEnt._targetSwitchCd = Math.max(0, remaining - Math.max(0, elapsed));
+    return pEnt._targetSwitchCd <= 0;
 }
 
 // 普攻擊殺後換目標的最短間隔沿用技能 GCD；attackRate 用來換算成 atkCd 計時器單位，
@@ -43,6 +65,7 @@ function applyBasicAttackKillGap(pEnt, attackRate) {
     var gapSec = (typeof SKILL_GLOBAL_COOLDOWN === 'number') ? SKILL_GLOBAL_COOLDOWN : 0.4;
     var rate = (typeof attackRate === 'number' && attackRate > 0) ? attackRate : 1;
     pEnt.atkCd = Math.max(pEnt.atkCd || 0, gapSec * rate);
+    applyTargetSwitchDelay(pEnt, targetSwitchDelaySeconds());
 }
 
 function initFieldPlayer() {
@@ -984,6 +1007,9 @@ function fieldTick(dt) {
 
     tickFieldDeathClears(dt);
     var arrivedEnemies = tickFieldEnterDelays(dt);   // 進場倒數：走到定位才加入戰鬥
+    /* 擊殺後的換目標間隔先作用在「重新選目標」：等待結束前角色保持原地，
+       不會先轉向或追到下一隻怪旁邊才停下來等普攻冷卻。技能仍沿用自己的冷卻規則。 */
+    var targetSwitchReady = tickTargetSwitchDelay(p, dt);
     /* 我方移動：朝鎖定目標跑，進到近戰距離就停下來打（→ js/battlefield.js）。
        位移一律由模擬層產生，顯示層只負責畫。顯示層若自己讓角色跑，敵人的座標
        卻是模擬層算的，兩邊就會脫節——那正是「我方一動、整群敵人跟著平移」的成因。
@@ -1000,7 +1026,9 @@ function fieldTick(dt) {
         if (p.hp <= 0) { onPlayerFieldDeath(); return; }
         playerMoveDt = skillCastTick.remainingDt;
     }
-    if (typeof bfTickPlayer === 'function') bfTickPlayer(fieldEnemyList(), playerMoveDt, p._lockTarget, p);
+    if (targetSwitchReady && typeof bfTickPlayer === 'function') {
+        bfTickPlayer(fieldEnemyList(), playerMoveDt, p._lockTarget, p);
+    }
     /* 逼近與推擠：敵人朝我方走、走到接觸距離就停，同伴之間互相推開。
        這是「要走到面前才打得到」的前提（→ js/battlefield.js 座標制）。
        回傳「本輪剛踏進攻擊距離」的敵人，牠們稍後會先出手（見下方首擊保證）。 */
@@ -1111,7 +1139,7 @@ function fieldTick(dt) {
         p.atkCd -= dt * playerAttackRate;
         // 新版技能【暴風之舞】化身中：無法普攻（可施放技能）
         var stormLock = (typeof skill2StormActive === 'function') && skill2StormActive();
-        if (p.atkCd <= 0 && !stormLock) {
+        if (targetSwitchReady && p.atkCd <= 0 && !stormLock) {
             // 普攻打離我方最近的敵人（同距離隨機挑一個）；鎖定後直到該目標死亡才換 → js/battlefield.js
             var primary = bfPickPrimary(combatFieldEnemies(), p._lockTarget);
             /* 普攻是近戰：目標還沒走到面前就不出手，也不進入冷卻——
@@ -1221,8 +1249,11 @@ function onFieldKill(m) {
         FIELD.player._lockTarget = null;
         /* 換目標的空檔：打死一隻之後不要在同一個 tick 就轉頭砍下一隻。
            壓在普攻冷卻上（技能有自己的冷卻與 GCD，不受這裡影響）。 */
-        var switchCd = (typeof TARGET_SWITCH_DELAY === 'number') ? TARGET_SWITCH_DELAY : 0;
-        if (switchCd > 0) FIELD.player.atkCd = Math.max(Number(FIELD.player.atkCd) || 0, switchCd);
+        var switchCd = targetSwitchDelaySeconds();
+        if (switchCd > 0) {
+            FIELD.player.atkCd = Math.max(Number(FIELD.player.atkCd) || 0, switchCd);
+            applyTargetSwitchDelay(FIELD.player, switchCd);
+        }
     }
     if (typeof legendaryOnEnemyKill === 'function') legendaryOnEnemyKill(FIELD.player);
     m._deathClearCd = FIELD_ENEMY_DEATH_CLEAR_DELAY;

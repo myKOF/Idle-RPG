@@ -2581,7 +2581,6 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
   var vfxSpec = skillVfxSpec(sk, fx, (fx && fx.shape) || (sk && sk.shape),
     targets.map(function (t) { return enemyEventFloatTarget(t, floatSel); }),
     placement.area, vfxExtra);
-  floatPlayerSkillCast(floatSel, sk);
   emitSkillVfx(vfxSpec);
   var logMsg = sk.emoji + ' 你施放【' + sk.name + ' Lv.' + lv + '】，';
   var parts = [];
@@ -2868,6 +2867,8 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
   if (typeof legendaryOnSkillCast === 'function') {
     legendaryOnSkillCast(pEnt, targets, id, sk, fx, lv, st, out, floatSel, legendaryPrep, opts);
   }
+
+  floatPlayerSkillCast(floatSel, sk, out.dmg);
 
   // 45 新技能：純機制技能（skillAmp 授予／連段窗／疊層引擎／冷卻操縱等無本體傷害/治療/增益者）
   // 無既有記錄片段時補通用日誌，避免出現空白句

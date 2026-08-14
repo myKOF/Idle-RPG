@@ -1945,7 +1945,8 @@ var BattleRenderer = (function () {
          岩甲護盾走的是 floatText（沒有那個類別），於是回血也被塗成紅色，
          玩家看到滿畫面紅字會以為自己在狂掉血。改成看語意分類。 */
       if (cls.indexOf('skill-cast') >= 0) {
-        s.fill = '#ffd43b'; s.size = 20; s.rise = 0; s.life = 1.05;
+        s.fill = '#ffd43b'; s.size = 20; s.rise = 0;
+        s.life = cls.indexOf('skill-cast-total') >= 0 ? 2.1 : 1.05;
         return s;
       }
       var isDamageToUs = cls.indexOf('mdmg') >= 0 || /^\s*(爆擊\s*)?-/.test(text);

@@ -417,11 +417,70 @@ test('普攻擊殺後換目標至少間隔技能 GCD 0.4 秒', () => {
 
   context.applyBasicAttackKillGap(player, 1);
   assert.equal(player.atkCd, 0.4);
+  assert.equal(player._targetSwitchCd, context.TARGET_SWITCH_DELAY);
 
   // 若原本計時器更長，擊殺間隔不能把它縮短。
   player.atkCd = 0.6;
   context.applyBasicAttackKillGap(player, 1);
   assert.equal(player.atkCd, 0.6);
+});
+
+test('擊殺後先等待換目標間隔，再重新選取並追擊下一隻怪', () => {
+  const context = loadCombatContext();
+  const player = context.newPlayerEntity({ hp: 100, mp: 0, aspd: 1 });
+  const killed = { name: '甲', hp: 100, maxHp: 100, gold: 0, xp: 0, pos: { x: 60, y: 0 } };
+  const next = { name: '乙', hp: 100, maxHp: 100, gold: 0, xp: 0, pos: { x: 80, y: 0 } };
+  player._lockTarget = killed;
+  context.G = {
+    player: { gold: 0 },
+    stage: { current: 1, best: 1, kills: 0, autoAdvance: false, zone: 'desert' },
+    tower: { active: false }
+  };
+  context.FIELD = {
+    player,
+    monster: killed,
+    monsters: [killed, next],
+    spawnCd: Infinity,
+    reviveCd: 0,
+    dpsWindow: [],
+    mapComplete: true,
+    _waveClearPending: false,
+    stageKills: 0,
+    quotaStage: 1,
+    stageQuota: 999
+  };
+  context.getStats = () => ({
+    hp: 100, mp: 0, aspd: 1, moveSpeed: 0,
+    goldBonus: 0, xpBonus: 0, passives: {}, skillTriggers: {}
+  });
+  context.healPlayer = () => {};
+  context.gainXp = () => {};
+  context.rollFieldDrops = () => [];
+  context.markFieldEnemyFloatTargets = () => {};
+  context.fieldStageQuota = () => 999;
+  context.tickSkillCds = () => {};
+  context.tickFieldDeathClears = () => {};
+  context.tickFieldEnterDelays = () => [];
+  context.bfTickApproach = () => [];
+  context.pickAndCastSkill = () => null;
+  context.tickSkillSchedulers = () => {};
+  context.tickLegendaryEffects = () => null;
+  context.effectActive = () => false;
+  context.fieldMonsterAttack = () => false;
+  context.bfPlayerCanReach = () => false;
+  let moveCalls = 0;
+  context.bfTickPlayer = () => { moveCalls++; };
+
+  context.onFieldKill(killed);
+  assert.equal(player._targetSwitchCd, context.TARGET_SWITCH_DELAY);
+
+  context.fieldTick(0.1);
+  assert.equal(moveCalls, 0, '等待期間不應轉向或追擊下一隻怪');
+  assert.equal(player._targetSwitchCd, context.TARGET_SWITCH_DELAY - 0.1);
+
+  context.fieldTick(context.TARGET_SWITCH_DELAY - 0.1);
+  assert.equal(moveCalls, 1, '等待結束後才重新選取並追擊目標');
+  assert.equal(player._targetSwitchCd, 0);
 });
 
 test('戰鬥畫面與敵方 tooltip 使用可見敵人列表，保留死亡待清除敵人資訊', () => {
