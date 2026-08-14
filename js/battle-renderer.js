@@ -1527,29 +1527,36 @@ var BattleRenderer = (function () {
     }
   }
 
-  function spawnBolt(fromPt, targetId, spec, delaySec, isMega, isPurple) {
+  function resolvePos(p) {
+    if (p && typeof p.x === 'number' && typeof p.y === 'number') return p;
+    return posOf(p);
+  }
+
+  function spawnBolt(fromPtOrId, targetPtOrId, spec, delaySec, isMega, isPurple) {
     var theme = themeOf(spec);
     var g = new PIXI.Graphics();
     S.layers.fx.addChild(g);
-    var t = -(delaySec || 0), dur = isPurple ? 0.32 : (isMega ? 0.28 : 0.24), redraws = 0;
+    var t = -(delaySec || 0), dur = isPurple ? 0.4 : (isMega ? 0.36 : 0.32), redraws = 0;
     addFx({
       node: g,
       update: function (dt) {
         t += dt;
         if (t < 0) return true;
-        var to = posOf(targetId);
-        var from = fromPt || { x: to.x + (Math.random() * 40 - 20), y: to.y - S.H * 0.65 };
+        var to = resolvePos(targetPtOrId);
+        var from = fromPtOrId ? resolvePos(fromPtOrId) : { x: to.x + (Math.random() * 40 - 20), y: to.y - S.H * 0.65 };
         redraws += dt;
-        if (redraws > 0.04 || g._empty !== false) {
+        if (redraws > 0.03 || g._empty !== false) {
           g._empty = false;
           redraws = 0;
           g.clear();
           boltPath(g, from.x, from.y, to.x, to.y, theme, Math.max(0, 1 - t / dur), !!isMega, !!isPurple);
         }
-        if (t >= dur * 0.35 && !g._hit) {
+        if (t >= dur * 0.25 && !g._hit) {
           g._hit = true;
           spawnImpact(to.x, to.y, spec, !!(isMega || isPurple));
-          hitReact(targetId, spec.elem || 'lightning', !!(isMega || isPurple));
+          if (typeof targetPtOrId === 'string') {
+            hitReact(targetPtOrId, spec.elem || 'lightning', !!(isMega || isPurple));
+          }
           if (isMega || isPurple) addShake(isPurple ? 5 : 3);
         }
         return t < dur;
@@ -1946,6 +1953,165 @@ var BattleRenderer = (function () {
     }, 1);
   }
 
+  /* 連續橫向穿梭折射閃電鏈（復刻截圖效果：在敵人間連續折射穿梭） */
+  function spawnContinuousChainLightning(nodeList, spec) {
+    if (!nodeList || nodeList.length < 2) return;
+    var theme = themeOf(spec);
+    var g = new PIXI.Graphics();
+    S.layers.fx.addChild(g);
+    var t = 0, dur = 0.42, redraws = 0;
+
+    // 為所有彈射節點生成光圈與爆點
+    nodeList.forEach(function (pos, idx) {
+      setTimeout(function () {
+        if (fxGate()) return;
+        spawnNodeRing(pos.x, pos.y, theme);
+        spawnImpact(pos.x, pos.y, spec, idx === 0);
+      }, idx * 55);
+    });
+
+    addFx({
+      node: g,
+      update: function (dt) {
+        t += dt;
+        if (t < 0) return true;
+        redraws += dt;
+        if (redraws > 0.035 || g._empty !== false) {
+          g._empty = false;
+          redraws = 0;
+          g.clear();
+          var alpha = Math.max(0, 1 - (t / dur) * 0.85);
+
+          // 繪製連續橫向穿梭折線
+          for (var segIdx = 0; segIdx < nodeList.length - 1; segIdx++) {
+            var pA = resolvePos(nodeList[segIdx]);
+            var pB = resolvePos(nodeList[segIdx + 1]);
+            var dx = pB.x - pA.x, dy = pB.y - pA.y;
+            var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            var nx = -dy / dist, ny = dx / dist;
+            var maxJitter = Math.min(26, dist * 0.28);
+            var segs = Math.max(4, Math.min(7, Math.round(dist / 32)));
+
+            var pts = [[pA.x, pA.y]];
+            for (var si = 1; si < segs; si++) {
+              var k = si / segs;
+              var jitter = (Math.random() * 2 - 1) * maxJitter;
+              pts.push([
+                pA.x + dx * k + nx * jitter,
+                pA.y + dy * k + ny * jitter
+              ]);
+            }
+            pts.push([pB.x, pB.y]);
+
+            // 1. 外層厚光暈
+            for (var i = 0; i < pts.length - 1; i++) {
+              g.moveTo(pts[i][0], pts[i][1]).lineTo(pts[i + 1][0], pts[i + 1][1])
+                .stroke({ color: 0xfffbe0, width: 14, alpha: alpha * 0.45, cap: 'round', join: 'round' });
+            }
+            // 2. 中層主電漿色
+            for (var j = 0; j < pts.length - 1; j++) {
+              g.moveTo(pts[j][0], pts[j][1]).lineTo(pts[j + 1][0], pts[j + 1][1])
+                .stroke({ color: 0xffd23f, width: 6.5, alpha: alpha * 0.92, cap: 'round', join: 'round' });
+            }
+            // 3. 內層極致白芯
+            for (var m = 0; m < pts.length - 1; m++) {
+              g.moveTo(pts[m][0], pts[m][1]).lineTo(pts[m + 1][0], pts[m + 1][1])
+                .stroke({ color: 0xffffff, width: 2.6, alpha: alpha, cap: 'round', join: 'round' });
+            }
+          }
+        }
+        return t < dur;
+      }
+    }, 1);
+  }
+
+  function spawnNodeRing(x, y, theme) {
+    var g = new PIXI.Graphics();
+    g.x = x; g.y = y;
+    S.layers.fx.addChild(g);
+    var t = 0, dur = 0.38;
+    addFx({
+      node: g,
+      update: function (dt) {
+        t += dt;
+        var k = Math.min(1, t / dur);
+        var r = 12 + k * 20;
+        var a = (1 - k) * 0.95;
+        g.clear();
+        g.circle(0, 0, r).stroke({ color: 0xffffff, width: 2.4, alpha: a });
+        g.circle(0, 0, r * 0.65).stroke({ color: 0xffd23f, width: 1.6, alpha: a * 0.75 });
+        return t < dur;
+      }
+    }, 1);
+  }
+
+  function handleChainVfx(targets, spec, baseDelay, stagger) {
+    if (!targets.length && !S.player) return;
+    if (spec.variant === 'knife-bounce' || spec.variant === 'poison-spread') {
+      for (var kb = 1; kb < targets.length; kb++) {
+        (function (hopIndex) {
+          var fromId = targets[hopIndex - 1];
+          var toId = targets[hopIndex];
+          var travel = projectileTravelMs(spec.travelMs && spec.travelMs[hopIndex], 120);
+          setTimeout(function () {
+            if (fxGate()) return;
+            spawnProjectile(toId, travel, spec, function (pt) {
+              spawnImpact(pt.x, pt.y, spec, false);
+              hitReact(toId, spec.elem, false);
+            }, posOf(fromId));
+          }, baseDelay + (hopIndex - 1) * stagger);
+        })(kb);
+      }
+      return;
+    }
+
+    var firstId = targets.length ? targets[0] : 'pv-float';
+    var firstPos = posOf(firstId);
+
+    // 1. 首目標劈下天頂大型天雷
+    spawnBolt(null, firstId, spec, 0, true, false);
+
+    // 2. 尋找並組成連續折射穿梭鏈（首目標 -> 另外 2 個敵人）
+    var chainList = [firstId];
+    for (var ti = 1; ti < targets.length && chainList.length < 3; ti++) {
+      if (chainList.indexOf(targets[ti]) < 0) chainList.push(targets[ti]);
+    }
+    if (chainList.length < 3) {
+      var entKeys = Object.keys(S.entities);
+      entKeys.sort(function (a, b) {
+        var pa = posOf(a), pb = posOf(b);
+        var da = (pa.x - firstPos.x) * (pa.x - firstPos.x) + (pa.y - firstPos.y) * (pa.y - firstPos.y);
+        var db = (pb.x - firstPos.x) * (pb.x - firstPos.x) + (pb.y - firstPos.y) * (pb.y - firstPos.y);
+        return da - db;
+      });
+      for (var ek = 0; ek < entKeys.length && chainList.length < 3; ek++) {
+        if (chainList.indexOf(entKeys[ek]) < 0) chainList.push(entKeys[ek]);
+      }
+    }
+
+    // 3. 收集目標座標清單
+    var chainPosList = chainList.map(function (id) { return posOf(id); });
+
+    // 若場上只有 1 個或 2 個敵人，在周圍生成延伸折射點
+    if (chainPosList.length < 3) {
+      var lastP = chainPosList[chainPosList.length - 1];
+      var needed = 3 - chainPosList.length;
+      for (var amb = 0; amb < needed; amb++) {
+        var angle = (amb === 0 ? -0.85 : 0.85) + (Math.random() * 0.4 - 0.2);
+        var dist = 75 + Math.random() * 35;
+        var ambP = {
+          x: lastP.x + Math.cos(angle) * dist,
+          y: lastP.y + Math.sin(angle) * dist + 15
+        };
+        chainPosList.push(ambP);
+        lastP = ambP;
+      }
+    }
+
+    // 4. 觸發連續折射電鏈（在目標之間高速橫向穿梭折射）
+    spawnContinuousChainLightning(chainPosList, spec);
+  }
+
   /* ============ VFX 事件分派（協議 v17 spec → Canvas 畫法） ============ */
   function onVfx(spec) {
     if (!S.ready || !spec) return;
@@ -1996,16 +2162,13 @@ var BattleRenderer = (function () {
       return;
     }
 
+    if (spec.fxKind === 'chain' || spec.variant === 'chain') {
+      handleChainVfx(targets, spec, baseDelay, stagger);
+      return;
+    }
+
     switch (spec.fxKind) {
       case 'projectile':
-        if (spec.variant === 'chain') {
-          targets.forEach(function (id, ti) {
-            for (var strike = 0; strike < 3; strike++) {
-              spawnBolt(null, id, spec, (strike * stagger + ti * 40) / 1000);
-            }
-          });
-          break;
-        }
         targets.forEach(function (id, ti) {
           var travel = projectileTravelMs(spec.travelMs && spec.travelMs[ti], spec.dur ? spec.dur * 1000 : 300);
           for (var c = 0; c < count; c++) {
@@ -2174,49 +2337,7 @@ var BattleRenderer = (function () {
         targets.forEach(function (id, ti) { spawnCurse(id, spec, ti * 0.05); });
         break;
       case 'chain':
-        /* targets 順序即彈跳路徑：首個目標劈下大型天雷，命中後以閃電鏈依序彈射到另外 2 個目標 */
-        if (targets.length) {
-          if (spec.variant === 'knife-bounce' || spec.variant === 'poison-spread') {
-            for (var kb = 1; kb < targets.length; kb++) {
-              (function (hopIndex) {
-                var fromId = targets[hopIndex - 1];
-                var toId = targets[hopIndex];
-                var travel = projectileTravelMs(spec.travelMs && spec.travelMs[hopIndex], 120);
-                setTimeout(function () {
-                  if (fxGate()) return;
-                  spawnProjectile(toId, travel, spec, function (pt) {
-                    spawnImpact(pt.x, pt.y, spec, false);
-                    hitReact(toId, spec.elem, false);
-                  }, posOf(fromId));
-                }, baseDelay + (hopIndex - 1) * stagger);
-              })(kb);
-            }
-            break;
-          }
-          // 1. 首目標大型天雷劈下
-          spawnBolt(null, targets[0], spec, 0, true, false);
-          // 2. 依序向另外 2 個目標（最多 3 個目標）彈射
-          var maxBounces = Math.min(targets.length, 3);
-          for (var h = 1; h < maxBounces; h++) {
-            (function (hh) {
-              var fromId = targets[hh - 1];
-              setTimeout(function () {
-                if (fxGate()) return;
-                spawnBolt(posOf(fromId), targets[hh], spec, 0, false, false);
-              }, 110 * hh);
-            })(h);
-          }
-          // 超過 3 個目標時其餘細弧光彈射
-          for (var hExtra = 3; hExtra < targets.length; hExtra++) {
-            (function (he) {
-              var fromId2 = targets[he - 1];
-              setTimeout(function () {
-                if (fxGate()) return;
-                spawnBolt(posOf(fromId2), targets[he], spec, 0, false, false);
-              }, 110 * he);
-            })(hExtra);
-          }
-        }
+        handleChainVfx(targets, spec, baseDelay, stagger);
         break;
       case 'impact':
       default:
