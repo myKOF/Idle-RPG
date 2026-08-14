@@ -1,5 +1,34 @@
 # AI_TASKS.md
 
+## Codex：依影片調整傷害飄字動畫（2026-08-14）
+
+- 狀態：已完成
+- 任務分類：戰鬥 UI／DOM 與 Canvas 傷害數字 VFX
+- 負責 AI：Codex
+- 任務內容：參考使用者提供的《吸血鬼倖存者》影片，調整傷害數字的彈出、縮放回彈、上浮與淡出節奏；不改變傷害數值、事件時序或合併規則。
+- 允許修改：`css/style.css`、`js/battle-renderer.js`、`index.html`、`tests/player-event-float.test.cjs`、`docs/AI_TASKS.md`
+- 禁止修改：戰鬥公式、Worker Protocol、存檔格式、傷害合併／目標選擇邏輯及其他 AI 進行中的檔案。
+- 前置依賴：既有 DOM／PixiJS 飄字路徑與影片參考畫面已確認；目標檔案衝突預檢無來源。
+- 驗收方式：DOM 與 Canvas 的一般傷害數字都具備快速縮放回彈、短距離上浮及尾段淡出；相關測試、語法檢查、Build 與 `git diff --check` 通過。
+- 驗證結果：`node --check js/battle-renderer.js` 通過；傷害／浮字／UI 定向測試 49/49 通過；`npm.cmd run build` 通過（278 個檔案）；`git diff --check` 通過。
+- 已知風險：影片沒有提供逐幀特效規格，這版依可觀察畫面做近似還原；字型沿用專案既有字型，未加入像素字型資源。
+- 完成後交給：使用者確認。
+
+## Codex：補充戰鬥特效模組註釋（2026-08-14）
+
+- 狀態：已完成
+- 任務分類：程式碼可讀性／VFX 維護文件
+- 負責 AI：Codex
+- 任務內容：在不改變執行行為的前提下，補充 `js/vfx.js` 各主要區塊、事件分派、品質降載、節點生命週期與閃電鏈彈射流程的詳細註釋。
+- 允許修改：`docs/AI_TASKS.md`、`js/vfx.js`
+- 禁止修改：VFX 執行邏輯、Worker Protocol、戰鬥公式、數值配置、存檔格式及其他 AI 進行中的檔案。
+- 前置依賴：已完成 `js/vfx.js` 與 `docs/AI_TASKS.md` 的衝突預檢，未發現其他副本或分支的修改來源。
+- 測試要求：`node --check js/vfx.js`、VFX／技能相關定向測試、`git diff --check`。
+- 完成條件：主要函式責任、DOM 座標／節點生命週期、閃電鏈第一跳與後續彈射、Canvas／DOM 事件入口及 Full／Reduced／Off 行為均有清楚註釋，且功能測試結果不變。
+- 驗證結果：`node --check js/vfx.js` 通過；VFX／技能定向測試 28/28 通過；`npm.cmd run build` 通過（278 個檔案）；`git diff --check` 通過。
+- 已知風險：未修改執行邏輯；瀏覽器實機畫面仍沿用既有 VFX 行為，沒有新增視覺回歸風險。
+- 完成後交給：使用者確認。
+
 ## Antigravity：新版主動技能系統全群組完整測試（2026-08-14）
 
 - 狀態：已完成

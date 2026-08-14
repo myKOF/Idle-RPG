@@ -23,8 +23,15 @@
    - 同時存在的特效節點有硬上限，超過就丟最舊的；掉特效永遠比掉幀好。
    - 動畫只用 transform / opacity / filter，不碰 layout。
    - 粒子一律是特效節點的子 span，隨父節點一起回收，不佔節點名額。
-   - 分頁不可見時整支停用（uiRenderingSuspended 已停了重繪，特效再畫也沒人看）。 */
+   - 分頁不可見時整支停用（uiRenderingSuspended 已停了重繪，特效再畫也沒人看）。
 
+   資料流總覽：Worker／舊路徑模擬層先送出純資料 spec，playCombatVfx() 只負責
+   做品質裁切與排程；renderCombatVfx() 才把 spec 分派到下方各種繪圖函式。
+   因此本檔可以調整畫法、延遲與節點生命週期，而不會改變傷害或戰鬥狀態。 */
+
+/* ---- 全域上限、品質狀態與排程器狀態 ----
+   _vfxNodes 管理已建立但尚未過期的 DOM 節點；_vfxEventQueue 管理尚未繪製的
+   spec。兩者是不同層次：前者防止畫面殘留，後者防止短時間事件洪峰塞爆主執行緒。 */
 var VFX_MAX_NODES = 96;        // 同時存在的特效節點上限
 var VFX_MAX_TARGETS = 8;       // 單一事件最多為幾個目標生成特效
 var VFX_LAYER_ID = 'bf-vfx-layer';
@@ -49,6 +56,9 @@ var _vfxAnchorCache = Object.create(null);
 var _vfxLayerRectCache = null;
 var _vfxLayoutVersion = 0;
 
+/* 版面快取的版本號只在尺寸、頁籤或戰鬥場景變動時遞增。
+   座標函式用這個版本判斷快取是否仍可用，避免每個特效都重新量測整個 DOM。 */
+
 /* 元素主題：c1 主色、c2 亮部／輔色、glow 光暈。
    這組色票同時供 DOM CSS 與 PixiJS 使用，所以 glow 採十六進位色碼，
    不用 rgba；無屬性事件才退回 spec.color 單色。 */
@@ -62,15 +72,20 @@ var VFX_ELEM_THEME = {
   poison:    { c1: '#4caf2b', c2: '#d8ff8a', glow: '#76d83b' }
 };
 
+/* 開關是比品質分級更高一層的總閘門；關閉時連已存在的特效也要清掉，
+   否則玩家雖然不再收到新事件，舊節點仍可能留在戰場上。 */
 function vfxSetEnabled(on) {
   _vfxEnabled = !!on;
   if (!on) vfxClear();
 }
 
+/* UI／頁籤策略讀取目前品質，實際裁切由 vfxSpecForQuality() 統一處理。 */
 function vfxQuality() {
   return _vfxQuality;
 }
 
+/* Full 保留完整事件；Reduced 保留主要命中但壓低數量；Off 清空佇列與畫面。
+   切換品質時清佇列，避免切回頁籤後補播已經過時的高負載事件。 */
 function vfxSetQuality(level) {
   var next = level === VFX_QUALITY_LEVELS.REDUCED ? VFX_QUALITY_LEVELS.REDUCED
     : level === VFX_QUALITY_LEVELS.OFF ? VFX_QUALITY_LEVELS.OFF : VFX_QUALITY_LEVELS.FULL;
@@ -80,6 +95,7 @@ function vfxSetQuality(level) {
   if (next === VFX_QUALITY_LEVELS.OFF) vfxClear();
 }
 
+/* 戰場尺寸、縮放、全螢幕或 DOM 重建後，所有錨點座標都必須重新讀取。 */
 function vfxInvalidateLayout() {
   _vfxLayoutVersion++;
   _vfxAnchorCache = Object.create(null);
@@ -87,7 +103,9 @@ function vfxInvalidateLayout() {
   _vfxOriginCache = null;
 }
 
-/* ---- 圖層與座標 ---- */
+/* ---- 圖層與座標 ----
+   這一區把「事件目標 id」轉成特效圖層內的座標。特效層跟著 battle-scene
+   移動，這樣投射物可以跨越我方欄與敵方欄，也不會成為 battlefield grid 的格子項目。 */
 /* 特效圖層掛在「事件目標所在」的 .battle-scene 上：野外掛棋盤景、高塔掛塔景。
    掛在 scene 的理由不變：
    1. 投射物必須橫跨我方與敵方兩欄——掛在敵方面板裡會被裁掉。
@@ -100,6 +118,8 @@ function vfxSceneFor(anchorId) {
   return (party && party.closest) ? party.closest('.battle-scene') : null;
 }
 
+/* 取得或建立目前 scene 唯一的特效容器；高塔與野外共用同一套 DOM 畫法，
+   差別只在 anchorId 會落到哪一個 battle-scene。 */
 function vfxLayer(anchorId) {
   var scene = vfxSceneFor(anchorId);
   if (!scene) return null;
@@ -116,6 +136,8 @@ function vfxLayer(anchorId) {
   return layer;
 }
 
+/* 場景切換、死亡、關閉 VFX 或品質切到 Off 時的總清理入口。
+   generation 讓尚未執行的 setTimeout／RAF 回呼自動失效，避免舊事件復活。 */
 function vfxClear() {
   _vfxGeneration++;
   _vfxEventQueue.length = 0;
@@ -148,6 +170,8 @@ function vfxClear() {
   }
 }
 
+/* className 在 HTML DOM 是字串，在 SVG／部分測試替身可能是 SVGAnimatedString；
+   統一取成字串，供節點上限與看門狗辨識 aura／meteor 類節點。 */
 function vfxNodeClassName(node) {
   if (!node) return '';
   if (typeof node.className === 'string') return node.className;
@@ -155,10 +179,13 @@ function vfxNodeClassName(node) {
   return '';
 }
 
+/* 對已脫離 DOM 的節點也安全；清理路徑可重複呼叫。 */
 function vfxRemoveNode(node) {
   if (node && node.parentNode) node.parentNode.removeChild(node);
 }
 
+/* Timer 是正常回收之外的第二道保險：處理動畫中斷、節點被外部移除或
+   某個 CSS／瀏覽器回呼沒有如期完成的情況。 */
 function vfxRunNodeWatchdog() {
   _vfxWatchdogHandle = 0;
   var now = Date.now();
@@ -172,12 +199,15 @@ function vfxRunNodeWatchdog() {
   if (_vfxNodes.length) _vfxWatchdogHandle = setTimeout(vfxRunNodeWatchdog, VFX_NODE_WATCHDOG_MS);
 }
 
+/* 只有有追蹤節點且目前沒有 watchdog 時才排程，避免每個特效各自建立 Timer。 */
 function vfxScheduleNodeWatchdog() {
   if (!_vfxWatchdogHandle && _vfxNodes.length) {
     _vfxWatchdogHandle = setTimeout(vfxRunNodeWatchdog, VFX_NODE_WATCHDOG_MS);
   }
 }
 
+/* 登記節點的預期壽命、套用全域節點上限並安排回收。
+   aura 是長駐狀態，節點爆量時優先淘汰短命效果，避免領域被技能連發擠掉。 */
 function vfxTrack(node, ms) {
   var ttl = Number(ms);
   if (!isFinite(ttl) || ttl < 0) ttl = 0;
@@ -209,7 +239,8 @@ function vfxTrack(node, ms) {
   vfxScheduleNodeWatchdog();
 }
 
-/* 目標圖層 id → 相對於特效圖層的中心座標。找不到（敵人已被清掉）回傳 null。 */
+/* ---- 錨點與範圍幾何 ----
+   目標圖層 id → 相對於特效圖層的中心座標。找不到（敵人已被清掉）回傳 null。 */
 function vfxLayerRect(layer) {
   if (_vfxLayerRectCache && _vfxLayerRectCache.layer === layer && _vfxLayerRectCache.version === _vfxLayoutVersion) {
     return _vfxLayerRectCache.rect;
@@ -219,6 +250,8 @@ function vfxLayerRect(layer) {
   return rect;
 }
 
+/* 高塔的浮字節點不等於 BOSS 圖像節點；先找實際可見的 emoji／圖片，
+   避免以整張 combatant 欄位中心當成命中點。野外則回到 enemy-card／combatant。 */
 function vfxPointTarget(elId, el) {
   /* 高塔的 tb-float 只是浮字層；整個 .combatant boss 會被 grid 拉滿整欄，
      取它的中心會把命中爆點與投射物終點推到血條／狀態列附近。
@@ -267,6 +300,8 @@ function vfxPointOf(elId, layer) {
    才會變，但這支原本每次施法都重量一次。回報者機器上實測 46 秒內 29 次強制重排
    出自這裡，而強制重排的成本取決於整份文件多大（後期背包上千格）。 */
 var _vfxOriginCache = null;
+/* 取得我方出手點。這是投射物、光束、突刺與彈射首段的共同起點；
+   對於沒有可見我方卡片的退化場景，使用 layer 中線左側的安全座標。 */
 function vfxOriginPoint(layer) {
   var lr = vfxLayerRect(layer);
   if (_vfxOriginCache && _vfxOriginCache.layer === layer && _vfxOriginCache.version === _vfxLayoutVersion) {
@@ -286,6 +321,8 @@ function vfxOriginPoint(layer) {
   return point;
 }
 
+/* 將協議中的棋盤格集合轉成實際像素矩形；只讀取現有格線的 DOM 位置，
+   不自行猜測欄寬，因而能跟著 UI 縮放與響應式版面走。 */
 /* 棋盤格 [{col,row}] → 相對特效圖層的矩形（用實際的格線方框量，不自己算格寬）。 */
 function vfxCellsRect(cells, layer) {
   if (!cells || !cells.length) return null;
@@ -319,8 +356,11 @@ function vfxRectAround(pt, area) {
   return { x: pt.x - 70, y: pt.y - 80, w: 140, h: 160 };
 }
 
-/* ---- 節點工廠 ---- */
+/* ---- 節點工廠與共用時序 ----
+   所有特效都透過 vfxNode() 建立，讓元素色票、CSS custom properties 與 DOM
+   父層保持一致；各專用函式只負責自己的幾何與子粒子。 */
 function vfxTheme(spec) {
+  /* variant 的專屬色優先於元素色；沒有元素時才使用事件傳入的單色。 */
   if (spec && (spec.variant === 'bleed' || spec.variant === 'bleed-tick')) {
     return { c1: '#d92846', c2: '#ffd0d8', glow: '#ff4962' };
   }
@@ -343,18 +383,22 @@ function vfxNode(cls, layer, spec) {
   return d;
 }
 
+/* DOM 特效的定位統一使用中心點，CSS 再透過 margin／transform 做視覺偏移。 */
 function vfxPlace(d, pt) {
   d.style.left = pt.x + 'px';
   d.style.top = pt.y + 'px';
 }
 
+/* 多段命中、連鎖與 DoT 共用的段間延遲；必須和傷害浮字使用同一個基準，
+   才不會出現特效已命中但數字尚未出現，或數字先跳出的錯位。 */
 function vfxStagger() {
   return (typeof VFX_HIT_STAGGER_SEC === 'number') ? VFX_HIT_STAGGER_SEC * 1000 : 90;
 }
 
 /* ---- 受擊反饋：卡片震動＋元素色閃光 ----
    卡片只在敵群「簽章」（身分＋站位）變動時重建，短命 class 掛上去是安全的；
-   萬一剛好碰上重建把 class 洗掉，也只是少抖一下，不會殘留。 */
+   萬一剛好碰上重建把 class 洗掉，也只是少抖一下，不會殘留。
+   受擊反饋是命中特效的附加層，不負責產生傷害數字，也不改變戰鬥狀態。 */
 var VFX_HIT_CLASSES = ['vfx-hit', 'vfx-hit-strong', 'vfx-hit-fire', 'vfx-hit-ice',
   'vfx-hit-lightning', 'vfx-hit-poison', 'vfx-hit-light', 'vfx-hit-dark', 'vfx-hit-earth'];
 function vfxHitReact(targetId, elem, delayMs, strong) {
@@ -385,7 +429,8 @@ function vfxHitReact(targetId, elem, delayMs, strong) {
   }, Math.max(0, delayMs || 0));
 }
 
-/* 畫面震動：大爆點（隕石、引爆）時整個戰鬥畫面晃一下。 */
+/* 畫面震動：大爆點（隕石、引爆）時整個戰鬥畫面晃一下。
+   Reduced 直接跳過，避免普通裝備操作頁也因戰鬥事件產生大範圍重繪。 */
 function vfxSceneShake(layer, delayMs, strong) {
   if (_vfxQuality !== VFX_QUALITY_LEVELS.FULL) return;
   var generation = _vfxGeneration;
@@ -415,9 +460,12 @@ function vfxSceneShake(layer, delayMs, strong) {
    variant 覆寫（單體技的專屬受擊）：
      vortex 暗渦收縮引爆（虛空裂隙）    detonate 大爆炸＋畫面震動（斷罪／碎印）
      venomburst 疫病炸裂               venom 命中後殘留 2.5 秒毒雲泡泡
-     nova 冰環爆發＋地面結霜（霜之新星） */
+      nova 冰環爆發＋地面結霜（霜之新星）
+   這是最常用的末端命中回饋；特殊技能通常仍由自己的幾何函式出手，
+   再呼叫本函式補命中爆點與卡片反應。 */
 var VFX_IMPACT_PARTS = { fire: 6, ice: 5, lightning: 5, poison: 4, light: 6, dark: 5, earth: 6, phys: 3, claw: 3 };
 function vfxImpact(spec, layer, pt, targetId, delayMs) {
+  /* 先把 variant 映射成 CSS class，再由粒子數與 strong 決定爆點規模。 */
   var v = spec.variant;
   var elemKey = spec.elem || 'phys';
   var strong = false;
@@ -480,7 +528,9 @@ function vfxImpact(spec, layer, pt, targetId, delayMs) {
 /* ---- 投射物 ----
    元素化彈體：外層節點做 x0→x1 位移（等速，時長＝travelMs），內層 core／trail
    以 --vfx-rot 對齊飛行方向。火屬性從畫面上方 45° 俯衝（「火球從畫面 45 度飛向敵方」），
-   glyph 模式（特殊／潛力／融合系）保留技能 emoji 當彈體。 */
+    glyph 模式（特殊／潛力／融合系）保留技能 emoji 當彈體。
+   vfxBarrageProjectile 是多線彈幕；vfxProjectile 是一般單線投射物，兩者都只
+   表現視覺飛行，命中時機由 renderCombatVfx 的 travelMs／delayMs 對齊。 */
 function vfxProjectileCls(spec) {
   var v = spec.variant;
   if (v === 'swordwave') return 'vfx-proj-sword';
@@ -492,18 +542,24 @@ function vfxProjectileCls(spec) {
   return 'vfx-proj-plain';
 }
 
+/* 僅用於投射物路徑內的數值插值，不涉及遊戲公式。 */
 function vfxLerp(a, b, t) { return a + (b - a) * t; }
 
+/* 讀取調速參數；沒有配置時退回 0.75，保證舊存檔或測試環境仍有合理速度。 */
 function vfxProjectileSpeedMultiplier() {
   return (typeof VFX_PROJECTILE_SPEED_MULTIPLIER === 'number' && VFX_PROJECTILE_SPEED_MULTIPLIER > 0)
     ? VFX_PROJECTILE_SPEED_MULTIPLIER : 0.75;
 }
 
+/* travelMs 是模擬層提供的實際距離時間；缺少時用 spec.dur 估算，並套用
+   顯示層速度倍率。這裡只計算動畫時長，不延遲或改寫戰鬥結算。 */
 function vfxProjectileFlightMs(travelMs, fallbackDurationSec) {
   if (travelMs > 0) return travelMs;
   return Math.round((fallbackDurationSec || 0) * 1000 / vfxProjectileSpeedMultiplier());
 }
 
+/* 彈幕專用投射物：同一目標建立左右兩側、三條 lane 的交錯彈道，
+   用來表現 arcane-barrage 這類密集魔法，而不是逐目標重複建立同一條線。 */
 function vfxBarrageProjectile(spec, layer, from, to, side, lane, delayMs, travelMs) {
   var flight = vfxProjectileFlightMs(travelMs, spec.dur || 0.55);
   var start = {
@@ -564,6 +620,7 @@ function vfxBarrageProjectile(spec, layer, from, to, side, lane, delayMs, travel
 }
 
 function vfxProjectile(spec, layer, from, to, delayMs, travelMs) {
+  /* 火球的起點刻意改成左上方 45 度，其他元素沿我方→目標直線飛行。 */
   var flight = vfxProjectileFlightMs(travelMs, spec.dur || 0.5);
   var fromPt = from;
   if (spec.elem === 'fire' && spec.variant !== 'flamewave') {
@@ -610,7 +667,8 @@ function vfxProjectile(spec, layer, from, to, delayMs, travelMs) {
   }
 }
 
-/* ---- 斬擊：交叉雙刀光 ---- */
+/* ---- 斬擊與近戰幾何 ----
+   這些函式只建立刀光／衝擊線；目標命中數量與傷害已由模擬層決定。 */
 function vfxSlash(spec, layer, pt, delayMs, tiltDeg, extraClass) {
   var d = vfxNode('vfx-slash' + (extraClass ? ' ' + extraClass : ''), layer, spec);
   vfxPlace(d, pt);
@@ -636,6 +694,7 @@ function vfxCleaveArc(spec, layer, pt, delayMs, angleDeg, extraClass) {
 }
 
 var VFX_CLEAVE_WAVE_SPEED_RATIO = 0.3;
+/* 震碎斬的慢速波不是一般投射物速度；用獨立比例保留「慢慢飛出」的視覺辨識度。 */
 function vfxCleaveWaveFlightMs() {
   return Math.max(900, Math.round(
     vfxProjectileFlightMs(0, 0.3) / VFX_CLEAVE_WAVE_SPEED_RATIO
@@ -672,6 +731,7 @@ function vfxCleaveWave(spec, layer, from, target, delayMs, angleOffset, lengthPx
   frame();
 }
 
+/* 突刺／三向突刺的直線刀光；angleOffset 由呼叫端提供，用來產生左右分叉。 */
 function vfxThrustLine(spec, layer, from, to, delayMs, angleOffset, lengthPx) {
   if (!from || !to) return;
   var dx = to.x - from.x, dy = to.y - from.y;
@@ -685,7 +745,8 @@ function vfxThrustLine(spec, layer, from, to, delayMs, angleOffset, lengthPx) {
   vfxTrack(d, Math.max(0, delayMs || 0) + Math.max(0.22, spec.dur || 0.38) * 1000 + 180);
 }
 
-/* 近戰彈射：第一組飛刀已從玩家飛出，後續只畫目前命中點到下一個目標的短刀光。 */
+/* 近戰彈射：第一組飛刀已從玩家飛出，後續只畫目前命中點到下一個目標的短刀光。
+   複製 spec 再改 variant，避免污染同一事件稍後可能使用的原始 spec。 */
 function vfxKnifeBounce(spec, layer, from, to, delayMs, travelMs) {
   if (!from || !to) return;
   var next = {};
@@ -694,7 +755,8 @@ function vfxKnifeBounce(spec, layer, from, to, delayMs, travelMs) {
   vfxProjectile(next, layer, from, to, delayMs, travelMs);
 }
 
-/* ---- 爆發（單點） ---- */
+/* ---- 爆發（單點） ----
+   沒有更具體幾何 variant 的事件會落到這裡，建立一個短命的中心爆發節點。 */
 function vfxBurst(spec, layer, pt, delayMs) {
   var d = vfxNode('vfx-burst' + (spec.elem ? ' vfx-burst-' + spec.elem : ''), layer, spec);
   vfxPlace(d, pt);
@@ -703,7 +765,8 @@ function vfxBurst(spec, layer, pt, delayMs) {
   vfxTrack(d, delayMs + (spec.dur || 0.5) * 1000 + 160);
 }
 
-/* ---- 氣旋（旋風斬）：圓形氣旋斬擊在敵陣中旋轉 ---- */
+/* ---- 氣旋（旋風斬）：圓形氣旋斬擊在敵陣中旋轉 ----
+   rect 由棋盤格或高塔目標退化矩形提供；本函式不重新查詢命中目標。 */
 function vfxCyclone(spec, layer, rect) {
   var size = Math.min(rect.w, rect.h) * 1.05;
   var d = vfxNode('vfx-cyclone', layer, spec);
@@ -718,7 +781,8 @@ function vfxCyclone(spec, layer, rect) {
   vfxTrack(d, 1000);
 }
 
-/* ---- 刀光亂舞（疾風連斬／殘影迴斬）：白刃在範圍內連閃 ---- */
+/* ---- 刀光亂舞（疾風連斬／殘影迴斬）：白刃在範圍內連閃 ----
+   粒子位置刻意隨機，但只影響視覺，不影響模擬層的目標與傷害。 */
 function vfxBladestorm(spec, layer, rect, count) {
   var slashes = Math.max(4, Math.min(7, (count || 3) + 2));
   for (var i = 0; i < slashes; i++) {
@@ -734,7 +798,8 @@ function vfxBladestorm(spec, layer, rect, count) {
   }
 }
 
-/* ---- 光束：冰＝冰晶槍、聖＝雷射、其他＝元素光束 ---- */
+/* ---- 光束：冰＝冰晶槍、聖＝雷射、其他＝元素光束 ----
+   由我方出手點拉到目標；元素差異主要交給 CSS class／主題色呈現。 */
 function vfxBeam(spec, layer, from, to) {
   var dx = to.x - from.x, dy = to.y - from.y;
   var len = Math.sqrt(dx * dx + dy * dy);
@@ -750,10 +815,13 @@ function vfxBeam(spec, layer, from, to) {
   vfxTrack(d, (spec.dur || 0.5) * 1000 + 160);
 }
 
-/* ---- 天降 ---- */
+/* ---- 天降 ----
+   天降類特效通常同時包含本體、落地爆炸、範圍閃光與命中反饋，
+   所以各函式會分別登記節點，讓每一層都能被生命週期管理。 */
 /* 大隕石：一顆燃燒的大火團由敵軍正上方斜落，砸進範圍中心後大爆炸＋全屏震動。
    落地時刻＝travelMs（模擬層已把所有目標統一成同一個值，傷害數字同時跳）。 */
 function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
+  /* 先限制外部延遲與飛行時間，避免長時間運行後過期隕石集中補播。 */
   var fall = travelMs > 0 ? Math.min(VFX_METEOR_MAX_TRAVEL_MS, travelMs) : VFX_METEOR_MAX_TRAVEL_MS;
   var safeBaseDelay = Number(baseDelay);
   if (!isFinite(safeBaseDelay) || safeBaseDelay < 0) safeBaseDelay = 0;
@@ -833,7 +901,7 @@ function vfxPillar(spec, layer, pt, targetId, delayMs) {
   vfxHitReact(targetId, spec.elem || 'light', delayMs + 220, false);
 }
 
-/* 預設天降：範圍內落下數道元素雨。 */
+/* 預設天降：範圍內落下數道元素雨；沒有 meteor／pillar／smite 專屬畫法時使用。 */
 function vfxRainDrops(spec, layer, rect) {
   var drops = Math.min(6, Math.max(3, Math.round(rect.w / 60)));
   for (var i = 0; i < drops; i++) {
@@ -849,7 +917,9 @@ function vfxRainDrops(spec, layer, rect) {
 }
 
 /* ---- 閃電（SVG 折線）----
-   from→to 之間 6 段鋸齒；粗白芯＋色描邊，閃兩下就消失。weak＝彈射弧光（細）。 */
+   vfxBolt 是所有「雷鏈／天雷」的共用幾何原件：在 from→to 之間切成 6 段，
+   每個中間節點沿法線加入小幅隨機偏移，形成不規則閃電；外層是粗色描邊，
+   內層是白色亮芯。weak=true 時縮小線寬，專門用於單目標時的氛圍彈射。 */
 function vfxBolt(spec, layer, from, to, delayMs, weak) {
   var minX = Math.min(from.x, to.x) - 26, minY = Math.min(from.y, to.y) - 26;
   var w = Math.max(8, Math.abs(to.x - from.x)) + 52, h = Math.max(8, Math.abs(to.y - from.y)) + 52;
@@ -894,11 +964,20 @@ function vfxBolt(spec, layer, from, to, delayMs, weak) {
   vfxTrack(d, delayMs + 420);
 }
 
-/* 連鎖雷鏈：第一個目標被天雷連劈 strikes 下（多段技的段數），之後沿 targets 順序
-   在敵人之間彈射；單目標時向場上其他敵人卡片彈 1~2 道弱化弧光（純視覺氛圍，不帶數字）。 */
+/* 連鎖雷鏈的完整流程：
+   1. ptList／idList 必須保持同一個 targets 順序；每個 index 是同一個目標的座標與 DOM id。
+   2. 第一個目標從畫面上方被 strikes 道天雷連劈，適合連鎖閃電或多段雷擊。
+   3. 後續目標依 targets 順序，從上一個目標的位置畫到下一個目標，形成逐跳彈射。
+   4. 每一跳另外補一個 lightning impact，讓落點與閃電線同時有爆點與卡片受擊反饋。
+   5. 若只有一個目標，傷害事件沒有第二個座標可連線，便只向畫面上其他敵卡補
+      1～2 道 weak 氛圍弧光；這些弧光純視覺、不代表額外傷害。
+
+   這裡不重新挑選目標，也不計算鏈傷害；彈射路徑與傷害清單都由模擬層先決定。 */
 function vfxChain(spec, layer, ptList, idList, baseDelay, strikes) {
   if (!ptList.length) return;
   if (spec.variant === 'knife-bounce' || spec.variant === 'poison-spread') {
+    /* 飛刀／毒感染共用 chain 原型，但不畫雷：每一跳改用短投射物，
+       命中點再補對應元素爆點。 */
     var pathHop = vfxStagger();
     for (var pathI = 1; pathI < ptList.length; pathI++) {
       var pathTravel = (spec.travelMs && spec.travelMs[pathI] > 0) ? spec.travelMs[pathI] : 0;
@@ -914,15 +993,19 @@ function vfxChain(spec, layer, ptList, idList, baseDelay, strikes) {
   }
   var hop = vfxStagger();
   var n = Math.max(1, strikes || 1);
+  /* 第一個目標的天雷段數用同一個 hop 間隔錯開，讓每一道落雷都能和浮字節奏對齊。 */
   for (var st = 0; st < n; st++) {
     vfxBolt(spec, layer, { x: ptList[0].x + 34 - st * 16, y: -60 }, ptList[0], baseDelay + st * hop, false);
     vfxImpact({ elem: 'lightning', variant: null, color: spec.color }, layer, ptList[0], idList[0], baseDelay + st * hop + 50);
   }
   for (var i = 1; i < ptList.length; i++) {
+    /* 從上一跳到目前跳的連線；第三跳之後使用弱化弧光，控制滿場節點數。 */
     vfxBolt(spec, layer, ptList[i - 1], ptList[i], baseDelay + i * hop, i > 2);
     vfxImpact({ elem: 'lightning', variant: null, color: spec.color }, layer, ptList[i], idList[i], baseDelay + i * hop + 40);
   }
   if (ptList.length === 1) {
+    /* 單目標時找不到真正的下一跳，只補不帶傷害的背景弧光，避免畫面看起來像
+       雷鏈完全沒有延伸，同時不捏造不存在的命中事件。 */
     var scene = layer.parentNode;
     var cards = scene ? scene.querySelectorAll('.enemy-card') : [];
     var lr = layer.getBoundingClientRect();
@@ -938,13 +1021,15 @@ function vfxChain(spec, layer, ptList, idList, baseDelay, strikes) {
   }
 }
 
-/* 天罰／單發神雷：一道天雷直劈目標。 */
+/* 天罰／單發神雷：一道天雷直劈目標；與 vfxChain 共用 vfxBolt，但沒有後續跳。 */
 function vfxSmite(spec, layer, pt, targetId, delayMs) {
   vfxBolt(spec, layer, { x: pt.x + 26, y: -50 }, pt, delayMs, false);
   vfxImpact({ elem: 'lightning', variant: null, color: spec.color }, layer, pt, targetId, delayMs + 40);
 }
 
-/* ---- 領域：元素化持續特效 ---- */
+/* ---- 領域：元素化持續特效 ----
+   領域是長壽命節點，會由 vfxTrack 以 dur 登記；品質 Reduced 會在入口直接略過，
+   避免在非戰鬥頁長時間保留大量動畫。 */
 function vfxAura(spec, layer, rect) {
   var cls = 'vfx-aura';
   if (spec.variant === 'swordfield') cls += ' vfx-aura-sword';
@@ -967,7 +1052,8 @@ function vfxAura(spec, layer, rect) {
   vfxTrack(d, Math.min(60, Math.max(1, spec.dur)) * 1000);
 }
 
-/* ---- 我方增益：光環＋上升光點 ---- */
+/* ---- 我方增益：光環＋上升光點 ----
+   只掛在我方錨點，不對敵人建立命中特效。 */
 function vfxSelfBuff(spec, layer, pt, delayMs) {
   var d = vfxNode('vfx-selfbuff', layer, spec);
   vfxPlace(d, pt);
@@ -984,7 +1070,8 @@ function vfxSelfBuff(spec, layer, pt, delayMs) {
   vfxTrack(d, delayMs + (spec.dur || 0.5) * 1000 + 400);
 }
 
-/* ---- 敵身詛咒：暗紫符紋迴旋下沉 ---- */
+/* ---- 敵身詛咒：暗紫符紋迴旋下沉 ----
+   bleed／poison 只改圖示與色彩；實際 DoT 由模擬層處理，這裡只負責狀態視覺。 */
 function vfxCurse(spec, layer, pt, targetId, delayMs) {
   var curseClass = 'vfx-curse';
   if (spec.variant === 'bleed') curseClass += ' vfx-curse-bleed';
@@ -997,7 +1084,9 @@ function vfxCurse(spec, layer, pt, targetId, delayMs) {
   vfxHitReact(targetId, spec.elem || (spec.variant === 'bleed' ? null : 'dark'), delayMs + 150, false);
 }
 
-/* ---- 進入點：協議 vfx 事件 → 畫面 ---- */
+/* ---- 進入點：協議 vfx 事件 → 畫面 ----
+   這是 DOM 後備／高塔路徑的主分派器。Worker 事件已在 ui.js 進入這裡前完成
+   協議轉換；本函式只做目標座標解析、時間換算與視覺函式選擇，不回寫遊戲狀態。 */
 function renderCombatVfx(spec) {
   if (!_vfxEnabled || !spec) return;
   if (typeof document === 'undefined' || document.hidden) return;
@@ -1032,6 +1121,8 @@ function renderCombatVfx(spec) {
     return { pts: pts, ids: ids, idxs: idxs };
   }
 
+  /* 彈幕是 glyph／variant 優先的特殊路徑，先於一般 fxKind 分派，
+     因為它需要同一個目標同時建立多條左右交錯的彈道。 */
   if (s.variant === 'arcane-barrage' || (s.glyph === '💫' && s.cat === 'magic')) {
     var barrage = resolveTargets();
     if (!barrage.pts.length) return;
@@ -1048,6 +1139,9 @@ function renderCombatVfx(spec) {
     return;
   }
 
+  /* chain 事件的 targets 順序就是彈射路徑；vfxChain 不會自行依距離重排，
+     這能確保畫面和模擬層／傷害浮字使用同一條路徑。variant=chain 的舊技能
+     可能仍以其他 fxKind 傳入，因此同時檢查 kind 與 variant。 */
   if (kind === 'chain' || s.variant === 'chain') {
     var ch = resolveTargets();
     if (!ch.pts.length) return;
@@ -1063,24 +1157,28 @@ function renderCombatVfx(spec) {
     return;
   }
 
+  /* 純命中事件不畫移動中的攻擊本體，只在各目標位置建立爆點與受擊反饋。 */
   if (kind === 'impact') {
     var im = resolveTargets();
     for (var ii = 0; ii < im.pts.length; ii++) vfxImpact(s, layer, im.pts[ii], im.ids[ii], baseDelay);
     return;
   }
 
+  /* 詛咒是附著在敵人身上的狀態視覺，依目標錯開少量時間避免同幀重疊。 */
   if (kind === 'curse') {
     var cu = resolveTargets();
     for (var ci = 0; ci < cu.pts.length; ci++) vfxCurse(s, layer, cu.pts[ci], cu.ids[ci], baseDelay + ci * 60);
     return;
   }
 
+  /* 我方增益沒有敵方 targets 時，以第一個錨點或玩家錨點定位。 */
   if (kind === 'selfBuff') {
     var mePt = vfxPointOf(anchorId || 'pv-float', layer);
     if (mePt) vfxSelfBuff(s, layer, mePt, baseDelay);
     return;
   }
 
+  /* aura／rain 需要一個範圍矩形：優先使用棋盤格，沒有格子時才退化到目標卡片。 */
   if (kind === 'aura' || kind === 'rain') {
     if (kind === 'rain' && s.variant === 'pillar') {
       var pl = resolveTargets();
@@ -1120,6 +1218,7 @@ function renderCombatVfx(spec) {
     return;
   }
 
+  /* DoT 屍爆／感染引爆需要逐目標命中爆點，而不是一般範圍中心爆發。 */
   if (kind === 'burst' && (s.variant === 'blood-explosion' || s.variant === 'zero-infection')) {
     var dotBurst = resolveTargets();
     for (var dbi = 0; dbi < dotBurst.pts.length; dbi++) {
@@ -1128,6 +1227,7 @@ function renderCombatVfx(spec) {
     return;
   }
 
+  /* 旋風與刀光亂舞先畫範圍本體，再為有限數量目標補受擊爆點。 */
   if (kind === 'burst' && (s.variant === 'cyclone' || s.variant === 'bladestorm')) {
     var bRect = vfxCellsRect(spec.cells, layer);
     var bt = resolveTargets();
@@ -1141,7 +1241,8 @@ function renderCombatVfx(spec) {
     return;
   }
 
-  // 讀在前、寫在後：先解析我方出手點與所有目標座標（純讀取），再開始生成節點
+  // 讀在前、寫在後：先解析我方出手點與所有目標座標（純讀取），再開始生成節點。
+  // 這個順序避免每個目標都在 DOM 寫入後觸發一次 forced reflow。
   var rt = resolveTargets();
   var from = vfxOriginPoint(layer);
   var stagger = vfxStagger();
@@ -1164,7 +1265,8 @@ function renderCombatVfx(spec) {
     return;
   }
 
-  /* 震碎斬的前方飛出刀光、迴身雙連斬的後方刀光；同時存在時兩者都畫。 */
+  /* 震碎斬的前方飛出刀光、迴身雙連斬的後方刀光；同時存在時兩者都畫。
+     命中延遲依刀光實際飛行距離估算，確保波刃抵達時傷害字才出現。 */
   if (kind === 'slash' && (s.variant === 'cleave' || s.variant === 'cleave-shockwave' || s.variant === 'cleave-back' || s.variant === 'cleave-dual')) {
     var drawForward = s.variant === 'cleave-shockwave' || s.variant === 'cleave-dual';
     var drawBack = s.variant === 'cleave-back' || s.variant === 'cleave-dual';
@@ -1241,6 +1343,9 @@ function renderCombatVfx(spec) {
   }
 }
 
+/* ---- 時間安全與品質裁切 ----
+   vfxNormalizeTiming 只對最容易長時間堆積的隕石事件設安全上限；其他事件
+   保留原始 timing，避免意外改變既有技能的視覺節奏。 */
 function vfxNormalizeTiming(spec) {
   if (!spec || spec.fxKind !== 'rain' || spec.variant !== 'meteor') return spec;
   var out = {};
@@ -1258,6 +1363,9 @@ function vfxNormalizeTiming(spec) {
   return out;
 }
 
+/* 將事件轉成目前品質可接受的版本：
+   Full 原樣播放；Reduced 固定單段、限制目標數、去除 aura；Off 直接丟棄。
+   這是純視覺降載，不應改變 Worker 已經算好的命中與傷害。 */
 function vfxSpecForQuality(spec) {
   if (!spec || _vfxQuality === VFX_QUALITY_LEVELS.OFF) return null;
   var source = vfxNormalizeTiming(spec);
@@ -1276,12 +1384,15 @@ function vfxSpecForQuality(spec) {
   return out;
 }
 
+/* 只合併短時間內重複的 impact／basic 事件；chain、技能本體與多段事件不合併，
+   否則會破壞彈射順序或讓玩家看不到每段技能的辨識效果。 */
 function vfxMergeKey(spec) {
   if (!spec || (spec.fxKind !== 'impact' && spec.cat !== 'basic')) return null;
   var target = spec.targets && spec.targets.length ? spec.targets[0] : '';
   return [spec.fxKind || '', spec.cat || '', spec.elem || '', spec.variant || '', target].join('|');
 }
 
+/* 每一幀最多排程一次 flush，優先用 RAF 跟畫面時鐘同步；測試／舊環境才退回 Timer。 */
 function vfxScheduleFlush() {
   if (_vfxFlushHandle || !_vfxEventQueue.length) return;
   var flush = function () {
@@ -1292,6 +1403,8 @@ function vfxScheduleFlush() {
   else _vfxFlushHandle = setTimeout(flush, 0);
 }
 
+/* 消化事件佇列的主迴圈：受品質限制的每幀預算，並丟掉超過 stale 門檻的舊事件。
+   事件即使被丟掉也只影響畫面，不影響模擬層的權威結果。 */
 function vfxFlushQueue() {
   if (!_vfxEnabled || _vfxQuality === VFX_QUALITY_LEVELS.OFF || (typeof document !== 'undefined' && document.hidden)) {
     _vfxEventQueue.length = 0;
@@ -1309,6 +1422,8 @@ function vfxFlushQueue() {
   if (_vfxEventQueue.length) vfxScheduleFlush();
 }
 
+/* 事件入列時先嘗試在短合併窗內更新同類事件；無法合併時才新增項目，
+   佇列撞上限則丟最舊項，避免特效洪峰拖慢輸入與面板操作。 */
 function vfxEnqueue(spec) {
   var now = Date.now();
   var mergeKey = vfxMergeKey(spec);
@@ -1328,6 +1443,8 @@ function vfxEnqueue(spec) {
   vfxScheduleFlush();
 }
 
+/* 對外唯一入口：所有模擬層／UI 呼叫都從這裡進入品質裁切與佇列。
+   document.hidden 時直接略過，返回前不補播背景期間累積的過期特效。 */
 function playCombatVfx(spec) {
   var next = vfxSpecForQuality(spec);
   if (!next || !_vfxEnabled || (typeof document !== 'undefined' && document.hidden)) return;

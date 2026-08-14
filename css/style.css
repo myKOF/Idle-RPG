@@ -1368,9 +1368,9 @@ textarea#save-io {
   --enemy-hit-font-size: 12px;
   font-size: var(--enemy-hit-font-size);
   /* 上浮動畫完成時間；時間越短，視覺上浮速度越快。 */
-  --enemy-hit-rise-duration: 0.8s;
+  --enemy-hit-rise-duration: 0.72s;
   /* 數字存在時間；以原本存活時間除以需求的消失速度倍率。 */
-  --enemy-hit-lifetime-base: 0.5925926s;
+  --enemy-hit-lifetime-base: 0.68s;
   --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 10 !important;
 }
@@ -1380,8 +1380,8 @@ textarea#save-io {
   color: #ffd700;
   --enemy-hit-font-size: 15px;
   font-size: var(--enemy-hit-font-size);
-  --enemy-hit-rise-duration: 1s;
-  --enemy-hit-lifetime-base: 0.8333333s;
+  --enemy-hit-rise-duration: 0.78s;
+  --enemy-hit-lifetime-base: 0.74s;
   --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 20 !important;
 }
@@ -1391,8 +1391,8 @@ textarea#save-io {
   color: #ffffff;
   --enemy-hit-font-size: 16px;
   font-size: var(--enemy-hit-font-size);
-  --enemy-hit-rise-duration: 1s;
-  --enemy-hit-lifetime-base: 0.7407407s;
+  --enemy-hit-rise-duration: 0.76s;
+  --enemy-hit-lifetime-base: 0.72s;
   --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 10 !important;
 }
@@ -1402,8 +1402,8 @@ textarea#save-io {
   color: #ffd700;
   --enemy-hit-font-size: 20px;
   font-size: var(--enemy-hit-font-size);
-  --enemy-hit-rise-duration: 1.2s;
-  --enemy-hit-lifetime-base: 1s;
+  --enemy-hit-rise-duration: 0.84s;
+  --enemy-hit-lifetime-base: 0.8s;
   --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 20 !important;
 }
@@ -1420,6 +1420,12 @@ textarea#save-io {
 .float-txt.enemy-hit-float.damage-aggregate {
   animation: enemyDamageFloatUp var(--enemy-hit-rise-duration, 2s) ease-out forwards,
     enemyDamageFloatFade var(--enemy-hit-lifetime, 2s) linear forwards;
+}
+
+/* 傷害數字以底部中心為縮放支點；這樣快速彈出時會像從命中點長出來，
+   不會因為放大而向左／右漂移。實際的回彈曲線由 enemyDamageFloatUp 控制。 */
+.float-txt.enemy-hit-float {
+  transform-origin: 50% 100%;
 }
 
 .float-txt.heal {
@@ -1577,13 +1583,26 @@ textarea#save-io {
 
 @keyframes enemyDamageFloatUp {
 
-  /* 合併傷害字在 2 秒內上浮 80px。 */
+  /* 參考影片的節奏：先從較小尺寸快速彈出，短暫超過 1 倍後回到正常大小，
+     接著只上浮一小段；淡出由 enemyDamageFloatFade 的最後 25% 負責。 */
   0% {
-    transform: translate(-50%, 0);
+    transform: translate(-50%, 3px) scale(0.72);
+  }
+
+  9% {
+    transform: translate(-50%, 0) scale(1.14);
+  }
+
+  19% {
+    transform: translate(-50%, -1px) scale(0.98);
+  }
+
+  28% {
+    transform: translate(-50%, -2px) scale(1);
   }
 
   100% {
-    transform: translate(-50%, -80px);
+    transform: translate(-50%, -42px) scale(1);
   }
 }
 

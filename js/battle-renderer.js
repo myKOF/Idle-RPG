@@ -2059,22 +2059,22 @@ var BattleRenderer = (function () {
       s.fill = '#9ecbff';
       return s;
     }
-    /* 敵方側：普攻白、技能金、暴擊放大 */
+    /* 敵方側：普攻白、技能金、暴擊放大。時間與 rise 對齊 CSS DOM 路徑，
+       讓 ?canvas=0 前後的傷害數字有相同的「彈出→上浮→淡出」節奏。 */
     if (text === 'MISS' || cls.indexOf('miss') >= 0) {
-      s.fill = '#9aa5b1'; s.size = 13; s.life = 0.7;
+      s.fill = '#9aa5b1'; s.size = 13; s.life = 0.62;
       return s;
     }
     var isSkillDamage = cls.indexOf('enemy-skill') >= 0;
     var isAttackDamage = cls.indexOf('enemy-attack') >= 0;
     if (isSkillDamage) { s.fill = '#ffd75e'; s.size = 17; }
     if (isCrit) {
-      s.fill = '#ffb347'; s.size = isHigh ? 26 : 21; s.rise = 58; s.life = 1.15;
+      s.fill = '#ffb347'; s.size = isHigh ? 26 : 21; s.rise = 44; s.life = 0.76;
       if (isHigh) s.fill = '#ff7b3c';
     }
     if (isSkillDamage || isAttackDamage) {
-      var baseLife = isSkillDamage ? (isCrit ? 1.2 : 1) : (isCrit ? 1 : 0.8);
-      var fadeSpeed = isSkillDamage ? 1.2 : 1.35;
-      s.life = baseLife / fadeSpeed;
+      s.rise = isSkillDamage ? 42 : 38;
+      s.life = isSkillDamage ? (isCrit ? 0.8 : 0.74) : (isCrit ? 0.72 : 0.68);
       if (isHigh && isCrit) s.life *= 2;
     }
     return s;
@@ -2179,11 +2179,20 @@ var BattleRenderer = (function () {
     var prefixMatch = /^([^0-9]*)/.exec(ev.text || '');
     var castLeft = String(ev.cls || '').indexOf('skill-cast-left') >= 0;
     var castRight = String(ev.cls || '').indexOf('skill-cast-right') >= 0;
+    var isEnemyDamageFloat = /^mv-float-\d+$/.test(String(ev.elId || '')) &&
+      (String(ev.cls || '').indexOf('enemy-attack') >= 0 ||
+       String(ev.cls || '').indexOf('enemy-skill') >= 0);
+    var isCritFloat = String(ev.cls || '').indexOf('crit') >= 0;
     var f = {
       node: node, t: 0, life: st.life, rise: st.rise,
       bornAt: nowMs(), hits: 1, total: isFinite(val) ? val : 0,
       prefix: prefixMatch ? prefixMatch[1] : '',
-      pop: (ev.cls || '').indexOf('crit') >= 0 ? 0.18 : 0,
+      /* 傷害數字沿用 DOM 的快速回彈：一般字從 0.72 倍起，
+         0.12 秒內放大到約 1.1 倍，再回到 1 倍；暴擊只稍微放大峰值。 */
+      pop: isEnemyDamageFloat ? 0.12 : (isCritFloat ? 0.18 : 0),
+      popStart: isEnemyDamageFloat ? 0.72 : 0.6,
+      popPeak: isEnemyDamageFloat ? (isCritFloat ? 1.16 : 1.14) : 1.1,
+      fadeTail: isEnemyDamageFloat,
       drift: castLeft ? -72 : (castRight ? 72 : 0)
     };
     S.floats.push(f);
@@ -2393,10 +2402,18 @@ var BattleRenderer = (function () {
         var fk = Math.min(1, f.t / f.life);
         f.node.y -= (f.rise / f.life) * dt;
         if (f.drift) f.node.x += (f.drift / f.life) * dt;
-        f.node.alpha = fk < 0.15 ? fk / 0.15 : (1 - (fk - 0.15) / 0.85);
+        /* 傷害字要像影片一樣一出現就可讀，只在最後四分之一淡出；
+           其他 Canvas 浮字保留原本的淡入／淡出曲線。 */
+        f.node.alpha = f.fadeTail
+          ? (fk > 0.75 ? 1 - (fk - 0.75) / 0.25 : 1)
+          : (fk < 0.15 ? fk / 0.15 : (1 - (fk - 0.15) / 0.85));
         if (f.pop > 0) {
           var pk = Math.min(1, f.t / f.pop);
-          f.node.scale.set(0.6 + 0.4 * pk + (1 - pk) * 0.5);
+          var popK = pk < 0.55 ? pk / 0.55 : 1 - (pk - 0.55) / 0.45;
+          var popScale = pk < 0.55
+            ? f.popStart + (f.popPeak - f.popStart) * popK
+            : 1 + (f.popPeak - 1) * popK;
+          f.node.scale.set(popScale);
         }
         if (fk >= 1) {
           f.dead = true;
