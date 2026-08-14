@@ -19,6 +19,14 @@
 - Verification: 新增 GM 測試工具定向測試；`npm.cmd run build`；`git diff --check`。
 - Handoff: 各 Agent 依 `docs/SKILL_TEST_SPEC.md` 執行技能測試並輸出報告至 `docs/skill-tests/`。
 
+
+## Codex | Cleave VFX follow-up | 2026-08-14
+- Status: Completed
+- Scope: Large cast-point cleave arcs in DOM/Pixi paths; normal impact-only target feedback; 震碎斬 12 m (120 units) slow wave at 30% projectile speed with path-hit timing; 迴身雙連斬 front/back arcs.
+- Files: `config/Excel/Skills2.xlsx`, `config/CSV/Skills2.csv`, `js/skills2.js`, `js/vfx.js`, `js/battle-renderer.js`, `css/style.css`, `index.html`, `js/worker/sim.worker.js`, `tests/skill2-vfx.test.cjs`, `tests/skill2-ui.test.cjs`.
+- Verification: targeted tests 37/37; build 273/273; full suite 1356/1357 with the existing unrelated elite quantity monotonicity failure in `tests/multi-enemy.test.cjs`.
+- Known risk: browser visual pass is still recommended for final tuning of arc size and wave readability.
+
 ## Codex：調整戰鬥飄字與飛行子彈速度（2026-08-14）
 
 - 狀態：已完成（待 Claude Review／Antigravity 驗證）

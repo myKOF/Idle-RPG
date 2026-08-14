@@ -623,6 +623,55 @@ function vfxSlash(spec, layer, pt, delayMs, tiltDeg, extraClass) {
 
 /* 直線突刺／飛出斬擊：固定 70 個系統距離單位（7 米）的刀光，
    從玩家位置沿目標方向貫穿；三向突刺由 angleOffset 產生三道刀光。 */
+/* 迴旋斬的施放點大型弧形斬擊；目標身上只保留普通受擊反應。 */
+function vfxCleaveArc(spec, layer, pt, delayMs, angleDeg, extraClass) {
+  if (!pt) return;
+  var d = vfxNode('vfx-cleave-arc' + (extraClass ? ' ' + extraClass : ''), layer, spec);
+  vfxPlace(d, pt);
+  d.style.setProperty('--vfx-tilt', (typeof angleDeg === 'number' ? angleDeg : 0).toFixed(0) + 'deg');
+  d.style.animationDelay = Math.max(0, delayMs || 0) + 'ms';
+  var duration = Math.max(0.38, spec.dur || 0.5);
+  d.style.animationDuration = Math.round(duration * 1000) + 'ms';
+  vfxTrack(d, Math.max(0, delayMs || 0) + duration * 1000 + 180);
+}
+
+var VFX_CLEAVE_WAVE_SPEED_RATIO = 0.3;
+function vfxCleaveWaveFlightMs() {
+  return Math.max(900, Math.round(
+    vfxProjectileFlightMs(0, 0.3) / VFX_CLEAVE_WAVE_SPEED_RATIO
+  ));
+}
+function vfxCleaveWave(spec, layer, from, target, delayMs, angleOffset, lengthPx) {
+  if (!from || !target) return;
+  var angle = Math.atan2(target.y - from.y, target.x - from.x) + (Number(angleOffset) || 0);
+  var length = Math.max(48, Number(lengthPx) || 120);
+  var flight = vfxCleaveWaveFlightMs();
+  var d = vfxNode('vfx-cleave-wave', layer, spec);
+  var generation = _vfxGeneration;
+  var startedAt = Date.now() + Math.max(0, delayMs || 0);
+  d.style.setProperty('--vfx-length', length + 'px');
+  function frame() {
+    if (!_vfxEnabled || generation !== _vfxGeneration || !d.parentNode) return;
+    var elapsed = Date.now() - startedAt;
+    if (elapsed < 0) {
+      d.style.opacity = '0';
+      (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : function (fn) { return setTimeout(fn, 16); })(frame);
+      return;
+    }
+    var k = Math.min(1, elapsed / flight);
+    var eased = k * k * (3 - 2 * k);
+    d.style.left = (from.x + Math.cos(angle) * length * eased) + 'px';
+    d.style.top = (from.y + Math.sin(angle) * length * eased) + 'px';
+    d.style.transform = 'translate(-50%, -50%) rotate(' + angle.toFixed(3) + 'rad)';
+    d.style.opacity = String(k > 0.78 ? 1 - (k - 0.78) / 0.22 : 1);
+    if (k < 1) {
+      (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : function (fn) { return setTimeout(fn, 16); })(frame);
+    }
+  }
+  vfxTrack(d, Math.max(0, delayMs || 0) + flight + 260);
+  frame();
+}
+
 function vfxThrustLine(spec, layer, from, to, delayMs, angleOffset, lengthPx) {
   if (!from || !to) return;
   var dx = to.x - from.x, dy = to.y - from.y;
@@ -1116,25 +1165,36 @@ function renderCombatVfx(spec) {
   }
 
   /* 震碎斬的前方飛出刀光、迴身雙連斬的後方刀光；同時存在時兩者都畫。 */
-  if (kind === 'slash' && (s.variant === 'cleave-shockwave' || s.variant === 'cleave-back' || s.variant === 'cleave-dual')) {
+  if (kind === 'slash' && (s.variant === 'cleave' || s.variant === 'cleave-shockwave' || s.variant === 'cleave-back' || s.variant === 'cleave-dual')) {
     var drawForward = s.variant === 'cleave-shockwave' || s.variant === 'cleave-dual';
     var drawBack = s.variant === 'cleave-back' || s.variant === 'cleave-dual';
+    var frontAngle = from && rt.pts.length
+      ? Math.atan2(rt.pts[0].y - from.y, rt.pts[0].x - from.x)
+      : 0;
     for (var cc = 0; cc < count; cc++) {
       var cleaveDelay = baseDelay + cc * stagger;
-      if (drawForward && rt.pts.length) vfxThrustLine(s, layer, from, rt.pts[0], cleaveDelay, 0, 70);
-      if (drawBack && rt.pts.length) vfxThrustLine(s, layer, from, rt.pts[0], cleaveDelay, Math.PI, 70);
-      if (drawBack && from) {
-        var backAngle = rt.pts.length
-          ? Math.atan2(rt.pts[0].y - from.y, rt.pts[0].x - from.x) * 180 / Math.PI + 180
-          : 180;
-        vfxSlash(s, layer, from, cleaveDelay, backAngle, 'vfx-slash-cleave-back');
+      if (from) vfxCleaveArc(s, layer, from, cleaveDelay, frontAngle * 180 / Math.PI);
+      if (drawForward && from) {
+        var waveEnd = {
+          x: from.x + Math.cos(frontAngle) * 120,
+          y: from.y + Math.sin(frontAngle) * 120
+        };
+        vfxCleaveWave(s, layer, from, waveEnd, cleaveDelay, 0, 120);
       }
+      if (drawBack && from) vfxCleaveArc(s, layer, from, cleaveDelay,
+        (frontAngle + Math.PI) * 180 / Math.PI, 'vfx-cleave-arc-back');
     }
     for (var cti = 0; cti < rt.pts.length; cti++) {
+      var targetDx = rt.pts[cti].x - (from ? from.x : 0);
+      var targetDy = rt.pts[cti].y - (from ? from.y : 0);
+      var targetAlong = targetDx * Math.cos(frontAngle) + targetDy * Math.sin(frontAngle);
+      var waveHitDelay = drawForward
+        ? Math.round(vfxCleaveWaveFlightMs() * Math.max(0, Math.min(1, targetAlong / 120)))
+        : 90;
       for (var ccc = 0; ccc < count; ccc++) {
-        var cHitDelay = baseDelay + ccc * stagger + cti * 35;
-        vfxSlash(s, layer, rt.pts[cti], cHitDelay);
-        vfxHitReact(rt.ids[cti], s.elem, cHitDelay + 70, false);
+        var cHitDelay = baseDelay + ccc * stagger + waveHitDelay + cti * 35;
+        vfxImpact({ elem: s.elem, variant: null, color: s.color }, layer,
+          rt.pts[cti], rt.ids[cti], cHitDelay + 90);
       }
     }
     return;
