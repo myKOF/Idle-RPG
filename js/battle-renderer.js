@@ -351,35 +351,68 @@ var BattleRenderer = (function () {
     return sp;
   }
 
-  /* 以同一組固定粒子位置重現 Phaser 的 advance emitter：白芯在前方，
-     黃／橙／紅粒子向飛行反方向拉長，最後用少量 flare 火星補足火焰柱。 */
-  function flameProjectile(theme, small, sizeScale, trailScale) {
+  /* Phaser emitter 的 Canvas 移植：lifespan 2400、scale 0.70→0、speed 100、
+     advance 2000，粒子顏色沿四色色票以 quad.out 方式插值；局部方向是飛行反方向
+     ±10°，等價於範例向上 -100°～-80° 發射後再旋轉到投射物軸線。 */
+  var PIXI_FLARE_COLORS = [0xfacc22, 0xf89800, 0xf83600, 0x9f0404];
+  function flameColorIntAt(progress) {
+    var q = Math.max(0, Math.min(1, progress));
+    q = 1 - (1 - q) * (1 - q);
+    var pos = q * (PIXI_FLARE_COLORS.length - 1);
+    var idx = Math.min(PIXI_FLARE_COLORS.length - 2, Math.floor(pos));
+    var local = pos - idx;
+    var a = PIXI_FLARE_COLORS[idx], b = PIXI_FLARE_COLORS[idx + 1];
+    var ar = (a >> 16) & 255, ag = (a >> 8) & 255, ab = a & 255;
+    var br = (b >> 16) & 255, bg = (b >> 8) & 255, bb = b & 255;
+    return (Math.round(ar + (br - ar) * local) << 16) |
+      (Math.round(ag + (bg - ag) * local) << 8) |
+      Math.round(ab + (bb - ab) * local);
+  }
+
+  function flameProjectile(theme, small, sizeScale) {
     var node = new PIXI.Container();
-    var k = (small ? 0.58 : 1) * (typeof sizeScale === 'number' ? sizeScale : 1);
-    var tailK = typeof trailScale === 'number' ? trailScale : 1;
-    flareSprite(theme, 0, 0, 0.86 * k, 0.98 * k, '#f83600', 0.78, node);
-    flareSprite(theme, 3 * k, 3 * k, 0.68 * k, 0.82 * k, '#f89800', 0.88, node);
-    flareSprite(theme, 7 * k, 7 * k, 0.51 * k, 0.65 * k, '#facc22', 0.96, node);
-    flareSprite(theme, 10 * k, 9 * k, 0.27 * k, 0.36 * k, '#fff6d8', 1, node);
-    var tail = [
-      [-22, -8, 0.46, 0.62, '#f89800'], [-38, 6, 0.38, 0.54, '#f83600'],
-      [-52, -10, 0.32, 0.46, '#f89800'], [-66, 8, 0.25, 0.38, '#9f0404'],
-      [-79, -4, 0.19, 0.29, '#f83600'], [-91, 12, 0.14, 0.22, '#9f0404']
-    ];
-    for (var i = 0; i < tail.length; i++) {
-      var p = tail[i];
-      flareSprite(theme, p[0] * k * tailK, p[1] * k, p[2] * k, p[3] * k, p[4], 0.82, node);
+    var size = (typeof sizeScale === 'number' ? sizeScale : 1) * (small ? 0.58 : 1);
+    var count = REDUCED_MOTION ? (small ? 8 : 14) : (small ? 14 : 26);
+    var interval = 2 / count;
+    var particles = [];
+    var accumulator = 0;
+
+    function spawn(age) {
+      var sp = flareSprite(theme, 0, 0, 0.70 * size, 0.70 * size, 0xfacc22, 1, node);
+      sp._age = age;
+      sp._angle = Math.PI + (Math.random() * 20 - 10) * Math.PI / 180;
+      sp._startScale = 0.70 * size;
+      particles.push(sp);
     }
-    if (!REDUCED_MOTION) {
-      var sparks = small ? 4 : 8;
-      for (var si = 0; si < sparks; si++) {
-        flareSprite(theme, (-28 - (si * 17) % 78) * k * tailK,
-          ((((si * 29) % 31) - 15) * k),
-          (0.08 + (si % 3) * 0.025) * k,
-          (0.11 + (si % 2) * 0.035) * k,
-          si % 2 ? '#f83600' : '#facc22', 0.72, node);
+
+    /* Phaser advance:2000：先把過去兩秒已發射的粒子補進畫面。 */
+    for (var i = 0; i < count; i++) spawn((i + 0.5) * interval);
+    node._flameUpdate = function (dt) {
+      var safeDt = Math.max(0, Math.min(0.08, dt));
+      accumulator += safeDt;
+      while (accumulator >= interval) {
+        accumulator -= interval;
+        spawn(0);
       }
-    }
+      for (var pi = particles.length - 1; pi >= 0; pi--) {
+        var p = particles[pi];
+        p._age += safeDt;
+        if (p._age >= 2.4) {
+          if (p.parent) node.removeChild(p);
+          p.destroy();
+          particles.splice(pi, 1);
+          continue;
+        }
+        var life = p._age / 2.4;
+        var distance = 100 * p._age;
+        var scale = p._startScale * Math.cos(life * Math.PI * 0.5);
+        p.x = Math.cos(p._angle) * distance;
+        p.y = Math.sin(p._angle) * distance;
+        p.scale.set(scale, scale);
+        p.tint = flameColorIntAt(life);
+        p.alpha = Math.max(0, 1 - life);
+      }
+    };
     return node;
   }
 
@@ -1170,24 +1203,26 @@ var BattleRenderer = (function () {
       core = new PIXI.Text({ text: spec.glyph, style: { fontSize: 20 } });
       core.anchor.set(0.5);
     } else if (spec.variant === 'fireball') {
-      /* 火球不再用圓形 Graphics：改用 Phaser white flare 多層疊影，
-         與 DOM 版共用相同粒子排列。 */
-      core = flameProjectile(theme, false, 0.65, 1);
+      /* 火球不再用圓形 Graphics：改用 Phaser white flare emitter，尺寸為 65%。 */
+      core = flameProjectile(theme, false, 0.65);
     } else {
       core = projectileCore(spec, theme);
     }
-    var glow = new PIXI.Sprite(glowTexture());
-    glow.anchor.set(0.5);
-    glow.tint = parseInt(String(theme.glow).replace('#', '0x')) || 0xffffff;
-    glow.alpha = spec.variant === 'fireball' ? 0.28 : 0.8;
-    glow.scale.set(spec.variant === 'fireball' ? 0.975 : 0.9);
-    glow.blendMode = 'add';
-    node.addChild(glow); node.addChild(core);
+    if (spec.variant !== 'fireball') {
+      var glow = new PIXI.Sprite(glowTexture());
+      glow.anchor.set(0.5);
+      glow.tint = parseInt(String(theme.glow).replace('#', '0x')) || 0xffffff;
+      glow.alpha = 0.8;
+      glow.scale.set(0.9);
+      glow.blendMode = 'add';
+      node.addChild(glow);
+    }
+    node.addChild(core);
     node.x = from.x; node.y = from.y;
     S.layers.fx.addChild(node);
 
     var dur = Math.max(60, projectileTravelMs(travelMs, spec.dur ? spec.dur * 1000 : 300)) / 1000;
-    var t = 0, trailAcc = 0;
+    var t = 0, trailAcc = 0, arrived = false;
     addFx({
       node: node,
       update: function (dt) {
@@ -1199,18 +1234,23 @@ var BattleRenderer = (function () {
         node.y = lerp(from.y, to.y, k) -
           (spec && spec.variant === 'fireball' ? 0 : Math.sin(k * Math.PI) * 18);
         node.rotation = Math.atan2(to.y - from.y, to.x - from.x);
+        if (core && core._flameUpdate) core._flameUpdate(dt);
         trailAcc += dt;
-        if (trailAcc > 0.03 && !REDUCED_MOTION) {
+        if (spec.variant !== 'fireball' && trailAcc > 0.03 && !REDUCED_MOTION) {
           trailAcc = 0;
           spawnTrailDot(node.x, node.y, theme);
         }
         if (k >= 1) {
-          if (onArrive) onArrive(posOf(targetId));
-          return false;
+          if (!arrived) {
+            arrived = true;
+            if (onArrive) onArrive(posOf(targetId));
+          }
+          /* 飛行結束後保留 emitter 2.4 秒，讓 advance 預填與尾端粒子完整淡出。 */
+          return t < dur + 2.4;
         }
         return true;
       }
-    }, 1);
+    }, 1, Math.max(FX_HARD_LIFETIME_MS, dur * 1000 + 2500));
   }
   /* 奧術彈幕：六顆光球先向玩家左右後方散開，過彎後以加速度追向目標。 */
   function spawnBarrageMissile(targetId, spec, side, lane, delaySec, travelMs) {
@@ -1709,19 +1749,14 @@ var BattleRenderer = (function () {
   }
   function spawnMeteorProjectile(spec, theme, from, to, scale, dur, delaySec, onArrive) {
     var node = new PIXI.Container();
-    /* 隕石與火球術共用 Phaser flare 疊影；small 由呼叫端透過 scale 傳入，
-       因此大隕石是白芯／黃身／紅外焰，小隕石則保持同色階但體積較小。 */
-    var flame = flameProjectile(theme, scale && scale < 1, 1, 1.35);
-    var glow = new PIXI.Sprite(glowTexture());
-    glow.anchor.set(0.5); glow.scale.set(scale && scale < 1 ? 2.5 : 4.8); glow.blendMode = 'add';
-    glow.alpha = 0.22;
-    glow.tint = parseInt(String(theme.glow).replace('#', '0x')) || 0xffffff;
-    node.addChild(glow); node.addChild(flame);
+    /* 隕石只保留 Phaser white flare emitter，不再額外疊一層非範例光暈。 */
+    var flame = flameProjectile(theme, scale && scale < 1, 1);
+    node.addChild(flame);
     node.scale.set(scale || 1);
     node.x = from.x; node.y = from.y;
     node.rotation = Math.atan2(to.y - from.y, to.x - from.x);
     S.layers.fx.addChild(node);
-    var t = -(Math.max(0, delaySec || 0));
+    var t = -(Math.max(0, delaySec || 0)), arrived = false;
     addFx({
       node: node,
       update: function (dt) {
@@ -1731,16 +1766,18 @@ var BattleRenderer = (function () {
         var k = Math.min(1, t / dur);
         node.x = lerp(from.x, to.x, k);
         node.y = lerp(from.y, to.y, k);
-        if (!REDUCED_MOTION && Math.random() < (scale && scale < 1 ? 0.35 : 0.6)) {
-          spawnTrailDot(node.x, node.y, theme);
-        }
+        if (flame && flame._flameUpdate) flame._flameUpdate(dt);
         if (k >= 1) {
-          if (onArrive) onArrive(to.x, to.y);
-          return false;
+          if (!arrived) {
+            arrived = true;
+            if (onArrive) onArrive(to.x, to.y);
+          }
+          /* 抵達後保留 emitter 2.4 秒，完整呈現 advance 預填粒子的淡出。 */
+          return t < dur + 2.4;
         }
         return true;
       }
-    }, scale && scale < 1 ? 0 : 2, dur * 1000 + (delaySec || 0) * 1000 + 500);
+    }, scale && scale < 1 ? 0 : 2, dur * 1000 + (delaySec || 0) * 1000 + 3000);
   }
 
   function spawnMeteor(rect, spec) {
