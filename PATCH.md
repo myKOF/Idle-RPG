@@ -1,6 +1,30 @@
 # PATCH.md
 
-## 驗證：新版主動技能系統（技能改造第一批）15 項實機與單元全數通過（Antigravity 2026-08-14）
+## GM 指令：新增指定品質全身 13 件裝備套裝指令 equipset（Antigravity 2026-08-14）
+
+- **新增 GM 指令 `equipset`（及別名 `suit`、`set`、`fullset`、`full_set`、`equip_set`、`gearset`、`gear_set`）**：
+  - 支援指令格式：`equipset <品質> [等級]`（如 `equipset mythic 500`、`equipset 創世`、`suit godforged 1000`、`set 6 100`）。
+  - 一個指令即可一次性向玩家背包加入全身 13 件部位裝備各 1 件：
+    1. **主手武器**（`weapon`）：隨機單手武器（`sword1h` / `dagger1h` / `wand1h` / `magicSword1h`）
+    2. **副手裝備**（`weapon2`）：隨機副手裝備（`shield` / `focus` / `spellbook` / `orb` / `dagger1h`）
+    3. **頭盔**（`helmet`）
+    4. **肩甲**（`shoulder`）
+    5. **胸甲**（`chest`）
+    6. **腰帶**（`belt`）
+    7. **護手**（`gloves`）
+    8. **手腕**（`wrist`）
+    9. **護腿**（`legs`）
+    10. **靴子**（`boots`）
+    11. **戒指**（`ring`）
+    12. **戒指Ⅱ**（`ring`）
+    13. **項鍊**（`amulet`）
+  - 品質支援英文 key、數字索引（0~10）、中文名稱或 `any`（每件隨機品質）。
+  - 等級若省略，自動以玩家當前等級（或關卡等級）為準。
+- **文件與測試同步**：
+  - 更新 `GM_command.md` 裝備章節說明與使用範例。
+  - 於 `tests/gm-command.test.cjs` 新增完整單元測試（包含 13 部件完整驗收、品質與等級解析、預設玩家等級、別名支援與異常錯誤處理）。
+  - 同步更新 `js/worker/sim.worker.js` 與 `js/bridge.js` 快取版本號。
+
 
 - **實機與邏輯 15 項驗證 (15/15 PASS)**：
   - **A. 技能分頁 UI**：頂部「🌟 新版技能」區塊正常渲染 6 個群組格與總等級徽章（初始 1）；懸停提示框正確列出 7 階現況（第 1 階 Lv.1，其餘未投資/未解鎖灰顯）；點擊開啟 7 階彈窗，每階顯示 Lv.x/10、動態說明、下一級預覽與金幣升級按鈕；循序解鎖與第 1 階保底/後續投資防降級提示機制運作正常；裝備/卸下按鈕掛載 `node-pending:skill:sg:<gid>` 防連擊連續觸發。

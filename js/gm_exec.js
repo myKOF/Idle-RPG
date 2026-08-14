@@ -89,6 +89,49 @@
       (slot ? '、' + ((SLOT_INFO[slot] && SLOT_INFO[slot].name) || slot) : '、隨機部位') + ' x' + count;
   }
 
+  function gmGiveEquipmentSet(rarity, level) {
+    if (!level) {
+      level = (G.player && G.player.level) || (G.stage && G.stage.current) || 1;
+    }
+    var oneHandTypes = ['sword1h', 'dagger1h', 'wand1h', 'magicSword1h'];
+    var offHandTypes = ['shield', 'focus', 'spellbook', 'orb', 'dagger1h'];
+
+    var setPieces = [
+      { slot: 'weapon', weaponType: typeof pick === 'function' ? pick(oneHandTypes) : oneHandTypes[Math.floor(Math.random() * oneHandTypes.length)], name: '主手' },
+      { slot: 'weapon', weaponType: typeof pick === 'function' ? pick(offHandTypes) : offHandTypes[Math.floor(Math.random() * offHandTypes.length)], name: '副手' },
+      { slot: 'helmet', name: '頭盔' },
+      { slot: 'shoulder', name: '肩甲' },
+      { slot: 'chest', name: '胸甲' },
+      { slot: 'belt', name: '腰帶' },
+      { slot: 'gloves', name: '護手' },
+      { slot: 'wrist', name: '手腕' },
+      { slot: 'legs', name: '護腿' },
+      { slot: 'boots', name: '靴子' },
+      { slot: 'ring', name: '戒指' },
+      { slot: 'ring', name: '戒指Ⅱ' },
+      { slot: 'amulet', name: '項鍊' }
+    ];
+
+    if (!G.inventory) G.inventory = [];
+
+    for (var i = 0; i < setPieces.length; i++) {
+      var piece = setPieces[i];
+      var itemRarity = rarity === 'any' ? Math.floor(Math.random() * RARITIES.length) : rarity;
+      var item = makeEquipment(level, {
+        rarity: itemRarity,
+        level: level,
+        slot: piece.slot,
+        weaponType: piece.weaponType
+      });
+      item.locked = false;
+      G.inventory.push(item);
+    }
+    gmDirty();
+
+    var rName = (rarity === 'any') ? '隨機品質' : ((typeof RARITIES !== 'undefined' && RARITIES[rarity] && RARITIES[rarity].name) || ('品質' + rarity));
+    return '已發放【' + rName + '】Lv.' + level + ' 全身 13 件裝備套裝（主手、副手、頭盔、肩甲、胸甲、腰帶、護手、手腕、護腿、靴子、戒指x2、項鍊）';
+  }
+
   function gmGivePart(tier, node, count) {
     var keys = Object.keys(PART_TYPES).filter(function (key) { return !node || PART_TYPES[key].node === node; });
     if (!keys.length) return '此節點目前關閉或不存在：' + (node || '未知');
@@ -632,6 +675,20 @@
       if (rarity === null || level === null || count === null) return { ok: false, message: '格式：equip 稀有度 等級 [部位] [數量]' };
       if (!slot) slot = null;
       return { ok: true, message: gmGiveEquipment(rarity, level, slot, count) };
+    }
+    if (command === 'equipset' || command === 'equip_set' || command === 'set' || command === 'suit' || command === 'fullset' || command === 'full_set' || command === 'gearset' || command === 'gear_set') {
+      if (!args[0]) {
+        return { ok: false, message: '格式：equipset 品質 [等級]（例：equipset mythic 500 或 equipset 創世）' };
+      }
+      rarity = gmRarity(args[0], true);
+      if (rarity === null) {
+        return { ok: false, message: '無效的品質：' + args[0] + '（可填 0~' + ((typeof RARITIES !== 'undefined' && RARITIES.length) ? (RARITIES.length - 1) : 10) + '、common/mythic... 或 any）' };
+      }
+      level = args[1] ? gmNumber(args[1], 1, 100000) : null;
+      if (args[1] && level === null) {
+        return { ok: false, message: '無效的等級：' + args[1] + '（範圍 1~100000）' };
+      }
+      return { ok: true, message: gmGiveEquipmentSet(rarity, level) };
     }
     if (command === 'part') {
       level = gmNumber(args[0], 1, PART_MAX_TIER);
