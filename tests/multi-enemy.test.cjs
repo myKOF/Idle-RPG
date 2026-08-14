@@ -411,12 +411,12 @@ test('真正最後一張地圖通關後仍標記完成並停止出怪', () => {
   assert.equal(context.FIELD.spawnCd, Infinity, '整張地圖打完就停止出怪');
 });
 
-test('普攻擊殺後換目標至少間隔技能最低施放間隔 0.4 秒', () => {
+test('普攻擊殺後換目標至少間隔技能施放最短間隔 0.2 秒', () => {
   const context = loadCombatContext();
   const player = { atkCd: 1 / 4.7 };
 
   context.applyBasicAttackKillGap(player, 1);
-  assert.equal(player.atkCd, 0.4);
+  assert.equal(player.atkCd, Math.max(1 / 4.7, context.skillMinimumInterval()));
   assert.equal(player._targetSwitchCd, context.TARGET_SWITCH_DELAY);
 
   // 若原本計時器更長，擊殺間隔不能把它縮短。

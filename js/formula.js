@@ -2099,8 +2099,8 @@ function gemShopUpgradeCost(level) {
    ============================================================ */
 
 var SKILL_MAX_LV = 10;         // 一般技能等級上限（保留給外部參照）
-var SKILL_CAST_LOCK = 0;       // 舊參數保留供參數表相容；技能不再改動普攻 atkCd
-var SKILL_MIN_CAST_INTERVAL = 0.4; // 每個技能自身冷卻的最低施放間隔（秒；固定值，不受冷卻縮減影響）
+var SKILL_CAST_LOCK = 0.2;       // 舊參數保留供參數表相容；技能不再改動普攻 atkCd
+var SKILL_MIN_CAST_INTERVAL = 0.2; // 每個技能自身冷卻的最低施放間隔（秒；固定值，不受冷卻縮減影響）
 
 function skillMinimumInterval() {
   return (typeof SKILL_MIN_CAST_INTERVAL === 'number' &&

@@ -213,7 +213,7 @@ test('突刺：Lv.1 對主目標 1 次命中；自身冷卻寫入；法力扣除
   assert.equal(p.mp, 100 - c.SKILLS2.thrust.cost);
   assert.ok(p.skillCds['sg:thrust'] > 0, '應寫入群組冷卻');
   assert.equal(p.skillGcd, undefined, '技能 2 不應建立共用 GCD');
-  assert.ok(p.skillCds['sg:thrust'] >= c.SKILL_MIN_CAST_INTERVAL, '自身冷卻不得低於技能最低施放間隔');
+  assert.ok(p.skillCds['sg:thrust'] >= c.SKILL_MIN_CAST_INTERVAL, '自身冷卻不得低於技能施放最短間隔');
 });
 
 test('突刺·連刺與超連刺：次數合成（機率全開時 (1+add)×2 段）', () => {
