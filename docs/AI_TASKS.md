@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Codex：依 Phaser 粒子範例調整火球與殞石 VFX（2026-08-14）
+
+- 狀態：已完成
+- 任務分類：戰鬥技能 VFX／DOM 與 Canvas
+- 負責 AI：Codex
+- 任務內容：參考 Phaser `createFlameRegion` 的粒子設定（黃／橙／紅火焰色票、短命火星、ADD 光暈、縮放淡出），將火球術改為單顆直線火球，將殞石術改為右上方 60° 大火球搭配 3 顆小火球斜向砸向目標。
+- 允許修改：`js/skills.js`、`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`index.html`、`tests/skill-special-vfx.test.cjs`、`docs/AI_TASKS.md`
+- 禁止修改：戰鬥傷害、目標選擇、Worker Protocol、存檔格式與技能數值。
+- 前置依賴：Phaser 範例原始碼已由使用者提供的網址確認；DOM／PixiJS 技能 VFX 分流已存在；目標檔案衝突預檢未發現其他副本或分支修改。
+- 驗收方式：火球術只建立一顆我方→敵方直線火球；殞石術建立一顆大火球與 3 顆小火球，均以 60° 右上→左下路徑進場；相關測試、語法檢查、Build 與 `git diff --check` 通過。
+- 驗證結果：技能／VFX 定向測試 33/33 通過；`node --check` 檢查 `js/skills.js`、`js/vfx.js`、`js/battle-renderer.js` 通過；`npm.cmd run build` 通過（278 個檔案）；`git diff --check` 通過。
+- 已知風險：本機瀏覽器因環境限制無法載入 localhost 進行畫面驗證；目前依 Phaser 原始碼與既有渲染器的靜態／單元驗證完成，實機視覺仍建議使用者確認。
+- 完成後交給：使用者確認。
+
 ## Codex：依影片調整傷害飄字動畫（2026-08-14）
 
 - 狀態：已完成

@@ -2420,6 +2420,7 @@ function skillRtActiveEnemies(fallback) {
      swordfield 劍域領域：旋轉的劍氣環
      swordwave  普攻劍氣（由 combat.js 直接發） */
 var SKILL_VFX_OVERRIDE = {
+  fireball: { variant: 'fireball' },       // 火球術：單顆火球由我方沿直線投向目標
   arcaneBarrage: { variant: 'arcane-barrage' },
   // 物理：範圍斬擊類
   whirlwind: { variant: 'cyclone' },        // 旋風斬：氣旋在敵陣中旋轉

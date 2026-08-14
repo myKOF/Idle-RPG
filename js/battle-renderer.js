@@ -1130,7 +1130,9 @@ var BattleRenderer = (function () {
         var k = Math.min(1, t / dur);
         var to = posOf(targetId);
         node.x = lerp(from.x, to.x, k);
-        node.y = lerp(from.y, to.y, k) - Math.sin(k * Math.PI) * 18; // 微弧線
+        /* 火球術依使用者要求走真正直線；其他投射物保留原本的微弧線。 */
+        node.y = lerp(from.y, to.y, k) -
+          (spec && spec.variant === 'fireball' ? 0 : Math.sin(k * Math.PI) * 18);
         node.rotation = Math.atan2(to.y - from.y, to.x - from.x);
         trailAcc += dt;
         if (trailAcc > 0.03 && !REDUCED_MOTION) {
@@ -1561,9 +1563,7 @@ var BattleRenderer = (function () {
       })(i);
     }
   }
-  function spawnMeteor(rect, spec) {
-    var theme = themeOf(spec);
-    var cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
+  function spawnMeteorProjectile(spec, theme, from, to, scale, dur, delaySec, onArrive) {
     var node = new PIXI.Container();
     var core = new PIXI.Graphics();
     core.circle(0, 0, 22).fill(theme.c1);
@@ -1572,27 +1572,54 @@ var BattleRenderer = (function () {
     glow.anchor.set(0.5); glow.scale.set(3.2); glow.blendMode = 'add';
     glow.tint = parseInt(String(theme.glow).replace('#', '0x')) || 0xffffff;
     node.addChild(glow); node.addChild(core);
-    var mSky = cy - S.H * 0.7;   // 目標上方的世界座標；鏡頭會動，不能用畫面頂端
-    node.x = cx; node.y = mSky;
+    node.scale.set(scale || 1);
+    node.x = from.x; node.y = from.y;
     S.layers.fx.addChild(node);
-    var t = 0, dur = Math.min(0.8, Math.max(0.5, (spec.travelMs && spec.travelMs[0] || 500) / 1000));
+    var t = -(Math.max(0, delaySec || 0));
     addFx({
       node: node,
       update: function (dt) {
         t += dt;
+        if (t < 0) { node.visible = false; return true; }
+        node.visible = true;
         var k = Math.min(1, t / dur);
-        node.x = cx;
-        node.y = lerp(mSky, cy, k);
-        if (!REDUCED_MOTION && Math.random() < 0.6) spawnTrailDot(node.x, node.y, theme);
+        node.x = lerp(from.x, to.x, k);
+        node.y = lerp(from.y, to.y, k);
+        if (!REDUCED_MOTION && Math.random() < (scale && scale < 1 ? 0.35 : 0.6)) {
+          spawnTrailDot(node.x, node.y, theme);
+        }
         if (k >= 1) {
-          spawnImpact(cx, cy, spec, true);
-          spawnFireShockwave(cx, cy, rectRadius(rect), theme);
-          addShake(8);
+          if (onArrive) onArrive(to.x, to.y);
           return false;
         }
         return true;
       }
-    }, 2);
+    }, scale && scale < 1 ? 0 : 2, dur * 1000 + (delaySec || 0) * 1000 + 500);
+  }
+
+  function spawnMeteor(rect, spec) {
+    var theme = themeOf(spec);
+    var cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
+    var run = Math.max(150, Math.min(230, rect.h + 120));
+    var rise = run * Math.tan(Math.PI / 3);
+    var mainFrom = { x: cx + run, y: cy - rise };
+    var dur = Math.min(0.8, Math.max(0.5, (spec.travelMs && spec.travelMs[0] || 500) / 1000));
+    spawnMeteorProjectile(spec, theme, mainFrom, { x: cx, y: cy }, 1, dur, 0, function () {
+      spawnImpact(cx, cy, spec, true);
+      spawnFireShockwave(cx, cy, rectRadius(rect), theme);
+      addShake(8);
+    });
+    var smallOffsets = [-0.18, 0.1, 0.28];
+    for (var si = 0; si < smallOffsets.length; si++) {
+      var ratio = 0.78 + si * 0.12;
+      var smallFrom = {
+        x: cx + run * ratio,
+        y: cy - rise * ratio + smallOffsets[si] * run
+      };
+      var delaySec = (36 + si * 42) / 1000;
+      var smallDur = Math.max(0.18, dur - delaySec - 0.02);
+      spawnMeteorProjectile(spec, theme, smallFrom, { x: cx, y: cy }, 0.52, smallDur, delaySec, null);
+    }
   }
   function spawnFireShockwave(cx, cy, radius, theme) {
     var g = new PIXI.Graphics();

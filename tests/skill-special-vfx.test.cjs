@@ -13,11 +13,14 @@ const shim = read('js/worker/shim.js');
 
 test('三個指定技能使用專用 VFX 與命中規格', () => {
   assert.match(skills, /chainLightning:[\s\S]*?hits:\s*3/);
+  assert.match(skills, /fireball:\s*\{\s*variant:\s*'fireball'/);
   assert.match(skills, /arcaneBarrage:\s*\{\s*variant:\s*'arcane-barrage'/);
   assert.match(skills, /meteor:\s*\{\s*fxKind:\s*'rain',\s*variant:\s*'meteor'/);
 
   assert.match(vfx, /function vfxBarrageProjectile\(/);
-  assert.match(vfx, /var mx0 = cx, my0 = rect\.y - 190/);
+  assert.match(vfx, /function vfxMeteorProjectile\(/);
+  assert.match(vfx, /var diagonalRise = diagonalRun \* Math\.tan\(Math\.PI \/ 3\)/);
+  assert.match(vfx, /var smallOffsets = \[-0\.18, 0\.1, 0\.28\]/);
   assert.match(vfx, /flash\.style\.borderRadius = '50%'/);
   assert.match(read('css/style.css'), /\.vfx-area-flash[\s\S]*?transform-origin: 50% 50%/);
   assert.match(read('css/style.css'), /@keyframes vfxAreaFlash[\s\S]*?transform: scale\(1\)/);
@@ -25,12 +28,15 @@ test('三個指定技能使用專用 VFX 與命中規格', () => {
   assert.match(vfx, /vfxRectAround\(fallbackPt, s\.variant === 'meteor' \? spec\.area : null\)/);
 
   assert.match(renderer, /function spawnBarrageMissile\(/);
+  assert.match(renderer, /function spawnMeteorProjectile\(/);
+  assert.match(renderer, /spec\.variant === 'fireball' \? 0/);
   assert.match(renderer, /if \(spec\.variant === 'arcane-barrage'/);
   assert.match(renderer, /for \(var lane = 0; lane < 3; lane\+\+\)[\s\S]*spawnBarrageMissile\(id, spec, -1, lane[\s\S]*spawnBarrageMissile\(id, spec, 1, lane/);
   assert.match(renderer, /for \(var strike = 0; strike < 3; strike\+\+\)/);
   assert.match(renderer, /function rectRadius\(rect\)/);
   assert.match(renderer, /spawnFireShockwave\(cx, cy, rectRadius\(rect\), theme\)/);
   assert.match(renderer, /spawnFireShockwave\(cx, cy/);
+  assert.match(read('css/style.css'), /\.vfx-meteor-small \.vfx-proj-core/);
   assert.match(renderer, /var outerWidth = 13 - 10\.5 \* q/);
   assert.match(shim, /area: spec\.area \|\| null/);
 });
