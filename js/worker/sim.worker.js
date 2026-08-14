@@ -12,7 +12,7 @@
 
 importScripts('protocol.js?v=19', 'shim.js');
 importScripts(
-  '../util.js?v=20260814-skill-summary', '../data.js?v=20260813-earth-recovery', '../status.js?v=20260813-skills2-rework', '../formula.js?v=20260814-skill-min-interval', '../battlefield.js?v=20260813-skills2-rework', '../stats.js',
+  '../util.js?v=20260814-skill-summary', '../data.js?v=20260813-earth-recovery', '../status.js?v=20260813-skills2-rework', '../formula.js?v=20260814-skill-min-interval-v2', '../battlefield.js?v=20260813-skills2-rework', '../stats.js',
   '../item.js?v=20260805-tasks',
   '../skills.js?v=20260814-skill-min-interval', '../skills2.js?v=20260814-skill-min-interval', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260814-skill-min-interval', '../special_rules.js',

@@ -58,7 +58,7 @@ function tickTargetSwitchDelay(pEnt, dt) {
     return pEnt._targetSwitchCd <= 0;
 }
 
-// 普攻擊殺後換目標的最短間隔沿用技能最低施放間隔；attackRate 用來換算成 atkCd 計時器單位，
+// 普攻擊殺後換目標的最短間隔沿用技能施放最短間隔；attackRate 用來換算成 atkCd 計時器單位，
 // 確保攻速增益或減速不會把實際的固定間隔縮短或意外延長。
 function applyBasicAttackKillGap(pEnt, attackRate) {
     if (!pEnt) return;
