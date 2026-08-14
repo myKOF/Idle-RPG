@@ -278,6 +278,36 @@ test('血刃斬：塗抹血刃流血；血毒刃同時中毒；作用間隔受�
   assert.ok(Math.abs(bleed.dps * bleed.interval - expectTick) < 1e-6, '每跳傷害＝技能傷害 × dotPct%');
 });
 
+test('毒霧感染：傳染數量由 count 參數控制', () => {
+  const c = loadContext();
+  stubHits(c);
+  c.chance = () => false;
+  c.G.player.skills2.levels.bloodblade = [1, 1, 1, 1, 1, 0, 0];
+  const p = playerEnt();
+  const source = enemy(1e9, 40, 0);
+  const near1 = enemy(1e9, 50, 0);
+  const near2 = enemy(1e9, 60, 0);
+  const near3 = enemy(1e9, 70, 0);
+  c.castSkill2(p, [source], 'bloodblade', 'mv-float');
+  assert.equal(c.SKILLS2.bloodblade.tiers[4].fx.count, 1, '毒霧感染應有 count 參數');
+
+  const spreadEvents = [];
+  c.sgEmitVfx = (gid, targets, floatSel, spec) => {
+    if (spec && spec.variant === 'poison-spread') spreadEvents.push({ from: targets[0], to: targets[1] });
+  };
+  c.SKILLS2.bloodblade.tiers[4].fx.count = 2;
+  c.chance = () => true;
+  c.tickSkill2(0.5, {
+    pEnt: p,
+    getEnemies: () => [source, near1, near2, near3],
+    floatSel: 'mv-float',
+    onDeaths() {}
+  });
+  assert.equal(spreadEvents.filter((event) => event.from === source).length, 2);
+  assert.ok(near1.dots.some((d) => d.sid === 'sgPoison'));
+  assert.ok(near2.dots.some((d) => d.sid === 'sgPoison'));
+});
+
 test('零日感染：作用時機率立即結算剩餘持續傷害並清除狀態', () => {
   const c = loadContext();
   stubHits(c);
