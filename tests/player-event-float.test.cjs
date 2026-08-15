@@ -410,6 +410,10 @@ test('skill cast summary formats total damage and keeps the doubled lifetime con
   assert.match(css, /\.float-txt\.player-event\.skill-cast-total\s*\{[\s\S]*?animation-duration:\s*2\.1s/);
   assert.match(renderer, /PLAYER_SKILL_TOTAL_FLOAT_LIFE_SEC = PLAYER_SKILL_FLOAT_LIFE_SEC \* 2/);
   assert.match(renderer, /PLAYER_SKILL_TOTAL_FLOAT_LIFE_SEC : PLAYER_SKILL_FLOAT_LIFE_SEC/);
+  assert.match(renderer, /var MAX_FLOATS = 60;[\s\S]*?技能名稱.*傷害不計入/);
+  assert.match(renderer, /function isSkillCastFloatEvent\(ev\)/);
+  assert.match(renderer, /if \(!skillCastEvent\) \{[\s\S]*?ordinaryFloatCount[\s\S]*?if \(!S\.floats\[oi\]\.skillCast\)/);
+  assert.match(renderer, /skillCast: skillCast/);
   assert.match(renderer, /pendingFloats: \[\]/);
   assert.match(renderer, /if \(!S\.ready\)[\s\S]*?queueFloatUntilReady\(ev\)/);
   assert.match(renderer, /S\.ready = true;\s*flushPendingFloats\(\);/);

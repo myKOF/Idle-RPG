@@ -39,7 +39,7 @@ var BattleRenderer = (function () {
   var PLAYER_REACH = 52;
   var ENEMY_CONTACT_GAP = 34;      // 敵人出手時衝到離角色這麼近（＝接觸）
   var ENEMY_MAX_CHARGE = 460;      // 單次衝刺的最大距離，避免從畫面另一頭瞬間貼臉
-  var MAX_FLOATS = 60;           // 同時存在的飄字上限
+  var MAX_FLOATS = 60;           // 一般飄字同時存在上限；技能名稱＋傷害不計入
   var FLOAT_MERGE_MS = 160;      // 同目標同類傷害的合併窗（DOM 版邏輯的簡化版）
   var LASTPOS_KEEP_MS = 3000;    // 實體移除後保留座標，讓遲到的飄字仍有落點
   var PLAYER_SKILL_FLOAT_SIDE_OFFSET = 120; // 技能名稱／傷害離人物中心的起始左右偏移（px；外移一個戰鬥大格）
@@ -2575,6 +2575,9 @@ var BattleRenderer = (function () {
     var base = (cls || '').replace(/crit-high-roll/, '').trim();
     return elId + '|' + base;
   }
+  function isSkillCastFloatEvent(ev) {
+    return !!ev && String(ev.cls || '').indexOf('skill-cast') >= 0;
+  }
   /* 找一個不會壓到別人的位置。
      同一瞬間常有三四個字落在同一點（傷害、護盾吸收、吸血、吸魔），
      舊版只給 ±18px 的隨機抖動，數字一多必然疊成一團看不清楚。
@@ -2634,13 +2637,26 @@ var BattleRenderer = (function () {
         return;
       }
     }
-    if (S.floats.length >= MAX_FLOATS) {
-      var oldest = S.floats.shift();
-      if (oldest) {
-        killFx(oldest);
-        oldest.dead = true;
-        /* 與自然到期路徑對稱：合併表的鍵含單調遞增的 mv-float-N，不清會累積 */
-        if (oldest.mergeKey && S.floatMerge[oldest.mergeKey] === oldest) delete S.floatMerge[oldest.mergeKey];
+    var skillCastEvent = isSkillCastFloatEvent(ev);
+    if (!skillCastEvent) {
+      /* 技能名稱＋總傷害是完整的一組提示，不能被一般傷害洪峰淘汰。
+         容量只計算非技能飄字；若滿了，找最舊的非技能字移除。 */
+      var ordinaryFloatCount = 0;
+      for (var oi = 0; oi < S.floats.length; oi++) {
+        if (!S.floats[oi].skillCast) ordinaryFloatCount++;
+      }
+      if (ordinaryFloatCount >= MAX_FLOATS) {
+        var oldestIndex = -1;
+        for (var fi = 0; fi < S.floats.length; fi++) {
+          if (!S.floats[fi].skillCast) { oldestIndex = fi; break; }
+        }
+        var oldest = oldestIndex >= 0 ? S.floats.splice(oldestIndex, 1)[0] : null;
+        if (oldest) {
+          killFx(oldest);
+          oldest.dead = true;
+          /* 與自然到期路徑對稱：合併表的鍵含單調遞增的 mv-float-N，不清會累積 */
+          if (oldest.mergeKey && S.floatMerge[oldest.mergeKey] === oldest) delete S.floatMerge[oldest.mergeKey];
+        }
       }
     }
     var st = floatStyle(ev.elId, ev.cls, ev.text || '');
@@ -2648,7 +2664,7 @@ var BattleRenderer = (function () {
     var playerTarget = ev.elId === 'pv-float' || ev.elId === 'tp-float';
     var playerDamage = playerTarget &&
       (String(ev.cls || '').indexOf('mdmg') >= 0 || /^\s*(爆擊\s*)?-/.test(String(ev.text || '')));
-    var skillCast = playerTarget && String(ev.cls || '').indexOf('skill-cast') >= 0;
+    var skillCast = playerTarget && skillCastEvent;
     var castLeft = String(ev.cls || '').indexOf('skill-cast-left') >= 0;
     var castRight = String(ev.cls || '').indexOf('skill-cast-right') >= 0;
     /* 玩家事件分區：有益效果在角色頭頂藍區，承傷在身體紅區；技能名稱／傷害從人物中心左右約 120px 出現。 */
@@ -2681,7 +2697,7 @@ var BattleRenderer = (function () {
        String(ev.cls || '').indexOf('enemy-skill') >= 0);
     var isCritFloat = String(ev.cls || '').indexOf('crit') >= 0;
     var f = {
-      node: node, t: 0, life: st.life, rise: st.rise,
+      node: node, t: 0, life: st.life, rise: st.rise, skillCast: skillCast,
       bornAt: nowMs(), hits: 1, total: isFinite(val) ? val : 0,
       prefix: prefixMatch ? prefixMatch[1] : '',
       /* 傷害數字沿用 DOM 的快速回彈：一般字從 0.72 倍起，
