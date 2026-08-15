@@ -66,12 +66,12 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.match(vfx, /projClass === 'vfx-proj-knife'[\s\S]*?spec\.glyph/);
   assert.match(renderer, /spec\.variant === 'knife'[\s\S]*?spec\.variant === 'knife-bounce'/);
   assert.match(css, /\.vfx-proj-knife \.vfx-proj-core[\s\S]*?background: none/);
-  assert.match(vfx, /vfxCleaveArc\([\s\S]*?vfx-cleave-arc-back/);
-  assert.match(renderer, /spawnCleaveArc\([\s\S]*?frontAngle \+ Math\.PI/);
-  assert.match(vfx, /vfxCleaveWave\([\s\S]*?, 120\)/);
-  assert.match(renderer, /spawnCleaveWave\([\s\S]*?, 120\)/);
-  assert.match(vfx, /VFX_CLEAVE_WAVE_SPEED_RATIO = 0\.3/);
-  assert.match(renderer, /CLEAVE_WAVE_SPEED_RATIO = 0\.3/);
+  assert.match(vfx, /function vfxCleaveArc\([\s\S]*?travel\)/);
+  assert.match(vfx, /vfxCleaveArc\([\s\S]*?length: 120/);
+  assert.match(vfx, /vfxCleaveArc\([\s\S]*?vfx-cleave-arc-back[\s\S]*?length: 120/);
+  assert.match(renderer, /spawnCleaveArc\([\s\S]*?frontAngle \+ Math\.PI[\s\S]*?length: 120/);
+  assert.doesNotMatch(vfx, /vfxCleaveWave|vfx-cleave-wave/);
+  assert.doesNotMatch(renderer, /spawnCleaveWave|CLEAVE_WAVE_SPEED_RATIO/);
   assert.match(vfx, /vfxImpact\([\s\S]*?cHitDelay \+ 90/);
   assert.match(renderer, /spawnImpact\(pt\.x, pt\.y, spec, false\)/);
   const vfxCleaveStart = vfx.indexOf("if (kind === 'slash' && (s.variant === 'cleave'");
@@ -82,6 +82,18 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.ok(rendererCleaveStart >= 0 && rendererCleaveEnd > rendererCleaveStart);
   assert.doesNotMatch(vfx.slice(vfxCleaveStart, vfxCleaveEnd), /vfxSlash\(/);
   assert.doesNotMatch(renderer.slice(rendererCleaveStart, rendererCleaveEnd), /spawnSlash\(/);
+});
+
+test('震碎斬與迴身雙連斬共用前後方向的迴旋斬弧光', () => {
+  const skills2 = read('js/skills2.js');
+  const cleaveStart = skills2.indexOf('function sgCastCleave');
+  const cleaveEnd = skills2.indexOf('\n}\n\n/* ---- 匕首投擲', cleaveStart);
+  const cleaveBlock = skills2.slice(cleaveStart, cleaveEnd);
+
+  assert.match(cleaveBlock, /lvs\[5\] > 0 && lvs\[6\] > 0\) \? 'cleave-dual'/);
+  assert.match(cleaveBlock, /lvs\[5\] > 0 \? 'cleave-shockwave'/);
+  assert.match(read('css/style.css'), /\.vfx-cleave-arc-back/);
+  assert.doesNotMatch(read('css/style.css'), /\.vfx-cleave-wave/);
 });
 
 test('震碎斬距離使用 12 米（120 系統距離單位）', () => {

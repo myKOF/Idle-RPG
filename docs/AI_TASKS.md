@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## Codex：調整震碎斬與迴身雙連斬的共用迴旋斬特效（2026-08-15）
+
+- 狀態：已完成
+- 任務分類：新版技能 VFX／迴旋斬方向表現
+- 負責 AI：Codex
+- 任務內容：震碎斬向前飛出的刀光改用既有迴旋斬弧光；迴身雙連斬加持時，同次產生前後兩道既有弧光並分別向前後方位移，移除額外圓形震波刀光。
+- 允許修改：`docs/AI_TASKS.md`、`js/skills2.js`、`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`index.html`、`tests/skill2-vfx.test.cjs`
+- 禁止修改：傷害與目標選擇、Worker Protocol、存檔格式、其他技能效果與其他 AI 進行中任務檔案。
+- 前置依賴：既有迴旋斬弧光與前／後方命中集合；目標檔案衝突預檢無來源。
+- 測試要求：新版技能 VFX 定向測試、相關 JavaScript 語法檢查、`npm.cmd run build`、完整 `npm.cmd test`、`git diff --check`。
+- 完成條件：DOM 與 Canvas 均以共用迴旋斬弧光呈現前／後向斬擊，且傷害數字延遲與刀光抵達一致；快取版號同步。
+- 驗證結果：新版技能 VFX 定向測試 5/5；`node --check js/vfx.js`、`node --check js/battle-renderer.js` 通過；`npm.cmd run build` 278/278；完整 `npm.cmd test` 1387/1387；`git diff --check` 通過。
+- 已知風險：尚未進行瀏覽器實機畫面驗證；Phaser 4 `actions` 範例僅作為方向位移參考，實際刀光仍使用專案既有 DOM／Canvas 弧光。
+- 完成後交給：使用者確認。
+
 ## Codex：調整血刃斬「死亡屍爆／零日感染」效果（2026-08-15）
 
 - 狀態：已完成

@@ -6890,31 +6890,6 @@ textarea:disabled,
   }
 }
 
-.vfx-cleave-wave {
-  width: 68px;
-  height: 68px;
-  margin: -34px 0 0 -34px;
-  pointer-events: none;
-}
-
-.vfx-cleave-wave::before,
-.vfx-cleave-wave::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 7px solid transparent;
-  border-right-color: var(--vfx-c1, #fff);
-  filter: drop-shadow(0 0 9px var(--vfx-glow, #fff));
-  transform: rotate(-34deg) scaleX(0.82);
-}
-
-.vfx-cleave-wave::after {
-  border-width: 2px;
-  border-right-color: var(--vfx-c2, #fff);
-  transform: rotate(-34deg) scaleX(0.68);
-}
-
 /* 汲取回流的魂息 */
 .vfx-proj-wisp .vfx-proj-core {
   width: 10px;
