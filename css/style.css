@@ -4390,25 +4390,44 @@ textarea:disabled,
   justify-content: center;
   gap: 1px;
   box-sizing: border-box;
-  border: 2px solid #5f5f5f;
-  background: rgba(75, 75, 75, .42);
+  border: 2px solid #4a4a4a;
+  background: rgba(45, 45, 45, .42);
   color: #8f8f8f;
   cursor: pointer;
-  opacity: .58;
-  filter: grayscale(.9);
+  opacity: .55;
+  filter: grayscale(.95);
   transition: opacity .1s, border-color .1s, box-shadow .1s;
 }
 
+/* 已解鎖但未學習（Lv.0）：可點擊查看與升級，但圖示與主體維持灰色/暗色，邊框呈現淡青藍提示 */
 .sg-stage-node.sg-stage-unlocked {
+  border-color: rgba(116, 201, 232, .35);
+  background: rgba(75, 170, 215, .08);
+  color: #9aa5b1;
+  opacity: .75;
+  filter: grayscale(.9);
+}
+
+.sg-stage-node.sg-stage-unlocked:hover {
+  opacity: .95;
+  border-color: rgba(116, 201, 232, .7);
+  filter: grayscale(.3);
+}
+
+/* 已學會（Lv > 0）：彩色圖示、亮色邊框與光暈 */
+.sg-stage-node.sg-stage-learned {
   border-color: #74c9e8;
   background: rgba(75, 170, 215, .25);
   color: var(--text);
   opacity: 1;
   filter: none;
+  box-shadow: 0 0 8px rgba(116, 201, 232, .55), inset 0 0 10px rgba(116, 201, 232, .18);
 }
 
-.sg-stage-node.sg-stage-learned {
-  box-shadow: 0 0 8px rgba(116, 201, 232, .55), inset 0 0 10px rgba(116, 201, 232, .18);
+.sg-stage-node.sg-stage-learned:hover {
+  opacity: 1;
+  filter: none;
+  box-shadow: 0 0 12px rgba(116, 201, 232, .75), inset 0 0 12px rgba(116, 201, 232, .25);
 }
 
 .sg-stage-node.selected {
@@ -4441,16 +4460,20 @@ textarea:disabled,
 }
 
 .sg-stage-level {
-  color: var(--accent);
+  color: var(--dim);
   font-size: 10px;
   font-weight: bold;
   line-height: 1.1;
 }
 
+.sg-stage-learned .sg-stage-level {
+  color: var(--accent);
+}
+
 .sg-stage-locked .sg-stage-emoji,
 .sg-stage-locked .sg-stage-level {
   filter: grayscale(1);
-  color: #777;
+  color: #666;
 }
 
 .sg-stage-eq {
