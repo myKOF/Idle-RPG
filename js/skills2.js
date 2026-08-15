@@ -718,6 +718,7 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     (lvs[5] > 0 ? 'thrust-pierce' : 'thrust'));
   sgEmitVfx('thrust', planned, floatSel, {
     fxKind: 'slash', variant: thrustVariant, count: Math.min(8, thrustCount), projectile: isPiercing,
+    dur: 0.3,
     lineLength: lineLen, lineWidth: Math.max(28, lineWidth), laneOffsets: laneOffsets,
     directionCount: directionCount
   });

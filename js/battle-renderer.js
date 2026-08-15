@@ -1449,29 +1449,34 @@ var BattleRenderer = (function () {
     /* 正式突刺素材：以圖片的長軸作為飛行軸，並沿路徑從短到長展開。
        圖片載入失敗時才走下方 Graphics 退化畫法，避免整個戰鬥 VFX 消失。 */
     if (S.thrustLanceTex) {
+      var group = new PIXI.Container();
+      group.x = startX; group.y = startY;
+      group.rotation = angle - Math.PI / 2;
       var sprite = new PIXI.Sprite(S.thrustLanceTex);
-      sprite.anchor.set(0.5, 0.5);
+      sprite.anchor.set(0.5, 0);
       sprite.blendMode = 'add';
-      S.layers.fx.addChild(sprite);
-      var st = -(delaySec || 0), sd = Math.max(0.28, spec.dur || 0.38);
+      var revealMask = new PIXI.Graphics();
+      group.addChild(sprite);
+      group.addChild(revealMask);
+      sprite.mask = revealMask;
+      S.layers.fx.addChild(group);
+      var st = -(delaySec || 0), sd = Math.max(0.24, spec.dur || 0.3);
       var texW = Math.max(1, S.thrustLanceTex.width || 1024);
       var texH = Math.max(1, S.thrustLanceTex.height || 1536);
       var imageWidth = Math.max(28, Number(spec.lineWidth) || 36);
       addFx({
-        node: sprite,
+        node: group,
         update: function (dt) {
           st += dt;
-          sprite.visible = st >= 0;
+          group.visible = st >= 0;
           if (st < 0) return true;
           var k = Math.min(1, st / sd);
-          var grow = k < 0.2 ? k / 0.2 : 1;
-          var fade = k > 0.64 ? 1 - (k - 0.64) / 0.36 : 1;
-          var shownLength = lineLength * grow;
-          sprite.x = startX + Math.cos(angle) * shownLength / 2;
-          sprite.y = startY + Math.sin(angle) * shownLength / 2;
-          sprite.rotation = angle - Math.PI / 2;
-          sprite.scale.set(imageWidth / texW, Math.max(0.001, shownLength / texH));
+          var reveal = k < 0.4 ? k / 0.4 : 1;
+          var fade = k > 0.8 ? 1 - (k - 0.8) / 0.2 : 1;
+          sprite.scale.set(imageWidth / texW, lineLength / texH);
           sprite.alpha = fade;
+          revealMask.clear();
+          revealMask.rect(-imageWidth / 2, 0, imageWidth, lineLength * reveal).fill(0xffffff);
           return st < sd;
         }
       }, 1);
@@ -1489,8 +1494,9 @@ var BattleRenderer = (function () {
         if (t < 0) return true;
         var k = Math.min(1, t / dur);
         var grow = k < 0.2 ? k / 0.2 : 1;
-        var fade = k > 0.58 ? 1 - (k - 0.58) / 0.42 : 1;
-        var tip = lineLength * grow;
+        var fade = k > 0.8 ? 1 - (k - 0.8) / 0.2 : 1;
+        var reveal = k < 0.4 ? k / 0.4 : 1;
+        var tip = lineLength * reveal;
         var centerX = tip * 0.5;
         var shoulderX = tip * 0.32;
         var half = Math.min(15, Math.max(5, tip * 0.22));

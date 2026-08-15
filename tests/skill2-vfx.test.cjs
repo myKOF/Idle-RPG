@@ -140,11 +140,14 @@ test('突刺光槍 VFX 使用確認的 PNG 素材並保留 DOM／Canvas 退化�
 
   assert.match(thrustCss, /images\/vfx\/thrust_lance\.png/);
   assert.match(thrustCss, /var\(--vfx-length/);
+  assert.match(thrustCss, /mask-image: linear-gradient/);
+  assert.match(css, /@property --vfx-reveal-end/);
   assert.match(thrustCss, /rotate\(calc\(var\(--vfx-angle/);
   assert.ok(fs.statSync(path.join(root, 'images/vfx/thrust_lance.png')).size > 1000, '突刺 PNG 素材應存在');
   assert.match(renderer, /PIXI\.Assets\.load\('images\/vfx\/thrust_lance\.png'\)/);
   assert.match(thrustRenderer, /if \(S\.thrustLanceTex\)/);
   assert.match(thrustRenderer, /g\.poly\(/);
+  assert.match(thrustRenderer, /revealMask\.rect/);
 });
 
 test('突刺 VFX 會保留實際長度與完整段數上限', () => {
