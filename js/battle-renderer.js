@@ -84,6 +84,7 @@ var BattleRenderer = (function () {
     lastPos: {},              // floatSel -> { x, y, at }（實體移除後短暫保留）
     fx: [],                   // 特效物件 { update(dt)->bool 活著, node, prio }
     floats: [],               // 飄字物件
+    pendingFloats: [],        // Canvas 初始化完成前暫存的玩家／野外浮字
     floatMerge: {},           // mergeKey -> float 物件
     shake: 0,                 // 畫面震動剩餘強度（px）
     sheets: {},               // name -> { tex, manifest, anims: {name: [Texture]} }
@@ -104,6 +105,21 @@ var BattleRenderer = (function () {
   /* ---- 小工具 ---- */
   function documentHidden() {
     return typeof document !== 'undefined' && document.hidden;
+  }
+  function isCanvasFloatTarget(elId) {
+    return elId === 'pv-float' || /^mv-float-\d+$/.test(elId || '');
+  }
+  function queueFloatUntilReady(ev) {
+    if (!isCanvasFloatTarget(ev && ev.elId)) return;
+    if (S.pendingFloats.length >= 40) S.pendingFloats.shift();
+    S.pendingFloats.push({
+      elId: ev.elId, text: ev.text, cls: ev.cls,
+      damageValue: ev.damageValue, delayMs: ev.delayMs
+    });
+  }
+  function flushPendingFloats() {
+    var pending = S.pendingFloats.splice(0, S.pendingFloats.length);
+    for (var i = 0; i < pending.length; i++) onFloat(pending[i]);
   }
   /* 延遲排程（setTimeout）的統一守門：渲染器沒起來或分頁已隱藏就放棄該段特效。
      外層 onVfx 進場時擋過一次，但 stagger/延遲段可能在隱藏之後才到期，得再擋。 */
@@ -1434,7 +1450,7 @@ var BattleRenderer = (function () {
     }, 1);
   }
 
-  function spawnThrustLine(targetId, spec, angleOffset, delaySec, length, laneOffset, angleOverride) {
+  function spawnThrustLine(targetId, spec, angleOffset, delaySec, length, laneOffset, angleOverride, isFinal) {
     var theme = themeOf(spec);
     var from = playerMuzzle();
     var to = posOf(targetId);
@@ -1449,6 +1465,8 @@ var BattleRenderer = (function () {
     /* 正式突刺素材：以圖片的長軸作為飛行軸，並沿路徑從短到長展開。
        圖片載入失敗時才走下方 Graphics 退化畫法，避免整個戰鬥 VFX 消失。 */
     if (S.thrustLanceTex) {
+      var bodyLength = isFinal ? lineLength : Math.min(96, Math.max(42, lineLength * 0.34));
+      var flightDistance = Math.max(0, lineLength - bodyLength);
       var group = new PIXI.Container();
       group.x = startX; group.y = startY;
       group.rotation = angle - Math.PI / 2;
@@ -1460,7 +1478,9 @@ var BattleRenderer = (function () {
       group.addChild(revealMask);
       sprite.mask = revealMask;
       S.layers.fx.addChild(group);
-      var st = -(delaySec || 0), sd = Math.max(0.24, spec.dur || 0.3);
+      var st = -(delaySec || 0), sd = isFinal
+        ? Math.max(0.24, spec.dur || 0.3)
+        : Math.max(0.16, Math.min(0.22, (spec.dur || 0.3) * 0.75));
       var texW = Math.max(1, S.thrustLanceTex.width || 1024);
       var texH = Math.max(1, S.thrustLanceTex.height || 1536);
       var imageWidth = Math.max(28, Number(spec.lineWidth) || 36);
@@ -1471,32 +1491,43 @@ var BattleRenderer = (function () {
           group.visible = st >= 0;
           if (st < 0) return true;
           var k = Math.min(1, st / sd);
-          var reveal = k < 0.4 ? k / 0.4 : 1;
-          var fade = k > 0.8 ? 1 - (k - 0.8) / 0.2 : 1;
-          sprite.scale.set(imageWidth / texW, lineLength / texH);
+          var reveal = isFinal ? (k < 0.4 ? k / 0.4 : 1) : 1;
+          var fade = isFinal
+            ? (k > 0.8 ? 1 - (k - 0.8) / 0.2 : 1)
+            : (k > 0.76 ? 1 - (k - 0.76) / 0.24 : 1);
+          var travel = isFinal ? 0 : flightDistance * Math.min(1, k / 0.76);
+          group.x = startX + Math.cos(angle) * travel;
+          group.y = startY + Math.sin(angle) * travel;
+          sprite.scale.set(imageWidth / texW, bodyLength / texH);
           sprite.alpha = fade;
           revealMask.clear();
-          revealMask.rect(-imageWidth / 2, 0, imageWidth, lineLength * reveal).fill(0xffffff);
+          revealMask.rect(-imageWidth / 2, 0, imageWidth, bodyLength * reveal).fill(0xffffff);
           return st < sd;
         }
       }, 1);
       return;
     }
+    var fallbackBodyLength = isFinal ? lineLength : Math.min(96, Math.max(42, lineLength * 0.34));
+    var fallbackFlightDistance = Math.max(0, lineLength - fallbackBodyLength);
     var g = new PIXI.Graphics();
-    g.x = from.x; g.y = from.y; g.rotation = angle;
+    g.x = startX; g.y = startY; g.rotation = angle;
     S.layers.fx.addChild(g);
-    var t = -(delaySec || 0), dur = Math.max(0.28, spec.dur || 0.38);
-    lineLength = Math.max(48, Number(length) || 70);
+    var t = -(delaySec || 0), dur = isFinal
+      ? Math.max(0.24, spec.dur || 0.3)
+      : Math.max(0.16, Math.min(0.22, (spec.dur || 0.3) * 0.75));
     addFx({
       node: g,
       update: function (dt) {
         t += dt;
         if (t < 0) return true;
         var k = Math.min(1, t / dur);
-        var grow = k < 0.2 ? k / 0.2 : 1;
-        var fade = k > 0.8 ? 1 - (k - 0.8) / 0.2 : 1;
-        var reveal = k < 0.4 ? k / 0.4 : 1;
-        var tip = lineLength * reveal;
+        var fade = isFinal
+          ? (k > 0.8 ? 1 - (k - 0.8) / 0.2 : 1)
+          : (k > 0.76 ? 1 - (k - 0.76) / 0.24 : 1);
+        var travel = isFinal ? 0 : fallbackFlightDistance * Math.min(1, k / 0.76);
+        g.x = startX + Math.cos(angle) * travel;
+        g.y = startY + Math.sin(angle) * travel;
+        var tip = fallbackBodyLength;
         var centerX = tip * 0.5;
         var shoulderX = tip * 0.32;
         var half = Math.min(15, Math.max(5, tip * 0.22));
@@ -2292,16 +2323,19 @@ var BattleRenderer = (function () {
           var thrustDirections = spec.variant === 'thrust-octagonal'
             ? Math.max(1, Number(spec.directionCount) || 8) : 1;
           var thrustLength = Math.max(48, Number(spec.lineLength) || 70);
+          /* 與 DOM VFX 同步：7 次突刺約 1.62 秒播完，保留每道光槍的辨識度。 */
+          var thrustStagger = 220;
           var thrustFrontAngle = Math.atan2(posOf(targets[0]).y - playerMuzzle().y,
             posOf(targets[0]).x - playerMuzzle().x);
           for (var trc = 0; trc < count; trc++) {
+            var isFinalThrust = trc === count - 1;
             for (var tro = 0; tro < thrustDirections; tro++) {
               var thrustAngle = spec.variant === 'thrust-octagonal'
                 ? thrustFrontAngle + tro * Math.PI * 2 / thrustDirections : thrustFrontAngle;
               for (var tl = 0; tl < thrustLanes.length; tl++) {
                 spawnThrustLine(targets[0], spec, 0,
-                  (baseDelay + trc * stagger) / 1000, thrustLength,
-                  thrustLanes[tl], thrustAngle);
+                  (baseDelay + trc * thrustStagger) / 1000, thrustLength,
+                  thrustLanes[tl], thrustAngle, isFinalThrust);
               }
             }
           }
@@ -2568,7 +2602,11 @@ var BattleRenderer = (function () {
   }
 
   function onFloat(ev) {
-    if (!S.ready || !ev) return;
+    if (!ev) return;
+    if (!S.ready) {
+      if (!S.failed && S.initStarted) queueFloatUntilReady(ev);
+      return;
+    }
     if (documentHidden()) return;   // 背景分頁：ui.js 已改走「只記最新」路徑，這裡擋 setTimeout 殘留
     /* 與特效同理：飄字要落在「畫面上那一刻」的實體身上（見 onVfx 的說明）。 */
     if (!ev._buffered) { ev._buffered = true; ev.delayMs = (ev.delayMs || 0) + POS_BUFFER_MS; }
@@ -2609,7 +2647,7 @@ var BattleRenderer = (function () {
     var skillCast = playerTarget && String(ev.cls || '').indexOf('skill-cast') >= 0;
     var castLeft = String(ev.cls || '').indexOf('skill-cast-left') >= 0;
     var castRight = String(ev.cls || '').indexOf('skill-cast-right') >= 0;
-    /* 玩家事件分區：有益效果在角色頭頂藍區，承傷在身體紅區；技能名稱／傷害從人物中心左右約 60px 出現。 */
+    /* 玩家事件分區：有益效果在角色頭頂藍區，承傷在身體紅區；技能名稱／傷害從人物中心左右約 120px 出現。 */
     if (playerTarget && S.player) {
       if (skillCast) {
         var castOffset = castLeft ? -PLAYER_SKILL_FLOAT_SIDE_OFFSET
@@ -3131,7 +3169,8 @@ var BattleRenderer = (function () {
   /* ============ 對外介面 ============ */
   function active() { return S.ready && !S.failed; }
   function wantsFloat(elId) {
-    return active() && (elId === 'pv-float' || /^mv-float-\d+$/.test(elId || ''));
+    return isCanvasFloatTarget(elId) &&
+      (active() || (S.initStarted && !S.ready && !S.failed));
   }
   function wantsVfx(spec) {
     if (!active() || !spec) return false;
@@ -3189,6 +3228,7 @@ var BattleRenderer = (function () {
       window.addEventListener('resize', resize, { passive: true });
       S.watchdogTimer = setInterval(fxWatchdog, FX_WATCHDOG_MS);
       S.ready = true;
+      flushPendingFloats();
       /* 開機時 battle 面板可能已經在手上（bridge 比渲染器先跑），先同步一次 */
       if (typeof peekUiPanelData === 'function') {
         var panel = peekUiPanelData('battle');

@@ -410,6 +410,10 @@ test('skill cast summary formats total damage and keeps the doubled lifetime con
   assert.match(css, /\.float-txt\.player-event\.skill-cast-total\s*\{[\s\S]*?animation-duration:\s*2\.1s/);
   assert.match(renderer, /PLAYER_SKILL_TOTAL_FLOAT_LIFE_SEC = PLAYER_SKILL_FLOAT_LIFE_SEC \* 2/);
   assert.match(renderer, /PLAYER_SKILL_TOTAL_FLOAT_LIFE_SEC : PLAYER_SKILL_FLOAT_LIFE_SEC/);
-  assert.match(skills2, /floatPlayerSkillCast\(floatSel, \{ emoji: g\.emoji, name: g\.name \}, out\.dmg\)/);
+  assert.match(renderer, /pendingFloats: \[\]/);
+  assert.match(renderer, /if \(!S\.ready\)[\s\S]*?queueFloatUntilReady\(ev\)/);
+  assert.match(renderer, /S\.ready = true;\s*flushPendingFloats\(\);/);
+  assert.match(skills2, /if \(out\._pendingProjectiles > 0\)[\s\S]*?out\._skillFloatPending/);
+  assert.match(skills2, /sgFinishSkillCastFloat\(projectile\.out\)/);
   assert.ok(skills.indexOf('floatPlayerSkillCast(floatSel, sk, out.dmg)') > skills.indexOf('out.dmg = totalDmg;'));
 });

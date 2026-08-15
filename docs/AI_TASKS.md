@@ -5,11 +5,11 @@
 - 狀態：已完成（2026-08-15）
 - 任務分類：突刺 VFX／透明度遮罩／動畫時序
 - 負責 AI：Codex
-- 任務內容：突刺光槍由我方位置向前推進顯現；每次特效週期以約 0.3 秒為基準，前 40% 沿光槍長軸顯現、中段保持完整、最後 20% 淡出，時序依 `spec.dur` 比例運作，不固定使用 0.5 秒。
+- 任務內容：突刺光槍由我方位置向前飛出；非最後一次使用短光槍沿路徑飛行並淡出，最後一次才完整顯現後淡出，單次突刺直接使用最後一次收尾型態。連段視覺間隔約 220ms，7 次約 1.62 秒播完；單次光槍週期仍依 `spec.dur` 約 0.3 秒運作。
 - 允許修改：`css/style.css`、`js/battle-renderer.js`、`js/vfx.js`、`js/skills2.js`、`tests/skill2-vfx.test.cjs`、`docs/AI_TASKS.md`
 - 禁止修改：其它技能數值與特效、傷害公式、存檔格式。
-- 驗收條件：DOM 與 Canvas 都能看到由我方端向前的漸進顯現；連續多段突刺不因單次動畫週期過長而拖慢整體節奏。
-- 驗證結果：突刺／Worker shim 相關測試 36/36 通過；`npm.cmd run build` 278/278 通過；`git diff --check` 通過。每次光槍以約 0.3 秒為基準，顯現／完整／淡出比例由動畫百分比控制。
+- 驗收條件：DOM 與 Canvas 都能看到由我方端向前飛出的連段；最後一次完整顯現並淡出；連續多段突刺在可辨識的節奏內完成。
+- 驗證結果：突刺／Worker shim 相關測試 37/37 通過；`npm.cmd run build` 278/278 通過；`git diff --check` 通過。非最後段以飛行距離與淡出比例播放，最後段以顯現／完整／淡出比例播放。
 - 完成後交給：使用者確認實機畫面。
 
 ## Codex：修正突刺光槍長度傳遞與多段特效次數（2026-08-15）
@@ -74,13 +74,13 @@
 - 狀態：已完成（待使用者確認）
 - 任務分類：戰鬥飄字顯示／可讀性修正
 - 負責 AI：Codex
-- 任務內容：技能名稱與技能傷害合併飄字不再從人物中心出現；依既有隨機左右方向，初始向左／右偏移約 120px（相當於再外移一個戰鬥大格），並保留小幅向外漂移；總傷害字顯示時間固定為一般技能名稱／傷害字 1.05 秒的 2 倍，即 2.1 秒。
-- 允許修改：`docs/AI_TASKS.md`、`js/battle-renderer.js`、`js/ui.js`、`css/style.css`、`index.html`、`tests/player-event-float.test.cjs`
+- 任務內容：技能名稱與技能傷害合併飄字不再從人物中心出現；依既有隨機左右方向，初始向左／右偏移約 120px（相當於再外移一個戰鬥大格），並保留小幅向外漂移；總傷害字顯示時間固定為一般技能名稱／傷害字 1.05 秒的 2 倍，即 2.1 秒；延遲飛行物技能必須等實際傷害結算後顯示總數字，Canvas 初始化期間不得遺失浮字。
+- 允許修改：`docs/AI_TASKS.md`、`js/battle-renderer.js`、`js/skills2.js`、`js/ui.js`、`index.html`、`tests/battle-skill-hover.test.cjs`、`tests/player-event-float.test.cjs`、`tests/skill2-system.test.cjs`
 - 禁止修改：技能數值、技能排程、Worker Protocol、存檔格式與其他 AI 進行中任務內容。
-- 前置依賴：既有 `floatPlayerSkillCast` 方向 class、DOM／Canvas 雙路徑與玩家飄字碰撞定位已存在；目標檔案衝突預檢無來源。
+- 前置依賴：既有 `floatPlayerSkillCast` 方向 class、DOM／Canvas 雙路徑與玩家飄字碰撞定位已存在；新版技能飛行物以 `out.dmg` 聚合命中傷害；目標檔案衝突預檢無來源。
 - 測試要求：玩家技能飄字定向測試、相關 JavaScript 語法檢查、`npm.cmd run build`、`git diff --check`。
-- 完成條件：DOM 與 Canvas 技能名稱／傷害飄字皆以人物中心左右約 120px 為起點，且左右方向一致；總傷害字在所有顯示路徑皆維持一般字的 2 倍時長。
-- 驗證結果：`tests/player-event-float.test.cjs` 23/23；`node --check js/battle-renderer.js`、`node --check js/ui.js` 通過；`npm.cmd run build` 278/278；`git diff --check` 通過。
+- 完成條件：DOM 與 Canvas 技能名稱／傷害飄字皆以人物中心左右約 120px 為起點，且左右方向一致；總傷害字在所有顯示路徑皆維持一般字的 2 倍時長；延遲命中技能顯示最終總傷害，Canvas 初始化期間的浮字不遺失。
+- 驗證結果：`tests/player-event-float.test.cjs` 23/23、`tests/skill2-system.test.cjs` 24/24、`tests/skill2-vfx.test.cjs` 8/8；`node --check js/battle-renderer.js`、`node --check js/skills2.js`、`node --check js/ui.js` 通過；`npm.cmd run build` 278/278；完整 `npm.cmd test` 1398/1398；`git diff --check` 通過。
 - 需要 Claude Review：否，屬顯示位置局部修正。
 - 需要 Antigravity 驗證：建議，確認不同技能名稱長度與傷害數字不再遮住人物中心或互相重疊。
 - 已知風險：尚未進行瀏覽器實機畫面驗證。

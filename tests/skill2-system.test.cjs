@@ -271,6 +271,31 @@ test('突刺·超連刺與貫穿突刺：平行路徑上的目標都吃到飛行
   assert.equal(calls.length, 24, '飛行物追加命中後應消失');
 });
 
+test('延遲飛行物技能：等所有飛行物結算後才顯示含總傷害的技能字', () => {
+  const c = loadContext();
+  const calls = stubHits(c);
+  const floats = [];
+  c.floatText = (...args) => floats.push(args);
+  c.chance = () => false;
+  c.G.player.skills2.levels.thrust = [1, 1, 1, 1, 1, 1, 0];
+  const p = playerEnt();
+  const a = enemy(1e9, 30, 0);
+  const out = c.castSkill2(p, [a], 'thrust', 'pv-float');
+  assert.equal(out.dmg, 0, '飛行物尚未命中時不能提前取總傷害');
+  const skillFloats = () => floats.filter((args) => String(args[2] || '').includes('skill-cast-total'));
+  assert.equal(skillFloats().length, 0, '尚未命中時不得只顯示技能名稱');
+  c.GT = 0.5;
+  c.tickSkill2(0.5, { pEnt: p, getEnemies: () => [a], floatSel: 'pv-float', onDeaths() {} });
+  c.GT = 1.0;
+  c.tickSkill2(0.5, { pEnt: p, getEnemies: () => [a], floatSel: 'pv-float', onDeaths() {} });
+  c.GT = 1.6;
+  c.tickSkill2(0.6, { pEnt: p, getEnemies: () => [a], floatSel: 'pv-float', onDeaths() {} });
+  assert.equal(skillFloats().length, 1, '所有飛行物完成後應只顯示一次技能總字');
+  assert.match(skillFloats()[0][1], /\d/);
+  assert.equal(skillFloats()[0][3], out.dmg);
+  assert.ok(calls.length > 0);
+});
+
 test('八方突刺：八個方向連續 5 次（2＋3），所有方向目標都命中', () => {
   const c = loadContext();
   const calls = stubHits(c);
