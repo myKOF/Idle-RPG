@@ -160,11 +160,15 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
 function playCombatVfx(spec) {
   _diag(SHIM_DIAG.ui, 'playCombatVfx');
   if (!spec) return;
+  var thrustVariant = spec.variant === 'thrust' || spec.variant === 'thrust-pierce' ||
+    spec.variant === 'thrust-parallel' || spec.variant === 'thrust-octagonal';
   shimPushEvent('vfx', {
     fxKind: spec.fxKind, glyph: spec.glyph, color: spec.color,
     targets: spec.targets || [], cells: spec.cells || null,
     area: spec.area || null,
-    dur: spec.dur, count: spec.count,
+    dur: spec.dur, count: thrustVariant
+      ? Math.min(8, Math.max(1, Number(spec.count) || 1))
+      : spec.count,
     // travelMs 必須一起送：傷害數字的延遲用的是這組數字，投射物動畫沒拿到就會用
     // 預設長度，變成「數字到了子彈還在飛」——與 v11 反過來的走鐘。
     travelMs: spec.travelMs || null,
@@ -172,7 +176,12 @@ function playCombatVfx(spec) {
     // 少送任何一個，顯示層都會退回單色預設畫法——所以新增欄位務必同步列在這裡。
     elem: spec.elem || null, cat: spec.cat || null,
     variant: spec.variant || null,
-    delayMs: (spec.delayMs > 0) ? spec.delayMs : 0
+    delayMs: (spec.delayMs > 0) ? spec.delayMs : 0,
+    projectile: !!spec.projectile,
+    lineLength: Number(spec.lineLength) > 0 ? Number(spec.lineLength) : null,
+    lineWidth: Number(spec.lineWidth) > 0 ? Number(spec.lineWidth) : null,
+    laneOffsets: Array.isArray(spec.laneOffsets) ? spec.laneOffsets.slice(0, 3) : null,
+    directionCount: Number(spec.directionCount) > 0 ? Number(spec.directionCount) : null
   });
 }
 

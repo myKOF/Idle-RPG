@@ -10,7 +10,7 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=19', 'shim.js');
+importScripts('protocol.js?v=20', 'shim.js?v=2');
 importScripts(
   '../util.js?v=20260814-skill-summary', '../data.js?v=20260813-earth-recovery', '../status.js?v=20260814-skill2-counter-bloodrage', '../formula.js?v=20260814-skill2-counter-bloodrage', '../battlefield.js?v=20260813-skills2-rework', '../stats.js',
   '../item.js?v=20260805-tasks',

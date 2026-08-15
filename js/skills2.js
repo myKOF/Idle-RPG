@@ -664,9 +664,9 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   if (lvs[2] > 0) pct += sgVal(t[2].fx, 'pct', lvs[2]);
   if (lvs[6] > 0) pct += sgVal(t[6].fx, 'pct', lvs[6]);
 
-  // 第 1 階本身是兩段；第 2 階觸發時再追加兩段；第 7 階把總段數至少提升到三段。
+  // 說明中的次數要逐項累加：第 1 階兩次；第 7 階再加三次；第 2 階觸發時再加兩次。
   var thrustCount = Math.max(1, Math.floor(Number(t[0].fx.count) || 2));
-  if (lvs[6] > 0) thrustCount = Math.max(thrustCount, Math.floor(Number(t[6].fx.count) || 3));
+  if (lvs[6] > 0) thrustCount += Math.max(1, Math.floor(Number(t[6].fx.count) || 3));
   if (lvs[1] > 0 && chance(sgVal(t[1].fx, 'chance', lvs[1]))) {
     thrustCount += Math.max(1, Math.floor(Number(t[1].fx.count) || 2));
   }
@@ -679,7 +679,8 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   if (lvs[5] > 0) lineLen += bfMeterPx(sgVal(t[5].fx, 'm', lvs[5]));
   var lineWidth = bfMeterPx(sgVal(t[0].fx, 'width', lvs[0]) || 2) * rangeScale;
   var isEightWay = lvs[6] > 0;
-  var isParallel = !isEightWay && lvs[3] > 0;
+  // 第 4 階的三道平行路徑與第 7 階的八方方向可同時存在；高階效果不覆蓋低階效果。
+  var isParallel = lvs[3] > 0;
   var directions = [0];
   var directionCount = isEightWay ? Math.max(1, Math.floor(Number(t[6].fx.directions) || 8)) : 1;
   if (isEightWay) {
@@ -716,7 +717,7 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var thrustVariant = isEightWay ? 'thrust-octagonal' : (isParallel ? 'thrust-parallel' :
     (lvs[5] > 0 ? 'thrust-pierce' : 'thrust'));
   sgEmitVfx('thrust', planned, floatSel, {
-    fxKind: 'slash', variant: thrustVariant, count: Math.min(5, thrustCount), projectile: isPiercing,
+    fxKind: 'slash', variant: thrustVariant, count: Math.min(8, thrustCount), projectile: isPiercing,
     lineLength: lineLen, lineWidth: Math.max(28, lineWidth), laneOffsets: laneOffsets,
     directionCount: directionCount
   });
