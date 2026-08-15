@@ -189,7 +189,7 @@ function statusEntries(ent) {
   if (ent.buffs && ent.buffs.shield && ent.buffs.shield.until > GT && (ent.shield || 0) > 0) {
     def = statusDef('shield');
     out.push({ sid: 'shield', name: def.name, icon: def.icon, kind: def.kind, effect: 'shield',
-      until: ent.buffs.shield.until, remain: ent.buffs.shield.until - GT,
+      until: ent.buffs.shield.until, remain: ent.buffs.shield.until - GT, dur: ent.buffs.shield.dur || (def && def.dur) || 0,
       val: Math.max(0, ent.shield || 0), dps: 0, stacks: 1 });
   }
   if (ent.effects) {
@@ -199,7 +199,7 @@ function statusEntries(ent) {
       def = statusDef(sid);
       out.push({ sid: sid, name: def ? def.name : k, icon: def ? def.icon : '❗',
         kind: def ? def.kind : 'ctrl', effect: def ? def.effect : 'ctrl',
-        until: ent.effects[k], remain: ent.effects[k] - GT, val: 0, dps: 0, stacks: 1 });
+        until: ent.effects[k], remain: ent.effects[k] - GT, dur: (def && def.dur) || (ent.effects[k] - GT), val: 0, dps: 0, stacks: 1 });
     }
   }
   if (ent.dots) {
@@ -210,7 +210,7 @@ function statusEntries(ent) {
       def = statusDef(sid);
       out.push({ sid: sid, name: def ? def.name : (d.name || '持續傷害'), icon: def ? def.icon : '🩸',
         kind: def ? def.kind : 'debuff', effect: 'dot',
-        until: d.until, remain: d.until - GT, val: 0, dps: d.dps || 0, stacks: d.stacks || 1 });
+        until: d.until, remain: d.until - GT, dur: d.dur || (def && def.dur) || (d.until - GT), val: 0, dps: d.dps || 0, stacks: d.stacks || 1 });
     }
   }
   if (ent.buffs) {
@@ -222,7 +222,7 @@ function statusEntries(ent) {
       def = statusDef(sid);
       out.push({ sid: sid, name: def ? def.name : k, icon: def ? def.icon : '💪',
         kind: def ? def.kind : 'buff', effect: def ? def.effect : 'stat',
-        until: b.until, remain: b.until - GT, val: b.val || 0, dps: 0, stacks: b.stacks || 1 });
+        until: b.until, remain: b.until - GT, dur: b.dur || (def && def.dur) || (b.until - GT), val: b.val || 0, dps: 0, stacks: b.stacks || 1 });
     }
   }
   return out;

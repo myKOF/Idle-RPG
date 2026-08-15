@@ -2821,11 +2821,10 @@ function battleBuffBadgeKey(e) {
 }
 
 function battleBuffBadgeMarkup(st) {
-  return '<div class="' + st.cls + '" data-buff-key="' + esc(st.key) + '" data-snap-until="' + st.until + '" data-snap-gt="' + st.snapshotGt + '" data-tt-title="' + esc(st.ttTitle) + '" data-tt-desc="' + esc(st.ttDesc) + '">' +
+  return '<div class="' + st.cls + '" data-buff-key="' + esc(st.key) + '" data-snap-dur="' + st.dur + '" data-snap-until="' + st.until + '" data-snap-gt="' + st.snapshotGt + '" data-tt-title="' + esc(st.ttTitle) + '" data-tt-desc="' + esc(st.ttDesc) + '">' +
     '<span class="bbb-icon">' + st.icon + '</span>' +
-    '<span class="bbb-name">' + esc(st.name + st.stackText) + '</span>' +
-    (st.valText ? '<span class="bbb-val">' + esc(st.valText) + '</span>' : '') +
-    (st.remainText ? '<span class="bbb-remain">' + esc(st.remainText) + '</span>' : '') +
+    '<span class="bbb-cd-mask" style="--cd-deg: ' + st.cdDeg + ';"></span>' +
+    (st.stacks > 1 ? '<span class="bbb-stacks">' + st.stacks + '</span>' : '') +
     '</div>';
 }
 
@@ -2833,6 +2832,7 @@ function syncBattleBuffBadge(badge, st) {
   if (!badge) return;
   badge.className = st.cls;
   badge.setAttribute('data-buff-key', st.key);
+  badge.setAttribute('data-snap-dur', st.dur);
   badge.setAttribute('data-snap-until', st.until);
   badge.setAttribute('data-snap-gt', st.snapshotGt);
   badge.setAttribute('data-tt-title', st.ttTitle);
@@ -2840,32 +2840,33 @@ function syncBattleBuffBadge(badge, st) {
 
   var iconEl = badge.querySelector('.bbb-icon');
   if (iconEl) setTextIfChanged(iconEl, st.icon);
+
+  var maskEl = badge.querySelector('.bbb-cd-mask');
+  if (!maskEl) {
+    maskEl = document.createElement('span');
+    maskEl.className = 'bbb-cd-mask';
+    badge.appendChild(maskEl);
+  }
+  maskEl.style.setProperty('--cd-deg', st.cdDeg);
+
+  var stacksEl = badge.querySelector('.bbb-stacks');
+  if (st.stacks > 1) {
+    if (!stacksEl) {
+      stacksEl = document.createElement('span');
+      stacksEl.className = 'bbb-stacks';
+      badge.appendChild(stacksEl);
+    }
+    setTextIfChanged(stacksEl, String(st.stacks));
+  } else if (stacksEl) {
+    stacksEl.remove();
+  }
+
   var nameEl = badge.querySelector('.bbb-name');
-  if (nameEl) setTextIfChanged(nameEl, st.name + st.stackText);
-
+  if (nameEl) nameEl.remove();
   var valEl = badge.querySelector('.bbb-val');
-  if (st.valText) {
-    if (!valEl) {
-      valEl = document.createElement('span');
-      valEl.className = 'bbb-val';
-      badge.insertBefore(valEl, badge.querySelector('.bbb-remain') || null);
-    }
-    setTextIfChanged(valEl, st.valText);
-  } else if (valEl) {
-    valEl.remove();
-  }
-
+  if (valEl) valEl.remove();
   var remainEl = badge.querySelector('.bbb-remain');
-  if (st.remainText) {
-    if (!remainEl) {
-      remainEl = document.createElement('span');
-      remainEl.className = 'bbb-remain';
-      badge.appendChild(remainEl);
-    }
-    setTextIfChanged(remainEl, st.remainText);
-  } else if (remainEl) {
-    remainEl.remove();
-  }
+  if (remainEl) remainEl.remove();
 }
 
 function renderBattleBuffBar(pEnt, snapshotGt) {
@@ -2899,12 +2900,17 @@ function renderBattleBuffBar(pEnt, snapshotGt) {
     } else if (e.dps) {
       valText = fmt(Math.round(e.dps)) + '/s';
     }
-    var stackText = statusStackSuffix(e);
-    var remainText = remain > 0 ? (remain >= 10 ? Math.ceil(remain) + 's' : fmt1(remain) + 's') : '';
+    var stackCount = (typeof e.stacks === 'number' && e.stacks > 1) ? e.stacks : 1;
+    var stackText = stackCount > 1 ? ' (' + stackCount + '層)' : '';
+    var dur = (typeof e.dur === 'number' && e.dur > 0) ? e.dur : (def && def.dur ? def.dur : remain);
+    if (!dur || dur <= 0) dur = Math.max(remain, 1);
+
+    var cdRatio = dur > 0 ? clamp(remain / dur, 0, 1) : 0;
+    var cdDeg = (cdRatio * 360).toFixed(1) + 'deg';
 
     var ttTitle = (e.icon || '✨') + ' ' + (e.name || e.sid) + (e.effect === 'stat' && e.val ? (e.kind === 'debuff' ? '↓' : '↑') : '') + stackText;
     var ttDesc = (def && def.desc ? def.desc + ' ' : '') +
-      (valText ? '數值：' + valText + ' ' : '') +
+      (valText ? (e.effect === 'shield' ? '護盾吸收量：' : '數值：') + valText + ' ' : '') +
       (remain > 0 ? '剩餘 ' + fmt1(remain) + ' 秒' : '');
 
     states.push({
@@ -2914,8 +2920,10 @@ function renderBattleBuffBar(pEnt, snapshotGt) {
       icon: e.icon || '✨',
       cls: cls,
       valText: valText,
+      stacks: stackCount,
       stackText: stackText,
-      remainText: remainText,
+      dur: dur,
+      cdDeg: cdDeg,
       until: e.until || 0,
       snapshotGt: gt,
       ttTitle: ttTitle,
@@ -3231,15 +3239,18 @@ function updateBattleSkillBarCds() {
       var bBadge = buffBar.children[bi];
       var bUntil = Number(bBadge.getAttribute('data-snap-until')) || 0;
       var bSnapGt = Number(bBadge.getAttribute('data-snap-gt')) || 0;
+      var bDur = Number(bBadge.getAttribute('data-snap-dur')) || 0;
       if (bUntil <= 0) continue;
       var bRemain = uiCountdownRemain(Math.max(0, bUntil - bSnapGt), bSnapGt);
-      var bRemainEl = bBadge.querySelector('.bbb-remain');
+      var bMask = bBadge.querySelector('.bbb-cd-mask');
       if (bRemain > 0) {
         hasActive = true;
-        var bTxt = bRemain >= 10 ? Math.ceil(bRemain) + 's' : fmt1(bRemain) + 's';
-        if (bRemainEl) setTextIfChanged(bRemainEl, bTxt);
-      } else if (bRemainEl) {
-        setTextIfChanged(bRemainEl, '');
+        if (bDur <= 0) bDur = Math.max(bRemain, 1);
+        var bRatio = clamp(bRemain / bDur, 0, 1);
+        var bDeg = (bRatio * 360).toFixed(1) + 'deg';
+        if (bMask) bMask.style.setProperty('--cd-deg', bDeg);
+      } else if (bMask) {
+        bMask.style.setProperty('--cd-deg', '0deg');
       }
     }
   }
