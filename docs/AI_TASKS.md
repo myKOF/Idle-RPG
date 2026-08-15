@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## Codex：技能視覺事件低延遲傳遞（2026-08-15）
+
+- 狀態：已完成（2026-08-15）
+- 任務分類：Worker／UI 事件時序與技能施放體感
+- 負責 AI：Codex
+- 任務內容：保留 Worker 單一遊戲時鐘與每技能獨立 CD；新增技能施放飄字／重要 VFX 的低延遲訊息通道，避免等待一般 0.2 秒 tick 批次。一般日誌、資源與面板資料仍維持批次傳送。
+- 允許修改：`docs/AI_TASKS.md`、`docs/WORKER_PROTOCOL.md`、`js/worker/protocol.js`、`js/worker/shim.js`、`js/worker/sim.worker.js`、`js/bridge.js`、`js/ui.js`、`index.html`、`tests/worker-shim.test.cjs`、`tests/worker-protocol.test.cjs`、`tests/p5a-protocol-crosscheck.test.cjs`、`tests/ui-worker-events.test.cjs`
+- 禁止修改：技能數值、技能 CD／施放硬直規則、傷害公式、存檔格式與非視覺 Worker 事件語意。
+- 前置依賴：現有 `skillCds`／ready queue 已分技能獨立運作；`shimPushEvent` 已集中收集 Worker UI 事件；主執行緒已有視覺事件 frame budget。
+- 測試要求：Worker protocol／shim／UI 事件路徑定向測試、相關 JavaScript 語法檢查、`npm.cmd run build`、完整 `npm.cmd test`、`git diff --check`。
+- 完成條件：技能施放浮字與重要 VFX 不再等待一般 tick；同一模擬步驟內的視覺事件最多合併成一則低延遲訊息；背景分頁與事件上限行為不回歸；協議版本與快取版號同步。
+- 驗證結果：定向 Worker／UI 事件測試 40/40；`node --check`（protocol、shim、sim.worker、bridge、ui）通過；`npm.cmd run build` 278/278；完整 `npm.cmd test` 1400/1400；`git diff --check` 通過。
+- 已知風險：尚未進行瀏覽器實機長時間戰鬥觀察；低延遲訊息仍受主執行緒 frame budget 與瀏覽器排程影響。
+- 完成後交給：使用者確認技能施放體感。
+
 ## Codex：替換突刺光槍為窄版透明素材（2026-08-15）
 
 - 狀態：已完成（2026-08-15）

@@ -70,11 +70,26 @@ test('shim 傳遞突刺光槍的長度、方向與飛行物欄位', () => {
     fxKind: 'slash', variant: 'thrust-octagonal', count: 7, projectile: true,
     lineLength: 182.8, lineWidth: 27.6, laneOffsets: [-13.8, 0, 13.8], directionCount: 8
   });
-  assert.deepEqual(plain(context.shimDrainEvents()), [{
+  assert.deepEqual(plain(context.shimDrainUrgentVisualEvents()), [{
     kind: 'vfx', fxKind: 'slash',
     targets: [], cells: null, area: null, count: 7,
     travelMs: null, elem: null, cat: null, variant: 'thrust-octagonal', delayMs: 0,
     projectile: true, lineLength: 182.8, lineWidth: 27.6,
     laneOffsets: [-13.8, 0, 13.8], directionCount: 8
+  }]);
+});
+
+test('技能施放飄字走低延遲佇列，一般傷害字仍走 tick 批次', () => {
+  const context = loadShim();
+  context.floatText('pv-float', '🔥 技能 10', 'skill-cast skill-cast-total', 10);
+  context.floatText('mv-float-0', '10', 'enemy-skill', 10);
+
+  assert.deepEqual(plain(context.shimDrainUrgentVisualEvents()), [{
+    kind: 'float', elId: 'pv-float', text: '🔥 技能 10',
+    cls: 'skill-cast skill-cast-total', damageValue: 10, delayMs: 0
+  }]);
+  assert.deepEqual(plain(context.shimDrainEvents()), [{
+    kind: 'float', elId: 'mv-float-0', text: '10', cls: 'enemy-skill',
+    damageValue: 10, delayMs: 0
   }]);
 });

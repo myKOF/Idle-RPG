@@ -67,7 +67,7 @@ test('BOOTED 在套用 Snapshot 後轉送開機期間累積的 Worker Events', (
     WorkerBridge: {
       on: (name, handler) => { handlers[name] = handler; }
     },
-    MSG_OUT: { BOOTED: 'BOOTED', FULL: 'FULL', TICK: 'TICK', PANEL: 'PANEL' },
+    MSG_OUT: { BOOTED: 'BOOTED', FULL: 'FULL', TICK: 'TICK', VISUAL: 'VISUAL', PANEL: 'PANEL' },
     applyUiSnapshot: snapshot => calls.push(['snapshot', snapshot]),
     updateWorkerSafeModeMarker: () => calls.push(['safe-mode']),
     handleWorkerUiEvents: events => calls.push(['events', events]),
@@ -94,6 +94,11 @@ test('BOOTED 在套用 Snapshot 後轉送開機期間累積的 Worker Events', (
     ['events', events],
     ['notices', notices]
   ]);
+
+  calls.length = 0;
+  const visualEvents = [{ kind: 'float', elId: 'pv-float', text: '技能', cls: 'skill-cast' }];
+  handlers.VISUAL({ events: visualEvents });
+  assert.deepEqual(calls, [['events', visualEvents]]);
 });
 
 test('Worker log 分類優先採用 cat，並依 tower Snapshot 導向 boss log', () => {

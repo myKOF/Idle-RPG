@@ -10,7 +10,7 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=20', 'shim.js?v=2');
+importScripts('protocol.js?v=20', 'shim.js?v=3');
 importScripts(
   '../util.js?v=20260814-skill-summary', '../data.js?v=20260813-earth-recovery', '../status.js?v=20260814-skill2-counter-bloodrage', '../formula.js?v=20260814-skill2-counter-bloodrage', '../battlefield.js?v=20260813-skills2-rework', '../stats.js',
   '../item.js?v=20260805-tasks',
@@ -327,10 +327,17 @@ function simStep(dt) {
    requestPersist 把關（見該處說明），不是靠這個迴圈剛好沒呼叫自動存檔：
    onVisibility 的 SHUTDOWN 不經過這裡，只靠迴圈是擋不住的。 */
 var _detSteps = 0;
+function emitUrgentVisualEvents() {
+  if (typeof shimDrainUrgentVisualEvents !== 'function') return;
+  var events = shimDrainUrgentVisualEvents();
+  if (events.length) post(MSG_OUT.VISUAL, { events: events });
+}
+
 function deterministicLoop() {
   if (!_booted) return;
   try {
     simStep(TICK_MS / 1000);
+    emitUrgentVisualEvents();
     _detSteps++;
     if (_detSteps % Math.round(TICK_EMIT_MS / TICK_MS) === 0) {
       updateShownRes();
@@ -363,6 +370,7 @@ function loop() {
     while (_catchupDebt > 0.0001) {
       var dt = Math.min(_catchupDebt, TICK_MS / 1000);
       simStep(dt);
+      emitUrgentVisualEvents();
       _catchupDebt -= dt;
       stepped += dt;
       /* 步數上限是保險絲：計時來源若被替換成不會前進的假時鐘（既有測試就是這樣），
