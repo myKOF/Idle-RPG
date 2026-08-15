@@ -313,18 +313,33 @@ test('狂怒擊殺：狂化連殺疊連擊（+0.1/殺）、狂血盛宴延長持
   assert.equal(c.skill2ComboBonus(), 0);
 });
 
-test('狂血盛宴：每 1 連擊數讓普攻多攻擊 1 個敵人，目標數不設技能上限', () => {
+test('狂血盛宴：主目標不變，依連擊數對附近額外敵人造成普攻傷害', () => {
   const c = loadContext();
   stubHits(c);
   c.GT = 0;
   c.G.player.skills2.levels.bloodrage = [1, 1, 1, 1, 1, 1, 1];
   const primary = enemy(1e9, 40, 0);
-  const enemies = [primary, enemy(1e9, 50, 0), enemy(1e9, 60, 0), enemy(1e9, 70, 0)];
+  const nearby1 = enemy(1e9, 50, 0);
+  const nearby2 = enemy(1e9, 60, 0);
+  const far = enemy(1e9, 200, 0);
+  const enemies = [primary, nearby1, nearby2, far];
   c.castSkill2(playerEnt(), enemies, 'bloodrage', 'mv-float');
   c.getStats = () => ({ comboHits: 3 });
-  assert.equal(c.skill2RageBasicAttackTargets(primary, enemies).length, 4, '3 連擊數應同時攻擊 3 個額外敵人');
+  const targets = c.skill2RageBasicAttackTargets(primary, enemies);
+  assert.equal(targets[0], primary, '主目標應維持普攻鎖定');
+  assert.deepEqual(new Set(targets), new Set([primary, nearby1, nearby2]),
+    '額外攻擊可選附近敵人，不應選取遠端敵人');
   c.getStats = () => ({ comboHits: 9999 });
-  assert.equal(c.skill2RageBasicAttackTargets(primary, enemies).length, 4, '連擊數無上限，但目標數受存活敵人數量限制');
+  const cappedByNearby = c.skill2RageBasicAttackTargets(primary, enemies);
+  assert.equal(cappedByNearby[0], primary);
+  assert.deepEqual(new Set(cappedByNearby), new Set([primary, nearby1, nearby2]),
+    '連擊數無上限，但目標數受附近存活敵人數量限制');
+  c.getStats = () => ({ comboHits: 0 });
+  c.SKILL2_RT.rage.killCombo = 1;
+  const withKillCombo = c.skill2RageBasicAttackTargets(primary, enemies);
+  assert.equal(withKillCombo[0], primary);
+  assert.equal(withKillCombo.length, 2, '狂化連殺提供的期間連擊數也應增加額外普攻目標');
+  assert.ok([nearby1, nearby2].includes(withKillCombo[1]));
 });
 
 /* ---- 6) 血飲術反噬 ---- */
