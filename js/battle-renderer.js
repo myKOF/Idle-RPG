@@ -2230,9 +2230,10 @@ var BattleRenderer = (function () {
           });
           break;
         }
-        if (spec.variant === 'cleave' || spec.variant === 'cleave-shockwave' || spec.variant === 'cleave-back' || spec.variant === 'cleave-dual') {
+        if (spec.variant === 'cleave' || spec.variant === 'cleave-shockwave' || spec.variant === 'cleave-back' || spec.variant === 'cleave-dual' || spec.variant === 'cleave-cross' || spec.variant === 'cleave-cross-shockwave') {
           var drawForward = spec.variant === 'cleave-shockwave' || spec.variant === 'cleave-back' || spec.variant === 'cleave-dual';
           var drawBack = spec.variant === 'cleave-back' || spec.variant === 'cleave-dual';
+          var drawCross = spec.variant === 'cleave-cross' || spec.variant === 'cleave-cross-shockwave';
           var drawStaticForward = spec.variant === 'cleave';
           var frontAngle = targets.length
             ? Math.atan2(posOf(targets[0]).y - playerMuzzle().y,
@@ -2243,6 +2244,13 @@ var BattleRenderer = (function () {
             var clDelay = (baseDelay + clc * stagger) / 1000;
             var cleaveFrom = playerMuzzle();
             if (drawStaticForward) spawnCleaveArc(cleaveFrom.x, cleaveFrom.y, spec, frontAngle, clDelay);
+            if (drawCross) {
+              for (var cdi = 0; cdi < 4; cdi++) {
+                spawnCleaveArc(cleaveFrom.x, cleaveFrom.y, spec,
+                  frontAngle + cdi * Math.PI / 2, clDelay,
+                  { angle: frontAngle + cdi * Math.PI / 2, length: 120 });
+              }
+            }
             if (drawForward) spawnCleaveArc(cleaveFrom.x, cleaveFrom.y, spec, frontAngle, clDelay,
               { angle: frontAngle, length: 120 });
             if (drawBack) spawnCleaveArc(cleaveFrom.x, cleaveFrom.y, spec, frontAngle + Math.PI, clDelay,
@@ -2255,7 +2263,10 @@ var BattleRenderer = (function () {
             var targetDy = targetPt.y - cleaveFromForHits.y;
             var targetAlong = targetDx * Math.cos(frontAngle) + targetDy * Math.sin(frontAngle);
             var arcHitDelay = 90;
-            if (drawForward && targetAlong >= 0) {
+            if (drawCross) {
+              var targetDistance = Math.sqrt(targetDx * targetDx + targetDy * targetDy);
+              arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetDistance / 120)));
+            } else if (drawForward && targetAlong >= 0) {
               arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetAlong / 120)));
             } else if (drawBack && targetAlong < 0) {
               arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, -targetAlong / 120)));

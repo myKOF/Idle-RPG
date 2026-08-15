@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## Codex：將迴身雙連斬擴充為十字四向迴旋斬（2026-08-15）
+
+- 狀態：已完成
+- 任務分類：新版技能效果／迴旋斬方向表現
+- 負責 AI：Codex
+- 任務內容：將迴身雙連斬由前後兩向調整為前、後、左、右四個方向各施放 3 次迴旋斬，保留物理傷害額外 +10%。
+- 允許修改：`docs/AI_TASKS.md`、`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`、`js/skills2.js`、`js/vfx.js`、`js/battle-renderer.js`、`index.html`、`tests/skill2-system.test.cjs`、`tests/skill2-vfx.test.cjs`
+- 禁止修改：其他技能數值、Worker Protocol、存檔格式及其他 AI 進行中任務內容。
+- 前置依賴：既有迴旋斬前／後方向與 DOM／Canvas 共用弧光實作；目標檔案衝突預檢無來源。
+- 測試要求：新版技能系統／VFX 定向測試、相關 JavaScript 語法檢查、`npm.cmd run build`、完整 `npm.cmd test`、`git diff --check`，並核對 Skills2 Excel／CSV／JS 資料同步。
+- 完成條件：十字四方向各 3 次迴旋斬、物理傷害額外 +10%、DOM 與 Canvas 特效一致、快取版號同步。
+- 驗證結果：新版技能系統／VFX 定向測試 27/27；`node --check js/skills2.js`、`node --check js/vfx.js`、`node --check js/battle-renderer.js` 通過；`npm.cmd run build` 278/278；完整 `npm.cmd test` 1391/1391；`git diff --check` 通過；Skills2 Excel／CSV／JS 已同步。
+- 已知風險：尚未進行瀏覽器實機畫面驗證。
+- 完成後交給：使用者確認。
+
 ## Codex：調整迴旋斬刀光與迴身雙連斬效果（2026-08-15）
 
 - 狀態：已完成

@@ -245,12 +245,14 @@ test('貫穿突刺：直線上所有敵人都吃到每一段', () => {
   assert.equal(calls.indexOf(off), -1, '線外敵人不得命中');
 });
 
-test('迴身雙連斬：前後各斬 3 次，且物理傷害額外 +10%', () => {
+test('迴身雙連斬：前後左右各斬 3 次，且物理傷害額外 +10%', () => {
   const c = loadContext();
   const cfgs = [];
+  const hits = new Map();
   c.chance = () => false;
   c.resolveHit = function (attacker, defender, attackCfg) {
     cfgs.push(attackCfg);
+    hits.set(defender, (hits.get(defender) || 0) + 1);
     defender.hp = Math.max(0, defender.hp - 1);
     return { dmg: 1, crit: false, miss: false, blocked: false, killed: false };
   };
@@ -258,11 +260,16 @@ test('迴身雙連斬：前後各斬 3 次，且物理傷害額外 +10%', () => 
   const p = playerEnt();
   const front = enemy(1e9, 40, 0);
   const back = enemy(1e9, -40, 0);
-  c.castSkill2(p, [front, back], 'cleave', 'mv-float');
+  const right = enemy(1e9, 0, 40);
+  const left = enemy(1e9, 0, -40);
+  c.castSkill2(p, [front, back, right, left], 'cleave', 'mv-float');
 
   assert.equal(c.SKILLS2.cleave.tiers[6].fx.times, 3);
   assert.equal(c.SKILLS2.cleave.tiers[6].fx.pct, 10);
-  assert.equal(cfgs.length, 6, '前後兩個方向各 3 次，應產生 6 次命中');
+  assert.equal(cfgs.length, 12, '前後左右四個方向各 3 次，應產生 12 次命中');
+  for (const target of [front, back, right, left]) {
+    assert.equal(hits.get(target), 3, '十字四方向的每個目標都應命中 3 次');
+  }
   assert.ok(cfgs.every((cfg) => cfg.atk === 2300), '基礎 200%＋傷害強化 20%＋迴身雙連斬 10% 應為 230%');
 
   const csv = fs.readFileSync(path.join(root, 'config/CSV/Skills2.csv'), 'utf8');
