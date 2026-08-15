@@ -42,6 +42,8 @@ var BattleRenderer = (function () {
   var MAX_FLOATS = 60;           // 同時存在的飄字上限
   var FLOAT_MERGE_MS = 160;      // 同目標同類傷害的合併窗（DOM 版邏輯的簡化版）
   var LASTPOS_KEEP_MS = 3000;    // 實體移除後保留座標，讓遲到的飄字仍有落點
+  var PLAYER_SKILL_FLOAT_SIDE_OFFSET = 60; // 技能名稱／傷害離人物中心的起始左右偏移（px）
+  var PLAYER_SKILL_FLOAT_DRIFT = 16;        // 起始後只再向外滑一小段，避免回到人物中心
 
   /* 元素主題色：優先沿用 js/vfx.js 的 VFX_ELEM_THEME，載入順序異常時退回內建表。 */
   var FALLBACK_THEME = {
@@ -2517,10 +2519,14 @@ var BattleRenderer = (function () {
     var playerDamage = playerTarget &&
       (String(ev.cls || '').indexOf('mdmg') >= 0 || /^\s*(爆擊\s*)?-/.test(String(ev.text || '')));
     var skillCast = playerTarget && String(ev.cls || '').indexOf('skill-cast') >= 0;
-    /* 玩家事件分區：有益效果在角色頭頂藍區，承傷在身體紅區；技能名稱從身體中心出現。 */
+    var castLeft = String(ev.cls || '').indexOf('skill-cast-left') >= 0;
+    var castRight = String(ev.cls || '').indexOf('skill-cast-right') >= 0;
+    /* 玩家事件分區：有益效果在角色頭頂藍區，承傷在身體紅區；技能名稱／傷害從人物中心左右約 60px 出現。 */
     if (playerTarget && S.player) {
       if (skillCast) {
-        pt = { x: S.player.root.x, y: S.player.root.y - 34 };
+        var castOffset = castLeft ? -PLAYER_SKILL_FLOAT_SIDE_OFFSET
+          : (castRight ? PLAYER_SKILL_FLOAT_SIDE_OFFSET : 0);
+        pt = { x: S.player.root.x + castOffset, y: S.player.root.y - 34 };
       } else if (playerDamage) {
         pt = { x: S.player.root.x + (Math.random() * 60 - 30),
           y: S.player.root.y - 12 + Math.random() * 30 };
@@ -2540,8 +2546,6 @@ var BattleRenderer = (function () {
     placeFloatNode(node, pt.x, pt.y - 8);
     S.layers.float.addChild(node);
     var prefixMatch = /^([^0-9]*)/.exec(ev.text || '');
-    var castLeft = String(ev.cls || '').indexOf('skill-cast-left') >= 0;
-    var castRight = String(ev.cls || '').indexOf('skill-cast-right') >= 0;
     var isEnemyDamageFloat = /^mv-float-\d+$/.test(String(ev.elId || '')) &&
       (String(ev.cls || '').indexOf('enemy-attack') >= 0 ||
        String(ev.cls || '').indexOf('enemy-skill') >= 0);
@@ -2556,7 +2560,7 @@ var BattleRenderer = (function () {
       popStart: isEnemyDamageFloat ? 0.72 : 0.6,
       popPeak: isEnemyDamageFloat ? (isCritFloat ? 1.16 : 1.14) : 1.1,
       fadeTail: isEnemyDamageFloat,
-      drift: castLeft ? -72 : (castRight ? 72 : 0)
+      drift: castLeft ? -PLAYER_SKILL_FLOAT_DRIFT : (castRight ? PLAYER_SKILL_FLOAT_DRIFT : 0)
     };
     S.floats.push(f);
     if (mergeable) {
