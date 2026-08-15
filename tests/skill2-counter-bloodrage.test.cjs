@@ -290,7 +290,7 @@ test('嗜血狂怒：施放進入狂怒（RT＋增益＋冷卻＋扣魔），各
 
 /* ---- 5) 擊殺效果 ---- */
 
-test('狂怒擊殺：狂化連殺疊連擊（+0.1/殺）、狂血盛宴延長持續（+0.5 秒/殺）', () => {
+test('狂怒擊殺：狂化連殺疊連擊（+0.1/殺）、狂血盛宴延長持續（+0.5 秒/殺且無上限）', () => {
   const c = loadContext();
   stubHits(c);
   c.GT = 0;
@@ -311,6 +311,20 @@ test('狂怒擊殺：狂化連殺疊連擊（+0.1/殺）、狂血盛宴延長持
   c.tickSkill2(0.1, { pEnt: p, getEnemies: () => [], floatSel: 'mv-float', onDeaths() {} });
   c.skills2OnEnemyDeath(enemy(0, 50, 0), []);
   assert.equal(c.skill2ComboBonus(), 0);
+});
+
+test('狂血盛宴：每 1 連擊數讓普攻多攻擊 1 個敵人，目標數不設技能上限', () => {
+  const c = loadContext();
+  stubHits(c);
+  c.GT = 0;
+  c.G.player.skills2.levels.bloodrage = [1, 1, 1, 1, 1, 1, 1];
+  const primary = enemy(1e9, 40, 0);
+  const enemies = [primary, enemy(1e9, 50, 0), enemy(1e9, 60, 0), enemy(1e9, 70, 0)];
+  c.castSkill2(playerEnt(), enemies, 'bloodrage', 'mv-float');
+  c.getStats = () => ({ comboHits: 3 });
+  assert.equal(c.skill2RageBasicAttackTargets(primary, enemies).length, 4, '3 連擊數應同時攻擊 3 個額外敵人');
+  c.getStats = () => ({ comboHits: 9999 });
+  assert.equal(c.skill2RageBasicAttackTargets(primary, enemies).length, 4, '連擊數無上限，但目標數受存活敵人數量限制');
 });
 
 /* ---- 6) 血飲術反噬 ---- */
@@ -370,7 +384,7 @@ test('致命一擊不觸發反擊（與反震「致命擊不反傷」一致；�
   assert.equal(p.shield, 0, '死者不得獲得反擊盾');
 });
 
-test('狂化連殺 killCombo 與狂血盛宴延時都有上限（表定 killMax／maxSec）', () => {
+test('狂化連殺 killCombo 仍依自身參數限額、狂血盛宴延時不設上限', () => {
   const c = loadContext();
   stubHits(c);
   c.GT = 0;
@@ -380,13 +394,13 @@ test('狂化連殺 killCombo 與狂血盛宴延時都有上限（表定 killMax�
   c.castSkill2(p, [m], 'bloodrage', 'mv-float');
   const t = c.SKILLS2.bloodrage.tiers;
   const killMax = Number(t[3].fx.killMax);
-  const maxSec = Number(t[6].fx.maxSec);
-  assert.ok(killMax > 0 && maxSec > 0, '上限必須是表定參數');
+  assert.ok(killMax > 0, '狂化連殺仍應保留自身表定上限');
+  assert.equal(t[6].fx.maxSec, undefined, '狂血盛宴不得有延時上限');
   const base = Number(t[0].fx.sec);
   for (let i = 0; i < 2000; i++) c.skills2OnEnemyDeath(enemy(0, 50, 0), []);
   // 連擊加成 = 基準(0.5) + 累積上限
   assert.equal(c.skill2ComboBonus(), Number(t[3].fx.add) + killMax, 'killCombo 應被夾在上限');
-  assert.ok(c.SKILL2_RT.rage.until <= c.GT + base + maxSec + 1e-9, '狂怒剩餘時間應被夾在「基礎+上限」');
+  assert.equal(c.SKILL2_RT.rage.until, c.GT + base + 2000 * Number(t[6].fx.sec), '狂血盛宴延時應持續累加');
   assert.ok(c.skill2RageActive(), '夾上限後狂怒仍在持續中');
 });
 
