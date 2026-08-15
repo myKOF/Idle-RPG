@@ -1421,9 +1421,9 @@ var BattleRenderer = (function () {
         var fade = k > 0.68 ? 1 - (k - 0.68) / 0.32 : 1;
         g.clear();
         g.arc(0, 0, R, head - 1.15, head, false)
-          .stroke({ color: theme.c1, width: 11 * fade, alpha: 0.95 * fade, cap: 'round' });
+          .stroke({ color: theme.c1, width: 14.3 * fade, alpha: 0.95 * fade, cap: 'round' });
         g.arc(0, 0, R * 0.82, head - 0.95, head, false)
-          .stroke({ color: theme.c2, width: 4 * fade, alpha: fade, cap: 'round' });
+          .stroke({ color: theme.c2, width: 5.2 * fade, alpha: fade, cap: 'round' });
         return t < dur;
       }
     }, 1);
@@ -2231,9 +2231,9 @@ var BattleRenderer = (function () {
           break;
         }
         if (spec.variant === 'cleave' || spec.variant === 'cleave-shockwave' || spec.variant === 'cleave-back' || spec.variant === 'cleave-dual') {
-          var drawForward = spec.variant === 'cleave-shockwave' || spec.variant === 'cleave-dual';
+          var drawForward = spec.variant === 'cleave-shockwave' || spec.variant === 'cleave-back' || spec.variant === 'cleave-dual';
           var drawBack = spec.variant === 'cleave-back' || spec.variant === 'cleave-dual';
-          var drawStaticForward = spec.variant === 'cleave' || spec.variant === 'cleave-back';
+          var drawStaticForward = spec.variant === 'cleave';
           var frontAngle = targets.length
             ? Math.atan2(posOf(targets[0]).y - playerMuzzle().y,
               posOf(targets[0]).x - playerMuzzle().x)

@@ -1,5 +1,39 @@
 # AI_TASKS.md
 
+## Codex：調整迴旋斬刀光與迴身雙連斬效果（2026-08-15）
+
+- 狀態：已完成
+- 任務分類：新版技能 VFX／刀光可讀性
+- 負責 AI：Codex
+- 任務內容：將迴旋斬既有刀光的線寬提高 30%，並使迴身雙連斬在前後兩個方向各使出 3 次迴旋斬，物理傷害額外 +10%；DOM 與 Canvas 渲染保持一致。
+- 允許修改：`docs/AI_TASKS.md`、`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`、`js/skills2.js`、`css/style.css`、`js/battle-renderer.js`、`index.html`、`tests/skill2-system.test.cjs`、`tests/skill2-vfx.test.cjs`
+- 禁止修改：其他技能數值、Worker Protocol、存檔格式及其他 AI 進行中任務內容。
+- 前置依賴：既有迴旋斬 DOM／Canvas 弧光、前後方向共用實作與 Skills2 Excel／CSV／JS 同步流程；目標檔案衝突預檢無來源。
+- 測試要求：新版技能系統／VFX 定向測試、相關 JavaScript 語法檢查、`npm.cmd run build`、完整 `npm.cmd test`（記錄其他進行中任務失敗）、`git diff --check`，並核對 Skills2 Excel／CSV／JS 資料同步。
+- 完成條件：迴旋斬弧光線寬在兩條渲染路徑均提高 30%；迴身雙連斬每方向 3 次且物理傷害額外 +10%；快取版號同步，測試與差異檢查完成。
+- 驗證結果：新版技能系統／VFX 定向測試 27/27；`node --check js/skills2.js`、`node --check js/vfx.js`、`node --check js/battle-renderer.js` 通過；`npm.cmd run build` 278/278；完整 `npm.cmd test` 1385/1388，3 個失敗均來自其他進行中 `js/skills.js` 任務；`git diff --check` 通過；Skills2 Excel／CSV／JS 已同步。
+- 已知風險：完整回歸中的 3 個 `js/skills.js` 相關失敗不屬本次修改；尚未進行瀏覽器實機畫面驗證。
+- 完成後交給：使用者確認。
+
+## Codex：加速技能列就緒監視與自動施放（2026-08-15）
+
+- 狀態：已完成（待使用者確認）
+- 任務分類：技能排程／戰鬥效能修正
+- 負責 AI：Codex
+- 任務內容：修正技能冷卻完成後仍因裝載欄逐次掃描而延遲施放的問題；每個技能在冷卻歸零時加入獨立就緒佇列，符合法力、目標與 AI 條件時立即進入施放。預設施放硬直與每技能最短施放間隔均由參數表讀取，目前配置值皆為 0.2 秒。
+- 技術影響：調整 `js/skills.js` 的技能就緒排程與配置驅動的預設施放硬直；保留每技能自身最短施放間隔與明確 `castTime` 技能的施法時間，不修改技能數值、戰鬥公式、存檔格式或 Worker Protocol。
+- 允許修改：`docs/AI_TASKS.md`、`js/skills.js`、`js/formula.js`、`config/CSV/game_parameters.csv`、`game_formula.md`、`js/worker/sim.worker.js`、`index.html`、`js/bridge.js`、`tests/skill-gcd.test.cjs`、`tests/skill2-system.test.cjs`
+- 禁止修改：技能數值與公式、存檔格式、Worker Protocol、UI 顯示邏輯及其他 AI 進行中任務檔案。
+- 前置依賴：既有 `skillCds` 冷卻、`markSkillReady` 與單一玩家戰鬥實體已存在；目標檔案衝突預檢無來源。
+- 測試要求：技能就緒佇列／大量裝載技能延遲回歸測試、`node --check js/skills.js`、`npm.cmd run build`、相關技能測試、`git diff --check`。
+- 完成條件：技能 CD 歸零後立即由獨立就緒佇列處理，不依裝載欄長度累積掃描延遲；條件不符的技能不阻塞其他已就緒技能；施放硬直與每技能最短間隔皆讀配置表；主頁與 Worker 快取版號同步。
+- 驗證結果：技能就緒佇列定向測試 34/34；`node --check js/skills.js`、`node --check js/formula.js`、`node --check js/bridge.js`、`node --check js/worker/sim.worker.js` 通過；`npm.cmd run build` 278/278；完整 `npm.cmd test` 1391/1391；`git diff --check` 通過。
+- 已知風險：尚未進行瀏覽器實機畫面驗證；明確 `castTime` 技能仍沿用單一玩家的施放硬直流程。
+- 需要 Claude Review：否，屬既有技能排程的局部修正；若驗證發現跨模組語意風險再回報。
+- 需要 Antigravity 驗證：建議，確認多技能裝載時 CD 歸零、法力不足、治療條件與目標距離條件的實機施放節奏。
+- 完成後交給：使用者確認後合併至整合分支。
+
+
 ## Codex：調整震碎斬與迴身雙連斬的共用迴旋斬特效（2026-08-15）
 
 - 狀態：已完成

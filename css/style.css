@@ -6840,7 +6840,7 @@ textarea:disabled,
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 6px solid transparent;
+  border: 7.8px solid transparent;
   border-top-color: var(--vfx-c1, #fff);
   filter: drop-shadow(0 0 10px var(--vfx-glow, #fff));
   animation: vfxCleaveArc ease-out both;
@@ -6850,7 +6850,7 @@ textarea:disabled,
 
 .vfx-cleave-arc::after {
   border-top-color: var(--vfx-c2, #fff);
-  border-width: 2px;
+  border-width: 2.6px;
   animation-name: vfxCleaveArcB;
 }
 

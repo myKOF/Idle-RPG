@@ -66,31 +66,24 @@ function playerEntity() {
   };
 }
 
-test('different skills can cast back-to-back while each skill keeps its own cooldown', () => {
+test('different skills keep independent cooldowns while cast lock comes from config', () => {
   const context = loadGameContext();
   const player = playerEntity();
 
   const first = context.pickAndCastSkill(player, null, 'float-layer');
   assert.equal(first && typeof first, 'object');
   assert.equal(first.casting, true);
-  assert.equal(player._skillCastRemaining, 0.4);
-  assert.equal(player.skillCds.timeWarp || 0, 0);
+  assert.equal(first.castTime, context.SKILL_CAST_LOCK);
+  assert.equal(player._skillCastRemaining, context.SKILL_CAST_LOCK);
+  context.tickSkillCast(player, context.SKILL_CAST_LOCK);
+  assert.equal(player.skillCds.timeWarp, 8);
   assert.equal(player.atkCd, 0, '技能施放不應增加普攻計時器');
 
-  const blocked = context.pickAndCastSkill(player, null, 'float-layer');
-  assert.equal(blocked, null);
-  assert.equal(player.skillCds.treasureSense || 0, 0);
-
-  context.tickSkillCast(player, 0.39);
-  assert.equal(context.pickAndCastSkill(player, null, 'float-layer'), null);
-
-  const completed = context.tickSkillCast(player, 0.01);
-  assert.equal(completed.completed, true);
-  assert.equal(player.skillCds.timeWarp, 8);
   const second = context.pickAndCastSkill(player, null, 'float-layer');
   assert.equal(second && typeof second, 'object');
   assert.equal(second.casting, true);
-  context.tickSkillCast(player, 0.4);
+  assert.equal(second.castTime, context.SKILL_CAST_LOCK);
+  context.tickSkillCast(player, context.SKILL_CAST_LOCK);
   assert.equal(player.skillCds.treasureSense, 12);
   assert.equal(player.skillGcd, undefined);
   assert.equal(player.atkCd, 0, '技能自身冷卻與普攻計時器應彼此獨立');
@@ -108,6 +101,7 @@ test('技能依冷卻歸零先後輪轉，前排短 CD 不會在首輪壟斷後�
     cdr: 0, castSpeed: 0, hp: 1000, mp: 100000, atk: 100, matk: 100,
     aoeDmg: 0
   });
+  ids.forEach((id) => { context.SKILLS[id].fx.castTime = 0; });
   context.castSkill = (player, target, id) => {
     calls.push(id);
     player.skillCds[id] = context.skillCdFor(context.skillDef(id));
@@ -118,7 +112,6 @@ test('技能依冷卻歸零先後輪轉，前排短 CD 不會在首輪壟斷後�
 
   for (let i = 0; i < ids.length; i += 1) {
     assert.ok(context.pickAndCastSkill(player, target, 'float-layer'));
-    context.tickSkillCast(player, 0.4);
     context.tickSkillCds(player, 0.4);
   }
 
@@ -217,7 +210,7 @@ test('the same skill is still blocked by its own cooldown and receives the minim
 
   const first = context.pickAndCastSkill(player, null, 'float-layer');
   assert.equal(first && first.casting, true);
-  context.tickSkillCast(player, 0.4);
+  context.tickSkillCast(player, context.SKILL_CAST_LOCK);
   assert.equal(player.skillCds.timeWarp, 8);
   assert.equal(context.pickAndCastSkill(player, null, 'float-layer'), null);
   assert.equal(player.skillGcd, undefined);
@@ -242,6 +235,49 @@ test('技能可用 castTime: 0 明確略過預設施法停頓', () => {
   const result = context.pickAndCastSkill(player, target, 'float-layer');
   assert.equal(result.casting, undefined);
   assert.equal(player._skillCastRemaining || 0, 0);
+  assert.ok(target.hp < 10000);
+});
+
+test('就緒佇列會跳過條件不符的技能，不讓後面的技能等待掃描輪次', () => {
+  const context = loadGameContext();
+  context.G.player.skills = { healWound: 1, powerSlash: 1 };
+  context.G.player.loadout = ['healWound', 'powerSlash'];
+  context.getStats = () => ({
+    cdr: 0, castSpeed: 0, hp: 1000, mp: 1000, atk: 100, matk: 100,
+    aoeDmg: 0, critRate: 0, critDmg: 150, pPen: 0, mPen: 0,
+    passives: {}, lifesteal: 0, manaSteal: 0, shieldEff: 0
+  });
+  context.SKILLS.powerSlash.fx.castTime = 0;
+  const calls = [];
+  context.castSkill = (player, target, id) => {
+    calls.push(id);
+    player.skillCds[id] = context.skillCdFor(context.skillDef(id));
+    return { killed: false, dmg: 0 };
+  };
+  const player = playerEntity();
+  player.hp = 900; // healWound 的 hurt70 條件不成立
+  assert.ok(context.pickAndCastSkill(player, { hp: 1000 }, 'float-layer'));
+  assert.deepEqual(calls, ['powerSlash']);
+  assert.equal(player._skillReadyQueued.healWound, true, '條件不符的技能仍應保留獨立監視');
+});
+
+test('明確 castTime 仍可為單一技能保留施法時間', () => {
+  const context = loadGameContext();
+  context.G.player.skills = { powerSlash: 1 };
+  context.G.player.loadout = ['powerSlash'];
+  context.SKILLS.powerSlash.fx.castTime = 0.4;
+  context.castSkill = (player, target, id) => {
+    player.skillCds[id] = context.skillCdFor(context.skillDef(id));
+    target.hp -= 1;
+    return { killed: false, dmg: 1 };
+  };
+  const player = playerEntity();
+  const target = { hp: 10000, maxHp: 10000, def: 0, mdef: 0, resist: {},
+    dodge: 0, ctrlRes: 0, elite: false, isBoss: false, buffs: {}, dots: [], effects: {}, shield: 0 };
+  const started = context.pickAndCastSkill(player, target, 'float-layer');
+  assert.equal(started.casting, true);
+  assert.equal(player._skillCastRemaining, 0.4);
+  context.tickSkillCast(player, 0.4);
   assert.ok(target.hp < 10000);
 });
 

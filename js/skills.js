@@ -13,7 +13,11 @@
    敵人側印記等狀態掛敵人實體（純 JSON 資料、until 時戳自然過期）；
    時間基準沿用 applyBuff/applyDot 同一時鐘 GT（js/util.js 遊戲時鐘，秒）。
    欄位一律由 resetSkillRT() 重建，戰鬥/關卡切換與讀檔進入點呼叫（比照 skillCds 重置位置）。 */
-var SKILL_CAST_DEFAULT_SEC = 0.4;
+/* 自動施放的預設施放硬直由 formula.js 的 SKILL_CAST_LOCK 讀取參數表；
+   就緒監視器只負責讓 CD 歸零且條件成立的技能立即進入施放，不再因裝載欄長度延後。
+   每技能自身最短施放間隔同樣由公式層讀取參數表；個別技能仍可用 castTime 覆寫。 */
+var SKILL_CAST_DEFAULT_SEC = (typeof SKILL_CAST_LOCK === 'number' &&
+  isFinite(SKILL_CAST_LOCK) && SKILL_CAST_LOCK >= 0) ? SKILL_CAST_LOCK : 0;
 var SKILL_CAST_RT = [];
 var SKILL_RT = null;
 function resetSkillRT() {
@@ -2899,27 +2903,59 @@ function targetHasDot(ent, name) {
   return false;
 }
 
-/* 技能就緒順序（執行期狀態，不入存檔）：
-   技能冷卻歸零時加入尾端；施放後等下一次冷卻歸零再重新排隊。
-   這樣前排短 CD 技能不會因為固定掃描裝載欄而壟斷施放機會。 */
+/* 技能就緒監視器（執行期狀態，不入存檔）：
+   每個技能的冷卻獨立倒數；歸零時只把該技能加入就緒佇列。
+   施放前不再解析／排序整個裝載欄，條件不成立的技能也不會阻塞後面的就緒技能。 */
 function ensureSkillReadyOrder(pEnt) {
   if (!pEnt._skillReadyOrder) pEnt._skillReadyOrder = {};
   if (typeof pEnt._skillReadySeq !== 'number' || !isFinite(pEnt._skillReadySeq)) pEnt._skillReadySeq = 0;
-  var lo = G.player.loadout || [];
+  if (!pEnt._skillReadyQueue) pEnt._skillReadyQueue = [];
+  if (!pEnt._skillReadyQueued) pEnt._skillReadyQueued = {};
+
+  var lo = (G && G.player && G.player.loadout) || [];
+  var signature = lo.join('\u0001');
+  if (pEnt._skillReadyLoadoutSignature === signature) return;
+  pEnt._skillReadyLoadoutSignature = signature;
+
+  var queue = [];
+  pEnt._skillReadyQueued = {};
   for (var i = 0; i < lo.length; i++) {
     var id = lo[i];
     if (pEnt._skillReadyOrder[id] === undefined) pEnt._skillReadyOrder[id] = pEnt._skillReadySeq++;
+    if ((pEnt.skillCds && pEnt.skillCds[id] || 0) <= 0) {
+      queue.push(id);
+      pEnt._skillReadyQueued[id] = true;
+    }
   }
+  pEnt._skillReadyQueue = queue;
+}
+
+function queueSkillReady(pEnt, id) {
+  if (!pEnt || id === undefined || id === null) return;
+  ensureSkillReadyOrder(pEnt);
+  if (pEnt._skillReadyQueued[id]) return;
+  var lo = (G && G.player && G.player.loadout) || [];
+  if (lo.indexOf(id) < 0) return;
+  pEnt._skillReadyQueue.push(id);
+  pEnt._skillReadyQueued[id] = true;
+}
+
+function dequeueSkillReady(pEnt, id) {
+  if (!pEnt || !pEnt._skillReadyQueued || !pEnt._skillReadyQueued[id]) return;
+  pEnt._skillReadyQueued[id] = false;
+  var queue = pEnt._skillReadyQueue || [];
+  var index = queue.indexOf(id);
+  if (index >= 0) queue.splice(index, 1);
 }
 
 function markSkillReady(pEnt, id) {
   ensureSkillReadyOrder(pEnt);
   pEnt._skillReadyOrder[id] = pEnt._skillReadySeq++;
+  queueSkillReady(pEnt, id);
 }
 
-// 依冷卻歸零先後挑一個可施放的技能（每 tick 至多一個）；同時就緒時沿用裝載順序
-/* Normal active skills use a short cast lock.  A skill/effect can opt out
-   explicitly with castTime: 0; triggered casts can use noCastLock. */
+// 依各技能獨立就緒順序挑一個可施放的技能（每 tick 至多一個）
+/* 自動技能預設套用參數表的施放硬直；個別技能／觸發技仍可用 castTime 或 noCastLock 覆寫。 */
 function skillCastTimeFor(def, fx, lv, opts) {
   if (opts && opts.noCastLock) return 0;
   var raw;
@@ -2959,6 +2995,7 @@ function executeSkillCastJob(job) {
 function beginSkillCast(job) {
   var pEnt = job && job.pEnt;
   if (!pEnt || skillCastInProgress(pEnt)) return null;
+  dequeueSkillReady(pEnt, job.loadoutKey || job.skillId);
   var sec = skillCastTimeFor(job.def, job.fx, job.lv, job.opts);
   if (!(sec > 0)) return executeSkillCastJob(job);
 
@@ -3018,9 +3055,14 @@ function pickAndCastSkill(pEnt, target, floatSel) {
   if (skillCastInProgress(pEnt)) return null;
   ensureSkillReadyOrder(pEnt);
   var lo = G.player.loadout || [];
-  var candidates = [];
-  for (var i = 0; i < lo.length; i++) {
-    var id = lo[i];
+  var readyQueue = pEnt._skillReadyQueue || [];
+  for (var qi = 0; qi < readyQueue.length; qi++) {
+    var id = readyQueue[qi];
+    if (!pEnt._skillReadyQueued[id] || (pEnt.skillCds[id] || 0) > 0 || lo.indexOf(id) < 0) {
+      dequeueSkillReady(pEnt, id);
+      qi--;
+      continue;
+    }
     // 新版技能群組（裝載欄鍵 'sg:<群組id>'，js/skills2.js）：依冷卻／法力／存活目標施放，沿用同一套排序。
     // 前綴用字面值（比照 'potential:'）——本檔可能在未載入 skills2.js 的測試環境單獨執行。
     if (typeof id === 'string' && id.indexOf('sg:') === 0) {
@@ -3045,8 +3087,10 @@ function pickAndCastSkill(pEnt, target, floatSel) {
         : (typeof bfPlayerCanReach !== 'function' || bfPlayerCanReach(target));
       if (!sgReachable) continue;
       if (pEnt.mp < (Number(sgDef.cost) || 0)) continue;
-      candidates.push({ id: id, sgId: sgId, slot: i, readyAt: pEnt._skillReadyOrder[id] });
-      continue;
+      return beginSkillCast({
+        kind: 'skill2', pEnt: pEnt, target: target, skillId: sgId,
+        floatSel: floatSel, def: (typeof SKILLS2 !== 'undefined') ? SKILLS2[sgId] : null
+      });
     }
     // 潛力技能（裝載欄鍵 'potential:<id>'）：無法力消耗，依冷卻與存活目標施放，其餘沿用同一套排序。
     if (typeof id === 'string' && id.indexOf('potential:') === 0) {
@@ -3057,8 +3101,10 @@ function pickAndCastSkill(pEnt, target, floatSel) {
         ? target.some(function (ent) { return ent && ent.hp > 0; })
         : !!(target && target.hp > 0);
       if (!hasLiveTarget) continue;
-      candidates.push({ id: id, potentialDef: pDef, slot: i, readyAt: pEnt._skillReadyOrder[id] });
-      continue;
+      return beginSkillCast({
+        kind: 'potential', pEnt: pEnt, target: target, skillId: id,
+        floatSel: floatSel, def: pDef, loadoutKey: id
+      });
     }
     var sk = skillDef(id);
     var lv = skillLevel(id);
@@ -3070,29 +3116,13 @@ function pickAndCastSkill(pEnt, target, floatSel) {
       ? legendarySkillManaCost(pEnt, id, sk, lv, st) : skillManaCost(sk, lv);
     if (pEnt.mp < skillCost && !skillRtWouldBeFree(sk, cfx, st)) continue;
     if (!skillConditionOk(sk, cfx, pEnt, target, st)) continue;
-    candidates.push({ id: id, lv: lv, slot: i, readyAt: pEnt._skillReadyOrder[id] });
-  }
-  if (!candidates.length) return null;
-  candidates.sort(function (a, b) { return a.readyAt - b.readyAt || a.slot - b.slot; });
-  var choice = candidates[0];
-  if (choice.sgId) {
     return beginSkillCast({
-      kind: 'skill2', pEnt: pEnt, target: target, skillId: choice.sgId,
-      floatSel: floatSel, def: (typeof SKILLS2 !== 'undefined') ? SKILLS2[choice.sgId] : null
+      kind: 'skill', pEnt: pEnt, target: target, skillId: id,
+      lv: lv, floatSel: floatSel, statSlot: lo.indexOf(id),
+      def: sk, fx: cfx
     });
   }
-  if (choice.potentialDef && typeof castPotentialSkill === 'function') {
-    return beginSkillCast({
-      kind: 'potential', pEnt: pEnt, target: target, skillId: choice.id,
-      floatSel: floatSel, def: choice.potentialDef, loadoutKey: choice.id
-    });
-  }
-  var choiceDef = skillDef(choice.id);
-  return beginSkillCast({
-    kind: 'skill', pEnt: pEnt, target: target, skillId: choice.id,
-    lv: choice.lv, floatSel: floatSel, statSlot: choice.slot,
-    def: choiceDef, fx: effectiveFx(choice.id, choiceDef, choice.lv)
-  });
+  return null;
 }
 function tickSkillCds(pEnt, dt) {
   if (pEnt.skillCds) {
