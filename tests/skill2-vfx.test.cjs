@@ -38,7 +38,7 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   const css = read('css/style.css');
 
   for (const variant of [
-    'thrust-pierce', 'thrust-triple', 'cleave-shockwave', 'cleave-cross', 'cleave-cross-shockwave', 'knife', 'knife-bounce',
+    'thrust-pierce', 'thrust-parallel', 'thrust-octagonal', 'cleave-shockwave', 'cleave-cross', 'cleave-cross-shockwave', 'knife', 'knife-bounce',
     'gale-slashes', 'bleed-tick', 'poison-tick', 'blood-explosion',
     'zero-infection', 'dual-storm'
   ]) {
@@ -46,7 +46,7 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   }
 
   for (const variant of [
-    'thrust-pierce', 'thrust-triple', 'cleave-shockwave', 'cleave-back', 'cleave-dual', 'cleave-cross', 'cleave-cross-shockwave', 'knife', 'knife-bounce',
+    'thrust-pierce', 'thrust-parallel', 'thrust-octagonal', 'cleave-shockwave', 'cleave-back', 'cleave-dual', 'cleave-cross', 'cleave-cross-shockwave', 'knife', 'knife-bounce',
     'gale-slashes', 'bleed-tick', 'poison-tick', 'blood-explosion',
     'zero-infection', 'cyclone'
   ]) {
@@ -59,8 +59,8 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
     }
   }
 
-  assert.match(vfx, /vfxThrustLine\([\s\S]*?, 70\)/);
-  assert.match(renderer, /spawnThrustLine\([\s\S]*?, 70\)/);
+  assert.match(vfx, /vfxThrustLine\([\s\S]*?thrustLength/);
+  assert.match(renderer, /spawnThrustLine\([\s\S]*?thrustLength/);
   assert.match(css, /\.vfx-thrust-line[\s\S]*?@keyframes vfxThrustLine/);
   assert.match(css, /\.vfx-proj-knife/);
   assert.match(vfx, /projClass === 'vfx-proj-knife'[\s\S]*?spec\.glyph/);
@@ -120,7 +120,7 @@ test('飛出斬擊與貫穿突刺由飛行物命中，不由 VFX 預先產生受
   const vfx = read('js/vfx.js');
   const renderer = read('js/battle-renderer.js');
 
-  assert.match(skills2, /variant: thrustVariant, count: Math\.min\(5, reps\), projectile: isPiercing/);
+  assert.match(skills2, /variant: thrustVariant, count: Math\.min\(5, thrustCount\), projectile: isPiercing/);
   assert.match(skills2, /variant: cleaveVariant, count: Math\.min\(5, slashes\), projectile: lvs\[5\] > 0/);
   const thrustVfx = vfx.slice(vfx.indexOf("s.variant === 'thrust-pierce'"), vfx.indexOf("s.variant === 'cleave'"));
   const thrustRenderer = renderer.slice(renderer.indexOf("spec.variant === 'thrust-pierce'"), renderer.indexOf("spec.variant === 'cleave'"));
@@ -132,17 +132,17 @@ test('飛出斬擊與貫穿突刺由飛行物命中，不由 VFX 預先產生受
   assert.match(cleaveRenderer, /if \(!spec\.projectile\)/);
 });
 
-test('突刺光槍 VFX 具備參考圖的白色核心、金褐晶刃與尖端收束', () => {
+test('突刺光槍 VFX 使用確認的 PNG 素材並保留 DOM／Canvas 退化畫法', () => {
   const css = read('css/style.css');
   const renderer = read('js/battle-renderer.js');
   const thrustCss = css.slice(css.indexOf('.vfx-thrust-line {'), css.indexOf('@keyframes vfxThrustLine'));
   const thrustRenderer = renderer.slice(renderer.indexOf('function spawnThrustLine'), renderer.indexOf('/* 光束 */'));
 
-  assert.match(thrustCss, /height: 30px/);
-  assert.match(thrustCss, /clip-path: polygon/);
-  assert.match(thrustCss, /#fff8df/);
-  assert.match(thrustCss, /#a86d2d/);
+  assert.match(thrustCss, /images\/vfx\/thrust_lance\.png/);
+  assert.match(thrustCss, /var\(--vfx-length/);
+  assert.match(thrustCss, /rotate\(calc\(var\(--vfx-angle/);
+  assert.ok(fs.statSync(path.join(root, 'images/vfx/thrust_lance.png')).size > 1000, '突刺 PNG 素材應存在');
+  assert.match(renderer, /PIXI\.Assets\.load\('images\/vfx\/thrust_lance\.png'\)/);
+  assert.match(thrustRenderer, /if \(S\.thrustLanceTex\)/);
   assert.match(thrustRenderer, /g\.poly\(/);
-  assert.match(thrustRenderer, /0xd8943b/);
-  assert.match(thrustRenderer, /0xfff8df/);
 });

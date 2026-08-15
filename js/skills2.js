@@ -53,7 +53,7 @@ function skills2PassiveActive(gid) {
    fx 參數命名慣例：<鍵> 為 Lv.1 基準值、<鍵>Per 為每級增量（值＝基準 + 增量×(等級-1)）。
    desc 內的 {鍵} 於顯示時代入目前等級的計算值。 */
 var SKILLS2 = {
-  thrust: { name: '突刺', emoji: '🗡️', cd: 5, cost: 25, tiers: [{ name: '突刺', fx: { pct: 300, pctPer: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '對敵人造成 1 次 {pct}% 物理傷害' }, { name: '連刺', fx: { chance: 10, chancePer: 5 }, goldBase: 200000, goldGrow: 1.5, desc: '有 {chance}% 的機率造成 2 次突刺' }, { name: '傷害強化', fx: { pct: 30, pctPer: 10 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化突刺傷害，額外 +{pct}% 物理傷害（與第 1 階累加）' }, { name: '超連刺', fx: { add: 1, addPer: 0.25 }, goldBase: 800000, goldGrow: 1.5, desc: '突刺次數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '擴散', fx: { pct: 20, pctPer: 5, count: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '突刺造成的傷害有 {pct}% 會擴散至周圍的 {count} 個敵人' }, { name: '貫穿突刺', fx: { m: 7, mPer: 0.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '突刺造成一直線傷害，貫穿路徑上所有敵人，貫穿距離 {m} 米' }, { name: '終極突刺', fx: { pct: 10, pctPer: 5, deg: 30 }, goldBase: 5000000, goldGrow: 1.5, desc: '向 3 個方向（正前與左右各 {deg} 度）同時突刺，且物理傷害額外 +{pct}%' }] },
+  thrust: { name: '突刺', emoji: '🗡️', cd: 5, cost: 25, tiers: [{ name: '突刺', fx: { pct: 300, pctPer: 30, count: 2, m: 6, width: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '對前方 {m} 米×寬 {width} 米範圍的敵人造成 {count} 次 {pct}% 物理傷害' }, { name: '連刺', fx: { chance: 25, chancePer: 2.5, count: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '有 {chance}% 的機率再次進行 {count} 次突刺' }, { name: '傷害強化', fx: { pct: 30, pctPer: 10 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化突刺傷害，額外 +{pct}% 物理傷害（與第 1 階累加）' }, { name: '超連刺', fx: { count: 3, range: 20, rangePer: 2 }, goldBase: 800000, goldGrow: 1.5, desc: '每次能進行 {count} 道平行貫穿突刺，且突刺範圍提升 {range}%' }, { name: '擴散', fx: { pct: 20, pctPer: 2, count: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '突刺造成的傷害有 {pct}% 會擴散至周圍的 {count} 個敵人' }, { name: '貫穿突刺', fx: { m: 10, mPer: 1 }, goldBase: 3000000, goldGrow: 1.5, desc: '突刺會造成一直線的傷害，貫穿路徑上所有敵人，貫穿長度在原本長度上再增加 {m} 米' }, { name: '八方突刺', fx: { pct: 20, pctPer: 2, count: 3, directions: 8 }, goldBase: 5000000, goldGrow: 1.5, desc: '向八個方向同時進行 {count} 次突刺，且造成傷害額外 +{pct}%' }] },
   cleave: { name: '迴旋斬', emoji: '🪓', cd: 8, cost: 30, tiers: [{ name: '迴旋斬', fx: { pct: 200, pctPer: 20, count: 6 }, goldBase: 100000, goldGrow: 1.5, desc: '對前方 {count} 個敵人造成 1 次 {pct}% 物理傷害' }, { name: '強化斬', fx: { add: 1, addPer: 0.5 }, goldBase: 200000, goldGrow: 1.5, desc: '斬擊的敵人數量額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '傷害強化', fx: { pct: 20, pctPer: 8 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化斬擊傷害，額外 +{pct}% 物理傷害' }, { name: '連斬', fx: { chance: 25, chancePer: 2.5, times: 2, timesPer: 0.25 }, goldBase: 800000, goldGrow: 1.5, desc: '斬擊時有 {chance}% 機率連續劈出共 {times} 次斬擊（不足 1 次的部分以機率觸發）' }, { name: '暈眩擊', fx: { chance: 25, chancePer: 1, sec: 1, secPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '斬擊時有 {chance}% 機率擊暈敵人 {sec} 秒' }, { name: '震碎斬', fx: { m: 12, mPer: 0.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '斬擊會向前飛出 {m} 米距離，命中路徑上的敵人' }, { name: '迴身雙連斬', fx: { pct: 10, pctPer: 5, times: 3, timesPer: 0 }, goldBase: 5000000, goldGrow: 1.5, desc: '同時朝前後左右四個方向各使出 {times} 次迴旋斬，且物理傷害額外 +{pct}%' }] },
   knife: { name: '飛刀', emoji: '🔪', cd: 4, cost: 28, tiers: [{ name: '飛刀', fx: { pct: 250, pctPer: 25, count: 3, deg: 60 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方 {deg} 度扇形內丟出 {count} 把飛刀，每把造成 {pct}% 物理傷害' }, { name: '強化飛刀', fx: { pct: 20, pctPer: 10 }, goldBase: 200000, goldGrow: 1.5, desc: '飛刀傷害進一步提升，額外 +{pct}% 物理傷害' }, { name: '彈射飛刀', fx: { pct: 30, pctPer: 5, count: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '每把飛刀會在附近的 {count} 個敵人間彈跳，每次彈射造成 {pct}% 技能傷害' }, { name: '強化彈射', fx: { add: 1, addPer: 0.25 }, goldBase: 800000, goldGrow: 1.5, desc: '飛刀彈射的敵人數量額外 +{add}（不足 1 次的部分以機率觸發）' }, { name: '迴旋飛刀', fx: { count: 5, countPer: 0.25 }, goldBase: 1500000, goldGrow: 1.5, desc: '改為向周圍的 {count} 個敵人丟出飛刀（全圓形範圍鎖敵；不足 1 個的部分以機率觸發）' }, { name: '連鎖彈射', fx: { chance: 20, chancePer: 2, max: 4 }, goldBase: 3000000, goldGrow: 1.5, desc: '飛刀彈射後有 {chance}% 機率再次彈射，最多連續 {max} 次' }, { name: '神速飛刀', fx: { sec: 0.1, secPer: 0.02 }, goldBase: 5000000, goldGrow: 1.5, desc: '每把飛刀（含彈射）爆擊時，使本技能冷卻時間 -{sec} 秒' }] },
   gale: { name: '疾風斬', emoji: '💨', cd: 6, cost: 30, tiers: [{ name: '疾風斬', fx: { pct: 250, pctPer: 20, hits: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '對敵人造成連續 {hits} 次 {pct}% 物理傷害（同一目標）' }, { name: '疾風連斬', fx: { add: 1, addPer: 0.2 }, goldBase: 200000, goldGrow: 1.5, desc: '斬擊次數額外 +{add}（不足 1 次的部分以機率觸發）' }, { name: '強化斬擊', fx: { pct: 15, pctPer: 4 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化斬擊傷害，額外 +{pct}% 物理傷害' }, { name: '擴散', fx: { pct: 50, pctPer: 5, m: 10 }, goldBase: 800000, goldGrow: 1.5, desc: '每次斬擊額外對 {m} 米內最近的 1 個敵人造成 {pct}% 技能傷害；附近沒有敵人時改對原目標造成' }, { name: '狂風斬', fx: { pct: 20, pctPer: 5, sec: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '施放疾風斬使你的攻速額外提高 {pct}%，持續 {sec} 秒（突破攻速上限，與自身攻速相乘）' }, { name: '極速斬', fx: { sec: 1, secPer: 0.3 }, goldBase: 3000000, goldGrow: 1.5, desc: '疾風斬的冷卻時間 -{sec} 秒' }, { name: '超神斬', fx: { pct: 200, pctPer: 20, m: 5 }, goldBase: 5000000, goldGrow: 1.5, desc: '疾風斬的傷害由目標周圍 {m} 米內的所有敵人均分，且傷害額外 +{pct}%' }] },
@@ -478,6 +478,10 @@ function sgEmitVfx(gid, targets, floatSel, extra) {
   if (extra && extra.variant) spec.variant = extra.variant;
   if (extra && extra.travelMs) spec.travelMs = extra.travelMs;
   if (extra && extra.projectile) spec.projectile = true;
+  if (extra && extra.lineLength) spec.lineLength = Number(extra.lineLength);
+  if (extra && extra.lineWidth) spec.lineWidth = Number(extra.lineWidth);
+  if (extra && extra.laneOffsets) spec.laneOffsets = extra.laneOffsets.slice(0, 3);
+  if (extra && extra.directionCount) spec.directionCount = Number(extra.directionCount);
   playCombatVfx(spec);
 }
 
@@ -507,6 +511,7 @@ function sgQueueFlyingProjectile(pEnt, st, gid, dmgVal, origin, angle, length, f
     out: out, states: [], started: false,
     spreadPct: extra && extra.spreadPct || 0,
     spreadCount: extra && extra.spreadCount || 0,
+    halfWidthPx: extra && Number(extra.halfWidthPx) > 0 ? Number(extra.halfWidthPx) : 0,
     stunChance: extra && extra.stunChance || 0,
     stunSec: extra && extra.stunSec || 0
   };
@@ -560,7 +565,8 @@ function sgTickFlyingProjectiles(dt, ctx) {
     var crossed;
     if (projectile.origin && typeof bfSegmentTargets === 'function') {
       crossed = bfSegmentTargets(projectile.origin, projectile.angle,
-        projectile.lastDistance, distance, enemies, SG_FLYING_PROJECTILE_HALF_WIDTH);
+        projectile.lastDistance, distance, enemies,
+        Math.max(SG_FLYING_PROJECTILE_HALF_WIDTH, projectile.halfWidthPx || 0));
     } else if (!projectile.started) {
       crossed = projectile.fallbackTargets.slice();
     } else {
@@ -645,71 +651,101 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
 }
 
 /* ---- 突刺 ---- */
+function sgThrustOffsetOrigin(angle, offsetPx) {
+  var p = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null;
+  if (!p || !offsetPx) return p;
+  var side = angle + Math.PI / 2;
+  return { x: p.x + Math.cos(side) * offsetPx, y: p.y + Math.sin(side) * offsetPx };
+}
+
 function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var t = g.tiers;
   var pct = sgVal(t[0].fx, 'pct', lvs[0]);
   if (lvs[2] > 0) pct += sgVal(t[2].fx, 'pct', lvs[2]);
   if (lvs[6] > 0) pct += sgVal(t[6].fx, 'pct', lvs[6]);
-  var reps = 1 + (lvs[3] > 0 ? sgRollCount(sgVal(t[3].fx, 'add', lvs[3])) : 0);
-  if (lvs[1] > 0 && chance(sgVal(t[1].fx, 'chance', lvs[1]))) reps *= 2;
+
+  // 第 1 階本身是兩段；第 2 階觸發時再追加兩段；第 7 階把總段數至少提升到三段。
+  var thrustCount = Math.max(1, Math.floor(Number(t[0].fx.count) || 2));
+  if (lvs[6] > 0) thrustCount = Math.max(thrustCount, Math.floor(Number(t[6].fx.count) || 3));
+  if (lvs[1] > 0 && chance(sgVal(t[1].fx, 'chance', lvs[1]))) {
+    thrustCount += Math.max(1, Math.floor(Number(t[1].fx.count) || 2));
+  }
+
   var dmgVal = st.atk * pct / 100;
   var baseAngle = (typeof bfAngleTo === 'function') ? bfAngleTo(primary) : null;
   var geomOk = baseAngle !== null;
-  var pierceLen = lvs[5] > 0 ? bfMeterPx(sgVal(t[5].fx, 'm', lvs[5])) : 0;
-  var dirs = [0];
-  if (lvs[6] > 0 && geomOk) {
-    var dg = (Number(t[6].fx.deg) || 30) * Math.PI / 180;
-    dirs = [0, -dg, dg];
+  var rangeScale = lvs[3] > 0 ? 1 + sgVal(t[3].fx, 'range', lvs[3]) / 100 : 1;
+  var lineLen = bfMeterPx(sgVal(t[0].fx, 'm', lvs[0]) || 6) * rangeScale;
+  if (lvs[5] > 0) lineLen += bfMeterPx(sgVal(t[5].fx, 'm', lvs[5]));
+  var lineWidth = bfMeterPx(sgVal(t[0].fx, 'width', lvs[0]) || 2) * rangeScale;
+  var isEightWay = lvs[6] > 0;
+  var isParallel = !isEightWay && lvs[3] > 0;
+  var directions = [0];
+  var directionCount = isEightWay ? Math.max(1, Math.floor(Number(t[6].fx.directions) || 8)) : 1;
+  if (isEightWay) {
+    directions = [];
+    for (var di = 0; di < directionCount; di++) directions.push(di * Math.PI * 2 / directionCount);
   }
-  var lineLen = pierceLen > 0 ? pierceLen : bfMeterPx(BF_MELEE_METERS);
-  var planned = [primary];
-  if (geomOk && (pierceLen > 0 || dirs.length > 1)) {
-    for (var pdi = 0; pdi < dirs.length; pdi++) {
-      var preview = bfLineTargets(baseAngle + dirs[pdi], lineLen, pool);
-      for (var pti = 0; pti < preview.length; pti++) {
-        if (planned.indexOf(preview[pti]) < 0) planned.push(preview[pti]);
+  var laneOffsets = isParallel ? [-lineWidth / 2, 0, lineWidth / 2] : [0];
+  var laneHalfWidth = isParallel ? lineWidth / 6 : lineWidth / 2;
+  var isPiercing = lvs[3] > 0 || lvs[5] > 0 || lvs[6] > 0;
+  var plans = [];
+  var planned = [];
+
+  if (geomOk) {
+    for (var pdi = 0; pdi < directions.length; pdi++) {
+      var pathAngle = baseAngle + directions[pdi];
+      for (var pli = 0; pli < laneOffsets.length; pli++) {
+        var laneOffset = laneOffsets[pli];
+        var pathOrigin = sgThrustOffsetOrigin(pathAngle, laneOffset) || bfPlayerPos();
+        var pathWidth = isPiercing ? laneHalfWidth : lineWidth / 2;
+        var pathTargets = bfLineTargets(pathAngle, lineLen, pool, pathWidth, pathOrigin);
+        if (pdi === 0 && pli === Math.floor(laneOffsets.length / 2) &&
+            primary.hp > 0 && pathTargets.indexOf(primary) < 0) pathTargets.unshift(primary);
+        plans.push({ angle: pathAngle, origin: pathOrigin, targets: pathTargets, halfWidth: pathWidth });
+        for (var pti = 0; pti < pathTargets.length; pti++) {
+          if (planned.indexOf(pathTargets[pti]) < 0) planned.push(pathTargets[pti]);
+        }
       }
     }
+  } else {
+    plans.push({ angle: 0, origin: null, targets: [primary], halfWidth: 0 });
+    planned.push(primary);
   }
-  var thrustVariant = dirs.length > 1 ? 'thrust-triple' : (pierceLen > 0 ? 'thrust-pierce' : 'thrust');
-  var isPiercing = pierceLen > 0;
+
+  var thrustVariant = isEightWay ? 'thrust-octagonal' : (isParallel ? 'thrust-parallel' :
+    (lvs[5] > 0 ? 'thrust-pierce' : 'thrust'));
   sgEmitVfx('thrust', planned, floatSel, {
-    fxKind: 'slash', variant: thrustVariant, count: Math.min(5, reps), projectile: isPiercing
+    fxKind: 'slash', variant: thrustVariant, count: Math.min(5, thrustCount), projectile: isPiercing,
+    lineLength: lineLen, lineWidth: Math.max(28, lineWidth), laneOffsets: laneOffsets,
+    directionCount: directionCount
   });
+
   if (isPiercing) {
     var spreadPct = lvs[4] > 0 ? sgVal(t[4].fx, 'pct', lvs[4]) : 0;
-    var spreadCount = lvs[4] > 0 ? Math.max(1, Math.floor(Number(t[4].fx.count) || 2)) : 0;
-    for (var pr = 0; pr < reps; pr++) {
-      for (var pdi = 0; pdi < dirs.length; pdi++) {
-        var projectileTargets = geomOk
-          ? bfLineTargets(baseAngle + dirs[pdi], lineLen, pool)
-          : [primary];
+    var spreadCount = lvs[4] > 0 ? Math.max(1, Math.floor(Number(t[4].fx.count) || 4)) : 0;
+    for (var pr = 0; pr < thrustCount; pr++) {
+      for (var pi = 0; pi < plans.length; pi++) {
+        var plan = plans[pi];
         sgQueueFlyingProjectile(pEnt, st, 'thrust', dmgVal,
-          (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null,
-          geomOk ? baseAngle + dirs[pdi] : 0, lineLen, floatSel, projectileTargets,
-          { spreadPct: spreadPct, spreadCount: spreadCount }, out);
+          plan.origin, plan.angle, lineLen, floatSel, plan.targets,
+          { spreadPct: spreadPct, spreadCount: spreadCount, halfWidthPx: plan.halfWidth }, out);
       }
     }
     return;
   }
+
   var hitIdx = 0;
-  for (var r = 0; r < reps; r++) {
-    for (var di = 0; di < dirs.length; di++) {
-      var hitTargets;
-      if (geomOk && (pierceLen > 0 || dirs.length > 1)) {
-        hitTargets = bfLineTargets(baseAngle + dirs[di], lineLen, pool);
-        // 主方向保證命中主目標（突刺為指向性技能，不做距離落空）
-        if (di === 0 && primary.hp > 0 && hitTargets.indexOf(primary) < 0) hitTargets.unshift(primary);
-      } else {
-        hitTargets = [primary];
-      }
+  for (var r = 0; r < thrustCount; r++) {
+    for (var pi2 = 0; pi2 < plans.length; pi2++) {
+      var hitTargets = plans[pi2].targets;
       for (var ti = 0; ti < hitTargets.length; ti++) {
         var res = sgHitOne(pEnt, st, hitTargets[ti], dmgVal, 'thrust', floatSel, out, sgStaggerMs(hitIdx));
         if (res && !res.miss && lvs[4] > 0) {
-          var spreadPct = sgVal(t[4].fx, 'pct', lvs[4]);
-          var others = bfNearestOthers(hitTargets[ti], pool, Math.max(1, Math.floor(Number(t[4].fx.count) || 2)));
+          var spreadPct2 = sgVal(t[4].fx, 'pct', lvs[4]);
+          var others = bfNearestOthers(hitTargets[ti], pool, Math.max(1, Math.floor(Number(t[4].fx.count) || 4)));
           for (var oi = 0; oi < others.length; oi++) {
-            sgDerivedHit(others[oi], res.dmg * spreadPct / 100, 'thrust', floatSel, out, g.emoji, sgStaggerMs(hitIdx + 1));
+            sgDerivedHit(others[oi], res.dmg * spreadPct2 / 100, 'thrust', floatSel, out, g.emoji, sgStaggerMs(hitIdx + 1));
           }
         }
       }

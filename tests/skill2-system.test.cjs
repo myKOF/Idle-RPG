@@ -104,6 +104,24 @@ test('SKILLS2 與 config/CSV/Skills2.csv 完整往返（每階一列）', () => 
   assert.match(rows[0], /效果參數\(JSON\)/);
 });
 
+test('突刺 1～7 階規格：數值、次數、距離與方向符合公開技能表', () => {
+  const c = loadContext();
+  const t = c.SKILLS2.thrust.tiers;
+  assert.deepEqual(plain(t.map((tier) => tier.fx)), [
+    { pct: 300, pctPer: 30, count: 2, m: 6, width: 2 },
+    { chance: 25, chancePer: 2.5, count: 2 },
+    { pct: 30, pctPer: 10 },
+    { count: 3, range: 20, rangePer: 2 },
+    { pct: 20, pctPer: 2, count: 4 },
+    { m: 10, mPer: 1 },
+    { pct: 20, pctPer: 2, count: 3, directions: 8 }
+  ]);
+  assert.match(t[0].desc, /前方 \{m\} 米×寬 \{width\} 米/);
+  assert.match(t[3].desc, /\{count\} 道平行貫穿突刺/);
+  assert.match(t[5].desc, /貫穿路徑上所有敵人/);
+  assert.match(t[6].desc, /八個方向/);
+});
+
 /* ---- 2) 等級正規化 ---- */
 
 test('sgEffectiveLevels：第 1 階預設開啟、上限夾限、前一階未達 Lv.1 時後續階視為 0', () => {
@@ -203,39 +221,38 @@ test('bfConeTargets：全張角與半徑過濾；bfNearestOthers：距離排序�
 
 /* ---- 5) 施放機制 ---- */
 
-test('突刺：Lv.1 對主目標 1 次命中；自身冷卻寫入；法力扣除', () => {
+test('突刺：Lv.1 對前方 6×2 米範圍造成 2 次命中；自身冷卻寫入；法力扣除', () => {
   const c = loadContext();
   const calls = stubHits(c);
   c.chance = () => false; // 關掉所有機率觸發
   const p = playerEnt();
   const m = enemy(1000, 40, 0);
   const out = c.castSkill2(p, [m], 'thrust', 'mv-float');
-  assert.equal(calls.length, 1);
-  assert.equal(out.dmg, 100);
+  assert.equal(calls.length, 2);
+  assert.equal(out.dmg, 200);
   assert.equal(p.mp, 100 - c.SKILLS2.thrust.cost);
   assert.ok(p.skillCds['sg:thrust'] > 0, '應寫入群組冷卻');
   assert.equal(p.skillGcd, undefined, '技能 2 不應建立共用 GCD');
   assert.ok(p.skillCds['sg:thrust'] >= c.SKILL_MIN_CAST_INTERVAL, '自身冷卻不得低於技能施放最短間隔');
 });
 
-test('突刺·連刺與超連刺：次數合成（機率全開時 (1+add)×2 段）', () => {
+test('突刺·連刺：機率觸發時再追加 2 次突刺', () => {
   const c = loadContext();
   const calls = stubHits(c);
   c.chance = () => true; // 所有機率觸發（含小數次數的補位）
-  // 階層循序解鎖：要開第 4 階（超連刺）必須 1~3 階皆至少 Lv.1
-  c.G.player.skills2.levels.thrust = [1, 1, 1, 1, 0, 0, 0];
+  c.G.player.skills2.levels.thrust = [1, 1, 0, 0, 0, 0, 0];
   const p = playerEnt();
   const m = enemy(1e9, 40, 0);
   c.castSkill2(p, [m], 'thrust', 'mv-float');
-  // 超連刺 Lv.1＝+1 次 → 2 次；連刺觸發 ×2 → 4 次
+  // 第 1 階 2 次 + 第 2 階追加 2 次＝4 次
   assert.equal(calls.length, 4);
 });
 
-test('貫穿突刺：直線上所有敵人都吃到每一段', () => {
+test('突刺·超連刺與貫穿突刺：平行路徑上的目標都吃到飛行物命中', () => {
   const c = loadContext();
   const calls = stubHits(c);
   c.chance = () => false;
-  c.G.player.skills2.levels.thrust = [1, 1, 1, 1, 1, 1, 0]; // 開到 6 階（貫穿 7 米＝70 單位）
+  c.G.player.skills2.levels.thrust = [1, 1, 1, 1, 1, 1, 0]; // 開到 6 階（原 6 米範圍再加 10 米）
   const p = playerEnt();
   const a = enemy(1e9, 30, 0);
   const b = enemy(1e9, 60, 0);
@@ -248,31 +265,34 @@ test('貫穿突刺：直線上所有敵人都吃到每一段', () => {
   assert.equal(calls.indexOf(off), -1, '線外敵人不得命中');
   c.GT = 1.0;
   c.tickSkill2(0.5, { pEnt: p, getEnemies: () => [a, b, off], floatSel: 'mv-float', onDeaths() {} });
-  assert.equal(calls.length, 8, '每個路徑目標應在 0.5 秒後各追加命中一次');
+  assert.equal(calls.length, 24, '每道平行路徑的目標應在 0.5 秒後各追加命中一次');
   c.GT = 1.6;
   c.tickSkill2(0.6, { pEnt: p, getEnemies: () => [a, b, off], floatSel: 'mv-float', onDeaths() {} });
-  assert.equal(calls.length, 8, '飛行物追加命中後應消失');
+  assert.equal(calls.length, 24, '飛行物追加命中後應消失');
 });
 
-test('貫穿突刺·終極突刺：三條扇形路徑都命中路徑內全部敵人', () => {
+test('八方突刺：八個方向連續 3 次，所有方向目標都命中', () => {
   const c = loadContext();
   const calls = stubHits(c);
   c.chance = () => false;
   c.G.player.skills2.levels.thrust = [1, 1, 1, 1, 1, 1, 1];
   const p = playerEnt();
-  const front = enemy(1e9, 60, 0);
-  const right = enemy(1e9, 51.962, 30);
-  const left = enemy(1e9, 51.962, -30);
-  const off = enemy(1e9, 0, 100);
-  c.castSkill2(p, [front, right, left, off], 'thrust', 'mv-float');
+  const targets = [];
+  for (let i = 0; i < 8; i++) {
+    const a = i * Math.PI / 4;
+    targets.push(enemy(1e9, Math.cos(a) * 60, Math.sin(a) * 60, '方向' + i));
+  }
+  const off = enemy(1e9, 0, 250);
+  c.castSkill2(p, targets.concat(off), 'thrust', 'mv-float');
   c.GT = 0.5;
-  c.tickSkill2(0.5, { pEnt: p, getEnemies: () => [front, right, left, off], floatSel: 'mv-float', onDeaths() {} });
-  assert.equal(calls.length, 6, '超連刺會使三條貫穿路徑各命中兩次');
-  assert.ok(calls.includes(front) && calls.includes(right) && calls.includes(left));
+  c.tickSkill2(0.5, { pEnt: p, getEnemies: () => targets.concat(off), floatSel: 'mv-float', onDeaths() {} });
+  assert.ok(targets.every((target) => calls.includes(target)), '八個方向目標都應命中');
+  assert.ok(calls.length >= 24, '八方突刺應至少有 8 方向×3 次命中');
   assert.equal(calls.includes(off), false, '扇形外敵人不得命中');
   c.GT = 1.0;
-  c.tickSkill2(0.5, { pEnt: p, getEnemies: () => [front, right, left, off], floatSel: 'mv-float', onDeaths() {} });
-  assert.equal(calls.length, 12, '三條路徑的每個目標都應再追加命中一次');
+  const beforeRepeat = calls.length;
+  c.tickSkill2(0.5, { pEnt: p, getEnemies: () => targets.concat(off), floatSel: 'mv-float', onDeaths() {} });
+  assert.ok(calls.length > beforeRepeat, '每個飛行物應在 0.5 秒後追加命中一次');
 });
 
 test('迴身雙連斬：前後左右各斬 3 次，且物理傷害額外 +10%', () => {
@@ -478,7 +498,7 @@ test("pickAndCastSkill：裝載 'sg:' 鍵可施放；equipSkillToLoadout 驗證�
   assert.ok(out && out.casting, '裝載後應在 CD 就緒時立即進入統一施放迴圈');
   assert.equal(out.castTime, c.SKILL_CAST_LOCK);
   c.tickSkillCast(p, c.SKILL_CAST_LOCK);
-  assert.equal(calls.length, 1, '施放硬直結束後應套用技能傷害');
+  assert.equal(calls.length, 2, '施放硬直結束後應套用兩段突刺傷害');
 });
 
 /* ---- 存檔常態化（save.js 讀檔防護與 sgEffectiveLevels 同規則） ---- */

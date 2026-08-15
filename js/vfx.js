@@ -802,18 +802,27 @@ function vfxCleaveArcFlightMs(spec) {
   return Math.round(Math.max(0.38, spec.dur || 0.5) * 1000);
 }
 
-/* 突刺／三向突刺的直線刀光；angleOffset 由呼叫端提供，用來產生左右分叉。 */
-function vfxThrustLine(spec, layer, from, to, delayMs, angleOffset, lengthPx) {
+/* 突刺光槍圖片；圖片本身是垂直長槍，播放時旋轉到路徑方向，並可用
+   laneOffsetPx 排成平行三道或用 angleOverride 畫八方向。 */
+function vfxThrustLine(spec, layer, from, to, delayMs, angleOffset, lengthPx, laneOffsetPx, angleOverride) {
   if (!from || !to) return;
   var dx = to.x - from.x, dy = to.y - from.y;
-  var angle = Math.atan2(dy, dx) + (Number(angleOffset) || 0);
+  var angle = typeof angleOverride === 'number'
+    ? angleOverride : Math.atan2(dy, dx) + (Number(angleOffset) || 0);
+  var distance = Math.max(48, Number(spec.lineLength) || Number(lengthPx) || 70);
+  var laneOffset = Number(laneOffsetPx) || 0;
+  var side = angle + Math.PI / 2;
+  var start = { x: from.x + Math.cos(side) * laneOffset, y: from.y + Math.sin(side) * laneOffset };
+  var center = { x: start.x + Math.cos(angle) * distance / 2, y: start.y + Math.sin(angle) * distance / 2 };
   var d = vfxNode('vfx-thrust-line', layer, spec);
-  vfxPlace(d, from);
-  d.style.setProperty('--vfx-length', Math.max(48, Number(lengthPx) || 70) + 'px');
+  vfxPlace(d, center);
+  d.style.setProperty('--vfx-length', distance + 'px');
+  d.style.setProperty('--vfx-width', Math.max(28, Number(spec.lineWidth) || 36) + 'px');
   d.style.setProperty('--vfx-angle', angle.toFixed(3) + 'rad');
   d.style.animationDelay = Math.max(0, delayMs || 0) + 'ms';
-  d.style.animationDuration = Math.round(Math.max(0.22, spec.dur || 0.38) * 1000) + 'ms';
-  vfxTrack(d, Math.max(0, delayMs || 0) + Math.max(0.22, spec.dur || 0.38) * 1000 + 180);
+  var duration = Math.max(0.22, spec.dur || 0.38);
+  d.style.animationDuration = Math.round(duration * 1000) + 'ms';
+  vfxTrack(d, Math.max(0, delayMs || 0) + duration * 1000 + 180);
 }
 
 /* 近戰彈射：第一組飛刀已從玩家飛出，後續只畫目前命中點到下一個目標的短刀光。
@@ -1554,15 +1563,25 @@ function renderCombatVfx(spec) {
   var from = vfxOriginPoint(layer);
   var stagger = vfxStagger();
 
-  /* 新版主動技能專用近戰畫法：固定 70 系統單位的直線刀光，
-     讓貫穿突刺與三向終極突刺不再只是目標身上的普通交叉斬。 */
-  if (kind === 'slash' && (s.variant === 'thrust-pierce' || s.variant === 'thrust-triple' || s.variant === 'thrust')) {
+  /* 新版突刺以使用者提供的光槍圖片播放：普通突刺為前方範圍，
+     超連刺為三道平行光槍，八方突刺則以八個徑向角度同時播放。 */
+  if (kind === 'slash' && (s.variant === 'thrust-pierce' || s.variant === 'thrust-parallel' ||
+      s.variant === 'thrust-octagonal' || s.variant === 'thrust')) {
     if (!rt.pts.length) return;
-    var thrustOffsets = s.variant === 'thrust-triple' ? [0, -30 * Math.PI / 180, 30 * Math.PI / 180] : [0];
+    var thrustLanes = Array.isArray(s.laneOffsets) && s.laneOffsets.length ? s.laneOffsets : [0];
+    var thrustDirections = s.variant === 'thrust-octagonal'
+      ? Math.max(1, Number(s.directionCount) || 8) : 1;
+    var thrustLength = Number(s.lineLength) || 70;
+    var thrustFrontAngle = Math.atan2(rt.pts[0].y - from.y, rt.pts[0].x - from.x);
     for (var tc = 0; tc < count; tc++) {
       var thrustDelay = baseDelay + tc * stagger;
-      for (var td = 0; td < thrustOffsets.length; td++) {
-        vfxThrustLine(s, layer, from, rt.pts[0], thrustDelay, thrustOffsets[td], 70);
+      for (var td = 0; td < thrustDirections; td++) {
+        var thrustAngle = s.variant === 'thrust-octagonal'
+          ? thrustFrontAngle + td * Math.PI * 2 / thrustDirections : thrustFrontAngle;
+        for (var tl = 0; tl < thrustLanes.length; tl++) {
+          vfxThrustLine(s, layer, from, rt.pts[0], thrustDelay, 0, thrustLength,
+            thrustLanes[tl], thrustAngle);
+        }
       }
       if (!s.projectile) {
         for (var tti = 0; tti < rt.pts.length; tti++) {

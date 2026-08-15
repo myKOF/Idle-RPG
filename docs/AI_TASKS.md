@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## Codex：依公開技能規格表調整突刺與套用光槍圖片特效（2026-08-15）
+
+- 狀態：已完成（2026-08-15）
+- 任務分類：突刺技能規格／命中幾何／DOM 與 Canvas VFX
+- 負責 AI：Codex
+- 任務內容：只依使用者提供的「技能」分頁調整突刺 1～7 階效果；將突刺本體改為前方 6 米×寬 2 米、兩段 300% 物理傷害，更新連刺、超連刺、擴散、貫穿突刺與八方突刺規則，並以使用者確認的光槍 PNG 作為突刺表現素材。
+- 允許修改：`docs/AI_TASKS.md`、`config/CSV/Skills2.csv`、`js/skills2.js`、`js/battlefield.js`、`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`index.html`、`images/vfx/thrust_lance.png`、`tests/skill2-system.test.cjs`、`tests/skill2-vfx.test.cjs`
+- 禁止修改：其它技能數值與特效、Worker Protocol、存檔格式、與本任務無關的 UI／戰鬥公式。
+- 前置依賴：使用者已將 Google 試算表設為知道連結者可檢視；突刺飛行物週期命中與既有 DOM／Canvas VFX 管線已完成。
+- 測試要求：突刺技能數值／範圍／八方向命中回歸測試、突刺 VFX 圖片載入測試、相關 JavaScript 語法檢查、`node tools/config_tables.cjs --apply Skills2`、`npm.cmd run build`、`git diff --check`。
+- 完成條件：只改突刺；試算表規格完整反映於 CSV／JS／命中幾何；DOM 與 Canvas 均播放指定光槍圖片；飛行物仍依路徑命中並在 0.5 秒追加命中後消失；測試與建置完成。
+- 驗證結果：突刺／VFX 相關測試 31/31 通過；`npm.cmd run build` 278/278 通過；`node tools/config_tables.cjs --apply Skills2 --write` 顯示 CSV 與 JS 一致；`git diff --check` 通過。完整測試另有既有的 `battle-skill-hover.test.cjs` 快取版號失敗（要求 `js/ui.js?v=1.0.43`，與本任務無關）。
+- 已知風險：試算表「超連刺」與「八方突刺」同時解鎖時採累積解讀（八方方向與超連刺平行路徑）；實機畫面仍需使用者確認圖片尺寸與八方向視覺密度。
+- 完成後交給：使用者確認。
+
 ## Codex：依參考圖重製突刺光槍特效（2026-08-15）
 
 - 狀態：已完成（待使用者確認）

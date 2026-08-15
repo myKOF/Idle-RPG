@@ -475,10 +475,11 @@ function bfSegmentTargets(origin, angle, fromLen, toLen, enemies, halfWidthPx) {
   return deco.map(function (x) { return x.ent; });
 }
 
-/* 直線（貫穿）命中：從我方出發、沿 angle 方向長 lenPx 的線段。 */
-function bfLineTargets(angle, lenPx, enemies, halfWidthPx) {
+/* 直線（貫穿）命中：從 origin（省略時為我方）出發、沿 angle 方向長 lenPx 的線段。
+   origin 讓同一技能可以建立多道平行貫穿路徑，而不把偏移寫死在技能層。 */
+function bfLineTargets(angle, lenPx, enemies, halfWidthPx, origin) {
   if (!(lenPx > 0)) return [];
-  return bfSegmentTargets(bfPlayerPos(), angle, 0, lenPx, enemies, halfWidthPx);
+  return bfSegmentTargets(origin || bfPlayerPos(), angle, 0, lenPx, enemies, halfWidthPx);
 }
 
 /* 扇形命中：以我方為圓心、centerAngle 為中軸、全張角 spreadDeg（度）、半徑 rangePx，

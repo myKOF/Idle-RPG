@@ -7339,48 +7339,24 @@ textarea:disabled,
   animation: vfxAreaFlash 0.6s ease-out both;
 }
 
-/* 突刺／震碎斬：參考窄長白金光槍，中央高亮、金褐晶刃與尖端收束。 */
+/* 突刺光槍：使用使用者確認的垂直 PNG，播放時旋轉到飛行方向。 */
 .vfx-thrust-line {
-  width: var(--vfx-length, 70px);
-  height: 30px;
-  transform-origin: 0 50%;
-  transform: rotate(var(--vfx-angle, 0rad)) scaleX(0.1);
-  background: linear-gradient(90deg, transparent 0%, #5c3a1f 13%, #a86d2d 34%, #e1aa54 46%, #fff8df 50%, #e1aa54 54%, #a86d2d 66%, #5c3a1f 87%, transparent 100%);
-  clip-path: polygon(0 50%, 10% 42%, 34% 35%, 47% 25%, 50% 0%, 53% 25%, 66% 35%, 90% 42%, 100% 50%, 90% 58%, 66% 65%, 53% 75%, 50% 100%, 47% 75%, 34% 65%, 10% 58%);
-  box-shadow: 0 0 12px rgba(255, 232, 174, 0.9), 0 0 28px rgba(168, 109, 45, 0.72);
+  width: var(--vfx-width, 36px);
+  height: var(--vfx-length, 70px);
+  transform-origin: 50% 50%;
+  transform: translate(-50%, -50%) rotate(calc(var(--vfx-angle, 0rad) - 1.5708rad)) scaleY(0.08);
+  background: url('../images/vfx/thrust_lance.png') center / 100% 100% no-repeat;
+  filter: drop-shadow(0 0 8px rgba(255, 244, 186, 0.9)) drop-shadow(0 0 20px rgba(226, 157, 49, 0.7));
   animation: vfxThrustLine ease-out both;
   animation-duration: inherit;
   animation-delay: inherit;
 }
 
-.vfx-thrust-line::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: #d8943b;
-  filter: blur(6px);
-  opacity: 0.72;
-  transform: scale(1.08, 0.82);
-}
-
-.vfx-thrust-line::after {
-  content: '';
-  position: absolute;
-  left: 2%;
-  top: calc(50% - 1.5px);
-  width: 96%;
-  height: 3px;
-  border-radius: 50%;
-  background: linear-gradient(90deg, transparent 0%, #ffe7a6 22%, #ffffff 48%, #ffffff 52%, #ffe7a6 78%, transparent 100%);
-  box-shadow: 0 0 5px #fff, 0 0 12px #f5c56b, 0 0 22px rgba(193, 124, 43, 0.9);
-  opacity: 0.98;
-}
-
 @keyframes vfxThrustLine {
-  0% { transform: rotate(var(--vfx-angle, 0rad)) scaleX(0.08); opacity: 0; }
-  18% { transform: rotate(var(--vfx-angle, 0rad)) scaleX(1); opacity: 1; }
-  70% { transform: rotate(var(--vfx-angle, 0rad)) scaleX(1); opacity: 0.9; }
-  100% { transform: rotate(var(--vfx-angle, 0rad)) scaleX(1.04); opacity: 0; }
+  0% { transform: translate(-50%, -50%) rotate(calc(var(--vfx-angle, 0rad) - 1.5708rad)) scaleY(0.08); opacity: 0; }
+  18% { transform: translate(-50%, -50%) rotate(calc(var(--vfx-angle, 0rad) - 1.5708rad)) scaleY(1); opacity: 1; }
+  70% { transform: translate(-50%, -50%) rotate(calc(var(--vfx-angle, 0rad) - 1.5708rad)) scaleY(1); opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) rotate(calc(var(--vfx-angle, 0rad) - 1.5708rad)) scaleY(1.04); opacity: 0; }
 }
 
 @keyframes vfxAreaFlash {

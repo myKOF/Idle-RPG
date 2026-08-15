@@ -88,6 +88,7 @@ var BattleRenderer = (function () {
     shake: 0,                 // 畫面震動剩餘強度（px）
     sheets: {},               // name -> { tex, manifest, anims: {name: [Texture]} }
     imgTex: {},               // 敵人圖檔快取：src -> Texture | 'loading' | 'failed'
+    thrustLanceTex: null,     // 突刺光槍圖片；載入失敗時由 spawnThrustLine 保留程序化退化畫法
     groundTile: null,
     vignette: null,
     deathFog: null,
@@ -1433,17 +1434,54 @@ var BattleRenderer = (function () {
     }, 1);
   }
 
-  function spawnThrustLine(targetId, spec, angleOffset, delaySec, length) {
+  function spawnThrustLine(targetId, spec, angleOffset, delaySec, length, laneOffset, angleOverride) {
     var theme = themeOf(spec);
     var from = playerMuzzle();
     var to = posOf(targetId);
     var dx = to.x - from.x, dy = to.y - from.y;
-    var angle = Math.atan2(dy, dx) + (angleOffset || 0);
+    var angle = typeof angleOverride === 'number' ? angleOverride : Math.atan2(dy, dx) + (angleOffset || 0);
+    var lineLength = Math.max(48, Number(spec.lineLength) || Number(length) || 70);
+    var side = angle + Math.PI / 2;
+    var offset = Number(laneOffset) || 0;
+    var startX = from.x + Math.cos(side) * offset;
+    var startY = from.y + Math.sin(side) * offset;
+
+    /* 正式突刺素材：以圖片的長軸作為飛行軸，並沿路徑從短到長展開。
+       圖片載入失敗時才走下方 Graphics 退化畫法，避免整個戰鬥 VFX 消失。 */
+    if (S.thrustLanceTex) {
+      var sprite = new PIXI.Sprite(S.thrustLanceTex);
+      sprite.anchor.set(0.5, 0.5);
+      sprite.blendMode = 'add';
+      S.layers.fx.addChild(sprite);
+      var st = -(delaySec || 0), sd = Math.max(0.28, spec.dur || 0.38);
+      var texW = Math.max(1, S.thrustLanceTex.width || 1024);
+      var texH = Math.max(1, S.thrustLanceTex.height || 1536);
+      var imageWidth = Math.max(28, Number(spec.lineWidth) || 36);
+      addFx({
+        node: sprite,
+        update: function (dt) {
+          st += dt;
+          sprite.visible = st >= 0;
+          if (st < 0) return true;
+          var k = Math.min(1, st / sd);
+          var grow = k < 0.2 ? k / 0.2 : 1;
+          var fade = k > 0.64 ? 1 - (k - 0.64) / 0.36 : 1;
+          var shownLength = lineLength * grow;
+          sprite.x = startX + Math.cos(angle) * shownLength / 2;
+          sprite.y = startY + Math.sin(angle) * shownLength / 2;
+          sprite.rotation = angle - Math.PI / 2;
+          sprite.scale.set(imageWidth / texW, Math.max(0.001, shownLength / texH));
+          sprite.alpha = fade;
+          return st < sd;
+        }
+      }, 1);
+      return;
+    }
     var g = new PIXI.Graphics();
     g.x = from.x; g.y = from.y; g.rotation = angle;
     S.layers.fx.addChild(g);
     var t = -(delaySec || 0), dur = Math.max(0.28, spec.dur || 0.38);
-    var lineLength = Math.max(48, Number(length) || 70);
+    lineLength = Math.max(48, Number(length) || 70);
     addFx({
       node: g,
       update: function (dt) {
@@ -2238,14 +2276,25 @@ var BattleRenderer = (function () {
         });
         break;
       case 'slash':
-        if (spec.variant === 'thrust-pierce' || spec.variant === 'thrust-triple' || spec.variant === 'thrust') {
+        if (spec.variant === 'thrust-pierce' || spec.variant === 'thrust-parallel' ||
+            spec.variant === 'thrust-octagonal' || spec.variant === 'thrust') {
           if (!targets.length) break;
-          var thrustOffsets = spec.variant === 'thrust-triple'
-            ? [0, -30 * Math.PI / 180, 30 * Math.PI / 180] : [0];
+          var thrustLanes = Array.isArray(spec.laneOffsets) && spec.laneOffsets.length
+            ? spec.laneOffsets : [0];
+          var thrustDirections = spec.variant === 'thrust-octagonal'
+            ? Math.max(1, Number(spec.directionCount) || 8) : 1;
+          var thrustLength = Math.max(48, Number(spec.lineLength) || 70);
+          var thrustFrontAngle = Math.atan2(posOf(targets[0]).y - playerMuzzle().y,
+            posOf(targets[0]).x - playerMuzzle().x);
           for (var trc = 0; trc < count; trc++) {
-            for (var tro = 0; tro < thrustOffsets.length; tro++) {
-              spawnThrustLine(targets[0], spec, thrustOffsets[tro],
-                (baseDelay + trc * stagger) / 1000, 70);
+            for (var tro = 0; tro < thrustDirections; tro++) {
+              var thrustAngle = spec.variant === 'thrust-octagonal'
+                ? thrustFrontAngle + tro * Math.PI * 2 / thrustDirections : thrustFrontAngle;
+              for (var tl = 0; tl < thrustLanes.length; tl++) {
+                spawnThrustLine(targets[0], spec, 0,
+                  (baseDelay + trc * stagger) / 1000, thrustLength,
+                  thrustLanes[tl], thrustAngle);
+              }
             }
           }
           if (!spec.projectile) {
@@ -3109,7 +3158,11 @@ var BattleRenderer = (function () {
       return Promise.all([
         loadSheet('player', 'images/sprites/player'),
         loadSheet('boss', 'images/sprites/boss_generic'),
-        loadFireFlare()
+        loadFireFlare(),
+        PIXI.Assets.load('images/vfx/thrust_lance.png').then(function (tex) {
+          S.thrustLanceTex = tex;
+          tex.source.scaleMode = 'linear';
+        }).catch(function () { S.thrustLanceTex = null; })
       ]);
     }).then(function () {
       S.app = app;
