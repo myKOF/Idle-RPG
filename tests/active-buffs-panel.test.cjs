@@ -59,6 +59,8 @@ test('戰鬥區技能快捷上方 BUFF 狀態列與增益提示', () => {
   assert.match(html, /id="tp-status" data-buff-tip/);
   assert.match(html, /id="pv-status" data-buff-tip/);
 
+  // 狀態列靠左對齊且位於技能快捷列上方 5px 位置 (bottom: 65px)
+  assert.match(css, /#battle-buff-bar\s*\{[^}]*bottom:\s*65px;[^}]*justify-content:\s*flex-start;/);
   // 狀態圖示為正方形 icon（約為技能格 42px 的 2/3 = 28px）
   assert.match(css, /\.battle-buff-badge\s*\{[^}]*width:\s*28px;[^}]*height:\s*28px;/);
   // 圓形倒計時黑色遮罩（conic-gradient）
