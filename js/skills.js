@@ -2258,7 +2258,8 @@ function skillConditionOk(sk, fx, pEnt, target, st) {
       break;
     case 'shield':
       var shield = Math.max(0, Number(pEnt.shield) || 0);
-      if (shield > st.hp * SHIELD_RECAST_THRESHOLD) return false;
+      var isShieldActive = (typeof statusActive === 'function') ? statusActive(pEnt, 'shield') : (pEnt.buffs && pEnt.buffs.shield && pEnt.buffs.shield.until > GT);
+      if (isShieldActive && shield > st.hp * SHIELD_RECAST_THRESHOLD) return false;
       break;
   }
   // 傷害/減益類需要目標
@@ -2274,11 +2275,13 @@ function skillConditionOk(sk, fx, pEnt, target, st) {
       : !!(target && target.hp > 0 && hasDots(target));
     if (!dotTargetOk) return false;
   }
-  /* 增益不重複疊放——僅限「純增益技」。
+  /* 增益不重複疊放——僅限「純增益技」（無特定 AI 條件者）。
      傷害技的增益是附帶效果（破甲擊等的穿透增益），若因增益還在就不施放，等於白丟一次輸出，
      因此傷害技不受此閘門限制。 */
-  var firstBuff = skillFxBuffList(fx)[0];
-  if (firstBuff && !fx.dmgType && buffVal(pEnt, statusRefKey(firstBuff)) > 0) return false;
+  if (!sk.ai) {
+    var firstBuff = skillFxBuffList(fx)[0];
+    if (firstBuff && !fx.dmgType && buffVal(pEnt, statusRefKey(firstBuff)) > 0) return false;
+  }
   return true;
 }
 

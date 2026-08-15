@@ -2910,8 +2910,7 @@ function renderBattleBuffBar(pEnt, snapshotGt) {
 
     var ttTitle = (e.icon || '✨') + ' ' + (e.name || e.sid) + (e.effect === 'stat' && e.val ? (e.kind === 'debuff' ? '↓' : '↑') : '') + stackText;
     var ttDesc = (def && def.desc ? def.desc + ' ' : '') +
-      (valText ? (e.effect === 'shield' ? '護盾吸收量：' : '數值：') + valText + ' ' : '') +
-      (remain > 0 ? '剩餘 ' + fmt1(remain) + ' 秒' : '');
+      (valText ? (e.effect === 'shield' ? '護盾吸收量：' : '數值：') + valText : '');
 
     states.push({
       key: key,
@@ -3252,6 +3251,28 @@ function updateBattleSkillBarCds() {
       } else if (bMask) {
         bMask.style.setProperty('--cd-deg', '0deg');
       }
+    }
+  }
+
+  var tip = $id('sk-tooltip');
+  if (tip && tip.style.display === 'block' && UI.tooltipAnchor && UI.tooltipAnchor.getAttribute && UI.tooltipAnchor.getAttribute('data-snap-until')) {
+    var curRemainText = getAnchorRemainText(UI.tooltipAnchor);
+    var remainEl = tip.querySelector('.skt-remain');
+    if (curRemainText) {
+      hasActive = true;
+      if (remainEl) {
+        setTextIfChanged(remainEl, curRemainText);
+      } else {
+        var nameEl = tip.querySelector('.skt-name');
+        if (nameEl) {
+          remainEl = document.createElement('span');
+          remainEl.className = 'skt-remain';
+          remainEl.textContent = curRemainText;
+          nameEl.appendChild(remainEl);
+        }
+      }
+    } else if (remainEl) {
+      remainEl.remove();
     }
   }
 
@@ -7832,15 +7853,27 @@ function showTalentTooltip(ref, anchorEl) {
   tip.style.left = x + 'px';
   tip.style.top = y + 'px';
 }
-function statTooltipHTML(title, desc) {
-  return '<div class="skt-name">' + title + '</div>' +
+function getAnchorRemainText(anchorEl) {
+  if (!anchorEl || !anchorEl.getAttribute) return '';
+  var until = Number(anchorEl.getAttribute('data-snap-until')) || 0;
+  var snapGt = Number(anchorEl.getAttribute('data-snap-gt')) || 0;
+  if (until <= 0) return '';
+  var remain = uiCountdownRemain(Math.max(0, until - snapGt), snapGt);
+  if (remain <= 0) return '';
+  return Math.max(0, remain).toFixed(1) + 's';
+}
+
+function statTooltipHTML(title, desc, remainText) {
+  var remainHtml = remainText ? '<span class="skt-remain">' + esc(remainText) + '</span>' : '';
+  return '<div class="skt-name"><span>' + title + '</span>' + remainHtml + '</div>' +
     '<div class="skt-desc">' + desc + '</div>';
 }
 
 function showStatTooltip(title, desc, anchorEl) {
   var tip = $id('sk-tooltip');
   if (!tip) return;
-  var h = statTooltipHTML(title, desc);
+  var remainText = getAnchorRemainText(anchorEl);
+  var h = statTooltipHTML(title, desc, remainText);
   /* 同一個錨點、同樣的內容、而且提示還開著 → 只是重複觸發，位置不必重算。
 
      定位要讀三次版面（錨點矩形 + 提示寬高），而這支被重複呼叫的次數遠超過玩家
@@ -7872,6 +7905,9 @@ function showStatTooltip(title, desc, anchorEl) {
   if (y < 8) y = 8;
   tip.style.left = x + 'px';
   tip.style.top = y + 'px';
+  if (remainText) {
+    startBattleSkillBarAnimation();
+  }
 }
 function showBuffTooltip(anchorEl) {
   var tip = $id('sk-tooltip');
@@ -7927,8 +7963,9 @@ function refreshOpenStatTooltip() {
     return;
   }
   if ((anchorEl.getAttribute && anchorEl.getAttribute('data-tt-title')) || (anchorEl.classList && anchorEl.classList.contains('res'))) {
+    var remainText = getAnchorRemainText(anchorEl);
     setHtmlIfChanged(tip, statTooltipHTML(anchorEl.getAttribute('data-tt-title') || '',
-      anchorEl.getAttribute('data-tt-desc') || ''));
+      anchorEl.getAttribute('data-tt-desc') || '', remainText));
   }
 }
 function refreshOpenResourceTooltip() {

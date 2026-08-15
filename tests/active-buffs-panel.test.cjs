@@ -59,15 +59,19 @@ test('戰鬥區技能快捷上方 BUFF 狀態列與增益提示', () => {
   assert.match(html, /id="tp-status" data-buff-tip/);
   assert.match(html, /id="pv-status" data-buff-tip/);
 
+  // 狀態列靠左對齊且位於技能快捷列上方 5px 位置 (bottom: 65px)
+  assert.match(css, /#battle-buff-bar\s*\{[^}]*bottom:\s*65px;[^}]*justify-content:\s*flex-start;/);
   // 狀態圖示為正方形 icon（約為技能格 42px 的 2/3 = 28px）
   assert.match(css, /\.battle-buff-badge\s*\{[^}]*width:\s*28px;[^}]*height:\s*28px;/);
   // 圓形倒計時黑色遮罩（conic-gradient）
   assert.match(css, /\.battle-buff-badge\s+\.bbb-cd-mask\s*\{[^}]*conic-gradient/);
   // 疊層數字顯示在右下角
   assert.match(css, /\.battle-buff-badge\s+\.bbb-stacks\s*\{[^}]*position:\s*absolute;[^}]*bottom:\s*1px;[^}]*right:\s*2px;/);
-  // 不在圖示內顯示倒計時數字，使用 Tips 提示
-  assert.match(ui, /battleBuffBadgeMarkup[\s\S]*?bbb-cd-mask/);
-  assert.match(ui, /battleBuffBadgeMarkup[\s\S]*?bbb-stacks/);
+  // Tooltip 右上角顯示倒計時間（.skt-remain）固定 1 位小數（toFixed(1)）並支援 60fps / 每 tick 即時動態刷新
+  assert.match(css, /\.skt-remain\s*\{[^}]*font-size:\s*13px;[^}]*margin-left:\s*auto;/);
+  assert.match(ui, /function getAnchorRemainText\(anchorEl\)[\s\S]*?toFixed\(1\)/);
+  assert.match(ui, /statTooltipHTML[\s\S]*?skt-remain/);
+  assert.match(ui, /updateBattleSkillBarCds[\s\S]*?skt-remain/);
 });
 
 test('增益 tooltip 每 tick 即時刷新；面板數值用綠色', () => {
@@ -80,4 +84,5 @@ test('增益 tooltip 每 tick 即時刷新；面板數值用綠色', () => {
   // 面板「目前技能增益」數值內嵌綠色（與 tooltip 相同 var(--good)），不再倚賴被移除的 CSS
   assert.match(ui, /buff-val" style="color:var\(--good\)"/);
 });
+
 

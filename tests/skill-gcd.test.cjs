@@ -283,20 +283,28 @@ test('明確 castTime 仍可為單一技能保留施法時間', () => {
 
 /* 2026-07-31：護盾技能改為「最大生命 × 技能護盾%」。
    舊式是「目前護盾基準 ×(1 + 技能護盾%)」，標示 34% 實得 134% 最大生命，約為標示的 4 倍。 */
-test('魔法屏障在護盾剩 20% 以下即可提前施放', () => {
+test('魔法屏障在護盾剩 20% 以下或護盾狀態結束時即可施放', () => {
   const context = loadGameContext();
   const skill = context.skillDef('manaBarrier');
   const fx = context.effectiveFx('manaBarrier', skill, 1);
   const stats = context.getStats();
   const player = playerEntity();
-  player.shield = 201;
 
+  // 1. 護盾 BUFF 生效中：剩餘護盾 > 20% 不重複施放，<= 20% 可提前補盾
+  player.buffs = { shield: { until: 100 } };
+  context.GT = 50;
+  player.shield = 201;
   assert.equal(context.skillConditionOk(skill, fx, player, null, stats), false);
   player.shield = 200;
   assert.equal(context.skillConditionOk(skill, fx, player, null, stats), true);
   player.shield = 1;
   assert.equal(context.skillConditionOk(skill, fx, player, null, stats), true);
   player.shield = 0;
+  assert.equal(context.skillConditionOk(skill, fx, player, null, stats), true);
+
+  // 2. 護盾 BUFF 已結束或未開啟：即便有被動護盾（如反擊盾/吸血盾 > 20%），亦可立即施放補大盾
+  delete player.buffs.shield;
+  player.shield = 350;
   assert.equal(context.skillConditionOk(skill, fx, player, null, stats), true);
 });
 
