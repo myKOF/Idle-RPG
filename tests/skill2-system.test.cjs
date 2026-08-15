@@ -431,10 +431,10 @@ test("pickAndCastSkill：裝載 'sg:' 鍵可施放；equipSkillToLoadout 驗證�
   const p = playerEnt();
   const m = enemy(1e9, 40, 0);
   const out = c.pickAndCastSkill(p, [m], 'mv-float');
-  const completed = c.tickSkillCast(p, 0.4);
-  assert.ok(out && out.casting, '裝載後應可經由統一施放迴圈施放');
-  assert.ok(completed.dmg > 0, '完成施法後應套用技能傷害');
-  assert.equal(calls.length, 1);
+  assert.ok(out && out.casting, '裝載後應在 CD 就緒時立即進入統一施放迴圈');
+  assert.equal(out.castTime, c.SKILL_CAST_LOCK);
+  c.tickSkillCast(p, c.SKILL_CAST_LOCK);
+  assert.equal(calls.length, 1, '施放硬直結束後應套用技能傷害');
 });
 
 /* ---- 存檔常態化（save.js 讀檔防護與 sgEffectiveLevels 同規則） ---- */
