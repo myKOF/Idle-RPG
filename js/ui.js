@@ -7341,7 +7341,7 @@ function renderSkills() {
       sgRows += sgSkillGroupRowHTML(sgGid, sgLvs, sgLoadout);
     }
     h += '<div class="tree-panel sg-skill-panel"><div class="tree-title">🌟 新版技能 ' +
-      '<span class="dim-text">同群組技能由左至右進階；亮起＝已解鎖，灰色＝未解鎖（可查看）</span></div>' +
+      '<span class="dim-text">同群組技能由左至右進階；亮起＝已學會，灰色＝未學／未解鎖（可查看）</span></div>' +
       '<div class="sg-skill-list">' + sgRows + '</div></div>';
   }
   for (var cat in SKILL_CATS) {
