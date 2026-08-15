@@ -1023,8 +1023,8 @@ SCHEMAS.Status = {
 };
 
 /* ---- Skills2 ← SKILLS2（js/skills2.js）新版主動技能群組（2026-08-13 技能改造第一批） ----
-   6 群組 × 7 階；同群組前端顯示為同一個技能。每列＝一階；群組層欄位（名稱／圖標／
-   冷卻／消耗）取自該群組「階數=1」那一列，其餘列的群組欄位僅供閱讀對照。
+   8 群組 × 7 階；同群組前端顯示為同一個技能。每列＝一階；群組層欄位（名稱／圖標／
+   range／冷卻／消耗）取自該群組「階數=1」那一列，其餘列的群組欄位僅供閱讀對照。
    「效果參數(JSON)」鍵值慣例：<鍵>＝Lv.1 基準值、<鍵>Per＝每級增量（值＝基準＋增量×(等級-1)）。
    「效果說明模板」內的 {鍵} 於遊戲顯示時代入目前等級的計算值。
    第二頁「欄位定義」＝ SKILLS2_GLOSSARY_ROWS（說明頁，程式不讀取）。 */
@@ -1036,6 +1036,10 @@ const SKILLS2_GLOSSARY_ROWS = [
   ['階數'],
   ['1~7；第 1 階為技能本體（預設開啟 Lv.1），前一階至少 Lv.1 才可投資下一階；'],
   ['每階上限 10 級（固定，不隨轉生提高）；'],
+  [''],
+  ['range'],
+  ['技能初始涵蓋範圍，格式為「長*寬」（米），例如 6*2；只供幾何計算，後續升級倍率／追加距離由程式套用；'],
+  ['不適合矩形表示或尚未定義初始矩形的技能可留白；此欄不會寫入遊戲內說明文字；'],
   [''],
   ['冷卻時間 / 施法消耗'],
   ['整個群組共用（同群組是同一個技能）；只需填在階數=1 那一列，其餘列僅供對照；'],
@@ -1059,7 +1063,7 @@ const SKILLS2_GLOSSARY_ROWS = [
 SCHEMAS.Skills2 = {
   name: 'Skills2', jsFile: 'skills2', sheet: 'Skills2', vars: ['SKILLS2'],
   extraSheets: [{ name: '欄位定義', rows: SKILLS2_GLOSSARY_ROWS }],
-  header: ['群組ID', '群組名稱', '群組圖標', '冷卻時間', '施法消耗', '階數', '階段名稱',
+  header: ['群組ID', '群組名稱', '群組圖標', 'range', '冷卻時間', '施法消耗', '階數', '階段名稱',
     '效果參數(JSON)', '升級金幣基數', '升級金幣倍率', '效果說明模板'],
   extract(src) {
     const SKILLS2 = evalLiteral(extractLiteral(src, 'SKILLS2').literal);
@@ -1067,7 +1071,7 @@ SCHEMAS.Skills2 = {
     Object.keys(SKILLS2).forEach(gid => {
       const g = SKILLS2[gid];
       (g.tiers || []).forEach((t, i) => {
-        rows.push([gid, g.name, g.emoji, numStr(g.cd), numStr(g.cost), String(i + 1), t.name,
+        rows.push([gid, g.name, g.emoji, g.range || '', numStr(g.cd), numStr(g.cost), String(i + 1), t.name,
           JSON.stringify(t.fx || {}), numStr(t.goldBase || 0), numStr(t.goldGrow || 1), t.desc || '']);
       });
     });
@@ -1082,12 +1086,16 @@ SCHEMAS.Skills2 = {
       const tierIdx = Math.floor(toNum(get(r, '階數')));
       if (!(tierIdx >= 1)) throw new Error('Skills2 群組「' + gid + '」有一列缺「階數」');
       if (!groups[gid]) {
-        groups[gid] = { name: '', emoji: '', cd: 0, cost: 0, tiers: [] };
+        groups[gid] = { name: '', emoji: '', range: '', cd: 0, cost: 0, tiers: [] };
         order.push(gid);
       }
       if (tierIdx === 1) {
         groups[gid].name = get(r, '群組名稱');
         groups[gid].emoji = get(r, '群組圖標');
+        groups[gid].range = get(r, 'range').trim();
+        if (groups[gid].range && !/^\d+(?:\.\d+)?\s*\*\s*\d+(?:\.\d+)?$/.test(groups[gid].range)) {
+          throw new Error('Skills2 群組「' + gid + '」的 range 必須是「長*寬」（例如 6*2）');
+        }
         groups[gid].cd = toNum(get(r, '冷卻時間'));
         groups[gid].cost = toNum(get(r, '施法消耗'));
       }

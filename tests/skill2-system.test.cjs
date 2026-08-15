@@ -78,6 +78,7 @@ test('SKILLS2：8 個群組、每組 7 階、欄位齊全且說明模板的參�
     const g = c.SKILLS2[gid];
     const isPassive = c.skills2IsPassive(gid);
     assert.ok(g.name && g.emoji, gid + ' 缺名稱/圖標');
+    assert.ok(g.range === undefined || typeof g.range === 'string', gid + ' range 欄位型別不合法');
     // 被動群組（counter）無冷卻無耗魔；主動群組必須有正冷卻
     assert.ok(isPassive ? (g.cd === 0 && g.cost === 0) : (g.cd > 0 && g.cost >= 0), gid + ' 冷卻/消耗不合法');
     assert.equal(g.tiers.length, c.SG_TIER_COUNT, gid + ' 階數不是 ' + c.SG_TIER_COUNT);
@@ -101,14 +102,17 @@ test('SKILLS2 與 config/CSV/Skills2.csv 完整往返（每階一列）', () => 
   Object.keys(c.SKILLS2).forEach((gid) => { tierTotal += c.SKILLS2[gid].tiers.length; });
   assert.equal(rows.length - 1, tierTotal, 'CSV 列數應為每階一列');
   assert.match(rows[0], /群組ID/);
+  assert.match(rows[0], /range/);
   assert.match(rows[0], /效果參數\(JSON\)/);
 });
 
 test('突刺 1～7 階規格：數值、次數、距離與方向符合公開技能表', () => {
   const c = loadContext();
   const t = c.SKILLS2.thrust.tiers;
+  assert.equal(c.SKILLS2.thrust.range, '6*2', '突刺初始範圍應由 range 欄位指定');
+  assert.deepEqual(plain(c.sgRange(c.SKILLS2.thrust.range)), { length: 6, width: 2 });
   assert.deepEqual(plain(t.map((tier) => tier.fx)), [
-    { pct: 300, pctPer: 30, count: 2, m: 6, width: 2 },
+    { pct: 300, pctPer: 30, count: 2 },
     { chance: 25, chancePer: 2.5, count: 2 },
     { pct: 30, pctPer: 10 },
     { count: 3, range: 20, rangePer: 2 },
@@ -116,7 +120,7 @@ test('突刺 1～7 階規格：數值、次數、距離與方向符合公開技�
     { m: 10, mPer: 1 },
     { pct: 20, pctPer: 2, count: 3, directions: 8 }
   ]);
-  assert.match(t[0].desc, /前方 \{m\} 米×寬 \{width\} 米/);
+  assert.doesNotMatch(t[0].desc, /米×寬|\{m\}|\{width\}/, '初始範圍不應寫入遊戲說明');
   assert.match(t[3].desc, /\{count\} 道平行貫穿突刺/);
   assert.match(t[5].desc, /貫穿路徑上所有敵人/);
   assert.match(t[6].desc, /八個方向/);
