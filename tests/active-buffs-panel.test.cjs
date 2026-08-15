@@ -67,9 +67,9 @@ test('戰鬥區技能快捷上方 BUFF 狀態列與增益提示', () => {
   assert.match(css, /\.battle-buff-badge\s+\.bbb-cd-mask\s*\{[^}]*conic-gradient/);
   // 疊層數字顯示在右下角
   assert.match(css, /\.battle-buff-badge\s+\.bbb-stacks\s*\{[^}]*position:\s*absolute;[^}]*bottom:\s*1px;[^}]*right:\s*2px;/);
-  // Tooltip 右上角顯示倒計時間（.skt-remain）並支援 60fps / 每 tick 即時動態刷新
+  // Tooltip 右上角顯示倒計時間（.skt-remain）固定 1 位小數（toFixed(1)）並支援 60fps / 每 tick 即時動態刷新
   assert.match(css, /\.skt-remain\s*\{[^}]*font-size:\s*13px;[^}]*margin-left:\s*auto;/);
-  assert.match(ui, /function getAnchorRemainText\(anchorEl\)/);
+  assert.match(ui, /function getAnchorRemainText\(anchorEl\)[\s\S]*?toFixed\(1\)/);
   assert.match(ui, /statTooltipHTML[\s\S]*?skt-remain/);
   assert.match(ui, /updateBattleSkillBarCds[\s\S]*?skt-remain/);
 });

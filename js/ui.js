@@ -7860,7 +7860,7 @@ function getAnchorRemainText(anchorEl) {
   if (until <= 0) return '';
   var remain = uiCountdownRemain(Math.max(0, until - snapGt), snapGt);
   if (remain <= 0) return '';
-  return remain >= 10 ? Math.ceil(remain) + 's' : fmt1(remain) + 's';
+  return Math.max(0, remain).toFixed(1) + 's';
 }
 
 function statTooltipHTML(title, desc, remainText) {
