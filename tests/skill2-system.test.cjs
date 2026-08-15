@@ -109,15 +109,15 @@ test('SKILLS2 與 config/CSV/Skills2.csv 完整往返（每階一列）', () => 
 test('突刺 1～7 階規格：數值、次數、距離與方向符合公開技能表', () => {
   const c = loadContext();
   const t = c.SKILLS2.thrust.tiers;
-  assert.equal(c.SKILLS2.thrust.range, '6*2', '突刺初始範圍應由 range 欄位指定');
-  assert.deepEqual(plain(c.sgRange(c.SKILLS2.thrust.range)), { length: 6, width: 2 });
+  assert.equal(c.SKILLS2.thrust.range, '12*3', '突刺初始範圍應由 range 欄位指定');
+  assert.deepEqual(plain(c.sgRange(c.SKILLS2.thrust.range)), { length: 12, width: 3 });
   assert.deepEqual(plain(t.map((tier) => tier.fx)), [
-    { pct: 300, pctPer: 30, count: 2 },
+    { pct: 150, pctPer: 15, count: 2 },
     { chance: 25, chancePer: 2.5, count: 2 },
-    { pct: 30, pctPer: 10 },
+    { pct: 20, pctPer: 3 },
     { count: 3, range: 20, rangePer: 2 },
     { pct: 20, pctPer: 2, count: 4 },
-    { m: 10, mPer: 1 },
+    { m: 5, mPer: 0.5 },
     { pct: 20, pctPer: 2, count: 3, directions: 8 }
   ]);
   assert.doesNotMatch(t[0].desc, /米×寬|\{m\}|\{width\}/, '初始範圍不應寫入遊戲說明');
@@ -225,7 +225,7 @@ test('bfConeTargets：全張角與半徑過濾；bfNearestOthers：距離排序�
 
 /* ---- 5) 施放機制 ---- */
 
-test('突刺：Lv.1 對前方 6×2 米範圍造成 2 次命中；自身冷卻寫入；法力扣除', () => {
+test('突刺：Lv.1 對前方 12×3 米範圍造成 2 次命中；自身冷卻寫入；法力扣除', () => {
   const c = loadContext();
   const calls = stubHits(c);
   c.chance = () => false; // 關掉所有機率觸發
@@ -256,7 +256,7 @@ test('突刺·超連刺與貫穿突刺：平行路徑上的目標都吃到飛行
   const c = loadContext();
   const calls = stubHits(c);
   c.chance = () => false;
-  c.G.player.skills2.levels.thrust = [1, 1, 1, 1, 1, 1, 0]; // 開到 6 階（原 6 米範圍再加 10 米）
+  c.G.player.skills2.levels.thrust = [1, 1, 1, 1, 1, 1, 0]; // 開到 6 階（原 12 米範圍再加 5 米）
   const p = playerEnt();
   const a = enemy(1e9, 30, 0);
   const b = enemy(1e9, 60, 0);
