@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## Codex：依參考圖重製突刺光槍特效（2026-08-15）
+
+- 狀態：已完成（待使用者確認）
+- 任務分類：突刺 VFX／DOM 與 Canvas 雙路徑
+- 負責 AI：Codex
+- 任務內容：依使用者提供的窄長白金光槍參考圖，調整突刺飛行特效的中央高亮、金褐色晶刃輪廓、外暈與尖端收束；不改變飛行物實際命中模型。
+- 允許修改：`docs/AI_TASKS.md`、`css/style.css`、`js/vfx.js`、`js/battle-renderer.js`、`index.html`、`tests/skill2-vfx.test.cjs`
+- 禁止修改：技能傷害、飛行物碰撞、Worker Protocol、存檔格式及其他 AI 進行中任務內容。
+- 前置依賴：突刺飛行物與 DOM／Canvas 特效管線已完成；目標檔案衝突預檢無來源。
+- 測試要求：突刺 VFX 結構回歸測試、相關 JavaScript 語法檢查、`npm.cmd run build`、`git diff --check`。
+- 完成條件：DOM 與 Canvas 突刺均呈現參考圖風格，突刺方向與三向突刺仍正確旋轉，命中邏輯不變。
+- 驗證結果：`tests/skill2-vfx.test.cjs` 8/8；`node --check js/vfx.js`、`node --check js/battle-renderer.js` 通過；`npm.cmd run build` 278/278；`git diff --check` 通過。
+- 已知風險：瀏覽器實機預覽因瀏覽器控制執行環境初始化錯誤未完成；未改變飛行物實際命中邏輯。
+- 完成後交給：使用者確認。
+
 ## Codex：將飛出斬擊與貫穿突刺改為週期命中的飛行物（2026-08-15）
 
 - 狀態：已完成（待使用者確認）

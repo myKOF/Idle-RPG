@@ -131,3 +131,18 @@ test('飛出斬擊與貫穿突刺由飛行物命中，不由 VFX 預先產生受
   assert.match(cleaveVfx, /if \(!s\.projectile\)/);
   assert.match(cleaveRenderer, /if \(!spec\.projectile\)/);
 });
+
+test('突刺光槍 VFX 具備參考圖的白色核心、金褐晶刃與尖端收束', () => {
+  const css = read('css/style.css');
+  const renderer = read('js/battle-renderer.js');
+  const thrustCss = css.slice(css.indexOf('.vfx-thrust-line {'), css.indexOf('@keyframes vfxThrustLine'));
+  const thrustRenderer = renderer.slice(renderer.indexOf('function spawnThrustLine'), renderer.indexOf('/* 光束 */'));
+
+  assert.match(thrustCss, /height: 30px/);
+  assert.match(thrustCss, /clip-path: polygon/);
+  assert.match(thrustCss, /#fff8df/);
+  assert.match(thrustCss, /#a86d2d/);
+  assert.match(thrustRenderer, /g\.poly\(/);
+  assert.match(thrustRenderer, /0xd8943b/);
+  assert.match(thrustRenderer, /0xfff8df/);
+});

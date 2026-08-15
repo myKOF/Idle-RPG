@@ -7339,42 +7339,41 @@ textarea:disabled,
   animation: vfxAreaFlash 0.6s ease-out both;
 }
 
-/* 突刺／震碎斬：從玩家位置向前拉出可辨識的直線刀光。 */
+/* 突刺／震碎斬：參考窄長白金光槍，中央高亮、金褐晶刃與尖端收束。 */
 .vfx-thrust-line {
   width: var(--vfx-length, 70px);
-  height: 9px;
+  height: 30px;
   transform-origin: 0 50%;
   transform: rotate(var(--vfx-angle, 0rad)) scaleX(0.1);
-  border-radius: 50%;
-  background: linear-gradient(90deg, var(--vfx-c2, #fff) 0%, var(--vfx-c1, #f97316) 58%, transparent 100%);
-  box-shadow: 0 0 8px var(--vfx-glow, #fff), 0 0 18px var(--vfx-c1, #f97316);
+  background: linear-gradient(90deg, transparent 0%, #5c3a1f 13%, #a86d2d 34%, #e1aa54 46%, #fff8df 50%, #e1aa54 54%, #a86d2d 66%, #5c3a1f 87%, transparent 100%);
+  clip-path: polygon(0 50%, 10% 42%, 34% 35%, 47% 25%, 50% 0%, 53% 25%, 66% 35%, 90% 42%, 100% 50%, 90% 58%, 66% 65%, 53% 75%, 50% 100%, 47% 75%, 34% 65%, 10% 58%);
+  box-shadow: 0 0 12px rgba(255, 232, 174, 0.9), 0 0 28px rgba(168, 109, 45, 0.72);
   animation: vfxThrustLine ease-out both;
   animation-duration: inherit;
   animation-delay: inherit;
 }
 
-.vfx-thrust-line::before,
+.vfx-thrust-line::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #d8943b;
+  filter: blur(6px);
+  opacity: 0.72;
+  transform: scale(1.08, 0.82);
+}
+
 .vfx-thrust-line::after {
   content: '';
   position: absolute;
-  left: 12px;
-  top: 2px;
-  height: 5px;
+  left: 2%;
+  top: calc(50% - 1.5px);
+  width: 96%;
+  height: 3px;
   border-radius: 50%;
-  background: #fff;
-  opacity: 0.95;
-}
-
-.vfx-thrust-line::before {
-  width: 36%;
-  filter: blur(1px);
-}
-
-.vfx-thrust-line::after {
-  width: 12px;
-  transform: translateX(calc(var(--vfx-length, 70px) - 34px));
-  background: var(--vfx-c2, #fff);
-  box-shadow: 0 0 9px var(--vfx-c2, #fff);
+  background: linear-gradient(90deg, transparent 0%, #ffe7a6 22%, #ffffff 48%, #ffffff 52%, #ffe7a6 78%, transparent 100%);
+  box-shadow: 0 0 5px #fff, 0 0 12px #f5c56b, 0 0 22px rgba(193, 124, 43, 0.9);
+  opacity: 0.98;
 }
 
 @keyframes vfxThrustLine {
