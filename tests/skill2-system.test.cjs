@@ -241,8 +241,38 @@ test('貫穿突刺：直線上所有敵人都吃到每一段', () => {
   const b = enemy(1e9, 60, 0);
   const off = enemy(1e9, 0, 300);
   c.castSkill2(p, [a, b, off], 'thrust', 'mv-float');
+  assert.equal(calls.length, 0, '飛行物尚未推進時不應立即命中');
+  c.GT = 0.5;
+  c.tickSkill2(0.5, { pEnt: p, getEnemies: () => [a, b, off], floatSel: 'mv-float', onDeaths() {} });
   assert.ok(calls.indexOf(a) >= 0 && calls.indexOf(b) >= 0, '直線上兩敵都要命中');
   assert.equal(calls.indexOf(off), -1, '線外敵人不得命中');
+  c.GT = 1.0;
+  c.tickSkill2(0.5, { pEnt: p, getEnemies: () => [a, b, off], floatSel: 'mv-float', onDeaths() {} });
+  assert.equal(calls.length, 8, '每個路徑目標應在 0.5 秒後各追加命中一次');
+  c.GT = 1.6;
+  c.tickSkill2(0.6, { pEnt: p, getEnemies: () => [a, b, off], floatSel: 'mv-float', onDeaths() {} });
+  assert.equal(calls.length, 8, '飛行物追加命中後應消失');
+});
+
+test('貫穿突刺·終極突刺：三條扇形路徑都命中路徑內全部敵人', () => {
+  const c = loadContext();
+  const calls = stubHits(c);
+  c.chance = () => false;
+  c.G.player.skills2.levels.thrust = [1, 1, 1, 1, 1, 1, 1];
+  const p = playerEnt();
+  const front = enemy(1e9, 60, 0);
+  const right = enemy(1e9, 51.962, 30);
+  const left = enemy(1e9, 51.962, -30);
+  const off = enemy(1e9, 0, 100);
+  c.castSkill2(p, [front, right, left, off], 'thrust', 'mv-float');
+  c.GT = 0.5;
+  c.tickSkill2(0.5, { pEnt: p, getEnemies: () => [front, right, left, off], floatSel: 'mv-float', onDeaths() {} });
+  assert.equal(calls.length, 6, '超連刺會使三條貫穿路徑各命中兩次');
+  assert.ok(calls.includes(front) && calls.includes(right) && calls.includes(left));
+  assert.equal(calls.includes(off), false, '扇形外敵人不得命中');
+  c.GT = 1.0;
+  c.tickSkill2(0.5, { pEnt: p, getEnemies: () => [front, right, left, off], floatSel: 'mv-float', onDeaths() {} });
+  assert.equal(calls.length, 12, '三條路徑的每個目標都應再追加命中一次');
 });
 
 test('迴身雙連斬：前後左右各斬 3 次，且物理傷害額外 +10%', () => {
@@ -266,11 +296,18 @@ test('迴身雙連斬：前後左右各斬 3 次，且物理傷害額外 +10%', 
 
   assert.equal(c.SKILLS2.cleave.tiers[6].fx.times, 3);
   assert.equal(c.SKILLS2.cleave.tiers[6].fx.pct, 10);
+  assert.equal(cfgs.length, 0, '震碎斬飛行物應在施放時先不命中');
+  c.GT = 0.5;
+  c.tickSkill2(0.5, { pEnt: p, getEnemies: () => [front, back, right, left], floatSel: 'mv-float', onDeaths() {} });
   assert.equal(cfgs.length, 12, '前後左右四個方向各 3 次，應產生 12 次命中');
   for (const target of [front, back, right, left]) {
     assert.equal(hits.get(target), 3, '十字四方向的每個目標都應命中 3 次');
   }
   assert.ok(cfgs.every((cfg) => cfg.atk === 2300), '基礎 200%＋傷害強化 20%＋迴身雙連斬 10% 應為 230%');
+
+  c.GT = 1.0;
+  c.tickSkill2(0.5, { pEnt: p, getEnemies: () => [front, back, right, left], floatSel: 'mv-float', onDeaths() {} });
+  assert.equal(cfgs.length, 24, '每條飛行物路徑應在 0.5 秒後再命中一次');
 
   const csv = fs.readFileSync(path.join(root, 'config/CSV/Skills2.csv'), 'utf8');
   const row = csv.split(/\r?\n/).find((line) => line.includes(',7,迴身雙連斬,'));

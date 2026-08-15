@@ -1442,7 +1442,7 @@ var BattleRenderer = (function () {
     var g = new PIXI.Graphics();
     g.x = from.x; g.y = from.y; g.rotation = angle;
     S.layers.fx.addChild(g);
-    var t = -(delaySec || 0), dur = 0.28;
+    var t = -(delaySec || 0), dur = Math.max(0.28, spec.dur || 0.38);
     var lineLength = Math.max(48, Number(length) || 70);
     addFx({
       node: g,
@@ -1452,11 +1452,35 @@ var BattleRenderer = (function () {
         var k = Math.min(1, t / dur);
         var grow = k < 0.2 ? k / 0.2 : 1;
         var fade = k > 0.58 ? 1 - (k - 0.58) / 0.42 : 1;
+        var tip = lineLength * grow;
+        var centerX = tip * 0.5;
+        var shoulderX = tip * 0.32;
+        var half = Math.min(15, Math.max(5, tip * 0.22));
         g.clear();
-        g.moveTo(0, 0).lineTo(lineLength * grow, 0)
-          .stroke({ color: theme.c1, width: 10 * fade, alpha: 0.9 * fade, cap: 'round' });
-        g.moveTo(2, 0).lineTo(lineLength * grow, 0)
-          .stroke({ color: theme.c2, width: 3.5 * fade, alpha: fade, cap: 'round' });
+        g.moveTo(0, 0).lineTo(tip, 0)
+          .stroke({ color: 0xd8943b, width: 26 * fade, alpha: 0.2 * fade, cap: 'round' });
+        g.poly([
+          0, 0, shoulderX, -half * 0.45, centerX, -half,
+          centerX + tip * 0.12, -half * 0.42, tip, 0,
+          centerX + tip * 0.12, half * 0.42, centerX, half,
+          shoulderX, half * 0.45
+        ]).fill({ color: 0xa86d2d, alpha: 0.88 * fade });
+        g.poly([
+          0, 0, shoulderX, -half * 0.2, centerX, -half * 0.42,
+          centerX + tip * 0.08, -half * 0.16, tip, 0,
+          centerX + tip * 0.08, half * 0.16, centerX, half * 0.42,
+          shoulderX, half * 0.2
+        ]).fill({ color: 0xe1aa54, alpha: 0.9 * fade });
+        g.moveTo(0, 0).lineTo(tip, 0)
+          .stroke({ color: 0xfff8df, width: 4.5 * fade, alpha: 0.95 * fade, cap: 'round' });
+        g.moveTo(0, 0).lineTo(tip, 0)
+          .stroke({ color: theme.c2, width: 1.5 * fade, alpha: fade, cap: 'round' });
+        g.moveTo(shoulderX, -half * 0.45).lineTo(centerX, -half)
+          .lineTo(centerX + tip * 0.12, -half * 0.42)
+          .stroke({ color: 0xf3c875, width: 1.2 * fade, alpha: 0.9 * fade, cap: 'round' });
+        g.moveTo(shoulderX, half * 0.45).lineTo(centerX, half)
+          .lineTo(centerX + tip * 0.12, half * 0.42)
+          .stroke({ color: 0x6b421e, width: 1.2 * fade, alpha: 0.85 * fade, cap: 'round' });
         return t < dur;
       }
     }, 1);
@@ -2224,14 +2248,16 @@ var BattleRenderer = (function () {
                 (baseDelay + trc * stagger) / 1000, 70);
             }
           }
-          targets.forEach(function (id, ti) {
-            setTimeout(function () {
-              if (fxGate()) return;
-              var pt = posOf(id);
-              spawnImpact(pt.x, pt.y, spec, false);
-              hitReact(id, spec.elem, false);
-            }, baseDelay + 100 + ti * 24);
-          });
+          if (!spec.projectile) {
+            targets.forEach(function (id, ti) {
+              setTimeout(function () {
+                if (fxGate()) return;
+                var pt = posOf(id);
+                spawnImpact(pt.x, pt.y, spec, false);
+                hitReact(id, spec.elem, false);
+              }, baseDelay + 100 + ti * 24);
+            });
+          }
           break;
         }
         if (spec.variant === 'cleave' || spec.variant === 'cleave-shockwave' || spec.variant === 'cleave-back' || spec.variant === 'cleave-dual' || spec.variant === 'cleave-cross' || spec.variant === 'cleave-cross-shockwave') {
@@ -2260,32 +2286,34 @@ var BattleRenderer = (function () {
             if (drawBack) spawnCleaveArc(cleaveFrom.x, cleaveFrom.y, spec, frontAngle + Math.PI, clDelay,
               { angle: frontAngle + Math.PI, length: 120 });
           }
-          targets.forEach(function (id, ti) {
-            var cleaveFromForHits = playerMuzzle();
-            var targetPt = posOf(id);
-            var targetDx = targetPt.x - cleaveFromForHits.x;
-            var targetDy = targetPt.y - cleaveFromForHits.y;
-            var targetAlong = targetDx * Math.cos(frontAngle) + targetDy * Math.sin(frontAngle);
-            var arcHitDelay = 90;
-            if (drawCross) {
-              var targetDistance = Math.sqrt(targetDx * targetDx + targetDy * targetDy);
-              arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetDistance / 120)));
-            } else if (drawForward && targetAlong >= 0) {
-              arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetAlong / 120)));
-            } else if (drawBack && targetAlong < 0) {
-              arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, -targetAlong / 120)));
-            }
-            for (var clHit = 0; clHit < count; clHit++) {
-              (function (hitIndex, hitDelay) {
-                setTimeout(function () {
-                  if (fxGate()) return;
-                  var pt = posOf(id);
-                  spawnImpact(pt.x, pt.y, spec, false);
-                  hitReact(id, spec.elem, false);
-                }, baseDelay + hitIndex * stagger + hitDelay + ti * 35);
-              })(clHit, arcHitDelay);
-            }
-          });
+          if (!spec.projectile) {
+            targets.forEach(function (id, ti) {
+              var cleaveFromForHits = playerMuzzle();
+              var targetPt = posOf(id);
+              var targetDx = targetPt.x - cleaveFromForHits.x;
+              var targetDy = targetPt.y - cleaveFromForHits.y;
+              var targetAlong = targetDx * Math.cos(frontAngle) + targetDy * Math.sin(frontAngle);
+              var arcHitDelay = 90;
+              if (drawCross) {
+                var targetDistance = Math.sqrt(targetDx * targetDx + targetDy * targetDy);
+                arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetDistance / 120)));
+              } else if (drawForward && targetAlong >= 0) {
+                arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetAlong / 120)));
+              } else if (drawBack && targetAlong < 0) {
+                arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, -targetAlong / 120)));
+              }
+              for (var clHit = 0; clHit < count; clHit++) {
+                (function (hitIndex, hitDelay) {
+                  setTimeout(function () {
+                    if (fxGate()) return;
+                    var pt = posOf(id);
+                    spawnImpact(pt.x, pt.y, spec, false);
+                    hitReact(id, spec.elem, false);
+                  }, baseDelay + hitIndex * stagger + hitDelay + ti * 35);
+                })(clHit, arcHitDelay);
+              }
+            });
+          }
           break;
         }
         if (spec.variant === 'gale-slashes') {

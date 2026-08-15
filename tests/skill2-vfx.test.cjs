@@ -114,3 +114,35 @@ test('震碎斬距離使用 12 米（120 系統距離單位）', () => {
   assert.ok(cleaveCsvLine && cleaveCsvLine.includes('""m"":12'), 'Skills2 CSV 應使用 12 米');
   assert.match(read('js/battlefield.js'), /BF_SYSTEM_UNITS_PER_METER = 10/);
 });
+
+test('飛出斬擊與貫穿突刺由飛行物命中，不由 VFX 預先產生受擊爆點', () => {
+  const skills2 = read('js/skills2.js');
+  const vfx = read('js/vfx.js');
+  const renderer = read('js/battle-renderer.js');
+
+  assert.match(skills2, /variant: thrustVariant, count: Math\.min\(5, reps\), projectile: isPiercing/);
+  assert.match(skills2, /variant: cleaveVariant, count: Math\.min\(5, slashes\), projectile: lvs\[5\] > 0/);
+  const thrustVfx = vfx.slice(vfx.indexOf("s.variant === 'thrust-pierce'"), vfx.indexOf("s.variant === 'cleave'"));
+  const thrustRenderer = renderer.slice(renderer.indexOf("spec.variant === 'thrust-pierce'"), renderer.indexOf("spec.variant === 'cleave'"));
+  assert.match(thrustVfx, /if \(!s\.projectile\)/);
+  assert.match(thrustRenderer, /if \(!spec\.projectile\)/);
+  const cleaveVfx = vfx.slice(vfx.indexOf("s.variant === 'cleave'"), vfx.indexOf("s.variant === 'gale-slashes'"));
+  const cleaveRenderer = renderer.slice(renderer.indexOf("spec.variant === 'cleave'"), renderer.indexOf("spec.variant === 'gale-slashes'"));
+  assert.match(cleaveVfx, /if \(!s\.projectile\)/);
+  assert.match(cleaveRenderer, /if \(!spec\.projectile\)/);
+});
+
+test('突刺光槍 VFX 具備參考圖的白色核心、金褐晶刃與尖端收束', () => {
+  const css = read('css/style.css');
+  const renderer = read('js/battle-renderer.js');
+  const thrustCss = css.slice(css.indexOf('.vfx-thrust-line {'), css.indexOf('@keyframes vfxThrustLine'));
+  const thrustRenderer = renderer.slice(renderer.indexOf('function spawnThrustLine'), renderer.indexOf('/* 光束 */'));
+
+  assert.match(thrustCss, /height: 30px/);
+  assert.match(thrustCss, /clip-path: polygon/);
+  assert.match(thrustCss, /#fff8df/);
+  assert.match(thrustCss, /#a86d2d/);
+  assert.match(thrustRenderer, /g\.poly\(/);
+  assert.match(thrustRenderer, /0xd8943b/);
+  assert.match(thrustRenderer, /0xfff8df/);
+});
