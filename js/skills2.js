@@ -281,18 +281,24 @@ function skill2RageDamageMultiplier(attacker) {
   return mult;
 }
 
-/* 狂血盛宴（第 7 階）：每 1 連擊數讓普攻多選 1 個敵人；不設技能層上限，
-   實際目標數自然受當下戰場存活敵人數量限制。掛點：combat.js 野外／高塔普攻入口。 */
+/* 狂血盛宴（第 7 階）：主攻擊仍鎖定主目標；每 1 連擊數再從主目標附近
+   選 1 個額外敵人承受一次普攻傷害。不設技能層上限，實際目標數受附近存活敵人限制。
+   掛點：combat.js 野外普攻入口。 */
 function skill2RageBasicAttackTargets(primary, enemies) {
   if (!primary || primary.hp <= 0 || !Array.isArray(enemies)) return primary ? [primary] : [];
   var lvs = skill2RageLevels();
   if (!lvs || lvs[6] < 1 || typeof bfNearestOthers !== 'function') return [primary];
   var st = getStats();
-  var comboHits = Math.max(0, Math.floor(Number(st && st.comboHits) || 0));
+  var comboHits = Math.max(0, Number(st && st.comboHits) || 0);
+  // 狂化連殺提供的期間連擊數也屬於玩家目前可用的連擊數。
+  if (typeof skill2ComboBonus === 'function') comboHits += Math.max(0, Number(skill2ComboBonus()) || 0);
   var perCombo = Number(SKILLS2.bloodrage.tiers[6].fx.count) || 1;
   var extras = Math.floor(comboHits * perCombo);
   if (extras <= 0) return [primary];
-  return [primary].concat(bfNearestOthers(primary, enemies, extras));
+  var nearbyGap = (typeof bfMeterPx === 'function') ? bfMeterPx(
+    (typeof BF_MELEE_METERS === 'number' && BF_MELEE_METERS > 0) ? BF_MELEE_METERS : 5
+  ) : 0;
+  return [primary].concat(bfNearestOthers(primary, enemies, extras, nearbyGap));
 }
 
 /* 嗜血反震（第 5 階）：反震傷害乘算因子。掛點：combat.js playerDefCfg 的 thornsPct。 */
