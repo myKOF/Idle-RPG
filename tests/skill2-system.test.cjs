@@ -299,7 +299,7 @@ test('毒霧感染：傳染數量由 count 參數控制', () => {
     if (spec && spec.variant === 'poison-spread') spreadEvents.push({ from: targets[0], to: targets[1] });
   };
   c.SKILLS2.bloodblade.tiers[4].fx.count = 2;
-  c.chance = () => true;
+  c.chance = (pct) => pct > 0;
   c.tickSkill2(0.5, {
     pEnt: p,
     getEnemies: () => [source, near1, near2, near3],
@@ -307,8 +307,8 @@ test('毒霧感染：傳染數量由 count 參數控制', () => {
     onDeaths() {}
   });
   assert.equal(spreadEvents.filter((event) => event.from === source).length, 2);
-  assert.ok(near1.dots.some((d) => d.sid === 'sgPoison'));
-  assert.ok(near2.dots.some((d) => d.sid === 'sgPoison'));
+  const infected = [near1, near2, near3].filter((e) => e.dots.some((d) => d.sid === 'sgPoison'));
+  assert.equal(infected.length, 2, '毒霧感染應傳染給 2 個附近敵人');
 });
 
 test('零日感染：作用時機率立即結算剩餘持續傷害並清除狀態', () => {
@@ -328,7 +328,30 @@ test('零日感染：作用時機率立即結算剩餘持續傷害並清除狀�
   assert.ok(m.hp < hpAfterCast, '剩餘持續傷害應立即生效');
 });
 
-test('死亡屍爆：流血敵人死亡時對附近敵人造成傷害', () => {
+test('零日感染：流血與中毒傷害提高，結束後傳染兩種狀態給 80 米內隨機 1 敵人', () => {
+  const c = loadContext();
+  stubHits(c);
+  c.chance = () => false;
+  c.G.player.skills2.levels.bloodblade = [1, 1, 1, 1, 1, 1, 1];
+  const p = playerEnt();
+  const source = enemy(1e9, 40, 0);
+  const near = enemy(1e9, 120, 0);
+  const far = enemy(1e9, 6000, 0);
+  c.GT = 0;
+  c.castSkill2(p, [source], 'bloodblade', 'mv-float');
+  const bleed = source.dots.find((d) => d.sid === 'sgBleed');
+  const poison = source.dots.find((d) => d.sid === 'sgPoison');
+  assert.equal(Math.round(bleed.dps * bleed.interval), 720, '零日感染應使流血每跳傷害提高 20%');
+  assert.equal(Math.round(poison.dps * poison.interval), 600, '零日感染應使中毒每跳傷害提高 20%');
+
+  c.chance = (pct) => pct === c.SKILLS2.bloodblade.tiers[6].fx.chance;
+  c.tickSkill2(1.0, { pEnt: p, getEnemies: () => [source, near, far], floatSel: 'mv-float', onDeaths() {} });
+  assert.ok(near.dots.some((d) => d.sid === 'sgBleed'), '作用結束後應傳染流血');
+  assert.ok(near.dots.some((d) => d.sid === 'sgPoison'), '作用結束後應傳染中毒');
+  assert.equal(far.dots.length, 0, '超出 80 米的敵人不得成為傳染目標');
+});
+
+test('死亡屍爆：流血敵人死亡時對附近敵人造成傷害並傳染中毒', () => {
   const c = loadContext();
   const calls = stubHits(c);
   c.chance = () => false;
@@ -342,6 +365,8 @@ test('死亡屍爆：流血敵人死亡時對附近敵人造成傷害', () => {
   const near2 = enemy(1e9, 80, 0);
   c.skills2OnEnemyDeath(dead, [near1, near2]);
   assert.equal(calls.length, 2, '屍爆應命中附近 2 個敵人');
+  assert.ok(near1.dots.some((d) => d.sid === 'sgPoison'), '屍爆應傳染中毒給第 1 個敵人');
+  assert.ok(near2.dots.some((d) => d.sid === 'sgPoison'), '屍爆應傳染中毒給第 2 個敵人');
 });
 
 /* ---- 6) 暴風之舞 ---- */
