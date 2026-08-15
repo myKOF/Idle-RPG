@@ -1519,7 +1519,7 @@ textarea#save-io {
   z-index: 9;
 }
 
-/* 技能施放提示由角色中心左右約 60px 出現；方向 class 由 util.js 產生。 */
+/* 技能施放提示由角色中心左右約 120px 出現；方向 class 由 util.js 產生。 */
 .float-txt.player-event.skill-cast {
   top: 50%;
   left: 50% !important;
@@ -1534,11 +1534,11 @@ textarea#save-io {
 }
 
 .float-txt.player-event.skill-cast-left {
-  left: calc(50% - 60px) !important;
+  left: calc(50% - 120px) !important;
 }
 
 .float-txt.player-event.skill-cast-right {
-  left: calc(50% + 60px) !important;
+  left: calc(50% + 120px) !important;
 }
 
 .float-txt.player-event.skill-cast-left {
