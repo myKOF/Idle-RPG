@@ -49,18 +49,14 @@ test('ui.js 屬性面板接上「目前技能增益」清單', () => {
   assert.match(ui, /function currentCombatPlayerEntity\(\)[\s\S]*?peekUiPanelData\('battle'\)/);
 });
 
-test('戰鬥區玩家狀態/增益按鈕可顯示增益詳情（懸停＋點擊切換）', () => {
+test('戰鬥區技能快捷上方 BUFF 狀態列與增益提示', () => {
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   assert.match(ui, /function showBuffTooltip\(anchorEl\)/);
-  // 懸停顯示、點擊切換、mouseout 收起皆掛上 [data-buff-tip]
-  assert.match(ui, /closest\('\[data-buff-tip\]'\)[\s\S]*?showBuffTooltip/);
-  assert.match(ui, /\[data-buff-tip\][\s\S]*?hideTooltip/);
-  // 兩個戰鬥場景的玩家狀態列與增益按鈕都有 data-buff-tip
-  assert.equal((html.match(/data-buff-tip/g) || []).length, 4);
+  assert.match(ui, /function renderBattleBuffBar\(/);
+  assert.match(html, /id="battle-buff-bar"/);
   assert.match(html, /id="tp-status" data-buff-tip/);
   assert.match(html, /id="pv-status" data-buff-tip/);
-  assert.equal((html.match(/class="info-btn buff-btn" data-buff-tip/g) || []).length, 2);
 });
 
 test('增益 tooltip 每 tick 即時刷新；面板數值用綠色', () => {

@@ -2808,6 +2808,139 @@ function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
   }
   if (prefix === 'pv') {
     renderBattleSkillBar(pEnt, snapshotGt);
+    renderBattleBuffBar(pEnt, snapshotGt);
+  }
+}
+
+/* ---- 戰鬥區 BUFF 狀態列（顯示於技能快捷列上方）---- */
+function battleBuffBadgeKey(e) {
+  return JSON.stringify([e.sid, e.effect, e.kind]);
+}
+
+function battleBuffBadgeMarkup(st) {
+  return '<div class="' + st.cls + '" data-buff-key="' + esc(st.key) + '" data-snap-until="' + st.until + '" data-snap-gt="' + st.snapshotGt + '" data-tt-title="' + esc(st.ttTitle) + '" data-tt-desc="' + esc(st.ttDesc) + '">' +
+    '<span class="bbb-icon">' + st.icon + '</span>' +
+    '<span class="bbb-name">' + esc(st.name + st.stackText) + '</span>' +
+    (st.valText ? '<span class="bbb-val">' + esc(st.valText) + '</span>' : '') +
+    (st.remainText ? '<span class="bbb-remain">' + esc(st.remainText) + '</span>' : '') +
+    '</div>';
+}
+
+function syncBattleBuffBadge(badge, st) {
+  if (!badge) return;
+  badge.className = st.cls;
+  badge.setAttribute('data-buff-key', st.key);
+  badge.setAttribute('data-snap-until', st.until);
+  badge.setAttribute('data-snap-gt', st.snapshotGt);
+  badge.setAttribute('data-tt-title', st.ttTitle);
+  badge.setAttribute('data-tt-desc', st.ttDesc);
+
+  var iconEl = badge.querySelector('.bbb-icon');
+  if (iconEl) setTextIfChanged(iconEl, st.icon);
+  var nameEl = badge.querySelector('.bbb-name');
+  if (nameEl) setTextIfChanged(nameEl, st.name + st.stackText);
+
+  var valEl = badge.querySelector('.bbb-val');
+  if (st.valText) {
+    if (!valEl) {
+      valEl = document.createElement('span');
+      valEl.className = 'bbb-val';
+      badge.insertBefore(valEl, badge.querySelector('.bbb-remain') || null);
+    }
+    setTextIfChanged(valEl, st.valText);
+  } else if (valEl) {
+    valEl.remove();
+  }
+
+  var remainEl = badge.querySelector('.bbb-remain');
+  if (st.remainText) {
+    if (!remainEl) {
+      remainEl = document.createElement('span');
+      remainEl.className = 'bbb-remain';
+      badge.appendChild(remainEl);
+    }
+    setTextIfChanged(remainEl, st.remainText);
+  } else if (remainEl) {
+    remainEl.remove();
+  }
+}
+
+function renderBattleBuffBar(pEnt, snapshotGt) {
+  var bar = $id('battle-buff-bar');
+  if (!bar) return;
+  if (!pEnt) {
+    pEnt = currentCombatPlayerEntity();
+  }
+  if (!pEnt) {
+    bar.innerHTML = '';
+    return;
+  }
+  var list = typeof statusEntries === 'function' ? statusEntries(pEnt) : [];
+  var gt = (typeof snapshotGt === 'number' && snapshotGt > 0) ? snapshotGt : (typeof GT === 'number' ? GT : 0);
+
+  var states = [];
+  for (var i = 0; i < list.length; i++) {
+    var e = list[i];
+    var def = typeof statusDef === 'function' ? statusDef(e.sid) : null;
+    var remain = Math.max(0, (e.until || 0) - gt);
+    if (remain <= 0 && e.effect !== 'shield') continue;
+    if (e.effect === 'shield' && (e.val || 0) <= 0) continue;
+
+    var key = battleBuffBadgeKey(e);
+    var cls = 'battle-buff-badge kind-' + (e.effect === 'shield' ? 'shield' : (e.kind || 'buff'));
+    var valText = '';
+    if (e.effect === 'shield') {
+      valText = fmt(Math.round(e.val));
+    } else if (e.effect === 'stat' && e.val) {
+      valText = (e.val > 0 ? '+' : '') + fmt1(e.val) + '%';
+    } else if (e.dps) {
+      valText = fmt(Math.round(e.dps)) + '/s';
+    }
+    var stackText = statusStackSuffix(e);
+    var remainText = remain > 0 ? (remain >= 10 ? Math.ceil(remain) + 's' : fmt1(remain) + 's') : '';
+
+    var ttTitle = (e.icon || '✨') + ' ' + (e.name || e.sid) + (e.effect === 'stat' && e.val ? (e.kind === 'debuff' ? '↓' : '↑') : '') + stackText;
+    var ttDesc = (def && def.desc ? def.desc + ' ' : '') +
+      (valText ? '數值：' + valText + ' ' : '') +
+      (remain > 0 ? '剩餘 ' + fmt1(remain) + ' 秒' : '');
+
+    states.push({
+      key: key,
+      sid: e.sid,
+      name: e.name || e.sid,
+      icon: e.icon || '✨',
+      cls: cls,
+      valText: valText,
+      stackText: stackText,
+      remainText: remainText,
+      until: e.until || 0,
+      snapshotGt: gt,
+      ttTitle: ttTitle,
+      ttDesc: ttDesc
+    });
+  }
+
+  for (var si = 0; si < states.length; si++) {
+    var st = states[si];
+    var badge = bar.children[si];
+    if (!badge || badge.getAttribute('data-buff-key') !== st.key) {
+      if (badge && UI.tooltipAnchor === badge) hideTooltip();
+      var holder = document.createElement('div');
+      holder.innerHTML = battleBuffBadgeMarkup(st);
+      var replacement = holder.firstElementChild;
+      if (badge) bar.replaceChild(replacement, badge);
+      else bar.appendChild(replacement);
+      badge = replacement;
+    }
+    syncBattleBuffBadge(badge, st);
+  }
+
+  var extraBadges = bar.children.length - states.length;
+  for (var ri = 0; ri < extraBadges; ri++) {
+    var removed = bar.lastElementChild;
+    if (!removed) break;
+    if (UI.tooltipAnchor === removed) hideTooltip();
+    bar.removeChild(removed);
   }
 }
 
@@ -3088,6 +3221,26 @@ function updateBattleSkillBarCds() {
       }
     }
   }
+
+  var buffBar = $id('battle-buff-bar');
+  if (buffBar && buffBar.children.length) {
+    for (var bi = 0; bi < buffBar.children.length; bi++) {
+      var bBadge = buffBar.children[bi];
+      var bUntil = Number(bBadge.getAttribute('data-snap-until')) || 0;
+      var bSnapGt = Number(bBadge.getAttribute('data-snap-gt')) || 0;
+      if (bUntil <= 0) continue;
+      var bRemain = uiCountdownRemain(Math.max(0, bUntil - bSnapGt), bSnapGt);
+      var bRemainEl = bBadge.querySelector('.bbb-remain');
+      if (bRemain > 0) {
+        hasActive = true;
+        var bTxt = bRemain >= 10 ? Math.ceil(bRemain) + 's' : fmt1(bRemain) + 's';
+        if (bRemainEl) setTextIfChanged(bRemainEl, bTxt);
+      } else if (bRemainEl) {
+        setTextIfChanged(bRemainEl, '');
+      }
+    }
+  }
+
   return hasActive;
 }
 
@@ -8983,30 +9136,7 @@ function initBattleCanvasMode() {
 
     /* 玩家資訊：血魔條改由畫布畫在角色腳下（資料走 TICK view），
        DOM 的 #pv-hp／#pv-mp 留在隱藏的 .battle-scene 裡讓 renderBattle 照常寫、不再顯示。
-       技能列與狀態列搬進彈出面板，只在點左上角的 💪 鈕時出現。
-       節點用搬的（appendChild），id 與既有事件綁定全部保留。 */
-    var infoPop = $id('player-info-popup');
-    var pvCard = document.querySelector('#combat-area .battle-scene > .combatant:not(.enemy-combatant)');
-    if (infoPop && pvCard) {
-      var statusEl = pvCard.querySelector('#pv-status');
-      var skill = pvCard.querySelector('#pv-skill');
-      if (statusEl) infoPop.appendChild(statusEl);
-      if (skill) infoPop.appendChild(skill);
-    }
-    var buffBtn = pvCard ? pvCard.querySelector('.buff-btn') : null;
-    var buffSlot = $id('battle-buff-btn-slot');
-    if (buffBtn && buffSlot && infoPop) {
-      /* 這顆鈕原本是 hover／點擊叫出增益 tooltip（data-buff-tip）。
-         現在它的職責改成「開關玩家資訊面板」，兩者同時綁會一次跳出兩層浮層，
-         所以拿掉 tooltip 屬性；面板裡的 #pv-status 仍帶 data-buff-tip，
-         滑到增益圖示上照樣看得到詳細說明。 */
-      buffBtn.removeAttribute('data-buff-tip');
-      buffSlot.appendChild(buffBtn);
-      buffBtn.addEventListener('click', function () {
-        var open = infoPop.classList.toggle('open');
-        buffBtn.classList.toggle('active', open);
-      });
-    }
+       BUFF 狀態圖示直接於技能快捷列上方實時呈現。 */
 
     /* 綜合紀錄 + 統計/日誌/篩選 → 側拉抽屜；暫停與迷你視窗按鈕 → 畫布右上角 */
     var drawerBody = $id('battle-info-drawer-body');
