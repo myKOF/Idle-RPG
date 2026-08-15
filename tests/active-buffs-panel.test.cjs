@@ -52,11 +52,22 @@ test('ui.js 屬性面板接上「目前技能增益」清單', () => {
 test('戰鬥區技能快捷上方 BUFF 狀態列與增益提示', () => {
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
   assert.match(ui, /function showBuffTooltip\(anchorEl\)/);
   assert.match(ui, /function renderBattleBuffBar\(/);
   assert.match(html, /id="battle-buff-bar"/);
   assert.match(html, /id="tp-status" data-buff-tip/);
   assert.match(html, /id="pv-status" data-buff-tip/);
+
+  // 狀態圖示為正方形 icon（約為技能格 42px 的 2/3 = 28px）
+  assert.match(css, /\.battle-buff-badge\s*\{[^}]*width:\s*28px;[^}]*height:\s*28px;/);
+  // 圓形倒計時黑色遮罩（conic-gradient）
+  assert.match(css, /\.battle-buff-badge\s+\.bbb-cd-mask\s*\{[^}]*conic-gradient/);
+  // 疊層數字顯示在右下角
+  assert.match(css, /\.battle-buff-badge\s+\.bbb-stacks\s*\{[^}]*position:\s*absolute;[^}]*bottom:\s*1px;[^}]*right:\s*2px;/);
+  // 不在圖示內顯示倒計時數字，使用 Tips 提示
+  assert.match(ui, /battleBuffBadgeMarkup[\s\S]*?bbb-cd-mask/);
+  assert.match(ui, /battleBuffBadgeMarkup[\s\S]*?bbb-stacks/);
 });
 
 test('增益 tooltip 每 tick 即時刷新；面板數值用綠色', () => {
@@ -69,3 +80,4 @@ test('增益 tooltip 每 tick 即時刷新；面板數值用綠色', () => {
   // 面板「目前技能增益」數值內嵌綠色（與 tooltip 相同 var(--good)），不再倚賴被移除的 CSS
   assert.match(ui, /buff-val" style="color:var\(--good\)"/);
 });
+

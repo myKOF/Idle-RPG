@@ -9799,7 +9799,7 @@ body.battle-canvas-mode #combat-area .battle-scene-wrapper > #btn-enemy-tip {
 /* ---- 戰鬥區 BUFF 狀態列（顯示於技能快捷列上方）---- */
 #battle-buff-bar {
   position: absolute;
-  bottom: 58px;
+  bottom: 60px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 30;
@@ -9814,78 +9814,91 @@ body.battle-canvas-mode #combat-area .battle-scene-wrapper > #btn-enemy-tip {
 }
 
 .battle-buff-badge {
-  display: inline-flex;
+  position: relative;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border-radius: 6px;
+  background: rgba(22, 17, 12, 0.92);
+  border: 1.5px solid rgba(130, 95, 45, 0.6);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.75);
+  display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 7px;
-  border-radius: 10px;
-  background: rgba(18, 14, 10, 0.88);
-  border: 1px solid rgba(245, 158, 11, 0.45);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), inset 0 0 6px rgba(245, 158, 11, 0.1);
-  backdrop-filter: blur(4px);
-  font-size: 11px;
-  line-height: 1.2;
+  justify-content: center;
   cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-  white-space: nowrap;
+  overflow: hidden;
+  box-sizing: border-box;
+  user-select: none;
+  transition: transform 0.1s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .battle-buff-badge:hover {
-  transform: translateY(-2px) scale(1.03);
-  border-color: #fbbf24;
-  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.5);
 }
 
 .battle-buff-badge.kind-buff {
-  border-color: rgba(86, 211, 79, 0.55);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), inset 0 0 6px rgba(86, 211, 79, 0.15);
+  border-color: rgba(86, 211, 79, 0.65);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.75), inset 0 0 4px rgba(86, 211, 79, 0.15);
 }
 
 .battle-buff-badge.kind-buff:hover {
   border-color: #56d34f;
-  box-shadow: 0 4px 12px rgba(86, 211, 79, 0.4);
+  box-shadow: 0 0 8px rgba(86, 211, 79, 0.5);
 }
 
 .battle-buff-badge.kind-shield {
-  border-color: rgba(56, 189, 248, 0.6);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), inset 0 0 6px rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.7);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.75), inset 0 0 4px rgba(56, 189, 248, 0.2);
 }
 
 .battle-buff-badge.kind-shield:hover {
   border-color: #38bdf8;
-  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.45);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.55);
 }
 
 .battle-buff-badge.kind-debuff,
 .battle-buff-badge.kind-ctrl {
-  border-color: rgba(248, 113, 113, 0.6);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), inset 0 0 6px rgba(248, 113, 113, 0.18);
+  border-color: rgba(248, 113, 113, 0.7);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.75), inset 0 0 4px rgba(248, 113, 113, 0.2);
 }
 
 .battle-buff-badge.kind-debuff:hover,
 .battle-buff-badge.kind-ctrl:hover {
   border-color: #f87171;
-  box-shadow: 0 4px 12px rgba(248, 113, 113, 0.45);
+  box-shadow: 0 0 8px rgba(248, 113, 113, 0.55);
 }
 
 .battle-buff-badge .bbb-icon {
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1;
+  z-index: 1;
+  pointer-events: none;
 }
 
-.battle-buff-badge .bbb-name {
-  font-weight: 600;
-  color: #f3f4f6;
+/* 圓形 CD 倒數遮罩：使用與技能列相同的 conic-gradient 扇形轉圈 */
+.battle-buff-badge .bbb-cd-mask {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: conic-gradient(rgba(0, 0, 0, 0.78) 0deg, rgba(0, 0, 0, 0.78) var(--cd-deg, 0deg), transparent var(--cd-deg, 0deg), transparent 360deg);
+  pointer-events: none;
+  z-index: 2;
 }
 
-.battle-buff-badge .bbb-val {
-  font-weight: bold;
-  color: var(--accent);
-}
-
-.battle-buff-badge .bbb-remain {
-  font-size: 10px;
-  color: var(--dim);
+/* 疊層數字顯示於右下角 */
+.battle-buff-badge .bbb-stacks {
+  position: absolute;
+  bottom: 1px;
+  right: 2px;
+  font-size: 9px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 1px 2px #000, 0 0 3px #000;
+  line-height: 1;
+  z-index: 3;
+  pointer-events: none;
   font-variant-numeric: tabular-nums;
 }
 
