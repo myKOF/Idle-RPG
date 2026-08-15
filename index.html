@@ -464,7 +464,6 @@
             <div class="battle-scene">
               <div class="combatant">
                 <div class="float-layer" id="tp-float"></div>
-                <div class="info-btn buff-btn" data-buff-tip>💪</div>
                 <div class="cb-level" id="tp-level"></div>
                 <img src="images/icon_avatar.png" class="cb-icon">
                 <div class="cb-name" id="tp-name">冒險者（你）</div>
@@ -600,9 +599,6 @@
                初始化成功時 body 會掛上 battle-canvas-mode，下方 .battle-scene 隱藏；
                失敗（?canvas=0 / WebGL 不可用）時本容器維持 display:none，原畫面照舊。 -->
           <div id="battle-canvas-host">
-            <!-- 左上角：💪 增益鈕（由 ui.js 從玩家卡片搬進來）＋ 它開關的玩家資訊面板 -->
-            <div id="battle-buff-btn-slot"></div>
-            <div id="player-info-popup"></div>
             <div id="battle-canvas-buttons">
               <button id="btn-battle-info" class="btn sm" type="button" data-tt-title="戰況資訊" data-tt-desc="開啟統計面板、綜合紀錄、詳細日誌與日誌篩選">📊</button>
             </div>
@@ -613,14 +609,15 @@
               </div>
               <div id="battle-info-drawer-body"></div>
             </div>
+            <!-- 戰鬥區 BUFF 狀態列：顯示於技能快捷列上方 -->
+            <div id="battle-buff-bar"></div>
             <!-- 戰鬥區技能欄：戰鬥區下方中央固定顯示 10 個技能圖示與冷卻碼錶 -->
             <div id="battle-skill-bar"></div>
           </div>
           <div class="battle-scene">
             <div class="combatant">
               <div class="float-layer" id="pv-float"></div>
-              <div class="info-btn buff-btn" data-buff-tip>💪</div>
-            <div class="cb-level" id="pv-level"></div>
+              <div class="cb-level" id="pv-level"></div>
             <img src="images/icon_avatar.png" class="cb-icon">
             <div class="cb-name" id="pv-name">冒險者（你）</div>
             <div class="hp-bar">
