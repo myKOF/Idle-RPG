@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## Codex：調整血刃斬「死亡屍爆／零日感染」效果（2026-08-15）
+
+- 狀態：已完成
+- 任務分類：新版技能效果與 DoT 傳染機制
+- 負責 AI：Codex
+- 任務內容：死亡屍爆命中附近 2 個敵人後傳染中毒；零日感染在流血／中毒作用時依機率立即結算剩餘傷害，結束後將兩種狀態傳染給 80 米內隨機 1 個敵人，並使兩種 DoT 傷害提高表定倍率。
+- 允許修改：`docs/AI_TASKS.md`、`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`、`js/skills2.js`、`index.html`、`tests/skill2-system.test.cjs`、`tests/skill2-review-fixes.test.cjs`
+- 禁止修改：Worker Protocol、存檔格式、其他技能效果與其他 AI 進行中任務檔案。
+- 前置依賴：既有血刃斬 DoT、毒霧感染、死亡回呼與戰場距離工具；目標檔案衝突預檢無來源。
+- 測試要求：新版技能定向測試、`node --check js/skills2.js`、`npm.cmd run build`、完整 `npm.cmd test`（記錄既有失敗）、`git diff --check`，並核對 Skills2 Excel／CSV／JS 資料同步。
+- 完成條件：兩項新效果符合需求且有回歸測試；快取版號同步；測試與差異檢查完成。
+- 驗證結果：新版技能定向測試 23/23、`npm.cmd run build` 278/278、完整 `npm.cmd test` 1386/1386、`git diff --check` 全部通過；Skills2 Excel／CSV／JS 已同步。
+- 已知風險：尚未進行瀏覽器實機畫面驗證；本次狀態與傷害邏輯已由單元測試覆蓋。
+- 完成後交給：使用者確認後合併至整合分支。
+
 ## Codex：以 Phaser emitter 規則重製火球與殞石粒子（2026-08-14）
 
 - 狀態：已完成
