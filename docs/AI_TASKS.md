@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## Codex：將飛出斬擊與貫穿突刺改為週期命中的飛行物（2026-08-15）
+
+- 狀態：已完成（待使用者確認）
+- 任務分類：新版技能命中模型／飛行物碰撞
+- 負責 AI：Codex
+- 任務內容：將會飛出的斬擊與「貫穿突刺」改為具備路徑碰撞的飛行物；飛行物沿路對範圍內敵人命中一次，之後每 0.5 秒再命中一次並立即消失，並使貫穿突刺的特效範圍內目標全部納入命中。
+- 允許修改：`docs/AI_TASKS.md`、`js/skills2.js`、`js/battlefield.js`、`js/vfx.js`、`js/battle-renderer.js`、`index.html`、`tests/skill2-system.test.cjs`、`tests/skill2-vfx.test.cjs`
+- 禁止修改：其他技能數值、Worker Protocol、存檔格式及其他 AI 進行中任務內容。
+- 前置依賴：Antigravity 的迴旋斬基礎目標數調整已合併；既有技能模擬時間與 DOM／Canvas VFX 管線可用；目標檔案衝突預檢無來源。
+- 測試要求：飛行物路徑／週期命中與貫穿突刺目標回歸測試、相關 JavaScript 語法檢查、`npm.cmd run build`、完整 `npm.cmd test`、`git diff --check`。
+- 完成條件：飛出斬擊與貫穿突刺具備實際路徑命中、每個目標首次命中後每 0.5 秒追加一次並消失、VFX 與命中時序一致、快取版號同步。
+- 驗證結果：`tests/skill2-system.test.cjs` 與 `tests/skill2-vfx.test.cjs` 29/29；`node --check`（4 個修改 JavaScript）通過；`npm.cmd run build` 278/278；`git diff --check` 通過。完整 `npm.cmd test` 的既有 `ui.js` 快取版號測試仍要求 `1.0.43`，與本任務無關且未修改該檔案。
+- 已知風險：尚未進行瀏覽器實機畫面驗證；無座標的高塔實體沿用主目標退化路徑。
+- 完成後交給：使用者確認。
+
 ## Codex：技能名稱與傷害飄字左右偏移（2026-08-15）
 
 - 狀態：已完成（待使用者確認）

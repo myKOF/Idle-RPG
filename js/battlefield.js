@@ -446,13 +446,15 @@ function bfAngleTo(ent) {
   return Math.atan2(dy, dx);
 }
 
-/* 直線（貫穿）命中：從我方出發、沿 angle 方向長 lenPx 的線段，
+/* 線段命中：從我方出發、沿 angle 方向的 [fromLen, toLen] 路徑，
    命中「身體圓與線段相交」的所有存活敵人，依線上投影距離由近到遠回傳。
    halfWidthPx 為線的半寬（預設 0＝細線，僅靠敵人體型半徑判定）。 */
-function bfLineTargets(angle, lenPx, enemies, halfWidthPx) {
-  if (angle === null || angle === undefined || !(lenPx > 0)) return [];
+function bfSegmentTargets(origin, angle, fromLen, toLen, enemies, halfWidthPx) {
+  if (!origin || angle === null || angle === undefined) return [];
+  var start = Math.max(0, Number(fromLen) || 0);
+  var end = Math.max(start, Number(toLen) || 0);
   var hw = Math.max(0, Number(halfWidthPx) || 0);
-  var c = bfPlayerPos();
+  var c = origin;
   var ux = Math.cos(angle), uy = Math.sin(angle);
   var deco = [];
   var live = bfLiveList(enemies);
@@ -462,8 +464,8 @@ function bfLineTargets(angle, lenPx, enemies, halfWidthPx) {
     var dx = p.x - c.x, dy = p.y - c.y;
     var along = dx * ux + dy * uy;                    // 線上投影距離
     var r = bfEntityRadius(live[i]) + hw;
-    if (along < -r || along > lenPx + r) continue;    // 線段前後範圍外
-    var clamped = Math.max(0, Math.min(lenPx, along));
+    if (along < start - r || along > end + r) continue; // 線段前後範圍外
+    var clamped = Math.max(start, Math.min(end, along));
     var cx = c.x + ux * clamped, cy = c.y + uy * clamped;
     var ox = p.x - cx, oy = p.y - cy;
     if (Math.sqrt(ox * ox + oy * oy) > r) continue;   // 離線段最近點太遠
@@ -471,6 +473,12 @@ function bfLineTargets(angle, lenPx, enemies, halfWidthPx) {
   }
   deco.sort(function (a, b) { return a.d - b.d; });
   return deco.map(function (x) { return x.ent; });
+}
+
+/* 直線（貫穿）命中：從我方出發、沿 angle 方向長 lenPx 的線段。 */
+function bfLineTargets(angle, lenPx, enemies, halfWidthPx) {
+  if (!(lenPx > 0)) return [];
+  return bfSegmentTargets(bfPlayerPos(), angle, 0, lenPx, enemies, halfWidthPx);
 }
 
 /* 扇形命中：以我方為圓心、centerAngle 為中軸、全張角 spreadDeg（度）、半徑 rangePx，

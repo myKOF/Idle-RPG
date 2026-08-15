@@ -2224,14 +2224,16 @@ var BattleRenderer = (function () {
                 (baseDelay + trc * stagger) / 1000, 70);
             }
           }
-          targets.forEach(function (id, ti) {
-            setTimeout(function () {
-              if (fxGate()) return;
-              var pt = posOf(id);
-              spawnImpact(pt.x, pt.y, spec, false);
-              hitReact(id, spec.elem, false);
-            }, baseDelay + 100 + ti * 24);
-          });
+          if (!spec.projectile) {
+            targets.forEach(function (id, ti) {
+              setTimeout(function () {
+                if (fxGate()) return;
+                var pt = posOf(id);
+                spawnImpact(pt.x, pt.y, spec, false);
+                hitReact(id, spec.elem, false);
+              }, baseDelay + 100 + ti * 24);
+            });
+          }
           break;
         }
         if (spec.variant === 'cleave' || spec.variant === 'cleave-shockwave' || spec.variant === 'cleave-back' || spec.variant === 'cleave-dual' || spec.variant === 'cleave-cross' || spec.variant === 'cleave-cross-shockwave') {
@@ -2260,32 +2262,34 @@ var BattleRenderer = (function () {
             if (drawBack) spawnCleaveArc(cleaveFrom.x, cleaveFrom.y, spec, frontAngle + Math.PI, clDelay,
               { angle: frontAngle + Math.PI, length: 120 });
           }
-          targets.forEach(function (id, ti) {
-            var cleaveFromForHits = playerMuzzle();
-            var targetPt = posOf(id);
-            var targetDx = targetPt.x - cleaveFromForHits.x;
-            var targetDy = targetPt.y - cleaveFromForHits.y;
-            var targetAlong = targetDx * Math.cos(frontAngle) + targetDy * Math.sin(frontAngle);
-            var arcHitDelay = 90;
-            if (drawCross) {
-              var targetDistance = Math.sqrt(targetDx * targetDx + targetDy * targetDy);
-              arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetDistance / 120)));
-            } else if (drawForward && targetAlong >= 0) {
-              arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetAlong / 120)));
-            } else if (drawBack && targetAlong < 0) {
-              arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, -targetAlong / 120)));
-            }
-            for (var clHit = 0; clHit < count; clHit++) {
-              (function (hitIndex, hitDelay) {
-                setTimeout(function () {
-                  if (fxGate()) return;
-                  var pt = posOf(id);
-                  spawnImpact(pt.x, pt.y, spec, false);
-                  hitReact(id, spec.elem, false);
-                }, baseDelay + hitIndex * stagger + hitDelay + ti * 35);
-              })(clHit, arcHitDelay);
-            }
-          });
+          if (!spec.projectile) {
+            targets.forEach(function (id, ti) {
+              var cleaveFromForHits = playerMuzzle();
+              var targetPt = posOf(id);
+              var targetDx = targetPt.x - cleaveFromForHits.x;
+              var targetDy = targetPt.y - cleaveFromForHits.y;
+              var targetAlong = targetDx * Math.cos(frontAngle) + targetDy * Math.sin(frontAngle);
+              var arcHitDelay = 90;
+              if (drawCross) {
+                var targetDistance = Math.sqrt(targetDx * targetDx + targetDy * targetDy);
+                arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetDistance / 120)));
+              } else if (drawForward && targetAlong >= 0) {
+                arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetAlong / 120)));
+              } else if (drawBack && targetAlong < 0) {
+                arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, -targetAlong / 120)));
+              }
+              for (var clHit = 0; clHit < count; clHit++) {
+                (function (hitIndex, hitDelay) {
+                  setTimeout(function () {
+                    if (fxGate()) return;
+                    var pt = posOf(id);
+                    spawnImpact(pt.x, pt.y, spec, false);
+                    hitReact(id, spec.elem, false);
+                  }, baseDelay + hitIndex * stagger + hitDelay + ti * 35);
+                })(clHit, arcHitDelay);
+              }
+            });
+          }
           break;
         }
         if (spec.variant === 'gale-slashes') {

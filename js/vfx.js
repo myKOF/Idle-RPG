@@ -1564,9 +1564,11 @@ function renderCombatVfx(spec) {
       for (var td = 0; td < thrustOffsets.length; td++) {
         vfxThrustLine(s, layer, from, rt.pts[0], thrustDelay, thrustOffsets[td], 70);
       }
-      for (var tti = 0; tti < rt.pts.length; tti++) {
-        vfxImpact({ elem: s.elem, variant: null, color: s.color }, layer,
-          rt.pts[tti], rt.ids[tti], thrustDelay + 100 + tti * 24);
+      if (!s.projectile) {
+        for (var tti = 0; tti < rt.pts.length; tti++) {
+          vfxImpact({ elem: s.elem, variant: null, color: s.color }, layer,
+            rt.pts[tti], rt.ids[tti], thrustDelay + 100 + tti * 24);
+        }
       }
     }
     return;
@@ -1599,23 +1601,25 @@ function renderCombatVfx(spec) {
         (frontAngle + Math.PI) * 180 / Math.PI, 'vfx-cleave-arc-back',
         { angle: frontAngle + Math.PI, length: 120 });
     }
-    for (var cti = 0; cti < rt.pts.length; cti++) {
-      var targetDx = rt.pts[cti].x - (from ? from.x : 0);
-      var targetDy = rt.pts[cti].y - (from ? from.y : 0);
-      var targetAlong = targetDx * Math.cos(frontAngle) + targetDy * Math.sin(frontAngle);
-      var arcHitDelay = 90;
-      if (drawCross) {
-        var targetDistance = Math.sqrt(targetDx * targetDx + targetDy * targetDy);
-        arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetDistance / 120)));
-      } else if (drawForward && targetAlong >= 0) {
-        arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetAlong / 120)));
-      } else if (drawBack && targetAlong < 0) {
-        arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, -targetAlong / 120)));
-      }
-      for (var ccc = 0; ccc < count; ccc++) {
-        var cHitDelay = baseDelay + ccc * stagger + arcHitDelay + cti * 35;
-        vfxImpact({ elem: s.elem, variant: null, color: s.color }, layer,
-          rt.pts[cti], rt.ids[cti], cHitDelay + 90);
+    if (!s.projectile) {
+      for (var cti = 0; cti < rt.pts.length; cti++) {
+        var targetDx = rt.pts[cti].x - (from ? from.x : 0);
+        var targetDy = rt.pts[cti].y - (from ? from.y : 0);
+        var targetAlong = targetDx * Math.cos(frontAngle) + targetDy * Math.sin(frontAngle);
+        var arcHitDelay = 90;
+        if (drawCross) {
+          var targetDistance = Math.sqrt(targetDx * targetDx + targetDy * targetDy);
+          arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetDistance / 120)));
+        } else if (drawForward && targetAlong >= 0) {
+          arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetAlong / 120)));
+        } else if (drawBack && targetAlong < 0) {
+          arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, -targetAlong / 120)));
+        }
+        for (var ccc = 0; ccc < count; ccc++) {
+          var cHitDelay = baseDelay + ccc * stagger + arcHitDelay + cti * 35;
+          vfxImpact({ elem: s.elem, variant: null, color: s.color }, layer,
+            rt.pts[cti], rt.ids[cti], cHitDelay + 90);
+        }
       }
     }
     return;

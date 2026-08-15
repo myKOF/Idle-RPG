@@ -28,6 +28,9 @@
 var SG_PREFIX = 'sg:';
 var SG_TIER_MAX_LV = 10;      // 每階等級上限（固定，不隨轉生提高）
 var SG_TIER_COUNT = 7;        // 每群組階數
+var SG_FLYING_PROJECTILE_SPEED = 240;
+var SG_FLYING_PROJECTILE_HALF_WIDTH = 8;
+var SG_FLYING_PROJECTILE_REHIT_SEC = 0.5;
 /* 主動型被動群組（2026-08-14 技能類型擴充；引擎接線，不入參數表）：
    效果被動觸發、永遠不會被主動施放（不佔出手節奏、無冷卻無耗魔），
    但**必須裝配到技能列才生效**——佔用一個技能格就是這類技能的代價。
@@ -73,6 +76,7 @@ function resetSkill2RT() {
   }
   SKILL2_RT = {
     storm: null, // 暴風之舞化身狀態：{ until, nextAt, gap, tgt }（tgt 為當前衝鋒目標實體）
+    projectiles: [], // 飛出斬擊／貫穿突刺的執行期飛行物（不入存檔）
     rage: null   // 嗜血狂怒爆發狀態：{ until, pEnt, killCombo }（pEnt＝施放時的玩家實體，
                  // 供血飲術反噬定位；killCombo＝期間擊殺累積的連擊數加成，結束歸零）
   };
@@ -473,6 +477,7 @@ function sgEmitVfx(gid, targets, floatSel, extra) {
   };
   if (extra && extra.variant) spec.variant = extra.variant;
   if (extra && extra.travelMs) spec.travelMs = extra.travelMs;
+  if (extra && extra.projectile) spec.projectile = true;
   playCombatVfx(spec);
 }
 
@@ -480,6 +485,109 @@ var SG_HIT_STAGGER_SEC_FALLBACK = 0.09;
 function sgStaggerMs(hitIndex) {
   var s = (typeof VFX_HIT_STAGGER_SEC === 'number') ? VFX_HIT_STAGGER_SEC : SG_HIT_STAGGER_SEC_FALLBACK;
   return Math.round(Math.max(0, hitIndex || 0) * s * 1000);
+}
+
+function sgProjectileNow() {
+  return typeof GT === 'number' ? GT : 0;
+}
+
+/* 飛行物只保存執行期資料；命中仍走既有完整傷害管線。 */
+function sgQueueFlyingProjectile(pEnt, st, gid, dmgVal, origin, angle, length, floatSel, fallbackTargets, extra, out) {
+  if (!(length > 0)) return;
+  var now = sgProjectileNow();
+  var start = origin && isFinite(origin.x) && isFinite(origin.y)
+    ? { x: Number(origin.x), y: Number(origin.y) } : null;
+  var speed = SG_FLYING_PROJECTILE_SPEED;
+  var travel = Math.max(0.05, Number(length) / speed);
+  var p = {
+    pEnt: pEnt, st: st, gid: gid, dmgVal: dmgVal, origin: start,
+    angle: Number(angle) || 0, length: Number(length), speed: speed,
+    startAt: now, lastAt: now, lastDistance: 0, endAt: now + travel,
+    fallbackTargets: fallbackTargets || [], floatSel: floatSel,
+    out: out, states: [], started: false,
+    spreadPct: extra && extra.spreadPct || 0,
+    spreadCount: extra && extra.spreadCount || 0,
+    stunChance: extra && extra.stunChance || 0,
+    stunSec: extra && extra.stunSec || 0
+  };
+  SKILL2_RT.projectiles.push(p);
+}
+
+function sgProjectileState(projectile, target) {
+  for (var i = 0; i < projectile.states.length; i++) {
+    if (projectile.states[i].ent === target) return projectile.states[i];
+  }
+  return null;
+}
+
+function sgProjectileHit(projectile, target, ctx) {
+  if (!target || target.hp <= 0) return;
+  var res = sgHitOne(projectile.pEnt, projectile.st, target, projectile.dmgVal,
+    projectile.gid, projectile.floatSel, projectile.out, 0);
+  if (!res || res.miss) return;
+  if (ctx.onDamage) ctx.onDamage(res.dmg);
+
+  if (projectile.spreadPct > 0 && projectile.spreadCount > 0) {
+    var live = ctx.getEnemies ? ctx.getEnemies() : [];
+    var others = bfNearestOthers(target, live, projectile.spreadCount);
+    for (var i = 0; i < others.length; i++) {
+      var wasAlive = others[i].hp > 0;
+      var beforeSpread = projectile.out.dmg;
+      sgDerivedHit(others[i], res.dmg * projectile.spreadPct / 100, projectile.gid,
+        projectile.floatSel, projectile.out, SKILLS2[projectile.gid].emoji, 0);
+      if (wasAlive && others[i].hp <= 0 && ctx.onDeaths) ctx.onDeaths();
+      if (ctx.onDamage && projectile.out.dmg > beforeSpread) ctx.onDamage(projectile.out.dmg - beforeSpread);
+    }
+  }
+  if (projectile.stunChance > 0 && chance(projectile.stunChance) &&
+      !(typeof isBossControlImmune === 'function' && isBossControlImmune(target)) &&
+      !(typeof resistCtrl === 'function' && resistCtrl(monsterDefCfg(target)))) {
+    applyStatus(target, 'stun', { dur: projectile.stunSec });
+  }
+  if (res.killed && ctx.onDeaths) ctx.onDeaths();
+}
+
+function sgTickFlyingProjectiles(dt, ctx) {
+  var list = SKILL2_RT.projectiles;
+  if (!list || !list.length) return;
+  var now = sgProjectileNow();
+  var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
+  for (var pi = list.length - 1; pi >= 0; pi--) {
+    var projectile = list[pi];
+    var distance = projectile.origin
+      ? Math.min(projectile.length, Math.max(0, (now - projectile.startAt) * projectile.speed))
+      : projectile.length;
+    var crossed;
+    if (projectile.origin && typeof bfSegmentTargets === 'function') {
+      crossed = bfSegmentTargets(projectile.origin, projectile.angle,
+        projectile.lastDistance, distance, enemies, SG_FLYING_PROJECTILE_HALF_WIDTH);
+    } else if (!projectile.started) {
+      crossed = projectile.fallbackTargets.slice();
+    } else {
+      crossed = [];
+    }
+    for (var ci = 0; ci < crossed.length; ci++) {
+      if (sgProjectileState(projectile, crossed[ci])) continue;
+      var state = { ent: crossed[ci], nextAt: now + SG_FLYING_PROJECTILE_REHIT_SEC, repeated: false };
+      projectile.states.push(state);
+      sgProjectileHit(projectile, crossed[ci], ctx);
+    }
+    for (var si = 0; si < projectile.states.length; si++) {
+      var hitState = projectile.states[si];
+      if (hitState.repeated || hitState.nextAt > now) continue;
+      if (hitState.ent && hitState.ent.hp > 0) sgProjectileHit(projectile, hitState.ent, ctx);
+      hitState.repeated = true;
+    }
+    projectile.lastDistance = distance;
+    projectile.lastAt = now;
+    projectile.started = true;
+    var pathDone = !projectile.origin || distance >= projectile.length;
+    var allRepeated = true;
+    for (var ri = 0; ri < projectile.states.length; ri++) {
+      if (!projectile.states[ri].repeated) { allRepeated = false; break; }
+    }
+    if (pathDone && allRepeated && now >= projectile.endAt) list.splice(pi, 1);
+  }
 }
 
 /* ---- 施放總入口 ----
@@ -564,9 +672,26 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     }
   }
   var thrustVariant = dirs.length > 1 ? 'thrust-triple' : (pierceLen > 0 ? 'thrust-pierce' : 'thrust');
+  var isPiercing = pierceLen > 0;
   sgEmitVfx('thrust', planned, floatSel, {
-    fxKind: 'slash', variant: thrustVariant, count: Math.min(5, reps)
+    fxKind: 'slash', variant: thrustVariant, count: Math.min(5, reps), projectile: isPiercing
   });
+  if (isPiercing) {
+    var spreadPct = lvs[4] > 0 ? sgVal(t[4].fx, 'pct', lvs[4]) : 0;
+    var spreadCount = lvs[4] > 0 ? Math.max(1, Math.floor(Number(t[4].fx.count) || 2)) : 0;
+    for (var pr = 0; pr < reps; pr++) {
+      for (var pdi = 0; pdi < dirs.length; pdi++) {
+        var projectileTargets = geomOk
+          ? bfLineTargets(baseAngle + dirs[pdi], lineLen, pool)
+          : [primary];
+        sgQueueFlyingProjectile(pEnt, st, 'thrust', dmgVal,
+          (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null,
+          geomOk ? baseAngle + dirs[pdi] : 0, lineLen, floatSel, projectileTargets,
+          { spreadPct: spreadPct, spreadCount: spreadCount }, out);
+      }
+    }
+    return;
+  }
   var hitIdx = 0;
   for (var r = 0; r < reps; r++) {
     for (var di = 0; di < dirs.length; di++) {
@@ -652,10 +777,24 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var cleaveVariant = lvs[6] > 0 ? (lvs[5] > 0 ? 'cleave-cross-shockwave' : 'cleave-cross')
     : (lvs[5] > 0 ? 'cleave-shockwave' : 'cleave');
   sgEmitVfx('cleave', targets, floatSel, {
-    fxKind: 'slash', variant: cleaveVariant, count: Math.min(5, slashes)
+    fxKind: 'slash', variant: cleaveVariant, count: Math.min(5, slashes), projectile: lvs[5] > 0
   });
   var stunChance = lvs[4] > 0 ? sgVal(t[4].fx, 'chance', lvs[4]) : 0;
   var stunSec = lvs[4] > 0 ? sgVal(t[4].fx, 'sec', lvs[4]) : 0;
+  if (lvs[5] > 0) {
+    for (var ps = 0; ps < slashes; ps++) {
+      for (var pdi2 = 0; pdi2 < directions.length; pdi2++) {
+        var projectileLen = (pdi2 === 0)
+          ? bfMeterPx(sgVal(t[5].fx, 'm', lvs[5]))
+          : ((typeof bfMeleeRange === 'function') ? bfMeleeRange() : bfMeterPx(5));
+        sgQueueFlyingProjectile(pEnt, st, 'cleave', dmgVal,
+          (typeof bfPlayerPos === 'function' && geomOk) ? bfPlayerPos() : null,
+          geomOk ? baseAngle + directions[pdi2] : 0, projectileLen, floatSel,
+          directionTargets[pdi2], { stunChance: stunChance, stunSec: stunSec }, out);
+      }
+    }
+    return;
+  }
   for (var s = 0; s < slashes; s++) {
     for (var di2 = 0; di2 < directionTargets.length; di2++) {
       for (var ti = 0; ti < directionTargets[di2].length; ti++) {
@@ -1050,6 +1189,7 @@ function sgCounterSplashTargets(exclude, enemies, fx) {
 function tickSkill2(dt, ctx) {
   if (!SKILL2_RT || !ctx || !ctx.pEnt) return;
   if (SKILL2_RT.rage && SKILL2_RT.rage.until <= GT) SKILL2_RT.rage = null; // 狂怒到期回收
+  sgTickFlyingProjectiles(dt, ctx);
   sgTickStorm(ctx);
   sgTickBloodDots(dt, ctx);
 }
