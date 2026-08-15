@@ -3206,7 +3206,7 @@ var BattleRenderer = (function () {
         loadSheet('player', 'images/sprites/player'),
         loadSheet('boss', 'images/sprites/boss_generic'),
         loadFireFlare(),
-        PIXI.Assets.load('images/vfx/thrust_lance.png').then(function (tex) {
+        PIXI.Assets.load('images/vfx/thrust_lance.png?v=20260815-narrow-rect').then(function (tex) {
           S.thrustLanceTex = tex;
           tex.source.scaleMode = 'linear';
         }).catch(function () { S.thrustLanceTex = null; })
