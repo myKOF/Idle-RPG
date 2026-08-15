@@ -1731,7 +1731,7 @@ function playerRecoveryFloatInfo(elId, cls, text, value) {
 }
 
 /* 玩家浮字分區：承傷落在角色身體附近；其餘事件（護盾、回血、回魔、增益、
-   閃避與格擋）落在角色頭頂的藍色區域。技能施放提示從角色中心左右約 60px 出現。 */
+   閃避與格擋）落在角色頭頂的藍色區域。技能施放提示從角色中心左右約 120px 出現。 */
 function playerFloatStyleClass(elId, text, cls) {
   if (elId !== 'pv-float' && elId !== 'tp-float') return '';
   var tokens = (cls || '').split(/\s+/);

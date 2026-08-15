@@ -84,6 +84,7 @@ var BattleRenderer = (function () {
     lastPos: {},              // floatSel -> { x, y, at }（實體移除後短暫保留）
     fx: [],                   // 特效物件 { update(dt)->bool 活著, node, prio }
     floats: [],               // 飄字物件
+    pendingFloats: [],        // Canvas 初始化完成前暫存的玩家／野外浮字
     floatMerge: {},           // mergeKey -> float 物件
     shake: 0,                 // 畫面震動剩餘強度（px）
     sheets: {},               // name -> { tex, manifest, anims: {name: [Texture]} }
@@ -104,6 +105,21 @@ var BattleRenderer = (function () {
   /* ---- 小工具 ---- */
   function documentHidden() {
     return typeof document !== 'undefined' && document.hidden;
+  }
+  function isCanvasFloatTarget(elId) {
+    return elId === 'pv-float' || /^mv-float-\d+$/.test(elId || '');
+  }
+  function queueFloatUntilReady(ev) {
+    if (!isCanvasFloatTarget(ev && ev.elId)) return;
+    if (S.pendingFloats.length >= 40) S.pendingFloats.shift();
+    S.pendingFloats.push({
+      elId: ev.elId, text: ev.text, cls: ev.cls,
+      damageValue: ev.damageValue, delayMs: ev.delayMs
+    });
+  }
+  function flushPendingFloats() {
+    var pending = S.pendingFloats.splice(0, S.pendingFloats.length);
+    for (var i = 0; i < pending.length; i++) onFloat(pending[i]);
   }
   /* 延遲排程（setTimeout）的統一守門：渲染器沒起來或分頁已隱藏就放棄該段特效。
      外層 onVfx 進場時擋過一次，但 stagger/延遲段可能在隱藏之後才到期，得再擋。 */
@@ -2568,7 +2584,11 @@ var BattleRenderer = (function () {
   }
 
   function onFloat(ev) {
-    if (!S.ready || !ev) return;
+    if (!ev) return;
+    if (!S.ready) {
+      if (!S.failed && S.initStarted) queueFloatUntilReady(ev);
+      return;
+    }
     if (documentHidden()) return;   // 背景分頁：ui.js 已改走「只記最新」路徑，這裡擋 setTimeout 殘留
     /* 與特效同理：飄字要落在「畫面上那一刻」的實體身上（見 onVfx 的說明）。 */
     if (!ev._buffered) { ev._buffered = true; ev.delayMs = (ev.delayMs || 0) + POS_BUFFER_MS; }
@@ -2609,7 +2629,7 @@ var BattleRenderer = (function () {
     var skillCast = playerTarget && String(ev.cls || '').indexOf('skill-cast') >= 0;
     var castLeft = String(ev.cls || '').indexOf('skill-cast-left') >= 0;
     var castRight = String(ev.cls || '').indexOf('skill-cast-right') >= 0;
-    /* 玩家事件分區：有益效果在角色頭頂藍區，承傷在身體紅區；技能名稱／傷害從人物中心左右約 60px 出現。 */
+    /* 玩家事件分區：有益效果在角色頭頂藍區，承傷在身體紅區；技能名稱／傷害從人物中心左右約 120px 出現。 */
     if (playerTarget && S.player) {
       if (skillCast) {
         var castOffset = castLeft ? -PLAYER_SKILL_FLOAT_SIDE_OFFSET
@@ -3131,7 +3151,8 @@ var BattleRenderer = (function () {
   /* ============ 對外介面 ============ */
   function active() { return S.ready && !S.failed; }
   function wantsFloat(elId) {
-    return active() && (elId === 'pv-float' || /^mv-float-\d+$/.test(elId || ''));
+    return isCanvasFloatTarget(elId) &&
+      (active() || (S.initStarted && !S.ready && !S.failed));
   }
   function wantsVfx(spec) {
     if (!active() || !spec) return false;
@@ -3189,6 +3210,7 @@ var BattleRenderer = (function () {
       window.addEventListener('resize', resize, { passive: true });
       S.watchdogTimer = setInterval(fxWatchdog, FX_WATCHDOG_MS);
       S.ready = true;
+      flushPendingFloats();
       /* 開機時 battle 面板可能已經在手上（bridge 比渲染器先跑），先同步一次 */
       if (typeof peekUiPanelData === 'function') {
         var panel = peekUiPanelData('battle');

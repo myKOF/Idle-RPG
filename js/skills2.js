@@ -515,7 +515,21 @@ function sgQueueFlyingProjectile(pEnt, st, gid, dmgVal, origin, angle, length, f
     stunChance: extra && extra.stunChance || 0,
     stunSec: extra && extra.stunSec || 0
   };
+  out._pendingProjectiles = (out._pendingProjectiles || 0) + 1;
   SKILL2_RT.projectiles.push(p);
+}
+
+/* 飛行物技能的總傷害在路徑命中完成前尚未確定；技能字要等所有同一施放
+   建立的飛行物結束後才送出，避免只顯示技能名稱或顯示 0 傷害。 */
+function sgFinishSkillCastFloat(out) {
+  if (!out) return;
+  out._pendingProjectiles = Math.max(0, (out._pendingProjectiles || 0) - 1);
+  if (out._pendingProjectiles > 0 || !out._skillFloatPending) return;
+  var pending = out._skillFloatPending;
+  out._skillFloatPending = null;
+  if (typeof floatPlayerSkillCast === 'function') {
+    floatPlayerSkillCast(pending.floatSel, pending.skill, out.dmg);
+  }
 }
 
 function sgProjectileState(projectile, target) {
@@ -592,7 +606,10 @@ function sgTickFlyingProjectiles(dt, ctx) {
     for (var ri = 0; ri < projectile.states.length; ri++) {
       if (!projectile.states[ri].repeated) { allRepeated = false; break; }
     }
-    if (pathDone && allRepeated && now >= projectile.endAt) list.splice(pi, 1);
+    if (pathDone && allRepeated && now >= projectile.endAt) {
+      list.splice(pi, 1);
+      sgFinishSkillCastFloat(projectile.out);
+    }
   }
 }
 
@@ -641,7 +658,12 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
     default: return null;
   }
   if (!storm && typeof floatPlayerSkillCast === 'function') {
-    floatPlayerSkillCast(floatSel, { emoji: g.emoji, name: g.name }, out.dmg);
+    var skillFloat = { emoji: g.emoji, name: g.name };
+    if (out._pendingProjectiles > 0) {
+      out._skillFloatPending = { floatSel: floatSel, skill: skillFloat };
+    } else {
+      floatPlayerSkillCast(floatSel, skillFloat, out.dmg);
+    }
   }
   if (typeof blog === 'function' && !storm) {
     blog(g.emoji + ' 你施放【' + g.name + ' Lv.' + sgTotalLevel(lvs) + '】' +
