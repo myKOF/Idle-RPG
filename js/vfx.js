@@ -1575,9 +1575,9 @@ function renderCombatVfx(spec) {
   /* 震碎斬與迴身雙連斬都重用迴旋斬弧光；同時存在時各自沿前／後方飛出。
      命中延遲依弧光實際飛行距離估算，確保刀光抵達時傷害字才出現。 */
   if (kind === 'slash' && (s.variant === 'cleave' || s.variant === 'cleave-shockwave' || s.variant === 'cleave-back' || s.variant === 'cleave-dual')) {
-    var drawForward = s.variant === 'cleave-shockwave' || s.variant === 'cleave-dual';
+    var drawForward = s.variant === 'cleave-shockwave' || s.variant === 'cleave-back' || s.variant === 'cleave-dual';
     var drawBack = s.variant === 'cleave-back' || s.variant === 'cleave-dual';
-    var drawStaticForward = s.variant === 'cleave' || s.variant === 'cleave-back';
+    var drawStaticForward = s.variant === 'cleave';
     var frontAngle = from && rt.pts.length
       ? Math.atan2(rt.pts[0].y - from.y, rt.pts[0].x - from.x)
       : 0;

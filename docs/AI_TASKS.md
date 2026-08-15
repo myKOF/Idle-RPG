@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Codex：調整迴旋斬刀光與迴身雙連斬效果（2026-08-15）
+
+- 狀態：已完成
+- 任務分類：新版技能 VFX／刀光可讀性
+- 負責 AI：Codex
+- 任務內容：將迴旋斬既有刀光的線寬提高 30%，並使迴身雙連斬在前後兩個方向各使出 3 次迴旋斬，物理傷害額外 +10%；DOM 與 Canvas 渲染保持一致。
+- 允許修改：`docs/AI_TASKS.md`、`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`、`js/skills2.js`、`css/style.css`、`js/battle-renderer.js`、`index.html`、`tests/skill2-system.test.cjs`、`tests/skill2-vfx.test.cjs`
+- 禁止修改：其他技能數值、Worker Protocol、存檔格式及其他 AI 進行中任務內容。
+- 前置依賴：既有迴旋斬 DOM／Canvas 弧光、前後方向共用實作與 Skills2 Excel／CSV／JS 同步流程；目標檔案衝突預檢無來源。
+- 測試要求：新版技能系統／VFX 定向測試、相關 JavaScript 語法檢查、`npm.cmd run build`、完整 `npm.cmd test`（記錄其他進行中任務失敗）、`git diff --check`，並核對 Skills2 Excel／CSV／JS 資料同步。
+- 完成條件：迴旋斬弧光線寬在兩條渲染路徑均提高 30%；迴身雙連斬每方向 3 次且物理傷害額外 +10%；快取版號同步，測試與差異檢查完成。
+- 驗證結果：新版技能系統／VFX 定向測試 27/27；`node --check js/skills2.js`、`node --check js/vfx.js`、`node --check js/battle-renderer.js` 通過；`npm.cmd run build` 278/278；完整 `npm.cmd test` 1385/1388，3 個失敗均來自其他進行中 `js/skills.js` 任務；`git diff --check` 通過；Skills2 Excel／CSV／JS 已同步。
+- 已知風險：完整回歸中的 3 個 `js/skills.js` 相關失敗不屬本次修改；尚未進行瀏覽器實機畫面驗證。
+- 完成後交給：使用者確認。
 ## Codex：調整震碎斬與迴身雙連斬的共用迴旋斬特效（2026-08-15）
 
 - 狀態：已完成

@@ -245,6 +245,31 @@ test('貫穿突刺：直線上所有敵人都吃到每一段', () => {
   assert.equal(calls.indexOf(off), -1, '線外敵人不得命中');
 });
 
+test('迴身雙連斬：前後各斬 3 次，且物理傷害額外 +10%', () => {
+  const c = loadContext();
+  const cfgs = [];
+  c.chance = () => false;
+  c.resolveHit = function (attacker, defender, attackCfg) {
+    cfgs.push(attackCfg);
+    defender.hp = Math.max(0, defender.hp - 1);
+    return { dmg: 1, crit: false, miss: false, blocked: false, killed: false };
+  };
+  c.G.player.skills2.levels.cleave = [1, 1, 1, 1, 1, 1, 1];
+  const p = playerEnt();
+  const front = enemy(1e9, 40, 0);
+  const back = enemy(1e9, -40, 0);
+  c.castSkill2(p, [front, back], 'cleave', 'mv-float');
+
+  assert.equal(c.SKILLS2.cleave.tiers[6].fx.times, 3);
+  assert.equal(c.SKILLS2.cleave.tiers[6].fx.pct, 10);
+  assert.equal(cfgs.length, 6, '前後兩個方向各 3 次，應產生 6 次命中');
+  assert.ok(cfgs.every((cfg) => cfg.atk === 2300), '基礎 200%＋傷害強化 20%＋迴身雙連斬 10% 應為 230%');
+
+  const csv = fs.readFileSync(path.join(root, 'config/CSV/Skills2.csv'), 'utf8');
+  const row = csv.split(/\r?\n/).find((line) => line.includes(',7,迴身雙連斬,'));
+  assert.ok(row && row.includes('""times"":3'), 'Skills2 CSV 應同步迴身雙連斬 3 次');
+});
+
 test('飛刀·神速飛刀：爆擊使群組冷卻縮短', () => {
   const c = loadContext();
   stubHits(c, { crit: true });

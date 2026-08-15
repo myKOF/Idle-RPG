@@ -96,6 +96,16 @@ test('震碎斬與迴身雙連斬共用前後方向的迴旋斬弧光', () => {
   assert.doesNotMatch(read('css/style.css'), /\.vfx-cleave-wave/);
 });
 
+test('迴旋斬刀光線寬在 DOM 與 Canvas 都提高 30%', () => {
+  const css = read('css/style.css');
+  const renderer = read('js/battle-renderer.js');
+
+  assert.match(css, /\.vfx-cleave-arc::before[\s\S]*?border: 7\.8px solid transparent/);
+  assert.match(css, /\.vfx-cleave-arc::after[\s\S]*?border-width: 2\.6px/);
+  assert.match(renderer, /theme\.c1, width: 14\.3 \* fade/);
+  assert.match(renderer, /theme\.c2, width: 5\.2 \* fade/);
+});
+
 test('震碎斬距離使用 12 米（120 系統距離單位）', () => {
   const skills2 = read('js/skills2.js');
   const csv = read('config/CSV/Skills2.csv');
