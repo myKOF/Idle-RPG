@@ -1572,11 +1572,12 @@ function renderCombatVfx(spec) {
     return;
   }
 
-  /* 震碎斬與迴身雙連斬都重用迴旋斬弧光；同時存在時各自沿前／後方飛出。
+  /* 震碎斬與迴身雙連斬都重用迴旋斬弧光；迴身雙連斬沿十字四方向飛出。
      命中延遲依弧光實際飛行距離估算，確保刀光抵達時傷害字才出現。 */
-  if (kind === 'slash' && (s.variant === 'cleave' || s.variant === 'cleave-shockwave' || s.variant === 'cleave-back' || s.variant === 'cleave-dual')) {
+  if (kind === 'slash' && (s.variant === 'cleave' || s.variant === 'cleave-shockwave' || s.variant === 'cleave-back' || s.variant === 'cleave-dual' || s.variant === 'cleave-cross' || s.variant === 'cleave-cross-shockwave')) {
     var drawForward = s.variant === 'cleave-shockwave' || s.variant === 'cleave-back' || s.variant === 'cleave-dual';
     var drawBack = s.variant === 'cleave-back' || s.variant === 'cleave-dual';
+    var drawCross = s.variant === 'cleave-cross' || s.variant === 'cleave-cross-shockwave';
     var drawStaticForward = s.variant === 'cleave';
     var frontAngle = from && rt.pts.length
       ? Math.atan2(rt.pts[0].y - from.y, rt.pts[0].x - from.x)
@@ -1585,6 +1586,13 @@ function renderCombatVfx(spec) {
     for (var cc = 0; cc < count; cc++) {
       var cleaveDelay = baseDelay + cc * stagger;
       if (drawStaticForward && from) vfxCleaveArc(s, layer, from, cleaveDelay, frontAngle * 180 / Math.PI);
+      if (drawCross && from) {
+        for (var cdi = 0; cdi < 4; cdi++) {
+          var crossAngle = frontAngle + cdi * Math.PI / 2;
+          vfxCleaveArc(s, layer, from, cleaveDelay,
+            crossAngle * 180 / Math.PI, null, { angle: crossAngle, length: 120 });
+        }
+      }
       if (drawForward && from) vfxCleaveArc(s, layer, from, cleaveDelay,
         frontAngle * 180 / Math.PI, null, { angle: frontAngle, length: 120 });
       if (drawBack && from) vfxCleaveArc(s, layer, from, cleaveDelay,
@@ -1596,7 +1604,10 @@ function renderCombatVfx(spec) {
       var targetDy = rt.pts[cti].y - (from ? from.y : 0);
       var targetAlong = targetDx * Math.cos(frontAngle) + targetDy * Math.sin(frontAngle);
       var arcHitDelay = 90;
-      if (drawForward && targetAlong >= 0) {
+      if (drawCross) {
+        var targetDistance = Math.sqrt(targetDx * targetDx + targetDy * targetDy);
+        arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetDistance / 120)));
+      } else if (drawForward && targetAlong >= 0) {
         arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetAlong / 120)));
       } else if (drawBack && targetAlong < 0) {
         arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, -targetAlong / 120)));

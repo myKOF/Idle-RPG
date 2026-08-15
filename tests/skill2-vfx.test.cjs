@@ -38,7 +38,7 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   const css = read('css/style.css');
 
   for (const variant of [
-    'thrust-pierce', 'thrust-triple', 'cleave-shockwave', 'cleave-back', 'cleave-dual', 'knife', 'knife-bounce',
+    'thrust-pierce', 'thrust-triple', 'cleave-shockwave', 'cleave-cross', 'cleave-cross-shockwave', 'knife', 'knife-bounce',
     'gale-slashes', 'bleed-tick', 'poison-tick', 'blood-explosion',
     'zero-infection', 'dual-storm'
   ]) {
@@ -46,7 +46,7 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   }
 
   for (const variant of [
-    'thrust-pierce', 'thrust-triple', 'cleave-shockwave', 'cleave-back', 'cleave-dual', 'knife', 'knife-bounce',
+    'thrust-pierce', 'thrust-triple', 'cleave-shockwave', 'cleave-back', 'cleave-dual', 'cleave-cross', 'cleave-cross-shockwave', 'knife', 'knife-bounce',
     'gale-slashes', 'bleed-tick', 'poison-tick', 'blood-explosion',
     'zero-infection', 'cyclone'
   ]) {
@@ -84,13 +84,13 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.doesNotMatch(renderer.slice(rendererCleaveStart, rendererCleaveEnd), /spawnSlash\(/);
 });
 
-test('震碎斬與迴身雙連斬共用前後方向的迴旋斬弧光', () => {
+test('震碎斬與迴身雙連斬共用十字方向的迴旋斬弧光', () => {
   const skills2 = read('js/skills2.js');
   const cleaveStart = skills2.indexOf('function sgCastCleave');
   const cleaveEnd = skills2.indexOf('\n}\n\n/* ---- 匕首投擲', cleaveStart);
   const cleaveBlock = skills2.slice(cleaveStart, cleaveEnd);
 
-  assert.match(cleaveBlock, /lvs\[5\] > 0 && lvs\[6\] > 0\) \? 'cleave-dual'/);
+  assert.match(cleaveBlock, /lvs\[6\] > 0 \? \(lvs\[5\] > 0 \? 'cleave-cross-shockwave' : 'cleave-cross'\)/);
   assert.match(cleaveBlock, /lvs\[5\] > 0 \? 'cleave-shockwave'/);
   assert.match(read('css/style.css'), /\.vfx-cleave-arc-back/);
   assert.doesNotMatch(read('css/style.css'), /\.vfx-cleave-wave/);
