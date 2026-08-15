@@ -2205,7 +2205,9 @@ var BattleRenderer = (function () {
     }
     var targets = Array.isArray(spec.targets) ? spec.targets.slice(0, 8) : [];
     var rect = areaRect(spec.area);
-    var count = Math.min(5, Math.max(1, spec.count || 1));
+    var isThrust = spec.variant === 'thrust' || spec.variant === 'thrust-pierce' ||
+      spec.variant === 'thrust-parallel' || spec.variant === 'thrust-octagonal';
+    var count = Math.min(isThrust ? 8 : 5, Math.max(1, spec.count || 1));
     var stagger = ((typeof VFX_HIT_STAGGER_SEC === 'number') ? VFX_HIT_STAGGER_SEC : 0.09) * 1000;
 
     /* 玩家出手動作（非敵方事件都算玩家出招）。

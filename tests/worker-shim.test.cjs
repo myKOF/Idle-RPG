@@ -63,3 +63,18 @@ test('recordLoot shim 也合批進事件佇列', {
   ]);
   assert.deepEqual(plain(context.shimDiagSnapshot().ui), { recordLootGold: 1 });
 });
+
+test('shim 傳遞突刺光槍的長度、方向與飛行物欄位', () => {
+  const context = loadShim();
+  context.playCombatVfx({
+    fxKind: 'slash', variant: 'thrust-octagonal', count: 7, projectile: true,
+    lineLength: 182.8, lineWidth: 27.6, laneOffsets: [-13.8, 0, 13.8], directionCount: 8
+  });
+  assert.deepEqual(plain(context.shimDrainEvents()), [{
+    kind: 'vfx', fxKind: 'slash',
+    targets: [], cells: null, area: null, count: 7,
+    travelMs: null, elem: null, cat: null, variant: 'thrust-octagonal', delayMs: 0,
+    projectile: true, lineLength: 182.8, lineWidth: 27.6,
+    laneOffsets: [-13.8, 0, 13.8], directionCount: 8
+  }]);
+});

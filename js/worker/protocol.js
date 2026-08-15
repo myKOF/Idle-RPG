@@ -117,7 +117,9 @@ var EVENT_KINDS = {
              js/skills.js SKILL_VFX_OVERRIDE 註解）。顯示層不認得的 variant 一律
              退回該原型預設畫法，因此新增變體不需要動協議。
      delayMs（v17，可選）：整則特效的基礎延遲（毫秒）——追加劍氣、天罰神雷等
-             「接在前一段動作之後」的特效用它錯開時刻。 */
+             「接在前一段動作之後」的特效用它錯開時刻。
+     projectile（可選）：飛行物命中事件不預先補命中爆點。
+     lineLength／lineWidth／laneOffsets／directionCount（可選）：突刺光槍的長寬、平行道與方向數。 */
   VFX: 'vfx'
 };
 

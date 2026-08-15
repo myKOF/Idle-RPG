@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## Codex：修正突刺光槍長度傳遞與多段特效次數（2026-08-15）
+
+- 狀態：已完成（2026-08-15）
+- 任務分類：突刺 VFX／Worker 事件欄位／多段次數
+- 負責 AI：Codex
+- 任務內容：修正 Worker shim 遺漏突刺光槍長度、寬度、平行道、方向數與飛行物欄位的問題；依使用者要求讓突刺說明中的多段次數逐項累加並同步播放。
+- 允許修改：`js/worker/shim.js`、`js/worker/sim.worker.js`、`js/worker/protocol.js`、`js/skills2.js`、`js/vfx.js`、`js/battle-renderer.js`、`index.html`、`tests/worker-shim.test.cjs`、`tests/skill2-system.test.cjs`、`tests/skill2-vfx.test.cjs`、`docs/AI_TASKS.md`
+- 禁止修改：其它技能數值與特效、傷害公式、存檔格式。
+- 驗收條件：全滿突刺的光槍長度依實際 6 米×範圍倍率＋貫穿追加距離傳到 DOM／Canvas；第 1 階 2 次、第 7 階追加 3 次、第 2 階觸發時追加 2 次，特效段數與命中段數一致。
+- 驗證結果：突刺／Worker shim 相關測試 36/36 通過；`npm.cmd run build` 278/278 通過；`git diff --check` 通過。完整測試僅保留既有的 `battle-skill-hover.test.cjs` 快取版號失敗（要求 `js/ui.js?v=1.0.43`，與本任務無關）。
+- 完成後交給：使用者確認實機畫面。
+
 ## Codex：依公開技能規格表調整突刺與套用光槍圖片特效（2026-08-15）
 
 - 狀態：已完成（2026-08-15）

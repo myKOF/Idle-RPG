@@ -271,7 +271,7 @@ test('突刺·超連刺與貫穿突刺：平行路徑上的目標都吃到飛行
   assert.equal(calls.length, 24, '飛行物追加命中後應消失');
 });
 
-test('八方突刺：八個方向連續 3 次，所有方向目標都命中', () => {
+test('八方突刺：八個方向連續 5 次（2＋3），所有方向目標都命中', () => {
   const c = loadContext();
   const calls = stubHits(c);
   c.chance = () => false;
@@ -287,7 +287,7 @@ test('八方突刺：八個方向連續 3 次，所有方向目標都命中', ()
   c.GT = 0.5;
   c.tickSkill2(0.5, { pEnt: p, getEnemies: () => targets.concat(off), floatSel: 'mv-float', onDeaths() {} });
   assert.ok(targets.every((target) => calls.includes(target)), '八個方向目標都應命中');
-  assert.ok(calls.length >= 24, '八方突刺應至少有 8 方向×3 次命中');
+  assert.ok(calls.length >= 40, '八方突刺應為第 1 階 2 次＋第 7 階 3 次，共 8 方向×5 次');
   assert.equal(calls.includes(off), false, '扇形外敵人不得命中');
   c.GT = 1.0;
   const beforeRepeat = calls.length;

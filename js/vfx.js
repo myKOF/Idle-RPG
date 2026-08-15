@@ -1402,12 +1402,19 @@ function renderCombatVfx(spec) {
   if (!layer) return;
   var kind = spec.fxKind;
   var dur = spec.dur > 0 ? spec.dur : 0.5;
-  var count = Math.max(1, Math.min(5, spec.count || 1));
+  var isThrust = spec.variant === 'thrust' || spec.variant === 'thrust-pierce' ||
+    spec.variant === 'thrust-parallel' || spec.variant === 'thrust-octagonal';
+  var count = Math.max(1, Math.min(isThrust ? 8 : 5, spec.count || 1));
   var baseDelay = spec.delayMs > 0 ? spec.delayMs : 0;
   var s = {
     fxKind: kind, glyph: spec.glyph || '✨', color: spec.color || '#fff',
     elem: spec.elem || null, cat: spec.cat || null, variant: spec.variant || null, dur: dur,
-    travelMs: spec.travelMs || null
+    travelMs: spec.travelMs || null,
+    projectile: !!spec.projectile,
+    lineLength: Number(spec.lineLength) > 0 ? Number(spec.lineLength) : null,
+    lineWidth: Number(spec.lineWidth) > 0 ? Number(spec.lineWidth) : null,
+    laneOffsets: Array.isArray(spec.laneOffsets) ? spec.laneOffsets.slice(0, 3) : null,
+    directionCount: Number(spec.directionCount) > 0 ? Number(spec.directionCount) : null
   };
   var travelMs = spec.travelMs || null;   // 每個目標各自的飛行時間（毫秒）
   var targets = (spec.targets || []).slice(0, VFX_MAX_TARGETS);

@@ -120,7 +120,7 @@ test('飛出斬擊與貫穿突刺由飛行物命中，不由 VFX 預先產生受
   const vfx = read('js/vfx.js');
   const renderer = read('js/battle-renderer.js');
 
-  assert.match(skills2, /variant: thrustVariant, count: Math\.min\(5, thrustCount\), projectile: isPiercing/);
+  assert.match(skills2, /variant: thrustVariant, count: Math\.min\(8, thrustCount\), projectile: isPiercing/);
   assert.match(skills2, /variant: cleaveVariant, count: Math\.min\(5, slashes\), projectile: lvs\[5\] > 0/);
   const thrustVfx = vfx.slice(vfx.indexOf("s.variant === 'thrust-pierce'"), vfx.indexOf("s.variant === 'cleave'"));
   const thrustRenderer = renderer.slice(renderer.indexOf("spec.variant === 'thrust-pierce'"), renderer.indexOf("spec.variant === 'cleave'"));
@@ -145,4 +145,21 @@ test('突刺光槍 VFX 使用確認的 PNG 素材並保留 DOM／Canvas 退化�
   assert.match(renderer, /PIXI\.Assets\.load\('images\/vfx\/thrust_lance\.png'\)/);
   assert.match(thrustRenderer, /if \(S\.thrustLanceTex\)/);
   assert.match(thrustRenderer, /g\.poly\(/);
+});
+
+test('突刺 VFX 會保留實際長度與完整段數上限', () => {
+  const skills2 = read('js/skills2.js');
+  const vfx = read('js/vfx.js');
+  const renderer = read('js/battle-renderer.js');
+  const shim = read('js/worker/shim.js');
+
+  assert.match(skills2, /第 1 階兩次；第 7 階再加三次；第 2 階觸發時再加兩次/);
+  assert.match(skills2, /var isParallel = lvs\[3\] > 0/);
+  assert.match(shim, /lineLength: Number\(spec\.lineLength\) > 0/);
+  assert.match(shim, /lineWidth: Number\(spec\.lineWidth\) > 0/);
+  assert.match(shim, /laneOffsets: Array\.isArray\(spec\.laneOffsets\)/);
+  assert.match(shim, /directionCount: Number\(spec\.directionCount\) > 0/);
+  assert.match(shim, /projectile: !!spec\.projectile/);
+  assert.match(vfx, /var isThrust = spec\.variant === 'thrust'/);
+  assert.match(renderer, /var isThrust = spec\.variant === 'thrust'/);
 });
