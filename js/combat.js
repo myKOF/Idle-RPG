@@ -1231,6 +1231,9 @@ function fieldTick(dt) {
             if (primary && inReach) {
                 p.atkCd += 1 / st.aspd;
                 p._lockTarget = primary;
+                // 狂血盛宴：每 1 連擊數讓同一次普攻多攻擊 1 個敵人；追加目標不再遞迴觸發普攻特效。
+                var basicTargets = (typeof skill2RageBasicAttackTargets === 'function')
+                    ? skill2RageBasicAttackTargets(primary, combatFieldEnemies()) : [primary];
                 var res = doPlayerAttack(p, primary, primary.floatSel || 'mv-float');
                 combatDebugAuditFieldDeaths(debugFieldTick, 'basic attack');
                 if (res.killed) {
@@ -1242,6 +1245,19 @@ function fieldTick(dt) {
                    死亡從未成立（下面的空場提前返回也會跳過怪物攻擊那條唯一的判死路徑）。 */
                 if (p.hp <= 0) { onPlayerFieldDeath(); return; }
                 if (!combatFieldEnemies().length) return;
+                for (var bti = 1; bti < basicTargets.length; bti++) {
+                    var extraTarget = basicTargets[bti];
+                    if (!extraTarget || extraTarget.hp <= 0) continue;
+                    var extraRes = doPlayerAttack(p, extraTarget, extraTarget.floatSel || 'mv-float', 1, {
+                        noProc: true, vfxDelayMs: 130 * bti
+                    });
+                    if (extraRes) {
+                        res.dmg += extraRes.dmg || 0;
+                        if (extraRes.killed) res.killed = true;
+                    }
+                }
+                if (res.killed) onFieldDeaths();
+                if (p.hp <= 0) { onPlayerFieldDeath(); return; }
             }
         }
     }
