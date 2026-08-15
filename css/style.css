@@ -7365,12 +7365,25 @@ textarea:disabled,
   animation-delay: inherit;
 }
 
+/* 非最後一段只保留短槍頭，沿長軸飛向最遠點；最後一段才使用上方完整光槍動畫。 */
+.vfx-thrust-flight {
+  -webkit-mask-image: none;
+  mask-image: none;
+  animation-name: vfxThrustFlight;
+}
+
 @keyframes vfxThrustLine {
   0% { --vfx-reveal-end: 33%; transform: translate(-50%, -50%) rotate(calc(var(--vfx-angle, 0rad) - 1.5708rad)) scaleY(1); opacity: 1; }
   20% { --vfx-reveal-end: 50%; transform: translate(-50%, -50%) rotate(calc(var(--vfx-angle, 0rad) - 1.5708rad)) scaleY(1); opacity: 1; }
   40% { --vfx-reveal-end: 100%; -webkit-mask-image: none; mask-image: none; transform: translate(-50%, -50%) rotate(calc(var(--vfx-angle, 0rad) - 1.5708rad)) scaleY(1); opacity: 1; }
   80% { --vfx-reveal-end: 100%; -webkit-mask-image: none; mask-image: none; transform: translate(-50%, -50%) rotate(calc(var(--vfx-angle, 0rad) - 1.5708rad)) scaleY(1); opacity: 1; }
   100% { --vfx-reveal-end: 100%; -webkit-mask-image: none; mask-image: none; transform: translate(-50%, -50%) rotate(calc(var(--vfx-angle, 0rad) - 1.5708rad)) scaleY(1); opacity: 0; }
+}
+
+@keyframes vfxThrustFlight {
+  0% { transform: translate(-50%, -50%) rotate(calc(var(--vfx-angle, 0rad) - 1.5708rad)) translateY(0); opacity: 1; }
+  76% { transform: translate(-50%, -50%) rotate(calc(var(--vfx-angle, 0rad) - 1.5708rad)) translateY(var(--vfx-flight-distance, 0px)); opacity: 1; }
+  100% { transform: translate(-50%, -50%) rotate(calc(var(--vfx-angle, 0rad) - 1.5708rad)) translateY(var(--vfx-flight-distance, 0px)); opacity: 0; }
 }
 
 @keyframes vfxAreaFlash {

@@ -804,23 +804,29 @@ function vfxCleaveArcFlightMs(spec) {
 
 /* 突刺光槍圖片；圖片本身是垂直長槍，播放時旋轉到路徑方向，並可用
    laneOffsetPx 排成平行三道或用 angleOverride 畫八方向。 */
-function vfxThrustLine(spec, layer, from, to, delayMs, angleOffset, lengthPx, laneOffsetPx, angleOverride) {
+function vfxThrustLine(spec, layer, from, to, delayMs, angleOffset, lengthPx, laneOffsetPx, angleOverride, isFinal) {
   if (!from || !to) return;
   var dx = to.x - from.x, dy = to.y - from.y;
   var angle = typeof angleOverride === 'number'
     ? angleOverride : Math.atan2(dy, dx) + (Number(angleOffset) || 0);
   var distance = Math.max(48, Number(spec.lineLength) || Number(lengthPx) || 70);
+  var bodyLength = isFinal ? distance : Math.min(96, Math.max(42, distance * 0.34));
+  var flightDistance = Math.max(0, distance - bodyLength);
   var laneOffset = Number(laneOffsetPx) || 0;
   var side = angle + Math.PI / 2;
   var start = { x: from.x + Math.cos(side) * laneOffset, y: from.y + Math.sin(side) * laneOffset };
-  var center = { x: start.x + Math.cos(angle) * distance / 2, y: start.y + Math.sin(angle) * distance / 2 };
+  var center = { x: start.x + Math.cos(angle) * bodyLength / 2, y: start.y + Math.sin(angle) * bodyLength / 2 };
   var d = vfxNode('vfx-thrust-line', layer, spec);
+  if (!isFinal) d.classList.add('vfx-thrust-flight');
   vfxPlace(d, center);
-  d.style.setProperty('--vfx-length', distance + 'px');
+  d.style.setProperty('--vfx-length', bodyLength + 'px');
+  d.style.setProperty('--vfx-flight-distance', flightDistance + 'px');
   d.style.setProperty('--vfx-width', Math.max(28, Number(spec.lineWidth) || 36) + 'px');
   d.style.setProperty('--vfx-angle', angle.toFixed(3) + 'rad');
   d.style.animationDelay = Math.max(0, delayMs || 0) + 'ms';
-  var duration = Math.max(0.22, spec.dur || 0.38);
+  var duration = isFinal
+    ? Math.max(0.24, spec.dur || 0.3)
+    : Math.max(0.16, Math.min(0.22, (spec.dur || 0.3) * 0.75));
   d.style.animationDuration = Math.round(duration * 1000) + 'ms';
   vfxTrack(d, Math.max(0, delayMs || 0) + duration * 1000 + 180);
 }
@@ -1579,15 +1585,19 @@ function renderCombatVfx(spec) {
     var thrustDirections = s.variant === 'thrust-octagonal'
       ? Math.max(1, Number(s.directionCount) || 8) : 1;
     var thrustLength = Number(s.lineLength) || 70;
+    /* 突刺連段要讓每一道的「向外飛出」看得清楚：7 次時
+       6 個間隔 × 220ms + 最後收尾 300ms ≈ 1.62 秒。 */
+    var thrustStagger = 220;
     var thrustFrontAngle = Math.atan2(rt.pts[0].y - from.y, rt.pts[0].x - from.x);
     for (var tc = 0; tc < count; tc++) {
-      var thrustDelay = baseDelay + tc * stagger;
+      var thrustDelay = baseDelay + tc * thrustStagger;
+      var isFinalThrust = tc === count - 1;
       for (var td = 0; td < thrustDirections; td++) {
         var thrustAngle = s.variant === 'thrust-octagonal'
           ? thrustFrontAngle + td * Math.PI * 2 / thrustDirections : thrustFrontAngle;
         for (var tl = 0; tl < thrustLanes.length; tl++) {
           vfxThrustLine(s, layer, from, rt.pts[0], thrustDelay, 0, thrustLength,
-            thrustLanes[tl], thrustAngle);
+            thrustLanes[tl], thrustAngle, isFinalThrust);
         }
       }
       if (!s.projectile) {
