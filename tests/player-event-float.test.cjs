@@ -404,11 +404,12 @@ test('skill cast summary formats total damage and keeps the doubled lifetime con
   assert.equal(calls[0][1], '✨Buff');
   assert.equal(calls[0][3], undefined);
 
-  assert.match(ui, /var SKILL_CAST_TOTAL_FLOAT_SPEED_FACTOR = 0\.7/);
-  assert.match(ui, /var SKILL_CAST_TOTAL_FLOAT_LIFETIME_MS = FLOAT_TEXT_LIFETIME_MS \* 2 \/ SKILL_CAST_TOTAL_FLOAT_SPEED_FACTOR/);
+  assert.match(ui, /var SKILL_CAST_FLOAT_LIFETIME_MS = 1050/);
+  assert.match(ui, /var SKILL_CAST_TOTAL_FLOAT_LIFETIME_MS = SKILL_CAST_FLOAT_LIFETIME_MS \* 2/);
   assert.match(ui, /if \(isSkillCastTotalFloat\)\s*\{[\s\S]*?scheduleFloatTextRemoval\(sp, SKILL_CAST_TOTAL_FLOAT_LIFETIME_MS\)/);
-  assert.match(css, /\.float-txt\.player-event\.skill-cast-total\s*\{[\s\S]*?animation-duration:\s*3s/);
-  assert.match(renderer, /skill-cast-total.*\? 3 : 1\.05/);
+  assert.match(css, /\.float-txt\.player-event\.skill-cast-total\s*\{[\s\S]*?animation-duration:\s*2\.1s/);
+  assert.match(renderer, /PLAYER_SKILL_TOTAL_FLOAT_LIFE_SEC = PLAYER_SKILL_FLOAT_LIFE_SEC \* 2/);
+  assert.match(renderer, /PLAYER_SKILL_TOTAL_FLOAT_LIFE_SEC : PLAYER_SKILL_FLOAT_LIFE_SEC/);
   assert.match(skills2, /floatPlayerSkillCast\(floatSel, \{ emoji: g\.emoji, name: g\.name \}, out\.dmg\)/);
   assert.ok(skills.indexOf('floatPlayerSkillCast(floatSel, sk, out.dmg)') > skills.indexOf('out.dmg = totalDmg;'));
 });

@@ -44,6 +44,8 @@ var BattleRenderer = (function () {
   var LASTPOS_KEEP_MS = 3000;    // 實體移除後保留座標，讓遲到的飄字仍有落點
   var PLAYER_SKILL_FLOAT_SIDE_OFFSET = 60; // 技能名稱／傷害離人物中心的起始左右偏移（px）
   var PLAYER_SKILL_FLOAT_DRIFT = 16;        // 起始後只再向外滑一小段，避免回到人物中心
+  var PLAYER_SKILL_FLOAT_LIFE_SEC = 1.05;   // 一般技能名稱／傷害字的顯示時間
+  var PLAYER_SKILL_TOTAL_FLOAT_LIFE_SEC = PLAYER_SKILL_FLOAT_LIFE_SEC * 2;
 
   /* 元素主題色：優先沿用 js/vfx.js 的 VFX_ELEM_THEME，載入順序異常時退回內建表。 */
   var FALLBACK_THEME = {
@@ -2405,7 +2407,8 @@ var BattleRenderer = (function () {
          玩家看到滿畫面紅字會以為自己在狂掉血。改成看語意分類。 */
       if (cls.indexOf('skill-cast') >= 0) {
         s.fill = '#ffd43b'; s.size = 20; s.rise = 0;
-        s.life = cls.indexOf('skill-cast-total') >= 0 ? 3 : 1.05;
+        s.life = cls.indexOf('skill-cast-total') >= 0
+          ? PLAYER_SKILL_TOTAL_FLOAT_LIFE_SEC : PLAYER_SKILL_FLOAT_LIFE_SEC;
         return s;
       }
       var isDamageToUs = cls.indexOf('mdmg') >= 0 || /^\s*(爆擊\s*)?-/.test(text);
