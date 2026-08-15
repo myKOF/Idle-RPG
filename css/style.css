@@ -6847,7 +6847,8 @@ textarea:disabled,
   border-radius: 0;
   background: none;
   box-shadow: none;
-  filter: drop-shadow(0 0 5px var(--vfx-glow, #fff)) drop-shadow(0 0 2px #fff);
+  /* 飛刀外層光暈降低 80%，並改用紅色；刀身本體亮度不變。 */
+  filter: drop-shadow(0 0 5px rgba(255, 56, 80, 0.2));
   transform: translate(-50%, -50%) rotate(var(--vfx-rot, 0rad));
 }
 

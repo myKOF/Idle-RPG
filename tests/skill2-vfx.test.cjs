@@ -66,6 +66,9 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.match(vfx, /projClass === 'vfx-proj-knife'[\s\S]*?spec\.glyph/);
   assert.match(renderer, /spec\.variant === 'knife'[\s\S]*?spec\.variant === 'knife-bounce'/);
   assert.match(css, /\.vfx-proj-knife \.vfx-proj-core[\s\S]*?background: none/);
+  assert.match(renderer, /isKnifeProjectile[\s\S]*?glow\.tint = isKnifeProjectile \? 0xff3850[\s\S]*?glow\.alpha = isKnifeProjectile \? 0\.16 : 0\.8/);
+  assert.match(renderer, /isKnifeBounce[\s\S]*?glow\.tint = isKnifeBounce \? 0xff3850[\s\S]*?glow\.alpha = isKnifeBounce \? 0\.15 : 0\.75/);
+  assert.match(css, /\.vfx-proj-knife \.vfx-proj-core[\s\S]*?drop-shadow\(0 0 5px rgba\(255, 56, 80, 0\.2\)\)/);
   assert.match(vfx, /function vfxCleaveArc\([\s\S]*?travel\)/);
   assert.match(vfx, /vfxCleaveArc\([\s\S]*?length: 120/);
   assert.match(vfx, /vfxCleaveArc\([\s\S]*?vfx-cleave-arc-back[\s\S]*?length: 120/);

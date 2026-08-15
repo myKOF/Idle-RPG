@@ -35,6 +35,8 @@ function shimDiagReset() {
    背景則由 shimSetBackground() 降為只保留最新一筆。 */
 var SHIM_EVENT_CAP = 400;
 var _shimEvents = [];
+var SHIM_URGENT_VISUAL_CAP = 80;
+var _shimUrgentVisualEvents = [];
 var _shimEventsDropped = 0;
 var _shimBackground = false;
 var _shimLatestBackgroundFloat = null;
@@ -65,9 +67,20 @@ function shimSetBackground(hidden) {
   }
 }
 
+function shimIsUrgentVisualEvent(kind, data) {
+  if (_shimBackground) return false;
+  if (kind === 'vfx') return true;
+  return kind === 'float' && /(?:^|\s)skill-cast(?:\s|$)/.test(String(data && data.cls || ''));
+}
+
 function shimPushEvent(kind, data) {
   data = data || {};
   data.kind = kind;
+  if (shimIsUrgentVisualEvent(kind, data)) {
+    if (_shimUrgentVisualEvents.length >= SHIM_URGENT_VISUAL_CAP) _shimUrgentVisualEvents.shift();
+    _shimUrgentVisualEvents.push(data);
+    return;
+  }
   if (kind === 'float' && _shimBackground) {
     _shimLatestBackgroundFloat = data;
     return;
@@ -90,9 +103,21 @@ function shimPushEvent(kind, data) {
   _shimEvents.push(data);
 }
 
+/* 同一個模擬步驟內的技能飄字／VFX 在 Worker 端先合併，交由 sim.worker.js
+   一次送出；這不是每個事件各自 postMessage。 */
+function shimDrainUrgentVisualEvents() {
+  var out = _shimUrgentVisualEvents;
+  _shimUrgentVisualEvents = [];
+  return out;
+}
+
 function shimDrainEvents() {
   var out = _shimEvents;
   _shimEvents = [];
+  if (_shimUrgentVisualEvents.length) {
+    out = _shimUrgentVisualEvents.concat(out);
+    _shimUrgentVisualEvents = [];
+  }
   if (!_shimBackground && _shimLatestBackgroundFloat) {
     out.push(_shimLatestBackgroundFloat);
     _shimLatestBackgroundFloat = null;

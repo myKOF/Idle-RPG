@@ -5,6 +5,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 const protocol = require(path.join(root, 'js/worker/protocol.js'));
+const simWorker = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
 
 const VALID_ARG_TYPES = new Set([
   'int', 'num', 'bool', 'str', 'id', 'ids', 'ref', 'slots', 'obj', 'any'
@@ -106,7 +107,9 @@ test('凍結的 Worker 指令表有 90 條且分類數量固定', () => {
   //      新增 task.claim（js/tasks.js taskClaim），87 → 88
   // v19：新版主動技能系統——新增 skill2.learn / skill2.downgrade（js/skills2.js），
   //      skills 面板新增 skills2 欄位（tierMax + 各群組各階等級），88 → 90
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 19);
+  // v20：技能施放飄字與重要 VFX 改走低延遲 visual 訊息，不等待一般 tick
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 20);
+  assert.equal(protocol.MSG_OUT.VISUAL, 'visual');
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   const names = Object.keys(protocol.COMMANDS);
   assert.equal(names.length, 90);
@@ -117,6 +120,12 @@ test('凍結的 Worker 指令表有 90 條且分類數量固定', () => {
     counts[group] = (counts[group] || 0) + 1;
   }
   assert.deepEqual(counts, EXPECTED_COMMAND_COUNTS);
+});
+
+test('Worker 在每個模擬步驟後低延遲送出視覺事件', () => {
+  assert.match(simWorker, /function emitUrgentVisualEvents\(\)[\s\S]*?post\(MSG_OUT\.VISUAL, \{ events: events \}\)/);
+  assert.match(simWorker, /simStep\(TICK_MS \/ 1000\);\s*emitUrgentVisualEvents\(\);/);
+  assert.match(simWorker, /simStep\(dt\);\s*emitUrgentVisualEvents\(\);/);
 });
 
 test('所有指令名稱、fn、args、resolve、limit 與 dirty metadata 格式合法', () => {

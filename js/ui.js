@@ -856,6 +856,9 @@ function bindWorkerUiState() {
       requestPanelData(key, true);
     }
   });
+  WorkerBridge.on(MSG_OUT.VISUAL, function (msg) {
+    handleWorkerUiEvents(msg.events);
+  });
   WorkerBridge.on(MSG_OUT.PANEL, function (msg) {
     if (!validUiPanelKey(msg.name)) return;
     var previousPanel = UI_WORKER_STATE.panels[msg.name];

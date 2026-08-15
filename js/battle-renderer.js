@@ -1233,10 +1233,12 @@ var BattleRenderer = (function () {
       core = projectileCore(spec, theme);
     }
     if (spec.variant !== 'fireball') {
+      var isKnifeProjectile = spec.variant === 'knife' || spec.variant === 'knife-bounce';
       var glow = new PIXI.Sprite(glowTexture());
       glow.anchor.set(0.5);
-      glow.tint = parseInt(String(theme.glow).replace('#', '0x')) || 0xffffff;
-      glow.alpha = 0.8;
+      glow.tint = isKnifeProjectile ? 0xff3850
+        : (parseInt(String(theme.glow).replace('#', '0x')) || 0xffffff);
+      glow.alpha = isKnifeProjectile ? 0.16 : 0.8;
       glow.scale.set(0.9);
       glow.blendMode = 'add';
       node.addChild(glow);
@@ -1294,10 +1296,12 @@ var BattleRenderer = (function () {
     };
     var node = new PIXI.Container();
     var core = projectileCore(spec, theme);
+    var isKnifeBounce = spec.variant === 'knife-bounce';
     var glow = new PIXI.Sprite(glowTexture());
     glow.anchor.set(0.5);
-    glow.tint = parseInt(String(theme.glow).replace('#', '0x')) || 0xffffff;
-    glow.alpha = 0.75;
+    glow.tint = isKnifeBounce ? 0xff3850
+      : (parseInt(String(theme.glow).replace('#', '0x')) || 0xffffff);
+    glow.alpha = isKnifeBounce ? 0.15 : 0.75;
     glow.scale.set(0.72);
     glow.blendMode = 'add';
     node.addChild(glow); node.addChild(core);

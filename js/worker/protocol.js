@@ -11,7 +11,9 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-/* v19（2026-08-13 新版主動技能系統）：新增指令 skill2.learn／skill2.downgrade
+/* v20（2026-08-15 技能視覺事件低延遲傳遞）：新增 Worker → 主執行緒的 visual 訊息，
+   只承載技能施放飄字與重要 VFX；一般日誌、資源與面板仍隨 tick 合批。
+   v19（2026-08-13 新版主動技能系統）：新增指令 skill2.learn／skill2.downgrade
    （6 群組 × 7 階的新版技能——升級花金幣、階層循序解鎖；定義表 SKILLS2 在共載檔
    js/skills2.js，兩端讀同一張表，故名稱／說明／費用公式**不進協議**；skills 面板
    快照新增 skills2 欄位＝{ tierMax, levels }，僅投影會變動的各階等級），88 → 90。
@@ -25,7 +27,7 @@
    v16：新增 newforge.upgradePart（熔爐零件升級），86 → 87
    v15（2026-08-02 詞條規則外送）：equip 面板新增 affixRules（每種詞條的可用部位與
    品質門檻，取自 AFFIX_POOL）。任何「想洗出某條詞條」的一方不必再自己抄一份部位清單。 */
-var WORKER_PROTOCOL_VERSION = 19;
+var WORKER_PROTOCOL_VERSION = 20;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -57,6 +59,7 @@ var MSG_IN = {
 var MSG_OUT = {
   BOOTED: 'booted',   // { snapshot, offlineSummary, notices, protocolVersion }
   TICK: 'tick',       // { view, dirty, events }
+  VISUAL: 'visual',   // { events }：技能飄字／重要 VFX，低延遲獨立傳送
   PANEL: 'panel',     // { name, data }
   FULL: 'full',       // { snapshot }
   /* { token, kind, payload: { json, meta } }  請主執行緒落地存檔。
@@ -74,7 +77,7 @@ var MSG_OUT = {
 var PANEL_KEYS = ['header', 'battle', 'equip', 'inv', 'forge', 'newforge',
                   'factory', 'tower', 'gems', 'skills', 'talents', 'task'];
 
-/* ---- 事件種類（隨 tick 合批送出，禁止一則一次 postMessage）---- */
+/* ---- 事件種類（一般事件隨 tick 合批；視覺事件可走 MSG_OUT.VISUAL）---- */
 var EVENT_KINDS = {
   LOG: 'log',       // { msg, cls, cat }        對應 blog()
   FLOG: 'flog',     // { msg, cls }             對應 flog()
