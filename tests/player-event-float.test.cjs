@@ -372,12 +372,16 @@ test('我方飄字依承傷／增益分成紅區與藍區，技能名稱從中�
   assert.match(css, /\.float-txt\.player-damage\s*\{[\s\S]*?color:\s*#ff6b6b/);
   assert.match(css, /\.float-txt\.player-benefit\s*\{[\s\S]*?top:\s*6%/);
   assert.match(css, /\.float-txt\.player-event\.skill-cast\s*\{[\s\S]*?color:\s*#ffd43b/);
-  assert.match(css, /@keyframes\s+skillCastFloatLeft\s*\{[\s\S]*?translate\(calc\(-50% - 76px\)/);
-  assert.match(css, /@keyframes\s+skillCastFloatRight\s*\{[\s\S]*?translate\(calc\(-50% \+ 76px\)/);
+  assert.match(css, /skill-cast-left\s*\{[\s\S]*?left:\s*calc\(50% - 60px\)/);
+  assert.match(css, /skill-cast-right\s*\{[\s\S]*?left:\s*calc\(50% \+ 60px\)/);
+  assert.match(css, /@keyframes\s+skillCastFloatLeft\s*\{[\s\S]*?translate\(calc\(-50% - 16px\)/);
+  assert.match(css, /@keyframes\s+skillCastFloatRight\s*\{[\s\S]*?translate\(calc\(-50% \+ 16px\)/);
   assert.match(skills, /floatPlayerSkillCast\(floatSel, sk, out\.dmg\)/);
   assert.match(potential, /floatPlayerSkillCast\(floatSel, def, res && res\.dmg\)/);
   assert.match(renderer, /cls\.indexOf\('skill-cast'\) >= 0/);
-  assert.match(renderer, /drift: castLeft \? -72 : \(castRight \? 72 : 0\)/);
+  assert.match(renderer, /PLAYER_SKILL_FLOAT_SIDE_OFFSET = 60/);
+  assert.match(renderer, /x: S\.player\.root\.x \+ castOffset/);
+  assert.match(renderer, /drift: castLeft \? -PLAYER_SKILL_FLOAT_DRIFT : \(castRight \? PLAYER_SKILL_FLOAT_DRIFT : 0\)/);
 });
 
 test('skill cast summary formats total damage and keeps the doubled lifetime contract', () => {
