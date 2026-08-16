@@ -2070,7 +2070,7 @@ function sgOrbitStep(f, enemies, dt, ctx) {
   if (out.killed && ctx && ctx.onDeaths) ctx.onDeaths();
 }
 
-/* 環繞特效：一道一則事件，帶上模擬層實際判定的環半徑、火狩體積與旋轉方向；
+/* 環繞特效：一道一則事件，帶上模擬層實際判定的環半徑、火狩體積、旋轉方向與角速度；
    圓心送出施放當下的玩家座標，顯示層以自己的玩家錨點逐幀跟隨（火狩跟著玩家跑）。 */
 function sgOrbitEmitVfx(f) {
   var center = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null;
@@ -2081,7 +2081,8 @@ function sgOrbitEmitVfx(f) {
       fxKind: 'aura', variant: 'firehunt', elem: 'fire', dur: dur, count: perRing,
       area: {
         x: center ? center.x : 0, y: center ? center.y : 0, r: f.rings[i].r,
-        orbR: f.bodyR, orbs: perRing, spin: f.rings[i].spin >= 0 ? 1 : -1
+        orbR: f.bodyR, orbs: perRing, spin: f.rings[i].spin >= 0 ? 1 : -1,
+        spinRate: f.rings[i].spin
       }
     });
   }

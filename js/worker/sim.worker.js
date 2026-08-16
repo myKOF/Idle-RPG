@@ -10,11 +10,11 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=21', 'shim.js?v=3');
+importScripts('protocol.js?v=22', 'shim.js?v=3');
 importScripts(
   '../util.js?v=20260814-skill-summary', '../data.js?v=20260816-projectile-speed', '../status.js?v=20260817-skill2-unlock', '../formula.js?v=20260814-skill2-counter-bloodrage', '../battlefield.js?v=20260816-projectile-speed', '../stats.js',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260816-meteor-fireball', '../skills2.js?v=20260817-firehunt-rps', '../talents.js?v=20260811-loadout-cap-clamp',
+  '../skills.js?v=20260816-meteor-fireball', '../skills2.js?v=20260817-firehunt-vfx', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260814-skill-min-interval', '../special_rules.js',
   '../combat.js?v=20260817-basic-attack-cd', '../legendary.js?v=20260816-magic-fire-skills', '../potential.js?v=20260814-skill-min-interval', '../tower.js?v=20260814-skill2-review-fixes',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260814-active-passive',

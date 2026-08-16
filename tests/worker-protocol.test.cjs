@@ -108,8 +108,8 @@ test('凍結的 Worker 指令表有 92 條且分類數量固定', () => {
   // v19：新版主動技能系統——新增 skill2.learn / skill2.downgrade（js/skills2.js），
   //      skills 面板新增 skills2 欄位（tierMax + 各群組各階等級），88 → 90
   // v20：技能施放飄字與重要 VFX 改走低延遲 visual 訊息，不等待一般 tick
-  // v21：新增 skill2.max / skill2.delete（新版技能一鍵滿級與重置），90 → 92
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 21);
+  // v22：VFX 環形 area 新增可選 spinRate，讓火狩畫面同步模擬層角速度
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 22);
   assert.equal(protocol.MSG_OUT.VISUAL, 'visual');
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   const names = Object.keys(protocol.COMMANDS);

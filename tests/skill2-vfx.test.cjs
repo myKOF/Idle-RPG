@@ -197,6 +197,16 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.doesNotMatch(renderer.slice(rendererCleaveStart, rendererCleaveEnd), /spawnSlash\(/);
 });
 
+test('火狩 Canvas 旋轉速度沿用模擬層角速度，舊事件仍可退回方向速度', () => {
+  const skills2 = read('js/skills2.js');
+  const renderer = read('js/battle-renderer.js');
+
+  assert.match(skills2, /spin: f\.rings\[i\]\.spin >= 0 \? 1 : -1,\s*spinRate: f\.rings\[i\]\.spin/);
+  assert.match(renderer, /var spinRate = Number\(a\.spinRate\);/);
+  assert.match(renderer, /isFinite\(spinRate\) && Math\.abs\(spinRate\) > 1e-6/);
+  assert.match(renderer, /\? spinRate : \(ccw \? -1 : 1\) \* Math\.PI \* 2/);
+});
+
 test('震碎斬與迴身雙連斬共用十字方向的迴旋斬弧光', () => {
   const skills2 = read('js/skills2.js');
   const cleaveStart = skills2.indexOf('function sgCastCleave');

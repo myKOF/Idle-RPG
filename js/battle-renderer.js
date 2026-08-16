@@ -1972,7 +1972,9 @@ var BattleRenderer = (function () {
     }, 2, dur * 1000 + 500);
   }
   /* 火狩（新版技能【火狩】）：釘在玩家身上、持續旋轉的環繞體。
-     模擬層送來的 area 帶 r（環繞半徑）／orbR（單團體積半徑）／orbs（團數）／spin（方向），
+     模擬層送來的 area 帶 r（環繞半徑）／orbR（單團體積半徑）／orbs（團數）／spin（方向）／
+     spinRate（弧度／秒），畫面旋轉速度必須沿用模擬層的實際角速度；舊事件沒有 spinRate
+     時退回每秒 1 圈，避免快取中的舊事件完全失效。
      顯示層必須沿用同一組數字——這就是模擬層實際判定接觸的圓，畫小了玩家會覺得
      「明明沒碰到卻扣血」。圓心不取 area 的 x／y 而是逐幀讀玩家目前座標：
      火狩本來就跟著玩家跑，用施放當下的座標會整團留在原地。
@@ -1997,7 +1999,9 @@ var BattleRenderer = (function () {
     }
 
     var theme = themeOf(spec);
-    var spin = (ccw ? -1 : 1) * Math.PI * 2;  // 每秒 1 圈：旋轉快慢是表現，命中節奏仍由模擬層決定
+    var spinRate = Number(a.spinRate);
+    var spin = isFinite(spinRate) && Math.abs(spinRate) > 1e-6
+      ? spinRate : (ccw ? -1 : 1) * Math.PI * 2;
     var node = new PIXI.Container();
     S.layers.fx.addChild(node);
     var g = new PIXI.Graphics();
