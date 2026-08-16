@@ -1957,6 +1957,75 @@ var BattleRenderer = (function () {
       }
     }, 2, dur * 1000 + 500);
   }
+  /* 火狩（新版技能【火狩】）：釘在玩家身上、持續旋轉的環繞體。
+     模擬層送來的 area 帶 r（環繞半徑）／orbR（單團體積半徑）／orbs（團數）／spin（方向），
+     顯示層必須沿用同一組數字——這就是模擬層實際判定接觸的圓，畫小了玩家會覺得
+     「明明沒碰到卻扣血」。圓心不取 area 的 x／y 而是逐幀讀玩家目前座標：
+     火狩本來就跟著玩家跑，用施放當下的座標會整團留在原地。
+     同一道（半徑＋方向相同）只保留一個節點：【再生】延長持續時間時模擬層會補送
+     同一道的事件，沒有這層合併就會愈疊愈多團。 */
+  var FX_ORBIT_MAX_SEC = 12;       // 環繞體的顯示上限（秒）；【再生】可延長，但不無限延長
+  var _fireHuntRings = Object.create(null);
+  function spawnFireHunt(spec) {
+    var a = spec && spec.area;
+    if (!a || !isFinite(a.r)) return;
+    var ringR = Math.max(6, Number(a.r) || 0);
+    var orbR = Math.max(3, Number(a.orbR) || 0);
+    var orbs = Math.max(1, Math.min(12, Math.floor(Number(a.orbs) || 1)));
+    var ccw = Number(a.spin) < 0;
+    var dur = Math.min(FX_ORBIT_MAX_SEC, Math.max(0.5, spec.dur || 4));
+    var key = Math.round(ringR) + ':' + (ccw ? 'ccw' : 'cw');
+    var ring = _fireHuntRings[key];
+    if (ring && !ring.done) {
+      ring.dur = Math.min(FX_ORBIT_MAX_SEC, Math.max(ring.dur, ring.t + dur));
+      ring.orbs = orbs;
+      return;
+    }
+
+    var theme = themeOf(spec);
+    var spin = (ccw ? -1 : 1) * Math.PI * 2;  // 每秒 1 圈：旋轉快慢是表現，命中節奏仍由模擬層決定
+    var node = new PIXI.Container();
+    S.layers.fx.addChild(node);
+    var g = new PIXI.Graphics();
+    node.addChild(g);
+    ring = { t: 0, dur: dur, orbs: orbs, done: false };
+    _fireHuntRings[key] = ring;
+    var partAcc = 0;
+    addFx({
+      node: node,
+      update: function (dt) {
+        ring.t += dt;
+        var p = playerPos();
+        node.x = p.x; node.y = p.y - 12;      // 略高於腳底，對齊角色貼圖的視覺中心
+        var fade = ring.t > ring.dur - 0.4 ? Math.max(0, (ring.dur - ring.t) / 0.4) : 1;
+        var base = spin * ring.t;
+        g.clear();
+        g.circle(0, 0, ringR).stroke({ color: theme.c1, width: 1.5, alpha: 0.18 * fade });
+        for (var i = 0; i < ring.orbs; i++) {
+          var ang = base + Math.PI * 2 * i / ring.orbs;
+          var ox = Math.cos(ang) * ringR;
+          var oy = Math.sin(ang) * ringR * 0.62;  // 俯視壓扁，與棋盤的透視一致
+          g.circle(ox, oy, orbR).fill({ color: theme.c2, alpha: 0.85 * fade });
+          g.circle(ox, oy, orbR * 0.55).fill({ color: theme.c1, alpha: 0.95 * fade });
+          // 尾焰拖在行進方向的後方
+          g.circle(ox - Math.cos(ang + spin * 0.08) * orbR * 0.8, oy - Math.sin(ang + spin * 0.08) * orbR * 0.5,
+            orbR * 0.42).fill({ color: theme.glow || theme.c1, alpha: 0.4 * fade });
+        }
+        partAcc += dt;
+        if (partAcc > 0.12 && !REDUCED_MOTION && fade > 0.5) {
+          partAcc = 0;
+          var sa = base + Math.PI * 2 * Math.floor(Math.random() * ring.orbs) / ring.orbs;
+          spawnRiser(p.x + Math.cos(sa) * ringR, p.y - 12 + Math.sin(sa) * ringR * 0.62, theme, spec.glyph);
+        }
+        if (ring.t >= ring.dur) {
+          ring.done = true;
+          if (_fireHuntRings[key] === ring) delete _fireHuntRings[key];
+        }
+        return ring.t < ring.dur;
+      }
+    }, 2, (FX_ORBIT_MAX_SEC + 1) * 1000);
+  }
+
   /* 火牆（新版技能【無限火牆】）：橫向矩形的地面場域。
      模擬層送來的 area 帶 w／h／a（長、寬、朝向弧度），顯示層必須沿用同一組數字——
      傷害範圍與畫面範圍對不起來，是這類地板技能最難查的一種回報。 */
@@ -2730,7 +2799,8 @@ var BattleRenderer = (function () {
         });
         break;
       case 'aura':
-        if (spec.variant === 'firewall') spawnFireWall(spec);
+        if (spec.variant === 'firehunt') spawnFireHunt(spec);
+        else if (spec.variant === 'firewall') spawnFireWall(spec);
         else if (spec.variant === 'cyclone') spawnCyclone(rect, spec);
         else if (spec.variant === 'bladestorm') spawnBladestorm(rect, spec);
         else spawnAura(rect, spec);

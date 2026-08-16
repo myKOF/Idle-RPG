@@ -1,5 +1,34 @@
 # AI_TASKS.md
 
+## Claude｜新版技能第四批：魔法系「火狩」（環繞場域）｜2026-08-16
+
+- 狀態：已完成（2026-08-16）
+- Owner：Claude
+- 需求來源：設計文檔（Google 試算表「技能」頁籤）〈魔法〉區塊新增技能群組「火狩」，7 階、冷卻 26 秒。
+- 目的：實作火狩群組，並把它需要的「環繞場域」做成群組共用能力（不是這個技能的特例）。
+- 架構決策：新增第四種場域型態 `SKILL2_RT.orbits`（環繞場域）。與既有 `grounds`（地板場域）的差別只在錨點與命中判定：
+  地板場域釘在座標上、按節拍反覆作用；環繞場域釘在玩家身上、以接觸判定命中（進入才算一次），
+  因此「碰到敵人即命中一次」不需要另設再命中間隔，命中頻率就是旋轉速度本身。
+- 允許修改：`js/skills2.js`、`js/battle-renderer.js`、`js/worker/protocol.js`、`js/worker/sim.worker.js`、
+  `js/bridge.js`、`index.html`、`config/CSV/Skills2.csv`、`config/Excel/Skills2.xlsx`、`tools/config_tables.cjs`、
+  `tests/skill2-magic-firehunt.test.cjs`（新增）、`tests/skill2-system.test.cjs`、`GM_command.md`、`PATCH.md`、本文件。
+- 禁止修改：既有技能數值、傷害公式、存檔格式、Worker 協議欄位（本次只補 `area` 的環形形狀說明，不新增欄位）。
+- 前置依賴：第三批（魔法群組 `dmgType`／`elem`、施法距離 `castM`、地板場域）已存在；衝突預檢 12 支檔案全乾淨。
+- 實作範圍：
+  - 參數表新增 `firehunt` 群組 7 階（群組 `range` 欄＝火狩體積 3*3 米；新鍵 `rps` 每秒圈數、`rings` 道數）。
+  - 引擎：`sgCastFirehunt`／`sgSpawnOrbitField`／`sgOrbitStep`／`sgTickOrbits` 等，接在既有 `tickSkill2` 節拍上。
+  - 特效：協議 `area` 補環形形狀 `{x,y,r,orbR,orbs,spin}`；`js/battle-renderer.js` 新增 `aura/firehunt` 畫法，
+    圓心逐幀取玩家座標（火狩跟著玩家跑），同一道只保留一個節點以支援【再生】延長時的補送事件。
+- 待使用者確認的數值：第 4 階【三重火狩】設計表的升級效果寫「每級+5%機率」，但該階沒有機率參數；
+  暫定為每級 +15% 火屬性傷害（與第 1 階同樣的 10%／級成長），可直接在參數表調整。
+  另外設計表未定義的施法消耗（50）與施法距離（8 米＝環繞半徑）也已填入參數表待調。
+- 驗證結果：新增 `tests/skill2-magic-firehunt.test.cjs` 14 項全過；完整 `node --test "tests/*.test.cjs"` 1448/1448；
+  `node tools/build_check.cjs` 282/282；參數表往返 `--apply Skills2` 語意變更 0；
+  本機實機（8331 埠）以 GM `sglv firehunt max` 實測：`skill2:firehunt` 191 次命中／327,649 傷害，
+  VFX 事件為兩道反向環（r=102.8／162.8、orbR=19.275），Canvas 畫法執行無 Console 錯誤。
+- 已知限制：瀏覽器分頁未顯示，無法截圖確認環繞特效的實際外觀，需由使用者或 Antigravity 目視確認。
+- 後續接手者：Antigravity 實機驗證（見 PATCH.md 的驗證重點）。
+
 ## Codex｜修正近戰普攻冷卻負數累積｜2026-08-16
 
 - 狀態：已完成（2026-08-16）
