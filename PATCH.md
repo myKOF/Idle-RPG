@@ -1,10 +1,18 @@
 # PATCH.md
 
-## 受擊爆點特效圈尺寸調回原尺寸（Antigravity 2026-08-16）
+## 裝備與背包 Tips 懸停持久性修復（Antigravity 2026-08-16）
 
-- **受擊爆點特效圈（vfxImpact）尺寸修復**：
-  - 修正 `.vfx-impact::before` 與 `.vfx-impact::after` 之 Keyframes 動畫：新增專用 `@keyframes vfxImpactRing`（最大縮放比由 `scale(4.2)` 調整為 `scale(1.4)`）與 `@keyframes vfxImpactFlash`（最大縮放比調整為 `scale(0.8)`）。
-  - 受擊擴散圓環直徑由 117.6px 精確縮小至 39.2px（擴散半徑還原至原先 1/3 規格），同時將 `js/vfx.js` 受擊粒子飛散距離同步等比調精細（`6~15px`），解決高頻攻擊下受擊特效圈過大遮擋畫面的問題。
+- **裝備與背包 Tips 閃退消失問題根治**：
+  - 全域監聽滑鼠座標（`mousemove`），並於 Worker 非同步回傳詳情與 `uiTick()` 5Hz 刷面板（`refreshOpenStatTooltip`）時，若舊錨點 DOM 節點因全頁或局部重構脫離文件，自動依 `data-id` 與 `elementFromPoint` 動態重新綁定至游標下新建的裝備/背包槽位。
+  - 修正 `showItemTooltip` 使其發起時精確設定 `UI.tooltipAnchor` 與 `UI.hoveredItemTooltip`，避免游標持續懸停於裝備或背包格子上時因背景資料同步導致 Tips 視窗瞬間關閉。
+- **測試與建置驗證**：
+  - 執行 `node --test "tests/*.test.cjs"`（1,408 個單元測試全數通過）與 `node tools/build_check.cjs`（278 個檔案編譯全數通過）。
+
+## 受擊爆點與技能爆發特效圈尺寸全面還原至 1/3（Antigravity 2026-08-16）
+
+- **爆發與受擊特效圈（vfxRing / vfxFlash）尺寸修復**：
+  - 修正 `css/style.css` 中通用爆發光環 `@keyframes vfxRing`（`scale(4.2)` 降為 `scale(1.4)`）與 `@keyframes vfxFlash`（`scale(2.4)` 降為 `scale(0.8)`），並更新 `.vfx-impact` 之受擊動態。
+  - 修復前技能與飛刀觸發 `vfxBurst` 時，光環直徑擴散至 92~117px（覆蓋 1.5 個棋盤格）；修復後圓環直徑縮小至 30~39px（擴散半徑精確還原至原先 1/3），解決戰鬥區頻繁出招時巨型光環遮蔽畫面的問題。
 - **測試與建置驗證**：
   - 執行 `node --test "tests/*.test.cjs"`（1,404 個單元測試全數通過）與 `node tools/build_check.cjs`（278 個檔案編譯全數通過）。
 

@@ -910,9 +910,20 @@ function bindWorkerUiState() {
     if (msg.name === 'inv' && UI.pendingItemTooltip) {
       var pendingTooltip = UI.pendingItemTooltip;
       var pendingTooltipItem = findItemById(pendingTooltip.id, true);
+      if (pendingTooltip && pendingTooltip.anchor && !document.documentElement.contains(pendingTooltip.anchor)) {
+        try {
+          var freshAnchor = document.querySelector('.item-cell[data-id="' + CSS.escape(pendingTooltip.id) + '"], .eq-slot[data-id="' + CSS.escape(pendingTooltip.id) + '"]') ||
+            (document.elementFromPoint(_lastMouseX, _lastMouseY) && document.elementFromPoint(_lastMouseX, _lastMouseY).closest('.item-cell[data-id], .eq-slot[data-id]'));
+          if (freshAnchor) {
+            pendingTooltip.anchor = freshAnchor;
+            if (UI.hoveredItemTooltip && UI.hoveredItemTooltip.id === pendingTooltip.id) {
+              UI.hoveredItemTooltip.anchor = freshAnchor;
+            }
+          }
+        } catch (_) {}
+      }
       var stillHoveringPending = UI.hoveredItemTooltip &&
-        UI.hoveredItemTooltip.id === pendingTooltip.id &&
-        UI.hoveredItemTooltip.anchor === pendingTooltip.anchor;
+        UI.hoveredItemTooltip.id === pendingTooltip.id;
       if (pendingTooltipItem && pendingTooltip.anchor && stillHoveringPending &&
         document.documentElement.contains(pendingTooltip.anchor)) {
         showItemTooltip(pendingTooltipItem, pendingTooltip.anchor);
@@ -8021,6 +8032,17 @@ function refreshOpenStatTooltip() {
   var tip = $id('sk-tooltip');
   var anchorEl = UI.tooltipAnchor;
   if (!tip || tip.style.display !== 'block') return;
+  if (anchorEl && !document.documentElement.contains(anchorEl)) {
+    try {
+      var elUnder = document.elementFromPoint(_lastMouseX, _lastMouseY);
+      var newAnchor = elUnder && elUnder.closest && elUnder.closest('.item-cell[data-id], .eq-slot.filled[data-id], .forge-slot.filled[data-forge-slot], [data-sk], [data-tip], [data-buff-tip], [data-enemy-buff-tip]');
+      if (newAnchor) {
+        UI.tooltipAnchor = newAnchor;
+        anchorEl = newAnchor;
+        if (UI.hoveredItemTooltip) UI.hoveredItemTooltip.anchor = newAnchor;
+      }
+    } catch (_) {}
+  }
   if (!anchorEl || !document.documentElement.contains(anchorEl)) {
     hideTooltip();
     return;
@@ -8051,6 +8073,10 @@ function refreshBuffTooltip() {
 function showItemTooltip(it, anchorEl, opts) {
   var tip = $id('sk-tooltip');
   if (!tip) return;
+  UI.tooltipAnchor = anchorEl;
+  if (it && anchorEl) {
+    UI.hoveredItemTooltip = { id: it.id, anchor: anchorEl };
+  }
   var compareItem = null;
   var tc = $id('toggle-compare');
   if (tc && tc.checked) {
@@ -9880,6 +9906,12 @@ function initUI() {
     draggedSlotIndex = null;
   });
 
+  var _lastMouseX = 0, _lastMouseY = 0;
+  document.addEventListener('mousemove', function (e) {
+    _lastMouseX = e.clientX;
+    _lastMouseY = e.clientY;
+  }, { passive: true });
+
   // 懸停提示（事件委派）
   document.addEventListener('mouseover', function (e) {
     var tipBtn = e.target.closest('[data-tip]');
@@ -9955,6 +9987,18 @@ function initUI() {
       // Leaving a child element (icon, level, badge) is not leaving the item
       // cell; keep its tooltip alive until the whole cell is exited.
       if (e.relatedTarget && outCell.contains && outCell.contains(e.relatedTarget)) return;
+
+      if (!document.documentElement.contains(outCell)) {
+        try {
+          var elUnder = document.elementFromPoint(_lastMouseX, _lastMouseY);
+          var matchCell = elUnder && elUnder.closest && elUnder.closest('.item-cell[data-id], .eq-slot.filled[data-id], .forge-slot.filled[data-forge-slot]');
+          if (matchCell) {
+            UI.tooltipAnchor = matchCell;
+            if (UI.hoveredItemTooltip) UI.hoveredItemTooltip.anchor = matchCell;
+            return;
+          }
+        } catch (_) {}
+      }
       if (UI.hoveredItemTooltip && UI.hoveredItemTooltip.anchor === outCell) {
         UI.hoveredItemTooltip = null;
       }
