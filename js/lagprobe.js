@@ -146,6 +146,12 @@
     'flushWorkerVisualEvents', 'handleWorkerUiEvents', 'flushPendingLogDom', 'playCombatVfx',
     'floatText', 'placeFloatAvoidingOverlap', 'showItemTooltip', 'showStatTooltip',
     'renderAttrPanel', 'uiTick',
+    /* 計時器驅動的路徑。2026-08-16 的報告裡長工作是 ~100ms、每秒一次，
+       但名單上每一支的單次最大都不到 16ms——兇手整個在名單外。
+       這幾支都是 setInterval 掛著的，最有機會是那種「平常不跑、被觸發後
+       每秒咬一口」的東西，補進來才不會又是一張看不出兇手的報告。 */
+    'checkForUpdates', 'saveGame', 'renderStatsPanel', 'renderQuestModal',
+    'drawMiniCanvas', 'renderMiniWindow', 'syncUiScale', 'resize',
     // 寶石頁：整支與各子區塊分開量，才看得出是哪一塊慢
     'renderGems', 'renderGemConvert', 'renderGemFusion', 'renderGemShop', 'renderGemDismantle',
     'renderFuseInfo', 'updateShopCountdown'];
