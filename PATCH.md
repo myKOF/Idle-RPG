@@ -15,6 +15,10 @@
   - 無論在技能頁裝備欄或是戰鬥區快捷列，按住技能圖示拖曳至另一個技能圖示放開，兩者將會直接互換位置（Array element swap）。
 - **升級彈窗按鈕文案精簡**：
   - 技能升級彈窗中的升級按鈕文案簡化為 `⬆️ 升級`（移除按鈕上的金幣數字，因 Hover Tooltip 已有詳細顯示 `花費 X.XXM 金幣`）。
+- **修復戰鬥技能快捷列高頻戰鬥下冷卻倒計時黑圈與數字消失問題**：
+  - 修復 `renderBattleSkillBar` 在 `pEnt` 為空時未自動備援讀取戰鬥快照 (`peekUiPanelData('battle')`) 導致技能冷卻數值被歸零重置的問題。
+  - 修復新版技能 `entry` 鍵值前綴（`sg:`）匹配：同時檢索 `pEnt.skillCds['sg:knife']` 與 `pEnt.skillCds['knife']`，確保技能冷卻值精確讀取。
+  - 修復 60fps 碼錶動態器（`startBattleSkillBarAnimation`）：每次接收新技能冷卻資料時強制重啟動畫幀（`cancelAnimationFrame`），確保大量傷害飄字與高頻戰鬥下，圓形黑色倒算遮罩與碼錶數字（如 `4.0s` -> `0.0s`）持續平滑轉動。
 - **測試與建置驗證**：
   - 執行 `node --test "tests/*.test.cjs"`（1,401 個單元測試全數通過）與 `node tools/build_check.cjs`（278 個檔案編譯全數通過）。
 
