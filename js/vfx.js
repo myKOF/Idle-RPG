@@ -45,8 +45,8 @@ var VFX_FRAME_BUDGET_REDUCED = 4;
 var VFX_MERGE_WINDOW_MS = 120;
 var VFX_STALE_EVENT_MS = 1500;
 var VFX_METEOR_MAX_DELAY_MS = 900;
-var VFX_METEOR_MAX_TRAVEL_MS = 450;
-var VFX_METEOR_SPEED_MULTIPLIER = 0.70; // 30% 慢速：滅世殞石需要比一般天降更有壓迫感
+var VFX_METEOR_MAX_TRAVEL_MS = (typeof VFX_METEOR_RAW_TRAVEL_MS === 'number' && VFX_METEOR_RAW_TRAVEL_MS > 0)
+  ? VFX_METEOR_RAW_TRAVEL_MS : 700;
 var VFX_METEOR_SIZE_SCALE = 1.30; // 新版殞石術特效寬度／尺寸增加 30%
 var VFX_NODE_WATCHDOG_MS = 1000;
 var VFX_METEOR_HARD_LIFETIME_MS = 2800;
@@ -476,7 +476,8 @@ function vfxSceneShake(layer, delayMs, strong, spec) {
   var generation = _vfxGeneration;
   setTimeout(function () {
     if (!_vfxEnabled || generation !== _vfxGeneration) return;
-    var scene = (layer && layer.parentNode) ? layer.parentNode : null;
+    var scene = (layer && layer.closest) ? layer.closest('.battle-scene')
+      : ((layer && layer.parentNode) ? layer.parentNode : null);
     if (!scene || !scene.classList) return;
     scene.classList.remove('vfx-scene-shake', 'vfx-scene-shake-strong');
     requestAnimationFrame(function () {
@@ -1041,8 +1042,10 @@ function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
   if (!isFinite(safeBaseDelay) || safeBaseDelay < 0) safeBaseDelay = 0;
   safeBaseDelay = Math.min(VFX_METEOR_MAX_DELAY_MS, safeBaseDelay);
   var cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
-  var diagonalRun = Math.max(150, Math.min(230, rect.h + 120));
-  var diagonalRise = diagonalRun * Math.tan(Math.PI / 3);
+  var diagonalRun = (typeof VFX_METEOR_DROP_RUN === 'number' && VFX_METEOR_DROP_RUN > 0)
+    ? VFX_METEOR_DROP_RUN : 180;
+  var diagonalRise = diagonalRun * Math.tan(
+    (typeof VFX_METEOR_DROP_ANGLE_RAD === 'number') ? VFX_METEOR_DROP_ANGLE_RAD : Math.PI / 3);
   var mainFrom = { x: cx + diagonalRun, y: cy - diagonalRise };
   vfxMeteorProjectile(spec, layer, mainFrom, { x: cx, y: cy }, safeBaseDelay, fall, false);
   /* 小火球總共 4 顆，透過略微不同的起點與延遲形成伴隨感，

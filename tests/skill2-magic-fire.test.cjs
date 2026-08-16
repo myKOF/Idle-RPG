@@ -270,6 +270,29 @@ test('殞石術：三顆會在附近有多名敵人時先各自隨機取不同�
   assert.equal(new Set(selected).size, 3, '附近有三名敵人時不應三顆全鎖同一目標');
 });
 
+test('殞石術：落地前不查詢範圍命中，落地時才依當下位置結算', () => {
+  const c = loadContext();
+  const calls = stubHits(c);
+  c.chance = () => false;
+  setLevels(c, 'fireball', [1, 1, 1, 1, 1, 1, 1]);
+  const main = enemy(1e9, 100, 0, '落點');
+  const late = enemy(1e9, 500, 0, '落地前才進範圍');
+  const p = playerEnt();
+
+  c.castSkill2(p, [main, late], 'fireball', 'mv-float');
+  assert.equal(calls.length, 0);
+
+  // 15 米範圍內的判定刻意在施放後才成立；只有落地查詢才應看到它。
+  late.pos.x = 120;
+  c.GT = 0.99;
+  c.tickSkill2(0, tickCtx(c, p, [main, late]));
+  assert.equal(calls.length, 0, '落地前即使敵人已進入範圍也不能提前扣血');
+
+  c.GT = 2.1;
+  c.tickSkill2(0, tickCtx(c, p, [main, late]));
+  assert.equal(calls.filter((x) => x.ent === late).length, 3, '三顆殞石落地時才應各自檢查並命中範圍內敵人');
+});
+
 test('火球術·爆燃：燃燒結束時對我方 12 米內 2 個敵人造成累積傷害的 50%', () => {
   const c = loadContext();
   stubHits(c);

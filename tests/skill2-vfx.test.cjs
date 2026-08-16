@@ -110,8 +110,11 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   const css = read('css/style.css');
 
   assert.match(skills2, /var SG_METEOR_INTERVAL_MS = 350/);
+  assert.match(skills2, /function sgMeteorFallTiming\(\)/);
+  assert.match(skills2, /SG_METEOR_DROP_DISTANCE/);
+  assert.match(skills2, /SG_METEOR_FALL_SPEED/);
   assert.match(skills2, /var SG_FLYING_PROJECTILE_SPEED = 240/);
-  assert.match(skills2, /typeof bfTravelSeconds === 'function'/);
+  assert.doesNotMatch(skills2, /bfTravelSeconds\(primary\)/);
   assert.match(skills2, /speed: fireballPlan\.speed/);
   assert.match(skills2, /travelMs: \[travelMs\]/);
   assert.match(skills2, /sgQueueMeteor\(pEnt, st, dmgVal, meteorTarget/);

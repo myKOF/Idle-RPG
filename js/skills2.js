@@ -39,7 +39,24 @@ var SG_FLYING_PROJECTILE_SPEED = 240;
 var SG_FLYING_PROJECTILE_HALF_WIDTH = 8;
 var SG_FLYING_PROJECTILE_REHIT_SEC = 0.5;
 var SG_METEOR_INTERVAL_MS = 350;
-var SG_METEOR_MAX_TRAVEL_MS = 450; // 與 DOM／Canvas vfxNormalizeTiming 的上限一致
+var SG_METEOR_SPEED_MULTIPLIER = (typeof VFX_METEOR_SPEED_MULTIPLIER === 'number' && VFX_METEOR_SPEED_MULTIPLIER > 0)
+  ? VFX_METEOR_SPEED_MULTIPLIER : 0.70;
+var SG_METEOR_DROP_DISTANCE = (typeof VFX_METEOR_DROP_DISTANCE === 'number' && VFX_METEOR_DROP_DISTANCE > 0)
+  ? VFX_METEOR_DROP_DISTANCE : 360;
+var SG_METEOR_FALL_SPEED = (typeof VFX_METEOR_FALL_SPEED === 'number' && VFX_METEOR_FALL_SPEED > 0)
+  ? VFX_METEOR_FALL_SPEED : 360;
+var SG_METEOR_MAX_TRAVEL_MS = (typeof VFX_METEOR_RAW_TRAVEL_MS === 'number' && VFX_METEOR_RAW_TRAVEL_MS > 0)
+  ? VFX_METEOR_RAW_TRAVEL_MS : 700;
+
+/* 殞石的傷害時刻必須和落地時刻相同：先算天空到地面的距離，
+   再除以殞石實際落下速度；travelMs 是顯示層套用 0.70 慢速倍率前的時間。 */
+function sgMeteorFallTiming() {
+  var distance = SG_METEOR_DROP_DISTANCE;
+  var speed = SG_METEOR_FALL_SPEED;
+  var fallMs = Math.max(1, Math.round(distance / speed * 1000));
+  var travelMs = Math.max(1, Math.round(fallMs * SG_METEOR_SPEED_MULTIPLIER));
+  return { travelMs: Math.min(SG_METEOR_MAX_TRAVEL_MS, travelMs), fallMs: fallMs };
+}
 /* 主動型被動群組（2026-08-14 技能類型擴充；引擎接線，不入參數表）：
    效果被動觸發、永遠不會被主動施放（不佔出手節奏、無冷卻無耗魔），
    但**必須裝配到技能列才生效**——佔用一個技能格就是這類技能的代價。
@@ -1414,10 +1431,10 @@ function sgTickBurn(dt, ctx) {
 }
 
 /* 殞石落地時才結算命中，讓 Worker 的血量快照、血條與傷害飄字同時更新。
-   每顆殞石在施放時鎖定自己的落點與範圍目標，等待 at 到期後才走完整命中管線。 */
-function sgQueueMeteor(pEnt, st, dmgVal, target, victims, burnSpec, floatSel, out, at) {
+   施放時只鎖定落點目標；victims 不在此建立，等待 at 到期後才重新查詢範圍。 */
+function sgQueueMeteor(pEnt, st, dmgVal, target, pool, radius, burnSpec, floatSel, out, at) {
   SKILL2_RT.meteors.push({
-    at: at, target: target, pEnt: pEnt, st: st, dmgVal: dmgVal, victims: victims.slice(),
+    at: at, target: target, pool: pool, radius: radius, pEnt: pEnt, st: st, dmgVal: dmgVal,
     burnSpec: burnSpec, floatSel: floatSel, out: out
   });
   out._pendingProjectiles = (out._pendingProjectiles || 0) + 1;
@@ -1432,12 +1449,22 @@ function sgTickMeteors(ctx) {
     if (!m || m.at > GT) { if (m) keep.push(m); continue; }
     var before = m.out.dmg;
     var killed = false;
-    for (var vi = 0; vi < m.victims.length; vi++) {
-      var target = m.victims[vi];
+    /* 只有這裡才讀取殞石落點周圍的敵人；敵人若在落地前死亡或移出範圍，
+       就不會被這顆殞石扣血。 */
+    var victims = (typeof bfTargetsAround === 'function')
+      ? bfTargetsAround(m.target, m.pool || [], m.radius) :
+      (m.target && m.target.hp > 0 ? [m.target] : []);
+    for (var vi = 0; vi < victims.length; vi++) {
+      var target = victims[vi];
       if (!target || target.hp <= 0) continue;
       var res = sgHitOne(m.pEnt, m.st, target, m.dmgVal, 'fireball', m.floatSel, m.out, 0);
       if (res && !res.miss && m.burnSpec) sgApplyBurn(target, m.burnSpec);
       if (res && res.killed) killed = true;
+    }
+    if (victims.length) {
+      sgEmitVfx('fireball', victims, m.floatSel, {
+        fxKind: 'impact', variant: 'meteor-impact', elem: 'fire', area: sgAreaAround(m.target, m.radius)
+      });
     }
     if (ctx.onDamage && m.out.dmg > before) ctx.onDamage(m.out.dmg - before);
     if (killed && ctx.onDeaths) ctx.onDeaths();
@@ -1542,12 +1569,10 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var travelMs = 0;
   var meteorFallMs = 0;
   if (meteor) {
-    var rawMeteorTravelMs = (typeof bfTravelSeconds === 'function')
-      ? Math.round(bfTravelSeconds(primary) * 1000) : SG_METEOR_MAX_TRAVEL_MS;
-    travelMs = Math.min(SG_METEOR_MAX_TRAVEL_MS, rawMeteorTravelMs);
-    /* Canvas／DOM 殞石都以 0.70 速度倍率播放；模擬層使用同一落地時間，
-       因此每顆只錯開 350ms，不因各目標距離不同而破壞節奏。 */
-    meteorFallMs = Math.round(travelMs / 0.70);
+    var meteorTiming = sgMeteorFallTiming();
+    travelMs = meteorTiming.travelMs;
+    /* 每顆只錯開 350ms；不再使用玩家到目標的普通投射物距離。 */
+    meteorFallMs = meteorTiming.fallMs;
   }
   var burnSpec = sgFireballBurnSpec(st, g, lvs);
   var nextMeteorTarget = meteor ? sgMeteorTargetBag(primary, pool, radius) : null;
@@ -1557,12 +1582,13 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     var targetGeomOk = (typeof bfPos === 'function') && !!bfPos(meteorTarget);
     var castDelay = meteor ? v * SG_METEOR_INTERVAL_MS : 0;
     var hitDelay = castDelay + meteorFallMs;
-    var victims = (targetGeomOk && radius > 0) ? bfTargetsAround(meteorTarget, pool, radius) : [meteorTarget];
-    if (!victims.length) victims = [meteorTarget];
+    var victims = meteor ? null
+      : ((targetGeomOk && radius > 0) ? bfTargetsAround(meteorTarget, pool, radius) : [meteorTarget]);
+    if (!meteor && !victims.length) victims = [meteorTarget];
     var area = targetGeomOk ? sgAreaAround(meteorTarget, radius) : null;
 
     if (meteor) {
-      sgEmitVfx('fireball', victims, floatSel, {
+      sgEmitVfx('fireball', [meteorTarget], floatSel, {
         fxKind: 'rain', variant: 'meteor', elem: 'fire', count: 1,
         area: area, delayMs: castDelay, travelMs: [travelMs]
       });
@@ -1578,7 +1604,7 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     }
 
     if (meteor) {
-      sgQueueMeteor(pEnt, st, dmgVal, meteorTarget, victims, burnSpec, floatSel, out,
+      sgQueueMeteor(pEnt, st, dmgVal, meteorTarget, pool, radius, burnSpec, floatSel, out,
         GT + hitDelay / 1000);
     } else {
       var splitTargets = [];
