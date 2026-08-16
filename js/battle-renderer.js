@@ -1510,18 +1510,18 @@ var BattleRenderer = (function () {
     ring.x = x; ring.y = y;
     S.layers.fx.addChild(ring);
     var t = 0, dur = strong ? 0.4 : 0.26;
-    var maxR = strong ? 46 : 26;
+    var maxR = strong ? 15 : 8.5;
     addFx({
       node: ring,
       update: function (dt) {
         t += dt;
         var k = Math.min(1, t / dur);
-        ring.scale.set((4 + maxR * k) / RING_TEX_RADIUS);
+        ring.scale.set((1.3 + maxR * k) / RING_TEX_RADIUS);
         ring.alpha = 1 - k;
         return t < dur;
       }
     }, 1);
-    spawnParticles(x, y, strong ? 12 : 6, theme, strong ? 2.6 : 1.6);
+    spawnParticles(x, y, strong ? 12 : 6, theme, strong ? 0.9 : 0.55);
     if (strong) addShake(5);
   }
 
@@ -2299,11 +2299,11 @@ var BattleRenderer = (function () {
       update: function (dt) {
         t += dt;
         var k = Math.min(1, t / dur);
-        var r = 12 + k * 20;
+        var r = 4 + k * 6.5;
         var a = (1 - k) * 0.95;
         g.clear();
-        g.circle(0, 0, r).stroke({ color: 0xffffff, width: 2.4, alpha: a });
-        g.circle(0, 0, r * 0.65).stroke({ color: 0xffd23f, width: 1.6, alpha: a * 0.75 });
+        g.circle(0, 0, r).stroke({ color: 0xffffff, width: 1.2, alpha: a });
+        g.circle(0, 0, r * 0.65).stroke({ color: 0xffd23f, width: 0.8, alpha: a * 0.75 });
         return t < dur;
       }
     }, 1);
