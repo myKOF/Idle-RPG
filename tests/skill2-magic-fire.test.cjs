@@ -201,13 +201,36 @@ test('火球術·殞石術：三顆殞石、傷害與範圍改讀第 7 階、射
   c2.chance = () => false;
   setLevels(c2, 'fireball', [1, 1, 1, 1, 1, 1, 1]);
   const solo2 = enemy(1e9, 100, 0);
-  c2.castSkill2(playerEnt(), [solo2], 'fireball', 'mv-float');
+  const out2 = c2.castSkill2(playerEnt(), [solo2], 'fireball', 'mv-float');
 
   assert.equal(baseHits, 1);
+  assert.equal(calls2.length, 0, '殞石尚未落地前不應提前扣血');
+  assert.equal(c2.SKILL2_RT.meteors.length, 3, '應建立三個獨立落地事件');
+  assert.equal(out2._pendingProjectiles, 3);
+  assert.equal(Math.round((c2.SKILL2_RT.meteors[1].at - c2.SKILL2_RT.meteors[0].at) * 1000), 350);
+  assert.equal(Math.round((c2.SKILL2_RT.meteors[2].at - c2.SKILL2_RT.meteors[1].at) * 1000), 350);
   // 三顆殞石各打一次主目標（本體），第 3 階分裂沒有其他敵人可選
+  c2.GT = 10;
+  c2.tickSkill2(0, tickCtx(c2, playerEnt(), [solo2]));
   assert.equal(calls2.filter((x) => x.ent === solo2 && Math.round(x.aCfg.atk) === 1000).length, 3);
+  assert.equal(out2._pendingProjectiles, 0, '三顆落地後才完成技能命中');
   // 射程由第 7 階改寫為 20 米
   assert.equal(c2.skills2CastRangePx('fireball', c2.skills2Levels('fireball')), c2.bfMeterPx(20));
+});
+
+test('殞石術：三顆會在附近有多名敵人時先各自隨機取不同目標', () => {
+  const c = loadContext();
+  stubHits(c);
+  c.chance = () => false;
+  setLevels(c, 'fireball', [1, 1, 1, 1, 1, 1, 1]);
+  const main = enemy(1e9, 100, 0, '主目標');
+  const east = enemy(1e9, 210, 0, '東側');
+  const north = enemy(1e9, 100, 110, '北側');
+  c.castSkill2(playerEnt(), [main, east, north], 'fireball', 'mv-float');
+
+  const selected = c.SKILL2_RT.meteors.map((m) => m.target);
+  assert.equal(selected.length, 3);
+  assert.equal(new Set(selected).size, 3, '附近有三名敵人時不應三顆全鎖同一目標');
 });
 
 test('火球術·爆燃：燃燒結束時對我方 12 米內 2 個敵人造成累積傷害的 50%', () => {

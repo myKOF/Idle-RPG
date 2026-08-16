@@ -33,6 +33,7 @@ var BattleRenderer = (function () {
   var FX_AURA_MAX_SEC = 6;         // 領域／旋風類的顯示上限（秒）——原本吃技能的實際持續時間，
                                    // 長效領域會讓那塊半透明方框在畫面上留很久，看起來像沒清乾淨
   var FX_WATCHDOG_MS = 1000;       // 看門狗掃描間隔
+  var METEOR_SIZE_SCALE = 1.30;    // 新版殞石術特效寬度／尺寸增加 30%
   /* 角色的跑速與追擊邏輯已經**不在這裡**：位移由模擬層產生（js/battlefield.js
      bfTickPlayer），顯示層只把座標畫出來。這裡只留一個「面前一個身位」的長度，
      給找不到目標時的特效落點用。 */
@@ -1523,14 +1524,15 @@ var BattleRenderer = (function () {
   /* 命中爆點：環 + 粒子 */
   function spawnImpact(x, y, spec, strong, isBounceHit) {
     var theme = themeOf(spec);
+    var visualStrong = strong || spec.variant === 'fire-explosion';
     /* 逐幀 clear()＋stroke() 換成貼圖縮放，理由見 ringTexture()。 */
     var ring = new PIXI.Sprite(ringTexture());
     ring.anchor.set(0.5);
     ring.tint = cssColorToInt(theme.c1, 0xffffff);
     ring.x = x; ring.y = y;
     S.layers.fx.addChild(ring);
-    var t = 0, dur = strong ? 0.4 : 0.26;
-    var maxR = strong ? 15 : 8.5;
+    var t = 0, dur = visualStrong ? 0.4 : 0.26;
+    var maxR = visualStrong ? 15 : 8.5;
     var impactScale = isBounceHit ? BOUNCE_HIT_RADIUS_SCALE : 1;
     addFx({
       node: ring,
@@ -1543,6 +1545,9 @@ var BattleRenderer = (function () {
       }
     }, 1);
     spawnParticles(x, y, strong ? 12 : 6, theme, strong ? 0.9 : 0.55, impactScale);
+    if (!strong && spec.variant === 'fire-explosion') {
+      spawnParticles(x, y, 12, theme, 0.9, impactScale);
+    }
     if (strong) addShake(5, spec);
   }
 
@@ -2034,7 +2039,7 @@ var BattleRenderer = (function () {
   function spawnMeteorProjectile(spec, theme, from, to, scale, dur, delaySec, onArrive) {
     var node = new PIXI.Container();
     /* 隕石只保留 Phaser white flare emitter，不再額外疊一層非範例光暈。 */
-    var flame = flameProjectile(theme, scale && scale < 1, 1);
+    var flame = flameProjectile(theme, scale && scale < 1, METEOR_SIZE_SCALE);
     node.addChild(flame);
     node.scale.set(scale || 1);
     node.x = from.x; node.y = from.y;
@@ -2073,10 +2078,11 @@ var BattleRenderer = (function () {
     var meteorTravel = (spec.travelMs && spec.travelMs[0]) || 500;
     /* 與 DOM vfxMeteor、技能傷害浮字相同：殞石固定慢 30%。 */
     var dur = Math.min(1.15, Math.max(0.7, meteorTravel / 1000 / 0.70));
+    var shockTheme = { c1: '#9f1d12', c2: '#f05a13', glow: '#d62f12' };
     spawnMeteorProjectile(spec, theme, mainFrom, { x: cx, y: cy }, 1, dur, 0, function () {
+      /* 強化爆點本身就是這顆殞石唯一一次 Canvas 鏡頭晃動。 */
       spawnImpact(cx, cy, spec, true);
-      spawnFireShockwave(cx, cy, rectRadius(rect), theme);
-      addShake(8, spec);
+      spawnFireShockwave(cx, cy, rectRadius(rect), shockTheme);
     });
     var smallOffsets = [-0.22, -0.04, 0.16, 0.32];
     var smallTheme = { c1: '#ef4b16', c2: '#ffd166', glow: '#ff7a1a' };
@@ -2132,7 +2138,9 @@ var BattleRenderer = (function () {
           if (pk <= 0) continue;
           var px = Math.cos(bp.angle) * bp.distance * pk;
           var py = Math.sin(bp.angle) * bp.distance * pk * 0.48 + 28 * pk * pk - 10;
-          g.circle(px, py, Math.max(0.5, bp.size * (1 - pk)))
+          /* 橢圓火舌向外噴散，避免震波只像圓點粒子。 */
+          g.ellipse(px, py, Math.max(0.5, bp.size * 0.65 * (1 - pk)),
+            Math.max(1, bp.size * 1.8 * (1 - pk)))
             .fill({ color: pi % 2 ? theme.c1 : theme.c2, alpha: 0.95 * (1 - pk) });
         }
         return t < dur;
@@ -2665,8 +2673,11 @@ var BattleRenderer = (function () {
           setTimeout(function () {
             if (fxGate(spec)) return;
             var pt = posOf(id);
-            spawnImpact(pt.x, pt.y, spec, spec.variant === 'nova' || spec.variant === 'detonate');
-            hitReact(id, spec.elem, spec.variant === 'nova' || spec.variant === 'detonate');
+            var fireExplosion = spec.variant === 'fire-explosion';
+            var strongBurst = !fireExplosion && (spec.variant === 'nova' || spec.variant === 'detonate');
+            /* 火球爆炸要有完整爆點，但鏡頭晃動保留給殞石每顆落地。 */
+            spawnImpact(pt.x, pt.y, spec, strongBurst, false);
+            hitReact(id, spec.elem, strongBurst);
           }, ti * 40);
         });
         if (!targets.length && rect) spawnAreaFlash(rect, themeOf(spec));

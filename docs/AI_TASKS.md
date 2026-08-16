@@ -3378,3 +3378,33 @@ Commit：
 需要 Antigravity 驗證：建議，驗證野外多敵人普攻與高塔單 Boss 退化行為。
 
 完成後交給：使用者／主整合工作區。
+
+## 任務：新版殞石術落地節奏、分散目標與火焰震波強化
+
+使用者需求：新版殞石術的特效寬度增加 30%；三顆殞石每顆間隔 0.35 秒；敵人血條與傷害飄字要在每顆殞石落地時才更新一次；落地震波加深火焰色、改為火焰向外散開並讓鏡頭每顆殞石輕微晃動；三顆殞石的目標要隨機搜尋，附近只有一名敵人時才可重複命中該敵人。
+
+任務狀態：已完成
+
+任務分類：技能效果／戰鬥 VFX／戰鬥 UI
+
+負責 AI：Codex
+
+任務內容：調整 `skills2.js` 的殞石排程與每顆目標選擇，讓每顆殞石帶自己的命中集合與落地延遲；同步 Canvas 與 DOM VFX 的殞石尺寸、間隔、落地火焰震波及單顆鏡頭震動；在 Canvas／DOM 顯示層將殞石傷害血條更新對齊落地事件，避免一顆殞石造成多次血條刷新；分離火球與殞石的飛行／命中特效，並在殞石進化後停用舊版火球自動施放。
+
+技術影響：新版火球術第 7 階殞石術的目標選擇、傷害浮字延遲、敵人血條顯示、Canvas／DOM 特效與鏡頭震動；不變更存檔格式與 Worker 協議。
+
+允許修改：`js/skills.js`、`js/skills2.js`、`js/vfx.js`、`js/battle-renderer.js`、`js/worker/sim.worker.js`、`css/style.css`、`index.html`、`js/bridge.js`、`tests/skill2-magic-fire.test.cjs`、`tests/skill2-vfx.test.cjs`、`tests/skill-special-vfx.test.cjs`、`docs/AI_TASKS.md`。
+
+禁止修改：其他技能群組效果、存檔格式、Worker 協議、無關 UI 與無關戰鬥公式。
+
+前置依賴：既有新版火球術／殞石術與 Canvas 戰鬥 VFX 已存在；無其他 AI 進行中的同檔案任務。
+
+測試要求：執行殞石術與 VFX 相關測試、完整 `npm.cmd test`、`npm.cmd run build`，並檢查快取版本、diff 與 `git diff --check`。
+
+完成條件：殞石寬度為原規格 130%、三顆落地間隔為 350ms、每顆依附近存活敵人隨機選目標、傷害浮字／血條在落地時逐顆更新、每顆只觸發一次鏡頭震動與火焰震波；火球使用小型平射投射物並在命中時播放爆炸；建立 Codex commit。
+
+需要 Claude Review：否（沿用既有 VFX 與技能資料流，範圍明確）。
+
+需要 Antigravity 驗證：建議，驗證三顆落點、血條落地同步、震波與鏡頭晃動。
+
+完成後交給：使用者／主整合工作區。

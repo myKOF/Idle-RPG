@@ -3117,6 +3117,14 @@ function pickAndCastSkill(pEnt, target, floatSel) {
         floatSel: floatSel, def: pDef, loadoutKey: id
       });
     }
+    /* 火球術進化成殞石術後，舊技能列中的 fireball 不得再併發施放。保留舊
+       loadout 項目可避免存檔相容問題，但自動施法只讓新版 sg:fireball 生效。 */
+    if (id === 'fireball' && typeof skills2FireballIsMeteor === 'function' &&
+        skills2FireballIsMeteor()) {
+      dequeueSkillReady(pEnt, id);
+      qi--;
+      continue;
+    }
     var sk = skillDef(id);
     var lv = skillLevel(id);
     if (!sk || !lv) continue;
