@@ -37,6 +37,22 @@ test('飛刀彈射必須在上一段抵達後才開始下一段', () => {
   assert.doesNotMatch(canvasChain, /baseDelay \+ \(hopIndex - 1\) \* stagger/);
 });
 
+test('飛刀彈射與普攻不觸發角色動作，目標離場後延遲事件失效', () => {
+  const renderer = read('js/battle-renderer.js');
+  const onVfxStart = renderer.indexOf('function onVfx');
+  const onVfxEnd = renderer.indexOf('/* ============ 傷害飄字', onVfxStart);
+  const onVfx = renderer.slice(onVfxStart, onVfxEnd);
+
+  assert.match(renderer, /function shouldAnimatePlayer\(spec\)/);
+  assert.match(renderer, /spec\.cat !== 'enemy' && spec\.cat !== 'basic'/);
+  assert.match(renderer, /spec\.fxKind !== 'chain' && spec\.variant !== 'knife-bounce'/);
+  assert.match(onVfx, /if \(fxGate\(spec\)\) return;\s*spec\.delayMs = 0;/);
+  assert.match(onVfx, /if \(shouldAnimatePlayer\(spec\) && vfxTargetsLive\(spec\)\)/);
+  assert.doesNotMatch(onVfx, /if \(spec\.cat !== 'enemy'\) \{/);
+  assert.match(renderer, /if \(spec && \(spec\.cat === 'basic' \|\| spec\.variant === 'knife-bounce'\)\)/);
+  assert.match(renderer, /if \(ent\.state === 'dying' \|\| ent\.state === 'gone' \|\| \(ent\.data && ent\.data\.hp <= 0\)\) return false;/);
+});
+
 test('新版技能的 7 米距離換算為 70 個系統距離單位', () => {
   const context = { Math, console, isFinite };
   context.globalThis = context;

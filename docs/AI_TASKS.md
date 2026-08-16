@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## Codex：修正飛刀彈射與戰鬥結束後的角色動作殘留（2026-08-16）
+
+- 狀態：已完成（2026-08-16）
+- 任務分類：戰鬥 VFX／角色動作時序
+- 負責 AI：Codex
+- 任務內容：飛刀彈射是子彈自身行為，不得因 `knife-bounce` 事件重播角色普攻動作；戰鬥結束或目標消失後，已排程的普攻 VFX 不得繼續觸發角色動作。
+- 前置依賴：既有 Canvas VFX `playerAttackAnim` 與延遲 `setTimeout` 管線；目標檔案衝突預檢無來源。
+- 允許修改：`js/battle-renderer.js`、`index.html`、`tests/skill2-vfx.test.cjs`、`docs/AI_TASKS.md`
+- 禁止修改：技能數值、傷害公式、目標選擇規則、Worker Protocol、存檔格式及其他技能效果。
+- 測試要求：新增飛刀彈射不觸發角色動作與延遲事件失效回歸斷言；執行相關技能測試、JavaScript 語法檢查、`npm.cmd run build`、完整 `npm.cmd test` 與 `git diff --check`。
+- 完成條件：只有技能施放事件能觸發角色動作；`knife-bounce` 與已失效目標的延遲 VFX 不得觸發動作；快取版號同步。
+- 驗證結果：定向 VFX 測試 11/11 通過；`js/battle-renderer.js` 語法檢查通過；`npm.cmd run build` 278/278 通過；完整 `npm.cmd test` 1404/1404 通過；`git diff --check` 通過。
+- 已知風險：尚未進行瀏覽器實機操作驗證，需由使用者確認戰鬥結束後畫面不再播放普攻動作。
+- 完成後交給：Claude Code 唯讀 Review；使用者確認戰鬥結束後畫面不再播放普攻動作。
+
 ## Codex：修正飛刀彈射必須逐段命中後再出發（2026-08-16）
 
 - 狀態：已完成（2026-08-16）
