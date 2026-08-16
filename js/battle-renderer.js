@@ -1519,7 +1519,22 @@ var BattleRenderer = (function () {
     if (strong) addShake(5);
   }
 
-  /* 斬擊弧線 */
+  /* 斬擊弧線 ——「這支不用改成 Sprite」，已量過（scratch/_perf_bench3.html）
+     它和命中環一樣是逐幀 clear() 重繪，而且更貴（兩段 arc stroke），普攻頻率也高，
+     直覺會把它當成下一個熱點。實測不是：
+
+       每秒 10／40／80 發   中位 0.20／0.30／0.50 ms，360 幀中超標 0／0／1
+       多目標技能一次 40 道 中位 0.80 ms，超標 2／360
+       （對照：飛刀彈射的特效層 中位 2.20 ms，超標 14／360）
+
+     原因是逐幀重繪的成本取決於**同時存在幾個**，不是產生頻率。弧線只活
+     0.24 秒，速率再高同時數也只到 3～20；彈射鏈當初是幾十個環外加幾百顆
+     粒子擠在同一批幀裡，那才是問題。改成旋轉貼圖確實能壓到 0.00 ms，
+     但真實速率下省的量在雜訊裡，而且要重畫視覺——不值得冒第二次
+     「特效走樣」的風險。spawnPillar 同理（中位 0.20 ms，超標 0～1／360）。
+
+     什麼時候要回來看：如果之後有技能讓弧線同時存在數十個且持續（不是瞬間
+     爆發），再跑一次 bench3 重新判斷。 */
   function spawnSlash(x, y, spec, big, rotation) {
     var theme = themeOf(spec);
     var g = new PIXI.Graphics();
@@ -2166,7 +2181,8 @@ var BattleRenderer = (function () {
     }
   }
 
-  /* 火柱（pillar 變體） */
+  /* 火柱（pillar 變體）。逐幀 clear() 重繪，但同時存在數量少，實測不是熱點
+     （中位 0.20 ms、超標 0～1／360）；不要改成 Sprite，理由見 spawnSlash。 */
   function spawnPillar(targetId, spec, delaySec) {
     var theme = themeOf(spec);
     var g = new PIXI.Graphics();
