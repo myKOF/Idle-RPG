@@ -7006,7 +7006,7 @@ textarea:disabled,
   width: 58px;
   height: 58px;
   margin: -29px 0 0 -29px;
-  transform: rotate(var(--vfx-tilt, 0deg)) scale(var(--vfx-hit-scale, 1));
+  transform: rotate(var(--vfx-tilt, 0deg));
 }
 
 .vfx-slash::before,

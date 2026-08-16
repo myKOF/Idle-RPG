@@ -65,13 +65,13 @@ test('投射物是等速飛行：距離越遠飛越久，不是固定時間', ()
   assert.ok(tNear >= c.VFX_TRAVEL_MIN_SEC && tFar <= c.VFX_TRAVEL_MAX_SEC);
 });
 
-test('投射物速度統一降低 25%，且上下限同步延長', () => {
+test('投射物速度在目前值上再降低 20%，且上下限同步延長', () => {
   const c = loadContext();
   const target = enemy(340, 0);
-  assert.equal(c.VFX_PROJECTILE_SPEED_MULTIPLIER, 0.75);
-  assert.equal(c.VFX_PROJECTILE_SPEED_CELLS, 10.5);
-  assert.equal(c.VFX_TRAVEL_MIN_SEC, 0.08);
-  assert.equal(c.VFX_TRAVEL_MAX_SEC, 0.6);
+  assert.equal(c.VFX_PROJECTILE_SPEED_MULTIPLIER, 0.6);
+  assert.equal(c.VFX_PROJECTILE_SPEED_CELLS, 8.4);
+  assert.equal(c.VFX_TRAVEL_MIN_SEC, 0.1);
+  assert.equal(c.VFX_TRAVEL_MAX_SEC, 0.75);
   assert.equal(c.bfTravelSeconds(target), c.bfTravelDistance(target) /
     (c.VFX_PROJECTILE_SPEED_CELLS * c.BF_UNIT));
 });
