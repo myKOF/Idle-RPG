@@ -2196,50 +2196,50 @@ function deleteSkill(id) {
 }
 
 function equipSkillToLoadout(id) {
+  var cap = loadoutSize();
+  var lo = G.player.loadout || [];
+  if (lo.indexOf(id) >= 0) return '已在裝載欄';
+
   // 新版技能群組（'sg:<群組id>'，js/skills2.js）：第 1 階預設開啟即可裝載。
   if (typeof id === 'string' && id.indexOf('sg:') === 0) {
     var sgId = id.slice(3);
     if (typeof SKILLS2 === 'undefined' || !SKILLS2[sgId]) return '未知技能群組';
-    /* 主動型被動（反擊）同樣要裝載才生效——這類技能的代價就是佔一個技能格，
-       因此走與主動技能完全相同的裝載規則（只是永遠不會被施放）。 */
     if (typeof skills2Castable === 'function' && !skills2Castable(sgId)) return '尚未學習';
-    var sgLo = G.player.loadout;
-    if (sgLo.indexOf(id) >= 0) return '已在裝載欄';
-    if (sgLo.length >= loadoutSize()) return '裝載欄已滿（' + loadoutSize() + ' 格，依參數表計算）';
-    sgLo.push(id);
-    UI.dirty.skills = true;
-    return null;
-  }
-  // 潛力技能（'potential:<id>'）：僅主動可施放型可裝載；被動潛力學會即常駐、無需裝備。
-  if (typeof id === 'string' && id.indexOf('potential:') === 0) {
+  } else if (typeof id === 'string' && id.indexOf('potential:') === 0) {
     var pid = id.slice(10);
     var pdef = (typeof potentialDef === 'function') ? potentialDef(pid) : null;
     if (!pdef) return '未知技能';
     if (typeof potentialEquippable !== 'function' || !potentialEquippable(pdef)) return '被動潛力技能學會即常駐，無需裝備';
     if (!potentialLevel(pid)) return '尚未學習';
     if (typeof potentialSkillActive === 'function' && !potentialSkillActive(pid)) return '潛力節點尚未解鎖';
-    var plo = G.player.loadout;
-    if (plo.indexOf(id) >= 0) return '已在裝載欄';
-    if (plo.length >= loadoutSize()) return '裝載欄已滿（' + loadoutSize() + ' 格，依參數表計算）';
-    plo.push(id);
-    UI.dirty.skills = true;
-    return null;
+  } else {
+    var sk = skillDef(id);
+    if (!sk || sk.cat === 'passive') return '被動技能無需裝備';
+    if (!skillLevel(id)) return sk.cat === 'fusion' ? '融合技需升級至 Lv.1 才可裝備' : '尚未學習';
+    if (skillUsedInFusion(id)) return '技能已投入融合，無法裝備（刪除該融合技後釋放）';
   }
-  var sk = skillDef(id);
-  if (!sk || sk.cat === 'passive') return '被動技能無需裝備';
-  if (!skillLevel(id)) return sk.cat === 'fusion' ? '融合技需升級至 Lv.1 才可裝備' : '尚未學習';
-  if (skillUsedInFusion(id)) return '技能已投入融合，無法裝備（刪除該融合技後釋放）';
-  var lo = G.player.loadout;
-  if (lo.indexOf(id) >= 0) return '已在裝載欄';
-  if (lo.length >= loadoutSize()) return '裝載欄已滿（' + loadoutSize() + ' 格，依參數表計算）';
-  lo.push(id);
+
+  var firstEmpty = -1;
+  for (var i = 0; i < cap; i++) {
+    if (!lo[i]) { firstEmpty = i; break; }
+  }
+  if (firstEmpty < 0) return '裝載欄已滿（' + cap + ' 格，依參數表計算）';
+
+  lo[firstEmpty] = id;
   UI.dirty.skills = true;
   return null;
 }
 function unequipSkillFromLoadout(id) {
   var lo = G.player.loadout;
+  if (!lo) return;
   var i = lo.indexOf(id);
-  if (i >= 0) { lo.splice(i, 1); UI.dirty.skills = true; }
+  if (i >= 0) {
+    lo[i] = null;
+    while (lo.length > 0 && !lo[lo.length - 1]) {
+      lo.pop();
+    }
+    UI.dirty.skills = true;
+  }
 }
 
 /* ---- 施放條件（AI）：fx 需傳入等級解析後的效果 ---- */

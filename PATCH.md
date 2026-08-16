@@ -1,5 +1,14 @@
 # PATCH.md
 
+## 技能裝備欄空槽位拖曳位移與高頻刷新比對防護（Antigravity 2026-08-16）
+
+- **技能可拖曳至已解鎖未設置技能的空槽位**：
+  - 修正 `handleSkillLoadoutSwap`、`equipSkillToLoadout` 與 Worker `skill.reorderLoadout` 邏輯，支援將技能從目前位置拖曳至任意已解鎖的未裝備空槽位（`＋`），自動進行陣列擴展與空位充填，且卸下技能時精確保留其他技能的所在格數。
+- **技能頁裝備欄高頻刷新比對防護**：
+  - 為 `renderSkills()` 中的 `#skill-loadout`、`#fusion-skill-list` 與 `#skill-trees` 引入 innerHTML 內容字串快取比對（`_lastLh` / `_lastH`）。在戰鬥區擊殺怪物頻繁更新技能經驗時，若裝備欄技能與等級並未變動，將不會重構與撕裂 DOM 節點，防止技能裝備欄視覺閃爍與高頻刷新。
+- **測試與建置驗證**：
+  - 執行 `node --test "tests/*.test.cjs"`（1,404 個單元測試全數通過）與 `node tools/build_check.cjs`（278 個檔案編譯全數通過）。
+
 ## 技能裝備欄 UI 統一、點擊選取/小叉叉卸下與雙向拖曳置換位置（Antigravity 2026-08-16）
 
 - **技能頁裝備欄格式統一**：

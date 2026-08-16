@@ -7345,7 +7345,8 @@ function renderSkills() {
   var cap = skillViewLoadoutSize(skillsSnapshot);
   var loadoutPendingKey = nodePendingKey('skill-loadout');
   var loadoutPending = isUiCommandPending(loadoutPendingKey);
-  $id('loadout-cap').textContent = lo.length + '/' + cap + ' 格' + (reincarnations >= 1 ? '（1 轉已解鎖全部上限）' : '（依參數表成長）');
+  var equippedCount = lo.filter(Boolean).length;
+  $id('loadout-cap').textContent = equippedCount + '/' + cap + ' 格' + (reincarnations >= 1 ? '（1 轉已解鎖全部上限）' : '（依參數表成長）');
   var lh = '';
   var TOTAL_SLOTS = 10;
   var selectedIndex = typeof UI.selectedSkillLoadoutIndex === 'number' ? UI.selectedSkillLoadoutIndex : -1;
@@ -7408,16 +7409,25 @@ function renderSkills() {
       removeBtn +
       '</div>';
   }
-  loBox.innerHTML = lh;
+  if (loBox._lastLh !== lh) {
+    loBox.innerHTML = lh;
+    loBox._lastLh = lh;
+  }
 
   // 融合技（置頂區）
   var fuList = $id('fusion-skill-list');
-  var fusions = skillsSnapshot.fusions || [];
-  fuList.innerHTML = fusions.length
-    ? fusions.map(function (f) {
-      return skillCellHTML(f.id, skillsSnapshot, talentSnapshot, headerSnapshot);
-    }).join('')
-    : '<span class="hint">尚無融合技 — 使用下方「技能融合」創造你的專屬奧義！</span>';
+  if (fuList) {
+    var fusions = skillsSnapshot.fusions || [];
+    var fuH = fusions.length
+      ? fusions.map(function (f) {
+        return skillCellHTML(f.id, skillsSnapshot, talentSnapshot, headerSnapshot);
+      }).join('')
+      : '<span class="hint">尚無融合技 — 使用下方「技能融合」創造你的專屬奧義！</span>';
+    if (fuList._lastH !== fuH) {
+      fuList.innerHTML = fuH;
+      fuList._lastH = fuH;
+    }
+  }
 
   // 技能樹（每系一棵，技能不受前置投入點數限制）
   var h = '';
@@ -7458,7 +7468,10 @@ function renderSkills() {
     }
     h += '<div class="tree-panel potential-skill-panel"><div class="tree-title">✨ 潛力 <span class="dim-text">技能分類；使用技能點與金幣　已解鎖 ' + talentViewPotentialUnlockedCount(talentSnapshot) + '/' + POTENTIAL_NODE_COUNT + '</span></div>' + potentialRows + '</div>';
   }
-  treesBox.innerHTML = h;
+  if (treesBox._lastH !== h) {
+    treesBox.innerHTML = h;
+    treesBox._lastH = h;
+  }
 
   renderSkillModal(skillsSnapshot, talentSnapshot, headerSnapshot);
   renderFusionPanel(skillsSnapshot);
@@ -9761,16 +9774,21 @@ function initUI() {
     var pendingKey = nodePendingKey('skill-loadout');
     if (isUiCommandPending(pendingKey)) return;
     var skillsSnapshot = uiSkillsPanelSnapshot();
-    var currentLoadout = skillViewLoadout(skillsSnapshot).slice();
-    if (fromIndex < 0 || fromIndex >= currentLoadout.length) return;
+    var cap = skillViewLoadoutSize(skillsSnapshot);
+    if (fromIndex < 0 || fromIndex >= cap || toIndex < 0 || toIndex >= cap || fromIndex === toIndex) return;
 
-    if (toIndex >= 0 && toIndex < currentLoadout.length) {
-      var tmp = currentLoadout[fromIndex];
-      currentLoadout[fromIndex] = currentLoadout[toIndex];
-      currentLoadout[toIndex] = tmp;
-    } else if (toIndex >= currentLoadout.length) {
-      var moved = currentLoadout.splice(fromIndex, 1)[0];
-      currentLoadout.push(moved);
+    var currentLoadout = skillViewLoadout(skillsSnapshot).slice();
+    var maxIdx = Math.max(fromIndex, toIndex);
+    while (currentLoadout.length <= maxIdx) {
+      currentLoadout.push(null);
+    }
+
+    var tmp = currentLoadout[fromIndex] || null;
+    currentLoadout[fromIndex] = currentLoadout[toIndex] || null;
+    currentLoadout[toIndex] = tmp;
+
+    while (currentLoadout.length > 0 && !currentLoadout[currentLoadout.length - 1]) {
+      currentLoadout.pop();
     }
 
     UI.optimisticSkillLoadout = {

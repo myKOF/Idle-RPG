@@ -1365,15 +1365,22 @@ var COMMAND_IMPL = {
   'skill.reorderLoadout': function (a) {
     var lo = G.player.loadout || [];
     var from = a.from, to = a.to;
-    if (from < 0 || from >= lo.length || from === to) return { err: '位置無效' };
-    if (to >= 0 && to < lo.length) {
-      var tmp = lo[from];
-      lo[from] = lo[to];
-      lo[to] = tmp;
-    } else if (to >= lo.length) {
-      var moved = lo.splice(from, 1)[0];
-      lo.push(moved);
+    var cap = (typeof loadoutSize === 'function') ? loadoutSize() : 10;
+    if (from < 0 || from >= cap || to < 0 || to >= cap || from === to) return { err: '位置無效' };
+
+    var maxIdx = Math.max(from, to);
+    while (lo.length <= maxIdx) {
+      lo.push(null);
     }
+
+    var tmp = lo[from] || null;
+    lo[from] = lo[to] || null;
+    lo[to] = tmp;
+
+    while (lo.length > 0 && !lo[lo.length - 1]) {
+      lo.pop();
+    }
+
     G.player.loadout = lo;
     UI.dirty.skills = true; UI.dirty.battle = true;
     return { loadout: lo.slice() };
