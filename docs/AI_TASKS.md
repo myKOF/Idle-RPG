@@ -1,5 +1,34 @@
 # AI_TASKS.md
 
+## Claude｜修正普攻不出手與擊殺無動作｜2026-08-16
+
+- 狀態：已完成（2026-08-16）
+- Owner：Claude
+- 目的：使用者回報「轉頭後不會馬上普攻、常常站在原地好幾秒也不會普攻」，且不確定是動畫問題還是沒算傷害。
+- 根因（兩個各自獨立的缺陷）：
+  1. 模擬層：`fieldTick` 把 `p.atkCd` 的遞減放在「場上沒有可交戰敵人就 return」與「施放技能中」兩道閘門之後，
+     整波清空的空窗、新怪還在進場、施放硬直期間冷卻整個停住。敵人走到面前後還要再等一整個攻擊週期才出手。
+     `4be1b10` 把負數欠債夾成 0 之後，原本被欠債抵掉的這段等待就浮上檯面。
+  2. 顯示層：`vfxTargetsLive` 把「垂死（dying／hp<=0）」也當成失效，而普攻事件延後 `POS_BUFFER_MS` 才播，
+     面板同步早已把被殺的敵人標成垂死＝**擊殺的那一刀必定丟掉自己的劍氣與出手動作**。
+     傷害飄字走的是另一條判定（只擋已離場），所以數字照跳、動作沒播——這就是「像是沒出手」的來源。
+     `53541e4` 才剛把普攻的角色動畫打開，但被這條擋住，等於白開。
+- 允許修改：`js/combat.js`、`js/battle-renderer.js`、`index.html`、`tests/multi-enemy.test.cjs`、
+  `tests/ui-worker-events.test.cjs`、`tests/skill2-vfx.test.cjs`、本文件。
+- 禁止修改：Worker Protocol、存檔格式、攻擊公式、目標選擇、技能數值。
+- 修改內容：
+  - `js/combat.js`：`playerAttackRate` 與 `atkCd` 遞減移到 `fieldTick` 前段，每個 tick 固定跑一次；
+    保留 `Math.max(0, ...)`（`4be1b10` 的負債修正不變），暈眩期間仍停住。
+  - `js/battle-renderer.js`：`vfxTargetsLive` 的失效條件收斂成「已離場（gone／實體已移除）」，
+    與飄字 `enemyFloatTargetAvailable` 同一條線；`e0fb728`「戰鬥結束後不殘留動作」的原始意圖不變。
+- 測試要求：普攻節奏與 VFX 守門的回歸測試；`npm.cmd run build`、完整 `npm.cmd test`、`git diff --check`。
+- 完成條件：空窗期冷卻照樣倒數到 ready、敵人一可交戰就出手；擊殺的那一刀仍播出手動作與劍氣。
+- 驗證結果：見 commit。
+- 已知風險：施放硬直期間冷卻改成照走，技能後銜接普攻變順，DPS 略升（符合 `SKILL_CAST_LOCK`
+  「技能不改動 atkCd」的既有設計註記）。暈眩維持凍結，不動控場強度。
+- 後續接手者：Antigravity 驗證實機出手節奏與擊殺動作；使用者確認手感。
+
+
 ## Claude｜新版技能第四批：魔法系「火狩」（環繞場域）｜2026-08-16
 
 - 狀態：已完成（2026-08-16）

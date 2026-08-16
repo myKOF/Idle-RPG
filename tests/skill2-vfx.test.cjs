@@ -63,7 +63,11 @@ test('普攻觸發角色動作；飛刀彈射與連鎖不觸發，目標離場�
   assert.match(onVfx, /if \(shouldAnimatePlayer\(spec\) && vfxTargetsLive\(spec\)\)/);
   assert.doesNotMatch(onVfx, /if \(spec\.cat !== 'enemy'\) \{/);
   assert.match(renderer, /if \(spec && \(spec\.cat === 'basic' \|\| spec\.variant === 'knife-bounce'\)\)/);
-  assert.match(renderer, /if \(ent\.state === 'dying' \|\| ent\.state === 'gone' \|\| \(ent\.data && ent\.data\.hp <= 0\)\) return false;/);
+  /* 失效條件只認「離場」。若把垂死（dying／hp<=0）也算失效，普攻事件因 POS_BUFFER_MS
+     延後播放，會在面板把敵人標成垂死之後才到期＝擊殺的那一刀永遠丟掉自己的動作。
+     行為層的回歸測試在 tests/ui-worker-events.test.cjs。 */
+  assert.match(renderer, /if \(ent\.state === 'gone'\) return false;/);
+  assert.doesNotMatch(renderer, /ent\.state === 'dying' \|\| ent\.state === 'gone'/);
 });
 
 test('新版技能的 7 米距離換算為 70 個系統距離單位', () => {
