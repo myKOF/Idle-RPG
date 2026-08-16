@@ -1,0 +1,141 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>pixi bench 5 — 飄字管線</title>
+<style>body{background:#111;color:#ddd;font:14px monospace;padding:12px}b{color:#7fd}
+canvas{border:1px solid #333;width:390px;height:369px}
+.hd{color:#fd7;margin-top:12px;display:block}.no{color:#8a8}</style></head>
+<body>
+<div id="out">running...</div>
+<script src="../js/vendor/pixi.min.js"></script>
+<script>
+var lines = [];
+function log(s) { lines.push(s); document.getElementById('out').innerHTML = lines.join('<br>'); }
+
+/* bench2 量飄字時漏掉了 placeFloatNode——那支每加一個飄字，最多要跑
+   12 輪 × 16 個既有飄字的碰撞檢查，而且每次都讀 PIXI.Text 的 .width/.height。
+   當時只讀了一次寬度就收工，所以量到 0.10 ms 是低估的。
+
+   這支補上完整管線：建立 PIXI.Text → placeFloatNode 防重疊 → 逐幀
+   位移/淡出/縮放 → 到期 destroy，並掃不同的飄字速率。
+   對照的截圖情境：血刃斬 + 流血/中毒/反傷/吸收，畫面上飄字長期維持在
+   MAX_FLOATS(60) 的上限。 */
+(async function () {
+  var CSS_W = 782, CSS_H = 738;
+  var MAX_FLOATS = 60;
+
+  var app = new PIXI.Application();
+  await app.init({ width: CSS_W, height: CSS_H, background: 0x111111, antialias: false });
+  document.body.appendChild(app.canvas);
+  app.ticker.stop();
+  var gl = app.renderer.gl;
+  log('PIXI ' + PIXI.VERSION + '　gl.finish 可用: ' + !!gl);
+
+  var floats = [];
+
+  /* 與 js/battle-renderer.js 的 placeFloatNode 同演算法 */
+  function placeFloatNode(node, baseX, baseY, cacheWH) {
+    node.x = baseX + (Math.random() * 16 - 8);
+    node.y = baseY;
+    var w = (cacheWH ? node._w : node.width) || 20;
+    var h = (cacheWH ? node._h : node.height) || 16;
+    var lane = 0;
+    for (var pass = 0; pass < 12; pass++) {
+      var hit = null;
+      for (var i = floats.length - 1, seen = 0; i >= 0 && seen < 16; i--, seen++) {
+        var o = floats[i];
+        if (!o || o.dead || !o.node || o.node.destroyed) continue;
+        var ow = (cacheWH ? o.node._w : o.node.width) || 20;
+        var oh = (cacheWH ? o.node._h : o.node.height) || 16;
+        if (Math.abs(o.node.x - node.x) >= (w + ow) / 2 - 2) continue;
+        if (node.y - h >= o.node.y || o.node.y - oh >= node.y) continue;
+        hit = o; break;
+      }
+      if (!hit) break;
+      node.y = hit.node.y - ((cacheWH ? hit.node._h : hit.node.height) || 16) - 3;
+      if (baseY - node.y > 96) {
+        lane++;
+        node.x = baseX + (lane % 2 ? 1 : -1) * (34 + Math.floor(lane / 2) * 30);
+        node.y = baseY;
+      }
+    }
+  }
+
+  var TEXTS = ['吸收 3.94K', '反傷 114K', '爆擊 187K', '格擋 1.4M', '-15.0K',
+               '吸收 56.8K', '爆擊 71.1K', '1.63M', '-72.2K', '流血 8.5K'];
+  var seq = 0;
+  function spawnFloat(cfg, x, y) {
+    var txt = TEXTS[(seq++) % TEXTS.length] + (cfg.unique ? ' ' + seq : '');
+    var node = new PIXI.Text({ text: txt, style: {
+      fontFamily: 'sans-serif', fontSize: 15, fontWeight: 'bold',
+      fill: '#ffd75e', stroke: { color: '#000000', width: 3 } } });
+    node.anchor.set(0.5, 1);
+    if (cfg.cacheWH) { node._w = node.width; node._h = node.height; }
+    if (cfg.place) placeFloatNode(node, x, y, cfg.cacheWH);
+    else { node.x = x; node.y = y; }
+    app.stage.addChild(node);
+    /* 容量上限：與 onFloat 相同，滿了就踢最舊的 */
+    if (floats.length >= MAX_FLOATS) {
+      var old = floats.shift();
+      if (old && !old.node.destroyed) old.node.destroy();
+      old.dead = true;
+    }
+    floats.push({ node: node, t: 0, life: 0.9, dead: false });
+  }
+
+  function step(dt) {
+    for (var i = floats.length - 1; i >= 0; i--) {
+      var f = floats[i];
+      f.t += dt;
+      var k = Math.min(1, f.t / f.life);
+      f.node.y -= (44 / f.life) * dt;
+      f.node.alpha = k > 0.75 ? 1 - (k - 0.75) / 0.25 : 1;
+      if (k >= 1) { f.node.destroy(); floats.splice(i, 1); }
+    }
+  }
+
+  function run(name, cfg) {
+    for (var i = 0; i < floats.length; i++) if (!floats[i].node.destroyed) floats[i].node.destroy();
+    floats.length = 0;
+    app.stage.removeChildren();
+    gl.finish();
+    var dt = 1 / 60, acc = 0, frames = [], peak = 0;
+    var interval = 1 / cfg.rate;
+    for (var f = 0; f < 360; f++) {
+      var t0 = performance.now();
+      acc += dt;
+      while (acc >= interval) {
+        acc -= interval;
+        spawnFloat(cfg, CSS_W / 2 + (Math.random() * 200 - 100), CSS_H / 2 + (Math.random() * 160 - 80));
+      }
+      step(dt);
+      app.renderer.render(app.stage);
+      gl.finish();
+      var ms = performance.now() - t0;
+      if (f >= 60) frames.push(ms);
+      if (floats.length > peak) peak = floats.length;
+    }
+    var s = frames.slice().sort(function (a, b) { return a - b; });
+    var over = frames.filter(function (v) { return v > 16.7; }).length;
+    log(name + '　<b>中位 ' + s[Math.floor(s.length * 0.5)].toFixed(2) +
+        '</b>　p95 <b>' + s[Math.floor(s.length * 0.95)].toFixed(2) +
+        '</b>　最大 ' + s[s.length - 1].toFixed(1) + ' ms　>16.7ms ' + over + '/' + frames.length +
+        '　場上飄字 ' + peak);
+  }
+
+  log('<span class="hd">---- 飄字速率掃描（現行：PIXI.Text + placeFloatNode 防重疊）----</span>');
+  run('每秒 60 個　　現行　　　　　　　　　', { rate: 60, place: true, unique: true });
+  run('每秒 120 個　 現行　　　　　　　　　', { rate: 120, place: true, unique: true });
+  run('每秒 200 個　 現行（截圖那種密度）　', { rate: 200, place: true, unique: true });
+  run('每秒 300 個　 現行　　　　　　　　　', { rate: 300, place: true, unique: true });
+
+  log('<span class="hd">---- 拆解：placeFloatNode 佔多少？ ----</span>');
+  run('每秒 200 個　關掉防重疊（只定位）　 ', { rate: 200, place: false, unique: true });
+  run('每秒 200 個　防重疊改讀快取寬高　　 ', { rate: 200, place: true, unique: true, cacheWH: true });
+
+  log('<span class="hd">---- 拆解：字串是否重複（貼圖快取）----</span>');
+  run('每秒 200 個　字串重複（只有 10 種）　', { rate: 200, place: true, unique: false });
+
+  log('---- 完成 ----');
+})();
+</script>
+</body></html>

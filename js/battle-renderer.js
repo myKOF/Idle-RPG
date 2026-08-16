@@ -3412,13 +3412,32 @@ var BattleRenderer = (function () {
     });
   }
 
+  /* 除了現況快照，還要回報「會不會只增不減」的集合大小。
+     2026-08-16 的回報：一旦開始卡頓，死亡重生也不會恢復，只有 F5 有效——
+     那是累積型問題，不是負載問題，而負載量測（scratch/_perf_bench2~5）
+     全部顯示穩態成本很低。要抓這種東西只能看同一個數字隨時間的走勢，
+     所以這裡把每個有嫌疑的集合都列出來，交給 js/lagprobe.js 做成長追蹤。 */
   function status() {
+    var L = S.layers || {};
+    function kids(layer) { return (layer && layer.children) ? layer.children.length : 0; }
     return {
       ready: S.ready, failed: S.failed,
       size: S.W + 'x' + S.H,
       entities: Object.keys(S.entities).length,
       fx: S.fx.length, floats: S.floats.length,
-      paused: S.paused, zone: S.zoneKey
+      paused: S.paused, zone: S.zoneKey,
+      /* ---- 洩漏診斷 ---- */
+      lastPos: Object.keys(S.lastPos).length,          // 離場實體的殘留座標，應隨 LASTPOS_KEEP_MS 回落
+      floatMerge: Object.keys(S.floatMerge).length,    // 合併表，鍵是遞增的 mv-float-N
+      pendingFloats: S.pendingFloats.length,           // 初始化前暫存的飄字
+      imgTex: Object.keys(S.imgTex).length,            // 敵人圖檔貼圖快取
+      /* 顯示串列的實際子節點數。與上面的邏輯集合分開看：
+         若 nodes.fx 遠大於 fx，代表有節點沒被回收（孤兒）；
+         nodes.entity 只增不減則是屍體沒清掉。 */
+      nodes: {
+        fx: kids(L.fx), zone: kids(L.zone), entity: kids(L.entity),
+        float: kids(L.float), overlay: kids(L.overlay)
+      }
     };
   }
 
