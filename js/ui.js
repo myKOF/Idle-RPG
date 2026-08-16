@@ -1549,6 +1549,23 @@ function enemyFloatTargetPresent(elId, ent, battleSnapshot) {
   return false;
 }
 
+function enemyFloatTargetStillTracked(elId, ent, battleSnapshot) {
+  if (!elId || elId.indexOf('mv-float-') !== 0) return true;
+  var currentSnapshot = typeof uiBattlePanelSnapshot === 'function'
+    ? uiBattlePanelSnapshot() : null;
+  var snapshot = currentSnapshot || battleSnapshot;
+  var field = snapshot && snapshot.field;
+  if (field) {
+    var enemies = Array.isArray(field.monsters) ? field.monsters : (field.monster ? [field.monster] : []);
+    for (var i = 0; i < enemies.length; i++) {
+      var enemy = enemies[i];
+      if (enemy && (enemy === ent || enemy.floatSel === elId)) return true;
+    }
+    return false;
+  }
+  return !!ent;
+}
+
 function enemyFloatTargetState(elId, ent, battleSnapshot) {
   if (!elId || elId.indexOf('mv-float-') !== 0) return 'ready';
   var targetLayer = $id(elId);
@@ -1962,8 +1979,10 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
      但模擬層是一瞬間把整段結算完的。純顯示時序，戰鬥結果早就定了。
      延遲期間敵人可能已死，但卡片還會留 FIELD_ENEMY_DEATH_CLEAR_DELAY（2.1 秒）才移除，
      遠長於這裡的延遲；真的來不及也只是走 queuePendingEnemyFloat 的既有路徑。 */
+  var delayedEnemyHitFloat = elId && elId.indexOf('mv-float-') === 0 && isEnemyHitFloat(elId, cls);
   if (delayMs > 0) {
     setTimeout(function () {
+      if (delayedEnemyHitFloat && !enemyFloatTargetStillTracked(elId, ent, battleSnapshot)) return;
       floatText(elId, text, cls, damageValue, ent, battleSnapshot, 0);
     }, delayMs);
     return;
@@ -1974,6 +1993,7 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
     cls = 'player-event dodge defend';
   }
   var enemyHitFloat = isEnemyHitFloat(elId, cls);
+  if (enemyHitFloat && !enemyFloatTargetStillTracked(elId, ent, battleSnapshot)) return;
   var targetLayer = $id(elId);
   if (enemyHitFloat && elId && elId.indexOf('mv-float-') === 0) {
     var targetState = enemyFloatTargetState(elId, ent, battleSnapshot);

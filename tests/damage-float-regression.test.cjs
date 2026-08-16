@@ -86,6 +86,7 @@ test('沒有目前敵人時，即時 Worker 傷害事件也不會建立浮字', 
     functionBody(ui, 'floatLayerAttached'),
     functionBody(ui, 'enemyFloatTargetPresent'),
     functionBody(ui, 'enemyFloatTargetState'),
+    functionBody(ui, 'enemyFloatTargetStillTracked'),
     functionBody(ui, 'floatText')
   ].join('\n'), context);
 
@@ -171,4 +172,26 @@ test('敵方傷害浮字從建立起掛在死亡重建之外的持久層', () =>
   assert.match(ui, /var useRetainedEnemyLayer = enemyHitFloat && elId && elId\.indexOf\('mv-float-'\) === 0;[\s\S]*var layer = useRetainedEnemyLayer \? \(\$id\('mv-float-retained'\) \|\| targetLayer\) : targetLayer;/);
   assert.match(ui, /placeEnemyDamageFloat\(sp, layer, targetLayer\)/);
   assert.match(ui, /_enemyFloatTargetId !== elId/);
+});
+
+test('DOM delayed enemy damage float is discarded after the target disappears', () => {
+  const callbacks = [];
+  let snapshot = { field: { monsters: [{ floatSel: 'mv-float-0' }] } };
+  const context = {
+    PENDING_ENEMY_FLOATS: [],
+    uiRenderingSuspended: () => false,
+    isEnemyHitFloat: () => true,
+    uiBattlePanelSnapshot: () => snapshot,
+    setTimeout: callback => { callbacks.push(callback); return 0; }
+  };
+  vm.runInNewContext([
+    functionBody(ui, 'enemyFloatTargetStillTracked'),
+    functionBody(ui, 'floatText')
+  ].join('\n'), context);
+
+  context.floatText('mv-float-0', '100', 'enemy-attack', 100, null, snapshot, 100);
+  assert.equal(callbacks.length, 1);
+  snapshot = { field: { monsters: [] } };
+  callbacks[0]();
+  assert.deepEqual(context.PENDING_ENEMY_FLOATS, []);
 });

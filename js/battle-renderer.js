@@ -109,6 +109,12 @@ var BattleRenderer = (function () {
   function isCanvasFloatTarget(elId) {
     return elId === 'pv-float' || /^mv-float-\d+$/.test(elId || '');
   }
+  function enemyFloatTargetAvailable(elId) {
+    if (!/^mv-float-\d+$/.test(elId || '')) return true;
+    var ent = S.entities[elId];
+    if (ent) return ent.state !== 'gone';
+    return !S.lastPos[elId];
+  }
   function queueFloatUntilReady(ev) {
     if (!isCanvasFloatTarget(ev && ev.elId)) return;
     if (S.pendingFloats.length >= 40) S.pendingFloats.shift();
@@ -2767,10 +2773,12 @@ var BattleRenderer = (function () {
     var delay = Math.max(0, ev.delayMs || 0);
     if (delay > 0) {
       setTimeout(function () {
+        if (!enemyFloatTargetAvailable(ev.elId)) return;
         onFloat({ elId: ev.elId, text: ev.text, cls: ev.cls, damageValue: ev.damageValue, _buffered: true });
       }, delay);
       return;
     }
+    if (!enemyFloatTargetAvailable(ev.elId)) return;
     var val = Number(ev.damageValue);
     var mergeable = isFinite(val) && val > 0 && /^[-+]?/.test(ev.text || '') && (ev.cls || '').indexOf('player-event') < 0;
     if (mergeable) {
