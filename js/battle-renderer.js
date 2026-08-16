@@ -1362,6 +1362,25 @@ var BattleRenderer = (function () {
     return (fallbackMs > 0 ? fallbackMs : 300) / projectileSpeedMultiplier();
   }
 
+  /* 一般火球專用的小型平射彈體：不用殞石的 Phaser flare emitter，
+     讓 Canvas 與 DOM 都能清楚區分「直線火球」和「天降殞石」。 */
+  function smallFireballProjectile(theme) {
+    var node = new PIXI.Container();
+    var c1 = cssColorToInt(theme && theme.c1, 0xf04a19);
+    var c2 = cssColorToInt(theme && theme.c2, 0xffd166);
+    var tail = new PIXI.Graphics();
+    tail.moveTo(-23, 0).lineTo(-7, -4).lineTo(-3, 0).lineTo(-7, 4).closePath()
+      .fill({ color: c1, alpha: 0.9 });
+    tail.moveTo(-16, 0).lineTo(-6, -2).lineTo(-4, 0).lineTo(-6, 2).closePath()
+      .fill({ color: c2, alpha: 0.95 });
+    var core = new PIXI.Graphics();
+    core.circle(0, 0, 6.5).fill(c1);
+    core.circle(-1.2, -1.2, 3.1).fill(c2);
+    node.addChild(tail);
+    node.addChild(core);
+    return node;
+  }
+
   function spawnProjectile(targetId, travelMs, spec, onArrive, fromOverride) {
     var theme = themeOf(spec);
     var from = fromOverride || playerMuzzle();
@@ -1373,13 +1392,13 @@ var BattleRenderer = (function () {
     if (glyphOnly) {
       core = new PIXI.Text({ text: spec.glyph, style: { fontSize: 20 } });
       core.anchor.set(0.5);
-    } else if (spec.variant === 'fireball') {
-      /* 火球不再用圓形 Graphics：改用 Phaser white flare emitter，尺寸為 65%。 */
-      core = flameProjectile(theme, false, 0.65);
+    } else if (spec.variant === 'fireball-small' || spec.variant === 'fireball') {
+      core = smallFireballProjectile(theme);
     } else {
       core = projectileCore(spec, theme);
     }
-    if (spec.variant !== 'fireball') {
+    var isSmallFireball = spec.variant === 'fireball-small' || spec.variant === 'fireball';
+    if (!isSmallFireball) {
       var isKnifeProjectile = spec.variant === 'knife' || spec.variant === 'knife-bounce';
       var glow = new PIXI.Sprite(glowTexture());
       glow.anchor.set(0.5);
@@ -1405,11 +1424,11 @@ var BattleRenderer = (function () {
         node.x = lerp(from.x, to.x, k);
         /* 火球術依使用者要求走真正直線；其他投射物保留原本的微弧線。 */
         node.y = lerp(from.y, to.y, k) -
-          (spec && spec.variant === 'fireball' ? 0 : Math.sin(k * Math.PI) * 18);
+          (isSmallFireball ? 0 : Math.sin(k * Math.PI) * 18);
         node.rotation = Math.atan2(to.y - from.y, to.x - from.x);
         if (core && core._flameUpdate) core._flameUpdate(dt);
         trailAcc += dt;
-        if (spec.variant !== 'fireball' && trailAcc > trailIntervalSec() && !REDUCED_MOTION) {
+        if (!isSmallFireball && trailAcc > trailIntervalSec() && !REDUCED_MOTION) {
           trailAcc = 0;
           spawnTrailDot(node.x, node.y, theme);
         }
@@ -1417,10 +1436,6 @@ var BattleRenderer = (function () {
           if (!arrived) {
             arrived = true;
             if (onArrive) onArrive(posOf(targetId));
-          }
-          if (spec && spec.variant === 'fireball') {
-            if (core) core._flameStop = true;
-            return t < dur + 0.4;
           }
           return false;
         }

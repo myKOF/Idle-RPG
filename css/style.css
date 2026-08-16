@@ -6782,6 +6782,35 @@ textarea:disabled,
 /* 火球術由 JS 從我方到敵方直線飛行；火焰的方向由 flare 粒子本身對齊飛行角度。 */
 .vfx-proj-fire .vfx-proj-trail { display: none; }
 
+/* 一般火球：獨立的小型平射彈體，不使用殞石的 flare emitter／天降尾焰。 */
+.vfx-proj-fireball-small {
+  z-index: 2;
+}
+
+.vfx-proj-fireball-small .vfx-fireball-small-core {
+  left: 0;
+  top: 0;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 38% 35%, #fff8b0 0 18%, #ffc247 34%, #f04a19 70%, #9f1d12 100%);
+  box-shadow: 0 0 5px #ffcf54, 0 0 12px #f04a19;
+}
+
+.vfx-proj-fireball-small .vfx-fireball-small-tail {
+  left: 0;
+  top: 0;
+  width: 25px;
+  height: 7px;
+  transform-origin: 100% 50%;
+  transform: rotate(var(--vfx-rot, 0rad)) translate(-25px, -50%);
+  border-radius: 70% 20% 20% 70%;
+  background: linear-gradient(90deg, transparent, #e52f15 45%, #ffd166 92%);
+  filter: blur(1px) drop-shadow(0 0 4px #f04a19);
+  opacity: 0.9;
+}
+
 .vfx-proj-big .vfx-proj-core {
   width: 52px;
   height: 52px;

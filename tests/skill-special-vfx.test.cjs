@@ -23,10 +23,10 @@ test('三個指定技能使用專用 VFX 與命中規格', () => {
   assert.match(vfx, /var fall = Math\.round\(rawFall \/ meteorSpeed\)/);
   assert.match(vfx, /var diagonalRise = diagonalRun \* Math\.tan\(Math\.PI \/ 3\)/);
   assert.match(vfx, /var smallOffsets = \[-0\.22, -0\.04, 0\.16, 0\.32\]/);
-  assert.match(vfx, /vfxBuildFlareFlame\(d, false, 0\.65\)/);
+  assert.match(vfx, /vfxBuildSmallFireball\(d\)/);
   assert.match(vfx, /var VFX_METEOR_SIZE_SCALE = 1\.30/);
   assert.match(vfx, /vfxBuildFlareFlame\(d, !!small, VFX_METEOR_SIZE_SCALE\)/);
-  assert.match(vfx, /vfxBuildFlareFlame\(d, false, 0\.65\)/);
+  assert.match(vfx, /function vfxBuildSmallFireball\(parent\)/);
   assert.match(vfx, /vfx-impact-fire-explosion/);
   assert.match(vfx, /vfx-burst-fireball/);
   assert.match(vfx, /VFX_FLARE_LIFESPAN_MS = 2400/);
@@ -43,12 +43,13 @@ test('三個指定技能使用專用 VFX 與命中規格', () => {
 
   assert.match(renderer, /function spawnBarrageMissile\(/);
   assert.match(renderer, /function spawnMeteorProjectile\(/);
-  assert.match(renderer, /spec\.variant === 'fireball' \? 0/);
+  assert.match(renderer, /var isSmallFireball = spec\.variant === 'fireball-small'/);
   assert.match(renderer, /var smallTheme = \{ c1: '#ef4b16', c2: '#ffd166', glow: '#ff7a1a' \}/);
   assert.match(renderer, /function loadFireFlare\(\)/);
   assert.match(renderer, /new PIXI\.Rectangle\(392, 2, 128, 128\)/);
   assert.match(renderer, /function flameProjectile\(theme, small, sizeScale\)/);
-  assert.match(renderer, /core = flameProjectile\(theme, false, 0\.65\)/);
+  assert.match(renderer, /function smallFireballProjectile\(theme\)/);
+  assert.match(renderer, /core = smallFireballProjectile\(theme\)/);
   assert.match(renderer, /var METEOR_SIZE_SCALE = 1\.30/);
   assert.match(renderer, /var flame = flameProjectile\(theme, scale && scale < 1, METEOR_SIZE_SCALE\)/);
   assert.match(renderer, /p\._age >= 2\.4/);

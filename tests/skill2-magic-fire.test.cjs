@@ -71,6 +71,10 @@ function tickCtx(c, p, enemies, extra) {
     pEnt: p, getEnemies: () => enemies, floatSel: 'mv-float', onDeaths() {}, onDamage() {}
   }, extra || {});
 }
+function finishFireball(c, p, enemies, at) {
+  c.GT = at === undefined ? 1 : at;
+  c.tickSkill2(c.GT, tickCtx(c, p, enemies));
+}
 /* 把等級陣列直接寫進存檔（階層循序解鎖的驗證由 skill2-system 守，這裡只擺場景）。 */
 function setLevels(c, gid, levels) { c.G.player.skills2.levels[gid] = levels.slice(); }
 
@@ -84,6 +88,7 @@ test('魔法群組：傷害基準吃魔攻、穿透吃魔穿、本體傷害整�
   const m = enemy(100000, 60, 0);
 
   c.castSkill2(p, [m], 'fireball', 'mv-float');
+  finishFireball(c, p, [m]);
 
   assert.equal(calls.length, 1);
   const aCfg = calls[0].aCfg;
@@ -124,6 +129,28 @@ test('施法距離：火球 30 米可施放、31 米不可；武技仍只有近�
 
 /* ---- 3) 火球術 ---- */
 
+test('一般火球：使用標準飛行物佇列，抵達前不命中且不走殞石佇列', () => {
+  const c = loadContext();
+  const calls = stubHits(c);
+  c.chance = () => false;
+  const p = playerEnt();
+  const m = enemy(100000, 120, 0);
+
+  const out = c.castSkill2(p, [m], 'fireball', 'mv-float');
+  assert.equal(calls.length, 0);
+  assert.equal(c.SKILL2_RT.meteors.length, 0);
+  assert.equal(c.SKILL2_RT.projectiles.length, 1);
+  assert.equal(out._pendingProjectiles, 1);
+
+  c.GT = 0.25;
+  c.tickSkill2(0.25, tickCtx(c, p, [m]));
+  assert.equal(calls.length, 0, '一般火球尚未飛抵前不應命中');
+
+  finishFireball(c, p, [m], 0.6);
+  assert.equal(calls.length, 1);
+  assert.equal(out._pendingProjectiles, 0);
+});
+
 test('火球術：命中目標與 6 米內敵人，範圍外不受影響', () => {
   const c = loadContext();
   const calls = stubHits(c);
@@ -133,6 +160,7 @@ test('火球術：命中目標與 6 米內敵人，範圍外不受影響', () =>
   const out = enemy(100000, 100, 200);  // 離爆心 200－20＝180 ＞ 60
 
   c.castSkill2(playerEnt(), [main, near, out], 'fireball', 'mv-float');
+  finishFireball(c, playerEnt(), [main, near, out]);
 
   const hit = calls.map((x) => x.ent);
   assert.ok(hit.indexOf(main) >= 0 && hit.indexOf(near) >= 0);
@@ -146,7 +174,9 @@ test('火球術·燃燒：塗上烈焰燃燒，每跳量＝技能傷害 20%、�
   setLevels(c, 'fireball', [1, 1, 0, 0, 0, 0, 0]);
   const m = enemy(100000, 100, 0);
 
-  c.castSkill2(playerEnt(), [m], 'fireball', 'mv-float');
+  const p = playerEnt();
+  c.castSkill2(p, [m], 'fireball', 'mv-float');
+  finishFireball(c, p, [m]);
 
   const dot = c.sgFindDot(m, 'sgBurn');
   assert.ok(dot, '應塗上 sgBurn');
@@ -163,7 +193,9 @@ test('火球術·強化燃燒：作用間隔縮短到 0.4 秒，每級再 -0.015
   setLevels(c, 'fireball', [1, 1, 1, 3, 0, 0, 0]);
   const m = enemy(100000, 100, 0);
 
-  c.castSkill2(playerEnt(), [m], 'fireball', 'mv-float');
+  const p = playerEnt();
+  c.castSkill2(p, [m], 'fireball', 'mv-float');
+  finishFireball(c, p, [m]);
 
   const dot = c.sgFindDot(m, 'sgBurn');
   assert.equal(Math.round(dot.interval * 1000) / 1000, 0.37); // 0.4 - 0.015×2
@@ -180,7 +212,10 @@ test('火球術·火球爆裂：分裂 3 個小火球打 20 米內的其他敵�
   const d = enemy(100000, 100, 180);
   const e = enemy(100000, 100, 210);
 
-  c.castSkill2(playerEnt(), [main, a, b, d, e], 'fireball', 'mv-float');
+  const p = playerEnt();
+  c.castSkill2(p, [main, a, b, d, e], 'fireball', 'mv-float');
+  finishFireball(c, p, [main, a, b, d, e]);
+  finishFireball(c, p, [main, a, b, d, e], 2);
 
   const splitCalls = calls.filter((x) => Math.round(x.aCfg.atk) === 225); // 750 × 30%
   assert.equal(splitCalls.length, 3, '應分裂出 3 個小火球');
@@ -193,7 +228,9 @@ test('火球術·殞石術：三顆殞石、傷害與範圍改讀第 7 階、射
   c.chance = () => false;
   setLevels(c, 'fireball', [1, 0, 0, 0, 0, 0, 0]);
   const solo = enemy(1e9, 100, 0);
-  c.castSkill2(playerEnt(), [solo], 'fireball', 'mv-float');
+  const p = playerEnt();
+  c.castSkill2(p, [solo], 'fireball', 'mv-float');
+  finishFireball(c, p, [solo]);
   const baseHits = calls.length;
 
   const c2 = loadContext();
@@ -246,6 +283,7 @@ test('火球術·爆燃：燃燒結束時對我方 12 米內 2 個敵人造成�
   const enemies = [burned, near1, near2, far];
 
   c.castSkill2(p, [burned], 'fireball', 'mv-float');
+  finishFireball(c, p, enemies);
   const dot = c.sgFindDot(burned, 'sgBurn');
   const total = dot.dps * (dot.until - c.GT);
 
@@ -439,6 +477,7 @@ test('高塔（無座標）：火球術與火柱都退化為單體語意，不�
   const boss = enemy(1e9); // 無 pos
 
   c.castSkill2(p, boss, 'fireball', 'tb-float');
+  finishFireball(c, p, [boss]);
   assert.equal(calls.length, 1);
   assert.equal(calls[0].ent, boss);
 
