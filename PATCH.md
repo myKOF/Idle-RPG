@@ -1,5 +1,13 @@
 # PATCH.md
 
+## 受擊爆點特效圈尺寸調回原尺寸（Antigravity 2026-08-16）
+
+- **受擊爆點特效圈（vfxImpact）尺寸修復**：
+  - 修正 `.vfx-impact::before` 與 `.vfx-impact::after` 之 Keyframes 動畫：新增專用 `@keyframes vfxImpactRing`（最大縮放比由 `scale(4.2)` 調整為 `scale(1.4)`）與 `@keyframes vfxImpactFlash`（最大縮放比調整為 `scale(0.8)`）。
+  - 受擊擴散圓環直徑由 117.6px 精確縮小至 39.2px（擴散半徑還原至原先 1/3 規格），同時將 `js/vfx.js` 受擊粒子飛散距離同步等比調精細（`6~15px`），解決高頻攻擊下受擊特效圈過大遮擋畫面的問題。
+- **測試與建置驗證**：
+  - 執行 `node --test "tests/*.test.cjs"`（1,404 個單元測試全數通過）與 `node tools/build_check.cjs`（278 個檔案編譯全數通過）。
+
 ## 戰鬥區技能快捷列點擊直跳技能頁（Antigravity 2026-08-16）
 
 - **戰鬥區技能快捷列點擊跳轉行為修正**：
