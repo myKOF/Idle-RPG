@@ -1186,8 +1186,9 @@ var BattleRenderer = (function () {
       playAnim(ent, 'hurt', 'idle');
     }
   }
-  function addShake(px) {
+  function addShake(px, spec) {
     if (REDUCED_MOTION) return;
+    if (!isSpecialScreenShakeSpec(spec)) return;
     S.shake = Math.min(10, Math.max(S.shake, px));
   }
 
@@ -1542,7 +1543,7 @@ var BattleRenderer = (function () {
       }
     }, 1);
     spawnParticles(x, y, strong ? 12 : 6, theme, strong ? 0.9 : 0.55, impactScale);
-    if (strong && isSpecialScreenShakeSpec(spec)) addShake(5);
+    if (strong) addShake(5, spec);
   }
 
   /* 斬擊弧線 ——「這支不用改成 Sprite」，已量過（scratch/_perf_bench3.html）
@@ -1844,8 +1845,8 @@ var BattleRenderer = (function () {
           if (typeof targetPtOrId === 'string') {
             hitReact(targetPtOrId, spec.elem || 'lightning', !!(isMega || isPurple));
           }
-          if ((isMega || isPurple) && isSpecialScreenShakeSpec(spec)) {
-            addShake(isPurple ? 5 : 3);
+          if (isMega || isPurple) {
+            addShake(isPurple ? 5 : 3, spec);
           }
         }
         return t < dur;
@@ -2041,7 +2042,7 @@ var BattleRenderer = (function () {
     spawnMeteorProjectile(spec, theme, mainFrom, { x: cx, y: cy }, 1, dur, 0, function () {
       spawnImpact(cx, cy, spec, true);
       spawnFireShockwave(cx, cy, rectRadius(rect), theme);
-      addShake(8);
+      addShake(8, spec);
     });
     var smallOffsets = [-0.22, -0.04, 0.16, 0.32];
     var smallTheme = { c1: '#ef4b16', c2: '#ffd166', glow: '#ff7a1a' };
@@ -2233,7 +2234,7 @@ var BattleRenderer = (function () {
         if (!g._hit && k > 0.25) {
           g._hit = true;
           hitReact(targetId, spec.elem || 'fire', true);
-          if (isSpecialScreenShakeSpec(spec)) addShake(5);
+          addShake(5, spec);
           spawnParticles(to.x, to.y - 20, 8, theme, 2);
         }
         return t < dur;
@@ -2958,6 +2959,8 @@ var BattleRenderer = (function () {
       } else {
         p.bodyWrap.x = 0;
       }
+      p.bodyWrap.x += p.jolt > 0 ? (Math.random() * 2 - 1) * (p.joltX || HIT_JOLT_X) : 0;
+      p.bodyWrap.y = p.jolt > 0 ? (Math.random() * 2 - 1) * (p.joltY || HIT_JOLT_Y) : 0;
       p.root.x = p.wx;
       p.root.y = p.wy;
       p.root.zIndex = p.wy;
@@ -3064,12 +3067,12 @@ var BattleRenderer = (function () {
       }
 
       updateFlashJolt(e, dt);
-      e.root.x = e.wx + (e.dashX || 0) +
-        (e.jolt > 0 ? (Math.random() * 2 - 1) * (e.joltX || HIT_JOLT_X) : 0);
+      e.root.x = e.wx + (e.dashX || 0);
       if (e.state !== 'dying') {
-        e.root.y = e.wy + (e.dashY || 0) +
-          (e.jolt > 0 ? (Math.random() * 2 - 1) * (e.joltY || HIT_JOLT_Y) : 0);
+        e.root.y = e.wy + (e.dashY || 0);
       }
+      e.bodyWrap.x = e.jolt > 0 ? (Math.random() * 2 - 1) * (e.joltX || HIT_JOLT_X) : 0;
+      e.bodyWrap.y = e.jolt > 0 ? (Math.random() * 2 - 1) * (e.joltY || HIT_JOLT_Y) : 0;
       e.root.zIndex = e.root.y + (e.isBoss ? 1000 : 0);
     }
 
