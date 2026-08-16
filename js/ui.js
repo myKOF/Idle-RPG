@@ -3070,6 +3070,12 @@ function syncBattleSkillSlot(slot, state) {
 function renderBattleSkillBar(pEnt, snapshotGt) {
   var bar = $id('battle-skill-bar');
   if (!bar) return;
+  if (!pEnt) {
+    var battleSnap = peekUiPanelData('battle') || {};
+    var field = battleSnap.field || {};
+    pEnt = field.player || battleSnap.player || null;
+    snapshotGt = battleSnap.gt || 0;
+  }
   var skillsSnapshot = uiSkillsPanelSnapshot();
   var talentSnapshot = uiTalentPanelSnapshot();
   var headerSnapshot = uiHeaderPanelSnapshot();
@@ -3121,7 +3127,7 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
       continue;
     }
 
-    var rawCdVal = (pEnt && pEnt.skillCds && pEnt.skillCds[entry]) || 0;
+    var rawCdVal = (pEnt && pEnt.skillCds && (pEnt.skillCds[entry] || (isSgE ? pEnt.skillCds[entry.slice(3)] : 0))) || 0;
     var cd = pEnt ? uiCountdownRemain(rawCdVal, snapshotGt) : 0;
     var lv = isSgE
       ? sgUiTotalLevel(sgUiLevels(skillsSnapshot, entry.slice(3)))
@@ -3185,8 +3191,11 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
 /* 戰鬥區技能欄 60fps 絲滑碼錶與圓形 CD 倒數動態器 */
 var _battleSkillBarAnimFrame = null;
 function startBattleSkillBarAnimation() {
-  if (_battleSkillBarAnimFrame) return;
   if (typeof requestAnimationFrame !== 'function') return;
+  if (_battleSkillBarAnimFrame) {
+    cancelAnimationFrame(_battleSkillBarAnimFrame);
+    _battleSkillBarAnimFrame = null;
+  }
 
   function step() {
     _battleSkillBarAnimFrame = null;
@@ -9770,7 +9779,7 @@ function initUI() {
     };
     renderSkills();
     if (typeof renderBattleSkillBar === 'function') {
-      renderBattleSkillBar(null, 0);
+      renderBattleSkillBar();
     }
     sendUiCommand('skill.reorderLoadout', {
       from: fromIndex,
@@ -9785,7 +9794,7 @@ function initUI() {
         UI.optimisticSkillLoadout = null;
         reportUiCommandFailure('技能排序失敗', error, ['skills', 'battle']);
         renderSkills();
-        if (typeof renderBattleSkillBar === 'function') renderBattleSkillBar(null, 0);
+        if (typeof renderBattleSkillBar === 'function') renderBattleSkillBar();
         return;
       }
       if (UI.optimisticSkillLoadout) {
@@ -9796,7 +9805,7 @@ function initUI() {
       UI.optimisticSkillLoadout = null;
       reportUiCommandFailure('技能排序失敗', error, ['skills', 'battle']);
       renderSkills();
-      if (typeof renderBattleSkillBar === 'function') renderBattleSkillBar(null, 0);
+      if (typeof renderBattleSkillBar === 'function') renderBattleSkillBar();
     });
   }
 
