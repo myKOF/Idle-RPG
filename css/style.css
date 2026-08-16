@@ -1442,8 +1442,9 @@ textarea#save-io {
 }
 
 .float-txt.miss {
-  color: #dc2626;
-  text-shadow: 0 1px 3px #000, 0 0 6px rgba(127, 29, 29, 0.9);
+  color: #ef4444;
+  font-size: 16px;
+  text-shadow: 0 1px 3px #000, 0 0 8px rgba(239, 68, 68, 0.95);
 }
 
 .float-txt.thorn {
@@ -1482,7 +1483,8 @@ textarea#save-io {
 }
 
 .float-txt.player-event.debuff {
-  color: #fb7185;
+  color: #ef4444;
+  text-shadow: 0 1px 3px #000, 0 0 6px rgba(239, 68, 68, 0.8);
 }
 
 .float-txt.player-event.buff {
@@ -1505,13 +1507,15 @@ textarea#save-io {
 .float-txt.player-damage {
   top: 42%;
   z-index: 8;
-  color: #ff6b6b;
+  color: #ef4444;
   font-size: 16px;
+  text-shadow: 0 1px 3px #000, 0 0 6px rgba(239, 68, 68, 0.7);
 }
 
 .float-txt.player-damage.crit {
-  color: #ff3b3b;
+  color: #dc2626;
   font-size: 20px;
+  text-shadow: 0 1px 3px #000, 0 0 8px rgba(220, 38, 38, 0.9);
 }
 
 .float-txt.player-benefit {
