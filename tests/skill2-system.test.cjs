@@ -521,7 +521,89 @@ test('死亡屍爆：流血敵人死亡時對附近敵人造成傷害並傳染�
   assert.ok(near2.dots.some((d) => d.sid === 'sgPoison'), '屍爆應傳染中毒給第 2 個敵人');
 });
 
-/* ---- 6) 暴風之舞 ---- */
+/* ---- 6) 雙刀亂舞三項效果 ---- */
+
+test('雙刀亂舞設定：狂暴之舞、鐵血之舞、嗜血狂化數值與說明同步', () => {
+  const c = loadContext();
+  const tiers = c.SKILLS2.dualdance.tiers;
+  assert.deepEqual(plain(tiers[3].fx), { cr: 100, crPer: 10, add: 1, addPer: 0.1, sec: 6 });
+  assert.deepEqual(plain(tiers[4].fx), { pct: 3.5, pctPer: 0.35, sec: 3, gap: 0.35, m: 5 });
+  assert.deepEqual(plain(tiers[5].fx), { pct: 0.25, pctPer: 0.025, sec: 6 });
+  assert.match(tiers[3].desc, /暴擊率.*連擊數/);
+  assert.doesNotMatch(tiers[3].desc, /暴擊傷害/);
+  assert.match(tiers[4].desc, /最大生命值/);
+  assert.match(tiers[5].desc, /技能傷害提升/);
+});
+
+test('狂暴之舞：暴擊率與連擊數持續 6 秒，不再提供暴擊傷害', () => {
+  const c = loadContext();
+  stubHits(c);
+  c.chance = () => false;
+  c.G.player.skills2.levels.dualdance = [1, 1, 1, 1, 1, 1, 0];
+  const p = playerEnt();
+  const m = enemy(1e9, 40, 0);
+  c.GT = 0;
+  c.castSkill2(p, [m], 'dualdance', 'mv-float');
+  assert.equal(p.buffs.sgCritUp.val, 100);
+  assert.equal(p.buffs.sgCritUp.until, 6);
+  assert.equal(p.buffs.sgCritDmgUp, undefined);
+  assert.equal(c.skill2FrenzyComboBonus(), 1);
+  assert.equal(c.rollComboHits({ comboHits: 0 }), 1, '連擊數 +1 應產生 1 次追加攻擊');
+
+  c.GT = 6;
+  assert.equal(c.skill2FrenzyComboBonus(), 0);
+  assert.equal(c.rollComboHits({ comboHits: 0 }), 0, '狂暴到期後不應再追加連擊');
+});
+
+test('鐵血之舞：自身與 5 米內敵人依最大生命值附加 0.35 秒流血', () => {
+  const c = loadContext();
+  stubHits(c);
+  c.chance = () => false;
+  c.G.player.skills2.levels.dualdance = [1, 1, 1, 1, 1, 1, 0];
+  const p = playerEnt();
+  const near = enemy(2000, 40, 0);
+  const far = enemy(2000, 200, 0);
+  c.GT = 0;
+  c.castSkill2(p, [near, far], 'dualdance', 'mv-float');
+  const ownBleed = p.dots.find((d) => d.sid === 'sgIronBleed');
+  const nearBleed = near.dots.find((d) => d.sid === 'sgIronBleed');
+  assert.ok(ownBleed && nearBleed, '自身與範圍內敵人都應流血');
+  assert.equal(ownBleed.interval, 0.35);
+  assert.equal(ownBleed.dps, 100, '自身每跳應為 1000 × 3.5%');
+  assert.equal(Math.round(nearBleed.dps * nearBleed.interval), 70, '敵人每跳應為 2000 × 3.5%');
+  assert.equal(far.dots.length, 0, '範圍外敵人不應流血');
+});
+
+test('嗜血狂化：6 秒內依生命／護盾損失提高技能傷害，無護盾不預設為損失 100%', () => {
+  const c = loadContext();
+  c.chance = (pct) => pct >= 100;
+  c.rnd = () => 1;
+  c.G.player.skills2.levels.dualdance = [1, 1, 1, 1, 1, 1, 0];
+  const p = playerEnt();
+  const m = enemy(1e9, 40, 0);
+  c.GT = 0;
+  c.castSkill2(p, [m], 'dualdance', 'mv-float');
+  assert.equal(c.skill2FrenzySkillDamageMultiplier(p), 1, '滿血且無護盾時不應自動增加傷害');
+
+  p.hp = 900;
+  const baseCfg = { atk: 1000, dmgType: 'phys', level: 10, critRate: 0, critDmg: 150, hit: 100, isPlayer: true };
+  const skillCfg = Object.assign({}, baseCfg, { isSkill: true });
+  const base = c.resolveHit(p, enemy(1e9, 40, 0), baseCfg, c.monsterDefCfg(m)).dmg;
+  const boosted = c.resolveHit(p, enemy(1e9, 40, 0), skillCfg, c.monsterDefCfg(m)).dmg;
+  assert.equal(boosted, Math.round(base * 1.025), '生命值減少 10% 應使技能傷害提高 2.5%');
+
+  p.shieldMax = 400;
+  p.shield = 200;
+  const derivedTarget = enemy(1000, 40, 0);
+  const derivedOut = { dmg: 0, killed: false };
+  assert.equal(c.sgDerivedHit(derivedTarget, 100, 'dualdance', 'mv-float', derivedOut, 'test', 0), 115,
+    '生命與護盾損失應套用於雙刀亂舞的衍生技能傷害');
+  assert.equal(c.skill2FrenzySkillDamageMultiplier(p), 1.15, '生命損失 10% 加護盾損失 50% 應提高 15%');
+  c.GT = 6;
+  assert.equal(c.skill2FrenzySkillDamageMultiplier(p), 1, '嗜血狂化到期後不應再提高技能傷害');
+});
+
+/* ---- 7) 暴風之舞 ---- */
 
 test('暴風之舞：施放進入化身；期間自動施放、普攻旗標鎖定；到期清除', () => {
   const c = loadContext();

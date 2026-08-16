@@ -602,6 +602,7 @@ function comboHitsFor(critRate) {
 // 依連擊數擲骰出本次實際追加攻擊次數：整數部分固定追加，小數部分為機率再追加一次
 function rollComboHits(st) {
   var c = (st && st.comboHits) || 0;
+  if (typeof skill2FrenzyComboBonus === 'function') c += skill2FrenzyComboBonus();
   if (c <= 0) return 0;
   var n = Math.floor(c);
   if (chance((c - n) * 100)) n++;
@@ -856,6 +857,9 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   // 新版技能【嗜血狂怒】最終輸出乘區（狂怒／血飲術／狂血盛宴，js/skills2.js；僅玩家攻擊端）
   if (aCfg.isPlayer && typeof skill2RageDamageMultiplier === 'function') {
     dmg *= skill2RageDamageMultiplier(attacker);
+  }
+  if (aCfg.isPlayer && aCfg.isSkill && typeof skill2FrenzySkillDamageMultiplier === 'function') {
+    dmg *= skill2FrenzySkillDamageMultiplier(attacker);
   }
   // 格擋（機率減傷）：機率與減傷上限共用 STAT_CAPS，0 代表不設上限。
   var blockChance = capValue(dCfg.blockRate || 0, STAT_CAPS.blockRate);
