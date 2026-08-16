@@ -2040,38 +2040,122 @@ var BattleRenderer = (function () {
     }, 2, (FX_ORBIT_MAX_SEC + 1) * 1000);
   }
 
-  /* 火牆（新版技能【無限火牆】）：橫向矩形的地面場域。
+  /* 火牆（新版技能【無限火牆】）：貼地橫向火焰帶。
      模擬層送來的 area 帶 w／h／a（長、寬、朝向弧度），顯示層必須沿用同一組數字——
-     傷害範圍與畫面範圍對不起來，是這類地板技能最難查的一種回報。 */
+     傷害範圍與畫面範圍對不起來，是這類地板技能最難查的一種回報。
+     同一道牆的多次傷害事件共用 vfxId，避免每一跳都疊一個矩形框。 */
+  var _fireWallFx = Object.create(null);
+  var FIRE_WALL_MAX_LIFE_SEC = 4.5;
   function spawnFireWall(spec) {
     var a = spec && spec.area;
-    if (!a || !isFinite(a.x) || !isFinite(a.y)) return;
-    var w = Math.max(10, Number(a.w) || 0);
-    var h = Math.max(8, Number(a.h) || 0);
+    if (!a || !isFinite(a.x) || !isFinite(a.y)) return null;
+    var key = a.id || [Math.round(a.x), Math.round(a.y), Math.round(a.w || 0), Math.round(a.h || 0), Math.round(a.a || 0)].join(':');
+    var holdMs = Math.max(900, Number(spec.dur || 0.5) * 2400);
+    var current = _fireWallFx[key];
+    if (current && !current.dead && current.node && !current.node.destroyed) {
+      current.x = Number(a.x);
+      current.y = Number(a.y);
+      current.w = Math.max(10, Number(a.w) || current.w);
+      current.h = Math.max(8, Number(a.h) || current.h);
+      current.angle = Number(a.a) || 0;
+      current.expiresAt = nowMs() + holdMs;
+      return current;
+    }
+
     var theme = themeOf(spec);
     var node = new PIXI.Container();
-    node.x = a.x; node.y = a.y;
-    node.rotation = Number(a.a) || 0;
     var g = new PIXI.Graphics();
     node.addChild(g);
     S.layers.zone.addChild(node);
-    var t = 0, dur = Math.min(FX_AURA_MAX_SEC, Math.max(0.35, spec.dur || 0.5));
+    var fx = {
+      node: node, x: Number(a.x), y: Number(a.y), w: Math.max(10, Number(a.w) || 10),
+      h: Math.max(8, Number(a.h) || 8), angle: Number(a.a) || 0,
+      t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false
+    };
+    _fireWallFx[key] = fx;
+    var particleAt = 0;
+
     addFx({
       node: node,
       update: function (dt) {
-        t += dt;
-        var k = Math.min(1, t / dur);
-        var fade = k > 0.6 ? 1 - (k - 0.6) / 0.4 : 1;
-        var flick = 0.55 + Math.sin(t * 18) * 0.15;
+        fx.t += dt;
+        node.x = fx.x;
+        node.y = fx.y;
+        node.rotation = fx.angle;
+        var fade = fx.expiresAt - nowMs() < 360 ? Math.max(0, (fx.expiresAt - nowMs()) / 360) : 1;
+        var w = fx.w;
+        var h = fx.h;
+        var groundY = h * 0.28;
+        var baseDepth = Math.max(10, Math.min(30, h * 0.48));
+        var flameH = Math.max(24, Math.min(96, h * 1.55));
+        var phase = fx.t * 5.2;
+        var segs = Math.max(10, Math.min(24, Math.round(w / 12)));
+        var outer = [], orange = [], core = [];
+        var i, u, x, peak, wave;
+
         g.clear();
-        g.roundRect(-w / 2, -h / 2, w, h, 6)
-          .fill({ color: theme.c2, alpha: 0.3 * fade })
-          .stroke({ color: theme.c1, width: 2, alpha: 0.7 * fade });
-        g.roundRect(-w / 2 + 3, -h / 2 + 3, w - 6, h - 6, 5)
-          .fill({ color: theme.c1, alpha: 0.24 * flick * fade });
-        return t < dur;
+        // 貼地黑灰焦痕與橘色熱浪底座，先把「牆」壓在地面上。
+        g.ellipse(0, groundY + baseDepth * 0.16, w * 0.5, baseDepth * 0.58)
+          .fill({ color: 0x30231d, alpha: 0.5 * fade });
+        g.roundRect(-w * 0.49, groundY - baseDepth * 0.2, w * 0.98, baseDepth * 0.44, baseDepth * 0.22)
+          .fill({ color: 0x9f250e, alpha: 0.76 * fade })
+          .stroke({ color: 0xff7a18, width: 2, alpha: 0.72 * fade });
+
+        // 外焰輪廓：每段高度不同，形成參考圖那種低矮、連續但不規則的火牆。
+        for (i = 0; i <= segs; i++) {
+          u = i / segs;
+          x = -w / 2 + w * u;
+          wave = Math.sin(phase * 0.9 + i * 1.73) * 0.12 + Math.sin(phase * 0.45 + i * 0.61) * 0.08;
+          peak = flameH * (0.43 + 0.33 * (0.5 + 0.5 * Math.sin(i * 2.41 + phase * 0.72)) + wave);
+          outer.push(x, groundY - Math.max(flameH * 0.3, peak));
+        }
+        outer.push(w / 2, groundY + baseDepth * 0.2, -w / 2, groundY + baseDepth * 0.2);
+        g.poly(outer).fill({ color: 0xd63412, alpha: 0.84 * fade });
+
+        // 橘焰與黃白核心沿牆內側鋪開，底部不畫成整片矩形。
+        for (i = 0; i <= segs; i++) {
+          u = i / segs;
+          x = -w * 0.44 + w * 0.88 * u;
+          peak = flameH * (0.28 + 0.4 * (0.5 + 0.5 * Math.sin(i * 2.83 + phase * 0.86)));
+          orange.push(x, groundY - Math.max(flameH * 0.22, peak));
+        }
+        orange.push(w * 0.44, groundY + baseDepth * 0.12, -w * 0.44, groundY + baseDepth * 0.12);
+        g.poly(orange).fill({ color: 0xff7618, alpha: 0.83 * fade });
+        for (i = 0; i <= segs; i++) {
+          u = i / segs;
+          x = -w * 0.35 + w * 0.7 * u;
+          peak = flameH * (0.16 + 0.26 * (0.5 + 0.5 * Math.sin(i * 3.17 + phase * 1.1)));
+          core.push(x, groundY - Math.max(flameH * 0.16, peak));
+        }
+        core.push(w * 0.35, groundY, -w * 0.35, groundY);
+        g.poly(core).fill({ color: 0xffd84a, alpha: 0.86 * fade });
+        g.roundRect(-w * 0.34, groundY - flameH * 0.12, w * 0.68, flameH * 0.13, 5)
+          .fill({ color: 0xffffb2, alpha: 0.58 * fade });
+
+        // 火牆上方的低煙，不遮住火焰，只用半透明灰褐色顆粒帶出參考圖的煙塵感。
+        for (i = 0; i < 9; i++) {
+          var smokeU = (i + 0.5) / 9;
+          var smokeX = -w * 0.43 + w * 0.86 * smokeU + Math.sin(phase * 0.35 + i) * 5;
+          var smokeY = groundY - flameH * (0.72 + (i % 3) * 0.08) - Math.sin(phase * 0.48 + i * 1.3) * 4;
+          var smokeR = 4 + (i % 3) * 2.2;
+          g.circle(smokeX, smokeY, smokeR).fill({ color: i % 2 ? 0x5a5148 : 0x76624d, alpha: 0.13 * fade });
+        }
+
+        particleAt += dt;
+        if (!REDUCED_MOTION && particleAt > 0.1 && fade > 0.45) {
+          particleAt = 0;
+          spawnParticles(fx.x + (Math.random() - 0.5) * w * 0.72,
+            fx.y - flameH * (0.45 + Math.random() * 0.3), 3, theme, 1.2, 0.7);
+        }
+        if (nowMs() >= fx.expiresAt) {
+          fx.dead = true;
+          if (_fireWallFx[key] === fx) delete _fireWallFx[key];
+          return false;
+        }
+        return true;
       }
-    }, 2, dur * 1000 + 300);
+    }, 2, FIRE_WALL_MAX_LIFE_SEC * 1000);
+    return fx;
   }
 
   function spawnRiser(x, y, theme, glyph) {

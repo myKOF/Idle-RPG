@@ -7683,6 +7683,93 @@ textarea:disabled,
   to { margin-left: 3%; transform: translateX(-50%) rotate(calc(var(--vfx-tongue-rot, 0deg) + 7deg)) scaleY(1.06); }
 }
 
+/* ---- 無限火牆：貼地橫向火焰帶＋低煙塵 ---- */
+.vfx-fire-wall {
+  overflow: visible;
+  transform-origin: 50% 50%;
+  transform: rotate(var(--vfx-wall-angle, 0rad));
+  animation: vfxFireWallPulse 0.74s ease-in-out infinite alternate;
+}
+
+.vfx-fire-wall::before {
+  content: '';
+  position: absolute;
+  left: 1%;
+  right: 1%;
+  bottom: 10%;
+  height: 25%;
+  border-radius: 45% 45% 22% 22%;
+  background: linear-gradient(180deg, rgba(255, 117, 19, 0.74), rgba(157, 30, 13, 0.92));
+  box-shadow: 0 0 14px rgba(255, 83, 14, 0.9), 0 5px 12px rgba(46, 27, 20, 0.62);
+  animation: vfxFireWallBase 0.46s ease-in-out infinite alternate;
+}
+
+.vfx-fire-wall::after {
+  content: '';
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  top: 4%;
+  height: 48%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(81, 73, 66, 0.2), rgba(102, 68, 46, 0.08) 45%, transparent 72%);
+  filter: blur(4px);
+  animation: vfxFireWallSmoke 1.25s ease-in-out infinite alternate;
+}
+
+.vfx-fire-wall-flame {
+  position: absolute;
+  left: var(--vfx-wall-x, 50%);
+  bottom: 13%;
+  width: var(--vfx-wall-flame-w, 13px);
+  height: var(--vfx-wall-flame-h, 58%);
+  transform: translateX(-50%);
+  transform-origin: 50% 100%;
+  clip-path: polygon(50% 0, 100% 24%, 75% 52%, 100% 82%, 59% 100%, 0 84%, 28% 52%, 0 27%);
+  background: linear-gradient(180deg, #ff9c25 0%, #ff6418 48%, #c92b12 100%);
+  filter: drop-shadow(0 0 6px rgba(255, 92, 16, 0.9));
+  opacity: 0.9;
+  animation: vfxFireWallFlame 0.76s ease-in-out var(--vfx-wall-delay, 0s) infinite alternate;
+}
+
+.vfx-fire-wall-flame:nth-child(3n + 1) {
+  background: linear-gradient(180deg, #ffe888 0%, #ff9b1f 42%, #e33b12 100%);
+}
+
+.vfx-fire-wall-smoke {
+  position: absolute;
+  left: var(--vfx-wall-smoke-x, 50%);
+  bottom: 55%;
+  width: var(--vfx-wall-smoke-size, 16px);
+  height: var(--vfx-wall-smoke-size, 16px);
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(89, 79, 68, 0.34), rgba(70, 64, 58, 0.12) 58%, transparent 74%);
+  filter: blur(2px);
+  opacity: 0.7;
+  animation: vfxFireWallSmoke 1.4s ease-in-out var(--vfx-wall-smoke-delay, 0s) infinite alternate;
+}
+
+@keyframes vfxFireWallPulse {
+  from { opacity: 0.76; }
+  to { opacity: 1; }
+}
+
+@keyframes vfxFireWallBase {
+  from { transform: scaleX(0.97) scaleY(0.84); opacity: 0.72; }
+  to { transform: scaleX(1.02) scaleY(1.08); opacity: 1; }
+}
+
+@keyframes vfxFireWallFlame {
+  from { transform: translateX(-50%) rotate(-4deg) scaleY(0.87); }
+  to { transform: translateX(-50%) rotate(5deg) scaleY(1.08); }
+}
+
+@keyframes vfxFireWallSmoke {
+  from { transform: translate(-50%, 3px) scale(0.82); opacity: 0.38; }
+  to { transform: translate(-44%, -8px) scale(1.12); opacity: 0.78; }
+}
+
 /* ---- 光柱審判：天光射下→觸地散開 ---- */
 .vfx-pillar {
   width: 40px;

@@ -178,6 +178,12 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.match(vfx, /s\.variant === 'pillar'[\s\S]*vfxFirePillar\(s, layer, spec\.area, pillarPt\)/);
   assert.match(css, /\.vfx-fire-pillar[\s\S]*@keyframes vfxFirePillarPulse/);
   assert.match(css, /\.vfx-fire-tongue/);
+  assert.match(renderer, /function spawnFireWall\(spec\)[\s\S]*_fireWallFx/);
+  assert.match(renderer, /spec\.variant === 'firewall'[\s\S]*spawnFireWall\(spec\)/);
+  assert.match(vfx, /function vfxFireWall\(spec, layer, area, rect\)/);
+  assert.match(vfx, /s\.variant === 'firewall'[\s\S]*vfxFireWall\(s, layer, spec\.area, rect\)/);
+  assert.match(css, /\.vfx-fire-wall[\s\S]*@keyframes vfxFireWallFlame/);
+  assert.match(css, /\.vfx-fire-wall-smoke/);
   const vfxCleaveStart = vfx.indexOf("if (kind === 'slash' && (s.variant === 'cleave'");
   const vfxCleaveEnd = vfx.indexOf('\n    return;', vfxCleaveStart);
   const rendererCleaveStart = renderer.indexOf("if (spec.variant === 'cleave'");

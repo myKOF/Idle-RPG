@@ -59,6 +59,8 @@ var _vfxLayerRectCache = null;
 var _vfxLayoutVersion = 0;
 var _vfxFirePillars = Object.create(null);
 var VFX_FIRE_PILLAR_LIFE_MS = 3600;
+var _vfxFireWalls = Object.create(null);
+var VFX_FIRE_WALL_LIFE_MS = 3600;
 
 /* 版面快取的版本號只在尺寸、頁籤或戰鬥場景變動時遞增。
    座標函式用這個版本判斷快取是否仍可用，避免每個特效都重新量測整個 DOM。 */
@@ -160,6 +162,7 @@ function vfxClear() {
   }
   _vfxNodes = [];
   _vfxFirePillars = Object.create(null);
+  _vfxFireWalls = Object.create(null);
   if (typeof document === 'undefined' || !document.querySelectorAll) return;
   var hitCards = document.querySelectorAll('.enemy-card, .combatant');
   for (var ci = 0; ci < hitCards.length; ci++) {
@@ -1161,6 +1164,56 @@ function vfxFirePillar(spec, layer, area, fallbackPt) {
   return node;
 }
 
+/* 第 7 階無限火牆：低矮、貼地、橫向延展的火焰帶。area 的世界座標在 DOM 舊路徑
+   沒有直接投影器，因此沿用場域矩形／目標退化矩形；同一道牆以 id 合併每次 tick。 */
+function vfxFireWall(spec, layer, area, rect) {
+  if (!rect || !isFinite(rect.x) || !isFinite(rect.y)) return null;
+  var wallW = Math.max(70, Number(rect.w) || 140);
+  var wallH = Math.max(26, Math.min(76, (Number(rect.h) || 120) * 0.42));
+  var wallX = Number(rect.x) || 0;
+  var wallY = (Number(rect.y) || 0) + Math.max(0, (Number(rect.h) || 120) * 0.52);
+  var key = area && area.id ? String(area.id) : [Math.round(wallX), Math.round(wallY), Math.round(wallW)].join(':');
+  var node = _vfxFireWalls[key];
+  if (node && node.parentNode === layer) {
+    node.style.left = wallX + 'px';
+    node.style.top = wallY + 'px';
+    node.style.width = wallW + 'px';
+    node.style.height = wallH + 'px';
+    node.style.setProperty('--vfx-wall-angle', isFinite(area && area.a) ? Number(area.a).toFixed(3) + 'rad' : '0rad');
+    node._vfxExpiresAt = Date.now() + Math.max(900, Number(spec.dur || 0.5) * 2400);
+    return node;
+  }
+
+  node = vfxNode('vfx-fire-wall', layer, spec);
+  node.style.left = wallX + 'px';
+  node.style.top = wallY + 'px';
+  node.style.width = wallW + 'px';
+  node.style.height = wallH + 'px';
+  node.style.setProperty('--vfx-wall-angle', isFinite(area && area.a) ? Number(area.a).toFixed(3) + 'rad' : '0rad');
+  var flameCount = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 5 : 9;
+  for (var i = 0; i < flameCount; i++) {
+    var flame = document.createElement('span');
+    flame.className = 'vfx-fire-wall-flame';
+    flame.style.setProperty('--vfx-wall-x', ((i + 0.5) / flameCount * 100).toFixed(1) + '%');
+    flame.style.setProperty('--vfx-wall-flame-w', (10 + (i % 3) * 4) + 'px');
+    flame.style.setProperty('--vfx-wall-flame-h', (45 + (i % 4) * 13) + '%');
+    flame.style.setProperty('--vfx-wall-delay', (-Math.random() * 0.9).toFixed(2) + 's');
+    node.appendChild(flame);
+  }
+  var smokeCount = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 6;
+  for (var si = 0; si < smokeCount; si++) {
+    var smoke = document.createElement('span');
+    smoke.className = 'vfx-fire-wall-smoke';
+    smoke.style.setProperty('--vfx-wall-smoke-x', ((si + 0.5) / smokeCount * 100).toFixed(1) + '%');
+    smoke.style.setProperty('--vfx-wall-smoke-size', (13 + (si % 3) * 5) + 'px');
+    smoke.style.setProperty('--vfx-wall-smoke-delay', (-Math.random() * 1.4).toFixed(2) + 's');
+    node.appendChild(smoke);
+  }
+  _vfxFireWalls[key] = node;
+  vfxTrack(node, VFX_FIRE_WALL_LIFE_MS);
+  return node;
+}
+
 /* 預設天降：範圍內落下數道元素雨；沒有 meteor／pillar／smite 專屬畫法時使用。 */
 function vfxRainDrops(spec, layer, rect) {
   var drops = Math.min(6, Math.max(3, Math.round(rect.w / 60)));
@@ -1655,6 +1708,7 @@ function renderCombatVfx(spec) {
     }
     if (kind === 'aura') {
       if (s.variant === 'cyclone') vfxCyclone(s, layer, rect);
+      else if (s.variant === 'firewall') vfxFireWall(s, layer, spec.area, rect);
       else vfxAura(s, layer, rect);
       return;
     }
