@@ -1,5 +1,13 @@
 # PATCH.md
 
+## 裝備與背包 Tips 懸停持久性修復（Antigravity 2026-08-16）
+
+- **裝備與背包 Tips 閃退消失問題根治**：
+  - 全域監聽滑鼠座標（`mousemove`），並於 Worker 非同步回傳詳情與 `uiTick()` 5Hz 刷面板（`refreshOpenStatTooltip`）時，若舊錨點 DOM 節點因全頁或局部重構脫離文件，自動依 `data-id` 與 `elementFromPoint` 動態重新綁定至游標下新建的裝備/背包槽位。
+  - 修正 `showItemTooltip` 使其發起時精確設定 `UI.tooltipAnchor` 與 `UI.hoveredItemTooltip`，避免游標持續懸停於裝備或背包格子上時因背景資料同步導致 Tips 視窗瞬間關閉。
+- **測試與建置驗證**：
+  - 執行 `node --test "tests/*.test.cjs"`（1,408 個單元測試全數通過）與 `node tools/build_check.cjs`（278 個檔案編譯全數通過）。
+
 ## 受擊爆點與技能爆發特效圈尺寸全面還原至 1/3（Antigravity 2026-08-16）
 
 - **爆發與受擊特效圈（vfxRing / vfxFlash）尺寸修復**：
