@@ -497,7 +497,7 @@ function vfxImpact(spec, layer, pt, targetId, delayMs) {
       s.style.setProperty('--dy', (-(20 + Math.random() * 30)).toFixed(1) + 'px');
     } else {
       var ang = (Math.PI * 2) * (i / n) + Math.random() * 0.9;
-      var dist = 16 + Math.random() * 26 + (strong ? 14 : 0);
+      var dist = 6 + Math.random() * 9 + (strong ? 5 : 0);
       s.style.setProperty('--dx', (Math.cos(ang) * dist).toFixed(1) + 'px');
       s.style.setProperty('--dy', (Math.sin(ang) * dist).toFixed(1) + 'px');
     }

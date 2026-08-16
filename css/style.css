@@ -8028,7 +8028,7 @@ textarea:disabled,
   inset: -15px;
   border-radius: 50%;
   background: radial-gradient(circle, var(--vfx-c2, #fff), var(--vfx-glow, #fff) 50%, transparent 75%);
-  animation: vfxFlash 0.4s ease-out both;
+  animation: vfxImpactFlash 0.35s ease-out both;
   animation-delay: inherit;
 }
 
@@ -8038,8 +8038,32 @@ textarea:disabled,
   inset: -9px;
   border-radius: 50%;
   border: 2px solid var(--vfx-c1, #fff);
-  animation: vfxRing 0.45s ease-out both;
+  animation: vfxImpactRing 0.4s ease-out both;
   animation-delay: inherit;
+}
+
+@keyframes vfxImpactFlash {
+  from {
+    transform: scale(0.3);
+    opacity: 1;
+  }
+
+  to {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+}
+
+@keyframes vfxImpactRing {
+  from {
+    transform: scale(0.3);
+    opacity: 0.95;
+  }
+
+  to {
+    transform: scale(1.4);
+    opacity: 0;
+  }
 }
 
 .vfx-impact .vfx-p,
