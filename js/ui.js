@@ -4786,8 +4786,9 @@ function detailAction(act, actBtn) {
       return;
     }
     if (act === 'equip') {
-      UI.sel = { id: it.id, source: 'equip', slot: args.slotKey || it.slot };
+      UI.sel = null;
       triggerEquipFlash(args.slotKey || it.slot, it);
+      renderDetail();
     }
     if (act === 'unequip') UI.sel = { id: it.id, source: 'inv' };
     if (act === 'salvage') UI.sel = null;

@@ -1,5 +1,13 @@
 # PATCH.md
 
+## 裝備穿上時取消裝備欄及背包欄選取（Antigravity 2026-08-16）
+
+- **UI 選取狀態優化**：
+  - 修改 `js/ui.js` 中的 `detailAction` 裝備穿上（`act === 'equip'`）處理邏輯：當一件裝備被穿上時，將 `UI.sel` 設為 `null`，並呼叫 `renderDetail()` 取消裝備欄與背包欄中的所有格子選取狀態（`.selected`、`.dimmed`、`.inventory-selection-match`），使詳情面板恢復為「點選裝備查看詳情」。
+- **測試更新與驗證**：
+  - 更新 `tests/equipment-slot-selection.test.cjs` 中的穿裝選取測試，驗證穿上裝備後 `UI.sel` 為 `null` 並觸發詳情面板重繪。
+  - 執行 `node tools/build_check.cjs`（281 個檔案全數通過）與單元測試。
+
 ## 新版技能第三批：魔法系「火球術」與「火柱」＋傷害範圍法算（Claude 2026-08-16）
 
 - **設計來源**：記事錄「技能」頁籤新增〈魔法〉區塊兩個技能群組，以及新欄位「傷害範圍說明」
