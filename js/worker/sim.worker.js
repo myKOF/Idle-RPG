@@ -1366,9 +1366,14 @@ var COMMAND_IMPL = {
     var lo = G.player.loadout || [];
     var from = a.from, to = a.to;
     if (from < 0 || from >= lo.length || from === to) return { err: '位置無效' };
-    var moved = lo.splice(from, 1)[0];
-    if (to >= lo.length) lo.push(moved);
-    else lo.splice(to, 0, moved);
+    if (to >= 0 && to < lo.length) {
+      var tmp = lo[from];
+      lo[from] = lo[to];
+      lo[to] = tmp;
+    } else if (to >= lo.length) {
+      var moved = lo.splice(from, 1)[0];
+      lo.push(moved);
+    }
     G.player.loadout = lo;
     UI.dirty.skills = true; UI.dirty.battle = true;
     return { loadout: lo.slice() };
