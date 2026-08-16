@@ -11,7 +11,8 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-/* v20（2026-08-15 技能視覺事件低延遲傳遞）：新增 Worker → 主執行緒的 visual 訊息，
+/* v21（2026-08-16 新版技能一鍵滿級與重置）：新增指令 skill2.max／skill2.delete，90 → 92。
+   v20（2026-08-15 技能視覺事件低延遲傳遞）：新增 Worker → 主執行緒的 visual 訊息，
    只承載技能施放飄字與重要 VFX；一般日誌、資源與面板仍隨 tick 合批。
    v19（2026-08-13 新版主動技能系統）：新增指令 skill2.learn／skill2.downgrade
    （6 群組 × 7 階的新版技能——升級花金幣、階層循序解鎖；定義表 SKILLS2 在共載檔
@@ -27,7 +28,7 @@
    v16：新增 newforge.upgradePart（熔爐零件升級），86 → 87
    v15（2026-08-02 詞條規則外送）：equip 面板新增 affixRules（每種詞條的可用部位與
    品質門檻，取自 AFFIX_POOL）。任何「想洗出某條詞條」的一方不必再自己抄一份部位清單。 */
-var WORKER_PROTOCOL_VERSION = 20;
+var WORKER_PROTOCOL_VERSION = 21;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -256,7 +257,9 @@ var COMMANDS = {
      group 是群組定義鍵（SKILLS2 的鍵）、tier 是階索引 0~6；裝載沿用
      skill.equipLoadout／skill.unequipLoadout（id 帶 'sg:' 前綴，比照 'potential:'）。 */
   'skill2.learn':          { fn: 'skills2Learn',        args: { group: 'str', tier: 'int' }, limit: { tier: { min: 0, max: 6 } }, dirty: ['skills', 'header'] },
+  'skill2.max':            { fn: null,                  args: { group: 'str', tier: 'int' }, limit: { tier: { min: 0, max: 6 } }, dirty: ['skills', 'header'] },
   'skill2.downgrade':      { fn: 'skills2Downgrade',    args: { group: 'str', tier: 'int' }, limit: { tier: { min: 0, max: 6 } }, dirty: ['skills', 'header'] },
+  'skill2.delete':         { fn: null,                  args: { group: 'str', tier: 'int' }, limit: { tier: { min: 0, max: 6 } }, dirty: ['skills', 'header'] },
 
   /* -- 天賦與潛能 --
      id 是天賦定義鍵（def.id），不是實例 id，不需要解析成物件。 */

@@ -1471,6 +1471,56 @@ var COMMAND_IMPL = {
     return true;
   },
 
+  /* ---- 新版技能群組指令 ---- */
+  'skill2.max': function (a) {
+    var g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[a.group] : null;
+    if (!g) return { err: '未知技能群組' };
+    var tier = Math.floor(Number(a.tier));
+    if (!(tier >= 0 && tier < g.tiers.length)) return { err: '未知階數' };
+    var lvs = (typeof skills2Levels === 'function') ? skills2Levels(a.group) : (G.player.skills2 && G.player.skills2.levels && G.player.skills2.levels[a.group]);
+    if (!lvs) lvs = [];
+    if (tier > 0 && (lvs[tier - 1] || 0) < 1) return { err: '前一階需至少 Lv.1 才能解鎖此階' };
+    var tierMax = (typeof SG_TIER_MAX_LV === 'number') ? SG_TIER_MAX_LV : 10;
+    var upgraded = 0;
+    while ((lvs[tier] || 0) < tierMax) {
+      var curLv = lvs[tier] || 0;
+      var cost = (typeof skills2UpgradeCost === 'function') ? skills2UpgradeCost(a.group, tier, curLv) : 0;
+      if ((G.player.gold || 0) < cost) break;
+      G.player.gold -= cost;
+      lvs[tier] = curLv + 1;
+      upgraded++;
+    }
+    if (upgraded > 0) {
+      if (!G.player.skills2) G.player.skills2 = { levels: {} };
+      if (!G.player.skills2.levels) G.player.skills2.levels = {};
+      G.player.skills2.levels[a.group] = lvs;
+      UI.dirty.skills = true;
+      UI.dirty.header = true;
+    }
+    return true;
+  },
+
+  'skill2.delete': function (a) {
+    var g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[a.group] : null;
+    if (!g) return { err: '未知技能群組' };
+    var tier = Math.floor(Number(a.tier));
+    if (!(tier >= 0 && tier < g.tiers.length)) return { err: '未知階數' };
+    var lvs = (typeof skills2Levels === 'function') ? skills2Levels(a.group) : (G.player.skills2 && G.player.skills2.levels && G.player.skills2.levels[a.group]);
+    if (!lvs) return true;
+    var minLv = (tier === 0 ? 1 : 0);
+    if ((lvs[tier] || 0) <= minLv) return true;
+    for (var i = tier + 1; i < lvs.length; i++) {
+      lvs[i] = 0;
+    }
+    lvs[tier] = minLv;
+    if (!G.player.skills2) G.player.skills2 = { levels: {} };
+    if (!G.player.skills2.levels) G.player.skills2.levels = {};
+    G.player.skills2.levels[a.group] = lvs;
+    UI.dirty.skills = true;
+    UI.dirty.header = true;
+    return true;
+  },
+
   /* ---- 寶石批次 ----
      行為對齊 ui.js 的同步迴圈，上限也照抄：跨執行緒逐次往返不可行，一次跑完再回報。 */
   'gem.composeAll': function (a) {

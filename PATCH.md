@@ -1,5 +1,15 @@
 # PATCH.md
 
+## 新版技能一鍵滿級與重置 Worker 指令原子化（Antigravity 2026-08-16）
+
+- **指令原子化與協議升級（v21）**：
+  - 在 `js/worker/protocol.js` 新增指令 `skill2.max` 與 `skill2.delete`，協定版本升至 `21`（指令總數 90 → 92）。
+  - 在 `js/worker/sim.worker.js` 的 `COMMAND_IMPL` 實作 `skill2.max`（原子迴圈扣除金幣並一次升至當前上限）與 `skill2.delete`（原子重置該階級等級至 0，第 1 階保留 1），避免主執行緒連續多次請求觸發 pending 鎖定而中斷。
+  - 在 `js/ui.js` 簡化 `runSkill2MaxAction` 與 `runSkill2DeleteAction` 直接調用原子指令。
+- **測試更新與驗證**：
+  - 更新 `tests/worker-protocol.test.cjs` 與 `tests/skill2-ui.test.cjs` 斷言。
+  - 執行 `node tools/build_check.cjs`（281 個檔案全數通過）與單元測試。
+
 ## 新版技能彈窗沿用舊版技能升級界面（Antigravity 2026-08-16）
 
 - **新版技能升級界面格式對齊**：

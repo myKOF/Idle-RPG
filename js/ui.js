@@ -7293,45 +7293,11 @@ function runSkill2UiAction(commandName, group, tier) {
 }
 
 function runSkill2MaxAction(group, tier) {
-  var g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[group] : null;
-  if (!g) return;
-  var skillsSnapshot = uiSkillsPanelSnapshot();
-  var headerSnapshot = uiHeaderPanelSnapshot();
-  var lvs = sgUiLevels(skillsSnapshot, group) || [];
-  var curLv = lvs[tier] || 0;
-  var tierMax = (typeof SG_TIER_MAX_LV === 'number') ? SG_TIER_MAX_LV : 10;
-  var gold = Number(headerSnapshot && headerSnapshot.player && headerSnapshot.player.gold) || 0;
-  if (curLv >= tierMax) return;
-
-  function step(currentLv, currentGold) {
-    if (currentLv >= tierMax) return;
-    var cost = (typeof skills2UpgradeCost === 'function') ? skills2UpgradeCost(group, tier, currentLv) : 0;
-    if (currentGold < cost) return;
-    runSkill2UiAction('skill2.learn', group, tier).then(function (ok) {
-      if (ok) {
-        step(currentLv + 1, currentGold - cost);
-      }
-    });
-  }
-  step(curLv, gold);
+  runSkill2UiAction('skill2.max', group, tier);
 }
 
 function runSkill2DeleteAction(group, tier) {
-  var skillsSnapshot = uiSkillsPanelSnapshot();
-  var lvs = sgUiLevels(skillsSnapshot, group) || [];
-  var curLv = lvs[tier] || 0;
-  var minLv = (tier === 0 ? 1 : 0);
-  if (curLv <= minLv) return;
-
-  function step(currentLv) {
-    if (currentLv <= minLv) return;
-    runSkill2UiAction('skill2.downgrade', group, tier).then(function (ok) {
-      if (ok) {
-        step(currentLv - 1);
-      }
-    });
-  }
-  step(curLv);
+  runSkill2UiAction('skill2.delete', group, tier);
 }
 
 function runSkillUiAction(commandName, id, pendingRef, legacyAction, panels, onSuccess) {
