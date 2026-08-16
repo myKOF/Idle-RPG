@@ -7,6 +7,52 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
+test('飛刀彈射必須在上一段抵達後才開始下一段', () => {
+  const skills2 = read('js/skills2.js');
+  const vfx = read('js/vfx.js');
+  const renderer = read('js/battle-renderer.js');
+
+  assert.match(skills2, /if \(extra && extra\.delayMs > 0\) spec\.delayMs = Number\(extra\.delayMs\);/);
+  assert.match(skills2, /delayMs: chainStartDelay, travelMs: \[0, bounceTravelMs\]/);
+  assert.match(skills2, /chainStartDelay \+ bounceTravelMs/);
+  assert.match(skills2, /chainStartDelay \+= bounceTravelMs/);
+  assert.match(skills2, /if \(!next \|\| next === cur \|\| next\.hp <= 0\) break;/);
+
+  const domChainStart = vfx.indexOf('function vfxChain');
+  const domChainEnd = vfx.indexOf('/* ---- 時間安全', domChainStart);
+  const domChain = vfx.slice(domChainStart, domChainEnd);
+  assert.match(domChain, /var pathStart = baseDelay;/);
+  assert.match(domChain, /var pathFlight = vfxProjectileFlightMs\(pathTravel, spec\.dur \|\| 0\.5\);/);
+  assert.match(domChain, /pathStart \+ pathFlight/);
+  assert.match(domChain, /pathStart \+= pathFlight/);
+  assert.doesNotMatch(domChain, /pathI - 1\) \* pathHop/);
+
+  const canvasChainStart = renderer.indexOf('function handleChainVfx');
+  const canvasChainEnd = renderer.indexOf('var firstId', canvasChainStart);
+  const canvasChain = renderer.slice(canvasChainStart, canvasChainEnd);
+  assert.match(canvasChain, /var chainStart = baseDelay;/);
+  assert.match(canvasChain, /var hopTravel = projectileTravelMs\(spec\.travelMs && spec\.travelMs\[kb\], 120\);/);
+  assert.match(canvasChain, /\}\)\(kb, chainStart, hopTravel\);/);
+  assert.match(canvasChain, /chainStart \+= hopTravel;/);
+  assert.doesNotMatch(canvasChain, /baseDelay \+ \(hopIndex - 1\) \* stagger/);
+});
+
+test('飛刀彈射與普攻不觸發角色動作，目標離場後延遲事件失效', () => {
+  const renderer = read('js/battle-renderer.js');
+  const onVfxStart = renderer.indexOf('function onVfx');
+  const onVfxEnd = renderer.indexOf('/* ============ 傷害飄字', onVfxStart);
+  const onVfx = renderer.slice(onVfxStart, onVfxEnd);
+
+  assert.match(renderer, /function shouldAnimatePlayer\(spec\)/);
+  assert.match(renderer, /spec\.cat !== 'enemy' && spec\.cat !== 'basic'/);
+  assert.match(renderer, /spec\.fxKind !== 'chain' && spec\.variant !== 'knife-bounce'/);
+  assert.match(onVfx, /if \(fxGate\(spec\)\) return;\s*spec\.delayMs = 0;/);
+  assert.match(onVfx, /if \(shouldAnimatePlayer\(spec\) && vfxTargetsLive\(spec\)\)/);
+  assert.doesNotMatch(onVfx, /if \(spec\.cat !== 'enemy'\) \{/);
+  assert.match(renderer, /if \(spec && \(spec\.cat === 'basic' \|\| spec\.variant === 'knife-bounce'\)\)/);
+  assert.match(renderer, /if \(ent\.state === 'dying' \|\| ent\.state === 'gone' \|\| \(ent\.data && ent\.data\.hp <= 0\)\) return false;/);
+});
+
 test('新版技能的 7 米距離換算為 70 個系統距離單位', () => {
   const context = { Math, console, isFinite };
   context.globalThis = context;

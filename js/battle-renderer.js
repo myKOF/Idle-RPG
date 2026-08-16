@@ -121,10 +121,38 @@ var BattleRenderer = (function () {
     var pending = S.pendingFloats.splice(0, S.pendingFloats.length);
     for (var i = 0; i < pending.length; i++) onFloat(pending[i]);
   }
-  /* 延遲排程（setTimeout）的統一守門：渲染器沒起來或分頁已隱藏就放棄該段特效。
-     外層 onVfx 進場時擋過一次，但 stagger/延遲段可能在隱藏之後才到期，得再擋。 */
-  function fxGate() {
-    return !S.ready || documentHidden();
+  /* 延遲排程（setTimeout）的統一守門：渲染器沒起來、分頁已隱藏，或
+     普攻／飛刀彈射的目標已經消失時，放棄該段特效。技能命中視覺仍保留，
+     但不讓戰鬥結束前排入的普攻／子彈計時器在結束後重新觸發畫面。 */
+  function vfxTargetsLive(spec) {
+    var ids = spec && Array.isArray(spec.targets) ? spec.targets : [];
+    if (!ids.length) return true;
+    for (var i = 0; i < ids.length; i++) {
+      var id = ids[i];
+      if (id === 'pv-float') {
+        if (!S.player || !S.player.dead) continue;
+        return false;
+      }
+      var ent = S.entities[id];
+      if (!ent) {
+        /* 尚未建立的目標允許事件繼續；有 lastPos 代表它曾存在且已離場。 */
+        if (S.lastPos[id]) return false;
+        continue;
+      }
+      if (ent.state === 'dying' || ent.state === 'gone' || (ent.data && ent.data.hp <= 0)) return false;
+    }
+    return true;
+  }
+  function fxGate(spec) {
+    if (!S.ready || documentHidden()) return true;
+    if (spec && (spec.cat === 'basic' || spec.variant === 'knife-bounce')) {
+      return !vfxTargetsLive(spec);
+    }
+    return false;
+  }
+  function shouldAnimatePlayer(spec) {
+    return !!spec && spec.cat !== 'enemy' && spec.cat !== 'basic' &&
+      spec.fxKind !== 'chain' && spec.variant !== 'knife-bounce';
   }
   function lerp(a, b, t) { return a + (b - a) * t; }
   function cssColorToInt(c, fallback) {
@@ -2034,7 +2062,7 @@ var BattleRenderer = (function () {
     for (var i = 0; i < n; i++) {
       (function (idx) {
         setTimeout(function () {
-          if (fxGate()) return;
+          if (fxGate(spec)) return;
           spawnSlash(rect.x + Math.random() * rect.w, rect.y + Math.random() * rect.h, spec, true);
         }, idx * 90);
       })(i);
@@ -2081,7 +2109,7 @@ var BattleRenderer = (function () {
     // 為所有彈射節點生成光圈與爆點
     nodeList.forEach(function (pos, idx) {
       setTimeout(function () {
-        if (fxGate()) return;
+        if (fxGate(spec)) return;
         spawnNodeRing(pos.x, pos.y, theme);
         spawnImpact(pos.x, pos.y, spec, idx === 0);
       }, idx * 55);
@@ -2165,19 +2193,22 @@ var BattleRenderer = (function () {
   function handleChainVfx(targets, spec, baseDelay, stagger) {
     if (!targets.length && !S.player) return;
     if (spec.variant === 'knife-bounce' || spec.variant === 'poison-spread') {
+      // 下一段必須接在上一段飛行完成後，不能用固定 stagger 提前播放。
+      var chainStart = baseDelay;
       for (var kb = 1; kb < targets.length; kb++) {
-        (function (hopIndex) {
+        var hopTravel = projectileTravelMs(spec.travelMs && spec.travelMs[kb], 120);
+        (function (hopIndex, startDelay, hopTravel) {
           var fromId = targets[hopIndex - 1];
           var toId = targets[hopIndex];
-          var travel = projectileTravelMs(spec.travelMs && spec.travelMs[hopIndex], 120);
           setTimeout(function () {
-            if (fxGate()) return;
-            spawnProjectile(toId, travel, spec, function (pt) {
+            if (fxGate(spec)) return;
+            spawnProjectile(toId, hopTravel, spec, function (pt) {
               spawnImpact(pt.x, pt.y, spec, false);
               hitReact(toId, spec.elem, false);
             }, posOf(fromId));
-          }, baseDelay + (hopIndex - 1) * stagger);
-        })(kb);
+          }, startDelay);
+        })(kb, chainStart, hopTravel);
+        chainStart += hopTravel;
       }
       return;
     }
@@ -2241,7 +2272,11 @@ var BattleRenderer = (function () {
     if (!spec._buffered) { spec._buffered = true; spec.delayMs = (spec.delayMs || 0) + POS_BUFFER_MS; }
     var baseDelay = Math.max(0, spec.delayMs || 0);
     if (baseDelay > 0) {
-      setTimeout(function () { spec.delayMs = 0; onVfx(spec); }, baseDelay);
+      setTimeout(function () {
+        if (fxGate(spec)) return;
+        spec.delayMs = 0;
+        onVfx(spec);
+      }, baseDelay);
       return;
     }
     var targets = Array.isArray(spec.targets) ? spec.targets.slice(0, 8) : [];
@@ -2251,10 +2286,9 @@ var BattleRenderer = (function () {
     var count = Math.min(isThrust ? 8 : 5, Math.max(1, spec.count || 1));
     var stagger = ((typeof VFX_HIT_STAGGER_SEC === 'number') ? VFX_HIT_STAGGER_SEC : 0.09) * 1000;
 
-    /* 玩家出手動作（非敵方事件都算玩家出招）。
-       物理（普攻／物理技）用接觸型特效時＝近戰，角色會撲到目標身前再揮；
-       魔法與投射／光束／天降類＝原地施法，由投射物負責跑完距離。 */
-    if (spec.cat !== 'enemy') {
+    /* 只有技能施放事件觸發角色動作；普攻與連鎖／彈射是特效自身的行為，
+       不得因每一發子彈或每一段折射重新播放玩家攻擊動畫。 */
+    if (shouldAnimatePlayer(spec) && vfxTargetsLive(spec)) {
       var contactFx = spec.fxKind === 'slash' || spec.fxKind === 'impact' || spec.fxKind === 'burst';
       var meleeCat = spec.cat === 'basic' || spec.cat === 'phys';
       var firstTarget = targets.length ? targets[0] : null;
@@ -2299,7 +2333,7 @@ var BattleRenderer = (function () {
                  延遲仍沿用 travelMs——傷害數字用同一個延遲，刀到＝數字跳。 */
               if (spec.cat === 'basic') {
                 setTimeout(function () {
-                  if (fxGate()) return;
+                  if (fxGate(spec)) return;
                   var pt = posOf(id);
                   spawnSlash(pt.x, pt.y, spec, true);
                   spawnImpact(pt.x, pt.y, spec, false);
@@ -2308,7 +2342,7 @@ var BattleRenderer = (function () {
                 return;
               }
               setTimeout(function () {
-                if (fxGate()) return;
+                if (fxGate(spec)) return;
                 spawnProjectile(id, travel, spec, function (pt) {
                   spawnImpact(pt.x, pt.y, spec, spec.variant === 'detonate');
                   hitReact(id, spec.elem, spec.variant === 'detonate');
@@ -2346,7 +2380,7 @@ var BattleRenderer = (function () {
           if (!spec.projectile) {
             targets.forEach(function (id, ti) {
               setTimeout(function () {
-                if (fxGate()) return;
+                if (fxGate(spec)) return;
                 var pt = posOf(id);
                 spawnImpact(pt.x, pt.y, spec, false);
                 hitReact(id, spec.elem, false);
@@ -2400,7 +2434,7 @@ var BattleRenderer = (function () {
               for (var clHit = 0; clHit < count; clHit++) {
                 (function (hitIndex, hitDelay) {
                   setTimeout(function () {
-                    if (fxGate()) return;
+                    if (fxGate(spec)) return;
                     var pt = posOf(id);
                     spawnImpact(pt.x, pt.y, spec, false);
                     hitReact(id, spec.elem, false);
@@ -2423,7 +2457,7 @@ var BattleRenderer = (function () {
           for (var c = 0; c < count; c++) {
             (function (cc) {
               setTimeout(function () {
-                if (fxGate()) return;
+                if (fxGate(spec)) return;
                 var pt = posOf(id);
                 if (spec.variant === 'claw') {
                   spawnSlash(pt.x - 6, pt.y - 6, spec, false);
@@ -2441,7 +2475,7 @@ var BattleRenderer = (function () {
         if (spec.variant === 'blood-explosion' || spec.variant === 'zero-infection') {
           targets.forEach(function (id, ti) {
             setTimeout(function () {
-              if (fxGate()) return;
+              if (fxGate(spec)) return;
               var pt = posOf(id);
               spawnImpact(pt.x, pt.y, spec, true);
               hitReact(id, spec.elem, true);
@@ -2451,7 +2485,7 @@ var BattleRenderer = (function () {
         }
         targets.forEach(function (id, ti) {
           setTimeout(function () {
-            if (fxGate()) return;
+            if (fxGate(spec)) return;
             var pt = posOf(id);
             spawnImpact(pt.x, pt.y, spec, spec.variant === 'nova' || spec.variant === 'detonate');
             hitReact(id, spec.elem, spec.variant === 'nova' || spec.variant === 'detonate');
@@ -2475,7 +2509,7 @@ var BattleRenderer = (function () {
         spawnRain(rect, spec);
         targets.forEach(function (id, ti) {
           setTimeout(function () {
-            if (fxGate()) return;
+            if (fxGate(spec)) return;
             hitReact(id, spec.elem, spec.variant === 'meteor');
           }, (spec.variant === 'meteor' ? 320 : 240) + ti * stagger);
         });
@@ -2506,7 +2540,7 @@ var BattleRenderer = (function () {
         }
         targets.forEach(function (id, ti) {
           setTimeout(function () {
-            if (fxGate()) return;
+            if (fxGate(spec)) return;
             var pt = posOf(id);
             var strong = spec.variant === 'detonate' || spec.variant === 'nova';
             spawnImpact(pt.x, pt.y, spec, strong);
