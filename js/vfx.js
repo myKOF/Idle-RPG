@@ -165,6 +165,14 @@ function vfxClear() {
     card._vfxHitUntil = 0;
     card._vfxHitLastAt = 0;
   }
+  var hitVisuals = document.querySelectorAll('.vfx-hit-target');
+  for (var vi = 0; vi < hitVisuals.length; vi++) {
+    var visual = hitVisuals[vi];
+    if (!visual.classList) continue;
+    for (var vhi = 0; vhi < VFX_HIT_CLASSES.length; vhi++) visual.classList.remove(VFX_HIT_CLASSES[vhi]);
+    visual.classList.remove('vfx-hit-target');
+    visual._vfxHitUntil = 0;
+  }
   var scenes = document.querySelectorAll('.battle-scene');
   for (var si = 0; si < scenes.length; si++) {
     if (!scenes[si].classList) continue;
@@ -406,6 +414,16 @@ var VFX_BOUNCE_HIT_RADIUS_SCALE = 1 / 3;
    受擊反饋是命中特效的附加層，不負責產生傷害數字，也不改變戰鬥狀態。 */
 var VFX_HIT_CLASSES = ['vfx-hit', 'vfx-hit-strong', 'vfx-hit-fire', 'vfx-hit-ice',
   'vfx-hit-lightning', 'vfx-hit-poison', 'vfx-hit-light', 'vfx-hit-dark', 'vfx-hit-earth'];
+function vfxHitVisualTarget(elId, card) {
+  if (!card || !card.querySelector) return null;
+  if (elId === 'tb-float') {
+    var bossHost = document.getElementById('tb-emoji');
+    var bossVisual = bossHost && bossHost.querySelector
+      ? bossHost.querySelector('img, span') : null;
+    if (bossVisual) return bossVisual;
+  }
+  return card.querySelector('.cb-icon, .cb-emoji, .enemy-emoji-fallback');
+}
 function vfxHitReact(targetId, elem, delayMs, strong) {
   if (!targetId) return;
   if (_vfxQuality === VFX_QUALITY_LEVELS.REDUCED && !strong) return;
@@ -414,24 +432,29 @@ function vfxHitReact(targetId, elem, delayMs, strong) {
     if (!_vfxEnabled || generation !== _vfxGeneration) return;
     var el = document.getElementById(targetId);
     var card = (el && el.closest) ? (el.closest('.enemy-card') || el.closest('.combatant')) : null;
-    if (!card || !card.classList) return;
+    var visual = vfxHitVisualTarget(targetId, card);
+    if (!card || !card.classList || !visual || !visual.classList) return;
     var hitAt = Date.now();
     if (typeof card._vfxHitLastAt === 'number' &&
         hitAt - card._vfxHitLastAt < VFX_HIT_COOLDOWN_MS) return;
     card._vfxHitLastAt = hitAt;
+    for (var vi = 0; vi < VFX_HIT_CLASSES.length; vi++) visual.classList.remove(VFX_HIT_CLASSES[vi]);
     // 先移除再隔兩幀掛回：連續命中時動畫才會重新播放（不用 offsetWidth 硬觸發 reflow）
     for (var i = 0; i < VFX_HIT_CLASSES.length; i++) card.classList.remove(VFX_HIT_CLASSES[i]);
     var until = Date.now() + 340;
     card._vfxHitUntil = until;
+    visual._vfxHitUntil = until;
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
+        if (!visual || visual._vfxHitUntil !== until) return;
         if (!_vfxEnabled || generation !== _vfxGeneration || card._vfxHitUntil !== until) return;  // 已被更新的一擊接手
-        card.classList.add('vfx-hit');
-        if (strong) card.classList.add('vfx-hit-strong');
-        if (elem && VFX_ELEM_THEME[elem]) card.classList.add('vfx-hit-' + elem);
+        visual.classList.add('vfx-hit-target', 'vfx-hit');
+        if (strong) visual.classList.add('vfx-hit-strong');
+        if (elem && VFX_ELEM_THEME[elem]) visual.classList.add('vfx-hit-' + elem);
         setTimeout(function () {
-          if (generation !== _vfxGeneration || card._vfxHitUntil !== until) return;
-          for (var j = 0; j < VFX_HIT_CLASSES.length; j++) card.classList.remove(VFX_HIT_CLASSES[j]);
+          if (generation !== _vfxGeneration || card._vfxHitUntil !== until || visual._vfxHitUntil !== until) return;
+          for (var j = 0; j < VFX_HIT_CLASSES.length; j++) visual.classList.remove(VFX_HIT_CLASSES[j]);
+          visual.classList.remove('vfx-hit-target');
         }, 360);
       });
     });
@@ -440,7 +463,14 @@ function vfxHitReact(targetId, elem, delayMs, strong) {
 
 /* 畫面震動：大爆點（隕石、引爆）時整個戰鬥畫面晃一下。
    Reduced 直接跳過，避免普通裝備操作頁也因戰鬥事件產生大範圍重繪。 */
-function vfxSceneShake(layer, delayMs, strong) {
+function vfxAllowsSceneShake(spec) {
+  var v = spec && spec.variant;
+  return v === 'meteor' || v === 'pillar' || v === 'purple-thunder' ||
+    v === 'storm-sigil' || v === 'detonate' || v === 'blood-explosion' ||
+    v === 'zero-infection' || v === 'nova' || v === 'venomburst' || v === 'vortex';
+}
+function vfxSceneShake(layer, delayMs, strong, spec) {
+  if (!vfxAllowsSceneShake(spec)) return;
   if (_vfxQuality !== VFX_QUALITY_LEVELS.FULL) return;
   var generation = _vfxGeneration;
   setTimeout(function () {
@@ -531,7 +561,7 @@ function vfxImpact(spec, layer, pt, targetId, delayMs, isBounceHit) {
     }
     vfxTrack(cloud, delayMs + 2600);
   }
-  if (v === 'detonate' || v === 'blood-explosion') vfxSceneShake(layer, delayMs, false);
+  if (v === 'detonate' || v === 'blood-explosion') vfxSceneShake(layer, delayMs, false, spec);
   vfxHitReact(targetId, spec.elem || null, delayMs, strong);
 }
 
@@ -1031,7 +1061,7 @@ function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
 
   vfxMeteorShockwave(spec, layer, { x: cx, y: cy }, rectRadius(rect), hitAt);
 
-  vfxSceneShake(layer, hitAt, true);
+  vfxSceneShake(layer, hitAt, true, spec);
   for (var t = 0; t < (targetIds || []).length; t++) {
     vfxHitReact(targetIds[t], 'fire', hitAt + (t % 3) * 40, true);
   }
@@ -1246,7 +1276,7 @@ function vfxPurpleThunder(spec, layer, pt, targetId, delayMs) {
   vfxTrack(sigilWrap, delayMs + 800);
 
   // 4. 卡片受擊反饋與場景微震
-  vfxSceneShake(layer, delayMs + 50, false);
+  vfxSceneShake(layer, delayMs + 50, false, pSpec);
   if (targetId) {
     vfxHitReact(targetId, 'lightning', delayMs + 50, true);
   }

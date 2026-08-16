@@ -1186,8 +1186,9 @@ var BattleRenderer = (function () {
       playAnim(ent, 'hurt', 'idle');
     }
   }
-  function addShake(px) {
+  function addShake(px, spec) {
     if (REDUCED_MOTION) return;
+    if (!isSpecialScreenShakeSpec(spec)) return;
     S.shake = Math.min(10, Math.max(S.shake, px));
   }
 
@@ -1542,7 +1543,7 @@ var BattleRenderer = (function () {
       }
     }, 1);
     spawnParticles(x, y, strong ? 12 : 6, theme, strong ? 0.9 : 0.55, impactScale);
-    if (strong && isSpecialScreenShakeSpec(spec)) addShake(5);
+    if (strong) addShake(5, spec);
   }
 
   /* 斬擊弧線 ——「這支不用改成 Sprite」，已量過（scratch/_perf_bench3.html）
@@ -1593,7 +1594,8 @@ var BattleRenderer = (function () {
     g.x = x; g.y = y;
     g.rotation = typeof rotation === 'number' ? rotation : 0;
     S.layers.fx.addChild(g);
-    var t = -(delaySec || 0), dur = Math.max(0.38, spec.dur || 0.5), R = 86;
+    // 與 DOM 版同步：大型斬擊弧光半徑縮為原值 1/3；一般 spawnImpact 不受影響。
+    var t = -(delaySec || 0), dur = Math.max(0.38, spec.dur || 0.5), R = 86 / 3;
     var travelAngle = travel && typeof travel.angle === 'number' ? travel.angle : 0;
     var travelDistance = travel && Number(travel.length) > 0 ? Math.max(48, Number(travel.length)) : 0;
     addFx({
@@ -1612,9 +1614,9 @@ var BattleRenderer = (function () {
         var fade = k > 0.68 ? 1 - (k - 0.68) / 0.32 : 1;
         g.clear();
         g.arc(0, 0, R, head - 1.15, head, false)
-          .stroke({ color: theme.c1, width: 14.3 * fade, alpha: 0.95 * fade, cap: 'round' });
+          .stroke({ color: theme.c1, width: 14.3 / 3 * fade, alpha: 0.95 * fade, cap: 'round' });
         g.arc(0, 0, R * 0.82, head - 0.95, head, false)
-          .stroke({ color: theme.c2, width: 5.2 * fade, alpha: fade, cap: 'round' });
+          .stroke({ color: theme.c2, width: 5.2 / 3 * fade, alpha: fade, cap: 'round' });
         return t < dur;
       }
     }, 1);
@@ -1843,8 +1845,8 @@ var BattleRenderer = (function () {
           if (typeof targetPtOrId === 'string') {
             hitReact(targetPtOrId, spec.elem || 'lightning', !!(isMega || isPurple));
           }
-          if ((isMega || isPurple) && isSpecialScreenShakeSpec(spec)) {
-            addShake(isPurple ? 5 : 3);
+          if (isMega || isPurple) {
+            addShake(isPurple ? 5 : 3, spec);
           }
         }
         return t < dur;
@@ -2040,7 +2042,7 @@ var BattleRenderer = (function () {
     spawnMeteorProjectile(spec, theme, mainFrom, { x: cx, y: cy }, 1, dur, 0, function () {
       spawnImpact(cx, cy, spec, true);
       spawnFireShockwave(cx, cy, rectRadius(rect), theme);
-      addShake(8);
+      addShake(8, spec);
     });
     var smallOffsets = [-0.22, -0.04, 0.16, 0.32];
     var smallTheme = { c1: '#ef4b16', c2: '#ffd166', glow: '#ff7a1a' };
@@ -2232,7 +2234,7 @@ var BattleRenderer = (function () {
         if (!g._hit && k > 0.25) {
           g._hit = true;
           hitReact(targetId, spec.elem || 'fire', true);
-          if (isSpecialScreenShakeSpec(spec)) addShake(5);
+          addShake(5, spec);
           spawnParticles(to.x, to.y - 20, 8, theme, 2);
         }
         return t < dur;
@@ -2957,6 +2959,8 @@ var BattleRenderer = (function () {
       } else {
         p.bodyWrap.x = 0;
       }
+      p.bodyWrap.x += p.jolt > 0 ? (Math.random() * 2 - 1) * (p.joltX || HIT_JOLT_X) : 0;
+      p.bodyWrap.y = p.jolt > 0 ? (Math.random() * 2 - 1) * (p.joltY || HIT_JOLT_Y) : 0;
       p.root.x = p.wx;
       p.root.y = p.wy;
       p.root.zIndex = p.wy;
@@ -3063,12 +3067,12 @@ var BattleRenderer = (function () {
       }
 
       updateFlashJolt(e, dt);
-      e.root.x = e.wx + (e.dashX || 0) +
-        (e.jolt > 0 ? (Math.random() * 2 - 1) * (e.joltX || HIT_JOLT_X) : 0);
+      e.root.x = e.wx + (e.dashX || 0);
       if (e.state !== 'dying') {
-        e.root.y = e.wy + (e.dashY || 0) +
-          (e.jolt > 0 ? (Math.random() * 2 - 1) * (e.joltY || HIT_JOLT_Y) : 0);
+        e.root.y = e.wy + (e.dashY || 0);
       }
+      e.bodyWrap.x = e.jolt > 0 ? (Math.random() * 2 - 1) * (e.joltX || HIT_JOLT_X) : 0;
+      e.bodyWrap.y = e.jolt > 0 ? (Math.random() * 2 - 1) * (e.joltY || HIT_JOLT_Y) : 0;
       e.root.zIndex = e.root.y + (e.isBoss ? 1000 : 0);
     }
 

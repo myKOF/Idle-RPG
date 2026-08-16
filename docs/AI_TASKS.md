@@ -2,18 +2,19 @@
 
 ## Codex｜縮小目標投射物受擊特效半徑｜2026-08-16
 
-- 狀態：已完成（2026-08-16；一般／彈射尺寸與飛行速度已分流完成）
+- 狀態：已完成（2026-08-16；已修正畫面中央大型圓環）
 - Owner：Codex
 - 目的：將飛刀與血刃斬彈射目標的命中爆點縮為目前半徑的 1/3，改善彈射命中時遮住敵群與傷害飄字的問題；一般受擊維持原尺寸。
 - 需求修訂：除殞石術等明確特殊技能外，一般受擊不再觸發鏡頭震動；一般命中改由目標角色圖片晃動呈現，並保留同一單位每 3 秒最多 1 次的冷卻。
-- 再次修訂：一般受擊爆點與斬擊回饋不套用 1/3 半徑；只有飛刀 `knife-bounce` 與血刃斬 `poison-spread` 的彈射目標命中爆點保留 1/3 半徑，並保留鏡頭震動分流與 3 秒角色晃動冷卻。
+- 再次修訂：一般受擊爆點不套用 1/3 半徑；只有飛刀 `knife-bounce` 與血刃斬 `poison-spread` 的彈射目標命中爆點保留 1/3 半徑。另將截圖中實際造成大白環的 `cleave-arc` 斬擊弧光本體縮為 1/3，不改一般 `vfx-impact`。
 - 追加需求：所有飛行子彈速度在目前值上再降低 20%，DOM／Canvas 顯示路徑與彈射段同步延長飛行時間。
+- 追加診斷：最新畫面的大型白色圓環不是 `knife-bounce`／`poison-spread` 的 `vfx-impact`，而是 `cleave` 斬擊波的 DOM／Canvas `cleave-arc`；需縮小實際可見的大圓環，同時維持一般 `vfx-impact` 原尺寸。
 - 前置依賴：既有 DOM／PixiJS VFX 雙路徑、飛刀 `knife`／`knife-bounce` 與血刃斬 `poison-spread` 共用命中回饋已存在；另一分支僅修改無關的 `lagprobe.js` 快取版號，已保留。
-- 允許修改：`js/data.js`、`js/battlefield.js`、`js/bridge.js`、`js/worker/sim.worker.js`、`js/battle-renderer.js`、`js/vfx.js`、`css/style.css`、`index.html`、`tests/hit-react-throttle.test.cjs`、`tests/projectile-impact-size.test.cjs`、`tests/skill-hit-timing.test.cjs`、本文件。
+- 允許修改：`js/data.js`、`js/battlefield.js`、`js/bridge.js`、`js/worker/sim.worker.js`、`js/battle-renderer.js`、`js/vfx.js`、`css/style.css`、`index.html`、`tests/hit-react-throttle.test.cjs`、`tests/projectile-impact-size.test.cjs`、`tests/skill-hit-timing.test.cjs`、`tests/skill2-vfx.test.cjs`、本文件。
 - 禁止修改：技能數值、傷害公式、目標選擇、彈射距離與時序、Worker Protocol、存檔格式及其他任務內容。
-- 驗收：DOM／Canvas 一般目標命中回饋恢復原尺寸，僅飛刀／血刃斬彈射目標爆點縮為 1/3；一般命中只有角色圖片晃動且同一單位 3 秒最多 1 次；殞石術等特殊技能仍可觸發鏡頭震動；所有飛行子彈速度為原目前值的 80%；執行定向測試、JavaScript `--check`、`npm.cmd run build`、完整 `npm.cmd test` 與 `git diff --check`。
-- 驗證結果：尺寸／速度／戰鬥 VFX 定向測試 53/53、JavaScript `--check` 通過、`npm.cmd run build` 280/280、完整 `npm.cmd test` 1413/1413、`git diff --check` 通過。
-- 已知風險：尚未進行瀏覽器實機畫面確認；一般受擊與彈射受擊已在 DOM／Canvas 事件入口分流尺寸，速度調整沿用既有共用倍率。
+- 驗收：DOM／Canvas 一般目標命中回饋維持原尺寸，僅飛刀／血刃斬彈射目標爆點縮為 1/3；截圖中的 `cleave-arc` 大白環在 DOM／Canvas 都縮為 1/3；一般命中只有角色圖片晃動且同一單位 3 秒最多 1 次；殞石術等特殊技能仍可觸發鏡頭震動；所有飛行子彈速度為原目前值的 80%；執行定向測試、JavaScript `--check`、`npm.cmd run build`、完整 `npm.cmd test` 與 `git diff --check`。
+- 驗證結果：本次大圓環／尺寸定向測試 12/12（前一輪尺寸／速度／戰鬥 VFX 定向測試 53/53）、JavaScript `--check` 通過、`npm.cmd run build` 280/280、完整 `npm.cmd test` 1413/1413、`git diff --check` 通過；本地頁面實際載入 `.vfx-cleave-arc` 尺寸 52×52px。
+- 已知風險：本地頁面已確認縮小後 CSS 實際載入，但未在高密度彈射技能戰鬥中重現完整截圖；一般受擊與彈射受擊仍在 DOM／Canvas 事件入口分流尺寸，速度調整沿用既有共用倍率。
 - 交接：完成後回報修改檔案、測試指令與結果；建立 `[Codex]` 前綴 commit，不合併或推送其他分支。
 
 ## Codex｜敵人死亡後清除未播放傷害浮字｜2026-08-16
