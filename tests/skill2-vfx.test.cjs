@@ -7,6 +7,18 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
+/* 只載入幾何與新版技能定義：施法距離是純函式，不需要完整戰鬥環境。 */
+function loadSkills2() {
+  const context = { Math, console, isFinite, JSON };
+  context.globalThis = context;
+  context.self = context;
+  vm.createContext(context);
+  ['js/battlefield.js', 'js/skills2.js'].forEach((f) => {
+    vm.runInContext(read(f), context, { filename: f });
+  });
+  return context;
+}
+
 test('飛刀彈射必須在上一段抵達後才開始下一段', () => {
   const skills2 = read('js/skills2.js');
   const vfx = read('js/vfx.js');
@@ -65,16 +77,28 @@ test('新版技能的 7 米距離換算為 70 個系統距離單位', () => {
   assert.equal(context.bfMeleeRange(), 50);
 });
 
-test('六組新版技能均以普攻近戰距離啟動', () => {
+/* 施法距離的判定必須只有一份：施放閘門（skills.js）與起手主目標篩選（skills2.js）
+   都要走 skills2CanReach，任何一邊自己再算一次距離都會與另一邊漂移。
+   武技沒有 castM＝退回普攻近戰距離；魔法群組吃各階表定射程。 */
+test('施法距離判定收斂在 skills2CanReach，武技仍是近戰、魔法吃表定射程', () => {
   const skills = read('js/skills.js');
   const skills2 = read('js/skills2.js');
 
-  assert.match(skills, /bfPlayerCanReach\(target\)/);
-  assert.match(skills2, /var reachable = rawPool\.filter\(function \(e\) \{[\s\S]*bfPlayerCanReach\(e\)/);
+  assert.match(skills, /skills2CanReach\(sgId, ent\)/);
+  assert.match(skills2, /var reachable = rawPool\.filter\(function \(e\) \{ return skills2CanReach\(gid, e, lvs\); \}\);/);
   const knifeStart = skills2.indexOf('function sgCastKnife');
   const galeStart = skills2.indexOf('function sgCastGale');
   assert.ok(knifeStart >= 0 && galeStart > knifeStart);
   assert.doesNotMatch(skills2.slice(knifeStart, galeStart), /bfRangedRange/);
+
+  const c = loadSkills2();
+  ['thrust', 'cleave', 'knife', 'gale', 'bloodblade', 'dualdance', 'counter', 'bloodrage'].forEach((gid) => {
+    assert.equal(c.skills2CastRangePx(gid, c.sgEffectiveLevels(null, gid)), c.bfMeleeRange(), gid + ' 應維持近戰距離');
+  });
+  // 火球術射程 30 米；投資到第 7 階【殞石術】後由該階改寫為 20 米
+  assert.equal(c.skills2CastRangePx('fireball', c.sgEffectiveLevels(null, 'fireball')), c.bfMeterPx(30));
+  assert.equal(c.skills2CastRangePx('fireball', [1, 1, 1, 1, 1, 1, 1]), c.bfMeterPx(20));
+  assert.equal(c.skills2CastRangePx('firepillar', c.sgEffectiveLevels(null, 'firepillar')), c.bfMeterPx(30));
 });
 
 test('新版技能的特殊性質都有明確 VFX variant', () => {

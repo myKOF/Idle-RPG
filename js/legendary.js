@@ -238,6 +238,13 @@ function legendaryElementDamageUp(st, pEnt) {
   if (buffVal(pEnt, 'legendaryDarkUp') > 0) {
     out.dark = (out.dark || 0) + buffVal(pEnt, 'legendaryDarkUp');
   }
+  /* 本函式是全專案「屬性傷害提升%」的唯一收斂點（普攻、舊技能、新技能都由此取值），
+     所以增益型的屬性加成一律掛在這裡，而不是各傷害端各補一次。
+     新版技能【火焰增幅】（js/skills2.js）即循此掛入。 */
+  if (typeof skill2FireAmpPct === 'function') {
+    var fireAmp = skill2FireAmpPct(pEnt);
+    if (fireAmp > 0) out.fire = (out.fire || 0) + fireAmp;
+  }
   return out;
 }
 

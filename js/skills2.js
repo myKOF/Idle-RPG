@@ -5,6 +5,13 @@
    透過升級各階持續強化該技能的效果（階＝效果模組，不是獨立技能）。
    （2026-08-14 第二批追加：counter 反擊＝被動群組，不裝載、不施放，受擊時觸發；
    bloodrage 嗜血狂怒＝主動爆發增益，效果全部只在持續期間生效。）
+   （2026-08-16 第三批追加＝魔法系兩群組：fireball 火球術／firepillar 火柱。
+   帶進三個新機制，皆為群組共用能力、不是這兩個技能的特例：
+     1. 群組層 dmgType／elem：魔法傷害走魔攻與魔穿、本體傷害段歸屬火屬性（sgAtkCfg）
+     2. 施法距離：各階 fx.castM（米）決定射程，取代「新版技能一律近戰起手」的寫死規則
+        （skills2CastRangePx／skills2CanReach，js/skills.js 的施放閘門同步改吃這支）
+     3. 地板場域（SKILL2_RT.grounds）：釘在座標上、按節拍反覆作用的區域，
+        可移動（追擊）、可重生；無座標時（高塔）退化為固定打主目標）
 
    規則：
      - 每階上限 SG_TIER_MAX_LV 級，固定不隨轉生提高
@@ -60,7 +67,9 @@ var SKILLS2 = {
   bloodblade: { name: '血刃斬', emoji: '🩸', range: '', cd: 8, cost: 40, tiers: [{ name: '血刃斬', fx: { pct: 200, pctPer: 15, dotPct: 30, dotSec: 5, dotGap: 1 }, goldBase: 100000, goldGrow: 1.5, desc: '對敵人造成 1 次 {pct}% 物理傷害，並附加流血：每 {dotGap} 秒造成技能傷害 {dotPct}% 的傷害，持續 {dotSec} 秒' }, { name: '強化流血', fx: { sec: 0.5, secPer: 0.1, gapPct: 10, gapPctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '流血持續時間 +{sec} 秒，且流血作用間隔縮短 {gapPct}%（跳得更快、總傷更高）' }, { name: '虛弱', fx: { pct: 10, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '流血中的敵人受到的傷害提高 {pct}%' }, { name: '血毒刃', fx: { dotPct: 25, dotPctPer: 3, dotSec: 6, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '敵人流血的同時也會中毒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的毒屬性傷害，持續 {dotSec} 秒' }, { name: '毒霧感染', fx: { chance: 30, chancePer: 2, count: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '血毒刃的毒在每次作用時，有 {chance}% 機率傳染給附近的 {count} 個敵人' }, { name: '死亡屍爆', fx: { pct: 50, pctPer: 5, count: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '流血或中毒狀態的敵人死亡時爆炸，對附近 {count} 個敵人造成 {pct}% 技能傷害並傳染中毒' }, { name: '零日感染', fx: { chance: 20, chancePer: 2, pct: 40, pctPer: 4, m: 20, count: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '流血或中毒狀態在每次作用時有 {chance}% 機率立即造成剩餘的持續傷害；作用結束後將流血及中毒傳染給 {m} 米內的隨機 {count} 個敵人，且流血與中毒傷害 +{pct}%' }] },
   dualdance: { name: '雙刀亂舞', emoji: '⚔️', range: '', cd: 10, cost: 35, tiers: [{ name: '雙刀亂舞', fx: { pct: 300, pctPer: 25, count: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '對附近 {count} 個敵人各造成 1 次 {pct}% 物理傷害（只有 1 個敵人時全部打向同一目標）' }, { name: '疾風亂舞', fx: { add: 1, addPer: 0.2 }, goldBase: 200000, goldGrow: 1.5, desc: '額外攻擊附近 {add} 個敵人（不足 1 個的部分以機率觸發）' }, { name: '強化雙刀', fx: { pct: 25, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化雙刀傷害，額外 +{pct}% 物理傷害' }, { name: '狂暴之舞', fx: { cr: 100, crPer: 10, add: 1, addPer: 0.1, sec: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '讓你的暴擊率 +{cr}%、連擊數 +{add}，持續 {sec} 秒' }, { name: '鐵血之舞', fx: { pct: 3.5, pctPer: 0.35, sec: 3, gap: 0.35, m: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '施放雙刀亂舞時使你以及附近 {m} 米內的所有敵人流血：每 {gap} 秒造成最大生命值 {pct}% 傷害，持續 {sec} 秒' }, { name: '嗜血狂化', fx: { pct: 0.25, pctPer: 0.025, sec: 6 }, goldBase: 3000000, goldGrow: 1.5, desc: '施放雙刀亂舞後 {sec} 秒內，生命值或護盾每減少 1%，獲得 {pct}% 技能傷害提升' }, { name: '暴風亂舞', fx: { sec: 3, secPer: 0.3, gap: 0.35 }, goldBase: 5000000, goldGrow: 1.5, desc: '化身暴風在敵人間穿梭 {sec} 秒：每 {gap} 秒自動施放 1 次雙刀亂舞；期間無法普攻但可施放技能' }] },
   counter: { name: '反擊', emoji: '🛡️', range: '', cd: 0, cost: 0, tiers: [{ name: '反擊', fx: { chance: 35, pct: 50, pctPer: 5 }, goldBase: 100000, goldGrow: 1.5, desc: '被動：受到傷害時有 {chance}% 機率對攻擊者反擊，造成 {pct}% 普攻傷害' }, { name: '招架', fx: { mult: 300, multPer: 30 }, goldBase: 200000, goldGrow: 1.5, desc: '格擋時必定對敵人反擊，造成「格擋減傷值 × {mult}%」的普攻傷害' }, { name: '強化反擊', fx: { pct: 30, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步提升反擊傷害，額外 +{pct}% 反擊普攻傷害' }, { name: '反擊盾', fx: { pct: 1, pctPer: 0.1 }, goldBase: 800000, goldGrow: 1.5, desc: '觸發反擊時，回復自身最大生命 {pct}% 的護盾' }, { name: '破甲擊', fx: { chance: 35, def: 15, sec: 4, secPer: 0.4, max: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '格擋時有 {chance}% 機率造成破甲：防禦 -{def}%，持續 {sec} 秒，最多疊 {max} 層（疊層時重置時間）' }, { name: '二次反擊', fx: { chance: 50, chancePer: 5, count: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '反擊時有 {chance}% 機率再追加 {count} 次反擊（追加反擊不會再觸發反擊）' }, { name: '狂化反殺', fx: { pct: 50, pctPer: 5, count: 2, m: 80 }, goldBase: 5000000, goldGrow: 1.5, desc: '每次反擊時，額外對 {m} 米內隨機 {count} 個敵人反擊，造成 {pct}% 普攻傷害（不會再觸發反擊）' }] },
-  bloodrage: { name: '嗜血狂怒', emoji: '💢', range: '', cd: 60, cost: 50, tiers: [{ name: '嗜血狂怒', fx: { pct: 20, pctPer: 2, sec: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '攻速額外 +{pct}%（乘算，不受攻速上限限制），持續 {sec} 秒' }, { name: '狂暴', fx: { pct: 20, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '狂怒期間爆擊傷害額外 +{pct}%（乘算）' }, { name: '狂怒', fx: { pct: 20, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '狂怒期間總傷害額外 +{pct}%（乘算）' }, { name: '狂化連殺', fx: { add: 0.5, addPer: 0.1, kill: 0.1, killMax: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '狂怒期間基礎連擊數 +{add}，且每擊殺 1 個敵人再 +{kill}（累計上限 +{killMax}；不足 1 次的部分以機率觸發）' }, { name: '嗜血反震', fx: { pct: 20, pctPer: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '狂怒期間反震傷害提高 {pct}%（乘算，可與其它反震加成疊加）' }, { name: '血飲術', fx: { pct: 30, pctPer: 3, self: 1, m: 80 }, goldBase: 3000000, goldGrow: 1.5, desc: '狂怒期間傷害額外提高 {pct}%（乘算），但 {m} 米內的敵人每次受傷都會使你損失最大生命 {self}%（直接扣血，無法被護盾吸收）' }, { name: '狂血盛宴', fx: { sec: 0.5, pct: 1, pctPer: 0.1, count: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '狂怒期間每擊殺 1 個敵人，持續時間延長 {sec} 秒；且生命值每減少 1%，傷害額外 +{pct}%（乘算，無限疊加），每 1 連擊數使普攻可同時攻擊 1 個敵人（無限疊加）' }] }
+  bloodrage: { name: '嗜血狂怒', emoji: '💢', range: '', cd: 60, cost: 50, tiers: [{ name: '嗜血狂怒', fx: { pct: 20, pctPer: 2, sec: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '攻速額外 +{pct}%（乘算，不受攻速上限限制），持續 {sec} 秒' }, { name: '狂暴', fx: { pct: 20, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '狂怒期間爆擊傷害額外 +{pct}%（乘算）' }, { name: '狂怒', fx: { pct: 20, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '狂怒期間總傷害額外 +{pct}%（乘算）' }, { name: '狂化連殺', fx: { add: 0.5, addPer: 0.1, kill: 0.1, killMax: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '狂怒期間基礎連擊數 +{add}，且每擊殺 1 個敵人再 +{kill}（累計上限 +{killMax}；不足 1 次的部分以機率觸發）' }, { name: '嗜血反震', fx: { pct: 20, pctPer: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '狂怒期間反震傷害提高 {pct}%（乘算，可與其它反震加成疊加）' }, { name: '血飲術', fx: { pct: 30, pctPer: 3, self: 1, m: 80 }, goldBase: 3000000, goldGrow: 1.5, desc: '狂怒期間傷害額外提高 {pct}%（乘算），但 {m} 米內的敵人每次受傷都會使你損失最大生命 {self}%（直接扣血，無法被護盾吸收）' }, { name: '狂血盛宴', fx: { sec: 0.5, pct: 1, pctPer: 0.1, count: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '狂怒期間每擊殺 1 個敵人，持續時間延長 {sec} 秒；且生命值每減少 1%，傷害額外 +{pct}%（乘算，無限疊加），每 1 連擊數使普攻可同時攻擊 1 個敵人（無限疊加）' }] },
+  fireball: { name: '火球術', emoji: '🔥', range: '', dmgType: 'magic', elem: 'fire', cd: 14, cost: 45, tiers: [{ name: '火球術', fx: { pct: 150, pctPer: 15, m: 6, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '射出一顆火球（射程 {castM} 米），命中時爆炸，對目標及 {m} 米內的敵人造成 {pct}% 火屬性傷害' }, { name: '燃燒', fx: { dotPct: 20, dotPctPer: 2, dotSec: 5, dotGap: 0.5 }, goldBase: 200000, goldGrow: 1.5, desc: '被火球擊中的敵人陷入燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火屬性傷害，持續 {dotSec} 秒' }, { name: '火球爆裂', fx: { pct: 30, pctPer: 3, count: 3, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '火球爆炸後分裂出 {count} 個小火球，射向目標 {m} 米內的敵人，每個造成原始火球 {pct}% 的傷害' }, { name: '強化燃燒', fx: { gap: 0.4, gapPer: -0.015 }, goldBase: 800000, goldGrow: 1.5, desc: '燃燒的作用間隔縮短至 {gap} 秒（跳得更快＝總傷更高）' }, { name: '爆燃', fx: { pct: 50, pctPer: 5, count: 2, m: 12 }, goldBase: 1500000, goldGrow: 1.5, desc: '燃燒結束或敵人死亡時爆炸，對我方 {m} 米內的 {count} 個敵人造成該敵人整段燃燒累積傷害 {pct}% 的傷害' }, { name: '火焰增幅', fx: { pct: 0.25, pctPer: 0.025, sec: 4, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '我方 {m} 米內每有 1 次燃燒作用，你的火屬性傷害 +{pct}%，持續 {sec} 秒（無限疊加，每次疊加時重置時間）' }, { name: '殞石術', fx: { pct: 200, pctPer: 20, count: 3, m: 15, castM: 20 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為召喚 {count} 顆巨大火殞石從天而降（射程 {castM} 米），每顆對目標 {m} 米內的敵人造成 {pct}% 火屬性傷害（第 2~6 階效果仍然生效）' }] },
+  firepillar: { name: '火柱', emoji: '🌋', range: '', dmgType: 'magic', elem: 'fire', cd: 14, cost: 40, tiers: [{ name: '火柱', fx: { pct: 60, pctPer: 6, hits: 5, m: 3, castM: 30, sec: 2.5 }, goldBase: 100000, goldGrow: 1.5, desc: '在敵人腳下召喚一道火柱（射程 {castM} 米），對目標 {m} 米內的敵人連續造成 {hits} 段傷害，每段 {pct}% 火屬性傷害（全程約 {sec} 秒）' }, { name: '強化火柱', fx: { pct: 10, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '火柱的傷害範圍擴大 {pct}%' }, { name: '雙重火柱', fx: { count: 2, pct: 20, pctPer: 2, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '可同時對 {m} 米內的 {count} 個目標施放火柱，且火屬性傷害額外 +{pct}%' }, { name: '燃燒', fx: { chance: 20, chancePer: 2, dotPct: 20, dotSec: 4, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '火柱每次作用時有 {chance}% 機率使敵人燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火屬性傷害，持續 {dotSec} 秒' }, { name: '追擊', fx: { m: 6, mPer: 0.6 }, goldBase: 1500000, goldGrow: 1.5, desc: '火柱會以每秒 {m} 米的速度追擊目標' }, { name: '重生', fx: { chance: 25, chancePer: 2.5, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '火柱消失後有 {chance}% 機率在我方 {m} 米內的敵人身上重生' }, { name: '無限火牆', fx: { count: 3, hits: 8, pct: 60, pctPer: 6, len: 18, wid: 6, respawn: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為施放 {count} 道火牆（橫向 {len}×{wid} 米），每道造成 {hits} 段 {pct}% 火屬性傷害；每道火牆消失後再召喚 1 道（僅能再觸發一次；第 2~6 階效果仍然生效）' }] }
 };
 
 /* ---- 執行期狀態（絕不掛 G＝保證不入存檔） ----
@@ -81,6 +90,7 @@ function resetSkill2RT() {
   SKILL2_RT = {
     storm: null, // 暴風之舞化身狀態：{ until, nextAt, gap, tgt }（tgt 為當前衝鋒目標實體）
     projectiles: [], // 飛出斬擊／貫穿突刺的執行期飛行物（不入存檔）
+    grounds: [], // 地板場域（火柱／火牆）的執行期實例（不入存檔）
     rage: null,  // 嗜血狂怒爆發狀態：{ until, pEnt, killCombo }（pEnt＝施放時的玩家實體，
                  // 供血飲術反噬定位；killCombo＝期間擊殺累積的連擊數加成，結束歸零）
     frenzy: null // 狂暴之舞狀態：{ until, pEnt, levels }
@@ -131,6 +141,47 @@ function sgRange(range) {
   var m = String(range == null ? '' : range).trim().match(/^([0-9]+(?:\.[0-9]+)?)\s*\*\s*([0-9]+(?:\.[0-9]+)?)$/);
   if (!m) return { length: 0, width: 0 };
   return { length: Number(m[1]) || 0, width: Number(m[2]) || 0 };
+}
+
+/* ---- 群組傷害類型與屬性（表格欄位；未填＝物理、無屬性，維持既有八個武技群組的行為）---- */
+function sgIsMagic(g) { return !!g && g.dmgType === 'magic'; }
+/* 傷害基準屬性：魔法群組吃魔攻、其餘吃物攻。 */
+function sgGroupBaseStat(g, st) {
+  return sgIsMagic(g) ? (Number(st && st.matk) || 0) : (Number(st && st.atk) || 0);
+}
+/* 特效分類鍵（顏色與畫法）：與傷害類型同源，不另外設一欄。 */
+function sgVfxCat(g) { return sgIsMagic(g) ? 'magic' : 'phys'; }
+
+/* 群組目前的施法距離（像素）：由各階 fx.castM（米）決定——
+   基準取第 1 階，之後每個「已投資且有定義 castM」的階可覆寫（殞石術把射程改成 20 米）。
+   全部階都沒定義＝近戰技能，退回普攻近戰距離（既有八個武技群組即屬此類）。 */
+function skills2CastRangePx(gid, lvs) {
+  var g = SKILLS2[gid];
+  if (!g) return 0;
+  var m = 0;
+  for (var i = 0; i < g.tiers.length; i++) {
+    if (i > 0 && (!lvs || lvs[i] < 1)) continue;
+    var v = Number(g.tiers[i].fx && g.tiers[i].fx.castM);
+    if (isFinite(v) && v > 0) m = v;
+  }
+  if (!(m > 0)) return (typeof bfMeleeRange === 'function') ? bfMeleeRange() : 0;
+  return (typeof bfMeterPx === 'function') ? bfMeterPx(m) : 0;
+}
+
+/* 這個群組現在打得到這個目標嗎——施放閘門（js/skills.js）與起手主目標篩選的唯一判定。
+   無座標的實體（高塔 BOSS）沿用戰場既有規則：不擋。 */
+function skills2CanReach(gid, ent, lvs) {
+  if (!ent || ent.hp <= 0) return false;
+  if (typeof bfPos !== 'function' || !bfPos(ent)) return true;
+  if (typeof bfEntityDistance !== 'function') return true;
+  return bfEntityDistance(ent) <= skills2CastRangePx(gid, lvs || skills2Levels(gid));
+}
+
+/* 火焰增幅（火球術第 6 階）目前的火屬性傷害提升%。
+   掛點：js/legendary.js legendaryElementDamageUp——全專案「屬性傷害提升」的唯一收斂點，
+   因此普攻的元素附傷、舊技能與新技能一體生效，不必在各傷害端各掛一次。 */
+function skill2FireAmpPct(pEnt) {
+  return (typeof buffVal === 'function') ? Math.max(0, buffVal(pEnt, 'sgFireAmp')) : 0;
 }
 
 /* 小數次數 → 實際次數：整數部分保底，小數部分為額外 1 次的機率。 */
@@ -449,16 +500,22 @@ function sgSpreadBloodbladeDots(source, enemies, st, lvs, tiers) {
   return target;
 }
 
-/* 物理攻擊組態（比照 castSkill 的技能傷害段規格：命中地板 100、含裝備元素攻擊、
-   神鑄被動與敵種加成；另計本系統的狂暴爆擊增益與虛弱增傷）。 */
-function sgAtkCfg(pEnt, st, dmgVal, target, bonusTotalPct) {
+/* 攻擊組態（比照 castSkill 的技能傷害段規格：命中地板 100、含裝備元素攻擊、
+   神鑄被動與敵種加成；另計本系統的狂暴爆擊增益與虛弱增傷）。
+   傷害類型與屬性由群組決定：魔法群組走魔攻／魔穿，並把整段本體傷害歸屬該屬性
+   （skillElem，比照 js/skills.js skillElemApplyACfg 的技能屬性化規則）。 */
+function sgAtkCfg(pEnt, st, dmgVal, target, bonusTotalPct, gid) {
+  var g = SKILLS2[gid];
+  var magic = sgIsMagic(g);
   var aCfg = {
-    atk: dmgVal, dmgType: 'phys', level: st.level,
+    atk: dmgVal, dmgType: magic ? 'magic' : 'phys', level: st.level,
     critRate: st.critRate + (typeof buffVal === 'function' ? buffVal(pEnt, 'sgCritUp') : 0),
     // 嗜血狂怒【狂暴】：爆擊傷害乘算（與狂暴之舞的加算增益疊乘）
     critDmg: (st.critDmg + (typeof buffVal === 'function' ? buffVal(pEnt, 'sgCritDmgUp') : 0)) * skill2RageCritDmgFactor(),
     hit: Math.max(100, st.hit),
-    pen: (typeof effectivePPen === 'function') ? effectivePPen(st, pEnt) : 0,
+    pen: magic
+      ? ((typeof effectiveMPen === 'function') ? effectiveMPen(st, pEnt) : 0)
+      : ((typeof effectivePPen === 'function') ? effectivePPen(st, pEnt) : 0),
     sunder: (st.passives && st.passives.sunder) || 0,
     trueDmgPct: (st.passives && st.passives.trueDmg) || 0,
     annihilate: (st.passives && st.passives.annihilate) || 0,
@@ -469,6 +526,7 @@ function sgAtkCfg(pEnt, st, dmgVal, target, bonusTotalPct) {
     dmgVsElem: st.dmgVsElem,
     isPlayer: true, isSkill: true
   };
+  if (g && g.elem) aCfg.skillElem = g.elem;
   return skill2VulnACfg(aCfg, target);
 }
 
@@ -477,7 +535,7 @@ function sgAtkCfg(pEnt, st, dmgVal, target, bonusTotalPct) {
 function sgHitOne(pEnt, st, target, dmgVal, gid, floatSel, out, delayMs, bonusTotalPct) {
   if (!target || target.hp <= 0 || !(dmgVal > 0)) return null;
   var g = SKILLS2[gid];
-  var res = resolveHit(pEnt, target, sgAtkCfg(pEnt, st, dmgVal, target, bonusTotalPct), monsterDefCfg(target));
+  var res = resolveHit(pEnt, target, sgAtkCfg(pEnt, st, dmgVal, target, bonusTotalPct, gid), monsterDefCfg(target));
   if (typeof applySkillFinalDamageMultiplier === 'function') applySkillFinalDamageMultiplier(target, res, false);
   if (!res.miss) {
     out.dmg += res.dmg;
@@ -527,11 +585,12 @@ function sgEmitVfx(gid, targets, floatSel, extra) {
   for (var i = 0; i < targets.length && ids.length < 8; i++) {
     if (targets[i] && targets[i].hp > 0) ids.push(enemyEventFloatTarget(targets[i], floatSel));
   }
+  var cat = sgVfxCat(g);
   var spec = {
     fxKind: (extra && extra.fxKind) || 'slash',
     glyph: g.emoji,
-    color: (typeof VFX_CAT_COLORS !== 'undefined' && VFX_CAT_COLORS.phys) || '#f97316',
-    cat: 'phys', elem: (extra && extra.elem) || null,
+    color: (typeof VFX_CAT_COLORS !== 'undefined' && VFX_CAT_COLORS[cat]) || '#f97316',
+    cat: cat, elem: (extra && extra.elem) || g.elem || null,
     targets: ids, area: (extra && extra.area) || null,
     dur: (extra && extra.dur) || 0.5,
     count: Math.max(1, Math.min(5, (extra && extra.count) || 1))
@@ -689,12 +748,10 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
   var rawPool = Array.isArray(target)
     ? target.filter(function (e) { return e && e.hp > 0; })
     : ((target && target.hp > 0) ? [target] : []);
-  /* 所有新版主動技能都以普攻近戰距離起手；但 pool 必須保留完整敵群，讓
-     貫穿 7 米、範圍擴散與周圍敵人等階段仍能命中近戰線段外的目標。 */
+  /* 起手主目標必須在群組的施法距離內（武技＝普攻近戰距離、魔法＝表定射程）；
+     但 pool 必須保留完整敵群，讓貫穿、範圍擴散與周圍敵人等階段仍能命中射程外的目標。 */
   if (!rawPool.length) return null;
-  var reachable = rawPool.filter(function (e) {
-    return typeof bfPlayerCanReach !== 'function' || bfPlayerCanReach(e);
-  });
+  var reachable = rawPool.filter(function (e) { return skills2CanReach(gid, e, lvs); });
   if (!reachable.length) return null;
   /* 後續幾何與範圍技能仍需看到完整存活敵群；只有起手主目標用 reachable。 */
   var pool = rawPool;
@@ -717,6 +774,8 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
     case 'bloodblade': sgCastBloodblade(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     case 'dualdance': sgCastDualdance(pEnt, st, g, lvs, pool, primary, floatSel, out, storm); break;
     case 'bloodrage': sgCastBloodrage(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
+    case 'fireball': sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
+    case 'firepillar': sgCastFirepillar(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     default: return null;
   }
   if (!storm && typeof floatPlayerSkillCast === 'function') {
@@ -1161,6 +1220,429 @@ function sgCastBloodrage(pEnt, st, g, lvs, pool, primary, floatSel, out) {
 }
 
 /* ===========================================================================
+   魔法系共用基建：燃燒（sgBurn）
+   ---------------------------------------------------------------------------
+   火球術第 2 階與火柱第 4 階塗的是**同一個**狀態，因此火球術第 5 階【爆燃】與
+   第 6 階【火焰增幅】對兩者一視同仁——兩棵樹同時投資時的交互作用是刻意的，
+   不是漏判：狀態表只有一種「燃燒」，引擎就不該憑來源分成兩種。
+   每跳量＝技能傷害基準 × dotPct%，間隔可被【強化燃燒】縮短（跳更快＝總傷更高），
+   因此以 dps（每跳量 ÷ 間隔）指定，繞過狀態表「狀態傷害＝每秒量」的預設換算
+   ——與血刃斬的流血採同一套算法。
+   =========================================================================== */
+
+/* 火球術的燃燒規格（第 2 階未投資＝不燃燒）。傷害基準跟著本體傷害走：
+   學了殞石術之後本體改由第 7 階定義，燃燒也跟著變強。 */
+function sgFireballBurnSpec(st, g, lvs) {
+  if (lvs[1] < 1) return null;
+  var t = g.tiers;
+  var baseFx = lvs[6] > 0 ? t[6].fx : t[0].fx;
+  var baseLv = lvs[6] > 0 ? lvs[6] : lvs[0];
+  var base = sgGroupBaseStat(g, st) * sgVal(baseFx, 'pct', baseLv) / 100;
+  var gap = Math.max(0.1, lvs[3] > 0
+    ? sgVal(t[3].fx, 'gap', lvs[3])
+    : (Number(t[1].fx.dotGap) || 0.5));
+  return {
+    dps: base * sgVal(t[1].fx, 'dotPct', lvs[1]) / 100 / gap,
+    dur: Number(t[1].fx.dotSec) || 5,
+    interval: gap
+  };
+}
+
+/* 火柱的燃燒規格（第 4 階未投資＝不燃燒）。每跳量占的是火柱「每段」的技能傷害。 */
+function sgFirepillarBurnSpec(g, lvs, segmentDmg) {
+  if (lvs[3] < 1) return null;
+  var fx = g.tiers[3].fx;
+  var gap = Math.max(0.1, Number(fx.dotGap) || 0.5);
+  return {
+    dps: segmentDmg * (Number(fx.dotPct) || 0) / 100 / gap,
+    dur: Number(fx.dotSec) || 4,
+    interval: gap
+  };
+}
+
+/* 塗上燃燒，並留下【爆燃】要用的規格快照。
+   快照是必要的：DoT 實例在燃燒結束的當下就被 tickStatuses 回收，
+   之後再想回頭算「整段燃燒總共造成多少」已經沒有資料可讀。 */
+function sgApplyBurn(ent, spec) {
+  if (!ent || ent.hp <= 0 || !spec || !(spec.dps > 0)) return false;
+  applyStatus(ent, 'sgBurn', { dps: spec.dps, dur: spec.dur, interval: spec.interval });
+  var d = sgFindDot(ent, 'sgBurn');
+  if (!d) return false;
+  // 疊加規則為 strongest：實際生效的可能是原本更強的那一份，故一律以塗抹後的實例為準。
+  ent._sgBurnWatch = { dps: d.dps, dur: Math.max(0, d.until - GT), until: d.until };
+  return true;
+}
+
+/* 這段燃燒到目前為止累積造成的傷害（燃燒結束＝全額；中途死亡＝已經跳完的部分）。 */
+function sgBurnDealtSoFar(ent) {
+  var w = ent && ent._sgBurnWatch;
+  if (!w || !(w.dps > 0)) return 0;
+  var served = Math.max(0, w.dur - Math.max(0, w.until - GT));
+  return w.dps * served;
+}
+
+/* 我方周圍 radiusPx 內的存活敵人（排除 exclude），最多 count 個、由近而遠。
+   無座標的實體（高塔）視為在範圍內，與本系統其他範圍查詢一致。 */
+function sgEnemiesNearPlayer(enemies, radiusPx, exclude, count) {
+  var out = [];
+  var live = (typeof bfLiveList === 'function') ? bfLiveList(enemies) : (enemies || []);
+  var deco = [];
+  for (var i = 0; i < live.length; i++) {
+    var e = live[i];
+    if (!e || e === exclude || e.hp <= 0) continue;
+    var d = 0;
+    if (typeof bfPos === 'function' && bfPos(e) && typeof bfEntityDistance === 'function') {
+      d = bfEntityDistance(e);
+      if (radiusPx > 0 && d > radiusPx) continue;
+    }
+    deco.push({ ent: e, d: d, r: Math.random() });
+  }
+  deco.sort(function (a, b) { return (a.d - b.d) || (a.r - b.r); });
+  for (var j = 0; j < deco.length && (!(count > 0) || out.length < count); j++) out.push(deco[j].ent);
+  return out;
+}
+
+/* 我方周圍 radiusPx 內隨機 1 個存活敵人（火柱【重生】的落點規則：任意敵人，不是最近的）。 */
+function sgRandomEnemyNearPlayer(enemies, radiusPx, exclude) {
+  var cands = sgEnemiesNearPlayer(enemies, radiusPx, exclude, 0);
+  return cands.length ? cands[Math.floor(Math.random() * cands.length)] : null;
+}
+
+/* 【爆燃】（火球術第 5 階）：燃燒結束或敵人死亡時引爆，對我方範圍內數個敵人造成
+   該敵人整段燃燒累積傷害的一定比例。衍生傷害不再過防禦與爆擊（比照擴散／零日感染）。
+   ctx 可省略（敵人死亡的呼叫點沒有 tick ctx），此時由 FIELD 取得玩家實體。 */
+function sgBurnBlast(ent, enemies, ctx) {
+  if (!ent) return;
+  var amount = sgBurnDealtSoFar(ent);
+  ent._sgBurnWatch = null;
+  var lvs = skills2Levels('fireball');
+  if (!lvs || lvs[4] < 1 || !(amount > 0)) return;
+  var fx = SKILLS2.fireball.tiers[4].fx;
+  var count = Math.max(1, Math.floor(Number(fx.count) || 2));
+  var victims = sgEnemiesNearPlayer(enemies, bfMeterPx(Number(fx.m) || 12), ent, count);
+  if (!victims.length) return;
+  var out = { killed: false, dmg: 0, crit: false };
+  var per = amount * sgVal(fx, 'pct', lvs[4]) / 100;
+  sgEmitVfx('fireball', victims, (ctx && ctx.floatSel) || 'mv-float', {
+    fxKind: 'burst', variant: 'fire-blast', elem: 'fire'
+  });
+  for (var i = 0; i < victims.length; i++) {
+    sgDerivedHit(victims[i], per, 'fireball', (ctx && ctx.floatSel) || 'mv-float', out, '💥', 0);
+  }
+  if (ctx && ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
+  if (out.killed && ctx && ctx.onDeaths) ctx.onDeaths();
+}
+
+/* 燃燒節拍器：以本引擎自己的計時對齊各燃燒實例的作用間隔（時戳記在敵人實體上、純 JSON、
+   隨實體自然回收），不去改動 tickStatuses 的通用結算——與 sgTickBloodDots 同一套做法。
+   負責兩件事：每次作用時疊【火焰增幅】、燃燒自然結束時觸發【爆燃】。 */
+function sgTickBurn(dt, ctx) {
+  var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
+  if (!enemies.length) return;
+  var fbLvs = skills2Levels('fireball');
+  var ampLv = fbLvs ? fbLvs[5] : 0;
+  var ampFx = SKILLS2.fireball.tiers[5].fx;
+  var ampRange = bfMeterPx(Number(ampFx.m) || 20);
+  /* 燃燒可能同時掛在整群敵人身上（火球爆炸＋分裂＋火柱），逐一送特效事件會把
+     同一個 tick 的事件量放大成敵人數；同一幀跳動的敵人合併成一則事件送出。 */
+  var tickedNow = null;
+  for (var i = 0; i < enemies.length; i++) {
+    var e = enemies[i];
+    if (!e) continue;
+    var d = (e.hp > 0) ? sgFindDot(e, 'sgBurn') : null;
+    if (!d) {
+      // 燃燒自然結束（實例已被回收）：這是【爆燃】的其中一個觸發時機
+      if (e._sgBurnWatch) sgBurnBlast(e, enemies, ctx);
+      if (e._sgAcc) e._sgAcc.sgBurn = 0;
+      continue;
+    }
+    if (typeof GT === 'number' && e._sgDotSkipAt === GT) continue;
+    if (!e._sgAcc) e._sgAcc = {};
+    var acc = (e._sgAcc.sgBurn || 0) + dt;
+    var gap = Math.max(0.1, d.interval || 0.5);
+    while (acc >= gap) {
+      acc -= gap;
+      if (!tickedNow) tickedNow = [];
+      if (tickedNow.indexOf(e) < 0) tickedNow.push(e);
+      /* 火焰增幅：範圍內每有 1 次燃燒作用就疊一層。層數無上限，因此不用狀態表的
+         疊層規則（有 maxStacks），改由引擎自己把總量算好後以「後蓋前」寫入。 */
+      if (ampLv > 0 && ctx.pEnt && ctx.pEnt.hp > 0) {
+        var inRange = !(typeof bfPos === 'function' && bfPos(e) &&
+          typeof bfEntityDistance === 'function' && bfEntityDistance(e) > ampRange);
+        if (inRange) {
+          applyStatus(ctx.pEnt, 'sgFireAmp', {
+            val: skill2FireAmpPct(ctx.pEnt) + sgVal(ampFx, 'pct', ampLv),
+            dur: Number(ampFx.sec) || 4
+          });
+        }
+      }
+    }
+    e._sgAcc.sgBurn = acc;
+  }
+  if (tickedNow) {
+    sgEmitVfx('fireball', tickedNow, ctx.floatSel, {
+      fxKind: 'impact', variant: 'burn-tick', elem: 'fire'
+    });
+  }
+}
+
+/* ===========================================================================
+   火球術（fireball）
+   ---------------------------------------------------------------------------
+   傷害在施放當下一次結算完畢，飛行時間只用來延後浮字與特效——與飛刀同一套規格
+   （模擬層瞬間結算、顯示層按 travelMs 錯開，見 protocol.js FLOAT.delayMs）。
+   第 7 階【殞石術】依設計文檔「改為」召喚三顆殞石：本體傷害%與範圍改讀第 7 階，
+   第 2~6 階的進化效果照舊生效。
+   =========================================================================== */
+function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
+  var t = g.tiers;
+  var meteor = lvs[6] > 0;
+  var srcFx = meteor ? t[6].fx : t[0].fx;
+  var srcLv = meteor ? lvs[6] : lvs[0];
+  var dmgVal = sgGroupBaseStat(g, st) * sgVal(srcFx, 'pct', srcLv) / 100;
+  var radius = bfMeterPx(sgVal(srcFx, 'm', srcLv));
+  var volleys = meteor ? Math.max(1, Math.floor(Number(t[6].fx.count) || 3)) : 1;
+  var geomOk = (typeof bfPos === 'function') && !!bfPos(primary);
+  var travelMs = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(primary) * 1000) : 0;
+  var burnSpec = sgFireballBurnSpec(st, g, lvs);
+
+  for (var v = 0; v < volleys; v++) {
+    var castDelay = sgStaggerMs(v * 2); // 三顆殞石依序落下
+    var hitDelay = castDelay + travelMs;
+    var victims = (geomOk && radius > 0) ? bfTargetsAround(primary, pool, radius) : [primary];
+    if (!victims.length) victims = [primary];
+    var area = geomOk ? sgAreaAround(primary, radius) : null;
+
+    if (meteor) {
+      sgEmitVfx('fireball', [primary], floatSel, {
+        fxKind: 'rain', variant: 'meteor', elem: 'fire', count: 1,
+        area: area, delayMs: castDelay
+      });
+    } else {
+      sgEmitVfx('fireball', [primary], floatSel, {
+        fxKind: 'projectile', variant: 'fireball', elem: 'fire', count: 1,
+        travelMs: [travelMs], projectile: true
+      });
+      sgEmitVfx('fireball', victims, floatSel, {
+        fxKind: 'burst', variant: 'fire-explosion', elem: 'fire',
+        area: area, delayMs: hitDelay
+      });
+    }
+
+    for (var i = 0; i < victims.length; i++) {
+      var res = sgHitOne(pEnt, st, victims[i], dmgVal, 'fireball', floatSel, out, hitDelay);
+      if (res && !res.miss && burnSpec) sgApplyBurn(victims[i], burnSpec);
+    }
+
+    // 火球爆裂：爆炸後分裂出小火球射向目標範圍內的其他敵人
+    if (lvs[2] > 0) {
+      var splitFx = t[2].fx;
+      var splits = bfNearestOthers(primary, pool, Math.max(1, Math.floor(Number(splitFx.count) || 3)),
+        bfMeterPx(Number(splitFx.m) || 20));
+      if (splits.length) {
+        sgEmitVfx('fireball', splits, floatSel, {
+          fxKind: 'projectile', variant: 'fireball', elem: 'fire', count: 1,
+          delayMs: hitDelay, projectile: true
+        });
+        var splitVal = dmgVal * sgVal(splitFx, 'pct', lvs[2]) / 100;
+        for (var s = 0; s < splits.length; s++) {
+          var sres = sgHitOne(pEnt, st, splits[s], splitVal, 'fireball', floatSel, out,
+            hitDelay + sgStaggerMs(s + 1));
+          if (sres && !sres.miss && burnSpec) sgApplyBurn(splits[s], burnSpec);
+        }
+      }
+    }
+  }
+}
+
+/* 以某實體為圓心的區域描述（顯示層的地面範圍標記；無座標時回傳 null）。 */
+function sgAreaAround(ent, rPx) {
+  var p = (typeof bfPos === 'function') ? bfPos(ent) : null;
+  if (!p || !(rPx > 0)) return null;
+  return { x: p.x, y: p.y, r: rPx };
+}
+
+/* ===========================================================================
+   火柱（firepillar）：地板場域
+   ---------------------------------------------------------------------------
+   火柱不是「一次結算完」的技能：它釘在地板上、按節拍反覆作用，還可能移動（追擊）
+   與重生。因此建立執行期場域實例（SKILL2_RT.grounds，不入存檔），由 tickSkill2 推進。
+   無座標時（高塔 BOSS）退化為「固定打主目標」——與本系統其他幾何查詢的退化規則一致。
+   第 7 階【無限火牆】依設計文檔「改為」火牆：形狀改為橫向矩形、段數與傷害%改讀第 7 階，
+   第 2~6 階的進化效果照舊生效。
+   =========================================================================== */
+function sgCastFirepillar(pEnt, st, g, lvs, pool, primary, floatSel, out) {
+  var t = g.tiers;
+  var wall = lvs[6] > 0;
+  var srcFx = wall ? t[6].fx : t[0].fx;
+  var srcLv = wall ? lvs[6] : lvs[0];
+  var pct = sgVal(srcFx, 'pct', srcLv);
+  if (lvs[2] > 0) pct += sgVal(t[2].fx, 'pct', lvs[2]); // 雙重火柱：火屬性傷害額外加成
+  var dmgVal = sgGroupBaseStat(g, st) * pct / 100;
+  var hits = Math.max(1, Math.floor(Number(srcFx.hits) || 5));
+  var lifeSec = Math.max(0.2, Number(t[0].fx.sec) || 2.5);
+  var gap = lifeSec / hits;
+  // 強化火柱：範圍擴大（火柱＝半徑、火牆＝長寬同步放大）
+  var scale = lvs[1] > 0 ? 1 + sgVal(t[1].fx, 'pct', lvs[1]) / 100 : 1;
+  var burnSpec = sgFirepillarBurnSpec(g, lvs, dmgVal);
+  var speed = lvs[4] > 0 ? bfMeterPx(sgVal(t[4].fx, 'm', lvs[4])) : 0;
+
+  var count = wall
+    ? Math.max(1, Math.floor(Number(t[6].fx.count) || 3))
+    : (lvs[2] > 0 ? Math.max(1, Math.floor(Number(t[2].fx.count) || 2)) : 1);
+  var spreadPx = lvs[2] > 0 ? bfMeterPx(Number(t[2].fx.m) || 20) : skills2CastRangePx('firepillar', lvs);
+  var spots = [primary];
+  if (count > 1) spots = spots.concat(bfNearestOthers(primary, pool, count - 1, spreadPx));
+
+  for (var i = 0; i < count; i++) {
+    // 目標不足時多出來的火柱疊在主目標身上（比照雙刀亂舞「只有 1 個敵人就都打同一個」）
+    var spot = spots[i % spots.length];
+    sgSpawnGround(pEnt, st, 'firepillar', {
+      kind: wall ? 'wall' : 'pillar', tgt: spot, floatSel: floatSel,
+      radius: bfMeterPx(sgVal(t[0].fx, 'm', lvs[0])) * scale,
+      length: bfMeterPx(Number(t[6].fx.len) || 18) * scale,
+      width: bfMeterPx(Number(t[6].fx.wid) || 6) * scale,
+      dmgVal: dmgVal, hits: hits, gap: gap, speed: speed,
+      burnSpec: burnSpec, burnChance: lvs[3] > 0 ? sgVal(t[3].fx, 'chance', lvs[3]) : 0,
+      respawnLeft: wall ? Math.max(0, Math.floor(Number(t[6].fx.respawn) || 0)) : 0,
+      delaySec: i * gap * 0.2
+    });
+  }
+}
+
+/* 建立一個地板場域實例。pos 於此時定位（釘在地板上，之後與目標實體脫鉤——
+   目標死了火柱也還在燒），tgt 只用於追擊時的移動方向。 */
+function sgSpawnGround(pEnt, st, gid, cfg) {
+  var p = (typeof bfPos === 'function' && cfg.tgt) ? bfPos(cfg.tgt) : null;
+  var angle = (typeof bfAngleTo === 'function' && cfg.tgt) ? bfAngleTo(cfg.tgt) : null;
+  SKILL2_RT.grounds.push({
+    gid: gid, pEnt: pEnt, st: st, floatSel: cfg.floatSel, kind: cfg.kind,
+    pos: p ? { x: p.x, y: p.y } : null,
+    angle: (angle === null || angle === undefined) ? 0 : angle,
+    radius: Math.max(0, Number(cfg.radius) || 0),
+    length: Math.max(0, Number(cfg.length) || 0),
+    width: Math.max(0, Number(cfg.width) || 0),
+    dmgVal: Number(cfg.dmgVal) || 0,
+    hits: Math.max(1, Math.floor(Number(cfg.hits) || 1)),
+    hitsLeft: Math.max(1, Math.floor(Number(cfg.hits) || 1)),
+    gap: Math.max(0.05, Number(cfg.gap) || 0.5),
+    nextAt: GT + Math.max(0.05, Number(cfg.gap) || 0.5) + Math.max(0, Number(cfg.delaySec) || 0),
+    speed: Math.max(0, Number(cfg.speed) || 0),
+    tgt: cfg.tgt || null,
+    burnSpec: cfg.burnSpec || null,
+    burnChance: Math.max(0, Number(cfg.burnChance) || 0),
+    respawnLeft: Math.max(0, Math.floor(Number(cfg.respawnLeft) || 0))
+  });
+}
+
+/* 場域這一跳打到誰：火柱＝圓、火牆＝以我方視線為法線的橫向矩形（以線段＋半寬表示）。
+   無座標＝退化為固定打當初的目標。 */
+function sgGroundVictims(f, enemies) {
+  if (!f.pos) return (f.tgt && f.tgt.hp > 0) ? [f.tgt] : [];
+  if (f.kind === 'wall' && typeof bfSegmentTargets === 'function' && f.length > 0) {
+    var axis = f.angle + Math.PI / 2;                 // 橫向＝與我方視線垂直
+    var half = f.length / 2;
+    var origin = { x: f.pos.x - Math.cos(axis) * half, y: f.pos.y - Math.sin(axis) * half };
+    return bfSegmentTargets(origin, axis, 0, f.length, enemies, f.width / 2);
+  }
+  if (typeof bfEnemiesInArea !== 'function' || typeof bfLiveList !== 'function') return [];
+  return bfEnemiesInArea({ x: f.pos.x, y: f.pos.y, r: f.radius }, bfLiveList(enemies));
+}
+
+/* 追擊：朝目標移動；目標死亡就改追離我方最近的敵人。 */
+function sgGroundChase(f, enemies, dt) {
+  if (!f.pos || !(f.speed > 0)) return;
+  if (!f.tgt || f.tgt.hp <= 0 || !(typeof bfPos === 'function' && bfPos(f.tgt))) {
+    f.tgt = (typeof bfNearestOther === 'function') ? bfNearestOther(null, enemies) : null;
+  }
+  var p = (typeof bfPos === 'function' && f.tgt) ? bfPos(f.tgt) : null;
+  if (!p) return;
+  var dx = p.x - f.pos.x, dy = p.y - f.pos.y;
+  var d = Math.sqrt(dx * dx + dy * dy);
+  if (d <= 0.0001) return;
+  var step = Math.min(d, f.speed * dt);
+  f.pos.x += (dx / d) * step;
+  f.pos.y += (dy / d) * step;
+  if (typeof bfAngleTo === 'function' && f.tgt) {
+    var a = bfAngleTo(f.tgt);
+    if (a !== null && a !== undefined) f.angle = a;
+  }
+}
+
+/* 場域的一次作用：範圍內每個敵人各吃一段傷害，並依機率附加燃燒。 */
+function sgGroundTick(f, enemies, ctx) {
+  var victims = sgGroundVictims(f, enemies);
+  sgEmitVfx(f.gid, victims, f.floatSel, f.kind === 'wall'
+    ? { fxKind: 'aura', variant: 'firewall', elem: 'fire', dur: f.gap, area: sgGroundArea(f) }
+    : { fxKind: 'impact', variant: 'pillar', elem: 'fire', dur: f.gap, area: sgGroundArea(f) });
+  if (!victims.length) return;
+  var out = { killed: false, dmg: 0, crit: false };
+  for (var i = 0; i < victims.length; i++) {
+    var res = sgHitOne(f.pEnt, f.st, victims[i], f.dmgVal, f.gid, f.floatSel, out, sgStaggerMs(i));
+    if (res && !res.miss && f.burnSpec && f.burnChance > 0 && chance(f.burnChance)) {
+      sgApplyBurn(victims[i], f.burnSpec);
+    }
+  }
+  if (ctx && ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
+  if (out.killed && ctx && ctx.onDeaths) ctx.onDeaths();
+}
+
+/* 場域的地面範圍描述（顯示層用）。火牆帶 w/h/a 讓顯示層畫出方向正確的矩形；
+   同時附上 r（外接圓半徑）讓不認得矩形的舊畫法仍有合理的退化尺寸。 */
+function sgGroundArea(f) {
+  if (!f.pos) return null;
+  if (f.kind === 'wall') {
+    return { x: f.pos.x, y: f.pos.y, w: f.length, h: f.width,
+      a: f.angle + Math.PI / 2, r: Math.max(f.length, f.width) / 2 };
+  }
+  return { x: f.pos.x, y: f.pos.y, r: f.radius };
+}
+
+/* 場域消失：火牆的再召喚（第 7 階，每道只能再觸發一次）與火柱的重生（第 6 階，
+   機率成立就在我方範圍內的隨機敵人身上重來一次）。 */
+function sgGroundExpire(f, enemies, ctx) {
+  var lvs = skills2Levels(f.gid);
+  var t = SKILLS2[f.gid].tiers;
+  var respawn = f.respawnLeft > 0;
+  var rebirth = lvs[5] > 0 && chance(sgVal(t[5].fx, 'chance', lvs[5]));
+  if (!respawn && !rebirth) return;
+  // 重生有表定的落點範圍；火牆的再召喚沒有，改用技能自身的射程當落點上限。
+  var radius = rebirth ? bfMeterPx(Number(t[5].fx.m) || 20) : skills2CastRangePx(f.gid, lvs);
+  var spot = sgRandomEnemyNearPlayer(enemies, radius, null) ||
+    ((f.tgt && f.tgt.hp > 0) ? f.tgt : null);
+  if (!spot) return;
+  sgSpawnGround(f.pEnt, f.st, f.gid, {
+    kind: f.kind, tgt: spot, floatSel: f.floatSel,
+    radius: f.radius, length: f.length, width: f.width,
+    dmgVal: f.dmgVal, hits: f.hits, gap: f.gap, speed: f.speed,
+    burnSpec: f.burnSpec, burnChance: f.burnChance,
+    respawnLeft: respawn ? f.respawnLeft - 1 : 0
+  });
+}
+
+/* 每個 tick 推進所有場域：先移動、再依節拍作用、打完就消失（並處理再召喚／重生）。 */
+function sgTickGrounds(dt, ctx) {
+  var list = SKILL2_RT.grounds;
+  if (!list || !list.length) return;
+  var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
+  for (var i = list.length - 1; i >= 0; i--) {
+    var f = list[i];
+    sgGroundChase(f, enemies, dt);
+    var guard = 0;
+    while (f.hitsLeft > 0 && f.nextAt <= GT && guard < 20) {
+      guard++;
+      f.nextAt += f.gap;
+      f.hitsLeft--;
+      sgGroundTick(f, enemies, ctx);
+      enemies = ctx.getEnemies ? ctx.getEnemies() : enemies;
+    }
+    if (f.hitsLeft > 0) continue;
+    list.splice(i, 1);
+    sgGroundExpire(f, enemies, ctx);
+  }
+}
+
+/* ===========================================================================
    反擊（counter）：主動型被動——受擊時觸發，需裝配技能列才生效、永不主動施放。
    掛點：combat.js doMonsterAttack（野外與高塔敵攻玩家的唯一收斂點）於
    legendaryOnPlayerDamaged 旁鏈結呼叫，簽名與其一致。
@@ -1314,8 +1796,10 @@ function tickSkill2(dt, ctx) {
   if (!SKILL2_RT || !ctx || !ctx.pEnt) return;
   if (SKILL2_RT.rage && SKILL2_RT.rage.until <= GT) SKILL2_RT.rage = null; // 狂怒到期回收
   sgTickFlyingProjectiles(dt, ctx);
+  sgTickGrounds(dt, ctx);
   sgTickStorm(ctx);
   sgTickBloodDots(dt, ctx);
+  sgTickBurn(dt, ctx);
 }
 
 /* 暴風之舞：每 gap 秒自動施放 1 次雙刀亂舞；每次作用時挑一個敵方目標衝過去，
@@ -1426,6 +1910,7 @@ function skills2OnEnemyDeath(deadEnt, enemies) {
   if (!SKILL2_RT || !deadEnt) return;
   sgRageOnKill();                 // 嗜血狂怒：狂化連殺疊連擊（T4）＋狂血盛宴延時（T7）
   sgDeathBoom(deadEnt, enemies);  // 血刃斬：死亡屍爆（T6）
+  sgBurnBlast(deadEnt, enemies);  // 火球術：爆燃（T5）——死亡是燃燒的另一個結束時機
 }
 
 /* 嗜血狂怒的擊殺效果：期間每殺 1 敵——T4 連擊數累加、T7 延長持續時間並同步刷新

@@ -1926,6 +1926,40 @@ var BattleRenderer = (function () {
       }
     }, 2, dur * 1000 + 500);
   }
+  /* 火牆（新版技能【無限火牆】）：橫向矩形的地面場域。
+     模擬層送來的 area 帶 w／h／a（長、寬、朝向弧度），顯示層必須沿用同一組數字——
+     傷害範圍與畫面範圍對不起來，是這類地板技能最難查的一種回報。 */
+  function spawnFireWall(spec) {
+    var a = spec && spec.area;
+    if (!a || !isFinite(a.x) || !isFinite(a.y)) return;
+    var w = Math.max(10, Number(a.w) || 0);
+    var h = Math.max(8, Number(a.h) || 0);
+    var theme = themeOf(spec);
+    var node = new PIXI.Container();
+    node.x = a.x; node.y = a.y;
+    node.rotation = Number(a.a) || 0;
+    var g = new PIXI.Graphics();
+    node.addChild(g);
+    S.layers.zone.addChild(node);
+    var t = 0, dur = Math.min(FX_AURA_MAX_SEC, Math.max(0.35, spec.dur || 0.5));
+    addFx({
+      node: node,
+      update: function (dt) {
+        t += dt;
+        var k = Math.min(1, t / dur);
+        var fade = k > 0.6 ? 1 - (k - 0.6) / 0.4 : 1;
+        var flick = 0.55 + Math.sin(t * 18) * 0.15;
+        g.clear();
+        g.roundRect(-w / 2, -h / 2, w, h, 6)
+          .fill({ color: theme.c2, alpha: 0.3 * fade })
+          .stroke({ color: theme.c1, width: 2, alpha: 0.7 * fade });
+        g.roundRect(-w / 2 + 3, -h / 2 + 3, w - 6, h - 6, 5)
+          .fill({ color: theme.c1, alpha: 0.24 * flick * fade });
+        return t < dur;
+      }
+    }, 2, dur * 1000 + 300);
+  }
+
   function spawnRiser(x, y, theme, glyph) {
     var node;
     if (glyph && Math.random() < 0.4) {
@@ -2659,7 +2693,8 @@ var BattleRenderer = (function () {
         });
         break;
       case 'aura':
-        if (spec.variant === 'cyclone') spawnCyclone(rect, spec);
+        if (spec.variant === 'firewall') spawnFireWall(spec);
+        else if (spec.variant === 'cyclone') spawnCyclone(rect, spec);
         else if (spec.variant === 'bladestorm') spawnBladestorm(rect, spec);
         else spawnAura(rect, spec);
         break;
@@ -2675,6 +2710,9 @@ var BattleRenderer = (function () {
       case 'impact':
       default:
         if (spec.variant === 'pillar') {
+          /* 地板場域（火柱）帶 area＝這一跳的實際傷害範圍：先畫地面footprint，
+             範圍內沒有敵人時它也是玩家唯一看得到的「火柱在這裡」。 */
+          if (rect) spawnAreaFlash(rect, themeOf(spec));
           targets.forEach(function (id, ti) { spawnPillar(id, spec, ti * 0.06); });
           break;
         }

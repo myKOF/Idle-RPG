@@ -1041,6 +1041,11 @@ const SKILLS2_GLOSSARY_ROWS = [
   ['技能初始涵蓋範圍，格式為「長*寬」（米），例如 6*2；只供幾何計算，後續升級倍率／追加距離由程式套用；'],
   ['不適合矩形表示或尚未定義初始矩形的技能可留白；此欄不會寫入遊戲內說明文字；'],
   [''],
+  ['傷害類型 / 傷害屬性'],
+  ['傷害類型：phys＝物理（吃物攻與物穿）、magic＝魔法（吃魔攻與魔穿）；留白＝phys；'],
+  ['傷害屬性：fire/ice/lightning/poison/light/dark/earth，本體傷害整段歸屬該屬性（吃元素抗性與屬性傷害提升）；留白＝無屬性；'],
+  ['兩欄都只需填在階數=1 那一列（整個群組共用）；'],
+  [''],
   ['冷卻時間 / 施法消耗'],
   ['整個群組共用（同群組是同一個技能）；只需填在階數=1 那一列，其餘列僅供對照；'],
   [''],
@@ -1051,7 +1056,10 @@ const SKILLS2_GLOSSARY_ROWS = [
   ['　　　　dotPct＝每跳傷害%（占技能傷害）、dotSec＝持續秒數、dotGap＝作用間隔秒、'],
   ['　　　　gapPct＝間隔縮短%、times＝連擊次數、max＝連鎖上限/疊層上限、cr/cd＝爆擊率/爆擊傷害%、hits＝段數、'],
   ['　　　　mult＝倍率%（反擊·招架：格擋減傷值×此倍率）、def＝防禦降低%（破甲）、'],
-  ['　　　　self＝自身損血%（血飲術反噬，占最大生命）、kill＝每擊殺追加量（狂化連殺連擊數）；'],
+  ['　　　　self＝自身損血%（血飲術反噬，占最大生命）、kill＝每擊殺追加量（狂化連殺連擊數）、'],
+  ['　　　　castM＝施法距離（米，決定這個技能站多遠可以開始施放；留白＝近戰 5 米，'],
+  ['　　　　　　　　高階可覆寫低階，例如殞石術把射程由 30 改成 20）、'],
+  ['　　　　len/wid＝矩形場域的長與寬（米，火牆）、respawn＝場域消失後可再召喚的次數；'],
   ['注意：鍵名是程式接線，不能自創或改名；只調數字即可；'],
   [''],
   ['升級金幣基數 / 升級金幣倍率'],
@@ -1063,7 +1071,7 @@ const SKILLS2_GLOSSARY_ROWS = [
 SCHEMAS.Skills2 = {
   name: 'Skills2', jsFile: 'skills2', sheet: 'Skills2', vars: ['SKILLS2'],
   extraSheets: [{ name: '欄位定義', rows: SKILLS2_GLOSSARY_ROWS }],
-  header: ['群組ID', '群組名稱', '群組圖標', 'range', '冷卻時間', '施法消耗', '階數', '階段名稱',
+  header: ['群組ID', '群組名稱', '群組圖標', 'range', '傷害類型', '傷害屬性', '冷卻時間', '施法消耗', '階數', '階段名稱',
     '效果參數(JSON)', '升級金幣基數', '升級金幣倍率', '效果說明模板'],
   extract(src) {
     const SKILLS2 = evalLiteral(extractLiteral(src, 'SKILLS2').literal);
@@ -1071,7 +1079,8 @@ SCHEMAS.Skills2 = {
     Object.keys(SKILLS2).forEach(gid => {
       const g = SKILLS2[gid];
       (g.tiers || []).forEach((t, i) => {
-        rows.push([gid, g.name, g.emoji, g.range || '', numStr(g.cd), numStr(g.cost), String(i + 1), t.name,
+        rows.push([gid, g.name, g.emoji, g.range || '', g.dmgType || '', g.elem || '',
+          numStr(g.cd), numStr(g.cost), String(i + 1), t.name,
           JSON.stringify(t.fx || {}), numStr(t.goldBase || 0), numStr(t.goldGrow || 1), t.desc || '']);
       });
     });
@@ -1086,7 +1095,8 @@ SCHEMAS.Skills2 = {
       const tierIdx = Math.floor(toNum(get(r, '階數')));
       if (!(tierIdx >= 1)) throw new Error('Skills2 群組「' + gid + '」有一列缺「階數」');
       if (!groups[gid]) {
-        groups[gid] = { name: '', emoji: '', range: '', cd: 0, cost: 0, tiers: [] };
+        // 鍵的順序＝回寫 JS 字面值的欄位順序，須與手寫時一致（留白的兩欄稍後移除）
+        groups[gid] = { name: '', emoji: '', range: '', dmgType: '', elem: '', cd: 0, cost: 0, tiers: [] };
         order.push(gid);
       }
       if (tierIdx === 1) {
@@ -1095,6 +1105,11 @@ SCHEMAS.Skills2 = {
         groups[gid].range = get(r, 'range').trim();
         if (groups[gid].range && !/^\d+(?:\.\d+)?\s*\*\s*\d+(?:\.\d+)?$/.test(groups[gid].range)) {
           throw new Error('Skills2 群組「' + gid + '」的 range 必須是「長*寬」（例如 6*2）');
+        }
+        groups[gid].dmgType = get(r, '傷害類型').trim();
+        groups[gid].elem = get(r, '傷害屬性').trim();
+        if (groups[gid].dmgType && !/^(phys|magic)$/.test(groups[gid].dmgType)) {
+          throw new Error('Skills2 群組「' + gid + '」的傷害類型只能是 phys 或 magic（留白＝phys）');
         }
         groups[gid].cd = toNum(get(r, '冷卻時間'));
         groups[gid].cost = toNum(get(r, '施法消耗'));
@@ -1114,6 +1129,9 @@ SCHEMAS.Skills2 = {
       if (!g.tiers.length) throw new Error('Skills2 群組「' + gid + '」沒有任何階');
       g.tiers.forEach((t, i) => { if (!t) throw new Error('Skills2 群組「' + gid + '」缺第 ' + (i + 1) + ' 階'); });
       if (!g.name) throw new Error('Skills2 群組「' + gid + '」階數=1 那一列缺「群組名稱」');
+      // 留白＝沿用預設（物理、無屬性）：不寫進字面值，避免八個武技群組多出兩個空欄位
+      if (!g.dmgType) delete g.dmgType;
+      if (!g.elem) delete g.elem;
     });
     const entries = order.map(gid => '  ' + (isIdentKey(gid) ? gid : quoteStr(gid)) + ': ' + jsLit(groups[gid]));
     return { SKILLS2: 'var SKILLS2 = {\n' + entries.join(',\n') + '\n};' };
