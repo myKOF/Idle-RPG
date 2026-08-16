@@ -12,7 +12,7 @@
 
 importScripts('protocol.js?v=20', 'shim.js?v=3');
 importScripts(
-  '../util.js?v=20260814-skill-summary', '../data.js?v=20260813-earth-recovery', '../status.js?v=20260814-skill2-counter-bloodrage', '../formula.js?v=20260814-skill2-counter-bloodrage', '../battlefield.js?v=20260813-skills2-rework', '../stats.js',
+  '../util.js?v=20260814-skill-summary', '../data.js?v=20260816-projectile-speed', '../status.js?v=20260814-skill2-counter-bloodrage', '../formula.js?v=20260814-skill2-counter-bloodrage', '../battlefield.js?v=20260816-projectile-speed', '../stats.js',
   '../item.js?v=20260805-tasks',
   '../skills.js?v=20260815-skill-ready-queue', '../skills2.js?v=20260816-dualdance-effects', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260814-skill-min-interval', '../special_rules.js',

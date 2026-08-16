@@ -43,6 +43,7 @@ var BattleRenderer = (function () {
   var FLOAT_MERGE_MS = 160;      // 同目標同類傷害的合併窗（DOM 版邏輯的簡化版）
   var LASTPOS_KEEP_MS = 3000;    // 實體移除後保留座標，讓遲到的飄字仍有落點
   var HIT_JOLT_COOLDOWN_MS = 3000; // 同一單位的受擊抖動冷卻，避免多段傷害連續晃動
+  var BOUNCE_HIT_RADIUS_SCALE = 1 / 3;
   var HIT_JOLT_X = 2.5;          // 受擊抖動水平幅度（px）
   var HIT_JOLT_Y = 1.5;          // 受擊抖動垂直幅度（px）
   var PLAYER_SKILL_FLOAT_SIDE_OFFSET = 120; // 技能名稱／傷害離人物中心的起始左右偏移（px；外移一個戰鬥大格）
@@ -1267,10 +1268,11 @@ var BattleRenderer = (function () {
     sweepOrphanFxNodes();
   }
 
-  function spawnParticles(x, y, count, theme, speed) {
+  function spawnParticles(x, y, count, theme, speed, radiusScale) {
     if (REDUCED_MOTION) return;
     count = particleBudget(Math.min(count, 14));
     if (count <= 0) return;
+    var particleScale = (typeof radiusScale === 'number' && radiusScale > 0) ? radiusScale : 1;
     var c1 = cssColorToInt(theme.c1, 0xffffff);
     var c2 = cssColorToInt(theme.c2, 0xffffff);
     for (var i = 0; i < count; i++) {
@@ -1278,13 +1280,13 @@ var BattleRenderer = (function () {
         var g = new PIXI.Sprite(dotTexture());
         var r = 1.6 + Math.random() * 2.4;
         g.anchor.set(0.5);
-        g.scale.set(r / DOT_TEX_RADIUS);
+        g.scale.set(r * particleScale / DOT_TEX_RADIUS);
         g.tint = Math.random() < 0.5 ? c1 : c2;
         g.x = x; g.y = y;
         g.blendMode = 'add';
         S.layers.fx.addChild(g);
         var ang = Math.random() * Math.PI * 2;
-        var v = (60 + Math.random() * 120) * (speed || 1) * 0.55;
+        var v = (60 + Math.random() * 120) * (speed || 1) * particleScale * 0.55;
         var vx = Math.cos(ang) * v, vy = Math.sin(ang) * v - 40;
         var life = 0.45 + Math.random() * 0.3;
         var t = 0;
@@ -1350,7 +1352,7 @@ var BattleRenderer = (function () {
 
   function projectileSpeedMultiplier() {
     return (typeof VFX_PROJECTILE_SPEED_MULTIPLIER === 'number' && VFX_PROJECTILE_SPEED_MULTIPLIER > 0)
-      ? VFX_PROJECTILE_SPEED_MULTIPLIER : 0.75;
+      ? VFX_PROJECTILE_SPEED_MULTIPLIER : 0.6;
   }
 
   function projectileTravelMs(travelMs, fallbackMs) {
@@ -1518,7 +1520,7 @@ var BattleRenderer = (function () {
   }
 
   /* 命中爆點：環 + 粒子 */
-  function spawnImpact(x, y, spec, strong) {
+  function spawnImpact(x, y, spec, strong, isBounceHit) {
     var theme = themeOf(spec);
     /* 逐幀 clear()＋stroke() 換成貼圖縮放，理由見 ringTexture()。 */
     var ring = new PIXI.Sprite(ringTexture());
@@ -1528,17 +1530,18 @@ var BattleRenderer = (function () {
     S.layers.fx.addChild(ring);
     var t = 0, dur = strong ? 0.4 : 0.26;
     var maxR = strong ? 15 : 8.5;
+    var impactScale = isBounceHit ? BOUNCE_HIT_RADIUS_SCALE : 1;
     addFx({
       node: ring,
       update: function (dt) {
         t += dt;
         var k = Math.min(1, t / dur);
-        ring.scale.set((1.3 + maxR * k) / RING_TEX_RADIUS);
+        ring.scale.set((1.3 + maxR * k) * impactScale / RING_TEX_RADIUS);
         ring.alpha = 1 - k;
         return t < dur;
       }
     }, 1);
-    spawnParticles(x, y, strong ? 12 : 6, theme, strong ? 0.9 : 0.55);
+    spawnParticles(x, y, strong ? 12 : 6, theme, strong ? 0.9 : 0.55, impactScale);
     if (strong && isSpecialScreenShakeSpec(spec)) addShake(5);
   }
 
@@ -2342,7 +2345,7 @@ var BattleRenderer = (function () {
           setTimeout(function () {
             if (fxGate(spec)) return;
             spawnProjectile(toId, hopTravel, spec, function (pt) {
-              spawnImpact(pt.x, pt.y, spec, false);
+              spawnImpact(pt.x, pt.y, spec, false, true);
               hitReact(toId, spec.elem, false);
             }, posOf(fromId));
           }, startDelay);

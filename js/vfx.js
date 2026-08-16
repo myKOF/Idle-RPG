@@ -398,6 +398,7 @@ function vfxStagger() {
 }
 
 var VFX_HIT_COOLDOWN_MS = 3000;
+var VFX_BOUNCE_HIT_RADIUS_SCALE = 1 / 3;
 
 /* ---- 受擊反饋：卡片震動＋元素色閃光 ----
    卡片只在敵群「簽章」（身分＋站位）變動時重建，短命 class 掛上去是安全的；
@@ -472,7 +473,7 @@ function vfxSceneShake(layer, delayMs, strong) {
    這是最常用的末端命中回饋；特殊技能通常仍由自己的幾何函式出手，
    再呼叫本函式補命中爆點與卡片反應。 */
 var VFX_IMPACT_PARTS = { fire: 6, ice: 5, lightning: 5, poison: 4, light: 6, dark: 5, earth: 6, phys: 3, claw: 3 };
-function vfxImpact(spec, layer, pt, targetId, delayMs) {
+function vfxImpact(spec, layer, pt, targetId, delayMs, isBounceHit) {
   /* 先把 variant 映射成 CSS class，再由粒子數與 strong 決定爆點規模。 */
   var v = spec.variant;
   var elemKey = spec.elem || 'phys';
@@ -491,6 +492,7 @@ function vfxImpact(spec, layer, pt, targetId, delayMs) {
   else cls = 'vfx-impact vfx-impact-' + elemKey;
   var d = vfxNode(cls, layer, spec);
   vfxPlace(d, pt);
+  if (isBounceHit) d.style.setProperty('--vfx-hit-scale', String(VFX_BOUNCE_HIT_RADIUS_SCALE));
   d.style.animationDelay = delayMs + 'ms';
 
   var n = VFX_IMPACT_PARTS[elemKey] || 4;
@@ -557,7 +559,7 @@ function vfxLerp(a, b, t) { return a + (b - a) * t; }
 /* 讀取調速參數；沒有配置時退回 0.75，保證舊存檔或測試環境仍有合理速度。 */
 function vfxProjectileSpeedMultiplier() {
   return (typeof VFX_PROJECTILE_SPEED_MULTIPLIER === 'number' && VFX_PROJECTILE_SPEED_MULTIPLIER > 0)
-    ? VFX_PROJECTILE_SPEED_MULTIPLIER : 0.75;
+    ? VFX_PROJECTILE_SPEED_MULTIPLIER : 0.6;
 }
 
 /* travelMs 是模擬層提供的實際距離時間；缺少時用 spec.dur 估算，並套用
@@ -1270,7 +1272,7 @@ function vfxChain(spec, layer, ptList, idList, baseDelay, strikes) {
         elem: spec.variant === 'poison-spread' ? 'poison' : null,
         variant: null, color: spec.color
       }, layer, ptList[pathI], idList[pathI],
-        pathStart + pathFlight);
+        pathStart + pathFlight, true);
       pathStart += pathFlight;
     }
     return;
