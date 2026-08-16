@@ -1,0 +1,166 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>pixi bench 4 — 光暈填充率 / 混合模式 / 震動 / 解析度</title>
+<style>body{background:#111;color:#ddd;font:14px monospace;padding:12px}b{color:#7fd}
+canvas{border:1px solid #333;width:390px;height:369px}
+.hd{color:#fd7;margin-top:12px;display:block}
+.no{color:#8a8}</style></head>
+<body>
+<div id="out">running...</div>
+<script src="../js/vendor/pixi.min.js"></script>
+<script>
+var lines = [];
+function log(s) { lines.push(s); document.getElementById('out').innerHTML = lines.join('<br>'); }
+
+/* 回答一個問題：「滿畫面的光暈漸層 + 受擊震動，是不是效能主因？」
+   這三件事的解法完全不同，所以必須分開量：
+
+     填充率     同樣數量的光暈，擠在一小塊 vs 散開全畫面。差別＝重疊造成的
+                同像素重複著色。若擠在一起明顯比較慢，問題是 overdraw，
+                要縮小光暈尺寸或降低數量，改畫法沒用。
+     混合模式   add vs normal；以及 add/normal 交錯排列 vs 依混合模式分組。
+                交錯會強制拆批（每換一次模式就 flush 一次）。
+     震動       整個 world 容器每幀位移。注意鏡頭本來就每幀在寫這個座標，
+                所以震動的「額外」成本才是要量的東西。
+     解析度     dpr × uiShellScale（js/battle-renderer.js currentResolution，
+                上限 2.5）。像素量是平方關係，填充率的代價會跟著平方。
+
+   驅動方式同 bench2/3：同步步進 + gl.finish()。 */
+(async function () {
+  var CSS_W = 782, CSS_H = 738;   // 對齊使用者截圖的戰鬥區尺寸
+
+  function glowTex() {
+    var c = document.createElement('canvas');
+    c.width = c.height = 64;
+    var g = c.getContext('2d');
+    var grad = g.createRadialGradient(32, 32, 2, 32, 32, 32);
+    grad.addColorStop(0, 'rgba(255,255,255,0.9)');
+    grad.addColorStop(0.5, 'rgba(255,255,255,0.28)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 64, 64);
+    return PIXI.Texture.from(c);
+  }
+
+  async function makeApp(res) {
+    var app = new PIXI.Application();
+    await app.init({ width: CSS_W, height: CSS_H, background: 0x111111,
+                     antialias: false, resolution: res, autoDensity: false });
+    app.ticker.stop();
+    return app;
+  }
+
+  var app = await makeApp(1);
+  document.body.appendChild(app.canvas);
+  var gl = app.renderer.gl;
+  log('PIXI ' + PIXI.VERSION + '　畫布 ' + CSS_W + '×' + CSS_H +
+      '　devicePixelRatio=' + (window.devicePixelRatio || 1) + '　gl.finish 可用: ' + !!gl);
+
+  var TEX = glowTex();
+
+  /* 建一批光暈。cluster=true 就擠在畫面中央 200×200 內（＝截圖那團），
+     false 則散開整個畫面；兩者物件數與尺寸完全相同，差別只有重疊程度。 */
+  function build(app, n, opts) {
+    var world = new PIXI.Container();
+    app.stage.addChild(world);
+    for (var i = 0; i < n; i++) {
+      var s = new PIXI.Sprite(TEX);
+      s.anchor.set(0.5);
+      s.scale.set(opts.scale);
+      s.alpha = opts.alpha;
+      s.tint = [0xff6a2a, 0x79d8ff, 0xffd23f, 0x76d83b][i % 4];
+      if (opts.cluster) {
+        s.x = CSS_W / 2 + (Math.random() * 200 - 100);
+        s.y = CSS_H / 2 + (Math.random() * 200 - 100);
+      } else {
+        s.x = Math.random() * CSS_W;
+        s.y = Math.random() * CSS_H;
+      }
+      /* interleave：一半 add 一半 normal 交錯掛上去（現況：投射物光暈是 add、
+         本體是一般混合，粒子是 add，環是一般混合，全部混在同一層）
+         grouped：先掛完所有 normal 再掛所有 add */
+      if (opts.blend === 'add') s.blendMode = 'add';
+      else if (opts.blend === 'normal') s.blendMode = 'normal';
+      else if (opts.blend === 'interleave') s.blendMode = (i % 2) ? 'add' : 'normal';
+      world.addChild(s);
+    }
+    if (opts.blend === 'grouped') {
+      var kids = world.children.slice();
+      world.removeChildren();
+      for (var a = 0; a < kids.length; a++) if (a % 2 === 0) { kids[a].blendMode = 'normal'; world.addChild(kids[a]); }
+      for (var b = 0; b < kids.length; b++) if (b % 2 === 1) { kids[b].blendMode = 'add'; world.addChild(kids[b]); }
+    }
+    return world;
+  }
+
+  function measure(app, world, shake) {
+    var gl2 = app.renderer.gl, frames = [];
+    for (var f = 0; f < 300; f++) {
+      var t0 = performance.now();
+      /* 鏡頭：不管震不震動，這個座標每幀都會被重寫（跟著玩家跑） */
+      var camX = Math.sin(f * 0.03) * 40, camY = Math.cos(f * 0.03) * 24;
+      var sx = shake ? (Math.random() * 2 - 1) * 8 : 0;
+      var sy = shake ? (Math.random() * 2 - 1) * 5 : 0;
+      world.x = CSS_W / 2 - camX + sx;
+      world.y = CSS_H / 2 - camY + sy;
+      app.renderer.render(app.stage);
+      gl2.finish();
+      var ms = performance.now() - t0;
+      if (f >= 60) frames.push(ms);
+    }
+    frames.sort(function (a, b) { return a - b; });
+    return { p50: frames[Math.floor(frames.length * 0.5)],
+             p95: frames[Math.floor(frames.length * 0.95)] };
+  }
+
+  function run(name, app, n, opts, shake) {
+    app.stage.removeChildren();
+    var world = build(app, n, opts);
+    var r = measure(app, world, shake);
+    world.destroy({ children: true });
+    log(name + '　<b>中位 ' + r.p50.toFixed(2) + ' ms</b>　p95 ' + r.p95.toFixed(2) + ' ms');
+    return r.p50;
+  }
+
+  var base = { scale: 1.6, alpha: 0.7, blend: 'add', cluster: true };
+  function o(over) { var x = {}; for (var k in base) x[k] = base[k]; for (k in over) x[k] = over[k]; return x; }
+
+  log('<span class="hd">---- 1. 填充率：同樣的光暈，擠成一團 vs 散開全畫面 ----</span>');
+  log('<span class="no">（物件數與尺寸完全相同，唯一差別是重疊程度）</span>');
+  run('120 個光暈　擠在中央 200×200（＝截圖那團）', app, 120, o({ cluster: true }), false);
+  run('120 個光暈　散開整個畫面　　　　　　　　 ', app, 120, o({ cluster: false }), false);
+  run('300 個光暈　擠在中央 200×200　　　　　　 ', app, 300, o({ cluster: true }), false);
+  run('300 個光暈　散開整個畫面　　　　　　　　 ', app, 300, o({ cluster: false }), false);
+
+  log('<span class="hd">---- 2. 光暈尺寸（純填充率槓桿，物件數不變）----</span>');
+  run('300 個　scale 1.6（現況量級）　　　　　　', app, 300, o({ scale: 1.6 }), false);
+  run('300 個　scale 0.9　　　　　　　　　　　　', app, 300, o({ scale: 0.9 }), false);
+  run('300 個　scale 0.5　　　　　　　　　　　　', app, 300, o({ scale: 0.5 }), false);
+
+  log('<span class="hd">---- 3. 混合模式與合批 ----</span>');
+  run('300 個　全部 add　　　　　　　　　　　　 ', app, 300, o({ blend: 'add' }), false);
+  run('300 個　全部 normal　　　　　　　　　　　', app, 300, o({ blend: 'normal' }), false);
+  run('300 個　add/normal 交錯（現況的排列方式） ', app, 300, o({ blend: 'interleave' }), false);
+  run('300 個　依混合模式分組後再掛　　　　　　 ', app, 300, o({ blend: 'grouped' }), false);
+
+  log('<span class="hd">---- 4. 受擊震動（整個 world 容器每幀位移）----</span>');
+  log('<span class="no">（鏡頭本來就每幀在寫 world.x/y，這裡量的是「再加一個震動偏移」的額外成本）</span>');
+  run('300 個　不震動　　　　　　　　　　　　　 ', app, 300, o({}), false);
+  run('300 個　震動　　　　　　　　　　　　　　 ', app, 300, o({}), true);
+  run('800 個　不震動　　　　　　　　　　　　　 ', app, 800, o({}), false);
+  run('800 個　震動　　　　　　　　　　　　　　 ', app, 800, o({}), true);
+
+  log('<span class="hd">---- 5. 算繪解析度（currentResolution，上限 2.5）----</span>');
+  log('<span class="no">（同一批內容，只改 resolution；像素量是平方關係）</span>');
+  for (var ri = 0; ri < 3; ri++) {
+    var res = [1, 1.5, 2][ri];
+    var a2 = await makeApp(res);
+    var p = run('300 個光暈擠成一團　resolution=' + res +
+                '（' + Math.round(CSS_W * res) + '×' + Math.round(CSS_H * res) + '）',
+                a2, 300, o({ cluster: true }), false);
+    a2.destroy(true);
+  }
+  log('---- 完成 ----');
+})();
+</script>
+</body></html>

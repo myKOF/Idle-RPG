@@ -28,7 +28,38 @@
     /^172\.(1[6-9]|2\d|3[01])\./.test(host);
   if (!internal) return;
 
-  var P = { fn: {}, layout: {}, layoutTotal: 0, long: [], cmd: {}, t0: 0 };
+  var P = { fn: {}, layout: {}, layoutTotal: 0, long: [], cmd: {}, t0: 0, grow: {}, timers: 0, timersPeak: 0 };
+
+  /* ---- 成長追蹤 ----
+     用來抓「一旦開始卡就回不去，只有 F5 會好」這類累積型問題。單看當下的數字
+     沒有意義（60 個飄字是正常的），要看的是**同一個數字有沒有只增不減**。
+     每支指標記三個值：第一次看到、目前、歷史最大。若「目前 ≈ 最大 ≫ 起始」，
+     那支就是嫌疑犯。 */
+  function track(name, value) {
+    if (typeof value !== 'number' || !isFinite(value)) return;
+    var s = P.grow[name] || (P.grow[name] = { first: value, max: value, now: value });
+    s.now = value;
+    if (value > s.max) s.max = value;
+  }
+
+  /* 未結束的計時器數量。特效與飄字的延遲全靠 setTimeout，
+     若某條路徑只排程不執行（或排程速度長期高於觸發速度），這個數字會一路長大。 */
+  function wrapTimers() {
+    var st = window.setTimeout, ct = window.clearTimeout;
+    if (!st || st.__lagWrapped) return;
+    var wrapped = function (fn, ms) {
+      var args = Array.prototype.slice.call(arguments, 2);
+      P.timers++;
+      if (P.timers > P.timersPeak) P.timersPeak = P.timers;
+      return st(function () {
+        P.timers--;
+        if (typeof fn === 'function') fn.apply(null, args);
+      }, ms);
+    };
+    wrapped.__lagWrapped = true;
+    window.setTimeout = wrapped;
+    window.clearTimeout = function (id) { if (P.timers > 0) P.timers--; return ct(id); };
+  }
 
   function bump(bucket, key, ms) {
     var s = bucket[key] || (bucket[key] = { n: 0, ms: 0, max: 0 });
@@ -171,6 +202,39 @@
     console.log('主執行緒長工作(>50ms)：' + P.long.length + ' 次 / 共 ' + busy +
       ' ms / 卡住 ' + (busy / (sec * 1000) * 100).toFixed(1) + '% 的時間　最大幾筆：' +
       P.long.slice().sort(function (a, b) { return b - a; }).slice(0, 8).join(', '));
+    /* ---- 成長追蹤：抓「回不去」的累積型卡頓 ---- */
+    var br = (window.BattleRenderer && BattleRenderer.status) ? BattleRenderer.status() : null;
+    if (br) {
+      track('渲染器 特效(fx)', br.fx);
+      track('渲染器 飄字(floats)', br.floats);
+      track('渲染器 敵人實體', br.entities);
+      track('渲染器 殘留座標(lastPos)', br.lastPos);
+      track('渲染器 飄字合併表', br.floatMerge);
+      track('渲染器 貼圖快取(imgTex)', br.imgTex);
+      if (br.nodes) {
+        track('節點 特效層', br.nodes.fx);
+        track('節點 實體層', br.nodes.entity);
+        track('節點 飄字層', br.nodes.float);
+        track('節點 覆蓋層', br.nodes.overlay);
+      }
+    }
+    track('DOM 節點總數', document.getElementsByTagName('*').length);
+    track('未結束計時器', P.timers);
+    track('Worker 待處理指令', st.pendingCommands);
+    track('Worker 落後秒數', st.catchupSec);
+
+    var growRows = Object.keys(P.grow).map(function (k) {
+      var g = P.grow[k];
+      /* 只增不減的判準：現在仍停在歷史高點附近，而且比起始高出一截 */
+      var suspect = (g.now >= g.max * 0.9) && (g.now > g.first + 5) && (g.now > g.first * 1.5);
+      return { '項目': k, '起始': g.first, '目前': g.now, '最大': g.max,
+               '疑似只增不減': suspect ? '★ 是' : '' };
+    }).sort(function (a, b) { return (b['最大'] - b['起始']) - (a['最大'] - a['起始']); });
+    console.log('%c--- 成長追蹤（★ 表示疑似洩漏，要看多份報告確認趨勢）---',
+      'color:#c60;font-weight:bold');
+    console.table(growRows);
+    console.log('計時器峰值 ' + P.timersPeak + ' 個');
+
     if (Object.keys(P.cmd).length) { console.log('--- 按鈕延遲（按下→可再按）---'); console.table(rows(P.cmd, true)); }
     console.log('--- 誰在強制版面重算（次數）---'); console.table(rows(P.layout, false).slice(0, 15));
     console.log('--- 各函式耗時 ---'); console.table(rows(P.fn, true).slice(0, 15));
@@ -184,20 +248,24 @@
       enemies: document.querySelectorAll('.enemy-card').length,
       worker: { catchup: st.catchupSec, ticks: st.ticks, errors: st.errors, restarts: st.restarts },
       layoutTotal: P.layoutTotal, longTasks: P.long.slice(),
+      renderer: br, timers: P.timers, timersPeak: P.timersPeak, grow: growRows,
       cmd: rows(P.cmd, true), layout: rows(P.layout, false).slice(0, 20), fn: rows(P.fn, true).slice(0, 20)
     };
     return '把上面整段截圖回報（或執行 copy(__lagData) 貼純文字）';
   };
 
+  /* 成長追蹤刻意**不**歸零：抓累積型問題要的就是一條夠長的基線，
+     中途重設會把「起始值」洗成已經漲上去的數字，等於自廢武功。 */
   window.lagReset = function () {
     P.fn = {}; P.layout = {}; P.layoutTotal = 0; P.long = []; P.cmd = {};
     P.t0 = performance.now();
-    return '已歸零，重新計時';
+    return '已歸零，重新計時（成長追蹤的基線保留）';
   };
 
   function start() {
     wrapAll();
     wrapCommands();
+    wrapTimers();
     P.t0 = performance.now();
     console.log('%c[卡頓探針] 已啟用（?lag=1）。每 15 秒自動印一次；lagReport() 立即印，lagReset() 歸零。',
       'color:#0a0;font-weight:bold');
