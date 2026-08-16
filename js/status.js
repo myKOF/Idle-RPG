@@ -91,7 +91,8 @@ var STATUS = {
   sgBloodrage: { name: '嗜血狂怒', icon: '💢', kind: 'buff', effect: 'stat', key: 'sgBloodrage', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 20, dur: 8, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【嗜血狂怒】：攻速乘算提高（突破攻速上限）；期間各階狂怒效果生效。' },
   sgArmorBrk: { name: '破甲', icon: '⚒️', kind: 'debuff', effect: 'stat', key: 'sgDefBrk', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 25, dur: 4, interval: 0, stack: 'stack', maxStacks: 4, desc: '新版技能【破甲擊】：防禦降低（可疊層，疊層時重置時間；獨立鍵、與舊 defDown 減益加總計算）。' },
   sgBurn: { name: '烈焰燃燒', icon: '🔥', kind: 'debuff', effect: 'dot', key: '', elem: 'fire', dmgSource: 'skill', dmg: 20, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0.5, stack: 'strongest', maxStacks: 1, desc: '新版技能【火球術／火柱】：火屬性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。' },
-  sgFireAmp: { name: '火焰增幅', icon: '🔥', kind: 'buff', effect: 'stat', key: 'sgFireAmp', elem: 'fire', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 4, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【火焰增幅】：火屬性傷害提升（層數由引擎累加成單一數值，故用後蓋前並重置時間）。' }
+  sgFireAmp: { name: '火焰增幅', icon: '🔥', kind: 'buff', effect: 'stat', key: 'sgFireAmp', elem: 'fire', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 4, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【火焰增幅】：火屬性傷害提升（層數由引擎累加成單一數值，故用後蓋前並重置時間）。' },
+  sgFirehunt: { name: '火狩', icon: '☄️', kind: 'buff', effect: 'stat', key: 'sgFirehunt', elem: 'fire', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 4, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【火狩】：火狩環繞自身的剩餘時間；【再生】的擊殺延長會累加在這裡。' }
 };
 
 /* ---- 反查索引 ----

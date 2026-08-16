@@ -41,3 +41,4 @@ sgBloodrage,嗜血狂怒,💢,buff,stat,sgBloodrage,,,0,,0,20,8,0,refresh,1,新�
 sgArmorBrk,破甲,⚒️,debuff,stat,sgDefBrk,,,0,,0,25,4,0,stack,4,新版技能【破甲擊】：防禦降低（可疊層，疊層時重置時間；獨立鍵、與舊 defDown 減益加總計算）。
 sgBurn,烈焰燃燒,🔥,debuff,dot,,fire,skill,20,,0,0,5,0.5,strongest,1,新版技能【火球術／火柱】：火屬性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。
 sgFireAmp,火焰增幅,🔥,buff,stat,sgFireAmp,fire,,0,,0,0,4,0,refresh,1,新版技能【火焰增幅】：火屬性傷害提升（層數由引擎累加成單一數值，故用後蓋前並重置時間）。
+sgFirehunt,火狩,☄️,buff,stat,sgFirehunt,fire,,0,,0,0,4,0,refresh,1,新版技能【火狩】：火狩環繞自身的剩餘時間；【再生】的擊殺延長會累加在這裡。
