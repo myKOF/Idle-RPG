@@ -45,7 +45,6 @@ var BattleRenderer = (function () {
   var HIT_JOLT_COOLDOWN_MS = 3000; // 同一單位的受擊抖動冷卻，避免多段傷害連續晃動
   var HIT_JOLT_X = 2.5;          // 受擊抖動水平幅度（px）
   var HIT_JOLT_Y = 1.5;          // 受擊抖動垂直幅度（px）
-  var PROJECTILE_HIT_RADIUS_SCALE = 1 / 3; // 一般投射物命中回饋縮放；強爆炸保留原規模
   var PLAYER_SKILL_FLOAT_SIDE_OFFSET = 120; // 技能名稱／傷害離人物中心的起始左右偏移（px；外移一個戰鬥大格）
   var PLAYER_SKILL_FLOAT_DRIFT = 16;        // 起始後只再向外滑一小段，避免回到人物中心
   var PLAYER_SKILL_FLOAT_LIFE_SEC = 1.05;   // 一般技能名稱／傷害字的顯示時間
@@ -1268,11 +1267,10 @@ var BattleRenderer = (function () {
     sweepOrphanFxNodes();
   }
 
-  function spawnParticles(x, y, count, theme, speed, radiusScale) {
+  function spawnParticles(x, y, count, theme, speed) {
     if (REDUCED_MOTION) return;
     count = particleBudget(Math.min(count, 14));
     if (count <= 0) return;
-    var particleScale = (typeof radiusScale === 'number' && radiusScale > 0) ? radiusScale : 1;
     var c1 = cssColorToInt(theme.c1, 0xffffff);
     var c2 = cssColorToInt(theme.c2, 0xffffff);
     for (var i = 0; i < count; i++) {
@@ -1280,13 +1278,13 @@ var BattleRenderer = (function () {
         var g = new PIXI.Sprite(dotTexture());
         var r = 1.6 + Math.random() * 2.4;
         g.anchor.set(0.5);
-        g.scale.set(r * particleScale / DOT_TEX_RADIUS);
+        g.scale.set(r / DOT_TEX_RADIUS);
         g.tint = Math.random() < 0.5 ? c1 : c2;
         g.x = x; g.y = y;
         g.blendMode = 'add';
         S.layers.fx.addChild(g);
         var ang = Math.random() * Math.PI * 2;
-        var v = (60 + Math.random() * 120) * (speed || 1) * particleScale * 0.55;
+        var v = (60 + Math.random() * 120) * (speed || 1) * 0.55;
         var vx = Math.cos(ang) * v, vy = Math.sin(ang) * v - 40;
         var life = 0.45 + Math.random() * 0.3;
         var t = 0;
@@ -1530,18 +1528,17 @@ var BattleRenderer = (function () {
     S.layers.fx.addChild(ring);
     var t = 0, dur = strong ? 0.4 : 0.26;
     var maxR = strong ? 15 : 8.5;
-    var impactScale = strong ? 1 : PROJECTILE_HIT_RADIUS_SCALE;
     addFx({
       node: ring,
       update: function (dt) {
         t += dt;
         var k = Math.min(1, t / dur);
-        ring.scale.set((1.3 + maxR * k) * impactScale / RING_TEX_RADIUS);
+        ring.scale.set((1.3 + maxR * k) / RING_TEX_RADIUS);
         ring.alpha = 1 - k;
         return t < dur;
       }
     }, 1);
-    spawnParticles(x, y, strong ? 12 : 6, theme, strong ? 0.9 : 0.55, impactScale);
+    spawnParticles(x, y, strong ? 12 : 6, theme, strong ? 0.9 : 0.55);
     if (strong && isSpecialScreenShakeSpec(spec)) addShake(5);
   }
 
@@ -1567,8 +1564,7 @@ var BattleRenderer = (function () {
     g.x = x; g.y = y;
     g.rotation = typeof rotation === 'number' ? rotation : (-0.5 + Math.random());
     S.layers.fx.addChild(g);
-    var slashScale = spec && spec.variant === 'claw' ? 1 : PROJECTILE_HIT_RADIUS_SCALE;
-    var t = 0, dur = 0.24, R = (big ? 54 : 36) * slashScale;
+    var t = 0, dur = 0.24, R = big ? 54 : 36;
     addFx({
       node: g,
       update: function (dt) {
@@ -1577,9 +1573,9 @@ var BattleRenderer = (function () {
         var sweep = -Math.PI * 0.7 + k * Math.PI * 1.1;
         g.clear();
         g.arc(0, 0, R, sweep - 0.9, sweep, false)
-          .stroke({ color: theme.c1, width: 7 * slashScale * (1 - k * 0.6), alpha: 1 - k, cap: 'round' });
+          .stroke({ color: theme.c1, width: 7 * (1 - k * 0.6), alpha: 1 - k, cap: 'round' });
         g.arc(0, 0, R * 0.8, sweep - 0.7, sweep, false)
-          .stroke({ color: '#ffffff', width: 3 * slashScale * (1 - k), alpha: 0.8 * (1 - k), cap: 'round' });
+          .stroke({ color: '#ffffff', width: 3 * (1 - k), alpha: 0.8 * (1 - k), cap: 'round' });
         return t < dur;
       }
     }, 1);

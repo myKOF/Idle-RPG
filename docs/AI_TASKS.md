@@ -2,16 +2,17 @@
 
 ## Codex｜縮小目標投射物受擊特效半徑｜2026-08-16
 
-- 狀態：已完成（2026-08-16）
+- 狀態：已完成（2026-08-16；尺寸修改已撤回）
 - Owner：Codex
 - 目的：將目標身上的一般投射物／彈射命中爆點與斬擊回饋縮為目前半徑的 1/3，改善飛刀與血刃斬彈射命中時遮住敵群與傷害飄字的問題。
 - 需求修訂：除殞石術等明確特殊技能外，一般受擊不再觸發鏡頭震動；一般命中改由目標角色圖片晃動呈現，並保留同一單位每 3 秒最多 1 次的冷卻。
+- 再次修訂：一般受擊爆點與斬擊回饋不套用 1/3 半徑；撤回先前過度擴大的共用尺寸修改，僅保留鏡頭震動分流與 3 秒角色晃動冷卻。
 - 前置依賴：既有 DOM／PixiJS VFX 雙路徑、飛刀 `knife`／`knife-bounce` 與血刃斬 `poison-spread` 共用命中回饋已存在；另一分支僅修改無關的 `lagprobe.js` 快取版號，已保留。
-- 允許修改：`js/battle-renderer.js`、`js/vfx.js`、`css/style.css`、`index.html`、`tests/hit-react-throttle.test.cjs`、`tests/projectile-impact-size.test.cjs`、本文件。
+- 允許修改：`js/battle-renderer.js`、`js/vfx.js`、`css/style.css`、`index.html`、`tests/hit-react-throttle.test.cjs`、本文件。
 - 禁止修改：技能數值、傷害公式、目標選擇、彈射距離與時序、Worker Protocol、存檔格式及其他任務內容。
-- 驗收：DOM／Canvas 一般目標命中回饋半徑為原本 1/3；一般命中只有角色圖片晃動且同一單位 3 秒最多 1 次；殞石術等特殊技能仍可觸發鏡頭震動；執行定向測試、JavaScript 語法檢查、`npm.cmd run build`、完整 `npm.cmd test` 與 `git diff --check`。
-- 驗證結果：定向測試 14/14、JavaScript `--check` 通過、`npm.cmd run build` 280/280、完整 `npm.cmd test` 1413/1413、`git diff --check` 通過。
-- 已知風險：尚未進行瀏覽器實機畫面確認；特殊技能的鏡頭震動仍依既有明確技能變體保留。
+- 驗收：DOM／Canvas 一般目標命中回饋恢復原尺寸；一般命中只有角色圖片晃動且同一單位 3 秒最多 1 次；殞石術等特殊技能仍可觸發鏡頭震動；執行定向測試、JavaScript `--check`、`npm.cmd run build`、完整 `npm.cmd test` 與 `git diff --check`。
+- 驗證結果：定向測試 13/13、JavaScript `--check` 通過、`npm.cmd run build` 279/279、完整 `npm.cmd test` 1412/1412、`git diff --check` 通過。
+- 已知風險：尚未進行瀏覽器實機畫面確認；本次不再改動一般受擊特效尺寸。
 - 交接：完成後回報修改檔案、測試指令與結果；建立 `[Codex]` 前綴 commit，不合併或推送其他分支。
 
 ## Codex｜敵人死亡後清除未播放傷害浮字｜2026-08-16
