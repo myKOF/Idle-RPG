@@ -2113,17 +2113,6 @@ var BattleRenderer = (function () {
           axisX * shadowLong - perpX * shadowWide, shadowY + axisY * shadowLong - perpY * shadowWide,
           -axisX * shadowLong - perpX * shadowWide, shadowY - axisY * shadowLong - perpY * shadowWide
         ]).fill({ color: 0x30231d, alpha: 0.5 * fade });
-        var baseLong = w * 0.47;
-        var baseWide = baseDepth * 0.22;
-        g.poly([
-          -axisX * baseLong + perpX * baseWide, groundY - axisY * baseLong + perpY * baseWide,
-          axisX * baseLong + perpX * baseWide, groundY + axisY * baseLong + perpY * baseWide,
-          axisX * baseLong - perpX * baseWide, groundY + axisY * baseLong - perpY * baseWide,
-          -axisX * baseLong - perpX * baseWide, groundY - axisY * baseLong - perpY * baseWide
-        ])
-          .fill({ color: 0x9f250e, alpha: 0.48 * fade })
-          .stroke({ color: 0xff7a18, width: 1.5, alpha: 0.42 * fade });
-
         // 三個獨立的火龍捲沿傷害矩形長軸並排；每個柱體仍保持世界座標的垂直噴發。
         var vortexW = Math.max(24, w * 0.34);
         for (var vi = 0; vi < 3; vi++) {

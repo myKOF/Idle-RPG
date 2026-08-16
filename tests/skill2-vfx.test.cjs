@@ -189,6 +189,7 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.match(vfx, /for \(var vi = 0; vi < 3; vi\+\+\)[\s\S]*vfx-fire-wall-vortex/);
   assert.match(renderer, /var axisAngle = fx\.angle/);
   assert.match(renderer, /var vortexGroundY = groundY \+ axisY \* vortexOffset/);
+  assert.doesNotMatch(renderer, /var baseLong = w \* 0\.47/);
   assert.match(vfx, /var wallAngle = isFinite\(area && area\.a\)/);
   assert.match(vfx, /wallAxisX \* \(vi - 1\) \* 31/);
   assert.match(css, /\.vfx-fire-wall[\s\S]*transform: none/);
