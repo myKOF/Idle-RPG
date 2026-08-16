@@ -31,15 +31,22 @@
   var P = { fn: {}, layout: {}, layoutTotal: 0, long: [], cmd: {}, t0: 0, grow: {}, timers: 0, timersPeak: 0 };
 
   /* ---- 成長追蹤 ----
-     用來抓「一旦開始卡就回不去，只有 F5 會好」這類累積型問題。單看當下的數字
-     沒有意義（60 個飄字是正常的），要看的是**同一個數字有沒有只增不減**。
-     每支指標記三個值：第一次看到、目前、歷史最大。若「目前 ≈ 最大 ≫ 起始」，
-     那支就是嫌疑犯。 */
+     用來抓「一旦開始卡就回不去，只有 F5 會好」這類累積型問題。
+
+     ⚠️ 判準看的是**近期最低點**，不是目前值。第一版拿「目前 vs 起始」判斷，
+     結果 2026-08-16 的實測報告裡整排都標成嫌疑犯——因為戰鬥中場上有 68 隻怪、
+     138 個特效，本來就該比待機時高。戰鬥一結束全部回落，根本沒有洩漏。
+     真正的洩漏長的是**地板**：連最閒的那一刻都回不到原本的水位。
+     所以這裡記一個滑動窗的最低值，只有「地板持續墊高」才標記。 */
+  var GROW_WINDOW = 8;   // 保留最近 8 份報告 ≈ 2 分鐘，要夠長才蓋得住一場戰鬥
   function track(name, value) {
     if (typeof value !== 'number' || !isFinite(value)) return;
-    var s = P.grow[name] || (P.grow[name] = { first: value, max: value, now: value });
+    var s = P.grow[name] || (P.grow[name] = { first: value, max: value, now: value, win: [] });
     s.now = value;
     if (value > s.max) s.max = value;
+    s.win.push(value);
+    if (s.win.length > GROW_WINDOW) s.win.shift();
+    s.floor = Math.min.apply(null, s.win);
   }
 
   /* 未結束的計時器數量。特效與飄字的延遲全靠 setTimeout，
@@ -116,8 +123,13 @@
 
   /* ---- 主執行緒長工作 ---- */
   try {
+    /* 連同「發生在第幾秒」一起記。只有時長的話分不出那筆 954ms 是載入期的
+       一次性成本，還是戰鬥中真的凍住——這兩件事的處理方式完全不同。
+       秒數以分頁載入為起點（e.startTime 的基準），不是探針啟動時間。 */
     new PerformanceObserver(function (list) {
-      list.getEntries().forEach(function (e) { P.long.push(Math.round(e.duration)); });
+      list.getEntries().forEach(function (e) {
+        P.long.push({ ms: Math.round(e.duration), at: Math.round(e.startTime / 1000) });
+      });
       if (P.long.length > 500) P.long.splice(0, 250);
     }).observe({ entryTypes: ['longtask'] });
   } catch (e) {}
@@ -186,7 +198,7 @@
   window.lagReport = function () {
     var sec = (performance.now() - P.t0) / 1000;
     if (sec <= 0) return '尚未開始計時';
-    var busy = P.long.reduce(function (a, b) { return a + b; }, 0);
+    var busy = P.long.reduce(function (a, b) { return a + b.ms; }, 0);
     var inv = (window.UI_WORKER_STATE && UI_WORKER_STATE.panels.inv) || {};
     var st = (window.WorkerBridge && WorkerBridge.status) ? WorkerBridge.status() : {};
     console.log('%c===== 卡頓探針 ' + sec.toFixed(0) + ' 秒 =====', 'font-weight:bold');
@@ -200,8 +212,9 @@
     console.log('%c強制版面重算 ' + P.layoutTotal + ' 次（每秒 ' +
       (P.layoutTotal / sec).toFixed(0) + ' 次）', 'color:#c00;font-weight:bold');
     console.log('主執行緒長工作(>50ms)：' + P.long.length + ' 次 / 共 ' + busy +
-      ' ms / 卡住 ' + (busy / (sec * 1000) * 100).toFixed(1) + '% 的時間　最大幾筆：' +
-      P.long.slice().sort(function (a, b) { return b - a; }).slice(0, 8).join(', '));
+      ' ms / 卡住 ' + (busy / (sec * 1000) * 100).toFixed(1) + '% 的時間　最大幾筆（時長@發生秒數）：' +
+      P.long.slice().sort(function (a, b) { return b.ms - a.ms; }).slice(0, 8)
+        .map(function (e) { return e.ms + 'ms@' + e.at + 's'; }).join(', '));
     /* ---- 成長追蹤：抓「回不去」的累積型卡頓 ---- */
     var br = (window.BattleRenderer && BattleRenderer.status) ? BattleRenderer.status() : null;
     if (br) {
@@ -225,12 +238,15 @@
 
     var growRows = Object.keys(P.grow).map(function (k) {
       var g = P.grow[k];
-      /* 只增不減的判準：現在仍停在歷史高點附近，而且比起始高出一截 */
-      var suspect = (g.now >= g.max * 0.9) && (g.now > g.first + 5) && (g.now > g.first * 1.5);
+      /* 洩漏＝地板墊高：近兩分鐘裡最閒的那一刻都回不到起始水位。
+         窗口沒填滿前不判定，否則開場幾份報告一定誤判。 */
+      var floor = (g.floor === undefined) ? g.now : g.floor;
+      var suspect = g.win.length >= GROW_WINDOW &&
+        floor > g.first + 5 && floor > g.first * 1.5;
       return { '項目': k, '起始': g.first, '目前': g.now, '最大': g.max,
-               '疑似只增不減': suspect ? '★ 是' : '' };
-    }).sort(function (a, b) { return (b['最大'] - b['起始']) - (a['最大'] - a['起始']); });
-    console.log('%c--- 成長追蹤（★ 表示疑似洩漏，要看多份報告確認趨勢）---',
+               '近期最低': floor, '疑似洩漏': suspect ? '★ 是' : '' };
+    }).sort(function (a, b) { return (b['近期最低'] - b['起始']) - (a['近期最低'] - a['起始']); });
+    console.log('%c--- 成長追蹤（看「近期最低」這欄：洩漏長的是地板，不是尖峰）---',
       'color:#c60;font-weight:bold');
     console.table(growRows);
     console.log('計時器峰值 ' + P.timersPeak + ' 個');
