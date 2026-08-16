@@ -21,7 +21,7 @@ const EXPECTED_COMMAND_COUNTS = {
   gem: 14,
   player: 6,
   skill: 9,
-  skill2: 2,
+  skill2: 4,
   talent: 8,
   tower: 6,
   forge: 10,
@@ -92,7 +92,7 @@ function validArgs(spec) {
   return args;
 }
 
-test('凍結的 Worker 指令表有 90 條且分類數量固定', () => {
+test('凍結的 Worker 指令表有 92 條且分類數量固定', () => {
   // v8：新增 app.handoff（多分頁交接前先落地並停止模擬），85 → 86
   // v9：移除 visibility 的 pip 欄位（背景休眠機制取消），指令表未變動
   // v10：新增 vfx 事件（技能／增益特效），指令表未變動
@@ -108,11 +108,12 @@ test('凍結的 Worker 指令表有 90 條且分類數量固定', () => {
   // v19：新版主動技能系統——新增 skill2.learn / skill2.downgrade（js/skills2.js），
   //      skills 面板新增 skills2 欄位（tierMax + 各群組各階等級），88 → 90
   // v20：技能施放飄字與重要 VFX 改走低延遲 visual 訊息，不等待一般 tick
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 20);
+  // v21：新增 skill2.max / skill2.delete（新版技能一鍵滿級與重置），90 → 92
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 21);
   assert.equal(protocol.MSG_OUT.VISUAL, 'visual');
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   const names = Object.keys(protocol.COMMANDS);
-  assert.equal(names.length, 90);
+  assert.equal(names.length, 92);
 
   const counts = {};
   for (const name of names) {
