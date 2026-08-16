@@ -38,6 +38,8 @@ var SG_TIER_COUNT = 7;        // 每群組階數
 var SG_FLYING_PROJECTILE_SPEED = 240;
 var SG_FLYING_PROJECTILE_HALF_WIDTH = 8;
 var SG_FLYING_PROJECTILE_REHIT_SEC = 0.5;
+var SG_METEOR_INTERVAL_MS = 350;
+var SG_METEOR_MAX_TRAVEL_MS = 450; // 與 DOM／Canvas vfxNormalizeTiming 的上限一致
 /* 主動型被動群組（2026-08-14 技能類型擴充；引擎接線，不入參數表）：
    效果被動觸發、永遠不會被主動施放（不佔出手節奏、無冷卻無耗魔），
    但**必須裝配到技能列才生效**——佔用一個技能格就是這類技能的代價。
@@ -90,6 +92,7 @@ function resetSkill2RT() {
   SKILL2_RT = {
     storm: null, // 暴風之舞化身狀態：{ until, nextAt, gap, tgt }（tgt 為當前衝鋒目標實體）
     projectiles: [], // 飛出斬擊／貫穿突刺的執行期飛行物（不入存檔）
+    meteors: [], // 殞石落地佇列：{ at, victims, burnSpec, ... }（不入存檔）
     grounds: [], // 地板場域（火柱／火牆）的執行期實例（不入存檔）
     rage: null,  // 嗜血狂怒爆發狀態：{ until, pEnt, killCombo }（pEnt＝施放時的玩家實體，
                  // 供血飲術反噬定位；killCombo＝期間擊殺累積的連擊數加成，結束歸零）
@@ -128,6 +131,11 @@ function skills2Levels(gid) {
 function skills2Castable(gid) {
   var l = skills2Levels(gid);
   return !!l && l[0] >= 1;
+}
+/* 火球術第 7 階是「改為」殞石術：自動施法時不再讓舊技能 fireball 併發。 */
+function skills2FireballIsMeteor() {
+  var l = skills2Levels('fireball');
+  return !!l && l[6] > 0;
 }
 
 /* fx 參數在指定等級的值：<鍵> + <鍵>Per ×（等級-1）。等級至少以 1 計。 */
@@ -1386,12 +1394,65 @@ function sgTickBurn(dt, ctx) {
   }
 }
 
+/* 殞石落地時才結算命中，讓 Worker 的血量快照、血條與傷害飄字同時更新。
+   每顆殞石在施放時鎖定自己的落點與範圍目標，等待 at 到期後才走完整命中管線。 */
+function sgQueueMeteor(pEnt, st, dmgVal, target, victims, burnSpec, floatSel, out, at) {
+  SKILL2_RT.meteors.push({
+    at: at, target: target, pEnt: pEnt, st: st, dmgVal: dmgVal, victims: victims.slice(),
+    burnSpec: burnSpec, floatSel: floatSel, out: out
+  });
+  out._pendingProjectiles = (out._pendingProjectiles || 0) + 1;
+}
+
+function sgTickMeteors(ctx) {
+  var list = SKILL2_RT.meteors;
+  if (!list || !list.length) return;
+  var keep = [];
+  for (var i = 0; i < list.length; i++) {
+    var m = list[i];
+    if (!m || m.at > GT) { if (m) keep.push(m); continue; }
+    var before = m.out.dmg;
+    var killed = false;
+    for (var vi = 0; vi < m.victims.length; vi++) {
+      var target = m.victims[vi];
+      if (!target || target.hp <= 0) continue;
+      var res = sgHitOne(m.pEnt, m.st, target, m.dmgVal, 'fireball', m.floatSel, m.out, 0);
+      if (res && !res.miss && m.burnSpec) sgApplyBurn(target, m.burnSpec);
+      if (res && res.killed) killed = true;
+    }
+    if (ctx.onDamage && m.out.dmg > before) ctx.onDamage(m.out.dmg - before);
+    if (killed && ctx.onDeaths) ctx.onDeaths();
+    sgFinishSkillCastFloat(m.out);
+  }
+  SKILL2_RT.meteors = keep;
+}
+
+/* 隨機袋抽樣：同一輪先不重複抽，附近有多名敵人時不會三顆全砸同一人；
+   候選不足時才重建袋子，讓敵人數少於殞石數時自然重複。 */
+function sgMeteorTargetBag(primary, pool, radius) {
+  var candidates = (typeof bfTargetsAround === 'function')
+    ? bfTargetsAround(primary, pool, radius) : [primary];
+  if (!candidates.length) candidates = [primary];
+  var bag = [];
+  function refill() {
+    bag = candidates.slice();
+    for (var i = bag.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var swap = bag[i]; bag[i] = bag[j]; bag[j] = swap;
+    }
+  }
+  refill();
+  return function () {
+    if (!bag.length) refill();
+    return bag.pop();
+  };
+}
+
 /* ===========================================================================
    火球術（fireball）
    ---------------------------------------------------------------------------
-   傷害在施放當下一次結算完畢，飛行時間只用來延後浮字與特效——與飛刀同一套規格
-   （模擬層瞬間結算、顯示層按 travelMs 錯開，見 protocol.js FLOAT.delayMs）。
-   第 7 階【殞石術】依設計文檔「改為」召喚三顆殞石：本體傷害%與範圍改讀第 7 階，
+   一般火球仍在施放當下結算，只有第 7 階殞石術使用逐顆落地排程。
+   第 7 階殞石術依設計文檔「改為」召喚三顆殞石：本體傷害%與範圍改讀第 7 階，
    第 2~6 階的進化效果照舊生效。
    =========================================================================== */
 function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
@@ -1402,21 +1463,28 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var dmgVal = sgGroupBaseStat(g, st) * sgVal(srcFx, 'pct', srcLv) / 100;
   var radius = bfMeterPx(sgVal(srcFx, 'm', srcLv));
   var volleys = meteor ? Math.max(1, Math.floor(Number(t[6].fx.count) || 3)) : 1;
-  var geomOk = (typeof bfPos === 'function') && !!bfPos(primary);
-  var travelMs = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(primary) * 1000) : 0;
+  var rawTravelMs = (typeof bfTravelSeconds === 'function')
+    ? Math.round(bfTravelSeconds(primary) * 1000) : 0;
+  var travelMs = meteor ? Math.min(SG_METEOR_MAX_TRAVEL_MS, rawTravelMs) : rawTravelMs;
+  /* Canvas／DOM 殞石都以 0.70 速度倍率播放；模擬層使用同一落地時間，
+     因此每顆只錯開 350ms，不因各目標距離不同而破壞節奏。 */
+  var meteorFallMs = meteor ? Math.round(travelMs / 0.70) : travelMs;
   var burnSpec = sgFireballBurnSpec(st, g, lvs);
+  var nextMeteorTarget = meteor ? sgMeteorTargetBag(primary, pool, radius) : null;
 
   for (var v = 0; v < volleys; v++) {
-    var castDelay = sgStaggerMs(v * 2); // 三顆殞石依序落下
-    var hitDelay = castDelay + travelMs;
-    var victims = (geomOk && radius > 0) ? bfTargetsAround(primary, pool, radius) : [primary];
-    if (!victims.length) victims = [primary];
-    var area = geomOk ? sgAreaAround(primary, radius) : null;
+    var meteorTarget = meteor ? nextMeteorTarget() : primary;
+    var targetGeomOk = (typeof bfPos === 'function') && !!bfPos(meteorTarget);
+    var castDelay = meteor ? v * SG_METEOR_INTERVAL_MS : 0;
+    var hitDelay = castDelay + meteorFallMs;
+    var victims = (targetGeomOk && radius > 0) ? bfTargetsAround(meteorTarget, pool, radius) : [meteorTarget];
+    if (!victims.length) victims = [meteorTarget];
+    var area = targetGeomOk ? sgAreaAround(meteorTarget, radius) : null;
 
     if (meteor) {
-      sgEmitVfx('fireball', [primary], floatSel, {
+      sgEmitVfx('fireball', victims, floatSel, {
         fxKind: 'rain', variant: 'meteor', elem: 'fire', count: 1,
-        area: area, delayMs: castDelay
+        area: area, delayMs: castDelay, travelMs: [travelMs]
       });
     } else {
       sgEmitVfx('fireball', [primary], floatSel, {
@@ -1429,13 +1497,16 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       });
     }
 
-    for (var i = 0; i < victims.length; i++) {
+    if (meteor) {
+      sgQueueMeteor(pEnt, st, dmgVal, meteorTarget, victims, burnSpec, floatSel, out,
+        GT + hitDelay / 1000);
+    } else for (var i = 0; i < victims.length; i++) {
       var res = sgHitOne(pEnt, st, victims[i], dmgVal, 'fireball', floatSel, out, hitDelay);
       if (res && !res.miss && burnSpec) sgApplyBurn(victims[i], burnSpec);
     }
 
     // 火球爆裂：爆炸後分裂出小火球射向目標範圍內的其他敵人
-    if (lvs[2] > 0) {
+    if (!meteor && lvs[2] > 0) {
       var splitFx = t[2].fx;
       var splits = bfNearestOthers(primary, pool, Math.max(1, Math.floor(Number(splitFx.count) || 3)),
         bfMeterPx(Number(splitFx.m) || 20));
@@ -1796,6 +1867,7 @@ function tickSkill2(dt, ctx) {
   if (!SKILL2_RT || !ctx || !ctx.pEnt) return;
   if (SKILL2_RT.rage && SKILL2_RT.rage.until <= GT) SKILL2_RT.rage = null; // 狂怒到期回收
   sgTickFlyingProjectiles(dt, ctx);
+  sgTickMeteors(ctx);
   sgTickGrounds(dt, ctx);
   sgTickStorm(ctx);
   sgTickBloodDots(dt, ctx);

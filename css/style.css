@@ -7091,6 +7091,42 @@ textarea:disabled,
   animation-delay: inherit;
 }
 
+/* 火球命中：比一般命中爆點更明確的火焰爆炸，但不使用殞石的地面震波。 */
+.vfx-burst-fireball {
+  width: 30px;
+  height: 30px;
+  margin: -15px 0 0 -15px;
+}
+
+.vfx-burst-fireball::before {
+  inset: -16px;
+  background: radial-gradient(circle, #fff5a3 0 14%, var(--vfx-c2, #ffd447) 32%,
+    var(--vfx-c1, #e63924) 58%, transparent 76%);
+  filter: drop-shadow(0 0 10px var(--vfx-glow, #ff6a2a));
+  animation: vfxFireballExplosion 0.46s ease-out both;
+  animation-delay: inherit;
+}
+
+.vfx-burst-fireball::after {
+  inset: -7px;
+  border-width: 3px;
+  border-color: var(--vfx-c2, #ffd447);
+  box-shadow: 0 0 18px var(--vfx-glow, #ff6a2a), inset 0 0 10px var(--vfx-c1, #e63924);
+  animation: vfxFireballRing 0.55s ease-out both;
+  animation-delay: inherit;
+}
+
+@keyframes vfxFireballExplosion {
+  0% { transform: scale(0.15); opacity: 1; }
+  35% { transform: scale(0.95); opacity: 1; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+@keyframes vfxFireballRing {
+  0% { transform: scale(0.18); opacity: 1; }
+  100% { transform: scale(1.75); opacity: 0; }
+}
+
 @keyframes vfxFlash {
   from {
     transform: scale(0.3);
@@ -7376,9 +7412,10 @@ textarea:disabled,
   width: var(--particle-size, 6px);
   height: var(--particle-size, 6px);
   margin: calc(var(--particle-size, 6px) * -0.5) 0 0 calc(var(--particle-size, 6px) * -0.5);
-  border-radius: 50%;
-  background: var(--vfx-c2, #ffd166);
-  box-shadow: 0 0 8px var(--vfx-glow, #ff7a1a);
+  border-radius: 62% 38% 58% 42%;
+  background: linear-gradient(180deg, #fff2a0 0%, var(--vfx-c2, #f05a13) 38%, var(--vfx-c1, #9f1d12) 100%);
+  clip-path: polygon(50% 0%, 100% 62%, 68% 58%, 56% 100%, 38% 66%, 0% 74%);
+  filter: drop-shadow(0 0 8px var(--vfx-glow, #d62f12));
   animation: vfxShockwaveParticle 0.72s cubic-bezier(0.2, 0.5, 0.3, 1) both;
   animation-delay: inherit;
 }

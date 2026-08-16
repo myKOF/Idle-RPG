@@ -47,6 +47,7 @@ var VFX_STALE_EVENT_MS = 1500;
 var VFX_METEOR_MAX_DELAY_MS = 900;
 var VFX_METEOR_MAX_TRAVEL_MS = 450;
 var VFX_METEOR_SPEED_MULTIPLIER = 0.70; // 30% 慢速：滅世殞石需要比一般天降更有壓迫感
+var VFX_METEOR_SIZE_SCALE = 1.30; // 新版殞石術特效寬度／尺寸增加 30%
 var VFX_NODE_WATCHDOG_MS = 1000;
 var VFX_METEOR_HARD_LIFETIME_MS = 2800;
 var _vfxQuality = VFX_QUALITY_LEVELS.FULL;
@@ -519,6 +520,7 @@ function vfxImpact(spec, layer, pt, targetId, delayMs, isBounceHit) {
   else if (v === 'bleed-tick') { cls = 'vfx-impact vfx-impact-phys vfx-impact-bleed'; }
   else if (v === 'poison-tick') { cls = 'vfx-impact vfx-impact-poison'; }
   else if (v === 'nova') { cls = 'vfx-impact vfx-impact-nova'; strong = true; life = 1000; }
+  else if (v === 'fire-explosion') { cls = 'vfx-impact vfx-impact-fire-explosion'; strong = true; life = 900; }
   else cls = 'vfx-impact vfx-impact-' + elemKey;
   var d = vfxNode(cls, layer, spec);
   vfxPlace(d, pt);
@@ -883,7 +885,9 @@ function vfxKnifeBounce(spec, layer, from, to, delayMs, travelMs) {
 /* ---- 爆發（單點） ----
    沒有更具體幾何 variant 的事件會落到這裡，建立一個短命的中心爆發節點。 */
 function vfxBurst(spec, layer, pt, delayMs) {
-  var d = vfxNode('vfx-burst' + (spec.elem ? ' vfx-burst-' + spec.elem : ''), layer, spec);
+  var cls = 'vfx-burst' + (spec.elem ? ' vfx-burst-' + spec.elem : '');
+  if (spec.variant === 'fire-explosion') cls += ' vfx-burst-fireball';
+  var d = vfxNode(cls, layer, spec);
   vfxPlace(d, pt);
   d.style.animationDelay = delayMs + 'ms';
   d.style.animationDuration = Math.round((spec.dur || 0.5) * 1000) + 'ms';
@@ -955,7 +959,7 @@ function vfxMeteorProjectile(spec, layer, from, to, delayMs, flight, small) {
   d.style.animationDelay = delayMs + 'ms';
   d.style.animationDuration = flight + 'ms';
   /* 殞石只改變 emitter 的方向、數量、尺寸與速度；不再額外拉扁或拉長尾焰。 */
-  vfxBuildFlareFlame(d, !!small, 1);
+  vfxBuildFlareFlame(d, !!small, VFX_METEOR_SIZE_SCALE);
   vfxTrack(d, delayMs + flight + VFX_FLARE_LIFESPAN_MS + 140);
 }
 
@@ -966,6 +970,10 @@ function vfxMeteorProjectile(spec, layer, from, to, delayMs, flight, small) {
  */
 function vfxMeteorShockwave(spec, layer, pt, radius, delayMs) {
   var d = vfxNode('vfx-meteor-shockwave', layer, spec);
+  /* 震波獨立使用較深的火焰色，避免沿用一般火球的明黃色。 */
+  d.style.setProperty('--vfx-c1', '#9f1d12');
+  d.style.setProperty('--vfx-c2', '#f05a13');
+  d.style.setProperty('--vfx-glow', '#d62f12');
   vfxPlace(d, pt);
   radius = Number(radius);
   if (!isFinite(radius) || radius <= 0) radius = 80;
