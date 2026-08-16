@@ -7687,7 +7687,7 @@ textarea:disabled,
 .vfx-fire-wall {
   overflow: visible;
   transform-origin: 50% 50%;
-  transform: rotate(0deg);
+  transform: none;
   animation: vfxFireWallPulse 0.74s ease-in-out infinite alternate;
 }
 
@@ -7720,7 +7720,7 @@ textarea:disabled,
 .vfx-fire-wall-vortex {
   position: absolute;
   left: var(--vfx-wall-vortex-x, 50%);
-  bottom: 7%;
+  bottom: var(--vfx-wall-vortex-bottom, 7%);
   width: var(--vfx-wall-vortex-w, 32%);
   height: var(--vfx-wall-vortex-h, 88%);
   transform: translateX(-50%);

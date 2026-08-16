@@ -2044,7 +2044,7 @@ var BattleRenderer = (function () {
     }, 2, (FX_ORBIT_MAX_SEC + 1) * 1000);
   }
 
-  /* 火牆（新版技能【無限火牆】）：貼地橫向火焰帶。
+  /* 火牆（新版技能【無限火牆】）：沿傷害矩形長軸排列的直立火焰柱。
      模擬層送來的 area 帶 w／h／a（長、寬、朝向弧度），顯示層必須沿用同一組數字——
      傷害範圍與畫面範圍對不起來，是這類地板技能最難查的一種回報。
      同一道牆的多次傷害事件共用 vfxId，避免每一跳都疊一個矩形框。 */
@@ -2085,7 +2085,7 @@ var BattleRenderer = (function () {
         fx.t += dt;
         node.x = fx.x;
         node.y = fx.y;
-        // 火牆是固定由地面向上噴出的立體柱；施放方向只屬於範圍資料，不能旋轉視覺本體。
+        // 柱體永遠由地面向上；方向只用來排列三個柱體，不能旋轉柱體的高度軸。
         node.rotation = 0;
         var fade = fx.expiresAt - nowMs() < 360 ? Math.max(0, (fx.expiresAt - nowMs()) / 360) : 1;
         var w = fx.w;
@@ -2095,33 +2095,54 @@ var BattleRenderer = (function () {
         // 火牆的長度沿地面橫向延伸，但火焰本體要向上立起，不能只是一條火帶。
         var flameH = Math.max(72, Math.min(180, h * 2.8));
         var phase = fx.t * 5.2;
+        var axisAngle = fx.angle;
+        var axisX = Math.cos(axisAngle);
+        var axisY = Math.sin(axisAngle);
+        var perpX = -axisY;
+        var perpY = axisX;
         var i;
 
         g.clear();
         // 貼地黑灰焦痕與橘色熱浪底座，讓直立牆有明確的地面接點。
-        g.ellipse(0, groundY + baseDepth * 0.16, w * 0.5, baseDepth * 0.58)
-          .fill({ color: 0x30231d, alpha: 0.5 * fade });
-        g.roundRect(-w * 0.47, groundY - baseDepth * 0.1, w * 0.94, baseDepth * 0.3, baseDepth * 0.18)
+        var shadowLong = w * 0.5;
+        var shadowWide = baseDepth * 0.34;
+        var shadowY = groundY + baseDepth * 0.16;
+        g.poly([
+          -axisX * shadowLong + perpX * shadowWide, shadowY - axisY * shadowLong + perpY * shadowWide,
+          axisX * shadowLong + perpX * shadowWide, shadowY + axisY * shadowLong + perpY * shadowWide,
+          axisX * shadowLong - perpX * shadowWide, shadowY + axisY * shadowLong - perpY * shadowWide,
+          -axisX * shadowLong - perpX * shadowWide, shadowY - axisY * shadowLong - perpY * shadowWide
+        ]).fill({ color: 0x30231d, alpha: 0.5 * fade });
+        var baseLong = w * 0.47;
+        var baseWide = baseDepth * 0.22;
+        g.poly([
+          -axisX * baseLong + perpX * baseWide, groundY - axisY * baseLong + perpY * baseWide,
+          axisX * baseLong + perpX * baseWide, groundY + axisY * baseLong + perpY * baseWide,
+          axisX * baseLong - perpX * baseWide, groundY + axisY * baseLong - perpY * baseWide,
+          -axisX * baseLong - perpX * baseWide, groundY - axisY * baseLong - perpY * baseWide
+        ])
           .fill({ color: 0x9f250e, alpha: 0.48 * fade })
           .stroke({ color: 0xff7a18, width: 1.5, alpha: 0.42 * fade });
 
-        // 三個獨立的火龍捲並排：每個都是由下往上的長柱體，內部再用旋臂堆出立體感。
+        // 三個獨立的火龍捲沿傷害矩形長軸並排；每個柱體仍保持世界座標的垂直噴發。
         var vortexW = Math.max(24, w * 0.34);
         for (var vi = 0; vi < 3; vi++) {
-          var vortexX = (vi - 1) * w * 0.31;
+          var vortexOffset = (vi - 1) * w * 0.31;
+          var vortexX = axisX * vortexOffset;
+          var vortexGroundY = groundY + axisY * vortexOffset;
           var vortexH = flameH * (0.88 + vi * 0.035);
           var vortexPhase = phase + vi * 1.9;
           var silhouette = [];
           for (var vs = 0; vs <= 6; vs++) {
             var vu = vs / 6;
-            var vy = groundY + baseDepth * 0.08 - vortexH * vu;
+            var vy = vortexGroundY + baseDepth * 0.08 - vortexH * vu;
             var vsway = Math.sin(vortexPhase + vu * 7.2) * vortexW * 0.13 * (1 - vu * 0.45);
             var vhalf = vortexW * (0.52 - vu * 0.12);
             silhouette.push(vortexX + vsway - vhalf, vy);
           }
           for (vs = 6; vs >= 0; vs--) {
             vu = vs / 6;
-            vy = groundY + baseDepth * 0.08 - vortexH * vu;
+            vy = vortexGroundY + baseDepth * 0.08 - vortexH * vu;
             vsway = Math.sin(vortexPhase + vu * 7.2) * vortexW * 0.13 * (1 - vu * 0.45);
             vhalf = vortexW * (0.52 - vu * 0.12);
             silhouette.push(vortexX + vsway + vhalf, vy);
@@ -2131,14 +2152,14 @@ var BattleRenderer = (function () {
             var ribbon = [];
             for (var rs = 0; rs <= 6; rs++) {
               var ru = rs / 6;
-              var ry = groundY + baseDepth * 0.05 - vortexH * ru;
+              var ry = vortexGroundY + baseDepth * 0.05 - vortexH * ru;
               var rx = vortexX + Math.sin(vortexPhase + ri * 1.55 + ru * 8.6) * vortexW * 0.29 * (1 - ru * 0.38);
               var rw = Math.max(3, vortexW * (0.13 - ru * 0.035));
               ribbon.push(rx - rw, ry);
             }
             for (rs = 6; rs >= 0; rs--) {
               ru = rs / 6;
-              ry = groundY + baseDepth * 0.05 - vortexH * ru;
+              ry = vortexGroundY + baseDepth * 0.05 - vortexH * ru;
               rx = vortexX + Math.sin(vortexPhase + ri * 1.55 + ru * 8.6) * vortexW * 0.29 * (1 - ru * 0.38);
               rw = Math.max(3, vortexW * (0.13 - ru * 0.035));
               ribbon.push(rx + rw, ry);
@@ -2146,20 +2167,21 @@ var BattleRenderer = (function () {
             g.poly(ribbon).fill({ color: ri === 1 ? 0xffd84a : (ri % 2 ? 0xff7618 : 0xffa51d),
               alpha: (ri === 1 ? 0.78 : 0.68) * fade });
           }
-          g.ellipse(vortexX, groundY - vortexH * 0.38, vortexW * 0.18, vortexH * 0.31)
+          g.ellipse(vortexX, vortexGroundY - vortexH * 0.38, vortexW * 0.18, vortexH * 0.31)
             .fill({ color: 0xffffbd, alpha: 0.3 * fade });
-          g.poly([vortexX - vortexW * 0.18, groundY - vortexH * 0.82,
-            vortexX + vortexW * 0.02, groundY - vortexH * 1.08,
-            vortexX + vortexW * 0.2, groundY - vortexH * 0.88,
-            vortexX + vortexW * 0.08, groundY - vortexH * 0.7])
+          g.poly([vortexX - vortexW * 0.18, vortexGroundY - vortexH * 0.82,
+            vortexX + vortexW * 0.02, vortexGroundY - vortexH * 1.08,
+            vortexX + vortexW * 0.2, vortexGroundY - vortexH * 0.88,
+            vortexX + vortexW * 0.08, vortexGroundY - vortexH * 0.7])
             .fill({ color: 0xffff7a, alpha: 0.62 * fade });
         }
 
         // 火牆上方的低煙，不遮住火焰，只用半透明灰褐色顆粒帶出參考圖的煙塵感。
         for (i = 0; i < 9; i++) {
           var smokeU = (i + 0.5) / 9;
-          var smokeX = -w * 0.43 + w * 0.86 * smokeU + Math.sin(phase * 0.35 + i) * 5;
-          var smokeY = groundY - flameH * (0.72 + (i % 3) * 0.08) - Math.sin(phase * 0.48 + i * 1.3) * 4;
+          var smokeOffset = -w * 0.43 + w * 0.86 * smokeU;
+          var smokeX = axisX * smokeOffset + Math.sin(phase * 0.35 + i) * 5;
+          var smokeY = groundY + axisY * smokeOffset - flameH * (0.72 + (i % 3) * 0.08) - Math.sin(phase * 0.48 + i * 1.3) * 4;
           var smokeR = 4 + (i % 3) * 2.2;
           g.circle(smokeX, smokeY, smokeR).fill({ color: i % 2 ? 0x5a5148 : 0x76624d, alpha: 0.13 * fade });
         }
@@ -2167,8 +2189,9 @@ var BattleRenderer = (function () {
         particleAt += dt;
         if (!REDUCED_MOTION && particleAt > 0.1 && fade > 0.45) {
           particleAt = 0;
-          spawnParticles(fx.x + (Math.random() - 0.5) * w * 0.72,
-            fx.y - flameH * (0.45 + Math.random() * 0.3), 3, theme, 1.2, 0.7);
+          var particleOffset = (Math.random() - 0.5) * w * 0.72;
+          spawnParticles(fx.x + axisX * particleOffset,
+            fx.y + axisY * particleOffset - flameH * (0.45 + Math.random() * 0.3), 3, theme, 1.2, 0.7);
         }
         if (nowMs() >= fx.expiresAt) {
           fx.dead = true;

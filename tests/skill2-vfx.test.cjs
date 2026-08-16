@@ -187,9 +187,11 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.match(renderer, /var flameH = Math\.max\(72, Math\.min\(180, h \* 2\.8\)\)/);
   assert.match(renderer, /for \(var vi = 0; vi < 3; vi\+\+\)[\s\S]*vortexPhase/);
   assert.match(vfx, /for \(var vi = 0; vi < 3; vi\+\+\)[\s\S]*vfx-fire-wall-vortex/);
-  assert.match(renderer, /node\.rotation = 0/);
-  assert.match(vfx, /--vfx-wall-angle', '0rad'/);
-  assert.match(css, /\.vfx-fire-wall[\s\S]*transform: rotate\(0deg\)/);
+  assert.match(renderer, /var axisAngle = fx\.angle/);
+  assert.match(renderer, /var vortexGroundY = groundY \+ axisY \* vortexOffset/);
+  assert.match(vfx, /var wallAngle = isFinite\(area && area\.a\)/);
+  assert.match(vfx, /wallAxisX \* \(vi - 1\) \* 31/);
+  assert.match(css, /\.vfx-fire-wall[\s\S]*transform: none/);
   assert.match(vfx, /var wallH = Math\.max\(84, Math\.min\(180, rectH \* 1\.15\)\)/);
   const vfxCleaveStart = vfx.indexOf("if (kind === 'slash' && (s.variant === 'cleave'");
   const vfxCleaveEnd = vfx.indexOf('\n    return;', vfxCleaveStart);

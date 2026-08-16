@@ -1175,14 +1175,25 @@ function vfxFireWall(spec, layer, area, rect) {
   var wallX = Number(rect.x) || 0;
   var floorY = (Number(rect.y) || 0) + Math.max(0, rectH * 0.54);
   var wallY = floorY - wallH;
+  var wallAngle = isFinite(area && area.a) ? Number(area.a) : 0;
+  var wallAxisX = Math.cos(wallAngle);
+  var wallAxisY = Math.sin(wallAngle);
   var key = area && area.id ? String(area.id) : [Math.round(wallX), Math.round(wallY), Math.round(wallW)].join(':');
+  function updateWallVortexLayout(target) {
+    var vortices = target.querySelectorAll('.vfx-fire-wall-vortex');
+    for (var vi = 0; vi < vortices.length; vi++) {
+      vortices[vi].style.setProperty('--vfx-wall-vortex-x', (50 + wallAxisX * (vi - 1) * 31).toFixed(1) + '%');
+      vortices[vi].style.setProperty('--vfx-wall-vortex-bottom', (7 - wallAxisY * (wallW * 0.31 / wallH * 100) * (vi - 1)).toFixed(1) + '%');
+    }
+  }
   var node = _vfxFireWalls[key];
   if (node && node.parentNode === layer) {
     node.style.left = wallX + 'px';
     node.style.top = wallY + 'px';
     node.style.width = wallW + 'px';
     node.style.height = wallH + 'px';
-    node.style.setProperty('--vfx-wall-angle', '0rad');
+    node.style.setProperty('--vfx-wall-angle', wallAngle.toFixed(3) + 'rad');
+    updateWallVortexLayout(node);
     node._vfxExpiresAt = Date.now() + Math.max(900, Number(spec.dur || 0.5) * 2400);
     return node;
   }
@@ -1192,12 +1203,11 @@ function vfxFireWall(spec, layer, area, rect) {
   node.style.top = wallY + 'px';
   node.style.width = wallW + 'px';
   node.style.height = wallH + 'px';
-  node.style.setProperty('--vfx-wall-angle', '0rad');
+  node.style.setProperty('--vfx-wall-angle', wallAngle.toFixed(3) + 'rad');
   var ribbonCount = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 4;
   for (var vi = 0; vi < 3; vi++) {
     var vortex = document.createElement('span');
     vortex.className = 'vfx-fire-wall-vortex';
-    vortex.style.setProperty('--vfx-wall-vortex-x', (50 + (vi - 1) * 31).toFixed(1) + '%');
     vortex.style.setProperty('--vfx-wall-vortex-w', (31 + (vi === 1 ? 3 : 0)) + '%');
     vortex.style.setProperty('--vfx-wall-vortex-h', (86 + vi * 4) + '%');
     vortex.style.setProperty('--vfx-wall-delay', (-Math.random() * 0.9).toFixed(2) + 's');
@@ -1210,6 +1220,7 @@ function vfxFireWall(spec, layer, area, rect) {
     }
     node.appendChild(vortex);
   }
+  updateWallVortexLayout(node);
   var smokeCount = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 6;
   for (var si = 0; si < smokeCount; si++) {
     var smoke = document.createElement('span');
