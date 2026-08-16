@@ -3418,15 +3418,15 @@ Commit：
 
 負責 AI：Codex
 
-任務內容：新增 `fireball-small` 的 DOM／Canvas 小型火球彈體；一般火球與火球爆裂改由標準飛行物佇列以 `SG_FLYING_PROJECTILE_SPEED` 推進，抵達後才結算本體範圍傷害、燃燒與分裂小火球；殞石仍維持獨立的天降路徑與速度。
+任務內容：新增 `fireball-small` 的 DOM／Canvas 小型火球彈體；一般火球與火球爆裂改由標準飛行物佇列以 `SG_FLYING_PROJECTILE_SPEED` 推進，沿直線平飛抵達後才結算本體範圍傷害、燃燒與分裂小火球；火球使用 3 倍尺寸、短拖尾與核心脈動動畫，殞石仍維持獨立的天降路徑與速度。
 
 技術影響：一般火球的命中時序改為實際飛行物抵達後，殞石排程與舊版火球自動施放抑制不變；不變更存檔格式與 Worker 協議。
 
-允許修改：`js/skills2.js`、`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`tests/skill2-magic-fire.test.cjs`、`tests/skill2-vfx.test.cjs`、`tests/skill-special-vfx.test.cjs`、`docs/AI_TASKS.md`。
+允許修改：`js/skills2.js`、`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`tests/skill2-magic-fire.test.cjs`、`tests/skill2-vfx.test.cjs`、`tests/skill-special-vfx.test.cjs`、`tests/projectile-impact-size.test.cjs`、`docs/AI_TASKS.md`。
 
 禁止修改：殞石落地規格、其他技能群組效果、存檔格式、Worker 協議與無關 UI。
 
-測試結果：一般火球／魔法與 VFX 相關測試 32/32 通過；完整測試與建置待本任務結束前執行。
+測試結果：一般火球／魔法與 VFX 相關測試 32/32 通過；完整測試 1434/1434 通過；`npm.cmd run build` 281/281 通過；`git diff --check` 通過。
 
 完成條件：火球不再呼叫殞石 flare 畫法；一般火球只進入標準飛行物佇列；命中後才產生爆炸與範圍傷害；建立 Codex commit。
 
@@ -3463,5 +3463,29 @@ Commit：
 需要 Claude Review：否（沿用既有 VFX 與技能資料流，範圍明確）。
 
 需要 Antigravity 驗證：建議，驗證三顆落點、血條落地同步、震波與鏡頭晃動。
+
+完成後交給：使用者／主整合工作區。
+
+## 任務：火球尺寸與標準平射子彈邏輯修正
+
+使用者需求：火球長寬放大 3 倍；參考敵人遠程普攻的標準飛行子彈，採平射、不使用拋物線，且不得與殞石飛行時間或速度相依；命中後要有爆炸特效。
+
+任務狀態：已完成
+
+任務分類：戰鬥 VFX／投射物飛行
+
+負責 AI：Codex
+
+任務內容：將一般火球 DOM／Canvas 核心與尾焰尺寸統一放大 3 倍；保留 `spawnProjectile` 的一般投射物位移與直線插值，技能層使用獨立的 `SG_FLYING_PROJECTILE_SPEED` 計算飛行時間；殞石計時分支與火球分離；保留命中後 `fire-explosion` 爆炸事件並加深紅橙火焰、放大爆炸環與火花散射。
+
+技術影響：一般火球外觀與平射飛行時序調整；不變更殞石落地規格、存檔格式或 Worker 協議。
+
+測試結果：火球／VFX 相關測試 32/32、完整測試 1433/1433、建置 281/281 通過。
+
+完成條件：火球寬高為原本 3 倍、平射且不走拋物線、不引用殞石慢速／落地計時、抵達後播放爆炸；建立 Codex commit。
+
+需要 Claude Review：否（沿用既有標準投射物流程，範圍明確）。
+
+需要 Antigravity 驗證：建議，確認畫面中火球尺寸、平射路徑與命中爆炸。
 
 完成後交給：使用者／主整合工作區。

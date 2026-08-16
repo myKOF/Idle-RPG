@@ -28,6 +28,7 @@ test('三個指定技能使用專用 VFX 與命中規格', () => {
   assert.match(vfx, /vfxBuildFlareFlame\(d, !!small, VFX_METEOR_SIZE_SCALE\)/);
   assert.match(vfx, /function vfxBuildSmallFireball\(parent\)/);
   assert.match(vfx, /vfx-impact-fire-explosion/);
+  assert.match(vfx, /d\.style\.setProperty\('--vfx-c1', '#c51e0d'\)/);
   assert.match(vfx, /vfx-burst-fireball/);
   assert.match(vfx, /VFX_FLARE_LIFESPAN_MS = 2400/);
   assert.match(vfx, /VFX_FLARE_SPEED = 100/);
@@ -49,6 +50,11 @@ test('三個指定技能使用專用 VFX 與命中規格', () => {
   assert.match(renderer, /new PIXI\.Rectangle\(392, 2, 128, 128\)/);
   assert.match(renderer, /function flameProjectile\(theme, small, sizeScale\)/);
   assert.match(renderer, /function smallFireballProjectile\(theme\)/);
+  assert.match(renderer, /var FIREBALL_SIZE_SCALE = 3/);
+  assert.match(renderer, /6\.5 \* s/);
+  assert.match(renderer, /tail\.moveTo\(-14 \* s/);
+  assert.match(renderer, /node\._fireballUpdate = function \(dt\)/);
+  assert.match(renderer, /isSmallFireball \? 0 : Math\.sin/);
   assert.match(renderer, /core = smallFireballProjectile\(theme\)/);
   assert.match(renderer, /var METEOR_SIZE_SCALE = 1\.30/);
   assert.match(renderer, /var flame = flameProjectile\(theme, scale && scale < 1, METEOR_SIZE_SCALE\)/);
@@ -71,7 +77,14 @@ test('三個指定技能使用專用 VFX 與命中規格', () => {
   assert.match(read('css/style.css'), /\.vfx-meteor-shockwave[\s\S]*?@keyframes vfxShockwaveRing/);
   assert.match(read('css/style.css'), /@keyframes vfxShockwaveParticle/);
   assert.match(read('css/style.css'), /\.vfx-burst-fireball[\s\S]*?@keyframes vfxFireballExplosion/);
+  assert.match(read('css/style.css'), /\.vfx-impact-fire-explosion[\s\S]*?drop-shadow\(0 0 20px #ff3b0a\)/);
   assert.match(vfx, /function vfxBuildFlareFlame\(parent, small, sizeScale\)/);
+  assert.match(vfx, /function vfxBuildSmallFireball\(parent\)/);
+  assert.match(vfx, /var scale = 3/);
+  assert.match(read('css/style.css'), /calc\(13px \* var\(--fireball-size-scale, 3\)\)/);
+  assert.match(read('css/style.css'), /calc\(14px \* var\(--fireball-size-scale, 3\)\)/);
+  assert.match(read('css/style.css'), /@keyframes vfxFireballTailFlicker/);
+  assert.match(read('css/style.css'), /@keyframes vfxFireballCorePulse/);
   assert.equal(fs.existsSync(path.join(root, 'images', 'flares.png')), true);
   assert.equal(fs.existsSync(path.join(root, 'images', 'flares.json')), true);
   assert.match(renderer, /var outerWidth = isPurple \? \(22 - 13 \* q\) : \(isMega \? \(18 - 12 \* q\) : \(13 - 10\.5 \* q\)\);/);

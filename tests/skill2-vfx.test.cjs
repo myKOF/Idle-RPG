@@ -115,6 +115,8 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.match(skills2, /sgQueueMeteor\(pEnt, st, dmgVal, meteorTarget/);
   assert.match(skills2, /variant: 'fireball-small'/);
   assert.match(skills2, /hitFn: sgFireballProjectileHit/);
+  assert.match(skills2, /sgEmitVfx\('fireball', victims, floatSel, \{[\s\S]*variant: 'fire-explosion'/);
+  assert.match(skills2, /var fireballPlan = meteor \? null : sgFireballProjectilePlan\(primary\)/);
   assert.match(skills, /id === 'fireball'[\s\S]*skills2FireballIsMeteor/);
   assert.match(skills2, /function skills2FireballIsMeteor\(/);
 

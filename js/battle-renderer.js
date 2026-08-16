@@ -1364,20 +1364,30 @@ var BattleRenderer = (function () {
 
   /* 一般火球專用的小型平射彈體：不用殞石的 Phaser flare emitter，
      讓 Canvas 與 DOM 都能清楚區分「直線火球」和「天降殞石」。 */
+  var FIREBALL_SIZE_SCALE = 3;
   function smallFireballProjectile(theme) {
     var node = new PIXI.Container();
     var c1 = cssColorToInt(theme && theme.c1, 0xf04a19);
     var c2 = cssColorToInt(theme && theme.c2, 0xffd166);
+    var s = FIREBALL_SIZE_SCALE;
     var tail = new PIXI.Graphics();
-    tail.moveTo(-23, 0).lineTo(-7, -4).lineTo(-3, 0).lineTo(-7, 4).closePath()
+    tail.moveTo(-14 * s, 0).lineTo(-6 * s, -4 * s).lineTo(-3 * s, 0).lineTo(-6 * s, 4 * s).closePath()
       .fill({ color: c1, alpha: 0.9 });
-    tail.moveTo(-16, 0).lineTo(-6, -2).lineTo(-4, 0).lineTo(-6, 2).closePath()
+    tail.moveTo(-10 * s, 0).lineTo(-5 * s, -2 * s).lineTo(-4 * s, 0).lineTo(-5 * s, 2 * s).closePath()
       .fill({ color: c2, alpha: 0.95 });
     var core = new PIXI.Graphics();
-    core.circle(0, 0, 6.5).fill(c1);
-    core.circle(-1.2, -1.2, 3.1).fill(c2);
+    core.circle(0, 0, 6.5 * s).fill(c1);
+    core.circle(-1.2 * s, -1.2 * s, 3.1 * s).fill(c2);
     node.addChild(tail);
     node.addChild(core);
+    var pulse = 0;
+    node._fireballUpdate = function (dt) {
+      pulse += Math.max(0, Math.min(0.08, dt));
+      var flicker = 1 + Math.sin(pulse * 34) * 0.08 + Math.sin(pulse * 61) * 0.04;
+      tail.scale.set(flicker, 0.92 + Math.sin(pulse * 47) * 0.10);
+      tail.alpha = 0.82 + Math.sin(pulse * 53) * 0.12;
+      core.scale.set(0.97 + Math.sin(pulse * 31) * 0.06);
+    };
     return node;
   }
 
@@ -1427,6 +1437,7 @@ var BattleRenderer = (function () {
           (isSmallFireball ? 0 : Math.sin(k * Math.PI) * 18);
         node.rotation = Math.atan2(to.y - from.y, to.x - from.x);
         if (core && core._flameUpdate) core._flameUpdate(dt);
+        if (core && core._fireballUpdate) core._fireballUpdate(dt);
         trailAcc += dt;
         if (!isSmallFireball && trailAcc > trailIntervalSec() && !REDUCED_MOTION) {
           trailAcc = 0;
@@ -1538,16 +1549,18 @@ var BattleRenderer = (function () {
 
   /* 命中爆點：環 + 粒子 */
   function spawnImpact(x, y, spec, strong, isBounceHit) {
-    var theme = themeOf(spec);
-    var visualStrong = strong || spec.variant === 'fire-explosion';
+    var fireExplosion = spec.variant === 'fire-explosion';
+    var theme = fireExplosion
+      ? { c1: '#c51e0d', c2: '#ffd447', glow: '#ff3b0a' } : themeOf(spec);
+    var visualStrong = strong || fireExplosion;
     /* 逐幀 clear()＋stroke() 換成貼圖縮放，理由見 ringTexture()。 */
     var ring = new PIXI.Sprite(ringTexture());
     ring.anchor.set(0.5);
     ring.tint = cssColorToInt(theme.c1, 0xffffff);
     ring.x = x; ring.y = y;
     S.layers.fx.addChild(ring);
-    var t = 0, dur = visualStrong ? 0.4 : 0.26;
-    var maxR = visualStrong ? 15 : 8.5;
+    var t = 0, dur = fireExplosion ? 0.62 : (visualStrong ? 0.4 : 0.26);
+    var maxR = fireExplosion ? 30 : (visualStrong ? 15 : 8.5);
     var impactScale = isBounceHit ? BOUNCE_HIT_RADIUS_SCALE : 1;
     addFx({
       node: ring,
@@ -1559,10 +1572,8 @@ var BattleRenderer = (function () {
         return t < dur;
       }
     }, 1);
-    spawnParticles(x, y, strong ? 12 : 6, theme, strong ? 0.9 : 0.55, impactScale);
-    if (!strong && spec.variant === 'fire-explosion') {
-      spawnParticles(x, y, 12, theme, 0.9, impactScale);
-    }
+    spawnParticles(x, y, fireExplosion ? 22 : (strong ? 12 : 6), theme,
+      fireExplosion ? 1.35 : (strong ? 0.9 : 0.55), fireExplosion ? 1.45 * impactScale : impactScale);
     if (strong) addShake(5, spec);
   }
 
