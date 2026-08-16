@@ -1,0 +1,173 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>pixi bench 2</title>
+<style>body{background:#111;color:#ddd;font:14px monospace;padding:12px}b{color:#7fd}
+canvas{border:1px solid #333;width:450px;height:310px}</style></head>
+<body>
+<div id="out">running...</div>
+<script src="../js/vendor/pixi.min.js"></script>
+<script>
+var lines = [];
+function log(s) { lines.push(s); document.getElementById('out').innerHTML = lines.join('<br>'); }
+
+/* 同步驅動（不靠 rAF，隱藏分頁也能跑完）：以固定 16.7ms 步進推進 6 秒的模擬負載，
+   每步真的 render 一次並 gl.finish()，量到的是「主執行緒 + GPU 提交」的完整成本。
+   模擬的是飛刀彈射的真實規模：每 0.4 秒一次施放 = 45 個獨特飄字 + 40 次彈射，
+   每次彈射 = 1 個投射物(emoji Text + 光暈 Sprite) + 7 顆拖尾 + 6 顆爆點粒子 + 1 個環。 */
+(async function () {
+  var app = new PIXI.Application();
+  await app.init({ width: 900, height: 620, background: 0x111111, antialias: false });
+  document.body.appendChild(app.canvas);
+  app.ticker.stop();
+  var gl = app.renderer.gl || null;
+  log('PIXI ' + PIXI.VERSION + '　renderer=' + (app.renderer.type === 1 ? 'webgl' : 'webgpu') +
+      '　gl.finish 可用: ' + !!gl);
+
+  var stage = app.stage;
+  var glowTex = (function () {
+    var c = document.createElement('canvas'); c.width = c.height = 32;
+    var x = c.getContext('2d');
+    var g = x.createRadialGradient(16, 16, 0, 16, 16, 16);
+    g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g; x.fillRect(0, 0, 32, 32);
+    return PIXI.Texture.from(c);
+  })();
+  var ringTex = (function () {
+    var c = document.createElement('canvas'); c.width = c.height = 64;
+    var x = c.getContext('2d');
+    x.strokeStyle = '#fff'; x.lineWidth = 6; x.beginPath();
+    x.arc(32, 32, 26, 0, Math.PI * 2); x.stroke();
+    return PIXI.Texture.from(c);
+  })();
+
+  var live = [], seq = 0;
+
+  function addLive(node, life, ring) { stage.addChild(node); live.push({ node: node, t: 0, life: life, ring: ring }); }
+
+  function floatNode(cfg, x, y) {
+    var opts = { text: '🔪爆擊 ' + (100 + (seq++) % 900) + 'K', style: {
+      fontFamily: 'sans-serif', fontSize: 17, fontWeight: 'bold',
+      fill: '#ffd75e', stroke: { color: '#000000', width: 3 } } };
+    var n = cfg.bitmapFloat ? new PIXI.BitmapText(opts) : new PIXI.Text(opts);
+    n.anchor.set(0.5, 1); n.x = x; n.y = y;
+    var w = n.width;
+    addLive(n, 0.9);
+  }
+  function projectileNode(cfg, x, y) {
+    var node = new PIXI.Container();
+    var glow = new PIXI.Sprite(glowTex);
+    glow.anchor.set(0.5); glow.tint = 0xff3850; glow.alpha = 0.16; glow.blendMode = 'add';
+    node.addChild(glow);
+    var core;
+    if (cfg.sharedGlyph) { core = new PIXI.Sprite(cfg.glyphTex); core.anchor.set(0.5); }
+    else { core = new PIXI.Text({ text: '🔪', style: { fontSize: 20 } }); core.anchor.set(0.5); }
+    node.addChild(core);
+    node.x = x; node.y = y;
+    addLive(node, 0.25);
+  }
+  function dotNode(cfg, x, y) {
+    var n;
+    if (cfg.spriteParticle) { n = new PIXI.Sprite(glowTex); n.anchor.set(0.5); n.scale.set(0.14); n.tint = 0xffe07a; }
+    else { n = new PIXI.Graphics(); n.circle(0, 0, 2.2).fill(0xffe07a); }
+    n.x = x; n.y = y; n.blendMode = 'add';
+    addLive(n, 0.3);
+  }
+  function ringNode(cfg, x, y) {
+    if (cfg.spriteRing) {
+      var s = new PIXI.Sprite(ringTex); s.anchor.set(0.5); s.tint = 0xffd75e; s.x = x; s.y = y;
+      addLive(s, 0.26, 'sprite');
+    } else {
+      var g = new PIXI.Graphics(); g.x = x; g.y = y;
+      addLive(g, 0.26, 'graphics');
+    }
+  }
+
+  function castOnce(cfg) {
+    var nf = cfg.floats, nb = cfg.bounces, np = cfg.particles, nt = cfg.trails;
+    for (var i = 0; i < nf; i++) floatNode(cfg, 80 + Math.random() * 740, 100 + Math.random() * 420);
+    for (i = 0; i < nb; i++) {
+      var x = 80 + Math.random() * 740, y = 100 + Math.random() * 420;
+      projectileNode(cfg, x, y);
+      for (var d = 0; d < nt; d++) dotNode(cfg, x + d * 4, y + d * 3);
+      for (var p = 0; p < np; p++) dotNode(cfg, x, y);
+      ringNode(cfg, x, y);
+    }
+  }
+
+  function step(dt) {
+    for (var i = live.length - 1; i >= 0; i--) {
+      var o = live[i];
+      o.t += dt;
+      var k = Math.min(1, o.t / o.life);
+      if (o.ring === 'graphics') {
+        o.node.clear();
+        o.node.circle(0, 0, 4 + 26 * k).stroke({ color: 0xffd75e, width: Math.max(1, 5 * (1 - k)), alpha: 1 - k });
+      } else if (o.ring === 'sprite') {
+        o.node.scale.set(0.15 + k); o.node.alpha = 1 - k;
+      } else {
+        o.node.y -= 44 * dt; o.node.alpha = Math.max(0, 1 - k);
+      }
+      if (k >= 1) { o.node.destroy(); live.splice(i, 1); }
+    }
+  }
+
+  function run(name, cfg) {
+    for (var i = 0; i < live.length; i++) if (!live[i].node.destroyed) live[i].node.destroy();
+    live.length = 0;
+    if (gl) gl.finish();
+    var dt = 1 / 60, castAcc = 0, frames = [], peak = 0;
+    for (var f = 0; f < 420; f++) {           // 7 秒
+      castAcc += dt;
+      var t0 = performance.now();
+      if (castAcc >= 0.4) { castAcc = 0; castOnce(cfg); }
+      step(dt);
+      app.renderer.render(stage);
+      if (gl) gl.finish();
+      var ms = performance.now() - t0;
+      if (f >= 60) frames.push(ms);           // 前 1 秒暖機不計
+      if (live.length > peak) peak = live.length;
+    }
+    var sorted = frames.slice().sort(function (a, b) { return a - b; });
+    var p50 = sorted[Math.floor(sorted.length * 0.5)];
+    var p95 = sorted[Math.floor(sorted.length * 0.95)];
+    var max = sorted[sorted.length - 1];
+    var over = frames.filter(function (v) { return v > 16.7; }).length;
+    log(name + '　<b>中位 ' + p50.toFixed(2) + '</b>　p95 <b>' + p95.toFixed(2) +
+        '</b>　最大 <b>' + max.toFixed(1) + ' ms</b>　>16.7ms 幀數 ' + over + '/' + frames.length +
+        '　場上物件峰值 ' + peak);
+  }
+
+  var CUR = { floats: 45, bounces: 40, particles: 6, trails: 7,
+              bitmapFloat: false, spriteParticle: false, spriteRing: false, sharedGlyph: false };
+  function cfg(over) { var o = {}; for (var k in CUR) o[k] = CUR[k]; for (k in over) o[k] = over[k]; return o; }
+
+  // 共用 emoji 貼圖（一次性）
+  var glyphTex = (function () {
+    var t = new PIXI.Text({ text: '🔪', style: { fontSize: 20 } });
+    var tex = app.renderer.generateTexture(t);
+    t.destroy();
+    return tex;
+  })();
+  CUR.glyphTex = glyphTex;
+
+  log('---- 每 0.4 秒一次施放（45 飄字 / 40 彈射 / 每彈射 13 粒子 + 1 環）----');
+  run('A 現行作法　　　　　　　　　　　　', cfg({}));
+  run('B 空載對照（完全不產生任何特效）　', cfg({ floats: 0, bounces: 0 }));
+  run('C 只留飄字（無投射物／粒子／環）　', cfg({ bounces: 0 }));
+  run('D 只留特效（無飄字）　　　　　　　', cfg({ floats: 0 }));
+  log('---- 逐項替換 ----');
+  run('E 粒子改共用貼圖 Sprite　　　　　 ', cfg({ spriteParticle: true }));
+  run('F 環改 Sprite 縮放　　　　　　　　', cfg({ spriteRing: true }));
+  run('G 投射物 emoji 改共用貼圖　　　　 ', cfg({ sharedGlyph: true }));
+  run('H 飄字改 BitmapText　　　　　　　 ', cfg({ bitmapFloat: true }));
+  run('I 以上全部　　　　　　　　　　　　', cfg({ spriteParticle: true, spriteRing: true, sharedGlyph: true, bitmapFloat: true }));
+  log('---- 減量（降級策略）----');
+  run('J 拖尾關閉、粒子 6→2　　　　　　　', cfg({ trails: 0, particles: 2 }));
+  run('K 減量 + 全部替換　　　　　　　　 ', cfg({ trails: 0, particles: 2, spriteParticle: true, spriteRing: true, sharedGlyph: true, bitmapFloat: true }));
+  log('---- 本次實際送出的組合（飄字與 emoji 依實測維持原狀）----');
+  run('L 環 + 粒子/拖尾改共用貼圖 Sprite ', cfg({ spriteParticle: true, spriteRing: true }));
+  run('M L + 高載降級（拖尾停、粒子 6→2）', cfg({ spriteParticle: true, spriteRing: true, trails: 0, particles: 2 }));
+  log('---- 完成 ----');
+})();
+</script>
+</body></html>

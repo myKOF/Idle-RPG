@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>verify</title>
+<style>body{background:#111;color:#ddd;font:14px monospace;padding:12px}
+.ok{color:#6f6}.bad{color:#f66}canvas{border:1px solid #333;margin-top:8px}</style></head>
+<body>
+<div id="out"></div>
+<script src="../js/vendor/pixi.min.js"></script>
+<script>
+var lines = [];
+function log(s) { lines.push(s); document.getElementById('out').innerHTML = lines.join('<br>'); }
+function chk(name, cond, extra) {
+  log((cond ? '<span class="ok">✔</span> ' : '<span class="bad">�’ 失敗</span> ') + name +
+      (extra ? '　<span style="color:#888">' + extra + '</span>' : ''));
+  return cond;
+}
+
+/* 與 js/battle-renderer.js 中新增的兩支貼圖產生器逐行相同 */
+function dotTextureCanvas() {
+  var c = document.createElement('canvas');
+  c.width = c.height = 32;
+  var g = c.getContext('2d');
+  var grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.55, 'rgba(255,255,255,1)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 32, 32);
+  return c;
+}
+function ringTextureCanvas() {
+  var c = document.createElement('canvas');
+  c.width = c.height = 128;
+  var g = c.getContext('2d');
+  var grad = g.createRadialGradient(64, 64, 64 * 0.58, 64, 64, 64);
+  grad.addColorStop(0, 'rgba(255,255,255,0)');
+  grad.addColorStop(0.5, 'rgba(255,255,255,1)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.beginPath();
+  g.arc(64, 64, 64, 0, Math.PI * 2);
+  g.fill();
+  return c;
+}
+function alphaAt(c, x, y) { return c.getContext('2d').getImageData(x, y, 1, 1).data[3]; }
+
+(async function () {
+  log('---- 貼圖形狀（程式判讀，不靠肉眼）----');
+  var dot = dotTextureCanvas();
+  chk('圓點：中心不透明', alphaAt(dot, 16, 16) > 250, 'alpha=' + alphaAt(dot, 16, 16));
+  chk('圓點：邊緣完全透明', alphaAt(dot, 1, 1) < 5, 'alpha=' + alphaAt(dot, 1, 1));
+  chk('圓點：0.55 半徑內仍是實心', alphaAt(dot, 16 + 7, 16) > 250, 'alpha=' + alphaAt(dot, 23, 16));
+
+  var ring = ringTextureCanvas();
+  var cen = alphaAt(ring, 64, 64), mid = alphaAt(ring, 64 + 50, 64), out = alphaAt(ring, 64 + 63, 64);
+  chk('環：中心透空（是圈不是餅）', cen < 5, 'alpha=' + cen);
+  chk('環：中段最亮', mid > 200, 'alpha=' + mid);
+  chk('環：外緣淡出', out < 60, 'alpha=' + out);
+
+  log('---- 共用貼圖的生命週期（本次改動的最大風險）----');
+  var app = new PIXI.Application();
+  await app.init({ width: 260, height: 200, background: 0x000000, antialias: false });
+  document.body.appendChild(app.canvas);
+  app.ticker.stop();
+
+  var shared = PIXI.Texture.from(ringTextureCanvas());
+  var s1 = new PIXI.Sprite(shared);
+  s1.anchor.set(0.5); s1.x = 130; s1.y = 100; s1.scale.set(0.5); s1.tint = 0xff6644;
+  app.stage.addChild(s1);
+  app.renderer.render(app.stage);
+
+  // killFx() 用的就是這個呼叫
+  s1.destroy({ children: true });
+  chk('Sprite.destroy({children:true}) 後共用貼圖仍存活', !shared.destroyed,
+      'texture.destroyed=' + shared.destroyed);
+
+  var ok2 = false, err = '';
+  try {
+    for (var i = 0; i < 5; i++) {
+      var s2 = new PIXI.Sprite(shared);
+      s2.anchor.set(0.5); s2.x = 30 + i * 50; s2.y = 100; s2.scale.set(0.35); s2.tint = 0x44ff88;
+      app.stage.addChild(s2);
+    }
+    app.renderer.render(app.stage);
+    ok2 = true;
+  } catch (e) { err = e.message; }
+  chk('銷毀後再用同一張貼圖建立並繪製', ok2, err);
+
+  // 讀畫面像素，確認後續 Sprite 真的畫出東西（不是空白）
+  var gl = app.renderer.gl;
+  var px = new Uint8Array(4);
+  // 讀第一個綠色環的中段亮點（WebGL 原點在左下，故 y 要翻轉）
+  gl.readPixels(30 + 17, app.canvas.height - 100, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+  chk('後續 Sprite 確實有畫素輸出（非空白）', px[1] > 20 || px[0] > 20 || px[2] > 20,
+      'rgba=' + px[0] + ',' + px[1] + ',' + px[2] + ',' + px[3]);
+
+  log('---- tint 是否生效 ----');
+  app.stage.removeChildren();
+  var s3 = new PIXI.Sprite(PIXI.Texture.from(dotTextureCanvas()));
+  s3.anchor.set(0.5); s3.x = 130; s3.y = 100; s3.scale.set(3); s3.tint = 0xff0000;
+  app.stage.addChild(s3);
+  app.renderer.render(app.stage);
+  gl.readPixels(130, app.canvas.height - 100, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+  chk('tint 紅色生效（R 高、G/B 低）', px[0] > 200 && px[1] < 60 && px[2] < 60,
+      'rgba=' + px[0] + ',' + px[1] + ',' + px[2] + ',' + px[3]);
+
+  log('---- 完成 ----');
+})();
+</script>
+</body></html>
