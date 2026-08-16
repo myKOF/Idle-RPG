@@ -1,5 +1,16 @@
 # PATCH.md
 
+## 對我方不利戰鬥數字統一紅字樣式（Antigravity 2026-08-16）
+
+- **戰鬥飄字色彩對齊**：
+  - 更新 `css/style.css`：
+    - `.float-txt.miss`：調整為鮮明醒目的亮紅色（`#ef4444`，字級 16px，帶紅色外發光陰影 `rgba(239, 68, 68, 0.95)`），明確提示我方攻擊未命中／敵方閃避之不利狀態。
+    - `.float-txt.player-damage` 與 `.player-damage.crit`：承傷字統一為亮紅（`#ef4444` 與 `#dc2626`）。
+    - `.float-txt.player-event.debuff`：玩家受到負面狀態（如流血、中毒、破甲等）統一調整為紅色（`#ef4444`）。
+- **測試更新與驗證**：
+  - 更新 `tests/player-event-float.test.cjs` 對應的紅字色彩與陰影斷言。
+  - 執行 `node tools/build_check.cjs`（282 個檔案全數通過）與單元測試。
+
 ## 新版技能一鍵滿級與重置 Worker 指令原子化（Antigravity 2026-08-16）
 
 - **指令原子化與協議升級（v21）**：
