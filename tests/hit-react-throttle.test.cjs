@@ -66,6 +66,8 @@ test('Canvas 與 DOM 受擊震動都使用三秒冷卻並降低幅度', () => {
   assert.match(renderer, /var HIT_JOLT_COOLDOWN_MS = 3000/);
   assert.match(renderer, /hitAt - ent\.lastJoltAt >= HIT_JOLT_COOLDOWN_MS/);
   assert.doesNotMatch(renderer, /if \(strong && canJolt\) addShake\(4\)/);
+  assert.match(renderer, /function addMeteorCameraShake\(\)/);
+  assert.match(renderer, /S\.shake = Math\.min\(18, Math\.max\(S\.shake, 14\)\)/);
   assert.match(renderer, /function addShake\(px, spec\)[\s\S]*?if \(!isSpecialScreenShakeSpec\(spec\)\) return;/);
   assert.match(renderer, /if \(strong\) addShake\(5, spec\)/);
   assert.match(renderer, /if \(isMega \|\| isPurple\) \{[\s\S]*?addShake\(isPurple \? 5 : 3, spec\)/);
@@ -78,6 +80,7 @@ test('Canvas 與 DOM 受擊震動都使用三秒冷卻並降低幅度', () => {
   assert.match(vfx, /function vfxHitVisualTarget\(elId, card\)/);
   assert.match(vfx, /visual\.classList\.add\('vfx-hit-target', 'vfx-hit'\)/);
   assert.match(vfx, /function vfxAllowsSceneShake\(spec\)/);
+  assert.match(vfx, /vfx-scene-shake-meteor/);
   assert.match(vfx, /vfxSceneShake\(layer, delayMs, false, spec\)/);
   assert.match(css, /translate\(-1\.5px, 0\.5px\)/);
   assert.match(css, /translate\(-2\.5px, 1\.5px\)/);

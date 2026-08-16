@@ -1201,6 +1201,12 @@ var BattleRenderer = (function () {
     S.shake = Math.min(10, Math.max(S.shake, px));
   }
 
+  /* 殞石是明確要求的落地鏡頭效果：不走一般受擊的 reduced-motion 閘門，
+     直接推動世界鏡頭，確保每顆殞石到達時都能看到一次畫面位移。 */
+  function addMeteorCameraShake() {
+    S.shake = Math.min(18, Math.max(S.shake, 14));
+  }
+
   function isSpecialScreenShakeSpec(spec) {
     var v = spec && spec.variant;
     return v === 'meteor' || v === 'pillar' || v === 'purple-thunder' ||
@@ -2189,6 +2195,7 @@ var BattleRenderer = (function () {
       spawnImpact(cx, cy, spec, true);
       /* 把殞石落地震動提高到可見強度；同一個到達回呼只執行一次。 */
       addShake(8, spec);
+      addMeteorCameraShake();
       spawnFireShockwave(cx, cy, rectRadius(rect), shockTheme);
     });
     var smallOffsets = [-0.22, -0.04, 0.16, 0.32];
