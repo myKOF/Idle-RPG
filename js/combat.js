@@ -1082,6 +1082,24 @@ function fieldTick(dt) {
     p.mp = Math.min(st.mp, p.mp + playerMpRegenPerSec(st) * dt);
     tickSkillCds(p, dt); // 潛力技能冷卻共用 skillCds（鍵 'potential:<id>'），一併在此遞減
 
+    /* 普攻冷卻：每個 tick 都要走完，而且只夾在 0（＝ready），不累積負數欠債。
+       ⚠️ 這一段必須留在「場上沒有可交戰敵人就 return」與「施放技能中」兩道閘門之**前**——
+       atkCd 是「下一刀什麼時候好」的計時器，不是「現在有沒有人可以打」。
+       放在閘門後面的話，整波清空的空窗、新怪還在進場、以及施放硬直那幾秒，
+       冷卻會整個停住：玩家在原地站了好幾秒，等敵人終於走進近戰距離，
+       還要再等一整個攻擊週期才出得了手＝「轉頭後不會馬上普攻」。
+       施放硬直本來就不該影響普攻節奏（見 formula.js SKILL_CAST_LOCK：技能不改動 atkCd）。
+       夾在 0 是 2026-08-16「追擊遠方敵人累積負數冷卻」修正的核心，必須保留：
+       等待期間只保持 ready，不會在抵達當下連續補攻。
+       暈眩期間維持停住（無法行動就不該累積 ready），與下方玩家行動閘門一致。
+       ── 潛力【極速之力】施放期間以倍率放大攻擊頻率（突破一般攻速上限）；
+          新版技能【狂風斬】同樣是突破上限的攻速乘算（js/skills2.js skill2AspdFactor）。 */
+    var playerAttackRate = slowFactor(p) * (1 + buffVal(p, 'aspdUp') / 100) *
+        (typeof potentialVelocityFactor === 'function' ? potentialVelocityFactor(p, st) : 1) *
+        (typeof legendaryAttackSpeedMultiplier === 'function' ? legendaryAttackSpeedMultiplier(p, st) : 1) *
+        (typeof skill2AspdFactor === 'function' ? skill2AspdFactor(p) : 1);
+    if (!effectActive(p, 'stun')) p.atkCd = Math.max(0, p.atkCd - dt * playerAttackRate);
+
     // 持續傷害（玩家：中毒 / 詛咒等）
     if (tickStatuses(p, dt)) { onPlayerFieldDeath(); return; }
 
@@ -1212,15 +1230,6 @@ function fieldTick(dt) {
             if (!enemies.length) return;
         }
         if (p.hp <= 0) { onPlayerFieldDeath(); return; } // 狂暴打擊等自傷技能
-        // 潛力【極速之力】：施放期間以倍率放大攻擊頻率（突破一般攻速上限）
-        // 新版技能【狂風斬】：同樣突破上限的攻速乘算（js/skills2.js skill2AspdFactor）
-        var playerAttackRate = slowFactor(p) * (1 + buffVal(p, 'aspdUp') / 100) *
-            (typeof potentialVelocityFactor === 'function' ? potentialVelocityFactor(p, st) : 1) *
-            (typeof legendaryAttackSpeedMultiplier === 'function' ? legendaryAttackSpeedMultiplier(p, st) : 1) *
-            (typeof skill2AspdFactor === 'function' ? skill2AspdFactor(p) : 1);
-        /* 普攻是近戰：尚未進入攻擊距離時只保持 ready，不累積負數冷卻欠債。
-           否則追擊一段時間後，抵達目標會因 atkCd <= 0 在每個 Tick 連續補攻。 */
-        p.atkCd = Math.max(0, p.atkCd - dt * playerAttackRate);
         // 新版技能【暴風之舞】化身中：無法普攻（可施放技能）
         var stormLock = (typeof skill2StormActive === 'function') && skill2StormActive();
         if (targetSwitchReady && p.atkCd <= 0 && !stormLock) {

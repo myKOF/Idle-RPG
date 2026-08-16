@@ -306,6 +306,59 @@ test('遠距離追擊時普攻冷卻不累積負數，抵達後只觸發一發�
   assert.equal(player.atkCd, 0.9);
 });
 
+/* 上一條測的是「不得累積負數」，這一條測相反的一半：冷卻也不得整個停住。
+   atkCd 是「下一刀什麼時候好」的計時器，不是「現在有沒有人可以打」——
+   整波清空的空窗、新怪還在進場的那幾秒，冷卻照樣要倒數到 ready，
+   否則玩家在原地站了好幾秒，敵人終於走進近戰距離還要再等一整個攻擊週期才出手。 */
+test('場上沒有可交戰敵人時普攻冷卻照樣倒數，敵人一進場就立刻出手', () => {
+  const context = loadCombatContext();
+  const events = [];
+  const player = context.newPlayerEntity({ hp: 100, mp: 0, aspd: 1 });
+  const enemy = {
+    name: '進場中測試怪', hp: 100, maxHp: 100, pos: { x: 40, y: 0 },
+    _enterCd: 2, atkCd: 1, magic: false
+  };
+  context.G = {
+    player: { gold: 0 },
+    stage: { current: 1, best: 1, kills: 0, autoAdvance: false, zone: 'desert' },
+    tower: { active: false }
+  };
+  context.FIELD = {
+    player, monster: enemy, monsters: [enemy], spawnCd: Infinity, reviveCd: 0,
+    dpsWindow: [], _waveClearPending: false, mapComplete: true,
+    stageKills: 0, quotaStage: 1, stageQuota: 999
+  };
+  context.getStats = () => ({ hp: 100, mp: 0, aspd: 1, moveSpeed: 0, passives: {}, skillTriggers: {} });
+  context.playerHpRegenPerSec = () => 0;
+  context.playerMpRegenPerSec = () => 0;
+  context.tickSkillCds = () => {};
+  context.tickFieldDeathClears = () => {};
+  context.tickFieldEnterDelays = () => [];   // 進場倒數由本測試手動控制
+  context.bfTickPlayer = () => {};
+  context.bfTickApproach = () => [];
+  context.bfPlayerCanReach = () => true;     // 敵人就站在近戰距離內
+  context.pickAndCastSkill = () => null;
+  context.tickSkillSchedulers = () => {};
+  context.tickLegendaryEffects = () => null;
+  context.effectActive = () => false;
+  context.fieldMonsterAttack = () => false;
+  context.doPlayerAttack = () => {
+    events.push('player');
+    return { killed: false };
+  };
+
+  // 進場中＝不可交戰：不能出手，但冷卻必須照走
+  for (let i = 0; i < 15; i++) context.fieldTick(0.1);
+  assert.deepEqual(events, [], '敵人還在進場時不得出手');
+  assert.equal(player.atkCd, 0, '空窗期冷卻必須倒數到 ready，不得停在原值');
+
+  // 走到定位＝可交戰：同一個 Tick 就該出手，不用再等一整個攻擊週期
+  enemy._enterCd = 0;
+  context.fieldTick(0.1);
+  assert.deepEqual(events, ['player'], '敵人一可交戰就應立刻普攻');
+  assert.equal(player.atkCd, 1, '出手後補回一個完整攻擊週期');
+});
+
 /* 2026-08 波次串流改版：敵人改成每隔幾秒補一波、不等場上清空，
    推進判定因此從「整波清空」改為「殺滿本關配額」（fieldStageQuota）。
    本測試改測新語意：逐一擊殺各自結算，殺滿配額後的下一個 tick 推進。 */
