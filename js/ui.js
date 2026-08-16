@@ -7275,16 +7275,63 @@ function skillViewDescription(id, def, level, skipFusionDetail, isPotential, fus
 /* 新版技能群組指令（skill2.learn／skill2.downgrade：參數是 group+tier，不是 id）。 */
 function runSkill2UiAction(commandName, group, tier) {
   var panels = ['skills', 'header'];
-  sendUiCommand(commandName, { group: group, tier: tier }, {
+  return sendUiCommand(commandName, { group: group, tier: tier }, {
     silentResultError: true,
     keys: nodePendingKey('sg:' + group),
     panels: panels
   }).then(function (result) {
     var error = uiCommandResultError(result);
-    if (error) reportUiCommandFailure('技能操作失敗', error, panels);
+    if (error) {
+      reportUiCommandFailure('技能操作失敗', error, panels);
+      return false;
+    }
+    return true;
   }, function (error) {
     reportUiCommandFailure('技能操作失敗', error, panels);
+    return false;
   });
+}
+
+function runSkill2MaxAction(group, tier) {
+  var g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[group] : null;
+  if (!g) return;
+  var skillsSnapshot = uiSkillsPanelSnapshot();
+  var headerSnapshot = uiHeaderPanelSnapshot();
+  var lvs = sgUiLevels(skillsSnapshot, group) || [];
+  var curLv = lvs[tier] || 0;
+  var tierMax = (typeof SG_TIER_MAX_LV === 'number') ? SG_TIER_MAX_LV : 10;
+  var gold = Number(headerSnapshot && headerSnapshot.player && headerSnapshot.player.gold) || 0;
+  if (curLv >= tierMax) return;
+
+  function step(currentLv, currentGold) {
+    if (currentLv >= tierMax) return;
+    var cost = (typeof skills2UpgradeCost === 'function') ? skills2UpgradeCost(group, tier, currentLv) : 0;
+    if (currentGold < cost) return;
+    runSkill2UiAction('skill2.learn', group, tier).then(function (ok) {
+      if (ok) {
+        step(currentLv + 1, currentGold - cost);
+      }
+    });
+  }
+  step(curLv, gold);
+}
+
+function runSkill2DeleteAction(group, tier) {
+  var skillsSnapshot = uiSkillsPanelSnapshot();
+  var lvs = sgUiLevels(skillsSnapshot, group) || [];
+  var curLv = lvs[tier] || 0;
+  var minLv = (tier === 0 ? 1 : 0);
+  if (curLv <= minLv) return;
+
+  function step(currentLv) {
+    if (currentLv <= minLv) return;
+    runSkill2UiAction('skill2.downgrade', group, tier).then(function (ok) {
+      if (ok) {
+        step(currentLv - 1);
+      }
+    });
+  }
+  step(curLv);
 }
 
 function runSkillUiAction(commandName, id, pendingRef, legacyAction, panels, onSuccess) {
@@ -7589,7 +7636,7 @@ function sgSkillGroupRowHTML(gid, lvs, loadout) {
   return h + '</div></div>';
 }
 
-/* 新版技能群組的升級彈窗內容（沿用 #skill-modal 外殼）。 */
+/* 新版技能群組的升級彈窗內容（沿用 #skill-modal 外殼與舊版技能升級界面佈局）。 */
 function renderSkill2Modal(body, gid, skillsSnapshot, headerSnapshot) {
   if (UI.tooltipAnchor && body.contains(UI.tooltipAnchor)) hideTooltip();
   var g = SKILLS2[gid];
@@ -7608,42 +7655,80 @@ function renderSkill2Modal(body, gid, skillsSnapshot, headerSnapshot) {
   var cost = (typeof skills2UpgradeCost === 'function') ? skills2UpgradeCost(gid, selectedTier, lv) : 0;
   // 主動型被動（反擊）：無冷卻無耗魔、不主動施放，但要裝配技能列才生效
   var isPassiveGroup = (typeof skills2IsPassive === 'function') && skills2IsPassive(gid);
+  var dmgTypeLabel = (g.dmgType === 'magic') ? '魔法' : '物理';
+  var elemInfo = (g.elem && typeof ELEM_INFO !== 'undefined' && ELEM_INFO[g.elem]) ? ELEM_INFO[g.elem] : null;
+  var typeStr = dmgTypeLabel + (elemInfo ? '·' + (elemInfo.short || elemInfo.name) : '');
+
   var h = '<div class="skd-head"><span class="skd-emoji">' + g.emoji + '</span><b>' + esc(tier.name) + '</b> ' +
-    '<span class="dim-text">總 Lv.' + sgUiTotalLevel(lvs) + '｜第' + (selectedTier + 1) + '階｜新版技能</span>' +
-    '<span class="sk-meta">' + (isPassiveGroup ? '🌀 主動型被動（無冷卻/耗魔）' : '🔵 ' + (Number(g.cost) || 0) + ' MP　⏱️ ' + g.cd + 's') + '</span></div>';
-  h += '<div class="skill-tags"><span class="skill-tag skill-tag-category">新版技能（同群組進化）</span>' +
-    (isPassiveGroup ? '<span class="skill-tag skill-tag-passive">主動型被動·需裝配技能列</span>' : '') + '</div>';
-  if (isPassiveGroup && !inLoadout) {
-    h += '<div class="hint skill-unlock-hint">⚠️ 此技能需裝配到技能列才會生效（不會主動施放，僅佔用一個技能格）</div>';
+    '<span class="dim-text">Lv.' + lv + '/' + tierMax + '｜' + typeStr + '</span>' +
+    '<span class="sk-meta">' + (isPassiveGroup ? '🌀 被動' : '🔵 ' + (Number(g.cost) || 0) + ' MP　⏱️ ' + g.cd + 's') + '</span></div>';
+
+  var tags = [{ text: dmgTypeLabel, cls: 'skill-tag-category' }];
+  if (elemInfo) {
+    tags.push({ text: elemInfo.emoji + (elemInfo.short || elemInfo.name) + '系', cls: 'skill-tag-element skill-tag-' + g.elem });
   }
+  if (isPassiveGroup) {
+    tags.push({ text: '主動型被動·需裝配', cls: 'skill-tag-passive' });
+  }
+  h += '<div class="skill-tags">' + tags.map(function (t) {
+    return '<span class="skill-tag ' + t.cls + '">' + esc(t.text) + '</span>';
+  }).join('') + '</div>';
+
   h += '<div class="skill-modal-copy">' +
-    '<div class="sk-desc">第' + (selectedTier + 1) + '階【' + esc(tier.name) + '】　Lv.' + lv + '/' + tierMax + '</div>' +
-    '<div class="sk-desc">' + describeSkill2Tier(gid, selectedTier, lv) + '</div>' +
+    '<div class="sk-desc">' + describeSkill2Tier(gid, selectedTier, Math.max(1, lv)) + '</div>' +
     (!locked && !atCap ? '<div class="skd-next dim-text">下一級：' + describeSkill2Tier(gid, selectedTier, lv + 1) + '</div>' : '') +
+    (tier.desc ? '<div class="sk-flavor">' + esc(tier.desc) + '</div>' : '') +
     (locked ? '<div class="hint skill-unlock-hint">🔒 前一階需至少 Lv.1 才能解鎖；目前僅可查看</div>' : '') +
     '</div>';
+
   h += '<div class="skill-modal-points">金幣：' + fmt(gold) + '</div>';
+
   h += '<div class="detail-actions skill-modal-actions">';
+
+  // 1. 升級與一鍵滿級
   if (!locked && !atCap) {
     h += '<button class="btn sm" data-skill2-learn="' + gid + ':' + selectedTier + '" data-tip="花費 ' + fmt(cost) + ' 金幣"' +
-      pendingAttrs + (gold < cost ? ' disabled' : '') + '>⬆️ 升級</button>';
+      pendingAttrs + (gold < cost ? ' disabled' : '') + '>' + (lv === 0 ? '📖 學習' : '⬆️ 升級') + '</button>';
+    h += '<button class="btn sm" data-skill2-max="' + gid + ':' + selectedTier + '" data-tip="自動消耗金幣，升至目前階級上限"' +
+      pendingAttrs + (gold < cost ? ' disabled' : '') + '>⚡ 一鍵滿級</button>';
   } else if (atCap) {
     h += '<div style="text-align:center; padding:4px; color:var(--good); font-size:12px;">已滿級</div>';
+    h += '<div style="visibility:hidden;"></div>';
   } else {
-    h += '<div class="sg-modal-locked-action">🔒 未解鎖</div>';
+    h += '<div style="visibility:hidden;"></div><div style="visibility:hidden;"></div>';
   }
-  if (lv > (selectedTier === 0 ? 1 : 0)) {
+
+  // 2. 降級
+  var canDowngrade = (selectedTier === 0) ? (lv > 1) : (lv > 0);
+  if (canDowngrade) {
     h += '<button class="btn sm warn" data-skill2-downgrade="' + gid + ':' + selectedTier + '" data-tip="降 1 級（不退還金幣）"' + pendingAttrs + '>⬇️ 降級</button>';
   } else {
-    h += '<div style="visibility:hidden"></div>';
+    h += '<div style="visibility:hidden;"></div>';
   }
-  /* 裝備／卸下仍以群組參照 sg:<群組id>，階段參照只決定目前查看哪一階。
-     主動型被動同樣要裝配才生效，因此一樣給裝備鈕（只是文案點明它不會主動施放）。 */
+
+  // 3. 裝備／卸下
   var equipPendingAttrs = pendingUiButtonAttributes(nodePendingKey('skill:' + ref));
-  h += inLoadout
-    ? '<button class="btn sm warn" data-skill-unequip="' + ref + '"' + equipPendingAttrs + '>卸下</button>'
-    : '<button class="btn sm" data-skill-equip="' + ref + '"' + equipPendingAttrs +
-      (isPassiveGroup ? ' data-tip="裝配後被動效果才會生效">🌀 裝備（啟用被動）' : '>⚔️ 裝備') + '</button>';
+  var totalLv = sgUiTotalLevel(lvs);
+  if (totalLv > 0) {
+    h += inLoadout
+      ? '<button class="btn sm warn" data-skill-unequip="' + ref + '"' + equipPendingAttrs + '>卸下</button>'
+      : '<button class="btn sm" data-skill-equip="' + ref + '"' + equipPendingAttrs +
+        (isPassiveGroup ? ' data-tip="裝配後被動效果才會生效">🌀 裝備（啟用被動）' : '>⚔️ 裝備') + '</button>';
+  } else {
+    h += '<div style="visibility:hidden;"></div>';
+  }
+
+  // 4. 第二排：加入融合位置留空，右側放置刪除按鈕
+  h += '<div style="visibility:hidden;"></div>';
+
+  var canDelete = (selectedTier === 0) ? (lv > 1) : (lv > 0);
+  if (canDelete) {
+    h += '<button class="btn sm danger" data-skill2-delete="' + gid + ':' + selectedTier + '" data-tip="重置此階等級（不退還金幣）"' + pendingAttrs + '>🗑️ 刪除</button>';
+  } else {
+    h += '<div style="visibility:hidden;"></div>';
+  }
+  h += '<div style="visibility:hidden;"></div><div style="visibility:hidden;"></div>';
+
   h += '</div>';
   body.innerHTML = h;
 }
@@ -9534,17 +9619,37 @@ function initUI() {
       }
       return;
     }
-    // 新版技能群組：各階升級／降級（屬性值格式 "群組id:階索引"）
+    // 新版技能群組：各階升級／一鍵滿級／降級／重置刪除（屬性值格式 "群組id:階索引"）
     var s2l = e.target.closest('[data-skill2-learn]');
     if (s2l) {
       var s2lRef = String(s2l.getAttribute('data-skill2-learn')).split(':');
       runSkill2UiAction('skill2.learn', s2lRef[0], Math.floor(Number(s2lRef[1]) || 0));
       return;
     }
+    var s2m = e.target.closest('[data-skill2-max]');
+    if (s2m) {
+      var s2mRef = String(s2m.getAttribute('data-skill2-max')).split(':');
+      runSkill2MaxAction(s2mRef[0], Math.floor(Number(s2mRef[1]) || 0));
+      return;
+    }
     var s2d = e.target.closest('[data-skill2-downgrade]');
     if (s2d) {
       var s2dRef = String(s2d.getAttribute('data-skill2-downgrade')).split(':');
       runSkill2UiAction('skill2.downgrade', s2dRef[0], Math.floor(Number(s2dRef[1]) || 0));
+      return;
+    }
+    var s2del = e.target.closest('[data-skill2-delete]');
+    if (s2del) {
+      var s2delRef = String(s2del.getAttribute('data-skill2-delete')).split(':');
+      var delGid = s2delRef[0];
+      var delTier = Math.floor(Number(s2delRef[1]) || 0);
+      var gObj = (typeof SKILLS2 !== 'undefined') ? SKILLS2[delGid] : null;
+      var tierObj = gObj && gObj.tiers[delTier];
+      var tierName = tierObj ? tierObj.name : '技能';
+      var confirmMsg = '確定重置技能階級【' + tierName + '】？等級將歸零（第 1 階保留 Lv.1，不退還金幣）。';
+      showConfirmDialog(confirmMsg, function () {
+        runSkill2DeleteAction(delGid, delTier);
+      }, { title: '技能重置確認', danger: true });
       return;
     }
     var mx = e.target.closest('[data-skill-max]');

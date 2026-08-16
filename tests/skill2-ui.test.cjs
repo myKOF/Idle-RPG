@@ -48,8 +48,10 @@ test('新版階段彈窗沿用舊版單技能結構，未解鎖階段不產生�
   assert.match(modal, /class="skill-modal-copy"/);
   assert.match(modal, /class="skill-modal-points"/);
   assert.match(modal, /if \(!locked && !atCap\) \{/);
-  assert.match(modal, /class="sg-modal-locked-action"/);
   assert.match(modal, /data-skill2-learn="' \+ gid \+ ':' \+ selectedTier/);
+  assert.match(modal, /data-skill2-max="' \+ gid \+ ':' \+ selectedTier/);
+  assert.match(modal, /data-skill2-downgrade="' \+ gid \+ ':' \+ selectedTier/);
+  assert.match(modal, /data-skill2-delete="' \+ gid \+ ':' \+ selectedTier/);
 });
 
 test('主動型被動：技能彈窗有裝備鈕與類型標籤，快捷列外框旋轉流動', () => {
