@@ -1252,16 +1252,19 @@ function vfxPurpleThunder(spec, layer, pt, targetId, delayMs) {
 function vfxChain(spec, layer, ptList, idList, baseDelay, strikes) {
   if (!ptList.length) return;
   if (spec.variant === 'knife-bounce' || spec.variant === 'poison-spread') {
-    var pathHop = vfxStagger();
+    // 彈射鏈必須等上一段真的抵達目標；固定段間距會讓 B→C 在 A→B 尚未完成時提前出發。
+    var pathStart = baseDelay;
     for (var pathI = 1; pathI < ptList.length; pathI++) {
       var pathTravel = (spec.travelMs && spec.travelMs[pathI] > 0) ? spec.travelMs[pathI] : 0;
+      var pathFlight = vfxProjectileFlightMs(pathTravel, spec.dur || 0.5);
       vfxKnifeBounce(spec, layer, ptList[pathI - 1], ptList[pathI],
-        baseDelay + (pathI - 1) * pathHop, pathTravel);
+        pathStart, pathTravel);
       vfxImpact({
         elem: spec.variant === 'poison-spread' ? 'poison' : null,
         variant: null, color: spec.color
       }, layer, ptList[pathI], idList[pathI],
-        baseDelay + (pathI - 1) * pathHop + Math.max(40, pathTravel));
+        pathStart + pathFlight);
+      pathStart += pathFlight;
     }
     return;
   }

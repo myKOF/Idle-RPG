@@ -376,6 +376,40 @@ test('飛刀·神速飛刀：爆擊使群組冷卻縮短', () => {
   assert.ok(p.skillCds['sg:knife'] < base, '每次爆擊應縮短冷卻（實際 ' + p.skillCds['sg:knife'] + ' < 基礎 ' + base + '）');
 });
 
+test('飛刀彈射：允許回跳到其他目標，但禁止自我彈射', () => {
+  const c = loadContext();
+  stubHits(c);
+  c.chance = () => false;
+  c.bfTravelSeconds = () => 0.1;
+  const p = playerEnt();
+  const a = enemy(1e9, 40, 0, 'A');
+  const b = enemy(1e9, 45, 0, 'B');
+  const vfx = [];
+  c.enemyEventFloatTarget = (ent) => ent.name;
+  c.playCombatVfx = (spec) => vfx.push(spec);
+  c.bfNearestOthers = (from) => from === a ? [b] : [a];
+  c.bfNearestOther = (from) => from === a ? b : a;
+  c.G.player.skills2.levels.knife = [1, 1, 1, 1, 0, 1, 0];
+
+  c.castSkill2(p, [a, b], 'knife', 'mv-float');
+  const chain = vfx.filter((spec) => spec.variant === 'knife-bounce');
+  assert.ok(chain.some((spec) => spec.targets[0] === 'A' && spec.targets[1] === 'B'),
+    '應允許 A 彈向 B');
+  assert.ok(chain.some((spec) => spec.targets[0] === 'B' && spec.targets[1] === 'A'),
+    '應允許 B 彈回 A');
+  assert.ok(chain.every((spec) => spec.targets[0] !== spec.targets[1]),
+    '彈射路徑不得出現 A→A 或其他自我彈射');
+
+  // 即使近鄰替身錯誤地回傳目前目標，防線也不得建立自我彈射事件。
+  vfx.length = 0;
+  const solo = enemy(1e9, 40, 0, 'Solo');
+  c.bfNearestOthers = () => [solo];
+  c.bfNearestOther = () => solo;
+  c.castSkill2(p, [solo], 'knife', 'mv-float');
+  assert.equal(vfx.filter((spec) => spec.variant === 'knife-bounce').length, 0,
+    '單一目標不得建立 Solo→Solo');
+});
+
 test('血刃斬：塗抹血刃流血；血毒刃同時中毒；作用間隔受強化流血縮短', () => {
   const c = loadContext();
   stubHits(c);

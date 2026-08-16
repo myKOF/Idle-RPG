@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## Codex：修正飛刀彈射必須逐段命中後再出發（2026-08-16）
+
+- 狀態：已完成（2026-08-16）
+- 任務分類：新版技能 VFX／飛刀彈射時序
+- 負責 AI：Codex
+- 任務內容：修正飛刀首發與後續彈射的顯示時序，讓飛刀先抵達 A，再由 A 飛往 B，再由 B 飛往 C；每一段必須以前一段實際飛行時間完成為下一段起點，不得在前一段飛行中提前播放後續彈射。
+- 前置依賴：既有 `knife`／`knife-bounce` DOM 與 Canvas VFX 管線、`travelMs` 飛行時間欄位已存在；目標檔案衝突預檢無來源。
+- 允許修改：`js/skills2.js`、`js/vfx.js`、`js/battle-renderer.js`、`js/worker/sim.worker.js`、`js/bridge.js`、`index.html`、`tests/skill2-system.test.cjs`、`tests/skill2-vfx.test.cjs`、`docs/AI_TASKS.md`
+- 禁止修改：技能數值、傷害公式、目標選擇規則、Worker Protocol、存檔格式及其他技能效果。
+- 測試要求：新增飛刀首發／彈射時序回歸斷言；執行相關技能測試、JavaScript 語法檢查、`npm.cmd run build`、完整 `npm.cmd test` 與 `git diff --check`。
+- 完成條件：DOM 與 Canvas 均以首發抵達時間作為第一段彈射起點，後續段落依前一段飛行時間串行開始；不改變命中目標與傷害結算規則；快取版號同步。
+- 驗證結果：定向技能／VFX 測試 35/35 通過；JavaScript 語法檢查通過；`npm.cmd run build` 278/278 通過；完整 `npm.cmd test` 1403/1403 通過；`git diff --check` 通過。
+- 已知風險：尚未進行瀏覽器實機操作驗證，需由 Claude Code／使用者確認飛刀 A→B→C 畫面。
+- 完成後交給：Claude Code 唯讀 Review；使用者確認實機飛刀 A→B→C 畫面。
+
 ## Codex：技能視覺事件低延遲傳遞（2026-08-15）
 
 - 狀態：已完成（2026-08-15）

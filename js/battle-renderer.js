@@ -2165,19 +2165,22 @@ var BattleRenderer = (function () {
   function handleChainVfx(targets, spec, baseDelay, stagger) {
     if (!targets.length && !S.player) return;
     if (spec.variant === 'knife-bounce' || spec.variant === 'poison-spread') {
+      // 下一段必須接在上一段飛行完成後，不能用固定 stagger 提前播放。
+      var chainStart = baseDelay;
       for (var kb = 1; kb < targets.length; kb++) {
-        (function (hopIndex) {
+        var hopTravel = projectileTravelMs(spec.travelMs && spec.travelMs[kb], 120);
+        (function (hopIndex, startDelay, hopTravel) {
           var fromId = targets[hopIndex - 1];
           var toId = targets[hopIndex];
-          var travel = projectileTravelMs(spec.travelMs && spec.travelMs[hopIndex], 120);
           setTimeout(function () {
             if (fxGate()) return;
-            spawnProjectile(toId, travel, spec, function (pt) {
+            spawnProjectile(toId, hopTravel, spec, function (pt) {
               spawnImpact(pt.x, pt.y, spec, false);
               hitReact(toId, spec.elem, false);
             }, posOf(fromId));
-          }, baseDelay + (hopIndex - 1) * stagger);
-        })(kb);
+          }, startDelay);
+        })(kb, chainStart, hopTravel);
+        chainStart += hopTravel;
       }
       return;
     }

@@ -505,6 +505,7 @@ function sgEmitVfx(gid, targets, floatSel, extra) {
   };
   if (extra && extra.variant) spec.variant = extra.variant;
   if (extra && extra.travelMs) spec.travelMs = extra.travelMs;
+  if (extra && extra.delayMs > 0) spec.delayMs = Number(extra.delayMs);
   if (extra && extra.projectile) spec.projectile = true;
   if (extra && extra.lineLength) spec.lineLength = Number(extra.lineLength);
   if (extra && extra.lineWidth) spec.lineWidth = Number(extra.lineWidth);
@@ -964,6 +965,8 @@ function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     var chained = 0;
     var cur = knives[ki];
     var visited = [cur];
+    // 首發飛到第一個目標的時間也是彈射鏈的起點；後續每段再接續前一段飛行時間。
+    var chainStartDelay = delay;
     var b = 0;
     while (b < bounces) {
       b++;
@@ -974,17 +977,20 @@ function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
         if (visited.indexOf(near[ni]) < 0) { next = near[ni]; break; }
       }
       if (!next) next = (typeof bfNearestOther === 'function') ? bfNearestOther(cur, pool) : null;
-      if (!next || next.hp <= 0) break;
+      // 允許 A→B→A，但任何自我彈射 A→A 都必須停止。
+      if (!next || next === cur || next.hp <= 0) break;
       visited.push(next);
+      var bounceTravelMs = (typeof bfTravelSeconds === 'function')
+        ? Math.round(bfTravelSeconds(next) * 1000) : 0;
       sgEmitVfx('knife', [cur, next], floatSel, {
         fxKind: 'chain', variant: 'knife-bounce', count: 1,
-        travelMs: [0, (typeof bfTravelSeconds === 'function')
-          ? Math.round(bfTravelSeconds(next) * 1000) : 0]
+        delayMs: chainStartDelay, travelMs: [0, bounceTravelMs]
       });
       var bres = sgHitOne(pEnt, st, next, dmgVal * bouncePct / 100, 'knife', floatSel, out,
-        delay + sgStaggerMs(b));
+        chainStartDelay + bounceTravelMs);
       if (bres && bres.crit) onCrit();
       cur = next;
+      chainStartDelay += bounceTravelMs;
       // 連鎖彈射：本次彈射後有機率再彈一次（最多連續 chainMax 次）
       if (bres && !bres.miss && chained < chainMax && chainChance > 0 && chance(chainChance)) {
         bounces++;
