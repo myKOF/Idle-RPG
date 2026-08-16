@@ -19,6 +19,8 @@
   - 修復 `renderBattleSkillBar` 在 `pEnt` 為空時未自動備援讀取戰鬥快照 (`peekUiPanelData('battle')`) 導致技能冷卻數值被歸零重置的問題。
   - 修復新版技能 `entry` 鍵值前綴（`sg:`）匹配：同時檢索 `pEnt.skillCds['sg:knife']` 與 `pEnt.skillCds['knife']`，確保技能冷卻值精確讀取。
   - 修復 60fps 碼錶動態器（`startBattleSkillBarAnimation`）：每次接收新技能冷卻資料時強制重啟動畫幀（`cancelAnimationFrame`），確保大量傷害飄字與高頻戰鬥下，圓形黑色倒算遮罩與碼錶數字（如 `4.0s` -> `0.0s`）持續平滑轉動。
+- **修復裝備及背包 Tips 懸停移動時瞬間消失問題**：
+  - 修復 `mouseout` 全局事件監聽器邏輯：修正裝備槽/背包格 (`outCell`) 內部元素懸停防護，解決游標移至圖示 (`<img>`)、等級角標或太古星標等子元素時誤觸發第二段懸停檢查並呼叫 `hideTooltip()` 導致 Tips 提示框瞬間關閉的問題。
 - **測試與建置驗證**：
   - 執行 `node --test "tests/*.test.cjs"`（1,401 個單元測試全數通過）與 `node tools/build_check.cjs`（278 個檔案編譯全數通過）。
 

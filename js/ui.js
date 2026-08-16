@@ -9931,7 +9931,7 @@ function initUI() {
     if (etip) { showEnemyTooltip(etip); return; }
   });
   document.addEventListener('mouseout', function (e) {
-    var outCell = e.target.closest('.item-cell[data-id]') || e.target.closest('.eq-slot.filled[data-id]');
+    var outCell = e.target.closest('.item-cell[data-id]') || e.target.closest('.eq-slot.filled[data-id]') || e.target.closest('.forge-slot.filled[data-forge-slot]');
     if (outCell) {
       if (UI.inventoryScrolling && outCell.classList.contains('item-cell')) return;
       // Leaving a child element (icon, level, badge) is not leaving the item
@@ -9940,16 +9940,17 @@ function initUI() {
       if (UI.hoveredItemTooltip && UI.hoveredItemTooltip.anchor === outCell) {
         UI.hoveredItemTooltip = null;
       }
+      hideTooltip();
+      return;
     }
+
     if (e.target.closest('[data-sk]') || e.target.closest('.stat-row[data-tt-title]') ||
       e.target.closest('[data-tt-title]') ||
       e.target.closest('[data-talent-tip]') ||
       e.target.closest('[data-tower-tip]') || e.target.closest('#btn-enemy-tip') ||
       e.target.closest('#btn-boss-tip') || e.target.closest('#btn-tower-result-boss-tip') ||
       e.target.closest('[data-tip]') || e.target.closest('[data-buff-tip]') ||
-      e.target.closest('[data-enemy-buff-tip]') || e.target.closest('.item-cell[data-id]') ||
-      e.target.closest('.eq-slot.filled[data-id]') ||
-      e.target.closest('.forge-slot.filled[data-forge-slot]') ||
+      e.target.closest('[data-enemy-buff-tip]') ||
       e.target.closest('.battle-skill-slot')) {
       var outTipCell = e.target.closest('[data-sk]') || e.target.closest('.battle-skill-slot');
       if (outTipCell && e.relatedTarget && outTipCell.contains && outTipCell.contains(e.relatedTarget)) return;
