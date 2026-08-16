@@ -252,6 +252,60 @@ test('敵人走進畫面前不參戰，抵達當輪立即出手，即使被玩�
   assert.equal(context.FIELD.player.hp, 99, '即使敵人被秒殺，玩家仍應承受首擊');
 });
 
+test('遠距離追擊時普攻冷卻不累積負數，抵達後只觸發一發再依攻速倒數', () => {
+  const context = loadCombatContext();
+  const events = [];
+  const player = context.newPlayerEntity({ hp: 100, mp: 0, aspd: 1 });
+  const enemy = {
+    name: '遠方測試怪', hp: 100, maxHp: 100, pos: { x: 500, y: 0 },
+    _enterCd: 0, atkCd: 1, magic: false
+  };
+  context.G = {
+    player: { gold: 0 },
+    stage: { current: 1, best: 1, kills: 0, autoAdvance: false, zone: 'desert' },
+    tower: { active: false }
+  };
+  context.FIELD = {
+    player, monster: enemy, monsters: [enemy], spawnCd: Infinity, reviveCd: 0,
+    dpsWindow: [], _waveClearPending: false, mapComplete: true,
+    stageKills: 0, quotaStage: 1, stageQuota: 999
+  };
+  context.getStats = () => ({
+    hp: 100, mp: 0, aspd: 1, moveSpeed: 0,
+    passives: {}, skillTriggers: {}
+  });
+  context.playerHpRegenPerSec = () => 0;
+  context.playerMpRegenPerSec = () => 0;
+  context.tickSkillCds = () => {};
+  context.tickFieldDeathClears = () => {};
+  context.tickFieldEnterDelays = () => [];
+  context.bfTickPlayer = () => {};
+  context.bfTickApproach = () => [];
+  context.bfPlayerCanReach = () => false;
+  context.pickAndCastSkill = () => null;
+  context.tickSkillSchedulers = () => {};
+  context.tickLegendaryEffects = () => null;
+  context.effectActive = () => false;
+  context.fieldMonsterAttack = () => false;
+  context.doPlayerAttack = () => {
+    events.push('player');
+    return { killed: false };
+  };
+
+  for (let i = 0; i < 20; i++) context.fieldTick(0.1);
+  assert.equal(player.atkCd, 0, '遠距離等待時冷卻只能停在 ready，不得累積負數');
+  assert.deepEqual(events, [], '尚未到近戰距離不得攻擊');
+
+  context.bfPlayerCanReach = () => true;
+  context.fieldTick(0.1);
+  assert.deepEqual(events, ['player'], '抵達近戰距離後只應立即攻擊一次');
+  assert.equal(player.atkCd, 1, '出手後應補回一個完整攻擊週期');
+
+  context.fieldTick(0.1);
+  assert.deepEqual(events, ['player'], '下一個 Tick 不得因負數欠債再次攻擊');
+  assert.equal(player.atkCd, 0.9);
+});
+
 /* 2026-08 波次串流改版：敵人改成每隔幾秒補一波、不等場上清空，
    推進判定因此從「整波清空」改為「殺滿本關配額」（fieldStageQuota）。
    本測試改測新語意：逐一擊殺各自結算，殺滿配額後的下一個 tick 推進。 */

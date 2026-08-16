@@ -1218,7 +1218,9 @@ function fieldTick(dt) {
             (typeof potentialVelocityFactor === 'function' ? potentialVelocityFactor(p, st) : 1) *
             (typeof legendaryAttackSpeedMultiplier === 'function' ? legendaryAttackSpeedMultiplier(p, st) : 1) *
             (typeof skill2AspdFactor === 'function' ? skill2AspdFactor(p) : 1);
-        p.atkCd -= dt * playerAttackRate;
+        /* 普攻是近戰：尚未進入攻擊距離時只保持 ready，不累積負數冷卻欠債。
+           否則追擊一段時間後，抵達目標會因 atkCd <= 0 在每個 Tick 連續補攻。 */
+        p.atkCd = Math.max(0, p.atkCd - dt * playerAttackRate);
         // 新版技能【暴風之舞】化身中：無法普攻（可施放技能）
         var stormLock = (typeof skill2StormActive === 'function') && skill2StormActive();
         if (targetSwitchReady && p.atkCd <= 0 && !stormLock) {

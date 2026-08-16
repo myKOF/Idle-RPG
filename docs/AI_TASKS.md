@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Codex｜修正近戰普攻冷卻負數累積｜2026-08-16
+
+- 狀態：已完成（2026-08-16）
+- Owner：Codex
+- 目的：修正玩家追擊遠方敵人時普攻 `atkCd` 持續扣成負數，抵達近戰距離後在多個 Tick 連續觸發十幾次普攻的問題。
+- 根因：普攻距離閘門只阻止攻擊，沒有阻止冷卻計時器累積負債；抵達後每 Tick 都因 `atkCd <= 0` 重複出手。
+- 允許修改：`js/combat.js`、`index.html`、`tests/multi-enemy.test.cjs`、本文件。
+- 禁止修改：Worker Protocol、存檔格式、攻擊公式、目標選擇、戰鬥 VFX 與其他 AI／使用者進行中的檔案。
+- 前置依賴：既有連續座標近戰距離判定與普攻冷卻流程已存在；目標檔案衝突預檢無其他副本來源。
+- 測試要求：新增遠距離等待後抵達只觸發一發普攻的回歸測試；執行多敵人／戰鬥相關測試、JavaScript 語法檢查、`npm.cmd run build`、完整 `npm.cmd test` 與 `git diff --check`。
+- 完成條件：`atkCd` 不得低於 0；遠距離等待只保留 ready 狀態，抵達後正常依攻速倒數，不再出現連續補攻；建立 `[Codex]` 前綴 commit。
+- 驗證結果：`node --test tests/multi-enemy.test.cjs` 17/17；普攻／戰鬥相關定向測試 57/57；`node --check js/combat.js` 通過；`npm.cmd run build` 281/281；`git diff --check` 通過。完整 `npm.cmd test` 僅有既有未提交火球修改造成的 `tests/projectile-impact-size.test.cjs` 字串回歸失敗，本任務範圍內測試無失敗。
+- 後續接手者：Claude Code 唯讀 Review；使用者確認實機攻擊節奏穩定且不再長時間停頓後爆發連打。
+
 ## Codex｜恢復近戰普攻角色動畫｜2026-08-16
 
 - 狀態：已完成（2026-08-16）
