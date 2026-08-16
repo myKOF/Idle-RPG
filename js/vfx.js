@@ -163,6 +163,7 @@ function vfxClear() {
     if (!card.classList) continue;
     for (var hi = 0; hi < VFX_HIT_CLASSES.length; hi++) card.classList.remove(VFX_HIT_CLASSES[hi]);
     card._vfxHitUntil = 0;
+    card._vfxHitLastAt = 0;
   }
   var scenes = document.querySelectorAll('.battle-scene');
   for (var si = 0; si < scenes.length; si++) {
@@ -396,6 +397,9 @@ function vfxStagger() {
   return (typeof VFX_HIT_STAGGER_SEC === 'number') ? VFX_HIT_STAGGER_SEC * 1000 : 90;
 }
 
+var VFX_HIT_COOLDOWN_MS = 3000;
+var VFX_PROJECTILE_HIT_RADIUS_SCALE = 1 / 3;
+
 /* ---- 受擊反饋：卡片震動＋元素色閃光 ----
    卡片只在敵群「簽章」（身分＋站位）變動時重建，短命 class 掛上去是安全的；
    萬一剛好碰上重建把 class 洗掉，也只是少抖一下，不會殘留。
@@ -411,6 +415,10 @@ function vfxHitReact(targetId, elem, delayMs, strong) {
     var el = document.getElementById(targetId);
     var card = (el && el.closest) ? (el.closest('.enemy-card') || el.closest('.combatant')) : null;
     if (!card || !card.classList) return;
+    var hitAt = Date.now();
+    if (typeof card._vfxHitLastAt === 'number' &&
+        hitAt - card._vfxHitLastAt < VFX_HIT_COOLDOWN_MS) return;
+    card._vfxHitLastAt = hitAt;
     // 先移除再隔兩幀掛回：連續命中時動畫才會重新播放（不用 offsetWidth 硬觸發 reflow）
     for (var i = 0; i < VFX_HIT_CLASSES.length; i++) card.classList.remove(VFX_HIT_CLASSES[i]);
     var until = Date.now() + 340;
@@ -484,6 +492,7 @@ function vfxImpact(spec, layer, pt, targetId, delayMs) {
   else cls = 'vfx-impact vfx-impact-' + elemKey;
   var d = vfxNode(cls, layer, spec);
   vfxPlace(d, pt);
+  if (!strong) d.style.setProperty('--vfx-hit-scale', String(VFX_PROJECTILE_HIT_RADIUS_SCALE));
   d.style.animationDelay = delayMs + 'ms';
 
   var n = VFX_IMPACT_PARTS[elemKey] || 4;
@@ -758,6 +767,7 @@ function vfxProjectile(spec, layer, from, to, delayMs, travelMs) {
 function vfxSlash(spec, layer, pt, delayMs, tiltDeg, extraClass) {
   var d = vfxNode('vfx-slash' + (extraClass ? ' ' + extraClass : ''), layer, spec);
   vfxPlace(d, pt);
+  d.style.setProperty('--vfx-hit-scale', String(VFX_PROJECTILE_HIT_RADIUS_SCALE));
   var tilt = typeof tiltDeg === 'number' ? tiltDeg : (Math.random() * 50 - 25);
   d.style.setProperty('--vfx-tilt', tilt.toFixed(0) + 'deg');
   d.style.animationDelay = delayMs + 'ms';
