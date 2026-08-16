@@ -94,6 +94,11 @@ function turnSec(c, turns) { return turns / baseRps(c); }
 
 /* ---- 1) 環繞場域的基本語意 ---- */
 
+test('火狩：基礎旋轉速度降低 30%', () => {
+  const c = loadContext();
+  assert.ok(Math.abs(baseRps(c) - 0.65 * 0.7) < 1e-12, '基礎 rps 應為原值的 70%');
+});
+
 test('火狩：施放當下不結算，環繞碰到敵人才命中；吃魔攻、火屬性、魔法傷害', () => {
   const c = loadContext();
   const calls = stubHits(c);

@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## Codex｜調整「火狩」技能旋轉速度 -30%｜2026-08-17
+
+- 狀態：已完成（2026-08-17）
+- Owner：Codex
+- 使用者需求：將「火狩」技能的旋轉速度降低 30%。
+- 允許修改：`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`、`js/skills2.js`、`index.html`、`js/worker/sim.worker.js`、`tests/skill2-magic-firehunt.test.cjs`、本文件。
+- 禁止修改：其他技能數值、傷害公式、存檔格式、Worker Protocol 與無關 UI。
+- 前置依賴：既有火狩環繞場域與 Skills2 參數表同步流程；衝突預檢已通過。
+- 完成內容：基礎 `rps` 由 0.65 調為 0.455（原值的 70%），第 5 階加成仍照既有規則疊加；同步 Excel／CSV／JS 與主頁、Worker 快取版本，新增基礎轉速回歸斷言。
+- 驗證結果：火狩／Skills2 定向測試 47/47；完整 `npm.cmd test` 1455/1455；`npm.cmd run build` 282/282；`node tools/config_tables.cjs --apply Skills2` dry-run 語意變更 0；JavaScript 語法檢查與 `git diff --check` 通過。
+- 已知風險：無；未變更存檔格式、Worker Protocol 或其他技能效果。
+- 完成後交給：使用者／主整合工作區。
+
 ## Claude｜新版技能「解鎖轉生/等級」門檻｜2026-08-17
 
 - 狀態：已完成（2026-08-17）
