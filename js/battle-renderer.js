@@ -374,80 +374,6 @@ var BattleRenderer = (function () {
     return _glowTex;
   }
 
-  /* ---- 圓點貼圖（粒子與拖尾共用，一次生成重複使用） ----
-     這兩種東西原本每一顆都是 new PIXI.Graphics().circle().fill()。
-     實測（scratch/_perf_bench2.html）貴的不是「建立」——每顆只要 0.013ms——
-     而是每個 Graphics 都帶自己的一份幾何，彼此無法合批：一次施放幾百顆，
-     就是幾百次獨立的繪製提交。改成同一張貼圖的 Sprite 之後全部併成一批，
-     顏色差異用 tint 表現，畫面完全一樣。 */
-  var _dotTex = null;
-  function dotTexture() {
-    if (_dotTex) return _dotTex;
-    var c = document.createElement('canvas');
-    c.width = c.height = 32;
-    var g = c.getContext('2d');
-    var grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
-    grad.addColorStop(0, 'rgba(255,255,255,1)');
-    grad.addColorStop(0.55, 'rgba(255,255,255,1)');
-    grad.addColorStop(1, 'rgba(255,255,255,0)');
-    g.fillStyle = grad;
-    g.fillRect(0, 0, 32, 32);
-    _dotTex = PIXI.Texture.from(c);
-    return _dotTex;
-  }
-  var DOT_TEX_RADIUS = 8.8;   // 貼圖裡「實心」部分的半徑（16 × 0.55），換算縮放用
-
-  /* ---- 環形貼圖（命中爆點共用） ----
-     ⚠️ 這是整個特效層最大的單項成本來源，改動前請先看實測數字。
-     原本的命中環是每一幀 clear() 再 circle().stroke() 重畫一次。描邊要重新
-     產生一整圈三角形帶，而且逐幀變動的 Graphics 完全無法合批；場上同時有
-     數十個環時，中位幀時間就從 1.1ms 漲到 2.6ms（scratch/_perf_bench2.html
-     情境 A 對 F）。改成固定貼圖 Sprite，擴張用 scale、消失用 alpha，
-     每幀零幾何重建。
-     視覺差異：原版的圈會邊擴散邊變細，貼圖版是等比放大。所以貼圖畫的是
-     一圈「柔邊光環」而不是硬描邊——柔邊在放大時看不出線寬變化。 */
-  var _ringTex = null;
-  function ringTexture() {
-    if (_ringTex) return _ringTex;
-    var c = document.createElement('canvas');
-    c.width = c.height = 128;
-    var g = c.getContext('2d');
-    var grad = g.createRadialGradient(64, 64, 64 * 0.58, 64, 64, 64);
-    grad.addColorStop(0, 'rgba(255,255,255,0)');
-    grad.addColorStop(0.5, 'rgba(255,255,255,1)');
-    grad.addColorStop(1, 'rgba(255,255,255,0)');
-    g.fillStyle = grad;
-    g.beginPath();
-    g.arc(64, 64, 64, 0, Math.PI * 2);
-    g.fill();
-    _ringTex = PIXI.Texture.from(c);
-    return _ringTex;
-  }
-  var RING_TEX_RADIUS = 64;   // 貼圖半徑，換算縮放用
-
-  /* ---- 負載自適應降級 ----
-     模擬層產生的事件量沒有上限，顯示層不能假設它很小：飛刀滿階時單次施放
-     約 40 次彈射（7 把刀 × 5.4 跳），而第 7 階「神速飛刀」每次爆擊都扣冷卻，
-     幾十次爆擊足以把 4 秒冷卻直接清光——所以那不是一次性尖峰，是持續滿載。
-     這裡的原則：**裝飾性的東西在高載時先讓位，主體永遠保留**。
-     拖尾與粒子屬於裝飾；投射物本體、命中爆點、傷害飄字屬於主體，任何負載
-     都照畫，因為那是玩家真正在讀的資訊。 */
-  function fxLoad() {
-    return S.fx.length / MAX_FX;
-  }
-  function particleBudget(n) {
-    var load = fxLoad();
-    if (load >= 0.85) return 0;
-    if (load >= 0.6) return Math.max(1, Math.round(n * 0.35));
-    return n;
-  }
-  function trailIntervalSec() {
-    var load = fxLoad();
-    if (load >= 0.85) return Infinity;   // 高載：完全停畫拖尾
-    if (load >= 0.6) return 0.075;
-    return 0.03;
-  }
-
   /* 讀取 Phaser 範例使用的 flares.png，裁出 atlas 中名為 white 的 128×128 frame。
      範例的「火焰」不是單一素材，而是這張柔光粒子被連續發射、縮小、染色後的
      疊影；Canvas 版也沿用同一張圖，避免 DOM 與 Pixi 的火球輪廓再次分家。 */
@@ -1233,17 +1159,12 @@ var BattleRenderer = (function () {
 
   function spawnParticles(x, y, count, theme, speed) {
     if (REDUCED_MOTION) return;
-    count = particleBudget(Math.min(count, 14));
-    if (count <= 0) return;
-    var c1 = cssColorToInt(theme.c1, 0xffffff);
-    var c2 = cssColorToInt(theme.c2, 0xffffff);
+    count = Math.min(count, 14);
     for (var i = 0; i < count; i++) {
       (function () {
-        var g = new PIXI.Sprite(dotTexture());
+        var g = new PIXI.Graphics();
         var r = 1.6 + Math.random() * 2.4;
-        g.anchor.set(0.5);
-        g.scale.set(r / DOT_TEX_RADIUS);
-        g.tint = Math.random() < 0.5 ? c1 : c2;
+        g.circle(0, 0, r).fill(Math.random() < 0.5 ? theme.c1 : theme.c2);
         g.x = x; g.y = y;
         g.blendMode = 'add';
         S.layers.fx.addChild(g);
@@ -1369,7 +1290,7 @@ var BattleRenderer = (function () {
         node.rotation = Math.atan2(to.y - from.y, to.x - from.x);
         if (core && core._flameUpdate) core._flameUpdate(dt);
         trailAcc += dt;
-        if (spec.variant !== 'fireball' && trailAcc > trailIntervalSec() && !REDUCED_MOTION) {
+        if (spec.variant !== 'fireball' && trailAcc > 0.03 && !REDUCED_MOTION) {
           trailAcc = 0;
           spawnTrailDot(node.x, node.y, theme);
         }
@@ -1444,7 +1365,7 @@ var BattleRenderer = (function () {
         node.x = x; node.y = y;
         node.rotation = Math.atan2(aheadY - y, aheadX - x);
         trailAcc += dt;
-        if (trailAcc > Math.max(0.035, trailIntervalSec()) && !REDUCED_MOTION) {
+        if (trailAcc > 0.035 && !REDUCED_MOTION) {
           trailAcc = 0;
           spawnTrailDot(x, y, theme);
         }
@@ -1460,11 +1381,8 @@ var BattleRenderer = (function () {
   }
 
   function spawnTrailDot(x, y, theme) {
-    var g = new PIXI.Sprite(dotTexture());
-    var base = 2.2 / DOT_TEX_RADIUS;    // 原本是半徑 2.2 的實心圓，換算成貼圖縮放
-    g.anchor.set(0.5);
-    g.scale.set(base);
-    g.tint = cssColorToInt(theme.c2, 0xffffff);
+    var g = new PIXI.Graphics();
+    g.circle(0, 0, 2.2).fill(theme.c2);
     g.x = x; g.y = y;
     g.alpha = 0.7;
     g.blendMode = 'add';
@@ -1475,7 +1393,7 @@ var BattleRenderer = (function () {
       update: function (dt) {
         t += dt;
         g.alpha = 0.7 * (1 - t / 0.28);
-        g.scale.set(base * (1 - t / 0.4));
+        g.scale.set(1 - t / 0.4);
         return t < 0.28;
       }
     }, 0);
@@ -1484,10 +1402,7 @@ var BattleRenderer = (function () {
   /* 命中爆點：環 + 粒子 */
   function spawnImpact(x, y, spec, strong) {
     var theme = themeOf(spec);
-    /* 逐幀 clear()＋stroke() 換成貼圖縮放，理由見 ringTexture()。 */
-    var ring = new PIXI.Sprite(ringTexture());
-    ring.anchor.set(0.5);
-    ring.tint = cssColorToInt(theme.c1, 0xffffff);
+    var ring = new PIXI.Graphics();
     ring.x = x; ring.y = y;
     S.layers.fx.addChild(ring);
     var t = 0, dur = strong ? 0.4 : 0.26;
@@ -1497,8 +1412,9 @@ var BattleRenderer = (function () {
       update: function (dt) {
         t += dt;
         var k = Math.min(1, t / dur);
-        ring.scale.set((4 + maxR * k) / RING_TEX_RADIUS);
-        ring.alpha = 1 - k;
+        ring.clear();
+        ring.circle(0, 0, 4 + maxR * k)
+          .stroke({ color: theme.c1, width: Math.max(1, 5 * (1 - k)), alpha: 1 - k });
         return t < dur;
       }
     }, 1);
