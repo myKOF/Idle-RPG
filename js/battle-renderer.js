@@ -42,6 +42,9 @@ var BattleRenderer = (function () {
   var MAX_FLOATS = 60;           // 一般飄字同時存在上限；技能名稱＋傷害不計入
   var FLOAT_MERGE_MS = 160;      // 同目標同類傷害的合併窗（DOM 版邏輯的簡化版）
   var LASTPOS_KEEP_MS = 3000;    // 實體移除後保留座標，讓遲到的飄字仍有落點
+  var HIT_JOLT_COOLDOWN_MS = 3000; // 同一單位的受擊抖動冷卻，避免多段傷害連續晃動
+  var HIT_JOLT_X = 2.5;          // 受擊抖動水平幅度（px）
+  var HIT_JOLT_Y = 1.5;          // 受擊抖動垂直幅度（px）
   var PLAYER_SKILL_FLOAT_SIDE_OFFSET = 120; // 技能名稱／傷害離人物中心的起始左右偏移（px；外移一個戰鬥大格）
   var PLAYER_SKILL_FLOAT_DRIFT = 16;        // 起始後只再向外滑一小段，避免回到人物中心
   var PLAYER_SKILL_FLOAT_LIFE_SEC = 1.05;   // 一般技能名稱／傷害字的顯示時間
@@ -1166,14 +1169,22 @@ var BattleRenderer = (function () {
        ⚠️ 不用「tint 白閃」：Pixi 的 tint 是乘法染色，0xffffff 是恆等值，畫不出提亮。 */
     ent.flash = strong ? 0.24 : 0.15;
     ent.flashTint = cssColorToInt(theme.c1, 0xff8888);
-    ent.jolt = strong ? 0.26 : 0.16;
+    var hitAt = nowMs();
+    var canJolt = typeof ent.lastJoltAt !== 'number' ||
+      hitAt - ent.lastJoltAt >= HIT_JOLT_COOLDOWN_MS;
+    if (canJolt) {
+      ent.lastJoltAt = hitAt;
+      ent.jolt = strong ? 0.18 : 0.12;
+      ent.joltX = HIT_JOLT_X;
+      ent.joltY = HIT_JOLT_Y;
+    }
     if (ent === S.player) return;
     ent.pop = strong ? 0.24 : 0.15;
     ent.popDur = ent.pop;
     if (ent.isBoss && ent.sheetName && ent.state === 'idle' && ent.curAnim !== 'attack') {
       playAnim(ent, 'hurt', 'idle');
     }
-    if (strong) addShake(4);
+    if (strong && canJolt) addShake(4);
   }
   function addShake(px) {
     if (REDUCED_MOTION) return;
@@ -3040,9 +3051,11 @@ var BattleRenderer = (function () {
       }
 
       updateFlashJolt(e, dt);
-      e.root.x = e.wx + (e.dashX || 0) + (e.jolt > 0 ? (Math.random() * 2 - 1) * 5 : 0);
+      e.root.x = e.wx + (e.dashX || 0) +
+        (e.jolt > 0 ? (Math.random() * 2 - 1) * (e.joltX || HIT_JOLT_X) : 0);
       if (e.state !== 'dying') {
-        e.root.y = e.wy + (e.dashY || 0) + (e.jolt > 0 ? (Math.random() * 2 - 1) * 3 : 0);
+        e.root.y = e.wy + (e.dashY || 0) +
+          (e.jolt > 0 ? (Math.random() * 2 - 1) * (e.joltY || HIT_JOLT_Y) : 0);
       }
       e.root.zIndex = e.root.y + (e.isBoss ? 1000 : 0);
     }
