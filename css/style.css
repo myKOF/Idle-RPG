@@ -7089,7 +7089,7 @@ textarea:disabled,
   }
 
   to {
-    transform: scale(2.4);
+    transform: scale(0.8);
     opacity: 0;
   }
 }
@@ -7101,7 +7101,7 @@ textarea:disabled,
   }
 
   to {
-    transform: scale(4.2);
+    transform: scale(1.4);
     opacity: 0;
   }
 }
