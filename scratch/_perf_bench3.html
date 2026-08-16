@@ -1,0 +1,198 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>pixi bench 3 — slash / pillar</title>
+<style>body{background:#111;color:#ddd;font:14px monospace;padding:12px}b{color:#7fd}
+canvas{border:1px solid #333;width:450px;height:310px}
+.hd{color:#fd7;margin-top:10px;display:block}</style></head>
+<body>
+<div id="out">running...</div>
+<script src="../js/vendor/pixi.min.js"></script>
+<script>
+var lines = [];
+function log(s) { lines.push(s); document.getElementById('out').innerHTML = lines.join('<br>'); }
+
+/* 量 spawnSlash（普攻劍氣）與 spawnPillar（火柱）這兩支「逐幀 clear() 重繪」。
+   驅動方式與 _perf_bench2.html 相同：同步步進 + gl.finish()，不靠 rAF
+   （預覽窗格 document.hidden=true，rAF 被節流到跑不完）。
+
+   關鍵觀察：spawnSlash 的弧線掃角是**固定 0.9 弧度**，動的只有角度
+   （sweep 從 -0.7π 轉到 +0.4π）。形狀不變＝可以用預繪貼圖 + rotation 複製，
+   線寬收窄用 scale、淡出用 alpha。火柱同理：兩個 roundRect 只有長寬在長，
+   等同於一張圓角矩形貼圖做非等比縮放。 */
+(async function () {
+  var app = new PIXI.Application();
+  await app.init({ width: 900, height: 620, background: 0x111111, antialias: false });
+  document.body.appendChild(app.canvas);
+  app.ticker.stop();
+  var gl = app.renderer.gl || null;
+  log('PIXI ' + PIXI.VERSION + '　gl.finish 可用: ' + !!gl);
+
+  var stage = app.stage;
+
+  /* 預繪弧線貼圖：半徑 48、跨角 0.9 弧度、線寬 7（對應 spawnSlash 的外圈），
+     另外把內圈白芯一起烙進同一張圖，省掉第二個顯示物件。 */
+  var arcTex = (function () {
+    var S = 160, c = document.createElement('canvas');
+    c.width = c.height = S;
+    var g = c.getContext('2d');
+    var cx = S / 2, cy = S / 2, R = 48;
+    g.strokeStyle = 'rgba(255,255,255,1)'; g.lineWidth = 7; g.lineCap = 'round';
+    g.beginPath(); g.arc(cx, cy, R, -0.9, 0, false); g.stroke();
+    g.strokeStyle = 'rgba(255,255,255,0.8)'; g.lineWidth = 3;
+    g.beginPath(); g.arc(cx, cy, R * 0.8, -0.7, 0, false); g.stroke();
+    return PIXI.Texture.from(c);
+  })();
+  /* 圓角矩形貼圖（火柱本體） */
+  var barTex = (function () {
+    var W = 64, H = 128, c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    var g = c.getContext('2d');
+    g.fillStyle = '#fff';
+    g.beginPath();
+    if (g.roundRect) g.roundRect(0, 0, W, H, 8); else g.rect(0, 0, W, H);
+    g.fill();
+    return PIXI.Texture.from(c);
+  })();
+
+  var live = [];
+  function addLive(node, life, kind) { stage.addChild(node); live.push({ node: node, t: 0, life: life, kind: kind }); }
+
+  function spawnSlashNow(mode, x, y) {
+    if (mode === 'sprite') {
+      var s = new PIXI.Sprite(arcTex);
+      s.anchor.set(0.5); s.x = x; s.y = y; s.tint = 0xffe07a; s.blendMode = 'add';
+      addLive(s, 0.24, 'slash-sprite');
+    } else {
+      var g = new PIXI.Graphics();
+      g.x = x; g.y = y; g.rotation = -0.5 + Math.random();
+      addLive(g, 0.24, 'slash-gfx');
+    }
+  }
+  function spawnPillarNow(mode, x, y) {
+    if (mode === 'sprite') {
+      var c = new PIXI.Container();
+      var outer = new PIXI.Sprite(barTex); outer.anchor.set(0.5, 1); outer.tint = 0xffd447; outer.alpha = 0.5;
+      var inner = new PIXI.Sprite(barTex); inner.anchor.set(0.5, 1); inner.tint = 0xe63924; inner.alpha = 0.8;
+      c.addChild(outer); c.addChild(inner);
+      c.x = x; c.y = y; c._o = outer; c._i = inner;
+      addLive(c, 0.55, 'pillar-sprite');
+    } else {
+      var g = new PIXI.Graphics(); g.x = x; g.y = y;
+      addLive(g, 0.55, 'pillar-gfx');
+    }
+  }
+
+  function step(dt) {
+    for (var i = live.length - 1; i >= 0; i--) {
+      var o = live[i], k = Math.min(1, o.t / o.life);
+      o.t += dt;
+      var n = o.node;
+      if (o.kind === 'slash-gfx') {
+        // 現行 spawnSlash：每幀 clear() + 兩段 arc stroke
+        var sweep = -Math.PI * 0.7 + k * Math.PI * 1.1, R = 36;
+        n.clear();
+        n.arc(0, 0, R, sweep - 0.9, sweep, false)
+          .stroke({ color: 0xffe07a, width: 7 * (1 - k * 0.6), alpha: 1 - k, cap: 'round' });
+        n.arc(0, 0, R * 0.8, sweep - 0.7, sweep, false)
+          .stroke({ color: 0xffffff, width: 3 * (1 - k), alpha: 0.8 * (1 - k), cap: 'round' });
+      } else if (o.kind === 'slash-sprite') {
+        n.rotation = -Math.PI * 0.7 + k * Math.PI * 1.1;
+        n.scale.set(36 / 48 * (1 - k * 0.18));
+        n.alpha = 1 - k;
+      } else if (o.kind === 'pillar-gfx') {
+        // 現行 spawnPillar：每幀 clear() + 兩個 roundRect fill
+        var grow = k < 0.3 ? k / 0.3 : 1, fade = k > 0.6 ? 1 - (k - 0.6) / 0.4 : 1;
+        var h = 120 * grow, w = 26 * grow;
+        n.clear();
+        n.roundRect(-w / 2, -h, w, h, 8).fill({ color: 0xffd447, alpha: 0.5 * fade });
+        n.roundRect(-w * 0.25, -h * 0.92, w * 0.5, h * 0.9, 6).fill({ color: 0xe63924, alpha: 0.8 * fade });
+      } else if (o.kind === 'pillar-sprite') {
+        var grow2 = k < 0.3 ? k / 0.3 : 1, fade2 = k > 0.6 ? 1 - (k - 0.6) / 0.4 : 1;
+        n._o.scale.set(26 * grow2 / 64, 120 * grow2 / 128); n._o.alpha = 0.5 * fade2;
+        n._i.scale.set(13 * grow2 / 64, 108 * grow2 / 128); n._i.alpha = 0.8 * fade2;
+      }
+      if (k >= 1) { n.destroy({ children: true }); live.splice(i, 1); }
+    }
+  }
+
+  function run(name, cfg) {
+    for (var i = 0; i < live.length; i++) if (!live[i].node.destroyed) live[i].node.destroy({ children: true });
+    live.length = 0;
+    if (gl) gl.finish();
+    var dt = 1 / 60, acc = 0, frames = [], peak = 0;
+    var interval = 1 / cfg.rate;
+    for (var f = 0; f < 420; f++) {
+      var t0 = performance.now();
+      acc += dt;
+      while (acc >= interval) {
+        acc -= interval;
+        var x = 80 + Math.random() * 740, y = 120 + Math.random() * 400;
+        if (cfg.what === 'slash') spawnSlashNow(cfg.mode, x, y);
+        else spawnPillarNow(cfg.mode, x, y);
+      }
+      step(dt);
+      app.renderer.render(stage);
+      if (gl) gl.finish();
+      var ms = performance.now() - t0;
+      if (f >= 60) frames.push(ms);
+      if (live.length > peak) peak = live.length;
+    }
+    var s = frames.slice().sort(function (a, b) { return a - b; });
+    var over = frames.filter(function (v) { return v > 16.7; }).length;
+    log(name + '　<b>中位 ' + s[Math.floor(s.length * 0.5)].toFixed(2) +
+        '</b>　p95 ' + s[Math.floor(s.length * 0.95)].toFixed(2) +
+        '　最大 ' + s[s.length - 1].toFixed(1) + ' ms　>16.7ms ' + over + '/' + frames.length +
+        '　同時存在峰值 ' + peak);
+  }
+
+  log('<span class="hd">---- 普攻劍氣 spawnSlash（每發存活 0.24 秒）----</span>');
+  run('每秒 10 發　現行（逐幀 2 段 arc stroke）', { what: 'slash', mode: 'gfx', rate: 10 });
+  run('每秒 10 發　改旋轉 Sprite　　　　　　　', { what: 'slash', mode: 'sprite', rate: 10 });
+  run('每秒 20 發　現行　　　　　　　　　　　 ', { what: 'slash', mode: 'gfx', rate: 20 });
+  run('每秒 20 發　改旋轉 Sprite　　　　　　　', { what: 'slash', mode: 'sprite', rate: 20 });
+  run('每秒 40 發　現行　　　　　　　　　　　 ', { what: 'slash', mode: 'gfx', rate: 40 });
+  run('每秒 40 發　改旋轉 Sprite　　　　　　　', { what: 'slash', mode: 'sprite', rate: 40 });
+  run('每秒 80 發　現行（多段連擊的極端值）　 ', { what: 'slash', mode: 'gfx', rate: 80 });
+  run('每秒 80 發　改旋轉 Sprite　　　　　　　', { what: 'slash', mode: 'sprite', rate: 80 });
+
+  /* 突發情境：多目標技能（旋風斬／刀光亂舞）會一次丟出一整批弧線，
+     這是 slash 唯一可能逼近「同時數十個」的路徑——也就是彈射鏈當初出事的形狀。 */
+  function runBurst(name, mode, burst, everySec) {
+    for (var i = 0; i < live.length; i++) if (!live[i].node.destroyed) live[i].node.destroy({ children: true });
+    live.length = 0;
+    if (gl) gl.finish();
+    var dt = 1 / 60, acc = 0, frames = [], peak = 0;
+    for (var f = 0; f < 420; f++) {
+      var t0 = performance.now();
+      acc += dt;
+      if (acc >= everySec) {
+        acc = 0;
+        for (var b = 0; b < burst; b++) spawnSlashNow(mode, 80 + Math.random() * 740, 120 + Math.random() * 400);
+      }
+      step(dt);
+      app.renderer.render(stage);
+      if (gl) gl.finish();
+      var ms = performance.now() - t0;
+      if (f >= 60) frames.push(ms);
+      if (live.length > peak) peak = live.length;
+    }
+    var s = frames.slice().sort(function (a, b) { return a - b; });
+    var over = frames.filter(function (v) { return v > 16.7; }).length;
+    log(name + '　<b>中位 ' + s[Math.floor(s.length * 0.5)].toFixed(2) +
+        '</b>　p95 ' + s[Math.floor(s.length * 0.95)].toFixed(2) +
+        '　最大 ' + s[s.length - 1].toFixed(1) + ' ms　>16.7ms ' + over + '/' + frames.length +
+        '　同時存在峰值 ' + peak);
+  }
+  log('<span class="hd">---- 突發：多目標技能一次丟 40 道弧線，每 0.4 秒一輪 ----</span>');
+  runBurst('現行（逐幀 2 段 arc stroke）　　　　　 ', 'gfx', 40, 0.4);
+  runBurst('改旋轉 Sprite　　　　　　　　　　　　　', 'sprite', 40, 0.4);
+
+  log('<span class="hd">---- 火柱 spawnPillar（每根存活 0.55 秒）----</span>');
+  run('每秒 8 根　 現行（逐幀 2 個 roundRect）', { what: 'pillar', mode: 'gfx', rate: 8 });
+  run('每秒 8 根　 改縮放 Sprite　　　　　　　', { what: 'pillar', mode: 'sprite', rate: 8 });
+  run('每秒 20 根　現行　　　　　　　　　　　 ', { what: 'pillar', mode: 'gfx', rate: 20 });
+  run('每秒 20 根　改縮放 Sprite　　　　　　　', { what: 'pillar', mode: 'sprite', rate: 20 });
+  log('---- 完成 ----');
+})();
+</script>
+</body></html>

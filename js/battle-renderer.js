@@ -388,14 +388,18 @@ var BattleRenderer = (function () {
     var g = c.getContext('2d');
     var grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
     grad.addColorStop(0, 'rgba(255,255,255,1)');
-    grad.addColorStop(0.55, 'rgba(255,255,255,1)');
+    grad.addColorStop(0.8, 'rgba(255,255,255,1)');
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     g.fillStyle = grad;
     g.fillRect(0, 0, 32, 32);
     _dotTex = PIXI.Texture.from(c);
     return _dotTex;
   }
-  var DOT_TEX_RADIUS = 8.8;   // 貼圖裡「實心」部分的半徑（16 × 0.55），換算縮放用
+  /* 貼圖裡「實心」部分的半徑（16 × 0.8），換算縮放用。
+     ⚠️ 柔邊留太寬，粒子看起來就會比原本的硬邊圓大一圈：可見光暈半徑是
+     16/DOT_TEX_RADIUS 倍的指定半徑，這裡是 1.25 倍。第一版寫 0.55
+     （＝1.8 倍）時，滿場粒子疊加後整片泛白。 */
+  var DOT_TEX_RADIUS = 12.8;
 
   /* ---- 環形貼圖（命中爆點共用） ----
      ⚠️ 這是整個特效層最大的單項成本來源，改動前請先看實測數字。
@@ -405,14 +409,21 @@ var BattleRenderer = (function () {
      情境 A 對 F）。改成固定貼圖 Sprite，擴張用 scale、消失用 alpha，
      每幀零幾何重建。
      視覺差異：原版的圈會邊擴散邊變細，貼圖版是等比放大。所以貼圖畫的是
-     一圈「柔邊光環」而不是硬描邊——柔邊在放大時看不出線寬變化。 */
+     一圈「柔邊光環」而不是硬描邊——柔邊在放大時看不出線寬變化。
+
+     ⚠️ 亮帶寬度一定要做窄，這條踩過一次。原版的描邊只有 1～5px，相對於
+     半徑約 13%；第一版把漸層內半徑設成 0.58，亮帶佔了半徑 53%（四倍寬），
+     圈的大小其實沒變，但變成一團厚環，一秒幾十發疊起來就在角色身上糊成
+     一顆大光球。判斷是否過寬不要靠眼睛，用 scratch/_perf_verify.html
+     的亮帶寬度斷言。 */
   var _ringTex = null;
   function ringTexture() {
     if (_ringTex) return _ringTex;
     var c = document.createElement('canvas');
     c.width = c.height = 128;
     var g = c.getContext('2d');
-    var grad = g.createRadialGradient(64, 64, 64 * 0.58, 64, 64, 64);
+    /* 亮帶只佔最外圈 54.4～64（峰值在 59.2），相對峰值半徑約 16% */
+    var grad = g.createRadialGradient(64, 64, 64 * 0.85, 64, 64, 64);
     grad.addColorStop(0, 'rgba(255,255,255,0)');
     grad.addColorStop(0.5, 'rgba(255,255,255,1)');
     grad.addColorStop(1, 'rgba(255,255,255,0)');
@@ -423,7 +434,9 @@ var BattleRenderer = (function () {
     _ringTex = PIXI.Texture.from(c);
     return _ringTex;
   }
-  var RING_TEX_RADIUS = 64;   // 貼圖半徑，換算縮放用
+  /* 亮帶峰值所在的半徑。縮放要對齊「看得到的那圈」，不是貼圖邊界——
+     用 64（貼圖半徑）會讓實際亮圈比指定半徑小一截。 */
+  var RING_TEX_RADIUS = 59.2;
 
   /* ---- 負載自適應降級 ----
      模擬層產生的事件量沒有上限，顯示層不能假設它很小：飛刀滿階時單次施放
@@ -1506,7 +1519,22 @@ var BattleRenderer = (function () {
     if (strong) addShake(5);
   }
 
-  /* 斬擊弧線 */
+  /* 斬擊弧線 ——「這支不用改成 Sprite」，已量過（scratch/_perf_bench3.html）
+     它和命中環一樣是逐幀 clear() 重繪，而且更貴（兩段 arc stroke），普攻頻率也高，
+     直覺會把它當成下一個熱點。實測不是：
+
+       每秒 10／40／80 發   中位 0.20／0.30／0.50 ms，360 幀中超標 0／0／1
+       多目標技能一次 40 道 中位 0.80 ms，超標 2／360
+       （對照：飛刀彈射的特效層 中位 2.20 ms，超標 14／360）
+
+     原因是逐幀重繪的成本取決於**同時存在幾個**，不是產生頻率。弧線只活
+     0.24 秒，速率再高同時數也只到 3～20；彈射鏈當初是幾十個環外加幾百顆
+     粒子擠在同一批幀裡，那才是問題。改成旋轉貼圖確實能壓到 0.00 ms，
+     但真實速率下省的量在雜訊裡，而且要重畫視覺——不值得冒第二次
+     「特效走樣」的風險。spawnPillar 同理（中位 0.20 ms，超標 0～1／360）。
+
+     什麼時候要回來看：如果之後有技能讓弧線同時存在數十個且持續（不是瞬間
+     爆發），再跑一次 bench3 重新判斷。 */
   function spawnSlash(x, y, spec, big, rotation) {
     var theme = themeOf(spec);
     var g = new PIXI.Graphics();
@@ -2153,7 +2181,8 @@ var BattleRenderer = (function () {
     }
   }
 
-  /* 火柱（pillar 變體） */
+  /* 火柱（pillar 變體）。逐幀 clear() 重繪，但同時存在數量少，實測不是熱點
+     （中位 0.20 ms、超標 0～1／360）；不要改成 Sprite，理由見 spawnSlash。 */
   function spawnPillar(targetId, spec, delaySec) {
     var theme = themeOf(spec);
     var g = new PIXI.Graphics();
