@@ -240,6 +240,31 @@ test('Worker delayed enemy damage float is discarded after the target disappears
   assert.equal(context.S.floats, undefined, '目標消失後不應建立新的浮字');
 });
 
+/* 普攻特效與角色動作的守門（vfxTargetsLive）只能擋「已離場」的目標。
+   普攻事件延後 POS_BUFFER_MS 才播，而面板同步早就把被殺的敵人標成垂死了——
+   把垂死也算成失效的話，擊殺的那一刀必定丟掉自己的劍氣與出手動作，
+   一刀一隻時角色幾乎永遠不播普攻動作，畫面上只剩傷害數字在跳。
+   垂死期間敵人還在畫面上演死亡動畫，這一擊本來就該打在牠身上。 */
+test('普攻特效在目標垂死時仍播放，實體離場後才失效', () => {
+  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
+  const context = { S: { entities: {}, lastPos: {}, player: { dead: false } } };
+  vm.runInNewContext(sourceFunctionBody(renderer, 'vfxTargetsLive'), context);
+  const spec = { cat: 'basic', targets: ['mv-float-0'] };
+
+  context.S.entities['mv-float-0'] = { state: 'alive', data: { hp: 100 } };
+  assert.equal(context.vfxTargetsLive(spec), true, '活著的目標當然要播');
+
+  context.S.entities['mv-float-0'] = { state: 'dying', data: { hp: 0 } };
+  assert.equal(context.vfxTargetsLive(spec), true, '垂死＝擊殺的那一刀，仍必須播出手動作與劍氣');
+
+  delete context.S.entities['mv-float-0'];
+  context.S.lastPos['mv-float-0'] = { x: 1, y: 2 };
+  assert.equal(context.vfxTargetsLive(spec), false, '實體已離場：戰鬥結束前排入的計時器不得再觸發畫面');
+
+  delete context.S.lastPos['mv-float-0'];
+  assert.equal(context.vfxTargetsLive(spec), true, '尚未建立的目標放行（圖層還沒生出來）');
+});
+
 test('統計清除在 Worker 模式送 stats.reset 並等待 battle Snapshot 重繪', async () => {
   const calls = [];
   const list = { innerHTML: 'old summary' };

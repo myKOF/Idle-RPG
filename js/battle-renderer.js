@@ -133,8 +133,16 @@ var BattleRenderer = (function () {
     for (var i = 0; i < pending.length; i++) onFloat(pending[i]);
   }
   /* 延遲排程（setTimeout）的統一守門：渲染器沒起來、分頁已隱藏，或
-     普攻／飛刀彈射的目標已經消失時，放棄該段特效。技能命中視覺仍保留，
-     但不讓戰鬥結束前排入的普攻／子彈計時器在結束後重新觸發畫面。 */
+     普攻／飛刀彈射的目標已經**離場**時，放棄該段特效。技能命中視覺仍保留，
+     但不讓戰鬥結束前排入的普攻／子彈計時器在結束後重新觸發畫面。
+
+     ⚠️ 判定只能收到「離場（gone／實體已移除）」，不得把「垂死（dying／hp<=0）」
+     也算成失效——普攻事件會延後 POS_BUFFER_MS 才播，而面板同步早就把被殺的
+     敵人標成 dying 了，於是**擊殺的那一刀必定被自己丟掉**：一刀一隻時角色
+     幾乎永遠不播普攻動作，畫面上只剩傷害數字在跳。
+     垂死的敵人還在畫面上演死亡動畫（死亡定格 2 秒以上），劍氣打在牠身上正是
+     擊殺該有的畫面。與飄字的 enemyFloatTargetAvailable 同一條線，兩者一致，
+     不會再出現「數字跳出來、卻沒有出手動作」的落差。 */
   function vfxTargetsLive(spec) {
     var ids = spec && Array.isArray(spec.targets) ? spec.targets : [];
     if (!ids.length) return true;
@@ -150,7 +158,7 @@ var BattleRenderer = (function () {
         if (S.lastPos[id]) return false;
         continue;
       }
-      if (ent.state === 'dying' || ent.state === 'gone' || (ent.data && ent.data.hp <= 0)) return false;
+      if (ent.state === 'gone') return false;
     }
     return true;
   }
