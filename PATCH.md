@@ -1,5 +1,13 @@
 # PATCH.md
 
+## PixiJS 戰鬥渲染器彈射與命中爆點環半徑全面縮小至 1/3（Antigravity 2026-08-16）
+
+- **Canvas/PixiJS 戰鬥特效環半徑修復**：
+  - 修正 `js/battle-renderer.js` 中所有彈射/投射物命中爆點 `spawnImpact` 之縮放半徑 `maxR`（普通命中由 26 降為 8.5，強力爆發由 46 降為 15，初始半徑由 4 降為 1.3），使 Canvas 貼圖環擴散半徑精確縮小為原本的 **1/3**（約 9.8px，直徑不到 20px）。
+  - 同步將連鎖折射環 `spawnNodeRing` 半徑由 12~32 降為 4~10.5，並將粒子爆發速度等比調精細，解決野外 PixiJS 戰鬥中彈射技能命中時巨型光環疊加遮蔽怪物的問題。
+- **測試與建置驗證**：
+  - 執行 `node --test "tests/*.test.cjs"`（1,408 個單元測試全數通過）與 `node tools/build_check.cjs`（278 個檔案編譯全數通過）。
+
 ## 裝備與背包 Tips 懸停持久性修復（Antigravity 2026-08-16）
 
 - **裝備與背包 Tips 閃退消失問題根治**：
