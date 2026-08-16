@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## Codex｜恢復近戰普攻角色動畫｜2026-08-16
+
+- 狀態：已完成（2026-08-16）
+- Owner：Codex
+- 目的：修正玩家走到敵人近戰距離後雖已進行普攻結算，角色卻不播放 `attack1~3` 動畫的問題。
+- 根因：`js/battle-renderer.js` 的 `shouldAnimatePlayer()` 將 `cat === 'basic'` 排除，導致普攻 VFX 只畫命中效果而不觸發玩家揮擊。
+- 允許修改：`js/battle-renderer.js`、`index.html`、`tests/skill2-vfx.test.cjs`、本文件。
+- 禁止修改：戰鬥公式、目標選擇、攻擊距離、Worker Protocol、存檔格式及其他 AI 進行中的檔案。
+- 前置依賴：既有 `doPlayerAttack()` 普攻 VFX 事件與 Canvas 角色動畫管線已存在；目標檔案衝突預檢無來源。
+- 測試要求：補上普攻可觸發角色動畫、飛刀彈射／連鎖不觸發角色動畫的回歸斷言；執行相關測試、JavaScript 語法檢查、`npm.cmd run build`、完整 `npm.cmd test` 與 `git diff --check`。
+- 完成條件：普攻事件恢復播放角色近戰動畫；飛刀彈射、連鎖與已離場目標的延遲事件行為不回歸；快取版號同步並建立 `[Codex]` 前綴 commit。
+- 驗證結果：`node --test tests/skill2-vfx.test.cjs` 11/11；`node --check js/battle-renderer.js`、`node --check js/combat.js` 通過；`npm.cmd run build` 281/281；完整 `npm.cmd test` 1433/1433；`git diff --check` 通過。
+- 已知風險：尚未在瀏覽器實機重新確認角色揮擊畫面，需由使用者確認走到敵人面前後的實際動畫與持續普攻體感。
+- 後續接手者：Claude Code 唯讀 Review；使用者確認實機走到敵人面前後會揮擊並持續普攻。
+
 ## Codex｜縮小目標投射物受擊特效半徑｜2026-08-16
 
 - 狀態：已完成（2026-08-16；已修正畫面中央大型圓環）

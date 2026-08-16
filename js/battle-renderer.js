@@ -162,7 +162,7 @@ var BattleRenderer = (function () {
     return false;
   }
   function shouldAnimatePlayer(spec) {
-    return !!spec && spec.cat !== 'enemy' && spec.cat !== 'basic' &&
+    return !!spec && spec.cat !== 'enemy' &&
       spec.fxKind !== 'chain' && spec.variant !== 'knife-bounce';
   }
   function lerp(a, b, t) { return a + (b - a) * t; }
