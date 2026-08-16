@@ -180,8 +180,8 @@ test('我方攻擊被敵方閃避時，MISS 顯示在敵方浮層', () => {
   assert.doesNotMatch(skills, /floatText\(targetEnt\.floatSel \|\| floatSel,\s*'MISS'/);
   const missBlock = css.match(/\.float-txt\.miss\s*\{([\s\S]*?)\}/);
   assert.ok(missBlock, '找不到 MISS 浮字樣式');
-  assert.match(missBlock[1], /color:\s*#dc2626/);
-  assert.match(missBlock[1], /rgba\(127,\s*29,\s*29,\s*0\.9\)/);
+  assert.match(missBlock[1], /color:\s*#ef4444/);
+  assert.match(missBlock[1], /rgba\(239,\s*68,\s*68,\s*0\.95\)/);
 });
 
 test('高塔 BOSS 攻擊被玩家閃避時，黃色閃避字顯示在玩家浮層', () => {
@@ -357,7 +357,7 @@ test('玩家事件浮字依效果類型使用不同顏色', () => {
   assert.match(css, /\.float-txt\.player-event\.attack\s*\{[\s\S]*?color:\s*#fb923c/);
   assert.match(css, /\.float-txt\.player-event\.special\s*\{[\s\S]*?color:\s*#facc15/);
   assert.match(css, /\.float-txt\.player-event\.defense,[\s\S]*?\.float-txt\.player-event\.heal\s*\{[\s\S]*?color:\s*#4ade80/);
-  assert.match(css, /\.float-txt\.player-event\.debuff\s*\{[\s\S]*?color:\s*#fb7185/);
+  assert.match(css, /\.float-txt\.player-event\.debuff\s*\{[\s\S]*?color:\s*#ef4444/);
 });
 
 test('我方飄字依承傷／增益分成紅區與藍區，技能名稱從中心向左右隨機滑出', () => {
@@ -369,7 +369,7 @@ test('我方飄字依承傷／增益分成紅區與藍區，技能名稱從中�
   assert.match(ui, /return isDamage \? 'player-damage' : 'player-benefit'/);
   assert.match(ui, /if \(isPlayerDamage\) placePlayerDamageFloat\(sp, layer\)/);
   assert.match(ui, /else if \(isPlayerBenefit\) placePlayerBenefitFloat\(sp, layer\)/);
-  assert.match(css, /\.float-txt\.player-damage\s*\{[\s\S]*?color:\s*#ff6b6b/);
+  assert.match(css, /\.float-txt\.player-damage\s*\{[\s\S]*?color:\s*#ef4444/);
   assert.match(css, /\.float-txt\.player-benefit\s*\{[\s\S]*?top:\s*6%/);
   assert.match(css, /\.float-txt\.player-event\.skill-cast\s*\{[\s\S]*?color:\s*#ffd43b/);
   assert.match(css, /skill-cast-left\s*\{[\s\S]*?left:\s*calc\(50% - 120px\)/);
