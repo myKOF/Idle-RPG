@@ -1844,7 +1844,9 @@ var BattleRenderer = (function () {
           if (typeof targetPtOrId === 'string') {
             hitReact(targetPtOrId, spec.elem || 'lightning', !!(isMega || isPurple));
           }
-          if (isMega || isPurple) addShake(isPurple ? 5 : 3);
+          if ((isMega || isPurple) && isSpecialScreenShakeSpec(spec)) {
+            addShake(isPurple ? 5 : 3);
+          }
         }
         return t < dur;
       }
