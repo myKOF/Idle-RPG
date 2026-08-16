@@ -2115,27 +2115,35 @@ textarea#save-io {
   top: 0;
   border-bottom: 2px solid #eab308;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  /* ⚠️ 這支動畫只能動 opacity，不要再把 text-shadow 加回去。
+     原本 0→15px 模糊的 text-shadow 也在動畫裡，那是無法交給合成器的屬性，
+     每一幀都得重繪；而這是個橫跨整個視窗、z-index 9999 疊在戰鬥 Canvas
+     上方的 sticky 元素，於是每幀連帶把底下的畫面一起重繪。
+     2026-08-16 實測：橫幅一出現，主執行緒就變成每秒一次、約 100ms 的長工作
+     （佔該時段約 10% 的時間），而且橫幅只在偵測到新版本後才顯示，所以症狀是
+     「打了 20 分鐘都好好的，提示一跳出來就開始卡」。回報者手動把它
+     display:none 之後卡頓立即消失，A/B 可重現。
+     光暈改成靜態值，脈動只留 opacity；will-change 讓它獨立成一層，
+     重繪就不會波及底下的戰鬥畫面。 */
+  text-shadow: 0 0 8px rgba(253, 224, 71, 0.55);
   animation: textPulse 2.5s infinite ease-in-out;
+  will-change: opacity;
 }
 
 #update-banner:hover {
   filter: brightness(1.2);
 }
 
+/* 只動 opacity——合成器可以獨力完成，不需要每幀重繪。理由見 #update-banner。 */
 @keyframes textPulse {
-  0% {
-    opacity: 0.7;
-    text-shadow: 0 0 2px rgba(253, 224, 71, 0.2);
+
+  0%,
+  100% {
+    opacity: 0.72;
   }
 
   50% {
     opacity: 1;
-    text-shadow: 0 0 15px rgba(253, 224, 71, 0.9), 0 0 5px rgba(253, 224, 71, 1);
-  }
-
-  100% {
-    opacity: 0.7;
-    text-shadow: 0 0 2px rgba(253, 224, 71, 0.2);
   }
 }
 
