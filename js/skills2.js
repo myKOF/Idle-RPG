@@ -12,6 +12,10 @@
         （skills2CastRangePx／skills2CanReach，js/skills.js 的施放閘門同步改吃這支）
      3. 地板場域（SKILL2_RT.grounds）：釘在座標上、按節拍反覆作用的區域，
         可移動（追擊）、可重生；無座標時（高塔）退化為固定打主目標）
+   （2026-08-16 第四批追加＝魔法系 firehunt 火狩。帶進第四個群組共用能力：
+     4. 環繞場域（SKILL2_RT.orbits）：釘在玩家身上、持續旋轉的環繞體，
+        以接觸判定命中（進入才算一次），可伴生、可因擊殺延長；
+        無座標時（高塔）退化為每轉一圈打一次主目標）
 
    規則：
      - 每階上限 SG_TIER_MAX_LV 級，固定不隨轉生提高
@@ -40,6 +44,10 @@ var SG_FLYING_PROJECTILE_HALF_WIDTH = 8;
 var SG_FLYING_PROJECTILE_REHIT_SEC = 0.5;
 var SG_METEOR_INTERVAL_MS = 350;
 var SG_METEOR_MAX_TRAVEL_MS = 450; // 與 DOM／Canvas vfxNormalizeTiming 的上限一致
+/* 環繞場域（火狩）：伴生已由「每團只能伴生一個、伴生體不可再伴生」自然收斂，
+   這個上限只是防呆（環繞體數量若失控，每個 tick 的接觸判定會跟著失控）。 */
+var SG_ORBIT_MAX_ORBS = 32;
+var SG_ORBIT_VFX_REFRESH_SEC = 2;   // 持續時間被【再生】延長多久才值得補送一次環繞特效
 /* 主動型被動群組（2026-08-14 技能類型擴充；引擎接線，不入參數表）：
    效果被動觸發、永遠不會被主動施放（不佔出手節奏、無冷卻無耗魔），
    但**必須裝配到技能列才生效**——佔用一個技能格就是這類技能的代價。
@@ -71,7 +79,8 @@ var SKILLS2 = {
   counter: { name: '反擊', emoji: '🛡️', range: '', cd: 0, cost: 0, tiers: [{ name: '反擊', fx: { chance: 35, pct: 50, pctPer: 5 }, goldBase: 100000, goldGrow: 1.5, desc: '被動：受到傷害時有 {chance}% 機率對攻擊者反擊，造成 {pct}% 普攻傷害' }, { name: '招架', fx: { mult: 300, multPer: 30 }, goldBase: 200000, goldGrow: 1.5, desc: '格擋時必定對敵人反擊，造成「格擋減傷值 × {mult}%」的普攻傷害' }, { name: '強化反擊', fx: { pct: 30, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步提升反擊傷害，額外 +{pct}% 反擊普攻傷害' }, { name: '反擊盾', fx: { pct: 1, pctPer: 0.1 }, goldBase: 800000, goldGrow: 1.5, desc: '觸發反擊時，回復自身最大生命 {pct}% 的護盾' }, { name: '破甲擊', fx: { chance: 35, def: 15, sec: 4, secPer: 0.4, max: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '格擋時有 {chance}% 機率造成破甲：防禦 -{def}%，持續 {sec} 秒，最多疊 {max} 層（疊層時重置時間）' }, { name: '二次反擊', fx: { chance: 50, chancePer: 5, count: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '反擊時有 {chance}% 機率再追加 {count} 次反擊（追加反擊不會再觸發反擊）' }, { name: '狂化反殺', fx: { pct: 50, pctPer: 5, count: 2, m: 80 }, goldBase: 5000000, goldGrow: 1.5, desc: '每次反擊時，額外對 {m} 米內隨機 {count} 個敵人反擊，造成 {pct}% 普攻傷害（不會再觸發反擊）' }] },
   bloodrage: { name: '嗜血狂怒', emoji: '💢', range: '', cd: 60, cost: 50, tiers: [{ name: '嗜血狂怒', fx: { pct: 20, pctPer: 2, sec: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '攻速額外 +{pct}%（乘算，不受攻速上限限制），持續 {sec} 秒' }, { name: '狂暴', fx: { pct: 20, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '狂怒期間爆擊傷害額外 +{pct}%（乘算）' }, { name: '狂怒', fx: { pct: 20, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '狂怒期間總傷害額外 +{pct}%（乘算）' }, { name: '狂化連殺', fx: { add: 0.5, addPer: 0.1, kill: 0.1, killMax: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '狂怒期間基礎連擊數 +{add}，且每擊殺 1 個敵人再 +{kill}（累計上限 +{killMax}；不足 1 次的部分以機率觸發）' }, { name: '嗜血反震', fx: { pct: 20, pctPer: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '狂怒期間反震傷害提高 {pct}%（乘算，可與其它反震加成疊加）' }, { name: '血飲術', fx: { pct: 30, pctPer: 3, self: 1, m: 80 }, goldBase: 3000000, goldGrow: 1.5, desc: '狂怒期間傷害額外提高 {pct}%（乘算），但 {m} 米內的敵人每次受傷都會使你損失最大生命 {self}%（直接扣血，無法被護盾吸收）' }, { name: '狂血盛宴', fx: { sec: 0.5, pct: 1, pctPer: 0.1, count: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '狂怒期間每擊殺 1 個敵人，持續時間延長 {sec} 秒；且生命值每減少 1%，傷害額外 +{pct}%（乘算，無限疊加），每 1 連擊數使普攻可同時攻擊 1 個敵人（無限疊加）' }] },
   fireball: { name: '火球術', emoji: '🔥', range: '', dmgType: 'magic', elem: 'fire', cd: 14, cost: 45, tiers: [{ name: '火球術', fx: { pct: 150, pctPer: 15, m: 6, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '射出一顆火球（射程 {castM} 米），命中時爆炸，對目標及 {m} 米內的敵人造成 {pct}% 火屬性傷害' }, { name: '燃燒', fx: { dotPct: 20, dotPctPer: 2, dotSec: 5, dotGap: 0.5 }, goldBase: 200000, goldGrow: 1.5, desc: '被火球擊中的敵人陷入燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火屬性傷害，持續 {dotSec} 秒' }, { name: '火球爆裂', fx: { pct: 30, pctPer: 3, count: 3, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '火球爆炸後分裂出 {count} 個小火球，射向目標 {m} 米內的敵人，每個造成原始火球 {pct}% 的傷害' }, { name: '強化燃燒', fx: { gap: 0.4, gapPer: -0.015 }, goldBase: 800000, goldGrow: 1.5, desc: '燃燒的作用間隔縮短至 {gap} 秒（跳得更快＝總傷更高）' }, { name: '爆燃', fx: { pct: 50, pctPer: 5, count: 2, m: 12 }, goldBase: 1500000, goldGrow: 1.5, desc: '燃燒結束或敵人死亡時爆炸，對我方 {m} 米內的 {count} 個敵人造成該敵人整段燃燒累積傷害 {pct}% 的傷害' }, { name: '火焰增幅', fx: { pct: 0.25, pctPer: 0.025, sec: 4, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '我方 {m} 米內每有 1 次燃燒作用，你的火屬性傷害 +{pct}%，持續 {sec} 秒（無限疊加，每次疊加時重置時間）' }, { name: '殞石術', fx: { pct: 200, pctPer: 20, count: 3, m: 15, castM: 20 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為召喚 {count} 顆巨大火殞石從天而降（射程 {castM} 米），每顆對目標 {m} 米內的敵人造成 {pct}% 火屬性傷害（第 2~6 階效果仍然生效）' }] },
-  firepillar: { name: '火柱', emoji: '🌋', range: '', dmgType: 'magic', elem: 'fire', cd: 14, cost: 40, tiers: [{ name: '火柱', fx: { pct: 60, pctPer: 6, hits: 5, m: 3, castM: 30, sec: 2.5 }, goldBase: 100000, goldGrow: 1.5, desc: '在敵人腳下召喚一道火柱（射程 {castM} 米），對目標 {m} 米內的敵人連續造成 {hits} 段傷害，每段 {pct}% 火屬性傷害（全程約 {sec} 秒）' }, { name: '強化火柱', fx: { pct: 10, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '火柱的傷害範圍擴大 {pct}%' }, { name: '雙重火柱', fx: { count: 2, pct: 20, pctPer: 2, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '可同時對 {m} 米內的 {count} 個目標施放火柱，且火屬性傷害額外 +{pct}%' }, { name: '燃燒', fx: { chance: 20, chancePer: 2, dotPct: 20, dotSec: 4, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '火柱每次作用時有 {chance}% 機率使敵人燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火屬性傷害，持續 {dotSec} 秒' }, { name: '追擊', fx: { m: 6, mPer: 0.6 }, goldBase: 1500000, goldGrow: 1.5, desc: '火柱會以每秒 {m} 米的速度追擊目標' }, { name: '重生', fx: { chance: 25, chancePer: 2.5, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '火柱消失後有 {chance}% 機率在我方 {m} 米內的敵人身上重生' }, { name: '無限火牆', fx: { count: 3, hits: 8, pct: 60, pctPer: 6, len: 18, wid: 6, respawn: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為施放 {count} 道火牆（橫向 {len}×{wid} 米），每道造成 {hits} 段 {pct}% 火屬性傷害；每道火牆消失後再召喚 1 道（僅能再觸發一次；第 2~6 階效果仍然生效）' }] }
+  firepillar: { name: '火柱', emoji: '🌋', range: '', dmgType: 'magic', elem: 'fire', cd: 14, cost: 40, tiers: [{ name: '火柱', fx: { pct: 60, pctPer: 6, hits: 5, m: 3, castM: 30, sec: 2.5 }, goldBase: 100000, goldGrow: 1.5, desc: '在敵人腳下召喚一道火柱（射程 {castM} 米），對目標 {m} 米內的敵人連續造成 {hits} 段傷害，每段 {pct}% 火屬性傷害（全程約 {sec} 秒）' }, { name: '強化火柱', fx: { pct: 10, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '火柱的傷害範圍擴大 {pct}%' }, { name: '雙重火柱', fx: { count: 2, pct: 20, pctPer: 2, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '可同時對 {m} 米內的 {count} 個目標施放火柱，且火屬性傷害額外 +{pct}%' }, { name: '燃燒', fx: { chance: 20, chancePer: 2, dotPct: 20, dotSec: 4, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '火柱每次作用時有 {chance}% 機率使敵人燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火屬性傷害，持續 {dotSec} 秒' }, { name: '追擊', fx: { m: 6, mPer: 0.6 }, goldBase: 1500000, goldGrow: 1.5, desc: '火柱會以每秒 {m} 米的速度追擊目標' }, { name: '重生', fx: { chance: 25, chancePer: 2.5, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '火柱消失後有 {chance}% 機率在我方 {m} 米內的敵人身上重生' }, { name: '無限火牆', fx: { count: 3, hits: 8, pct: 60, pctPer: 6, len: 18, wid: 6, respawn: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為施放 {count} 道火牆（橫向 {len}×{wid} 米），每道造成 {hits} 段 {pct}% 火屬性傷害；每道火牆消失後再召喚 1 道（僅能再觸發一次；第 2~6 階效果仍然生效）' }] },
+  firehunt: { name: '火狩', emoji: '☄️', range: '3*3', dmgType: 'magic', elem: 'fire', cd: 26, cost: 50, tiers: [{ name: '火狩', fx: { pct: 120, pctPer: 12, count: 2, sec: 4, m: 8, rps: 1, castM: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 團火狩環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 火屬性傷害，持續 {sec} 秒' }, { name: '強化火狩', fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '火狩的體積與環繞範圍同步擴大 {pct}%' }, { name: '伴生火狩', fx: { chance: 20, chancePer: 2, m: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '火狩命中時有 {chance}% 機率在其後方 {m} 米處伴生一團火狩（每團只能伴生一次，伴生出的不再伴生）' }, { name: '三重火狩', fx: { count: 3, pct: 150, pctPer: 15, sec: 4 }, goldBase: 800000, goldGrow: 1.5, desc: '改為召喚 {count} 團火狩，每團造成 {pct}% 火屬性傷害，持續 {sec} 秒' }, { name: '極速火狩', fx: { pct: 25, pctPer: 2.5 }, goldBase: 1500000, goldGrow: 1.5, desc: '火狩的旋轉速度 +{pct}%' }, { name: '再生', fx: { sec: 0.4, secPer: 0.04 }, goldBase: 3000000, goldGrow: 1.5, desc: '火狩每擊殺 1 個敵人，全部火狩的持續時間延長 {sec} 秒' }, { name: '狩神之舞', fx: { rings: 2, pct: 200, pctPer: 20, sec: 6, m: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為一次施放 {rings} 道火狩（外圈距內圈 {m} 米、兩道旋轉方向相反），每團造成 {pct}% 火屬性傷害、出現時自帶伴生，持續 {sec} 秒' }] }
 };
 
 /* ---- 執行期狀態（絕不掛 G＝保證不入存檔） ----
@@ -94,6 +103,7 @@ function resetSkill2RT() {
     projectiles: [], // 飛出斬擊／貫穿突刺的執行期飛行物（不入存檔）
     meteors: [], // 殞石落地佇列：{ at, victims, burnSpec, ... }（不入存檔）
     grounds: [], // 地板場域（火柱／火牆）的執行期實例（不入存檔）
+    orbits: [], // 環繞場域（火狩）的執行期實例：釘在玩家身上、持續旋轉（不入存檔）
     rage: null,  // 嗜血狂怒爆發狀態：{ until, pEnt, killCombo }（pEnt＝施放時的玩家實體，
                  // 供血飲術反噬定位；killCombo＝期間擊殺累積的連擊數加成，結束歸零）
     frenzy: null // 狂暴之舞狀態：{ until, pEnt, levels }
@@ -803,6 +813,7 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
     case 'bloodrage': sgCastBloodrage(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     case 'fireball': sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     case 'firepillar': sgCastFirepillar(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
+    case 'firehunt': sgCastFirehunt(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     default: return null;
   }
   if (!storm && typeof floatPlayerSkillCast === 'function') {
@@ -1787,6 +1798,212 @@ function sgTickGrounds(dt, ctx) {
 }
 
 /* ===========================================================================
+   火狩（firehunt）：環繞場域
+   ---------------------------------------------------------------------------
+   火狩與火柱同為「持續存在的場域」，差別只在錨點：火柱釘在地板座標上，
+   火狩釘在玩家身上——圓心永遠取當下的玩家座標，所以天生跟著玩家移動。
+   命中採**接觸判定**（進入才算一次）：一團火狩掃過同一個敵人只結算一次，
+   離開後再碰到才會再命中，正好等於設計文檔的「環繞過程中碰到敵人即命中一次」；
+   由此得出的命中頻率就是旋轉速度本身，不需要另外設一個再命中間隔。
+   無座標時（高塔 BOSS）退化為「每轉一圈打一次主目標」——與本系統其他幾何查詢
+   的退化規則一致（沒有座標就沒有幾何，只剩單體語意）。
+   第 4 階【三重火狩】與第 7 階【狩神之舞】依設計文檔「改為」：團數、傷害%與
+   持續時間改讀該階，其餘階的進化效果照舊生效。
+   =========================================================================== */
+function sgCastFirehunt(pEnt, st, g, lvs, pool, primary, floatSel, out) {
+  var t = g.tiers;
+  var dance = lvs[6] > 0;
+  var triple = lvs[3] > 0;
+  // 傷害%與持續時間取「最高的改寫階」，團數則由三重火狩決定（狩神之舞只加道數）
+  var srcFx = dance ? t[6].fx : (triple ? t[3].fx : t[0].fx);
+  var srcLv = dance ? lvs[6] : (triple ? lvs[3] : lvs[0]);
+  var dmgVal = sgGroupBaseStat(g, st) * sgVal(srcFx, 'pct', srcLv) / 100;
+  var lifeSec = Math.max(0.5, Number(srcFx.sec) || Number(t[0].fx.sec) || 4);
+  var count = Math.max(1, Math.floor(Number((triple ? t[3].fx : t[0].fx).count) || 2));
+  // 強化火狩：體積與環繞範圍同步擴大
+  var scale = lvs[1] > 0 ? 1 + sgVal(t[1].fx, 'pct', lvs[1]) / 100 : 1;
+  var radius = bfMeterPx(Number(t[0].fx.m) || 8) * scale;
+  var body = sgRange(g.range); // 群組 range＝火狩體積（長*寬，米）
+  var bodyR = bfMeterPx(Math.max(body.length, body.width) / 2) * scale;
+  // 極速火狩：旋轉速度（圈/秒 → 弧度/秒），正值＝順時針
+  var spin = Math.PI * 2 * (Number(t[0].fx.rps) || 1) *
+    (lvs[4] > 0 ? 1 + sgVal(t[4].fx, 'pct', lvs[4]) / 100 : 1);
+
+  /* 狩神之舞：兩道火狩，外圈距內圈 m 米、旋轉方向相反；
+     且每團出現時自帶伴生（不必等命中判定；伴生體本身仍不可再伴生）。 */
+  var rings = [{ r: radius, spin: spin }];
+  if (dance) {
+    var ringCount = Math.max(1, Math.floor(Number(t[6].fx.rings) || 2));
+    for (var ri = 1; ri < ringCount; ri++) {
+      rings.push({ r: radius + bfMeterPx(Number(t[6].fx.m) || 6) * ri, spin: (ri % 2) ? -spin : spin });
+    }
+  }
+
+  sgSpawnOrbitField(pEnt, st, 'firehunt', {
+    tgt: primary, floatSel: floatSel, rings: rings, count: count,
+    dmgVal: dmgVal, lifeSec: lifeSec, bodyR: bodyR,
+    companionChance: lvs[2] > 0 ? sgVal(t[2].fx, 'chance', lvs[2]) : 0,
+    companionPx: bfMeterPx(Number(t[2].fx.m) || 1),
+    bornWithCompanion: dance,
+    extendSec: lvs[5] > 0 ? sgVal(t[5].fx, 'sec', lvs[5]) : 0
+  });
+}
+
+/* 建立一次施放的環繞場域：每一道（ring）平均散開 count 團火狩。
+   持續時間由整組共用（設計文檔：時間結束時所有火狩一起消失，含伴生出來的）。 */
+function sgSpawnOrbitField(pEnt, st, gid, cfg) {
+  var f = {
+    gid: gid, pEnt: pEnt, st: st, floatSel: cfg.floatSel, tgt: cfg.tgt || null,
+    until: GT + Math.max(0.5, Number(cfg.lifeSec) || 0),
+    dmgVal: Number(cfg.dmgVal) || 0,
+    bodyR: Math.max(1, Number(cfg.bodyR) || 0),
+    companionChance: Math.max(0, Number(cfg.companionChance) || 0),
+    companionPx: Math.max(0, Number(cfg.companionPx) || 0),
+    extendSec: Math.max(0, Number(cfg.extendSec) || 0),
+    rings: [], orbs: [], vfxUntil: 0
+  };
+  var count = Math.max(1, Math.floor(Number(cfg.count) || 1));
+  for (var i = 0; i < cfg.rings.length; i++) {
+    var ring = { r: Math.max(1, Number(cfg.rings[i].r) || 0), spin: Number(cfg.rings[i].spin) || 0 };
+    f.rings.push(ring);
+    for (var k = 0; k < count; k++) {
+      var orb = sgOrbitOrb(Math.PI * 2 * k / count, ring);
+      f.orbs.push(orb);
+      // 狩神之舞：出現時自帶伴生（母體與伴生體依規則都不可再伴生）
+      if (cfg.bornWithCompanion) { orb.canSpawn = false; f.orbs.push(sgOrbitCompanion(f, orb)); }
+    }
+  }
+  f.vfxUntil = f.until;
+  SKILL2_RT.orbits.push(f);
+  sgOrbitEmitVfx(f);
+}
+
+function sgOrbitOrb(ang, ring) {
+  return { ang: ang, spin: ring.spin, radius: ring.r, lap: 0, canSpawn: true, contacts: [] };
+}
+
+/* 伴生火狩：生在母體的正後方（沿環繞路徑往回 companionPx，弧長換算成弧度）。
+   母體與伴生體都不可再伴生（設計文檔：每一個火狩只能伴生一個，伴生出的不可再伴生）。 */
+function sgOrbitCompanion(f, orb) {
+  var back = orb.radius > 0 ? f.companionPx / orb.radius : 0;
+  return {
+    ang: orb.ang - (orb.spin >= 0 ? back : -back), spin: orb.spin,
+    radius: orb.radius, lap: 0, canSpawn: false, contacts: []
+  };
+}
+
+/* 這一團火狩現在碰到誰：火狩的體積圓對敵人的身體圓做接觸判定。
+   無座標的敵人不參與幾何（改由 sgOrbitLapTarget 以每圈一次的節拍退化處理）。 */
+function sgOrbitVictims(f, orb, center, live) {
+  var hit = [];
+  if (!center) return hit;
+  var ox = center.x + Math.cos(orb.ang) * orb.radius;
+  var oy = center.y + Math.sin(orb.ang) * orb.radius;
+  for (var i = 0; i < live.length; i++) {
+    var p = (typeof bfPos === 'function') ? bfPos(live[i]) : null;
+    if (!p) continue;
+    var r = f.bodyR + ((typeof bfEntityRadius === 'function') ? bfEntityRadius(live[i]) : 0);
+    var dx = p.x - ox, dy = p.y - oy;
+    if (dx * dx + dy * dy <= r * r) hit.push(live[i]);
+  }
+  return hit;
+}
+
+/* 無座標（高塔）退化目標：轉滿一圈打一次當初的主目標，主目標不在了就換下一個。 */
+function sgOrbitLapTarget(f, live) {
+  var noPos = function (e) { return !(typeof bfPos === 'function' && bfPos(e)); };
+  if (f.tgt && f.tgt.hp > 0 && noPos(f.tgt)) return f.tgt;
+  for (var i = 0; i < live.length; i++) {
+    if (live[i] && live[i].hp > 0 && noPos(live[i])) return live[i];
+  }
+  return null;
+}
+
+/* 一個 tick 的推進：每團火狩先轉再判接觸，只有「這一刻剛碰上」的敵人才結算。 */
+function sgOrbitStep(f, enemies, dt, ctx) {
+  var live = (typeof bfLiveList === 'function') ? bfLiveList(enemies) : [];
+  var center = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null;
+  var out = { killed: false, dmg: 0, crit: false };
+  var born = [];
+  var struck = [];
+  for (var i = 0; i < f.orbs.length; i++) {
+    var orb = f.orbs[i];
+    orb.ang += orb.spin * dt;
+    orb.lap += Math.abs(orb.spin) * dt;
+    var lapDone = false;
+    if (orb.lap >= Math.PI * 2) { orb.lap -= Math.PI * 2; lapDone = true; }
+    var touching = sgOrbitVictims(f, orb, center, live);
+    var fresh = [];
+    for (var v = 0; v < touching.length; v++) {
+      if (orb.contacts.indexOf(touching[v]) < 0) fresh.push(touching[v]);
+    }
+    orb.contacts = touching;
+    if (lapDone) {
+      var solo = sgOrbitLapTarget(f, live);
+      if (solo && fresh.indexOf(solo) < 0) fresh.push(solo);
+    }
+    for (var h = 0; h < fresh.length; h++) {
+      var res = sgHitOne(f.pEnt, f.st, fresh[h], f.dmgVal, f.gid, f.floatSel, out, sgStaggerMs(struck.length));
+      if (!res || res.miss) continue;
+      struck.push(fresh[h]);
+      // 再生：擊殺延長整組火狩的持續時間
+      if (res.killed && f.extendSec > 0) f.until += f.extendSec;
+      // 伴生火狩：命中才判定，且母體從此不再伴生
+      if (orb.canSpawn && f.companionChance > 0 && chance(f.companionChance) &&
+          f.orbs.length + born.length < SG_ORBIT_MAX_ORBS) {
+        orb.canSpawn = false;
+        born.push(sgOrbitCompanion(f, orb));
+      }
+    }
+  }
+  if (born.length) f.orbs = f.orbs.concat(born);
+  if (struck.length) {
+    sgEmitVfx(f.gid, struck, f.floatSel, { fxKind: 'impact', variant: 'fire-explosion', elem: 'fire', dur: 0.35 });
+  }
+  if (ctx && ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
+  if (out.killed && ctx && ctx.onDeaths) ctx.onDeaths();
+}
+
+/* 環繞特效：一道一則事件，帶上模擬層實際判定的環半徑、火狩體積與旋轉方向；
+   圓心送出施放當下的玩家座標，顯示層以自己的玩家錨點逐幀跟隨（火狩跟著玩家跑）。 */
+function sgOrbitEmitVfx(f) {
+  var center = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null;
+  var dur = Math.max(0.5, f.until - GT);
+  var perRing = Math.max(1, Math.round(f.orbs.length / Math.max(1, f.rings.length)));
+  for (var i = 0; i < f.rings.length; i++) {
+    sgEmitVfx(f.gid, f.tgt ? [f.tgt] : [], f.floatSel, {
+      fxKind: 'aura', variant: 'firehunt', elem: 'fire', dur: dur, count: perRing,
+      area: {
+        x: center ? center.x : 0, y: center ? center.y : 0, r: f.rings[i].r,
+        orbR: f.bodyR, orbs: perRing, spin: f.rings[i].spin >= 0 ? 1 : -1
+      }
+    });
+  }
+}
+
+/* 再生延長的是實際持續時間，但特效是施放當下一次廣播完的：延長累積到超過
+   已廣播的長度時補送一次，畫面才不會在火狩還在打的時候就先消失。 */
+function sgOrbitRefreshVfx(f) {
+  if (f.until <= f.vfxUntil + SG_ORBIT_VFX_REFRESH_SEC) return;
+  f.vfxUntil = f.until;
+  sgOrbitEmitVfx(f);
+}
+
+/* 每個 tick 推進所有環繞場域；到期就整組消失（含伴生出來的）。 */
+function sgTickOrbits(dt, ctx) {
+  var list = SKILL2_RT.orbits;
+  if (!list || !list.length) return;
+  var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
+  for (var i = list.length - 1; i >= 0; i--) {
+    var f = list[i];
+    if (f.until <= GT) { list.splice(i, 1); continue; }
+    sgOrbitStep(f, enemies, dt, ctx);
+    sgOrbitRefreshVfx(f);
+    enemies = ctx.getEnemies ? ctx.getEnemies() : enemies;
+  }
+}
+
+/* ===========================================================================
    反擊（counter）：主動型被動——受擊時觸發，需裝配技能列才生效、永不主動施放。
    掛點：combat.js doMonsterAttack（野外與高塔敵攻玩家的唯一收斂點）於
    legendaryOnPlayerDamaged 旁鏈結呼叫，簽名與其一致。
@@ -1942,6 +2159,7 @@ function tickSkill2(dt, ctx) {
   sgTickFlyingProjectiles(dt, ctx);
   sgTickMeteors(ctx);
   sgTickGrounds(dt, ctx);
+  sgTickOrbits(dt, ctx);
   sgTickStorm(ctx);
   sgTickBloodDots(dt, ctx);
   sgTickBurn(dt, ctx);
