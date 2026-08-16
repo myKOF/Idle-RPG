@@ -28,7 +28,9 @@ function loadContext() {
     'js/combat.js', 'js/skills.js', 'js/skills2.js', 'js/gm_exec.js']
     .forEach((file) => vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file }));
   context.G = {
-    player: { gold: 0, level: 10, skills2: { levels: {} }, loadout: [] },
+    /* 等級拉高：新版技能有「解鎖轉生/等級」門檻，低等會被正規化成 Lv.0，
+       那不是這支測試要驗的東西（門檻本身由 skill2-system 專門驗）。 */
+    player: { gold: 0, level: 999, skills2: { levels: {} }, loadout: [] },
     stage: { current: 1, zone: 'desert' }
   };
   return context;

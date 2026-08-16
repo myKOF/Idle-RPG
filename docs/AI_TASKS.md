@@ -1,5 +1,31 @@
 # AI_TASKS.md
 
+## Claude｜新版技能「解鎖轉生/等級」門檻｜2026-08-17
+
+- 狀態：已完成（2026-08-17）
+- Owner：Claude
+- 目的：使用者在 Skills2 參數表新增「解鎖轉生/等級」欄（格式 轉生次數|等級，例如 0|100），要求解鎖後才可升級。
+- 使用者決策（2026-08-16）：
+  1. 進度比較「轉生數優先，同轉生數才比等級」——達到 1 轉即視為 0 轉的門檻全部通過，以此類推。
+     轉生會把等級打回 1，用 AND 比較會讓每次轉生都把整份技能表重新鎖上。
+  2. 未解鎖的階一律視為 Lv.0，**含第 1 階的預設開啟**＝技能本身也不能施放
+     （否則表上「突刺 0|1、火狩 0|100」沒有意義）。
+- 修改內容：
+  - `tools/config_tables.cjs`：SCHEMAS.Skills2 增欄（extract／rebuild／欄位定義頁），
+    留白＝無門檻不寫進字面值；格式錯誤直接報錯。
+  - `js/skills2.js`：`sgTierUnlockedBy`／`sgUnlockText`／`sgUnlockProgress`；
+    `sgEffectiveLevels(raw, gid, prog)` 套門檻；`skills2Learn` 增閘門；
+    `skills2PanelView` 送出 progress（主執行緒沒有 G，只能靠這一份）。
+  - `js/worker/sim.worker.js`：`skill2.max` 一鍵滿級不經過 skills2Learn，自己補一道相同閘門。
+  - `js/ui.js`：`sgUiLevels` 改吃快照 progress；`sgStageUnlocked` 加門檻判定；
+    新增 `sgStageLockReason`，升級彈窗與 tooltip 顯示實際原因（門檻未到就報門檻）。
+- 未解鎖只是「視為 Lv.0」，存檔裡已投入的等級原封不動，達標就原樣回來。
+- 測試要求：門檻判定、轉生比較、正規化、投資閘門；受影響的既有測試改成不寫死欄位位置。
+- 驗證結果：`npm.cmd test` 1454/1454、`npm.cmd run build` 282 檔通過、`git diff --check` 通過。
+- 已知風險：`sgUnlockProgress` 取不到等級／轉生數時不套門檻（維持接線前行為），
+  避免面板快照缺欄位時把整份技能表鎖死。
+- 後續接手者：Antigravity 驗證技能面板的鎖定呈現與升級阻擋；使用者確認各技能的開放節奏。
+
 ## Claude｜修正普攻不出手與擊殺無動作｜2026-08-16
 
 - 狀態：已完成（2026-08-16）

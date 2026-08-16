@@ -12,11 +12,11 @@
 
 importScripts('protocol.js?v=21', 'shim.js?v=3');
 importScripts(
-  '../util.js?v=20260814-skill-summary', '../data.js?v=20260816-projectile-speed', '../status.js?v=20260816-magic-fire-skills', '../formula.js?v=20260814-skill2-counter-bloodrage', '../battlefield.js?v=20260816-projectile-speed', '../stats.js',
+  '../util.js?v=20260814-skill-summary', '../data.js?v=20260816-projectile-speed', '../status.js?v=20260817-skill2-unlock', '../formula.js?v=20260814-skill2-counter-bloodrage', '../battlefield.js?v=20260816-projectile-speed', '../stats.js',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260816-meteor-fireball', '../skills2.js?v=20260816-firehunt', '../talents.js?v=20260811-loadout-cap-clamp',
+  '../skills.js?v=20260816-meteor-fireball', '../skills2.js?v=20260817-skill2-unlock', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260814-skill-min-interval', '../special_rules.js',
-  '../combat.js?v=20260816-bloodrage-multi-target', '../legendary.js?v=20260816-magic-fire-skills', '../potential.js?v=20260814-skill-min-interval', '../tower.js?v=20260814-skill2-review-fixes',
+  '../combat.js?v=20260817-basic-attack-cd', '../legendary.js?v=20260816-magic-fire-skills', '../potential.js?v=20260814-skill-min-interval', '../tower.js?v=20260814-skill2-review-fixes',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260814-active-passive',
   '../tasks.js'
 );
@@ -1479,6 +1479,14 @@ var COMMAND_IMPL = {
     if (!(tier >= 0 && tier < g.tiers.length)) return { err: '未知階數' };
     var lvs = (typeof skills2Levels === 'function') ? skills2Levels(a.group) : (G.player.skills2 && G.player.skills2.levels && G.player.skills2.levels[a.group]);
     if (!lvs) lvs = [];
+    /* 一鍵滿級不經過 skills2Learn，解鎖門檻要在這裡自己擋一次——
+       少了它，未達「解鎖轉生/等級」的階可以用這條指令直接升到滿級。 */
+    if (typeof sgTierUnlockedBy === 'function' && typeof sgUnlockProgress === 'function') {
+      var maxPrg = sgUnlockProgress(null);
+      if (maxPrg && !sgTierUnlockedBy(g.tiers[tier].unlock, maxPrg.level, maxPrg.reinc)) {
+        return { err: '需達到 ' + sgUnlockText(g.tiers[tier].unlock) + '才能解鎖此階' };
+      }
+    }
     if (tier > 0 && (lvs[tier - 1] || 0) < 1) return { err: '前一階需至少 Lv.1 才能解鎖此階' };
     var tierMax = (typeof SG_TIER_MAX_LV === 'number') ? SG_TIER_MAX_LV : 10;
     var upgraded = 0;

@@ -1064,6 +1064,11 @@ const SKILLS2_GLOSSARY_ROWS = [
   ['　　　　rps＝每秒旋轉圈數、rings＝環繞場域的道數（火狩第 2 道在更外圈且反向旋轉）；'],
   ['注意：鍵名是程式接線，不能自創或改名；只調數字即可；'],
   [''],
+  ['解鎖轉生/等級'],
+  ['用途：這一階要達到什麼進度才能投資；格式「轉生次數|等級」，例如 0|100 ＝ 0 轉 100 級解鎖；'],
+  ['注意：留白＝無門檻；未解鎖的階一律視為 Lv.0（含第 1 階的預設開啟），已投入的等級留在存檔裡，'],
+  ['　　　達到門檻就原樣回來；'],
+  [''],
   ['升級金幣基數 / 升級金幣倍率'],
   ['升到下一級費用＝基數 × 倍率^目前等級（取整）；'],
   [''],
@@ -1073,7 +1078,8 @@ const SKILLS2_GLOSSARY_ROWS = [
 SCHEMAS.Skills2 = {
   name: 'Skills2', jsFile: 'skills2', sheet: 'Skills2', vars: ['SKILLS2'],
   extraSheets: [{ name: '欄位定義', rows: SKILLS2_GLOSSARY_ROWS }],
-  header: ['群組ID', '群組名稱', '群組圖標', 'range', '傷害類型', '傷害屬性', '冷卻時間', '施法消耗', '階數', '階段名稱',
+  header: ['群組ID', '群組名稱', '群組圖標', 'range', '傷害類型', '傷害屬性', '冷卻時間', '施法消耗', '階數',
+    '解鎖轉生/等級', '階段名稱',
     '效果參數(JSON)', '升級金幣基數', '升級金幣倍率', '效果說明模板'],
   extract(src) {
     const SKILLS2 = evalLiteral(extractLiteral(src, 'SKILLS2').literal);
@@ -1082,7 +1088,8 @@ SCHEMAS.Skills2 = {
       const g = SKILLS2[gid];
       (g.tiers || []).forEach((t, i) => {
         rows.push([gid, g.name, g.emoji, g.range || '', g.dmgType || '', g.elem || '',
-          numStr(g.cd), numStr(g.cost), String(i + 1), t.name,
+          numStr(g.cd), numStr(g.cost), String(i + 1),
+          t.unlock ? (numStr(t.unlock.reinc || 0) + '|' + numStr(t.unlock.lv || 0)) : '', t.name,
           JSON.stringify(t.fx || {}), numStr(t.goldBase || 0), numStr(t.goldGrow || 1), t.desc || '']);
       });
     });
@@ -1120,11 +1127,26 @@ SCHEMAS.Skills2 = {
       let fx;
       try { fx = fxRaw ? JSON.parse(fxRaw) : {}; }
       catch (e) { throw new Error('Skills2 群組「' + gid + '」第 ' + tierIdx + ' 階「效果參數(JSON)」解析失敗：' + e.message); }
-      groups[gid].tiers[tierIdx - 1] = {
-        name: get(r, '階段名稱'), fx,
-        goldBase: toNum(get(r, '升級金幣基數')), goldGrow: toNum(get(r, '升級金幣倍率')),
-        desc: get(r, '效果說明模板')
-      };
+      /* 解鎖門檻：「轉生次數|等級」，留白＝無門檻（不寫進字面值）。
+         留白與 0|0 等價，但留白時不產生欄位，字面值才不會多出一堆 { reinc: 0, lv: 0 }。 */
+      const unlockRaw = get(r, '解鎖轉生/等級').trim();
+      let unlock = null;
+      if (unlockRaw) {
+        const m = /^(\d+)\s*\|\s*(\d+)$/.exec(unlockRaw);
+        if (!m) {
+          throw new Error('Skills2 群組「' + gid + '」第 ' + tierIdx +
+            ' 階的「解鎖轉生/等級」必須是「轉生次數|等級」（例如 0|100），目前是「' + unlockRaw + '」');
+        }
+        unlock = { reinc: Number(m[1]), lv: Number(m[2]) };
+      }
+      groups[gid].tiers[tierIdx - 1] = Object.assign(
+        { name: get(r, '階段名稱') },
+        unlock ? { unlock } : null,
+        {
+          fx,
+          goldBase: toNum(get(r, '升級金幣基數')), goldGrow: toNum(get(r, '升級金幣倍率')),
+          desc: get(r, '效果說明模板')
+        });
     });
     order.forEach(gid => {
       const g = groups[gid];
