@@ -1164,14 +1164,17 @@ function vfxFirePillar(spec, layer, area, fallbackPt) {
   return node;
 }
 
-/* 第 7 階無限火牆：低矮、貼地、橫向延展的火焰帶。area 的世界座標在 DOM 舊路徑
+/* 第 7 階無限火牆：貼地、橫向延展且向上立起的火焰牆。area 的世界座標在 DOM 舊路徑
    沒有直接投影器，因此沿用場域矩形／目標退化矩形；同一道牆以 id 合併每次 tick。 */
 function vfxFireWall(spec, layer, area, rect) {
   if (!rect || !isFinite(rect.x) || !isFinite(rect.y)) return null;
   var wallW = Math.max(70, Number(rect.w) || 140);
-  var wallH = Math.max(26, Math.min(76, (Number(rect.h) || 120) * 0.42));
+  // 橫向長度仍沿用場域矩形，但火焰牆本體要從地面向上長出來。
+  var rectH = Number(rect.h) || 120;
+  var wallH = Math.max(84, Math.min(180, rectH * 1.15));
   var wallX = Number(rect.x) || 0;
-  var wallY = (Number(rect.y) || 0) + Math.max(0, (Number(rect.h) || 120) * 0.52);
+  var floorY = (Number(rect.y) || 0) + Math.max(0, rectH * 0.54);
+  var wallY = floorY - wallH;
   var key = area && area.id ? String(area.id) : [Math.round(wallX), Math.round(wallY), Math.round(wallW)].join(':');
   var node = _vfxFireWalls[key];
   if (node && node.parentNode === layer) {
@@ -1196,7 +1199,7 @@ function vfxFireWall(spec, layer, area, rect) {
     flame.className = 'vfx-fire-wall-flame';
     flame.style.setProperty('--vfx-wall-x', ((i + 0.5) / flameCount * 100).toFixed(1) + '%');
     flame.style.setProperty('--vfx-wall-flame-w', (10 + (i % 3) * 4) + 'px');
-    flame.style.setProperty('--vfx-wall-flame-h', (45 + (i % 4) * 13) + '%');
+    flame.style.setProperty('--vfx-wall-flame-h', (72 + (i % 4) * 7) + '%');
     flame.style.setProperty('--vfx-wall-delay', (-Math.random() * 0.9).toFixed(2) + 's');
     node.appendChild(flame);
   }

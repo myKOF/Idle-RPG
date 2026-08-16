@@ -184,6 +184,9 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.match(vfx, /s\.variant === 'firewall'[\s\S]*vfxFireWall\(s, layer, spec\.area, rect\)/);
   assert.match(css, /\.vfx-fire-wall[\s\S]*@keyframes vfxFireWallFlame/);
   assert.match(css, /\.vfx-fire-wall-smoke/);
+  assert.match(renderer, /var flameH = Math\.max\(72, Math\.min\(180, h \* 2\.8\)\)/);
+  assert.match(vfx, /var wallH = Math\.max\(84, Math\.min\(180, rectH \* 1\.15\)\)/);
+  assert.match(css, /\.vfx-fire-wall::before[\s\S]*clip-path: polygon\(0 100%/);
   const vfxCleaveStart = vfx.indexOf("if (kind === 'slash' && (s.variant === 'cleave'");
   const vfxCleaveEnd = vfx.indexOf('\n    return;', vfxCleaveStart);
   const rendererCleaveStart = renderer.indexOf("if (spec.variant === 'cleave'");

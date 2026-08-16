@@ -7683,7 +7683,7 @@ textarea:disabled,
   to { margin-left: 3%; transform: translateX(-50%) rotate(calc(var(--vfx-tongue-rot, 0deg) + 7deg)) scaleY(1.06); }
 }
 
-/* ---- 無限火牆：貼地橫向火焰帶＋低煙塵 ---- */
+/* ---- 無限火牆：沿地面橫向延伸、向上立起的火焰牆＋煙塵 ---- */
 .vfx-fire-wall {
   overflow: visible;
   transform-origin: 50% 50%;
@@ -7696,10 +7696,10 @@ textarea:disabled,
   position: absolute;
   left: 1%;
   right: 1%;
-  bottom: 10%;
-  height: 25%;
-  border-radius: 45% 45% 22% 22%;
-  background: linear-gradient(180deg, rgba(255, 117, 19, 0.74), rgba(157, 30, 13, 0.92));
+  bottom: 7%;
+  height: 88%;
+  clip-path: polygon(0 100%, 2% 66%, 8% 48%, 14% 57%, 21% 26%, 28% 42%, 36% 13%, 44% 35%, 53% 20%, 61% 46%, 69% 12%, 77% 38%, 85% 25%, 93% 54%, 100% 38%, 100% 100%);
+  background: linear-gradient(180deg, rgba(255, 103, 16, 0.72), rgba(231, 48, 12, 0.9) 48%, rgba(133, 24, 11, 0.96));
   box-shadow: 0 0 14px rgba(255, 83, 14, 0.9), 0 5px 12px rgba(46, 27, 20, 0.62);
   animation: vfxFireWallBase 0.46s ease-in-out infinite alternate;
 }
@@ -7709,8 +7709,8 @@ textarea:disabled,
   position: absolute;
   left: 4%;
   right: 4%;
-  top: 4%;
-  height: 48%;
+  top: 0;
+  height: 42%;
   border-radius: 50%;
   background: radial-gradient(ellipse, rgba(81, 73, 66, 0.2), rgba(102, 68, 46, 0.08) 45%, transparent 72%);
   filter: blur(4px);
@@ -7720,9 +7720,9 @@ textarea:disabled,
 .vfx-fire-wall-flame {
   position: absolute;
   left: var(--vfx-wall-x, 50%);
-  bottom: 13%;
+  bottom: 8%;
   width: var(--vfx-wall-flame-w, 13px);
-  height: var(--vfx-wall-flame-h, 58%);
+  height: var(--vfx-wall-flame-h, 82%);
   transform: translateX(-50%);
   transform-origin: 50% 100%;
   clip-path: polygon(50% 0, 100% 24%, 75% 52%, 100% 82%, 59% 100%, 0 84%, 28% 52%, 0 27%);
@@ -7739,7 +7739,7 @@ textarea:disabled,
 .vfx-fire-wall-smoke {
   position: absolute;
   left: var(--vfx-wall-smoke-x, 50%);
-  bottom: 55%;
+  bottom: 72%;
   width: var(--vfx-wall-smoke-size, 16px);
   height: var(--vfx-wall-smoke-size, 16px);
   transform: translateX(-50%);

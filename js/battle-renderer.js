@@ -2085,23 +2085,24 @@ var BattleRenderer = (function () {
         var fade = fx.expiresAt - nowMs() < 360 ? Math.max(0, (fx.expiresAt - nowMs()) / 360) : 1;
         var w = fx.w;
         var h = fx.h;
-        var groundY = h * 0.28;
+        var groundY = h * 0.32;
         var baseDepth = Math.max(10, Math.min(30, h * 0.48));
-        var flameH = Math.max(24, Math.min(96, h * 1.55));
+        // 火牆的長度沿地面橫向延伸，但火焰本體要向上立起，不能只是一條火帶。
+        var flameH = Math.max(72, Math.min(180, h * 2.8));
         var phase = fx.t * 5.2;
         var segs = Math.max(10, Math.min(24, Math.round(w / 12)));
         var outer = [], orange = [], core = [];
         var i, u, x, peak, wave;
 
         g.clear();
-        // 貼地黑灰焦痕與橘色熱浪底座，先把「牆」壓在地面上。
+        // 貼地黑灰焦痕與橘色熱浪底座，讓直立牆有明確的地面接點。
         g.ellipse(0, groundY + baseDepth * 0.16, w * 0.5, baseDepth * 0.58)
           .fill({ color: 0x30231d, alpha: 0.5 * fade });
         g.roundRect(-w * 0.49, groundY - baseDepth * 0.2, w * 0.98, baseDepth * 0.44, baseDepth * 0.22)
           .fill({ color: 0x9f250e, alpha: 0.76 * fade })
           .stroke({ color: 0xff7a18, width: 2, alpha: 0.72 * fade });
 
-        // 外焰輪廓：每段高度不同，形成參考圖那種低矮、連續但不規則的火牆。
+        // 外焰輪廓：高度明顯拉高，形成連續、不規則的直立火牆。
         for (i = 0; i <= segs; i++) {
           u = i / segs;
           x = -w / 2 + w * u;
