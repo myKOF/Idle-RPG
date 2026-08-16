@@ -7687,20 +7687,20 @@ textarea:disabled,
 .vfx-fire-wall {
   overflow: visible;
   transform-origin: 50% 50%;
-  transform: rotate(var(--vfx-wall-angle, 0rad));
+  transform: rotate(0deg);
   animation: vfxFireWallPulse 0.74s ease-in-out infinite alternate;
 }
 
 .vfx-fire-wall::before {
   content: '';
   position: absolute;
-  left: 1%;
-  right: 1%;
-  bottom: 7%;
-  height: 88%;
-  clip-path: polygon(0 100%, 2% 66%, 8% 48%, 14% 57%, 21% 26%, 28% 42%, 36% 13%, 44% 35%, 53% 20%, 61% 46%, 69% 12%, 77% 38%, 85% 25%, 93% 54%, 100% 38%, 100% 100%);
-  background: linear-gradient(180deg, rgba(255, 103, 16, 0.72), rgba(231, 48, 12, 0.9) 48%, rgba(133, 24, 11, 0.96));
-  box-shadow: 0 0 14px rgba(255, 83, 14, 0.9), 0 5px 12px rgba(46, 27, 20, 0.62);
+  left: 3%;
+  right: 3%;
+  bottom: 2%;
+  height: 18%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(255, 96, 15, 0.65), rgba(91, 29, 17, 0.35) 55%, transparent 74%);
+  box-shadow: 0 4px 13px rgba(46, 27, 20, 0.7);
   animation: vfxFireWallBase 0.46s ease-in-out infinite alternate;
 }
 
@@ -7717,23 +7717,61 @@ textarea:disabled,
   animation: vfxFireWallSmoke 1.25s ease-in-out infinite alternate;
 }
 
-.vfx-fire-wall-flame {
+.vfx-fire-wall-vortex {
   position: absolute;
-  left: var(--vfx-wall-x, 50%);
-  bottom: 8%;
-  width: var(--vfx-wall-flame-w, 13px);
-  height: var(--vfx-wall-flame-h, 82%);
+  left: var(--vfx-wall-vortex-x, 50%);
+  bottom: 7%;
+  width: var(--vfx-wall-vortex-w, 32%);
+  height: var(--vfx-wall-vortex-h, 88%);
   transform: translateX(-50%);
   transform-origin: 50% 100%;
-  clip-path: polygon(50% 0, 100% 24%, 75% 52%, 100% 82%, 59% 100%, 0 84%, 28% 52%, 0 27%);
-  background: linear-gradient(180deg, #ff9c25 0%, #ff6418 48%, #c92b12 100%);
-  filter: drop-shadow(0 0 6px rgba(255, 92, 16, 0.9));
-  opacity: 0.9;
-  animation: vfxFireWallFlame 0.76s ease-in-out var(--vfx-wall-delay, 0s) infinite alternate;
+  clip-path: polygon(50% 0, 78% 14%, 64% 32%, 92% 54%, 72% 76%, 100% 100%, 0 100%, 27% 76%, 8% 54%, 36% 32%, 22% 14%);
+  background: linear-gradient(90deg, rgba(170, 35, 12, 0.6), rgba(255, 117, 20, 0.82) 45%, rgba(183, 31, 11, 0.58));
+  filter: drop-shadow(0 0 7px rgba(255, 92, 16, 0.82));
+  opacity: 0.78;
+  animation: vfxFireWallVortex 0.9s ease-in-out var(--vfx-wall-delay, 0s) infinite alternate;
 }
 
-.vfx-fire-wall-flame:nth-child(3n + 1) {
-  background: linear-gradient(180deg, #ffe888 0%, #ff9b1f 42%, #e33b12 100%);
+.vfx-fire-wall-vortex::before {
+  content: '';
+  position: absolute;
+  left: 31%;
+  right: 31%;
+  bottom: 7%;
+  height: 75%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(255, 255, 190, 0.78), rgba(255, 183, 42, 0.46) 35%, rgba(218, 48, 12, 0.12) 72%, transparent 78%);
+  filter: blur(1px);
+}
+
+.vfx-fire-wall-vortex::after {
+  content: '';
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  bottom: 7%;
+  height: 22%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(255, 220, 88, 0.72), rgba(255, 89, 14, 0.22) 62%, transparent 76%);
+}
+
+.vfx-fire-wall-ribbon {
+  position: absolute;
+  left: 50%;
+  bottom: 6%;
+  width: 43%;
+  height: 82%;
+  transform: translateX(-50%) rotate(calc((var(--vfx-wall-ribbon-i, 0) - 1.5) * 9deg));
+  transform-origin: 50% 100%;
+  clip-path: polygon(50% 0, 100% 22%, 67% 48%, 100% 76%, 56% 100%, 0 80%, 31% 50%, 0 24%);
+  background: linear-gradient(180deg, #ffe98a 0%, #ff9c20 34%, #f04a13 72%, #a92211 100%);
+  filter: drop-shadow(0 0 4px rgba(255, 121, 20, 0.8));
+  opacity: 0.72;
+  animation: vfxFireWallRibbon 0.78s ease-in-out var(--vfx-wall-ribbon-delay, 0s) infinite alternate;
+}
+
+.vfx-fire-wall-ribbon:nth-child(2n) {
+  background: linear-gradient(180deg, #fff8b0 0%, #ffd044 32%, #ff6916 70%, #bd2910 100%);
 }
 
 .vfx-fire-wall-smoke {
@@ -7760,9 +7798,14 @@ textarea:disabled,
   to { transform: scaleX(1.02) scaleY(1.08); opacity: 1; }
 }
 
-@keyframes vfxFireWallFlame {
-  from { transform: translateX(-50%) rotate(-4deg) scaleY(0.87); }
-  to { transform: translateX(-50%) rotate(5deg) scaleY(1.08); }
+@keyframes vfxFireWallVortex {
+  from { transform: translateX(-50%) rotate(-2deg) scaleX(0.94); }
+  to { transform: translateX(-50%) rotate(2deg) scaleX(1.04); }
+}
+
+@keyframes vfxFireWallRibbon {
+  from { transform: translateX(-50%) rotate(-8deg) scaleY(0.9); }
+  to { transform: translateX(-50%) rotate(8deg) scaleY(1.06); }
 }
 
 @keyframes vfxFireWallSmoke {

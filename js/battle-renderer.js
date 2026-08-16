@@ -2085,7 +2085,8 @@ var BattleRenderer = (function () {
         fx.t += dt;
         node.x = fx.x;
         node.y = fx.y;
-        node.rotation = fx.angle;
+        // 火牆是固定由地面向上噴出的立體柱；施放方向只屬於範圍資料，不能旋轉視覺本體。
+        node.rotation = 0;
         var fade = fx.expiresAt - nowMs() < 360 ? Math.max(0, (fx.expiresAt - nowMs()) / 360) : 1;
         var w = fx.w;
         var h = fx.h;
@@ -2094,48 +2095,65 @@ var BattleRenderer = (function () {
         // 火牆的長度沿地面橫向延伸，但火焰本體要向上立起，不能只是一條火帶。
         var flameH = Math.max(72, Math.min(180, h * 2.8));
         var phase = fx.t * 5.2;
-        var segs = Math.max(10, Math.min(24, Math.round(w / 12)));
-        var outer = [], orange = [], core = [];
-        var i, u, x, peak, wave;
+        var i;
 
         g.clear();
         // 貼地黑灰焦痕與橘色熱浪底座，讓直立牆有明確的地面接點。
         g.ellipse(0, groundY + baseDepth * 0.16, w * 0.5, baseDepth * 0.58)
           .fill({ color: 0x30231d, alpha: 0.5 * fade });
-        g.roundRect(-w * 0.49, groundY - baseDepth * 0.2, w * 0.98, baseDepth * 0.44, baseDepth * 0.22)
-          .fill({ color: 0x9f250e, alpha: 0.76 * fade })
-          .stroke({ color: 0xff7a18, width: 2, alpha: 0.72 * fade });
+        g.roundRect(-w * 0.47, groundY - baseDepth * 0.1, w * 0.94, baseDepth * 0.3, baseDepth * 0.18)
+          .fill({ color: 0x9f250e, alpha: 0.48 * fade })
+          .stroke({ color: 0xff7a18, width: 1.5, alpha: 0.42 * fade });
 
-        // 外焰輪廓：高度明顯拉高，形成連續、不規則的直立火牆。
-        for (i = 0; i <= segs; i++) {
-          u = i / segs;
-          x = -w / 2 + w * u;
-          wave = Math.sin(phase * 0.9 + i * 1.73) * 0.12 + Math.sin(phase * 0.45 + i * 0.61) * 0.08;
-          peak = flameH * (0.43 + 0.33 * (0.5 + 0.5 * Math.sin(i * 2.41 + phase * 0.72)) + wave);
-          outer.push(x, groundY - Math.max(flameH * 0.3, peak));
+        // 三個獨立的火龍捲並排：每個都是由下往上的長柱體，內部再用旋臂堆出立體感。
+        var vortexW = Math.max(24, w * 0.34);
+        for (var vi = 0; vi < 3; vi++) {
+          var vortexX = (vi - 1) * w * 0.31;
+          var vortexH = flameH * (0.88 + vi * 0.035);
+          var vortexPhase = phase + vi * 1.9;
+          var silhouette = [];
+          for (var vs = 0; vs <= 6; vs++) {
+            var vu = vs / 6;
+            var vy = groundY + baseDepth * 0.08 - vortexH * vu;
+            var vsway = Math.sin(vortexPhase + vu * 7.2) * vortexW * 0.13 * (1 - vu * 0.45);
+            var vhalf = vortexW * (0.52 - vu * 0.12);
+            silhouette.push(vortexX + vsway - vhalf, vy);
+          }
+          for (vs = 6; vs >= 0; vs--) {
+            vu = vs / 6;
+            vy = groundY + baseDepth * 0.08 - vortexH * vu;
+            vsway = Math.sin(vortexPhase + vu * 7.2) * vortexW * 0.13 * (1 - vu * 0.45);
+            vhalf = vortexW * (0.52 - vu * 0.12);
+            silhouette.push(vortexX + vsway + vhalf, vy);
+          }
+          g.poly(silhouette).fill({ color: vi === 1 ? 0xe43b12 : 0xc82b12, alpha: 0.46 * fade });
+          for (var ri = 0; ri < 4; ri++) {
+            var ribbon = [];
+            for (var rs = 0; rs <= 6; rs++) {
+              var ru = rs / 6;
+              var ry = groundY + baseDepth * 0.05 - vortexH * ru;
+              var rx = vortexX + Math.sin(vortexPhase + ri * 1.55 + ru * 8.6) * vortexW * 0.29 * (1 - ru * 0.38);
+              var rw = Math.max(3, vortexW * (0.13 - ru * 0.035));
+              ribbon.push(rx - rw, ry);
+            }
+            for (rs = 6; rs >= 0; rs--) {
+              ru = rs / 6;
+              ry = groundY + baseDepth * 0.05 - vortexH * ru;
+              rx = vortexX + Math.sin(vortexPhase + ri * 1.55 + ru * 8.6) * vortexW * 0.29 * (1 - ru * 0.38);
+              rw = Math.max(3, vortexW * (0.13 - ru * 0.035));
+              ribbon.push(rx + rw, ry);
+            }
+            g.poly(ribbon).fill({ color: ri === 1 ? 0xffd84a : (ri % 2 ? 0xff7618 : 0xffa51d),
+              alpha: (ri === 1 ? 0.78 : 0.68) * fade });
+          }
+          g.ellipse(vortexX, groundY - vortexH * 0.38, vortexW * 0.18, vortexH * 0.31)
+            .fill({ color: 0xffffbd, alpha: 0.3 * fade });
+          g.poly([vortexX - vortexW * 0.18, groundY - vortexH * 0.82,
+            vortexX + vortexW * 0.02, groundY - vortexH * 1.08,
+            vortexX + vortexW * 0.2, groundY - vortexH * 0.88,
+            vortexX + vortexW * 0.08, groundY - vortexH * 0.7])
+            .fill({ color: 0xffff7a, alpha: 0.62 * fade });
         }
-        outer.push(w / 2, groundY + baseDepth * 0.2, -w / 2, groundY + baseDepth * 0.2);
-        g.poly(outer).fill({ color: 0xd63412, alpha: 0.84 * fade });
-
-        // 橘焰與黃白核心沿牆內側鋪開，底部不畫成整片矩形。
-        for (i = 0; i <= segs; i++) {
-          u = i / segs;
-          x = -w * 0.44 + w * 0.88 * u;
-          peak = flameH * (0.28 + 0.4 * (0.5 + 0.5 * Math.sin(i * 2.83 + phase * 0.86)));
-          orange.push(x, groundY - Math.max(flameH * 0.22, peak));
-        }
-        orange.push(w * 0.44, groundY + baseDepth * 0.12, -w * 0.44, groundY + baseDepth * 0.12);
-        g.poly(orange).fill({ color: 0xff7618, alpha: 0.83 * fade });
-        for (i = 0; i <= segs; i++) {
-          u = i / segs;
-          x = -w * 0.35 + w * 0.7 * u;
-          peak = flameH * (0.16 + 0.26 * (0.5 + 0.5 * Math.sin(i * 3.17 + phase * 1.1)));
-          core.push(x, groundY - Math.max(flameH * 0.16, peak));
-        }
-        core.push(w * 0.35, groundY, -w * 0.35, groundY);
-        g.poly(core).fill({ color: 0xffd84a, alpha: 0.86 * fade });
-        g.roundRect(-w * 0.34, groundY - flameH * 0.12, w * 0.68, flameH * 0.13, 5)
-          .fill({ color: 0xffffb2, alpha: 0.58 * fade });
 
         // 火牆上方的低煙，不遮住火焰，只用半透明灰褐色顆粒帶出參考圖的煙塵感。
         for (i = 0; i < 9; i++) {
