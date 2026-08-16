@@ -1,5 +1,26 @@
 # PATCH.md
 
+## 新版技能彈窗沿用舊版技能升級界面（Antigravity 2026-08-16）
+
+- **新版技能升級界面格式對齊**：
+  - 更新 `js/ui.js` 中的 `renderSkill2Modal`：
+    - 頂部標題列：呈現 `Lv.X/10 | 類型·屬性`、`MP 消耗` 與 `冷卻時間`，附帶類別與元素標籤。
+    - 描述區塊：完整呈現當前等級效果、下一級效果、風味說明以及解鎖前置提示。
+    - 資源提示：右下角顯示金幣庫存。
+    - 按鈕佈局：沿用 4 欄 2 排網格（第一排：升級/學習、⚡ 一鍵滿級、⬇️ 降級、⚔️ 裝備/卸下；第二排：排除加入融合按鈕並留空佔位、🗑️ 刪除重置）。
+  - 在 `js/ui.js` 新增 `runSkill2MaxAction` 與 `runSkill2DeleteAction`，並綁定 `data-skill2-max` 與 `data-skill2-delete` 點擊事件。
+- **測試更新與驗證**：
+  - 更新 `tests/skill2-ui.test.cjs` 中的新版技能彈窗按鈕結構斷言。
+  - 執行 `node tools/build_check.cjs`（281 個檔案全數通過）與 75 項新版技能相關單元測試。
+
+## 裝備穿上時取消裝備欄及背包欄選取（Antigravity 2026-08-16）
+
+- **UI 選取狀態優化**：
+  - 修改 `js/ui.js` 中的 `detailAction` 裝備穿上（`act === 'equip'`）處理邏輯：當一件裝備被穿上時，將 `UI.sel` 設為 `null`，並呼叫 `renderDetail()` 取消裝備欄與背包欄中的所有格子選取狀態（`.selected`、`.dimmed`、`.inventory-selection-match`），使詳情面板恢復為「點選裝備查看詳情」。
+- **測試更新與驗證**：
+  - 更新 `tests/equipment-slot-selection.test.cjs` 中的穿裝選取測試，驗證穿上裝備後 `UI.sel` 為 `null` 並觸發詳情面板重繪。
+  - 執行 `node tools/build_check.cjs`（281 個檔案全數通過）與單元測試。
+
 ## 新版技能第三批：魔法系「火球術」與「火柱」＋傷害範圍法算（Claude 2026-08-16）
 
 - **設計來源**：記事錄「技能」頁籤新增〈魔法〉區塊兩個技能群組，以及新欄位「傷害範圍說明」

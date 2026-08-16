@@ -91,7 +91,7 @@ test('two-hand main/off-hand clicks transfer selection', () => {
   assert.equal(context.UI.sel, null);
 });
 
-test('inventory equip command preserves the selected equipment slot', async () => {
+test('inventory equip command clears selection after equipping', async () => {
   const context = {
     UI: { sel: { id: 'ring-new', source: 'inv' } },
     uiHeaderPanelSnapshot: () => ({ player: {} }),
@@ -107,6 +107,9 @@ test('inventory equip command preserves the selected equipment slot', async () =
     },
     triggerEquipFlash: (slot, item) => {
       context.flash = { slot, item };
+    },
+    renderDetail: () => {
+      context.detailRendered = true;
     },
     uiCommandResultError: () => null,
     hasOwnUiState: () => false,
@@ -127,9 +130,8 @@ test('inventory equip command preserves the selected equipment slot', async () =
   });
   assert.equal(context.flash.slot, 'ring2');
   assert.equal(context.flash.item.id, 'ring-new');
-  assert.deepEqual(JSON.parse(JSON.stringify(context.UI.sel)), {
-    id: 'ring-new', source: 'equip', slot: 'ring2'
-  });
+  assert.equal(context.UI.sel, null);
+  assert.equal(context.detailRendered, true);
 });
 
 test('選取空部位時，同部位背包保持正常、不同部位背包灰化', () => {
