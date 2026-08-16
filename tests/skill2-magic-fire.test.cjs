@@ -142,8 +142,8 @@ test('一般火球：使用標準飛行物佇列，抵達前不命中且不走�
   assert.equal(c.SKILL2_RT.projectiles.length, 1);
   assert.equal(out._pendingProjectiles, 1);
 
-  c.GT = 0.25;
-  c.tickSkill2(0.25, tickCtx(c, p, [m]));
+  c.GT = 0.05;
+  c.tickSkill2(0.05, tickCtx(c, p, [m]));
   assert.equal(calls.length, 0, '一般火球尚未飛抵前不應命中');
 
   finishFireball(c, p, [m], 0.6);

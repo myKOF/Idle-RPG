@@ -3422,6 +3422,8 @@ Commit：
 
 技術影響：一般火球的命中時序改為實際飛行物抵達後，殞石排程與舊版火球自動施放抑制不變；不變更存檔格式與 Worker 協議。
 
+後續修正（2026-08-16）：一般火球改直接沿用 `bfTravelSeconds` 的標準遠程投射物距離／速度計算，並把同一速度傳給模擬飛行物，避免 6 米目標仍使用過慢的 240 單位／秒。
+
 允許修改：`js/skills2.js`、`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`tests/skill2-magic-fire.test.cjs`、`tests/skill2-vfx.test.cjs`、`tests/skill-special-vfx.test.cjs`、`tests/projectile-impact-size.test.cjs`、`docs/AI_TASKS.md`。
 
 禁止修改：殞石落地規格、其他技能群組效果、存檔格式、Worker 協議與無關 UI。

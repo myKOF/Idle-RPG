@@ -630,7 +630,7 @@ function sgQueueFlyingProjectile(pEnt, st, gid, dmgVal, origin, angle, length, f
   var now = sgProjectileNow();
   var start = origin && isFinite(origin.x) && isFinite(origin.y)
     ? { x: Number(origin.x), y: Number(origin.y) } : null;
-  var speed = SG_FLYING_PROJECTILE_SPEED;
+  var speed = extra && Number(extra.speed) > 0 ? Number(extra.speed) : SG_FLYING_PROJECTILE_SPEED;
   var travel = extra && Number(extra.travelMs) > 0
     ? Math.max(0.05, Number(extra.travelMs) / 1000)
     : Math.max(0.05, Number(length) / speed);
@@ -1480,12 +1480,13 @@ function sgFireballProjectilePlan(target) {
   var origin = geomOk ? bfPlayerPos() : null;
   var length = geomOk ? Math.max(1, bfTravelDistance(target)) : 1;
   var angle = geomOk && typeof bfAngleTo === 'function' ? bfAngleTo(target) : 0;
-  /* 一般飛行物速度＝SG_FLYING_PROJECTILE_SPEED；不使用殞石的 0.70 慢速倍率。 */
-  var travelMs = geomOk
-    ? Math.max(100, Math.round(length / SG_FLYING_PROJECTILE_SPEED * 1000))
-    : 260;
+  /* 一般火球直接沿用普攻遠程投射物的距離／速度計算；不使用殞石的 0.70 慢速倍率。 */
+  var travelMs = geomOk && typeof bfTravelSeconds === 'function'
+    ? Math.round(bfTravelSeconds(target) * 1000)
+    : (geomOk ? Math.max(100, Math.round(length / SG_FLYING_PROJECTILE_SPEED * 1000)) : 260);
+  var speed = geomOk && travelMs > 0 ? length / (travelMs / 1000) : SG_FLYING_PROJECTILE_SPEED;
   return { origin: origin, length: length, angle: angle, travelMs: travelMs,
-    waitForEnd: !geomOk };
+    speed: speed, waitForEnd: !geomOk };
 }
 
 function sgFireballSplitProjectileHit(projectile, target, ctx) {
@@ -1522,7 +1523,7 @@ function sgFireballProjectileHit(projectile, target, ctx) {
     sgQueueFlyingProjectile(projectile.pEnt, projectile.st, 'fireball', projectile.splitDmgVal,
       plan.origin, plan.angle, plan.length, projectile.floatSel, [splits[si]], {
         singleHit: true, targetOnly: true, waitForEnd: plan.waitForEnd,
-        travelMs: plan.travelMs, hitFn: sgFireballSplitProjectileHit,
+        travelMs: plan.travelMs, speed: plan.speed, hitFn: sgFireballSplitProjectileHit,
         burnSpec: projectile.burnSpec
       }, projectile.out);
   }
@@ -1592,7 +1593,7 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       sgQueueFlyingProjectile(pEnt, st, 'fireball', dmgVal,
         fireballPlan.origin, fireballPlan.angle, fireballPlan.length, floatSel, [primary], {
           singleHit: true, targetOnly: true, waitForEnd: fireballPlan.waitForEnd,
-          travelMs: fireballPlan.travelMs, hitFn: sgFireballProjectileHit,
+          travelMs: fireballPlan.travelMs, speed: fireballPlan.speed, hitFn: sgFireballProjectileHit,
           victims: victims, splitTargets: splitTargets, splitDmgVal: splitDmgVal, burnSpec: burnSpec
         }, out);
     }
