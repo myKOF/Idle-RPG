@@ -12,11 +12,11 @@
 
 importScripts('protocol.js?v=20', 'shim.js?v=3');
 importScripts(
-  '../util.js?v=20260814-skill-summary', '../data.js?v=20260816-projectile-speed', '../status.js?v=20260814-skill2-counter-bloodrage', '../formula.js?v=20260814-skill2-counter-bloodrage', '../battlefield.js?v=20260816-projectile-speed', '../stats.js',
+  '../util.js?v=20260814-skill-summary', '../data.js?v=20260816-projectile-speed', '../status.js?v=20260816-magic-fire-skills', '../formula.js?v=20260814-skill2-counter-bloodrage', '../battlefield.js?v=20260816-projectile-speed', '../stats.js',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260815-skill-ready-queue', '../skills2.js?v=20260816-dualdance-effects', '../talents.js?v=20260811-loadout-cap-clamp',
+  '../skills.js?v=20260816-magic-fire-skills', '../skills2.js?v=20260816-magic-fire-skills', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260814-skill-min-interval', '../special_rules.js',
-  '../combat.js?v=20260816-bloodrage-multi-target', '../legendary.js?v=20260814-skill2-counter-bloodrage', '../potential.js?v=20260814-skill-min-interval', '../tower.js?v=20260814-skill2-review-fixes',
+  '../combat.js?v=20260816-bloodrage-multi-target', '../legendary.js?v=20260816-magic-fire-skills', '../potential.js?v=20260814-skill-min-interval', '../tower.js?v=20260814-skill2-review-fixes',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260814-active-passive',
   '../tasks.js'
 );

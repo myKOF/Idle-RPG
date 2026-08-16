@@ -122,7 +122,11 @@ var EVENT_KINDS = {
      delayMs（v17，可選）：整則特效的基礎延遲（毫秒）——追加劍氣、天罰神雷等
              「接在前一段動作之後」的特效用它錯開時刻。
      projectile（可選）：飛行物命中事件不預先補命中爆點。
-     lineLength／lineWidth／laneOffsets／directionCount（可選）：突刺光槍的長寬、平行道與方向數。 */
+     lineLength／lineWidth／laneOffsets／directionCount（可選）：突刺光槍的長寬、平行道與方向數。
+     area（可選）：打在地上的那塊區域，世界座標。圓形＝{ x, y, r }；
+             矩形（火牆等地板場域）＝{ x, y, w, h, a }（長、寬、朝向弧度）並附帶 r＝
+             外接圓半徑，讓只認得圓的既有畫法仍能退化出合理尺寸。
+             ⚠️ 這組數字就是模擬層實際判定的傷害範圍，顯示層不得再套第二組縮放。 */
   VFX: 'vfx'
 };
 
