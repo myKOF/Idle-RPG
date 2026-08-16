@@ -41,6 +41,10 @@ test('測試服控制台提供啟動、列表、開啟與關閉介面', () => {
   assert.match(html, /data-external/);
   assert.match(html, /Idle-RPG 測試服（PowerShell）/);
   assert.match(html, /前往/);
+  assert.match(html, /function serverWindowName\(port\)/);
+  assert.match(html, /target="\$\{escapeHtml\(targetName\)\}"/);
+  assert.match(html, /window\.open\(url, serverWindowName\(port\)\)/);
+  assert.doesNotMatch(html, /target="_blank"/);
   assert.match(html, /開啟瀏覽器/);
   assert.match(batch, /test_server_manager\.cjs/);
   assert.match(batch, /--launch-manager/);

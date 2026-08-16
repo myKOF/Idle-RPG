@@ -83,6 +83,15 @@
       })[character]);
     }
 
+    function serverWindowName(port) {
+      return `idle-rpg-test-server-${Number(port)}`;
+    }
+
+    function openServerPage(url, port) {
+      const page = window.open(url, serverWindowName(port));
+      if (page) page.focus();
+    }
+
     function sourceLabel(server) {
       if (server.managed !== false) {
         return `Idle-RPG 測試服控制台（${server.sourceLabel || 'Node.js'}）`;
@@ -134,7 +143,8 @@
         const stopAction = canStop
           ? `<button class="danger" data-stop="${escapeHtml(server.port)}" data-pid="${escapeHtml(server.pid)}" data-external="${managed ? 'false' : 'true'}" data-source="${escapeHtml(source)}">關閉</button>`
           : '<span class="external">系統程序不可關閉</span>';
-        const actions = `<div class="action-group"><a class="button secondary" href="${escapeHtml(server.url)}" target="_blank" rel="noreferrer">前往</a>${stopAction}</div>`;
+        const targetName = serverWindowName(server.port);
+        const actions = `<div class="action-group"><a class="button secondary" href="${escapeHtml(server.url)}" target="${escapeHtml(targetName)}">前往</a>${stopAction}</div>`;
         return `
         <tr>
           <td>${escapeHtml(server.port)}</td>
@@ -182,7 +192,7 @@
           method: 'POST',
           body: JSON.stringify({ port, sourceKey })
         });
-        window.open(data.server.url, '_blank', 'noopener');
+        openServerPage(data.server.url, data.server.port);
         setStatus(`測試服已啟動：${data.server.sourceLabel || ''}（${data.server.sourceRoot || ''}）${data.server.url}`);
         await refresh();
       } catch (error) {
