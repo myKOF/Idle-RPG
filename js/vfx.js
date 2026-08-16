@@ -177,7 +177,7 @@ function vfxClear() {
   var scenes = document.querySelectorAll('.battle-scene');
   for (var si = 0; si < scenes.length; si++) {
     if (!scenes[si].classList) continue;
-    scenes[si].classList.remove('vfx-scene-shake', 'vfx-scene-shake-strong');
+    scenes[si].classList.remove('vfx-scene-shake', 'vfx-scene-shake-strong', 'vfx-scene-shake-meteor');
   }
 }
 
@@ -472,21 +472,23 @@ function vfxAllowsSceneShake(spec) {
 }
 function vfxSceneShake(layer, delayMs, strong, spec) {
   if (!vfxAllowsSceneShake(spec)) return;
-  if (_vfxQuality !== VFX_QUALITY_LEVELS.FULL) return;
+  var meteor = spec && spec.variant === 'meteor';
+  if (_vfxQuality !== VFX_QUALITY_LEVELS.FULL && !meteor) return;
   var generation = _vfxGeneration;
   setTimeout(function () {
     if (!_vfxEnabled || generation !== _vfxGeneration) return;
     var scene = (layer && layer.closest) ? layer.closest('.battle-scene')
       : ((layer && layer.parentNode) ? layer.parentNode : null);
     if (!scene || !scene.classList) return;
-    scene.classList.remove('vfx-scene-shake', 'vfx-scene-shake-strong');
+    scene.classList.remove('vfx-scene-shake', 'vfx-scene-shake-strong', 'vfx-scene-shake-meteor');
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
         if (!_vfxEnabled || generation !== _vfxGeneration) return;
-        scene.classList.add(strong ? 'vfx-scene-shake-strong' : 'vfx-scene-shake');
+        if (meteor) scene.classList.add('vfx-scene-shake-meteor');
+        else scene.classList.add(strong ? 'vfx-scene-shake-strong' : 'vfx-scene-shake');
         setTimeout(function () {
           if (generation !== _vfxGeneration) return;
-          scene.classList.remove('vfx-scene-shake', 'vfx-scene-shake-strong');
+          scene.classList.remove('vfx-scene-shake', 'vfx-scene-shake-strong', 'vfx-scene-shake-meteor');
         }, strong ? 520 : 340);
       });
     });

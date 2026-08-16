@@ -8655,6 +8655,12 @@ textarea:disabled,
   animation: vfxSceneShakeStrong 0.54s ease-out;
 }
 
+/* 殞石專用場景震動不受一般 reduced-motion 的 1ms 卡片動畫規則覆蓋，
+   否則會出現「程式已觸發但肉眼完全看不到」的情況。 */
+.battle-scene.vfx-scene-shake-meteor {
+  animation: vfxSceneShakeStrong 0.54s ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
 
   .vfx,

@@ -54,7 +54,7 @@ test('Reduced VFX removes the most expensive cosmetic work', () => {
   assert.match(vfx, /out\.count = 1/);
   assert.match(vfx, /targetLimit = source\.fxKind === 'chain' \|\| source\.variant === 'chain' \? 2 : 3/);
   assert.match(vfx, /if \(_vfxQuality === VFX_QUALITY_LEVELS\.REDUCED && !strong\) return/);
-  assert.match(vfx, /if \(_vfxQuality !== VFX_QUALITY_LEVELS\.FULL\) return/);
+  assert.match(vfx, /if \(_vfxQuality !== VFX_QUALITY_LEVELS\.FULL && !meteor\) return/);
   assert.match(vfx, /if \(_vfxQuality === VFX_QUALITY_LEVELS\.REDUCED\) n = 1/);
   assert.match(vfx, /function renderCombatVfx\(spec\)/);
   assert.match(vfx, /function playCombatVfx\(spec\)[\s\S]*vfxEnqueue\(next\)/);
