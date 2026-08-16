@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## Codex｜雙刀亂舞三項技能效果調整｜2026-08-16
+
+- 狀態：已完成
+- Owner：Codex
+- 目的：依使用者需求更新「狂暴之舞」「鐵血之舞」「嗜血狂化」的設定數值、說明文字與戰鬥行為。
+- 允許修改：`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`、`js/skills2.js`、`js/formula.js`、`js/skills.js`、`js/worker/sim.worker.js`、`js/bridge.js`、`index.html`、`tests/skill2-system.test.cjs`、本文件。
+- 實作範圍：狂暴之舞提供暴擊率與連擊數並持續 6 秒；鐵血之舞讓自身及 5 米內敵人依最大生命流血；嗜血狂化在 6 秒內依生命／護盾損失提高技能傷害。
+- 依賴與風險：需同步 Excel、CSV、`SKILLS2` literal 與前端／Worker 資源版本；不得覆寫其他技能既有設定。
+- 驗收：`node --check`、`npm.cmd run build`、相關 Node 測試、`git diff --check`；確認三個技能的 Lv.1 與每級增量及持續時間正確。
+- 交接：完成後回報修改檔案、測試指令與結果；預設建立 `[Codex]` 前綴 commit，未自行合併或推送 `develop`。
+
 ## Codex：修正飛刀彈射與戰鬥結束後的角色動作殘留（2026-08-16）
 
 - 狀態：已完成（2026-08-16）

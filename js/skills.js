@@ -1052,7 +1052,9 @@ function skillRtSimpleCast(pEnt, sk, fx, lv, powerPct, targets, floatSel, opts) 
       var res;
       if (fx.dmgType === 'true') {
         // 真實傷害：無視防禦/抗性/格擋（比照 castSkill 真傷分支）
-        var td = Math.max(1, Math.round(baseVal * rnd(0.95, 1.05)));
+        var td = Math.max(1, Math.round(baseVal *
+          (typeof skill2FrenzySkillDamageMultiplier === 'function' ? skill2FrenzySkillDamageMultiplier(pEnt) : 1) *
+          rnd(0.95, 1.05)));
         td = applyEnemyHpDamage(t, td);
         res = { dmg: td, killed: t.hp <= 0, miss: false, crit: false };
         if (res.killed) t.hp = 0;
@@ -1079,7 +1081,7 @@ function skillRtSimpleCast(pEnt, sk, fx, lv, powerPct, targets, floatSel, opts) 
           elemAtk: elemAtk, elemDmgPct: st.elemDmgPct, elemDmgUp: st.elemDmgUp,
           eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, normalDmg: st.normalDmg,
           totalDmgPct: (st.totalDmgPct || 0) + buffVal(pEnt, 'allDmgUp'),
-          dmgVsElem: st.dmgVsElem, isPlayer: true
+          dmgVsElem: st.dmgVsElem, isPlayer: true, isSkill: true
         };
         if (fx.dmgType === 'both') {
           // 融合技雙屬性：比照 castSkill 拆回物攻/魔攻兩段、雙穿透齊備
@@ -1416,7 +1418,7 @@ function skillRtOpenField(pEnt, sk, fx, id, lv, st, out) {
     elemDmgPct: st.elemDmgPct, elemDmgUp: st.elemDmgUp,
     eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, normalDmg: st.normalDmg,
     totalDmgPct: (st.totalDmgPct || 0) + buffVal(pEnt, 'allDmgUp'),
-    dmgVsElem: st.dmgVsElem, isPlayer: true
+    dmgVsElem: st.dmgVsElem, isPlayer: true, isSkill: true
   };
   skillElemApplyACfg(snapACfg, sk, fx); // 技能屬性化：領域每跳同樣整段歸屬技能屬性
   var snapElem = null;
@@ -1454,7 +1456,9 @@ function skillRtOpenField(pEnt, sk, fx, id, lv, st, out) {
       var res;
       if (entry.snapshot.dmgType === 'true') {
         // 真傷領域：直扣（比照 castSkill 真傷分支）
-        var td = Math.max(1, Math.round(entry.snapshot.trueTick * rnd(0.95, 1.05)));
+        var td = Math.max(1, Math.round(entry.snapshot.trueTick *
+          (typeof skill2FrenzySkillDamageMultiplier === 'function' ? skill2FrenzySkillDamageMultiplier(ctx.pEnt) : 1) *
+          rnd(0.95, 1.05)));
         td = applyEnemyHpDamage(t, td);
         res = { dmg: td, killed: t.hp <= 0, miss: false, crit: false };
         if (res.killed) t.hp = 0;
@@ -2655,7 +2659,9 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
         var dmgRes;
         if (fx.dmgType === 'true') {
           // 真實傷害：無視防禦/抗性/格擋
-          var td = Math.max(1, Math.round(baseVal * rnd(0.95, 1.05)));
+          var td = Math.max(1, Math.round(baseVal *
+            (typeof skill2FrenzySkillDamageMultiplier === 'function' ? skill2FrenzySkillDamageMultiplier(pEnt) : 1) *
+            rnd(0.95, 1.05)));
           td = applyEnemyHpDamage(targetEnt, td);
           dmgRes = { dmg: td, killed: targetEnt.hp <= 0, miss: false, crit: false };
           if (dmgRes.killed) targetEnt.hp = 0;
@@ -2685,7 +2691,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
             eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, normalDmg: st.normalDmg,
             totalDmgPct: (st.totalDmgPct || 0) + buffVal(pEnt, 'allDmgUp'), // 潛力【時空凝滯】：所有傷害提高
             dmgVsElem: st.dmgVsElem,
-            isPlayer: true
+            isPlayer: true, isSkill: true
           };
           if (fx.dmgType === 'both') {
             // 融合技雙屬性：baseVal 依 物攻:魔攻 比例拆回兩段（resolveHit 'both' 分支各自結算），雙穿透齊備
