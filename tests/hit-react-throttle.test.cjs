@@ -56,7 +56,8 @@ test('Canvas 與 DOM 受擊震動都使用三秒冷卻並降低幅度', () => {
 
   assert.match(renderer, /var HIT_JOLT_COOLDOWN_MS = 3000/);
   assert.match(renderer, /hitAt - ent\.lastJoltAt >= HIT_JOLT_COOLDOWN_MS/);
-  assert.match(renderer, /if \(strong && canJolt\) addShake\(4\)/);
+  assert.doesNotMatch(renderer, /if \(strong && canJolt\) addShake\(4\)/);
+  assert.match(renderer, /if \(strong && isSpecialScreenShakeSpec\(spec\)\) addShake\(5\)/);
   assert.match(renderer, /\* \(e\.joltX \|\| HIT_JOLT_X\)/);
   assert.match(renderer, /\* \(e\.joltY \|\| HIT_JOLT_Y\)/);
   assert.match(vfx, /var VFX_HIT_COOLDOWN_MS = 3000/);

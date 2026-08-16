@@ -398,6 +398,7 @@ function vfxStagger() {
 }
 
 var VFX_HIT_COOLDOWN_MS = 3000;
+var VFX_PROJECTILE_HIT_RADIUS_SCALE = 1 / 3;
 
 /* ---- 受擊反饋：卡片震動＋元素色閃光 ----
    卡片只在敵群「簽章」（身分＋站位）變動時重建，短命 class 掛上去是安全的；
@@ -491,6 +492,7 @@ function vfxImpact(spec, layer, pt, targetId, delayMs) {
   else cls = 'vfx-impact vfx-impact-' + elemKey;
   var d = vfxNode(cls, layer, spec);
   vfxPlace(d, pt);
+  if (!strong) d.style.setProperty('--vfx-hit-scale', String(VFX_PROJECTILE_HIT_RADIUS_SCALE));
   d.style.animationDelay = delayMs + 'ms';
 
   var n = VFX_IMPACT_PARTS[elemKey] || 4;
@@ -765,6 +767,7 @@ function vfxProjectile(spec, layer, from, to, delayMs, travelMs) {
 function vfxSlash(spec, layer, pt, delayMs, tiltDeg, extraClass) {
   var d = vfxNode('vfx-slash' + (extraClass ? ' ' + extraClass : ''), layer, spec);
   vfxPlace(d, pt);
+  d.style.setProperty('--vfx-hit-scale', String(VFX_PROJECTILE_HIT_RADIUS_SCALE));
   var tilt = typeof tiltDeg === 'number' ? tiltDeg : (Math.random() * 50 - 25);
   d.style.setProperty('--vfx-tilt', tilt.toFixed(0) + 'deg');
   d.style.animationDelay = delayMs + 'ms';
