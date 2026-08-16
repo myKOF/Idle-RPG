@@ -9565,9 +9565,9 @@ function initUI() {
       }
       return;
     }
-    // 點擊技能樹節點 → 開啟升級彈窗
+    // 點擊技能樹節點 → 開啟升級彈窗（排除裝備欄 #skill-loadout 與戰鬥區快捷列 #battle-skill-bar）
     var cell = e.target.closest('[data-sk]');
-    if (cell && !cell.closest('#skill-loadout')) {
+    if (cell && !cell.closest('#skill-loadout') && !cell.closest('#battle-skill-bar')) {
       openSkillModal(cell.getAttribute('data-sk'));
       return;
     }
@@ -9976,22 +9976,20 @@ function initUI() {
     }
   });
 
-  // 戰鬥區技能欄點擊跳轉技能頁（已裝備技能點擊無效果，空格跳轉）
+  // 戰鬥區技能欄點擊：不跳出升級彈窗，一律直接跳轉技能頁
   document.addEventListener('click', function (e) {
-    var bssEquipped = e.target.closest('#battle-skill-bar .battle-skill-slot.equipped');
-    if (bssEquipped) return;
     var bss = e.target.closest('#battle-skill-bar .battle-skill-slot');
     if (!bss || bss.classList.contains('locked')) return;
-    if (bss.getAttribute('data-skill-slot-action') === 'goto-skills') {
-      var tabBtn = document.querySelector('.tab-btn[data-tab="skills"]');
-      if (tabBtn) tabBtn.click();
-      var skId = bss.getAttribute('data-skill-id');
-      if (skId) {
-        try {
-          var targetCell = document.querySelector('.tree-cell[data-sk="' + CSS.escape(skId) + '"]');
-          if (targetCell) targetCell.click();
-        } catch (_) {}
-      }
+    var tabBtn = document.querySelector('.tab-btn[data-tab="skills"]');
+    if (tabBtn) tabBtn.click();
+    var skId = bss.getAttribute('data-skill-id') || bss.getAttribute('data-sk');
+    if (skId) {
+      try {
+        var targetCell = document.querySelector('#skill-trees [data-sk="' + CSS.escape(skId) + '"], #skill-loadout [data-sk="' + CSS.escape(skId) + '"]');
+        if (targetCell && typeof targetCell.scrollIntoView === 'function') {
+          targetCell.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      } catch (_) {}
     }
   });
 
