@@ -206,8 +206,9 @@ test('迴旋斬大型弧光半徑在 DOM 與 Canvas 都縮為三分之一', () =
 test('震碎斬距離使用 12 米（120 系統距離單位）', () => {
   const skills2 = read('js/skills2.js');
   const csv = read('config/CSV/Skills2.csv');
-  const cleaveCsvLine = csv.split(/\r?\n/).find((line) => line.includes(',6,震碎斬,'));
-  assert.match(skills2, /name: '震碎斬', fx: \{ m: 12, mPer: 0\.5 \}/);
+  const cleaveCsvLine = csv.split(/\r?\n/).find((line) => /,6,[^,]*,震碎斬,/.test(line));
+  // 階段名稱與 fx 之間可能還有「解鎖轉生/等級」欄位（unlock: { … }）
+  assert.match(skills2, /name: '震碎斬',.*?fx: \{ m: 12, mPer: 0\.5 \}/);
   assert.ok(cleaveCsvLine && cleaveCsvLine.includes('""m"":12'), 'Skills2 CSV 應使用 12 米');
   assert.match(read('js/battlefield.js'), /BF_SYSTEM_UNITS_PER_METER = 10/);
 });

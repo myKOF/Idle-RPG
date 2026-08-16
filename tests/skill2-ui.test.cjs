@@ -11,8 +11,8 @@ const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
 test('新版技能樹以群組列呈現七階橫向進階鏈', () => {
-  assert.match(ui, /sgSkillGroupRowHTML\(sgGid,\s*sgLvs,\s*sgLoadout\)/);
-  assert.match(ui, /sgStageNodeHTML\(gid,\s*i,\s*lvs,\s*loadout\)/);
+  assert.match(ui, /sgSkillGroupRowHTML\(sgGid,\s*sgLvs,\s*sgLoadout,\s*skillsSnapshot\)/);
+  assert.match(ui, /sgStageNodeHTML\(gid,\s*i,\s*lvs,\s*loadout,\s*skillsSnapshot\)/);
   assert.match(ui, /sg-stage-arrow/);
   assert.match(ui, /data-sg-tier="' \+ tierIndex/);
   assert.match(css, /\.sg-group-row\s*\{[\s\S]*?overflow-x:\s*auto/);
@@ -21,7 +21,7 @@ test('新版技能樹以群組列呈現七階橫向進階鏈', () => {
 });
 
 test('新版技能階段依解鎖狀態亮起或置灰，但灰色節點仍保留查看入口', () => {
-  assert.match(ui, /function sgStageUnlocked\(lvs, tierIndex\)/);
+  assert.match(ui, /function sgStageUnlocked\(gid, lvs, tierIndex, skillsSnapshot\)/);
   assert.match(ui, /tierIndex === 0 \|\| !!\(lvs && lvs\[tierIndex - 1\] >= 1\)/);
   assert.match(ui, /unlocked \? ' sg-stage-unlocked' : ' sg-stage-locked'/);
   assert.match(ui, /data-sk="' \+ ref/);

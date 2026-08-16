@@ -145,6 +145,61 @@ test('sgEffectiveLevels：第 1 階預設開啟、上限夾限、前一階未達
   assert.equal(c.sgEffectiveLevels({}, 'nope'), null);
 });
 
+/* ---- 2b) 解鎖門檻（參數表「解鎖轉生/等級」欄，格式 轉生次數|等級）----
+   使用者決策 2026-08-16：
+     - 進度比較是「轉生數優先，同轉生數才比等級」（轉生會把等級打回 1，
+       用 AND 比較會讓每次轉生都把整份技能表重新鎖上）
+     - 未解鎖的階一律視為 Lv.0，含第 1 階的預設開啟＝技能本身也不能施放 */
+test('解鎖門檻：轉生數優先比較，未解鎖的階視為 Lv.0（含第 1 階的預設開啟）', () => {
+  const c = loadContext();
+
+  // 純判定：0 轉 100 級的門檻
+  const need = { reinc: 0, lv: 100 };
+  assert.equal(c.sgTierUnlockedBy(need, 99, 0), false);
+  assert.equal(c.sgTierUnlockedBy(need, 100, 0), true);
+  assert.equal(c.sgTierUnlockedBy(need, 1, 1), true, '轉生數更高＝前面幾轉的門檻全部通過');
+  assert.equal(c.sgTierUnlockedBy({ reinc: 1, lv: 200 }, 999, 0), false, '轉生數不足時等級再高也不算');
+  assert.equal(c.sgTierUnlockedBy({ reinc: 1, lv: 200 }, 200, 1), true);
+  assert.equal(c.sgTierUnlockedBy(null, 0, 0), true, '留白＝無門檻');
+
+  // 火狩第 1 階＝0 轉 100 級：99 級時整組視為 Lv.0，技能不可施放
+  c.G.player.level = 99;
+  c.G.player.reincarnations = 0;
+  c.G.player.skills2.levels.firehunt = [5, 3, 0, 0, 0, 0, 0];
+  assert.deepEqual(plain(c.skills2Levels('firehunt')), [0, 0, 0, 0, 0, 0, 0]);
+  assert.equal(c.skills2Castable('firehunt'), false, '未解鎖的技能不能施放');
+
+  // 達標後原樣回來：未解鎖只是「視為 Lv.0」，不會動到存檔
+  c.G.player.level = 150;
+  assert.deepEqual(plain(c.skills2Levels('firehunt')), [5, 3, 0, 0, 0, 0, 0]);
+  assert.equal(c.skills2Castable('firehunt'), true);
+  // 第 2 階要 0 轉 150 級、第 3 階要 0 轉 200 級：只解到第 2 階
+  c.G.player.skills2.levels.firehunt = [5, 3, 2, 0, 0, 0, 0];
+  assert.deepEqual(plain(c.skills2Levels('firehunt')), [5, 3, 0, 0, 0, 0, 0]);
+
+  // 轉生後等級歸 1，但 0 轉的門檻全部算通過
+  c.G.player.level = 1;
+  c.G.player.reincarnations = 1;
+  assert.deepEqual(plain(c.skills2Levels('firehunt')), [5, 3, 2, 0, 0, 0, 0]);
+});
+
+test('解鎖門檻：未達標時不可投資，訊息指出需要的進度', () => {
+  const c = loadContext();
+  c.G.player.gold = 1e12;
+  c.G.player.level = 10;
+  c.G.player.reincarnations = 0;
+
+  // 火狩第 1 階＝0 轉 100 級
+  assert.match(c.skills2Learn('firehunt', 0), /100 級/);
+  // 突刺第 1 階＝0 轉 1 級：一開局就能投資
+  assert.equal(c.skills2Learn('thrust', 0), null);
+  // 突刺第 3 階＝0 轉 50 級：前一階補到 Lv.1 之後，仍卡在等級門檻
+  assert.equal(c.skills2Learn('thrust', 1), null);
+  assert.match(c.skills2Learn('thrust', 2), /50 級/);
+  c.G.player.level = 50;
+  assert.equal(c.skills2Learn('thrust', 2), null);
+});
+
 /* ---- 3) 升級／降級指令 ---- */
 
 test('skills2Learn：金幣不足拒絕、循序解鎖、扣款與寫入；skills2Downgrade：保底與依賴檢查', () => {
@@ -362,7 +417,8 @@ test('迴身雙連斬：前後左右各斬 3 次，且物理傷害額外 +10%', 
   assert.equal(cfgs.length, 24, '每條飛行物路徑應在 0.5 秒後再命中一次');
 
   const csv = fs.readFileSync(path.join(root, 'config/CSV/Skills2.csv'), 'utf8');
-  const row = csv.split(/\r?\n/).find((line) => line.includes(',7,迴身雙連斬,'));
+  // 階數與階段名稱之間還有「解鎖轉生/等級」欄，用 regex 跳過它
+  const row = csv.split(/\r?\n/).find((line) => /,7,[^,]*,迴身雙連斬,/.test(line));
   assert.ok(row && row.includes('""times"":3'), 'Skills2 CSV 應同步迴身雙連斬 3 次');
 });
 

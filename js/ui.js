@@ -7483,7 +7483,7 @@ function renderSkills() {
     var sgRows = '';
     for (var sgGid in SKILLS2) {
       var sgLvs = sgUiLevels(skillsSnapshot, sgGid);
-      sgRows += sgSkillGroupRowHTML(sgGid, sgLvs, sgLoadout);
+      sgRows += sgSkillGroupRowHTML(sgGid, sgLvs, sgLoadout, skillsSnapshot);
     }
     h += '<div class="tree-panel sg-skill-panel"><div class="tree-title">🌟 新版技能 ' +
       '<span class="dim-text">同群組技能由左至右進階；亮起＝已解鎖，灰色＝未解鎖（可查看）</span></div>' +
@@ -7533,10 +7533,16 @@ function sgGroupIdOf(ref) {
   if (typeof ref !== 'string' || ref.indexOf('sg:') !== 0) return null;
   return ref.slice(3).split(':')[0];
 }
-/* 快照 → 生效等級（正規化交給共載的 sgEffectiveLevels；主執行緒沒有 G，一律吃快照）。 */
+/* 快照 → 生效等級（正規化交給共載的 sgEffectiveLevels；主執行緒沒有 G，一律吃快照）。
+   解鎖進度也只能來自快照：主執行緒自己算會變成「畫面顯示已解鎖、Worker 卻擋著升級」。 */
+function sgUiUnlockProgress(skillsSnapshot) {
+  var s2 = skillsSnapshot && skillsSnapshot.skills2;
+  return (s2 && s2.progress) ? s2.progress : null;
+}
 function sgUiLevels(skillsSnapshot, gid) {
-  var raw = (skillsSnapshot && skillsSnapshot.skills2) ? skillsSnapshot.skills2.levels : null;
-  return (typeof sgEffectiveLevels === 'function') ? sgEffectiveLevels(raw, gid) : null;
+  var s2 = skillsSnapshot && skillsSnapshot.skills2;
+  return (typeof sgEffectiveLevels === 'function')
+    ? sgEffectiveLevels(s2 ? s2.levels : null, gid, s2 ? s2.progress : null) : null;
 }
 function sgUiTotalLevel(lvs) {
   var s = 0;
@@ -7553,16 +7559,34 @@ function sgTierIndexOf(ref) {
   return isFinite(tier) ? tier : null;
 }
 
-function sgStageUnlocked(lvs, tierIndex) {
+/* 這一階能不能投資：要同時滿足「前一階至少 Lv.1」與參數表的「解鎖轉生/等級」門檻。
+   未解鎖時 sgUiLevels 已經把該階算成 Lv.0，但第 1 階要靠這裡才擋得住（它的預設開啟）。 */
+function sgStageUnlocked(gid, lvs, tierIndex, skillsSnapshot) {
+  var g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[gid] : null;
+  var tier = g && g.tiers[tierIndex];
+  var prg = sgUiUnlockProgress(skillsSnapshot);
+  if (tier && prg && typeof sgTierUnlockedBy === 'function' &&
+      !sgTierUnlockedBy(tier.unlock, prg.level, prg.reinc)) return false;
   return tierIndex === 0 || !!(lvs && lvs[tierIndex - 1] >= 1);
 }
+/* 未解鎖的原因：門檻沒到就報門檻，否則就是前一階還沒投資。 */
+function sgStageLockReason(gid, tierIndex, skillsSnapshot) {
+  var g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[gid] : null;
+  var tier = g && g.tiers[tierIndex];
+  var prg = sgUiUnlockProgress(skillsSnapshot);
+  if (tier && tier.unlock && prg && typeof sgTierUnlockedBy === 'function' &&
+      !sgTierUnlockedBy(tier.unlock, prg.level, prg.reinc)) {
+    return '需達到 ' + sgUnlockText(tier.unlock) + '才能解鎖';
+  }
+  return '前一階需至少 Lv.1 才能解鎖';
+}
 
-function sgStageNodeHTML(gid, tierIndex, lvs, loadout) {
+function sgStageNodeHTML(gid, tierIndex, lvs, loadout, skillsSnapshot) {
   var g = SKILLS2[gid];
   var tier = g && g.tiers[tierIndex];
   if (!g || !tier) return '';
   var lv = lvs[tierIndex] || 0;
-  var unlocked = sgStageUnlocked(lvs, tierIndex);
+  var unlocked = sgStageUnlocked(gid, lvs, tierIndex, skillsSnapshot);
   var ref = 'sg:' + gid + ':' + tierIndex;
   var selected = UI.selSkill === ref;
   var equipped = loadout.indexOf('sg:' + gid) >= 0;
@@ -7583,7 +7607,7 @@ function sgStageNodeHTML(gid, tierIndex, lvs, loadout) {
     '</div>';
 }
 
-function sgSkillGroupRowHTML(gid, lvs, loadout) {
+function sgSkillGroupRowHTML(gid, lvs, loadout, skillsSnapshot) {
   var g = SKILLS2[gid];
   if (!g) return '';
   var groupRef = 'sg:' + gid;
@@ -7597,7 +7621,7 @@ function sgSkillGroupRowHTML(gid, lvs, loadout) {
     '</div><div class="sg-stage-track">';
   for (var i = 0; i < g.tiers.length; i++) {
     if (i > 0) h += '<span class="sg-stage-arrow" aria-hidden="true">➤</span>';
-    h += sgStageNodeHTML(gid, i, lvs, loadout);
+    h += sgStageNodeHTML(gid, i, lvs, loadout, skillsSnapshot);
   }
   return h + '</div></div>';
 }
@@ -7612,7 +7636,7 @@ function renderSkill2Modal(body, gid, skillsSnapshot, headerSnapshot) {
   if (selectedTier === null || selectedTier < 0 || selectedTier >= g.tiers.length) selectedTier = 0;
   var tier = g.tiers[selectedTier];
   var lv = lvs[selectedTier] || 0;
-  var locked = !sgStageUnlocked(lvs, selectedTier);
+  var locked = !sgStageUnlocked(gid, lvs, selectedTier, skillsSnapshot);
   var gold = Number(headerSnapshot && headerSnapshot.player && headerSnapshot.player.gold) || 0;
   var pendingAttrs = pendingUiButtonAttributes(nodePendingKey(ref));
   var inLoadout = skillViewLoadout(skillsSnapshot).indexOf(ref) >= 0;
@@ -7644,7 +7668,7 @@ function renderSkill2Modal(body, gid, skillsSnapshot, headerSnapshot) {
     '<div class="sk-desc">' + describeSkill2Tier(gid, selectedTier, Math.max(1, lv)) + '</div>' +
     (!locked && !atCap ? '<div class="skd-next dim-text">下一級：' + describeSkill2Tier(gid, selectedTier, lv + 1) + '</div>' : '') +
     (tier.desc ? '<div class="sk-flavor">' + esc(tier.desc) + '</div>' : '') +
-    (locked ? '<div class="hint skill-unlock-hint">🔒 前一階需至少 Lv.1 才能解鎖；目前僅可查看</div>' : '') +
+    (locked ? '<div class="hint skill-unlock-hint">🔒 ' + esc(sgStageLockReason(gid, selectedTier, skillsSnapshot)) + '；目前僅可查看</div>' : '') +
     '</div>';
 
   h += '<div class="skill-modal-points">金幣：' + fmt(gold) + '</div>';
@@ -7915,14 +7939,14 @@ function showSkillTooltip(ref, anchorEl) {
     var sgTipTier = sgTierIndexOf(ref);
     if (sgTipTier !== null && sgTipTier >= 0 && sgTipTier < sgG.tiers.length) {
       var sgTier = sgG.tiers[sgTipTier];
-      var sgLocked = !sgStageUnlocked(sgLvs, sgTipTier);
+      var sgLocked = !sgStageUnlocked(sgTipGid, sgLvs, sgTipTier, skillsSnapshot);
       var sgH = '<div class="skt-name">' + sgG.emoji + ' ' + esc(sgTier.name) +
         ' <span class="dim-text">第' + (sgTipTier + 1) + '階｜Lv.' + (sgLvs[sgTipTier] || 0) + '/' + SG_TIER_MAX_LV + '</span></div>';
       sgH += '<div class="skt-meta">' + esc(sgG.name) + '　' +
         ((typeof skills2IsPassive === 'function' && skills2IsPassive(sgTipGid))
           ? '🌀 主動型被動（需裝配技能列）' : '🔵 ' + (Number(sgG.cost) || 0) + ' MP　⏱️ ' + sgG.cd + 's') + '</div>';
       sgH += '<div class="skt-desc">' + describeSkill2Tier(sgTipGid, sgTipTier, sgLvs[sgTipTier] || 0) + '</div>';
-      if (sgLocked) sgH += '<div class="skt-lock skill-unlock-hint">🔒 前一階需至少 Lv.1 才能解鎖</div>';
+      if (sgLocked) sgH += '<div class="skt-lock skill-unlock-hint">🔒 ' + esc(sgStageLockReason(sgTipGid, sgTipTier, skillsSnapshot)) + '</div>';
       sgH += '<div class="skt-hint">點擊查看升級面板</div>';
       showSkillTooltipHTML(tip, sgH, anchorEl);
       return;
