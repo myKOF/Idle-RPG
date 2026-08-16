@@ -631,13 +631,23 @@ function sgQueueFlyingProjectile(pEnt, st, gid, dmgVal, origin, angle, length, f
   var start = origin && isFinite(origin.x) && isFinite(origin.y)
     ? { x: Number(origin.x), y: Number(origin.y) } : null;
   var speed = SG_FLYING_PROJECTILE_SPEED;
-  var travel = Math.max(0.05, Number(length) / speed);
+  var travel = extra && Number(extra.travelMs) > 0
+    ? Math.max(0.05, Number(extra.travelMs) / 1000)
+    : Math.max(0.05, Number(length) / speed);
   var p = {
     pEnt: pEnt, st: st, gid: gid, dmgVal: dmgVal, origin: start,
     angle: Number(angle) || 0, length: Number(length), speed: speed,
     startAt: now, lastAt: now, lastDistance: 0, endAt: now + travel,
     fallbackTargets: fallbackTargets || [], floatSel: floatSel,
     out: out, states: [], started: false,
+    hitFn: extra && typeof extra.hitFn === 'function' ? extra.hitFn : null,
+    rehit: !(extra && extra.singleHit),
+    waitForEnd: !!(extra && extra.waitForEnd),
+    targetOnly: !!(extra && extra.targetOnly),
+    burnSpec: extra && extra.burnSpec || null,
+    victims: extra && extra.victims || null,
+    splitTargets: extra && extra.splitTargets || null,
+    splitDmgVal: extra && Number(extra.splitDmgVal) > 0 ? Number(extra.splitDmgVal) : 0,
     spreadPct: extra && extra.spreadPct || 0,
     spreadCount: extra && extra.spreadCount || 0,
     halfWidthPx: extra && Number(extra.halfWidthPx) > 0 ? Number(extra.halfWidthPx) : 0,
@@ -670,6 +680,10 @@ function sgProjectileState(projectile, target) {
 
 function sgProjectileHit(projectile, target, ctx) {
   if (!target || target.hp <= 0) return;
+  if (projectile.hitFn) {
+    projectile.hitFn(projectile, target, ctx);
+    return;
+  }
   var res = sgHitOne(projectile.pEnt, projectile.st, target, projectile.dmgVal,
     projectile.gid, projectile.floatSel, projectile.out, 0);
   if (!res || res.miss) return;
@@ -710,14 +724,19 @@ function sgTickFlyingProjectiles(dt, ctx) {
       crossed = bfSegmentTargets(projectile.origin, projectile.angle,
         projectile.lastDistance, distance, enemies,
         Math.max(SG_FLYING_PROJECTILE_HALF_WIDTH, projectile.halfWidthPx || 0));
-    } else if (!projectile.started) {
+    } else if (!projectile.started && (!projectile.waitForEnd || now >= projectile.endAt)) {
       crossed = projectile.fallbackTargets.slice();
     } else {
       crossed = [];
     }
+    if (projectile.targetOnly) {
+      crossed = (now >= projectile.endAt && projectile.fallbackTargets.length)
+        ? [projectile.fallbackTargets[0]] : [];
+    }
     for (var ci = 0; ci < crossed.length; ci++) {
       if (sgProjectileState(projectile, crossed[ci])) continue;
-      var state = { ent: crossed[ci], nextAt: now + SG_FLYING_PROJECTILE_REHIT_SEC, repeated: false };
+      var state = { ent: crossed[ci], nextAt: now + SG_FLYING_PROJECTILE_REHIT_SEC,
+        repeated: !projectile.rehit };
       projectile.states.push(state);
       sgProjectileHit(projectile, crossed[ci], ctx);
     }
@@ -1455,6 +1474,60 @@ function sgMeteorTargetBag(primary, pool, radius) {
    第 7 階殞石術依設計文檔「改為」召喚三顆殞石：本體傷害%與範圍改讀第 7 階，
    第 2~6 階的進化效果照舊生效。
    =========================================================================== */
+function sgFireballProjectilePlan(target) {
+  var geomOk = (typeof bfPos === 'function') && !!bfPos(target) &&
+    (typeof bfPlayerPos === 'function') && (typeof bfTravelDistance === 'function');
+  var origin = geomOk ? bfPlayerPos() : null;
+  var length = geomOk ? Math.max(1, bfTravelDistance(target)) : 1;
+  var angle = geomOk && typeof bfAngleTo === 'function' ? bfAngleTo(target) : 0;
+  /* 一般飛行物速度＝SG_FLYING_PROJECTILE_SPEED；不使用殞石的 0.70 慢速倍率。 */
+  var travelMs = geomOk
+    ? Math.max(100, Math.round(length / SG_FLYING_PROJECTILE_SPEED * 1000))
+    : 260;
+  return { origin: origin, length: length, angle: angle, travelMs: travelMs,
+    waitForEnd: !geomOk };
+}
+
+function sgFireballSplitProjectileHit(projectile, target, ctx) {
+  var before = projectile.out.dmg;
+  var res = sgHitOne(projectile.pEnt, projectile.st, target, projectile.dmgVal,
+    'fireball', projectile.floatSel, projectile.out, 0);
+  if (res && !res.miss && projectile.burnSpec) sgApplyBurn(target, projectile.burnSpec);
+  if (ctx.onDamage && projectile.out.dmg > before) ctx.onDamage(projectile.out.dmg - before);
+}
+
+function sgFireballProjectileHit(projectile, target, ctx) {
+  var before = projectile.out.dmg;
+  var victims = projectile.victims && projectile.victims.length ? projectile.victims : [target];
+  for (var i = 0; i < victims.length; i++) {
+    var victim = victims[i];
+    if (!victim || victim.hp <= 0) continue;
+    var res = sgHitOne(projectile.pEnt, projectile.st, victim, projectile.dmgVal,
+      'fireball', projectile.floatSel, projectile.out, 0);
+    if (res && !res.miss && projectile.burnSpec) sgApplyBurn(victim, projectile.burnSpec);
+  }
+  if (ctx.onDamage && projectile.out.dmg > before) ctx.onDamage(projectile.out.dmg - before);
+
+  /* 火球爆裂必須在本體飛到並爆炸後才生成下一批一般小火球。 */
+  var splits = projectile.splitTargets || [];
+  for (var si = 0; si < splits.length; si++) {
+    var plan = sgFireballProjectilePlan(splits[si]);
+    sgEmitVfx('fireball', [splits[si]], projectile.floatSel, {
+      fxKind: 'projectile', variant: 'fireball-small', elem: 'fire', count: 1,
+      travelMs: [plan.travelMs], projectile: true
+    });
+    sgEmitVfx('fireball', [splits[si]], projectile.floatSel, {
+      fxKind: 'burst', variant: 'fire-explosion', elem: 'fire', delayMs: plan.travelMs
+    });
+    sgQueueFlyingProjectile(projectile.pEnt, projectile.st, 'fireball', projectile.splitDmgVal,
+      plan.origin, plan.angle, plan.length, projectile.floatSel, [splits[si]], {
+        singleHit: true, targetOnly: true, waitForEnd: plan.waitForEnd,
+        travelMs: plan.travelMs, hitFn: sgFireballSplitProjectileHit,
+        burnSpec: projectile.burnSpec
+      }, projectile.out);
+  }
+}
+
 function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var t = g.tiers;
   var meteor = lvs[6] > 0;
@@ -1463,9 +1536,10 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var dmgVal = sgGroupBaseStat(g, st) * sgVal(srcFx, 'pct', srcLv) / 100;
   var radius = bfMeterPx(sgVal(srcFx, 'm', srcLv));
   var volleys = meteor ? Math.max(1, Math.floor(Number(t[6].fx.count) || 3)) : 1;
+  var fireballPlan = sgFireballProjectilePlan(primary);
   var rawTravelMs = (typeof bfTravelSeconds === 'function')
-    ? Math.round(bfTravelSeconds(primary) * 1000) : 0;
-  var travelMs = meteor ? Math.min(SG_METEOR_MAX_TRAVEL_MS, rawTravelMs) : rawTravelMs;
+    ? Math.round(bfTravelSeconds(primary) * 1000) : fireballPlan.travelMs;
+  var travelMs = meteor ? Math.min(SG_METEOR_MAX_TRAVEL_MS, rawTravelMs) : fireballPlan.travelMs;
   /* Canvas／DOM 殞石都以 0.70 速度倍率播放；模擬層使用同一落地時間，
      因此每顆只錯開 350ms，不因各目標距離不同而破壞節奏。 */
   var meteorFallMs = meteor ? Math.round(travelMs / 0.70) : travelMs;
@@ -1488,8 +1562,8 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       });
     } else {
       sgEmitVfx('fireball', [primary], floatSel, {
-        fxKind: 'projectile', variant: 'fireball', elem: 'fire', count: 1,
-        travelMs: [travelMs], projectile: true
+        fxKind: 'projectile', variant: 'fireball-small', elem: 'fire', count: 1,
+        travelMs: [fireballPlan.travelMs], projectile: true
       });
       sgEmitVfx('fireball', victims, floatSel, {
         fxKind: 'burst', variant: 'fire-explosion', elem: 'fire',
@@ -1500,28 +1574,22 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     if (meteor) {
       sgQueueMeteor(pEnt, st, dmgVal, meteorTarget, victims, burnSpec, floatSel, out,
         GT + hitDelay / 1000);
-    } else for (var i = 0; i < victims.length; i++) {
-      var res = sgHitOne(pEnt, st, victims[i], dmgVal, 'fireball', floatSel, out, hitDelay);
-      if (res && !res.miss && burnSpec) sgApplyBurn(victims[i], burnSpec);
-    }
-
-    // 火球爆裂：爆炸後分裂出小火球射向目標範圍內的其他敵人
-    if (!meteor && lvs[2] > 0) {
-      var splitFx = t[2].fx;
-      var splits = bfNearestOthers(primary, pool, Math.max(1, Math.floor(Number(splitFx.count) || 3)),
-        bfMeterPx(Number(splitFx.m) || 20));
-      if (splits.length) {
-        sgEmitVfx('fireball', splits, floatSel, {
-          fxKind: 'projectile', variant: 'fireball', elem: 'fire', count: 1,
-          delayMs: hitDelay, projectile: true
-        });
-        var splitVal = dmgVal * sgVal(splitFx, 'pct', lvs[2]) / 100;
-        for (var s = 0; s < splits.length; s++) {
-          var sres = sgHitOne(pEnt, st, splits[s], splitVal, 'fireball', floatSel, out,
-            hitDelay + sgStaggerMs(s + 1));
-          if (sres && !sres.miss && burnSpec) sgApplyBurn(splits[s], burnSpec);
-        }
+    } else {
+      var splitTargets = [];
+      var splitDmgVal = 0;
+      if (lvs[2] > 0) {
+        var splitFxPlan = t[2].fx;
+        splitTargets = bfNearestOthers(primary, pool,
+          Math.max(1, Math.floor(Number(splitFxPlan.count) || 3)),
+          bfMeterPx(Number(splitFxPlan.m) || 20));
+        splitDmgVal = dmgVal * sgVal(splitFxPlan, 'pct', lvs[2]) / 100;
       }
+      sgQueueFlyingProjectile(pEnt, st, 'fireball', dmgVal,
+        fireballPlan.origin, fireballPlan.angle, fireballPlan.length, floatSel, [primary], {
+          singleHit: true, targetOnly: true, waitForEnd: fireballPlan.waitForEnd,
+          travelMs: fireballPlan.travelMs, hitFn: sgFireballProjectileHit,
+          victims: victims, splitTargets: splitTargets, splitDmgVal: splitDmgVal, burnSpec: burnSpec
+        }, out);
     }
   }
 }

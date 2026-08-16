@@ -685,6 +685,17 @@ function vfxBuildFlareFlame(parent, small, sizeScale) {
   update(lastAt);
 }
 
+/* 一般火球專用的小型彈體：不用殞石的 flare emitter，改成短尾焰＋小核心，
+   只配合 vfxProjectile 的直線投射物位移，避免視覺上再被誤認成天降殞石。 */
+function vfxBuildSmallFireball(parent) {
+  var core = document.createElement('span');
+  core.className = 'vfx-fireball-small-core';
+  parent.appendChild(core);
+  var tail = document.createElement('span');
+  tail.className = 'vfx-fireball-small-tail';
+  parent.appendChild(tail);
+}
+
 /* 彈幕專用投射物：同一目標建立左右兩側、三條 lane 的交錯彈道，
    用來表現 arcane-barrage 這類密集魔法，而不是逐目標重複建立同一條線。 */
 function vfxBarrageProjectile(spec, layer, from, to, side, lane, delayMs, travelMs) {
@@ -753,7 +764,8 @@ function vfxProjectile(spec, layer, from, to, delayMs, travelMs) {
   var fromPt = from;
   var dx = to.x - fromPt.x, dy = to.y - fromPt.y;
   var projClass = vfxProjectileCls(spec);
-  var d = vfxNode('vfx-proj ' + projClass, layer, spec);
+  var smallFireball = spec.variant === 'fireball-small' || spec.variant === 'fireball';
+  var d = vfxNode('vfx-proj ' + projClass + (smallFireball ? ' vfx-proj-fireball-small' : ''), layer, spec);
   d.style.setProperty('--vfx-x0', fromPt.x + 'px');
   d.style.setProperty('--vfx-y0', fromPt.y + 'px');
   d.style.setProperty('--vfx-x1', to.x + 'px');
@@ -766,9 +778,8 @@ function vfxProjectile(spec, layer, from, to, delayMs, travelMs) {
   if (projClass === 'vfx-proj-glyph' || projClass === 'vfx-proj-knife') {
     core.textContent = spec.glyph || (projClass === 'vfx-proj-knife' ? '🔪' : '✨');
   }
-  if (spec.variant === 'fireball') {
-    /* 火球術只改變 emitter 尺寸為 65%，粒子形狀與生命週期仍遵循 Phaser。 */
-    vfxBuildFlareFlame(d, false, 0.65);
+  if (smallFireball) {
+    vfxBuildSmallFireball(d);
   } else {
     d.appendChild(core);
     var trail = document.createElement('span');

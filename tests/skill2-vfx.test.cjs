@@ -109,8 +109,11 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   const css = read('css/style.css');
 
   assert.match(skills2, /var SG_METEOR_INTERVAL_MS = 350/);
+  assert.match(skills2, /var SG_FLYING_PROJECTILE_SPEED = 240/);
   assert.match(skills2, /travelMs: \[travelMs\]/);
   assert.match(skills2, /sgQueueMeteor\(pEnt, st, dmgVal, meteorTarget/);
+  assert.match(skills2, /variant: 'fireball-small'/);
+  assert.match(skills2, /hitFn: sgFireballProjectileHit/);
   assert.match(skills, /id === 'fireball'[\s\S]*skills2FireballIsMeteor/);
   assert.match(skills2, /function skills2FireballIsMeteor\(/);
 
