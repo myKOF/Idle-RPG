@@ -38,7 +38,7 @@ test('VFX exposes quality tiers and bounded frame scheduling', () => {
   assert.match(vfx, /VFX_MERGE_WINDOW_MS = 120/);
   assert.match(vfx, /VFX_STALE_EVENT_MS = 1500/);
   assert.match(vfx, /VFX_METEOR_MAX_DELAY_MS = 900/);
-  assert.match(vfx, /VFX_METEOR_MAX_TRAVEL_MS = 450/);
+  assert.match(vfx, /VFX_METEOR_MAX_TRAVEL_MS[\s\S]*\? VFX_METEOR_RAW_TRAVEL_MS : 700/);
   assert.match(vfx, /VFX_NODE_WATCHDOG_MS = 1000/);
   assert.match(vfx, /VFX_METEOR_HARD_LIFETIME_MS = 2800/);
   assert.match(vfx, /function vfxScheduleFlush\(\)/);
@@ -90,7 +90,7 @@ test('Meteor timing is bounded, stale events are skipped, and tracked nodes have
     fxKind: 'rain', variant: 'meteor', delayMs: 5000, travelMs: [5000]
   });
   assert.equal(safe.delayMs, 900);
-  assert.deepEqual(safe.travelMs, [450]);
+  assert.deepEqual(safe.travelMs, [700]);
 
   let rendered = 0;
   context.renderCombatVfx = () => { rendered++; };

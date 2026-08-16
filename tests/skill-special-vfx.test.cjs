@@ -10,6 +10,7 @@ const skills = read('js/skills.js');
 const vfx = read('js/vfx.js');
 const renderer = read('js/battle-renderer.js');
 const shim = read('js/worker/shim.js');
+const data = read('js/data.js');
 
 test('三個指定技能使用專用 VFX 與命中規格', () => {
   assert.match(skills, /chainLightning:[\s\S]*?hits:\s*3/);
@@ -19,9 +20,10 @@ test('三個指定技能使用專用 VFX 與命中規格', () => {
 
   assert.match(vfx, /function vfxBarrageProjectile\(/);
   assert.match(vfx, /function vfxMeteorProjectile\(/);
-  assert.match(vfx, /VFX_METEOR_SPEED_MULTIPLIER = 0\.70/);
+  assert.match(data, /var VFX_METEOR_SPEED_MULTIPLIER = 0\.70/);
   assert.match(vfx, /var fall = Math\.round\(rawFall \/ meteorSpeed\)/);
-  assert.match(vfx, /var diagonalRise = diagonalRun \* Math\.tan\(Math\.PI \/ 3\)/);
+  assert.match(vfx, /VFX_METEOR_DROP_RUN/);
+  assert.match(vfx, /VFX_METEOR_DROP_ANGLE_RAD/);
   assert.match(vfx, /var smallOffsets = \[-0\.22, -0\.04, 0\.16, 0\.32\]/);
   assert.match(vfx, /vfxBuildSmallFireball\(d\)/);
   assert.match(vfx, /var VFX_METEOR_SIZE_SCALE = 1\.30/);
@@ -62,7 +64,8 @@ test('三個指定技能使用專用 VFX 與命中規格', () => {
   assert.match(renderer, /var distance = 100 \* p\._age/);
   assert.match(renderer, /function flameColorIntAt\(/);
   assert.match(renderer, /g\.ellipse\(0, 0, 10 \+ radius/);
-  assert.match(renderer, /var dur = Math\.min\(1\.15, Math\.max\(0\.7, meteorTravel \/ 1000 \/ 0\.70\)\)/);
+  assert.match(renderer, /var dur = Math\.min\(1\.15, Math\.max\(0\.7, meteorTravel \/ 1000 \/ VFX_METEOR_SPEED_MULTIPLIER\)\)/);
+  assert.match(renderer, /spawnImpact\(cx, cy, spec, true\);[\s\S]*addShake\(8, spec\)/);
   assert.match(renderer, /if \(spec\.variant === 'arcane-barrage'/);
   assert.match(renderer, /for \(var lane = 0; lane < 3; lane\+\+\)[\s\S]*spawnBarrageMissile\(id, spec, -1, lane[\s\S]*spawnBarrageMissile\(id, spec, 1, lane/);
   assert.match(renderer, /function spawnContinuousChainLightning\(/);

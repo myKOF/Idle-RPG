@@ -8581,6 +8581,35 @@ textarea:disabled,
   }
 }
 
+/* 殞石落地的整個戰鬥場景震動；獨立於卡片受擊抖動，避免兩者互相改幅度。 */
+@keyframes vfxSceneShakeStrong {
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  15% {
+    transform: translate(-4.5px, 2.5px);
+  }
+
+  30% {
+    transform: translate(4.5px, -2.5px);
+  }
+
+  45% {
+    transform: translate(-3.5px, -2px);
+  }
+
+  60% {
+    transform: translate(3.5px, 2px);
+  }
+
+  80% {
+    transform: translate(-2px, 1px);
+  }
+}
+
 /* 元素色閃光只用 brightness/saturate（純色彩矩陣、無光柵成本）——
    drop-shadow 會把整張卡（名字＋血條＋狀態列）當 alpha 形狀取樣，血條與浮字在
    filter 生效期間每幀變動，全場技 8 張卡同時受擊時等於每幀重算 8 次模糊。
@@ -8623,7 +8652,7 @@ textarea:disabled,
 }
 
 .battle-scene.vfx-scene-shake-strong {
-  animation: vfxCardShakeStrong 0.5s ease-out;
+  animation: vfxSceneShakeStrong 0.54s ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {

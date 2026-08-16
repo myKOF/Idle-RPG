@@ -1015,6 +1015,17 @@ var VFX_PROJECTILE_SPEED_CELLS = 14 * VFX_PROJECTILE_SPEED_MULTIPLIER;
 var VFX_TRAVEL_MIN_SEC = 0.06 / VFX_PROJECTILE_SPEED_MULTIPLIER;
 var VFX_TRAVEL_MAX_SEC = 0.45 / VFX_PROJECTILE_SPEED_MULTIPLIER;
 
+/* 殞石落下時間軸：殞石不是從玩家飛向敵人的普通投射物，
+   而是沿固定 60° 天降路徑從天空落到地面。落地扣血與畫面落點都使用
+   「天空到地面的路徑距離 ÷ 實際落下速度」，避免施法瞬間先扣血。 */
+var VFX_METEOR_SPEED_MULTIPLIER = 0.70;
+var VFX_METEOR_DROP_RUN = 180;
+var VFX_METEOR_DROP_ANGLE_RAD = Math.PI / 3;
+var VFX_METEOR_DROP_DISTANCE = VFX_METEOR_DROP_RUN / Math.cos(VFX_METEOR_DROP_ANGLE_RAD);
+var VFX_METEOR_FALL_SPEED = 360;
+var VFX_METEOR_FALL_MS = Math.round(VFX_METEOR_DROP_DISTANCE / VFX_METEOR_FALL_SPEED * 1000);
+var VFX_METEOR_RAW_TRAVEL_MS = Math.round(VFX_METEOR_FALL_MS * VFX_METEOR_SPEED_MULTIPLIER);
+
 /* 無屬性技能的特效主色：依技能系統分類取色（js/vfx.js 與 skillVfxSpec 共用）。 */
 var VFX_CAT_COLORS = {
   phys: '#e6ddc8',      // 物理：刀光的冷白

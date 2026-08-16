@@ -2167,16 +2167,20 @@ var BattleRenderer = (function () {
   function spawnMeteor(rect, spec) {
     var theme = themeOf(spec);
     var cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
-    var run = Math.max(150, Math.min(230, rect.h + 120));
-    var rise = run * Math.tan(Math.PI / 3);
+    var run = (typeof VFX_METEOR_DROP_RUN === 'number' && VFX_METEOR_DROP_RUN > 0)
+      ? VFX_METEOR_DROP_RUN : 180;
+    var rise = run * Math.tan(
+      (typeof VFX_METEOR_DROP_ANGLE_RAD === 'number') ? VFX_METEOR_DROP_ANGLE_RAD : Math.PI / 3);
     var mainFrom = { x: cx + run, y: cy - rise };
     var meteorTravel = (spec.travelMs && spec.travelMs[0]) || 500;
     /* 與 DOM vfxMeteor、技能傷害浮字相同：殞石固定慢 30%。 */
-    var dur = Math.min(1.15, Math.max(0.7, meteorTravel / 1000 / 0.70));
+    var dur = Math.min(1.15, Math.max(0.7, meteorTravel / 1000 / VFX_METEOR_SPEED_MULTIPLIER));
     var shockTheme = { c1: '#9f1d12', c2: '#f05a13', glow: '#d62f12' };
     spawnMeteorProjectile(spec, theme, mainFrom, { x: cx, y: cy }, 1, dur, 0, function () {
       /* 強化爆點本身就是這顆殞石唯一一次 Canvas 鏡頭晃動。 */
       spawnImpact(cx, cy, spec, true);
+      /* 把殞石落地震動提高到可見強度；同一個到達回呼只執行一次。 */
+      addShake(8, spec);
       spawnFireShockwave(cx, cy, rectRadius(rect), shockTheme);
     });
     var smallOffsets = [-0.22, -0.04, 0.16, 0.32];
