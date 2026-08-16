@@ -22,7 +22,7 @@ function dotTextureCanvas() {
   var g = c.getContext('2d');
   var grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
   grad.addColorStop(0, 'rgba(255,255,255,1)');
-  grad.addColorStop(0.55, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.8, 'rgba(255,255,255,1)');
   grad.addColorStop(1, 'rgba(255,255,255,0)');
   g.fillStyle = grad;
   g.fillRect(0, 0, 32, 32);
@@ -32,7 +32,7 @@ function ringTextureCanvas() {
   var c = document.createElement('canvas');
   c.width = c.height = 128;
   var g = c.getContext('2d');
-  var grad = g.createRadialGradient(64, 64, 64 * 0.58, 64, 64, 64);
+  var grad = g.createRadialGradient(64, 64, 64 * 0.85, 64, 64, 64);
   grad.addColorStop(0, 'rgba(255,255,255,0)');
   grad.addColorStop(0.5, 'rgba(255,255,255,1)');
   grad.addColorStop(1, 'rgba(255,255,255,0)');
@@ -49,13 +49,26 @@ function alphaAt(c, x, y) { return c.getContext('2d').getImageData(x, y, 1, 1).d
   var dot = dotTextureCanvas();
   chk('圓點：中心不透明', alphaAt(dot, 16, 16) > 250, 'alpha=' + alphaAt(dot, 16, 16));
   chk('圓點：邊緣完全透明', alphaAt(dot, 1, 1) < 5, 'alpha=' + alphaAt(dot, 1, 1));
-  chk('圓點：0.55 半徑內仍是實心', alphaAt(dot, 16 + 7, 16) > 250, 'alpha=' + alphaAt(dot, 23, 16));
+  chk('圓點：0.8 半徑內仍是實心（柔邊只佔最外 20%）',
+      alphaAt(dot, 16 + 12, 16) > 250, 'alpha@r12=' + alphaAt(dot, 28, 16));
 
   var ring = ringTextureCanvas();
-  var cen = alphaAt(ring, 64, 64), mid = alphaAt(ring, 64 + 50, 64), out = alphaAt(ring, 64 + 63, 64);
+  var cen = alphaAt(ring, 64, 64), peak = alphaAt(ring, 64 + 59, 64), out = alphaAt(ring, 64 + 63, 64);
   chk('環：中心透空（是圈不是餅）', cen < 5, 'alpha=' + cen);
-  chk('環：中段最亮', mid > 200, 'alpha=' + mid);
-  chk('環：外緣淡出', out < 60, 'alpha=' + out);
+  chk('環：峰值在半徑 59 附近', peak > 200, 'alpha@r59=' + peak);
+  chk('環：外緣淡出', out < 60, 'alpha@r63=' + out);
+  /* 以下三條是「厚度」的把關，直接對應 2026-08-16 的災情：亮帶佔半徑 53%
+     時圈的大小沒變，但糊成一顆大光球。眼睛分不出「圈變大」和「圈變厚」，
+     所以這件事必須用數字判。 */
+  chk('環：半徑 45 處必須是空的（亮帶沒有往內漫）',
+      alphaAt(ring, 64 + 45, 64) < 5, 'alpha@r45=' + alphaAt(ring, 64 + 45, 64));
+  chk('環：半徑 50 處仍是空的', alphaAt(ring, 64 + 50, 64) < 5,
+      'alpha@r50=' + alphaAt(ring, 64 + 50, 64));
+  var bandPx = 0;
+  for (var rr = 0; rr < 64; rr++) if (alphaAt(ring, 64 + rr, 64) > 128) bandPx++;
+  chk('環：亮帶寬度相對峰值半徑 < 25%（原版描邊約 13%）',
+      bandPx / 59.2 < 0.25, '亮帶 ' + bandPx + 'px = 峰值半徑的 ' +
+      (bandPx / 59.2 * 100).toFixed(0) + '%');
 
   log('---- 共用貼圖的生命週期（本次改動的最大風險）----');
   var app = new PIXI.Application();
@@ -89,8 +102,10 @@ function alphaAt(c, x, y) { return c.getContext('2d').getImageData(x, y, 1, 1).d
   // 讀畫面像素，確認後續 Sprite 真的畫出東西（不是空白）
   var gl = app.renderer.gl;
   var px = new Uint8Array(4);
-  // 讀第一個綠色環的中段亮點（WebGL 原點在左下，故 y 要翻轉）
-  gl.readPixels(30 + 17, app.canvas.height - 100, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+  /* 讀第一個綠色環的亮帶（WebGL 原點在左下，故 y 要翻轉）。
+     取樣點必須落在亮帶上：峰值半徑 59.2 × 縮放 0.35 ≈ 20.7px。
+     環改窄之後，舊的 17px 取樣點會掉進圈內的空洞，讀到全黑。 */
+  gl.readPixels(30 + 21, app.canvas.height - 100, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
   chk('後續 Sprite 確實有畫素輸出（非空白）', px[1] > 20 || px[0] > 20 || px[2] > 20,
       'rgba=' + px[0] + ',' + px[1] + ',' + px[2] + ',' + px[3]);
 
