@@ -49,14 +49,15 @@ test('飛刀彈射必須在上一段抵達後才開始下一段', () => {
   assert.doesNotMatch(canvasChain, /baseDelay \+ \(hopIndex - 1\) \* stagger/);
 });
 
-test('飛刀彈射與普攻不觸發角色動作，目標離場後延遲事件失效', () => {
+test('普攻觸發角色動作；飛刀彈射與連鎖不觸發，目標離場後延遲事件失效', () => {
   const renderer = read('js/battle-renderer.js');
   const onVfxStart = renderer.indexOf('function onVfx');
   const onVfxEnd = renderer.indexOf('/* ============ 傷害飄字', onVfxStart);
   const onVfx = renderer.slice(onVfxStart, onVfxEnd);
 
   assert.match(renderer, /function shouldAnimatePlayer\(spec\)/);
-  assert.match(renderer, /spec\.cat !== 'enemy' && spec\.cat !== 'basic'/);
+  assert.match(renderer, /spec\.cat !== 'enemy' &&\s*spec\.fxKind !== 'chain'/);
+  assert.doesNotMatch(renderer, /spec\.cat !== 'enemy' && spec\.cat !== 'basic'/);
   assert.match(renderer, /spec\.fxKind !== 'chain' && spec\.variant !== 'knife-bounce'/);
   assert.match(onVfx, /if \(fxGate\(spec\)\) return;\s*spec\.delayMs = 0;/);
   assert.match(onVfx, /if \(shouldAnimatePlayer\(spec\) && vfxTargetsLive\(spec\)\)/);
@@ -114,6 +115,8 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.match(skills2, /sgQueueMeteor\(pEnt, st, dmgVal, meteorTarget/);
   assert.match(skills2, /variant: 'fireball-small'/);
   assert.match(skills2, /hitFn: sgFireballProjectileHit/);
+  assert.match(skills2, /sgEmitVfx\('fireball', victims, floatSel, \{[\s\S]*variant: 'fire-explosion'/);
+  assert.match(skills2, /var fireballPlan = meteor \? null : sgFireballProjectilePlan\(primary\)/);
   assert.match(skills, /id === 'fireball'[\s\S]*skills2FireballIsMeteor/);
   assert.match(skills2, /function skills2FireballIsMeteor\(/);
 

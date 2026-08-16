@@ -17,7 +17,7 @@ test('一般受擊維持原尺寸，只有飛刀與血刃斬彈射命中縮為�
   assert.match(renderer, /function spawnImpact\(x, y, spec, strong, isBounceHit\)/);
   assert.match(renderer, /var impactScale = isBounceHit \? BOUNCE_HIT_RADIUS_SCALE : 1/);
   assert.match(renderer, /ring\.scale\.set\(\(1\.3 \+ maxR \* k\) \* impactScale \/ RING_TEX_RADIUS\)/);
-  assert.match(renderer, /spawnParticles\(x, y, strong \? 12 : 6, theme, strong \? 0\.9 : 0\.55, impactScale\)/);
+  assert.match(renderer, /spawnParticles\(x, y, fireExplosion \? 22 : \(strong \? 12 : 6\), theme,[\s\S]*fireExplosion \? 1\.45 \* impactScale : impactScale\)/);
   assert.match(renderer, /spawnImpact\(pt\.x, pt\.y, spec, false, true\)/);
   assert.match(renderer, /var t = 0, dur = 0\.24, R = big \? 54 : 36;/);
   assert.doesNotMatch(renderer, /slashScale/);

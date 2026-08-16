@@ -1536,13 +1536,18 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var dmgVal = sgGroupBaseStat(g, st) * sgVal(srcFx, 'pct', srcLv) / 100;
   var radius = bfMeterPx(sgVal(srcFx, 'm', srcLv));
   var volleys = meteor ? Math.max(1, Math.floor(Number(t[6].fx.count) || 3)) : 1;
-  var fireballPlan = sgFireballProjectilePlan(primary);
-  var rawTravelMs = (typeof bfTravelSeconds === 'function')
-    ? Math.round(bfTravelSeconds(primary) * 1000) : fireballPlan.travelMs;
-  var travelMs = meteor ? Math.min(SG_METEOR_MAX_TRAVEL_MS, rawTravelMs) : fireballPlan.travelMs;
-  /* Canvas／DOM 殞石都以 0.70 速度倍率播放；模擬層使用同一落地時間，
-     因此每顆只錯開 350ms，不因各目標距離不同而破壞節奏。 */
-  var meteorFallMs = meteor ? Math.round(travelMs / 0.70) : travelMs;
+  /* 一般火球只建立標準平射飛行物計畫；殞石的落地計時完全走另一個分支。 */
+  var fireballPlan = meteor ? null : sgFireballProjectilePlan(primary);
+  var travelMs = 0;
+  var meteorFallMs = 0;
+  if (meteor) {
+    var rawMeteorTravelMs = (typeof bfTravelSeconds === 'function')
+      ? Math.round(bfTravelSeconds(primary) * 1000) : SG_METEOR_MAX_TRAVEL_MS;
+    travelMs = Math.min(SG_METEOR_MAX_TRAVEL_MS, rawMeteorTravelMs);
+    /* Canvas／DOM 殞石都以 0.70 速度倍率播放；模擬層使用同一落地時間，
+       因此每顆只錯開 350ms，不因各目標距離不同而破壞節奏。 */
+    meteorFallMs = Math.round(travelMs / 0.70);
+  }
   var burnSpec = sgFireballBurnSpec(st, g, lvs);
   var nextMeteorTarget = meteor ? sgMeteorTargetBag(primary, pool, radius) : null;
 

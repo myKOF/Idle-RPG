@@ -1,5 +1,34 @@
 # AI_TASKS.md
 
+## Codex｜修正近戰普攻冷卻負數累積｜2026-08-16
+
+- 狀態：已完成（2026-08-16）
+- Owner：Codex
+- 目的：修正玩家追擊遠方敵人時普攻 `atkCd` 持續扣成負數，抵達近戰距離後在多個 Tick 連續觸發十幾次普攻的問題。
+- 根因：普攻距離閘門只阻止攻擊，沒有阻止冷卻計時器累積負債；抵達後每 Tick 都因 `atkCd <= 0` 重複出手。
+- 允許修改：`js/combat.js`、`index.html`、`tests/multi-enemy.test.cjs`、本文件。
+- 禁止修改：Worker Protocol、存檔格式、攻擊公式、目標選擇、戰鬥 VFX 與其他 AI／使用者進行中的檔案。
+- 前置依賴：既有連續座標近戰距離判定與普攻冷卻流程已存在；目標檔案衝突預檢無其他副本來源。
+- 測試要求：新增遠距離等待後抵達只觸發一發普攻的回歸測試；執行多敵人／戰鬥相關測試、JavaScript 語法檢查、`npm.cmd run build`、完整 `npm.cmd test` 與 `git diff --check`。
+- 完成條件：`atkCd` 不得低於 0；遠距離等待只保留 ready 狀態，抵達後正常依攻速倒數，不再出現連續補攻；建立 `[Codex]` 前綴 commit。
+- 驗證結果：`node --test tests/multi-enemy.test.cjs` 17/17；普攻／戰鬥相關定向測試 57/57；`node --check js/combat.js` 通過；`npm.cmd run build` 281/281；`git diff --check` 通過。完整 `npm.cmd test` 僅有既有未提交火球修改造成的 `tests/projectile-impact-size.test.cjs` 字串回歸失敗，本任務範圍內測試無失敗。
+- 後續接手者：Claude Code 唯讀 Review；使用者確認實機攻擊節奏穩定且不再長時間停頓後爆發連打。
+
+## Codex｜恢復近戰普攻角色動畫｜2026-08-16
+
+- 狀態：已完成（2026-08-16）
+- Owner：Codex
+- 目的：修正玩家走到敵人近戰距離後雖已進行普攻結算，角色卻不播放 `attack1~3` 動畫的問題。
+- 根因：`js/battle-renderer.js` 的 `shouldAnimatePlayer()` 將 `cat === 'basic'` 排除，導致普攻 VFX 只畫命中效果而不觸發玩家揮擊。
+- 允許修改：`js/battle-renderer.js`、`index.html`、`tests/skill2-vfx.test.cjs`、本文件。
+- 禁止修改：戰鬥公式、目標選擇、攻擊距離、Worker Protocol、存檔格式及其他 AI 進行中的檔案。
+- 前置依賴：既有 `doPlayerAttack()` 普攻 VFX 事件與 Canvas 角色動畫管線已存在；目標檔案衝突預檢無來源。
+- 測試要求：補上普攻可觸發角色動畫、飛刀彈射／連鎖不觸發角色動畫的回歸斷言；執行相關測試、JavaScript 語法檢查、`npm.cmd run build`、完整 `npm.cmd test` 與 `git diff --check`。
+- 完成條件：普攻事件恢復播放角色近戰動畫；飛刀彈射、連鎖與已離場目標的延遲事件行為不回歸；快取版號同步並建立 `[Codex]` 前綴 commit。
+- 驗證結果：`node --test tests/skill2-vfx.test.cjs` 11/11；`node --check js/battle-renderer.js`、`node --check js/combat.js` 通過；`npm.cmd run build` 281/281；完整 `npm.cmd test` 1433/1433；`git diff --check` 通過。
+- 已知風險：尚未在瀏覽器實機重新確認角色揮擊畫面，需由使用者確認走到敵人面前後的實際動畫與持續普攻體感。
+- 後續接手者：Claude Code 唯讀 Review；使用者確認實機走到敵人面前後會揮擊並持續普攻。
+
 ## Codex｜縮小目標投射物受擊特效半徑｜2026-08-16
 
 - 狀態：已完成（2026-08-16；已修正畫面中央大型圓環）
@@ -3389,15 +3418,15 @@ Commit：
 
 負責 AI：Codex
 
-任務內容：新增 `fireball-small` 的 DOM／Canvas 小型火球彈體；一般火球與火球爆裂改由標準飛行物佇列以 `SG_FLYING_PROJECTILE_SPEED` 推進，抵達後才結算本體範圍傷害、燃燒與分裂小火球；殞石仍維持獨立的天降路徑與速度。
+任務內容：新增 `fireball-small` 的 DOM／Canvas 小型火球彈體；一般火球與火球爆裂改由標準飛行物佇列以 `SG_FLYING_PROJECTILE_SPEED` 推進，沿直線平飛抵達後才結算本體範圍傷害、燃燒與分裂小火球；火球使用 3 倍尺寸、短拖尾與核心脈動動畫，殞石仍維持獨立的天降路徑與速度。
 
 技術影響：一般火球的命中時序改為實際飛行物抵達後，殞石排程與舊版火球自動施放抑制不變；不變更存檔格式與 Worker 協議。
 
-允許修改：`js/skills2.js`、`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`tests/skill2-magic-fire.test.cjs`、`tests/skill2-vfx.test.cjs`、`tests/skill-special-vfx.test.cjs`、`docs/AI_TASKS.md`。
+允許修改：`js/skills2.js`、`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`tests/skill2-magic-fire.test.cjs`、`tests/skill2-vfx.test.cjs`、`tests/skill-special-vfx.test.cjs`、`tests/projectile-impact-size.test.cjs`、`docs/AI_TASKS.md`。
 
 禁止修改：殞石落地規格、其他技能群組效果、存檔格式、Worker 協議與無關 UI。
 
-測試結果：一般火球／魔法與 VFX 相關測試 32/32 通過；完整測試與建置待本任務結束前執行。
+測試結果：一般火球／魔法與 VFX 相關測試 32/32 通過；完整測試 1434/1434 通過；`npm.cmd run build` 281/281 通過；`git diff --check` 通過。
 
 完成條件：火球不再呼叫殞石 flare 畫法；一般火球只進入標準飛行物佇列；命中後才產生爆炸與範圍傷害；建立 Codex commit。
 
@@ -3434,5 +3463,29 @@ Commit：
 需要 Claude Review：否（沿用既有 VFX 與技能資料流，範圍明確）。
 
 需要 Antigravity 驗證：建議，驗證三顆落點、血條落地同步、震波與鏡頭晃動。
+
+完成後交給：使用者／主整合工作區。
+
+## 任務：火球尺寸與標準平射子彈邏輯修正
+
+使用者需求：火球長寬放大 3 倍；參考敵人遠程普攻的標準飛行子彈，採平射、不使用拋物線，且不得與殞石飛行時間或速度相依；命中後要有爆炸特效。
+
+任務狀態：已完成
+
+任務分類：戰鬥 VFX／投射物飛行
+
+負責 AI：Codex
+
+任務內容：將一般火球 DOM／Canvas 核心與尾焰尺寸統一放大 3 倍；保留 `spawnProjectile` 的一般投射物位移與直線插值，技能層使用獨立的 `SG_FLYING_PROJECTILE_SPEED` 計算飛行時間；殞石計時分支與火球分離；保留命中後 `fire-explosion` 爆炸事件並加深紅橙火焰、放大爆炸環與火花散射。
+
+技術影響：一般火球外觀與平射飛行時序調整；不變更殞石落地規格、存檔格式或 Worker 協議。
+
+測試結果：火球／VFX 相關測試 32/32、完整測試 1433/1433、建置 281/281 通過。
+
+完成條件：火球寬高為原本 3 倍、平射且不走拋物線、不引用殞石慢速／落地計時、抵達後播放爆炸；建立 Codex commit。
+
+需要 Claude Review：否（沿用既有標準投射物流程，範圍明確）。
+
+需要 Antigravity 驗證：建議，確認畫面中火球尺寸、平射路徑與命中爆炸。
 
 完成後交給：使用者／主整合工作區。

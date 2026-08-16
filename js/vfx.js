@@ -524,10 +524,16 @@ function vfxImpact(spec, layer, pt, targetId, delayMs, isBounceHit) {
   else cls = 'vfx-impact vfx-impact-' + elemKey;
   var d = vfxNode(cls, layer, spec);
   vfxPlace(d, pt);
+  if (v === 'fire-explosion') {
+    d.style.setProperty('--vfx-c1', '#c51e0d');
+    d.style.setProperty('--vfx-c2', '#ffd447');
+    d.style.setProperty('--vfx-glow', '#ff3b0a');
+  }
   if (isBounceHit) d.style.setProperty('--vfx-hit-scale', String(VFX_BOUNCE_HIT_RADIUS_SCALE));
   d.style.animationDelay = delayMs + 'ms';
 
   var n = VFX_IMPACT_PARTS[elemKey] || 4;
+  if (v === 'fire-explosion') n = 16;
   if (v === 'detonate' || v === 'blood-explosion' || v === 'zero-infection' || v === 'nova') n = 7;
   if (_vfxQuality === VFX_QUALITY_LEVELS.REDUCED) n = 1;
   for (var i = 0; i < n; i++) {
@@ -538,7 +544,8 @@ function vfxImpact(spec, layer, pt, targetId, delayMs, isBounceHit) {
       s.style.setProperty('--dy', (-(20 + Math.random() * 30)).toFixed(1) + 'px');
     } else {
       var ang = (Math.PI * 2) * (i / n) + Math.random() * 0.9;
-      var dist = 6 + Math.random() * 9 + (strong ? 5 : 0);
+      var dist = v === 'fire-explosion'
+        ? 14 + Math.random() * 22 : 6 + Math.random() * 9 + (strong ? 5 : 0);
       s.style.setProperty('--dx', (Math.cos(ang) * dist).toFixed(1) + 'px');
       s.style.setProperty('--dy', (Math.sin(ang) * dist).toFixed(1) + 'px');
     }
@@ -570,8 +577,8 @@ function vfxImpact(spec, layer, pt, targetId, delayMs, isBounceHit) {
 /* ---- 投射物 ----
    元素化彈體：外層節點做 x0→x1 位移（等速，時長＝travelMs），內層 core／trail
    以 --vfx-rot 對齊飛行方向。火球術是我方到敵方的直線；殞石術由 vfxMeteor
-   另外建立 60° 天降路徑。火焰彈體使用 Phaser 範例同款 flares.png 的白色 flare
-   粒子，透過多層色票與縮放／淡出組成火舌，而不是單一圓形漸層。
+   另外建立 60° 天降路徑。殞石才使用 Phaser 範例同款 flares.png 的白色 flare
+   粒子；一般火球改用獨立的短動態尾焰與核心脈動，避免和殞石外觀混用。
    vfxBarrageProjectile 是多線彈幕；vfxProjectile 是一般單線投射物，兩者都只
    表現視覺飛行，命中時機由 renderCombatVfx 的 travelMs／delayMs 對齊。 */
 function vfxProjectileCls(spec) {
@@ -688,11 +695,14 @@ function vfxBuildFlareFlame(parent, small, sizeScale) {
 /* 一般火球專用的小型彈體：不用殞石的 flare emitter，改成短尾焰＋小核心，
    只配合 vfxProjectile 的直線投射物位移，避免視覺上再被誤認成天降殞石。 */
 function vfxBuildSmallFireball(parent) {
+  var scale = 3;
   var core = document.createElement('span');
   core.className = 'vfx-fireball-small-core';
+  core.style.setProperty('--fireball-size-scale', scale);
   parent.appendChild(core);
   var tail = document.createElement('span');
   tail.className = 'vfx-fireball-small-tail';
+  tail.style.setProperty('--fireball-size-scale', scale);
   parent.appendChild(tail);
 }
 

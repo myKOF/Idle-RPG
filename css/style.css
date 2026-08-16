@@ -6779,7 +6779,7 @@ textarea:disabled,
   filter: drop-shadow(0 0 8px var(--flare-color, #facc22));
 }
 
-/* 火球術由 JS 從我方到敵方直線飛行；火焰的方向由 flare 粒子本身對齊飛行角度。 */
+/* 火球術由 JS 從我方到敵方直線飛行；一般火球使用獨立核心與短尾焰。 */
 .vfx-proj-fire .vfx-proj-trail { display: none; }
 
 /* 一般火球：獨立的小型平射彈體，不使用殞石的 flare emitter／天降尾焰。 */
@@ -6790,25 +6790,45 @@ textarea:disabled,
 .vfx-proj-fireball-small .vfx-fireball-small-core {
   left: 0;
   top: 0;
-  width: 13px;
-  height: 13px;
+  width: calc(13px * var(--fireball-size-scale, 3));
+  height: calc(13px * var(--fireball-size-scale, 3));
   border-radius: 50%;
   transform: translate(-50%, -50%);
   background: radial-gradient(circle at 38% 35%, #fff8b0 0 18%, #ffc247 34%, #f04a19 70%, #9f1d12 100%);
-  box-shadow: 0 0 5px #ffcf54, 0 0 12px #f04a19;
+  box-shadow: 0 0 15px #ffcf54, 0 0 36px #f04a19;
+  animation: vfxFireballCorePulse 0.16s ease-in-out infinite alternate;
 }
 
 .vfx-proj-fireball-small .vfx-fireball-small-tail {
   left: 0;
   top: 0;
-  width: 25px;
-  height: 7px;
+  width: calc(14px * var(--fireball-size-scale, 3));
+  height: calc(6px * var(--fireball-size-scale, 3));
   transform-origin: 100% 50%;
-  transform: rotate(var(--vfx-rot, 0rad)) translate(-25px, -50%);
-  border-radius: 70% 20% 20% 70%;
+  transform: rotate(var(--vfx-rot, 0rad)) translate(calc(-14px * var(--fireball-size-scale, 3)), -50%);
+  clip-path: polygon(100% 50%, 76% 12%, 53% 40%, 28% 4%, 0 50%, 28% 96%, 53% 60%, 76% 88%);
   background: linear-gradient(90deg, transparent, #e52f15 45%, #ffd166 92%);
-  filter: blur(1px) drop-shadow(0 0 4px #f04a19);
+  filter: blur(3px) drop-shadow(0 0 12px #f04a19);
   opacity: 0.9;
+  animation: vfxFireballTailFlicker 0.12s steps(2, end) infinite alternate;
+}
+
+@keyframes vfxFireballCorePulse {
+  from { transform: translate(-50%, -50%) scale(.92); filter: brightness(.95); }
+  to { transform: translate(-50%, -50%) scale(1.08); filter: brightness(1.22); }
+}
+
+@keyframes vfxFireballTailFlicker {
+  from {
+    transform: rotate(var(--vfx-rot, 0rad)) translate(calc(-14px * var(--fireball-size-scale, 3)), -50%)
+      scale(.82, .78) skewY(-5deg);
+    opacity: .72;
+  }
+  to {
+    transform: rotate(var(--vfx-rot, 0rad)) translate(calc(-14px * var(--fireball-size-scale, 3)), -50%)
+      scale(1.10, 1.16) skewY(5deg);
+    opacity: 1;
+  }
 }
 
 .vfx-proj-big .vfx-proj-core {
@@ -7122,38 +7142,71 @@ textarea:disabled,
 
 /* 火球命中：比一般命中爆點更明確的火焰爆炸，但不使用殞石的地面震波。 */
 .vfx-burst-fireball {
-  width: 30px;
-  height: 30px;
-  margin: -15px 0 0 -15px;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
 }
 
 .vfx-burst-fireball::before {
-  inset: -16px;
-  background: radial-gradient(circle, #fff5a3 0 14%, var(--vfx-c2, #ffd447) 32%,
-    var(--vfx-c1, #e63924) 58%, transparent 76%);
-  filter: drop-shadow(0 0 10px var(--vfx-glow, #ff6a2a));
-  animation: vfxFireballExplosion 0.46s ease-out both;
+  inset: -25px;
+  background: radial-gradient(circle, #fff8b0 0 10%, #ffd447 22%, #ff7a00 42%,
+    #d3260d 64%, #72120d 76%, transparent 86%);
+  filter: drop-shadow(0 0 18px #ff3b0a) drop-shadow(0 0 30px #d3260d);
+  animation: vfxFireballExplosion 0.58s cubic-bezier(0.15, 0.75, 0.25, 1) both;
   animation-delay: inherit;
 }
 
 .vfx-burst-fireball::after {
-  inset: -7px;
-  border-width: 3px;
-  border-color: var(--vfx-c2, #ffd447);
-  box-shadow: 0 0 18px var(--vfx-glow, #ff6a2a), inset 0 0 10px var(--vfx-c1, #e63924);
-  animation: vfxFireballRing 0.55s ease-out both;
+  inset: -12px;
+  border-width: 4px;
+  border-color: #ff9d00;
+  box-shadow: 0 0 24px #ff3b0a, 0 0 42px #b51f0f, inset 0 0 16px #ff5a00;
+  animation: vfxFireballRing 0.7s ease-out both;
   animation-delay: inherit;
+}
+
+/* vfxImpact 的 Canvas 對應：命中爆炸使用濃紅外焰與更大的火花散射。 */
+.vfx-impact-fire-explosion {
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+}
+
+.vfx-impact-fire-explosion::before {
+  inset: -30px;
+  background: radial-gradient(circle, #fff8b0 0 9%, #ffd447 20%, #ff6800 42%,
+    #c51e0d 64%, #68100c 78%, transparent 88%);
+  filter: drop-shadow(0 0 20px #ff3b0a) drop-shadow(0 0 34px #b51f0f);
+  animation: vfxFireballExplosion 0.62s cubic-bezier(0.12, 0.7, 0.25, 1) both;
+}
+
+.vfx-impact-fire-explosion::after {
+  inset: -16px;
+  border-width: 4px;
+  border-color: #ff8a00;
+  box-shadow: 0 0 25px #ff3b0a, 0 0 42px #b51f0f, inset 0 0 16px #ff5a00;
+  animation: vfxFireballRing 0.72s ease-out both;
+}
+
+.vfx-impact-fire-explosion .vfx-p {
+  width: 9px;
+  height: 14px;
+  border-radius: 55% 45% 50% 50%;
+  background: linear-gradient(180deg, #fff3a3 0%, #ff9d00 35%, #c51e0d 100%);
+  filter: drop-shadow(0 0 7px #ff3b0a);
+  clip-path: polygon(50% 0, 100% 45%, 72% 100%, 28% 100%, 0 45%);
+  animation-duration: 0.72s;
 }
 
 @keyframes vfxFireballExplosion {
   0% { transform: scale(0.15); opacity: 1; }
-  35% { transform: scale(0.95); opacity: 1; }
-  100% { transform: scale(1.35); opacity: 0; }
+  30% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1.65); opacity: 0; }
 }
 
 @keyframes vfxFireballRing {
   0% { transform: scale(0.18); opacity: 1; }
-  100% { transform: scale(1.75); opacity: 0; }
+  100% { transform: scale(2.15); opacity: 0; }
 }
 
 @keyframes vfxFlash {
