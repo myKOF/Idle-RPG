@@ -1,5 +1,21 @@
 # PATCH.md
 
+## 戰鬥區技能快捷列點擊直跳技能頁（Antigravity 2026-08-16）
+
+- **戰鬥區技能快捷列點擊跳轉行為修正**：
+  - 點擊戰鬥區底部技能快捷列（`#battle-skill-bar`）的任意解鎖槽位（無論是已裝備技能或未裝備空槽位 `＋`），均不會跳出技能升級彈窗（`openSkillModal`），而是直接切換跳轉至技能頁（`showTab('skills')`），並將對應技能滑動捲至視野。
+- **測試與建置驗證**：
+  - 執行 `node --test "tests/*.test.cjs"`（1,404 個單元測試全數通過）與 `node tools/build_check.cjs`（278 個檔案編譯全數通過）。
+
+## 技能裝備欄空槽位拖曳位移與高頻刷新比對防護（Antigravity 2026-08-16）
+
+- **技能可拖曳至已解鎖未設置技能的空槽位**：
+  - 修正 `handleSkillLoadoutSwap`、`equipSkillToLoadout` 與 Worker `skill.reorderLoadout` 邏輯，支援將技能從目前位置拖曳至任意已解鎖的未裝備空槽位（`＋`），自動進行陣列擴展與空位充填，且卸下技能時精確保留其他技能的所在格數。
+- **技能頁裝備欄高頻刷新比對防護**：
+  - 為 `renderSkills()` 中的 `#skill-loadout`、`#fusion-skill-list` 與 `#skill-trees` 引入 innerHTML 內容字串快取比對（`_lastLh` / `_lastH`）。在戰鬥區擊殺怪物頻繁更新技能經驗時，若裝備欄技能與等級並未變動，將不會重構與撕裂 DOM 節點，防止技能裝備欄視覺閃爍與高頻刷新。
+- **測試與建置驗證**：
+  - 執行 `node --test "tests/*.test.cjs"`（1,404 個單元測試全數通過）與 `node tools/build_check.cjs`（278 個檔案編譯全數通過）。
+
 ## 技能裝備欄 UI 統一、點擊選取/小叉叉卸下與雙向拖曳置換位置（Antigravity 2026-08-16）
 
 - **技能頁裝備欄格式統一**：
@@ -19,6 +35,8 @@
   - 修復 `renderBattleSkillBar` 在 `pEnt` 為空時未自動備援讀取戰鬥快照 (`peekUiPanelData('battle')`) 導致技能冷卻數值被歸零重置的問題。
   - 修復新版技能 `entry` 鍵值前綴（`sg:`）匹配：同時檢索 `pEnt.skillCds['sg:knife']` 與 `pEnt.skillCds['knife']`，確保技能冷卻值精確讀取。
   - 修復 60fps 碼錶動態器（`startBattleSkillBarAnimation`）：每次接收新技能冷卻資料時強制重啟動畫幀（`cancelAnimationFrame`），確保大量傷害飄字與高頻戰鬥下，圓形黑色倒算遮罩與碼錶數字（如 `4.0s` -> `0.0s`）持續平滑轉動。
+- **修復裝備及背包 Tips 懸停移動時瞬間消失問題**：
+  - 修復 `mouseout` 全局事件監聽器邏輯：修正裝備槽/背包格 (`outCell`) 內部元素懸停防護，解決游標移至圖示 (`<img>`)、等級角標或太古星標等子元素時誤觸發第二段懸停檢查並呼叫 `hideTooltip()` 導致 Tips 提示框瞬間關閉的問題。
 - **測試與建置驗證**：
   - 執行 `node --test "tests/*.test.cjs"`（1,401 個單元測試全數通過）與 `node tools/build_check.cjs`（278 個檔案編譯全數通過）。
 

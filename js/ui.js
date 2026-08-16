@@ -7345,7 +7345,8 @@ function renderSkills() {
   var cap = skillViewLoadoutSize(skillsSnapshot);
   var loadoutPendingKey = nodePendingKey('skill-loadout');
   var loadoutPending = isUiCommandPending(loadoutPendingKey);
-  $id('loadout-cap').textContent = lo.length + '/' + cap + ' 格' + (reincarnations >= 1 ? '（1 轉已解鎖全部上限）' : '（依參數表成長）');
+  var equippedCount = lo.filter(Boolean).length;
+  $id('loadout-cap').textContent = equippedCount + '/' + cap + ' 格' + (reincarnations >= 1 ? '（1 轉已解鎖全部上限）' : '（依參數表成長）');
   var lh = '';
   var TOTAL_SLOTS = 10;
   var selectedIndex = typeof UI.selectedSkillLoadoutIndex === 'number' ? UI.selectedSkillLoadoutIndex : -1;
@@ -7408,16 +7409,25 @@ function renderSkills() {
       removeBtn +
       '</div>';
   }
-  loBox.innerHTML = lh;
+  if (loBox._lastLh !== lh) {
+    loBox.innerHTML = lh;
+    loBox._lastLh = lh;
+  }
 
   // 融合技（置頂區）
   var fuList = $id('fusion-skill-list');
-  var fusions = skillsSnapshot.fusions || [];
-  fuList.innerHTML = fusions.length
-    ? fusions.map(function (f) {
-      return skillCellHTML(f.id, skillsSnapshot, talentSnapshot, headerSnapshot);
-    }).join('')
-    : '<span class="hint">尚無融合技 — 使用下方「技能融合」創造你的專屬奧義！</span>';
+  if (fuList) {
+    var fusions = skillsSnapshot.fusions || [];
+    var fuH = fusions.length
+      ? fusions.map(function (f) {
+        return skillCellHTML(f.id, skillsSnapshot, talentSnapshot, headerSnapshot);
+      }).join('')
+      : '<span class="hint">尚無融合技 — 使用下方「技能融合」創造你的專屬奧義！</span>';
+    if (fuList._lastH !== fuH) {
+      fuList.innerHTML = fuH;
+      fuList._lastH = fuH;
+    }
+  }
 
   // 技能樹（每系一棵，技能不受前置投入點數限制）
   var h = '';
@@ -7458,7 +7468,10 @@ function renderSkills() {
     }
     h += '<div class="tree-panel potential-skill-panel"><div class="tree-title">✨ 潛力 <span class="dim-text">技能分類；使用技能點與金幣　已解鎖 ' + talentViewPotentialUnlockedCount(talentSnapshot) + '/' + POTENTIAL_NODE_COUNT + '</span></div>' + potentialRows + '</div>';
   }
-  treesBox.innerHTML = h;
+  if (treesBox._lastH !== h) {
+    treesBox.innerHTML = h;
+    treesBox._lastH = h;
+  }
 
   renderSkillModal(skillsSnapshot, talentSnapshot, headerSnapshot);
   renderFusionPanel(skillsSnapshot);
@@ -9552,9 +9565,9 @@ function initUI() {
       }
       return;
     }
-    // 點擊技能樹節點 → 開啟升級彈窗
+    // 點擊技能樹節點 → 開啟升級彈窗（排除裝備欄 #skill-loadout 與戰鬥區快捷列 #battle-skill-bar）
     var cell = e.target.closest('[data-sk]');
-    if (cell && !cell.closest('#skill-loadout')) {
+    if (cell && !cell.closest('#skill-loadout') && !cell.closest('#battle-skill-bar')) {
       openSkillModal(cell.getAttribute('data-sk'));
       return;
     }
@@ -9761,16 +9774,21 @@ function initUI() {
     var pendingKey = nodePendingKey('skill-loadout');
     if (isUiCommandPending(pendingKey)) return;
     var skillsSnapshot = uiSkillsPanelSnapshot();
-    var currentLoadout = skillViewLoadout(skillsSnapshot).slice();
-    if (fromIndex < 0 || fromIndex >= currentLoadout.length) return;
+    var cap = skillViewLoadoutSize(skillsSnapshot);
+    if (fromIndex < 0 || fromIndex >= cap || toIndex < 0 || toIndex >= cap || fromIndex === toIndex) return;
 
-    if (toIndex >= 0 && toIndex < currentLoadout.length) {
-      var tmp = currentLoadout[fromIndex];
-      currentLoadout[fromIndex] = currentLoadout[toIndex];
-      currentLoadout[toIndex] = tmp;
-    } else if (toIndex >= currentLoadout.length) {
-      var moved = currentLoadout.splice(fromIndex, 1)[0];
-      currentLoadout.push(moved);
+    var currentLoadout = skillViewLoadout(skillsSnapshot).slice();
+    var maxIdx = Math.max(fromIndex, toIndex);
+    while (currentLoadout.length <= maxIdx) {
+      currentLoadout.push(null);
+    }
+
+    var tmp = currentLoadout[fromIndex] || null;
+    currentLoadout[fromIndex] = currentLoadout[toIndex] || null;
+    currentLoadout[toIndex] = tmp;
+
+    while (currentLoadout.length > 0 && !currentLoadout[currentLoadout.length - 1]) {
+      currentLoadout.pop();
     }
 
     UI.optimisticSkillLoadout = {
@@ -9931,7 +9949,7 @@ function initUI() {
     if (etip) { showEnemyTooltip(etip); return; }
   });
   document.addEventListener('mouseout', function (e) {
-    var outCell = e.target.closest('.item-cell[data-id]') || e.target.closest('.eq-slot.filled[data-id]');
+    var outCell = e.target.closest('.item-cell[data-id]') || e.target.closest('.eq-slot.filled[data-id]') || e.target.closest('.forge-slot.filled[data-forge-slot]');
     if (outCell) {
       if (UI.inventoryScrolling && outCell.classList.contains('item-cell')) return;
       // Leaving a child element (icon, level, badge) is not leaving the item
@@ -9940,16 +9958,17 @@ function initUI() {
       if (UI.hoveredItemTooltip && UI.hoveredItemTooltip.anchor === outCell) {
         UI.hoveredItemTooltip = null;
       }
+      hideTooltip();
+      return;
     }
+
     if (e.target.closest('[data-sk]') || e.target.closest('.stat-row[data-tt-title]') ||
       e.target.closest('[data-tt-title]') ||
       e.target.closest('[data-talent-tip]') ||
       e.target.closest('[data-tower-tip]') || e.target.closest('#btn-enemy-tip') ||
       e.target.closest('#btn-boss-tip') || e.target.closest('#btn-tower-result-boss-tip') ||
       e.target.closest('[data-tip]') || e.target.closest('[data-buff-tip]') ||
-      e.target.closest('[data-enemy-buff-tip]') || e.target.closest('.item-cell[data-id]') ||
-      e.target.closest('.eq-slot.filled[data-id]') ||
-      e.target.closest('.forge-slot.filled[data-forge-slot]') ||
+      e.target.closest('[data-enemy-buff-tip]') ||
       e.target.closest('.battle-skill-slot')) {
       var outTipCell = e.target.closest('[data-sk]') || e.target.closest('.battle-skill-slot');
       if (outTipCell && e.relatedTarget && outTipCell.contains && outTipCell.contains(e.relatedTarget)) return;
@@ -9957,22 +9976,20 @@ function initUI() {
     }
   });
 
-  // 戰鬥區技能欄點擊跳轉技能頁（已裝備技能點擊無效果，空格跳轉）
+  // 戰鬥區技能欄點擊：不跳出升級彈窗，一律直接跳轉技能頁
   document.addEventListener('click', function (e) {
-    var bssEquipped = e.target.closest('#battle-skill-bar .battle-skill-slot.equipped');
-    if (bssEquipped) return;
     var bss = e.target.closest('#battle-skill-bar .battle-skill-slot');
     if (!bss || bss.classList.contains('locked')) return;
-    if (bss.getAttribute('data-skill-slot-action') === 'goto-skills') {
-      var tabBtn = document.querySelector('.tab-btn[data-tab="skills"]');
-      if (tabBtn) tabBtn.click();
-      var skId = bss.getAttribute('data-skill-id');
-      if (skId) {
-        try {
-          var targetCell = document.querySelector('.tree-cell[data-sk="' + CSS.escape(skId) + '"]');
-          if (targetCell) targetCell.click();
-        } catch (_) {}
-      }
+    var tabBtn = document.querySelector('.tab-btn[data-tab="skills"]');
+    if (tabBtn) tabBtn.click();
+    var skId = bss.getAttribute('data-skill-id') || bss.getAttribute('data-sk');
+    if (skId) {
+      try {
+        var targetCell = document.querySelector('#skill-trees [data-sk="' + CSS.escape(skId) + '"], #skill-loadout [data-sk="' + CSS.escape(skId) + '"]');
+        if (targetCell && typeof targetCell.scrollIntoView === 'function') {
+          targetCell.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      } catch (_) {}
     }
   });
 

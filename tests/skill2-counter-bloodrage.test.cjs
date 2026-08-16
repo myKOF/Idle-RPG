@@ -204,16 +204,16 @@ test('破甲擊 T5：格擋機率上破甲，疊層×單層值、上限 4 層、
   const m = enemy(1e9, 40, 0);
   m.def = 100;
   c.skills2OnPlayerDamaged(m, p, 30, true, hitRes(), 'pv-float');
-  assert.equal(c.buffVal(m, 'sgDefBrk'), 25, '第 1 層＝25%');
+  assert.equal(c.buffVal(m, 'sgDefBrk'), 15, '第 1 層＝15%');
   c.GT = 1;
   c.skills2OnPlayerDamaged(m, p, 30, true, hitRes(), 'pv-float');
-  assert.equal(c.buffVal(m, 'sgDefBrk'), 50, '疊到第 2 層＝50%');
+  assert.equal(c.buffVal(m, 'sgDefBrk'), 30, '疊到第 2 層＝30%');
   assert.ok(m.buffs.sgDefBrk.until > 1 + 3.9, '疊層時重置時間');
   c.skills2OnPlayerDamaged(m, p, 30, true, hitRes(), 'pv-float');
   c.skills2OnPlayerDamaged(m, p, 30, true, hitRes(), 'pv-float');
   c.skills2OnPlayerDamaged(m, p, 30, true, hitRes(), 'pv-float');
-  assert.equal(c.buffVal(m, 'sgDefBrk'), 100, '上限 4 層＝100%');
-  assert.equal(c.monsterDefCfg(m).def, 0, '4 層破甲＝防禦剝光（下限 0 不為負）');
+  assert.equal(c.buffVal(m, 'sgDefBrk'), 60, '上限 4 層＝60%');
+  assert.equal(c.monsterDefCfg(m).def, 40, '4 層破甲＝防禦扣 60%（剩餘 40%）');
 });
 
 test('二次反擊 T6：機率追加 2 次同傷害反擊（不再判定）', () => {
@@ -248,8 +248,8 @@ test('狂化反殺 T7：每次反擊額外反擊範圍內隨機 2 個其他敵�
   assert.equal(calls.length, 3, '本體 1 次＋反殺 2 個目標');
   const sprayed = calls.slice(1).map((x) => x.defender);
   assert.ok(sprayed.indexOf(m2) >= 0 && sprayed.indexOf(m3) >= 0, '反殺打向攻擊者以外的敵人');
-  // 反殺傷害＝100%＋強化反擊（T3 Lv.1＝30）→ 130%
-  assert.equal(calls[1].aCfg.atk, 1300);
+  // 反殺傷害＝50%＋強化反擊（T3 Lv.1＝30）→ 80%
+  assert.equal(calls[1].aCfg.atk, 800);
 });
 
 /* ---- 4) 嗜血狂怒 ---- */

@@ -344,7 +344,7 @@ test('迴身雙連斬：前後左右各斬 3 次，且物理傷害額外 +10%', 
   c.castSkill2(p, [front, back, right, left], 'cleave', 'mv-float');
 
   assert.equal(c.SKILLS2.cleave.tiers[6].fx.times, 3);
-  assert.equal(c.SKILLS2.cleave.tiers[6].fx.pct, 10);
+  assert.equal(c.SKILLS2.cleave.tiers[6].fx.pct, 50);
   assert.equal(cfgs.length, 0, '震碎斬飛行物應在施放時先不命中');
   c.GT = 0.5;
   c.tickSkill2(0.5, { pEnt: p, getEnemies: () => [front, back, right, left], floatSel: 'mv-float', onDeaths() {} });
@@ -352,7 +352,7 @@ test('迴身雙連斬：前後左右各斬 3 次，且物理傷害額外 +10%', 
   for (const target of [front, back, right, left]) {
     assert.equal(hits.get(target), 3, '十字四方向的每個目標都應命中 3 次');
   }
-  assert.ok(cfgs.every((cfg) => cfg.atk === 2300), '基礎 200%＋傷害強化 20%＋迴身雙連斬 10% 應為 230%');
+  assert.ok(cfgs.every((cfg) => cfg.atk === 3000), '基礎 200%＋傷害強化 20%＋血浪 30%＋迴身雙連斬 50% 應為 300%');
 
   c.GT = 1.0;
   c.tickSkill2(0.5, { pEnt: p, getEnemies: () => [front, back, right, left], floatSel: 'mv-float', onDeaths() {} });
@@ -493,8 +493,8 @@ test('零日感染：流血與中毒傷害提高，結束後傳染兩種狀態�
   c.castSkill2(p, [source], 'bloodblade', 'mv-float');
   const bleed = source.dots.find((d) => d.sid === 'sgBleed');
   const poison = source.dots.find((d) => d.sid === 'sgPoison');
-  assert.equal(Math.round(bleed.dps * bleed.interval), 720, '零日感染應使流血每跳傷害提高 20%');
-  assert.equal(Math.round(poison.dps * poison.interval), 600, '零日感染應使中毒每跳傷害提高 20%');
+  assert.equal(Math.round(bleed.dps * bleed.interval), 840, '零日感染應使流血每跳傷害提高 40%');
+  assert.equal(Math.round(poison.dps * poison.interval), 700, '零日感染應使中毒每跳傷害提高 40%');
 
   c.chance = (pct) => pct === c.SKILLS2.bloodblade.tiers[6].fx.chance;
   c.tickSkill2(1.0, { pEnt: p, getEnemies: () => [source, near, far], floatSel: 'mv-float', onDeaths() {} });
