@@ -1,6 +1,6 @@
-# Worker 協議 v20
+# Worker 協議 v22
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 20`　最後更新：2026-08-15
+> 協議版本：`WORKER_PROTOCOL_VERSION = 22`　最後更新：2026-08-17
 > **單一資料來源是 `js/worker/protocol.js`。** 本文件是說明；兩者衝突時以程式碼為準。
 >
 > 遷移（P0～P5）已於 2026-07-28 完成，Worker 是模擬與存檔的唯一權威，舊單執行緒路徑已移除。
@@ -157,7 +157,7 @@ v1 用「參數名叫 `itemId` 就自動解析」的慣例會出事——`forgeP
 
 ### 4.4 指令清單
 
-完整清單見 `js/worker/protocol.js` 的 `COMMANDS`，v19 起共 **90 條**
+完整清單見 `js/worker/protocol.js` 的 `COMMANDS`，v22 起共 **92 條**
 （v1 凍結時 67 條，v3 補 14 條、v4 再補 4 條、v8 補 1 條、v16 補 1 條、v18 補 1 條、v19 補 2 條）。
 
 ⚠️ **指令名請以 `protocol.js` 為準，不要憑印象寫。** `WorkerBridge.send()` 會在送出前用
@@ -304,6 +304,8 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 
 | 版本 | 日期 | 變更 |
 | :--- | :--- | :--- |
+| 22 | 2026-08-17 | **火狩 VFX 速度同步**：環形 `area` 新增可選 `spinRate`（弧度／秒），由 `js/skills2.js` 傳遞模擬層實際角速度，`js/battle-renderer.js` 依此繪製；缺少欄位的舊事件仍以 `spin` 方向退回預設速度。<br>理由：先前模擬層已將火狩降速至 0.455 圈／秒，但事件只傳方向，Canvas 固定每秒 1 圈，導致玩家看到的旋轉速度沒有變。 |
+| 21 | 2026-08-16 | **新版技能一鍵滿級與重置**：新增指令 `skill2.max`／`skill2.delete`，90 → **92**。 |
 | 20 | 2026-08-15 | **技能視覺事件低延遲傳遞**：新增 Worker → 主執行緒 `visual` 訊息。技能施放飄字與重要 `vfx` 事件由 `shim` 在同一模擬步驟內先合併，再由 Worker 一次送出；一般日誌、掉落、資源與面板事件仍隨 `tick` 合批。<br>理由：技能 CD／ready queue 已在 Worker 內獨立運作，但原本視覺事件要等 5Hz 的一般 tick，造成最多約 0.2 秒的畫面延遲；新增專用通道只降低顯示延遲，不改變遊戲時間、傷害或技能施放規則。 |
 | 19 | 2026-08-13 | **新版主動技能系統（技能改造第一批）**：新增指令 `skill2.learn` / `skill2.downgrade`（`fn: skills2Learn / skills2Downgrade`，js/skills2.js；args `{group, tier}`，tier 限 0~6），88 → **90**。`skills` 面板快照新增 `skills2` 欄位＝`{ tierMax, levels: {群組id: [各階等級]} }`。<br>6 群組 × 7 階；同群組在前端顯示為同一個技能。定義表 `SKILLS2` 在共載檔 `js/skills2.js`（唯一來源 `config/Excel/Skills2.xlsx` ↔ `config/CSV/Skills2.csv`，經 config_tables.cjs 回寫），所以名稱、各階說明模板、費用公式**不進協議**——兩端讀同一張表，面板只投影會變動的各階等級。裝載沿用 `skill.equipLoadout` / `skill.unequipLoadout`（id 帶 `'sg:'` 前綴，比照 `'potential:'` 的並行前例），施放沿用 pickAndCastSkill 的統一迴圈與冷卻表（`pEnt.skillCds['sg:<群組id>']`）。舊技能系統完全不動——與新系統並行供調教，之後另案刪除。 |
 | 18 | 2026-08-05 | **主線任務系統**：`PANEL_KEYS` 新增 `task`（任務總覽投影，僅回傳每筆任務的 `{idx, prog, claimed, current, ready}` 動態欄位）；`TICK_VIEW_KEYS` 新增 `taskIdx` / `taskProg` / `taskReady`（戰鬥區上方任務快捷列的三個純量）；新增指令 `task.claim`（`fn: taskClaim`，js/tasks.js），87 → **88**。<br>任務定義表 `TASKS` 在共載檔 `js/data.js`（唯一來源 `config/CSV/Task.csv`，經套用參數.bat 回寫），所以名稱、目標數量、獎勵文字**不進協議**——兩端讀同一張表，tick 只送會變動的三個純量，面板只送進度與領取狀態。任務進度邏輯與領獎（js/tasks.js）只在 Worker 端載入；主執行緒不載 tasks.js，比照 factory / newforge。<br>累計型進度（強化/附魔）重用 `G.factory.stats` 既有統計；洗煉與寶石合成兩個新計數 `rerolled` / `gemComposed` 加進同一個 stats 物件，由 item.js 對應成功點遞增——不另設第二套統計家。 |

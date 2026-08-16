@@ -1972,7 +1972,9 @@ var BattleRenderer = (function () {
     }, 2, dur * 1000 + 500);
   }
   /* 火狩（新版技能【火狩】）：釘在玩家身上、持續旋轉的環繞體。
-     模擬層送來的 area 帶 r（環繞半徑）／orbR（單團體積半徑）／orbs（團數）／spin（方向），
+     模擬層送來的 area 帶 r（環繞半徑）／orbR（單團體積半徑）／orbs（團數）／spin（方向）／
+     spinRate（弧度／秒），畫面旋轉速度必須沿用模擬層的實際角速度；舊事件沒有 spinRate
+     時退回每秒 1 圈，避免快取中的舊事件完全失效。
      顯示層必須沿用同一組數字——這就是模擬層實際判定接觸的圓，畫小了玩家會覺得
      「明明沒碰到卻扣血」。圓心不取 area 的 x／y 而是逐幀讀玩家目前座標：
      火狩本來就跟著玩家跑，用施放當下的座標會整團留在原地。
@@ -1997,7 +1999,9 @@ var BattleRenderer = (function () {
     }
 
     var theme = themeOf(spec);
-    var spin = (ccw ? -1 : 1) * Math.PI * 2;  // 每秒 1 圈：旋轉快慢是表現，命中節奏仍由模擬層決定
+    var spinRate = Number(a.spinRate);
+    var spin = isFinite(spinRate) && Math.abs(spinRate) > 1e-6
+      ? spinRate : (ccw ? -1 : 1) * Math.PI * 2;
     var node = new PIXI.Container();
     S.layers.fx.addChild(node);
     var g = new PIXI.Graphics();
@@ -2040,38 +2044,153 @@ var BattleRenderer = (function () {
     }, 2, (FX_ORBIT_MAX_SEC + 1) * 1000);
   }
 
-  /* 火牆（新版技能【無限火牆】）：橫向矩形的地面場域。
+  /* 火牆（新版技能【無限火牆】）：沿傷害矩形長軸排列的直立火焰柱。
      模擬層送來的 area 帶 w／h／a（長、寬、朝向弧度），顯示層必須沿用同一組數字——
-     傷害範圍與畫面範圍對不起來，是這類地板技能最難查的一種回報。 */
+     傷害範圍與畫面範圍對不起來，是這類地板技能最難查的一種回報。
+     同一道牆的多次傷害事件共用 vfxId，避免每一跳都疊一個矩形框。 */
+  var _fireWallFx = Object.create(null);
+  var FIRE_WALL_MAX_LIFE_SEC = 4.5;
   function spawnFireWall(spec) {
     var a = spec && spec.area;
-    if (!a || !isFinite(a.x) || !isFinite(a.y)) return;
-    var w = Math.max(10, Number(a.w) || 0);
-    var h = Math.max(8, Number(a.h) || 0);
+    if (!a || !isFinite(a.x) || !isFinite(a.y)) return null;
+    var key = a.id || [Math.round(a.x), Math.round(a.y), Math.round(a.w || 0), Math.round(a.h || 0), Math.round(a.a || 0)].join(':');
+    var holdMs = Math.max(900, Number(spec.dur || 0.5) * 2400);
+    var current = _fireWallFx[key];
+    if (current && !current.dead && current.node && !current.node.destroyed) {
+      current.x = Number(a.x);
+      current.y = Number(a.y);
+      current.w = Math.max(10, Number(a.w) || current.w);
+      current.h = Math.max(8, Number(a.h) || current.h);
+      current.angle = Number(a.a) || 0;
+      current.expiresAt = nowMs() + holdMs;
+      return current;
+    }
+
     var theme = themeOf(spec);
     var node = new PIXI.Container();
-    node.x = a.x; node.y = a.y;
-    node.rotation = Number(a.a) || 0;
     var g = new PIXI.Graphics();
     node.addChild(g);
     S.layers.zone.addChild(node);
-    var t = 0, dur = Math.min(FX_AURA_MAX_SEC, Math.max(0.35, spec.dur || 0.5));
+    var fx = {
+      node: node, x: Number(a.x), y: Number(a.y), w: Math.max(10, Number(a.w) || 10),
+      h: Math.max(8, Number(a.h) || 8), angle: Number(a.a) || 0,
+      t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false
+    };
+    _fireWallFx[key] = fx;
+    var particleAt = 0;
+
     addFx({
       node: node,
       update: function (dt) {
-        t += dt;
-        var k = Math.min(1, t / dur);
-        var fade = k > 0.6 ? 1 - (k - 0.6) / 0.4 : 1;
-        var flick = 0.55 + Math.sin(t * 18) * 0.15;
+        fx.t += dt;
+        node.x = fx.x;
+        node.y = fx.y;
+        // 柱體永遠由地面向上；方向只用來排列三個柱體，不能旋轉柱體的高度軸。
+        node.rotation = 0;
+        var fade = fx.expiresAt - nowMs() < 360 ? Math.max(0, (fx.expiresAt - nowMs()) / 360) : 1;
+        var w = fx.w;
+        var h = fx.h;
+        var groundY = h * 0.32;
+        var baseDepth = Math.max(10, Math.min(30, h * 0.48));
+        // 火牆的長度沿地面橫向延伸，但火焰本體要向上立起，不能只是一條火帶。
+        var flameH = Math.max(72, Math.min(180, h * 2.8));
+        var phase = fx.t * 5.2;
+        var axisAngle = fx.angle;
+        var axisX = Math.cos(axisAngle);
+        var axisY = Math.sin(axisAngle);
+        var perpX = -axisY;
+        var perpY = axisX;
+        var i;
+
         g.clear();
-        g.roundRect(-w / 2, -h / 2, w, h, 6)
-          .fill({ color: theme.c2, alpha: 0.3 * fade })
-          .stroke({ color: theme.c1, width: 2, alpha: 0.7 * fade });
-        g.roundRect(-w / 2 + 3, -h / 2 + 3, w - 6, h - 6, 5)
-          .fill({ color: theme.c1, alpha: 0.24 * flick * fade });
-        return t < dur;
+        // 貼地黑灰焦痕與橘色熱浪底座，讓直立牆有明確的地面接點。
+        var shadowLong = w * 0.5;
+        var shadowWide = baseDepth * 0.34;
+        var shadowY = groundY + baseDepth * 0.16;
+        g.poly([
+          -axisX * shadowLong + perpX * shadowWide, shadowY - axisY * shadowLong + perpY * shadowWide,
+          axisX * shadowLong + perpX * shadowWide, shadowY + axisY * shadowLong + perpY * shadowWide,
+          axisX * shadowLong - perpX * shadowWide, shadowY + axisY * shadowLong - perpY * shadowWide,
+          -axisX * shadowLong - perpX * shadowWide, shadowY - axisY * shadowLong - perpY * shadowWide
+        ]).fill({ color: 0x30231d, alpha: 0.5 * fade });
+        // 三個獨立的火龍捲沿傷害矩形長軸並排；每個柱體仍保持世界座標的垂直噴發。
+        var vortexW = Math.max(24, w * 0.34);
+        for (var vi = 0; vi < 3; vi++) {
+          var vortexOffset = (vi - 1) * w * 0.31;
+          var vortexX = axisX * vortexOffset;
+          var vortexGroundY = groundY + axisY * vortexOffset;
+          var vortexH = flameH * (0.88 + vi * 0.035);
+          var vortexPhase = phase + vi * 1.9;
+          var silhouette = [];
+          for (var vs = 0; vs <= 6; vs++) {
+            var vu = vs / 6;
+            var vy = vortexGroundY + baseDepth * 0.08 - vortexH * vu;
+            var vsway = Math.sin(vortexPhase + vu * 7.2) * vortexW * 0.13 * (1 - vu * 0.45);
+            var vhalf = vortexW * (0.52 - vu * 0.12);
+            silhouette.push(vortexX + vsway - vhalf, vy);
+          }
+          for (vs = 6; vs >= 0; vs--) {
+            vu = vs / 6;
+            vy = vortexGroundY + baseDepth * 0.08 - vortexH * vu;
+            vsway = Math.sin(vortexPhase + vu * 7.2) * vortexW * 0.13 * (1 - vu * 0.45);
+            vhalf = vortexW * (0.52 - vu * 0.12);
+            silhouette.push(vortexX + vsway + vhalf, vy);
+          }
+          g.poly(silhouette).fill({ color: vi === 1 ? 0xe43b12 : 0xc82b12, alpha: 0.46 * fade });
+          for (var ri = 0; ri < 4; ri++) {
+            var ribbon = [];
+            for (var rs = 0; rs <= 6; rs++) {
+              var ru = rs / 6;
+              var ry = vortexGroundY + baseDepth * 0.05 - vortexH * ru;
+              var rx = vortexX + Math.sin(vortexPhase + ri * 1.55 + ru * 8.6) * vortexW * 0.29 * (1 - ru * 0.38);
+              var rw = Math.max(3, vortexW * (0.13 - ru * 0.035));
+              ribbon.push(rx - rw, ry);
+            }
+            for (rs = 6; rs >= 0; rs--) {
+              ru = rs / 6;
+              ry = vortexGroundY + baseDepth * 0.05 - vortexH * ru;
+              rx = vortexX + Math.sin(vortexPhase + ri * 1.55 + ru * 8.6) * vortexW * 0.29 * (1 - ru * 0.38);
+              rw = Math.max(3, vortexW * (0.13 - ru * 0.035));
+              ribbon.push(rx + rw, ry);
+            }
+            g.poly(ribbon).fill({ color: ri === 1 ? 0xffd84a : (ri % 2 ? 0xff7618 : 0xffa51d),
+              alpha: (ri === 1 ? 0.78 : 0.68) * fade });
+          }
+          g.ellipse(vortexX, vortexGroundY - vortexH * 0.38, vortexW * 0.18, vortexH * 0.31)
+            .fill({ color: 0xffffbd, alpha: 0.3 * fade });
+          g.poly([vortexX - vortexW * 0.18, vortexGroundY - vortexH * 0.82,
+            vortexX + vortexW * 0.02, vortexGroundY - vortexH * 1.08,
+            vortexX + vortexW * 0.2, vortexGroundY - vortexH * 0.88,
+            vortexX + vortexW * 0.08, vortexGroundY - vortexH * 0.7])
+            .fill({ color: 0xffff7a, alpha: 0.62 * fade });
+        }
+
+        // 火牆上方的低煙，不遮住火焰，只用半透明灰褐色顆粒帶出參考圖的煙塵感。
+        for (i = 0; i < 9; i++) {
+          var smokeU = (i + 0.5) / 9;
+          var smokeOffset = -w * 0.43 + w * 0.86 * smokeU;
+          var smokeX = axisX * smokeOffset + Math.sin(phase * 0.35 + i) * 5;
+          var smokeY = groundY + axisY * smokeOffset - flameH * (0.72 + (i % 3) * 0.08) - Math.sin(phase * 0.48 + i * 1.3) * 4;
+          var smokeR = 4 + (i % 3) * 2.2;
+          g.circle(smokeX, smokeY, smokeR).fill({ color: i % 2 ? 0x5a5148 : 0x76624d, alpha: 0.13 * fade });
+        }
+
+        particleAt += dt;
+        if (!REDUCED_MOTION && particleAt > 0.1 && fade > 0.45) {
+          particleAt = 0;
+          var particleOffset = (Math.random() - 0.5) * w * 0.72;
+          spawnParticles(fx.x + axisX * particleOffset,
+            fx.y + axisY * particleOffset - flameH * (0.45 + Math.random() * 0.3), 3, theme, 1.2, 0.7);
+        }
+        if (nowMs() >= fx.expiresAt) {
+          fx.dead = true;
+          if (_fireWallFx[key] === fx) delete _fireWallFx[key];
+          return false;
+        }
+        return true;
       }
-    }, 2, dur * 1000 + 300);
+    }, 2, FIRE_WALL_MAX_LIFE_SEC * 1000);
+    return fx;
   }
 
   function spawnRiser(x, y, theme, glyph) {
@@ -2367,35 +2486,110 @@ var BattleRenderer = (function () {
     }
   }
 
-  /* 火柱（pillar 變體）。逐幀 clear() 重繪，但同時存在數量少，實測不是熱點
-     （中位 0.20 ms、超標 0～1／360）；不要改成 Sprite，理由見 spawnSlash。 */
-  function spawnPillar(targetId, spec, delaySec) {
+  /* 火龍捲（pillar 變體）：真正的地板場域。每次傷害事件只更新同一道火龍捲的
+     座標與保留時間，不再以受擊敵人為中心重播一根短矩形光柱。 */
+  var _firePillarFx = Object.create(null);
+  var FIRE_PILLAR_MAX_LIFE_SEC = 4.5;
+  function spawnFirePillar(area, spec) {
+    if (!area || !isFinite(area.x) || !isFinite(area.y)) return null;
+    var key = area.id || [Math.round(area.x), Math.round(area.y), Math.round(area.r || 0)].join(':');
+    var holdMs = Math.max(900, Number(spec.dur || 0.5) * 2400);
+    var current = _firePillarFx[key];
+    if (current && !current.dead && current.node && !current.node.destroyed) {
+      current.x = Number(area.x);
+      current.y = Number(area.y);
+      current.radius = Math.max(16, Number(area.r) || current.radius);
+      current.expiresAt = nowMs() + holdMs;
+      return current;
+    }
+
     var theme = themeOf(spec);
+    var node = new PIXI.Container();
     var g = new PIXI.Graphics();
-    S.layers.fx.addChild(g);
-    var t = -(delaySec || 0), dur = 0.55;
+    node.addChild(g);
+    S.layers.zone.addChild(node);
+    var fx = { node: node, x: Number(area.x), y: Number(area.y), radius: Math.max(16, Number(area.r) || 28),
+      t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false };
+    _firePillarFx[key] = fx;
+    var particleAt = 0;
+
     addFx({
-      node: g,
+      node: node,
       update: function (dt) {
-        t += dt;
-        if (t < 0) return true;
-        var to = posOf(targetId);
-        var k = Math.min(1, t / dur);
-        var grow = k < 0.3 ? k / 0.3 : 1;
-        var fade = k > 0.6 ? 1 - (k - 0.6) / 0.4 : 1;
-        var h = 120 * grow, w = 26 * grow;
+        fx.t += dt;
+        node.x = fx.x;
+        node.y = fx.y;
+        var fade = fx.expiresAt - nowMs() < 360 ? Math.max(0, (fx.expiresAt - nowMs()) / 360) : 1;
+        var appear = Math.min(1, fx.t / 0.28);
+        var h = Math.max(118, fx.radius * 3.45) * appear;
+        var baseW = Math.max(44, fx.radius * 2.2) * appear;
+        var topW = Math.max(18, fx.radius * 0.62) * appear;
+        var phase = fx.t * 4.2;
         g.clear();
-        g.roundRect(to.x - w / 2, to.y - h, w, h, 8).fill({ color: theme.c2, alpha: 0.5 * fade });
-        g.roundRect(to.x - w * 0.25, to.y - h * 0.92, w * 0.5, h * 0.9, 6).fill({ color: theme.c1, alpha: 0.8 * fade });
-        if (!g._hit && k > 0.25) {
-          g._hit = true;
-          hitReact(targetId, spec.elem || 'fire', true);
-          addShake(5, spec);
-          spawnParticles(to.x, to.y - 20, 8, theme, 2);
+
+        // 地面火圈：把「傷害半徑」直接畫出來，讓玩家看得出場域邊界。
+        g.ellipse(0, 4, baseW * 0.58, Math.max(8, fx.radius * 0.34))
+          .fill({ color: 0x7d1708, alpha: 0.42 * fade })
+          .stroke({ color: 0xff6b19, width: 2, alpha: 0.78 * fade });
+        g.ellipse(0, 0, baseW * 0.46, Math.max(5, fx.radius * 0.2))
+          .fill({ color: 0xffb21c, alpha: 0.32 * fade });
+
+        // 外層火焰軀幹：寬底、收尖頂，並以旋臂抖動取代硬直矩形。
+        var silhouette = [
+          -baseW * 0.55, 0, -baseW * 0.47, -h * 0.18, -baseW * 0.36, -h * 0.44,
+          -topW * 0.52, -h * 0.78, -topW * 0.34, -h, topW * 0.34, -h,
+          topW * 0.52, -h * 0.78, baseW * 0.36, -h * 0.44, baseW * 0.47, -h * 0.18,
+          baseW * 0.55, 0
+        ];
+        g.poly(silhouette).fill({ color: 0xd93413, alpha: 0.52 * fade });
+
+        // 多條向上旋繞的火舌，使用固定段數控制每幀成本。
+        for (var ri = 0; ri < 4; ri++) {
+          var pts = [];
+          var inner = ri === 1 || ri === 2;
+          for (var si = 0; si <= 6; si++) {
+            var u = si / 6;
+            var y = -h * u;
+            var sway = Math.sin(phase + ri * 1.55 + u * 8.2) * baseW * (0.22 - u * 0.1);
+            var x = sway + Math.cos(phase * 0.7 + ri) * baseW * 0.08;
+            var width = Math.max(3, (baseW * (inner ? 0.12 : 0.18)) * (1 - u * 0.7));
+            pts.push(x - width, y);
+          }
+          for (si = 6; si >= 0; si--) {
+            u = si / 6;
+            y = -h * u;
+            sway = Math.sin(phase + ri * 1.55 + u * 8.2) * baseW * (0.22 - u * 0.1);
+            x = sway + Math.cos(phase * 0.7 + ri) * baseW * 0.08;
+            width = Math.max(3, (baseW * (inner ? 0.12 : 0.18)) * (1 - u * 0.7));
+            pts.push(x + width, y);
+          }
+          g.poly(pts).fill({ color: inner ? 0xffdf4d : (ri % 2 ? 0xff761c : 0xffa51d),
+            alpha: (inner ? 0.82 : 0.7) * fade });
         }
-        return t < dur;
+
+        // 白黃核心與頂端火舌，對齊參考圖的高亮中心。
+        g.ellipse(0, -h * 0.4, Math.max(5, baseW * 0.12), Math.max(18, h * 0.34))
+          .fill({ color: 0xffffbd, alpha: 0.62 * fade });
+        g.poly([-topW * 0.28, -h * 0.86, -topW * 0.08, -h * 1.12,
+          topW * 0.04, -h * 0.92, topW * 0.3, -h * 1.02, topW * 0.18, -h * 0.72])
+          .fill({ color: 0xff6a17, alpha: 0.82 * fade });
+
+        particleAt += dt;
+        if (!REDUCED_MOTION && particleAt > 0.11 && fade > 0.45) {
+          particleAt = 0;
+          var sparkAngle = Math.random() * Math.PI * 2;
+          var sparkX = Math.cos(sparkAngle) * baseW * (0.25 + Math.random() * 0.35);
+          spawnParticles(fx.x + sparkX, fx.y - h * (0.35 + Math.random() * 0.5), 3, theme, 1.1, 0.7);
+        }
+        if (nowMs() >= fx.expiresAt) {
+          fx.dead = true;
+          if (_firePillarFx[key] === fx) delete _firePillarFx[key];
+          return false;
+        }
+        return true;
       }
-    }, 1);
+    }, 2, FIRE_PILLAR_MAX_LIFE_SEC * 1000);
+    return fx;
   }
 
   /* 連續橫向穿梭折射閃電鏈（復刻截圖效果：在敵人間連續折射穿梭） */
@@ -2836,10 +3030,16 @@ var BattleRenderer = (function () {
       case 'impact':
       default:
         if (spec.variant === 'pillar') {
-          /* 地板場域（火柱）帶 area＝這一跳的實際傷害範圍：先畫地面footprint，
-             範圍內沒有敵人時它也是玩家唯一看得到的「火柱在這裡」。 */
-          if (rect) spawnAreaFlash(rect, themeOf(spec));
-          targets.forEach(function (id, ti) { spawnPillar(id, spec, ti * 0.06); });
+          /* 地板場域（火龍捲）以 area 為唯一錨點；targets 只負責受擊反饋，
+             不可再把火焰畫到每個敵人身上。高塔無座標時才用目標點退化。 */
+          var pillarArea = spec.area && isFinite(spec.area.x) && isFinite(spec.area.y)
+            ? spec.area
+            : (targets.length ? (function () {
+                var fallback = posOf(targets[0]);
+                return { x: fallback.x, y: fallback.y, r: 28 };
+              })() : null);
+          if (pillarArea) spawnFirePillar(pillarArea, spec);
+          targets.forEach(function (id) { hitReact(id, spec.elem || 'fire', false); });
           break;
         }
         if (spec.variant === 'smite') {

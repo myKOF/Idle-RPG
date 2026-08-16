@@ -124,6 +124,8 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.match(skills2, /sgQueueMeteor\(pEnt, st, dmgVal, meteorTarget/);
   assert.match(skills2, /variant: 'fireball-small'/);
   assert.match(skills2, /hitFn: sgFireballProjectileHit/);
+  assert.match(skills2, /firepillar: \{ name: '火龍捲'/);
+  assert.match(skills2, /vfxId: 'sg-ground-' \+ \(\+\+SKILL2_RT\.groundSeq\)/);
   assert.match(skills2, /sgEmitVfx\('fireball', victims, floatSel, \{[\s\S]*variant: 'fire-explosion'/);
   assert.match(skills2, /var fireballPlan = meteor \? null : sgFireballProjectilePlan\(primary\)/);
   assert.match(skills, /id === 'fireball'[\s\S]*skills2FireballIsMeteor/);
@@ -169,6 +171,29 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.doesNotMatch(renderer, /spawnCleaveWave|CLEAVE_WAVE_SPEED_RATIO/);
   assert.match(vfx, /vfxImpact\([\s\S]*?cHitDelay \+ 90/);
   assert.match(renderer, /spawnImpact\(pt\.x, pt\.y, spec, false\)/);
+  assert.match(renderer, /function spawnFirePillar\(area, spec\)/);
+  assert.match(renderer, /spec\.variant === 'pillar'[\s\S]*spawnFirePillar\(pillarArea, spec\)/);
+  assert.doesNotMatch(renderer, /function spawnPillar\(/);
+  assert.match(vfx, /function vfxFirePillar\(spec, layer, area, fallbackPt\)/);
+  assert.match(vfx, /s\.variant === 'pillar'[\s\S]*vfxFirePillar\(s, layer, spec\.area, pillarPt\)/);
+  assert.match(css, /\.vfx-fire-pillar[\s\S]*@keyframes vfxFirePillarPulse/);
+  assert.match(css, /\.vfx-fire-tongue/);
+  assert.match(renderer, /function spawnFireWall\(spec\)[\s\S]*_fireWallFx/);
+  assert.match(renderer, /spec\.variant === 'firewall'[\s\S]*spawnFireWall\(spec\)/);
+  assert.match(vfx, /function vfxFireWall\(spec, layer, area, rect\)/);
+  assert.match(vfx, /s\.variant === 'firewall'[\s\S]*vfxFireWall\(s, layer, spec\.area, rect\)/);
+  assert.match(css, /\.vfx-fire-wall-vortex[\s\S]*@keyframes vfxFireWallVortex/);
+  assert.match(css, /\.vfx-fire-wall-smoke/);
+  assert.match(renderer, /var flameH = Math\.max\(72, Math\.min\(180, h \* 2\.8\)\)/);
+  assert.match(renderer, /for \(var vi = 0; vi < 3; vi\+\+\)[\s\S]*vortexPhase/);
+  assert.match(vfx, /for \(var vi = 0; vi < 3; vi\+\+\)[\s\S]*vfx-fire-wall-vortex/);
+  assert.match(renderer, /var axisAngle = fx\.angle/);
+  assert.match(renderer, /var vortexGroundY = groundY \+ axisY \* vortexOffset/);
+  assert.doesNotMatch(renderer, /var baseLong = w \* 0\.47/);
+  assert.match(vfx, /var wallAngle = isFinite\(area && area\.a\)/);
+  assert.match(vfx, /wallAxisX \* \(vi - 1\) \* 31/);
+  assert.match(css, /\.vfx-fire-wall[\s\S]*transform: none/);
+  assert.match(vfx, /var wallH = Math\.max\(84, Math\.min\(180, rectH \* 1\.15\)\)/);
   const vfxCleaveStart = vfx.indexOf("if (kind === 'slash' && (s.variant === 'cleave'");
   const vfxCleaveEnd = vfx.indexOf('\n    return;', vfxCleaveStart);
   const rendererCleaveStart = renderer.indexOf("if (spec.variant === 'cleave'");
@@ -177,6 +202,16 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.ok(rendererCleaveStart >= 0 && rendererCleaveEnd > rendererCleaveStart);
   assert.doesNotMatch(vfx.slice(vfxCleaveStart, vfxCleaveEnd), /vfxSlash\(/);
   assert.doesNotMatch(renderer.slice(rendererCleaveStart, rendererCleaveEnd), /spawnSlash\(/);
+});
+
+test('火狩 Canvas 旋轉速度沿用模擬層角速度，舊事件仍可退回方向速度', () => {
+  const skills2 = read('js/skills2.js');
+  const renderer = read('js/battle-renderer.js');
+
+  assert.match(skills2, /spin: f\.rings\[i\]\.spin >= 0 \? 1 : -1,\s*spinRate: f\.rings\[i\]\.spin/);
+  assert.match(renderer, /var spinRate = Number\(a\.spinRate\);/);
+  assert.match(renderer, /isFinite\(spinRate\) && Math\.abs\(spinRate\) > 1e-6/);
+  assert.match(renderer, /\? spinRate : \(ccw \? -1 : 1\) \* Math\.PI \* 2/);
 });
 
 test('震碎斬與迴身雙連斬共用十字方向的迴旋斬弧光', () => {

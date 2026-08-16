@@ -57,6 +57,10 @@ var _vfxWatchdogHandle = 0;
 var _vfxAnchorCache = Object.create(null);
 var _vfxLayerRectCache = null;
 var _vfxLayoutVersion = 0;
+var _vfxFirePillars = Object.create(null);
+var VFX_FIRE_PILLAR_LIFE_MS = 3600;
+var _vfxFireWalls = Object.create(null);
+var VFX_FIRE_WALL_LIFE_MS = 3600;
 
 /* 版面快取的版本號只在尺寸、頁籤或戰鬥場景變動時遞增。
    座標函式用這個版本判斷快取是否仍可用，避免每個特效都重新量測整個 DOM。 */
@@ -157,6 +161,8 @@ function vfxClear() {
     if (n && n.parentNode) n.parentNode.removeChild(n);
   }
   _vfxNodes = [];
+  _vfxFirePillars = Object.create(null);
+  _vfxFireWalls = Object.create(null);
   if (typeof document === 'undefined' || !document.querySelectorAll) return;
   var hitCards = document.querySelectorAll('.enemy-card, .combatant');
   for (var ci = 0; ci < hitCards.length; ci++) {
@@ -1123,6 +1129,112 @@ function vfxPillar(spec, layer, pt, targetId, delayMs) {
   vfxHitReact(targetId, spec.elem || 'light', delayMs + 220, false);
 }
 
+/* 火龍捲（新版技能 firepillar）：以場域事件的 id 合併每次 tick，讓 DOM 版也只
+   保留一個固定在地板上的持續火焰。area 的世界座標在 DOM 舊路徑沒有直接投影器，
+   因此用場域第一個目標作為像素錨點；重要的是不再為每個受傷敵人各生成一根柱子。 */
+function vfxFirePillar(spec, layer, area, fallbackPt) {
+  var pt = fallbackPt;
+  if (!pt || !isFinite(pt.x) || !isFinite(pt.y)) return null;
+  var radius = Math.max(22, Number(area && area.r) || 30);
+  var key = area && area.id ? String(area.id) : [Math.round(pt.x), Math.round(pt.y), Math.round(radius)].join(':');
+  var node = _vfxFirePillars[key];
+  if (node && node.parentNode === layer) {
+    vfxPlace(node, pt);
+    node._vfxExpiresAt = Date.now() + Math.max(900, Number(spec.dur || 0.5) * 2400);
+    return node;
+  }
+  node = vfxNode('vfx-fire-pillar', layer, spec);
+  vfxPlace(node, pt);
+  node.style.setProperty('--vfx-radius', radius + 'px');
+  node.style.setProperty('--vfx-height', Math.max(150, radius * 3.5) + 'px');
+  var tongues = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 7;
+  for (var i = 0; i < tongues; i++) {
+    var tongue = document.createElement('span');
+    tongue.className = 'vfx-fire-tongue';
+    tongue.style.setProperty('--vfx-tongue-i', i);
+    tongue.style.setProperty('--vfx-tongue-x', ((i - (tongues - 1) / 2) * radius * 0.12).toFixed(1) + 'px');
+    tongue.style.setProperty('--vfx-tongue-width', Math.max(5, radius * (0.26 - i * 0.018)).toFixed(1) + 'px');
+    tongue.style.setProperty('--vfx-tongue-height', (70 + Math.random() * 30).toFixed(1) + '%');
+    tongue.style.setProperty('--vfx-tongue-rot', (Math.random() * 34 - 17).toFixed(1) + 'deg');
+    tongue.style.setProperty('--vfx-tongue-delay', (-Math.random() * 0.9).toFixed(2) + 's');
+    node.appendChild(tongue);
+  }
+  _vfxFirePillars[key] = node;
+  vfxTrack(node, VFX_FIRE_PILLAR_LIFE_MS);
+  return node;
+}
+
+/* 第 7 階無限火牆：貼地、橫向延展且向上立起的火焰牆。area 的世界座標在 DOM 舊路徑
+   沒有直接投影器，因此沿用場域矩形／目標退化矩形；同一道牆以 id 合併每次 tick。 */
+function vfxFireWall(spec, layer, area, rect) {
+  if (!rect || !isFinite(rect.x) || !isFinite(rect.y)) return null;
+  var wallW = Math.max(70, Number(rect.w) || 140);
+  // 橫向長度仍沿用場域矩形，但火焰牆本體要從地面向上長出來。
+  var rectH = Number(rect.h) || 120;
+  var wallH = Math.max(84, Math.min(180, rectH * 1.15));
+  var wallX = Number(rect.x) || 0;
+  var floorY = (Number(rect.y) || 0) + Math.max(0, rectH * 0.54);
+  var wallY = floorY - wallH;
+  var wallAngle = isFinite(area && area.a) ? Number(area.a) : 0;
+  var wallAxisX = Math.cos(wallAngle);
+  var wallAxisY = Math.sin(wallAngle);
+  var key = area && area.id ? String(area.id) : [Math.round(wallX), Math.round(wallY), Math.round(wallW)].join(':');
+  function updateWallVortexLayout(target) {
+    var vortices = target.querySelectorAll('.vfx-fire-wall-vortex');
+    for (var vi = 0; vi < vortices.length; vi++) {
+      vortices[vi].style.setProperty('--vfx-wall-vortex-x', (50 + wallAxisX * (vi - 1) * 31).toFixed(1) + '%');
+      vortices[vi].style.setProperty('--vfx-wall-vortex-bottom', (7 - wallAxisY * (wallW * 0.31 / wallH * 100) * (vi - 1)).toFixed(1) + '%');
+    }
+  }
+  var node = _vfxFireWalls[key];
+  if (node && node.parentNode === layer) {
+    node.style.left = wallX + 'px';
+    node.style.top = wallY + 'px';
+    node.style.width = wallW + 'px';
+    node.style.height = wallH + 'px';
+    node.style.setProperty('--vfx-wall-angle', wallAngle.toFixed(3) + 'rad');
+    updateWallVortexLayout(node);
+    node._vfxExpiresAt = Date.now() + Math.max(900, Number(spec.dur || 0.5) * 2400);
+    return node;
+  }
+
+  node = vfxNode('vfx-fire-wall', layer, spec);
+  node.style.left = wallX + 'px';
+  node.style.top = wallY + 'px';
+  node.style.width = wallW + 'px';
+  node.style.height = wallH + 'px';
+  node.style.setProperty('--vfx-wall-angle', wallAngle.toFixed(3) + 'rad');
+  var ribbonCount = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 4;
+  for (var vi = 0; vi < 3; vi++) {
+    var vortex = document.createElement('span');
+    vortex.className = 'vfx-fire-wall-vortex';
+    vortex.style.setProperty('--vfx-wall-vortex-w', (31 + (vi === 1 ? 3 : 0)) + '%');
+    vortex.style.setProperty('--vfx-wall-vortex-h', (86 + vi * 4) + '%');
+    vortex.style.setProperty('--vfx-wall-delay', (-Math.random() * 0.9).toFixed(2) + 's');
+    for (var ri = 0; ri < ribbonCount; ri++) {
+      var ribbon = document.createElement('span');
+      ribbon.className = 'vfx-fire-wall-ribbon';
+      ribbon.style.setProperty('--vfx-wall-ribbon-i', ri);
+      ribbon.style.setProperty('--vfx-wall-ribbon-delay', (-Math.random() * 0.8).toFixed(2) + 's');
+      vortex.appendChild(ribbon);
+    }
+    node.appendChild(vortex);
+  }
+  updateWallVortexLayout(node);
+  var smokeCount = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 6;
+  for (var si = 0; si < smokeCount; si++) {
+    var smoke = document.createElement('span');
+    smoke.className = 'vfx-fire-wall-smoke';
+    smoke.style.setProperty('--vfx-wall-smoke-x', ((si + 0.5) / smokeCount * 100).toFixed(1) + '%');
+    smoke.style.setProperty('--vfx-wall-smoke-size', (13 + (si % 3) * 5) + 'px');
+    smoke.style.setProperty('--vfx-wall-smoke-delay', (-Math.random() * 1.4).toFixed(2) + 's');
+    node.appendChild(smoke);
+  }
+  _vfxFireWalls[key] = node;
+  vfxTrack(node, VFX_FIRE_WALL_LIFE_MS);
+  return node;
+}
+
 /* 預設天降：範圍內落下數道元素雨；沒有 meteor／pillar／smite 專屬畫法時使用。 */
 function vfxRainDrops(spec, layer, rect) {
   var drops = Math.min(6, Math.max(3, Math.round(rect.w / 60)));
@@ -1565,6 +1677,15 @@ function renderCombatVfx(spec) {
   /* 純命中事件不畫移動中的攻擊本體，只在各目標位置建立爆點與受擊反饋。 */
   if (kind === 'impact') {
     var im = resolveTargets();
+    if (s.variant === 'pillar') {
+      /* 火龍捲是地板場域：火焰只建立在場域錨點，targets 只用於受擊反饋。 */
+      var pillarPt = im.pts.length ? im.pts[0] : null;
+      vfxFirePillar(s, layer, spec.area, pillarPt);
+      for (var pvi = 0; pvi < im.pts.length; pvi++) {
+        vfxHitReact(im.ids[pvi], s.elem || 'fire', baseDelay, false);
+      }
+      return;
+    }
     for (var ii = 0; ii < im.pts.length; ii++) vfxImpact(s, layer, im.pts[ii], im.ids[ii], baseDelay);
     return;
   }
@@ -1608,6 +1729,7 @@ function renderCombatVfx(spec) {
     }
     if (kind === 'aura') {
       if (s.variant === 'cyclone') vfxCyclone(s, layer, rect);
+      else if (s.variant === 'firewall') vfxFireWall(s, layer, spec.area, rect);
       else vfxAura(s, layer, rect);
       return;
     }

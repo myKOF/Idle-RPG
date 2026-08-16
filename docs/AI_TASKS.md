@@ -1,5 +1,30 @@
 # AI_TASKS.md
 
+## Codex｜同步火狩畫面特效旋轉速度｜2026-08-17
+
+- 狀態：已完成（2026-08-17）
+- Owner：Codex
+- 使用者需求：修正火狩已降低模擬旋轉速度，但畫面特效仍以固定每秒 1 圈播放的問題。
+- 允許修改：`AI_RULES.md`、`js/skills2.js`、`js/battle-renderer.js`、`js/worker/protocol.js`、`js/worker/sim.worker.js`、`js/bridge.js`、`index.html`、`docs/WORKER_PROTOCOL.md`、`tests/skill2-magic-firehunt.test.cjs`、`tests/skill2-vfx.test.cjs`、`tests/worker-protocol.test.cjs`、本文件。
+- 禁止修改：技能傷害、存檔格式、其他技能 VFX 與無關 UI。
+- 前置依賴：火狩基礎 `rps=0.455` 已完成；衝突預檢已通過。
+- 完成內容：VFX 事件新增 `spinRate` 傳遞實際角速度，Canvas 以該角速度旋轉；舊事件仍可用方向欄位退化；同步 Worker Protocol、主頁／Worker 快取版本；將「實際計算與視覺表現必須一致」寫入 `AI_RULES.md`。
+- 驗證結果：火狩／VFX／Worker Protocol 定向測試 37/37；完整 `npm.cmd test` 1456/1456；`npm.cmd run build` 282/282；JavaScript 語法檢查與 `git diff --check` 通過。
+- 完成後交給：使用者／主整合工作區。
+
+## Codex｜調整「火狩」技能旋轉速度 -30%｜2026-08-17
+
+- 狀態：已完成（2026-08-17）
+- Owner：Codex
+- 使用者需求：將「火狩」技能的旋轉速度降低 30%。
+- 允許修改：`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`、`js/skills2.js`、`index.html`、`js/worker/sim.worker.js`、`tests/skill2-magic-firehunt.test.cjs`、本文件。
+- 禁止修改：其他技能數值、傷害公式、存檔格式、Worker Protocol 與無關 UI。
+- 前置依賴：既有火狩環繞場域與 Skills2 參數表同步流程；衝突預檢已通過。
+- 完成內容：基礎 `rps` 由 0.65 調為 0.455（原值的 70%），第 5 階加成仍照既有規則疊加；同步 Excel／CSV／JS 與主頁、Worker 快取版本，新增基礎轉速回歸斷言。
+- 驗證結果：火狩／Skills2 定向測試 47/47；完整 `npm.cmd test` 1455/1455；`npm.cmd run build` 282/282；`node tools/config_tables.cjs --apply Skills2` dry-run 語意變更 0；JavaScript 語法檢查與 `git diff --check` 通過。
+- 已知風險：無；未變更存檔格式、Worker Protocol 或其他技能效果。
+- 完成後交給：使用者／主整合工作區。
+
 ## Claude｜新版技能「解鎖轉生/等級」門檻｜2026-08-17
 
 - 狀態：已完成（2026-08-17）

@@ -534,5 +534,5 @@ test('兩個新群組可裝載、可升級，且參數表往返一致', () => {
   assert.match(rows[0], /傷害類型/);
   assert.match(rows[0], /傷害屬性/);
   assert.ok(rows.some((r) => r.indexOf('fireball,火球術') === 0 && r.indexOf('magic,fire') > 0));
-  assert.ok(rows.some((r) => r.indexOf('firepillar,火柱') === 0 && r.indexOf('magic,fire') > 0));
+  assert.ok(rows.some((r) => r.indexOf('firepillar,火龍捲') === 0 && r.indexOf('magic,fire') > 0));
 });
