@@ -124,6 +124,8 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.match(skills2, /sgQueueMeteor\(pEnt, st, dmgVal, meteorTarget/);
   assert.match(skills2, /variant: 'fireball-small'/);
   assert.match(skills2, /hitFn: sgFireballProjectileHit/);
+  assert.match(skills2, /firepillar: \{ name: '火龍捲'/);
+  assert.match(skills2, /vfxId: 'sg-ground-' \+ \(\+\+SKILL2_RT\.groundSeq\)/);
   assert.match(skills2, /sgEmitVfx\('fireball', victims, floatSel, \{[\s\S]*variant: 'fire-explosion'/);
   assert.match(skills2, /var fireballPlan = meteor \? null : sgFireballProjectilePlan\(primary\)/);
   assert.match(skills, /id === 'fireball'[\s\S]*skills2FireballIsMeteor/);
@@ -169,6 +171,13 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.doesNotMatch(renderer, /spawnCleaveWave|CLEAVE_WAVE_SPEED_RATIO/);
   assert.match(vfx, /vfxImpact\([\s\S]*?cHitDelay \+ 90/);
   assert.match(renderer, /spawnImpact\(pt\.x, pt\.y, spec, false\)/);
+  assert.match(renderer, /function spawnFirePillar\(area, spec\)/);
+  assert.match(renderer, /spec\.variant === 'pillar'[\s\S]*spawnFirePillar\(pillarArea, spec\)/);
+  assert.doesNotMatch(renderer, /function spawnPillar\(/);
+  assert.match(vfx, /function vfxFirePillar\(spec, layer, area, fallbackPt\)/);
+  assert.match(vfx, /s\.variant === 'pillar'[\s\S]*vfxFirePillar\(s, layer, spec\.area, pillarPt\)/);
+  assert.match(css, /\.vfx-fire-pillar[\s\S]*@keyframes vfxFirePillarPulse/);
+  assert.match(css, /\.vfx-fire-tongue/);
   const vfxCleaveStart = vfx.indexOf("if (kind === 'slash' && (s.variant === 'cleave'");
   const vfxCleaveEnd = vfx.indexOf('\n    return;', vfxCleaveStart);
   const rendererCleaveStart = renderer.indexOf("if (spec.variant === 'cleave'");

@@ -2367,35 +2367,110 @@ var BattleRenderer = (function () {
     }
   }
 
-  /* 火柱（pillar 變體）。逐幀 clear() 重繪，但同時存在數量少，實測不是熱點
-     （中位 0.20 ms、超標 0～1／360）；不要改成 Sprite，理由見 spawnSlash。 */
-  function spawnPillar(targetId, spec, delaySec) {
+  /* 火龍捲（pillar 變體）：真正的地板場域。每次傷害事件只更新同一道火龍捲的
+     座標與保留時間，不再以受擊敵人為中心重播一根短矩形光柱。 */
+  var _firePillarFx = Object.create(null);
+  var FIRE_PILLAR_MAX_LIFE_SEC = 4.5;
+  function spawnFirePillar(area, spec) {
+    if (!area || !isFinite(area.x) || !isFinite(area.y)) return null;
+    var key = area.id || [Math.round(area.x), Math.round(area.y), Math.round(area.r || 0)].join(':');
+    var holdMs = Math.max(900, Number(spec.dur || 0.5) * 2400);
+    var current = _firePillarFx[key];
+    if (current && !current.dead && current.node && !current.node.destroyed) {
+      current.x = Number(area.x);
+      current.y = Number(area.y);
+      current.radius = Math.max(16, Number(area.r) || current.radius);
+      current.expiresAt = nowMs() + holdMs;
+      return current;
+    }
+
     var theme = themeOf(spec);
+    var node = new PIXI.Container();
     var g = new PIXI.Graphics();
-    S.layers.fx.addChild(g);
-    var t = -(delaySec || 0), dur = 0.55;
+    node.addChild(g);
+    S.layers.zone.addChild(node);
+    var fx = { node: node, x: Number(area.x), y: Number(area.y), radius: Math.max(16, Number(area.r) || 28),
+      t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false };
+    _firePillarFx[key] = fx;
+    var particleAt = 0;
+
     addFx({
-      node: g,
+      node: node,
       update: function (dt) {
-        t += dt;
-        if (t < 0) return true;
-        var to = posOf(targetId);
-        var k = Math.min(1, t / dur);
-        var grow = k < 0.3 ? k / 0.3 : 1;
-        var fade = k > 0.6 ? 1 - (k - 0.6) / 0.4 : 1;
-        var h = 120 * grow, w = 26 * grow;
+        fx.t += dt;
+        node.x = fx.x;
+        node.y = fx.y;
+        var fade = fx.expiresAt - nowMs() < 360 ? Math.max(0, (fx.expiresAt - nowMs()) / 360) : 1;
+        var appear = Math.min(1, fx.t / 0.28);
+        var h = Math.max(118, fx.radius * 3.45) * appear;
+        var baseW = Math.max(44, fx.radius * 2.2) * appear;
+        var topW = Math.max(18, fx.radius * 0.62) * appear;
+        var phase = fx.t * 4.2;
         g.clear();
-        g.roundRect(to.x - w / 2, to.y - h, w, h, 8).fill({ color: theme.c2, alpha: 0.5 * fade });
-        g.roundRect(to.x - w * 0.25, to.y - h * 0.92, w * 0.5, h * 0.9, 6).fill({ color: theme.c1, alpha: 0.8 * fade });
-        if (!g._hit && k > 0.25) {
-          g._hit = true;
-          hitReact(targetId, spec.elem || 'fire', true);
-          addShake(5, spec);
-          spawnParticles(to.x, to.y - 20, 8, theme, 2);
+
+        // 地面火圈：把「傷害半徑」直接畫出來，讓玩家看得出場域邊界。
+        g.ellipse(0, 4, baseW * 0.58, Math.max(8, fx.radius * 0.34))
+          .fill({ color: 0x7d1708, alpha: 0.42 * fade })
+          .stroke({ color: 0xff6b19, width: 2, alpha: 0.78 * fade });
+        g.ellipse(0, 0, baseW * 0.46, Math.max(5, fx.radius * 0.2))
+          .fill({ color: 0xffb21c, alpha: 0.32 * fade });
+
+        // 外層火焰軀幹：寬底、收尖頂，並以旋臂抖動取代硬直矩形。
+        var silhouette = [
+          -baseW * 0.55, 0, -baseW * 0.47, -h * 0.18, -baseW * 0.36, -h * 0.44,
+          -topW * 0.52, -h * 0.78, -topW * 0.34, -h, topW * 0.34, -h,
+          topW * 0.52, -h * 0.78, baseW * 0.36, -h * 0.44, baseW * 0.47, -h * 0.18,
+          baseW * 0.55, 0
+        ];
+        g.poly(silhouette).fill({ color: 0xd93413, alpha: 0.52 * fade });
+
+        // 多條向上旋繞的火舌，使用固定段數控制每幀成本。
+        for (var ri = 0; ri < 4; ri++) {
+          var pts = [];
+          var inner = ri === 1 || ri === 2;
+          for (var si = 0; si <= 6; si++) {
+            var u = si / 6;
+            var y = -h * u;
+            var sway = Math.sin(phase + ri * 1.55 + u * 8.2) * baseW * (0.22 - u * 0.1);
+            var x = sway + Math.cos(phase * 0.7 + ri) * baseW * 0.08;
+            var width = Math.max(3, (baseW * (inner ? 0.12 : 0.18)) * (1 - u * 0.7));
+            pts.push(x - width, y);
+          }
+          for (si = 6; si >= 0; si--) {
+            u = si / 6;
+            y = -h * u;
+            sway = Math.sin(phase + ri * 1.55 + u * 8.2) * baseW * (0.22 - u * 0.1);
+            x = sway + Math.cos(phase * 0.7 + ri) * baseW * 0.08;
+            width = Math.max(3, (baseW * (inner ? 0.12 : 0.18)) * (1 - u * 0.7));
+            pts.push(x + width, y);
+          }
+          g.poly(pts).fill({ color: inner ? 0xffdf4d : (ri % 2 ? 0xff761c : 0xffa51d),
+            alpha: (inner ? 0.82 : 0.7) * fade });
         }
-        return t < dur;
+
+        // 白黃核心與頂端火舌，對齊參考圖的高亮中心。
+        g.ellipse(0, -h * 0.4, Math.max(5, baseW * 0.12), Math.max(18, h * 0.34))
+          .fill({ color: 0xffffbd, alpha: 0.62 * fade });
+        g.poly([-topW * 0.28, -h * 0.86, -topW * 0.08, -h * 1.12,
+          topW * 0.04, -h * 0.92, topW * 0.3, -h * 1.02, topW * 0.18, -h * 0.72])
+          .fill({ color: 0xff6a17, alpha: 0.82 * fade });
+
+        particleAt += dt;
+        if (!REDUCED_MOTION && particleAt > 0.11 && fade > 0.45) {
+          particleAt = 0;
+          var sparkAngle = Math.random() * Math.PI * 2;
+          var sparkX = Math.cos(sparkAngle) * baseW * (0.25 + Math.random() * 0.35);
+          spawnParticles(fx.x + sparkX, fx.y - h * (0.35 + Math.random() * 0.5), 3, theme, 1.1, 0.7);
+        }
+        if (nowMs() >= fx.expiresAt) {
+          fx.dead = true;
+          if (_firePillarFx[key] === fx) delete _firePillarFx[key];
+          return false;
+        }
+        return true;
       }
-    }, 1);
+    }, 2, FIRE_PILLAR_MAX_LIFE_SEC * 1000);
+    return fx;
   }
 
   /* 連續橫向穿梭折射閃電鏈（復刻截圖效果：在敵人間連續折射穿梭） */
@@ -2836,10 +2911,16 @@ var BattleRenderer = (function () {
       case 'impact':
       default:
         if (spec.variant === 'pillar') {
-          /* 地板場域（火柱）帶 area＝這一跳的實際傷害範圍：先畫地面footprint，
-             範圍內沒有敵人時它也是玩家唯一看得到的「火柱在這裡」。 */
-          if (rect) spawnAreaFlash(rect, themeOf(spec));
-          targets.forEach(function (id, ti) { spawnPillar(id, spec, ti * 0.06); });
+          /* 地板場域（火龍捲）以 area 為唯一錨點；targets 只負責受擊反饋，
+             不可再把火焰畫到每個敵人身上。高塔無座標時才用目標點退化。 */
+          var pillarArea = spec.area && isFinite(spec.area.x) && isFinite(spec.area.y)
+            ? spec.area
+            : (targets.length ? (function () {
+                var fallback = posOf(targets[0]);
+                return { x: fallback.x, y: fallback.y, r: 28 };
+              })() : null);
+          if (pillarArea) spawnFirePillar(pillarArea, spec);
+          targets.forEach(function (id) { hitReact(id, spec.elem || 'fire', false); });
           break;
         }
         if (spec.variant === 'smite') {

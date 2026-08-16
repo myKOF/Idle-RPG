@@ -5,7 +5,7 @@
    透過升級各階持續強化該技能的效果（階＝效果模組，不是獨立技能）。
    （2026-08-14 第二批追加：counter 反擊＝被動群組，不裝載、不施放，受擊時觸發；
    bloodrage 嗜血狂怒＝主動爆發增益，效果全部只在持續期間生效。）
-   （2026-08-16 第三批追加＝魔法系兩群組：fireball 火球術／firepillar 火柱。
+   （2026-08-16 第三批追加＝魔法系兩群組：fireball 火球術／firepillar 火龍捲。
    帶進三個新機制，皆為群組共用能力、不是這兩個技能的特例：
      1. 群組層 dmgType／elem：魔法傷害走魔攻與魔穿、本體傷害段歸屬火屬性（sgAtkCfg）
      2. 施法距離：各階 fx.castM（米）決定射程，取代「新版技能一律近戰起手」的寫死規則
@@ -96,7 +96,7 @@ var SKILLS2 = {
   counter: { name: '反擊', emoji: '🛡️', range: '', cd: 0, cost: 0, tiers: [{ name: '反擊', unlock: { reinc: 0, lv: 300 }, fx: { chance: 35, pct: 50, pctPer: 5 }, goldBase: 100000, goldGrow: 1.5, desc: '被動：受到傷害時有 {chance}% 機率對攻擊者反擊，造成 {pct}% 普攻傷害' }, { name: '招架', unlock: { reinc: 0, lv: 350 }, fx: { mult: 300, multPer: 30 }, goldBase: 200000, goldGrow: 1.5, desc: '格擋時必定對敵人反擊，造成「格擋減傷值 × {mult}%」的普攻傷害' }, { name: '強化反擊', unlock: { reinc: 0, lv: 400 }, fx: { pct: 30, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步提升反擊傷害，額外 +{pct}% 反擊普攻傷害' }, { name: '反擊盾', unlock: { reinc: 0, lv: 450 }, fx: { pct: 1, pctPer: 0.1 }, goldBase: 800000, goldGrow: 1.5, desc: '觸發反擊時，回復自身最大生命 {pct}% 的護盾' }, { name: '破甲擊', unlock: { reinc: 0, lv: 500 }, fx: { chance: 35, def: 15, sec: 4, secPer: 0.4, max: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '格擋時有 {chance}% 機率造成破甲：防禦 -{def}%，持續 {sec} 秒，最多疊 {max} 層（疊層時重置時間）' }, { name: '二次反擊', unlock: { reinc: 0, lv: 550 }, fx: { chance: 50, chancePer: 5, count: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '反擊時有 {chance}% 機率再追加 {count} 次反擊（追加反擊不會再觸發反擊）' }, { name: '狂化反殺', unlock: { reinc: 0, lv: 600 }, fx: { pct: 50, pctPer: 5, count: 2, m: 80 }, goldBase: 5000000, goldGrow: 1.5, desc: '每次反擊時，額外對 {m} 米內隨機 {count} 個敵人反擊，造成 {pct}% 普攻傷害（不會再觸發反擊）' }] },
   bloodrage: { name: '嗜血狂怒', emoji: '💢', range: '', cd: 60, cost: 50, tiers: [{ name: '嗜血狂怒', unlock: { reinc: 0, lv: 400 }, fx: { pct: 20, pctPer: 2, sec: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '攻速額外 +{pct}%（乘算，不受攻速上限限制），持續 {sec} 秒' }, { name: '狂暴', unlock: { reinc: 0, lv: 450 }, fx: { pct: 20, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '狂怒期間爆擊傷害額外 +{pct}%（乘算）' }, { name: '狂怒', unlock: { reinc: 0, lv: 500 }, fx: { pct: 20, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '狂怒期間總傷害額外 +{pct}%（乘算）' }, { name: '狂化連殺', unlock: { reinc: 0, lv: 550 }, fx: { add: 0.5, addPer: 0.1, kill: 0.1, killMax: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '狂怒期間基礎連擊數 +{add}，且每擊殺 1 個敵人再 +{kill}（累計上限 +{killMax}；不足 1 次的部分以機率觸發）' }, { name: '嗜血反震', unlock: { reinc: 0, lv: 600 }, fx: { pct: 20, pctPer: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '狂怒期間反震傷害提高 {pct}%（乘算，可與其它反震加成疊加）' }, { name: '血飲術', unlock: { reinc: 0, lv: 650 }, fx: { pct: 30, pctPer: 3, self: 1, m: 80 }, goldBase: 3000000, goldGrow: 1.5, desc: '狂怒期間傷害額外提高 {pct}%（乘算），但 {m} 米內的敵人每次受傷都會使你損失最大生命 {self}%（直接扣血，無法被護盾吸收）' }, { name: '狂血盛宴', unlock: { reinc: 0, lv: 700 }, fx: { sec: 0.5, pct: 1, pctPer: 0.1, count: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '狂怒期間每擊殺 1 個敵人，持續時間延長 {sec} 秒；且生命值每減少 1%，傷害額外 +{pct}%（乘算，無限疊加），每 1 連擊數使普攻可同時攻擊 1 個敵人（無限疊加）' }] },
   fireball: { name: '火球術', emoji: '🔥', range: '', dmgType: 'magic', elem: 'fire', cd: 14, cost: 45, tiers: [{ name: '火球術', unlock: { reinc: 0, lv: 1 }, fx: { pct: 150, pctPer: 15, m: 6, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '射出一顆火球（射程 {castM} 米），命中時爆炸，對目標及 {m} 米內的敵人造成 {pct}% 火屬性傷害' }, { name: '燃燒', unlock: { reinc: 0, lv: 1 }, fx: { dotPct: 20, dotPctPer: 2, dotSec: 5, dotGap: 0.5 }, goldBase: 200000, goldGrow: 1.5, desc: '被火球擊中的敵人陷入燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火屬性傷害，持續 {dotSec} 秒' }, { name: '火球爆裂', unlock: { reinc: 0, lv: 50 }, fx: { pct: 30, pctPer: 3, count: 3, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '火球爆炸後分裂出 {count} 個小火球，射向目標 {m} 米內的敵人，每個造成原始火球 {pct}% 的傷害' }, { name: '強化燃燒', unlock: { reinc: 0, lv: 100 }, fx: { gap: 0.4, gapPer: -0.015 }, goldBase: 800000, goldGrow: 1.5, desc: '燃燒的作用間隔縮短至 {gap} 秒（跳得更快＝總傷更高）' }, { name: '爆燃', unlock: { reinc: 0, lv: 150 }, fx: { pct: 50, pctPer: 5, count: 2, m: 12 }, goldBase: 1500000, goldGrow: 1.5, desc: '燃燒結束或敵人死亡時爆炸，對我方 {m} 米內的 {count} 個敵人造成該敵人整段燃燒累積傷害 {pct}% 的傷害' }, { name: '火焰增幅', unlock: { reinc: 0, lv: 200 }, fx: { pct: 0.25, pctPer: 0.025, sec: 4, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '我方 {m} 米內每有 1 次燃燒作用，你的火屬性傷害 +{pct}%，持續 {sec} 秒（無限疊加，每次疊加時重置時間）' }, { name: '殞石術', unlock: { reinc: 0, lv: 250 }, fx: { pct: 200, pctPer: 20, count: 3, m: 15, castM: 20 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為召喚 {count} 顆巨大火殞石從天而降（射程 {castM} 米），每顆對目標 {m} 米內的敵人造成 {pct}% 火屬性傷害（第 2~6 階效果仍然生效）' }] },
-  firepillar: { name: '火柱', emoji: '🌋', range: '', dmgType: 'magic', elem: 'fire', cd: 14, cost: 40, tiers: [{ name: '火柱', unlock: { reinc: 0, lv: 50 }, fx: { pct: 60, pctPer: 6, hits: 5, m: 3, castM: 30, sec: 2.5 }, goldBase: 100000, goldGrow: 1.5, desc: '在敵人腳下召喚一道火柱（射程 {castM} 米），對目標 {m} 米內的敵人連續造成 {hits} 段傷害，每段 {pct}% 火屬性傷害（全程約 {sec} 秒）' }, { name: '強化火柱', unlock: { reinc: 0, lv: 100 }, fx: { pct: 10, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '火柱的傷害範圍擴大 {pct}%' }, { name: '雙重火柱', unlock: { reinc: 0, lv: 150 }, fx: { count: 2, pct: 20, pctPer: 2, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '可同時對 {m} 米內的 {count} 個目標施放火柱，且火屬性傷害額外 +{pct}%' }, { name: '燃燒', unlock: { reinc: 0, lv: 200 }, fx: { chance: 20, chancePer: 2, dotPct: 20, dotSec: 4, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '火柱每次作用時有 {chance}% 機率使敵人燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火屬性傷害，持續 {dotSec} 秒' }, { name: '追擊', unlock: { reinc: 0, lv: 250 }, fx: { m: 6, mPer: 0.6 }, goldBase: 1500000, goldGrow: 1.5, desc: '火柱會以每秒 {m} 米的速度追擊目標' }, { name: '重生', unlock: { reinc: 0, lv: 300 }, fx: { chance: 25, chancePer: 2.5, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '火柱消失後有 {chance}% 機率在我方 {m} 米內的敵人身上重生' }, { name: '無限火牆', unlock: { reinc: 0, lv: 350 }, fx: { count: 3, hits: 8, pct: 60, pctPer: 6, len: 18, wid: 6, respawn: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為施放 {count} 道火牆（橫向 {len}×{wid} 米），每道造成 {hits} 段 {pct}% 火屬性傷害；每道火牆消失後再召喚 1 道（僅能再觸發一次；第 2~6 階效果仍然生效）' }] },
+  firepillar: { name: '火龍捲', emoji: '🌋', range: '', dmgType: 'magic', elem: 'fire', cd: 14, cost: 40, tiers: [{ name: '火龍捲', unlock: { reinc: 0, lv: 50 }, fx: { pct: 60, pctPer: 6, hits: 5, m: 3, castM: 30, sec: 2.5 }, goldBase: 100000, goldGrow: 1.5, desc: '在敵人腳下召喚一道火柱（射程 {castM} 米），對目標 {m} 米內的敵人連續造成 {hits} 段傷害，每段 {pct}% 火屬性傷害（全程約 {sec} 秒）' }, { name: '強化噴發', unlock: { reinc: 0, lv: 100 }, fx: { pct: 10, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '火柱的傷害範圍擴大 {pct}%' }, { name: '雙重龍捲', unlock: { reinc: 0, lv: 150 }, fx: { count: 2, pct: 20, pctPer: 2, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '可同時對 {m} 米內的 {count} 個目標施放火柱，且火屬性傷害額外 +{pct}%' }, { name: '燃燒', unlock: { reinc: 0, lv: 200 }, fx: { chance: 20, chancePer: 2, dotPct: 20, dotSec: 4, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '火柱每次作用時有 {chance}% 機率使敵人燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火屬性傷害，持續 {dotSec} 秒' }, { name: '追擊', unlock: { reinc: 0, lv: 250 }, fx: { m: 6, mPer: 0.6 }, goldBase: 1500000, goldGrow: 1.5, desc: '火柱會以每秒 {m} 米的速度追擊目標' }, { name: '重生', unlock: { reinc: 0, lv: 300 }, fx: { chance: 25, chancePer: 2.5, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '火柱消失後有 {chance}% 機率在我方 {m} 米內的敵人身上重生' }, { name: '無限火牆', unlock: { reinc: 0, lv: 350 }, fx: { count: 3, hits: 8, pct: 60, pctPer: 6, len: 18, wid: 6, respawn: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為施放 {count} 道火牆（橫向 {len}×{wid} 米），每道造成 {hits} 段 {pct}% 火屬性傷害；每道火牆消失後再召喚 1 道（僅能再觸發一次；第 2~6 階效果仍然生效）' }] },
   firehunt: { name: '火狩', emoji: '☄️', range: '3*3', dmgType: 'magic', elem: 'fire', cd: 26, cost: 50, tiers: [{ name: '火狩', unlock: { reinc: 0, lv: 100 }, fx: { pct: 120, pctPer: 12, count: 2, sec: 4, m: 8, rps: 0.65, castM: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 團火狩環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 火屬性傷害，持續 {sec} 秒' }, { name: '強化火狩', unlock: { reinc: 0, lv: 150 }, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '火狩的體積與環繞範圍同步擴大 {pct}%' }, { name: '伴生火狩', unlock: { reinc: 0, lv: 200 }, fx: { chance: 20, chancePer: 2, m: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '火狩命中時有 {chance}% 機率在其後方 {m} 米處伴生一團火狩（每團只能伴生一次，伴生出的不再伴生）' }, { name: '三重火狩', unlock: { reinc: 0, lv: 250 }, fx: { count: 3, pct: 150, pctPer: 15, sec: 4 }, goldBase: 800000, goldGrow: 1.5, desc: '改為召喚 {count} 團火狩，每團造成 {pct}% 火屬性傷害，持續 {sec} 秒' }, { name: '極速火狩', unlock: { reinc: 0, lv: 300 }, fx: { pct: 25, pctPer: 2.5 }, goldBase: 1500000, goldGrow: 1.5, desc: '火狩的旋轉速度 +{pct}%' }, { name: '再生', unlock: { reinc: 0, lv: 350 }, fx: { sec: 0.4, secPer: 0.04 }, goldBase: 3000000, goldGrow: 1.5, desc: '火狩每擊殺 1 個敵人，全部火狩的持續時間延長 {sec} 秒' }, { name: '狩神之舞', unlock: { reinc: 0, lv: 400 }, fx: { rings: 2, pct: 200, pctPer: 20, sec: 6, m: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為一次施放 {rings} 道火狩（外圈距內圈 {m} 米、兩道旋轉方向相反），每團造成 {pct}% 火屬性傷害、出現時自帶伴生，持續 {sec} 秒' }] }
 };
 
@@ -119,7 +119,8 @@ function resetSkill2RT() {
     storm: null, // 暴風之舞化身狀態：{ until, nextAt, gap, tgt }（tgt 為當前衝鋒目標實體）
     projectiles: [], // 飛出斬擊／貫穿突刺的執行期飛行物（不入存檔）
     meteors: [], // 殞石落地佇列：{ at, victims, burnSpec, ... }（不入存檔）
-    grounds: [], // 地板場域（火柱／火牆）的執行期實例（不入存檔）
+    grounds: [], // 地板場域（火龍捲／火牆）的執行期實例（不入存檔）
+    groundSeq: 0, // 給顯示層辨識同一道持續場域；不入存檔
     orbits: [], // 環繞場域（火狩）的執行期實例：釘在玩家身上、持續旋轉（不入存檔）
     rage: null,  // 嗜血狂怒爆發狀態：{ until, pEnt, killCombo }（pEnt＝施放時的玩家實體，
                  // 供血飲術反噬定位；killCombo＝期間擊殺累積的連擊數加成，結束歸零）
@@ -1337,7 +1338,7 @@ function sgCastBloodrage(pEnt, st, g, lvs, pool, primary, floatSel, out) {
 /* ===========================================================================
    魔法系共用基建：燃燒（sgBurn）
    ---------------------------------------------------------------------------
-   火球術第 2 階與火柱第 4 階塗的是**同一個**狀態，因此火球術第 5 階【爆燃】與
+   火球術第 2 階與火龍捲第 4 階塗的是**同一個**狀態，因此火球術第 5 階【爆燃】與
    第 6 階【火焰增幅】對兩者一視同仁——兩棵樹同時投資時的交互作用是刻意的，
    不是漏判：狀態表只有一種「燃燒」，引擎就不該憑來源分成兩種。
    每跳量＝技能傷害基準 × dotPct%，間隔可被【強化燃燒】縮短（跳更快＝總傷更高），
@@ -1363,7 +1364,7 @@ function sgFireballBurnSpec(st, g, lvs) {
   };
 }
 
-/* 火柱的燃燒規格（第 4 階未投資＝不燃燒）。每跳量占的是火柱「每段」的技能傷害。 */
+/* 火龍捲的燃燒規格（第 4 階未投資＝不燃燒）。每跳量占的是火龍捲「每段」的技能傷害。 */
 function sgFirepillarBurnSpec(g, lvs, segmentDmg) {
   if (lvs[3] < 1) return null;
   var fx = g.tiers[3].fx;
@@ -1417,7 +1418,7 @@ function sgEnemiesNearPlayer(enemies, radiusPx, exclude, count) {
   return out;
 }
 
-/* 我方周圍 radiusPx 內隨機 1 個存活敵人（火柱【重生】的落點規則：任意敵人，不是最近的）。 */
+/* 我方周圍 radiusPx 內隨機 1 個存活敵人（火龍捲【重生】的落點規則：任意敵人，不是最近的）。 */
 function sgRandomEnemyNearPlayer(enemies, radiusPx, exclude) {
   var cands = sgEnemiesNearPlayer(enemies, radiusPx, exclude, 0);
   return cands.length ? cands[Math.floor(Math.random() * cands.length)] : null;
@@ -1458,7 +1459,7 @@ function sgTickBurn(dt, ctx) {
   var ampLv = fbLvs ? fbLvs[5] : 0;
   var ampFx = SKILLS2.fireball.tiers[5].fx;
   var ampRange = bfMeterPx(Number(ampFx.m) || 20);
-  /* 燃燒可能同時掛在整群敵人身上（火球爆炸＋分裂＋火柱），逐一送特效事件會把
+  /* 燃燒可能同時掛在整群敵人身上（火球爆炸＋分裂＋火龍捲），逐一送特效事件會把
      同一個 tick 的事件量放大成敵人數；同一幀跳動的敵人合併成一則事件送出。 */
   var tickedNow = null;
   for (var i = 0; i < enemies.length; i++) {
@@ -1705,9 +1706,9 @@ function sgAreaAround(ent, rPx) {
 }
 
 /* ===========================================================================
-   火柱（firepillar）：地板場域
+   火龍捲（firepillar）：地板場域
    ---------------------------------------------------------------------------
-   火柱不是「一次結算完」的技能：它釘在地板上、按節拍反覆作用，還可能移動（追擊）
+   火龍捲不是「一次結算完」的技能：它釘在地板上、按節拍反覆作用，還可能移動（追擊）
    與重生。因此建立執行期場域實例（SKILL2_RT.grounds，不入存檔），由 tickSkill2 推進。
    無座標時（高塔 BOSS）退化為「固定打主目標」——與本系統其他幾何查詢的退化規則一致。
    第 7 階【無限火牆】依設計文檔「改為」火牆：形狀改為橫向矩形、段數與傷害%改讀第 7 階，
@@ -1719,12 +1720,12 @@ function sgCastFirepillar(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var srcFx = wall ? t[6].fx : t[0].fx;
   var srcLv = wall ? lvs[6] : lvs[0];
   var pct = sgVal(srcFx, 'pct', srcLv);
-  if (lvs[2] > 0) pct += sgVal(t[2].fx, 'pct', lvs[2]); // 雙重火柱：火屬性傷害額外加成
+  if (lvs[2] > 0) pct += sgVal(t[2].fx, 'pct', lvs[2]); // 雙重火龍捲：火屬性傷害額外加成
   var dmgVal = sgGroupBaseStat(g, st) * pct / 100;
   var hits = Math.max(1, Math.floor(Number(srcFx.hits) || 5));
   var lifeSec = Math.max(0.2, Number(t[0].fx.sec) || 2.5);
   var gap = lifeSec / hits;
-  // 強化火柱：範圍擴大（火柱＝半徑、火牆＝長寬同步放大）
+  // 強化火龍捲：範圍擴大（火龍捲＝半徑、火牆＝長寬同步放大）
   var scale = lvs[1] > 0 ? 1 + sgVal(t[1].fx, 'pct', lvs[1]) / 100 : 1;
   var burnSpec = sgFirepillarBurnSpec(g, lvs, dmgVal);
   var speed = lvs[4] > 0 ? bfMeterPx(sgVal(t[4].fx, 'm', lvs[4])) : 0;
@@ -1737,7 +1738,7 @@ function sgCastFirepillar(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   if (count > 1) spots = spots.concat(bfNearestOthers(primary, pool, count - 1, spreadPx));
 
   for (var i = 0; i < count; i++) {
-    // 目標不足時多出來的火柱疊在主目標身上（比照雙刀亂舞「只有 1 個敵人就都打同一個」）
+    // 目標不足時多出來的火龍捲疊在主目標身上（比照雙刀亂舞「只有 1 個敵人就都打同一個」）
     var spot = spots[i % spots.length];
     sgSpawnGround(pEnt, st, 'firepillar', {
       kind: wall ? 'wall' : 'pillar', tgt: spot, floatSel: floatSel,
@@ -1753,11 +1754,12 @@ function sgCastFirepillar(pEnt, st, g, lvs, pool, primary, floatSel, out) {
 }
 
 /* 建立一個地板場域實例。pos 於此時定位（釘在地板上，之後與目標實體脫鉤——
-   目標死了火柱也還在燒），tgt 只用於追擊時的移動方向。 */
+   目標死了火龍捲也還在燒），tgt 只用於追擊時的移動方向。 */
 function sgSpawnGround(pEnt, st, gid, cfg) {
   var p = (typeof bfPos === 'function' && cfg.tgt) ? bfPos(cfg.tgt) : null;
   var angle = (typeof bfAngleTo === 'function' && cfg.tgt) ? bfAngleTo(cfg.tgt) : null;
   SKILL2_RT.grounds.push({
+    vfxId: 'sg-ground-' + (++SKILL2_RT.groundSeq),
     gid: gid, pEnt: pEnt, st: st, floatSel: cfg.floatSel, kind: cfg.kind,
     pos: p ? { x: p.x, y: p.y } : null,
     angle: (angle === null || angle === undefined) ? 0 : angle,
@@ -1777,7 +1779,7 @@ function sgSpawnGround(pEnt, st, gid, cfg) {
   });
 }
 
-/* 場域這一跳打到誰：火柱＝圓、火牆＝以我方視線為法線的橫向矩形（以線段＋半寬表示）。
+/* 場域這一跳打到誰：火龍捲＝圓、火牆＝以我方視線為法線的橫向矩形（以線段＋半寬表示）。
    無座標＝退化為固定打當初的目標。 */
 function sgGroundVictims(f, enemies) {
   if (!f.pos) return (f.tgt && f.tgt.hp > 0) ? [f.tgt] : [];
@@ -1834,13 +1836,13 @@ function sgGroundTick(f, enemies, ctx) {
 function sgGroundArea(f) {
   if (!f.pos) return null;
   if (f.kind === 'wall') {
-    return { x: f.pos.x, y: f.pos.y, w: f.length, h: f.width,
+    return { id: f.vfxId, x: f.pos.x, y: f.pos.y, w: f.length, h: f.width,
       a: f.angle + Math.PI / 2, r: Math.max(f.length, f.width) / 2 };
   }
-  return { x: f.pos.x, y: f.pos.y, r: f.radius };
+  return { id: f.vfxId, x: f.pos.x, y: f.pos.y, r: f.radius };
 }
 
-/* 場域消失：火牆的再召喚（第 7 階，每道只能再觸發一次）與火柱的重生（第 6 階，
+/* 場域消失：火牆的再召喚（第 7 階，每道只能再觸發一次）與火龍捲的重生（第 6 階，
    機率成立就在我方範圍內的隨機敵人身上重來一次）。 */
 function sgGroundExpire(f, enemies, ctx) {
   var lvs = skills2Levels(f.gid);
@@ -1887,7 +1889,7 @@ function sgTickGrounds(dt, ctx) {
 /* ===========================================================================
    火狩（firehunt）：環繞場域
    ---------------------------------------------------------------------------
-   火狩與火柱同為「持續存在的場域」，差別只在錨點：火柱釘在地板座標上，
+   火狩與火龍捲同為「持續存在的場域」，差別只在錨點：火龍捲釘在地板座標上，
    火狩釘在玩家身上——圓心永遠取當下的玩家座標，所以天生跟著玩家移動。
    命中採**接觸判定**（進入才算一次）：一團火狩掃過同一個敵人只結算一次，
    離開後再碰到才會再命中，正好等於設計文檔的「環繞過程中碰到敵人即命中一次」；
