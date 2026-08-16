@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## Codex｜敵人死亡後清除未播放傷害浮字｜2026-08-16
+
+- 狀態：已完成
+- Owner：Codex
+- 目的：敵人死亡並從戰場消失後，取消該敵人尚未播放的延遲傷害浮字。
+- 允許修改：`js/battle-renderer.js`、`js/ui.js`、`index.html`、`tests/battle-skill-hover.test.cjs`、`tests/damage-float-regression.test.cjs`、`tests/ui-worker-events.test.cjs`、本文件。
+- 實作範圍：Canvas 與 DOM 浮字延遲回呼在目標消失後直接丟棄；已顯示中的浮字維持原本生命週期。
+- 驗收：相關浮字回歸測試、`node --check`、`npm.cmd run build`、`npm.cmd test`、`git diff --check`。
+- 交接：完成後回報修改檔案、測試指令與結果；建立 `[Codex]` 前綴 commit，不合併或推送其他分支。
+
 ## Codex｜雙刀亂舞三項技能效果調整｜2026-08-16
 
 - 狀態：已完成

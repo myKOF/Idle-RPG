@@ -21,6 +21,18 @@ function functionBody(name) {
   assert.fail('unterminated function ' + name);
 }
 
+function sourceFunctionBody(source, name) {
+  const start = source.indexOf('function ' + name + '(');
+  assert.notEqual(start, -1, 'missing function ' + name);
+  const open = source.indexOf('{', start);
+  let depth = 0;
+  for (let i = open; i < source.length; i++) {
+    if (source[i] === '{') depth++;
+    if (source[i] === '}' && --depth === 0) return source.slice(start, i + 1);
+  }
+  assert.fail('unterminated function ' + name);
+}
+
 test('Worker Event 將 flog、log 與 float 接到既有 UI 呈現函式', () => {
   const calls = [];
   const battleSnapshot = { stats: { comboHits: 2, aspd: 3 } };
@@ -201,6 +213,31 @@ test('Worker delayed lethal float animates a dead enemy bar from full to empty',
   });
   assert.equal(fill.style.width, '0%');
   assert.equal(fill.style.transition, 'width 100ms linear');
+});
+
+test('Worker delayed enemy damage float is discarded after the target disappears', () => {
+  const callbacks = [];
+  const context = {
+    S: {
+      ready: true, failed: false, pendingFloats: [],
+      entities: { 'mv-float-0': { state: 'dying' } }, lastPos: {}
+    },
+    documentHidden: () => false,
+    POS_BUFFER_MS: 0,
+    setTimeout: callback => { callbacks.push(callback); return 0; }
+  };
+  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
+  vm.runInNewContext([
+    sourceFunctionBody(renderer, 'enemyFloatTargetAvailable'),
+    sourceFunctionBody(renderer, 'onFloat')
+  ].join('\n'), context);
+
+  context.onFloat({ elId: 'mv-float-0', text: '100', cls: 'enemy-attack', damageValue: 100, delayMs: 100 });
+  assert.equal(callbacks.length, 1);
+  delete context.S.entities['mv-float-0'];
+  context.S.lastPos['mv-float-0'] = { x: 1, y: 2 };
+  callbacks[0]();
+  assert.equal(context.S.floats, undefined, '目標消失後不應建立新的浮字');
 });
 
 test('統計清除在 Worker 模式送 stats.reset 並等待 battle Snapshot 重繪', async () => {
