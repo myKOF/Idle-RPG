@@ -951,10 +951,13 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   // 反震（防守方被動）= 防守方最大生命 × 反震%
   if (dCfg.thornsPct && !out.killed) {
     out.thorns = Math.max(1, Math.round(dCfg.maxHp * dCfg.thornsPct / 100 * globalDamageMultiplier(aCfg.globalDmgRed)));
-    attacker.hp -= out.thorns;
-    // 反震也是「敵人受傷」：血飲術反噬同樣通知（防守方為玩家＝攻擊者為敵人）
-    if (dCfg.isPlayer && typeof skills2OnEnemyDamaged === 'function') {
-      skills2OnEnemyDamaged(attacker, out.thorns);
+    /* 魔法投射物的反傷由 combat.js 排到投射物命中時結算；其他攻擊維持同步結算。 */
+    if (!dCfg.deferThorns) {
+      attacker.hp = Math.max(0, attacker.hp - out.thorns);
+      // 反震也是「敵人受傷」：血飲術反噬同樣通知（防守方為玩家＝攻擊者為敵人）
+      if (dCfg.isPlayer && typeof skills2OnEnemyDamaged === 'function') {
+        skills2OnEnemyDamaged(attacker, out.thorns);
+      }
     }
   }
   return out;

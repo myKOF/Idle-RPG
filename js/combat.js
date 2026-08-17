@@ -925,11 +925,98 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
 
 // 怪物攻擊玩家
 var THORN_FLOAT_MAP = { 'pv-float': 'mv-float', 'tp-float': 'tb-float' };
+/* 敵方魔法投射物的畫面飛行時間。反傷／反擊必須在同一個命中時刻結算，
+   否則反傷可能先殺死尚未把子彈送出去的敵人。 */
+var ENEMY_PROJECTILE_HIT_DELAY_SEC = 0.26;
+var DEFERRED_ENEMY_RETALIATIONS = [];
+
+function enemyAttackProjectileTravelMs(ent) {
+    return ent && ent.magic ? Math.round(ENEMY_PROJECTILE_HIT_DELAY_SEC * 1000) : 0;
+}
+
+function enemyAttackRetaliationDelaySec(ent) {
+    return enemyAttackProjectileTravelMs(ent) / 1000;
+}
+
+function settleEnemyAttackRetaliation(event) {
+    if (!event || !event.attacker || !event.target || !event.result) return;
+    var attacker = event.attacker;
+    var result = event.result;
+
+    /* resolveHit 已先算好反震數值；只有延後事件才在這裡真正扣敵人生命，
+       並補上原本由 resolveHit 觸發的「敵人受傷」掛點。 */
+    if (!event.thornsApplied && result.thorns > 0) {
+        attacker.hp = Math.max(0, attacker.hp - result.thorns);
+        if (event.defCfg && event.defCfg.isPlayer && typeof skills2OnEnemyDamaged === 'function') {
+            skills2OnEnemyDamaged(attacker, result.thorns);
+        }
+        event.thornsApplied = true;
+    }
+
+    /* 順序與同步攻擊完全一致：傳奇先，Skills2 後。這些入口包含魔法反震、
+       格擋反射、岩甲尖刺、生命反射之盾與受擊反擊等效果。 */
+    if (typeof legendaryOnPlayerDamaged === 'function') {
+        legendaryOnPlayerDamaged(attacker, event.target, event.hpDamage, event.blocked, result, event.floatSel);
+    }
+    if (typeof skills2OnPlayerDamaged === 'function') {
+        skills2OnPlayerDamaged(attacker, event.target, event.hpDamage, event.blocked, result, event.floatSel);
+    }
+    if (result.thorns) {
+        floatEnemyEvent(attacker, THORN_FLOAT_MAP[event.floatSel] || event.floatSel,
+            '反傷 ' + fmt(result.thorns), 'defend');
+    }
+
+    /* 延後反傷把敵人殺掉時，補走原本 fieldMonsterAttack／towerTick 的死亡出口。
+       這不會改變攻擊已經發出的事實，只把死亡移到投射物命中之後。 */
+    if (attacker.hp <= 0) {
+        if (typeof FIELD !== 'undefined' && FIELD && FIELD.player === event.target &&
+            typeof fieldEnemyList === 'function' && fieldEnemyList().indexOf(attacker) >= 0 &&
+            typeof onFieldKill === 'function') {
+            onFieldKill(attacker);
+        } else if (typeof TOWER !== 'undefined' && TOWER && TOWER.player === event.target &&
+            TOWER.boss === attacker && typeof G !== 'undefined' && G && G.tower && G.tower.active &&
+            !TOWER.showingResult && typeof endTowerFight === 'function') {
+            endTowerFight(true);
+        }
+    }
+}
+
+function queueEnemyAttackRetaliation(mEnt, pEnt, floatSel, res, hpDamage, blocked, dCfg, delaySec) {
+    DEFERRED_ENEMY_RETALIATIONS.push({
+        at: GT + delaySec,
+        attacker: mEnt,
+        target: pEnt,
+        floatSel: floatSel,
+        result: res,
+        hpDamage: hpDamage,
+        blocked: blocked,
+        defCfg: dCfg,
+        thornsApplied: false
+    });
+}
+
+function tickDeferredEnemyAttackRetaliations() {
+    if (!DEFERRED_ENEMY_RETALIATIONS.length) return;
+    var pending = DEFERRED_ENEMY_RETALIATIONS;
+    DEFERRED_ENEMY_RETALIATIONS = [];
+    for (var i = 0; i < pending.length; i++) {
+        var event = pending[i];
+        if (!event) continue;
+        if (event.at > GT) {
+            DEFERRED_ENEMY_RETALIATIONS.push(event);
+            continue;
+        }
+        settleEnemyAttackRetaliation(event);
+    }
+}
+
 function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
     if (pEnt && pEnt._legendaryDoll && typeof legendaryMonsterAttackDoll === 'function') {
         return legendaryMonsterAttackDoll(mEnt, pEnt, floatSel, mult, skillName);
     }
     var dCfg = playerDefCfg(pEnt);
+    var retaliationDelaySec = enemyAttackRetaliationDelaySec(mEnt);
+    if (retaliationDelaySec > 0) dCfg.deferThorns = true;
     var res = resolveHit(mEnt, pEnt, monsterAtkCfg(mEnt, mult), dCfg);
     var skillLabel = skillName ? ' 使用【' + skillName + '】' : '';
     var logMsg = (mEnt.name || '怪物') + skillLabel + (mult && mult > 1 ? ' <span class="log-hl-bad">重擊</span>你，' : ' 攻擊你，');
@@ -981,17 +1068,17 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
             logMsg += '<span class="log-hl-bad">［' + res.procs.join('・') + '］</span>';
         }
     }
-    if (typeof legendaryOnPlayerDamaged === 'function') {
-        legendaryOnPlayerDamaged(mEnt, pEnt, hpDamage, !!res.blocked, res, floatSel);
+    var retaliationQueued = retaliationDelaySec > 0 && !res.miss && !res.invuln;
+    if (retaliationQueued) {
+        queueEnemyAttackRetaliation(mEnt, pEnt, floatSel, res, hpDamage, !!res.blocked, dCfg, retaliationDelaySec);
+    } else {
+        settleEnemyAttackRetaliation({
+            attacker: mEnt, target: pEnt, floatSel: floatSel, result: res,
+            hpDamage: hpDamage, blocked: !!res.blocked, defCfg: dCfg,
+            thornsApplied: true
+        });
     }
-    // 新版技能【反擊】被動（js/skills2.js）：受傷機率反擊／格擋必反／破甲擊，野外與高塔共用此收斂點
-    if (typeof skills2OnPlayerDamaged === 'function') {
-        skills2OnPlayerDamaged(mEnt, pEnt, hpDamage, !!res.blocked, res, floatSel);
-    }
-    if (res.thorns) {
-        floatEnemyEvent(mEnt, THORN_FLOAT_MAP[floatSel] || floatSel, '反傷 ' + fmt(res.thorns), 'defend');
-        logMsg += '<span class="log-hl-good">並遭到荊棘反震 ' + fmt(res.thorns) + ' 傷害！</span>';
-    }
+    if (res.thorns) logMsg += '<span class="log-hl-good">並遭到荊棘反震 ' + fmt(res.thorns) + ' 傷害！</span>';
     var cls = 'log-enemy-damage';
     if (mult && mult > 1) { cls = 'log-enemy-skill'; }
     if (skillName) { cls = 'log-enemy-skill'; }
@@ -1060,6 +1147,7 @@ function combatDebugAuditFieldDeaths(snapshot, phase) {
 }
 /* ---- 野外主迴圈 ---- */
 function fieldTick(dt) {
+    tickDeferredEnemyAttackRetaliations();
     if (G.tower.active) return; // 高塔戰鬥期間野外暫停
     var st = getStats();
     if (!FIELD.player) initFieldPlayer();

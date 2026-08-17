@@ -1182,7 +1182,9 @@ var BattleRenderer = (function () {
     if (ent.isBoss && ent.sheetName) playAnim(ent, 'attack', 'idle');
     if (ent.data && ent.data.magic) {
       var from = { x: ent.root.x, y: ent.root.y - ent.hitHeight * 0.5 };
-      spawnProjectile('pv-float', 260, {
+      var enemyProjectileMs = typeof enemyAttackProjectileTravelMs === 'function'
+        ? enemyAttackProjectileTravelMs(ent.data) : 260;
+      spawnProjectile('pv-float', enemyProjectileMs > 0 ? enemyProjectileMs : 260, {
         elem: ent.data.attr || null, cat: 'enemy', color: '#c084fc'
       }, function (pt) {
         spawnImpact(pt.x, pt.y, { elem: ent.data.attr || null, color: '#c084fc' }, false);
