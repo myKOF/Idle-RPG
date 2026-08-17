@@ -7459,6 +7459,40 @@ textarea:disabled,
   animation: vfxPart 0.7s ease-out both;
 }
 
+/* 天降技能落地前的目標提示：貼地半透明單圈，尺寸由 area.r 傳入，
+   紅色代表殞石術，藍色代表雷殞天落；只在落下期間存在，落地前淡出。 */
+.vfx-target-telegraph {
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--vfx-target-border, rgba(248, 113, 113, 0.9));
+  border-radius: 50%;
+  background: var(--vfx-target-fill, rgba(220, 38, 38, 0.18));
+  box-shadow: 0 0 18px var(--vfx-target-glow, rgba(239, 68, 68, 0.5)),
+    inset 0 0 18px var(--vfx-target-inset-glow, rgba(127, 29, 29, 0.34));
+  animation: vfxTargetTelegraph 900ms ease-in-out both;
+  z-index: 0;
+}
+
+.vfx-target-telegraph-fire {
+  --vfx-target-fill: rgba(220, 38, 38, 0.18);
+  --vfx-target-border: rgba(248, 113, 113, 0.92);
+  --vfx-target-glow: rgba(239, 68, 68, 0.56);
+  --vfx-target-inset-glow: rgba(127, 29, 29, 0.36);
+}
+
+.vfx-target-telegraph-lightning {
+  --vfx-target-fill: rgba(37, 99, 235, 0.18);
+  --vfx-target-border: rgba(96, 165, 250, 0.94);
+  --vfx-target-glow: rgba(59, 130, 246, 0.62);
+  --vfx-target-inset-glow: rgba(30, 64, 175, 0.38);
+}
+
+@keyframes vfxTargetTelegraph {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.96, 0.92); }
+  12% { opacity: 0.82; }
+  82% { opacity: 0.68; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.02, 1.02); }
+}
+
 /* 殞石落地震波：三層橢圓環＋Particle Fountain 式徑向火星／塵土爆散。 */
 .vfx-meteor-shockwave {
   width: 0;
@@ -7841,16 +7875,24 @@ textarea:disabled,
   to { transform: translate(-44%, -8px) scale(1.12); opacity: 0.78; }
 }
 
-/* ---- 泥沼／熔岩沼（新版技能 mire）：貼地的一攤場域 ----
-   與火牆同為長駐節點，但畫的是攤在地上的水窪：橢圓本體＋擴散漣漪＋冒泡。
-   尺寸由 js/vfx.js 依場域矩形逐次套用（沼澤會隨時間長大），此處只負責樣式。 */
+/* ---- 泥沼／熔岩沼（新版技能 mire）：貼地的方形場域 ----
+   尺寸由 js/vfx.js 依場域矩形逐次套用（沼澤會隨時間長大）；毒沼再疊加深紫色氣流。 */
+.vfx-field-motion {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
 .vfx-mire-pool {
   position: absolute;
-  border-radius: 50%;
+  border-radius: 10px;
   pointer-events: none;
-  background: radial-gradient(ellipse at 50% 50%,
-    rgba(123, 100, 48, 0.5), rgba(74, 58, 32, 0.42) 62%, rgba(52, 41, 24, 0.08) 88%, transparent 96%);
-  box-shadow: inset 0 0 18px rgba(30, 24, 12, 0.55);
+  background: linear-gradient(135deg,
+    rgba(139, 94, 50, 0.68), rgba(91, 53, 29, 0.58) 52%, rgba(57, 34, 22, 0.48));
+  box-shadow: inset 0 0 18px rgba(30, 18, 10, 0.62), 0 0 12px rgba(92, 55, 29, 0.28);
   animation: vfxMirePoolPulse 2.4s ease-in-out infinite alternate;
 }
 
@@ -7858,18 +7900,41 @@ textarea:disabled,
   content: '';
   position: absolute;
   inset: 6%;
-  border-radius: 50%;
-  border: 2px solid rgba(155, 189, 82, 0.42);
+  border-radius: 7px;
+  border: 2px solid rgba(196, 155, 93, 0.44);
   animation: vfxMireRipple 2.1s ease-out infinite;
 }
 
 .vfx-mire-lava {
-  background: radial-gradient(ellipse at 50% 50%,
-    rgba(255, 140, 48, 0.5), rgba(160, 48, 12, 0.44) 60%, rgba(96, 26, 8, 0.1) 88%, transparent 96%);
+  background: linear-gradient(135deg,
+    rgba(255, 140, 48, 0.62), rgba(160, 48, 12, 0.54) 60%, rgba(96, 26, 8, 0.48));
   box-shadow: inset 0 0 22px rgba(255, 122, 42, 0.4);
 }
 
 .vfx-mire-lava::after { border-color: rgba(255, 179, 71, 0.5); }
+
+.vfx-mire-poison {
+  box-shadow: inset 0 0 20px rgba(43, 20, 53, 0.7), 0 0 16px rgba(91, 43, 114, 0.32);
+}
+
+.vfx-mire-lava.vfx-mire-poison {
+  background: linear-gradient(135deg,
+    rgba(139, 94, 50, 0.68), rgba(91, 53, 29, 0.58) 52%, rgba(57, 34, 22, 0.48));
+}
+
+.vfx-mire-current {
+  position: absolute;
+  left: var(--vfx-mire-current-x, 50%);
+  top: var(--vfx-mire-current-y, 50%);
+  width: 34%;
+  height: 18%;
+  border: 2px solid rgba(91, 43, 114, 0.82);
+  border-left-color: transparent;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  filter: drop-shadow(0 0 5px rgba(126, 63, 154, 0.66));
+  animation: vfxMireCurrent 2.1s ease-in-out var(--vfx-mire-current-delay, 0s) infinite;
+}
 
 .vfx-mire-bubble {
   position: absolute;
@@ -7879,12 +7944,18 @@ textarea:disabled,
   height: 7px;
   margin: -3.5px 0 0 -3.5px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(196, 220, 138, 0.7), rgba(120, 150, 60, 0.15) 70%, transparent 82%);
+  background: radial-gradient(circle, rgba(224, 188, 126, 0.82), rgba(142, 90, 44, 0.22) 70%, transparent 82%);
+  box-shadow: 0 0 5px rgba(196, 155, 93, 0.45);
   animation: vfxMireBubble 1.5s ease-in-out var(--vfx-mire-bubble-delay, 0s) infinite;
 }
 
 .vfx-mire-lava .vfx-mire-bubble {
   background: radial-gradient(circle, rgba(255, 210, 130, 0.8), rgba(255, 130, 40, 0.2) 70%, transparent 82%);
+}
+
+.vfx-mire-poison .vfx-mire-bubble {
+  background: radial-gradient(circle, rgba(168, 85, 199, 0.9), rgba(91, 43, 114, 0.3) 70%, transparent 82%);
+  box-shadow: 0 0 7px rgba(126, 63, 154, 0.76);
 }
 
 @keyframes vfxMirePoolPulse {
@@ -7895,6 +7966,12 @@ textarea:disabled,
 @keyframes vfxMireRipple {
   from { transform: scale(0.35); opacity: 0.55; }
   to { transform: scale(1); opacity: 0; }
+}
+
+@keyframes vfxMireCurrent {
+  0% { transform: translate(-50%, -50%) rotate(var(--vfx-mire-current-angle, 0deg)) scale(0.78); opacity: 0; }
+  35% { opacity: 0.8; }
+  100% { transform: translate(-43%, -60%) rotate(calc(var(--vfx-mire-current-angle, 0deg) + 18deg)) scale(1.12); opacity: 0; }
 }
 
 @keyframes vfxMireBubble {

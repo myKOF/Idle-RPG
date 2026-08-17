@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## Codex｜泥沼擴大與雷球移動改為平滑顯示｜2026-08-17
+
+- 狀態：已完成
+- Owner：Codex
+- 使用者需求：泥沼範圍擴大與雷球移動改為連續平滑動畫；傷害間隔維持原設定。
+- 修改範圍：`js/battle-renderer.js`、`js/vfx.js`、`css/style.css`、`tests/skill2-vfx.test.cjs`。
+- 完成內容：Canvas 場域以事件間隔做位置／尺寸內插；DOM 場域以 transform 外層容器做 RAF 內插，保留泥沼泡泡、毒沼氣流與雷球本體動畫；未修改 `sgGroundTick`、`SG_MIRE_TICK_SEC` 或雷球 `gap`。
+- 驗證結果：`node --test tests/skill2-vfx.test.cjs`（16/16）；`node tools/build_check.cjs`（287/287）；地系／雷系／VFX 定向測試（70 通過，2 個既有泥沼尺寸基準失敗）；完整 `npm.cmd test`（既有 5 項基準失敗，與本次顯示層修改無關）；`git diff --check` 通過。
+- 已知限制：本機 Browser runtime 啟動時發生 `Cannot redefine property: process`，未能完成畫面截圖驗證。
+
 ## Antigravity｜雷系三大新技能（連鎖閃電、落雷術、雷球）實機測試與驗證｜2026-08-17
 
 - 狀態：已完成
@@ -3927,5 +3937,125 @@ Commit：
   `config/Excel/Skills2.xlsx`，不在程式碼。
 
 未完成項目：實機目視確認技能面板的「目前級／下一級」文字，以及重跑數值模擬。
+
+完成後交給：使用者／主整合工作區。
+
+---
+
+## 任務：落雷與雷殞目標死亡後停止殘留特效（2026-08-17）
+
+任務狀態：已完成（2026-08-17）
+
+任務分類：技能效果／戰鬥 VFX／生命週期清理
+
+負責 AI：Codex
+
+使用者需求：落雷常在敵人死亡後仍繼續播放，角色自身死亡後也會留下雷電特效；需要停止這些失效的落雷視覺，但保留原本傷害間隔與傷害結算。
+
+任務內容：在 Canvas 與 DOM 兩條落雷／雷殞顯示路徑加入目標存活守門。目標進入 `dying`／`gone`、敵人卡片進入 `is-dead`，或玩家進入復活倒數時，取消尚未開始及正在播放的雷柱、落點提示、爆點、衝擊波與粒子；一般普攻仍保留垂死目標的致死一擊視覺。不得改動傷害公式、傷害間隔、存檔格式或 Worker Protocol。
+
+修改檔案：
+
+- `js/battle-renderer.js`
+- `js/vfx.js`
+- `tests/lightning-vfx-lifecycle.test.cjs`
+- `docs/AI_TASKS.md`
+
+驗證結果：新增落雷生命週期回歸測試 2/2 通過；受影響的技能／Worker／投射物測試 30/30 通過；完整 `npm.cmd test` 為 1523 項、1518 通過、5 項既有失敗；`node --check js/battle-renderer.js`、`node --check js/vfx.js`、`npm.cmd run build`（288/288）與 `git diff --check` 通過。
+
+已知風險：完整測試的 5 項失敗為既有基準線問題（UI 快取版號、counter／bloodrage 消耗斷言、泥沼 100／120 尺寸斷言），與本次落雷生命週期修改無關。DOM 路徑使用既有敵卡 `is-dead` 與玩家復活狀態列作為顯示層死亡訊號；本機瀏覽器目視驗證仍可能受既有 browser runtime 初始化問題影響。
+
+未完成項目：無程式項目。
+
+完成後交給：使用者／主整合工作區。
+
+---
+
+## 任務：泥沼術改為方形咖啡色場域並新增毒沼紫色氣流泡泡（2026-08-17）
+
+任務狀態：已完成（2026-08-17）
+
+任務分類：技能效果／戰鬥 VFX／場域視覺
+
+負責 AI：Codex
+
+使用者需求：泥沼術的範圍由目前的圓／橢圓視覺改為方形；一般泥沼使用咖啡色，並在場域上顯示冒泡粒子。
+點出第 3 階「毒沼術」後，泥沼維持咖啡色底，額外顯示深紫色氣流與深紫色泡泡。
+
+追加需求：殞石術與雷殞天落的落點提示保留半透明填色與最外側邊框，但移除所有內嵌同心圈，只顯示一圈。
+
+任務內容：沿用既有矩形 `area.w/h` 與場域生命週期，在 DOM 與 Pixi Canvas 兩條顯示路徑將泥沼本體改為方形；
+新增毒沼 VFX variant，讓紫色氣流／泡泡只在毒沼效果啟用時出現；不改範圍判定、傷害計算、技能數值、存檔格式或 Worker Protocol。
+
+允許修改：
+
+- `js/skills2.js`
+- `js/vfx.js`
+- `js/battle-renderer.js`
+- `css/style.css`
+- `index.html`
+- `tests/skill2-vfx.test.cjs`
+- `docs/AI_TASKS.md`
+
+禁止修改：技能數值與傷害公式、存檔格式、Worker Protocol、無關技能效果與 UI。
+
+前置依賴：既有泥沼場域已傳出 `area.w/h` 並在 DOM／Pixi 兩套顯示層接線；目標檔案衝突預檢無來源。
+
+測試要求：執行泥沼／地系 VFX 定向測試、完整 `npm.cmd test`、`npm.cmd run build`、JavaScript 語法檢查與 `git diff --check`，並同步主頁快取版本。
+
+完成條件：泥沼 DOM／Pixi 皆為方形咖啡色場域並持續冒泡；毒沼啟用時疊加深紫色氣流與深紫色泡泡；建立 Codex commit。
+
+驗證結果：`tests/skill2-vfx.test.cjs` 16/16 通過；地系／雷系／VFX 定向合併測試 70/72 通過，
+其中 2 項為既有泥沼尺寸斷言（測試期望 100、現行資料為 120），未涉及本次顯示層修改；
+完整 `npm.cmd test` 為 1521 項、1516 通過、5 項既有失敗；`npm.cmd run build` 287/287 通過；
+`node --check js/skills2.js`、`node --check js/vfx.js`、`node --check js/battle-renderer.js` 與 `git diff --check` 通過；
+主頁 CSS、DOM VFX、Pixi Renderer 與 Skills2 快取版號已同步。
+
+已知風險：完整測試的 5 項失敗為既有基準線問題（`ui.js` 快取版號、嗜血狂怒消耗、泥沼 100／120 尺寸斷言、
+`counter` 消耗／資料斷言），與本任務的 VFX 變更無關；本機 Browser runtime 初始化仍受
+`Cannot redefine property: process` 阻擋，未能完成實機畫面目視驗證。
+
+未完成項目：無程式項目；建議後續由 Antigravity 在實機戰場確認方形咖啡泥沼、毒沼紫色氣流／泡泡，
+以及殞石／雷殞只剩一圈的視覺尺寸與時序。
+
+完成後交給：使用者／主整合工作區。
+
+---
+
+## 任務：殞石術與雷殞天落新增落點目標提示圈（2026-08-17）
+
+任務狀態：已完成（2026-08-17）
+
+任務分類：技能效果／戰鬥 VFX／落點提示
+
+負責 AI：Codex
+
+使用者需求：殞石術的每個落下座標顯示紅色半透明目標提示圈；雷殞天落的每個落下座標顯示藍色半透明目標提示圈，視覺上類似附件參考圖。
+
+任務內容：沿用既有 `meteor`／`thunder-fall` 事件與 `area.r` 範圍資料，在 DOM 與 Pixi Canvas 兩條顯示路徑新增落地前提示圈；提示圈於各自的落下延遲期間保持可見，落地時淡出。不得改動傷害計算、技能數值、存檔格式或 Worker Protocol。
+
+允許修改：
+
+- `js/vfx.js`
+- `js/battle-renderer.js`
+- `css/style.css`
+- `index.html`
+- `tests/skill2-vfx.test.cjs`
+- `tests/skill2-lightning.test.cjs`
+- `docs/AI_TASKS.md`
+
+禁止修改：技能數值與傷害公式、`js/skills2.js`、存檔格式、Worker Protocol、無關技能效果與 UI。
+
+前置依賴：既有殞石術／雷殞天落已送出帶 `area.r` 的天降事件；目標檔案衝突預檢無來源。
+
+測試要求：執行殞石／雷殞天落 VFX 定向測試、完整 `npm.cmd test`、`npm.cmd run build`、`git diff --check`，並同步主頁快取版本。
+
+完成條件：殞石術落點顯示紅色半透明圈、雷殞天落落點顯示藍色半透明圈；DOM／Pixi 兩條路徑皆接線；提示圈尺寸沿用 `area.r`；建立 Codex commit。
+
+驗證結果：定向技能／VFX 測試 46/46 通過；完整 `npm.cmd test` 為 1521 項、1518 通過、3 項既有失敗；`npm.cmd run build` 287/287 通過；`node --check js/vfx.js`、`node --check js/battle-renderer.js` 與 `git diff --check` 通過；主頁 CSS／DOM VFX／Pixi Renderer 快取版本已同步。
+
+已知風險：完整測試的 3 項失敗均為既有基準線問題（`ui.js` 快取版號、`counter` 消耗、`bloodrage` 消耗），與本任務修改範圍無關；本機瀏覽器目視驗證受 browser runtime 初始化錯誤 `Cannot redefine property: process` 阻擋，未能完成實機畫面確認。
+
+未完成項目：無程式項目；建議後續由 Antigravity 在實機戰場確認紅／藍提示圈的視覺尺寸與落地時序。
 
 完成後交給：使用者／主整合工作區。

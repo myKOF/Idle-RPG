@@ -16,20 +16,20 @@ test('命中爆點的環在建立時就設好起始尺寸，且彈射與一般�
   const vfx = read('js/vfx.js');
   const css = read('css/style.css');
 
-  assert.match(renderer, /function spawnImpact\(x, y, spec, strong\)/);
+  assert.match(renderer, /function spawnImpact\(x, y, spec, strong, targetGuard\)/);
   assert.match(renderer, /ring\.anchor\.set\(0\.5\);[\s\S]*?ring\.scale\.set\(1\.3 \/ RING_TEX_RADIUS\);/);
   assert.match(renderer, /ring\.scale\.set\(\(1\.3 \+ maxR \* k\) \/ RING_TEX_RADIUS\)/);
-  assert.match(renderer, /spawnParticles\(x, y, fireExplosion \? 22 : \(strong \? 12 : 6\), theme,[\s\S]*fireExplosion \? 1\.45 : 1\)/);
+  assert.match(renderer, /spawnParticles\(x, y, fireExplosion \? 22 : \(strong \? 12 : 6\), theme,[\s\S]*fireExplosion \? 1\.45 : 1(?:, targetGuard)?\)/);
   assert.match(renderer, /spawnImpact\(pt\.x, pt\.y, spec, false\);\s*\n\s*hitReact\(toId, spec\.elem, false\);/);
   assert.doesNotMatch(renderer, /BOUNCE_HIT_RADIUS_SCALE|isBounceHit|impactScale/);
 
-  assert.match(renderer, /function spawnParticles\(x, y, count, theme, speed, radiusScale\)/);
+  assert.match(renderer, /function spawnParticles\(x, y, count, theme, speed, radiusScale, targetGuard\)/);
   assert.match(renderer, /g\.scale\.set\(r \* particleScale \/ DOT_TEX_RADIUS\)/);
   assert.match(renderer, /var t = 0, dur = 0\.24, R = big \? 54 : 36;/);
   assert.doesNotMatch(renderer, /slashScale/);
   assert.doesNotMatch(renderer, /if \(strong && canJolt\) addShake\(4\)/);
 
-  assert.match(vfx, /function vfxImpact\(spec, layer, pt, targetId, delayMs\)/);
+  assert.match(vfx, /function vfxImpact\(spec, layer, pt, targetId, delayMs, targetGuard\)/);
   assert.doesNotMatch(vfx, /VFX_BOUNCE_HIT_RADIUS_SCALE|isBounceHit/);
   assert.doesNotMatch(vfx, /--vfx-hit-scale/);
   assert.match(vfx, /pathStart \+ pathFlight\);/);

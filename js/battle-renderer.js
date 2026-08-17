@@ -142,11 +142,33 @@ var BattleRenderer = (function () {
      垂死的敵人還在畫面上演死亡動畫（死亡定格 2 秒以上），劍氣打在牠身上正是
      擊殺該有的畫面。與飄字的 enemyFloatTargetAvailable 同一條線，兩者一致，
      不會再出現「數字跳出來、卻沒有出手動作」的落差。 */
+  function isTargetBoundThunderVfx(spec) {
+    return !!spec && (spec.variant === 'thunder-strike' || spec.variant === 'thunder-fall');
+  }
+  /* 落雷／雷殞是延遲到落點才結算的天降特效。這兩種特效若在等待期間
+     目標已死亡，必須整段取消；一般普攻仍沿用「dying 也要播出致死那一刀」
+     的舊規則，避免把兩種時序混在一起。 */
+  function vfxTargetLiveForSpec(spec, id) {
+    if (!isTargetBoundThunderVfx(spec) || typeof id !== 'string') return true;
+    if (id === 'pv-float') return !!(S.player && !S.player.dead);
+    var ent = S.entities[id];
+    if (!ent) {
+      /* 尚未建立的目標允許事件繼續；有 lastPos 代表它已經離場。 */
+      return !S.lastPos[id];
+    }
+    return ent.state !== 'dying' && ent.state !== 'gone';
+  }
   function vfxTargetsLive(spec) {
     var ids = spec && Array.isArray(spec.targets) ? spec.targets : [];
     if (!ids.length) return true;
     for (var i = 0; i < ids.length; i++) {
       var id = ids[i];
+      if (spec && (spec.variant === 'thunder-strike' || spec.variant === 'thunder-fall')) {
+        if (id === 'pv-float' && (!S.player || S.player.dead)) return false;
+        var thunderEnt = S.entities[id];
+        if (!thunderEnt && S.lastPos[id]) return false;
+        if (thunderEnt && (thunderEnt.state === 'dying' || thunderEnt.state === 'gone')) return false;
+      }
       if (id === 'pv-float') {
         if (!S.player || !S.player.dead) continue;
         return false;
@@ -163,6 +185,9 @@ var BattleRenderer = (function () {
   }
   function fxGate(spec) {
     if (!S.ready || documentHidden()) return true;
+    if (spec && (spec.variant === 'thunder-strike' || spec.variant === 'thunder-fall')) {
+      return !vfxTargetsLive(spec);
+    }
     if (spec && (spec.cat === 'basic' || spec.variant === 'knife-bounce')) {
       return !vfxTargetsLive(spec);
     }
@@ -1346,7 +1371,7 @@ var BattleRenderer = (function () {
     sweepOrphanFxNodes();
   }
 
-  function spawnParticles(x, y, count, theme, speed, radiusScale) {
+  function spawnParticles(x, y, count, theme, speed, radiusScale, targetGuard) {
     if (REDUCED_MOTION) return;
     count = particleBudget(Math.min(count, 14));
     if (count <= 0) return;
@@ -1371,6 +1396,7 @@ var BattleRenderer = (function () {
         addFx({
           node: g,
           update: function (dt) {
+            if (targetGuard && !targetGuard()) return false;
             t += dt;
             vy += 260 * dt;
             g.x += vx * dt; g.y += vy * dt;
@@ -1625,7 +1651,8 @@ var BattleRenderer = (function () {
   }
 
   /* 命中爆點：環 + 粒子 */
-  function spawnImpact(x, y, spec, strong) {
+  function spawnImpact(x, y, spec, strong, targetGuard) {
+    if (targetGuard && !targetGuard()) return;
     var fireExplosion = spec.variant === 'fire-explosion';
     var theme = fireExplosion
       ? { c1: '#c51e0d', c2: '#ffd447', glow: '#ff3b0a' } : themeOf(spec);
@@ -1649,6 +1676,7 @@ var BattleRenderer = (function () {
     addFx({
       node: ring,
       update: function (dt) {
+        if (targetGuard && !targetGuard()) return false;
         t += dt;
         var k = Math.min(1, t / dur);
         ring.scale.set((1.3 + maxR * k) / RING_TEX_RADIUS);
@@ -1657,7 +1685,7 @@ var BattleRenderer = (function () {
       }
     }, 1);
     spawnParticles(x, y, fireExplosion ? 22 : (strong ? 12 : 6), theme,
-      fireExplosion ? 1.35 : (strong ? 0.9 : 0.55), fireExplosion ? 1.45 : 1);
+      fireExplosion ? 1.35 : (strong ? 0.9 : 0.55), fireExplosion ? 1.45 : 1, targetGuard);
     if (strong) addShake(5, spec);
   }
 
@@ -1943,6 +1971,7 @@ var BattleRenderer = (function () {
     addFx({
       node: g,
       update: function (dt) {
+        if (typeof targetPtOrId === 'string' && !vfxTargetLiveForSpec(spec, targetPtOrId)) return false;
         t += dt;
         if (t < 0) return true;
         var to = resolvePos(targetPtOrId);
@@ -1956,7 +1985,9 @@ var BattleRenderer = (function () {
         }
         if (t >= dur * 0.25 && !g._hit) {
           g._hit = true;
-          spawnImpact(to.x, to.y, spec, !!(isMega || isPurple));
+          spawnImpact(to.x, to.y, spec, !!(isMega || isPurple), function () {
+            return typeof targetPtOrId !== 'string' || vfxTargetLiveForSpec(spec, targetPtOrId);
+          });
           if (typeof targetPtOrId === 'string') {
             hitReact(targetPtOrId, spec.elem || 'lightning', !!(isMega || isPurple));
           }
@@ -2266,24 +2297,65 @@ var BattleRenderer = (function () {
     return fx;
   }
 
-  /* 泥沼／熔岩沼（新版技能 mire）：貼地的一攤場域。
-     與火牆同為「按 area.id 合併、每次 tick 續命」的長駐特效，但畫法完全相反——
-     火牆是向上立起的火焰，沼澤是攤平在地上的水窪，所以另寫一支而不是共用參數。
-     沼澤會隨時間長大（【沼澤漫延】），尺寸每次 tick 都由 area 帶進來，不自行推算。 */
+  /* 場域的移動／尺寸只屬於顯示層：模擬層仍以自己的 tick 頻率判定傷害，
+     這裡只把兩次權威快照之間的畫面補齊，避免場域一格一格跳動。 */
+  function fieldVfxMotionSec(spec, fallback) {
+    var sec = Number(spec && spec.dur);
+    return Math.max(0.05, isFinite(sec) && sec > 0 ? sec : fallback);
+  }
+
+  function fieldVfxSetTarget(fx, x, y, w, h, duration) {
+    fx.motionFromX = fx.x;
+    fx.motionFromY = fx.y;
+    fx.motionFromW = fx.w;
+    fx.motionFromH = fx.h;
+    fx.motionToX = Number(x);
+    fx.motionToY = Number(y);
+    fx.motionToW = Math.max(1, Number(w));
+    fx.motionToH = Math.max(1, Number(h));
+    fx.motionT = 0;
+    fx.motionDur = Math.max(0.05, Number(duration) || 0.35);
+  }
+
+  function fieldVfxSetPositionTarget(fx, x, y, duration) {
+    fx.motionFromX = fx.x;
+    fx.motionFromY = fx.y;
+    fx.motionToX = Number(x);
+    fx.motionToY = Number(y);
+    fx.motionT = 0;
+    fx.motionDur = Math.max(0.05, Number(duration) || 0.35);
+  }
+
+  function fieldVfxStep(fx, dt) {
+    if (!(fx.motionDur > 0)) return;
+    fx.motionT = Math.min(fx.motionDur, fx.motionT + Math.max(0, Number(dt) || 0));
+    var k = Math.min(1, fx.motionT / fx.motionDur);
+    fx.x = lerp(fx.motionFromX, fx.motionToX, k);
+    fx.y = lerp(fx.motionFromY, fx.motionToY, k);
+    fx.w = lerp(fx.motionFromW, fx.motionToW, k);
+    fx.h = lerp(fx.motionFromH, fx.motionToH, k);
+  }
+
+  /* 泥沼／熔岩沼（新版技能 mire）：貼地的方形場域。
+     與火牆同為「按 area.id 合併、每次 tick 續命」的長駐特效，但尺寸直接沿用
+     area.w／area.h，不壓成橢圓。毒沼 variant 額外畫深紫色氣流與泡泡。 */
   var _mirePoolFx = Object.create(null);
   var MIRE_POOL_MAX_LIFE_SEC = 14;
   function spawnMirePool(spec) {
     var a = spec && spec.area;
     if (!a || !isFinite(a.x) || !isFinite(a.y)) return null;
-    var lava = spec.variant === 'mire-lava';
-    var key = (a.id || [Math.round(a.x), Math.round(a.y)].join(':')) + (lava ? ':lava' : '');
+    var lava = spec.variant === 'mire-lava' || spec.variant === 'mire-lava-poison';
+    var poison = spec.variant === 'mire-poison' || spec.variant === 'mire-lava-poison';
+    var key = (a.id || [Math.round(a.x), Math.round(a.y)].join(':'))
+      + (lava ? ':lava' : '') + (poison ? ':poison' : '');
     var holdMs = Math.max(700, Number(spec.dur || 0.5) * 2200);
     var current = _mirePoolFx[key];
     if (current && !current.dead && current.node && !current.node.destroyed) {
-      current.x = Number(a.x); current.y = Number(a.y);
-      current.w = Math.max(20, Number(a.w) || current.w);
-      current.h = Math.max(16, Number(a.h) || current.h);
+      fieldVfxSetTarget(current, Number(a.x), Number(a.y),
+        Math.max(20, Number(a.w) || current.w), Math.max(16, Number(a.h) || current.h),
+        fieldVfxMotionSec(spec, 0.5));
       current.lava = lava;
+      current.poison = poison;
       current.expiresAt = nowMs() + holdMs;
       return current;
     }
@@ -2294,7 +2366,12 @@ var BattleRenderer = (function () {
     var fx = {
       node: node, x: Number(a.x), y: Number(a.y),
       w: Math.max(20, Number(a.w) || 100), h: Math.max(16, Number(a.h) || 100),
-      lava: lava, t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false
+      lava: lava, poison: poison, t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false,
+      motionFromX: Number(a.x), motionFromY: Number(a.y),
+      motionFromW: Math.max(20, Number(a.w) || 100), motionFromH: Math.max(16, Number(a.h) || 100),
+      motionToX: Number(a.x), motionToY: Number(a.y),
+      motionToW: Math.max(20, Number(a.w) || 100), motionToH: Math.max(16, Number(a.h) || 100),
+      motionT: 1, motionDur: 1
     };
     _mirePoolFx[key] = fx;
     var bubbleAt = 0;
@@ -2303,39 +2380,60 @@ var BattleRenderer = (function () {
       node: node,
       update: function (dt) {
         fx.t += dt;
+        fieldVfxStep(fx, dt);
         node.x = fx.x; node.y = fx.y; node.rotation = 0;
         var left = fx.expiresAt - nowMs();
         var fade = left < 420 ? Math.max(0, left / 420) : 1;
-        /* 地面是俯視壓扁的：橫向用整個寬度，縱向壓成 0.5，看起來才是「躺在地上」。 */
+        /* 地面範圍是矩形，顯示層不得再用橢圓或固定的縱向壓縮代替實際判定。 */
         var rx = fx.w * 0.5;
-        var ry = fx.h * 0.5 * 0.52;
+        var ry = fx.h * 0.5;
         var phase = fx.t * 2.1;
-        var body = fx.lava ? 0x8a2b0b : 0x4a3a20;
-        var rim = fx.lava ? 0xff7a2a : 0x7d6533;
-        var glow = fx.lava ? 0xffb347 : 0x9bbd52;
+        var body = fx.poison ? 0x4a3020 : (fx.lava ? 0x8a2b0b : 0x4a3a20);
+        var rim = fx.poison ? 0x5b2b72 : (fx.lava ? 0xff7a2a : 0x7d6533);
+        var glow = fx.poison ? 0x7e3f9a : (fx.lava ? 0xffb347 : 0xa37a48);
+        var bubble = fx.poison ? 0x6b2d7c : (fx.lava ? 0xffd282 : 0xc49b68);
         g.clear();
-        g.ellipse(0, 0, rx, ry).fill({ color: body, alpha: 0.44 * fade });
-        g.ellipse(0, 0, rx, ry).stroke({ width: 3, color: rim, alpha: 0.55 * fade });
-        // 幾圈慢慢擴散的漣漪：沼澤在冒泡、岩漿在翻滾，用同一組環表現
+        g.rect(-rx, -ry, fx.w, fx.h).fill({ color: body, alpha: 0.5 * fade });
+        g.rect(-rx, -ry, fx.w, fx.h).stroke({ width: 3, color: rim, alpha: 0.62 * fade });
+        // 方形內的慢速漣漪：只作為泥面流動，不改變場域邊界。
         for (var ri = 0; ri < 3; ri++) {
           var u = ((phase * 0.32 + ri / 3) % 1);
-          g.ellipse(0, 0, rx * (0.28 + u * 0.7), ry * (0.28 + u * 0.7))
+          var rw = rx * (0.28 + u * 0.62), rh = ry * (0.28 + u * 0.62);
+          g.rect(-rw, -rh, rw * 2, rh * 2)
             .stroke({ width: 2, color: glow, alpha: (0.34 * (1 - u)) * fade });
         }
-        // 泡泡：位置以 t 決定（同一個 fx 每幀連續變化，不用亂數避免閃爍）
+        if (fx.poison) {
+          // 深紫色氣流在泥面上緩慢橫向流動；使用固定波形避免每幀閃爍。
+          for (var ci = 0; ci < 3; ci++) {
+            var cy = -ry * 0.48 + ci * ry * 0.46;
+            var path = g.moveTo(-rx * 0.78, cy);
+            for (var si = 1; si <= 6; si++) {
+              var su = si / 6;
+              path = path.lineTo(-rx * 0.78 + fx.w * 0.13 * si,
+                cy + Math.sin(phase * 0.9 + ci * 1.7 + su * 7) * ry * 0.1);
+            }
+            path.stroke({ color: 0x6b2d7c, width: 3, alpha: 0.56 * fade });
+          }
+        }
+        // 泡泡：固定相位加上上升量，讓泡泡看起來真的從泥面冒出。
         for (var bi = 0; bi < 6; bi++) {
           var ba = phase * 0.7 + bi * 1.9;
           var brr = 0.28 + ((bi * 0.17 + phase * 0.11) % 0.62);
           var bx = Math.cos(ba) * rx * brr;
-          var by = Math.sin(ba) * ry * brr;
+          var rise = (fx.t * (14 + bi * 2) + bi * 17) % Math.max(1, ry * 0.55);
+          var by = Math.sin(ba) * ry * brr - rise;
           var br = 2.4 + (bi % 3) * 1.4 + Math.sin(phase * 1.7 + bi) * 0.9;
-          g.circle(bx, by, Math.max(1, br)).fill({ color: glow, alpha: 0.3 * fade });
+          g.circle(bx, by, Math.max(1, br)).fill({ color: bubble, alpha: 0.34 * fade });
+          g.circle(bx, by, Math.max(1, br)).stroke({ color: glow, width: 1.3, alpha: 0.52 * fade });
         }
         bubbleAt += dt;
         if (!REDUCED_MOTION && bubbleAt > 0.28 && fade > 0.4) {
           bubbleAt = 0;
+          var bubbleTheme = fx.poison
+            ? { c1: '#6b2d7c', c2: '#a855c7', glow: '#7e3f9a' }
+            : themeOf(spec);
           spawnParticles(fx.x + (Math.random() - 0.5) * fx.w * 0.6,
-            fx.y + (Math.random() - 0.5) * ry * 1.2, 2, themeOf(spec), 0.9, 0.5);
+            fx.y + (Math.random() - 0.5) * ry * 1.2, 2, bubbleTheme, 0.9, 0.5);
         }
         if (nowMs() >= fx.expiresAt) {
           fx.dead = true;
@@ -2350,8 +2448,8 @@ var BattleRenderer = (function () {
 
   /* 雷球（新版技能 thunderorb）：會飛的球體場域。
      模擬層每 0.35 秒送一次事件，帶上 area（x／y／r）與同一顆球的 id；
-     顯示層按 id 合併節點、每次事件只更新到最新座標——球會不會飛、飛多快，
-     完全由模擬層決定，顯示層不自行推算，傷害範圍與畫面因此永遠對得起來。 */
+     顯示層按 id 合併節點、每次事件設定最新座標目標，再以事件間隔內插到目標；
+     球會不會飛、飛多快仍完全由模擬層決定，顯示層只補畫面，不改傷害範圍。 */
   var _thunderOrbFx = Object.create(null);
   var THUNDER_ORB_MAX_LIFE_SEC = 14;
   var THUNDER_SHOCK_THEME = { c1: '#2563eb', c2: '#dbeafe', glow: '#60a5fa' };
@@ -2362,9 +2460,9 @@ var BattleRenderer = (function () {
     var holdMs = Math.max(520, Number(spec.dur || 0.35) * 2400);
     var current = _thunderOrbFx[key];
     if (current && !current.dead && current.node && !current.node.destroyed) {
-      current.x = Number(a.x);
-      current.y = Number(a.y);
       current.r = Math.max(8, Number(a.r) || current.r);
+      fieldVfxSetPositionTarget(current, Number(a.x), Number(a.y),
+        fieldVfxMotionSec(spec, 0.35));
       current.expiresAt = nowMs() + holdMs;
       return current;
     }
@@ -2374,13 +2472,20 @@ var BattleRenderer = (function () {
     S.layers.fx.addChild(node);
     var fx = {
       node: node, x: Number(a.x), y: Number(a.y), r: Math.max(8, Number(a.r) || 30),
-      t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false
+      w: Math.max(8, Number(a.r) || 30), h: Math.max(8, Number(a.r) || 30),
+      t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false,
+      motionFromX: Number(a.x), motionFromY: Number(a.y),
+      motionFromW: Math.max(8, Number(a.r) || 30), motionFromH: Math.max(8, Number(a.r) || 30),
+      motionToX: Number(a.x), motionToY: Number(a.y),
+      motionToW: Math.max(8, Number(a.r) || 30), motionToH: Math.max(8, Number(a.r) || 30),
+      motionT: 1, motionDur: 1
     };
     _thunderOrbFx[key] = fx;
     addFx({
       node: node,
       update: function (dt) {
         fx.t += dt;
+        fieldVfxStep(fx, dt);
         node.x = fx.x;
         node.y = fx.y - 10;                 // 略高於腳底，看起來是懸在空中的球
         var left = fx.expiresAt - nowMs();
@@ -2418,21 +2523,27 @@ var BattleRenderer = (function () {
   /* 雷殞天落（thunderorb T7）：巨大雷球從天而降，落地炸出藍色衝擊波。
      與殞石共用「落下時間＝模擬層的 travelMs」的約定，畫面到地與傷害結算同一刻。 */
   function spawnThunderFall(spec, targetId, delaySec) {
+    if (typeof targetId === 'string' && !vfxTargetLiveForSpec(spec, targetId)) return;
     var to = (spec.area && isFinite(spec.area.x) && isFinite(spec.area.y))
       ? { x: spec.area.x, y: spec.area.y } : posOf(targetId);
     if (!to || !isFinite(to.x)) return;
     var radius = (spec.area && Number(spec.area.r) > 0) ? Number(spec.area.r) : 90;
     var from = { x: to.x + (Math.random() * 36 - 18), y: to.y - S.H * 0.7 };
     var dur = Math.max(0.35, ((spec.travelMs && spec.travelMs[0]) || 700) / 1000);
+    spawnTargetTelegraph(spec, to.x, to.y, radius, delaySec, dur, targetId);
     var node = new PIXI.Container();
     var g = new PIXI.Graphics();
     node.addChild(g);
     S.layers.fx.addChild(node);
     var t = -(Math.max(0, delaySec || 0)), landed = false;
+    var targetGuard = typeof targetId === 'string' ? function () {
+      return vfxTargetLiveForSpec(spec, targetId);
+    } : null;
     var orbR = Math.max(16, radius * 0.32);
     addFx({
       node: node,
       update: function (dt) {
+        if (typeof targetId === 'string' && !vfxTargetLiveForSpec(spec, targetId)) return false;
         t += dt;
         if (t < 0) { node.visible = false; return true; }
         node.visible = true;
@@ -2451,8 +2562,8 @@ var BattleRenderer = (function () {
         }
         if (k >= 1 && !landed) {
           landed = true;
-          spawnImpact(to.x, to.y, spec, true);
-          spawnFireShockwave(to.x, to.y, radius, THUNDER_SHOCK_THEME);
+          spawnImpact(to.x, to.y, spec, true, targetGuard);
+          spawnFireShockwave(to.x, to.y, radius, THUNDER_SHOCK_THEME, targetGuard);
           addShake(6, spec);
           if (typeof targetId === 'string') hitReact(targetId, spec.elem || 'lightning', true);
         }
@@ -2565,6 +2676,38 @@ var BattleRenderer = (function () {
     }, scale && scale < 1 ? 0 : 2, dur * 1000 + (delaySec || 0) * 1000 + 800);
   }
 
+  function spawnTargetTelegraph(spec, cx, cy, radius, delaySec, durationSec, targetId) {
+    radius = Number(radius);
+    if (!isFinite(radius) || radius <= 0) radius = 90;
+    radius = Math.max(36, radius);
+    var isLightning = spec && spec.variant === 'thunder-fall';
+    var colors = isLightning
+      ? { fill: 0x2563eb, border: 0x60a5fa }
+      : { fill: 0xdc2626, border: 0xf87171 };
+    var g = new PIXI.Graphics();
+    g.x = cx; g.y = cy;
+    S.layers.zone.addChild(g);
+    var t = -(Math.max(0, delaySec || 0));
+    var dur = Math.max(0.28, durationSec || 0.7);
+    addFx({
+      node: g,
+      update: function (dt) {
+        if (typeof targetId === 'string' && !vfxTargetLiveForSpec(spec, targetId)) return false;
+        t += dt;
+        if (t < 0) { g.visible = false; return true; }
+        g.visible = true;
+        var k = Math.min(1, t / dur);
+        var fade = k > 0.84 ? Math.max(0, (1 - k) / 0.16) : 1;
+        var pulse = 1 + Math.sin(t * 5.5) * 0.025;
+        g.clear();
+        g.ellipse(0, 0, radius * pulse, radius * 0.52 * pulse)
+          .fill({ color: colors.fill, alpha: 0.16 * fade })
+          .stroke({ color: colors.border, width: 2.5, alpha: 0.82 * fade });
+        return t < dur;
+      }
+    }, 1, (dur + (delaySec || 0)) * 1000 + 500);
+  }
+
   function spawnMeteor(rect, spec) {
     var theme = themeOf(spec);
     var cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
@@ -2577,6 +2720,7 @@ var BattleRenderer = (function () {
     /* 與 DOM vfxMeteor、技能傷害浮字相同：殞石固定慢 30%。 */
     var dur = Math.min(1.15, Math.max(0.7, meteorTravel / 1000 / VFX_METEOR_SPEED_MULTIPLIER));
     var shockTheme = { c1: '#9f1d12', c2: '#f05a13', glow: '#d62f12' };
+    spawnTargetTelegraph(spec, cx, cy, rectRadius(rect), 0, dur);
     spawnMeteorProjectile(spec, theme, mainFrom, { x: cx, y: cy }, 1, dur, 0, function () {
       /* 強化爆點本身就是這顆殞石唯一一次 Canvas 鏡頭晃動。 */
       spawnImpact(cx, cy, spec, true);
@@ -2598,7 +2742,7 @@ var BattleRenderer = (function () {
       spawnMeteorProjectile(spec, smallTheme, smallFrom, { x: cx, y: cy }, 0.52, smallDur, delaySec, null);
     }
   }
-  function spawnFireShockwave(cx, cy, radius, theme) {
+  function spawnFireShockwave(cx, cy, radius, theme, targetGuard) {
     var g = new PIXI.Graphics();
     g.x = cx; g.y = cy;
     S.layers.fx.addChild(g);
@@ -2618,6 +2762,7 @@ var BattleRenderer = (function () {
     addFx({
       node: g,
       update: function (dt) {
+        if (targetGuard && !targetGuard()) return false;
         t += dt;
         var k = t / dur;
         g.clear();
@@ -3328,7 +3473,7 @@ var BattleRenderer = (function () {
         if (spec.variant === 'firehunt' || spec.variant === 'thunder-orbit') spawnFireHunt(spec);
         else if (spec.variant === 'thunder-orb') spawnThunderOrbField(spec);
         else if (spec.variant === 'firewall') spawnFireWall(spec);
-        else if (spec.variant === 'mire' || spec.variant === 'mire-lava') spawnMirePool(spec);
+        else if (spec.variant === 'mire' || spec.variant === 'mire-lava' || spec.variant === 'mire-poison' || spec.variant === 'mire-lava-poison') spawnMirePool(spec);
         else if (spec.variant === 'cyclone') spawnCyclone(rect, spec);
         else if (spec.variant === 'bladestorm') spawnBladestorm(rect, spec);
         else spawnAura(rect, spec);

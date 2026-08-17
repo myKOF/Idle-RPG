@@ -162,7 +162,7 @@ function vfxClear() {
   }
   for (var i = 0; i < _vfxNodes.length; i++) {
     var n = _vfxNodes[i];
-    if (n && n.parentNode) n.parentNode.removeChild(n);
+    vfxRemoveNode(n);
   }
   _vfxNodes = [];
   _vfxFirePillars = Object.create(null);
@@ -204,6 +204,11 @@ function vfxNodeClassName(node) {
 
 /* 對已脫離 DOM 的節點也安全；清理路徑可重複呼叫。 */
 function vfxRemoveNode(node) {
+  if (node && node._vfxTargetGuardHandle) {
+    if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(node._vfxTargetGuardHandle);
+    else if (typeof clearTimeout === 'function') clearTimeout(node._vfxTargetGuardHandle);
+    node._vfxTargetGuardHandle = 0;
+  }
   if (node && node.parentNode) node.parentNode.removeChild(node);
 }
 
@@ -231,7 +236,7 @@ function vfxScheduleNodeWatchdog() {
 
 /* 登記節點的預期壽命、套用全域節點上限並安排回收。
    aura 是長駐狀態，節點爆量時優先淘汰短命效果，避免領域被技能連發擠掉。 */
-function vfxTrack(node, ms) {
+function vfxTrack(node, ms, targetGuard) {
   var ttl = Number(ms);
   if (!isFinite(ttl) || ttl < 0) ttl = 0;
   var cls = vfxNodeClassName(node);
@@ -239,6 +244,26 @@ function vfxTrack(node, ms) {
     ttl = Math.min(ttl, VFX_METEOR_HARD_LIFETIME_MS);
   }
   node._vfxExpiresAt = Date.now() + ttl;
+  if (typeof targetGuard === 'function') {
+    node._vfxTargetGuard = targetGuard;
+    var checkTarget = function () {
+      node._vfxTargetGuardHandle = 0;
+      if (!node.parentNode || !_vfxEnabled || !targetGuard()) {
+        vfxRemoveNode(node);
+        return;
+      }
+      if (typeof requestAnimationFrame === 'function') {
+        node._vfxTargetGuardHandle = requestAnimationFrame(checkTarget);
+      } else if (typeof setTimeout === 'function') {
+        node._vfxTargetGuardHandle = setTimeout(checkTarget, 50);
+      }
+    };
+    if (typeof requestAnimationFrame === 'function') {
+      node._vfxTargetGuardHandle = requestAnimationFrame(checkTarget);
+    } else if (typeof setTimeout === 'function') {
+      node._vfxTargetGuardHandle = setTimeout(checkTarget, 50);
+    }
+  }
   _vfxNodes.push(node);
   while (_vfxNodes.length > VFX_MAX_NODES) {
     // 撞頂時優先踢短命特效：領域（aura）是長駐視覺狀態，最老≠最該死，
@@ -246,7 +271,8 @@ function vfxTrack(node, ms) {
     var evict = 0;
     for (var ei = 0; ei < _vfxNodes.length; ei++) {
       var cand = _vfxNodes[ei];
-      if (!cand || typeof cand.className !== 'string' || cand.className.indexOf('vfx-aura') < 0) {
+      if (!cand || typeof cand.className !== 'string' ||
+          (cand.className.indexOf('vfx-aura') < 0 && cand.className.indexOf('vfx-field-motion') < 0)) {
         evict = ei;
         break;
       }
@@ -393,6 +419,78 @@ function vfxTheme(spec) {
   return { c1: c, c2: '#ffffff', glow: c };
 }
 
+/* 長駐場域的 DOM 幾何只更新一次快照；用獨立的外層容器以 transform 內插位置／尺寸，
+   內層保留原本的 pulse／泡泡／氣流 CSS 動畫。這只影響畫面，不會增加傷害判定。 */
+function vfxFieldMotionSec(spec, fallback) {
+  var sec = Number(spec && spec.dur);
+  return Math.max(0.05, isFinite(sec) && sec > 0 ? sec : fallback);
+}
+
+function vfxFieldMotionApply(node, state) {
+  var baseW = Math.max(1, state.baseW);
+  var baseH = Math.max(1, state.baseH);
+  var cx = state.x + state.w / 2;
+  var cy = state.y + state.h / 2;
+  var sx = Math.max(0.01, state.w / baseW);
+  var sy = Math.max(0.01, state.h / baseH);
+  node.style.transform = 'translate3d(' + cx.toFixed(3) + 'px, ' + cy.toFixed(3) + 'px, 0) scale(' +
+    sx.toFixed(5) + ', ' + sy.toFixed(5) + ')';
+}
+
+function vfxFieldMotionSchedule(node) {
+  if (!node || node._vfxFieldMotionHandle) return;
+  var frame = function () {
+    node._vfxFieldMotionHandle = 0;
+    if (!node.parentNode || !node._vfxFieldMotion) return;
+    var state = node._vfxFieldMotion;
+    var elapsed = Math.max(0, Date.now() - state.startedAt) / 1000;
+    var k = state.duration > 0 ? Math.min(1, elapsed / state.duration) : 1;
+    state.x = state.fromX + (state.toX - state.fromX) * k;
+    state.y = state.fromY + (state.toY - state.fromY) * k;
+    state.w = state.fromW + (state.toW - state.fromW) * k;
+    state.h = state.fromH + (state.toH - state.fromH) * k;
+    vfxFieldMotionApply(node, state);
+    if (k < 1) vfxFieldMotionSchedule(node);
+  };
+  if (typeof requestAnimationFrame === 'function') node._vfxFieldMotionHandle = requestAnimationFrame(frame);
+  else node._vfxFieldMotionHandle = setTimeout(frame, 16);
+}
+
+function vfxFieldMotionSet(node, x, y, w, h, duration) {
+  var state = node._vfxFieldMotion;
+  if (!state) {
+    state = node._vfxFieldMotion = {
+      x: Number(x), y: Number(y), w: Math.max(1, Number(w)), h: Math.max(1, Number(h)),
+      fromX: Number(x), fromY: Number(y), fromW: Math.max(1, Number(w)), fromH: Math.max(1, Number(h)),
+      toX: Number(x), toY: Number(y), toW: Math.max(1, Number(w)), toH: Math.max(1, Number(h)),
+      baseW: Math.max(1, Number(w)), baseH: Math.max(1, Number(h)),
+      startedAt: Date.now(), duration: 0
+    };
+  } else {
+    state.fromX = state.x;
+    state.fromY = state.y;
+    state.fromW = state.w;
+    state.fromH = state.h;
+    state.toX = Number(x);
+    state.toY = Number(y);
+    state.toW = Math.max(1, Number(w));
+    state.toH = Math.max(1, Number(h));
+    state.startedAt = Date.now();
+    state.duration = vfxFieldMotionSec({ dur: duration }, 0.35);
+  }
+  vfxFieldMotionApply(node, state);
+  if (state.duration > 0) vfxFieldMotionSchedule(node);
+}
+
+function vfxFieldVisual(node, cls, layerSpec, w, h) {
+  var visual = vfxNode(cls, node, layerSpec);
+  visual.style.left = (-w / 2) + 'px';
+  visual.style.top = (-h / 2) + 'px';
+  visual.style.width = w + 'px';
+  visual.style.height = h + 'px';
+  return visual;
+}
+
 function vfxNode(cls, layer, spec) {
   var d = document.createElement('div');
   d.className = 'vfx ' + cls;
@@ -436,12 +534,38 @@ function vfxHitVisualTarget(elId, card) {
   }
   return card.querySelector('.cb-icon, .cb-emoji, .enemy-emoji-fallback');
 }
-function vfxHitReact(targetId, elem, delayMs, strong) {
+/* 落雷／雷殞的 CSS 元件會先建立、再依 animationDelay 播放；播放期間若目標
+   死亡或從場上移除，不能只靠固定 TTL，否則天雷會劈在空位上。敵卡用 is-dead
+   作為死亡訊號，玩家則使用復活狀態列；其他場景沒有死亡標記時維持原行為。 */
+function vfxTargetIsLive(targetId) {
+  if (!targetId || typeof document === 'undefined') return true;
+  var el = document.getElementById(targetId);
+  if (!el) return false;
+  var card = (el.closest) ? (el.closest('.enemy-card') || el.closest('.combatant')) : null;
+  if (card && card.classList &&
+      (card.classList.contains('is-dead') || card.classList.contains('dead') ||
+       card.getAttribute('data-dead') === 'true')) return false;
+  if (targetId === 'pv-float') {
+    var status = document.getElementById('pv-status');
+    if (status && /復活中/.test(status.textContent || '')) return false;
+    if (typeof uiBattlePanelSnapshot === 'function') {
+      var snapshot = uiBattlePanelSnapshot();
+      var field = snapshot && snapshot.field;
+      if (field && Number(field.reviveCd) > 0) return false;
+    }
+  }
+  return true;
+}
+function vfxTargetGuard(targetId) {
+  if (!targetId) return null;
+  return function () { return vfxTargetIsLive(targetId); };
+}
+function vfxHitReact(targetId, elem, delayMs, strong, targetGuard) {
   if (!targetId) return;
   if (_vfxQuality === VFX_QUALITY_LEVELS.REDUCED && !strong) return;
   var generation = _vfxGeneration;
   setTimeout(function () {
-    if (!_vfxEnabled || generation !== _vfxGeneration) return;
+    if (!_vfxEnabled || generation !== _vfxGeneration || (targetGuard && !targetGuard())) return;
     var el = document.getElementById(targetId);
     var card = (el && el.closest) ? (el.closest('.enemy-card') || el.closest('.combatant')) : null;
     var visual = vfxHitVisualTarget(targetId, card);
@@ -459,12 +583,14 @@ function vfxHitReact(targetId, elem, delayMs, strong) {
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
         if (!visual || visual._vfxHitUntil !== until) return;
-        if (!_vfxEnabled || generation !== _vfxGeneration || card._vfxHitUntil !== until) return;  // 已被更新的一擊接手
+        if (!_vfxEnabled || generation !== _vfxGeneration || card._vfxHitUntil !== until ||
+            (targetGuard && !targetGuard())) return;  // 已被更新的一擊接手
         visual.classList.add('vfx-hit-target', 'vfx-hit');
         if (strong) visual.classList.add('vfx-hit-strong');
         if (elem && VFX_ELEM_THEME[elem]) visual.classList.add('vfx-hit-' + elem);
         setTimeout(function () {
-          if (generation !== _vfxGeneration || card._vfxHitUntil !== until || visual._vfxHitUntil !== until) return;
+          if (generation !== _vfxGeneration || card._vfxHitUntil !== until || visual._vfxHitUntil !== until ||
+              (targetGuard && !targetGuard())) return;
           for (var j = 0; j < VFX_HIT_CLASSES.length; j++) visual.classList.remove(VFX_HIT_CLASSES[j]);
           visual.classList.remove('vfx-hit-target');
         }, 360);
@@ -518,7 +644,7 @@ function vfxSceneShake(layer, delayMs, strong, spec) {
    這是最常用的末端命中回饋；特殊技能通常仍由自己的幾何函式出手，
    再呼叫本函式補命中爆點與卡片反應。 */
 var VFX_IMPACT_PARTS = { fire: 6, ice: 5, lightning: 5, poison: 4, light: 6, dark: 5, earth: 6, phys: 3, claw: 3 };
-function vfxImpact(spec, layer, pt, targetId, delayMs) {
+function vfxImpact(spec, layer, pt, targetId, delayMs, targetGuard) {
   /* 先把 variant 映射成 CSS class，再由粒子數與 strong 決定爆點規模。 */
   var v = spec.variant;
   var elemKey = spec.elem || 'phys';
@@ -566,7 +692,7 @@ function vfxImpact(spec, layer, pt, targetId, delayMs) {
     s.style.animationDelay = (delayMs + i * 22) + 'ms';
     d.appendChild(s);
   }
-  vfxTrack(d, delayMs + life);
+  vfxTrack(d, delayMs + life, targetGuard);
 
   if (v === 'venom' && _vfxQuality !== VFX_QUALITY_LEVELS.REDUCED) {
     // 殘留毒雲：中毒 DoT 的視覺殘影，泡泡持續冒 2.5 秒
@@ -581,10 +707,10 @@ function vfxImpact(spec, layer, pt, targetId, delayMs) {
       bb.style.animationDelay = (delayMs + 150 + b * 420) + 'ms';
       cloud.appendChild(bb);
     }
-    vfxTrack(cloud, delayMs + 2600);
+    vfxTrack(cloud, delayMs + 2600, targetGuard);
   }
   if (v === 'detonate' || v === 'blood-explosion') vfxSceneShake(layer, delayMs, false, spec);
-  vfxHitReact(targetId, spec.elem || null, delayMs, strong);
+  vfxHitReact(targetId, spec.elem || null, delayMs, strong, targetGuard);
 }
 
 /* ---- 投射物 ----
@@ -1058,6 +1184,35 @@ function vfxFirePillarShockwave(spec, layer, pt, radius, delayMs) {
   });
 }
 
+/* 天降技能的落點提示：以模擬層送來的 area.r 畫出貼地範圍，
+   讓玩家在殞石／雷球落下前看見真正會受影響的中心與範圍。提示只屬於顯示層，
+   durationMs 到期後淡出，不參與命中或傷害判定。 */
+function vfxTargetTelegraph(spec, layer, pt, radius, delayMs, durationMs, targetGuard) {
+  if (!pt || !isFinite(pt.x) || !isFinite(pt.y)) return null;
+  radius = Number(radius);
+  if (!isFinite(radius) || radius <= 0) radius = 72;
+  radius = Math.max(36, radius);
+  var delay = Math.max(0, Number(delayMs) || 0);
+  var duration = Math.max(280, Number(durationMs) || 700);
+  var element = spec && spec.elem === 'lightning' ? 'lightning' : 'fire';
+  var d = vfxNode('vfx-target-telegraph vfx-target-telegraph-' + element, layer, spec);
+  vfxPlace(d, pt);
+  d.style.width = (radius * 2) + 'px';
+  d.style.height = (radius * 1.04) + 'px';
+  d.style.animationDelay = delay + 'ms';
+  d.style.animationDuration = duration + 'ms';
+  vfxTrack(d, delay + duration + 240, targetGuard);
+  return d;
+}
+
+function vfxAreaRadius(rect, area) {
+  var areaRadius = Number(area && area.r);
+  if (isFinite(areaRadius) && areaRadius > 0) return areaRadius;
+  var w = Math.abs(Number(rect && rect.w));
+  var h = Math.abs(Number(rect && rect.h));
+  return isFinite(w) && isFinite(h) ? Math.min(w, h) * 0.5 : 72;
+}
+
 /* 大隕石：右上方以 60° 斜線砸向範圍中心，並由幾顆較小火球伴隨進場。
    落地時刻＝travelMs（模擬層已把所有目標統一成同一個值，傷害數字同時跳）。 */
 function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
@@ -1068,11 +1223,15 @@ function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
   var safeBaseDelay = Number(baseDelay);
   if (!isFinite(safeBaseDelay) || safeBaseDelay < 0) safeBaseDelay = 0;
   safeBaseDelay = Math.min(VFX_METEOR_MAX_DELAY_MS, safeBaseDelay);
-  var cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
+  var targetPt = targetIds && targetIds.length ? vfxPointOf(targetIds[0], layer) : null;
+  var cx = targetPt ? targetPt.x : rect.x + rect.w / 2;
+  var cy = targetPt ? targetPt.y : rect.y + rect.h / 2;
+  var impactRadius = vfxAreaRadius(rect, spec.area);
   var diagonalRun = (typeof VFX_METEOR_DROP_RUN === 'number' && VFX_METEOR_DROP_RUN > 0)
     ? VFX_METEOR_DROP_RUN : 180;
   var diagonalRise = diagonalRun * Math.tan(
     (typeof VFX_METEOR_DROP_ANGLE_RAD === 'number') ? VFX_METEOR_DROP_ANGLE_RAD : Math.PI / 3);
+  vfxTargetTelegraph(spec, layer, { x: cx, y: cy }, impactRadius, safeBaseDelay, fall);
   var mainFrom = { x: cx + diagonalRun, y: cy - diagonalRise };
   vfxMeteorProjectile(spec, layer, mainFrom, { x: cx, y: cy }, safeBaseDelay, fall, false);
   /* 小火球總共 4 顆，透過略微不同的起點與延遲形成伴隨感，
@@ -1118,7 +1277,7 @@ function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
   flash.style.animationDelay = hitAt + 'ms';
   vfxTrack(flash, hitAt + 700);
 
-  vfxMeteorShockwave(spec, layer, { x: cx, y: cy }, rectRadius(rect), hitAt);
+  vfxMeteorShockwave(spec, layer, { x: cx, y: cy }, impactRadius, hitAt);
 
   vfxSceneShake(layer, hitAt, true, spec);
   for (var t = 0; t < (targetIds || []).length; t++) {
@@ -1254,32 +1413,31 @@ function vfxFireWall(spec, layer, area, rect) {
   return node;
 }
 
-/* 泥沼／熔岩沼（新版技能 mire）：貼地的一攤場域。
-   與火牆同為「按 area.id 合併、每次 tick 續命」的長駐節點，但畫的是攤平在地上的水窪，
-   所以尺寸直接吃場域矩形、縱向壓扁成俯視。沼澤會隨時間長大，每次 tick 都重新套尺寸。 */
+/* 泥沼／熔岩沼（新版技能 mire）：貼地的方形場域。
+   與火牆同為「按 area.id 合併、每次 tick 續命」的長駐節點；尺寸直接吃場域矩形，
+   不用橢圓或固定半徑自行推算。毒沼 variant 另外疊加深紫色氣流與泡泡。 */
 function vfxMirePool(spec, layer, area, rect) {
   if (!rect || !isFinite(rect.x) || !isFinite(rect.y)) return null;
-  var lava = spec && spec.variant === 'mire-lava';
+  var lava = spec && (spec.variant === 'mire-lava' || spec.variant === 'mire-lava-poison');
+  var poison = spec && (spec.variant === 'mire-poison' || spec.variant === 'mire-lava-poison');
   var w = Math.max(48, Number(rect.w) || 120);
-  var h = Math.max(24, (Number(rect.h) || 120) * 0.55);
+  var h = Math.max(48, Number(rect.h) || 120);
   var x = (Number(rect.x) || 0) - w / 2 + (Number(rect.w) || 0) / 2;
   var y = (Number(rect.y) || 0) - h / 2 + (Number(rect.h) || 0) / 2;
-  var key = (area && area.id ? String(area.id) : [Math.round(x), Math.round(y)].join(':')) + (lava ? ':lava' : '');
+  var key = (area && area.id ? String(area.id) : [Math.round(x), Math.round(y)].join(':'))
+    + (lava ? ':lava' : '') + (poison ? ':poison' : '');
   var ttl = Math.max(900, Number(spec.dur || 0.5) * 2400);
-  function layout(target) {
-    target.style.left = x + 'px';
-    target.style.top = y + 'px';
-    target.style.width = w + 'px';
-    target.style.height = h + 'px';
-  }
   var node = _vfxMirePools[key];
   if (node && node.parentNode === layer) {
-    layout(node);
+    vfxFieldMotionSet(node, x, y, w, h, vfxFieldMotionSec(spec, 0.5));
     node._vfxExpiresAt = Date.now() + ttl;
     return node;
   }
-  node = vfxNode('vfx-mire-pool' + (lava ? ' vfx-mire-lava' : ''), layer, spec);
-  layout(node);
+  node = vfxNode('vfx-field-motion', layer, null);
+  node._vfxFieldVisual = vfxFieldVisual(node,
+    'vfx-mire-pool' + (lava ? ' vfx-mire-lava' : '') + (poison ? ' vfx-mire-poison' : ''),
+    spec, w, h);
+  vfxFieldMotionSet(node, x, y, w, h, 0);
   var bubbles = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 5;
   for (var bi = 0; bi < bubbles; bi++) {
     var bubble = document.createElement('span');
@@ -1287,7 +1445,19 @@ function vfxMirePool(spec, layer, area, rect) {
     bubble.style.setProperty('--vfx-mire-bubble-x', (12 + (76 * (bi + 0.5) / bubbles)).toFixed(1) + '%');
     bubble.style.setProperty('--vfx-mire-bubble-y', (24 + (bi % 3) * 22).toFixed(1) + '%');
     bubble.style.setProperty('--vfx-mire-bubble-delay', (-Math.random() * 1.6).toFixed(2) + 's');
-    node.appendChild(bubble);
+    node._vfxFieldVisual.appendChild(bubble);
+  }
+  if (poison) {
+    var currents = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 2 : 3;
+    for (var ci = 0; ci < currents; ci++) {
+      var current = document.createElement('span');
+      current.className = 'vfx-mire-current';
+      current.style.setProperty('--vfx-mire-current-x', (24 + ci * 27) + '%');
+      current.style.setProperty('--vfx-mire-current-y', (35 + (ci % 2) * 24) + '%');
+      current.style.setProperty('--vfx-mire-current-angle', (ci % 2 ? -12 : 10) + 'deg');
+      current.style.setProperty('--vfx-mire-current-delay', (-Math.random() * 1.2).toFixed(2) + 's');
+      node._vfxFieldVisual.appendChild(current);
+    }
   }
   _vfxMirePools[key] = node;
   vfxTrack(node, VFX_MIRE_POOL_LIFE_MS);
@@ -1296,7 +1466,7 @@ function vfxMirePool(spec, layer, area, rect) {
 
 /* 雷球（新版技能 thunderorb）：會飛的球體場域。
    與沼澤同為「按 area.id 合併、每次 tick 續命」的長駐節點；差別在雷球會移動，
-   因此每次事件都要把節點搬到模擬層最新的座標（尺寸則固定為場域直徑）。 */
+   因此每次事件都要把最新座標交給顯示層內插（尺寸則固定為場域直徑）。 */
 function vfxThunderOrb(spec, layer, area, rect) {
   if (!rect || !isFinite(rect.x) || !isFinite(rect.y)) return null;
   var d = Math.max(28, (Number(area && area.r) || 30) * 2);
@@ -1304,27 +1474,22 @@ function vfxThunderOrb(spec, layer, area, rect) {
   var cy = (Number(rect.y) || 0) + (Number(rect.h) || 0) / 2;
   var key = (area && area.id) ? String(area.id) : [Math.round(cx), Math.round(cy)].join(':');
   var ttl = Math.max(700, Number(spec.dur || 0.35) * 2400);
-  function layout(target) {
-    target.style.left = (cx - d / 2) + 'px';
-    target.style.top = (cy - d / 2) + 'px';
-    target.style.width = d + 'px';
-    target.style.height = d + 'px';
-  }
   var node = _vfxThunderOrbs[key];
   if (node && node.parentNode === layer) {
-    layout(node);
+    vfxFieldMotionSet(node, cx - d / 2, cy - d / 2, d, d, vfxFieldMotionSec(spec, 0.35));
     node._vfxExpiresAt = Date.now() + ttl;
     return node;
   }
-  node = vfxNode('vfx-thunder-orb', layer, spec);
-  layout(node);
+  node = vfxNode('vfx-field-motion', layer, null);
+  node._vfxFieldVisual = vfxFieldVisual(node, 'vfx-thunder-orb', spec, d, d);
+  vfxFieldMotionSet(node, cx - d / 2, cy - d / 2, d, d, 0);
   var arcs = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 2 : 4;
   for (var ai = 0; ai < arcs; ai++) {
     var arc = document.createElement('span');
     arc.className = 'vfx-thunder-orb-arc';
     arc.style.setProperty('--vfx-thunder-arc-rot', (ai * (360 / arcs)).toFixed(1) + 'deg');
     arc.style.setProperty('--vfx-thunder-arc-delay', (-ai * 0.18).toFixed(2) + 's');
-    node.appendChild(arc);
+    node._vfxFieldVisual.appendChild(arc);
   }
   _vfxThunderOrbs[key] = node;
   vfxTrack(node, VFX_THUNDER_ORB_LIFE_MS);
@@ -1351,7 +1516,7 @@ function vfxRainDrops(spec, layer, rect) {
    支援弱化弧光（weak）、大型天雷（mega）、巨型紫雷（purple）。
    在 mega / purple 模式下額外生成分叉副電弧（branch arcs），並使用分層 SVG 筆刷
    （outer 輝光、mid 電漿、core 亮芯）。 */
-function vfxBolt(spec, layer, from, to, delayMs, opts) {
+function vfxBolt(spec, layer, from, to, delayMs, opts, targetGuard) {
   var isWeak = opts === true || (opts && opts.weak);
   var isMega = opts && opts.mega;
   var isPurple = (opts && opts.purple) || (spec && (spec.variant === 'purple-thunder' || spec.variant === 'storm-sigil'));
@@ -1451,11 +1616,11 @@ function vfxBolt(spec, layer, from, to, delayMs, opts) {
     Math.round(w) + ' ' + Math.round(h) + '">' +
     svgLines.join('') +
     '</svg>';
-  vfxTrack(d, delayMs + (isPurple ? 520 : (isMega ? 460 : 420)));
+  vfxTrack(d, delayMs + (isPurple ? 520 : (isMega ? 460 : 420)), targetGuard);
 }
 
 /* 雷擊地表衝擊與電漿火花 */
-function vfxLightningGroundImpact(spec, layer, pt, delayMs, isPurple) {
+function vfxLightningGroundImpact(spec, layer, pt, delayMs, isPurple, targetGuard) {
   var wrap = vfxNode('vfx-lightning-impact-wrap', layer, spec);
   vfxPlace(wrap, pt);
   wrap.style.animationDelay = delayMs + 'ms';
@@ -1476,7 +1641,7 @@ function vfxLightningGroundImpact(spec, layer, pt, delayMs, isPurple) {
     sp.style.animationDelay = (delayMs + (i % 3) * 16) + 'ms';
     wrap.appendChild(sp);
   }
-  vfxTrack(wrap, delayMs + 550);
+  vfxTrack(wrap, delayMs + 550, targetGuard);
 }
 
 /* 巨型紫色電雷（電紋刻印／雷印烙印）：
@@ -1618,10 +1783,18 @@ function vfxChain(spec, layer, ptList, idList, baseDelay, strikes) {
 }
 
 /* 天罰／單發神雷：一道天雷直劈目標；與 vfxChain 共用 vfxBolt，但沒有後續跳。 */
-function vfxSmite(spec, layer, pt, targetId, delayMs) {
-  vfxBolt(spec, layer, { x: pt.x + 26, y: -50 }, pt, delayMs, { mega: true });
-  vfxLightningGroundImpact(spec, layer, pt, delayMs + 30, false);
-  vfxImpact({ elem: 'lightning', variant: null, color: spec.color }, layer, pt, targetId, delayMs + 40);
+function vfxSmite(spec, layer, pt, targetId, delayMs, travelMs) {
+  if (targetId && !vfxTargetIsLive(targetId)) return;
+  var targetGuard = vfxTargetGuard(targetId);
+  if (spec.variant === 'thunder-fall') {
+    var radius = vfxAreaRadius(null, spec.area);
+    var flight = Array.isArray(travelMs) ? travelMs[0] : travelMs;
+    vfxTargetTelegraph(spec, layer, pt, radius, delayMs, flight, targetGuard);
+  }
+  vfxBolt(spec, layer, { x: pt.x + 26, y: -50 }, pt, delayMs, { mega: true }, targetGuard);
+  vfxLightningGroundImpact(spec, layer, pt, delayMs + 30, false, targetGuard);
+  vfxImpact({ elem: 'lightning', variant: null, color: spec.color }, layer, pt, targetId,
+    delayMs + 40, targetGuard);
 }
 
 /* ---- 領域：元素化持續特效 ----
@@ -1699,6 +1872,7 @@ function renderCombatVfx(spec) {
   var s = {
     fxKind: kind, glyph: spec.glyph || '✨', color: spec.color || '#fff',
     elem: spec.elem || null, cat: spec.cat || null, variant: spec.variant || null, dur: dur,
+    area: spec.area || null,
     travelMs: spec.travelMs || null,
     projectile: !!spec.projectile,
     lineLength: Number(spec.lineLength) > 0 ? Number(spec.lineLength) : null,
@@ -1814,7 +1988,10 @@ function renderCombatVfx(spec) {
     /* 落雷術與雷殞天落沿用天雷畫法（同樣是「從天而降劈在目標身上」）。 */
     if (kind === 'rain' && (s.variant === 'thunder-strike' || s.variant === 'thunder-fall')) {
       var tb = resolveTargets();
-      for (var bi = 0; bi < tb.pts.length; bi++) vfxSmite(s, layer, tb.pts[bi], tb.ids[bi], baseDelay);
+      for (var bi = 0; bi < tb.pts.length; bi++) {
+        vfxSmite(s, layer, tb.pts[bi], tb.ids[bi], baseDelay,
+          travelMs && travelMs[tb.idxs[bi]]);
+      }
       return;
     }
     if (kind === 'rain' && s.variant === 'smite') {
@@ -1832,7 +2009,7 @@ function renderCombatVfx(spec) {
     if (kind === 'aura') {
       if (s.variant === 'cyclone') vfxCyclone(s, layer, rect);
       else if (s.variant === 'firewall') vfxFireWall(s, layer, spec.area, rect);
-      else if (s.variant === 'mire' || s.variant === 'mire-lava') vfxMirePool(s, layer, spec.area, rect);
+      else if (s.variant === 'mire' || s.variant === 'mire-lava' || s.variant === 'mire-poison' || s.variant === 'mire-lava-poison') vfxMirePool(s, layer, spec.area, rect);
       else if (s.variant === 'thunder-orb') vfxThunderOrb(s, layer, spec.area, rect);
       else vfxAura(s, layer, rect);
       return;
