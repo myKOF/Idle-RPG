@@ -7903,6 +7903,39 @@ textarea:disabled,
   100% { transform: scale(0.5) translateY(-6px); opacity: 0; }
 }
 
+/* ---- 雷球（新版技能 thunderorb）：懸空的電漿球，表面繞著電弧 ---- */
+.vfx-thunder-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 45%,
+    rgba(255, 255, 255, 0.92), rgba(96, 165, 250, 0.62) 42%, rgba(29, 78, 216, 0.32) 72%, transparent 92%);
+  box-shadow: 0 0 22px rgba(96, 165, 250, 0.55);
+  animation: vfxThunderOrbPulse 0.9s ease-in-out infinite alternate;
+}
+
+.vfx-thunder-orb-arc {
+  content: '';
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  border: 2px solid rgba(219, 234, 254, 0.55);
+  border-left-color: transparent;
+  border-bottom-color: transparent;
+  transform: rotate(var(--vfx-thunder-arc-rot, 0deg));
+  animation: vfxThunderOrbArc 0.7s linear var(--vfx-thunder-arc-delay, 0s) infinite;
+}
+
+@keyframes vfxThunderOrbPulse {
+  from { opacity: 0.82; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1.06); }
+}
+
+@keyframes vfxThunderOrbArc {
+  from { transform: rotate(var(--vfx-thunder-arc-rot, 0deg)); opacity: 0.9; }
+  to { transform: rotate(calc(var(--vfx-thunder-arc-rot, 0deg) + 360deg)); opacity: 0.45; }
+}
+
 /* ---- 光柱審判：天光射下→觸地散開 ---- */
 .vfx-pillar {
   width: 40px;

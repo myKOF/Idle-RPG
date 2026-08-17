@@ -97,3 +97,24 @@ earthguard,大地守護,🌍,,magic,earth,0,25,4,0|400,魔力再生,"{""pct"":10
 earthguard,大地守護,🌍,,magic,earth,0,25,5,0|450,魔法盾,"{""pct"":30,""pctPer"":3}",1500000,1.5,你的生命減少時，其中 {pct}% 改由消耗法力承擔（法力不足時只轉換付得起的部分，餘額仍扣生命）
 earthguard,大地守護,🌍,,magic,earth,0,25,6,0|500,生命反射之盾,"{""pct"":1,""pctPer"":0.1,""m"":20,""count"":1}",3000000,1.5,你每消耗 1% 生命或護盾，{m} 米內的 {count} 個敵人同步損失 {pct}% 最大生命
 earthguard,大地守護,🌍,,magic,earth,0,25,7,0|550,天地共生,"{""pct"":20,""pctPer"":8,""sec"":5,""cd"":60,""cdPer"":-3}",5000000,1.5,死亡時原地復活並回復 {pct}% 生命，復活後 {sec} 秒無敵；此招自身冷卻 {cd} 秒（顯示於技能格）
+chainlightning,連鎖閃電,⚡,,magic,lightning,18,40,1,0|300,連鎖閃電,"{""pct"":150,""pctPer"":15,""count"":4,""m"":30,""castM"":30}",100000,1.5,丟出一道閃電鏈（射程 {castM} 米），在最多 {count} 個目標間彈射（每段彈射範圍 {m} 米），每擊造成 {pct}% 雷電傷害
+chainlightning,連鎖閃電,⚡,,magic,lightning,18,40,2,0|350,強化閃電,"{""pct"":50,""pctPer"":5}",200000,1.5,強化閃電威力，閃電鏈傷害進一步 +{pct}% 雷電傷害
+chainlightning,連鎖閃電,⚡,,magic,lightning,18,40,3,0|400,雷鳴術,"{""add"":1,""addPer"":0.1}",400000,1.5,被閃電鏈擊中的敵人額外再受到 {add} 次雷電傷害（不足 1 次的部分以機率觸發）
+chainlightning,連鎖閃電,⚡,,magic,lightning,18,40,4,0|450,強化連鎖,"{""add"":1,""addPer"":0.2}",800000,1.5,閃電鏈的彈射數額外 +{add} 次（不足 1 次的部分以機率觸發）
+chainlightning,連鎖閃電,⚡,,magic,lightning,18,40,5,0|500,電殛擴散,"{""pct"":25,""pctPer"":2.5,""count"":1,""m"":6}",1500000,1.5,閃電鏈每次彈射時，額外對 {m} 米內的 {count} 個敵人造成閃電鏈 {pct}% 的雷電傷害
+chainlightning,連鎖閃電,⚡,,magic,lightning,18,40,6,0|550,雷幻身,"{""pct"":50,""pctPer"":5}",3000000,1.5,閃電鏈傷害額外 +{pct}% 雷電傷害；沒有其它彈射目標時可用自身當中繼點繼續彈射（彈到自身不消耗彈射數）
+chainlightning,連鎖閃電,⚡,,magic,lightning,18,40,7,0|600,雷電暴風,"{""count"":3,""add"":1,""addPer"":0.1,""pct"":100,""pctPer"":10}",5000000,1.5,同時發射 {count} 道閃電鏈，彈射數額外 +{add} 次，且閃電傷害額外 +{pct}%
+thunderstrike,落雷術,🌩️,,magic,lightning,14,40,1,0|350,落雷術,"{""pct"":200,""pctPer"":20,""count"":2,""gap"":0.2,""castM"":30}",100000,1.5,對 {castM} 米內的 {count} 個目標降下落雷（每道間隔 {gap} 秒），每道造成 {pct}% 雷電傷害
+thunderstrike,落雷術,🌩️,,magic,lightning,14,40,2,0|400,落雷連鎖,"{""add"":1,""addPer"":0.1}",200000,1.5,攻擊目標額外 +{add} 個（不足 1 個的部分以機率觸發）
+thunderstrike,落雷術,🌩️,,magic,lightning,14,40,3,0|450,雙重落雷,"{""add"":1,""addPer"":0.1}",400000,1.5,對每個目標的攻擊次數額外 +{add} 次（不足 1 次的部分以機率觸發）
+thunderstrike,落雷術,🌩️,,magic,lightning,14,40,4,0|500,閃電增幅,"{""pct"":100,""pctPer"":10}",800000,1.5,進一步強化落雷傷害，額外 +{pct}% 雷電傷害
+thunderstrike,落雷術,🌩️,,magic,lightning,14,40,5,0|550,雷電脈衝,"{""sec"":1.5,""secPer"":0.15,""count"":2,""m"":6}",1500000,1.5,落雷落地時產生衝擊波，震暈目標本身與 {m} 米內共 {count} 個敵人 {sec} 秒
+thunderstrike,落雷術,🌩️,,magic,lightning,14,40,6,0|600,迅雷重生,"{""chance"":20,""chancePer"":2,""max"":5}",3000000,1.5,每道落雷結束後有 {chance}% 機率再產生 1 道落雷（同一次施放最多再生 {max} 道）
+thunderstrike,落雷術,🌩️,,magic,lightning,14,40,7,0|650,殛道落雷,"{""mult"":2,""pct"":30,""pctPer"":3}",5000000,1.5,落雷的攻擊次數與目標數量 ×{mult}，且暈眩中的敵人受到落雷傷害額外 +{pct}%
+thunderorb,雷球,🔵,6*6,magic,lightning,20,40,1,0|400,雷球,"{""pct"":50,""pctPer"":5,""count"":2,""gap"":0.35,""sec"":2,""m"":3,""speed"":6,""castM"":30}",100000,1.5,召喚 {count} 個雷球緩慢飛向目標（射程 {castM} 米、飛行速度 {speed} 米/秒），途中每 {gap} 秒對半徑 {m} 米內的所有敵人造成 {pct}% 雷電傷害，抵達後停留 {sec} 秒才消散
+thunderorb,雷球,🔵,6*6,magic,lightning,20,40,2,0|450,擴增雷球,"{""pct"":15,""pctPer"":1.5}",200000,1.5,雷球的體積擴大 {pct}%
+thunderorb,雷球,🔵,6*6,magic,lightning,20,40,3,0|500,多重雷球,"{""add"":1,""addPer"":0.1}",400000,1.5,雷球數量額外 +{add} 個（不足 1 個的部分以機率觸發）
+thunderorb,雷球,🔵,6*6,magic,lightning,20,40,4,0|550,環體電球,"{""count"":2,""pct"":100,""pctPer"":10,""sec"":6,""m"":8,""rps"":0.7}",800000,1.5,額外召喚 {count} 個電球環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 雷電傷害，持續 {sec} 秒
+thunderorb,雷球,🔵,6*6,magic,lightning,20,40,5,0|600,強化雷球,"{""pct"":30,""pctPer"":3}",1500000,1.5,所有雷球與電球的雷電傷害額外 +{pct}%
+thunderorb,雷球,🔵,6*6,magic,lightning,20,40,6,0|650,伴生雷球,"{""chance"":15,""chancePer"":1.5,""sec"":2}",3000000,1.5,環體電球命中時有 {chance}% 機率在該處生成一個靜止雷球，持續 {sec} 秒（每次作用只判定一次機率）
+thunderorb,雷球,🔵,6*6,magic,lightning,20,40,7,0|700,雷殞天落,"{""count"":2,""pct"":300,""pctPer"":30,""m"":15,""sec"":3}",5000000,1.5,額外召喚 {count} 個巨大雷球從天而降，各對 {m} 米內的敵人造成 {pct}% 雷電傷害，並以衝擊波擊暈 {sec} 秒

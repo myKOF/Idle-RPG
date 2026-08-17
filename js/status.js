@@ -105,7 +105,8 @@ var STATUS = {
   sgRockAmp: { name: '岩甲增幅', icon: '🪨', kind: 'buff', effect: 'stat', key: 'sgRockAmp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 3, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【岩甲增幅】：損失護盾換得的傷害增幅（層數由引擎累加成單一數值，故用後蓋前並重置時間）。' },
   sgMire: { name: '泥沼緩速', icon: '🟤', kind: 'debuff', effect: 'stat', key: 'sgMire', elem: 'earth', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 50, dur: 1, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【泥沼術】：攻速與移動速度下降（效果值＝攻速下降%）。同類型緩速依「取代」規則後蓋前並重新計時；為場域型持續重塗，不吃控場遞減與韌性。' },
   sgMirePoison: { name: '泥沼劇毒', icon: '☠️', kind: 'debuff', effect: 'dot', key: '', elem: 'poison', dmgSource: 'skill', dmg: 25, capStat: '', capMult: 0, val: 0, dur: 1, interval: 0.5, stack: 'refresh', maxStacks: 1, desc: '新版技能【毒沼術】：毒性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫），站在沼澤中才會被重塗。' },
-  sgMireLava: { name: '熔岩灼燒', icon: '🌋', kind: 'debuff', effect: 'dot', key: '', elem: 'fire', dmgSource: 'skill', dmg: 70, capStat: '', capMult: 0, val: 0, dur: 1, interval: 0.4, stack: 'refresh', maxStacks: 1, desc: '新版技能【熔岩沼】：火焰持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫），站在岩漿中才會被重塗。' }
+  sgMireLava: { name: '熔岩灼燒', icon: '🌋', kind: 'debuff', effect: 'dot', key: '', elem: 'fire', dmgSource: 'skill', dmg: 70, capStat: '', capMult: 0, val: 0, dur: 1, interval: 0.4, stack: 'refresh', maxStacks: 1, desc: '新版技能【熔岩沼】：火焰持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫），站在岩漿中才會被重塗。' },
+  sgThunderOrb: { name: '環體電球', icon: '🔵', kind: 'buff', effect: 'stat', key: 'sgThunderOrb', elem: 'lightning', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【環體電球】：電球環繞自身的剩餘時間（與火狩各自一格，兩者互不覆蓋）。' }
 };
 
 /* ---- 反查索引 ----

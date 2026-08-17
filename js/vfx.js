@@ -63,6 +63,8 @@ var _vfxFireWalls = Object.create(null);
 var VFX_FIRE_WALL_LIFE_MS = 3600;
 var _vfxMirePools = Object.create(null);
 var VFX_MIRE_POOL_LIFE_MS = 3600;
+var _vfxThunderOrbs = Object.create(null);
+var VFX_THUNDER_ORB_LIFE_MS = 3600;
 
 /* 版面快取的版本號只在尺寸、頁籤或戰鬥場景變動時遞增。
    座標函式用這個版本判斷快取是否仍可用，避免每個特效都重新量測整個 DOM。 */
@@ -166,6 +168,7 @@ function vfxClear() {
   _vfxFirePillars = Object.create(null);
   _vfxFireWalls = Object.create(null);
   _vfxMirePools = Object.create(null);
+  _vfxThunderOrbs = Object.create(null);
   if (typeof document === 'undefined' || !document.querySelectorAll) return;
   var hitCards = document.querySelectorAll('.enemy-card, .combatant');
   for (var ci = 0; ci < hitCards.length; ci++) {
@@ -1291,6 +1294,43 @@ function vfxMirePool(spec, layer, area, rect) {
   return node;
 }
 
+/* 雷球（新版技能 thunderorb）：會飛的球體場域。
+   與沼澤同為「按 area.id 合併、每次 tick 續命」的長駐節點；差別在雷球會移動，
+   因此每次事件都要把節點搬到模擬層最新的座標（尺寸則固定為場域直徑）。 */
+function vfxThunderOrb(spec, layer, area, rect) {
+  if (!rect || !isFinite(rect.x) || !isFinite(rect.y)) return null;
+  var d = Math.max(28, (Number(area && area.r) || 30) * 2);
+  var cx = (Number(rect.x) || 0) + (Number(rect.w) || 0) / 2;
+  var cy = (Number(rect.y) || 0) + (Number(rect.h) || 0) / 2;
+  var key = (area && area.id) ? String(area.id) : [Math.round(cx), Math.round(cy)].join(':');
+  var ttl = Math.max(700, Number(spec.dur || 0.35) * 2400);
+  function layout(target) {
+    target.style.left = (cx - d / 2) + 'px';
+    target.style.top = (cy - d / 2) + 'px';
+    target.style.width = d + 'px';
+    target.style.height = d + 'px';
+  }
+  var node = _vfxThunderOrbs[key];
+  if (node && node.parentNode === layer) {
+    layout(node);
+    node._vfxExpiresAt = Date.now() + ttl;
+    return node;
+  }
+  node = vfxNode('vfx-thunder-orb', layer, spec);
+  layout(node);
+  var arcs = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 2 : 4;
+  for (var ai = 0; ai < arcs; ai++) {
+    var arc = document.createElement('span');
+    arc.className = 'vfx-thunder-orb-arc';
+    arc.style.setProperty('--vfx-thunder-arc-rot', (ai * (360 / arcs)).toFixed(1) + 'deg');
+    arc.style.setProperty('--vfx-thunder-arc-delay', (-ai * 0.18).toFixed(2) + 's');
+    node.appendChild(arc);
+  }
+  _vfxThunderOrbs[key] = node;
+  vfxTrack(node, VFX_THUNDER_ORB_LIFE_MS);
+  return node;
+}
+
 /* 預設天降：範圍內落下數道元素雨；沒有 meteor／pillar／smite 專屬畫法時使用。 */
 function vfxRainDrops(spec, layer, rect) {
   var drops = Math.min(6, Math.max(3, Math.round(rect.w / 60)));
@@ -1771,6 +1811,12 @@ function renderCombatVfx(spec) {
       }
       return;
     }
+    /* 落雷術與雷殞天落沿用天雷畫法（同樣是「從天而降劈在目標身上」）。 */
+    if (kind === 'rain' && (s.variant === 'thunder-strike' || s.variant === 'thunder-fall')) {
+      var tb = resolveTargets();
+      for (var bi = 0; bi < tb.pts.length; bi++) vfxSmite(s, layer, tb.pts[bi], tb.ids[bi], baseDelay);
+      return;
+    }
     if (kind === 'rain' && s.variant === 'smite') {
       var sm = resolveTargets();
       for (var si = 0; si < sm.pts.length; si++) vfxSmite(s, layer, sm.pts[si], sm.ids[si], baseDelay);
@@ -1787,6 +1833,7 @@ function renderCombatVfx(spec) {
       if (s.variant === 'cyclone') vfxCyclone(s, layer, rect);
       else if (s.variant === 'firewall') vfxFireWall(s, layer, spec.area, rect);
       else if (s.variant === 'mire' || s.variant === 'mire-lava') vfxMirePool(s, layer, spec.area, rect);
+      else if (s.variant === 'thunder-orb') vfxThunderOrb(s, layer, spec.area, rect);
       else vfxAura(s, layer, rect);
       return;
     }
