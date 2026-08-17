@@ -833,9 +833,9 @@ var PASSIVE_POOL = {
     fx: { manaCostMaxPct: 50, skillDamagePct: 500 }
   },
   magicLightShield: {
-    name: '魔法光盾', desc: '生命值低於 50% 時產生相當於最大生命的光盾；光盾期間受到的傷害降低 35%，持續 5 秒。',
+    name: '魔法光盾', desc: '生命值低於 50% 時產生相當於最大生命的光盾；光盾期間受到的傷害降低 35%，持續 5 秒；內建冷卻 20 秒。',
     base: 0, perR: 0, legendary: true, type: 'light', weaponTypes: ['orb'],
-    fx: { lowHpThresholdPct: 50, shieldHpPct: 100, dmgRedPct: 35, dur: 5 }
+    fx: { lowHpThresholdPct: 50, shieldHpPct: 100, dmgRedPct: 35, dur: 5, cooldownSec: 20 }
   },
   lightCollision: {
     name: '光之碰撞', desc: '每隔 4 秒自動發射追蹤光彈尋找最近的目標，造成 250% 聖屬性傷害。',

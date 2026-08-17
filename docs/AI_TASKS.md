@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## Codex：魔法光盾內建 20 秒冷卻（2026-08-17）
+
+- Status：Done
+- Owner：Codex
+- Task：傳奇特效 `magicLightShield` 觸發後加入固定 20 秒內建冷卻，避免低血量期間反覆觸發。
+- Scope：`config/Excel/Equipment_Affix.xlsx`、`config/CSV/Equipment_Affix.csv`、`js/data.js`、`js/legendary.js`、`js/worker/sim.worker.js`、`js/bridge.js`、`index.html`、`tests/magic-light-shield-cooldown.test.cjs`、本文件。
+- Verification：定向冷卻測試、完整 `npm.cmd test`、`npm.cmd run build`、JavaScript 語法檢查、`git diff --check`。
+- Risk：冷卻結束後仍沿用原本「生命值回升至門檻才重新上膛」的觸發規則。
+- Next：可合併；不需額外依賴。
+
 ## Claude｜修正彈射命中爆點第一幀為整張貼圖原尺寸｜2026-08-17
 
 - 狀態：已完成（2026-08-17）
