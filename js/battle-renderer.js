@@ -2060,7 +2060,10 @@ var BattleRenderer = (function () {
     var orbs = Math.max(1, Math.min(12, Math.floor(Number(a.orbs) || 1)));
     var ccw = Number(a.spin) < 0;
     var dur = Math.min(FX_ORBIT_MAX_SEC, Math.max(0.5, spec.dur || 4));
-    var key = Math.round(ringR) + ':' + (ccw ? 'ccw' : 'cw');
+    /* 合併鍵要含變體與屬性：火狩與環體電球可能同時存在且半徑相同，
+       只用「半徑＋方向」當鍵會讓後來的那一道被誤認成同一道而整組不畫。 */
+    var key = (spec.variant || 'firehunt') + ':' + (spec.elem || '') + ':' +
+      Math.round(ringR) + ':' + (ccw ? 'ccw' : 'cw');
     var ring = _fireHuntRings[key];
     if (ring && !ring.done) {
       ring.dur = Math.min(FX_ORBIT_MAX_SEC, Math.max(ring.dur, ring.t + dur));
@@ -2343,6 +2346,119 @@ var BattleRenderer = (function () {
       }
     }, 2, MIRE_POOL_MAX_LIFE_SEC * 1000);
     return fx;
+  }
+
+  /* 雷球（新版技能 thunderorb）：會飛的球體場域。
+     模擬層每 0.35 秒送一次事件，帶上 area（x／y／r）與同一顆球的 id；
+     顯示層按 id 合併節點、每次事件只更新到最新座標——球會不會飛、飛多快，
+     完全由模擬層決定，顯示層不自行推算，傷害範圍與畫面因此永遠對得起來。 */
+  var _thunderOrbFx = Object.create(null);
+  var THUNDER_ORB_MAX_LIFE_SEC = 14;
+  var THUNDER_SHOCK_THEME = { c1: '#2563eb', c2: '#dbeafe', glow: '#60a5fa' };
+  function spawnThunderOrbField(spec) {
+    var a = spec && spec.area;
+    if (!a || !isFinite(a.x) || !isFinite(a.y)) return null;
+    var key = a.id || [Math.round(a.x), Math.round(a.y)].join(':');
+    var holdMs = Math.max(520, Number(spec.dur || 0.35) * 2400);
+    var current = _thunderOrbFx[key];
+    if (current && !current.dead && current.node && !current.node.destroyed) {
+      current.x = Number(a.x);
+      current.y = Number(a.y);
+      current.r = Math.max(8, Number(a.r) || current.r);
+      current.expiresAt = nowMs() + holdMs;
+      return current;
+    }
+    var node = new PIXI.Container();
+    var g = new PIXI.Graphics();
+    node.addChild(g);
+    S.layers.fx.addChild(node);
+    var fx = {
+      node: node, x: Number(a.x), y: Number(a.y), r: Math.max(8, Number(a.r) || 30),
+      t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false
+    };
+    _thunderOrbFx[key] = fx;
+    addFx({
+      node: node,
+      update: function (dt) {
+        fx.t += dt;
+        node.x = fx.x;
+        node.y = fx.y - 10;                 // 略高於腳底，看起來是懸在空中的球
+        var left = fx.expiresAt - nowMs();
+        var fade = left < 260 ? Math.max(0, left / 260) : 1;
+        var r = fx.r;
+        var pulse = 1 + Math.sin(fx.t * 9) * 0.06;
+        g.clear();
+        g.circle(0, 0, r * pulse).fill({ color: 0x1d4ed8, alpha: 0.24 * fade });
+        g.circle(0, 0, r * 0.62 * pulse).fill({ color: 0x60a5fa, alpha: 0.5 * fade });
+        g.circle(0, 0, r * 0.3 * pulse).fill({ color: 0xffffff, alpha: 0.8 * fade });
+        /* 表面電弧：折點以 t 推進（不用亂數，否則每幀重抽會變成閃爍雜訊）。 */
+        for (var ai = 0; ai < 4; ai++) {
+          var base = fx.t * (2.2 + ai * 0.6) + ai * 1.7;
+          var px = Math.cos(base) * r, py = Math.sin(base) * r * 0.72;
+          for (var seg = 1; seg <= 3; seg++) {
+            var ang = base + seg * (0.9 + Math.sin(fx.t * 3 + ai) * 0.25);
+            var rad = r * (1 - seg * 0.18);
+            var nx = Math.cos(ang) * rad, ny = Math.sin(ang) * rad * 0.72;
+            g.moveTo(px, py).lineTo(nx, ny)
+              .stroke({ color: seg === 1 ? 0xffffff : 0x93c5fd, width: Math.max(1, 2 - seg * 0.4), alpha: 0.7 * fade });
+            px = nx; py = ny;
+          }
+        }
+        if (nowMs() >= fx.expiresAt) {
+          fx.dead = true;
+          if (_thunderOrbFx[key] === fx) delete _thunderOrbFx[key];
+          return false;
+        }
+        return true;
+      }
+    }, 2, THUNDER_ORB_MAX_LIFE_SEC * 1000);
+    return fx;
+  }
+
+  /* 雷殞天落（thunderorb T7）：巨大雷球從天而降，落地炸出藍色衝擊波。
+     與殞石共用「落下時間＝模擬層的 travelMs」的約定，畫面到地與傷害結算同一刻。 */
+  function spawnThunderFall(spec, targetId, delaySec) {
+    var to = (spec.area && isFinite(spec.area.x) && isFinite(spec.area.y))
+      ? { x: spec.area.x, y: spec.area.y } : posOf(targetId);
+    if (!to || !isFinite(to.x)) return;
+    var radius = (spec.area && Number(spec.area.r) > 0) ? Number(spec.area.r) : 90;
+    var from = { x: to.x + (Math.random() * 36 - 18), y: to.y - S.H * 0.7 };
+    var dur = Math.max(0.35, ((spec.travelMs && spec.travelMs[0]) || 700) / 1000);
+    var node = new PIXI.Container();
+    var g = new PIXI.Graphics();
+    node.addChild(g);
+    S.layers.fx.addChild(node);
+    var t = -(Math.max(0, delaySec || 0)), landed = false;
+    var orbR = Math.max(16, radius * 0.32);
+    addFx({
+      node: node,
+      update: function (dt) {
+        t += dt;
+        if (t < 0) { node.visible = false; return true; }
+        node.visible = true;
+        var k = Math.min(1, t / dur);
+        node.x = lerp(from.x, to.x, k);
+        node.y = lerp(from.y, to.y, k);
+        g.clear();
+        g.circle(0, 0, orbR).fill({ color: 0x1d4ed8, alpha: 0.34 });
+        g.circle(0, 0, orbR * 0.62).fill({ color: 0x60a5fa, alpha: 0.62 });
+        g.circle(0, 0, orbR * 0.3).fill({ color: 0xffffff, alpha: 0.9 });
+        for (var ai = 0; ai < 3; ai++) {
+          var ang = t * 7 + ai * 2.1;
+          g.moveTo(Math.cos(ang) * orbR, Math.sin(ang) * orbR)
+            .lineTo(Math.cos(ang + 2.4) * orbR * 0.7, Math.sin(ang + 2.4) * orbR * 0.7)
+            .stroke({ color: 0xffffff, width: 2, alpha: 0.7 });
+        }
+        if (k >= 1 && !landed) {
+          landed = true;
+          spawnImpact(to.x, to.y, spec, true);
+          spawnFireShockwave(to.x, to.y, radius, THUNDER_SHOCK_THEME);
+          addShake(6, spec);
+          if (typeof targetId === 'string') hitReact(targetId, spec.elem || 'lightning', true);
+        }
+        return t < dur + 0.2;
+      }
+    }, 2, (dur + (delaySec || 0)) * 1000 + 900);
   }
 
   function spawnRiser(x, y, theme, glyph) {
@@ -2846,6 +2962,16 @@ var BattleRenderer = (function () {
 
   function handleChainVfx(targets, spec, baseDelay, stagger) {
     if (!targets.length && !S.player) return;
+    /* 連鎖閃電：一則事件＝一段電弧，時間點由模擬層的 delayMs 決定（傷害同一刻）。
+       單一目標＝起手那一下（從玩家身上劈出去）；兩個目標＝彈射段（前一個 → 下一個）。 */
+    if (spec.variant === 'lightning-chain') {
+      if (targets.length >= 2) {
+        spawnBolt(targets[0], targets[1], spec, baseDelay / 1000, false, false);
+      } else if (targets.length) {
+        spawnBolt(playerPos(), targets[0], spec, baseDelay / 1000, false, false);
+      }
+      return;
+    }
     if (spec.variant === 'knife-bounce' || spec.variant === 'poison-spread') {
       // 下一段必須接在上一段飛行完成後，不能用固定 stagger 提前播放。
       var chainStart = baseDelay;
@@ -3175,6 +3301,21 @@ var BattleRenderer = (function () {
           });
           break;
         }
+        // 落雷術：一則事件＝一道天雷，落下時間與模擬層的落地結算對齊
+        if (spec.variant === 'thunder-strike') {
+          targets.forEach(function (id, ti) {
+            spawnBolt(null, id, spec, (baseDelay + ti * stagger) / 1000, false, false);
+          });
+          break;
+        }
+        // 雷殞天落：巨大雷球從天而降＋藍色衝擊波
+        if (spec.variant === 'thunder-fall') {
+          targets.forEach(function (id, ti) {
+            spawnThunderFall(spec, id, (baseDelay + ti * stagger) / 1000);
+          });
+          if (!targets.length) spawnThunderFall(spec, null, baseDelay / 1000);
+          break;
+        }
         spawnRain(rect, spec);
         targets.forEach(function (id, ti) {
           setTimeout(function () {
@@ -3184,7 +3325,8 @@ var BattleRenderer = (function () {
         });
         break;
       case 'aura':
-        if (spec.variant === 'firehunt') spawnFireHunt(spec);
+        if (spec.variant === 'firehunt' || spec.variant === 'thunder-orbit') spawnFireHunt(spec);
+        else if (spec.variant === 'thunder-orb') spawnThunderOrbField(spec);
         else if (spec.variant === 'firewall') spawnFireWall(spec);
         else if (spec.variant === 'mire' || spec.variant === 'mire-lava') spawnMirePool(spec);
         else if (spec.variant === 'cyclone') spawnCyclone(rect, spec);

@@ -3808,3 +3808,58 @@ Commit：
 未完成項目：泥沼／熔岩沼水窪與岩甲護盾光殼的實機目視確認（建議交由 Antigravity 依 SKILL_TEST_SPEC 執行）。
 
 完成後交給：使用者／主整合工作區。
+
+## 任務：實作雷系三大新技能（連鎖閃電／落雷術／雷球）
+
+任務狀態：已完成（2026-08-17）
+
+任務分類：新技能實作／戰鬥機制／狀態系統／戰鬥 VFX
+
+負責 AI：Claude
+
+使用者需求：設計文檔（線上試算表「技能」頁籤〈魔法〉區塊）新增三個魔法技能
+「連鎖閃電」「落雷術」「雷球」，共 21 階，全部為魔法傷害／雷屬性。
+
+任務內容：新增三個技能群組與其執行期機制；引擎新增三個群組共用能力
+（移動場域、天降打擊佇列泛用化、環繞場域泛用化）；新增環體電球的剩餘時間狀態；
+補上連鎖電弧、天雷、球體場域三種特效的 Canvas／DOM 兩套畫法。
+
+使用者決策（實作前確認）：
+- 【電殛擴散】（連鎖閃電 T5）升級量以每級 +2.5% 實作（文檔的 +25% 判定為少一位小數）
+- 【雷幻身】（連鎖閃電 T6）的 +50% ＝整道鏈恆時生效，另外附帶自身中繼機制
+- 【雷殞天落】（雷球 T7）＝追加而非「改為」：飛行雷球照常召喚
+
+允許修改：
+
+- `config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`
+- `config/Excel/Status.xlsx`、`config/CSV/Status.csv`
+- `js/skills2.js`、`js/status.js`、`js/vfx.js`、`js/battle-renderer.js`
+- `css/style.css`、`index.html`、`js/worker/sim.worker.js`
+- `tests/skill2-lightning.test.cjs`（新增）、`tests/skill2-system.test.cjs`、`tests/skill2-vfx.test.cjs`
+- `docs/AI_TASKS.md`、`PATCH.md`
+
+禁止修改：既有技能群組的數值與效果、存檔格式、Worker Protocol、無關 UI／VFX、無關戰鬥公式。
+
+前置依賴：新版技能系統（SKILLS2）與其地板場域／環繞場域／天降佇列基建已存在；
+衝突預檢一開始為退出碼 2（codex 未提交、antigravity 未合併），使用者確認 codex 已合併後重跑為 0。
+
+測試要求：新增技能定向測試、完整 `npm test`、`npm run build`、
+`config_tables --apply` dry-run 語意變更 0、`index.html` 與 Worker 快取版號同步。
+
+完成條件：三個群組可由程式測試驗證、資料與說明同步、建立 Claude commit。
+
+驗證結果：新增 `tests/skill2-lightning.test.cjs` 29 項全通過；`tests/skill2-vfx.test.cjs` 15 項全通過；
+完整 `npm test` 1519 項 / 1513 通過 / 6 項失敗，與同一 commit 的乾淨基準線（1489 項 / 1483 通過 / 6 項失敗）
+**逐項相同**；`npm run build` 287/287 通過；`config_tables --sync` + `--apply` dry-run 語意變更 0。
+
+已知風險：
+- 完整測試的 6 項失敗全部是**既有**的參數表漂移（火狩三項、`counter` 施法消耗、`bloodrage`、
+  `ui.js` 快取版號），與本任務無關，已於乾淨副本逐項重現。
+- 三種新特效（連鎖電弧、天雷、球體場域）尚未實機目視確認：程式面已由原始碼定向測試守住
+  Canvas 與 DOM 兩條路徑的接線，但畫面表現需實機檢查。
+- 【電殛擴散】的每級 +2.5% 與設計文檔字面值不同（使用者決策），改回請調
+  `config/Excel/Skills2.xlsx` 的 `chainlightning` 第 5 階 `pctPer`。
+
+未完成項目：三種雷系特效的實機目視確認（建議交由 Antigravity 依 SKILL_TEST_SPEC 執行）。
+
+完成後交給：使用者／主整合工作區。

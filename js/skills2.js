@@ -27,6 +27,15 @@
          故走 stat 減益（不吃控場遞減——每 0.5 秒重塗一次的場域會被遞減歸零）
       8. 法力承傷（skills2ManaShieldAbsorb）：我方扣血前先由法力承擔一部分
       9. 復活攔截（skills2TryRebirth）：掛在野外／高塔兩個判死收斂點
+   （2026-08-17 第六批追加＝雷系三群組：chainlightning 連鎖閃電／thunderstrike 落雷術／
+    thunderorb 雷球。帶進第十～第十二個群組共用能力，同樣是引擎收斂點：
+     10. 移動場域（sgSpawnGround 的 moveTo／speed／parkSec）：地板場域從「釘死在座標上」
+         擴充為「可沿直線飛向落點、抵達後停駐」，雷球飛行途中的逐拍傷害因此與火龍捲
+         共用同一套場域結算（含成長、退化與顯示層 area 協議）
+     11. 天降打擊佇列泛用化（sgQueueMeteor 的 extra）：落地時刻結算的排程原本寫死火球術，
+         改為帶 gid／特效變體／每目標傷害加成／落地回呼，落雷術與雷殞天落共用同一條時間軸
+     12. 環繞場域泛用化（sgSpawnOrbitField 的 statusId／hitVfx／onStrike）：
+         狀態鍵、命中特效與命中回呼改由呼叫端指定，環體電球與火狩共用同一套接觸判定
 
    ---- 設計文檔用語對照（2026-08-17 補列於文檔上方）----
    物理傷害／火焰傷害／寒冰傷害／地系傷害／風系傷害（未實裝）／雷電傷害／毒性傷害／
@@ -130,7 +139,10 @@ var SKILLS2 = {
   firehunt: { name: '火狩', emoji: '☄️', range: '3*3', dmgType: 'magic', elem: 'fire', cd: 26, cost: 40, tiers: [{ name: '火狩', unlock: { reinc: 0, lv: 100 }, fx: { pct: 100, pctPer: 10, count: 2, sec: 4, m: 8, rps: 0.455, castM: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 團火狩環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 火焰傷害，持續 {sec} 秒' }, { name: '強化火狩', unlock: { reinc: 0, lv: 150 }, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '火狩的體積與環繞範圍同步擴大 {pct}%' }, { name: '伴生火狩', unlock: { reinc: 0, lv: 200 }, fx: { chance: 20, chancePer: 2, m: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '火狩命中時有 {chance}% 機率在其後方 {m} 米處伴生一團火狩（每團只能伴生一次，伴生出的不再伴生）' }, { name: '三重火狩', unlock: { reinc: 0, lv: 250 }, fx: { count: 3, pct: 120, pctPer: 12, sec: 4 }, goldBase: 800000, goldGrow: 1.5, desc: '改為召喚 {count} 團火狩，每團造成 {pct}% 火焰傷害，持續 {sec} 秒' }, { name: '極速火狩', unlock: { reinc: 0, lv: 300 }, fx: { pct: 25, pctPer: 2.5 }, goldBase: 1500000, goldGrow: 1.5, desc: '火狩的旋轉速度 +{pct}%' }, { name: '再生', unlock: { reinc: 0, lv: 350 }, fx: { sec: 0.4, secPer: 0.04 }, goldBase: 3000000, goldGrow: 1.5, desc: '火狩每擊殺 1 個敵人，全部火狩的持續時間延長 {sec} 秒' }, { name: '狩神之舞', unlock: { reinc: 0, lv: 400 }, fx: { rings: 2, pct: 150, pctPer: 15, sec: 6, m: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為一次施放 {rings} 道火狩（外圈距內圈 {m} 米、兩道旋轉方向相反），每團造成 {pct}% 火焰傷害、出現時自帶伴生，持續 {sec} 秒' }] },
   rockarmor: { name: '岩甲術', emoji: '🪨', range: '', dmgType: 'magic', elem: 'earth', cd: 25, cost: 40, tiers: [{ name: '岩甲術', unlock: { reinc: 0, lv: 150 }, fx: { pct: 30, pctPer: 3, sec: 10, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '施放岩甲強化自身，獲得最大生命值 {pct}% 的岩甲護盾，持續 {sec} 秒' }, { name: '強化岩甲', unlock: { reinc: 0, lv: 200 }, fx: { pct: 20, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '進一步強化岩甲，額外獲得最大生命值 {pct}% 的岩甲護盾（與第 1 階累加）' }, { name: '岩甲尖刺', unlock: { reinc: 0, lv: 250 }, fx: { pct: 5, pctPer: 0.5 }, goldBase: 400000, goldGrow: 1.5, desc: '岩甲護盾存在期間，攻擊你的敵人會遭受你最大生命值 {pct}% 的地系傷害（獨立於反震，兩者各自結算）' }, { name: '護盾增幅', unlock: { reinc: 0, lv: 300 }, fx: { pct: 15, pctPer: 1.5 }, goldBase: 800000, goldGrow: 1.5, desc: '主動型被動（裝配到技能列即恆時生效）：你獲得的所有護盾效率額外 +{pct}%（乘算）' }, { name: '岩之再生', unlock: { reinc: 0, lv: 350 }, fx: { pct: 1, pctPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '岩甲護盾存在期間，你每減少 1% 生命值即獲得最大生命 {pct}% 的護盾' }, { name: '岩甲增幅', unlock: { reinc: 0, lv: 400 }, fx: { pct: 0.5, pctPer: 0.05, max: 30, sec: 3 }, goldBase: 3000000, goldGrow: 1.5, desc: '岩甲護盾存在期間，你每減少 1% 護盾即獲得 {pct}% 傷害增幅（乘算），最多疊 {max} 層，持續 {sec} 秒' }, { name: '天地逆返', unlock: { reinc: 0, lv: 450 }, fx: { pct: 30, pctPer: 3 }, goldBase: 5000000, goldGrow: 1.5, desc: '岩甲護盾存在期間，護盾剩餘量越低則傷害減免越高，護盾歸零時最高額外 +{pct}% 傷害減免（乘算）' }] },
   mire: { name: '泥沼術', emoji: '🟤', range: '10*10', dmgType: 'magic', elem: 'earth', cd: 18, cost: 40, tiers: [{ name: '泥沼術', unlock: { reinc: 0, lv: 200 }, fx: { sec: 4, secPer: 0.4, castM: 20, move: 30, aspd: 50 }, goldBase: 100000, goldGrow: 1.5, desc: '在敵人腳下召喚一片 10×10 米的沼澤（射程 {castM} 米），沼澤中的敵人陷入緩速（移動速度 -{move}%、攻速 -{aspd}%），持續 {sec} 秒' }, { name: '虛弱', unlock: { reinc: 0, lv: 250 }, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '受泥沼緩速影響的敵人，受到的傷害提高 {pct}%' }, { name: '毒沼術', unlock: { reinc: 0, lv: 300 }, fx: { dotPct: 25, dotPctPer: 2.5, dotGap: 0.5 }, goldBase: 400000, goldGrow: 1.5, desc: '沼澤持續放出毒氣：沼澤中的敵人每 {dotGap} 秒受到魔法攻擊 {dotPct}% 的毒性傷害' }, { name: '毒沼增生', unlock: { reinc: 0, lv: 350 }, fx: { add: 1, addPer: 0.1, m: 40 }, goldBase: 800000, goldGrow: 1.5, desc: '沼澤結束時傳染給 {m} 米內較近的敵人，最多傳染 {add} 次（不足 1 次的部分以機率觸發）' }, { name: '沼澤漫延', unlock: { reinc: 0, lv: 400 }, fx: { sec: 6, pct: 40, pctPer: 4, growSec: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '沼澤持續時間提高至 {sec} 秒，且在 {growSec} 秒內逐步擴大，最大擴增 {pct}%' }, { name: '重力泥沼', unlock: { reinc: 0, lv: 450 }, fx: { move: 50, aspd: 75, pct: 20, pctPer: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '緩速強化為移動速度 -{move}%、攻速 -{aspd}%，且受影響目標受到的傷害再提高 {pct}%（與第 2 階累加）' }, { name: '熔岩沼', unlock: { reinc: 0, lv: 500 }, fx: { sec: 8, pct: 20, pctPer: 2, dotPct: 70, dotPctPer: 7, dotGap: 0.4 }, goldBase: 5000000, goldGrow: 1.5, desc: '沼澤轉變為岩漿：持續時間提高至 {sec} 秒、範圍再擴增 {pct}%（與第 5 階累加），其中的目標每 {dotGap} 秒額外受到魔法攻擊 {dotPct}% 的火焰傷害' }] },
-  earthguard: { name: '大地守護', emoji: '🌍', range: '', dmgType: 'magic', elem: 'earth', cd: 0, cost: 0, tiers: [{ name: '大地守護', unlock: { reinc: 0, lv: 250 }, fx: { pct: 10, pctPer: 1, hp: 20, hpPer: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '主動型被動：自身傷害減免額外 +{pct}%、生命上限額外 +{hp}%（皆為乘算）' }, { name: '大地祝福', unlock: { reinc: 0, lv: 300 }, fx: { pct: 25, pctPer: 2.5 }, goldBase: 200000, goldGrow: 1.5, desc: '全屬性傷害額外 +{pct}%（與所有屬性增傷效果為額外的乘法計算）' }, { name: '生命再生', unlock: { reinc: 0, lv: 350 }, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '生命回復額外 +{pct}%、吸血額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔力再生', unlock: { reinc: 0, lv: 400 }, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '法力回復額外 +{pct}%、吸魔額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔法盾', unlock: { reinc: 0, lv: 450 }, fx: { pct: 30, pctPer: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '你的生命減少時，其中 {pct}% 改由消耗法力承擔（法力不足時只轉換付得起的部分，餘額仍扣生命）' }, { name: '生命反射之盾', unlock: { reinc: 0, lv: 500 }, fx: { pct: 1, pctPer: 0.1, m: 20, count: 1 }, goldBase: 3000000, goldGrow: 1.5, desc: '你每消耗 1% 生命或護盾，{m} 米內的 {count} 個敵人同步損失 {pct}% 最大生命' }, { name: '天地共生', unlock: { reinc: 0, lv: 550 }, fx: { pct: 20, pctPer: 8, sec: 5, cd: 60, cdPer: -3 }, goldBase: 5000000, goldGrow: 1.5, desc: '死亡時原地復活並回復 {pct}% 生命，復活後 {sec} 秒無敵；此招自身冷卻 {cd} 秒（顯示於技能格）' }] }
+  earthguard: { name: '大地守護', emoji: '🌍', range: '', dmgType: 'magic', elem: 'earth', cd: 0, cost: 0, tiers: [{ name: '大地守護', unlock: { reinc: 0, lv: 250 }, fx: { pct: 10, pctPer: 1, hp: 20, hpPer: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '主動型被動：自身傷害減免額外 +{pct}%、生命上限額外 +{hp}%（皆為乘算）' }, { name: '大地祝福', unlock: { reinc: 0, lv: 300 }, fx: { pct: 25, pctPer: 2.5 }, goldBase: 200000, goldGrow: 1.5, desc: '全屬性傷害額外 +{pct}%（與所有屬性增傷效果為額外的乘法計算）' }, { name: '生命再生', unlock: { reinc: 0, lv: 350 }, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '生命回復額外 +{pct}%、吸血額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔力再生', unlock: { reinc: 0, lv: 400 }, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '法力回復額外 +{pct}%、吸魔額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔法盾', unlock: { reinc: 0, lv: 450 }, fx: { pct: 30, pctPer: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '你的生命減少時，其中 {pct}% 改由消耗法力承擔（法力不足時只轉換付得起的部分，餘額仍扣生命）' }, { name: '生命反射之盾', unlock: { reinc: 0, lv: 500 }, fx: { pct: 1, pctPer: 0.1, m: 20, count: 1 }, goldBase: 3000000, goldGrow: 1.5, desc: '你每消耗 1% 生命或護盾，{m} 米內的 {count} 個敵人同步損失 {pct}% 最大生命' }, { name: '天地共生', unlock: { reinc: 0, lv: 550 }, fx: { pct: 20, pctPer: 8, sec: 5, cd: 60, cdPer: -3 }, goldBase: 5000000, goldGrow: 1.5, desc: '死亡時原地復活並回復 {pct}% 生命，復活後 {sec} 秒無敵；此招自身冷卻 {cd} 秒（顯示於技能格）' }] },
+  chainlightning: { name: '連鎖閃電', emoji: '⚡', range: '', dmgType: 'magic', elem: 'lightning', cd: 18, cost: 40, tiers: [{ name: '連鎖閃電', unlock: { reinc: 0, lv: 300 }, fx: { pct: 150, pctPer: 15, count: 4, m: 30, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '丟出一道閃電鏈（射程 {castM} 米），在最多 {count} 個目標間彈射（每段彈射範圍 {m} 米），每擊造成 {pct}% 雷電傷害' }, { name: '強化閃電', unlock: { reinc: 0, lv: 350 }, fx: { pct: 50, pctPer: 5 }, goldBase: 200000, goldGrow: 1.5, desc: '強化閃電威力，閃電鏈傷害進一步 +{pct}% 雷電傷害' }, { name: '雷鳴術', unlock: { reinc: 0, lv: 400 }, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '被閃電鏈擊中的敵人額外再受到 {add} 次雷電傷害（不足 1 次的部分以機率觸發）' }, { name: '強化連鎖', unlock: { reinc: 0, lv: 450 }, fx: { add: 1, addPer: 0.2 }, goldBase: 800000, goldGrow: 1.5, desc: '閃電鏈的彈射數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '電殛擴散', unlock: { reinc: 0, lv: 500 }, fx: { pct: 25, pctPer: 2.5, count: 1, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '閃電鏈每次彈射時，額外對 {m} 米內的 {count} 個敵人造成閃電鏈 {pct}% 的雷電傷害' }, { name: '雷幻身', unlock: { reinc: 0, lv: 550 }, fx: { pct: 50, pctPer: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '閃電鏈傷害額外 +{pct}% 雷電傷害；沒有其它彈射目標時可用自身當中繼點繼續彈射（彈到自身不消耗彈射數）' }, { name: '雷電暴風', unlock: { reinc: 0, lv: 600 }, fx: { count: 3, add: 1, addPer: 0.1, pct: 100, pctPer: 10 }, goldBase: 5000000, goldGrow: 1.5, desc: '同時發射 {count} 道閃電鏈，彈射數額外 +{add} 次，且閃電傷害額外 +{pct}%' }] },
+  thunderstrike: { name: '落雷術', emoji: '🌩️', range: '', dmgType: 'magic', elem: 'lightning', cd: 14, cost: 40, tiers: [{ name: '落雷術', unlock: { reinc: 0, lv: 350 }, fx: { pct: 200, pctPer: 20, count: 2, gap: 0.2, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '對 {castM} 米內的 {count} 個目標降下落雷（每道間隔 {gap} 秒），每道造成 {pct}% 雷電傷害' }, { name: '落雷連鎖', unlock: { reinc: 0, lv: 400 }, fx: { add: 1, addPer: 0.1 }, goldBase: 200000, goldGrow: 1.5, desc: '攻擊目標額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '雙重落雷', unlock: { reinc: 0, lv: 450 }, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '對每個目標的攻擊次數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '閃電增幅', unlock: { reinc: 0, lv: 500 }, fx: { pct: 100, pctPer: 10 }, goldBase: 800000, goldGrow: 1.5, desc: '進一步強化落雷傷害，額外 +{pct}% 雷電傷害' }, { name: '雷電脈衝', unlock: { reinc: 0, lv: 550 }, fx: { sec: 1.5, secPer: 0.15, count: 2, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '落雷落地時產生衝擊波，震暈目標本身與 {m} 米內共 {count} 個敵人 {sec} 秒' }, { name: '迅雷重生', unlock: { reinc: 0, lv: 600 }, fx: { chance: 20, chancePer: 2, max: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '每道落雷結束後有 {chance}% 機率再產生 1 道落雷（同一次施放最多再生 {max} 道）' }, { name: '殛道落雷', unlock: { reinc: 0, lv: 650 }, fx: { mult: 2, pct: 30, pctPer: 3 }, goldBase: 5000000, goldGrow: 1.5, desc: '落雷的攻擊次數與目標數量 ×{mult}，且暈眩中的敵人受到落雷傷害額外 +{pct}%' }] },
+  thunderorb: { name: '雷球', emoji: '🔵', range: '6*6', dmgType: 'magic', elem: 'lightning', cd: 20, cost: 40, tiers: [{ name: '雷球', unlock: { reinc: 0, lv: 400 }, fx: { pct: 50, pctPer: 5, count: 2, gap: 0.35, sec: 2, m: 3, speed: 6, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 個雷球緩慢飛向目標（射程 {castM} 米、飛行速度 {speed} 米/秒），途中每 {gap} 秒對半徑 {m} 米內的所有敵人造成 {pct}% 雷電傷害，抵達後停留 {sec} 秒才消散' }, { name: '擴增雷球', unlock: { reinc: 0, lv: 450 }, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '雷球的體積擴大 {pct}%' }, { name: '多重雷球', unlock: { reinc: 0, lv: 500 }, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '雷球數量額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '環體電球', unlock: { reinc: 0, lv: 550 }, fx: { count: 2, pct: 100, pctPer: 10, sec: 6, m: 8, rps: 0.7 }, goldBase: 800000, goldGrow: 1.5, desc: '額外召喚 {count} 個電球環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 雷電傷害，持續 {sec} 秒' }, { name: '強化雷球', unlock: { reinc: 0, lv: 600 }, fx: { pct: 30, pctPer: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '所有雷球與電球的雷電傷害額外 +{pct}%' }, { name: '伴生雷球', unlock: { reinc: 0, lv: 650 }, fx: { chance: 15, chancePer: 1.5, sec: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '環體電球命中時有 {chance}% 機率在該處生成一個靜止雷球，持續 {sec} 秒（每次作用只判定一次機率）' }, { name: '雷殞天落', unlock: { reinc: 0, lv: 700 }, fx: { count: 2, pct: 300, pctPer: 30, m: 15, sec: 3 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外召喚 {count} 個巨大雷球從天而降，各對 {m} 米內的敵人造成 {pct}% 雷電傷害，並以衝擊波擊暈 {sec} 秒' }] }
 };
 
 /* ---- 執行期狀態（絕不掛 G＝保證不入存檔） ----
@@ -304,6 +316,23 @@ function skills2CanReach(gid, ent, lvs) {
    因此普攻的元素附傷、舊技能與新技能一體生效，不必在各傷害端各掛一次。 */
 function skill2FireAmpPct(pEnt) {
   return (typeof buffVal === 'function') ? Math.max(0, buffVal(pEnt, 'sgFireAmp')) : 0;
+}
+
+/* 暈眩塗抹的唯一入口：BOSS 控場免疫與敵人韌性抗性都在這裡擋掉，
+   各技能只負責決定「要不要暈、暈多久」。回傳是否真的暈到。 */
+function sgTryStun(target, sec) {
+  if (!target || target.hp <= 0 || !(sec > 0)) return false;
+  if (typeof isBossControlImmune === 'function' && isBossControlImmune(target)) return false;
+  if (typeof resistCtrl === 'function' && typeof monsterDefCfg === 'function' &&
+      resistCtrl(monsterDefCfg(target))) return false;
+  if (typeof applyStatus !== 'function') return false;
+  applyStatus(target, 'stun', { dur: sec });
+  return true;
+}
+
+/* 這個目標現在正在暈眩嗎（殛道落雷的增傷判定）。 */
+function sgIsStunned(target) {
+  return !!(target && typeof effectActive === 'function' && effectActive(target, 'stun'));
 }
 
 /* 小數次數 → 實際次數：整數部分保底，小數部分為額外 1 次的機率。 */
@@ -830,10 +859,8 @@ function sgProjectileHit(projectile, target, ctx) {
       if (ctx.onDamage && projectile.out.dmg > beforeSpread) ctx.onDamage(projectile.out.dmg - beforeSpread);
     }
   }
-  if (projectile.stunChance > 0 && chance(projectile.stunChance) &&
-      !(typeof isBossControlImmune === 'function' && isBossControlImmune(target)) &&
-      !(typeof resistCtrl === 'function' && resistCtrl(monsterDefCfg(target)))) {
-    applyStatus(target, 'stun', { dur: projectile.stunSec });
+  if (projectile.stunChance > 0 && chance(projectile.stunChance)) {
+    sgTryStun(target, projectile.stunSec);
   }
   if (res.killed && ctx.onDeaths) ctx.onDeaths();
 }
@@ -935,6 +962,9 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
     case 'firehunt': sgCastFirehunt(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     case 'rockarmor': sgCastRockarmor(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     case 'mire': sgCastMire(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
+    case 'chainlightning': sgCastChainlightning(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
+    case 'thunderstrike': sgCastThunderstrike(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
+    case 'thunderorb': sgCastThunderorb(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     default: return null;
   }
   if (!storm && typeof floatPlayerSkillCast === 'function') {
@@ -1547,11 +1577,20 @@ function sgTickBurn(dt, ctx) {
 }
 
 /* 殞石落地時才結算命中，讓 Worker 的血量快照、血條與傷害飄字同時更新。
-   施放時只鎖定落點目標；victims 不在此建立，等待 at 到期後才重新查詢範圍。 */
-function sgQueueMeteor(pEnt, st, dmgVal, target, pool, radius, burnSpec, floatSel, out, at) {
+   施放時只鎖定落點目標；victims 不在此建立，等待 at 到期後才重新查詢範圍。
+   extra（選填）＝天降打擊佇列的泛用欄位：gid／特效變體／落地回呼／每目標傷害加成，
+   讓落雷術與雷殞天落共用同一條「落地才結算」的時間軸，不必各自複製一份排程器。 */
+function sgQueueMeteor(pEnt, st, dmgVal, target, pool, radius, burnSpec, floatSel, out, at, extra) {
   SKILL2_RT.meteors.push({
     at: at, target: target, pool: pool, radius: radius, pEnt: pEnt, st: st, dmgVal: dmgVal,
-    burnSpec: burnSpec, floatSel: floatSel, out: out
+    burnSpec: burnSpec, floatSel: floatSel, out: out,
+    gid: (extra && extra.gid) || 'fireball',
+    variant: (extra && extra.variant) || 'meteor-impact',
+    elem: (extra && extra.elem) || null,
+    /* bonusPctFn(target)＝落地當下才決定的總傷加成%（殛道落雷要看目標是否正在暈眩）；
+       onImpact(meteor, victims, ctx)＝落地後的附加效果（震暈、再生一道落雷）。 */
+    bonusPctFn: (extra && extra.bonusPctFn) || null,
+    onImpact: (extra && extra.onImpact) || null
   });
   out._pendingProjectiles = (out._pendingProjectiles || 0) + 1;
 }
@@ -1565,23 +1604,26 @@ function sgTickMeteors(ctx) {
     if (!m || m.at > GT) { if (m) keep.push(m); continue; }
     var before = m.out.dmg;
     var killed = false;
-    /* 只有這裡才讀取殞石落點周圍的敵人；敵人若在落地前死亡或移出範圍，
-       就不會被這顆殞石扣血。 */
-    var victims = (typeof bfTargetsAround === 'function')
-      ? bfTargetsAround(m.target, m.pool || [], m.radius) :
-      (m.target && m.target.hp > 0 ? [m.target] : []);
+    /* 只有這裡才讀取落點周圍的敵人；敵人若在落地前死亡或移出範圍，
+       就不會被這一發扣血。radius ≤ 0＝單體落點（落雷術），不做範圍查詢：
+       半徑 0 的圓仍會涵蓋「身體壓到落點中心」的旁邊敵人，那不是單體技能該有的行為。 */
+    var victims = (m.radius > 0 && typeof bfTargetsAround === 'function')
+      ? bfTargetsAround(m.target, m.pool || [], m.radius)
+      : ((m.target && m.target.hp > 0) ? [m.target] : []);
     for (var vi = 0; vi < victims.length; vi++) {
       var target = victims[vi];
       if (!target || target.hp <= 0) continue;
-      var res = sgHitOne(m.pEnt, m.st, target, m.dmgVal, 'fireball', m.floatSel, m.out, 0);
+      var bonusPct = m.bonusPctFn ? m.bonusPctFn(target) : 0;
+      var res = sgHitOne(m.pEnt, m.st, target, m.dmgVal, m.gid, m.floatSel, m.out, 0, bonusPct);
       if (res && !res.miss && m.burnSpec) sgApplyBurn(target, m.burnSpec);
       if (res && res.killed) killed = true;
     }
     if (victims.length) {
-      sgEmitVfx('fireball', victims, m.floatSel, {
-        fxKind: 'impact', variant: 'meteor-impact', elem: 'fire', area: sgAreaAround(m.target, m.radius)
+      sgEmitVfx(m.gid, victims, m.floatSel, {
+        fxKind: 'impact', variant: m.variant, elem: m.elem, area: sgAreaAround(m.target, m.radius)
       });
     }
+    if (m.onImpact) m.onImpact(m, victims, ctx);
     if (ctx.onDamage && m.out.dmg > before) ctx.onDamage(m.out.dmg - before);
     if (killed && ctx.onDeaths) ctx.onDeaths();
     sgFinishSkillCastFloat(m.out);
@@ -1799,7 +1841,11 @@ function sgCastFirepillar(pEnt, st, g, lvs, pool, primary, floatSel, out) {
 /* 建立一個地板場域實例。pos 於此時定位（釘在地板上，之後與目標實體脫鉤——
    目標死了火龍捲也還在燒）。 */
 function sgSpawnGround(pEnt, st, gid, cfg) {
-  var p = (typeof bfPos === 'function' && cfg.tgt) ? bfPos(cfg.tgt) : null;
+  /* cfg.from＝指定出生座標（移動場域從玩家腳下出發、伴生雷球生在命中處）；
+     留白＝比照火龍捲，出生在目標當下的位置。 */
+  var p = (cfg.from && isFinite(cfg.from.x) && isFinite(cfg.from.y))
+    ? { x: Number(cfg.from.x), y: Number(cfg.from.y) }
+    : ((typeof bfPos === 'function' && cfg.tgt) ? bfPos(cfg.tgt) : null);
   var angle = (typeof bfAngleTo === 'function' && cfg.tgt) ? bfAngleTo(cfg.tgt) : null;
   SKILL2_RT.grounds.push({
     vfxId: 'sg-ground-' + (++SKILL2_RT.groundSeq),
@@ -1826,8 +1872,25 @@ function sgSpawnGround(pEnt, st, gid, cfg) {
     baseWidth: Math.max(0, Number(cfg.width) || 0),
     growTo: Math.max(1, Number(cfg.growTo) || 1),
     growSec: Math.max(0, Number(cfg.growSec) || 0),
+    /* 移動場域（雷球）：沿直線飛向 dest，抵達後就地停駐到打完剩餘段數。
+       速度以像素／秒表示；沒有 dest 或沒有座標＝原本的釘死在地板上。 */
+    dest: (cfg.dest && isFinite(cfg.dest.x) && isFinite(cfg.dest.y))
+      ? { x: Number(cfg.dest.x), y: Number(cfg.dest.y) } : null,
+    speed: Math.max(0, Number(cfg.speed) || 0),
     mire: cfg.mire || null
   });
+}
+
+/* 移動場域的一步：朝 dest 前進 speed × dt，抵達（或已無座標）就把 dest 清掉改為停駐。
+   場域的傷害判定讀的就是 f.pos，因此位置一更新，這一拍的命中範圍就跟著走。 */
+function sgGroundMove(f, dt) {
+  if (!f.dest || !f.pos || !(f.speed > 0) || !(dt > 0)) return;
+  var dx = f.dest.x - f.pos.x, dy = f.dest.y - f.pos.y;
+  var dist = Math.sqrt(dx * dx + dy * dy);
+  var step = f.speed * dt;
+  if (dist <= step || dist <= 0.5) { f.pos.x = f.dest.x; f.pos.y = f.dest.y; f.dest = null; return; }
+  f.pos.x += dx / dist * step;
+  f.pos.y += dy / dist * step;
 }
 
 /* 場域當下的成長倍率（沒有設定成長＝恆為 1）。 */
@@ -1867,9 +1930,7 @@ function sgGroundVictims(f, enemies) {
 function sgGroundTick(f, enemies, ctx) {
   var victims = sgGroundVictims(f, enemies);
   if (f.kind === 'mire') { sgMireGroundTick(f, victims, ctx); return; }
-  sgEmitVfx(f.gid, victims, f.floatSel, f.kind === 'wall'
-    ? { fxKind: 'aura', variant: 'firewall', elem: 'fire', dur: f.gap, area: sgGroundArea(f) }
-    : { fxKind: 'impact', variant: 'pillar', elem: 'fire', dur: f.gap, area: sgGroundArea(f) });
+  sgEmitVfx(f.gid, victims, f.floatSel, sgGroundVfxSpec(f));
   if (!victims.length) return;
   var out = { killed: false, dmg: 0, crit: false };
   for (var i = 0; i < victims.length; i++) {
@@ -1880,6 +1941,15 @@ function sgGroundTick(f, enemies, ctx) {
   }
   if (ctx && ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
   if (out.killed && ctx && ctx.onDeaths) ctx.onDeaths();
+}
+
+/* 場域這一拍的特效規格：形狀決定畫法（火柱＝地面爆點、火牆＝直立牆、雷球＝球體），
+   屬性交給 sgEmitVfx 由群組帶入，這裡不再寫死 fire。 */
+function sgGroundVfxSpec(f) {
+  var area = sgGroundArea(f);
+  if (f.kind === 'wall') return { fxKind: 'aura', variant: 'firewall', elem: 'fire', dur: f.gap, area: area };
+  if (f.kind === 'orb') return { fxKind: 'aura', variant: 'thunder-orb', dur: f.gap, area: area };
+  return { fxKind: 'impact', variant: 'pillar', elem: 'fire', dur: f.gap, area: area };
 }
 
 /* 場域的地面範圍描述（顯示層用）。矩形場域帶 w/h/a 讓顯示層畫出方向正確的矩形；
@@ -1904,6 +1974,9 @@ function sgGroundImpactVictims(f, enemies, radius) {
    機率成立就在我方範圍內的隨機敵人身上重來一次）；第 5 階烈焰衝擊也在此結算。 */
 function sgGroundExpire(f, enemies, ctx) {
   if (f.kind === 'mire') { sgMireGroundExpire(f, enemies, ctx); return; }
+  /* 雷球（移動場域）消散時沒有附加效果：下面整段是火龍捲樹的階序（第 5 階烈焰衝擊、
+     第 6 階重生、火牆再召喚），套到別的群組會把同一個階數當成完全不同的效果。 */
+  if (f.kind === 'orb') return;
   var lvs = skills2Levels(f.gid);
   var t = SKILLS2[f.gid].tiers;
   if (lvs[4] > 0) {
@@ -1950,6 +2023,7 @@ function sgTickGrounds(dt, ctx) {
   for (var i = list.length - 1; i >= 0; i--) {
     var f = list[i];
     var guard = 0;
+    sgGroundMove(f, dt);      // 移動場域（雷球）：作用前先推進到當下位置
     sgGroundApplyGrowth(f);   // 逐漸擴大的場域：作用前先更新到當下尺寸
     while (f.hitsLeft > 0 && f.nextAt <= GT && guard < 20) {
       guard++;
@@ -2027,6 +2101,13 @@ function sgSpawnOrbitField(pEnt, st, gid, cfg) {
     companionChance: Math.max(0, Number(cfg.companionChance) || 0),
     companionPx: Math.max(0, Number(cfg.companionPx) || 0),
     extendSec: Math.max(0, Number(cfg.extendSec) || 0),
+    /* 泛用欄位（火狩以外的群組用得到）：狀態鍵、環繞體與命中的特效變體、命中回呼。
+       留白＝火狩原本的行為，因此既有呼叫端不必改。 */
+    statusId: cfg.statusId || 'sgFirehunt',
+    auraVariant: cfg.auraVariant || 'firehunt',
+    hitVariant: cfg.hitVariant || 'fire-explosion',
+    hitElem: cfg.hitElem || null,
+    onStrike: cfg.onStrike || null,
     rings: [], orbs: [], vfxUntil: 0
   };
   var count = Math.max(1, Math.floor(Number(cfg.count) || 1));
@@ -2042,7 +2123,7 @@ function sgSpawnOrbitField(pEnt, st, gid, cfg) {
   }
   f.vfxUntil = f.until;
   SKILL2_RT.orbits.push(f);
-  sgOrbitSyncStatus(pEnt);
+  sgOrbitSyncStatus(pEnt, f.statusId);
   sgOrbitEmitVfx(f);
 }
 
@@ -2051,13 +2132,17 @@ function sgSpawnOrbitField(pEnt, st, gid, cfg) {
    取這名玩家身上所有環繞場域中**最晚結束**的那一個：狀態列一個技能只呈現一格，
    多重施放時該顯示的當然是「火狩還會在場多久」，不是其中某一組的殘餘。
    狀態與場域共用同一個時鐘 GT，因此必定同時到期，不需要另外清除。 */
-function sgOrbitSyncStatus(pEnt) {
+function sgOrbitSyncStatus(pEnt, statusId) {
   if (!pEnt) return;
+  var sid = statusId || 'sgFirehunt';
   var list = SKILL2_RT.orbits, until = 0;
   for (var i = 0; i < list.length; i++) {
-    if (list[i] && list[i].pEnt === pEnt && list[i].until > until) until = list[i].until;
+    /* 只比同一個狀態鍵的環繞場域：火狩與環體電球是兩個技能、兩格狀態，
+       共用一個剩餘時間會讓其中一邊顯示成另一邊的秒數。 */
+    if (list[i] && list[i].pEnt === pEnt && (list[i].statusId || 'sgFirehunt') === sid &&
+        list[i].until > until) until = list[i].until;
   }
-  if (until > GT) applyStatus(pEnt, 'sgFirehunt', { dur: until - GT });
+  if (until > GT) applyStatus(pEnt, sid, { dur: until - GT });
 }
 
 function sgOrbitOrb(ang, ring) {
@@ -2076,6 +2161,12 @@ function sgOrbitCompanion(f, orb) {
 
 /* 這一團火狩現在碰到誰：火狩的體積圓對敵人的身體圓做接觸判定。
    無座標的敵人不參與幾何（改由 sgOrbitLapTarget 以每圈一次的節拍退化處理）。 */
+/* 環繞體此刻的世界座標（圓心＝當下的玩家座標）；無座標時回傳 null。 */
+function sgOrbitPos(orb, center) {
+  if (!center || !orb) return null;
+  return { x: center.x + Math.cos(orb.ang) * orb.radius, y: center.y + Math.sin(orb.ang) * orb.radius };
+}
+
 function sgOrbitVictims(f, orb, center, live) {
   var hit = [];
   if (!center) return hit;
@@ -2109,6 +2200,7 @@ function sgOrbitStep(f, enemies, dt, ctx) {
   var born = [];
   var struck = [];
   var extended = false;
+  var strikes = [];
   for (var i = 0; i < f.orbs.length; i++) {
     var orb = f.orbs[i];
     orb.ang += orb.spin * dt;
@@ -2129,6 +2221,9 @@ function sgOrbitStep(f, enemies, dt, ctx) {
       var res = sgHitOne(f.pEnt, f.st, fresh[h], f.dmgVal, f.gid, f.floatSel, out, sgStaggerMs(struck.length));
       if (!res || res.miss) continue;
       struck.push(fresh[h]);
+      /* 一顆環繞體這一拍只算「一次命中」（設計文檔：受擊一次可能命中多個敵人，
+         但也只算一次命中機率）——伴生雷球的機率判定因此掛在這裡去重。 */
+      if (f.onStrike && strikes.indexOf(orb) < 0) strikes.push(orb);
       // 再生：擊殺延長整組火狩的持續時間（狀態列的剩餘時間同步往後推）
       if (res.killed && f.extendSec > 0) { f.until += f.extendSec; extended = true; }
       // 伴生火狩：命中才判定，且母體從此不再伴生
@@ -2140,9 +2235,12 @@ function sgOrbitStep(f, enemies, dt, ctx) {
     }
   }
   if (born.length) f.orbs = f.orbs.concat(born);
-  if (extended) sgOrbitSyncStatus(f.pEnt);
+  if (extended) sgOrbitSyncStatus(f.pEnt, f.statusId);
+  for (var si = 0; si < strikes.length; si++) f.onStrike(f, strikes[si], sgOrbitPos(strikes[si], center), ctx);
   if (struck.length) {
-    sgEmitVfx(f.gid, struck, f.floatSel, { fxKind: 'impact', variant: 'fire-explosion', elem: 'fire', dur: 0.35 });
+    sgEmitVfx(f.gid, struck, f.floatSel, {
+      fxKind: 'impact', variant: f.hitVariant, elem: f.hitElem, dur: 0.35
+    });
   }
   if (ctx && ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
   if (out.killed && ctx && ctx.onDeaths) ctx.onDeaths();
@@ -2156,7 +2254,7 @@ function sgOrbitEmitVfx(f) {
   var perRing = Math.max(1, Math.round(f.orbs.length / Math.max(1, f.rings.length)));
   for (var i = 0; i < f.rings.length; i++) {
     sgEmitVfx(f.gid, f.tgt ? [f.tgt] : [], f.floatSel, {
-      fxKind: 'aura', variant: 'firehunt', elem: 'fire', dur: dur, count: perRing,
+      fxKind: 'aura', variant: f.auraVariant, elem: f.hitElem, dur: dur, count: perRing,
       area: {
         x: center ? center.x : 0, y: center ? center.y : 0, r: f.rings[i].r,
         orbR: f.bodyR, orbs: perRing, spin: f.rings[i].spin >= 0 ? 1 : -1,
@@ -2622,6 +2720,324 @@ function skills2TryRebirth(pEnt) {
   }
   if (typeof UI !== 'undefined' && UI.dirty) { UI.dirty.battle = true; UI.dirty.skills = true; }
   return true;
+}
+
+/* ===========================================================================
+   連鎖閃電（chainlightning）
+   ---------------------------------------------------------------------------
+   一道在敵人之間逐跳彈射的閃電鏈：每一跳都接在前一跳的飛行時間之後，
+   傷害飄字與特效因此與畫面同步（比照飛刀的彈射鏈）。
+   彈射目標的選法：優先跳向「本輪還沒跳過、且在彈射範圍內」的最近敵人；
+   都跳過了就結束——第 6 階【雷幻身】才是唯一的例外，它讓玩家自己當中繼點，
+   把走訪紀錄清空並繼續彈射（中繼那一下不消耗彈射數，落到敵人身上才算一次）。
+   因此單一敵人時整條鏈仍打得完（A→自身→A→…），不必為此另設「單體加成」。
+   =========================================================================== */
+function sgCastChainlightning(pEnt, st, g, lvs, pool, primary, floatSel, out) {
+  var t = g.tiers;
+  var pct = sgVal(t[0].fx, 'pct', lvs[0]);
+  if (lvs[1] > 0) pct += sgVal(t[1].fx, 'pct', lvs[1]);   // 強化閃電
+  if (lvs[5] > 0) pct += sgVal(t[5].fx, 'pct', lvs[5]);   // 雷幻身（使用者決策：整道鏈恆時增傷）
+  if (lvs[6] > 0) pct += sgVal(t[6].fx, 'pct', lvs[6]);   // 雷電暴風
+  var links = Math.max(1, Math.floor(Number(t[0].fx.count) || 4));
+  if (lvs[3] > 0) links += sgRollCount(sgVal(t[3].fx, 'add', lvs[3]));
+  if (lvs[6] > 0) links += sgRollCount(sgVal(t[6].fx, 'add', lvs[6]));
+  var cfg = {
+    dmgVal: sgGroupBaseStat(g, st) * pct / 100,
+    links: links,
+    hopPx: bfMeterPx(Number(t[0].fx.m) || 30),
+    extraHits: lvs[2] > 0 ? sgRollCount(sgVal(t[2].fx, 'add', lvs[2])) : 0,
+    splashPct: lvs[4] > 0 ? sgVal(t[4].fx, 'pct', lvs[4]) : 0,
+    splashCount: Math.max(1, Math.floor(Number(t[4].fx.count) || 1)),
+    splashPx: bfMeterPx(Number(t[4].fx.m) || 6),
+    selfRelay: lvs[5] > 0
+  };
+  var bolts = lvs[6] > 0 ? Math.max(1, Math.floor(Number(t[6].fx.count) || 3)) : 1;
+  var starts = sgChainStarts(primary, pool, bolts);
+  for (var i = 0; i < bolts; i++) {
+    sgChainlightningBolt(pEnt, st, cfg, starts[i % starts.length], pool, floatSel, out);
+  }
+}
+
+/* 【雷電暴風】的三道鏈盡量從不同的敵人起手；敵人不夠時才輪流重用同一個起點。 */
+function sgChainStarts(primary, pool, count) {
+  var starts = [primary];
+  var sorted = (typeof bfSortedTargets === 'function') ? bfSortedTargets(pool) : [];
+  for (var i = 0; i < sorted.length && starts.length < count; i++) {
+    if (starts.indexOf(sorted[i]) < 0) starts.push(sorted[i]);
+  }
+  return starts;
+}
+
+/* 下一個彈射目標：彈射範圍內、本輪還沒跳過的最近敵人（沒有就回 null）。
+   from 為 null＝從玩家（雷幻身中繼點）出發，改用「離我方最近」排序。 */
+function sgChainNextTarget(from, pool, visited, hopPx) {
+  var near = (typeof bfNearestOthers === 'function') ? bfNearestOthers(from, pool, pool.length, hopPx) : [];
+  for (var i = 0; i < near.length; i++) {
+    if (near[i] && near[i].hp > 0 && visited.indexOf(near[i]) < 0) return near[i];
+  }
+  return null;
+}
+
+function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
+  if (!start || start.hp <= 0) return;
+  var gid = 'chainlightning';
+  var cur = start;
+  var visited = [start];
+  var isBounce = false;   // 起手那一擊不算彈射（電殛擴散只在彈射時追加）
+  var linksLeft = cfg.links;
+  var delayMs = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(start) * 1000) : 0;
+  sgEmitVfx(gid, [start], floatSel, {
+    fxKind: 'chain', variant: 'lightning-chain', count: 1, travelMs: [delayMs]
+  });
+  var guard = 0;
+  while (linksLeft > 0 && cur && cur.hp > 0 && guard < 64) {
+    guard++;
+    linksLeft--;
+    sgHitOne(pEnt, st, cur, cfg.dmgVal, gid, floatSel, out, delayMs);
+    // 【雷鳴術】：被擊中的敵人再多吃幾次同樣的閃電傷害（不足 1 次的部分已於施放時擲骰）
+    for (var e = 0; e < cfg.extraHits; e++) {
+      sgHitOne(pEnt, st, cur, cfg.dmgVal, gid, floatSel, out, delayMs + sgStaggerMs(e + 1));
+    }
+    // 【電殛擴散】：每次彈射時劈向附近的敵人（不占彈射數、不繼續延伸鏈）
+    if (isBounce && cfg.splashPct > 0) {
+      var splash = (typeof bfNearestOthers === 'function')
+        ? bfNearestOthers(cur, pool, cfg.splashCount, cfg.splashPx) : [];
+      for (var s = 0; s < splash.length; s++) {
+        sgHitOne(pEnt, st, splash[s], cfg.dmgVal * cfg.splashPct / 100, gid, floatSel, out,
+          delayMs + sgStaggerMs(s + 1));
+      }
+      if (splash.length) {
+        sgEmitVfx(gid, splash, floatSel, {
+          fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', delayMs: delayMs, dur: 0.3
+        });
+      }
+    }
+    var next = sgChainNextTarget(cur, pool, visited, cfg.hopPx);
+    if (!next && cfg.selfRelay) {
+      /* 【雷幻身】：以自身當中繼點——清空走訪紀錄後重新找目標，
+         中繼這一下不消耗彈射數（消耗的是落到敵人身上的那一擊）。 */
+      visited = [];
+      next = sgChainNextTarget(null, pool, visited, cfg.hopPx);
+      if (next) {
+        sgEmitPlayerVfx(gid, floatSel, { fxKind: 'aura', variant: 'lightning-relay', elem: 'lightning', dur: 0.35 });
+      }
+    }
+    if (!next) break;
+    visited.push(next);
+    var hopMs = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(next) * 1000) : 0;
+    sgEmitVfx(gid, [cur, next], floatSel, {
+      fxKind: 'chain', variant: 'lightning-chain', count: 1,
+      delayMs: delayMs, travelMs: [0, hopMs]
+    });
+    delayMs += hopMs;
+    cur = next;
+    isBounce = true;
+  }
+}
+
+/* ===========================================================================
+   落雷術（thunderstrike）
+   ---------------------------------------------------------------------------
+   每一道落雷都是一次「天降打擊」：施放當下只排程與播放落雷特效，
+   傷害等到落地那一刻才結算（沿用殞石術的同一條佇列，見 sgQueueMeteor）。
+   因此第 5 階【雷電脈衝】的暈眩塗在落地之後，第 7 階【殛道落雷】對
+   「已經在暈眩中」的敵人加成才有意義——同一次施放的先落者暈住、後落者吃加成。
+   =========================================================================== */
+function sgCastThunderstrike(pEnt, st, g, lvs, pool, primary, floatSel, out) {
+  var t = g.tiers;
+  var pct = sgVal(t[0].fx, 'pct', lvs[0]);
+  if (lvs[3] > 0) pct += sgVal(t[3].fx, 'pct', lvs[3]);   // 閃電增幅
+  var dmgVal = sgGroupBaseStat(g, st) * pct / 100;
+  var targetCount = Math.max(1, Math.floor(Number(t[0].fx.count) || 2));
+  if (lvs[1] > 0) targetCount += sgRollCount(sgVal(t[1].fx, 'add', lvs[1]));
+  var hitsPer = 1;
+  if (lvs[2] > 0) hitsPer += sgRollCount(sgVal(t[2].fx, 'add', lvs[2]));
+  if (lvs[6] > 0) {
+    // 【殛道落雷】：攻擊次數與目標數同時乘倍（在第 2／3 階的追加之後才乘）
+    var mult = Math.max(1, Math.floor(Number(t[6].fx.mult) || 2));
+    targetCount *= mult;
+    hitsPer *= mult;
+  }
+  var gapMs = Math.max(0, Number(t[0].fx.gap) || 0.2) * 1000;
+  var targets = sgThunderTargets(primary, pool, lvs, targetCount);
+  var boltIndex = 0;
+  for (var i = 0; i < targets.length; i++) {
+    for (var h = 0; h < hitsPer; h++) {
+      sgQueueThunderBolt(pEnt, st, g, lvs, dmgVal, targets[i], pool, floatSel, out, boltIndex * gapMs, 0);
+      boltIndex++;
+    }
+  }
+}
+
+/* 落雷的目標清單：射程內、由近而遠取 count 個；敵人不足時輪流重用
+   （表定就是「對 N 個目標降下落雷」，敵人少於 N 時全落在同一批人身上）。 */
+function sgThunderTargets(primary, pool, lvs, count) {
+  var sorted = (typeof bfSortedTargets === 'function') ? bfSortedTargets(pool) : [];
+  var inRange = [primary];
+  for (var i = 0; i < sorted.length; i++) {
+    if (sorted[i] !== primary && skills2CanReach('thunderstrike', sorted[i], lvs)) inRange.push(sorted[i]);
+  }
+  var out = [];
+  for (var k = 0; k < count; k++) out.push(inRange[k % inRange.length]);
+  return out;
+}
+
+/* 一道落雷：排程落地結算，並掛上【雷電脈衝】的暈眩與【迅雷重生】的再生。
+   regenDone＝這一條落雷鏈已經再生過幾道（上限來自表格 max，避免無限接力）。 */
+function sgQueueThunderBolt(pEnt, st, g, lvs, dmgVal, target, pool, floatSel, out, castDelayMs, regenDone) {
+  if (!target || target.hp <= 0) return;
+  var t = g.tiers;
+  var timing = sgMeteorFallTiming();
+  var stunSec = lvs[4] > 0 ? sgVal(t[4].fx, 'sec', lvs[4]) : 0;
+  var stunCount = Math.max(1, Math.floor(Number(t[4].fx.count) || 2));
+  var stunPx = bfMeterPx(Number(t[4].fx.m) || 6);
+  var vulnPct = lvs[6] > 0 ? sgVal(t[6].fx, 'pct', lvs[6]) : 0;
+  var regenChance = lvs[5] > 0 ? sgVal(t[5].fx, 'chance', lvs[5]) : 0;
+  var regenMax = Math.max(0, Math.floor(Number(t[5].fx.max) || 5));
+
+  sgEmitVfx('thunderstrike', [target], floatSel, {
+    fxKind: 'rain', variant: 'thunder-strike', elem: 'lightning', count: 1,
+    delayMs: castDelayMs, travelMs: [timing.travelMs]
+  });
+  sgQueueMeteor(pEnt, st, dmgVal, target, pool, 0, null, floatSel, out,
+    GT + (castDelayMs + timing.fallMs) / 1000, {
+      gid: 'thunderstrike', variant: 'thunder-impact', elem: 'lightning',
+      /* 【殛道落雷】：加成在落地當下才判定——先落的雷把人暈住，後落的才吃得到。 */
+      bonusPctFn: vulnPct > 0 ? function (tgt) { return sgIsStunned(tgt) ? vulnPct : 0; } : null,
+      onImpact: function (m, victims, ctx) {
+        if (stunSec > 0) {
+          /* 表定範圍＝「目標本身以及 6 米內的任 1 個敵人」，共 stunCount 個。 */
+          var stunned = (m.target && m.target.hp > 0) ? [m.target] : [];
+          var extra = (typeof bfNearestOthers === 'function')
+            ? bfNearestOthers(m.target, m.pool || [], Math.max(0, stunCount - stunned.length), stunPx) : [];
+          for (var si = 0; si < extra.length; si++) stunned.push(extra[si]);
+          for (var vi = 0; vi < stunned.length; vi++) sgTryStun(stunned[vi], stunSec);
+        }
+        // 【迅雷重生】：這一道結束後再生一道；目標死了就改劈附近還活著的敵人
+        if (regenChance > 0 && regenDone < regenMax && chance(regenChance)) {
+          var next = (m.target && m.target.hp > 0) ? m.target
+            : ((typeof bfNearestOther === 'function') ? bfNearestOther(m.target, m.pool || []) : null);
+          if (next) {
+            sgQueueThunderBolt(m.pEnt, m.st, SKILLS2.thunderstrike, skills2Levels('thunderstrike'),
+              m.dmgVal, next, m.pool, m.floatSel, m.out, 0, regenDone + 1);
+          }
+        }
+      }
+    });
+}
+
+/* ===========================================================================
+   雷球（thunderorb）
+   ---------------------------------------------------------------------------
+   三種形態共用同一套既有基建，因此不必為雷球另寫一個模擬迴圈：
+     飛行雷球  → 地板場域＋移動（sgSpawnGround 的 dest／speed）：邊飛邊按節拍打範圍
+     環體電球  → 環繞場域（sgSpawnOrbitField）：與火狩同一套接觸判定
+     雷殞天落  → 天降打擊佇列（sgQueueMeteor）：與殞石術同一條落地時間軸
+   第 7 階依使用者決策為「追加」而非「改為」：飛行雷球照常召喚，再額外降下巨雷球。
+   =========================================================================== */
+function sgCastThunderorb(pEnt, st, g, lvs, pool, primary, floatSel, out) {
+  var t = g.tiers;
+  var ampPct = lvs[4] > 0 ? sgVal(t[4].fx, 'pct', lvs[4]) : 0;   // 【強化雷球】：所有形態共用
+  var scale = lvs[1] > 0 ? 1 + sgVal(t[1].fx, 'pct', lvs[1]) / 100 : 1;
+  var orbCfg = {
+    dmgVal: sgGroupBaseStat(g, st) * (sgVal(t[0].fx, 'pct', lvs[0]) + ampPct) / 100,
+    radius: bfMeterPx(Number(t[0].fx.m) || 3) * scale,
+    gap: Math.max(0.05, Number(t[0].fx.gap) || 0.35),
+    parkSec: Math.max(0, Number(t[0].fx.sec) || 2),
+    speedPx: Math.max(1, bfMeterPx(Number(t[0].fx.speed) || 6))
+  };
+  var count = Math.max(1, Math.floor(Number(t[0].fx.count) || 2));
+  if (lvs[2] > 0) count += sgRollCount(sgVal(t[2].fx, 'add', lvs[2]));
+  /* 目標隨機挑（設計文檔：選目標的時候隨機選，不用特別選近的）；
+     射程閘門已在施放入口擋過，這裡只從還活著的敵人裡抽。 */
+  var live = (typeof bfLiveList === 'function') ? bfLiveList(pool) : [];
+  for (var i = 0; i < count; i++) {
+    var tgt = live.length ? live[Math.floor(Math.random() * live.length)] : primary;
+    sgSpawnThunderOrb(pEnt, st, tgt, floatSel, orbCfg);
+  }
+
+  // 【環體電球】：環繞自身的電球，命中判定與火狩共用同一套接觸判定
+  if (lvs[3] > 0) {
+    var ofx = t[3].fx;
+    var body = sgRange(g.range);
+    var companionChance = lvs[5] > 0 ? sgVal(t[5].fx, 'chance', lvs[5]) : 0;
+    var companionSec = Math.max(0.5, Number(t[5].fx.sec) || 2);
+    sgSpawnOrbitField(pEnt, st, 'thunderorb', {
+      tgt: primary, floatSel: floatSel,
+      rings: [{ r: bfMeterPx(Number(ofx.m) || 8), spin: Math.PI * 2 * (Number(ofx.rps) || 0.7) }],
+      count: Math.max(1, Math.floor(Number(ofx.count) || 2)),
+      dmgVal: sgGroupBaseStat(g, st) * (sgVal(ofx, 'pct', lvs[3]) + ampPct) / 100,
+      lifeSec: Math.max(0.5, Number(ofx.sec) || 6),
+      bodyR: bfMeterPx(Math.max(body.length, body.width) / 2) * scale,
+      statusId: 'sgThunderOrb', auraVariant: 'thunder-orbit',
+      hitVariant: 'thunder-burst', hitElem: 'lightning',
+      /* 【伴生雷球】：命中處留下一顆靜止雷球（傷害與體積比照飛行雷球）。 */
+      onStrike: companionChance > 0 ? function (f, orb, pos) {
+        if (!pos || !chance(companionChance)) return;
+        sgSpawnStationaryThunderOrb(f.pEnt, f.st, f.floatSel, orbCfg, pos, companionSec);
+      } : null
+    });
+  }
+
+  // 【雷殞天落】：追加兩顆從天而降的巨大雷球（不取代飛行雷球）
+  if (lvs[6] > 0) {
+    var ffx = t[6].fx;
+    var fallDmg = sgGroupBaseStat(g, st) * (sgVal(ffx, 'pct', lvs[6]) + ampPct) / 100;
+    var fallRadius = bfMeterPx(Number(ffx.m) || 15);
+    var fallCount = Math.max(1, Math.floor(Number(ffx.count) || 2));
+    var fallStun = Math.max(0, Number(ffx.sec) || 3);
+    var timing = sgMeteorFallTiming();
+    var nextFallTarget = sgMeteorTargetBag(primary, pool, fallRadius);
+    for (var f = 0; f < fallCount; f++) {
+      var fallTarget = nextFallTarget();
+      var castDelay = f * SG_METEOR_INTERVAL_MS;
+      sgEmitVfx('thunderorb', [fallTarget], floatSel, {
+        fxKind: 'rain', variant: 'thunder-fall', elem: 'lightning', count: 1,
+        area: sgAreaAround(fallTarget, fallRadius), delayMs: castDelay, travelMs: [timing.travelMs]
+      });
+      sgQueueMeteor(pEnt, st, fallDmg, fallTarget, pool, fallRadius, null, floatSel, out,
+        GT + (castDelay + timing.fallMs) / 1000, {
+          gid: 'thunderorb', variant: 'thunder-fall-impact', elem: 'lightning',
+          onImpact: function (m, victims) {
+            for (var vi = 0; vi < victims.length; vi++) sgTryStun(victims[vi], fallStun);
+          }
+        });
+    }
+  }
+}
+
+/* 一顆飛行雷球：從玩家腳下出發、沿直線飛向目標當下的位置，抵達後停駐 parkSec 秒。
+   總作用次數＝(飛行時間＋停駐時間) ÷ 節拍；無座標（高塔）時取射程一半的飛行時間，
+   否則高塔會完全吃不到「飛行途中持續傷害」這一段。 */
+function sgSpawnThunderOrb(pEnt, st, target, floatSel, cfg) {
+  var from = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null;
+  var to = (typeof bfPos === 'function' && target) ? bfPos(target) : null;
+  var flightSec;
+  if (from && to) {
+    var dx = to.x - from.x, dy = to.y - from.y;
+    flightSec = Math.sqrt(dx * dx + dy * dy) / cfg.speedPx;
+  } else {
+    var lvs = skills2Levels('thunderorb');
+    flightSec = skills2CastRangePx('thunderorb', lvs) / 2 / cfg.speedPx;
+  }
+  var hits = Math.max(1, Math.ceil((flightSec + cfg.parkSec) / cfg.gap));
+  sgSpawnGround(pEnt, st, 'thunderorb', {
+    kind: 'orb', tgt: target, floatSel: floatSel,
+    from: from ? { x: from.x, y: from.y } : null,
+    dest: (from && to) ? { x: to.x, y: to.y } : null,
+    speed: cfg.speedPx, radius: cfg.radius,
+    dmgVal: cfg.dmgVal, hits: hits, gap: cfg.gap
+  });
+}
+
+/* 靜止雷球（【伴生雷球】）：生在環體電球的命中處，不移動，只按節拍打自己的範圍。 */
+function sgSpawnStationaryThunderOrb(pEnt, st, floatSel, cfg, pos, lifeSec) {
+  sgSpawnGround(pEnt, st, 'thunderorb', {
+    kind: 'orb', tgt: null, floatSel: floatSel,
+    from: { x: pos.x, y: pos.y }, dest: null, speed: 0,
+    radius: cfg.radius, dmgVal: cfg.dmgVal,
+    hits: Math.max(1, Math.ceil(lifeSec / cfg.gap)), gap: cfg.gap
+  });
 }
 
 /* ===========================================================================

@@ -355,3 +355,35 @@ test('岩甲術與大地守護的自身特效走玩家定址，不會畫到敵�
   // 岩甲尖刺打在敵人身上，走敵人定址的 impact
   assert.match(skills2, /sgEmitVfx\('rockarmor', \[mEnt\], eSel, \{ fxKind: 'impact', variant: 'rock-spike', elem: 'earth' \}\);/);
 });
+
+test('雷系三技能的顯示層接線：鏈、天雷、球體場域在 Canvas 與 DOM 兩條路徑都接上', () => {
+  const skills2 = read('js/skills2.js');
+  const vfx = read('js/vfx.js');
+  const renderer = read('js/battle-renderer.js');
+  const css = read('css/style.css');
+
+  // 連鎖閃電：一則事件＝一段電弧；起手那一段從玩家身上劈出去
+  assert.match(skills2, /fxKind: 'chain', variant: 'lightning-chain'/);
+  assert.match(renderer, /if \(spec\.variant === 'lightning-chain'\)/);
+  assert.match(renderer, /spawnBolt\(playerPos\(\), targets\[0\], spec, baseDelay \/ 1000, false, false\);/);
+
+  // 落雷術／雷殞天落：天降路徑
+  assert.match(renderer, /if \(spec\.variant === 'thunder-strike'\)/);
+  assert.match(renderer, /if \(spec\.variant === 'thunder-fall'\)/);
+  assert.match(renderer, /function spawnThunderFall\(spec, targetId, delaySec\)/);
+  assert.match(vfx, /s\.variant === 'thunder-strike' \|\| s\.variant === 'thunder-fall'/);
+
+  // 雷球：按 area.id 合併的長駐球體，每次事件更新到最新座標（球會飛）
+  assert.match(skills2, /variant: 'thunder-orb'/);
+  assert.match(renderer, /else if \(spec\.variant === 'thunder-orb'\) spawnThunderOrbField\(spec\);/);
+  assert.match(renderer, /var current = _thunderOrbFx\[key\];/);
+  assert.match(vfx, /else if \(s\.variant === 'thunder-orb'\) vfxThunderOrb\(s, layer, spec\.area, rect\);/);
+  assert.match(vfx, /_vfxThunderOrbs = Object\.create\(null\);/);
+
+  // 環體電球沿用火狩的環繞畫法，但合併鍵要含變體與屬性（否則兩道會互相吃掉）
+  assert.match(renderer, /spec\.variant === 'firehunt' \|\| spec\.variant === 'thunder-orbit'/);
+  assert.match(renderer, /var key = \(spec\.variant \|\| 'firehunt'\) \+ ':' \+ \(spec\.elem \|\| ''\) \+ ':' \+/);
+
+  assert.match(css, /\.vfx-thunder-orb\s*\{[\s\S]*?border-radius:\s*50%/);
+  assert.match(css, /@keyframes vfxThunderOrbArc/);
+});
