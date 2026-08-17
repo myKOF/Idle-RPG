@@ -8139,7 +8139,7 @@ function refreshOpenStatTooltip() {
   if (anchorEl && !document.documentElement.contains(anchorEl)) {
     try {
       var elUnder = document.elementFromPoint(_lastMouseX, _lastMouseY);
-      var newAnchor = elUnder && elUnder.closest && elUnder.closest('.item-cell[data-id], .eq-slot.filled[data-id], .forge-slot.filled[data-forge-slot], [data-sk], [data-tip], [data-buff-tip], [data-enemy-buff-tip]');
+      var newAnchor = elUnder && elUnder.closest && elUnder.closest('.item-cell[data-id], .eq-slot.filled[data-id], .forge-slot.filled[data-forge-slot], [data-sk], [data-tip], [data-buff-tip], [data-enemy-buff-tip], #btn-enemy-tip, #btn-boss-tip, #btn-tower-result-boss-tip, [data-tower-tip]');
       if (newAnchor) {
         UI.tooltipAnchor = newAnchor;
         anchorEl = newAnchor;
@@ -8231,9 +8231,10 @@ function showItemTooltip(it, anchorEl, opts) {
 }
 function showTowerTooltip(flStr, anchorEl) {
   var tip = $id('sk-tooltip');
-  if (!tip) return;
+  if (!tip || !anchorEl) return;
   var fl = parseInt(flStr, 10);
   if (!fl) return;
+  UI.tooltipAnchor = anchorEl;
   var hasSoul = isHellTowerFloor(fl) || isPurgatoryTowerFloor(fl);
   var bossStats = bossStatsFor(fl);
   var bossXp = bossStats.xp;
@@ -8291,7 +8292,8 @@ function showTowerTooltip(flStr, anchorEl) {
 }
 function showEnemyTooltip(anchorEl) {
   var tip = $id('sk-tooltip');
-  if (!tip) return;
+  if (!tip || !anchorEl) return;
+  UI.tooltipAnchor = anchorEl;
 
   var isBossTip = (anchorEl.id === 'btn-boss-tip' || anchorEl.id === 'btn-tower-result-boss-tip');
   var workerView = viewState() || {};
@@ -8455,6 +8457,7 @@ function hideTooltip() {
   var tip = $id('sk-tooltip');
   if (tip) tip.style.display = 'none';
   UI.tooltipAnchor = null;
+  UI.tooltipOpenByClick = false;
 }
 
 function hideAffixPool() {
@@ -9725,22 +9728,37 @@ function initUI() {
     var etip = e.target.closest('#btn-enemy-tip') || e.target.closest('#btn-boss-tip') || e.target.closest('#btn-tower-result-boss-tip');
     if (etip) {
       var tip = $id('sk-tooltip');
-      if (tip && tip.style.display === 'block') hideTooltip();
-      else showEnemyTooltip(etip);
+      if (tip && tip.style.display === 'block' && UI.tooltipAnchor === etip && UI.tooltipOpenByClick) {
+        hideTooltip();
+        UI.tooltipOpenByClick = false;
+      } else {
+        showEnemyTooltip(etip);
+        UI.tooltipOpenByClick = true;
+      }
       return;
     }
     var btip = e.target.closest('[data-buff-tip]');
     if (btip) {
       var btipEl = $id('sk-tooltip');
-      if (btipEl && btipEl.style.display === 'block' && UI.tooltipAnchor === btip) hideTooltip();
-      else showBuffTooltip(btip);
+      if (btipEl && btipEl.style.display === 'block' && UI.tooltipAnchor === btip && UI.tooltipOpenByClick) {
+        hideTooltip();
+        UI.tooltipOpenByClick = false;
+      } else {
+        showBuffTooltip(btip);
+        UI.tooltipOpenByClick = true;
+      }
       return;
     }
     var ebtip = e.target.closest('[data-enemy-buff-tip]');
     if (ebtip) {
       var ebtipEl = $id('sk-tooltip');
-      if (ebtipEl && ebtipEl.style.display === 'block' && UI.tooltipAnchor === ebtip) hideTooltip();
-      else showEnemyBuffTooltip(ebtip);
+      if (ebtipEl && ebtipEl.style.display === 'block' && UI.tooltipAnchor === ebtip && UI.tooltipOpenByClick) {
+        hideTooltip();
+        UI.tooltipOpenByClick = false;
+      } else {
+        showEnemyBuffTooltip(ebtip);
+        UI.tooltipOpenByClick = true;
+      }
       return;
     }
     // 降級
