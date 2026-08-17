@@ -116,8 +116,8 @@ test('火狩：施放當下不結算，環繞碰到敵人才命中；吃魔攻�
   assert.ok(calls.length >= 1, '火狩掃過敵人應命中');
   assert.equal(calls[0].aCfg.dmgType, 'magic');
   assert.equal(calls[0].aCfg.skillElem, 'fire');
-  // 火狩 Lv.1＝120% → 魔攻 500 × 120% ＝ 600（若誤吃物攻 1000 會是 1200）
-  assert.equal(Math.round(calls[0].aCfg.atk), 600);
+  // 火狩 Lv.1＝110%（100 + 每級 10）→ 魔攻 500 × 110% ＝ 550（若誤吃物攻 1000 會是 1100）
+  assert.equal(Math.round(calls[0].aCfg.atk), 550);
 });
 
 test('接觸判定：同一次通過只命中一次，離開後再碰到才會再命中', () => {
@@ -184,9 +184,9 @@ test('強化火狩：體積與環繞範圍同步擴大，原本掃不到的距�
   const m = farOut();
   c.castSkill2(p, [enemy(1e9, 8 * M, 0)], 'firehunt', 'mv-float');
   const f = c.SKILL2_RT.orbits[0];
-  // 擴大 15%＋每級 1.5%（Lv.10）＝ 28.5%：半徑與體積同一個倍率
-  assert.ok(Math.abs(f.rings[0].r - 8 * M * 1.285) < 1e-6, '環繞半徑應同步擴大');
-  assert.ok(Math.abs(f.bodyR - 1.5 * M * 1.285) < 1e-6, '體積半徑應同步擴大');
+  // 底值 15%＋每級 1.5%×10（Lv.10）＝ 30%：半徑與體積同一個倍率
+  assert.ok(Math.abs(f.rings[0].r - 8 * M * 1.3) < 1e-6, '環繞半徑應同步擴大');
+  assert.ok(Math.abs(f.bodyR - 1.5 * M * 1.3) < 1e-6, '體積半徑應同步擴大');
   run(c, p, [m], turnSec(c, 1.2));
   assert.ok(calls.length >= 1, '擴大後應掃得到');
 });
@@ -225,8 +225,8 @@ test('三重火狩：改為 3 團、傷害%改讀第 4 階', () => {
   c.castSkill2(p, [m], 'firehunt', 'mv-float');
   assert.equal(c.SKILL2_RT.orbits[0].orbs.length, 3);
   run(c, p, [m], turnSec(c, 0.1));
-  // 第 4 階 Lv.1＝150% → 魔攻 500 × 150% ＝ 750
-  assert.equal(Math.round(calls[0].aCfg.atk), 750);
+  // 第 4 階 Lv.1＝132%（120 + 每級 12）→ 魔攻 500 × 132% ＝ 660
+  assert.equal(Math.round(calls[0].aCfg.atk), 660);
 });
 
 test('極速火狩：旋轉速度提升，命中頻率跟著變快', () => {
@@ -239,7 +239,7 @@ test('極速火狩：旋轉速度提升，命中頻率跟著變快', () => {
 
   c.castSkill2(p, [m], 'firehunt', 'mv-float');
   const spin = c.SKILL2_RT.orbits[0].orbs[0].spin;
-  assert.ok(Math.abs(spin - Math.PI * 2 * baseRps(c) * 1.25) < 1e-6, '第 5 階 Lv.1＝ +25% 旋轉速度');
+  assert.ok(Math.abs(spin - Math.PI * 2 * baseRps(c) * 1.275) < 1e-6, '第 5 階 Lv.1＝ +27.5% 旋轉速度');
 
   // 同一段時間內：投資第 5 階的命中次數必須多於未投資（比較兩邊，不寫死次數）
   const slow = loadContext();
@@ -269,7 +269,7 @@ test('再生：火狩擊殺敵人時延長整組持續時間', () => {
   const before = f.until;
   run(c, p, [m], turnSec(c, 0.1));
   assert.equal(m.hp, 0, '敵人應被火狩擊殺');
-  assert.ok(Math.abs(f.until - (before + 0.4)) < 1e-9, '第 6 階 Lv.1＝擊殺延長 0.4 秒');
+  assert.ok(Math.abs(f.until - (before + 0.44)) < 1e-9, '第 6 階 Lv.1＝擊殺延長 0.44 秒');
 });
 
 /* 持續時間要看得見：火狩的剩餘時間掛在狀態列（狀態表 sgFirehunt），
@@ -324,7 +324,7 @@ test('狩神之舞：兩道反向火狩、外圈距內圈 6 米、出現即自�
 
   run(c, p, [m], turnSec(c, 0.1));
   // 第 7 階 Lv.1＝200% → 魔攻 500 × 200% ＝ 1000
-  assert.equal(Math.round(calls[0].aCfg.atk), 1000);
+  assert.equal(Math.round(calls[0].aCfg.atk), 825);
 });
 
 /* ---- 3) 生命週期與無座標退化 ---- */

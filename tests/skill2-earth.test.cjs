@@ -78,6 +78,9 @@ function run(c, p, enemies, sec, step) {
 }
 function setLevels(c, gid, levels) { c.G.player.skills2.levels[gid] = levels.slice(); }
 function equip(c, gid) { c.G.player.loadout = ['sg:' + gid]; }
+/* Lv.1 已含 1 級升級效果，追加次數類（add）在 Lv.1 就帶小數並以機率觸發；
+   凡是驗「幾攤／幾次」的測試都先關掉那一擲。0＝必中、0.999＝必不中。 */
+function forceRolls(c, value) { c.Math.random = () => value; }
 
 const M = 10; // 1 米 = 10 個系統距離單位（bfMeterPx）
 
@@ -134,10 +137,10 @@ test('岩甲術：施放給自己護盾（第 1＋2 階累加），並開啟岩�
   setLevels(c, 'rockarmor', [1, 1, 0, 0, 0, 0, 0]);
 
   assert.ok(c.castSkill2(p, [m], 'rockarmor', 'mv-float'), '應可施放');
-  // 30% + 20% ＝ 最大生命 1000 的 50%
-  assert.equal(Math.round(p.shield), 500);
+  // 33% + 22% ＝ 最大生命 1000 的 55%
+  assert.equal(Math.round(p.shield), 550);
   assert.ok(c.SKILL2_RT.rock && c.SKILL2_RT.rock.until > c.GT, '岩甲期間應開啟');
-  assert.equal(c.SKILL2_RT.rock.base, 500, 'T6/T7 的分母＝施放當下的護盾總量');
+  assert.equal(c.SKILL2_RT.rock.base, 550, 'T6/T7 的分母＝施放當下的護盾總量');
   assert.ok(c.buffVal(p, 'sgRockArmor') > 0, '應掛上岩甲標記（UI 投影）');
 });
 
@@ -159,7 +162,7 @@ test('岩甲尖刺（T3）：岩甲期間才反擊，且走地屬性魔法傷害
   assert.equal(calls[0].ent, m, '反擊的是攻擊者');
   assert.equal(calls[0].aCfg.dmgType, 'magic');
   assert.equal(calls[0].aCfg.skillElem, 'earth', '土系傷害＝地屬性，吃地屬性加成與敵人地抗');
-  assert.equal(Math.round(calls[0].aCfg.atk), 50, '最大生命 1000 的 5%');
+  assert.equal(Math.round(calls[0].aCfg.atk), 55, '最大生命 1000 的 5.5%');
 });
 
 test('護盾增幅（T4）：主動型被動——裝配才生效，且對護盾效率乘算', () => {
@@ -167,13 +170,13 @@ test('護盾增幅（T4）：主動型被動——裝配才生效，且對護盾
   setLevels(c, 'rockarmor', [1, 1, 1, 1, 0, 0, 0]);
   assert.equal(c.skill2ShieldEffFactor(), 1, '沒裝配就不生效');
   equip(c, 'rockarmor');
-  assert.ok(Math.abs(c.skill2ShieldEffFactor() - 1.15) < 1e-9, '裝配後 ×1.15');
+  assert.ok(Math.abs(c.skill2ShieldEffFactor() - 1.165) < 1e-9, '裝配後 ×1.165');
   // 不必先放技能：這一階是「主動型被動」，與其餘綁護盾的階不同
   assert.equal(c.SKILL2_RT.rock, null);
-  assert.ok(Math.abs(c.skill2ShieldEffFactor() - 1.15) < 1e-9);
+  assert.ok(Math.abs(c.skill2ShieldEffFactor() - 1.165) < 1e-9);
 });
 
-test('岩之再生（T5）：岩甲期間每減少 1% 生命換得 1% 最大生命的護盾', () => {
+test('岩之再生（T5）：岩甲期間每減少 1% 生命換得 1.1% 最大生命的護盾', () => {
   const c = loadContext();
   stubHits(c);
   const p = playerEnt();
@@ -183,7 +186,7 @@ test('岩之再生（T5）：岩甲期間每減少 1% 生命換得 1% 最大生�
   const before = p.shield;
   p.shield = 0;               // 先把護盾清掉，才看得出「換回來多少」
   c.skills2OnPlayerDamaged(m, p, 100, false, { absorbed: 0 }, 'pv-float');
-  assert.equal(Math.round(p.shield), 100, '扣 100 血（10%）→ 換回 10% 最大生命的護盾');
+  assert.equal(Math.round(p.shield), 110, '扣 100 血（10%）→ 換回 11% 最大生命的護盾');
   assert.ok(before > 0);
 });
 
@@ -196,11 +199,11 @@ test('岩甲增幅（T6）：損失護盾換傷害增幅，並夾在 30 層上�
   c.castSkill2(p, [m], 'rockarmor', 'mv-float'); // 護盾 500、base 500
 
   c.skills2OnPlayerDamaged(m, p, 0, false, { absorbed: 50 }, 'pv-float');
-  // 損失 10% 護盾 → 10 層 × 0.5% ＝ 5%
-  assert.ok(Math.abs(c.skill2RockAmpPct(p) - 5) < 1e-9, '10% 護盾＝5% 增幅');
+  // 護盾 550 損失 50 ≒ 9.09% → 9.09 層 × 0.55% ＝ 5%
+  assert.ok(Math.abs(c.skill2RockAmpPct(p) - 5) < 1e-9, '損失 50 護盾＝5% 增幅');
 
   c.skills2OnPlayerDamaged(m, p, 0, false, { absorbed: 500 }, 'pv-float');
-  assert.ok(Math.abs(c.skill2RockAmpPct(p) - 15) < 1e-9, '上限 30 層 × 0.5% ＝ 15%');
+  assert.ok(Math.abs(c.skill2RockAmpPct(p) - 16.5) < 1e-9, '上限 30 層 × 0.55% ＝ 16.5%');
 });
 
 test('天地逆返（T7）：護盾越低減傷越高；沒放技能時完全不生效', () => {
@@ -215,9 +218,9 @@ test('天地逆返（T7）：護盾越低減傷越高；沒放技能時完全不
   c.castSkill2(p, [m], 'rockarmor', 'mv-float');
   assert.equal(c.skill2DamageTakenMultiplier(p), 1, '護盾滿的時候沒有額外減傷');
   p.shield = c.SKILL2_RT.rock.base / 2;
-  assert.ok(Math.abs(c.skill2DamageTakenMultiplier(p) - 0.85) < 1e-9, '剩一半護盾＝一半的 30%');
+  assert.ok(Math.abs(c.skill2DamageTakenMultiplier(p) - 0.835) < 1e-9, '剩一半護盾＝一半的 33%');
   p.shield = 0;
-  assert.ok(Math.abs(c.skill2DamageTakenMultiplier(p) - 0.7) < 1e-9, '護盾歸零＝滿額 30%');
+  assert.ok(Math.abs(c.skill2DamageTakenMultiplier(p) - 0.67) < 1e-9, '護盾歸零＝滿額 33%');
 });
 
 /* ===========================================================================
@@ -237,7 +240,7 @@ test('泥沼術：召喚一片方形沼澤，本體不造成任何傷害', () =>
   assert.equal(f.kind, 'mire');
   assert.equal(f.length, 10 * M, '10 米見方');
   assert.equal(f.width, 10 * M);
-  assert.equal(f.hits, 8, '4 秒 ÷ 0.5 秒節拍 ＝ 8 跳');
+  assert.equal(f.hits, 9, 'Lv.1＝4.4 秒 ÷ 0.5 秒節拍 ≒ 9 跳');
 
   run(c, p, [m], 1);
   assert.equal(calls.length, 0, '泥沼術本體不造成傷害');
@@ -280,9 +283,9 @@ test('虛弱（T2）＋重力泥沼（T6）：受泥沼影響的敵人受到的�
   assert.equal(c.skill2MireVulnPct(m), 0, '沒踩進沼澤就沒有增傷');
   c.castSkill2(p, [m], 'mire', 'mv-float');
   run(c, p, [m], 0.6);
-  assert.equal(c.skill2MireVulnPct(m), 35, '15% + 20% 累加');
+  assert.equal(c.skill2MireVulnPct(m), 38.5, '16.5% + 22% 累加');
   const aCfg = c.skill2VulnACfg({ totalDmgPct: 0 }, m);
-  assert.equal(aCfg.totalDmgPct, 35, '收斂進同一個 totalDmgPct');
+  assert.equal(aCfg.totalDmgPct, 38.5, '收斂進同一個 totalDmgPct');
 });
 
 test('毒沼術（T3）／熔岩沼（T7）：以中毒與燃燒兩個狀態發傷害，且吃魔攻', () => {
@@ -298,11 +301,11 @@ test('毒沼術（T3）／熔岩沼（T7）：以中毒與燃燒兩個狀態發�
   const lava = m.dots.filter((d) => d.sid === 'sgMireLava')[0];
   assert.ok(poison, '應中毒');
   assert.ok(lava, '熔岩沼應附加燃燒');
-  // 魔攻 500 × 25% ÷ 0.5 秒 ＝ 250/s（若誤吃物攻 1000 會是 500/s）
-  assert.ok(Math.abs(poison.dps - 250) < 1e-9);
+  // 魔攻 500 × 27.5% ÷ 0.5 秒 ＝ 275/s（若誤吃物攻 1000 會是 550/s）
+  assert.ok(Math.abs(poison.dps - 275) < 1e-9);
   assert.equal(poison.interval, 0.5);
-  // 魔攻 500 × 70% ÷ 0.4 秒 ＝ 875/s
-  assert.ok(Math.abs(lava.dps - 875) < 1e-9);
+  // 魔攻 500 × 77% ÷ 0.4 秒 ＝ 962.5/s
+  assert.ok(Math.abs(lava.dps - 962.5) < 1e-9);
   assert.equal(lava.interval, 0.4);
 });
 
@@ -331,13 +334,13 @@ test('沼澤漫延（T5）／熔岩沼（T7）：持續時間取地板值、範�
   const f = c.SKILL2_RT.grounds[0];
 
   assert.equal(f.hits, 16, '熔岩沼把持續時間拉到 8 秒 ÷ 0.5 ＝ 16 跳');
-  assert.ok(Math.abs(f.growTo - 1.6) < 1e-9, '40%（第 5 階）＋20%（第 7 階）累加');
+  assert.ok(Math.abs(f.growTo - 1.66) < 1e-9, '44%（第 5 階）＋22%（第 7 階）累加');
   assert.equal(f.growSec, 4);
   assert.equal(f.length, 10 * M, '剛出生時是原始大小');
 
   c.GT += 4;
   c.sgGroundApplyGrowth(f);
-  assert.ok(Math.abs(f.length - 16 * M) < 1e-9, '4 秒後長到 1.6 倍');
+  assert.ok(Math.abs(f.length - 16.6 * M) < 1e-9, '4 秒後長到 1.66 倍');
 });
 
 test('第 1 階滿級的持續時間不會被第 5 階的 6 秒「降級」', () => {
@@ -345,9 +348,9 @@ test('第 1 階滿級的持續時間不會被第 5 階的 6 秒「降級」', ()
   stubHits(c);
   const p = playerEnt();
   const m = enemy(1e9, 5 * M, 0);
-  setLevels(c, 'mire', [10, 1, 1, 1, 1, 0, 0]);   // 第 1 階滿級＝4 + 0.4×9 ＝ 7.6 秒
+  setLevels(c, 'mire', [10, 1, 1, 1, 1, 0, 0]);   // 第 1 階滿級＝4 + 0.4×10 ＝ 8 秒
   c.castSkill2(p, [m], 'mire', 'mv-float');
-  assert.equal(c.SKILL2_RT.grounds[0].hits, 15, '取 max(7.6, 6) ＝ 7.6 秒 ÷ 0.5');
+  assert.equal(c.SKILL2_RT.grounds[0].hits, 16, '取 max(8, 6) ＝ 8 秒 ÷ 0.5');
 });
 
 test('毒沼增生（T4）：沼澤結束時在附近較近的敵人腳下重長，且只傳染一次', () => {
@@ -357,6 +360,7 @@ test('毒沼增生（T4）：沼澤結束時在附近較近的敵人腳下重長
   const near = enemy(1e9, 5 * M, 0);
   const far = enemy(1e9, 12 * M, 0);
   setLevels(c, 'mire', [1, 1, 1, 1, 0, 0, 0]);
+  forceRolls(c, 0.999);   // Lv.1 的 1.1 次只留整數 1 次
   c.castSkill2(p, [near], 'mire', 'mv-float');
   assert.equal(c.SKILL2_RT.grounds[0].respawnLeft, 1);
 
@@ -392,13 +396,13 @@ test('大地守護（T1）：傷害減免與生命上限都是乘算；大地祝
   setLevels(c, 'earthguard', [1, 1, 0, 0, 0, 0, 0]);
   assert.equal(c.skill2MaxHpFactor(), 1, '沒裝配就不加生命上限');
   equip(c, 'earthguard');
-  assert.ok(Math.abs(c.skill2DamageTakenMultiplier(p) - 0.9) < 1e-9, '受到的傷害 ×0.9');
-  assert.ok(Math.abs(c.skill2MaxHpFactor() - 1.2) < 1e-9, '生命上限 ×1.2');
-  assert.equal(c.skill2ElemDamageUpPct(), 25);
+  assert.ok(Math.abs(c.skill2DamageTakenMultiplier(p) - 0.89) < 1e-9, '受到的傷害 ×0.89');
+  assert.ok(Math.abs(c.skill2MaxHpFactor() - 1.22) < 1e-9, '生命上限 ×1.22');
+  assert.equal(c.skill2ElemDamageUpPct(), 27.5);
 
   setLevels(c, 'earthguard', [10, 1, 0, 0, 0, 0, 0]);
-  assert.ok(Math.abs(c.skill2DamageTakenMultiplier(p) - 0.81) < 1e-9, '滿級 19% 減傷');
-  assert.ok(Math.abs(c.skill2MaxHpFactor() - 1.38) < 1e-9, '滿級 +38% 生命上限');
+  assert.ok(Math.abs(c.skill2DamageTakenMultiplier(p) - 0.8) < 1e-9, '滿級 20% 減傷');
+  assert.ok(Math.abs(c.skill2MaxHpFactor() - 1.4) < 1e-9, '滿級 +40% 生命上限');
 });
 
 test('生命上限乘區掛在 st.hp 派生點，且不得在計算途中回頭呼叫 getStats', () => {
@@ -408,35 +412,35 @@ test('生命上限乘區掛在 st.hp 派生點，且不得在計算途中回頭�
   // computeStats 途中呼叫 getStats 會無限遞迴；這裡把它換成會爆炸的替身當守門員
   const realGetStats = c.getStats;
   c.getStats = () => { throw new Error('skill2MaxHpFactor 不得呼叫 getStats'); };
-  assert.ok(Math.abs(c.skill2MaxHpFactor() - 1.2) < 1e-9);
+  assert.ok(Math.abs(c.skill2MaxHpFactor() - 1.22) < 1e-9);
   c.getStats = realGetStats;
   const src = fs.readFileSync(path.join(root, 'js/formula.js'), 'utf8');
   assert.match(src, /skill2MaxHpFactor/, 'st.hp 派生點要接上這個乘區');
 });
 
-test('生命／法力再生（T3／T4）：回復 +100%、吸血吸魔 +50%，兩個乘區各自獨立', () => {
+test('生命／法力再生（T3／T4）：回復 +110%、吸血吸魔 +55%，兩個乘區各自獨立', () => {
   const c = loadContext();
   setLevels(c, 'earthguard', [1, 1, 1, 1, 0, 0, 0]);
   equip(c, 'earthguard');
-  assert.equal(c.skill2RegenFactor('hp'), 2);
-  assert.equal(c.skill2RegenFactor('mp'), 2);
-  assert.equal(c.skill2DrainFactor('hp'), 1.5);
-  assert.equal(c.skill2DrainFactor('mp'), 1.5);
+  assert.equal(c.skill2RegenFactor('hp'), 2.1);
+  assert.equal(c.skill2RegenFactor('mp'), 2.1);
+  assert.equal(c.skill2DrainFactor('hp'), 1.55);
+  assert.equal(c.skill2DrainFactor('mp'), 1.55);
 
   const st = c.getStats();
   st.hpRegen = 40; st.mpRegen = 20;
   const hpBase = (st.hp * c.BASE_HP_REGEN_PCT / 100) + st.hpRegen;
-  assert.ok(Math.abs(c.playerHpRegenPerSec(st) - hpBase * 2) < 1e-9, '每秒生命回復 ×2');
-  assert.ok(Math.abs(c.playerMpRegenPerSec(st) - st.mpRegen * 2) < 1e-9, '每秒法力回復 ×2');
+  assert.ok(Math.abs(c.playerHpRegenPerSec(st) - hpBase * 2.1) < 1e-9, '每秒生命回復 ×2.1');
+  assert.ok(Math.abs(c.playerMpRegenPerSec(st) - st.mpRegen * 2.1) < 1e-9, '每秒法力回復 ×2.1');
   /* 吸血是「每秒回復 × 吸血%」，但吃的是自己的 +50%——
      若誤用被放大過的回復換算就會變成 ×2（甚至 ×3），這裡正是防那條回歸。 */
-  assert.ok(Math.abs(c.lifestealHealAmount(st, 100) - hpBase * 1.5) < 1e-9, '吸血 ×1.5');
-  assert.ok(Math.abs(c.manaStealAmount(st, 100) - st.mpRegen * 1.5) < 1e-9, '吸魔 ×1.5');
+  assert.ok(Math.abs(c.lifestealHealAmount(st, 100) - hpBase * 1.55) < 1e-9, '吸血 ×1.55');
+  assert.ok(Math.abs(c.manaStealAmount(st, 100) - st.mpRegen * 1.55) < 1e-9, '吸魔 ×1.55');
 
-  // 滿級：回復 +190%、汲取 +95%
+  // 滿級：回復 +200%、汲取 +100%
   setLevels(c, 'earthguard', [1, 1, 10, 10, 0, 0, 0]);
-  assert.ok(Math.abs(c.skill2RegenFactor('hp') - 2.9) < 1e-9);
-  assert.ok(Math.abs(c.skill2DrainFactor('mp') - 1.95) < 1e-9);
+  assert.ok(Math.abs(c.skill2RegenFactor('hp') - 3) < 1e-9);
+  assert.ok(Math.abs(c.skill2DrainFactor('mp') - 2) < 1e-9);
 });
 
 test('沒裝配大地守護時，回復與吸血換算完全維持原本行為', () => {
@@ -457,8 +461,8 @@ test('魔法盾（T5）：法力付得起多少算多少，餘額仍扣生命', 
   equip(c, 'earthguard');
 
   p.mp = 200;
-  assert.equal(c.skills2ManaShieldAbsorb(p, 100), 30, '30% 由法力承擔');
-  assert.equal(p.mp, 170);
+  assert.equal(c.skills2ManaShieldAbsorb(p, 100), 33, '33% 由法力承擔');
+  assert.equal(p.mp, 167);
 
   p.mp = 10;
   assert.equal(c.skills2ManaShieldAbsorb(p, 100), 10, '法力不足＝只付得起 10');
@@ -491,9 +495,9 @@ test('天地共生（T7）：死亡復活、無敵、進入自身冷卻；冷卻
 
   p.hp = 0;
   assert.equal(c.skills2TryRebirth(p), true, '應攔下死亡');
-  assert.equal(p.hp, 200, '回復 20% 最大生命');
+  assert.equal(p.hp, 280, '回復 28% 最大生命');
   assert.ok(c.effectActive(p, 'invuln'), '復活後無敵');
-  assert.equal(p.skillCds['sg:earthguard'], 60, '冷卻寫進技能格（通用冷卻顯示）');
+  assert.equal(p.skillCds['sg:earthguard'], 57, '冷卻寫進技能格（通用冷卻顯示）');
 
   p.hp = 0;
   assert.equal(c.skills2TryRebirth(p), false, '冷卻中不再復活');

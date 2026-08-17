@@ -112,7 +112,7 @@ test('counter 為主動型被動：可裝載、永不施放，且未裝配時效
 
 /* ---- 2) 反擊觸發 ---- */
 
-test('反擊 T1：受傷且機率命中時對攻擊者反擊一次，傷害＝普攻×(50%+強化)', () => {
+test('反擊 T1：受傷且機率命中時對攻擊者反擊一次，傷害＝普攻×(55%+強化)', () => {
   const c = loadContext();
   const calls = stubHits(c);
   c.GT = 0;
@@ -124,15 +124,14 @@ test('反擊 T1：受傷且機率命中時對攻擊者反擊一次，傷害＝�
   c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
   assert.equal(calls.length, 1, '應反擊 1 次');
   assert.equal(calls[0].defender, m, '反擊目標是攻擊者');
-  // Lv.1：50% 普攻傷害 → aCfg.atk = 1000 × 50%
-  assert.equal(calls[0].aCfg.atk, 500);
+  // Lv.1：50 + 每級 5 ＝ 55% 普攻傷害 → aCfg.atk = 1000 × 55%
+  assert.equal(calls[0].aCfg.atk, 550);
 
-  // 強化反擊（T3）累加：50 + (30 + 5×9) = 125%
   c.G.player.skills2.levels.counter = [10, 1, 10, 0, 0, 0, 0];
   c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
   c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
-  // T1 Lv.10＝50+5×9＝95，＋T3 Lv.10＝30+5×9＝75 → 170%
-  assert.equal(calls[1].aCfg.atk, 1700);
+  // T1 Lv.10＝50+5×10＝100，＋T3 Lv.10＝30+5×10＝80 → 180%
+  assert.equal(calls[1].aCfg.atk, 1800);
 });
 
 test('反擊 T1：機率未命中或未受傷（閃避/無敵）不反擊', () => {
@@ -157,7 +156,7 @@ test('反擊 T1：機率未命中或未受傷（閃避/無敵）不反擊', () =
   assert.equal(calls.length, 1, '護盾全吸收仍算受傷，應反擊');
 });
 
-test('反擊 T2 招架：格擋必反，傷害＝格擋減傷值×300%（與 T1 各自結算）', () => {
+test('反擊 T2 招架：格擋必反，傷害＝格擋減傷值×330%（與 T1 各自結算）', () => {
   const c = loadContext();
   const calls = stubHits(c);
   c.GT = 0;
@@ -168,8 +167,8 @@ test('反擊 T2 招架：格擋必反，傷害＝格擋減傷值×300%（與 T1 
   const m = enemy(1e9, 40, 0);
   c.skills2OnPlayerDamaged(m, p, 30, true, hitRes(), 'pv-float');
   assert.equal(calls.length, 1, '格擋必反 1 次');
-  // 招架 Lv.1：格擋總減傷（基礎值，st.blockDmgRed 未給）× 300%
-  const expectPct = c.blockDmgReduction(0) * 300 / 100;
+  // 招架 Lv.1：格擋總減傷（基礎值，st.blockDmgRed 未給）× 330%（300 + 每級 30）
+  const expectPct = c.blockDmgReduction(0) * 330 / 100;
   assert.ok(Math.abs(calls[0].aCfg.atk - 1000 * expectPct / 100) < 1e-9, '招架傷害應為格擋減傷×倍率');
   // T1 同時擲中 → 兩個反擊各自結算
   c.chance = () => true;
@@ -189,8 +188,8 @@ test('反擊盾 T4：觸發反擊時回復最大生命比例的護盾（每次�
   const p = playerEnt();
   const m = enemy(1e9, 40, 0);
   c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
-  // Lv.1＝最大生命 1% → 10（護盾效率未給＝0）
-  assert.equal(p.shield, 10);
+  // Lv.1＝最大生命 1.1%（1 + 每級 0.1）→ 11（護盾效率未給＝0）
+  assert.equal(p.shield, 11);
 });
 
 test('破甲擊 T5：格擋機率上破甲，疊層×單層值、上限 4 層、疊層重置時間', () => {
@@ -222,8 +221,8 @@ test('二次反擊 T6：機率追加 2 次同傷害反擊（不再判定）', ()
   c.GT = 0;
   c.G.player.skills2.levels.counter = [1, 1, 1, 1, 1, 1, 0];
   c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
-  // T1（35）與 T6（50+5×0=50）都擲中；T5 破甲（35）也會中，無妨
-  c.chance = (p) => p === 35 || p === 50;
+  // T1（35）與 T6（50 + 每級 5 ＝ 55）都擲中；T5 破甲（35）也會中，無妨
+  c.chance = (p) => p === 35 || p === 55;
   const p = playerEnt();
   const m = enemy(1e9, 40, 0);
   c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
@@ -237,7 +236,7 @@ test('狂化反殺 T7：每次反擊額外反擊範圍內隨機 2 個其他敵�
   c.GT = 0;
   c.G.player.skills2.levels.counter = [1, 1, 1, 1, 1, 1, 1];
   c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
-  c.chance = (p) => p === 35; // T1 觸發；T6（50+5×0…Lv1=50）不觸發
+  c.chance = (p) => p === 35; // T1 觸發；T6（Lv.1＝55）不觸發
   const p = playerEnt();
   const m = enemy(1e9, 40, 0);
   const m2 = enemy(1e9, 60, 30, '反殺目標A');
@@ -248,8 +247,8 @@ test('狂化反殺 T7：每次反擊額外反擊範圍內隨機 2 個其他敵�
   assert.equal(calls.length, 3, '本體 1 次＋反殺 2 個目標');
   const sprayed = calls.slice(1).map((x) => x.defender);
   assert.ok(sprayed.indexOf(m2) >= 0 && sprayed.indexOf(m3) >= 0, '反殺打向攻擊者以外的敵人');
-  // 反殺傷害＝50%＋強化反擊（T3 Lv.1＝30）→ 80%
-  assert.equal(calls[1].aCfg.atk, 800);
+  // 反殺傷害＝55%＋強化反擊（T3 Lv.1＝35）→ 90%
+  assert.equal(calls[1].aCfg.atk, 900);
 });
 
 /* ---- 4) 嗜血狂怒 ---- */
@@ -266,18 +265,18 @@ test('嗜血狂怒：施放進入狂怒（RT＋增益＋冷卻＋扣魔），各
   assert.equal(p.mp, 100 - 50, '扣魔 50');
   assert.ok(p.skillCds['sg:bloodrage'] > 0, '寫入冷卻');
   assert.ok(c.skill2RageActive(), '進入狂怒');
-  // Lv.10 攻速 20+2×9＝38% → 乘算因子 1.38
-  assert.ok(Math.abs(c.skill2AspdFactor(p) - 1.38) < 1e-9, '攻速乘算（sgBloodrage 增益）');
-  // 爆傷（T2）與反震（T5）：各 1.38 倍
-  assert.ok(Math.abs(c.skill2RageCritDmgFactor() - 1.38) < 1e-9);
-  assert.ok(Math.abs(c.skill2RageThornsFactor() - 1.38) < 1e-9);
-  // 總傷（T3 38%）×血飲（T6 30+3×9＝57%）；滿血無盛宴加成
-  assert.ok(Math.abs(c.skill2RageDamageMultiplier(p) - 1.38 * 1.57) < 1e-9);
-  // 狂血盛宴（T7）：失血 50% → 每 1% 加 1+0.1×9＝1.9% → ×(1+95%)
+  // Lv.10 攻速 20+2×10＝40% → 乘算因子 1.40
+  assert.ok(Math.abs(c.skill2AspdFactor(p) - 1.4) < 1e-9, '攻速乘算（sgBloodrage 增益）');
+  // 爆傷（T2）與反震（T5）：各 1.40 倍
+  assert.ok(Math.abs(c.skill2RageCritDmgFactor() - 1.4) < 1e-9);
+  assert.ok(Math.abs(c.skill2RageThornsFactor() - 1.4) < 1e-9);
+  // 總傷（T3 40%）×血飲（T6 30+3×10＝60%）；滿血無盛宴加成
+  assert.ok(Math.abs(c.skill2RageDamageMultiplier(p) - 1.4 * 1.6) < 1e-9);
+  // 狂血盛宴（T7）：失血 50% → 每 1% 加 1+0.1×10＝2% → ×(1+100%)
   p.hp = 500;
-  assert.ok(Math.abs(c.skill2RageDamageMultiplier(p) - 1.38 * 1.57 * 1.95) < 1e-9);
-  // 連擊（T4）：0.5+0.1×9＝1.4
-  assert.ok(Math.abs(c.skill2ComboBonus() - 1.4) < 1e-9);
+  assert.ok(Math.abs(c.skill2RageDamageMultiplier(p) - 1.4 * 1.6 * 2) < 1e-9);
+  // 連擊（T4）：0.5+0.1×10＝1.5
+  assert.ok(Math.abs(c.skill2ComboBonus() - 1.5) < 1e-9);
   // 到期：全部歸位
   c.GT = 100;
   c.tickSkill2(0.1, { pEnt: p, getEnemies: () => [m], floatSel: 'mv-float', onDeaths() {} });
@@ -413,8 +412,8 @@ test('狂化連殺 killCombo 仍依自身參數限額、狂血盛宴延時不設
   assert.equal(t[6].fx.maxSec, undefined, '狂血盛宴不得有延時上限');
   const base = Number(t[0].fx.sec);
   for (let i = 0; i < 2000; i++) c.skills2OnEnemyDeath(enemy(0, 50, 0), []);
-  // 連擊加成 = 基準(0.5) + 累積上限
-  assert.equal(c.skill2ComboBonus(), Number(t[3].fx.add) + killMax, 'killCombo 應被夾在上限');
+  // 連擊加成 = Lv.1 的基礎連擊（底值 + 1 級增量）+ 累積上限
+  assert.equal(c.skill2ComboBonus(), c.sgVal(t[3].fx, 'add', 1) + killMax, 'killCombo 應被夾在上限');
   assert.equal(c.SKILL2_RT.rage.until, c.GT + base + 2000 * Number(t[6].fx.sec), '狂血盛宴延時應持續累加');
   assert.ok(c.skill2RageActive(), '夾上限後狂怒仍在持續中');
 });

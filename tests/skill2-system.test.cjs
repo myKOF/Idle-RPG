@@ -383,7 +383,7 @@ test('八方突刺：八個方向連續 5 次（2＋3），所有方向目標都
   assert.ok(calls.length > beforeRepeat, '每個飛行物應在 0.5 秒後追加命中一次');
 });
 
-test('迴身雙連斬：前後左右各斬 3 次，且物理傷害額外 +10%', () => {
+test('迴身雙連斬：前後左右各斬 3 次，且物理傷害額外 +55%', () => {
   const c = loadContext();
   const cfgs = [];
   const hits = new Map();
@@ -411,7 +411,8 @@ test('迴身雙連斬：前後左右各斬 3 次，且物理傷害額外 +10%', 
   for (const target of [front, back, right, left]) {
     assert.equal(hits.get(target), 3, '十字四方向的每個目標都應命中 3 次');
   }
-  assert.ok(cfgs.every((cfg) => cfg.atk === 3000), '基礎 200%＋傷害強化 20%＋血浪 30%＋迴身雙連斬 50% 應為 300%');
+  assert.ok(cfgs.every((cfg) => cfg.atk === 3300),
+    '基礎 220%＋傷害強化 55%＋迴身雙連斬 55% 應為 330%（各階 Lv.1 已含 1 級升級效果）');
 
   c.GT = 1.0;
   c.tickSkill2(0.5, { pEnt: p, getEnemies: () => [front, back, right, left], floatSel: 'mv-float', onDeaths() {} });
@@ -553,10 +554,10 @@ test('零日感染：流血與中毒傷害提高，結束後傳染兩種狀態�
   c.castSkill2(p, [source], 'bloodblade', 'mv-float');
   const bleed = source.dots.find((d) => d.sid === 'sgBleed');
   const poison = source.dots.find((d) => d.sid === 'sgPoison');
-  assert.equal(Math.round(bleed.dps * bleed.interval), 840, '零日感染應使流血每跳傷害提高 40%');
-  assert.equal(Math.round(poison.dps * poison.interval), 700, '零日感染應使中毒每跳傷害提高 40%');
+  assert.equal(Math.round(bleed.dps * bleed.interval), 929, '零日感染應使流血每跳傷害提高 44%');
+  assert.equal(Math.round(poison.dps * poison.interval), 867, '零日感染應使中毒每跳傷害提高 44%');
 
-  c.chance = (pct) => pct === c.SKILLS2.bloodblade.tiers[6].fx.chance;
+  c.chance = (pct) => pct === c.sgVal(c.SKILLS2.bloodblade.tiers[6].fx, 'chance', 1);
   c.tickSkill2(1.0, { pEnt: p, getEnemies: () => [source, near, far], floatSel: 'mv-float', onDeaths() {} });
   assert.ok(near.dots.some((d) => d.sid === 'sgBleed'), '作用結束後應傳染流血');
   assert.ok(near.dots.some((d) => d.sid === 'sgPoison'), '作用結束後應傳染中毒');
@@ -604,10 +605,10 @@ test('狂暴之舞：暴擊率與連擊數持續 6 秒，不再提供暴擊傷�
   const m = enemy(1e9, 40, 0);
   c.GT = 0;
   c.castSkill2(p, [m], 'dualdance', 'mv-float');
-  assert.equal(p.buffs.sgCritUp.val, 100);
+  assert.equal(p.buffs.sgCritUp.val, 110);
   assert.equal(p.buffs.sgCritUp.until, 6);
   assert.equal(p.buffs.sgCritDmgUp, undefined);
-  assert.equal(c.skill2FrenzyComboBonus(), 1);
+  assert.ok(Math.abs(c.skill2FrenzyComboBonus() - 1.1) < 1e-9);
   assert.equal(c.rollComboHits({ comboHits: 0 }), 1, '連擊數 +1 應產生 1 次追加攻擊');
 
   c.GT = 6;
@@ -629,8 +630,8 @@ test('鐵血之舞：自身與 5 米內敵人依最大生命值附加 0.35 秒�
   const nearBleed = near.dots.find((d) => d.sid === 'sgIronBleed');
   assert.ok(ownBleed && nearBleed, '自身與範圍內敵人都應流血');
   assert.equal(ownBleed.interval, 0.35);
-  assert.equal(ownBleed.dps, 100, '自身每跳應為 1000 × 3.5%');
-  assert.equal(Math.round(nearBleed.dps * nearBleed.interval), 70, '敵人每跳應為 2000 × 3.5%');
+  assert.equal(ownBleed.dps, 110, '自身每跳應為 1000 × 3.85%');
+  assert.equal(Math.round(nearBleed.dps * nearBleed.interval), 77, '敵人每跳應為 2000 × 3.85%');
   assert.equal(far.dots.length, 0, '範圍外敵人不應流血');
 });
 
@@ -650,15 +651,15 @@ test('嗜血狂化：6 秒內依生命／護盾損失提高技能傷害，無護
   const skillCfg = Object.assign({}, baseCfg, { isSkill: true });
   const base = c.resolveHit(p, enemy(1e9, 40, 0), baseCfg, c.monsterDefCfg(m)).dmg;
   const boosted = c.resolveHit(p, enemy(1e9, 40, 0), skillCfg, c.monsterDefCfg(m)).dmg;
-  assert.equal(boosted, Math.round(base * 1.025), '生命值減少 10% 應使技能傷害提高 2.5%');
+  assert.equal(boosted, Math.round(base * 1.0275), '生命值減少 10% 應使技能傷害提高 2.75%');
 
   p.shieldMax = 400;
   p.shield = 200;
   const derivedTarget = enemy(1000, 40, 0);
   const derivedOut = { dmg: 0, killed: false };
-  assert.equal(c.sgDerivedHit(derivedTarget, 100, 'dualdance', 'mv-float', derivedOut, 'test', 0), 115,
+  assert.equal(c.sgDerivedHit(derivedTarget, 100, 'dualdance', 'mv-float', derivedOut, 'test', 0), 117,
     '生命與護盾損失應套用於雙刀亂舞的衍生技能傷害');
-  assert.equal(c.skill2FrenzySkillDamageMultiplier(p), 1.15, '生命損失 10% 加護盾損失 50% 應提高 15%');
+  assert.equal(c.skill2FrenzySkillDamageMultiplier(p), 1.165, '生命損失 10% 加護盾損失 50% 應提高 16.5%');
   c.GT = 6;
   assert.equal(c.skill2FrenzySkillDamageMultiplier(p), 1, '嗜血狂化到期後不應再提高技能傷害');
 });
