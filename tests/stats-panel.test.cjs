@@ -209,10 +209,19 @@ test('統計面板 UI：標題、三區塊與每秒即時更新', () => {
   assert.match(html, /id="stats-source-card"/);
   assert.match(html, /id="stats-loot-card"/);
   assert.match(html, /js\/stats\.js/);
+  assert.match(html, /id="summary-modal-box"/);
+  assert.match(html, /id="summary-modal-header"/);
 
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   assert.match(ui, /renderStatsPanel/);
   assert.match(ui, /statsSourceHtml/);
   assert.match(ui, /setInterval\(renderStatsPanel, 1000\)/);
   assert.match(ui, /sendUiCommand\('stats\.reset'/);
+  assert.match(ui, /initSummaryModalDrag/);
+  assert.match(ui, /ensureSummaryBoxPosition/);
+  assert.match(ui, /toggleStatsPanel/);
+
+  const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
+  assert.match(css, /#summary-modal\s*\{[^}]*pointer-events:\s*none;/);
+  assert.match(css, /#summary-modal\s+(?:#summary-modal-box|\.modal-box)\s*\{[^}]*pointer-events:\s*auto;/);
 });

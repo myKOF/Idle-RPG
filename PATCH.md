@@ -1,5 +1,20 @@
 # PATCH.md
 
+## 統計面板支援獨立懸浮與滑鼠左鍵拖曳移動（Antigravity 2026-08-17）
+
+- **需求背景**：
+  - 統計面板需允許單獨存在，關閉日誌面板（側拉抽屜 / 戰況資訊）時不必一起關閉。
+  - 統計面板介面支援滑鼠左鍵按住拖曳移動（Draggable）。
+- **實作內容**：
+  - **獨立懸浮**：將 `#summary-modal` 改為透明穿透遮罩（`pointer-events: none`），內部 `.modal-box` 設定為 `pointer-events: auto`；移除點擊遮罩關閉邏輯，使背景遊戲、畫布與日誌抽屜可自由操作，關閉日誌面板時統計面板不受影響、保持即時更新。
+  - **滑鼠左鍵拖曳移動**：實作 `initSummaryModalDrag` 與 `ensureSummaryBoxPosition`，支援滑鼠左鍵按住面板頂部/卡片非互動區域進行流暢拖曳（使用 `setPointerCapture`），並限制在螢幕可視範圍內，支援視窗尺寸變化重定位與位置記憶。
+  - **樣式與標題**：加入抓取游標樣式（`cursor: grab` / `cursor: grabbing`），微調陰影與拖曳回饋。
+- **驗證項目**：
+  - `tests/stats-panel.test.cjs` 通過。
+  - `tests/battle-skill-hover.test.cjs` 通過。
+  - `node tools/build_check.cjs` 288/288 檔案全數 OK。
+
+
 ## 雷系三大新技能（連鎖閃電／落雷術／雷球）實機與回歸測試報告（Antigravity 2026-08-17）
 
 - **測試對象**：`chainlightning`（連鎖閃電）、`thunderstrike`（落雷術）、`thunderorb`（雷球）

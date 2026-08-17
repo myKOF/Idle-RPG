@@ -9437,6 +9437,11 @@ function initUI() {
       invalidateInventoryGridColumns();
       uiInvalidateFloatLayout();
       if (typeof vfxInvalidateLayout === 'function') vfxInvalidateLayout();
+      var modal = $id('summary-modal');
+      var box = $id('summary-modal-box') || (modal && modal.querySelector('.modal-box'));
+      if (modal && modal.style.display !== 'none' && box && typeof ensureSummaryBoxPosition === 'function') {
+        ensureSummaryBoxPosition(box);
+      }
     });
     // 介面縮放（js/ui-scale.js）會改變格線容器寬度，欄數快取一樣得作廢
     document.addEventListener('fullscreenchange', invalidateInventoryGridColumns);
@@ -11420,37 +11425,22 @@ function initUI() {
 
   syncFactoryInputs();
 
-  // 統計面板彈窗
+  // 統計面板彈窗（支援獨立懸浮與拖曳移動）
   var btnSummary = $id('btn-summary');
   if (btnSummary) {
-    btnSummary.addEventListener('click', function () {
-      var modal = $id('summary-modal');
-      if (modal) {
-        renderStatsPanel();
-        modal.style.display = 'flex';
-        startStatsPanelTimer();
-      }
-    });
+    btnSummary.addEventListener('click', toggleStatsPanel);
   }
   var summaryModal = $id('summary-modal');
   if (summaryModal) {
-    summaryModal.addEventListener('click', function (e) {
-      if (e.target === summaryModal) {
-        summaryModal.style.display = 'none';
-        stopStatsPanelTimer();
-      }
-    });
     var summaryClose = $id('summary-modal-close');
     if (summaryClose) {
-      summaryClose.addEventListener('click', function () {
-        summaryModal.style.display = 'none';
-        stopStatsPanelTimer();
-      });
+      summaryClose.addEventListener('click', closeStatsPanel);
     }
     var btnSummaryClear = $id('btn-summary-clear');
     if (btnSummaryClear) {
       btnSummaryClear.addEventListener('click', resetStatsFromUi);
     }
+    initSummaryModalDrag();
   }
 
   /* 任務快捷列與任務總覽彈窗 */
@@ -11658,6 +11648,131 @@ function withWorkerBattleStats(render) {
     window.LOOT_STATS = previousLootStats;
   }
   return true;
+}
+
+var summaryBoxPos = { x: null, y: null };
+var isSummaryDragging = false;
+var summaryDragStartX = 0;
+var summaryDragStartY = 0;
+var summaryBoxStartX = 0;
+var summaryBoxStartY = 0;
+
+function ensureSummaryBoxPosition(box) {
+  if (!box) return;
+  var boxW = box.offsetWidth || 440;
+  var boxH = box.offsetHeight || 500;
+  if (summaryBoxPos.x === null || summaryBoxPos.y === null) {
+    var initX = Math.max(12, Math.min(window.innerWidth - boxW - 12, Math.round((window.innerWidth - boxW) / 2)));
+    var initY = Math.max(12, Math.min(window.innerHeight - boxH - 12, Math.round((window.innerHeight - boxH) / 2)));
+    summaryBoxPos.x = initX;
+    summaryBoxPos.y = initY;
+  } else {
+    summaryBoxPos.x = Math.max(0, Math.min(Math.max(0, window.innerWidth - boxW), summaryBoxPos.x));
+    summaryBoxPos.y = Math.max(0, Math.min(Math.max(0, window.innerHeight - boxH), summaryBoxPos.y));
+  }
+  box.style.position = 'fixed';
+  box.style.margin = '0';
+  box.style.left = summaryBoxPos.x + 'px';
+  box.style.top = summaryBoxPos.y + 'px';
+}
+
+function initSummaryModalDrag() {
+  var box = $id('summary-modal-box') || document.querySelector('#summary-modal .modal-box');
+  if (!box || box._dragBound) return;
+  box._dragBound = true;
+
+  box.addEventListener('pointerdown', function (e) {
+    if (e.button !== 0) return;
+    var target = e.target;
+    if (target.closest('button, input, select, textarea, a, #stats-scroll, .modal-x, .btn')) return;
+
+    isSummaryDragging = true;
+    summaryDragStartX = e.clientX;
+    summaryDragStartY = e.clientY;
+    var rect = box.getBoundingClientRect();
+    summaryBoxStartX = rect.left;
+    summaryBoxStartY = rect.top;
+
+    box.style.position = 'fixed';
+    box.style.margin = '0';
+    box.style.left = summaryBoxStartX + 'px';
+    box.style.top = summaryBoxStartY + 'px';
+    summaryBoxPos.x = summaryBoxStartX;
+    summaryBoxPos.y = summaryBoxStartY;
+
+    try {
+      box.setPointerCapture(e.pointerId);
+    } catch (err) {}
+
+    box.classList.add('is-dragging');
+    e.preventDefault();
+  });
+
+  box.addEventListener('pointermove', function (e) {
+    if (!isSummaryDragging) return;
+    var dx = e.clientX - summaryDragStartX;
+    var dy = e.clientY - summaryDragStartY;
+    var newX = summaryBoxStartX + dx;
+    var newY = summaryBoxStartY + dy;
+
+    var boxW = box.offsetWidth || 440;
+    var boxH = box.offsetHeight || 500;
+    var minX = 0;
+    var maxX = Math.max(0, window.innerWidth - boxW);
+    var minY = 0;
+    var maxY = Math.max(0, window.innerHeight - boxH);
+
+    var clampedX = Math.max(minX, Math.min(maxX, newX));
+    var clampedY = Math.max(minY, Math.min(maxY, newY));
+
+    box.style.left = clampedX + 'px';
+    box.style.top = clampedY + 'px';
+    summaryBoxPos.x = clampedX;
+    summaryBoxPos.y = clampedY;
+  });
+
+  function finishSummaryDrag(e) {
+    if (!isSummaryDragging) return;
+    isSummaryDragging = false;
+    box.classList.remove('is-dragging');
+    try {
+      if (e && e.pointerId && box.hasPointerCapture(e.pointerId)) {
+        box.releasePointerCapture(e.pointerId);
+      }
+    } catch (err) {}
+  }
+
+  box.addEventListener('pointerup', finishSummaryDrag);
+  box.addEventListener('pointercancel', finishSummaryDrag);
+}
+
+function openStatsPanel() {
+  var modal = $id('summary-modal');
+  var box = $id('summary-modal-box') || (modal && modal.querySelector('.modal-box'));
+  if (modal) {
+    renderStatsPanel();
+    modal.style.display = 'flex';
+    initSummaryModalDrag();
+    if (box) ensureSummaryBoxPosition(box);
+    startStatsPanelTimer();
+  }
+}
+
+function closeStatsPanel() {
+  var modal = $id('summary-modal');
+  if (modal) {
+    modal.style.display = 'none';
+    stopStatsPanelTimer();
+  }
+}
+
+function toggleStatsPanel() {
+  var modal = $id('summary-modal');
+  if (modal && modal.style.display !== 'none') {
+    closeStatsPanel();
+  } else {
+    openStatsPanel();
+  }
 }
 
 function renderStatsPanel() {
