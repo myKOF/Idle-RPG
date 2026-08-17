@@ -105,6 +105,7 @@ function startTowerAuto(floor, count) {
 }
 
 function towerTick(dt) {
+  if (typeof tickDeferredEnemyAttackRetaliations === 'function') tickDeferredEnemyAttackRetaliations();
   // 連續挑戰：上一場結束後倒數，自動開始下一場
   if (!G.tower.active && TOWER.auto && TOWER.autoNextCd > 0) {
     TOWER.autoNextCd -= dt;
