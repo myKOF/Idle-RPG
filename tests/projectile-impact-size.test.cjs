@@ -6,30 +6,37 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('一般受擊維持原尺寸，只有飛刀與血刃斬彈射命中縮為三分之一', () => {
+/* 命中爆點的環：
+   1. 建立當下就要有起始尺寸。特效主迴圈反向走訪 S.fx，而投射物命中的爆點是在
+      別的特效 update() 裡生出來的，那一幀必定不會被 update；少了起始 scale，
+      第一幀就會把整張 128px 環形貼圖原尺寸畫出來（飛刀彈射時滿畫面大圈）。
+   2. 彈射命中與一般命中同尺寸：不得再有 bounce 專用的縮放分流。 */
+test('命中爆點的環在建立時就設好起始尺寸，且彈射與一般命中同尺寸', () => {
   const renderer = read('js/battle-renderer.js');
   const vfx = read('js/vfx.js');
   const css = read('css/style.css');
 
-  assert.match(renderer, /var BOUNCE_HIT_RADIUS_SCALE = 1 \/ 3/);
+  assert.match(renderer, /function spawnImpact\(x, y, spec, strong\)/);
+  assert.match(renderer, /ring\.anchor\.set\(0\.5\);[\s\S]*?ring\.scale\.set\(1\.3 \/ RING_TEX_RADIUS\);/);
+  assert.match(renderer, /ring\.scale\.set\(\(1\.3 \+ maxR \* k\) \/ RING_TEX_RADIUS\)/);
+  assert.match(renderer, /spawnParticles\(x, y, fireExplosion \? 22 : \(strong \? 12 : 6\), theme,[\s\S]*fireExplosion \? 1\.45 : 1\)/);
+  assert.match(renderer, /spawnImpact\(pt\.x, pt\.y, spec, false\);\s*\n\s*hitReact\(toId, spec\.elem, false\);/);
+  assert.doesNotMatch(renderer, /BOUNCE_HIT_RADIUS_SCALE|isBounceHit|impactScale/);
+
   assert.match(renderer, /function spawnParticles\(x, y, count, theme, speed, radiusScale\)/);
   assert.match(renderer, /g\.scale\.set\(r \* particleScale \/ DOT_TEX_RADIUS\)/);
-  assert.match(renderer, /function spawnImpact\(x, y, spec, strong, isBounceHit\)/);
-  assert.match(renderer, /var impactScale = isBounceHit \? BOUNCE_HIT_RADIUS_SCALE : 1/);
-  assert.match(renderer, /ring\.scale\.set\(\(1\.3 \+ maxR \* k\) \* impactScale \/ RING_TEX_RADIUS\)/);
-  assert.match(renderer, /spawnParticles\(x, y, fireExplosion \? 22 : \(strong \? 12 : 6\), theme,[\s\S]*fireExplosion \? 1\.45 \* impactScale : impactScale\)/);
-  assert.match(renderer, /spawnImpact\(pt\.x, pt\.y, spec, false, true\)/);
   assert.match(renderer, /var t = 0, dur = 0\.24, R = big \? 54 : 36;/);
   assert.doesNotMatch(renderer, /slashScale/);
   assert.doesNotMatch(renderer, /if \(strong && canJolt\) addShake\(4\)/);
 
-  assert.match(vfx, /var VFX_BOUNCE_HIT_RADIUS_SCALE = 1 \/ 3/);
-  assert.match(vfx, /function vfxImpact\(spec, layer, pt, targetId, delayMs, isBounceHit\)/);
-  assert.match(vfx, /if \(isBounceHit\) d\.style\.setProperty\('--vfx-hit-scale', String\(VFX_BOUNCE_HIT_RADIUS_SCALE\)\)/);
-  assert.doesNotMatch(vfx, /if \(!strong\) d\.style\.setProperty\('--vfx-hit-scale'/);
-  assert.match(vfx, /pathStart \+ pathFlight, true\);/);
+  assert.match(vfx, /function vfxImpact\(spec, layer, pt, targetId, delayMs\)/);
+  assert.doesNotMatch(vfx, /VFX_BOUNCE_HIT_RADIUS_SCALE|isBounceHit/);
+  assert.doesNotMatch(vfx, /--vfx-hit-scale/);
+  assert.match(vfx, /pathStart \+ pathFlight\);/);
 
-  assert.match(css, /\.vfx-impact \{[\s\S]*?transform: scale\(var\(--vfx-hit-scale, 1\)\)/);
+  const impactBlock = css.match(/\.vfx-impact \{([\s\S]*?)\n\}/);
+  assert.ok(impactBlock, 'vfx-impact CSS block should exist');
+  assert.doesNotMatch(impactBlock[1], /--vfx-hit-scale/);
   const slashBlock = css.match(/\.vfx-slash \{([\s\S]*?)\n\}/);
   assert.ok(slashBlock, 'vfx-slash CSS block should exist');
   assert.doesNotMatch(slashBlock[1], /--vfx-hit-scale/);

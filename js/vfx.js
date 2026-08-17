@@ -413,7 +413,6 @@ function vfxStagger() {
 }
 
 var VFX_HIT_COOLDOWN_MS = 3000;
-var VFX_BOUNCE_HIT_RADIUS_SCALE = 1 / 3;
 
 /* ---- 受擊反饋：卡片震動＋元素色閃光 ----
    卡片只在敵群「簽章」（身分＋站位）變動時重建，短命 class 掛上去是安全的；
@@ -513,7 +512,7 @@ function vfxSceneShake(layer, delayMs, strong, spec) {
    這是最常用的末端命中回饋；特殊技能通常仍由自己的幾何函式出手，
    再呼叫本函式補命中爆點與卡片反應。 */
 var VFX_IMPACT_PARTS = { fire: 6, ice: 5, lightning: 5, poison: 4, light: 6, dark: 5, earth: 6, phys: 3, claw: 3 };
-function vfxImpact(spec, layer, pt, targetId, delayMs, isBounceHit) {
+function vfxImpact(spec, layer, pt, targetId, delayMs) {
   /* 先把 variant 映射成 CSS class，再由粒子數與 strong 決定爆點規模。 */
   var v = spec.variant;
   var elemKey = spec.elem || 'phys';
@@ -538,7 +537,6 @@ function vfxImpact(spec, layer, pt, targetId, delayMs, isBounceHit) {
     d.style.setProperty('--vfx-c2', '#ffd447');
     d.style.setProperty('--vfx-glow', '#ff3b0a');
   }
-  if (isBounceHit) d.style.setProperty('--vfx-hit-scale', String(VFX_BOUNCE_HIT_RADIUS_SCALE));
   d.style.animationDelay = delayMs + 'ms';
 
   var n = VFX_IMPACT_PARTS[elemKey] || 4;
@@ -1448,7 +1446,7 @@ function vfxChain(spec, layer, ptList, idList, baseDelay, strikes) {
         elem: spec.variant === 'poison-spread' ? 'poison' : null,
         variant: null, color: spec.color
       }, layer, ptList[pathI], idList[pathI],
-        pathStart + pathFlight, true);
+        pathStart + pathFlight);
       pathStart += pathFlight;
     }
     return;
