@@ -8355,7 +8355,6 @@ textarea:disabled,
   width: 10px;
   height: 10px;
   margin: -5px 0 0 -5px;
-  transform: scale(var(--vfx-hit-scale, 1));
 }
 
 .vfx-impact::before {

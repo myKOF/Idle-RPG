@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Claude｜修正彈射命中爆點第一幀為整張貼圖原尺寸｜2026-08-17
+
+- 狀態：已完成（2026-08-17）
+- Owner：Claude
+- 使用者需求：飛刀彈射的受擊特效在畫面上是一圈大橘紅圈，先前多次調整尺寸都無效；彈射命中改為與一般命中同尺寸。
+- 根因：`spawnImpact()` 建立環形 Sprite 時只設 anchor／tint／座標，尺寸寫在 `addFx` 的 `update()` 內。特效主迴圈反向走訪 `S.fx`，而投射物命中的爆點是在別的特效 `update()`（`spawnProjectile` 的 `onArrive`）裡生出來的，新 fx push 到陣列尾端時迴圈已走過該索引，這一幀必定不會被 update；PIXI 的 render 又排在 ticker 低優先級。結果命中的第一幀以 `scale = 1` 畫出整張 128px 環形貼圖（alpha 1、染成技能色），且不受 `maxR`／`impactScale` 影響——這就是先前四次調整都無效的原因。
+- 實測（本機 PixiJS 逐幀量測）：修正前第 3 幀 `scale=1`／寬 128px／`tint=#ff3850`，第 4 幀起 2→7px；修正後 2.8→20.5px，與一般投射物命中的序列完全一致。
+- 允許修改：`js/battle-renderer.js`、`js/vfx.js`、`css/style.css`、`index.html`、`tests/projectile-impact-size.test.cjs`、本文件。
+- 禁止修改：技能數值、傷害公式、目標選擇、彈射時序、Worker Protocol、存檔格式。
+- 完成內容：ring 在建立時即設好起始尺寸（`1.3 / RING_TEX_RADIUS`）並加註為何不能只寫在 `update()`；移除 Canvas／DOM 兩路徑的彈射專用 1/3 縮放（`BOUNCE_HIT_RADIUS_SCALE`、`VFX_BOUNCE_HIT_RADIUS_SCALE`、`--vfx-hit-scale`），彈射命中與一般命中同尺寸；改寫定向測試改為鎖「起始尺寸存在」與「無彈射專用縮放」。
+- 驗證結果：定向測試 1/1；完整 `npm.cmd test` 1450/1456（6 項失敗為火系技能數值既有失敗，`git stash` 後同樣失敗，與本次修改無關）；`npm.cmd run build` 282/282；JavaScript 語法檢查與 `git diff --check` 通過；瀏覽器逐幀量測如上。
+- 已知風險：所有經由投射物 `onArrive` 產生的命中爆點（火球術、彈幕、彈射）第一幀行為都跟著改變，屬預期修正；同類「只在 update 設初值」的寫法若日後再出現仍會復發，建議未來在 `addFx()` 統一補一次初始化。
+- 完成後交給：使用者／主整合工作區。
+
 ## Antigravity｜魔法系三大新技能（火球術、火龍捲、火狩）完整測試｜2026-08-17
 
 - 狀態：已完成

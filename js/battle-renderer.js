@@ -44,7 +44,6 @@ var BattleRenderer = (function () {
   var FLOAT_MERGE_MS = 160;      // 同目標同類傷害的合併窗（DOM 版邏輯的簡化版）
   var LASTPOS_KEEP_MS = 3000;    // 實體移除後保留座標，讓遲到的飄字仍有落點
   var HIT_JOLT_COOLDOWN_MS = 3000; // 同一單位的受擊抖動冷卻，避免多段傷害連續晃動
-  var BOUNCE_HIT_RADIUS_SCALE = 1 / 3;
   var HIT_JOLT_X = 2.5;          // 受擊抖動水平幅度（px）
   var HIT_JOLT_Y = 1.5;          // 受擊抖動垂直幅度（px）
   var PLAYER_SKILL_FLOAT_SIDE_OFFSET = 120; // 技能名稱／傷害離人物中心的起始左右偏移（px；外移一個戰鬥大格）
@@ -1562,32 +1561,39 @@ var BattleRenderer = (function () {
   }
 
   /* 命中爆點：環 + 粒子 */
-  function spawnImpact(x, y, spec, strong, isBounceHit) {
+  function spawnImpact(x, y, spec, strong) {
     var fireExplosion = spec.variant === 'fire-explosion';
     var theme = fireExplosion
       ? { c1: '#c51e0d', c2: '#ffd447', glow: '#ff3b0a' } : themeOf(spec);
     var visualStrong = strong || fireExplosion;
+    var t = 0, dur = fireExplosion ? 0.62 : (visualStrong ? 0.4 : 0.26);
+    var maxR = fireExplosion ? 30 : (visualStrong ? 15 : 8.5);
     /* 逐幀 clear()＋stroke() 換成貼圖縮放，理由見 ringTexture()。 */
     var ring = new PIXI.Sprite(ringTexture());
     ring.anchor.set(0.5);
+    /* ⚠️ 起始尺寸一定要在這裡就設好，不能只寫在 update() 裡。
+       特效主迴圈是反向走訪 S.fx（見 tick 的特效段），而投射物命中的爆點是在
+       **另一個特效的 update 裡**生出來的（spawnProjectile 的 onArrive）：新的 fx
+       push 到陣列尾端時，反向迴圈早就走過那個索引，這一幀保證不會被 update；
+       PIXI 的 render 又排在 ticker 的低優先級（跑在 update 之後）。
+       少了這一行，命中的第一幀就會把整張 128px 環形貼圖原尺寸畫出去——
+       飛刀彈射一次幾十跳，畫面上等於常駐一堆大圈，而且怎麼調 maxR 都沒用。 */
+    ring.scale.set(1.3 / RING_TEX_RADIUS);
     ring.tint = cssColorToInt(theme.c1, 0xffffff);
     ring.x = x; ring.y = y;
     S.layers.fx.addChild(ring);
-    var t = 0, dur = fireExplosion ? 0.62 : (visualStrong ? 0.4 : 0.26);
-    var maxR = fireExplosion ? 30 : (visualStrong ? 15 : 8.5);
-    var impactScale = isBounceHit ? BOUNCE_HIT_RADIUS_SCALE : 1;
     addFx({
       node: ring,
       update: function (dt) {
         t += dt;
         var k = Math.min(1, t / dur);
-        ring.scale.set((1.3 + maxR * k) * impactScale / RING_TEX_RADIUS);
+        ring.scale.set((1.3 + maxR * k) / RING_TEX_RADIUS);
         ring.alpha = 1 - k;
         return t < dur;
       }
     }, 1);
     spawnParticles(x, y, fireExplosion ? 22 : (strong ? 12 : 6), theme,
-      fireExplosion ? 1.35 : (strong ? 0.9 : 0.55), fireExplosion ? 1.45 * impactScale : impactScale);
+      fireExplosion ? 1.35 : (strong ? 0.9 : 0.55), fireExplosion ? 1.45 : 1);
     if (strong) addShake(5, spec);
   }
 
@@ -2697,7 +2703,7 @@ var BattleRenderer = (function () {
           setTimeout(function () {
             if (fxGate(spec)) return;
             spawnProjectile(toId, hopTravel, spec, function (pt) {
-              spawnImpact(pt.x, pt.y, spec, false, true);
+              spawnImpact(pt.x, pt.y, spec, false);
               hitReact(toId, spec.elem, false);
             }, posOf(fromId));
           }, startDelay);
@@ -2984,7 +2990,7 @@ var BattleRenderer = (function () {
             var fireExplosion = spec.variant === 'fire-explosion';
             var strongBurst = !fireExplosion && (spec.variant === 'nova' || spec.variant === 'detonate');
             /* 火球爆炸要有完整爆點，但鏡頭晃動保留給殞石每顆落地。 */
-            spawnImpact(pt.x, pt.y, spec, strongBurst, false);
+            spawnImpact(pt.x, pt.y, spec, strongBurst);
             hitReact(id, spec.elem, strongBurst);
           }, ti * 40);
         });
