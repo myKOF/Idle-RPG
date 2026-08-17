@@ -55,8 +55,8 @@ test('技能資料主色與 DOM／Pixi 特效主題一致', () => {
     assert.match(data, new RegExp(`${elem}: \\{[^}]*color: '${theme.c1}'`));
     assert.match(vfx, new RegExp(`${elem}:\\s+\\{ c1: '${theme.c1}'`));
   }
-  assert.match(renderer, /elem: ent\.data\.attr \|\| null, cat: 'enemy'/,
-    'Pixi 敵方投射物應依敵人 attr 取色');
+  assert.match(renderer, /elem: spec\.elem \|\| null, cat: 'enemy'/,
+    'Pixi 敵方投射物應依攻擊事件的敵人 attr 取色');
   assert.match(renderer, /function projectileCore\(spec, theme\)/);
   assert.match(renderer, /elem === 'lightning'/);
   assert.match(renderer, /theme\.c1, width: 5/);
@@ -78,9 +78,10 @@ test('投射物與地板領域保留各元素的形狀辨識', () => {
     '敵方受擊回饋不得再固定使用紅色');
 });
 
-test('DOM 後備路徑的敵方受擊事件讀取敵人屬性', () => {
+test('DOM 後備路徑的敵方攻擊事件讀取敵人屬性', () => {
   const combat = fs.readFileSync(path.join(root, 'js', 'combat.js'), 'utf8');
   assert.match(combat, /var enemyVfxElem = \(mEnt && mEnt\.attr/);
-  assert.match(combat, /variant: 'claw', elem: enemyVfxElem, cat: 'enemy'/);
-  assert.match(combat, /enemyVfxElem \? ELEM_INFO\[enemyVfxElem\]\.color : '#ff6b6b'/);
+  assert.match(combat, /fxKind: 'enemy-attack'/);
+  assert.match(combat, /variant: mEnt && mEnt\.magic \? 'enemy-projectile' : 'enemy-melee'/);
+  assert.match(combat, /enemyVfxElem \? ELEM_INFO\[enemyVfxElem\]\.color[\s\S]*#ff6b6b/);
 });

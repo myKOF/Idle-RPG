@@ -1413,15 +1413,17 @@ function vfxFireWall(spec, layer, area, rect) {
   return node;
 }
 
-/* 泥沼／熔岩沼（新版技能 mire）：貼地的方形場域。
+/* 泥沼／熔岩沼（新版技能 mire）：貼地的橫向長方形場域。
    與火牆同為「按 area.id 合併、每次 tick 續命」的長駐節點；尺寸直接吃場域矩形，
-   不用橢圓或固定半徑自行推算。毒沼 variant 另外疊加深紫色氣流與泡泡。 */
+   只把顯示高度壓成 52%，不改實際方形範圍。毒沼 variant 另外疊加深紫色氣流與泡泡。 */
+var VFX_MIRE_VISUAL_HEIGHT_RATIO = 0.52;
 function vfxMirePool(spec, layer, area, rect) {
   if (!rect || !isFinite(rect.x) || !isFinite(rect.y)) return null;
   var lava = spec && (spec.variant === 'mire-lava' || spec.variant === 'mire-lava-poison');
   var poison = spec && (spec.variant === 'mire-poison' || spec.variant === 'mire-lava-poison');
   var w = Math.max(48, Number(rect.w) || 120);
   var h = Math.max(48, Number(rect.h) || 120);
+  var visualH = Math.max(24, h * VFX_MIRE_VISUAL_HEIGHT_RATIO);
   var x = (Number(rect.x) || 0) - w / 2 + (Number(rect.w) || 0) / 2;
   var y = (Number(rect.y) || 0) - h / 2 + (Number(rect.h) || 0) / 2;
   var key = (area && area.id ? String(area.id) : [Math.round(x), Math.round(y)].join(':'))
@@ -1436,7 +1438,7 @@ function vfxMirePool(spec, layer, area, rect) {
   node = vfxNode('vfx-field-motion', layer, null);
   node._vfxFieldVisual = vfxFieldVisual(node,
     'vfx-mire-pool' + (lava ? ' vfx-mire-lava' : '') + (poison ? ' vfx-mire-poison' : ''),
-    spec, w, h);
+    spec, w, visualH);
   vfxFieldMotionSet(node, x, y, w, h, 0);
   var bubbles = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 5;
   for (var bi = 0; bi < bubbles; bi++) {
@@ -1897,6 +1899,32 @@ function renderCombatVfx(spec) {
       idxs.push(i);
     }
     return { pts: pts, ids: ids, idxs: idxs };
+  }
+
+  /* 敵人攻擊事件由模擬層在 resolveHit 後立即送出，不能沿用「我方出手」
+     的 origin。高塔／DOM 路徑仍能用 sourceId 找到 BOSS；野外 Canvas 會
+     在另一條路徑處理，這裡保留同樣的近戰／遠程時序。 */
+  if (kind === 'enemy-attack' && s.cat === 'enemy') {
+    var enemyAttackTargets = resolveTargets();
+    if (!enemyAttackTargets.pts.length) return;
+    var enemySource = spec.sourceId ? vfxPointOf(spec.sourceId, layer) : null;
+    var enemyTarget = enemyAttackTargets.pts[0];
+    var enemyTargetId = enemyAttackTargets.ids[0];
+    var enemyHit = spec.hit !== false;
+    if (s.variant === 'enemy-projectile' && enemySource) {
+      var enemyTravel = (travelMs && Number(travelMs[0]) > 0) ? Number(travelMs[0]) : 260;
+      vfxProjectile(s, layer, enemySource, enemyTarget, baseDelay, enemyTravel);
+      if (enemyHit) {
+        var enemyFlight = vfxProjectileFlightMs(enemyTravel, s.dur || 0.35);
+        vfxImpact(s, layer, enemyTarget, enemyTargetId, baseDelay + enemyFlight);
+      }
+    } else {
+      var enemyAngle = enemySource
+        ? Math.atan2(enemyTarget.y - enemySource.y, enemyTarget.x - enemySource.x) : 0;
+      vfxSlash(s, layer, enemyTarget, baseDelay, enemyAngle * 180 / Math.PI);
+      if (enemyHit) vfxImpact(s, layer, enemyTarget, enemyTargetId, baseDelay);
+    }
+    return;
   }
 
   /* 彈幕是 glyph／variant 優先的特殊路徑，先於一般 fxKind 分派，

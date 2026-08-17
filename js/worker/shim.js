@@ -187,7 +187,7 @@ function playCombatVfx(spec) {
   if (!spec) return;
   var thrustVariant = spec.variant === 'thrust' || spec.variant === 'thrust-pierce' ||
     spec.variant === 'thrust-parallel' || spec.variant === 'thrust-octagonal';
-  shimPushEvent('vfx', {
+  var event = {
     fxKind: spec.fxKind, glyph: spec.glyph, color: spec.color,
     targets: spec.targets || [], cells: spec.cells || null,
     area: spec.area || null,
@@ -207,7 +207,13 @@ function playCombatVfx(spec) {
     lineWidth: Number(spec.lineWidth) > 0 ? Number(spec.lineWidth) : null,
     laneOffsets: Array.isArray(spec.laneOffsets) ? spec.laneOffsets.slice(0, 3) : null,
     directionCount: Number(spec.directionCount) > 0 ? Number(spec.directionCount) : null
-  });
+  };
+  /* 敵人攻擊事件需要保留來源，才能在攻擊者同一 tick 被反傷殺死後，
+     仍從它最後的位置建立近戰／魔法投射物；一般技能事件不增加欄位，
+     維持既有 Worker protocol 的資料形狀。 */
+  if (spec.sourceId) event.sourceId = spec.sourceId;
+  if (typeof spec.hit === 'boolean') event.hit = spec.hit;
+  shimPushEvent('vfx', event);
 }
 
 /* ---- 其餘 ui.js 函式替身 ----

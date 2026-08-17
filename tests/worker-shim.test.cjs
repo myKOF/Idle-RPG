@@ -79,6 +79,19 @@ test('shim 傳遞突刺光槍的長度、方向與飛行物欄位', () => {
   }]);
 });
 
+test('shim 保留敵人攻擊的來源與命中欄位', () => {
+  const context = loadShim();
+  context.playCombatVfx({
+    fxKind: 'enemy-attack', variant: 'enemy-projectile', cat: 'enemy',
+    sourceId: 'mv-float-4', targets: ['pv-float'], travelMs: [260], hit: false
+  });
+  const event = plain(context.shimDrainUrgentVisualEvents())[0];
+  assert.equal(event.kind, 'vfx');
+  assert.equal(event.sourceId, 'mv-float-4');
+  assert.equal(event.hit, false);
+  assert.deepEqual(event.travelMs, [260]);
+});
+
 test('技能施放飄字走低延遲佇列，一般傷害字仍走 tick 批次', () => {
   const context = loadShim();
   context.floatText('pv-float', '🔥 技能 10', 'skill-cast skill-cast-total', 10);

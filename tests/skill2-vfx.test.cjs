@@ -348,9 +348,14 @@ test('泥沼／熔岩沼：兩套顯示層都有貼地水窪畫法，且尺寸�
   assert.match(css, /\.vfx-mire-lava\s*\{/);
   assert.match(skills2, /var mireVariant = m\.lava[\s\S]*'mire-lava-poison'[\s\S]*'mire-poison'/);
   assert.match(vfx, /var poison = spec && \(spec\.variant === 'mire-poison' \|\| spec\.variant === 'mire-lava-poison'\)/);
+  assert.match(vfx, /var VFX_MIRE_VISUAL_HEIGHT_RATIO = 0\.52/);
+  assert.match(vfx, /var visualH = Math\.max\(24, h \* VFX_MIRE_VISUAL_HEIGHT_RATIO\)/);
   assert.match(vfx, /vfx-mire-current/);
   assert.match(renderer, /var poison = spec\.variant === 'mire-poison' \|\| spec\.variant === 'mire-lava-poison'/);
-  assert.match(renderer, /g\.rect\(-rx, -ry, fx\.w, fx\.h\)/);
+  assert.match(renderer, /var MIRE_VISUAL_HEIGHT_RATIO = 0\.52/);
+  assert.match(renderer, /var visualH = Math\.max\(16, fx\.h \* MIRE_VISUAL_HEIGHT_RATIO\)/);
+  assert.match(renderer, /g\.rect\(-rx, -ry, fx\.w, visualH\)/);
+  assert.doesNotMatch(renderer, /g\.rect\(-rx, -ry, fx\.w, fx\.h\)/);
   assert.match(renderer, /0x6b2d7c/);
   assert.match(css, /\.vfx-mire-poison\s*\{/);
   assert.match(css, /\.vfx-mire-current\s*\{/);

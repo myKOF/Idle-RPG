@@ -1112,11 +1112,11 @@ var BattleRenderer = (function () {
         S.entities[d.floatSel] = ent;
         if (ent.isBoss) ensureBossBar(ent);
       } else {
-        var prevCd = ent.lastAtkCd;
         ent.data = d;
-        /* 攻擊偵測：atkCd 是倒數計時，出手時會加回 1/aspd → 數值跳升就是攻擊了 */
+        /* 攻擊視覺由 doMonsterAttack 的 enemy-attack VFX 事件即時送出。
+           不能再從 atkCd 的快照跳升反推：反傷秒殺會讓同一張快照直接變
+           成 hp<=0，這裡若只接受 alive 就會把整次攻擊／子彈吃掉。 */
         if (typeof d.atkCd === 'number') {
-          if (alive && ent.state === 'idle' && d.atkCd > prevCd + 0.15) enemyAttackAnim(ent);
           ent.lastAtkCd = d.atkCd;
         }
         /* 模擬層每個 tick 都在移動敵人，但面板 5Hz 才送一次：
@@ -1199,29 +1199,52 @@ var BattleRenderer = (function () {
     }
   }
 
-  /* 敵人出手：物理系衝進接觸距離再揮，魔法系原地放投射物（需求：物理近戰、魔法遠程）。
-     ⚠️ 模擬層沒有攻擊距離的概念——不管站在哪一格都打得到玩家。
-     所以「打得到」這件事在畫面上必須由這裡負責：出手就是整隻衝到玩家身前，
-     否則遠處那圈敵人看起來就是在隔空互毆。 */
-  function enemyAttackAnim(ent) {
-    if (ent.isBoss && ent.sheetName) playAnim(ent, 'attack', 'idle');
-    if (ent.data && ent.data.magic) {
-      var from = { x: ent.root.x, y: ent.root.y - ent.hitHeight * 0.5 };
-      var enemyProjectileMs = typeof enemyAttackProjectileTravelMs === 'function'
-        ? enemyAttackProjectileTravelMs(ent.data) : 260;
-      spawnProjectile('pv-float', enemyProjectileMs > 0 ? enemyProjectileMs : 260, {
-        elem: ent.data.attr || null, cat: 'enemy', color: '#c084fc'
-      }, function (pt) {
-        spawnImpact(pt.x, pt.y, { elem: ent.data.attr || null, color: '#c084fc' }, false);
-      }, from);
+  /* 敵人出手：由模擬層即時送入，而不是等下一張面板快照反推。
+     來源實體可能已進入 dying，因此魔法投射物用 sourceId／lastPos 建立起點；
+     近戰則即使屍體已開始淡出，仍在玩家身上畫出致死前的攻擊弧光。 */
+  function renderEnemyAttackVfx(spec) {
+    var targetId = Array.isArray(spec.targets) && spec.targets.length
+      ? spec.targets[0] : 'pv-float';
+    var sourceId = spec.sourceId || null;
+    var from = sourceId ? posOf(sourceId) : null;
+    var sourceEnt = sourceId ? S.entities[sourceId] : null;
+    var hit = spec.hit !== false;
+    var themeSpec = {
+      elem: spec.elem || null, cat: 'enemy', color: spec.color || '#ff6b6b',
+      variant: spec.variant || null, glyph: spec.glyph || '💢'
+    };
+
+    if (spec.variant === 'enemy-projectile') {
+      var travel = spec.travelMs && Number(spec.travelMs[0]) > 0
+        ? Number(spec.travelMs[0]) : 260;
+      var projectileFrom = from || posOf(sourceId || targetId);
+      spawnProjectile(targetId, travel, themeSpec, function (pt) {
+        if (!hit) return;
+        spawnImpact(pt.x, pt.y, themeSpec, false);
+        hitReact(targetId, themeSpec.elem, false);
+      }, projectileFrom);
       return;
     }
-    /* 衝刺時間隨距離拉長，遠的那隻才不會像瞬移過來 */
-    var pc = playerPos();
-    var dx = pc.x - ent.wx, dy = (pc.y - 26) - ent.wy;
-    var dist = Math.sqrt(dx * dx + dy * dy);
-    ent.lungeDur = Math.max(0.28, Math.min(0.8, 0.24 + dist / 900));
-    ent.lunge = ent.lungeDur;
+
+    /* 保留近戰敵人的衝刺／BOSS 攻擊動作；若來源已 dying，這段不依賴
+       dying 狀態的 lunge 更新，仍用玩家位置上的弧光表現「先出手」。 */
+    if (sourceEnt && sourceEnt.isBoss && sourceEnt.sheetName && sourceEnt.state !== 'dying') {
+      playAnim(sourceEnt, 'attack', 'idle');
+    }
+    if (sourceEnt && sourceEnt.state === 'idle') {
+      var pc = playerPos();
+      var dx = pc.x - sourceEnt.wx, dy = (pc.y - 26) - sourceEnt.wy;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      sourceEnt.lungeDur = Math.max(0.28, Math.min(0.8, 0.24 + dist / 900));
+      sourceEnt.lunge = sourceEnt.lungeDur;
+    }
+    var target = posOf(targetId);
+    var angle = from ? Math.atan2(target.y - from.y, target.x - from.x) : 0;
+    spawnSlash(target.x, target.y, themeSpec, false, angle);
+    if (hit) {
+      spawnImpact(target.x, target.y, themeSpec, false);
+      hitReact(targetId, themeSpec.elem, false);
+    }
   }
 
   function startDeath(ent, realDeath) {
@@ -2336,11 +2359,12 @@ var BattleRenderer = (function () {
     fx.h = lerp(fx.motionFromH, fx.motionToH, k);
   }
 
-  /* 泥沼／熔岩沼（新版技能 mire）：貼地的方形場域。
+  /* 泥沼／熔岩沼（新版技能 mire）：貼地的橫向長方形場域。
      與火牆同為「按 area.id 合併、每次 tick 續命」的長駐特效，但尺寸直接沿用
-     area.w／area.h，不壓成橢圓。毒沼 variant 額外畫深紫色氣流與泡泡。 */
+     area.w／area.h；只把顯示高度壓成 52%，不改實際方形範圍。毒沼 variant 額外畫深紫色氣流與泡泡。 */
   var _mirePoolFx = Object.create(null);
   var MIRE_POOL_MAX_LIFE_SEC = 14;
+  var MIRE_VISUAL_HEIGHT_RATIO = 0.52;
   function spawnMirePool(spec) {
     var a = spec && spec.area;
     if (!a || !isFinite(a.x) || !isFinite(a.y)) return null;
@@ -2384,18 +2408,19 @@ var BattleRenderer = (function () {
         node.x = fx.x; node.y = fx.y; node.rotation = 0;
         var left = fx.expiresAt - nowMs();
         var fade = left < 420 ? Math.max(0, left / 420) : 1;
-        /* 地面範圍是矩形，顯示層不得再用橢圓或固定的縱向壓縮代替實際判定。 */
+        /* 地面判定仍是方形；顯示層只壓低高度，畫成橫向長方形。 */
+        var visualH = Math.max(16, fx.h * MIRE_VISUAL_HEIGHT_RATIO);
         var rx = fx.w * 0.5;
-        var ry = fx.h * 0.5;
+        var ry = visualH * 0.5;
         var phase = fx.t * 2.1;
         var body = fx.poison ? 0x4a3020 : (fx.lava ? 0x8a2b0b : 0x4a3a20);
         var rim = fx.poison ? 0x5b2b72 : (fx.lava ? 0xff7a2a : 0x7d6533);
         var glow = fx.poison ? 0x7e3f9a : (fx.lava ? 0xffb347 : 0xa37a48);
         var bubble = fx.poison ? 0x6b2d7c : (fx.lava ? 0xffd282 : 0xc49b68);
         g.clear();
-        g.rect(-rx, -ry, fx.w, fx.h).fill({ color: body, alpha: 0.5 * fade });
-        g.rect(-rx, -ry, fx.w, fx.h).stroke({ width: 3, color: rim, alpha: 0.62 * fade });
-        // 方形內的慢速漣漪：只作為泥面流動，不改變場域邊界。
+        g.rect(-rx, -ry, fx.w, visualH).fill({ color: body, alpha: 0.5 * fade });
+        g.rect(-rx, -ry, fx.w, visualH).stroke({ width: 3, color: rim, alpha: 0.62 * fade });
+        // 長方形內的慢速漣漪：只作為泥面流動，不改變場域邊界。
         for (var ri = 0; ri < 3; ri++) {
           var u = ((phase * 0.32 + ri / 3) % 1);
           var rw = rx * (0.28 + u * 0.62), rh = ry * (0.28 + u * 0.62);
@@ -3191,10 +3216,15 @@ var BattleRenderer = (function () {
     /* 背景分頁不畫特效（與 DOM 版 vfxSetEnabled(false) 同精神）；
        setTimeout 排進來的延遲段也會走到這裡被擋掉。 */
     if (documentHidden()) return;
-    /* 事件要和畫面走同一個時鐘：位置是延後 POS_BUFFER_MS 播放的，
-       特效若照原速播，就會在「敵人畫面上還沒走到」的時候先打出來——
-       看起來就是隔空攻擊。延遲量與位置緩衝相同，兩者必定對齊。 */
-    if (!spec._buffered) { spec._buffered = true; spec.delayMs = (spec.delayMs || 0) + POS_BUFFER_MS; }
+    /* 一般技能事件要和內插位置走同一個時鐘，延後 POS_BUFFER_MS 播放；
+       敵人出手事件則是「先攻擊、後反傷死亡」的時序本身，不能再等一個
+       位置緩衝，否則魔法子彈會在死亡動畫開始後才出現。來源位置會由
+       sourceId／lastPos 固定，故不會因省略這段緩衝而隔空飄移。 */
+    var isEnemyAttack = spec.cat === 'enemy' && spec.fxKind === 'enemy-attack';
+    if (!spec._buffered) {
+      spec._buffered = true;
+      if (!isEnemyAttack) spec.delayMs = (spec.delayMs || 0) + POS_BUFFER_MS;
+    }
     var baseDelay = Math.max(0, spec.delayMs || 0);
     if (baseDelay > 0) {
       setTimeout(function () {
@@ -3202,6 +3232,10 @@ var BattleRenderer = (function () {
         spec.delayMs = 0;
         onVfx(spec);
       }, baseDelay);
+      return;
+    }
+    if (isEnemyAttack) {
+      renderEnemyAttackVfx(spec);
       return;
     }
     var targets = Array.isArray(spec.targets) ? spec.targets.slice(0, 8) : [];
