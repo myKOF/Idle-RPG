@@ -110,7 +110,7 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 傳奇特效,fireSpiritShield,火靈盾,0,,,,,,,,0,,身體永久被火焰包覆，每秒損失 1% 最大生命；攻擊你的敵人持續受到 20% 火焰灼燒傷害，最多疊加 10 層。,fire,,,spellbook,"{""selfHpDrainPctPerSec"":1,""retaliateBurnPct"":20,""maxStacks"":10}"
 傳奇特效,skyfallMeteor,神落天殞,0,,,,,,,,0,,每隔 8 秒自動召喚一顆無消耗的殞石，且殞石術傷害提高 50%。,fire,meteor,meteor,staff2h,"{""autoTrigger"":{""skill"":""meteor"",""sec"":8},""skillDamagePct"":50}"
 傳奇特效,manaExplosion,法力爆燃,0,,,,,,,,0,,法力灼燒改為消耗最大法力的 50%，且傷害提高 500%。,fire,manaBurn,,orb,"{""manaCostMaxPct"":50,""skillDamagePct"":500}"
-傳奇特效,magicLightShield,魔法光盾,0,,,,,,,,0,,生命值低於 50% 時產生相當於最大生命的光盾；光盾期間受到的傷害降低 35%，持續 5 秒。,light,,,orb,"{""lowHpThresholdPct"":50,""shieldHpPct"":100,""dmgRedPct"":35,""dur"":5}"
+傳奇特效,magicLightShield,魔法光盾,0,,,,,,,,0,,生命值低於 50% 時產生相當於最大生命的光盾；光盾期間受到的傷害降低 35%，持續 5 秒；內建冷卻 20 秒。,light,,,orb,"{""lowHpThresholdPct"":50,""shieldHpPct"":100,""dmgRedPct"":35,""dur"":5,""cooldownSec"":20}"
 傳奇特效,lightCollision,光之碰撞,0,,,,,,,,0,,每隔 4 秒自動發射追蹤光彈尋找最近的目標，造成 250% 聖屬性傷害。,light,,,wand1h,"{""autoProjectile"":{""sec"":4,""powerPct"":250,""elem"":""light""}}"
 傳奇特效,judgmentArrival,審判降臨,0,,,,,,,,0,,聖光審判的傷害提高 50%，且冷卻時間縮短 30%。,light,holySmite,,wand1h,"{""skillDamagePct"":50,""skillCdPct"":-30}"
 傳奇特效,holyImpact,聖光衝擊,0,,,,,,,,0,,施放奧術衝擊後，下一個技能必定雙重施法，且有 20% 機率變為三重施法。,light,arcaneBurst,,focus,"{""nextMultiCast"":{""double"":2,""tripleChance"":20,""triple"":3}}"

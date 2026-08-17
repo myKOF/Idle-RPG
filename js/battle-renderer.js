@@ -256,6 +256,67 @@ var BattleRenderer = (function () {
     return { x: pp.x + face * (PLAYER_REACH + 14), y: pp.y - 24 };
   }
 
+  /* 投射物只追蹤單一目標，不重新搜尋敵人：用已有的座標取樣估出速度，
+     預判飛行結束時的目標點。這能避免目標往前走時，彈體在舊路徑末端
+     看起來像「停在旁邊」；命中半徑則是移動模型誤差的低成本保底。 */
+  var PROJECTILE_NEAR_HIT_RADIUS = 24;
+  var PROJECTILE_MAX_PREDICTION_SEC = 1.25;
+  function projectileTargetVelocity(targetId) {
+    var ent = targetId === 'pv-float' ? S.player : S.entities[targetId];
+    var samples = ent && ent.samples;
+    if (!samples || samples.length < 2) return { x: 0, y: 0 };
+    var b = samples[samples.length - 1];
+    var a = samples[samples.length - 2];
+    var dt = b.t - a.t;
+    if (!(dt > 0)) return { x: 0, y: 0 };
+    return { x: (b.x - a.x) / dt * 1000, y: (b.y - a.y) / dt * 1000 };
+  }
+  function projectileTargetStopGap(targetId) {
+    if (targetId === 'pv-float') return 0;
+    var ent = S.entities[targetId];
+    if (!ent) return 0;
+    var contact = (typeof BF_CONTACT_DIST === 'number' && BF_CONTACT_DIST > 0) ? BF_CONTACT_DIST : 46;
+    var radius = ent.isBoss
+      ? ((typeof BF_BOSS_RADIUS === 'number' && BF_BOSS_RADIUS > 0) ? BF_BOSS_RADIUS : 52)
+      : ((typeof BF_BODY_RADIUS === 'number' && BF_BODY_RADIUS > 0) ? BF_BODY_RADIUS : 20);
+    return contact + radius;
+  }
+  function projectileTargetPoint(targetId, horizonSec) {
+    var current = posOf(targetId);
+    var horizon = Math.max(0, Math.min(PROJECTILE_MAX_PREDICTION_SEC, Number(horizonSec) || 0));
+    if (!(horizon > 0)) return current;
+    var velocity = projectileTargetVelocity(targetId);
+    var future = {
+      x: current.x + velocity.x * horizon,
+      y: current.y + velocity.y * horizon
+    };
+
+    /* 敵人逼近玩家時，預判不可穿過模擬層的停步距離；沒有速度或已經在停步點
+       時自然維持原座標。玩家本身不套用這個限制。 */
+    var stopGap = projectileTargetStopGap(targetId);
+    if (stopGap > 0) {
+      var player = playerPos();
+      var cx = current.x - player.x, cy = current.y - player.y;
+      var currentDist = Math.sqrt(cx * cx + cy * cy);
+      var speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
+      var toward = (player.x - current.x) * velocity.x + (player.y - current.y) * velocity.y;
+      if (speed > 0 && currentDist > stopGap && toward > 0) {
+        var move = Math.min(speed * horizon, Math.max(0, currentDist - stopGap));
+        future.x = current.x + velocity.x * move / speed;
+        future.y = current.y + velocity.y * move / speed;
+      }
+    }
+    return future;
+  }
+  function projectileNearTarget(x, y, targetId) {
+    var target = posOf(targetId);
+    var ent = targetId === 'pv-float' ? S.player : S.entities[targetId];
+    var radius = Math.max(PROJECTILE_NEAR_HIT_RADIUS,
+      ent && ent.hitHeight ? ent.hitHeight * 0.35 : PROJECTILE_NEAR_HIT_RADIUS);
+    var dx = x - target.x, dy = y - target.y;
+    return dx * dx + dy * dy <= radius * radius;
+  }
+
   /* ---- 位置內插緩衝 ----
      模擬層的座標是 5Hz 的離散取樣，畫面要 60fps 連續播放，中間必須自己補。
 
@@ -1443,7 +1504,8 @@ var BattleRenderer = (function () {
       update: function (dt) {
         t += dt;
         var k = Math.min(1, t / dur);
-        var to = posOf(targetId);
+        var targetNow = posOf(targetId);
+        var to = projectileTargetPoint(targetId, Math.max(0, dur - t));
         node.x = lerp(from.x, to.x, k);
         /* 火球術依使用者要求走真正直線；其他投射物保留原本的微弧線。 */
         node.y = lerp(from.y, to.y, k) -
@@ -1456,10 +1518,10 @@ var BattleRenderer = (function () {
           trailAcc = 0;
           spawnTrailDot(node.x, node.y, theme);
         }
-        if (k >= 1) {
+        if (k >= 1 || projectileNearTarget(node.x, node.y, targetId)) {
           if (!arrived) {
             arrived = true;
-            if (onArrive) onArrive(posOf(targetId));
+            if (onArrive) onArrive(targetNow);
           }
           return false;
         }
@@ -1505,6 +1567,8 @@ var BattleRenderer = (function () {
         node.visible = true;
         var k = Math.min(1, t / dur);
         var x, y, q;
+        var targetNow = posOf(targetId);
+        var targetAim = projectileTargetPoint(targetId, Math.max(0, dur - t));
         if (k < 0.38) {
           q = k / 0.38;
           q = q * q * (3 - 2 * q);
@@ -1513,13 +1577,11 @@ var BattleRenderer = (function () {
         } else {
           q = (k - 0.38) / 0.62;
           q = q * q;
-          var target = posOf(targetId);
-          x = lerp(turn.x, target.x, q);
-          y = lerp(turn.y, target.y, q);
+          x = lerp(turn.x, targetAim.x, q);
+          y = lerp(turn.y, targetAim.y, q);
         }
-        var targetNow = posOf(targetId);
-        var aheadX = k < 0.38 ? turn.x : targetNow.x;
-        var aheadY = k < 0.38 ? turn.y : targetNow.y;
+        var aheadX = k < 0.38 ? turn.x : targetAim.x;
+        var aheadY = k < 0.38 ? turn.y : targetAim.y;
         node.x = x; node.y = y;
         node.rotation = Math.atan2(aheadY - y, aheadX - x);
         trailAcc += dt;
@@ -1527,8 +1589,8 @@ var BattleRenderer = (function () {
           trailAcc = 0;
           spawnTrailDot(x, y, theme);
         }
-        if (k >= 1) {
-          var hit = posOf(targetId);
+        if (k >= 1 || projectileNearTarget(x, y, targetId)) {
+          var hit = targetNow;
           spawnImpact(hit.x, hit.y, spec, false);
           hitReact(targetId, spec.elem, false);
           return false;

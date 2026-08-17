@@ -1,5 +1,25 @@
 # AI_TASKS.md
 
+## Codex：修正投射物追蹤移動目標的視覺軌跡 - 2026-08-17
+- Status：done
+- Owner：Codex
+- Task：投射物以目標既有位置樣本預判飛行終點，並在進入命中半徑時提前觸發命中視覺。
+- Scope：`js/battle-renderer.js`、`index.html`、`tests/projectile-target-prediction.test.cjs`
+- Performance：不增加敵人搜尋；每枚投射物只做一次速度樣本讀取，更新時增加一次距離平方比較，預期影響可忽略。
+- Verification：`node --test tests/projectile-target-prediction.test.cjs`、`npm.cmd run build`、`git diff --check`
+- Risk：渲染器只預判視覺座標，不改變模擬層的實際傷害時間；目標突然轉向時仍由近距離提前命中保底。
+- Next：完成聚焦測試與建置後提交。
+
+## Codex：魔法光盾內建 20 秒冷卻（2026-08-17）
+
+- Status：Done
+- Owner：Codex
+- Task：傳奇特效 `magicLightShield` 觸發後加入固定 20 秒內建冷卻，避免低血量期間反覆觸發。
+- Scope：`config/Excel/Equipment_Affix.xlsx`、`config/CSV/Equipment_Affix.csv`、`js/data.js`、`js/legendary.js`、`js/worker/sim.worker.js`、`js/bridge.js`、`index.html`、`tests/magic-light-shield-cooldown.test.cjs`、本文件。
+- Verification：定向冷卻測試、完整 `npm.cmd test`、`npm.cmd run build`、JavaScript 語法檢查、`git diff --check`。
+- Risk：冷卻結束後仍沿用原本「生命值回升至門檻才重新上膛」的觸發規則。
+- Next：可合併；不需額外依賴。
+
 ## Claude｜修正彈射命中爆點第一幀為整張貼圖原尺寸｜2026-08-17
 
 - 狀態：已完成（2026-08-17）

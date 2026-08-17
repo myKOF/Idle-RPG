@@ -26,6 +26,7 @@ function resetLegendaryRT() {
     nextChargeAt: 0,
     nextFireDrainAt: 0,
     lightShieldArmed: true,
+    lightShieldCooldownUntil: 0,
     lightShieldUntil: 0,
     lightShieldGranted: 0
   };
@@ -47,7 +48,7 @@ function legendaryClone(value) {
 
 var LEGENDARY_FX_NON_VALUE_KEYS = {
   chance: true, count: true, bounces: true, hits: true, maxStacks: true,
-  tickSec: true, sec: true, dur: true, cd: true, basicAttackThreshold: true,
+  tickSec: true, sec: true, dur: true, cd: true, cooldownSec: true, basicAttackThreshold: true,
   killExtend: true, double: true, triple: true
 };
 
@@ -605,14 +606,15 @@ function legendaryOnEnemyKill(pEnt) {
 
 function legendaryApplyLowLifeShield(pEnt, st, floatSel) {
   var rt = legendaryEnsureRT();
-  if (!legendaryHas(st, 'magicLightShield') || !rt.lightShieldArmed || !(st.hp > 0) || !(pEnt.hp > 0) ||
-      pEnt.hp / st.hp * 100 >= legendaryFx('magicLightShield').lowHpThresholdPct) return;
   var spec = legendaryFx('magicLightShield');
+  if (!legendaryHas(st, 'magicLightShield') || !rt.lightShieldArmed || rt.lightShieldCooldownUntil > GT ||
+      !(st.hp > 0) || !(pEnt.hp > 0) || pEnt.hp / st.hp * 100 >= spec.lowHpThresholdPct) return;
   var before = Math.max(0, pEnt.shield || 0);
   var target = st.hp * spec.shieldHpPct / 100;
   pEnt.shield = Math.max(before, target);
   rt.lightShieldGranted = Math.max(0, pEnt.shield - before);
   rt.lightShieldUntil = GT + spec.dur;
+  rt.lightShieldCooldownUntil = GT + spec.cooldownSec;
   rt.lightShieldArmed = false;
   applyBuff(pEnt, 'legendaryLightShieldRed', spec.dmgRedPct, spec.dur);
   if (typeof refreshShieldMaxAfterGain === 'function') refreshShieldMaxAfterGain(pEnt, before);
