@@ -7877,6 +7877,15 @@ textarea:disabled,
 
 /* ---- 泥沼／熔岩沼（新版技能 mire）：貼地的方形場域 ----
    尺寸由 js/vfx.js 依場域矩形逐次套用（沼澤會隨時間長大）；毒沼再疊加深紫色氣流。 */
+.vfx-field-motion {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
 .vfx-mire-pool {
   position: absolute;
   border-radius: 10px;

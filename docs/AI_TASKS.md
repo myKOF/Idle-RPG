@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## Codex｜泥沼擴大與雷球移動改為平滑顯示｜2026-08-17
+
+- 狀態：已完成
+- Owner：Codex
+- 使用者需求：泥沼範圍擴大與雷球移動改為連續平滑動畫；傷害間隔維持原設定。
+- 修改範圍：`js/battle-renderer.js`、`js/vfx.js`、`css/style.css`、`tests/skill2-vfx.test.cjs`。
+- 完成內容：Canvas 場域以事件間隔做位置／尺寸內插；DOM 場域以 transform 外層容器做 RAF 內插，保留泥沼泡泡、毒沼氣流與雷球本體動畫；未修改 `sgGroundTick`、`SG_MIRE_TICK_SEC` 或雷球 `gap`。
+- 驗證結果：`node --test tests/skill2-vfx.test.cjs`（16/16）；`node tools/build_check.cjs`（287/287）；地系／雷系／VFX 定向測試（70 通過，2 個既有泥沼尺寸基準失敗）；完整 `npm.cmd test`（既有 5 項基準失敗，與本次顯示層修改無關）；`git diff --check` 通過。
+- 已知限制：本機 Browser runtime 啟動時發生 `Cannot redefine property: process`，未能完成畫面截圖驗證。
+
 ## Antigravity｜雷系三大新技能（連鎖閃電、落雷術、雷球）實機測試與驗證｜2026-08-17
 
 - 狀態：已完成

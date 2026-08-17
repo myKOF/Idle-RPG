@@ -2266,6 +2266,45 @@ var BattleRenderer = (function () {
     return fx;
   }
 
+  /* 場域的移動／尺寸只屬於顯示層：模擬層仍以自己的 tick 頻率判定傷害，
+     這裡只把兩次權威快照之間的畫面補齊，避免場域一格一格跳動。 */
+  function fieldVfxMotionSec(spec, fallback) {
+    var sec = Number(spec && spec.dur);
+    return Math.max(0.05, isFinite(sec) && sec > 0 ? sec : fallback);
+  }
+
+  function fieldVfxSetTarget(fx, x, y, w, h, duration) {
+    fx.motionFromX = fx.x;
+    fx.motionFromY = fx.y;
+    fx.motionFromW = fx.w;
+    fx.motionFromH = fx.h;
+    fx.motionToX = Number(x);
+    fx.motionToY = Number(y);
+    fx.motionToW = Math.max(1, Number(w));
+    fx.motionToH = Math.max(1, Number(h));
+    fx.motionT = 0;
+    fx.motionDur = Math.max(0.05, Number(duration) || 0.35);
+  }
+
+  function fieldVfxSetPositionTarget(fx, x, y, duration) {
+    fx.motionFromX = fx.x;
+    fx.motionFromY = fx.y;
+    fx.motionToX = Number(x);
+    fx.motionToY = Number(y);
+    fx.motionT = 0;
+    fx.motionDur = Math.max(0.05, Number(duration) || 0.35);
+  }
+
+  function fieldVfxStep(fx, dt) {
+    if (!(fx.motionDur > 0)) return;
+    fx.motionT = Math.min(fx.motionDur, fx.motionT + Math.max(0, Number(dt) || 0));
+    var k = Math.min(1, fx.motionT / fx.motionDur);
+    fx.x = lerp(fx.motionFromX, fx.motionToX, k);
+    fx.y = lerp(fx.motionFromY, fx.motionToY, k);
+    fx.w = lerp(fx.motionFromW, fx.motionToW, k);
+    fx.h = lerp(fx.motionFromH, fx.motionToH, k);
+  }
+
   /* 泥沼／熔岩沼（新版技能 mire）：貼地的方形場域。
      與火牆同為「按 area.id 合併、每次 tick 續命」的長駐特效，但尺寸直接沿用
      area.w／area.h，不壓成橢圓。毒沼 variant 額外畫深紫色氣流與泡泡。 */
@@ -2281,9 +2320,9 @@ var BattleRenderer = (function () {
     var holdMs = Math.max(700, Number(spec.dur || 0.5) * 2200);
     var current = _mirePoolFx[key];
     if (current && !current.dead && current.node && !current.node.destroyed) {
-      current.x = Number(a.x); current.y = Number(a.y);
-      current.w = Math.max(20, Number(a.w) || current.w);
-      current.h = Math.max(16, Number(a.h) || current.h);
+      fieldVfxSetTarget(current, Number(a.x), Number(a.y),
+        Math.max(20, Number(a.w) || current.w), Math.max(16, Number(a.h) || current.h),
+        fieldVfxMotionSec(spec, 0.5));
       current.lava = lava;
       current.poison = poison;
       current.expiresAt = nowMs() + holdMs;
@@ -2296,7 +2335,12 @@ var BattleRenderer = (function () {
     var fx = {
       node: node, x: Number(a.x), y: Number(a.y),
       w: Math.max(20, Number(a.w) || 100), h: Math.max(16, Number(a.h) || 100),
-      lava: lava, poison: poison, t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false
+      lava: lava, poison: poison, t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false,
+      motionFromX: Number(a.x), motionFromY: Number(a.y),
+      motionFromW: Math.max(20, Number(a.w) || 100), motionFromH: Math.max(16, Number(a.h) || 100),
+      motionToX: Number(a.x), motionToY: Number(a.y),
+      motionToW: Math.max(20, Number(a.w) || 100), motionToH: Math.max(16, Number(a.h) || 100),
+      motionT: 1, motionDur: 1
     };
     _mirePoolFx[key] = fx;
     var bubbleAt = 0;
@@ -2305,6 +2349,7 @@ var BattleRenderer = (function () {
       node: node,
       update: function (dt) {
         fx.t += dt;
+        fieldVfxStep(fx, dt);
         node.x = fx.x; node.y = fx.y; node.rotation = 0;
         var left = fx.expiresAt - nowMs();
         var fade = left < 420 ? Math.max(0, left / 420) : 1;
@@ -2372,8 +2417,8 @@ var BattleRenderer = (function () {
 
   /* 雷球（新版技能 thunderorb）：會飛的球體場域。
      模擬層每 0.35 秒送一次事件，帶上 area（x／y／r）與同一顆球的 id；
-     顯示層按 id 合併節點、每次事件只更新到最新座標——球會不會飛、飛多快，
-     完全由模擬層決定，顯示層不自行推算，傷害範圍與畫面因此永遠對得起來。 */
+     顯示層按 id 合併節點、每次事件設定最新座標目標，再以事件間隔內插到目標；
+     球會不會飛、飛多快仍完全由模擬層決定，顯示層只補畫面，不改傷害範圍。 */
   var _thunderOrbFx = Object.create(null);
   var THUNDER_ORB_MAX_LIFE_SEC = 14;
   var THUNDER_SHOCK_THEME = { c1: '#2563eb', c2: '#dbeafe', glow: '#60a5fa' };
@@ -2384,9 +2429,9 @@ var BattleRenderer = (function () {
     var holdMs = Math.max(520, Number(spec.dur || 0.35) * 2400);
     var current = _thunderOrbFx[key];
     if (current && !current.dead && current.node && !current.node.destroyed) {
-      current.x = Number(a.x);
-      current.y = Number(a.y);
       current.r = Math.max(8, Number(a.r) || current.r);
+      fieldVfxSetPositionTarget(current, Number(a.x), Number(a.y),
+        fieldVfxMotionSec(spec, 0.35));
       current.expiresAt = nowMs() + holdMs;
       return current;
     }
@@ -2396,13 +2441,20 @@ var BattleRenderer = (function () {
     S.layers.fx.addChild(node);
     var fx = {
       node: node, x: Number(a.x), y: Number(a.y), r: Math.max(8, Number(a.r) || 30),
-      t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false
+      w: Math.max(8, Number(a.r) || 30), h: Math.max(8, Number(a.r) || 30),
+      t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false,
+      motionFromX: Number(a.x), motionFromY: Number(a.y),
+      motionFromW: Math.max(8, Number(a.r) || 30), motionFromH: Math.max(8, Number(a.r) || 30),
+      motionToX: Number(a.x), motionToY: Number(a.y),
+      motionToW: Math.max(8, Number(a.r) || 30), motionToH: Math.max(8, Number(a.r) || 30),
+      motionT: 1, motionDur: 1
     };
     _thunderOrbFx[key] = fx;
     addFx({
       node: node,
       update: function (dt) {
         fx.t += dt;
+        fieldVfxStep(fx, dt);
         node.x = fx.x;
         node.y = fx.y - 10;                 // 略高於腳底，看起來是懸在空中的球
         var left = fx.expiresAt - nowMs();

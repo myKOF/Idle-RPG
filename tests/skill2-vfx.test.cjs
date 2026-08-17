@@ -335,6 +335,9 @@ test('泥沼／熔岩沼：兩套顯示層都有貼地水窪畫法，且尺寸�
   // 同一攤沼澤要靠 area.id 合併成一個長駐節點，不是每跳生一個新的
   assert.match(vfx, /var node = _vfxMirePools\[key\];/);
   assert.match(renderer, /var current = _mirePoolFx\[key\];/);
+  assert.match(renderer, /function fieldVfxSetTarget\(fx, x, y, w, h, duration\)/);
+  assert.match(renderer, /fieldVfxStep\(fx, dt\);/);
+  assert.match(renderer, /motionToW = Math\.max\(1, Number\(w\)\)/);
   // 續命與清場：切場景時長駐節點要一起回收
   assert.match(vfx, /_vfxMirePools = Object\.create\(null\);/);
   assert.match(renderer, /if \(_mirePoolFx\[key\] === fx\) delete _mirePoolFx\[key\];/);
@@ -388,8 +391,14 @@ test('雷系三技能的顯示層接線：鏈、天雷、球體場域在 Canvas 
   assert.match(skills2, /variant: 'thunder-orb'/);
   assert.match(renderer, /else if \(spec\.variant === 'thunder-orb'\) spawnThunderOrbField\(spec\);/);
   assert.match(renderer, /var current = _thunderOrbFx\[key\];/);
+  assert.match(renderer, /function fieldVfxSetPositionTarget\(fx, x, y, duration\)/);
+  assert.match(renderer, /fieldVfxSetPositionTarget\(current, Number\(a\.x\), Number\(a\.y\)/);
   assert.match(vfx, /else if \(s\.variant === 'thunder-orb'\) vfxThunderOrb\(s, layer, spec\.area, rect\);/);
   assert.match(vfx, /_vfxThunderOrbs = Object\.create\(null\);/);
+  assert.match(vfx, /function vfxFieldMotionSet\(node, x, y, w, h, duration\)/);
+  assert.match(vfx, /requestAnimationFrame\(frame\)/);
+  assert.match(vfx, /translate3d\(/);
+  assert.match(css, /\.vfx-field-motion\s*\{[\s\S]*?will-change:\s*transform/);
 
   // 環體電球沿用火狩的環繞畫法，但合併鍵要含變體與屬性（否則兩道會互相吃掉）
   assert.match(renderer, /spec\.variant === 'firehunt' \|\| spec\.variant === 'thunder-orbit'/);

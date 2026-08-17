@@ -246,7 +246,8 @@ function vfxTrack(node, ms) {
     var evict = 0;
     for (var ei = 0; ei < _vfxNodes.length; ei++) {
       var cand = _vfxNodes[ei];
-      if (!cand || typeof cand.className !== 'string' || cand.className.indexOf('vfx-aura') < 0) {
+      if (!cand || typeof cand.className !== 'string' ||
+          (cand.className.indexOf('vfx-aura') < 0 && cand.className.indexOf('vfx-field-motion') < 0)) {
         evict = ei;
         break;
       }
@@ -391,6 +392,78 @@ function vfxTheme(spec) {
   if (t) return t;
   var c = (spec && spec.color) || '#ffffff';
   return { c1: c, c2: '#ffffff', glow: c };
+}
+
+/* 長駐場域的 DOM 幾何只更新一次快照；用獨立的外層容器以 transform 內插位置／尺寸，
+   內層保留原本的 pulse／泡泡／氣流 CSS 動畫。這只影響畫面，不會增加傷害判定。 */
+function vfxFieldMotionSec(spec, fallback) {
+  var sec = Number(spec && spec.dur);
+  return Math.max(0.05, isFinite(sec) && sec > 0 ? sec : fallback);
+}
+
+function vfxFieldMotionApply(node, state) {
+  var baseW = Math.max(1, state.baseW);
+  var baseH = Math.max(1, state.baseH);
+  var cx = state.x + state.w / 2;
+  var cy = state.y + state.h / 2;
+  var sx = Math.max(0.01, state.w / baseW);
+  var sy = Math.max(0.01, state.h / baseH);
+  node.style.transform = 'translate3d(' + cx.toFixed(3) + 'px, ' + cy.toFixed(3) + 'px, 0) scale(' +
+    sx.toFixed(5) + ', ' + sy.toFixed(5) + ')';
+}
+
+function vfxFieldMotionSchedule(node) {
+  if (!node || node._vfxFieldMotionHandle) return;
+  var frame = function () {
+    node._vfxFieldMotionHandle = 0;
+    if (!node.parentNode || !node._vfxFieldMotion) return;
+    var state = node._vfxFieldMotion;
+    var elapsed = Math.max(0, Date.now() - state.startedAt) / 1000;
+    var k = state.duration > 0 ? Math.min(1, elapsed / state.duration) : 1;
+    state.x = state.fromX + (state.toX - state.fromX) * k;
+    state.y = state.fromY + (state.toY - state.fromY) * k;
+    state.w = state.fromW + (state.toW - state.fromW) * k;
+    state.h = state.fromH + (state.toH - state.fromH) * k;
+    vfxFieldMotionApply(node, state);
+    if (k < 1) vfxFieldMotionSchedule(node);
+  };
+  if (typeof requestAnimationFrame === 'function') node._vfxFieldMotionHandle = requestAnimationFrame(frame);
+  else node._vfxFieldMotionHandle = setTimeout(frame, 16);
+}
+
+function vfxFieldMotionSet(node, x, y, w, h, duration) {
+  var state = node._vfxFieldMotion;
+  if (!state) {
+    state = node._vfxFieldMotion = {
+      x: Number(x), y: Number(y), w: Math.max(1, Number(w)), h: Math.max(1, Number(h)),
+      fromX: Number(x), fromY: Number(y), fromW: Math.max(1, Number(w)), fromH: Math.max(1, Number(h)),
+      toX: Number(x), toY: Number(y), toW: Math.max(1, Number(w)), toH: Math.max(1, Number(h)),
+      baseW: Math.max(1, Number(w)), baseH: Math.max(1, Number(h)),
+      startedAt: Date.now(), duration: 0
+    };
+  } else {
+    state.fromX = state.x;
+    state.fromY = state.y;
+    state.fromW = state.w;
+    state.fromH = state.h;
+    state.toX = Number(x);
+    state.toY = Number(y);
+    state.toW = Math.max(1, Number(w));
+    state.toH = Math.max(1, Number(h));
+    state.startedAt = Date.now();
+    state.duration = vfxFieldMotionSec({ dur: duration }, 0.35);
+  }
+  vfxFieldMotionApply(node, state);
+  if (state.duration > 0) vfxFieldMotionSchedule(node);
+}
+
+function vfxFieldVisual(node, cls, layerSpec, w, h) {
+  var visual = vfxNode(cls, node, layerSpec);
+  visual.style.left = (-w / 2) + 'px';
+  visual.style.top = (-h / 2) + 'px';
+  visual.style.width = w + 'px';
+  visual.style.height = h + 'px';
+  return visual;
 }
 
 function vfxNode(cls, layer, spec) {
@@ -1301,20 +1374,17 @@ function vfxMirePool(spec, layer, area, rect) {
   var key = (area && area.id ? String(area.id) : [Math.round(x), Math.round(y)].join(':'))
     + (lava ? ':lava' : '') + (poison ? ':poison' : '');
   var ttl = Math.max(900, Number(spec.dur || 0.5) * 2400);
-  function layout(target) {
-    target.style.left = x + 'px';
-    target.style.top = y + 'px';
-    target.style.width = w + 'px';
-    target.style.height = h + 'px';
-  }
   var node = _vfxMirePools[key];
   if (node && node.parentNode === layer) {
-    layout(node);
+    vfxFieldMotionSet(node, x, y, w, h, vfxFieldMotionSec(spec, 0.5));
     node._vfxExpiresAt = Date.now() + ttl;
     return node;
   }
-  node = vfxNode('vfx-mire-pool' + (lava ? ' vfx-mire-lava' : '') + (poison ? ' vfx-mire-poison' : ''), layer, spec);
-  layout(node);
+  node = vfxNode('vfx-field-motion', layer, null);
+  node._vfxFieldVisual = vfxFieldVisual(node,
+    'vfx-mire-pool' + (lava ? ' vfx-mire-lava' : '') + (poison ? ' vfx-mire-poison' : ''),
+    spec, w, h);
+  vfxFieldMotionSet(node, x, y, w, h, 0);
   var bubbles = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 5;
   for (var bi = 0; bi < bubbles; bi++) {
     var bubble = document.createElement('span');
@@ -1322,7 +1392,7 @@ function vfxMirePool(spec, layer, area, rect) {
     bubble.style.setProperty('--vfx-mire-bubble-x', (12 + (76 * (bi + 0.5) / bubbles)).toFixed(1) + '%');
     bubble.style.setProperty('--vfx-mire-bubble-y', (24 + (bi % 3) * 22).toFixed(1) + '%');
     bubble.style.setProperty('--vfx-mire-bubble-delay', (-Math.random() * 1.6).toFixed(2) + 's');
-    node.appendChild(bubble);
+    node._vfxFieldVisual.appendChild(bubble);
   }
   if (poison) {
     var currents = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 2 : 3;
@@ -1333,7 +1403,7 @@ function vfxMirePool(spec, layer, area, rect) {
       current.style.setProperty('--vfx-mire-current-y', (35 + (ci % 2) * 24) + '%');
       current.style.setProperty('--vfx-mire-current-angle', (ci % 2 ? -12 : 10) + 'deg');
       current.style.setProperty('--vfx-mire-current-delay', (-Math.random() * 1.2).toFixed(2) + 's');
-      node.appendChild(current);
+      node._vfxFieldVisual.appendChild(current);
     }
   }
   _vfxMirePools[key] = node;
@@ -1343,7 +1413,7 @@ function vfxMirePool(spec, layer, area, rect) {
 
 /* 雷球（新版技能 thunderorb）：會飛的球體場域。
    與沼澤同為「按 area.id 合併、每次 tick 續命」的長駐節點；差別在雷球會移動，
-   因此每次事件都要把節點搬到模擬層最新的座標（尺寸則固定為場域直徑）。 */
+   因此每次事件都要把最新座標交給顯示層內插（尺寸則固定為場域直徑）。 */
 function vfxThunderOrb(spec, layer, area, rect) {
   if (!rect || !isFinite(rect.x) || !isFinite(rect.y)) return null;
   var d = Math.max(28, (Number(area && area.r) || 30) * 2);
@@ -1351,27 +1421,22 @@ function vfxThunderOrb(spec, layer, area, rect) {
   var cy = (Number(rect.y) || 0) + (Number(rect.h) || 0) / 2;
   var key = (area && area.id) ? String(area.id) : [Math.round(cx), Math.round(cy)].join(':');
   var ttl = Math.max(700, Number(spec.dur || 0.35) * 2400);
-  function layout(target) {
-    target.style.left = (cx - d / 2) + 'px';
-    target.style.top = (cy - d / 2) + 'px';
-    target.style.width = d + 'px';
-    target.style.height = d + 'px';
-  }
   var node = _vfxThunderOrbs[key];
   if (node && node.parentNode === layer) {
-    layout(node);
+    vfxFieldMotionSet(node, cx - d / 2, cy - d / 2, d, d, vfxFieldMotionSec(spec, 0.35));
     node._vfxExpiresAt = Date.now() + ttl;
     return node;
   }
-  node = vfxNode('vfx-thunder-orb', layer, spec);
-  layout(node);
+  node = vfxNode('vfx-field-motion', layer, null);
+  node._vfxFieldVisual = vfxFieldVisual(node, 'vfx-thunder-orb', spec, d, d);
+  vfxFieldMotionSet(node, cx - d / 2, cy - d / 2, d, d, 0);
   var arcs = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 2 : 4;
   for (var ai = 0; ai < arcs; ai++) {
     var arc = document.createElement('span');
     arc.className = 'vfx-thunder-orb-arc';
     arc.style.setProperty('--vfx-thunder-arc-rot', (ai * (360 / arcs)).toFixed(1) + 'deg');
     arc.style.setProperty('--vfx-thunder-arc-delay', (-ai * 0.18).toFixed(2) + 's');
-    node.appendChild(arc);
+    node._vfxFieldVisual.appendChild(arc);
   }
   _vfxThunderOrbs[key] = node;
   vfxTrack(node, VFX_THUNDER_ORB_LIFE_MS);
