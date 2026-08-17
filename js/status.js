@@ -106,7 +106,19 @@ var STATUS = {
   sgMire: { name: '泥沼緩速', icon: '🟤', kind: 'debuff', effect: 'stat', key: 'sgMire', elem: 'earth', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 50, dur: 1, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【泥沼術】：攻速與移動速度下降（效果值＝攻速下降%）。同類型緩速依「取代」規則後蓋前並重新計時；為場域型持續重塗，不吃控場遞減與韌性。' },
   sgMirePoison: { name: '泥沼劇毒', icon: '☠️', kind: 'debuff', effect: 'dot', key: '', elem: 'poison', dmgSource: 'skill', dmg: 25, capStat: '', capMult: 0, val: 0, dur: 1, interval: 0.5, stack: 'refresh', maxStacks: 1, desc: '新版技能【毒沼術】：毒性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫），站在沼澤中才會被重塗。' },
   sgMireLava: { name: '熔岩灼燒', icon: '🌋', kind: 'debuff', effect: 'dot', key: '', elem: 'fire', dmgSource: 'skill', dmg: 70, capStat: '', capMult: 0, val: 0, dur: 1, interval: 0.4, stack: 'refresh', maxStacks: 1, desc: '新版技能【熔岩沼】：火焰持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫），站在岩漿中才會被重塗。' },
-  sgThunderOrb: { name: '環體電球', icon: '🔵', kind: 'buff', effect: 'stat', key: 'sgThunderOrb', elem: 'lightning', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【環體電球】：電球環繞自身的剩餘時間（與火狩各自一格，兩者互不覆蓋）。' }
+  sgThunderOrb: { name: '環體電球', icon: '🔵', kind: 'buff', effect: 'stat', key: 'sgThunderOrb', elem: 'lightning', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【環體電球】：電球環繞自身的剩餘時間（與火狩各自一格，兩者互不覆蓋）。' },
+
+  /* ---- 寒霜狀態（2026-08-17 冰系三群組共用：寒冰箭／水流彈／冰霜新星共同塗抹）----
+     設計文檔把「寒霜狀態」的說明重複寫在三個群組的階裡，實際上是同一個狀態；
+     行為參數（單層緩速、層數上限、凍結秒數、跳動間隔、持續時間）一律以本表為權威，
+     各群組只決定「每跳打多少寒冰傷害、一次疊幾層」。
+     刻意拆成三筆而不是一筆：一筆狀態不能同時是 dot 與 stat，而「疊層只加緩速、
+     傷害不隨層數變強」是使用者 2026-08-17 的決策——若把傷害併進 stack 規則
+     （實際效果＝單層值 × 層數）就會違反該決策。 */
+  sgFrost: { name: '寒霜', icon: '❄️', kind: 'debuff', effect: 'stat', key: 'sgFrost', elem: 'ice', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 20, dur: 5, interval: 0, stack: 'stack', maxStacks: 5, desc: '新版技能【寒霜狀態】的層數與緩速：每疊 1 層使移動與攻擊速度各下降（效果值＝單層下降% × 層數），疊滿層數時凍結。比照泥沼緩速為場域型重塗，緩速本身不吃控場遞減與韌性。' },
+  sgFrostBite: { name: '寒霜凍傷', icon: '🧊', kind: 'debuff', effect: 'dot', key: '', elem: 'ice', dmgSource: 'skill', dmg: 50, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0.5, stack: 'strongest', maxStacks: 1, desc: '新版技能【寒霜狀態】的寒冰持續傷害；每跳量占施放群組的本體技能傷害（引擎以 dps 覆寫）。依使用者決策，傷害不隨寒霜層數提高。' },
+  sgFrozen: { name: '凍結', icon: '🥶', kind: 'debuff', effect: 'stat', key: 'sgFrozen', elem: 'ice', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 3, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【寒霜狀態】疊滿層數的凍結標記。行動限制本身由「暈眩」承擔（因此完整沿用 BOSS 控場免疫、韌性折減與控場遞減），本狀態只標記「正在凍結中」，供【水龍捲】增傷與【寒冰爆裂箭】判定冰爆時機。' },
+  sgIceRevert: { name: '寒冰逆轉', icon: '💧', kind: 'debuff', effect: 'stat', key: 'sgIceRevert', elem: 'ice', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 20, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【寒冰逆轉】：敵人的屬性標籤強制改為寒冰，且受到的寒冰傷害提高（效果值＝提高%）。' }
 };
 
 /* ---- 反查索引 ----

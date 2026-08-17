@@ -767,10 +767,15 @@ function monsterAtkCfg(m, mult) {
 function monsterDefCfg(m) {
     // 新版技能【破甲擊】sgDefBrk（獨立鍵、可疊層）與舊 defDown 減益加總；下限 0＝防禦最多被剝光、不為負
     var defMul = Math.max(0, 1 - (buffVal(m, 'defDown') + buffVal(m, 'sgDefBrk')) / 100);
+    /* 新版技能【寒冰逆轉】（水流彈 T2，js/skills2.js）：屬性標籤強制改為寒冰。
+       這裡是全專案「防守方屬性標籤」的唯一出口，因此攻方的「對屬性敵人傷害%」與
+       守方的「對屬性敵人抗性%」兩條既有規則會一起認得改寫，不必在各傷害端各補一次。 */
+    var forcedAttr = (typeof skill2ForcedAttr === 'function') ? skill2ForcedAttr(m) : '';
     return {
         def: m.def * defMul, mdef: (m.mdef || m.def * 0.75) * defMul, level: m.level, dodge: m.dodge || 0,
         resist: m.resist || {}, ctrlRes: m.ctrlRes || 0, maxHp: m.maxHp,
-        isElite: !!m.elite, isBoss: !!m.isBoss, towerBoss: !!m.towerBoss, attr: m.attr || null, globalDmgRed: m.globalDmgRed || 0
+        isElite: !!m.elite, isBoss: !!m.isBoss, towerBoss: !!m.towerBoss,
+        attr: forcedAttr || m.attr || null, globalDmgRed: m.globalDmgRed || 0
     };
 }
 

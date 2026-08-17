@@ -6747,6 +6747,40 @@ textarea:disabled,
   }
 }
 
+/* 拋物線投射物（水流彈）：弧高由 js/vfx.js 依模擬層的表定值（arcM 米）寫入 --vfx-arc，
+   顯示層不自行決定高度。中段抬升、落點與直線版完全相同。 */
+.vfx-proj-arc {
+  animation-name: vfxFlyArc;
+  animation-timing-function: linear;
+}
+
+@keyframes vfxFlyArc {
+  from {
+    transform: translate(var(--vfx-x0), var(--vfx-y0)) translate(-50%, -50%) scale(0.75);
+    opacity: 0;
+  }
+
+  12% {
+    opacity: 1;
+  }
+
+  50% {
+    transform:
+      translate(calc((var(--vfx-x0) + var(--vfx-x1)) / 2), calc((var(--vfx-y0) + var(--vfx-y1)) / 2))
+      translate(-50%, -50%) translateY(calc(-1 * var(--vfx-arc, 18px))) scale(1);
+    opacity: 1;
+  }
+
+  92% {
+    opacity: 1;
+  }
+
+  to {
+    transform: translate(var(--vfx-x1), var(--vfx-y1)) translate(-50%, -50%) scale(1.1);
+    opacity: 0.9;
+  }
+}
+
 .vfx-proj-core {
   left: 0;
   top: 0;
@@ -8055,6 +8089,100 @@ textarea:disabled,
 @keyframes vfxThunderOrbArc {
   from { transform: rotate(var(--vfx-thunder-arc-rot, 0deg)); opacity: 0.9; }
   to { transform: rotate(calc(var(--vfx-thunder-arc-rot, 0deg) + 360deg)); opacity: 0.45; }
+}
+
+/* ---- 冰系場域（新版技能 icearrow／waterball／frostnova）----
+   暴風雪＝貼地藍色雲霧＋落雪；水龍捲＝旋轉漏斗；追蹤冰箭＝小顆冰晶。
+   尺寸一律由 js/vfx.js 依模擬層的 area 寫進 inline style，這裡只負責外觀與動畫。 */
+.vfx-blizzard {
+  position: absolute;
+  border-radius: 42% / 58%;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 45%, rgba(224, 242, 254, 0.34), rgba(125, 211, 252, 0.2) 52%, transparent 88%);
+  border: 2px solid rgba(34, 211, 238, 0.42);
+  box-shadow: 0 0 26px rgba(34, 211, 238, 0.32) inset;
+  animation: vfxBlizzardDrift 2.6s ease-in-out infinite alternate;
+}
+
+.vfx-blizzard-flake {
+  position: absolute;
+  left: var(--vfx-flake-x, 50%);
+  top: -8%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(240, 249, 255, 0.92);
+  box-shadow: 0 0 6px rgba(224, 242, 254, 0.75);
+  animation: vfxBlizzardFall 1.5s linear var(--vfx-flake-delay, 0s) infinite;
+}
+
+@keyframes vfxBlizzardDrift {
+  from { opacity: 0.72; }
+  to { opacity: 1; }
+}
+
+@keyframes vfxBlizzardFall {
+  from { transform: translate(0, 0); opacity: 0; }
+  18% { opacity: 1; }
+  to { transform: translate(-14px, 130%); opacity: 0; }
+}
+
+.vfx-water-tornado {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 62%,
+    rgba(224, 242, 254, 0.5), rgba(56, 189, 248, 0.3) 46%, rgba(14, 116, 144, 0.18) 74%, transparent 92%);
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.45);
+}
+
+.vfx-tornado-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 34%;
+  margin-left: -50%;
+  margin-top: -17%;
+  border-radius: 50%;
+  border: 2px solid rgba(224, 242, 254, 0.6);
+  transform: translateY(var(--vfx-tornado-lift, 0)) scale(var(--vfx-tornado-scale, 1));
+  animation: vfxTornadoSpin 0.8s linear var(--vfx-tornado-delay, 0s) infinite;
+}
+
+@keyframes vfxTornadoSpin {
+  from { opacity: 0.75; }
+  50% { opacity: 0.35; }
+  to { opacity: 0.75; }
+}
+
+.vfx-ice-homing {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 45%,
+    rgba(255, 255, 255, 0.95), rgba(125, 211, 252, 0.7) 44%, rgba(34, 211, 238, 0.3) 76%, transparent 94%);
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.65);
+  animation: vfxIceHomingPulse 0.55s ease-in-out infinite alternate;
+}
+
+.vfx-ice-shard {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 90%;
+  margin-left: -1px;
+  margin-top: -45%;
+  background: linear-gradient(180deg, transparent, rgba(224, 242, 254, 0.85), transparent);
+  transform: rotate(var(--vfx-shard-rot, 0deg));
+}
+
+@keyframes vfxIceHomingPulse {
+  from { opacity: 0.85; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1.12); }
 }
 
 /* ---- 光柱審判：天光射下→觸地散開 ---- */
