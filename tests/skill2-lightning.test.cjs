@@ -133,7 +133,7 @@ test('環體電球的剩餘時間有自己的狀態，不與火狩共用一格',
    1) 連鎖閃電
    =========================================================================== */
 
-test('連鎖閃電 T1：吃魔攻，在最多 4 個目標間彈射，每擊 150%', () => {
+test('連鎖閃電 T1：吃魔攻，在最多 4 個目標間彈射，每擊 165%（150 + 每級 15）', () => {
   const c = loadContext();
   const calls = stubHits(c);
   const p = playerEnt();
@@ -142,7 +142,7 @@ test('連鎖閃電 T1：吃魔攻，在最多 4 個目標間彈射，每擊 150%
   setLevels(c, 'chainlightning', [1, 0, 0, 0, 0, 0, 0]);
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
   assert.equal(calls.length, 4, '4 個目標＝4 擊');
-  calls.forEach((call) => assert.ok(Math.abs(call.atk - 500 * 1.5) < 1e-9, '150% 魔攻（不是物攻）'));
+  calls.forEach((call) => assert.ok(Math.abs(call.atk - 500 * 1.65) < 1e-9, '165% 魔攻（不是物攻）'));
   const hitSet = new Set(calls.map((call) => call.ent));
   assert.equal(hitSet.size, 4, '同一輪不重複跳同一個敵人');
 });
@@ -154,11 +154,14 @@ test('連鎖閃電 T2：強化閃電與本體傷害累加', () => {
   const es = [enemy(1e9, 5 * M, 0), enemy(1e9, 8 * M, 0)];
   setLevels(c, 'chainlightning', [1, 1, 0, 0, 0, 0, 0]);
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
-  assert.ok(Math.abs(calls[0].atk - 500 * 2.0) < 1e-9, '150% + 50% ＝ 200% 魔攻');
+  assert.ok(Math.abs(calls[0].atk - 500 * 2.2) < 1e-9, '165% + 55% ＝ 220% 魔攻');
 });
 
 /* 以下的等級陣列一律是累積的：前一階未達 Lv.1 時後續階視為 Lv.0（sgEffectiveLevels），
-   因此驗第 N 階時，第 1~N-1 階的效果必然同時生效，期望值要一起算進去。 */
+   因此驗第 N 階時，第 1~N-1 階的效果必然同時生效，期望值要一起算進去。
+   另外：Lv.1 已含 1 級升級效果，追加次數／目標數類（add）在 Lv.1 就帶小數
+   （雷鳴術 1+0.1＝1.1），小數部分以機率觸發，因此凡是驗「段數」的測試都要先
+   forceRolls(0.999) 關掉那一擲，否則段數會忽多忽少。 */
 
 test('連鎖閃電 T3：雷鳴術讓每個被擊中的敵人多吃一次', () => {
   const c = loadContext();
@@ -166,9 +169,10 @@ test('連鎖閃電 T3：雷鳴術讓每個被擊中的敵人多吃一次', () =>
   const p = playerEnt();
   const es = [enemy(1e9, 5 * M, 0), enemy(1e9, 8 * M, 0), enemy(1e9, 11 * M, 0), enemy(1e9, 14 * M, 0)];
   setLevels(c, 'chainlightning', [1, 1, 1, 0, 0, 0, 0]);
+  forceRolls(c, 0.999);       // 關掉 add 小數部分的擲骰，只留整數 1 次
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
   assert.equal(calls.length, 8, '4 個目標 × (1 + 1 次額外)');
-  calls.forEach((call) => assert.ok(Math.abs(call.atk - 500 * 2.0) < 1e-9, '含 T2 的 150%+50%'));
+  calls.forEach((call) => assert.ok(Math.abs(call.atk - 500 * 2.2) < 1e-9, '含 T2 的 165%+55%'));
 });
 
 test('連鎖閃電 T4：強化連鎖讓彈射數 +1（＝多一個目標）', () => {
@@ -178,6 +182,7 @@ test('連鎖閃電 T4：強化連鎖讓彈射數 +1（＝多一個目標）', ()
   const es = [];
   for (let i = 0; i < 6; i++) es.push(enemy(1e9, (5 + i * 3) * M, 0));
   setLevels(c, 'chainlightning', [1, 1, 1, 1, 0, 0, 0]);
+  forceRolls(c, 0.999);
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
   assert.equal(new Set(calls.map((call) => call.ent)).size, 5, '4 + 1 個目標');
   assert.equal(calls.length, 10, '5 個目標 × (1 + T3 的 1 次額外)');
@@ -191,41 +196,45 @@ test('連鎖閃電 T5：電殛擴散只在「彈射」時追加，且起手那�
   const es = [];
   for (let i = 0; i < 6; i++) es.push(enemy(1e9, (5 + i * 3) * M, 0));
   setLevels(c, 'chainlightning', [1, 1, 1, 1, 1, 0, 0]);
+  forceRolls(c, 0.999);
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
   // 5 個目標 ×（本體 + 雷鳴術 1 次）＝ 10，再加 4 次彈射各 1 個擴散目標
   assert.equal(calls.length, 14);
-  const splash = calls.filter((call) => Math.abs(call.atk - 500 * 2.0 * 0.25) < 1e-9);
-  assert.equal(splash.length, 4, '擴散傷害＝閃電鏈傷害的 25%，且起手不算彈射');
+  const splash = calls.filter((call) => Math.abs(call.atk - 500 * 2.2 * 0.275) < 1e-9);
+  assert.equal(splash.length, 4, '擴散傷害＝閃電鏈傷害的 27.5%，且起手不算彈射');
 });
 
-test('連鎖閃電 T6：雷幻身讓單一敵人也吃滿整條鏈，且整道鏈 +50%', () => {
+test('連鎖閃電 T6：雷幻身讓單一敵人也吃滿整條鏈，且整道鏈 +55%', () => {
   const c = loadContext();
   const calls = stubHits(c);
   const p = playerEnt();
   const only = enemy(1e9, 5 * M, 0);
   setLevels(c, 'chainlightning', [1, 1, 1, 1, 1, 1, 0]);
+  forceRolls(c, 0.999);
   c.castSkill2(p, [only], 'chainlightning', 'mv-float');
   assert.equal(calls.length, 10, '以自身當中繼點：5 段 ×（本體 + 雷鳴術）全落在唯一的敵人身上');
-  calls.forEach((call) => assert.ok(Math.abs(call.atk - 500 * 2.5) < 1e-9, '150% + 50% + 50% ＝ 250% 魔攻'));
+  calls.forEach((call) => assert.ok(Math.abs(call.atk - 500 * 2.75) < 1e-9, '165% + 55% + 55% ＝ 275% 魔攻'));
 
   const c2 = loadContext();
   const calls2 = stubHits(c2);
   setLevels(c2, 'chainlightning', [1, 1, 1, 1, 1, 0, 0]);
+  forceRolls(c2, 0.999);
   c2.castSkill2(playerEnt(), [enemy(1e9, 5 * M, 0)], 'chainlightning', 'mv-float');
   assert.equal(calls2.length, 2, '沒有雷幻身時，單一敵人只吃起手那一段（含雷鳴術追加）');
 });
 
-test('連鎖閃電 T7：雷電暴風＝三道鏈、彈射 +1、傷害 +100%', () => {
+test('連鎖閃電 T7：雷電暴風＝三道鏈、彈射 +1、傷害 +110%', () => {
   const c = loadContext();
   const calls = stubHits(c);
   const p = playerEnt();
   const es = [];
   for (let i = 0; i < 7; i++) es.push(enemy(1e9, (5 + i * 3) * M, 0));
   setLevels(c, 'chainlightning', [1, 1, 1, 1, 1, 1, 1]);
+  forceRolls(c, 0.999);
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
   // 每道鏈：6 個目標 ×（本體 + 雷鳴術）＝ 12，加 5 次彈射的擴散 ＝ 17；三道共 51
   assert.equal(calls.length, 51, '3 道 × 17 段');
-  assert.ok(Math.abs(calls[0].atk - 500 * 3.5) < 1e-9, '150% + 50% + 50% + 100% ＝ 350% 魔攻');
+  assert.ok(Math.abs(calls[0].atk - 500 * 3.85) < 1e-9, '165% + 55% + 55% + 110% ＝ 385% 魔攻');
 });
 
 test('連鎖閃電：彈射範圍外的敵人不會被跳到', () => {
@@ -273,7 +282,7 @@ test('落雷術 T1：施放當下不結算，落地才扣血；表定 2 個目�
   assert.equal(calls.length, 0, '天降打擊在落地前不得結算');
   run(c, p, es, 3);
   assert.equal(calls.length, 2, '2 道落雷、各 1 次');
-  calls.forEach((call) => assert.ok(Math.abs(call.atk - 500 * 2) < 1e-9, '200% 魔攻'));
+  calls.forEach((call) => assert.ok(Math.abs(call.atk - 500 * 2.2) < 1e-9, '220% 魔攻'));
 });
 
 test('落雷術 T2／T3：目標數與每目標次數各自追加', () => {
@@ -282,6 +291,7 @@ test('落雷術 T2／T3：目標數與每目標次數各自追加', () => {
   const p = playerEnt();
   const es = [enemy(1e9, 5 * M, 0), enemy(1e9, 9 * M, 0), enemy(1e9, 13 * M, 0), enemy(1e9, 17 * M, 0)];
   setLevels(c, 'thunderstrike', [1, 1, 1, 0, 0, 0, 0]);
+  forceRolls(c, 0.999);
   c.castSkill2(p, es, 'thunderstrike', 'mv-float');
   run(c, p, es, 3);
   assert.equal(calls.length, 6, '(2+1) 個目標 × (1+1) 次');
@@ -293,10 +303,11 @@ test('落雷術 T4：閃電增幅與本體累加', () => {
   const p = playerEnt();
   const es = [enemy(1e9, 5 * M, 0), enemy(1e9, 9 * M, 0), enemy(1e9, 13 * M, 0), enemy(1e9, 17 * M, 0)];
   setLevels(c, 'thunderstrike', [1, 1, 1, 1, 0, 0, 0]);
+  forceRolls(c, 0.999);
   c.castSkill2(p, es, 'thunderstrike', 'mv-float');
   run(c, p, es, 3);
   assert.equal(calls.length, 6, '(2+1) 個目標 × (1+1) 次');
-  assert.ok(Math.abs(calls[0].atk - 500 * 3) < 1e-9, '200% + 100% ＝ 300% 魔攻');
+  assert.ok(Math.abs(calls[0].atk - 500 * 3.3) < 1e-9, '220% + 110% ＝ 330% 魔攻');
 });
 
 test('落雷術 T5：雷電脈衝在落地後暈眩目標本身與 6 米內的 1 個敵人', () => {
@@ -333,11 +344,11 @@ test('落雷術 T6：迅雷重生會再生落雷，且夾在表定上限', () =>
   const p = playerEnt();
   const es = [enemy(1e9, 5 * M, 0)];
   setLevels(c, 'thunderstrike', [1, 1, 1, 1, 1, 1, 0]);
-  forceRolls(c, 0);           // 機率必中
+  forceRolls(c, 0);           // 機率必中（連 add 的小數部分也必中：1.1 → 2）
   c.castSkill2(p, es, 'thunderstrike', 'mv-float');
   run(c, p, es, 20);
-  // (2+1) 個目標 × (1+1) 次 ＝ 6 道；每道最多再接力 5 道
-  assert.equal(calls.length, 6 + 6 * 5, '每道落雷最多接力 5 次');
+  // (2+2) 個目標 × (1+2) 次 ＝ 12 道；每道最多再接力 5 道
+  assert.equal(calls.length, 12 + 12 * 5, '每道落雷最多接力 5 次');
 });
 
 test('落雷術 T7：次數與目標數 ×2，且暈眩中的敵人吃額外增傷', () => {
@@ -350,8 +361,8 @@ test('落雷術 T7：次數與目標數 ×2，且暈眩中的敵人吃額外增�
   c.castSkill2(p, es, 'thunderstrike', 'mv-float');
   run(c, p, es, 6);
   assert.equal(calls.length, 24, '((2+1) 目標 × (1+1) 次) × 2 × 2');
-  const boosted = calls.filter((call) => call.aCfg.totalDmgPct === 30);
-  assert.ok(boosted.length > 0, '先落的雷把人暈住後，後落的雷吃到 +30%');
+  const boosted = calls.filter((call) => call.aCfg.totalDmgPct === 33);
+  assert.ok(boosted.length > 0, '先落的雷把人暈住後，後落的雷吃到 +33%');
   assert.equal(calls[0].aCfg.totalDmgPct, 0, '第一道落雷時還沒人被暈');
 });
 
@@ -376,7 +387,7 @@ test('雷球 T1：召喚 2 顆移動場域，飛行途中按節拍打範圍，�
   assert.equal(calls.length, 0, '還沒飛到敵人身邊時打不到人（範圍只有半徑 3 米）');
   run(c, p, es, 4.5);
   assert.ok(calls.length > 0, '飛進範圍後每 0.35 秒作用一次');
-  assert.ok(Math.abs(calls[0].atk - 500 * 0.5) < 1e-9, '每拍 50% 魔攻');
+  assert.ok(Math.abs(calls[0].atk - 500 * 0.55) < 1e-9, '每拍 55% 魔攻');
   run(c, p, es, 10);
   assert.equal(c.SKILL2_RT.grounds.length, 0, '停留時間結束後消散');
 });
@@ -387,9 +398,10 @@ test('雷球 T2／T3：體積擴大與數量追加', () => {
   const p = playerEnt();
   const es = [enemy(1e9, 20 * M, 0)];
   setLevels(c, 'thunderorb', [1, 1, 1, 0, 0, 0, 0]);
+  forceRolls(c, 0.999);
   c.castSkill2(p, es, 'thunderorb', 'mv-float');
   assert.equal(c.SKILL2_RT.grounds.length, 3, '2 + 1 顆');
-  assert.ok(Math.abs(c.SKILL2_RT.grounds[0].radius - 3 * M * 1.15) < 1e-6, '半徑擴大 15%');
+  assert.ok(Math.abs(c.SKILL2_RT.grounds[0].radius - 3 * M * 1.165) < 1e-6, '半徑擴大 16.5%');
 });
 
 test('雷球 T4：環體電球是環繞場域，並掛上自己的剩餘時間狀態', () => {
@@ -416,11 +428,11 @@ test('雷球 T5：強化雷球同時作用在飛行雷球、環體電球與雷�
   forceRolls(c, 0.999);        // 關掉伴生機率，只驗傷害倍率
   c.castSkill2(p, es, 'thunderorb', 'mv-float');
   const flying = c.SKILL2_RT.grounds[0];
-  assert.ok(Math.abs(flying.dmgVal - 500 * (50 + 30) / 100) < 1e-9, '飛行雷球 50% + 30%');
-  assert.ok(Math.abs(c.SKILL2_RT.orbits[0].dmgVal - 500 * (100 + 30) / 100) < 1e-9, '環體電球 100% + 30%');
+  assert.ok(Math.abs(flying.dmgVal - 500 * (55 + 33) / 100) < 1e-9, '飛行雷球 55% + 33%');
+  assert.ok(Math.abs(c.SKILL2_RT.orbits[0].dmgVal - 500 * (110 + 33) / 100) < 1e-9, '環體電球 110% + 33%');
   run(c, p, es, 2.5);
-  const fall = calls.filter((call) => Math.abs(call.atk - 500 * (300 + 30) / 100) < 1e-9);
-  assert.ok(fall.length > 0, '雷殞天落 300% + 30%');
+  const fall = calls.filter((call) => Math.abs(call.atk - 500 * (330 + 33) / 100) < 1e-9);
+  assert.ok(fall.length > 0, '雷殞天落 330% + 33%');
 });
 
 test('雷球 T6：伴生雷球在環體電球命中處留下靜止雷球', () => {
@@ -450,7 +462,7 @@ test('雷球 T7：雷殞天落是追加（飛行雷球照常召喚），落地�
   assert.equal(c.SKILL2_RT.grounds.length, 3, '第 7 階不取代飛行雷球（2 + T3 的 1 顆）');
   assert.equal(c.SKILL2_RT.meteors.length, 2, '再追加 2 顆從天而降的巨大雷球');
   run(c, p, es, 2);
-  assert.ok(calls.some((call) => Math.abs(call.atk - 500 * (300 + 30) / 100) < 1e-9), '巨雷球 300% + 30%');
+  assert.ok(calls.some((call) => Math.abs(call.atk - 500 * (330 + 33) / 100) < 1e-9), '巨雷球 330% + 33%');
   assert.ok(c.effectActive(es[0], 'stun'), '命中地面的衝擊波擊暈敵人');
 });
 

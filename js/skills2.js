@@ -123,7 +123,9 @@ function skills2PassiveActive(gid) {
    群組欄位：name 名稱／emoji 圖標／range 初始涵蓋範圍（長*寬，米）／cd 冷卻秒數／cost 施法法力消耗
    階欄位：name 階段名稱／fx 效果參數／goldBase 升級金幣基數／goldGrow 升級金幣倍率
            （升級至下一級費用＝goldBase × goldGrow^目前等級，取整）／desc 效果說明模板
-   fx 參數命名慣例：<鍵> 為 Lv.1 基準值、<鍵>Per 為每級增量（值＝基準 + 增量×(等級-1)）。
+   fx 參數命名慣例：<鍵> 為不含升級效果的底值、<鍵>Per 為每級增量（值＝底值 + 增量×等級）。
+   Lv.1 就已經吃到 1 級升級效果，練滿＝底值 + 增量×SG_TIER_MAX_LV；表值即依此設計，
+   底值本身不是任何一個實際等級會出現的數字。
    desc 內的 {鍵} 於顯示時代入目前等級的計算值。 */
 var SKILLS2 = {
   thrust: { name: '突刺', emoji: '🗡️', range: '12*3', cd: 5, cost: 25, tiers: [{ name: '突刺', unlock: { reinc: 0, lv: 1 }, fx: { pct: 150, pctPer: 15, count: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '對前方敵人造成 {count} 次 {pct}% 物理傷害' }, { name: '連刺', unlock: { reinc: 0, lv: 1 }, fx: { chance: 25, chancePer: 2.5, count: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '有 {chance}% 的機率再次進行 {count} 次突刺' }, { name: '傷害強化', unlock: { reinc: 0, lv: 50 }, fx: { pct: 20, pctPer: 3 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化突刺傷害，額外 +{pct}% 物理傷害（與第 1 階累加）' }, { name: '超連刺', unlock: { reinc: 0, lv: 100 }, fx: { count: 3, range: 20, rangePer: 2 }, goldBase: 800000, goldGrow: 1.5, desc: '每次能進行 {count} 道平行貫穿突刺，且突刺範圍提升 {range}%' }, { name: '擴散', unlock: { reinc: 0, lv: 150 }, fx: { pct: 20, pctPer: 2, count: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '突刺造成的傷害有 {pct}% 會擴散至周圍的 {count} 個敵人' }, { name: '貫穿突刺', unlock: { reinc: 0, lv: 200 }, fx: { m: 5, mPer: 0.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '突刺會造成一直線的傷害，貫穿路徑上所有敵人，貫穿長度在原本長度上再增加 {m} 米' }, { name: '八方突刺', unlock: { reinc: 0, lv: 250 }, fx: { pct: 20, pctPer: 2, count: 3, directions: 8 }, goldBase: 5000000, goldGrow: 1.5, desc: '向八個方向同時進行 {count} 次突刺，且造成傷害額外 +{pct}%' }] },
@@ -264,9 +266,11 @@ function skills2FireballIsMeteor() {
   return !!l && l[6] > 0;
 }
 
-/* fx 參數在指定等級的值：<鍵> + <鍵>Per ×（等級-1）。等級至少以 1 計。 */
+/* fx 參數在指定等級的值：<鍵> + <鍵>Per × 等級。等級至少以 1 計。
+   <鍵> 是「不含任何升級效果」的底值：Lv.1 就已經吃到 1 級升級效果，
+   練滿 SG_TIER_MAX_LV 級＝底值 + 增量×SG_TIER_MAX_LV（設計文檔的滿級值即以此為準）。 */
 function sgVal(fx, key, lv) {
-  return (Number(fx[key]) || 0) + (Number(fx[key + 'Per']) || 0) * (Math.max(1, Number(lv) || 1) - 1);
+  return (Number(fx[key]) || 0) + (Number(fx[key + 'Per']) || 0) * Math.max(1, Number(lv) || 1);
 }
 
 /* 群組初始矩形範圍：表格 range 使用「長*寬」（米）文字格式；

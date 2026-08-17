@@ -94,8 +94,8 @@ test('魔法群組：傷害基準吃魔攻、穿透吃魔穿、本體傷害整�
   const aCfg = calls[0].aCfg;
   assert.equal(aCfg.dmgType, 'magic');
   assert.equal(aCfg.skillElem, 'fire');
-  // 火球術 Lv.1＝150% → 魔攻 500 × 150% ＝ 750（若誤吃物攻 1000 會是 1500）
-  assert.equal(Math.round(aCfg.atk), 750);
+  // 火球術 Lv.1＝165%（150 + 每級 15）→ 魔攻 500 × 165% ＝ 825（若誤吃物攻 1000 會是 1650）
+  assert.equal(Math.round(aCfg.atk), 825);
 });
 
 test('武技群組不受影響：仍是物理傷害、無屬性、吃物攻', () => {
@@ -107,7 +107,7 @@ test('武技群組不受影響：仍是物理傷害、無屬性、吃物攻', ()
   assert.ok(calls.length > 0);
   assert.equal(calls[0].aCfg.dmgType, 'phys');
   assert.equal(calls[0].aCfg.skillElem, undefined);
-  assert.equal(Math.round(calls[0].aCfg.atk), 2500); // 疾風斬 250% × 物攻 1000
+  assert.equal(Math.round(calls[0].aCfg.atk), 2700); // 疾風斬 270%（250 + 每級 20）× 物攻 1000
 });
 
 /* ---- 2) 施法距離（傷害範圍說明：射程） ---- */
@@ -167,7 +167,7 @@ test('火球術：命中目標與 6 米內敵人，範圍外不受影響', () =>
   assert.equal(hit.indexOf(out), -1);
 });
 
-test('火球術·燃燒：塗上烈焰燃燒，每跳量＝技能傷害 20%、間隔 0.5 秒', () => {
+test('火球術·燃燒：塗上烈焰燃燒，每跳量＝技能傷害 22%、間隔 0.5 秒', () => {
   const c = loadContext();
   stubHits(c);
   c.chance = () => false;
@@ -182,11 +182,11 @@ test('火球術·燃燒：塗上烈焰燃燒，每跳量＝技能傷害 20%、�
   assert.ok(dot, '應塗上 sgBurn');
   assert.equal(dot.interval, 0.5);
   assert.equal(Math.round((dot.until - c.GT) * 100) / 100, 5);
-  // 每跳量＝750（魔攻 500×150%）× 20% ＝ 150；dps＝每跳量 ÷ 間隔
-  assert.equal(Math.round(dot.dps * dot.interval), 150);
+  // 每跳量＝825（魔攻 500×165%）× 22% ＝ 181.5；dps＝每跳量 ÷ 間隔
+  assert.equal(Math.round(dot.dps * dot.interval * 100) / 100, 181.5);
 });
 
-test('火球術·強化燃燒：作用間隔縮短到 0.4 秒，每級再 -0.015 秒', () => {
+test('火球術·強化燃燒：作用間隔＝0.4 秒每級再 -0.015 秒（Lv.1 已扣 1 級）', () => {
   const c = loadContext();
   stubHits(c);
   c.chance = () => false;
@@ -198,10 +198,10 @@ test('火球術·強化燃燒：作用間隔縮短到 0.4 秒，每級再 -0.015
   finishFireball(c, p, [m]);
 
   const dot = c.sgFindDot(m, 'sgBurn');
-  assert.equal(Math.round(dot.interval * 1000) / 1000, 0.37); // 0.4 - 0.015×2
+  assert.equal(Math.round(dot.interval * 1000) / 1000, 0.355); // 0.4 - 0.015×3
 });
 
-test('火球術·火球爆裂：分裂 3 個小火球打 20 米內的其他敵人，各造成 30% 傷害', () => {
+test('火球術·火球爆裂：分裂 3 個小火球打 20 米內的其他敵人，各造成 33% 傷害', () => {
   const c = loadContext();
   const calls = stubHits(c);
   c.chance = () => false;
@@ -217,7 +217,7 @@ test('火球術·火球爆裂：分裂 3 個小火球打 20 米內的其他敵�
   finishFireball(c, p, [main, a, b, d, e]);
   finishFireball(c, p, [main, a, b, d, e], 2);
 
-  const splitCalls = calls.filter((x) => Math.round(x.aCfg.atk) === 225); // 750 × 30%
+  const splitCalls = calls.filter((x) => Math.round(x.aCfg.atk) === 272); // 825 × 33% ＝ 272.25
   assert.equal(splitCalls.length, 3, '應分裂出 3 個小火球');
   assert.equal(splitCalls.some((x) => x.ent === a), false, '20 米外不該被分裂火球選中');
 });
@@ -249,10 +249,10 @@ test('火球術·殞石術：三顆殞石、傷害與範圍改讀第 7 階、射
   // 三顆殞石各打一次主目標（本體），第 3 階分裂沒有其他敵人可選
   c2.GT = 10;
   c2.tickSkill2(0, tickCtx(c2, playerEnt(), [solo2]));
-  assert.equal(calls2.filter((x) => x.ent === solo2 && Math.round(x.aCfg.atk) === 1250).length, 3);
+  assert.equal(calls2.filter((x) => x.ent === solo2 && Math.round(x.aCfg.atk) === 1375).length, 3);
   const meteorBurn = c2.sgFindDot(solo2, 'sgBurn');
   assert.ok(meteorBurn, '殞石命中後應保留燃燒');
-  assert.equal(Math.round(meteorBurn.dps * meteorBurn.interval), 500, '殞石燃燒傷害應為 2 倍');
+  assert.equal(Math.round(meteorBurn.dps * meteorBurn.interval), 605, '殞石燃燒傷害應為 2 倍');
   assert.equal(out2._pendingProjectiles, 0, '三顆落地後才完成技能命中');
   // 射程由第 7 階改寫為 20 米
   assert.equal(c2.skills2CastRangePx('fireball', c2.skills2Levels('fireball')), c2.bfMeterPx(20));
@@ -296,7 +296,7 @@ test('殞石術：落地前不查詢範圍命中，落地時才依當下位置�
   assert.equal(calls.filter((x) => x.ent === late).length, 3, '三顆殞石落地時才應各自檢查並命中範圍內敵人');
 });
 
-test('火球術·爆燃：燃燒結束時對我方 12 米內 2 個敵人造成累積傷害的 50%', () => {
+test('火球術·爆燃：燃燒結束時對我方 12 米內 2 個敵人造成累積傷害的 55%', () => {
   const c = loadContext();
   stubHits(c);
   c.chance = () => false;
@@ -322,11 +322,11 @@ test('火球術·爆燃：燃燒結束時對我方 12 米內 2 個敵人造成�
   assert.ok(near1.hp < before[0] && near2.hp < before[1], '我方 12 米內的兩個敵人應被爆燃波及');
   assert.equal(far.hp, before[2], '12 米外不該被波及');
   const dealt = before[0] - near1.hp;
-  assert.equal(dealt, Math.max(1, Math.round(total * 0.5)));
+  assert.equal(dealt, Math.max(1, Math.round(total * 0.55)));
   assert.equal(burned._sgBurnWatch, null, '引爆後應清掉快照，不得重複引爆');
 });
 
-test('火球術·火焰增幅：燃燒每作用 1 次疊 0.25% 火傷，且掛進屬性傷害提升的唯一收斂點', () => {
+test('火球術·火焰增幅：燃燒每作用 1 次疊 0.275% 火傷，且掛進屬性傷害提升的唯一收斂點', () => {
   const c = loadContext();
   stubHits(c);
   c.chance = () => false;
@@ -339,11 +339,11 @@ test('火球術·火焰增幅：燃燒每作用 1 次疊 0.25% 火傷，且掛�
 
   c.GT = 0.5;
   c.tickSkill2(0.5, tickCtx(c, p, [m]));
-  assert.equal(Math.round(c.skill2FireAmpPct(p) * 1000) / 1000, 0.25);
+  assert.equal(Math.round(c.skill2FireAmpPct(p) * 1000) / 1000, 0.275);
 
   c.GT = 1.0;
   c.tickSkill2(0.5, tickCtx(c, p, [m]));
-  assert.equal(Math.round(c.skill2FireAmpPct(p) * 1000) / 1000, 0.5, '無限疊加：第二次作用再疊一層');
+  assert.equal(Math.round(c.skill2FireAmpPct(p) * 1000) / 1000, 0.55, '無限疊加：第二次作用再疊一層');
 
   // 掛點：js/legendary.js 的 legendaryElementDamageUp 是全專案唯一的屬性傷害提升收斂點
   const legendary = fs.readFileSync(path.join(root, 'js/legendary.js'), 'utf8');
@@ -353,7 +353,7 @@ test('火球術·火焰增幅：燃燒每作用 1 次疊 0.25% 火傷，且掛�
 
 /* ---- 4) 火柱（地板場域） ---- */
 
-test('火柱：地板場域連續 5 段、每段 60% 魔攻，打完就消失', () => {
+test('火柱：地板場域連續 5 段、每段 66% 魔攻，打完就消失', () => {
   const c = loadContext();
   const calls = stubHits(c);
   c.chance = () => false;
@@ -370,7 +370,7 @@ test('火柱：地板場域連續 5 段、每段 60% 魔攻，打完就消失', 
     c.tickSkill2(0.5, tickCtx(c, p, [m]));
   }
   assert.equal(calls.length, 5, '2.5 秒內共 5 段');
-  assert.equal(Math.round(calls[0].aCfg.atk), 300); // 魔攻 500 × 60%
+  assert.equal(Math.round(calls[0].aCfg.atk), 330); // 魔攻 500 × 66%
   assert.equal(calls[0].aCfg.skillElem, 'fire');
   assert.equal(c.SKILL2_RT.grounds.length, 0, '打完 5 段後場域消失');
 });
@@ -393,7 +393,7 @@ test('火柱：傷害範圍是目標周圍 3 米，範圍外的敵人不受影�
   assert.equal(hit.indexOf(out), -1);
 });
 
-test('火柱·雙重火柱：同時對 2 個目標施放，且火屬性傷害額外 +20%', () => {
+test('火柱·雙重火柱：同時對 2 個目標施放，且火屬性傷害額外 +22%', () => {
   const c = loadContext();
   const calls = stubHits(c);
   c.chance = () => false;
@@ -412,10 +412,10 @@ test('火柱·雙重火柱：同時對 2 個目標施放，且火屬性傷害額
   }
   const hit = calls.map((x) => x.ent);
   assert.ok(hit.indexOf(a) >= 0 && hit.indexOf(b) >= 0);
-  assert.equal(Math.round(calls[0].aCfg.atk), 400); // 魔攻 500 ×（60%＋20%）
+  assert.equal(Math.round(calls[0].aCfg.atk), 440); // 魔攻 500 ×（66%＋22%）
 });
 
-test('火柱·烈焰衝擊：場域不再追擊，消失時對周圍 6 米造成 100% 火焰傷害', () => {
+test('火柱·烈焰衝擊：場域不再追擊，消失時對周圍 6 米造成 110% 火焰傷害', () => {
   const c = loadContext();
   const calls = stubHits(c);
   const vfxEvents = [];
@@ -445,9 +445,9 @@ test('火柱·烈焰衝擊：場域不再追擊，消失時對周圍 6 米造成
   c.tickSkill2(0.5, tickCtx(c, p, [m, near, out]));
   const impactHits = calls.filter((x) => x.ent === near);
   const newNearHits = impactHits.slice(nearHitsBeforeExpire);
-  assert.equal(newNearHits.filter((x) => Math.round(x.aCfg.atk) === 600).length, 1,
+  assert.equal(newNearHits.filter((x) => Math.round(x.aCfg.atk) === 660).length, 1,
     '場域消失時應只對 6 米內敵人新增一次烈焰衝擊');
-  assert.equal(Math.round(newNearHits.at(-1).aCfg.atk), 600, '第 5 階 Lv.1 100% 應加上第 3 階火焰傷害增幅');
+  assert.equal(Math.round(newNearHits.at(-1).aCfg.atk), 660, '第 5 階 Lv.1 110% 應加上第 3 階火焰傷害增幅 22%');
   const impactVfx = vfxEvents.filter((x) => x.variant === 'firepillar-impact');
   assert.ok(impactVfx.length > 0, '烈焰衝擊應發送獨立爆炸衝擊波 VFX');
   assert.ok(impactVfx.every((x) => x.area && x.area.r === 60), '烈焰衝擊 VFX 應帶 6 米範圍');
@@ -489,9 +489,9 @@ test('火柱·無限火牆：3 道橫向 6×18 米火牆、每道 8 段，且每
   assert.equal(c.SKILL2_RT.grounds.length, 3);
   assert.equal(c.SKILL2_RT.grounds[0].kind, 'wall');
   assert.equal(c.SKILL2_RT.grounds[0].hitsLeft, 8);
-  // 第 2 階【強化火柱】的範圍擴大 10% 對火牆一樣生效（設計文檔：2~6 階效果仍然生效）
-  assert.equal(Math.round(c.SKILL2_RT.grounds[0].length), Math.round(c.bfMeterPx(18) * 1.1));
-  assert.equal(Math.round(c.SKILL2_RT.grounds[0].width), Math.round(c.bfMeterPx(6) * 1.1));
+  // 第 2 階【強化火柱】的範圍擴大 12% 對火牆一樣生效（設計文檔：2~6 階效果仍然生效）
+  assert.equal(Math.round(c.SKILL2_RT.grounds[0].length), Math.round(c.bfMeterPx(18) * 1.12));
+  assert.equal(Math.round(c.SKILL2_RT.grounds[0].width), Math.round(c.bfMeterPx(6) * 1.12));
   assert.equal(c.SKILL2_RT.grounds[0].respawnLeft, 1);
 
   // 火牆橫向＝與我方視線垂直：與主目標同 x、y 相差 80（8 米）者落在 18 米長度內；
