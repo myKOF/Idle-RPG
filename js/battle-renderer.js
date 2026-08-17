@@ -1516,6 +1516,17 @@ var BattleRenderer = (function () {
     return node;
   }
 
+  /* 投射物的拋物線離地最高點（像素）。模擬層帶 arcM（米）時換算成世界單位，
+     否則沿用原本所有投射物共用的 18px 微弧。 */
+  var PROJECTILE_DEFAULT_ARC_PX = 18;
+  function projectileArcPx(spec) {
+    var m = Number(spec && spec.arcM);
+    if (!(m > 0)) return PROJECTILE_DEFAULT_ARC_PX;
+    var perM = (typeof BF_SYSTEM_UNITS_PER_METER === 'number' && BF_SYSTEM_UNITS_PER_METER > 0)
+      ? BF_SYSTEM_UNITS_PER_METER : 10;
+    return m * perM;
+  }
+
   function spawnProjectile(targetId, travelMs, spec, onArrive, fromOverride) {
     var theme = themeOf(spec);
     var from = fromOverride || playerMuzzle();
@@ -1558,9 +1569,11 @@ var BattleRenderer = (function () {
         var targetNow = posOf(targetId);
         var to = projectileTargetPoint(targetId, Math.max(0, dur - t));
         node.x = lerp(from.x, to.x, k);
-        /* 火球術依使用者要求走真正直線；其他投射物保留原本的微弧線。 */
+        /* 火球術依使用者要求走真正直線；其他投射物保留原本的微弧線。
+           水流彈的拋物線高度由模擬層的表定值決定（spec.arcM，米）——弧高是設計數值，
+           顯示層不得自己挑一個固定 px（AI_RULES 8.3）。沒帶 arcM 就沿用原本的 18px 微弧。 */
         node.y = lerp(from.y, to.y, k) -
-          (isSmallFireball ? 0 : Math.sin(k * Math.PI) * 18);
+          (isSmallFireball ? 0 : Math.sin(k * Math.PI) * projectileArcPx(spec));
         node.rotation = Math.atan2(to.y - from.y, to.x - from.x);
         if (core && core._flameUpdate) core._flameUpdate(dt);
         if (core && core._fireballUpdate) core._fireballUpdate(dt);
@@ -2468,6 +2481,131 @@ var BattleRenderer = (function () {
         return true;
       }
     }, 2, MIRE_POOL_MAX_LIFE_SEC * 1000);
+    return fx;
+  }
+
+  /* ---- 冰系場域（2026-08-17 冰系三群組）----
+     三種形態全部以模擬層送來的 area 為唯一錨點（不用棋盤格 rect），因此畫面範圍與
+     實際判定範圍恆等（AI_RULES 8.3：不得由表現層自行挑一個固定尺寸）：
+       暴風雪   blizzard          矩形雲霧＋落雪，跟隨我方（模擬層每拍送新座標，顯示層內插）
+       水龍捲   water-tornado     圓形漏斗，釘在地板
+       追蹤冰箭 ice-arrow-homing  小圓冰晶，持續移動（模擬層每 0.1 秒送新座標）
+     同一個 area.id 只保留一個節點、每次事件續命——與沼澤／雷球同一套合併規則，
+     否則長效場域每個節拍都會新增一個節點。 */
+  var _iceFieldFx = Object.create(null);
+  var ICE_FIELD_MAX_LIFE_SEC = 14;
+  var ICE_FIELD_THEME = { c1: '#7dd3fc', c2: '#e0f2fe', glow: '#22d3ee' };
+
+  function spawnIceField(spec) {
+    var a = spec && spec.area;
+    if (!a || !isFinite(a.x) || !isFinite(a.y)) return null;
+    var variant = spec.variant;
+    var isRect = (variant === 'blizzard');
+    var w = isRect ? Math.max(24, Number(a.w) || 120) : Math.max(10, (Number(a.r) || 30) * 2);
+    var h = isRect ? Math.max(24, Number(a.h) || 120) : w;
+    var key = (a.id || [Math.round(a.x), Math.round(a.y)].join(':')) + ':' + variant;
+    var holdMs = Math.max(520, Number(spec.dur || 0.4) * 2400);
+    var motionSec = fieldVfxMotionSec(spec, 0.4);
+    var current = _iceFieldFx[key];
+    if (current && !current.dead && current.node && !current.node.destroyed) {
+      fieldVfxSetTarget(current, Number(a.x), Number(a.y), w, h, motionSec);
+      current.expiresAt = nowMs() + holdMs;
+      return current;
+    }
+    var node = new PIXI.Container();
+    var g = new PIXI.Graphics();
+    node.addChild(g);
+    // 暴風雪是壟罩地面的雲霧 → zone 層；水龍捲與冰箭是立體物件 → fx 層
+    (isRect ? S.layers.zone : S.layers.fx).addChild(node);
+    var fx = {
+      node: node, x: Number(a.x), y: Number(a.y), w: w, h: h,
+      variant: variant, t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false,
+      motionFromX: Number(a.x), motionFromY: Number(a.y), motionFromW: w, motionFromH: h,
+      motionToX: Number(a.x), motionToY: Number(a.y), motionToW: w, motionToH: h,
+      motionT: 1, motionDur: 1
+    };
+    _iceFieldFx[key] = fx;
+    var flakeAt = 0;
+    var c1 = cssColorToInt(ICE_FIELD_THEME.c1, 0x7dd3fc);
+    var c2 = cssColorToInt(ICE_FIELD_THEME.c2, 0xe0f2fe);
+    var glow = cssColorToInt(ICE_FIELD_THEME.glow, 0x22d3ee);
+
+    addFx({
+      node: node,
+      update: function (dt) {
+        fx.t += dt;
+        fieldVfxStep(fx, dt);
+        node.x = fx.x; node.y = fx.y; node.rotation = 0;
+        var left = fx.expiresAt - nowMs();
+        var fade = left < 420 ? Math.max(0, left / 420) : 1;
+        var phase = fx.t * 2.2;
+        g.clear();
+
+        if (fx.variant === 'blizzard') {
+          /* 藍色雲霧壟罩：地面判定是正方形，顯示比照沼澤壓低高度畫成橫向長方形，
+             才不會看起來像一塊立起來的板子。 */
+          var visualH = Math.max(20, fx.h * MIRE_VISUAL_HEIGHT_RATIO);
+          var rx = fx.w * 0.5, ry = visualH * 0.5;
+          g.rect(-rx, -ry, fx.w, visualH).fill({ color: c1, alpha: 0.2 * fade });
+          g.rect(-rx, -ry, fx.w, visualH).stroke({ width: 3, color: glow, alpha: 0.5 * fade });
+          // 橫向飄動的雲層：固定波形，避免逐幀閃爍
+          for (var ci = 0; ci < 3; ci++) {
+            var cy = -ry * 0.5 + ci * ry * 0.5;
+            var path = g.moveTo(-rx * 0.86, cy);
+            for (var si = 1; si <= 7; si++) {
+              path = path.lineTo(-rx * 0.86 + fx.w * 0.123 * si,
+                cy + Math.sin(phase * 0.7 + ci * 1.6 + si * 0.9) * ry * 0.12);
+            }
+            path.stroke({ color: c2, width: 2, alpha: 0.34 * fade });
+          }
+          // 持續降下的冰雪粒子（以固定相位＋落下量表示，不隨幀率改變密度）
+          for (var fi = 0; fi < 10; fi++) {
+            var fxx = (Math.sin(fi * 2.7) * 0.5) * fx.w * 0.92;
+            var fall = (fx.t * (26 + fi * 3) + fi * 23) % Math.max(1, visualH);
+            var fyy = -ry + fall;
+            g.circle(fxx, fyy, 1.6 + (fi % 3) * 0.7).fill({ color: c2, alpha: 0.6 * fade });
+          }
+        } else if (fx.variant === 'water-tornado') {
+          /* 水龍捲：由下往上收窄的漏斗，以同心橢圓堆疊表示旋轉。 */
+          var tr = fx.w * 0.5;
+          g.circle(0, 0, tr).fill({ color: c1, alpha: 0.14 * fade });
+          g.circle(0, 0, tr).stroke({ width: 2, color: glow, alpha: 0.5 * fade });
+          for (var li = 0; li < 5; li++) {
+            var u = li / 5;
+            var lr = tr * (1 - u * 0.72);
+            var ly = -tr * 1.5 * u;
+            var spin = phase * 1.6 + li * 0.8;
+            g.ellipse(Math.cos(spin) * lr * 0.16, ly, lr, lr * 0.34)
+              .stroke({ width: 2.4, color: li % 2 ? c2 : glow, alpha: (0.62 - u * 0.3) * fade });
+          }
+        } else {
+          /* 追蹤冰箭：小顆冰晶＋尾焰光暈；體積就是模擬層的接觸半徑。 */
+          var ar = Math.max(5, fx.w * 0.5);
+          g.circle(0, 0, ar * 1.7).fill({ color: c1, alpha: 0.18 * fade });
+          g.circle(0, 0, ar).fill({ color: c2, alpha: 0.8 * fade });
+          g.circle(0, 0, ar).stroke({ width: 1.6, color: glow, alpha: 0.85 * fade });
+          for (var si2 = 0; si2 < 4; si2++) {
+            var sa = phase * 2.4 + si2 * Math.PI / 2;
+            g.moveTo(Math.cos(sa) * ar * 0.5, Math.sin(sa) * ar * 0.5)
+              .lineTo(Math.cos(sa) * ar * 1.8, Math.sin(sa) * ar * 1.8)
+              .stroke({ width: 1.4, color: c2, alpha: 0.55 * fade });
+          }
+        }
+
+        flakeAt += dt;
+        if (!REDUCED_MOTION && flakeAt > 0.3 && fade > 0.4) {
+          flakeAt = 0;
+          spawnParticles(fx.x + (Math.random() - 0.5) * fx.w * 0.6,
+            fx.y + (Math.random() - 0.5) * fx.h * 0.4, 2, ICE_FIELD_THEME, 0.8, 0.5);
+        }
+        if (nowMs() >= fx.expiresAt) {
+          fx.dead = true;
+          if (_iceFieldFx[key] === fx) delete _iceFieldFx[key];
+          return false;
+        }
+        return true;
+      }
+    }, 2, ICE_FIELD_MAX_LIFE_SEC * 1000);
     return fx;
   }
 
@@ -3508,6 +3646,8 @@ var BattleRenderer = (function () {
         else if (spec.variant === 'thunder-orb') spawnThunderOrbField(spec);
         else if (spec.variant === 'firewall') spawnFireWall(spec);
         else if (spec.variant === 'mire' || spec.variant === 'mire-lava' || spec.variant === 'mire-poison' || spec.variant === 'mire-lava-poison') spawnMirePool(spec);
+        else if (spec.variant === 'blizzard' || spec.variant === 'water-tornado' ||
+                 spec.variant === 'ice-arrow-homing') spawnIceField(spec);
         else if (spec.variant === 'cyclone') spawnCyclone(rect, spec);
         else if (spec.variant === 'bladestorm') spawnBladestorm(rect, spec);
         else spawnAura(rect, spec);

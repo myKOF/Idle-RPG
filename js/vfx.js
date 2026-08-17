@@ -65,6 +65,8 @@ var _vfxMirePools = Object.create(null);
 var VFX_MIRE_POOL_LIFE_MS = 3600;
 var _vfxThunderOrbs = Object.create(null);
 var VFX_THUNDER_ORB_LIFE_MS = 3600;
+var _vfxIceFields = Object.create(null);
+var VFX_ICE_FIELD_LIFE_MS = 3600;
 
 /* 版面快取的版本號只在尺寸、頁籤或戰鬥場景變動時遞增。
    座標函式用這個版本判斷快取是否仍可用，避免每個特效都重新量測整個 DOM。 */
@@ -169,6 +171,7 @@ function vfxClear() {
   _vfxFireWalls = Object.create(null);
   _vfxMirePools = Object.create(null);
   _vfxThunderOrbs = Object.create(null);
+  _vfxIceFields = Object.create(null);
   if (typeof document === 'undefined' || !document.querySelectorAll) return;
   var hitCards = document.querySelectorAll('.enemy-card, .combatant');
   for (var ci = 0; ci < hitCards.length; ci++) {
@@ -906,6 +909,16 @@ function vfxBarrageProjectile(spec, layer, from, to, side, lane, delayMs, travel
   frame();
 }
 
+/* 投射物的拋物線離地最高點（畫面單位）：模擬層帶 arcM（米）才走拋物線，
+   沒帶就回 0 ＝維持既有的直線／微弧畫法。 */
+function vfxProjectileArcPx(spec) {
+  var m = Number(spec && spec.arcM);
+  if (!(m > 0)) return 0;
+  var perM = (typeof BF_SYSTEM_UNITS_PER_METER === 'number' && BF_SYSTEM_UNITS_PER_METER > 0)
+    ? BF_SYSTEM_UNITS_PER_METER : 10;
+  return Math.round(m * perM);
+}
+
 function vfxProjectile(spec, layer, from, to, delayMs, travelMs) {
   /* 火球術使用一般的我方→敵方直線；殞石術的 60° 天降路徑由 vfxMeteor
      獨立處理，避免兩種火焰技能共用錯誤的進場方向。 */
@@ -914,7 +927,12 @@ function vfxProjectile(spec, layer, from, to, delayMs, travelMs) {
   var dx = to.x - fromPt.x, dy = to.y - fromPt.y;
   var projClass = vfxProjectileCls(spec);
   var smallFireball = spec.variant === 'fireball-small' || spec.variant === 'fireball';
-  var d = vfxNode('vfx-proj ' + projClass + (smallFireball ? ' vfx-proj-fireball-small' : ''), layer, spec);
+  /* 拋物線投射物（水流彈）：離地最高點是模擬層的表定值（spec.arcM，米），
+     換算成畫面單位後交給 CSS——顯示層不得自己挑一個固定弧高（AI_RULES 8.3）。 */
+  var arcPx = vfxProjectileArcPx(spec);
+  var d = vfxNode('vfx-proj ' + projClass + (smallFireball ? ' vfx-proj-fireball-small' : '') +
+    (arcPx > 0 ? ' vfx-proj-arc' : ''), layer, spec);
+  if (arcPx > 0) d.style.setProperty('--vfx-arc', arcPx + 'px');
   d.style.setProperty('--vfx-x0', fromPt.x + 'px');
   d.style.setProperty('--vfx-y0', fromPt.y + 'px');
   d.style.setProperty('--vfx-x1', to.x + 'px');
@@ -1498,6 +1516,65 @@ function vfxThunderOrb(spec, layer, area, rect) {
   return node;
 }
 
+/* 冰系場域（新版技能 icearrow／waterball／frostnova）：暴風雪、水龍捲、追蹤冰箭。
+   與沼澤／雷球同為「按 area.id 合併、每次 tick 續命」的長駐節點。
+   三者的差別只在形狀與內容元素：
+     暴風雪   矩形（貼地壓成 52% 高，比照沼澤）＋落雪粒子，跟隨我方 → 每次事件都要內插新座標
+     水龍捲   圓形漏斗，釘在地板
+     追蹤冰箭 小圓冰晶，持續移動 → 同樣靠內插跟上模擬層座標 */
+function vfxIceField(spec, layer, area, rect) {
+  if (!rect || !isFinite(rect.x) || !isFinite(rect.y)) return null;
+  var variant = spec && spec.variant;
+  var isRect = (variant === 'blizzard');
+  var w, h, visualH;
+  if (isRect) {
+    w = Math.max(48, Number(rect.w) || 120);
+    h = Math.max(48, Number(rect.h) || 120);
+    visualH = Math.max(24, h * VFX_MIRE_VISUAL_HEIGHT_RATIO);
+  } else {
+    w = h = Math.max(variant === 'ice-arrow-homing' ? 16 : 40, (Number(area && area.r) || 30) * 2);
+    visualH = h;
+  }
+  var cx = (Number(rect.x) || 0) + (Number(rect.w) || 0) / 2;
+  var cy = (Number(rect.y) || 0) + (Number(rect.h) || 0) / 2;
+  var x = cx - w / 2, y = cy - h / 2;
+  var key = (area && area.id ? String(area.id) : [Math.round(x), Math.round(y)].join(':')) + ':' + variant;
+  var ttl = Math.max(700, Number(spec.dur || 0.4) * 2400);
+  var node = _vfxIceFields[key];
+  if (node && node.parentNode === layer) {
+    vfxFieldMotionSet(node, x, y, w, h, vfxFieldMotionSec(spec, 0.4));
+    node._vfxExpiresAt = Date.now() + ttl;
+    return node;
+  }
+  var cls = (variant === 'blizzard') ? 'vfx-blizzard'
+    : ((variant === 'water-tornado') ? 'vfx-water-tornado' : 'vfx-ice-homing');
+  node = vfxNode('vfx-field-motion', layer, null);
+  node._vfxFieldVisual = vfxFieldVisual(node, cls, spec, w, visualH);
+  vfxFieldMotionSet(node, x, y, w, h, 0);
+  var pieces = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 6;
+  for (var i = 0; i < pieces; i++) {
+    var piece = document.createElement('span');
+    if (variant === 'blizzard') {
+      piece.className = 'vfx-blizzard-flake';
+      piece.style.setProperty('--vfx-flake-x', (8 + (84 * (i + 0.5) / pieces)).toFixed(1) + '%');
+      piece.style.setProperty('--vfx-flake-delay', (-i * 0.28).toFixed(2) + 's');
+    } else if (variant === 'water-tornado') {
+      piece.className = 'vfx-tornado-ring';
+      piece.style.setProperty('--vfx-tornado-scale', (1 - i * 0.14).toFixed(2));
+      piece.style.setProperty('--vfx-tornado-lift', (-i * 16).toFixed(0) + '%');
+      piece.style.setProperty('--vfx-tornado-delay', (-i * 0.16).toFixed(2) + 's');
+    } else {
+      if (i >= 4) break;   // 冰晶只需要四道尖刺
+      piece.className = 'vfx-ice-shard';
+      piece.style.setProperty('--vfx-shard-rot', (i * 90).toFixed(0) + 'deg');
+    }
+    node._vfxFieldVisual.appendChild(piece);
+  }
+  _vfxIceFields[key] = node;
+  vfxTrack(node, VFX_ICE_FIELD_LIFE_MS);
+  return node;
+}
+
 /* 預設天降：範圍內落下數道元素雨；沒有 meteor／pillar／smite 專屬畫法時使用。 */
 function vfxRainDrops(spec, layer, rect) {
   var drops = Math.min(6, Math.max(3, Math.round(rect.w / 60)));
@@ -2039,6 +2116,8 @@ function renderCombatVfx(spec) {
       else if (s.variant === 'firewall') vfxFireWall(s, layer, spec.area, rect);
       else if (s.variant === 'mire' || s.variant === 'mire-lava' || s.variant === 'mire-poison' || s.variant === 'mire-lava-poison') vfxMirePool(s, layer, spec.area, rect);
       else if (s.variant === 'thunder-orb') vfxThunderOrb(s, layer, spec.area, rect);
+      else if (s.variant === 'blizzard' || s.variant === 'water-tornado' ||
+               s.variant === 'ice-arrow-homing') vfxIceField(s, layer, spec.area, rect);
       else vfxAura(s, layer, rect);
       return;
     }

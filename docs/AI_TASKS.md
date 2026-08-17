@@ -4138,3 +4138,73 @@ Commit：
 未完成項目：無程式項目；待主整合處理 `index.html` 快取版本與 Antigravity 修改的合併。
 
 完成後交給：使用者／主整合工作區。
+## 任務：實作冰系三大新技能（寒冰箭／水流彈／冰霜新星）
+
+任務狀態：已完成（2026-08-17）
+
+任務分類：新技能實作／戰鬥機制／狀態系統／戰鬥 VFX
+
+負責 AI：Claude
+
+使用者需求：設計文檔（線上試算表「技能」頁籤〈魔法〉區塊）新增三個魔法技能
+「寒冰箭」「水流彈」「冰霜新星」，共 21 階，全部為魔法傷害／寒冰屬性。
+
+任務內容：新增三個技能群組與其執行期機制；引擎新增四個群組共用能力
+（寒霜狀態與通用緩速收斂點、敵人屬性標籤強制改寫與單一屬性受傷增幅、
+跟隨我方的地板場域、追擊場域＋接觸判定）；新增寒霜／寒霜凍傷／凍結／寒冰逆轉
+四筆狀態；補上暴風雪、水龍捲、追蹤冰箭三種場域與水流彈拋物線的 Canvas／DOM 兩套畫法。
+
+使用者決策（實作前確認）：
+- 【寒霜狀態】的持續傷害不隨層數提高：層數只累積移動與攻速下降，疊滿才凍結
+  （因此寒霜拆成 sgFrost 層數／緩速 與 sgFrostBite 傷害 兩筆狀態）
+- 【凍結】走既有控場管線：BOSS 控場免疫、韌性折減、控場遞減全部適用
+
+實作判斷（文檔未明寫，依既有先例決定）：
+- 【水龍捲】【暴風雪】文檔未寫「改為」→ 為追加（比照雷殞天落的既有決策）
+- 【貫穿冰箭】的貫穿長度以「打得到主目標」為地板（比照泥沼術持續時間取 max，
+  避免升級變成降級）
+- 【冰霜衝擊】的 13 米同樣以 max 為地板
+- 設計文檔筆誤：【寒流彈】與【寒流爆散】都標 3 階、其後跳到 5 階
+  → 判定【寒流爆散】為第 4 階
+
+允許修改：
+
+- `config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`
+- `config/Excel/Status.xlsx`、`config/CSV/Status.csv`
+- `js/skills2.js`、`js/status.js`、`js/combat.js`、`js/formula.js`、`js/battlefield.js`
+- `js/vfx.js`、`js/battle-renderer.js`、`css/style.css`
+- `index.html`、`js/bridge.js`、`js/worker/sim.worker.js`
+- `tests/skill2-ice.test.cjs`（新增）、`tests/skill2-vfx.test.cjs`、`tests/skill2-system.test.cjs`
+- `docs/AI_TASKS.md`、`PATCH.md`
+
+禁止修改：既有技能群組的數值與效果、存檔格式、Worker Protocol、無關 UI／VFX、無關戰鬥公式。
+
+前置依賴：新版技能系統（SKILLS2）與其地板場域／環繞場域／天降佇列／移動場域基建已存在；
+衝突預檢（`.claude/check-conflicts.ps1`）對 13 支目標檔案退出碼 0，無其他副本或分支的修改。
+
+測試要求：新增技能定向測試、完整 `npm test` 與乾淨基準線逐項比對、`npm run build`、
+`config_tables --apply` dry-run 語意變更 0、`apply_params` 三項檢查、
+`index.html` 與 Worker 快取版號同步。
+
+完成條件：三個群組可由程式測試驗證、資料與說明同步、建立 Claude commit。
+
+驗證結果：新增 `tests/skill2-ice.test.cjs` 34 項全通過；`tests/skill2-vfx.test.cjs` 18 項全通過
+（新增 2 項冰系特效接線）；完整 `npm test` 1562 項 / 1558 通過 / 4 失敗，
+與同一 commit 的乾淨基準線（1526 項 / 1522 通過 / 4 失敗）**失敗項目與原因逐字相同**；
+`node tools/build_check.cjs` 290/290 通過；`config_tables --apply` 對 Skills2 與 Status
+皆語意變更 0；`apply_params` 試跑「將變更 0、錨點問題 0」、對應參數總數 554 與基準線一致、
+`--check-anchors` 554 個錨點各命中一次。
+
+已知風險：
+- 完整測試的 4 項失敗全部是**既有**的參數表漂移（`counter` 施法消耗、`bloodrage`、
+  泥沼術範圍兩項），與本任務無關，已於乾淨副本逐項重現並比對失敗訊息。
+- 寒霜疊滿 5 層＝緩速 100%，沿用既有 95% 夾限（與泥沼同一條規則），
+  等於 BOSS 也會被壓到 -95% 攻速與移速。這是文檔字面值（每層 -20% × 5 層）的直接結果；
+  要調整只需改 `config/Excel/Status.xlsx` 的 `sgFrost` 單層值（引擎不寫死）。
+- 三種新特效與水流彈拋物線尚未實機目視確認：程式面已由原始碼定向測試守住
+  Canvas 與 DOM 兩條路徑的接線與參數傳遞，但畫面表現需實機檢查。
+
+未完成項目：暴風雪、水龍捲、追蹤冰箭三種場域與水流彈拋物線的實機目視確認
+（建議交由 Antigravity 依 SKILL_TEST_SPEC 執行）。
+
+完成後交給：使用者／主整合工作區。

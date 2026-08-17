@@ -47,11 +47,14 @@ function bfContactDist() { return bfNum('BF_CONTACT_DIST', 46); }     // 走到�
 function bfPlayerSpeed() { return bfNum('BF_PLAYER_SPEED', 300); }
 /* 敵人跑速是獨立的值，不由我方換算——兩邊要能分開調。 */
 function bfEnemySpeed() { return bfNum('BF_ENEMY_SPEED', 210); }
-/* 單一敵人的跑速倍率：目前唯一來源是新版技能【泥沼術】的緩速（js/skills2.js）。
+/* 單一敵人的跑速倍率：來源是新版技能的場域型緩速（泥沼術×冰系寒霜，
+   收斂在 js/skills2.js 的 skill2SlowMoveFactor）。
    本檔不認識任何技能，只認得「有沒有人提供倍率」——沒載入就恆為 1。 */
 function bfEnemySpeedFactor(ent) {
-  if (typeof skill2MoveSlowFactor !== 'function') return 1;
-  var f = Number(skill2MoveSlowFactor(ent));
+  var src = (typeof skill2SlowMoveFactor === 'function') ? skill2SlowMoveFactor
+    : ((typeof skill2MoveSlowFactor === 'function') ? skill2MoveSlowFactor : null);
+  if (!src) return 1;
+  var f = Number(src(ent));
   return (isFinite(f) && f > 0) ? Math.min(1, f) : 1;
 }
 function bfMeleeRange() { return bfNum('BF_MELEE_RANGE', 50); }       // 近戰攻擊距離

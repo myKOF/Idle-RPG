@@ -569,11 +569,13 @@ var BASE_HP_REGEN_PCT = 2;  // 野外每秒基礎生命回復（最大生命 %�
    2026-08 之前這裡是「擊殺回復 12%」，每擊殺一隻觸發；改為整波清空才回復一次。 */
 var WAVE_CLEAR_HEAL_PCT = 12;
 
-/* 攻擊冷卻累積倍率：舊的 slow 控場（固定 -30%）× 新版技能【泥沼術】的可變緩速。
+/* 攻擊冷卻累積倍率：舊的 slow 控場（固定 -30%）× 新版技能的場域型可變緩速
+   （泥沼術【泥沼緩速】×冰系【寒霜】，收斂在 skill2SlowAspdFactor）。
    兩者是不同機制（控場 vs. 場域減益），故相乘而非取其一。 */
 function slowFactor(ent) {
   var f = effectActive(ent, 'slow') ? SLOW_ASPD_FACTOR : 1;
-  if (typeof skill2MireAspdFactor === 'function') f *= skill2MireAspdFactor(ent);
+  if (typeof skill2SlowAspdFactor === 'function') f *= skill2SlowAspdFactor(ent);
+  else if (typeof skill2MireAspdFactor === 'function') f *= skill2MireAspdFactor(ent);
   return f;
 }
 

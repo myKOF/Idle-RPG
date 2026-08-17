@@ -439,8 +439,60 @@ test('殞石術與雷殞天落在落地前顯示對應顏色的目標提示圈',
   assert.match(css, /\.vfx-target-telegraph-lightning\s*\{[\s\S]*?rgba\(37, 99, 235, 0\.18\)/);
   assert.doesNotMatch(css, /\.vfx-target-telegraph-ring/);
   assert.match(css, /@keyframes vfxTargetTelegraph/);
-  assert.match(index, /css\/style\.css\?v=1\.0\.41/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.39/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.68/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.36/);
+  assert.match(index, /css\/style\.css\?v=1\.0\.42/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.40/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.69/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.37/);
+});
+
+/* 冰系三群組（2026-08-17 第七批）：三種新場域與拋物線水彈的兩條渲染路徑都要接上，
+   且尺寸／弧高一律沿用模擬層送來的語意參數（AI_RULES 8.3）。 */
+test('冰系特效：暴風雪／水龍捲／追蹤冰箭在 Canvas 與 DOM 兩條路徑都有畫法', () => {
+  const vfx = fs.readFileSync(path.join(root, 'js/vfx.js'), 'utf8');
+  const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
+  const skills2 = fs.readFileSync(path.join(root, 'js/skills2.js'), 'utf8');
+
+  // 模擬層：三種場域各自的變體名稱
+  assert.match(skills2, /variant: 'blizzard'/);
+  assert.match(skills2, /variant: 'water-tornado'/);
+  assert.match(skills2, /variant: 'ice-arrow-homing'/);
+
+  // Canvas：aura 分派表接上 spawnIceField，且以 area 為錨點（不是棋盤格 rect）
+  assert.match(renderer, /function spawnIceField\(spec\)/);
+  assert.match(renderer, /spec\.variant === 'blizzard' \|\| spec\.variant === 'water-tornado' \|\|[\s\S]{0,80}spawnIceField\(spec\)/);
+  assert.match(renderer, /function spawnIceField[\s\S]*?var a = spec && spec\.area;/);
+
+  // DOM：aura 分派表接上 vfxIceField，且節點按 area.id 合併
+  assert.match(vfx, /function vfxIceField\(spec, layer, area, rect\)/);
+  assert.match(vfx, /s\.variant === 'blizzard' \|\| s\.variant === 'water-tornado' \|\|[\s\S]{0,90}vfxIceField\(s, layer, spec\.area, rect\)/);
+  assert.match(vfx, /_vfxIceFields\[key\] = node;/);
+  // 場景切換時必須一併清掉，否則場域節點會殘留
+  assert.match(vfx, /_vfxIceFields = Object\.create\(null\);[\s\S]{0,400}?querySelectorAll/);
+
+  assert.match(css, /\.vfx-blizzard\s*\{/);
+  assert.match(css, /\.vfx-water-tornado\s*\{/);
+  assert.match(css, /\.vfx-ice-homing\s*\{/);
+  assert.match(css, /@keyframes vfxBlizzardFall/);
+});
+
+test('冰系特效：水流彈的拋物線弧高由模擬層的表定值決定', () => {
+  const vfx = fs.readFileSync(path.join(root, 'js/vfx.js'), 'utf8');
+  const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
+  const skills2 = fs.readFileSync(path.join(root, 'js/skills2.js'), 'utf8');
+
+  // 事件必須帶得出 arcM（表定 8 米），而不是讓顯示層自己挑固定弧高
+  assert.match(skills2, /if \(extra && extra\.arcM > 0\) spec\.arcM = Number\(extra\.arcM\);/);
+  assert.match(skills2, /arcM: cfg\.arcM/);
+  assert.match(skills2, /arcM: 8/);
+
+  // Canvas：弧高換算成世界單位後餵進拋物線
+  assert.match(renderer, /function projectileArcPx\(spec\)/);
+  assert.match(renderer, /Math\.sin\(k \* Math\.PI\) \* projectileArcPx\(spec\)/);
+  // DOM：弧高寫進 CSS 變數，並改用拋物線 keyframe
+  assert.match(vfx, /function vfxProjectileArcPx\(spec\)/);
+  assert.match(vfx, /d\.style\.setProperty\('--vfx-arc', arcPx \+ 'px'\)/);
+  assert.match(css, /@keyframes vfxFlyArc/);
+  assert.match(css, /var\(--vfx-arc, 18px\)/);
 });

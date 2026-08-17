@@ -36,6 +36,20 @@
          改為帶 gid／特效變體／每目標傷害加成／落地回呼，落雷術與雷殞天落共用同一條時間軸
      12. 環繞場域泛用化（sgSpawnOrbitField 的 statusId／hitVfx／onStrike）：
          狀態鍵、命中特效與命中回呼改由呼叫端指定，環體電球與火狩共用同一套接觸判定
+   （2026-08-17 第七批追加＝冰系三群組：icearrow 寒冰箭／waterball 水流彈／
+    frostnova 冰霜新星。帶進第十三～第十六個群組共用能力，同樣是引擎收斂點：
+     13. 寒霜狀態（sgApplyFrost／sgFrostStacks／sgTickFrost）：可疊層的緩速兼持續傷害，
+         疊滿層數即凍結（凍結的行動限制沿用暈眩管線，因此完整吃 BOSS 免疫與控場遞減）。
+         同時把「場域型緩速」收斂成 skill2SlowAspdFactor／skill2SlowMoveFactor 兩支，
+         formula.js 與 battlefield.js 從此只認得通用緩速一個掛點（泥沼與寒霜相乘）
+     14. 敵人屬性標籤強制改寫（skill2ForcedAttr，掛 combat.js monsterDefCfg 的 attr 欄）
+         ＋單一屬性的受傷增幅（skill2IceAmpACfg，掛 resolveHit 既有的 skillElemAmp 乘區，
+         與 totalDmgPct 分開，才不會把同一次攻擊的其他屬性段一起放大）
+     15. 跟隨我方的地板場域（sgSpawnGround 的 follow）：圓心恆等於玩家當下座標，
+         與環繞場域同一種錨定方式，差別只在形狀是地板矩形（暴風雪）
+     16. 追擊場域（sgSpawnGround 的 chaseM ＋ contact）：抵達落點後改鎖範圍內的隨機敵人
+         繼續飛，並採環繞場域的接觸判定（進入才算一次命中），追蹤冰箭因此不必另寫
+         模擬迴圈，也不會退化成「每個節拍都全額命中」
 
    ---- 設計文檔用語對照（2026-08-17 補列於文檔上方）----
    物理傷害／火焰傷害／寒冰傷害／地系傷害／風系傷害（未實裝）／雷電傷害／毒性傷害／
@@ -87,6 +101,10 @@ var SG_METEOR_MAX_TRAVEL_MS = (typeof VFX_METEOR_RAW_TRAVEL_MS === 'number' && V
    這個上限只是防呆（環繞體數量若失控，每個 tick 的接觸判定會跟著失控）。 */
 var SG_ORBIT_MAX_ORBS = 32;
 var SG_ORBIT_VFX_REFRESH_SEC = 2;   // 持續時間被【再生】延長多久才值得補送一次環繞特效
+/* 同一次施放丟出多顆／多次時，各發之間的錯開時間（純顯示節奏；傷害在施放當下就結算完畢，
+   延遲只用在飄字與特效的 delayMs，比照殞石的 SG_METEOR_INTERVAL_MS）。 */
+var SG_WATERBALL_VOLLEY_MS = 220;   // 【三重流水】的第 2 顆之後每顆再錯開多久
+var SG_FROSTNOVA_VOLLEY_MS = 260;   // 【三重新星】的第 2 次之後每次再錯開多久
 
 /* 殞石的傷害時刻必須和落地時刻相同：先算天空到地面的距離，
    再除以殞石實際落下速度；travelMs 是顯示層套用 0.70 慢速倍率前的時間。 */
@@ -144,7 +162,10 @@ var SKILLS2 = {
   earthguard: { name: '大地守護', emoji: '🌍', range: '', dmgType: 'magic', elem: 'earth', cd: 0, cost: 0, tiers: [{ name: '大地守護', unlock: { reinc: 0, lv: 250 }, fx: { pct: 10, pctPer: 1, hp: 20, hpPer: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '主動型被動：自身傷害減免額外 +{pct}%、生命上限額外 +{hp}%（皆為乘算）' }, { name: '大地祝福', unlock: { reinc: 0, lv: 300 }, fx: { pct: 25, pctPer: 2.5 }, goldBase: 200000, goldGrow: 1.5, desc: '全屬性傷害額外 +{pct}%（與所有屬性增傷效果為額外的乘法計算）' }, { name: '生命再生', unlock: { reinc: 0, lv: 350 }, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '生命回復額外 +{pct}%、吸血額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔力再生', unlock: { reinc: 0, lv: 400 }, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '法力回復額外 +{pct}%、吸魔額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔法盾', unlock: { reinc: 0, lv: 450 }, fx: { pct: 30, pctPer: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '你的生命減少時，其中 {pct}% 改由消耗法力承擔（法力不足時只轉換付得起的部分，餘額仍扣生命）' }, { name: '生命反射之盾', unlock: { reinc: 0, lv: 500 }, fx: { pct: 1, pctPer: 0.1, m: 20, count: 1 }, goldBase: 3000000, goldGrow: 1.5, desc: '你每消耗 1% 生命或護盾，{m} 米內的 {count} 個敵人同步損失 {pct}% 最大生命' }, { name: '天地共生', unlock: { reinc: 0, lv: 550 }, fx: { pct: 20, pctPer: 8, sec: 5, cd: 60, cdPer: -3 }, goldBase: 5000000, goldGrow: 1.5, desc: '死亡時原地復活並回復 {pct}% 生命，復活後 {sec} 秒無敵；此招自身冷卻 {cd} 秒（顯示於技能格）' }] },
   chainlightning: { name: '連鎖閃電', emoji: '⚡', range: '', dmgType: 'magic', elem: 'lightning', cd: 18, cost: 40, tiers: [{ name: '連鎖閃電', unlock: { reinc: 0, lv: 300 }, fx: { pct: 150, pctPer: 15, count: 4, m: 30, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '丟出一道閃電鏈（射程 {castM} 米），在最多 {count} 個目標間彈射（每段彈射範圍 {m} 米），每擊造成 {pct}% 雷電傷害' }, { name: '強化閃電', unlock: { reinc: 0, lv: 350 }, fx: { pct: 50, pctPer: 5 }, goldBase: 200000, goldGrow: 1.5, desc: '強化閃電威力，閃電鏈傷害進一步 +{pct}% 雷電傷害' }, { name: '雷鳴術', unlock: { reinc: 0, lv: 400 }, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '被閃電鏈擊中的敵人額外再受到 {add} 次雷電傷害（不足 1 次的部分以機率觸發）' }, { name: '強化連鎖', unlock: { reinc: 0, lv: 450 }, fx: { add: 1, addPer: 0.2 }, goldBase: 800000, goldGrow: 1.5, desc: '閃電鏈的彈射數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '電殛擴散', unlock: { reinc: 0, lv: 500 }, fx: { pct: 25, pctPer: 2.5, count: 1, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '閃電鏈每次彈射時，額外對 {m} 米內的 {count} 個敵人造成閃電鏈 {pct}% 的雷電傷害' }, { name: '雷幻身', unlock: { reinc: 0, lv: 550 }, fx: { pct: 50, pctPer: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '閃電鏈傷害額外 +{pct}% 雷電傷害；沒有其它彈射目標時可用自身當中繼點繼續彈射（彈到自身不消耗彈射數）' }, { name: '雷電暴風', unlock: { reinc: 0, lv: 600 }, fx: { count: 3, add: 1, addPer: 0.1, pct: 100, pctPer: 10 }, goldBase: 5000000, goldGrow: 1.5, desc: '同時發射 {count} 道閃電鏈，彈射數額外 +{add} 次，且閃電傷害額外 +{pct}%' }] },
   thunderstrike: { name: '落雷術', emoji: '🌩️', range: '', dmgType: 'magic', elem: 'lightning', cd: 14, cost: 40, tiers: [{ name: '落雷術', unlock: { reinc: 0, lv: 350 }, fx: { pct: 200, pctPer: 20, count: 2, gap: 0.2, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '對 {castM} 米內的 {count} 個目標降下落雷（每道間隔 {gap} 秒），每道造成 {pct}% 雷電傷害' }, { name: '落雷連鎖', unlock: { reinc: 0, lv: 400 }, fx: { add: 1, addPer: 0.1 }, goldBase: 200000, goldGrow: 1.5, desc: '攻擊目標額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '雙重落雷', unlock: { reinc: 0, lv: 450 }, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '對每個目標的攻擊次數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '閃電增幅', unlock: { reinc: 0, lv: 500 }, fx: { pct: 100, pctPer: 10 }, goldBase: 800000, goldGrow: 1.5, desc: '進一步強化落雷傷害，額外 +{pct}% 雷電傷害' }, { name: '雷電脈衝', unlock: { reinc: 0, lv: 550 }, fx: { sec: 1.5, secPer: 0.15, count: 2, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '落雷落地時產生衝擊波，震暈目標本身與 {m} 米內共 {count} 個敵人 {sec} 秒' }, { name: '迅雷重生', unlock: { reinc: 0, lv: 600 }, fx: { chance: 20, chancePer: 2, max: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '每道落雷結束後有 {chance}% 機率再產生 1 道落雷（同一次施放最多再生 {max} 道）' }, { name: '殛道落雷', unlock: { reinc: 0, lv: 650 }, fx: { mult: 2, pct: 30, pctPer: 3 }, goldBase: 5000000, goldGrow: 1.5, desc: '落雷的攻擊次數與目標數量 ×{mult}，且暈眩中的敵人受到落雷傷害額外 +{pct}%' }] },
-  thunderorb: { name: '雷球', emoji: '🔵', range: '6*6', dmgType: 'magic', elem: 'lightning', cd: 20, cost: 40, tiers: [{ name: '雷球', unlock: { reinc: 0, lv: 400 }, fx: { pct: 50, pctPer: 5, count: 2, gap: 0.35, sec: 2, m: 3, speed: 6, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 個雷球緩慢飛向目標（射程 {castM} 米、飛行速度 {speed} 米/秒），途中每 {gap} 秒對半徑 {m} 米內的所有敵人造成 {pct}% 雷電傷害，抵達後停留 {sec} 秒才消散' }, { name: '擴增雷球', unlock: { reinc: 0, lv: 450 }, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '雷球的體積擴大 {pct}%' }, { name: '多重雷球', unlock: { reinc: 0, lv: 500 }, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '雷球數量額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '環體電球', unlock: { reinc: 0, lv: 550 }, fx: { count: 2, pct: 100, pctPer: 10, sec: 6, m: 8, rps: 0.7 }, goldBase: 800000, goldGrow: 1.5, desc: '額外召喚 {count} 個電球環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 雷電傷害，持續 {sec} 秒' }, { name: '強化雷球', unlock: { reinc: 0, lv: 600 }, fx: { pct: 30, pctPer: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '所有雷球與電球的雷電傷害額外 +{pct}%' }, { name: '伴生雷球', unlock: { reinc: 0, lv: 650 }, fx: { chance: 15, chancePer: 1.5, sec: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '環體電球命中時有 {chance}% 機率在該處生成一個靜止雷球，持續 {sec} 秒（每次作用只判定一次機率）' }, { name: '雷殞天落', unlock: { reinc: 0, lv: 700 }, fx: { count: 2, pct: 300, pctPer: 30, m: 15, sec: 3 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外召喚 {count} 個巨大雷球從天而降，各對 {m} 米內的敵人造成 {pct}% 雷電傷害，並以衝擊波擊暈 {sec} 秒' }] }
+  thunderorb: { name: '雷球', emoji: '🔵', range: '6*6', dmgType: 'magic', elem: 'lightning', cd: 20, cost: 40, tiers: [{ name: '雷球', unlock: { reinc: 0, lv: 400 }, fx: { pct: 50, pctPer: 5, count: 2, gap: 0.35, sec: 2, m: 3, speed: 6, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 個雷球緩慢飛向目標（射程 {castM} 米、飛行速度 {speed} 米/秒），途中每 {gap} 秒對半徑 {m} 米內的所有敵人造成 {pct}% 雷電傷害，抵達後停留 {sec} 秒才消散' }, { name: '擴增雷球', unlock: { reinc: 0, lv: 450 }, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '雷球的體積擴大 {pct}%' }, { name: '多重雷球', unlock: { reinc: 0, lv: 500 }, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '雷球數量額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '環體電球', unlock: { reinc: 0, lv: 550 }, fx: { count: 2, pct: 100, pctPer: 10, sec: 6, m: 8, rps: 0.7 }, goldBase: 800000, goldGrow: 1.5, desc: '額外召喚 {count} 個電球環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 雷電傷害，持續 {sec} 秒' }, { name: '強化雷球', unlock: { reinc: 0, lv: 600 }, fx: { pct: 30, pctPer: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '所有雷球與電球的雷電傷害額外 +{pct}%' }, { name: '伴生雷球', unlock: { reinc: 0, lv: 650 }, fx: { chance: 15, chancePer: 1.5, sec: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '環體電球命中時有 {chance}% 機率在該處生成一個靜止雷球，持續 {sec} 秒（每次作用只判定一次機率）' }, { name: '雷殞天落', unlock: { reinc: 0, lv: 700 }, fx: { count: 2, pct: 300, pctPer: 30, m: 15, sec: 3 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外召喚 {count} 個巨大雷球從天而降，各對 {m} 米內的敵人造成 {pct}% 雷電傷害，並以衝擊波擊暈 {sec} 秒' }] },
+  icearrow: { name: '寒冰箭', emoji: '❄️', range: '', dmgType: 'magic', elem: 'ice', cd: 18, cost: 40, tiers: [{ name: '寒冰箭', unlock: { reinc: 0, lv: 450 }, fx: { pct: 250, pctPer: 25, count: 2, deg: 45, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方 {deg} 度扇形內射出 {count} 支寒冰箭（射程 {castM} 米），每支對 1 個敵人造成 {pct}% 寒冰傷害' }, { name: '寒霜箭', unlock: { reinc: 0, lv: 500 }, fx: { frostPct: 50, frostPctPer: 5, stacks: 1 }, goldBase: 200000, goldGrow: 1.5, desc: '被寒冰箭擊中的敵人附加 {stacks} 層寒霜狀態：每跳造成寒冰箭傷害 {frostPct}% 的寒冰傷害，每層使移動與攻速下降，疊滿層數時凍結' }, { name: '冰系強化', unlock: { reinc: 0, lv: 550 }, fx: { pct: 100, pctPer: 10 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化寒冰箭，額外 +{pct}% 寒冰傷害（與第 1 階累加）' }, { name: '貫穿冰箭', unlock: { reinc: 0, lv: 600 }, fx: { m: 10, mPer: 2 }, goldBase: 800000, goldGrow: 1.5, desc: '寒冰箭改為貫穿攻擊，貫穿路徑上的所有敵人，貫穿長度 {m} 米（不足以打到主目標時自動延長到主目標）' }, { name: '冰箭散射', unlock: { reinc: 0, lv: 650 }, fx: { add: 1, addPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '射出的寒冰箭數量額外 +{add} 支（不足 1 支的部分以機率觸發）' }, { name: '寒霜凍結', unlock: { reinc: 0, lv: 700 }, fx: { stacks: 1, stacksPer: 0.4 }, goldBase: 3000000, goldGrow: 1.5, desc: '寒冰箭射中帶寒霜狀態的敵人時，立即再疊 {stacks} 層寒霜，並造成該敵人寒霜剩餘的全部寒冰傷害（不足 1 層的部分以機率觸發）' }, { name: '寒冰爆裂箭', unlock: { reinc: 0, lv: 750 }, fx: { pct: 400, pctPer: 40, sec: 6, m: 6, chaseM: 30, bodyM: 1.5, gap: 0.1 }, goldBase: 5000000, goldGrow: 1.5, desc: '寒冰箭改為追蹤冰箭：貫穿後在 {chaseM} 米內來回穿梭追擊敵人 {sec} 秒（碰到才算一次命中）；敵人的凍結結束時產生冰爆，對其周圍 {m} 米內的所有敵人造成 {pct}% 寒冰傷害' }] },
+  waterball: { name: '水流彈', emoji: '💧', range: '', dmgType: 'magic', elem: 'ice', cd: 14, cost: 40, tiers: [{ name: '水流彈', unlock: { reinc: 0, lv: 500 }, fx: { pct: 200, pctPer: 20, castM: 30, arcM: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '丟出一顆水彈砸向敵人（射程 {castM} 米、拋物線離地最高 {arcM} 米），造成 {pct}% 寒冰傷害' }, { name: '寒冰逆轉', unlock: { reinc: 0, lv: 550 }, fx: { pct: 20, pctPer: 2, sec: 6 }, goldBase: 200000, goldGrow: 1.5, desc: '被水流彈擊中的敵人強制轉變為寒冰屬性，且受到的寒冰傷害 +{pct}%，持續 {sec} 秒' }, { name: '寒流彈', unlock: { reinc: 0, lv: 600 }, fx: { frostPct: 50, frostPctPer: 20, stacks: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '被水流彈擊中的敵人附加 {stacks} 層寒霜狀態：每跳造成水流彈傷害 {frostPct}% 的寒冰傷害' }, { name: '寒流爆散', unlock: { reinc: 0, lv: 650 }, fx: { m: 8, bounce: 2, bouncePer: 0.2 }, goldBase: 800000, goldGrow: 1.5, desc: '水流彈改為範圍攻擊，對目標 {m} 米內的所有敵人造成傷害，並再彈射 {bounce} 次（不足 1 次的部分以機率觸發）' }, { name: '寒霜擴散', unlock: { reinc: 0, lv: 700 }, fx: { chance: 25, chancePer: 2.5, m: 10, count: 1 }, goldBase: 1500000, goldGrow: 1.5, desc: '寒霜狀態每次作用時有 {chance}% 機率擴散至目標 {m} 米內的 {count} 個敵人' }, { name: '三重流水', unlock: { reinc: 0, lv: 750 }, fx: { add: 1, addPer: 0.2 }, goldBase: 3000000, goldGrow: 1.5, desc: '朝隨機目標額外丟出 {add} 顆水流彈（不足 1 顆的部分以機率觸發）' }, { name: '水龍捲', unlock: { reinc: 0, lv: 800 }, fx: { count: 4, hits: 6, pct: 100, pctPer: 10, m: 5, side: 10, frozen: 2, gap: 0.35 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外在我方 {side}×{side} 米正方形的四個頂點召喚 {count} 道水龍捲（傷害半徑 {m} 米），每道造成連續 {hits} 段 {pct}% 寒冰傷害，且對凍結中的敵人傷害為 {frozen} 倍' }] },
+  frostnova: { name: '冰霜新星', emoji: '🧊', range: '', dmgType: 'magic', elem: 'ice', cd: 20, cost: 40, tiers: [{ name: '冰霜新星', unlock: { reinc: 0, lv: 550 }, fx: { pct: 150, pctPer: 5, m: 12, castM: 12, stacks: 2, frostPct: 50 }, goldBase: 100000, goldGrow: 1.5, desc: '對周圍 {m} 米內的敵人釋放冰霜新星，造成 {pct}% 寒冰傷害並附加 {stacks} 層寒霜狀態（寒霜每跳造成新星傷害 {frostPct}% 的寒冰傷害）' }, { name: '冰霜衝擊', unlock: { reinc: 0, lv: 600 }, fx: { m: 13, mPer: 0.6, castM: 13, castMPer: 0.6, pct: 50, pctPer: 5 }, goldBase: 200000, goldGrow: 1.5, desc: '冰霜新星的範圍擴展至 {m} 米，且寒冰傷害額外 +{pct}%' }, { name: '寒冰體', unlock: { reinc: 0, lv: 650 }, fx: { chance: 25, chancePer: 2.5, stacks: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '攻擊你的敵人有 {chance}% 機率被附加 {stacks} 層寒霜狀態' }, { name: '極致寒霜', unlock: { reinc: 0, lv: 700 }, fx: { dmgPct: 40, dmgPctPer: 4, durPct: 40, durPctPer: 4 }, goldBase: 800000, goldGrow: 1.5, desc: '所有來源的寒霜狀態傷害提高 {dmgPct}%，且持續時間增加 {durPct}%' }, { name: '三重新星', unlock: { reinc: 0, lv: 750 }, fx: { add: 1, addPer: 0.1, m: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '冰霜新星的施放次數額外 +{add} 次，且每次釋放的範圍再 +{m} 米（不足 1 次的部分以機率觸發）' }, { name: '死亡新星', unlock: { reinc: 0, lv: 800 }, fx: { chance: 35, chancePer: 6.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '帶寒霜狀態的敵人死亡時有 {chance}% 機率再釋放 1 次冰霜新星' }, { name: '暴風雪', unlock: { reinc: 0, lv: 850 }, fx: { pct: 100, pctPer: 10, gap: 0.4, sec: 8, side: 20 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外召喚 1 道暴風雪籠罩天空，對 {side}×{side} 米範圍內的敵人每 {gap} 秒造成 {pct}% 寒冰傷害，暴風雪跟隨我方移動，持續 {sec} 秒' }] }
 };
 
 /* ---- 執行期狀態（絕不掛 G＝保證不入存檔） ----
@@ -299,7 +320,13 @@ function skills2CastRangePx(gid, lvs) {
   var m = 0;
   for (var i = 0; i < g.tiers.length; i++) {
     if (i > 0 && (!lvs || lvs[i] < 1)) continue;
-    var v = Number(g.tiers[i].fx && g.tiers[i].fx.castM);
+    var fx = g.tiers[i].fx;
+    if (!fx || !(Number(fx.castM) > 0)) continue;
+    /* 射程比照其他 fx 欄位支援每級成長（castMPer）：自身範圍型技能（冰霜新星）的
+       施放距離就是它自己的作用半徑，而半徑會隨等級長大——若射程停在底值，
+       高等級時會出現「範圍打得到、卻不准施放」的死角。
+       既有群組都沒有定義 castMPer，sgVal 對它們的回傳值與改造前完全相同。 */
+    var v = sgVal(fx, 'castM', lvs ? lvs[i] : 1);
     if (isFinite(v) && v > 0) m = v;
   }
   if (!(m > 0)) return (typeof bfMeleeRange === 'function') ? bfMeleeRange() : 0;
@@ -323,15 +350,21 @@ function skill2FireAmpPct(pEnt) {
 }
 
 /* 暈眩塗抹的唯一入口：BOSS 控場免疫與敵人韌性抗性都在這裡擋掉，
-   各技能只負責決定「要不要暈、暈多久」。回傳是否真的暈到。 */
+   各技能只負責決定「要不要暈、暈多久」。
+   回傳**實際暈到的秒數**（0＝沒暈到）：控場遞減會在 applyEffect 內縮短時間，
+   寒霜的凍結標記必須跟著這個實際值，否則會出現「標記著凍結卻早就能行動」的敵人。
+   數值回傳對既有呼叫端相容（>0 為真、0 為假）。 */
 function sgTryStun(target, sec) {
-  if (!target || target.hp <= 0 || !(sec > 0)) return false;
-  if (typeof isBossControlImmune === 'function' && isBossControlImmune(target)) return false;
+  if (!target || target.hp <= 0 || !(sec > 0)) return 0;
+  if (typeof isBossControlImmune === 'function' && isBossControlImmune(target)) return 0;
   if (typeof resistCtrl === 'function' && typeof monsterDefCfg === 'function' &&
-      resistCtrl(monsterDefCfg(target))) return false;
-  if (typeof applyStatus !== 'function') return false;
-  applyStatus(target, 'stun', { dur: sec });
-  return true;
+      resistCtrl(monsterDefCfg(target))) return 0;
+  if (typeof applyStatus !== 'function') return 0;
+  var applied = applyStatus(target, 'stun', { dur: sec });
+  /* applyEffect 回傳實際持續秒數；遞減歸零時回 false。舊版狀態寫入器若回傳
+     true（沒有秒數資訊）就沿用表定值，行為與改造前相同。 */
+  if (applied === false || applied === 0) return 0;
+  return (typeof applied === 'number' && applied > 0) ? applied : sec;
 }
 
 /* 這個目標現在正在暈眩嗎（殛道落雷的增傷判定）。 */
@@ -452,6 +485,11 @@ function skill2VulnACfg(aCfg, target) {
   var pct = skill2VulnPct(target) +
     ((typeof skill2MireVulnPct === 'function') ? skill2MireVulnPct(target) : 0);
   if (pct > 0) aCfg.totalDmgPct = (aCfg.totalDmgPct || 0) + pct;
+  /* 只針對「某一個屬性」的受傷增幅走另一條路：水流彈【寒冰逆轉】的 +X% 寒冰傷害
+     不能混進 totalDmgPct（那會連同一次攻擊的火／雷段一起放大）。
+     本支同時服務普攻端（combat.js doPlayerAttack）與新版技能端（sgAtkCfg），
+     因此兩邊都認得這個增幅，不必各補一次。 */
+  if (typeof skill2IceAmpACfg === 'function') aCfg = skill2IceAmpACfg(aCfg, target);
   return aCfg;
 }
 
@@ -775,6 +813,9 @@ function sgEmitVfx(gid, targets, floatSel, extra) {
   if (extra && extra.lineWidth) spec.lineWidth = Number(extra.lineWidth);
   if (extra && extra.laneOffsets) spec.laneOffsets = extra.laneOffsets.slice(0, 3);
   if (extra && extra.directionCount) spec.directionCount = Number(extra.directionCount);
+  /* 拋物線投射物的離地最高點（米，水流彈）：弧高是模擬層的表定值，
+     顯示層不得自己另外挑一個固定值（AI_RULES 8.3：計算層與表現層共用同一個語意參數）。 */
+  if (extra && extra.arcM > 0) spec.arcM = Number(extra.arcM);
   playCombatVfx(spec);
 }
 
@@ -809,6 +850,7 @@ function sgQueueFlyingProjectile(pEnt, st, gid, dmgVal, origin, angle, length, f
     waitForEnd: !!(extra && extra.waitForEnd),
     targetOnly: !!(extra && extra.targetOnly),
     burnSpec: extra && extra.burnSpec || null,
+    frostSpec: extra && extra.frostSpec || null,
     victims: extra && extra.victims || null,
     splitTargets: extra && extra.splitTargets || null,
     splitDmgVal: extra && Number(extra.splitDmgVal) > 0 ? Number(extra.splitDmgVal) : 0,
@@ -971,6 +1013,9 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
     case 'chainlightning': sgCastChainlightning(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     case 'thunderstrike': sgCastThunderstrike(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     case 'thunderorb': sgCastThunderorb(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
+    case 'icearrow': sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
+    case 'waterball': sgCastWaterball(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
+    case 'frostnova': sgCastFrostnova(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     default: return null;
   }
   if (!storm && typeof floatPlayerSkillCast === 'function') {
@@ -1883,20 +1928,68 @@ function sgSpawnGround(pEnt, st, gid, cfg) {
     dest: (cfg.dest && isFinite(cfg.dest.x) && isFinite(cfg.dest.y))
       ? { x: Number(cfg.dest.x), y: Number(cfg.dest.y) } : null,
     speed: Math.max(0, Number(cfg.speed) || 0),
+    /* 跟隨我方的場域（暴風雪）：圓心恆等於玩家當下座標，與環繞場域同一種錨定方式，
+       差別只在形狀是地板矩形。留白＝原本的釘死在地板上。 */
+    follow: !!cfg.follow,
+    /* 追擊場域（追蹤冰箭）：抵達落點後改鎖 chaseM 米內的隨機敵人繼續飛。
+       contact＝採環繞場域的接觸判定（進入才算一次命中、離開再進來才會再命中），
+       否則以本場域的節拍頻率會變成「每個節拍全額命中一次」的傷害爆炸。 */
+    chaseM: Math.max(0, Number(cfg.chaseM) || 0),
+    contact: !!cfg.contact,
+    contacts: [],
+    /* 對凍結中的敵人的傷害倍率（水龍捲）；1＝沒有額外倍率。 */
+    frozenMult: Math.max(1, Number(cfg.frozenMult) || 1),
+    frostSpec: cfg.frostSpec || null,
     mire: cfg.mire || null
   });
 }
 
 /* 移動場域的一步：朝 dest 前進 speed × dt，抵達（或已無座標）就把 dest 清掉改為停駐。
-   場域的傷害判定讀的就是 f.pos，因此位置一更新，這一拍的命中範圍就跟著走。 */
-function sgGroundMove(f, dt) {
-  if (!f.dest || !f.pos || !(f.speed > 0) || !(dt > 0)) return;
+   場域的傷害判定讀的就是 f.pos，因此位置一更新，這一拍的命中範圍就跟著走。
+   三種移動方式共用這一支：跟隨我方（follow）、飛向落點後停駐（雷球）、
+   抵達後改鎖隨機敵人繼續飛（chaseM＝追蹤冰箭）。 */
+function sgGroundMove(f, dt, enemies) {
+  // 跟隨我方：位置的權威是玩家當下座標，不需要速度也不會停駐
+  if (f.follow) {
+    var pp = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null;
+    if (!pp) return;
+    if (!f.pos) f.pos = { x: pp.x, y: pp.y };
+    else { f.pos.x = pp.x; f.pos.y = pp.y; }
+    return;
+  }
+  if (!f.pos || !(f.speed > 0) || !(dt > 0)) return;
+  if (!f.dest && f.chaseM > 0) f.dest = sgGroundChaseDest(f, enemies);
+  if (!f.dest) return;
   var dx = f.dest.x - f.pos.x, dy = f.dest.y - f.pos.y;
   var dist = Math.sqrt(dx * dx + dy * dy);
   var step = f.speed * dt;
-  if (dist <= step || dist <= 0.5) { f.pos.x = f.dest.x; f.pos.y = f.dest.y; f.dest = null; return; }
+  if (dist <= step || dist <= 0.5) {
+    f.pos.x = f.dest.x; f.pos.y = f.dest.y;
+    // 追擊場域抵達後立刻改鎖下一個目標；非追擊場域就地停駐（雷球原本的行為）
+    f.dest = (f.chaseM > 0) ? sgGroundChaseDest(f, enemies) : null;
+    return;
+  }
   f.pos.x += dx / dist * step;
   f.pos.y += dy / dist * step;
+}
+
+/* 追擊場域的下一個落點：以場域當下位置為圓心、chaseM 米內的隨機存活敵人
+   （文檔：朝範圍內的隨機目標飛去——不是最近的）。範圍內沒人就原地待命。 */
+function sgGroundChaseDest(f, enemies) {
+  if (!f.pos || typeof bfLiveList !== 'function' || typeof bfPos !== 'function') return null;
+  var radius = bfMeterPx(f.chaseM);
+  var live = bfLiveList(enemies || []);
+  var cands = [];
+  for (var i = 0; i < live.length; i++) {
+    var p = bfPos(live[i]);
+    if (!p) continue;
+    var dx = p.x - f.pos.x, dy = p.y - f.pos.y;
+    if (dx * dx + dy * dy > radius * radius) continue;
+    cands.push(p);
+  }
+  if (!cands.length) return null;
+  var pick = cands[Math.floor(Math.random() * cands.length)];
+  return { x: pick.x, y: pick.y };
 }
 
 /* 場域當下的成長倍率（沒有設定成長＝恆為 1）。 */
@@ -1931,19 +2024,33 @@ function sgGroundVictims(f, enemies) {
   return bfEnemiesInArea({ x: f.pos.x, y: f.pos.y, r: f.radius }, bfLiveList(enemies));
 }
 
-/* 場域的一次作用：範圍內每個敵人各吃一段傷害，並依機率附加燃燒。
+/* 場域的一次作用：範圍內每個敵人各吃一段傷害，並依機率附加燃燒／寒霜。
    泥沼術本體不造成傷害（只給狀態），走各自的分支。 */
 function sgGroundTick(f, enemies, ctx) {
   var victims = sgGroundVictims(f, enemies);
   if (f.kind === 'mire') { sgMireGroundTick(f, victims, ctx); return; }
+  /* 接觸判定的場域（追蹤冰箭）：只結算「這一刻剛碰上」的敵人，離開後再碰到才會再命中。
+     借用環繞場域的同一種語意，避免以節拍頻率反覆全額命中。 */
+  if (f.contact) {
+    var fresh = [];
+    for (var ci = 0; ci < victims.length; ci++) {
+      if (f.contacts.indexOf(victims[ci]) < 0) fresh.push(victims[ci]);
+    }
+    f.contacts = victims;
+    victims = fresh;
+  }
   sgEmitVfx(f.gid, victims, f.floatSel, sgGroundVfxSpec(f));
   if (!victims.length) return;
   var out = { killed: false, dmg: 0, crit: false };
   for (var i = 0; i < victims.length; i++) {
-    var res = sgHitOne(f.pEnt, f.st, victims[i], f.dmgVal, f.gid, f.floatSel, out, sgStaggerMs(i));
-    if (res && !res.miss && f.burnSpec && f.burnChance > 0 && chance(f.burnChance)) {
-      sgApplyBurn(victims[i], f.burnSpec);
-    }
+    /* 對凍結中的敵人的傷害倍率（水龍捲）：走 sgHitOne 的總傷加成參數，
+       因此仍完整經過防禦、抗性與爆擊，不是事後再乘一次的獨立傷害。 */
+    var bonusPct = (f.frozenMult > 1 && sgFrozenOn(victims[i])) ? (f.frozenMult - 1) * 100 : 0;
+    var res = sgHitOne(f.pEnt, f.st, victims[i], f.dmgVal, f.gid, f.floatSel, out,
+      sgStaggerMs(i), bonusPct);
+    if (!res || res.miss) continue;
+    if (f.burnSpec && f.burnChance > 0 && chance(f.burnChance)) sgApplyBurn(victims[i], f.burnSpec);
+    if (f.frostSpec && victims[i].hp > 0) sgApplyFrost(victims[i], f.frostSpec);
   }
   if (ctx && ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
   if (out.killed && ctx && ctx.onDeaths) ctx.onDeaths();
@@ -1955,6 +2062,9 @@ function sgGroundVfxSpec(f) {
   var area = sgGroundArea(f);
   if (f.kind === 'wall') return { fxKind: 'aura', variant: 'firewall', elem: 'fire', dur: f.gap, area: area };
   if (f.kind === 'orb') return { fxKind: 'aura', variant: 'thunder-orb', dur: f.gap, area: area };
+  if (f.kind === 'tornado') return { fxKind: 'aura', variant: 'water-tornado', elem: 'ice', dur: f.gap, area: area };
+  if (f.kind === 'blizzard') return { fxKind: 'aura', variant: 'blizzard', elem: 'ice', dur: f.gap, area: area };
+  if (f.kind === 'icearrow') return { fxKind: 'aura', variant: 'ice-arrow-homing', elem: 'ice', dur: f.gap, area: area };
   return { fxKind: 'impact', variant: 'pillar', elem: 'fire', dur: f.gap, area: area };
 }
 
@@ -2029,7 +2139,7 @@ function sgTickGrounds(dt, ctx) {
   for (var i = list.length - 1; i >= 0; i--) {
     var f = list[i];
     var guard = 0;
-    sgGroundMove(f, dt);      // 移動場域（雷球）：作用前先推進到當下位置
+    sgGroundMove(f, dt, enemies);   // 移動／跟隨／追擊場域：作用前先推進到當下位置
     sgGroundApplyGrowth(f);   // 逐漸擴大的場域：作用前先更新到當下尺寸
     while (f.hitsLeft > 0 && f.nextAt <= GT && guard < 20) {
       guard++;
@@ -3062,14 +3172,645 @@ function sgSpawnStationaryThunderOrb(pEnt, st, floatSel, cfg, pos, lifeSec) {
    死者反殺拿到的經驗若讓玩家升級（升級會回滿血），呼叫端的 hp<=0 判死就會失效，
    整個死亡流程被無聲取消。
    =========================================================================== */
+/* ===========================================================================
+   冰系三群組（2026-08-17 第七批）：寒冰箭 icearrow／水流彈 waterball／冰霜新星 frostnova
+   ---------------------------------------------------------------------------
+   三個群組全部是魔法傷害／寒冰屬性，並共用同一個核心狀態【寒霜】——設計文檔把
+   寒霜的整段說明重複寫在三棵樹裡（寒霜箭 T2／寒流彈 T3／冰霜新星 T1），實際上是
+   同一個狀態，因此寒霜一律寫在群組共用層，不掛在任何一個技能的施放流程裡。
+   使用者於實作前的兩項決策（2026-08-17）：
+     1. 寒霜的持續傷害**不隨層數提高**：層數只累積移動與攻速的下降，並在疊滿時凍結。
+        （所以寒霜刻意拆成 sgFrost「層數＋緩速」與 sgFrostBite「傷害」兩筆狀態——
+         若併成一筆走疊層規則，實際效果會變成「單層值 × 層數」而違反此決策。）
+     2. 凍結**走既有控場管線**：BOSS 控場免疫、韌性折減與控場遞減全部適用。
+   本批帶進四個群組共用能力（皆為引擎收斂點，不是這三個技能的特例）：
+     13. 寒霜狀態（sgApplyFrost／sgFrostStacks／sgTickFrost ＋ 通用緩速收斂點
+         skill2SlowAspdFactor／skill2SlowMoveFactor）：可疊層的緩速兼持續傷害，
+         疊滿即凍結；formula.js 與 battlefield.js 從此只認得「通用緩速」一個掛點
+     14. 敵人屬性標籤強制改寫（skill2ForcedAttr）＋每系受傷增幅（skill2IceAmpACfg）：
+         掛在 combat.js monsterDefCfg 的 attr 欄與 resolveHit 既有的 skillElemAmp 乘區
+     15. 跟隨我方的地板場域（sgSpawnGround 的 follow）：場域圓心恆等於玩家當下座標，
+         與環繞場域同一種錨定方式，差別只在形狀是地板矩形（暴風雪）
+     16. 追擊場域（sgSpawnGround 的 chaseM ＋ contact）：抵達落點後改鎖範圍內的隨機敵人
+         繼續飛，並採環繞場域的接觸判定（進入才算一次命中），因此追蹤冰箭不必
+         另寫一個模擬迴圈，也不會退化成「每個節拍都全額命中」的傷害爆炸
+   =========================================================================== */
+
+/* ---- 寒霜狀態的行為參數：權威在狀態表（js/status.js）----
+   sgFrost.val＝單層的移動與攻速下降%／sgFrost.maxStacks＝層數上限（疊滿即凍結）／
+   sgFrostBite.interval／dur＝跳動間隔與持續時間／sgFrozen.dur＝凍結秒數。
+   本檔只決定「哪個群組、每跳打多少寒冰傷害、一次疊幾層」。 */
+function sgStatusNum(sid, field, fallback) {
+  var d = (typeof statusDef === 'function') ? statusDef(sid) : null;
+  var v = Number(d && d[field]);
+  return (isFinite(v) && v > 0) ? v : fallback;
+}
+function sgFrostMaxStacks() { return Math.max(1, Math.floor(sgStatusNum('sgFrost', 'maxStacks', 5))); }
+function sgFrostSlowPerStack() { return sgStatusNum('sgFrost', 'val', 20); }
+function sgFrostGap() { return sgStatusNum('sgFrostBite', 'interval', 0.5); }
+function sgFrostBaseDur() { return sgStatusNum('sgFrostBite', 'dur', 5); }
+function sgFrozenSec() { return sgStatusNum('sgFrozen', 'dur', 3); }
+
+/* 增益／減益容器裡這一格是否生效。buffVal 讀的是效果值，而凍結標記的效果值為 0
+   （它不加減任何屬性），因此不能用 buffVal 判斷有沒有掛上。 */
+function sgBuffActive(ent, key) {
+  var b = ent && ent.buffs && ent.buffs[key];
+  return !!(b && b.until > GT);
+}
+
+/* 【極致寒霜】（冰霜新星 T4）：文檔寫的是「寒霜狀態的傷害／持續時間」，沒有限定
+   是哪一棵樹塗上的，因此掛在寒霜共用層——三個群組塗出來的寒霜一起被放大。 */
+function skill2FrostDmgFactor() {
+  var lvs = skills2Levels('frostnova');
+  if (!lvs || lvs[3] < 1) return 1;
+  return 1 + sgVal(SKILLS2.frostnova.tiers[3].fx, 'dmgPct', lvs[3]) / 100;
+}
+function skill2FrostDurFactor() {
+  var lvs = skills2Levels('frostnova');
+  if (!lvs || lvs[3] < 1) return 1;
+  return 1 + sgVal(SKILLS2.frostnova.tiers[3].fx, 'durPct', lvs[3]) / 100;
+}
+
+/* 某個群組現在塗出來的寒霜規格（施放當下定版，之後不隨屬性變動）。
+   每跳量占「該群組的本體技能傷害」——與燃燒占火球傷害同源（sgFireballBurnSpec）。
+   tierIdx＝該群組負責附加寒霜的那一階；沒點出來就回 null（＝這棵樹不塗寒霜）。
+   stacksRaw 保留小數並延後到每個目標各自 sgRollCount，機率才是逐目標判定。 */
+function sgFrostSpec(g, lvs, tierIdx, bodyDmg) {
+  if (!lvs || lvs[tierIdx] < 1 || !(bodyDmg > 0)) return null;
+  var fx = g.tiers[tierIdx].fx;
+  var pct = sgVal(fx, 'frostPct', lvs[tierIdx]);
+  if (!(pct > 0)) return null;
+  var gap = sgFrostGap();
+  return {
+    dps: bodyDmg * pct / 100 * skill2FrostDmgFactor() / gap,
+    dur: sgFrostBaseDur() * skill2FrostDurFactor(),
+    interval: gap,
+    stacksRaw: sgVal(fx, 'stacks', lvs[tierIdx])
+  };
+}
+
+/* 目前的寒霜層數（權威在疊層狀態的 stacks 欄，由 combat.js stackStep 維護）。 */
+function sgFrostStacks(ent) {
+  if (!ent || !ent.buffs) return 0;
+  var b = ent.buffs.sgFrost;
+  return (b && b.until > GT) ? Math.max(0, Math.floor(b.stacks || 0)) : 0;
+}
+/* 「帶著寒霜狀態」＝層數還在，或凍傷還在跳（兩者同時到期，任一存在都算）。 */
+function sgFrostOn(ent) { return sgFrostStacks(ent) > 0 || sgHasDot(ent, 'sgFrostBite'); }
+function sgFrozenOn(ent) { return sgBuffActive(ent, 'sgFrozen'); }
+
+/* 塗上寒霜。回傳實際增加的層數（0＝沒塗上）。
+   疊滿層數的**那一次**才凍結：維持在滿層時的重塗不再重新凍結——否則每 0.5 秒
+   重塗一次就是永久凍結，等於繞過使用者指定要走的控場遞減。 */
+function sgApplyFrost(ent, spec, stacksOverride) {
+  if (!ent || ent.hp <= 0 || !spec || typeof applyStatus !== 'function') return 0;
+  var raw = (stacksOverride === undefined || stacksOverride === null)
+    ? Number(spec.stacksRaw) : Number(stacksOverride);
+  var want = sgRollCount(raw);
+  if (want <= 0) return 0;
+  var max = sgFrostMaxStacks();
+  var before = sgFrostStacks(ent);
+  for (var i = 0; i < want; i++) applyStatus(ent, 'sgFrost', { val: sgFrostSlowPerStack(), dur: spec.dur });
+  if (spec.dps > 0) applyStatus(ent, 'sgFrostBite', { dps: spec.dps, dur: spec.dur, interval: spec.interval });
+  var after = sgFrostStacks(ent);
+  if (before < max && after >= max) sgFreezeTarget(ent);
+  return after - before;
+}
+
+/* 疊滿層數的凍結：行動限制本身交給既有的暈眩管線（使用者決策：走既有控場管線），
+   sgTryStun 已擋掉 BOSS 控場免疫與韌性抗性、applyEffect 再套控場遞減。
+   凍結標記的長度必須用「實際暈到的秒數」而不是表定秒數——遞減後若標記比行動限制長，
+   就會出現「標記著凍結卻早就能行動」的敵人，而【水龍捲】的增傷與冰爆的時機都讀這個標記。 */
+function sgFreezeTarget(ent) {
+  var sec = Number(sgTryStun(ent, sgFrozenSec()));
+  if (!(sec > 0)) return 0;
+  applyStatus(ent, 'sgFrozen', { val: 0, dur: sec });
+  sgEmitVfx('frostnova', [ent], 'mv-float', { fxKind: 'burst', variant: 'frost-freeze', elem: 'ice', dur: sec });
+  return sec;
+}
+
+/* ---- 寒霜緩速的兩個對外掛點（比照泥沼緩速）----
+   攻速：formula.js slowFactor｜移速：battlefield.js bfEnemySpeedFactor。
+   兩支檔案改吃通用收斂點，日後再增加第三種場域型緩速就不必再動它們。
+   寒霜的移速與攻速同幅（文檔：每疊 1 層「移動及攻速」-20%），不必像泥沼分開兩個值。 */
+function skill2FrostSlowPct(ent) {
+  return (typeof buffVal === 'function') ? Math.max(0, buffVal(ent, 'sgFrost')) : 0;
+}
+function skill2FrostSlowFactor(ent) {
+  var v = skill2FrostSlowPct(ent);
+  return v > 0 ? Math.max(0.05, 1 - Math.min(95, v) / 100) : 1;
+}
+function skill2SlowAspdFactor(ent) { return skill2MireAspdFactor(ent) * skill2FrostSlowFactor(ent); }
+function skill2SlowMoveFactor(ent) { return skill2MoveSlowFactor(ent) * skill2FrostSlowFactor(ent); }
+
+/* ---- 【寒冰逆轉】（水流彈 T2）：敵人屬性標籤強制改寫 ----
+   掛點：combat.js monsterDefCfg 的 attr 欄——全專案「防守方屬性標籤」的唯一出口，
+   因此攻方的「對屬性敵人傷害%」與守方的「對屬性敵人抗性%」兩條既有規則會一起
+   認得這次改寫，不必在各傷害端各補一次判斷。 */
+function skill2ForcedAttr(ent) { return sgBuffActive(ent, 'sgIceRevert') ? 'ice' : ''; }
+
+/* 受到的寒冰傷害增幅：掛在 resolveHit 既有的 skillElemAmp（每系獨立乘區，原本服務
+   舊技能的元素領域），因此只放大「技能屬性化為寒冰」的本體段，不會誤放大同一次
+   攻擊的火／雷等其他屬性段。寒霜凍傷是施放當下定版的平坦 dps（比照燃燒，不走
+   resolveHit），因此不吃這個增幅——與火焰增幅對燃燒的既有關係一致。 */
+function skill2IceTakenPct(target) {
+  return (typeof buffVal === 'function') ? Math.max(0, buffVal(target, 'sgIceRevert')) : 0;
+}
+function skill2IceAmpACfg(aCfg, target) {
+  var pct = skill2IceTakenPct(target);
+  if (!(pct > 0)) return aCfg;
+  var amp = {};
+  for (var k in (aCfg.skillElemAmp || {})) amp[k] = aCfg.skillElemAmp[k];
+  amp.ice = (Number(amp.ice) || 1) * (1 + pct / 100);
+  aCfg.skillElemAmp = amp;
+  return aCfg;
+}
+
+/* 寒霜的節拍器：以本引擎自己的計時對齊各凍傷實例的作用間隔（時戳記在敵人實體上、
+   純 JSON、隨實體自然回收），不去改動 tickStatuses 的通用結算——與 sgTickBurn 同一套做法。
+   負責兩件事：【寒霜擴散】的逐跳擴散判定，以及凍結結束時的【寒冰爆裂箭】冰爆。 */
+function sgTickFrost(dt, ctx) {
+  var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
+  if (!enemies.length) return;
+  var wbLvs = skills2Levels('waterball');
+  var spreadLv = (wbLvs && wbLvs[0] > 0) ? wbLvs[4] : 0;
+  var spreadFx = SKILLS2.waterball.tiers[4].fx;
+  var iaLvs = skills2Levels('icearrow');
+  var blastOn = !!(iaLvs && iaLvs[6] > 0);
+  var tickedNow = null;
+  for (var i = 0; i < enemies.length; i++) {
+    var e = enemies[i];
+    if (!e) continue;
+    /* 凍結結束＝冰爆的時機。標記消失的那一幀才算結束，因此逐幀比對前一幀的狀態
+       （敵人在凍結中死亡也是一種結束，此時以死亡當下的位置引爆）。 */
+    var frozen = sgFrozenOn(e) && e.hp > 0;
+    if (e._sgFrozenWatch && !frozen) {
+      e._sgFrozenWatch = false;
+      if (blastOn) {
+        sgIceBlast(e, enemies, ctx);
+        enemies = ctx.getEnemies ? ctx.getEnemies() : enemies;
+      }
+    } else if (frozen) e._sgFrozenWatch = true;
+    var d = (e.hp > 0) ? sgFindDot(e, 'sgFrostBite') : null;
+    if (!d) { if (e._sgAcc) e._sgAcc.sgFrostBite = 0; continue; }
+    if (typeof GT === 'number' && e._sgDotSkipAt === GT) continue;
+    if (!e._sgAcc) e._sgAcc = {};
+    var acc = (e._sgAcc.sgFrostBite || 0) + dt;
+    var gap = Math.max(0.1, d.interval || sgFrostGap());
+    while (acc >= gap) {
+      acc -= gap;
+      if (!tickedNow) tickedNow = [];
+      if (tickedNow.indexOf(e) < 0) tickedNow.push(e);
+      // 【寒霜擴散】（水流彈 T5）：寒霜每次作用時有機率擴散給附近的敵人
+      if (spreadLv > 0 && chance(sgVal(spreadFx, 'chance', spreadLv))) {
+        sgSpreadFrost(e, enemies, spreadFx, d);
+      }
+    }
+    e._sgAcc.sgFrostBite = acc;
+  }
+  /* 寒霜可能同時掛在整群敵人身上；同一幀跳動的敵人合併成一則特效事件送出
+     （比照燃燒節拍器，避免事件量被放大成敵人數）。 */
+  if (tickedNow) {
+    sgEmitVfx('icearrow', tickedNow, ctx.floatSel, {
+      fxKind: 'impact', variant: 'frost-tick', elem: 'ice'
+    });
+  }
+}
+
+/* 【寒霜擴散】：把「當下這一份寒霜」複製給附近的敵人（同樣的每跳量與剩餘時間，固定 1 層）。
+   複製而不是重新計算：來源的凍傷可能已被【極致寒霜】放大過，重算會把它打回表定值。 */
+function sgSpreadFrost(from, enemies, fx, dot) {
+  var radius = bfMeterPx(Number(fx.m) || 10);
+  var count = Math.max(1, Math.floor(Number(fx.count) || 1));
+  var victims = bfNearestOthers(from, enemies, count, radius);
+  if (!victims.length) return;
+  var spec = { dps: dot.dps, dur: Math.max(0.1, dot.until - GT), interval: dot.interval, stacksRaw: 1 };
+  var spread = [];
+  for (var i = 0; i < victims.length; i++) {
+    if (sgApplyFrost(victims[i], spec, 1) > 0) spread.push(victims[i]);
+  }
+  if (spread.length) {
+    sgEmitVfx('waterball', spread, 'mv-float', { fxKind: 'chain', variant: 'frost-spread', elem: 'ice' });
+  }
+}
+
+/* 【寒冰爆裂箭】（寒冰箭 T7）的冰爆：敵人的凍結結束時，以該敵人為圓心炸開。
+   走完整傷害管線（本體傷害段、寒冰屬性），不是衍生傷害——文檔給的是獨立的 400% 技能傷害。
+   ctx 可省略（死亡呼叫點沒有 tick ctx），此時由 FIELD 取得玩家實體。 */
+function sgIceBlast(ent, enemies, ctx) {
+  var lvs = skills2Levels('icearrow');
+  if (!lvs || lvs[6] < 1) return;
+  var pEnt = (ctx && ctx.pEnt) || ((typeof FIELD !== 'undefined' && FIELD && FIELD.player) ? FIELD.player : null);
+  if (!pEnt || pEnt.hp <= 0) return;
+  var st = getStats();
+  var fx = SKILLS2.icearrow.tiers[6].fx;
+  var dmgVal = sgGroupBaseStat(SKILLS2.icearrow, st) * sgVal(fx, 'pct', lvs[6]) / 100;
+  if (!(dmgVal > 0)) return;
+  var radius = bfMeterPx(Number(fx.m) || 6);
+  var victims = sgIceBlastVictims(ent, enemies, radius);
+  var floatSel = (ctx && ctx.floatSel) || 'mv-float';
+  sgEmitVfx('icearrow', [ent], floatSel, {
+    fxKind: 'burst', variant: 'ice-blast', elem: 'ice',
+    area: sgAreaAround(ent, radius), preserveDeadTargets: true
+  });
+  if (!victims.length) return;
+  var out = { killed: false, dmg: 0, crit: false };
+  for (var i = 0; i < victims.length; i++) {
+    sgHitOne(pEnt, st, victims[i], dmgVal, 'icearrow', floatSel, out, sgStaggerMs(i));
+  }
+  if (ctx && ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
+  if (out.killed && ctx && ctx.onDeaths) ctx.onDeaths();
+}
+
+/* 冰爆的受害者：以凍結結束的那個敵人為圓心。該敵人自己若還活著也算在內
+   （文檔：對附近的所有敵人造成傷害——凍結解除的本人就在最中心）。 */
+function sgIceBlastVictims(ent, enemies, radius) {
+  var p = (typeof bfPos === 'function') ? bfPos(ent) : null;
+  if (!p) return (ent && ent.hp > 0) ? [ent] : [];
+  if (typeof bfEnemiesInArea !== 'function' || typeof bfLiveList !== 'function') return [];
+  return bfEnemiesInArea({ x: p.x, y: p.y, r: radius }, bfLiveList(enemies));
+}
+
+/* ===========================================================================
+   寒冰箭（icearrow）
+   ---------------------------------------------------------------------------
+   三種形態，全部共用既有基建：
+     單體冰箭（T1）  → 扇形挑目標＋逐箭直接結算（比照飛刀的第 1 階）
+     貫穿冰箭（T4）  → 飛行投射物（bfSegmentTargets 的路徑命中，比照貫穿突刺）
+     追蹤冰箭（T7）  → 先照 T4 貫穿一次，再交給「追擊場域」在範圍內來回穿梭
+   第 7 階依文檔「寒冰箭變為追蹤冰箭」＝改為（不是追加）：貫穿那一段仍然發生，
+   因為文檔的其它說明明寫「射出後會直接朝指定方向貫穿敵人後，再朝範圍內的隨機目標飛去」。
+   =========================================================================== */
+
+/* 寒冰箭的瞄準：第 1 階是「前方扇形內的單體攻擊」，一支箭鎖一個敵人，
+   目標不足時輪流分配（比照飛刀與雙刀亂舞的既有語意）。
+   無座標時（高塔）沒有扇形可言，全部打主目標。 */
+function sgIcearrowAim(primary, pool, count, deg, rangePx) {
+  var picks = [primary];
+  if (typeof bfPos === 'function' && bfPos(primary) &&
+      typeof bfConeTargets === 'function' && typeof bfAngleTo === 'function') {
+    var cone = bfConeTargets(bfAngleTo(primary), deg, rangePx, pool);
+    for (var i = 0; i < cone.length && picks.length < count; i++) {
+      if (cone[i] !== primary && cone[i].hp > 0) picks.push(cone[i]);
+    }
+  }
+  var arrows = [];
+  for (var k = 0; k < count; k++) arrows.push(picks[k % picks.length]);
+  return arrows;
+}
+
+/* 貫穿長度：文檔的「10 米＋每級 2 米」是箭本身的行程。單看字面值會讓投資第 4 階
+   變成降級（射程 30 米的技能只剩 12 米行程，遠處的主目標反而打不到），
+   因此以「打得到主目標」為地板——與泥沼術持續時間取 max 的既有處理同一個理由。 */
+function sgIcearrowPierceLen(lvs, fx, primary) {
+  var len = bfMeterPx(sgVal(fx, 'm', lvs[3]));
+  var need = (typeof bfTravelDistance === 'function' && typeof bfPos === 'function' && bfPos(primary))
+    ? bfTravelDistance(primary) + (typeof bfEntityRadius === 'function' ? bfEntityRadius(primary) : 0)
+    : 0;
+  return Math.max(len, need);
+}
+
+function sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out) {
+  var t = g.tiers;
+  /* 本體每支傷害：第 1 階 ＋【冰系強化】（文檔明寫「與 1 階的傷害為累加效果」）。 */
+  var pct = sgVal(t[0].fx, 'pct', lvs[0]) + (lvs[2] > 0 ? sgVal(t[2].fx, 'pct', lvs[2]) : 0);
+  var dmgVal = sgGroupBaseStat(g, st) * pct / 100;
+  // 【冰箭散射】：數量額外 +N 支（不足 1 支的部分以機率觸發）
+  var count = Math.max(1, Math.floor(Number(t[0].fx.count) || 2) +
+    (lvs[4] > 0 ? sgRollCount(sgVal(t[4].fx, 'add', lvs[4])) : 0));
+  var frost = sgFrostSpec(g, lvs, 1, dmgVal);
+  var pierce = lvs[3] > 0 || lvs[6] > 0;   // 追蹤冰箭同樣先貫穿一次
+  var geomOk = (typeof bfAngleTo === 'function') && bfAngleTo(primary) !== null;
+  var arrows = sgIcearrowAim(primary, pool, count, Number(t[0].fx.deg) || 45,
+    skills2CastRangePx('icearrow', lvs));
+
+  if (pierce && geomOk) {
+    var lineLen = sgIcearrowPierceLen(lvs, t[3].fx, primary);
+    var origin = bfPlayerPos();
+    var halfWidth = SG_FLYING_PROJECTILE_HALF_WIDTH;
+    for (var ai = 0; ai < arrows.length; ai++) {
+      var angle = bfAngleTo(arrows[ai]);
+      if (angle === null) angle = bfAngleTo(primary) || 0;
+      var path = bfLineTargets(angle, lineLen, pool, halfWidth, origin);
+      if (arrows[ai].hp > 0 && path.indexOf(arrows[ai]) < 0) path.unshift(arrows[ai]);
+      sgEmitVfx('icearrow', path.length ? path : [arrows[ai]], floatSel, {
+        fxKind: 'projectile', variant: 'ice-arrow-pierce', elem: 'ice', count: 1,
+        lineLength: lineLen, lineWidth: Math.max(20, halfWidth * 2)
+      });
+      sgQueueFlyingProjectile(pEnt, st, 'icearrow', dmgVal, origin, angle, lineLen,
+        floatSel, path, { halfWidthPx: halfWidth, hitFn: sgIcearrowProjectileHit, frostSpec: frost }, out);
+    }
+  } else {
+    var travelMs = (typeof bfTravelSeconds === 'function')
+      ? arrows.map(function (e) { return Math.round(bfTravelSeconds(e) * 1000); }) : null;
+    /* arrows 一支箭一個元素；count 固定 1，否則顯示層會把每支箭再複製 count 次。 */
+    sgEmitVfx('icearrow', arrows, floatSel, {
+      fxKind: 'projectile', variant: 'ice-arrow', elem: 'ice', count: 1, travelMs: travelMs
+    });
+    for (var i = 0; i < arrows.length; i++) {
+      var delay = (travelMs && travelMs[i]) || 0;
+      sgIcearrowHit(pEnt, st, arrows[i], dmgVal, frost, lvs, floatSel, out, delay, null);
+    }
+  }
+
+  // 【寒冰爆裂箭】：貫穿之後轉為追擊，在範圍內來回穿梭追擊敵人
+  if (lvs[6] > 0) {
+    var hfx = t[6].fx;
+    var lifeSec = Math.max(0.5, Number(hfx.sec) || 6);
+    var gap = Math.max(0.05, Number(hfx.gap) || 0.1);
+    for (var hi = 0; hi < arrows.length; hi++) {
+      sgSpawnGround(pEnt, st, 'icearrow', {
+        kind: 'icearrow', tgt: arrows[hi], floatSel: floatSel,
+        from: (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null,
+        dest: (typeof bfPos === 'function') ? bfPos(arrows[hi]) : null,
+        radius: bfMeterPx(Number(hfx.bodyM) || 1.5),
+        dmgVal: dmgVal, hits: Math.max(1, Math.round(lifeSec / gap)), gap: gap,
+        speed: SG_FLYING_PROJECTILE_SPEED,
+        chaseM: Number(hfx.chaseM) || 30, contact: true, frostSpec: frost
+      });
+    }
+  }
+}
+
+/* 一支冰箭命中一個敵人：本體傷害 → 寒霜 →【寒霜凍結】的追加層數與剩餘傷害引爆。
+   順序是刻意的：先讓本體傷害結算完，再判斷「命中前」是否已帶寒霜——
+   否則本次自己塗上的寒霜會讓第 6 階每一箭都必定觸發。 */
+function sgIcearrowHit(pEnt, st, target, dmgVal, frost, lvs, floatSel, out, delayMs, ctx) {
+  if (!target || target.hp <= 0) return null;
+  var hadFrost = sgFrostOn(target);
+  var res = sgHitOne(pEnt, st, target, dmgVal, 'icearrow', floatSel, out, delayMs);
+  if (!res || res.miss) return res;
+  if (hadFrost && lvs[5] > 0) sgFrostShatter(target, lvs, floatSel, out, ctx);
+  if (frost && target.hp > 0) sgApplyFrost(target, frost);
+  return res;
+}
+
+/* 【寒霜凍結】（寒冰箭 T6）：對已帶寒霜的敵人再疊 N 層，並「造成寒霜所剩餘的寒冰傷害」——
+   把還沒跳完的凍傷一次結清（比照血刃斬【零日感染】的立即結算），結清後該筆凍傷就結束。
+   追加層數在結清之後才塗：新塗上的那一份不該被同一次結算一起清掉。 */
+function sgFrostShatter(target, lvs, floatSel, out, ctx) {
+  var dot = sgFindDot(target, 'sgFrostBite');
+  var fx = SKILLS2.icearrow.tiers[5].fx;
+  if (dot && dot.dps > 0) {
+    var remain = Math.max(0, dot.until - GT);
+    var amount = dot.dps * remain;
+    dot.until = GT;               // 剩餘傷害已一次結清：這筆凍傷到此為止
+    if (amount > 0) {
+      sgDerivedHit(target, amount, 'icearrow', floatSel, out, '🧊', 0);
+      if (ctx && ctx.onDamage) ctx.onDamage(amount);
+      if (target.hp <= 0 && ctx && ctx.onDeaths) ctx.onDeaths();
+    }
+  }
+  if (target.hp <= 0) return;
+  /* 只疊層、不帶傷害（dps 0）：剩餘凍傷剛剛已一次結清，緊接著呼叫端的第 2 階
+     會用正確的每跳量重新塗上寒霜，這裡再算一份傷害只會被那一次覆蓋。
+     層數與傷害是兩筆狀態，因此缺傷害不影響疊層。 */
+  sgApplyFrost(target,
+    { dps: 0, dur: sgFrostBaseDur() * skill2FrostDurFactor(), interval: sgFrostGap(), stacksRaw: 1 },
+    sgVal(fx, 'stacks', lvs[5]));
+}
+
+/* 貫穿冰箭的路徑命中：與單體冰箭走同一支結算（含寒霜與寒霜凍結）。 */
+function sgIcearrowProjectileHit(projectile, target, ctx) {
+  var before = projectile.out.dmg;
+  sgIcearrowHit(projectile.pEnt, projectile.st, target, projectile.dmgVal,
+    projectile.frostSpec, skills2Levels('icearrow'), projectile.floatSel, projectile.out, 0, ctx);
+  if (ctx && ctx.onDamage && projectile.out.dmg > before) ctx.onDamage(projectile.out.dmg - before);
+  if (target.hp <= 0 && ctx && ctx.onDeaths) ctx.onDeaths();
+}
+
+/* ===========================================================================
+   水流彈（waterball）
+   ---------------------------------------------------------------------------
+   本體是一顆拋物線水彈（射程 30 米，離地最高點由表定 arcM 決定，顯示層據此畫弧）。
+   第 4 階【寒流爆散】把單體改為「範圍＋彈射」：一次爆散打目標周圍所有敵人，
+   之後再彈到下一個目標繼續爆散（彈射次數不足 1 的部分以機率觸發）。
+   第 7 階【水龍捲】依文檔未寫「改為」＝追加（比照雷殞天落的既有決策）：
+   水流彈照常丟出，另外在我方正方形的四個頂點各召喚一道水龍捲（地板場域）。
+   =========================================================================== */
+function sgCastWaterball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
+  var t = g.tiers;
+  var dmgVal = sgGroupBaseStat(g, st) * sgVal(t[0].fx, 'pct', lvs[0]) / 100;
+  var frost = sgFrostSpec(g, lvs, 2, dmgVal);
+  var revertSec = lvs[1] > 0 ? Math.max(0.1, Number(t[1].fx.sec) || 6) : 0;
+  var revertPct = lvs[1] > 0 ? sgVal(t[1].fx, 'pct', lvs[1]) : 0;
+  var burstR = lvs[3] > 0 ? bfMeterPx(Number(t[3].fx.m) || 8) : 0;
+  var bounces = lvs[3] > 0 ? sgRollCount(sgVal(t[3].fx, 'bounce', lvs[3])) : 0;
+  // 【三重流水】：朝隨機目標額外丟出 N 顆（不足 1 顆的部分以機率觸發）
+  var extra = lvs[5] > 0 ? sgRollCount(sgVal(t[5].fx, 'add', lvs[5])) : 0;
+  var shots = [primary];
+  for (var e = 0; e < extra; e++) {
+    var rnd = sgRandomEnemyNearPlayer(pool, skills2CastRangePx('waterball', lvs), null);
+    shots.push(rnd || primary);
+  }
+  var arcM = Number(t[0].fx.arcM) || 8;
+
+  for (var si = 0; si < shots.length; si++) {
+    sgWaterballShot(pEnt, st, g, lvs, pool, shots[si], floatSel, out, {
+      dmgVal: dmgVal, frost: frost, revertSec: revertSec, revertPct: revertPct,
+      burstR: burstR, bounces: bounces, arcM: arcM, delayMs: si * SG_WATERBALL_VOLLEY_MS
+    });
+  }
+
+  // 【水龍捲】：追加四道地板場域，位置固定在我方正方形的四個頂點
+  if (lvs[6] > 0) sgSpawnWaterTornadoes(pEnt, st, g, lvs, floatSel);
+}
+
+/* 一顆水流彈：飛行（拋物線，顯示層用 arcM 畫弧）→ 命中 → 爆散 → 彈射。
+   彈射鏈的每一段都接在前一段的飛行時間之後，飄字與畫面才對得上。 */
+function sgWaterballShot(pEnt, st, g, lvs, pool, target, floatSel, out, cfg) {
+  if (!target || target.hp <= 0) return;
+  var travelMs = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(target) * 1000) : 0;
+  var delay = cfg.delayMs + travelMs;
+  sgEmitVfx('waterball', [target], floatSel, {
+    fxKind: 'projectile', variant: 'waterball', elem: 'ice', count: 1,
+    travelMs: [travelMs], delayMs: cfg.delayMs, arcM: cfg.arcM, projectile: true
+  });
+  var cur = target;
+  var visited = [cur];
+  var hops = cfg.bounces;
+  var hopDelay = delay;
+  for (var b = 0; ; b++) {
+    var victims = (cfg.burstR > 0 && typeof bfTargetsAround === 'function')
+      ? bfTargetsAround(cur, pool, cfg.burstR) : [cur];
+    if (!victims.length) victims = [cur];
+    if (cfg.burstR > 0) {
+      sgEmitVfx('waterball', victims, floatSel, {
+        fxKind: 'burst', variant: 'water-burst', elem: 'ice',
+        area: sgAreaAround(cur, cfg.burstR), delayMs: hopDelay
+      });
+    }
+    for (var vi = 0; vi < victims.length; vi++) {
+      sgWaterballHit(pEnt, st, victims[vi], cfg, floatSel, out, hopDelay + sgStaggerMs(vi));
+    }
+    if (b >= hops) break;
+    var next = null;
+    var near = bfNearestOthers(cur, pool, pool.length);
+    for (var ni = 0; ni < near.length; ni++) {
+      if (visited.indexOf(near[ni]) < 0) { next = near[ni]; break; }
+    }
+    if (!next) next = (typeof bfNearestOther === 'function') ? bfNearestOther(cur, pool) : null;
+    if (!next || next === cur || next.hp <= 0) break;
+    visited.push(next);
+    var hopTravelMs = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(next) * 1000) : 0;
+    sgEmitVfx('waterball', [cur, next], floatSel, {
+      fxKind: 'chain', variant: 'water-bounce', elem: 'ice', count: 1,
+      delayMs: hopDelay, travelMs: [0, hopTravelMs]
+    });
+    cur = next;
+    hopDelay += hopTravelMs;
+  }
+}
+
+/* 水流彈命中一個敵人：本體傷害 →【寒冰逆轉】→ 寒霜。
+   逆轉塗在傷害之後：本次命中不吃自己造成的受傷增幅，之後的每一次才吃到
+   （與落雷術「暈眩塗在傷害之後、後落的雷才吃到增傷」同一個處理原則）。 */
+function sgWaterballHit(pEnt, st, target, cfg, floatSel, out, delayMs) {
+  if (!target || target.hp <= 0) return null;
+  var res = sgHitOne(pEnt, st, target, cfg.dmgVal, 'waterball', floatSel, out, delayMs);
+  if (!res || res.miss || target.hp <= 0) return res;
+  if (cfg.revertSec > 0) {
+    applyStatus(target, 'sgIceRevert', { val: cfg.revertPct, dur: cfg.revertSec });
+  }
+  if (cfg.frost) sgApplyFrost(target, cfg.frost);
+  return res;
+}
+
+/* 【水龍捲】（水流彈 T7）：四道地板場域，位置是我方 side×side 米正方形的四個頂點。
+   釘在地板上（不跟隨我方）：文檔只說位置在我方範圍的四個頂點，沒有說會跟著跑。 */
+function sgSpawnWaterTornadoes(pEnt, st, g, lvs, floatSel) {
+  var fx = g.tiers[6].fx;
+  var p = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null;
+  var half = bfMeterPx(Number(fx.side) || 10) / 2;
+  var radius = bfMeterPx(Number(fx.m) || 5);
+  var gap = Math.max(0.05, Number(fx.gap) || 0.35);
+  var hits = Math.max(1, Math.floor(Number(fx.hits) || 6));
+  var dmgVal = sgGroupBaseStat(g, st) * sgVal(fx, 'pct', lvs[6]) / 100;
+  var corners = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
+  var count = Math.max(1, Math.floor(Number(fx.count) || 4));
+  for (var i = 0; i < count; i++) {
+    var c = corners[i % corners.length];
+    sgSpawnGround(pEnt, st, 'waterball', {
+      kind: 'tornado', tgt: null, floatSel: floatSel,
+      from: p ? { x: p.x + c[0] * half, y: p.y + c[1] * half } : null,
+      radius: radius, dmgVal: dmgVal, hits: hits, gap: gap,
+      frozenMult: Math.max(1, Number(fx.frozen) || 2),
+      delaySec: i * gap * 0.15
+    });
+  }
+}
+
+/* ===========================================================================
+   冰霜新星（frostnova）
+   ---------------------------------------------------------------------------
+   以自身為圓心的範圍爆發，是三棵樹裡唯一「不需要目標座標」的技能，因此高塔也能完整生效。
+   第 2 階【冰霜衝擊】依文檔「範圍擴展至 13 米」＝改為（取代第 1 階的 12 米），
+   但仍以 max 為地板，避免第 1 階練滿後投資第 2 階反而縮小範圍。
+   第 5 階【三重新星】為多次施放，每次範圍再 +3 米（逐次累加，第 N 次＝基礎 + 3×N）。
+   第 7 階【暴風雪】依文檔未寫「改為」＝追加：新星照常釋放，另外召喚一道跟隨我方的暴風雪。
+   =========================================================================== */
+function sgCastFrostnova(pEnt, st, g, lvs, pool, primary, floatSel, out) {
+  var t = g.tiers;
+  var pct = sgVal(t[0].fx, 'pct', lvs[0]) + (lvs[1] > 0 ? sgVal(t[1].fx, 'pct', lvs[1]) : 0);
+  var dmgVal = sgGroupBaseStat(g, st) * pct / 100;
+  var baseM = Number(t[0].fx.m) || 12;
+  if (lvs[1] > 0) baseM = Math.max(baseM, sgVal(t[1].fx, 'm', lvs[1]));
+  var frost = sgFrostSpec(g, lvs, 0, dmgVal);
+  // 【三重新星】：施放次數額外 +N 次（不足 1 次的部分以機率觸發），且每次範圍再 +m 米
+  var casts = 1 + (lvs[4] > 0 ? sgRollCount(sgVal(t[4].fx, 'add', lvs[4])) : 0);
+  var stepM = lvs[4] > 0 ? Number(t[4].fx.m) || 0 : 0;
+  for (var i = 0; i < casts; i++) {
+    sgFrostnovaBurst(pEnt, st, g, lvs, pool, floatSel, out, dmgVal, frost,
+      bfMeterPx(baseM + stepM * i), i * SG_FROSTNOVA_VOLLEY_MS);
+  }
+  // 【暴風雪】：追加一道跟隨我方的地板場域
+  if (lvs[6] > 0) sgSpawnBlizzard(pEnt, st, g, lvs, floatSel);
+}
+
+/* 一次新星爆發：以我方為圓心的圓形範圍，範圍內每個敵人吃一次本體傷害並附加寒霜。
+   無座標時（高塔）退化為「打得到的所有敵人」——與本系統其他範圍查詢的退化規則一致。 */
+function sgFrostnovaBurst(pEnt, st, g, lvs, pool, floatSel, out, dmgVal, frost, radiusPx, delayMs) {
+  var victims = sgEnemiesNearPlayer(pool, radiusPx, null, 0);
+  var p = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null;
+  sgEmitVfx('frostnova', victims, floatSel, {
+    fxKind: 'burst', variant: 'frost-nova', elem: 'ice', delayMs: delayMs,
+    area: p ? { x: p.x, y: p.y, r: radiusPx } : null
+  });
+  if (!victims.length) return;
+  for (var i = 0; i < victims.length; i++) {
+    var res = sgHitOne(pEnt, st, victims[i], dmgVal, 'frostnova', floatSel, out, delayMs + sgStaggerMs(i));
+    if (res && !res.miss && frost && victims[i].hp > 0) sgApplyFrost(victims[i], frost);
+  }
+}
+
+/* 【暴風雪】（冰霜新星 T7）：跟隨我方的正方形地板場域（follow＝圓心恆等於玩家當下座標）。 */
+function sgSpawnBlizzard(pEnt, st, g, lvs, floatSel) {
+  var fx = g.tiers[6].fx;
+  var side = bfMeterPx(Number(fx.side) || 20);
+  var gap = Math.max(0.05, Number(fx.gap) || 0.4);
+  var lifeSec = Math.max(0.5, Number(fx.sec) || 8);
+  sgSpawnGround(pEnt, st, 'frostnova', {
+    kind: 'blizzard', tgt: null, floatSel: floatSel,
+    from: (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null,
+    length: side, width: side,
+    dmgVal: sgGroupBaseStat(g, st) * sgVal(fx, 'pct', lvs[6]) / 100,
+    hits: Math.max(1, Math.round(lifeSec / gap)), gap: gap, follow: true
+  });
+}
+
+/* 【死亡新星】（冰霜新星 T6）：帶寒霜的敵人死亡時有機率再釋放一次新星。
+   掛在敵人死亡的收斂點（skills2OnEnemyDeath），不是新星自己的施放流程。
+   釋放的是「一次爆發」而不是整個 castSkill2：不扣魔、不進冷卻、也不會再觸發
+   第 5 階的多次施放與第 7 階的暴風雪（否則連鎖擊殺會遞迴放大）。 */
+function sgDeathNova(deadEnt, enemies) {
+  var lvs = skills2Levels('frostnova');
+  if (!lvs || lvs[5] < 1) return;
+  if (!sgFrostOn(deadEnt)) return;
+  var t = SKILLS2.frostnova.tiers;
+  if (!chance(sgVal(t[5].fx, 'chance', lvs[5]))) return;
+  var pEnt = (typeof FIELD !== 'undefined' && FIELD && FIELD.player) ? FIELD.player : null;
+  if (!pEnt || pEnt.hp <= 0) return;
+  var g = SKILLS2.frostnova;
+  var st = getStats();
+  var pct = sgVal(t[0].fx, 'pct', lvs[0]) + (lvs[1] > 0 ? sgVal(t[1].fx, 'pct', lvs[1]) : 0);
+  var dmgVal = sgGroupBaseStat(g, st) * pct / 100;
+  var baseM = Number(t[0].fx.m) || 12;
+  if (lvs[1] > 0) baseM = Math.max(baseM, sgVal(t[1].fx, 'm', lvs[1]));
+  var out = { killed: false, dmg: 0, crit: false };
+  sgFrostnovaBurst(pEnt, st, g, lvs, enemies || [], 'mv-float', out, dmgVal,
+    sgFrostSpec(g, lvs, 0, dmgVal), bfMeterPx(baseM), 0);
+}
+
+/* 【寒冰體】（冰霜新星 T3）：攻擊你的敵人有機率被附加寒霜。
+   掛在我方受擊收斂點（skills2OnPlayerDamaged）；寒霜的每跳量仍占新星的本體傷害，
+   因此不必裝配也能算出規格——但比照其他主動階，沒點出第 1 階就不生效。 */
+function sgFrostbodyOnPlayerDamaged(mEnt, pEnt, floatSel) {
+  var lvs = skills2Levels('frostnova');
+  if (!lvs || lvs[0] < 1 || lvs[2] < 1) return;
+  if (!mEnt || mEnt.hp <= 0) return;
+  var t = SKILLS2.frostnova.tiers;
+  if (!chance(sgVal(t[2].fx, 'chance', lvs[2]))) return;
+  var g = SKILLS2.frostnova;
+  var st = getStats();
+  var pct = sgVal(t[0].fx, 'pct', lvs[0]) + (lvs[1] > 0 ? sgVal(t[1].fx, 'pct', lvs[1]) : 0);
+  var spec = sgFrostSpec(g, lvs, 0, sgGroupBaseStat(g, st) * pct / 100);
+  if (!spec) return;
+  if (sgApplyFrost(mEnt, spec, sgVal(t[2].fx, 'stacks', lvs[2])) > 0) {
+    sgEmitVfx('frostnova', [mEnt], floatSel || 'mv-float', {
+      fxKind: 'impact', variant: 'frost-body', elem: 'ice'
+    });
+  }
+}
+
 function skills2OnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) {
   if (!SKILL2_RT || !mEnt || !pEnt) return;
   if (res && (res.miss || res.invuln || res.killed)) return;
   if (!(pEnt.hp > 0)) return;
-  /* 受擊收斂點現在服務三個群組；各自獨立判定，彼此不得互相短路。 */
+  /* 受擊收斂點現在服務四個群組；各自獨立判定，彼此不得互相短路。 */
   sgRockOnPlayerDamaged(mEnt, pEnt, hpDamage, res, floatSel);            // 岩甲術 T3／T5／T6
   sgEarthguardReflect(mEnt, pEnt, hpDamage, res, floatSel);              // 大地守護 T6
   sgCounterOnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel); // 反擊
+  sgFrostbodyOnPlayerDamaged(mEnt, pEnt, floatSel);                      // 冰霜新星 T3【寒冰體】
 }
 
 function sgCounterOnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) {
@@ -3219,6 +3960,7 @@ function tickSkill2(dt, ctx) {
   sgTickStorm(ctx);
   sgTickBloodDots(dt, ctx);
   sgTickBurn(dt, ctx);
+  sgTickFrost(dt, ctx);
 }
 
 /* 暴風之舞：每 gap 秒自動施放 1 次雙刀亂舞；每次作用時挑一個敵方目標衝過去，
@@ -3330,6 +4072,7 @@ function skills2OnEnemyDeath(deadEnt, enemies) {
   sgRageOnKill();                 // 嗜血狂怒：狂化連殺疊連擊（T4）＋狂血盛宴延時（T7）
   sgDeathBoom(deadEnt, enemies);  // 血刃斬：死亡屍爆（T6）
   sgBurnBlast(deadEnt, enemies);  // 火球術：爆燃（T5）——死亡是燃燒的另一個結束時機
+  sgDeathNova(deadEnt, enemies);  // 冰霜新星：死亡新星（T6）——帶寒霜的敵人死亡時機率再釋放
 }
 
 /* 嗜血狂怒的擊殺效果：期間每殺 1 敵——T4 連擊數累加、T7 延長持續時間並同步刷新
