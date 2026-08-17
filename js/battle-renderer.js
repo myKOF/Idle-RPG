@@ -142,11 +142,33 @@ var BattleRenderer = (function () {
      垂死的敵人還在畫面上演死亡動畫（死亡定格 2 秒以上），劍氣打在牠身上正是
      擊殺該有的畫面。與飄字的 enemyFloatTargetAvailable 同一條線，兩者一致，
      不會再出現「數字跳出來、卻沒有出手動作」的落差。 */
+  function isTargetBoundThunderVfx(spec) {
+    return !!spec && (spec.variant === 'thunder-strike' || spec.variant === 'thunder-fall');
+  }
+  /* 落雷／雷殞是延遲到落點才結算的天降特效。這兩種特效若在等待期間
+     目標已死亡，必須整段取消；一般普攻仍沿用「dying 也要播出致死那一刀」
+     的舊規則，避免把兩種時序混在一起。 */
+  function vfxTargetLiveForSpec(spec, id) {
+    if (!isTargetBoundThunderVfx(spec) || typeof id !== 'string') return true;
+    if (id === 'pv-float') return !!(S.player && !S.player.dead);
+    var ent = S.entities[id];
+    if (!ent) {
+      /* 尚未建立的目標允許事件繼續；有 lastPos 代表它已經離場。 */
+      return !S.lastPos[id];
+    }
+    return ent.state !== 'dying' && ent.state !== 'gone';
+  }
   function vfxTargetsLive(spec) {
     var ids = spec && Array.isArray(spec.targets) ? spec.targets : [];
     if (!ids.length) return true;
     for (var i = 0; i < ids.length; i++) {
       var id = ids[i];
+      if (spec && (spec.variant === 'thunder-strike' || spec.variant === 'thunder-fall')) {
+        if (id === 'pv-float' && (!S.player || S.player.dead)) return false;
+        var thunderEnt = S.entities[id];
+        if (!thunderEnt && S.lastPos[id]) return false;
+        if (thunderEnt && (thunderEnt.state === 'dying' || thunderEnt.state === 'gone')) return false;
+      }
       if (id === 'pv-float') {
         if (!S.player || !S.player.dead) continue;
         return false;
@@ -163,6 +185,9 @@ var BattleRenderer = (function () {
   }
   function fxGate(spec) {
     if (!S.ready || documentHidden()) return true;
+    if (spec && (spec.variant === 'thunder-strike' || spec.variant === 'thunder-fall')) {
+      return !vfxTargetsLive(spec);
+    }
     if (spec && (spec.cat === 'basic' || spec.variant === 'knife-bounce')) {
       return !vfxTargetsLive(spec);
     }
@@ -1346,7 +1371,7 @@ var BattleRenderer = (function () {
     sweepOrphanFxNodes();
   }
 
-  function spawnParticles(x, y, count, theme, speed, radiusScale) {
+  function spawnParticles(x, y, count, theme, speed, radiusScale, targetGuard) {
     if (REDUCED_MOTION) return;
     count = particleBudget(Math.min(count, 14));
     if (count <= 0) return;
@@ -1371,6 +1396,7 @@ var BattleRenderer = (function () {
         addFx({
           node: g,
           update: function (dt) {
+            if (targetGuard && !targetGuard()) return false;
             t += dt;
             vy += 260 * dt;
             g.x += vx * dt; g.y += vy * dt;
@@ -1625,7 +1651,8 @@ var BattleRenderer = (function () {
   }
 
   /* 命中爆點：環 + 粒子 */
-  function spawnImpact(x, y, spec, strong) {
+  function spawnImpact(x, y, spec, strong, targetGuard) {
+    if (targetGuard && !targetGuard()) return;
     var fireExplosion = spec.variant === 'fire-explosion';
     var theme = fireExplosion
       ? { c1: '#c51e0d', c2: '#ffd447', glow: '#ff3b0a' } : themeOf(spec);
@@ -1649,6 +1676,7 @@ var BattleRenderer = (function () {
     addFx({
       node: ring,
       update: function (dt) {
+        if (targetGuard && !targetGuard()) return false;
         t += dt;
         var k = Math.min(1, t / dur);
         ring.scale.set((1.3 + maxR * k) / RING_TEX_RADIUS);
@@ -1657,7 +1685,7 @@ var BattleRenderer = (function () {
       }
     }, 1);
     spawnParticles(x, y, fireExplosion ? 22 : (strong ? 12 : 6), theme,
-      fireExplosion ? 1.35 : (strong ? 0.9 : 0.55), fireExplosion ? 1.45 : 1);
+      fireExplosion ? 1.35 : (strong ? 0.9 : 0.55), fireExplosion ? 1.45 : 1, targetGuard);
     if (strong) addShake(5, spec);
   }
 
@@ -1943,6 +1971,7 @@ var BattleRenderer = (function () {
     addFx({
       node: g,
       update: function (dt) {
+        if (typeof targetPtOrId === 'string' && !vfxTargetLiveForSpec(spec, targetPtOrId)) return false;
         t += dt;
         if (t < 0) return true;
         var to = resolvePos(targetPtOrId);
@@ -1956,7 +1985,9 @@ var BattleRenderer = (function () {
         }
         if (t >= dur * 0.25 && !g._hit) {
           g._hit = true;
-          spawnImpact(to.x, to.y, spec, !!(isMega || isPurple));
+          spawnImpact(to.x, to.y, spec, !!(isMega || isPurple), function () {
+            return typeof targetPtOrId !== 'string' || vfxTargetLiveForSpec(spec, targetPtOrId);
+          });
           if (typeof targetPtOrId === 'string') {
             hitReact(targetPtOrId, spec.elem || 'lightning', !!(isMega || isPurple));
           }
@@ -2492,22 +2523,27 @@ var BattleRenderer = (function () {
   /* 雷殞天落（thunderorb T7）：巨大雷球從天而降，落地炸出藍色衝擊波。
      與殞石共用「落下時間＝模擬層的 travelMs」的約定，畫面到地與傷害結算同一刻。 */
   function spawnThunderFall(spec, targetId, delaySec) {
+    if (typeof targetId === 'string' && !vfxTargetLiveForSpec(spec, targetId)) return;
     var to = (spec.area && isFinite(spec.area.x) && isFinite(spec.area.y))
       ? { x: spec.area.x, y: spec.area.y } : posOf(targetId);
     if (!to || !isFinite(to.x)) return;
     var radius = (spec.area && Number(spec.area.r) > 0) ? Number(spec.area.r) : 90;
     var from = { x: to.x + (Math.random() * 36 - 18), y: to.y - S.H * 0.7 };
     var dur = Math.max(0.35, ((spec.travelMs && spec.travelMs[0]) || 700) / 1000);
-    spawnTargetTelegraph(spec, to.x, to.y, radius, delaySec, dur);
+    spawnTargetTelegraph(spec, to.x, to.y, radius, delaySec, dur, targetId);
     var node = new PIXI.Container();
     var g = new PIXI.Graphics();
     node.addChild(g);
     S.layers.fx.addChild(node);
     var t = -(Math.max(0, delaySec || 0)), landed = false;
+    var targetGuard = typeof targetId === 'string' ? function () {
+      return vfxTargetLiveForSpec(spec, targetId);
+    } : null;
     var orbR = Math.max(16, radius * 0.32);
     addFx({
       node: node,
       update: function (dt) {
+        if (typeof targetId === 'string' && !vfxTargetLiveForSpec(spec, targetId)) return false;
         t += dt;
         if (t < 0) { node.visible = false; return true; }
         node.visible = true;
@@ -2526,8 +2562,8 @@ var BattleRenderer = (function () {
         }
         if (k >= 1 && !landed) {
           landed = true;
-          spawnImpact(to.x, to.y, spec, true);
-          spawnFireShockwave(to.x, to.y, radius, THUNDER_SHOCK_THEME);
+          spawnImpact(to.x, to.y, spec, true, targetGuard);
+          spawnFireShockwave(to.x, to.y, radius, THUNDER_SHOCK_THEME, targetGuard);
           addShake(6, spec);
           if (typeof targetId === 'string') hitReact(targetId, spec.elem || 'lightning', true);
         }
@@ -2640,7 +2676,7 @@ var BattleRenderer = (function () {
     }, scale && scale < 1 ? 0 : 2, dur * 1000 + (delaySec || 0) * 1000 + 800);
   }
 
-  function spawnTargetTelegraph(spec, cx, cy, radius, delaySec, durationSec) {
+  function spawnTargetTelegraph(spec, cx, cy, radius, delaySec, durationSec, targetId) {
     radius = Number(radius);
     if (!isFinite(radius) || radius <= 0) radius = 90;
     radius = Math.max(36, radius);
@@ -2656,6 +2692,7 @@ var BattleRenderer = (function () {
     addFx({
       node: g,
       update: function (dt) {
+        if (typeof targetId === 'string' && !vfxTargetLiveForSpec(spec, targetId)) return false;
         t += dt;
         if (t < 0) { g.visible = false; return true; }
         g.visible = true;
@@ -2705,7 +2742,7 @@ var BattleRenderer = (function () {
       spawnMeteorProjectile(spec, smallTheme, smallFrom, { x: cx, y: cy }, 0.52, smallDur, delaySec, null);
     }
   }
-  function spawnFireShockwave(cx, cy, radius, theme) {
+  function spawnFireShockwave(cx, cy, radius, theme, targetGuard) {
     var g = new PIXI.Graphics();
     g.x = cx; g.y = cy;
     S.layers.fx.addChild(g);
@@ -2725,6 +2762,7 @@ var BattleRenderer = (function () {
     addFx({
       node: g,
       update: function (dt) {
+        if (targetGuard && !targetGuard()) return false;
         t += dt;
         var k = t / dur;
         g.clear();

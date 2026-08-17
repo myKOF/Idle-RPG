@@ -162,7 +162,7 @@ function vfxClear() {
   }
   for (var i = 0; i < _vfxNodes.length; i++) {
     var n = _vfxNodes[i];
-    if (n && n.parentNode) n.parentNode.removeChild(n);
+    vfxRemoveNode(n);
   }
   _vfxNodes = [];
   _vfxFirePillars = Object.create(null);
@@ -204,6 +204,11 @@ function vfxNodeClassName(node) {
 
 /* 對已脫離 DOM 的節點也安全；清理路徑可重複呼叫。 */
 function vfxRemoveNode(node) {
+  if (node && node._vfxTargetGuardHandle) {
+    if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(node._vfxTargetGuardHandle);
+    else if (typeof clearTimeout === 'function') clearTimeout(node._vfxTargetGuardHandle);
+    node._vfxTargetGuardHandle = 0;
+  }
   if (node && node.parentNode) node.parentNode.removeChild(node);
 }
 
@@ -231,7 +236,7 @@ function vfxScheduleNodeWatchdog() {
 
 /* 登記節點的預期壽命、套用全域節點上限並安排回收。
    aura 是長駐狀態，節點爆量時優先淘汰短命效果，避免領域被技能連發擠掉。 */
-function vfxTrack(node, ms) {
+function vfxTrack(node, ms, targetGuard) {
   var ttl = Number(ms);
   if (!isFinite(ttl) || ttl < 0) ttl = 0;
   var cls = vfxNodeClassName(node);
@@ -239,6 +244,26 @@ function vfxTrack(node, ms) {
     ttl = Math.min(ttl, VFX_METEOR_HARD_LIFETIME_MS);
   }
   node._vfxExpiresAt = Date.now() + ttl;
+  if (typeof targetGuard === 'function') {
+    node._vfxTargetGuard = targetGuard;
+    var checkTarget = function () {
+      node._vfxTargetGuardHandle = 0;
+      if (!node.parentNode || !_vfxEnabled || !targetGuard()) {
+        vfxRemoveNode(node);
+        return;
+      }
+      if (typeof requestAnimationFrame === 'function') {
+        node._vfxTargetGuardHandle = requestAnimationFrame(checkTarget);
+      } else if (typeof setTimeout === 'function') {
+        node._vfxTargetGuardHandle = setTimeout(checkTarget, 50);
+      }
+    };
+    if (typeof requestAnimationFrame === 'function') {
+      node._vfxTargetGuardHandle = requestAnimationFrame(checkTarget);
+    } else if (typeof setTimeout === 'function') {
+      node._vfxTargetGuardHandle = setTimeout(checkTarget, 50);
+    }
+  }
   _vfxNodes.push(node);
   while (_vfxNodes.length > VFX_MAX_NODES) {
     // 撞頂時優先踢短命特效：領域（aura）是長駐視覺狀態，最老≠最該死，
@@ -509,12 +534,38 @@ function vfxHitVisualTarget(elId, card) {
   }
   return card.querySelector('.cb-icon, .cb-emoji, .enemy-emoji-fallback');
 }
-function vfxHitReact(targetId, elem, delayMs, strong) {
+/* 落雷／雷殞的 CSS 元件會先建立、再依 animationDelay 播放；播放期間若目標
+   死亡或從場上移除，不能只靠固定 TTL，否則天雷會劈在空位上。敵卡用 is-dead
+   作為死亡訊號，玩家則使用復活狀態列；其他場景沒有死亡標記時維持原行為。 */
+function vfxTargetIsLive(targetId) {
+  if (!targetId || typeof document === 'undefined') return true;
+  var el = document.getElementById(targetId);
+  if (!el) return false;
+  var card = (el.closest) ? (el.closest('.enemy-card') || el.closest('.combatant')) : null;
+  if (card && card.classList &&
+      (card.classList.contains('is-dead') || card.classList.contains('dead') ||
+       card.getAttribute('data-dead') === 'true')) return false;
+  if (targetId === 'pv-float') {
+    var status = document.getElementById('pv-status');
+    if (status && /復活中/.test(status.textContent || '')) return false;
+    if (typeof uiBattlePanelSnapshot === 'function') {
+      var snapshot = uiBattlePanelSnapshot();
+      var field = snapshot && snapshot.field;
+      if (field && Number(field.reviveCd) > 0) return false;
+    }
+  }
+  return true;
+}
+function vfxTargetGuard(targetId) {
+  if (!targetId) return null;
+  return function () { return vfxTargetIsLive(targetId); };
+}
+function vfxHitReact(targetId, elem, delayMs, strong, targetGuard) {
   if (!targetId) return;
   if (_vfxQuality === VFX_QUALITY_LEVELS.REDUCED && !strong) return;
   var generation = _vfxGeneration;
   setTimeout(function () {
-    if (!_vfxEnabled || generation !== _vfxGeneration) return;
+    if (!_vfxEnabled || generation !== _vfxGeneration || (targetGuard && !targetGuard())) return;
     var el = document.getElementById(targetId);
     var card = (el && el.closest) ? (el.closest('.enemy-card') || el.closest('.combatant')) : null;
     var visual = vfxHitVisualTarget(targetId, card);
@@ -532,12 +583,14 @@ function vfxHitReact(targetId, elem, delayMs, strong) {
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
         if (!visual || visual._vfxHitUntil !== until) return;
-        if (!_vfxEnabled || generation !== _vfxGeneration || card._vfxHitUntil !== until) return;  // 已被更新的一擊接手
+        if (!_vfxEnabled || generation !== _vfxGeneration || card._vfxHitUntil !== until ||
+            (targetGuard && !targetGuard())) return;  // 已被更新的一擊接手
         visual.classList.add('vfx-hit-target', 'vfx-hit');
         if (strong) visual.classList.add('vfx-hit-strong');
         if (elem && VFX_ELEM_THEME[elem]) visual.classList.add('vfx-hit-' + elem);
         setTimeout(function () {
-          if (generation !== _vfxGeneration || card._vfxHitUntil !== until || visual._vfxHitUntil !== until) return;
+          if (generation !== _vfxGeneration || card._vfxHitUntil !== until || visual._vfxHitUntil !== until ||
+              (targetGuard && !targetGuard())) return;
           for (var j = 0; j < VFX_HIT_CLASSES.length; j++) visual.classList.remove(VFX_HIT_CLASSES[j]);
           visual.classList.remove('vfx-hit-target');
         }, 360);
@@ -591,7 +644,7 @@ function vfxSceneShake(layer, delayMs, strong, spec) {
    這是最常用的末端命中回饋；特殊技能通常仍由自己的幾何函式出手，
    再呼叫本函式補命中爆點與卡片反應。 */
 var VFX_IMPACT_PARTS = { fire: 6, ice: 5, lightning: 5, poison: 4, light: 6, dark: 5, earth: 6, phys: 3, claw: 3 };
-function vfxImpact(spec, layer, pt, targetId, delayMs) {
+function vfxImpact(spec, layer, pt, targetId, delayMs, targetGuard) {
   /* 先把 variant 映射成 CSS class，再由粒子數與 strong 決定爆點規模。 */
   var v = spec.variant;
   var elemKey = spec.elem || 'phys';
@@ -639,7 +692,7 @@ function vfxImpact(spec, layer, pt, targetId, delayMs) {
     s.style.animationDelay = (delayMs + i * 22) + 'ms';
     d.appendChild(s);
   }
-  vfxTrack(d, delayMs + life);
+  vfxTrack(d, delayMs + life, targetGuard);
 
   if (v === 'venom' && _vfxQuality !== VFX_QUALITY_LEVELS.REDUCED) {
     // 殘留毒雲：中毒 DoT 的視覺殘影，泡泡持續冒 2.5 秒
@@ -654,10 +707,10 @@ function vfxImpact(spec, layer, pt, targetId, delayMs) {
       bb.style.animationDelay = (delayMs + 150 + b * 420) + 'ms';
       cloud.appendChild(bb);
     }
-    vfxTrack(cloud, delayMs + 2600);
+    vfxTrack(cloud, delayMs + 2600, targetGuard);
   }
   if (v === 'detonate' || v === 'blood-explosion') vfxSceneShake(layer, delayMs, false, spec);
-  vfxHitReact(targetId, spec.elem || null, delayMs, strong);
+  vfxHitReact(targetId, spec.elem || null, delayMs, strong, targetGuard);
 }
 
 /* ---- 投射物 ----
@@ -1134,7 +1187,7 @@ function vfxFirePillarShockwave(spec, layer, pt, radius, delayMs) {
 /* 天降技能的落點提示：以模擬層送來的 area.r 畫出貼地範圍，
    讓玩家在殞石／雷球落下前看見真正會受影響的中心與範圍。提示只屬於顯示層，
    durationMs 到期後淡出，不參與命中或傷害判定。 */
-function vfxTargetTelegraph(spec, layer, pt, radius, delayMs, durationMs) {
+function vfxTargetTelegraph(spec, layer, pt, radius, delayMs, durationMs, targetGuard) {
   if (!pt || !isFinite(pt.x) || !isFinite(pt.y)) return null;
   radius = Number(radius);
   if (!isFinite(radius) || radius <= 0) radius = 72;
@@ -1148,7 +1201,7 @@ function vfxTargetTelegraph(spec, layer, pt, radius, delayMs, durationMs) {
   d.style.height = (radius * 1.04) + 'px';
   d.style.animationDelay = delay + 'ms';
   d.style.animationDuration = duration + 'ms';
-  vfxTrack(d, delay + duration + 240);
+  vfxTrack(d, delay + duration + 240, targetGuard);
   return d;
 }
 
@@ -1463,7 +1516,7 @@ function vfxRainDrops(spec, layer, rect) {
    支援弱化弧光（weak）、大型天雷（mega）、巨型紫雷（purple）。
    在 mega / purple 模式下額外生成分叉副電弧（branch arcs），並使用分層 SVG 筆刷
    （outer 輝光、mid 電漿、core 亮芯）。 */
-function vfxBolt(spec, layer, from, to, delayMs, opts) {
+function vfxBolt(spec, layer, from, to, delayMs, opts, targetGuard) {
   var isWeak = opts === true || (opts && opts.weak);
   var isMega = opts && opts.mega;
   var isPurple = (opts && opts.purple) || (spec && (spec.variant === 'purple-thunder' || spec.variant === 'storm-sigil'));
@@ -1563,11 +1616,11 @@ function vfxBolt(spec, layer, from, to, delayMs, opts) {
     Math.round(w) + ' ' + Math.round(h) + '">' +
     svgLines.join('') +
     '</svg>';
-  vfxTrack(d, delayMs + (isPurple ? 520 : (isMega ? 460 : 420)));
+  vfxTrack(d, delayMs + (isPurple ? 520 : (isMega ? 460 : 420)), targetGuard);
 }
 
 /* 雷擊地表衝擊與電漿火花 */
-function vfxLightningGroundImpact(spec, layer, pt, delayMs, isPurple) {
+function vfxLightningGroundImpact(spec, layer, pt, delayMs, isPurple, targetGuard) {
   var wrap = vfxNode('vfx-lightning-impact-wrap', layer, spec);
   vfxPlace(wrap, pt);
   wrap.style.animationDelay = delayMs + 'ms';
@@ -1588,7 +1641,7 @@ function vfxLightningGroundImpact(spec, layer, pt, delayMs, isPurple) {
     sp.style.animationDelay = (delayMs + (i % 3) * 16) + 'ms';
     wrap.appendChild(sp);
   }
-  vfxTrack(wrap, delayMs + 550);
+  vfxTrack(wrap, delayMs + 550, targetGuard);
 }
 
 /* 巨型紫色電雷（電紋刻印／雷印烙印）：
@@ -1731,14 +1784,17 @@ function vfxChain(spec, layer, ptList, idList, baseDelay, strikes) {
 
 /* 天罰／單發神雷：一道天雷直劈目標；與 vfxChain 共用 vfxBolt，但沒有後續跳。 */
 function vfxSmite(spec, layer, pt, targetId, delayMs, travelMs) {
+  if (targetId && !vfxTargetIsLive(targetId)) return;
+  var targetGuard = vfxTargetGuard(targetId);
   if (spec.variant === 'thunder-fall') {
     var radius = vfxAreaRadius(null, spec.area);
     var flight = Array.isArray(travelMs) ? travelMs[0] : travelMs;
-    vfxTargetTelegraph(spec, layer, pt, radius, delayMs, flight);
+    vfxTargetTelegraph(spec, layer, pt, radius, delayMs, flight, targetGuard);
   }
-  vfxBolt(spec, layer, { x: pt.x + 26, y: -50 }, pt, delayMs, { mega: true });
-  vfxLightningGroundImpact(spec, layer, pt, delayMs + 30, false);
-  vfxImpact({ elem: 'lightning', variant: null, color: spec.color }, layer, pt, targetId, delayMs + 40);
+  vfxBolt(spec, layer, { x: pt.x + 26, y: -50 }, pt, delayMs, { mega: true }, targetGuard);
+  vfxLightningGroundImpact(spec, layer, pt, delayMs + 30, false, targetGuard);
+  vfxImpact({ elem: 'lightning', variant: null, color: spec.color }, layer, pt, targetId,
+    delayMs + 40, targetGuard);
 }
 
 /* ---- 領域：元素化持續特效 ----
