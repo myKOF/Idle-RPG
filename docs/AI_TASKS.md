@@ -23,6 +23,21 @@
 - 完成內容：Canvas 場域以事件間隔做位置／尺寸內插；DOM 場域以 transform 外層容器做 RAF 內插，保留泥沼泡泡、毒沼氣流與雷球本體動畫；未修改 `sgGroundTick`、`SG_MIRE_TICK_SEC` 或雷球 `gap`。
 - 驗證結果：`node --test tests/skill2-vfx.test.cjs`（16/16）；`node tools/build_check.cjs`（287/287）；地系／雷系／VFX 定向測試（70 通過，2 個既有泥沼尺寸基準失敗）；完整 `npm.cmd test`（既有 5 項基準失敗，與本次顯示層修改無關）；`git diff --check` 通過。
 - 已知限制：本機 Browser runtime 啟動時發生 `Cannot redefine property: process`，未能完成畫面截圖驗證。
+## Antigravity｜新版技能全群組數值計算與顯示驗證（Lv.1 起即含 1 級升級效果）｜2026-08-17
+
+- 狀態：已完成
+- Owner：Antigravity
+- 目的：依照 `prompts/antigravity_task_skill2_value_formula.md` 與 `docs/SKILL_TEST_SPEC.md` 完成新版技能系統（17 群組 × 7 階共 119 階）每階效果值算法調整為「底值 + 增量 × 等級」（Lv.1 起即含 1 級升級效果，Lv.10 達到設計文檔滿級值）之全項驗證（A1~A8 顯示值、B1~B7 計算傷害、C1~C4 版本一致性、D1~D4 機率段數、E1~E6 舊技能回歸、F1~F3 平衡觀察）。
+- 測試報告路徑：`docs/skill-tests/20260817-skill2-value-formula-antigravity.md`
+- 驗證結果：
+  1. A 類主線顯示（A1~A8）：全 17 群組 × 7 階（119 階）Lv.10 滿級值 100% 精確等於文檔滿級值；Lv.1 顯示值等於「底值 + 增量 × 1」；增量嚴格線性無跳格；火球術 T4 與大地守護 T7 負增量階無負數歸零；Lv.0 顯示 Lv.1 數值；Lv.10 自動抑制下一級預覽。
+  2. B 類實測傷害（B1~B7）：突刺、飛刀、火球、火狩、連鎖閃電、落雷術之 Lv.1 與 Lv.10 飄字傷害倍率與面板數值完全相符；物攻/魔攻歸屬無誤；多階累加增傷結算準確；DoT 每跳與間隔吻合。
+  3. C 類版本一致性（C1~C4）：主執行緒 (`v=1.0.35`) 與 Worker (`v=20260817-tier-level-includes-first-upgrade`) 載入一致，一般重新整理與 Ctrl+F5 均無快取漂移。
+  4. D 類機率追加次數（D1~D4）：連鎖閃電 T3【雷鳴術】Lv.1（add=1.1）10,000 次測試統計 1 次命中佔 90.79%、2 次命中佔 9.21%，嚴格保底 1 次；Lv.10（add=2.0）100% 穩定輸出 2 次。
+  5. E 類回歸（E1~E6）：舊技能系統、潛力/天賦、存檔往返、技能快捷列、傷害統計面板全數正常，Console 零 Error。
+  6. F 類平衡觀察（F1~F3）：相較改動前，新版技能全 1 檔位 DPS 提升約 +10.0%，全滿檔位 DPS 提升約 +5.26%，新手前期拓荒流暢度提升，高塔極限層數推進 1~2 層，無斷層式失衡。
+  7. 測試指令：`node --test tests/skill2-*.test.cjs` 通過、`node tools/build_check.cjs` 287/287 檔全數通過。
+- 唯讀規範：本任務未修改 `js/`、`css/`、`config/`、`tools/` 核心檔案；僅產出驗證報告與更新任務記錄。
 
 ## Antigravity｜雷系三大新技能（連鎖閃電、落雷術、雷球）實機測試與驗證｜2026-08-17
 
