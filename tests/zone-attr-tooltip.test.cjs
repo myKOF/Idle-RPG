@@ -109,3 +109,34 @@ test('renderZoneBar Tips 也包含主要敵人屬性，且前圖 Boss 未擊敗�
   assert.doesNotMatch(htmlUnlocked, /class="zone-btn locked"[^>]*data-zone="undead_mountains"/);
 });
 
+test('showEnemyTooltip 與 showTowerTooltip 設定 tooltipAnchor 且在 refreshOpenStatTooltip 下不被立刻關閉', () => {
+  const ctx = loadGameContext();
+  const dummyDoc = {
+    contains: (node) => !!node
+  };
+  ctx.document.documentElement = dummyDoc;
+  ctx.UI_WORKER_STATE.panels.header = { stage: { zone: 'swamp', current: 1 } };
+  ctx.UI_WORKER_STATE.panels.battle = {
+    field: {
+      monster: { name: '劇毒蛙', attr: 'poison', atk: 100, aspd: 1, def: 50, mdef: 50, maxHp: 1000, hit: 100, dodge: 0 }
+    }
+  };
+
+  const dummyEnemyBtn = { id: 'btn-enemy-tip', getBoundingClientRect: () => ({ left: 0, right: 10, top: 0, bottom: 10 }) };
+  ctx.showEnemyTooltip(dummyEnemyBtn);
+  assert.strictEqual(ctx.UI.tooltipAnchor, dummyEnemyBtn, 'showEnemyTooltip 必須設定 UI.tooltipAnchor');
+  assert.strictEqual(ctx.mockTip.style.display, 'block', 'Tooltip 應為開啟狀態');
+
+  // 模擬 tick 觸發的 refreshOpenStatTooltip
+  ctx.refreshOpenStatTooltip();
+  assert.strictEqual(ctx.mockTip.style.display, 'block', 'refreshOpenStatTooltip 不應誤關閉敵人情報提示');
+
+  const dummyTowerBtn = { getAttribute: () => null, getBoundingClientRect: () => ({ left: 0, right: 10, top: 0, bottom: 10 }) };
+  ctx.showTowerTooltip('10', dummyTowerBtn);
+  assert.strictEqual(ctx.UI.tooltipAnchor, dummyTowerBtn, 'showTowerTooltip 必須設定 UI.tooltipAnchor');
+  assert.strictEqual(ctx.mockTip.style.display, 'block', '高塔 Tooltip 應為開啟狀態');
+
+  ctx.refreshOpenStatTooltip();
+  assert.strictEqual(ctx.mockTip.style.display, 'block', 'refreshOpenStatTooltip 不應誤關閉高塔提示');
+});
+

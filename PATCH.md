@@ -1,6 +1,21 @@
 # PATCH.md
 
-## 地系三大新技能（岩甲術、泥沼術、大地守護）實機測試與五大收斂點回歸（Antigravity 2026-08-17）
+## 修正戰鬥區敵人情報與高塔資訊 Tooltip 開啟後立即關閉問題（Antigravity 2026-08-17）
+
+- **問題原因**：
+  1. `js/ui.js` 中的 `showEnemyTooltip()` 與 `showTowerTooltip()` 開啟提示時未設定 `UI.tooltipAnchor = anchorEl`。導致每 200ms 的遊戲 Tick 執行 `refreshOpenStatTooltip()` 檢查錨點時，判定錨點為空而立即呼叫 `hideTooltip()` 關閉提示。
+  2. 桌面端游標移入 `#btn-enemy-tip` 時先觸發 `mouseover` 開啟 Tooltip，玩家接著點擊按鈕時觸發 `click` 事件；原先點擊處理未比對 `UI.tooltipOpenByClick` 狀態直接執行 `hideTooltip()`，造成點擊後瞬間閃退。
+- **修正內容**：
+  - `showEnemyTooltip` 與 `showTowerTooltip` 於開啟 Tooltip 時同步賦值 `UI.tooltipAnchor = anchorEl`。
+  - `hideTooltip` 同步重置 `UI.tooltipOpenByClick = false`。
+  - `initUI` 點擊事件中，針對 `#btn-enemy-tip`、`#btn-boss-tip`、`#btn-tower-result-boss-tip` 以及增益狀態按鈕，加入 `UI.tooltipOpenByClick` 開關防護，避免游標 hover 後的點擊誤觸立即關閉。
+  - `refreshOpenStatTooltip` 的 DOM 回溯 fallback 選擇器補上 `#btn-enemy-tip, #btn-boss-tip, #btn-tower-result-boss-tip, [data-tower-tip]`。
+  - `index.html` 的 `js/ui.js` 快取版本遞增為 `v=1.0.49`。
+- **測試與驗證**：
+  - 補強 `tests/zone-attr-tooltip.test.cjs`，驗證 `showEnemyTooltip` 與 `showTowerTooltip` 錨點正確設定，且在模擬 Tick 呼叫 `refreshOpenStatTooltip` 時保持開啟不被誤關。
+  - 執行 `node --test tests/zone-attr-tooltip.test.cjs tests/boss-tooltip.test.cjs` 全數通過（7/7 PASS）。
+  - 執行 `node tools/build_check.cjs`（285 檔全數通過）。
+
 
 - **測試報告與任務交付**：
   - 依照 `prompts/antigravity_task_earth_skills.md` 與 `docs/SKILL_TEST_SPEC.md` 完成地系三大新技能「岩甲術 `rockarmor`」、「泥沼術 `mire`」與「大地守護 `earthguard`」全套實機測試，產出報告 `docs/skill-tests/20260817-earth-three-antigravity.md` 並同步更新 `docs/AI_TASKS.md`。
