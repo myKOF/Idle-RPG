@@ -70,11 +70,11 @@ function stubHits(c, opts) {
 
 /* ---- 1) 定義表 ---- */
 
-test('SKILLS2：11 個群組、每組 7 階、欄位齊全且說明模板的參數鍵都存在', () => {
+test('SKILLS2：14 個群組、每組 7 階、欄位齊全且說明模板的參數鍵都存在', () => {
   const c = loadContext();
   const gids = Object.keys(c.SKILLS2);
   assert.deepEqual(gids, ['thrust', 'cleave', 'knife', 'gale', 'bloodblade', 'dualdance', 'counter', 'bloodrage',
-    'fireball', 'firepillar', 'firehunt']);
+    'fireball', 'firepillar', 'firehunt', 'rockarmor', 'mire', 'earthguard']);
   gids.forEach((gid) => {
     const g = c.SKILLS2[gid];
     const isPassive = c.skills2IsPassive(gid);

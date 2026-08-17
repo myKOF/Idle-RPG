@@ -2816,8 +2816,11 @@ function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
           : skillViewLevel(skillsSnapshot, entry));
       arr.push({
         sk: sk, lv: lv, cd: cd, cost: isSgE ? (Number(sk.cost) || 0) : (isPotE ? 0 : skillManaCost(sk, lv)),
-        // 主動型被動：恆時生效，不顯示冷卻與無魔
-        passive: isSgE && (typeof skills2IsPassive === 'function') && skills2IsPassive(entry.slice(3))
+        /* 主動型被動：恆時生效，不顯示冷卻與無魔。
+           但個別階可以有自己的內部冷卻（大地守護【天地共生】把冷卻寫進同一個技能格），
+           冷卻中就退回一般技能的倒數呈現——否則畫面會宣稱它隨時可用。 */
+        passive: isSgE && (typeof skills2IsPassive === 'function') &&
+          skills2IsPassive(entry.slice(3)) && !(cd > 0)
       });
     }
 
@@ -3178,7 +3181,11 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
 
     /* 主動型被動（js/skills2.js SG_PASSIVE）：裝上即恆時生效，沒有冷卻也不吃法力，
        在快捷列以旋轉流動外框和其他技能區分（不顯示碼錶與無魔標記）。 */
-    var isActivePassive = isSgE && (typeof skills2IsPassive === 'function') && skills2IsPassive(entry.slice(3));
+    var isPassiveGroup = isSgE && (typeof skills2IsPassive === 'function') && skills2IsPassive(entry.slice(3));
+    /* 個別階可以帶自己的內部冷卻（大地守護【天地共生】），冷卻中改用一般技能的
+       「不可用」呈現。群組冷卻是 0，畫不出有意義的比例，故整圈罩住＋顯示剩餘秒數。 */
+    var isPassiveOnCd = isPassiveGroup && cd > 0;
+    var isActivePassive = isPassiveGroup && !isPassiveOnCd;
     var isOnCd = !isActivePassive && cd > 0;
     var isNoMp = !isActivePassive && !isOnCd && pEnt && pEnt.mp !== undefined && pEnt.mp < cost;
     var slotCls = 'battle-skill-slot equipped' +
@@ -3186,7 +3193,8 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
     var equippedState = {
       kind: 'equipped', index: i, entry: entry, emoji: sk.emoji || '⚔️', lv: lv,
       rawCdVal: rawCdVal, snapshotGt: snapshotGt, totalCd: totalCd,
-      cdDeg: isActivePassive ? '0deg' : cdDeg, cdText: isActivePassive ? '' : cdText,
+      cdDeg: isActivePassive ? '0deg' : (isPassiveOnCd ? '360deg' : cdDeg),
+      cdText: isActivePassive ? '' : cdText,
       isOnCd: isOnCd, isNoMp: isNoMp, isActivePassive: isActivePassive, slotCls: slotCls
     };
     equippedState.key = battleSkillSlotKey(equippedState);

@@ -1075,6 +1075,27 @@ const SKILLS2_GLOSSARY_ROWS = [
   ['效果說明模板'],
   ['遊戲內顯示的說明文字；{鍵} 會代入目前等級的計算值（鍵名同「效果參數(JSON)」）。']
 ];
+/* 「冷卻時間 / 施法消耗」是群組層欄位：程式只讀階數=1 那一列，其餘列**僅供對照**，
+   因此編表者可以在後續列寫自己的註記（例如各階原本設想的魔力曲線）。
+   --gen 會整份重建表格，若不特別保留就會被群組值蓋掉——比照 Skills 表的「完整描述」，
+   重建時從現有 CSV 依「群組ID+階數」帶回來。 */
+function skills2TierNoteMap() {
+  const map = {};
+  try {
+    const rows = csvParse(readUtf8(csvPathOf('Skills2')));
+    if (!rows.length) return map;
+    const idx = name => rows[0].findIndex(h => String(h).split('\n')[0].trim() === name);
+    const gIdx = idx('群組ID'), tIdx = idx('階數'), cdIdx = idx('冷卻時間'), costIdx = idx('施法消耗');
+    if (gIdx < 0 || tIdx < 0 || cdIdx < 0 || costIdx < 0) return map;
+    rows.slice(1).forEach(r => {
+      const gid = (r[gIdx] || '').trim();
+      const tier = (r[tIdx] || '').trim();
+      if (gid && tier) map[gid + '|' + tier] = { cd: r[cdIdx] || '', cost: r[costIdx] || '' };
+    });
+  } catch (e) { /* 沒有現成 CSV（首次 bootstrap）就留空 */ }
+  return map;
+}
+
 SCHEMAS.Skills2 = {
   name: 'Skills2', jsFile: 'skills2', sheet: 'Skills2', vars: ['SKILLS2'],
   extraSheets: [{ name: '欄位定義', rows: SKILLS2_GLOSSARY_ROWS }],
@@ -1083,12 +1104,16 @@ SCHEMAS.Skills2 = {
     '效果參數(JSON)', '升級金幣基數', '升級金幣倍率', '效果說明模板'],
   extract(src) {
     const SKILLS2 = evalLiteral(extractLiteral(src, 'SKILLS2').literal);
+    const notes = skills2TierNoteMap();
     const rows = [];
     Object.keys(SKILLS2).forEach(gid => {
       const g = SKILLS2[gid];
       (g.tiers || []).forEach((t, i) => {
+        // 階數 1 是權威（回寫 JS 只讀這一列）；其餘列若表上原本就有註記值就保留
+        const note = i > 0 ? notes[gid + '|' + String(i + 1)] : null;
         rows.push([gid, g.name, g.emoji, g.range || '', g.dmgType || '', g.elem || '',
-          numStr(g.cd), numStr(g.cost), String(i + 1),
+          (note && note.cd !== '') ? note.cd : numStr(g.cd),
+          (note && note.cost !== '') ? note.cost : numStr(g.cost), String(i + 1),
           t.unlock ? (numStr(t.unlock.reinc || 0) + '|' + numStr(t.unlock.lv || 0)) : '', t.name,
           JSON.stringify(t.fx || {}), numStr(t.goldBase || 0), numStr(t.goldGrow || 1), t.desc || '']);
       });

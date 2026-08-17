@@ -3671,3 +3671,66 @@ Commit：
 未完成項目：無。
 
 完成後交給：使用者／主整合工作區。
+
+## 任務：實作地系三大新技能（岩甲術／泥沼術／大地守護）
+
+任務狀態：已完成（2026-08-17）
+
+任務分類：新技能實作／戰鬥機制／狀態系統／戰鬥 VFX
+
+負責 AI：Claude
+
+使用者需求：設計文檔（記事錄 xlsx「技能」頁籤）新增三個魔法技能「岩甲術」「泥沼術」「大地守護」，
+並在文檔上方新增兩段全域注釋：各屬性在遊戲中的說明用語、buff 的重上／疊加／取代規則。
+過程中追加兩項調整：大地守護第 3／4 階改為「回復 +100%、吸血吸魔 +50%」兩個不同倍率；
+第 1 階改為「傷害減免 +10%、生命上限額外 +20%」。
+
+任務內容：新增三個技能群組（共 21 階）與其執行期機制；把設計文檔的屬性用語套進所有新說明模板；
+把 buff 三規則對應到狀態表 stack 欄並寫進文件；引擎新增五個群組共用能力
+（我方防禦側乘區、護盾效率乘算、可變緩速、法力承傷、復活攔截）；補上泥沼場域的 Canvas／DOM 兩套畫法。
+
+使用者決策（實作前確認）：
+- 岩甲術第 4 階＝主動型被動（裝配即生效），第 3、5、6、7 階綁岩甲護盾期間
+- 熔岩沼的 8 秒＝沼澤總持續時間
+- 魔法盾法力不足時「付多少算多少，餘額回扣生命」
+- 岩甲尖刺走獨立的地屬性反擊傷害（非併入反震）
+
+允許修改：
+
+- `config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`
+- `config/Excel/Status.xlsx`、`config/CSV/Status.csv`
+- `js/skills2.js`、`js/status.js`、`js/formula.js`、`js/combat.js`、`js/tower.js`、
+  `js/battlefield.js`、`js/legendary.js`、`js/vfx.js`、`js/battle-renderer.js`、`js/ui.js`
+- `css/style.css`、`index.html`、`js/worker/sim.worker.js`
+- `tools/config_tables.cjs`（`--gen Skills2` 會蓋掉人工註記欄的修正）
+- `tests/skill2-earth.test.cjs`（新增）、`tests/skill2-system.test.cjs`、`tests/skill2-ui.test.cjs`、
+  `tests/skill2-vfx.test.cjs`、`tests/battle-skill-hover.test.cjs`
+- `docs/AI_TASKS.md`、`PATCH.md`
+
+禁止修改：既有技能群組的數值與效果、存檔格式、Worker Protocol、無關 UI／VFX、無關戰鬥公式。
+
+前置依賴：新版技能系統（SKILLS2）與其地板場域／環繞場域基建已存在；
+衝突預檢確認 antigravity／codex／develop 三個副本皆為乾淨工作區且與本副本同一 commit。
+
+測試要求：新增技能定向測試、完整 `npm test`、`npm run build`、
+`config_tables --apply` dry-run 語意變更 0、`index.html` 與 Worker 快取版號同步。
+
+完成條件：三個群組可由程式測試驗證、資料與說明同步、建立 Claude commit。
+
+驗證結果：新增 `tests/skill2-earth.test.cjs` 26 項全通過；`tests/skill2-vfx.test.cjs` 14 項全通過；
+完整 `npm test` 1477 通過 / 5 既有失敗（與乾淨基準線 `develop` 逐項相同，見下）；
+`npm run build` 283/283 通過；`config_tables --apply` dry-run 語意變更 0；
+瀏覽器實機載入無 Console 錯誤，`SKILLS2` 14 個群組與 5 個新狀態皆正確註冊。
+
+已知風險：
+- 完整測試的 5 項失敗全部是**既有**的「參數表 vs. 測試斷言」漂移，與本任務無關，
+  且在乾淨副本上逐項可重現：`counter` 施法消耗（表 25／測試期望 0）、
+  `bloodrage` 施法消耗（表 25／測試期望 50）、
+  `firehunt` 第 1／4／7 階傷害%（表 100/120/150／測試與設計文檔為 120/150/200）。
+  這些是設計數值，需使用者裁決哪一邊為準，未擅自更動。
+- 泥沼場域的視覺（Canvas 水窪與 DOM 版）尚未在實機畫面上目視確認：驗證當下瀏覽器面板未顯示，
+  顯示層不合成畫面，`playCombatVfx` 不會產生節點。程式面已由原始碼定向測試守住兩條路徑的接線。
+
+未完成項目：泥沼／熔岩沼水窪與岩甲護盾光殼的實機目視確認（建議交由 Antigravity 依 SKILL_TEST_SPEC 執行）。
+
+完成後交給：使用者／主整合工作區。

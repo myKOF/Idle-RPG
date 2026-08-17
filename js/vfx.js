@@ -61,6 +61,8 @@ var _vfxFirePillars = Object.create(null);
 var VFX_FIRE_PILLAR_LIFE_MS = 3600;
 var _vfxFireWalls = Object.create(null);
 var VFX_FIRE_WALL_LIFE_MS = 3600;
+var _vfxMirePools = Object.create(null);
+var VFX_MIRE_POOL_LIFE_MS = 3600;
 
 /* 版面快取的版本號只在尺寸、頁籤或戰鬥場景變動時遞增。
    座標函式用這個版本判斷快取是否仍可用，避免每個特效都重新量測整個 DOM。 */
@@ -163,6 +165,7 @@ function vfxClear() {
   _vfxNodes = [];
   _vfxFirePillars = Object.create(null);
   _vfxFireWalls = Object.create(null);
+  _vfxMirePools = Object.create(null);
   if (typeof document === 'undefined' || !document.querySelectorAll) return;
   var hitCards = document.querySelectorAll('.enemy-card, .combatant');
   for (var ci = 0; ci < hitCards.length; ci++) {
@@ -1248,6 +1251,46 @@ function vfxFireWall(spec, layer, area, rect) {
   return node;
 }
 
+/* 泥沼／熔岩沼（新版技能 mire）：貼地的一攤場域。
+   與火牆同為「按 area.id 合併、每次 tick 續命」的長駐節點，但畫的是攤平在地上的水窪，
+   所以尺寸直接吃場域矩形、縱向壓扁成俯視。沼澤會隨時間長大，每次 tick 都重新套尺寸。 */
+function vfxMirePool(spec, layer, area, rect) {
+  if (!rect || !isFinite(rect.x) || !isFinite(rect.y)) return null;
+  var lava = spec && spec.variant === 'mire-lava';
+  var w = Math.max(48, Number(rect.w) || 120);
+  var h = Math.max(24, (Number(rect.h) || 120) * 0.55);
+  var x = (Number(rect.x) || 0) - w / 2 + (Number(rect.w) || 0) / 2;
+  var y = (Number(rect.y) || 0) - h / 2 + (Number(rect.h) || 0) / 2;
+  var key = (area && area.id ? String(area.id) : [Math.round(x), Math.round(y)].join(':')) + (lava ? ':lava' : '');
+  var ttl = Math.max(900, Number(spec.dur || 0.5) * 2400);
+  function layout(target) {
+    target.style.left = x + 'px';
+    target.style.top = y + 'px';
+    target.style.width = w + 'px';
+    target.style.height = h + 'px';
+  }
+  var node = _vfxMirePools[key];
+  if (node && node.parentNode === layer) {
+    layout(node);
+    node._vfxExpiresAt = Date.now() + ttl;
+    return node;
+  }
+  node = vfxNode('vfx-mire-pool' + (lava ? ' vfx-mire-lava' : ''), layer, spec);
+  layout(node);
+  var bubbles = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 5;
+  for (var bi = 0; bi < bubbles; bi++) {
+    var bubble = document.createElement('span');
+    bubble.className = 'vfx-mire-bubble';
+    bubble.style.setProperty('--vfx-mire-bubble-x', (12 + (76 * (bi + 0.5) / bubbles)).toFixed(1) + '%');
+    bubble.style.setProperty('--vfx-mire-bubble-y', (24 + (bi % 3) * 22).toFixed(1) + '%');
+    bubble.style.setProperty('--vfx-mire-bubble-delay', (-Math.random() * 1.6).toFixed(2) + 's');
+    node.appendChild(bubble);
+  }
+  _vfxMirePools[key] = node;
+  vfxTrack(node, VFX_MIRE_POOL_LIFE_MS);
+  return node;
+}
+
 /* 預設天降：範圍內落下數道元素雨；沒有 meteor／pillar／smite 專屬畫法時使用。 */
 function vfxRainDrops(spec, layer, rect) {
   var drops = Math.min(6, Math.max(3, Math.round(rect.w / 60)));
@@ -1743,6 +1786,7 @@ function renderCombatVfx(spec) {
     if (kind === 'aura') {
       if (s.variant === 'cyclone') vfxCyclone(s, layer, rect);
       else if (s.variant === 'firewall') vfxFireWall(s, layer, spec.area, rect);
+      else if (s.variant === 'mire' || s.variant === 'mire-lava') vfxMirePool(s, layer, spec.area, rect);
       else vfxAura(s, layer, rect);
       return;
     }

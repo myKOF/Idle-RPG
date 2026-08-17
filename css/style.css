@@ -7841,6 +7841,68 @@ textarea:disabled,
   to { transform: translate(-44%, -8px) scale(1.12); opacity: 0.78; }
 }
 
+/* ---- 泥沼／熔岩沼（新版技能 mire）：貼地的一攤場域 ----
+   與火牆同為長駐節點，但畫的是攤在地上的水窪：橢圓本體＋擴散漣漪＋冒泡。
+   尺寸由 js/vfx.js 依場域矩形逐次套用（沼澤會隨時間長大），此處只負責樣式。 */
+.vfx-mire-pool {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 50%,
+    rgba(123, 100, 48, 0.5), rgba(74, 58, 32, 0.42) 62%, rgba(52, 41, 24, 0.08) 88%, transparent 96%);
+  box-shadow: inset 0 0 18px rgba(30, 24, 12, 0.55);
+  animation: vfxMirePoolPulse 2.4s ease-in-out infinite alternate;
+}
+
+.vfx-mire-pool::after {
+  content: '';
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  border: 2px solid rgba(155, 189, 82, 0.42);
+  animation: vfxMireRipple 2.1s ease-out infinite;
+}
+
+.vfx-mire-lava {
+  background: radial-gradient(ellipse at 50% 50%,
+    rgba(255, 140, 48, 0.5), rgba(160, 48, 12, 0.44) 60%, rgba(96, 26, 8, 0.1) 88%, transparent 96%);
+  box-shadow: inset 0 0 22px rgba(255, 122, 42, 0.4);
+}
+
+.vfx-mire-lava::after { border-color: rgba(255, 179, 71, 0.5); }
+
+.vfx-mire-bubble {
+  position: absolute;
+  left: var(--vfx-mire-bubble-x, 50%);
+  top: var(--vfx-mire-bubble-y, 50%);
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(196, 220, 138, 0.7), rgba(120, 150, 60, 0.15) 70%, transparent 82%);
+  animation: vfxMireBubble 1.5s ease-in-out var(--vfx-mire-bubble-delay, 0s) infinite;
+}
+
+.vfx-mire-lava .vfx-mire-bubble {
+  background: radial-gradient(circle, rgba(255, 210, 130, 0.8), rgba(255, 130, 40, 0.2) 70%, transparent 82%);
+}
+
+@keyframes vfxMirePoolPulse {
+  from { opacity: 0.78; transform: scale(0.985); }
+  to { opacity: 1; transform: scale(1.015); }
+}
+
+@keyframes vfxMireRipple {
+  from { transform: scale(0.35); opacity: 0.55; }
+  to { transform: scale(1); opacity: 0; }
+}
+
+@keyframes vfxMireBubble {
+  0% { transform: scale(0.4); opacity: 0; }
+  45% { transform: scale(1.1); opacity: 0.85; }
+  100% { transform: scale(0.5) translateY(-6px); opacity: 0; }
+}
+
 /* ---- 光柱審判：天光射下→觸地散開 ---- */
 .vfx-pillar {
   width: 40px;

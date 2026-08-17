@@ -969,6 +969,11 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
             floatPlayerEvent(playerFloatSel, '🛡️吸收 ' + fmt(res.absorbed), 'shield');
             logMsg += '<span class="log-hl-good">生命減少 ' + fmt(hpDamage) + '，護盾吸收 ' + fmt(res.absorbed) + '。</span>';
         }
+        // 新版技能【魔法盾】（大地守護 T5）：改由法力承擔的那一段（→ formula.js resolveHit）
+        if (res.manaShield > 0) {
+            floatPlayerEvent(playerFloatSel, '🔵抵擋 ' + fmt(res.manaShield), 'shield');
+            logMsg += '<span class="log-hl-good">魔法盾以 ' + fmt(res.manaShield) + ' 法力承擔了部分傷害。</span>';
+        }
         if (res.procs.length) {
             res.procs.forEach(function (proc) {
                 floatPlayerEvent(playerFloatSel, proc + '!', proc === '不朽' ? 'buff' : 'debuff');
@@ -1427,6 +1432,13 @@ function fieldDeathRetreatStage(currentStage) {
 }
 
 function onPlayerFieldDeath() {
+    /* 新版技能【天地共生】（大地守護 T7，js/skills2.js）：死亡攔截。
+       掛在這裡而不是 resolveHit 的致死分支，是因為野外有多條判死路徑
+       （敵人攻擊、持續傷害、自傷技能、反震），這裡是它們唯一的共同出口。 */
+    if (typeof skills2TryRebirth === 'function' && FIELD.player && skills2TryRebirth(FIELD.player)) {
+        UI.dirty.battle = true;
+        return;
+    }
     // 45 新技能：死亡＝該場戰鬥結束——比照 finishTowerFight 清空 SKILL_RT 執行期狀態，
     // 避免死前入列的回響/領域/聖痕/快照窗（帶死前傷害快照）在復活後對退階新波次集中結算
     if (typeof resetSkillRT === 'function') resetSkillRT();

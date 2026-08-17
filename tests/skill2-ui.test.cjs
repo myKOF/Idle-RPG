@@ -69,9 +69,12 @@ test('主動型被動：技能彈窗有裝備鈕與類型標籤，快捷列外�
   const barStart = ui.indexOf('function renderBattleSkillBar(');
   const barEnd = ui.indexOf('function startBattleSkillBarAnimation(', barStart);
   const bar = ui.slice(barStart, barEnd);
-  assert.match(bar, /isActivePassive = isSgE && \(typeof skills2IsPassive === 'function'\) && skills2IsPassive\(entry\.slice\(3\)\)/);
+  assert.match(bar, /isPassiveGroup = isSgE && \(typeof skills2IsPassive === 'function'\) && skills2IsPassive\(entry\.slice\(3\)\)/);
   assert.match(bar, /isActivePassive \? ' active-passive ready'/);
   assert.match(bar, /var isOnCd = !isActivePassive && cd > 0/);
+  // 主動型被動的個別階可以有自己的內部冷卻（大地守護【天地共生】）：冷卻中要退回一般倒數呈現
+  assert.match(bar, /var isPassiveOnCd = isPassiveGroup && cd > 0/);
+  assert.match(bar, /var isActivePassive = isPassiveGroup && !isPassiveOnCd/);
 
   // CSS：旋轉流動外框（conic-gradient ＋ 無限旋轉動畫），並提供減少動態的替代呈現
   assert.match(css, /\.battle-skill-slot\.active-passive::before\s*\{[\s\S]*?conic-gradient/);
