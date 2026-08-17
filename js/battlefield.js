@@ -47,6 +47,13 @@ function bfContactDist() { return bfNum('BF_CONTACT_DIST', 46); }     // 走到�
 function bfPlayerSpeed() { return bfNum('BF_PLAYER_SPEED', 300); }
 /* 敵人跑速是獨立的值，不由我方換算——兩邊要能分開調。 */
 function bfEnemySpeed() { return bfNum('BF_ENEMY_SPEED', 210); }
+/* 單一敵人的跑速倍率：目前唯一來源是新版技能【泥沼術】的緩速（js/skills2.js）。
+   本檔不認識任何技能，只認得「有沒有人提供倍率」——沒載入就恆為 1。 */
+function bfEnemySpeedFactor(ent) {
+  if (typeof skill2MoveSlowFactor !== 'function') return 1;
+  var f = Number(skill2MoveSlowFactor(ent));
+  return (isFinite(f) && f > 0) ? Math.min(1, f) : 1;
+}
 function bfMeleeRange() { return bfNum('BF_MELEE_RANGE', 50); }       // 近戰攻擊距離
 function bfRangedRange() { return bfNum('BF_RANGED_RANGE', 320); }    // 魔法系敵人的攻擊距離
 function bfBodyRadius() { return bfNum('BF_BODY_RADIUS', 20); }
@@ -183,7 +190,7 @@ function bfTickApproach(enemies, dt) {
     var d = Math.sqrt(dx0 * dx0 + dy0 * dy0);
     var stop = bfStopDistance(ent);
     if (d > stop && d > 0.0001) {
-      var step = Math.min(d - stop, speed * dt);
+      var step = Math.min(d - stop, speed * bfEnemySpeedFactor(ent) * dt);
       p.x -= (dx0 / d) * step;
       p.y -= (dy0 / d) * step;
     }

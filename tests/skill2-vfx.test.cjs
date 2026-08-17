@@ -307,3 +307,51 @@ test('突刺 VFX 會保留實際長度與完整段數上限', () => {
   assert.match(vfx, /var isThrust = spec\.variant === 'thrust'/);
   assert.match(renderer, /var isThrust = spec\.variant === 'thrust'/);
 });
+
+test('泥沼／熔岩沼：兩套顯示層都有貼地水窪畫法，且尺寸每次 tick 都跟著場域更新', () => {
+  const skills2 = read('js/skills2.js');
+  const vfx = read('js/vfx.js');
+  const renderer = read('js/battle-renderer.js');
+  const css = read('css/style.css');
+  const shim = read('js/worker/shim.js');
+
+  // 模擬層：沼澤每一跳送出帶 area 的 aura 事件；熔岩沼換一個 variant 與火屬性
+  assert.match(skills2, /variant: m\.lava \? 'mire-lava' : 'mire'/);
+  assert.match(skills2, /elem: m\.lava \? 'fire' : 'earth'/);
+  // 矩形場域的 area 必須帶 w/h/a，顯示層才畫得出方向正確的方框（外接圓 r 供舊畫法退化）
+  assert.match(skills2, /return \{ id: f\.vfxId, x: f\.pos\.x, y: f\.pos\.y, w: f\.length, h: f\.width,/);
+  assert.match(shim, /area: spec\.area \|\| null/, 'area 必須整包跨 Worker 邊界送出');
+
+  // 場域會長大：尺寸的權威是「出生尺寸 × 當下倍率」，每跳重算，不能就地複利
+  assert.match(skills2, /function sgGroundGrowScale\(f\)/);
+  assert.match(skills2, /f\.length = f\.baseLength \* s;/);
+  assert.match(skills2, /sgGroundApplyGrowth\(f\);   \/\/ 逐漸擴大的場域/);
+
+  // DOM（高塔）與 Canvas（野外）兩條路徑都要接上，否則其中一邊會退回預設光暈
+  assert.match(vfx, /function vfxMirePool\(spec, layer, area, rect\)/);
+  assert.match(vfx, /else if \(s\.variant === 'mire' \|\| s\.variant === 'mire-lava'\) vfxMirePool\(s, layer, spec\.area, rect\);/);
+  assert.match(renderer, /function spawnMirePool\(spec\)/);
+  assert.match(renderer, /else if \(spec\.variant === 'mire' \|\| spec\.variant === 'mire-lava'\) spawnMirePool\(spec\);/);
+  // 同一攤沼澤要靠 area.id 合併成一個長駐節點，不是每跳生一個新的
+  assert.match(vfx, /var node = _vfxMirePools\[key\];/);
+  assert.match(renderer, /var current = _mirePoolFx\[key\];/);
+  // 續命與清場：切場景時長駐節點要一起回收
+  assert.match(vfx, /_vfxMirePools = Object\.create\(null\);/);
+  assert.match(renderer, /if \(_mirePoolFx\[key\] === fx\) delete _mirePoolFx\[key\];/);
+
+  assert.match(css, /\.vfx-mire-pool\s*\{[\s\S]*?border-radius:\s*50%/);
+  assert.match(css, /\.vfx-mire-lava\s*\{/);
+  assert.match(css, /@keyframes vfxMireRipple/);
+  assert.match(css, /@keyframes vfxMireBubble/);
+});
+
+test('岩甲術與大地守護的自身特效走玩家定址，不會畫到敵人身上', () => {
+  const skills2 = read('js/skills2.js');
+  assert.match(skills2, /function sgEmitPlayerVfx\(gid, floatSel, extra\)/);
+  assert.match(skills2, /playerEventFloatTarget/);
+  assert.match(skills2, /sgEmitPlayerVfx\('rockarmor', floatSel, \{ fxKind: 'aura', variant: 'rock-armor'/);
+  // 天地共生的復活光柱：沿用既有 rain/pillar 畫法（設計文檔要求「從天而降的光柱」）
+  assert.match(skills2, /sgEmitPlayerVfx\('earthguard', 'pv-float', \{ fxKind: 'rain', variant: 'pillar'/);
+  // 岩甲尖刺打在敵人身上，走敵人定址的 impact
+  assert.match(skills2, /sgEmitVfx\('rockarmor', \[mEnt\], eSel, \{ fxKind: 'impact', variant: 'rock-spike', elem: 'earth' \}\);/);
+});

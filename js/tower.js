@@ -138,10 +138,15 @@ function towerTick(dt) {
   }
 
   // 回復與冷卻（含再生增益）
-  p.mp = Math.min(st.mp, p.mp + st.mpRegen * dt);
+  /* 高塔沒有每秒基礎生命回復（formula.js BASE_HP_REGEN_PCT 只作用於野外），
+     因此這裡不能直接改用 playerHpRegenPerSec；新版技能【生命再生】／【魔力再生】
+     （大地守護 T3／T4）的乘算則兩邊都要吃，故單獨乘在屬性值上。 */
+  var regenHpMul = (typeof skill2RegenFactor === 'function') ? skill2RegenFactor('hp') : 1;
+  var regenMpMul = (typeof skill2RegenFactor === 'function') ? skill2RegenFactor('mp') : 1;
+  p.mp = Math.min(st.mp, p.mp + st.mpRegen * regenMpMul * dt);
   var hot = buffVal(p, 'hot');
   if ((st.hpRegen > 0 || hot > 0) && p.hp < st.hp) {
-    p.hp = Math.min(st.hp, p.hp + (st.hpRegen + st.hp * hot / 100) * dt);
+    p.hp = Math.min(st.hp, p.hp + (st.hpRegen * regenHpMul + st.hp * hot / 100) * dt);
   }
   tickSkillCds(p, dt); // 潛力技能冷卻共用 skillCds（鍵 'potential:<id>'），一併在此遞減
 
@@ -258,6 +263,13 @@ function towerTick(dt) {
 
 /* ---- 結算與失敗分析 ---- */
 function endTowerFight(win, reason) {
+  /* 新版技能【天地共生】（大地守護 T7，js/skills2.js）：死亡攔截。
+     高塔有十來處 `p.hp <= 0 → endTowerFight(false, 'death')`，這裡是它們的共同出口；
+     復活成功就當這次判死沒發生過，呼叫端本來就只是 return，下一個 tick 會繼續打。 */
+  if (!win && reason === 'death' && typeof skills2TryRebirth === 'function' &&
+      TOWER.player && skills2TryRebirth(TOWER.player)) {
+    return;
+  }
   var b = TOWER.boss;
   var floor = TOWER.floor;
   var hpPct = b ? (b.hp / b.maxHp * 100) : 0;

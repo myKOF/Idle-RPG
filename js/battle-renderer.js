@@ -2199,6 +2199,88 @@ var BattleRenderer = (function () {
     return fx;
   }
 
+  /* 泥沼／熔岩沼（新版技能 mire）：貼地的一攤場域。
+     與火牆同為「按 area.id 合併、每次 tick 續命」的長駐特效，但畫法完全相反——
+     火牆是向上立起的火焰，沼澤是攤平在地上的水窪，所以另寫一支而不是共用參數。
+     沼澤會隨時間長大（【沼澤漫延】），尺寸每次 tick 都由 area 帶進來，不自行推算。 */
+  var _mirePoolFx = Object.create(null);
+  var MIRE_POOL_MAX_LIFE_SEC = 14;
+  function spawnMirePool(spec) {
+    var a = spec && spec.area;
+    if (!a || !isFinite(a.x) || !isFinite(a.y)) return null;
+    var lava = spec.variant === 'mire-lava';
+    var key = (a.id || [Math.round(a.x), Math.round(a.y)].join(':')) + (lava ? ':lava' : '');
+    var holdMs = Math.max(700, Number(spec.dur || 0.5) * 2200);
+    var current = _mirePoolFx[key];
+    if (current && !current.dead && current.node && !current.node.destroyed) {
+      current.x = Number(a.x); current.y = Number(a.y);
+      current.w = Math.max(20, Number(a.w) || current.w);
+      current.h = Math.max(16, Number(a.h) || current.h);
+      current.lava = lava;
+      current.expiresAt = nowMs() + holdMs;
+      return current;
+    }
+    var node = new PIXI.Container();
+    var g = new PIXI.Graphics();
+    node.addChild(g);
+    S.layers.zone.addChild(node);
+    var fx = {
+      node: node, x: Number(a.x), y: Number(a.y),
+      w: Math.max(20, Number(a.w) || 100), h: Math.max(16, Number(a.h) || 100),
+      lava: lava, t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false
+    };
+    _mirePoolFx[key] = fx;
+    var bubbleAt = 0;
+
+    addFx({
+      node: node,
+      update: function (dt) {
+        fx.t += dt;
+        node.x = fx.x; node.y = fx.y; node.rotation = 0;
+        var left = fx.expiresAt - nowMs();
+        var fade = left < 420 ? Math.max(0, left / 420) : 1;
+        /* 地面是俯視壓扁的：橫向用整個寬度，縱向壓成 0.5，看起來才是「躺在地上」。 */
+        var rx = fx.w * 0.5;
+        var ry = fx.h * 0.5 * 0.52;
+        var phase = fx.t * 2.1;
+        var body = fx.lava ? 0x8a2b0b : 0x4a3a20;
+        var rim = fx.lava ? 0xff7a2a : 0x7d6533;
+        var glow = fx.lava ? 0xffb347 : 0x9bbd52;
+        g.clear();
+        g.ellipse(0, 0, rx, ry).fill({ color: body, alpha: 0.44 * fade });
+        g.ellipse(0, 0, rx, ry).stroke({ width: 3, color: rim, alpha: 0.55 * fade });
+        // 幾圈慢慢擴散的漣漪：沼澤在冒泡、岩漿在翻滾，用同一組環表現
+        for (var ri = 0; ri < 3; ri++) {
+          var u = ((phase * 0.32 + ri / 3) % 1);
+          g.ellipse(0, 0, rx * (0.28 + u * 0.7), ry * (0.28 + u * 0.7))
+            .stroke({ width: 2, color: glow, alpha: (0.34 * (1 - u)) * fade });
+        }
+        // 泡泡：位置以 t 決定（同一個 fx 每幀連續變化，不用亂數避免閃爍）
+        for (var bi = 0; bi < 6; bi++) {
+          var ba = phase * 0.7 + bi * 1.9;
+          var brr = 0.28 + ((bi * 0.17 + phase * 0.11) % 0.62);
+          var bx = Math.cos(ba) * rx * brr;
+          var by = Math.sin(ba) * ry * brr;
+          var br = 2.4 + (bi % 3) * 1.4 + Math.sin(phase * 1.7 + bi) * 0.9;
+          g.circle(bx, by, Math.max(1, br)).fill({ color: glow, alpha: 0.3 * fade });
+        }
+        bubbleAt += dt;
+        if (!REDUCED_MOTION && bubbleAt > 0.28 && fade > 0.4) {
+          bubbleAt = 0;
+          spawnParticles(fx.x + (Math.random() - 0.5) * fx.w * 0.6,
+            fx.y + (Math.random() - 0.5) * ry * 1.2, 2, themeOf(spec), 0.9, 0.5);
+        }
+        if (nowMs() >= fx.expiresAt) {
+          fx.dead = true;
+          if (_mirePoolFx[key] === fx) delete _mirePoolFx[key];
+          return false;
+        }
+        return true;
+      }
+    }, 2, MIRE_POOL_MAX_LIFE_SEC * 1000);
+    return fx;
+  }
+
   function spawnRiser(x, y, theme, glyph) {
     var node;
     if (glyph && Math.random() < 0.4) {
@@ -3040,6 +3122,7 @@ var BattleRenderer = (function () {
       case 'aura':
         if (spec.variant === 'firehunt') spawnFireHunt(spec);
         else if (spec.variant === 'firewall') spawnFireWall(spec);
+        else if (spec.variant === 'mire' || spec.variant === 'mire-lava') spawnMirePool(spec);
         else if (spec.variant === 'cyclone') spawnCyclone(rect, spec);
         else if (spec.variant === 'bladestorm') spawnBladestorm(rect, spec);
         else spawnAura(rect, spec);

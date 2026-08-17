@@ -245,6 +245,20 @@ function legendaryElementDamageUp(st, pEnt) {
     var fireAmp = skill2FireAmpPct(pEnt);
     if (fireAmp > 0) out.fire = (out.fire || 0) + fireAmp;
   }
+  /* 新版技能【大地祝福】（大地守護 T2）：全屬性傷害的**乘算**增幅——
+     設計文檔明訂「與所有屬性增傷效果為額外的乘法計算」，因此不是再加一筆%，
+     而是把每個屬性目前的加成整體放大。 */
+  if (typeof skill2ElemDamageUpPct === 'function') {
+    var allElem = skill2ElemDamageUpPct();
+    if (allElem > 0) {
+      var keys = (typeof ELEMENTS !== 'undefined' && ELEMENTS.length)
+        ? ELEMENTS : ['fire', 'ice', 'lightning', 'poison', 'light', 'dark', 'earth'];
+      for (var ei = 0; ei < keys.length; ei++) {
+        var ek = keys[ei];
+        out[ek] = ((1 + (out[ek] || 0) / 100) * (1 + allElem / 100) - 1) * 100;
+      }
+    }
+  }
   return out;
 }
 

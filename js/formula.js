@@ -323,7 +323,9 @@ function computeStats(equipmentOverride) {
   st.base = {};
   st.base.hp = DERIVED_COEF.hpBase + (lv - 1) * DERIVED_COEF.hpPerLevel + rawVit * PRIMARY_STAT_EFFECTS.vitHp;
   var rawHp = (st.base.hp + A.hpFlat) * (1 + A.hpPct / 100);
-  st.hp = Math.round(rawHp * reincMult * (1 + (talent.hpPct || 0) / 100));
+  // 新版技能【大地守護】（earthguard T1，js/skills2.js）：生命上限的額外乘區（與天賦同層獨立相乘）
+  st.hp = Math.round(rawHp * reincMult * (1 + (talent.hpPct || 0) / 100) *
+    ((typeof skill2MaxHpFactor === 'function') ? skill2MaxHpFactor() : 1));
   st.hpRegen = A.hpRegen;                                    // 額外生命恢復/秒（另有 BASE_HP_REGEN_PCT%/秒 基礎回復）
   // 法力 =（基底 + 原始智力×intMp + 定值）×轉生倍率；法力恢復另依原有公式計算
   st.base.mp = DERIVED_COEF.mpBase + rawInt * PRIMARY_STAT_EFFECTS.intMp;
@@ -387,7 +389,10 @@ function computeStats(equipmentOverride) {
   // 「被控場持續時間」（ccFactor）與「被爆擊機率」（resolveHit 暴擊段）三處。
   st.tenacity = capValue(A.tenacity, STAT_CAPS.tenacity);
   // 護盾總值額外（護盾脈衝）＝獨立乘區：與其他護盾效率% 連乘後折算回單一效率值，供既有護盾公式沿用。
-  st.shieldEff = ((1 + A.shieldEff / 100) * (1 + (talent.shieldEff || 0) / 100) - 1) * 100;
+  // 新版技能【護盾增幅】（岩甲術 T4，js/skills2.js）同為獨立乘區，一併折算回效率值——
+  // 收斂在這一處，applyShield／grantShield／溢出轉護盾三條路徑就都吃得到。
+  st.shieldEff = ((1 + A.shieldEff / 100) * (1 + (talent.shieldEff || 0) / 100) - 1) * 100 *
+    ((typeof skill2ShieldEffFactor === 'function') ? skill2ShieldEffFactor() : 1);
   // 物理、魔法與元素抗性不設上限；仍保留下限 0，避免負抗性反向增傷。
   // 物抗/魔抗天賦「額外」＝抗性總值 ×(1+天賦%)。
   st.pRes = Math.max(0, Number(A.pRes) || 0) * (1 + (talent.pRes || 0) / 100);
@@ -564,7 +569,13 @@ var BASE_HP_REGEN_PCT = 2;  // 野外每秒基礎生命回復（最大生命 %�
    2026-08 之前這裡是「擊殺回復 12%」，每擊殺一隻觸發；改為整波清空才回復一次。 */
 var WAVE_CLEAR_HEAL_PCT = 12;
 
-function slowFactor(ent) { return effectActive(ent, 'slow') ? SLOW_ASPD_FACTOR : 1; }
+/* 攻擊冷卻累積倍率：舊的 slow 控場（固定 -30%）× 新版技能【泥沼術】的可變緩速。
+   兩者是不同機制（控場 vs. 場域減益），故相乘而非取其一。 */
+function slowFactor(ent) {
+  var f = effectActive(ent, 'slow') ? SLOW_ASPD_FACTOR : 1;
+  if (typeof skill2MireAspdFactor === 'function') f *= skill2MireAspdFactor(ent);
+  return f;
+}
 
 // 高塔 BOSS 不受會改變攻擊頻率的控制效果影響。
 function isBossControlImmune(ent) { return !!(ent && ent.isBoss); }
@@ -710,6 +721,11 @@ function applyEnemyHpDamage(ent, damage) {
     /* GM 鎖血（僅本機 GM 指令 god → js/gm_exec.js）：我方生命最低鎖 1。
        只對玩家戰鬥實體生效——實體判別沿用 tickStatuses 慣例（敵人才有 maxHp）。 */
     var gmFloor = (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.god && !(ent.maxHp > 0)) ? 1 : 0;
+    /* 新版技能【魔法盾】（大地守護 T5）：持續傷害等「不經 resolveHit 的直接扣血」
+       同樣是「你的生命減少」。玩家實體以「沒有 maxHp」辨識（沿用 tickStatuses 慣例）。 */
+    if (amount > 0 && !(ent.maxHp > 0) && typeof skills2ManaShieldAbsorb === 'function') {
+      amount = Math.max(0, amount - skills2ManaShieldAbsorb(ent, amount));
+    }
     ent.hp = Math.max(gmFloor, ent.hp - amount);
     // 新版技能【血飲術】反噬：持續傷害／衍生傷害等直接扣血也是「敵人受傷」
     //（僅敵方實體＝有 maxHp；玩家自身流血不通知，天然阻斷遞迴）
@@ -720,7 +736,7 @@ function applyEnemyHpDamage(ent, damage) {
   return amount;
 }
 function resolveHit(attacker, defender, aCfg, dCfg) {
-  var out = { dmg: 0, crit: false, miss: false, blocked: false, killed: false, thorns: 0, heal: 0, shield: 0, absorbed: 0, procs: [] };
+  var out = { dmg: 0, crit: false, miss: false, blocked: false, killed: false, thorns: 0, heal: 0, shield: 0, absorbed: 0, manaShield: 0, procs: [] };
   // 命中率 = clamp(攻擊者命中 - 防守者閃避, 下限, 上限)；玩家命中已含基礎值。
   var attackerHit = Number(aCfg.hit);
   if (!isFinite(attackerHit)) attackerHit = 100;
@@ -861,6 +877,11 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   if (aCfg.isPlayer && aCfg.isSkill && typeof skill2FrenzySkillDamageMultiplier === 'function') {
     dmg *= skill2FrenzySkillDamageMultiplier(attacker);
   }
+  // 新版技能【岩甲增幅】（岩甲術 T6，js/skills2.js）：損失護盾換得的總傷害乘算
+  if (aCfg.isPlayer && typeof skill2RockAmpPct === 'function') {
+    var rockAmp = skill2RockAmpPct(attacker);
+    if (rockAmp > 0) dmg *= 1 + rockAmp / 100;
+  }
   // 格擋（機率減傷）：機率與減傷上限共用 STAT_CAPS，0 代表不設上限。
   var blockChance = capValue(dCfg.blockRate || 0, STAT_CAPS.blockRate);
   if (blockChance > 0 && chance(blockChance)) {
@@ -869,6 +890,11 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   }
   // 神鑄特效【聖佑】：受到的所有傷害按比例降低（上限見特效設定）
   if (dCfg.dmgRed) dmg *= 1 - clamp(dCfg.dmgRed, 0, GODFORGED_SANCTUARY_RED_CAP) / 100;
+  /* 新版技能的我方減傷乘區（大地守護【傷害減免】×岩甲術【天地逆返】，js/skills2.js）。
+     刻意與【聖佑】的 dmgRed 分開：那條是加算池且夾 50% 上限，混在一起會互相吃掉空間。 */
+  if (dCfg.isPlayer && typeof skill2DamageTakenMultiplier === 'function') {
+    dmg *= skill2DamageTakenMultiplier(defender);
+  }
   // 全局減傷：所有既有傷害計算完成後才套用，之後才進入最低傷害與護盾結算。
   if (dCfg.globalDmgRed) dmg *= globalDamageMultiplier(dCfg.globalDmgRed);
   // 敵種傷害抗性：依攻擊者敵種（普通/菁英/BOSS）選用對應抗性值，於全局減傷之後的最末端套用。
@@ -890,6 +916,12 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     dmg -= out.absorbed;
   }
   dmg = towerBossHpDamage(defender, dmg);
+  /* 新版技能【魔法盾】（大地守護 T5，js/skills2.js）：護盾吸收之後、扣生命之前，
+     把一部分傷害改由法力承擔（法力付得起多少算多少）。 */
+  if (dCfg.isPlayer && dmg > 0 && typeof skills2ManaShieldAbsorb === 'function') {
+    var mpPaid = skills2ManaShieldAbsorb(defender, dmg);
+    if (mpPaid > 0) { dmg = Math.max(0, dmg - mpPaid); out.manaShield = mpPaid; }
+  }
   out.hpDamage = dmg;
   defender.hp -= dmg;
   // GM 鎖血（僅本機 GM 指令 god）：我方生命最低鎖 1，不進入下方致死分支
@@ -996,18 +1028,34 @@ function grantShield(pEnt, amount, st) {
      吸魔回復 = 每秒法力恢復 × 吸魔%
    每秒生命回復 = 最大生命 × BASE_HP_REGEN_PCT% + 額外生命恢復（與屬性面板「生命恢復」同值）。
    溢出不轉護盾（healPlayer 的 noShield 路徑）。 */
-function playerHpRegenPerSec(st) {
+/* 新版技能【生命再生】／【魔力再生】（大地守護 T3／T4，js/skills2.js）：
+   「回復」與「吸血／吸魔」是兩個**不同倍率**的乘區（回復 +100%、汲取 +50%），
+   因此吸血不能直接沿用被放大過的每秒回復——換算基準改讀未加成的 base 版本，
+   再各自乘上自己的倍率。 */
+function playerRegenSkillFactor(kind) {
+  return (typeof skill2RegenFactor === 'function') ? skill2RegenFactor(kind) : 1;
+}
+function playerDrainSkillFactor(kind) {
+  return (typeof skill2DrainFactor === 'function') ? skill2DrainFactor(kind) : 1;
+}
+function playerHpRegenBasePerSec(st) {
   if (!st) return 0;
   return (st.hp || 0) * (BASE_HP_REGEN_PCT / 100) + (st.hpRegen || 0);
 }
-function playerMpRegenPerSec(st) {
+function playerHpRegenPerSec(st) {
+  return playerHpRegenBasePerSec(st) * playerRegenSkillFactor('hp');
+}
+function playerMpRegenBasePerSec(st) {
   return st ? (st.mpRegen || 0) : 0;
 }
+function playerMpRegenPerSec(st) {
+  return playerMpRegenBasePerSec(st) * playerRegenSkillFactor('mp');
+}
 function lifestealHealAmount(st, pct) {
-  return Math.max(0, playerHpRegenPerSec(st) * (Number(pct) || 0) / 100);
+  return Math.max(0, playerHpRegenBasePerSec(st) * (Number(pct) || 0) / 100 * playerDrainSkillFactor('hp'));
 }
 function manaStealAmount(st, pct) {
-  return Math.max(0, playerMpRegenPerSec(st) * (Number(pct) || 0) / 100);
+  return Math.max(0, playerMpRegenBasePerSec(st) * (Number(pct) || 0) / 100 * playerDrainSkillFactor('mp'));
 }
 
 /* ============================================================

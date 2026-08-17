@@ -42,3 +42,8 @@ sgArmorBrk,破甲,⚒️,debuff,stat,sgDefBrk,,,0,,0,25,4,0,stack,4,新版技能
 sgBurn,烈焰燃燒,🔥,debuff,dot,,fire,skill,20,,0,0,5,0.5,strongest,1,新版技能【火球術／火柱】：火屬性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。
 sgFireAmp,火焰增幅,🔥,buff,stat,sgFireAmp,fire,,0,,0,0,4,0,refresh,1,新版技能【火焰增幅】：火屬性傷害提升（層數由引擎累加成單一數值，故用後蓋前並重置時間）。
 sgFirehunt,火狩,☄️,buff,stat,sgFirehunt,fire,,0,,0,0,4,0,refresh,1,新版技能【火狩】：火狩環繞自身的剩餘時間；【再生】的擊殺延長會累加在這裡。
+sgRockArmor,岩甲,🪨,buff,stat,sgRockArmor,earth,,0,,0,0,10,0,refresh,1,新版技能【岩甲術】：岩甲護盾的剩餘時間；第 3、5、6、7 階的效果只在此期間生效（護盾本身走「護盾」狀態）。
+sgRockAmp,岩甲增幅,🪨,buff,stat,sgRockAmp,,,0,,0,0,3,0,refresh,1,新版技能【岩甲增幅】：損失護盾換得的傷害增幅（層數由引擎累加成單一數值，故用後蓋前並重置時間）。
+sgMire,泥沼緩速,🟤,debuff,stat,sgMire,earth,,0,,0,50,1,0,refresh,1,新版技能【泥沼術】：攻速與移動速度下降（效果值＝攻速下降%）。同類型緩速依「取代」規則後蓋前並重新計時；為場域型持續重塗，不吃控場遞減與韌性。
+sgMirePoison,泥沼劇毒,☠️,debuff,dot,,poison,skill,25,,0,0,1,0.5,refresh,1,新版技能【毒沼術】：毒性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫），站在沼澤中才會被重塗。
+sgMireLava,熔岩灼燒,🌋,debuff,dot,,fire,skill,70,,0,0,1,0.4,refresh,1,新版技能【熔岩沼】：火焰持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫），站在岩漿中才會被重塗。

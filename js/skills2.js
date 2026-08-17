@@ -16,6 +16,29 @@
      4. 環繞場域（SKILL2_RT.orbits）：釘在玩家身上、持續旋轉的環繞體，
         以接觸判定命中（進入才算一次），可伴生、可因擊殺延長；
         無座標時（高塔）退化為每轉一圈打一次主目標）
+   （2026-08-17 第五批追加＝地系三群組：rockarmor 岩甲術／mire 泥沼術／earthguard 大地守護。
+    帶進第五～第九個群組共用能力，全部都是「引擎收斂點」而非這三個技能的特例：
+      5. 我方防禦側乘區（skill2DamageTakenMultiplier）：受到的傷害額外乘算減免，
+         獨立於神鑄【聖佑】的 dmgRed 上限，掛在 formula.js resolveHit 我方受擊段
+      6. 護盾效率乘算（skill2ShieldEffFactor）：掛在 formula.js st.shieldEff 派生點，
+         因此 applyShield／grantShield／溢出轉護盾三條路徑一體生效
+      7. 可變緩速（sgMire 狀態＋skill2MireAspdFactor／skill2MoveSlowFactor）：
+         舊 slow 是固定 -30% 攻速的控場；場域型緩速需要「同時降攻速與移速、強度可換代」，
+         故走 stat 減益（不吃控場遞減——每 0.5 秒重塗一次的場域會被遞減歸零）
+      8. 法力承傷（skills2ManaShieldAbsorb）：我方扣血前先由法力承擔一部分
+      9. 復活攔截（skills2TryRebirth）：掛在野外／高塔兩個判死收斂點
+
+   ---- 設計文檔用語對照（2026-08-17 補列於文檔上方）----
+   物理傷害／火焰傷害／寒冰傷害／地系傷害／風系傷害（未實裝）／雷電傷害／毒性傷害／
+   光系傷害／暗影傷害 ＝ phys／fire／ice／earth／(wind)／lightning／poison／light／dark。
+   本檔的 desc 說明模板一律使用上列「說明用語」。
+
+   ---- buff 規則對照（設計文檔 → 狀態表 stack 欄）----
+     重上（持續時間內再次獲得＝時間重計）      → refresh（同值重塗）
+     疊加（層數 +1 並重新計時，效果＝單層×層數）→ stack（maxStacks 為層數上限）
+     取代（同類型不同強度＝新的覆蓋舊的並重計）→ refresh（後蓋前，不比大小）
+   ⚠️ 既有持續傷害多為 strongest（取高並重新計時），與「取代」不同；本次不動既有狀態的
+      疊加規則（會改變已調校完成的數值），新增狀態則依上表選規則。
 
    規則：
      - 每階上限 SG_TIER_MAX_LV 級，固定不隨轉生提高
@@ -69,15 +92,22 @@ function sgMeteorFallTiming() {
    效果被動觸發、永遠不會被主動施放（不佔出手節奏、無冷卻無耗魔），
    但**必須裝配到技能列才生效**——佔用一個技能格就是這類技能的代價。
    與純被動的差別在此：學了不等於生效，卸下即失效。 */
-var SG_PASSIVE = { counter: true };
+var SG_PASSIVE = { counter: true, earthguard: true };
 function skills2IsPassive(gid) { return !!SG_PASSIVE[gid]; }
 
-/* 主動型被動目前是否生效：已學習（第 1 階至少 Lv.1）且已裝配在技能列。
-   讀 G＝Worker 端唯一權威；主執行緒 UI 走面板快照自行判斷（js/ui.js）。 */
-function skills2PassiveActive(gid) {
-  if (!skills2IsPassive(gid) || !skills2Castable(gid)) return false;
+/* 群組目前是否已學習（第 1 階至少 Lv.1）且已裝配在技能列。
+   讀 G＝Worker 端唯一權威；主執行緒 UI 走面板快照自行判斷（js/ui.js）。
+   主動群組也用得到：岩甲術【護盾增幅】是「主動技裡的主動型被動階」，
+   生效前提同樣是佔著一個技能格。 */
+function skills2Equipped(gid) {
+  if (!skills2Castable(gid)) return false;
   var lo = (typeof G !== 'undefined' && G && G.player && G.player.loadout) ? G.player.loadout : null;
   return !!lo && lo.indexOf(SG_PREFIX + gid) >= 0;
+}
+
+/* 主動型被動目前是否生效：已學習且已裝配在技能列。 */
+function skills2PassiveActive(gid) {
+  return skills2IsPassive(gid) && skills2Equipped(gid);
 }
 
 /* ---- 群組定義表（撥離：config/CSV/Skills2.csv → 本字面值） ----
@@ -97,7 +127,10 @@ var SKILLS2 = {
   bloodrage: { name: '嗜血狂怒', emoji: '💢', range: '', cd: 60, cost: 25, tiers: [{ name: '嗜血狂怒', unlock: { reinc: 0, lv: 400 }, fx: { pct: 20, pctPer: 2, sec: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '攻速額外 +{pct}%（乘算，不受攻速上限限制），持續 {sec} 秒' }, { name: '狂暴', unlock: { reinc: 0, lv: 450 }, fx: { pct: 20, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '狂怒期間爆擊傷害額外 +{pct}%（乘算）' }, { name: '狂怒', unlock: { reinc: 0, lv: 500 }, fx: { pct: 20, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '狂怒期間總傷害額外 +{pct}%（乘算）' }, { name: '狂化連殺', unlock: { reinc: 0, lv: 550 }, fx: { add: 0.5, addPer: 0.1, kill: 0.1, killMax: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '狂怒期間基礎連擊數 +{add}，且每擊殺 1 個敵人再 +{kill}（累計上限 +{killMax}；不足 1 次的部分以機率觸發）' }, { name: '嗜血反震', unlock: { reinc: 0, lv: 600 }, fx: { pct: 20, pctPer: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '狂怒期間反震傷害提高 {pct}%（乘算，可與其它反震加成疊加）' }, { name: '血飲術', unlock: { reinc: 0, lv: 650 }, fx: { pct: 30, pctPer: 3, self: 1, m: 80 }, goldBase: 3000000, goldGrow: 1.5, desc: '狂怒期間傷害額外提高 {pct}%（乘算），但 {m} 米內的敵人每次受傷都會使你損失最大生命 {self}%（直接扣血，無法被護盾吸收）' }, { name: '狂血盛宴', unlock: { reinc: 0, lv: 700 }, fx: { sec: 0.5, pct: 1, pctPer: 0.1, count: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '狂怒期間每擊殺 1 個敵人，持續時間延長 {sec} 秒；且生命值每減少 1%，傷害額外 +{pct}%（乘算，無限疊加），每 1 連擊數使普攻可同時攻擊 1 個敵人（無限疊加）' }] },
   fireball: { name: '火球術', emoji: '🔥', range: '', dmgType: 'magic', elem: 'fire', cd: 14, cost: 40, tiers: [{ name: '火球術', unlock: { reinc: 0, lv: 1 }, fx: { pct: 150, pctPer: 15, m: 6, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '射出一顆火球（射程 {castM} 米），命中時爆炸，對目標及 {m} 米內的敵人造成 {pct}% 火焰傷害' }, { name: '燃燒', unlock: { reinc: 0, lv: 1 }, fx: { dotPct: 20, dotPctPer: 2, dotSec: 5, dotGap: 0.5 }, goldBase: 200000, goldGrow: 1.5, desc: '被火球擊中的敵人陷入燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火焰傷害，持續 {dotSec} 秒' }, { name: '火球爆裂', unlock: { reinc: 0, lv: 50 }, fx: { pct: 30, pctPer: 3, count: 3, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '火球爆炸後分裂出 {count} 個小火球，射向目標 {m} 米內的敵人，每個造成原始火球 {pct}% 的傷害' }, { name: '強化燃燒', unlock: { reinc: 0, lv: 100 }, fx: { gap: 0.4, gapPer: -0.015 }, goldBase: 800000, goldGrow: 1.5, desc: '燃燒的作用間隔縮短至 {gap} 秒（跳得更快＝總傷更高）' }, { name: '爆燃', unlock: { reinc: 0, lv: 150 }, fx: { pct: 50, pctPer: 5, count: 2, m: 12 }, goldBase: 1500000, goldGrow: 1.5, desc: '燃燒結束或敵人死亡時爆炸，對我方 {m} 米內的 {count} 個敵人造成該敵人整段燃燒累積傷害 {pct}% 的傷害' }, { name: '火焰增幅', unlock: { reinc: 0, lv: 200 }, fx: { pct: 0.25, pctPer: 0.025, sec: 4, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '我方 {m} 米內每有 1 次燃燒作用，你的火焰傷害 +{pct}%，持續 {sec} 秒（無限疊加，每次疊加時重置時間）' }, { name: '殞石術', unlock: { reinc: 0, lv: 250 }, fx: { pct: 250, pctPer: 25, count: 3, m: 15, castM: 20 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為召喚 {count} 顆巨大火殞石從天而降（射程 {castM} 米），每顆對目標 {m} 米內的敵人造成 {pct}% 火焰傷害，且殞石造成的燃燒傷害為 2 倍（第 2~6 階效果仍然生效）' }] },
   firepillar: { name: '火龍捲', emoji: '🌋', range: '', dmgType: 'magic', elem: 'fire', cd: 14, cost: 40, tiers: [{ name: '火龍捲', unlock: { reinc: 0, lv: 50 }, fx: { pct: 60, pctPer: 6, hits: 5, m: 3, castM: 30, sec: 2.5 }, goldBase: 100000, goldGrow: 1.5, desc: '在敵人腳下召喚一道火柱（射程 {castM} 米），對目標 {m} 米內的敵人連續造成 {hits} 段傷害，每段 {pct}% 火焰傷害（全程約 {sec} 秒）' }, { name: '龍捲噴發', unlock: { reinc: 0, lv: 100 }, fx: { pct: 10, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '火柱的傷害範圍擴大 {pct}%' }, { name: '雙重龍捲', unlock: { reinc: 0, lv: 150 }, fx: { count: 2, pct: 20, pctPer: 2, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '可同時對 {m} 米內的 {count} 個目標施放火柱，且火焰傷害額外 +{pct}%' }, { name: '燃燒', unlock: { reinc: 0, lv: 200 }, fx: { chance: 20, chancePer: 2, dotPct: 20, dotSec: 4, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '火柱每次作用時有 {chance}% 機率使敵人燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火焰傷害，持續 {dotSec} 秒' }, { name: '烈焰衝擊', unlock: { reinc: 0, lv: 250 }, fx: { pct: 100, pctPer: 10, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '火龍捲或火牆消失時，對周圍 {m} 米內的敵人造成 {pct}% 火焰傷害' }, { name: '重生', unlock: { reinc: 0, lv: 300 }, fx: { chance: 25, chancePer: 2.5, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '火柱消失後有 {chance}% 機率在我方 {m} 米內的敵人身上重生' }, { name: '無限火牆', unlock: { reinc: 0, lv: 350 }, fx: { count: 3, hits: 8, pct: 100, pctPer: 10, len: 18, wid: 6, respawn: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為施放 {count} 道火牆（橫向 {len}×{wid} 米），每道造成 {hits} 段 {pct}% 火焰傷害；每道火牆消失後再召喚 1 道（僅能再觸發一次；第 2~6 階效果仍然生效）' }] },
-  firehunt: { name: '火狩', emoji: '☄️', range: '3*3', dmgType: 'magic', elem: 'fire', cd: 26, cost: 40, tiers: [{ name: '火狩', unlock: { reinc: 0, lv: 100 }, fx: { pct: 100, pctPer: 10, count: 2, sec: 4, m: 8, rps: 0.455, castM: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 團火狩環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 火焰傷害，持續 {sec} 秒' }, { name: '強化火狩', unlock: { reinc: 0, lv: 150 }, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '火狩的體積與環繞範圍同步擴大 {pct}%' }, { name: '伴生火狩', unlock: { reinc: 0, lv: 200 }, fx: { chance: 20, chancePer: 2, m: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '火狩命中時有 {chance}% 機率在其後方 {m} 米處伴生一團火狩（每團只能伴生一次，伴生出的不再伴生）' }, { name: '三重火狩', unlock: { reinc: 0, lv: 250 }, fx: { count: 3, pct: 120, pctPer: 12, sec: 4 }, goldBase: 800000, goldGrow: 1.5, desc: '改為召喚 {count} 團火狩，每團造成 {pct}% 火焰傷害，持續 {sec} 秒' }, { name: '極速火狩', unlock: { reinc: 0, lv: 300 }, fx: { pct: 25, pctPer: 2.5 }, goldBase: 1500000, goldGrow: 1.5, desc: '火狩的旋轉速度 +{pct}%' }, { name: '再生', unlock: { reinc: 0, lv: 350 }, fx: { sec: 0.4, secPer: 0.04 }, goldBase: 3000000, goldGrow: 1.5, desc: '火狩每擊殺 1 個敵人，全部火狩的持續時間延長 {sec} 秒' }, { name: '狩神之舞', unlock: { reinc: 0, lv: 400 }, fx: { rings: 2, pct: 150, pctPer: 15, sec: 6, m: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為一次施放 {rings} 道火狩（外圈距內圈 {m} 米、兩道旋轉方向相反），每團造成 {pct}% 火焰傷害、出現時自帶伴生，持續 {sec} 秒' }] }
+  firehunt: { name: '火狩', emoji: '☄️', range: '3*3', dmgType: 'magic', elem: 'fire', cd: 26, cost: 40, tiers: [{ name: '火狩', unlock: { reinc: 0, lv: 100 }, fx: { pct: 100, pctPer: 10, count: 2, sec: 4, m: 8, rps: 0.455, castM: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 團火狩環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 火焰傷害，持續 {sec} 秒' }, { name: '強化火狩', unlock: { reinc: 0, lv: 150 }, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '火狩的體積與環繞範圍同步擴大 {pct}%' }, { name: '伴生火狩', unlock: { reinc: 0, lv: 200 }, fx: { chance: 20, chancePer: 2, m: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '火狩命中時有 {chance}% 機率在其後方 {m} 米處伴生一團火狩（每團只能伴生一次，伴生出的不再伴生）' }, { name: '三重火狩', unlock: { reinc: 0, lv: 250 }, fx: { count: 3, pct: 120, pctPer: 12, sec: 4 }, goldBase: 800000, goldGrow: 1.5, desc: '改為召喚 {count} 團火狩，每團造成 {pct}% 火焰傷害，持續 {sec} 秒' }, { name: '極速火狩', unlock: { reinc: 0, lv: 300 }, fx: { pct: 25, pctPer: 2.5 }, goldBase: 1500000, goldGrow: 1.5, desc: '火狩的旋轉速度 +{pct}%' }, { name: '再生', unlock: { reinc: 0, lv: 350 }, fx: { sec: 0.4, secPer: 0.04 }, goldBase: 3000000, goldGrow: 1.5, desc: '火狩每擊殺 1 個敵人，全部火狩的持續時間延長 {sec} 秒' }, { name: '狩神之舞', unlock: { reinc: 0, lv: 400 }, fx: { rings: 2, pct: 150, pctPer: 15, sec: 6, m: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為一次施放 {rings} 道火狩（外圈距內圈 {m} 米、兩道旋轉方向相反），每團造成 {pct}% 火焰傷害、出現時自帶伴生，持續 {sec} 秒' }] },
+  rockarmor: { name: '岩甲術', emoji: '🪨', range: '', dmgType: 'magic', elem: 'earth', cd: 25, cost: 40, tiers: [{ name: '岩甲術', unlock: { reinc: 0, lv: 150 }, fx: { pct: 30, pctPer: 3, sec: 10, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '施放岩甲強化自身，獲得最大生命值 {pct}% 的岩甲護盾，持續 {sec} 秒' }, { name: '強化岩甲', unlock: { reinc: 0, lv: 200 }, fx: { pct: 20, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '進一步強化岩甲，額外獲得最大生命值 {pct}% 的岩甲護盾（與第 1 階累加）' }, { name: '岩甲尖刺', unlock: { reinc: 0, lv: 250 }, fx: { pct: 5, pctPer: 0.5 }, goldBase: 400000, goldGrow: 1.5, desc: '岩甲護盾存在期間，攻擊你的敵人會遭受你最大生命值 {pct}% 的地系傷害（獨立於反震，兩者各自結算）' }, { name: '護盾增幅', unlock: { reinc: 0, lv: 300 }, fx: { pct: 15, pctPer: 1.5 }, goldBase: 800000, goldGrow: 1.5, desc: '主動型被動（裝配到技能列即恆時生效）：你獲得的所有護盾效率額外 +{pct}%（乘算）' }, { name: '岩之再生', unlock: { reinc: 0, lv: 350 }, fx: { pct: 1, pctPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '岩甲護盾存在期間，你每減少 1% 生命值即獲得最大生命 {pct}% 的護盾' }, { name: '岩甲增幅', unlock: { reinc: 0, lv: 400 }, fx: { pct: 0.5, pctPer: 0.05, max: 30, sec: 3 }, goldBase: 3000000, goldGrow: 1.5, desc: '岩甲護盾存在期間，你每減少 1% 護盾即獲得 {pct}% 傷害增幅（乘算），最多疊 {max} 層，持續 {sec} 秒' }, { name: '天地逆返', unlock: { reinc: 0, lv: 450 }, fx: { pct: 30, pctPer: 3 }, goldBase: 5000000, goldGrow: 1.5, desc: '岩甲護盾存在期間，護盾剩餘量越低則傷害減免越高，護盾歸零時最高額外 +{pct}% 傷害減免（乘算）' }] },
+  mire: { name: '泥沼術', emoji: '🟤', range: '10*10', dmgType: 'magic', elem: 'earth', cd: 18, cost: 40, tiers: [{ name: '泥沼術', unlock: { reinc: 0, lv: 200 }, fx: { sec: 4, secPer: 0.4, castM: 20, move: 30, aspd: 50 }, goldBase: 100000, goldGrow: 1.5, desc: '在敵人腳下召喚一片 10×10 米的沼澤（射程 {castM} 米），沼澤中的敵人陷入緩速（移動速度 -{move}%、攻速 -{aspd}%），持續 {sec} 秒' }, { name: '虛弱', unlock: { reinc: 0, lv: 250 }, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '受泥沼緩速影響的敵人，受到的傷害提高 {pct}%' }, { name: '毒沼術', unlock: { reinc: 0, lv: 300 }, fx: { dotPct: 25, dotPctPer: 2.5, dotGap: 0.5 }, goldBase: 400000, goldGrow: 1.5, desc: '沼澤持續放出毒氣：沼澤中的敵人每 {dotGap} 秒受到魔法攻擊 {dotPct}% 的毒性傷害' }, { name: '毒沼增生', unlock: { reinc: 0, lv: 350 }, fx: { add: 1, addPer: 0.1, m: 40 }, goldBase: 800000, goldGrow: 1.5, desc: '沼澤結束時傳染給 {m} 米內較近的敵人，最多傳染 {add} 次（不足 1 次的部分以機率觸發）' }, { name: '沼澤漫延', unlock: { reinc: 0, lv: 400 }, fx: { sec: 6, pct: 40, pctPer: 4, growSec: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '沼澤持續時間提高至 {sec} 秒，且在 {growSec} 秒內逐步擴大，最大擴增 {pct}%' }, { name: '重力泥沼', unlock: { reinc: 0, lv: 450 }, fx: { move: 50, aspd: 75, pct: 20, pctPer: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '緩速強化為移動速度 -{move}%、攻速 -{aspd}%，且受影響目標受到的傷害再提高 {pct}%（與第 2 階累加）' }, { name: '熔岩沼', unlock: { reinc: 0, lv: 500 }, fx: { sec: 8, pct: 20, pctPer: 2, dotPct: 70, dotPctPer: 7, dotGap: 0.4 }, goldBase: 5000000, goldGrow: 1.5, desc: '沼澤轉變為岩漿：持續時間提高至 {sec} 秒、範圍再擴增 {pct}%（與第 5 階累加），其中的目標每 {dotGap} 秒額外受到魔法攻擊 {dotPct}% 的火焰傷害' }] },
+  earthguard: { name: '大地守護', emoji: '🌍', range: '', dmgType: 'magic', elem: 'earth', cd: 0, cost: 0, tiers: [{ name: '大地守護', unlock: { reinc: 0, lv: 250 }, fx: { pct: 10, pctPer: 1, hp: 20, hpPer: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '主動型被動：自身傷害減免額外 +{pct}%、生命上限額外 +{hp}%（皆為乘算）' }, { name: '大地祝福', unlock: { reinc: 0, lv: 300 }, fx: { pct: 25, pctPer: 2.5 }, goldBase: 200000, goldGrow: 1.5, desc: '全屬性傷害額外 +{pct}%（與所有屬性增傷效果為額外的乘法計算）' }, { name: '生命再生', unlock: { reinc: 0, lv: 350 }, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '生命回復額外 +{pct}%、吸血額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔力再生', unlock: { reinc: 0, lv: 400 }, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '法力回復額外 +{pct}%、吸魔額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔法盾', unlock: { reinc: 0, lv: 450 }, fx: { pct: 30, pctPer: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '你的生命減少時，其中 {pct}% 改由消耗法力承擔（法力不足時只轉換付得起的部分，餘額仍扣生命）' }, { name: '生命反射之盾', unlock: { reinc: 0, lv: 500 }, fx: { pct: 1, pctPer: 0.1, m: 20, count: 1 }, goldBase: 3000000, goldGrow: 1.5, desc: '你每消耗 1% 生命或護盾，{m} 米內的 {count} 個敵人同步損失 {pct}% 最大生命' }, { name: '天地共生', unlock: { reinc: 0, lv: 550 }, fx: { pct: 20, pctPer: 8, sec: 5, cd: 60, cdPer: -3 }, goldBase: 5000000, goldGrow: 1.5, desc: '死亡時原地復活並回復 {pct}% 生命，復活後 {sec} 秒無敵；此招自身冷卻 {cd} 秒（顯示於技能格）' }] }
 };
 
 /* ---- 執行期狀態（絕不掛 G＝保證不入存檔） ----
@@ -115,6 +148,10 @@ function resetSkill2RT() {
     delete SKILL2_RT.frenzy.pEnt.buffs.sgFrenzyCr;
     delete SKILL2_RT.frenzy.pEnt.buffs.sgFrenzyCd;
   }
+  if (SKILL2_RT && SKILL2_RT.rock && SKILL2_RT.rock.pEnt && SKILL2_RT.rock.pEnt.buffs) {
+    delete SKILL2_RT.rock.pEnt.buffs.sgRockArmor;
+    delete SKILL2_RT.rock.pEnt.buffs.sgRockAmp;
+  }
   SKILL2_RT = {
     storm: null, // 暴風之舞化身狀態：{ until, nextAt, gap, tgt }（tgt 為當前衝鋒目標實體）
     projectiles: [], // 飛出斬擊／貫穿突刺的執行期飛行物（不入存檔）
@@ -124,7 +161,8 @@ function resetSkill2RT() {
     orbits: [], // 環繞場域（火狩）的執行期實例：釘在玩家身上、持續旋轉（不入存檔）
     rage: null,  // 嗜血狂怒爆發狀態：{ until, pEnt, killCombo }（pEnt＝施放時的玩家實體，
                  // 供血飲術反噬定位；killCombo＝期間擊殺累積的連擊數加成，結束歸零）
-    frenzy: null // 狂暴之舞狀態：{ until, pEnt, levels }
+    frenzy: null, // 狂暴之舞狀態：{ until, pEnt, levels }
+    rock: null   // 岩甲術狀態：{ until, pEnt, base }（base＝施放當下的護盾總量＝T6／T7 的分母）
   };
 }
 resetSkill2RT(); // 載入即建立初始狀態
@@ -376,7 +414,10 @@ function skill2VulnPct(target) {
   return sgVal(SKILLS2.bloodblade.tiers[2].fx, 'pct', lvs[2]);
 }
 function skill2VulnACfg(aCfg, target) {
-  var pct = skill2VulnPct(target);
+  /* 「目標受到的傷害提高」目前有兩個來源：血刃斬【虛弱】與泥沼術【虛弱／重力泥沼】。
+     兩者都是加算進同一個 totalDmgPct，收斂在這一支——呼叫端不必逐一補判。 */
+  var pct = skill2VulnPct(target) +
+    ((typeof skill2MireVulnPct === 'function') ? skill2MireVulnPct(target) : 0);
   if (pct > 0) aCfg.totalDmgPct = (aCfg.totalDmgPct || 0) + pct;
   return aCfg;
 }
@@ -892,6 +933,8 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
     case 'fireball': sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     case 'firepillar': sgCastFirepillar(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     case 'firehunt': sgCastFirehunt(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
+    case 'rockarmor': sgCastRockarmor(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
+    case 'mire': sgCastMire(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     default: return null;
   }
   if (!storm && typeof floatPlayerSkillCast === 'function') {
@@ -1774,16 +1817,43 @@ function sgSpawnGround(pEnt, st, gid, cfg) {
     tgt: cfg.tgt || null,
     burnSpec: cfg.burnSpec || null,
     burnChance: Math.max(0, Number(cfg.burnChance) || 0),
-    respawnLeft: Math.max(0, Math.floor(Number(cfg.respawnLeft) || 0))
+    respawnLeft: Math.max(0, Math.floor(Number(cfg.respawnLeft) || 0)),
+    /* 逐漸擴大的場域（泥沼術【沼澤漫延】）：尺寸的權威是「出生尺寸 × 當下成長倍率」，
+       每跳重算一次；把成長寫進 length/width 本身會讓倍率被反覆複利。 */
+    bornAt: GT,
+    baseRadius: Math.max(0, Number(cfg.radius) || 0),
+    baseLength: Math.max(0, Number(cfg.length) || 0),
+    baseWidth: Math.max(0, Number(cfg.width) || 0),
+    growTo: Math.max(1, Number(cfg.growTo) || 1),
+    growSec: Math.max(0, Number(cfg.growSec) || 0),
+    mire: cfg.mire || null
   });
 }
 
-/* 場域這一跳打到誰：火龍捲＝圓、火牆＝以我方視線為法線的橫向矩形（以線段＋半寬表示）。
+/* 場域當下的成長倍率（沒有設定成長＝恆為 1）。 */
+function sgGroundGrowScale(f) {
+  if (!(f.growTo > 1) || !(f.growSec > 0)) return f.growTo > 1 ? f.growTo : 1;
+  var t = Math.max(0, Math.min(1, (GT - f.bornAt) / f.growSec));
+  return 1 + (f.growTo - 1) * t;
+}
+function sgGroundApplyGrowth(f) {
+  var s = sgGroundGrowScale(f);
+  if (s === 1) return;
+  f.radius = f.baseRadius * s;
+  f.length = f.baseLength * s;
+  f.width = f.baseWidth * s;
+}
+
+/* 矩形場域的長軸方位：火牆＝與我方視線垂直（橫向擋在面前）；
+   泥沼＝軸對齊的正方形（一灘攤在地上的沼澤沒有「面向」）。 */
+function sgGroundRectAxis(f) { return (f.kind === 'wall') ? f.angle + Math.PI / 2 : 0; }
+
+/* 場域這一跳打到誰：火龍捲＝圓、火牆／泥沼＝矩形（以線段＋半寬表示）。
    無座標＝退化為固定打當初的目標。 */
 function sgGroundVictims(f, enemies) {
   if (!f.pos) return (f.tgt && f.tgt.hp > 0) ? [f.tgt] : [];
-  if (f.kind === 'wall' && typeof bfSegmentTargets === 'function' && f.length > 0) {
-    var axis = f.angle + Math.PI / 2;                 // 橫向＝與我方視線垂直
+  if (f.length > 0 && f.width > 0 && typeof bfSegmentTargets === 'function') {
+    var axis = sgGroundRectAxis(f);
     var half = f.length / 2;
     var origin = { x: f.pos.x - Math.cos(axis) * half, y: f.pos.y - Math.sin(axis) * half };
     return bfSegmentTargets(origin, axis, 0, f.length, enemies, f.width / 2);
@@ -1792,9 +1862,11 @@ function sgGroundVictims(f, enemies) {
   return bfEnemiesInArea({ x: f.pos.x, y: f.pos.y, r: f.radius }, bfLiveList(enemies));
 }
 
-/* 場域的一次作用：範圍內每個敵人各吃一段傷害，並依機率附加燃燒。 */
+/* 場域的一次作用：範圍內每個敵人各吃一段傷害，並依機率附加燃燒。
+   泥沼術本體不造成傷害（只給狀態），走各自的分支。 */
 function sgGroundTick(f, enemies, ctx) {
   var victims = sgGroundVictims(f, enemies);
+  if (f.kind === 'mire') { sgMireGroundTick(f, victims, ctx); return; }
   sgEmitVfx(f.gid, victims, f.floatSel, f.kind === 'wall'
     ? { fxKind: 'aura', variant: 'firewall', elem: 'fire', dur: f.gap, area: sgGroundArea(f) }
     : { fxKind: 'impact', variant: 'pillar', elem: 'fire', dur: f.gap, area: sgGroundArea(f) });
@@ -1810,13 +1882,13 @@ function sgGroundTick(f, enemies, ctx) {
   if (out.killed && ctx && ctx.onDeaths) ctx.onDeaths();
 }
 
-/* 場域的地面範圍描述（顯示層用）。火牆帶 w/h/a 讓顯示層畫出方向正確的矩形；
+/* 場域的地面範圍描述（顯示層用）。矩形場域帶 w/h/a 讓顯示層畫出方向正確的矩形；
    同時附上 r（外接圓半徑）讓不認得矩形的舊畫法仍有合理的退化尺寸。 */
 function sgGroundArea(f) {
   if (!f.pos) return null;
-  if (f.kind === 'wall') {
+  if (f.length > 0 && f.width > 0) {
     return { id: f.vfxId, x: f.pos.x, y: f.pos.y, w: f.length, h: f.width,
-      a: f.angle + Math.PI / 2, r: Math.max(f.length, f.width) / 2 };
+      a: sgGroundRectAxis(f), r: Math.max(f.length, f.width) / 2 };
   }
   return { id: f.vfxId, x: f.pos.x, y: f.pos.y, r: f.radius };
 }
@@ -1831,6 +1903,7 @@ function sgGroundImpactVictims(f, enemies, radius) {
 /* 場域消失：火牆的再召喚（第 7 階，每道只能再觸發一次）與火龍捲的重生（第 6 階，
    機率成立就在我方範圍內的隨機敵人身上重來一次）；第 5 階烈焰衝擊也在此結算。 */
 function sgGroundExpire(f, enemies, ctx) {
+  if (f.kind === 'mire') { sgMireGroundExpire(f, enemies, ctx); return; }
   var lvs = skills2Levels(f.gid);
   var t = SKILLS2[f.gid].tiers;
   if (lvs[4] > 0) {
@@ -1877,6 +1950,7 @@ function sgTickGrounds(dt, ctx) {
   for (var i = list.length - 1; i >= 0; i--) {
     var f = list[i];
     var guard = 0;
+    sgGroundApplyGrowth(f);   // 逐漸擴大的場域：作用前先更新到當下尺寸
     while (f.hitsLeft > 0 && f.nextAt <= GT && guard < 20) {
       guard++;
       f.nextAt += f.gap;
@@ -2114,6 +2188,442 @@ function sgTickOrbits(dt, ctx) {
   }
 }
 
+/* 我方自身的特效事件（護盾光殼、復活光柱等）：sgEmitVfx 的目標一律走敵人定址，
+   自身增益要用這一支才會畫在我方卡片上。 */
+function sgEmitPlayerVfx(gid, floatSel, extra) {
+  if (typeof playCombatVfx !== 'function') return;
+  var g = SKILLS2[gid];
+  if (!g) return;
+  var sel = (typeof playerEventFloatTarget === 'function') ? playerEventFloatTarget(floatSel) : floatSel;
+  var cat = sgVfxCat(g);
+  var spec = {
+    fxKind: (extra && extra.fxKind) || 'aura', glyph: g.emoji,
+    color: (typeof VFX_CAT_COLORS !== 'undefined' && VFX_CAT_COLORS[cat]) || '#a3a3a3',
+    cat: cat, elem: (extra && extra.elem) || g.elem || null,
+    targets: [sel], area: null,
+    dur: (extra && extra.dur) || 0.6, count: 1
+  };
+  if (extra && extra.variant) spec.variant = extra.variant;
+  playCombatVfx(spec);
+}
+
+/* ===========================================================================
+   岩甲術（rockarmor）：護盾爆發
+   ---------------------------------------------------------------------------
+   施放給自己一層占最大生命比例的護盾，並在護盾存在期間開啟一整組「以護盾為燃料」
+   的效果。權威狀態＝SKILL2_RT.rock（until／base／pEnt），sgRockArmor 增益只是投影：
+     - base ＝ 施放當下實際拿到的護盾量。T6 的「每減少 1% 護盾」與 T7 的「護盾剩餘量」
+       都以它為分母，不能改用 pEnt.shieldMax——護盾被打光的那一刻 shieldMax 會歸零
+       （formula.js refreshShieldMaxAfterGain），分母跟著消失，最後一段損失就漏算了。
+   生效條件（使用者決策 2026-08-17）：
+     - 第 4 階【護盾增幅】＝主動型被動，裝配在技能列即恆時生效（不必先放技能）
+     - 第 3、5、6、7 階一律綁岩甲護盾：沒有護盾期間就沒有效果
+       （否則第 7 階會變成「平時 0 護盾＝白拿滿額減傷、放了技能反而變弱」的反向設計）
+   =========================================================================== */
+function sgCastRockarmor(pEnt, st, g, lvs, pool, primary, floatSel, out) {
+  var t = g.tiers;
+  var pct = sgVal(t[0].fx, 'pct', lvs[0]);
+  if (lvs[1] > 0) pct += sgVal(t[1].fx, 'pct', lvs[1]);   // 強化岩甲：與第 1 階累加
+  var dur = Math.max(0.5, Number(t[0].fx.sec) || 10);
+  var before = Math.max(0, pEnt.shield || 0);
+  applyStatus(pEnt, 'shield', { val: pct, dur: dur, stats: st });
+  applyStatus(pEnt, 'sgRockArmor', { val: pct, dur: dur });
+  /* base 取「這次施放後的護盾總量」而不是增量：護盾是共用的一池（applyShield 取 max），
+     分母用增量會在既有護盾較高時算出負數比例。 */
+  SKILL2_RT.rock = {
+    until: GT + dur, pEnt: pEnt,
+    base: Math.max(1, Math.max(before, pEnt.shield || 0)), amp: 0
+  };
+  sgEmitPlayerVfx('rockarmor', floatSel, { fxKind: 'aura', variant: 'rock-armor', elem: 'earth', dur: Math.min(6, dur) });
+  if (typeof floatPlayerEvent === 'function') {
+    var pSel = (typeof playerEventFloatTarget === 'function') ? playerEventFloatTarget(floatSel) : floatSel;
+    floatPlayerEvent(pSel, '🪨+' + fmt(Math.max(0, (pEnt.shield || 0) - before)), 'shield');
+  }
+}
+
+/* 岩甲護盾是否生效中（RT 為權威；增益圖示只是投影）。 */
+function skill2RockActive(pEnt) {
+  var rt = SKILL2_RT && SKILL2_RT.rock;
+  if (!rt || rt.until <= GT) return false;
+  return !pEnt || pEnt === rt.pEnt;
+}
+/* 綁護盾的那幾階目前是否可用：回傳等級陣列或 null。 */
+function skill2RockLevels(pEnt) {
+  if (!skill2RockActive(pEnt)) return null;
+  var lvs = skills2Levels('rockarmor');
+  return (lvs && lvs[0] >= 1) ? lvs : null;
+}
+/* 護盾剩餘比例 0~1（岩甲期間才有意義）。 */
+function skill2RockShieldRemain(pEnt) {
+  var rt = SKILL2_RT && SKILL2_RT.rock;
+  if (!rt || !(rt.base > 0) || !pEnt) return 0;
+  return Math.max(0, Math.min(1, (pEnt.shield || 0) / rt.base));
+}
+
+/* 【護盾增幅】（T4，主動型被動）：對「護盾效率%」屬性的額外乘算增幅。
+   掛點：formula.js st.shieldEff 派生點——一處收斂，applyShield／grantShield／
+   溢出轉護盾三條路徑一體生效。 */
+function skill2ShieldEffFactor() {
+  if (!skills2Equipped('rockarmor')) return 1;
+  var lvs = skills2Levels('rockarmor');
+  if (!lvs || lvs[3] < 1) return 1;
+  return 1 + sgVal(SKILLS2.rockarmor.tiers[3].fx, 'pct', lvs[3]) / 100;
+}
+
+/* 【岩甲增幅】（T6）目前的傷害增幅%。掛點：formula.js 我方輸出最終乘區。 */
+function skill2RockAmpPct(pEnt) {
+  if (!skill2RockActive(pEnt)) return 0;
+  return (typeof buffVal === 'function') ? Math.max(0, buffVal(pEnt, 'sgRockAmp')) : 0;
+}
+
+/* 岩甲術的受擊結算（T3 尖刺反擊／T5 失血轉護盾／T6 失盾轉增幅）。 */
+function sgRockOnPlayerDamaged(mEnt, pEnt, hpDamage, res, floatSel) {
+  var lvs = skill2RockLevels(pEnt);
+  if (!lvs) return;
+  var t = SKILLS2.rockarmor.tiers;
+  var st = getStats();
+  var rt = SKILL2_RT.rock;
+  var absorbed = Math.max(0, (res && res.absorbed) || 0);
+
+  // T3 岩甲尖刺：獨立的一段地屬性反擊傷害（走完整傷害管線＝吃地屬性加成與敵人地抗）
+  if (lvs[2] > 0 && mEnt && mEnt.hp > 0) {
+    var spikeVal = st.hp * sgVal(t[2].fx, 'pct', lvs[2]) / 100;
+    var eSel = (typeof THORN_FLOAT_MAP !== 'undefined' && THORN_FLOAT_MAP[floatSel]) || floatSel;
+    var spikeOut = { killed: false, dmg: 0, crit: false };
+    sgEmitVfx('rockarmor', [mEnt], eSel, { fxKind: 'impact', variant: 'rock-spike', elem: 'earth' });
+    sgHitOne(pEnt, st, mEnt, spikeVal, 'rockarmor', eSel, spikeOut, 0);
+    if (spikeOut.killed && typeof onFieldDeaths === 'function' &&
+        typeof FIELD !== 'undefined' && FIELD && FIELD.player === pEnt) {
+      onFieldDeaths();
+    }
+  }
+
+  // T5 岩之再生：每減少 1% 生命 → 獲得最大生命 pct% 的護盾（pct=1 時等量換回）
+  if (lvs[4] > 0 && hpDamage > 0 && st.hp > 0 && typeof grantShield === 'function') {
+    var gain = grantShield(pEnt, hpDamage * sgVal(t[4].fx, 'pct', lvs[4]), st);
+    if (gain > 0 && typeof floatPlayerEvent === 'function') {
+      var pSel = (typeof playerEventFloatTarget === 'function') ? playerEventFloatTarget(floatSel) : floatSel;
+      floatPlayerEvent(pSel, '🪨+' + fmt(gain), 'shield');
+    }
+  }
+
+  /* T6 岩甲增幅：每減少 1% 護盾疊一層。層數上限與持續時間都在表上，
+     但層值是引擎自己累加的總量（比照【火焰增幅】以「後蓋前」寫入單一數值）。 */
+  if (lvs[5] > 0 && absorbed > 0 && rt.base > 0) {
+    var per = sgVal(t[5].fx, 'pct', lvs[5]);
+    var cap = per * Math.max(1, Math.floor(Number(t[5].fx.max) || 30));
+    var add = absorbed / rt.base * 100 * per;
+    var total = Math.min(cap, Math.max(0, buffVal(pEnt, 'sgRockAmp')) + add);
+    if (total > 0) applyStatus(pEnt, 'sgRockAmp', { val: total, dur: Number(t[5].fx.sec) || 3 });
+  }
+}
+
+/* ===========================================================================
+   泥沼術（mire）：地板場域（減益型）
+   ---------------------------------------------------------------------------
+   與火龍捲共用 SKILL2_RT.grounds，差別在三點：
+     1. 形狀是軸對齊的正方形（一灘沼澤沒有「面向」），且可隨時間長大（growTo／growSec）
+     2. 本體不造成傷害——它只發三種狀態：緩速（sgMire）、中毒（sgMirePoison）、
+        熔岩灼燒（sgMireLava）。設計文檔第 7 階註明「共會給予三種 debuff」，
+        因此走狀態表而不是逐跳直接傷害
+     3. 狀態是「站在裡面才有」：每跳重塗一次、持續時間只給兩跳，離開後很快自然消失
+   為什麼緩速不用既有的 ctrl 'slow'：'slow' 是固定 -30% 攻速、且吃控場遞減與韌性；
+   一個每 0.5 秒重塗的場域會被控場遞減瞬間打成 0 秒，而且本技能要同時降攻速與移速、
+   強度還會被第 6 階換代。故另立 stat 減益，遞減與抗性不介入（＝場域一定生效）。
+   =========================================================================== */
+var SG_MIRE_TICK_SEC = 0.5;      // 場域節拍（＝狀態重塗頻率）
+
+function sgCastMire(pEnt, st, g, lvs, pool, primary, floatSel, out) {
+  var t = g.tiers;
+  /* 持續時間取各改寫階的最大值：第 1 階本身每級 +0.4 秒，滿級 7.6 秒已超過
+     第 5 階表定的 6 秒；直接覆寫會讓升級變成降級，故取 max 當作「地板」。 */
+  var lifeSec = Math.max(0.5, sgVal(t[0].fx, 'sec', lvs[0]));
+  if (lvs[4] > 0) lifeSec = Math.max(lifeSec, Number(t[4].fx.sec) || 6);
+  if (lvs[6] > 0) lifeSec = Math.max(lifeSec, Number(t[6].fx.sec) || 8);
+  var hits = Math.max(1, Math.round(lifeSec / SG_MIRE_TICK_SEC));
+  var side = bfMeterPx(sgRange(g.range).length || 10);
+  var growTo = 1;
+  if (lvs[4] > 0) growTo += sgVal(t[4].fx, 'pct', lvs[4]) / 100;
+  if (lvs[6] > 0) growTo += sgVal(t[6].fx, 'pct', lvs[6]) / 100;   // 熔岩沼：與第 5 階累加
+  var spread = lvs[3] > 0 ? sgRollCount(sgVal(t[3].fx, 'add', lvs[3])) : 0;
+  sgSpawnGround(pEnt, st, 'mire', {
+    kind: 'mire', tgt: primary, floatSel: floatSel,
+    length: side, width: side, dmgVal: 0,
+    hits: hits, gap: SG_MIRE_TICK_SEC,
+    growTo: growTo, growSec: lvs[4] > 0 ? Math.max(0.1, Number(t[4].fx.growSec) || 4) : 0,
+    respawnLeft: spread,
+    mire: sgMireSpec(g, lvs, st)
+  });
+}
+
+/* 沼澤這一攤要發的三種狀態規格（施放當下定版，之後不隨屬性變動）。 */
+function sgMireSpec(g, lvs, st) {
+  var t = g.tiers;
+  var base = sgGroupBaseStat(g, st);
+  var gravity = lvs[5] > 0;                                   // 重力泥沼：緩速換代
+  var poisonGap = Math.max(0.1, Number(t[2].fx.dotGap) || 0.5);
+  var lavaGap = Math.max(0.1, Number(t[6].fx.dotGap) || 0.4);
+  return {
+    aspd: Number((gravity ? t[5].fx : t[0].fx).aspd) || 50,
+    move: Number((gravity ? t[5].fx : t[0].fx).move) || 30,
+    poisonDps: lvs[2] > 0 ? base * sgVal(t[2].fx, 'dotPct', lvs[2]) / 100 / poisonGap : 0,
+    poisonGap: poisonGap,
+    lavaDps: lvs[6] > 0 ? base * sgVal(t[6].fx, 'dotPct', lvs[6]) / 100 / lavaGap : 0,
+    lavaGap: lavaGap,
+    lava: lvs[6] > 0
+  };
+}
+
+/* 沼澤的一次作用：不造成傷害，只對站在裡面的敵人重塗狀態。 */
+function sgMireGroundTick(f, victims, ctx) {
+  var m = f.mire || {};
+  sgEmitVfx('mire', victims, f.floatSel, {
+    fxKind: 'aura', variant: m.lava ? 'mire-lava' : 'mire',
+    elem: m.lava ? 'fire' : 'earth', dur: f.gap, area: sgGroundArea(f)
+  });
+  if (!victims.length) return;
+  var hold = f.gap * 2;   // 只給兩跳：離開沼澤後最多再殘留一個節拍
+  for (var i = 0; i < victims.length; i++) {
+    var e = victims[i];
+    if (!e || e.hp <= 0) continue;
+    applyStatus(e, 'sgMire', { val: m.aspd || 0, dur: hold });
+    if (m.poisonDps > 0) applyStatus(e, 'sgMirePoison', { dps: m.poisonDps, dur: hold, interval: m.poisonGap });
+    if (m.lavaDps > 0) applyStatus(e, 'sgMireLava', { dps: m.lavaDps, dur: hold, interval: m.lavaGap });
+  }
+}
+
+/* 【毒沼增生】（T4）：沼澤結束時在附近較近的敵人腳下重新長出一攤（可再傳染的次數遞減）。 */
+function sgMireGroundExpire(f, enemies, ctx) {
+  if (!(f.respawnLeft > 0)) return;
+  var lvs = skills2Levels('mire');
+  if (!lvs || lvs[3] < 1) return;
+  var radius = bfMeterPx(Number(SKILLS2.mire.tiers[3].fx.m) || 40);
+  var spot = sgMireSpreadTarget(f, enemies, radius);
+  if (!spot) return;
+  sgSpawnGround(f.pEnt, f.st, 'mire', {
+    kind: 'mire', tgt: spot, floatSel: f.floatSel,
+    length: f.baseLength, width: f.baseWidth, dmgVal: 0,
+    hits: f.hits, gap: f.gap,
+    growTo: f.growTo, growSec: f.growSec,
+    respawnLeft: f.respawnLeft - 1,
+    mire: f.mire
+  });
+}
+
+/* 傳染落點：以沼澤當下位置為圓心、radius 內「較近」的存活敵人（設計文檔：優先選擇較近的目標）。 */
+function sgMireSpreadTarget(f, enemies, radius) {
+  var live = (typeof bfLiveList === 'function') ? bfLiveList(enemies) : (enemies || []);
+  if (!f.pos || typeof bfPos !== 'function') return live.length ? live[0] : null;
+  var best = null, bestD = Infinity;
+  for (var i = 0; i < live.length; i++) {
+    var p = bfPos(live[i]);
+    if (!p) continue;
+    var dx = p.x - f.pos.x, dy = p.y - f.pos.y;
+    var d = Math.sqrt(dx * dx + dy * dy);
+    if (d > radius || d >= bestD) continue;
+    best = live[i]; bestD = d;
+  }
+  return best;
+}
+
+/* ---- 泥沼緩速的兩個對外掛點 ----
+   攻速：formula.js slowFactor（野外與高塔的敵人攻擊節拍共用）
+   移速：battlefield.js bfTickApproach（敵人逼近速度）
+   減速幅度的權威是「目前的技能等級」：攻速值另外存在狀態上供 UI 顯示，
+   移速值不佔第二個狀態格（同一棵樹只會有一種泥沼，不需要分開記）。 */
+function sgMireOn(ent) {
+  return (typeof buffVal === 'function') ? Math.max(0, buffVal(ent, 'sgMire')) : 0;
+}
+function skill2MireMovePct() {
+  var lvs = skills2Levels('mire');
+  if (!lvs || lvs[0] < 1) return 0;
+  var t = SKILLS2.mire.tiers;
+  return Number((lvs[5] > 0 ? t[5].fx : t[0].fx).move) || 0;
+}
+function skill2MireAspdFactor(ent) {
+  var v = sgMireOn(ent);
+  return v > 0 ? Math.max(0.05, 1 - Math.min(95, v) / 100) : 1;
+}
+function skill2MoveSlowFactor(ent) {
+  if (!(sgMireOn(ent) > 0)) return 1;
+  return Math.max(0.05, 1 - Math.min(95, skill2MireMovePct()) / 100);
+}
+/* 【虛弱】（T2）＋【重力泥沼】（T6）：受泥沼影響的敵人受到的傷害提高（兩者累加）。 */
+function skill2MireVulnPct(target) {
+  if (!(sgMireOn(target) > 0)) return 0;
+  var lvs = skills2Levels('mire');
+  if (!lvs || lvs[0] < 1) return 0;
+  var t = SKILLS2.mire.tiers;
+  var pct = 0;
+  if (lvs[1] > 0) pct += sgVal(t[1].fx, 'pct', lvs[1]);
+  if (lvs[5] > 0) pct += sgVal(t[5].fx, 'pct', lvs[5]);
+  return pct;
+}
+
+/* ===========================================================================
+   大地守護（earthguard）：主動型被動
+   ---------------------------------------------------------------------------
+   七階全是「掛在既有收斂點上的乘區」，沒有任何主動施放：
+     T1 傷害減免  → formula.js resolveHit 我方受擊段（skill2DamageTakenMultiplier）
+     T1 生命上限  → formula.js st.hp 派生點（skill2MaxHpFactor）
+     T2 全屬性傷害 → legendary.js legendaryElementDamageUp（全專案屬性傷害提升的唯一收斂點）
+     T3 生命回復＋吸血 → formula.js playerHpRegenPerSec ／ lifestealHealAmount（兩個不同倍率）
+     T4 法力回復＋吸魔 → formula.js playerMpRegenPerSec ／ manaStealAmount
+     T5 魔法盾    → formula.js 我方扣血點（resolveHit ／ applyEnemyHpDamage）
+     T6 生命反射  → combat.js doMonsterAttack 的受擊收斂點
+     T7 天地共生  → 野外／高塔兩個判死收斂點（skills2TryRebirth）
+   =========================================================================== */
+function skill2EarthguardLevels() {
+  if (!skills2PassiveActive('earthguard')) return null;
+  var lvs = skills2Levels('earthguard');
+  return (lvs && lvs[0] >= 1) ? lvs : null;
+}
+
+/* 我方受到的傷害乘區（岩甲【天地逆返】×大地守護【傷害減免】）。
+   刻意不併進 dCfg.dmgRed：那條是神鑄【聖佑】的加算池、還夾著 50% 上限，
+   兩個不同來源的減免混在一起會互相吃掉對方的空間。 */
+function skill2DamageTakenMultiplier(pEnt) {
+  var mult = 1;
+  var eg = skill2EarthguardLevels();
+  if (eg && eg[0] > 0) {
+    mult *= 1 - Math.min(90, sgVal(SKILLS2.earthguard.tiers[0].fx, 'pct', eg[0])) / 100;
+  }
+  var rk = skill2RockLevels(pEnt);
+  if (rk && rk[6] > 0) {
+    var red = sgVal(SKILLS2.rockarmor.tiers[6].fx, 'pct', rk[6]) * (1 - skill2RockShieldRemain(pEnt));
+    if (red > 0) mult *= 1 - Math.min(90, red) / 100;
+  }
+  return mult;
+}
+
+/* 【大地守護】（T1）：生命上限的額外乘算倍率。
+   掛點：formula.js 的 st.hp 派生點——一處收斂，護盾%、最大生命%持續傷害、
+   反震與所有「占最大生命」的換算就都吃到同一個上限，不必逐處補判。
+   ⚠️ 這一支會在 computeStats 途中被呼叫，因此**不得**再回頭呼叫 getStats()。 */
+function skill2MaxHpFactor() {
+  var lvs = skill2EarthguardLevels();
+  if (!lvs || lvs[0] < 1) return 1;
+  return 1 + sgVal(SKILLS2.earthguard.tiers[0].fx, 'hp', lvs[0]) / 100;
+}
+
+/* 【大地祝福】（T2）：全屬性傷害的額外乘算增幅%（0＝未生效）。 */
+function skill2ElemDamageUpPct() {
+  var lvs = skill2EarthguardLevels();
+  if (!lvs || lvs[1] < 1) return 0;
+  return sgVal(SKILLS2.earthguard.tiers[1].fx, 'pct', lvs[1]);
+}
+
+/* 【生命再生】／【魔力再生】（T3／T4）：同一階給兩個**不同倍率**的乘區——
+   回復本身 +100%（pct），吸血／吸魔 +50%（drain）。因此吸血不能沿用被放大過的
+   每秒回復去換算，兩者在 formula.js 各自從未加成的基準值出發。 */
+function sgEarthguardRegenTier(kind) {
+  var lvs = skill2EarthguardLevels();
+  var idx = (kind === 'mp') ? 3 : 2;
+  return (lvs && lvs[idx] >= 1) ? { fx: SKILLS2.earthguard.tiers[idx].fx, lv: lvs[idx] } : null;
+}
+function skill2RegenFactor(kind) {
+  var t = sgEarthguardRegenTier(kind);
+  return t ? 1 + sgVal(t.fx, 'pct', t.lv) / 100 : 1;
+}
+function skill2DrainFactor(kind) {
+  var t = sgEarthguardRegenTier(kind);
+  return t ? 1 + sgVal(t.fx, 'drain', t.lv) / 100 : 1;
+}
+
+/* 【魔法盾】（T5）：我方扣血前先由法力承擔一部分；回傳「改由法力付掉」的傷害量。
+   使用者決策 2026-08-17：法力付得起多少就付多少，餘額仍照扣生命。 */
+function skills2ManaShieldAbsorb(pEnt, dmg) {
+  if (!pEnt || !(dmg > 0)) return 0;
+  var lvs = skill2EarthguardLevels();
+  if (!lvs || lvs[4] < 1) return 0;
+  var want = dmg * sgVal(SKILLS2.earthguard.tiers[4].fx, 'pct', lvs[4]) / 100;
+  var paid = Math.min(want, Math.max(0, Number(pEnt.mp) || 0));
+  if (!(paid > 0)) return 0;
+  pEnt.mp = Math.max(0, pEnt.mp - paid);
+  return paid;
+}
+
+/* 【生命反射之盾】（T6）：你每消耗 1% 生命或護盾，附近敵人同步損失自身最大生命的一定比例。
+   分母一律取最大生命——本專案的護盾量本來就以「占最大生命%」描述（岩甲護盾即 30% 最大生命），
+   用 shieldMax 當分母會在護盾打光的那一刻歸零而漏算最後一段。 */
+function sgEarthguardReflect(mEnt, pEnt, hpDamage, res, floatSel) {
+  var lvs = skill2EarthguardLevels();
+  if (!lvs || lvs[5] < 1) return;
+  var st = getStats();
+  if (!(st.hp > 0)) return;
+  var lostPct = (Math.max(0, hpDamage) + Math.max(0, (res && res.absorbed) || 0)) / st.hp * 100;
+  if (!(lostPct > 0)) return;
+  var fx = SKILLS2.earthguard.tiers[5].fx;
+  var enemies = (typeof combatFieldEnemies === 'function' && typeof FIELD !== 'undefined' &&
+    FIELD && FIELD.player === pEnt) ? combatFieldEnemies() : [mEnt];
+  var victims = sgEarthguardReflectTargets(mEnt, enemies, fx);
+  if (!victims.length) return;
+  var eSel = (typeof THORN_FLOAT_MAP !== 'undefined' && THORN_FLOAT_MAP[floatSel]) || floatSel;
+  var pctOfMax = lostPct * sgVal(fx, 'pct', lvs[5]) / 100;
+  var killed = false;
+  sgEmitVfx('earthguard', victims, eSel, { fxKind: 'chain', variant: 'earth-reflect', elem: 'earth' });
+  for (var i = 0; i < victims.length; i++) {
+    var e = victims[i];
+    var amount = Math.max(1, Math.round((Number(e.maxHp) || 0) * pctOfMax / 100));
+    var dealt = (typeof applyEnemyHpDamage === 'function') ? applyEnemyHpDamage(e, amount) : 0;
+    if (dealt <= 0) continue;
+    if (typeof floatEnemyEvent === 'function') floatEnemyEvent(e, eSel, '🌍' + fmt(dealt), 'enemy-skill', dealt, 0);
+    if (typeof trackDps === 'function') trackDps(dealt);
+    if (typeof recordRunDamage === 'function') {
+      recordRunDamage(SKILLS2.earthguard.name, dealt, 'skill2:earthguard', sgTotalLevel(skills2Levels('earthguard')));
+    }
+    if (e.hp <= 0) { e.hp = 0; killed = true; }
+  }
+  if (killed && typeof onFieldDeaths === 'function' && typeof FIELD !== 'undefined' &&
+      FIELD && FIELD.player === pEnt) {
+    onFieldDeaths();
+  }
+}
+
+/* 反射目標：範圍內任意 count 個；「除非只剩一個目標，否則避開當前攻擊者」。 */
+function sgEarthguardReflectTargets(exclude, enemies, fx) {
+  var radius = bfMeterPx(Number(fx.m) || 20);
+  var count = Math.max(1, Math.floor(Number(fx.count) || 1));
+  var others = [], self = [];
+  for (var i = 0; i < (enemies || []).length; i++) {
+    var e = enemies[i];
+    if (!e || e.hp <= 0) continue;
+    if (typeof bfPos === 'function' && bfPos(e) && typeof bfEntityDistance === 'function' &&
+        bfEntityDistance(e) > radius) continue;
+    (e === exclude ? self : others).push(e);
+  }
+  var pick = others.length ? others : self;
+  for (var j = pick.length - 1; j > 0; j--) {
+    var k = Math.floor(Math.random() * (j + 1));
+    var tmp = pick[j]; pick[j] = pick[k]; pick[k] = tmp;
+  }
+  return pick.slice(0, count);
+}
+
+/* 【天地共生】（T7）：死亡攔截。掛在野外 onPlayerFieldDeath 與高塔 endTowerFight
+   兩個判死收斂點的最前端——持續傷害、自傷技能與敵人攻擊都會經過那裡。
+   冷卻寫進 pEnt.skillCds['sg:earthguard']，直接沿用技能格的通用冷卻顯示。 */
+function skills2TryRebirth(pEnt) {
+  if (!pEnt || typeof getStats !== 'function') return false;
+  var lvs = skill2EarthguardLevels();
+  if (!lvs || lvs[6] < 1) return false;
+  if (!pEnt.skillCds) pEnt.skillCds = {};
+  if ((pEnt.skillCds[SG_PREFIX + 'earthguard'] || 0) > 0) return false;
+  var fx = SKILLS2.earthguard.tiers[6].fx;
+  var st = getStats();
+  if (typeof cleanse === 'function') cleanse(pEnt);   // 先淨化再上無敵，避免無敵被自己清掉
+  pEnt.hp = Math.max(1, Math.round(st.hp * sgVal(fx, 'pct', lvs[6]) / 100));
+  pEnt.skillCds[SG_PREFIX + 'earthguard'] = Math.max(1, sgVal(fx, 'cd', lvs[6]));
+  applyStatus(pEnt, 'invuln', { dur: Math.max(0.5, Number(fx.sec) || 5) });
+  sgEmitPlayerVfx('earthguard', 'pv-float', { fxKind: 'rain', variant: 'pillar', elem: 'light', dur: 1.2 });
+  if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '天地共生!', 'buff');
+  if (typeof blog === 'function') {
+    blog('🌍 【天地共生】大地將你托起——你原地復活，回復 ' + fmt(pEnt.hp) + ' 生命並獲得無敵！', 'info');
+  }
+  if (typeof UI !== 'undefined' && UI.dirty) { UI.dirty.battle = true; UI.dirty.skills = true; }
+  return true;
+}
+
 /* ===========================================================================
    反擊（counter）：主動型被動——受擊時觸發，需裝配技能列才生效、永不主動施放。
    掛點：combat.js doMonsterAttack（野外與高塔敵攻玩家的唯一收斂點）於
@@ -2129,6 +2639,13 @@ function skills2OnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) {
   if (!SKILL2_RT || !mEnt || !pEnt) return;
   if (res && (res.miss || res.invuln || res.killed)) return;
   if (!(pEnt.hp > 0)) return;
+  /* 受擊收斂點現在服務三個群組；各自獨立判定，彼此不得互相短路。 */
+  sgRockOnPlayerDamaged(mEnt, pEnt, hpDamage, res, floatSel);            // 岩甲術 T3／T5／T6
+  sgEarthguardReflect(mEnt, pEnt, hpDamage, res, floatSel);              // 大地守護 T6
+  sgCounterOnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel); // 反擊
+}
+
+function sgCounterOnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) {
   if (!skills2PassiveActive('counter')) return; // 主動型被動：沒裝在技能列就不生效
   var lvs = skills2Levels('counter');
   if (!lvs || lvs[0] < 1) return;
@@ -2267,6 +2784,7 @@ function sgCounterSplashTargets(exclude, enemies, fx) {
 function tickSkill2(dt, ctx) {
   if (!SKILL2_RT || !ctx || !ctx.pEnt) return;
   if (SKILL2_RT.rage && SKILL2_RT.rage.until <= GT) SKILL2_RT.rage = null; // 狂怒到期回收
+  if (SKILL2_RT.rock && SKILL2_RT.rock.until <= GT) SKILL2_RT.rock = null; // 岩甲到期回收
   sgTickFlyingProjectiles(dt, ctx);
   sgTickMeteors(ctx);
   sgTickGrounds(dt, ctx);

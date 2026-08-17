@@ -43,7 +43,15 @@ var STATUS_DEFAULT_INTERVAL = 1;
      stack       疊加規則：refresh＝重新計時（後蓋前）／strongest＝取高並重新計時／
                  stack＝疊層（單層值取高、層數 +1 至上限，實際效果＝單層值 × 層數）
      maxStacks   最大疊層（stack 規則用；其餘規則填 1）
-     desc        說明 */
+     desc        說明
+
+   ---- 設計文檔的 buff 規則 → 本表 stack 欄（2026-08-17 文檔補列）----
+     重上：持續時間內再次獲得同一個 buff，時間重計                 → refresh
+     疊加：特定 buff 可疊次數，每次疊加時次數 +1 且時間重計         → stack（maxStacks 為上限）
+     取代：同類型但強度不同的 buff（緩速 -30% ／ -50%），
+           新的覆蓋舊的、時間重計，除非技能特別說明可並存          → refresh（後蓋前，不比大小）
+   ⚠️ strongest（取高並重新計時）不在文檔的三條規則內，是既有持續傷害的歷史行為；
+      本次不更動既有狀態的疊加規則（會改動已調校完成的數值），新增狀態一律依上表選規則。 */
 var STATUS = {
   bleed: { name: '流血', icon: '🩸', kind: 'debuff', effect: 'dot', key: '', elem: '', dmgSource: 'skill', dmg: 25, capStat: '', capMult: 0, val: 0, dur: 5, interval: 1, stack: 'strongest', maxStacks: 1, desc: '傷口持續失血，每次作用造成技能傷害的一部分。' },
   burn: { name: '燃燒', icon: '🔥', kind: 'debuff', effect: 'dot', key: '', elem: 'fire', dmgSource: 'skill', dmg: 20, capStat: '', capMult: 0, val: 0, dur: 4, interval: 1, stack: 'strongest', maxStacks: 1, desc: '火焰持續灼燒，每次作用造成火屬性傷害。' },
@@ -92,7 +100,12 @@ var STATUS = {
   sgArmorBrk: { name: '破甲', icon: '⚒️', kind: 'debuff', effect: 'stat', key: 'sgDefBrk', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 25, dur: 4, interval: 0, stack: 'stack', maxStacks: 4, desc: '新版技能【破甲擊】：防禦降低（可疊層，疊層時重置時間；獨立鍵、與舊 defDown 減益加總計算）。' },
   sgBurn: { name: '烈焰燃燒', icon: '🔥', kind: 'debuff', effect: 'dot', key: '', elem: 'fire', dmgSource: 'skill', dmg: 20, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0.5, stack: 'strongest', maxStacks: 1, desc: '新版技能【火球術／火柱】：火屬性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。' },
   sgFireAmp: { name: '火焰增幅', icon: '🔥', kind: 'buff', effect: 'stat', key: 'sgFireAmp', elem: 'fire', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 4, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【火焰增幅】：火屬性傷害提升（層數由引擎累加成單一數值，故用後蓋前並重置時間）。' },
-  sgFirehunt: { name: '火狩', icon: '☄️', kind: 'buff', effect: 'stat', key: 'sgFirehunt', elem: 'fire', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 4, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【火狩】：火狩環繞自身的剩餘時間；【再生】的擊殺延長會累加在這裡。' }
+  sgFirehunt: { name: '火狩', icon: '☄️', kind: 'buff', effect: 'stat', key: 'sgFirehunt', elem: 'fire', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 4, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【火狩】：火狩環繞自身的剩餘時間；【再生】的擊殺延長會累加在這裡。' },
+  sgRockArmor: { name: '岩甲', icon: '🪨', kind: 'buff', effect: 'stat', key: 'sgRockArmor', elem: 'earth', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 10, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【岩甲術】：岩甲護盾的剩餘時間；第 3、5、6、7 階的效果只在此期間生效（護盾本身走「護盾」狀態）。' },
+  sgRockAmp: { name: '岩甲增幅', icon: '🪨', kind: 'buff', effect: 'stat', key: 'sgRockAmp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 3, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【岩甲增幅】：損失護盾換得的傷害增幅（層數由引擎累加成單一數值，故用後蓋前並重置時間）。' },
+  sgMire: { name: '泥沼緩速', icon: '🟤', kind: 'debuff', effect: 'stat', key: 'sgMire', elem: 'earth', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 50, dur: 1, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【泥沼術】：攻速與移動速度下降（效果值＝攻速下降%）。同類型緩速依「取代」規則後蓋前並重新計時；為場域型持續重塗，不吃控場遞減與韌性。' },
+  sgMirePoison: { name: '泥沼劇毒', icon: '☠️', kind: 'debuff', effect: 'dot', key: '', elem: 'poison', dmgSource: 'skill', dmg: 25, capStat: '', capMult: 0, val: 0, dur: 1, interval: 0.5, stack: 'refresh', maxStacks: 1, desc: '新版技能【毒沼術】：毒性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫），站在沼澤中才會被重塗。' },
+  sgMireLava: { name: '熔岩灼燒', icon: '🌋', kind: 'debuff', effect: 'dot', key: '', elem: 'fire', dmgSource: 'skill', dmg: 70, capStat: '', capMult: 0, val: 0, dur: 1, interval: 0.4, stack: 'refresh', maxStacks: 1, desc: '新版技能【熔岩沼】：火焰持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫），站在岩漿中才會被重塗。' }
 };
 
 /* ---- 反查索引 ----
