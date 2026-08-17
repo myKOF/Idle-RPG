@@ -1058,6 +1058,41 @@ function vfxFirePillarShockwave(spec, layer, pt, radius, delayMs) {
   });
 }
 
+/* 天降技能的落點提示：以模擬層送來的 area.r 畫出貼地橢圓，
+   讓玩家在殞石／雷球落下前看見真正會受影響的中心與範圍。提示只屬於顯示層，
+   durationMs 到期後淡出，不參與命中或傷害判定。 */
+function vfxTargetTelegraph(spec, layer, pt, radius, delayMs, durationMs) {
+  if (!pt || !isFinite(pt.x) || !isFinite(pt.y)) return null;
+  radius = Number(radius);
+  if (!isFinite(radius) || radius <= 0) radius = 72;
+  radius = Math.max(36, radius);
+  var delay = Math.max(0, Number(delayMs) || 0);
+  var duration = Math.max(280, Number(durationMs) || 700);
+  var element = spec && spec.elem === 'lightning' ? 'lightning' : 'fire';
+  var d = vfxNode('vfx-target-telegraph vfx-target-telegraph-' + element, layer, spec);
+  vfxPlace(d, pt);
+  d.style.width = (radius * 2) + 'px';
+  d.style.height = (radius * 1.04) + 'px';
+  d.style.animationDelay = delay + 'ms';
+  d.style.animationDuration = duration + 'ms';
+  for (var i = 0; i < 3; i++) {
+    var ring = document.createElement('span');
+    ring.className = 'vfx-target-telegraph-ring';
+    ring.style.setProperty('--vfx-target-inset', (10 + i * 17) + '%');
+    d.appendChild(ring);
+  }
+  vfxTrack(d, delay + duration + 240);
+  return d;
+}
+
+function vfxAreaRadius(rect, area) {
+  var areaRadius = Number(area && area.r);
+  if (isFinite(areaRadius) && areaRadius > 0) return areaRadius;
+  var w = Math.abs(Number(rect && rect.w));
+  var h = Math.abs(Number(rect && rect.h));
+  return isFinite(w) && isFinite(h) ? Math.min(w, h) * 0.5 : 72;
+}
+
 /* 大隕石：右上方以 60° 斜線砸向範圍中心，並由幾顆較小火球伴隨進場。
    落地時刻＝travelMs（模擬層已把所有目標統一成同一個值，傷害數字同時跳）。 */
 function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
@@ -1068,11 +1103,15 @@ function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
   var safeBaseDelay = Number(baseDelay);
   if (!isFinite(safeBaseDelay) || safeBaseDelay < 0) safeBaseDelay = 0;
   safeBaseDelay = Math.min(VFX_METEOR_MAX_DELAY_MS, safeBaseDelay);
-  var cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
+  var targetPt = targetIds && targetIds.length ? vfxPointOf(targetIds[0], layer) : null;
+  var cx = targetPt ? targetPt.x : rect.x + rect.w / 2;
+  var cy = targetPt ? targetPt.y : rect.y + rect.h / 2;
+  var impactRadius = vfxAreaRadius(rect, spec.area);
   var diagonalRun = (typeof VFX_METEOR_DROP_RUN === 'number' && VFX_METEOR_DROP_RUN > 0)
     ? VFX_METEOR_DROP_RUN : 180;
   var diagonalRise = diagonalRun * Math.tan(
     (typeof VFX_METEOR_DROP_ANGLE_RAD === 'number') ? VFX_METEOR_DROP_ANGLE_RAD : Math.PI / 3);
+  vfxTargetTelegraph(spec, layer, { x: cx, y: cy }, impactRadius, safeBaseDelay, fall);
   var mainFrom = { x: cx + diagonalRun, y: cy - diagonalRise };
   vfxMeteorProjectile(spec, layer, mainFrom, { x: cx, y: cy }, safeBaseDelay, fall, false);
   /* 小火球總共 4 顆，透過略微不同的起點與延遲形成伴隨感，
@@ -1118,7 +1157,7 @@ function vfxMeteor(spec, layer, rect, targetIds, travelMs, baseDelay) {
   flash.style.animationDelay = hitAt + 'ms';
   vfxTrack(flash, hitAt + 700);
 
-  vfxMeteorShockwave(spec, layer, { x: cx, y: cy }, rectRadius(rect), hitAt);
+  vfxMeteorShockwave(spec, layer, { x: cx, y: cy }, impactRadius, hitAt);
 
   vfxSceneShake(layer, hitAt, true, spec);
   for (var t = 0; t < (targetIds || []).length; t++) {
@@ -1618,7 +1657,12 @@ function vfxChain(spec, layer, ptList, idList, baseDelay, strikes) {
 }
 
 /* 天罰／單發神雷：一道天雷直劈目標；與 vfxChain 共用 vfxBolt，但沒有後續跳。 */
-function vfxSmite(spec, layer, pt, targetId, delayMs) {
+function vfxSmite(spec, layer, pt, targetId, delayMs, travelMs) {
+  if (spec.variant === 'thunder-fall') {
+    var radius = vfxAreaRadius(null, spec.area);
+    var flight = Array.isArray(travelMs) ? travelMs[0] : travelMs;
+    vfxTargetTelegraph(spec, layer, pt, radius, delayMs, flight);
+  }
   vfxBolt(spec, layer, { x: pt.x + 26, y: -50 }, pt, delayMs, { mega: true });
   vfxLightningGroundImpact(spec, layer, pt, delayMs + 30, false);
   vfxImpact({ elem: 'lightning', variant: null, color: spec.color }, layer, pt, targetId, delayMs + 40);
@@ -1699,6 +1743,7 @@ function renderCombatVfx(spec) {
   var s = {
     fxKind: kind, glyph: spec.glyph || '✨', color: spec.color || '#fff',
     elem: spec.elem || null, cat: spec.cat || null, variant: spec.variant || null, dur: dur,
+    area: spec.area || null,
     travelMs: spec.travelMs || null,
     projectile: !!spec.projectile,
     lineLength: Number(spec.lineLength) > 0 ? Number(spec.lineLength) : null,
@@ -1814,7 +1859,10 @@ function renderCombatVfx(spec) {
     /* 落雷術與雷殞天落沿用天雷畫法（同樣是「從天而降劈在目標身上」）。 */
     if (kind === 'rain' && (s.variant === 'thunder-strike' || s.variant === 'thunder-fall')) {
       var tb = resolveTargets();
-      for (var bi = 0; bi < tb.pts.length; bi++) vfxSmite(s, layer, tb.pts[bi], tb.ids[bi], baseDelay);
+      for (var bi = 0; bi < tb.pts.length; bi++) {
+        vfxSmite(s, layer, tb.pts[bi], tb.ids[bi], baseDelay,
+          travelMs && travelMs[tb.idxs[bi]]);
+      }
       return;
     }
     if (kind === 'rain' && s.variant === 'smite') {

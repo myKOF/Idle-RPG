@@ -538,7 +538,9 @@ test('三個技能都送出雷屬性的特效事件（鏈、天降、球體場�
   assert.ok(orbSpecs.some((s) => s.fxKind === 'aura' && s.variant === 'thunder-orb' && s.area),
     '飛行雷球以 area 為錨點');
   assert.ok(orbSpecs.some((s) => s.variant === 'thunder-orbit'), '環體電球是環繞特效');
-  assert.ok(orbSpecs.some((s) => s.variant === 'thunder-fall'), '雷殞天落是天降特效');
+  const fallSpec = orbSpecs.find((s) => s.variant === 'thunder-fall');
+  assert.ok(fallSpec, '雷殞天落是天降特效');
+  assert.ok(fallSpec.area && fallSpec.area.r > 0, '雷殞天落提示圈沿用落點範圍');
 });
 
 /* ===========================================================================

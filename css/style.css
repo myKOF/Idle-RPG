@@ -7459,6 +7459,47 @@ textarea:disabled,
   animation: vfxPart 0.7s ease-out both;
 }
 
+/* 天降技能落地前的目標提示：貼地半透明橢圓，尺寸由 area.r 傳入，
+   紅色代表殞石術，藍色代表雷殞天落；只在落下期間存在，落地前淡出。 */
+.vfx-target-telegraph {
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--vfx-target-border, rgba(248, 113, 113, 0.9));
+  border-radius: 50%;
+  background: var(--vfx-target-fill, rgba(220, 38, 38, 0.18));
+  box-shadow: 0 0 18px var(--vfx-target-glow, rgba(239, 68, 68, 0.5)),
+    inset 0 0 18px var(--vfx-target-inset-glow, rgba(127, 29, 29, 0.34));
+  animation: vfxTargetTelegraph 900ms ease-in-out both;
+  z-index: 0;
+}
+
+.vfx-target-telegraph-fire {
+  --vfx-target-fill: rgba(220, 38, 38, 0.18);
+  --vfx-target-border: rgba(248, 113, 113, 0.92);
+  --vfx-target-glow: rgba(239, 68, 68, 0.56);
+  --vfx-target-inset-glow: rgba(127, 29, 29, 0.36);
+}
+
+.vfx-target-telegraph-lightning {
+  --vfx-target-fill: rgba(37, 99, 235, 0.18);
+  --vfx-target-border: rgba(96, 165, 250, 0.94);
+  --vfx-target-glow: rgba(59, 130, 246, 0.62);
+  --vfx-target-inset-glow: rgba(30, 64, 175, 0.38);
+}
+
+.vfx-target-telegraph-ring {
+  inset: var(--vfx-target-inset, 10%);
+  border: 1.5px solid var(--vfx-target-border, rgba(248, 113, 113, 0.7));
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--vfx-target-glow, rgba(239, 68, 68, 0.34));
+}
+
+@keyframes vfxTargetTelegraph {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.96, 0.92); }
+  12% { opacity: 0.82; }
+  82% { opacity: 0.68; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.02, 1.02); }
+}
+
 /* 殞石落地震波：三層橢圓環＋Particle Fountain 式徑向火星／塵土爆散。 */
 .vfx-meteor-shockwave {
   width: 0;

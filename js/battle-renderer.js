@@ -2424,6 +2424,7 @@ var BattleRenderer = (function () {
     var radius = (spec.area && Number(spec.area.r) > 0) ? Number(spec.area.r) : 90;
     var from = { x: to.x + (Math.random() * 36 - 18), y: to.y - S.H * 0.7 };
     var dur = Math.max(0.35, ((spec.travelMs && spec.travelMs[0]) || 700) / 1000);
+    spawnTargetTelegraph(spec, to.x, to.y, radius, delaySec, dur);
     var node = new PIXI.Container();
     var g = new PIXI.Graphics();
     node.addChild(g);
@@ -2565,6 +2566,43 @@ var BattleRenderer = (function () {
     }, scale && scale < 1 ? 0 : 2, dur * 1000 + (delaySec || 0) * 1000 + 800);
   }
 
+  function spawnTargetTelegraph(spec, cx, cy, radius, delaySec, durationSec) {
+    radius = Number(radius);
+    if (!isFinite(radius) || radius <= 0) radius = 90;
+    radius = Math.max(36, radius);
+    var isLightning = spec && spec.variant === 'thunder-fall';
+    var colors = isLightning
+      ? { fill: 0x2563eb, border: 0x60a5fa, inner: 0xdbeafe }
+      : { fill: 0xdc2626, border: 0xf87171, inner: 0xfecaca };
+    var g = new PIXI.Graphics();
+    g.x = cx; g.y = cy;
+    S.layers.zone.addChild(g);
+    var t = -(Math.max(0, delaySec || 0));
+    var dur = Math.max(0.28, durationSec || 0.7);
+    addFx({
+      node: g,
+      update: function (dt) {
+        t += dt;
+        if (t < 0) { g.visible = false; return true; }
+        g.visible = true;
+        var k = Math.min(1, t / dur);
+        var fade = k > 0.84 ? Math.max(0, (1 - k) / 0.16) : 1;
+        var pulse = 1 + Math.sin(t * 5.5) * 0.025;
+        g.clear();
+        g.ellipse(0, 0, radius * pulse, radius * 0.52 * pulse)
+          .fill({ color: colors.fill, alpha: 0.16 * fade })
+          .stroke({ color: colors.border, width: 2.5, alpha: 0.82 * fade });
+        for (var ri = 0; ri < 3; ri++) {
+          var scale = 0.78 - ri * 0.18;
+          g.ellipse(0, 0, radius * scale * pulse, radius * 0.52 * scale * pulse)
+            .stroke({ color: ri === 0 ? colors.inner : colors.border,
+              width: ri === 0 ? 1.8 : 1.4, alpha: (0.48 - ri * 0.08) * fade });
+        }
+        return t < dur;
+      }
+    }, 1, (dur + (delaySec || 0)) * 1000 + 500);
+  }
+
   function spawnMeteor(rect, spec) {
     var theme = themeOf(spec);
     var cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
@@ -2577,6 +2615,7 @@ var BattleRenderer = (function () {
     /* 與 DOM vfxMeteor、技能傷害浮字相同：殞石固定慢 30%。 */
     var dur = Math.min(1.15, Math.max(0.7, meteorTravel / 1000 / VFX_METEOR_SPEED_MULTIPLIER));
     var shockTheme = { c1: '#9f1d12', c2: '#f05a13', glow: '#d62f12' };
+    spawnTargetTelegraph(spec, cx, cy, rectRadius(rect), 0, dur);
     spawnMeteorProjectile(spec, theme, mainFrom, { x: cx, y: cy }, 1, dur, 0, function () {
       /* 強化爆點本身就是這顆殞石唯一一次 Canvas 鏡頭晃動。 */
       spawnImpact(cx, cy, spec, true);

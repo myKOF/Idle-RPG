@@ -3929,3 +3929,43 @@ Commit：
 未完成項目：實機目視確認技能面板的「目前級／下一級」文字，以及重跑數值模擬。
 
 完成後交給：使用者／主整合工作區。
+
+---
+
+## 任務：殞石術與雷殞天落新增落點目標提示圈（2026-08-17）
+
+任務狀態：已完成（2026-08-17）
+
+任務分類：技能效果／戰鬥 VFX／落點提示
+
+負責 AI：Codex
+
+使用者需求：殞石術的每個落下座標顯示紅色半透明目標提示圈；雷殞天落的每個落下座標顯示藍色半透明目標提示圈，視覺上類似附件參考圖。
+
+任務內容：沿用既有 `meteor`／`thunder-fall` 事件與 `area.r` 範圍資料，在 DOM 與 Pixi Canvas 兩條顯示路徑新增落地前提示圈；提示圈於各自的落下延遲期間保持可見，落地時淡出。不得改動傷害計算、技能數值、存檔格式或 Worker Protocol。
+
+允許修改：
+
+- `js/vfx.js`
+- `js/battle-renderer.js`
+- `css/style.css`
+- `index.html`
+- `tests/skill2-vfx.test.cjs`
+- `tests/skill2-lightning.test.cjs`
+- `docs/AI_TASKS.md`
+
+禁止修改：技能數值與傷害公式、`js/skills2.js`、存檔格式、Worker Protocol、無關技能效果與 UI。
+
+前置依賴：既有殞石術／雷殞天落已送出帶 `area.r` 的天降事件；目標檔案衝突預檢無來源。
+
+測試要求：執行殞石／雷殞天落 VFX 定向測試、完整 `npm.cmd test`、`npm.cmd run build`、`git diff --check`，並同步主頁快取版本。
+
+完成條件：殞石術落點顯示紅色半透明圈、雷殞天落落點顯示藍色半透明圈；DOM／Pixi 兩條路徑皆接線；提示圈尺寸沿用 `area.r`；建立 Codex commit。
+
+驗證結果：定向技能／VFX 測試 46/46 通過；完整 `npm.cmd test` 為 1521 項、1518 通過、3 項既有失敗；`npm.cmd run build` 287/287 通過；`node --check js/vfx.js`、`node --check js/battle-renderer.js` 與 `git diff --check` 通過；主頁 CSS／DOM VFX／Pixi Renderer 快取版本已同步。
+
+已知風險：完整測試的 3 項失敗均為既有基準線問題（`ui.js` 快取版號、`counter` 消耗、`bloodrage` 消耗），與本任務修改範圍無關；本機瀏覽器目視驗證受 browser runtime 初始化錯誤 `Cannot redefine property: process` 阻擋，未能完成實機畫面確認。
+
+未完成項目：無程式項目；建議後續由 Antigravity 在實機戰場確認紅／藍提示圈的視覺尺寸與落地時序。
+
+完成後交給：使用者／主整合工作區。

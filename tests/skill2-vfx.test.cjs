@@ -387,3 +387,27 @@ test('雷系三技能的顯示層接線：鏈、天雷、球體場域在 Canvas 
   assert.match(css, /\.vfx-thunder-orb\s*\{[\s\S]*?border-radius:\s*50%/);
   assert.match(css, /@keyframes vfxThunderOrbArc/);
 });
+
+test('殞石術與雷殞天落在落地前顯示對應顏色的目標提示圈', () => {
+  const vfx = read('js/vfx.js');
+  const renderer = read('js/battle-renderer.js');
+  const css = read('css/style.css');
+  const index = read('index.html');
+
+  // 兩套顯示層共用同一個 area.r 語意，落點位置也優先取目標座標。
+  assert.match(vfx, /function vfxTargetTelegraph\(spec, layer, pt, radius, delayMs, durationMs\)/);
+  assert.match(vfx, /var impactRadius = vfxAreaRadius\(rect, spec\.area\)/);
+  assert.match(vfx, /vfxTargetTelegraph\(spec, layer, \{ x: cx, y: cy \}, impactRadius, safeBaseDelay, fall\)/);
+  assert.match(vfx, /spec\.variant === 'thunder-fall'[\s\S]*vfxTargetTelegraph\(spec, layer, pt, radius, delayMs, flight\)/);
+  assert.match(renderer, /function spawnTargetTelegraph\(spec, cx, cy, radius, delaySec, durationSec\)/);
+  assert.match(renderer, /spawnTargetTelegraph\(spec, cx, cy, rectRadius\(rect\), 0, dur\)/);
+  assert.match(renderer, /spawnTargetTelegraph\(spec, to\.x, to\.y, radius, delaySec, dur\)/);
+
+  assert.match(css, /\.vfx-target-telegraph-fire\s*\{[\s\S]*?rgba\(220, 38, 38, 0\.18\)/);
+  assert.match(css, /\.vfx-target-telegraph-lightning\s*\{[\s\S]*?rgba\(37, 99, 235, 0\.18\)/);
+  assert.match(css, /\.vfx-target-telegraph-ring/);
+  assert.match(css, /@keyframes vfxTargetTelegraph/);
+  assert.match(index, /css\/style\.css\?v=1\.0\.40/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.38/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.67/);
+});
