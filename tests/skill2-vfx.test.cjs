@@ -173,6 +173,12 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.match(renderer, /spawnImpact\(pt\.x, pt\.y, spec, false\)/);
   assert.match(renderer, /function spawnFirePillar\(area, spec\)/);
   assert.match(renderer, /spec\.variant === 'pillar'[\s\S]*spawnFirePillar\(pillarArea, spec\)/);
+  assert.match(skills2, /variant: 'firepillar-impact'/);
+  assert.match(vfx, /function vfxFirePillarShockwave\(/);
+  assert.match(vfx, /s\.variant === 'firepillar-impact'[\s\S]*vfxFirePillarShockwave/);
+  assert.match(renderer, /function spawnFirePillarShockwave\(/);
+  assert.match(renderer, /spec\.variant === 'firepillar-impact'[\s\S]*spawnFirePillarShockwave/);
+  assert.match(css, /\.vfx-firepillar-shockwave[\s\S]*@keyframes vfxFirePillarShockwaveRing/);
   assert.doesNotMatch(renderer, /function spawnPillar\(/);
   assert.match(vfx, /function vfxFirePillar\(spec, layer, area, fallbackPt\)/);
   assert.match(vfx, /s\.variant === 'pillar'[\s\S]*vfxFirePillar\(s, layer, spec\.area, pillarPt\)/);

@@ -3614,3 +3614,46 @@ Commit：
 需要 Antigravity 驗證：建議，確認畫面中火球尺寸、平射路徑與命中爆炸。
 
 完成後交給：使用者／主整合工作區。
+
+## 任務：調整殞石術與烈焰衝擊技能效果
+
+任務狀態：已完成（2026-08-17）
+
+任務分類：技能效果調整／戰鬥機制／戰鬥 VFX
+
+負責 AI：Codex
+
+使用者需求：火球術第 7 階「殞石術」改為三顆巨大火殞石，每顆對目標範圍 15 米內敵人造成 250% 火焰傷害，每級 +25%；殞石造成的燃燒傷害為 2 倍。火龍捲第 5 階由「追擊」完全改為「烈焰衝擊」，火龍捲／火牆消失時對周圍 6 米內敵人造成 100% 火焰傷害，每級 +10%，並移除火龍捲與火牆的追擊效果。
+
+任務內容：同步 Skills2 的 Excel／CSV／程式資料與說明；讓殞石的本體傷害、範圍、燃燒倍率使用新數值；讓火龍捲及第 7 階火牆場域不再追擊，於每次場域消失時依第 5 階數值結算一次 6 米範圍火焰傷害，並新增爆炸衝擊波特效；補上技能計算、場域消失、VFX 分派與說明文字回歸測試。
+
+允許修改：
+
+- `config/Excel/Skills2.xlsx`
+- `config/CSV/Skills2.csv`
+- `js/skills2.js`
+- `js/vfx.js`
+- `js/battle-renderer.js`
+- `css/style.css`
+- `tests/skill2-magic-fire.test.cjs`
+- `tests/skill2-vfx.test.cjs`
+- `index.html`
+- `js/bridge.js`
+- `js/worker/sim.worker.js`
+- `docs/AI_TASKS.md`
+
+禁止修改：其他技能群組效果、存檔格式、Worker Protocol、無關 UI／VFX、無關戰鬥公式。
+
+前置依賴：既有新版火球術／殞石術、火龍捲／火牆與技能 VFX 已存在；衝突預檢確認沒有其他副本或分支修改上述檔案。
+
+測試要求：執行火球／火龍捲相關測試、完整 `npm.cmd test`、`npm.cmd run build`、`git diff --check`；確認 Skills2 Excel／CSV／JS 三者資料一致，並檢查 `index.html`／Worker 快取版本是否需同步。
+
+完成條件：兩項新效果可由程式測試驗證，追擊不再影響火龍捲／火牆，資料與說明同步，建立 Codex commit。
+
+驗證結果：火球／火龍捲／技能 VFX 定向測試 34/34 通過；`npm.cmd run build` 282/282 通過；Skills2 `xlsx → CSV` 同步完成，`--apply Skills2` dry-run 語意變更 0；JavaScript 語法檢查與 `git diff --check` 通過；主頁與 Worker 快取版本已同步。
+
+已知風險：完整 `npm.cmd test` 為 1451 通過、5 項既有失敗，失敗集中於 `counter`／`bloodrage`／`firehunt` 舊有數值斷言，單獨重跑仍可重現，未涉及本任務修改的火球／火龍捲／VFX 程式碼。
+
+未完成項目：無。
+
+完成後交給：使用者／主整合工作區。

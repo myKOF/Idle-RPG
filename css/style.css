@@ -7467,6 +7467,34 @@ textarea:disabled,
   pointer-events: none;
 }
 
+/* 烈焰衝擊：場域消失時的爆炸衝擊波，使用更厚的外環與更強的火光。 */
+.vfx-firepillar-shockwave {
+  width: 0;
+  height: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.vfx-firepillar-shockwave .vfx-shockwave-ring {
+  border-width: 5px;
+  border-color: #ffb21c;
+  box-shadow: 0 0 18px #ff3b0a, inset 0 0 12px #7d1708;
+  animation-name: vfxFirePillarShockwaveRing;
+  animation-duration: 0.86s;
+}
+
+@keyframes vfxFirePillarShockwaveRing {
+  0% {
+    opacity: 0;
+    transform: scale(0.08, 0.14);
+  }
+  12% { opacity: 1; }
+  100% {
+    opacity: 0;
+    transform: scale(var(--ring-sx, 3.8), var(--ring-sy, 6.2));
+  }
+}
+
 .vfx-shockwave-ring {
   left: 0;
   top: 0;

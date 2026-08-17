@@ -3,7 +3,7 @@
      1. 魔法群組走魔攻／魔穿，本體傷害整段歸屬火屬性
      2. 施法距離＝各階 fx.castM（火球 30 米、殞石術改 20 米、火柱 30 米）
      3. 火球術：爆炸 6 米、爆裂 20 米、爆燃我方 12 米、火焰增幅我方 20 米、殞石 15 米
-     4. 火柱：地板場域 3 米連續 5 段、雙重火柱 20 米內 2 個目標、追擊、重生、火牆 6×18 橫向
+     4. 火柱：地板場域 3 米連續 5 段、雙重火柱 20 米內 2 個目標、烈焰衝擊、重生、火牆 6×18 橫向
      5. 無座標（高塔）一律退化為單體語意 */
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -249,7 +249,10 @@ test('火球術·殞石術：三顆殞石、傷害與範圍改讀第 7 階、射
   // 三顆殞石各打一次主目標（本體），第 3 階分裂沒有其他敵人可選
   c2.GT = 10;
   c2.tickSkill2(0, tickCtx(c2, playerEnt(), [solo2]));
-  assert.equal(calls2.filter((x) => x.ent === solo2 && Math.round(x.aCfg.atk) === 1000).length, 3);
+  assert.equal(calls2.filter((x) => x.ent === solo2 && Math.round(x.aCfg.atk) === 1250).length, 3);
+  const meteorBurn = c2.sgFindDot(solo2, 'sgBurn');
+  assert.ok(meteorBurn, '殞石命中後應保留燃燒');
+  assert.equal(Math.round(meteorBurn.dps * meteorBurn.interval), 500, '殞石燃燒傷害應為 2 倍');
   assert.equal(out2._pendingProjectiles, 0, '三顆落地後才完成技能命中');
   // 射程由第 7 階改寫為 20 米
   assert.equal(c2.skills2CastRangePx('fireball', c2.skills2Levels('fireball')), c2.bfMeterPx(20));
@@ -412,22 +415,43 @@ test('火柱·雙重火柱：同時對 2 個目標施放，且火屬性傷害額
   assert.equal(Math.round(calls[0].aCfg.atk), 400); // 魔攻 500 ×（60%＋20%）
 });
 
-test('火柱·追擊：場域以 6 米/秒朝目標移動', () => {
+test('火柱·烈焰衝擊：場域不再追擊，消失時對周圍 6 米造成 100% 火焰傷害', () => {
   const c = loadContext();
-  stubHits(c);
+  const calls = stubHits(c);
+  const vfxEvents = [];
+  c.playCombatVfx = (spec) => vfxEvents.push(spec);
   c.chance = () => false;
   setLevels(c, 'firepillar', [1, 1, 1, 1, 1, 0, 0]);
   const p = playerEnt();
   const m = enemy(1e9, 100, 0);
+  const near = enemy(1e9, 100, 100); // 超出火龍捲 3 米半徑，但仍在烈焰衝擊 6 米內
+  const out = enemy(1e9, 100, 200);
 
-  c.castSkill2(p, [m], 'firepillar', 'mv-float');
+  c.castSkill2(p, [m, near, out], 'firepillar', 'mv-float');
   const field = c.SKILL2_RT.grounds[0];
   assert.equal(field.pos.x, 100);
 
-  m.pos.x = 300; // 目標跑掉了
+  m.pos.x = 300; // 目標跑掉了，場域仍應留在原地
   c.GT = 0.5;
-  c.tickSkill2(0.5, tickCtx(c, p, [m]));
-  assert.equal(Math.round(field.pos.x), 130, '0.5 秒 × 6 米/秒 ＝ 3 米＝30 單位');
+  c.tickSkill2(0.5, tickCtx(c, p, [m, near, out]));
+  assert.equal(Math.round(field.pos.x), 100, '烈焰衝擊改制後，火龍捲不應追擊目標');
+
+  for (let i = 2; i <= 5; i++) {
+    c.GT = i * 0.5;
+    c.tickSkill2(0.5, tickCtx(c, p, [m, near, out]));
+  }
+  const nearHitsBeforeExpire = calls.filter((x) => x.ent === near).length;
+  c.GT = 3.0;
+  c.tickSkill2(0.5, tickCtx(c, p, [m, near, out]));
+  const impactHits = calls.filter((x) => x.ent === near);
+  const newNearHits = impactHits.slice(nearHitsBeforeExpire);
+  assert.equal(newNearHits.filter((x) => Math.round(x.aCfg.atk) === 600).length, 1,
+    '場域消失時應只對 6 米內敵人新增一次烈焰衝擊');
+  assert.equal(Math.round(newNearHits.at(-1).aCfg.atk), 600, '第 5 階 Lv.1 100% 應加上第 3 階火焰傷害增幅');
+  const impactVfx = vfxEvents.filter((x) => x.variant === 'firepillar-impact');
+  assert.ok(impactVfx.length > 0, '烈焰衝擊應發送獨立爆炸衝擊波 VFX');
+  assert.ok(impactVfx.every((x) => x.area && x.area.r === 60), '烈焰衝擊 VFX 應帶 6 米範圍');
+  assert.equal(calls.filter((x) => x.ent === out).length, 0, '6 米外敵人不應受到烈焰衝擊');
 });
 
 test('火柱·重生：消失後機率成立時在我方範圍內的敵人身上重來一次', () => {

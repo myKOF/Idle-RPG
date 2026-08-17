@@ -998,12 +998,12 @@ function vfxMeteorProjectile(spec, layer, from, to, delayMs, flight, small) {
  * 讓粒子由落點向外噴散並在短時間內縮小、淡出；同時用三層橢圓環模擬
  * 地面受力的波紋。這和技能傷害範圍是兩回事，只負責落地瞬間的視覺重量感。
  */
-function vfxMeteorShockwave(spec, layer, pt, radius, delayMs) {
-  var d = vfxNode('vfx-meteor-shockwave', layer, spec);
-  /* 震波獨立使用較深的火焰色，避免沿用一般火球的明黃色。 */
-  d.style.setProperty('--vfx-c1', '#9f1d12');
-  d.style.setProperty('--vfx-c2', '#f05a13');
-  d.style.setProperty('--vfx-glow', '#d62f12');
+function vfxShockwave(spec, layer, pt, radius, delayMs, className, colors) {
+  var d = vfxNode(className, layer, spec);
+  /* 震波使用獨立色票，避免沿用一般火球的明黃色。 */
+  d.style.setProperty('--vfx-c1', colors.c1);
+  d.style.setProperty('--vfx-c2', colors.c2);
+  d.style.setProperty('--vfx-glow', colors.glow);
   vfxPlace(d, pt);
   radius = Number(radius);
   if (!isFinite(radius) || radius <= 0) radius = 80;
@@ -1037,6 +1037,21 @@ function vfxMeteorShockwave(spec, layer, pt, radius, delayMs) {
     d.appendChild(dust);
   }
   vfxTrack(d, delayMs + 980);
+  return d;
+}
+
+function vfxMeteorShockwave(spec, layer, pt, radius, delayMs) {
+  return vfxShockwave(spec, layer, pt, radius, delayMs, 'vfx-meteor-shockwave', {
+    c1: '#9f1d12', c2: '#f05a13', glow: '#d62f12'
+  });
+}
+
+/* 火龍捲／火牆消失時的烈焰衝擊：獨立於火球命中爆點，
+   以場域中心向外擴散完整的爆炸衝擊波。 */
+function vfxFirePillarShockwave(spec, layer, pt, radius, delayMs) {
+  return vfxShockwave(spec, layer, pt, radius, delayMs, 'vfx-firepillar-shockwave', {
+    c1: '#7d1708', c2: '#ffb21c', glow: '#ff3b0a'
+  });
 }
 
 /* 大隕石：右上方以 60° 斜線砸向範圍中心，並由幾顆較小火球伴隨進場。
@@ -1750,6 +1765,22 @@ function renderCombatVfx(spec) {
     var dotBurst = resolveTargets();
     for (var dbi = 0; dbi < dotBurst.pts.length; dbi++) {
       vfxImpact(s, layer, dotBurst.pts[dbi], dotBurst.ids[dbi], baseDelay + dbi * 40);
+    }
+    return;
+  }
+
+  /* 烈焰衝擊是場域消失時的一次性範圍爆炸：特效錨定場域中心，
+     不跟著受擊目標各自重播，並保留每個目標的受擊反饋。 */
+  if (kind === 'burst' && s.variant === 'firepillar-impact') {
+    var fireImpact = resolveTargets();
+    var fireCenter = spec.area && isFinite(spec.area.x) && isFinite(spec.area.y)
+      ? { x: Number(spec.area.x), y: Number(spec.area.y) }
+      : (fireImpact.pts.length ? fireImpact.pts[0] : null);
+    if (!fireCenter) return;
+    var fireRadius = spec.area && Number(spec.area.r) > 0 ? Number(spec.area.r) : 60;
+    vfxFirePillarShockwave(s, layer, fireCenter, fireRadius, baseDelay);
+    for (var fti = 0; fti < fireImpact.ids.length; fti++) {
+      vfxHitReact(fireImpact.ids[fti], s.elem || 'fire', baseDelay, true);
     }
     return;
   }

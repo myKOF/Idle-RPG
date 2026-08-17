@@ -2381,6 +2381,14 @@ var BattleRenderer = (function () {
     }, 1);
   }
 
+  /* 火龍捲／火牆消失時的烈焰衝擊，沿用殞石震波的徑向粒子骨架，
+     但以獨立色票呈現場域消失的爆炸衝擊波。 */
+  function spawnFirePillarShockwave(cx, cy, radius) {
+    spawnFireShockwave(cx, cy, radius, {
+      c1: '#7d1708', c2: '#ffb21c', glow: '#ff3b0a'
+    });
+  }
+
   /* 我方增益／敵身詛咒 */
   function spawnAreaFlash(rect, theme) {
     if (!rect) return;
@@ -2966,6 +2974,18 @@ var BattleRenderer = (function () {
         });
         break;
       case 'burst':
+        if (spec.variant === 'firepillar-impact') {
+          var fireImpactPt = spec.area && isFinite(spec.area.x) && isFinite(spec.area.y)
+            ? { x: Number(spec.area.x), y: Number(spec.area.y) }
+            : (targets.length ? posOf(targets[0]) : null);
+          if (!fireImpactPt) break;
+          var fireImpactSpec = Object.assign({}, spec, { variant: 'fire-explosion' });
+          spawnImpact(fireImpactPt.x, fireImpactPt.y, fireImpactSpec, true);
+          spawnFirePillarShockwave(fireImpactPt.x, fireImpactPt.y,
+            spec.area && Number(spec.area.r) > 0 ? Number(spec.area.r) : 60);
+          targets.forEach(function (id) { hitReact(id, spec.elem || 'fire', true); });
+          break;
+        }
         if (spec.variant === 'blood-explosion' || spec.variant === 'zero-infection') {
           targets.forEach(function (id, ti) {
             setTimeout(function () {
