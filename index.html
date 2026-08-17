@@ -721,11 +721,13 @@
     </div>
   </div>
 
-  <!-- 戰鬥結算日誌彈窗 -->
+  <!-- 戰鬥結算日誌彈窗（支援拖曳移動與獨立懸浮） -->
   <div id="summary-modal" class="modal-overlay" style="display:none; background: transparent; backdrop-filter: none;">
-    <div class="modal-box" style="display:flex; flex-direction:column; max-height:85vh; width:min(440px, 92vw);">
+    <div class="modal-box" id="summary-modal-box" style="display:flex; flex-direction:column; max-height:85vh; width:min(440px, 92vw);">
       <button id="summary-modal-close" class="modal-x" aria-label="關閉">✕</button>
-      <div class="sec-title" style="text-align:center; margin-bottom:12px;">統計面板</div>
+      <div class="summary-modal-header" id="summary-modal-header">
+        <div class="sec-title" style="text-align:center; margin-bottom:12px;">📊 統計面板</div>
+      </div>
       <div style="display:flex; justify-content:center; align-items:center; margin-bottom:8px; position:relative;">
         <div class="hint" style="text-shadow: 1px 1px 2px #000; margin:0;">(統計即時更新，按清理歸零重計)</div>
         <button id="btn-summary-clear" class="btn sm"

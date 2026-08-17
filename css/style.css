@@ -739,6 +739,50 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* 統計面板：可獨立懸浮、無全螢幕遮罩、支援滑鼠左鍵拖曳移動 */
+#summary-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#summary-modal #summary-modal-box,
+#summary-modal .modal-box {
+  pointer-events: auto;
+  cursor: default;
+  touch-action: none;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.95), 0 0 20px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(0, 0, 0, 0.8);
+}
+
+#summary-modal .summary-modal-header {
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+#summary-modal .summary-modal-header:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+#summary-modal .modal-box.is-dragging {
+  cursor: grabbing !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  opacity: 0.96;
+}
+
+#summary-modal .modal-box.is-dragging .summary-modal-header {
+  cursor: grabbing !important;
+}
+
 /* ==========================================================================
    ?�全?�通用組件?�Global Common UI Components
    說�?：控?�通用?��?�?btn）、輸?��??��??��?話�??�以?�基礎數?�微調�??�用類別??
