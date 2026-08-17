@@ -100,10 +100,20 @@ test('魔法投射物的反傷等到命中時間才結算', () => {
   c.legendaryOnPlayerDamaged = () => callbacks.push('legendary');
   c.skills2OnPlayerDamaged = () => callbacks.push('skills2');
   const m = enemy(true);
+  m.floatSel = 'mv-float-7';
   const p = player();
+  const vfx = [];
+  c.playCombatVfx = (spec) => vfx.push(spec);
 
   const res = c.doMonsterAttack(m, p, 'pv-float');
   assert.equal(res.thorns, 1000);
+  assert.equal(vfx.length, 1);
+  assert.equal(vfx[0].fxKind, 'enemy-attack');
+  assert.equal(vfx[0].variant, 'enemy-projectile');
+  assert.equal(vfx[0].sourceId, 'mv-float-7');
+  assert.equal(vfx[0].travelMs.length, 1);
+  assert.equal(vfx[0].travelMs[0], 260);
+  assert.equal(vfx[0].hit, true);
   assert.equal(m.hp, 50, '子彈尚未命中前，反傷不得先扣敵人生命');
   assert.equal(c.DEFERRED_ENEMY_RETALIATIONS.length, 1);
   assert.deepEqual(callbacks, [], '受擊反擊掛點也要等到子彈命中');
@@ -123,9 +133,17 @@ test('近戰攻擊的反震仍在攻擊結算時立即生效', () => {
   c.getStats = stats;
   c.GT = 0;
   const m = enemy(false);
+  m.floatSel = 'mv-float-2';
   const p = player();
+  const vfx = [];
+  c.playCombatVfx = (spec) => vfx.push(spec);
 
   c.doMonsterAttack(m, p, 'pv-float');
+  assert.equal(vfx.length, 1);
+  assert.equal(vfx[0].fxKind, 'enemy-attack');
+  assert.equal(vfx[0].variant, 'enemy-melee');
+  assert.equal(vfx[0].sourceId, 'mv-float-2');
+  assert.equal(vfx[0].hit, true);
   assert.equal(m.hp, 0);
   assert.equal(c.DEFERRED_ENEMY_RETALIATIONS.length, 0);
 });

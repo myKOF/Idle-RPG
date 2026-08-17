@@ -938,6 +938,15 @@ function enemyAttackRetaliationDelaySec(ent) {
     return enemyAttackProjectileTravelMs(ent) / 1000;
 }
 
+/* 敵人出手的來源不能再靠 Canvas 從下一張快照反推：反傷可能在同一個 tick
+   把敵人殺掉，下一張快照只剩 dying 狀態。野外使用敵人的穩定 floatSel；
+   高塔的目標參數是 tp-float，來源則固定是 BOSS 的 tb-float。 */
+function enemyAttackSourceId(ent, floatSel) {
+    if (ent && ent.towerBoss) return 'tb-float';
+    if (ent && ent.floatSel) return ent.floatSel;
+    return (floatSel && floatSel.indexOf('mv-float-') === 0) ? floatSel : null;
+}
+
 function settleEnemyAttackRetaliation(event) {
     if (!event || !event.attacker || !event.target || !event.result) return;
     var attacker = event.attacker;
@@ -1021,6 +1030,28 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
     var skillLabel = skillName ? ' 使用【' + skillName + '】' : '';
     var logMsg = (mEnt.name || '怪物') + skillLabel + (mult && mult > 1 ? ' <span class="log-hl-bad">重擊</span>你，' : ' 攻擊你，');
     var playerFloatSel = playerEventFloatTarget(floatSel);
+    var enemyVfxElem = (mEnt && mEnt.attr && typeof ELEM_INFO !== 'undefined' && ELEM_INFO[mEnt.attr])
+        ? mEnt.attr : null;
+    /* 攻擊視覺要在 resolveHit 後、反傷結算前送出。即使這一擊會同步反傷
+       秒殺敵人，顯示層仍有足夠資料建立近戰攻擊或遠程子彈。魔法攻擊的
+       travelMs 與 DEFERRED_ENEMY_RETALIATIONS 共用同一個 260ms 時序。 */
+    if (typeof playCombatVfx === 'function') {
+        var enemyTravelMs = enemyAttackProjectileTravelMs(mEnt);
+        playCombatVfx({
+            fxKind: 'enemy-attack',
+            variant: mEnt && mEnt.magic ? 'enemy-projectile' : 'enemy-melee',
+            elem: enemyVfxElem, cat: 'enemy',
+            glyph: mEnt && mEnt.magic ? '✦' : '💢',
+            color: enemyVfxElem ? ELEM_INFO[enemyVfxElem].color
+                : (mEnt && mEnt.magic ? '#c084fc' : '#ff6b6b'),
+            sourceId: enemyAttackSourceId(mEnt, floatSel),
+            targets: [playerFloatSel],
+            travelMs: enemyTravelMs > 0 ? [enemyTravelMs] : null,
+            dur: enemyTravelMs > 0 ? enemyTravelMs / 1000 : 0.35,
+            count: 1,
+            hit: !res.invuln && !res.miss
+        });
+    }
     var hpDamage = 0;
     if (res.invuln) {
         floatPlayerEvent(playerFloatSel, '無敵!', 'defend');
@@ -1037,17 +1068,6 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
         var dmgStr = '-' + fmt(res.dmg);
         if (res.crit) dmgStr = '爆擊 ' + dmgStr;
         floatText(playerFloatSel, dmgStr, isCrit ? 'crit' : 'mdmg');
-        // 我方受擊反饋（協議 v17）：爪痕閃過我方卡片＋卡片震動，由顯示層畫。
-        // 敵人的 attr 是敵方技能／攻擊的視覺屬性來源；無屬性敵人仍退回紅色爪痕。
-        var enemyVfxElem = (mEnt && mEnt.attr && typeof ELEM_INFO !== 'undefined' && ELEM_INFO[mEnt.attr])
-            ? mEnt.attr : null;
-        if (typeof playCombatVfx === 'function') {
-            playCombatVfx({
-                fxKind: 'impact', variant: 'claw', elem: enemyVfxElem, cat: 'enemy',
-                glyph: '💢', color: enemyVfxElem ? ELEM_INFO[enemyVfxElem].color : '#ff6b6b',
-                targets: [playerFloatSel], travelMs: null, dur: 0.35, count: 1
-            });
-        }
         if (res.blocked) floatPlayerEvent(playerFloatSel, '格擋!', 'defend');
         hpDamage = Math.max(0, res.dmg - (res.absorbed || 0));
         logMsg += (res.crit ? '<span class="log-hl-bad">爆擊</span> ' : '造成 ') + fmt(res.dmg) + (mEnt.magic ? ' 魔法' : '') + ' 傷害。';

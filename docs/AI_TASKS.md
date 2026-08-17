@@ -4059,3 +4059,45 @@ Commit：
 未完成項目：無程式項目；建議後續由 Antigravity 在實機戰場確認紅／藍提示圈的視覺尺寸與落地時序。
 
 完成後交給：使用者／主整合工作區。
+
+---
+
+## 任務：反傷秒殺時仍播放敵人攻擊與普攻子彈（2026-08-17）
+
+任務狀態：已完成（2026-08-17）
+
+任務分類：戰鬥時序／敵人攻擊 VFX／反傷生命週期
+
+負責 AI：Codex
+
+使用者需求：敵人被反傷秒殺時，敵人仍應先完成攻擊動作；若是遠程攻擊，必須先看到普攻子彈命中玩家，再套用反傷讓敵人死亡。敵人與玩家死亡時都不得留下不合理的攻擊視覺。
+
+任務內容：移除 Canvas 只依 5Hz 戰鬥快照中的 `atkCd` 猜測敵人出手的單一路徑，改由 `doMonsterAttack` 在攻擊結算時送出含來源、類型與命中資訊的敵人攻擊 VFX 事件。魔法敵人的反傷仍延後至既有投射物飛行時間，傷害間隔與傷害數值不變；Canvas／DOM／Worker shim 需同步處理新事件欄位。
+
+允許修改：
+
+- `js/combat.js`
+- `js/worker/shim.js`
+- `js/battle-renderer.js`
+- `js/vfx.js`
+- `tests/enemy-projectile-retaliation.test.cjs`
+- `tests/worker-shim.test.cjs`
+- `tests/enemy-attack-vfx.test.cjs`
+- `tests/vfx-element-colors.test.cjs`
+- `docs/AI_TASKS.md`
+
+禁止修改：反傷傷害公式、反傷數值與間隔、存檔格式、技能數值、無關技能效果、戰鬥結算結果與高塔勝負規則。
+
+前置依賴：既有魔法投射物反傷延後結算已完成；目標檔案衝突預檢無來源。
+
+測試要求：執行反傷／敵人攻擊 VFX／Worker shim 定向測試、完整 `npm.cmd test`、`npm.cmd run build`、JavaScript 語法檢查與 `git diff --check`。
+
+完成條件：反傷秒殺的近戰敵人仍出現攻擊／命中視覺；魔法敵人先發出子彈並於命中後才視覺上死亡；既有反傷時序測試保持通過；建立 Codex commit。
+
+驗證結果：反傷／敵人攻擊 VFX／Worker shim／元素色彩定向測試 14/14 通過；完整 `npm.cmd test` 為 1526 項、1521 通過、5 項既有失敗；`npm.cmd run build` 289/289 通過；四個 JavaScript 語法檢查與 `git diff --check` 通過。
+
+已知風險：完整測試的 5 項失敗為既有基準線問題（`ui.js` 快取版號、嗜血狂怒消耗、泥沼尺寸／技能欄位），與本任務修改無關。`index.html` 有 Antigravity 未合併 commit `4ffe382` 的修改來源，依協作規範未直接改動該檔案；主整合時請一併把 `vfx.js`、`battle-renderer.js`、`combat.js` 的快取版本升版。
+
+未完成項目：無程式項目；待主整合處理 `index.html` 快取版本與 Antigravity 修改的合併。
+
+完成後交給：使用者／主整合工作區。

@@ -1899,6 +1899,32 @@ function renderCombatVfx(spec) {
     return { pts: pts, ids: ids, idxs: idxs };
   }
 
+  /* 敵人攻擊事件由模擬層在 resolveHit 後立即送出，不能沿用「我方出手」
+     的 origin。高塔／DOM 路徑仍能用 sourceId 找到 BOSS；野外 Canvas 會
+     在另一條路徑處理，這裡保留同樣的近戰／遠程時序。 */
+  if (kind === 'enemy-attack' && s.cat === 'enemy') {
+    var enemyAttackTargets = resolveTargets();
+    if (!enemyAttackTargets.pts.length) return;
+    var enemySource = spec.sourceId ? vfxPointOf(spec.sourceId, layer) : null;
+    var enemyTarget = enemyAttackTargets.pts[0];
+    var enemyTargetId = enemyAttackTargets.ids[0];
+    var enemyHit = spec.hit !== false;
+    if (s.variant === 'enemy-projectile' && enemySource) {
+      var enemyTravel = (travelMs && Number(travelMs[0]) > 0) ? Number(travelMs[0]) : 260;
+      vfxProjectile(s, layer, enemySource, enemyTarget, baseDelay, enemyTravel);
+      if (enemyHit) {
+        var enemyFlight = vfxProjectileFlightMs(enemyTravel, s.dur || 0.35);
+        vfxImpact(s, layer, enemyTarget, enemyTargetId, baseDelay + enemyFlight);
+      }
+    } else {
+      var enemyAngle = enemySource
+        ? Math.atan2(enemyTarget.y - enemySource.y, enemyTarget.x - enemySource.x) : 0;
+      vfxSlash(s, layer, enemyTarget, baseDelay, enemyAngle * 180 / Math.PI);
+      if (enemyHit) vfxImpact(s, layer, enemyTarget, enemyTargetId, baseDelay);
+    }
+    return;
+  }
+
   /* 彈幕是 glyph／variant 優先的特殊路徑，先於一般 fxKind 分派，
      因為它需要同一個目標同時建立多條左右交錯的彈道。 */
   if (s.variant === 'arcane-barrage' || (s.glyph === '💫' && s.cat === 'magic')) {
