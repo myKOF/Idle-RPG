@@ -749,7 +749,9 @@ function sgEmitVfx(gid, targets, floatSel, extra) {
   var g = SKILLS2[gid];
   var ids = [];
   for (var i = 0; i < targets.length && ids.length < 8; i++) {
-    if (targets[i] && targets[i].hp > 0) ids.push(enemyEventFloatTarget(targets[i], floatSel));
+    if (targets[i] && (targets[i].hp > 0 || (extra && extra.preserveDeadTargets))) {
+      ids.push(enemyEventFloatTarget(targets[i], floatSel));
+    }
   }
   var cat = sgVfxCat(g);
   var spec = {
@@ -2787,7 +2789,8 @@ function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
   var linksLeft = cfg.links;
   var delayMs = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(start) * 1000) : 0;
   sgEmitVfx(gid, [start], floatSel, {
-    fxKind: 'chain', variant: 'lightning-chain', count: 1, travelMs: [delayMs]
+    fxKind: 'chain', variant: 'lightning-chain', count: 1, travelMs: [delayMs],
+    preserveDeadTargets: true
   });
   var guard = 0;
   while (linksLeft > 0 && cur && cur.hp > 0 && guard < 64) {
@@ -2827,7 +2830,7 @@ function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
     var hopMs = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(next) * 1000) : 0;
     sgEmitVfx(gid, [cur, next], floatSel, {
       fxKind: 'chain', variant: 'lightning-chain', count: 1,
-      delayMs: delayMs, travelMs: [0, hopMs]
+      delayMs: delayMs, travelMs: [0, hopMs], preserveDeadTargets: true
     });
     delayMs += hopMs;
     cur = next;
