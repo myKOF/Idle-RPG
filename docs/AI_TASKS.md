@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Antigravity｜魔法系三大新技能（火球術、火龍捲、火狩）完整測試｜2026-08-17
+
+- 狀態：已完成
+- Owner：Antigravity
+- 目的：依照 `docs/SKILL_TEST_SPEC.md` 標準測試流程（含 MP 常態充足、排除普攻傷害干擾）完成新版魔法系三大技能群組「火球術 (`fireball`)」、「火龍捲 (`firepillar`)」與「火狩 (`firehunt`)」的 B1~B8 基礎、N1~N10 數值、V1~V7 專屬特效與 120 秒純技能 DPS 矩陣量測。
+- 測試報告路徑：`docs/skill-tests/20260817-magic-fire-three-antigravity.md`
+- 驗證結果：
+  1. 基礎驗證（B1~B8）：解鎖、升降級、金幣消耗、高低階效果疊加、裝載/卸下、存檔往返與非法指令邊界 100% 通過。
+  2. 數值驗證（N1~N10）：吃魔攻（MATK）與魔穿（MPEN）、射程與法算半徑（火球 30m/爆炸 6m、火龍捲 30m/3m 連續 5~8 段/無限火牆 3 道 18×6m、火狩 8m 環繞/狩神之舞雙圈反向旋轉）皆符合表定。
+  3. 特效驗證（V1~V7）：`variant: fireball` / `meteor` / `fire-explosion` / `pillar` / `firewall` / `aura/firehunt` 專屬特效於 Canvas／DOM 雙路徑正常渲染，Console 零 Error。
+  4. 平衡矩陣：120 秒純技能 DPS 量測完成。單體輸出以火龍捲最高（75k~85k DPS），多敵包圍時火狩與火球術表現最突出（火狩全滿達 963k DPS、火球術全滿達 658k DPS）。
+  5. 測試指令：`node --test "tests/skill2-*.test.cjs"`（106 項 PASS）、`node --test "tests/*.test.cjs"`（1,456 項全數 PASS）、`node tools/build_check.cjs`（282 檔編譯全數通過）。
+- 唯讀規範：未修改核心遊戲程式碼；僅更新測試規範、輸出測試報告與更新任務記錄。
+
 ## Codex｜同步火狩畫面特效旋轉速度｜2026-08-17
 
 - 狀態：已完成（2026-08-17）

@@ -1,5 +1,16 @@
 # PATCH.md
 
+## 魔法系三大新技能（火球術、火龍捲、火狩）完整測試與標準規範更新（Antigravity 2026-08-17）
+
+- **標準測試規範（SKILL_TEST_SPEC.md）更新**：
+  - §0 與 §5 納入「MP 回復需常態保持充足不缺乏」規範（可鑲嵌藍晶石 `kyanite` 回魔寶石），消除缺魔對技能循環與輸出數據量測之干擾。
+- **測試報告與任務交付**：
+  - 依照規範完成魔法系三大技能「火球術 `fireball`」、「火龍捲 `firepillar`」與「火狩 `firehunt`」全套驗證，產出報告 `docs/skill-tests/20260817-magic-fire-three-antigravity.md` 並更新 `docs/AI_TASKS.md`。
+  - **基礎與數值**：B1~B8 基礎功能 100% 通過、N1~N10 數值與機制符合表定（魔法群組吃魔攻 MATK／魔穿 MPEN、射程與法算半徑正確）。
+  - **專屬特效**：V1~V7 專屬特效（火球、殞石、火龍捲、火牆、火狩環繞軌道、狩神之舞雙圈反向）於 Canvas／DOM 雙路徑表現正常，Console 零 Error。
+  - **平衡矩陣**：嚴格排除普攻傷害，120s 純技能 DPS 矩陣完整產出（火龍捲單體 75k~85k DPS；火狩多目標包圍 963k DPS；火球術多目標 658k DPS）。
+- **測試與建置驗證**：執行 `node --test "tests/skill2-*.test.cjs"`（106 項 PASS）、`node --test "tests/*.test.cjs"`（1,456 項全數通過）與 `node tools/build_check.cjs`（282 檔建置檢查全數通過）。
+
 ## 新版技能「解鎖轉生/等級」門檻（Claude 2026-08-17）
 
 參數表 Skills2 新增一欄「解鎖轉生/等級」（格式 `轉生次數|等級`，例如 `0|100` ＝ 0 轉 100 級解鎖），
