@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Antigravity｜地系三大新技能（岩甲術、泥沼術、大地守護）實機測試與驗證｜2026-08-17
+
+- 狀態：已完成
+- Owner：Antigravity
+- 目的：依照 `prompts/antigravity_task_earth_skills.md` 與 `docs/SKILL_TEST_SPEC.md` 完成新版地系三大技能群組「岩甲術 (`rockarmor`)」、「泥沼術 (`mire`)」與「大地守護 (`earthguard`)」的五大收斂點回歸（R1~R8）、高風險項（E1~E22）、基礎驗證（B1~B8）與雙路徑特效目視驗收（V-E1~V-E7）。
+- 測試報告路徑：`docs/skill-tests/20260817-earth-three-antigravity.md`
+- 驗證結果：
+  1. §2 共用收斂點回歸（R1~R8）：完全不學/不裝新技能狀態下，攻速減速、護盾效率、生命/法力回復與吸血換算、最大生命、我方減傷、敵人移動速度、死亡退階/失敗流程、DoT 每跳量 100% 維持原行為。
+  2. §3 高風險驗證（E1~E22）：22 項決策點全數通過（含 E1 天地逆返未放技能無減傷、E4 護盾被打光至 0 後除以施放時總盾量規避 shieldMax 歸零、E16 回復 ×2.0 與吸血 ×1.5 獨立倍率等）。
+  3. §4 雙路徑特效驗證（V-E1~V-E7）：Canvas 與 DOM 兩套獨立顯示層皆目視驗證通過（褐綠泥沼水窪與冒泡漣漪、橘紅熔岩沼、角色岩甲結晶外框、反擊岩刺迸裂、天地共生復活天降光柱），Console 零 Error。
+  4. 測試指令：`node --test tests/skill2-earth.test.cjs`（26/26 PASS）、`node --test tests/skill2-vfx.test.cjs`（14/14 PASS）、`node tools/build_check.cjs`（285 檔全數通過）、完整 `node --test "tests/*.test.cjs"`（1481 通過 / 5 項既有參數表漂移失敗，地系測試 100% 通過）。
+- 唯讀規範：未修改核心遊戲程式碼；僅新增驗證報告並更新任務追蹤記錄。
+
+
 ## Codex：修正投射物追蹤移動目標的視覺軌跡 - 2026-08-17
 - Status：done
 - Owner：Codex

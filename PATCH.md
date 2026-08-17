@@ -1,5 +1,19 @@
 # PATCH.md
 
+## 地系三大新技能（岩甲術、泥沼術、大地守護）實機測試與五大收斂點回歸（Antigravity 2026-08-17）
+
+- **測試報告與任務交付**：
+  - 依照 `prompts/antigravity_task_earth_skills.md` 與 `docs/SKILL_TEST_SPEC.md` 完成地系三大新技能「岩甲術 `rockarmor`」、「泥沼術 `mire`」與「大地守護 `earthguard`」全套實機測試，產出報告 `docs/skill-tests/20260817-earth-three-antigravity.md` 並同步更新 `docs/AI_TASKS.md`。
+  - **§2 共用收斂點回歸（R1~R8）**：在完全不學/不裝新技能狀態下，驗證攻速減速、護盾效率、生命/法力回復與吸血換算、最大生命、我方減傷、敵人移動速度、死亡退階/失敗流程與 DoT 每跳量，確認未受任何干擾（100% PASS）。
+  - **§3 高風險決策點（E1~E22）**：22 項關鍵項全數通過。包含 E1【天地逆返】未放技能時無減傷；E4 護盾打光至 0 時以施放時總盾量為分母規避 `shieldMax` 歸零除零問題；E16【大地守護】生命回復 ×2.0 與吸血 ×1.5 獨立倍率；E10 泥沼術持續時間取各階最大值（不降級）；E19 魔法盾法力扣盡後正常扣血等。
+  - **§4 特效目視驗收（V-E1~V-E7）**：Canvas 與 DOM 雙路徑目視確認通過（褐綠泥沼水窪、橘紅熔岩沼、角色岩甲結晶外框、反擊岩刺迸裂、天地共生復活天降金黃/翡翠光柱），Console 零 Error。
+- **測試指令與 DoD 驗證**：
+  - 執行 `node --test tests/skill2-earth.test.cjs`（26/26 PASS）。
+  - 執行 `node --test tests/skill2-vfx.test.cjs`（14/14 PASS）。
+  - 執行 `node tools/build_check.cjs`（285 檔全數通過）。
+  - 執行 `node --test "tests/*.test.cjs"`（1481 通過 / 5 項既有參數表漂移失敗，地系技能 100% 通過）。
+
+
 ## 地系三大新技能：岩甲術／泥沼術／大地守護（Claude 2026-08-17）
 
 設計文檔〈魔法〉區塊新增三個群組，並在文檔上方補了兩段全域注釋（屬性用語、buff 規則）。
