@@ -1413,15 +1413,17 @@ function vfxFireWall(spec, layer, area, rect) {
   return node;
 }
 
-/* 泥沼／熔岩沼（新版技能 mire）：貼地的方形場域。
+/* 泥沼／熔岩沼（新版技能 mire）：貼地的橫向長方形場域。
    與火牆同為「按 area.id 合併、每次 tick 續命」的長駐節點；尺寸直接吃場域矩形，
-   不用橢圓或固定半徑自行推算。毒沼 variant 另外疊加深紫色氣流與泡泡。 */
+   只把顯示高度壓成 52%，不改實際方形範圍。毒沼 variant 另外疊加深紫色氣流與泡泡。 */
+var VFX_MIRE_VISUAL_HEIGHT_RATIO = 0.52;
 function vfxMirePool(spec, layer, area, rect) {
   if (!rect || !isFinite(rect.x) || !isFinite(rect.y)) return null;
   var lava = spec && (spec.variant === 'mire-lava' || spec.variant === 'mire-lava-poison');
   var poison = spec && (spec.variant === 'mire-poison' || spec.variant === 'mire-lava-poison');
   var w = Math.max(48, Number(rect.w) || 120);
   var h = Math.max(48, Number(rect.h) || 120);
+  var visualH = Math.max(24, h * VFX_MIRE_VISUAL_HEIGHT_RATIO);
   var x = (Number(rect.x) || 0) - w / 2 + (Number(rect.w) || 0) / 2;
   var y = (Number(rect.y) || 0) - h / 2 + (Number(rect.h) || 0) / 2;
   var key = (area && area.id ? String(area.id) : [Math.round(x), Math.round(y)].join(':'))
@@ -1436,7 +1438,7 @@ function vfxMirePool(spec, layer, area, rect) {
   node = vfxNode('vfx-field-motion', layer, null);
   node._vfxFieldVisual = vfxFieldVisual(node,
     'vfx-mire-pool' + (lava ? ' vfx-mire-lava' : '') + (poison ? ' vfx-mire-poison' : ''),
-    spec, w, h);
+    spec, w, visualH);
   vfxFieldMotionSet(node, x, y, w, h, 0);
   var bubbles = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 5;
   for (var bi = 0; bi < bubbles; bi++) {

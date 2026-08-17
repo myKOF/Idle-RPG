@@ -3942,6 +3942,43 @@ Commit：
 
 ---
 
+## 任務：泥沼場域由正方形顯示為橫向長方形（2026-08-17）
+
+任務狀態：已完成（2026-08-17）
+
+任務分類：技能效果／戰鬥 VFX／泥沼場域幾何
+
+負責 AI：Codex
+
+使用者需求：泥沼仍維持方形範圍，只將畫面上的場域壓成橫向長方形，不改成圓形或橢圓。
+
+任務內容：DOM 與 Pixi Canvas 的泥沼本體保留場域中心、寬度與實際 `area.w／area.h`，僅將顯示高度壓為 52%；保留場域成長、平滑移動、泡泡、熔岩色與毒沼深紫色氣流。不得修改傷害／減益判定、傷害間隔或場域資料。
+
+允許修改：
+
+- `js/vfx.js`
+- `js/battle-renderer.js`
+- `tests/skill2-vfx.test.cjs`
+- `docs/AI_TASKS.md`
+
+禁止修改：模擬層範圍判定、技能數值、傷害／減益公式、存檔格式、Worker Protocol、`css/style.css`（目前有 Antigravity 未合併修改來源）與無關 UI。
+
+前置依賴：既有泥沼矩形場域與每 tick 更新的 DOM／Canvas 長駐 VFX 已完成；目標檔案衝突預檢顯示 `css/style.css` 有 Antigravity 未合併 commit `4ffe382`，本任務避開該檔案。
+
+測試要求：執行泥沼 VFX 定向測試、完整 `npm.cmd test`、`npm.cmd run build`、JavaScript 語法檢查與 `git diff --check`。
+
+完成條件：泥沼在 DOM／Canvas 顯示為橫向直角長方形；實際範圍與傷害／減益行為不變；建立 Codex commit。
+
+驗證結果：泥沼／技能 VFX 定向測試 16/16 通過；完整 `npm.cmd test` 為 1526 項、1521 通過、5 項既有失敗；`npm.cmd run build` 為 289/289 通過；`node --check js/vfx.js`、`node --check js/battle-renderer.js` 與 `git diff --check` 通過。
+
+已知風險：完整測試的 5 項失敗為既有基準線問題（`ui.js` 快取版號、嗜血狂怒消耗、泥沼尺寸／技能欄位與 SKILLS2 欄位），與本任務的顯示層比例修改無關。`css/style.css` 仍有 Antigravity 未合併 commit `4ffe382` 的修改來源，本任務未觸碰該檔案；`index.html` 快取版號仍待主整合時依既有協作流程處理。
+
+未完成項目：無程式項目；尚未進行瀏覽器實機目視驗證。
+
+完成後交給：使用者／主整合工作區。
+
+---
+
 ## 任務：落雷與雷殞目標死亡後停止殘留特效（2026-08-17）
 
 任務狀態：已完成（2026-08-17）
