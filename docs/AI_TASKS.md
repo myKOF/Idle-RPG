@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## Codex：修正投射物追蹤移動目標的視覺軌跡 - 2026-08-17
+- Status：done
+- Owner：Codex
+- Task：投射物以目標既有位置樣本預判飛行終點，並在進入命中半徑時提前觸發命中視覺。
+- Scope：`js/battle-renderer.js`、`index.html`、`tests/projectile-target-prediction.test.cjs`
+- Performance：不增加敵人搜尋；每枚投射物只做一次速度樣本讀取，更新時增加一次距離平方比較，預期影響可忽略。
+- Verification：`node --test tests/projectile-target-prediction.test.cjs`、`npm.cmd run build`、`git diff --check`
+- Risk：渲染器只預判視覺座標，不改變模擬層的實際傷害時間；目標突然轉向時仍由近距離提前命中保底。
+- Next：完成聚焦測試與建置後提交。
+
 ## Codex：魔法光盾內建 20 秒冷卻（2026-08-17）
 
 - Status：Done
