@@ -3932,6 +3932,57 @@ Commit：
 
 ---
 
+## 任務：泥沼術改為方形咖啡色場域並新增毒沼紫色氣流泡泡（2026-08-17）
+
+任務狀態：已完成（2026-08-17）
+
+任務分類：技能效果／戰鬥 VFX／場域視覺
+
+負責 AI：Codex
+
+使用者需求：泥沼術的範圍由目前的圓／橢圓視覺改為方形；一般泥沼使用咖啡色，並在場域上顯示冒泡粒子。
+點出第 3 階「毒沼術」後，泥沼維持咖啡色底，額外顯示深紫色氣流與深紫色泡泡。
+
+追加需求：殞石術與雷殞天落的落點提示保留半透明填色與最外側邊框，但移除所有內嵌同心圈，只顯示一圈。
+
+任務內容：沿用既有矩形 `area.w/h` 與場域生命週期，在 DOM 與 Pixi Canvas 兩條顯示路徑將泥沼本體改為方形；
+新增毒沼 VFX variant，讓紫色氣流／泡泡只在毒沼效果啟用時出現；不改範圍判定、傷害計算、技能數值、存檔格式或 Worker Protocol。
+
+允許修改：
+
+- `js/skills2.js`
+- `js/vfx.js`
+- `js/battle-renderer.js`
+- `css/style.css`
+- `index.html`
+- `tests/skill2-vfx.test.cjs`
+- `docs/AI_TASKS.md`
+
+禁止修改：技能數值與傷害公式、存檔格式、Worker Protocol、無關技能效果與 UI。
+
+前置依賴：既有泥沼場域已傳出 `area.w/h` 並在 DOM／Pixi 兩套顯示層接線；目標檔案衝突預檢無來源。
+
+測試要求：執行泥沼／地系 VFX 定向測試、完整 `npm.cmd test`、`npm.cmd run build`、JavaScript 語法檢查與 `git diff --check`，並同步主頁快取版本。
+
+完成條件：泥沼 DOM／Pixi 皆為方形咖啡色場域並持續冒泡；毒沼啟用時疊加深紫色氣流與深紫色泡泡；建立 Codex commit。
+
+驗證結果：`tests/skill2-vfx.test.cjs` 16/16 通過；地系／雷系／VFX 定向合併測試 70/72 通過，
+其中 2 項為既有泥沼尺寸斷言（測試期望 100、現行資料為 120），未涉及本次顯示層修改；
+完整 `npm.cmd test` 為 1521 項、1516 通過、5 項既有失敗；`npm.cmd run build` 287/287 通過；
+`node --check js/skills2.js`、`node --check js/vfx.js`、`node --check js/battle-renderer.js` 與 `git diff --check` 通過；
+主頁 CSS、DOM VFX、Pixi Renderer 與 Skills2 快取版號已同步。
+
+已知風險：完整測試的 5 項失敗為既有基準線問題（`ui.js` 快取版號、嗜血狂怒消耗、泥沼 100／120 尺寸斷言、
+`counter` 消耗／資料斷言），與本任務的 VFX 變更無關；本機 Browser runtime 初始化仍受
+`Cannot redefine property: process` 阻擋，未能完成實機畫面目視驗證。
+
+未完成項目：無程式項目；建議後續由 Antigravity 在實機戰場確認方形咖啡泥沼、毒沼紫色氣流／泡泡，
+以及殞石／雷殞只剩一圈的視覺尺寸與時序。
+
+完成後交給：使用者／主整合工作區。
+
+---
+
 ## 任務：殞石術與雷殞天落新增落點目標提示圈（2026-08-17）
 
 任務狀態：已完成（2026-08-17）

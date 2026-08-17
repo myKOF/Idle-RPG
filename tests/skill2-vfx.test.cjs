@@ -316,8 +316,8 @@ test('泥沼／熔岩沼：兩套顯示層都有貼地水窪畫法，且尺寸�
   const shim = read('js/worker/shim.js');
 
   // 模擬層：沼澤每一跳送出帶 area 的 aura 事件；熔岩沼換一個 variant 與火屬性
-  assert.match(skills2, /variant: m\.lava \? 'mire-lava' : 'mire'/);
-  assert.match(skills2, /elem: m\.lava \? 'fire' : 'earth'/);
+  assert.match(skills2, /var mireVariant = m\.lava[\s\S]*'mire-lava-poison'[\s\S]*'mire-poison'/);
+  assert.match(skills2, /elem: m\.lava && !poison \? 'fire' : 'earth'/);
   // 矩形場域的 area 必須帶 w/h/a，顯示層才畫得出方向正確的方框（外接圓 r 供舊畫法退化）
   assert.match(skills2, /return \{ id: f\.vfxId, x: f\.pos\.x, y: f\.pos\.y, w: f\.length, h: f\.width,/);
   assert.match(shim, /area: spec\.area \|\| null/, 'area 必須整包跨 Worker 邊界送出');
@@ -329,9 +329,9 @@ test('泥沼／熔岩沼：兩套顯示層都有貼地水窪畫法，且尺寸�
 
   // DOM（高塔）與 Canvas（野外）兩條路徑都要接上，否則其中一邊會退回預設光暈
   assert.match(vfx, /function vfxMirePool\(spec, layer, area, rect\)/);
-  assert.match(vfx, /else if \(s\.variant === 'mire' \|\| s\.variant === 'mire-lava'\) vfxMirePool\(s, layer, spec\.area, rect\);/);
+  assert.match(vfx, /else if \(s\.variant === 'mire'[\s\S]*s\.variant === 'mire-poison'[\s\S]*vfxMirePool\(s, layer, spec\.area, rect\);/);
   assert.match(renderer, /function spawnMirePool\(spec\)/);
-  assert.match(renderer, /else if \(spec\.variant === 'mire' \|\| spec\.variant === 'mire-lava'\) spawnMirePool\(spec\);/);
+  assert.match(renderer, /else if \(spec\.variant === 'mire'[\s\S]*spec\.variant === 'mire-poison'[\s\S]*spawnMirePool\(spec\);/);
   // 同一攤沼澤要靠 area.id 合併成一個長駐節點，不是每跳生一個新的
   assert.match(vfx, /var node = _vfxMirePools\[key\];/);
   assert.match(renderer, /var current = _mirePoolFx\[key\];/);
@@ -339,8 +339,19 @@ test('泥沼／熔岩沼：兩套顯示層都有貼地水窪畫法，且尺寸�
   assert.match(vfx, /_vfxMirePools = Object\.create\(null\);/);
   assert.match(renderer, /if \(_mirePoolFx\[key\] === fx\) delete _mirePoolFx\[key\];/);
 
-  assert.match(css, /\.vfx-mire-pool\s*\{[\s\S]*?border-radius:\s*50%/);
+  const mireBaseCss = css.slice(css.indexOf('.vfx-mire-pool {'), css.indexOf('.vfx-mire-pool::after'));
+  assert.match(mireBaseCss, /border-radius:\s*10px/);
+  assert.doesNotMatch(mireBaseCss, /border-radius:\s*50%/);
   assert.match(css, /\.vfx-mire-lava\s*\{/);
+  assert.match(skills2, /var mireVariant = m\.lava[\s\S]*'mire-lava-poison'[\s\S]*'mire-poison'/);
+  assert.match(vfx, /var poison = spec && \(spec\.variant === 'mire-poison' \|\| spec\.variant === 'mire-lava-poison'\)/);
+  assert.match(vfx, /vfx-mire-current/);
+  assert.match(renderer, /var poison = spec\.variant === 'mire-poison' \|\| spec\.variant === 'mire-lava-poison'/);
+  assert.match(renderer, /g\.rect\(-rx, -ry, fx\.w, fx\.h\)/);
+  assert.match(renderer, /0x6b2d7c/);
+  assert.match(css, /\.vfx-mire-poison\s*\{/);
+  assert.match(css, /\.vfx-mire-current\s*\{/);
+  assert.match(css, /@keyframes vfxMireCurrent/);
   assert.match(css, /@keyframes vfxMireRipple/);
   assert.match(css, /@keyframes vfxMireBubble/);
 });
@@ -403,11 +414,19 @@ test('殞石術與雷殞天落在落地前顯示對應顏色的目標提示圈',
   assert.match(renderer, /spawnTargetTelegraph\(spec, cx, cy, rectRadius\(rect\), 0, dur\)/);
   assert.match(renderer, /spawnTargetTelegraph\(spec, to\.x, to\.y, radius, delaySec, dur\)/);
 
+  const domTelegraphStart = vfx.indexOf('function vfxTargetTelegraph');
+  const domTelegraphEnd = vfx.indexOf('function vfxAreaRadius', domTelegraphStart);
+  const pixiTelegraphStart = renderer.indexOf('function spawnTargetTelegraph');
+  const pixiTelegraphEnd = renderer.indexOf('function spawnMeteor', pixiTelegraphStart);
+  assert.doesNotMatch(vfx.slice(domTelegraphStart, domTelegraphEnd), /vfx-target-telegraph-ring/);
+  assert.doesNotMatch(renderer.slice(pixiTelegraphStart, pixiTelegraphEnd), /for \(var ri = 0; ri < 3; ri\+\+\)/);
+
   assert.match(css, /\.vfx-target-telegraph-fire\s*\{[\s\S]*?rgba\(220, 38, 38, 0\.18\)/);
   assert.match(css, /\.vfx-target-telegraph-lightning\s*\{[\s\S]*?rgba\(37, 99, 235, 0\.18\)/);
-  assert.match(css, /\.vfx-target-telegraph-ring/);
+  assert.doesNotMatch(css, /\.vfx-target-telegraph-ring/);
   assert.match(css, /@keyframes vfxTargetTelegraph/);
-  assert.match(index, /css\/style\.css\?v=1\.0\.40/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.38/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.67/);
+  assert.match(index, /css\/style\.css\?v=1\.0\.41/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.39/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.68/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.36/);
 });

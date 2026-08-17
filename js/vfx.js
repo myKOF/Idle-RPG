@@ -1058,7 +1058,7 @@ function vfxFirePillarShockwave(spec, layer, pt, radius, delayMs) {
   });
 }
 
-/* 天降技能的落點提示：以模擬層送來的 area.r 畫出貼地橢圓，
+/* 天降技能的落點提示：以模擬層送來的 area.r 畫出貼地範圍，
    讓玩家在殞石／雷球落下前看見真正會受影響的中心與範圍。提示只屬於顯示層，
    durationMs 到期後淡出，不參與命中或傷害判定。 */
 function vfxTargetTelegraph(spec, layer, pt, radius, delayMs, durationMs) {
@@ -1075,12 +1075,6 @@ function vfxTargetTelegraph(spec, layer, pt, radius, delayMs, durationMs) {
   d.style.height = (radius * 1.04) + 'px';
   d.style.animationDelay = delay + 'ms';
   d.style.animationDuration = duration + 'ms';
-  for (var i = 0; i < 3; i++) {
-    var ring = document.createElement('span');
-    ring.className = 'vfx-target-telegraph-ring';
-    ring.style.setProperty('--vfx-target-inset', (10 + i * 17) + '%');
-    d.appendChild(ring);
-  }
   vfxTrack(d, delay + duration + 240);
   return d;
 }
@@ -1293,17 +1287,19 @@ function vfxFireWall(spec, layer, area, rect) {
   return node;
 }
 
-/* 泥沼／熔岩沼（新版技能 mire）：貼地的一攤場域。
-   與火牆同為「按 area.id 合併、每次 tick 續命」的長駐節點，但畫的是攤平在地上的水窪，
-   所以尺寸直接吃場域矩形、縱向壓扁成俯視。沼澤會隨時間長大，每次 tick 都重新套尺寸。 */
+/* 泥沼／熔岩沼（新版技能 mire）：貼地的方形場域。
+   與火牆同為「按 area.id 合併、每次 tick 續命」的長駐節點；尺寸直接吃場域矩形，
+   不用橢圓或固定半徑自行推算。毒沼 variant 另外疊加深紫色氣流與泡泡。 */
 function vfxMirePool(spec, layer, area, rect) {
   if (!rect || !isFinite(rect.x) || !isFinite(rect.y)) return null;
-  var lava = spec && spec.variant === 'mire-lava';
+  var lava = spec && (spec.variant === 'mire-lava' || spec.variant === 'mire-lava-poison');
+  var poison = spec && (spec.variant === 'mire-poison' || spec.variant === 'mire-lava-poison');
   var w = Math.max(48, Number(rect.w) || 120);
-  var h = Math.max(24, (Number(rect.h) || 120) * 0.55);
+  var h = Math.max(48, Number(rect.h) || 120);
   var x = (Number(rect.x) || 0) - w / 2 + (Number(rect.w) || 0) / 2;
   var y = (Number(rect.y) || 0) - h / 2 + (Number(rect.h) || 0) / 2;
-  var key = (area && area.id ? String(area.id) : [Math.round(x), Math.round(y)].join(':')) + (lava ? ':lava' : '');
+  var key = (area && area.id ? String(area.id) : [Math.round(x), Math.round(y)].join(':'))
+    + (lava ? ':lava' : '') + (poison ? ':poison' : '');
   var ttl = Math.max(900, Number(spec.dur || 0.5) * 2400);
   function layout(target) {
     target.style.left = x + 'px';
@@ -1317,7 +1313,7 @@ function vfxMirePool(spec, layer, area, rect) {
     node._vfxExpiresAt = Date.now() + ttl;
     return node;
   }
-  node = vfxNode('vfx-mire-pool' + (lava ? ' vfx-mire-lava' : ''), layer, spec);
+  node = vfxNode('vfx-mire-pool' + (lava ? ' vfx-mire-lava' : '') + (poison ? ' vfx-mire-poison' : ''), layer, spec);
   layout(node);
   var bubbles = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 5;
   for (var bi = 0; bi < bubbles; bi++) {
@@ -1327,6 +1323,18 @@ function vfxMirePool(spec, layer, area, rect) {
     bubble.style.setProperty('--vfx-mire-bubble-y', (24 + (bi % 3) * 22).toFixed(1) + '%');
     bubble.style.setProperty('--vfx-mire-bubble-delay', (-Math.random() * 1.6).toFixed(2) + 's');
     node.appendChild(bubble);
+  }
+  if (poison) {
+    var currents = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 2 : 3;
+    for (var ci = 0; ci < currents; ci++) {
+      var current = document.createElement('span');
+      current.className = 'vfx-mire-current';
+      current.style.setProperty('--vfx-mire-current-x', (24 + ci * 27) + '%');
+      current.style.setProperty('--vfx-mire-current-y', (35 + (ci % 2) * 24) + '%');
+      current.style.setProperty('--vfx-mire-current-angle', (ci % 2 ? -12 : 10) + 'deg');
+      current.style.setProperty('--vfx-mire-current-delay', (-Math.random() * 1.2).toFixed(2) + 's');
+      node.appendChild(current);
+    }
   }
   _vfxMirePools[key] = node;
   vfxTrack(node, VFX_MIRE_POOL_LIFE_MS);
@@ -1880,7 +1888,7 @@ function renderCombatVfx(spec) {
     if (kind === 'aura') {
       if (s.variant === 'cyclone') vfxCyclone(s, layer, rect);
       else if (s.variant === 'firewall') vfxFireWall(s, layer, spec.area, rect);
-      else if (s.variant === 'mire' || s.variant === 'mire-lava') vfxMirePool(s, layer, spec.area, rect);
+      else if (s.variant === 'mire' || s.variant === 'mire-lava' || s.variant === 'mire-poison' || s.variant === 'mire-lava-poison') vfxMirePool(s, layer, spec.area, rect);
       else if (s.variant === 'thunder-orb') vfxThunderOrb(s, layer, spec.area, rect);
       else vfxAura(s, layer, rect);
       return;

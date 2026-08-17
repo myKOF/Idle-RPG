@@ -2481,9 +2481,13 @@ function sgMireSpec(g, lvs, st) {
 /* 沼澤的一次作用：不造成傷害，只對站在裡面的敵人重塗狀態。 */
 function sgMireGroundTick(f, victims, ctx) {
   var m = f.mire || {};
+  var poison = m.poisonDps > 0;
+  var mireVariant = m.lava
+    ? (poison ? 'mire-lava-poison' : 'mire-lava')
+    : (poison ? 'mire-poison' : 'mire');
   sgEmitVfx('mire', victims, f.floatSel, {
-    fxKind: 'aura', variant: m.lava ? 'mire-lava' : 'mire',
-    elem: m.lava ? 'fire' : 'earth', dur: f.gap, area: sgGroundArea(f)
+    fxKind: 'aura', variant: mireVariant,
+    elem: m.lava && !poison ? 'fire' : 'earth', dur: f.gap, area: sgGroundArea(f)
   });
   if (!victims.length) return;
   var hold = f.gap * 2;   // 只給兩跳：離開沼澤後最多再殘留一個節拍

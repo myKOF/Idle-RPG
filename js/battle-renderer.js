@@ -2266,17 +2266,18 @@ var BattleRenderer = (function () {
     return fx;
   }
 
-  /* 泥沼／熔岩沼（新版技能 mire）：貼地的一攤場域。
-     與火牆同為「按 area.id 合併、每次 tick 續命」的長駐特效，但畫法完全相反——
-     火牆是向上立起的火焰，沼澤是攤平在地上的水窪，所以另寫一支而不是共用參數。
-     沼澤會隨時間長大（【沼澤漫延】），尺寸每次 tick 都由 area 帶進來，不自行推算。 */
+  /* 泥沼／熔岩沼（新版技能 mire）：貼地的方形場域。
+     與火牆同為「按 area.id 合併、每次 tick 續命」的長駐特效，但尺寸直接沿用
+     area.w／area.h，不壓成橢圓。毒沼 variant 額外畫深紫色氣流與泡泡。 */
   var _mirePoolFx = Object.create(null);
   var MIRE_POOL_MAX_LIFE_SEC = 14;
   function spawnMirePool(spec) {
     var a = spec && spec.area;
     if (!a || !isFinite(a.x) || !isFinite(a.y)) return null;
-    var lava = spec.variant === 'mire-lava';
-    var key = (a.id || [Math.round(a.x), Math.round(a.y)].join(':')) + (lava ? ':lava' : '');
+    var lava = spec.variant === 'mire-lava' || spec.variant === 'mire-lava-poison';
+    var poison = spec.variant === 'mire-poison' || spec.variant === 'mire-lava-poison';
+    var key = (a.id || [Math.round(a.x), Math.round(a.y)].join(':'))
+      + (lava ? ':lava' : '') + (poison ? ':poison' : '');
     var holdMs = Math.max(700, Number(spec.dur || 0.5) * 2200);
     var current = _mirePoolFx[key];
     if (current && !current.dead && current.node && !current.node.destroyed) {
@@ -2284,6 +2285,7 @@ var BattleRenderer = (function () {
       current.w = Math.max(20, Number(a.w) || current.w);
       current.h = Math.max(16, Number(a.h) || current.h);
       current.lava = lava;
+      current.poison = poison;
       current.expiresAt = nowMs() + holdMs;
       return current;
     }
@@ -2294,7 +2296,7 @@ var BattleRenderer = (function () {
     var fx = {
       node: node, x: Number(a.x), y: Number(a.y),
       w: Math.max(20, Number(a.w) || 100), h: Math.max(16, Number(a.h) || 100),
-      lava: lava, t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false
+      lava: lava, poison: poison, t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false
     };
     _mirePoolFx[key] = fx;
     var bubbleAt = 0;
@@ -2306,36 +2308,56 @@ var BattleRenderer = (function () {
         node.x = fx.x; node.y = fx.y; node.rotation = 0;
         var left = fx.expiresAt - nowMs();
         var fade = left < 420 ? Math.max(0, left / 420) : 1;
-        /* 地面是俯視壓扁的：橫向用整個寬度，縱向壓成 0.5，看起來才是「躺在地上」。 */
+        /* 地面範圍是矩形，顯示層不得再用橢圓或固定的縱向壓縮代替實際判定。 */
         var rx = fx.w * 0.5;
-        var ry = fx.h * 0.5 * 0.52;
+        var ry = fx.h * 0.5;
         var phase = fx.t * 2.1;
-        var body = fx.lava ? 0x8a2b0b : 0x4a3a20;
-        var rim = fx.lava ? 0xff7a2a : 0x7d6533;
-        var glow = fx.lava ? 0xffb347 : 0x9bbd52;
+        var body = fx.poison ? 0x4a3020 : (fx.lava ? 0x8a2b0b : 0x4a3a20);
+        var rim = fx.poison ? 0x5b2b72 : (fx.lava ? 0xff7a2a : 0x7d6533);
+        var glow = fx.poison ? 0x7e3f9a : (fx.lava ? 0xffb347 : 0xa37a48);
+        var bubble = fx.poison ? 0x6b2d7c : (fx.lava ? 0xffd282 : 0xc49b68);
         g.clear();
-        g.ellipse(0, 0, rx, ry).fill({ color: body, alpha: 0.44 * fade });
-        g.ellipse(0, 0, rx, ry).stroke({ width: 3, color: rim, alpha: 0.55 * fade });
-        // 幾圈慢慢擴散的漣漪：沼澤在冒泡、岩漿在翻滾，用同一組環表現
+        g.rect(-rx, -ry, fx.w, fx.h).fill({ color: body, alpha: 0.5 * fade });
+        g.rect(-rx, -ry, fx.w, fx.h).stroke({ width: 3, color: rim, alpha: 0.62 * fade });
+        // 方形內的慢速漣漪：只作為泥面流動，不改變場域邊界。
         for (var ri = 0; ri < 3; ri++) {
           var u = ((phase * 0.32 + ri / 3) % 1);
-          g.ellipse(0, 0, rx * (0.28 + u * 0.7), ry * (0.28 + u * 0.7))
+          var rw = rx * (0.28 + u * 0.62), rh = ry * (0.28 + u * 0.62);
+          g.rect(-rw, -rh, rw * 2, rh * 2)
             .stroke({ width: 2, color: glow, alpha: (0.34 * (1 - u)) * fade });
         }
-        // 泡泡：位置以 t 決定（同一個 fx 每幀連續變化，不用亂數避免閃爍）
+        if (fx.poison) {
+          // 深紫色氣流在泥面上緩慢橫向流動；使用固定波形避免每幀閃爍。
+          for (var ci = 0; ci < 3; ci++) {
+            var cy = -ry * 0.48 + ci * ry * 0.46;
+            var path = g.moveTo(-rx * 0.78, cy);
+            for (var si = 1; si <= 6; si++) {
+              var su = si / 6;
+              path = path.lineTo(-rx * 0.78 + fx.w * 0.13 * si,
+                cy + Math.sin(phase * 0.9 + ci * 1.7 + su * 7) * ry * 0.1);
+            }
+            path.stroke({ color: 0x6b2d7c, width: 3, alpha: 0.56 * fade });
+          }
+        }
+        // 泡泡：固定相位加上上升量，讓泡泡看起來真的從泥面冒出。
         for (var bi = 0; bi < 6; bi++) {
           var ba = phase * 0.7 + bi * 1.9;
           var brr = 0.28 + ((bi * 0.17 + phase * 0.11) % 0.62);
           var bx = Math.cos(ba) * rx * brr;
-          var by = Math.sin(ba) * ry * brr;
+          var rise = (fx.t * (14 + bi * 2) + bi * 17) % Math.max(1, ry * 0.55);
+          var by = Math.sin(ba) * ry * brr - rise;
           var br = 2.4 + (bi % 3) * 1.4 + Math.sin(phase * 1.7 + bi) * 0.9;
-          g.circle(bx, by, Math.max(1, br)).fill({ color: glow, alpha: 0.3 * fade });
+          g.circle(bx, by, Math.max(1, br)).fill({ color: bubble, alpha: 0.34 * fade });
+          g.circle(bx, by, Math.max(1, br)).stroke({ color: glow, width: 1.3, alpha: 0.52 * fade });
         }
         bubbleAt += dt;
         if (!REDUCED_MOTION && bubbleAt > 0.28 && fade > 0.4) {
           bubbleAt = 0;
+          var bubbleTheme = fx.poison
+            ? { c1: '#6b2d7c', c2: '#a855c7', glow: '#7e3f9a' }
+            : themeOf(spec);
           spawnParticles(fx.x + (Math.random() - 0.5) * fx.w * 0.6,
-            fx.y + (Math.random() - 0.5) * ry * 1.2, 2, themeOf(spec), 0.9, 0.5);
+            fx.y + (Math.random() - 0.5) * ry * 1.2, 2, bubbleTheme, 0.9, 0.5);
         }
         if (nowMs() >= fx.expiresAt) {
           fx.dead = true;
@@ -2572,8 +2594,8 @@ var BattleRenderer = (function () {
     radius = Math.max(36, radius);
     var isLightning = spec && spec.variant === 'thunder-fall';
     var colors = isLightning
-      ? { fill: 0x2563eb, border: 0x60a5fa, inner: 0xdbeafe }
-      : { fill: 0xdc2626, border: 0xf87171, inner: 0xfecaca };
+      ? { fill: 0x2563eb, border: 0x60a5fa }
+      : { fill: 0xdc2626, border: 0xf87171 };
     var g = new PIXI.Graphics();
     g.x = cx; g.y = cy;
     S.layers.zone.addChild(g);
@@ -2592,12 +2614,6 @@ var BattleRenderer = (function () {
         g.ellipse(0, 0, radius * pulse, radius * 0.52 * pulse)
           .fill({ color: colors.fill, alpha: 0.16 * fade })
           .stroke({ color: colors.border, width: 2.5, alpha: 0.82 * fade });
-        for (var ri = 0; ri < 3; ri++) {
-          var scale = 0.78 - ri * 0.18;
-          g.ellipse(0, 0, radius * scale * pulse, radius * 0.52 * scale * pulse)
-            .stroke({ color: ri === 0 ? colors.inner : colors.border,
-              width: ri === 0 ? 1.8 : 1.4, alpha: (0.48 - ri * 0.08) * fade });
-        }
         return t < dur;
       }
     }, 1, (dur + (delaySec || 0)) * 1000 + 500);
@@ -3367,7 +3383,7 @@ var BattleRenderer = (function () {
         if (spec.variant === 'firehunt' || spec.variant === 'thunder-orbit') spawnFireHunt(spec);
         else if (spec.variant === 'thunder-orb') spawnThunderOrbField(spec);
         else if (spec.variant === 'firewall') spawnFireWall(spec);
-        else if (spec.variant === 'mire' || spec.variant === 'mire-lava') spawnMirePool(spec);
+        else if (spec.variant === 'mire' || spec.variant === 'mire-lava' || spec.variant === 'mire-poison' || spec.variant === 'mire-lava-poison') spawnMirePool(spec);
         else if (spec.variant === 'cyclone') spawnCyclone(rect, spec);
         else if (spec.variant === 'bladestorm') spawnBladestorm(rect, spec);
         else spawnAura(rect, spec);
