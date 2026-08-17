@@ -239,6 +239,25 @@ test('連鎖閃電：彈射範圍外的敵人不會被跳到', () => {
   assert.equal(calls.length, 1, '跳不到就結束，不會硬跳');
 });
 
+test('連鎖閃電：上一個目標死亡仍保留為下一段 VFX 的起點', () => {
+  const c = loadContext();
+  stubHits(c);
+  const specs = stubVfx(c);
+  const p = playerEnt();
+  const dead = enemy(50, 5 * M, 0, 'A');
+  const next = enemy(1e9, 8 * M, 0, 'B');
+  const third = enemy(1e9, 11 * M, 0, 'C');
+  setLevels(c, 'chainlightning', [1, 0, 0, 0, 0, 0, 0]);
+
+  c.castSkill2(p, [dead, next, third], 'chainlightning', 'mv-float');
+
+  assert.equal(dead.hp, 0, '第一個目標應死亡');
+  assert.ok(next.hp < next.maxHp, '死亡後仍應繼續命中下一個目標');
+  assert.ok(specs.some((spec) => spec.variant === 'lightning-chain' &&
+    spec.targets[0] === 'A' && spec.targets[1] === 'B'),
+  '上一個死亡目標仍應保留為下一段閃電鏈的起點');
+});
+
 /* ===========================================================================
    2) 落雷術
    =========================================================================== */
