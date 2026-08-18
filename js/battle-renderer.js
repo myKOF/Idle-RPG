@@ -2911,7 +2911,7 @@ var BattleRenderer = (function () {
     var current = _iceFieldFx[key];
     if (current && !current.dead && current.node && !current.node.destroyed) {
       current.speed = Number(a.speed) > 0 ? Number(a.speed) : current.speed;
-      if (variant === 'wind-blade-homing') {
+      if (isHoming) {
         /* 追跡風刃的傷害位置由模擬層 area.x/y 定義；畫面只在兩個權威快照
            之間補間，不能另走一條追向未更新 dest 的獨立路徑。 */
         fieldVfxSetPositionTarget(current, Number(a.x), Number(a.y), motionSec);
@@ -2919,11 +2919,6 @@ var BattleRenderer = (function () {
           current.destX = Number(a.destX);
           current.destY = Number(a.destY);
         }
-      } else if (isHoming && isFinite(a.destX) && isFinite(a.destY)) {
-        /* 追蹤冰箭不是把每個 tick 的座標當成新起點；保留目前畫面位置，
-           讓 update() 依模擬層的速度朝最新目的地逐幀前進。 */
-        current.destX = Number(a.destX);
-        current.destY = Number(a.destY);
       } else if (variant !== 'blizzard') {
         fieldVfxSetTarget(current, Number(a.x), Number(a.y), w, h, motionSec);
       }
@@ -2964,23 +2959,10 @@ var BattleRenderer = (function () {
             fx.x = follow.x;
             fx.y = follow.y;
           }
-        } else if (fx.variant === 'wind-blade-homing') {
-          /* 傷害場域和風刃特效共用模擬層的目前位置；只補間快照，不自行追目標。 */
+        } else if (isHoming) {
+          /* 傷害場域和追蹤特效共用模擬層的目前位置；只補間快照，
+             不自行追目標，避免顯示位置與實際判定範圍脫節。 */
           fieldVfxStep(fx, dt);
-        } else if (fx.variant === 'ice-arrow-homing' &&
-                   fx.speed > 0 && isFinite(fx.destX) && isFinite(fx.destY)) {
-          /* 追蹤冰箭使用速度積分補足模擬 tick 之間的畫面幀，
-             並在接近目的地時夾住，避免浮點誤差造成微抖。 */
-          var hdx = fx.destX - fx.x, hdy = fx.destY - fx.y;
-          var hdist = Math.sqrt(hdx * hdx + hdy * hdy);
-          var hstep = fx.speed * Math.max(0, Number(dt) || 0);
-          if (hdist <= hstep || hdist <= 0.5) {
-            fx.x = fx.destX;
-            fx.y = fx.destY;
-          } else if (hdist > 0) {
-            fx.x += hdx / hdist * hstep;
-            fx.y += hdy / hdist * hstep;
-          }
         } else {
           fieldVfxStep(fx, dt);
         }

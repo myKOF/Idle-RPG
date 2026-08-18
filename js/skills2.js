@@ -2145,8 +2145,9 @@ function sgGroundArea(f) {
     var rect = { id: f.vfxId, x: f.pos.x, y: f.pos.y, w: f.length, h: f.width,
       a: sgGroundRectAxis(f), r: Math.max(f.length, f.width) / 2 };
     /* 顯示層的跟隨／追蹤只讀這些欄位，不參與傷害幾何：
-       暴風雪每幀直接貼玩家的畫面座標；冰箭在兩次模擬 tick 之間
-       沿目前目的地與速度繼續飛，避免把 0.1 秒取樣畫成一格一格。 */
+       暴風雪每幀直接貼玩家的畫面座標；冰箭／風刃只以 area.x/y
+       在兩次模擬快照之間補間，destX／destY／speed 僅保留方向語意，
+       不得由顯示層另建一條與傷害位置脫節的追擊路徑。 */
     if (f.follow) rect.follow = true;
     if ((f.kind === 'icearrow' || f.kind === 'windblade') && f.dest) {
       rect.destX = f.dest.x;

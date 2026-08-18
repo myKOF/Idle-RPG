@@ -1,5 +1,26 @@
 # AI_TASKS.md
 
+## Codex｜全技能檢查連續移動與傷害範圍同步｜2026-08-18
+
+- 狀態：已完成
+- Owner：Codex
+- 使用者需求：完成風刃修正後，全面檢查所有技能的特效與實際傷害觸發範圍，確認沒有一格一格移動的不平滑路徑。
+- 審查範圍：新版 `SKILLS2` 23 個技能群組、`js/battlefield.js` 共用移動／範圍幾何、舊版 `SKILL_RT` 週期領域、Canvas `js/battle-renderer.js` 與 DOM `js/vfx.js` 的飛行物／移動場域／環繞場域路徑。
+- 根因與修正：模擬層的投射物、移動場域、環繞場域與傷害幾何皆已使用連續座標；發現追蹤冰箭的 Canvas／DOM 曾各自沿 `destX/destY + speed` 追擊，現改為只以模擬層 `area.x/y` 快照補間，避免特效與實際判定範圍脫節。
+- 未發現其他逐格路徑：`bfTick*`、`sgGroundMove`、`sgTickFlyingProjectiles`、`sgOrbitStep` 與 `bfSegmentTargets` 均未量化位置；舊版週期領域為固定範圍，不會逐格搬移。
+- 允許修改：`js/battle-renderer.js`、`js/vfx.js`、`js/skills2.js`、`tests/skill2-vfx.test.cjs`、`index.html`、本文件。
+- 禁止修改：技能數值、傷害公式、命中／目標選擇、追蹤速度／範圍／命中間隔、存檔格式、Worker Protocol、其他技能的傷害行為。
+- 驗證要求：全技能連續座標回歸測試、冰／風／VFX 定向測試、語法檢查、建置、快取版本與 `git diff --check`。
+- 修改檔案：`js/battle-renderer.js`、`js/vfx.js`、`js/skills2.js`（僅同步規則註釋）、`tests/skill2-vfx.test.cjs`、`index.html`、本文件。
+- 未修改但檢查過：`js/battlefield.js`、`js/skills.js`、`css/style.css`、各新版技能傷害／命中測試與 Worker 路徑。
+- 完成結果：追蹤冰箭 Canvas／DOM 均改為只補間模擬層 `area.x/y`，移除獨立 `destX/destY + speed` 追擊；全技能回歸測試新增連續座標、傷害幾何與 VFX 路徑檢查。未發現其他逐格移動或特效／判定範圍脫節路徑。
+- 驗證結果：`tests/skill2-vfx.test.cjs` 24/24、風系測試 61/61；新版技能／投射物／VFX 定向合計 88/89，唯一失敗為既有暴風雪 20×20 測試與目前參數表 24×24 的基準差異；完整 `npm.cmd test` 為 1608 項、1603 通過、5 項既有參數基準失敗；`node --check`、`node tools/build_check.cjs`（294/294）、快取版號檢查與 `git diff --check` 通過。
+- 已知風險：本次未改動傷害與命中結果；完整測試的另外 4 項既有失敗為嗜血狂怒扣魔、泥沼 10×10 範圍／擴大，以及技能欄位合法性，均與本次平滑移動修正無關。
+- 未完成項目：無。
+- 建議下一步：由使用者整合後，以瀏覽器實機確認追蹤冰箭與風刃轉彎時的外觀同步。
+- 是否可以合併：可以。
+- Commit 編號：`1717141`。
+
 ## Codex｜移除風刃傷害方塊並同步平滑追蹤｜2026-08-18
 
 - 狀態：已完成

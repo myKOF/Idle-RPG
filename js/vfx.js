@@ -1636,9 +1636,6 @@ function vfxIceField(spec, layer, area, rect) {
     vfxFieldMotionSet(node, x, y, w, h, vfxFieldMotionSec(spec, 0.4));
     if (variant === 'blizzard') {
       vfxFieldMotionFollowPlayer(node, layer);
-    } else if (variant === 'ice-arrow-homing' &&
-               area && area.speed > 0 && isFinite(area.destX) && isFinite(area.destY)) {
-      vfxFieldMotionHome(node, area.speed, area.destX, area.destY);
     }
     if (variant === 'wind-blade-homing') vfxWindHomingSetAngle(node._vfxFieldVisual, cx, cy, area);
     node._vfxExpiresAt = Date.now() + ttl;
@@ -1652,9 +1649,6 @@ function vfxIceField(spec, layer, area, rect) {
   vfxFieldMotionSet(node, x, y, w, h, 0);
   if (variant === 'blizzard') {
     vfxFieldMotionFollowPlayer(node, layer);
-  } else if (variant === 'ice-arrow-homing' &&
-             area && area.speed > 0 && isFinite(area.destX) && isFinite(area.destY)) {
-    vfxFieldMotionHome(node, area.speed, area.destX, area.destY);
   }
   if (variant === 'wind-blade-homing') {
     /* 追跡風刃的移動場域只放一個小型風刃，不再建立冰晶尖刺或藍色球體。 */
