@@ -595,6 +595,10 @@
                搬遷至戰鬥區頂部中央；點擊：可領取時直接領獎，否則開啟任務總覽（#quest-modal） -->
           <div id="quest-bar" style="display:none"></div>
           <div id="btn-enemy-tip" class="info-btn">!</div>
+          <button id="btn-toggle-damage" class="info-btn damage-toggle-btn" type="button" aria-label="傷害數字開關" data-tt-title="傷害數字" data-tt-desc="目前顯示傷害數字（點擊關閉）">
+            <svg class="icon-eye-open" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <svg class="icon-eye-closed" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+          </button>
           <!-- Canvas 戰鬥模式（js/battle-renderer.js）：PixiJS 畫布動態插入為第一個子節點。
                初始化成功時 body 會掛上 battle-canvas-mode，下方 .battle-scene 隱藏；
                失敗（?canvas=0 / WebGL 不可用）時本容器維持 display:none，原畫面照舊。 -->

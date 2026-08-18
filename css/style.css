@@ -10671,6 +10671,61 @@ body.battle-canvas-mode #combat-area .battle-scene-wrapper > #btn-enemy-tip {
   z-index: 30;
 }
 
+/* 傷害數字開關鈕：固定在敵情提示鈕右側 */
+#btn-toggle-damage {
+  position: absolute;
+  top: 8px;
+  left: 36px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid #38bdf8;
+  color: #38bdf8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: inherit;
+  padding: 0;
+  cursor: pointer;
+  z-index: 30;
+  box-shadow: 0 0 5px rgba(56, 189, 248, 0.5);
+  transition: all 0.2s;
+  user-select: none;
+}
+
+#btn-toggle-damage:hover {
+  background: rgba(56, 189, 248, 0.25);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.85);
+  color: #7dd3fc;
+}
+
+#btn-toggle-damage svg {
+  pointer-events: none;
+}
+
+#btn-toggle-damage.is-off {
+  border-color: #64748b;
+  color: #94a3b8;
+  box-shadow: none;
+  opacity: 0.65;
+}
+
+#btn-toggle-damage.is-off:hover {
+  background: rgba(100, 116, 139, 0.25);
+  border-color: #94a3b8;
+  color: #e2e8f0;
+  box-shadow: 0 0 6px rgba(148, 163, 184, 0.4);
+  opacity: 1;
+}
+
+body.battle-canvas-mode #combat-area .battle-scene-wrapper > #btn-toggle-damage {
+  position: absolute;
+  top: 8px;
+  left: 36px;
+  z-index: 30;
+}
+
 /* ---- 戰鬥區 BUFF 狀態列（顯示於技能快捷列上方）---- */
 #battle-buff-bar {
   position: absolute;
