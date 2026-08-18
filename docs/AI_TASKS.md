@@ -1,5 +1,24 @@
 # AI_TASKS.md
 
+## Codex｜封鎖所有風系泛用方框回退｜2026-08-19
+
+- 狀態：已完成
+- Owner：Codex
+- 使用者需求：修正後截圖仍出現綠色方塊；半月形風刃已顯示，但任何風刃／風系場域都不應退回綠色方框。
+- 根因：Canvas `spawnAura` 只攔截缺 variant／追蹤風刃，仍允許其他有 variant 的風系事件進入泛用方框；DOM 後備 `vfxAura` 對暴風屏障等風系變體也會產生同樣矩形。
+- 允許修改：`js/battle-renderer.js`、`js/vfx.js`、`index.html`、`tests/skill2-vfx.test.cjs`、本文件。
+- 禁止修改：技能數值、傷害公式、命中／目標選擇、追蹤速度／範圍／命中間隔、存檔格式、Worker Protocol、半月風刃與風殼的專用外觀。
+- 修改內容：Canvas／DOM 的泛用 aura 對所有 `elem: wind` 事件直接拒絕；保留追蹤風刃的 `spawnIceField`／`vfxIceField` 專用路徑；同步渲染器與 DOM VFX 版號。
+- 驗證要求：風系泛用方框拒絕與專用路徑回歸測試、語法檢查、建置、`git diff --check`。
+- 未修改但檢查過：`js/skills2.js`、`js/worker/shim.js`、`js/worker/sim.worker.js` 的 VFX 欄位傳遞與技能傷害路徑。
+- 驗證結果：`tests/skill2-vfx.test.cjs` 25/25、相關檔案 `node --check` 通過、`node tools/build_check.cjs` 294/294、`git diff --check` 通過。
+- 已知風險：DOM 後備路徑對沒有專用風殼畫法的風系 aura 會略過泛用方框；Canvas 路徑仍保留暴風屏障／暴風神體／暴風撕裂的專用風殼。
+- 未完成項目：無；需重新載入頁面或使用 `Ctrl+F5`，讓新版渲染器與 DOM VFX 版號生效。
+- 建議下一步：由使用者重新載入戰鬥畫面，確認所有綠色方塊消失，半月風刃仍正常平滑追蹤。
+- 是否可以合併：可以。
+- Commit 編號：`d99e35f`。
+
+
 ## Codex｜追蹤風刃移除殘留方塊與平滑轉向｜2026-08-19
 
 - 狀態：已完成

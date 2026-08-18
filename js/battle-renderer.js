@@ -2137,10 +2137,10 @@ var BattleRenderer = (function () {
 
   /* 領域（aura）：覆蓋棋盤格範圍，持續 dur 秒 */
   function spawnAura(rect, spec) {
-    /* 風刃的傷害範圍不是地板提示。舊版／延遲事件若缺 variant，
-       不得退回泛用綠色方框；有 variant 的追跡風刃也只能由 spawnIceField 畫半月刃。 */
-    if (!rect || (spec && spec.elem === 'wind' &&
-        (!spec.variant || spec.variant === 'wind-blade-homing'))) return;
+    /* 泛用 aura 的綠色矩形不是任何風系技能的合法外觀。
+       追蹤風刃由 spawnIceField 畫半月刃；其他風系技能由各自的專用畫法處理。
+       即使遇到未知／延遲 variant，也不能退回這條方框 fallback。 */
+    if (!rect || (spec && spec.elem === 'wind')) return;
     var theme = themeOf(spec);
     var node = new PIXI.Container();
     var g = new PIXI.Graphics();
