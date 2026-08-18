@@ -1,5 +1,9 @@
 # PATCH.md
 
+## 主動型被動技能流光外框裁切修復（Antigravity 2026-08-18）
+
+- **CSS 溢出裁切修復**：針對 `.battle-skill-slot.active-passive` 補上 `overflow: hidden;`，使底層 `::before` 的 200% 尺寸旋轉圓錐漸層（`conic-gradient`）嚴格依據槽位 8px 圓角與外邊界進行裁切，搭配 `::after` 遮罩形成細緻乾淨的旋轉流光邊框，解決底層旋轉色塊溢出槽位、外露旋轉的視覺破圖問題。
+
 ## 戰鬥傷害與全部飄字數字開關功能（Antigravity 2026-08-18）
 
 - **UI 按鈕新增**：於戰鬥區左上角敵情提示鈕（`#btn-enemy-tip`）右側新增圓形眼睛圖示按鈕（`#btn-toggle-damage`），支援以 SVG 精準呈現睜眼（開啟）與劃線閉眼（關閉）狀態，並搭配主題色 Hover 效果與動態 Tooltip 說明。
