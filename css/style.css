@@ -8243,6 +8243,32 @@ textarea:disabled,
   animation: vfxIceHomingPulse 0.55s ease-in-out infinite alternate;
 }
 
+/* 追跡風刃（DOM 後備路徑）：淡綠色的小型旋刃，與冰晶用同一組 shard 元素、
+   只換配色與旋轉節奏，避免為了一個變體再開一整套結構。 */
+.vfx-wind-homing {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 45%,
+    rgba(255, 255, 255, 0.95), rgba(134, 239, 172, 0.7) 44%, rgba(74, 222, 128, 0.28) 76%, transparent 94%);
+  box-shadow: 0 0 16px rgba(134, 239, 172, 0.6);
+  animation: vfxWindHomingSpin 0.9s linear infinite;
+}
+
+@keyframes vfxWindHomingSpin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vfx-wind-homing .vfx-ice-shard {
+  background: linear-gradient(180deg, transparent, rgba(214, 255, 228, 0.9), transparent);
+}
+
 .vfx-ice-shard {
   position: absolute;
   left: 50%;

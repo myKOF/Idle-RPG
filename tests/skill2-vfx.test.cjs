@@ -439,10 +439,13 @@ test('殞石術與雷殞天落在落地前顯示對應顏色的目標提示圈',
   assert.match(css, /\.vfx-target-telegraph-lightning\s*\{[\s\S]*?rgba\(37, 99, 235, 0\.18\)/);
   assert.doesNotMatch(css, /\.vfx-target-telegraph-ring/);
   assert.match(css, /@keyframes vfxTargetTelegraph/);
-  assert.match(index, /css\/style\.css\?v=1\.0\.43/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.42/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.71/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.39/);
+  /* 版本號只驗「有帶、且格式正確」，不釘死某一個數字：
+     這四支檔案每次改動都會 bump（漏 bump 測試者會跑到快取舊檔），
+     釘死數字只會讓每次 bump 都連帶改測試，而且一旦忘了改就變成長期紅燈。 */
+  assert.match(index, /css\/style\.css\?v=\d+\.\d+\.\d+/);
+  assert.match(index, /js\/vfx\.js\?v=\d+\.\d+\.\d+/);
+  assert.match(index, /js\/battle-renderer\.js\?v=\d+\.\d+\.\d+/);
+  assert.match(index, /js\/skills2\.js\?v=\d+\.\d+\.\d+/);
 });
 
 /* 冰系三群組（2026-08-17 第七批）：三種新場域與拋物線水彈的兩條渲染路徑都要接上，
@@ -460,7 +463,7 @@ test('冰系特效：暴風雪／水龍捲／追蹤冰箭在 Canvas 與 DOM 兩�
 
   // Canvas：aura 分派表接上 spawnIceField，且以 area 為錨點（不是棋盤格 rect）
   assert.match(renderer, /function spawnIceField\(spec\)/);
-  assert.match(renderer, /spec\.variant === 'blizzard' \|\| spec\.variant === 'water-tornado' \|\|[\s\S]{0,80}spawnIceField\(spec\)/);
+  assert.match(renderer, /spec\.variant === 'blizzard' \|\| spec\.variant === 'water-tornado' \|\|[\s\S]{0,200}spawnIceField\(spec\)/);
   assert.match(renderer, /function spawnIceField[\s\S]*?var a = spec && spec\.area;/);
   assert.match(renderer, /fx\.variant === 'blizzard'[\s\S]*?var follow = playerPos\(\)/);
   assert.match(renderer, /fx\.variant === 'ice-arrow-homing'[\s\S]*?fx\.speed \* Math\.max/);
@@ -532,7 +535,7 @@ test('寒冰箭貫穿：兩條渲染路徑都以單一連續直線投射物呈�
   assert.match(renderer, /function spawnIcearrowPierce[\s\S]*?spawnProjectile\(null, flight, spec, null, from, \{ angle: angle, length: length \}\)/);
   assert.match(renderer, /if \(spec\.variant === 'ice-arrow-pierce'\)[\s\S]{0,180}spawnIcearrowPierce\(spec, targets/);
   // DOM：同一事件只建立一個固定終點的 CSS 飛行節點。
-  assert.match(vfx, /kind === 'projectile' && s\.variant === 'ice-arrow-pierce'[\s\S]*?vfxProjectile\(s, layer, from, iceArrowEnd, iceArrowDelay, iceArrowTravel\)/);
+  assert.match(vfx, /kind === 'projectile' && \(?s\.variant === 'ice-arrow-pierce'[\s\S]*?vfxProjectile\(s, layer, from, iceArrowEnd, iceArrowDelay, iceArrowTravel\)/);
 });
 
 test('新版技能彈射與特效細化：連鎖閃電無天雷、水流彈藍色拋物彈射、血刃斬綠色子彈、大地守護白光光束、反傷無特效、水龍捲藍色火柱', () => {
@@ -569,4 +572,49 @@ test('新版技能彈射與特效細化：連鎖閃電無天雷、水流彈藍�
   assert.match(renderer, /var isWater = spec && \(spec\.variant === 'water-tornado' \|\| spec\.elem === 'ice'\)/);
   assert.match(css, /\.vfx-water-tornado-pillar/);
   assert.match(css, /\.vfx-water-tongue/);
+});
+
+/* 風系三群組（2026-08-18 第八批）：設計文檔對特效的外形有明確指定，
+   而且尺寸一律沿用模擬層送來的判定數字（AI_RULES 8.3）。
+   兩條渲染路徑（Canvas 野外／DOM 高塔）都要接上，缺一邊在高塔就會看不到技能。 */
+test('風系特效：風刃／真空斬／迴旋斬／虛空斬／暴風屏障在兩條路徑都有畫法', () => {
+  const vfx = fs.readFileSync(path.join(root, 'js/vfx.js'), 'utf8');
+  const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
+  const skills2 = fs.readFileSync(path.join(root, 'js/skills2.js'), 'utf8');
+
+  // 模擬層：各變體名稱，以及「方位與刀身尺寸必須送到顯示層」的兩個欄位
+  ['wind-blade', 'wind-blade-small', 'wind-blade-homing', 'wind-burst',
+    'wind-slash', 'wind-spin', 'void-disc', 'storm-barrier', 'storm-god', 'storm-rip']
+    .forEach((v) => assert.match(skills2, new RegExp("'" + v + "'"), `模擬層缺少變體 ${v}`));
+  assert.match(skills2, /if \(extra && isFinite\(extra\.angle\)\) spec\.angle = Number\(extra\.angle\);/);
+  assert.match(skills2, /if \(extra && extra\.bodyLength > 0\) spec\.bodyLength = Number\(extra\.bodyLength\);/);
+
+  // Canvas：風刃走自己的直線飛行（方位取事件的 angle，路徑上沒有敵人也要畫得出來）
+  assert.match(renderer, /function spawnWindBlade\(spec, targets, baseDelay\)/);
+  assert.match(renderer, /var angle = isFinite\(spec\.angle\) \? Number\(spec\.angle\)/);
+  assert.match(renderer, /spec\.variant === 'wind-blade' \|\| spec\.variant === 'wind-blade-small'[\s\S]{0,80}spawnWindBlade\(spec, targets, baseDelay\)/);
+  // Canvas：半月箭頭弧形是共用輪廓（風刃與真空斬同一支）
+  assert.match(renderer, /function windCrescentPoly\(width, body\)/);
+  assert.match(renderer, /function drawWindCrescent\(g, width, body, theme, alpha\)/);
+  // Canvas：虛空斬的半徑成長沿用模擬層的 area.grow，且順逆時針各一道
+  assert.match(renderer, /function spawnVoidDisc\(spec\)/);
+  assert.match(renderer, /disc\.r \+= grow \* dt;/);
+  assert.match(skills2, /grow: f\.growPxPerSec \|\| 0/);
+  // Canvas：屏障／神體／撕裂是釘在自身的風殼
+  assert.match(renderer, /function spawnStormShell\(spec\)/);
+  assert.match(renderer, /spec\.variant === 'storm-barrier' \|\| spec\.variant === 'storm-god'/);
+  // Canvas：追跡風刃與追蹤冰箭共用同一套移動場域畫法
+  assert.match(renderer, /variant === 'ice-arrow-homing' \|\| variant === 'wind-blade-homing'/);
+
+  // DOM：風刃沿用貫穿冰箭那條直線飛行路徑；追跡風刃沿用移動場域
+  assert.match(vfx, /s\.variant === 'wind-blade' \|\| s\.variant === 'wind-blade-small'/);
+  assert.match(vfx, /s\.variant === 'ice-arrow-homing' \|\| s\.variant === 'wind-blade-homing'/);
+  assert.match(vfx, /'vfx-wind-homing'/);
+
+  // CSS：風系的投射物／受擊／光環配色，以及技能標籤
+  assert.match(css, /\.vfx-proj-wind \.vfx-proj-core/);
+  assert.match(css, /\.vfx-impact-wind \.vfx-p/);
+  assert.match(css, /\.vfx-aura-wind \.vfx-aura-p/);
+  assert.match(css, /\.vfx-wind-homing \{/);
 });
