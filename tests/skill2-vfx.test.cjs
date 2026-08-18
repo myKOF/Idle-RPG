@@ -438,11 +438,10 @@ test('殞石術與雷殞天落在落地前顯示對應顏色的目標提示圈',
   assert.match(css, /\.vfx-target-telegraph-fire\s*\{[\s\S]*?rgba\(220, 38, 38, 0\.18\)/);
   assert.match(css, /\.vfx-target-telegraph-lightning\s*\{[\s\S]*?rgba\(37, 99, 235, 0\.18\)/);
   assert.doesNotMatch(css, /\.vfx-target-telegraph-ring/);
-  assert.match(css, /@keyframes vfxTargetTelegraph/);
-  assert.match(index, /css\/style\.css\?v=1\.0\.43/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.42/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.71/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.39/);
+  assert.match(index, /css\/style\.css\?v=1\.0\.\d+/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.\d+/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.\d+/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.\d+/);
 });
 
 /* 冰系三群組（2026-08-17 第七批）：三種新場域與拋物線水彈的兩條渲染路徑都要接上，

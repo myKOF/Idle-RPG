@@ -1,5 +1,18 @@
 # PATCH.md
 
+## 戰鬥傷害統計面板重構與全傷害歸屬（Antigravity 2026-08-18）
+
+- **DoT 持續傷害精準歸屬**：
+  - `js/status.js` 與 `js/combat.js` 中的 `applyStatus` / `applyDot` 擴充來源標記（`sourceName`, `sourceKey`, `sourceLevel`），並支援依狀態 ID（`sid`）自動反查來源技能。
+  - `tickStatuses` 於每幀分段結算敵方持續傷害扣血時，按各狀態跳傷比例精確將 DoT 傷害回寫至 `RUN_STATS.skills`。
+- **泥沼術與場域／純輔助技能全覆蓋**：
+  - 泥沼術在施放與每次場域脈衝時自動登記技能統計資料，其 3 階【毒沼術】（`sgMirePoison`）與 7 階【熔岩沼】（`sgMireLava`）的跳傷完整累積至「泥沼術」，解決統計面板獨漏泥沼術的問題。
+  - 統計面板（`generateSummaryHtml`）排序升級（優先依傷害降序，同傷害依施放次數降序），確保裝備的 10 個技能與普攻 100% 完整呈現。
+- **火狩元素主題修復**：
+  - 修復 `sgCastFirehunt` 與 `sgSpawnOrbitField` 漏設 `hitElem: 'fire'` 的問題，使火狩環繞球體與拖尾光軌恢復為標準的熾熱紅橙色火焰特效（🔥），不再降級跑色為藍白色光球。
+- **測試覆蓋**：
+  - 新增 `tests/skill-stats-panel-comprehensive.test.cjs` 驗證 DoT 來源綁定、自動解析、火狩火元素標記與統計面板完整輸出；全套測試與 `node tools/build_check.cjs` 全數 PASS。
+
 ## 主動型被動技能流光外框裁切修復（Antigravity 2026-08-18）
 
 - **CSS 溢出裁切修復**：針對 `.battle-skill-slot.active-passive` 補上 `overflow: hidden;`，使底層 `::before` 的 200% 尺寸旋轉圓錐漸層（`conic-gradient`）嚴格依據槽位 8px 圓角與外邊界進行裁切，搭配 `::after` 遮罩形成細緻乾淨的旋轉流光邊框，解決底層旋轉色塊溢出槽位、外露旋轉的視覺破圖問題。
