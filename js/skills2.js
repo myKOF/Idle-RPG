@@ -2216,6 +2216,7 @@ function sgCastFirehunt(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   sgSpawnOrbitField(pEnt, st, 'firehunt', {
     tgt: primary, floatSel: floatSel, rings: rings, count: count,
     dmgVal: dmgVal, lifeSec: lifeSec, bodyR: bodyR,
+    hitElem: 'fire',
     companionChance: lvs[2] > 0 ? sgVal(t[2].fx, 'chance', lvs[2]) : 0,
     companionPx: bfMeterPx(Number(t[2].fx.m) || 1),
     bornWithCompanion: dance,
@@ -2239,7 +2240,7 @@ function sgSpawnOrbitField(pEnt, st, gid, cfg) {
     statusId: cfg.statusId || 'sgFirehunt',
     auraVariant: cfg.auraVariant || 'firehunt',
     hitVariant: cfg.hitVariant || 'fire-explosion',
-    hitElem: cfg.hitElem || null,
+    hitElem: cfg.hitElem || (SKILLS2[gid] && SKILLS2[gid].elem) || 'fire',
     onStrike: cfg.onStrike || null,
     rings: [], orbs: [], vfxUntil: 0
   };
@@ -2577,6 +2578,9 @@ function sgCastMire(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   if (lvs[4] > 0) growTo += sgVal(t[4].fx, 'pct', lvs[4]) / 100;
   if (lvs[6] > 0) growTo += sgVal(t[6].fx, 'pct', lvs[6]) / 100;   // 熔岩沼：與第 5 階累加
   var spread = lvs[3] > 0 ? sgRollCount(sgVal(t[3].fx, 'add', lvs[3])) : 0;
+  if (typeof recordRunDamage === 'function') {
+    recordRunDamage(g.name, 0, 'skill2:mire', sgTotalLevel(lvs));
+  }
   sgSpawnGround(pEnt, st, 'mire', {
     kind: 'mire', tgt: primary, floatSel: floatSel,
     length: side, width: side, dmgVal: 0,
@@ -2618,12 +2622,18 @@ function sgMireGroundTick(f, victims, ctx) {
   });
   if (!victims.length) return;
   var hold = f.gap * 2;   // 只給兩跳：離開沼澤後最多再殘留一個節拍
+  var mireSource = {
+    sourceKey: 'skill2:mire',
+    sourceName: (typeof SKILLS2 !== 'undefined' && SKILLS2.mire) ? SKILLS2.mire.name : '泥沼術',
+    sourceLevel: (typeof skills2Levels === 'function' && typeof sgTotalLevel === 'function')
+      ? sgTotalLevel(skills2Levels('mire')) : undefined
+  };
   for (var i = 0; i < victims.length; i++) {
     var e = victims[i];
     if (!e || e.hp <= 0) continue;
     applyStatus(e, 'sgMire', { val: m.aspd || 0, dur: hold });
-    if (m.poisonDps > 0) applyStatus(e, 'sgMirePoison', { dps: m.poisonDps, dur: hold, interval: m.poisonGap });
-    if (m.lavaDps > 0) applyStatus(e, 'sgMireLava', { dps: m.lavaDps, dur: hold, interval: m.lavaGap });
+    if (m.poisonDps > 0) applyStatus(e, 'sgMirePoison', { dps: m.poisonDps, dur: hold, interval: m.poisonGap, source: mireSource });
+    if (m.lavaDps > 0) applyStatus(e, 'sgMireLava', { dps: m.lavaDps, dur: hold, interval: m.lavaGap, source: mireSource });
   }
 }
 

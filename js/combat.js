@@ -450,7 +450,7 @@ function applyEffect(ent, key, dur) {
     ent.effects[key] = GT + dur;
     return dur;
 }
-function effectActive(ent, key) { return (ent.effects[key] || 0) > GT; }
+function effectActive(ent, key) { return ((ent && ent.effects && ent.effects[key]) || 0) > GT; }
 // 減速攻速倍率公式 slowFactor → js/formula.js §3
 
 /* 中毒不再自成一套（原 poisonDps／poisonUntil 已移除）：它就是狀態表的 poison，
@@ -559,11 +559,34 @@ function applyShield(ent, pctOfMaxHp, dur, sid, stats, stackCfg) {
     return dur;
 }
 
+function resolveDotSource(sid) {
+    if (!sid) return null;
+    if (sid === 'sgMirePoison' || sid === 'sgMireLava' || sid === 'sgMire') {
+        var mlv = (typeof skills2Levels === 'function' && typeof sgTotalLevel === 'function')
+            ? sgTotalLevel(skills2Levels('mire')) : undefined;
+        return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.mire) ? SKILLS2.mire.name : '泥沼術', key: 'skill2:mire', level: mlv };
+    }
+    if (sid === 'sgBurn') {
+        var flv = (typeof skills2Levels === 'function' && typeof sgTotalLevel === 'function')
+            ? sgTotalLevel(skills2Levels('fireball')) : undefined;
+        return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.fireball) ? SKILLS2.fireball.name : '火球術', key: 'skill2:fireball', level: flv };
+    }
+    if (sid === 'sgBleed' || sid === 'sgPoison' || sid === 'sgIronBleed') {
+        var blv = (typeof skills2Levels === 'function' && typeof sgTotalLevel === 'function')
+            ? sgTotalLevel(skills2Levels('bloodblade')) : undefined;
+        return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.bloodblade) ? SKILLS2.bloodblade.name : '血刃斬', key: 'skill2:bloodblade', level: blv };
+    }
+    if (sid === 'sgFrostBite') {
+        return { name: '寒霜凍傷', key: 'skill2:frostbite' };
+    }
+    return null;
+}
+
 /* ---- 持續傷害（流血/燃燒/中毒/詛咒…；疊加規則見 stackStep） ----
    dps＝每秒傷害；interval＝作用間隔（秒，來自狀態表；0＝不分段連續結算）。
    儲存採 dps 而非「每跳量」，既有的 DoT 引爆（剩餘總值＝dps×剩餘秒數）、轉移與延長
    機制才不必改算法；每跳實際傷害＝dps×interval，由 tickStatuses 結算。 */
-function applyDot(ent, dps, dur, name, sid, interval, stackCfg) {
+function applyDot(ent, dps, dur, name, sid, interval, stackCfg, sourceCtx) {
     if (effectActive(ent, 'invuln')) return; // 無敵：免疫持續傷害
     if (typeof legendaryInstantBurn === 'function') {
         var instantBurn = legendaryInstantBurn(ent, dps, dur, name);
@@ -579,6 +602,18 @@ function applyDot(ent, dps, dur, name, sid, interval, stackCfg) {
         var sdef2 = statusDef(sid);
         stackCfg = sdef2 ? { rule: sdef2.stack, max: sdef2.maxStacks } : { rule: 'strongest' };
     }
+    var sKey = (sourceCtx && (sourceCtx.sourceKey || sourceCtx.statKey)) || '';
+    var sName = (sourceCtx && (sourceCtx.sourceName || sourceCtx.skillName)) || '';
+    var sLv = (sourceCtx && sourceCtx.sourceLevel !== undefined) ? sourceCtx.sourceLevel : undefined;
+    if (!sName && sid) {
+        var resDef = resolveDotSource(sid);
+        if (resDef) {
+            sName = resDef.name;
+            sKey = sKey || resDef.key;
+            if (sLv === undefined) sLv = resDef.level;
+        }
+    }
+
     if (!ent.dots) ent.dots = [];
     for (var i = 0; i < ent.dots.length; i++) {
         if (ent.dots[i].name === name) {
@@ -593,14 +628,20 @@ function applyDot(ent, dps, dur, name, sid, interval, stackCfg) {
             cur.ext = 0;
             cur.sid = sid;
             cur.interval = interval;
+            if (sName) cur.sourceName = sName;
+            if (sKey) cur.sourceKey = sKey;
+            if (sLv !== undefined) cur.sourceLevel = sLv;
             return;
         }
     }
     // 45 新技能基建（buffExtend 族）：補存原始持續 dur 與累計延長 ext（延長上限依據）
     // acc＝距離下次作用已累積的秒數；unit／stacks＝疊層規則用
     var step3 = stackStep(stackCfg, null, dps);
-    ent.dots.push({ dps: step3.value, until: GT + dur, name: name, dur: dur, ext: 0, sid: sid,
-        interval: interval, acc: 0, unit: step3.unit, stacks: step3.stacks });
+    ent.dots.push({
+        dps: step3.value, until: GT + dur, name: name, dur: dur, ext: 0, sid: sid,
+        interval: interval, acc: 0, unit: step3.unit, stacks: step3.stacks,
+        sourceName: sName || undefined, sourceKey: sKey || undefined, sourceLevel: sLv
+    });
 }
 function hasDots(ent) {
     if (!ent || !ent.dots) return false;
@@ -627,6 +668,7 @@ function tickStatuses(ent, dt) {
     }
     var total = 0;
     var dotNames = [];
+    var dotDamageItems = [];
     var live = [];
     for (var i = 0; i < ent.dots.length; i++) {
         var d = ent.dots[i];
@@ -645,7 +687,9 @@ function tickStatuses(ent, dt) {
             d.acc = elapsed;
         }
         if (seconds > 0 && d.dps > 0) {
-            total += d.dps * seconds;
+            var dDmg = d.dps * seconds;
+            total += dDmg;
+            dotDamageItems.push({ d: d, baseDamage: dDmg });
             if (d.name && dotNames.indexOf(d.name) < 0) dotNames.push(d.name);
         }
         if (!expired) live.push(d);
@@ -654,8 +698,32 @@ function tickStatuses(ent, dt) {
     if (total > 0) {
         var legendaryDotMult = (ent.maxHp && typeof legendaryDotDamageMultiplier === 'function')
             ? legendaryDotDamageMultiplier(ent) : 1;
-        var dotDealt = total * globalDamageMultiplierForEntity(ent) * legendaryDotMult;
-        dotDealt = applyEnemyHpDamage(ent, dotDealt);
+        var dotScale = globalDamageMultiplierForEntity(ent) * legendaryDotMult;
+        var dotDealt = applyEnemyHpDamage(ent, total * dotScale);
+        if (dotDealt > 0 && typeof recordRunDamage === 'function' && ent.maxHp) {
+            for (var k = 0; k < dotDamageItems.length; k++) {
+                var item = dotDamageItems[k];
+                var dItem = item.d;
+                var itemRatio = item.baseDamage / total;
+                var itemDealt = dotDealt * itemRatio;
+                var sourceName = dItem.sourceName;
+                var sourceKey = dItem.sourceKey;
+                var sourceLevel = dItem.sourceLevel;
+                if (!sourceName && dItem.sid) {
+                    var sResolved = resolveDotSource(dItem.sid);
+                    if (sResolved) {
+                        sourceName = sResolved.name;
+                        sourceKey = sResolved.key;
+                        if (sourceLevel === undefined) sourceLevel = sResolved.level;
+                    }
+                }
+                if (sourceName) {
+                    recordRunDamage(sourceName, itemDealt, sourceKey, sourceLevel);
+                } else if (dItem.name) {
+                    recordRunDamage(dItem.name, itemDealt, 'dot:' + (dItem.sid || dItem.name));
+                }
+            }
+        }
         // 單一狀態直接報狀態名（例：「受到中毒」），多個才合併報「持續傷害（流血、燃燒）」
         logEnemyDirectDamage(ent, dotNames.length === 1 ? dotNames[0]
             : '持續傷害' + (dotNames.length ? '（' + dotNames.join('、') + '）' : ''), dotDealt, ent.hp <= 0);
@@ -1675,12 +1743,14 @@ function recordRunDamage(skillName, dmg, statKey, skillLevel) {
 
 function generateSummaryHtml(current) {
     var totalDmg = 0;
+    var totalCount = 0;
     var displayNames = {};
     var nameCounts = {};
     var nameSeen = {};
     for (var key in RUN_STATS.skills) {
         var stat = RUN_STATS.skills[key];
-        totalDmg += stat.damage;
+        totalDmg += (stat.damage || 0);
+        totalCount += (stat.count || 0);
         if (typeof stat.level === 'number') {
             var rawName = stat.name || key;
             nameCounts[rawName] = (nameCounts[rawName] || 0) + 1;
@@ -1699,7 +1769,7 @@ function generateSummaryHtml(current) {
         }
         displayNames[key] = displayName;
     }
-    if (totalDmg === 0) return '';
+    if (totalDmg === 0 && totalCount === 0) return '';
     var html = '<div class="summary-card"' + (current ? ' data-summary-current="true"' : '') + '>';
     html += '<div class="summary-card-title">------------' + (current ? '目前戰鬥（即時統計）' : '第 ' + RUN_STATS.runCount + ' 場戰鬥') + '--------------</div>';
     html += '<div class="summary-card-row"><span style="color:var(--accent)">最高關數</span>：' + RUN_STATS.maxStage + '</div>';
@@ -1708,17 +1778,18 @@ function generateSummaryHtml(current) {
         var sk = RUN_STATS.skills[k];
         skillList.push({
             name: displayNames[k] || k,
-            count: sk.count,
-            damage: sk.damage
+            count: sk.count || 0,
+            damage: sk.damage || 0
         });
     }
     skillList.sort(function (a, b) {
-        return b.damage - a.damage;
+        if (b.damage !== a.damage) return b.damage - a.damage;
+        return b.count - a.count;
     });
 
     for (var i = 0; i < skillList.length; i++) {
         var item = skillList[i];
-        var pct = totalDmg > 0 ? (item.damage / totalDmg * 100).toFixed(1) : 0;
+        var pct = totalDmg > 0 ? (item.damage / totalDmg * 100).toFixed(1) : '0.0';
         html += '<div class="summary-card-row"><span style="color:var(--accent)">' + item.name + '</span>：' + fmt(item.count) + '次，傷害 ' + fmt(item.damage) + ' (' + pct + '%)</div>';
     }
     html += '</div>';

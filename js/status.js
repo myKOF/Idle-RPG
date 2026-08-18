@@ -192,7 +192,7 @@ function applyStatus(ent, sid, ctx) {
   switch (def.effect) {
     case 'dot':
       return applyDot(ent, statusDps(ent, def, ctx), dur, def.name, sid,
-        statusNum(ctx.interval, def.interval));
+        statusNum(ctx.interval, def.interval), statusStackCfg(def), ctx.source || ctx);
     case 'hot':
     case 'stat':
       return applyBuff(ent, def.key, statusNum(ctx.val, def.effect === 'hot' ? def.dmg : def.val) * mult, dur, sid,
