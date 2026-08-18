@@ -39,8 +39,10 @@ test('Worker Event 將 flog、log 與 float 接到既有 UI 呈現函式', () =>
   const context = {
     UI_WORKER_VISUAL_EVENT_QUEUE: [],
     UI_WORKER_VISUAL_FLUSH_HANDLE: 0,
-    UI_WORKER_VISUAL_QUEUE_MAX: 160,
-    UI_WORKER_VISUAL_FRAME_BUDGET: 6,
+    UI_WORKER_VISUAL_QUEUE_MAX: 480,
+    UI_WORKER_VISUAL_FRAME_MS: 4,
+    UI_WORKER_VISUAL_FRAME_MAX: 800,
+    uiNowMs: () => Date.now(),
     addLog: (...args) => calls.push(['addLog', ...args]),
     routeUiLog: (...args) => calls.push(['routeUiLog', ...args]),
     workerTowerActiveForLog: () => true,
