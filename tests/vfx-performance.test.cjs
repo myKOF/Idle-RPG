@@ -45,7 +45,10 @@ test('VFX exposes quality tiers and bounded frame scheduling', () => {
   assert.match(vfx, /function vfxFlushQueue\(\)/);
   assert.match(vfx, /function vfxEnqueue\(spec\)/);
   assert.match(vfx, /now - entry\.queuedAt > VFX_STALE_EVENT_MS/);
-  assert.match(vfx, /if \(_vfxEventQueue\.length >= VFX_EVENT_QUEUE_MAX\) _vfxEventQueue\.shift\(\)/);
+  assert.match(vfx, /function vfxQueuePriority\(spec\)/);
+  assert.match(vfx, /queuedPriority < incomingPriority/);
+  assert.match(vfx, /incomingPriority === 0 && queuedPriority === 0/);
+  assert.match(vfx, /if \(evictIndex >= 0\) _vfxEventQueue\.splice\(evictIndex, 1\);[\s\S]*else return;/);
 });
 
 test('Reduced VFX removes the most expensive cosmetic work', () => {
@@ -82,6 +85,24 @@ test('Quality changes and short-burst events are bounded at runtime', () => {
   context.vfxSetQuality('off');
   assert.equal(context._vfxEventQueue.length, 0);
   assert.equal(context.vfxQuality(), 'off');
+});
+
+test('滿載事件佇列保留火狩，低優先級事件不得淘汰長駐場域', () => {
+  const context = loadVfx();
+  for (let i = 0; i < 48; i++) {
+    context.playCombatVfx({
+      fxKind: 'impact', variant: 'burst-' + i, targets: ['target-' + i]
+    });
+  }
+  assert.equal(context._vfxEventQueue.length, 48);
+
+  context.playCombatVfx({ fxKind: 'aura', variant: 'firehunt', targets: [] });
+  assert.equal(context._vfxEventQueue.length, 48);
+  assert.ok(context._vfxEventQueue.some((entry) => entry.spec.variant === 'firehunt'));
+
+  context.playCombatVfx({ fxKind: 'impact', variant: 'late-impact', targets: ['late'] });
+  assert.equal(context._vfxEventQueue.length, 48);
+  assert.ok(context._vfxEventQueue.some((entry) => entry.spec.variant === 'firehunt'));
 });
 
 test('Meteor timing is bounded, stale events are skipped, and tracked nodes have a watchdog', () => {

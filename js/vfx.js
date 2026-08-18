@@ -2012,6 +2012,46 @@ function vfxAura(spec, layer, rect) {
   vfxTrack(d, Math.min(60, Math.max(1, spec.dur)) * 1000);
 }
 
+/* 虛空斬：DOM 後備路徑也要保留完整的 6 秒螺旋，而不是退回一般光環的
+   1.6 秒呼吸與 2 秒粒子循環。半徑由事件帶來的 r／grow 推到結束，
+   CSS 只負責在這段壽命內旋轉刀影與向外擴展。 */
+function vfxVoidDisc(spec, layer, rect) {
+  var duration = vfxFieldMotionSec(spec, 6);
+  var area = spec.area || {};
+  var startRadius = Number(area.r);
+  if (!isFinite(startRadius) || startRadius <= 0) {
+    startRadius = Math.max(48, Math.min(Math.abs(rect.w), Math.abs(rect.h)) * 0.5);
+  }
+  var grow = Math.max(0, Number(area.grow) || 0);
+  var endRadius = Math.max(startRadius, startRadius + grow * duration);
+  var center = (spec.targets && spec.targets.length)
+    ? vfxPointOf(spec.targets[0], layer) : null;
+  if (!center) center = vfxOriginPoint(layer);
+  if (!center && rect) center = { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2 };
+  if (!center) return;
+
+  var d = vfxNode('vfx-void-disc', layer, spec);
+  vfxPlace(d, center);
+  d.style.width = (endRadius * 2) + 'px';
+  d.style.height = (endRadius * 1.24) + 'px';
+  d.style.setProperty('--vfx-void-duration', duration + 's');
+  d.style.setProperty('--vfx-void-r-start', startRadius + 'px');
+  d.style.setProperty('--vfx-void-r-end', endRadius + 'px');
+  d.style.setProperty('--vfx-void-start-scale', String(startRadius / endRadius));
+  d.style.setProperty('--vfx-void-turn', Number(area.spin) < 0 ? '-560deg' : '560deg');
+  d.style.setProperty('--vfx-void-turn-end', Number(area.spin) < 0 ? '-920deg' : '920deg');
+  var startAng = Number(area.startAng);
+  if (!isFinite(startAng)) startAng = 0;
+  var startDeg = startAng * 180 / Math.PI;
+  /* 每個事件代表圓周上的一道斬擊；四個事件各自帶 0／90／180／270 度相位，
+     這裡不能再在單一節點內複製刀影，否則會變成 16 道而不是剛好 4 道。 */
+  var blade = document.createElement('span');
+  blade.className = 'vfx-void-blade';
+  blade.style.setProperty('--void-angle', startDeg + 'deg');
+  d.appendChild(blade);
+  vfxTrack(d, duration * 1000);
+}
+
 /* ---- 我方增益：光環＋上升光點 ----
    只掛在我方錨點，不對敵人建立命中特效。 */
 function vfxSelfBuff(spec, layer, pt, delayMs) {
@@ -2234,6 +2274,7 @@ function renderCombatVfx(spec) {
     if (!rect) {
       // 高塔戰沒有棋盤格：以目標卡片為中心的退化矩形
       var fallbackPt = vfxPointOf(anchorId, layer);
+      if (!fallbackPt && s.variant === 'void-disc') fallbackPt = vfxOriginPoint(layer);
       if (!fallbackPt) return;
       rect = vfxRectAround(fallbackPt, s.variant === 'meteor' ? spec.area : null);
     }
@@ -2248,6 +2289,7 @@ function renderCombatVfx(spec) {
           : (vfxPointOf(anchorId, layer) || { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2 });
         vfxFirePillar(s, layer, spec.area, tornadoPt);
       }
+      else if (s.variant === 'void-disc') vfxVoidDisc(s, layer, rect);
       else if (isIceField) vfxIceField(s, layer, spec.area, rect);
       else vfxAura(s, layer, rect);
       return;
@@ -2536,6 +2578,15 @@ function vfxMergeKey(spec) {
   return [spec.fxKind || '', spec.cat || '', spec.elem || '', spec.variant || '', target].join('|');
 }
 
+/* 事件佇列滿載時，長駐場域比瞬間命中反饋更需要保留；否則混合技能連發
+   會在 DOM 路徑把火狩事件淘汰，造成「模擬有火狩、畫面卻沒有」的落差。 */
+function vfxQueuePriority(spec) {
+  if (!spec) return 0;
+  if (spec.fxKind === 'aura' && spec.variant === 'firehunt') return 3;
+  if (spec.fxKind === 'aura') return 2;
+  return 0;
+}
+
 /* 每一幀最多排程一次 flush，優先用 RAF 跟畫面時鐘同步；測試／舊環境才退回 Timer。 */
 function vfxScheduleFlush() {
   if (_vfxFlushHandle || !_vfxEventQueue.length) return;
@@ -2582,7 +2633,22 @@ function vfxEnqueue(spec) {
       }
     }
   }
-  if (_vfxEventQueue.length >= VFX_EVENT_QUEUE_MAX) _vfxEventQueue.shift();
+  if (_vfxEventQueue.length >= VFX_EVENT_QUEUE_MAX) {
+    var incomingPriority = vfxQueuePriority(spec);
+    var evictIndex = -1;
+    var evictPriority = Infinity;
+    for (var qi = 0; qi < _vfxEventQueue.length; qi++) {
+      var queuedPriority = vfxQueuePriority(_vfxEventQueue[qi].spec);
+      if ((queuedPriority < incomingPriority ||
+           (incomingPriority === 0 && queuedPriority === 0)) &&
+          queuedPriority < evictPriority) {
+        evictIndex = qi;
+        evictPriority = queuedPriority;
+      }
+    }
+    if (evictIndex >= 0) _vfxEventQueue.splice(evictIndex, 1);
+    else return;
+  }
   _vfxEventQueue.push({ spec: spec, key: mergeKey, queuedAt: now });
   vfxScheduleFlush();
 }

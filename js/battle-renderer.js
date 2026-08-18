@@ -32,6 +32,7 @@ var BattleRenderer = (function () {
   var FX_HARD_LIFETIME_MS = 3000;  // 特效節點的硬性壽命（牆鐘）；領域類另外指定
   var FX_AURA_MAX_SEC = 6;         // 領域／旋風類的顯示上限（秒）——原本吃技能的實際持續時間，
                                    // 長效領域會讓那塊半透明方框在畫面上留很久，看起來像沒清乾淨
+  var FX_PERSISTENT_AURA_PRIORITY = 3; // 長駐自身場域在混合技能洪峰中優先保留
   var FX_WATCHDOG_MS = 1000;       // 看門狗掃描間隔
   var METEOR_SIZE_SCALE = 1.30;    // 新版殞石術特效寬度／尺寸增加 30%
   /* 角色的跑速與追擊邏輯已經**不在這裡**：位移由模擬層產生（js/battlefield.js
@@ -153,20 +154,21 @@ var BattleRenderer = (function () {
     if (id === 'pv-float') return !!(S.player && !S.player.dead);
     var ent = S.entities[id];
     if (!ent) {
-      /* 尚未建立的目標允許事件繼續；有 lastPos 代表它已經離場。 */
-      return !S.lastPos[id];
+      /* 落雷不能用 posOf() 的預設座標代替缺失目標；沒有實體就沒有可劈的點。 */
+      return false;
     }
     return ent.state !== 'dying' && ent.state !== 'gone';
   }
   function vfxTargetsLive(spec) {
     var ids = spec && Array.isArray(spec.targets) ? spec.targets : [];
-    if (!ids.length) return true;
+    /* 落雷／雷殞是嚴格綁定目標的特效；空清單不可退化成地面落點。 */
+    if (!ids.length) return !isTargetBoundThunderVfx(spec);
     for (var i = 0; i < ids.length; i++) {
       var id = ids[i];
       if (spec && (spec.variant === 'thunder-strike' || spec.variant === 'thunder-fall')) {
         if (id === 'pv-float' && (!S.player || S.player.dead)) return false;
         var thunderEnt = S.entities[id];
-        if (!thunderEnt && S.lastPos[id]) return false;
+        if (!thunderEnt) return false;
         if (thunderEnt && (thunderEnt.state === 'dying' || thunderEnt.state === 'gone')) return false;
       }
       if (id === 'pv-float') {
@@ -1333,11 +1335,22 @@ var BattleRenderer = (function () {
     fx.bornAt = nowMs();
     fx.maxLife = maxLifeMs || FX_HARD_LIFETIME_MS;
     if (S.fx.length >= MAX_FX) {
-      /* 滿了先踢低優先級（粒子），跟 DOM 版先踢非 aura 的精神一致 */
+      /* 滿了可讓高優先級事件淘汰較低優先級事件；否則長駐場域會在
+         技能洪峰中因為所有低優先級粒子已被清掉而反遭拒收。相同優先級
+         不互相淘汰，避免新事件把仍在播放的長駐場域換掉。 */
+      var evictIndex = -1;
+      var evictPrio = Infinity;
       for (var i = 0; i < S.fx.length; i++) {
-        if (S.fx[i].prio <= 0) { killFx(S.fx[i]); S.fx.splice(i, 1); break; }
+        var candidatePrio = S.fx[i].prio || 0;
+        if (candidatePrio < fx.prio && candidatePrio < evictPrio) {
+          evictIndex = i;
+          evictPrio = candidatePrio;
+        }
       }
-      if (S.fx.length >= MAX_FX) {
+      if (evictIndex >= 0) {
+        killFx(S.fx[evictIndex]);
+        S.fx.splice(evictIndex, 1);
+      } else {
         /* 拒收就要就地銷毀：呼叫端都是先 addChild 再 addFx，
            不銷毀的話節點會永遠凍在舞台上（沒有任何清除路徑會再碰到它）。 */
         killFx(fx);
@@ -2042,6 +2055,8 @@ var BattleRenderer = (function () {
   }
 
   function spawnBolt(fromPtOrId, targetPtOrId, spec, delaySec, isMega, isPurple) {
+    if (typeof targetPtOrId === 'string' && isTargetBoundThunderVfx(spec) &&
+        !vfxTargetLiveForSpec(spec, targetPtOrId)) return;
     var theme = themeOf(spec);
     var g = new PIXI.Graphics();
     S.layers.fx.addChild(g);
@@ -2174,7 +2189,7 @@ var BattleRenderer = (function () {
     var key = (spec.variant || 'firehunt') + ':' + (spec.elem || '') + ':' +
       Math.round(ringR) + ':' + (ccw ? 'ccw' : 'cw');
     var ring = _fireHuntRings[key];
-    if (ring && !ring.done) {
+    if (ring && !ring.done && ring.fx && !ring.fx.dead) {
       ring.dur = Math.min(FX_ORBIT_MAX_SEC, Math.max(ring.dur, ring.t + dur));
       ring.orbs = orbs;
       return;
@@ -2188,10 +2203,10 @@ var BattleRenderer = (function () {
     S.layers.fx.addChild(node);
     var g = new PIXI.Graphics();
     node.addChild(g);
-    ring = { t: 0, dur: dur, orbs: orbs, done: false };
+    ring = { t: 0, dur: dur, orbs: orbs, done: false, fx: null };
     _fireHuntRings[key] = ring;
     var partAcc = 0;
-    addFx({
+    var ringFx = addFx({
       node: node,
       update: function (dt) {
         ring.t += dt;
@@ -2223,7 +2238,15 @@ var BattleRenderer = (function () {
         }
         return ring.t < ring.dur;
       }
-    }, 2, (FX_ORBIT_MAX_SEC + 1) * 1000);
+    }, FX_PERSISTENT_AURA_PRIORITY, (FX_ORBIT_MAX_SEC + 1) * 1000);
+    if (!ringFx) {
+      /* 容量真的無法容納時不能留下未追蹤的 ring；否則下一次刷新會誤以為
+         畫面上仍有同一道火狩，永遠不再建立節點。 */
+      ring.done = true;
+      if (_fireHuntRings[key] === ring) delete _fireHuntRings[key];
+      return;
+    }
+    ring.fx = ringFx;
   }
 
   /* 火牆（新版技能【無限火牆】）：沿傷害矩形長軸排列的直立火焰柱。
@@ -2733,23 +2756,28 @@ var BattleRenderer = (function () {
   }
 
   /* 虛空斬：以自身為圓心繞行的鋸齒圓盤，半徑逐秒擴大（area.grow＝每秒擴大的像素）。
-     與火狩共用「同一道只保留一個節點」的合併規則。 */
+     每一道用 area.id 保留自己的節點與初始相位；同一道補播延長事件時才合併。 */
   var _voidDiscs = Object.create(null);
   function spawnVoidDisc(spec) {
     var a = spec && spec.area;
     if (!a || !isFinite(a.r)) return;
     var ccw = Number(a.spin) < 0;
-    var key = 'void:' + (ccw ? 'ccw' : 'cw');
-    var dur = Math.min(FX_ORBIT_MAX_SEC, Math.max(0.5, spec.dur || 6));
+    var key = 'void:' + (a.id || (ccw ? 'ccw' : 'cw'));
+    /* 虛空斬的畫面壽命直接跟事件的技能壽命走；不能套用一般領域上限，
+       否則未來技能表調長時，特效會比實際場域早消失。 */
+    var dur = Math.max(0.5, Number(spec && spec.dur) || 6);
     var disc = _voidDiscs[key];
     if (disc && !disc.done) {
-      disc.dur = Math.min(FX_ORBIT_MAX_SEC, Math.max(disc.dur, disc.t + dur));
+      disc.dur = Math.max(disc.dur, disc.t + dur);
+      if (disc.fx) disc.fx.maxLife = Math.max(disc.fx.maxLife || 0, disc.dur * 1000 + 500);
       return;
     }
     var theme = themeOf(spec);
     var spinRate = Number(a.spinRate);
     var spin = isFinite(spinRate) && Math.abs(spinRate) > 1e-6
       ? spinRate : (ccw ? -1 : 1) * Math.PI * 2;
+    var startAngle = Number(a.startAng);
+    if (!isFinite(startAngle)) startAngle = 0;
     var grow = Math.max(0, Number(a.grow) || 0);
     var bodyR = Math.max(6, Number(a.orbR) || 24);
     var node = new PIXI.Graphics();
@@ -2758,7 +2786,21 @@ var BattleRenderer = (function () {
     _voidDiscs[key] = disc;
     var c1 = cssColorToInt(theme.c1, 0x86efac);
     var c2 = cssColorToInt(theme.c2, 0xffffff);
-    addFx({
+    function drawBlade(angle, radius, alpha) {
+      var cx = Math.cos(angle) * radius;
+      var cy = Math.sin(angle) * radius * 0.62;
+      var teeth = 12;
+      var poly = [];
+      for (var i = 0; i < teeth * 2; i++) {
+        var ta = angle * 3 + Math.PI * i / teeth;
+        var rr = bodyR * (i % 2 === 0 ? 1 : 0.68);
+        poly.push(cx + Math.cos(ta) * rr, cy + Math.sin(ta) * rr * 0.85);
+      }
+      node.poly(poly).fill({ color: c1, alpha: 0.8 * alpha })
+        .stroke({ color: c2, width: 2, alpha: 0.9 * alpha });
+      node.circle(cx, cy, bodyR * 0.42).fill({ color: c2, alpha: 0.85 * alpha });
+    }
+    var fx = addFx({
       node: node,
       update: function (dt) {
         disc.t += dt;
@@ -2766,29 +2808,27 @@ var BattleRenderer = (function () {
         var p = playerPos();
         node.x = p.x; node.y = p.y - 12;
         var fade = disc.t > disc.dur - 0.4 ? Math.max(0, (disc.dur - disc.t) / 0.4) : 1;
-        var ang = spin * disc.t;
-        var cx = Math.cos(ang) * disc.r, cy = Math.sin(ang) * disc.r * 0.62;
         node.clear();
         node.ellipse(0, 0, disc.r, disc.r * 0.62)
           .stroke({ color: c1, width: 1.5, alpha: 0.16 * fade });
-        // 鋸齒圓盤：外圈鋸齒 + 內圈白光
-        var teeth = 12;
-        var poly = [];
-        for (var i = 0; i < teeth * 2; i++) {
-          var ta = ang * 3 + Math.PI * i / teeth;
-          var rr = bodyR * (i % 2 === 0 ? 1 : 0.68);
-          poly.push(cx + Math.cos(ta) * rr, cy + Math.sin(ta) * rr * 0.85);
+        /* 保留最近幾幀的刃影，形成連續螺旋；半徑與角度都回推到各自的時間點，
+           因此從開始到 dur 結束都能看見向外擴展，而不是只剩一顆短促的圓盤。 */
+        var trailSteps = 5;
+        for (var ti = trailSteps; ti >= 0; ti--) {
+          var trailDt = Math.min(disc.t, ti * 0.11);
+          var trailT = disc.t - trailDt;
+          var trailR = Math.max(8, disc.r - grow * trailDt);
+          var trailAlpha = ti === 0 ? 1 : 0.18 * (1 - ti / (trailSteps + 1));
+          drawBlade(startAngle + spin * trailT, trailR, trailAlpha * fade);
         }
-        node.poly(poly).fill({ color: c1, alpha: 0.8 * fade })
-          .stroke({ color: c2, width: 2, alpha: 0.9 * fade });
-        node.circle(cx, cy, bodyR * 0.42).fill({ color: c2, alpha: 0.85 * fade });
         if (disc.t >= disc.dur) {
           disc.done = true;
           if (_voidDiscs[key] === disc) delete _voidDiscs[key];
         }
         return disc.t < disc.dur;
       }
-    }, 2, (FX_ORBIT_MAX_SEC + 1) * 1000);
+    }, 2, dur * 1000 + 500);
+    disc.fx = fx;
   }
 
   /* 暴風屏障／暴風神體／暴風撕裂：纏在自身的風殼。
@@ -4171,7 +4211,6 @@ var BattleRenderer = (function () {
           targets.forEach(function (id, ti) {
             spawnThunderFall(spec, id, (baseDelay + ti * stagger) / 1000);
           });
-          if (!targets.length) spawnThunderFall(spec, null, baseDelay / 1000);
           break;
         }
         spawnRain(rect, spec);

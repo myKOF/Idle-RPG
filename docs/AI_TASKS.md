@@ -3685,6 +3685,164 @@ Commit：
 
 完成後交給：使用者／主整合工作區。
 
+---
+
+## 任務：虛空斬改為四道順時針向外擴張
+
+任務編號：Codex-20260818-void-disc-quad-cw
+
+任務狀態：已完成（2026-08-18）
+
+任務分類：Skills2 參數／戰鬥 VFX／環繞場域
+
+負責 AI：Codex
+
+使用者需求：虛空斬從我方角色中心出現 4 個斬擊，四道剛好位於同一圓的 0／90／180／270 度位置，向外逐漸擴大，每秒擴大 4 米，4 道皆順時針旋轉。
+
+允許修改：
+
+- `config/Excel/Skills2.xlsx`
+- `config/CSV/Skills2.csv`
+- `js/skills2.js`
+- `js/battle-renderer.js`
+- `js/vfx.js`
+- `tests/skill2-wind.test.cjs`
+- `tests/skill2-vfx.test.cjs`
+- `index.html`
+- `docs/AI_TASKS.md`
+
+禁止修改：虛空斬傷害、持續時間、命中判定以外的技能數值、存檔格式、Worker Protocol、無關技能／UI／VFX。
+
+前置依賴：既有虛空斬 6 秒環繞場域、Canvas／DOM 特效與 Skills2 參數表同步流程已存在。
+
+驗收方式：參數表與 JS 顯示 4 道、每秒 4 米、順時針；模擬層四個場域使用同一圓上相隔 90 度的獨立初始相位且同向旋轉；Canvas／DOM 各事件只畫一道並保留四道特效；定向測試與建置檢查通過。
+
+完成條件：同步 CSV／Excel／JS、更新快取版號、補回歸測試、更新驗證結果並建立 `[Codex]` commit。
+
+實作結果：Skills2 第七階改為 4 道虛空斬；四道初始相位固定為同一圓周上的 0／90／180／270 度，皆以每秒 1 圈順時針旋轉，半徑每秒平滑增加 4 米，持續時間維持 6 秒。Canvas 與 DOM 各事件只繪製一道，且保留四道獨立節點，不會因同向旋轉而合併。
+
+驗證結果：`node --test tests/skill2-wind.test.cjs tests/skill2-vfx.test.cjs` 51/51 通過；`npm run build` 294/294 通過；`node tools/config_tables.cjs --apply Skills2` 顯示語意變更 0；完整 `npm test` 1602/1607 通過，5 個失敗均位於本任務未修改的反擊／地／冰技能既有測試。
+
+已知風險：完整測試中的 5 個既有失敗仍需另立任務處理；不影響本次虛空斬定向測試與建置檢查。
+
+未完成項目：無。
+
+Commit 編號：`19325dc`（功能提交）。
+
+---
+
+## 任務：修正落雷無目標時仍向地面發射
+
+任務編號：Codex-20260818-lightning-target
+
+任務狀態：已完成（2026-08-18）
+
+任務分類：戰鬥 VFX／目標生命週期
+
+負責 AI：Codex
+
+使用者需求：落雷偶爾沒有有效敵方目標，卻仍在玩家附近向地面發射；修正為只有解析到有效目標時才建立落雷，避免以預設座標誤播。
+
+允許修改：
+
+- `js/battle-renderer.js`
+- `tests/lightning-vfx-lifecycle.test.cjs`
+- `index.html`
+- `docs/AI_TASKS.md`
+
+禁止修改：技能數值與目標選擇規則、Worker Protocol、存檔格式、DOM 落雷畫法、無關 UI／VFX。
+
+前置依賴：既有落雷／雷殞的延遲目標守門已存在；本任務只收緊 Canvas 顯示層對缺失目標的處理。
+
+驗收方式：缺失或已離場的落雷目標不得通過 Canvas 目標守門，也不得退回玩家前方預設座標；一般普攻的尚未建立目標相容行為維持不變；定向測試與完整測試通過。
+
+完成條件：完成程式與回歸測試、同步 `index.html` 快取版號、更新驗證結果與已知風險，建立 `[Codex]` commit。
+
+驗證結果：`tests/lightning-vfx-lifecycle.test.cjs`、`tests/ui-worker-events.test.cjs`、
+`tests/skill2-lightning.test.cjs` 共 44 項全通過；`node tools/build_check.cjs` 294/294 通過；
+完整 `npm test` 共 1607 項、1602 通過、5 項失敗，失敗均為既有的 `counter/bloodrage`、
+泥沼範圍、暴風雪範圍與技能系統參數漂移，未涉及本任務檔案邏輯。
+
+已知風險：本次未修改技能數值與目標選擇；若目標尚未建立 Canvas 實體，落雷會被取消而不等待補播，
+這是避免誤劈地面的安全取捨。實機畫面仍建議在混合技能與目標快速死亡情境下目視確認。
+
+未完成項目：無。
+
+完成後交給：使用者／主整合工作區。
+
+---
+
+## [Codex] 虛空斬持續特效與技能時間同步
+
+任務狀態：Completed
+
+任務分類：戰鬥 VFX／技能顯示修正
+
+負責 AI：Codex
+
+使用者需求：虛空斬技能說明為持續 6 秒，但實際觀察到螺旋特效約 2 秒就消失；
+要求特效持續至技能時間結束，並持續旋轉、向外擴展至 6 秒結束。
+
+允許修改：`js/battle-renderer.js`、`js/vfx.js`、`css/style.css`、
+`tests/skill2-wind.test.cjs`、`tests/skill2-vfx.test.cjs`、`index.html`、`docs/AI_TASKS.md`。
+
+禁止修改：技能傷害、命中判定、狀態數值、存檔格式、Worker Protocol 與無關技能效果。
+
+驗收方式：確認虛空斬事件將技能實際 `dur` 傳給兩條顯示路徑；Canvas／DOM 特效均以該
+`dur` 回收，且測試驗證施放後 5 秒仍存在、6 秒到期後才清除。
+
+完成內容：Canvas 改為以事件 `dur` 作為硬性壽命，新增連續刃影形成向外擴展的螺旋；
+DOM 後備路徑新增虛空斬專用螺旋，並以 `r + grow × dur` 計算結束半徑；更新兩支腳本
+版號與回歸測試。
+
+驗證結果：`node --test tests/skill2-wind.test.cjs tests/skill2-vfx.test.cjs
+tests/skill-special-vfx.test.cjs` 52/52 通過；`node --check js/vfx.js`、
+`node --check js/battle-renderer.js` 通過；`node tools/build_check.cjs` 294/294 通過；
+完整 `npm test` 1606 項中 1601 通過、5 項失敗，失敗均為乾淨基準線既有的
+counter 消耗／泥沼範圍／暴風雪範圍／參數漂移，未新增本任務相關失敗。
+
+已知風險：尚未以實機瀏覽器逐幀目視確認 DOM 後備路徑的螺旋尺寸；Canvas 與 DOM
+均保留現有特效節點上限，極端特效洪峰時仍可能依優先級淘汰視覺節點，但不影響技能判定。
+
+完成後交給：使用者／主整合工作區。
+
+## 任務：火狩與其他技能同時施放時特效遺失
+
+任務狀態：已完成（2026-08-18）
+
+任務分類：技能效果／戰鬥 VFX／特效排程與容量保護
+
+負責 AI：Codex
+
+使用者需求：火狩單獨施放時會出現環繞特效，但與其他技能同時施放時火狩特效不出現；需修正為混合技能場景也能穩定顯示。
+
+任務內容：檢查 Canvas 與 DOM 兩條 VFX 路徑的事件佇列、特效容量上限與火狩環繞場域生命週期；讓火狩長駐環繞事件在特效洪峰時具有明確保護優先級，且事件被容量拒收後不殘留失效的環繞狀態，避免後續刷新永遠被錯誤合併。
+
+允許修改：
+
+- `js/battle-renderer.js`
+- `js/vfx.js`
+- `tests/skill2-vfx.test.cjs`
+- `tests/vfx-performance.test.cjs`
+- `index.html`
+- `docs/AI_TASKS.md`
+
+禁止修改：技能數值、傷害計算、技能施放時序、存檔格式、Worker Protocol、無關 UI／VFX。
+
+前置依賴：既有火狩環繞場域與 Canvas／DOM VFX 路徑已存在；目標檔案衝突預檢無來源。
+
+測試要求：執行火狩／VFX 定向測試、完整 `npm.cmd test`、`npm.cmd run build`、JavaScript 語法檢查與 `git diff --check`，並同步主頁快取版本。
+
+完成條件：混合特效容量下火狩事件不被較低優先級事件淘汰；Canvas 拒收後可安全重建；DOM 事件洪峰保留火狩長駐事件；建立 Codex commit。
+
+驗證結果：火狩／VFX 定向測試 49/49 通過；完整 `npm.cmd test` 為 1606 項、1601 通過、5 項既有失敗；`npm.cmd run build` 294/294 通過；`node --check js/battle-renderer.js`、`node --check js/vfx.js` 與 `git diff --check` 通過；`index.html` 的 `vfx.js`／`battle-renderer.js` 快取版號已同步。
+
+已知風險：完整測試的 5 項失敗是既有參數表／測試斷言漂移（`counter`、`bloodrage`、泥沼尺寸 2 項、暴風雪範圍），與本次特效容量修改無關；尚未進行瀏覽器實機目視驗證。
+
+未完成項目：無程式項目。
+
+後續接手者：使用者／主整合工作區。
+
 ## 任務：投射物命中後才結算反震／反傷
 
 任務狀態：已完成（2026-08-17）

@@ -220,6 +220,21 @@ test('火狩 Canvas 旋轉速度沿用模擬層角速度，舊事件仍可退回
   assert.match(renderer, /\? spinRate : \(ccw \? -1 : 1\) \* Math\.PI \* 2/);
 });
 
+test('火狩長駐特效在混合技能容量洪峰中保留，拒收後可重建', () => {
+  const renderer = read('js/battle-renderer.js');
+  const vfx = read('js/vfx.js');
+
+  assert.match(renderer, /var FX_PERSISTENT_AURA_PRIORITY = 3/);
+  assert.match(renderer, /candidatePrio < fx\.prio/);
+  assert.match(renderer, /ring && !ring\.done && ring\.fx && !ring\.fx\.dead/);
+  assert.match(renderer, /var ringFx = addFx\([\s\S]*?FX_PERSISTENT_AURA_PRIORITY/);
+  assert.match(renderer, /if \(!ringFx\) \{[\s\S]*?delete _fireHuntRings\[key\]/);
+  assert.match(vfx, /function vfxQueuePriority\(spec\)/);
+  assert.match(vfx, /spec\.fxKind === 'aura' && spec\.variant === 'firehunt'\) return 3/);
+  assert.match(vfx, /queuedPriority < incomingPriority/);
+  assert.match(vfx, /if \(evictIndex >= 0\) _vfxEventQueue\.splice\(evictIndex, 1\);[\s\S]*else return;/);
+});
+
 test('震碎斬與迴身雙連斬共用十字方向的迴旋斬弧光', () => {
   const skills2 = read('js/skills2.js');
   const cleaveStart = skills2.indexOf('function sgCastCleave');
@@ -593,10 +608,19 @@ test('風系特效：風刃／真空斬／迴旋斬／虛空斬／暴風屏障�
   // Canvas：半月箭頭弧形是共用輪廓（風刃與真空斬同一支）
   assert.match(renderer, /function windCrescentPoly\(width, body\)/);
   assert.match(renderer, /function drawWindCrescent\(g, width, body, theme, alpha\)/);
-  // Canvas：虛空斬的半徑成長沿用模擬層的 area.grow，且順逆時針各一道
+  // Canvas：虛空斬的半徑成長沿用模擬層的 area.grow，四道各自保留相位與節點
   assert.match(renderer, /function spawnVoidDisc\(spec\)/);
   assert.match(renderer, /disc\.r \+= grow \* dt;/);
+  assert.match(renderer, /var dur = Math\.max\(0\.5, Number\(spec && spec\.dur\) \|\| 6\);/);
+  assert.match(renderer, /dur \* 1000 \+ 500/);
+  assert.match(renderer, /形成連續螺旋/);
   assert.match(skills2, /grow: f\.growPxPerSec \|\| 0/);
+  assert.match(skills2, /fieldKey: 'void-disc-' \+ i/);
+  assert.match(skills2, /startAng: baseAngle \+ Math\.PI \* 2 \* i \/ discs/);
+  assert.match(skills2, /rings: \[\{ r: startR, spin: spin \}\]/);
+  assert.match(renderer, /var key = 'void:' \+ \(a\.id \|\|/);
+  assert.match(renderer, /var startAngle = Number\(a\.startAng\)/);
+  assert.match(renderer, /drawBlade\(startAngle \+ spin \* trailT/);
   // Canvas：屏障／神體／撕裂是釘在自身的風殼
   assert.match(renderer, /function spawnStormShell\(spec\)/);
   assert.match(renderer, /spec\.variant === 'storm-barrier' \|\| spec\.variant === 'storm-god'/);
@@ -607,10 +631,18 @@ test('風系特效：風刃／真空斬／迴旋斬／虛空斬／暴風屏障�
   assert.match(vfx, /s\.variant === 'wind-blade' \|\| s\.variant === 'wind-blade-small'/);
   assert.match(vfx, /s\.variant === 'ice-arrow-homing' \|\| s\.variant === 'wind-blade-homing'/);
   assert.match(vfx, /'vfx-wind-homing'/);
+  assert.match(vfx, /function vfxVoidDisc\(spec, layer, rect\)/);
+  assert.match(vfx, /s\.variant === 'void-disc'\) vfxVoidDisc\(s, layer, rect\)/);
+  assert.match(vfx, /var startAng = Number\(area\.startAng\)/);
+  const voidDom = vfx.slice(vfx.indexOf('function vfxVoidDisc'), vfx.indexOf('/* ---- 我方增益', vfx.indexOf('function vfxVoidDisc')));
+  assert.match(voidDom, /blade\.style\.setProperty\('--void-angle', startDeg \+ 'deg'\)/);
+  assert.doesNotMatch(voidDom, /for \(var i = 0; i < 4; i\+\+\)/, '每個 DOM 節點只畫一道斬擊');
 
   // CSS：風系的投射物／受擊／光環配色，以及技能標籤
   assert.match(css, /\.vfx-proj-wind \.vfx-proj-core/);
   assert.match(css, /\.vfx-impact-wind \.vfx-p/);
   assert.match(css, /\.vfx-aura-wind \.vfx-aura-p/);
   assert.match(css, /\.vfx-wind-homing \{/);
+  assert.match(css, /\.vfx-void-disc \{/);
+  assert.match(css, /vfxVoidDiscBlade/);
 });
