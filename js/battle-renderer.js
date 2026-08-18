@@ -4687,6 +4687,8 @@ var BattleRenderer = (function () {
         float: kids(L.float), overlay: kids(L.overlay)
       }
     };
+  }
+
   function clearAllFloats() {
     for (var i = S.floats.length - 1; i >= 0; i--) {
       var f = S.floats[i];

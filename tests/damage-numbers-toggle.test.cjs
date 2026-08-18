@@ -41,4 +41,20 @@ test('UI 與戰鬥渲染器包含傷害數字開關邏輯與清除函式', funct
   assert.match(renderer, /clearDamageFloats:\s*clearDamageFloats/);
   assert.match(renderer, /clearAllFloats:\s*clearAllFloats/);
   assert.match(renderer, /if \(typeof isDamageNumbersEnabled === 'function' && !isDamageNumbersEnabled\(\)\) return;/);
+
+  // 驗證 BattleRenderer 執行後的模組導出物件結構
+  const vm = require('node:vm');
+  const sandbox = {
+    window: {},
+    document: { addEventListener: () => {} },
+    WorkerBridge: { on: () => {} },
+    MSG_OUT: { PANEL: 'panel' },
+    isDamageNumbersEnabled: () => true
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(renderer, sandbox);
+  assert.equal(typeof sandbox.BattleRenderer, 'object', 'BattleRenderer 必須是物件');
+  assert.equal(typeof sandbox.BattleRenderer.init, 'function', 'BattleRenderer.init 必須是函式');
+  assert.equal(typeof sandbox.BattleRenderer.onFloat, 'function', 'BattleRenderer.onFloat 必須是函式');
+  assert.equal(typeof sandbox.BattleRenderer.clearAllFloats, 'function', 'BattleRenderer.clearAllFloats 必須是函式');
 });
