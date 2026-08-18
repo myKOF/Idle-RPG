@@ -30,7 +30,7 @@ function loadContext() {
   context.G = {
     /* 等級拉高：新版技能有「解鎖轉生/等級」門檻，低等會被正規化成 Lv.0，
        那不是這支測試要驗的東西（門檻本身由 skill2-system 專門驗）。 */
-    player: { gold: 0, level: 999, skills2: { levels: {} }, loadout: [] },
+    player: { gold: 0, level: 1000, skills2: { levels: {} }, loadout: [] },   // MAX_LEVEL：暴風屏障第 7 階解鎖於 1000 級
     stage: { current: 1, zone: 'desert' }
   };
   return context;

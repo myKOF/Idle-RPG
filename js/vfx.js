@@ -81,7 +81,8 @@ var VFX_ELEM_THEME = {
   ice:       { c1: '#4da6ff', c2: '#f2fbff', glow: '#79d8ff' },
   lightning: { c1: '#f2b705', c2: '#fff8b0', glow: '#ffd23f' },
   earth:     { c1: '#ad7444', c2: '#5b3a27', glow: '#c48a55' },
-  poison:    { c1: '#4caf2b', c2: '#d8ff8a', glow: '#76d83b' }
+  poison:    { c1: '#4caf2b', c2: '#d8ff8a', glow: '#76d83b' },
+  wind:      { c1: '#86efac', c2: '#ffffff', glow: '#b9f6cf' }
 };
 
 /* 開關是比品質分級更高一層的總閘門；關閉時連已存在的特效也要清掉，
@@ -586,7 +587,8 @@ var VFX_HIT_COOLDOWN_MS = 3000;
    萬一剛好碰上重建把 class 洗掉，也只是少抖一下，不會殘留。
    受擊反饋是命中特效的附加層，不負責產生傷害數字，也不改變戰鬥狀態。 */
 var VFX_HIT_CLASSES = ['vfx-hit', 'vfx-hit-strong', 'vfx-hit-fire', 'vfx-hit-ice',
-  'vfx-hit-lightning', 'vfx-hit-poison', 'vfx-hit-light', 'vfx-hit-dark', 'vfx-hit-earth'];
+  'vfx-hit-lightning', 'vfx-hit-poison', 'vfx-hit-light', 'vfx-hit-dark', 'vfx-hit-earth',
+  'vfx-hit-wind'];
 function vfxHitVisualTarget(elId, card) {
   if (!card || !card.querySelector) return null;
   if (elId === 'tb-float') {
@@ -1617,7 +1619,8 @@ function vfxIceField(spec, layer, area, rect) {
     h = Math.max(48, Number(rect.h) || 120);
     visualH = Math.max(24, h * VFX_MIRE_VISUAL_HEIGHT_RATIO);
   } else {
-    w = h = Math.max(variant === 'ice-arrow-homing' ? 16 : 40, (Number(area && area.r) || 30) * 2);
+    w = h = Math.max((variant === 'ice-arrow-homing' || variant === 'wind-blade-homing') ? 16 : 40,
+      (Number(area && area.r) || 30) * 2);
     visualH = h;
   }
   var cx = (Number(rect.x) || 0) + (Number(rect.w) || 0) / 2;
@@ -1630,22 +1633,23 @@ function vfxIceField(spec, layer, area, rect) {
     vfxFieldMotionSet(node, x, y, w, h, vfxFieldMotionSec(spec, 0.4));
     if (variant === 'blizzard') {
       vfxFieldMotionFollowPlayer(node, layer);
-    } else if (variant === 'ice-arrow-homing' && area && area.speed > 0 &&
-               isFinite(area.destX) && isFinite(area.destY)) {
+    } else if ((variant === 'ice-arrow-homing' || variant === 'wind-blade-homing') &&
+               area && area.speed > 0 && isFinite(area.destX) && isFinite(area.destY)) {
       vfxFieldMotionHome(node, area.speed, area.destX, area.destY);
     }
     node._vfxExpiresAt = Date.now() + ttl;
     return node;
   }
   var cls = (variant === 'blizzard') ? 'vfx-blizzard'
-    : ((variant === 'water-tornado') ? 'vfx-water-tornado' : 'vfx-ice-homing');
+    : ((variant === 'water-tornado') ? 'vfx-water-tornado'
+      : ((variant === 'wind-blade-homing') ? 'vfx-wind-homing' : 'vfx-ice-homing'));
   node = vfxNode('vfx-field-motion', layer, null);
   node._vfxFieldVisual = vfxFieldVisual(node, cls, spec, w, visualH);
   vfxFieldMotionSet(node, x, y, w, h, 0);
   if (variant === 'blizzard') {
     vfxFieldMotionFollowPlayer(node, layer);
-  } else if (variant === 'ice-arrow-homing' && area && area.speed > 0 &&
-             isFinite(area.destX) && isFinite(area.destY)) {
+  } else if ((variant === 'ice-arrow-homing' || variant === 'wind-blade-homing') &&
+             area && area.speed > 0 && isFinite(area.destX) && isFinite(area.destY)) {
     vfxFieldMotionHome(node, area.speed, area.destX, area.destY);
   }
   var pieces = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 6;
@@ -2213,7 +2217,7 @@ function renderCombatVfx(spec) {
     }
     var rect = vfxCellsRect(spec.cells, layer);
     var isIceField = s.variant === 'blizzard' || s.variant === 'water-tornado' ||
-      s.variant === 'ice-arrow-homing';
+      s.variant === 'ice-arrow-homing' || s.variant === 'wind-blade-homing';
     /* 地板場域的 area 是世界座標中心；DOM 後備路徑沒有棋盤格時，
        直接用它建立矩形包絡，不能退化成第一個受擊敵人的位置。 */
     if (!rect && isIceField && spec.area && isFinite(spec.area.x) && isFinite(spec.area.y)) {
@@ -2355,7 +2359,11 @@ function renderCombatVfx(spec) {
 
   /* 貫穿冰箭只有一個飛行中的箭頭，沿著模擬層提供的直線長度前進；
      路徑上的敵人只在箭頭經過時各自顯示命中反饋。 */
-  if (kind === 'projectile' && s.variant === 'ice-arrow-pierce') {
+  /* 風刃（含小型風刃）與貫穿冰箭同構：一個飛行體沿直線前進、路徑上的敵人依序反饋。
+     DOM 後備路徑沒有世界座標，因此方位取「我方 → 第一個受擊目標」，
+     不使用事件裡的 angle（那是模擬層的世界座標方位）。 */
+  if (kind === 'projectile' && (s.variant === 'ice-arrow-pierce' ||
+      s.variant === 'wind-blade' || s.variant === 'wind-blade-small')) {
     if (!rt.pts.length || !from) return;
     var iceArrowAngle = Math.atan2(rt.pts[0].y - from.y, rt.pts[0].x - from.x);
     var iceArrowLength = Number(s.lineLength) > 0 ? Number(s.lineLength)

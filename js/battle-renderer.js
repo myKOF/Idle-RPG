@@ -2538,6 +2538,320 @@ var BattleRenderer = (function () {
   var ICE_FIELD_MAX_LIFE_SEC = 14;
   var ICE_FIELD_THEME = { c1: '#7dd3fc', c2: '#e0f2fe', glow: '#22d3ee' };
 
+  /* ===========================================================================
+     風系特效（2026-08-18 技能改造第八批）
+     ---------------------------------------------------------------------------
+     設計文檔指定的外形，逐項對應：
+       風刃      wind-blade / wind-blade-small  半月箭頭弧形、淡綠＋白光，沿方位飛出
+       追跡風刃  wind-blade-homing              小風刃在場上追擊（走地板場域那條路）
+       沿途脈衝  wind-burst                     狂風碎裂的環狀衝擊
+       真空斬    wind-slash                     前方半月弧
+       迴旋斬    wind-spin                      圍繞周身的一整圈
+       虛空斬    void-disc                      綠色白光帶鋸齒的圓盤，順／逆時針各一
+       暴風屏障  storm-barrier / storm-god / storm-rip  纏在自身的風殼
+     尺寸全部取自模擬層（lineLength 飛行距離、lineWidth 刀寬、bodyLength 刀身厚、
+     area.r 半徑、area.grow 每秒擴大量）——這些就是實際判定用的數字，
+     顯示層不得自己挑一組（AI_RULES 8.3）。 */
+
+  /* 半月箭頭弧形的輪廓（局部座標以 +x 為行進方向）：
+     前緣是一條凸向前的弧、後緣是一條較淺的弧，兩端自然收尖。 */
+  function windCrescentPoly(width, body) {
+    var half = Math.max(3, width * 0.5);
+    var depth = Math.max(3, body);
+    var pts = [];
+    var steps = 10;
+    var i, t;
+    for (i = 0; i <= steps; i++) {
+      t = -1 + 2 * i / steps;
+      pts.push(depth * (1 - t * t), half * t);
+    }
+    for (i = steps; i >= 0; i--) {
+      t = -1 + 2 * i / steps;
+      pts.push(depth * 0.26 * (1 - t * t), half * t * 0.9);
+    }
+    return pts;
+  }
+  /* 刀身只畫一次（靜態 Graphics）：飛行途中只搬動節點。
+     逐幀 clear() 重畫是這個渲染器最貴的動作，能不做就不做。 */
+  function drawWindCrescent(g, width, body, theme, alpha) {
+    var a = (alpha === undefined) ? 1 : alpha;
+    g.poly(windCrescentPoly(width, body))
+      .fill({ color: cssColorToInt(theme.c1, 0x86efac), alpha: 0.85 * a });
+    g.poly(windCrescentPoly(width * 0.7, body * 0.72))
+      .fill({ color: cssColorToInt(theme.c2, 0xffffff), alpha: 0.9 * a });
+    g.poly(windCrescentPoly(width, body))
+      .stroke({ color: cssColorToInt(theme.c2, 0xffffff), width: 2, alpha: 0.85 * a });
+  }
+
+  /* 風刃：沿模擬層的方位直線飛出。路徑上可能一個敵人都沒有（四方向齊射），
+     因此方位取事件帶來的 angle，不從 targets 反推。 */
+  function spawnWindBlade(spec, targets, baseDelay) {
+    var length = Math.max(40, Number(spec.lineLength) || 240);
+    var width = Math.max(8, Number(spec.lineWidth) || 40);
+    var body = Math.max(5, Number(spec.bodyLength) || width * 0.4);
+    var flight = Math.max(120, Number(spec.travelMs && spec.travelMs[0]) || 700);
+    setTimeout(function () {
+      if (fxGate(spec)) return;
+      var theme = themeOf(spec);
+      var from = playerMuzzle();
+      var angle = isFinite(spec.angle) ? Number(spec.angle)
+        : (targets && targets.length
+          ? (function () { var p = posOf(targets[0]); return Math.atan2(p.y - from.y, p.x - from.x); })()
+          : ((S.player && S.player.facing < 0) ? Math.PI : 0));
+      var node = new PIXI.Container();
+      var g = new PIXI.Graphics();
+      node.addChild(g);
+      drawWindCrescent(g, width, body, theme, 1);
+      node.x = from.x; node.y = from.y; node.rotation = angle;
+      S.layers.fx.addChild(node);
+      var t = 0, dur = flight / 1000, trail = 0;
+      addFx({
+        node: node,
+        update: function (dt) {
+          t += dt;
+          var k = Math.min(1, t / dur);
+          node.x = from.x + Math.cos(angle) * length * k;
+          node.y = from.y + Math.sin(angle) * length * k;
+          node.alpha = k > 0.88 ? Math.max(0, (1 - k) / 0.12) : 1;
+          trail += dt;
+          if (trail > 0.06 && !REDUCED_MOTION) { trail = 0; spawnTrailDot(node.x, node.y, theme); }
+          return k < 1;
+        }
+      }, 1, flight + 400);
+      /* 命中反饋依「目標在路徑上的投影距離」排時間，才會是刀鋒掃過去才亮，
+         而不是整條路徑同時亮（比照貫穿冰箭）。 */
+      var cos = Math.cos(angle), sin = Math.sin(angle);
+      (targets || []).forEach(function (id) {
+        var pt = posOf(id);
+        var along = (pt.x - from.x) * cos + (pt.y - from.y) * sin;
+        var at = Math.round(flight * Math.max(0, Math.min(1, along / length)));
+        setTimeout(function () {
+          if (fxGate(spec)) return;
+          spawnImpact(pt.x, pt.y, spec, false);
+          hitReact(id, spec.elem, false);
+        }, at);
+      });
+    }, Math.max(0, baseDelay || 0));
+  }
+
+  /* 狂風碎裂的沿途脈衝：以模擬層的圓心與半徑畫一圈擴散的氣浪。 */
+  function spawnWindBurst(spec) {
+    var a = spec && spec.area;
+    if (!a || !isFinite(a.x) || !isFinite(a.y)) return;
+    var r = Math.max(12, Number(a.r) || 40);
+    var theme = themeOf(spec);
+    var node = new PIXI.Graphics();
+    node.x = a.x; node.y = a.y - 10;
+    S.layers.fx.addChild(node);
+    var t = 0, dur = 0.34;
+    addFx({
+      node: node,
+      update: function (dt) {
+        t += dt;
+        var k = Math.min(1, t / dur);
+        node.clear();
+        node.ellipse(0, 0, r * (0.45 + k * 0.6), r * (0.45 + k * 0.6) * 0.6)
+          .stroke({ color: cssColorToInt(theme.c1, 0x86efac), width: 3, alpha: (1 - k) * 0.9 });
+        node.ellipse(0, 0, r * (0.2 + k * 0.5), r * (0.2 + k * 0.5) * 0.6)
+          .stroke({ color: cssColorToInt(theme.c2, 0xffffff), width: 1.5, alpha: (1 - k) * 0.7 });
+        return k < 1;
+      }
+    }, 1, dur * 1000 + 200);
+  }
+
+  /* 真空斬：自身前方揮出的半月弧（不飛行，原地張開後淡出）。 */
+  function spawnWindSlash(spec, targets, baseDelay) {
+    var radius = Math.max(24, Number(spec.lineLength) || 60);
+    setTimeout(function () {
+      if (fxGate(spec)) return;
+      var theme = themeOf(spec);
+      var from = playerMuzzle();
+      var angle = (targets && targets.length)
+        ? (function () { var p = posOf(targets[0]); return Math.atan2(p.y - from.y, p.x - from.x); })()
+        : ((S.player && S.player.facing < 0) ? Math.PI : 0);
+      var node = new PIXI.Graphics();
+      node.x = from.x; node.y = from.y; node.rotation = angle;
+      S.layers.fx.addChild(node);
+      var t = 0, dur = 0.32;
+      addFx({
+        node: node,
+        update: function (dt) {
+          t += dt;
+          var k = Math.min(1, t / dur);
+          var reach = radius * (0.55 + k * 0.45);
+          node.clear();
+          drawWindCrescent(node, reach * 1.25, reach * 0.55, theme, 1 - k * 0.85);
+          return k < 1;
+        }
+      }, 1, dur * 1000 + 200);
+      (targets || []).forEach(function (id, ti) {
+        setTimeout(function () {
+          if (fxGate(spec)) return;
+          var pt = posOf(id);
+          spawnImpact(pt.x, pt.y, spec, false);
+          hitReact(id, spec.elem, false);
+        }, 60 + ti * 30);
+      });
+    }, Math.max(0, baseDelay || 0));
+  }
+
+  /* 迴旋斬：圍繞周身的一整圈（設計文檔：風刃變為一圍繞周身的一整圈的特效）。
+     半徑就是模擬層這一圈的實際判定半徑。 */
+  function spawnWindSpin(spec, baseDelay) {
+    var a = spec && spec.area;
+    var radius = Math.max(24, (a && Number(a.r)) || Number(spec.lineLength) || 60);
+    setTimeout(function () {
+      if (fxGate(spec)) return;
+      var theme = themeOf(spec);
+      var node = new PIXI.Graphics();
+      S.layers.fx.addChild(node);
+      var c1 = cssColorToInt(theme.c1, 0x86efac);
+      var c2 = cssColorToInt(theme.c2, 0xffffff);
+      var t = 0, dur = 0.42;
+      addFx({
+        node: node,
+        update: function (dt) {
+          t += dt;
+          var k = Math.min(1, t / dur);
+          var p = playerPos();
+          node.x = p.x; node.y = p.y - 12;
+          var r = radius * (0.5 + k * 0.5);
+          var fade = 1 - k;
+          node.clear();
+          node.ellipse(0, 0, r, r * 0.62).stroke({ color: c1, width: 4, alpha: 0.75 * fade });
+          node.ellipse(0, 0, r * 0.88, r * 0.55).stroke({ color: c2, width: 2, alpha: 0.6 * fade });
+          // 圈上的四道刃影，隨著圈一起轉
+          for (var i = 0; i < 4; i++) {
+            var ang = k * Math.PI * 2 + i * Math.PI / 2;
+            var bx = Math.cos(ang) * r, by = Math.sin(ang) * r * 0.62;
+            node.ellipse(bx, by, r * 0.16, r * 0.07).fill({ color: c2, alpha: 0.7 * fade });
+          }
+          return k < 1;
+        }
+      }, 1, dur * 1000 + 200);
+    }, Math.max(0, baseDelay || 0));
+  }
+
+  /* 虛空斬：以自身為圓心繞行的鋸齒圓盤，半徑逐秒擴大（area.grow＝每秒擴大的像素）。
+     與火狩共用「同一道只保留一個節點」的合併規則。 */
+  var _voidDiscs = Object.create(null);
+  function spawnVoidDisc(spec) {
+    var a = spec && spec.area;
+    if (!a || !isFinite(a.r)) return;
+    var ccw = Number(a.spin) < 0;
+    var key = 'void:' + (ccw ? 'ccw' : 'cw');
+    var dur = Math.min(FX_ORBIT_MAX_SEC, Math.max(0.5, spec.dur || 6));
+    var disc = _voidDiscs[key];
+    if (disc && !disc.done) {
+      disc.dur = Math.min(FX_ORBIT_MAX_SEC, Math.max(disc.dur, disc.t + dur));
+      return;
+    }
+    var theme = themeOf(spec);
+    var spinRate = Number(a.spinRate);
+    var spin = isFinite(spinRate) && Math.abs(spinRate) > 1e-6
+      ? spinRate : (ccw ? -1 : 1) * Math.PI * 2;
+    var grow = Math.max(0, Number(a.grow) || 0);
+    var bodyR = Math.max(6, Number(a.orbR) || 24);
+    var node = new PIXI.Graphics();
+    S.layers.fx.addChild(node);
+    disc = { t: 0, dur: dur, r: Math.max(8, Number(a.r) || 60), done: false };
+    _voidDiscs[key] = disc;
+    var c1 = cssColorToInt(theme.c1, 0x86efac);
+    var c2 = cssColorToInt(theme.c2, 0xffffff);
+    addFx({
+      node: node,
+      update: function (dt) {
+        disc.t += dt;
+        disc.r += grow * dt;                 // 與模擬層同一個成長速度（平滑，不是每秒跳一次）
+        var p = playerPos();
+        node.x = p.x; node.y = p.y - 12;
+        var fade = disc.t > disc.dur - 0.4 ? Math.max(0, (disc.dur - disc.t) / 0.4) : 1;
+        var ang = spin * disc.t;
+        var cx = Math.cos(ang) * disc.r, cy = Math.sin(ang) * disc.r * 0.62;
+        node.clear();
+        node.ellipse(0, 0, disc.r, disc.r * 0.62)
+          .stroke({ color: c1, width: 1.5, alpha: 0.16 * fade });
+        // 鋸齒圓盤：外圈鋸齒 + 內圈白光
+        var teeth = 12;
+        var poly = [];
+        for (var i = 0; i < teeth * 2; i++) {
+          var ta = ang * 3 + Math.PI * i / teeth;
+          var rr = bodyR * (i % 2 === 0 ? 1 : 0.68);
+          poly.push(cx + Math.cos(ta) * rr, cy + Math.sin(ta) * rr * 0.85);
+        }
+        node.poly(poly).fill({ color: c1, alpha: 0.8 * fade })
+          .stroke({ color: c2, width: 2, alpha: 0.9 * fade });
+        node.circle(cx, cy, bodyR * 0.42).fill({ color: c2, alpha: 0.85 * fade });
+        if (disc.t >= disc.dur) {
+          disc.done = true;
+          if (_voidDiscs[key] === disc) delete _voidDiscs[key];
+        }
+        return disc.t < disc.dur;
+      }
+    }, 2, (FX_ORBIT_MAX_SEC + 1) * 1000);
+  }
+
+  /* 暴風屏障／暴風神體／暴風撕裂：纏在自身的風殼。
+     屏障是常駐的旋風殼、神體再加一層金色風暴、撕裂是每一拍向外掃出的氣刃。 */
+  var _stormShells = Object.create(null);
+  function spawnStormShell(spec) {
+    var variant = spec.variant || 'storm-barrier';
+    var dur = Math.min(FX_ORBIT_MAX_SEC, Math.max(0.3, spec.dur || 4));
+    var shell = _stormShells[variant];
+    if (shell && !shell.done) {
+      shell.dur = Math.min(FX_ORBIT_MAX_SEC, Math.max(shell.dur, shell.t + dur));
+      return;
+    }
+    var theme = themeOf(spec);
+    var god = (variant === 'storm-god');
+    var rip = (variant === 'storm-rip');
+    var node = new PIXI.Graphics();
+    S.layers.fx.addChild(node);
+    shell = { t: 0, dur: dur, done: false };
+    _stormShells[variant] = shell;
+    var c1 = cssColorToInt(theme.c1, 0x86efac);
+    var c2 = cssColorToInt(god ? '#ffe9a3' : theme.c2, 0xffffff);
+    addFx({
+      node: node,
+      update: function (dt) {
+        shell.t += dt;
+        var p = playerPos();
+        node.x = p.x; node.y = p.y - 24;
+        var fade = shell.t > shell.dur - 0.4 ? Math.max(0, (shell.dur - shell.t) / 0.4) : 1;
+        var ph = shell.t * (god ? 7 : 4.2);
+        node.clear();
+        if (rip) {
+          // 撕裂：一圈向外擴張的氣刃（每一拍一次，短促）
+          var k = Math.min(1, shell.t / Math.max(0.1, shell.dur));
+          for (var ri = 0; ri < 6; ri++) {
+            var ra = ph + ri * Math.PI / 3;
+            var rr = 26 + k * 34;
+            node.ellipse(Math.cos(ra) * rr, Math.sin(ra) * rr * 0.62, 9, 3.4)
+              .fill({ color: c2, alpha: 0.7 * (1 - k) });
+          }
+          return shell.t < shell.dur;
+        }
+        // 屏障：三層高度不同的旋風環，繞著角色轉
+        for (var i = 0; i < 3; i++) {
+          var yy = -6 + i * 16;
+          var rx = 30 + Math.sin(ph + i) * 5;
+          node.ellipse(0, yy, rx, 9).stroke({ color: i === 1 ? c2 : c1, width: 2.5, alpha: (god ? 0.9 : 0.6) * fade });
+          var sa = ph * 1.6 + i * 2.1;
+          node.circle(Math.cos(sa) * rx, yy + Math.sin(sa) * 9 * 0.5, god ? 3.6 : 2.6)
+            .fill({ color: c2, alpha: 0.9 * fade });
+        }
+        if (god) {
+          node.ellipse(0, 6, 40, 46).stroke({ color: c2, width: 2, alpha: 0.35 * fade });
+        }
+        if (shell.t >= shell.dur) {
+          shell.done = true;
+          if (_stormShells[variant] === shell) delete _stormShells[variant];
+        }
+        return shell.t < shell.dur;
+      }
+    }, 2, (FX_ORBIT_MAX_SEC + 1) * 1000);
+  }
+
   function spawnIceField(spec) {
     var a = spec && spec.area;
     if (!a || !isFinite(a.x) || !isFinite(a.y)) return null;
@@ -2546,6 +2860,7 @@ var BattleRenderer = (function () {
       return spawnFirePillar(a, spec);
     }
     var isRect = (variant === 'blizzard');
+    var isHoming = (variant === 'ice-arrow-homing' || variant === 'wind-blade-homing');
     var w = isRect ? Math.max(24, Number(a.w) || 120) : Math.max(10, (Number(a.r) || 30) * 2);
     var h = isRect ? Math.max(24, Number(a.h) || 120) : w;
     var key = (a.id || [Math.round(a.x), Math.round(a.y)].join(':')) + ':' + variant;
@@ -2554,7 +2869,7 @@ var BattleRenderer = (function () {
     var current = _iceFieldFx[key];
     if (current && !current.dead && current.node && !current.node.destroyed) {
       current.speed = Number(a.speed) > 0 ? Number(a.speed) : current.speed;
-      if (variant === 'ice-arrow-homing' && isFinite(a.destX) && isFinite(a.destY)) {
+      if (isHoming && isFinite(a.destX) && isFinite(a.destY)) {
         /* 追蹤冰箭不是把每個 tick 的座標當成新起點；保留目前畫面位置，
            讓 update() 依模擬層的速度朝最新目的地逐幀前進。 */
         current.destX = Number(a.destX);
@@ -2598,8 +2913,8 @@ var BattleRenderer = (function () {
             fx.x = follow.x;
             fx.y = follow.y;
           }
-        } else if (fx.variant === 'ice-arrow-homing' && fx.speed > 0 &&
-                   isFinite(fx.destX) && isFinite(fx.destY)) {
+        } else if ((fx.variant === 'ice-arrow-homing' || fx.variant === 'wind-blade-homing') &&
+                   fx.speed > 0 && isFinite(fx.destX) && isFinite(fx.destY)) {
           /* 追蹤冰箭使用速度積分補足模擬 tick 之間的畫面幀，
              並在接近目的地時夾住，避免浮點誤差造成微抖。 */
           var hdx = fx.destX - fx.x, hdy = fx.destY - fx.y;
@@ -3613,6 +3928,10 @@ var BattleRenderer = (function () {
 
     switch (spec.fxKind) {
       case 'projectile':
+        if (spec.variant === 'wind-blade' || spec.variant === 'wind-blade-small') {
+          spawnWindBlade(spec, targets, baseDelay);
+          break;
+        }
         if (spec.variant === 'ice-arrow-pierce') {
           spawnIcearrowPierce(spec, targets,
             spec.travelMs && spec.travelMs[0], baseDelay, stagger, count);
@@ -3649,6 +3968,17 @@ var BattleRenderer = (function () {
         });
         break;
       case 'slash':
+        if (spec.variant === 'wind-slash') { spawnWindSlash(spec, targets, baseDelay); break; }
+        if (spec.variant === 'wind-spin') {
+          spawnWindSpin(spec, baseDelay);
+          targets.forEach(function (id, ti) {
+            setTimeout(function () {
+              if (fxGate(spec)) return;
+              hitReact(id, spec.elem, false);
+            }, baseDelay + 90 + ti * 24);
+          });
+          break;
+        }
         if (spec.variant === 'thrust-pierce' || spec.variant === 'thrust-parallel' ||
             spec.variant === 'thrust-octagonal' || spec.variant === 'thrust') {
           if (!targets.length) break;
@@ -3858,7 +4188,10 @@ var BattleRenderer = (function () {
         else if (spec.variant === 'firewall') spawnFireWall(spec);
         else if (spec.variant === 'mire' || spec.variant === 'mire-lava' || spec.variant === 'mire-poison' || spec.variant === 'mire-lava-poison') spawnMirePool(spec);
         else if (spec.variant === 'blizzard' || spec.variant === 'water-tornado' ||
-                 spec.variant === 'ice-arrow-homing') spawnIceField(spec);
+                 spec.variant === 'ice-arrow-homing' || spec.variant === 'wind-blade-homing') spawnIceField(spec);
+        else if (spec.variant === 'void-disc') spawnVoidDisc(spec);
+        else if (spec.variant === 'storm-barrier' || spec.variant === 'storm-god' ||
+                 spec.variant === 'storm-rip') spawnStormShell(spec);
         else if (spec.variant === 'cyclone') spawnCyclone(rect, spec);
         else if (spec.variant === 'bladestorm') spawnBladestorm(rect, spec);
         else spawnAura(rect, spec);
@@ -3874,6 +4207,12 @@ var BattleRenderer = (function () {
         break;
       case 'impact':
       default:
+        if (spec.variant === 'wind-burst') {
+          /* 狂風碎裂的沿途脈衝：圓心由模擬層帶來，範圍內沒有敵人時照樣要看得到氣浪。 */
+          spawnWindBurst(spec);
+          targets.forEach(function (id) { hitReact(id, spec.elem || 'wind', false); });
+          break;
+        }
         if (spec.variant === 'pillar') {
           /* 地板場域（火龍捲）以 area 為唯一錨點；targets 只負責受擊反饋，
              不可再把火焰畫到每個敵人身上。高塔無座標時才用目標點退化。 */

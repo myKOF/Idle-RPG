@@ -107,7 +107,8 @@ test('combat.js 敵人命中率帶入攻擊組態，不再寫死 100', () => {
   /* 攻擊組態改用敵人自身命中率；沒有 hit 欄位時退回預設值。
      那個預設值原本是寫死的 100，套用參數表靠 numCtx 夾住數字改寫；
      已改為 data.js 的具名常數 MONSTER_DEFAULT_HIT，錨點綁變數名。 */
-  assert.match(combat, /hit:\s*m\.hit\s*\|\|\s*MONSTER_DEFAULT_HIT/);
+  // 2026-08-18：風切（真空斬 T3）的命中折減乘在這個出口上，因此允許外面再包一層括號
+  assert.match(combat, /hit:\s*\(?m\.hit\s*\|\|\s*MONSTER_DEFAULT_HIT\)?/);
   assert.match(fs.readFileSync(path.join(root, 'js/data.js'), 'utf8'), /var MONSTER_DEFAULT_HIT = 100;/);
   assert.doesNotMatch(combat, /critRate:\s*5,\s*critDmg:\s*150,\s*hit:\s*100,/);
 });

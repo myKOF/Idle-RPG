@@ -827,7 +827,11 @@ function monsterAtkCfg(m, mult) {
         dmgType: m.magic ? 'magic' : 'phys', level: m.level,
         // 敵人爆擊：爆擊率依敵種（普通/菁英/BOSS）、爆傷共用，數值 → formula.js §4 ENEMY_CRIT_*
         critRate: enemyCritRateFor(m), critDmg: ENEMY_CRIT_DMG_PCT,
-        hit: m.hit || MONSTER_DEFAULT_HIT, elemAtk: ea, globalDmgRed: m.globalDmgRed || 0,
+        /* 新版技能【風切】（真空斬 T3／暴風屏障 T3，js/skills2.js）：命中率折減。
+           這裡是全專案「攻擊方命中率」的唯一出口，因此敵人的普攻與技能一體變不準。 */
+        hit: (m.hit || MONSTER_DEFAULT_HIT) *
+            ((typeof skill2WindRendHitFactor === 'function') ? skill2WindRendHitFactor(m) : 1),
+        elemAtk: ea, globalDmgRed: m.globalDmgRed || 0,
         isElite: !!m.elite, isBoss: !!m.isBoss, // 攻擊者敵種：供玩家的敵種傷害抗性選值
         attr: m.attr || null // 攻擊者屬性標籤：供玩家的對屬性敵人抗性選值
     };
