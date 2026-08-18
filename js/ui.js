@@ -105,11 +105,29 @@ var WORKER_RESTART_NOTICE_TIMER = 0;
 
 /* Worker 訊息回呼不可同步建立整批戰鬥視覺 DOM，否則 pointer/keyboard 事件
    只能等整批浮字與特效處理完才有機會執行。視覺事件可延後一個 frame，且
-   超過上限時只丟棄最舊的畫面事件；戰鬥數值仍以 Worker snapshot 為準。 */
+   超過上限時只丟棄最舊的畫面事件；戰鬥數值仍以 Worker snapshot 為準。
+
+   ---- 為什麼配額是「時間」不是「件數」（2026-08-18）----
+
+   原本是每幀固定放行 6 件。那個 6 是 DOM 特效時代訂的：一件事件＝建一批浮字／
+   特效 DOM 節點，6 件就足以吃掉一幀。野外戰鬥改走 Canvas（js/battle-renderer.js）
+   之後，一件事件的成本掉到微秒等級，但配額沒跟著改——用舊成本模型訂的件數，
+   套在新成本上，等於把吞吐量硬鎖在「6 × 每秒幀數」。
+
+   實測（Lv.1000、10 技能全滿、場上 32 隻）：模擬層每秒產出 424～1165 件，
+   放行量永遠精準等於幀數×6（60fps → 360 件），每秒丟掉最多 794 件，佇列長期
+   釘在上限。畫面上的結果就是「技能有施放、但看不到特效」，而敵人攻擊特效只佔
+   全部流量約 2%，在洪水裡幾乎必定被丟光。血條與死亡看起來正常，是因為那條走
+   5Hz 面板（BattleRenderer.syncBattle），完全不經過這條佇列。
+
+   改成時間預算之後，成本高的路徑（高塔 DOM 浮字）自己會用完預算而收斂，成本低
+   的路徑（Canvas）一幀就能把整批排空，兩邊共用同一條規則，不必再各訂一個魔數。
+   FRAME_MAX 只是安全閥，避免極端情況下單幀跑太久。 */
 var UI_WORKER_VISUAL_EVENT_QUEUE = [];
 var UI_WORKER_VISUAL_FLUSH_HANDLE = 0;
-var UI_WORKER_VISUAL_QUEUE_MAX = 160;
-var UI_WORKER_VISUAL_FRAME_BUDGET = 6;
+var UI_WORKER_VISUAL_QUEUE_MAX = 480;
+var UI_WORKER_VISUAL_FRAME_MS = 4;
+var UI_WORKER_VISUAL_FRAME_MAX = 800;
 
 function hasOwnUiState(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key);
@@ -504,8 +522,11 @@ function flushWorkerVisualEvents() {
     return;
   }
 
+  var flushStart = uiNowMs();
   var processed = 0;
-  while (UI_WORKER_VISUAL_EVENT_QUEUE.length && processed < UI_WORKER_VISUAL_FRAME_BUDGET) {
+  while (UI_WORKER_VISUAL_EVENT_QUEUE.length && processed < UI_WORKER_VISUAL_FRAME_MAX) {
+    /* 時間檢查每 16 件做一次：逐件量時鐘在「一幀排掉上千件」時本身就是成本。 */
+    if (processed && (processed & 15) === 0 && uiNowMs() - flushStart >= UI_WORKER_VISUAL_FRAME_MS) break;
     var event = UI_WORKER_VISUAL_EVENT_QUEUE.shift();
     if (!event) continue;
     if (event.kind === 'float') {
@@ -542,6 +563,19 @@ function handleWorkerUiEvents(events) {
     if (event.kind === 'float') {
       if (typeof uiRenderingSuspended === 'function' && uiRenderingSuspended()) {
         rememberBackgroundEnemyFloat(event.elId, event.text, event.cls, event.damageValue);
+        return;
+      }
+      /* 傷害數字關閉時，Canvas 目標的飄字連排隊都不必排（2026-08-18）。
+
+         開關原本只在管線末端檢查（floatText 與 BattleRenderer.onFloat），事件仍然
+         照樣入列、照樣佔用佇列名額與每幀預算，被取出來之後才丟掉。飄字是流量大宗，
+         於是「關掉傷害數字」反而把預算全花在畫不出來的東西上，把真正要看的技能與
+         敵人攻擊特效擠出佇列——回報者的截圖正是這個狀態：數字關閉、特效一個也沒有。
+
+         只擋 Canvas 目標：高塔走的 DOM 路徑在 floatText 裡先做了 animatePendingEnemyKill
+         （敵人死亡動畫）才檢查開關，那個副作用不能跟著被擋掉。 */
+      if (typeof isDamageNumbersEnabled === 'function' && !isDamageNumbersEnabled() &&
+        typeof BattleRenderer !== 'undefined' && BattleRenderer.wantsFloat(event.elId)) {
         return;
       }
       queueWorkerVisualEvent(event);

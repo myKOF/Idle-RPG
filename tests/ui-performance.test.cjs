@@ -108,7 +108,11 @@ test('戰鬥浮字高峰會自動降載，避免每次命中反覆觸發 layout'
   assert.match(ui, /var UI_WORKER_VISUAL_EVENT_QUEUE = \[\];/);
   assert.match(ui, /function queueWorkerVisualEvent\(event\)/);
   assert.match(ui, /function flushWorkerVisualEvents\(\)/);
-  assert.match(ui, /UI_WORKER_VISUAL_FRAME_BUDGET = 6/);
+  /* 視覺事件配額是「每幀時間」不是「每幀件數」：件數配額是 DOM 特效時代的成本模型，
+     Canvas 化之後會把吞吐量硬鎖在 6×fps，怪一多就把技能特效整批丟掉。 */
+  assert.match(ui, /UI_WORKER_VISUAL_FRAME_MS = 4/);
+  assert.match(ui, /UI_WORKER_VISUAL_FRAME_MAX = 800/);
+  assert.doesNotMatch(ui, /UI_WORKER_VISUAL_FRAME_BUDGET/);
   assert.match(ui, /var ENEMY_FLOAT_LAYOUT_ENABLED = false;/);
   assert.match(ui, /var ENEMY_FLOAT_LAYOUT_LOAD_LIMIT = 24/);
   assert.match(ui, /var ENEMY_DAMAGE_FLOAT_AUTO_MERGE_THRESHOLD = 12/);
