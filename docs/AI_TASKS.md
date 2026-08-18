@@ -1,5 +1,25 @@
 # AI_TASKS.md
 
+## Codex｜修正冰系場域逐格移動與冰霜新星形狀｜2026-08-18
+
+- 狀態：已完成
+- Owner：Codex
+- 需求：冰箭追蹤與暴風雪必須逐幀平滑移動；冰霜新星改為圓形範圍，暴風雪維持矩形。
+- 根因：場域 VFX 只以模擬 tick 座標補間，且暴風雪沒有直接綁定畫面中的玩家內插座標；DOM 後備路徑無目標時也無法使用 area 中心。
+- 修改：`js/skills2.js` 傳遞 follow／追蹤目的地與速度；`js/battle-renderer.js` 讓暴風雪逐幀跟隨玩家、冰箭以速度積分追蹤，並繪製 Frost Nova 圓形；`js/vfx.js` 同步 DOM 路徑；`css/style.css` 新增圓形新星外觀；`index.html` 更新版本號；`tests/skill2-vfx.test.cjs` 補上驗證。
+- 驗證：`node --test tests/skill2-vfx.test.cjs tests/skill2-ice.test.cjs tests/projectile-target-prediction.test.cjs`（55/55）、三個修改後 JS 的 `node --check`、`node tools/build_check.cjs`（290/290）與 `git diff --check` 均通過；瀏覽器已重載最新版本並完成 Canvas 畫面與 Console 檢查。
+
+## Codex｜修正寒冰箭貫穿投射物逐格移動｜2026-08-18
+
+- 狀態：已完成
+- Owner：Codex
+- 使用者需求：寒冰箭飛行軌跡不應一格一格前進，需改為平滑移動。
+- 根因：`ice-arrow-pierce` 將貫穿路徑上的每個敵人交給一般單目標投射物渲染，導致同一支箭從玩家位置重複飛向各個格位；貫穿 VFX 也未帶入模擬層的線段飛行時間。
+- 修改範圍：`js/skills2.js`、`js/battle-renderer.js`、`js/vfx.js`、`index.html`、`tests/projectile-target-prediction.test.cjs`、`tests/skill2-vfx.test.cjs`。
+- 完成內容：Canvas 與 DOM 兩條路徑均改為建立單一箭頭，沿 `lineLength` 直線連續插值；路徑上的目標依箭頭通過時間顯示命中反饋；模擬層提供與飛行速度一致的 `travelMs`，並更新腳本版本號避免快取舊程式。
+- 驗證結果：`node --test tests/projectile-target-prediction.test.cjs tests/skill2-ice.test.cjs tests/skill2-vfx.test.cjs`（54/54）；`node --check js/battle-renderer.js`、`node --check js/vfx.js`、`node --check js/skills2.js`；`node tools/build_check.cjs`（290/290）；`git diff --check`；瀏覽器重新載入後 Console Error／Warning 皆為 0。
+- 已知風險：本次只調整顯示層與 VFX 事件時序，不改變貫穿傷害判定與傷害數值。
+
 ## Antigravity｜冰系三大新技能（寒冰箭、水流彈、冰霜新星）實機測試與驗證｜2026-08-18
 
 - 狀態：已完成
