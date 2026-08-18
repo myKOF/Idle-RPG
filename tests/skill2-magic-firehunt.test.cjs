@@ -94,7 +94,7 @@ function turnSec(c, turns) { return turns / baseRps(c); }
 
 /* ---- 1) 環繞場域的基本語意 ---- */
 
-test('火狩不附加寒霜；未裝備冰霜新星時寒冰體不得跨技能觸發', () => {
+test('火狩不附加寒霜；寒冰體未進入窗口不得跨技能觸發', () => {
   const c = loadContext();
   stubHits(c);
   c.chance = () => true;
@@ -114,7 +114,7 @@ test('火狩不附加寒霜；未裝備冰霜新星時寒冰體不得跨技能�
 
   c.G.player.loadout = ['sg:frostnova'];
   c.skills2OnPlayerDamaged(m, p, 10, false, { miss: false }, 'mv-float');
-  assert.ok(c.sgFrostStacks(m) > 0, '裝備冰霜新星後寒冰體才可附加寒霜');
+  assert.equal(c.sgFrostStacks(m), 0, '未施放冰霜新星時寒冰體不得觸發');
 });
 
 test('火狩：基礎旋轉速度降低 30%', () => {

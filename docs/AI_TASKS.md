@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## Codex｜將寒冰體改為 6 秒狀態窗口｜2026-08-18
+
+- 狀態：已完成
+- Owner：Codex
+- 需求：冰霜新星施放後 6 秒內，攻擊玩家的敵人有 25% 機率被附加寒霜。
+- 實作：新增 `sgFrostbody` 玩家增益狀態；冰霜新星 T3 施放時授予狀態，受擊鉤子只在狀態有效期間判定。
+- 修改範圍：`config/CSV/Status.csv`、`config/CSV/Skills2.csv`、`config/Excel/Status.xlsx`、`config/Excel/Skills2.xlsx`、
+  `js/status.js`、`js/skills2.js`、冰系／火狩測試與本文件。
+- 驗證：`node --test tests/skill2-ice.test.cjs tests/skill2-magic-firehunt.test.cjs` 50/51 通過；新增寒冰體案例通過，
+  唯一失敗為既有的暴風雪 20×20 範圍斷言；`node --check`、`node tools/build_check.cjs` 291/291、
+  `config_tables --apply Status`／`Skills2` 語意變更 0、`git diff --check` 均通過。
+- 已知風險：暴風雪目前參數表為 24×24，既有測試仍斷言 20×20，未於本任務中調整。
+
 ## Codex｜修正火狩誤觸發寒霜｜2026-08-18
 
 - 狀態：已完成

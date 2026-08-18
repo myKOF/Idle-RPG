@@ -59,14 +59,11 @@ var STATUS = {
   corrode: { name: '侵蝕', icon: '🕳️', kind: 'debuff', effect: 'dot', key: '', elem: 'dark', dmgSource: 'skill', dmg: 25, capStat: '', capMult: 0, val: 0, dur: 4, interval: 1, stack: 'strongest', maxStacks: 1, desc: '暗影侵蝕軀體，每次作用造成暗屬性傷害。' },
   plague: { name: '瘟疫', icon: '🦠', kind: 'debuff', effect: 'dot', key: '', elem: 'poison', dmgSource: 'skill', dmg: 40, capStat: '', capMult: 0, val: 0, dur: 6, interval: 1, stack: 'strongest', maxStacks: 1, desc: '疫病蔓延，每次作用造成毒屬性傷害。' },
   deathCurse: { name: '詛咒', icon: '💀', kind: 'debuff', effect: 'dot', key: '', elem: 'dark', dmgSource: 'maxHp', dmg: 2.4, capStat: 'matk', capMult: 6, val: 0, dur: 5, interval: 1, stack: 'strongest', maxStacks: 1, desc: '每次作用造成目標最大生命一定比例的傷害，總量受施法者魔攻上限限制。' },
-
   stun: { name: '暈眩', icon: '😵', kind: 'ctrl', effect: 'ctrl', key: 'stun', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 1, interval: 0, stack: 'refresh', maxStacks: 1, desc: '無法行動；持續時間受控場遞減與韌性影響。' },
   slow: { name: '減速', icon: '🐌', kind: 'ctrl', effect: 'ctrl', key: 'slow', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 3, interval: 0, stack: 'refresh', maxStacks: 1, desc: '攻擊速度下降；持續時間受控場遞減與韌性影響。' },
   invuln: { name: '無敵結界（免疫一切傷害與負面效果）', icon: '✨', kind: 'buff', effect: 'ctrl', key: 'invuln', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 3, interval: 0, stack: 'refresh', maxStacks: 1, desc: '免疫一切傷害與負面狀態。' },
-
   regen: { name: '再生', icon: '💚', kind: 'buff', effect: 'hot', key: 'hot', elem: '', dmgSource: 'maxHp', dmg: 2.5, capStat: '', capMult: 0, val: 0, dur: 6, interval: 0, stack: 'strongest', maxStacks: 1, desc: '每秒回復最大生命的一定比例。' },
   shield: { name: '護盾', icon: '🛡️', kind: 'buff', effect: 'shield', key: 'shield', elem: '', dmgSource: 'maxHp', dmg: 18, capStat: '', capMult: 0, val: 0, dur: 15, interval: 0, stack: 'strongest', maxStacks: 1, desc: '吸收傷害的屏障，占施法者最大生命一定比例；被打完或時間到就消失（時間到時未用完的部分一併消失）。' },
-
   atkUp: { name: '攻擊', icon: '⚔️', kind: 'buff', effect: 'stat', key: 'atkUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 15, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '攻擊力提高。' },
   defUp: { name: '防禦', icon: '🛡️', kind: 'buff', effect: 'stat', key: 'defUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 40, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '防禦力提高。' },
   aspdUp: { name: '攻速', icon: '⚡', kind: 'buff', effect: 'stat', key: 'aspdUp', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 25, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '攻擊速度提高。' },
@@ -84,11 +81,9 @@ var STATUS = {
   legendaryDarkUp: { name: '暗影強化', icon: '🌑', kind: 'buff', effect: 'stat', key: 'legendaryDarkUp', elem: 'dark', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '傳奇特效：暗屬性傷害提高。' },
   legendaryGuardRed: { name: '守護減傷', icon: '🛡️', kind: 'buff', effect: 'stat', key: 'legendaryGuardRed', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '傳奇特效：受到的傷害降低。' },
   legendaryLightShieldRed: { name: '聖盾減傷', icon: '🔆', kind: 'buff', effect: 'stat', key: 'legendaryLightShieldRed', elem: 'light', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '傳奇特效：受到的傷害降低。' },
-
   atkDown: { name: '攻擊', icon: '⚔️', kind: 'debuff', effect: 'stat', key: 'atkDown', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 18, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '目標攻擊力下降。' },
   defDown: { name: '防禦', icon: '🛡️', kind: 'debuff', effect: 'stat', key: 'defDown', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '目標防禦力下降（舊存檔融合技快照相容保留，新設計改用穿透提升）。' },
   enemyAspdDown: { name: '時間結界·攻速', icon: '⏳', kind: 'debuff', effect: 'stat', key: 'enemyAspdDown', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0, stack: 'refresh', maxStacks: 1, desc: '潛力【時間結界】：目標攻擊速度下降。' },
-
   sgBleed: { name: '血刃流血', icon: '🩸', kind: 'debuff', effect: 'dot', key: '', elem: '', dmgSource: 'skill', dmg: 30, capStat: '', capMult: 0, val: 0, dur: 5, interval: 1, stack: 'strongest', maxStacks: 1, desc: '新版技能【血刃斬】：每次作用造成技能傷害一定比例的傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。' },
   sgPoison: { name: '血刃劇毒', icon: '☠️', kind: 'debuff', effect: 'dot', key: '', elem: 'poison', dmgSource: 'skill', dmg: 25, capStat: '', capMult: 0, val: 0, dur: 4, interval: 0.5, stack: 'strongest', maxStacks: 1, desc: '新版技能【血毒刃】：毒屬性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。' },
   sgIronBleed: { name: '鐵血裂傷', icon: '🗡️', kind: 'debuff', effect: 'dot', key: '', elem: '', dmgSource: 'maxHp', dmg: 3.5, capStat: '', capMult: 0, val: 0, dur: 3, interval: 0.35, stack: 'refresh', maxStacks: 1, desc: '新版技能【鐵血之舞】：占最大生命比例的流血；自身流血直接扣生命、不吃護盾。' },
@@ -107,15 +102,8 @@ var STATUS = {
   sgMirePoison: { name: '泥沼劇毒', icon: '☠️', kind: 'debuff', effect: 'dot', key: '', elem: 'poison', dmgSource: 'skill', dmg: 25, capStat: '', capMult: 0, val: 0, dur: 1, interval: 0.5, stack: 'refresh', maxStacks: 1, desc: '新版技能【毒沼術】：毒性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫），站在沼澤中才會被重塗。' },
   sgMireLava: { name: '熔岩灼燒', icon: '🌋', kind: 'debuff', effect: 'dot', key: '', elem: 'fire', dmgSource: 'skill', dmg: 70, capStat: '', capMult: 0, val: 0, dur: 1, interval: 0.4, stack: 'refresh', maxStacks: 1, desc: '新版技能【熔岩沼】：火焰持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫），站在岩漿中才會被重塗。' },
   sgThunderOrb: { name: '環體電球', icon: '🔵', kind: 'buff', effect: 'stat', key: 'sgThunderOrb', elem: 'lightning', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【環體電球】：電球環繞自身的剩餘時間（與火狩各自一格，兩者互不覆蓋）。' },
-
-  /* ---- 寒霜狀態（2026-08-17 冰系三群組共用：寒冰箭／水流彈／冰霜新星共同塗抹）----
-     設計文檔把「寒霜狀態」的說明重複寫在三個群組的階裡，實際上是同一個狀態；
-     行為參數（單層緩速、層數上限、凍結秒數、跳動間隔、持續時間）一律以本表為權威，
-     各群組只決定「每跳打多少寒冰傷害、一次疊幾層」。
-     刻意拆成三筆而不是一筆：一筆狀態不能同時是 dot 與 stat，而「疊層只加緩速、
-     傷害不隨層數變強」是使用者 2026-08-17 的決策——若把傷害併進 stack 規則
-     （實際效果＝單層值 × 層數）就會違反該決策。 */
   sgFrost: { name: '寒霜', icon: '❄️', kind: 'debuff', effect: 'stat', key: 'sgFrost', elem: 'ice', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 20, dur: 5, interval: 0, stack: 'stack', maxStacks: 5, desc: '新版技能【寒霜狀態】的層數與緩速：每疊 1 層使移動與攻擊速度各下降（效果值＝單層下降% × 層數），疊滿層數時凍結。比照泥沼緩速為場域型重塗，緩速本身不吃控場遞減與韌性。' },
+  sgFrostbody: { name: '寒冰體', icon: '❄️', kind: 'buff', effect: 'stat', key: 'sgFrostbody', elem: 'ice', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 25, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【冰霜新星】：施放後 6 秒內，攻擊你的敵人有 25% 機率被附加寒霜狀態。' },
   sgFrostBite: { name: '寒霜凍傷', icon: '🧊', kind: 'debuff', effect: 'dot', key: '', elem: 'ice', dmgSource: 'skill', dmg: 50, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0.5, stack: 'strongest', maxStacks: 1, desc: '新版技能【寒霜狀態】的寒冰持續傷害；每跳量占施放群組的本體技能傷害（引擎以 dps 覆寫）。依使用者決策，傷害不隨寒霜層數提高。' },
   sgFrozen: { name: '凍結', icon: '🥶', kind: 'debuff', effect: 'stat', key: 'sgFrozen', elem: 'ice', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 3, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【寒霜狀態】疊滿層數的凍結標記。行動限制本身由「暈眩」承擔（因此完整沿用 BOSS 控場免疫、韌性折減與控場遞減），本狀態只標記「正在凍結中」，供【水龍捲】增傷與【寒冰爆裂箭】判定冰爆時機。' },
   sgIceRevert: { name: '寒冰逆轉', icon: '💧', kind: 'debuff', effect: 'stat', key: 'sgIceRevert', elem: 'ice', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 20, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【寒冰逆轉】：敵人的屬性標籤強制改為寒冰，且受到的寒冰傷害提高（效果值＝提高%）。' }
