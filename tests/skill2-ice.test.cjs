@@ -482,17 +482,32 @@ test('【三重新星】多次施放，每次範圍再擴大', () => {
   assert.ok(Math.abs(radii[1] - radii[0] - c.bfMeterPx(3)) < 1e-6, '每次固定 +3 米');
 });
 
-test('【寒冰體】攻擊你的敵人被附加寒霜', () => {
+test('【寒冰體】冰霜新星施放後 6 秒內，攻擊你的敵人有 25% 機率被附加寒霜', () => {
   const c = loadContext(); stubHits(c); stubVfx(c);
   setLevels(c, 'frostnova', [1, 1, 1, 0, 0, 0, 0]); equip(c, 'frostnova');
   const p = playerEnt(); c.FIELD.player = p;
   const attacker = enemy(1e9, 2 * M, 0);
+  forceRolls(c, 0);
+  c.skills2OnPlayerDamaged(attacker, p, 10, false, { miss: false }, 'mv-float');
+  assert.equal(c.sgFrostStacks(attacker), 0, '未施放冰霜新星前不附加寒霜');
+
+  const novaTarget = enemy(1e9, 3 * M, 0);
+  c.castSkill2(p, [novaTarget], 'frostnova', 'mv-float');
+  assert.ok(c.statusActive(p, 'sgFrostbody'), '施放後玩家應取得寒冰體狀態');
+  assert.equal(c.buffVal(p, 'sgFrostbody'), 25, '寒冰體狀態的機率為 25%');
+  assert.ok(Math.abs((p.buffs.sgFrostbody.until - c.GT) - 6) < 1e-9, '寒冰體狀態持續 6 秒');
+
   forceRolls(c, 0.999);
   c.skills2OnPlayerDamaged(attacker, p, 10, false, { miss: false }, 'mv-float');
   assert.equal(c.sgFrostStacks(attacker), 0, '機率不成立時不附加');
   forceRolls(c, 0);
   c.skills2OnPlayerDamaged(attacker, p, 10, false, { miss: false }, 'mv-float');
   assert.ok(c.sgFrostStacks(attacker) > 0, '機率成立 → 附加寒霜');
+
+  c.GT = 6;
+  const expiredAttacker = enemy(1e9, 2 * M, 0);
+  c.skills2OnPlayerDamaged(expiredAttacker, p, 10, false, { miss: false }, 'mv-float');
+  assert.equal(c.sgFrostStacks(expiredAttacker), 0, '寒冰體狀態到期後不再附加寒霜');
 });
 
 test('【死亡新星】帶寒霜的敵人死亡時機率再釋放一次新星', () => {

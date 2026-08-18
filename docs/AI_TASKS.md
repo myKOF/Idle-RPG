@@ -1,5 +1,32 @@
 # AI_TASKS.md
 
+## Codex｜將寒冰體改為 6 秒狀態窗口｜2026-08-18
+
+- 狀態：已完成
+- Owner：Codex
+- 需求：冰霜新星施放後 6 秒內，攻擊玩家的敵人有 25% 機率被附加寒霜。
+- 實作：新增 `sgFrostbody` 玩家增益狀態；冰霜新星 T3 施放時授予狀態，受擊鉤子只在狀態有效期間判定。
+- 修改範圍：`config/CSV/Status.csv`、`config/CSV/Skills2.csv`、`config/Excel/Status.xlsx`、`config/Excel/Skills2.xlsx`、
+  `js/status.js`、`js/skills2.js`、冰系／火狩測試與本文件。
+- 驗證：`node --test tests/skill2-ice.test.cjs tests/skill2-magic-firehunt.test.cjs` 50/51 通過；新增寒冰體案例通過，
+  唯一失敗為既有的暴風雪 20×20 範圍斷言；`node --check`、`node tools/build_check.cjs` 291/291、
+  `config_tables --apply Status`／`Skills2` 語意變更 0、`git diff --check` 均通過。
+- 已知風險：暴風雪目前參數表為 24×24，既有測試仍斷言 20×20，未於本任務中調整。
+
+## Codex｜修正火狩誤觸發寒霜｜2026-08-18
+
+- 狀態：已完成
+- Owner：Codex
+- 問題：裝備火狩時，敵人受擊事件可能附加寒霜；火狩本身沒有寒霜設定。
+- 根因：冰霜新星 T3「寒冰體」只檢查是否學會，未檢查是否裝備，導致受擊反應跨技能生效。
+- 修改：寒冰體改為必須裝備 `frostnova` 才生效；`sgFrostSpec` 增加冰屬性邊界，非冰系不得產生寒霜規格；新增火狩回歸測試。
+- 修改檔案：`js/skills2.js`、`tests/skill2-magic-firehunt.test.cjs`、本文件。
+- 驗證：`node --test tests/skill2-magic-firehunt.test.cjs` 17/17 通過；`node --check js/skills2.js`、
+  `node --check tests/skill2-magic-firehunt.test.cjs` 通過；`node tools/build_check.cjs` 291/291 通過；
+  `git diff --check` 通過。
+- 已知風險：火狩＋冰系合併測試為 50/51，唯一失敗是既有的暴風雪 20×20 範圍斷言，
+  目前參數表為 24×24，與本修正無關。
+
 ## Codex｜修正冰系場域逐格移動與冰霜新星形狀｜2026-08-18
 
 - 狀態：已完成

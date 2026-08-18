@@ -94,6 +94,29 @@ function turnSec(c, turns) { return turns / baseRps(c); }
 
 /* ---- 1) 環繞場域的基本語意 ---- */
 
+test('火狩不附加寒霜；寒冰體未進入窗口不得跨技能觸發', () => {
+  const c = loadContext();
+  stubHits(c);
+  c.chance = () => true;
+  setLevels(c, 'firehunt', [1, 0, 0, 0, 0, 0, 0]);
+  setLevels(c, 'frostnova', [1, 1, 1, 0, 0, 0, 0]);
+  const p = playerEnt();
+  const m = enemy(1e9, 8 * M, 0);
+  c.FIELD.player = p;
+  c.G.player.loadout = ['sg:firehunt'];
+
+  c.castSkill2(p, [m], 'firehunt', 'mv-float');
+  assert.equal(c.sgFrostStacks(m), 0, '火狩施放後不得有寒霜層數');
+  assert.equal(c.sgFindDot(m, 'sgFrostBite'), null, '火狩施放後不得有寒霜凍傷');
+
+  c.skills2OnPlayerDamaged(m, p, 10, false, { miss: false }, 'mv-float');
+  assert.equal(c.sgFrostStacks(m), 0, '未裝備冰霜新星時寒冰體不得觸發');
+
+  c.G.player.loadout = ['sg:frostnova'];
+  c.skills2OnPlayerDamaged(m, p, 10, false, { miss: false }, 'mv-float');
+  assert.equal(c.sgFrostStacks(m), 0, '未施放冰霜新星時寒冰體不得觸發');
+});
+
 test('火狩：基礎旋轉速度降低 30%', () => {
   const c = loadContext();
   assert.ok(Math.abs(baseRps(c) - 0.65 * 0.7) < 1e-12, '基礎 rps 應為原值的 70%');
