@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Codex｜移除風刃傷害方塊並同步平滑追蹤｜2026-08-18
+
+- 狀態：已完成
+- Owner：Codex
+- 使用者需求：追跡小型風刃不顯示綠色傷害範圍方塊；風刃的傷害位置移動與轉彎須平滑，且和小型風刃特效同步。
+- 規則同步：依使用者要求，將所有飛行物／移動場域的移動、轉彎與範圍變化必須平滑呈現的規則寫入 `AI_RULES.md` §8.3.1。
+- 根因：追跡風刃顯示層仍保留地面場域／棋盤矩形的退化入口，且 Canvas／DOM 的追蹤位置可能依自己的速度路徑追向未更新目標，未直接以模擬層的 `area.x/y` 快照補間。
+- 允許修改：`AI_RULES.md`、`js/battle-renderer.js`、`js/vfx.js`、`css/style.css`、`index.html`、`tests/skill2-vfx.test.cjs`、本文件。
+- 禁止修改：風刃傷害數值、命中與目標選擇、追蹤速度／範圍／命中間隔、技能資料、存檔格式、Worker Protocol、其他技能的 VFX 或傷害判定。
+- 驗證要求：追跡風刃不得建立範圍方塊／矩形畫法；Canvas／DOM 以模擬 `area.x/y` 連續補間並同步轉向；大型直線風刃保持原行為；執行風系／VFX 定向測試、語法檢查、建置、快取版號與 `git diff --check`。
+- 完成結果：Canvas 追跡風刃改以模擬 `area.x/y` 在快照間補間，DOM 路徑停用 `vfxFieldMotionHome` 的獨立追擊並同樣補間權威位置；兩條路徑都跳過棋盤格矩形，僅保留小型半月風刃與同步轉向。新增專案級平滑運動規則至 `AI_RULES.md` §8.3.1。
+- 驗證結果：`tests/skill2-vfx.test.cjs` 23/23、`tests/skill2-wind.test.cjs` 28/28、`node tools/build_check.cjs` 294/294、語法檢查、快取版號檢查、`git diff --check` 均通過。
+- 後續接手者：使用者／主整合工作區。
+
 ## Codex｜修正追跡小型風刃誤顯示為藍色球｜2026-08-18
 
 - 狀態：已完成

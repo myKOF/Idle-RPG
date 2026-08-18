@@ -2911,7 +2911,15 @@ var BattleRenderer = (function () {
     var current = _iceFieldFx[key];
     if (current && !current.dead && current.node && !current.node.destroyed) {
       current.speed = Number(a.speed) > 0 ? Number(a.speed) : current.speed;
-      if (isHoming && isFinite(a.destX) && isFinite(a.destY)) {
+      if (variant === 'wind-blade-homing') {
+        /* 追跡風刃的傷害位置由模擬層 area.x/y 定義；畫面只在兩個權威快照
+           之間補間，不能另走一條追向未更新 dest 的獨立路徑。 */
+        fieldVfxSetPositionTarget(current, Number(a.x), Number(a.y), motionSec);
+        if (isFinite(a.destX) && isFinite(a.destY)) {
+          current.destX = Number(a.destX);
+          current.destY = Number(a.destY);
+        }
+      } else if (isHoming && isFinite(a.destX) && isFinite(a.destY)) {
         /* 追蹤冰箭不是把每個 tick 的座標當成新起點；保留目前畫面位置，
            讓 update() 依模擬層的速度朝最新目的地逐幀前進。 */
         current.destX = Number(a.destX);
@@ -2956,7 +2964,10 @@ var BattleRenderer = (function () {
             fx.x = follow.x;
             fx.y = follow.y;
           }
-        } else if ((fx.variant === 'ice-arrow-homing' || fx.variant === 'wind-blade-homing') &&
+        } else if (fx.variant === 'wind-blade-homing') {
+          /* 傷害場域和風刃特效共用模擬層的目前位置；只補間快照，不自行追目標。 */
+          fieldVfxStep(fx, dt);
+        } else if (fx.variant === 'ice-arrow-homing' &&
                    fx.speed > 0 && isFinite(fx.destX) && isFinite(fx.destY)) {
           /* 追蹤冰箭使用速度積分補足模擬 tick 之間的畫面幀，
              並在接近目的地時夾住，避免浮點誤差造成微抖。 */
@@ -3018,10 +3029,11 @@ var BattleRenderer = (function () {
           }
         } else if (fx.variant === 'wind-blade-homing') {
           /* 追跡風刃只改變移動方式，不改變外形：小型半月風刃沿目前追蹤方向旋轉。 */
-          if (isFinite(fx.destX) && isFinite(fx.destY)) {
-            var windDx = fx.destX - fx.x, windDy = fx.destY - fx.y;
-            if (Math.abs(windDx) + Math.abs(windDy) > 0.5) node.rotation = Math.atan2(windDy, windDx);
+          var windDx = fx.motionToX - fx.motionFromX, windDy = fx.motionToY - fx.motionFromY;
+          if (Math.abs(windDx) + Math.abs(windDy) <= 0.5 && isFinite(fx.destX) && isFinite(fx.destY)) {
+            windDx = fx.destX - fx.x; windDy = fx.destY - fx.y;
           }
+          if (Math.abs(windDx) + Math.abs(windDy) > 0.5) node.rotation = Math.atan2(windDy, windDx);
           drawWindCrescent(g, Math.max(8, fx.w), Math.max(5, fx.w * 0.38),
             themeOf({ elem: 'wind' }), fade);
         } else {

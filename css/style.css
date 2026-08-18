@@ -8412,6 +8412,9 @@ textarea:disabled,
   position: absolute;
   pointer-events: none;
   overflow: visible;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
 .vfx-wind-homing-blade {

@@ -1636,7 +1636,7 @@ function vfxIceField(spec, layer, area, rect) {
     vfxFieldMotionSet(node, x, y, w, h, vfxFieldMotionSec(spec, 0.4));
     if (variant === 'blizzard') {
       vfxFieldMotionFollowPlayer(node, layer);
-    } else if ((variant === 'ice-arrow-homing' || variant === 'wind-blade-homing') &&
+    } else if (variant === 'ice-arrow-homing' &&
                area && area.speed > 0 && isFinite(area.destX) && isFinite(area.destY)) {
       vfxFieldMotionHome(node, area.speed, area.destX, area.destY);
     }
@@ -1652,7 +1652,7 @@ function vfxIceField(spec, layer, area, rect) {
   vfxFieldMotionSet(node, x, y, w, h, 0);
   if (variant === 'blizzard') {
     vfxFieldMotionFollowPlayer(node, layer);
-  } else if ((variant === 'ice-arrow-homing' || variant === 'wind-blade-homing') &&
+  } else if (variant === 'ice-arrow-homing' &&
              area && area.speed > 0 && isFinite(area.destX) && isFinite(area.destY)) {
     vfxFieldMotionHome(node, area.speed, area.destX, area.destY);
   }
@@ -2268,9 +2268,11 @@ function renderCombatVfx(spec) {
       for (var si = 0; si < sm.pts.length; si++) vfxSmite(s, layer, sm.pts[si], sm.ids[si], baseDelay);
       return;
     }
-    var rect = vfxCellsRect(spec.cells, layer);
     var isIceField = s.variant === 'blizzard' || s.variant === 'water-tornado' ||
       s.variant === 'ice-arrow-homing' || s.variant === 'wind-blade-homing';
+    /* 追跡風刃不是地面範圍提示：不可讀取棋盤格集合建立綠色方塊，
+       只使用模擬層 area.x/y 讓小型風刃本體平滑移動。 */
+    var rect = s.variant === 'wind-blade-homing' ? null : vfxCellsRect(spec.cells, layer);
     /* 地板場域的 area 是世界座標中心；DOM 後備路徑沒有棋盤格時，
        直接用它建立矩形包絡，不能退化成第一個受擊敵人的位置。 */
     if (!rect && isIceField && spec.area && isFinite(spec.area.x) && isFinite(spec.area.y)) {

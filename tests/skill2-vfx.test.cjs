@@ -628,6 +628,8 @@ test('風系特效：風刃／真空斬／迴旋斬／虛空斬／暴風屏障�
   assert.match(renderer, /variant === 'ice-arrow-homing' \|\| variant === 'wind-blade-homing'/);
   const windFieldCanvas = renderer.slice(renderer.indexOf('function spawnIceField'), renderer.indexOf('function spawnRiser', renderer.indexOf('function spawnIceField')));
   assert.match(windFieldCanvas, /fx\.variant === 'wind-blade-homing'[\s\S]*?drawWindCrescent\(g,/);
+  assert.match(windFieldCanvas, /variant === 'wind-blade-homing'[\s\S]*?fieldVfxSetPositionTarget\(current,/);
+  assert.match(windFieldCanvas, /fx\.variant === 'wind-blade-homing'[\s\S]*?fieldVfxStep\(fx, dt\)/);
   assert.match(windFieldCanvas, /fx\.variant !== 'wind-blade-homing'/);
 
   // DOM：大型風刃沿用直線飛行；追跡風刃沿用移動場域但只建立小型風刃
@@ -637,6 +639,8 @@ test('風系特效：風刃／真空斬／迴旋斬／虛空斬／暴風屏障�
   const windFieldDom = vfx.slice(vfx.indexOf('function vfxIceField'), vfx.indexOf('/* 預設天降', vfx.indexOf('function vfxIceField')));
   assert.match(windFieldDom, /variant === 'wind-blade-homing'[\s\S]*?vfx-wind-homing-blade/);
   assert.match(windFieldDom, /variant === 'wind-blade-homing'[\s\S]*?不再建立冰晶尖刺或藍色球體/);
+  assert.doesNotMatch(windFieldDom, /variant === 'wind-blade-homing'[\s\S]{0,260}vfxFieldMotionHome/);
+  assert.match(vfx, /s\.variant === 'wind-blade-homing' \? null : vfxCellsRect\(spec\.cells, layer\)/);
   assert.match(vfx, /function vfxVoidDisc\(spec, layer, rect\)/);
   assert.match(vfx, /s\.variant === 'void-disc'\) vfxVoidDisc\(s, layer, rect\)/);
   assert.match(vfx, /var startAng = Number\(area\.startAng\)/);
@@ -650,6 +654,7 @@ test('風系特效：風刃／真空斬／迴旋斬／虛空斬／暴風屏障�
   assert.match(css, /\.vfx-aura-wind \.vfx-aura-p/);
   assert.match(css, /\.vfx-wind-homing \{/);
   assert.match(css, /\.vfx-wind-homing-blade\s*\{[\s\S]*?clip-path: path/);
+  assert.match(css, /\.vfx-wind-homing\s*\{[\s\S]*?background: transparent[\s\S]*?border: 0[\s\S]*?box-shadow: none/);
   assert.doesNotMatch(css, /\.vfx-wind-homing \.vfx-ice-shard/);
   assert.match(css, /\.vfx-void-disc \{/);
   assert.match(css, /vfxVoidDiscBlade/);
