@@ -3687,6 +3687,47 @@ Commit：
 
 ---
 
+## 任務：修正落雷無目標時仍向地面發射
+
+任務編號：Codex-20260818-lightning-target
+
+任務狀態：已完成（2026-08-18）
+
+任務分類：戰鬥 VFX／目標生命週期
+
+負責 AI：Codex
+
+使用者需求：落雷偶爾沒有有效敵方目標，卻仍在玩家附近向地面發射；修正為只有解析到有效目標時才建立落雷，避免以預設座標誤播。
+
+允許修改：
+
+- `js/battle-renderer.js`
+- `tests/lightning-vfx-lifecycle.test.cjs`
+- `index.html`
+- `docs/AI_TASKS.md`
+
+禁止修改：技能數值與目標選擇規則、Worker Protocol、存檔格式、DOM 落雷畫法、無關 UI／VFX。
+
+前置依賴：既有落雷／雷殞的延遲目標守門已存在；本任務只收緊 Canvas 顯示層對缺失目標的處理。
+
+驗收方式：缺失或已離場的落雷目標不得通過 Canvas 目標守門，也不得退回玩家前方預設座標；一般普攻的尚未建立目標相容行為維持不變；定向測試與完整測試通過。
+
+完成條件：完成程式與回歸測試、同步 `index.html` 快取版號、更新驗證結果與已知風險，建立 `[Codex]` commit。
+
+驗證結果：`tests/lightning-vfx-lifecycle.test.cjs`、`tests/ui-worker-events.test.cjs`、
+`tests/skill2-lightning.test.cjs` 共 44 項全通過；`node tools/build_check.cjs` 294/294 通過；
+完整 `npm test` 共 1607 項、1602 通過、5 項失敗，失敗均為既有的 `counter/bloodrage`、
+泥沼範圍、暴風雪範圍與技能系統參數漂移，未涉及本任務檔案邏輯。
+
+已知風險：本次未修改技能數值與目標選擇；若目標尚未建立 Canvas 實體，落雷會被取消而不等待補播，
+這是避免誤劈地面的安全取捨。實機畫面仍建議在混合技能與目標快速死亡情境下目視確認。
+
+未完成項目：無。
+
+完成後交給：使用者／主整合工作區。
+
+---
+
 ## [Codex] 虛空斬持續特效與技能時間同步
 
 任務狀態：Completed

@@ -154,20 +154,21 @@ var BattleRenderer = (function () {
     if (id === 'pv-float') return !!(S.player && !S.player.dead);
     var ent = S.entities[id];
     if (!ent) {
-      /* 尚未建立的目標允許事件繼續；有 lastPos 代表它已經離場。 */
-      return !S.lastPos[id];
+      /* 落雷不能用 posOf() 的預設座標代替缺失目標；沒有實體就沒有可劈的點。 */
+      return false;
     }
     return ent.state !== 'dying' && ent.state !== 'gone';
   }
   function vfxTargetsLive(spec) {
     var ids = spec && Array.isArray(spec.targets) ? spec.targets : [];
-    if (!ids.length) return true;
+    /* 落雷／雷殞是嚴格綁定目標的特效；空清單不可退化成地面落點。 */
+    if (!ids.length) return !isTargetBoundThunderVfx(spec);
     for (var i = 0; i < ids.length; i++) {
       var id = ids[i];
       if (spec && (spec.variant === 'thunder-strike' || spec.variant === 'thunder-fall')) {
         if (id === 'pv-float' && (!S.player || S.player.dead)) return false;
         var thunderEnt = S.entities[id];
-        if (!thunderEnt && S.lastPos[id]) return false;
+        if (!thunderEnt) return false;
         if (thunderEnt && (thunderEnt.state === 'dying' || thunderEnt.state === 'gone')) return false;
       }
       if (id === 'pv-float') {
@@ -2054,6 +2055,8 @@ var BattleRenderer = (function () {
   }
 
   function spawnBolt(fromPtOrId, targetPtOrId, spec, delaySec, isMega, isPurple) {
+    if (typeof targetPtOrId === 'string' && isTargetBoundThunderVfx(spec) &&
+        !vfxTargetLiveForSpec(spec, targetPtOrId)) return;
     var theme = themeOf(spec);
     var g = new PIXI.Graphics();
     S.layers.fx.addChild(g);
@@ -4206,7 +4209,6 @@ var BattleRenderer = (function () {
           targets.forEach(function (id, ti) {
             spawnThunderFall(spec, id, (baseDelay + ti * stagger) / 1000);
           });
-          if (!targets.length) spawnThunderFall(spec, null, baseDelay / 1000);
           break;
         }
         spawnRain(rect, spec);
