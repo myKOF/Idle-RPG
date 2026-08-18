@@ -1,5 +1,52 @@
 # AI_TASKS.md
 
+## Codex｜全技能檢查連續移動與傷害範圍同步｜2026-08-18
+
+- 狀態：已完成
+- Owner：Codex
+- 使用者需求：完成風刃修正後，全面檢查所有技能的特效與實際傷害觸發範圍，確認沒有一格一格移動的不平滑路徑。
+- 審查範圍：新版 `SKILLS2` 23 個技能群組、`js/battlefield.js` 共用移動／範圍幾何、舊版 `SKILL_RT` 週期領域、Canvas `js/battle-renderer.js` 與 DOM `js/vfx.js` 的飛行物／移動場域／環繞場域路徑。
+- 根因與修正：模擬層的投射物、移動場域、環繞場域與傷害幾何皆已使用連續座標；發現追蹤冰箭的 Canvas／DOM 曾各自沿 `destX/destY + speed` 追擊，現改為只以模擬層 `area.x/y` 快照補間，避免特效與實際判定範圍脫節。
+- 未發現其他逐格路徑：`bfTick*`、`sgGroundMove`、`sgTickFlyingProjectiles`、`sgOrbitStep` 與 `bfSegmentTargets` 均未量化位置；舊版週期領域為固定範圍，不會逐格搬移。
+- 允許修改：`js/battle-renderer.js`、`js/vfx.js`、`js/skills2.js`、`tests/skill2-vfx.test.cjs`、`index.html`、本文件。
+- 禁止修改：技能數值、傷害公式、命中／目標選擇、追蹤速度／範圍／命中間隔、存檔格式、Worker Protocol、其他技能的傷害行為。
+- 驗證要求：全技能連續座標回歸測試、冰／風／VFX 定向測試、語法檢查、建置、快取版本與 `git diff --check`。
+- 修改檔案：`js/battle-renderer.js`、`js/vfx.js`、`js/skills2.js`（僅同步規則註釋）、`tests/skill2-vfx.test.cjs`、`index.html`、本文件。
+- 未修改但檢查過：`js/battlefield.js`、`js/skills.js`、`css/style.css`、各新版技能傷害／命中測試與 Worker 路徑。
+- 完成結果：追蹤冰箭 Canvas／DOM 均改為只補間模擬層 `area.x/y`，移除獨立 `destX/destY + speed` 追擊；全技能回歸測試新增連續座標、傷害幾何與 VFX 路徑檢查。未發現其他逐格移動或特效／判定範圍脫節路徑。
+- 驗證結果：`tests/skill2-vfx.test.cjs` 24/24、風系測試 61/61；新版技能／投射物／VFX 定向合計 88/89，唯一失敗為既有暴風雪 20×20 測試與目前參數表 24×24 的基準差異；完整 `npm.cmd test` 為 1608 項、1603 通過、5 項既有參數基準失敗；`node --check`、`node tools/build_check.cjs`（294/294）、快取版號檢查與 `git diff --check` 通過。
+- 已知風險：本次未改動傷害與命中結果；完整測試的另外 4 項既有失敗為嗜血狂怒扣魔、泥沼 10×10 範圍／擴大，以及技能欄位合法性，均與本次平滑移動修正無關。
+- 未完成項目：無。
+- 建議下一步：由使用者整合後，以瀏覽器實機確認追蹤冰箭與風刃轉彎時的外觀同步。
+- 是否可以合併：可以。
+- Commit 編號：`1717141`。
+
+## Codex｜移除風刃傷害方塊並同步平滑追蹤｜2026-08-18
+
+- 狀態：已完成
+- Owner：Codex
+- 使用者需求：追跡小型風刃不顯示綠色傷害範圍方塊；風刃的傷害位置移動與轉彎須平滑，且和小型風刃特效同步。
+- 規則同步：依使用者要求，將所有飛行物／移動場域的移動、轉彎與範圍變化必須平滑呈現的規則寫入 `AI_RULES.md` §8.3.1。
+- 根因：追跡風刃顯示層仍保留地面場域／棋盤矩形的退化入口，且 Canvas／DOM 的追蹤位置可能依自己的速度路徑追向未更新目標，未直接以模擬層的 `area.x/y` 快照補間。
+- 允許修改：`AI_RULES.md`、`js/battle-renderer.js`、`js/vfx.js`、`css/style.css`、`index.html`、`tests/skill2-vfx.test.cjs`、本文件。
+- 禁止修改：風刃傷害數值、命中與目標選擇、追蹤速度／範圍／命中間隔、技能資料、存檔格式、Worker Protocol、其他技能的 VFX 或傷害判定。
+- 驗證要求：追跡風刃不得建立範圍方塊／矩形畫法；Canvas／DOM 以模擬 `area.x/y` 連續補間並同步轉向；大型直線風刃保持原行為；執行風系／VFX 定向測試、語法檢查、建置、快取版號與 `git diff --check`。
+- 完成結果：Canvas 追跡風刃改以模擬 `area.x/y` 在快照間補間，DOM 路徑停用 `vfxFieldMotionHome` 的獨立追擊並同樣補間權威位置；兩條路徑都跳過棋盤格矩形，僅保留小型半月風刃與同步轉向。新增專案級平滑運動規則至 `AI_RULES.md` §8.3.1。
+- 驗證結果：`tests/skill2-vfx.test.cjs` 23/23、`tests/skill2-wind.test.cjs` 28/28、`node tools/build_check.cjs` 294/294、語法檢查、快取版號檢查、`git diff --check` 均通過。
+- 後續接手者：使用者／主整合工作區。
+
+## Codex｜修正追跡小型風刃誤顯示為藍色球｜2026-08-18
+
+- 狀態：已完成
+- Owner：Codex
+- 使用者需求：保留大型風刃的直線飛行；第 5 階後的小型風刃改為追蹤敵人的小型風刃特效，不得再顯示藍色球或其他冰系外觀。
+- 根因：`wind-blade-homing` 雖然由模擬層正確建立為追蹤風刃場域，但 Canvas 與 DOM 顯示層沿用冰系場域的圓球／冰晶畫法。
+- 允許修改：`js/battle-renderer.js`、`js/vfx.js`、`css/style.css`、`index.html`、`tests/skill2-vfx.test.cjs`、本文件。
+- 禁止修改：風刃傷害、目標選擇、追蹤速度／範圍／命中間隔、技能資料、存檔格式、Worker Protocol、其他技能的 VFX。
+- 驗證要求：Canvas／DOM 都必須驗證大型風刃仍走 `wind-blade` 直線投射、小型追蹤風刃只走 `wind-blade-homing` 小型風刃畫法；執行定向 VFX 測試、語法檢查、建置檢查、快取版號檢查與 `git diff --check`。
+- 完成結果：Canvas 與 DOM 的 `wind-blade-homing` 均改為單一綠白小型半月風刃，移除藍色圓球、冰晶尖刺與冰系粒子；大型 `wind-blade` 直線投射路徑未變。定向測試 23/23 通過、相關風／雷回歸測試 58/58 通過、建置檢查 294 個檔案通過；完整套件另有 5 個既有技能參數／規格測試失敗，與本次修改檔案無關。
+- 後續接手者：使用者／主整合工作區。
+
 ## Codex｜合併後恢復寒冰體狀態窗口｜2026-08-18
 
 - 狀態：已完成

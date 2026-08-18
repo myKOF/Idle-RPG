@@ -8406,30 +8406,34 @@ textarea:disabled,
   animation: vfxIceHomingPulse 0.55s ease-in-out infinite alternate;
 }
 
-/* 追跡風刃（DOM 後備路徑）：淡綠色的小型旋刃，與冰晶用同一組 shard 元素、
-   只換配色與旋轉節奏，避免為了一個變體再開一整套結構。 */
+/* 追跡風刃（DOM 後備路徑）：只建立一個淡綠色的小型半月風刃，
+   不共用冰晶尖刺或藍色圓球的外觀。 */
 .vfx-wind-homing {
   position: absolute;
   pointer-events: none;
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 45%,
-    rgba(255, 255, 255, 0.95), rgba(134, 239, 172, 0.7) 44%, rgba(74, 222, 128, 0.28) 76%, transparent 94%);
-  box-shadow: 0 0 16px rgba(134, 239, 172, 0.6);
-  animation: vfxWindHomingSpin 0.9s linear infinite;
+  overflow: visible;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
-@keyframes vfxWindHomingSpin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
+.vfx-wind-homing-blade {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 30px;
+  height: 20px;
+  background: linear-gradient(120deg, #ffffff, #86efac 62%);
+  clip-path: path('M 2 10 Q 15 -4 28 10 Q 15 4 2 10 Z');
+  filter: drop-shadow(0 0 6px #86efac);
+  transform: translate(-50%, -50%) rotate(var(--vfx-wind-angle, 0rad)) scale(var(--vfx-wind-blade-scale, 1));
+  transform-origin: center;
+  animation: vfxWindHomingPulse 0.55s ease-in-out infinite alternate;
 }
 
-.vfx-wind-homing .vfx-ice-shard {
-  background: linear-gradient(180deg, transparent, rgba(214, 255, 228, 0.9), transparent);
+@keyframes vfxWindHomingPulse {
+  from { opacity: 0.78; filter: drop-shadow(0 0 4px #86efac); }
+  to { opacity: 1; filter: drop-shadow(0 0 8px #b9f6cf); }
 }
 
 .vfx-ice-shard {

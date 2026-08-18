@@ -60,7 +60,8 @@ var BattleRenderer = (function () {
     ice:       { c1: '#4da6ff', c2: '#f2fbff', glow: '#79d8ff' },
     lightning: { c1: '#f2b705', c2: '#fff8b0', glow: '#ffd23f' },
     earth:     { c1: '#ad7444', c2: '#5b3a27', glow: '#c48a55' },
-    poison:    { c1: '#4caf2b', c2: '#d8ff8a', glow: '#76d83b' }
+    poison:    { c1: '#4caf2b', c2: '#d8ff8a', glow: '#76d83b' },
+    wind:      { c1: '#86efac', c2: '#ffffff', glow: '#b9f6cf' }
   };
   function themeOf(spec) {
     var table = (typeof VFX_ELEM_THEME !== 'undefined' && VFX_ELEM_THEME) || FALLBACK_THEME;
@@ -2549,14 +2550,15 @@ var BattleRenderer = (function () {
     return fx;
   }
 
-  /* ---- 冰系場域（2026-08-17 冰系三群組）----
-     三種形態全部以模擬層送來的 area 為唯一錨點（不用棋盤格 rect），因此畫面範圍與
+  /* ---- 冰系／追跡風刃場域（2026-08-17～18）----
+     場域全部以模擬層送來的 area 為唯一錨點（不用棋盤格 rect），因此畫面範圍與
      實際判定範圍恆等（AI_RULES 8.3：不得由表現層自行挑一個固定尺寸）：
-       暴風雪   blizzard          矩形雲霧＋落雪，跟隨我方（模擬層每拍送新座標，顯示層內插）
-       水龍捲   water-tornado     圓形漏斗，釘在地板
-       追蹤冰箭 ice-arrow-homing  小圓冰晶，持續移動（模擬層每 0.1 秒送新座標）
-     同一個 area.id 只保留一個節點、每次事件續命——與沼澤／雷球同一套合併規則，
-     否則長效場域每個節拍都會新增一個節點。 */
+       暴風雪          blizzard          矩形雲霧＋落雪，跟隨我方
+       水龍捲          water-tornado     圓形漏斗，釘在地板
+       追蹤冰箭        ice-arrow-homing  小圓冰晶，持續移動
+       追跡風刃        wind-blade-homing 小型風刃，持續追蹤
+     同一個 area.id 只保留一個節點、每次事件續命；追跡風刃只沿用場域的移動邏輯，
+     外形必須走風刃輪廓，不能退化成冰晶／藍色圓球。 */
   var _iceFieldFx = Object.create(null);
   var ICE_FIELD_MAX_LIFE_SEC = 14;
   var ICE_FIELD_THEME = { c1: '#7dd3fc', c2: '#e0f2fe', glow: '#22d3ee' };
@@ -2909,11 +2911,14 @@ var BattleRenderer = (function () {
     var current = _iceFieldFx[key];
     if (current && !current.dead && current.node && !current.node.destroyed) {
       current.speed = Number(a.speed) > 0 ? Number(a.speed) : current.speed;
-      if (isHoming && isFinite(a.destX) && isFinite(a.destY)) {
-        /* 追蹤冰箭不是把每個 tick 的座標當成新起點；保留目前畫面位置，
-           讓 update() 依模擬層的速度朝最新目的地逐幀前進。 */
-        current.destX = Number(a.destX);
-        current.destY = Number(a.destY);
+      if (isHoming) {
+        /* 追跡風刃的傷害位置由模擬層 area.x/y 定義；畫面只在兩個權威快照
+           之間補間，不能另走一條追向未更新 dest 的獨立路徑。 */
+        fieldVfxSetPositionTarget(current, Number(a.x), Number(a.y), motionSec);
+        if (isFinite(a.destX) && isFinite(a.destY)) {
+          current.destX = Number(a.destX);
+          current.destY = Number(a.destY);
+        }
       } else if (variant !== 'blizzard') {
         fieldVfxSetTarget(current, Number(a.x), Number(a.y), w, h, motionSec);
       }
@@ -2937,9 +2942,10 @@ var BattleRenderer = (function () {
     };
     _iceFieldFx[key] = fx;
     var flakeAt = 0;
-    var c1 = cssColorToInt(ICE_FIELD_THEME.c1, 0x7dd3fc);
-    var c2 = cssColorToInt(ICE_FIELD_THEME.c2, 0xe0f2fe);
-    var glow = cssColorToInt(ICE_FIELD_THEME.glow, 0x22d3ee);
+    var fieldTheme = variant === 'wind-blade-homing' ? themeOf({ elem: 'wind' }) : ICE_FIELD_THEME;
+    var c1 = cssColorToInt(fieldTheme.c1, 0x7dd3fc);
+    var c2 = cssColorToInt(fieldTheme.c2, 0xe0f2fe);
+    var glow = cssColorToInt(fieldTheme.glow, 0x22d3ee);
 
     addFx({
       node: node,
@@ -2953,20 +2959,10 @@ var BattleRenderer = (function () {
             fx.x = follow.x;
             fx.y = follow.y;
           }
-        } else if ((fx.variant === 'ice-arrow-homing' || fx.variant === 'wind-blade-homing') &&
-                   fx.speed > 0 && isFinite(fx.destX) && isFinite(fx.destY)) {
-          /* 追蹤冰箭使用速度積分補足模擬 tick 之間的畫面幀，
-             並在接近目的地時夾住，避免浮點誤差造成微抖。 */
-          var hdx = fx.destX - fx.x, hdy = fx.destY - fx.y;
-          var hdist = Math.sqrt(hdx * hdx + hdy * hdy);
-          var hstep = fx.speed * Math.max(0, Number(dt) || 0);
-          if (hdist <= hstep || hdist <= 0.5) {
-            fx.x = fx.destX;
-            fx.y = fx.destY;
-          } else if (hdist > 0) {
-            fx.x += hdx / hdist * hstep;
-            fx.y += hdy / hdist * hstep;
-          }
+        } else if (isHoming) {
+          /* 傷害場域和追蹤特效共用模擬層的目前位置；只補間快照，
+             不自行追目標，避免顯示位置與實際判定範圍脫節。 */
+          fieldVfxStep(fx, dt);
         } else {
           fieldVfxStep(fx, dt);
         }
@@ -3013,6 +3009,15 @@ var BattleRenderer = (function () {
             g.ellipse(Math.cos(spin) * lr * 0.16, ly, lr, lr * 0.34)
               .stroke({ width: 2.4, color: li % 2 ? c2 : glow, alpha: (0.62 - u * 0.3) * fade });
           }
+        } else if (fx.variant === 'wind-blade-homing') {
+          /* 追跡風刃只改變移動方式，不改變外形：小型半月風刃沿目前追蹤方向旋轉。 */
+          var windDx = fx.motionToX - fx.motionFromX, windDy = fx.motionToY - fx.motionFromY;
+          if (Math.abs(windDx) + Math.abs(windDy) <= 0.5 && isFinite(fx.destX) && isFinite(fx.destY)) {
+            windDx = fx.destX - fx.x; windDy = fx.destY - fx.y;
+          }
+          if (Math.abs(windDx) + Math.abs(windDy) > 0.5) node.rotation = Math.atan2(windDy, windDx);
+          drawWindCrescent(g, Math.max(8, fx.w), Math.max(5, fx.w * 0.38),
+            themeOf({ elem: 'wind' }), fade);
         } else {
           /* 追蹤冰箭：小顆冰晶＋尾焰光暈；體積就是模擬層的接觸半徑。 */
           var ar = Math.max(5, fx.w * 0.5);
@@ -3028,7 +3033,7 @@ var BattleRenderer = (function () {
         }
 
         flakeAt += dt;
-        if (!REDUCED_MOTION && flakeAt > 0.3 && fade > 0.4) {
+        if (fx.variant !== 'wind-blade-homing' && !REDUCED_MOTION && flakeAt > 0.3 && fade > 0.4) {
           flakeAt = 0;
           spawnParticles(fx.x + (Math.random() - 0.5) * fx.w * 0.6,
             fx.y + (Math.random() - 0.5) * fx.h * 0.4, 2, ICE_FIELD_THEME, 0.8, 0.5);

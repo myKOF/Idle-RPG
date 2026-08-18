@@ -477,7 +477,11 @@ test('冰系特效：暴風雪／水龍捲／追蹤冰箭在 Canvas 與 DOM 兩�
   assert.match(renderer, /spec\.variant === 'blizzard' \|\| spec\.variant === 'water-tornado' \|\|[\s\S]{0,200}spawnIceField\(spec\)/);
   assert.match(renderer, /function spawnIceField[\s\S]*?var a = spec && spec\.area;/);
   assert.match(renderer, /fx\.variant === 'blizzard'[\s\S]*?var follow = playerPos\(\)/);
-  assert.match(renderer, /fx\.variant === 'ice-arrow-homing'[\s\S]*?fx\.speed \* Math\.max/);
+  const iceFieldCanvas = renderer.slice(renderer.indexOf('function spawnIceField'), renderer.indexOf('function spawnRiser', renderer.indexOf('function spawnIceField')));
+  assert.match(iceFieldCanvas, /if \(isHoming\)[\s\S]*?fieldVfxSetPositionTarget\(current,/);
+  assert.match(iceFieldCanvas, /else if \(isHoming\)[\s\S]*?fieldVfxStep\(fx, dt\)/);
+  assert.doesNotMatch(iceFieldCanvas, /hdx = fx\.destX|hstep = fx\.speed/,
+    '追蹤冰箭不得在顯示層另走速度追擊路徑');
   assert.match(skills2, /if \(f\.follow\) rect\.follow = true;/);
   assert.match(skills2, /rect\.destX = f\.dest\.x;[\s\S]{0,80}rect\.speed = f\.speed;/);
 
@@ -489,6 +493,10 @@ test('冰系特效：暴風雪／水龍捲／追蹤冰箭在 Canvas 與 DOM 兩�
   assert.match(vfx, /function vfxFieldMotionFollowPlayer\(node, layer\)/);
   assert.match(vfx, /function vfxFieldMotionHome\(node, speed, targetX, targetY\)/);
   assert.match(vfx, /var isIceField = s\.variant === 'blizzard'/);
+  const iceFieldDom = vfx.slice(vfx.indexOf('function vfxIceField'), vfx.indexOf('/* 預設天降', vfx.indexOf('function vfxIceField')));
+  assert.match(iceFieldDom, /vfxFieldMotionSet\(node, x, y, w, h/);
+  assert.doesNotMatch(iceFieldDom, /vfxFieldMotionHome/,
+    '追蹤冰箭 DOM 不得自建另一條速度追擊路徑');
   // 場景切換時必須一併清掉，否則場域節點會殘留
   assert.match(vfx, /_vfxIceFields = Object\.create\(null\);[\s\S]{0,400}?querySelectorAll/);
 
@@ -624,13 +632,23 @@ test('風系特效：風刃／真空斬／迴旋斬／虛空斬／暴風屏障�
   // Canvas：屏障／神體／撕裂是釘在自身的風殼
   assert.match(renderer, /function spawnStormShell\(spec\)/);
   assert.match(renderer, /spec\.variant === 'storm-barrier' \|\| spec\.variant === 'storm-god'/);
-  // Canvas：追跡風刃與追蹤冰箭共用同一套移動場域畫法
+  // Canvas：追跡風刃只共用追蹤移動，不得共用冰晶／藍球外觀
   assert.match(renderer, /variant === 'ice-arrow-homing' \|\| variant === 'wind-blade-homing'/);
+  const windFieldCanvas = renderer.slice(renderer.indexOf('function spawnIceField'), renderer.indexOf('function spawnRiser', renderer.indexOf('function spawnIceField')));
+  assert.match(windFieldCanvas, /fx\.variant === 'wind-blade-homing'[\s\S]*?drawWindCrescent\(g,/);
+  assert.match(windFieldCanvas, /variant === 'wind-blade-homing'[\s\S]*?fieldVfxSetPositionTarget\(current,/);
+  assert.match(windFieldCanvas, /fx\.variant === 'wind-blade-homing'[\s\S]*?fieldVfxStep\(fx, dt\)/);
+  assert.match(windFieldCanvas, /fx\.variant !== 'wind-blade-homing'/);
 
-  // DOM：風刃沿用貫穿冰箭那條直線飛行路徑；追跡風刃沿用移動場域
+  // DOM：大型風刃沿用直線飛行；追跡風刃沿用移動場域但只建立小型風刃
   assert.match(vfx, /s\.variant === 'wind-blade' \|\| s\.variant === 'wind-blade-small'/);
   assert.match(vfx, /s\.variant === 'ice-arrow-homing' \|\| s\.variant === 'wind-blade-homing'/);
   assert.match(vfx, /'vfx-wind-homing'/);
+  const windFieldDom = vfx.slice(vfx.indexOf('function vfxIceField'), vfx.indexOf('/* 預設天降', vfx.indexOf('function vfxIceField')));
+  assert.match(windFieldDom, /variant === 'wind-blade-homing'[\s\S]*?vfx-wind-homing-blade/);
+  assert.match(windFieldDom, /variant === 'wind-blade-homing'[\s\S]*?不再建立冰晶尖刺或藍色球體/);
+  assert.doesNotMatch(windFieldDom, /variant === 'wind-blade-homing'[\s\S]{0,260}vfxFieldMotionHome/);
+  assert.match(vfx, /s\.variant === 'wind-blade-homing' \? null : vfxCellsRect\(spec\.cells, layer\)/);
   assert.match(vfx, /function vfxVoidDisc\(spec, layer, rect\)/);
   assert.match(vfx, /s\.variant === 'void-disc'\) vfxVoidDisc\(s, layer, rect\)/);
   assert.match(vfx, /var startAng = Number\(area\.startAng\)/);
@@ -643,6 +661,95 @@ test('風系特效：風刃／真空斬／迴旋斬／虛空斬／暴風屏障�
   assert.match(css, /\.vfx-impact-wind \.vfx-p/);
   assert.match(css, /\.vfx-aura-wind \.vfx-aura-p/);
   assert.match(css, /\.vfx-wind-homing \{/);
+  assert.match(css, /\.vfx-wind-homing-blade\s*\{[\s\S]*?clip-path: path/);
+  assert.match(css, /\.vfx-wind-homing\s*\{[\s\S]*?background: transparent[\s\S]*?border: 0[\s\S]*?box-shadow: none/);
+  assert.doesNotMatch(css, /\.vfx-wind-homing \.vfx-ice-shard/);
   assert.match(css, /\.vfx-void-disc \{/);
   assert.match(css, /vfxVoidDiscBlade/);
+});
+
+test('全技能移動與傷害範圍使用連續座標，不以棋盤格逐步跳動', () => {
+  const battlefield = read('js/battlefield.js');
+  const legacySkills = read('js/skills.js');
+  const skills2 = read('js/skills2.js');
+  const vfx = read('js/vfx.js');
+  const renderer = read('js/battle-renderer.js');
+
+  // 新版 23 個技能群組共用的飛行物、移動場域、傷害幾何與環繞場域路徑。
+  const projectileTick = skills2.slice(
+    skills2.indexOf('function sgTickFlyingProjectiles'),
+    skills2.indexOf('function ', skills2.indexOf('function sgTickFlyingProjectiles') + 1)
+  );
+  const groundMove = skills2.slice(
+    skills2.indexOf('function sgGroundMove'),
+    skills2.indexOf('function ', skills2.indexOf('function sgGroundMove') + 1)
+  );
+  const groundVictims = skills2.slice(
+    skills2.indexOf('function sgGroundVictims'),
+    skills2.indexOf('function ', skills2.indexOf('function sgGroundVictims') + 1)
+  );
+  const orbitStep = skills2.slice(
+    skills2.indexOf('function sgOrbitStep'),
+    skills2.indexOf('function ', skills2.indexOf('function sgOrbitStep') + 1)
+  );
+  const bfSegment = battlefield.slice(
+    battlefield.indexOf('function bfSegmentTargets'),
+    battlefield.indexOf('function ', battlefield.indexOf('function bfSegmentTargets') + 1)
+  );
+  const scheduler = legacySkills.slice(
+    legacySkills.indexOf('function tickSkillSchedulers'),
+    legacySkills.indexOf('/* ---- periodicField', legacySkills.indexOf('function tickSkillSchedulers'))
+  );
+
+  assert.match(projectileTick, /\(now - projectile\.startAt\) \* projectile\.speed/);
+  assert.match(projectileTick, /bfSegmentTargets\(projectile\.origin/);
+  assert.match(groundMove, /f\.pos\.x \+= dx \/ dist \* step/);
+  assert.match(groundMove, /f\.pos\.y \+= dy \/ dist \* step/);
+  assert.doesNotMatch(groundMove, /Math\.(round|floor|ceil)/);
+  assert.match(groundVictims, /bfSegmentTargets\(origin, axis/);
+  assert.match(groundVictims, /bfEnemiesInArea\(\{ x: f\.pos\.x, y: f\.pos\.y/);
+  assert.match(orbitStep, /orb\.ang \+= orb\.spin \* dt/);
+  assert.match(orbitStep, /f\.rings\[gi\]\.r \+= f\.growPxPerSec \* dt/);
+  assert.doesNotMatch(orbitStep, /Math\.(round|floor|ceil)/);
+  assert.match(bfSegment, /Math\.cos\(angle\)/);
+  assert.match(bfSegment, /Math\.sqrt\(ox \* ox \+ oy \* oy\)/);
+  assert.doesNotMatch(bfSegment, /Math\.(round|floor|ceil)/);
+  // 舊版週期領域只更新時間／狀態，不會把傷害範圍座標量化或逐格搬移。
+  assert.doesNotMatch(scheduler, /f\.area\.(x|y)\s*[+\-]=/);
+
+  // 所有會移動或改變範圍的畫面路徑都必須採快照補間；追蹤技能不能另走速度積分。
+  const rendererField = renderer.slice(
+    renderer.indexOf('function spawnIceField'),
+    renderer.indexOf('function spawnRiser', renderer.indexOf('function spawnIceField'))
+  );
+  const domField = vfx.slice(
+    vfx.indexOf('function vfxIceField'),
+    vfx.indexOf('/* 預設天降', vfx.indexOf('function vfxIceField'))
+  );
+  const rendererMire = renderer.slice(
+    renderer.indexOf('function spawnMirePool'),
+    renderer.indexOf('function spawnIceField', renderer.indexOf('function spawnMirePool'))
+  );
+  const rendererOrb = renderer.slice(
+    renderer.indexOf('function spawnThunderOrbField'),
+    renderer.indexOf('function spawnThunderFall', renderer.indexOf('function spawnThunderOrbField'))
+  );
+  const domMire = vfx.slice(
+    vfx.indexOf('function vfxMirePool'),
+    vfx.indexOf('function vfxThunderOrb', vfx.indexOf('function vfxMirePool'))
+  );
+  const domOrb = vfx.slice(
+    vfx.indexOf('function vfxThunderOrb'),
+    vfx.indexOf('function vfxIceField', vfx.indexOf('function vfxThunderOrb'))
+  );
+
+  assert.match(rendererField, /fieldVfxSetPositionTarget\(/);
+  assert.match(rendererField, /fieldVfxStep\(fx, dt\)/);
+  assert.doesNotMatch(rendererField, /hdx = fx\.destX|hstep = fx\.speed/);
+  assert.match(rendererMire, /fieldVfxSetTarget\(/);
+  assert.match(rendererOrb, /fieldVfxSetPositionTarget\(/);
+  assert.match(domField, /vfxFieldMotionSet\(node, x, y, w, h/);
+  assert.doesNotMatch(domField, /vfxFieldMotionHome/);
+  assert.match(domMire, /vfxFieldMotionSet\(node, x, y, w, h/);
+  assert.match(domOrb, /vfxFieldMotionSet\(node, cx - d \/ 2/);
 });
