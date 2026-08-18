@@ -3253,6 +3253,8 @@ function skill2FrostDurFactor() {
    tierIdx＝該群組負責附加寒霜的那一階；沒點出來就回 null（＝這棵樹不塗寒霜）。
    stacksRaw 保留小數並延後到每個目標各自 sgRollCount，機率才是逐目標判定。 */
 function sgFrostSpec(g, lvs, tierIdx, bodyDmg) {
+  /* 寒霜是冰系專屬狀態；即使呼叫端誤傳其它屬性群組，也不得產生規格。 */
+  if (!g || g.elem !== 'ice' || !g.tiers || !g.tiers[tierIdx]) return null;
   if (!lvs || lvs[tierIdx] < 1 || !(bodyDmg > 0)) return null;
   var fx = g.tiers[tierIdx].fx;
   var pct = sgVal(fx, 'frostPct', lvs[tierIdx]);
@@ -3800,9 +3802,10 @@ function sgDeathNova(deadEnt, enemies) {
 }
 
 /* 【寒冰體】（冰霜新星 T3）：攻擊你的敵人有機率被附加寒霜。
-   掛在我方受擊收斂點（skills2OnPlayerDamaged）；寒霜的每跳量仍占新星的本體傷害，
-   因此不必裝配也能算出規格——但比照其他主動階，沒點出第 1 階就不生效。 */
+   掛在我方受擊收斂點（skills2OnPlayerDamaged）；必須裝備冰霜新星才生效，
+   寒霜的每跳量仍占新星的本體傷害。 */
 function sgFrostbodyOnPlayerDamaged(mEnt, pEnt, floatSel) {
+  if (!skills2Equipped('frostnova')) return;
   var lvs = skills2Levels('frostnova');
   if (!lvs || lvs[0] < 1 || lvs[2] < 1) return;
   if (!mEnt || mEnt.hp <= 0) return;

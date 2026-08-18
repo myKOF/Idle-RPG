@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Codex｜修正火狩誤觸發寒霜｜2026-08-18
+
+- 狀態：已完成
+- Owner：Codex
+- 問題：裝備火狩時，敵人受擊事件可能附加寒霜；火狩本身沒有寒霜設定。
+- 根因：冰霜新星 T3「寒冰體」只檢查是否學會，未檢查是否裝備，導致受擊反應跨技能生效。
+- 修改：寒冰體改為必須裝備 `frostnova` 才生效；`sgFrostSpec` 增加冰屬性邊界，非冰系不得產生寒霜規格；新增火狩回歸測試。
+- 修改檔案：`js/skills2.js`、`tests/skill2-magic-firehunt.test.cjs`、本文件。
+- 驗證：`node --test tests/skill2-magic-firehunt.test.cjs` 17/17 通過；`node --check js/skills2.js`、
+  `node --check tests/skill2-magic-firehunt.test.cjs` 通過；`node tools/build_check.cjs` 291/291 通過；
+  `git diff --check` 通過。
+- 已知風險：火狩＋冰系合併測試為 50/51，唯一失敗是既有的暴風雪 20×20 範圍斷言，
+  目前參數表為 24×24，與本修正無關。
+
 ## Codex｜修正冰系場域逐格移動與冰霜新星形狀｜2026-08-18
 
 - 狀態：已完成
