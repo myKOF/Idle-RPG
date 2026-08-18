@@ -753,3 +753,49 @@ test('全技能移動與傷害範圍使用連續座標，不以棋盤格逐步�
   assert.match(domMire, /vfxFieldMotionSet\(node, x, y, w, h/);
   assert.match(domOrb, /vfxFieldMotionSet\(node, cx - d \/ 2/);
 });
+
+test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳格節點', () => {
+  const renderer = read('js/battle-renderer.js');
+  const vfx = read('js/vfx.js');
+  const css = read('css/style.css');
+  const index = read('index.html');
+  const bridge = read('js/bridge.js');
+  const worker = read('js/worker/sim.worker.js');
+
+  const rendererField = renderer.slice(
+    renderer.indexOf('function spawnIceField'),
+    renderer.indexOf('function spawnRiser', renderer.indexOf('function spawnIceField'))
+  );
+  const domField = vfx.slice(
+    vfx.indexOf('function vfxIceField'),
+    vfx.indexOf('/* 預設天降', vfx.indexOf('function vfxIceField'))
+  );
+
+  // 風系泛用 aura 是最後防線：不能把追蹤風刃或缺 variant 的舊事件畫成方框。
+  assert.match(renderer, /spec\.elem === 'wind'[\s\S]{0,100}wind-blade-homing/);
+  assert.match(renderer, /spec\.fxKind === 'aura' && spec\.elem === 'wind' && !spec\.variant\) return/);
+  assert.match(vfx, /kind === 'aura' && s\.elem === 'wind' && !s\.variant\) return/);
+  assert.match(vfx, /spec\.elem === 'wind'[\s\S]{0,100}wind-blade-homing/);
+
+  // 追蹤場域沒有穩定 id 時禁止以 Math.round(x/y) 當鍵；否則每跨一格就會新增半月刃。
+  assert.match(renderer, /function fieldVfxKey\(area, variant\)/);
+  assert.match(renderer, /if \(variant === 'ice-arrow-homing' \|\| variant === 'wind-blade-homing'\) return null;/);
+  assert.match(rendererField, /var key = fieldVfxKey\(a, variant\);[\s\S]*if \(!key\) return null;/);
+  assert.match(vfx, /function vfxFieldKey\(area, variant\)/);
+  assert.match(domField, /var key = vfxFieldKey\(area, variant\);[\s\S]*if \(!key\) return null;/);
+
+  // 位置與轉彎都要是連續的：位置補間保留最低時長，方向以角度最短路徑平滑追上。
+  assert.match(renderer, /var FIELD_VFX_MIN_MOTION_SEC = 0\.12/);
+  assert.match(rendererField, /fieldVfxWindAngleStep\(fx, dt\)/);
+  assert.match(renderer, /Math\.atan2\(Math\.sin\(target - fx\.windAngle\), Math\.cos\(target - fx\.windAngle\)\)/);
+  assert.match(vfx, /return Math\.max\(0\.12, isFinite\(sec\)/);
+  assert.match(css, /\.vfx-wind-homing-blade[\s\S]*?transition: transform 120ms linear/);
+
+  // 主頁與 Worker 必須換版本，否則瀏覽器會繼續執行舊的綠色方框／逐格路徑。
+  assert.match(index, /css\/style\.css\?v=1\.0\.47/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.51/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.81/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.43/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-wind-smooth-v2'/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260819-wind-smooth-v2/);
+});

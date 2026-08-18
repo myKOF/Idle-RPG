@@ -427,7 +427,18 @@ function vfxTheme(spec) {
    內層保留原本的 pulse／泡泡／氣流 CSS 動畫。這只影響畫面，不會增加傷害判定。 */
 function vfxFieldMotionSec(spec, fallback) {
   var sec = Number(spec && spec.dur);
-  return Math.max(0.05, isFinite(sec) && sec > 0 ? sec : fallback);
+  /* Worker 以 0.2 秒批次送事件；最短補間保留一小段畫面時間，
+     避免兩個快照同幀進來時，移動場域看起來像逐格跳動。 */
+  return Math.max(0.12, isFinite(sec) && sec > 0 ? sec : fallback);
+}
+
+function vfxFieldKey(area, variant) {
+  var id = area && (area.id || area.fieldKey || area.vfxId);
+  if (id !== undefined && id !== null && id !== '') return String(id) + ':' + variant;
+  /* 移動場域沒有穩定識別鍵時，座標退化鍵會在每次移動時重建節點；
+     寧可略過舊格式事件，也不能畫出一串跳格殘影。 */
+  if (variant === 'ice-arrow-homing' || variant === 'wind-blade-homing') return null;
+  return [Math.round(area && area.x), Math.round(area && area.y)].join(':') + ':' + variant;
 }
 
 function vfxFieldMotionApply(node, state) {
@@ -1629,7 +1640,8 @@ function vfxIceField(spec, layer, area, rect) {
   var cx = (Number(rect.x) || 0) + (Number(rect.w) || 0) / 2;
   var cy = (Number(rect.y) || 0) + (Number(rect.h) || 0) / 2;
   var x = cx - w / 2, y = cy - h / 2;
-  var key = (area && area.id ? String(area.id) : [Math.round(x), Math.round(y)].join(':')) + ':' + variant;
+  var key = vfxFieldKey(area, variant);
+  if (!key) return null;
   var ttl = Math.max(700, Number(spec.dur || 0.4) * 2400);
   var node = _vfxIceFields[key];
   if (node && node.parentNode === layer) {
@@ -1998,6 +2010,8 @@ function vfxSmite(spec, layer, pt, targetId, delayMs, travelMs) {
    領域是長壽命節點，會由 vfxTrack 以 dur 登記；品質 Reduced 會在入口直接略過，
    避免在非戰鬥頁長時間保留大量動畫。 */
 function vfxAura(spec, layer, rect) {
+  if (spec && spec.elem === 'wind' &&
+      (!spec.variant || spec.variant === 'wind-blade-homing')) return null;
   var cls = 'vfx-aura';
   if (spec.variant === 'swordfield') cls += ' vfx-aura-sword';
   else if (spec.elem && VFX_ELEM_THEME[spec.elem]) cls += ' vfx-aura-' + spec.elem;
@@ -2117,6 +2131,8 @@ function renderCombatVfx(spec) {
     laneOffsets: Array.isArray(spec.laneOffsets) ? spec.laneOffsets.slice(0, 3) : null,
     directionCount: Number(spec.directionCount) > 0 ? Number(spec.directionCount) : null
   };
+  /* 舊事件沒有 variant 時，風系 aura 不得走棋盤矩形的泛用畫法。 */
+  if (kind === 'aura' && s.elem === 'wind' && !s.variant) return;
   var travelMs = spec.travelMs || null;   // 每個目標各自的飛行時間（毫秒）
   var targets = (spec.targets || []).slice(0, VFX_MAX_TARGETS);
 

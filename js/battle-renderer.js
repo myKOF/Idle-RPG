@@ -2137,7 +2137,10 @@ var BattleRenderer = (function () {
 
   /* 領域（aura）：覆蓋棋盤格範圍，持續 dur 秒 */
   function spawnAura(rect, spec) {
-    if (!rect) return;
+    /* 風刃的傷害範圍不是地板提示。舊版／延遲事件若缺 variant，
+       不得退回泛用綠色方框；有 variant 的追跡風刃也只能由 spawnIceField 畫半月刃。 */
+    if (!rect || (spec && spec.elem === 'wind' &&
+        (!spec.variant || spec.variant === 'wind-blade-homing'))) return;
     var theme = themeOf(spec);
     var node = new PIXI.Container();
     var g = new PIXI.Graphics();
@@ -2400,10 +2403,44 @@ var BattleRenderer = (function () {
   }
 
   /* 場域的移動／尺寸只屬於顯示層：模擬層仍以自己的 tick 頻率判定傷害，
-     這裡只把兩次權威快照之間的畫面補齊，避免場域一格一格跳動。 */
+     這裡只把兩次權威快照之間的畫面補齊，避免場域一格一格跳動。
+     Worker 事件通常每 0.2 秒批次送達；最短補間不能跟著技能的 0.1 秒傷害間隔
+     縮成短促的瞬移，否則事件在同一幀到達時，玩家仍會看到一格一格的風刃。 */
+  var FIELD_VFX_MIN_MOTION_SEC = 0.12;
   function fieldVfxMotionSec(spec, fallback) {
     var sec = Number(spec && spec.dur);
-    return Math.max(0.05, isFinite(sec) && sec > 0 ? sec : fallback);
+    return Math.max(FIELD_VFX_MIN_MOTION_SEC, isFinite(sec) && sec > 0 ? sec : fallback);
+  }
+
+  /* 移動場域必須有模擬層發出的穩定 id。座標只能當靜態舊事件的退化鍵；
+     若拿座標當追蹤風刃的鍵，每跨過一個整數座標就會重建一顆節點，
+     這正是「半月風刃一格一格跳」與多個殘影同時存在的來源。 */
+  function fieldVfxKey(area, variant) {
+    var id = area && (area.id || area.fieldKey || area.vfxId);
+    if (id !== undefined && id !== null && id !== '') return String(id) + ':' + variant;
+    if (variant === 'ice-arrow-homing' || variant === 'wind-blade-homing') return null;
+    return [Math.round(area && area.x), Math.round(area && area.y)].join(':') + ':' + variant;
+  }
+
+  function fieldVfxWindAngle(fx) {
+    var dx = fx.motionToX - fx.motionFromX, dy = fx.motionToY - fx.motionFromY;
+    if (Math.abs(dx) + Math.abs(dy) <= 0.5 && isFinite(fx.destX) && isFinite(fx.destY)) {
+      dx = fx.destX - fx.x; dy = fx.destY - fx.y;
+    }
+    return Math.abs(dx) + Math.abs(dy) > 0.5 ? Math.atan2(dy, dx) : fx.windAngle;
+  }
+
+  /* 位置只補間權威 area.x/y；方向也沿著同一個快照方向緩慢轉向，
+     不讓半月刃在追擊轉彎時瞬間折角。這只影響畫面，不改傷害判定。 */
+  function fieldVfxWindAngleStep(fx, dt) {
+    var target = fieldVfxWindAngle(fx);
+    if (!isFinite(target)) return 0;
+    if (!isFinite(fx.windAngle)) fx.windAngle = target;
+    var safeDt = Math.max(0, Number(dt) || 0);
+    var k = 1 - Math.exp(-safeDt * 14);
+    var delta = Math.atan2(Math.sin(target - fx.windAngle), Math.cos(target - fx.windAngle));
+    fx.windAngle += delta * k;
+    return fx.windAngle;
   }
 
   function fieldVfxSetTarget(fx, x, y, w, h, duration) {
@@ -2905,7 +2942,8 @@ var BattleRenderer = (function () {
     var isHoming = (variant === 'ice-arrow-homing' || variant === 'wind-blade-homing');
     var w = isRect ? Math.max(24, Number(a.w) || 120) : Math.max(10, (Number(a.r) || 30) * 2);
     var h = isRect ? Math.max(24, Number(a.h) || 120) : w;
-    var key = (a.id || [Math.round(a.x), Math.round(a.y)].join(':')) + ':' + variant;
+    var key = fieldVfxKey(a, variant);
+    if (!key) return null;
     var holdMs = Math.max(520, Number(spec.dur || 0.4) * 2400);
     var motionSec = fieldVfxMotionSec(spec, 0.4);
     var current = _iceFieldFx[key];
@@ -2938,7 +2976,8 @@ var BattleRenderer = (function () {
       destY: isFinite(a.destY) ? Number(a.destY) : null,
       motionFromX: Number(a.x), motionFromY: Number(a.y), motionFromW: w, motionFromH: h,
       motionToX: Number(a.x), motionToY: Number(a.y), motionToW: w, motionToH: h,
-      motionT: 1, motionDur: 1
+      motionT: 1, motionDur: 1,
+      windAngle: null
     };
     _iceFieldFx[key] = fx;
     var flakeAt = 0;
@@ -2966,7 +3005,9 @@ var BattleRenderer = (function () {
         } else {
           fieldVfxStep(fx, dt);
         }
-        node.x = fx.x; node.y = fx.y; node.rotation = 0;
+        node.x = fx.x; node.y = fx.y;
+        node.rotation = fx.variant === 'wind-blade-homing'
+          ? fieldVfxWindAngleStep(fx, dt) : 0;
         var left = fx.expiresAt - nowMs();
         var fade = left < 420 ? Math.max(0, left / 420) : 1;
         var phase = fx.t * 2.2;
@@ -3011,11 +3052,6 @@ var BattleRenderer = (function () {
           }
         } else if (fx.variant === 'wind-blade-homing') {
           /* 追跡風刃只改變移動方式，不改變外形：小型半月風刃沿目前追蹤方向旋轉。 */
-          var windDx = fx.motionToX - fx.motionFromX, windDy = fx.motionToY - fx.motionFromY;
-          if (Math.abs(windDx) + Math.abs(windDy) <= 0.5 && isFinite(fx.destX) && isFinite(fx.destY)) {
-            windDx = fx.destX - fx.x; windDy = fx.destY - fx.y;
-          }
-          if (Math.abs(windDx) + Math.abs(windDy) > 0.5) node.rotation = Math.atan2(windDy, windDx);
           drawWindCrescent(g, Math.max(8, fx.w), Math.max(5, fx.w * 0.38),
             themeOf({ elem: 'wind' }), fade);
         } else {
@@ -3930,6 +3966,9 @@ var BattleRenderer = (function () {
       renderEnemyAttackVfx(spec);
       return;
     }
+    /* 舊 Worker 事件可能沒有 variant。風系 aura 沒有可辨識的形狀時直接略過，
+       不能把傷害場域畫成綠色棋盤方塊；目前所有合法風系場域都有明確 variant。 */
+    if (spec.fxKind === 'aura' && spec.elem === 'wind' && !spec.variant) return;
     var targets = Array.isArray(spec.targets) ? spec.targets.slice(0, 8) : [];
     var rect = areaRect(spec.area);
     var isThrust = spec.variant === 'thrust' || spec.variant === 'thrust-pierce' ||

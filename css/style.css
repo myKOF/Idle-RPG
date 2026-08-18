@@ -8428,6 +8428,7 @@ textarea:disabled,
   filter: drop-shadow(0 0 6px #86efac);
   transform: translate(-50%, -50%) rotate(var(--vfx-wind-angle, 0rad)) scale(var(--vfx-wind-blade-scale, 1));
   transform-origin: center;
+  transition: transform 120ms linear;
   animation: vfxWindHomingPulse 0.55s ease-in-out infinite alternate;
 }
 
