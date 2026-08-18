@@ -35,9 +35,10 @@ test('UI 與戰鬥渲染器包含傷害數字開關邏輯與清除函式', funct
   assert.match(ui, /function clearActiveDamageFloats\s*\(\)/);
 
   // floatText 中包含傷害數字關閉檢查
-  assert.match(ui, /if \(!isDamageNumbersEnabled\(\) && \(enemyHitFloat \|\| isPlayerDamage\)\)/);
+  assert.match(ui, /if \(!isDamageNumbersEnabled\(\)\)/);
 
-  // battle-renderer.js 導出 clearDamageFloats 並於 onFloat 檢查 isDamageNumbersEnabled
+  // battle-renderer.js 導出 clearDamageFloats / clearAllFloats 並於 onFloat 檢查 isDamageNumbersEnabled
   assert.match(renderer, /clearDamageFloats:\s*clearDamageFloats/);
-  assert.match(renderer, /if \(typeof isDamageNumbersEnabled === 'function' && !isDamageNumbersEnabled\(\)\)/);
+  assert.match(renderer, /clearAllFloats:\s*clearAllFloats/);
+  assert.match(renderer, /if \(typeof isDamageNumbersEnabled === 'function' && !isDamageNumbersEnabled\(\)\) return;/);
 });
