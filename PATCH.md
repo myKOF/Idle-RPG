@@ -1,6 +1,21 @@
 # PATCH.md
 
-## 冰系三大新技能實機測試與驗證（Antigravity 2026-08-18）
+## 新版技能彈射與連鎖特效全面優化與細化（Antigravity 2026-08-18）
+
+針對新版技能中彈射、傳染、反射與水龍捲視覺特效進行重構與專屬化收斂：
+- **連鎖閃電（`chainlightning`）**：移除首目標天頂天雷直劈與過量環境假弧光，改為乾淨純粹的目標間逐跳閃電鏈電弧（DOM 與 Canvas 雙路徑同步）。
+- **水流彈（`waterball`）**：
+  - T4【寒流爆散】：彈射時由閃電鏈修正為專屬水系藍色拋物線子彈（`variant: water-bounce`），抵達目標後引爆水花衝擊波。
+  - T5【寒霜擴散】：由閃電鏈修正為快速平飛的藍色冰霜子彈（`variant: frost-spread`）。
+- **血刃斬（`bloodblade`）**：
+  - T5【毒霧感染】：移除小刀圖案，改為純綠色快速平飛毒液子彈（`variant: poison-spread` / `venom`）。
+- **反擊（`counter`）**：
+  - T7【狂化反殺】：移除物理反傷所有特效發送（無多餘閃電鏈，維持純數值與飄字受擊）。
+- **大地守護（`earthguard`）**：
+  - T6【生命反射之盾】：由閃電鏈修正為從玩家射向敵人的亮白色線條光束（`variant: earth-reflect`，走 `vfxBeam` / `spawnBeam`）。
+- **水龍捲（`waterball` T7）**：
+  - 升級為火龍捲同款動態旋轉柱體與多層向上旋繞舌流結構，並調整為藍色/碧水色調（DOM `.vfx-water-tornado-pillar` 與 Canvas 渲染）。
+- **測試回歸**：新增 `tests/skill2-vfx.test.cjs` 專屬回歸測試，單元測試與 `build_check.cjs` 290 檔案全數通過。
 
 依照 `prompts/antigravity_task_ice_skills.md` 完成冰系三群組實機驗證與共用收斂點回歸：
 - **收斂點回歸（R1~R10）**：通用緩速收斂點（泥沼術與寒霜相乘）、`sgTryStun` 實際秒數回傳、投射物弧高、屬性增傷獨立乘區、`monsterDefCfg` 屬性改寫、場域跟隨/追擊分支、全額命中判定、技能射程完全不變、狀態列獨立圖示與傷害統計面板 100% PASS。

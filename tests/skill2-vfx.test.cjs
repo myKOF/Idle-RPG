@@ -534,3 +534,39 @@ test('寒冰箭貫穿：兩條渲染路徑都以單一連續直線投射物呈�
   // DOM：同一事件只建立一個固定終點的 CSS 飛行節點。
   assert.match(vfx, /kind === 'projectile' && s\.variant === 'ice-arrow-pierce'[\s\S]*?vfxProjectile\(s, layer, from, iceArrowEnd, iceArrowDelay, iceArrowTravel\)/);
 });
+
+test('新版技能彈射與特效細化：連鎖閃電無天雷、水流彈藍色拋物彈射、血刃斬綠色子彈、大地守護白光光束、反傷無特效、水龍捲藍色火柱', () => {
+  const vfx = fs.readFileSync(path.join(root, 'js/vfx.js'), 'utf8');
+  const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
+  const skills2 = fs.readFileSync(path.join(root, 'js/skills2.js'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
+
+  // 1. 連鎖閃電：移除天雷落頂特效，只留閃電鏈彈射
+  assert.doesNotMatch(vfx, /vfxBolt\(spec, layer, skyPt/);
+  assert.match(vfx, /vfxBolt\(spec, layer, casterOrigin, ptList\[0\], baseDelay/);
+
+  // 2. 水流彈：藍色拋物線子彈彈射，寒霜傳染平飛藍色子彈
+  assert.match(vfx, /spec\.variant === 'water-bounce'[\s\S]*?variant: 'waterball'/);
+  assert.match(vfx, /spec\.variant === 'frost-spread'[\s\S]*?variant: 'frost-bullet'/);
+  assert.match(renderer, /spec\.variant === 'water-bounce'[\s\S]*?variant: 'waterball'/);
+  assert.match(renderer, /spec\.variant === 'frost-spread'[\s\S]*?variant: 'frost-bullet'/);
+
+  // 3. 血刃斬：移除小刀圖案，使用綠色快速平飛子彈
+  assert.match(vfx, /spec\.variant === 'poison-spread'[\s\S]*?variant: 'venom'/);
+  assert.match(renderer, /spec\.variant === 'poison-spread'[\s\S]*?variant: 'venom'/);
+
+  // 4. 反擊：移除反傷特效
+  assert.doesNotMatch(skills2, /variant: 'counter-sweep'/);
+
+  // 5. 大地守護：生命反射盾白光射向敵人
+  assert.match(skills2, /variant: 'earth-reflect', elem: 'light'/);
+  assert.match(vfx, /spec\.variant === 'earth-reflect'[\s\S]*?vfxBeam\(eSpec, layer, eFrom, ptList\[ei\]\)/);
+  assert.match(renderer, /spec\.variant === 'earth-reflect'[\s\S]*?spawnBeam\(tgtId, eSpec\)/);
+
+  // 6. 水龍捲：使用火龍捲柱體結構搭配藍色系
+  assert.match(vfx, /vfx-water-tornado-pillar/);
+  assert.match(renderer, /spawnFirePillar\(spec\.area \|\| spec\.area, spec\)|spawnFirePillar\(a, spec\)/);
+  assert.match(renderer, /var isWater = spec && \(spec\.variant === 'water-tornado' \|\| spec\.elem === 'ice'\)/);
+  assert.match(css, /\.vfx-water-tornado-pillar/);
+  assert.match(css, /\.vfx-water-tongue/);
+});
