@@ -49,7 +49,7 @@ const cap = (e) => e.charAt(0).toUpperCase() + e.slice(1);
 test('earth 是 ELEMENTS 的正式成員，且 ELEM_INFO 每系齊全', () => {
   const c = loadFormulaContext();
   assert.ok(c.ELEMENTS.includes('earth'));
-  assert.equal(c.ELEMENTS.length, 7);
+  assert.equal(c.ELEMENTS.length, 8);   // 2026-08-18 追加 wind（風系三技能）
   for (const e of c.ELEMENTS) {
     const info = c.ELEM_INFO[e];
     assert.ok(info, `${e} 缺少 ELEM_INFO`);

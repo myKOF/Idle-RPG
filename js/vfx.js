@@ -81,7 +81,8 @@ var VFX_ELEM_THEME = {
   ice:       { c1: '#4da6ff', c2: '#f2fbff', glow: '#79d8ff' },
   lightning: { c1: '#f2b705', c2: '#fff8b0', glow: '#ffd23f' },
   earth:     { c1: '#ad7444', c2: '#5b3a27', glow: '#c48a55' },
-  poison:    { c1: '#4caf2b', c2: '#d8ff8a', glow: '#76d83b' }
+  poison:    { c1: '#4caf2b', c2: '#d8ff8a', glow: '#76d83b' },
+  wind:      { c1: '#86efac', c2: '#ffffff', glow: '#b9f6cf' }
 };
 
 /* 開關是比品質分級更高一層的總閘門；關閉時連已存在的特效也要清掉，
@@ -586,7 +587,8 @@ var VFX_HIT_COOLDOWN_MS = 3000;
    萬一剛好碰上重建把 class 洗掉，也只是少抖一下，不會殘留。
    受擊反饋是命中特效的附加層，不負責產生傷害數字，也不改變戰鬥狀態。 */
 var VFX_HIT_CLASSES = ['vfx-hit', 'vfx-hit-strong', 'vfx-hit-fire', 'vfx-hit-ice',
-  'vfx-hit-lightning', 'vfx-hit-poison', 'vfx-hit-light', 'vfx-hit-dark', 'vfx-hit-earth'];
+  'vfx-hit-lightning', 'vfx-hit-poison', 'vfx-hit-light', 'vfx-hit-dark', 'vfx-hit-earth',
+  'vfx-hit-wind'];
 function vfxHitVisualTarget(elId, card) {
   if (!card || !card.querySelector) return null;
   if (elId === 'tb-float') {

@@ -52,3 +52,9 @@ sgFrost,寒霜,❄️,debuff,stat,sgFrost,ice,,0,,0,20,5,0,stack,5,新版技能�
 sgFrostBite,寒霜凍傷,🧊,debuff,dot,,ice,skill,50,,0,0,5,0.5,strongest,1,新版技能【寒霜狀態】的寒冰持續傷害；每跳量占施放群組的本體技能傷害（引擎以 dps 覆寫）。依使用者決策，傷害不隨寒霜層數提高。
 sgFrozen,凍結,🥶,debuff,stat,sgFrozen,ice,,0,,0,0,3,0,refresh,1,新版技能【寒霜狀態】疊滿層數的凍結標記。行動限制本身由「暈眩」承擔（因此完整沿用 BOSS 控場免疫、韌性折減與控場遞減），本狀態只標記「正在凍結中」，供【水龍捲】增傷與【寒冰爆裂箭】判定冰爆時機。
 sgIceRevert,寒冰逆轉,💧,debuff,stat,sgIceRevert,ice,,0,,0,20,6,0,refresh,1,新版技能【寒冰逆轉】：敵人的屬性標籤強制改為寒冰，且受到的寒冰傷害提高（效果值＝提高%）。
+sgWindRend,風切,🌀,debuff,stat,sgWindRend,wind,,0,,0,80,4,0,stack,3,新版技能【風切狀態】的層數與減益：移動速度下降（效果值＝下降%）、命中率下降，層數上限由【無限風切】開放。比照泥沼緩速為技能型減益，不吃控場遞減與韌性。
+sgWindCut,風切割裂,💨,debuff,dot,,wind,skill,50,,0,0,4,0.5,strongest,1,新版技能【風切狀態】的風系持續傷害；每跳量占施放群組的本體技能傷害並隨風切層數提高（引擎以 dps 覆寫）。
+sgWindSlow,狂風緩速,🍃,debuff,stat,sgWindSlow,wind,,0,,0,60,3,0,refresh,1,新版技能【狂風碎裂】：被風刃命中的敵人移動速度下降（效果值＝下降%）。同類型緩速依「取代」規則後蓋前並重新計時。
+sgStormBarrier,暴風屏障,🌪️,buff,stat,sgStormBarrier,wind,,0,,0,10,8,0,refresh,1,新版技能【暴風屏障】：屏障的剩餘時間與傷害減免（效果值＝減免%）；第 2～6 階的效果只在此期間生效（護盾由節拍逐次給予）。
+sgVoidBlade,虛空斬,🌀,buff,stat,sgVoidBlade,wind,,0,,0,0,6,0,refresh,1,新版技能【虛空斬】：虛空斬擊還會在場上繞行多久（環繞場域的剩餘時間投影，比照火狩）。
+sgStormGod,暴風神體,⛈️,buff,stat,sgStormGod,wind,,0,,0,99,2,0,refresh,1,新版技能【暴風神體】：風暴之神附體期間的傷害減免（效果值＝減免%），且風系傷害額外乘算提高。與暴風屏障是分開的兩個狀態。

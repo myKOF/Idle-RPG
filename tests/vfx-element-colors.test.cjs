@@ -12,7 +12,8 @@ const expected = {
   ice: { c1: '#4da6ff', c2: '#f2fbff', glow: '#79d8ff' },
   lightning: { c1: '#f2b705', c2: '#fff8b0', glow: '#ffd23f' },
   earth: { c1: '#ad7444', c2: '#5b3a27', glow: '#c48a55' },
-  poison: { c1: '#4caf2b', c2: '#d8ff8a', glow: '#76d83b' }
+  poison: { c1: '#4caf2b', c2: '#d8ff8a', glow: '#76d83b' },
+  wind: { c1: '#86efac', c2: '#ffffff', glow: '#b9f6cf' }
 };
 
 function loadVfxContext() {
@@ -38,7 +39,7 @@ function loadVfxContext() {
   return context;
 }
 
-test('七系戰鬥特效共用明確的屬性色票', () => {
+test('八系戰鬥特效共用明確的屬性色票', () => {
   const c = loadVfxContext();
   assert.equal(JSON.stringify(c.VFX_ELEM_THEME), JSON.stringify(expected));
   for (const [elem, theme] of Object.entries(expected)) {
