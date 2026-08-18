@@ -1395,6 +1395,58 @@ function isEnemyHitFloat(elId, cls) {
     tokens.indexOf('crit') >= 0 || tokens.indexOf('skill') >= 0);
 }
 
+var UI_DAMAGE_NUMBERS_ENABLED = true;
+try {
+  var savedDamageNumbers = localStorage.getItem('setting_damage_numbers');
+  if (savedDamageNumbers === '0' || savedDamageNumbers === 'false') {
+    UI_DAMAGE_NUMBERS_ENABLED = false;
+  }
+} catch (e) {}
+
+function isDamageNumbersEnabled() {
+  return UI_DAMAGE_NUMBERS_ENABLED;
+}
+
+function updateDamageToggleButton() {
+  var btn = $id('btn-toggle-damage');
+  if (!btn) return;
+  var on = UI_DAMAGE_NUMBERS_ENABLED;
+  btn.classList.toggle('is-off', !on);
+  var iconOpen = btn.querySelector('.icon-eye-open');
+  var iconClosed = btn.querySelector('.icon-eye-closed');
+  if (iconOpen) iconOpen.style.display = on ? 'block' : 'none';
+  if (iconClosed) iconClosed.style.display = on ? 'none' : 'block';
+  btn.setAttribute('data-tt-title', '傷害數字');
+  btn.setAttribute('data-tt-desc', on ? '目前顯示傷害數字（點擊關閉）' : '目前已關閉傷害數字（點擊開啟）');
+  if (typeof refreshOpenStatTooltip === 'function') refreshOpenStatTooltip();
+}
+
+function setDamageNumbersEnabled(enabled, quiet) {
+  UI_DAMAGE_NUMBERS_ENABLED = !!enabled;
+  try {
+    localStorage.setItem('setting_damage_numbers', UI_DAMAGE_NUMBERS_ENABLED ? '1' : '0');
+  } catch (e) {}
+  updateDamageToggleButton();
+  if (!UI_DAMAGE_NUMBERS_ENABLED) {
+    clearActiveDamageFloats();
+  }
+  if (!quiet && typeof blog === 'function') {
+    blog(UI_DAMAGE_NUMBERS_ENABLED ? '👁️ 已開啟傷害數字顯示' : '👁️ 已關閉傷害數字顯示', 'info');
+  }
+}
+
+function clearActiveDamageFloats() {
+  var floats = document.querySelectorAll ? document.querySelectorAll('.enemy-hit-float, .player-damage, .damage-aggregate') : [];
+  for (var i = 0; i < floats.length; i++) {
+    if (floats[i].parentNode) floats[i].parentNode.removeChild(floats[i]);
+  }
+  PENDING_ENEMY_FLOATS.length = 0;
+  BACKGROUND_LATEST_ENEMY_FLOAT = null;
+  if (typeof BattleRenderer !== 'undefined' && typeof BattleRenderer.clearDamageFloats === 'function') {
+    BattleRenderer.clearDamageFloats();
+  }
+}
+
 var FLOAT_TEXT_LIFETIME_MS = 2000;
 var SKILL_CAST_FLOAT_LIFETIME_MS = 1050;
 var SKILL_CAST_TOTAL_FLOAT_LIFETIME_MS = SKILL_CAST_FLOAT_LIFETIME_MS * 2;
@@ -2022,6 +2074,14 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
   // 不因數量或 opacity 主動清理任何數字；每個節點只由自己的自然淡出
   // 計時器移除，避免大量死亡時一次掃描造成畫面與動畫不同步。
   if (enemyHitFloat) animatePendingEnemyKill(ent, elId, cls, battleSnapshot);
+  var playerStyleClass = playerFloatStyleClass(elId, text, cls);
+  var isPlayerDamage = playerStyleClass === 'player-damage';
+
+  // 傷害數字關閉時：不建立傷害飄字 DOM 節點
+  if (!isDamageNumbersEnabled() && (enemyHitFloat || isPlayerDamage)) {
+    return;
+  }
+
   var damageInfo = enemyHitFloat ? enemyDamageFloatInfo(text, damageValue) : null;
   var damageKey = damageInfo ? enemyDamageFloatKey(cls) : '';
   var recoveryInfo = playerRecoveryFloatInfo(elId, cls, text, damageValue);
@@ -2061,13 +2121,11 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
 
   var sp = document.createElement('span');
   var enemyStyleClass = enemyHitFloat ? enemyDamageFloatStyleClass(cls) : '';
-  var playerStyleClass = playerFloatStyleClass(elId, text, cls);
   sp.className = 'float-txt ' + (cls || '') +
     (enemyStyleClass ? ' ' + enemyStyleClass : '') +
     (playerStyleClass ? ' ' + playerStyleClass : '');
   if (enemyHitFloat) sp.className += ' enemy-hit-float';
   sp.textContent = text;
-  var isPlayerDamage = playerStyleClass === 'player-damage';
   var isPlayerBenefit = playerStyleClass === 'player-benefit';
   var isSkillCastFloat = playerStyleClass === 'skill-cast-float';
   var isSkillCastTotalFloat = isSkillCastFloat && String(cls || '').indexOf('skill-cast-total') >= 0;
@@ -9452,6 +9510,15 @@ function initUI() {
   }
   syncVfxQualityForTab();
   initBattleCanvasMode();
+
+  var toggleDamageBtn = $id('btn-toggle-damage');
+  if (toggleDamageBtn) {
+    updateDamageToggleButton();
+    toggleDamageBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      setDamageNumbersEnabled(!isDamageNumbersEnabled());
+    });
+  }
 
   // 本地測試服承傷顯示初始化：顯示在全螢幕按鈕右側
   var host = window.location.hostname;
