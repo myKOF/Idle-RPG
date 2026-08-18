@@ -7450,6 +7450,132 @@ textarea:disabled,
   }
 }
 
+/* 虛空斬：旋轉刀影沿著實際半徑從 r 擴展到 r＋grow×dur；
+   duration 由 js/vfx.js 以技能事件的 dur 注入，避免固定 2 秒動畫提早結束。 */
+.vfx-void-disc {
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center,
+    color-mix(in srgb, var(--vfx-c1, #86efac) 12%, transparent) 0 35%, transparent 72%);
+  filter: drop-shadow(0 0 8px var(--vfx-glow, #86efac));
+  animation: vfxVoidDiscLife var(--vfx-void-duration, 6s) linear both;
+}
+
+.vfx-void-disc::before,
+.vfx-void-disc::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  transform-origin: center;
+  animation-duration: var(--vfx-void-duration, 6s);
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+
+.vfx-void-disc::before {
+  border-top-color: var(--vfx-c1, #86efac);
+  border-right-color: color-mix(in srgb, var(--vfx-c2, #fff) 72%, transparent);
+  animation-name: vfxVoidDiscRing;
+}
+
+.vfx-void-disc::after {
+  inset: 12%;
+  border-width: 1px;
+  border-bottom-color: var(--vfx-c2, #fff);
+  border-left-color: color-mix(in srgb, var(--vfx-c1, #86efac) 70%, transparent);
+  animation-name: vfxVoidDiscInnerRing;
+}
+
+.vfx-void-blade {
+  left: 50%;
+  top: 50%;
+  width: 42px;
+  height: 9px;
+  margin-top: -4.5px;
+  border-radius: 70% 18% 18% 70%;
+  background: linear-gradient(90deg, transparent, var(--vfx-c1, #86efac) 30%, var(--vfx-c2, #fff));
+  clip-path: polygon(0 50%, 28% 10%, 100% 0, 72% 50%, 100% 100%, 28% 90%);
+  filter: drop-shadow(0 0 5px var(--vfx-glow, #86efac));
+  transform-origin: 0 50%;
+  animation: vfxVoidDiscBlade var(--vfx-void-duration, 6s) linear both;
+}
+
+@keyframes vfxVoidDiscLife {
+  0%,
+  8% {
+    opacity: 0.15;
+  }
+
+  16%,
+  84% {
+    opacity: 0.9;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes vfxVoidDiscRing {
+  0% {
+    transform: scale(var(--vfx-void-start-scale, 0.35)) rotate(0deg);
+    opacity: 0.25;
+  }
+
+  14% {
+    opacity: 0.9;
+  }
+
+  86% {
+    opacity: 0.78;
+  }
+
+  100% {
+    transform: scale(1) rotate(var(--vfx-void-turn-end, 920deg));
+    opacity: 0;
+  }
+}
+
+@keyframes vfxVoidDiscInnerRing {
+  0% {
+    transform: scale(var(--vfx-void-start-scale, 0.35)) rotate(0deg);
+    opacity: 0.2;
+  }
+
+  18% {
+    opacity: 0.72;
+  }
+
+  100% {
+    transform: scale(1) rotate(var(--vfx-void-turn, 560deg));
+    opacity: 0;
+  }
+}
+
+@keyframes vfxVoidDiscBlade {
+  0% {
+    transform: rotate(var(--void-angle, 0deg)) translateX(var(--vfx-void-r-start, 60px)) scale(0.45);
+    opacity: 0;
+  }
+
+  14% {
+    opacity: 0.95;
+  }
+
+  84% {
+    transform: rotate(calc(var(--void-angle, 0deg) + var(--vfx-void-turn, 560deg)))
+      translateX(var(--vfx-void-r-end, 180px)) scale(1);
+    opacity: 0.86;
+  }
+
+  100% {
+    transform: rotate(calc(var(--void-angle, 0deg) + var(--vfx-void-turn-end, 920deg)))
+      translateX(var(--vfx-void-r-end, 180px)) scale(0.55);
+    opacity: 0;
+  }
+}
+
 /* ---- 刀光亂舞：白刃連閃 ---- */
 .vfx-bstorm {
   width: 52px;

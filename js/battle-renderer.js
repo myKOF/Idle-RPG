@@ -2760,10 +2760,13 @@ var BattleRenderer = (function () {
     if (!a || !isFinite(a.r)) return;
     var ccw = Number(a.spin) < 0;
     var key = 'void:' + (ccw ? 'ccw' : 'cw');
-    var dur = Math.min(FX_ORBIT_MAX_SEC, Math.max(0.5, spec.dur || 6));
+    /* 虛空斬的畫面壽命直接跟事件的技能壽命走；不能套用一般領域上限，
+       否則未來技能表調長時，特效會比實際場域早消失。 */
+    var dur = Math.max(0.5, Number(spec && spec.dur) || 6);
     var disc = _voidDiscs[key];
     if (disc && !disc.done) {
-      disc.dur = Math.min(FX_ORBIT_MAX_SEC, Math.max(disc.dur, disc.t + dur));
+      disc.dur = Math.max(disc.dur, disc.t + dur);
+      if (disc.fx) disc.fx.maxLife = Math.max(disc.fx.maxLife || 0, disc.dur * 1000 + 500);
       return;
     }
     var theme = themeOf(spec);
@@ -2778,7 +2781,21 @@ var BattleRenderer = (function () {
     _voidDiscs[key] = disc;
     var c1 = cssColorToInt(theme.c1, 0x86efac);
     var c2 = cssColorToInt(theme.c2, 0xffffff);
-    addFx({
+    function drawBlade(angle, radius, alpha) {
+      var cx = Math.cos(angle) * radius;
+      var cy = Math.sin(angle) * radius * 0.62;
+      var teeth = 12;
+      var poly = [];
+      for (var i = 0; i < teeth * 2; i++) {
+        var ta = angle * 3 + Math.PI * i / teeth;
+        var rr = bodyR * (i % 2 === 0 ? 1 : 0.68);
+        poly.push(cx + Math.cos(ta) * rr, cy + Math.sin(ta) * rr * 0.85);
+      }
+      node.poly(poly).fill({ color: c1, alpha: 0.8 * alpha })
+        .stroke({ color: c2, width: 2, alpha: 0.9 * alpha });
+      node.circle(cx, cy, bodyR * 0.42).fill({ color: c2, alpha: 0.85 * alpha });
+    }
+    var fx = addFx({
       node: node,
       update: function (dt) {
         disc.t += dt;
@@ -2786,29 +2803,27 @@ var BattleRenderer = (function () {
         var p = playerPos();
         node.x = p.x; node.y = p.y - 12;
         var fade = disc.t > disc.dur - 0.4 ? Math.max(0, (disc.dur - disc.t) / 0.4) : 1;
-        var ang = spin * disc.t;
-        var cx = Math.cos(ang) * disc.r, cy = Math.sin(ang) * disc.r * 0.62;
         node.clear();
         node.ellipse(0, 0, disc.r, disc.r * 0.62)
           .stroke({ color: c1, width: 1.5, alpha: 0.16 * fade });
-        // 鋸齒圓盤：外圈鋸齒 + 內圈白光
-        var teeth = 12;
-        var poly = [];
-        for (var i = 0; i < teeth * 2; i++) {
-          var ta = ang * 3 + Math.PI * i / teeth;
-          var rr = bodyR * (i % 2 === 0 ? 1 : 0.68);
-          poly.push(cx + Math.cos(ta) * rr, cy + Math.sin(ta) * rr * 0.85);
+        /* 保留最近幾幀的刃影，形成連續螺旋；半徑與角度都回推到各自的時間點，
+           因此從開始到 dur 結束都能看見向外擴展，而不是只剩一顆短促的圓盤。 */
+        var trailSteps = 5;
+        for (var ti = trailSteps; ti >= 0; ti--) {
+          var trailDt = Math.min(disc.t, ti * 0.11);
+          var trailT = disc.t - trailDt;
+          var trailR = Math.max(8, disc.r - grow * trailDt);
+          var trailAlpha = ti === 0 ? 1 : 0.18 * (1 - ti / (trailSteps + 1));
+          drawBlade(spin * trailT, trailR, trailAlpha * fade);
         }
-        node.poly(poly).fill({ color: c1, alpha: 0.8 * fade })
-          .stroke({ color: c2, width: 2, alpha: 0.9 * fade });
-        node.circle(cx, cy, bodyR * 0.42).fill({ color: c2, alpha: 0.85 * fade });
         if (disc.t >= disc.dur) {
           disc.done = true;
           if (_voidDiscs[key] === disc) delete _voidDiscs[key];
         }
         return disc.t < disc.dur;
       }
-    }, 2, (FX_ORBIT_MAX_SEC + 1) * 1000);
+    }, 2, dur * 1000 + 500);
+    disc.fx = fx;
   }
 
   /* 暴風屏障／暴風神體／暴風撕裂：纏在自身的風殼。

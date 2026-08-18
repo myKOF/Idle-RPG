@@ -611,6 +611,9 @@ test('風系特效：風刃／真空斬／迴旋斬／虛空斬／暴風屏障�
   // Canvas：虛空斬的半徑成長沿用模擬層的 area.grow，且順逆時針各一道
   assert.match(renderer, /function spawnVoidDisc\(spec\)/);
   assert.match(renderer, /disc\.r \+= grow \* dt;/);
+  assert.match(renderer, /var dur = Math\.max\(0\.5, Number\(spec && spec\.dur\) \|\| 6\);/);
+  assert.match(renderer, /dur \* 1000 \+ 500/);
+  assert.match(renderer, /形成連續螺旋/);
   assert.match(skills2, /grow: f\.growPxPerSec \|\| 0/);
   // Canvas：屏障／神體／撕裂是釘在自身的風殼
   assert.match(renderer, /function spawnStormShell\(spec\)/);
@@ -622,10 +625,14 @@ test('風系特效：風刃／真空斬／迴旋斬／虛空斬／暴風屏障�
   assert.match(vfx, /s\.variant === 'wind-blade' \|\| s\.variant === 'wind-blade-small'/);
   assert.match(vfx, /s\.variant === 'ice-arrow-homing' \|\| s\.variant === 'wind-blade-homing'/);
   assert.match(vfx, /'vfx-wind-homing'/);
+  assert.match(vfx, /function vfxVoidDisc\(spec, layer, rect\)/);
+  assert.match(vfx, /s\.variant === 'void-disc'\) vfxVoidDisc\(s, layer, rect\)/);
 
   // CSS：風系的投射物／受擊／光環配色，以及技能標籤
   assert.match(css, /\.vfx-proj-wind \.vfx-proj-core/);
   assert.match(css, /\.vfx-impact-wind \.vfx-p/);
   assert.match(css, /\.vfx-aura-wind \.vfx-aura-p/);
   assert.match(css, /\.vfx-wind-homing \{/);
+  assert.match(css, /\.vfx-void-disc \{/);
+  assert.match(css, /vfxVoidDiscBlade/);
 });

@@ -2012,6 +2012,43 @@ function vfxAura(spec, layer, rect) {
   vfxTrack(d, Math.min(60, Math.max(1, spec.dur)) * 1000);
 }
 
+/* 虛空斬：DOM 後備路徑也要保留完整的 6 秒螺旋，而不是退回一般光環的
+   1.6 秒呼吸與 2 秒粒子循環。半徑由事件帶來的 r／grow 推到結束，
+   CSS 只負責在這段壽命內旋轉刀影與向外擴展。 */
+function vfxVoidDisc(spec, layer, rect) {
+  var duration = vfxFieldMotionSec(spec, 6);
+  var area = spec.area || {};
+  var startRadius = Number(area.r);
+  if (!isFinite(startRadius) || startRadius <= 0) {
+    startRadius = Math.max(48, Math.min(Math.abs(rect.w), Math.abs(rect.h)) * 0.5);
+  }
+  var grow = Math.max(0, Number(area.grow) || 0);
+  var endRadius = Math.max(startRadius, startRadius + grow * duration);
+  var center = (spec.targets && spec.targets.length)
+    ? vfxPointOf(spec.targets[0], layer) : null;
+  if (!center) center = vfxOriginPoint(layer);
+  if (!center && rect) center = { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2 };
+  if (!center) return;
+
+  var d = vfxNode('vfx-void-disc', layer, spec);
+  vfxPlace(d, center);
+  d.style.width = (endRadius * 2) + 'px';
+  d.style.height = (endRadius * 1.24) + 'px';
+  d.style.setProperty('--vfx-void-duration', duration + 's');
+  d.style.setProperty('--vfx-void-r-start', startRadius + 'px');
+  d.style.setProperty('--vfx-void-r-end', endRadius + 'px');
+  d.style.setProperty('--vfx-void-start-scale', String(startRadius / endRadius));
+  d.style.setProperty('--vfx-void-turn', Number(area.spin) < 0 ? '-560deg' : '560deg');
+  d.style.setProperty('--vfx-void-turn-end', Number(area.spin) < 0 ? '-920deg' : '920deg');
+  for (var i = 0; i < 8; i++) {
+    var blade = document.createElement('span');
+    blade.className = 'vfx-void-blade';
+    blade.style.setProperty('--void-angle', (i * 45) + 'deg');
+    d.appendChild(blade);
+  }
+  vfxTrack(d, duration * 1000);
+}
+
 /* ---- 我方增益：光環＋上升光點 ----
    只掛在我方錨點，不對敵人建立命中特效。 */
 function vfxSelfBuff(spec, layer, pt, delayMs) {
@@ -2234,6 +2271,7 @@ function renderCombatVfx(spec) {
     if (!rect) {
       // 高塔戰沒有棋盤格：以目標卡片為中心的退化矩形
       var fallbackPt = vfxPointOf(anchorId, layer);
+      if (!fallbackPt && s.variant === 'void-disc') fallbackPt = vfxOriginPoint(layer);
       if (!fallbackPt) return;
       rect = vfxRectAround(fallbackPt, s.variant === 'meteor' ? spec.area : null);
     }
@@ -2248,6 +2286,7 @@ function renderCombatVfx(spec) {
           : (vfxPointOf(anchorId, layer) || { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2 });
         vfxFirePillar(s, layer, spec.area, tornadoPt);
       }
+      else if (s.variant === 'void-disc') vfxVoidDisc(s, layer, rect);
       else if (isIceField) vfxIceField(s, layer, spec.area, rect);
       else vfxAura(s, layer, rect);
       return;

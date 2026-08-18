@@ -3685,6 +3685,42 @@ Commit：
 
 完成後交給：使用者／主整合工作區。
 
+---
+
+## [Codex] 虛空斬持續特效與技能時間同步
+
+任務狀態：Completed
+
+任務分類：戰鬥 VFX／技能顯示修正
+
+負責 AI：Codex
+
+使用者需求：虛空斬技能說明為持續 6 秒，但實際觀察到螺旋特效約 2 秒就消失；
+要求特效持續至技能時間結束，並持續旋轉、向外擴展至 6 秒結束。
+
+允許修改：`js/battle-renderer.js`、`js/vfx.js`、`css/style.css`、
+`tests/skill2-wind.test.cjs`、`tests/skill2-vfx.test.cjs`、`index.html`、`docs/AI_TASKS.md`。
+
+禁止修改：技能傷害、命中判定、狀態數值、存檔格式、Worker Protocol 與無關技能效果。
+
+驗收方式：確認虛空斬事件將技能實際 `dur` 傳給兩條顯示路徑；Canvas／DOM 特效均以該
+`dur` 回收，且測試驗證施放後 5 秒仍存在、6 秒到期後才清除。
+
+完成內容：Canvas 改為以事件 `dur` 作為硬性壽命，新增連續刃影形成向外擴展的螺旋；
+DOM 後備路徑新增虛空斬專用螺旋，並以 `r + grow × dur` 計算結束半徑；更新兩支腳本
+版號與回歸測試。
+
+驗證結果：`node --test tests/skill2-wind.test.cjs tests/skill2-vfx.test.cjs
+tests/skill-special-vfx.test.cjs` 52/52 通過；`node --check js/vfx.js`、
+`node --check js/battle-renderer.js` 通過；`node tools/build_check.cjs` 294/294 通過；
+完整 `npm test` 1606 項中 1601 通過、5 項失敗，失敗均為乾淨基準線既有的
+counter 消耗／泥沼範圍／暴風雪範圍／參數漂移，未新增本任務相關失敗。
+
+已知風險：尚未以實機瀏覽器逐幀目視確認 DOM 後備路徑的螺旋尺寸；Canvas 與 DOM
+均保留現有特效節點上限，極端特效洪峰時仍可能依優先級淘汰視覺節點，但不影響技能判定。
+
+完成後交給：使用者／主整合工作區。
+
 ## 任務：火狩與其他技能同時施放時特效遺失
 
 任務狀態：已完成（2026-08-18）

@@ -382,7 +382,13 @@ test('【虛空斬】：兩道反向旋轉、半徑逐秒擴大的環繞場域',
   assert.ok(Math.abs(c.SKILL2_RT.orbits[0].rings[0].r - (before + c.bfMeterPx(2))) < 1e-6,
     '每秒加長 2 米（逐 tick 平滑累加）');
   assert.ok(calls.some((x) => Math.abs(x.atk - 500 * (400 + 40) / 100) < 1e-6), '碰到的敵人吃 440% 風系傷害');
-  assert.ok(specs.some((s) => s.variant === 'void-disc'), '送出虛空斬的環繞特效');
+  const voidSpecs = specs.filter((s) => s.variant === 'void-disc');
+  assert.ok(voidSpecs.length >= 2, '送出順逆兩道虛空斬的環繞特效');
+  assert.ok(voidSpecs.every((s) => s.dur === 6), '顯示層收到技能表的完整 6 秒壽命');
+  run(c, p, [e], 4);
+  assert.equal(c.SKILL2_RT.orbits.length, 2, '持續 5 秒時兩道虛空斬仍在作用');
+  run(c, p, [e], 1.1);
+  assert.equal(c.SKILL2_RT.orbits.length, 0, '超過 6 秒才清除虛空斬場域');
   assert.ok(p.buffs.sgVoidBlade, '剩餘時間投影成狀態（比照火狩）');
 });
 
