@@ -7711,12 +7711,23 @@ function sgStageNodeHTML(gid, tierIndex, lvs, loadout, skillsSnapshot) {
     '</div>';
 }
 
+function isGMHost() {
+  var loc = (typeof window !== 'undefined' && window.location) ||
+    (typeof location !== 'undefined' && location);
+  var host = loc && loc.hostname;
+  return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+}
+
 function sgSkillGroupRowHTML(gid, lvs, loadout, skillsSnapshot) {
   var g = SKILLS2[gid];
   if (!g) return '';
   var groupRef = 'sg:' + gid;
   var equipped = loadout.indexOf(groupRef) >= 0;
   var labelCls = 'sg-group-label' + (equipped ? ' sg-group-equipped' : '');
+  var isDev = isGMHost();
+  var maxBtnHtml = isDev
+    ? '<button type="button" class="sg-row-max-btn" data-sg-max-group="' + esc(gid) + '" title="【內測專用】一鍵將「' + esc(g.name) + '」全階層升至滿級" aria-label="一鍵滿級 ' + esc(g.name) + '">MAX</button>'
+    : '';
   var h = '<div class="sg-group-row">' +
     '<div class="' + labelCls + '" data-sk="' + groupRef + '">' +
     '<span class="sg-group-emoji" aria-hidden="true">' + g.emoji + '</span>' +
@@ -7727,7 +7738,7 @@ function sgSkillGroupRowHTML(gid, lvs, loadout, skillsSnapshot) {
     if (i > 0) h += '<span class="sg-stage-arrow" aria-hidden="true">➤</span>';
     h += sgStageNodeHTML(gid, i, lvs, loadout, skillsSnapshot);
   }
-  return h + '</div></div>';
+  return h + maxBtnHtml + '</div></div>';
 }
 
 /* 新版技能群組的升級彈窗內容（沿用 #skill-modal 外殼與舊版技能升級界面佈局）。 */
@@ -9727,6 +9738,22 @@ function initUI() {
         }).catch(function (error) {
           reportUiCommandFailure('換穿裝備套', error, ['equip', 'inv', 'header']);
         });
+      }
+      return;
+    }
+    // 內測專用：新版技能群組整列一鍵滿級
+    var s2RowMax = e.target.closest('[data-sg-max-group]');
+    if (s2RowMax) {
+      var maxGid = s2RowMax.getAttribute('data-sg-max-group');
+      if (maxGid) {
+        var isDev = (typeof isGMHost === 'function') ? isGMHost() : (typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '::1'));
+        if (isDev && typeof WorkerBridge !== 'undefined') {
+          WorkerBridge.send('gm.exec', { line: 'skill2max ' + maxGid }).then(function (res) {
+            if (res && res.message && typeof blog === 'function') {
+              blog('⚡ [內測] ' + res.message, res.ok ? 'good' : 'bad');
+            }
+          });
+        }
       }
       return;
     }

@@ -529,6 +529,35 @@
     return { ok: true, message: '背包容量已設定為 ' + fmtCap + ' 格（基礎 ' + baseCap + ' + 擴充 ' + G.player.invUpgrades + '）' };
   }
 
+  function gmMaxSkill2(gidRaw) {
+    if (!isGMHost()) return { ok: false, message: 'GM 指令僅能在本機開發環境使用。' };
+    var gid = String(gidRaw || '').trim().toLowerCase();
+    if (!gid) return { ok: false, message: '請指定技能群組代碼（或 all）。' };
+    var maxLv = (typeof SG_TIER_MAX_LV === 'number') ? SG_TIER_MAX_LV : 10;
+    if (!G.player.skills2) G.player.skills2 = { levels: {} };
+    if (!G.player.skills2.levels) G.player.skills2.levels = {};
+
+    if (gid === 'all') {
+      if (typeof SKILLS2 !== 'undefined') {
+        for (var k in SKILLS2) {
+          var arr = [];
+          for (var t = 0; t < SKILLS2[k].tiers.length; t++) arr.push(maxLv);
+          G.player.skills2.levels[k] = arr;
+        }
+      }
+      gmDirty();
+      return { ok: true, message: '所有新版技能群組已升至滿級（Lv.' + maxLv + '）' };
+    }
+
+    var g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[gid] : null;
+    if (!g) return { ok: false, message: '找不到技能群組：' + gid };
+    var arr = [];
+    for (var i = 0; i < g.tiers.length; i++) arr.push(maxLv);
+    G.player.skills2.levels[gid] = arr;
+    gmDirty();
+    return { ok: true, message: '【' + g.name + '】全階層已升至滿級（Lv.' + maxLv + '）' };
+  }
+
   function executeGMCommand(raw) {
     if (!isGMHost()) return { ok: false, message: 'GM 指令僅能在本機開發環境使用。' };
     var text = String(raw || '').trim();
@@ -536,6 +565,10 @@
     var args = text.split(/\s+/);
     var command = args.shift().toLowerCase();
     var amount, level, rarity, count, type, key, result, slot, node;
+
+    if (command === 'skill2max' || command === 'skillmax' || command === 'skills2max') {
+      return gmMaxSkill2(args[0]);
+    }
 
     if (command === 'help' || command === '?') {
       return { ok: true, message: '指令說明請查看根目錄 GM_command.md' };

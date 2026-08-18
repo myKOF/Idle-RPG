@@ -4388,9 +4388,9 @@ textarea:disabled,
 .sg-group-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
-  padding: 6px 4px;
+  padding: 5px 6px;
   border: 1px solid rgba(185, 138, 45, .45);
   background: rgba(0, 0, 0, .28);
   overflow-x: auto;
@@ -4399,13 +4399,13 @@ textarea:disabled,
 
 .sg-group-label {
   display: flex;
-  flex: 0 0 88px;
+  flex: 0 0 76px;
   min-height: 58px;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
   gap: 2px;
-  padding: 4px 6px;
+  padding: 4px 4px;
   border-left: 3px solid var(--border);
   color: var(--text);
   cursor: pointer;
@@ -4438,7 +4438,7 @@ textarea:disabled,
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 .sg-stage-node {
@@ -4524,12 +4524,49 @@ textarea:disabled,
 }
 
 .sg-stage-arrow {
-  flex: 0 0 16px;
+  flex: 0 0 13px;
   color: #1f8cb7;
-  font-size: 25px;
+  font-size: 20px;
   font-weight: bold;
   line-height: 1;
+  text-align: center;
   text-shadow: 1px 1px 0 #07141b, 0 0 5px rgba(31, 140, 183, .5);
+}
+
+/* 內測專用：一鍵滿級按鈕 */
+.sg-row-max-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 58px;
+  margin-left: 4px;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, #421111 0%, #1e0707 100%);
+  border: 1.5px solid #d4a340;
+  border-radius: 3px;
+  color: #ffe066;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(212, 163, 64, 0.4), inset 0 0 8px rgba(255, 60, 60, 0.25);
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.sg-row-max-btn:hover {
+  background: linear-gradient(180deg, #661818 0%, #300909 100%);
+  border-color: #fff188;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(255, 241, 136, 0.7), inset 0 0 10px rgba(255, 100, 100, 0.5);
+  transform: translateY(-1px);
+}
+
+.sg-row-max-btn:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.85);
 }
 
 .sg-modal-locked-action {
