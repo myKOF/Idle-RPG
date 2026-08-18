@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜合併後恢復寒冰體狀態窗口｜2026-08-18
+
+- 狀態：已完成
+- 根因：合併後 `js/skills2.js` 的寒冰體 T3 與受擊判定回到舊機率欄位，`Status.xlsx` 缺少 `sgFrostbody`，`Skills2.xlsx` 也未同步 6 秒狀態規格。
+- 修改：恢復 `sgFrostbody` 的 6 秒授予與有效期判定、25% 狀態值讀取，以及兩份 Excel 的寒冰體資料；保留合併後的風系內容。
+- 驗證：冰系／火狩測試 50/51 通過；新增寒冰體案例通過。唯一失敗仍是既有暴風雪 20×20 米斷言，而參數表為 24×24；`node --check`、`node tools/build_check.cjs`（293/293）、兩份 `config_tables --apply` 語意變更 0、`git diff --check` 均通過。
+
 ## Codex｜將寒冰體改為 6 秒狀態窗口｜2026-08-18
 
 - 狀態：已完成
