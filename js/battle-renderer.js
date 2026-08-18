@@ -3997,6 +3997,7 @@ var BattleRenderer = (function () {
 
   function onFloat(ev) {
     if (!ev) return;
+    if (typeof isDamageNumbersEnabled === 'function' && !isDamageNumbersEnabled()) return;
     if (!S.ready) {
       if (!S.failed && S.initStarted) queueFloatUntilReady(ev);
       return;
@@ -4013,22 +4014,6 @@ var BattleRenderer = (function () {
       return;
     }
     if (!enemyFloatTargetAvailable(ev.elId)) return;
-    var playerTarget = ev.elId === 'pv-float' || ev.elId === 'tp-float';
-    var playerDamage = playerTarget &&
-      (String(ev.cls || '').indexOf('mdmg') >= 0 || /^\s*(爆擊\s*)?-/.test(String(ev.text || '')));
-    var isEnemyDamage = (!playerTarget) && (
-      /^mv-float-\d+$/.test(String(ev.elId || '')) || ev.elId === 'tb-float'
-    ) && (
-      String(ev.cls || '').indexOf('enemy-attack') >= 0 ||
-      String(ev.cls || '').indexOf('enemy-skill') >= 0 ||
-      String(ev.cls || '').indexOf('dmg') >= 0 ||
-      String(ev.cls || '').indexOf('crit') >= 0 ||
-      (typeof isEnemyHitFloat === 'function' && isEnemyHitFloat(ev.elId, ev.cls))
-    );
-
-    if (typeof isDamageNumbersEnabled === 'function' && !isDamageNumbersEnabled()) {
-      if (isEnemyDamage || playerDamage) return;
-    }
 
     var val = Number(ev.damageValue);
     var mergeable = isFinite(val) && val > 0 && /^[-+]?/.test(ev.text || '') && (ev.cls || '').indexOf('player-event') < 0;
@@ -4702,20 +4687,21 @@ var BattleRenderer = (function () {
         float: kids(L.float), overlay: kids(L.overlay)
       }
     };
-  }
-
-  function clearDamageFloats() {
+  function clearAllFloats() {
     for (var i = S.floats.length - 1; i >= 0; i--) {
       var f = S.floats[i];
-      if (!f || f.dead) continue;
-      if (!f.skillCast) {
-        killFx(f);
-        f.dead = true;
-        if (f.mergeKey && S.floatMerge[f.mergeKey] === f) delete S.floatMerge[f.mergeKey];
-        S.floats.splice(i, 1);
-      }
+      if (!f) continue;
+      killFx(f);
+      f.dead = true;
+      if (f.mergeKey && S.floatMerge[f.mergeKey] === f) delete S.floatMerge[f.mergeKey];
+    }
+    S.floats.length = 0;
+    S.floatMerge = {};
+    if (S.layers && S.layers.float) {
+      try { S.layers.float.removeChildren(); } catch (e) {}
     }
   }
+  var clearDamageFloats = clearAllFloats;
 
   return {
     init: init,
@@ -4727,6 +4713,7 @@ var BattleRenderer = (function () {
     syncBattle: syncBattle,
     status: status,
     clearDamageFloats: clearDamageFloats,
+    clearAllFloats: clearAllFloats,
     /* 測試／除錯用：取 Pixi Application（headless 驗證時手動推 ticker、抽畫面）
        與內部狀態快照。正式流程不得依賴。 */
     _app: function () { return S.app; },

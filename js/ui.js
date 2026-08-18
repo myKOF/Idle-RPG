@@ -1436,14 +1436,18 @@ function setDamageNumbersEnabled(enabled, quiet) {
 }
 
 function clearActiveDamageFloats() {
-  var floats = document.querySelectorAll ? document.querySelectorAll('.enemy-hit-float, .player-damage, .damage-aggregate') : [];
+  var floats = document.querySelectorAll ? document.querySelectorAll('.float-txt, .float-layer > *') : [];
   for (var i = 0; i < floats.length; i++) {
     if (floats[i].parentNode) floats[i].parentNode.removeChild(floats[i]);
   }
   PENDING_ENEMY_FLOATS.length = 0;
   BACKGROUND_LATEST_ENEMY_FLOAT = null;
-  if (typeof BattleRenderer !== 'undefined' && typeof BattleRenderer.clearDamageFloats === 'function') {
-    BattleRenderer.clearDamageFloats();
+  if (typeof BattleRenderer !== 'undefined') {
+    if (typeof BattleRenderer.clearAllFloats === 'function') {
+      BattleRenderer.clearAllFloats();
+    } else if (typeof BattleRenderer.clearDamageFloats === 'function') {
+      BattleRenderer.clearDamageFloats();
+    }
   }
 }
 
@@ -2077,8 +2081,8 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
   var playerStyleClass = playerFloatStyleClass(elId, text, cls);
   var isPlayerDamage = playerStyleClass === 'player-damage';
 
-  // 傷害數字關閉時：不建立傷害飄字 DOM 節點
-  if (!isDamageNumbersEnabled() && (enemyHitFloat || isPlayerDamage)) {
+  // 數字/戰鬥飄字關閉時：不建立任何飄字 DOM 節點
+  if (!isDamageNumbersEnabled()) {
     return;
   }
 

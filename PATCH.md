@@ -1,13 +1,13 @@
 # PATCH.md
 
-## 戰鬥傷害數字開關功能（Antigravity 2026-08-18）
+## 戰鬥傷害與全部飄字數字開關功能（Antigravity 2026-08-18）
 
 - **UI 按鈕新增**：於戰鬥區左上角敵情提示鈕（`#btn-enemy-tip`）右側新增圓形眼睛圖示按鈕（`#btn-toggle-damage`），支援以 SVG 精準呈現睜眼（開啟）與劃線閉眼（關閉）狀態，並搭配主題色 Hover 效果與動態 Tooltip 說明。
-- **雙模式戰鬥飄字開關**：
-  - **DOM 模式**：關閉時自動跳過敵我雙方傷害數字（`enemy-hit-float`、`player-damage`）的 DOM 節點生成，保持致死血條動畫與非傷害飄字（如回復、護盾、閃避、技能施放）正常運作；開啟/關閉切換時立即清空殘留傷害浮字。
-  - **PixiJS 渲染器模式**：`BattleRenderer` 同步接入 `isDamageNumbersEnabled()` 檢查，關閉時即時過濾傷害字節點，並實作 `clearDamageFloats()` 函式以利狀態切換時即時清除畫布上殘留的傷害浮字。
-- **本地設定持久化**：玩家對傷害數字開關的偏好自動保存至 `localStorage`（`setting_damage_numbers`），重新整理頁面後自動延續玩家設定。
-- **測試回歸**：新增 `tests/damage-numbers-toggle.test.cjs` 驗證按鈕 DOM、CSS、UI 邏輯與渲染器介面；相關飄字與 Tooltip 回歸測試全部 PASS。
+- **全數值飄字雙模式完整過濾與即時清理**：
+  - **DOM 模式**：關閉時跳過所有戰鬥浮字生成（包含普攻/技能傷害、各類反傷/反震、護盾吸收、治療回復、法力、格擋、閃避與技能標題浮字），同時確保致死血條動畫正常結算；切換關閉時清空所有 `.float-txt` 殘留浮字。
+  - **PixiJS 渲染器模式**：`BattleRenderer.onFloat` 於入口處直接判斷 `isDamageNumbersEnabled()`，關閉時即時中斷所有浮字創建；`clearAllFloats()` 於切換關閉時即時清空畫布所有浮字與 `S.layers.float` 容器節點。
+- **本地設定持久化**：玩家對數字開關的偏好自動保存至 `localStorage`（`setting_damage_numbers`），重新整理頁面後自動延續玩家設定。
+- **測試回歸**：更新 `tests/damage-numbers-toggle.test.cjs` 驗證按鈕 DOM、CSS、UI 邏輯與渲染器介面；相關飄字與 Tooltip 回歸測試全部 PASS。
 
 ## 新版技能彈射與連鎖特效全面優化與細化（Antigravity 2026-08-18）
 
