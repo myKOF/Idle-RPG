@@ -1603,12 +1603,15 @@ function vfxThunderOrb(spec, layer, area, rect) {
   return node;
 }
 
-/* 冰系場域（新版技能 icearrow／waterball／frostnova）：暴風雪、水龍捲、追蹤冰箭。
-   與沼澤／雷球同為「按 area.id 合併、每次 tick 續命」的長駐節點。
-   三者的差別只在形狀與內容元素：
-     暴風雪   矩形（貼地壓成 52% 高，比照沼澤）＋落雪粒子，跟隨我方 → 每次事件都要內插新座標
-     水龍捲   圓形漏斗，釘在地板
-     追蹤冰箭 小圓冰晶，持續移動 → 同樣靠內插跟上模擬層座標 */
+/* 冰系場域與追跡風刃：按 area.id 合併、每次 tick 續命。
+   追跡風刃只共用場域的平滑追蹤，不共用冰晶的 DOM 外觀。 */
+function vfxWindHomingSetAngle(visual, cx, cy, area) {
+  if (!visual || !area || !isFinite(area.destX) || !isFinite(area.destY)) return;
+  var dx = Number(area.destX) - Number(cx), dy = Number(area.destY) - Number(cy);
+  if (Math.abs(dx) + Math.abs(dy) <= 0.5) return;
+  visual.style.setProperty('--vfx-wind-angle', Math.atan2(dy, dx).toFixed(5) + 'rad');
+}
+
 function vfxIceField(spec, layer, area, rect) {
   if (!rect || !isFinite(rect.x) || !isFinite(rect.y)) return null;
   var variant = spec && spec.variant;
@@ -1637,6 +1640,7 @@ function vfxIceField(spec, layer, area, rect) {
                area && area.speed > 0 && isFinite(area.destX) && isFinite(area.destY)) {
       vfxFieldMotionHome(node, area.speed, area.destX, area.destY);
     }
+    if (variant === 'wind-blade-homing') vfxWindHomingSetAngle(node._vfxFieldVisual, cx, cy, area);
     node._vfxExpiresAt = Date.now() + ttl;
     return node;
   }
@@ -1652,24 +1656,33 @@ function vfxIceField(spec, layer, area, rect) {
              area && area.speed > 0 && isFinite(area.destX) && isFinite(area.destY)) {
     vfxFieldMotionHome(node, area.speed, area.destX, area.destY);
   }
-  var pieces = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 6;
-  for (var i = 0; i < pieces; i++) {
-    var piece = document.createElement('span');
-    if (variant === 'blizzard') {
-      piece.className = 'vfx-blizzard-flake';
-      piece.style.setProperty('--vfx-flake-x', (8 + (84 * (i + 0.5) / pieces)).toFixed(1) + '%');
-      piece.style.setProperty('--vfx-flake-delay', (-i * 0.28).toFixed(2) + 's');
-    } else if (variant === 'water-tornado') {
-      piece.className = 'vfx-tornado-ring';
-      piece.style.setProperty('--vfx-tornado-scale', (1 - i * 0.14).toFixed(2));
-      piece.style.setProperty('--vfx-tornado-lift', (-i * 16).toFixed(0) + '%');
-      piece.style.setProperty('--vfx-tornado-delay', (-i * 0.16).toFixed(2) + 's');
-    } else {
-      if (i >= 4) break;   // 冰晶只需要四道尖刺
-      piece.className = 'vfx-ice-shard';
-      piece.style.setProperty('--vfx-shard-rot', (i * 90).toFixed(0) + 'deg');
+  if (variant === 'wind-blade-homing') {
+    /* 追跡風刃的移動場域只放一個小型風刃，不再建立冰晶尖刺或藍色球體。 */
+    var windBlade = document.createElement('span');
+    windBlade.className = 'vfx-wind-homing-blade';
+    windBlade.style.setProperty('--vfx-wind-blade-scale', Math.max(0.55, w / 30).toFixed(3));
+    node._vfxFieldVisual.appendChild(windBlade);
+    vfxWindHomingSetAngle(node._vfxFieldVisual, cx, cy, area);
+  } else {
+    var pieces = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 6;
+    for (var i = 0; i < pieces; i++) {
+      var piece = document.createElement('span');
+      if (variant === 'blizzard') {
+        piece.className = 'vfx-blizzard-flake';
+        piece.style.setProperty('--vfx-flake-x', (8 + (84 * (i + 0.5) / pieces)).toFixed(1) + '%');
+        piece.style.setProperty('--vfx-flake-delay', (-i * 0.28).toFixed(2) + 's');
+      } else if (variant === 'water-tornado') {
+        piece.className = 'vfx-tornado-ring';
+        piece.style.setProperty('--vfx-tornado-scale', (1 - i * 0.14).toFixed(2));
+        piece.style.setProperty('--vfx-tornado-lift', (-i * 16).toFixed(0) + '%');
+        piece.style.setProperty('--vfx-tornado-delay', (-i * 0.16).toFixed(2) + 's');
+      } else {
+        if (i >= 4) break;   // 冰晶只需要四道尖刺
+        piece.className = 'vfx-ice-shard';
+        piece.style.setProperty('--vfx-shard-rot', (i * 90).toFixed(0) + 'deg');
+      }
+      node._vfxFieldVisual.appendChild(piece);
     }
-    node._vfxFieldVisual.appendChild(piece);
   }
   _vfxIceFields[key] = node;
   vfxTrack(node, VFX_ICE_FIELD_LIFE_MS);

@@ -624,13 +624,19 @@ test('風系特效：風刃／真空斬／迴旋斬／虛空斬／暴風屏障�
   // Canvas：屏障／神體／撕裂是釘在自身的風殼
   assert.match(renderer, /function spawnStormShell\(spec\)/);
   assert.match(renderer, /spec\.variant === 'storm-barrier' \|\| spec\.variant === 'storm-god'/);
-  // Canvas：追跡風刃與追蹤冰箭共用同一套移動場域畫法
+  // Canvas：追跡風刃只共用追蹤移動，不得共用冰晶／藍球外觀
   assert.match(renderer, /variant === 'ice-arrow-homing' \|\| variant === 'wind-blade-homing'/);
+  const windFieldCanvas = renderer.slice(renderer.indexOf('function spawnIceField'), renderer.indexOf('function spawnRiser', renderer.indexOf('function spawnIceField')));
+  assert.match(windFieldCanvas, /fx\.variant === 'wind-blade-homing'[\s\S]*?drawWindCrescent\(g,/);
+  assert.match(windFieldCanvas, /fx\.variant !== 'wind-blade-homing'/);
 
-  // DOM：風刃沿用貫穿冰箭那條直線飛行路徑；追跡風刃沿用移動場域
+  // DOM：大型風刃沿用直線飛行；追跡風刃沿用移動場域但只建立小型風刃
   assert.match(vfx, /s\.variant === 'wind-blade' \|\| s\.variant === 'wind-blade-small'/);
   assert.match(vfx, /s\.variant === 'ice-arrow-homing' \|\| s\.variant === 'wind-blade-homing'/);
   assert.match(vfx, /'vfx-wind-homing'/);
+  const windFieldDom = vfx.slice(vfx.indexOf('function vfxIceField'), vfx.indexOf('/* 預設天降', vfx.indexOf('function vfxIceField')));
+  assert.match(windFieldDom, /variant === 'wind-blade-homing'[\s\S]*?vfx-wind-homing-blade/);
+  assert.match(windFieldDom, /variant === 'wind-blade-homing'[\s\S]*?不再建立冰晶尖刺或藍色球體/);
   assert.match(vfx, /function vfxVoidDisc\(spec, layer, rect\)/);
   assert.match(vfx, /s\.variant === 'void-disc'\) vfxVoidDisc\(s, layer, rect\)/);
   assert.match(vfx, /var startAng = Number\(area\.startAng\)/);
@@ -643,6 +649,8 @@ test('風系特效：風刃／真空斬／迴旋斬／虛空斬／暴風屏障�
   assert.match(css, /\.vfx-impact-wind \.vfx-p/);
   assert.match(css, /\.vfx-aura-wind \.vfx-aura-p/);
   assert.match(css, /\.vfx-wind-homing \{/);
+  assert.match(css, /\.vfx-wind-homing-blade\s*\{[\s\S]*?clip-path: path/);
+  assert.doesNotMatch(css, /\.vfx-wind-homing \.vfx-ice-shard/);
   assert.match(css, /\.vfx-void-disc \{/);
   assert.match(css, /vfxVoidDiscBlade/);
 });
