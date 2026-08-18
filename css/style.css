@@ -7854,6 +7854,21 @@ textarea:disabled,
   to { margin-left: 3%; transform: translateX(-50%) rotate(calc(var(--vfx-tongue-rot, 0deg) + 7deg)) scaleY(1.06); }
 }
 
+.vfx-water-tornado-pillar::before {
+  background: linear-gradient(180deg, #0284c7 0%, #0369a1 38%, #38bdf8 72%, #e0f2fe 100%);
+  filter: drop-shadow(0 0 10px #38bdf8);
+}
+
+.vfx-water-tornado-pillar::after {
+  background: radial-gradient(ellipse, rgba(240, 249, 255, 0.95) 0 15%, rgba(56, 189, 248, 0.68) 38%, rgba(2, 132, 199, 0.2) 68%, transparent 75%);
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.85);
+}
+
+.vfx-water-tongue {
+  background: linear-gradient(180deg, #f0f9ff 0%, #bae6fd 22%, #38bdf8 66%, #0284c7 100%);
+  filter: drop-shadow(0 0 8px #38bdf8);
+}
+
 /* ---- 無限火牆：沿地面橫向延伸、向上立起的火焰牆＋煙塵 ---- */
 .vfx-fire-wall {
   overflow: visible;

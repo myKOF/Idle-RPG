@@ -787,7 +787,8 @@ function vfxProjectileCls(spec) {
   var v = spec.variant;
   if (v === 'swordwave') return 'vfx-proj-sword';
   if (v === 'knife' || v === 'knife-bounce') return 'vfx-proj-knife';
-  if (v === 'venom') return 'vfx-proj-poison';
+  if (v === 'venom' || v === 'poison-spread' || v === 'poison-bullet') return 'vfx-proj-poison';
+  if (v === 'waterball' || v === 'water-bounce' || v === 'frost-bullet' || v === 'frost-spread') return 'vfx-proj-ice vfx-proj-water';
   if (v === 'flamewave') return 'vfx-proj-fire vfx-proj-big';
   if (spec.elem && VFX_ELEM_THEME[spec.elem]) return 'vfx-proj-' + spec.elem;
   if (spec.cat === 'special' || spec.cat === 'potential' || spec.cat === 'fusion') return 'vfx-proj-glyph';
@@ -1412,22 +1413,25 @@ function vfxPillar(spec, layer, pt, targetId, delayMs) {
 function vfxFirePillar(spec, layer, area, fallbackPt) {
   var pt = fallbackPt;
   if (!pt || !isFinite(pt.x) || !isFinite(pt.y)) return null;
+  var isWater = spec && (spec.variant === 'water-tornado' || spec.elem === 'ice');
   var radius = Math.max(22, Number(area && area.r) || 30);
-  var key = area && area.id ? String(area.id) : [Math.round(pt.x), Math.round(pt.y), Math.round(radius)].join(':');
+  var key = (area && area.id ? String(area.id) : [Math.round(pt.x), Math.round(pt.y), Math.round(radius)].join(':')) +
+    (isWater ? ':water' : '');
   var node = _vfxFirePillars[key];
   if (node && node.parentNode === layer) {
     vfxPlace(node, pt);
     node._vfxExpiresAt = Date.now() + Math.max(900, Number(spec.dur || 0.5) * 2400);
     return node;
   }
-  node = vfxNode('vfx-fire-pillar', layer, spec);
+  var pillarClass = 'vfx-fire-pillar' + (isWater ? ' vfx-water-tornado-pillar' : '');
+  node = vfxNode(pillarClass, layer, spec);
   vfxPlace(node, pt);
   node.style.setProperty('--vfx-radius', radius + 'px');
   node.style.setProperty('--vfx-height', Math.max(150, radius * 3.5) + 'px');
   var tongues = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 7;
   for (var i = 0; i < tongues; i++) {
     var tongue = document.createElement('span');
-    tongue.className = 'vfx-fire-tongue';
+    tongue.className = 'vfx-fire-tongue' + (isWater ? ' vfx-water-tongue' : '');
     tongue.style.setProperty('--vfx-tongue-i', i);
     tongue.style.setProperty('--vfx-tongue-x', ((i - (tongues - 1) / 2) * radius * 0.12).toFixed(1) + 'px');
     tongue.style.setProperty('--vfx-tongue-width', Math.max(5, radius * (0.26 - i * 0.018)).toFixed(1) + 'px');
@@ -1869,87 +1873,97 @@ function vfxPurpleThunder(spec, layer, pt, targetId, delayMs) {
    5. 若場上目標不足 3 個，自動向周圍其他敵卡引導氛圍彈射弧光。 */
 function vfxChain(spec, layer, ptList, idList, baseDelay, strikes) {
   if (!ptList.length) return;
-  if (spec.variant === 'knife-bounce' || spec.variant === 'poison-spread') {
-    // 彈射鏈必須等上一段真的抵達目標；固定段間距會讓 B→C 在 A→B 尚未完成時提前出發。
+
+  // 1. 飛刀彈射：短刀光從上一目標飛向下一個目標
+  if (spec.variant === 'knife-bounce') {
     var pathStart = baseDelay;
     for (var pathI = 1; pathI < ptList.length; pathI++) {
       var pathTravel = (spec.travelMs && spec.travelMs[pathI] > 0) ? spec.travelMs[pathI] : 0;
       var pathFlight = vfxProjectileFlightMs(pathTravel, spec.dur || 0.5);
-      vfxKnifeBounce(spec, layer, ptList[pathI - 1], ptList[pathI],
-        pathStart, pathTravel);
-      vfxImpact({
-        elem: spec.variant === 'poison-spread' ? 'poison' : null,
-        variant: null, color: spec.color
-      }, layer, ptList[pathI], idList[pathI],
-        pathStart + pathFlight);
+      vfxKnifeBounce(spec, layer, ptList[pathI - 1], ptList[pathI], pathStart, pathTravel);
+      vfxImpact({ elem: null, variant: null, color: spec.color }, layer, ptList[pathI], idList[pathI], pathStart + pathFlight);
       pathStart += pathFlight;
     }
     return;
   }
 
-  var hop = Math.max(110, vfxStagger());
-  var n = Math.max(1, strikes || 1);
-
-  // 1. 首個目標：大型天雷從天頂劈下
-  for (var st = 0; st < n; st++) {
-    var strikeDelay = baseDelay + st * hop;
-    var skyPt = { x: ptList[0].x + (st === 0 ? 28 : (st % 2 === 1 ? -24 : 32)), y: -70 };
-    vfxBolt(spec, layer, skyPt, ptList[0], strikeDelay, { mega: true });
-    vfxLightningGroundImpact(spec, layer, ptList[0], strikeDelay + 40, false);
-    vfxImpact({ elem: 'lightning', variant: null, color: spec.color }, layer, ptList[0], idList[0], strikeDelay + 50);
-  }
-
-  // 2. 命中後，以閃電鏈形式彈射到後續目標（最多另外兩個目標，即 targets 1 和 2）
-  var maxChainBounces = Math.min(ptList.length, 3);
-  for (var i = 1; i < maxChainBounces; i++) {
-    var bounceDelay = baseDelay + (n - 1) * hop + i * hop;
-    vfxBolt(spec, layer, ptList[i - 1], ptList[i], bounceDelay, { mega: false });
-    vfxLightningGroundImpact(spec, layer, ptList[i], bounceDelay + 30, false);
-    vfxImpact({ elem: 'lightning', variant: null, color: spec.color }, layer, ptList[i], idList[i], bounceDelay + 40);
-  }
-
-  // 如果原本傳入的 targets 超過 3 個，繼續用細弧光彈射剩餘目標
-  for (var j = 3; j < ptList.length; j++) {
-    var extraDelay = baseDelay + (n - 1) * hop + j * hop;
-    vfxBolt(spec, layer, ptList[j - 1], ptList[j], extraDelay, { weak: true });
-    vfxImpact({ elem: 'lightning', variant: null, color: spec.color }, layer, ptList[j], idList[j], extraDelay + 40);
-  }
-
-  // 3. 若目標不足 3 個（如只有 1 個或 2 個敵人），向畫面其他敵卡補彈射弧光
-  if (ptList.length < 3) {
-    var scene = layer.parentNode;
-    var cards = scene ? scene.querySelectorAll('.enemy-card') : [];
-    var lr = layer.getBoundingClientRect();
-    var added = 0;
-    var needed = 3 - ptList.length;
-    var lastPt = ptList[ptList.length - 1];
-
-    for (var c = 0; c < cards.length && added < needed; c++) {
-      var r = cards[c].getBoundingClientRect();
-      if (!r.width) continue;
-      var cpt = { x: r.left - lr.left + r.width / 2, y: r.top - lr.top + r.height / 2 };
-      var isExisting = ptList.some(function (p) {
-        return Math.abs(p.x - cpt.x) < 6 && Math.abs(p.y - cpt.y) < 6;
-      });
-      if (isExisting) continue;
-      added++;
-      var ambientDelay = baseDelay + (n - 1) * hop + (ptList.length - 1 + added) * hop;
-      vfxBolt(spec, layer, lastPt, cpt, ambientDelay, { weak: false, mega: false });
-      lastPt = cpt;
+  // 2. 毒霧感染：綠色快速平飛子彈（移除小刀圖案）
+  if (spec.variant === 'poison-spread') {
+    var pFrom = ptList.length > 1 ? ptList[0] : (vfxPointOf('pv-float', layer) || vfxOriginPoint(layer));
+    var pTargets = ptList.length > 1 ? ptList.slice(1) : ptList;
+    var pIds = idList.length > 1 ? idList.slice(1) : idList;
+    for (var pi = 0; pi < pTargets.length; pi++) {
+      var pTravel = (spec.travelMs && spec.travelMs[pi + 1] > 0) ? spec.travelMs[pi + 1] : 80;
+      var pFlight = vfxProjectileFlightMs(pTravel, 0.2);
+      var pSpec = Object.assign({}, spec, { variant: 'venom', elem: 'poison', glyph: '', arcM: 0 });
+      vfxProjectile(pSpec, layer, pFrom, pTargets[pi], baseDelay, pTravel);
+      vfxImpact({ elem: 'poison', variant: null, color: '#4ade80' }, layer, pTargets[pi], pIds[pi], baseDelay + pFlight);
     }
+    return;
+  }
 
-    while (added < needed) {
-      added++;
-      var ambAngle = (added === 1 ? -0.85 : 0.85) + (Math.random() * 0.4 - 0.2);
-      var ambDist = 70 + Math.random() * 35;
-      var groundCpt = {
-        x: lastPt.x + Math.cos(ambAngle) * ambDist,
-        y: lastPt.y + Math.sin(ambAngle) * ambDist + 15
-      };
-      var ambDelay = baseDelay + (n - 1) * hop + (ptList.length - 1 + added) * hop;
-      vfxBolt(spec, layer, lastPt, groundCpt, ambDelay, { weak: false, mega: false });
-      vfxLightningGroundImpact(spec, layer, groundCpt, ambDelay + 30, false);
-      lastPt = groundCpt;
+  // 3. 水流彈彈射：水系藍色拋物線子彈彈射
+  if (spec.variant === 'water-bounce') {
+    var wStart = baseDelay;
+    for (var wi = 1; wi < ptList.length; wi++) {
+      var wTravel = (spec.travelMs && spec.travelMs[wi] > 0) ? spec.travelMs[wi] : 140;
+      var wFlight = vfxProjectileFlightMs(wTravel, spec.dur || 0.4);
+      var wSpec = Object.assign({}, spec, {
+        variant: 'waterball',
+        elem: 'ice',
+        arcM: Number(spec.arcM) || 8
+      });
+      vfxProjectile(wSpec, layer, ptList[wi - 1], ptList[wi], wStart, wTravel);
+      vfxImpact({ elem: 'ice', variant: 'water-burst', color: spec.color }, layer, ptList[wi], idList[wi], wStart + wFlight);
+      wStart += wFlight;
+    }
+    return;
+  }
+
+  // 4. 寒霜傳染：快速平飛的藍色子彈
+  if (spec.variant === 'frost-spread') {
+    var fFrom = ptList.length > 1 ? ptList[0] : (vfxPointOf('pv-float', layer) || vfxOriginPoint(layer));
+    var fTargets = ptList.length > 1 ? ptList.slice(1) : ptList;
+    var fIds = idList.length > 1 ? idList.slice(1) : idList;
+    for (var fi = 0; fi < fTargets.length; fi++) {
+      var fTravel = (spec.travelMs && spec.travelMs[fi + 1] > 0) ? spec.travelMs[fi + 1] : 80;
+      var fFlight = vfxProjectileFlightMs(fTravel, 0.2);
+      var fSpec = Object.assign({}, spec, { variant: 'frost-bullet', elem: 'ice', glyph: '', arcM: 0 });
+      vfxProjectile(fSpec, layer, fFrom, fTargets[fi], baseDelay, fTravel);
+      vfxImpact({ elem: 'ice', variant: 'frost-tick', color: '#7dd3fc' }, layer, fTargets[fi], fIds[fi], baseDelay + fFlight);
+    }
+    return;
+  }
+
+  // 5. 大地守護生命反射盾：帶有白光的線條光束射向敵人
+  if (spec.variant === 'earth-reflect') {
+    var eFrom = vfxPointOf('pv-float', layer) || vfxOriginPoint(layer);
+    for (var ei = 0; ei < ptList.length; ei++) {
+      var eSpec = Object.assign({}, spec, { elem: 'light', color: '#ffffff' });
+      vfxBeam(eSpec, layer, eFrom, ptList[ei]);
+      vfxImpact({ elem: 'light', variant: null, color: '#ffffff' }, layer, ptList[ei], idList[ei], baseDelay + 100);
+    }
+    return;
+  }
+
+  // 6. 反擊：無特效
+  if (spec.variant === 'counter-sweep') {
+    return;
+  }
+
+  // 7. 連鎖閃電（及一般雷鏈）：移除天雷轟下特效，只留閃電鏈彈射
+  var hop = Math.max(110, vfxStagger());
+  if (ptList.length === 1) {
+    var casterOrigin = vfxPointOf('pv-float', layer) || vfxOriginPoint(layer);
+    vfxBolt(spec, layer, casterOrigin, ptList[0], baseDelay, { mega: false });
+    vfxLightningGroundImpact(spec, layer, ptList[0], baseDelay + 30, false);
+    vfxImpact({ elem: 'lightning', variant: null, color: spec.color }, layer, ptList[0], idList[0], baseDelay + 40);
+  } else {
+    for (var i = 1; i < ptList.length; i++) {
+      var bounceDelay = baseDelay + (i - 1) * hop;
+      vfxBolt(spec, layer, ptList[i - 1], ptList[i], bounceDelay, { mega: false });
+      vfxLightningGroundImpact(spec, layer, ptList[i], bounceDelay + 30, false);
+      vfxImpact({ elem: 'lightning', variant: null, color: spec.color }, layer, ptList[i], idList[i], bounceDelay + 40);
     }
   }
 }
@@ -2224,6 +2238,12 @@ function renderCombatVfx(spec) {
       else if (s.variant === 'firewall') vfxFireWall(s, layer, spec.area, rect);
       else if (s.variant === 'mire' || s.variant === 'mire-lava' || s.variant === 'mire-poison' || s.variant === 'mire-lava-poison') vfxMirePool(s, layer, spec.area, rect);
       else if (s.variant === 'thunder-orb') vfxThunderOrb(s, layer, spec.area, rect);
+      else if (s.variant === 'water-tornado') {
+        var tornadoPt = (spec.area && isFinite(spec.area.x) && isFinite(spec.area.y))
+          ? { x: Number(spec.area.x), y: Number(spec.area.y) }
+          : (vfxPointOf(anchorId, layer) || { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2 });
+        vfxFirePillar(s, layer, spec.area, tornadoPt);
+      }
       else if (isIceField) vfxIceField(s, layer, spec.area, rect);
       else vfxAura(s, layer, rect);
       return;

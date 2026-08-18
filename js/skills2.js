@@ -2796,7 +2796,7 @@ function sgEarthguardReflect(mEnt, pEnt, hpDamage, res, floatSel) {
   var eSel = (typeof THORN_FLOAT_MAP !== 'undefined' && THORN_FLOAT_MAP[floatSel]) || floatSel;
   var pctOfMax = lostPct * sgVal(fx, 'pct', lvs[5]) / 100;
   var killed = false;
-  sgEmitVfx('earthguard', victims, eSel, { fxKind: 'chain', variant: 'earth-reflect', elem: 'earth' });
+  sgEmitVfx('earthguard', victims, eSel, { fxKind: 'chain', variant: 'earth-reflect', elem: 'light' });
   for (var i = 0; i < victims.length; i++) {
     var e = victims[i];
     var amount = Math.max(1, Math.round((Number(e.maxHp) || 0) * pctOfMax / 100));
@@ -3407,7 +3407,7 @@ function sgSpreadFrost(from, enemies, fx, dot) {
     if (sgApplyFrost(victims[i], spec, 1) > 0) spread.push(victims[i]);
   }
   if (spread.length) {
-    sgEmitVfx('waterball', spread, 'mv-float', { fxKind: 'chain', variant: 'frost-spread', elem: 'ice' });
+    sgEmitVfx('waterball', [from].concat(spread), 'mv-float', { fxKind: 'chain', variant: 'frost-spread', elem: 'ice', travelMs: [80] });
   }
 }
 
@@ -3673,7 +3673,7 @@ function sgWaterballShot(pEnt, st, g, lvs, pool, target, floatSel, out, cfg) {
     var hopTravelMs = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(next) * 1000) : 0;
     sgEmitVfx('waterball', [cur, next], floatSel, {
       fxKind: 'chain', variant: 'water-bounce', elem: 'ice', count: 1,
-      delayMs: hopDelay, travelMs: [0, hopTravelMs]
+      delayMs: hopDelay, travelMs: [0, hopTravelMs], arcM: cfg.arcM
     });
     cur = next;
     hopDelay += hopTravelMs;
@@ -3887,9 +3887,7 @@ function sgCounterOnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) 
       }
     }
   }
-  if (splashHit.length) {
-    sgEmitVfx('counter', splashHit, eSel, { fxKind: 'chain', variant: 'counter-sweep' });
-  }
+
 
   // 反擊盾（T4）：每次反擊事件回復一次（吃護盾效率與技能護盾上限 → formula.js grantShield）
   if (lvs[3] > 0 && typeof grantShield === 'function') {

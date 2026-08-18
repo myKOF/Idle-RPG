@@ -2542,6 +2542,9 @@ var BattleRenderer = (function () {
     var a = spec && spec.area;
     if (!a || !isFinite(a.x) || !isFinite(a.y)) return null;
     var variant = spec.variant;
+    if (variant === 'water-tornado') {
+      return spawnFirePillar(a, spec);
+    }
     var isRect = (variant === 'blizzard');
     var w = isRect ? Math.max(24, Number(a.w) || 120) : Math.max(10, (Number(a.r) || 30) * 2);
     var h = isRect ? Math.max(24, Number(a.h) || 120) : w;
@@ -3185,7 +3188,8 @@ var BattleRenderer = (function () {
   var FIRE_PILLAR_MAX_LIFE_SEC = 4.5;
   function spawnFirePillar(area, spec) {
     if (!area || !isFinite(area.x) || !isFinite(area.y)) return null;
-    var key = area.id || [Math.round(area.x), Math.round(area.y), Math.round(area.r || 0)].join(':');
+    var isWater = spec && (spec.variant === 'water-tornado' || spec.elem === 'ice');
+    var key = (area.id || [Math.round(area.x), Math.round(area.y), Math.round(area.r || 0)].join(':')) + (isWater ? ':water' : '');
     var holdMs = Math.max(900, Number(spec.dur || 0.5) * 2400);
     var current = _firePillarFx[key];
     if (current && !current.dead && current.node && !current.node.destroyed) {
@@ -3196,7 +3200,7 @@ var BattleRenderer = (function () {
       return current;
     }
 
-    var theme = themeOf(spec);
+    var theme = isWater ? ICE_FIELD_THEME : themeOf(spec);
     var node = new PIXI.Container();
     var g = new PIXI.Graphics();
     node.addChild(g);
@@ -3205,6 +3209,16 @@ var BattleRenderer = (function () {
       t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false };
     _firePillarFx[key] = fx;
     var particleAt = 0;
+
+    var baseColor = isWater ? 0x0369a1 : 0x7d1708;
+    var strokeColor = isWater ? 0x38bdf8 : 0xff6b19;
+    var innerEllipseColor = isWater ? 0x7dd3fc : 0xffb21c;
+    var polyColor = isWater ? 0x0284c7 : 0xd93413;
+    var ribbonInner = isWater ? 0xf0f9ff : 0xffdf4d;
+    var ribbonOdd = isWater ? 0x38bdf8 : 0xff761c;
+    var ribbonEven = isWater ? 0x7dd3fc : 0xffa51d;
+    var coreColor = isWater ? 0xf0f9ff : 0xffffbd;
+    var topFlameColor = isWater ? 0x38bdf8 : 0xff6a17;
 
     addFx({
       node: node,
@@ -3220,23 +3234,23 @@ var BattleRenderer = (function () {
         var phase = fx.t * 4.2;
         g.clear();
 
-        // 地面火圈：把「傷害半徑」直接畫出來，讓玩家看得出場域邊界。
+        // 地面圈：把「傷害半徑」直接畫出來，讓玩家看得出場域邊界。
         g.ellipse(0, 4, baseW * 0.58, Math.max(8, fx.radius * 0.34))
-          .fill({ color: 0x7d1708, alpha: 0.42 * fade })
-          .stroke({ color: 0xff6b19, width: 2, alpha: 0.78 * fade });
+          .fill({ color: baseColor, alpha: 0.42 * fade })
+          .stroke({ color: strokeColor, width: 2, alpha: 0.78 * fade });
         g.ellipse(0, 0, baseW * 0.46, Math.max(5, fx.radius * 0.2))
-          .fill({ color: 0xffb21c, alpha: 0.32 * fade });
+          .fill({ color: innerEllipseColor, alpha: 0.32 * fade });
 
-        // 外層火焰軀幹：寬底、收尖頂，並以旋臂抖動取代硬直矩形。
+        // 外層火焰/水流軀幹：寬底、收尖頂，並以旋臂抖動取代硬直矩形。
         var silhouette = [
           -baseW * 0.55, 0, -baseW * 0.47, -h * 0.18, -baseW * 0.36, -h * 0.44,
           -topW * 0.52, -h * 0.78, -topW * 0.34, -h, topW * 0.34, -h,
           topW * 0.52, -h * 0.78, baseW * 0.36, -h * 0.44, baseW * 0.47, -h * 0.18,
           baseW * 0.55, 0
         ];
-        g.poly(silhouette).fill({ color: 0xd93413, alpha: 0.52 * fade });
+        g.poly(silhouette).fill({ color: polyColor, alpha: 0.52 * fade });
 
-        // 多條向上旋繞的火舌，使用固定段數控制每幀成本。
+        // 多條向上旋繞的舌流，使用固定段數控制每幀成本。
         for (var ri = 0; ri < 4; ri++) {
           var pts = [];
           var inner = ri === 1 || ri === 2;
@@ -3256,16 +3270,16 @@ var BattleRenderer = (function () {
             width = Math.max(3, (baseW * (inner ? 0.12 : 0.18)) * (1 - u * 0.7));
             pts.push(x + width, y);
           }
-          g.poly(pts).fill({ color: inner ? 0xffdf4d : (ri % 2 ? 0xff761c : 0xffa51d),
+          g.poly(pts).fill({ color: inner ? ribbonInner : (ri % 2 ? ribbonOdd : ribbonEven),
             alpha: (inner ? 0.82 : 0.7) * fade });
         }
 
-        // 白黃核心與頂端火舌，對齊參考圖的高亮中心。
+        // 高亮核心與頂端舌尖
         g.ellipse(0, -h * 0.4, Math.max(5, baseW * 0.12), Math.max(18, h * 0.34))
-          .fill({ color: 0xffffbd, alpha: 0.62 * fade });
+          .fill({ color: coreColor, alpha: 0.62 * fade });
         g.poly([-topW * 0.28, -h * 0.86, -topW * 0.08, -h * 1.12,
           topW * 0.04, -h * 0.92, topW * 0.3, -h * 1.02, topW * 0.18, -h * 0.72])
-          .fill({ color: 0xff6a17, alpha: 0.82 * fade });
+          .fill({ color: topFlameColor, alpha: 0.82 * fade });
 
         particleAt += dt;
         if (!REDUCED_MOTION && particleAt > 0.11 && fade > 0.45) {
@@ -3389,8 +3403,7 @@ var BattleRenderer = (function () {
       }
       return;
     }
-    if (spec.variant === 'knife-bounce' || spec.variant === 'poison-spread') {
-      // 下一段必須接在上一段飛行完成後，不能用固定 stagger 提前播放。
+    if (spec.variant === 'knife-bounce') {
       var chainStart = baseDelay;
       for (var kb = 1; kb < targets.length; kb++) {
         var hopTravel = projectileTravelMs(spec.travelMs && spec.travelMs[kb], 120);
@@ -3407,6 +3420,78 @@ var BattleRenderer = (function () {
         })(kb, chainStart, hopTravel);
         chainStart += hopTravel;
       }
+      return;
+    }
+    if (spec.variant === 'poison-spread') {
+      var pOriginPos = targets.length > 1 ? posOf(targets[0]) : playerPos();
+      var pSpreadTargets = targets.length > 1 ? targets.slice(1) : targets;
+      for (var psi = 0; psi < pSpreadTargets.length; psi++) {
+        (function (tgtId) {
+          setTimeout(function () {
+            if (fxGate(spec)) return;
+            var pSpec = Object.assign({}, spec, { variant: 'venom', elem: 'poison', arcM: 0 });
+            spawnProjectile(tgtId, 80, pSpec, function (pt) {
+              spawnImpact(pt.x, pt.y, pSpec, false);
+              hitReact(tgtId, 'poison', false);
+            }, pOriginPos);
+          }, baseDelay);
+        })(pSpreadTargets[psi]);
+      }
+      return;
+    }
+    if (spec.variant === 'water-bounce') {
+      var wChainStart = baseDelay;
+      for (var wb = 1; wb < targets.length; wb++) {
+        var wHopTravel = projectileTravelMs(spec.travelMs && spec.travelMs[wb], 140);
+        (function (hopIndex, startDelay, hopTravel) {
+          var fromId = targets[hopIndex - 1];
+          var toId = targets[hopIndex];
+          setTimeout(function () {
+            if (fxGate(spec)) return;
+            var wSpec = Object.assign({}, spec, { variant: 'waterball', elem: 'ice', arcM: Number(spec.arcM) || 8 });
+            spawnProjectile(toId, hopTravel, wSpec, function (pt) {
+              spawnImpact(pt.x, pt.y, wSpec, false);
+              hitReact(toId, 'ice', false);
+            }, posOf(fromId));
+          }, startDelay);
+        })(wb, wChainStart, wHopTravel);
+        wChainStart += wHopTravel;
+      }
+      return;
+    }
+    if (spec.variant === 'frost-spread') {
+      var fOriginPos = targets.length > 1 ? posOf(targets[0]) : playerPos();
+      var fSpreadTargets = targets.length > 1 ? targets.slice(1) : targets;
+      for (var fsi = 0; fsi < fSpreadTargets.length; fsi++) {
+        (function (tgtId) {
+          setTimeout(function () {
+            if (fxGate(spec)) return;
+            var fSpec = Object.assign({}, spec, { variant: 'frost-bullet', elem: 'ice', arcM: 0 });
+            spawnProjectile(tgtId, 80, fSpec, function (pt) {
+              spawnImpact(pt.x, pt.y, fSpec, false);
+              hitReact(tgtId, 'ice', false);
+            }, fOriginPos);
+          }, baseDelay);
+        })(fSpreadTargets[fsi]);
+      }
+      return;
+    }
+    if (spec.variant === 'earth-reflect') {
+      for (var eri = 0; eri < targets.length; eri++) {
+        (function (tgtId) {
+          setTimeout(function () {
+            if (fxGate(spec)) return;
+            var eSpec = Object.assign({}, spec, { elem: 'light', color: '#ffffff' });
+            spawnBeam(tgtId, eSpec);
+            var tgtPos = posOf(tgtId);
+            spawnImpact(tgtPos.x, tgtPos.y, eSpec, false);
+            hitReact(tgtId, 'light', false);
+          }, baseDelay);
+        })(targets[eri]);
+      }
+      return;
+    }
+    if (spec.variant === 'counter-sweep') {
       return;
     }
 
