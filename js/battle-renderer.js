@@ -2756,13 +2756,13 @@ var BattleRenderer = (function () {
   }
 
   /* 虛空斬：以自身為圓心繞行的鋸齒圓盤，半徑逐秒擴大（area.grow＝每秒擴大的像素）。
-     與火狩共用「同一道只保留一個節點」的合併規則。 */
+     每一道用 area.id 保留自己的節點與初始相位；同一道補播延長事件時才合併。 */
   var _voidDiscs = Object.create(null);
   function spawnVoidDisc(spec) {
     var a = spec && spec.area;
     if (!a || !isFinite(a.r)) return;
     var ccw = Number(a.spin) < 0;
-    var key = 'void:' + (ccw ? 'ccw' : 'cw');
+    var key = 'void:' + (a.id || (ccw ? 'ccw' : 'cw'));
     /* 虛空斬的畫面壽命直接跟事件的技能壽命走；不能套用一般領域上限，
        否則未來技能表調長時，特效會比實際場域早消失。 */
     var dur = Math.max(0.5, Number(spec && spec.dur) || 6);
@@ -2776,6 +2776,8 @@ var BattleRenderer = (function () {
     var spinRate = Number(a.spinRate);
     var spin = isFinite(spinRate) && Math.abs(spinRate) > 1e-6
       ? spinRate : (ccw ? -1 : 1) * Math.PI * 2;
+    var startAngle = Number(a.startAng);
+    if (!isFinite(startAngle)) startAngle = 0;
     var grow = Math.max(0, Number(a.grow) || 0);
     var bodyR = Math.max(6, Number(a.orbR) || 24);
     var node = new PIXI.Graphics();
@@ -2817,7 +2819,7 @@ var BattleRenderer = (function () {
           var trailT = disc.t - trailDt;
           var trailR = Math.max(8, disc.r - grow * trailDt);
           var trailAlpha = ti === 0 ? 1 : 0.18 * (1 - ti / (trailSteps + 1));
-          drawBlade(spin * trailT, trailR, trailAlpha * fade);
+          drawBlade(startAngle + spin * trailT, trailR, trailAlpha * fade);
         }
         if (disc.t >= disc.dur) {
           disc.done = true;

@@ -3687,6 +3687,50 @@ Commit：
 
 ---
 
+## 任務：虛空斬改為四道順時針向外擴張
+
+任務編號：Codex-20260818-void-disc-quad-cw
+
+任務狀態：已完成（2026-08-18）
+
+任務分類：Skills2 參數／戰鬥 VFX／環繞場域
+
+負責 AI：Codex
+
+使用者需求：虛空斬從我方角色中心出現 4 個斬擊，四道剛好位於同一圓的 0／90／180／270 度位置，向外逐漸擴大，每秒擴大 4 米，4 道皆順時針旋轉。
+
+允許修改：
+
+- `config/Excel/Skills2.xlsx`
+- `config/CSV/Skills2.csv`
+- `js/skills2.js`
+- `js/battle-renderer.js`
+- `js/vfx.js`
+- `tests/skill2-wind.test.cjs`
+- `tests/skill2-vfx.test.cjs`
+- `index.html`
+- `docs/AI_TASKS.md`
+
+禁止修改：虛空斬傷害、持續時間、命中判定以外的技能數值、存檔格式、Worker Protocol、無關技能／UI／VFX。
+
+前置依賴：既有虛空斬 6 秒環繞場域、Canvas／DOM 特效與 Skills2 參數表同步流程已存在。
+
+驗收方式：參數表與 JS 顯示 4 道、每秒 4 米、順時針；模擬層四個場域使用同一圓上相隔 90 度的獨立初始相位且同向旋轉；Canvas／DOM 各事件只畫一道並保留四道特效；定向測試與建置檢查通過。
+
+完成條件：同步 CSV／Excel／JS、更新快取版號、補回歸測試、更新驗證結果並建立 `[Codex]` commit。
+
+實作結果：Skills2 第七階改為 4 道虛空斬；四道初始相位固定為同一圓周上的 0／90／180／270 度，皆以每秒 1 圈順時針旋轉，半徑每秒平滑增加 4 米，持續時間維持 6 秒。Canvas 與 DOM 各事件只繪製一道，且保留四道獨立節點，不會因同向旋轉而合併。
+
+驗證結果：`node --test tests/skill2-wind.test.cjs tests/skill2-vfx.test.cjs` 51/51 通過；`npm run build` 294/294 通過；`node tools/config_tables.cjs --apply Skills2` 顯示語意變更 0；完整 `npm test` 1602/1607 通過，5 個失敗均位於本任務未修改的反擊／地／冰技能既有測試。
+
+已知風險：完整測試中的 5 個既有失敗仍需另立任務處理；不影響本次虛空斬定向測試與建置檢查。
+
+未完成項目：無。
+
+Commit 編號：`0536629`。
+
+---
+
 ## 任務：修正落雷無目標時仍向地面發射
 
 任務編號：Codex-20260818-lightning-target

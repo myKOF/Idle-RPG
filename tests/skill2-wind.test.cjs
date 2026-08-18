@@ -365,28 +365,35 @@ test('【無限風切】：層數上限開放到 3，且每層加傷', () => {
   assert.ok(dot2.dps > dps1, '疊層後的每跳傷害更高');
 });
 
-test('【虛空斬】：兩道反向旋轉、半徑逐秒擴大的環繞場域', () => {
+test('【虛空斬】：四道順時針、半徑每秒擴大 4 米的環繞場域', () => {
   const c = loadContext(); const calls = stubHits(c); const specs = stubVfx(c);
   setLevels(c, 'vacuumslash', [1, 1, 1, 1, 1, 1, 1]); equip(c, 'vacuumslash');
   const p = playerEnt(); c.FIELD.player = p;
   const e = enemy(1e9, 2 * M, 0);
   c.castSkill2(p, [e], 'vacuumslash', 'mv-float');
   const discs = c.SKILL2_RT.orbits;
-  assert.equal(discs.length, 2, '文檔：斬出 2 道虛空斬擊');
-  assert.equal(discs[0].rings[0].spin, -discs[1].rings[0].spin, '第 2 道反向旋轉');
-  assert.ok(Math.abs(Math.abs(discs[0].rings[0].spin) - Math.PI * 2) < 1e-9, '每秒 1 圈');
+  assert.equal(discs.length, 4, '文檔：斬出 4 道虛空斬擊');
+  assert.ok(discs.every((d) => d.rings[0].spin > 0), '4 道皆順時針旋轉');
+  assert.ok(discs.every((d) => Math.abs(d.rings[0].spin - Math.PI * 2) < 1e-9), '每秒 1 圈');
+  assert.equal(new Set(discs.map((d) => d.startAng.toFixed(9))).size, 4, '4 道使用獨立初始相位');
+  const phase0 = discs[0].startAng;
+  discs.forEach((d, i) => assert.ok(Math.abs(d.startAng - (phase0 + Math.PI * 2 * i / 4)) < 1e-9,
+    `第 ${i + 1} 道位於圓周的 ${i * 90} 度位置`));
   assert.equal(discs[0].rings[0].r, c.bfMeterPx(6), '起始半徑 6 米');
-  assert.ok(discs[0].growPxPerSec > 0, '半徑隨時間擴大');
+  assert.equal(discs[0].growPxPerSec, c.bfMeterPx(4), '每秒向外擴大 4 米');
   const before = discs[0].rings[0].r;
   run(c, p, [e], 1);
-  assert.ok(Math.abs(c.SKILL2_RT.orbits[0].rings[0].r - (before + c.bfMeterPx(2))) < 1e-6,
-    '每秒加長 2 米（逐 tick 平滑累加）');
+  assert.ok(Math.abs(c.SKILL2_RT.orbits[0].rings[0].r - (before + c.bfMeterPx(4))) < 1e-6,
+    '每秒加長 4 米（逐 tick 平滑累加）');
   assert.ok(calls.some((x) => Math.abs(x.atk - 500 * (400 + 40) / 100) < 1e-6), '碰到的敵人吃 440% 風系傷害');
   const voidSpecs = specs.filter((s) => s.variant === 'void-disc');
-  assert.ok(voidSpecs.length >= 2, '送出順逆兩道虛空斬的環繞特效');
+  assert.equal(voidSpecs.length, 4, '送出 4 道虛空斬的環繞特效');
   assert.ok(voidSpecs.every((s) => s.dur === 6), '顯示層收到技能表的完整 6 秒壽命');
+  assert.ok(voidSpecs.every((s) => s.area.spin === 1), '顯示層 4 道皆順時針');
+  assert.ok(voidSpecs.every((s) => s.area.grow === c.bfMeterPx(4)), '顯示層每秒擴大 4 米');
+  assert.equal(new Set(voidSpecs.map((s) => s.area.id)).size, 4, '顯示層保留 4 道獨立節點');
   run(c, p, [e], 4);
-  assert.equal(c.SKILL2_RT.orbits.length, 2, '持續 5 秒時兩道虛空斬仍在作用');
+  assert.equal(c.SKILL2_RT.orbits.length, 4, '持續 5 秒時四道虛空斬仍在作用');
   run(c, p, [e], 1.1);
   assert.equal(c.SKILL2_RT.orbits.length, 0, '超過 6 秒才清除虛空斬場域');
   assert.ok(p.buffs.sgVoidBlade, '剩餘時間投影成狀態（比照火狩）');

@@ -2040,12 +2040,15 @@ function vfxVoidDisc(spec, layer, rect) {
   d.style.setProperty('--vfx-void-start-scale', String(startRadius / endRadius));
   d.style.setProperty('--vfx-void-turn', Number(area.spin) < 0 ? '-560deg' : '560deg');
   d.style.setProperty('--vfx-void-turn-end', Number(area.spin) < 0 ? '-920deg' : '920deg');
-  for (var i = 0; i < 8; i++) {
-    var blade = document.createElement('span');
-    blade.className = 'vfx-void-blade';
-    blade.style.setProperty('--void-angle', (i * 45) + 'deg');
-    d.appendChild(blade);
-  }
+  var startAng = Number(area.startAng);
+  if (!isFinite(startAng)) startAng = 0;
+  var startDeg = startAng * 180 / Math.PI;
+  /* 每個事件代表圓周上的一道斬擊；四個事件各自帶 0／90／180／270 度相位，
+     這裡不能再在單一節點內複製刀影，否則會變成 16 道而不是剛好 4 道。 */
+  var blade = document.createElement('span');
+  blade.className = 'vfx-void-blade';
+  blade.style.setProperty('--void-angle', startDeg + 'deg');
+  d.appendChild(blade);
   vfxTrack(d, duration * 1000);
 }
 
