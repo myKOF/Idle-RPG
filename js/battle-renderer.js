@@ -1527,9 +1527,12 @@ var BattleRenderer = (function () {
     return m * perM;
   }
 
-  function spawnProjectile(targetId, travelMs, spec, onArrive, fromOverride) {
+  function spawnProjectile(targetId, travelMs, spec, onArrive, fromOverride, pathOverride) {
     var theme = themeOf(spec);
     var from = fromOverride || playerMuzzle();
+    var path = pathOverride && Number(pathOverride.length) > 0
+      ? { angle: Number(pathOverride.angle) || 0, length: Number(pathOverride.length) }
+      : null;
     var node = new PIXI.Container();
     var core;
     var glyphOnly = spec.glyph && (spec.variant === 'glyph' ||
@@ -1566,8 +1569,11 @@ var BattleRenderer = (function () {
       update: function (dt) {
         t += dt;
         var k = Math.min(1, t / dur);
-        var targetNow = posOf(targetId);
-        var to = projectileTargetPoint(targetId, Math.max(0, dur - t));
+        var targetNow = path ? {
+          x: from.x + Math.cos(path.angle) * path.length,
+          y: from.y + Math.sin(path.angle) * path.length
+        } : posOf(targetId);
+        var to = path ? targetNow : projectileTargetPoint(targetId, Math.max(0, dur - t));
         node.x = lerp(from.x, to.x, k);
         /* 火球術依使用者要求走真正直線；其他投射物保留原本的微弧線。
            水流彈的拋物線高度由模擬層的表定值決定（spec.arcM，米）——弧高是設計數值，
@@ -1582,7 +1588,7 @@ var BattleRenderer = (function () {
           trailAcc = 0;
           spawnTrailDot(node.x, node.y, theme);
         }
-        if (k >= 1 || projectileNearTarget(node.x, node.y, targetId)) {
+        if (k >= 1 || (!path && projectileNearTarget(node.x, node.y, targetId))) {
           if (!arrived) {
             arrived = true;
             if (onArrive) onArrive(targetNow);
@@ -1592,6 +1598,42 @@ var BattleRenderer = (function () {
         return true;
       }
     }, 1, dur * 1000 + 600);
+  }
+
+  /* 貫穿冰箭是「一支箭沿直線穿過多個目標」，不能把路徑上的每個格子
+     當成獨立目標再各自從玩家手上發射，否則畫面會看起來像逐格跳動。 */
+  function spawnIcearrowPierce(spec, targets, travelMs, baseDelay, stagger, count) {
+    if (!targets.length) return;
+    var flight = projectileTravelMs(travelMs, spec.dur ? spec.dur * 1000 : 300);
+    for (var c = 0; c < count; c++) {
+      (function (cc) {
+        setTimeout(function () {
+          if (fxGate(spec)) return;
+          var from = playerMuzzle();
+          var first = posOf(targets[0]);
+          var dx = first.x - from.x, dy = first.y - from.y;
+          var angle = Math.atan2(dy, dx);
+          var length = Number(spec.lineLength) > 0 ? Number(spec.lineLength) : Math.sqrt(dx * dx + dy * dy);
+          if (!(length > 0)) return;
+          spawnProjectile(null, flight, spec, null, from, { angle: angle, length: length });
+
+          var cos = Math.cos(angle), sin = Math.sin(angle);
+          for (var ti = 0; ti < targets.length; ti++) {
+            var targetId = targets[ti];
+            var point = posOf(targetId);
+            var along = (point.x - from.x) * cos + (point.y - from.y) * sin;
+            var hitAt = Math.round(flight * Math.max(0, Math.min(1, along / length)));
+            (function (id, pt, hitDelay) {
+              setTimeout(function () {
+                if (fxGate(spec)) return;
+                spawnImpact(pt.x, pt.y, spec, false);
+                hitReact(id, spec.elem, false);
+              }, hitDelay);
+            })(targetId, point, hitAt);
+          }
+        }, Math.max(0, baseDelay) + cc * stagger);
+      })(c);
+    }
   }
   /* 奧術彈幕：六顆光球先向玩家左右後方散開，過彎後以加速度追向目標。 */
   function spawnBarrageMissile(targetId, spec, side, lane, delaySec, travelMs) {
@@ -2508,7 +2550,15 @@ var BattleRenderer = (function () {
     var motionSec = fieldVfxMotionSec(spec, 0.4);
     var current = _iceFieldFx[key];
     if (current && !current.dead && current.node && !current.node.destroyed) {
-      fieldVfxSetTarget(current, Number(a.x), Number(a.y), w, h, motionSec);
+      current.speed = Number(a.speed) > 0 ? Number(a.speed) : current.speed;
+      if (variant === 'ice-arrow-homing' && isFinite(a.destX) && isFinite(a.destY)) {
+        /* 追蹤冰箭不是把每個 tick 的座標當成新起點；保留目前畫面位置，
+           讓 update() 依模擬層的速度朝最新目的地逐幀前進。 */
+        current.destX = Number(a.destX);
+        current.destY = Number(a.destY);
+      } else if (variant !== 'blizzard') {
+        fieldVfxSetTarget(current, Number(a.x), Number(a.y), w, h, motionSec);
+      }
       current.expiresAt = nowMs() + holdMs;
       return current;
     }
@@ -2520,6 +2570,9 @@ var BattleRenderer = (function () {
     var fx = {
       node: node, x: Number(a.x), y: Number(a.y), w: w, h: h,
       variant: variant, t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false,
+      speed: Number(a.speed) > 0 ? Number(a.speed) : 0,
+      destX: isFinite(a.destX) ? Number(a.destX) : null,
+      destY: isFinite(a.destY) ? Number(a.destY) : null,
       motionFromX: Number(a.x), motionFromY: Number(a.y), motionFromW: w, motionFromH: h,
       motionToX: Number(a.x), motionToY: Number(a.y), motionToW: w, motionToH: h,
       motionT: 1, motionDur: 1
@@ -2534,7 +2587,31 @@ var BattleRenderer = (function () {
       node: node,
       update: function (dt) {
         fx.t += dt;
-        fieldVfxStep(fx, dt);
+        if (fx.variant === 'blizzard') {
+          /* 暴風雪的權威錨點是畫面中的玩家，而不是上一個 0.1 秒事件。
+             playerPos() 已經使用角色的渲染內插座標，因此這裡每幀同步即可。 */
+          var follow = playerPos();
+          if (follow && isFinite(follow.x) && isFinite(follow.y)) {
+            fx.x = follow.x;
+            fx.y = follow.y;
+          }
+        } else if (fx.variant === 'ice-arrow-homing' && fx.speed > 0 &&
+                   isFinite(fx.destX) && isFinite(fx.destY)) {
+          /* 追蹤冰箭使用速度積分補足模擬 tick 之間的畫面幀，
+             並在接近目的地時夾住，避免浮點誤差造成微抖。 */
+          var hdx = fx.destX - fx.x, hdy = fx.destY - fx.y;
+          var hdist = Math.sqrt(hdx * hdx + hdy * hdy);
+          var hstep = fx.speed * Math.max(0, Number(dt) || 0);
+          if (hdist <= hstep || hdist <= 0.5) {
+            fx.x = fx.destX;
+            fx.y = fx.destY;
+          } else if (hdist > 0) {
+            fx.x += hdx / hdist * hstep;
+            fx.y += hdy / hdist * hstep;
+          }
+        } else {
+          fieldVfxStep(fx, dt);
+        }
         node.x = fx.x; node.y = fx.y; node.rotation = 0;
         var left = fx.expiresAt - nowMs();
         var fade = left < 420 ? Math.max(0, left / 420) : 1;
@@ -2963,6 +3040,38 @@ var BattleRenderer = (function () {
     spawnFireShockwave(cx, cy, radius, {
       c1: '#7d1708', c2: '#ffb21c', glow: '#ff3b0a'
     });
+  }
+
+  /* 冰霜新星的範圍本體：傷害判定仍由模擬層的 area.r 負責，
+     這裡只用同一個半徑畫成逐幀擴散的圓，避免沿用矩形包絡。 */
+  function spawnFrostNovaArea(spec) {
+    var a = spec && spec.area;
+    var center = a && isFinite(a.x) && isFinite(a.y)
+      ? { x: Number(a.x), y: Number(a.y) } : playerPos();
+    if (!center || !isFinite(center.x) || !isFinite(center.y)) return;
+    var radius = a && Number(a.r) > 0 ? Number(a.r) : 90;
+    var theme = themeOf(spec);
+    var g = new PIXI.Graphics();
+    g.x = center.x;
+    g.y = center.y;
+    S.layers.zone.addChild(g);
+    var t = 0;
+    var dur = Math.max(0.32, Math.min(0.8, Number(spec.dur) || 0.5));
+    addFx({
+      node: g,
+      update: function (dt) {
+        t += dt;
+        var k = Math.min(1, t / dur);
+        var ease = k * k * (3 - 2 * k);
+        var r = radius * (0.22 + ease * 0.82);
+        var alpha = (1 - k) * 0.72;
+        g.clear();
+        g.circle(0, 0, r).fill({ color: cssColorToInt(theme.c1, 0x7dd3fc), alpha: alpha * 0.24 });
+        g.circle(0, 0, r).stroke({ color: cssColorToInt(theme.c2, 0xe0f2fe), width: 3, alpha: alpha });
+        g.circle(0, 0, r * 0.72).stroke({ color: cssColorToInt(theme.glow, 0x22d3ee), width: 2, alpha: alpha * 0.62 });
+        return t < dur;
+      }
+    }, 1);
   }
 
   /* 我方增益／敵身詛咒 */
@@ -3419,6 +3528,11 @@ var BattleRenderer = (function () {
 
     switch (spec.fxKind) {
       case 'projectile':
+        if (spec.variant === 'ice-arrow-pierce') {
+          spawnIcearrowPierce(spec, targets,
+            spec.travelMs && spec.travelMs[0], baseDelay, stagger, count);
+          break;
+        }
         targets.forEach(function (id, ti) {
           var travel = projectileTravelMs(spec.travelMs && spec.travelMs[ti], spec.dur ? spec.dur * 1000 : 300);
           for (var c = 0; c < count; c++) {
@@ -3569,6 +3683,18 @@ var BattleRenderer = (function () {
         });
         break;
       case 'burst':
+        if (spec.variant === 'frost-nova') {
+          spawnFrostNovaArea(spec);
+          targets.forEach(function (id, ti) {
+            setTimeout(function () {
+              if (fxGate(spec)) return;
+              var pt = posOf(id);
+              spawnImpact(pt.x, pt.y, spec, false);
+              hitReact(id, spec.elem, false);
+            }, baseDelay + ti * 40);
+          });
+          break;
+        }
         if (spec.variant === 'firepillar-impact') {
           var fireImpactPt = spec.area && isFinite(spec.area.x) && isFinite(spec.area.y)
             ? { x: Number(spec.area.x), y: Number(spec.area.y) }

@@ -17,8 +17,8 @@ test('Canvas 投射物預判移動目標，接近目標時可提前命中', () =
     renderer.indexOf('function spawnProjectile('),
     renderer.indexOf('function spawnBarrageMissile(')
   );
-  assert.match(projectile, /var to = projectileTargetPoint\(targetId, Math\.max\(0, dur - t\)\);/);
-  assert.match(projectile, /if \(k >= 1 \|\| projectileNearTarget\(node\.x, node\.y, targetId\)\)/);
+  assert.match(projectile, /var to = path \? targetNow : projectileTargetPoint\(targetId, Math\.max\(0, dur - t\)\);/);
+  assert.match(projectile, /if \(k >= 1 \|\| \(!path && projectileNearTarget\(node\.x, node\.y, targetId\)\)\)/);
   assert.doesNotMatch(projectile, /var to = posOf\(targetId\);/);
 
   const barrage = renderer.slice(

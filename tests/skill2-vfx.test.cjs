@@ -319,7 +319,7 @@ test('泥沼／熔岩沼：兩套顯示層都有貼地水窪畫法，且尺寸�
   assert.match(skills2, /var mireVariant = m\.lava[\s\S]*'mire-lava-poison'[\s\S]*'mire-poison'/);
   assert.match(skills2, /elem: m\.lava && !poison \? 'fire' : 'earth'/);
   // 矩形場域的 area 必須帶 w/h/a，顯示層才畫得出方向正確的方框（外接圓 r 供舊畫法退化）
-  assert.match(skills2, /return \{ id: f\.vfxId, x: f\.pos\.x, y: f\.pos\.y, w: f\.length, h: f\.width,/);
+  assert.match(skills2, /var rect = \{ id: f\.vfxId, x: f\.pos\.x, y: f\.pos\.y, w: f\.length, h: f\.width,/);
   assert.match(shim, /area: spec\.area \|\| null/, 'area 必須整包跨 Worker 邊界送出');
 
   // 場域會長大：尺寸的權威是「出生尺寸 × 當下倍率」，每跳重算，不能就地複利
@@ -439,10 +439,10 @@ test('殞石術與雷殞天落在落地前顯示對應顏色的目標提示圈',
   assert.match(css, /\.vfx-target-telegraph-lightning\s*\{[\s\S]*?rgba\(37, 99, 235, 0\.18\)/);
   assert.doesNotMatch(css, /\.vfx-target-telegraph-ring/);
   assert.match(css, /@keyframes vfxTargetTelegraph/);
-  assert.match(index, /css\/style\.css\?v=1\.0\.42/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.40/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.69/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.37/);
+  assert.match(index, /css\/style\.css\?v=1\.0\.43/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.42/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.71/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.39/);
 });
 
 /* 冰系三群組（2026-08-17 第七批）：三種新場域與拋物線水彈的兩條渲染路徑都要接上，
@@ -462,11 +462,19 @@ test('冰系特效：暴風雪／水龍捲／追蹤冰箭在 Canvas 與 DOM 兩�
   assert.match(renderer, /function spawnIceField\(spec\)/);
   assert.match(renderer, /spec\.variant === 'blizzard' \|\| spec\.variant === 'water-tornado' \|\|[\s\S]{0,80}spawnIceField\(spec\)/);
   assert.match(renderer, /function spawnIceField[\s\S]*?var a = spec && spec\.area;/);
+  assert.match(renderer, /fx\.variant === 'blizzard'[\s\S]*?var follow = playerPos\(\)/);
+  assert.match(renderer, /fx\.variant === 'ice-arrow-homing'[\s\S]*?fx\.speed \* Math\.max/);
+  assert.match(skills2, /if \(f\.follow\) rect\.follow = true;/);
+  assert.match(skills2, /rect\.destX = f\.dest\.x;[\s\S]{0,80}rect\.speed = f\.speed;/);
 
   // DOM：aura 分派表接上 vfxIceField，且節點按 area.id 合併
   assert.match(vfx, /function vfxIceField\(spec, layer, area, rect\)/);
-  assert.match(vfx, /s\.variant === 'blizzard' \|\| s\.variant === 'water-tornado' \|\|[\s\S]{0,90}vfxIceField\(s, layer, spec\.area, rect\)/);
+  assert.match(vfx, /var isIceField = s\.variant === 'blizzard' \|\| s\.variant === 'water-tornado'/);
+  assert.match(vfx, /else if \(isIceField\) vfxIceField\(s, layer, spec\.area, rect\);/);
   assert.match(vfx, /_vfxIceFields\[key\] = node;/);
+  assert.match(vfx, /function vfxFieldMotionFollowPlayer\(node, layer\)/);
+  assert.match(vfx, /function vfxFieldMotionHome\(node, speed, targetX, targetY\)/);
+  assert.match(vfx, /var isIceField = s\.variant === 'blizzard'/);
   // 場景切換時必須一併清掉，否則場域節點會殘留
   assert.match(vfx, /_vfxIceFields = Object\.create\(null\);[\s\S]{0,400}?querySelectorAll/);
 
@@ -474,6 +482,22 @@ test('冰系特效：暴風雪／水龍捲／追蹤冰箭在 Canvas 與 DOM 兩�
   assert.match(css, /\.vfx-water-tornado\s*\{/);
   assert.match(css, /\.vfx-ice-homing\s*\{/);
   assert.match(css, /@keyframes vfxBlizzardFall/);
+});
+
+test('冰霜新星範圍使用模擬半徑繪製圓形，暴風雪維持矩形', () => {
+  const vfx = fs.readFileSync(path.join(root, 'js/vfx.js'), 'utf8');
+  const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
+  const skills2 = fs.readFileSync(path.join(root, 'js/skills2.js'), 'utf8');
+
+  assert.match(skills2, /variant: 'frost-nova'[\s\S]{0,120}area: p \? \{ x: p\.x, y: p\.y, r: radiusPx \}/);
+  assert.match(renderer, /function spawnFrostNovaArea\(spec\)[\s\S]*?g\.circle\(0, 0, r\)/);
+  assert.match(renderer, /spec\.variant === 'frost-nova'[\s\S]*?spawnFrostNovaArea\(spec\)/);
+  assert.match(vfx, /function vfxFrostNova\(spec, layer, area, fallbackPt, delayMs\)/);
+  assert.match(vfx, /kind === 'burst' && s\.variant === 'frost-nova'[\s\S]*?vfxFrostNova\(s, layer, spec\.area/);
+  assert.match(css, /\.vfx-frost-nova\s*\{[\s\S]*?border-radius: 50%/);
+  assert.match(css, /@keyframes vfxFrostNovaExpand/);
+  assert.match(css, /\.vfx-blizzard\s*\{[\s\S]*?border-radius: 42% \/ 58%/);
 });
 
 test('冰系特效：水流彈的拋物線弧高由模擬層的表定值決定', () => {
@@ -495,4 +519,18 @@ test('冰系特效：水流彈的拋物線弧高由模擬層的表定值決定',
   assert.match(vfx, /d\.style\.setProperty\('--vfx-arc', arcPx \+ 'px'\)/);
   assert.match(css, /@keyframes vfxFlyArc/);
   assert.match(css, /var\(--vfx-arc, 18px\)/);
+});
+
+test('寒冰箭貫穿：兩條渲染路徑都以單一連續直線投射物呈現', () => {
+  const vfx = fs.readFileSync(path.join(root, 'js/vfx.js'), 'utf8');
+  const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
+  const skills2 = fs.readFileSync(path.join(root, 'js/skills2.js'), 'utf8');
+
+  // 模擬層提供貫穿線段的飛行時間，畫面不再使用每個目標的預設延遲。
+  assert.match(skills2, /variant: 'ice-arrow-pierce'[\s\S]{0,180}travelMs: \[Math\.round\(lineLen \/ SG_FLYING_PROJECTILE_SPEED \* 1000\)\]/);
+  // Canvas：同一事件只建立一支沿 angle／length 前進的箭。
+  assert.match(renderer, /function spawnIcearrowPierce[\s\S]*?spawnProjectile\(null, flight, spec, null, from, \{ angle: angle, length: length \}\)/);
+  assert.match(renderer, /if \(spec\.variant === 'ice-arrow-pierce'\)[\s\S]{0,180}spawnIcearrowPierce\(spec, targets/);
+  // DOM：同一事件只建立一個固定終點的 CSS 飛行節點。
+  assert.match(vfx, /kind === 'projectile' && s\.variant === 'ice-arrow-pierce'[\s\S]*?vfxProjectile\(s, layer, from, iceArrowEnd, iceArrowDelay, iceArrowTravel\)/);
 });

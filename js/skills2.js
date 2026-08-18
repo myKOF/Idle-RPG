@@ -2073,10 +2073,27 @@ function sgGroundVfxSpec(f) {
 function sgGroundArea(f) {
   if (!f.pos) return null;
   if (f.length > 0 && f.width > 0) {
-    return { id: f.vfxId, x: f.pos.x, y: f.pos.y, w: f.length, h: f.width,
+    var rect = { id: f.vfxId, x: f.pos.x, y: f.pos.y, w: f.length, h: f.width,
       a: sgGroundRectAxis(f), r: Math.max(f.length, f.width) / 2 };
+    /* 顯示層的跟隨／追蹤只讀這些欄位，不參與傷害幾何：
+       暴風雪每幀直接貼玩家的畫面座標；冰箭在兩次模擬 tick 之間
+       沿目前目的地與速度繼續飛，避免把 0.1 秒取樣畫成一格一格。 */
+    if (f.follow) rect.follow = true;
+    if (f.kind === 'icearrow' && f.dest) {
+      rect.destX = f.dest.x;
+      rect.destY = f.dest.y;
+      rect.speed = f.speed;
+    }
+    return rect;
   }
-  return { id: f.vfxId, x: f.pos.x, y: f.pos.y, r: f.radius };
+  var circle = { id: f.vfxId, x: f.pos.x, y: f.pos.y, r: f.radius };
+  if (f.follow) circle.follow = true;
+  if (f.kind === 'icearrow' && f.dest) {
+    circle.destX = f.dest.x;
+    circle.destY = f.dest.y;
+    circle.speed = f.speed;
+  }
+  return circle;
 }
 
 /* 烈焰衝擊：場域消失時以場域當下位置為圓心重新查詢 6 米範圍。 */
@@ -3495,7 +3512,8 @@ function sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       if (arrows[ai].hp > 0 && path.indexOf(arrows[ai]) < 0) path.unshift(arrows[ai]);
       sgEmitVfx('icearrow', path.length ? path : [arrows[ai]], floatSel, {
         fxKind: 'projectile', variant: 'ice-arrow-pierce', elem: 'ice', count: 1,
-        lineLength: lineLen, lineWidth: Math.max(20, halfWidth * 2)
+        lineLength: lineLen, lineWidth: Math.max(20, halfWidth * 2),
+        travelMs: [Math.round(lineLen / SG_FLYING_PROJECTILE_SPEED * 1000)]
       });
       sgQueueFlyingProjectile(pEnt, st, 'icearrow', dmgVal, origin, angle, lineLen,
         floatSel, path, { halfWidthPx: halfWidth, hitFn: sgIcearrowProjectileHit, frostSpec: frost }, out);

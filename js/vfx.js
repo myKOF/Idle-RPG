@@ -446,7 +446,43 @@ function vfxFieldMotionSchedule(node) {
     node._vfxFieldMotionHandle = 0;
     if (!node.parentNode || !node._vfxFieldMotion) return;
     var state = node._vfxFieldMotion;
-    var elapsed = Math.max(0, Date.now() - state.startedAt) / 1000;
+    var now = Date.now();
+    if (state.followPlayer) {
+      /* 暴風雪直接跟畫面中的玩家錨點走；不再讓每個模擬事件重設
+         一條 0.1 秒的補間曲線。 */
+      var player = vfxPointOf('pv-float', state.layer);
+      if (player) {
+        state.x = player.x - state.w / 2;
+        state.y = player.y - state.h / 2;
+      }
+      state.lastAt = now;
+      vfxFieldMotionApply(node, state);
+      if (!node._vfxExpiresAt || node._vfxExpiresAt > now) vfxFieldMotionSchedule(node);
+      return;
+    }
+    if (state.homing && state.speed > 0 && isFinite(state.targetX) && isFinite(state.targetY)) {
+      /* 追蹤冰箭用速度積分補足 DOM 的每幀位置，避免事件取樣形成階梯。 */
+      var elapsedHoming = Math.min(0.05, Math.max(0, now - (state.lastAt || now)) / 1000);
+      var centerX = state.x + state.w / 2;
+      var centerY = state.y + state.h / 2;
+      var dx = state.targetX - centerX, dy = state.targetY - centerY;
+      var distance = Math.sqrt(dx * dx + dy * dy);
+      var step = state.speed * elapsedHoming;
+      if (distance <= step || distance <= 0.5) {
+        centerX = state.targetX;
+        centerY = state.targetY;
+      } else if (distance > 0) {
+        centerX += dx / distance * step;
+        centerY += dy / distance * step;
+      }
+      state.x = centerX - state.w / 2;
+      state.y = centerY - state.h / 2;
+      state.lastAt = now;
+      vfxFieldMotionApply(node, state);
+      if (!node._vfxExpiresAt || node._vfxExpiresAt > now) vfxFieldMotionSchedule(node);
+      return;
+    }
+    var elapsed = Math.max(0, now - state.startedAt) / 1000;
     var k = state.duration > 0 ? Math.min(1, elapsed / state.duration) : 1;
     state.x = state.fromX + (state.toX - state.fromX) * k;
     state.y = state.fromY + (state.toY - state.fromY) * k;
@@ -470,6 +506,8 @@ function vfxFieldMotionSet(node, x, y, w, h, duration) {
       startedAt: Date.now(), duration: 0
     };
   } else {
+    state.followPlayer = false;
+    state.homing = false;
     state.fromX = state.x;
     state.fromY = state.y;
     state.fromW = state.w;
@@ -483,6 +521,28 @@ function vfxFieldMotionSet(node, x, y, w, h, duration) {
   }
   vfxFieldMotionApply(node, state);
   if (state.duration > 0) vfxFieldMotionSchedule(node);
+}
+
+function vfxFieldMotionFollowPlayer(node, layer) {
+  if (!node || !node._vfxFieldMotion) return;
+  var state = node._vfxFieldMotion;
+  state.followPlayer = true;
+  state.homing = false;
+  state.layer = layer;
+  state.lastAt = Date.now();
+  vfxFieldMotionSchedule(node);
+}
+
+function vfxFieldMotionHome(node, speed, targetX, targetY) {
+  if (!node || !node._vfxFieldMotion) return;
+  var state = node._vfxFieldMotion;
+  state.followPlayer = false;
+  state.homing = true;
+  state.speed = Math.max(0, Number(speed) || 0);
+  state.targetX = Number(targetX);
+  state.targetY = Number(targetY);
+  state.lastAt = Date.now();
+  vfxFieldMotionSchedule(node);
 }
 
 function vfxFieldVisual(node, cls, layerSpec, w, h) {
@@ -1072,6 +1132,27 @@ function vfxBurst(spec, layer, pt, delayMs) {
   vfxTrack(d, delayMs + (spec.dur || 0.5) * 1000 + 160);
 }
 
+/* 冰霜新星的範圍本體：直接使用模擬層 area.r，
+   以圓形節點播放一次擴散；目標命中爆點另由 renderCombatVfx 處理。 */
+function vfxFrostNova(spec, layer, area, fallbackPt, delayMs) {
+  var center = area && isFinite(area.x) && isFinite(area.y)
+    ? { x: Number(area.x), y: Number(area.y) } : fallbackPt;
+  if (!center || !isFinite(center.x) || !isFinite(center.y)) return null;
+  var radius = area && Number(area.r) > 0 ? Number(area.r) : 90;
+  var d = vfxNode('vfx-frost-nova', layer, spec);
+  vfxPlace(d, center);
+  d.style.width = (radius * 2) + 'px';
+  d.style.height = (radius * 2) + 'px';
+  d.style.margin = (-radius) + 'px 0 0 ' + (-radius) + 'px';
+  d.style.animationDelay = (delayMs || 0) + 'ms';
+  d.style.animationDuration = Math.round(Math.max(0.32, Number(spec.dur) || 0.5) * 1000) + 'ms';
+  var inner = document.createElement('span');
+  inner.className = 'vfx-frost-nova-inner';
+  d.appendChild(inner);
+  vfxTrack(d, (delayMs || 0) + Math.max(0.32, Number(spec.dur) || 0.5) * 1000 + 180);
+  return d;
+}
+
 /* ---- 氣旋（旋風斬）：圓形氣旋斬擊在敵陣中旋轉 ----
    rect 由棋盤格或高塔目標退化矩形提供；本函式不重新查詢命中目標。 */
 function vfxCyclone(spec, layer, rect) {
@@ -1543,6 +1624,12 @@ function vfxIceField(spec, layer, area, rect) {
   var node = _vfxIceFields[key];
   if (node && node.parentNode === layer) {
     vfxFieldMotionSet(node, x, y, w, h, vfxFieldMotionSec(spec, 0.4));
+    if (variant === 'blizzard') {
+      vfxFieldMotionFollowPlayer(node, layer);
+    } else if (variant === 'ice-arrow-homing' && area && area.speed > 0 &&
+               isFinite(area.destX) && isFinite(area.destY)) {
+      vfxFieldMotionHome(node, area.speed, area.destX, area.destY);
+    }
     node._vfxExpiresAt = Date.now() + ttl;
     return node;
   }
@@ -1551,6 +1638,12 @@ function vfxIceField(spec, layer, area, rect) {
   node = vfxNode('vfx-field-motion', layer, null);
   node._vfxFieldVisual = vfxFieldVisual(node, cls, spec, w, visualH);
   vfxFieldMotionSet(node, x, y, w, h, 0);
+  if (variant === 'blizzard') {
+    vfxFieldMotionFollowPlayer(node, layer);
+  } else if (variant === 'ice-arrow-homing' && area && area.speed > 0 &&
+             isFinite(area.destX) && isFinite(area.destY)) {
+    vfxFieldMotionHome(node, area.speed, area.destX, area.destY);
+  }
   var pieces = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 6;
   for (var i = 0; i < pieces; i++) {
     var piece = document.createElement('span');
@@ -2105,6 +2198,21 @@ function renderCombatVfx(spec) {
       return;
     }
     var rect = vfxCellsRect(spec.cells, layer);
+    var isIceField = s.variant === 'blizzard' || s.variant === 'water-tornado' ||
+      s.variant === 'ice-arrow-homing';
+    /* 地板場域的 area 是世界座標中心；DOM 後備路徑沒有棋盤格時，
+       直接用它建立矩形包絡，不能退化成第一個受擊敵人的位置。 */
+    if (!rect && isIceField && spec.area && isFinite(spec.area.x) && isFinite(spec.area.y)) {
+      var areaW = Number(spec.area.w) > 0 ? Number(spec.area.w)
+        : Math.max(16, (Number(spec.area.r) || 30) * 2);
+      var areaH = Number(spec.area.h) > 0 ? Number(spec.area.h) : areaW;
+      rect = {
+        x: Number(spec.area.x) - areaW / 2,
+        y: Number(spec.area.y) - areaH / 2,
+        w: areaW,
+        h: areaH
+      };
+    }
     if (!rect) {
       // 高塔戰沒有棋盤格：以目標卡片為中心的退化矩形
       var fallbackPt = vfxPointOf(anchorId, layer);
@@ -2116,8 +2224,7 @@ function renderCombatVfx(spec) {
       else if (s.variant === 'firewall') vfxFireWall(s, layer, spec.area, rect);
       else if (s.variant === 'mire' || s.variant === 'mire-lava' || s.variant === 'mire-poison' || s.variant === 'mire-lava-poison') vfxMirePool(s, layer, spec.area, rect);
       else if (s.variant === 'thunder-orb') vfxThunderOrb(s, layer, spec.area, rect);
-      else if (s.variant === 'blizzard' || s.variant === 'water-tornado' ||
-               s.variant === 'ice-arrow-homing') vfxIceField(s, layer, spec.area, rect);
+      else if (isIceField) vfxIceField(s, layer, spec.area, rect);
       else vfxAura(s, layer, rect);
       return;
     }
@@ -2138,6 +2245,20 @@ function renderCombatVfx(spec) {
     var dotBurst = resolveTargets();
     for (var dbi = 0; dbi < dotBurst.pts.length; dbi++) {
       vfxImpact(s, layer, dotBurst.pts[dbi], dotBurst.ids[dbi], baseDelay + dbi * 40);
+    }
+    return;
+  }
+
+  /* 冰霜新星是以玩家為圓心的一次範圍爆發：範圍本體使用 area.r 畫圓，
+     目標位置只補命中爆點，不再把範圍退化成方形。 */
+  if (kind === 'burst' && s.variant === 'frost-nova') {
+    var frostNovaTargets = resolveTargets();
+    var frostNovaFallback = frostNovaTargets.pts.length
+      ? frostNovaTargets.pts[0] : vfxPointOf('pv-float', layer);
+    vfxFrostNova(s, layer, spec.area, frostNovaFallback, baseDelay);
+    for (var fni = 0; fni < frostNovaTargets.pts.length; fni++) {
+      vfxImpact({ elem: s.elem, variant: null, color: s.color }, layer,
+        frostNovaTargets.pts[fni], frostNovaTargets.ids[fni], baseDelay + fni * 40);
     }
     return;
   }
@@ -2206,6 +2327,40 @@ function renderCombatVfx(spec) {
         for (var tti = 0; tti < rt.pts.length; tti++) {
           vfxImpact({ elem: s.elem, variant: null, color: s.color }, layer,
             rt.pts[tti], rt.ids[tti], thrustDelay + 100 + tti * 24);
+        }
+      }
+    }
+    return;
+  }
+
+  /* 貫穿冰箭只有一個飛行中的箭頭，沿著模擬層提供的直線長度前進；
+     路徑上的敵人只在箭頭經過時各自顯示命中反饋。 */
+  if (kind === 'projectile' && s.variant === 'ice-arrow-pierce') {
+    if (!rt.pts.length || !from) return;
+    var iceArrowAngle = Math.atan2(rt.pts[0].y - from.y, rt.pts[0].x - from.x);
+    var iceArrowLength = Number(s.lineLength) > 0 ? Number(s.lineLength)
+      : Math.sqrt(Math.pow(rt.pts[0].x - from.x, 2) + Math.pow(rt.pts[0].y - from.y, 2));
+    if (!(iceArrowLength > 0)) return;
+    var iceArrowTravel = (travelMs && Number(travelMs[0]) > 0) ? Number(travelMs[0]) : 0;
+    var iceArrowCos = Math.cos(iceArrowAngle), iceArrowSin = Math.sin(iceArrowAngle);
+    var iceArrowEnd = {
+      x: from.x + iceArrowCos * iceArrowLength,
+      y: from.y + iceArrowSin * iceArrowLength
+    };
+    for (var iac = 0; iac < count; iac++) {
+      var iceArrowDelay = baseDelay + iac * stagger;
+      vfxProjectile(s, layer, from, iceArrowEnd, iceArrowDelay, iceArrowTravel);
+      for (var iat = 0; iat < rt.pts.length; iat++) {
+        var iceTargetDx = rt.pts[iat].x - from.x;
+        var iceTargetDy = rt.pts[iat].y - from.y;
+        var iceTargetAlong = iceTargetDx * iceArrowCos + iceTargetDy * iceArrowSin;
+        var iceHitDelay = iceArrowDelay + (iceArrowTravel > 0
+          ? Math.round(iceArrowTravel * Math.max(0, Math.min(1, iceTargetAlong / iceArrowLength)))
+          : Math.round(dur * 1000));
+        if (iac === 0 || rt.pts.length <= 3) {
+          vfxImpact(s, layer, rt.pts[iat], rt.ids[iat], iceHitDelay);
+        } else {
+          vfxHitReact(rt.ids[iat], s.elem, iceHitDelay, false);
         }
       }
     }

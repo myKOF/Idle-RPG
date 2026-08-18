@@ -7222,6 +7222,37 @@ textarea:disabled,
   animation-delay: inherit;
 }
 
+/* 冰霜新星：範圍本體使用真正的圓形，不沿用格子矩形的包絡。 */
+.vfx-frost-nova {
+  position: absolute;
+  pointer-events: none;
+  box-sizing: border-box;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle, rgba(224, 242, 254, 0.3),
+    rgba(125, 211, 252, 0.18) 54%, rgba(34, 211, 238, 0.05) 76%, transparent 88%);
+  border: 3px solid rgba(224, 242, 254, 0.86);
+  box-shadow: 0 0 22px rgba(34, 211, 238, 0.62), inset 0 0 20px rgba(125, 211, 252, 0.42);
+  animation: vfxFrostNovaExpand ease-out both;
+  animation-duration: inherit;
+  animation-delay: inherit;
+}
+
+.vfx-frost-nova-inner {
+  position: absolute;
+  inset: 14%;
+  border: 2px solid rgba(186, 230, 253, 0.7);
+  border-radius: 50%;
+  box-shadow: 0 0 14px rgba(224, 242, 254, 0.72) inset;
+}
+
+@keyframes vfxFrostNovaExpand {
+  0% { transform: scale(0.24); opacity: 0; }
+  18% { opacity: 0.95; }
+  68% { opacity: 0.72; }
+  100% { transform: scale(1.06); opacity: 0; }
+}
+
 /* 火球命中：比一般命中爆點更明確的火焰爆炸，但不使用殞石的地面震波。 */
 .vfx-burst-fireball {
   width: 44px;
