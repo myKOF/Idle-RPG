@@ -2010,8 +2010,10 @@ function vfxSmite(spec, layer, pt, targetId, delayMs, travelMs) {
    領域是長壽命節點，會由 vfxTrack 以 dur 登記；品質 Reduced 會在入口直接略過，
    避免在非戰鬥頁長時間保留大量動畫。 */
 function vfxAura(spec, layer, rect) {
-  if (spec && spec.elem === 'wind' &&
-      (!spec.variant || spec.variant === 'wind-blade-homing')) return null;
+  /* DOM 後備路徑也不得用泛用綠色矩形代表風系傷害／場域。
+     追蹤風刃在呼叫本函式前已走 vfxIceField；其他風系事件沒有專用 DOM
+     方框替代品時直接略過，避免再次把畫面誤認成傷害範圍。 */
+  if (spec && spec.elem === 'wind') return null;
   var cls = 'vfx-aura';
   if (spec.variant === 'swordfield') cls += ' vfx-aura-sword';
   else if (spec.elem && VFX_ELEM_THEME[spec.elem]) cls += ' vfx-aura-' + spec.elem;
