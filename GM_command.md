@@ -728,9 +728,6 @@ task 99   （全部任務完成）
 - 不接受未知的寶石、附魔、稀有度、部位或節點 key。
 - 不提供刪除資源、扣除資源或清空背包指令，避免測試時誤刪資料。
 - 非本機 hostname 不會執行任何 GM 指令。
-- `equip chaos <等級> <部位> [數量]`：發放混沌裝備（R9）。
-- `equip chaosGodforged <等級> <部位> [數量]`：發放神鑄混沌裝備（R10）。
-
 【技能熟練度／技能經驗（2026-07-30 技能融合改造）】
 
 ```text
@@ -746,4 +743,21 @@ masterylv 500
 scroll 100
 mat scroll -10
 ```
+
+【新版技能一鍵滿級（2026-08-18 內測服專用）】
+
+```text
+skill2max 群組id或all （將指定技能群組或所有新版技能群組全階層升至滿級 Lv.10）
+```
+
+別名：`skillmax`、`skills2max`
+
+範例：
+
+```text
+skill2max icearrow      （將寒冰箭全階層升至 Lv.10）
+skill2max stormbarrier  （將暴風屏障全階層升至 Lv.10）
+skill2max all           （將所有新版技能群組全階層升至 Lv.10）
+```
+
 

@@ -1,5 +1,16 @@
 # PATCH.md
 
+## 技能區域左移與技能列一鍵滿級功能（Antigravity 2026-08-18）
+
+- **技能區域向左微調**：
+  - 在 `css/style.css` 緊湊化技能群組列表（`.sg-group-row`）排版，調降 `.sg-group-label` 寬度（88px → 76px）與內距（`4px 4px`），縮減群組間隙（`gap: 6px`）與各階進階軌道箭頭（`font-size: 20px`, `flex: 0 0 13px`），使全 7 階技能節點向左位移約 30px，騰出右側空間並消除不必要的橫向捲動。
+- **技能列一鍵滿級按鈕（內測服／開發環境專用）**：
+  - **環境雙重防護**：依據 `isGMHost()`（僅限 `localhost`、`127.0.0.1`、`::1`）安全邊界，非內測服不渲染按鈕且指令執行層拒絕執行。
+  - **UI 按鈕**：於各技能列第 7 階末尾新增金色邊框暗紅漸變方塊按鈕 `.sg-row-max-btn`（標示 `MAX`），點擊即可一鍵將該列 0~6 階全數提升至滿級 Lv.10。
+  - **GM 執行層**：在 `js/gm_exec.js` 新增 `skill2max <group|all>` 指令（支援別名 `skillmax`、`skills2max`），點擊按鈕時透過 `WorkerBridge.send('gm.exec', ...)` 呼叫並即時刷新技能快照。
+  - **文件與測試**：同步更新 `GM_command.md` 指令說明，並新增 `tests/skill2-row-max-dev.test.cjs` 驗證群組升級、全部升級與安全邊界限制。
+
+
 ## 戰鬥傷害統計面板重構與全傷害歸屬（Antigravity 2026-08-18）
 
 - **DoT 持續傷害精準歸屬**：
