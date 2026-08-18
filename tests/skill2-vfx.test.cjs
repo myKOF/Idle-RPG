@@ -220,6 +220,21 @@ test('火狩 Canvas 旋轉速度沿用模擬層角速度，舊事件仍可退回
   assert.match(renderer, /\? spinRate : \(ccw \? -1 : 1\) \* Math\.PI \* 2/);
 });
 
+test('火狩長駐特效在混合技能容量洪峰中保留，拒收後可重建', () => {
+  const renderer = read('js/battle-renderer.js');
+  const vfx = read('js/vfx.js');
+
+  assert.match(renderer, /var FX_PERSISTENT_AURA_PRIORITY = 3/);
+  assert.match(renderer, /candidatePrio < fx\.prio/);
+  assert.match(renderer, /ring && !ring\.done && ring\.fx && !ring\.fx\.dead/);
+  assert.match(renderer, /var ringFx = addFx\([\s\S]*?FX_PERSISTENT_AURA_PRIORITY/);
+  assert.match(renderer, /if \(!ringFx\) \{[\s\S]*?delete _fireHuntRings\[key\]/);
+  assert.match(vfx, /function vfxQueuePriority\(spec\)/);
+  assert.match(vfx, /spec\.fxKind === 'aura' && spec\.variant === 'firehunt'\) return 3/);
+  assert.match(vfx, /queuedPriority < incomingPriority/);
+  assert.match(vfx, /if \(evictIndex >= 0\) _vfxEventQueue\.splice\(evictIndex, 1\);[\s\S]*else return;/);
+});
+
 test('震碎斬與迴身雙連斬共用十字方向的迴旋斬弧光', () => {
   const skills2 = read('js/skills2.js');
   const cleaveStart = skills2.indexOf('function sgCastCleave');

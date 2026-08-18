@@ -3685,6 +3685,43 @@ Commit：
 
 完成後交給：使用者／主整合工作區。
 
+## 任務：火狩與其他技能同時施放時特效遺失
+
+任務狀態：已完成（2026-08-18）
+
+任務分類：技能效果／戰鬥 VFX／特效排程與容量保護
+
+負責 AI：Codex
+
+使用者需求：火狩單獨施放時會出現環繞特效，但與其他技能同時施放時火狩特效不出現；需修正為混合技能場景也能穩定顯示。
+
+任務內容：檢查 Canvas 與 DOM 兩條 VFX 路徑的事件佇列、特效容量上限與火狩環繞場域生命週期；讓火狩長駐環繞事件在特效洪峰時具有明確保護優先級，且事件被容量拒收後不殘留失效的環繞狀態，避免後續刷新永遠被錯誤合併。
+
+允許修改：
+
+- `js/battle-renderer.js`
+- `js/vfx.js`
+- `tests/skill2-vfx.test.cjs`
+- `tests/vfx-performance.test.cjs`
+- `index.html`
+- `docs/AI_TASKS.md`
+
+禁止修改：技能數值、傷害計算、技能施放時序、存檔格式、Worker Protocol、無關 UI／VFX。
+
+前置依賴：既有火狩環繞場域與 Canvas／DOM VFX 路徑已存在；目標檔案衝突預檢無來源。
+
+測試要求：執行火狩／VFX 定向測試、完整 `npm.cmd test`、`npm.cmd run build`、JavaScript 語法檢查與 `git diff --check`，並同步主頁快取版本。
+
+完成條件：混合特效容量下火狩事件不被較低優先級事件淘汰；Canvas 拒收後可安全重建；DOM 事件洪峰保留火狩長駐事件；建立 Codex commit。
+
+驗證結果：火狩／VFX 定向測試 49/49 通過；完整 `npm.cmd test` 為 1606 項、1601 通過、5 項既有失敗；`npm.cmd run build` 294/294 通過；`node --check js/battle-renderer.js`、`node --check js/vfx.js` 與 `git diff --check` 通過；`index.html` 的 `vfx.js`／`battle-renderer.js` 快取版號已同步。
+
+已知風險：完整測試的 5 項失敗是既有參數表／測試斷言漂移（`counter`、`bloodrage`、泥沼尺寸 2 項、暴風雪範圍），與本次特效容量修改無關；尚未進行瀏覽器實機目視驗證。
+
+未完成項目：無程式項目。
+
+後續接手者：使用者／主整合工作區。
+
 ## 任務：投射物命中後才結算反震／反傷
 
 任務狀態：已完成（2026-08-17）

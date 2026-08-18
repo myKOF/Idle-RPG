@@ -32,6 +32,7 @@ var BattleRenderer = (function () {
   var FX_HARD_LIFETIME_MS = 3000;  // 特效節點的硬性壽命（牆鐘）；領域類另外指定
   var FX_AURA_MAX_SEC = 6;         // 領域／旋風類的顯示上限（秒）——原本吃技能的實際持續時間，
                                    // 長效領域會讓那塊半透明方框在畫面上留很久，看起來像沒清乾淨
+  var FX_PERSISTENT_AURA_PRIORITY = 3; // 長駐自身場域在混合技能洪峰中優先保留
   var FX_WATCHDOG_MS = 1000;       // 看門狗掃描間隔
   var METEOR_SIZE_SCALE = 1.30;    // 新版殞石術特效寬度／尺寸增加 30%
   /* 角色的跑速與追擊邏輯已經**不在這裡**：位移由模擬層產生（js/battlefield.js
@@ -1333,11 +1334,22 @@ var BattleRenderer = (function () {
     fx.bornAt = nowMs();
     fx.maxLife = maxLifeMs || FX_HARD_LIFETIME_MS;
     if (S.fx.length >= MAX_FX) {
-      /* 滿了先踢低優先級（粒子），跟 DOM 版先踢非 aura 的精神一致 */
+      /* 滿了可讓高優先級事件淘汰較低優先級事件；否則長駐場域會在
+         技能洪峰中因為所有低優先級粒子已被清掉而反遭拒收。相同優先級
+         不互相淘汰，避免新事件把仍在播放的長駐場域換掉。 */
+      var evictIndex = -1;
+      var evictPrio = Infinity;
       for (var i = 0; i < S.fx.length; i++) {
-        if (S.fx[i].prio <= 0) { killFx(S.fx[i]); S.fx.splice(i, 1); break; }
+        var candidatePrio = S.fx[i].prio || 0;
+        if (candidatePrio < fx.prio && candidatePrio < evictPrio) {
+          evictIndex = i;
+          evictPrio = candidatePrio;
+        }
       }
-      if (S.fx.length >= MAX_FX) {
+      if (evictIndex >= 0) {
+        killFx(S.fx[evictIndex]);
+        S.fx.splice(evictIndex, 1);
+      } else {
         /* 拒收就要就地銷毀：呼叫端都是先 addChild 再 addFx，
            不銷毀的話節點會永遠凍在舞台上（沒有任何清除路徑會再碰到它）。 */
         killFx(fx);
@@ -2174,7 +2186,7 @@ var BattleRenderer = (function () {
     var key = (spec.variant || 'firehunt') + ':' + (spec.elem || '') + ':' +
       Math.round(ringR) + ':' + (ccw ? 'ccw' : 'cw');
     var ring = _fireHuntRings[key];
-    if (ring && !ring.done) {
+    if (ring && !ring.done && ring.fx && !ring.fx.dead) {
       ring.dur = Math.min(FX_ORBIT_MAX_SEC, Math.max(ring.dur, ring.t + dur));
       ring.orbs = orbs;
       return;
@@ -2188,10 +2200,10 @@ var BattleRenderer = (function () {
     S.layers.fx.addChild(node);
     var g = new PIXI.Graphics();
     node.addChild(g);
-    ring = { t: 0, dur: dur, orbs: orbs, done: false };
+    ring = { t: 0, dur: dur, orbs: orbs, done: false, fx: null };
     _fireHuntRings[key] = ring;
     var partAcc = 0;
-    addFx({
+    var ringFx = addFx({
       node: node,
       update: function (dt) {
         ring.t += dt;
@@ -2223,7 +2235,15 @@ var BattleRenderer = (function () {
         }
         return ring.t < ring.dur;
       }
-    }, 2, (FX_ORBIT_MAX_SEC + 1) * 1000);
+    }, FX_PERSISTENT_AURA_PRIORITY, (FX_ORBIT_MAX_SEC + 1) * 1000);
+    if (!ringFx) {
+      /* 容量真的無法容納時不能留下未追蹤的 ring；否則下一次刷新會誤以為
+         畫面上仍有同一道火狩，永遠不再建立節點。 */
+      ring.done = true;
+      if (_fireHuntRings[key] === ring) delete _fireHuntRings[key];
+      return;
+    }
+    ring.fx = ringFx;
   }
 
   /* 火牆（新版技能【無限火牆】）：沿傷害矩形長軸排列的直立火焰柱。

@@ -2536,6 +2536,15 @@ function vfxMergeKey(spec) {
   return [spec.fxKind || '', spec.cat || '', spec.elem || '', spec.variant || '', target].join('|');
 }
 
+/* 事件佇列滿載時，長駐場域比瞬間命中反饋更需要保留；否則混合技能連發
+   會在 DOM 路徑把火狩事件淘汰，造成「模擬有火狩、畫面卻沒有」的落差。 */
+function vfxQueuePriority(spec) {
+  if (!spec) return 0;
+  if (spec.fxKind === 'aura' && spec.variant === 'firehunt') return 3;
+  if (spec.fxKind === 'aura') return 2;
+  return 0;
+}
+
 /* 每一幀最多排程一次 flush，優先用 RAF 跟畫面時鐘同步；測試／舊環境才退回 Timer。 */
 function vfxScheduleFlush() {
   if (_vfxFlushHandle || !_vfxEventQueue.length) return;
@@ -2582,7 +2591,22 @@ function vfxEnqueue(spec) {
       }
     }
   }
-  if (_vfxEventQueue.length >= VFX_EVENT_QUEUE_MAX) _vfxEventQueue.shift();
+  if (_vfxEventQueue.length >= VFX_EVENT_QUEUE_MAX) {
+    var incomingPriority = vfxQueuePriority(spec);
+    var evictIndex = -1;
+    var evictPriority = Infinity;
+    for (var qi = 0; qi < _vfxEventQueue.length; qi++) {
+      var queuedPriority = vfxQueuePriority(_vfxEventQueue[qi].spec);
+      if ((queuedPriority < incomingPriority ||
+           (incomingPriority === 0 && queuedPriority === 0)) &&
+          queuedPriority < evictPriority) {
+        evictIndex = qi;
+        evictPriority = queuedPriority;
+      }
+    }
+    if (evictIndex >= 0) _vfxEventQueue.splice(evictIndex, 1);
+    else return;
+  }
   _vfxEventQueue.push({ spec: spec, key: mergeKey, queuedAt: now });
   vfxScheduleFlush();
 }
