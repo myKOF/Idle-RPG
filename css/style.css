@@ -5246,6 +5246,15 @@ textarea:disabled,
   border-color: rgba(139, 92, 246, 0.55);
 }
 
+.battle-skill-slot.active-passive {
+  overflow: hidden;
+}
+
+.battle-skill-slot.active-passive .bss-remove-btn {
+  top: 0;
+  right: 0;
+}
+
 .battle-skill-slot.active-passive::before {
   content: '';
   position: absolute;
