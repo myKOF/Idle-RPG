@@ -890,7 +890,12 @@ function sgQueueFlyingProjectile(pEnt, st, gid, dmgVal, origin, angle, length, f
     nextPulseAt: begin + Math.max(0.05, Number(extra && extra.pulseGap) || 0.5),
     /* 命中時附加的減益（狂風碎裂的移速下降）：狀態鍵與數值由呼叫端指定。 */
     slowStatus: (extra && extra.slowStatus) || '',
-    slowPct: Math.max(0, Number(extra && extra.slowPct) || 0)
+    slowPct: Math.max(0, Number(extra && extra.slowPct) || 0),
+    /* 保證命中的指派目標（寒冰箭的扇形齊射）：箭道散開之後，被指派的敵人
+       通常不在自己那條箭道上，但文檔的語意是「每支箭對 1 個敵人造成傷害」。
+       它會在箭飛到它身旁的那一刻結算一次；已被箭道掃到就不再重複（走 states 去重）。 */
+    mustHit: (extra && extra.mustHit) || null,
+    mustHitDone: false
   };
   out._pendingProjectiles = (out._pendingProjectiles || 0) + 1;
   SKILL2_RT.projectiles.push(p);
@@ -978,6 +983,22 @@ function sgProjectilePulse(projectile, now, distance, enemies, ctx) {
   }
 }
 
+/* 保證命中：把指派目標插進「這一段剛掃到的敵人」名單——時機取它在箭道上的
+   投影距離（＝箭飛到它身旁的那一刻），不是起飛或抵達的瞬間，因此傷害數字
+   仍然跟著箭走。命中與否的去重交給 projectile.states，不會與箭道命中重覆結算。 */
+function sgProjectileMustHit(projectile, crossed, distance) {
+  var ent = projectile.mustHit;
+  if (!ent || projectile.mustHitDone || ent.hp <= 0 || !projectile.origin) return crossed;
+  var p = (typeof bfPos === 'function') ? bfPos(ent) : null;
+  if (!p) return crossed;
+  var along = (p.x - projectile.origin.x) * Math.cos(projectile.angle) +
+    (p.y - projectile.origin.y) * Math.sin(projectile.angle);
+  along = Math.max(0, Math.min(projectile.length, along));
+  if (distance < along) return crossed;
+  projectile.mustHitDone = true;
+  return (crossed.indexOf(ent) >= 0) ? crossed : crossed.concat([ent]);
+}
+
 function sgTickFlyingProjectiles(dt, ctx) {
   var list = SKILL2_RT.projectiles;
   if (!list || !list.length) return;
@@ -1002,6 +1023,8 @@ function sgTickFlyingProjectiles(dt, ctx) {
     if (projectile.targetOnly) {
       crossed = (now >= projectile.endAt && projectile.fallbackTargets.length)
         ? [projectile.fallbackTargets[0]] : [];
+    } else if (projectile.mustHit && projectile.origin) {
+      crossed = sgProjectileMustHit(projectile, crossed, distance);
     }
     for (var ci = 0; ci < crossed.length; ci++) {
       if (sgProjectileState(projectile, crossed[ci])) continue;
@@ -3704,15 +3727,21 @@ function sgIcearrowSpeed() {
   return (typeof bfMeterPx === 'function') ? bfMeterPx(metersPerSecond) : metersPerSecond * 10;
 }
 
+/* 打得到某個敵人所需的行程（含它的體型半徑）；沒有座標時回 0。 */
+function sgIcearrowReach(ent) {
+  if (typeof bfTravelDistance !== 'function' || typeof bfPos !== 'function' || !bfPos(ent)) return 0;
+  return bfTravelDistance(ent) + (typeof bfEntityRadius === 'function' ? bfEntityRadius(ent) : 0);
+}
+
 /* 貫穿長度：文檔的「10 米＋每級 2 米」是箭本身的行程。單看字面值會讓投資第 4 階
    變成降級（射程 30 米的技能只剩 12 米行程，遠處的主目標反而打不到），
-   因此以「打得到主目標」為地板——與泥沼術持續時間取 max 的既有處理同一個理由。 */
-function sgIcearrowPierceLen(lvs, fx, primary) {
+   因此以「打得到目標」為地板——與泥沼術持續時間取 max 的既有處理同一個理由。
+   targets 為這次齊射的全部指派目標：整個扇形共用一個行程，箭道才會等長。 */
+function sgIcearrowPierceLen(lvs, fx, targets) {
   var len = bfMeterPx(sgVal(fx, 'm', lvs[3]));
-  var need = (typeof bfTravelDistance === 'function' && typeof bfPos === 'function' && bfPos(primary))
-    ? bfTravelDistance(primary) + (typeof bfEntityRadius === 'function' ? bfEntityRadius(primary) : 0)
-    : 0;
-  return Math.max(len, need);
+  var list = Array.isArray(targets) ? targets : [targets];
+  for (var i = 0; i < list.length; i++) len = Math.max(len, sgIcearrowReach(list[i]));
+  return len;
 }
 
 function sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out) {
@@ -3738,35 +3767,37 @@ function sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var waveGap = homingFx ? Math.max(0, Number(homingFx.waveGap) || 0.3) : 0;
 
   if (pierce && geomOk) {
-    var lineLen = sgIcearrowPierceLen(lvs, t[3].fx, primary);
+    var lineLen = sgIcearrowPierceLen(lvs, t[3].fx, arrows);
     var origin = bfPlayerPos();
     var halfWidth = SG_FLYING_PROJECTILE_HALF_WIDTH;
     var flightSec = lineLen / sgIcearrowSpeed();
     for (var wave = 0; wave < waveCount; wave++) {
       var waveDelay = wave * waveGap;
       for (var ai = 0; ai < arrows.length; ai++) {
-        var simulationAngle = bfAngleTo(arrows[ai]);
-        if (simulationAngle === null) simulationAngle = centerAngle || 0;
-        var path = bfLineTargets(simulationAngle, lineLen, pool, halfWidth, origin);
+        /* 每支箭飛自己的箭道（相鄰夾角 deg 度、以主目標方位為中心散開），
+           傷害幾何與畫面用的是同一個角度：這一段的終點就是追擊段的起點，
+           兩者若不同角度，冰箭在轉入追擊的瞬間會憑空橫移一大段。
+           箭道上的敵人照樣被貫穿；被指派的那個敵人則由 mustHit 保證命中
+           （文檔：每支箭對 1 個敵人造成傷害），散開因此不等於變成亂射。 */
+        var laneAngle = sgIcearrowLaneAngle(centerAngle, ai, arrows.length, laneStepDeg);
+        var path = bfLineTargets(laneAngle, lineLen, pool, halfWidth, origin);
         if (arrows[ai].hp > 0 && path.indexOf(arrows[ai]) < 0) path.unshift(arrows[ai]);
-        /* 貫穿箭的畫面方位＝實際的貫穿方位（不是均分的 15 度箭道）：
-           這一段的終點就是追擊段的起點，兩者用不同角度會讓冰箭在轉入追擊的
-           瞬間憑空橫移一大段。箭道扇形只留給沒有貫穿的第 1 階。 */
         sgEmitVfx('icearrow', path.length ? path : [arrows[ai]], floatSel, {
           fxKind: 'projectile', variant: 'ice-arrow-pierce', elem: 'ice', count: 1,
-          lineLength: lineLen, lineWidth: Math.max(20, halfWidth * 2), angle: simulationAngle,
+          lineLength: lineLen, lineWidth: Math.max(20, halfWidth * 2), angle: laneAngle,
           delayMs: Math.round(waveDelay * 1000),
           travelMs: [Math.round(flightSec * 1000)]
         });
-        sgQueueFlyingProjectile(pEnt, st, 'icearrow', dmgVal, origin, simulationAngle, lineLen,
+        sgQueueFlyingProjectile(pEnt, st, 'icearrow', dmgVal, origin, laneAngle, lineLen,
           floatSel, path, { halfWidthPx: halfWidth, hitFn: sgIcearrowProjectileHit,
-            frostSpec: frost, speed: sgIcearrowSpeed(), beginSec: waveDelay }, out);
+            frostSpec: frost, speed: sgIcearrowSpeed(), beginSec: waveDelay,
+            mustHit: arrows[ai] }, out);
         // 這支箭飛完直線之後，就地從終點轉入追擊模式（同一個飛行物換飛法）
         if (homingFx) {
           sgSpawnIcearrowHoming(pEnt, st, homingFx, arrows[ai], dmgVal, frost, floatSel, {
-            from: { x: origin.x + Math.cos(simulationAngle) * lineLen,
-              y: origin.y + Math.sin(simulationAngle) * lineLen },
-            moveAngle: simulationAngle, wave: wave, startDelaySec: waveDelay + flightSec
+            from: { x: origin.x + Math.cos(laneAngle) * lineLen,
+              y: origin.y + Math.sin(laneAngle) * lineLen },
+            moveAngle: laneAngle, wave: wave, startDelaySec: waveDelay + flightSec
           });
         }
       }

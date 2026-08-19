@@ -314,6 +314,30 @@ test('【貫穿冰箭】改為路徑貫穿，且貫穿長度不足時自動延�
   assert.ok(specs.some((s) => s.variant === 'ice-arrow-pierce'), '送出貫穿特效');
 });
 
+/* 使用者驗收的形狀：一波 N 支冰箭要**散開**，相鄰兩支夾角 deg 度（表定 15），
+   三波就是 3×N 支。散開之後被指派的敵人多半不在自己那條箭道上，
+   但文檔寫的是「每支對 1 個敵人造成傷害」——所以散開不得換來漏打。 */
+test('【冰箭齊射】各支沿相鄰 15 度的箭道散開，且每支仍打中自己的指派目標', () => {
+  const c = loadContext(); const calls = stubHits(c); const specs = stubVfx(c);
+  setLevels(c, 'icearrow', [1, 1, 1, 1, 1, 1, 1]); equip(c, 'icearrow');
+  forceRolls(c, 0.999);
+  const p = playerEnt(); c.FIELD.player = p;
+  const es = [enemy(1e9, 20 * M, 0, 'A'), enemy(1e9, 20 * M, 2 * M, 'B'), enemy(1e9, 20 * M, -2 * M, 'C')];
+  c.castSkill2(p, es, 'icearrow', 'mv-float');
+  const pierce = specs.filter((s) => s.variant === 'ice-arrow-pierce');
+  assert.equal(pierce.length, 9, '三波各三支箭（2 支 ＋【冰箭散射】1 支）');
+  const step = c.SKILLS2.icearrow.tiers[0].fx.deg;
+  const wave0 = pierce.filter((s) => !s.delayMs).map((s) => s.angle).sort((a, b) => a - b);
+  assert.equal(wave0.length, 3, '第一波三支箭各有自己的箭道');
+  for (let i = 1; i < wave0.length; i++) {
+    const deg = (wave0[i] - wave0[i - 1]) * 180 / Math.PI;
+    assert.ok(Math.abs(deg - step) < 1e-9, '相鄰箭道夾角 ' + step + ' 度（實際 ' + deg + '）');
+  }
+  run(c, p, es, 2);
+  const names = new Set(calls.map((x) => x.ent.name));
+  ['A', 'B', 'C'].forEach((n) => assert.ok(names.has(n), n + ' 仍被指派給它的那支箭命中'));
+});
+
 test('【寒霜凍結】對已帶寒霜的敵人結清剩餘凍傷並追加層數', () => {
   /* stub 的 resolveHit 固定每次扣 100，因此「總扣血 − 命中次數×100」就是走
      sgDerivedHit 的結清量（衍生傷害不經 resolveHit，不會進 calls）。

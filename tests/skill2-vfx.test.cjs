@@ -562,9 +562,12 @@ test('寒冰箭貫穿：兩條渲染路徑都以單一連續直線投射物呈�
   // 模擬層提供貫穿線段的飛行時間，畫面不再使用每個目標的預設延遲。
   assert.match(skills2, /var flightSec = lineLen \/ sgIcearrowSpeed\(\);/);
   assert.match(skills2, /variant: 'ice-arrow-pierce'[\s\S]{0,320}travelMs: \[Math\.round\(flightSec \* 1000\)\]/);
-  /* 貫穿段的畫面方位必須等於實際貫穿方位：這一段的終點就是追擊段的起點，
-     用均分箭道去畫會讓冰箭在轉入追擊時憑空橫移。 */
-  assert.match(skills2, /variant: 'ice-arrow-pierce'[\s\S]{0,200}angle: simulationAngle/);
+  /* 貫穿段的傷害幾何與畫面方位都是「自己的箭道」（相鄰 15 度散開）：
+     兩者若不同角度，冰箭在轉入追擊時會憑空橫移；散開後打不到的指派目標
+     由飛行物的 mustHit 補回，不是靠顯示層另畫一條線。 */
+  assert.match(skills2, /variant: 'ice-arrow-pierce'[\s\S]{0,200}angle: laneAngle/);
+  assert.match(skills2, /sgQueueFlyingProjectile\([\s\S]{0,400}mustHit: arrows\[ai\]/);
+  assert.match(skills2, /function sgProjectileMustHit\(projectile, crossed, distance\)/);
   assert.match(skills2, /variant: 'ice-arrow', elem: 'ice', count: 1,[\s\S]{0,180}angle: laneAngle/);
   // Canvas：同一事件只建立一支沿 angle／length 前進的箭。
   assert.match(renderer, /function spawnIcearrowPierce[\s\S]*?spawnProjectile\(null, flight, spec, null, from, \{ angle: angle, length: length \}\)/);
@@ -829,9 +832,9 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(index, /css\/style\.css\?v=1\.0\.49/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.59/);
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.91/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.48/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-icearrow-homing-handoff-v6'/);
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260819-icearrow-homing-handoff-v6/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.49/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-icearrow-fan-lanes-v7'/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260819-icearrow-fan-lanes-v7/);
 });
 
 /* 2026-08-19 回報三連：真空斬系的綠色落雷、風刃地板綠方塊、風刃一格一格移動。
