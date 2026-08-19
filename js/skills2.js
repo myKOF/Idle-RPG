@@ -1996,6 +1996,9 @@ function sgSpawnGround(pEnt, st, gid, cfg) {
     dest: (cfg.dest && isFinite(cfg.dest.x) && isFinite(cfg.dest.y))
       ? { x: Number(cfg.dest.x), y: Number(cfg.dest.y) } : null,
     speed: Math.max(0, Number(cfg.speed) || 0),
+    /* 目前的飛行方向（弧度）：追擊場域沒有落點可追時沿著它直線飛出去。
+       出生時未定；第一次朝落點移動就會寫入。 */
+    moveAngle: null,
     /* 跟隨我方的場域（暴風雪）：圓心恆等於玩家當下座標，與環繞場域同一種錨定方式，
        差別只在形狀是地板矩形。留白＝原本的釘死在地板上。 */
     follow: !!cfg.follow,
@@ -2026,33 +2029,58 @@ function sgGroundMove(f, dt, enemies) {
     return;
   }
   if (!f.pos || !(f.speed > 0) || !(dt > 0)) return;
-  if (!f.dest && f.chaseM > 0) f.dest = sgGroundChaseDest(f, enemies);
-  if (!f.dest) return;
-  var dx = f.dest.x - f.pos.x, dy = f.dest.y - f.pos.y;
-  var dist = Math.sqrt(dx * dx + dy * dy);
+  var chase = f.chaseM > 0;
   var step = f.speed * dt;
-  if (dist <= step || dist <= 0.5) {
+  /* 這一步要走完整段距離：抵達落點只是換方向，不是把剩下的位移丟掉。
+     舊版抵達後直接 return，於是每換一次目標就少走一格——距離短時
+     幾乎每個 tick 都在「換目標」，場域看起來就是一格一格挪。
+     guard 擋住「落點全在腳下」的病態情形，不讓單一 tick 無限換目標。 */
+  var guard = 0;
+  while (step > 1e-6 && guard++ < 4) {
+    if (!f.dest && chase) f.dest = sgGroundChaseDest(f, enemies);
+    if (!f.dest) break;
+    var dx = f.dest.x - f.pos.x, dy = f.dest.y - f.pos.y;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 1e-6) f.moveAngle = Math.atan2(dy, dx);   // 記住方向：沒有目標時要沿著它繼續飛
+    if (dist > step) {
+      f.pos.x += dx / dist * step;
+      f.pos.y += dy / dist * step;
+      return;
+    }
     f.pos.x = f.dest.x; f.pos.y = f.dest.y;
+    step -= dist;
     // 追擊場域抵達後立刻改鎖下一個目標；非追擊場域就地停駐（雷球原本的行為）
-    f.dest = (f.chaseM > 0) ? sgGroundChaseDest(f, enemies) : null;
-    return;
+    f.dest = chase ? sgGroundChaseDest(f, enemies) : null;
+    if (!chase) return;
   }
-  f.pos.x += dx / dist * step;
-  f.pos.y += dy / dist * step;
+  /* 追擊場域沒有可追的目標（範圍內沒人、或只剩腳下那一個）時沿最後的方向直線飛，
+     不原地待命：追擊場域是接觸判定，停下來就等於不再命中任何東西。
+     下一個 tick 仍會重新找落點，飛行途中有敵人進入範圍就會轉回去追。 */
+  if (step > 1e-6 && chase && isFinite(f.moveAngle)) {
+    f.pos.x += Math.cos(f.moveAngle) * step;
+    f.pos.y += Math.sin(f.moveAngle) * step;
+  }
 }
 
 /* 追擊場域的下一個落點：以場域當下位置為圓心、chaseM 米內的隨機存活敵人
-   （文檔：朝範圍內的隨機目標飛去——不是最近的）。範圍內沒人就原地待命。 */
+   （文檔：朝範圍內的隨機目標飛去——不是最近的）。
+   **已經在自己判定圈內的敵人不算候選**：追擊場域是接觸判定，站在腳下的那一個
+   早就結算過了，再把它挑成落點只會得到「距離 0 的目標」——場域就地停住、
+   每個 tick 只跟著它抖幾個像素，那正是玩家看到的「小風刃一格一格移動」。
+   全部候選都在腳下（或範圍內沒人）時回 null，交給 sgGroundMove 沿最後方向直線飛出去，
+   飛出接觸圈後同一個敵人又會重新成為候選——來回穿梭因此是自然結果。 */
 function sgGroundChaseDest(f, enemies) {
   if (!f.pos || typeof bfLiveList !== 'function' || typeof bfPos !== 'function') return null;
   var radius = bfMeterPx(f.chaseM);
+  var near = Math.max(1, Number(f.radius) || 0);
   var live = bfLiveList(enemies || []);
   var cands = [];
   for (var i = 0; i < live.length; i++) {
     var p = bfPos(live[i]);
     if (!p) continue;
     var dx = p.x - f.pos.x, dy = p.y - f.pos.y;
-    if (dx * dx + dy * dy > radius * radius) continue;
+    var d2 = dx * dx + dy * dy;
+    if (d2 > radius * radius || d2 <= near * near) continue;
     cands.push(p);
   }
   if (!cands.length) return null;

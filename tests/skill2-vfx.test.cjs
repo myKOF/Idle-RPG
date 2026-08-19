@@ -794,10 +794,10 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   // 主頁與 Worker 必須換版本，否則瀏覽器會繼續執行舊的綠色方框／逐格路徑。
   assert.match(index, /css\/style\.css\?v=1\.0\.47/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.53/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.83/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.43/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-wind-smooth-v2'/);
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260819-wind-smooth-v2/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.84/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.44/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-wind-chase-v3'/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260819-wind-chase-v3/);
 });
 
 /* 2026-08-19 回報三連：真空斬系的綠色落雷、風刃地板綠方塊、風刃一格一格移動。
@@ -852,7 +852,9 @@ test('追蹤場域的補間長度跟著同一批帶了幾個模擬步放大', ()
   assert.match(renderer, /fx\.batchSteps = \(Number\(fx\.batchSteps\) \|\| 1\) \+ 1;/);
   assert.match(renderer, /Number\(baseSec\) \|\| 0\) \* fx\.batchSteps/);
   assert.match(renderer, /var FIELD_VFX_BATCH_EPS_SEC = 0\.05/);
+  // 一批只帶半步（Worker 的零頭步）時，補間長度仍要撐到下一批到達為止。
+  assert.match(renderer, /sec = Math\.max\(sec, Number\(fx\.arrivalSec\) \|\| 0\);/);
   assert.match(rendererField, /var stepSec = fieldVfxStepSec\(current, motionSec\);/);
   assert.match(rendererField, /fieldVfxSetPositionTarget\(current, Number\(a\.x\), Number\(a\.y\), stepSec\)/);
-  assert.match(rendererField, /lastEventAt: nowMs\(\), batchSteps: 1,/);
+  assert.match(rendererField, /lastEventAt: nowMs\(\), batchSteps: 1, arrivalSec: 0,/);
 });
