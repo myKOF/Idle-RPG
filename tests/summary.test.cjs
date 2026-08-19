@@ -86,3 +86,18 @@ test('傷害統計按傷害由高至低排序且傷害數字使用簡寫', () =>
   assert.match(html, /傷害 2\.00M/);
   assert.match(html, /傷害 500/);
 });
+
+test('DoT 與未帶等級技能在結算統計中顯示正確中文名稱而非內部代碼', () => {
+  const context = loadCombatContext();
+  context.G = { stage: { current: 1 } };
+  context.RUN_STATS = { runCount: 1, maxStage: 1, skills: {} };
+
+  context.recordRunDamage('寒霜凍傷', 1400000000, 'skill2:frostbite');
+  context.recordRunDamage('風切割裂', 741000000, 'dot:sgWindCut');
+
+  const html = context.generateSummaryHtml(true);
+  assert.match(html, /寒霜凍傷/);
+  assert.match(html, /風切割裂/);
+  assert.doesNotMatch(html, /skill2:frostbite/);
+  assert.doesNotMatch(html, /dot:sgWindCut/);
+});
