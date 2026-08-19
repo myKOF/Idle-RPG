@@ -794,7 +794,7 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   // 主頁與 Worker 必須換版本，否則瀏覽器會繼續執行舊的綠色方框／逐格路徑。
   assert.match(index, /css\/style\.css\?v=1\.0\.47/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.53/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.84/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.85/);
   assert.match(index, /js\/skills2\.js\?v=1\.0\.44/);
   assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-wind-chase-v3'/);
   assert.match(worker, /\.\.\/skills2\.js\?v=20260819-wind-chase-v3/);
@@ -838,23 +838,24 @@ test('風系事件不得借用雷鏈與泛用方框的畫法', () => {
   assert.match(burstCase, /!targets\.length && rect && spec\.elem !== 'wind'\) spawnAreaFlash/);
 });
 
-test('追蹤場域的補間長度跟著同一批帶了幾個模擬步放大', () => {
+test('追蹤場域的畫面位置以指數跟隨逼近權威座標（不做固定時長補間）', () => {
   const renderer = read('js/battle-renderer.js');
   const rendererField = renderer.slice(
     renderer.indexOf('function spawnIceField'),
     renderer.indexOf('function spawnRiser', renderer.indexOf('function spawnIceField'))
   );
 
-  /* Worker 每 0.1 秒送一則場域快照，但訊息到達會抖動：實測多為 92～111 毫秒一批，
-     每秒左右出現一次約 200 毫秒的空窗、下一批一次帶兩則。每則都用固定長度補間時，
-     那一批會用一段的時間走兩段的距離再停住等下一批＝畫面上的一格一格。 */
-  assert.match(renderer, /function fieldVfxStepSec\(fx, baseSec\)/);
-  assert.match(renderer, /fx\.batchSteps = \(Number\(fx\.batchSteps\) \|\| 1\) \+ 1;/);
-  assert.match(renderer, /Number\(baseSec\) \|\| 0\) \* fx\.batchSteps/);
-  assert.match(renderer, /var FIELD_VFX_BATCH_EPS_SEC = 0\.05/);
-  // 一批只帶半步（Worker 的零頭步）時，補間長度仍要撐到下一批到達為止。
-  assert.match(renderer, /sec = Math\.max\(sec, Number\(fx\.arrivalSec\) \|\| 0\);/);
-  assert.match(rendererField, /var stepSec = fieldVfxStepSec\(current, motionSec\);/);
-  assert.match(rendererField, /fieldVfxSetPositionTarget\(current, Number\(a\.x\), Number\(a\.y\), stepSec\)/);
-  assert.match(rendererField, /lastEventAt: nowMs\(\), batchSteps: 1, arrivalSec: 0,/);
+  /* 事件的到達節奏本身就不平均（實測同一顆場域：204ms 帶兩步、緊接著 0ms 補一個
+     零頭步、再來 94/110/118ms 各一步）。固定時長的補間在事件早到時要衝刺、晚到時
+     會走完停住——以實測序列回放有 13.9% 的畫格完全靜止，那就是「一格一格移動」。
+     指數跟隨的速度只取決於離權威座標多遠，因此不會有硬停頓（同序列降到 4.9%）。 */
+  assert.match(renderer, /var FIELD_VFX_FOLLOW_TAU_SEC = 0\.14/);
+  assert.match(renderer, /function fieldVfxFollowStep\(fx, dt\)/);
+  assert.match(renderer, /var want = dist \/ FIELD_VFX_FOLLOW_TAU_SEC;/);
+  // 追趕速度要以模擬層的權威速度為上限，不得用瞬移補上落後的距離
+  assert.match(renderer, /Number\(fx\.speed\) > 0 \? Number\(fx\.speed\) : want\) \* FIELD_VFX_FOLLOW_MAX_MULT/);
+  assert.match(rendererField, /fieldVfxSetFollowTarget\(current, Number\(a\.x\), Number\(a\.y\)\)/);
+  assert.match(rendererField, /fieldVfxFollowStep\(fx, dt\)/);
+  // 朝向取「目前位置 → 權威座標」：跟隨模型沒有補間起點可用
+  assert.match(renderer, /var dx = fx\.motionToX - fx\.x, dy = fx\.motionToY - fx\.y;/);
 });
