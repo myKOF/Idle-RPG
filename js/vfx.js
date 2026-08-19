@@ -639,7 +639,12 @@ function vfxTargetGuard(targetId) {
   if (!targetId) return null;
   return function () { return vfxTargetIsLive(targetId); };
 }
-function vfxHitReact(targetId, elem, delayMs, strong, targetGuard) {
+function isBloodbladeNoHitShakeSpec(spec) {
+  var v = spec && spec.variant;
+  return v === 'poison-spread' || v === 'bleed' || v === 'poison' ||
+    v === 'bleed-tick' || v === 'poison-tick';
+}
+function vfxHitReact(targetId, elem, delayMs, strong, targetGuard, suppressShake) {
   if (!targetId) return;
   if (_vfxQuality === VFX_QUALITY_LEVELS.REDUCED && !strong) return;
   var generation = _vfxGeneration;
@@ -664,8 +669,9 @@ function vfxHitReact(targetId, elem, delayMs, strong, targetGuard) {
         if (!visual || visual._vfxHitUntil !== until) return;
         if (!_vfxEnabled || generation !== _vfxGeneration || card._vfxHitUntil !== until ||
             (targetGuard && !targetGuard())) return;  // 已被更新的一擊接手
-        visual.classList.add('vfx-hit-target', 'vfx-hit');
-        if (strong) visual.classList.add('vfx-hit-strong');
+        visual.classList.add('vfx-hit-target');
+        if (!suppressShake) visual.classList.add('vfx-hit');
+        if (!suppressShake && strong) visual.classList.add('vfx-hit-strong');
         if (elem && VFX_ELEM_THEME[elem]) visual.classList.add('vfx-hit-' + elem);
         setTimeout(function () {
           if (generation !== _vfxGeneration || card._vfxHitUntil !== until || visual._vfxHitUntil !== until ||
@@ -791,7 +797,8 @@ function vfxImpact(spec, layer, pt, targetId, delayMs, targetGuard) {
     vfxTrack(cloud, delayMs + 2600, targetGuard);
   }
   if (v === 'detonate' || v === 'blood-explosion') vfxSceneShake(layer, delayMs, false, spec);
-  vfxHitReact(targetId, spec.elem || null, delayMs, strong, targetGuard);
+  vfxHitReact(targetId, spec.elem || null, delayMs, strong, targetGuard,
+    !!spec._suppressHitShake || isBloodbladeNoHitShakeSpec(spec));
 }
 
 /* ---- 投射物 ----
@@ -1926,7 +1933,8 @@ function vfxChain(spec, layer, ptList, idList, baseDelay, strikes) {
       var pFlight = vfxProjectileFlightMs(pTravel, 0.2);
       var pSpec = Object.assign({}, spec, { variant: 'venom', elem: 'poison', glyph: '', arcM: 0 });
       vfxProjectile(pSpec, layer, pFrom, pTargets[pi], baseDelay, pTravel);
-      vfxImpact({ elem: 'poison', variant: null, color: '#4ade80' }, layer, pTargets[pi], pIds[pi], baseDelay + pFlight);
+      vfxImpact({ elem: 'poison', variant: null, color: '#4ade80', _suppressHitShake: true },
+        layer, pTargets[pi], pIds[pi], baseDelay + pFlight);
     }
     return;
   }
@@ -2141,7 +2149,8 @@ function vfxCurse(spec, layer, pt, targetId, delayMs) {
   d.style.animationDelay = delayMs + 'ms';
   d.textContent = spec.variant === 'bleed' ? '🩸' : (spec.variant === 'poison' ? '☠️' : (spec.glyph || '☠️'));
   vfxTrack(d, delayMs + 1100);
-  vfxHitReact(targetId, spec.elem || (spec.variant === 'bleed' ? null : 'dark'), delayMs + 150, false);
+  vfxHitReact(targetId, spec.elem || (spec.variant === 'bleed' ? null : 'dark'),
+    delayMs + 150, false, null, isBloodbladeNoHitShakeSpec(spec));
 }
 
 /* ---- 進入點：協議 vfx 事件 → 畫面 ----

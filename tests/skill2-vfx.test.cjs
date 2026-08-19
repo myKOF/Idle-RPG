@@ -590,6 +590,15 @@ test('新版技能彈射與特效細化：連鎖閃電無天雷、水流彈藍�
   // 3. 血刃斬：移除小刀圖案，使用綠色快速平飛子彈
   assert.match(vfx, /spec\.variant === 'poison-spread'[\s\S]*?variant: 'venom'/);
   assert.match(renderer, /spec\.variant === 'poison-spread'[\s\S]*?variant: 'venom'/);
+  assert.match(vfx, /function isBloodbladeNoHitShakeSpec\(spec\)[\s\S]*?v === 'poison-tick'/);
+  assert.match(vfx, /function vfxHitReact\(targetId, elem, delayMs, strong, targetGuard, suppressShake\)/);
+  assert.match(vfx, /if \(!suppressShake\) visual\.classList\.add\('vfx-hit'\)/);
+  assert.match(vfx, /_suppressHitShake: true[\s\S]*?pIds\[pi\], baseDelay \+ pFlight\)/,
+    'DOM poison spread must not shake the target image');
+  assert.match(renderer, /function isBloodbladeNoHitJoltSpec\(spec\)[\s\S]*?v === 'poison-tick'/);
+  assert.match(renderer, /function hitReact\(elId, elem, strong, suppressJolt\)[\s\S]*?if \(!suppressJolt && canJolt\)/);
+  assert.match(renderer, /hitReact\(tgtId, 'poison', false, true\)/,
+    'Canvas poison spread must not jolt the target');
   assert.match(vfx, /function vfxAllowsSceneShake\(spec\)[\s\S]*?if \(v === 'poison-spread'\) return false;/,
     'DOM 毒霧感染不得觸發整個戰場的鏡頭震動');
   assert.match(renderer, /function isSpecialScreenShakeSpec\(spec\)[\s\S]*?if \(v === 'poison-spread'\) return false;/,
@@ -814,8 +823,8 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
 
   // 主頁與 Worker 必須換版本，否則瀏覽器會繼續執行舊的綠色方框／逐格路徑。
   assert.match(index, /css\/style\.css\?v=1\.0\.48/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.56/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.88/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.57/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.89/);
   assert.match(index, /js\/skills2\.js\?v=1\.0\.47/);
   assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-chase-turn-icearrow-v5'/);
   assert.match(worker, /\.\.\/skills2\.js\?v=20260819-chase-turn-icearrow-v5/);

@@ -78,7 +78,8 @@ test('Canvas 與 DOM 受擊震動都使用三秒冷卻並降低幅度', () => {
   assert.match(vfx, /var VFX_HIT_COOLDOWN_MS = 3000/);
   assert.match(vfx, /hitAt - card\._vfxHitLastAt < VFX_HIT_COOLDOWN_MS/);
   assert.match(vfx, /function vfxHitVisualTarget\(elId, card\)/);
-  assert.match(vfx, /visual\.classList\.add\('vfx-hit-target', 'vfx-hit'\)/);
+  assert.match(vfx, /visual\.classList\.add\('vfx-hit-target'\)/);
+  assert.match(vfx, /if \(!suppressShake\) visual\.classList\.add\('vfx-hit'\)/);
   assert.match(vfx, /function vfxAllowsSceneShake\(spec\)/);
   assert.match(vfx, /vfx-scene-shake-meteor/);
   assert.match(vfx, /vfxSceneShake\(layer, delayMs, false, spec\)/);

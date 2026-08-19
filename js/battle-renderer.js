@@ -1287,7 +1287,12 @@ var BattleRenderer = (function () {
   }
 
   /* ============ 受擊反應（FLOAT / VFX impact 觸發） ============ */
-  function hitReact(elId, elem, strong) {
+  function isBloodbladeNoHitJoltSpec(spec) {
+    var v = spec && spec.variant;
+    return v === 'poison-spread' || v === 'bleed' || v === 'poison' ||
+      v === 'bleed-tick' || v === 'poison-tick';
+  }
+  function hitReact(elId, elem, strong, suppressJolt) {
     var ent = (elId === 'pv-float') ? S.player : S.entities[elId];
     if (!ent) return;
     var theme = themeOf({ elem: elem });
@@ -1298,7 +1303,7 @@ var BattleRenderer = (function () {
     var hitAt = nowMs();
     var canJolt = typeof ent.lastJoltAt !== 'number' ||
       hitAt - ent.lastJoltAt >= HIT_JOLT_COOLDOWN_MS;
-    if (canJolt) {
+    if (!suppressJolt && canJolt) {
       ent.lastJoltAt = hitAt;
       ent.jolt = strong ? 0.18 : 0.12;
       ent.joltX = HIT_JOLT_X;
@@ -3614,7 +3619,10 @@ var BattleRenderer = (function () {
         node.x = to.x; node.y = to.y - 14 - t * 16;
         node.alpha = 1 - t / dur;
         node.rotation = Math.sin(t * 8) * 0.3;
-        if (t > 0.1 && !node._hit) { node._hit = true; hitReact(targetId, spec.elem, false); }
+        if (t > 0.1 && !node._hit) {
+          node._hit = true;
+          hitReact(targetId, spec.elem, false, isBloodbladeNoHitJoltSpec(spec));
+        }
         return t < dur;
       }
     }, 1);
@@ -3910,7 +3918,7 @@ var BattleRenderer = (function () {
             var pSpec = Object.assign({}, spec, { variant: 'venom', elem: 'poison', arcM: 0 });
             spawnProjectile(tgtId, 80, pSpec, function (pt) {
               spawnImpact(pt.x, pt.y, pSpec, false);
-              hitReact(tgtId, 'poison', false);
+              hitReact(tgtId, 'poison', false, true);
             }, pOriginPos);
           }, baseDelay);
         })(pSpreadTargets[psi]);
@@ -3988,7 +3996,7 @@ var BattleRenderer = (function () {
           if (fxGate(spec)) return;
           var pt = posOf(id);
           spawnImpact(pt.x, pt.y, spec, false);
-          hitReact(id, spec.elem, false);
+          hitReact(id, spec.elem, false, isBloodbladeNoHitJoltSpec(spec));
         }, baseDelay + ti * stagger);
       });
       return;
@@ -4450,7 +4458,7 @@ var BattleRenderer = (function () {
             var pt = posOf(id);
             var strong = spec.variant === 'detonate' || spec.variant === 'nova';
             spawnImpact(pt.x, pt.y, spec, strong);
-            hitReact(id, spec.elem, strong);
+            hitReact(id, spec.elem, strong, isBloodbladeNoHitJoltSpec(spec));
           }, ti * 40);
         });
         break;
