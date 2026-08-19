@@ -2407,9 +2407,31 @@ var BattleRenderer = (function () {
      Worker 事件通常每 0.2 秒批次送達；最短補間不能跟著技能的 0.1 秒傷害間隔
      縮成短促的瞬移，否則事件在同一幀到達時，玩家仍會看到一格一格的風刃。 */
   var FIELD_VFX_MIN_MOTION_SEC = 0.12;
+  var FIELD_VFX_MAX_MOTION_SEC = 0.6;
+  var FIELD_VFX_BATCH_EPS_SEC = 0.05;   // 小於這個間隔＝同一批（同一幀）送達，不是新的節拍
   function fieldVfxMotionSec(spec, fallback) {
     var sec = Number(spec && spec.dur);
     return Math.max(FIELD_VFX_MIN_MOTION_SEC, isFinite(sec) && sec > 0 ? sec : fallback);
+  }
+
+  /* 一則場域事件＝模擬層的一個節拍（spec.dur）。但事件不是等距送達的：
+     實測前景是每 92～111 毫秒到一批，每秒左右會出現一次約 200 毫秒的空窗，
+     空窗後的那一批一次帶兩則（＝兩個模擬步、兩倍距離）。
+     每則都用同一個固定長度補間時，那一批就會「用一段的時間走兩段的距離」，
+     走完再停著等下一批——這就是玩家看到的「風刃一格一格移動」。
+     因此補間長度＝節拍長度 × 這一批帶了幾則：距離兩倍，時間也兩倍，
+     速度維持不變，空窗期間畫面也還在走。只影響顯示，判定仍在模擬層。 */
+  function fieldVfxStepSec(fx, baseSec) {
+    var now = nowMs();
+    var last = Number(fx.lastEventAt) || 0;
+    if (last > 0 && (now - last) / 1000 < FIELD_VFX_BATCH_EPS_SEC) {
+      fx.batchSteps = (Number(fx.batchSteps) || 1) + 1;   // 同一批（同一幀）又到一則
+    } else {
+      fx.batchSteps = 1;                                  // 新的一批：重新計數並記下批次起點
+      fx.lastEventAt = now;
+    }
+    var sec = Math.max(FIELD_VFX_MIN_MOTION_SEC, Number(baseSec) || 0) * fx.batchSteps;
+    return Math.min(FIELD_VFX_MAX_MOTION_SEC, sec);
   }
 
   /* 移動場域必須有模擬層發出的穩定 id。座標只能當靜態舊事件的退化鍵；
@@ -2721,6 +2743,49 @@ var BattleRenderer = (function () {
     }, 1, dur * 1000 + 200);
   }
 
+  /* 風切擴散：來源敵人 → 每個被傳染的敵人各掠過一道小風刃。
+     終點逐幀取目標當下座標（敵人會移動），落點只補一般命中爆點，
+     不另外畫範圍圈——擴散本身不造成傷害，沒有可畫的判定範圍。 */
+  function spawnWindRendSpread(targets, spec, baseDelay) {
+    if (!targets || targets.length < 2) return;
+    var fromId = targets[0];
+    var travel = projectileTravelMs(spec.travelMs && spec.travelMs[0], 120);
+    targets.slice(1).forEach(function (toId, i) {
+      setTimeout(function () {
+        if (fxGate(spec)) return;
+        var theme = themeOf(spec);
+        var from = posOf(fromId);
+        var node = new PIXI.Container();
+        var g = new PIXI.Graphics();
+        node.addChild(g);
+        /* 小風刃的體積沒有模擬層來源（擴散不是傷害事件），
+           因此沿用小型風刃在畫面上的既有比例，不去假造一組判定尺寸。 */
+        drawWindCrescent(g, 20, 8, theme, 1);
+        node.x = from.x; node.y = from.y;
+        S.layers.fx.addChild(node);
+        var t = 0, dur = Math.max(0.08, travel / 1000), arrived = false;
+        addFx({
+          node: node,
+          update: function (dt) {
+            t += dt;
+            var k = Math.min(1, t / dur);
+            var to = posOf(toId);
+            node.x = from.x + (to.x - from.x) * k;
+            node.y = from.y + (to.y - from.y) * k;
+            node.rotation = Math.atan2(to.y - from.y, to.x - from.x);
+            node.alpha = k > 0.85 ? Math.max(0, (1 - k) / 0.15) : 1;
+            if (k >= 1 && !arrived) {
+              arrived = true;
+              spawnImpact(to.x, to.y, spec, false);
+              hitReact(toId, spec.elem || 'wind', false);
+            }
+            return k < 1;
+          }
+        }, 1, travel + 400);
+      }, Math.max(0, baseDelay || 0) + i * 40);
+    });
+  }
+
   /* 真空斬：自身前方揮出的半月弧（不飛行，原地張開後淡出）。 */
   function spawnWindSlash(spec, targets, baseDelay) {
     var radius = Math.max(24, Number(spec.lineLength) || 60);
@@ -2949,16 +3014,19 @@ var BattleRenderer = (function () {
     var current = _iceFieldFx[key];
     if (current && !current.dead && current.node && !current.node.destroyed) {
       current.speed = Number(a.speed) > 0 ? Number(a.speed) : current.speed;
+      /* 補間長度依「這一批帶了幾個模擬步」放大，不是每則都用同一個固定長度：
+         事件是成批送達的，照單則長度補間會走完就停住等下一批。 */
+      var stepSec = fieldVfxStepSec(current, motionSec);
       if (isHoming) {
         /* 追跡風刃的傷害位置由模擬層 area.x/y 定義；畫面只在兩個權威快照
            之間補間，不能另走一條追向未更新 dest 的獨立路徑。 */
-        fieldVfxSetPositionTarget(current, Number(a.x), Number(a.y), motionSec);
+        fieldVfxSetPositionTarget(current, Number(a.x), Number(a.y), stepSec);
         if (isFinite(a.destX) && isFinite(a.destY)) {
           current.destX = Number(a.destX);
           current.destY = Number(a.destY);
         }
       } else if (variant !== 'blizzard') {
-        fieldVfxSetTarget(current, Number(a.x), Number(a.y), w, h, motionSec);
+        fieldVfxSetTarget(current, Number(a.x), Number(a.y), w, h, stepSec);
       }
       current.expiresAt = nowMs() + holdMs;
       return current;
@@ -2977,6 +3045,8 @@ var BattleRenderer = (function () {
       motionFromX: Number(a.x), motionFromY: Number(a.y), motionFromW: w, motionFromH: h,
       motionToX: Number(a.x), motionToY: Number(a.y), motionToW: w, motionToH: h,
       motionT: 1, motionDur: 1,
+      /* 批次量測的起點＝建立這一刻；batchSteps 由 fieldVfxStepSec 逐批重算。 */
+      lastEventAt: nowMs(), batchSteps: 1,
       windAngle: null
     };
     _iceFieldFx[key] = fx;
@@ -3890,6 +3960,27 @@ var BattleRenderer = (function () {
     if (spec.variant === 'counter-sweep') {
       return;
     }
+    /* 風切擴散（暴風屏障 T5）：風切狀態從來源敵人傳染給附近的敵人。
+       這是狀態的傳染，不是雷擊——畫成一道小風刃掠過去、落點補一個命中爆點。 */
+    if (spec.variant === 'wind-rend-spread') {
+      spawnWindRendSpread(targets, spec, baseDelay);
+      return;
+    }
+    /* ---- 以下是【潛能：連鎖閃電】(variant='chain') 的專屬畫法 ----
+       天頂大雷＋折射電鏈會用事件本身的屬性色著色，因此任何「沒有自己分支」
+       的 chain 事件掉進來，就會以自己的屬性劈出一道天雷：風系＝綠色落雷。
+       這裡改成白名單，未知變體退回單純的命中爆點，不再借用雷系畫法。 */
+    if (spec.variant && spec.variant !== 'chain' && spec.elem !== 'lightning') {
+      targets.forEach(function (id, ti) {
+        setTimeout(function () {
+          if (fxGate(spec)) return;
+          var pt = posOf(id);
+          spawnImpact(pt.x, pt.y, spec, false);
+          hitReact(id, spec.elem, false);
+        }, baseDelay + ti * stagger);
+      });
+      return;
+    }
 
     var firstId = targets.length ? targets[0] : 'pv-float';
     var firstPos = posOf(firstId);
@@ -4217,6 +4308,15 @@ var BattleRenderer = (function () {
           });
           break;
         }
+        if (spec.variant === 'wind-burst') {
+          /* 狂風碎裂的沿途脈衝也走 burst：圓心與半徑由模擬層帶來，
+             範圍內沒有敵人時照樣要看得到氣浪。沒有這條分支時事件會掉到
+             下面的泛用結尾，被 spawnAreaFlash 畫成一塊綠色方框——
+             那正是玩家看到「風刃在地板留下綠色方塊」的來源。 */
+          spawnWindBurst(spec);
+          targets.forEach(function (id) { hitReact(id, spec.elem || 'wind', false); });
+          break;
+        }
         targets.forEach(function (id, ti) {
           setTimeout(function () {
             if (fxGate(spec)) return;
@@ -4228,7 +4328,9 @@ var BattleRenderer = (function () {
             hitReact(id, spec.elem, strongBurst);
           }, ti * 40);
         });
-        if (!targets.length && rect) spawnAreaFlash(rect, themeOf(spec));
+        /* 泛用範圍閃光是矩形：與 spawnAura 同一條規則，風系一律不得用綠色方框
+           代表傷害範圍（風系技能各有自己的專用畫法）。 */
+        if (!targets.length && rect && spec.elem !== 'wind') spawnAreaFlash(rect, themeOf(spec));
         break;
       case 'beam':
         targets.forEach(function (id) {

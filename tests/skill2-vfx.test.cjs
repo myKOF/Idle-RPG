@@ -793,9 +793,66 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
 
   // 主頁與 Worker 必須換版本，否則瀏覽器會繼續執行舊的綠色方框／逐格路徑。
   assert.match(index, /css\/style\.css\?v=1\.0\.47/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.52/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.82/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.53/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.83/);
   assert.match(index, /js\/skills2\.js\?v=1\.0\.43/);
   assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-wind-smooth-v2'/);
   assert.match(worker, /\.\.\/skills2\.js\?v=20260819-wind-smooth-v2/);
+});
+
+/* 2026-08-19 回報三連：真空斬系的綠色落雷、風刃地板綠方塊、風刃一格一格移動。
+   三者都在顯示層：事件本身是對的，是分派表少了分支、或補間長度與事件節奏對不上。 */
+test('風系事件不得借用雷鏈與泛用方框的畫法', () => {
+  const renderer = read('js/battle-renderer.js');
+  const vfx = read('js/vfx.js');
+
+  const canvasChain = renderer.slice(
+    renderer.indexOf('function handleChainVfx'),
+    renderer.indexOf('/* ============ VFX 事件分派')
+  );
+  const domChain = vfx.slice(
+    vfx.indexOf('function vfxChain'),
+    vfx.indexOf('function vfxSmite')
+  );
+
+  // 1. 風切擴散有自己的畫法（小風刃掠過去），不再掉進 chain 結尾的天頂大雷。
+  assert.match(renderer, /function spawnWindRendSpread\(targets, spec, baseDelay\)/);
+  assert.match(canvasChain, /spec\.variant === 'wind-rend-spread'/);
+  assert.match(canvasChain, /spawnWindRendSpread\(targets, spec, baseDelay\)/);
+  assert.match(domChain, /spec\.variant === 'wind-rend-spread'/);
+
+  // 2. 天雷折射鏈是【潛能：連鎖閃電】專屬：未知變體一律不得掉進來（改白名單）。
+  //    spawnBolt 會用事件屬性著色，風系掉進去就是「綠色落雷」。
+  assert.match(canvasChain, /spec\.variant !== 'chain' && spec\.elem !== 'lightning'/);
+  // 白名單守門必須排在天雷那一段之前，否則等於沒擋。
+  assert.ok(canvasChain.indexOf("spec.variant !== 'chain' && spec.elem !== 'lightning'") <
+    canvasChain.indexOf('spawnContinuousChainLightning'));
+  assert.match(domChain, /spec\.variant !== 'chain' && spec\.elem && spec\.elem !== 'lightning'/);
+
+  // 3. 狂風碎裂的沿途脈衝走 burst：要畫氣浪，且不得退回 spawnAreaFlash 的綠色方框。
+  const burstCase = renderer.slice(
+    renderer.indexOf("      case 'burst':"),
+    renderer.indexOf("      case 'beam':")
+  );
+  assert.match(burstCase, /spec\.variant === 'wind-burst'[\s\S]*?spawnWindBurst\(spec\)/);
+  assert.match(burstCase, /!targets\.length && rect && spec\.elem !== 'wind'\) spawnAreaFlash/);
+});
+
+test('追蹤場域的補間長度跟著同一批帶了幾個模擬步放大', () => {
+  const renderer = read('js/battle-renderer.js');
+  const rendererField = renderer.slice(
+    renderer.indexOf('function spawnIceField'),
+    renderer.indexOf('function spawnRiser', renderer.indexOf('function spawnIceField'))
+  );
+
+  /* Worker 每 0.1 秒送一則場域快照，但訊息到達會抖動：實測多為 92～111 毫秒一批，
+     每秒左右出現一次約 200 毫秒的空窗、下一批一次帶兩則。每則都用固定長度補間時，
+     那一批會用一段的時間走兩段的距離再停住等下一批＝畫面上的一格一格。 */
+  assert.match(renderer, /function fieldVfxStepSec\(fx, baseSec\)/);
+  assert.match(renderer, /fx\.batchSteps = \(Number\(fx\.batchSteps\) \|\| 1\) \+ 1;/);
+  assert.match(renderer, /Number\(baseSec\) \|\| 0\) \* fx\.batchSteps/);
+  assert.match(renderer, /var FIELD_VFX_BATCH_EPS_SEC = 0\.05/);
+  assert.match(rendererField, /var stepSec = fieldVfxStepSec\(current, motionSec\);/);
+  assert.match(rendererField, /fieldVfxSetPositionTarget\(current, Number\(a\.x\), Number\(a\.y\), stepSec\)/);
+  assert.match(rendererField, /lastEventAt: nowMs\(\), batchSteps: 1,/);
 });

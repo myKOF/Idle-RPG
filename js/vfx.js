@@ -1974,7 +1974,32 @@ function vfxChain(spec, layer, ptList, idList, baseDelay, strikes) {
     return;
   }
 
-  // 7. 連鎖閃電（及一般雷鏈）：移除天雷轟下特效，只留閃電鏈彈射
+  /* 6.5 風切擴散：風切狀態傳染給鄰近敵人＝一道小風刃掠過去，不是雷擊。 */
+  if (spec.variant === 'wind-rend-spread') {
+    var wrFrom = ptList.length > 1 ? ptList[0] : (vfxPointOf('pv-float', layer) || vfxOriginPoint(layer));
+    var wrTargets = ptList.length > 1 ? ptList.slice(1) : ptList;
+    var wrIds = idList.length > 1 ? idList.slice(1) : idList;
+    for (var wri = 0; wri < wrTargets.length; wri++) {
+      var wrTravel = (spec.travelMs && spec.travelMs[0] > 0) ? spec.travelMs[0] : 80;
+      var wrFlight = vfxProjectileFlightMs(wrTravel, 0.2);
+      var wrSpec = Object.assign({}, spec, { variant: 'wind-blade-small', elem: 'wind', glyph: '', arcM: 0 });
+      vfxProjectile(wrSpec, layer, wrFrom, wrTargets[wri], baseDelay, wrTravel);
+      vfxImpact({ elem: 'wind', variant: null, color: spec.color }, layer, wrTargets[wri], wrIds[wri], baseDelay + wrFlight);
+    }
+    return;
+  }
+
+  /* 7. 連鎖閃電（及一般雷鏈）：移除天雷轟下特效，只留閃電鏈彈射。
+     這條尾巴是雷鏈專屬——vfxBolt 會用事件本身的屬性著色，任何沒有專屬畫法的
+     chain 事件掉進來就會變成該屬性色的閃電（風系＝綠色電光）。改成白名單，
+     未知變體只補命中爆點，與 Canvas 版同一條規則。 */
+  if (spec.variant && spec.variant !== 'chain' && spec.elem && spec.elem !== 'lightning') {
+    for (var oi = 0; oi < ptList.length; oi++) {
+      vfxImpact({ elem: spec.elem, variant: null, color: spec.color }, layer,
+        ptList[oi], idList[oi], baseDelay + oi * Math.max(60, vfxStagger()));
+    }
+    return;
+  }
   var hop = Math.max(110, vfxStagger());
   if (ptList.length === 1) {
     var casterOrigin = vfxPointOf('pv-float', layer) || vfxOriginPoint(layer);
