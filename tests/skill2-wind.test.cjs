@@ -252,6 +252,47 @@ test('【追跡風刃】：每個 tick 都走滿速度，落點在腳下或沒�
     '沒有可追的目標時沿最後方向直線飛，不原地待命');
 });
 
+/* 追蹤子彈不做原地掉頭：貫穿之後要畫一個轉彎弧再繞回來，弧的半徑由子彈體積決定
+   （設計指定 4～8 米）。這同時保證每個 tick 的位移仍然是完整的 speed × dt。 */
+test('追擊場域有轉彎半徑：體積越大轉得越開，且不做原地掉頭', () => {
+  const c = loadContext(); stubHits(c); stubVfx(c);
+  const p = playerEnt(); c.FIELD.player = p;
+  const st = c.getStats();
+
+  // 半徑 4.8 米的小風刃吃滿上限、半徑 1.5 米的追蹤冰箭落在下段
+  const big = { radius: 4.8 * M }, small = { radius: 1.5 * M }, tiny = { radius: 0 };
+  assert.ok(Math.abs(c.sgGroundTurnRadiusPx(big) - 7.84 * M) < 1e-6, '4.8 米體積 → 7.84 米轉彎半徑');
+  assert.ok(Math.abs(c.sgGroundTurnRadiusPx(small) - 5.2 * M) < 1e-6, '1.5 米體積 → 5.2 米轉彎半徑');
+  assert.ok(Math.abs(c.sgGroundTurnRadiusPx(tiny) - 4 * M) < 1e-6, '再小也不低於 4 米');
+  assert.ok(c.sgGroundTurnRadiusPx({ radius: 99 * M }) === 8 * M, '再大也不超過 8 米');
+
+  // 向右飛出、敵人在身後：必須以弧線折返，每個 tick 的轉向不得超過 step / 轉彎半徑
+  const behind = enemy(1e9, -20 * M, 0);
+  c.sgSpawnGround(p, st, 'windblade', {
+    kind: 'windblade', tgt: null, floatSel: 'mv-float', from: { x: 0, y: 0 },
+    dest: { x: 10 * M, y: 0 }, radius: 4.8 * M, dmgVal: 1, hits: 60, gap: 0.1,
+    speed: 18 * M, chaseM: 30, contact: true
+  });
+  const f = c.SKILL2_RT.grounds[0];
+  const ctx = { pEnt: p, getEnemies: () => [behind], floatSel: 'mv-float', onDeaths() {}, onDamage() {} };
+  const maxTurn = (f.speed * 0.1) / c.sgGroundTurnRadiusPx(f);
+  let prev = null, sawTurn = false;
+  for (let i = 0; i < 40; i++) {
+    const from = { x: f.pos.x, y: f.pos.y };
+    c.GT += 0.1; c.tickSkill2(0.1, ctx);
+    const dx = f.pos.x - from.x, dy = f.pos.y - from.y;
+    assert.ok(Math.abs(Math.hypot(dx, dy) - f.speed * 0.1) < 1e-6, '每個 tick 都走滿 speed×dt');
+    const ang = Math.atan2(dy, dx);
+    if (prev !== null) {
+      const turn = Math.abs(Math.atan2(Math.sin(ang - prev), Math.cos(ang - prev)));
+      assert.ok(turn <= maxTurn + 1e-6, '單一 tick 的轉向不得超過轉彎半徑允許的角度（不得原地掉頭）');
+      if (turn > 1e-6) sawTurn = true;
+    }
+    prev = ang;
+  }
+  assert.ok(sawTurn, '敵人在身後時必須真的轉向（不是一路直線飛走）');
+});
+
 test('【狂風碎裂】：命中附加移速減益，並在飛行途中沿路脈衝', () => {
   const c = loadContext(); const calls = stubHits(c); const specs = stubVfx(c);
   setLevels(c, 'windblade', [1, 1, 1, 1, 1, 1, 0]); equip(c, 'windblade');

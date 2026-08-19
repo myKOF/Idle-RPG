@@ -682,7 +682,7 @@ test('全技能移動與傷害範圍使用連續座標，不以棋盤格逐步�
   );
   const groundMove = skills2.slice(
     skills2.indexOf('function sgGroundMove'),
-    skills2.indexOf('function ', skills2.indexOf('function sgGroundMove') + 1)
+    skills2.indexOf('function sgGroundChaseDest')
   );
   const groundVictims = skills2.slice(
     skills2.indexOf('function sgGroundVictims'),
@@ -705,6 +705,9 @@ test('全技能移動與傷害範圍使用連續座標，不以棋盤格逐步�
   assert.match(projectileTick, /bfSegmentTargets\(projectile\.origin/);
   assert.match(groundMove, /f\.pos\.x \+= dx \/ dist \* step/);
   assert.match(groundMove, /f\.pos\.y \+= dy \/ dist \* step/);
+  // 有轉彎半徑的追擊（追跡風刃／追蹤冰箭）沿目前方向前進，同樣是連續浮點位移
+  assert.match(groundMove, /f\.pos\.x \+= Math\.cos\(f\.moveAngle\) \* step/);
+  assert.match(groundMove, /f\.pos\.y \+= Math\.sin\(f\.moveAngle\) \* step/);
   assert.doesNotMatch(groundMove, /Math\.(round|floor|ceil)/);
   assert.match(groundVictims, /bfSegmentTargets\(origin, axis/);
   assert.match(groundVictims, /bfEnemiesInArea\(\{ x: f\.pos\.x, y: f\.pos\.y/);
@@ -795,9 +798,9 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(index, /css\/style\.css\?v=1\.0\.47/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.53/);
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.85/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.44/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-wind-chase-v3'/);
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260819-wind-chase-v3/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.45/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-chase-turn-v4'/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260819-chase-turn-v4/);
 });
 
 /* 2026-08-19 回報三連：真空斬系的綠色落雷、風刃地板綠方塊、風刃一格一格移動。

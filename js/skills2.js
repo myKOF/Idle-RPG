@@ -1997,8 +1997,10 @@ function sgSpawnGround(pEnt, st, gid, cfg) {
       ? { x: Number(cfg.dest.x), y: Number(cfg.dest.y) } : null,
     speed: Math.max(0, Number(cfg.speed) || 0),
     /* 目前的飛行方向（弧度）：追擊場域沒有落點可追時沿著它直線飛出去。
-       出生時未定；第一次朝落點移動就會寫入。 */
+       出生時未定；第一次朝落點移動就會寫入。
+       turnSide＝正後方迴轉時的慣用邊，依出生序號交替，不額外消耗亂數。 */
     moveAngle: null,
+    turnSide: (SKILL2_RT.groundSeq % 2) ? 1 : -1,
     /* 跟隨我方的場域（暴風雪）：圓心恆等於玩家當下座標，與環繞場域同一種錨定方式，
        差別只在形狀是地板矩形。留白＝原本的釘死在地板上。 */
     follow: !!cfg.follow,
@@ -2029,37 +2031,68 @@ function sgGroundMove(f, dt, enemies) {
     return;
   }
   if (!f.pos || !(f.speed > 0) || !(dt > 0)) return;
-  var chase = f.chaseM > 0;
   var step = f.speed * dt;
-  /* 這一步要走完整段距離：抵達落點只是換方向，不是把剩下的位移丟掉。
-     舊版抵達後直接 return，於是每換一次目標就少走一格——距離短時
-     幾乎每個 tick 都在「換目標」，場域看起來就是一格一格挪。
-     guard 擋住「落點全在腳下」的病態情形，不讓單一 tick 無限換目標。 */
-  var guard = 0;
-  while (step > 1e-6 && guard++ < 4) {
-    if (!f.dest && chase) f.dest = sgGroundChaseDest(f, enemies);
-    if (!f.dest) break;
+  if (f.chaseM > 0) sgGroundChaseStep(f, step, enemies);   // 追擊：有轉彎半徑的追蹤飛行
+  else sgGroundFlyStep(f, step);                            // 直線飛向落點後停駐（雷球）
+}
+
+/* 追擊場域的轉彎半徑（像素）：子彈體積越大轉得越開（設計指定 4～8 米）。
+   體積取場域自己的判定半徑——那就是這顆子彈實際的大小，不另外挑一組數字。 */
+var SG_CHASE_TURN_MIN_M = 4;
+var SG_CHASE_TURN_MAX_M = 8;
+var SG_CHASE_TURN_BODY_REF_M = 5;   // 判定半徑到這個值就吃滿最大轉彎半徑
+function sgGroundTurnRadiusPx(f) {
+  var perM = (typeof bfMeterPx === 'function') ? bfMeterPx(1) : 10;
+  if (!(perM > 0)) perM = 10;
+  var bodyM = Math.max(0, Number(f.radius) || 0) / perM;
+  var k = Math.max(0, Math.min(1, bodyM / SG_CHASE_TURN_BODY_REF_M));
+  return (SG_CHASE_TURN_MIN_M + (SG_CHASE_TURN_MAX_M - SG_CHASE_TURN_MIN_M) * k) * perM;
+}
+
+/* 追擊場域的一步：方向以「最大轉彎速率」逼近落點，而不是每個 tick 直接對準它。
+   一步能轉的角度＝這一步的弧長 ÷ 轉彎半徑，因此貫穿敵人之後不會原地掉頭水平折返，
+   而是畫一個半徑 4～8 米的迴轉弧再繞回來。位移每個 tick 都是完整的 speed × dt。 */
+function sgGroundChaseStep(f, step, enemies) {
+  if (!f.dest) f.dest = sgGroundChaseDest(f, enemies);
+  var turnR = sgGroundTurnRadiusPx(f);
+  if (f.dest) {
     var dx = f.dest.x - f.pos.x, dy = f.dest.y - f.pos.y;
     var dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist > 1e-6) f.moveAngle = Math.atan2(dy, dx);   // 記住方向：沒有目標時要沿著它繼續飛
-    if (dist > step) {
-      f.pos.x += dx / dist * step;
-      f.pos.y += dy / dist * step;
-      return;
+    var want = Math.atan2(dy, dx);
+    if (!isFinite(f.moveAngle)) f.moveAngle = want;
+    var diff = Math.atan2(Math.sin(want - f.moveAngle), Math.cos(want - f.moveAngle));
+    /* 正後方（差 180 度）時左轉右轉一樣近，交給場域出生時決定的慣用邊，
+       同一批小風刃才不會整齊劃一地朝同一側轉。 */
+    if (Math.abs(diff) > Math.PI - 1e-3) diff = (f.turnSide < 0 ? -1 : 1) * Math.PI;
+    var maxTurn = turnR > 0 ? step / turnR : Math.PI;
+    f.moveAngle += Math.max(-maxTurn, Math.min(maxTurn, diff));
+    /* 換下一個落點：碰到了，或落點已經掉進自己的迴轉圈內又不在正前方——
+       最小轉彎半徑限制下那種目標永遠繞不進去，硬追只會變成繞著它打轉。 */
+    if (dist <= step || (dist <= turnR && Math.abs(diff) > Math.PI / 2)) {
+      f.dest = sgGroundChaseDest(f, enemies);
     }
+  }
+  /* 沒有可追的目標（範圍內沒人、或只剩腳下那一個）時沿目前方向直線飛，不原地待命：
+     追擊場域是接觸判定，停下來就等於不再命中任何東西。
+     下一個 tick 仍會重新找落點，途中有敵人進入範圍就會轉回去追。 */
+  if (!isFinite(f.moveAngle)) return;
+  f.pos.x += Math.cos(f.moveAngle) * step;
+  f.pos.y += Math.sin(f.moveAngle) * step;
+}
+
+/* 非追擊的移動場域（雷球）：直線飛向落點，抵達就地停駐到打完剩餘段數。 */
+function sgGroundFlyStep(f, step) {
+  if (!f.dest) return;
+  var dx = f.dest.x - f.pos.x, dy = f.dest.y - f.pos.y;
+  var dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist > 1e-6) f.moveAngle = Math.atan2(dy, dx);
+  if (dist <= step || dist <= 0.5) {
     f.pos.x = f.dest.x; f.pos.y = f.dest.y;
-    step -= dist;
-    // 追擊場域抵達後立刻改鎖下一個目標；非追擊場域就地停駐（雷球原本的行為）
-    f.dest = chase ? sgGroundChaseDest(f, enemies) : null;
-    if (!chase) return;
+    f.dest = null;
+    return;
   }
-  /* 追擊場域沒有可追的目標（範圍內沒人、或只剩腳下那一個）時沿最後的方向直線飛，
-     不原地待命：追擊場域是接觸判定，停下來就等於不再命中任何東西。
-     下一個 tick 仍會重新找落點，飛行途中有敵人進入範圍就會轉回去追。 */
-  if (step > 1e-6 && chase && isFinite(f.moveAngle)) {
-    f.pos.x += Math.cos(f.moveAngle) * step;
-    f.pos.y += Math.sin(f.moveAngle) * step;
-  }
+  f.pos.x += dx / dist * step;
+  f.pos.y += dy / dist * step;
 }
 
 /* 追擊場域的下一個落點：以場域當下位置為圓心、chaseM 米內的隨機存活敵人

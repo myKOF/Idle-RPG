@@ -14,7 +14,7 @@ importScripts('protocol.js?v=22', 'shim.js?v=3');
 importScripts(
   '../util.js?v=20260814-skill-summary', '../data.js?v=20260818-wind-element', '../status.js?v=20260818-wind-skills', '../formula.js?v=20260817-ice-skills', '../battlefield.js?v=20260817-ice-skills', '../stats.js',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260816-meteor-fireball', '../skills2.js?v=20260819-wind-chase-v3', '../talents.js?v=20260811-loadout-cap-clamp',
+  '../skills.js?v=20260816-meteor-fireball', '../skills2.js?v=20260819-chase-turn-v4', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260814-skill-min-interval', '../special_rules.js',
   '../combat.js?v=20260818-wind-skills', '../legendary.js?v=20260817-magic-light-shield-cd', '../potential.js?v=20260814-skill-min-interval', '../tower.js?v=20260817-projectile-retaliation',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260814-active-passive',
