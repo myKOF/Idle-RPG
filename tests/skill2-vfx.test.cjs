@@ -562,10 +562,17 @@ test('寒冰箭貫穿：兩條渲染路徑都以單一連續直線投射物呈�
   // 模擬層提供貫穿線段的飛行時間，畫面不再使用每個目標的預設延遲。
   assert.match(skills2, /var flightSec = lineLen \/ sgIcearrowSpeed\(\);/);
   assert.match(skills2, /variant: 'ice-arrow-pierce'[\s\S]{0,320}travelMs: \[Math\.round\(flightSec \* 1000\)\]/);
-  /* 貫穿段的畫面方位必須等於實際貫穿方位：這一段的終點就是追擊段的起點，
-     用均分箭道去畫會讓冰箭在轉入追擊時憑空橫移。 */
-  assert.match(skills2, /variant: 'ice-arrow-pierce'[\s\S]{0,200}angle: simulationAngle/);
-  assert.match(skills2, /variant: 'ice-arrow', elem: 'ice', count: 1,[\s\S]{0,180}angle: laneAngle/);
+  /* 貫穿段的傷害幾何與畫面方位都是「自己的箭道」（相鄰 15 度均等分）：
+     兩者若不同角度，冰箭在轉入追擊時會憑空橫移。 */
+  assert.match(skills2, /variant: 'ice-arrow-pierce'[\s\S]{0,200}angle: laneAngle/);
+  /* 箭道上沒有敵人是常態（均等分散開），那支箭仍要飛出去：
+     模擬層照送事件，顯示層不得因為 targets 是空的就整支不畫。 */
+  assert.match(skills2, /sgEmitVfx\('icearrow', path, floatSel/);
+  assert.match(renderer, /function spawnIcearrowPierce[\s\S]{0,400}if \(!targets\.length && !\(isFinite\(spec\.angle\) && Number\(spec\.lineLength\) > 0\)\) return;/);
+  /* 還沒變成貫穿的第 1 階是單體攻擊：箭直接飛向自己那個敵人，
+     不套均等分的箭道（那是貫穿之後才有的形狀）。 */
+  assert.match(skills2, /variant: 'ice-arrow', elem: 'ice', count: 1,[\s\S]{0,180}angle: shotAngle/);
+  assert.match(skills2, /var shotAngle = geomOk \? bfAngleTo\(arrows\[i\]\) : centerAngle;/);
   // Canvas：同一事件只建立一支沿 angle／length 前進的箭。
   assert.match(renderer, /function spawnIcearrowPierce[\s\S]*?spawnProjectile\(null, flight, spec, null, from, \{ angle: angle, length: length \}\)/);
   assert.match(renderer, /if \(spec\.variant === 'ice-arrow-pierce'\)[\s\S]{0,180}spawnIcearrowPierce\(spec, targets/);
@@ -828,10 +835,10 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   // 主頁與 Worker 必須換版本，否則瀏覽器會繼續執行舊的綠色方框／逐格路徑。
   assert.match(index, /css\/style\.css\?v=1\.0\.49/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.59/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.91/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.48/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-icearrow-homing-handoff-v6'/);
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260819-icearrow-homing-handoff-v6/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.92/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.50/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-icearrow-even-lanes-v8'/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260819-icearrow-even-lanes-v8/);
 });
 
 /* 2026-08-19 回報三連：真空斬系的綠色落雷、風刃地板綠方塊、風刃一格一格移動。
