@@ -84,6 +84,13 @@ test('主動型被動：技能彈窗有裝備鈕與類型標籤，快捷列外�
   assert.match(css, /prefers-reduced-motion[\s\S]*?\.battle-skill-slot\.active-passive::before\s*\{[\s\S]*?animation:\s*none/);
 });
 
+test('新版技能群組列外側包含內測一鍵滿級按鈕', () => {
+  assert.match(ui, /class="sg-group-row-wrap"/);
+  assert.match(ui, /class="sg-row-max-btn"/);
+  assert.match(css, /\.sg-group-row-wrap\s*\{[\s\S]*?display:\s*flex/);
+  assert.match(css, /\.sg-row-max-btn\s*\{[\s\S]*?width:\s*28px/);
+});
+
 test('技能頁文字與資產版號已更新', () => {
   assert.match(html, /亮起階段代表已解鎖，灰色階段仍可查看但不能升級/);
   assert.match(html, /css\/style\.css\?v=1\.0\.\d+/);

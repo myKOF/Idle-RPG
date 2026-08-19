@@ -7728,7 +7728,8 @@ function sgSkillGroupRowHTML(gid, lvs, loadout, skillsSnapshot) {
   var maxBtnHtml = isDev
     ? '<button type="button" class="sg-row-max-btn" data-sg-max-group="' + esc(gid) + '" title="【內測專用】一鍵將「' + esc(g.name) + '」全階層升至滿級" aria-label="一鍵滿級 ' + esc(g.name) + '">MAX</button>'
     : '';
-  var h = '<div class="sg-group-row">' +
+  var h = '<div class="sg-group-row-wrap">' +
+    '<div class="sg-group-row">' +
     '<div class="' + labelCls + '" data-sk="' + groupRef + '">' +
     '<span class="sg-group-emoji" aria-hidden="true">' + g.emoji + '</span>' +
     '<span class="sg-group-name">' + esc(g.name) + '</span>' +
@@ -7738,7 +7739,7 @@ function sgSkillGroupRowHTML(gid, lvs, loadout, skillsSnapshot) {
     if (i > 0) h += '<span class="sg-stage-arrow" aria-hidden="true">➤</span>';
     h += sgStageNodeHTML(gid, i, lvs, loadout, skillsSnapshot);
   }
-  return h + maxBtnHtml + '</div></div>';
+  return h + '</div></div>' + maxBtnHtml + '</div>';
 }
 
 /* 新版技能群組的升級彈窗內容（沿用 #skill-modal 外殼與舊版技能升級界面佈局）。 */
