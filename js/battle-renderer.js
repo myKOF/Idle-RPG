@@ -65,6 +65,9 @@ var BattleRenderer = (function () {
   };
   function themeOf(spec) {
     var table = (typeof VFX_ELEM_THEME !== 'undefined' && VFX_ELEM_THEME) || FALLBACK_THEME;
+    if (spec && spec.variant === 'thunder-strike') {
+      return { c1: '#c084fc', c2: '#fdf4ff', glow: '#9333ea' };
+    }
     if (spec && (spec.variant === 'bleed' || spec.variant === 'bleed-tick')) {
       return { c1: '#d92846', c2: '#ffd0d8', glow: '#ff4962' };
     }
@@ -1322,6 +1325,8 @@ var BattleRenderer = (function () {
 
   function isSpecialScreenShakeSpec(spec) {
     var v = spec && spec.variant;
+    /* 血刃斬的毒霧感染只是彈射毒液，不應把整個戰場一起震動。 */
+    if (v === 'poison-spread') return false;
     return v === 'meteor' || v === 'pillar' || v === 'purple-thunder' ||
       v === 'storm-sigil' || v === 'detonate' || v === 'blood-explosion' ||
       v === 'zero-infection' || v === 'nova' || v === 'venomburst' || v === 'vortex';
@@ -2058,6 +2063,7 @@ var BattleRenderer = (function () {
   function spawnBolt(fromPtOrId, targetPtOrId, spec, delaySec, isMega, isPurple) {
     if (typeof targetPtOrId === 'string' && isTargetBoundThunderVfx(spec) &&
         !vfxTargetLiveForSpec(spec, targetPtOrId)) return;
+    isPurple = !!isPurple || !!(spec && spec.variant === 'thunder-strike');
     var theme = themeOf(spec);
     var g = new PIXI.Graphics();
     S.layers.fx.addChild(g);
@@ -4371,7 +4377,7 @@ var BattleRenderer = (function () {
         // 落雷術：一則事件＝一道天雷，落下時間與模擬層的落地結算對齊
         if (spec.variant === 'thunder-strike') {
           targets.forEach(function (id, ti) {
-            spawnBolt(null, id, spec, (baseDelay + ti * stagger) / 1000, false, false);
+            spawnBolt(null, id, spec, (baseDelay + ti * stagger) / 1000, false, true);
           });
           break;
         }

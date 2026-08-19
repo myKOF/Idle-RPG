@@ -407,6 +407,16 @@ test('雷系三技能的顯示層接線：鏈、天雷、球體場域在 Canvas 
   assert.match(renderer, /if \(spec\.variant === 'thunder-fall'\)/);
   assert.match(renderer, /function spawnThunderFall\(spec, targetId, delaySec\)/);
   assert.match(vfx, /s\.variant === 'thunder-strike' \|\| s\.variant === 'thunder-fall'/);
+  assert.match(renderer, /spec\.variant === 'thunder-strike'[\s\S]*?c1: '#c084fc'/,
+    'Canvas 落雷應使用紫色雷電主題');
+  assert.match(vfx, /spec\.variant === 'thunder-strike'[\s\S]*?c1: '#c084fc'/,
+    'DOM 落雷應使用紫色雷電主題');
+  assert.match(renderer, /spawnBolt\(null, id, spec, \(baseDelay \+ ti \* stagger\) \/ 1000, false, true\)/,
+    'Canvas 落雷要走紫色雷電分支');
+  assert.match(vfx, /var isPurple = spec\.variant === 'thunder-strike';/,
+    'DOM 落雷要將地面衝擊標為紫色');
+  assert.match(vfx, /\{ mega: true, purple: isPurple \}/,
+    'DOM 落雷本體要使用紫色天雷畫法');
 
   // 雷球：按 area.id 合併的長駐球體，每次事件更新到最新座標（球會飛）
   assert.match(skills2, /variant: 'thunder-orb'/);
@@ -580,6 +590,10 @@ test('新版技能彈射與特效細化：連鎖閃電無天雷、水流彈藍�
   // 3. 血刃斬：移除小刀圖案，使用綠色快速平飛子彈
   assert.match(vfx, /spec\.variant === 'poison-spread'[\s\S]*?variant: 'venom'/);
   assert.match(renderer, /spec\.variant === 'poison-spread'[\s\S]*?variant: 'venom'/);
+  assert.match(vfx, /function vfxAllowsSceneShake\(spec\)[\s\S]*?if \(v === 'poison-spread'\) return false;/,
+    'DOM 毒霧感染不得觸發整個戰場的鏡頭震動');
+  assert.match(renderer, /function isSpecialScreenShakeSpec\(spec\)[\s\S]*?if \(v === 'poison-spread'\) return false;/,
+    'Canvas 毒霧感染不得觸發整個戰場的鏡頭震動');
 
   // 4. 反擊：移除反傷特效
   assert.doesNotMatch(skills2, /variant: 'counter-sweep'/);
@@ -800,9 +814,9 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
 
   // 主頁與 Worker 必須換版本，否則瀏覽器會繼續執行舊的綠色方框／逐格路徑。
   assert.match(index, /css\/style\.css\?v=1\.0\.48/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.54/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.86/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.46/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.56/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.88/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.47/);
   assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-chase-turn-icearrow-v5'/);
   assert.match(worker, /\.\.\/skills2\.js\?v=20260819-chase-turn-icearrow-v5/);
 });

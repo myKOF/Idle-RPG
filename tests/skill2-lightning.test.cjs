@@ -368,7 +368,7 @@ test('落雷術 T6：迅雷重生會再生落雷，且夾在表定上限', () =>
   assert.equal(calls.length, 12 + 12 * 5, '每道落雷最多接力 5 次');
 });
 
-test('落雷術 T7：次數與目標數 ×2，且暈眩中的敵人吃額外增傷', () => {
+test('落雷術 T7：次數與目標數 ×2，6 米範圍全命中，且暈眩增傷為乘算', () => {
   const c = loadContext();
   const calls = stubHits(c);
   const p = playerEnt();
@@ -378,9 +378,41 @@ test('落雷術 T7：次數與目標數 ×2，且暈眩中的敵人吃額外增�
   c.castSkill2(p, es, 'thunderstrike', 'mv-float');
   run(c, p, es, 6);
   assert.equal(calls.length, 24, '((2+1) 目標 × (1+1) 次) × 2 × 2');
-  const boosted = calls.filter((call) => call.aCfg.totalDmgPct === 33);
-  assert.ok(boosted.length > 0, '先落的雷把人暈住後，後落的雷吃到 +33%');
+  const boosted = calls.filter((call) => call.aCfg.totalDmgPct === 55);
+  assert.ok(boosted.length > 0, '先落的雷把人暈住後，後落的雷吃到 Lv.1 +55%');
   assert.equal(calls[0].aCfg.totalDmgPct, 0, '第一道落雷時還沒人被暈');
+
+  const formula = loadContext();
+  forceRolls(formula, 0.999);
+  const formulaPlayer = playerEnt();
+  const baseTarget = enemy(1e9, 5 * M, 0);
+  const baseCfg = formula.sgAtkCfg(formulaPlayer, formula.getStats(), 100, baseTarget, 0, 'thunderstrike');
+  const boostedCfg = formula.sgAtkCfg(formulaPlayer, formula.getStats(), 100, baseTarget, 55, 'thunderstrike');
+  const baseHit = formula.resolveHit(formulaPlayer, baseTarget, baseCfg, formula.monsterDefCfg(baseTarget));
+  const boostedHit = formula.resolveHit(formulaPlayer, baseTarget, boostedCfg, formula.monsterDefCfg(baseTarget));
+  assert.ok(Math.abs(boostedHit.dmg / baseHit.dmg - 1.55) < 1e-9,
+    '暈眩增傷應為原傷害 × 1.55，而不是把百分比加進攻擊倍率');
+});
+
+test('落雷術 T7：命中時對落點 6 米內所有敵人造成同一發傷害', () => {
+  const c = loadContext();
+  const calls = stubHits(c);
+  const p = playerEnt();
+  const primary = enemy(1e9, 5 * M, 0);
+  const nearA = enemy(1e9, 7 * M, 0);
+  const nearB = enemy(1e9, 9 * M, 0);
+  const far = enemy(1e9, 40 * M, 0);
+  setLevels(c, 'thunderstrike', [1, 1, 1, 1, 1, 1, 1]);
+  forceRolls(c, 0.999);
+  c.castSkill2(p, [primary, nearA, nearB, far], 'thunderstrike', 'mv-float');
+  run(c, p, [primary, nearA, nearB, far], 6);
+
+  // T1/T2/T3 的 3 道落雷經 T7 ×2 變成 6 道、每道 4 次；每次都命中 6 米內的 3 個敵人。
+  assert.equal(calls.length, 72, '6 道落雷 × 每道 4 次 × 3 個範圍內敵人');
+  assert.equal(calls.filter((call) => call.ent === primary).length, 24);
+  assert.equal(calls.filter((call) => call.ent === nearA).length, 24);
+  assert.equal(calls.filter((call) => call.ent === nearB).length, 24);
+  assert.equal(calls.filter((call) => call.ent === far).length, 0, '6 米外敵人不受範圍傷害');
 });
 
 /* ===========================================================================
