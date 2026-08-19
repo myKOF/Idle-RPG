@@ -1,5 +1,15 @@
 # PATCH.md
 
+## 技能一鍵滿級按鈕外置與尺寸精簡（Antigravity 2026-08-19）
+
+- **按鈕外置與容器重構**：
+  - 在 `js/ui.js` 的 `sgSkillGroupRowHTML` 中引入外層容器 `.sg-group-row-wrap`，將內測一鍵滿級按鈕 `.sg-row-max-btn`（標示 `MAX`）由原先技能列 `.sg-group-row` 框線內部第 7 階後方，搬移至技能列框線右外側。
+- **按鈕尺寸與外觀精簡**：
+  - 在 `css/style.css` 中將 `.sg-row-max-btn` 寬度與高度由 `38px x 58px` 縮小至 `28px x 46px`，字級由 `11px` 微調至 `10px`，並維持居中垂直對齊、金色邊框與暗紅漸層視覺，使版面更俐落整潔。
+- **快取破壞與測試**：
+  - 更新 `index.html` 快取版號（`css/style.css?v=1.0.48`、`js/ui.js?v=1.0.51`）。
+  - 在 `tests/skill2-ui.test.cjs` 補充外層包覆容器與外置按鈕尺寸回歸測試。
+
 ## 技能區域左移與技能列一鍵滿級功能（Antigravity 2026-08-18）
 
 - **技能區域向左微調**：
