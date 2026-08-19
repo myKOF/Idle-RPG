@@ -2424,13 +2424,19 @@ var BattleRenderer = (function () {
   function fieldVfxStepSec(fx, baseSec) {
     var now = nowMs();
     var last = Number(fx.lastEventAt) || 0;
-    if (last > 0 && (now - last) / 1000 < FIELD_VFX_BATCH_EPS_SEC) {
+    var gapSec = (now - last) / 1000;
+    if (last > 0 && gapSec < FIELD_VFX_BATCH_EPS_SEC) {
       fx.batchSteps = (Number(fx.batchSteps) || 1) + 1;   // 同一批（同一幀）又到一則
     } else {
-      fx.batchSteps = 1;                                  // 新的一批：重新計數並記下批次起點
+      // 新的一批：更新到達間隔的指數平均，並重新計數、記下批次起點
+      if (last > 0) fx.arrivalSec = fx.arrivalSec > 0 ? fx.arrivalSec * 0.6 + gapSec * 0.4 : gapSec;
+      fx.batchSteps = 1;
       fx.lastEventAt = now;
     }
     var sec = Math.max(FIELD_VFX_MIN_MOTION_SEC, Number(baseSec) || 0) * fx.batchSteps;
+    /* 批次步數說明「這一批帶了多少距離」，到達間隔說明「有多少時間可以走完」，
+       兩者取大值：一批只帶半步（Worker 的零頭步）時也不會走完就停著等下一批。 */
+    sec = Math.max(sec, Number(fx.arrivalSec) || 0);
     return Math.min(FIELD_VFX_MAX_MOTION_SEC, sec);
   }
 
@@ -3046,7 +3052,7 @@ var BattleRenderer = (function () {
       motionToX: Number(a.x), motionToY: Number(a.y), motionToW: w, motionToH: h,
       motionT: 1, motionDur: 1,
       /* 批次量測的起點＝建立這一刻；batchSteps 由 fieldVfxStepSec 逐批重算。 */
-      lastEventAt: nowMs(), batchSteps: 1,
+      lastEventAt: nowMs(), batchSteps: 1, arrivalSec: 0,
       windAngle: null
     };
     _iceFieldFx[key] = fx;

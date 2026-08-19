@@ -216,6 +216,42 @@ test('【追跡風刃】：小型風刃改為追擊場域，不再向前射出',
   assert.equal(c.SKILL2_RT.projectiles.length, 2, '只剩前後兩道主風刃還是飛行物');
 });
 
+/* 追擊場域一旦停下來就等於不再命中（接觸判定），因此「原地待命」是缺陷不是設計：
+   2026-08-19 回報「小風刃一格一格移動、沒有敵人時停在原地」的根因就在這裡。 */
+test('【追跡風刃】：每個 tick 都走滿速度，落點在腳下或沒有目標時沿最後方向直線飛', () => {
+  const c = loadContext(); stubHits(c); stubVfx(c);
+  setLevels(c, 'windblade', [1, 1, 1, 1, 1, 0, 0]); equip(c, 'windblade');
+  const p = playerEnt(); c.FIELD.player = p;
+  const near = enemy(1e9, 8 * M, 0);
+  c.castSkill2(p, [near], 'windblade', 'mv-float');
+  const f = c.SKILL2_RT.grounds.filter((g) => g.kind === 'windblade')[0];
+  const ctx = { pEnt: p, getEnemies: () => [near], floatSel: 'mv-float', onDeaths() {}, onDamage() {} };
+  const steps = [];
+  for (let i = 0; i < 30; i++) {
+    const from = { x: f.pos.x, y: f.pos.y };
+    const destBefore = f.dest;
+    c.GT += 0.1;
+    c.tickSkill2(0.1, ctx);
+    steps.push({ d: Math.hypot(f.pos.x - from.x, f.pos.y - from.y), turned: f.dest !== destBefore });
+  }
+  const expect = f.speed * 0.1;
+  steps.forEach((s2, i) => {
+    assert.ok(s2.d > 0, '第 ' + (i + 1) + ' 個 tick 不得原地不動（追擊場域停下來就不再命中）');
+    // 換落點的那一個 tick 會轉向，直線位移因此短於路徑長度；其餘 tick 必須整格走滿
+    if (!s2.turned) {
+      assert.ok(Math.abs(s2.d - expect) < 1e-6,
+        '第 ' + (i + 1) + ' 個 tick 應走滿 speed×dt（實際 ' + s2.d.toFixed(2) + ' / 期望 ' + expect.toFixed(2) + '）');
+    }
+  });
+
+  // 場上完全沒有敵人時也不得停住：沿最後的方向繼續直線飛
+  const empty = { pEnt: p, getEnemies: () => [], floatSel: 'mv-float', onDeaths() {}, onDamage() {} };
+  const before = { x: f.pos.x, y: f.pos.y };
+  c.GT += 0.1; c.tickSkill2(0.1, empty);
+  assert.ok(Math.abs(Math.hypot(f.pos.x - before.x, f.pos.y - before.y) - expect) < 1e-6,
+    '沒有可追的目標時沿最後方向直線飛，不原地待命');
+});
+
 test('【狂風碎裂】：命中附加移速減益，並在飛行途中沿路脈衝', () => {
   const c = loadContext(); const calls = stubHits(c); const specs = stubVfx(c);
   setLevels(c, 'windblade', [1, 1, 1, 1, 1, 1, 0]); equip(c, 'windblade');
