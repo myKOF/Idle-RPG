@@ -1686,6 +1686,13 @@ function vfxIceField(spec, layer, area, rect) {
     windBlade.style.setProperty('--vfx-wind-blade-scale', Math.max(0.55, w / 30).toFixed(3));
     node._vfxFieldVisual.appendChild(windBlade);
     vfxWindHomingSetAngle(node._vfxFieldVisual, cx, cy, area);
+  } else if (variant === 'ice-arrow-homing') {
+    /* 追蹤冰箭＝剛才射出去的那支冰箭換了飛法，因此只放一顆菱形冰晶本體，
+       不建立藍色圓球或四道尖刺（那看起來像另外多射出一種東西）。 */
+    var iceShard = document.createElement('span');
+    iceShard.className = 'vfx-ice-homing-shard';
+    iceShard.style.setProperty('--vfx-ice-shard-scale', Math.max(0.55, w / 30).toFixed(3));
+    node._vfxFieldVisual.appendChild(iceShard);
   } else {
     var pieces = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 6;
     for (var i = 0; i < pieces; i++) {
@@ -1694,15 +1701,11 @@ function vfxIceField(spec, layer, area, rect) {
         piece.className = 'vfx-blizzard-flake';
         piece.style.setProperty('--vfx-flake-x', (8 + (84 * (i + 0.5) / pieces)).toFixed(1) + '%');
         piece.style.setProperty('--vfx-flake-delay', (-i * 0.28).toFixed(2) + 's');
-      } else if (variant === 'water-tornado') {
+      } else {
         piece.className = 'vfx-tornado-ring';
         piece.style.setProperty('--vfx-tornado-scale', (1 - i * 0.14).toFixed(2));
         piece.style.setProperty('--vfx-tornado-lift', (-i * 16).toFixed(0) + '%');
         piece.style.setProperty('--vfx-tornado-delay', (-i * 0.16).toFixed(2) + 's');
-      } else {
-        if (i >= 4) break;   // 冰晶只需要四道尖刺
-        piece.className = 'vfx-ice-shard';
-        piece.style.setProperty('--vfx-shard-rot', (i * 90).toFixed(0) + 'deg');
       }
       node._vfxFieldVisual.appendChild(piece);
     }
