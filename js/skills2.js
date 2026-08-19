@@ -86,6 +86,8 @@ var SG_PREFIX = 'sg:';
 var SG_TIER_MAX_LV = 10;      // 每階等級上限（固定，不隨轉生提高）
 var SG_TIER_COUNT = 7;        // 每群組階數
 var SG_FLYING_PROJECTILE_SPEED = 240;
+/* 寒冰箭表定速度：30 米／秒；戰場座標固定為 10 單位／米。 */
+var SG_ICEARROW_SPEED = 300;
 var SG_FLYING_PROJECTILE_HALF_WIDTH = 8;
 var SG_FLYING_PROJECTILE_REHIT_SEC = 0.5;
 var SG_METEOR_INTERVAL_MS = 350;
@@ -163,7 +165,7 @@ var SKILLS2 = {
   chainlightning: { name: '連鎖閃電', emoji: '⚡', range: '', dmgType: 'magic', elem: 'lightning', cd: 18, cost: 40, tiers: [{ name: '連鎖閃電', unlock: { reinc: 0, lv: 300 }, fx: { pct: 150, pctPer: 15, count: 4, m: 30, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '丟出一道閃電鏈（射程 {castM} 米），在最多 {count} 個目標間彈射（每段彈射範圍 {m} 米），每擊造成 {pct}% 雷電傷害' }, { name: '強化閃電', unlock: { reinc: 0, lv: 350 }, fx: { pct: 50, pctPer: 5 }, goldBase: 200000, goldGrow: 1.5, desc: '強化閃電威力，閃電鏈傷害進一步 +{pct}% 雷電傷害' }, { name: '雷鳴術', unlock: { reinc: 0, lv: 400 }, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '被閃電鏈擊中的敵人額外再受到 {add} 次雷電傷害（不足 1 次的部分以機率觸發）' }, { name: '強化連鎖', unlock: { reinc: 0, lv: 450 }, fx: { add: 1, addPer: 0.2 }, goldBase: 800000, goldGrow: 1.5, desc: '閃電鏈的彈射數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '電殛擴散', unlock: { reinc: 0, lv: 500 }, fx: { pct: 25, pctPer: 2.5, count: 1, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '閃電鏈每次彈射時，額外對 {m} 米內的 {count} 個敵人造成閃電鏈 {pct}% 的雷電傷害' }, { name: '雷幻身', unlock: { reinc: 0, lv: 550 }, fx: { pct: 50, pctPer: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '閃電鏈傷害額外 +{pct}% 雷電傷害；沒有其它彈射目標時可用自身當中繼點繼續彈射（彈到自身不消耗彈射數）' }, { name: '雷電暴風', unlock: { reinc: 0, lv: 600 }, fx: { count: 3, add: 1, addPer: 0.1, pct: 100, pctPer: 10 }, goldBase: 5000000, goldGrow: 1.5, desc: '同時發射 {count} 道閃電鏈，彈射數額外 +{add} 次，且閃電傷害額外 +{pct}%' }] },
   thunderstrike: { name: '落雷術', emoji: '🌩️', range: '', dmgType: 'magic', elem: 'lightning', cd: 14, cost: 40, tiers: [{ name: '落雷術', unlock: { reinc: 0, lv: 350 }, fx: { pct: 200, pctPer: 20, count: 2, gap: 0.2, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '對 {castM} 米內的 {count} 個目標降下落雷（每道間隔 {gap} 秒），每道造成 {pct}% 雷電傷害' }, { name: '落雷連鎖', unlock: { reinc: 0, lv: 400 }, fx: { add: 1, addPer: 0.1 }, goldBase: 200000, goldGrow: 1.5, desc: '攻擊目標額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '雙重落雷', unlock: { reinc: 0, lv: 450 }, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '對每個目標的攻擊次數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '閃電增幅', unlock: { reinc: 0, lv: 500 }, fx: { pct: 100, pctPer: 10 }, goldBase: 800000, goldGrow: 1.5, desc: '進一步強化落雷傷害，額外 +{pct}% 雷電傷害' }, { name: '雷電脈衝', unlock: { reinc: 0, lv: 550 }, fx: { sec: 1.5, secPer: 0.15, count: 2, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '落雷落地時產生衝擊波，震暈目標本身與 {m} 米內共 {count} 個敵人 {sec} 秒' }, { name: '迅雷重生', unlock: { reinc: 0, lv: 600 }, fx: { chance: 20, chancePer: 2, max: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '每道落雷結束後有 {chance}% 機率再產生 1 道落雷（同一次施放最多再生 {max} 道）' }, { name: '殛道落雷', unlock: { reinc: 0, lv: 650 }, fx: { mult: 2, pct: 30, pctPer: 3 }, goldBase: 5000000, goldGrow: 1.5, desc: '落雷的攻擊次數與目標數量 ×{mult}，且暈眩中的敵人受到落雷傷害額外 +{pct}%' }] },
   thunderorb: { name: '雷球', emoji: '🔵', range: '6*6', dmgType: 'magic', elem: 'lightning', cd: 20, cost: 40, tiers: [{ name: '雷球', unlock: { reinc: 0, lv: 400 }, fx: { pct: 50, pctPer: 5, count: 2, gap: 0.35, sec: 2, m: 3, speed: 6, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 個雷球緩慢飛向目標（射程 {castM} 米、飛行速度 {speed} 米/秒），途中每 {gap} 秒對半徑 {m} 米內的所有敵人造成 {pct}% 雷電傷害，抵達後停留 {sec} 秒才消散' }, { name: '擴增雷球', unlock: { reinc: 0, lv: 450 }, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '雷球的體積擴大 {pct}%' }, { name: '多重雷球', unlock: { reinc: 0, lv: 500 }, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '雷球數量額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '環體電球', unlock: { reinc: 0, lv: 550 }, fx: { count: 2, pct: 100, pctPer: 10, sec: 6, m: 8, rps: 0.7 }, goldBase: 800000, goldGrow: 1.5, desc: '額外召喚 {count} 個電球環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 雷電傷害，持續 {sec} 秒' }, { name: '強化雷球', unlock: { reinc: 0, lv: 600 }, fx: { pct: 30, pctPer: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '所有雷球與電球的雷電傷害額外 +{pct}%' }, { name: '伴生雷球', unlock: { reinc: 0, lv: 650 }, fx: { chance: 15, chancePer: 1.5, sec: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '環體電球命中時有 {chance}% 機率在該處生成一個靜止雷球，持續 {sec} 秒（每次作用只判定一次機率）' }, { name: '雷殞天落', unlock: { reinc: 0, lv: 700 }, fx: { count: 2, pct: 300, pctPer: 30, m: 15, sec: 3 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外召喚 {count} 個巨大雷球從天而降，各對 {m} 米內的敵人造成 {pct}% 雷電傷害，並以衝擊波擊暈 {sec} 秒' }] },
-  icearrow: { name: '寒冰箭', emoji: '❄️', range: '', dmgType: 'magic', elem: 'ice', cd: 18, cost: 40, tiers: [{ name: '寒冰箭', unlock: { reinc: 0, lv: 450 }, fx: { pct: 250, pctPer: 25, count: 2, deg: 45, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方 {deg} 度扇形內射出 {count} 支寒冰箭（射程 {castM} 米），每支對 1 個敵人造成 {pct}% 寒冰傷害' }, { name: '寒霜箭', unlock: { reinc: 0, lv: 500 }, fx: { frostPct: 50, frostPctPer: 5, stacks: 1 }, goldBase: 200000, goldGrow: 1.5, desc: '被寒冰箭擊中的敵人附加 {stacks} 層寒霜狀態：每跳造成寒冰箭傷害 {frostPct}% 的寒冰傷害，每層使移動與攻速下降，疊滿層數時凍結' }, { name: '冰系強化', unlock: { reinc: 0, lv: 550 }, fx: { pct: 100, pctPer: 10 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化寒冰箭，額外 +{pct}% 寒冰傷害（與第 1 階累加）' }, { name: '貫穿冰箭', unlock: { reinc: 0, lv: 600 }, fx: { m: 10, mPer: 2 }, goldBase: 800000, goldGrow: 1.5, desc: '寒冰箭改為貫穿攻擊，貫穿路徑上的所有敵人，貫穿長度 {m} 米（不足以打到主目標時自動延長到主目標）' }, { name: '冰箭散射', unlock: { reinc: 0, lv: 650 }, fx: { add: 1, addPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '射出的寒冰箭數量額外 +{add} 支（不足 1 支的部分以機率觸發）' }, { name: '寒霜凍結', unlock: { reinc: 0, lv: 700 }, fx: { stacks: 1, stacksPer: 0.4 }, goldBase: 3000000, goldGrow: 1.5, desc: '寒冰箭射中帶寒霜狀態的敵人時，立即再疊 {stacks} 層寒霜，並造成該敵人寒霜剩餘的全部寒冰傷害（不足 1 層的部分以機率觸發）' }, { name: '寒冰爆裂箭', unlock: { reinc: 0, lv: 750 }, fx: { pct: 400, pctPer: 40, sec: 6, m: 6, chaseM: 30, bodyM: 1.5, gap: 0.1 }, goldBase: 5000000, goldGrow: 1.5, desc: '寒冰箭改為追蹤冰箭：貫穿後在 {chaseM} 米內來回穿梭追擊敵人 {sec} 秒（碰到才算一次命中）；敵人的凍結結束時產生冰爆，對其周圍 {m} 米內的所有敵人造成 {pct}% 寒冰傷害' }] },
+  icearrow: { name: '寒冰箭', emoji: '❄️', range: '', dmgType: 'magic', elem: 'ice', cd: 18, cost: 40, tiers: [{ name: '寒冰箭', unlock: { reinc: 0, lv: 450 }, fx: { pct: 250, pctPer: 25, count: 2, deg: 15, castM: 30, speed: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方射出 {count} 支寒冰箭，每支箭夾角 {deg} 度（射程 {castM} 米、飛行速度 {speed} 米／秒），每支對 1 個敵人造成 {pct}% 寒冰傷害' }, { name: '寒霜箭', unlock: { reinc: 0, lv: 500 }, fx: { frostPct: 50, frostPctPer: 5, stacks: 1 }, goldBase: 200000, goldGrow: 1.5, desc: '被寒冰箭擊中的敵人附加 {stacks} 層寒霜狀態：每跳造成寒冰箭傷害 {frostPct}% 的寒冰傷害，每層使移動與攻速下降，疊滿層數時凍結' }, { name: '冰系強化', unlock: { reinc: 0, lv: 550 }, fx: { pct: 100, pctPer: 10 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化寒冰箭，額外 +{pct}% 寒冰傷害（與第 1 階累加）' }, { name: '貫穿冰箭', unlock: { reinc: 0, lv: 600 }, fx: { m: 10, mPer: 2 }, goldBase: 800000, goldGrow: 1.5, desc: '寒冰箭改為貫穿攻擊，貫穿路徑上的所有敵人，貫穿長度 {m} 米（不足以打到主目標時自動延長到主目標）' }, { name: '冰箭散射', unlock: { reinc: 0, lv: 650 }, fx: { add: 1, addPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '射出的寒冰箭數量額外 +{add} 支（不足 1 支的部分以機率觸發）' }, { name: '寒霜凍結', unlock: { reinc: 0, lv: 700 }, fx: { stacks: 1, stacksPer: 0.4 }, goldBase: 3000000, goldGrow: 1.5, desc: '寒冰箭射中帶寒霜狀態的敵人時，立即再疊 {stacks} 層寒霜，並造成該敵人寒霜剩餘的全部寒冰傷害（不足 1 層的部分以機率觸發）' }, { name: '寒冰爆裂箭', unlock: { reinc: 0, lv: 750 }, fx: { pct: 400, pctPer: 40, sec: 6, m: 6, chaseM: 30, bodyM: 1.5, gap: 0.1, waves: 3, waveGap: 0.3 }, goldBase: 5000000, goldGrow: 1.5, desc: '寒冰爆裂箭連射 {waves} 波，每波間隔 {waveGap} 秒；寒冰箭變為追蹤冰箭，在 {chaseM} 米內來回穿梭追擊敵人 {sec} 秒（碰到才算一次命中）；敵人的凍結結束時產生冰爆，對其周圍 {m} 米內的所有敵人造成 {pct}% 寒冰傷害' }] },
   waterball: { name: '水流彈', emoji: '💧', range: '', dmgType: 'magic', elem: 'ice', cd: 14, cost: 40, tiers: [{ name: '水流彈', unlock: { reinc: 0, lv: 500 }, fx: { pct: 200, pctPer: 20, castM: 30, arcM: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '丟出一顆水彈砸向敵人（射程 {castM} 米、拋物線離地最高 {arcM} 米），造成 {pct}% 寒冰傷害' }, { name: '寒冰逆轉', unlock: { reinc: 0, lv: 550 }, fx: { pct: 20, pctPer: 2, sec: 6 }, goldBase: 200000, goldGrow: 1.5, desc: '被水流彈擊中的敵人強制轉變為寒冰屬性，且受到的寒冰傷害 +{pct}%，持續 {sec} 秒' }, { name: '寒流彈', unlock: { reinc: 0, lv: 600 }, fx: { frostPct: 50, frostPctPer: 20, stacks: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '被水流彈擊中的敵人附加 {stacks} 層寒霜狀態：每跳造成水流彈傷害 {frostPct}% 的寒冰傷害' }, { name: '寒流爆散', unlock: { reinc: 0, lv: 650 }, fx: { m: 8, bounce: 2, bouncePer: 0.2 }, goldBase: 800000, goldGrow: 1.5, desc: '水流彈改為範圍攻擊，對目標 {m} 米內的所有敵人造成傷害，並再彈射 {bounce} 次（不足 1 次的部分以機率觸發）' }, { name: '寒霜擴散', unlock: { reinc: 0, lv: 700 }, fx: { chance: 25, chancePer: 2.5, m: 10, count: 1 }, goldBase: 1500000, goldGrow: 1.5, desc: '寒霜狀態每次作用時有 {chance}% 機率擴散至目標 {m} 米內的 {count} 個敵人' }, { name: '三重流水', unlock: { reinc: 0, lv: 750 }, fx: { add: 1, addPer: 0.2 }, goldBase: 3000000, goldGrow: 1.5, desc: '朝隨機目標額外丟出 {add} 顆水流彈（不足 1 顆的部分以機率觸發）' }, { name: '水龍捲', unlock: { reinc: 0, lv: 800 }, fx: { count: 4, hits: 6, pct: 100, pctPer: 10, m: 5, side: 10, frozen: 2, gap: 0.35 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外在我方 {side}×{side} 米正方形的四個頂點召喚 {count} 道水龍捲（傷害半徑 {m} 米），每道造成連續 {hits} 段 {pct}% 寒冰傷害，且對凍結中的敵人傷害為 {frozen} 倍' }] },
   frostnova: { name: '冰霜新星', emoji: '🧊', range: '', dmgType: 'magic', elem: 'ice', cd: 20, cost: 40, tiers: [{ name: '冰霜新星', unlock: { reinc: 0, lv: 550 }, fx: { pct: 150, pctPer: 5, m: 12, castM: 12, stacks: 2, frostPct: 50 }, goldBase: 100000, goldGrow: 1.5, desc: '對周圍 {m} 米內的敵人釋放冰霜新星，造成 {pct}% 寒冰傷害並附加 {stacks} 層寒霜狀態（寒霜每跳造成新星傷害 {frostPct}% 的寒冰傷害）' }, { name: '冰霜衝擊', unlock: { reinc: 0, lv: 600 }, fx: { m: 13, mPer: 0.6, castM: 13, castMPer: 0.6, pct: 50, pctPer: 5 }, goldBase: 200000, goldGrow: 1.5, desc: '冰霜新星的範圍擴展至 {m} 米，且寒冰傷害額外 +{pct}%' }, { name: '寒冰體', unlock: { reinc: 0, lv: 650 }, fx: { stacks: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '施放冰霜新星後的 6 秒內，攻擊你的敵人有 25% 機率被附加 {stacks} 層寒霜狀態' }, { name: '極致寒霜', unlock: { reinc: 0, lv: 700 }, fx: { dmgPct: 40, dmgPctPer: 4, durPct: 40, durPctPer: 4 }, goldBase: 800000, goldGrow: 1.5, desc: '所有來源的寒霜狀態傷害提高 {dmgPct}%，且持續時間增加 {durPct}%' }, { name: '三重新星', unlock: { reinc: 0, lv: 750 }, fx: { add: 1, addPer: 0.1, m: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '冰霜新星的施放次數額外 +{add} 次，且每次釋放的範圍再 +{m} 米（不足 1 次的部分以機率觸發）' }, { name: '死亡新星', unlock: { reinc: 0, lv: 800 }, fx: { chance: 35, chancePer: 6.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '帶寒霜狀態的敵人死亡時有 {chance}% 機率再釋放 1 次冰霜新星' }, { name: '暴風雪', unlock: { reinc: 0, lv: 850 }, fx: { pct: 100, pctPer: 10, gap: 0.4, sec: 8, side: 24 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外召喚 1 道暴風雪籠罩天空，對 {side}×{side} 米範圍內的敵人每 {gap} 秒造成 {pct}% 寒冰傷害，暴風雪跟隨我方移動，持續 {sec} 秒' }] },
   windblade: { name: '風刃', emoji: '🍃', range: '4*8', dmgType: 'magic', elem: 'wind', cd: 18, cost: 40, tiers: [{ name: '風刃', unlock: { reinc: 0, lv: 600 }, fx: { pct: 200, pctPer: 20, castM: 30, m: 80, speed: 18 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方射出一道弧形風刃（射程 {castM} 米、飛行速度 {speed} 米/秒），貫穿飛行路徑 {m} 米上的所有敵人，各造成 {pct}% 風系傷害' }, { name: '巨型風刃', unlock: { reinc: 0, lv: 650 }, fx: { size: 30, sizePer: 3 }, goldBase: 200000, goldGrow: 1.5, desc: '風刃的體積 +{size}%（判定範圍與特效同步放大）' }, { name: '雙重風刃', unlock: { reinc: 0, lv: 700 }, fx: { pct: 30, pctPer: 30 }, goldBase: 400000, goldGrow: 1.5, desc: '同時向前方與後方各射出一道風刃，且風刃傷害額外 +{pct}%（與第 1 階累加）' }, { name: '亂披風', unlock: { reinc: 0, lv: 750 }, fx: { pct: 30, pctPer: 3, deg: 30, lenM: 3, widthM: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '風刃射出時同時朝其兩側各 {deg} 度發射 1 道小型風刃（體積 {lenM}×{widthM} 米、同樣貫穿全場），每道造成原風刃 {pct}% 的傷害' }, { name: '追跡風刃', unlock: { reinc: 0, lv: 800 }, fx: { sec: 4, secPer: 0.3, chaseM: 30, gap: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '小型風刃不再向前射出，改為在 {chaseM} 米內隨機追擊敵人 {sec} 秒，對路徑上的所有敵人造成傷害（碰到才算一次命中）' }, { name: '狂風碎裂', unlock: { reinc: 0, lv: 850 }, fx: { move: 60, gap: 0.6, gapPer: -0.03, pct: 50, m: 6 }, goldBase: 3000000, goldGrow: 1.5, desc: '風刃命中的敵人移動速度 -{move}%；風刃並在飛行途中每 {gap} 秒對半徑 {m} 米內的敵人造成風刃 {pct}% 的傷害（不含小型風刃）' }, { name: '暴風真空刃', unlock: { reinc: 0, lv: 900 }, fx: { pct: 40, pctPer: 40, count: 3, directions: 4, gap: 0.2 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為朝前後左右 {directions} 個方向各連續射出 {count} 道風刃（每道間隔 {gap} 秒，小型風刃同步發射），且風刃傷害額外 +{pct}%' }] },
@@ -1977,8 +1979,10 @@ function sgSpawnGround(pEnt, st, gid, cfg) {
     dmgVal: Number(cfg.dmgVal) || 0,
     hits: Math.max(1, Math.floor(Number(cfg.hits) || 1)),
     hitsLeft: Math.max(1, Math.floor(Number(cfg.hits) || 1)),
-    gap: Math.max(0.05, Number(cfg.gap) || 0.5),
-    nextAt: GT + Math.max(0.05, Number(cfg.gap) || 0.5) + Math.max(0, Number(cfg.delaySec) || 0),
+    gap: gap,
+    startAt: GT + startDelaySec,
+    wave: Math.max(0, Math.floor(Number(cfg.wave) || 0)),
+    nextAt: GT + startDelaySec + gap + Math.max(0, Number(cfg.delaySec) || 0),
     tgt: cfg.tgt || null,
     burnSpec: cfg.burnSpec || null,
     burnChance: Math.max(0, Number(cfg.burnChance) || 0),
@@ -2020,6 +2024,7 @@ function sgSpawnGround(pEnt, st, gid, cfg) {
    三種移動方式共用這一支：跟隨我方（follow）、飛向落點後停駐（雷球）、
    抵達後改鎖隨機敵人繼續飛（chaseM＝追蹤冰箭）。 */
 function sgGroundMove(f, dt, enemies) {
+  if (f.startAt > GT) return;
   // 跟隨我方：位置的權威是玩家當下座標，不需要速度也不會停駐
   if (f.follow) {
     var pp = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null;
@@ -2261,6 +2266,7 @@ function sgTickGrounds(dt, ctx) {
   var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
   for (var i = list.length - 1; i >= 0; i--) {
     var f = list[i];
+    if (f.startAt > GT) continue;
     var guard = 0;
     sgGroundMove(f, dt, enemies);   // 移動／跟隨／追擊場域：作用前先推進到當下位置
     sgGroundApplyGrowth(f);   // 逐漸擴大的場域：作用前先更新到當下尺寸
@@ -3618,6 +3624,24 @@ function sgIcearrowAim(primary, pool, count, deg, rangePx) {
   return arrows;
 }
 
+/* 箭的傷害路徑仍鎖定各自目標；laneAngle 只供畫面畫出不重疊的 15 度箭道。 */
+function sgIcearrowLaneAngle(center, index, count, stepDeg) {
+  var base = (center === null || center === undefined || !isFinite(center)) ? 0 : center;
+  return base + (index - (count - 1) / 2) * stepDeg * Math.PI / 180;
+}
+
+function sgIcearrowTravelMs(ent) {
+  var distance = (typeof bfTravelDistance === 'function') ? bfTravelDistance(ent) : 0;
+  return Math.max(1, Math.round(Math.max(0, Number(distance) || 0) / sgIcearrowSpeed() * 1000));
+}
+
+function sgIcearrowSpeed() {
+  var fx = SKILLS2.icearrow && SKILLS2.icearrow.tiers[0].fx;
+  var metersPerSecond = fx && Number(fx.speed);
+  if (!(metersPerSecond > 0)) return SG_ICEARROW_SPEED;
+  return (typeof bfMeterPx === 'function') ? bfMeterPx(metersPerSecond) : metersPerSecond * 10;
+}
+
 /* 貫穿長度：文檔的「10 米＋每級 2 米」是箭本身的行程。單看字面值會讓投資第 4 階
    變成降級（射程 30 米的技能只剩 12 米行程，遠處的主目標反而打不到），
    因此以「打得到主目標」為地板——與泥沼術持續時間取 max 的既有處理同一個理由。 */
@@ -3640,35 +3664,47 @@ function sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var frost = sgFrostSpec(g, lvs, 1, dmgVal);
   var pierce = lvs[3] > 0 || lvs[6] > 0;   // 追蹤冰箭同樣先貫穿一次
   var geomOk = (typeof bfAngleTo === 'function') && bfAngleTo(primary) !== null;
-  var arrows = sgIcearrowAim(primary, pool, count, Number(t[0].fx.deg) || 45,
+  var laneStepDeg = Number(t[0].fx.deg) || 15;
+  var arrows = sgIcearrowAim(primary, pool, count, laneStepDeg * Math.max(1, count - 1),
     skills2CastRangePx('icearrow', lvs));
+  var centerAngle = geomOk ? bfAngleTo(primary) : 0;
 
   if (pierce && geomOk) {
     var lineLen = sgIcearrowPierceLen(lvs, t[3].fx, primary);
     var origin = bfPlayerPos();
     var halfWidth = SG_FLYING_PROJECTILE_HALF_WIDTH;
-    for (var ai = 0; ai < arrows.length; ai++) {
-      var angle = bfAngleTo(arrows[ai]);
-      if (angle === null) angle = bfAngleTo(primary) || 0;
-      var path = bfLineTargets(angle, lineLen, pool, halfWidth, origin);
-      if (arrows[ai].hp > 0 && path.indexOf(arrows[ai]) < 0) path.unshift(arrows[ai]);
-      sgEmitVfx('icearrow', path.length ? path : [arrows[ai]], floatSel, {
-        fxKind: 'projectile', variant: 'ice-arrow-pierce', elem: 'ice', count: 1,
-        lineLength: lineLen, lineWidth: Math.max(20, halfWidth * 2),
-        travelMs: [Math.round(lineLen / SG_FLYING_PROJECTILE_SPEED * 1000)]
-      });
-      sgQueueFlyingProjectile(pEnt, st, 'icearrow', dmgVal, origin, angle, lineLen,
-        floatSel, path, { halfWidthPx: halfWidth, hitFn: sgIcearrowProjectileHit, frostSpec: frost }, out);
+    var waveCount = lvs[6] > 0 ? Math.max(1, Math.floor(Number(t[6].fx.waves) || 3)) : 1;
+    var waveGap = lvs[6] > 0 ? Math.max(0, Number(t[6].fx.waveGap) || 0.3) : 0;
+    for (var wave = 0; wave < waveCount; wave++) {
+      var waveDelay = wave * waveGap;
+      for (var ai = 0; ai < arrows.length; ai++) {
+        var simulationAngle = bfAngleTo(arrows[ai]);
+        if (simulationAngle === null) simulationAngle = centerAngle || 0;
+        var laneAngle = sgIcearrowLaneAngle(centerAngle, ai, arrows.length, laneStepDeg);
+        var path = bfLineTargets(simulationAngle, lineLen, pool, halfWidth, origin);
+        if (arrows[ai].hp > 0 && path.indexOf(arrows[ai]) < 0) path.unshift(arrows[ai]);
+        sgEmitVfx('icearrow', path.length ? path : [arrows[ai]], floatSel, {
+          fxKind: 'projectile', variant: 'ice-arrow-pierce', elem: 'ice', count: 1,
+          lineLength: lineLen, lineWidth: Math.max(20, halfWidth * 2), angle: laneAngle,
+          delayMs: Math.round(waveDelay * 1000),
+          travelMs: [Math.round(lineLen / sgIcearrowSpeed() * 1000)]
+        });
+        sgQueueFlyingProjectile(pEnt, st, 'icearrow', dmgVal, origin, simulationAngle, lineLen,
+          floatSel, path, { halfWidthPx: halfWidth, hitFn: sgIcearrowProjectileHit,
+            frostSpec: frost, speed: sgIcearrowSpeed(), beginSec: waveDelay }, out);
+      }
     }
   } else {
-    var travelMs = (typeof bfTravelSeconds === 'function')
-      ? arrows.map(function (e) { return Math.round(bfTravelSeconds(e) * 1000); }) : null;
-    /* arrows 一支箭一個元素；count 固定 1，否則顯示層會把每支箭再複製 count 次。 */
-    sgEmitVfx('icearrow', arrows, floatSel, {
-      fxKind: 'projectile', variant: 'ice-arrow', elem: 'ice', count: 1, travelMs: travelMs
-    });
+    /* 每支箭各自帶 laneAngle，避免顯示層把不同箭道疊回同一條線。 */
     for (var i = 0; i < arrows.length; i++) {
-      var delay = (travelMs && travelMs[i]) || 0;
+      var travelMs = sgIcearrowTravelMs(arrows[i]);
+      var laneAngle = sgIcearrowLaneAngle(centerAngle, i, arrows.length, laneStepDeg);
+      var lineLength = (typeof bfTravelDistance === 'function') ? bfTravelDistance(arrows[i]) : 0;
+      sgEmitVfx('icearrow', [arrows[i]], floatSel, {
+        fxKind: 'projectile', variant: 'ice-arrow', elem: 'ice', count: 1,
+        angle: laneAngle, lineLength: lineLength, travelMs: [travelMs]
+      });
+      var delay = travelMs;
       sgIcearrowHit(pEnt, st, arrows[i], dmgVal, frost, lvs, floatSel, out, delay, null);
     }
   }
@@ -3678,16 +3714,20 @@ function sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     var hfx = t[6].fx;
     var lifeSec = Math.max(0.5, Number(hfx.sec) || 6);
     var gap = Math.max(0.05, Number(hfx.gap) || 0.1);
+    var homingWaves = Math.max(1, Math.floor(Number(hfx.waves) || 3));
+    var homingWaveGap = Math.max(0, Number(hfx.waveGap) || 0.3);
     for (var hi = 0; hi < arrows.length; hi++) {
-      sgSpawnGround(pEnt, st, 'icearrow', {
-        kind: 'icearrow', tgt: arrows[hi], floatSel: floatSel,
-        from: (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null,
-        dest: (typeof bfPos === 'function') ? bfPos(arrows[hi]) : null,
-        radius: bfMeterPx(Number(hfx.bodyM) || 1.5),
-        dmgVal: dmgVal, hits: Math.max(1, Math.round(lifeSec / gap)), gap: gap,
-        speed: SG_FLYING_PROJECTILE_SPEED,
-        chaseM: Number(hfx.chaseM) || 30, contact: true, frostSpec: frost
-      });
+      for (var hw = 0; hw < homingWaves; hw++) {
+        sgSpawnGround(pEnt, st, 'icearrow', {
+          kind: 'icearrow', tgt: arrows[hi], floatSel: floatSel,
+          from: (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null,
+          dest: (typeof bfPos === 'function') ? bfPos(arrows[hi]) : null,
+          radius: bfMeterPx(Number(hfx.bodyM) || 1.5),
+          dmgVal: dmgVal, hits: Math.max(1, Math.round(lifeSec / gap)), gap: gap,
+          speed: sgIcearrowSpeed(), chaseM: Number(hfx.chaseM) || 30,
+          contact: true, frostSpec: frost, wave: hw, startDelaySec: hw * homingWaveGap
+        });
+      }
     }
   }
 }

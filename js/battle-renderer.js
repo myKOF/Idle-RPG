@@ -1626,7 +1626,7 @@ var BattleRenderer = (function () {
           var from = playerMuzzle();
           var first = posOf(targets[0]);
           var dx = first.x - from.x, dy = first.y - from.y;
-          var angle = Math.atan2(dy, dx);
+          var angle = isFinite(spec.angle) ? Number(spec.angle) : Math.atan2(dy, dx);
           var length = Number(spec.lineLength) > 0 ? Number(spec.lineLength) : Math.sqrt(dx * dx + dy * dy);
           if (!(length > 0)) return;
           spawnProjectile(null, flight, spec, null, from, { angle: angle, length: length });
@@ -4116,6 +4116,23 @@ var BattleRenderer = (function () {
         if (spec.variant === 'ice-arrow-pierce') {
           spawnIcearrowPierce(spec, targets,
             spec.travelMs && spec.travelMs[0], baseDelay, stagger, count);
+          break;
+        }
+        if (spec.variant === 'ice-arrow' && isFinite(spec.angle) && Number(spec.lineLength) > 0) {
+          targets.forEach(function (id, ti) {
+            var travel = projectileTravelMs(spec.travelMs && spec.travelMs[ti], spec.dur ? spec.dur * 1000 : 300);
+            var laneAngle = Number(spec.angle);
+            var laneLength = Number(spec.lineLength);
+            setTimeout(function () {
+              if (fxGate(spec)) return;
+              var from = playerMuzzle();
+              spawnProjectile(null, travel, spec, function () {
+                var pt = posOf(id);
+                spawnImpact(pt.x, pt.y, spec, false);
+                hitReact(id, spec.elem, false);
+              }, from, { angle: laneAngle, length: laneLength });
+            }, baseDelay + ti * 40);
+          });
           break;
         }
         targets.forEach(function (id, ti) {

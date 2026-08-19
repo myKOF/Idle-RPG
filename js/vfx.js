@@ -2156,7 +2156,8 @@ function renderCombatVfx(spec) {
     lineLength: Number(spec.lineLength) > 0 ? Number(spec.lineLength) : null,
     lineWidth: Number(spec.lineWidth) > 0 ? Number(spec.lineWidth) : null,
     laneOffsets: Array.isArray(spec.laneOffsets) ? spec.laneOffsets.slice(0, 3) : null,
-    directionCount: Number(spec.directionCount) > 0 ? Number(spec.directionCount) : null
+    directionCount: Number(spec.directionCount) > 0 ? Number(spec.directionCount) : null,
+    angle: isFinite(spec.angle) ? Number(spec.angle) : null
   };
   /* 舊事件沒有 variant 時，風系 aura 不得走棋盤矩形的泛用畫法。 */
   if (kind === 'aura' && s.elem === 'wind' && !s.variant) return;
@@ -2456,10 +2457,11 @@ function renderCombatVfx(spec) {
   /* 風刃（含小型風刃）與貫穿冰箭同構：一個飛行體沿直線前進、路徑上的敵人依序反饋。
      DOM 後備路徑沒有世界座標，因此方位取「我方 → 第一個受擊目標」，
      不使用事件裡的 angle（那是模擬層的世界座標方位）。 */
-  if (kind === 'projectile' && (s.variant === 'ice-arrow-pierce' ||
+  if (kind === 'projectile' && (s.variant === 'ice-arrow' || s.variant === 'ice-arrow-pierce' ||
       s.variant === 'wind-blade' || s.variant === 'wind-blade-small')) {
     if (!rt.pts.length || !from) return;
-    var iceArrowAngle = Math.atan2(rt.pts[0].y - from.y, rt.pts[0].x - from.x);
+    var iceArrowAngle = isFinite(s.angle) ? Number(s.angle)
+      : Math.atan2(rt.pts[0].y - from.y, rt.pts[0].x - from.x);
     var iceArrowLength = Number(s.lineLength) > 0 ? Number(s.lineLength)
       : Math.sqrt(Math.pow(rt.pts[0].x - from.x, 2) + Math.pow(rt.pts[0].y - from.y, 2));
     if (!(iceArrowLength > 0)) return;
