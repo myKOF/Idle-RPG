@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## Codex｜寒冰箭 15 度分箭、三波追蹤與 30 米／秒｜2026-08-19
+
+- 狀態：已完成
+- Owner：Codex
+- 使用者需求：寒冰箭每支箭夾角 15 度且不重疊；寒冰爆裂箭連射 3 波、每波間隔 0.3 秒，追蹤冰箭持續 6 秒並在凍結結束時造成 400% 冰爆；寒冰箭速度 30 米／秒。
+- 修改內容：將寒冰箭 30 米／秒寫入技能表並換算成系統速度；箭道 VFX 使用以主目標為中心、相鄰 15 度的連續角度；T7 的貫穿投射物與追蹤場域均按 0／0.3／0.6 秒啟動；Worker／DOM／Canvas 同步傳遞箭道角度；同步 Excel、CSV、JS 與載入版號。
+- 修改檔案：`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`、`js/skills2.js`、`js/vfx.js`、`js/battle-renderer.js`、`js/worker/shim.js`、`js/worker/protocol.js`、`js/worker/sim.worker.js`、`js/bridge.js`、`index.html`、`tests/skill2-ice.test.cjs`、`tests/skill2-vfx.test.cjs`、本文件。
+- 未修改但檢查過：`js/battlefield.js` 的米／系統單位換算與路徑幾何、既有 `sgTickFrost`／`sgIceBlast` 的凍結結束冰爆邏輯。
+- 驗證要求：冰系單元測試、VFX 測試、語法檢查、建置、`git diff --check`。
+- 已知風險：完整冰系測試仍有一項既有暴風雪尺寸基準失敗，與本次寒冰箭修改無關；需重新載入頁面讓新版載入版號生效。
+- 未完成項目：無。
+- 是否可以合併：可以。
+
 ## Codex｜封鎖所有風系泛用方框回退｜2026-08-19
 
 - 狀態：已完成

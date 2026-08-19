@@ -122,6 +122,19 @@ test('每階的說明模板都能代入 fx（沒有缺欄位的佔位符）', ()
   });
 });
 
+test('寒冰箭參數：箭道間隔 15 度、速度 30 米／秒，爆裂箭連射三波且間隔 0.3 秒', () => {
+  const c = loadContext();
+  const base = c.SKILLS2.icearrow.tiers[0].fx;
+  const burst = c.SKILLS2.icearrow.tiers[6].fx;
+  assert.equal(base.deg, 15);
+  assert.equal(base.speed, 30);
+  assert.equal(burst.waves, 3);
+  assert.equal(burst.waveGap, 0.3);
+  assert.equal(burst.sec, 6);
+  assert.equal(burst.pct, 400);
+  assert.equal(c.SG_ICEARROW_SPEED, c.bfMeterPx(30));
+});
+
 /* ---- 寒霜狀態（三群組共用） ---- */
 
 test('寒霜的行為參數以狀態表為權威', () => {
@@ -252,7 +265,12 @@ test('寒冰箭第 1 階：前方扇形內的單體攻擊，一支箭一個敵�
   assert.ok(Math.abs(calls[0].atk - 500 * (250 + 25) / 100) < 1e-6, '每支＝魔攻 ×(250+25×Lv)%');
   assert.equal(calls[0].aCfg.dmgType, 'magic');
   assert.equal(calls[0].aCfg.skillElem, 'ice');
-  assert.ok(specs.some((s) => s.variant === 'ice-arrow'), '送出寒冰箭投射物特效');
+  const shots = specs.filter((s) => s.variant === 'ice-arrow');
+  assert.equal(shots.length, 2, '每支箭各自送出一個投射物事件');
+  assert.ok(Math.abs(Math.abs(shots[1].angle - shots[0].angle) - 15 * Math.PI / 180) < 1e-9,
+    '相鄰箭道夾角固定 15 度，不重疊');
+  assert.equal(shots[0].travelMs[0], Math.round(5 * M / c.SG_ICEARROW_SPEED * 1000),
+    '箭速為 30 米／秒');
 });
 
 test('【冰系強化】與第 1 階累加（文檔明寫累加效果）', () => {
@@ -330,10 +348,13 @@ test('【寒冰爆裂箭】轉為追擊場域，並採接觸判定', () => {
   const es = [enemy(1e9, 5 * M, 0, 'A'), enemy(1e9, 9 * M, 2 * M, 'B')];
   c.castSkill2(p, es, 'icearrow', 'mv-float');
   const homing = c.SKILL2_RT.grounds.filter((f) => f.kind === 'icearrow');
-  assert.equal(homing.length, 3, '每支箭各一團追蹤（2 支 + 散射 1 支）');
+  assert.equal(homing.length, 9, '三波各發射 3 支追蹤冰箭');
+  assert.deepEqual([...new Set(homing.map((f) => f.startAt))], [0, 0.3, 0.6],
+    '三波啟動時間為 0、0.3、0.6 秒');
   homing.forEach((f) => {
     assert.equal(f.contact, true, '接觸判定：進入才算一次命中，不是每個節拍全額命中');
     assert.equal(f.chaseM, 30, '追擊範圍沿用表定 30 米');
+    assert.equal(f.speed, c.SG_ICEARROW_SPEED, '追蹤冰箭速度為 30 米／秒');
   });
 });
 

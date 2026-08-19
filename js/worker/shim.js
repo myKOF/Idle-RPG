@@ -206,7 +206,8 @@ function playCombatVfx(spec) {
     lineLength: Number(spec.lineLength) > 0 ? Number(spec.lineLength) : null,
     lineWidth: Number(spec.lineWidth) > 0 ? Number(spec.lineWidth) : null,
     laneOffsets: Array.isArray(spec.laneOffsets) ? spec.laneOffsets.slice(0, 3) : null,
-    directionCount: Number(spec.directionCount) > 0 ? Number(spec.directionCount) : null
+    directionCount: Number(spec.directionCount) > 0 ? Number(spec.directionCount) : null,
+    angle: isFinite(spec.angle) ? Number(spec.angle) : null
   };
   /* 敵人攻擊事件需要保留來源，才能在攻擊者同一 tick 被反傷殺死後，
      仍從它最後的位置建立近戰／魔法投射物；一般技能事件不增加欄位，

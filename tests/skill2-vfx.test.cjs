@@ -118,6 +118,7 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.match(skills2, /SG_METEOR_DROP_DISTANCE/);
   assert.match(skills2, /SG_METEOR_FALL_SPEED/);
   assert.match(skills2, /var SG_FLYING_PROJECTILE_SPEED = 240/);
+  assert.match(skills2, /var SG_ICEARROW_SPEED = 300/);
   assert.doesNotMatch(skills2, /bfTravelSeconds\(primary\)/);
   assert.match(skills2, /speed: fireballPlan\.speed/);
   assert.match(skills2, /travelMs: \[travelMs\]/);
@@ -549,12 +550,15 @@ test('寒冰箭貫穿：兩條渲染路徑都以單一連續直線投射物呈�
   const skills2 = fs.readFileSync(path.join(root, 'js/skills2.js'), 'utf8');
 
   // 模擬層提供貫穿線段的飛行時間，畫面不再使用每個目標的預設延遲。
-  assert.match(skills2, /variant: 'ice-arrow-pierce'[\s\S]{0,180}travelMs: \[Math\.round\(lineLen \/ SG_FLYING_PROJECTILE_SPEED \* 1000\)\]/);
+  assert.match(skills2, /variant: 'ice-arrow-pierce'[\s\S]{0,260}travelMs: \[Math\.round\(lineLen \/ sgIcearrowSpeed\(\) \* 1000\)\]/);
+  assert.match(skills2, /variant: 'ice-arrow', elem: 'ice', count: 1,[\s\S]{0,180}angle: laneAngle/);
   // Canvas：同一事件只建立一支沿 angle／length 前進的箭。
   assert.match(renderer, /function spawnIcearrowPierce[\s\S]*?spawnProjectile\(null, flight, spec, null, from, \{ angle: angle, length: length \}\)/);
   assert.match(renderer, /if \(spec\.variant === 'ice-arrow-pierce'\)[\s\S]{0,180}spawnIcearrowPierce\(spec, targets/);
   // DOM：同一事件只建立一個固定終點的 CSS 飛行節點。
-  assert.match(vfx, /kind === 'projectile' && \(?s\.variant === 'ice-arrow-pierce'[\s\S]*?vfxProjectile\(s, layer, from, iceArrowEnd, iceArrowDelay, iceArrowTravel\)/);
+  assert.match(vfx, /kind === 'projectile' && \(s\.variant === 'ice-arrow' \|\| s\.variant === 'ice-arrow-pierce'[\s\S]*?vfxProjectile\(s, layer, from, iceArrowEnd, iceArrowDelay, iceArrowTravel\)/);
+  assert.match(vfx, /s\.variant === 'ice-arrow' \|\| s\.variant === 'ice-arrow-pierce'/);
+  assert.match(renderer, /spec\.variant === 'ice-arrow' && isFinite\(spec\.angle\)/);
 });
 
 test('新版技能彈射與特效細化：連鎖閃電無天雷、水流彈藍色拋物彈射、血刃斬綠色子彈、大地守護白光光束、反傷無特效、水龍捲藍色火柱', () => {
@@ -795,12 +799,12 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(css, /\.vfx-wind-homing-blade[\s\S]*?transition: transform 120ms linear/);
 
   // 主頁與 Worker 必須換版本，否則瀏覽器會繼續執行舊的綠色方框／逐格路徑。
-  assert.match(index, /css\/style\.css\?v=1\.0\.47/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.53/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.85/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.45/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-chase-turn-v4'/);
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260819-chase-turn-v4/);
+  assert.match(index, /css\/style\.css\?v=1\.0\.48/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.54/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.86/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.46/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-chase-turn-icearrow-v5'/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260819-chase-turn-icearrow-v5/);
 });
 
 /* 2026-08-19 回報三連：真空斬系的綠色落雷、風刃地板綠方塊、風刃一格一格移動。
