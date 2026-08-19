@@ -2407,37 +2407,40 @@ var BattleRenderer = (function () {
      Worker 事件通常每 0.2 秒批次送達；最短補間不能跟著技能的 0.1 秒傷害間隔
      縮成短促的瞬移，否則事件在同一幀到達時，玩家仍會看到一格一格的風刃。 */
   var FIELD_VFX_MIN_MOTION_SEC = 0.12;
-  var FIELD_VFX_MAX_MOTION_SEC = 0.6;
-  var FIELD_VFX_BATCH_EPS_SEC = 0.05;   // 小於這個間隔＝同一批（同一幀）送達，不是新的節拍
   function fieldVfxMotionSec(spec, fallback) {
     var sec = Number(spec && spec.dur);
     return Math.max(FIELD_VFX_MIN_MOTION_SEC, isFinite(sec) && sec > 0 ? sec : fallback);
   }
 
-  /* 一則場域事件＝模擬層的一個節拍（spec.dur）。但事件不是等距送達的：
-     實測前景是每 92～111 毫秒到一批，每秒左右會出現一次約 200 毫秒的空窗，
-     空窗後的那一批一次帶兩則（＝兩個模擬步、兩倍距離）。
-     每則都用同一個固定長度補間時，那一批就會「用一段的時間走兩段的距離」，
-     走完再停著等下一批——這就是玩家看到的「風刃一格一格移動」。
-     因此補間長度＝節拍長度 × 這一批帶了幾則：距離兩倍，時間也兩倍，
-     速度維持不變，空窗期間畫面也還在走。只影響顯示，判定仍在模擬層。 */
-  function fieldVfxStepSec(fx, baseSec) {
-    var now = nowMs();
-    var last = Number(fx.lastEventAt) || 0;
-    var gapSec = (now - last) / 1000;
-    if (last > 0 && gapSec < FIELD_VFX_BATCH_EPS_SEC) {
-      fx.batchSteps = (Number(fx.batchSteps) || 1) + 1;   // 同一批（同一幀）又到一則
-    } else {
-      // 新的一批：更新到達間隔的指數平均，並重新計數、記下批次起點
-      if (last > 0) fx.arrivalSec = fx.arrivalSec > 0 ? fx.arrivalSec * 0.6 + gapSec * 0.4 : gapSec;
-      fx.batchSteps = 1;
-      fx.lastEventAt = now;
-    }
-    var sec = Math.max(FIELD_VFX_MIN_MOTION_SEC, Number(baseSec) || 0) * fx.batchSteps;
-    /* 批次步數說明「這一批帶了多少距離」，到達間隔說明「有多少時間可以走完」，
-       兩者取大值：一批只帶半步（Worker 的零頭步）時也不會走完就停著等下一批。 */
-    sec = Math.max(sec, Number(fx.arrivalSec) || 0);
-    return Math.min(FIELD_VFX_MAX_MOTION_SEC, sec);
+  /* ---- 追蹤場域（追跡風刃／追蹤冰箭）的畫面位置：指數跟隨 ----
+     一則事件＝模擬層的一個節拍，但事件的**到達節奏本身就不平均**。
+     同一顆場域的實測到達序列（毫秒／位移）：204/35.1、0/1.6、94/16.9、110/18、
+     118/18.5、178/34.9、0/1.6……＝有時一批帶兩步、有時緊接著補一個零頭步、
+     有時單步早到。把每則都當成「固定時間內走完的一段補間」時：事件早到就得衝刺、
+     晚到就走完停住——用這條真實序列回放，有 13.9% 的畫格完全靜止、另有一批畫格
+     是兩倍速。那正是玩家說的「一格一格移動」。
+
+     改用指數跟隨：速度只取決於「離權威座標多遠」（v = 距離 / TAU，並以模擬層
+     速度的 MAX_MULT 倍為上限）。目標暫停時自己平滑減速、目標跳一大步時自己加速，
+     沒有任何硬停頓；同一條序列回放後靜止畫格降到 4.9%（且最慢的畫格仍在移動，
+     剩下的都是風刃真的在轉向）。
+     平衡點的落後距離＝速度 × TAU（180px/s 約 25px），小於風刃自身的體積，
+     判定圈與畫面仍然重疊。判定位置永遠是模擬層的 area.x/y，這裡只管畫面。 */
+  var FIELD_VFX_FOLLOW_TAU_SEC = 0.14;
+  var FIELD_VFX_FOLLOW_MAX_MULT = 2;
+  function fieldVfxSetFollowTarget(fx, x, y) {
+    fx.motionToX = Number(x);
+    fx.motionToY = Number(y);
+  }
+  function fieldVfxFollowStep(fx, dt) {
+    var dx = fx.motionToX - fx.x, dy = fx.motionToY - fx.y;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    if (!(dist > 0.01) || !(dt > 0)) return;
+    var want = dist / FIELD_VFX_FOLLOW_TAU_SEC;
+    var cap = (Number(fx.speed) > 0 ? Number(fx.speed) : want) * FIELD_VFX_FOLLOW_MAX_MULT;
+    var step = Math.min(dist, Math.min(want, cap) * dt);
+    fx.x += dx / dist * step;
+    fx.y += dy / dist * step;
   }
 
   /* 移動場域必須有模擬層發出的穩定 id。座標只能當靜態舊事件的退化鍵；
@@ -2451,7 +2454,9 @@ var BattleRenderer = (function () {
   }
 
   function fieldVfxWindAngle(fx) {
-    var dx = fx.motionToX - fx.motionFromX, dy = fx.motionToY - fx.motionFromY;
+    /* 行進方向＝從畫面目前位置指向權威座標；跟隨模型沒有「這一段的起點」，
+       而這個向量本來就是刀鋒正在飛的方向。 */
+    var dx = fx.motionToX - fx.x, dy = fx.motionToY - fx.y;
     if (Math.abs(dx) + Math.abs(dy) <= 0.5 && isFinite(fx.destX) && isFinite(fx.destY)) {
       dx = fx.destX - fx.x; dy = fx.destY - fx.y;
     }
@@ -3020,19 +3025,16 @@ var BattleRenderer = (function () {
     var current = _iceFieldFx[key];
     if (current && !current.dead && current.node && !current.node.destroyed) {
       current.speed = Number(a.speed) > 0 ? Number(a.speed) : current.speed;
-      /* 補間長度依「這一批帶了幾個模擬步」放大，不是每則都用同一個固定長度：
-         事件是成批送達的，照單則長度補間會走完就停住等下一批。 */
-      var stepSec = fieldVfxStepSec(current, motionSec);
       if (isHoming) {
-        /* 追跡風刃的傷害位置由模擬層 area.x/y 定義；畫面只在兩個權威快照
-           之間補間，不能另走一條追向未更新 dest 的獨立路徑。 */
-        fieldVfxSetPositionTarget(current, Number(a.x), Number(a.y), stepSec);
+        /* 追跡風刃的傷害位置由模擬層 area.x/y 定義；畫面只是平滑跟隨這個座標，
+           不能另走一條追向未更新 dest 的獨立路徑。 */
+        fieldVfxSetFollowTarget(current, Number(a.x), Number(a.y));
         if (isFinite(a.destX) && isFinite(a.destY)) {
           current.destX = Number(a.destX);
           current.destY = Number(a.destY);
         }
       } else if (variant !== 'blizzard') {
-        fieldVfxSetTarget(current, Number(a.x), Number(a.y), w, h, stepSec);
+        fieldVfxSetTarget(current, Number(a.x), Number(a.y), w, h, motionSec);
       }
       current.expiresAt = nowMs() + holdMs;
       return current;
@@ -3051,8 +3053,6 @@ var BattleRenderer = (function () {
       motionFromX: Number(a.x), motionFromY: Number(a.y), motionFromW: w, motionFromH: h,
       motionToX: Number(a.x), motionToY: Number(a.y), motionToW: w, motionToH: h,
       motionT: 1, motionDur: 1,
-      /* 批次量測的起點＝建立這一刻；batchSteps 由 fieldVfxStepSec 逐批重算。 */
-      lastEventAt: nowMs(), batchSteps: 1, arrivalSec: 0,
       windAngle: null
     };
     _iceFieldFx[key] = fx;
@@ -3075,9 +3075,9 @@ var BattleRenderer = (function () {
             fx.y = follow.y;
           }
         } else if (isHoming) {
-          /* 傷害場域和追蹤特效共用模擬層的目前位置；只補間快照，
+          /* 傷害場域和追蹤特效共用模擬層的目前位置；畫面只平滑跟隨它，
              不自行追目標，避免顯示位置與實際判定範圍脫節。 */
-          fieldVfxStep(fx, dt);
+          fieldVfxFollowStep(fx, dt);
         } else {
           fieldVfxStep(fx, dt);
         }
