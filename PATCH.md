@@ -1,5 +1,16 @@
 # PATCH.md
 
+## 戰鬥統計面板 DoT 持續傷害中文名稱解析修復（Antigravity 2026-08-19）
+
+- **DoT 來源解析與中文映射擴充**：
+  - 在 `js/combat.js` 的 `resolveDotSource` 中補充 `sgWindCut`（風切割裂）來源對應，並加入 `statusDef` 自動映射機制，確保未單獨配置來源的狀態能自動解析為中文狀態名。
+- **統計面板顯示名稱回退修復**：
+  - 修復 `generateSummaryHtml` 在統計無技能等級的項目（如 DoT、部分狀態跳傷）時直接使用原始 key 的問題，改為優先取用 `stat.name` 中文名稱。
+  - 原先顯示為 `skill2:frostbite` 與 `dot:sgWindCut` 的項目現在正常顯示為「寒霜凍傷」與「風切割裂」。
+- **快取破壞與測試**：
+  - 更新 `index.html` 快取版號（`js/combat.js?v=1.0.32`）。
+  - 在 `tests/summary.test.cjs` 補充 DoT 中文名稱輸出之回歸測試。
+
 ## 技能一鍵滿級按鈕外置與尺寸精簡（Antigravity 2026-08-19）
 
 - **按鈕外置與容器重構**：

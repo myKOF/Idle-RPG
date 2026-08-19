@@ -579,6 +579,13 @@ function resolveDotSource(sid) {
     if (sid === 'sgFrostBite') {
         return { name: '寒霜凍傷', key: 'skill2:frostbite' };
     }
+    if (sid === 'sgWindCut') {
+        return { name: '風切割裂', key: 'skill2:windcut' };
+    }
+    var sdef = (typeof statusDef === 'function') ? statusDef(sid) : (typeof STATUS !== 'undefined' ? STATUS[sid] : null);
+    if (sdef && sdef.name) {
+        return { name: sdef.name, key: 'dot:' + sid };
+    }
     return null;
 }
 
@@ -1762,9 +1769,9 @@ function generateSummaryHtml(current) {
     }
     for (var key in RUN_STATS.skills) {
         var stat = RUN_STATS.skills[key];
-        var displayName = key;
+        var rawName = (stat && stat.name) || key;
+        var displayName = rawName;
         if (typeof stat.level === 'number') {
-            var rawName = stat.name || key;
             displayName = rawName + '(' + stat.level + '級)';
             if (nameCounts[rawName] > 1) {
                 nameSeen[rawName] = (nameSeen[rawName] || 0) + 1;
@@ -1781,7 +1788,7 @@ function generateSummaryHtml(current) {
     for (var k in RUN_STATS.skills) {
         var sk = RUN_STATS.skills[k];
         skillList.push({
-            name: displayNames[k] || k,
+            name: displayNames[k] || (sk && sk.name) || k,
             count: sk.count || 0,
             damage: sk.damage || 0
         });
