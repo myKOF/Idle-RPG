@@ -2575,7 +2575,10 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
     ? ((typeof legendarySkillManaCost === 'function') ? legendarySkillManaCost(pEnt, id, sk, lv, st) : skillManaCost(sk, lv))
     : legendaryPrep.manaCost;
   if (!isFreeCast) {
-    pEnt.mp -= manaCost;
+    /* 下限夾 0（與 castSkill2、魔法盾同一慣例）：法力門檻是在「開始吟唱」時檢查的，
+       吟唱途中法力可能被其他來源吃掉（反擊逐階扣魔、魔法盾代付傷害），
+       不夾就會扣成負數，回復還得先把負數填回來。 */
+    pEnt.mp = Math.max(0, pEnt.mp - manaCost);
     if (typeof legendaryOnManaSpent === 'function') legendaryOnManaSpent(pEnt, manaCost, st, floatSel);
   }
   if (!pEnt.skillCds) pEnt.skillCds = {};

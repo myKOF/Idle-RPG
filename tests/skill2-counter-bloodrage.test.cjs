@@ -50,9 +50,15 @@ function enemy(hp, x, y, name) {
     pos: (x === undefined) ? undefined : { x, y }
   };
 }
-function playerEnt() {
-  return { hp: 1000, mp: 100, shield: 0, shieldMax: 0, skillCds: {}, buffs: {}, dots: [], effects: {}, _lockTarget: null };
+/* mp 預設 100（＝ getStats().mp 上限）；反擊自 2026-08-19 起每階觸發各自扣魔，
+   驗證「機制」的案例一律給足法力，法力門檻本身由 §3.5 專門的案例負責。 */
+function playerEnt(mp) {
+  return {
+    hp: 1000, mp: (mp === undefined ? 100 : mp), shield: 0, shieldMax: 0,
+    skillCds: {}, buffs: {}, dots: [], effects: {}, _lockTarget: null
+  };
 }
+const AMPLE_MP = 100000;
 /* 傷害管線替身：固定 100 傷並記錄 (defender, aCfg)——反擊的傷害倍率驗證吃 aCfg.atk。 */
 function stubHits(c, opts) {
   const calls = [];
@@ -75,7 +81,7 @@ test('counter 為主動型被動：可裝載、永不施放，且未裝配時效
   assert.ok(c.skills2IsPassive('counter'));
   assert.ok(!c.skills2IsPassive('bloodrage'));
   const calls = stubHits(c);
-  const p = playerEnt();
+  const p = playerEnt(AMPLE_MP);
   const m = enemy(1e9, 40, 0);
   c.GT = 0;
   c.G.player.skills2.levels.counter = [10, 10, 10, 10, 10, 10, 10];
@@ -96,8 +102,9 @@ test('counter 為主動型被動：可裝載、永不施放，且未裝配時效
   assert.ok(calls.length > 0, '裝配後受擊應反擊');
 
   // 但永遠不會被主動施放（也不佔用出手節奏）
+  const mpBeforeCast = p.mp; // 受擊反擊已經扣過魔，這裡只看「施放嘗試」不再另外扣
   assert.equal(c.castSkill2(p, [m], 'counter', 'mv-float'), null, '主動型被動不可施放');
-  assert.equal(p.mp, 100, '施放嘗試不得扣魔');
+  assert.equal(p.mp, mpBeforeCast, '施放嘗試不得扣魔');
   assert.equal(p.skillCds['sg:counter'], undefined, '不得寫入冷卻');
   const picked = c.pickAndCastSkill(p, [m], 'mv-float');
   assert.ok(!picked || picked.skillId !== 'counter', '自動施放不得選中主動型被動');
@@ -119,7 +126,7 @@ test('反擊 T1：受傷且機率命中時對攻擊者反擊一次，傷害＝�
   c.G.player.skills2.levels.counter = [1, 0, 0, 0, 0, 0, 0];
   c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
   c.chance = (p) => p === 35; // 只讓 T1（35%）擲骰成功
-  const p = playerEnt();
+  const p = playerEnt(AMPLE_MP);
   const m = enemy(1e9, 40, 0);
   c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
   assert.equal(calls.length, 1, '應反擊 1 次');
@@ -140,7 +147,7 @@ test('反擊 T1：機率未命中或未受傷（閃避/無敵）不反擊', () =
   c.GT = 0;
   c.G.player.skills2.levels.counter = [1, 0, 0, 0, 0, 0, 0];
   c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
-  const p = playerEnt();
+  const p = playerEnt(AMPLE_MP);
   const m = enemy(1e9, 40, 0);
   c.chance = () => false;
   c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
@@ -163,7 +170,7 @@ test('反擊 T2 招架：格擋必反，傷害＝格擋減傷值×330%（與 T1 
   c.G.player.skills2.levels.counter = [1, 1, 0, 0, 0, 0, 0];
   c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
   c.chance = () => false; // T1 不觸發 → 只剩招架
-  const p = playerEnt();
+  const p = playerEnt(AMPLE_MP);
   const m = enemy(1e9, 40, 0);
   c.skills2OnPlayerDamaged(m, p, 30, true, hitRes(), 'pv-float');
   assert.equal(calls.length, 1, '格擋必反 1 次');
@@ -185,7 +192,7 @@ test('反擊盾 T4：觸發反擊時回復最大生命比例的護盾（每次�
   c.G.player.skills2.levels.counter = [1, 1, 1, 1, 0, 0, 0];
   c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
   c.chance = (p) => p === 35;
-  const p = playerEnt();
+  const p = playerEnt(AMPLE_MP);
   const m = enemy(1e9, 40, 0);
   c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
   // Lv.1＝最大生命 1.1%（1 + 每級 0.1）→ 11（護盾效率未給＝0）
@@ -199,7 +206,7 @@ test('破甲擊 T5：格擋機率上破甲，疊層×單層值、上限 4 層、
   c.G.player.skills2.levels.counter = [1, 1, 1, 1, 1, 0, 0];
   c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
   c.chance = (p) => p === 35; // T5 破甲機率 35 → 成功；T1 也是 35 會反擊（無妨）
-  const p = playerEnt();
+  const p = playerEnt(AMPLE_MP);
   const m = enemy(1e9, 40, 0);
   m.def = 100;
   c.skills2OnPlayerDamaged(m, p, 30, true, hitRes(), 'pv-float');
@@ -223,7 +230,7 @@ test('二次反擊 T6：機率追加 2 次同傷害反擊（不再判定）', ()
   c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
   // T1（35）與 T6（50 + 每級 5 ＝ 55）都擲中；T5 破甲（35）也會中，無妨
   c.chance = (p) => p === 35 || p === 55;
-  const p = playerEnt();
+  const p = playerEnt(AMPLE_MP);
   const m = enemy(1e9, 40, 0);
   c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
   assert.equal(calls.length, 3, '1 次本體＋追加 2 次');
@@ -237,7 +244,7 @@ test('狂化反殺 T7：每次反擊額外反擊範圍內隨機 2 個其他敵�
   c.G.player.skills2.levels.counter = [1, 1, 1, 1, 1, 1, 1];
   c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
   c.chance = (p) => p === 35; // T1 觸發；T6（Lv.1＝55）不觸發
-  const p = playerEnt();
+  const p = playerEnt(AMPLE_MP);
   const m = enemy(1e9, 40, 0);
   const m2 = enemy(1e9, 60, 30, '反殺目標A');
   const m3 = enemy(1e9, 60, -30, '反殺目標B');
@@ -251,6 +258,149 @@ test('狂化反殺 T7：每次反擊額外反擊範圍內隨機 2 個其他敵�
   assert.equal(calls[1].aCfg.atk, 900);
 });
 
+/* ---- 3.5) 反擊的法力消耗（2026-08-19：每階觸發時各自扣自己那一階的施法消耗） ---- */
+
+test('反擊法力：每階的觸發消耗＝參數表該階的施法消耗（T3 恆時加成不扣魔）', () => {
+  const c = loadContext();
+  const tiers = c.SKILLS2.counter.tiers;
+  [0, 1, 3, 4, 5, 6].forEach((i) => {
+    assert.ok(tiers[i].cost > 0, '第' + (i + 1) + '階參數表要有施法消耗');
+    assert.equal(c.skills2TierTriggerMp('counter', i), tiers[i].cost, '第' + (i + 1) + '階');
+  });
+  assert.equal(c.skills2TierTriggerMp('counter', 2), 0, 'T3 強化反擊是恆時加成，不扣魔');
+  // 主動群組在 castSkill2 付群組層的 cost，不走這條；恆時被動（大地守護）也沒有觸發消耗
+  assert.equal(c.skills2TierTriggerMp('thrust', 0), 0);
+  assert.equal(c.skills2TierTriggerMp('earthguard', 4), 0);
+  // UI 的法力門檻＝已投資的階裡最便宜的觸發消耗
+  assert.equal(c.skills2PassiveMinMp('counter', [1, 1, 1, 1, 1, 1, 1]), tiers[0].cost);
+  assert.equal(c.skills2PassiveMinMp('counter', [0, 0, 1, 0, 0, 0, 1]), tiers[6].cost, 'T3 不計入門檻');
+  assert.equal(c.skills2PassiveMinMp('earthguard', [1, 1, 1, 1, 1, 1, 1]), 0);
+});
+
+test('反擊法力：觸發才扣魔、法力不足則不觸發（機率沒中不扣）', () => {
+  const c = loadContext();
+  const calls = stubHits(c);
+  c.GT = 0;
+  c.G.player.skills2.levels.counter = [1, 0, 0, 0, 0, 0, 0];
+  c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
+  const cost = c.SKILLS2.counter.tiers[0].cost; // 5
+  const m = enemy(1e9, 40, 0);
+
+  c.chance = () => false;
+  const pMiss = playerEnt(50);
+  c.skills2OnPlayerDamaged(m, pMiss, 50, false, hitRes(), 'pv-float');
+  assert.equal(calls.length, 0, '機率沒中不反擊');
+  assert.equal(pMiss.mp, 50, '沒觸發就不扣魔');
+
+  c.chance = () => true;
+  c.skills2OnPlayerDamaged(m, pMiss, 50, false, hitRes(), 'pv-float');
+  assert.equal(calls.length, 1, '機率命中應反擊');
+  assert.equal(pMiss.mp, 50 - cost, '觸發扣掉該階的施法消耗');
+
+  const pPoor = playerEnt(cost - 1);
+  c.skills2OnPlayerDamaged(m, pPoor, 50, false, hitRes(), 'pv-float');
+  assert.equal(calls.length, 1, '法力不足不得反擊');
+  assert.equal(pPoor.mp, cost - 1, '法力不足時不扣魔');
+
+  const pExact = playerEnt(cost);
+  c.skills2OnPlayerDamaged(m, pExact, 50, false, hitRes(), 'pv-float');
+  assert.equal(calls.length, 2, '剛好付得起就照常反擊');
+  assert.equal(pExact.mp, 0);
+});
+
+test('反擊法力：各階各自判定——付不起的那一階不觸發，其餘照常', () => {
+  const c = loadContext();
+  const calls = stubHits(c);
+  c.GT = 0;
+  c.G.player.skills2.levels.counter = [1, 1, 1, 1, 1, 0, 0];
+  c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
+  c.chance = () => true;
+  const m = enemy(1e9, 40, 0);
+  // 結算順序＝扣魔順序：T5 破甲 60 → T1 5 → T2 招架 10 → T4 反擊盾 40
+  const p = playerEnt(60 + 5 + 10); // 反擊盾付不起
+  c.skills2OnPlayerDamaged(m, p, 30, true, hitRes(), 'pv-float');
+  assert.equal(c.buffVal(m, 'sgDefBrk'), 15, '破甲照上');
+  assert.equal(calls.length, 2, '受傷反擊＋招架都成立');
+  assert.equal(p.shield, 0, '反擊盾付不起→只有這一階不觸發');
+  assert.equal(p.mp, 0);
+
+  // 破甲（60）付不起時，反擊本身仍照常
+  const calls2Start = calls.length;
+  const pLow = playerEnt(20);
+  c.GT = 1;
+  const m2 = enemy(1e9, 40, 0);
+  c.skills2OnPlayerDamaged(m2, pLow, 30, true, hitRes(), 'pv-float');
+  assert.equal(c.buffVal(m2, 'sgDefBrk'), 0, '破甲付不起→不破甲');
+  assert.equal(calls.length - calls2Start, 2, '反擊與招架照常');
+  assert.equal(pLow.mp, 20 - 5 - 10, '只扣得起的兩階被扣');
+});
+
+test('反擊法力：強化反擊（T3）不扣魔，傷害加成照吃', () => {
+  const c = loadContext();
+  const calls = stubHits(c);
+  c.GT = 0;
+  c.G.player.skills2.levels.counter = [1, 1, 1, 0, 0, 0, 0]; // 階梯解鎖：T3 要 T2 先有 1 級
+  c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
+  c.chance = () => true;
+  const p = playerEnt(5); // 只夠付 T1；未格擋所以 T2 招架不觸發
+  const m = enemy(1e9, 40, 0);
+  c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].aCfg.atk, 900, 'T1 Lv.1 55% ＋ T3 Lv.1 35% ＝ 90% 普攻傷害');
+  assert.equal(p.mp, 0, 'T3 不另外扣魔');
+});
+
+test('反擊法力：二次反擊（80）與狂化反殺（100）各自付費，付不起就只少那一段', () => {
+  const c = loadContext();
+  const calls = stubHits(c);
+  c.GT = 0;
+  c.G.player.skills2.levels.counter = [1, 1, 1, 1, 1, 1, 1];
+  c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
+  c.chance = () => true; // T1 與 T6 都擲中（未格擋：T2 招架與 T5 破甲不進場）
+  const p = playerEnt(5 + 80); // 追加反擊付得起、狂化反殺（100）與反擊盾（40）付不起
+  const m = enemy(1e9, 40, 0);
+  const m2 = enemy(1e9, 60, 30, '反殺目標A');
+  c.FIELD = { player: p, dpsWindow: [] };
+  c.combatFieldEnemies = () => [m, m2];
+  c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
+  assert.equal(calls.length, 3, '本體 1 次＋追加 2 次；反殺付不起不觸發');
+  assert.ok(calls.every((x) => x.defender === m), '反殺沒發生，打擊全落在攻擊者身上');
+  assert.equal(p.shield, 0, '反擊盾也付不起');
+  assert.equal(p.mp, 0);
+});
+
+test('反擊法力：狂化反殺範圍內沒有其他敵人時不扣魔', () => {
+  const c = loadContext();
+  const calls = stubHits(c);
+  c.GT = 0;
+  c.G.player.skills2.levels.counter = [1, 1, 1, 1, 1, 1, 1];
+  c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
+  c.chance = (x) => x === 35; // 只讓 T1 擲中（T6 Lv.1＝55 不追加）
+  const p = playerEnt(200);
+  const m = enemy(1e9, 40, 0);
+  c.FIELD = { player: p, dpsWindow: [] };
+  c.combatFieldEnemies = () => [m]; // 只有攻擊者，反殺無目標
+  c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
+  assert.equal(calls.length, 1, '只有本體反擊');
+  assert.equal(p.mp, 200 - 5 - 40, '只扣 T1 的 5 與反擊盾的 40，反殺沒有目標不扣魔');
+});
+
+test('反擊法力：法力歸零後被動整個停擺（不會扣成負數）', () => {
+  const c = loadContext();
+  const calls = stubHits(c);
+  c.GT = 0;
+  c.G.player.skills2.levels.counter = [1, 1, 1, 1, 1, 1, 1];
+  c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
+  c.chance = () => true;
+  const p = playerEnt(0);
+  const m = enemy(1e9, 40, 0);
+  c.skills2OnPlayerDamaged(m, p, 30, true, hitRes(), 'pv-float');
+  assert.equal(calls.length, 0, '沒魔就不反擊');
+  assert.equal(p.shield, 0, '沒魔就沒有反擊盾');
+  assert.equal(c.buffVal(m, 'sgDefBrk'), 0, '沒魔就不破甲');
+  assert.equal(p.mp, 0, '不得扣成負數');
+});
+
 /* ---- 4) 嗜血狂怒 ---- */
 
 test('嗜血狂怒：施放進入狂怒（RT＋增益＋冷卻＋扣魔），各項因子期間生效、到期歸位', () => {
@@ -262,7 +412,8 @@ test('嗜血狂怒：施放進入狂怒（RT＋增益＋冷卻＋扣魔），各
   const m = enemy(1e9, 40, 0);
   const res = c.castSkill2(p, [m], 'bloodrage', 'mv-float');
   assert.ok(res, '應可施放');
-  assert.equal(p.mp, 100 - 50, '扣魔 50');
+  // 施法消耗以參數表為準（群組層 cost），不在測試裡寫死數字
+  assert.equal(p.mp, 100 - c.SKILLS2.bloodrage.cost, '扣掉群組的施法消耗');
   assert.ok(p.skillCds['sg:bloodrage'] > 0, '寫入冷卻');
   assert.ok(c.skill2RageActive(), '進入狂怒');
   // Lv.10 攻速 20+2×10＝40% → 乘算因子 1.40
@@ -386,7 +537,7 @@ test('致命一擊不觸發反擊（與反震「致命擊不反傷」一致；�
   c.G.player.skills2.levels.counter = [10, 10, 10, 10, 10, 10, 10];
   c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
   c.chance = () => true;
-  const p = playerEnt();
+  const p = playerEnt(AMPLE_MP);
   const m = enemy(1e9, 40, 0);
   // 這一擊打死玩家（res.killed）
   c.skills2OnPlayerDamaged(m, p, 1000, true, hitRes({ killed: true }), 'pv-float');
