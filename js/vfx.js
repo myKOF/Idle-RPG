@@ -688,11 +688,15 @@ function vfxHitReact(targetId, elem, delayMs, strong, targetGuard, suppressShake
    Reduced 直接跳過，避免普通裝備操作頁也因戰鬥事件產生大範圍重繪。 */
 function vfxAllowsSceneShake(spec) {
   var v = spec && spec.variant;
-  /* 血刃斬的毒霧感染只是彈射毒液，不應把整個戰場一起震動。 */
-  if (v === 'poison-spread') return false;
+  /* 血刃斬（含毒霧感染、死亡屍爆、零日感染）一律不震畫面：
+     這些爆點是逐目標各炸一次，一波死亡就會連續觸發數十次場景震動。
+     blood-explosion／zero-infection 為血刃斬專屬 variant，移除不影響
+     斷罪引爆／碎印湮滅等共用 detonate 的技能。 */
+  if (isBloodbladeNoHitShakeSpec(spec) ||
+      v === 'blood-explosion' || v === 'zero-infection') return false;
   return v === 'meteor' || v === 'pillar' || v === 'purple-thunder' ||
-    v === 'storm-sigil' || v === 'detonate' || v === 'blood-explosion' ||
-    v === 'zero-infection' || v === 'nova' || v === 'venomburst' || v === 'vortex';
+    v === 'storm-sigil' || v === 'detonate' ||
+    v === 'nova' || v === 'venomburst' || v === 'vortex';
 }
 function vfxSceneShake(layer, delayMs, strong, spec) {
   if (!vfxAllowsSceneShake(spec)) return;
@@ -796,7 +800,8 @@ function vfxImpact(spec, layer, pt, targetId, delayMs, targetGuard) {
     }
     vfxTrack(cloud, delayMs + 2600, targetGuard);
   }
-  if (v === 'detonate' || v === 'blood-explosion') vfxSceneShake(layer, delayMs, false, spec);
+  /* blood-explosion（死亡屍爆）已排除在 vfxAllowsSceneShake 之外，這裡只留斷罪引爆等 detonate。 */
+  if (v === 'detonate') vfxSceneShake(layer, delayMs, false, spec);
   vfxHitReact(targetId, spec.elem || null, delayMs, strong, targetGuard,
     !!spec._suppressHitShake || isBloodbladeNoHitShakeSpec(spec));
 }

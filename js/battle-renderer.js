@@ -1328,13 +1328,17 @@ var BattleRenderer = (function () {
     S.shake = Math.min(18, Math.max(S.shake, 14));
   }
 
+  /* 血刃斬（含毒霧感染、死亡屍爆、零日感染）一律不推鏡頭：
+     它的爆點是「每個中毒／流血目標各炸一次」，死一片就會連續觸發數十次，
+     鏡頭會被震到看不清畫面。blood-explosion／zero-infection 為血刃斬專屬 variant，
+     從允許清單移除即可，不影響斷罪引爆等共用 detonate 的技能。 */
   function isSpecialScreenShakeSpec(spec) {
     var v = spec && spec.variant;
-    /* 血刃斬的毒霧感染只是彈射毒液，不應把整個戰場一起震動。 */
-    if (v === 'poison-spread') return false;
+    if (isBloodbladeNoHitJoltSpec(spec) ||
+        v === 'blood-explosion' || v === 'zero-infection') return false;
     return v === 'meteor' || v === 'pillar' || v === 'purple-thunder' ||
-      v === 'storm-sigil' || v === 'detonate' || v === 'blood-explosion' ||
-      v === 'zero-infection' || v === 'nova' || v === 'venomburst' || v === 'vortex';
+      v === 'storm-sigil' || v === 'detonate' ||
+      v === 'nova' || v === 'venomburst' || v === 'vortex';
   }
 
   /* ============ 特效系統 ============ */
