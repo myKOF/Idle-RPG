@@ -1984,7 +1984,12 @@ function sgSpawnGround(pEnt, st, gid, cfg) {
     gap: gap,
     startAt: GT + startDelaySec,
     wave: Math.max(0, Math.floor(Number(cfg.wave) || 0)),
-    nextAt: GT + startDelaySec + gap + Math.max(0, Number(cfg.delaySec) || 0),
+    /* 預設第一拍在一個節拍之後（場域是「先出現、再開始作用」）；
+       tickAtStart＝出生的那一刻就作用一次，給「由前一段飛行接手」的場域用
+       （追蹤冰箭：貫穿箭消失的同一刻、同一個位置就要看到追擊的冰箭，
+       中間不能空一個節拍的黑畫面）。總拍數由 hits 決定，因此不影響總傷害。 */
+    nextAt: GT + startDelaySec + (cfg.tickAtStart ? 0 : gap) +
+      Math.max(0, Number(cfg.delaySec) || 0),
     tgt: cfg.tgt || null,
     burnSpec: cfg.burnSpec || null,
     burnChance: Math.max(0, Number(cfg.burnChance) || 0),
@@ -2003,9 +2008,10 @@ function sgSpawnGround(pEnt, st, gid, cfg) {
       ? { x: Number(cfg.dest.x), y: Number(cfg.dest.y) } : null,
     speed: Math.max(0, Number(cfg.speed) || 0),
     /* 目前的飛行方向（弧度）：追擊場域沒有落點可追時沿著它直線飛出去。
-       出生時未定；第一次朝落點移動就會寫入。
+       留白＝出生時未定，第一次朝落點移動才寫入；由前一段飛行接手的場域
+       （追蹤冰箭承接貫穿段）則直接帶入當時的航向，才不會一出生就瞬間轉向。
        turnSide＝正後方迴轉時的慣用邊，依出生序號交替，不額外消耗亂數。 */
-    moveAngle: null,
+    moveAngle: (typeof cfg.moveAngle === 'number' && isFinite(cfg.moveAngle)) ? cfg.moveAngle : null,
     turnSide: (SKILL2_RT.groundSeq % 2) ? 1 : -1,
     /* 跟隨我方的場域（暴風雪）：圓心恆等於玩家當下座標，與環繞場域同一種錨定方式，
        差別只在形狀是地板矩形。留白＝原本的釘死在地板上。 */
@@ -3655,9 +3661,12 @@ function sgIceBlastVictims(ent, enemies, radius) {
    三種形態，全部共用既有基建：
      單體冰箭（T1）  → 扇形挑目標＋逐箭直接結算（比照飛刀的第 1 階）
      貫穿冰箭（T4）  → 飛行投射物（bfSegmentTargets 的路徑命中，比照貫穿突刺）
-     追蹤冰箭（T7）  → 先照 T4 貫穿一次，再交給「追擊場域」在範圍內來回穿梭
+     追蹤冰箭（T7）  → 同一支箭先貫穿飛完直線，抵達終點後才「換飛行模式」改為追擊
    第 7 階依文檔「寒冰箭變為追蹤冰箭」＝改為（不是追加）：貫穿那一段仍然發生，
    因為文檔的其它說明明寫「射出後會直接朝指定方向貫穿敵人後，再朝範圍內的隨機目標飛去」。
+   **貫穿與追擊是同一個飛行物的前後兩段**，不是同時射出的兩發：追擊場域的出生點＝
+   貫穿路徑的終點、出生時間＝那支箭飛完直線的時刻、初始航向＝貫穿的方向，
+   因此畫面上只會有一顆冰箭，中途改變飛法而已。
    =========================================================================== */
 
 /* 寒冰箭的瞄準：第 1 階是「前方扇形內的單體攻擊」，一支箭鎖一個敵人，
@@ -3722,67 +3731,90 @@ function sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     skills2CastRangePx('icearrow', lvs));
   var centerAngle = geomOk ? bfAngleTo(primary) : 0;
 
+  /* 【寒冰爆裂箭】的連射：波數是第 7 階的性質，與有沒有座標無關，
+     因此兩條分支（貫穿／無座標的單體）共用同一組波次參數。 */
+  var homingFx = lvs[6] > 0 ? t[6].fx : null;
+  var waveCount = homingFx ? Math.max(1, Math.floor(Number(homingFx.waves) || 3)) : 1;
+  var waveGap = homingFx ? Math.max(0, Number(homingFx.waveGap) || 0.3) : 0;
+
   if (pierce && geomOk) {
     var lineLen = sgIcearrowPierceLen(lvs, t[3].fx, primary);
     var origin = bfPlayerPos();
     var halfWidth = SG_FLYING_PROJECTILE_HALF_WIDTH;
-    var waveCount = lvs[6] > 0 ? Math.max(1, Math.floor(Number(t[6].fx.waves) || 3)) : 1;
-    var waveGap = lvs[6] > 0 ? Math.max(0, Number(t[6].fx.waveGap) || 0.3) : 0;
+    var flightSec = lineLen / sgIcearrowSpeed();
     for (var wave = 0; wave < waveCount; wave++) {
       var waveDelay = wave * waveGap;
       for (var ai = 0; ai < arrows.length; ai++) {
         var simulationAngle = bfAngleTo(arrows[ai]);
         if (simulationAngle === null) simulationAngle = centerAngle || 0;
-        var laneAngle = sgIcearrowLaneAngle(centerAngle, ai, arrows.length, laneStepDeg);
         var path = bfLineTargets(simulationAngle, lineLen, pool, halfWidth, origin);
         if (arrows[ai].hp > 0 && path.indexOf(arrows[ai]) < 0) path.unshift(arrows[ai]);
+        /* 貫穿箭的畫面方位＝實際的貫穿方位（不是均分的 15 度箭道）：
+           這一段的終點就是追擊段的起點，兩者用不同角度會讓冰箭在轉入追擊的
+           瞬間憑空橫移一大段。箭道扇形只留給沒有貫穿的第 1 階。 */
         sgEmitVfx('icearrow', path.length ? path : [arrows[ai]], floatSel, {
           fxKind: 'projectile', variant: 'ice-arrow-pierce', elem: 'ice', count: 1,
-          lineLength: lineLen, lineWidth: Math.max(20, halfWidth * 2), angle: laneAngle,
+          lineLength: lineLen, lineWidth: Math.max(20, halfWidth * 2), angle: simulationAngle,
           delayMs: Math.round(waveDelay * 1000),
-          travelMs: [Math.round(lineLen / sgIcearrowSpeed() * 1000)]
+          travelMs: [Math.round(flightSec * 1000)]
         });
         sgQueueFlyingProjectile(pEnt, st, 'icearrow', dmgVal, origin, simulationAngle, lineLen,
           floatSel, path, { halfWidthPx: halfWidth, hitFn: sgIcearrowProjectileHit,
             frostSpec: frost, speed: sgIcearrowSpeed(), beginSec: waveDelay }, out);
+        // 這支箭飛完直線之後，就地從終點轉入追擊模式（同一個飛行物換飛法）
+        if (homingFx) {
+          sgSpawnIcearrowHoming(pEnt, st, homingFx, arrows[ai], dmgVal, frost, floatSel, {
+            from: { x: origin.x + Math.cos(simulationAngle) * lineLen,
+              y: origin.y + Math.sin(simulationAngle) * lineLen },
+            moveAngle: simulationAngle, wave: wave, startDelaySec: waveDelay + flightSec
+          });
+        }
       }
     }
   } else {
     /* 每支箭各自帶 laneAngle，避免顯示層把不同箭道疊回同一條線。 */
-    for (var i = 0; i < arrows.length; i++) {
-      var travelMs = sgIcearrowTravelMs(arrows[i]);
-      var laneAngle = sgIcearrowLaneAngle(centerAngle, i, arrows.length, laneStepDeg);
-      var lineLength = (typeof bfTravelDistance === 'function') ? bfTravelDistance(arrows[i]) : 0;
-      sgEmitVfx('icearrow', [arrows[i]], floatSel, {
-        fxKind: 'projectile', variant: 'ice-arrow', elem: 'ice', count: 1,
-        angle: laneAngle, lineLength: lineLength, travelMs: [travelMs]
-      });
-      var delay = travelMs;
-      sgIcearrowHit(pEnt, st, arrows[i], dmgVal, frost, lvs, floatSel, out, delay, null);
-    }
-  }
-
-  // 【寒冰爆裂箭】：貫穿之後轉為追擊，在範圍內來回穿梭追擊敵人
-  if (lvs[6] > 0) {
-    var hfx = t[6].fx;
-    var lifeSec = Math.max(0.5, Number(hfx.sec) || 6);
-    var gap = Math.max(0.05, Number(hfx.gap) || 0.1);
-    var homingWaves = Math.max(1, Math.floor(Number(hfx.waves) || 3));
-    var homingWaveGap = Math.max(0, Number(hfx.waveGap) || 0.3);
-    for (var hi = 0; hi < arrows.length; hi++) {
-      for (var hw = 0; hw < homingWaves; hw++) {
-        sgSpawnGround(pEnt, st, 'icearrow', {
-          kind: 'icearrow', tgt: arrows[hi], floatSel: floatSel,
-          from: (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null,
-          dest: (typeof bfPos === 'function') ? bfPos(arrows[hi]) : null,
-          radius: bfMeterPx(Number(hfx.bodyM) || 1.5),
-          dmgVal: dmgVal, hits: Math.max(1, Math.round(lifeSec / gap)), gap: gap,
-          speed: sgIcearrowSpeed(), chaseM: Number(hfx.chaseM) || 30,
-          contact: true, frostSpec: frost, wave: hw, startDelaySec: hw * homingWaveGap
+    for (var wv = 0; wv < waveCount; wv++) {
+      var wvDelayMs = Math.round(wv * waveGap * 1000);
+      for (var i = 0; i < arrows.length; i++) {
+        var travelMs = sgIcearrowTravelMs(arrows[i]);
+        var laneAngle = sgIcearrowLaneAngle(centerAngle, i, arrows.length, laneStepDeg);
+        var lineLength = (typeof bfTravelDistance === 'function') ? bfTravelDistance(arrows[i]) : 0;
+        sgEmitVfx('icearrow', [arrows[i]], floatSel, {
+          fxKind: 'projectile', variant: 'ice-arrow', elem: 'ice', count: 1,
+          angle: laneAngle, lineLength: lineLength, travelMs: [travelMs],
+          delayMs: wvDelayMs
         });
+        sgIcearrowHit(pEnt, st, arrows[i], dmgVal, frost, lvs, floatSel, out,
+          wvDelayMs + travelMs, null);
+        /* 無座標（高塔）時沒有幾何可言，但時序仍然成立：箭飛到目標身上才轉入追擊。 */
+        if (homingFx) {
+          sgSpawnIcearrowHoming(pEnt, st, homingFx, arrows[i], dmgVal, frost, floatSel, {
+            wave: wv, startDelaySec: (wvDelayMs + travelMs) / 1000
+          });
+        }
       }
     }
   }
+}
+
+/* 【寒冰爆裂箭】的追擊段：由「這支箭飛完直線的那一刻、那個位置、那個航向」接手，
+   在 chaseM 米內來回穿梭。opts 留白＝沒有座標的退化路徑（就地咬住原目標）。 */
+function sgSpawnIcearrowHoming(pEnt, st, hfx, target, dmgVal, frost, floatSel, opts) {
+  var lifeSec = Math.max(0.5, Number(hfx.sec) || 6);
+  var gap = Math.max(0.05, Number(hfx.gap) || 0.1);
+  var o = opts || {};
+  sgSpawnGround(pEnt, st, 'icearrow', {
+    kind: 'icearrow', tgt: target, floatSel: floatSel,
+    from: o.from || null,
+    /* dest 留白：出生點就是貫穿終點，下一個落點由追擊邏輯自己在範圍內挑，
+       初始航向沿用貫穿方向，因此是「順著飛出去再彎回來」而不是原地轉向。 */
+    moveAngle: o.moveAngle,
+    radius: bfMeterPx(Number(hfx.bodyM) || 1.5),
+    dmgVal: dmgVal, hits: Math.max(1, Math.round(lifeSec / gap)), gap: gap,
+    speed: sgIcearrowSpeed(), chaseM: Number(hfx.chaseM) || 30,
+    contact: true, frostSpec: frost, tickAtStart: true,
+    wave: o.wave, startDelaySec: o.startDelaySec
+  });
 }
 
 /* 一支冰箭命中一個敵人：本體傷害 → 寒霜 →【寒霜凍結】的追加層數與剩餘傷害引爆。

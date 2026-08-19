@@ -1460,6 +1460,17 @@ var BattleRenderer = (function () {
   }
 
   /* 投射物：追蹤目標實體（等速、travelMs 由協議帶來） */
+  /* 冰晶：四角菱形，而不是一般圓形彈體。飛行中的冰箭與轉入追擊後的冰箭是
+     同一個飛行物，外形因此只能有一份（追蹤段不得退化成圓球）。
+     scale＝1 為投射物本體尺寸（半高 11px）。 */
+  function drawIceShard(g, scale, c1, c2, alpha) {
+    var s = Math.max(0.2, Number(scale) || 1);
+    var a = (alpha === undefined || alpha === null) ? 1 : Math.max(0, Number(alpha));
+    g.poly([-9 * s, 0, 0, -11 * s, 9 * s, 0, 0, 11 * s]).fill({ color: c1, alpha: a })
+      .stroke({ color: c2, width: 2, alpha: 0.95 * a });
+    return g;
+  }
+
   function projectileCore(spec, theme) {
     var core = new PIXI.Graphics();
     var elem = spec && spec.elem;
@@ -1478,9 +1489,7 @@ var BattleRenderer = (function () {
       return core;
     }
     if (elem === 'ice') {
-      /* 冰晶：四角菱形，而不是一般圓形彈體。 */
-      core.poly([-9, 0, 0, -11, 9, 0, 0, 11]).fill(theme.c1)
-        .stroke({ color: theme.c2, width: 2, alpha: 0.95 });
+      drawIceShard(core, 1, theme.c1, theme.c2, 1);
       return core;
     }
     if (elem === 'earth') {
@@ -2640,10 +2649,11 @@ var BattleRenderer = (function () {
      實際判定範圍恆等（AI_RULES 8.3：不得由表現層自行挑一個固定尺寸）：
        暴風雪          blizzard          矩形雲霧＋落雪，跟隨我方
        水龍捲          water-tornado     圓形漏斗，釘在地板
-       追蹤冰箭        ice-arrow-homing  小圓冰晶，持續移動
+       追蹤冰箭        ice-arrow-homing  菱形冰晶（＝冰箭本體），持續移動
        追跡風刃        wind-blade-homing 小型風刃，持續追蹤
-     同一個 area.id 只保留一個節點、每次事件續命；追跡風刃只沿用場域的移動邏輯，
-     外形必須走風刃輪廓，不能退化成冰晶／藍色圓球。 */
+     同一個 area.id 只保留一個節點、每次事件續命；追蹤冰箭／追跡風刃只沿用場域的
+     移動邏輯，外形一律沿用飛行物本體（冰箭＝菱形冰晶、風刃＝半月刃），
+     不得退化成藍色圓球——那會看起來像另外多射出一種東西。 */
   var _iceFieldFx = Object.create(null);
   var ICE_FIELD_MAX_LIFE_SEC = 14;
   var ICE_FIELD_THEME = { c1: '#7dd3fc', c2: '#e0f2fe', glow: '#22d3ee' };
@@ -3072,10 +3082,25 @@ var BattleRenderer = (function () {
     };
     _iceFieldFx[key] = fx;
     var flakeAt = 0;
-    var fieldTheme = variant === 'wind-blade-homing' ? themeOf({ elem: 'wind' }) : ICE_FIELD_THEME;
+    /* 追蹤中的冰箭／風刃是「飛行物本體」，配色必須與飛出去的那一支相同；
+       只有真正的場域（暴風雪／水龍捲）才用場域自己的冰霧色。 */
+    var fieldTheme = variant === 'wind-blade-homing' ? themeOf({ elem: 'wind' })
+      : (variant === 'ice-arrow-homing' ? themeOf({ elem: 'ice' }) : ICE_FIELD_THEME);
     var c1 = cssColorToInt(fieldTheme.c1, 0x7dd3fc);
     var c2 = cssColorToInt(fieldTheme.c2, 0xe0f2fe);
     var glow = cssColorToInt(fieldTheme.glow, 0x22d3ee);
+    /* 冰箭的加色光暈：與飛行中的冰箭同一組（spawnProjectile 的 glow），
+       否則同一支箭在轉入追擊的瞬間會突然變暗。 */
+    var homingGlow = null;
+    if (variant === 'ice-arrow-homing') {
+      homingGlow = new PIXI.Sprite(glowTexture());
+      homingGlow.anchor.set(0.5);
+      homingGlow.tint = glow;
+      homingGlow.alpha = 0.8;
+      homingGlow.scale.set(0.9);
+      homingGlow.blendMode = 'add';
+      node.addChildAt(homingGlow, 0);
+    }
 
     addFx({
       node: node,
@@ -3097,11 +3122,12 @@ var BattleRenderer = (function () {
           fieldVfxStep(fx, dt);
         }
         node.x = fx.x; node.y = fx.y;
-        node.rotation = fx.variant === 'wind-blade-homing'
-          ? fieldVfxWindAngleStep(fx, dt) : 0;
+        // 追擊中的飛行物一律朝著自己正在飛的方向（冰箭與風刃同一套）
+        node.rotation = isHoming ? fieldVfxWindAngleStep(fx, dt) : 0;
         var left = fx.expiresAt - nowMs();
         var fade = left < 420 ? Math.max(0, left / 420) : 1;
         var phase = fx.t * 2.2;
+        if (homingGlow) homingGlow.alpha = 0.8 * fade;
         g.clear();
 
         if (fx.variant === 'blizzard') {
@@ -3146,24 +3172,17 @@ var BattleRenderer = (function () {
           drawWindCrescent(g, Math.max(8, fx.w), Math.max(5, fx.w * 0.38),
             themeOf({ elem: 'wind' }), fade);
         } else {
-          /* 追蹤冰箭：小顆冰晶＋尾焰光暈；體積就是模擬層的接觸半徑。 */
-          var ar = Math.max(5, fx.w * 0.5);
-          g.circle(0, 0, ar * 1.7).fill({ color: c1, alpha: 0.18 * fade });
-          g.circle(0, 0, ar).fill({ color: c2, alpha: 0.8 * fade });
-          g.circle(0, 0, ar).stroke({ width: 1.6, color: glow, alpha: 0.85 * fade });
-          for (var si2 = 0; si2 < 4; si2++) {
-            var sa = phase * 2.4 + si2 * Math.PI / 2;
-            g.moveTo(Math.cos(sa) * ar * 0.5, Math.sin(sa) * ar * 0.5)
-              .lineTo(Math.cos(sa) * ar * 1.8, Math.sin(sa) * ar * 1.8)
-              .stroke({ width: 1.4, color: c2, alpha: 0.55 * fade });
-          }
+          /* 追蹤冰箭＝剛才那支冰箭換了飛法，外形必須仍是冰箭本體的菱形冰晶，
+             不能改畫成圓球（那會看起來像另外多射出一種東西）。
+             尺寸取模擬層的接觸半徑：菱形半高＝判定半徑。 */
+          drawIceShard(g, Math.max(5, fx.w * 0.5) / 11, c1, c2, fade);
         }
 
         flakeAt += dt;
         if (fx.variant !== 'wind-blade-homing' && !REDUCED_MOTION && flakeAt > 0.3 && fade > 0.4) {
           flakeAt = 0;
           spawnParticles(fx.x + (Math.random() - 0.5) * fx.w * 0.6,
-            fx.y + (Math.random() - 0.5) * fx.h * 0.4, 2, ICE_FIELD_THEME, 0.8, 0.5);
+            fx.y + (Math.random() - 0.5) * fx.h * 0.4, 2, fieldTheme, 0.8, 0.5);
         }
         if (nowMs() >= fx.expiresAt) {
           fx.dead = true;

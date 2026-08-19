@@ -8403,13 +8403,28 @@ textarea:disabled,
   to { opacity: 0.75; }
 }
 
+/* 追蹤冰箭（DOM 後備路徑）：貫穿段與追擊段是同一個飛行物，
+   外形只能沿用冰箭本體的菱形冰晶，不畫成藍色圓球。 */
 .vfx-ice-homing {
   position: absolute;
   pointer-events: none;
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 45%,
-    rgba(255, 255, 255, 0.95), rgba(125, 211, 252, 0.7) 44%, rgba(34, 211, 238, 0.3) 76%, transparent 94%);
-  box-shadow: 0 0 16px rgba(34, 211, 238, 0.65);
+  overflow: visible;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.vfx-ice-homing-shard {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 22px;
+  background: linear-gradient(160deg, #f2fbff, #4da6ff 62%);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  filter: drop-shadow(0 0 6px #79d8ff);
+  transform: translate(-50%, -50%) scale(var(--vfx-ice-shard-scale, 1));
+  transform-origin: center;
   animation: vfxIceHomingPulse 0.55s ease-in-out infinite alternate;
 }
 
@@ -8444,21 +8459,9 @@ textarea:disabled,
   to { opacity: 1; filter: drop-shadow(0 0 8px #b9f6cf); }
 }
 
-.vfx-ice-shard {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 2px;
-  height: 90%;
-  margin-left: -1px;
-  margin-top: -45%;
-  background: linear-gradient(180deg, transparent, rgba(224, 242, 254, 0.85), transparent);
-  transform: rotate(var(--vfx-shard-rot, 0deg));
-}
-
 @keyframes vfxIceHomingPulse {
-  from { opacity: 0.85; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1.12); }
+  from { opacity: 0.85; filter: drop-shadow(0 0 4px #79d8ff); }
+  to { opacity: 1; filter: drop-shadow(0 0 9px #bde9ff); }
 }
 
 /* ---- 光柱審判：天光射下→觸地散開 ---- */

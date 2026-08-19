@@ -349,8 +349,20 @@ test('【寒冰爆裂箭】轉為追擊場域，並採接觸判定', () => {
   c.castSkill2(p, es, 'icearrow', 'mv-float');
   const homing = c.SKILL2_RT.grounds.filter((f) => f.kind === 'icearrow');
   assert.equal(homing.length, 9, '三波各發射 3 支追蹤冰箭');
-  assert.deepEqual([...new Set(homing.map((f) => f.startAt))], [0, 0.3, 0.6],
-    '三波啟動時間為 0、0.3、0.6 秒');
+  /* 追擊段是「同一支箭飛完直線之後換飛法」，不是與冰箭同時射出的第二個飛行物：
+     因此啟動時間＝該波的發射時刻＋貫穿飛行時間，三波仍相隔 0.3 秒。 */
+  const starts = [...new Set(homing.map((f) => f.startAt))].sort((a, b) => a - b);
+  assert.equal(starts.length, 3, '三波各有自己的啟動時間');
+  assert.ok(starts[0] > 0, '追擊段不在施放當下出現：要等那支貫穿箭飛完直線');
+  assert.ok(Math.abs((starts[1] - starts[0]) - 0.3) < 1e-9 &&
+    Math.abs((starts[2] - starts[1]) - 0.3) < 1e-9, '三波間隔 0.3 秒');
+  const muzzle = c.bfPlayerPos();
+  homing.forEach((f) => {
+    const flown = Math.sqrt(Math.pow(f.pos.x - muzzle.x, 2) + Math.pow(f.pos.y - muzzle.y, 2));
+    assert.ok(Math.abs(flown - starts[0] * f.speed) < 1e-6,
+      '出生點＝貫穿段的終點（飛行時間 × 速度），不是玩家腳下');
+    assert.equal(typeof f.moveAngle, 'number', '初始航向沿用貫穿方向，不從零開始轉');
+  });
   homing.forEach((f) => {
     assert.equal(f.contact, true, '接觸判定：進入才算一次命中，不是每個節拍全額命中');
     assert.equal(f.chaseM, 30, '追擊範圍沿用表定 30 米');
