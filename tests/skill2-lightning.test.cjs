@@ -237,6 +237,23 @@ test('連鎖閃電 T7：雷電暴風＝三道鏈、彈射 +1、傷害 +110%', ()
   assert.ok(Math.abs(calls[0].atk - 500 * 3.85) < 1e-9, '165% + 55% + 55% + 110% ＝ 385% 魔攻');
 });
 
+test('連鎖閃電 T7：每次彈射有 20% 機率生成同規格閃電鏈', () => {
+  const c = loadContext();
+  stubHits(c);
+  const specs = stubVfx(c);
+  const p = playerEnt();
+  const es = [];
+  for (let i = 0; i < 4; i++) es.push(enemy(1e9, (5 + i * 3) * M, 0));
+  setLevels(c, 'chainlightning', [1, 1, 1, 1, 1, 1, 1]);
+  assert.equal(c.SKILLS2.chainlightning.tiers[6].fx.chance, 20);
+  assert.match(c.SKILLS2.chainlightning.tiers[6].desc, /每次彈射有 \{chance\}% 機率生成 1 條閃電鏈/);
+  // 目標排序本身也會擲骰；全數必中可穩定驗證生成鏈的佇列路徑。
+  forceRolls(c, 0);
+  c.castSkill2(p, es, 'chainlightning', 'mv-float');
+  const chainStarts = specs.filter((spec) => spec.variant === 'lightning-chain' && spec.targets.length === 1);
+  assert.ok(chainStarts.length > 3, '3 道初始鏈外，彈射成功時應再生成閃電鏈');
+});
+
 test('連鎖閃電：彈射範圍外的敵人不會被跳到', () => {
   const c = loadContext();
   const calls = stubHits(c);

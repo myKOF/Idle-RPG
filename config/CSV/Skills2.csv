@@ -103,7 +103,7 @@ chainlightning,連鎖閃電,⚡,,magic,lightning,18,40,3,0|400,雷鳴術,"{""add
 chainlightning,連鎖閃電,⚡,,magic,lightning,18,40,4,0|450,強化連鎖,"{""add"":1,""addPer"":0.2}",800000,1.5,閃電鏈的彈射數額外 +{add} 次（不足 1 次的部分以機率觸發）
 chainlightning,連鎖閃電,⚡,,magic,lightning,18,40,5,0|500,電殛擴散,"{""pct"":25,""pctPer"":2.5,""count"":1,""m"":6}",1500000,1.5,閃電鏈每次彈射時，額外對 {m} 米內的 {count} 個敵人造成閃電鏈 {pct}% 的雷電傷害
 chainlightning,連鎖閃電,⚡,,magic,lightning,18,40,6,0|550,雷幻身,"{""pct"":50,""pctPer"":5}",3000000,1.5,閃電鏈傷害額外 +{pct}% 雷電傷害；沒有其它彈射目標時可用自身當中繼點繼續彈射（彈到自身不消耗彈射數）
-chainlightning,連鎖閃電,⚡,,magic,lightning,18,40,7,0|600,雷電暴風,"{""count"":3,""add"":1,""addPer"":0.1,""pct"":100,""pctPer"":10}",5000000,1.5,同時發射 {count} 道閃電鏈，彈射數額外 +{add} 次，且閃電傷害額外 +{pct}%
+chainlightning,連鎖閃電,⚡,,magic,lightning,18,40,7,0|600,雷電暴風,"{""count"":3,""add"":1,""addPer"":0.1,""pct"":100,""pctPer"":10,""chance"":20}",5000000,1.5,同時發射 {count} 道閃電鏈，彈射數額外 +{add} 次，且閃電傷害額外 +{pct}%；每次彈射有 {chance}% 機率生成 1 條閃電鏈
 thunderstrike,落雷術,🌩️,,magic,lightning,14,40,1,0|350,落雷術,"{""pct"":200,""pctPer"":20,""count"":2,""gap"":0.2,""castM"":30}",100000,1.5,對 {castM} 米內的 {count} 個目標降下落雷（每道間隔 {gap} 秒），每道造成 {pct}% 雷電傷害
 thunderstrike,落雷術,🌩️,,magic,lightning,14,40,2,0|400,落雷連鎖,"{""add"":1,""addPer"":0.1}",200000,1.5,攻擊目標額外 +{add} 個（不足 1 個的部分以機率觸發）
 thunderstrike,落雷術,🌩️,,magic,lightning,14,40,3,0|450,雙重落雷,"{""add"":1,""addPer"":0.1}",400000,1.5,對每個目標的攻擊次數額外 +{add} 次（不足 1 次的部分以機率觸發）
