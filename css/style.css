@@ -4491,6 +4491,75 @@ textarea:disabled,
   outline-offset: 2px;
 }
 
+/* ---- 超神進化（第 8 格）：與各階同一顆格子，只換配色以區隔「這是三選一的最終階」 ---- */
+.sg-stage-node.sg-stage-ult.sg-stage-unlocked {
+  border-color: #d8a13a;
+  background: linear-gradient(180deg, rgba(216, 161, 58, .34), rgba(140, 92, 20, .24));
+}
+
+.sg-stage-node.sg-stage-ult.sg-stage-learned {
+  box-shadow: 0 0 10px rgba(240, 190, 90, .6), inset 0 0 12px rgba(240, 190, 90, .22);
+}
+
+.sg-stage-node.sg-stage-ult .sg-stage-tier {
+  color: #f0be5a;
+  font-weight: bold;
+}
+
+/* 三選一卡片：直向堆疊。
+   技能彈窗只有 min(440px, 92vw) 寬，三張並排每張不到 130px，效果說明會被壓成細長條；
+   直向排列讓每一張都有完整寬度可讀，捲動交給下面的 .sg-ult-picking 容器。 */
+.sg-ult-picks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.sg-ult-pick {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #d8a13a;
+  border-radius: 6px;
+  background: rgba(216, 161, 58, .1);
+}
+
+/* 三選一版面：#skill-modal-body 平常是固定 5 列的 grid（48/24/140/28/66px），
+   卡片放進 140px 的固定軌一定溢位。選擇畫面改成自動列高＋整體可捲動。 */
+#skill-modal-body.sg-ult-picking {
+  grid-template-rows: auto;
+  min-height: 0;
+  max-height: 68vh;
+  overflow-y: auto;
+}
+
+.sg-ult-pick-name {
+  color: #f0be5a;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.sg-ult-pick-desc {
+  flex: 1 1 auto;
+  color: var(--text);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.sg-ult-pick-cost {
+  color: var(--dim);
+  font-size: 11px;
+}
+
+.skill-tag-ult {
+  border-color: #d8a13a;
+  background: rgba(216, 161, 58, .18);
+  color: #f0be5a;
+}
+
 .sg-stage-emoji {
   font-size: 18px;
   line-height: 1;

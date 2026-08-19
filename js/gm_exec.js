@@ -930,6 +930,49 @@
       gmDirty();
       return { ok: true, message: '新版技能等級設定：' + sgMsgs.join('；') };
     }
+    if (command === 'sgult') {
+      /* 超神進化（第 8 階）直設（測試用，不扣金幣）。
+         選擇本身是玩家決策，因此 maxskill2／sglv 一律不碰它——要測就用這一支。
+         格式：sgult 群組|all 1|2|3|off [等級|max] */
+      if (typeof SKILLS2 === 'undefined' || typeof sgUltDefs !== 'function') {
+        return { ok: false, message: '新版技能模組未載入（SKILLS2）' };
+      }
+      var ulTarget = String(args[0] || '').trim();
+      var ulOptRaw = String(args[1] || '').trim().toLowerCase();
+      var ulLvRaw = String(args[2] || 'max').trim().toLowerCase();
+      if (!ulTarget || !ulOptRaw) {
+        return { ok: false, message: '格式：sgult 群組|all 1|2|3|off [等級|max]' };
+      }
+      if (ulTarget !== 'all' && !SKILLS2[ulTarget]) {
+        return { ok: false, message: '未知群組：' + ulTarget };
+      }
+      var ulGids = ulTarget === 'all' ? Object.keys(SKILLS2) : [ulTarget];
+      var ulMax = (typeof SG_TIER_MAX_LV === 'number') ? SG_TIER_MAX_LV : 10;
+      var ulLv = ulLvRaw === 'max' ? ulMax : Math.max(0, Math.min(ulMax, Math.floor(Number(ulLvRaw) || 0)));
+      if (!G.player.skills2) G.player.skills2 = { levels: {} };
+      if (!G.player.skills2.ult) G.player.skills2.ult = {};
+      var ulMsgs = [];
+      for (var ulI = 0; ulI < ulGids.length; ulI++) {
+        var ulGid = ulGids[ulI];
+        var ulList = sgUltDefs(ulGid);
+        if (!ulList) continue;                       // 尚未開放超神進化的群組直接略過
+        if (ulOptRaw === 'off' || ulLv < 1) {
+          delete G.player.skills2.ult[ulGid];
+          ulMsgs.push(SKILLS2[ulGid].name + ' 已清除');
+          continue;
+        }
+        var ulIdx = Math.floor(Number(ulOptRaw)) - 1; // 指令用 1-based，存檔用 0-based
+        if (!(ulIdx >= 0 && ulIdx < ulList.length)) {
+          return { ok: false, message: '選項需為 1~' + ulList.length + '（或 off）' };
+        }
+        G.player.skills2.ult[ulGid] = { pick: ulIdx, lv: ulLv };
+        ulMsgs.push(SKILLS2[ulGid].name + '【' + ulList[ulIdx].name + '】Lv.' + ulLv);
+      }
+      if (!ulMsgs.length) return { ok: false, message: '指定的群組尚未開放超神進化' };
+      if (typeof markStatsDirty === 'function') markStatsDirty();
+      gmDirty();
+      return { ok: true, message: '超神進化設定：' + ulMsgs.join('；') };
+    }
     return { ok: false, message: '未知指令：' + command + '（輸入 help 查看文件）' };
   }
 

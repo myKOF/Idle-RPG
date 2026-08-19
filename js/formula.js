@@ -744,6 +744,10 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   if (!isFinite(attackerHit)) attackerHit = 100;
   var defenderDodge = Number(dCfg.dodge);
   if (!isFinite(defenderDodge)) defenderDodge = 0;
+  /* 絕對閃避（超神進化【幻影八方陣】）：與命中率無關的獨立擲骰，先於命中判定。
+     一般閃避是「命中率 − 閃避」且夾在 5%~100%，因此再高的閃避也擋不掉 5% 的保底命中；
+     「絕對閃避」的語意就是繞過那個保底，所以必須放在這一行之前，不能併進 dodge。 */
+  if (dCfg.absDodge > 0 && chance(dCfg.absDodge)) { out.miss = true; return out; }
   var hitChance = clamp(attackerHit - defenderDodge, 5, 100);
   if (!chance(hitChance)) { out.miss = true; return out; }
   // 潛力技能【絕對領域】／【不屈意志】無敵：免疫本次所有傷害。

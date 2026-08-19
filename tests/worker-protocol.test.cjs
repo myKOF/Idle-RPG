@@ -21,7 +21,7 @@ const EXPECTED_COMMAND_COUNTS = {
   gem: 14,
   player: 6,
   skill: 9,
-  skill2: 4,
+  skill2: 5,
   talent: 8,
   tower: 6,
   forge: 10,
@@ -109,11 +109,13 @@ test('凍結的 Worker 指令表有 92 條且分類數量固定', () => {
   //      skills 面板新增 skills2 欄位（tierMax + 各群組各階等級），88 → 90
   // v20：技能施放飄字與重要 VFX 改走低延遲 visual 訊息，不等待一般 tick
   // v22：VFX 環形 area 新增可選 spinRate，讓火狩畫面同步模擬層角速度
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 22);
+  // v23：超神進化（技能第 8 格）——新增 skill2.ultPick、skill2.* 的 tier 上限由 6 放寬到 7、
+  //      skills 面板的 skills2 新增 ult 欄位（各群組已選的選項索引與等級），92 → 93
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 23);
   assert.equal(protocol.MSG_OUT.VISUAL, 'visual');
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   const names = Object.keys(protocol.COMMANDS);
-  assert.equal(names.length, 92);
+  assert.equal(names.length, 93);
 
   const counts = {};
   for (const name of names) {

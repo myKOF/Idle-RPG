@@ -534,6 +534,32 @@ function bfNearestOthers(from, enemies, count, maxGapPx) {
   return out;
 }
 
+/* ---- 拉近（傳奇特效【聚敵旋渦】）----
+   把離我方 fromPx 以內、但比 toPx 還遠的敵人，沿原本的方位角拉到 toPx 的圓周上。
+   座標改寫一律走本檔（幾何唯一權威）：呼叫端只給「多遠以內的拉、拉到多近」。
+   不會把敵人拉進停止距離內（否則會直接疊在玩家身上，逼近推擠那一段還要再推開一次）；
+   沒有座標的實體（高塔 BOSS）一律略過。回傳實際被拉動的實體陣列。 */
+function bfPullEnemies(enemies, fromPx, toPx) {
+  var moved = [];
+  if (!(fromPx > 0)) return moved;
+  var live = bfLiveList(enemies);
+  var c = bfPlayerPos();
+  for (var i = 0; i < live.length; i++) {
+    var ent = live[i];
+    var p = bfPos(ent);
+    if (!p) continue;
+    var dx = p.x - c.x, dy = p.y - c.y;
+    var d = Math.sqrt(dx * dx + dy * dy);
+    if (!(d > 0) || d > fromPx) continue;
+    var want = Math.max(bfStopDistance(ent), Math.max(0, Number(toPx) || 0));
+    if (d <= want) continue;
+    p.x = c.x + dx / d * want;
+    p.y = c.y + dy / d * want;
+    moved.push(ent);
+  }
+  return moved;
+}
+
 /* 以某實體為中心、半徑 rPx 的圓內所有存活敵人（含中心實體自己）。 */
 function bfTargetsAround(center, enemies, rPx) {
   var p = bfPos(center);

@@ -3039,7 +3039,7 @@ var BattleRenderer = (function () {
     var a = spec && spec.area;
     if (!a || !isFinite(a.x) || !isFinite(a.y)) return null;
     var variant = spec.variant;
-    if (variant === 'water-tornado') {
+    if (variant === 'water-tornado' || variant === 'wind-tornado') {
       return spawnFirePillar(a, spec);
     }
     var isRect = (variant === 'blizzard');
@@ -3157,7 +3157,7 @@ var BattleRenderer = (function () {
             var fyy = -ry + fall;
             g.circle(fxx, fyy, 1.6 + (fi % 3) * 0.7).fill({ color: c2, alpha: 0.6 * fade });
           }
-        } else if (fx.variant === 'water-tornado') {
+        } else if (fx.variant === 'water-tornado' || fx.variant === 'wind-tornado') {
           /* 水龍捲：由下往上收窄的漏斗，以同心橢圓堆疊表示旋轉。 */
           var tr = fx.w * 0.5;
           g.circle(0, 0, tr).fill({ color: c1, alpha: 0.14 * fade });
@@ -3700,7 +3700,7 @@ var BattleRenderer = (function () {
   var FIRE_PILLAR_MAX_LIFE_SEC = 4.5;
   function spawnFirePillar(area, spec) {
     if (!area || !isFinite(area.x) || !isFinite(area.y)) return null;
-    var isWater = spec && (spec.variant === 'water-tornado' || spec.elem === 'ice');
+    var isWater = spec && (spec.variant === 'water-tornado' || spec.variant === 'wind-tornado' || spec.elem === 'ice');
     var key = (area.id || [Math.round(area.x), Math.round(area.y), Math.round(area.r || 0)].join(':')) + (isWater ? ':water' : '');
     var holdMs = Math.max(900, Number(spec.dur || 0.5) * 2400);
     var current = _firePillarFx[key];
@@ -4263,6 +4263,8 @@ var BattleRenderer = (function () {
               posOf(targets[0]).x - playerMuzzle().x)
             : ((S.player && S.player.facing < 0) ? Math.PI : 0);
           var arcFlightMs = Math.round(Math.max(0.38, spec.dur || 0.5) * 1000);
+          /* 弧光飛行距離：與 DOM 端同一個語意參數（模擬層的 lineLength），沒帶就退回 120px。 */
+          var arcLen = Number(spec.lineLength) > 0 ? Number(spec.lineLength) : 120;
           for (var clc = 0; clc < count; clc++) {
             var clDelay = (baseDelay + clc * stagger) / 1000;
             var cleaveFrom = playerMuzzle();
@@ -4271,13 +4273,13 @@ var BattleRenderer = (function () {
               for (var cdi = 0; cdi < 4; cdi++) {
                 spawnCleaveArc(cleaveFrom.x, cleaveFrom.y, spec,
                   frontAngle + cdi * Math.PI / 2, clDelay,
-                  { angle: frontAngle + cdi * Math.PI / 2, length: 120 });
+                  { angle: frontAngle + cdi * Math.PI / 2, length: arcLen });
               }
             }
             if (drawForward) spawnCleaveArc(cleaveFrom.x, cleaveFrom.y, spec, frontAngle, clDelay,
-              { angle: frontAngle, length: 120 });
+              { angle: frontAngle, length: arcLen });
             if (drawBack) spawnCleaveArc(cleaveFrom.x, cleaveFrom.y, spec, frontAngle + Math.PI, clDelay,
-              { angle: frontAngle + Math.PI, length: 120 });
+              { angle: frontAngle + Math.PI, length: arcLen });
           }
           if (!spec.projectile) {
             targets.forEach(function (id, ti) {
@@ -4289,11 +4291,11 @@ var BattleRenderer = (function () {
               var arcHitDelay = 90;
               if (drawCross) {
                 var targetDistance = Math.sqrt(targetDx * targetDx + targetDy * targetDy);
-                arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetDistance / 120)));
+                arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetDistance / arcLen)));
               } else if (drawForward && targetAlong >= 0) {
-                arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetAlong / 120)));
+                arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetAlong / arcLen)));
               } else if (drawBack && targetAlong < 0) {
-                arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, -targetAlong / 120)));
+                arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, -targetAlong / arcLen)));
               }
               for (var clHit = 0; clHit < count; clHit++) {
                 (function (hitIndex, hitDelay) {
@@ -4435,7 +4437,7 @@ var BattleRenderer = (function () {
         else if (spec.variant === 'thunder-orb') spawnThunderOrbField(spec);
         else if (spec.variant === 'firewall') spawnFireWall(spec);
         else if (spec.variant === 'mire' || spec.variant === 'mire-lava' || spec.variant === 'mire-poison' || spec.variant === 'mire-lava-poison') spawnMirePool(spec);
-        else if (spec.variant === 'blizzard' || spec.variant === 'water-tornado' ||
+        else if (spec.variant === 'blizzard' || spec.variant === 'water-tornado' || spec.variant === 'wind-tornado' ||
                  spec.variant === 'ice-arrow-homing' || spec.variant === 'wind-blade-homing') spawnIceField(spec);
         else if (spec.variant === 'void-disc') spawnVoidDisc(spec);
         else if (spec.variant === 'storm-barrier' || spec.variant === 'storm-god' ||

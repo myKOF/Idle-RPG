@@ -1443,7 +1443,7 @@ function vfxPillar(spec, layer, pt, targetId, delayMs) {
 function vfxFirePillar(spec, layer, area, fallbackPt) {
   var pt = fallbackPt;
   if (!pt || !isFinite(pt.x) || !isFinite(pt.y)) return null;
-  var isWater = spec && (spec.variant === 'water-tornado' || spec.elem === 'ice');
+  var isWater = spec && (spec.variant === 'water-tornado' || spec.variant === 'wind-tornado' || spec.elem === 'ice');
   var radius = Math.max(22, Number(area && area.r) || 30);
   var key = (area && area.id ? String(area.id) : [Math.round(pt.x), Math.round(pt.y), Math.round(radius)].join(':')) +
     (isWater ? ':water' : '');
@@ -1671,7 +1671,7 @@ function vfxIceField(spec, layer, area, rect) {
     return node;
   }
   var cls = (variant === 'blizzard') ? 'vfx-blizzard'
-    : ((variant === 'water-tornado') ? 'vfx-water-tornado'
+    : ((variant === 'water-tornado' || variant === 'wind-tornado') ? 'vfx-water-tornado'
       : ((variant === 'wind-blade-homing') ? 'vfx-wind-homing' : 'vfx-ice-homing'));
   node = vfxNode('vfx-field-motion', layer, null);
   node._vfxFieldVisual = vfxFieldVisual(node, cls, spec, w, visualH);
@@ -2335,7 +2335,7 @@ function renderCombatVfx(spec) {
       for (var si = 0; si < sm.pts.length; si++) vfxSmite(s, layer, sm.pts[si], sm.ids[si], baseDelay);
       return;
     }
-    var isIceField = s.variant === 'blizzard' || s.variant === 'water-tornado' ||
+    var isIceField = s.variant === 'blizzard' || s.variant === 'water-tornado' || s.variant === 'wind-tornado' ||
       s.variant === 'ice-arrow-homing' || s.variant === 'wind-blade-homing';
     /* 追跡風刃不是地面範圍提示：不可讀取棋盤格集合建立綠色方塊，
        只使用模擬層 area.x/y 讓小型風刃本體平滑移動。 */
@@ -2365,7 +2365,7 @@ function renderCombatVfx(spec) {
       else if (s.variant === 'firewall') vfxFireWall(s, layer, spec.area, rect);
       else if (s.variant === 'mire' || s.variant === 'mire-lava' || s.variant === 'mire-poison' || s.variant === 'mire-lava-poison') vfxMirePool(s, layer, spec.area, rect);
       else if (s.variant === 'thunder-orb') vfxThunderOrb(s, layer, spec.area, rect);
-      else if (s.variant === 'water-tornado') {
+      else if (s.variant === 'water-tornado' || s.variant === 'wind-tornado') {
         var tornadoPt = (spec.area && isFinite(spec.area.x) && isFinite(spec.area.y))
           ? { x: Number(spec.area.x), y: Number(spec.area.y) }
           : (vfxPointOf(anchorId, layer) || { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2 });
@@ -2531,6 +2531,10 @@ function renderCombatVfx(spec) {
       ? Math.atan2(rt.pts[0].y - from.y, rt.pts[0].x - from.x)
       : 0;
     var arcFlightMs = vfxCleaveArcFlightMs(s);
+    /* 弧光飛行距離：模擬層帶來的 lineLength（震碎斬／裂空飛斬各自的實際距離）；
+       沒帶就沿用原本寫死的 120px。命中延遲的分母必須是同一個值，否則距離一拉長，
+       遠處的目標會全部被 Math.min(1, dist/120) 夾到 1 而同時跳傷害字。 */
+    var arcLen = Number(s.lineLength) > 0 ? Number(s.lineLength) : 120;
     for (var cc = 0; cc < count; cc++) {
       var cleaveDelay = baseDelay + cc * stagger;
       if (drawStaticForward && from) vfxCleaveArc(s, layer, from, cleaveDelay, frontAngle * 180 / Math.PI);
@@ -2538,14 +2542,14 @@ function renderCombatVfx(spec) {
         for (var cdi = 0; cdi < 4; cdi++) {
           var crossAngle = frontAngle + cdi * Math.PI / 2;
           vfxCleaveArc(s, layer, from, cleaveDelay,
-            crossAngle * 180 / Math.PI, null, { angle: crossAngle, length: 120 });
+            crossAngle * 180 / Math.PI, null, { angle: crossAngle, length: arcLen });
         }
       }
       if (drawForward && from) vfxCleaveArc(s, layer, from, cleaveDelay,
-        frontAngle * 180 / Math.PI, null, { angle: frontAngle, length: 120 });
+        frontAngle * 180 / Math.PI, null, { angle: frontAngle, length: arcLen });
       if (drawBack && from) vfxCleaveArc(s, layer, from, cleaveDelay,
         (frontAngle + Math.PI) * 180 / Math.PI, 'vfx-cleave-arc-back',
-        { angle: frontAngle + Math.PI, length: 120 });
+        { angle: frontAngle + Math.PI, length: arcLen });
     }
     if (!s.projectile) {
       for (var cti = 0; cti < rt.pts.length; cti++) {
@@ -2555,11 +2559,11 @@ function renderCombatVfx(spec) {
         var arcHitDelay = 90;
         if (drawCross) {
           var targetDistance = Math.sqrt(targetDx * targetDx + targetDy * targetDy);
-          arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetDistance / 120)));
+          arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetDistance / arcLen)));
         } else if (drawForward && targetAlong >= 0) {
-          arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetAlong / 120)));
+          arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetAlong / arcLen)));
         } else if (drawBack && targetAlong < 0) {
-          arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, -targetAlong / 120)));
+          arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, -targetAlong / arcLen)));
         }
         for (var ccc = 0; ccc < count; ccc++) {
           var cHitDelay = baseDelay + ccc * stagger + arcHitDelay + cti * 35;

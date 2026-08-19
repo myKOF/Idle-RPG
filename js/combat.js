@@ -811,6 +811,9 @@ function playerDefCfg(pEnt) {
             buffVal(pEnt, 'legendaryLightShieldRed'),
         globalDmgRed: st.globalDmgRed, undying: st.passives.undying || 0,
         invuln: !!effectActive(pEnt, 'invuln'), // 潛力【絕對領域】／【不屈意志】無敵
+        /* 超神進化【幻影八方陣】的絕對閃避：與命中率無關的獨立擲骰（formula.js resolveHit
+           在命中判定之前先擲一次）。這裡是它唯一的出口，因此野外與高塔一體生效。 */
+        absDodge: (typeof buffVal === 'function') ? Math.max(0, buffVal(pEnt, 'sgPhantomDodge')) : 0,
         undyingGuard: (typeof potentialSkillActive === 'function' && potentialSkillActive('lastStandUndying')),
         undyingGuardCd: (typeof potentialUndyingCd === 'function' ? potentialUndyingCd() : 90),
         normalDmgRed: st.normalDmgRed, eliteDmgRed: st.eliteDmgRed, bossDmgRed: st.bossDmgRed, // 敵種傷害抗性 → formula.js §3
@@ -1829,7 +1832,9 @@ var PLAYER_BUFF_ORDER = ['atkUp', 'defUp', 'aspdUp', 'evasionUp', 'critDmgUp', '
     // 潛力技能增益（極速之力/雷霆過載/時間坍縮/聖療逆轉/時空凝滯）
     'velocitySurge', 'lightningOverload', 'chronoCdr', 'sacredInvert', 'allDmgUp',
     // 新版技能增益（狂風斬/狂暴之舞/暴風之舞/嗜血狂怒，js/skills2.js）
-    'sgGale', 'sgCritUp', 'sgCritDmgUp', 'sgStorm', 'sgBloodrage'];
+    'sgGale', 'sgCritUp', 'sgCritDmgUp', 'sgStorm', 'sgBloodrage',
+    // 超神進化【幻影八方陣】：施放突刺後的短時間絕對閃避（2 秒，玩家要看得到還剩幾秒）
+    'sgPhantomDodge'];
 
 function activePlayerBuffs(ent) {
     if (!ent) return [];

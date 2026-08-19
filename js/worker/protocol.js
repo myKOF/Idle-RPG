@@ -30,7 +30,7 @@
    v16：新增 newforge.upgradePart（熔爐零件升級），86 → 87
    v15（2026-08-02 詞條規則外送）：equip 面板新增 affixRules（每種詞條的可用部位與
    品質門檻，取自 AFFIX_POOL）。任何「想洗出某條詞條」的一方不必再自己抄一份部位清單。 */
-var WORKER_PROTOCOL_VERSION = 22;
+var WORKER_PROTOCOL_VERSION = 23;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -260,12 +260,17 @@ var COMMANDS = {
   'skill.reorderLoadout':  { fn: null,                  args: { from: 'int', to: 'int' },         dirty: ['skills', 'battle'] },
 
   /* -- 新版技能群組（v19，js/skills2.js）--
-     group 是群組定義鍵（SKILLS2 的鍵）、tier 是階索引 0~6；裝載沿用
-     skill.equipLoadout／skill.unequipLoadout（id 帶 'sg:' 前綴，比照 'potential:'）。 */
-  'skill2.learn':          { fn: 'skills2Learn',        args: { group: 'str', tier: 'int' }, limit: { tier: { min: 0, max: 6 } }, dirty: ['skills', 'header'] },
-  'skill2.max':            { fn: null,                  args: { group: 'str', tier: 'int' }, limit: { tier: { min: 0, max: 6 } }, dirty: ['skills', 'header'] },
-  'skill2.downgrade':      { fn: 'skills2Downgrade',    args: { group: 'str', tier: 'int' }, limit: { tier: { min: 0, max: 6 } }, dirty: ['skills', 'header'] },
-  'skill2.delete':         { fn: null,                  args: { group: 'str', tier: 'int' }, limit: { tier: { min: 0, max: 6 } }, dirty: ['skills', 'header'] },
+     group 是群組定義鍵（SKILLS2 的鍵）、tier 是格位索引 0~7；裝載沿用
+     skill.equipLoadout／skill.unequipLoadout（id 帶 'sg:' 前綴，比照 'potential:'）。
+     ⚠️ tier 上限 7 是「超神進化」那一格（SG_ULT_SLOT，2026-08-19）：它不是 tiers 的
+     第 8 個元素，而是群組層的三選一效果；Worker 端各指令自己以 sgIsUltSlot 分流，
+     沒有開放超神進化的群組傳 7 會被該指令回「未知階數」。 */
+  'skill2.learn':          { fn: 'skills2Learn',        args: { group: 'str', tier: 'int' }, limit: { tier: { min: 0, max: 7 } }, dirty: ['skills', 'header'] },
+  'skill2.max':            { fn: null,                  args: { group: 'str', tier: 'int' }, limit: { tier: { min: 0, max: 7 } }, dirty: ['skills', 'header'] },
+  'skill2.downgrade':      { fn: 'skills2Downgrade',    args: { group: 'str', tier: 'int' }, limit: { tier: { min: 0, max: 7 } }, dirty: ['skills', 'header'] },
+  'skill2.delete':         { fn: null,                  args: { group: 'str', tier: 'int' }, limit: { tier: { min: 0, max: 7 } }, dirty: ['skills', 'header'] },
+  /* 超神進化三選一：opt 是選項索引 0~2（SG_ULT_OPTION_COUNT）。 */
+  'skill2.ultPick':        { fn: 'skills2UltPick',      args: { group: 'str', opt: 'int' },  limit: { opt: { min: 0, max: 2 } },  dirty: ['skills', 'header'] },
 
   /* -- 天賦與潛能 --
      id 是天賦定義鍵（def.id），不是實例 id，不需要解析成物件。 */
