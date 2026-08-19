@@ -88,6 +88,9 @@ var SG_TIER_COUNT = 7;        // 每群組階數
 var SG_FLYING_PROJECTILE_SPEED = 240;
 /* 寒冰箭表定速度：30 米／秒；戰場座標固定為 10 單位／米。 */
 var SG_ICEARROW_SPEED = 300;
+/* 寒冰箭第 1 階（還沒變成貫穿）挑目標用的「前方正面」扇形。這一階是單體攻擊，
+   一支箭咬一個敵人，箭道夾角不重要；變成貫穿之後就不再挑目標，故只用於該階。 */
+var SG_ICEARROW_AIM_DEG = 45;
 var SG_FLYING_PROJECTILE_HALF_WIDTH = 8;
 var SG_FLYING_PROJECTILE_REHIT_SEC = 0.5;
 var SG_METEOR_INTERVAL_MS = 350;
@@ -890,12 +893,7 @@ function sgQueueFlyingProjectile(pEnt, st, gid, dmgVal, origin, angle, length, f
     nextPulseAt: begin + Math.max(0.05, Number(extra && extra.pulseGap) || 0.5),
     /* 命中時附加的減益（狂風碎裂的移速下降）：狀態鍵與數值由呼叫端指定。 */
     slowStatus: (extra && extra.slowStatus) || '',
-    slowPct: Math.max(0, Number(extra && extra.slowPct) || 0),
-    /* 保證命中的指派目標（寒冰箭的扇形齊射）：箭道散開之後，被指派的敵人
-       通常不在自己那條箭道上，但文檔的語意是「每支箭對 1 個敵人造成傷害」。
-       它會在箭飛到它身旁的那一刻結算一次；已被箭道掃到就不再重複（走 states 去重）。 */
-    mustHit: (extra && extra.mustHit) || null,
-    mustHitDone: false
+    slowPct: Math.max(0, Number(extra && extra.slowPct) || 0)
   };
   out._pendingProjectiles = (out._pendingProjectiles || 0) + 1;
   SKILL2_RT.projectiles.push(p);
@@ -983,22 +981,6 @@ function sgProjectilePulse(projectile, now, distance, enemies, ctx) {
   }
 }
 
-/* 保證命中：把指派目標插進「這一段剛掃到的敵人」名單——時機取它在箭道上的
-   投影距離（＝箭飛到它身旁的那一刻），不是起飛或抵達的瞬間，因此傷害數字
-   仍然跟著箭走。命中與否的去重交給 projectile.states，不會與箭道命中重覆結算。 */
-function sgProjectileMustHit(projectile, crossed, distance) {
-  var ent = projectile.mustHit;
-  if (!ent || projectile.mustHitDone || ent.hp <= 0 || !projectile.origin) return crossed;
-  var p = (typeof bfPos === 'function') ? bfPos(ent) : null;
-  if (!p) return crossed;
-  var along = (p.x - projectile.origin.x) * Math.cos(projectile.angle) +
-    (p.y - projectile.origin.y) * Math.sin(projectile.angle);
-  along = Math.max(0, Math.min(projectile.length, along));
-  if (distance < along) return crossed;
-  projectile.mustHitDone = true;
-  return (crossed.indexOf(ent) >= 0) ? crossed : crossed.concat([ent]);
-}
-
 function sgTickFlyingProjectiles(dt, ctx) {
   var list = SKILL2_RT.projectiles;
   if (!list || !list.length) return;
@@ -1023,8 +1005,6 @@ function sgTickFlyingProjectiles(dt, ctx) {
     if (projectile.targetOnly) {
       crossed = (now >= projectile.endAt && projectile.fallbackTargets.length)
         ? [projectile.fallbackTargets[0]] : [];
-    } else if (projectile.mustHit && projectile.origin) {
-      crossed = sgProjectileMustHit(projectile, crossed, distance);
     }
     for (var ci = 0; ci < crossed.length; ci++) {
       if (sgProjectileState(projectile, crossed[ci])) continue;
@@ -3692,8 +3672,9 @@ function sgIceBlastVictims(ent, enemies, radius) {
    因此畫面上只會有一顆冰箭，中途改變飛法而已。
    =========================================================================== */
 
-/* 寒冰箭的瞄準：第 1 階是「前方扇形內的單體攻擊」，一支箭鎖一個敵人，
-   目標不足時輪流分配（比照飛刀與雙刀亂舞的既有語意）。
+/* 寒冰箭的瞄準：**只有還沒變成貫穿的第 1 階需要挑目標**——那一階是單體攻擊，
+   一支箭鎖前方正面最近的一個敵人，目標不足時輪流分配（比照飛刀與雙刀亂舞的既有語意）。
+   變成貫穿之後路徑上的敵人一律受傷，箭改為均等分散開，不再經過這裡。
    無座標時（高塔）沒有扇形可言，全部打主目標。 */
 function sgIcearrowAim(primary, pool, count, deg, rangePx) {
   var picks = [primary];
@@ -3709,7 +3690,8 @@ function sgIcearrowAim(primary, pool, count, deg, rangePx) {
   return arrows;
 }
 
-/* 箭的傷害路徑仍鎖定各自目標；laneAngle 只供畫面畫出不重疊的 15 度箭道。 */
+/* 貫穿之後的箭道：以主目標方位為中心均等分，相鄰兩支相隔 stepDeg 度。
+   這是傷害幾何本身（顯示層用同一個角度），不是只給畫面看的。 */
 function sgIcearrowLaneAngle(center, index, count, stepDeg) {
   var base = (center === null || center === undefined || !isFinite(center)) ? 0 : center;
   return base + (index - (count - 1) / 2) * stepDeg * Math.PI / 180;
@@ -3735,13 +3717,9 @@ function sgIcearrowReach(ent) {
 
 /* 貫穿長度：文檔的「10 米＋每級 2 米」是箭本身的行程。單看字面值會讓投資第 4 階
    變成降級（射程 30 米的技能只剩 12 米行程，遠處的主目標反而打不到），
-   因此以「打得到目標」為地板——與泥沼術持續時間取 max 的既有處理同一個理由。
-   targets 為這次齊射的全部指派目標：整個扇形共用一個行程，箭道才會等長。 */
-function sgIcearrowPierceLen(lvs, fx, targets) {
-  var len = bfMeterPx(sgVal(fx, 'm', lvs[3]));
-  var list = Array.isArray(targets) ? targets : [targets];
-  for (var i = 0; i < list.length; i++) len = Math.max(len, sgIcearrowReach(list[i]));
-  return len;
+   因此以「打得到主目標」為地板——與泥沼術持續時間取 max 的既有處理同一個理由。 */
+function sgIcearrowPierceLen(lvs, fx, primary) {
+  return Math.max(bfMeterPx(sgVal(fx, 'm', lvs[3])), sgIcearrowReach(primary));
 }
 
 function sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out) {
@@ -3756,8 +3734,6 @@ function sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var pierce = lvs[3] > 0 || lvs[6] > 0;   // 追蹤冰箭同樣先貫穿一次
   var geomOk = (typeof bfAngleTo === 'function') && bfAngleTo(primary) !== null;
   var laneStepDeg = Number(t[0].fx.deg) || 15;
-  var arrows = sgIcearrowAim(primary, pool, count, laneStepDeg * Math.max(1, count - 1),
-    skills2CastRangePx('icearrow', lvs));
   var centerAngle = geomOk ? bfAngleTo(primary) : 0;
 
   /* 【寒冰爆裂箭】的連射：波數是第 7 階的性質，與有沒有座標無關，
@@ -3767,22 +3743,22 @@ function sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var waveGap = homingFx ? Math.max(0, Number(homingFx.waveGap) || 0.3) : 0;
 
   if (pierce && geomOk) {
-    var lineLen = sgIcearrowPierceLen(lvs, t[3].fx, arrows);
+    /* 貫穿之後就沒有「這支箭該對準誰」的問題了：路徑上的敵人一律受傷，
+       所以箭只要均等分散開——以主目標方位為中心、相鄰夾角 deg 度。
+       傷害幾何與畫面用的是同一個角度：這一段的終點就是追擊段的起點，
+       兩者若不同角度，冰箭在轉入追擊的瞬間會憑空橫移一大段。 */
+    var lineLen = sgIcearrowPierceLen(lvs, t[3].fx, primary);
     var origin = bfPlayerPos();
     var halfWidth = SG_FLYING_PROJECTILE_HALF_WIDTH;
     var flightSec = lineLen / sgIcearrowSpeed();
     for (var wave = 0; wave < waveCount; wave++) {
       var waveDelay = wave * waveGap;
-      for (var ai = 0; ai < arrows.length; ai++) {
-        /* 每支箭飛自己的箭道（相鄰夾角 deg 度、以主目標方位為中心散開），
-           傷害幾何與畫面用的是同一個角度：這一段的終點就是追擊段的起點，
-           兩者若不同角度，冰箭在轉入追擊的瞬間會憑空橫移一大段。
-           箭道上的敵人照樣被貫穿；被指派的那個敵人則由 mustHit 保證命中
-           （文檔：每支箭對 1 個敵人造成傷害），散開因此不等於變成亂射。 */
-        var laneAngle = sgIcearrowLaneAngle(centerAngle, ai, arrows.length, laneStepDeg);
+      for (var ai = 0; ai < count; ai++) {
+        var laneAngle = sgIcearrowLaneAngle(centerAngle, ai, count, laneStepDeg);
         var path = bfLineTargets(laneAngle, lineLen, pool, halfWidth, origin);
-        if (arrows[ai].hp > 0 && path.indexOf(arrows[ai]) < 0) path.unshift(arrows[ai]);
-        sgEmitVfx('icearrow', path.length ? path : [arrows[ai]], floatSel, {
+        /* 這條箭道上一個敵人都沒有也照樣送事件（targets 可以是空的）：
+           畫面上那支箭仍要飛出去，方位與行程由 angle／lineLength 帶給顯示層。 */
+        sgEmitVfx('icearrow', path, floatSel, {
           fxKind: 'projectile', variant: 'ice-arrow-pierce', elem: 'ice', count: 1,
           lineLength: lineLen, lineWidth: Math.max(20, halfWidth * 2), angle: laneAngle,
           delayMs: Math.round(waveDelay * 1000),
@@ -3790,11 +3766,10 @@ function sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out) {
         });
         sgQueueFlyingProjectile(pEnt, st, 'icearrow', dmgVal, origin, laneAngle, lineLen,
           floatSel, path, { halfWidthPx: halfWidth, hitFn: sgIcearrowProjectileHit,
-            frostSpec: frost, speed: sgIcearrowSpeed(), beginSec: waveDelay,
-            mustHit: arrows[ai] }, out);
+            frostSpec: frost, speed: sgIcearrowSpeed(), beginSec: waveDelay }, out);
         // 這支箭飛完直線之後，就地從終點轉入追擊模式（同一個飛行物換飛法）
         if (homingFx) {
-          sgSpawnIcearrowHoming(pEnt, st, homingFx, arrows[ai], dmgVal, frost, floatSel, {
+          sgSpawnIcearrowHoming(pEnt, st, homingFx, primary, dmgVal, frost, floatSel, {
             from: { x: origin.x + Math.cos(laneAngle) * lineLen,
               y: origin.y + Math.sin(laneAngle) * lineLen },
             moveAngle: laneAngle, wave: wave, startDelaySec: waveDelay + flightSec
@@ -3803,16 +3778,20 @@ function sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       }
     }
   } else {
-    /* 每支箭各自帶 laneAngle，避免顯示層把不同箭道疊回同一條線。 */
+    /* 還沒變成貫穿的第 1 階是單體攻擊：挑前方正面最近的幾個敵人，一支箭咬一個，
+       箭就直接飛向自己的目標（這裡沒有箭道扇形可言，夾角由目標位置決定）。 */
+    var arrows = sgIcearrowAim(primary, pool, count, SG_ICEARROW_AIM_DEG,
+      skills2CastRangePx('icearrow', lvs));
     for (var wv = 0; wv < waveCount; wv++) {
       var wvDelayMs = Math.round(wv * waveGap * 1000);
       for (var i = 0; i < arrows.length; i++) {
         var travelMs = sgIcearrowTravelMs(arrows[i]);
-        var laneAngle = sgIcearrowLaneAngle(centerAngle, i, arrows.length, laneStepDeg);
+        var shotAngle = geomOk ? bfAngleTo(arrows[i]) : centerAngle;
+        if (shotAngle === null || shotAngle === undefined) shotAngle = centerAngle;
         var lineLength = (typeof bfTravelDistance === 'function') ? bfTravelDistance(arrows[i]) : 0;
         sgEmitVfx('icearrow', [arrows[i]], floatSel, {
           fxKind: 'projectile', variant: 'ice-arrow', elem: 'ice', count: 1,
-          angle: laneAngle, lineLength: lineLength, travelMs: [travelMs],
+          angle: shotAngle, lineLength: lineLength, travelMs: [travelMs],
           delayMs: wvDelayMs
         });
         sgIcearrowHit(pEnt, st, arrows[i], dmgVal, frost, lvs, floatSel, out,

@@ -1640,15 +1640,18 @@ var BattleRenderer = (function () {
   /* 貫穿冰箭是「一支箭沿直線穿過多個目標」，不能把路徑上的每個格子
      當成獨立目標再各自從玩家手上發射，否則畫面會看起來像逐格跳動。 */
   function spawnIcearrowPierce(spec, targets, travelMs, baseDelay, stagger, count) {
-    if (!targets.length) return;
+    /* 齊射的箭是均等分散開的，某一支的箭道上一個敵人都沒有很正常——
+       那支箭仍然要飛出去，因此不能因為 targets 是空的就整個不畫；
+       方位與行程由模擬層的 angle／lineLength 帶過來，不從目標反推。 */
+    if (!targets.length && !(isFinite(spec.angle) && Number(spec.lineLength) > 0)) return;
     var flight = projectileTravelMs(travelMs, spec.dur ? spec.dur * 1000 : 300);
     for (var c = 0; c < count; c++) {
       (function (cc) {
         setTimeout(function () {
           if (fxGate(spec)) return;
           var from = playerMuzzle();
-          var first = posOf(targets[0]);
-          var dx = first.x - from.x, dy = first.y - from.y;
+          var first = targets.length ? posOf(targets[0]) : null;
+          var dx = first ? first.x - from.x : 0, dy = first ? first.y - from.y : 0;
           var angle = isFinite(spec.angle) ? Number(spec.angle) : Math.atan2(dy, dx);
           var length = Number(spec.lineLength) > 0 ? Number(spec.lineLength) : Math.sqrt(dx * dx + dy * dy);
           if (!(length > 0)) return;

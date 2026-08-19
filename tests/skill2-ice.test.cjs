@@ -267,8 +267,11 @@ test('寒冰箭第 1 階：前方扇形內的單體攻擊，一支箭一個敵�
   assert.equal(calls[0].aCfg.skillElem, 'ice');
   const shots = specs.filter((s) => s.variant === 'ice-arrow');
   assert.equal(shots.length, 2, '每支箭各自送出一個投射物事件');
-  assert.ok(Math.abs(Math.abs(shots[1].angle - shots[0].angle) - 15 * Math.PI / 180) < 1e-9,
-    '相鄰箭道夾角固定 15 度，不重疊');
+  /* 這一階是單體攻擊：箭直接飛向自己那個敵人，沒有「一定要夾角幾度」的箭道。 */
+  const aimed = calls.map((x) => c.bfAngleTo(x.ent)).sort((a, b) => a - b);
+  const fired = shots.map((s) => s.angle).sort((a, b) => a - b);
+  fired.forEach((ang, i) => assert.ok(Math.abs(ang - aimed[i]) < 1e-9,
+    '每支箭的方位就是它自己那個目標的方位'));
   assert.equal(shots[0].travelMs[0], Math.round(5 * M / c.SG_ICEARROW_SPEED * 1000),
     '箭速為 30 米／秒');
 });
@@ -304,7 +307,10 @@ test('【貫穿冰箭】改為路徑貫穿，且貫穿長度不足時自動延�
   forceRolls(c, 0.999);
   const p = playerEnt(); c.FIELD.player = p;
   /* 主目標（＝最近的敵人）在 25 米處，遠超第 4 階 Lv.1 的 12 米貫穿長度；
-     路徑必須自動延長，否則投資第 4 階會讓原本打得到的目標變成打不到。 */
+     路徑必須自動延長，否則投資第 4 階會讓原本打得到的目標變成打不到。
+     ⚠️ 這裡刻意讓箭數為 3（投資【冰箭散射】）：均等分的箭道在奇數支時
+     正中央那條會朝正前方，兩個排成一直線的敵人才在同一條箭道上。 */
+  setLevels(c, 'icearrow', [1, 1, 1, 1, 1, 0, 0]);
   const es = [enemy(1e9, 25 * M, 0, '遠'), enemy(1e9, 28 * M, 0, '更遠')];
   c.castSkill2(p, es, 'icearrow', 'mv-float');
   run(c, p, es, 2);
@@ -314,19 +320,23 @@ test('【貫穿冰箭】改為路徑貫穿，且貫穿長度不足時自動延�
   assert.ok(specs.some((s) => s.variant === 'ice-arrow-pierce'), '送出貫穿特效');
 });
 
-/* 使用者驗收的形狀：一波 N 支冰箭要**散開**，相鄰兩支夾角 deg 度（表定 15），
-   三波就是 3×N 支。散開之後被指派的敵人多半不在自己那條箭道上，
-   但文檔寫的是「每支對 1 個敵人造成傷害」——所以散開不得換來漏打。 */
-test('【冰箭齊射】各支沿相鄰 15 度的箭道散開，且每支仍打中自己的指派目標', () => {
+/* 使用者定調的形狀：**變成貫穿之後就不再挑目標**——路徑上的敵人一律受傷，
+   所以箭只是均等分散開（相鄰夾角 deg 度、以主目標方位為中心），三波就是 3×N 支。 */
+test('【冰箭齊射】貫穿之後不挑目標：所有箭均等分，箭道上的敵人一律被貫穿', () => {
   const c = loadContext(); const calls = stubHits(c); const specs = stubVfx(c);
   setLevels(c, 'icearrow', [1, 1, 1, 1, 1, 1, 1]); equip(c, 'icearrow');
   forceRolls(c, 0.999);
   const p = playerEnt(); c.FIELD.player = p;
-  const es = [enemy(1e9, 20 * M, 0, 'A'), enemy(1e9, 20 * M, 2 * M, 'B'), enemy(1e9, 20 * M, -2 * M, 'C')];
+  const step = c.SKILLS2.icearrow.tiers[0].fx.deg;
+  const rad = step * Math.PI / 180;
+  /* 兩個敵人的方位剛好差一個箭道：不論誰被選為主目標（扇形的中心），
+     兩個都會落在某一條箭道上。 */
+  const front = enemy(1e9, 8 * M, 0, '正前');
+  const side = enemy(1e9, 6 * M * Math.cos(rad), 6 * M * Math.sin(rad), '斜前');
+  const es = [front, side];
   c.castSkill2(p, es, 'icearrow', 'mv-float');
   const pierce = specs.filter((s) => s.variant === 'ice-arrow-pierce');
   assert.equal(pierce.length, 9, '三波各三支箭（2 支 ＋【冰箭散射】1 支）');
-  const step = c.SKILLS2.icearrow.tiers[0].fx.deg;
   const wave0 = pierce.filter((s) => !s.delayMs).map((s) => s.angle).sort((a, b) => a - b);
   assert.equal(wave0.length, 3, '第一波三支箭各有自己的箭道');
   for (let i = 1; i < wave0.length; i++) {
@@ -335,7 +345,7 @@ test('【冰箭齊射】各支沿相鄰 15 度的箭道散開，且每支仍打�
   }
   run(c, p, es, 2);
   const names = new Set(calls.map((x) => x.ent.name));
-  ['A', 'B', 'C'].forEach((n) => assert.ok(names.has(n), n + ' 仍被指派給它的那支箭命中'));
+  ['正前', '斜前'].forEach((n) => assert.ok(names.has(n), n + ' 站在箭道上，應被貫穿'));
 });
 
 test('【寒霜凍結】對已帶寒霜的敵人結清剩餘凍傷並追加層數', () => {
