@@ -832,13 +832,15 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(vfx, /return Math\.max\(0\.12, isFinite\(sec\)/);
   assert.match(css, /\.vfx-wind-homing-blade[\s\S]*?transition: transform 120ms linear/);
 
-  // 主頁與 Worker 必須換版本，否則瀏覽器會繼續執行舊的綠色方框／逐格路徑。
+  /* 主頁與 Worker 必須換版本，否則瀏覽器會繼續執行舊的綠色方框／逐格路徑。
+     這幾條釘的是「目前的版號」——之後任何人再動這些檔、把版號往上推時，
+     連同這裡一起更新即可（釘住的用意是禁止「改了檔卻沒換版號」）。 */
   assert.match(index, /css\/style\.css\?v=1\.0\.49/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.59/);
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.92/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.50/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-icearrow-even-lanes-v8'/);
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260819-icearrow-even-lanes-v8/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.51/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-counter-mp'/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260819-counter-mp/);
 });
 
 /* 2026-08-19 回報三連：真空斬系的綠色落雷、風刃地板綠方塊、風刃一格一格移動。

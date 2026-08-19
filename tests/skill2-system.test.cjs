@@ -85,8 +85,11 @@ test('SKILLS2：23 個群組、每組 7 階、欄位齊全且說明模板的參�
     assert.ok(g.range === undefined || typeof g.range === 'string', gid + ' range 欄位型別不合法');
     assert.ok(g.dmgType === undefined || g.dmgType === 'phys' || g.dmgType === 'magic', gid + ' 傷害類型不合法');
     assert.ok(g.elem === undefined || typeof g.elem === 'string', gid + ' 傷害屬性欄位型別不合法');
-    // 被動群組（counter）無冷卻無耗魔；主動群組必須有正冷卻
-    assert.ok(isPassive ? (g.cd === 0 && g.cost === 0) : (g.cd > 0 && g.cost >= 0), gid + ' 冷卻/消耗不合法');
+    /* 被動群組不主動施放＝無群組冷卻；主動群組必須有正冷卻。
+       群組層 cost 對被動群組不再必須是 0——反擊自 2026-08-19 起每階觸發各自扣魔，
+       群組層那一格＝第 1 階的觸發消耗（實際扣魔看 tiers[i].cost，由
+       tests/skill2-counter-bloodrage.test.cjs 守）。 */
+    assert.ok(isPassive ? (g.cd === 0 && g.cost >= 0) : (g.cd > 0 && g.cost >= 0), gid + ' 冷卻/消耗不合法');
     assert.equal(g.tiers.length, c.SG_TIER_COUNT, gid + ' 階數不是 ' + c.SG_TIER_COUNT);
     g.tiers.forEach((t, i) => {
       assert.ok(t.name, gid + ' 第 ' + (i + 1) + ' 階缺名稱');

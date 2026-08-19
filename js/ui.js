@@ -2910,13 +2910,21 @@ function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
         : (isPotE
           ? uiPotentialLevelFromSnapshot(talentSnapshot, sk.id)
           : skillViewLevel(skillsSnapshot, entry));
+      /* 主動型被動的法力門檻＝已投資各階裡最便宜的觸發消耗（反擊每階觸發各自扣魔）；
+         恆時生效的被動（大地守護）沒有觸發消耗，門檻為 0。 */
+      var isPassiveE = isSgE && (typeof skills2IsPassive === 'function') && skills2IsPassive(entry.slice(3));
+      var passiveMinMpE = (isPassiveE && typeof skills2PassiveMinMp === 'function')
+        ? skills2PassiveMinMp(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3))) : 0;
+      var costE = isSgE
+        ? (isPassiveE ? passiveMinMpE : (Number(sk.cost) || 0))
+        : (isPotE ? 0 : skillManaCost(sk, lv));
       arr.push({
-        sk: sk, lv: lv, cd: cd, cost: isSgE ? (Number(sk.cost) || 0) : (isPotE ? 0 : skillManaCost(sk, lv)),
+        sk: sk, lv: lv, cd: cd, cost: costE,
         /* 主動型被動：恆時生效，不顯示冷卻與無魔。
            但個別階可以有自己的內部冷卻（大地守護【天地共生】把冷卻寫進同一個技能格），
-           冷卻中就退回一般技能的倒數呈現——否則畫面會宣稱它隨時可用。 */
-        passive: isSgE && (typeof skills2IsPassive === 'function') &&
-          skills2IsPassive(entry.slice(3)) && !(cd > 0)
+           冷卻中就退回一般技能的倒數呈現——否則畫面會宣稱它隨時可用；
+           法力不足以觸發任何一階時同理，退回一般技能呈現。 */
+        passive: isPassiveE && !(cd > 0) && !(costE > 0 && pEnt.mp !== undefined && pEnt.mp < costE)
       });
     }
 
@@ -3264,7 +3272,15 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
       : (isPotE
         ? uiPotentialLevelFromSnapshot(talentSnapshot, sk.id)
         : skillViewLevel(skillsSnapshot, entry));
-    var cost = isSgE ? (Number(sk.cost) || 0) : (isPotE ? 0 : (typeof skillManaCost === 'function' ? skillManaCost(sk, lv) : (Number(sk.cost) || 0)));
+    /* 主動型被動（js/skills2.js SG_PASSIVE）：裝上即生效、不主動施放，
+       在快捷列以旋轉流動外框和其他技能區分。反擊自 2026-08-19 起每階觸發要扣魔，
+       所以它的「法力門檻」＝已投資各階裡最便宜的那一階（低於此值整個被動都動不了）。 */
+    var isPassiveGroup = isSgE && (typeof skills2IsPassive === 'function') && skills2IsPassive(entry.slice(3));
+    var passiveMinMp = (isPassiveGroup && typeof skills2PassiveMinMp === 'function')
+      ? skills2PassiveMinMp(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3))) : 0;
+    var cost = isSgE
+      ? (isPassiveGroup ? passiveMinMp : (Number(sk.cost) || 0))
+      : (isPotE ? 0 : (typeof skillManaCost === 'function' ? skillManaCost(sk, lv) : (Number(sk.cost) || 0)));
     var rawCd = Number(sk.cd) || 5;
     var eqSnapshot = uiEquipPanelSnapshot();
     var pStats = (eqSnapshot && eqSnapshot.stats) || (typeof uiViewStats === 'function' ? uiViewStats() : null);
@@ -3275,13 +3291,12 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
     var cdDeg = (cdRatio * 360).toFixed(1) + 'deg';
     var cdText = cd > 0 ? (cd >= 10 ? Math.ceil(cd) + 's' : fmt1(cd) + 's') : '';
 
-    /* 主動型被動（js/skills2.js SG_PASSIVE）：裝上即恆時生效，沒有冷卻也不吃法力，
-       在快捷列以旋轉流動外框和其他技能區分（不顯示碼錶與無魔標記）。 */
-    var isPassiveGroup = isSgE && (typeof skills2IsPassive === 'function') && skills2IsPassive(entry.slice(3));
     /* 個別階可以帶自己的內部冷卻（大地守護【天地共生】），冷卻中改用一般技能的
        「不可用」呈現。群組冷卻是 0，畫不出有意義的比例，故整圈罩住＋顯示剩餘秒數。 */
     var isPassiveOnCd = isPassiveGroup && cd > 0;
-    var isActivePassive = isPassiveGroup && !isPassiveOnCd;
+    /* 法力不足時被動同樣觸發不了，退回一般技能的無魔呈現——否則畫面會宣稱它隨時生效。 */
+    var isPassiveNoMp = isPassiveGroup && cost > 0 && pEnt && pEnt.mp !== undefined && pEnt.mp < cost;
+    var isActivePassive = isPassiveGroup && !isPassiveOnCd && !isPassiveNoMp;
     var isOnCd = !isActivePassive && cd > 0;
     var isNoMp = !isActivePassive && !isOnCd && pEnt && pEnt.mp !== undefined && pEnt.mp < cost;
     var slotCls = 'battle-skill-slot equipped' +
@@ -7765,9 +7780,13 @@ function renderSkill2Modal(body, gid, skillsSnapshot, headerSnapshot) {
   var elemInfo = (g.elem && typeof ELEM_INFO !== 'undefined' && ELEM_INFO[g.elem]) ? ELEM_INFO[g.elem] : null;
   var typeStr = dmgTypeLabel + (elemInfo ? '·' + (elemInfo.short || elemInfo.name) : '');
 
+  /* 被動群組的法力寫在「階」上（反擊每階觸發各自扣魔）；沒有觸發消耗的階只標被動。 */
+  var tierMp = (typeof skills2TierTriggerMp === 'function') ? skills2TierTriggerMp(gid, selectedTier) : 0;
   var h = '<div class="skd-head"><span class="skd-emoji">' + g.emoji + '</span><b>' + esc(tier.name) + '</b> ' +
     '<span class="dim-text">Lv.' + lv + '/' + tierMax + '｜' + typeStr + '</span>' +
-    '<span class="sk-meta">' + (isPassiveGroup ? '🌀 被動' : '🔵 ' + (Number(g.cost) || 0) + ' MP　⏱️ ' + g.cd + 's') + '</span></div>';
+    '<span class="sk-meta">' + (isPassiveGroup
+      ? ('🌀 被動' + (tierMp > 0 ? '　🔵 ' + tierMp + ' MP／次觸發' : ''))
+      : '🔵 ' + (Number(g.cost) || 0) + ' MP　⏱️ ' + g.cd + 's') + '</span></div>';
 
   var tags = [{ text: dmgTypeLabel, cls: 'skill-tag-category' }];
   if (elemInfo) {
@@ -8058,9 +8077,11 @@ function showSkillTooltip(ref, anchorEl) {
       var sgLocked = !sgStageUnlocked(sgTipGid, sgLvs, sgTipTier, skillsSnapshot);
       var sgH = '<div class="skt-name">' + sgG.emoji + ' ' + esc(sgTier.name) +
         ' <span class="dim-text">第' + (sgTipTier + 1) + '階｜Lv.' + (sgLvs[sgTipTier] || 0) + '/' + SG_TIER_MAX_LV + '</span></div>';
+      var sgTipMp = (typeof skills2TierTriggerMp === 'function') ? skills2TierTriggerMp(sgTipGid, sgTipTier) : 0;
       sgH += '<div class="skt-meta">' + esc(sgG.name) + '　' +
         ((typeof skills2IsPassive === 'function' && skills2IsPassive(sgTipGid))
-          ? '🌀 主動型被動（需裝配技能列）' : '🔵 ' + (Number(sgG.cost) || 0) + ' MP　⏱️ ' + sgG.cd + 's') + '</div>';
+          ? ('🌀 主動型被動（需裝配技能列）' + (sgTipMp > 0 ? '　🔵 ' + sgTipMp + ' MP／次觸發' : ''))
+          : '🔵 ' + (Number(sgG.cost) || 0) + ' MP　⏱️ ' + sgG.cd + 's') + '</div>';
       sgH += '<div class="skt-desc">' + describeSkill2Tier(sgTipGid, sgTipTier, sgLvs[sgTipTier] || 0) + '</div>';
       if (sgLocked) sgH += '<div class="skt-lock skill-unlock-hint">🔒 ' + esc(sgStageLockReason(sgTipGid, sgTipTier, skillsSnapshot)) + '</div>';
       sgH += '<div class="skt-hint">點擊查看升級面板</div>';

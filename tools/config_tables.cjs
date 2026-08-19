@@ -1049,7 +1049,10 @@ const SKILLS2_GLOSSARY_ROWS = [
   ['兩欄都只需填在階數=1 那一列（整個群組共用）；'],
   [''],
   ['冷卻時間 / 施法消耗'],
-  ['整個群組共用（同群組是同一個技能）；只需填在階數=1 那一列，其餘列僅供對照；'],
+  ['冷卻時間：整個群組共用（同群組是同一個技能）；只需填在階數=1 那一列，其餘列僅供對照；'],
+  ['施法消耗：階數=1 那一列＝群組的施法消耗（主動技能施放時扣的魔）；'],
+  ['　　　　　每一列另外也是「該階的觸發消耗」，供被動技能逐階扣魔用（反擊：每階觸發各扣各的）；'],
+  ['　　　　　主動技能目前只讀群組值，後續列填多少都不影響施放成本；'],
   [''],
   ['效果參數(JSON)'],
   ['各階的數值參數。命名慣例：<鍵>＝不含升級效果的底值、<鍵>Per＝每級增量，值＝底值＋增量×等級；'],
@@ -1077,10 +1080,13 @@ const SKILLS2_GLOSSARY_ROWS = [
   ['效果說明模板'],
   ['遊戲內顯示的說明文字；{鍵} 會代入目前等級的計算值（鍵名同「效果參數(JSON)」）。']
 ];
-/* 「冷卻時間 / 施法消耗」是群組層欄位：程式只讀階數=1 那一列，其餘列**僅供對照**，
-   因此編表者可以在後續列寫自己的註記（例如各階原本設想的魔力曲線）。
+/* 「冷卻時間」是群組層欄位：程式只讀階數=1 那一列，其餘列**僅供對照**，
+   因此編表者可以在後續列寫自己的註記（例如各階原本設想的冷卻曲線）。
    --gen 會整份重建表格，若不特別保留就會被群組值蓋掉——比照 Skills 表的「完整描述」，
-   重建時從現有 CSV 依「群組ID+階數」帶回來。 */
+   重建時從現有 CSV 依「群組ID+階數」帶回來。
+   ⚠️「施法消耗」自 2026-08-19 起改為**每階真欄位**（tiers[i].cost）：群組層仍取階數=1
+   那一列（castSkill2 的施放成本），但每一列同時是該階的「觸發消耗」，被動技能（反擊）
+   逐階扣魔就讀這個值。因此它不再需要 note 保留機制——值本身就在 JS 字面值裡。 */
 function skills2TierNoteMap() {
   const map = {};
   try {
@@ -1096,6 +1102,14 @@ function skills2TierNoteMap() {
     });
   } catch (e) { /* 沒有現成 CSV（首次 bootstrap）就留空 */ }
   return map;
+}
+/* 每階的施法消耗：新版字面值直接帶 tiers[i].cost；尚未套用過新版的舊字面值
+   （只有群組層 cost）退回「現有 CSV 的註記值 → 群組值」，--gen 才不會把編表者
+   已經填好的每階魔力曲線洗成同一個數字。 */
+function skills2TierCostCell(tier, note, groupCost) {
+  if (tier && tier.cost !== undefined && tier.cost !== null) return numStr(tier.cost);
+  if (note && note.cost !== '') return note.cost;
+  return numStr(groupCost);
 }
 
 SCHEMAS.Skills2 = {
@@ -1115,7 +1129,7 @@ SCHEMAS.Skills2 = {
         const note = i > 0 ? notes[gid + '|' + String(i + 1)] : null;
         rows.push([gid, g.name, g.emoji, g.range || '', g.dmgType || '', g.elem || '',
           (note && note.cd !== '') ? note.cd : numStr(g.cd),
-          (note && note.cost !== '') ? note.cost : numStr(g.cost), String(i + 1),
+          skills2TierCostCell(t, note, g.cost), String(i + 1),
           t.unlock ? (numStr(t.unlock.reinc || 0) + '|' + numStr(t.unlock.lv || 0)) : '', t.name,
           JSON.stringify(t.fx || {}), numStr(t.goldBase || 0), numStr(t.goldGrow || 1), t.desc || '']);
       });
@@ -1166,9 +1180,13 @@ SCHEMAS.Skills2 = {
         }
         unlock = { reinc: Number(m[1]), lv: Number(m[2]) };
       }
+      /* 每階的施法消耗＝該階的觸發消耗（被動技能逐階扣魔用）；留白／0 不寫進字面值，
+         讓「這一階不耗魔」在程式端就是「沒有這個欄位」。 */
+      const tierCost = toNum(get(r, '施法消耗'));
       groups[gid].tiers[tierIdx - 1] = Object.assign(
         { name: get(r, '階段名稱') },
         unlock ? { unlock } : null,
+        tierCost > 0 ? { cost: tierCost } : null,
         {
           fx,
           goldBase: toNum(get(r, '升級金幣基數')), goldGrow: toNum(get(r, '升級金幣倍率')),
