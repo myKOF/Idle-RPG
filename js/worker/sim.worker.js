@@ -10,19 +10,19 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=23', 'shim.js?v=4');
+importScripts('protocol.js?v=24', 'shim.js?v=4');
 importScripts(
-  '../util.js?v=20260814-skill-summary', '../data.js?v=20260818-wind-element', '../status.js?v=20260818-wind-skills', '../formula.js?v=20260817-ice-skills', '../battlefield.js?v=20260817-ice-skills', '../stats.js',
+  '../util.js?v=20260814-skill-summary', '../data.js?v=20260819-ult-evolution', '../status.js?v=20260819-ult-evolution', '../formula.js?v=20260819-ult-evolution', '../battlefield.js?v=20260819-ult-evolution', '../stats.js',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260819-counter-mp', '../skills2.js?v=20260819-counter-mp', '../talents.js?v=20260811-loadout-cap-clamp',
+  '../skills.js?v=20260819-ult-evolution', '../skills2.js?v=20260819-ult-evolution', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260814-skill-min-interval', '../special_rules.js',
-  '../combat.js?v=20260818-wind-skills', '../legendary.js?v=20260817-magic-light-shield-cd', '../potential.js?v=20260814-skill-min-interval', '../tower.js?v=20260817-projectile-retaliation',
-  '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260814-active-passive',
+  '../combat.js?v=20260819-ult-evolution', '../legendary.js?v=20260819-ult-evolution', '../potential.js?v=20260814-skill-min-interval', '../tower.js?v=20260817-projectile-retaliation',
+  '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260819-ult-evolution',
   '../tasks.js'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
-importScripts('../gm_exec.js?v=20260814-skill2-counter-bloodrage');
+importScripts('../gm_exec.js?v=20260819-ult-evolution');
 
 /* ---- 決定論測試模式（只在本機、只在網址帶 ?seed=N 時啟用）----
    存在的唯一理由：讓瀏覽器實機跑出來的結果，能和 headless 模擬器
@@ -1476,6 +1476,18 @@ var COMMAND_IMPL = {
     var g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[a.group] : null;
     if (!g) return { err: '未知技能群組' };
     var tier = Math.floor(Number(a.tier));
+    /* 超神進化那一格：一鍵滿級＝反覆呼叫 skills2UltLearn（金幣不足就停），
+       解鎖條件與「必須先選一個」的判定都在那一支裡，這裡不再複製一份規則。 */
+    if (typeof sgIsUltSlot === 'function' && sgIsUltSlot(a.group, tier)) {
+      var ultErr = null, ultUp = 0;
+      while (ultUp < (typeof SG_TIER_MAX_LV === 'number' ? SG_TIER_MAX_LV : 10)) {
+        ultErr = skills2UltLearn(a.group);
+        if (ultErr) break;
+        ultUp++;
+      }
+      if (!ultUp && ultErr) return { err: ultErr };
+      return true;
+    }
     if (!(tier >= 0 && tier < g.tiers.length)) return { err: '未知階數' };
     var lvs = (typeof skills2Levels === 'function') ? skills2Levels(a.group) : (G.player.skills2 && G.player.skills2.levels && G.player.skills2.levels[a.group]);
     if (!lvs) lvs = [];
@@ -1512,6 +1524,13 @@ var COMMAND_IMPL = {
     var g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[a.group] : null;
     if (!g) return { err: '未知技能群組' };
     var tier = Math.floor(Number(a.tier));
+    /* 超神進化那一格：刪除＝整個清掉選擇（等級歸零、可重新三選一，不退金幣）。 */
+    if (typeof sgIsUltSlot === 'function' && sgIsUltSlot(a.group, tier)) {
+      if (G.player.skills2 && G.player.skills2.ult) delete G.player.skills2.ult[a.group];
+      UI.dirty.skills = true;
+      UI.dirty.header = true;
+      return true;
+    }
     if (!(tier >= 0 && tier < g.tiers.length)) return { err: '未知階數' };
     var lvs = (typeof skills2Levels === 'function') ? skills2Levels(a.group) : (G.player.skills2 && G.player.skills2.levels && G.player.skills2.levels[a.group]);
     if (!lvs) return true;

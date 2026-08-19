@@ -715,6 +715,34 @@ function migrateSave(data) {
       });
     }
   }
+  /* ---- 超神進化（第 8 階；2026-08-19，冪等）----
+     結構：G.player.skills2.ult = { <群組id>: { pick: 選項索引, lv: 等級 } }。
+     舊存檔沒有這個欄位＝還沒選過，不需要 migration（不建欄位，維持存檔精簡）。
+     這裡只做防呆：未知群組、選項索引越界、等級非法一律整筆刪除
+     （選項索引越界代表表格改過，留著會讓 UI 指向不存在的效果）。
+     ⚠️ 「前 7 階必須全滿」是**生效條件**不是存檔條件：降級只讓它暫時失效，
+     等級與選擇一律保留，練回滿級就原樣回來（規則同各階的解鎖門檻）。 */
+  if (data.player.skills2 && data.player.skills2.ult && typeof SKILLS2 !== 'undefined') {
+    var sgUltMap = data.player.skills2.ult;
+    if (typeof sgUltMap !== 'object') delete data.player.skills2.ult;
+    else {
+      var sgUltMax = (typeof SG_TIER_MAX_LV === 'number') ? SG_TIER_MAX_LV : 10;
+      for (var sgUltGid in sgUltMap) {
+        var sgUltDef = SKILLS2[sgUltGid];
+        var sgUltList = (sgUltDef && Object.prototype.toString.call(sgUltDef.ult) === '[object Array]')
+          ? sgUltDef.ult : null;
+        var sgUltRec = sgUltMap[sgUltGid];
+        if (!sgUltList || !sgUltRec || typeof sgUltRec !== 'object') { delete sgUltMap[sgUltGid]; continue; }
+        var sgUltPick = Math.floor(Number(sgUltRec.pick));
+        var sgUltLv = Math.floor(Number(sgUltRec.lv) || 0);
+        if (!(sgUltPick >= 0 && sgUltPick < sgUltList.length) || !isFinite(sgUltLv) || sgUltLv < 1) {
+          delete sgUltMap[sgUltGid];
+          continue;
+        }
+        sgUltMap[sgUltGid] = { pick: sgUltPick, lv: Math.min(sgUltMax, sgUltLv) };
+      }
+    }
+  }
   /* ---- 融合寶石「融合次數」改為世代制（2026-07-09 修正）----
      舊定義 fusions = 融合事件總數（兩顆融合1次的再融合 → 3，玩家預期 2）。
      新定義 fusions = 世代（max+1），另補 leaves = 素材 5 階總數（拆解成本用）。

@@ -70,6 +70,34 @@ function legendaryFx(key) {
   return mult === 1 ? def.fx : legendaryScaleFxValues(def.fx, mult, '');
 }
 
+/* ---- 新版技能（js/skills2.js）的傳奇改寫收斂點（2026-08-19）----
+   舊技能走 castSkill（js/skills.js）→ legendaryPrepareSkillCast／legendaryOnSkillCast；
+   新版技能群組走 castSkill2，是**另一條**施放路徑，那兩支掛鉤完全碰不到它。
+   與其在 skills2.js 各處散落 legendaryHas(...) 判斷，這裡提供唯一入口：
+   把「relatedSkill 指向該群組 id 且目前生效」的所有傳奇特效的 fx **平坦合併**成一個物件，
+   施放端只讀通用參數鍵（thrustLenPct、cleaveFlyM…），不必認得特效 id。
+   同名參數鍵的合併規則：**數字相加**（兩個都加 30% 技能傷害就是 +60%，比照詞條加總），
+   其餘型別（布林旗標、規格物件）後者覆蓋前者。因此規格物件請一個特效用一個獨立鍵。
+   relatedSkill 沿用既有欄位（新舊技能 id 不重疊，舊技能沒有 thrust／cleave 這兩個鍵），
+   因此參數表（Equipment_Affix 的「關聯技能」欄）不需要新增欄位。 */
+function legendarySkill2Mods(gid) {
+  if (!gid || typeof PASSIVE_POOL === 'undefined') return null;
+  var st = (typeof getStats === 'function') ? getStats() : null;
+  if (!st || !st.legendaryEffects) return null;
+  var out = null;
+  for (var key in PASSIVE_POOL) {
+    var def = PASSIVE_POOL[key];
+    if (!def || def.relatedSkill !== gid || !def.fx) continue;
+    if (!legendaryHas(st, key)) continue;
+    var fx = legendaryFx(key);
+    if (!out) out = {};
+    for (var k in fx) {
+      out[k] = (typeof fx[k] === 'number' && typeof out[k] === 'number') ? out[k] + fx[k] : fx[k];
+    }
+  }
+  return out;
+}
+
 function legendaryTriggeredSkillLevel(id) {
   var lv = (typeof skillLevel === 'function') ? skillLevel(id) : 0;
   return Math.max(1, Math.floor(Number(lv) || 0));
@@ -433,6 +461,23 @@ function legendaryQueue(at, resolve) {
   legendaryEnsureRT().queue.push({ at: at, resolve: resolve });
 }
 
+/* 連鎖閃電的畫面（2026-08-19 補）：本檔原本一發特效都不送，玩家只看得到敵人身上
+   憑空跳出傷害字。這裡送出與新版技能【連鎖閃電】同一種 chain 事件，
+   兩個渲染器（js/vfx.js 與 js/battle-renderer.js）都已認得 lightning-chain。
+   from 留白＝從我方出手點連到第一個目標。 */
+function legendaryEmitChainVfx(from, to, floatSel, elem) {
+  if (typeof playCombatVfx !== 'function' || typeof enemyEventFloatTarget !== 'function') return;
+  var ids = [];
+  if (from && from.hp > 0) ids.push(enemyEventFloatTarget(from, floatSel));
+  if (to) ids.push(enemyEventFloatTarget(to, floatSel));
+  if (!ids.length) return;
+  playCombatVfx({
+    fxKind: 'chain', variant: 'lightning-chain', glyph: '⚡',
+    color: (typeof VFX_CAT_COLORS !== 'undefined' && VFX_CAT_COLORS.magic) || '#f2b705',
+    cat: 'magic', elem: elem || 'lightning', targets: ids, area: null, dur: 0.35, count: 1
+  });
+}
+
 function legendaryScheduleChain(pEnt, spec, floatSel) {
   // 連鎖不再每跳全場亂數挑：記住上一跳打到誰，下一跳跳到離它最近的鄰居 → js/battlefield.js
   var chainState = { last: null };
@@ -444,8 +489,10 @@ function legendaryScheduleChain(pEnt, spec, floatSel) {
         var target = (typeof bfChainNext === 'function')
           ? (bfChainNext(chainState.last, enemies) || enemies[0])
           : enemies[Math.floor(Math.random() * enemies.length)];
+        legendaryEmitChainVfx(chainState.last, target, floatSel, spec.elem);
         chainState.last = target;
-        legendaryDealDamage(pEnt, target, spec.powerPct, 'magic', spec.elem, floatSel, '閃電飛越', ctx);
+        legendaryDealDamage(pEnt, target, spec.powerPct, 'magic', spec.elem, floatSel,
+          spec.label || '閃電飛越', ctx);
         if (target.hp <= 0 && ctx && typeof ctx.onDeaths === 'function') ctx.onDeaths();
       });
     })(i);

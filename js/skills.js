@@ -3083,8 +3083,11 @@ function pickAndCastSkill(pEnt, target, floatSel) {
       var sgDef = (typeof SKILLS2 !== 'undefined') ? SKILLS2[sgId] : null;
       if (!sgDef || typeof castSkill2 !== 'function' ||
           typeof skills2Castable !== 'function' || !skills2Castable(sgId)) continue;
-      // 主動型被動（反擊）：裝在技能列只為生效，永不主動施放、不佔用出手節奏
-      if (typeof skills2IsPassive === 'function' && skills2IsPassive(sgId)) continue;
+      /* 主動型被動（反擊）：裝在技能列只為生效，永不主動施放、不佔用出手節奏。
+         超神進化【天霸風神斬】會把迴旋斬也變成這一類，因此判定走 skills2ActsPassive
+         （表定被動 ∪ 被超神進化改為被動）——這裡不得只認 SG_PASSIVE。 */
+      if (typeof skills2ActsPassive === 'function' ? skills2ActsPassive(sgId)
+        : (typeof skills2IsPassive === 'function' && skills2IsPassive(sgId))) continue;
       var sgLive = Array.isArray(target)
         ? target.some(function (ent) { return ent && ent.hp > 0; })
         : !!(target && target.hp > 0);

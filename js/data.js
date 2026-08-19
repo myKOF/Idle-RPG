@@ -893,6 +893,64 @@ var PASSIVE_POOL = {
     name: '魔法反震', desc: '反震敵人時消耗 10 點魔力，且該次反震傷害提高 100%。',
     base: 0, perR: 0, legendary: true, weaponTypes: ['spellbook'],
     fx: { thornsManaCost: 10, thornsDamagePct: 100 }
+  },
+
+  /* ---- 新版技能改寫型（2026-08-19；設計來源「傳奇進化」頁籤）----
+     這一批的 relatedSkill 指向**新版技能群組 id**（js/skills2.js SKILLS2 的鍵），
+     不是舊技能 id——新舊 id 不重疊，因此沿用同一個欄位，參數表不必加欄。
+     生效路徑與舊技能不同：castSkill2 不經過 legendaryPrepareSkillCast，改由
+     js/legendary.js legendarySkill2Mods 把同群組的 fx 平坦合併後交給施放端，
+     施放端只讀通用參數鍵（見各 fx 的鍵名）。
+     只出現在匕首（dagger1h＝突刺）與單手劍（sword1h＝迴旋斬）。 */
+  piercingFocus: {
+    name: '凝鋒穿刺', desc: '突刺的長度 +30%、寬度 -15%，且造成的傷害 +30%。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'thrust', weaponTypes: ['dagger1h'],
+    fx: { thrustLenPct: 30, thrustWidthPct: -15, skillDamagePct: 30 }
+  },
+  thousandWounds: {
+    name: '千瘡百孔', desc: '每次突刺命中使敵人受到的傷害 +4%，持續 5 秒，最多疊加 10 層。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'thrust', weaponTypes: ['dagger1h'],
+    fx: { thrustVuln: { pct: 4, dur: 5, maxStacks: 10 } }
+  },
+  sunpiercerLance: {
+    name: '貫日之刺', desc: '八方連刺改為朝前方的 1 道巨型突刺，突刺範圍 +100%，且造成的傷害 +100%。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'thrust', weaponTypes: ['dagger1h'],
+    fx: { octaToSingle: true, thrustRangePct: 100, skillDamagePct: 100 }
+  },
+  thunderStab: {
+    name: '迅雷穿刺', desc: '每次突刺擊中敵人時有 15% 機率附加 1 道連鎖閃電。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thrust', weaponTypes: ['dagger1h'],
+    fx: { thrustChain: { chance: 15, powerPct: 50, elem: 'lightning', bounces: 5, tickSec: 0.3, label: '迅雷穿刺' } }
+  },
+  heartrendBleed: {
+    name: '穿心裂血', desc: '突刺會附加流血，每 0.5 秒造成 50% 物理傷害，持續 5 秒。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'thrust', weaponTypes: ['dagger1h'],
+    fx: { thrustDot: { tickPowerPct: 50, tickSec: 0.5, dur: 5 } }
+  },
+  chainSpin: {
+    name: '連環迴旋', desc: '迴旋斬的斬擊次數 +2 次。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'cleave', weaponTypes: ['sword1h'],
+    fx: { cleaveSlashAdd: 2 }
+  },
+  galeBladeDance: {
+    name: '旋風劍舞', desc: '迴旋斬的每次斬擊會同時產生旋風，對周圍 8 米範圍內的所有敵人造成 100% 風系傷害。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'cleave', weaponTypes: ['sword1h'],
+    fx: { cleaveWhirl: { m: 8, powerPct: 100, elem: 'wind' } }
+  },
+  skyrendSlash: {
+    name: '裂空飛斬', desc: '迴旋斬的斬擊會向外飛出 60 米，命中路徑上的敵人。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'cleave', weaponTypes: ['sword1h'],
+    fx: { cleaveFlyM: 60 }
+  },
+  exploitWeakness: {
+    name: '乘虛之斬', desc: '迴旋斬對暈眩中的敵人造成額外的 50% 傷害。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'cleave', weaponTypes: ['sword1h'],
+    fx: { cleaveStunnedDmgPct: 50 }
+  },
+  gatheringVortex: {
+    name: '聚敵旋渦', desc: '迴旋斬會將 60 米內的所有敵人拉近至身邊 10 米範圍內。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'cleave', weaponTypes: ['sword1h'],
+    fx: { cleavePull: { m: 60, toM: 10 } }
   }
 };
 

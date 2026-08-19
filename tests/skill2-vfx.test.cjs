@@ -165,9 +165,13 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.match(renderer, /isKnifeBounce[\s\S]*?glow\.tint = isKnifeBounce \? 0xff3850[\s\S]*?glow\.alpha = isKnifeBounce \? 0\.15 : 0\.75/);
   assert.match(css, /\.vfx-proj-knife \.vfx-proj-core[\s\S]*?drop-shadow\(0 0 5px rgba\(255, 56, 80, 0\.2\)\)/);
   assert.match(vfx, /function vfxCleaveArc\([\s\S]*?travel\)/);
-  assert.match(vfx, /vfxCleaveArc\([\s\S]*?length: 120/);
-  assert.match(vfx, /vfxCleaveArc\([\s\S]*?vfx-cleave-arc-back[\s\S]*?length: 120/);
-  assert.match(renderer, /spawnCleaveArc\([\s\S]*?frontAngle \+ Math\.PI[\s\S]*?length: 120/);
+  /* 2026-08-19：弧光飛行距離改由模擬層的 lineLength 帶入（傳奇【裂空飛斬】要飛 60 米），
+     兩個渲染器都以同一個 arcLen 變數承接，沒帶時才退回原本寫死的 120px。 */
+  assert.match(vfx, /var arcLen = Number\(s\.lineLength\) > 0 \? Number\(s\.lineLength\) : 120;/);
+  assert.match(renderer, /var arcLen = Number\(spec\.lineLength\) > 0 \? Number\(spec\.lineLength\) : 120;/);
+  assert.match(vfx, /vfxCleaveArc\([\s\S]*?length: arcLen/);
+  assert.match(vfx, /vfxCleaveArc\([\s\S]*?vfx-cleave-arc-back[\s\S]*?length: arcLen/);
+  assert.match(renderer, /spawnCleaveArc\([\s\S]*?frontAngle \+ Math\.PI[\s\S]*?length: arcLen/);
   assert.doesNotMatch(vfx, /vfxCleaveWave|vfx-cleave-wave/);
   assert.doesNotMatch(renderer, /spawnCleaveWave|CLEAVE_WAVE_SPEED_RATIO/);
   assert.match(vfx, /vfxImpact\([\s\S]*?cHitDelay \+ 90/);
@@ -242,8 +246,10 @@ test('震碎斬與迴身雙連斬共用十字方向的迴旋斬弧光', () => {
   const cleaveEnd = skills2.indexOf('\n}\n\n/* ---- 匕首投擲', cleaveStart);
   const cleaveBlock = skills2.slice(cleaveStart, cleaveEnd);
 
-  assert.match(cleaveBlock, /lvs\[6\] > 0 \? \(lvs\[5\] > 0 \? 'cleave-cross-shockwave' : 'cleave-cross'\)/);
-  assert.match(cleaveBlock, /lvs\[5\] > 0 \? 'cleave-shockwave'/);
+  /* 2026-08-19：飛出距離改由 isFlying 決定（第 6 階【震碎斬】∪ 傳奇【裂空飛斬】），
+     變體選擇的結構不變——仍是「十字 × 是否飛出」四種組合共用同一組弧光。 */
+  assert.match(cleaveBlock, /lvs\[6\] > 0 \? \(isFlying \? 'cleave-cross-shockwave' : 'cleave-cross'\)/);
+  assert.match(cleaveBlock, /isFlying \? 'cleave-shockwave'/);
   assert.match(read('css/style.css'), /\.vfx-cleave-arc-back/);
   assert.doesNotMatch(read('css/style.css'), /\.vfx-cleave-wave/);
 });
@@ -276,7 +282,7 @@ test('飛出斬擊與貫穿突刺由飛行物命中，不由 VFX 預先產生受
   const renderer = read('js/battle-renderer.js');
 
   assert.match(skills2, /variant: thrustVariant, count: Math\.min\(8, thrustCount\), projectile: isPiercing/);
-  assert.match(skills2, /variant: cleaveVariant, count: Math\.min\(5, slashes\), projectile: lvs\[5\] > 0/);
+  assert.match(skills2, /variant: cleaveVariant, count: Math\.min\(5, slashes\), projectile: isFlying/);
   const thrustVfx = vfx.slice(vfx.indexOf("s.variant === 'thrust-pierce'"), vfx.indexOf("s.variant === 'cleave'"));
   const thrustRenderer = renderer.slice(renderer.indexOf("spec.variant === 'thrust-pierce'"), renderer.indexOf("spec.variant === 'cleave'"));
   assert.match(thrustVfx, /if \(!s\.projectile\)/);
@@ -835,12 +841,12 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   /* 主頁與 Worker 必須換版本，否則瀏覽器會繼續執行舊的綠色方框／逐格路徑。
      這幾條釘的是「目前的版號」——之後任何人再動這些檔、把版號往上推時，
      連同這裡一起更新即可（釘住的用意是禁止「改了檔卻沒換版號」）。 */
-  assert.match(index, /css\/style\.css\?v=1\.0\.49/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.59/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.92/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.51/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-counter-mp'/);
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260819-counter-mp/);
+  assert.match(index, /css\/style\.css\?v=1\.0\.50/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.60/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.93/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.52/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-ult-evolution'/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260819-ult-evolution/);
 });
 
 /* 2026-08-19 回報三連：真空斬系的綠色落雷、風刃地板綠方塊、風刃一格一格移動。

@@ -111,7 +111,11 @@ var STATUS = {
   sgWindSlow: { name: '狂風緩速', icon: '🍃', kind: 'debuff', effect: 'stat', key: 'sgWindSlow', elem: 'wind', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 60, dur: 3, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【狂風碎裂】：被風刃命中的敵人移動速度下降（效果值＝下降%）。同類型緩速依「取代」規則後蓋前並重新計時。' },
   sgStormBarrier: { name: '暴風屏障', icon: '🌪️', kind: 'buff', effect: 'stat', key: 'sgStormBarrier', elem: 'wind', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 10, dur: 8, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【暴風屏障】：屏障的剩餘時間與傷害減免（效果值＝減免%）；第 2～6 階的效果只在此期間生效（護盾由節拍逐次給予）。' },
   sgVoidBlade: { name: '虛空斬', icon: '🌀', kind: 'buff', effect: 'stat', key: 'sgVoidBlade', elem: 'wind', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【虛空斬】：虛空斬擊還會在場上繞行多久（環繞場域的剩餘時間投影，比照火狩）。' },
-  sgStormGod: { name: '暴風神體', icon: '⛈️', kind: 'buff', effect: 'stat', key: 'sgStormGod', elem: 'wind', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 99, dur: 2, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【暴風神體】：風暴之神附體期間的傷害減免（效果值＝減免%），且風系傷害額外乘算提高。與暴風屏障是分開的兩個狀態。' }
+  sgStormGod: { name: '暴風神體', icon: '⛈️', kind: 'buff', effect: 'stat', key: 'sgStormGod', elem: 'wind', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 99, dur: 2, interval: 0, stack: 'refresh', maxStacks: 1, desc: '新版技能【暴風神體】：風暴之神附體期間的傷害減免（效果值＝減免%），且風系傷害額外乘算提高。與暴風屏障是分開的兩個狀態。' },
+  sgThrustVuln: { name: '千瘡百孔', icon: '🕳️', kind: 'debuff', effect: 'stat', key: 'sgThrustVuln', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 4, dur: 5, interval: 0, stack: 'stack', maxStacks: 10, desc: '傳奇特效【千瘡百孔】：每次突刺命中疊 1 層，每層使該敵人受到的傷害提高（效果值＝單層提高%）；層數上限由特效參數決定。' },
+  sgSoulRend: { name: '靈魂撕裂', icon: '👻', kind: 'debuff', effect: 'stat', key: 'sgSoulRend', elem: 'dark', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 1, dur: 30, interval: 0, stack: 'stack', maxStacks: 100, desc: '超神進化【暗影絕殺者】：每次突刺命中疊 1 層，每層使該敵人受到的傷害提高（效果值＝單層提高%）；層數上限與單層值由技能參數決定。' },
+  sgThrustBleed: { name: '穿心裂血', icon: '🩸', kind: 'debuff', effect: 'dot', key: '', elem: '', dmgSource: 'skill', dmg: 50, capStat: '', capMult: 0, val: 0, dur: 5, interval: 0.5, stack: 'strongest', maxStacks: 1, desc: '傳奇特效【穿心裂血】：突刺附加的流血；每跳量與間隔由特效參數決定（引擎以 dps 覆寫）。' },
+  sgPhantomDodge: { name: '幻影殘像', icon: '🌫️', kind: 'buff', effect: 'stat', key: 'sgPhantomDodge', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 30, dur: 2, interval: 0, stack: 'refresh', maxStacks: 1, desc: '超神進化【幻影八方陣】：期間有一定機率絕對閃避敵方攻擊（效果值＝機率%）；此擲骰與命中率無關，先於命中判定結算。' }
 };
 
 /* ---- 反查索引 ----
@@ -129,9 +133,14 @@ var STATUS_BY_NAME = {};
 
 function statusDef(sid) { return (sid && STATUS[sid]) || null; }
 /* 疊加規則傳給低階寫入器；未指定＝維持各容器原本的行為（持續傷害取高、增益後蓋前）。 */
-function statusStackCfg(def) {
+/* maxOverride：呼叫端（技能／特效）可把層數上限往上調，表上的值是預設值。
+   例：突刺超神進化【暗影絕殺者】的靈魂撕裂上限寫在技能參數裡，隨版本調整；
+   狀態表只負責「這個狀態是疊層制、單層值多少、預設疊幾層」。 */
+function statusStackCfg(def, maxOverride) {
   if (!def || def.stack !== 'stack') return def ? { rule: def.stack } : null;
-  return { rule: 'stack', max: Math.max(1, Math.floor(Number(def.maxStacks) || 1)) };
+  var max = Math.floor(Number(maxOverride) || 0);
+  if (!(max > 0)) max = Math.floor(Number(def.maxStacks) || 0);
+  return { rule: 'stack', max: Math.max(1, max) };
 }
 function statusIdByKey(key) { return STATUS_BY_KEY[key] || (STATUS[key] ? key : ''); }
 function statusIdByName(name) { return STATUS_BY_NAME[name] || ''; }
@@ -185,17 +194,17 @@ function applyStatus(ent, sid, ctx) {
   switch (def.effect) {
     case 'dot':
       return applyDot(ent, statusDps(ent, def, ctx), dur, def.name, sid,
-        statusNum(ctx.interval, def.interval), statusStackCfg(def), ctx.source || ctx);
+        statusNum(ctx.interval, def.interval), statusStackCfg(def, ctx.maxStacks), ctx.source || ctx);
     case 'hot':
     case 'stat':
       return applyBuff(ent, def.key, statusNum(ctx.val, def.effect === 'hot' ? def.dmg : def.val) * mult, dur, sid,
-        statusStackCfg(def));
+        statusStackCfg(def, ctx.maxStacks));
     case 'ctrl':
       return applyEffect(ent, def.key, dur, sid);
     case 'shield':
       // 護盾量＝施法者最大生命 × 效果值%（吃護盾效率與技能護盾上限，規則在 js/combat.js）
       return applyShield(ent, statusNum(ctx.val, def.dmg) * mult, dur, sid,
-        ctx.stats, statusStackCfg(def));
+        ctx.stats, statusStackCfg(def, ctx.maxStacks));
   }
   return false;
 }

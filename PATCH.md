@@ -1,5 +1,31 @@
 # PATCH.md
 
+## 傳奇進化：10 個新版技能改寫型傳奇特效 ＋ 超神進化（技能第 8 格三選一）（Claude 2026-08-19）
+
+設計來源：使用者提供的「神力之巔_記事錄」試算表〈傳奇進化〉頁籤。
+
+- **架構決策：超神進化不進 `tiers`**：前 7 階是「循序解鎖、同時生效、各自升級」，超神進化是「三選一、只有選中的生效」。兩種語意混在同一個陣列，會讓 `sgEffectiveLevels` 的級聯、`js/save.js` 的存檔夾限（`sgArr.length = tiers.length`）與參數表的階數校驗全部長出例外分支，且全專案上百處 7 元素等級陣列都要跟著改。因此資料放在群組層 `SKILLS2[gid].ult`、存檔另開 `G.player.skills2.ult`，**`SG_TIER_COUNT` 維持 7**，既有等級陣列的所有讀寫完全不動；UI 只在「格位」這一層把它畫成第 8 格（ref 仍是 `sg:<群組id>:7`）。
+- **架構決策：傳奇特效 × 新版技能要另建一座橋**：新版技能走 `castSkill2`，不經 `castSkill`，因此 `legendaryPrepareSkillCast`／`legendaryOnSkillCast` 完全碰不到它。新增 `legendarySkill2Mods(gid)`（`js/legendary.js`）作為唯一收斂點——把「`relatedSkill` 指向該群組且目前生效」的所有 `fx` 平坦合併後交給施放端（`sgLegend`，`js/skills2.js`），同名數字鍵相加、其餘型別後者覆蓋。施放端只讀通用參數鍵，不必認得特效 id。`relatedSkill` 沿用既有欄位（新舊技能 id 不重疊），參數表因此不必新增欄位。
+- **10 個新傳奇特效（`js/data.js` `PASSIVE_POOL`）**：只出現在匕首（改寫突刺）與單手劍（改寫迴旋斬）。
+  - 匕首：凝鋒穿刺（長 ×1.3／寬 ×0.85／傷害 +30%）、千瘡百孔（命中疊 `sgThrustVuln`，單層 +4% 受傷、10 層）、貫日之刺（八方連刺改單道、範圍 ×2、傷害 +100%）、迅雷穿刺（命中 15% 觸發連鎖閃電，重用 `legendaryScheduleChain`）、穿心裂血（`sgThrustBleed`，每 0.5 秒 50% 物攻／5 秒）。
+  - 單手劍：連環迴旋（斬擊輪數 +2，與連斬相加）、旋風劍舞（每輪對周身 8 米 100% 風系傷害）、裂空飛斬（斬擊向外飛出 60 米）、乘虛之斬（對暈眩目標 +50% 總傷）、聚敵旋渦（把 60 米內敵人拉到 10 米圓周）。
+- **超神進化（`js/skills2.js`）**：突刺＝幻影八方陣／暗影絕殺者／一擊必殺；迴旋斬＝虛空碎裂斬／逐風者／天霸風神斬。解鎖條件只有「該群組前 7 階全滿」（使用者指定：目前不擋任何其他條件）。選定＝學會 Lv.1 並付第 1 級金幣；降到 Lv.0 會清除選擇、可重新三選一。**解鎖是生效條件不是存檔條件**——任一階降級只讓它暫時失效，選擇與等級留在存檔，練回滿級原樣回來。
+- **引擎新增的共用能力**（都是收斂點，不是這兩個技能的特例）：
+  - 命中後掛鉤（`projectile.onHit`）：突刺／迴旋斬投資到高階就整個改走飛行物結算，直接命中與飛行物兩條路徑因此共用同一支掛鉤，效果不會只在其中一種形態下生效。
+  - 逐目標總傷加成（`projectile.bonusPctFn`）：乘虛之斬的暈眩增傷在命中當下才算得準。
+  - 傷害屬性覆寫（`sgAtkCfg`／`sgHitOne` 的 `elemOverride`、場域的 `hitElem`）：物理群組打出風系段。
+  - 疊層上限可由技能覆寫（`statusStackCfg(def, ctx.maxStacks)`）：狀態表只定「疊層制與單層預設值」。
+  - 絕對閃避（`dCfg.absDodge`，`js/combat.js` playerDefCfg → `js/formula.js` resolveHit）：與命中率無關的獨立擲骰，排在命中判定之前——一般閃避夾在 5%~100%，繞不過 5% 保底命中。
+  - 拉近（`bfPullEnemies`，`js/battlefield.js`）：座標改寫一律走幾何唯一權威，不在 skills2.js 直接寫 `pos.x/y`。
+  - 被動化判定（`skills2ActsPassive`）：表定被動 ∪ 被超神進化改為被動；主動輪替閘門（`js/skills.js`）改讀這一支。
+- **新增狀態（`js/status.js`）**：`sgThrustVuln`（千瘡百孔）、`sgSoulRend`（靈魂撕裂）、`sgThrustBleed`（穿心裂血）、`sgPhantomDodge`（幻影殘像；已加進 `PLAYER_BUFF_ORDER`，玩家看得到剩餘秒數）。
+- **顯示層補完**（偵查發現四個「模擬有、畫面沒有」的缺口，一併修掉）：巨型單道突刺改用會讀 `lineLength` 的既有 `thrust-pierce`（不要發明顯示層不認得的 variant，那會退化成隨機小刀光並忽略長寬）；旋風劍舞的 `wind-spin` 改掛 `fxKind: 'slash'`（寫成 `aura` 會被兩個渲染器的「風系泛用 aura 不畫方框」守衛擋掉）；新增 `wind-tornado` 變體路由（DOM 與 Canvas 各 4 處）；`legendaryScheduleChain` 補上 chain 特效（連帶讓既有的【閃電飛越】也終於看得到電弧）。迴旋斬弧光的飛行距離由寫死 120px 改讀模擬層的 `lineLength`，裂空飛斬的 60 米才不會只飛 1/5。
+- **參數表**：Skills2 表新增「超神ID」欄，階數 8／9／10 ＝三選一的選項 1／2／3（`tools/config_tables.cjs` 的 `extract`／`rebuild` 都已支援，非 3 個選項會 throw）；以 `--gen Skills2 / Status / Equipment_Affix` 由 JS 回寫 CSV + xlsx，`--apply` 乾跑驗證 19 個字面值語意變更 0（下次「套用參數.bat」不會沖掉新資料）。
+- **協議**：`WORKER_PROTOCOL_VERSION` 22 → **23**；新增 `skill2.ultPick`（92 → 93 條），既有四條 `skill2.*` 的 tier 上限 0~6 → 0~**7**；`skills` 面板快照的 `skills2` 新增 `ult` 欄位。同步更新 `docs/WORKER_PROTOCOL.md`。
+- **GM**：新增 `sgult 群組|all 1|2|3|off [等級|max]`（`skill2max`／`sglv` 刻意不碰第 8 格——三選一是玩家決策）；`GM_command.md` 同步補上，並註明「下完 skill2max 後第 8 格仍待選不是 bug」。
+- **測試**：新增 `tests/skill2-ult-evolution.test.cjs`（18 個案例：資料形狀、名稱 2~4 字、武器池隔離、解鎖與三選一的四種拒絕路徑、降到 Lv.0 清除選擇、暫時失效但存檔保留、面板快照、六個超神效果與十個傳奇特效的實際戰鬥行為、存檔正規化、參數表往返）。既有測試同步更新：傳奇特效總數 38 → 48、`relatedSkill` 可指向 SKILLS2、Skills2 CSV 列數含超神選項、協議 23／93 條、迴旋斬 VFX 的 `isFlying`／`arcLen` 斷言。全套 1644 案例，除 10 支**與本次無關的既有紅燈**（`sgWindRend` 狀態表缺列等，已用 HEAD 對照跑證實）外全綠；`npm run build` 通過。
+- **快取破壞**：`index.html`（style.css 1.0.50、data.js 1.0.32、status.js 1.0.11、formula.js 1.0.27、battlefield.js 1.3.8、skills.js 1.0.24、skills2.js 1.0.52、combat.js 1.0.33、save.js 1.0.9、ui.js 1.0.53、vfx.js 1.0.60、battle-renderer.js 1.6.93、worker/protocol.js 24、bridge.js 1.0.11）；戰鬥邏輯跑在 Worker，故一併換 `WORKER_ASSET_VERSION` 與 `sim.worker.js` 內各 `?v=`（`20260819-ult-evolution`）——三層漏一層就會執行到舊檔。
+
 ## 反擊（含所有進化階）改為觸發時扣魔、法力不足不觸發（Claude 2026-08-19）
 
 - **參數表管線：「施法消耗」升格為每階真欄位**：

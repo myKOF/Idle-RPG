@@ -103,7 +103,8 @@ test('附檔 31 個不重複效果皆進入傳奇特效池，並保留正確武�
     assert.ok(def.desc.length > 0);
   });
   assert.equal(Object.values(context.PASSIVE_POOL).filter((def) => def.name === '劇毒血霧').length, 1);
-  assert.equal(Object.keys(context.PASSIVE_POOL).length, 38, '既有 7 個效果加附檔 31 個效果');
+  // 2026-08-19：再加「傳奇進化」10 個新版技能改寫型（突刺 5 ＋ 迴旋斬 5）
+  assert.equal(Object.keys(context.PASSIVE_POOL).length, 48, '既有 7 個效果 ＋ 附檔 31 個 ＋ 傳奇進化 10 個');
 });
 
 test('附檔 31 個傳奇特效皆有執行期路由，戰鬥與技能主流程已接線', () => {
@@ -192,8 +193,18 @@ test('不屈護衛以原始普攻最終傷害乘格擋減傷與 500% 反擊', ()
 
 test('關聯技能與觸發技能都對應現有技能定義', () => {
   const context = loadLegendaryContext();
+  /* 2026-08-19：relatedSkill 可以指向舊技能（SKILLS）或新版技能群組（SKILLS2）。
+     兩套 id 不重疊，所以沿用同一個欄位不需要新增欄位——但「必須指到某一個真的存在的
+     技能」這條不變式要一併涵蓋兩套，否則新版技能那 10 個特效等於沒被檢查。 */
+  const sg2 = loadContext(['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js',
+    'js/battlefield.js', 'js/combat.js', 'js/skills.js', 'js/skills2.js']);
+  const sg2Ids = new Set(Object.keys(sg2.SKILLS2));
+  assert.ok(sg2Ids.has('thrust') && sg2Ids.has('cleave'), '應能載入 SKILLS2 的群組 id');
   Object.entries(context.PASSIVE_POOL).forEach(([id, def]) => {
-    if (def.relatedSkill) assert.ok(context.SKILLS[def.relatedSkill], id + ' 關聯技能不存在');
+    if (def.relatedSkill) {
+      assert.ok(context.SKILLS[def.relatedSkill] || sg2Ids.has(def.relatedSkill),
+        id + ' 關聯技能不存在（SKILLS 與 SKILLS2 都找不到 ' + def.relatedSkill + '）');
+    }
     if (def.triggerSkill) assert.ok(context.SKILLS[def.triggerSkill], id + ' 觸發技能不存在');
   });
   assert.equal(context.PASSIVE_POOL.whirlwindRift.triggerSkill, 'whirlwind');

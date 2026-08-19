@@ -103,16 +103,21 @@ test('SKILLS2：23 個群組、每組 7 階、欄位齊全且說明模板的參�
   });
 });
 
-test('SKILLS2 與 config/CSV/Skills2.csv 完整往返（每階一列）', () => {
+test('SKILLS2 與 config/CSV/Skills2.csv 完整往返（每階一列 ＋ 超神進化每選項一列）', () => {
   const c = loadContext();
   const csv = fs.readFileSync(path.join(root, 'config/CSV/Skills2.csv'), 'utf8').replace(/^﻿/, '');
   const rows = csv.trim().split(/\r?\n/);
   let tierTotal = 0;
-  Object.keys(c.SKILLS2).forEach((gid) => { tierTotal += c.SKILLS2[gid].tiers.length; });
-  assert.equal(rows.length - 1, tierTotal, 'CSV 列數應為每階一列');
+  Object.keys(c.SKILLS2).forEach((gid) => {
+    tierTotal += c.SKILLS2[gid].tiers.length;
+    // 超神進化（階數 8/9/10）＝三選一，每個選項一列
+    tierTotal += (c.SKILLS2[gid].ult || []).length;
+  });
+  assert.equal(rows.length - 1, tierTotal, 'CSV 列數應為每階一列（含超神進化選項）');
   assert.match(rows[0], /群組ID/);
   assert.match(rows[0], /range/);
   assert.match(rows[0], /效果參數\(JSON\)/);
+  assert.match(rows[0], /超神ID/);
 });
 
 test('突刺 1～7 階規格：數值、次數、距離與方向符合公開技能表', () => {

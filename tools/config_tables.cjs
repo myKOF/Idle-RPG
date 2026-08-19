@@ -1037,6 +1037,14 @@ const SKILLS2_GLOSSARY_ROWS = [
   ['階數'],
   ['1~7；第 1 階為技能本體（預設開啟 Lv.1），前一階至少 Lv.1 才可投資下一階；'],
   ['每階上限 10 級（固定，不隨轉生提高）；'],
+  ['8/9/10 ＝「超神進化」（第 8 階）的三選一選項 1/2/3——不是第 8~10 階；'],
+  ['　　　　玩家把前 7 階全部練滿後，只能從這三個效果裡選一個，選中的那一個可再升 10 級；'],
+  ['　　　　同一個群組要嘛不填（尚未開放），要嘛三列一起填（8、9、10 缺一不可）；'],
+  [''],
+  ['超神ID'],
+  ['只有階數 8/9/10 的列要填。程式判定用的穩定鍵（例如 phantomOcta），存檔存的是選項索引；'],
+  ['注意：這是鑰匙欄，改了會讓程式找不到對應效果（引擎以此 id 判斷施放時該套哪一套規則）；'],
+  ['　　　三個選項的排列順序也是鑰匙：存檔記的是索引，重新排序會讓玩家已選的效果換成別的；'],
   [''],
   ['range'],
   ['技能初始涵蓋範圍，格式為「長*寬」（米），例如 6*2；只供幾何計算，後續升級倍率／追加距離由程式套用；'],
@@ -1106,6 +1114,11 @@ function skills2TierNoteMap() {
 /* 每階的施法消耗：新版字面值直接帶 tiers[i].cost；尚未套用過新版的舊字面值
    （只有群組層 cost）退回「現有 CSV 的註記值 → 群組值」，--gen 才不會把編表者
    已經填好的每階魔力曲線洗成同一個數字。 */
+/* 超神進化（第 8 階三選一）在 Skills2 表裡的「階數」起始值：8、9、10 ＝選項 1、2、3。
+   接在第 7 階之後而不是另開一張表，是因為它本來就屬於同一個技能群組的成長線，
+   編表者在同一頁就能看到「這個技能練滿之後有哪三條路」。 */
+const SKILLS2_ULT_ROW_BASE = 8;
+
 function skills2TierCostCell(tier, note, groupCost) {
   if (tier && tier.cost !== undefined && tier.cost !== null) return numStr(tier.cost);
   if (note && note.cost !== '') return note.cost;
@@ -1115,9 +1128,12 @@ function skills2TierCostCell(tier, note, groupCost) {
 SCHEMAS.Skills2 = {
   name: 'Skills2', jsFile: 'skills2', sheet: 'Skills2', vars: ['SKILLS2'],
   extraSheets: [{ name: '欄位定義', rows: SKILLS2_GLOSSARY_ROWS }],
+  /* 「階數」8／9／10 ＝ 超神進化（第 8 階）的三選一選項 1／2／3（2026-08-19）。
+     它不是 tiers 的第 8~10 個元素，回寫時進 g.ult[0..2]（見 rebuild）；
+     「超神ID」欄只有這三列要填，是程式判定用的穩定鍵（存檔存索引、程式判 id）。 */
   header: ['群組ID', '群組名稱', '群組圖標', 'range', '傷害類型', '傷害屬性', '冷卻時間', '施法消耗', '階數',
     '解鎖轉生/等級', '階段名稱',
-    '效果參數(JSON)', '升級金幣基數', '升級金幣倍率', '效果說明模板'],
+    '效果參數(JSON)', '升級金幣基數', '升級金幣倍率', '效果說明模板', '超神ID'],
   extract(src) {
     const SKILLS2 = evalLiteral(extractLiteral(src, 'SKILLS2').literal);
     const notes = skills2TierNoteMap();
@@ -1131,7 +1147,16 @@ SCHEMAS.Skills2 = {
           (note && note.cd !== '') ? note.cd : numStr(g.cd),
           skills2TierCostCell(t, note, g.cost), String(i + 1),
           t.unlock ? (numStr(t.unlock.reinc || 0) + '|' + numStr(t.unlock.lv || 0)) : '', t.name,
-          JSON.stringify(t.fx || {}), numStr(t.goldBase || 0), numStr(t.goldGrow || 1), t.desc || '']);
+          JSON.stringify(t.fx || {}), numStr(t.goldBase || 0), numStr(t.goldGrow || 1), t.desc || '', '']);
+      });
+      // 超神進化三選一：階數固定接在各階之後（SKILLS2_ULT_ROW_BASE + 選項索引）
+      (g.ult || []).forEach((o, i) => {
+        const note = notes[gid + '|' + String(SKILLS2_ULT_ROW_BASE + i)];
+        rows.push([gid, '', '', '', '', '',
+          (note && note.cd !== '') ? note.cd : '',
+          skills2TierCostCell(o, note, g.cost), String(SKILLS2_ULT_ROW_BASE + i),
+          '', o.name,
+          JSON.stringify(o.fx || {}), numStr(o.goldBase || 0), numStr(o.goldGrow || 1), o.desc || '', o.id || '']);
       });
     });
     return rows;
@@ -1145,8 +1170,8 @@ SCHEMAS.Skills2 = {
       const tierIdx = Math.floor(toNum(get(r, '階數')));
       if (!(tierIdx >= 1)) throw new Error('Skills2 群組「' + gid + '」有一列缺「階數」');
       if (!groups[gid]) {
-        // 鍵的順序＝回寫 JS 字面值的欄位順序，須與手寫時一致（留白的兩欄稍後移除）
-        groups[gid] = { name: '', emoji: '', range: '', dmgType: '', elem: '', cd: 0, cost: 0, tiers: [] };
+        // 鍵的順序＝回寫 JS 字面值的欄位順序，須與手寫時一致（留白的欄位稍後移除）
+        groups[gid] = { name: '', emoji: '', range: '', dmgType: '', elem: '', cd: 0, cost: 0, tiers: [], ult: [] };
         order.push(gid);
       }
       if (tierIdx === 1) {
@@ -1183,6 +1208,21 @@ SCHEMAS.Skills2 = {
       /* 每階的施法消耗＝該階的觸發消耗（被動技能逐階扣魔用）；留白／0 不寫進字面值，
          讓「這一階不耗魔」在程式端就是「沒有這個欄位」。 */
       const tierCost = toNum(get(r, '施法消耗'));
+      /* 階數 >= 8：超神進化的三選一選項（不是第 8~10 階）。
+         欄位順序須與手寫字面值一致：id／name／cost／fx／goldBase／goldGrow／desc。 */
+      if (tierIdx >= SKILLS2_ULT_ROW_BASE) {
+        const ultIdx = tierIdx - SKILLS2_ULT_ROW_BASE;
+        const ultId = get(r, '超神ID').trim();
+        if (!ultId) {
+          throw new Error('Skills2 群組「' + gid + '」階數=' + tierIdx + '（超神進化）缺「超神ID」');
+        }
+        groups[gid].ult[ultIdx] = {
+          id: ultId, name: get(r, '階段名稱'), cost: tierCost, fx: fx,
+          goldBase: toNum(get(r, '升級金幣基數')), goldGrow: toNum(get(r, '升級金幣倍率')),
+          desc: get(r, '效果說明模板')
+        };
+        return;
+      }
       groups[gid].tiers[tierIdx - 1] = Object.assign(
         { name: get(r, '階段名稱') },
         unlock ? { unlock } : null,
@@ -1201,6 +1241,15 @@ SCHEMAS.Skills2 = {
       // 留白＝沿用預設（物理、無屬性）：不寫進字面值，避免八個武技群組多出兩個空欄位
       if (!g.dmgType) delete g.dmgType;
       if (!g.elem) delete g.elem;
+      /* 超神進化：沒有就整個欄位不寫（尚未開放的群組不該多出一個空陣列）；
+         有就必須剛好三個且不缺號，否則 UI 的三選一會出現空卡片。 */
+      if (!g.ult.length) { delete g.ult; return; }
+      if (g.ult.length !== 3) {
+        throw new Error('Skills2 群組「' + gid + '」的超神進化必須剛好 3 個選項（階數 8、9、10），目前 ' + g.ult.length + ' 個');
+      }
+      g.ult.forEach((o, i) => {
+        if (!o) throw new Error('Skills2 群組「' + gid + '」缺超神進化選項 ' + (i + 1) + '（階數 ' + (SKILLS2_ULT_ROW_BASE + i) + '）');
+      });
     });
     const entries = order.map(gid => '  ' + (isIdentKey(gid) ? gid : quoteStr(gid)) + ': ' + jsLit(groups[gid]));
     return { SKILLS2: 'var SKILLS2 = {\n' + entries.join(',\n') + '\n};' };
