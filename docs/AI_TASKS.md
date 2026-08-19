@@ -3783,6 +3783,53 @@ Commit：
 
 完成後交給：使用者／主整合工作區。
 
+## 任務：調整殛道落電效果與紫色雷電特效（2026-08-19）
+
+任務狀態：已完成（2026-08-19）
+
+任務分類：技能效果調整／戰鬥計算／戰鬥 VFX
+
+負責 AI：Codex
+
+使用者需求：調整「殛道落電」（現有 Skills2 T7 `殛道落雷`）：落雷命中時對目標 6 米內的所有敵人造成傷害；
+攻擊次數與攻擊目標數量各乘以 2；落雷命中暈眩中的敵人時，傷害額外提高 50%，且每級再提高 5%；
+此增傷與原傷害採乘算；落雷的雷電特效改為紫色雷電。
+
+允許修改：
+
+- `config/Excel/Skills2.xlsx`
+- `config/CSV/Skills2.csv`
+- `js/skills2.js`
+- `js/battle-renderer.js`
+- `js/vfx.js`
+- `tests/skill2-lightning.test.cjs`
+- `index.html`
+- `docs/AI_TASKS.md`
+
+禁止修改：其他技能群組效果、存檔格式、Worker Protocol、無關技能數值、無關 UI／VFX。
+
+前置依賴：雷系三大新版技能與既有落雷天降佇列已存在；衝突預檢於 2026-08-19 合併其他分支後通過。
+
+測試要求：驗證 T7 6 米範圍內所有存活敵人均受傷、次數／目標數 ×2、暈眩增傷為原傷害的乘算倍率且每級 +5%；
+驗證 Canvas／DOM 落雷本體與落地衝擊均使用紫色；執行雷系定向測試、完整 `npm test`、`npm run build`、
+Skills2 Excel／CSV／JS round-trip、`git diff --check`。
+
+完成條件：資料與程式同步、計算與雙路徑 VFX 回歸測試通過、更新前端快取版本並建立 `[Codex]` commit。
+
+後續接手者：使用者／主整合工作區。
+
+完成內容：T7 改為「殛道落電」，新增 6 米落點範圍傷害；攻擊次數與目標數量各乘 2；暈眩增傷採原傷害乘算，Lv.1 為 +55%（50% 基礎值＋每級 5%）；Canvas／DOM 落雷本體與地面衝擊改用紫色雷電。
+
+驗證結果：`node --test tests/skill2-lightning.test.cjs tests/skill2-vfx.test.cjs` 59/59 通過；落雷生命週期與 VFX 定向測試 30/30 通過；`node tools/config_tables.cjs --apply Skills2` 語意變更 0；`npm run build` 通過 294 個檔案檢查；完整 `npm test` 共 1617 項，1612 通過，剩餘 5 項為既有基線失敗（嗜血狂怒、泥沼／熔岩沼、暴風雪、counter 欄位驗證），未涉及本任務修改。
+
+資料備註：原 `config/Excel/Skills2.xlsx` 的 OpenXML 壓縮資料損壞，已依專案表格流程重建為可讀 workbook；Excel／CSV／JS round-trip dry-run 已確認無語意差異。
+
+已知風險：完整套件仍有上述 5 項既有基線失敗，需由其他任務另行處理。
+
+未完成項目：無。
+
+Commit 編號：本次 `[Codex]` 功能提交（以 Git HEAD 為準）。
+
 ---
 
 ## 任務：虛空斬改為四道順時針向外擴張

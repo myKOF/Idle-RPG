@@ -414,6 +414,9 @@ function vfxRectAround(pt, area) {
    父層保持一致；各專用函式只負責自己的幾何與子粒子。 */
 function vfxTheme(spec) {
   /* variant 的專屬色優先於元素色；沒有元素時才使用事件傳入的單色。 */
+  if (spec && spec.variant === 'thunder-strike') {
+    return { c1: '#c084fc', c2: '#fdf4ff', glow: '#9333ea' };
+  }
   if (spec && (spec.variant === 'bleed' || spec.variant === 'bleed-tick')) {
     return { c1: '#d92846', c2: '#ffd0d8', glow: '#ff4962' };
   }
@@ -679,6 +682,8 @@ function vfxHitReact(targetId, elem, delayMs, strong, targetGuard) {
    Reduced 直接跳過，避免普通裝備操作頁也因戰鬥事件產生大範圍重繪。 */
 function vfxAllowsSceneShake(spec) {
   var v = spec && spec.variant;
+  /* 血刃斬的毒霧感染只是彈射毒液，不應把整個戰場一起震動。 */
+  if (v === 'poison-spread') return false;
   return v === 'meteor' || v === 'pillar' || v === 'purple-thunder' ||
     v === 'storm-sigil' || v === 'detonate' || v === 'blood-explosion' ||
     v === 'zero-infection' || v === 'nova' || v === 'venomburst' || v === 'vortex';
@@ -1718,7 +1723,8 @@ function vfxRainDrops(spec, layer, rect) {
 function vfxBolt(spec, layer, from, to, delayMs, opts, targetGuard) {
   var isWeak = opts === true || (opts && opts.weak);
   var isMega = opts && opts.mega;
-  var isPurple = (opts && opts.purple) || (spec && (spec.variant === 'purple-thunder' || spec.variant === 'storm-sigil'));
+  var isPurple = (opts && opts.purple) || (spec && (spec.variant === 'thunder-strike' ||
+    spec.variant === 'purple-thunder' || spec.variant === 'storm-sigil'));
   var minX = Math.min(from.x, to.x) - 40, minY = Math.min(from.y, to.y) - 40;
   var w = Math.max(12, Math.abs(to.x - from.x)) + 80, h = Math.max(12, Math.abs(to.y - from.y)) + 80;
   var segs = isMega || isPurple ? 8 : 6;
@@ -2020,13 +2026,19 @@ function vfxChain(spec, layer, ptList, idList, baseDelay, strikes) {
 function vfxSmite(spec, layer, pt, targetId, delayMs, travelMs) {
   if (targetId && !vfxTargetIsLive(targetId)) return;
   var targetGuard = vfxTargetGuard(targetId);
+  var isPurple = spec.variant === 'thunder-strike';
   if (spec.variant === 'thunder-fall') {
     var radius = vfxAreaRadius(null, spec.area);
     var flight = Array.isArray(travelMs) ? travelMs[0] : travelMs;
     vfxTargetTelegraph(spec, layer, pt, radius, delayMs, flight, targetGuard);
   }
-  vfxBolt(spec, layer, { x: pt.x + 26, y: -50 }, pt, delayMs, { mega: true }, targetGuard);
-  vfxLightningGroundImpact(spec, layer, pt, delayMs + 30, false, targetGuard);
+  vfxBolt(spec, layer, { x: pt.x + 26, y: -50 }, pt, delayMs,
+    { mega: true, purple: isPurple }, targetGuard);
+  if (isPurple) {
+    vfxLightningGroundImpact(spec, layer, pt, delayMs + 30, true, targetGuard);
+  } else {
+    vfxLightningGroundImpact(spec, layer, pt, delayMs + 30, false, targetGuard);
+  }
   vfxImpact({ elem: 'lightning', variant: null, color: spec.color }, layer, pt, targetId,
     delayMs + 40, targetGuard);
 }
