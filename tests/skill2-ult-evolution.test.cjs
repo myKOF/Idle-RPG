@@ -1167,6 +1167,12 @@ test('【狂舞】與【殺千刀】：只在暴風之舞持續期間作用，�
   c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'dualdance', 'mv-float');
   const stm = c.SKILL2_RT.storm;
   assert.ok(stm, '應進入暴風之舞');
+  /* 這一拍必須還是「設計值」——開起化身的那一次施放不算在持續期間內。
+     少了這條，把 sgCastDualdance 的 stormOn 守衛拿掉也不會紅：
+     gap0 會連同被縮短的值一起被讀走，後面的比值斷言照樣成立。 */
+  const designGap = Math.max(0.1, Number(c.SKILLS2.dualdance.tiers[6].fx.gap) || 0.35);
+  assert.ok(Math.abs(stm.gap - designGap) < 1e-9,
+    '開起化身的那一拍不得先吃到狂舞的縮短，實得 ' + stm.gap + '（設計值 ' + designGap + '）');
   const gap0 = stm.gap, until0 = stm.until;
 
   // 化身期間的自動施放：節拍縮短
