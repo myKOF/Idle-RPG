@@ -1031,6 +1031,9 @@ function sgEmitVfx(gid, targets, floatSel, extra) {
   if (extra && extra.laneOffsets) spec.laneOffsets = extra.laneOffsets.slice(0, 3);
   if (extra && extra.directionCount) spec.directionCount = Number(extra.directionCount);
   if (extra && extra.rangeScale > 0) spec.rangeScale = Number(extra.rangeScale);
+  if (extra && Array.isArray(extra.directionRanges)) {
+    spec.directionRanges = extra.directionRanges.slice(0, 4).map(Number);
+  }
   /* 風刃是「朝某個方位射出」而不是「射向某個目標」：路徑上可能一個敵人都沒有
      （四方向齊射），顯示層因此必須拿得到方位與刀身長度，不能從 targets 反推。 */
   if (extra && isFinite(extra.angle)) spec.angle = Number(extra.angle);
@@ -1082,6 +1085,12 @@ function sgQueueFlyingProjectile(pEnt, st, gid, dmgVal, origin, angle, length, f
     spreadPct: extra && extra.spreadPct || 0,
     spreadCount: extra && extra.spreadCount || 0,
     halfWidthPx: extra && Number(extra.halfWidthPx) > 0 ? Number(extra.halfWidthPx) : 0,
+    /* 迴身四方斬的每道飛行物是 90 度扇形，距離隨飛行物推進而增長；
+       coneBaseAngle／coneIndex 將四個扇形切成不重疊的完整圓，避免邊界敵人被重複命中。 */
+    coneDeg: extra && Number(extra.coneDeg) > 0 ? Number(extra.coneDeg) : 0,
+    coneBaseAngle: extra && isFinite(extra.coneBaseAngle) ? Number(extra.coneBaseAngle) : 0,
+    coneIndex: extra && Number(extra.coneIndex) >= 0 ? Math.floor(Number(extra.coneIndex)) : -1,
+    coneCount: extra && Number(extra.coneCount) > 0 ? Math.floor(Number(extra.coneCount)) : 0,
     stunChance: extra && extra.stunChance || 0,
     stunSec: extra && extra.stunSec || 0,
     /* 延遲發射（暴風真空刃：同一個方向連續射出三道，每道間隔 0.2 秒）。
@@ -1168,6 +1177,25 @@ function sgProjectileHit(projectile, target, ctx) {
   if (res.killed && ctx.onDeaths) ctx.onDeaths();
 }
 
+/* 四方斬的四個 90 度扇形在數學上剛好首尾相接。
+   bfConeTargets 的邊界是雙包含，這裡依「從前方扇形開始、逆時針分配」改成半開區間，
+   讓落在 45／135／225／315 度邊界上的敵人只歸屬其中一道斬擊。 */
+function sgFilterCleaveSectorTargets(targets, baseAngle, sectorIndex, sectorCount) {
+  if (!Array.isArray(targets) || sectorIndex < 0 || !(sectorCount > 0) ||
+      typeof bfAngleTo !== 'function') return targets || [];
+  var step = Math.PI * 2 / sectorCount;
+  var start = baseAngle - step / 2 + sectorIndex * step;
+  var out = [];
+  for (var i = 0; i < targets.length; i++) {
+    var angle = bfAngleTo(targets[i]);
+    var rel = angle - start;
+    while (rel < 0) rel += Math.PI * 2;
+    while (rel >= Math.PI * 2) rel -= Math.PI * 2;
+    if (rel < step) out.push(targets[i]);
+  }
+  return out;
+}
+
 /* 飛行物的沿途脈衝（狂風碎裂）：以飛行物當下位置為圓心，對半徑內的所有敵人各打一段。
    節拍與位置都由飛行物自己推進，因此速度、體積與傷害全部只有一個來源。 */
 function sgProjectilePulse(projectile, now, distance, enemies, ctx) {
@@ -1207,7 +1235,11 @@ function sgTickFlyingProjectiles(dt, ctx) {
       ? Math.min(projectile.length, Math.max(0, (now - projectile.startAt) * projectile.speed))
       : projectile.length;
     var crossed;
-    if (projectile.origin && typeof bfSegmentTargets === 'function') {
+    if (projectile.origin && projectile.coneDeg > 0 && typeof bfConeTargets === 'function') {
+      crossed = bfConeTargets(projectile.angle, projectile.coneDeg, distance, enemies);
+      crossed = sgFilterCleaveSectorTargets(crossed, projectile.coneBaseAngle,
+        projectile.coneIndex, projectile.coneCount);
+    } else if (projectile.origin && typeof bfSegmentTargets === 'function') {
       crossed = bfSegmentTargets(projectile.origin, projectile.angle,
         projectile.lastDistance, distance, enemies,
         Math.max(SG_FLYING_PROJECTILE_HALF_WIDTH, projectile.halfWidthPx || 0));
@@ -1641,32 +1673,34 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var legendFlyPx = bfMeterPx(Number(lg.cleaveFlyM) || 0) * cleaveRangeScale;
   var frontFlyPx = Math.max(tierFlyPx, legendFlyPx);
   var sideFlyPx = legendFlyPx;
-  var isFlying = frontFlyPx > 0;
+  // 迴身四方斬本身就是向外擴張的四道扇形；其他階段沒有飛出距離時仍須走飛行物時間軸。
+  var isFlying = frontFlyPx > 0 || lvs[6] > 0;
   var meleeRangePx = ((typeof bfMeleeRange === 'function') ? bfMeleeRange() : bfMeterPx(5)) * cleaveRangeScale;
 
   var targets = [];
   var directionTargets = [];
   var directions = lvs[6] > 0 ? [0, Math.PI / 2, Math.PI, Math.PI * 1.5] : [0];
   if (lvs[6] > 0) {
-    // 迴身四方斬：以玩家朝向為基準，分別取前、右、後、左四個十字方向的目標。
+    // 迴身四方斬：以玩家朝向為基準，四個方向各取 90 度扇形，合起來覆蓋完整圓周。
     for (var di = 0; di < directions.length; di++) {
       var dirFly = (di === 0) ? frontFlyPx : sideFlyPx;
       var dirRange = dirFly > 0
         ? dirFly
         : meleeRangePx;
-      var dirTargets = geomOk ? bfLineTargets(baseAngle + directions[di], dirRange, pool) : [primary];
+      var dirTargets = geomOk && typeof bfConeTargets === 'function'
+        ? bfConeTargets(baseAngle + directions[di], 90, dirRange, pool) : [primary];
+      dirTargets = sgFilterCleaveSectorTargets(dirTargets, baseAngle, di, directions.length);
       if (targetCap > 0) dirTargets = dirTargets.slice(0, targetCap);
       if (di === 0 && geomOk && primary.hp > 0 && dirTargets.indexOf(primary) < 0) {
         dirTargets.unshift(primary);
         if (targetCap > 0 && dirTargets.length > targetCap) dirTargets.pop();
       }
-      // 震碎斬／裂空飛斬的延伸仍套用在該方向的刀光上（飛出距離內的敵人全部聯集進來）。
-      if (dirFly > 0 && geomOk) {
-        var crossLine = bfLineTargets(baseAngle + directions[di], dirFly, pool);
-        for (var cli = 0; cli < crossLine.length; cli++) {
-          if (dirTargets.indexOf(crossLine[cli]) < 0) dirTargets.push(crossLine[cli]);
-        }
+      // 四個扇形首尾相接；同一敵人只保留在第一個分配到的方向，避免邊界重複傷害。
+      var uniqueDirTargets = [];
+      for (var dui = 0; dui < dirTargets.length; dui++) {
+        if (targets.indexOf(dirTargets[dui]) < 0) uniqueDirTargets.push(dirTargets[dui]);
       }
+      dirTargets = uniqueDirTargets;
       directionTargets.push(dirTargets);
       for (var dti = 0; dti < dirTargets.length; dti++) {
         if (targets.indexOf(dirTargets[dti]) < 0) targets.push(dirTargets[dti]);
@@ -1691,11 +1725,18 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   }
   var cleaveVariant = lvs[6] > 0 ? (isFlying ? 'cleave-cross-shockwave' : 'cleave-cross')
     : (isFlying ? 'cleave-shockwave' : 'cleave');
+  var directionRanges = [];
+  for (var dri = 0; dri < directions.length; dri++) {
+    var rangeFly = (dri === 0) ? frontFlyPx : sideFlyPx;
+    directionRanges.push(rangeFly > 0 ? rangeFly : meleeRangePx);
+  }
+  var cleaveVfxRange = lvs[6] > 0 ? Math.max.apply(Math, directionRanges) : frontFlyPx;
   /* lineLength＝弧光實際要飛多遠（像素）。不帶的話兩個渲染器都會退回寫死的 120px，
      傳奇【裂空飛斬】的 60 米就只會飛出 1/5 的距離。 */
   sgEmitVfx('cleave', targets, floatSel, {
     fxKind: 'slash', variant: cleaveVariant, count: Math.min(5, slashes), projectile: isFlying,
-    lineLength: frontFlyPx, rangeScale: cleaveRangeScale, color: '#60a5fa'
+    lineLength: cleaveVfxRange, directionRanges: lvs[6] > 0 ? directionRanges : null,
+    rangeScale: cleaveRangeScale, color: '#60a5fa'
   });
   var stunChance = lvs[4] > 0 ? sgVal(t[4].fx, 'chance', lvs[4]) : 0;
   var stunSec = lvs[4] > 0 ? sgVal(t[4].fx, 'sec', lvs[4]) : 0;
@@ -1729,7 +1770,9 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
           (typeof bfPlayerPos === 'function' && geomOk) ? bfPlayerPos() : null,
           geomOk ? baseAngle + directions[pdi2] : 0, projectileLen, floatSel,
           directionTargets[pdi2],
-          { stunChance: stunChance, stunSec: stunSec, onHit: onCleaveHit, bonusPctFn: bonusFor }, out);
+          { stunChance: stunChance, stunSec: stunSec, onHit: onCleaveHit, bonusPctFn: bonusFor,
+            coneDeg: lvs[6] > 0 ? 90 : 0, coneBaseAngle: baseAngle,
+            coneIndex: lvs[6] > 0 ? pdi2 : -1, coneCount: lvs[6] > 0 ? directions.length : 0 }, out);
       }
     }
     return;
