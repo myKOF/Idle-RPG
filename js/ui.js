@@ -7787,16 +7787,30 @@ function sgSkillGroupRowHTML(gid, lvs, loadout, skillsSnapshot) {
   var groupRef = 'sg:' + gid;
   var equipped = loadout.indexOf(groupRef) >= 0;
   var labelCls = 'sg-group-label' + (equipped ? ' sg-group-equipped' : '');
+  var totalLv = sgUiTotalLevel(lvs);
   var isDev = isGMHost();
+
+  var equipBtnHtml = '';
+  if (equipped) {
+    equipBtnHtml = '<button type="button" class="sg-row-action-btn sg-row-unequip-btn" data-skill-unequip="' + esc(groupRef) + '" title="從裝載欄卸下「' + esc(g.name) + '」" aria-label="卸下 ' + esc(g.name) + '">卸下</button>';
+  } else if (totalLv > 0) {
+    equipBtnHtml = '<button type="button" class="sg-row-action-btn sg-row-equip-btn" data-skill-equip="' + esc(groupRef) + '" title="裝備「' + esc(g.name) + '」至裝載欄" aria-label="裝備 ' + esc(g.name) + '">裝備</button>';
+  } else {
+    equipBtnHtml = '<button type="button" class="sg-row-action-btn sg-row-equip-btn disabled" disabled title="需先升級此技能群組才能裝備" aria-label="裝備 ' + esc(g.name) + '（未解鎖）">裝備</button>';
+  }
+
   var maxBtnHtml = isDev
     ? '<button type="button" class="sg-row-max-btn" data-sg-max-group="' + esc(gid) + '" title="【內測專用】一鍵將「' + esc(g.name) + '」全階層升至滿級" aria-label="一鍵滿級 ' + esc(g.name) + '">MAX</button>'
     : '';
+
+  var actionsHtml = '<div class="sg-row-actions">' + equipBtnHtml + maxBtnHtml + '</div>';
+
   var h = '<div class="sg-group-row-wrap">' +
     '<div class="sg-group-row">' +
     '<div class="' + labelCls + '" data-sk="' + groupRef + '">' +
     '<span class="sg-group-emoji" aria-hidden="true">' + g.emoji + '</span>' +
     '<span class="sg-group-name">' + esc(g.name) + '</span>' +
-    '<span class="sg-group-total">總 Lv.' + sgUiTotalLevel(lvs) + '</span>' +
+    '<span class="sg-group-total">總 Lv.' + totalLv + '</span>' +
     '</div><div class="sg-stage-track">';
   /* 格數＝各階 ＋（有開放超神進化時）第 8 格。sgSlotCount 是共載的唯一權威，
      未開放的群組不畫空格子——不留一個永遠點不開的死格。 */
@@ -7805,7 +7819,7 @@ function sgSkillGroupRowHTML(gid, lvs, loadout, skillsSnapshot) {
     if (i > 0) h += '<span class="sg-stage-arrow" aria-hidden="true">➤</span>';
     h += sgStageNodeHTML(gid, i, lvs, loadout, skillsSnapshot);
   }
-  return h + '</div></div>' + maxBtnHtml + '</div>';
+  return h + '</div></div>' + actionsHtml + '</div>';
 }
 
 /* 新版技能群組「超神進化」（第 8 格）的升級彈窗內容。

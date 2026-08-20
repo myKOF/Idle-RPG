@@ -10,12 +10,12 @@ const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
-test('新版技能樹以群組列呈現七階橫向進階鏈', () => {
+test('新版技能樹以群組列呈現七階橫向進階鏈，且無拉條', () => {
   assert.match(ui, /sgSkillGroupRowHTML\(sgGid,\s*sgLvs,\s*sgLoadout,\s*skillsSnapshot\)/);
   assert.match(ui, /sgStageNodeHTML\(gid,\s*i,\s*lvs,\s*loadout,\s*skillsSnapshot\)/);
   assert.match(ui, /sg-stage-arrow/);
   assert.match(ui, /data-sg-tier="' \+ tierIndex/);
-  assert.match(css, /\.sg-group-row\s*\{[\s\S]*?overflow-x:\s*auto/);
+  assert.doesNotMatch(css, /\.sg-group-row\s*\{[^}]*?overflow-x:\s*auto/);
   assert.match(css, /\.sg-stage-track\s*\{[\s\S]*?display:\s*flex/);
   assert.match(css, /\.sg-stage-arrow\s*\{[\s\S]*?color:\s*#1f8cb7/);
 });
@@ -84,11 +84,15 @@ test('主動型被動：技能彈窗有裝備鈕與類型標籤，快捷列外�
   assert.match(css, /prefers-reduced-motion[\s\S]*?\.battle-skill-slot\.active-passive::before\s*\{[\s\S]*?animation:\s*none/);
 });
 
-test('新版技能群組列外側包含內測一鍵滿級按鈕', () => {
+test('新版技能群組列右側包含裝備/卸下按鈕與縮小版一鍵滿級按鈕', () => {
   assert.match(ui, /class="sg-group-row-wrap"/);
+  assert.match(ui, /class="sg-row-actions"/);
+  assert.match(ui, /sg-row-equip-btn/);
+  assert.match(ui, /sg-row-unequip-btn/);
   assert.match(ui, /class="sg-row-max-btn"/);
   assert.match(css, /\.sg-group-row-wrap\s*\{[\s\S]*?display:\s*flex/);
-  assert.match(css, /\.sg-row-max-btn\s*\{[\s\S]*?width:\s*28px/);
+  assert.match(css, /\.sg-row-actions\s*\{[\s\S]*?display:\s*flex/);
+  assert.match(css, /\.sg-row-max-btn\s*\{[\s\S]*?width:\s*46px/);
 });
 
 test('技能頁文字與資產版號已更新', () => {

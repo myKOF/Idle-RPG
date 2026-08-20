@@ -1,6 +1,20 @@
 # PATCH.md
 
-## 傳奇進化：10 個新版技能改寫型傳奇特效 ＋ 超神進化（技能第 8 格三選一）（Claude 2026-08-19）
+## 技能群組列介面擴大、移除拉條、新增右側裝備/卸下按鈕與 MAX 按鈕精簡（Antigravity 2026-08-20）
+
+- **移除技能欄橫向拉條與介面擴大**：
+  - 調整 `css/style.css` 中的 `.sg-group-row-wrap`、`.sg-group-row`、`.sg-group-label`、`.sg-stage-track`、`.sg-stage-node` 與 `.sg-stage-arrow`。
+  - 移除 `.sg-group-row` 的 `overflow-x: auto`，將格位與箭頭調整為彈性自適應寬度，使 7 階進階鏈與超神進化格在不同解析度下皆能完整呈現，徹底消除橫向捲軸/拉條。
+- **新增右側裝備/卸下按鈕**：
+  - 在 `js/ui.js` 的 `sgSkillGroupRowHTML` 中建立 `.sg-row-actions` 容器。
+  - 新增 `.sg-row-action-btn`（`.sg-row-equip-btn` / `.sg-row-unequip-btn`），若技能已裝備於快捷欄顯示「卸下」（點擊觸發 `skill.unequipLoadout`），未裝備且已學習則顯示「裝備」（點擊觸發 `skill.equipLoadout`），未學習則為置灰禁用狀態。
+- **MAX 按鈕縮小與整合**：
+  - 將內測一鍵滿級按鈕 `.sg-row-max-btn` 精簡縮小，與裝備/卸下按鈕在右側 `.sg-row-actions` 欄位中垂直緊湊排列。
+- **快取破壞與測試**：
+  - 更新 `index.html` 快取版號（`css/style.css?v=1.0.51`、`js/ui.js?v=1.0.54`）。
+  - 更新 `tests/skill2-ui.test.cjs` 驗證拉條移除、新按鈕結構與 CSS 樣式。
+
+
 
 設計來源：使用者提供的「神力之巔_記事錄」試算表〈傳奇進化〉頁籤。
 

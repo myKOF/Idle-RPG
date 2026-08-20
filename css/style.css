@@ -4390,6 +4390,7 @@ textarea:disabled,
   align-items: center;
   gap: 8px;
   min-width: 0;
+  width: 100%;
 }
 
 .sg-group-row {
@@ -4401,19 +4402,18 @@ textarea:disabled,
   padding: 5px 6px;
   border: 1px solid rgba(185, 138, 45, .45);
   background: rgba(0, 0, 0, .28);
-  overflow-x: auto;
-  scrollbar-width: thin;
+  border-radius: 4px;
 }
 
 .sg-group-label {
   display: flex;
-  flex: 0 0 76px;
-  min-height: 58px;
+  flex: 0 0 74px;
+  min-height: 56px;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
   gap: 2px;
-  padding: 4px 4px;
+  padding: 3px 4px;
   border-left: 3px solid var(--border);
   color: var(--text);
   cursor: pointer;
@@ -4431,7 +4431,7 @@ textarea:disabled,
 }
 
 .sg-group-name {
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: bold;
   white-space: nowrap;
 }
@@ -4444,17 +4444,20 @@ textarea:disabled,
 
 .sg-stage-track {
   display: flex;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   align-items: center;
-  gap: 3px;
+  justify-content: space-between;
+  gap: 2px;
+  min-width: 0;
 }
 
 .sg-stage-node {
   position: relative;
   display: flex;
-  flex: 0 0 56px;
-  width: 56px;
-  height: 58px;
+  flex: 1 1 50px;
+  min-width: 42px;
+  max-width: 56px;
+  height: 56px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -4601,33 +4604,108 @@ textarea:disabled,
 }
 
 .sg-stage-arrow {
-  flex: 0 0 13px;
+  flex: 0 0 10px;
   color: #1f8cb7;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: bold;
   line-height: 1;
   text-align: center;
   text-shadow: 1px 1px 0 #07141b, 0 0 5px rgba(31, 140, 183, .5);
 }
 
-/* 內測專用：一鍵滿級按鈕（置於技能列外側） */
+/* 右側操作按鈕區塊（裝備/卸下 + MAX） */
+.sg-row-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 0 0 46px;
+  width: 46px;
+}
+
+.sg-row-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 25px;
+  box-sizing: border-box;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  text-shadow: 1px 1px 1px #000;
+}
+
+.sg-row-equip-btn {
+  background: linear-gradient(180deg, #1b3d52 0%, #0c202d 100%);
+  border: 1.5px solid #38bdf8;
+  color: #bae6fd;
+  box-shadow: 0 0 4px rgba(56, 189, 248, 0.35);
+}
+
+.sg-row-equip-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #275674 0%, #133347 100%);
+  border-color: #7dd3fc;
+  color: #ffffff;
+  box-shadow: 0 0 8px rgba(125, 211, 252, 0.6);
+  transform: translateY(-1px);
+}
+
+.sg-row-equip-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.sg-row-equip-btn:disabled,
+.sg-row-equip-btn.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: #555;
+  color: #888;
+  background: #222;
+  box-shadow: none;
+  transform: none;
+}
+
+.sg-row-unequip-btn {
+  background: linear-gradient(180deg, #4a3a1f 0%, #2a2016 100%);
+  border: 1.5px solid #d4a340;
+  color: #ffcc66;
+  box-shadow: 0 0 4px rgba(212, 163, 64, 0.35);
+}
+
+.sg-row-unequip-btn:hover {
+  background: linear-gradient(180deg, #664d26 0%, #3d2b18 100%);
+  border-color: #ffe066;
+  color: #ffffff;
+  box-shadow: 0 0 8px rgba(255, 224, 102, 0.6);
+  transform: translateY(-1px);
+}
+
+.sg-row-unequip-btn:active {
+  transform: translateY(1px);
+}
+
+/* 縮小版一鍵滿級按鈕（內測專用） */
 .sg-row-max-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 28px;
-  width: 28px;
-  height: 46px;
+  width: 46px;
+  height: 23px;
   box-sizing: border-box;
   background: linear-gradient(180deg, #421111 0%, #1e0707 100%);
   border: 1.5px solid #d4a340;
   border-radius: 4px;
   color: #ffe066;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 900;
   letter-spacing: 0.5px;
   cursor: pointer;
-  box-shadow: 0 0 4px rgba(212, 163, 64, 0.4), inset 0 0 8px rgba(255, 60, 60, 0.25);
+  box-shadow: 0 0 4px rgba(212, 163, 64, 0.4), inset 0 0 6px rgba(255, 60, 60, 0.25);
   transition: all 0.15s ease;
   user-select: none;
 }
@@ -4636,13 +4714,13 @@ textarea:disabled,
   background: linear-gradient(180deg, #661818 0%, #300909 100%);
   border-color: #fff188;
   color: #fff;
-  box-shadow: 0 0 10px rgba(255, 241, 136, 0.7), inset 0 0 10px rgba(255, 100, 100, 0.5);
+  box-shadow: 0 0 8px rgba(255, 241, 136, 0.7), inset 0 0 8px rgba(255, 100, 100, 0.5);
   transform: translateY(-1px);
 }
 
 .sg-row-max-btn:active {
   transform: translateY(1px);
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.85);
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.85);
 }
 
 .sg-modal-locked-action {
