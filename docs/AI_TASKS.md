@@ -1,5 +1,22 @@
 # AI_TASKS.md
 
+## Codex｜調整天霸風神斬範圍與被動施放間隔｜2026-08-20
+
+- 狀態：已完成
+- Owner：Codex
+- 使用者需求：迴旋斬範圍擴大 30%，改為被動技能，每 8 秒自動施放 1 次，且每級施放間隔減少 0.5 秒。
+- 前置依賴：沿用現有天霸風神斬的超神進化與被動自動施放流程；不變更存檔格式、Worker Protocol 或其他技能。
+- 允許修改：`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`、`js/skills2.js`、`tests/skill2-ult-evolution.test.cjs`、`game_formula.md`、`GM_command.md`、`index.html`、本文件。
+- 禁止修改：其他技能數值、傷害公式、目標選擇、VFX 外觀與非本技能的載入流程。
+- 驗證要求：Skills2 表格往返同步、天霸風神斬範圍／間隔／被動施放測試、語法檢查、建置、`git diff --check`。
+- 修改內容：Skills2 超神進化 `stormGodSlash` 新增 `range:30`、間隔改為 `sec:8`／`secPer:-0.5`；迴旋斬施放距離、飛行斬擊與十字斬擊路徑套用 30% 倍率；同步遊戲公式、GM 指令說明、技能載入版號與回歸測試。
+- 修改檔案：`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`、`js/skills2.js`、`tests/skill2-ult-evolution.test.cjs`、`game_formula.md`、`GM_command.md`、`index.html`、本文件。
+- 未修改但檢查過：`js/skills.js` 的主動輪替被動閘門、`js/battlefield.js` 的米／系統距離換算與線段命中、`js/vfx.js`／`js/battle-renderer.js` 的既有迴旋斬特效路徑。
+- 驗證結果：天霸風神斬／Skills2 系統定向測試 49/49、建置檢查 295/295、`node --check js/skills2.js`、Skills2 `--sync`／`--apply` 往返與 `apply_params` 554 錨點檢查通過、`git diff --check` 通過。完整測試 1644 項中 1633 通過、11 項為既有泥沼／寒冰／暴風雪參數、風切狀態與 VFX／快取基準失敗，未涉及本次天霸風神斬邏輯。
+- 已知風險：VFX 定向測試仍有 2 項既有 DOM／快取基準失敗；完整套件的 11 項既有失敗需另案處理。瀏覽器需重新整理以載入 `js/skills2.js?v=1.0.53`。
+- 未完成項目：無。
+- 是否可以合併：可以。
+
 ## Codex｜寒冰箭 15 度分箭、三波追蹤與 30 米／秒｜2026-08-19
 
 - 狀態：已完成

@@ -407,21 +407,28 @@ test('【逐風者】：每次命中在該處生成一道龍捲風，逐段造�
   assert.ok(!calls2.some((x) => x.elem === 'wind'), '沒選逐風者就不該有風系段');
 });
 
-test('【天霸風神斬】：迴旋斬變成被動——不進主動輪替，改為每 N 秒自動施放', () => {
+test('【天霸風神斬】：範圍 +30%、變成被動，且每級將自動施放間隔 -0.5 秒', () => {
   const c = loadContext();
   stubHits(c); stubVfx(c);
   forceRolls(c, 0.999);
   maxLevels(c, 'cleave'); equip(c, 'cleave');
   setUlt(c, 'cleave', 'stormGodSlash', 10);
+  const ult = c.skills2Ult('cleave');
+  assert.equal(ult.def.fx.range, 30, '天霸風神斬範圍倍率應為 30%');
+  assert.equal(ult.def.fx.sec, 8, '天霸風神斬基礎間隔應為 8 秒');
+  assert.equal(ult.def.fx.secPer, -0.5, '天霸風神斬每級間隔應減少 0.5 秒');
+  assert.equal(c.sgUltVal(ult, 'sec'), 3, 'Lv.10 應為 8 − 0.5×10 ＝ 3 秒');
+  assert.equal(c.skills2CastRangePx('cleave', c.skills2Levels('cleave')), c.bfMeterPx(6.5),
+    '範圍 +30% 應將迴旋斬施放距離由 5 米提高至 6.5 米');
   assert.equal(c.skills2ActsPassive('cleave'), true, '選了天霸風神斬就視為被動群組');
   assert.equal(c.skills2ActsPassive('thrust'), false);
 
   const p = playerEnt(); c.FIELD = { player: p };
   const e = enemy(1e12, 2 * M, 0);
-  // Lv.10 ＝ 8 − 0.4×10 ＝ 每 4 秒一次
-  run(c, p, [e], 3.5);
+  // Lv.10 ＝ 8 − 0.5×10 ＝ 每 3 秒一次
+  run(c, p, [e], 2.5);
   assert.equal(e.hp, 1e12, '間隔還沒到就不該出手');
-  run(c, p, [e], 1.5);
+  run(c, p, [e], 1.0);
   assert.ok(e.hp < 1e12, '間隔到了自動施放一次');
 
   // 沒裝配在技能列就不生效（與其他主動型被動同一條代價）
