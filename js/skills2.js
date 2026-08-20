@@ -414,6 +414,27 @@ function skills2AsuraAffixPct() {
   return u ? sgUltVal(u, 'pct') : 0;
 }
 
+/* ---- 新版技能狀態異動後的統一收尾 ----
+   為什麼屬性快取也要失效：超神進化【修羅亂舞】的生效條件是「選了它 ＋ 前 7 階全滿 ＋
+   裝配在技能列上」，因此**任何**一階的升降、選擇的增刪都可能開關它，進而改變 computeStats
+  （副手的雙手武器計不計入、雙手詞條要不要加成）。與其在每個異動點各自判斷是不是 dualdance，
+   一律失效最便宜，也最不會漏——這裡少一個呼叫點，症狀是「面板數字停在舊值」而且沒有任何錯誤訊息。 */
+/* 目前這一場戰鬥的玩家實體。血刃斬在高塔一樣可以施放（技能排程器野外／高塔共用），
+   寫死 FIELD.player 的話高塔裡會取到待命中的野外實體：扣的血不影響塔內玩家，
+   還會在 finishTowerFight 被整個蓋掉——等於【毒血祭】的代價在高塔白拿。
+   判定與 js/legendary.js legendaryCurrentPlayer 同一條：塔戰進行中優先取 TOWER.player。 */
+function sgCurrentPlayerEnt() {
+  if (typeof legendaryCurrentPlayer === 'function') return legendaryCurrentPlayer();
+  if (typeof G !== 'undefined' && G && G.tower && G.tower.active &&
+      typeof TOWER !== 'undefined' && TOWER.player) return TOWER.player;
+  return (typeof FIELD !== 'undefined' && FIELD && FIELD.player) ? FIELD.player : null;
+}
+
+function sgAfterSkillChange() {
+  if (typeof markStatsDirty === 'function') markStatsDirty();
+  if (typeof UI !== 'undefined' && UI.dirty) { UI.dirty.skills = true; UI.dirty.header = true; }
+}
+
 /* ---- 「你造成的所有傷害提高」的唯一加總入口 ----
    目前四個來源：潛力【時空凝滯】allDmgUp、超神進化【死亡收割者】sgDeathReaper、
    超神進化【殺神領域】sgSlayerMark、傳奇【不屈之誓】sgDeathDefer。
@@ -586,8 +607,7 @@ function skills2UltPick(group, optIdx) {
      因此超神進化的任何異動都必須讓屬性快取失效——不然玩家選／卸之後
      _statsCache 會沿用舊值，而且沒有任何機制會偵測到。 */
   if (typeof markStatsDirty === 'function') markStatsDirty();
-  UI.dirty.skills = true;
-  UI.dirty.header = true;
+  sgAfterSkillChange();
   return null;
 }
 
@@ -609,8 +629,7 @@ function skills2UltLearn(group) {
      因此超神進化的任何異動都必須讓屬性快取失效——不然玩家選／卸之後
      _statsCache 會沿用舊值，而且沒有任何機制會偵測到。 */
   if (typeof markStatsDirty === 'function') markStatsDirty();
-  UI.dirty.skills = true;
-  UI.dirty.header = true;
+  sgAfterSkillChange();
   return null;
 }
 
@@ -625,8 +644,7 @@ function skills2UltDowngrade(group) {
      因此超神進化的任何異動都必須讓屬性快取失效——不然玩家選／卸之後
      _statsCache 會沿用舊值，而且沒有任何機制會偵測到。 */
   if (typeof markStatsDirty === 'function') markStatsDirty();
-  UI.dirty.skills = true;
-  UI.dirty.header = true;
+  sgAfterSkillChange();
   return null;
 }
 
@@ -652,8 +670,7 @@ function skills2Learn(group, tier) {
   if (!G.player.skills2) G.player.skills2 = { levels: {} };
   if (!G.player.skills2.levels) G.player.skills2.levels = {};
   G.player.skills2.levels[group] = lvs;
-  UI.dirty.skills = true;
-  UI.dirty.header = true;
+  sgAfterSkillChange();
   return null;
 }
 function skills2Downgrade(group, tier) {
@@ -672,8 +689,7 @@ function skills2Downgrade(group, tier) {
   if (!G.player.skills2) G.player.skills2 = { levels: {} };
   if (!G.player.skills2.levels) G.player.skills2.levels = {};
   G.player.skills2.levels[group] = lvs;
-  UI.dirty.skills = true;
-  UI.dirty.header = true;
+  sgAfterSkillChange();
   return null;
 }
 
@@ -891,11 +907,10 @@ function sgBloodrageBackfire(ent) {
    持續傷害、反震、其他技能造成的傷害一律算數。溢出不轉護盾（noShield）：
    這是持續小額吸血，讓它堆成護盾等於白送一層無上限的減傷。 */
 function sgBloodMistDrain(ent) {
-  if (!sgHasBuff(ent, 'sgBloodMist')) return;
-  var spec = sgLegend('bloodblade').bloodMistField;
-  var pct = spec ? Math.max(0, Number(spec.healPct) || 0) : 0;
+  /* 效果值就是治療比例（在場域塗標記時定版），因此這裡不必再碰傳奇特效池。 */
+  var pct = (typeof buffVal === 'function') ? buffVal(ent, 'sgBloodMist') : 0;
   if (!(pct > 0) || typeof getStats !== 'function' || typeof healPlayer !== 'function') return;
-  var pEnt = (typeof FIELD !== 'undefined' && FIELD && FIELD.player) ? FIELD.player : null;
+  var pEnt = sgCurrentPlayerEnt();
   if (!pEnt || pEnt.hp <= 0) return;
   var st = getStats();
   healPlayer(pEnt, st.hp * pct / 100, st, { noShield: true });
@@ -910,8 +925,16 @@ function sgHasBuff(ent, key) {
 /* 傳奇【血霧】場域的一拍：只塗標記，不造成傷害。標記時間略長於一拍，
    敵人走出血霧後最多再殘留一拍就失效。 */
 function sgBloodMistGroundTick(f, victims) {
+  /* 地板場域的特效只有 sgGroundTick 尾端那一個發射點，而本分流在它之前就 return，
+     所以要像泥沼池（sgMireGroundTick）一樣自己先發一次，否則血霧完全看不見。 */
+  sgEmitVfx(f.gid, victims, f.floatSel, sgGroundVfxSpec(f));
+  /* 把治療比例存進標記的效果值：吸血掛在「敵人受傷」這條全遊戲最熱的路徑上，
+     在那裡重算 legendarySkill2Mods（掃整個特效池 ＋ 雙手補償深拷貝）太貴。
+     順帶讓數值在血霧生成的當下定版，之後換裝也不會回頭改變已存在的血霧。 */
+  var spec = sgLegend('bloodblade').bloodMistField;
+  var healPct = spec ? Math.max(0, Number(spec.healPct) || 0) : 0;
   for (var i = 0; i < victims.length; i++) {
-    applyStatus(victims[i], 'sgBloodMist', { dur: Math.max(0.2, f.gap * 1.2) });
+    applyStatus(victims[i], 'sgBloodMist', { val: healPct, dur: Math.max(0.2, f.gap * 1.2) });
   }
 }
 
@@ -983,7 +1006,7 @@ function sgBloodVenomRiteCost(sid) {
   var rite = sgLegend('bloodblade').bloodVenomRite;
   var pct = rite ? Math.max(0, Number(rite.hpPct) || 0) : 0;
   if (!(pct > 0)) return;
-  var pEnt = (typeof FIELD !== 'undefined' && FIELD && FIELD.player) ? FIELD.player : null;
+  var pEnt = sgCurrentPlayerEnt();
   if (!pEnt || !(pEnt.hp > 1)) return;
   pEnt.hp = Math.max(1, pEnt.hp - Math.max(1, Math.round(pEnt.hp * pct / 100)));
 }
@@ -993,6 +1016,9 @@ function sgBloodVenomRiteCost(sid) {
    並比照傳奇【燃燒法則】的即時引爆補上 legendaryDotDamageMultiplier——
    逐跳結算時 tickStatuses 會乘這個乘區，一次結清若少乘就會比讓它跳完更弱。 */
 function sgDisintegrate(ent, sid, spec, dur, ult, ctx) {
+  /* 流血結清很容易當場打死主目標；此時緊接著的中毒塗抹若照跑，sgDerivedHit 對屍體回 0，
+     卻仍會用未打折的總量再炸周圍一次。已經死掉就不再結算第二次。 */
+  if (!ent || ent.hp <= 0) return;
   var total = Math.max(0, spec.dps * dur);
   if (typeof legendaryDotDamageMultiplier === 'function') total *= legendaryDotDamageMultiplier(ent);
   if (!(total > 0)) return;
@@ -2579,7 +2605,11 @@ function skills2TryDeathDefer(pEnt) {
    此時 skills2TryDeathDefer 回 false，死亡如期生效（不會再延後第二次）。 */
 function sgTickDeathDefer(ctx) {
   var d = SKILL2_RT.deathDefer;
-  if (!d || d.until > GT) return;
+  if (!d || d.until > GT || d.done) return;
+  /* 只兌現一次。少了 done 旗標的話，只要這次死亡沒有真的成立（最典型是【天地共生】
+     在延後期間冷卻結束、把玩家原地滿血復活並在 onPlayerFieldDeath 就 return，
+     RT 因此不會被 resetSkillRT 重建），這裡就會每個 tick 把生命重新歸零＝直接鎖死。 */
+  d.done = true;
   if (ctx.pEnt && ctx.pEnt.hp > 0) ctx.pEnt.hp = 0;
 }
 
@@ -3306,6 +3336,14 @@ function sgGroundArea(f) {
     return rect;
   }
   var circle = { id: f.vfxId, x: f.pos.x, y: f.pos.y, r: f.radius };
+  /* 泥沼池系列的畫法（毒爆／血霧沿用它）只讀 a.w／a.h，完全不讀 a.r：
+     不補外接矩形的話，這兩種場域會被畫成固定尺寸，與實際判定範圍對不上。
+     只補這兩種——其餘圓形場域（火柱／雷球／追蹤冰箭）的畫法都是讀 a.r，
+     多給 w/h 反而可能改到已經調好的既有尺寸。 */
+  if (f.kind === 'poisonmist' || f.kind === 'bloodmist') {
+    circle.w = f.radius * 2;
+    circle.h = f.radius * 2;
+  }
   if (f.follow) circle.follow = true;
   if (f.kind === 'windblade' && f.dest) {
     circle.destX = f.dest.x;
@@ -6147,7 +6185,7 @@ function sgVenomDomainPulse(ult, enemies, ctx, radius, gap) {
 function sgSlayerDomainOnDeath(deadEnt) {
   var ult = sgUlt('bloodblade', 'slayerDomain');
   if (!ult || !skills2Equipped('bloodblade') || typeof getStats !== 'function') return;
-  var pEnt = (typeof FIELD !== 'undefined' && FIELD && FIELD.player) ? FIELD.player : null;
+  var pEnt = sgCurrentPlayerEnt();
   if (!pEnt || pEnt.hp <= 0) return;
   var radius = bfMeterPx(sgUltVal(ult, 'm'));
   if (typeof bfPos === 'function' && bfPos(deadEnt) && typeof bfEntityDistance === 'function' &&
@@ -6171,7 +6209,7 @@ function sgBloodFieldsOnDeath(deadEnt) {
   var lg = sgLegend('bloodblade');
   var mist = lg.bloodPoisonMist, blood = lg.bloodMistField;
   if (!mist && !blood) return;
-  var pEnt = (typeof FIELD !== 'undefined' && FIELD && FIELD.player) ? FIELD.player : null;
+  var pEnt = sgCurrentPlayerEnt();
   var lvs = skills2Levels('bloodblade');
   if (!pEnt || !lvs || lvs[0] < 1 || typeof getStats !== 'function') return;
   var st = getStats();
@@ -6248,7 +6286,7 @@ function sgDeathBoom(deadEnt, enemies) {
   var count = Math.max(1, Math.floor(Number(t[5].fx.count) || 2));
   var victims = bfNearestOthers(deadEnt, enemies, count);
   if (!victims.length) return;
-  var pEnt = (typeof FIELD !== 'undefined' && FIELD && FIELD.player) ? FIELD.player : null;
+  var pEnt = sgCurrentPlayerEnt();
   if (!pEnt) return;
   var poisonSpec = sgBloodbladeDotSpec(st, lvs, t, 'sgPoison');
   var deadPoison = sgFindDot(deadEnt, 'sgPoison');

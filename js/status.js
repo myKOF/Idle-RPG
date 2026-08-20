@@ -123,7 +123,7 @@ var STATUS = {
   sgVenomField: { name: '萬毒侵蝕', icon: '🧪', kind: 'debuff', effect: 'dot', key: '', elem: 'poison', dmgSource: 'skill', dmg: 100, capStat: '', capMult: 0, val: 0, dur: 6, interval: 0.5, stack: 'stack', maxStacks: 10, desc: '超神進化【萬毒血霧】：領域內每次作用疊 1 層，每跳量＝單層量 × 層數（引擎以 dps 覆寫）。' },
   sgKagura: { name: '神樂灼焰', icon: '🎇', kind: 'debuff', effect: 'dot', key: '', elem: 'fire', dmgSource: 'skill', dmg: 10, capStat: '', capMult: 0, val: 0, dur: 6, interval: 0.5, stack: 'stack', maxStacks: 20, desc: '超神進化【火之神樂】：雙刀亂舞每命中 1 次疊 1 層，每跳量＝單層量 × 層數（引擎以 dps 覆寫）。' },
   sgDeathDefer: { name: '不屈之誓', icon: '🕯️', kind: 'buff', effect: 'stat', key: 'sgDeathDefer', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 100, dur: 10, interval: 0, stack: 'refresh', maxStacks: 1, desc: '傳奇【不屈之誓】：死亡延後生效的期間，你造成的所有傷害提高。' },
-  sgBloodMist: { name: '血霧壟罩', icon: '🌫️', kind: 'debuff', effect: 'stat', key: 'sgBloodMist', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 0.6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '傳奇【血霧】：站在血霧裡的標記，受傷時回復施放者生命。效果值為 0＝本身不改變任何屬性。' }
+  sgBloodMist: { name: '血霧壟罩', icon: '🌫️', kind: 'debuff', effect: 'stat', key: 'sgBloodMist', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 0.6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '傳奇【血霧】：站在血霧裡的標記，受傷時回復施放者生命。效果值＝血霧生成當下定版的回復比例%（沒有任何屬性讀這個鍵，它只是把數值帶在標記上）。' }
 };
 
 /* ---- 反查索引 ----
