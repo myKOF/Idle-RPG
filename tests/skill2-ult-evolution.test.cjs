@@ -994,22 +994,42 @@ test('【毒爆】／【血霧】：中毒／流血的敵人死亡後才留下�
   assert.equal(poison.hitElem, 'poison');
 });
 
-test('【血霧】：站在血霧裡的敵人每次受傷都回復玩家生命', () => {
+test('【血霧】：屍體留下場域 → 場域塗標記 → 站在裡面的敵人每次受傷都回復玩家生命', () => {
+  /* 血霧的三段生效鏈都要走到，不能手動塗標記跳過中間那一步：
+     ①帶流血的敵人死亡 → sgBloodFieldsOnDeath 生成場域
+     ②sgGroundTick 的 bloodmist 分流 → sgBloodMistGroundTick 把標記塗到範圍內的敵人
+     ③skills2OnEnemyDamaged → sgBloodMistDrain 吸血 */
   const c = loadContext(['js/legendary.js']);
-  stubVfx(c);
+  stubHits(c); stubVfx(c);
+  forceRolls(c, 0.999);
   maxLevels(c, 'bloodblade'); equip(c, 'bloodblade');
   setLegendary(c, ['bloodMist']);
-  const p = playerEnt(); p.hp = 100; c.FIELD = { player: p };
-  const e = enemy(1e12, 3 * M, 0);
+  const p = playerEnt(); c.FIELD = { player: p };
 
-  c.skills2OnEnemyDamaged(e, 50);
-  assert.equal(p.hp, 100, '沒被血霧標記就不回血');
+  // ① 讓一隻敵人帶著流血死亡
+  const victim = enemy(1e12, 3 * M, 0);
+  c.castSkill2(p, [victim], 'bloodblade', 'mv-float');
+  victim.hp = 0;
+  c.skills2OnEnemyDeath(victim, [victim]);
+  const mist = c.SKILL2_RT.grounds.filter((g) => g.kind === 'bloodmist')[0];
+  assert.ok(mist, '帶流血的敵人死亡後要留下血霧場域');
 
-  c.applyStatus(e, 'sgBloodMist', { dur: 2 });
-  c.skills2OnEnemyDamaged(e, 50);
+  // ② 場域推進一拍：範圍內的敵人被塗上標記，範圍外的沒有
+  const inside = enemy(1e12, 3 * M, 0);
+  const outside = enemy(1e12, 60 * M, 0);
+  p.hp = 100;
+  run(c, p, [inside, outside], 0.6);
+  assert.ok(c.buffVal(inside, 'sgBloodMist') > 0, '場域內的敵人要被塗上血霧標記');
+  assert.equal(c.buffVal(outside, 'sgBloodMist'), 0, '場域外的敵人不得被塗到');
+
+  // ③ 受傷才吸血；標記的效果值＝血霧生成當下定版的回復比例
+  const before = p.hp;
+  c.skills2OnEnemyDamaged(outside, 50);
+  assert.equal(p.hp, before, '沒被標記的敵人受傷不回血');
+  c.skills2OnEnemyDamaged(inside, 50);
   const healPct = c.PASSIVE_POOL.bloodMist.fx.bloodMistField.healPct;
-  assert.ok(Math.abs(p.hp - (100 + c.getStats().hp * healPct / 100)) < 1e-6,
-    '應回復最大生命的 ' + healPct + '%');
+  assert.ok(Math.abs(p.hp - (before + c.getStats().hp * healPct / 100)) < 1e-6,
+    '應回復最大生命的 ' + healPct + '%，實得 ' + (p.hp - before));
 });
 
 /* ---- 12) 血刃斬的三個超神進化 ---- */

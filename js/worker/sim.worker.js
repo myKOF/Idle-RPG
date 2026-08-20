@@ -1514,8 +1514,10 @@ var COMMAND_IMPL = {
       if (!G.player.skills2) G.player.skills2 = { levels: {} };
       if (!G.player.skills2.levels) G.player.skills2.levels = {};
       G.player.skills2.levels[a.group] = lvs;
-      UI.dirty.skills = true;
-      UI.dirty.header = true;
+      /* 超神進化的異動會開關【修羅亂舞】，進而改變屬性聚合；
+         收尾一律走 js/skills2.js 的 sgAfterSkillChange，與面板端的三支指令保持一致。 */
+      if (typeof sgAfterSkillChange === 'function') sgAfterSkillChange();
+      else { UI.dirty.skills = true; UI.dirty.header = true; }
     }
     return true;
   },
@@ -1527,8 +1529,10 @@ var COMMAND_IMPL = {
     /* 超神進化那一格：刪除＝整個清掉選擇（等級歸零、可重新三選一，不退金幣）。 */
     if (typeof sgIsUltSlot === 'function' && sgIsUltSlot(a.group, tier)) {
       if (G.player.skills2 && G.player.skills2.ult) delete G.player.skills2.ult[a.group];
-      UI.dirty.skills = true;
-      UI.dirty.header = true;
+      /* 超神進化的異動會開關【修羅亂舞】，進而改變屬性聚合；
+         收尾一律走 js/skills2.js 的 sgAfterSkillChange，與面板端的三支指令保持一致。 */
+      if (typeof sgAfterSkillChange === 'function') sgAfterSkillChange();
+      else { UI.dirty.skills = true; UI.dirty.header = true; }
       return true;
     }
     if (!(tier >= 0 && tier < g.tiers.length)) return { err: '未知階數' };
@@ -1543,8 +1547,9 @@ var COMMAND_IMPL = {
     if (!G.player.skills2) G.player.skills2 = { levels: {} };
     if (!G.player.skills2.levels) G.player.skills2.levels = {};
     G.player.skills2.levels[a.group] = lvs;
-    UI.dirty.skills = true;
-    UI.dirty.header = true;
+    /* 降階同樣可能讓超神進化失去解鎖條件（前 7 階全滿），連帶開關【修羅亂舞】。 */
+    if (typeof sgAfterSkillChange === 'function') sgAfterSkillChange();
+    else { UI.dirty.skills = true; UI.dirty.header = true; }
     return true;
   },
 

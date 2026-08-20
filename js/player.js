@@ -351,8 +351,12 @@ function equipTargetSlot(it, eq) {
 function equipItem(it, slotKey, eq) {
   eq = eq || G.equipment;
   var key = slotKey || equipTargetSlot(it, eq);
-  // 裝上雙手武器 → 副手一併卸下（修羅亂舞生效時副手留著，那正是它的效果）
-  if (key === 'weapon' && isTwoHandItem(it) && eq.weapon2 && !asuraDualWieldOn()) {
+  /* 裝上雙手武器 → 副手一併卸下。
+     修羅亂舞的例外只開給「副手放的也是雙手武器」——它讓你同時拿兩把雙手武器，
+     不是讓你在拿雙手武器的同時保留一面盾。少了後半段條件，玩家只要先在副手放盾、
+     再把雙手武器裝到主手，就能同時吃到兩者的全部屬性。 */
+  if (key === 'weapon' && isTwoHandItem(it) && eq.weapon2 &&
+      !(asuraDualWieldOn() && isTwoHandItem(eq.weapon2))) {
     var off = eq.weapon2;
     eq.weapon2 = null;
     off.locked = false;

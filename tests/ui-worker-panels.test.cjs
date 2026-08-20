@@ -48,7 +48,7 @@ test('裝備與背包頁由 Worker panel 投影渲染並以 Command 修改狀態
   const detailAction = functionBody('detailAction');
   const sendUiCommand = functionBody('sendUiCommand');
 
-  assert.match(ui, /equip:\s*\['equip', 'inv', 'gems', 'header'\]/);
+  assert.match(ui, /equip:\s*\['equip', 'inv', 'gems', 'header', 'skills'\]/);
   assert.match(renderEquip, /uiEquipPanelSnapshot\(\)/);
   assert.match(renderEquip, /equipViewEquipment\(equipSnapshot\)/);
   assert.doesNotMatch(renderEquip, /\bviewedEquipment\(/);

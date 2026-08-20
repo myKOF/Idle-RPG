@@ -63,7 +63,9 @@ var UI_PANEL_MIGRATION_ORDER = [
  * command still needs an authoritative response.
  */
 var UI_PANEL_SUBSCRIPTIONS_BY_TAB = {
-  equip: ['equip', 'inv', 'gems', 'header'],
+  /* equip 頁多訂閱 skills：修羅亂舞（雙刀亂舞超神進化）決定副手能不能放第二把雙手武器，
+     而那個判定只能從 skills 面板快照重算。沒訂閱的話開機第一次畫裝備格必定判成「沒生效」。 */
+  equip: ['equip', 'inv', 'gems', 'header', 'skills'],
   gems: ['gems', 'header'],
   skills: ['skills', 'talents', 'header'],
   talents: ['talents', 'header'],
@@ -4062,7 +4064,8 @@ function itemCellHTML(it, source, extraClass, pendingKey) {
   var iconFile = itemIconFile(it, info);
   var iconHtml = iconFile ? '<img src="images/' + iconFile + '" class="item-icon">' : '<span class="ic-emoji">' + info.emoji + '</span>';
   // data-eqslots：此「實例」可裝入的欄位（武器依類型而異），供選取比對用
-  var eqSlots = (typeof equipSlotsForItem === 'function') ? equipSlotsForItem(it).join(',') : it.slot;
+  var eqSlots = (typeof equipSlotsForItem === 'function')
+    ? equipSlotsForItem(it, uiAsuraDualWield()).join(',') : it.slot;
   return '<div class="item-cell' + effClass + (extraClass || '') + '" data-id="' + it.id + '" data-src="' + source + '" data-slot="' + it.slot + '" data-eqslots="' + eqSlots + '"' +
     (pendingKey ? pendingUiButtonAttributes(pendingKey) : '') + ' ' +
     'style="border-color:' + r.color + ';box-shadow:inset 0 0 12px ' + r.color + '33">' +
@@ -6541,8 +6544,11 @@ function uiProjectedItemScore(item) {
 
 function uiEquipTargetSlotFromSnapshot(item, equipment) {
   if (!item) return null;
+  /* 主執行緒沒有 G，equipSlotsForItem 自己算修羅亂舞一定得到「沒生效」，
+     雙手武器的候選欄位就永遠只有主手——「裝備」鈕會因此完全裝不進副手。
+     旗標一律由面板快照算好後傳入（uiAsuraDualWield）。 */
   var candidates = typeof equipSlotsForItem === 'function'
-    ? equipSlotsForItem(item).slice()
+    ? equipSlotsForItem(item, uiAsuraDualWield()).slice()
     : [item.slot];
   if (!candidates.length) return null;
   if (UI.lastEquipSlot && candidates.indexOf(UI.lastEquipSlot) >= 0) return UI.lastEquipSlot;
