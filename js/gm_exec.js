@@ -75,11 +75,25 @@
     return '增加 ' + fmtAmt + ' ' + key;
   }
 
+  /* 武器類型鍵的大小寫不敏感比對：指令參數在解析時一律轉小寫，
+     但 WEAPON_TYPES 的鍵是駝峰（magicSword1h…），直接查表會查不到。 */
+  function gmWeaponTypeKey(raw) {
+    if (typeof WEAPON_TYPES === 'undefined') return null;
+    var key = String(raw || '').trim().toLowerCase();
+    if (!key) return null;
+    for (var k in WEAPON_TYPES) {
+      if (k.toLowerCase() === key) return k;
+      if (WEAPON_TYPES[k].name === raw) return k;   // 也接受中文名（單手魔劍…）
+    }
+    return null;
+  }
+
   function gmGiveEquipment(rarity, level, slot, count) {
     var weaponType;
     if (slot === 'any' || slot === '*') slot = null;
-    if (slot && typeof WEAPON_TYPES !== 'undefined' && WEAPON_TYPES[slot]) {
-      weaponType = slot;
+    var wt = slot ? gmWeaponTypeKey(slot) : null;
+    if (wt) {
+      weaponType = wt;
       slot = 'weapon';
     } else if (slot) {
       slot = slotTypeOf(slot);

@@ -951,6 +951,60 @@ var PASSIVE_POOL = {
     name: '聚敵旋渦', desc: '迴旋斬會將 60 米內的所有敵人拉近至身邊 10 米範圍內。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'cleave', weaponTypes: ['sword1h'],
     fx: { cleavePull: { m: 60, toM: 10 } }
+  },
+
+  /* ---- 新版技能改寫型 第二批（2026-08-20；設計來源「傳奇進化」頁籤）----
+     生效路徑與第一批相同（legendarySkill2Mods 平坦合併 → 施放端讀通用參數鍵）。
+     只出現在匕首（dagger1h＝飛刀）與單手魔劍（magicSword1h＝疾風斬）。 */
+  knifeChain: {
+    name: '連鎖', desc: '飛刀的彈射數 +2 次。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'knife', weaponTypes: ['dagger1h'],
+    fx: { knifeBounceAdd: 2 }
+  },
+  knifeSplitter: {
+    name: '分裂者', desc: '飛刀殺死敵人時會分裂出 2 把小型飛刀，每把造成 50% 傷害，且可彈射 2 次。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'knife', weaponTypes: ['dagger1h'],
+    fx: { knifeSplit: { count: 2, pct: 50, bounces: 2 } }
+  },
+  knifeExecutioner: {
+    name: '處刑者', desc: '飛刀會優先在生命值最高的目標間彈射，且對其造成的傷害 +30%。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'knife', weaponTypes: ['dagger1h'],
+    fx: { knifeExecutor: { pct: 30 } }
+  },
+  knifeShadowblade: {
+    name: '影刃', desc: '射出的飛刀數量 +2 把。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'knife', weaponTypes: ['dagger1h'],
+    fx: { knifeCountAdd: 2 }
+  },
+  knifeWaltzblade: {
+    name: '輪舞刃', desc: '射出的第 1 把飛刀不再彈射，改為圍繞在你周圍 10 米處旋轉，對路徑上的所有敵人造成傷害，持續 5 秒。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'knife', weaponTypes: ['dagger1h'],
+    fx: { knifeOrbit: { m: 10, sec: 5 } }
+  },
+  galeWhirlwind: {
+    name: '風捲殘雲', desc: '疾風斬命中時有 35% 機率在目標處形成一道龍捲風，造成 4 段、每段 100% 風系傷害。',
+    base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'gale', weaponTypes: ['magicSword1h'],
+    fx: { galeTornado: { chance: 35, hits: 4, pct: 100, m: 4, gap: 0.4 } }
+  },
+  galeExecute: {
+    name: '斬殺', desc: '疾風斬有 35% 機率可立即殺死生命值 20% 以下的非 BOSS 敵人。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'gale', weaponTypes: ['magicSword1h'],
+    fx: { galeExecute: { chance: 35, hpPct: 20 } }
+  },
+  galeTwinShadow: {
+    name: '雙影', desc: '疾風斬命中時有 50% 機率額外對附近 1 個敵人造成 50% 傷害。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'gale', weaponTypes: ['magicSword1h'],
+    fx: { galeTwin: { chance: 50, pct: 50, m: 10 } }
+  },
+  galeWindwalker: {
+    name: '風行者', desc: '疾風斬命中時附加風切狀態：移動速度 -80%、命中率 -50%，且每 0.5 秒受到 50% 風系傷害，持續 4 秒。',
+    base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'gale', weaponTypes: ['magicSword1h'],
+    fx: { galeWindRend: { cutPct: 50 } }
+  },
+  galeGodspeed: {
+    name: '神速斬', desc: '疾風斬每次命中時，疾風斬的冷卻時間 -0.1 秒。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'gale', weaponTypes: ['magicSword1h'],
+    fx: { galeCdrSec: 0.1 }
   }
 };
 

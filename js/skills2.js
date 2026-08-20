@@ -162,8 +162,8 @@ function skills2PassiveActive(gid) {
 var SKILLS2 = {
   thrust: { name: '突刺', emoji: '🗡️', range: '12*3', cd: 5, cost: 25, tiers: [{ name: '突刺', unlock: { reinc: 0, lv: 1 }, cost: 25, fx: { pct: 150, pctPer: 15, count: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '對前方敵人造成 {count} 次 {pct}% 物理傷害' }, { name: '連刺', unlock: { reinc: 0, lv: 1 }, cost: 40, fx: { chance: 25, chancePer: 2.5, count: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '有 {chance}% 的機率再次進行 {count} 次突刺' }, { name: '傷害強化', unlock: { reinc: 0, lv: 50 }, cost: 60, fx: { pct: 20, pctPer: 3 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化突刺傷害，額外 +{pct}% 物理傷害（與第 1 階累加）' }, { name: '超連刺', unlock: { reinc: 0, lv: 100 }, cost: 80, fx: { count: 3, range: 20, rangePer: 2 }, goldBase: 800000, goldGrow: 1.5, desc: '每次能進行 {count} 道平行貫穿突刺，且突刺範圍提升 {range}%' }, { name: '擴散', unlock: { reinc: 0, lv: 150 }, cost: 100, fx: { pct: 20, pctPer: 2, count: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '突刺造成的傷害有 {pct}% 會擴散至周圍的 {count} 個敵人' }, { name: '貫穿突刺', unlock: { reinc: 0, lv: 200 }, cost: 140, fx: { m: 5, mPer: 0.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '突刺會造成一直線的傷害，貫穿路徑上所有敵人，貫穿長度在原本長度上再增加 {m} 米' }, { name: '八方連刺', unlock: { reinc: 0, lv: 250 }, cost: 240, fx: { pct: 20, pctPer: 2, count: 3, directions: 8 }, goldBase: 5000000, goldGrow: 1.5, desc: '向八個方向同時進行 {count} 次突刺，且造成傷害額外 +{pct}%' }], ult: [{ id: 'phantomOcta', name: '幻影八方陣', cost: 300, fx: { m: 6, mPer: 0.6, dodge: 30, sec: 2 }, goldBase: 10000000, goldGrow: 1.5, desc: '突刺命中時，傷害同時擴散至該敵人周圍 {m} 米內的所有敵人；施放突刺後 {sec} 秒內，你有 {dodge}% 機率絕對閃避敵方攻擊' }, { id: 'shadowExecutioner', name: '暗影絕殺者', cost: 300, fx: { perStack: 1, perStackPer: 0.2, maxStacks: 100, pct: 100, pctPer: 20, dur: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '突刺命中時堆疊【靈魂撕裂】：每層使該敵人受到的傷害提高 {perStack}%，最多 {maxStacks} 層（疊滿＝+{pct}%）' }, { id: 'oneStrikeKill', name: '一擊必殺', cost: 300, fx: { mult: 4, multPer: 0.4 }, goldBase: 10000000, goldGrow: 1.5, desc: '【八方連刺】改為朝前方的 1 道突刺，但傷害改為 {mult} 倍，且可以立即殺死普通敵人' }] },
   cleave: { name: '迴旋斬', emoji: '🪓', range: '', cd: 8, cost: 25, tiers: [{ name: '迴旋斬', unlock: { reinc: 0, lv: 1 }, cost: 25, fx: { pct: 200, pctPer: 20 }, goldBase: 100000, goldGrow: 1.5, desc: '對範圍內的所有敵人造成 1 次 {pct}% 物理傷害' }, { name: '強化斬', unlock: { reinc: 0, lv: 1 }, cost: 40, fx: { range: 15, rangePer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '斬擊範圍擴大 {range}%（每級 +1.5% 範圍）' }, { name: '傷害強化', unlock: { reinc: 0, lv: 50 }, cost: 60, fx: { pct: 50, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化斬擊傷害，額外 +{pct}% 物理傷害' }, { name: '連斬', unlock: { reinc: 0, lv: 100 }, cost: 80, fx: { chance: 25, chancePer: 2.5, times: 2, timesPer: 0.25 }, goldBase: 800000, goldGrow: 1.5, desc: '斬擊時有 {chance}% 機率連續劈出共 {times} 次斬擊（不足 1 次的部分以機率觸發）' }, { name: '暈眩擊', unlock: { reinc: 0, lv: 150 }, cost: 100, fx: { chance: 25, chancePer: 1, sec: 1, secPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '斬擊時有 {chance}% 機率擊暈敵人 {sec} 秒' }, { name: '震碎斬', unlock: { reinc: 0, lv: 200 }, cost: 140, fx: { m: 12, mPer: 0.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '斬擊會向前飛出 {m} 米距離，命中路徑上的敵人' }, { name: '迴身四方斬', unlock: { reinc: 0, lv: 250 }, cost: 240, fx: { pct: 50, pctPer: 5, times: 3, timesPer: 0 }, goldBase: 5000000, goldGrow: 1.5, desc: '同時朝前後左右四個方向各使出 {times} 次斬擊，且傷害額外 +{pct}%（每級 +5% 傷害；與原有傷害乘法計算）' }], ult: [{ id: 'voidShatter', name: '虛空碎裂斬', cost: 300, fx: { times: 1, timesPer: 0.2, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '【迴身四方斬】的攻擊次數 +{times} 次，且物理傷害再額外 +{pct}%' }, { id: 'windChaser', name: '逐風者', cost: 300, fx: { hits: 4, hitsPer: 0.4, pct: 100, pctPer: 10, m: 4, gap: 0.4 }, goldBase: 10000000, goldGrow: 1.5, desc: '迴旋斬每命中 1 次，就在該敵人所在位置生成一道龍捲風：對半徑 {m} 米內的敵人造成 {hits} 段、每段 {pct}% 風系傷害' }, { id: 'stormGodSlash', name: '天霸風神斬', cost: 300, fx: { sec: 8, secPer: -0.5, range: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '迴旋斬範圍擴大 {range}%，並改為被動技能：不再主動施放，改為每 {sec} 秒自動施放 1 次（每級施放間隔 -0.5 秒，仍需裝配在技能列才生效）' }] },
-  knife: { name: '飛刀', emoji: '🔪', range: '', cd: 8, cost: 25, tiers: [{ name: '飛刀', unlock: { reinc: 0, lv: 50 }, cost: 25, fx: { pct: 150, pctPer: 15, count: 3, deg: 60 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方 {deg} 度扇形內丟出 {count} 把飛刀，每把造成 {pct}% 物理傷害' }, { name: '強化飛刀', unlock: { reinc: 0, lv: 100 }, cost: 40, fx: { pct: 20, pctPer: 10 }, goldBase: 200000, goldGrow: 1.5, desc: '飛刀傷害進一步提升，額外 +{pct}% 物理傷害' }, { name: '彈射飛刀', unlock: { reinc: 0, lv: 150 }, cost: 60, fx: { pct: 30, pctPer: 5, count: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '每把飛刀會在附近的 {count} 個敵人間彈跳，每次彈射造成 {pct}% 技能傷害' }, { name: '強化彈射', unlock: { reinc: 0, lv: 200 }, cost: 80, fx: { add: 1, addPer: 0.25 }, goldBase: 800000, goldGrow: 1.5, desc: '飛刀彈射的敵人數量額外 +{add}（不足 1 次的部分以機率觸發）' }, { name: '迴旋飛刀', unlock: { reinc: 0, lv: 250 }, cost: 100, fx: { count: 4, countPer: 0.2 }, goldBase: 1500000, goldGrow: 1.5, desc: '改為向周圍的 {count} 個敵人丟出飛刀（全圓形範圍鎖敵；不足 1 個的部分以機率觸發）' }, { name: '連鎖彈射', unlock: { reinc: 0, lv: 300 }, cost: 140, fx: { chance: 20, chancePer: 2, max: 4 }, goldBase: 3000000, goldGrow: 1.5, desc: '飛刀彈射後有 {chance}% 機率再次彈射，最多連續 {max} 次' }, { name: '神速飛刀', unlock: { reinc: 0, lv: 350 }, cost: 240, fx: { sec: 0.05, secPer: 0.01 }, goldBase: 5000000, goldGrow: 1.5, desc: '每把飛刀（含彈射）爆擊時，使飛刀技能冷卻時間 -{sec} 秒' }] },
-  gale: { name: '疾風斬', emoji: '💨', range: '', cd: 6, cost: 25, tiers: [{ name: '疾風斬', unlock: { reinc: 0, lv: 100 }, cost: 25, fx: { pct: 250, pctPer: 20, hits: 3 }, goldBase: 100000, goldGrow: 1.5, desc: '對敵人造成連續 {hits} 次 {pct}% 物理傷害（同一目標）' }, { name: '疾風連斬', unlock: { reinc: 0, lv: 150 }, cost: 40, fx: { add: 1, addPer: 0.2 }, goldBase: 200000, goldGrow: 1.5, desc: '斬擊次數額外 +{add}（不足 1 次的部分以機率觸發）' }, { name: '強化斬擊', unlock: { reinc: 0, lv: 200 }, cost: 60, fx: { pct: 15, pctPer: 4 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化斬擊傷害，額外 +{pct}% 物理傷害' }, { name: '擴散', unlock: { reinc: 0, lv: 250 }, cost: 80, fx: { pct: 50, pctPer: 5, m: 10 }, goldBase: 800000, goldGrow: 1.5, desc: '每次斬擊額外對 {m} 米內最近的 1 個敵人造成 {pct}% 技能傷害；附近沒有敵人時改對原目標造成' }, { name: '狂風斬', unlock: { reinc: 0, lv: 300 }, cost: 100, fx: { pct: 20, pctPer: 5, sec: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '施放疾風斬使你的攻速額外提高 {pct}%，持續 {sec} 秒（突破攻速上限，與自身攻速相乘）' }, { name: '極速斬', unlock: { reinc: 0, lv: 350 }, cost: 140, fx: { sec: 1, secPer: 0.3 }, goldBase: 3000000, goldGrow: 1.5, desc: '疾風斬的冷卻時間 -{sec} 秒' }, { name: '月牙斬', unlock: { reinc: 0, lv: 400 }, cost: 240, fx: { pct: 300, pctPer: 30, m: 5 }, goldBase: 5000000, goldGrow: 1.5, desc: '疾風斬的傷害由目標周圍 {m} 米內的所有敵人均分，且傷害額外 +{pct}%' }] },
+  knife: { name: '飛刀', emoji: '🔪', range: '', cd: 8, cost: 25, tiers: [{ name: '飛刀', unlock: { reinc: 0, lv: 50 }, cost: 25, fx: { pct: 150, pctPer: 15, count: 3, deg: 60 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方 {deg} 度扇形內丟出 {count} 把飛刀，每把造成 {pct}% 物理傷害' }, { name: '強化飛刀', unlock: { reinc: 0, lv: 100 }, cost: 40, fx: { pct: 20, pctPer: 10 }, goldBase: 200000, goldGrow: 1.5, desc: '飛刀傷害進一步提升，額外 +{pct}% 物理傷害' }, { name: '彈射飛刀', unlock: { reinc: 0, lv: 150 }, cost: 60, fx: { pct: 30, pctPer: 5, count: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '每把飛刀會在附近的 {count} 個敵人間彈跳，每次彈射造成 {pct}% 技能傷害' }, { name: '強化彈射', unlock: { reinc: 0, lv: 200 }, cost: 80, fx: { add: 1, addPer: 0.25 }, goldBase: 800000, goldGrow: 1.5, desc: '飛刀彈射的敵人數量額外 +{add}（不足 1 次的部分以機率觸發）' }, { name: '迴旋飛刀', unlock: { reinc: 0, lv: 250 }, cost: 100, fx: { count: 4, countPer: 0.2 }, goldBase: 1500000, goldGrow: 1.5, desc: '改為向周圍的 {count} 個敵人丟出飛刀（全圓形範圍鎖敵；不足 1 個的部分以機率觸發）' }, { name: '連鎖彈射', unlock: { reinc: 0, lv: 300 }, cost: 140, fx: { chance: 20, chancePer: 2, max: 4 }, goldBase: 3000000, goldGrow: 1.5, desc: '飛刀彈射後有 {chance}% 機率再次彈射，最多連續 {max} 次' }, { name: '神速飛刀', unlock: { reinc: 0, lv: 350 }, cost: 240, fx: { sec: 0.05, secPer: 0.01 }, goldBase: 5000000, goldGrow: 1.5, desc: '每把飛刀（含彈射）爆擊時，使飛刀技能冷卻時間 -{sec} 秒' }], ult: [{ id: 'petalStorm', name: '暴雨梨花', cost: 300, fx: { pct: 20, pctPer: 2 }, goldBase: 10000000, goldGrow: 1.5, desc: '每把飛刀（含彈射）都會對飛行路徑上的所有敵人造成 {pct}% 技能傷害' }, { id: 'deathReaper', name: '死亡收割者', cost: 300, fx: { pct: 25, pctPer: 2.5, maxStacks: 20, dur: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '飛刀殺死敵人時堆疊【死亡收割】：每層使你造成的傷害提高 {pct}%，最多 {maxStacks} 層，持續 {dur} 秒' }, { id: 'soulhunterBlade', name: '無限追魂刃', cost: 300, fx: { pct: 50, pctPer: 5, m: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '每次施放飛刀時額外射出 1 支無限飛刀，追擊周圍 {m} 米內的任意敵人：傷害提高 {pct}%，且彈射次數不受限制（場上每個敵人各被命中一次）' }] },
+  gale: { name: '疾風斬', emoji: '💨', range: '', cd: 6, cost: 25, tiers: [{ name: '疾風斬', unlock: { reinc: 0, lv: 100 }, cost: 25, fx: { pct: 250, pctPer: 20, hits: 3 }, goldBase: 100000, goldGrow: 1.5, desc: '對敵人造成連續 {hits} 次 {pct}% 物理傷害（同一目標）' }, { name: '疾風連斬', unlock: { reinc: 0, lv: 150 }, cost: 40, fx: { add: 1, addPer: 0.2 }, goldBase: 200000, goldGrow: 1.5, desc: '斬擊次數額外 +{add}（不足 1 次的部分以機率觸發）' }, { name: '強化斬擊', unlock: { reinc: 0, lv: 200 }, cost: 60, fx: { pct: 15, pctPer: 4 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化斬擊傷害，額外 +{pct}% 物理傷害' }, { name: '擴散', unlock: { reinc: 0, lv: 250 }, cost: 80, fx: { pct: 50, pctPer: 5, m: 10 }, goldBase: 800000, goldGrow: 1.5, desc: '每次斬擊額外對 {m} 米內最近的 1 個敵人造成 {pct}% 技能傷害；附近沒有敵人時改對原目標造成' }, { name: '狂風斬', unlock: { reinc: 0, lv: 300 }, cost: 100, fx: { pct: 20, pctPer: 5, sec: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '施放疾風斬使你的攻速額外提高 {pct}%，持續 {sec} 秒（突破攻速上限，與自身攻速相乘）' }, { name: '極速斬', unlock: { reinc: 0, lv: 350 }, cost: 140, fx: { sec: 1, secPer: 0.3 }, goldBase: 3000000, goldGrow: 1.5, desc: '疾風斬的冷卻時間 -{sec} 秒' }, { name: '月牙斬', unlock: { reinc: 0, lv: 400 }, cost: 240, fx: { pct: 300, pctPer: 30, m: 5 }, goldBase: 5000000, goldGrow: 1.5, desc: '疾風斬的傷害由目標周圍 {m} 米內的所有敵人均分，且傷害額外 +{pct}%' }], ult: [{ id: 'thunderFlash', name: '霹靂一閃', cost: 300, fx: { mult: 5, multPer: 0.5, m: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '疾風斬的最後一斬會對你周圍 {m} 米內的敵人造成「單段傷害 × 連擊數 × {mult}」的傷害' }, { id: 'thunderGodSlash', name: '雷神斬', cost: 300, fx: { pct: 200, pctPer: 20, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '疾風斬附加雷電：每次斬擊命中時降下 1 道落雷，對命中處周圍 {m} 米內的敵人造成 {pct}% 閃電傷害' }, { id: 'chidori', name: '千鳥', cost: 300, fx: { pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '【月牙斬】不再由範圍內的敵人均分傷害，改為每個敵人都受到完整傷害，且傷害再額外 +{pct}%' }] },
   bloodblade: { name: '血刃斬', emoji: '🩸', range: '', cd: 8, cost: 25, tiers: [{ name: '血刃斬', unlock: { reinc: 0, lv: 200 }, cost: 25, fx: { pct: 200, pctPer: 15, dotPct: 30, dotSec: 5, dotGap: 1 }, goldBase: 100000, goldGrow: 1.5, desc: '對敵人造成 1 次 {pct}% 物理傷害，並附加流血：每 {dotGap} 秒造成技能傷害 {dotPct}% 的傷害，持續 {dotSec} 秒' }, { name: '強化流血', unlock: { reinc: 0, lv: 250 }, cost: 40, fx: { sec: 0.5, secPer: 0.1, gapPct: 10, gapPctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '流血持續時間 +{sec} 秒，且流血作用間隔縮短 {gapPct}%（跳得更快、總傷更高）' }, { name: '虛弱', unlock: { reinc: 0, lv: 300 }, cost: 60, fx: { pct: 10, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '流血中的敵人受到的傷害提高 {pct}%' }, { name: '血毒刃', unlock: { reinc: 0, lv: 350 }, cost: 80, fx: { dotPct: 25, dotPctPer: 3, dotSec: 6, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '敵人流血的同時也會中毒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的毒屬性傷害，持續 {dotSec} 秒' }, { name: '毒霧感染', unlock: { reinc: 0, lv: 400 }, cost: 100, fx: { chance: 30, chancePer: 2, count: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '血毒刃的毒在每次作用時，有 {chance}% 機率傳染給附近的 {count} 個敵人' }, { name: '死亡屍爆', unlock: { reinc: 0, lv: 450 }, cost: 140, fx: { pct: 50, pctPer: 5, count: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '流血或中毒狀態的敵人死亡時爆炸，對附近 {count} 個敵人造成 {pct}% 技能傷害並傳染中毒' }, { name: '零日感染', unlock: { reinc: 0, lv: 500 }, cost: 240, fx: { chance: 20, chancePer: 2, pct: 40, pctPer: 4, m: 20, count: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '流血或中毒狀態在每次作用時有 {chance}% 機率立即造成剩餘的持續傷害；作用結束後將流血及中毒傳染給 {m} 米內的隨機 {count} 個敵人，且流血與中毒傷害 +{pct}%' }] },
   dualdance: { name: '雙刀亂舞', emoji: '⚔️', range: '', cd: 10, cost: 25, tiers: [{ name: '雙刀亂舞', unlock: { reinc: 0, lv: 250 }, cost: 25, fx: { pct: 300, pctPer: 25, count: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '對附近 {count} 個敵人各造成 1 次 {pct}% 物理傷害（只有 1 個敵人時全部打向同一目標）' }, { name: '疾風亂舞', unlock: { reinc: 0, lv: 300 }, cost: 40, fx: { add: 1, addPer: 0.2 }, goldBase: 200000, goldGrow: 1.5, desc: '額外攻擊附近 {add} 個敵人（不足 1 個的部分以機率觸發）' }, { name: '強化雙刀', unlock: { reinc: 0, lv: 350 }, cost: 60, fx: { pct: 25, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化雙刀傷害，額外 +{pct}% 物理傷害' }, { name: '狂暴之舞', unlock: { reinc: 0, lv: 400 }, cost: 80, fx: { cr: 100, crPer: 10, add: 1, addPer: 0.1, sec: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '讓你的暴擊率 +{cr}%、連擊數 +{add}，持續 {sec} 秒' }, { name: '鐵血之舞', unlock: { reinc: 0, lv: 450 }, cost: 100, fx: { pct: 3.5, pctPer: 0.35, sec: 3, gap: 0.35, m: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '施放雙刀亂舞時使你以及附近 {m} 米內的所有敵人流血：每 {gap} 秒造成最大生命值 {pct}% 傷害，持續 {sec} 秒' }, { name: '嗜血狂化', unlock: { reinc: 0, lv: 500 }, cost: 140, fx: { pct: 0.25, pctPer: 0.025, sec: 6 }, goldBase: 3000000, goldGrow: 1.5, desc: '施放雙刀亂舞後 {sec} 秒內，生命值或護盾每減少 1%，獲得 {pct}% 技能傷害提升' }, { name: '暴風亂舞', unlock: { reinc: 0, lv: 550 }, cost: 240, fx: { sec: 3, secPer: 0.3, gap: 0.35 }, goldBase: 5000000, goldGrow: 1.5, desc: '化身暴風在敵人間穿梭 {sec} 秒：每 {gap} 秒自動施放 1 次雙刀亂舞；期間無法普攻但可施放技能' }] },
   counter: { name: '反擊', emoji: '🛡️', range: '', cd: 0, cost: 5, tiers: [{ name: '反擊', unlock: { reinc: 0, lv: 300 }, cost: 5, fx: { chance: 35, pct: 50, pctPer: 5 }, goldBase: 100000, goldGrow: 1.5, desc: '被動：受到傷害時有 {chance}% 機率對攻擊者反擊，造成 {pct}% 普攻傷害' }, { name: '招架', unlock: { reinc: 0, lv: 350 }, cost: 10, fx: { mult: 300, multPer: 30 }, goldBase: 200000, goldGrow: 1.5, desc: '格擋時必定對敵人反擊，造成「格擋減傷值 × {mult}%」的普攻傷害' }, { name: '強化反擊', unlock: { reinc: 0, lv: 400 }, cost: 20, fx: { pct: 30, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步提升反擊傷害，額外 +{pct}% 反擊普攻傷害' }, { name: '反擊盾', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 1, pctPer: 0.1 }, goldBase: 800000, goldGrow: 1.5, desc: '觸發反擊時，回復自身最大生命 {pct}% 的護盾' }, { name: '破甲擊', unlock: { reinc: 0, lv: 500 }, cost: 60, fx: { chance: 35, def: 15, sec: 4, secPer: 0.4, max: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '格擋時有 {chance}% 機率造成破甲：防禦 -{def}%，持續 {sec} 秒，最多疊 {max} 層（疊層時重置時間）' }, { name: '二次反擊', unlock: { reinc: 0, lv: 550 }, cost: 80, fx: { chance: 50, chancePer: 5, count: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '反擊時有 {chance}% 機率再追加 {count} 次反擊（追加反擊不會再觸發反擊）' }, { name: '狂化反殺', unlock: { reinc: 0, lv: 600 }, cost: 100, fx: { pct: 50, pctPer: 5, count: 2, m: 80 }, goldBase: 5000000, goldGrow: 1.5, desc: '每次反擊時，額外對 {m} 米內隨機 {count} 個敵人反擊，造成 {pct}% 普攻傷害（不會再觸發反擊）' }] },
@@ -941,7 +941,11 @@ function sgAtkCfg(pEnt, st, dmgVal, target, bonusTotalPct, gid, elemOverride) {
     elemAtk: st.elemAtk || null, elemDmgPct: st.elemDmgPct,
     elemDmgUp: (typeof legendaryElementDamageUp === 'function') ? legendaryElementDamageUp(st, pEnt) : st.elemDmgUp,
     eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, normalDmg: st.normalDmg,
-    totalDmgPct: (st.totalDmgPct || 0) + (typeof buffVal === 'function' ? buffVal(pEnt, 'allDmgUp') : 0) + (bonusTotalPct || 0),
+    /* 潛力【時空凝滯】allDmgUp 與超神進化【死亡收割者】sgDeathReaper 都是「造成的所有傷害提高」，
+       普攻端在 combat.js playerAtkCfg 取用同一組鍵；新版技能的傷害走這裡，兩邊必須一致。 */
+    totalDmgPct: (st.totalDmgPct || 0) +
+      (typeof buffVal === 'function' ? buffVal(pEnt, 'allDmgUp') + buffVal(pEnt, 'sgDeathReaper') : 0) +
+      (bonusTotalPct || 0),
     dmgVsElem: st.dmgVsElem,
     isPlayer: true, isSkill: true
   };
@@ -1798,21 +1802,189 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   }
 }
 
-/* ---- 飛刀 ---- */
+/* ---- 飛刀 ----
+   飛刀有四種發射來源：主刀、彈射、傳奇【分裂者】的小刀、超神【無限追魂刃】。
+   命中、彈射與命中後觸發全部收斂到 sgKnifeHit／sgKnifeBounceChain 兩支，
+   效果才不會只在其中一種形態下生效（比照突刺／迴旋斬的共用掛鉤設計）。
+   cfg 由 sgCastKnife 一次算好（純資料，不含幾何）。 */
+
+var SG_KNIFE_PATH_HALF_M = 1;   // 超神【暴雨梨花】判定飛行路徑的半寬（米）
+var SG_KNIFE_WALTZ_RPS = 1;     // 傳奇【輪舞刃】刀環每秒轉幾圈
+
+/* 超神【暴雨梨花】：兩點之間的飛行路徑上，所有敵人各吃一段。
+   起點與終點由呼叫端自己結算（終點吃的是完整傷害），這裡排除掉避免重複計算。
+   無座標（高塔）時整段退化為不作用，與本系統其他幾何查詢的退化規則一致。 */
+function sgKnifePathHit(cfg, fromEnt, toEnt, delayMs) {
+  if (!(cfg.pathPct > 0) || typeof bfLineTargets !== 'function' || typeof bfPos !== 'function') return;
+  var a = fromEnt ? bfPos(fromEnt) : ((typeof bfPlayerPos === 'function') ? bfPlayerPos() : null);
+  var b = toEnt ? bfPos(toEnt) : null;
+  if (!a || !b) return;
+  var dx = b.x - a.x, dy = b.y - a.y;
+  var len = Math.sqrt(dx * dx + dy * dy);
+  if (!(len > 0)) return;
+  var line = bfLineTargets(Math.atan2(dy, dx), len, cfg.pool, bfMeterPx(SG_KNIFE_PATH_HALF_M), a);
+  var dmg = cfg.dmgVal * cfg.pathPct / 100;
+  for (var i = 0; i < line.length; i++) {
+    if (line[i] === toEnt || line[i] === fromEnt) continue;
+    sgKnifeHit(cfg, line[i], dmg, delayMs, 0, true);
+  }
+}
+
+/* 飛刀的一次命中（含命中後的所有觸發）。
+   derived＝路徑貫穿／分裂刃造成的命中：仍計入死亡收割的擊殺，但不再往下分裂，
+   否則「分裂刃殺人再分裂」會無限展開。 */
+function sgKnifeHit(cfg, target, dmgVal, delayMs, bonusPct, derived) {
+  if (!target || target.hp <= 0 || !(dmgVal > 0)) return null;
+  var res = sgHitOne(cfg.pEnt, cfg.st, target, dmgVal, 'knife', cfg.floatSel, cfg.out, delayMs, bonusPct || 0);
+  if (!res || res.miss) return res;
+  if (res.crit && cfg.onCrit) cfg.onCrit();
+  if (!res.killed) return res;
+  /* 超神【死亡收割者】：飛刀每殺死 1 個敵人就疊 1 層「造成的所有傷害提高」。 */
+  if (cfg.reaper && typeof applyStatus === 'function') {
+    applyStatus(cfg.pEnt, 'sgDeathReaper', {
+      val: cfg.reaper.pct, maxStacks: cfg.reaper.maxStacks, dur: cfg.reaper.dur
+    });
+  }
+  /* 傳奇【分裂者】：擊殺處分裂出小型飛刀。 */
+  if (cfg.split && !derived) sgKnifeSplit(cfg, target, delayMs);
+  return res;
+}
+
+/* 下一個彈射目標：預設是本輪還沒彈過的最近敵人（原本的規則）；
+   傳奇【處刑者】改為在還沒彈過的敵人裡挑生命值最高的。都彈過就允許回跳。 */
+function sgKnifeNextBounce(cfg, cur, visited) {
+  var near = bfNearestOthers(cur, cfg.pool, cfg.pool.length);
+  var best = null;
+  for (var i = 0; i < near.length; i++) {
+    if (visited.indexOf(near[i]) >= 0) continue;
+    if (!cfg.execPct) return near[i];
+    if (!best || near[i].hp > best.hp) best = near[i];
+  }
+  if (best) return best;
+  return (typeof bfNearestOther === 'function') ? bfNearestOther(cur, cfg.pool) : null;
+}
+
+/* 彈射鏈：從 cur 出發連續彈射 bounces 次，所有飛刀來源共用這一支。
+   chainMax／chainChance＝第 6 階【連鎖彈射】的機率追加（其餘來源傳 0）。 */
+function sgKnifeBounceChain(cfg, cur, dmgVal, startDelay, bounces, chainMax, chainChance, derived) {
+  if (!(dmgVal > 0) || !(bounces > 0)) return;
+  var visited = [cur];
+  var delay = startDelay;
+  var chained = 0;
+  var b = 0;
+  while (b < bounces) {
+    b++;
+    var next = sgKnifeNextBounce(cfg, cur, visited);
+    // 允許 A→B→A，但任何自我彈射 A→A 都必須停止。
+    if (!next || next === cur || next.hp <= 0) break;
+    visited.push(next);
+    var travel = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(next) * 1000) : 0;
+    sgEmitVfx('knife', [cur, next], cfg.floatSel, {
+      fxKind: 'chain', variant: 'knife-bounce', count: 1,
+      delayMs: delay, travelMs: [0, travel]
+    });
+    sgKnifePathHit(cfg, cur, next, delay);
+    var res = sgKnifeHit(cfg, next, dmgVal, delay + travel, cfg.execPct, derived);
+    cur = next;
+    delay += travel;
+    // 連鎖彈射：本次彈射後有機率再彈一次（最多連續 chainMax 次）
+    if (res && !res.miss && chained < chainMax && chainChance > 0 && chance(chainChance)) {
+      bounces++;
+      chained++;
+    }
+  }
+}
+
+/* 傳奇【分裂者】：擊殺處分裂出 N 把小型飛刀，各自再彈射固定次數。
+   分裂刃一律以 derived 命中，因此不會再觸發分裂。 */
+function sgKnifeSplit(cfg, from, delayMs) {
+  var count = Math.max(1, Math.floor(Number(cfg.split.count) || 0));
+  var dmg = cfg.dmgVal * (Number(cfg.split.pct) || 0) / 100;
+  if (!(dmg > 0)) return;
+  var bounces = Math.max(0, Math.floor(Number(cfg.split.bounces) || 0));
+  var near = bfNearestOthers(from, cfg.pool, count);
+  if (!near.length) return;
+  for (var i = 0; i < count; i++) {
+    var tgt = near[i % near.length];
+    if (!tgt || tgt.hp <= 0) continue;
+    var travel = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(tgt) * 1000) : 0;
+    sgEmitVfx('knife', [from, tgt], cfg.floatSel, {
+      fxKind: 'chain', variant: 'knife-bounce', count: 1, delayMs: delayMs, travelMs: [0, travel]
+    });
+    sgKnifePathHit(cfg, from, tgt, delayMs);
+    sgKnifeHit(cfg, tgt, dmg, delayMs + travel, cfg.execPct, true);
+    sgKnifeBounceChain(cfg, tgt, dmg, delayMs + travel, bounces, 0, 0, true);
+  }
+}
+
+/* 傳奇【輪舞刃】：第 1 把飛刀不再射出，改為圍繞自身旋轉的刀環。
+   幾何與節拍的唯一權威是環繞場域 sgSpawnOrbitField（火狩／雷球／虛空斬同一套）。 */
+function sgKnifeWaltz(pEnt, st, cfg, waltz) {
+  if (typeof sgSpawnOrbitField !== 'function') return;
+  var r = bfMeterPx(Number(waltz.m) || 0);
+  if (!(r > 0)) return;
+  sgSpawnOrbitField(pEnt, st, 'knife', {
+    floatSel: cfg.floatSel, lifeSec: Math.max(0.5, Number(waltz.sec) || 0),
+    dmgVal: cfg.dmgVal, bodyR: bfMeterPx(1), count: 1,
+    rings: [{ r: r, spin: Math.PI * 2 * SG_KNIFE_WALTZ_RPS }],
+    fieldKey: 'knife-waltz', statusId: 'sgKnifeWaltz',
+    /* 沿用虛空斬的圓盤（同樣是「繞著自己轉的一圈刀刃」），屬性改物理＝配色轉為中性；
+       另立新變體會在兩個渲染器都沒有對應分支時整個沒有畫面。 */
+    auraVariant: 'void-disc', hitVariant: 'knife-strike', hitElem: 'phys'
+  });
+}
+
+/* 超神【無限追魂刃】：額外射出 1 支追擊範圍內任意敵人的飛刀，傷害提高、彈射次數不受限制。
+   「不受限制」以「場上每個敵人各被命中一次」收斂——彈射規則允許回跳（A→B→A），
+   單純不設上限會讓迴圈永遠不結束。 */
+function sgKnifeSoulhunter(cfg, ult) {
+  var live = (typeof bfLiveList === 'function') ? bfLiveList(cfg.pool)
+    : (cfg.pool || []).filter(function (e) { return e && e.hp > 0; });
+  if (!live.length) return;
+  var rPx = bfMeterPx(sgUltVal(ult, 'm'));
+  var inRange = live;
+  if (rPx > 0 && typeof bfEntityDistance === 'function') {
+    var near = [];
+    for (var i = 0; i < live.length; i++) {
+      var d = bfEntityDistance(live[i]);
+      // 無座標（高塔）的敵人距離為 null／NaN：一律視為在範圍內，退化為純單體追擊
+      if (!(d > 0) || d <= rPx) near.push(live[i]);
+    }
+    if (near.length) inRange = near;
+  }
+  var first = inRange[Math.floor(Math.random() * inRange.length)];
+  if (!first || first.hp <= 0) return;
+  var dmg = cfg.dmgVal * (1 + sgUltVal(ult, 'pct') / 100);
+  var travel = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(first) * 1000) : 0;
+  sgEmitVfx('knife', [first], cfg.floatSel, {
+    fxKind: 'projectile', variant: 'knife', count: 1, travelMs: [travel]
+  });
+  sgKnifePathHit(cfg, null, first, 0);
+  sgKnifeHit(cfg, first, dmg, travel, cfg.execPct, false);
+  sgKnifeBounceChain(cfg, first, dmg, travel, Math.max(1, live.length - 1), 0, 0, false);
+}
+
 function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var t = g.tiers;
+  var lg = sgLegend('knife');
+  var ultPetal = sgUlt('knife', 'petalStorm');
+  var ultReaper = sgUlt('knife', 'deathReaper');
+  var ultSoul = sgUlt('knife', 'soulhunterBlade');
   var pct = sgVal(t[0].fx, 'pct', lvs[0]);
   if (lvs[1] > 0) pct += sgVal(t[1].fx, 'pct', lvs[1]);
+  pct += Number(lg.skillDamagePct) || 0;
   var dmgVal = st.atk * pct / 100;
   var geomOk = (typeof bfPos === 'function') && !!bfPos(primary);
+  // 傳奇【影刃】：射出的飛刀數量 +N（扇形與全圓形兩種鎖敵型態都適用）
+  var countAdd = Math.max(0, Math.floor(Number(lg.knifeCountAdd) || 0));
   var targets;
   var kCount;
   if (lvs[4] > 0) {
     // 迴旋飛刀：全圓形範圍，鎖定周圍最近的 N 個敵人
-    kCount = Math.max(1, sgRollCount(sgVal(t[4].fx, 'count', lvs[4])));
+    kCount = Math.max(1, sgRollCount(sgVal(t[4].fx, 'count', lvs[4])) + countAdd);
     targets = bfSortedTargets(pool).slice(0, kCount);
   } else {
-    kCount = Math.max(1, Math.floor(Number(t[0].fx.count) || 3));
+    kCount = Math.max(1, Math.floor(Number(t[0].fx.count) || 3) + countAdd);
     if (geomOk) {
       // 以主目標為中軸的扇形，隨機挑選其餘目標
       var cone = bfConeTargets(bfAngleTo(primary), Number(t[0].fx.deg) || 60,
@@ -1836,10 +2008,6 @@ function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var travelMs = (typeof bfTravelSeconds === 'function')
     ? knives.map(function (e) { return Math.round(bfTravelSeconds(e) * 1000); })
     : null;
-  /* targets 一個代表一把刀；count 必須固定為 1，否則顯示層會把每把刀再複製 kCount 次。 */
-  sgEmitVfx('knife', knives, floatSel, {
-    fxKind: 'projectile', variant: 'knife', count: 1, travelMs: travelMs
-  });
 
   var bouncePct = lvs[2] > 0 ? sgVal(t[2].fx, 'pct', lvs[2]) : 0;
   var cdrSec = lvs[6] > 0 ? sgVal(t[6].fx, 'sec', lvs[6]) : 0;
@@ -1849,59 +2017,130 @@ function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       pEnt.skillCds[cdKey] = Math.max(0, pEnt.skillCds[cdKey] - cdrSec);
     }
   }
-  for (var ki = 0; ki < knives.length; ki++) {
+
+  var cfg = {
+    pEnt: pEnt, st: st, pool: pool, floatSel: floatSel, out: out, dmgVal: dmgVal, onCrit: onCrit,
+    // 超神【暴雨梨花】：飛行路徑上的敵人各吃一段（占本體技能傷害的比例）
+    pathPct: ultPetal ? sgUltVal(ultPetal, 'pct') : 0,
+    // 超神【死亡收割者】：擊殺疊層的傷害增益
+    reaper: ultReaper ? {
+      pct: sgUltVal(ultReaper, 'pct'),
+      maxStacks: Math.max(1, Math.floor(sgUltVal(ultReaper, 'maxStacks'))),
+      dur: sgUltVal(ultReaper, 'dur')
+    } : null,
+    // 傳奇【分裂者】：擊殺分裂；【處刑者】：優先跳向生命值最高的目標並對其增傷
+    split: lg.knifeSplit || null,
+    execPct: lg.knifeExecutor ? (Number(lg.knifeExecutor.pct) || 0) : 0
+  };
+
+  /* 傳奇【輪舞刃】：第 1 把飛刀改為刀環（因此下面的迴圈跳過 index 0）。 */
+  var waltz = lg.knifeOrbit || null;
+  if (waltz) sgKnifeWaltz(pEnt, st, cfg, waltz);
+
+  /* targets 一個代表一把刀；count 必須固定為 1，否則顯示層會把每把刀再複製 kCount 次。 */
+  var flying = waltz ? knives.slice(1) : knives;
+  if (flying.length) {
+    sgEmitVfx('knife', flying, floatSel, {
+      fxKind: 'projectile', variant: 'knife', count: 1,
+      travelMs: travelMs ? travelMs.slice(waltz ? 1 : 0) : null
+    });
+  }
+
+  for (var ki = waltz ? 1 : 0; ki < knives.length; ki++) {
     var delay = (travelMs && travelMs[ki]) || 0;
-    var res = sgHitOne(pEnt, st, knives[ki], dmgVal, 'knife', floatSel, out, delay);
-    if (res && res.crit) onCrit();
+    sgKnifePathHit(cfg, null, knives[ki], 0);
+    var res = sgKnifeHit(cfg, knives[ki], dmgVal, delay, 0, false);
     if (!res || res.miss || bouncePct <= 0) continue;
-    // 彈射：基礎彈射數（第 3 階）＋強化彈射（第 4 階）；連鎖彈射（第 6 階）機率追加
+    // 彈射：基礎彈射數（第 3 階）＋強化彈射（第 4 階）＋傳奇【連鎖】；連鎖彈射（第 6 階）機率追加
     var bounces = Math.max(1, Math.floor(Number(t[2].fx.count) || 1)) +
-      (lvs[3] > 0 ? sgRollCount(sgVal(t[3].fx, 'add', lvs[3])) : 0);
+      (lvs[3] > 0 ? sgRollCount(sgVal(t[3].fx, 'add', lvs[3])) : 0) +
+      Math.max(0, Math.floor(Number(lg.knifeBounceAdd) || 0));
     var chainMax = lvs[5] > 0 ? Math.max(0, Math.floor(Number(t[5].fx.max) || 4)) : 0;
     var chainChance = lvs[5] > 0 ? sgVal(t[5].fx, 'chance', lvs[5]) : 0;
-    var chained = 0;
-    var cur = knives[ki];
-    var visited = [cur];
     // 首發飛到第一個目標的時間也是彈射鏈的起點；後續每段再接續前一段飛行時間。
-    var chainStartDelay = delay;
-    var b = 0;
-    while (b < bounces) {
-      b++;
-      // 優先跳向本輪還沒彈過的最近敵人；都彈過就允許回跳
-      var next = null;
-      var near = bfNearestOthers(cur, pool, pool.length);
-      for (var ni = 0; ni < near.length; ni++) {
-        if (visited.indexOf(near[ni]) < 0) { next = near[ni]; break; }
-      }
-      if (!next) next = (typeof bfNearestOther === 'function') ? bfNearestOther(cur, pool) : null;
-      // 允許 A→B→A，但任何自我彈射 A→A 都必須停止。
-      if (!next || next === cur || next.hp <= 0) break;
-      visited.push(next);
-      var bounceTravelMs = (typeof bfTravelSeconds === 'function')
-        ? Math.round(bfTravelSeconds(next) * 1000) : 0;
-      sgEmitVfx('knife', [cur, next], floatSel, {
-        fxKind: 'chain', variant: 'knife-bounce', count: 1,
-        delayMs: chainStartDelay, travelMs: [0, bounceTravelMs]
-      });
-      var bres = sgHitOne(pEnt, st, next, dmgVal * bouncePct / 100, 'knife', floatSel, out,
-        chainStartDelay + bounceTravelMs);
-      if (bres && bres.crit) onCrit();
-      cur = next;
-      chainStartDelay += bounceTravelMs;
-      // 連鎖彈射：本次彈射後有機率再彈一次（最多連續 chainMax 次）
-      if (bres && !bres.miss && chained < chainMax && chainChance > 0 && chance(chainChance)) {
-        bounces++;
-        chained++;
-      }
-    }
+    sgKnifeBounceChain(cfg, knives[ki], dmgVal * bouncePct / 100, delay, bounces, chainMax, chainChance, false);
+  }
+
+  if (ultSoul) sgKnifeSoulhunter(cfg, ultSoul);
+}
+
+/* ---- 疾風斬 ----
+   本體斬擊、擴散、均分（月牙斬／千鳥）三條結算路徑共用同一支命中掛鉤 sgGaleOnHit，
+   傳奇特效與超神進化才不會只在其中一種型態下生效（比照突刺／迴旋斬）。
+   cfg 由 sgCastGale 一次算好（純資料，不含幾何）。 */
+
+/* 傳奇【風捲殘雲】：命中處生成一道龍捲風（地板場域，逐段結算風系傷害）。
+   與迴旋斬超神【逐風者】同一種場域，差別只在觸發條件與參數來源。 */
+function sgGaleTornado(cfg, target) {
+  if (typeof sgSpawnGround !== 'function') return;
+  var spec = cfg.tornado;
+  sgSpawnGround(cfg.pEnt, cfg.st, 'gale', {
+    tgt: target, floatSel: cfg.floatSel, kind: 'windtornado',
+    radius: bfMeterPx(Number(spec.m) || 0), dmgVal: cfg.dmgVal * (Number(spec.pct) || 0) / 100,
+    hits: Math.max(1, Math.floor(Number(spec.hits) || 1)), gap: Number(spec.gap) || 0.4,
+    hitElem: 'wind'
+  });
+}
+
+/* 超神【雷神斬】：命中處降下 1 道落雷，對該處周圍範圍內的敵人造成閃電傷害。 */
+function sgGaleThunderBolt(cfg, target) {
+  var r = bfMeterPx(Number(cfg.bolt.m) || 0);
+  var victims = sgEnemiesAround(target, cfg.pool, r);
+  if (target.hp > 0) victims.push(target);
+  if (!victims.length) return;
+  sgEmitVfx('gale', victims, cfg.floatSel, {
+    fxKind: 'rain', variant: 'thunder-strike', elem: 'lightning', count: 1,
+    area: (typeof sgAreaAround === 'function') ? sgAreaAround(target, r) : null
+  });
+  var dmg = cfg.dmgVal * (Number(cfg.bolt.pct) || 0) / 100;
+  for (var i = 0; i < victims.length; i++) {
+    sgHitOne(cfg.pEnt, cfg.st, victims[i], dmg, 'gale', cfg.floatSel, cfg.out, 0, 0, 'lightning');
   }
 }
 
-/* ---- 疾風斬 ---- */
+/* 疾風斬的「命中之後」掛鉤。這裡的每一項都只由單次斬擊命中觸發，
+   衍生命中（雙影的追加、雷神斬的落雷）一律不再回頭觸發本支，避免無限展開。 */
+function sgGaleOnHit(cfg, target, res) {
+  if (!target || !res || res.miss) return;
+  /* 傳奇【神速斬】：每次命中使疾風斬的冷卻時間 -N 秒（沿用第 6 階【極速斬】的同一個冷卻鍵）。 */
+  if (cfg.cdrSec > 0 && cfg.pEnt.skillCds && cfg.pEnt.skillCds[cfg.cdKey] > 0) {
+    cfg.pEnt.skillCds[cfg.cdKey] = Math.max(0, cfg.pEnt.skillCds[cfg.cdKey] - cfg.cdrSec);
+  }
+  /* 傳奇【風捲殘雲】：機率在目標處形成龍捲風。 */
+  if (cfg.tornado && chance(Number(cfg.tornado.chance) || 0)) sgGaleTornado(cfg, target);
+  /* 傳奇【風行者】：附加風切狀態。移速／命中率折減與層數規則的唯一權威是
+     sgApplyWindRend（真空斬與暴風屏障用的是同一支），這裡只提供每跳傷害。 */
+  if (cfg.windRend && target.hp > 0 && typeof sgApplyWindRend === 'function') {
+    sgApplyWindRend(target, cfg.windRend);
+  }
+  /* 超神【雷神斬】：命中處降下落雷。 */
+  if (cfg.bolt) sgGaleThunderBolt(cfg, target);
+  /* 傳奇【雙影】：機率額外對附近 1 個敵人造成傷害。 */
+  if (cfg.twin && chance(Number(cfg.twin.chance) || 0)) {
+    var other = bfNearestOthers(target, cfg.pool, 1, bfMeterPx(Number(cfg.twin.m) || 0))[0];
+    if (other && other.hp > 0) {
+      sgHitOne(cfg.pEnt, cfg.st, other, cfg.dmgVal * (Number(cfg.twin.pct) || 0) / 100,
+        'gale', cfg.floatSel, cfg.out, 0);
+    }
+  }
+  /* 傳奇【斬殺】：機率立即殺死生命值門檻以下的非 BOSS 敵人。
+     放在最後，前面的觸發才不會因為目標已死而整批跳過。 */
+  if (cfg.execute && target.hp > 0 && !target.isBoss && !target.towerBoss &&
+      target.maxHp > 0 && target.hp <= target.maxHp * (Number(cfg.execute.hpPct) || 0) / 100 &&
+      chance(Number(cfg.execute.chance) || 0)) {
+    sgDerivedHit(target, target.hp, 'gale', cfg.floatSel, cfg.out, '💀', 0);
+  }
+}
+
 function sgCastGale(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var t = g.tiers;
+  var lg = sgLegend('gale');
+  var ultFlash = sgUlt('gale', 'thunderFlash');
+  var ultBolt = sgUlt('gale', 'thunderGodSlash');
+  var ultChidori = sgUlt('gale', 'chidori');
   var pct = sgVal(t[0].fx, 'pct', lvs[0]);
   if (lvs[2] > 0) pct += sgVal(t[2].fx, 'pct', lvs[2]);
+  pct += Number(lg.skillDamagePct) || 0;
   var hits = Math.max(1, Math.floor(Number(t[0].fx.hits) || 2) +
     (lvs[1] > 0 ? sgRollCount(sgVal(t[1].fx, 'add', lvs[1])) : 0));
   var dmgVal = st.atk * pct / 100;
@@ -1912,31 +2151,77 @@ function sgCastGale(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     shareTargets = geomOk ? bfTargetsAround(primary, pool, bfMeterPx(sgVal(t[6].fx, 'm', lvs[6]))) : [primary];
     if (!shareTargets.length) shareTargets = [primary];
   }
+
+  var cdKey = SG_PREFIX + 'gale';
+  var cfg = {
+    pEnt: pEnt, st: st, pool: pool, floatSel: floatSel, out: out, dmgVal: dmgVal, cdKey: cdKey,
+    // 傳奇【神速斬】：每次命中的冷卻縮減秒數
+    cdrSec: Math.max(0, Number(lg.galeCdrSec) || 0),
+    // 傳奇【風捲殘雲】／【雙影】／【斬殺】
+    tornado: lg.galeTornado || null,
+    twin: lg.galeTwin || null,
+    execute: lg.galeExecute || null,
+    /* 傳奇【風行者】：風切的每跳傷害＝本體技能傷害 × cutPct%，換算成每秒量交給狀態引擎；
+       移速 -80%／命中率 -50%／持續 4 秒全部沿用風切狀態表的既有數值。 */
+    windRend: lg.galeWindRend ? {
+      per: dmgVal * (Number(lg.galeWindRend.cutPct) || 0) / 100 / sgWindRendGap(),
+      extra: 0, dur: sgWindRendDur(), interval: sgWindRendGap()
+    } : null,
+    // 超神【雷神斬】：每次斬擊命中附加的落雷
+    bolt: ultBolt ? { pct: sgUltVal(ultBolt, 'pct'), m: sgUltVal(ultBolt, 'm') } : null
+  };
+
   sgEmitVfx('gale', shareMode ? shareTargets : [primary], floatSel, {
     fxKind: 'slash', count: Math.min(5, hits), variant: 'gale-slashes'
   });
   for (var h = 0; h < hits; h++) {
     if (shareMode) {
-      // 超神斬：本段傷害 ×(1+加成) 後由範圍內敵人均分
+      // 超神【千鳥】：月牙斬不再均分，改為每個敵人都吃完整傷害，且傷害再額外提高
       var total = dmgVal * (1 + sgVal(t[6].fx, 'pct', lvs[6]) / 100);
+      if (ultChidori) total *= 1 + sgUltVal(ultChidori, 'pct') / 100;
       var alive = shareTargets.filter(function (e) { return e && e.hp > 0; });
       if (!alive.length) break;
-      var share = total / alive.length;
+      var share = ultChidori ? total : total / alive.length;
       for (var si = 0; si < alive.length; si++) {
-        sgHitOne(pEnt, st, alive[si], share, 'gale', floatSel, out, sgStaggerMs(h));
+        var sres = sgHitOne(pEnt, st, alive[si], share, 'gale', floatSel, out, sgStaggerMs(h));
+        sgGaleOnHit(cfg, alive[si], sres);
       }
     } else {
-      sgHitOne(pEnt, st, primary, dmgVal, 'gale', floatSel, out, sgStaggerMs(h));
+      var pres = sgHitOne(pEnt, st, primary, dmgVal, 'gale', floatSel, out, sgStaggerMs(h));
+      sgGaleOnHit(cfg, primary, pres);
     }
     // 擴散：每次斬擊額外打 10 米內最近的敵人；附近沒有敵人時改對原目標
     if (lvs[3] > 0) {
       var extra = bfNearestOthers(primary, pool, 1, bfMeterPx(sgVal(t[3].fx, 'm', lvs[3])))[0] || primary;
-      sgHitOne(pEnt, st, extra, dmgVal * sgVal(t[3].fx, 'pct', lvs[3]) / 100, 'gale', floatSel, out, sgStaggerMs(h + 1));
+      var eres = sgHitOne(pEnt, st, extra, dmgVal * sgVal(t[3].fx, 'pct', lvs[3]) / 100, 'gale', floatSel, out, sgStaggerMs(h + 1));
+      sgGaleOnHit(cfg, extra, eres);
     }
   }
   // 狂風斬：攻速增益（突破上限、與自身攻速相乘——掛點在戰鬥迴圈的乘算區）
   if (lvs[4] > 0) {
     applyStatus(pEnt, 'sgGale', { val: sgVal(t[4].fx, 'pct', lvs[4]), dur: sgVal(t[4].fx, 'sec', lvs[4]) });
+  }
+  /* 超神【霹靂一閃】：最後一斬改為對自身周圍範圍內的敵人打出「單段傷害 × 連擊數 × 倍率」。
+     只在所有斬擊結算完之後打一次，因此不受 hits 迴圈影響。 */
+  if (ultFlash) sgGaleThunderFlash(cfg, ultFlash, hits);
+}
+
+/* 超神【霹靂一閃】：疾風斬的最後一斬對自身周圍範圍內的敵人造成連擊數倍的傷害。 */
+function sgGaleThunderFlash(cfg, ult, hits) {
+  var r = bfMeterPx(sgUltVal(ult, 'm'));
+  var victims = (typeof bfEnemiesInArea === 'function' && typeof bfPlayerPos === 'function' &&
+    typeof bfLiveList === 'function')
+    ? bfEnemiesInArea({ x: bfPlayerPos().x, y: bfPlayerPos().y, r: r }, bfLiveList(cfg.pool))
+    : (cfg.pool || []).filter(function (e) { return e && e.hp > 0; });
+  if (!victims.length) return;
+  sgEmitVfx('gale', victims, cfg.floatSel, {
+    fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', dur: 0.4
+  });
+  var dmg = cfg.dmgVal * Math.max(1, hits) * Math.max(0, sgUltVal(ult, 'mult'));
+  for (var i = 0; i < victims.length; i++) {
+    var res = sgHitOne(cfg.pEnt, cfg.st, victims[i], dmg, 'gale', cfg.floatSel, cfg.out,
+      sgStaggerMs(hits), 0, 'lightning');
+    sgGaleOnHit(cfg, victims[i], res);
   }
 }
 

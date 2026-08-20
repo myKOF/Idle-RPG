@@ -25,9 +25,9 @@ test('飛刀彈射必須在上一段抵達後才開始下一段', () => {
   const renderer = read('js/battle-renderer.js');
 
   assert.match(skills2, /if \(extra && extra\.delayMs > 0\) spec\.delayMs = Number\(extra\.delayMs\);/);
-  assert.match(skills2, /delayMs: chainStartDelay, travelMs: \[0, bounceTravelMs\]/);
-  assert.match(skills2, /chainStartDelay \+ bounceTravelMs/);
-  assert.match(skills2, /chainStartDelay \+= bounceTravelMs/);
+  assert.match(skills2, /delayMs: delay, travelMs: \[0, travel\]/);
+  assert.match(skills2, /sgKnifeHit\(cfg, next, dmgVal, delay \+ travel/);
+  assert.match(skills2, /delay \+= travel;/);
   assert.match(skills2, /if \(!next \|\| next === cur \|\| next\.hp <= 0\) break;/);
 
   const domChainStart = vfx.indexOf('function vfxChain');
@@ -893,9 +893,9 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(index, /css\/style\.css\?v=1\.0\.54/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.64/);
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.97/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.56/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-ult-evolution'/);
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260819-ult-evolution/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.57/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260820-ult-evolution-2'/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260820-ult-evolution-2/);
 });
 
 /* 2026-08-19 回報三連：真空斬系的綠色落雷、風刃地板綠方塊、風刃一格一格移動。

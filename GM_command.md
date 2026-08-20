@@ -671,7 +671,7 @@ sgult 群組|all 1|2|3|off [等級|max] （直設超神進化的三選一與等�
 
 - 第 2 個參數是**選項編號**（1／2／3，對應技能面板三選一的左中右），`off` ＝清除選擇。
 - 第 3 個參數留白＝`max`（Lv.10）；填 0 等同 `off`。
-- 目前只有 `thrust`（突刺）與 `cleave`（迴旋斬）開放超神進化，`all` 會自動略過其餘群組。
+- 目前只有 `thrust`（突刺）、`cleave`（迴旋斬）、`knife`（飛刀）、`gale`（疾風斬）開放超神進化，`all` 會自動略過其餘群組。
 - **生效前提是該群組前 7 階全部滿級**：沒滿級時指令仍會寫入，但效果暫時失效
   （面板會標「暫時失效」）。要立刻看到效果，先 `sglv thrust max` 再 `sgult thrust 1`。
 
@@ -679,6 +679,8 @@ sgult 群組|all 1|2|3|off [等級|max] （直設超神進化的三選一與等�
 sglv thrust max ; sgult thrust 1      （突刺全滿＋幻影八方陣 Lv.10）
 sgult thrust 3 5                      （改成一擊必殺 Lv.5）
 sgult cleave 3                        （迴旋斬＝天霸風神斬：變被動、Lv.10 每 3 秒自動施放）
+sgult knife 2                         （飛刀＝死亡收割者：擊殺疊層增傷）
+sgult gale 3                          （疾風斬＝千鳥：月牙斬不再均分傷害）
 sgult all off                         （清除所有超神進化選擇）
 ```
 
