@@ -351,16 +351,18 @@ function equipTargetSlot(it, eq) {
 function equipItem(it, slotKey, eq) {
   eq = eq || G.equipment;
   var key = slotKey || equipTargetSlot(it, eq);
-  // 裝上雙手武器 → 副手一併卸下
-  if (key === 'weapon' && isTwoHandItem(it) && eq.weapon2) {
+  // 裝上雙手武器 → 副手一併卸下（修羅亂舞生效時副手留著，那正是它的效果）
+  if (key === 'weapon' && isTwoHandItem(it) && eq.weapon2 && !asuraDualWieldOn()) {
     var off = eq.weapon2;
     eq.weapon2 = null;
     off.locked = false;
     addToInventory(off);
     blog('🗡️ 雙手武器佔據主副手：已卸下副手 ' + rarityTag(off), 'info');
   }
-  // 主手為雙手武器時要裝副手 → 先卸下該雙手武器
-  if (key === 'weapon2' && isTwoHandItem(eq.weapon)) {
+  /* 主手為雙手武器時要裝副手 → 先卸下該雙手武器。
+     修羅亂舞的例外只開給「副手也是雙手武器」：它讓你同時拿兩把雙手武器，
+     不是讓你在拿雙手武器的同時再插一面盾。 */
+  if (key === 'weapon2' && isTwoHandItem(eq.weapon) && !(isTwoHandItem(it) && asuraDualWieldOn())) {
     var mh = eq.weapon;
     eq.weapon = null;
     mh.locked = false;
@@ -404,6 +406,9 @@ function tryAutoEquip(it) {
     var key = cands[i];
     if (G.equipment[key]) continue;
     if (slotBlockedByTwoHand(G.equipment, key)) continue;        // 副手被雙手武器連帶佔用
+    /* 修羅亂舞讓副手可以再放一把雙手武器，但別的東西（盾牌、匕首）放進去仍會擠掉主手，
+       所以不自動穿——自動穿裝的原則是「只填空欄、不擠掉既有裝備」。 */
+    if (key === 'weapon2' && !isTwoHandItem(it) && isTwoHandItem(G.equipment.weapon)) continue;
     if (isTwoHandItem(it) && G.equipment.weapon2) continue;      // 雙手武器不自動擠下副手
     equipItem(it, key);
     blog('🎽 自動穿裝：' + rarityTag(it) + '（' + SLOT_INFO[key].name + '）', 'info');

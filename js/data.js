@@ -398,16 +398,31 @@ function isTwoHandItem(it) {
   var wd = weaponDef(it);
   return !!wd && wd.cat === 'twoHand';
 }
-// 該欄位是否被雙手武器連帶佔用（＝副手欄且主手裝著雙手武器）
-function slotBlockedByTwoHand(eq, slotKey) {
-  return slotKey === 'weapon2' && !!eq && isTwoHandItem(eq.weapon);
+/* 修羅亂舞（雙刀亂舞超神進化）目前是否生效。判定本體在 js/skills2.js skills2AsuraDualWield
+  （讀 G＝Worker 端權威）；本檔比它早載入，因此以 typeof 取用，未載入時視為沒生效。
+   override＝主執行緒以面板快照算好的值：主執行緒沒有 G，自己算一定得到「沒生效」。 */
+function asuraDualWieldOn(override) {
+  if (override !== undefined && override !== null) return !!override;
+  return typeof skills2AsuraDualWield === 'function' && skills2AsuraDualWield();
+}
+// 該欄位是否被雙手武器連帶佔用（＝副手欄且主手裝著雙手武器；修羅亂舞生效時不算佔用）
+function slotBlockedByTwoHand(eq, slotKey, asuraOverride) {
+  if (slotKey !== 'weapon2' || !eq || !isTwoHandItem(eq.weapon)) return false;
+  return !asuraDualWieldOn(asuraOverride);
 }
 // 物品「實例」→ 可裝入的欄位：武器依類型定義，其餘同 equipSlotsForType
-function equipSlotsForItem(it) {
+function equipSlotsForItem(it, asuraOverride) {
   if (!it) return [];
   var wd = weaponDef(it);
-  if (wd) return wd.slots.slice();
-  return equipSlotsForType(it.slot);
+  if (!wd) return equipSlotsForType(it.slot);
+  var slots = wd.slots.slice();
+  /* 修羅亂舞：雙手武器多一個可裝欄位（副手）。沒生效時維持原本的「只能主手」，
+     因此卸下超神進化之後就再也裝不進副手；已經在裡面的那件會留著但不計入屬性
+    （js/formula.js computeStats），資料不會遺失，重新選回來就立刻恢復。 */
+  if (wd.cat === 'twoHand' && slots.indexOf('weapon2') < 0 && asuraDualWieldOn(asuraOverride)) {
+    slots.push('weapon2');
+  }
+  return slots;
 }
 function inferWeaponTypeFromName(name) {
   if (!name || typeof name !== 'string') return null;
@@ -1005,6 +1020,64 @@ var PASSIVE_POOL = {
     name: '神速斬', desc: '疾風斬每次命中時，疾風斬的冷卻時間 -0.1 秒。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'gale', weaponTypes: ['magicSword1h'],
     fx: { galeCdrSec: 0.1 }
+  },
+
+  /* ---- 新版技能改寫型 第三批（2026-08-20；設計來源「傳奇進化」頁籤）----
+     生效路徑與前兩批相同（legendarySkill2Mods 平坦合併 → 施放端讀通用參數鍵）。
+     這一批全部掛在**雙手武器**：雙手魔劍（magicSword2h＝血刃斬）與雙手大劍（greatsword2h＝雙刀亂舞）。
+     ⚠️ 雙手武器補償會讓 legendaryFx 把 fx 內的數值鍵自動 ×2（白名單鍵除外，見 js/legendary.js
+     LEGENDARY_FX_NON_VALUE_KEYS）。因此下面的規格物件一律用慣例鍵名：
+     不該被放大的用 chance／count／sec／gap，該放大的用 pct／m／hpPct／healPct。
+     desc 寫的是**未乘補償**的底值，與既有雙手特效（旋風回旋斬…）同一個口徑。 */
+  bloodPoisonBurst: {
+    name: '毒爆', desc: '血刃斬造成中毒的敵人死亡後留下一灘毒霧，對範圍 6 米內的敵人每 0.5 秒造成 50% 中毒傷害，持續 3 秒。',
+    base: 0, perR: 0, legendary: true, type: 'poison', relatedSkill: 'bloodblade', weaponTypes: ['magicSword2h'],
+    fx: { bloodPoisonMist: { m: 6, pct: 50, sec: 3, gap: 0.5 } }
+  },
+  bloodVenomRite: {
+    name: '毒血祭', desc: '血刃斬的中毒每感染 1 個敵人就使自身生命值 -1%，但造成的中毒與流血傷害提高 50%。',
+    base: 0, perR: 0, legendary: true, type: 'poison', relatedSkill: 'bloodblade', weaponTypes: ['magicSword2h'],
+    fx: { bloodVenomRite: { hpPct: 1, pct: 50 } }
+  },
+  bloodMist: {
+    name: '血霧', desc: '血刃斬造成流血的敵人死亡後留下一灘血霧，血霧內的敵人每次受傷都回復你 0.2% 生命值，持續 4 秒。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'bloodblade', weaponTypes: ['magicSword2h'],
+    fx: { bloodMistField: { m: 6, healPct: 0.2, sec: 4 } }
+  },
+  bloodShadow: {
+    name: '血影', desc: '血刃斬有 35% 機率揮出第 2 斬。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'bloodblade', weaponTypes: ['magicSword2h'],
+    fx: { bloodSecondSlash: { chance: 35 } }
+  },
+  bloodCleaver: {
+    name: '切割', desc: '血刃斬的斬擊傷害 +100%。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'bloodblade', weaponTypes: ['magicSword2h'],
+    fx: { bloodSlashPct: 100 }
+  },
+  danceFrenzy: {
+    name: '狂舞', desc: '暴風之舞持續期間，每施放 1 次雙刀亂舞就使下一次的施放間隔縮短 6%。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'dualdance', weaponTypes: ['greatsword2h'],
+    fx: { danceStormGap: { pct: 6 } }
+  },
+  danceBerserker: {
+    name: '狂戰士', desc: '鐵血之舞造成的生命損失與傷害同時提高 50%。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'dualdance', weaponTypes: ['greatsword2h'],
+    fx: { danceIronAmp: { pct: 50 } }
+  },
+  danceUnyielding: {
+    name: '不屈之誓', desc: '暴風之舞持續期間你的死亡延後 10 秒才生效，且這 10 秒內你的傷害提高 100%。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'dualdance', weaponTypes: ['greatsword2h'],
+    fx: { danceDeathDefer: { sec: 10, pct: 100 } }
+  },
+  danceThousandCuts: {
+    name: '殺千刀', desc: '雙刀亂舞每殺死 1 個敵人就使暴風之舞的持續時間 +0.2 秒。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'dualdance', weaponTypes: ['greatsword2h'],
+    fx: { danceStormKill: { sec: 0.2 } }
+  },
+  danceTwinBlades: {
+    name: '雙生刃', desc: '雙刀亂舞的擊中目標數量 +2 個。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'dualdance', weaponTypes: ['greatsword2h'],
+    fx: { danceTargetAdd: { count: 2 } }
   }
 };
 

@@ -2657,6 +2657,13 @@ textarea#save-io {
   }
 }
 
+/* 修羅亂舞沒生效時，副手上的雙手武器仍在欄位裡但完全不計入屬性（js/formula.js）。
+   壓暗並去飽和，讓「有東西但沒作用」一眼可辨，不必點開才知道。 */
+.eq-slot.eq-inert {
+  filter: grayscale(1) brightness(.55);
+  opacity: .8;
+}
+
 .eq-slot .th-occupied-mark {
   position: absolute;
   right: 3px;

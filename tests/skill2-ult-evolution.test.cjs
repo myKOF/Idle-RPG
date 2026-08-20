@@ -1,11 +1,11 @@
-/* 超神進化（技能第 8 格）＋ 傳奇進化特效（2026-08-19 第一批、2026-08-20 第二批）
+/* 超神進化（技能第 8 格）＋ 傳奇進化特效（2026-08-19 第一批、2026-08-20 第二、三批）
    設計來源：神力之巔_記事錄.xlsx「傳奇進化」頁籤。
    守住的事：
-     1. 資料形狀：thrust／cleave／knife／gale 各三個超神進化選項，desc 模板的 {鍵} 都在 fx 裡；
-        20 個新傳奇特效只出現在匕首／單手劍／單手魔劍，且 relatedSkill 指向新版技能群組
+     1. 資料形狀：thrust／cleave／knife／gale／bloodblade／dualdance 各三個超神進化選項，
+        desc 模板的 {鍵} 都在 fx 裡；30 個新傳奇特效只出現在指定武器類型，relatedSkill 指向新版技能群組
      2. 解鎖與指令：前 7 階全滿才可三選一；選定＝Lv.1 並扣款；重複選擇被拒；
         降到 Lv.0 清除選擇（可重選）；某階降級後效果失效但存檔保留
-     3. 施放行為：四個群組各三個超神效果、各五個傳奇特效都真的改變了戰鬥結果
+     3. 施放行為：六個群組各三個超神效果、各五個傳奇特效都真的改變了戰鬥結果
      4. 傳奇特效：legendarySkill2Mods 只合併「同群組且已生效」的 fx，數字同鍵相加
      5. 存檔與快照：面板快照帶 ult；讀檔正規化會刪掉越界／非法的紀錄
 
@@ -119,9 +119,9 @@ function setLegendary(c, keys) {
 
 /* ---- 1) 資料形狀 ---- */
 
-test('超神進化：thrust／cleave／knife／gale 各三個選項，欄位齊全且說明模板的參數鍵都存在', () => {
+test('超神進化：六個已開放群組各三個選項，欄位齊全且說明模板的參數鍵都存在', () => {
   const c = loadContext();
-  ['thrust', 'cleave', 'knife', 'gale'].forEach((gid) => {
+  ['thrust', 'cleave', 'knife', 'gale', 'bloodblade', 'dualdance'].forEach((gid) => {
     const list = c.sgUltDefs(gid);
     assert.ok(list, gid + ' 應有超神進化');
     assert.equal(list.length, c.SG_ULT_OPTION_COUNT, gid + ' 超神進化必須剛好三選一');
@@ -138,14 +138,14 @@ test('超神進化：thrust／cleave／knife／gale 各三個選項，欄位齊�
       });
     });
   });
-  // 其餘群組目前尚未開放（設計文檔只給了突刺與迴旋斬）
-  assert.equal(c.sgUltDefs('bloodblade'), null);
+  // 其餘 17 個群組尚未開放；火球術當控制組（設計文檔尚未給它超神進化）
+  assert.equal(c.sgUltDefs('fireball'), null);
   assert.equal(c.sgSlotCount('thrust'), 8);
-  assert.equal(c.sgSlotCount('bloodblade'), 7);
+  assert.equal(c.sgSlotCount('fireball'), 7);
   assert.equal(c.SG_ULT_SLOT, c.SG_TIER_COUNT, '第 8 格的索引＝各階數（0-based 接在最後一階之後）');
 });
 
-test('傳奇進化二十特效：只出現在匕首／單手劍／單手魔劍，且關聯到新版技能群組', () => {
+test('傳奇進化三十特效：各自只出現在指定武器類型，且關聯到新版技能群組', () => {
   const c = loadContext();
   const NEW_ONES = {
     piercingFocus: ['凝鋒穿刺', 'dagger1h', 'thrust'],
@@ -168,9 +168,20 @@ test('傳奇進化二十特效：只出現在匕首／單手劍／單手魔劍�
     galeExecute: ['斬殺', 'magicSword1h', 'gale'],
     galeTwinShadow: ['雙影', 'magicSword1h', 'gale'],
     galeWindwalker: ['風行者', 'magicSword1h', 'gale'],
-    galeGodspeed: ['神速斬', 'magicSword1h', 'gale']
+    galeGodspeed: ['神速斬', 'magicSword1h', 'gale'],
+    // 2026-08-20 第三批：血刃斬（雙手魔劍）／雙刀亂舞（雙手大劍）
+    bloodPoisonBurst: ['毒爆', 'magicSword2h', 'bloodblade'],
+    bloodVenomRite: ['毒血祭', 'magicSword2h', 'bloodblade'],
+    bloodMist: ['血霧', 'magicSword2h', 'bloodblade'],
+    bloodShadow: ['血影', 'magicSword2h', 'bloodblade'],
+    bloodCleaver: ['切割', 'magicSword2h', 'bloodblade'],
+    danceFrenzy: ['狂舞', 'greatsword2h', 'dualdance'],
+    danceBerserker: ['狂戰士', 'greatsword2h', 'dualdance'],
+    danceUnyielding: ['不屈之誓', 'greatsword2h', 'dualdance'],
+    danceThousandCuts: ['殺千刀', 'greatsword2h', 'dualdance'],
+    danceTwinBlades: ['雙生刃', 'greatsword2h', 'dualdance']
   };
-  assert.equal(Object.keys(NEW_ONES).length, 20);
+  assert.equal(Object.keys(NEW_ONES).length, 30);
   const names = new Set();
   Object.entries(NEW_ONES).forEach(([key, [name, weapon, gid]]) => {
     const def = c.PASSIVE_POOL[key];
@@ -185,7 +196,7 @@ test('傳奇進化二十特效：只出現在匕首／單手劍／單手魔劍�
     assert.ok(def.fx && Object.keys(def.fx).length > 0, key + ' 缺 fx 規格');
     names.add(name);
   });
-  assert.equal(names.size, 20, '新特效之間不得同名');
+  assert.equal(names.size, 30, '新特效之間不得同名');
   /* 顯示名稱在整個傳奇特效池裡也必須唯一：玩家只看得到名字，
      兩個效果同名等於裝備詞條無法分辨（設計上的【神速】改名為【神速斬】即為此）。 */
   const allNames = Object.keys(c.PASSIVE_POOL).map((k) => c.PASSIVE_POOL[k].name);
@@ -203,6 +214,13 @@ test('傳奇進化二十特效：只出現在匕首／單手劍／單手魔劍�
   assert.ok(!c.passiveAllowedForItem('knifeChain', magic));
   assert.ok(c.passiveAllowedForItem('galeWindwalker', magic));
   assert.ok(!c.passiveAllowedForItem('galeWindwalker', dagger));
+  const great = { weaponType: 'greatsword2h' };
+  const magic2h = { weaponType: 'magicSword2h' };
+  assert.ok(c.passiveAllowedForItem('bloodCleaver', magic2h));
+  assert.ok(!c.passiveAllowedForItem('bloodCleaver', magic), '雙手魔劍的效果不得漏到單手魔劍');
+  assert.ok(c.passiveAllowedForItem('danceTwinBlades', great));
+  assert.ok(!c.passiveAllowedForItem('danceTwinBlades', magic2h));
+  assert.ok(!c.passiveAllowedForItem('galeWindwalker', magic2h));
 });
 
 /* ---- 2) 解鎖與指令 ---- */
@@ -217,8 +235,8 @@ test('超神進化的唯一解鎖條件＝前 7 階全滿；未滿級時不可�
   assert.equal(c.sgUltUnlockedBy('thrust', c.skills2Levels('thrust')), true);
   assert.equal(c.skills2UltPick('thrust', 0), null, '前 7 階全滿即可三選一');
   // 尚未開放超神進化的群組一律拒絕
-  maxLevels(c, 'bloodblade');
-  assert.match(c.skills2UltPick('bloodblade', 0), /尚未開放/);
+  maxLevels(c, 'fireball');
+  assert.match(c.skills2UltPick('fireball', 0), /尚未開放/);
 });
 
 test('三選一：選定＝Lv.1 並扣款；已選過不得改選；降到 Lv.0 才可重選', () => {
@@ -253,14 +271,14 @@ test('第 8 格走 skills2Learn／skills2Downgrade 的同一個入口（UI 只�
   maxLevels(c, 'thrust');
   c.G.player.gold = 1e12;
   assert.equal(c.sgIsUltSlot('thrust', c.SG_ULT_SLOT), true);
-  assert.equal(c.sgIsUltSlot('bloodblade', c.SG_ULT_SLOT), false, '未開放的群組沒有第 8 格');
+  assert.equal(c.sgIsUltSlot('fireball', c.SG_ULT_SLOT), false, '未開放的群組沒有第 8 格');
   assert.match(c.skills2Learn('thrust', c.SG_ULT_SLOT), /請先選擇/);
   assert.equal(c.skills2UltPick('thrust', 0), null);
   assert.equal(c.skills2Learn('thrust', c.SG_ULT_SLOT), null);
   assert.equal(c.skills2Ult('thrust').lv, 2);
   assert.equal(c.skills2Downgrade('thrust', c.SG_ULT_SLOT), null);
   assert.equal(c.skills2Ult('thrust').lv, 1);
-  assert.match(c.skills2Learn('bloodblade', c.SG_ULT_SLOT), /未知階數/);
+  assert.match(c.skills2Learn('fireball', c.SG_ULT_SLOT), /未知階數/);
 });
 
 test('前 7 階任一階離開滿級：超神進化暫時失效，但存檔的選擇與等級原樣保留', () => {
@@ -281,7 +299,7 @@ test('面板快照帶上超神進化的選擇（主執行緒沒有 G，只能靠
   setUlt(c, 'thrust', 'phantomOcta', 3);
   const view = c.skills2PanelView();
   assert.deepEqual(JSON.parse(JSON.stringify(view.ult.thrust)), { pick: 0, lv: 3 });
-  assert.equal(view.ult.bloodblade, undefined, '沒選過的群組不佔快照欄位');
+  assert.equal(view.ult.fireball, undefined, '沒選過的群組不佔快照欄位');
   // UI 端以同一支純函式重算，確保「畫面說可以」＝「Worker 說可以」
   const pick = c.sgUltPickOf(view.ult, 'thrust');
   assert.equal(pick.id, 'phantomOcta');
@@ -610,7 +628,7 @@ test('讀檔正規化：越界／非法的超神進化紀錄一律刪除，合�
         ult: {
           thrust: { pick: 0, lv: 99 },        // 超過上限 → 夾回
           cleave: { pick: 9, lv: 3 },         // 選項越界 → 刪除
-          bloodblade: { pick: 0, lv: 1 },          // 該群組沒有超神進化 → 刪除
+          fireball: { pick: 0, lv: 1 },          // 該群組沒有超神進化 → 刪除
           gale: { pick: 0, lv: 0 }            // 等級不合法 → 刪除
         }
       },
@@ -623,7 +641,7 @@ test('讀檔正規化：越界／非法的超神進化紀錄一律刪除，合�
   assert.match(norm, /data\.player\.skills2\.ult/);
   // 純函式端：壞資料一律被視為「沒選」
   assert.equal(c.sgUltPickOf(data.player.skills2.ult, 'cleave'), null);
-  assert.equal(c.sgUltPickOf(data.player.skills2.ult, 'bloodblade'), null);
+  assert.equal(c.sgUltPickOf(data.player.skills2.ult, 'fireball'), null);
   assert.equal(c.sgUltPickOf(data.player.skills2.ult, 'gale'), null);
   assert.equal(c.sgUltPickOf(data.player.skills2.ult, 'thrust').lv, c.SG_TIER_MAX_LV);
 });
@@ -795,7 +813,9 @@ test('【死亡收割者】：擊殺疊層，且層數直接進入「造成的�
   const aCfg = c.sgAtkCfg(p, c.getStats(), 100, alive, 0, 'knife');
   assert.ok(aCfg.totalDmgPct > 0, '死亡收割必須進 totalDmgPct');
   const src = fs.readFileSync(path.join(root, 'js/combat.js'), 'utf8');
-  assert.match(src, /totalDmgPct:[\s\S]{0,120}buffVal\(pEnt, 'sgDeathReaper'\)/, '普攻端也要吃到');
+  assert.match(src, /totalDmgPct:[\s\S]{0,160}skills2AllDamageUpPct\(pEnt\)/, '普攻端要走同一個加總入口');
+  const s2 = fs.readFileSync(path.join(root, 'js/skills2.js'), 'utf8');
+  assert.match(s2, /function skills2AllDamageUpPct[\s\S]{0,320}sgDeathReaper/, '加總入口要含死亡收割');
 });
 
 test('【無限追魂刃】：額外射出 1 支高傷飛刀，且彈射到場上每個敵人', () => {
@@ -876,21 +896,396 @@ test('【千鳥】：月牙斬不再均分傷害，每個敵人都吃完整傷�
     '應為原本每人份的 ' + (2 * bonus) + ' 倍，實際 ' + (full / shared));
 });
 
+/* ---- 11) 血刃斬的五個傳奇特效（2026-08-20 第三批） ---- */
+
+function bleedOf(ent) { return ent.dots.filter((d) => d.sid === 'sgBleed')[0] || null; }
+function poisonOf(ent) { return ent.dots.filter((d) => d.sid === 'sgPoison')[0] || null; }
+
+test('【切割】：只放大斬擊本體，流血／中毒的每跳量不變', () => {
+  const c = loadContext(['js/legendary.js']);
+  const calls = stubHits(c); stubVfx(c);
+  forceRolls(c, 0.999);
+  maxLevels(c, 'bloodblade'); equip(c, 'bloodblade');
+  const p = playerEnt(); c.FIELD = { player: p };
+
+  const plain = enemy(1e12, 3 * M, 0);
+  c.castSkill2(p, [plain], 'bloodblade', 'mv-float');
+  const plainTotal = calls[0].total;
+  const plainBleed = bleedOf(plain).dps;
+
+  setLegendary(c, ['bloodCleaver']);
+  calls.length = 0;
+  const cut = enemy(1e12, 3 * M, 0);
+  p.mp = 200;
+  c.castSkill2(p, [cut], 'bloodblade', 'mv-float');
+  const add = c.PASSIVE_POOL.bloodCleaver.fx.bloodSlashPct;
+  assert.ok(Math.abs(calls[0].total - (plainTotal + add)) < 1e-9, '斬擊本體要吃到 +' + add + '%');
+  assert.ok(Math.abs(bleedOf(cut).dps - plainBleed) < 1e-9, '流血基準不吃斬擊加成');
+});
+
+test('【血影】：機率揮出第 2 斬，兩斬都是完整規格', () => {
+  const c = loadContext(['js/legendary.js']);
+  const calls = stubHits(c); stubVfx(c);
+  maxLevels(c, 'bloodblade'); equip(c, 'bloodblade');
+  setLegendary(c, ['bloodShadow']);
+  const p = playerEnt(); c.FIELD = { player: p };
+
+  forceRolls(c, 0.999);                              // 機率不觸發
+  c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'bloodblade', 'mv-float');
+  assert.equal(calls.length, 1, '沒觸發時只有 1 斬');
+
+  forceRolls(c, 0);                                  // 機率必觸發
+  calls.length = 0;
+  p.mp = 200;
+  c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'bloodblade', 'mv-float');
+  assert.equal(calls.length, 2, '觸發時第 2 斬也要走完整命中');
+});
+
+test('【毒血祭】：中毒與流血傷害提高，但每感染 1 個敵人就付出自身生命（不會扣死）', () => {
+  const c = loadContext(['js/legendary.js']);
+  stubHits(c); stubVfx(c);
+  forceRolls(c, 0.999);
+  maxLevels(c, 'bloodblade'); equip(c, 'bloodblade');
+  const p = playerEnt(); c.FIELD = { player: p };
+
+  const plain = enemy(1e12, 3 * M, 0);
+  c.castSkill2(p, [plain], 'bloodblade', 'mv-float');
+  const basePoison = poisonOf(plain).dps;
+  const baseBleed = bleedOf(plain).dps;
+
+  setLegendary(c, ['bloodVenomRite']);
+  const rite = c.PASSIVE_POOL.bloodVenomRite.fx.bloodVenomRite;
+  const before = p.hp; p.mp = 200;
+  const target = enemy(1e12, 3 * M, 0);
+  c.castSkill2(p, [target], 'bloodblade', 'mv-float');
+  const k = 1 + rite.pct / 100;
+  assert.ok(Math.abs(poisonOf(target).dps - basePoison * k) < 1e-6, '中毒傷害要 ×' + k);
+  assert.ok(Math.abs(bleedOf(target).dps - baseBleed * k) < 1e-6, '流血傷害也要 ×' + k);
+  assert.ok(p.hp < before, '感染要付出自身生命');
+
+  p.hp = 1;                                    // 生命見底時不得再扣（保底 1 點）
+  p.mp = 200;
+  c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'bloodblade', 'mv-float');
+  assert.equal(p.hp, 1, '不得把自己扣死');
+});
+
+test('【毒爆】／【血霧】：中毒／流血的敵人死亡後才留下場域，且血霧本身不造成傷害', () => {
+  const c = loadContext(['js/legendary.js']);
+  stubHits(c); stubVfx(c);
+  forceRolls(c, 0.999);
+  maxLevels(c, 'bloodblade'); equip(c, 'bloodblade');
+  setLegendary(c, ['bloodPoisonBurst', 'bloodMist']);
+  const p = playerEnt(); c.FIELD = { player: p };
+
+  const clean = enemy(1e12, 3 * M, 0);
+  c.skills2OnEnemyDeath(clean, [clean]);
+  assert.equal(c.SKILL2_RT.grounds.length, 0, '身上沒有中毒／流血就不留場域');
+
+  const victim = enemy(1e12, 3 * M, 0);
+  c.castSkill2(p, [victim], 'bloodblade', 'mv-float');
+  victim.hp = 0;
+  c.skills2OnEnemyDeath(victim, [victim]);
+  const kinds = Array.from(c.SKILL2_RT.grounds).map((g) => g.kind).sort();
+  assert.deepEqual(kinds, ['bloodmist', 'poisonmist']);
+  const mist = c.SKILL2_RT.grounds.filter((g) => g.kind === 'bloodmist')[0];
+  assert.equal(mist.dmgVal, 0, '血霧本身不造成傷害');
+  const poison = c.SKILL2_RT.grounds.filter((g) => g.kind === 'poisonmist')[0];
+  assert.ok(poison.dmgVal > 0);
+  assert.equal(poison.hitElem, 'poison');
+});
+
+test('【血霧】：站在血霧裡的敵人每次受傷都回復玩家生命', () => {
+  const c = loadContext(['js/legendary.js']);
+  stubVfx(c);
+  maxLevels(c, 'bloodblade'); equip(c, 'bloodblade');
+  setLegendary(c, ['bloodMist']);
+  const p = playerEnt(); p.hp = 100; c.FIELD = { player: p };
+  const e = enemy(1e12, 3 * M, 0);
+
+  c.skills2OnEnemyDamaged(e, 50);
+  assert.equal(p.hp, 100, '沒被血霧標記就不回血');
+
+  c.applyStatus(e, 'sgBloodMist', { dur: 2 });
+  c.skills2OnEnemyDamaged(e, 50);
+  const healPct = c.PASSIVE_POOL.bloodMist.fx.bloodMistField.healPct;
+  assert.ok(Math.abs(p.hp - (100 + c.getStats().hp * healPct / 100)) < 1e-6,
+    '應回復最大生命的 ' + healPct + '%');
+});
+
+/* ---- 12) 血刃斬的三個超神進化 ---- */
+
+test('【殺神領域】：領域內的敵人死亡才疊層並回血，領域外不算', () => {
+  const c = loadContext(['js/legendary.js']);
+  stubVfx(c);
+  maxLevels(c, 'bloodblade'); equip(c, 'bloodblade');
+  const p = playerEnt(); p.hp = 100; c.FIELD = { player: p };
+
+  const near = enemy(1e12, 3 * M, 0);
+  c.skills2OnEnemyDeath(near, [near]);
+  assert.equal(p.buffs.sgSlayerMark, undefined, '沒選超神進化時不疊層');
+
+  setUlt(c, 'bloodblade', 'slayerDomain');
+  const ult = c.SKILLS2.bloodblade.ult[0];
+  const far = enemy(1e12, 100 * M, 0);
+  c.skills2OnEnemyDeath(far, [far]);
+  assert.equal(p.buffs.sgSlayerMark, undefined, '領域外（>24 米）不算');
+
+  c.skills2OnEnemyDeath(near, [near]);
+  const buff = p.buffs.sgSlayerMark;
+  assert.ok(buff, '領域內死亡要疊層');
+  assert.ok(Math.abs(buff.unit - c.sgVal(ult.fx, 'pct', c.SG_TIER_MAX_LV)) < 1e-9);
+  assert.ok(p.hp > 100, '疊層同時要回血');
+  // 疊層直接進入「造成的所有傷害提高」乘區
+  const aCfg = c.sgAtkCfg(p, c.getStats(), 100, near, 0, 'bloodblade');
+  assert.ok(aCfg.totalDmgPct >= buff.val, '殺神層數必須進 totalDmgPct');
+});
+
+test('【萬毒血霧】：領域內每 0.5 秒疊一層萬毒侵蝕，且只作用在範圍內的敵人', () => {
+  const c = loadContext(['js/legendary.js']);
+  stubVfx(c);
+  maxLevels(c, 'bloodblade'); equip(c, 'bloodblade');
+  setUlt(c, 'bloodblade', 'venomDomain');
+  const p = playerEnt(); c.FIELD = { player: p };
+  const near = enemy(1e12, 3 * M, 0);
+  const far = enemy(1e12, 100 * M, 0);
+
+  run(c, p, [near, far], 1.6);
+  const dot = near.dots.filter((d) => d.sid === 'sgVenomField')[0];
+  assert.ok(dot, '領域內應被塗上萬毒侵蝕');
+  assert.ok(dot.stacks >= 2, '每 0.5 秒疊一層，1.6 秒至少 2 層，實得 ' + dot.stacks);
+  assert.ok(Math.abs(dot.dps - dot.unit * dot.stacks) < 1e-6, '每跳量＝單層 × 層數');
+  assert.equal(far.dots.length, 0, '領域外不受影響');
+});
+
+test('【崩解】：中毒與流血當場結清、不留狀態，並對周圍爆炸', () => {
+  const c = loadContext(['js/legendary.js']);
+  stubHits(c); stubVfx(c);
+  const hits = stubDerived(c);
+  forceRolls(c, 0.999);
+  maxLevels(c, 'bloodblade'); equip(c, 'bloodblade');
+  const p = playerEnt(); c.FIELD = { player: p };
+
+  const plain = enemy(1e12, 3 * M, 0);
+  c.castSkill2(p, [plain], 'bloodblade', 'mv-float');
+  const bleedTotal = bleedOf(plain).dps * bleedOf(plain).dur;
+
+  setUlt(c, 'bloodblade', 'disintegrate');
+  hits.length = 0; p.mp = 200;
+  const main = enemy(1e12, 3 * M, 0);
+  const bystander = enemy(1e12, 3 * M, 2 * M);      // 距離 2 米 < 6 米
+  c.castSkill2(p, [main, bystander], 'bloodblade', 'mv-float');
+
+  assert.equal(main.dots.length, 0, '崩解之後不得留下持續狀態');
+  const onMain = hits.filter((h) => h.ent === main).map((h) => h.amount);
+  assert.ok(onMain.some((a) => Math.abs(a - Math.round(bleedTotal)) <= 1),
+    '主目標要一次吃掉整段流血傷害（' + Math.round(bleedTotal) + '），實得 ' + onMain.join('/'));
+  const pct = c.sgVal(c.SKILLS2.bloodblade.ult[2].fx, 'pct', c.SG_TIER_MAX_LV);
+  const onBystander = hits.filter((h) => h.ent === bystander).map((h) => h.amount);
+  assert.ok(onBystander.length >= 1, '周圍的敵人要被爆炸波及');
+  assert.ok(onBystander.some((a) => Math.abs(a - Math.round(bleedTotal * pct / 100)) <= 1),
+    '爆炸傷害＝該效果的 ' + pct + '%，實得 ' + onBystander.join('/'));
+});
+
+/* ---- 13) 雙刀亂舞的五個傳奇特效 ---- */
+
+test('【雙生刃】：擊中目標數量 +2', () => {
+  const c = loadContext(['js/legendary.js']);
+  const calls = stubHits(c); stubVfx(c);
+  forceRolls(c, 0.999);
+  maxLevels(c, 'dualdance'); equip(c, 'dualdance');
+  const p = playerEnt(); c.FIELD = { player: p };
+  const mk = () => [enemy(1e12, 3 * M, 0), enemy(1e12, 3 * M, 1 * M), enemy(1e12, 3 * M, 2 * M)];
+
+  c.castSkill2(p, mk(), 'dualdance', 'mv-float');
+  const base = calls.length;
+
+  setLegendary(c, ['danceTwinBlades']);
+  calls.length = 0; p.mp = 200;
+  c.castSkill2(p, mk(), 'dualdance', 'mv-float');
+  assert.equal(calls.length, base + c.PASSIVE_POOL.danceTwinBlades.fx.danceTargetAdd.count);
+});
+
+test('【狂戰士】：鐵血之舞的生命損失與敵人流血同步放大', () => {
+  const c = loadContext(['js/legendary.js']);
+  stubHits(c); stubVfx(c);
+  forceRolls(c, 0.999);
+  maxLevels(c, 'dualdance'); equip(c, 'dualdance');
+  const p = playerEnt(); c.FIELD = { player: p };
+
+  const e1 = enemy(1e12, 3 * M, 0);
+  c.castSkill2(p, [e1], 'dualdance', 'mv-float');
+  const baseEnemy = e1.dots.filter((d) => d.sid === 'sgIronBleed')[0].dps;
+  const baseSelf = p.dots.filter((d) => d.sid === 'sgIronBleed')[0].dps;
+
+  setLegendary(c, ['danceBerserker']);
+  const k = 1 + c.PASSIVE_POOL.danceBerserker.fx.danceIronAmp.pct / 100;
+  const e2 = enemy(1e12, 3 * M, 0);
+  p.dots.length = 0; p.mp = 200;
+  c.castSkill2(p, [e2], 'dualdance', 'mv-float');
+  assert.ok(Math.abs(e2.dots.filter((d) => d.sid === 'sgIronBleed')[0].dps - baseEnemy * k) < 1e-6,
+    '敵人流血要 ×' + k);
+  assert.ok(Math.abs(p.dots.filter((d) => d.sid === 'sgIronBleed')[0].dps - baseSelf * k) < 1e-6,
+    '自身生命損失也要 ×' + k);
+});
+
+test('【狂舞】與【殺千刀】：只在暴風之舞持續期間作用，分別縮短節拍與延長化身', () => {
+  const c = loadContext(['js/legendary.js']);
+  stubHits(c); stubVfx(c);
+  forceRolls(c, 0.999);
+  maxLevels(c, 'dualdance'); equip(c, 'dualdance');
+  setLegendary(c, ['danceFrenzy', 'danceThousandCuts']);
+  const p = playerEnt(); c.FIELD = { player: p };
+
+  // 第一次施放會「開起」化身；依設計那一拍不算在持續期間內
+  c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'dualdance', 'mv-float');
+  const stm = c.SKILL2_RT.storm;
+  assert.ok(stm, '應進入暴風之舞');
+  const gap0 = stm.gap, until0 = stm.until;
+
+  // 化身期間的自動施放：節拍縮短
+  p.mp = 200;
+  c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'dualdance', 'mv-float', { storm: true });
+  const shrink = 1 - c.PASSIVE_POOL.danceFrenzy.fx.danceStormGap.pct / 100;
+  assert.ok(Math.abs(c.SKILL2_RT.storm.gap - gap0 * shrink) < 1e-9,
+    '每施放 1 次要把下一拍間隔乘 ' + shrink);
+  assert.ok(Math.abs(c.SKILL2_RT.storm.until - until0) < 1e-9, '沒殺人就不延長');
+
+  // 化身期間殺人：延長化身
+  p.mp = 200;
+  const dying = [enemy(100, 3 * M, 0), enemy(100, 3 * M, 1 * M)];
+  c.castSkill2(p, dying, 'dualdance', 'mv-float', { storm: true });
+  const per = c.PASSIVE_POOL.danceThousandCuts.fx.danceStormKill.sec;
+  assert.ok(c.SKILL2_RT.storm.until >= until0 + per * 2 - 1e-9,
+    '殺 2 個要延長 ' + (per * 2) + ' 秒，實得 ' + (c.SKILL2_RT.storm.until - until0));
+});
+
+test('【不屈之誓】：暴風之舞期間的死亡延後生效，期間傷害提高，時間到才真的死', () => {
+  const c = loadContext(['js/legendary.js']);
+  stubHits(c); stubVfx(c);
+  forceRolls(c, 0.999);
+  maxLevels(c, 'dualdance'); equip(c, 'dualdance');
+  const p = playerEnt(); c.FIELD = { player: p };
+
+  assert.equal(c.skills2TryDeathDefer(p), false, '沒進化身就不攔死亡');
+
+  setLegendary(c, ['danceUnyielding']);
+  c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'dualdance', 'mv-float');
+  assert.ok(c.SKILL2_RT.storm, '應進入暴風之舞');
+
+  p.hp = 0;
+  assert.equal(c.skills2TryDeathDefer(p), true, '化身期間的死亡要被攔下');
+  assert.ok(p.hp >= 1, '被攔下時生命夾回 1 點');
+  const spec = c.PASSIVE_POOL.danceUnyielding.fx.danceDeathDefer;
+  assert.ok(Math.abs(c.buffVal(p, 'sgDeathDefer') - spec.pct) < 1e-9, '期間要有傷害增益');
+  assert.ok(c.skills2AllDamageUpPct(p) >= spec.pct, '增益必須進入所有傷害加總');
+
+  p.hp = 0;
+  assert.equal(c.skills2TryDeathDefer(p), true, '延後期間再死一次仍然被攔');
+
+  c.GT += spec.sec + 0.1;                       // 延後期滿
+  p.hp = 500;
+  c.tickSkill2(0.05, tickCtx(c, p, []));
+  assert.equal(p.hp, 0, '時間到要把生命歸零，讓原本的判死流程接手');
+  assert.equal(c.skills2TryDeathDefer(p), false, '不得延後第二次');
+});
+
+/* ---- 14) 雙刀亂舞的三個超神進化 ---- */
+
+test('【毀滅之舞】：每次施放付出當下生命（不致死），換來本次施放的總傷加成', () => {
+  const c = loadContext(['js/legendary.js']);
+  const calls = stubHits(c); stubVfx(c);
+  forceRolls(c, 0.999);
+  maxLevels(c, 'dualdance'); equip(c, 'dualdance');
+  const p = playerEnt(); c.FIELD = { player: p };
+
+  c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'dualdance', 'mv-float');
+  const baseTotal = calls[0].total;
+  const hpAfterPlain = p.hp;
+
+  setUlt(c, 'dualdance', 'doomDance');
+  const ult = c.SKILLS2.dualdance.ult[0];
+  calls.length = 0; p.mp = 200;
+  c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'dualdance', 'mv-float');
+  assert.ok(p.hp < hpAfterPlain, '施放要付出生命');
+  const bonus = c.sgVal(ult.fx, 'pct', c.SG_TIER_MAX_LV);
+  assert.ok(Math.abs(calls[0].total - (baseTotal + bonus)) < 1e-9, '本次施放要 +' + bonus + '%');
+
+  p.hp = 1; p.mp = 200;
+  c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'dualdance', 'mv-float');
+  assert.equal(p.hp, 1, '生命見底時不得把自己扣死');
+});
+
+test('【火之神樂】：每命中 1 次疊 1 層灼焰，每跳量＝單層 × 層數', () => {
+  const c = loadContext(['js/legendary.js']);
+  stubHits(c); stubVfx(c);
+  forceRolls(c, 0.999);
+  maxLevels(c, 'dualdance'); equip(c, 'dualdance');
+  const p = playerEnt(); c.FIELD = { player: p };
+
+  const plain = enemy(1e12, 3 * M, 0);
+  c.castSkill2(p, [plain], 'dualdance', 'mv-float');
+  assert.equal(plain.dots.filter((d) => d.sid === 'sgKagura').length, 0, '沒選超神進化時不附加火焰');
+
+  setUlt(c, 'dualdance', 'flameKagura');
+  const ult = c.SKILLS2.dualdance.ult[1];
+  p.mp = 200;
+  const target = enemy(1e12, 3 * M, 0);          // 只有 1 個敵人 → 所有斬擊都打它
+  c.castSkill2(p, [target], 'dualdance', 'mv-float');
+  const dot = target.dots.filter((d) => d.sid === 'sgKagura')[0];
+  assert.ok(dot, '應附加神樂灼焰');
+  assert.ok(dot.stacks >= 2, '同一次施放的多段命中要各疊 1 層，實得 ' + dot.stacks);
+  assert.ok(dot.stacks <= c.sgVal(ult.fx, 'maxStacks', c.SG_TIER_MAX_LV), '不得超過層數上限');
+  assert.ok(Math.abs(dot.dps - dot.unit * dot.stacks) < 1e-6, '每跳量＝單層 × 層數');
+});
+
+test('【修羅亂舞】：只有「選了它且雙刀亂舞裝配在技能列上」時，雙手武器才能進副手', () => {
+  const c = loadContext();
+  const twoHand = { slot: 'weapon', weaponType: 'greatsword2h' };
+  const shield = { slot: 'weapon', weaponType: 'shield' };
+
+  maxLevels(c, 'dualdance');
+  assert.equal(c.skills2AsuraDualWield(), false, '沒選超神進化就不生效');
+  setUlt(c, 'dualdance', 'asuraDance');
+  assert.equal(c.skills2AsuraDualWield(), false, '沒裝配在技能列上也不生效');
+
+  equip(c, 'dualdance');
+  assert.equal(c.skills2AsuraDualWield(), true);
+  assert.deepEqual(Array.from(c.equipSlotsForItem(twoHand)), ['weapon', 'weapon2'], '雙手武器可進副手');
+  assert.deepEqual(Array.from(c.equipSlotsForItem(shield)), ['weapon2'], '副手武器的可裝欄位不受影響');
+  assert.equal(c.slotBlockedByTwoHand({ weapon: twoHand }, 'weapon2'), false, '副手不再算被佔用');
+  const pct = c.sgVal(c.SKILLS2.dualdance.ult[2].fx, 'pct', c.SG_TIER_MAX_LV);
+  assert.ok(Math.abs(c.skills2AsuraAffixPct() - pct) < 1e-9);
+
+  // 卸下技能：規則立刻恢復原樣
+  c.G.player.loadout = [];
+  assert.equal(c.skills2AsuraDualWield(), false);
+  assert.deepEqual(Array.from(c.equipSlotsForItem(twoHand)), ['weapon']);
+  assert.equal(c.slotBlockedByTwoHand({ weapon: twoHand }, 'weapon2'), true);
+  assert.equal(c.skills2AsuraAffixPct(), 0);
+  // 主執行緒沒有 G，改由面板快照算好後傳參覆寫
+  assert.equal(c.slotBlockedByTwoHand({ weapon: twoHand }, 'weapon2', true), false);
+  assert.deepEqual(Array.from(c.equipSlotsForItem(twoHand, true)), ['weapon', 'weapon2']);
+});
+
 /* ---- 10) 參數表往返 ---- */
 
-test('參數表往返：Skills2 的超神進化列與 Equipment_Affix 的二十個新特效都落表', () => {
+test('參數表往返：Skills2 的超神進化列與 Equipment_Affix 的三十個新特效都落表', () => {
   const skills2Csv = fs.readFileSync(path.join(root, 'config/CSV/Skills2.csv'), 'utf8').replace(/^﻿/, '');
   assert.match(skills2Csv.split(/\r?\n/)[0], /超神ID/, 'Skills2 表要有超神ID 欄');
   ['phantomOcta', 'shadowExecutioner', 'oneStrikeKill', 'voidShatter', 'windChaser', 'stormGodSlash',
-    'petalStorm', 'deathReaper', 'soulhunterBlade', 'thunderFlash', 'thunderGodSlash', 'chidori']
+    'petalStorm', 'deathReaper', 'soulhunterBlade', 'thunderFlash', 'thunderGodSlash', 'chidori',
+    'slayerDomain', 'venomDomain', 'disintegrate', 'doomDance', 'flameKagura', 'asuraDance']
     .forEach((id) => assert.ok(skills2Csv.includes(id), 'Skills2.csv 應含 ' + id));
   const affixCsv = fs.readFileSync(path.join(root, 'config/CSV/Equipment_Affix.csv'), 'utf8');
   ['piercingFocus', 'thousandWounds', 'sunpiercerLance', 'thunderStab', 'heartrendBleed',
     'chainSpin', 'galeBladeDance', 'skyrendSlash', 'exploitWeakness', 'gatheringVortex',
     'knifeChain', 'knifeSplitter', 'knifeExecutioner', 'knifeShadowblade', 'knifeWaltzblade',
-    'galeWhirlwind', 'galeExecute', 'galeTwinShadow', 'galeWindwalker', 'galeGodspeed']
+    'galeWhirlwind', 'galeExecute', 'galeTwinShadow', 'galeWindwalker', 'galeGodspeed',
+    'bloodPoisonBurst', 'bloodVenomRite', 'bloodMist', 'bloodShadow', 'bloodCleaver',
+    'danceFrenzy', 'danceBerserker', 'danceUnyielding', 'danceThousandCuts', 'danceTwinBlades']
     .forEach((id) => assert.ok(affixCsv.includes(id), 'Equipment_Affix.csv 應含 ' + id));
   const statusCsv = fs.readFileSync(path.join(root, 'config/CSV/Status.csv'), 'utf8');
-  ['sgWindRend', 'sgDeathReaper', 'sgKnifeWaltz']
+  ['sgWindRend', 'sgDeathReaper', 'sgKnifeWaltz',
+    'sgSlayerMark', 'sgVenomField', 'sgKagura', 'sgDeathDefer', 'sgBloodMist']
     .forEach((id) => assert.ok(statusCsv.includes(id), 'Status.csv 應含 ' + id));
 });

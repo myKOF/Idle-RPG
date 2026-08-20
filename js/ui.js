@@ -4165,25 +4165,34 @@ function renderEquip() {
   var box = $id('equip-grid');
   var h = '';
   var eq = equipViewEquipment(equipSnapshot);
+  var asuraOn = uiAsuraDualWield();   // 修羅亂舞：副手可以再放一把雙手武器
   SLOT_LIST.forEach(function (slot) {
     var it = eq[slot];
     var info = SLOT_INFO[slot];
     // A two-handed weapon occupies the main-hand slot in the data model, but
     // the off-hand cell should still show the same weapon as a visual cue.
-    var twoHandDuplicate = !it && slot === 'weapon2' &&
+    /* 修羅亂舞生效時副手是一個真正可用的欄位，就不再把主手那把重複畫到副手格上。 */
+    var twoHandDuplicate = !it && slot === 'weapon2' && !asuraOn &&
       typeof isTwoHandItem === 'function' && isTwoHandItem(eq.weapon);
     if (twoHandDuplicate) it = eq.weapon;
+    /* 修羅亂舞沒生效時，副手上的雙手武器留著但完全不計入屬性（js/formula.js computeStats
+       會跳過它）。物品照樣顯示，但要讓玩家看得出它現在是死的——否則面板上明明掛著一把武器、
+       屬性卻對不上，會被當成算錯。 */
+    var inert = !!it && slot === 'weapon2' && !twoHandDuplicate && !asuraOn &&
+      typeof isTwoHandItem === 'function' && isTwoHandItem(it);
     if (it) {
       var r = RARITIES[it.rarity];
       var effClass = (it.rarity === 6) ? ' eff-mythic' : (it.rarity >= GODFORGED_IDX ? ' eff-godforged' : (it.rarity === 7 ? ' eff-genesis' : ''));
       var iconFile = itemIconFile(it, info);
       var iconHtml = iconFile ? '<img src="images/' + iconFile + '" class="eq-icon">' : '<div class="eq-emoji">' + info.emoji + '</div>';
       var flashHtml = equipFlashActive(slot) ? '<span class="equip-flash-overlay" aria-hidden="true"></span>' : '';
-      h += '<div class="eq-slot filled' + effClass + (twoHandDuplicate ? ' twohand-duplicate' : '') + ' slot-' + slot + '" data-id="' + it.id + '" data-src="equip" data-slot="' + slot + '" style="border-color:' + r.color + '; box-shadow: inset 0 0 15px ' + r.color + '40">' +
-        iconHtml + ancientStarBadgeHTML(it) + flashHtml + '</div>';
+      h += '<div class="eq-slot filled' + effClass + (twoHandDuplicate ? ' twohand-duplicate' : '') + (inert ? ' eq-inert' : '') + ' slot-' + slot + '" data-id="' + it.id + '" data-src="equip" data-slot="' + slot + '" style="border-color:' + r.color + '; box-shadow: inset 0 0 15px ' + r.color + '40">' +
+        iconHtml + ancientStarBadgeHTML(it) + flashHtml +
+        (inert ? '<span class="th-occupied-mark" title="未裝備【修羅亂舞】，副手的雙手武器不生效">🚫</span>' : '') +
+        '</div>';
     } else {
       // 副手欄被主手雙手武器連帶佔用：加佔用標記（仍可點選，改裝副手會自動卸下雙手武器）
-      var blocked2h = (typeof slotBlockedByTwoHand === 'function') && slotBlockedByTwoHand(eq, slot);
+      var blocked2h = (typeof slotBlockedByTwoHand === 'function') && slotBlockedByTwoHand(eq, slot, asuraOn);
       var iconHtml = info.icon ? '<img src="images/' + info.icon + '" class="eq-icon dim">' : '<div class="eq-emoji dim">' + info.emoji + '</div>';
       h += '<div class="eq-slot empty slot-' + slot + (blocked2h ? ' twohand-occupied' : '') + '" data-slot="' + slot + '">' + iconHtml +
         (blocked2h ? '<span class="th-occupied-mark">⛓️</span>' : '') + '</div>';
@@ -7710,6 +7719,17 @@ function sgUiUltPick(skillsSnapshot, gid) {
 }
 function sgUiUltUnlocked(gid, lvs) {
   return (typeof sgUltUnlockedBy === 'function') && sgUltUnlockedBy(gid, lvs);
+}
+/* 超神進化【修羅亂舞】（雙刀亂舞，js/skills2.js）目前是否生效。
+   主執行緒沒有 G，不能直接呼叫 skills2AsuraDualWield（那支讀 G，在這裡永遠回 false），
+   因此以面板快照重算，條件逐項對齊 Worker 端：
+     ①選的是修羅亂舞 ②前 7 階仍全滿 ③雙刀亂舞裝配在技能列上。 */
+function uiAsuraDualWield() {
+  var sk = uiSkillsPanelSnapshot();
+  var pick = sgUiUltPick(sk, 'dualdance');
+  if (!pick || pick.id !== 'asuraDance') return false;
+  if (!sgUiUltUnlocked('dualdance', sgUiLevels(sk, 'dualdance'))) return false;
+  return skillViewLoadout(sk).indexOf(SG_PREFIX + 'dualdance') >= 0;
 }
 /* 這個格位是不是超神進化那一格。 */
 function sgUiIsUltSlot(gid, slot) {
