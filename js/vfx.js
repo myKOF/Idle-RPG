@@ -1115,15 +1115,16 @@ function vfxCleaveArc(spec, layer, pt, delayMs, angleDeg, extraClass, travel) {
   vfxTrack(d, delay + duration * 1000 + 180);
 }
 
-/* 迴身四方斬：一個方向就是一個 90 度扇形。
+/* 迴身四方斬：一個方向就是一個 60 度扇形。
    扇形從中心的小半徑開始，向外飛行並同步放大到該方向的實際傷害半徑；
-   不再用數個小弧光分散在圓周上，讓四道斬擊合起來真的覆蓋整個圓。 */
+   同時以 45 度／秒旋轉；四道斬擊使用相同的飛行與放大動畫。 */
 function vfxCleaveSector(spec, layer, pt, delayMs, angleDeg, travel) {
   if (!pt) return;
   var d = vfxNode('vfx-cleave-sector', layer, spec);
   var maxRadius = Math.max(48, Number(travel && travel.length) || Number(spec && spec.lineLength) || 120);
   var delay = Math.max(0, delayMs || 0);
   var duration = Math.max(0.38, spec.dur || 0.5);
+  var rotationSpeedDeg = 45;
   var travelAngle = Number(travel && travel.angle) || 0;
   var angle = typeof angleDeg === 'number' ? angleDeg : travelAngle * 180 / Math.PI;
   d.style.width = (maxRadius * 2) + 'px';
@@ -1145,7 +1146,8 @@ function vfxCleaveSector(spec, layer, pt, delayMs, angleDeg, travel) {
       var shift = maxRadius * 0.08 * eased;
       d.style.left = (pt.x + Math.cos(travelAngle) * shift) + 'px';
       d.style.top = (pt.y + Math.sin(travelAngle) * shift) + 'px';
-      d.style.transform = 'translate(-50%, -50%) rotate(' + angle.toFixed(0) + 'deg) scale(' + radiusScale.toFixed(4) + ')';
+      var rotation = angle + rotationSpeedDeg * (elapsed / 1000);
+      d.style.transform = 'translate(-50%, -50%) rotate(' + rotation.toFixed(3) + 'deg) scale(' + radiusScale.toFixed(4) + ')';
       d.style.opacity = k > 0.76 ? String(Math.max(0, 1 - (k - 0.76) / 0.24)) : String(Math.min(1, k / 0.08));
       if (k >= 1) return;
     }
@@ -2569,7 +2571,7 @@ function renderCombatVfx(spec) {
     return;
   }
 
-  /* 震碎斬重用迴旋斬弧光；迴身四方斬使用四個 90 度扇形向外擴張。
+  /* 震碎斬重用迴旋斬弧光；迴身四方斬使用四個 60 度扇形向外擴張並旋轉。
      命中延遲依弧光實際飛行距離估算，確保刀光抵達時傷害字才出現。 */
   if (kind === 'slash' && (s.variant === 'cleave' || s.variant === 'cleave-shockwave' || s.variant === 'cleave-back' || s.variant === 'cleave-dual' || s.variant === 'cleave-cross' || s.variant === 'cleave-cross-shockwave')) {
     var drawForward = s.variant === 'cleave-shockwave' || s.variant === 'cleave-back' || s.variant === 'cleave-dual';

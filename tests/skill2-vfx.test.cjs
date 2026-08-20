@@ -254,24 +254,31 @@ test('震碎斬與迴身四方斬共用迴旋斬的方向事件', () => {
   assert.doesNotMatch(read('css/style.css'), /\.vfx-cleave-wave/);
 });
 
-test('迴身四方斬使用四個 90 度扇形，特效與飛行傷害共用擴張範圍', () => {
+test('迴身四方斬使用四個 60 度扇形，四向共用範圍並旋轉放大', () => {
   const skills2 = read('js/skills2.js');
   const vfx = read('js/vfx.js');
   const renderer = read('js/battle-renderer.js');
   const css = read('css/style.css');
   const shim = read('js/worker/shim.js');
   const protocol = read('js/worker/protocol.js');
-  assert.match(skills2, /bfConeTargets\(baseAngle \+ directions\[di\], 90, dirRange, pool\)/);
-  assert.match(skills2, /coneDeg: lvs\[6\] > 0 \? 90 : 0/);
+  assert.match(skills2, /var crossRangePx = Math\.max\(frontFlyPx, sideFlyPx, meleeRangePx\)/);
+  assert.match(skills2, /var dirFly = lvs\[6\] > 0 \? crossRangePx/);
+  assert.match(skills2, /bfConeTargets\(baseAngle \+ directions\[di\], 60, dirRange, pool\)/);
+  assert.match(skills2, /coneDeg: lvs\[6\] > 0 \? 60 : 0/);
   assert.match(skills2, /sgFilterCleaveSectorTargets\(crossed, projectile\.coneBaseAngle/);
   assert.match(skills2, /directionRanges: lvs\[6\] > 0 \? directionRanges : null/);
   assert.match(vfx, /function vfxCleaveSector\(/);
   assert.match(vfx, /vfxCleaveSector\(s, layer, from, cleaveDelay/);
+  assert.match(vfx, /var rotationSpeedDeg = 45/);
+  assert.match(vfx, /rotation = angle \+ rotationSpeedDeg \* \(elapsed \/ 1000\)/);
   assert.match(vfx, /targetRange = Array\.isArray\(s\.directionRanges\)/);
   assert.match(renderer, /function spawnCleaveSector\(/);
   assert.match(renderer, /spawnCleaveSector\(cleaveFrom\.x, cleaveFrom\.y, spec/);
+  assert.match(renderer, /var rotationSpeed = Math\.PI \/ 4/);
+  assert.match(renderer, /g\.rotation = baseRotation \+ rotationSpeed \* t/);
+  assert.match(renderer, /Math\.PI \/ 6/);
   assert.match(renderer, /targetRange = Array\.isArray\(spec\.directionRanges\)/);
-  assert.match(css, /\.vfx-cleave-sector[\s\S]*?clip-path: polygon\(50% 50%, 100% 0, 100% 100%\)/);
+  assert.match(css, /\.vfx-cleave-sector[\s\S]*?clip-path: polygon\(50% 50%, 100% 21\.13%, 100% 78\.87%\)/);
   assert.match(shim, /rangeScale: Number\(spec\.rangeScale\) > 0 \? Number\(spec\.rangeScale\) : 1/);
   assert.match(shim, /directionRanges: Array\.isArray\(spec\.directionRanges\)/);
   assert.match(protocol, /rangeScale／directionRanges/);
@@ -875,10 +882,10 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   /* 主頁與 Worker 必須換版本，否則瀏覽器會繼續執行舊的綠色方框／逐格路徑。
      這幾條釘的是「目前的版號」——之後任何人再動這些檔、把版號往上推時，
      連同這裡一起更新即可（釘住的用意是禁止「改了檔卻沒換版號」）。 */
-  assert.match(index, /css\/style\.css\?v=1\.0\.52/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.62/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.95/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.55/);
+  assert.match(index, /css\/style\.css\?v=1\.0\.53/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.63/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.96/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.56/);
   assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-ult-evolution'/);
   assert.match(worker, /\.\.\/skills2\.js\?v=20260819-ult-evolution/);
 });

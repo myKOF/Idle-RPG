@@ -1884,16 +1884,18 @@ var BattleRenderer = (function () {
     }, 1);
   }
 
-  /* 迴身四方斬的單一道路：以 90 度扇形由中心向外飛出，半徑也同步成長。
+  /* 迴身四方斬的單一道路：以 60 度扇形由中心向外飛出，半徑同步成長並以 45 度／秒旋轉。
      directionRanges 由模擬層傳入，確保畫面終點與實際傷害範圍相同。 */
   function spawnCleaveSector(x, y, spec, rotation, delaySec, travel) {
     var theme = themeOf(spec);
     var g = new PIXI.Graphics();
     g.x = x; g.y = y;
-    g.rotation = typeof rotation === 'number' ? rotation : 0;
+    var baseRotation = typeof rotation === 'number' ? rotation : 0;
+    g.rotation = baseRotation;
     S.layers.fx.addChild(g);
     var maxRadius = Math.max(48, Number(travel && travel.length) || Number(spec && spec.lineLength) || 120);
     var travelAngle = travel && typeof travel.angle === 'number' ? travel.angle : g.rotation;
+    var rotationSpeed = Math.PI / 4;
     var t = -(delaySec || 0), dur = Math.max(0.38, spec.dur || 0.5);
     addFx({
       node: g,
@@ -1907,18 +1909,19 @@ var BattleRenderer = (function () {
         var shift = maxRadius * 0.05 * eased;
         g.x = x + Math.cos(travelAngle) * shift;
         g.y = y + Math.sin(travelAngle) * shift;
+        g.rotation = baseRotation + rotationSpeed * t;
         var fade = k > 0.76 ? 1 - (k - 0.76) / 0.24 : Math.min(1, k / 0.08);
         g.clear();
         g.moveTo(0, 0)
-          .lineTo(Math.cos(-Math.PI / 4) * radius, Math.sin(-Math.PI / 4) * radius)
-          .arc(0, 0, radius, -Math.PI / 4, Math.PI / 4, false)
+          .lineTo(Math.cos(-Math.PI / 6) * radius, Math.sin(-Math.PI / 6) * radius)
+          .arc(0, 0, radius, -Math.PI / 6, Math.PI / 6, false)
           .lineTo(0, 0).closePath()
           .fill({ color: theme.c1, alpha: 0.2 * fade });
-        g.arc(0, 0, radius, -Math.PI / 4, Math.PI / 4, false)
+        g.arc(0, 0, radius, -Math.PI / 6, Math.PI / 6, false)
           .stroke({ color: theme.c1, width: Math.max(2, maxRadius * 0.025) * fade,
             alpha: 0.95 * fade, cap: 'round' });
-        g.moveTo(0, 0).lineTo(Math.cos(-Math.PI / 4) * radius, Math.sin(-Math.PI / 4) * radius)
-          .moveTo(0, 0).lineTo(Math.cos(Math.PI / 4) * radius, Math.sin(Math.PI / 4) * radius)
+        g.moveTo(0, 0).lineTo(Math.cos(-Math.PI / 6) * radius, Math.sin(-Math.PI / 6) * radius)
+          .moveTo(0, 0).lineTo(Math.cos(Math.PI / 6) * radius, Math.sin(Math.PI / 6) * radius)
           .stroke({ color: theme.c2, width: Math.max(1, maxRadius * 0.012) * fade,
             alpha: 0.9 * fade, cap: 'round' });
         return t < dur;
