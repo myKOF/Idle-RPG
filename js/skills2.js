@@ -1085,8 +1085,8 @@ function sgQueueFlyingProjectile(pEnt, st, gid, dmgVal, origin, angle, length, f
     spreadPct: extra && extra.spreadPct || 0,
     spreadCount: extra && extra.spreadCount || 0,
     halfWidthPx: extra && Number(extra.halfWidthPx) > 0 ? Number(extra.halfWidthPx) : 0,
-    /* 迴身四方斬的每道飛行物是 90 度扇形，距離隨飛行物推進而增長；
-       coneBaseAngle／coneIndex 將四個扇形切成不重疊的完整圓，避免邊界敵人被重複命中。 */
+    /* 迴身四方斬的每道飛行物是 60 度扇形，距離隨飛行物推進而增長；
+       coneBaseAngle／coneIndex 固定四個方向的歸屬，避免邊界敵人被重複命中。 */
     coneDeg: extra && Number(extra.coneDeg) > 0 ? Number(extra.coneDeg) : 0,
     coneBaseAngle: extra && isFinite(extra.coneBaseAngle) ? Number(extra.coneBaseAngle) : 0,
     coneIndex: extra && Number(extra.coneIndex) >= 0 ? Math.floor(Number(extra.coneIndex)) : -1,
@@ -1177,9 +1177,9 @@ function sgProjectileHit(projectile, target, ctx) {
   if (res.killed && ctx.onDeaths) ctx.onDeaths();
 }
 
-/* 四方斬的四個 90 度扇形在數學上剛好首尾相接。
-   bfConeTargets 的邊界是雙包含，這裡依「從前方扇形開始、逆時針分配」改成半開區間，
-   讓落在 45／135／225／315 度邊界上的敵人只歸屬其中一道斬擊。 */
+/* 四方斬的四個方向中心相隔 90 度，但每道實際攻擊扇形為 60 度。
+   bfConeTargets 的邊界是雙包含，這裡依「從前方方向開始、逆時針分配」固定方向歸屬，
+   讓敵人即使落在方向分界附近，也只歸屬其中一道斬擊。 */
 function sgFilterCleaveSectorTargets(targets, baseAngle, sectorIndex, sectorCount) {
   if (!Array.isArray(targets) || sectorIndex < 0 || !(sectorCount > 0) ||
       typeof bfAngleTo !== 'function') return targets || [];
@@ -1676,19 +1676,21 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   // 迴身四方斬本身就是向外擴張的四道扇形；其他階段沒有飛出距離時仍須走飛行物時間軸。
   var isFlying = frontFlyPx > 0 || lvs[6] > 0;
   var meleeRangePx = ((typeof bfMeleeRange === 'function') ? bfMeleeRange() : bfMeterPx(5)) * cleaveRangeScale;
+  // 第 7 階四個方向必須共用同一個最大半徑，不能讓第 6 階只把前方一道拉長。
+  var crossRangePx = Math.max(frontFlyPx, sideFlyPx, meleeRangePx);
 
   var targets = [];
   var directionTargets = [];
   var directions = lvs[6] > 0 ? [0, Math.PI / 2, Math.PI, Math.PI * 1.5] : [0];
   if (lvs[6] > 0) {
-    // 迴身四方斬：以玩家朝向為基準，四個方向各取 90 度扇形，合起來覆蓋完整圓周。
+    // 迴身四方斬：以玩家朝向為基準，四個方向各取 60 度扇形，中心仍相隔 90 度。
     for (var di = 0; di < directions.length; di++) {
-      var dirFly = (di === 0) ? frontFlyPx : sideFlyPx;
+      var dirFly = lvs[6] > 0 ? crossRangePx : ((di === 0) ? frontFlyPx : sideFlyPx);
       var dirRange = dirFly > 0
         ? dirFly
         : meleeRangePx;
       var dirTargets = geomOk && typeof bfConeTargets === 'function'
-        ? bfConeTargets(baseAngle + directions[di], 90, dirRange, pool) : [primary];
+        ? bfConeTargets(baseAngle + directions[di], 60, dirRange, pool) : [primary];
       dirTargets = sgFilterCleaveSectorTargets(dirTargets, baseAngle, di, directions.length);
       if (targetCap > 0) dirTargets = dirTargets.slice(0, targetCap);
       if (di === 0 && geomOk && primary.hp > 0 && dirTargets.indexOf(primary) < 0) {
@@ -1727,7 +1729,7 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     : (isFlying ? 'cleave-shockwave' : 'cleave');
   var directionRanges = [];
   for (var dri = 0; dri < directions.length; dri++) {
-    var rangeFly = (dri === 0) ? frontFlyPx : sideFlyPx;
+    var rangeFly = lvs[6] > 0 ? crossRangePx : ((dri === 0) ? frontFlyPx : sideFlyPx);
     directionRanges.push(rangeFly > 0 ? rangeFly : meleeRangePx);
   }
   var cleaveVfxRange = lvs[6] > 0 ? Math.max.apply(Math, directionRanges) : frontFlyPx;
@@ -1762,7 +1764,7 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     for (var ps = 0; ps < slashes; ps++) {
       if (whirl) sgCleaveWhirlwind(pEnt, st, whirl, pool, floatSel, out, ps);
       for (var pdi2 = 0; pdi2 < directions.length; pdi2++) {
-        var dirFly2 = (pdi2 === 0) ? frontFlyPx : sideFlyPx;
+        var dirFly2 = lvs[6] > 0 ? crossRangePx : ((pdi2 === 0) ? frontFlyPx : sideFlyPx);
         var projectileLen = dirFly2 > 0
           ? dirFly2
           : meleeRangePx;
@@ -1771,7 +1773,7 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
           geomOk ? baseAngle + directions[pdi2] : 0, projectileLen, floatSel,
           directionTargets[pdi2],
           { stunChance: stunChance, stunSec: stunSec, onHit: onCleaveHit, bonusPctFn: bonusFor,
-            coneDeg: lvs[6] > 0 ? 90 : 0, coneBaseAngle: baseAngle,
+            coneDeg: lvs[6] > 0 ? 60 : 0, coneBaseAngle: baseAngle,
             coneIndex: lvs[6] > 0 ? pdi2 : -1, coneCount: lvs[6] > 0 ? directions.length : 0 }, out);
       }
     }

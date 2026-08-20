@@ -1,5 +1,23 @@
 # AI_TASKS.md
 
+## Codex｜迴身四方斬統一四向範圍、改為 60 度並加入旋轉｜2026-08-20
+
+- 狀態：已完成
+- Owner：Codex
+- 使用者需求：修正目前只有前方套用長距離的問題，讓四個方向使用一致的攻擊範圍；每道斬擊的攻擊角度與特效改為 60°；特效向外飛出、逐步放大並以約 45°/秒旋轉。
+- 前置依賴：沿用上一項迴身四方斬扇形擴張修改（commit 44eff56）。
+- 允許修改：`js/skills2.js`、`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`js/worker/shim.js`、`js/worker/protocol.js`、`tests/skill2-system.test.cjs`、`tests/skill2-vfx.test.cjs`、`game_formula.md`、`index.html`、本文件。
+- 禁止修改：`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`、未列出的功能模組；不得降低既有測試要求。
+- 驗收方式：四向範圍一致；每道扇形傷害判定與 DOM/Canvas 特效均為 60°；特效由中心向外飛出並逐步放大、以 45°/秒旋轉；執行語法檢查、技能與 VFX 測試、build_check、參數錨點與 diff 檢查。
+- 完成內容：第 7 階四向斬統一使用 `max(前方飛行距離、側向飛行距離、近戰範圍)`；傷害判定與 Canvas 扇形改為每道 60°；DOM／Canvas 特效同步逐步放大、向外位移並以 45°/秒旋轉；補上遠距離四向命中與 VFX 靜態驗證。
+- 修改檔案：`js/skills2.js`、`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`tests/skill2-system.test.cjs`、`tests/skill2-vfx.test.cjs`、`game_formula.md`、`index.html`、本文件。
+- 未修改但檢查過：`js/worker/shim.js`、`js/worker/protocol.js`（既有 `rangeScale`／`directionRanges` 傳遞已足夠）、`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`。
+- 驗證結果：語法檢查通過；技能系統 33/33；VFX 定向檢查 28/29（1 項為既有毒霧鏡頭震動基準失敗）；Worker shim 6/6；build 295/295；`apply_params` 554/554；錨點 554/554；`git diff --check` 通過；全量測試 1648 項中 1638 通過，10 項為既有泥沼／冰系／毒霧鏡頭震動／風切基準失敗，本次新增測試未失敗。
+- 已知風險：完整套件既有 10 項失敗需另案處理；四道中心仍相隔 90°，每道攻擊扇形為 60°，因此方向之間保留 30° 間隔；瀏覽器需重新整理以載入新版 CSS／VFX／Battle Renderer／Skills2。
+- 未完成項目：無。
+- 是否可以合併：可以。
+- Commit：完成後使用 `[Codex]` 前綴。
+
 ## Codex｜迴身四方斬改為四向 90 度扇形擴張｜2026-08-20
 
 - 狀態：已完成
