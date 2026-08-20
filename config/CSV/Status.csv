@@ -53,6 +53,7 @@ sgFrostBite,寒霜凍傷,🧊,debuff,dot,,ice,skill,50,,0,0,5,0.5,strongest,1,�
 sgFrozen,凍結,🥶,debuff,stat,sgFrozen,ice,,0,,0,0,3,0,refresh,1,新版技能【寒霜狀態】疊滿層數的凍結標記。行動限制本身由「暈眩」承擔（因此完整沿用 BOSS 控場免疫、韌性折減與控場遞減），本狀態只標記「正在凍結中」，供【水龍捲】增傷與【寒冰爆裂箭】判定冰爆時機。
 sgIceRevert,寒冰逆轉,💧,debuff,stat,sgIceRevert,ice,,0,,0,20,6,0,refresh,1,新版技能【寒冰逆轉】：敵人的屬性標籤強制改為寒冰，且受到的寒冰傷害提高（效果值＝提高%）。
 sgFrostbody,寒冰體,❄️,buff,stat,sgFrostbody,ice,,0,,0,25,6,0,refresh,1,新版技能【冰霜新星】：施放後 6 秒內，攻擊你的敵人有 25% 機率被附加寒霜狀態。
+sgWindRend,風切,💨,debuff,stat,sgWindRend,wind,,0,,0,80,4,0,stack,3,新版技能【風切狀態】的減益本體：移動速度下降（效果值＝單層下降%，不隨層數再加深）且命中率下降；層數只影響風切割裂的每跳傷害，當下允許的層數上限由真空斬【無限風切】決定。
 sgWindCut,風切割裂,💨,debuff,dot,,wind,skill,50,,0,0,4,0.5,strongest,1,新版技能【風切狀態】的風系持續傷害；每跳量占施放群組的本體技能傷害並隨風切層數提高（引擎以 dps 覆寫）。
 sgWindSlow,狂風緩速,🍃,debuff,stat,sgWindSlow,wind,,0,,0,60,3,0,refresh,1,新版技能【狂風碎裂】：被風刃命中的敵人移動速度下降（效果值＝下降%）。同類型緩速依「取代」規則後蓋前並重新計時。
 sgStormBarrier,暴風屏障,🌪️,buff,stat,sgStormBarrier,wind,,0,,0,10,8,0,refresh,1,新版技能【暴風屏障】：屏障的剩餘時間與傷害減免（效果值＝減免%）；第 2～6 階的效果只在此期間生效（護盾由節拍逐次給予）。
@@ -62,3 +63,5 @@ sgThrustVuln,千瘡百孔,🕳️,debuff,stat,sgThrustVuln,,,0,,0,4,5,0,stack,10
 sgSoulRend,靈魂撕裂,👻,debuff,stat,sgSoulRend,dark,,0,,0,1,30,0,stack,100,超神進化【暗影絕殺者】：每次突刺命中疊 1 層，每層使該敵人受到的傷害提高（效果值＝單層提高%）；層數上限與單層值由技能參數決定。
 sgThrustBleed,穿心裂血,🩸,debuff,dot,,,skill,50,,0,0,5,0.5,strongest,1,傳奇特效【穿心裂血】：突刺附加的流血；每跳量與間隔由特效參數決定（引擎以 dps 覆寫）。
 sgPhantomDodge,幻影殘像,🌫️,buff,stat,sgPhantomDodge,,,0,,0,30,2,0,refresh,1,超神進化【幻影八方陣】：期間有一定機率絕對閃避敵方攻擊（效果值＝機率%）；此擲骰與命中率無關，先於命中判定結算。
+sgDeathReaper,死亡收割,☠️,buff,stat,sgDeathReaper,,,0,,0,25,8,0,stack,20,超神進化【死亡收割者】：飛刀每殺死 1 個敵人疊 1 層，每層使你造成的所有傷害提高（效果值＝單層提高%）；層數上限與單層值由技能參數決定。
+sgKnifeWaltz,輪舞刃,🔪,buff,stat,sgKnifeWaltz,,,0,,0,0,5,0,refresh,1,傳奇特效【輪舞刃】：繞行在你周圍的飛刀還會留在場上多久（環繞場域的剩餘時間投影，比照火狩）。

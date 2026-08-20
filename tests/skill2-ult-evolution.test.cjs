@@ -1,11 +1,11 @@
-/* 超神進化（技能第 8 格）＋ 傳奇進化十特效（2026-08-19）
+/* 超神進化（技能第 8 格）＋ 傳奇進化特效（2026-08-19 第一批、2026-08-20 第二批）
    設計來源：神力之巔_記事錄.xlsx「傳奇進化」頁籤。
    守住的事：
-     1. 資料形狀：thrust／cleave 各三個超神進化選項，desc 模板的 {鍵} 都在 fx 裡；
-        10 個新傳奇特效只出現在匕首／單手劍，且 relatedSkill 指向新版技能群組
+     1. 資料形狀：thrust／cleave／knife／gale 各三個超神進化選項，desc 模板的 {鍵} 都在 fx 裡；
+        20 個新傳奇特效只出現在匕首／單手劍／單手魔劍，且 relatedSkill 指向新版技能群組
      2. 解鎖與指令：前 7 階全滿才可三選一；選定＝Lv.1 並扣款；重複選擇被拒；
         降到 Lv.0 清除選擇（可重選）；某階降級後效果失效但存檔保留
-     3. 施放行為：三個突刺超神效果、三個迴旋斬超神效果各自真的改變了戰鬥結果
+     3. 施放行為：四個群組各三個超神效果、各五個傳奇特效都真的改變了戰鬥結果
      4. 傳奇特效：legendarySkill2Mods 只合併「同群組且已生效」的 fx，數字同鍵相加
      5. 存檔與快照：面板快照帶 ult；讀檔正規化會刪掉越界／非法的紀錄
 
@@ -119,9 +119,9 @@ function setLegendary(c, keys) {
 
 /* ---- 1) 資料形狀 ---- */
 
-test('超神進化：thrust／cleave 各三個選項，欄位齊全且說明模板的參數鍵都存在', () => {
+test('超神進化：thrust／cleave／knife／gale 各三個選項，欄位齊全且說明模板的參數鍵都存在', () => {
   const c = loadContext();
-  ['thrust', 'cleave'].forEach((gid) => {
+  ['thrust', 'cleave', 'knife', 'gale'].forEach((gid) => {
     const list = c.sgUltDefs(gid);
     assert.ok(list, gid + ' 應有超神進化');
     assert.equal(list.length, c.SG_ULT_OPTION_COUNT, gid + ' 超神進化必須剛好三選一');
@@ -139,13 +139,13 @@ test('超神進化：thrust／cleave 各三個選項，欄位齊全且說明模�
     });
   });
   // 其餘群組目前尚未開放（設計文檔只給了突刺與迴旋斬）
-  assert.equal(c.sgUltDefs('knife'), null);
+  assert.equal(c.sgUltDefs('bloodblade'), null);
   assert.equal(c.sgSlotCount('thrust'), 8);
-  assert.equal(c.sgSlotCount('knife'), 7);
+  assert.equal(c.sgSlotCount('bloodblade'), 7);
   assert.equal(c.SG_ULT_SLOT, c.SG_TIER_COUNT, '第 8 格的索引＝各階數（0-based 接在最後一階之後）');
 });
 
-test('傳奇進化十特效：只出現在匕首與單手劍，且關聯到新版技能群組', () => {
+test('傳奇進化二十特效：只出現在匕首／單手劍／單手魔劍，且關聯到新版技能群組', () => {
   const c = loadContext();
   const NEW_ONES = {
     piercingFocus: ['凝鋒穿刺', 'dagger1h', 'thrust'],
@@ -157,9 +157,21 @@ test('傳奇進化十特效：只出現在匕首與單手劍，且關聯到新�
     galeBladeDance: ['旋風劍舞', 'sword1h', 'cleave'],
     skyrendSlash: ['裂空飛斬', 'sword1h', 'cleave'],
     exploitWeakness: ['乘虛之斬', 'sword1h', 'cleave'],
-    gatheringVortex: ['聚敵旋渦', 'sword1h', 'cleave']
+    gatheringVortex: ['聚敵旋渦', 'sword1h', 'cleave'],
+    // 2026-08-20 第二批：飛刀（匕首）／疾風斬（單手魔劍）
+    knifeChain: ['連鎖', 'dagger1h', 'knife'],
+    knifeSplitter: ['分裂者', 'dagger1h', 'knife'],
+    knifeExecutioner: ['處刑者', 'dagger1h', 'knife'],
+    knifeShadowblade: ['影刃', 'dagger1h', 'knife'],
+    knifeWaltzblade: ['輪舞刃', 'dagger1h', 'knife'],
+    galeWhirlwind: ['風捲殘雲', 'magicSword1h', 'gale'],
+    galeExecute: ['斬殺', 'magicSword1h', 'gale'],
+    galeTwinShadow: ['雙影', 'magicSword1h', 'gale'],
+    galeWindwalker: ['風行者', 'magicSword1h', 'gale'],
+    galeGodspeed: ['神速斬', 'magicSword1h', 'gale']
   };
-  assert.equal(Object.keys(NEW_ONES).length, 10);
+  assert.equal(Object.keys(NEW_ONES).length, 20);
+  const names = new Set();
   Object.entries(NEW_ONES).forEach(([key, [name, weapon, gid]]) => {
     const def = c.PASSIVE_POOL[key];
     assert.ok(def, key + ' 必須存在於傳奇特效池');
@@ -171,13 +183,26 @@ test('傳奇進化十特效：只出現在匕首與單手劍，且關聯到新�
     assert.equal(def.relatedSkill, gid, key + ' 應關聯到新版技能群組 ' + gid);
     assert.ok(c.SKILLS2[def.relatedSkill], key + ' 的關聯群組不存在');
     assert.ok(def.fx && Object.keys(def.fx).length > 0, key + ' 缺 fx 規格');
+    names.add(name);
   });
-  // 只在這兩個部位出現：抽詞條時不得漏到其他武器
+  assert.equal(names.size, 20, '新特效之間不得同名');
+  /* 顯示名稱在整個傳奇特效池裡也必須唯一：玩家只看得到名字，
+     兩個效果同名等於裝備詞條無法分辨（設計上的【神速】改名為【神速斬】即為此）。 */
+  const allNames = Object.keys(c.PASSIVE_POOL).map((k) => c.PASSIVE_POOL[k].name);
+  assert.equal(new Set(allNames).size, allNames.length, '傳奇特效池出現同名詞條');
+  // 只在指定部位出現：抽詞條時不得漏到其他武器
   const dagger = { weaponType: 'dagger1h' };
+  const sword = { weaponType: 'sword1h' };
+  const magic = { weaponType: 'magicSword1h' };
   const staff = { weaponType: 'staff2h' };
   assert.ok(c.passiveAllowedForItem('piercingFocus', dagger));
   assert.ok(!c.passiveAllowedForItem('piercingFocus', staff));
   assert.ok(!c.passiveAllowedForItem('chainSpin', dagger));
+  assert.ok(c.passiveAllowedForItem('knifeChain', dagger));
+  assert.ok(!c.passiveAllowedForItem('knifeChain', sword));
+  assert.ok(!c.passiveAllowedForItem('knifeChain', magic));
+  assert.ok(c.passiveAllowedForItem('galeWindwalker', magic));
+  assert.ok(!c.passiveAllowedForItem('galeWindwalker', dagger));
 });
 
 /* ---- 2) 解鎖與指令 ---- */
@@ -192,8 +217,8 @@ test('超神進化的唯一解鎖條件＝前 7 階全滿；未滿級時不可�
   assert.equal(c.sgUltUnlockedBy('thrust', c.skills2Levels('thrust')), true);
   assert.equal(c.skills2UltPick('thrust', 0), null, '前 7 階全滿即可三選一');
   // 尚未開放超神進化的群組一律拒絕
-  maxLevels(c, 'knife');
-  assert.match(c.skills2UltPick('knife', 0), /尚未開放/);
+  maxLevels(c, 'bloodblade');
+  assert.match(c.skills2UltPick('bloodblade', 0), /尚未開放/);
 });
 
 test('三選一：選定＝Lv.1 並扣款；已選過不得改選；降到 Lv.0 才可重選', () => {
@@ -228,14 +253,14 @@ test('第 8 格走 skills2Learn／skills2Downgrade 的同一個入口（UI 只�
   maxLevels(c, 'thrust');
   c.G.player.gold = 1e12;
   assert.equal(c.sgIsUltSlot('thrust', c.SG_ULT_SLOT), true);
-  assert.equal(c.sgIsUltSlot('knife', c.SG_ULT_SLOT), false, '未開放的群組沒有第 8 格');
+  assert.equal(c.sgIsUltSlot('bloodblade', c.SG_ULT_SLOT), false, '未開放的群組沒有第 8 格');
   assert.match(c.skills2Learn('thrust', c.SG_ULT_SLOT), /請先選擇/);
   assert.equal(c.skills2UltPick('thrust', 0), null);
   assert.equal(c.skills2Learn('thrust', c.SG_ULT_SLOT), null);
   assert.equal(c.skills2Ult('thrust').lv, 2);
   assert.equal(c.skills2Downgrade('thrust', c.SG_ULT_SLOT), null);
   assert.equal(c.skills2Ult('thrust').lv, 1);
-  assert.match(c.skills2Learn('knife', c.SG_ULT_SLOT), /未知階數/);
+  assert.match(c.skills2Learn('bloodblade', c.SG_ULT_SLOT), /未知階數/);
 });
 
 test('前 7 階任一階離開滿級：超神進化暫時失效，但存檔的選擇與等級原樣保留', () => {
@@ -256,7 +281,7 @@ test('面板快照帶上超神進化的選擇（主執行緒沒有 G，只能靠
   setUlt(c, 'thrust', 'phantomOcta', 3);
   const view = c.skills2PanelView();
   assert.deepEqual(JSON.parse(JSON.stringify(view.ult.thrust)), { pick: 0, lv: 3 });
-  assert.equal(view.ult.knife, undefined, '沒選過的群組不佔快照欄位');
+  assert.equal(view.ult.bloodblade, undefined, '沒選過的群組不佔快照欄位');
   // UI 端以同一支純函式重算，確保「畫面說可以」＝「Worker 說可以」
   const pick = c.sgUltPickOf(view.ult, 'thrust');
   assert.equal(pick.id, 'phantomOcta');
@@ -585,7 +610,7 @@ test('讀檔正規化：越界／非法的超神進化紀錄一律刪除，合�
         ult: {
           thrust: { pick: 0, lv: 99 },        // 超過上限 → 夾回
           cleave: { pick: 9, lv: 3 },         // 選項越界 → 刪除
-          knife: { pick: 0, lv: 1 },          // 該群組沒有超神進化 → 刪除
+          bloodblade: { pick: 0, lv: 1 },          // 該群組沒有超神進化 → 刪除
           gale: { pick: 0, lv: 0 }            // 等級不合法 → 刪除
         }
       },
@@ -598,18 +623,274 @@ test('讀檔正規化：越界／非法的超神進化紀錄一律刪除，合�
   assert.match(norm, /data\.player\.skills2\.ult/);
   // 純函式端：壞資料一律被視為「沒選」
   assert.equal(c.sgUltPickOf(data.player.skills2.ult, 'cleave'), null);
-  assert.equal(c.sgUltPickOf(data.player.skills2.ult, 'knife'), null);
+  assert.equal(c.sgUltPickOf(data.player.skills2.ult, 'bloodblade'), null);
   assert.equal(c.sgUltPickOf(data.player.skills2.ult, 'gale'), null);
   assert.equal(c.sgUltPickOf(data.player.skills2.ult, 'thrust').lv, c.SG_TIER_MAX_LV);
 });
 
-test('參數表往返：Skills2 的超神進化列與 Equipment_Affix 的十個新特效都落表', () => {
+/* ---- 6) 飛刀的五個傳奇特效 ---- */
+
+test('飛刀的五個傳奇特效：彈射數、擊殺分裂、優先高血量、飛刀數、刀環', () => {
+  const c = loadContext(['js/legendary.js']);
+  const calls = stubHits(c); const specs = stubVfx(c);
+  forceRolls(c, 0.999);
+  // 第 3 階＝彈射（傳奇【連鎖】要有彈射才看得出來）；第 5 階不點＝維持扇形鎖敵
+  setLevels(c, 'knife', [10, 10, 10, 0, 0, 0, 0]); equip(c, 'knife');
+  const p = playerEnt(); c.FIELD = { player: p };
+
+  function cast(enemies) {
+    calls.length = 0; specs.length = 0;
+    c.castSkill2(p, enemies, 'knife', 'mv-float');
+    return { calls: calls.slice(), specs: specs.slice() };
+  }
+  const knifeSpec = (list) => list.find((s) => s.fxKind === 'projectile' && s.variant === 'knife');
+
+  // 基準：3 把飛刀（第 1 階 count），每把彈射 1 次
+  const base = cast([enemy(1e12, 3 * M, 0), enemy(1e12, 3 * M, 1 * M)]);
+  assert.equal(knifeSpec(base.specs).targets.length, 3, '第 1 階 count＝3 把飛刀，每把一個特效目標');
+  const baseHits = base.calls.length;
+
+  // 影刃：射出的飛刀數量 +2 把 → 命中次數必定增加
+  setLegendary(c, ['knifeShadowblade']);
+  const shadow = cast([enemy(1e12, 3 * M, 0), enemy(1e12, 3 * M, 1 * M)]);
+  assert.ok(shadow.calls.length > baseHits, '飛刀數 +2 應打出更多段');
+
+  // 連鎖：彈射數 +2 → 同樣的飛刀數但總段數更多
+  setLegendary(c, ['knifeChain']);
+  const chain = cast([enemy(1e12, 3 * M, 0), enemy(1e12, 3 * M, 1 * M)]);
+  assert.ok(chain.calls.length > baseHits, '彈射數 +2 應打出更多段');
+
+  // 處刑者：彈射優先跳向生命值最高的目標，且對其增傷 30%
+  setLegendary(c, ['knifeExecutioner']);
+  const weak = enemy(1e12, 3 * M, 0);
+  const tough = enemy(9e12, 3 * M, 1 * M);
+  const exec = cast([weak, tough]);
+  const bounced = exec.calls.filter((k) => k.total === 30);
+  assert.ok(bounced.length > 0, '彈射段應帶 +30% 總傷');
+  assert.ok(bounced.some((k) => k.ent === tough), '彈射應跳向生命值最高的目標');
+
+  // 分裂者：擊殺時分裂出小刀（小刀傷害＝本體的 50%）
+  setLegendary(c, ['knifeSplitter']);
+  const dying = enemy(100, 3 * M, 0);          // stubHits 每段固定 100 → 首擊必死
+  const other = enemy(1e12, 3 * M, 1 * M);
+  const split = cast([dying, other]);
+  const body = Math.max.apply(null, split.calls.map((k) => k.atk));
+  assert.ok(split.calls.some((k) => Math.abs(k.atk - body * 0.5) < 1e-6),
+    '應出現 50% 傷害的分裂刃');
+
+  // 輪舞刃：第 1 把飛刀不再射出，改為圍繞自身的刀環（環繞場域）
+  setLegendary(c, ['knifeWaltzblade']);
+  c.SKILL2_RT.orbits.length = 0;
+  const waltz = cast([enemy(1e12, 3 * M, 0), enemy(1e12, 3 * M, 1 * M)]);
+  assert.equal(c.SKILL2_RT.orbits.length, 1, '應生成一組刀環');
+  assert.equal(c.SKILL2_RT.orbits[0].rings[0].r, 10 * M, '刀環半徑 10 米');
+  assert.ok(c.SKILL2_RT.orbits[0].until > c.GT, '刀環要有存續時間');
+  assert.equal(knifeSpec(waltz.specs).targets.length, 2, '第 1 把改成刀環，其餘 2 把照常射出');
+});
+
+/* ---- 7) 疾風斬的五個傳奇特效 ---- */
+
+test('疾風斬的五個傳奇特效：龍捲風、斬殺、雙影、風切、冷卻縮減', () => {
+  const c = loadContext(['js/legendary.js']);
+  const calls = stubHits(c); stubVfx(c);
+  const derived = stubDerived(c);
+  setLevels(c, 'gale', [10, 0, 0, 0, 0, 0, 0]); equip(c, 'gale');
+  const p = playerEnt(); c.FIELD = { player: p };
+
+  /* 神速斬：每次命中使疾風斬的冷卻時間 -0.1 秒。
+     castSkill2 會在施放時把冷卻重設為表定值，因此比較的是「同一次施放之後的剩餘冷卻」。 */
+  forceRolls(c, 0.999);
+  c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'gale', 'mv-float');
+  const baseCd = p.skillCds[c.SG_PREFIX + 'gale'];
+  assert.ok(baseCd > 0, '施放後應進入冷卻');
+  setLegendary(c, ['galeGodspeed']);
+  c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'gale', 'mv-float');
+  assert.ok(p.skillCds[c.SG_PREFIX + 'gale'] < baseCd, '命中應縮短冷卻');
+
+  // 風捲殘雲：命中時機率生成龍捲風（地板場域）
+  setLegendary(c, ['galeWhirlwind']);
+  forceRolls(c, 0.01);                      // chance() 一律通過
+  c.SKILL2_RT.grounds.length = 0;
+  c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'gale', 'mv-float');
+  assert.ok(c.SKILL2_RT.grounds.length > 0, '應生成龍捲風場域');
+  assert.equal(c.SKILL2_RT.grounds[0].kind, 'windtornado');
+  assert.equal(c.SKILL2_RT.grounds[0].hitElem, 'wind', '龍捲風打的是風系傷害');
+
+  // 風行者：附加風切狀態（移速／命中率折減 ＋ 風系持續傷害）
+  setLegendary(c, ['galeWindwalker']);
+  const wind = enemy(1e12, 3 * M, 0);
+  c.castSkill2(p, [wind], 'gale', 'mv-float');
+  assert.ok(wind.buffs.sgWindRend, '應掛上風切減益本體');
+  assert.ok(c.sgFindDot(wind, 'sgWindCut'), '應附加風切割裂的持續傷害');
+  assert.ok(c.skill2WindRendHitFactor(wind) < 1, '命中率必須被折減');
+
+  // 雙影：機率額外對附近 1 個敵人造成 50% 傷害
+  setLegendary(c, ['galeTwinShadow']);
+  calls.length = 0;
+  const main = enemy(1e12, 3 * M, 0);
+  const side = enemy(1e12, 3 * M, 1 * M);
+  c.castSkill2(p, [main, side], 'gale', 'mv-float');
+  const body = Math.max.apply(null, calls.map((k) => k.atk));
+  assert.ok(calls.some((k) => k.ent === side && Math.abs(k.atk - body * 0.5) < 1e-6),
+    '應對附近敵人追加 50% 傷害');
+
+  // 斬殺：機率立即殺死生命值 20% 以下的非 BOSS 敵人
+  setLegendary(c, ['galeExecute']);
+  derived.length = 0;
+  const weak = enemy(1e6, 3 * M, 0); weak.hp = 1e5;                   // 10% ≤ 20%
+  c.castSkill2(p, [weak], 'gale', 'mv-float');
+  assert.equal(weak.hp, 0, '門檻以下的普通敵人應被斬殺');
+  assert.ok(derived.length > 0, '斬殺走的是衍生傷害（不再過防禦）');
+  // BOSS 不吃斬殺
+  derived.length = 0;
+  const boss = enemy(1e6, 3 * M, 0, 'BOSS', 'boss'); boss.hp = 1e5;   // 同樣在門檻內
+  c.castSkill2(p, [boss], 'gale', 'mv-float');
+  assert.ok(boss.hp > 0, 'BOSS 不得被斬殺');
+});
+
+/* ---- 8) 飛刀的三個超神進化 ---- */
+
+test('【暴雨梨花】：飛行路徑上的敵人各吃一段（占本體技能傷害的比例）', () => {
+  const c = loadContext(['js/legendary.js']);
+  const calls = stubHits(c); stubVfx(c);
+  forceRolls(c, 0.999);
+  maxLevels(c, 'knife'); equip(c, 'knife');
+  const p = playerEnt(); c.FIELD = { player: p };
+  // 近的擋在遠的前面：飛向遠處那隻的路徑一定會穿過近處那隻
+  const mk = () => [enemy(1e12, 3 * M, 0), enemy(1e12, 6 * M, 0)];
+
+  c.castSkill2(p, mk(), 'knife', 'mv-float');
+  const body = Math.max.apply(null, calls.map((k) => k.atk));
+  const pathPct = c.sgVal(c.SKILLS2.knife.ult[0].fx, 'pct', c.SG_TIER_MAX_LV);
+  assert.ok(!calls.some((k) => Math.abs(k.atk - body * pathPct / 100) < 1e-6),
+    '沒選超神進化時不得有路徑傷害');
+
+  setUlt(c, 'knife', 'petalStorm');
+  calls.length = 0;
+  c.castSkill2(p, mk(), 'knife', 'mv-float');
+  assert.ok(calls.some((k) => Math.abs(k.atk - body * pathPct / 100) < 1e-6),
+    '路徑上的敵人應吃到 ' + pathPct + '% 技能傷害');
+});
+
+test('【死亡收割者】：擊殺疊層，且層數直接進入「造成的所有傷害提高」乘區', () => {
+  const c = loadContext(['js/legendary.js']);
+  stubHits(c); stubVfx(c);
+  forceRolls(c, 0.999);
+  maxLevels(c, 'knife'); equip(c, 'knife');
+  const p = playerEnt(); c.FIELD = { player: p };
+
+  const alive = enemy(1e12, 3 * M, 0);
+  c.castSkill2(p, [alive], 'knife', 'mv-float');
+  assert.equal(p.buffs.sgDeathReaper, undefined, '沒選超神進化時不得疊層');
+
+  setUlt(c, 'knife', 'deathReaper');
+  const dying = enemy(100, 3 * M, 0);              // stubHits 每段 100 → 首擊必死
+  c.castSkill2(p, [dying], 'knife', 'mv-float');
+  const buff = p.buffs.sgDeathReaper;
+  assert.ok(buff, '擊殺應疊上死亡收割');
+  assert.ok(buff.stacks >= 1);
+  const perStack = c.sgVal(c.SKILLS2.knife.ult[1].fx, 'pct', c.SG_TIER_MAX_LV);
+  assert.ok(Math.abs(buff.unit - perStack) < 1e-9, '單層值＝技能參數');
+  // 乘區：新版技能傷害（sgAtkCfg）與普攻（combat.js playerAtkCfg）讀的是同一個鍵
+  const aCfg = c.sgAtkCfg(p, c.getStats(), 100, alive, 0, 'knife');
+  assert.ok(aCfg.totalDmgPct > 0, '死亡收割必須進 totalDmgPct');
+  const src = fs.readFileSync(path.join(root, 'js/combat.js'), 'utf8');
+  assert.match(src, /totalDmgPct:[\s\S]{0,120}buffVal\(pEnt, 'sgDeathReaper'\)/, '普攻端也要吃到');
+});
+
+test('【無限追魂刃】：額外射出 1 支高傷飛刀，且彈射到場上每個敵人', () => {
+  const c = loadContext(['js/legendary.js']);
+  const calls = stubHits(c); stubVfx(c);
+  forceRolls(c, 0.999);
+  maxLevels(c, 'knife'); equip(c, 'knife');
+  const p = playerEnt(); c.FIELD = { player: p };
+  const mk = () => [enemy(1e12, 3 * M, 0)];
+
+  c.castSkill2(p, mk(), 'knife', 'mv-float');
+  const body = Math.max.apply(null, calls.map((k) => k.atk));
+  const baseHits = calls.length;
+
+  setUlt(c, 'knife', 'soulhunterBlade');
+  calls.length = 0;
+  c.castSkill2(p, mk(), 'knife', 'mv-float');
+  const boostPct = c.sgVal(c.SKILLS2.knife.ult[2].fx, 'pct', c.SG_TIER_MAX_LV);
+  assert.ok(calls.some((k) => Math.abs(k.atk - body * (1 + boostPct / 100)) < 1e-6),
+    '追魂刃的傷害要比本體高 ' + boostPct + '%');
+  assert.ok(calls.length > baseHits, '追魂刃是額外多出來的一支');
+});
+
+/* ---- 9) 疾風斬的三個超神進化 ---- */
+
+test('【霹靂一閃】：最後一斬對周圍打出「單段 × 連擊數 × 倍率」的閃電傷害', () => {
+  const c = loadContext(['js/legendary.js']);
+  const calls = stubHits(c); stubVfx(c);
+  forceRolls(c, 0.999);
+  maxLevels(c, 'gale'); equip(c, 'gale');
+  const p = playerEnt(); c.FIELD = { player: p };
+  const mk = () => [enemy(1e12, 3 * M, 0), enemy(1e12, 3 * M, 1 * M)];
+
+  c.castSkill2(p, mk(), 'gale', 'mv-float');
+  assert.ok(!calls.some((k) => k.elem === 'lightning'), '沒選超神進化時不得有閃電段');
+  const body = Math.max.apply(null, calls.map((k) => k.atk));
+
+  setUlt(c, 'gale', 'thunderFlash');
+  calls.length = 0;
+  c.castSkill2(p, mk(), 'gale', 'mv-float');
+  const bolts = calls.filter((k) => k.elem === 'lightning');
+  assert.ok(bolts.length >= 2, '周圍範圍內的敵人都要吃到');
+  assert.ok(bolts[0].atk > body, '倍率必須明顯高於單段傷害');
+});
+
+test('【雷神斬】：每次斬擊命中都附加一道落雷（閃電傷害）', () => {
+  const c = loadContext(['js/legendary.js']);
+  const calls = stubHits(c); const specs = stubVfx(c);
+  forceRolls(c, 0.999);
+  maxLevels(c, 'gale'); equip(c, 'gale');
+  const p = playerEnt(); c.FIELD = { player: p };
+
+  setUlt(c, 'gale', 'thunderGodSlash');
+  c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'gale', 'mv-float');
+  const bolts = calls.filter((k) => k.elem === 'lightning');
+  assert.ok(bolts.length >= 2, '每次斬擊都要有落雷');
+  assert.ok(specs.some((s) => s.variant === 'thunder-strike'), '落雷要有畫面');
+});
+
+test('【千鳥】：月牙斬不再均分傷害，每個敵人都吃完整傷害且再額外提高', () => {
+  const c = loadContext(['js/legendary.js']);
+  const calls = stubHits(c); stubVfx(c);
+  forceRolls(c, 0.999);
+  maxLevels(c, 'gale'); equip(c, 'gale');
+  const p = playerEnt(); c.FIELD = { player: p };
+  const mk = () => [enemy(1e12, 3 * M, 0), enemy(1e12, 3 * M, 1 * M)];
+
+  c.castSkill2(p, mk(), 'gale', 'mv-float');
+  const shared = Math.max.apply(null, calls.map((k) => k.atk));
+
+  setUlt(c, 'gale', 'chidori');
+  calls.length = 0;
+  c.castSkill2(p, mk(), 'gale', 'mv-float');
+  const full = Math.max.apply(null, calls.map((k) => k.atk));
+  const bonus = 1 + c.sgVal(c.SKILLS2.gale.ult[2].fx, 'pct', c.SG_TIER_MAX_LV) / 100;
+  // 均分（2 個敵人）取消 ＋ 額外加成
+  assert.ok(Math.abs(full - shared * 2 * bonus) < 1e-6,
+    '應為原本每人份的 ' + (2 * bonus) + ' 倍，實際 ' + (full / shared));
+});
+
+/* ---- 10) 參數表往返 ---- */
+
+test('參數表往返：Skills2 的超神進化列與 Equipment_Affix 的二十個新特效都落表', () => {
   const skills2Csv = fs.readFileSync(path.join(root, 'config/CSV/Skills2.csv'), 'utf8').replace(/^﻿/, '');
   assert.match(skills2Csv.split(/\r?\n/)[0], /超神ID/, 'Skills2 表要有超神ID 欄');
-  ['phantomOcta', 'shadowExecutioner', 'oneStrikeKill', 'voidShatter', 'windChaser', 'stormGodSlash']
+  ['phantomOcta', 'shadowExecutioner', 'oneStrikeKill', 'voidShatter', 'windChaser', 'stormGodSlash',
+    'petalStorm', 'deathReaper', 'soulhunterBlade', 'thunderFlash', 'thunderGodSlash', 'chidori']
     .forEach((id) => assert.ok(skills2Csv.includes(id), 'Skills2.csv 應含 ' + id));
   const affixCsv = fs.readFileSync(path.join(root, 'config/CSV/Equipment_Affix.csv'), 'utf8');
   ['piercingFocus', 'thousandWounds', 'sunpiercerLance', 'thunderStab', 'heartrendBleed',
-    'chainSpin', 'galeBladeDance', 'skyrendSlash', 'exploitWeakness', 'gatheringVortex']
+    'chainSpin', 'galeBladeDance', 'skyrendSlash', 'exploitWeakness', 'gatheringVortex',
+    'knifeChain', 'knifeSplitter', 'knifeExecutioner', 'knifeShadowblade', 'knifeWaltzblade',
+    'galeWhirlwind', 'galeExecute', 'galeTwinShadow', 'galeWindwalker', 'galeGodspeed']
     .forEach((id) => assert.ok(affixCsv.includes(id), 'Equipment_Affix.csv 應含 ' + id));
+  const statusCsv = fs.readFileSync(path.join(root, 'config/CSV/Status.csv'), 'utf8');
+  ['sgWindRend', 'sgDeathReaper', 'sgKnifeWaltz']
+    .forEach((id) => assert.ok(statusCsv.includes(id), 'Status.csv 應含 ' + id));
 });

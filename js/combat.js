@@ -791,7 +791,8 @@ function playerAtkCfg(pEnt) {
         globalDmgRed: st.globalDmgRed,
         annihilate: st.passives.annihilate || 0,
         eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, normalDmg: st.normalDmg,
-        totalDmgPct: (st.totalDmgPct || 0) + buffVal(pEnt, 'allDmgUp'), // 潛力【時空凝滯】：所有傷害提高
+        // 潛力【時空凝滯】allDmgUp／超神進化【死亡收割者】sgDeathReaper（疊層，js/skills2.js）：所有傷害提高
+        totalDmgPct: (st.totalDmgPct || 0) + buffVal(pEnt, 'allDmgUp') + buffVal(pEnt, 'sgDeathReaper'),
         dmgVsElem: st.dmgVsElem,
         isPlayer: true
     };
@@ -1834,7 +1835,9 @@ var PLAYER_BUFF_ORDER = ['atkUp', 'defUp', 'aspdUp', 'evasionUp', 'critDmgUp', '
     // 新版技能增益（狂風斬/狂暴之舞/暴風之舞/嗜血狂怒，js/skills2.js）
     'sgGale', 'sgCritUp', 'sgCritDmgUp', 'sgStorm', 'sgBloodrage',
     // 超神進化【幻影八方陣】：施放突刺後的短時間絕對閃避（2 秒，玩家要看得到還剩幾秒）
-    'sgPhantomDodge'];
+    'sgPhantomDodge',
+    // 超神進化【死亡收割者】：飛刀擊殺疊層的傷害增益（層數與剩餘時間都要看得到）
+    'sgDeathReaper'];
 
 function activePlayerBuffs(ent) {
     if (!ent) return [];
