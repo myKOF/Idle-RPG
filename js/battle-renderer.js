@@ -1856,7 +1856,8 @@ var BattleRenderer = (function () {
     g.rotation = typeof rotation === 'number' ? rotation : 0;
     S.layers.fx.addChild(g);
     // 與 DOM 版同步：大型斬擊弧光半徑縮為原值 1/3；一般 spawnImpact 不受影響。
-    var t = -(delaySec || 0), dur = Math.max(0.38, spec.dur || 0.5), R = 86 / 3;
+    var rangeScale = Number(spec && spec.rangeScale) > 0 ? Number(spec.rangeScale) : 1;
+    var t = -(delaySec || 0), dur = Math.max(0.38, spec.dur || 0.5), R = 86 / 3 * rangeScale;
     var travelAngle = travel && typeof travel.angle === 'number' ? travel.angle : 0;
     var travelDistance = travel && Number(travel.length) > 0 ? Math.max(48, Number(travel.length)) : 0;
     addFx({
@@ -1875,9 +1876,9 @@ var BattleRenderer = (function () {
         var fade = k > 0.68 ? 1 - (k - 0.68) / 0.32 : 1;
         g.clear();
         g.arc(0, 0, R, head - 1.15, head, false)
-          .stroke({ color: theme.c1, width: 14.3 / 3 * fade, alpha: 0.95 * fade, cap: 'round' });
+          .stroke({ color: theme.c1, width: 14.3 / 3 * rangeScale * fade, alpha: 0.95 * fade, cap: 'round' });
         g.arc(0, 0, R * 0.82, head - 0.95, head, false)
-          .stroke({ color: theme.c2, width: 5.2 / 3 * fade, alpha: fade, cap: 'round' });
+          .stroke({ color: theme.c2, width: 5.2 / 3 * rangeScale * fade, alpha: fade, cap: 'round' });
         return t < dur;
       }
     }, 1);

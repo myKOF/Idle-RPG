@@ -1082,6 +1082,13 @@ function vfxCleaveArc(spec, layer, pt, delayMs, angleDeg, extraClass, travel) {
   if (!pt) return;
   var d = vfxNode('vfx-cleave-arc' + (extraClass ? ' ' + extraClass : ''), layer, spec);
   vfxPlace(d, pt);
+  var rangeScale = Number(spec && spec.rangeScale) > 0 ? Number(spec.rangeScale) : 1;
+  if (rangeScale !== 1) {
+    var arcSize = 52 * rangeScale;
+    d.style.width = arcSize + 'px';
+    d.style.height = arcSize + 'px';
+    d.style.margin = (-arcSize / 2) + 'px 0 0 ' + (-arcSize / 2) + 'px';
+  }
   d.style.setProperty('--vfx-tilt', (typeof angleDeg === 'number' ? angleDeg : 0).toFixed(0) + 'deg');
   var delay = Math.max(0, delayMs || 0);
   d.style.animationDelay = delay + 'ms';
@@ -2186,7 +2193,8 @@ function renderCombatVfx(spec) {
     lineWidth: Number(spec.lineWidth) > 0 ? Number(spec.lineWidth) : null,
     laneOffsets: Array.isArray(spec.laneOffsets) ? spec.laneOffsets.slice(0, 3) : null,
     directionCount: Number(spec.directionCount) > 0 ? Number(spec.directionCount) : null,
-    angle: isFinite(spec.angle) ? Number(spec.angle) : null
+    angle: isFinite(spec.angle) ? Number(spec.angle) : null,
+    rangeScale: Number(spec.rangeScale) > 0 ? Number(spec.rangeScale) : 1
   };
   /* 舊事件沒有 variant 時，風系 aura 不得走棋盤矩形的泛用畫法。 */
   if (kind === 'aura' && s.elem === 'wind' && !s.variant) return;

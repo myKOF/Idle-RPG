@@ -240,7 +240,7 @@ test('火狩長駐特效在混合技能容量洪峰中保留，拒收後可重�
   assert.match(vfx, /if \(evictIndex >= 0\) _vfxEventQueue\.splice\(evictIndex, 1\);[\s\S]*else return;/);
 });
 
-test('震碎斬與迴身雙連斬共用十字方向的迴旋斬弧光', () => {
+test('震碎斬與迴身四方斬共用十字方向的迴旋斬弧光', () => {
   const skills2 = read('js/skills2.js');
   const cleaveStart = skills2.indexOf('function sgCastCleave');
   const cleaveEnd = skills2.indexOf('\n}\n\n/* ---- 匕首投擲', cleaveStart);
@@ -261,9 +261,20 @@ test('迴旋斬大型弧光半徑在 DOM 與 Canvas 都縮為三分之一', () =
   assert.match(css, /\.vfx-cleave-arc[\s\S]*?width: 52px;[\s\S]*?height: 52px;[\s\S]*?margin: -26px 0 0 -26px/);
   assert.match(css, /\.vfx-cleave-arc::before[\s\S]*?border: 2\.6px solid transparent/);
   assert.match(css, /\.vfx-cleave-arc::after[\s\S]*?border-width: 0\.87px/);
-  assert.match(renderer, /var t = -\(delaySec \|\| 0\), dur = Math\.max\(0\.38, spec\.dur \|\| 0\.5\), R = 86 \/ 3/);
-  assert.match(renderer, /theme\.c1, width: 14\.3 \/ 3 \* fade/);
-  assert.match(renderer, /theme\.c2, width: 5\.2 \/ 3 \* fade/);
+  assert.match(renderer, /var rangeScale = Number\(spec && spec\.rangeScale\) > 0 \? Number\(spec\.rangeScale\) : 1;[\s\S]*?R = 86 \/ 3 \* rangeScale/);
+  assert.match(renderer, /theme\.c1, width: 14\.3 \/ 3 \* rangeScale \* fade/);
+  assert.match(renderer, /theme\.c2, width: 5\.2 \/ 3 \* rangeScale \* fade/);
+});
+
+test('迴旋斬主斬擊特效採藍色，且尺寸跟隨範圍倍率', () => {
+  const skills2 = read('js/skills2.js');
+  const vfx = read('js/vfx.js');
+  const renderer = read('js/battle-renderer.js');
+  assert.match(skills2, /lineLength: frontFlyPx, rangeScale: cleaveRangeScale, color: '#60a5fa'/);
+  assert.match(skills2, /targetCap <= 0 && geomOk && typeof bfEnemiesInArea === 'function'/);
+  assert.match(vfx, /var rangeScale = Number\(spec && spec\.rangeScale\) > 0 \? Number\(spec\.rangeScale\) : 1;/);
+  assert.match(vfx, /var arcSize = 52 \* rangeScale/);
+  assert.match(renderer, /R = 86 \/ 3 \* rangeScale/);
 });
 
 test('震碎斬距離使用 12 米（120 系統距離單位）', () => {

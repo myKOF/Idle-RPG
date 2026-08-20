@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## Codex｜迴旋斬不限人數、強化斬範圍、藍色特效與迴身四方斬｜2026-08-20
+
+- 狀態：已完成
+- Owner：Codex
+- 使用者需求：`cleave` 迴旋斬改為範圍內所有敵人、不再限制人數；「強化斬」改為斬擊範圍 +15%，每級再 +1.5%；迴旋斬特效改為藍色；第 7 階「迴身雙連斬」更名為「迴身四方斬」，四方向各斬 3 次，傷害額外 +50%，每級 +5%，並與原有傷害採乘法計算。
+- 前置依賴：沿用 `cleave` 群組既有近戰範圍與 Canvas／DOM 斬擊事件，未變更存檔結構或 Worker Protocol。
+- 允許修改：`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`、`js/skills2.js`、`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`tests/skill2-system.test.cjs`、`tests/skill2-vfx.test.cjs`、`tests/skill2-ult-evolution.test.cjs`、`game_formula.md`、`index.html`、本文件。
+- 禁止修改：未列出的功能模組、存檔格式、Worker Protocol、其他技能的數值與特效。
+- 驗收方式：SSOT round-trip、`node --check`、技能系統與 VFX 測試、全量測試、`build_check`、`git diff --check`。
+- 完成內容：迴旋斬改為範圍內不限人數；強化斬改為範圍 +15% 且每級 +1.5%；斬擊特效改為藍色並隨範圍倍率放大；迴身四方斬完成改名、四向三連斬與乘法傷害。
+- 測試結果：技能系統與超神進化 50/50；本次 VFX 定向測試 3/3；參數 dry-run 554/554、錨點 554/554、build 295/295、`git diff --check` 通過。全量測試仍有既有 VFX／風切／泥沼／冰系基準失敗，本次相關測試未新增失敗。
+- 已知風險：全量測試的既有失敗需另案處理；本次範圍內無未完成項目。
+- 是否可以合併：可以。
+- Commit：完成後使用 `[Codex]` 前綴。
+
 ## Codex｜調整天霸風神斬範圍與被動施放間隔｜2026-08-20
 
 - 狀態：已完成
