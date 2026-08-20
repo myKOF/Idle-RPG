@@ -65,6 +65,9 @@ var BattleRenderer = (function () {
   };
   function themeOf(spec) {
     var table = (typeof VFX_ELEM_THEME !== 'undefined' && VFX_ELEM_THEME) || FALLBACK_THEME;
+    if (spec && spec.variant === 'knife-soulhunter') {
+      return { c1: '#f2b705', c2: '#fff8b0', glow: '#ffd23f' };
+    }
     if (spec && spec.variant === 'thunder-strike') {
       return { c1: '#c084fc', c2: '#fdf4ff', glow: '#9333ea' };
     }
@@ -195,6 +198,9 @@ var BattleRenderer = (function () {
       return !vfxTargetsLive(spec);
     }
     if (spec && (spec.cat === 'basic' || spec.variant === 'knife-bounce')) {
+      return !vfxTargetsLive(spec);
+    }
+    if (spec && spec.variant === 'knife-soulhunter') {
       return !vfxTargetsLive(spec);
     }
     return false;
@@ -1474,7 +1480,8 @@ var BattleRenderer = (function () {
   function projectileCore(spec, theme) {
     var core = new PIXI.Graphics();
     var elem = spec && spec.elem;
-    if (spec && (spec.variant === 'knife' || spec.variant === 'knife-bounce')) {
+    if (spec && (spec.variant === 'knife' || spec.variant === 'knife-bounce' ||
+        spec.variant === 'knife-soulhunter')) {
       core.moveTo(-14, 0).lineTo(-4, -5).lineTo(14, 0).lineTo(-4, 5).closePath()
         .fill(theme.c1)
         .stroke({ color: theme.c2, width: 2, alpha: 0.95 });
@@ -1585,12 +1592,17 @@ var BattleRenderer = (function () {
     }
     var isSmallFireball = spec.variant === 'fireball-small' || spec.variant === 'fireball';
     if (!isSmallFireball) {
-      var isKnifeProjectile = spec.variant === 'knife' || spec.variant === 'knife-bounce';
+      var isSoulhunterKnife = spec.variant === 'knife-soulhunter';
+      var isKnifeProjectile = spec.variant === 'knife' || spec.variant === 'knife-bounce' || isSoulhunterKnife;
       var glow = new PIXI.Sprite(glowTexture());
       glow.anchor.set(0.5);
       glow.tint = isKnifeProjectile ? 0xff3850
         : (parseInt(String(theme.glow).replace('#', '0x')) || 0xffffff);
       glow.alpha = isKnifeProjectile ? 0.16 : 0.8;
+      if (isSoulhunterKnife) {
+        glow.tint = 0xffd23f;
+        glow.alpha = 0.9;
+      }
       glow.scale.set(0.9);
       glow.blendMode = 'add';
       node.addChild(glow);
@@ -3982,7 +3994,7 @@ var BattleRenderer = (function () {
       }
       return;
     }
-    if (spec.variant === 'knife-bounce') {
+    if (spec.variant === 'knife-bounce' || spec.variant === 'knife-soulhunter') {
       var chainStart = baseDelay;
       for (var kb = 1; kb < targets.length; kb++) {
         var hopTravel = projectileTravelMs(spec.travelMs && spec.travelMs[kb], 120);

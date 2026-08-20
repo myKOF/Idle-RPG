@@ -2016,7 +2016,7 @@ function sgKnifeNextBounce(cfg, cur, visited) {
 
 /* 彈射鏈：從 cur 出發連續彈射 bounces 次，所有飛刀來源共用這一支。
    chainMax／chainChance＝第 6 階【連鎖彈射】的機率追加（其餘來源傳 0）。 */
-function sgKnifeBounceChain(cfg, cur, dmgVal, startDelay, bounces, chainMax, chainChance, derived) {
+function sgKnifeBounceChain(cfg, cur, dmgVal, startDelay, bounces, chainMax, chainChance, derived, vfxVariant) {
   if (!(dmgVal > 0) || !(bounces > 0)) return;
   var visited = [cur];
   var delay = startDelay;
@@ -2030,7 +2030,7 @@ function sgKnifeBounceChain(cfg, cur, dmgVal, startDelay, bounces, chainMax, cha
     visited.push(next);
     var travel = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(next) * 1000) : 0;
     sgEmitVfx('knife', [cur, next], cfg.floatSel, {
-      fxKind: 'chain', variant: 'knife-bounce', count: 1,
+      fxKind: 'chain', variant: vfxVariant || 'knife-bounce', count: 1,
       delayMs: delay, travelMs: [0, travel]
     });
     sgKnifePathHit(cfg, cur, next, delay);
@@ -2107,11 +2107,12 @@ function sgKnifeSoulhunter(cfg, ult) {
   var dmg = cfg.dmgVal * (1 + sgUltVal(ult, 'pct') / 100);
   var travel = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(first) * 1000) : 0;
   sgEmitVfx('knife', [first], cfg.floatSel, {
-    fxKind: 'projectile', variant: 'knife', count: 1, travelMs: [travel]
+    fxKind: 'projectile', variant: 'knife-soulhunter', count: 1, travelMs: [travel]
   });
   sgKnifePathHit(cfg, null, first, 0);
   sgKnifeHit(cfg, first, dmg, travel, cfg.execPct, false);
-  sgKnifeBounceChain(cfg, first, dmg, travel, Math.max(1, live.length - 1), 0, 0, false);
+  sgKnifeBounceChain(cfg, first, dmg, travel, Math.max(1, live.length - 1), 0, 0, false,
+    'knife-soulhunter');
 }
 
 function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {

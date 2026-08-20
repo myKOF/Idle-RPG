@@ -14,7 +14,7 @@ importScripts('protocol.js?v=24', 'shim.js?v=4');
 importScripts(
   '../util.js?v=20260814-skill-summary', '../data.js?v=20260820-ult-evolution-3', '../status.js?v=20260820-ult-evolution-3', '../formula.js?v=20260820-ult-evolution-3', '../battlefield.js?v=20260820-ult-evolution-3', '../stats.js',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260820-ult-evolution-3', '../skills2.js?v=20260820-ult-evolution-3', '../talents.js?v=20260811-loadout-cap-clamp',
+  '../skills.js?v=20260820-ult-evolution-3', '../skills2.js?v=20260820-ult-evolution-4', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260820-ult-evolution-3', '../special_rules.js',
   '../combat.js?v=20260820-ult-evolution-3', '../legendary.js?v=20260820-ult-evolution-3', '../potential.js?v=20260814-skill-min-interval', '../tower.js?v=20260817-projectile-retaliation',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260820-ult-evolution-3',

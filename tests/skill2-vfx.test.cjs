@@ -133,7 +133,7 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.match(skills2, /function skills2FireballIsMeteor\(/);
 
   for (const variant of [
-    'thrust-pierce', 'thrust-parallel', 'thrust-octagonal', 'cleave-shockwave', 'cleave-cross', 'cleave-cross-shockwave', 'knife', 'knife-bounce',
+    'thrust-pierce', 'thrust-parallel', 'thrust-octagonal', 'cleave-shockwave', 'cleave-cross', 'cleave-cross-shockwave', 'knife', 'knife-bounce', 'knife-soulhunter',
     'gale-slashes', 'bleed-tick', 'poison-tick', 'blood-explosion',
     'zero-infection', 'dual-storm'
   ]) {
@@ -141,7 +141,7 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   }
 
   for (const variant of [
-    'thrust-pierce', 'thrust-parallel', 'thrust-octagonal', 'cleave-shockwave', 'cleave-back', 'cleave-dual', 'cleave-cross', 'cleave-cross-shockwave', 'knife', 'knife-bounce',
+    'thrust-pierce', 'thrust-parallel', 'thrust-octagonal', 'cleave-shockwave', 'cleave-back', 'cleave-dual', 'cleave-cross', 'cleave-cross-shockwave', 'knife', 'knife-bounce', 'knife-soulhunter',
     'gale-slashes', 'bleed-tick', 'poison-tick', 'blood-explosion',
     'zero-infection', 'cyclone'
   ]) {
@@ -158,10 +158,12 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.match(renderer, /spawnThrustLine\([\s\S]*?thrustLength/);
   assert.match(css, /\.vfx-thrust-line[\s\S]*?@keyframes vfxThrustLine/);
   assert.match(css, /\.vfx-proj-knife/);
-  assert.match(vfx, /projClass === 'vfx-proj-knife'[\s\S]*?spec\.glyph/);
+  assert.match(vfx, /isKnifeClass[\s\S]*?spec\.glyph/);
   assert.match(renderer, /spec\.variant === 'knife'[\s\S]*?spec\.variant === 'knife-bounce'/);
   assert.match(css, /\.vfx-proj-knife \.vfx-proj-core[\s\S]*?background: none/);
+  assert.match(css, /\.vfx-proj-knife-soulhunter[\s\S]*?drop-shadow\(0 0 20px var\(--vfx-glow/);
   assert.match(renderer, /isKnifeProjectile[\s\S]*?glow\.tint = isKnifeProjectile \? 0xff3850[\s\S]*?glow\.alpha = isKnifeProjectile \? 0\.16 : 0\.8/);
+  assert.match(renderer, /isSoulhunterKnife[\s\S]*?glow\.tint = 0xffd23f[\s\S]*?glow\.alpha = 0\.9/);
   assert.match(renderer, /isKnifeBounce[\s\S]*?glow\.tint = isKnifeBounce \? 0xff3850[\s\S]*?glow\.alpha = isKnifeBounce \? 0\.15 : 0\.75/);
   assert.match(css, /\.vfx-proj-knife \.vfx-proj-core[\s\S]*?drop-shadow\(0 0 5px rgba\(255, 56, 80, 0\.2\)\)/);
   assert.match(vfx, /function vfxCleaveArc\([\s\S]*?travel\)/);
@@ -911,12 +913,12 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   /* 主頁與 Worker 必須換版本，否則瀏覽器會繼續執行舊的綠色方框／逐格路徑。
      這幾條釘的是「目前的版號」——之後任何人再動這些檔、把版號往上推時，
      連同這裡一起更新即可（釘住的用意是禁止「改了檔卻沒換版號」）。 */
-  assert.match(index, /css\/style\.css\?v=1\.0\.56/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.65/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.98/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.58/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260820-ult-evolution-3'/);
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260820-ult-evolution-3/);
+  assert.match(index, /css\/style\.css\?v=1\.0\.57/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.66/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.99/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.59/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260820-ult-evolution-4'/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260820-ult-evolution-4/);
 });
 
 /* 2026-08-19 回報三連：真空斬系的綠色落雷、風刃地板綠方塊、風刃一格一格移動。
