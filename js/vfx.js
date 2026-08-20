@@ -413,6 +413,9 @@ function vfxRectAround(pt, area) {
    所有特效都透過 vfxNode() 建立，讓元素色票、CSS custom properties 與 DOM
    父層保持一致；各專用函式只負責自己的幾何與子粒子。 */
 function vfxTheme(spec) {
+  if (spec && spec.variant === 'knife-soulhunter') {
+    return { c1: '#f2b705', c2: '#fff8b0', glow: '#ffd23f' };
+  }
   /* variant 的專屬色優先於元素色；沒有元素時才使用事件傳入的單色。 */
   if (spec && spec.variant === 'thunder-strike') {
     return { c1: '#c084fc', c2: '#fdf4ff', glow: '#9333ea' };
@@ -816,6 +819,7 @@ function vfxImpact(spec, layer, pt, targetId, delayMs, targetGuard) {
 function vfxProjectileCls(spec) {
   var v = spec.variant;
   if (v === 'swordwave') return 'vfx-proj-sword';
+  if (v === 'knife-soulhunter') return 'vfx-proj-knife vfx-proj-knife-soulhunter';
   if (v === 'knife' || v === 'knife-bounce') return 'vfx-proj-knife';
   if (v === 'venom' || v === 'poison-spread' || v === 'poison-bullet') return 'vfx-proj-poison';
   if (v === 'waterball' || v === 'water-bounce' || v === 'frost-bullet' || v === 'frost-spread') return 'vfx-proj-ice vfx-proj-water';
@@ -956,8 +960,9 @@ function vfxBarrageProjectile(spec, layer, from, to, side, lane, delayMs, travel
   d.style.animation = 'none';
   var core = document.createElement('span');
   core.className = 'vfx-proj-core';
-  if (projClass === 'vfx-proj-glyph' || projClass === 'vfx-proj-knife') {
-    core.textContent = spec.glyph || (projClass === 'vfx-proj-knife' ? '🔪' : '✨');
+  var isKnifeClass = projClass.indexOf('vfx-proj-knife') >= 0;
+  if (projClass === 'vfx-proj-glyph' || isKnifeClass) {
+    core.textContent = spec.glyph || (isKnifeClass ? '🔪' : '✨');
   }
   d.appendChild(core);
   var trail = document.createElement('span');
@@ -1033,8 +1038,9 @@ function vfxProjectile(spec, layer, from, to, delayMs, travelMs) {
   d.style.animationDuration = flight + 'ms';
   var core = document.createElement('span');
   core.className = 'vfx-proj-core';
-  if (projClass === 'vfx-proj-glyph' || projClass === 'vfx-proj-knife') {
-    core.textContent = spec.glyph || (projClass === 'vfx-proj-knife' ? '🔪' : '✨');
+  var isKnifeClass = projClass.indexOf('vfx-proj-knife') >= 0;
+  if (projClass === 'vfx-proj-glyph' || isKnifeClass) {
+    core.textContent = spec.glyph || (isKnifeClass ? '🔪' : '✨');
   }
   if (smallFireball) {
     vfxBuildSmallFireball(d);
@@ -1206,7 +1212,7 @@ function vfxKnifeBounce(spec, layer, from, to, delayMs, travelMs) {
   if (!from || !to) return;
   var next = {};
   for (var key in spec) next[key] = spec[key];
-  next.variant = 'knife-bounce';
+  next.variant = spec.variant === 'knife-soulhunter' ? 'knife-soulhunter' : 'knife-bounce';
   vfxProjectile(next, layer, from, to, delayMs, travelMs);
 }
 
@@ -1979,7 +1985,7 @@ function vfxChain(spec, layer, ptList, idList, baseDelay, strikes) {
   if (!ptList.length) return;
 
   // 1. 飛刀彈射：短刀光從上一目標飛向下一個目標
-  if (spec.variant === 'knife-bounce') {
+  if (spec.variant === 'knife-bounce' || spec.variant === 'knife-soulhunter') {
     var pathStart = baseDelay;
     for (var pathI = 1; pathI < ptList.length; pathI++) {
       var pathTravel = (spec.travelMs && spec.travelMs[pathI] > 0) ? spec.travelMs[pathI] : 0;

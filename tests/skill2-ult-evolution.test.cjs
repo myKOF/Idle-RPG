@@ -824,7 +824,9 @@ test('【無限追魂刃】：額外射出 1 支高傷飛刀，且彈射到場�
   forceRolls(c, 0.999);
   maxLevels(c, 'knife'); equip(c, 'knife');
   const p = playerEnt(); c.FIELD = { player: p };
-  const mk = () => [enemy(1e12, 3 * M, 0)];
+  const mk = () => [enemy(1e12, 3 * M, 0), enemy(1e12, 4 * M, 0)];
+  const specs = [];
+  c.playCombatVfx = (spec) => specs.push(spec);
 
   c.castSkill2(p, mk(), 'knife', 'mv-float');
   const body = Math.max.apply(null, calls.map((k) => k.atk));
@@ -832,7 +834,12 @@ test('【無限追魂刃】：額外射出 1 支高傷飛刀，且彈射到場�
 
   setUlt(c, 'knife', 'soulhunterBlade');
   calls.length = 0;
+  specs.length = 0;
   c.castSkill2(p, mk(), 'knife', 'mv-float');
+  assert.ok(specs.some((s) => s.variant === 'knife-soulhunter' && s.fxKind === 'projectile'),
+    'Soulhunter opening knife should use its dedicated VFX variant');
+  assert.ok(specs.some((s) => s.variant === 'knife-soulhunter' && s.fxKind === 'chain'),
+    'Soulhunter bounce chain should keep its dedicated VFX variant');
   const boostPct = c.sgVal(c.SKILLS2.knife.ult[2].fx, 'pct', c.SG_TIER_MAX_LV);
   assert.ok(calls.some((k) => Math.abs(k.atk - body * (1 + boostPct / 100)) < 1e-6),
     '追魂刃的傷害要比本體高 ' + boostPct + '%');

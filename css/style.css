@@ -7275,6 +7275,18 @@ textarea:disabled,
   opacity: 0.65;
 }
 
+.vfx-proj-knife-soulhunter .vfx-proj-core {
+  filter: drop-shadow(0 0 5px var(--vfx-c2, #fff8b0))
+    drop-shadow(0 0 11px var(--vfx-c1, #ffd23f))
+    drop-shadow(0 0 20px var(--vfx-glow, #ffd23f));
+}
+
+.vfx-proj-knife-soulhunter .vfx-proj-trail {
+  background: linear-gradient(90deg, transparent, var(--vfx-c1, #ffd23f), var(--vfx-c2, #fff8b0));
+  opacity: 0.9;
+  filter: blur(1px) drop-shadow(0 0 6px var(--vfx-glow, #ffd23f));
+}
+
 .vfx-cleave-arc {
   /* 畫面中的大型白色圓環是斬擊弧光，不是一般 vfx-impact；僅將弧光本體縮為原半徑 1/3。 */
   width: 52px;
