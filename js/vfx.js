@@ -1492,17 +1492,18 @@ function vfxPillar(spec, layer, pt, targetId, delayMs) {
 function vfxFirePillar(spec, layer, area, fallbackPt) {
   var pt = fallbackPt;
   if (!pt || !isFinite(pt.x) || !isFinite(pt.y)) return null;
-  var isWater = spec && (spec.variant === 'water-tornado' || spec.variant === 'wind-tornado' || spec.elem === 'ice');
+  var isWater = spec && (spec.variant === 'water-tornado' || spec.elem === 'ice');
+  var isWind = spec && spec.variant === 'wind-tornado';
   var radius = Math.max(22, Number(area && area.r) || 30);
   var key = (area && area.id ? String(area.id) : [Math.round(pt.x), Math.round(pt.y), Math.round(radius)].join(':')) +
-    (isWater ? ':water' : '');
+    (isWater ? ':water' : (isWind ? ':wind' : ''));
   var node = _vfxFirePillars[key];
   if (node && node.parentNode === layer) {
     vfxPlace(node, pt);
     node._vfxExpiresAt = Date.now() + Math.max(900, Number(spec.dur || 0.5) * 2400);
     return node;
   }
-  var pillarClass = 'vfx-fire-pillar' + (isWater ? ' vfx-water-tornado-pillar' : '');
+  var pillarClass = 'vfx-fire-pillar' + (isWater ? ' vfx-water-tornado-pillar' : (isWind ? ' vfx-wind-tornado-pillar' : ''));
   node = vfxNode(pillarClass, layer, spec);
   vfxPlace(node, pt);
   node.style.setProperty('--vfx-radius', radius + 'px');
@@ -1510,7 +1511,7 @@ function vfxFirePillar(spec, layer, area, fallbackPt) {
   var tongues = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 7;
   for (var i = 0; i < tongues; i++) {
     var tongue = document.createElement('span');
-    tongue.className = 'vfx-fire-tongue' + (isWater ? ' vfx-water-tongue' : '');
+    tongue.className = 'vfx-fire-tongue' + (isWater ? ' vfx-water-tongue' : (isWind ? ' vfx-wind-tongue' : ''));
     tongue.style.setProperty('--vfx-tongue-i', i);
     tongue.style.setProperty('--vfx-tongue-x', ((i - (tongues - 1) / 2) * radius * 0.12).toFixed(1) + 'px');
     tongue.style.setProperty('--vfx-tongue-width', Math.max(5, radius * (0.26 - i * 0.018)).toFixed(1) + 'px');

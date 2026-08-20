@@ -3746,8 +3746,10 @@ var BattleRenderer = (function () {
   var FIRE_PILLAR_MAX_LIFE_SEC = 4.5;
   function spawnFirePillar(area, spec) {
     if (!area || !isFinite(area.x) || !isFinite(area.y)) return null;
-    var isWater = spec && (spec.variant === 'water-tornado' || spec.variant === 'wind-tornado' || spec.elem === 'ice');
-    var key = (area.id || [Math.round(area.x), Math.round(area.y), Math.round(area.r || 0)].join(':')) + (isWater ? ':water' : '');
+    var isWater = spec && (spec.variant === 'water-tornado' || spec.elem === 'ice');
+    var isWind = spec && spec.variant === 'wind-tornado';
+    var key = (area.id || [Math.round(area.x), Math.round(area.y), Math.round(area.r || 0)].join(':')) +
+      (isWater ? ':water' : (isWind ? ':wind' : ''));
     var holdMs = Math.max(900, Number(spec.dur || 0.5) * 2400);
     var current = _firePillarFx[key];
     if (current && !current.dead && current.node && !current.node.destroyed) {
@@ -3768,15 +3770,15 @@ var BattleRenderer = (function () {
     _firePillarFx[key] = fx;
     var particleAt = 0;
 
-    var baseColor = isWater ? 0x0369a1 : 0x7d1708;
-    var strokeColor = isWater ? 0x38bdf8 : 0xff6b19;
-    var innerEllipseColor = isWater ? 0x7dd3fc : 0xffb21c;
-    var polyColor = isWater ? 0x0284c7 : 0xd93413;
-    var ribbonInner = isWater ? 0xf0f9ff : 0xffdf4d;
-    var ribbonOdd = isWater ? 0x38bdf8 : 0xff761c;
-    var ribbonEven = isWater ? 0x7dd3fc : 0xffa51d;
-    var coreColor = isWater ? 0xf0f9ff : 0xffffbd;
-    var topFlameColor = isWater ? 0x38bdf8 : 0xff6a17;
+    var baseColor = isWater ? 0x0369a1 : (isWind ? 0x166534 : 0x7d1708);
+    var strokeColor = isWater ? 0x38bdf8 : (isWind ? 0x86efac : 0xff6b19);
+    var innerEllipseColor = isWater ? 0x7dd3fc : (isWind ? 0xbbf7d0 : 0xffb21c);
+    var polyColor = isWater ? 0x0284c7 : (isWind ? 0x22c55e : 0xd93413);
+    var ribbonInner = isWater ? 0xf0f9ff : (isWind ? 0xffffff : 0xffdf4d);
+    var ribbonOdd = isWater ? 0x38bdf8 : (isWind ? 0x86efac : 0xff761c);
+    var ribbonEven = isWater ? 0x7dd3fc : (isWind ? 0xbbf7d0 : 0xffa51d);
+    var coreColor = isWater ? 0xf0f9ff : (isWind ? 0xffffff : 0xffffbd);
+    var topFlameColor = isWater ? 0x38bdf8 : (isWind ? 0x4ade80 : 0xff6a17);
 
     addFx({
       node: node,
