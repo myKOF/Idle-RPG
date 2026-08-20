@@ -42,7 +42,9 @@ test('雙手武器在副手欄顯示同一把武器，但仍以視覺 duplicate 
     ancientStarBadgeHTML: () => '',
     renderEquipSetTabs: () => {},
     renderDetail: () => {},
-    $id: (id) => id === 'equip-grid' ? equipGrid : null
+    $id: (id) => id === 'equip-grid' ? equipGrid : null,
+    // 修羅亂舞（js/skills2.js）沒生效＝副手仍由主手的雙手武器佔用，本測試驗的就是那個狀態
+    uiAsuraDualWield: () => false
   };
   vm.createContext(context);
   vm.runInContext(functionBody('renderEquip'), context);

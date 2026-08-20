@@ -160,16 +160,30 @@ function computeStats(equipmentOverride) {
   var elemDmgUp = zeroElemMap();
   var socketed = []; // 鑲嵌的寶石（gemEff 需在詞條聚合完成後才知道，先蒐集）
 
+  /* ---- 超神進化【修羅亂舞】（雙刀亂舞，js/skills2.js）----
+     它做兩件事：可以同時裝備兩把雙手武器，且雙手武器的詞條效果提升。
+     沒生效時，副手上的雙手武器完全不計入（詞條／特效／神鑄／附魔／鑲嵌一律跳過），
+     等同沒穿——「卸下該超神進化後副手武器不再生效、詞條加成恢復原樣」就是這兩個值。
+     物品本身仍留在裝備欄裡不會遺失，重新選回修羅亂舞立刻恢復。
+     ⚠️ 這一段是唯一的閘門：legendaryEffects 也是這個迴圈的產物，因此副手雙手武器上的
+     傳奇特效會連帶失效，戰鬥端（legendaryHas／legendaryFx／legendarySkill2Mods）不必各自判斷。 */
+  var asuraOn = (typeof skills2AsuraDualWield === 'function') && skills2AsuraDualWield();
+  var asuraAffixMult = 1 + (asuraOn ?
+    ((typeof skills2AsuraAffixPct === 'function') ? skills2AsuraAffixPct() : 0) : 0) / 100;
+
   SLOT_LIST.forEach(function (slot) {
     var it = equipment[slot];
     if (!it) return;
+    var twoHand = (typeof isTwoHandItem === 'function') && isTwoHandItem(it);
+    if (slot === 'weapon2' && twoHand && !asuraOn) return;   // 修羅亂舞沒生效＝副手的雙手武器不生效
     if (it.sockets) {
       it.sockets.forEach(function (g) { if (g && (g.fused || GEM_TYPES[g.type])) socketed.push(g); });
     }
     var um = upgradeMult(it); // 強化倍率：每 +1 詞條數值 +5%
     it.affixes.forEach(function (a) {
       if (typeof affixIsAllLocked === 'function' && affixIsAllLocked(a.key)) return;
-      var v = affixValue(it, a) * um;   // 詞條值由強度值當場算出（affixValue → §6）
+      // 詞條值由強度值當場算出（affixValue → §6）；修羅亂舞只放大雙手武器的詞條，不含特效／附魔／寶石
+      var v = affixValue(it, a) * um * (twoHand ? asuraAffixMult : 1);
       var k = a.key;
       var re = affixResElem(k);
       var dv = affixDmgVsElem(k);

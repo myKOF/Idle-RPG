@@ -144,6 +144,16 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 傳奇特效,galeTwinShadow,雙影,0,,,,,,,,0,,疾風斬命中時有 50% 機率額外對附近 1 個敵人造成 50% 傷害。,phys,gale,,magicSword1h,"{""galeTwin"":{""chance"":50,""pct"":50,""m"":10}}"
 傳奇特效,galeWindwalker,風行者,0,,,,,,,,0,,疾風斬命中時附加風切狀態：移動速度 -80%、命中率 -50%，且每 0.5 秒受到 50% 風系傷害，持續 4 秒。,wind,gale,,magicSword1h,"{""galeWindRend"":{""cutPct"":50}}"
 傳奇特效,galeGodspeed,神速斬,0,,,,,,,,0,,疾風斬每次命中時，疾風斬的冷卻時間 -0.1 秒。,phys,gale,,magicSword1h,"{""galeCdrSec"":0.1}"
+傳奇特效,bloodPoisonBurst,毒爆,0,,,,,,,,0,,血刃斬造成中毒的敵人死亡後留下一灘毒霧，對範圍 6 米內的敵人每 0.5 秒造成 50% 中毒傷害，持續 3 秒。,poison,bloodblade,,magicSword2h,"{""bloodPoisonMist"":{""m"":6,""pct"":50,""sec"":3,""gap"":0.5}}"
+傳奇特效,bloodVenomRite,毒血祭,0,,,,,,,,0,,血刃斬的中毒每感染 1 個敵人就使自身生命值 -1%，但造成的中毒與流血傷害提高 50%。,poison,bloodblade,,magicSword2h,"{""bloodVenomRite"":{""hpPct"":1,""pct"":50}}"
+傳奇特效,bloodMist,血霧,0,,,,,,,,0,,血刃斬造成流血的敵人死亡後留下一灘血霧，血霧內的敵人每次受傷都回復你 0.2% 生命值，持續 4 秒。,phys,bloodblade,,magicSword2h,"{""bloodMistField"":{""m"":6,""healPct"":0.2,""sec"":4}}"
+傳奇特效,bloodShadow,血影,0,,,,,,,,0,,血刃斬有 35% 機率揮出第 2 斬。,phys,bloodblade,,magicSword2h,"{""bloodSecondSlash"":{""chance"":35}}"
+傳奇特效,bloodCleaver,切割,0,,,,,,,,0,,血刃斬的斬擊傷害 +100%。,phys,bloodblade,,magicSword2h,"{""bloodSlashPct"":100}"
+傳奇特效,danceFrenzy,狂舞,0,,,,,,,,0,,暴風之舞持續期間，每施放 1 次雙刀亂舞就使下一次的施放間隔縮短 6%。,phys,dualdance,,greatsword2h,"{""danceStormGap"":{""pct"":6}}"
+傳奇特效,danceBerserker,狂戰士,0,,,,,,,,0,,鐵血之舞造成的生命損失與傷害同時提高 50%。,phys,dualdance,,greatsword2h,"{""danceIronAmp"":{""pct"":50}}"
+傳奇特效,danceUnyielding,不屈之誓,0,,,,,,,,0,,暴風之舞持續期間你的死亡延後 10 秒才生效，且這 10 秒內你的傷害提高 100%。,phys,dualdance,,greatsword2h,"{""danceDeathDefer"":{""sec"":10,""pct"":100}}"
+傳奇特效,danceThousandCuts,殺千刀,0,,,,,,,,0,,雙刀亂舞每殺死 1 個敵人就使暴風之舞的持續時間 +0.2 秒。,phys,dualdance,,greatsword2h,"{""danceStormKill"":{""sec"":0.2}}"
+傳奇特效,danceTwinBlades,雙生刃,0,,,,,,,,0,,雙刀亂舞的擊中目標數量 +2 個。,phys,dualdance,,greatsword2h,"{""danceTargetAdd"":{""count"":2}}"
 神鑄特效,dragonBlood,龍血,25,,,,,,,,,hpPct,生命上限提高 {v}%,,,,,
 神鑄特效,godMight,神力,18,,,,,,,,,atkPct;matkPct,物理與魔法攻擊額外提高 {v}%,,,,,
 神鑄特效,godHaste,神速,15,,,,,,,,,aspdPct,攻擊速度提高 {v}%,,,,,

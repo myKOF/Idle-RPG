@@ -48,7 +48,8 @@ function legendaryClone(value) {
 
 var LEGENDARY_FX_NON_VALUE_KEYS = {
   chance: true, count: true, bounces: true, hits: true, maxStacks: true,
-  tickSec: true, sec: true, dur: true, cd: true, cooldownSec: true, basicAttackThreshold: true,
+  tickSec: true, sec: true, dur: true, gap: true, interval: true, cd: true, cooldownSec: true,
+  basicAttackThreshold: true,
   killExtend: true, double: true, triple: true
 };
 

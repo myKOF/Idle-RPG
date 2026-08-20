@@ -2230,6 +2230,10 @@ function equipSkillToLoadout(id) {
   if (firstEmpty < 0) return '裝載欄已滿（' + cap + ' 格，依參數表計算）';
 
   lo[firstEmpty] = id;
+  /* 修羅亂舞的生效條件包含「雙刀亂舞裝配在技能列上」，因此裝載欄異動會改變屬性
+    （副手雙手武器是否計入）。裝載欄異動很罕見，一律讓屬性快取失效即可，
+     不必在這裡認得是哪一個技能。 */
+  if (typeof markStatsDirty === 'function') markStatsDirty();
   UI.dirty.skills = true;
   return null;
 }
@@ -2242,6 +2246,10 @@ function unequipSkillFromLoadout(id) {
     while (lo.length > 0 && !lo[lo.length - 1]) {
       lo.pop();
     }
+    /* 修羅亂舞的生效條件包含「雙刀亂舞裝配在技能列上」，因此裝載欄異動會改變屬性
+      （副手雙手武器是否計入）。裝載欄異動很罕見，一律讓屬性快取失效即可，
+       不必在這裡認得是哪一個技能。 */
+    if (typeof markStatsDirty === 'function') markStatsDirty();
     UI.dirty.skills = true;
   }
 }

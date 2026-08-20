@@ -791,8 +791,10 @@ function playerAtkCfg(pEnt) {
         globalDmgRed: st.globalDmgRed,
         annihilate: st.passives.annihilate || 0,
         eliteDmg: st.eliteDmg, bossDmg: st.bossDmg, normalDmg: st.normalDmg,
-        // 潛力【時空凝滯】allDmgUp／超神進化【死亡收割者】sgDeathReaper（疊層，js/skills2.js）：所有傷害提高
-        totalDmgPct: (st.totalDmgPct || 0) + buffVal(pEnt, 'allDmgUp') + buffVal(pEnt, 'sgDeathReaper'),
+        /* 「你造成的所有傷害提高」的來源由 js/skills2.js skills2AllDamageUpPct 統一加總
+          （時空凝滯／死亡收割者／殺神領域／不屈之誓）；新版技能的 sgAtkCfg 讀同一支。 */
+        totalDmgPct: (st.totalDmgPct || 0) + ((typeof skills2AllDamageUpPct === 'function')
+            ? skills2AllDamageUpPct(pEnt) : buffVal(pEnt, 'allDmgUp')),
         dmgVsElem: st.dmgVsElem,
         isPlayer: true
     };
@@ -1635,6 +1637,13 @@ function onPlayerFieldDeath() {
         UI.dirty.battle = true;
         return;
     }
+    /* 傳奇【不屈之誓】（雙刀亂舞，js/skills2.js）：暴風之舞期間的死亡延後 10 秒生效。
+       排在天地共生之後——天地共生是「原地滿血復活」，嚴格優於「再撐 10 秒然後還是死」，
+       兩者都可用時先走前者才不會浪費掉不屈之誓的那一次。 */
+    if (typeof skills2TryDeathDefer === 'function' && FIELD.player && skills2TryDeathDefer(FIELD.player)) {
+        UI.dirty.battle = true;
+        return;
+    }
     // 45 新技能：死亡＝該場戰鬥結束——比照 finishTowerFight 清空 SKILL_RT 執行期狀態，
     // 避免死前入列的回響/領域/聖痕/快照窗（帶死前傷害快照）在復活後對退階新波次集中結算
     if (typeof resetSkillRT === 'function') resetSkillRT();
@@ -1837,7 +1846,9 @@ var PLAYER_BUFF_ORDER = ['atkUp', 'defUp', 'aspdUp', 'evasionUp', 'critDmgUp', '
     // 超神進化【幻影八方陣】：施放突刺後的短時間絕對閃避（2 秒，玩家要看得到還剩幾秒）
     'sgPhantomDodge',
     // 超神進化【死亡收割者】：飛刀擊殺疊層的傷害增益（層數與剩餘時間都要看得到）
-    'sgDeathReaper'];
+    'sgDeathReaper',
+    // 超神進化【殺神領域】與傳奇【不屈之誓】：兩個都是有層數／倒數的所有傷害增益，玩家要看得到
+    'sgSlayerMark', 'sgDeathDefer'];
 
 function activePlayerBuffs(ent) {
     if (!ent) return [];
