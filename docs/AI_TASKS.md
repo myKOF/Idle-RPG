@@ -1,5 +1,37 @@
 # AI_TASKS.md
 
+## Codex｜迴旋斬不限人數、強化斬範圍、藍色特效與迴身四方斬｜2026-08-20
+
+- 狀態：已完成
+- Owner：Codex
+- 使用者需求：`cleave` 迴旋斬改為範圍內所有敵人、不再限制人數；「強化斬」改為斬擊範圍 +15%，每級再 +1.5%；迴旋斬特效改為藍色；第 7 階「迴身雙連斬」更名為「迴身四方斬」，四方向各斬 3 次，傷害額外 +50%，每級 +5%，並與原有傷害採乘法計算。
+- 前置依賴：沿用 `cleave` 群組既有近戰範圍與 Canvas／DOM 斬擊事件，未變更存檔結構或 Worker Protocol。
+- 允許修改：`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`、`js/skills2.js`、`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`tests/skill2-system.test.cjs`、`tests/skill2-vfx.test.cjs`、`tests/skill2-ult-evolution.test.cjs`、`game_formula.md`、`index.html`、本文件。
+- 禁止修改：未列出的功能模組、存檔格式、Worker Protocol、其他技能的數值與特效。
+- 驗收方式：SSOT round-trip、`node --check`、技能系統與 VFX 測試、全量測試、`build_check`、`git diff --check`。
+- 完成內容：迴旋斬改為範圍內不限人數；強化斬改為範圍 +15% 且每級 +1.5%；斬擊特效改為藍色並隨範圍倍率放大；迴身四方斬完成改名、四向三連斬與乘法傷害。
+- 測試結果：技能系統與超神進化 50/50；本次 VFX 定向測試 3/3；參數 dry-run 554/554、錨點 554/554、build 295/295、`git diff --check` 通過。全量測試仍有既有 VFX／風切／泥沼／冰系基準失敗，本次相關測試未新增失敗。
+- 已知風險：全量測試的既有失敗需另案處理；本次範圍內無未完成項目。
+- 是否可以合併：可以。
+- Commit：完成後使用 `[Codex]` 前綴。
+
+## Codex｜調整天霸風神斬範圍與被動施放間隔｜2026-08-20
+
+- 狀態：已完成
+- Owner：Codex
+- 使用者需求：迴旋斬範圍擴大 30%，改為被動技能，每 8 秒自動施放 1 次，且每級施放間隔減少 0.5 秒。
+- 前置依賴：沿用現有天霸風神斬的超神進化與被動自動施放流程；不變更存檔格式、Worker Protocol 或其他技能。
+- 允許修改：`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`、`js/skills2.js`、`tests/skill2-ult-evolution.test.cjs`、`game_formula.md`、`GM_command.md`、`index.html`、本文件。
+- 禁止修改：其他技能數值、傷害公式、目標選擇、VFX 外觀與非本技能的載入流程。
+- 驗證要求：Skills2 表格往返同步、天霸風神斬範圍／間隔／被動施放測試、語法檢查、建置、`git diff --check`。
+- 修改內容：Skills2 超神進化 `stormGodSlash` 新增 `range:30`、間隔改為 `sec:8`／`secPer:-0.5`；迴旋斬施放距離、飛行斬擊與十字斬擊路徑套用 30% 倍率；同步遊戲公式、GM 指令說明、技能載入版號與回歸測試。
+- 修改檔案：`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`、`js/skills2.js`、`tests/skill2-ult-evolution.test.cjs`、`game_formula.md`、`GM_command.md`、`index.html`、本文件。
+- 未修改但檢查過：`js/skills.js` 的主動輪替被動閘門、`js/battlefield.js` 的米／系統距離換算與線段命中、`js/vfx.js`／`js/battle-renderer.js` 的既有迴旋斬特效路徑。
+- 驗證結果：天霸風神斬／Skills2 系統定向測試 49/49、建置檢查 295/295、`node --check js/skills2.js`、Skills2 `--sync`／`--apply` 往返與 `apply_params` 554 錨點檢查通過、`git diff --check` 通過。完整測試 1644 項中 1633 通過、11 項為既有泥沼／寒冰／暴風雪參數、風切狀態與 VFX／快取基準失敗，未涉及本次天霸風神斬邏輯。
+- 已知風險：VFX 定向測試仍有 2 項既有 DOM／快取基準失敗；完整套件的 11 項既有失敗需另案處理。瀏覽器需重新整理以載入 `js/skills2.js?v=1.0.53`。
+- 未完成項目：無。
+- 是否可以合併：可以。
+
 ## Codex｜寒冰箭 15 度分箭、三波追蹤與 30 米／秒｜2026-08-19
 
 - 狀態：已完成

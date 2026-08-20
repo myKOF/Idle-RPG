@@ -347,7 +347,7 @@ test('【暗影絕殺者】：命中堆疊靈魂撕裂，層數直接進入「�
 
 /* ---- 4) 迴旋斬的三個超神進化 ---- */
 
-test('【虛空碎裂斬】：迴身雙連斬的次數與傷害都再提高（前 7 階沒全滿時不生效）', () => {
+test('【虛空碎裂斬】：迴身四方斬的次數與傷害都再提高（前 7 階沒全滿時不生效）', () => {
   const c = loadContext();
   stubHits(c); stubVfx(c);
   setLevels(c, 'cleave', [10, 10, 10, 10, 10, 0, 10]);
@@ -370,8 +370,9 @@ test('【虛空碎裂斬】：迴身雙連斬的次數與傷害都再提高（�
   c2.SKILL2_RT.projectiles.length = 0;
   c2.castSkill2(p2, [e2], 'cleave', 'mv-float');
   run(c2, p2, [e2], 3);
-  // Lv.10 ＝ 傷害再 +（50+5×10）% ＝ +100% 物攻；次數再 +（1+0.2×10）＝ +3 輪
-  assert.ok(Math.abs(calls2[0].atk - (before + 1000 * 1)) < 1e-6, '第 7 階傷害再 +100%');
+  // Lv.10 的虛空碎裂斬先使原有百分比 +100%，再套用迴身四方斬的 2 倍乘區。
+  assert.ok(Math.abs(calls2[0].atk - ((before / 2 + 1000) * 2)) < 1e-6,
+    '虛空碎裂斬的加成應先併入原有傷害，再乘迴身四方斬倍率');
   assert.ok(calls2.length > beforeHits, '攻擊次數也要變多');
 });
 
@@ -407,21 +408,28 @@ test('【逐風者】：每次命中在該處生成一道龍捲風，逐段造�
   assert.ok(!calls2.some((x) => x.elem === 'wind'), '沒選逐風者就不該有風系段');
 });
 
-test('【天霸風神斬】：迴旋斬變成被動——不進主動輪替，改為每 N 秒自動施放', () => {
+test('【天霸風神斬】：範圍 +30%、變成被動，且每級將自動施放間隔 -0.5 秒', () => {
   const c = loadContext();
   stubHits(c); stubVfx(c);
   forceRolls(c, 0.999);
   maxLevels(c, 'cleave'); equip(c, 'cleave');
   setUlt(c, 'cleave', 'stormGodSlash', 10);
+  const ult = c.skills2Ult('cleave');
+  assert.equal(ult.def.fx.range, 30, '天霸風神斬範圍倍率應為 30%');
+  assert.equal(ult.def.fx.sec, 8, '天霸風神斬基礎間隔應為 8 秒');
+  assert.equal(ult.def.fx.secPer, -0.5, '天霸風神斬每級間隔應減少 0.5 秒');
+  assert.equal(c.sgUltVal(ult, 'sec'), 3, 'Lv.10 應為 8 − 0.5×10 ＝ 3 秒');
+  assert.equal(c.skills2CastRangePx('cleave', c.skills2Levels('cleave')), c.bfMeterPx(8),
+    '滿級強化斬 +30% 與天霸風神斬 +30% 應將迴旋斬施放距離由 5 米提高至 8 米');
   assert.equal(c.skills2ActsPassive('cleave'), true, '選了天霸風神斬就視為被動群組');
   assert.equal(c.skills2ActsPassive('thrust'), false);
 
   const p = playerEnt(); c.FIELD = { player: p };
   const e = enemy(1e12, 2 * M, 0);
-  // Lv.10 ＝ 8 − 0.4×10 ＝ 每 4 秒一次
-  run(c, p, [e], 3.5);
+  // Lv.10 ＝ 8 − 0.5×10 ＝ 每 3 秒一次
+  run(c, p, [e], 2.5);
   assert.equal(e.hp, 1e12, '間隔還沒到就不該出手');
-  run(c, p, [e], 1.5);
+  run(c, p, [e], 1.0);
   assert.ok(e.hp < 1e12, '間隔到了自動施放一次');
 
   // 沒裝配在技能列就不生效（與其他主動型被動同一條代價）
