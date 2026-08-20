@@ -1,0 +1,260 @@
+{
+  "thrust": {
+    "gid": "thrust",
+    "groupName": "突刺",
+    "r1": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "scenarioType": 1,
+      "combatTime": 19.2,
+      "cleared": true,
+      "totalDamageDealt": 34985002096,
+      "dps": 1822135526,
+      "peakDps": 6437433269,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "scenarioType": 2,
+      "combatTime": 9.55,
+      "cleared": true,
+      "totalDamageDealt": 4290505870,
+      "dps": 449267630,
+      "peakDps": 832422526,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "scenarioType": 3,
+      "combatTime": 0.45,
+      "cleared": true,
+      "totalDamageDealt": 238400478,
+      "dps": 529778840,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  "cleave": {
+    "gid": "cleave",
+    "groupName": "迴旋斬",
+    "r1": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "scenarioType": 1,
+      "combatTime": 40.35,
+      "cleared": true,
+      "totalDamageDealt": 155050766070,
+      "dps": 3842645999,
+      "peakDps": 51071820335,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "scenarioType": 2,
+      "combatTime": 13.25,
+      "cleared": true,
+      "totalDamageDealt": 16182783145,
+      "dps": 1221342124,
+      "peakDps": 11166080637,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "scenarioType": 3,
+      "combatTime": 0.25,
+      "cleared": true,
+      "totalDamageDealt": 627494313,
+      "dps": 2509977252,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  "knife": {
+    "gid": "knife",
+    "groupName": "飛刀",
+    "r1": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "scenarioType": 1,
+      "combatTime": 120.05,
+      "cleared": false,
+      "totalDamageDealt": 33636738015,
+      "dps": 280189405,
+      "peakDps": 4883136262,
+      "killsCount": 144,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "scenarioType": 2,
+      "combatTime": 23.6,
+      "cleared": true,
+      "totalDamageDealt": 5911035818,
+      "dps": 250467619,
+      "peakDps": 1814700407,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "scenarioType": 3,
+      "combatTime": 0.25,
+      "cleared": true,
+      "totalDamageDealt": 270926301,
+      "dps": 1083705204,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  "gale": {
+    "gid": "gale",
+    "groupName": "疾風斬",
+    "r1": {
+      "gid": "gale",
+      "groupName": "疾風斬",
+      "scenarioType": 1,
+      "combatTime": 51.5,
+      "cleared": true,
+      "totalDamageDealt": 111715948811,
+      "dps": 2169241724,
+      "peakDps": 9029444175,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "gale",
+      "groupName": "疾風斬",
+      "scenarioType": 2,
+      "combatTime": 16.85,
+      "cleared": true,
+      "totalDamageDealt": 19805585244,
+      "dps": 1175405652,
+      "peakDps": 4743934507,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "gale",
+      "groupName": "疾風斬",
+      "scenarioType": 3,
+      "combatTime": 0.25,
+      "cleared": true,
+      "totalDamageDealt": 2929117870,
+      "dps": 11716471480,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  "bloodblade": {
+    "gid": "bloodblade",
+    "groupName": "血刃斬",
+    "r1": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "scenarioType": 1,
+      "combatTime": 120.05,
+      "cleared": false,
+      "totalDamageDealt": 7080142548,
+      "dps": 58976614,
+      "peakDps": 383134367,
+      "killsCount": 67,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "scenarioType": 2,
+      "combatTime": 59.15,
+      "cleared": true,
+      "totalDamageDealt": 3130040468,
+      "dps": 52916999,
+      "peakDps": 389892292,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "scenarioType": 3,
+      "combatTime": 0.25,
+      "cleared": true,
+      "totalDamageDealt": 248371054,
+      "dps": 993484216,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  "dualdance": {
+    "gid": "dualdance",
+    "groupName": "雙刀亂舞",
+    "r1": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "scenarioType": 1,
+      "combatTime": 43.4,
+      "cleared": true,
+      "totalDamageDealt": 88009551402,
+      "dps": 2027869848,
+      "peakDps": 7297007433,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "scenarioType": 2,
+      "combatTime": 11.5,
+      "cleared": true,
+      "totalDamageDealt": 13428908060,
+      "dps": 1167731136,
+      "peakDps": 3343768968,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "scenarioType": 3,
+      "combatTime": 0.25,
+      "cleared": true,
+      "totalDamageDealt": 426422273,
+      "dps": 1705689092,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  }
+}
