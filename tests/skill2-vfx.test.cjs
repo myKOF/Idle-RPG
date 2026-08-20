@@ -254,6 +254,27 @@ test('震碎斬與迴身四方斬共用迴旋斬的方向事件', () => {
   assert.doesNotMatch(read('css/style.css'), /\.vfx-cleave-wave/);
 });
 
+test('疾風斬使用玩家中心的單一道前方 180 度弧形掃擊', () => {
+  const vfx = read('js/vfx.js');
+  const renderer = read('js/battle-renderer.js');
+  const css = read('css/style.css');
+  const galeVfxStart = vfx.indexOf("if (kind === 'slash' && s.variant === 'gale-slashes')");
+  const galeVfxEnd = vfx.indexOf('for (var t = 0;', galeVfxStart);
+  const galeRendererStart = renderer.indexOf("if (spec.variant === 'gale-slashes')");
+  const galeRendererEnd = renderer.indexOf('targets.forEach(function (id, ti)', galeRendererStart);
+
+  assert.ok(galeVfxStart >= 0 && galeVfxEnd > galeVfxStart);
+  assert.ok(galeRendererStart >= 0 && galeRendererEnd > galeRendererStart);
+  assert.match(vfx, /function vfxGaleSweep\([\s\S]*?vfxCleaveSector\([\s\S]*?'vfx-gale-sweep'/);
+  assert.match(vfx.slice(galeVfxStart, galeVfxEnd), /vfxGaleSweep\(s, layer, from/);
+  assert.doesNotMatch(vfx.slice(galeVfxStart, galeVfxEnd), /vfxBladestorm|vfxRectAround\(rt\.pts/);
+  assert.match(vfx.slice(galeVfxStart, galeVfxEnd), /vfxHitReact\(rt\.ids\[gti\]/);
+  assert.match(renderer, /function spawnGaleSweep\([\s\S]*?spawnCleaveSector\([\s\S]*?180/);
+  assert.match(renderer.slice(galeRendererStart, galeRendererEnd), /spawnGaleSweep\(spec, targets, baseDelay\)/);
+  assert.doesNotMatch(renderer.slice(galeRendererStart, galeRendererEnd), /spawnBladestorm|posOf\(id\)/);
+  assert.match(css, /\.vfx-gale-sweep[\s\S]*?clip-path: polygon\(50% 50%, 50% 0%,[\s\S]*?50% 100%\)/);
+});
+
 test('迴身四方斬使用四個 60 度扇形，四向共用範圍並旋轉放大', () => {
   const skills2 = read('js/skills2.js');
   const vfx = read('js/vfx.js');
@@ -890,9 +911,9 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   /* 主頁與 Worker 必須換版本，否則瀏覽器會繼續執行舊的綠色方框／逐格路徑。
      這幾條釘的是「目前的版號」——之後任何人再動這些檔、把版號往上推時，
      連同這裡一起更新即可（釘住的用意是禁止「改了檔卻沒換版號」）。 */
-  assert.match(index, /css\/style\.css\?v=1\.0\.54/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.64/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.97/);
+  assert.match(index, /css\/style\.css\?v=1\.0\.55/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.65/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.98/);
   assert.match(index, /js\/skills2\.js\?v=1\.0\.56/);
   assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-ult-evolution'/);
   assert.match(worker, /\.\.\/skills2\.js\?v=20260819-ult-evolution/);

@@ -1120,7 +1120,7 @@ function vfxCleaveArc(spec, layer, pt, delayMs, angleDeg, extraClass, travel) {
    同時以 45 度／秒旋轉；四道斬擊使用相同的飛行與放大動畫。 */
 function vfxCleaveSector(spec, layer, pt, delayMs, angleDeg, travel) {
   if (!pt) return;
-  var d = vfxNode('vfx-cleave-sector', layer, spec);
+  var d = vfxNode('vfx-cleave-sector' + (travel && travel.extraClass ? ' ' + travel.extraClass : ''), layer, spec);
   var maxRadius = Math.max(48, Number(travel && travel.length) || Number(spec && spec.lineLength) || 120);
   var delay = Math.max(0, delayMs || 0);
   var duration = Math.max(0.38, spec.dur || 0.5);
@@ -1155,6 +1155,16 @@ function vfxCleaveSector(spec, layer, pt, delayMs, angleDeg, travel) {
   };
   frame();
   vfxTrack(d, delay + duration * 1000 + 180);
+}
+
+/* 疾風斬：只建立一道以玩家為中心、朝第一個目標方向的 180 度掃擊；
+   目標本身不再生成刀光，命中時只保留受擊反饋。沿用扇形的向外放大與 45 度／秒旋轉。 */
+function vfxGaleSweep(spec, layer, pt, delayMs, angleDeg, length) {
+  if (!pt) return;
+  var maxRadius = Math.max(48, Number(length) || Number(spec && spec.lineLength) || 120);
+  var angle = (Number(angleDeg) || 0) * Math.PI / 180;
+  vfxCleaveSector(spec, layer, pt, delayMs, Number(angleDeg) || 0,
+    { angle: angle, length: maxRadius, extraClass: 'vfx-gale-sweep' });
 }
 
 function vfxCleaveArcFlightMs(spec) {
@@ -2638,9 +2648,11 @@ function renderCombatVfx(spec) {
 
   /* 疾風斬多段：在近戰目標周圍連續閃出刀光，清楚表現多段斬擊。 */
   if (kind === 'slash' && s.variant === 'gale-slashes') {
+    var galeAngle = from && rt.pts.length
+      ? Math.atan2(rt.pts[0].y - from.y, rt.pts[0].x - from.x) * 180 / Math.PI : 0;
+    vfxGaleSweep(s, layer, from, baseDelay, galeAngle,
+      Number(s.lineLength) > 0 ? Number(s.lineLength) : 120);
     for (var gti = 0; gti < rt.pts.length; gti++) {
-      var galeRect = vfxRectAround(rt.pts[gti], { r: 52 });
-      vfxBladestorm(s, layer, galeRect, count);
       vfxHitReact(rt.ids[gti], s.elem, baseDelay + 120, false);
     }
     return;

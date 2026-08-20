@@ -1,5 +1,22 @@
 # AI_TASKS.md
 
+## Codex｜疾風斬改為前方 180 度單一道弧形掃擊｜2026-08-20
+
+- 狀態：已完成
+- Owner：Codex
+- 使用者需求：疾風斬應顯示以玩家為中心、前方 180 度的單一道弧形掃擊；不要在每個敵人身上重複建立掃擊特效，敵人位置只保留受擊反饋。
+- 前置依賴：沿用既有 `gale-slashes` VFX 事件與傷害命中資料；不變更技能傷害、命中數量或目標選取。
+- 允許修改：`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`tests/skill2-vfx.test.cjs`、`index.html`、`docs/AI_TASKS.md`。
+- 禁止修改：`config/`、`js/skills2.js`、Worker protocol、存檔格式與非本需求技能邏輯。
+- 驗收方式：DOM／Canvas 都只建立一個玩家中心的 180 度掃擊；掃擊向外擴大並以 45 度／秒旋轉；每個命中目標仍有受擊反饋；既有測試與建置檢查通過。
+- 實作結果：新增 `vfxGaleSweep`／`spawnGaleSweep`，掃擊由玩家位置沿第一目標方向呈現前方 180 度半圓；敵人只保留同步 `hitReact`。未修改 `js/skills2.js` 的傷害與目標邏輯。
+- 修改檔案：`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`tests/skill2-vfx.test.cjs`、`index.html`、`docs/AI_TASKS.md`。
+- 測試指令：`node --test --test-name-pattern="疾風斬使用玩家中心" tests/skill2-vfx.test.cjs`、`npm.cmd run build`、`git diff --check`。
+- 測試結果：疾風斬回歸測試 1/1；build 295/295；diff check 通過。完整 `skill2-vfx` 的既有毒霧感染鏡頭震動檢查仍為失敗，與本任務無關。
+- 已知風險：目前 VFX 朝第一個事件目標方向取向；沒有目標時退回水平正向／Canvas 的玩家面向。
+- 未完成項目：無。
+- Commit：待建立 `[Codex] 疾風斬改為前方 180 度弧形掃擊`。
+
 ## Codex｜逐風者龍捲風改為淡綠白光特效｜2026-08-20
 
 - 狀態：已完成

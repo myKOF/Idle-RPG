@@ -1886,7 +1886,7 @@ var BattleRenderer = (function () {
 
   /* 迴身四方斬的單一道路：以 60 度扇形由中心向外飛出，半徑同步成長並以 45 度／秒旋轉。
      directionRanges 由模擬層傳入，確保畫面終點與實際傷害範圍相同。 */
-  function spawnCleaveSector(x, y, spec, rotation, delaySec, travel) {
+  function spawnCleaveSector(x, y, spec, rotation, delaySec, travel, sectorAngleDeg) {
     var theme = themeOf(spec);
     var g = new PIXI.Graphics();
     g.x = x; g.y = y;
@@ -1895,6 +1895,8 @@ var BattleRenderer = (function () {
     S.layers.fx.addChild(g);
     var maxRadius = Math.max(48, Number(travel && travel.length) || Number(spec && spec.lineLength) || 120);
     var travelAngle = travel && typeof travel.angle === 'number' ? travel.angle : g.rotation;
+    var halfSector = Number(sectorAngleDeg) > 0
+      ? Math.min(180, Number(sectorAngleDeg)) * Math.PI / 360 : Math.PI / 6;
     var rotationSpeed = Math.PI / 4;
     var t = -(delaySec || 0), dur = Math.max(0.38, spec.dur || 0.5);
     addFx({
@@ -1913,20 +1915,37 @@ var BattleRenderer = (function () {
         var fade = k > 0.76 ? 1 - (k - 0.76) / 0.24 : Math.min(1, k / 0.08);
         g.clear();
         g.moveTo(0, 0)
-          .lineTo(Math.cos(-Math.PI / 6) * radius, Math.sin(-Math.PI / 6) * radius)
-          .arc(0, 0, radius, -Math.PI / 6, Math.PI / 6, false)
+          .lineTo(Math.cos(-halfSector) * radius, Math.sin(-halfSector) * radius)
+          .arc(0, 0, radius, -halfSector, halfSector, false)
           .lineTo(0, 0).closePath()
           .fill({ color: theme.c1, alpha: 0.2 * fade });
-        g.arc(0, 0, radius, -Math.PI / 6, Math.PI / 6, false)
+        g.arc(0, 0, radius, -halfSector, halfSector, false)
           .stroke({ color: theme.c1, width: Math.max(2, maxRadius * 0.025) * fade,
             alpha: 0.95 * fade, cap: 'round' });
-        g.moveTo(0, 0).lineTo(Math.cos(-Math.PI / 6) * radius, Math.sin(-Math.PI / 6) * radius)
-          .moveTo(0, 0).lineTo(Math.cos(Math.PI / 6) * radius, Math.sin(Math.PI / 6) * radius)
+        g.moveTo(0, 0).lineTo(Math.cos(-halfSector) * radius, Math.sin(-halfSector) * radius)
+          .moveTo(0, 0).lineTo(Math.cos(halfSector) * radius, Math.sin(halfSector) * radius)
           .stroke({ color: theme.c2, width: Math.max(1, maxRadius * 0.012) * fade,
             alpha: 0.9 * fade, cap: 'round' });
         return t < dur;
       }
     }, 1);
+  }
+
+  /* 疾風斬：單一道以玩家為中心的前方 180 度掃擊；目標只產生受擊反饋。 */
+  function spawnGaleSweep(spec, targets, baseDelay) {
+    var from = playerMuzzle();
+    var angle = (targets && targets.length)
+      ? (function () { var p = posOf(targets[0]); return Math.atan2(p.y - from.y, p.x - from.x); })()
+      : ((S.player && S.player.facing < 0) ? Math.PI : 0);
+    var radius = Math.max(48, Number(spec.lineLength) || 120);
+    spawnCleaveSector(from.x, from.y, spec, angle, (baseDelay || 0) / 1000,
+      { angle: angle, length: radius }, 180);
+    (targets || []).forEach(function (id, ti) {
+      setTimeout(function () {
+        if (fxGate(spec)) return;
+        hitReact(id, spec.elem, false);
+      }, Math.max(0, baseDelay || 0) + 120);
+    });
   }
 
   function spawnThrustLine(targetId, spec, angleOffset, delaySec, length, laneOffset, angleOverride, isFinal) {
@@ -4369,11 +4388,7 @@ var BattleRenderer = (function () {
           break;
         }
         if (spec.variant === 'gale-slashes') {
-          targets.forEach(function (id) {
-            var pt = posOf(id);
-            spawnBladestorm({ x: pt.x - 52, y: pt.y - 52, w: 104, h: 104 }, spec);
-            hitReact(id, spec.elem, false);
-          });
+          spawnGaleSweep(spec, targets, baseDelay);
           break;
         }
         targets.forEach(function (id, ti) {
