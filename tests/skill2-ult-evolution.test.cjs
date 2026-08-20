@@ -1,11 +1,12 @@
-/* 超神進化（技能第 8 格）＋ 傳奇進化特效（2026-08-19 第一批、2026-08-20 第二、三批）
+/* 超神進化（技能第 8 格）＋ 傳奇進化特效（2026-08-19 第一批、2026-08-20 第二～四批）
    設計來源：神力之巔_記事錄.xlsx「傳奇進化」頁籤。
    守住的事：
-     1. 資料形狀：thrust／cleave／knife／gale／bloodblade／dualdance 各三個超神進化選項，
-        desc 模板的 {鍵} 都在 fx 裡；30 個新傳奇特效只出現在指定武器類型，relatedSkill 指向新版技能群組
+     1. 資料形狀：thrust／cleave／knife／gale／bloodblade／dualdance／counter／bloodrage
+        各三個超神進化選項，desc 模板的 {鍵} 都在 fx 裡；40 個新傳奇特效只出現在指定武器類型，
+        relatedSkill 指向新版技能群組
      2. 解鎖與指令：前 7 階全滿才可三選一；選定＝Lv.1 並扣款；重複選擇被拒；
         降到 Lv.0 清除選擇（可重選）；某階降級後效果失效但存檔保留
-     3. 施放行為：六個群組各三個超神效果、各五個傳奇特效都真的改變了戰鬥結果
+     3. 施放行為：八個群組各三個超神效果、各五個傳奇特效都真的改變了戰鬥結果
      4. 傳奇特效：legendarySkill2Mods 只合併「同群組且已生效」的 fx，數字同鍵相加
      5. 存檔與快照：面板快照帶 ult；讀檔正規化會刪掉越界／非法的紀錄
 
@@ -117,11 +118,40 @@ function setLegendary(c, keys) {
   c.getStats = () => Object.assign({}, base, { legendaryEffects: on, legendaryEffectMults: {} });
 }
 
+/* 敵攻玩家的結算結果替身（skills2OnPlayerDamaged 只讀 miss／invuln／killed／absorbed）。 */
+function hitRes(extra) { return Object.assign({ miss: false, invuln: false, killed: false, absorbed: 0 }, extra || {}); }
+/* 反擊只投資第 1 階（機率反擊）：一次受擊事件＝剛好一次斬擊，計數與傷害才數得準。
+   法力給到滿——逐階扣魔的門檻本身由 tests/skill2-counter-bloodrage 負責。 */
+function counterFirstTierOnly(c) {
+  setLevels(c, 'counter', [10, 0, 0, 0, 0, 0, 0]);
+  equip(c, 'counter');
+  const p = playerEnt();
+  p.mp = 1e9;
+  c.FIELD = { player: p };
+  c.chance = () => true;   // 反擊必定觸發；機率本身不是本檔要守的事
+  return p;
+}
+
+/* 超神進化要「前 7 階全滿」才解鎖，所以驗超神的案例不能只投資第 1 階。
+   滿階時 T6【二次反擊】與 T7【狂化反殺】都會追加斬擊，計數就不好數了，因此：
+     ・機率替身只讓 35% 這種低機率過（T1 反擊 35 過；T6 滿階是 100，不過）
+     ・場上先只放攻擊者一個（T7 的反殺目標排除攻擊者本身，挑不到人就不追加）
+   兩者合起來＝一次受擊剛好一次斬擊。 */
+function counterMaxSingleStrike(c) {
+  maxLevels(c, 'counter');
+  equip(c, 'counter');
+  const p = playerEnt();
+  p.mp = 1e9;
+  c.FIELD = { player: p };
+  c.chance = (pct) => pct <= 40;
+  return p;
+}
+
 /* ---- 1) 資料形狀 ---- */
 
-test('超神進化：六個已開放群組各三個選項，欄位齊全且說明模板的參數鍵都存在', () => {
+test('超神進化：八個已開放群組各三個選項，欄位齊全且說明模板的參數鍵都存在', () => {
   const c = loadContext();
-  ['thrust', 'cleave', 'knife', 'gale', 'bloodblade', 'dualdance'].forEach((gid) => {
+  ['thrust', 'cleave', 'knife', 'gale', 'bloodblade', 'dualdance', 'counter', 'bloodrage'].forEach((gid) => {
     const list = c.sgUltDefs(gid);
     assert.ok(list, gid + ' 應有超神進化');
     assert.equal(list.length, c.SG_ULT_OPTION_COUNT, gid + ' 超神進化必須剛好三選一');
@@ -130,7 +160,8 @@ test('超神進化：六個已開放群組各三個選項，欄位齊全且說�
       assert.ok(o.id, gid + ' 選項 ' + (i + 1) + ' 缺 id');
       assert.ok(!ids.has(o.id), gid + ' 選項 id 重複：' + o.id);
       ids.add(o.id);
-      assert.ok(o.name && o.name.length >= 2 && o.name.length <= 5, gid + ' 選項名稱長度不合理');
+      // 上限 6 是為了設計文檔的【阿修羅霸王拳】；再長就該懷疑是不是貼錯欄位了
+      assert.ok(o.name && o.name.length >= 2 && o.name.length <= 6, gid + ' 選項名稱長度不合理');
       assert.ok(o.goldBase > 0 && o.goldGrow >= 1, gid + ' 選項 ' + o.id + ' 升級費用不合法');
       String(o.desc || '').replace(/\{(\w+)\}/g, (m, key) => {
         assert.ok(o.fx[key] !== undefined, gid + '/' + o.id + ' 說明模板引用了不存在的參數 {' + key + '}');
@@ -138,14 +169,14 @@ test('超神進化：六個已開放群組各三個選項，欄位齊全且說�
       });
     });
   });
-  // 其餘 17 個群組尚未開放；火球術當控制組（設計文檔尚未給它超神進化）
+  // 其餘 15 個群組尚未開放；火球術當控制組（設計文檔尚未給它超神進化）
   assert.equal(c.sgUltDefs('fireball'), null);
   assert.equal(c.sgSlotCount('thrust'), 8);
   assert.equal(c.sgSlotCount('fireball'), 7);
   assert.equal(c.SG_ULT_SLOT, c.SG_TIER_COUNT, '第 8 格的索引＝各階數（0-based 接在最後一階之後）');
 });
 
-test('傳奇進化三十特效：各自只出現在指定武器類型，且關聯到新版技能群組', () => {
+test('傳奇進化四十特效：各自只出現在指定武器類型，且關聯到新版技能群組', () => {
   const c = loadContext();
   const NEW_ONES = {
     piercingFocus: ['凝鋒穿刺', 'dagger1h', 'thrust'],
@@ -179,9 +210,20 @@ test('傳奇進化三十特效：各自只出現在指定武器類型，且關�
     danceBerserker: ['狂戰士', 'greatsword2h', 'dualdance'],
     danceUnyielding: ['不屈之誓', 'greatsword2h', 'dualdance'],
     danceThousandCuts: ['殺千刀', 'greatsword2h', 'dualdance'],
-    danceTwinBlades: ['雙生刃', 'greatsword2h', 'dualdance']
+    danceTwinBlades: ['雙生刃', 'greatsword2h', 'dualdance'],
+    // 2026-08-21 第四批：反擊（盾牌）／嗜血狂怒（雙手大劍）
+    counterOath: ['堅韌誓言', 'shield', 'counter'],
+    counterWrath: ['怒火', 'shield', 'counter'],
+    counterPerfect: ['完美姿態', 'shield', 'counter'],
+    counterBloodPay: ['以血還血', 'shield', 'counter'],
+    counterWindBody: ['風之體', 'shield', 'counter'],
+    rageValor: ['英勇氣概', 'greatsword2h', 'bloodrage'],
+    rageBurnBlood: ['燃血', 'greatsword2h', 'bloodrage'],
+    rageBloodDebt: ['血債償還', 'greatsword2h', 'bloodrage'],
+    rageZealot: ['狂熱者', 'greatsword2h', 'bloodrage'],
+    rageSlaughterer: ['屠戮者', 'greatsword2h', 'bloodrage']
   };
-  assert.equal(Object.keys(NEW_ONES).length, 30);
+  assert.equal(Object.keys(NEW_ONES).length, 40);
   const names = new Set();
   Object.entries(NEW_ONES).forEach(([key, [name, weapon, gid]]) => {
     const def = c.PASSIVE_POOL[key];
@@ -196,7 +238,7 @@ test('傳奇進化三十特效：各自只出現在指定武器類型，且關�
     assert.ok(def.fx && Object.keys(def.fx).length > 0, key + ' 缺 fx 規格');
     names.add(name);
   });
-  assert.equal(names.size, 30, '新特效之間不得同名');
+  assert.equal(names.size, 40, '新特效之間不得同名');
   /* 顯示名稱在整個傳奇特效池裡也必須唯一：玩家只看得到名字，
      兩個效果同名等於裝備詞條無法分辨（設計上的【神速】改名為【神速斬】即為此）。 */
   const allNames = Object.keys(c.PASSIVE_POOL).map((k) => c.PASSIVE_POOL[k].name);
@@ -1302,12 +1344,306 @@ test('【修羅亂舞】：只有「選了它且雙刀亂舞裝配在技能列�
 
 /* ---- 10) 參數表往返 ---- */
 
-test('參數表往返：Skills2 的超神進化列與 Equipment_Affix 的三十個新特效都落表', () => {
+test('反擊的五個傳奇特效：完美姿態、以血還血、風之體、堅韌誓言、怒火', () => {
+  const c = loadContext(['js/legendary.js']);
+  const calls = stubHits(c); stubVfx(c);
+  const p = counterFirstTierOnly(c);
+  const m = enemy(1e12, 3 * M, 0);
+  c.combatFieldEnemies = () => [m];
+
+  // 基準：一次受擊＝一次斬擊，傷害＝普攻攻擊力 × 第 1 階的 pct%
+  c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
+  assert.equal(calls.length, 1, '第 1 階單獨投資時，一次受擊只反擊一次');
+  const base = calls[0].atk;
+  assert.ok(base > 0);
+
+  // 【完美姿態】：該次反擊傷害提高 pct%
+  setLegendary(c, ['counterPerfect']);
+  calls.length = 0;
+  c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
+  const perfect = c.PASSIVE_POOL.counterPerfect.fx.counterPerfect;
+  assert.ok(Math.abs(calls[0].atk - base * (1 + perfect.pct / 100)) < 1e-6,
+    '完美反擊應為基準的 ' + (1 + perfect.pct / 100) + ' 倍，實得 ' + (calls[0].atk / base));
+
+  // 【以血還血】：傷害提高，同時每一斬付出自身生命
+  setLegendary(c, ['counterBloodPay']);
+  calls.length = 0;
+  p.hp = 1000;
+  c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
+  const pay = c.PASSIVE_POOL.counterBloodPay.fx.counterBloodPay;
+  assert.ok(Math.abs(calls[0].atk - base * (1 + pay.pct / 100)) < 1e-6);
+  assert.equal(p.hp, 1000 - Math.round(c.getStats().hp * pay.hpPct / 100),
+    '每一次反擊都要付出自身最大生命的 ' + pay.hpPct + '%');
+
+  // 【風之體】：反擊之外再飛一道風系傷害（走正規結算，因此看得到 skillElem）
+  setLegendary(c, ['counterWindBody']);
+  calls.length = 0;
+  c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
+  const wind = calls.filter((x) => x.elem === 'wind');
+  assert.equal(wind.length, 1, '風之體要多打出一道風系傷害');
+  assert.ok(Math.abs(wind[0].atk -
+    c.getStats().atk * c.PASSIVE_POOL.counterWindBody.fx.counterWindBlade.powerPct / 100) < 1e-6);
+
+  // 【堅韌誓言】／【怒火】：累積到門檻才兌現一次，兌現後歸零重新累積
+  setLegendary(c, ['counterOath', 'counterWrath']);
+  const oathN = c.PASSIVE_POOL.counterOath.fx.counterOath.count;
+  p.hp = 1000; p.buffs = {}; p.effects = {};
+  for (let i = 0; i < oathN - 1; i++) {
+    c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
+  }
+  assert.ok(!c.effectActive(p, 'invuln'), '差一次就不算：' + (oathN - 1) + ' 次還不能給無敵');
+  assert.equal(c.buffVal(p, 'sgCounterWrath'), 0, '差一次就不算：怒火也還不能上');
+  c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
+  assert.ok(c.effectActive(p, 'invuln'), '第 ' + oathN + ' 次反擊要給無敵');
+  assert.equal(c.buffVal(p, 'sgCounterWrath'), c.PASSIVE_POOL.counterWrath.fx.counterWrath.pct);
+  // 怒火直接進入「造成的所有傷害提高」乘區
+  assert.ok(c.skills2AllDamageUpPct(p) >= c.buffVal(p, 'sgCounterWrath'),
+    '怒火必須進 skills2AllDamageUpPct');
+});
+
+test('【神聖之體】：每 N 次反擊射出一顆光彈，對目標周圍打出神聖傷害', () => {
+  const c = loadContext(['js/legendary.js']);
+  const calls = stubHits(c); stubVfx(c);
+  const p = counterMaxSingleStrike(c);
+  const m = enemy(1e12, 3 * M, 0);
+  const near = enemy(1e12, 5 * M, 0);      // 與目標間距 0 米：在 8 米內
+  const far = enemy(1e12, 100 * M, 0);     // 與目標相距極遠：不該吃到
+  c.combatFieldEnemies = () => [m];        // 累積階段場上只有攻擊者 → 一次受擊一次斬擊
+
+  setUlt(c, 'counter', 'holyBody');
+  const ult = c.sgUlt('counter', 'holyBody');
+  assert.ok(ult, '前 7 階全滿才解鎖超神進化');
+  const n = c.sgUltVal(ult, 'count');
+  for (let i = 0; i < n - 1; i++) {
+    c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
+  }
+  assert.equal(c.SKILL2_RT.counter.hits, n - 1, '前提：一次受擊剛好累積一次斬擊');
+  assert.equal(calls.filter((x) => x.elem === 'light').length, 0, '沒到門檻不得發動');
+
+  c.combatFieldEnemies = () => [m, near, far];
+  c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
+  const holy = calls.filter((x) => x.elem === 'light');
+  assert.equal(holy.length, 2, '光彈要打到目標本身與 8 米內的鄰居，遠處的不算');
+  assert.ok(holy.every((x) => x.ent !== far));
+  const expect = c.getStats().atk * c.sgUltVal(ult, 'pct') / 100;
+  assert.ok(Math.abs(holy[0].atk - expect) < 1e-6, '光彈傷害＝普攻攻擊力 × pct%');
+});
+
+test('【戰神體】：視窗內損失的生命百分比會加成到之後的反擊，過期就消失', () => {
+  const c = loadContext(['js/legendary.js']);
+  const calls = stubHits(c); stubVfx(c);
+  const p = counterMaxSingleStrike(c);
+  const m = enemy(1e12, 3 * M, 0);
+  c.combatFieldEnemies = () => [m];
+
+  c.skills2OnPlayerDamaged(m, p, 200, false, hitRes(), 'pv-float');
+  assert.equal(calls.length, 1, '前提：一次受擊剛好一次斬擊');
+  const base = calls[0].atk;
+
+  setUlt(c, 'counter', 'warGodBody');
+  calls.length = 0;
+  // 這一下就損失了最大生命的 20%，同一次的反擊就要吃到（設計文檔：「一併附加」）
+  c.skills2OnPlayerDamaged(m, p, 200, false, hitRes(), 'pv-float');
+  assert.ok(Math.abs(calls[0].atk - base * 1.2) < 1e-6, '失血 20% → 反擊傷害 ×1.2，實得 ' + (calls[0].atk / base));
+  calls.length = 0;
+  c.skills2OnPlayerDamaged(m, p, 200, false, hitRes(), 'pv-float');
+  assert.ok(Math.abs(calls[0].atk - base * 1.4) < 1e-6, '視窗內的失血要累加');
+
+  c.GT += c.sgUltVal(c.sgUlt('counter', 'warGodBody'), 'sec') + 1;
+  calls.length = 0;
+  c.skills2OnPlayerDamaged(m, p, 0, false, hitRes({ absorbed: 1 }), 'pv-float');
+  assert.ok(Math.abs(calls[0].atk - base) < 1e-6, '過了視窗就回到基準');
+});
+
+test('【不屈鬥魂】：死亡時地系爆發、倒地期間無法行動，時間到原地滿血復活且進入冷卻', () => {
+  const c = loadContext(['js/legendary.js']);
+  const calls = stubHits(c); stubVfx(c);
+  maxLevels(c, 'counter'); equip(c, 'counter');
+  const p = playerEnt(); p.mp = 1e9; p.hp = 0;
+  c.FIELD = { player: p };
+  const near = enemy(1e12, 3 * M, 0);
+  const far = enemy(1e12, 100 * M, 0);   // 超過 30 米
+  c.combatFieldEnemies = () => [near, far];
+
+  assert.equal(c.skills2TryLastStand(p), false, '沒選超神進化時不攔截死亡');
+  setUlt(c, 'counter', 'indomitable');
+  assert.equal(c.skills2TryLastStand(p), true, '選了就要攔截');
+  const quake = calls.filter((x) => x.elem === 'earth');
+  assert.equal(quake.length, 1, '只有 30 米內的敵人吃得到地系爆發');
+  assert.equal(quake[0].ent, near);
+  const ult = c.sgUlt('counter', 'indomitable');
+  assert.ok(Math.abs(quake[0].atk - c.getStats().atk * c.sgUltVal(ult, 'pct') / 100) < 1e-6);
+
+  assert.equal(p.hp, 1, '倒地期間生命鎖在 1，不是 0——0 會被下一次判死再抓一次');
+  assert.ok(c.effectActive(p, 'invuln'), '倒地期間無敵');
+  assert.ok(c.skill2DownedActive(), '倒地期間不能行動');
+  assert.equal(c.skills2TryLastStand(p), false, '倒地期間再被判死不得重複攔截');
+
+  run(c, p, [near, far], c.sgUltVal(ult, 'sec') + 1);
+  assert.equal(p.hp, c.getStats().hp, '時間到要原地滿血復活');
+  assert.equal(c.skill2DownedActive(), false, '復活後恢復行動');
+  assert.ok(p.skillCds[c.SG_PREFIX + 'counter'] > 0, '要進入冷卻');
+  p.hp = 0;
+  assert.equal(c.skills2TryLastStand(p), false, '冷卻中不得再發動');
+});
+
+test('嗜血狂怒的五個傳奇特效：英勇氣概、血債償還、燃血、屠戮者、狂熱者', () => {
+  const c = loadContext(['js/legendary.js']);
+  stubHits(c); stubVfx(c);
+  maxLevels(c, 'bloodrage'); equip(c, 'bloodrage');
+  const p = playerEnt(); p.mp = 1e9;
+  c.FIELD = { player: p };
+  const m = enemy(1e12, 3 * M, 0);
+  const t = c.SKILLS2.bloodrage.tiers;
+  const lvs = c.skills2Levels('bloodrage');
+
+  // 【英勇氣概】：攻速加成直接加在 sgBloodrage 的效果值上（skill2AspdFactor 讀的就是它）
+  c.castSkill2(p, [m], 'bloodrage', 'mv-float');
+  const plainAspd = c.buffVal(p, 'sgBloodrage');
+  assert.ok(Math.abs(plainAspd - c.sgVal(t[0].fx, 'pct', lvs[0])) < 1e-9);
+  c.GT += 1;
+  setLegendary(c, ['rageValor']);
+  const p2 = playerEnt(); p2.mp = 1e9; c.FIELD = { player: p2 };
+  c.castSkill2(p2, [m], 'bloodrage', 'mv-float');
+  assert.ok(Math.abs(c.buffVal(p2, 'sgBloodrage') - (plainAspd + c.PASSIVE_POOL.rageValor.fx.rageAspdPct)) < 1e-9,
+    '英勇氣概要加在狂怒的攻速值上');
+  // 擊殺延時會重新塗一次增益——那一次不得把傳奇加成刷掉
+  c.skills2OnEnemyDeath(enemy(1, 3 * M, 0), []);
+  assert.ok(Math.abs(c.buffVal(p2, 'sgBloodrage') - (plainAspd + c.PASSIVE_POOL.rageValor.fx.rageAspdPct)) < 1e-9,
+    '擊殺刷新之後傳奇加成必須還在');
+
+  // 【血債償還】＋【燃血】：代價打折，而且每一次生命損失都疊一層傷害增益
+  c.GT += 1;
+  const p3 = playerEnt(); p3.mp = 1e9; c.FIELD = { player: p3 };
+  setLegendary(c, []);
+  c.castSkill2(p3, [m], 'bloodrage', 'mv-float');
+  p3.hp = 1000;
+  c.skills2OnEnemyDamaged(m, 10);
+  const plainCost = 1000 - p3.hp;
+  assert.ok(plainCost > 0);
+  c.GT += 1;
+  const p4 = playerEnt(); p4.mp = 1e9; c.FIELD = { player: p4 };
+  setLegendary(c, ['rageBloodDebt', 'rageBurnBlood']);
+  c.castSkill2(p4, [m], 'bloodrage', 'mv-float');
+  p4.hp = 1000;
+  c.skills2OnEnemyDamaged(m, 10);
+  const cutPct = c.PASSIVE_POOL.rageBloodDebt.fx.rageSelfCut.reducePct;
+  assert.equal(1000 - p4.hp, Math.max(1, Math.round(plainCost * (100 - cutPct) / 100)),
+    '血債償還要把代價打折');
+  const burn = c.PASSIVE_POOL.rageBurnBlood.fx.rageBurnBlood;
+  assert.equal(c.buffVal(p4, 'sgBurnBlood'), burn.pct, '燃血：一次生命損失＝一層');
+  c.skills2OnEnemyDamaged(m, 10);
+  assert.equal(c.buffVal(p4, 'sgBurnBlood'), burn.pct * 2, '再一次損失＝兩層');
+  assert.ok(c.skills2AllDamageUpPct(p4) >= burn.pct * 2, '燃血必須進 skills2AllDamageUpPct');
+
+  // 【屠戮者】：狂怒期間每擊殺 1 個敵人使反震倍率再提高一層
+  c.GT += 1;
+  const p5 = playerEnt(); p5.mp = 1e9; c.FIELD = { player: p5 };
+  setLegendary(c, ['rageSlaughterer']);
+  c.castSkill2(p5, [m], 'bloodrage', 'mv-float');
+  const thornsBefore = c.skill2RageThornsFactor();
+  c.skills2OnEnemyDeath(enemy(1, 3 * M, 0), []);
+  const stack = c.PASSIVE_POOL.rageSlaughterer.fx.rageThornsStack;
+  assert.equal(c.buffVal(p5, 'sgThornsRage'), stack.pct);
+  assert.ok(Math.abs(c.skill2RageThornsFactor() - thornsBefore * (1 + stack.pct / 100)) < 1e-9,
+    '屠戮者要放大嗜血反震的倍率');
+
+  // 【狂熱者】：用連擊數放大【狂血盛宴】的失血係數
+  c.GT += 1;
+  const p6 = playerEnt(); p6.mp = 1e9; c.FIELD = { player: p6 };
+  setLegendary(c, []);
+  c.castSkill2(p6, [m], 'bloodrage', 'mv-float');
+  p6.hp = 500;   // 失血 50%
+  const plainMult = c.skill2RageDamageMultiplier(p6);
+  c.GT += 1;
+  setLegendary(c, ['rageZealot']);
+  const zealotMult = c.skill2RageDamageMultiplier(p6);
+  assert.ok(zealotMult > plainMult, '狂熱者要讓狂血盛宴的失血增傷更高：' + plainMult + ' → ' + zealotMult);
+  const combo = c.skill2ComboBonus();
+  const per = c.sgVal(t[6].fx, 'pct', lvs[6]) * (1 + combo * c.PASSIVE_POOL.rageZealot.fx.rageZealotPct / 100);
+  const expect = (1 + c.sgVal(t[2].fx, 'pct', lvs[2]) / 100) *
+    (1 + c.sgVal(t[5].fx, 'pct', lvs[5]) / 100) * (1 + 50 * per / 100);
+  assert.ok(Math.abs(zealotMult - expect) < 1e-9, '狂熱者只放大第 7 階的係數，不另外再乘一個乘區');
+});
+
+test('嗜血狂怒的三個超神進化：殺神降臨、戰神屠錄、阿修羅霸王拳', () => {
+  const c = loadContext(['js/legendary.js']);
+  stubHits(c); stubVfx(c);
+  maxLevels(c, 'bloodrage'); equip(c, 'bloodrage');   // 超神進化要前 7 階全滿
+  const p = playerEnt(); p.mp = 1e9;
+  c.FIELD = { player: p };
+  const primary = enemy(1e12, 3 * M, 0);
+  /* mid 刻意放在「近戰範圍外、殺神降臨範圍內」——滿階時【狂血盛宴】也會追加目標，
+     不隔開的話就分不出多打到的那一個是誰加的。實際間距由下面的前提斷言把關。 */
+  const mid = enemy(1e12, 3 * M + 100, 0);
+  const far = enemy(1e12, 3 * M + 300, 0);
+  const pool = [primary, mid, far];
+  c.castSkill2(p, pool, 'bloodrage', 'mv-float');
+
+  assert.deepEqual(Array.from(c.skill2RageBasicAttackTargets(primary, pool)), [primary],
+    '沒選超神進化時，mid 應落在【狂血盛宴】的近戰範圍外');
+  const plainCfg = c.skill2RageBasicAtkACfg({ atk: 1000 });
+  assert.equal(plainCfg.atk, 1000, '沒選超神進化時普攻傷害不變');
+
+  setUlt(c, 'bloodrage', 'slayerAdvent');
+  const advent = c.sgUlt('bloodrage', 'slayerAdvent');
+  assert.ok(advent, '前 7 階全滿才解鎖超神進化');
+  const gap = c.bfEntityGap(primary, mid);
+  assert.ok(gap > c.bfMeterPx(c.BF_MELEE_METERS) && gap < c.bfMeterPx(c.sgUltVal(advent, 'm')),
+    '前提：mid 必須落在近戰範圍外、殺神降臨範圍內（實測間距 ' + gap + '）');
+  assert.deepEqual(Array.from(c.skill2RageBasicAttackTargets(primary, pool)), [primary, mid],
+    '主目標周圍 8 米內的敵人一起吃到，遠處的不算');
+  assert.ok(Math.abs(c.skill2RageBasicAtkACfg({ atk: 1000 }).atk - 1000 * (1 + c.sgUltVal(advent, 'pct') / 100)) < 1e-6);
+
+  // 【戰神屠錄】：狂怒期間拿不到護盾，但每擊殺 1 個敵人疊一層傷害增益
+  c.G.player.skills2.ult = {};
+  assert.ok(c.grantShield(p, 100, c.getStats()) > 0, '沒選超神進化時護盾照給');
+  p.shield = 0; p.shieldMax = 0;
+  setUlt(c, 'bloodrage', 'warGodRoll');
+  assert.equal(c.grantShield(p, 100, c.getStats()), 0, '戰神屠錄：狂怒期間完全拿不到護盾');
+  p.hp = 100;
+  c.healPlayer(p, 1e9, c.getStats());
+  assert.equal(p.shield, 0, '治療溢出也不得轉成護盾——那是護盾的第二條入口');
+  /* 實機驗證（2026-08-21，8331 演武場）抓到的漏洞：狂怒期間護盾仍從 4899 漲到 7579。
+     護盾在本專案沒有單一收斂點——狀態表的 shield 效果、傳奇【聖盾】／【光之護盾】、
+     舊技能的護盾都是直接寫 pEnt.shield，全都繞過那兩條入口。因此除了明確攔截之外
+     還有一道每拍掃描；這裡就用「直接寫 shield」模擬那些來源，證明掃描擋得住。 */
+  p.shield = 9999; p.shieldMax = 9999;
+  run(c, p, [], 0.2);
+  assert.equal(p.shield, 0, '直接寫 pEnt.shield 的來源（狀態表／傳奇／舊技能）也要被掃掉');
+  assert.equal(p.shieldMax, 0, '護盾歸零時上限要一起收乾淨，否則面板的護盾條會停在舊值');
+  c.skills2OnEnemyDeath(enemy(1, 3 * M, 0), []);
+  const roll = c.sgUlt('bloodrage', 'warGodRoll');
+  assert.equal(c.buffVal(p, 'sgWarGodKill'), c.sgUltVal(roll, 'pct'), '每擊殺 1 個疊 1 層');
+  assert.ok(c.skills2AllDamageUpPct(p) >= c.sgUltVal(roll, 'pct'), '戰神屠錄必須進 skills2AllDamageUpPct');
+  assert.ok(p.buffs.sgWarGodKill.until - c.GT > 60,
+    '設計是「持續到死亡為止」，持續時間必須遠長於一場戰鬥');
+  c.resetSkill2RT();
+  assert.equal(c.buffVal(p, 'sgWarGodKill'), 0, '死亡／讀檔重置時要收得回來');
+
+  // 【阿修羅霸王拳】：每 gap 秒自動發動一次
+  const p7 = playerEnt(); p7.mp = 1e9;
+  c.FIELD = { player: p7 };
+  c.G.player.skills2.ult = {};
+  run(c, p7, [], 12, 0.1);
+  assert.equal(c.buffVal(p7, 'sgAsuraFist'), 0, '沒選超神進化時不會自己發動');
+  setUlt(c, 'bloodrage', 'asuraFist');
+  const fist = c.sgUlt('bloodrage', 'asuraFist');
+  const beat = c.sgUltVal(fist, 'gap');
+  run(c, p7, [], beat - 1, 0.1);
+  assert.equal(c.buffVal(p7, 'sgAsuraFist'), 0, '還沒到節拍就不該發動');
+  run(c, p7, [], 2, 0.1);
+  assert.equal(c.buffVal(p7, 'sgAsuraFist'), c.sgUltVal(fist, 'pct'), '到了節拍就自動發動');
+  assert.ok(c.skills2AllDamageUpPct(p7) >= c.sgUltVal(fist, 'pct'), '霸王拳必須進 skills2AllDamageUpPct');
+});
+
+test('參數表往返：Skills2 的超神進化列與 Equipment_Affix 的四十個新特效都落表', () => {
   const skills2Csv = fs.readFileSync(path.join(root, 'config/CSV/Skills2.csv'), 'utf8').replace(/^﻿/, '');
   assert.match(skills2Csv.split(/\r?\n/)[0], /超神ID/, 'Skills2 表要有超神ID 欄');
   ['phantomOcta', 'shadowExecutioner', 'oneStrikeKill', 'voidShatter', 'windChaser', 'stormGodSlash',
     'petalStorm', 'deathReaper', 'soulhunterBlade', 'thunderFlash', 'thunderGodSlash', 'chidori',
-    'slayerDomain', 'venomDomain', 'disintegrate', 'doomDance', 'flameKagura', 'asuraDance']
+    'slayerDomain', 'venomDomain', 'disintegrate', 'doomDance', 'flameKagura', 'asuraDance',
+    'holyBody', 'indomitable', 'warGodBody', 'slayerAdvent', 'warGodRoll', 'asuraFist']
     .forEach((id) => assert.ok(skills2Csv.includes(id), 'Skills2.csv 應含 ' + id));
   const affixCsv = fs.readFileSync(path.join(root, 'config/CSV/Equipment_Affix.csv'), 'utf8');
   ['piercingFocus', 'thousandWounds', 'sunpiercerLance', 'thunderStab', 'heartrendBleed',
@@ -1315,10 +1651,13 @@ test('參數表往返：Skills2 的超神進化列與 Equipment_Affix 的三十�
     'knifeChain', 'knifeSplitter', 'knifeExecutioner', 'knifeShadowblade', 'knifeWaltzblade',
     'galeWhirlwind', 'galeExecute', 'galeTwinShadow', 'galeWindwalker', 'galeGodspeed',
     'bloodPoisonBurst', 'bloodVenomRite', 'bloodMist', 'bloodShadow', 'bloodCleaver',
-    'danceFrenzy', 'danceBerserker', 'danceUnyielding', 'danceThousandCuts', 'danceTwinBlades']
+    'danceFrenzy', 'danceBerserker', 'danceUnyielding', 'danceThousandCuts', 'danceTwinBlades',
+    'counterOath', 'counterWrath', 'counterPerfect', 'counterBloodPay', 'counterWindBody',
+    'rageValor', 'rageBurnBlood', 'rageBloodDebt', 'rageZealot', 'rageSlaughterer']
     .forEach((id) => assert.ok(affixCsv.includes(id), 'Equipment_Affix.csv 應含 ' + id));
   const statusCsv = fs.readFileSync(path.join(root, 'config/CSV/Status.csv'), 'utf8');
   ['sgWindRend', 'sgDeathReaper', 'sgKnifeWaltz',
-    'sgSlayerMark', 'sgVenomField', 'sgKagura', 'sgDeathDefer', 'sgBloodMist']
+    'sgSlayerMark', 'sgVenomField', 'sgKagura', 'sgDeathDefer', 'sgBloodMist',
+    'sgCounterWrath', 'sgBurnBlood', 'sgThornsRage', 'sgWarGodKill', 'sgAsuraFist']
     .forEach((id) => assert.ok(statusCsv.includes(id), 'Status.csv 應含 ' + id));
 });

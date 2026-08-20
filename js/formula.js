@@ -1023,6 +1023,8 @@ function healPlayer(pEnt, amount, st, opts) {
   if (amount <= space) { pEnt.hp += amount; return; }
   pEnt.hp = st.hp;
   if (opts && opts.noShield) return;   // 非技能來源：溢出不轉護盾
+  /* 【戰神屠錄】：溢出轉護盾是護盾的第二條入口，不一起擋的話代價會被整個繞過去。 */
+  if (typeof skills2ShieldBlocked === 'function' && skills2ShieldBlocked()) return;
   var over = amount - space;
   var cap = st.hp * (SHIELD_HEAL_CAP_PCT / 100) * (1 + (st.shieldEff || 0) / 100);
   var beforeShield = Math.max(0, pEnt.shield || 0);
@@ -1036,6 +1038,8 @@ function healPlayer(pEnt, amount, st, opts) {
    既有護盾已超過上限時只維持、不再往上加。 */
 function grantShield(pEnt, amount, st) {
   if (!pEnt || !(amount > 0) || !st) return 0;
+  /* 新版技能超神【戰神屠錄】（嗜血狂怒，js/skills2.js）：狂怒期間完全無法獲得護盾。 */
+  if (typeof skills2ShieldBlocked === 'function' && skills2ShieldBlocked()) return 0;
   var before = Math.max(0, pEnt.shield || 0);
   var cap = st.hp * (SHIELD_SKILL_CAP_PCT / 100);
   var next = Math.min(Math.max(before, cap), before + amount * (1 + (st.shieldEff || 0) / 100));

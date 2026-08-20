@@ -49,6 +49,9 @@ function legendaryClone(value) {
 var LEGENDARY_FX_NON_VALUE_KEYS = {
   chance: true, count: true, bounces: true, hits: true, maxStacks: true,
   tickSec: true, sec: true, dur: true, gap: true, interval: true, cd: true, cooldownSec: true,
+  /* 減免類的百分比：×2 會把「降低 50%」變成「降低 100%」＝代價完全消失，
+     方向與補償的用意（讓雙手武器的一個特效抵得上兩個）相反，因此不放大。 */
+  reducePct: true,
   basicAttackThreshold: true,
   killExtend: true, double: true, triple: true
 };

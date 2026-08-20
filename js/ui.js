@@ -2681,7 +2681,11 @@ function statusStackSuffix(entry) {
   return (entry && entry.stacks > 1) ? '×' + entry.stacks : '';
 }
 
+/* 「持續到死亡為止」的增益（超神【戰神屠錄】）在狀態表上是一個單場戰鬥走不完的持續時間，
+   照實印出來就是「99999s」，對玩家沒有任何意義；超過一小時一律顯示為 ∞。 */
+var BUFF_REMAIN_INFINITE_SEC = 3600;
 function buffRemainHtml(remain) {
+  if (remain > BUFF_REMAIN_INFINITE_SEC) return '<span class="buff-remain">∞</span>';
   return '<span class="buff-remain">' + Math.max(0, Math.ceil(remain || 0)) + 's</span>';
 }
 
