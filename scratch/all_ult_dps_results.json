@@ -1,0 +1,1407 @@
+[
+  {
+    "skill": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "id": "phantomOcta",
+      "name": "幻影八方陣",
+      "opt": 0,
+      "specialAffixes": [
+        "evasion",
+        "aoeDmg"
+      ],
+      "mechanism": "範圍擴散 / 閃避生存",
+      "note": "命中擴散至周圍12m全體敵人+30%絕對閃避"
+    },
+    "r1": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "ultId": "phantomOcta",
+      "ultName": "幻影八方陣",
+      "mechanism": "範圍擴散 / 閃避生存",
+      "specialAffixes": [
+        "evasion",
+        "aoeDmg"
+      ],
+      "note": "命中擴散至周圍12m全體敵人+30%絕對閃避",
+      "scenarioType": 1,
+      "combatTime": 21.3,
+      "cleared": true,
+      "totalDamageDealt": 1359881045,
+      "dps": 63844181,
+      "peakDps": 391028815,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "ultId": "phantomOcta",
+      "ultName": "幻影八方陣",
+      "mechanism": "範圍擴散 / 閃避生存",
+      "specialAffixes": [
+        "evasion",
+        "aoeDmg"
+      ],
+      "note": "命中擴散至周圍12m全體敵人+30%絕對閃避",
+      "scenarioType": 2,
+      "combatTime": 10.9,
+      "cleared": true,
+      "totalDamageDealt": 275743408,
+      "dps": 25297560,
+      "peakDps": 162186345,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "ultId": "phantomOcta",
+      "ultName": "幻影八方陣",
+      "mechanism": "範圍擴散 / 閃避生存",
+      "specialAffixes": [
+        "evasion",
+        "aoeDmg"
+      ],
+      "note": "命中擴散至周圍12m全體敵人+30%絕對閃避",
+      "scenarioType": 3,
+      "combatTime": 0.4,
+      "cleared": true,
+      "totalDamageDealt": 26150362,
+      "dps": 65375905,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  {
+    "skill": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "id": "shadowExecutioner",
+      "name": "暗影絕殺者",
+      "opt": 1,
+      "specialAffixes": [
+        "aspd",
+        "pPen"
+      ],
+      "mechanism": "受傷加深 / 單體爆發",
+      "note": "突刺命中堆疊靈魂撕裂，最高+300%受傷"
+    },
+    "r1": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "ultId": "shadowExecutioner",
+      "ultName": "暗影絕殺者",
+      "mechanism": "受傷加深 / 單體爆發",
+      "specialAffixes": [
+        "aspd",
+        "pPen"
+      ],
+      "note": "突刺命中堆疊靈魂撕裂，最高+300%受傷",
+      "scenarioType": 1,
+      "combatTime": 21.45,
+      "cleared": true,
+      "totalDamageDealt": 1150951136,
+      "dps": 53657396,
+      "peakDps": 336787071,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "ultId": "shadowExecutioner",
+      "ultName": "暗影絕殺者",
+      "mechanism": "受傷加深 / 單體爆發",
+      "specialAffixes": [
+        "aspd",
+        "pPen"
+      ],
+      "note": "突刺命中堆疊靈魂撕裂，最高+300%受傷",
+      "scenarioType": 2,
+      "combatTime": 10.95,
+      "cleared": true,
+      "totalDamageDealt": 252470899,
+      "dps": 23056703,
+      "peakDps": 138869874,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "ultId": "shadowExecutioner",
+      "ultName": "暗影絕殺者",
+      "mechanism": "受傷加深 / 單體爆發",
+      "specialAffixes": [
+        "aspd",
+        "pPen"
+      ],
+      "note": "突刺命中堆疊靈魂撕裂，最高+300%受傷",
+      "scenarioType": 3,
+      "combatTime": 0.4,
+      "cleared": true,
+      "totalDamageDealt": 21357937,
+      "dps": 53394843,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  {
+    "skill": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "id": "oneStrikeKill",
+      "name": "一擊必殺",
+      "opt": 2,
+      "specialAffixes": [
+        "atkPct",
+        "critDmg"
+      ],
+      "mechanism": "直線重擊 / 小怪秒殺",
+      "note": "前方單一直線8倍爆發+直接斬殺普通怪"
+    },
+    "r1": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "ultId": "oneStrikeKill",
+      "ultName": "一擊必殺",
+      "mechanism": "直線重擊 / 小怪秒殺",
+      "specialAffixes": [
+        "atkPct",
+        "critDmg"
+      ],
+      "note": "前方單一直線8倍爆發+直接斬殺普通怪",
+      "scenarioType": 1,
+      "combatTime": 20.25,
+      "cleared": true,
+      "totalDamageDealt": 270892796144,
+      "dps": 13377422032,
+      "peakDps": 36681689083,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "ultId": "oneStrikeKill",
+      "ultName": "一擊必殺",
+      "mechanism": "直線重擊 / 小怪秒殺",
+      "specialAffixes": [
+        "atkPct",
+        "critDmg"
+      ],
+      "note": "前方單一直線8倍爆發+直接斬殺普通怪",
+      "scenarioType": 2,
+      "combatTime": 9.3,
+      "cleared": true,
+      "totalDamageDealt": 29006389376,
+      "dps": 3118966600,
+      "peakDps": 6173548232,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "ultId": "oneStrikeKill",
+      "ultName": "一擊必殺",
+      "mechanism": "直線重擊 / 小怪秒殺",
+      "specialAffixes": [
+        "atkPct",
+        "critDmg"
+      ],
+      "note": "前方單一直線8倍爆發+直接斬殺普通怪",
+      "scenarioType": 3,
+      "combatTime": 0.45,
+      "cleared": true,
+      "totalDamageDealt": 2389864853,
+      "dps": 5310810784,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  {
+    "skill": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "id": "voidShatter",
+      "name": "虛空碎裂斬",
+      "opt": 0,
+      "specialAffixes": [
+        "aoeDmg",
+        "critDmg"
+      ],
+      "mechanism": "四方連續爆發",
+      "note": "迴身四方斬攻擊次數+3(共6段)+100%物理傷害"
+    },
+    "r1": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "ultId": "voidShatter",
+      "ultName": "虛空碎裂斬",
+      "mechanism": "四方連續爆發",
+      "specialAffixes": [
+        "aoeDmg",
+        "critDmg"
+      ],
+      "note": "迴身四方斬攻擊次數+3(共6段)+100%物理傷害",
+      "scenarioType": 1,
+      "combatTime": 33.85,
+      "cleared": true,
+      "totalDamageDealt": 193987351611,
+      "dps": 5730793253,
+      "peakDps": 77190547412,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "ultId": "voidShatter",
+      "ultName": "虛空碎裂斬",
+      "mechanism": "四方連續爆發",
+      "specialAffixes": [
+        "aoeDmg",
+        "critDmg"
+      ],
+      "note": "迴身四方斬攻擊次數+3(共6段)+100%物理傷害",
+      "scenarioType": 2,
+      "combatTime": 16.8,
+      "cleared": true,
+      "totalDamageDealt": 21610814144,
+      "dps": 1286357985,
+      "peakDps": 15922405997,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "ultId": "voidShatter",
+      "ultName": "虛空碎裂斬",
+      "mechanism": "四方連續爆發",
+      "specialAffixes": [
+        "aoeDmg",
+        "critDmg"
+      ],
+      "note": "迴身四方斬攻擊次數+3(共6段)+100%物理傷害",
+      "scenarioType": 3,
+      "combatTime": 0.25,
+      "cleared": true,
+      "totalDamageDealt": 915326135,
+      "dps": 3661304540,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  {
+    "skill": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "id": "windChaser",
+      "name": "逐風者",
+      "opt": 1,
+      "specialAffixes": [
+        "elemDmgWind",
+        "dmgVsWind"
+      ],
+      "mechanism": "風系召喚 / 多段龍捲",
+      "note": "每擊生成龍捲風(8段每段200%風傷，4m半徑)"
+    },
+    "r1": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "ultId": "windChaser",
+      "ultName": "逐風者",
+      "mechanism": "風系召喚 / 多段龍捲",
+      "specialAffixes": [
+        "elemDmgWind",
+        "dmgVsWind"
+      ],
+      "note": "每擊生成龍捲風(8段每段200%風傷，4m半徑)",
+      "scenarioType": 1,
+      "combatTime": 25.05,
+      "cleared": true,
+      "totalDamageDealt": 7159611026,
+      "dps": 285812815,
+      "peakDps": 2074906818,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "ultId": "windChaser",
+      "ultName": "逐風者",
+      "mechanism": "風系召喚 / 多段龍捲",
+      "specialAffixes": [
+        "elemDmgWind",
+        "dmgVsWind"
+      ],
+      "note": "每擊生成龍捲風(8段每段200%風傷，4m半徑)",
+      "scenarioType": 2,
+      "combatTime": 9.35,
+      "cleared": true,
+      "totalDamageDealt": 815288717,
+      "dps": 87196654,
+      "peakDps": 368775776,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "ultId": "windChaser",
+      "ultName": "逐風者",
+      "mechanism": "風系召喚 / 多段龍捲",
+      "specialAffixes": [
+        "elemDmgWind",
+        "dmgVsWind"
+      ],
+      "note": "每擊生成龍捲風(8段每段200%風傷，4m半徑)",
+      "scenarioType": 3,
+      "combatTime": 0.75,
+      "cleared": true,
+      "totalDamageDealt": 32699539,
+      "dps": 43599385,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  {
+    "skill": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "id": "stormGodSlash",
+      "name": "天霸風神斬",
+      "opt": 2,
+      "specialAffixes": [
+        "aoeDmg",
+        "atkPct"
+      ],
+      "mechanism": "被動自動施放 / 零GCD",
+      "note": "範圍+30%，轉為被動技能每3秒自動施放"
+    },
+    "r1": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "ultId": "stormGodSlash",
+      "ultName": "天霸風神斬",
+      "mechanism": "被動自動施放 / 零GCD",
+      "specialAffixes": [
+        "aoeDmg",
+        "atkPct"
+      ],
+      "note": "範圍+30%，轉為被動技能每3秒自動施放",
+      "scenarioType": 1,
+      "combatTime": 21.35,
+      "cleared": true,
+      "totalDamageDealt": 168839879556,
+      "dps": 7908191080,
+      "peakDps": 30840953239,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "ultId": "stormGodSlash",
+      "ultName": "天霸風神斬",
+      "mechanism": "被動自動施放 / 零GCD",
+      "specialAffixes": [
+        "aoeDmg",
+        "atkPct"
+      ],
+      "note": "範圍+30%，轉為被動技能每3秒自動施放",
+      "scenarioType": 2,
+      "combatTime": 12.35,
+      "cleared": true,
+      "totalDamageDealt": 20397032845,
+      "dps": 1651581607,
+      "peakDps": 6511731872,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "ultId": "stormGodSlash",
+      "ultName": "天霸風神斬",
+      "mechanism": "被動自動施放 / 零GCD",
+      "specialAffixes": [
+        "aoeDmg",
+        "atkPct"
+      ],
+      "note": "範圍+30%，轉為被動技能每3秒自動施放",
+      "scenarioType": 3,
+      "combatTime": 0.75,
+      "cleared": true,
+      "totalDamageDealt": 78653747,
+      "dps": 104871663,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  {
+    "skill": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "id": "petalStorm",
+      "name": "暴雨梨花",
+      "opt": 0,
+      "specialAffixes": [
+        "critRate",
+        "aoeDmg"
+      ],
+      "mechanism": "路徑貫穿 / 暴擊縮CD",
+      "note": "所有飛刀路徑貫穿40%傷害+100%暴擊縮短CD"
+    },
+    "r1": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "ultId": "petalStorm",
+      "ultName": "暴雨梨花",
+      "mechanism": "路徑貫穿 / 暴擊縮CD",
+      "specialAffixes": [
+        "critRate",
+        "aoeDmg"
+      ],
+      "note": "所有飛刀路徑貫穿40%傷害+100%暴擊縮短CD",
+      "scenarioType": 1,
+      "combatTime": 67.55,
+      "cleared": true,
+      "totalDamageDealt": 36499447869,
+      "dps": 540332315,
+      "peakDps": 4342419729,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "ultId": "petalStorm",
+      "ultName": "暴雨梨花",
+      "mechanism": "路徑貫穿 / 暴擊縮CD",
+      "specialAffixes": [
+        "critRate",
+        "aoeDmg"
+      ],
+      "note": "所有飛刀路徑貫穿40%傷害+100%暴擊縮短CD",
+      "scenarioType": 2,
+      "combatTime": 22.5,
+      "cleared": true,
+      "totalDamageDealt": 4933129491,
+      "dps": 219250200,
+      "peakDps": 1734793983,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "ultId": "petalStorm",
+      "ultName": "暴雨梨花",
+      "mechanism": "路徑貫穿 / 暴擊縮CD",
+      "specialAffixes": [
+        "critRate",
+        "aoeDmg"
+      ],
+      "note": "所有飛刀路徑貫穿40%傷害+100%暴擊縮短CD",
+      "scenarioType": 3,
+      "combatTime": 0.25,
+      "cleared": true,
+      "totalDamageDealt": 325408820,
+      "dps": 1301635280,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  {
+    "skill": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "id": "deathReaper",
+      "name": "死亡收割者",
+      "opt": 1,
+      "specialAffixes": [
+        "critRate",
+        "atkPct"
+      ],
+      "mechanism": "擊殺疊增傷 / 滾雪球",
+      "note": "擊殺堆疊死亡收割(每層+50%總傷害，最高20層=+1000%)"
+    },
+    "r1": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "ultId": "deathReaper",
+      "ultName": "死亡收割者",
+      "mechanism": "擊殺疊增傷 / 滾雪球",
+      "specialAffixes": [
+        "critRate",
+        "atkPct"
+      ],
+      "note": "擊殺堆疊死亡收割(每層+50%總傷害，最高20層=+1000%)",
+      "scenarioType": 1,
+      "combatTime": 66.5,
+      "cleared": true,
+      "totalDamageDealt": 591079834220,
+      "dps": 8888418560,
+      "peakDps": 93138023829,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "ultId": "deathReaper",
+      "ultName": "死亡收割者",
+      "mechanism": "擊殺疊增傷 / 滾雪球",
+      "specialAffixes": [
+        "critRate",
+        "atkPct"
+      ],
+      "note": "擊殺堆疊死亡收割(每層+50%總傷害，最高20層=+1000%)",
+      "scenarioType": 2,
+      "combatTime": 9.5,
+      "cleared": true,
+      "totalDamageDealt": 40794127499,
+      "dps": 4294118684,
+      "peakDps": 22751867711,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "ultId": "deathReaper",
+      "ultName": "死亡收割者",
+      "mechanism": "擊殺疊增傷 / 滾雪球",
+      "specialAffixes": [
+        "critRate",
+        "atkPct"
+      ],
+      "note": "擊殺堆疊死亡收割(每層+50%總傷害，最高20層=+1000%)",
+      "scenarioType": 3,
+      "combatTime": 0.25,
+      "cleared": true,
+      "totalDamageDealt": 250006557,
+      "dps": 1000026228,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  {
+    "skill": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "id": "soulhunterBlade",
+      "name": "無限追魂刃",
+      "opt": 2,
+      "specialAffixes": [
+        "critRate",
+        "aoeDmg"
+      ],
+      "mechanism": "全場鎖敵 / 無限彈射",
+      "note": "額外射出無限追魂刃(全場每個敵人各命中1次+100%傷害)"
+    },
+    "r1": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "ultId": "soulhunterBlade",
+      "ultName": "無限追魂刃",
+      "mechanism": "全場鎖敵 / 無限彈射",
+      "specialAffixes": [
+        "critRate",
+        "aoeDmg"
+      ],
+      "note": "額外射出無限追魂刃(全場每個敵人各命中1次+100%傷害)",
+      "scenarioType": 1,
+      "combatTime": 40.5,
+      "cleared": true,
+      "totalDamageDealt": 116559339187,
+      "dps": 2878008375,
+      "peakDps": 24653211969,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "ultId": "soulhunterBlade",
+      "ultName": "無限追魂刃",
+      "mechanism": "全場鎖敵 / 無限彈射",
+      "specialAffixes": [
+        "critRate",
+        "aoeDmg"
+      ],
+      "note": "額外射出無限追魂刃(全場每個敵人各命中1次+100%傷害)",
+      "scenarioType": 2,
+      "combatTime": 15,
+      "cleared": true,
+      "totalDamageDealt": 6972931013,
+      "dps": 464862068,
+      "peakDps": 3386042955,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "ultId": "soulhunterBlade",
+      "ultName": "無限追魂刃",
+      "mechanism": "全場鎖敵 / 無限彈射",
+      "specialAffixes": [
+        "critRate",
+        "aoeDmg"
+      ],
+      "note": "額外射出無限追魂刃(全場每個敵人各命中1次+100%傷害)",
+      "scenarioType": 3,
+      "combatTime": 0.25,
+      "cleared": true,
+      "totalDamageDealt": 310447257,
+      "dps": 1241789028,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  {
+    "skill": {
+      "gid": "gale",
+      "groupName": "疾風斬",
+      "id": "thunderFlash",
+      "name": "霹靂一閃",
+      "opt": 0,
+      "specialAffixes": [
+        "aspd",
+        "critRate"
+      ],
+      "mechanism": "連擊數乘算 / 終結爆發",
+      "note": "最後一斬造成單段傷害×連擊數×10倍周圍6m爆發"
+    },
+    "r1": {
+      "gid": "gale",
+      "groupName": "疾風斬",
+      "ultId": "thunderFlash",
+      "ultName": "霹靂一閃",
+      "mechanism": "連擊數乘算 / 終結爆發",
+      "specialAffixes": [
+        "aspd",
+        "critRate"
+      ],
+      "note": "最後一斬造成單段傷害×連擊數×10倍周圍6m爆發",
+      "scenarioType": 1,
+      "combatTime": 24.5,
+      "cleared": true,
+      "totalDamageDealt": 689525613120,
+      "dps": 28143902576,
+      "peakDps": 138036284964,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "gale",
+      "groupName": "疾風斬",
+      "ultId": "thunderFlash",
+      "ultName": "霹靂一閃",
+      "mechanism": "連擊數乘算 / 終結爆發",
+      "specialAffixes": [
+        "aspd",
+        "critRate"
+      ],
+      "note": "最後一斬造成單段傷害×連擊數×10倍周圍6m爆發",
+      "scenarioType": 2,
+      "combatTime": 11.05,
+      "cleared": true,
+      "totalDamageDealt": 215852277032,
+      "dps": 19534142718,
+      "peakDps": 88383370674,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "gale",
+      "groupName": "疾風斬",
+      "ultId": "thunderFlash",
+      "ultName": "霹靂一閃",
+      "mechanism": "連擊數乘算 / 終結爆發",
+      "specialAffixes": [
+        "aspd",
+        "critRate"
+      ],
+      "note": "最後一斬造成單段傷害×連擊數×10倍周圍6m爆發",
+      "scenarioType": 3,
+      "combatTime": 0.25,
+      "cleared": true,
+      "totalDamageDealt": 354017618,
+      "dps": 1416070472,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  {
+    "skill": {
+      "gid": "gale",
+      "groupName": "疾風斬",
+      "id": "thunderGodSlash",
+      "name": "雷神斬",
+      "opt": 1,
+      "specialAffixes": [
+        "elemDmgLightning",
+        "dmgVsLightning"
+      ],
+      "mechanism": "雷電落雷 / 範圍雷擊",
+      "note": "每次斬擊降下落雷(400%閃電傷害，8m範圍)"
+    },
+    "r1": {
+      "gid": "gale",
+      "groupName": "疾風斬",
+      "ultId": "thunderGodSlash",
+      "ultName": "雷神斬",
+      "mechanism": "雷電落雷 / 範圍雷擊",
+      "specialAffixes": [
+        "elemDmgLightning",
+        "dmgVsLightning"
+      ],
+      "note": "每次斬擊降下落雷(400%閃電傷害，8m範圍)",
+      "scenarioType": 1,
+      "combatTime": 20.45,
+      "cleared": true,
+      "totalDamageDealt": 796288688744,
+      "dps": 38938322188,
+      "peakDps": 135724266386,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "gale",
+      "groupName": "疾風斬",
+      "ultId": "thunderGodSlash",
+      "ultName": "雷神斬",
+      "mechanism": "雷電落雷 / 範圍雷擊",
+      "specialAffixes": [
+        "elemDmgLightning",
+        "dmgVsLightning"
+      ],
+      "note": "每次斬擊降下落雷(400%閃電傷害，8m範圍)",
+      "scenarioType": 2,
+      "combatTime": 13.5,
+      "cleared": true,
+      "totalDamageDealt": 98461068171,
+      "dps": 7293412457,
+      "peakDps": 30347540569,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "gale",
+      "groupName": "疾風斬",
+      "ultId": "thunderGodSlash",
+      "ultName": "雷神斬",
+      "mechanism": "雷電落雷 / 範圍雷擊",
+      "specialAffixes": [
+        "elemDmgLightning",
+        "dmgVsLightning"
+      ],
+      "note": "每次斬擊降下落雷(400%閃電傷害，8m範圍)",
+      "scenarioType": 3,
+      "combatTime": 0.25,
+      "cleared": true,
+      "totalDamageDealt": 57287095,
+      "dps": 229148380,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  {
+    "skill": {
+      "gid": "gale",
+      "groupName": "疾風斬",
+      "id": "chidori",
+      "name": "千鳥",
+      "opt": 2,
+      "specialAffixes": [
+        "aoeDmg",
+        "atkPct"
+      ],
+      "mechanism": "月牙不均分 / 全額AOE",
+      "note": "月牙斬不再均分傷害，範圍內全員承受全額傷害+100%"
+    },
+    "r1": {
+      "gid": "gale",
+      "groupName": "疾風斬",
+      "ultId": "chidori",
+      "ultName": "千鳥",
+      "mechanism": "月牙不均分 / 全額AOE",
+      "specialAffixes": [
+        "aoeDmg",
+        "atkPct"
+      ],
+      "note": "月牙斬不再均分傷害，範圍內全員承受全額傷害+100%",
+      "scenarioType": 1,
+      "combatTime": 29.6,
+      "cleared": true,
+      "totalDamageDealt": 1010170531607,
+      "dps": 34127382825,
+      "peakDps": 113628075992,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "gale",
+      "groupName": "疾風斬",
+      "ultId": "chidori",
+      "ultName": "千鳥",
+      "mechanism": "月牙不均分 / 全額AOE",
+      "specialAffixes": [
+        "aoeDmg",
+        "atkPct"
+      ],
+      "note": "月牙斬不再均分傷害，範圍內全員承受全額傷害+100%",
+      "scenarioType": 2,
+      "combatTime": 11.3,
+      "cleared": true,
+      "totalDamageDealt": 83779215427,
+      "dps": 7414089861,
+      "peakDps": 19591533580,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "gale",
+      "groupName": "疾風斬",
+      "ultId": "chidori",
+      "ultName": "千鳥",
+      "mechanism": "月牙不均分 / 全額AOE",
+      "specialAffixes": [
+        "aoeDmg",
+        "atkPct"
+      ],
+      "note": "月牙斬不再均分傷害，範圍內全員承受全額傷害+100%",
+      "scenarioType": 3,
+      "combatTime": 0.25,
+      "cleared": true,
+      "totalDamageDealt": 4065336659,
+      "dps": 16261346636,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  {
+    "skill": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "id": "slayerDomain",
+      "name": "殺神領域",
+      "opt": 0,
+      "specialAffixes": [
+        "atkPct",
+        "critDmg"
+      ],
+      "mechanism": "領域擊殺疊傷 / 續戰增傷",
+      "note": "永久24m領域，擊殺疊殺神(每層+4%全傷害，最高100層=+400%)"
+    },
+    "r1": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "ultId": "slayerDomain",
+      "ultName": "殺神領域",
+      "mechanism": "領域擊殺疊傷 / 續戰增傷",
+      "specialAffixes": [
+        "atkPct",
+        "critDmg"
+      ],
+      "note": "永久24m領域，擊殺疊殺神(每層+4%全傷害，最高100層=+400%)",
+      "scenarioType": 1,
+      "combatTime": 18.65,
+      "cleared": true,
+      "totalDamageDealt": 313610287,
+      "dps": 16815565,
+      "peakDps": 313610287,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "ultId": "slayerDomain",
+      "ultName": "殺神領域",
+      "mechanism": "領域擊殺疊傷 / 續戰增傷",
+      "specialAffixes": [
+        "atkPct",
+        "critDmg"
+      ],
+      "note": "永久24m領域，擊殺疊殺神(每層+4%全傷害，最高100層=+400%)",
+      "scenarioType": 2,
+      "combatTime": 9.65,
+      "cleared": true,
+      "totalDamageDealt": 320997887,
+      "dps": 33264030,
+      "peakDps": 320997887,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "ultId": "slayerDomain",
+      "ultName": "殺神領域",
+      "mechanism": "領域擊殺疊傷 / 續戰增傷",
+      "specialAffixes": [
+        "atkPct",
+        "critDmg"
+      ],
+      "note": "永久24m領域，擊殺疊殺神(每層+4%全傷害，最高100層=+400%)",
+      "scenarioType": 3,
+      "combatTime": 0.25,
+      "cleared": true,
+      "totalDamageDealt": 244356359,
+      "dps": 977425436,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  {
+    "skill": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "id": "venomDomain",
+      "name": "萬毒血霧",
+      "opt": 1,
+      "specialAffixes": [
+        "elemDmgPoison",
+        "dmgVsPoison"
+      ],
+      "mechanism": "劇毒領域 / 疊層DoT",
+      "note": "永久24m萬毒領域，每0.5秒200%毒傷，最高疊10層(2000%毒傷)"
+    },
+    "r1": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "ultId": "venomDomain",
+      "ultName": "萬毒血霧",
+      "mechanism": "劇毒領域 / 疊層DoT",
+      "specialAffixes": [
+        "elemDmgPoison",
+        "dmgVsPoison"
+      ],
+      "note": "永久24m萬毒領域，每0.5秒200%毒傷，最高疊10層(2000%毒傷)",
+      "scenarioType": 1,
+      "combatTime": 18.55,
+      "cleared": true,
+      "totalDamageDealt": 4493121,
+      "dps": 242217,
+      "peakDps": 2383069,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "ultId": "venomDomain",
+      "ultName": "萬毒血霧",
+      "mechanism": "劇毒領域 / 疊層DoT",
+      "specialAffixes": [
+        "elemDmgPoison",
+        "dmgVsPoison"
+      ],
+      "note": "永久24m萬毒領域，每0.5秒200%毒傷，最高疊10層(2000%毒傷)",
+      "scenarioType": 2,
+      "combatTime": 8.6,
+      "cleared": true,
+      "totalDamageDealt": 8242106,
+      "dps": 958384,
+      "peakDps": 8242106,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "ultId": "venomDomain",
+      "ultName": "萬毒血霧",
+      "mechanism": "劇毒領域 / 疊層DoT",
+      "specialAffixes": [
+        "elemDmgPoison",
+        "dmgVsPoison"
+      ],
+      "note": "永久24m萬毒領域，每0.5秒200%毒傷，最高疊10層(2000%毒傷)",
+      "scenarioType": 3,
+      "combatTime": 1.1,
+      "cleared": true,
+      "totalDamageDealt": 0,
+      "dps": 0,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  {
+    "skill": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "id": "disintegrate",
+      "name": "崩解",
+      "opt": 2,
+      "specialAffixes": [
+        "elemDmgPoison",
+        "atkPct"
+      ],
+      "mechanism": "DoT立即引爆 / 屍爆連鎖",
+      "note": "流血與中毒立即結算全部持續傷害+6m範圍100%爆炸"
+    },
+    "r1": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "ultId": "disintegrate",
+      "ultName": "崩解",
+      "mechanism": "DoT立即引爆 / 屍爆連鎖",
+      "specialAffixes": [
+        "elemDmgPoison",
+        "atkPct"
+      ],
+      "note": "流血與中毒立即結算全部持續傷害+6m範圍100%爆炸",
+      "scenarioType": 1,
+      "combatTime": 120.05,
+      "cleared": false,
+      "totalDamageDealt": 5254861047,
+      "dps": 43772270,
+      "peakDps": 464242898,
+      "killsCount": 51,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "ultId": "disintegrate",
+      "ultName": "崩解",
+      "mechanism": "DoT立即引爆 / 屍爆連鎖",
+      "specialAffixes": [
+        "elemDmgPoison",
+        "atkPct"
+      ],
+      "note": "流血與中毒立即結算全部持續傷害+6m範圍100%爆炸",
+      "scenarioType": 2,
+      "combatTime": 40.5,
+      "cleared": true,
+      "totalDamageDealt": 2366198086,
+      "dps": 58424644,
+      "peakDps": 260392632,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "ultId": "disintegrate",
+      "ultName": "崩解",
+      "mechanism": "DoT立即引爆 / 屍爆連鎖",
+      "specialAffixes": [
+        "elemDmgPoison",
+        "atkPct"
+      ],
+      "note": "流血與中毒立即結算全部持續傷害+6m範圍100%爆炸",
+      "scenarioType": 3,
+      "combatTime": 0.75,
+      "cleared": true,
+      "totalDamageDealt": 59170966,
+      "dps": 78894621,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  {
+    "skill": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "id": "doomDance",
+      "name": "毀滅之舞",
+      "opt": 0,
+      "specialAffixes": [
+        "hpPct",
+        "atkPct"
+      ],
+      "mechanism": "損血增傷 / 超高倍率",
+      "note": "每次施放消耗5%生命，雙刀亂舞傷害+400%"
+    },
+    "r1": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "ultId": "doomDance",
+      "ultName": "毀滅之舞",
+      "mechanism": "損血增傷 / 超高倍率",
+      "specialAffixes": [
+        "hpPct",
+        "atkPct"
+      ],
+      "note": "每次施放消耗5%生命，雙刀亂舞傷害+400%",
+      "scenarioType": 1,
+      "combatTime": 31.6,
+      "cleared": true,
+      "totalDamageDealt": 251310084054,
+      "dps": 7952850761,
+      "peakDps": 26132981565,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "ultId": "doomDance",
+      "ultName": "毀滅之舞",
+      "mechanism": "損血增傷 / 超高倍率",
+      "specialAffixes": [
+        "hpPct",
+        "atkPct"
+      ],
+      "note": "每次施放消耗5%生命，雙刀亂舞傷害+400%",
+      "scenarioType": 2,
+      "combatTime": 11.55,
+      "cleared": true,
+      "totalDamageDealt": 56835736562,
+      "dps": 4920842992,
+      "peakDps": 14289271951,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "ultId": "doomDance",
+      "ultName": "毀滅之舞",
+      "mechanism": "損血增傷 / 超高倍率",
+      "specialAffixes": [
+        "hpPct",
+        "atkPct"
+      ],
+      "note": "每次施放消耗5%生命，雙刀亂舞傷害+400%",
+      "scenarioType": 3,
+      "combatTime": 0.25,
+      "cleared": true,
+      "totalDamageDealt": 2485878202,
+      "dps": 9943512808,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  {
+    "skill": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "id": "flameKagura",
+      "name": "火之神樂",
+      "opt": 1,
+      "specialAffixes": [
+        "elemDmgFire",
+        "dmgVsFire"
+      ],
+      "mechanism": "火焰附魔 / 疊層火DoT",
+      "note": "每次命中疊神樂灼焰(每0.5秒20%火傷，最高20層=400%火傷)"
+    },
+    "r1": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "ultId": "flameKagura",
+      "ultName": "火之神樂",
+      "mechanism": "火焰附魔 / 疊層火DoT",
+      "specialAffixes": [
+        "elemDmgFire",
+        "dmgVsFire"
+      ],
+      "note": "每次命中疊神樂灼焰(每0.5秒20%火傷，最高20層=400%火傷)",
+      "scenarioType": 1,
+      "combatTime": 31.25,
+      "cleared": true,
+      "totalDamageDealt": 1416630822,
+      "dps": 45332186,
+      "peakDps": 126825346,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "ultId": "flameKagura",
+      "ultName": "火之神樂",
+      "mechanism": "火焰附魔 / 疊層火DoT",
+      "specialAffixes": [
+        "elemDmgFire",
+        "dmgVsFire"
+      ],
+      "note": "每次命中疊神樂灼焰(每0.5秒20%火傷，最高20層=400%火傷)",
+      "scenarioType": 2,
+      "combatTime": 11.2,
+      "cleared": true,
+      "totalDamageDealt": 320875678,
+      "dps": 28649614,
+      "peakDps": 78037474,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "ultId": "flameKagura",
+      "ultName": "火之神樂",
+      "mechanism": "火焰附魔 / 疊層火DoT",
+      "specialAffixes": [
+        "elemDmgFire",
+        "dmgVsFire"
+      ],
+      "note": "每次命中疊神樂灼焰(每0.5秒20%火傷，最高20層=400%火傷)",
+      "scenarioType": 3,
+      "combatTime": 0.65,
+      "cleared": true,
+      "totalDamageDealt": 24005350,
+      "dps": 36931308,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  },
+  {
+    "skill": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "id": "asuraDance",
+      "name": "修羅亂舞",
+      "opt": 2,
+      "specialAffixes": [
+        "atkPct",
+        "critDmg"
+      ],
+      "isDualTwoHand": true,
+      "mechanism": "雙持雙手巨劍 / 詞條+40%",
+      "note": "副手可裝備第二把雙手巨劍，且雙手武器詞條效果+40%"
+    },
+    "r1": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "ultId": "asuraDance",
+      "ultName": "修羅亂舞",
+      "mechanism": "雙持雙手巨劍 / 詞條+40%",
+      "specialAffixes": [
+        "atkPct",
+        "critDmg"
+      ],
+      "note": "副手可裝備第二把雙手巨劍，且雙手武器詞條效果+40%",
+      "scenarioType": 1,
+      "combatTime": 25.4,
+      "cleared": true,
+      "totalDamageDealt": 111551731173,
+      "dps": 4391800440,
+      "peakDps": 9533602002,
+      "killsCount": 200,
+      "totalEnemies": 200,
+      "playerAtk": 1939192
+    },
+    "r2": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "ultId": "asuraDance",
+      "ultName": "修羅亂舞",
+      "mechanism": "雙持雙手巨劍 / 詞條+40%",
+      "specialAffixes": [
+        "atkPct",
+        "critDmg"
+      ],
+      "note": "副手可裝備第二把雙手巨劍，且雙手武器詞條效果+40%",
+      "scenarioType": 2,
+      "combatTime": 9.85,
+      "cleared": true,
+      "totalDamageDealt": 17230026425,
+      "dps": 1749241261,
+      "peakDps": 3441074352,
+      "killsCount": 25,
+      "totalEnemies": 25,
+      "playerAtk": 1939192
+    },
+    "r3": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "ultId": "asuraDance",
+      "ultName": "修羅亂舞",
+      "mechanism": "雙持雙手巨劍 / 詞條+40%",
+      "specialAffixes": [
+        "atkPct",
+        "critDmg"
+      ],
+      "note": "副手可裝備第二把雙手巨劍，且雙手武器詞條效果+40%",
+      "scenarioType": 3,
+      "combatTime": 0.25,
+      "cleared": true,
+      "totalDamageDealt": 718361447,
+      "dps": 2873445788,
+      "peakDps": 0,
+      "killsCount": 1,
+      "totalEnemies": 1,
+      "playerAtk": 1939192
+    }
+  }
+]
