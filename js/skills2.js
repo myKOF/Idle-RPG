@@ -3679,7 +3679,9 @@ function sgEmitPlayerVfx(gid, floatSel, extra) {
     fxKind: (extra && extra.fxKind) || 'aura', glyph: g.emoji,
     color: (typeof VFX_CAT_COLORS !== 'undefined' && VFX_CAT_COLORS[cat]) || '#a3a3a3',
     cat: cat, elem: (extra && extra.elem) || g.elem || null,
-    targets: [sel], area: null,
+    /* area＝以玩家為圓心的範圍提示（永久領域）。帶 id 時顯示層會把它當同一個場域重用節點，
+       沒有 id 就會退化成以座標當快取鍵——領域跟著玩家走，那等於每次都新建一個。 */
+    targets: [sel], area: (extra && extra.area) || null,
     dur: (extra && extra.dur) || 0.6, count: 1
   };
   if (extra && extra.variant) spec.variant = extra.variant;
@@ -6078,6 +6080,9 @@ function sgTickBloodDots(dt, ctx) {
    =========================================================================== */
 
 var SG_DOMAIN_VFX_SEC = 1;   // 永久領域的範圍提示重畫間隔（純顯示，與作用節拍無關）
+/* 範圍提示的穩定識別鍵：兩個顯示層都以 area.id 當快取鍵，同一個 id ＝ 重用同一個節點。
+   兩個永久領域一次只會有一個生效（三選一），因此共用一個 id 即可。 */
+var SG_BLOOD_DOMAIN_VFX_ID = 'sg-blood-domain';
 
 function sgTickBloodDomains(ctx) {
   var rt = SKILL2_RT.bloodDomain;
@@ -6109,10 +6114,10 @@ function sgTickBloodDomains(ctx) {
 function sgEmitBloodDomainAura(ctx, radius, poison) {
   var pp = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null;
   if (!pp || !(radius > 0)) return;
-  sgEmitVfx('bloodblade', [], ctx.floatSel, {
+  sgEmitPlayerVfx('bloodblade', ctx.floatSel, {
     fxKind: 'aura', variant: poison ? 'mire-poison' : 'mire',
     elem: poison ? 'poison' : 'dark', dur: SG_DOMAIN_VFX_SEC,
-    area: { x: pp.x, y: pp.y, r: radius }
+    area: { id: SG_BLOOD_DOMAIN_VFX_ID, x: pp.x, y: pp.y, r: radius, w: radius * 2, h: radius * 2 }
   });
 }
 
