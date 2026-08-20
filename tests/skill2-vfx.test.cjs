@@ -629,7 +629,7 @@ test('寒冰箭貫穿：兩條渲染路徑都以單一連續直線投射物呈�
   assert.match(renderer, /spec\.variant === 'ice-arrow' && isFinite\(spec\.angle\)/);
 });
 
-test('新版技能彈射與特效細化：連鎖閃電無天雷、水流彈藍色拋物彈射、血刃斬綠色子彈、大地守護白光光束、反傷無特效、水龍捲藍色火柱', () => {
+test('新版技能彈射與特效細化：連鎖閃電無天雷、水流彈藍色拋物彈射、血刃斬綠色子彈、大地守護白光光束、反傷無特效、逐風者淡綠白光龍捲風', () => {
   const vfx = fs.readFileSync(path.join(root, 'js/vfx.js'), 'utf8');
   const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
   const skills2 = fs.readFileSync(path.join(root, 'js/skills2.js'), 'utf8');
@@ -670,12 +670,20 @@ test('新版技能彈射與特效細化：連鎖閃電無天雷、水流彈藍�
   assert.match(vfx, /spec\.variant === 'earth-reflect'[\s\S]*?vfxBeam\(eSpec, layer, eFrom, ptList\[ei\]\)/);
   assert.match(renderer, /spec\.variant === 'earth-reflect'[\s\S]*?spawnBeam\(tgtId, eSpec\)/);
 
-  // 6. 水龍捲：使用火龍捲柱體結構搭配藍色系
+  // 6. 水龍捲維持冰系藍色；逐風者龍捲風改用風系淡綠白光
   assert.match(vfx, /vfx-water-tornado-pillar/);
+  assert.match(vfx, /var isWater = spec && \(spec\.variant === 'water-tornado' \|\| spec\.elem === 'ice'\)/);
+  assert.match(vfx, /vfx-wind-tornado-pillar/);
+  assert.match(vfx, /vfx-wind-tongue/);
   assert.match(renderer, /spawnFirePillar\(spec\.area \|\| spec\.area, spec\)|spawnFirePillar\(a, spec\)/);
   assert.match(renderer, /var isWater = spec && \(spec\.variant === 'water-tornado' \|\| spec\.elem === 'ice'\)/);
+  assert.match(renderer, /var isWind = spec && spec\.variant === 'wind-tornado'/);
+  assert.match(renderer, /var baseColor = isWater \? 0x0369a1 : \(isWind \? 0x166534 : 0x7d1708\)/);
+  assert.match(renderer, /var coreColor = isWater \? 0xf0f9ff : \(isWind \? 0xffffff : 0xffffbd\)/);
   assert.match(css, /\.vfx-water-tornado-pillar/);
   assert.match(css, /\.vfx-water-tongue/);
+  assert.match(css, /\.vfx-wind-tornado-pillar[\s\S]*?#86efac[\s\S]*?#ffffff/);
+  assert.match(css, /\.vfx-wind-tongue[\s\S]*?#86efac/);
 });
 
 /* 風系三群組（2026-08-18 第八批）：設計文檔對特效的外形有明確指定，
@@ -882,9 +890,9 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   /* 主頁與 Worker 必須換版本，否則瀏覽器會繼續執行舊的綠色方框／逐格路徑。
      這幾條釘的是「目前的版號」——之後任何人再動這些檔、把版號往上推時，
      連同這裡一起更新即可（釘住的用意是禁止「改了檔卻沒換版號」）。 */
-  assert.match(index, /css\/style\.css\?v=1\.0\.53/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.63/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.96/);
+  assert.match(index, /css\/style\.css\?v=1\.0\.54/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.64/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.97/);
   assert.match(index, /js\/skills2\.js\?v=1\.0\.56/);
   assert.match(bridge, /WORKER_ASSET_VERSION = '20260819-ult-evolution'/);
   assert.match(worker, /\.\.\/skills2\.js\?v=20260819-ult-evolution/);

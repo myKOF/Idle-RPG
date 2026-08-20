@@ -8230,6 +8230,22 @@ textarea:disabled,
   filter: drop-shadow(0 0 8px #38bdf8);
 }
 
+/* 逐風者龍捲風：風系淡綠色與白光；藍色只保留給冰系水龍捲。 */
+.vfx-wind-tornado-pillar::before {
+  background: linear-gradient(180deg, #bbf7d0 0%, #86efac 38%, #dcfce7 72%, #ffffff 100%);
+  filter: drop-shadow(0 0 10px #86efac);
+}
+
+.vfx-wind-tornado-pillar::after {
+  background: radial-gradient(ellipse, rgba(255, 255, 255, 0.95) 0 15%, rgba(134, 239, 172, 0.68) 38%, rgba(74, 222, 128, 0.2) 68%, transparent 75%);
+  box-shadow: 0 0 18px rgba(134, 239, 172, 0.85);
+}
+
+.vfx-wind-tongue {
+  background: linear-gradient(180deg, #ffffff 0%, #dcfce7 22%, #86efac 66%, #4ade80 100%);
+  filter: drop-shadow(0 0 8px #86efac);
+}
+
 /* ---- 無限火牆：沿地面橫向延伸、向上立起的火焰牆＋煙塵 ---- */
 .vfx-fire-wall {
   overflow: visible;

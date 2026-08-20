@@ -1,5 +1,23 @@
 # AI_TASKS.md
 
+## Codex｜逐風者龍捲風改為淡綠白光特效｜2026-08-20
+
+- 狀態：已完成
+- Owner：Codex
+- 使用者需求：逐風者生成的龍捲風特效使用風系淡綠色與白光，不得沿用冰系藍色特效。
+- 前置依賴：沿用既有 `wind-tornado` VFX 事件與火柱／水龍捲共用的形狀繪製邏輯。
+- 允許修改：`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`tests/skill2-vfx.test.cjs`、`index.html`、本文件。
+- 禁止修改：`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`、傷害計算、存檔格式、Worker Protocol、未列出的功能模組。
+- 驗收方式：DOM／Canvas 的 `wind-tornado` 不再進入冰系藍色配色分支，兩條路徑皆使用淡綠與白光；水龍捲仍維持藍色；執行 VFX 測試、語法檢查、建置與 diff 檢查。
+- 完成內容：DOM／Canvas 共用的火柱形狀保留不變，但 `wind-tornado` 改用獨立風系淡綠／白光色票；冰系 `water-tornado` 仍維持藍色；更新 CSS、快取版號與配色回歸測試。
+- 修改檔案：`js/vfx.js`、`js/battle-renderer.js`、`css/style.css`、`tests/skill2-vfx.test.cjs`、`index.html`、本文件。
+- 未修改但檢查過：`js/skills2.js` 的 `wind-tornado` 事件與 `game_formula.md` 的逐風者傷害規則；未變更技能傷害、存檔或 Worker Protocol。
+- 驗證結果：`node --check` 通過；超神進化與 VFX 定向測試 46/47（1 項為既有毒霧鏡頭震動基準失敗）；build 295/295；`git diff --check` 通過。
+- 已知風險：完整套件既有毒霧鏡頭震動基準失敗仍待另案處理；瀏覽器需重新整理以載入新版 CSS／VFX／Battle Renderer。
+- 未完成項目：無。
+- 是否可以合併：可以。
+- Commit：完成後建立 `[Codex]` 前綴 commit。
+
 ## Codex｜迴身四方斬統一四向範圍、改為 60 度並加入旋轉｜2026-08-20
 
 - 狀態：已完成
