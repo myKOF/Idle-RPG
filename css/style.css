@@ -7316,6 +7316,15 @@ textarea:disabled,
   will-change: transform, opacity, left, top;
 }
 
+/* 疾風斬：玩家中心的前方 180 度弧形掃擊，不在敵人身上重複建立刀光。 */
+.vfx-gale-sweep {
+  background: radial-gradient(circle at 50% 50%,
+      transparent 0 60%, var(--vfx-c1, #86efac) 64%,
+      var(--vfx-c2, #ffffff) 70%, transparent 76%);
+  clip-path: polygon(50% 50%, 50% 0%, 85.36% 14.64%, 100% 50%,
+      85.36% 85.36%, 50% 100%);
+}
+
 @keyframes vfxCleaveArc {
   from {
     transform: rotate(-72deg) scale(0.42);
