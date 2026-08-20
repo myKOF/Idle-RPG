@@ -207,6 +207,10 @@ function playCombatVfx(spec) {
     lineWidth: Number(spec.lineWidth) > 0 ? Number(spec.lineWidth) : null,
     laneOffsets: Array.isArray(spec.laneOffsets) ? spec.laneOffsets.slice(0, 3) : null,
     directionCount: Number(spec.directionCount) > 0 ? Number(spec.directionCount) : null,
+    /* 迴旋斬範圍倍率與迴身四方斬四方向各自的實際半徑；
+       這些是顯示層資料，不參與 Worker 的傷害／狀態計算。 */
+    rangeScale: Number(spec.rangeScale) > 0 ? Number(spec.rangeScale) : 1,
+    directionRanges: Array.isArray(spec.directionRanges) ? spec.directionRanges.slice(0, 4).map(Number) : null,
     angle: isFinite(spec.angle) ? Number(spec.angle) : null
   };
   /* 敵人攻擊事件需要保留來源，才能在攻擊者同一 tick 被反傷殺死後，

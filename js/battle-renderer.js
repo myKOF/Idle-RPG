@@ -1884,6 +1884,48 @@ var BattleRenderer = (function () {
     }, 1);
   }
 
+  /* 迴身四方斬的單一道路：以 90 度扇形由中心向外飛出，半徑也同步成長。
+     directionRanges 由模擬層傳入，確保畫面終點與實際傷害範圍相同。 */
+  function spawnCleaveSector(x, y, spec, rotation, delaySec, travel) {
+    var theme = themeOf(spec);
+    var g = new PIXI.Graphics();
+    g.x = x; g.y = y;
+    g.rotation = typeof rotation === 'number' ? rotation : 0;
+    S.layers.fx.addChild(g);
+    var maxRadius = Math.max(48, Number(travel && travel.length) || Number(spec && spec.lineLength) || 120);
+    var travelAngle = travel && typeof travel.angle === 'number' ? travel.angle : g.rotation;
+    var t = -(delaySec || 0), dur = Math.max(0.38, spec.dur || 0.5);
+    addFx({
+      node: g,
+      update: function (dt) {
+        t += dt;
+        g.visible = t >= 0;
+        if (t < 0) return true;
+        var k = Math.min(1, t / dur);
+        var eased = k * k * (3 - 2 * k);
+        var radius = maxRadius * (0.08 + eased * 0.87);
+        var shift = maxRadius * 0.05 * eased;
+        g.x = x + Math.cos(travelAngle) * shift;
+        g.y = y + Math.sin(travelAngle) * shift;
+        var fade = k > 0.76 ? 1 - (k - 0.76) / 0.24 : Math.min(1, k / 0.08);
+        g.clear();
+        g.moveTo(0, 0)
+          .lineTo(Math.cos(-Math.PI / 4) * radius, Math.sin(-Math.PI / 4) * radius)
+          .arc(0, 0, radius, -Math.PI / 4, Math.PI / 4, false)
+          .lineTo(0, 0).closePath()
+          .fill({ color: theme.c1, alpha: 0.2 * fade });
+        g.arc(0, 0, radius, -Math.PI / 4, Math.PI / 4, false)
+          .stroke({ color: theme.c1, width: Math.max(2, maxRadius * 0.025) * fade,
+            alpha: 0.95 * fade, cap: 'round' });
+        g.moveTo(0, 0).lineTo(Math.cos(-Math.PI / 4) * radius, Math.sin(-Math.PI / 4) * radius)
+          .moveTo(0, 0).lineTo(Math.cos(Math.PI / 4) * radius, Math.sin(Math.PI / 4) * radius)
+          .stroke({ color: theme.c2, width: Math.max(1, maxRadius * 0.012) * fade,
+            alpha: 0.9 * fade, cap: 'round' });
+        return t < dur;
+      }
+    }, 1);
+  }
+
   function spawnThrustLine(targetId, spec, angleOffset, delaySec, length, laneOffset, angleOverride, isFinal) {
     var theme = themeOf(spec);
     var from = playerMuzzle();
@@ -4272,9 +4314,11 @@ var BattleRenderer = (function () {
             if (drawStaticForward) spawnCleaveArc(cleaveFrom.x, cleaveFrom.y, spec, frontAngle, clDelay);
             if (drawCross) {
               for (var cdi = 0; cdi < 4; cdi++) {
-                spawnCleaveArc(cleaveFrom.x, cleaveFrom.y, spec,
+                var crossLength = Array.isArray(spec.directionRanges) && Number(spec.directionRanges[cdi]) > 0
+                  ? Number(spec.directionRanges[cdi]) : arcLen;
+                spawnCleaveSector(cleaveFrom.x, cleaveFrom.y, spec,
                   frontAngle + cdi * Math.PI / 2, clDelay,
-                  { angle: frontAngle + cdi * Math.PI / 2, length: arcLen });
+                  { angle: frontAngle + cdi * Math.PI / 2, length: crossLength });
               }
             }
             if (drawForward) spawnCleaveArc(cleaveFrom.x, cleaveFrom.y, spec, frontAngle, clDelay,
@@ -4292,7 +4336,14 @@ var BattleRenderer = (function () {
               var arcHitDelay = 90;
               if (drawCross) {
                 var targetDistance = Math.sqrt(targetDx * targetDx + targetDy * targetDy);
-                arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetDistance / arcLen)));
+                var targetAngle = Math.atan2(targetDy, targetDx);
+                var relativeAngle = targetAngle - frontAngle + Math.PI / 4;
+                while (relativeAngle < 0) relativeAngle += Math.PI * 2;
+                while (relativeAngle >= Math.PI * 2) relativeAngle -= Math.PI * 2;
+                var targetDirection = Math.floor(relativeAngle / (Math.PI / 2)) % 4;
+                var targetRange = Array.isArray(spec.directionRanges) && Number(spec.directionRanges[targetDirection]) > 0
+                  ? Number(spec.directionRanges[targetDirection]) : arcLen;
+                arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetDistance / targetRange)));
               } else if (drawForward && targetAlong >= 0) {
                 arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetAlong / arcLen)));
               } else if (drawBack && targetAlong < 0) {

@@ -7301,6 +7301,21 @@ textarea:disabled,
   transform: rotate(var(--vfx-tilt, 180deg));
 }
 
+/* 迴身四方斬：每道是完整 90 度扇形，實際尺寸由 DOM 動畫依模擬層的範圍逐幀放大。 */
+.vfx-cleave-sector {
+  position: absolute;
+  pointer-events: none;
+  transform-origin: 50% 50%;
+  background: radial-gradient(circle at 50% 50%,
+      transparent 0 10%, var(--vfx-c1, #60a5fa) 28%,
+      var(--vfx-c2, #bfdbfe) 68%, transparent 78%);
+  clip-path: polygon(50% 50%, 100% 0, 100% 100%);
+  filter: drop-shadow(0 0 12px var(--vfx-glow, #60a5fa));
+  mix-blend-mode: screen;
+  opacity: 0;
+  will-change: transform, opacity, left, top;
+}
+
 @keyframes vfxCleaveArc {
   from {
     transform: rotate(-72deg) scale(0.42);

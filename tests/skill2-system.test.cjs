@@ -91,6 +91,38 @@ test('cleave 迴旋斬改為近戰範圍內不限人數，強化斬同步放大�
   assert.equal(c.skills2CastRangePx('cleave', [1, 10, 0, 0, 0, 0, 0]), c.bfMeterPx(5 * 1.3));
 });
 
+test('迴身四方斬四道 90 度扇形覆蓋整圈，且半徑逐步向外擴張', () => {
+  const c = loadContext();
+  const calls = stubHits(c);
+  c.chance = () => false;
+  c.G.player.skills2.levels.cleave = [1, 1, 1, 1, 1, 1, 1];
+  const p = playerEnt();
+  const anchor = enemy(1e9, 16, 0, '基準');
+  p._lockTarget = anchor;
+  const targets = [anchor];
+  [30, 120, 210, 300].forEach((deg, i) => {
+    const rad = deg * Math.PI / 180;
+    targets.push(enemy(1e9, Math.cos(rad) * 40, Math.sin(rad) * 40, '扇形' + i));
+  });
+  // 45 度邊界只可歸屬一道斬擊，不能因 bfConeTargets 的雙包含而重複命中。
+  const boundary = enemy(1e9, Math.cos(Math.PI / 4) * 40, Math.sin(Math.PI / 4) * 40, '邊界');
+  targets.push(boundary);
+
+  c.castSkill2(p, targets, 'cleave', 'mv-float');
+  assert.equal(calls.length, 0, '四方斬應先建立向外飛行的傷害判定');
+  c.GT = 0.05;
+  c.tickSkill2(0.05, { pEnt: p, getEnemies: () => targets, floatSel: 'mv-float', onDeaths() {} });
+  assert.equal(calls.length, 3, '半徑尚未擴大前，只應命中中心附近的基準目標');
+  c.GT = 0.5;
+  c.tickSkill2(0.45, { pEnt: p, getEnemies: () => targets, floatSel: 'mv-float', onDeaths() {} });
+
+  assert.equal(calls.length, targets.length * 3, '四個 90 度扇形合計應覆蓋整圈，並各斬 3 次');
+  for (const target of targets) {
+    assert.equal(calls.filter((hit) => hit === target).length, 3,
+      target.name + ' 應只被一個方向的扇形命中 3 次');
+  }
+});
+
 /* ---- 1) 定義表 ---- */
 
 test('SKILLS2：23 個群組、每組 7 階、欄位齊全且說明模板的參數鍵都存在', () => {

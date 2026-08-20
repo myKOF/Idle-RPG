@@ -126,6 +126,7 @@ var EVENT_KINDS = {
              「接在前一段動作之後」的特效用它錯開時刻。
      projectile（可選）：飛行物命中事件不預先補命中爆點。
      lineLength／lineWidth／laneOffsets／directionCount／angle（可選）：突刺光槍／冰箭的長寬、平行道、方向數與世界方位。
+     rangeScale／directionRanges（可選）：迴旋斬的顯示範圍倍率，以及迴身四方斬四道扇形各自的實際半徑；只供主執行緒繪圖，不參與傷害結算。
      area（可選）：打在地上的那塊區域，世界座標。圓形＝{ x, y, r }；
              矩形（火牆等地板場域）＝{ x, y, w, h, a }（長、寬、朝向弧度）並附帶 r＝
              外接圓半徑，讓只認得圓的既有畫法仍能退化出合理尺寸。

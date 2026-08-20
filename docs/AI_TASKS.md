@@ -1,5 +1,23 @@
 # AI_TASKS.md
 
+## Codex｜迴身四方斬改為四向 90 度扇形擴張｜2026-08-20
+
+- 狀態：已完成
+- Owner：Codex
+- 使用者需求：四個斬擊朝四個方向發出，每個方向覆蓋 90 度；特效從中心向外飛出並逐漸擴大，實際傷害範圍也必須使用同一個擴張扇形。
+- 前置依賴：沿用已完成的迴身四方斬四向三連斬、迴旋斬範圍倍率與 DOM／Canvas VFX 事件；不變更存檔格式或 Worker Protocol。
+- 允許修改：`js/skills2.js`、`js/vfx.js`、`js/battle-renderer.js`、`js/worker/shim.js`、`js/worker/protocol.js`、`css/style.css`、`tests/skill2-system.test.cjs`、`tests/skill2-vfx.test.cjs`、`game_formula.md`、`index.html`、本文件。
+- 禁止修改：未列出的功能模組、存檔格式、Worker 控制／狀態協定、其他技能數值與特效；Worker 只追加本功能需要的可選 VFX 顯示欄位。
+- 驗收方式：四向 90 度幾何命中測試、飛行物扇形擴張測試、DOM／Canvas 扇形 VFX 靜態檢查、語法檢查、全量測試、建置、`git diff --check`。
+- 完成內容：迴身四方斬改為四道互不重疊的 90 度扇形，四個方向合計覆蓋完整圓周；第 7 階改走向外飛行的逐步擴張半徑，傷害每 tick 以當前半徑重新查詢；DOM／Canvas 皆改為藍色扇形由中心向外飛出並放大；補齊 Worker VFX 事件的 `rangeScale`／`directionRanges` 傳遞與快取版號。
+- 修改檔案：`js/skills2.js`、`js/vfx.js`、`js/battle-renderer.js`、`js/worker/shim.js`、`js/worker/protocol.js`、`css/style.css`、`tests/skill2-system.test.cjs`、`tests/skill2-vfx.test.cjs`、`tests/worker-shim.test.cjs`、`game_formula.md`、`index.html`、本文件。
+- 未修改但檢查過：`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`、`js/battlefield.js` 的 `bfConeTargets` 幾何、既有 `sgHitOne` 傷害管線。
+- 驗證結果：Skills2 round-trip 語意變更 0、`apply_params` 554/554、錨點 554/554、定向技能系統 33/33、Worker shim 6/6、扇形 VFX 定向檢查通過、build 295/295、`git diff --check` 通過；全量測試 1648 項中 1638 通過、10 項為既有泥沼／冰系／毒霧鏡頭震動／風切基準失敗，本次新增測試未失敗。
+- 已知風險：完整套件既有 10 項失敗需另案處理；瀏覽器需重新整理以載入新版 CSS／VFX／Battle Renderer／Skills2。
+- 未完成項目：無。
+- 是否可以合併：可以。
+- Commit：完成後使用 `[Codex]` 前綴。
+
 ## Codex｜迴旋斬不限人數、強化斬範圍、藍色特效與迴身四方斬｜2026-08-20
 
 - 狀態：已完成

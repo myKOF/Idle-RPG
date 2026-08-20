@@ -1115,6 +1115,46 @@ function vfxCleaveArc(spec, layer, pt, delayMs, angleDeg, extraClass, travel) {
   vfxTrack(d, delay + duration * 1000 + 180);
 }
 
+/* 迴身四方斬：一個方向就是一個 90 度扇形。
+   扇形從中心的小半徑開始，向外飛行並同步放大到該方向的實際傷害半徑；
+   不再用數個小弧光分散在圓周上，讓四道斬擊合起來真的覆蓋整個圓。 */
+function vfxCleaveSector(spec, layer, pt, delayMs, angleDeg, travel) {
+  if (!pt) return;
+  var d = vfxNode('vfx-cleave-sector', layer, spec);
+  var maxRadius = Math.max(48, Number(travel && travel.length) || Number(spec && spec.lineLength) || 120);
+  var delay = Math.max(0, delayMs || 0);
+  var duration = Math.max(0.38, spec.dur || 0.5);
+  var travelAngle = Number(travel && travel.angle) || 0;
+  var angle = typeof angleDeg === 'number' ? angleDeg : travelAngle * 180 / Math.PI;
+  d.style.width = (maxRadius * 2) + 'px';
+  d.style.height = (maxRadius * 2) + 'px';
+  d.style.margin = (-maxRadius) + 'px 0 0 ' + (-maxRadius) + 'px';
+  d.style.setProperty('--vfx-sector-radius', maxRadius + 'px');
+  d.style.setProperty('--vfx-sector-angle', angle.toFixed(0) + 'deg');
+  var generation = _vfxGeneration;
+  var startedAt = Date.now() + delay;
+  var frame = function () {
+    if (!_vfxEnabled || generation !== _vfxGeneration || !d.parentNode) return;
+    var elapsed = Date.now() - startedAt;
+    if (elapsed < 0) {
+      d.style.opacity = '0';
+    } else {
+      var k = Math.min(1, elapsed / (duration * 1000));
+      var eased = k * k * (3 - 2 * k);
+      var radiusScale = 0.08 + eased * 0.92;
+      var shift = maxRadius * 0.08 * eased;
+      d.style.left = (pt.x + Math.cos(travelAngle) * shift) + 'px';
+      d.style.top = (pt.y + Math.sin(travelAngle) * shift) + 'px';
+      d.style.transform = 'translate(-50%, -50%) rotate(' + angle.toFixed(0) + 'deg) scale(' + radiusScale.toFixed(4) + ')';
+      d.style.opacity = k > 0.76 ? String(Math.max(0, 1 - (k - 0.76) / 0.24)) : String(Math.min(1, k / 0.08));
+      if (k >= 1) return;
+    }
+    (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : function (fn) { return setTimeout(fn, 16); })(frame);
+  };
+  frame();
+  vfxTrack(d, delay + duration * 1000 + 180);
+}
+
 function vfxCleaveArcFlightMs(spec) {
   return Math.round(Math.max(0.38, spec.dur || 0.5) * 1000);
 }
@@ -2193,6 +2233,7 @@ function renderCombatVfx(spec) {
     lineWidth: Number(spec.lineWidth) > 0 ? Number(spec.lineWidth) : null,
     laneOffsets: Array.isArray(spec.laneOffsets) ? spec.laneOffsets.slice(0, 3) : null,
     directionCount: Number(spec.directionCount) > 0 ? Number(spec.directionCount) : null,
+    directionRanges: Array.isArray(spec.directionRanges) ? spec.directionRanges.slice(0, 4).map(Number) : null,
     angle: isFinite(spec.angle) ? Number(spec.angle) : null,
     rangeScale: Number(spec.rangeScale) > 0 ? Number(spec.rangeScale) : 1
   };
@@ -2528,7 +2569,7 @@ function renderCombatVfx(spec) {
     return;
   }
 
-  /* 震碎斬與迴身雙連斬都重用迴旋斬弧光；迴身雙連斬沿十字四方向飛出。
+  /* 震碎斬重用迴旋斬弧光；迴身四方斬使用四個 90 度扇形向外擴張。
      命中延遲依弧光實際飛行距離估算，確保刀光抵達時傷害字才出現。 */
   if (kind === 'slash' && (s.variant === 'cleave' || s.variant === 'cleave-shockwave' || s.variant === 'cleave-back' || s.variant === 'cleave-dual' || s.variant === 'cleave-cross' || s.variant === 'cleave-cross-shockwave')) {
     var drawForward = s.variant === 'cleave-shockwave' || s.variant === 'cleave-back' || s.variant === 'cleave-dual';
@@ -2549,8 +2590,10 @@ function renderCombatVfx(spec) {
       if (drawCross && from) {
         for (var cdi = 0; cdi < 4; cdi++) {
           var crossAngle = frontAngle + cdi * Math.PI / 2;
-          vfxCleaveArc(s, layer, from, cleaveDelay,
-            crossAngle * 180 / Math.PI, null, { angle: crossAngle, length: arcLen });
+          var crossLength = Array.isArray(s.directionRanges) && Number(s.directionRanges[cdi]) > 0
+            ? Number(s.directionRanges[cdi]) : arcLen;
+          vfxCleaveSector(s, layer, from, cleaveDelay,
+            crossAngle * 180 / Math.PI, { angle: crossAngle, length: crossLength });
         }
       }
       if (drawForward && from) vfxCleaveArc(s, layer, from, cleaveDelay,
@@ -2567,7 +2610,14 @@ function renderCombatVfx(spec) {
         var arcHitDelay = 90;
         if (drawCross) {
           var targetDistance = Math.sqrt(targetDx * targetDx + targetDy * targetDy);
-          arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetDistance / arcLen)));
+          var targetAngle = Math.atan2(targetDy, targetDx);
+          var relativeAngle = targetAngle - frontAngle + Math.PI / 4;
+          while (relativeAngle < 0) relativeAngle += Math.PI * 2;
+          while (relativeAngle >= Math.PI * 2) relativeAngle -= Math.PI * 2;
+          var targetDirection = Math.floor(relativeAngle / (Math.PI / 2)) % 4;
+          var targetRange = Array.isArray(s.directionRanges) && Number(s.directionRanges[targetDirection]) > 0
+            ? Number(s.directionRanges[targetDirection]) : arcLen;
+          arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetDistance / targetRange)));
         } else if (drawForward && targetAlong >= 0) {
           arcHitDelay = Math.round(arcFlightMs * Math.max(0, Math.min(1, targetAlong / arcLen)));
         } else if (drawBack && targetAlong < 0) {

@@ -68,14 +68,16 @@ test('shim 傳遞突刺光槍的長度、方向與飛行物欄位', () => {
   const context = loadShim();
   context.playCombatVfx({
     fxKind: 'slash', variant: 'thrust-octagonal', count: 7, projectile: true,
-    lineLength: 182.8, lineWidth: 27.6, laneOffsets: [-13.8, 0, 13.8], directionCount: 8
+    lineLength: 182.8, lineWidth: 27.6, laneOffsets: [-13.8, 0, 13.8], directionCount: 8,
+    rangeScale: 1.3, directionRanges: [182.8, 50, 50, 50]
   });
   assert.deepEqual(plain(context.shimDrainUrgentVisualEvents()), [{
     kind: 'vfx', fxKind: 'slash',
     targets: [], cells: null, area: null, count: 7,
     travelMs: null, elem: null, cat: null, variant: 'thrust-octagonal', delayMs: 0,
     projectile: true, lineLength: 182.8, lineWidth: 27.6,
-    laneOffsets: [-13.8, 0, 13.8], directionCount: 8, angle: null
+    laneOffsets: [-13.8, 0, 13.8], directionCount: 8,
+    rangeScale: 1.3, directionRanges: [182.8, 50, 50, 50], angle: null
   }]);
 });
 
