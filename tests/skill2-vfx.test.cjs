@@ -29,6 +29,7 @@ test('飛刀彈射必須在上一段抵達後才開始下一段', () => {
   assert.match(skills2, /sgKnifeHit\(cfg, next, dmgVal, delay \+ travel/);
   assert.match(skills2, /delay \+= travel;/);
   assert.match(skills2, /if \(!next \|\| next === cur \|\| next\.hp <= 0\) break;/);
+  assert.match(skills2, /loopReturn: true/);
 
   const domChainStart = vfx.indexOf('function vfxChain');
   const domChainEnd = vfx.indexOf('/* ---- 時間安全', domChainStart);
@@ -47,6 +48,9 @@ test('飛刀彈射必須在上一段抵達後才開始下一段', () => {
   assert.match(canvasChain, /\}\)\(kb, chainStart, hopTravel\);/);
   assert.match(canvasChain, /chainStart \+= hopTravel;/);
   assert.doesNotMatch(canvasChain, /baseDelay \+ \(hopIndex - 1\) \* stagger/);
+  assert.match(vfx, /function vfxKnifeReturn\(/);
+  assert.match(renderer, /pathOverride && pathOverride\.loopReturn/);
+  assert.match(renderer, /spec\.loopReturn && targets\.length === 1/);
 });
 
 test('普攻觸發角色動作；飛刀彈射與連鎖不觸發，目標離場後延遲事件失效', () => {
@@ -914,11 +918,11 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
      這幾條釘的是「目前的版號」——之後任何人再動這些檔、把版號往上推時，
      連同這裡一起更新即可（釘住的用意是禁止「改了檔卻沒換版號」）。 */
   assert.match(index, /css\/style\.css\?v=1\.0\.57/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.66/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.99/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.63/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260821-bounce-range'/);
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260821-bounce-range/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.67/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.100/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.64/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260821-soulhunter-return'/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260821-soulhunter-return/);
 });
 
 /* 2026-08-19 回報三連：真空斬系的綠色落雷、風刃地板綠方塊、風刃一格一格移動。

@@ -1217,6 +1217,50 @@ function vfxKnifeBounce(spec, layer, from, to, delayMs, travelMs) {
   vfxProjectile(next, layer, from, to, delayMs, travelMs);
 }
 
+/* 無限追魂刃只有一個有效目標時的回繞路徑：從目標出發，繞一個弧形圈後回到同一目標。
+   不能把 from/to 直接交給一般投射物，否則 Canvas 會因起點已在目標上而立即結束。 */
+function vfxKnifeReturn(spec, layer, pt, delayMs, travelMs) {
+  if (!pt) return;
+  var flight = vfxProjectileFlightMs(travelMs, spec.dur || 0.5);
+  var projClass = vfxProjectileCls(spec);
+  var d = vfxNode('vfx-proj ' + projClass, layer, spec);
+  d.style.animation = 'none';
+  var core = document.createElement('span');
+  core.className = 'vfx-proj-core';
+  if (projClass.indexOf('vfx-proj-knife') >= 0) core.textContent = spec.glyph || '🔪';
+  d.appendChild(core);
+  var trail = document.createElement('span');
+  trail.className = 'vfx-proj-trail';
+  d.appendChild(trail);
+  var radius = Math.max(24, vfxProjectileArcPx(spec));
+  var generation = _vfxGeneration;
+  var startedAt = Date.now() + Math.max(0, delayMs || 0);
+  function frame() {
+    if (!_vfxEnabled || generation !== _vfxGeneration || !d.parentNode) return;
+    var elapsed = Date.now() - startedAt;
+    if (elapsed < 0) {
+      d.style.opacity = '0';
+    } else {
+      var k = Math.min(1, elapsed / Math.max(1, flight));
+      var angle = Math.PI * 2 * k;
+      var x = pt.x + Math.sin(angle) * radius;
+      var y = pt.y - (1 - Math.cos(angle)) * radius;
+      var nextAngle = Math.PI * 2 * Math.min(1, k + 0.01);
+      var nx = pt.x + Math.sin(nextAngle) * radius;
+      var ny = pt.y - (1 - Math.cos(nextAngle)) * radius;
+      d.style.left = x + 'px';
+      d.style.top = y + 'px';
+      d.style.setProperty('--vfx-rot', Math.atan2(ny - y, nx - x).toFixed(3) + 'rad');
+      d.style.transform = 'translate(-50%, -50%)';
+      d.style.opacity = String(k >= 1 ? 0 : 1);
+      if (k >= 1) return;
+    }
+    (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : function (fn) { return setTimeout(fn, 16); })(frame);
+  }
+  vfxTrack(d, Math.max(0, delayMs || 0) + flight + VFX_FLARE_LIFESPAN_MS + 160);
+  frame();
+}
+
 /* ---- 爆發（單點） ----
    沒有更具體幾何 variant 的事件會落到這裡，建立一個短命的中心爆發節點。 */
 function vfxBurst(spec, layer, pt, delayMs) {
@@ -1987,6 +2031,14 @@ function vfxChain(spec, layer, ptList, idList, baseDelay, strikes) {
 
   // 1. 飛刀彈射：短刀光從上一目標飛向下一個目標
   if (spec.variant === 'knife-bounce' || spec.variant === 'knife-soulhunter') {
+    if (spec.loopReturn && ptList.length === 1) {
+      var returnTravel = (spec.travelMs && spec.travelMs[0] > 0) ? spec.travelMs[0] : 120;
+      var returnFlight = vfxProjectileFlightMs(returnTravel, spec.dur || 0.5);
+      vfxKnifeReturn(spec, layer, ptList[0], baseDelay, returnTravel);
+      vfxImpact({ elem: null, variant: null, color: spec.color }, layer,
+        ptList[0], idList[0], baseDelay + returnFlight);
+      return;
+    }
     var pathStart = baseDelay;
     for (var pathI = 1; pathI < ptList.length; pathI++) {
       var pathTravel = (spec.travelMs && spec.travelMs[pathI] > 0) ? spec.travelMs[pathI] : 0;

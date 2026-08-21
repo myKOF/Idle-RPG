@@ -1575,9 +1575,11 @@ var BattleRenderer = (function () {
   function spawnProjectile(targetId, travelMs, spec, onArrive, fromOverride, pathOverride) {
     var theme = themeOf(spec);
     var from = fromOverride || playerMuzzle();
-    var path = pathOverride && Number(pathOverride.length) > 0
-      ? { angle: Number(pathOverride.angle) || 0, length: Number(pathOverride.length) }
-      : null;
+    var path = pathOverride && pathOverride.loopReturn
+      ? { loopReturn: true }
+      : (pathOverride && Number(pathOverride.length) > 0
+        ? { angle: Number(pathOverride.angle) || 0, length: Number(pathOverride.length) }
+        : null);
     var node = new PIXI.Container();
     var core;
     var glyphOnly = spec.glyph && (spec.variant === 'glyph' ||
@@ -1619,11 +1621,11 @@ var BattleRenderer = (function () {
       update: function (dt) {
         t += dt;
         var k = Math.min(1, t / dur);
-        var targetNow = path ? {
+        var targetNow = path && !path.loopReturn ? {
           x: from.x + Math.cos(path.angle) * path.length,
           y: from.y + Math.sin(path.angle) * path.length
         } : posOf(targetId);
-        var to = path ? targetNow : projectileTargetPoint(targetId, Math.max(0, dur - t));
+        var to = path && !path.loopReturn ? targetNow : projectileTargetPoint(targetId, Math.max(0, dur - t));
         node.x = lerp(from.x, to.x, k);
         /* 火球術依使用者要求走真正直線；其他投射物保留原本的微弧線。
            水流彈的拋物線高度由模擬層的表定值決定（spec.arcM，米）——弧高是設計數值，
@@ -1631,6 +1633,16 @@ var BattleRenderer = (function () {
         node.y = lerp(from.y, to.y, k) -
           (isSmallFireball ? 0 : Math.sin(k * Math.PI) * projectileArcPx(spec));
         node.rotation = Math.atan2(to.y - from.y, to.x - from.x);
+        if (path && path.loopReturn) {
+          var loopRadius = Math.max(24, projectileArcPx(spec));
+          var loopAngle = Math.PI * 2 * k;
+          var loopNextAngle = Math.PI * 2 * Math.min(1, k + 0.01);
+          node.x = targetNow.x + Math.sin(loopAngle) * loopRadius;
+          node.y = targetNow.y - (1 - Math.cos(loopAngle)) * loopRadius;
+          var nextX = targetNow.x + Math.sin(loopNextAngle) * loopRadius;
+          var nextY = targetNow.y - (1 - Math.cos(loopNextAngle)) * loopRadius;
+          node.rotation = Math.atan2(nextY - node.y, nextX - node.x);
+        }
         if (core && core._flameUpdate) core._flameUpdate(dt);
         if (core && core._fireballUpdate) core._fireballUpdate(dt);
         trailAcc += dt;
@@ -3996,6 +4008,19 @@ var BattleRenderer = (function () {
       return;
     }
     if (spec.variant === 'knife-bounce' || spec.variant === 'knife-soulhunter') {
+      if (spec.loopReturn && targets.length === 1) {
+        var returnTravel = projectileTravelMs(spec.travelMs && spec.travelMs[0], 120);
+        (function (targetId, startDelay, hopTravel) {
+          setTimeout(function () {
+            if (fxGate(spec)) return;
+            spawnProjectile(targetId, hopTravel, spec, function (pt) {
+              spawnImpact(pt.x, pt.y, spec, false);
+              hitReact(targetId, spec.elem, false);
+            }, posOf(targetId), { loopReturn: true });
+          }, startDelay);
+        })(targets[0], baseDelay, returnTravel);
+        return;
+      }
       var chainStart = baseDelay;
       for (var kb = 1; kb < targets.length; kb++) {
         var hopTravel = projectileTravelMs(spec.travelMs && spec.travelMs[kb], 120);
