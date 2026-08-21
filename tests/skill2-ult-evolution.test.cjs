@@ -890,6 +890,32 @@ test('【無限追魂刃】：額外射出 1 支高傷飛刀，且彈射到場�
   assert.ok(calls.length > baseHits, '追魂刃是額外多出來的一支');
 });
 
+test('Soulhunter returns to the only in-range target through a loop instead of A-to-A bounce', () => {
+  const c = loadContext(['js/legendary.js']);
+  const calls = stubHits(c);
+  const specs = stubVfx(c);
+  forceRolls(c, 0.999);
+  maxLevels(c, 'knife'); equip(c, 'knife');
+  const p = playerEnt(); c.FIELD = { player: p };
+  const only = enemy(1e12, 3 * M, 0, 'only');
+
+  c.castSkill2(p, [only], 'knife', 'mv-float');
+  const body = Math.max.apply(null, calls.map((k) => k.atk));
+  setUlt(c, 'knife', 'soulhunterBlade');
+  calls.length = 0;
+  specs.length = 0;
+  c.castSkill2(p, [only], 'knife', 'mv-float');
+  const boostPct = c.sgVal(c.SKILLS2.knife.ult[2].fx, 'pct', c.SG_TIER_MAX_LV);
+  const soulHits = calls.filter((k) => Math.abs(k.atk - body * (1 + boostPct / 100)) < 1e-6);
+  assert.equal(soulHits.length, 2, 'only target should be hit once on arrival and once after the return loop');
+  const loop = specs.find((s) => s.variant === 'knife-soulhunter' && s.fxKind === 'chain');
+  assert.ok(loop, 'Soulhunter should emit a return chain event');
+  assert.equal(loop.targets.length, 1, 'return path should use one target instead of an A-to-A chain');
+  assert.equal(loop.targets[0], 'only', 'return path should target the same enemy');
+  assert.equal(loop.loopReturn, true, 'return chain must use the loop path');
+  assert.equal(loop.arcM, 4, 'return path should visibly arc around the target');
+});
+
 /* ---- 9) 疾風斬的三個超神進化 ---- */
 
 test('【霹靂一閃】：最後一斬對周圍打出「單段 × 連擊數 × 倍率」的閃電傷害', () => {
