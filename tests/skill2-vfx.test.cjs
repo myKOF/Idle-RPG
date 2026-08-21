@@ -916,9 +916,9 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(index, /css\/style\.css\?v=1\.0\.57/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.66/);
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.99/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.61/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260821-ult-evolution-6'/);
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260821-ult-evolution-6/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.62/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260821-ult-evolution-7'/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260821-ult-evolution-7/);
 });
 
 /* 2026-08-19 回報三連：真空斬系的綠色落雷、風刃地板綠方塊、風刃一格一格移動。
