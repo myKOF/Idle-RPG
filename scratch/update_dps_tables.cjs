@@ -7,16 +7,16 @@ const RESULTS_FILE = path.join(__dirname, 'all_ult_standardized_results.json');
 const results = JSON.parse(fs.readFileSync(RESULTS_FILE, 'utf8'));
 
 // 1. Generate docs/ULT_EVOLUTION_DPS_COMPARISON_DATA.md
-let mdComparison = `# 📊 超神進化前與進化後 DPS 數據資料表（300 級單波高血量實測）
+let mdComparison = `# 📊 超神進化前與進化後 DPS 數據資料表（300 級 0 防禦單波高血量實測）
 
 > **格式說明**：
 > 一行一個技能名稱及一個傷害值（DPS）與戰鬥時長，第一行為未進化（1~7 階全滿），後面接著三個進化技能。
 > 格式：\`主技能名稱 | 進化技能名稱 | 傷害值 (DPS) | 戰鬥時長\`
-> **環境設定**：300 級沼澤（Stage 300），小怪 20 隻/波、菁英 5 隻/波、BOSS 1 隻/波，全部僅出 1 波，外圍逼近，打到死為止。
+> **環境設定**：300 級沼澤（Stage 300，敵人 DEF=0），小怪 20 隻/波、菁英 5 隻/波、BOSS 1 隻/波，全部僅出 1 波，外圍逼近，打到死為止。
 
 ---
 
-## 🐺 場景 1：小怪群戰（300 級 20 隻小怪，單隻 HP ~1,776 億，共 1 波打到死）
+## 🐺 場景 1：小怪群戰（300 級 20 隻小怪，DEF=0，單隻 HP ~1,776 億，共 1 波打到死）
 
 | 主技能名稱 | 進化技能名稱 | 傷害值 (DPS) | 戰鬥時長 |
 | :--- | :--- | :---: | :---: |
@@ -35,7 +35,7 @@ results.forEach(r => {
 mdComparison += `
 ---
 
-## 🛡️ 場景 2：菁英攻堅（300 級 5 隻菁英怪，單隻 HP ~7,105 億，共 1 波打到死）
+## 🛡️ 場景 2：菁英攻堅（300 級 5 隻菁英怪，DEF=0，單隻 HP ~7,105 億，共 1 波打到死）
 
 | 主技能名稱 | 進化技能名稱 | 傷害值 (DPS) | 戰鬥時長 |
 | :--- | :--- | :---: | :---: |
@@ -54,7 +54,7 @@ results.forEach(r => {
 mdComparison += `
 ---
 
-## 👑 場景 3：單體 BOSS（300 級 1 隻 BOSS，HP ~2.66 兆，共 1 波打到死）
+## 👑 場景 3：單體 BOSS（300 級 1 隻 BOSS，DEF=0，HP ~2.66 兆，共 1 波打到死）
 
 | 主技能名稱 | 進化技能名稱 | 傷害值 (DPS) | 戰鬥時長 |
 | :--- | :--- | :---: | :---: |
@@ -74,12 +74,12 @@ fs.writeFileSync(path.join(ROOT, 'docs/ULT_EVOLUTION_DPS_COMPARISON_DATA.md'), m
 console.log('✅ Updated docs/ULT_EVOLUTION_DPS_COMPARISON_DATA.md');
 
 // 2. Generate docs/TASK238_ULT_SKILLS_DPS_REPORT.md
-let mdReport = `# ⚔️ TASK-238：全 8 大技能群組（24 招超神進化）300 級高血量單波基準測試報告
+let mdReport = `# ⚔️ TASK-238：全 8 大技能群組（24 招超神進化）300 級 0 防禦單波基準測試報告
 
-> **報告版本**：v3.0（300 級單波高血量無秒殺實測版）  
+> **報告版本**：v4.0（300 級 0 防禦 DEF=0 單波高血量實測版）  
 > **測試日期**：2026-08-21  
 > **負責測試**：Antigravity (QA & Simulation Engine)  
-> **測試環境**：300 級沼澤（Stage 300 Swamp），小怪/菁英/BOSS 均僅出 1 波，外圍逼近，打到死為止。怪物血量極高（小怪 ~1776 億、菁英 ~7105 億、BOSS ~2.66 兆），無秒殺與出怪空窗問題，溢出傷害佔比極低。
+> **測試環境**：300 級沼澤（Stage 300 Swamp，敵人物理/魔法防禦 DEF=0），小怪/菁英/BOSS 均僅出 1 波，外圍逼近，打到死為止。怪物血量極高（小怪 ~1776 億、菁英 ~7105 億、BOSS ~2.66 兆），無秒殺與出怪空窗問題，溢出傷害佔比極低。
 
 ---
 
