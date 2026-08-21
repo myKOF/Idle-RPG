@@ -883,6 +883,8 @@ test('【無限追魂刃】：額外射出 1 支高傷飛刀，且彈射到場�
   assert.ok(specs.some((s) => s.variant === 'knife-soulhunter' && s.fxKind === 'chain'),
     'Soulhunter bounce chain should keep its dedicated VFX variant');
   const boostPct = c.sgVal(c.SKILLS2.knife.ult[2].fx, 'pct', c.SG_TIER_MAX_LV);
+  assert.equal(c.SKILLS2.knife.ult[2].fx.m, 45,
+    'Soulhunter追擊範圍應為45米');
   assert.ok(calls.some((k) => Math.abs(k.atk - body * (1 + boostPct / 100)) < 1e-6),
     '追魂刃的傷害要比本體高 ' + boostPct + '%');
   assert.ok(calls.length > baseHits, '追魂刃是額外多出來的一支');
