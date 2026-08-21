@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## Antigravity｜全 8 大技能群組（24 招超神進化）標準化 DPS 基準測試與規範更新｜2026-08-21
+
+- 狀態：已完成
+- Owner：Antigravity
+- 目的：修正舊測試腳本中因詞條池上限擠出核心暴傷詞條（`critDmg`）導致的屬性偏差問題。確立嚴格控制變因測試規範，保證全技能群組核心傷害詞條（`atkPct`, `atkFlat`, `critDmg` 5996%, `critRate`, `pPen`）完全一致，嚴禁替換影響 DPS 的傷害詞條。全面重測 8 大技能群組（突刺、迴旋斬、飛刀、疾風斬、血刃斬、雙刀亂舞、反擊、嗜血狂怒）共 32 種技能形態 × 3 大場景（共 96 場模擬）。
+- 測試報告路徑：`docs/TASK238_ULT_SKILLS_DPS_REPORT.md`、`docs/ULT_EVOLUTION_DPS_COMPARISON_DATA.md`
+- 驗證成果：
+  1. 測試規範確立：明訂 DPS 基準量測必須嚴格控制傷害變因，僅有機制特殊需求（如反擊需 `blockRate`）時於副手替換防禦/次要詞條，絕不替換傷害核心詞條。
+  2. 突刺【幻影八方陣】重測：在統一詞條下，小怪群戰 DPS 達 **3.10B（1.51x 成長）**，完全繼承 168 道八方貫穿彈幕並疊加 12 米全額二次擴散。
+  3. 全 8 大群組 24 招超神進化標準化數據完成，全面同步至 `docs/ULT_EVOLUTION_DPS_COMPARISON_DATA.md` 與 `docs/TASK238_ULT_SKILLS_DPS_REPORT.md`。
+- 測試指令：`node scratch/test_all_ult_standardized.cjs`、`node tools/build_check.cjs`。
+
 ## Antigravity｜傳奇進化第四批（反擊／嗜血狂怒）完整實機驗證與 DPS 基準測試｜2026-08-21
 
 - 狀態：已完成
