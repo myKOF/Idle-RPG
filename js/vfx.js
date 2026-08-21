@@ -695,6 +695,7 @@ function vfxAllowsSceneShake(spec) {
      這些爆點是逐目標各炸一次，一波死亡就會連續觸發數十次場景震動。
      blood-explosion／zero-infection 為血刃斬專屬 variant，移除不影響
      斷罪引爆／碎印湮滅等共用 detonate 的技能。 */
+  if (v === 'poison-spread') return false;
   if (isBloodbladeNoHitShakeSpec(spec) ||
       v === 'blood-explosion' || v === 'zero-infection') return false;
   return v === 'meteor' || v === 'pillar' || v === 'purple-thunder' ||

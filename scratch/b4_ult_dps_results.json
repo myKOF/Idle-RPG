@@ -1,0 +1,746 @@
+[
+  {
+    "target": {
+      "gid": "counter",
+      "groupName": "反擊",
+      "isBase": true,
+      "id": "base_counter",
+      "name": "基礎反擊 (1~7階滿級)",
+      "specialAffixes": [
+        "blockRate",
+        "atkPct"
+      ],
+      "mechanism": "被動受擊反擊 / 格擋反殺",
+      "note": "未點超神進化"
+    },
+    "mob": {
+      "item": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": true,
+        "id": "base_counter",
+        "name": "基礎反擊 (1~7階滿級)",
+        "specialAffixes": [
+          "blockRate",
+          "atkPct"
+        ],
+        "mechanism": "被動受擊反擊 / 格擋反殺",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (200隻)",
+      "clearedTime": 120.05,
+      "totalKills": 116,
+      "expectedKills": 200,
+      "cleared": false,
+      "totalDamage": 14594554770,
+      "avgDps": 121570635,
+      "peakDps": 848935833,
+      "atkStat": 1939192
+    },
+    "elite": {
+      "item": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": true,
+        "id": "base_counter",
+        "name": "基礎反擊 (1~7階滿級)",
+        "specialAffixes": [
+          "blockRate",
+          "atkPct"
+        ],
+        "mechanism": "被動受擊反擊 / 格擋反殺",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (25隻)",
+      "clearedTime": 23.05,
+      "totalKills": 25,
+      "expectedKills": 25,
+      "cleared": true,
+      "totalDamage": 3357154026,
+      "avgDps": 145646595,
+      "peakDps": 860907048,
+      "atkStat": 1939192
+    },
+    "boss": {
+      "item": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": true,
+        "id": "base_counter",
+        "name": "基礎反擊 (1~7階滿級)",
+        "specialAffixes": [
+          "blockRate",
+          "atkPct"
+        ],
+        "mechanism": "被動受擊反擊 / 格擋反殺",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "clearedTime": 0.55,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 175611094,
+      "avgDps": 319292898,
+      "peakDps": 0,
+      "atkStat": 1939192
+    }
+  },
+  {
+    "target": {
+      "gid": "counter",
+      "groupName": "反擊",
+      "isBase": false,
+      "id": "holyBody",
+      "name": "神聖之體",
+      "opt": 0,
+      "specialAffixes": [
+        "blockRate",
+        "aoeDmg"
+      ],
+      "mechanism": "計次神聖光彈 / 範圍AOE",
+      "note": "每10次反擊發射光彈對8m敵人造成800%神聖傷害"
+    },
+    "mob": {
+      "item": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": false,
+        "id": "holyBody",
+        "name": "神聖之體",
+        "opt": 0,
+        "specialAffixes": [
+          "blockRate",
+          "aoeDmg"
+        ],
+        "mechanism": "計次神聖光彈 / 範圍AOE",
+        "note": "每10次反擊發射光彈對8m敵人造成800%神聖傷害"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (200隻)",
+      "clearedTime": 75.55,
+      "totalKills": 200,
+      "expectedKills": 200,
+      "cleared": true,
+      "totalDamage": 2583414093,
+      "avgDps": 34194760,
+      "peakDps": 625466972,
+      "atkStat": 1939192
+    },
+    "elite": {
+      "item": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": false,
+        "id": "holyBody",
+        "name": "神聖之體",
+        "opt": 0,
+        "specialAffixes": [
+          "blockRate",
+          "aoeDmg"
+        ],
+        "mechanism": "計次神聖光彈 / 範圍AOE",
+        "note": "每10次反擊發射光彈對8m敵人造成800%神聖傷害"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (25隻)",
+      "clearedTime": 28.5,
+      "totalKills": 25,
+      "expectedKills": 25,
+      "cleared": true,
+      "totalDamage": 298329330,
+      "avgDps": 10467696,
+      "peakDps": 119599232,
+      "atkStat": 1939192
+    },
+    "boss": {
+      "item": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": false,
+        "id": "holyBody",
+        "name": "神聖之體",
+        "opt": 0,
+        "specialAffixes": [
+          "blockRate",
+          "aoeDmg"
+        ],
+        "mechanism": "計次神聖光彈 / 範圍AOE",
+        "note": "每10次反擊發射光彈對8m敵人造成800%神聖傷害"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "clearedTime": 0.55,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 20807676,
+      "avgDps": 37832138,
+      "peakDps": 0,
+      "atkStat": 1939192
+    }
+  },
+  {
+    "target": {
+      "gid": "counter",
+      "groupName": "反擊",
+      "isBase": false,
+      "id": "indomitable",
+      "name": "不屈鬥魂",
+      "opt": 1,
+      "specialAffixes": [
+        "hpPct",
+        "atkPct"
+      ],
+      "mechanism": "死亡地系爆發 / 鎖血復活",
+      "note": "死亡時30m範圍4000%地系傷害，倒地5s後滿血站起"
+    },
+    "mob": {
+      "item": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": false,
+        "id": "indomitable",
+        "name": "不屈鬥魂",
+        "opt": 1,
+        "specialAffixes": [
+          "hpPct",
+          "atkPct"
+        ],
+        "mechanism": "死亡地系爆發 / 鎖血復活",
+        "note": "死亡時30m範圍4000%地系傷害，倒地5s後滿血站起"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (200隻)",
+      "clearedTime": 120.05,
+      "totalKills": 117,
+      "expectedKills": 200,
+      "cleared": false,
+      "totalDamage": 14943939980,
+      "avgDps": 124480966,
+      "peakDps": 469887369,
+      "atkStat": 1939192
+    },
+    "elite": {
+      "item": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": false,
+        "id": "indomitable",
+        "name": "不屈鬥魂",
+        "opt": 1,
+        "specialAffixes": [
+          "hpPct",
+          "atkPct"
+        ],
+        "mechanism": "死亡地系爆發 / 鎖血復活",
+        "note": "死亡時30m範圍4000%地系傷害，倒地5s後滿血站起"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (25隻)",
+      "clearedTime": 20.15,
+      "totalKills": 25,
+      "expectedKills": 25,
+      "cleared": true,
+      "totalDamage": 3377596954,
+      "avgDps": 167622678,
+      "peakDps": 756471925,
+      "atkStat": 1939192
+    },
+    "boss": {
+      "item": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": false,
+        "id": "indomitable",
+        "name": "不屈鬥魂",
+        "opt": 1,
+        "specialAffixes": [
+          "hpPct",
+          "atkPct"
+        ],
+        "mechanism": "死亡地系爆發 / 鎖血復活",
+        "note": "死亡時30m範圍4000%地系傷害，倒地5s後滿血站起"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "clearedTime": 0.05,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 123362184,
+      "avgDps": 2467243680,
+      "peakDps": 0,
+      "atkStat": 1939192
+    }
+  },
+  {
+    "target": {
+      "gid": "counter",
+      "groupName": "反擊",
+      "isBase": false,
+      "id": "warGodBody",
+      "name": "戰神體",
+      "opt": 2,
+      "specialAffixes": [
+        "hpPct",
+        "atkPct"
+      ],
+      "mechanism": "失血反擊加成 / 越殘越痛",
+      "note": "近2s內損失的生命%一併附加到反擊傷害"
+    },
+    "mob": {
+      "item": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": false,
+        "id": "warGodBody",
+        "name": "戰神體",
+        "opt": 2,
+        "specialAffixes": [
+          "hpPct",
+          "atkPct"
+        ],
+        "mechanism": "失血反擊加成 / 越殘越痛",
+        "note": "近2s內損失的生命%一併附加到反擊傷害"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (200隻)",
+      "clearedTime": 120.05,
+      "totalKills": 116,
+      "expectedKills": 200,
+      "cleared": false,
+      "totalDamage": 53706769532,
+      "avgDps": 447370009,
+      "peakDps": 2706925525,
+      "atkStat": 1939192
+    },
+    "elite": {
+      "item": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": false,
+        "id": "warGodBody",
+        "name": "戰神體",
+        "opt": 2,
+        "specialAffixes": [
+          "hpPct",
+          "atkPct"
+        ],
+        "mechanism": "失血反擊加成 / 越殘越痛",
+        "note": "近2s內損失的生命%一併附加到反擊傷害"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (25隻)",
+      "clearedTime": 27.15,
+      "totalKills": 25,
+      "expectedKills": 25,
+      "cleared": true,
+      "totalDamage": 9062742579,
+      "avgDps": 333802673,
+      "peakDps": 1827036628,
+      "atkStat": 1939192
+    },
+    "boss": {
+      "item": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": false,
+        "id": "warGodBody",
+        "name": "戰神體",
+        "opt": 2,
+        "specialAffixes": [
+          "hpPct",
+          "atkPct"
+        ],
+        "mechanism": "失血反擊加成 / 越殘越痛",
+        "note": "近2s內損失的生命%一併附加到反擊傷害"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "clearedTime": 0.05,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 155547539,
+      "avgDps": 3110950780,
+      "peakDps": 0,
+      "atkStat": 1939192
+    }
+  },
+  {
+    "target": {
+      "gid": "bloodrage",
+      "groupName": "嗜血狂怒",
+      "isBase": true,
+      "id": "base_bloodrage",
+      "name": "基礎嗜血狂怒 (1~7階滿級)",
+      "specialAffixes": [
+        "aspd",
+        "atkPct"
+      ],
+      "mechanism": "主動攻速爆發 / 自傷增傷",
+      "note": "未點超神進化"
+    },
+    "mob": {
+      "item": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": true,
+        "id": "base_bloodrage",
+        "name": "基礎嗜血狂怒 (1~7階滿級)",
+        "specialAffixes": [
+          "aspd",
+          "atkPct"
+        ],
+        "mechanism": "主動攻速爆發 / 自傷增傷",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (200隻)",
+      "clearedTime": 30.45,
+      "totalKills": 200,
+      "expectedKills": 200,
+      "cleared": true,
+      "totalDamage": 68960618404,
+      "avgDps": 2264716532,
+      "peakDps": 6746379603,
+      "atkStat": 2238527
+    },
+    "elite": {
+      "item": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": true,
+        "id": "base_bloodrage",
+        "name": "基礎嗜血狂怒 (1~7階滿級)",
+        "specialAffixes": [
+          "aspd",
+          "atkPct"
+        ],
+        "mechanism": "主動攻速爆發 / 自傷增傷",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (25隻)",
+      "clearedTime": 11.05,
+      "totalKills": 25,
+      "expectedKills": 25,
+      "cleared": true,
+      "totalDamage": 8351062559,
+      "avgDps": 755752268,
+      "peakDps": 1640990166,
+      "atkStat": 2238527
+    },
+    "boss": {
+      "item": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": true,
+        "id": "base_bloodrage",
+        "name": "基礎嗜血狂怒 (1~7階滿級)",
+        "specialAffixes": [
+          "aspd",
+          "atkPct"
+        ],
+        "mechanism": "主動攻速爆發 / 自傷增傷",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "clearedTime": 0.7,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 258289569,
+      "avgDps": 368985099,
+      "peakDps": 0,
+      "atkStat": 2238527
+    }
+  },
+  {
+    "target": {
+      "gid": "bloodrage",
+      "groupName": "嗜血狂怒",
+      "isBase": false,
+      "id": "slayerAdvent",
+      "name": "殺神降臨",
+      "opt": 0,
+      "specialAffixes": [
+        "aspd",
+        "aoeDmg"
+      ],
+      "mechanism": "狂怒普攻翻倍 / 8m群體重擊",
+      "note": "狂怒期間普攻傷害+200%且對目標周圍8m全體造成傷害"
+    },
+    "mob": {
+      "item": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": false,
+        "id": "slayerAdvent",
+        "name": "殺神降臨",
+        "opt": 0,
+        "specialAffixes": [
+          "aspd",
+          "aoeDmg"
+        ],
+        "mechanism": "狂怒普攻翻倍 / 8m群體重擊",
+        "note": "狂怒期間普攻傷害+200%且對目標周圍8m全體造成傷害"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (200隻)",
+      "clearedTime": 24.05,
+      "totalKills": 200,
+      "expectedKills": 200,
+      "cleared": true,
+      "totalDamage": 4783426883,
+      "avgDps": 198895089,
+      "peakDps": 521784156,
+      "atkStat": 2238527
+    },
+    "elite": {
+      "item": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": false,
+        "id": "slayerAdvent",
+        "name": "殺神降臨",
+        "opt": 0,
+        "specialAffixes": [
+          "aspd",
+          "aoeDmg"
+        ],
+        "mechanism": "狂怒普攻翻倍 / 8m群體重擊",
+        "note": "狂怒期間普攻傷害+200%且對目標周圍8m全體造成傷害"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (25隻)",
+      "clearedTime": 10.45,
+      "totalKills": 25,
+      "expectedKills": 25,
+      "cleared": true,
+      "totalDamage": 600163728,
+      "avgDps": 57431936,
+      "peakDps": 100315094,
+      "atkStat": 2238527
+    },
+    "boss": {
+      "item": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": false,
+        "id": "slayerAdvent",
+        "name": "殺神降臨",
+        "opt": 0,
+        "specialAffixes": [
+          "aspd",
+          "aoeDmg"
+        ],
+        "mechanism": "狂怒普攻翻倍 / 8m群體重擊",
+        "note": "狂怒期間普攻傷害+200%且對目標周圍8m全體造成傷害"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "clearedTime": 0.25,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 22454477,
+      "avgDps": 89817908,
+      "peakDps": 0,
+      "atkStat": 2238527
+    }
+  },
+  {
+    "target": {
+      "gid": "bloodrage",
+      "groupName": "嗜血狂怒",
+      "isBase": false,
+      "id": "warGodRoll",
+      "name": "戰神屠錄",
+      "opt": 1,
+      "specialAffixes": [
+        "atkPct",
+        "critDmg"
+      ],
+      "mechanism": "禁護盾 / 擊殺無限疊傷",
+      "note": "狂怒期間無法獲得護盾，每擊殺疊+4%全傷(最高200層=+800%)持續到死"
+    },
+    "mob": {
+      "item": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": false,
+        "id": "warGodRoll",
+        "name": "戰神屠錄",
+        "opt": 1,
+        "specialAffixes": [
+          "atkPct",
+          "critDmg"
+        ],
+        "mechanism": "禁護盾 / 擊殺無限疊傷",
+        "note": "狂怒期間無法獲得護盾，每擊殺疊+4%全傷(最高200層=+800%)持續到死"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (200隻)",
+      "clearedTime": 58.75,
+      "totalKills": 200,
+      "expectedKills": 200,
+      "cleared": true,
+      "totalDamage": 343731349289,
+      "avgDps": 5850746371,
+      "peakDps": 22125607866,
+      "atkStat": 2238527
+    },
+    "elite": {
+      "item": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": false,
+        "id": "warGodRoll",
+        "name": "戰神屠錄",
+        "opt": 1,
+        "specialAffixes": [
+          "atkPct",
+          "critDmg"
+        ],
+        "mechanism": "禁護盾 / 擊殺無限疊傷",
+        "note": "狂怒期間無法獲得護盾，每擊殺疊+4%全傷(最高200層=+800%)持續到死"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (25隻)",
+      "clearedTime": 13.1,
+      "totalKills": 25,
+      "expectedKills": 25,
+      "cleared": true,
+      "totalDamage": 12708032964,
+      "avgDps": 970078852,
+      "peakDps": 2772110621,
+      "atkStat": 2238527
+    },
+    "boss": {
+      "item": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": false,
+        "id": "warGodRoll",
+        "name": "戰神屠錄",
+        "opt": 1,
+        "specialAffixes": [
+          "atkPct",
+          "critDmg"
+        ],
+        "mechanism": "禁護盾 / 擊殺無限疊傷",
+        "note": "狂怒期間無法獲得護盾，每擊殺疊+4%全傷(最高200層=+800%)持續到死"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "clearedTime": 2.8,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 225409432,
+      "avgDps": 80503369,
+      "peakDps": 0,
+      "atkStat": 2238527
+    }
+  },
+  {
+    "target": {
+      "gid": "bloodrage",
+      "groupName": "嗜血狂怒",
+      "isBase": false,
+      "id": "asuraFist",
+      "name": "阿修羅霸王拳",
+      "opt": 2,
+      "specialAffixes": [
+        "atkPct",
+        "critDmg"
+      ],
+      "mechanism": "週期性超狂爆發 / 全傷+1000%",
+      "note": "每10秒造成的所有傷害+1000%，持續2秒"
+    },
+    "mob": {
+      "item": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": false,
+        "id": "asuraFist",
+        "name": "阿修羅霸王拳",
+        "opt": 2,
+        "specialAffixes": [
+          "atkPct",
+          "critDmg"
+        ],
+        "mechanism": "週期性超狂爆發 / 全傷+1000%",
+        "note": "每10秒造成的所有傷害+1000%，持續2秒"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (200隻)",
+      "clearedTime": 57.5,
+      "totalKills": 200,
+      "expectedKills": 200,
+      "cleared": true,
+      "totalDamage": 200135871730,
+      "avgDps": 3480623856,
+      "peakDps": 27019963087,
+      "atkStat": 2238527
+    },
+    "elite": {
+      "item": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": false,
+        "id": "asuraFist",
+        "name": "阿修羅霸王拳",
+        "opt": 2,
+        "specialAffixes": [
+          "atkPct",
+          "critDmg"
+        ],
+        "mechanism": "週期性超狂爆發 / 全傷+1000%",
+        "note": "每10秒造成的所有傷害+1000%，持續2秒"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (25隻)",
+      "clearedTime": 15.6,
+      "totalKills": 25,
+      "expectedKills": 25,
+      "cleared": true,
+      "totalDamage": 12063630904,
+      "avgDps": 773309673,
+      "peakDps": 3856589593,
+      "atkStat": 2238527
+    },
+    "boss": {
+      "item": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": false,
+        "id": "asuraFist",
+        "name": "阿修羅霸王拳",
+        "opt": 2,
+        "specialAffixes": [
+          "atkPct",
+          "critDmg"
+        ],
+        "mechanism": "週期性超狂爆發 / 全傷+1000%",
+        "note": "每10秒造成的所有傷害+1000%，持續2秒"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (1隻)",
+      "clearedTime": 0.6,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 312108151,
+      "avgDps": 520180252,
+      "peakDps": 0,
+      "atkStat": 2238527
+    }
+  }
+]

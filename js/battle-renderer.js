@@ -1340,6 +1340,7 @@ var BattleRenderer = (function () {
      從允許清單移除即可，不影響斷罪引爆等共用 detonate 的技能。 */
   function isSpecialScreenShakeSpec(spec) {
     var v = spec && spec.variant;
+    if (v === 'poison-spread') return false;
     if (isBloodbladeNoHitJoltSpec(spec) ||
         v === 'blood-explosion' || v === 'zero-infection') return false;
     return v === 'meteor' || v === 'pillar' || v === 'purple-thunder' ||

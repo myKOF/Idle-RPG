@@ -1,0 +1,2566 @@
+[
+  {
+    "target": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "isBase": true,
+      "id": "base_thrust",
+      "name": "基礎突刺 (1~7階滿級)",
+      "note": "未點超神進化"
+    },
+    "mob": {
+      "target": {
+        "gid": "thrust",
+        "groupName": "突刺",
+        "isBase": true,
+        "id": "base_thrust",
+        "name": "基礎突刺 (1~7階滿級)",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 215.1,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552421335874,
+      "avgDps": 16515208442,
+      "peakDps": 16515208442,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "thrust",
+        "groupName": "突刺",
+        "isBase": true,
+        "id": "base_thrust",
+        "name": "基礎突刺 (1~7階滿級)",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 1461.4,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552464488846,
+      "avgDps": 2430863890,
+      "peakDps": 2430863890,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "thrust",
+        "groupName": "突刺",
+        "isBase": true,
+        "id": "base_thrust",
+        "name": "基礎突刺 (1~7階滿級)",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 9476.15,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664355877442,
+      "avgDps": 281164384,
+      "peakDps": 281164384,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "isBase": false,
+      "id": "phantomOcta",
+      "name": "幻影八方陣",
+      "opt": 0,
+      "note": "命中12m全額擴散 + 30%絕對閃避"
+    },
+    "mob": {
+      "target": {
+        "gid": "thrust",
+        "groupName": "突刺",
+        "isBase": false,
+        "id": "phantomOcta",
+        "name": "幻影八方陣",
+        "opt": 0,
+        "note": "命中12m全額擴散 + 30%絕對閃避"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 25.72,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3553117426055,
+      "avgDps": 138146089660,
+      "peakDps": 138146089660,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "thrust",
+        "groupName": "突刺",
+        "isBase": false,
+        "id": "phantomOcta",
+        "name": "幻影八方陣",
+        "opt": 0,
+        "note": "命中12m全額擴散 + 30%絕對閃避"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 583.88,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552450666546,
+      "avgDps": 6084213651,
+      "peakDps": 6084213651,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "thrust",
+        "groupName": "突刺",
+        "isBase": false,
+        "id": "phantomOcta",
+        "name": "幻影八方陣",
+        "opt": 0,
+        "note": "命中12m全額擴散 + 30%絕對閃避"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 9354.63,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664354584391,
+      "avgDps": 284816672,
+      "peakDps": 284816672,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "isBase": false,
+      "id": "shadowExecutioner",
+      "name": "暗影絕殺者",
+      "opt": 1,
+      "note": "命中堆疊靈魂撕裂最高+300%受傷"
+    },
+    "mob": {
+      "target": {
+        "gid": "thrust",
+        "groupName": "突刺",
+        "isBase": false,
+        "id": "shadowExecutioner",
+        "name": "暗影絕殺者",
+        "opt": 1,
+        "note": "命中堆疊靈魂撕裂最高+300%受傷"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 119.01,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552449866949,
+      "avgDps": 29850011486,
+      "peakDps": 29850011486,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "thrust",
+        "groupName": "突刺",
+        "isBase": false,
+        "id": "shadowExecutioner",
+        "name": "暗影絕殺者",
+        "opt": 1,
+        "note": "命中堆疊靈魂撕裂最高+300%受傷"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 877.99,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552469278581,
+      "avgDps": 4046138656,
+      "peakDps": 4046138656,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "thrust",
+        "groupName": "突刺",
+        "isBase": false,
+        "id": "shadowExecutioner",
+        "name": "暗影絕殺者",
+        "opt": 1,
+        "note": "命中堆疊靈魂撕裂最高+300%受傷"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 5009.84,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664352582048,
+      "avgDps": 531823887,
+      "peakDps": 531823887,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "thrust",
+      "groupName": "突刺",
+      "isBase": false,
+      "id": "oneStrikeKill",
+      "name": "一擊必殺",
+      "opt": 2,
+      "note": "前方單道8倍重擊 + 普通小怪直接處決秒殺"
+    },
+    "mob": {
+      "target": {
+        "gid": "thrust",
+        "groupName": "突刺",
+        "isBase": false,
+        "id": "oneStrikeKill",
+        "name": "一擊必殺",
+        "opt": 2,
+        "note": "前方單道8倍重擊 + 普通小怪直接處決秒殺"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 9.03,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3554245351367,
+      "avgDps": 393604136364,
+      "peakDps": 393604136364,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "thrust",
+        "groupName": "突刺",
+        "isBase": false,
+        "id": "oneStrikeKill",
+        "name": "一擊必殺",
+        "opt": 2,
+        "note": "前方單道8倍重擊 + 普通小怪直接處決秒殺"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 1197.3,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552482338540,
+      "avgDps": 2967077874,
+      "peakDps": 2967077874,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "thrust",
+        "groupName": "突刺",
+        "isBase": false,
+        "id": "oneStrikeKill",
+        "name": "一擊必殺",
+        "opt": 2,
+        "note": "前方單道8倍重擊 + 普通小怪直接處決秒殺"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 3196.83,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664351964313,
+      "avgDps": 833435611,
+      "peakDps": 833435611,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "isBase": true,
+      "id": "base_cleave",
+      "name": "基礎迴旋斬 (1~7階滿級)",
+      "note": "未點超神進化"
+    },
+    "mob": {
+      "target": {
+        "gid": "cleave",
+        "groupName": "迴旋斬",
+        "isBase": true,
+        "id": "base_cleave",
+        "name": "基礎迴旋斬 (1~7階滿級)",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 3327.2,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552477109348,
+      "avgDps": 1067707715,
+      "peakDps": 1067707715,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "cleave",
+        "groupName": "迴旋斬",
+        "isBase": true,
+        "id": "base_cleave",
+        "name": "基礎迴旋斬 (1~7階滿級)",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 15363.96,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552472960673,
+      "avgDps": 231221180,
+      "peakDps": 231221180,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "cleave",
+        "groupName": "迴旋斬",
+        "isBase": true,
+        "id": "base_cleave",
+        "name": "基礎迴旋斬 (1~7階滿級)",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 39644.08,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664354808338,
+      "avgDps": 67206877,
+      "peakDps": 67206877,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "isBase": false,
+      "id": "voidShatter",
+      "name": "虛空碎裂斬",
+      "opt": 0,
+      "note": "迴身四方斬次數+3 + 100%物理傷害"
+    },
+    "mob": {
+      "target": {
+        "gid": "cleave",
+        "groupName": "迴旋斬",
+        "isBase": false,
+        "id": "voidShatter",
+        "name": "虛空碎裂斬",
+        "opt": 0,
+        "note": "迴身四方斬次數+3 + 100%物理傷害"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 2316.9,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552465757523,
+      "avgDps": 1533284025,
+      "peakDps": 1533284025,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "cleave",
+        "groupName": "迴旋斬",
+        "isBase": false,
+        "id": "voidShatter",
+        "name": "虛空碎裂斬",
+        "opt": 0,
+        "note": "迴身四方斬次數+3 + 100%物理傷害"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 7720.05,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552474813828,
+      "avgDps": 460162151,
+      "peakDps": 460162151,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "cleave",
+        "groupName": "迴旋斬",
+        "isBase": false,
+        "id": "voidShatter",
+        "name": "虛空碎裂斬",
+        "opt": 0,
+        "note": "迴身四方斬次數+3 + 100%物理傷害"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 18802.88,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664354050249,
+      "avgDps": 141699253,
+      "peakDps": 141699253,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "isBase": false,
+      "id": "windChaser",
+      "name": "逐風者",
+      "opt": 1,
+      "note": "每擊生成8段200%風傷龍捲風"
+    },
+    "mob": {
+      "target": {
+        "gid": "cleave",
+        "groupName": "迴旋斬",
+        "isBase": false,
+        "id": "windChaser",
+        "name": "逐風者",
+        "opt": 1,
+        "note": "每擊生成8段200%風傷龍捲風"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 4207.12,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552470865216,
+      "avgDps": 844394946,
+      "peakDps": 844394946,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "cleave",
+        "groupName": "迴旋斬",
+        "isBase": false,
+        "id": "windChaser",
+        "name": "逐風者",
+        "opt": 1,
+        "note": "每擊生成8段200%風傷龍捲風"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 12378.86,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552472344028,
+      "avgDps": 286978958,
+      "peakDps": 286978958,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "cleave",
+        "groupName": "迴旋斬",
+        "isBase": false,
+        "id": "windChaser",
+        "name": "逐風者",
+        "opt": 1,
+        "note": "每擊生成8段200%風傷龍捲風"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 32358.45,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664354680880,
+      "avgDps": 82338761,
+      "peakDps": 82338761,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "cleave",
+      "groupName": "迴旋斬",
+      "isBase": false,
+      "id": "stormGodSlash",
+      "name": "天霸風神斬",
+      "opt": 2,
+      "note": "轉為被動每3秒自動施放 + 範圍擴大30%"
+    },
+    "mob": {
+      "target": {
+        "gid": "cleave",
+        "groupName": "迴旋斬",
+        "isBase": false,
+        "id": "stormGodSlash",
+        "name": "天霸風神斬",
+        "opt": 2,
+        "note": "轉為被動每3秒自動施放 + 範圍擴大30%"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 2261.03,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552478809387,
+      "avgDps": 1571177211,
+      "peakDps": 1571177211,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "cleave",
+        "groupName": "迴旋斬",
+        "isBase": false,
+        "id": "stormGodSlash",
+        "name": "天霸風神斬",
+        "opt": 2,
+        "note": "轉為被動每3秒自動施放 + 範圍擴大30%"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 8548.58,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552473918129,
+      "avgDps": 415563043,
+      "peakDps": 415563043,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "cleave",
+        "groupName": "迴旋斬",
+        "isBase": false,
+        "id": "stormGodSlash",
+        "name": "天霸風神斬",
+        "opt": 2,
+        "note": "轉為被動每3秒自動施放 + 範圍擴大30%"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 16786.73,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664354583827,
+      "avgDps": 158717903,
+      "peakDps": 158717903,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "isBase": true,
+      "id": "base_knife",
+      "name": "基礎飛刀 (1~7階滿級)",
+      "note": "未點超神進化"
+    },
+    "mob": {
+      "target": {
+        "gid": "knife",
+        "groupName": "飛刀",
+        "isBase": true,
+        "id": "base_knife",
+        "name": "基礎飛刀 (1~7階滿級)",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 96129.26,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552472856886,
+      "avgDps": 36955167,
+      "peakDps": 36955167,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "knife",
+        "groupName": "飛刀",
+        "isBase": true,
+        "id": "base_knife",
+        "name": "基礎飛刀 (1~7階滿級)",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 98745.4,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552472805014,
+      "avgDps": 35976084,
+      "peakDps": 35976084,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "knife",
+        "groupName": "飛刀",
+        "isBase": true,
+        "id": "base_knife",
+        "name": "基礎飛刀 (1~7階滿級)",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 55329.05,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664354301996,
+      "avgDps": 48154709,
+      "peakDps": 48154709,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "isBase": false,
+      "id": "petalStorm",
+      "name": "暴雨梨花",
+      "opt": 0,
+      "note": "路徑貫穿40%傷害 + 暴擊頻繁縮短CD"
+    },
+    "mob": {
+      "target": {
+        "gid": "knife",
+        "groupName": "飛刀",
+        "isBase": false,
+        "id": "petalStorm",
+        "name": "暴雨梨花",
+        "opt": 0,
+        "note": "路徑貫穿40%傷害 + 暴擊頻繁縮短CD"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 154641.88,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552472701039,
+      "avgDps": 22972255,
+      "peakDps": 22972255,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "knife",
+        "groupName": "飛刀",
+        "isBase": false,
+        "id": "petalStorm",
+        "name": "暴雨梨花",
+        "opt": 0,
+        "note": "路徑貫穿40%傷害 + 暴擊頻繁縮短CD"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 67601.54,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552472960074,
+      "avgDps": 52550178,
+      "peakDps": 52550178,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "knife",
+        "groupName": "飛刀",
+        "isBase": false,
+        "id": "petalStorm",
+        "name": "暴雨梨花",
+        "opt": 0,
+        "note": "路徑貫穿40%傷害 + 暴擊頻繁縮短CD"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 64200.38,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664354547030,
+      "avgDps": 41500604,
+      "peakDps": 41500604,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "isBase": false,
+      "id": "deathReaper",
+      "name": "死亡收割者",
+      "opt": 1,
+      "note": "擊殺堆疊死亡收割(最高+1000%總傷)"
+    },
+    "mob": {
+      "target": {
+        "gid": "knife",
+        "groupName": "飛刀",
+        "isBase": false,
+        "id": "deathReaper",
+        "name": "死亡收割者",
+        "opt": 1,
+        "note": "擊殺堆疊死亡收割(最高+1000%總傷)"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 89649.88,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552472510021,
+      "avgDps": 39626071,
+      "peakDps": 39626071,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "knife",
+        "groupName": "飛刀",
+        "isBase": false,
+        "id": "deathReaper",
+        "name": "死亡收割者",
+        "opt": 1,
+        "note": "擊殺堆疊死亡收割(最高+1000%總傷)"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 160510.19,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552472679462,
+      "avgDps": 22132381,
+      "peakDps": 22132381,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "knife",
+        "groupName": "飛刀",
+        "isBase": false,
+        "id": "deathReaper",
+        "name": "死亡收割者",
+        "opt": 1,
+        "note": "擊殺堆疊死亡收割(最高+1000%總傷)"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 209724.4,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664354506930,
+      "avgDps": 12704075,
+      "peakDps": 12704075,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "knife",
+      "groupName": "飛刀",
+      "isBase": false,
+      "id": "soulhunterBlade",
+      "name": "無限追魂刃",
+      "opt": 2,
+      "note": "全場鎖敵無限追魂刃(每怪各吃1發+100%傷害)"
+    },
+    "mob": {
+      "target": {
+        "gid": "knife",
+        "groupName": "飛刀",
+        "isBase": false,
+        "id": "soulhunterBlade",
+        "name": "無限追魂刃",
+        "opt": 2,
+        "note": "全場鎖敵無限追魂刃(每怪各吃1發+100%傷害)"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 25064.62,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552472056218,
+      "avgDps": 141732532,
+      "peakDps": 141732532,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "knife",
+        "groupName": "飛刀",
+        "isBase": false,
+        "id": "soulhunterBlade",
+        "name": "無限追魂刃",
+        "opt": 2,
+        "note": "全場鎖敵無限追魂刃(每怪各吃1發+100%傷害)"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 55074.52,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552472975199,
+      "avgDps": 64503022,
+      "peakDps": 64503022,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "knife",
+        "groupName": "飛刀",
+        "isBase": false,
+        "id": "soulhunterBlade",
+        "name": "無限追魂刃",
+        "opt": 2,
+        "note": "全場鎖敵無限追魂刃(每怪各吃1發+100%傷害)"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 62929.35,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664354548226,
+      "avgDps": 42338822,
+      "peakDps": 42338822,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "gale",
+      "groupName": "疾風斬",
+      "isBase": true,
+      "id": "base_gale",
+      "name": "基礎疾風斬 (1~7階滿級)",
+      "note": "未點超神進化"
+    },
+    "mob": {
+      "target": {
+        "gid": "gale",
+        "groupName": "疾風斬",
+        "isBase": true,
+        "id": "base_gale",
+        "name": "基礎疾風斬 (1~7階滿級)",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 4951.46,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552474402474,
+      "avgDps": 717459982,
+      "peakDps": 717459982,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "gale",
+        "groupName": "疾風斬",
+        "isBase": true,
+        "id": "base_gale",
+        "name": "基礎疾風斬 (1~7階滿級)",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 14049.52,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552473845799,
+      "avgDps": 252853752,
+      "peakDps": 252853752,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "gale",
+        "groupName": "疾風斬",
+        "isBase": true,
+        "id": "base_gale",
+        "name": "基礎疾風斬 (1~7階滿級)",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 5014.5,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664355383176,
+      "avgDps": 531330219,
+      "peakDps": 531330219,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "gale",
+      "groupName": "疾風斬",
+      "isBase": false,
+      "id": "thunderFlash",
+      "name": "霹靂一閃",
+      "opt": 0,
+      "note": "終結斬單段×連擊數×10倍周圍6m爆發"
+    },
+    "mob": {
+      "target": {
+        "gid": "gale",
+        "groupName": "疾風斬",
+        "isBase": false,
+        "id": "thunderFlash",
+        "name": "霹靂一閃",
+        "opt": 0,
+        "note": "終結斬單段×連擊數×10倍周圍6m爆發"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 243.52,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552436612301,
+      "avgDps": 14587863881,
+      "peakDps": 14587863881,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "gale",
+        "groupName": "疾風斬",
+        "isBase": false,
+        "id": "thunderFlash",
+        "name": "霹靂一閃",
+        "opt": 0,
+        "note": "終結斬單段×連擊數×10倍周圍6m爆發"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 714.92,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552485742104,
+      "avgDps": 4969067507,
+      "peakDps": 4969067507,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "gale",
+        "groupName": "疾風斬",
+        "isBase": false,
+        "id": "thunderFlash",
+        "name": "霹靂一閃",
+        "opt": 0,
+        "note": "終結斬單段×連擊數×10倍周圍6m爆發"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 1672.26,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664351887412,
+      "avgDps": 1593264138,
+      "peakDps": 1593264138,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "gale",
+      "groupName": "疾風斬",
+      "isBase": false,
+      "id": "thunderGodSlash",
+      "name": "雷神斬",
+      "opt": 1,
+      "note": "每次斬擊降下400%閃電落雷"
+    },
+    "mob": {
+      "target": {
+        "gid": "gale",
+        "groupName": "疾風斬",
+        "isBase": false,
+        "id": "thunderGodSlash",
+        "name": "雷神斬",
+        "opt": 1,
+        "note": "每次斬擊降下400%閃電落雷"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 1022.96,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552486865688,
+      "avgDps": 3472752469,
+      "peakDps": 3472752469,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "gale",
+        "groupName": "疾風斬",
+        "isBase": false,
+        "id": "thunderGodSlash",
+        "name": "雷神斬",
+        "opt": 1,
+        "note": "每次斬擊降下400%閃電落雷"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 5962.64,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552472603996,
+      "avgDps": 595788544,
+      "peakDps": 595788544,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "gale",
+        "groupName": "疾風斬",
+        "isBase": false,
+        "id": "thunderGodSlash",
+        "name": "雷神斬",
+        "opt": 1,
+        "note": "每次斬擊降下400%閃電落雷"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 4535.12,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664351748488,
+      "avgDps": 587493109,
+      "peakDps": 587493109,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "gale",
+      "groupName": "疾風斬",
+      "isBase": false,
+      "id": "chidori",
+      "name": "千鳥",
+      "opt": 2,
+      "note": "月牙斬不再均分傷害，全員全額傷害+100%"
+    },
+    "mob": {
+      "target": {
+        "gid": "gale",
+        "groupName": "疾風斬",
+        "isBase": false,
+        "id": "chidori",
+        "name": "千鳥",
+        "opt": 2,
+        "note": "月牙斬不再均分傷害，全員全額傷害+100%"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 545.61,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552497506956,
+      "avgDps": 6511056445,
+      "peakDps": 6511056445,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "gale",
+        "groupName": "疾風斬",
+        "isBase": false,
+        "id": "chidori",
+        "name": "千鳥",
+        "opt": 2,
+        "note": "月牙斬不再均分傷害，全員全額傷害+100%"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 3769.24,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552476936615,
+      "avgDps": 942491573,
+      "peakDps": 942491573,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "gale",
+        "groupName": "疾風斬",
+        "isBase": false,
+        "id": "chidori",
+        "name": "千鳥",
+        "opt": 2,
+        "note": "月牙斬不再均分傷害，全員全額傷害+100%"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 1863.95,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664354633487,
+      "avgDps": 1429413146,
+      "peakDps": 1429413146,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "isBase": true,
+      "id": "base_bloodblade",
+      "name": "基礎血刃斬 (1~7階滿級)",
+      "note": "未點超神進化"
+    },
+    "mob": {
+      "target": {
+        "gid": "bloodblade",
+        "groupName": "血刃斬",
+        "isBase": true,
+        "id": "base_bloodblade",
+        "name": "基礎血刃斬 (1~7階滿級)",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 478724.39,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552472474495,
+      "avgDps": 7420705,
+      "peakDps": 7420705,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "bloodblade",
+        "groupName": "血刃斬",
+        "isBase": true,
+        "id": "base_bloodblade",
+        "name": "基礎血刃斬 (1~7階滿級)",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 395615.94,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552472894824,
+      "avgDps": 8979600,
+      "peakDps": 8979600,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "bloodblade",
+        "groupName": "血刃斬",
+        "isBase": true,
+        "id": "base_bloodblade",
+        "name": "基礎血刃斬 (1~7階滿級)",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 163884.56,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664354545276,
+      "avgDps": 16257508,
+      "peakDps": 16257508,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "isBase": false,
+      "id": "slayerDomain",
+      "name": "殺神領域",
+      "opt": 0,
+      "note": "永久24m殺神領域，擊殺疊層增傷(最高+400%)"
+    },
+    "mob": {
+      "target": {
+        "gid": "bloodblade",
+        "groupName": "血刃斬",
+        "isBase": false,
+        "id": "slayerDomain",
+        "name": "殺神領域",
+        "opt": 0,
+        "note": "永久24m殺神領域，擊殺疊層增傷(最高+400%)"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 5803.3,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552470508863,
+      "avgDps": 612146625,
+      "peakDps": 612146625,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "bloodblade",
+        "groupName": "血刃斬",
+        "isBase": false,
+        "id": "slayerDomain",
+        "name": "殺神領域",
+        "opt": 0,
+        "note": "永久24m殺神領域，擊殺疊層增傷(最高+400%)"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 329757.28,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552472539382,
+      "avgDps": 10772992,
+      "peakDps": 10772992,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "bloodblade",
+        "groupName": "血刃斬",
+        "isBase": false,
+        "id": "slayerDomain",
+        "name": "殺神領域",
+        "opt": 0,
+        "note": "永久24m殺神領域，擊殺疊層增傷(最高+400%)"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 1574425.9,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664355292219,
+      "avgDps": 1692271,
+      "peakDps": 1692271,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "isBase": false,
+      "id": "venomDomain",
+      "name": "萬毒血霧",
+      "opt": 1,
+      "note": "永久24m萬毒血霧，每0.5s疊層劇毒(最高2000%毒傷)"
+    },
+    "mob": {
+      "target": {
+        "gid": "bloodblade",
+        "groupName": "血刃斬",
+        "isBase": false,
+        "id": "venomDomain",
+        "name": "萬毒血霧",
+        "opt": 1,
+        "note": "永久24m萬毒血霧，每0.5s疊層劇毒(最高2000%毒傷)"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 693.56,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552481752065,
+      "avgDps": 5122097226,
+      "peakDps": 5122097226,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "bloodblade",
+        "groupName": "血刃斬",
+        "isBase": false,
+        "id": "venomDomain",
+        "name": "萬毒血霧",
+        "opt": 1,
+        "note": "永久24m萬毒血霧，每0.5s疊層劇毒(最高2000%毒傷)"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 2776.48,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552468088906,
+      "avgDps": 1279486288,
+      "peakDps": 1279486288,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "bloodblade",
+        "groupName": "血刃斬",
+        "isBase": false,
+        "id": "venomDomain",
+        "name": "萬毒血霧",
+        "opt": 1,
+        "note": "永久24m萬毒血霧，每0.5s疊層劇毒(最高2000%毒傷)"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 9696.85,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664355222974,
+      "avgDps": 274765024,
+      "peakDps": 274765024,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "bloodblade",
+      "groupName": "血刃斬",
+      "isBase": false,
+      "id": "disintegrate",
+      "name": "崩解",
+      "opt": 2,
+      "note": "流血中毒立即結算全部持續傷害 + 6m爆炸"
+    },
+    "mob": {
+      "target": {
+        "gid": "bloodblade",
+        "groupName": "血刃斬",
+        "isBase": false,
+        "id": "disintegrate",
+        "name": "崩解",
+        "opt": 2,
+        "note": "流血中毒立即結算全部持續傷害 + 6m爆炸"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 439620.93,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552472545170,
+      "avgDps": 8080763,
+      "peakDps": 8080763,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "bloodblade",
+        "groupName": "血刃斬",
+        "isBase": false,
+        "id": "disintegrate",
+        "name": "崩解",
+        "opt": 2,
+        "note": "流血中毒立即結算全部持續傷害 + 6m爆炸"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 1776892.12,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552472893615,
+      "avgDps": 1999262,
+      "peakDps": 1999262,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "bloodblade",
+        "groupName": "血刃斬",
+        "isBase": false,
+        "id": "disintegrate",
+        "name": "崩解",
+        "opt": 2,
+        "note": "流血中毒立即結算全部持續傷害 + 6m爆炸"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 141470.26,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664354535593,
+      "avgDps": 18833319,
+      "peakDps": 18833319,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "isBase": true,
+      "id": "base_dualdance",
+      "name": "基礎雙刀亂舞 (1~7階滿級)",
+      "note": "未點超神進化"
+    },
+    "mob": {
+      "target": {
+        "gid": "dualdance",
+        "groupName": "雙刀亂舞",
+        "isBase": true,
+        "id": "base_dualdance",
+        "name": "基礎雙刀亂舞 (1~7階滿級)",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 13.83,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3551308706241,
+      "avgDps": 256782986713,
+      "peakDps": 256782986713,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "dualdance",
+        "groupName": "雙刀亂舞",
+        "isBase": true,
+        "id": "base_dualdance",
+        "name": "基礎雙刀亂舞 (1~7階滿級)",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 9.53,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552049958402,
+      "avgDps": 372722975698,
+      "peakDps": 372722975698,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "dualdance",
+        "groupName": "雙刀亂舞",
+        "isBase": true,
+        "id": "base_dualdance",
+        "name": "基礎雙刀亂舞 (1~7階滿級)",
+        "note": "未點超神進化"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 6.1,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 18650481639522,
+      "avgDps": 3057456006479,
+      "peakDps": 3057456006479,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "isBase": false,
+      "id": "doomDance",
+      "name": "毀滅之舞",
+      "opt": 0,
+      "note": "損血5%換取雙刀亂舞傷害+400%"
+    },
+    "mob": {
+      "target": {
+        "gid": "dualdance",
+        "groupName": "雙刀亂舞",
+        "isBase": false,
+        "id": "doomDance",
+        "name": "毀滅之舞",
+        "opt": 0,
+        "note": "損血5%換取雙刀亂舞傷害+400%"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 11.65,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3553639571666,
+      "avgDps": 305033439628,
+      "peakDps": 305033439628,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "dualdance",
+        "groupName": "雙刀亂舞",
+        "isBase": false,
+        "id": "doomDance",
+        "name": "毀滅之舞",
+        "opt": 0,
+        "note": "損血5%換取雙刀亂舞傷害+400%"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 9.83,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552176005498,
+      "avgDps": 361360733011,
+      "peakDps": 361360733011,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "dualdance",
+        "groupName": "雙刀亂舞",
+        "isBase": false,
+        "id": "doomDance",
+        "name": "毀滅之舞",
+        "opt": 0,
+        "note": "損血5%換取雙刀亂舞傷害+400%"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 6.1,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 18650481639522,
+      "avgDps": 3057456006479,
+      "peakDps": 3057456006479,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "isBase": false,
+      "id": "flameKagura",
+      "name": "火之神樂",
+      "opt": 1,
+      "note": "雙刀附加神樂灼焰每跳疊層火傷"
+    },
+    "mob": {
+      "target": {
+        "gid": "dualdance",
+        "groupName": "雙刀亂舞",
+        "isBase": false,
+        "id": "flameKagura",
+        "name": "火之神樂",
+        "opt": 1,
+        "note": "雙刀附加神樂灼焰每跳疊層火傷"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 9.73,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3554221613404,
+      "avgDps": 365284852354,
+      "peakDps": 365284852354,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "dualdance",
+        "groupName": "雙刀亂舞",
+        "isBase": false,
+        "id": "flameKagura",
+        "name": "火之神樂",
+        "opt": 1,
+        "note": "雙刀附加神樂灼焰每跳疊層火傷"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 10.51,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3551474096257,
+      "avgDps": 337913805543,
+      "peakDps": 337913805543,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "dualdance",
+        "groupName": "雙刀亂舞",
+        "isBase": false,
+        "id": "flameKagura",
+        "name": "火之神樂",
+        "opt": 1,
+        "note": "雙刀附加神樂灼焰每跳疊層火傷"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 6.05,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 18650481639525,
+      "avgDps": 3082724237938,
+      "peakDps": 3082724237938,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "dualdance",
+      "groupName": "雙刀亂舞",
+      "isBase": false,
+      "id": "asuraDance",
+      "name": "修羅亂舞",
+      "opt": 2,
+      "isDualTwoHand": true,
+      "note": "雙持雙手巨劍，雙手詞條+40%雙倍加成"
+    },
+    "mob": {
+      "target": {
+        "gid": "dualdance",
+        "groupName": "雙刀亂舞",
+        "isBase": false,
+        "id": "asuraDance",
+        "name": "修羅亂舞",
+        "opt": 2,
+        "isDualTwoHand": true,
+        "note": "雙持雙手巨劍，雙手詞條+40%雙倍加成"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 11.54,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3551566336013,
+      "avgDps": 307761380937,
+      "peakDps": 307761380937,
+      "atkStat": 3117568,
+      "critDmgStat": 7614.179999999998,
+      "critRateStat": 568.5830499999998
+    },
+    "elite": {
+      "target": {
+        "gid": "dualdance",
+        "groupName": "雙刀亂舞",
+        "isBase": false,
+        "id": "asuraDance",
+        "name": "修羅亂舞",
+        "opt": 2,
+        "isDualTwoHand": true,
+        "note": "雙持雙手巨劍，雙手詞條+40%雙倍加成"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 9.84,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3553775194695,
+      "avgDps": 361156015721,
+      "peakDps": 361156015721,
+      "atkStat": 3117568,
+      "critDmgStat": 7614.179999999998,
+      "critRateStat": 568.5830499999998
+    },
+    "boss": {
+      "target": {
+        "gid": "dualdance",
+        "groupName": "雙刀亂舞",
+        "isBase": false,
+        "id": "asuraDance",
+        "name": "修羅亂舞",
+        "opt": 2,
+        "isDualTwoHand": true,
+        "note": "雙持雙手巨劍，雙手詞條+40%雙倍加成"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 6.1,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 18650481639522,
+      "avgDps": 3057456006479,
+      "peakDps": 3057456006479,
+      "atkStat": 3117568,
+      "critDmgStat": 7614.179999999998,
+      "critRateStat": 568.5830499999998
+    }
+  },
+  {
+    "target": {
+      "gid": "counter",
+      "groupName": "反擊",
+      "isBase": true,
+      "id": "base_counter",
+      "name": "基礎反擊 (1~7階滿級)",
+      "hasShield": true,
+      "note": "未點超神進化"
+    },
+    "mob": {
+      "target": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": true,
+        "id": "base_counter",
+        "name": "基礎反擊 (1~7階滿級)",
+        "hasShield": true,
+        "note": "未點超神進化"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 174211.05,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552472708325,
+      "avgDps": 20391776,
+      "peakDps": 20391776,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": true,
+        "id": "base_counter",
+        "name": "基礎反擊 (1~7階滿級)",
+        "hasShield": true,
+        "note": "未點超神進化"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 158041.55,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552472816806,
+      "avgDps": 22478094,
+      "peakDps": 22478094,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": true,
+        "id": "base_counter",
+        "name": "基礎反擊 (1~7階滿級)",
+        "hasShield": true,
+        "note": "未點超神進化"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 82852.74,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664354385625,
+      "avgDps": 32157710,
+      "peakDps": 32157710,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "counter",
+      "groupName": "反擊",
+      "isBase": false,
+      "id": "holyBody",
+      "name": "神聖之體",
+      "opt": 0,
+      "hasShield": true,
+      "note": "每10次反擊射出8m神聖光彈(800%神聖傷害)"
+    },
+    "mob": {
+      "target": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": false,
+        "id": "holyBody",
+        "name": "神聖之體",
+        "opt": 0,
+        "hasShield": true,
+        "note": "每10次反擊射出8m神聖光彈(800%神聖傷害)"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 52629.37,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552472685937,
+      "avgDps": 67499814,
+      "peakDps": 67499814,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": false,
+        "id": "holyBody",
+        "name": "神聖之體",
+        "opt": 0,
+        "hasShield": true,
+        "note": "每10次反擊射出8m神聖光彈(800%神聖傷害)"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 58621.54,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552472651693,
+      "avgDps": 60600125,
+      "peakDps": 60600125,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": false,
+        "id": "holyBody",
+        "name": "神聖之體",
+        "opt": 0,
+        "hasShield": true,
+        "note": "每10次反擊射出8m神聖光彈(800%神聖傷害)"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 94277.63,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664354646470,
+      "avgDps": 28260730,
+      "peakDps": 28260730,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "counter",
+      "groupName": "反擊",
+      "isBase": false,
+      "id": "indomitable",
+      "name": "不屈鬥魂",
+      "opt": 1,
+      "hasShield": true,
+      "note": "死亡30m範圍4000%地系爆發，倒地5s原地滿血復活"
+    },
+    "mob": {
+      "target": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": false,
+        "id": "indomitable",
+        "name": "不屈鬥魂",
+        "opt": 1,
+        "hasShield": true,
+        "note": "死亡30m範圍4000%地系爆發，倒地5s原地滿血復活"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 121269.23,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552472708005,
+      "avgDps": 29294098,
+      "peakDps": 29294098,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": false,
+        "id": "indomitable",
+        "name": "不屈鬥魂",
+        "opt": 1,
+        "hasShield": true,
+        "note": "死亡30m範圍4000%地系爆發，倒地5s原地滿血復活"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 166571.62,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552472773168,
+      "avgDps": 21326999,
+      "peakDps": 21326999,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": false,
+        "id": "indomitable",
+        "name": "不屈鬥魂",
+        "opt": 1,
+        "hasShield": true,
+        "note": "死亡30m範圍4000%地系爆發，倒地5s原地滿血復活"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 219436.43,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664354562393,
+      "avgDps": 12141806,
+      "peakDps": 12141806,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "counter",
+      "groupName": "反擊",
+      "isBase": false,
+      "id": "warGodBody",
+      "name": "戰神體",
+      "opt": 2,
+      "hasShield": true,
+      "note": "近2s失血百分比完全疊加至反擊傷害"
+    },
+    "mob": {
+      "target": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": false,
+        "id": "warGodBody",
+        "name": "戰神體",
+        "opt": 2,
+        "hasShield": true,
+        "note": "近2s失血百分比完全疊加至反擊傷害"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 3938.35,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552475059116,
+      "avgDps": 902021166,
+      "peakDps": 902021166,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "elite": {
+      "target": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": false,
+        "id": "warGodBody",
+        "name": "戰神體",
+        "opt": 2,
+        "hasShield": true,
+        "note": "近2s失血百分比完全疊加至反擊傷害"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 14485.32,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552473872041,
+      "avgDps": 245246489,
+      "peakDps": 245246489,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    },
+    "boss": {
+      "target": {
+        "gid": "counter",
+        "groupName": "反擊",
+        "isBase": false,
+        "id": "warGodBody",
+        "name": "戰神體",
+        "opt": 2,
+        "hasShield": true,
+        "note": "近2s失血百分比完全疊加至反擊傷害"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 17057.77,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664353958894,
+      "avgDps": 156195913,
+      "peakDps": 156195913,
+      "atkStat": 1939192,
+      "critDmgStat": 5996.0999999999985,
+      "critRateStat": 445.7030499999999
+    }
+  },
+  {
+    "target": {
+      "gid": "bloodrage",
+      "groupName": "嗜血狂怒",
+      "isBase": true,
+      "id": "base_bloodrage",
+      "name": "基礎嗜血狂怒 (1~7階滿級)",
+      "isTwoHand": true,
+      "note": "未點超神進化"
+    },
+    "mob": {
+      "target": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": true,
+        "id": "base_bloodrage",
+        "name": "基礎嗜血狂怒 (1~7階滿級)",
+        "isTwoHand": true,
+        "note": "未點超神進化"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 363121.58,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552472885377,
+      "avgDps": 9783150,
+      "peakDps": 9783150,
+      "atkStat": 2238527,
+      "critDmgStat": 6445.499999999998,
+      "critRateStat": 479.90304999999984
+    },
+    "elite": {
+      "target": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": true,
+        "id": "base_bloodrage",
+        "name": "基礎嗜血狂怒 (1~7階滿級)",
+        "isTwoHand": true,
+        "note": "未點超神進化"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 143405.79,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552472608864,
+      "avgDps": 24772170,
+      "peakDps": 24772170,
+      "atkStat": 2238527,
+      "critDmgStat": 6445.499999999998,
+      "critRateStat": 479.90304999999984
+    },
+    "boss": {
+      "target": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": true,
+        "id": "base_bloodrage",
+        "name": "基礎嗜血狂怒 (1~7階滿級)",
+        "isTwoHand": true,
+        "note": "未點超神進化"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 132732.7,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664354503914,
+      "avgDps": 20073083,
+      "peakDps": 20073083,
+      "atkStat": 2238527,
+      "critDmgStat": 6445.499999999998,
+      "critRateStat": 479.90304999999984
+    }
+  },
+  {
+    "target": {
+      "gid": "bloodrage",
+      "groupName": "嗜血狂怒",
+      "isBase": false,
+      "id": "slayerAdvent",
+      "name": "殺神降臨",
+      "opt": 0,
+      "isTwoHand": true,
+      "note": "狂怒普攻傷害+200%且擴散8m全體"
+    },
+    "mob": {
+      "target": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": false,
+        "id": "slayerAdvent",
+        "name": "殺神降臨",
+        "opt": 0,
+        "isTwoHand": true,
+        "note": "狂怒普攻傷害+200%且擴散8m全體"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 23018.72,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552472244059,
+      "avgDps": 154329704,
+      "peakDps": 154329704,
+      "atkStat": 2238527,
+      "critDmgStat": 6445.499999999998,
+      "critRateStat": 479.90304999999984
+    },
+    "elite": {
+      "target": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": false,
+        "id": "slayerAdvent",
+        "name": "殺神降臨",
+        "opt": 0,
+        "isTwoHand": true,
+        "note": "狂怒普攻傷害+200%且擴散8m全體"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 74634.16,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552472795979,
+      "avgDps": 47598483,
+      "peakDps": 47598483,
+      "atkStat": 2238527,
+      "critDmgStat": 6445.499999999998,
+      "critRateStat": 479.90304999999984
+    },
+    "boss": {
+      "target": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": false,
+        "id": "slayerAdvent",
+        "name": "殺神降臨",
+        "opt": 0,
+        "isTwoHand": true,
+        "note": "狂怒普攻傷害+200%且擴散8m全體"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 45892.32,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664354727067,
+      "avgDps": 58056658,
+      "peakDps": 58056658,
+      "atkStat": 2238527,
+      "critDmgStat": 6445.499999999998,
+      "critRateStat": 479.90304999999984
+    }
+  },
+  {
+    "target": {
+      "gid": "bloodrage",
+      "groupName": "嗜血狂怒",
+      "isBase": false,
+      "id": "warGodRoll",
+      "name": "戰神屠錄",
+      "opt": 1,
+      "isTwoHand": true,
+      "note": "禁護盾但每擊殺+4%全傷(最高+800%持續至死)"
+    },
+    "mob": {
+      "target": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": false,
+        "id": "warGodRoll",
+        "name": "戰神屠錄",
+        "opt": 1,
+        "isTwoHand": true,
+        "note": "禁護盾但每擊殺+4%全傷(最高+800%持續至死)"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 87925.18,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552472700605,
+      "avgDps": 40403360,
+      "peakDps": 40403360,
+      "atkStat": 2238527,
+      "critDmgStat": 6445.499999999998,
+      "critRateStat": 479.90304999999984
+    },
+    "elite": {
+      "target": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": false,
+        "id": "warGodRoll",
+        "name": "戰神屠錄",
+        "opt": 1,
+        "isTwoHand": true,
+        "note": "禁護盾但每擊殺+4%全傷(最高+800%持續至死)"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 511767.44,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552472579085,
+      "avgDps": 6941576,
+      "peakDps": 6941576,
+      "atkStat": 2238527,
+      "critDmgStat": 6445.499999999998,
+      "critRateStat": 479.90304999999984
+    },
+    "boss": {
+      "target": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": false,
+        "id": "warGodRoll",
+        "name": "戰神屠錄",
+        "opt": 1,
+        "isTwoHand": true,
+        "note": "禁護盾但每擊殺+4%全傷(最高+800%持續至死)"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 257023.2,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 2664354409886,
+      "avgDps": 10366202,
+      "peakDps": 10366202,
+      "atkStat": 2238527,
+      "critDmgStat": 6445.499999999998,
+      "critRateStat": 479.90304999999984
+    }
+  },
+  {
+    "target": {
+      "gid": "bloodrage",
+      "groupName": "嗜血狂怒",
+      "isBase": false,
+      "id": "asuraFist",
+      "name": "阿修羅霸王拳",
+      "opt": 2,
+      "isTwoHand": true,
+      "note": "每10秒+1000%全傷害超狂爆發(持續2秒)"
+    },
+    "mob": {
+      "target": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": false,
+        "id": "asuraFist",
+        "name": "阿修羅霸王拳",
+        "opt": 2,
+        "isTwoHand": true,
+        "note": "每10秒+1000%全傷害超狂爆發(持續2秒)"
+      },
+      "scenarioType": 1,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 80074.69,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 3552472543534,
+      "avgDps": 44364487,
+      "peakDps": 44364487,
+      "atkStat": 2238527,
+      "critDmgStat": 6445.499999999998,
+      "critRateStat": 479.90304999999984
+    },
+    "elite": {
+      "target": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": false,
+        "id": "asuraFist",
+        "name": "阿修羅霸王拳",
+        "opt": 2,
+        "isTwoHand": true,
+        "note": "每10秒+1000%全傷害超狂爆發(持續2秒)"
+      },
+      "scenarioType": 2,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 326684.63,
+      "totalKills": 5,
+      "expectedKills": 5,
+      "cleared": true,
+      "totalDamage": 3552472879017,
+      "avgDps": 10874319,
+      "peakDps": 10874319,
+      "atkStat": 2238527,
+      "critDmgStat": 6445.499999999998,
+      "critRateStat": 479.90304999999984
+    },
+    "boss": {
+      "target": {
+        "gid": "bloodrage",
+        "groupName": "嗜血狂怒",
+        "isBase": false,
+        "id": "asuraFist",
+        "name": "阿修羅霸王拳",
+        "opt": 2,
+        "isTwoHand": true,
+        "note": "每10秒+1000%全傷害超狂爆發(持續2秒)"
+      },
+      "scenarioType": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 999999,
+      "totalKills": 1,
+      "expectedKills": 1,
+      "cleared": true,
+      "totalDamage": 0,
+      "avgDps": 0,
+      "peakDps": 0,
+      "atkStat": 2238527,
+      "critDmgStat": 6445.499999999998,
+      "critRateStat": 479.90304999999984
+    }
+  }
+]
