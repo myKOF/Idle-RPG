@@ -807,12 +807,13 @@ function skillRtOnEnemyDeath(deadEnt, liveEnemies) {
     if (e && e !== deadEnt && e.hp > 0) pool.push(e);
   }
   if (!pool.length) return;
-  // 接收者一律取「離死者最近」的敵人（同距離隨機）：印記轉移與 DoT 濺射都是往旁邊擴散，
-  // 不再從全場隨機挑一隻 → js/battlefield.js bfNearestOther
-  var nearestRecv = (typeof bfNearestOther === 'function') ? bfNearestOther(deadEnt, pool) : null;
+  /* 接收者＝場上隨機一個其他存活敵人。技能說明本來就寫「濺射至隨機存活敵人」與
+     「印記轉移至隨機存活敵人」，兩段敘述都沒有指定最近；選法的唯一權威
+     → js/battlefield.js bfRandomOther（使用者定調 2026-08-21：沒寫最近就是範圍內隨機）。 */
+  var randomRecv = (typeof bfRandomOther === 'function') ? bfRandomOther(deadEnt, pool, 0, null) : null;
   // brand 族：印記死亡轉移（獵殺烙印 M8）——同名印記儲能/層數併入接收者
   if (trig.passiveBrandAmp && trig.passiveBrandAmp.transferOnKill && deadEnt.brands && deadEnt.brands.length) {
-    var recv = nearestRecv || pick(pool);
+    var recv = randomRecv || pick(pool);
     if (!recv.brands) recv.brands = [];
     for (var b = 0; b < deadEnt.brands.length; b++) {
       var be = deadEnt.brands[b];
@@ -837,7 +838,7 @@ function skillRtOnEnemyDeath(deadEnt, liveEnemies) {
   for (var d = 0; d < deadEnt.dots.length; d++) {
     var dd = deadEnt.dots[d];
     if (dd.until <= GT) continue;
-    applyDot(nearestRecv || pick(pool), dd.dps * pct / 100, Math.max(0.5, dd.until - GT), dd.name);
+    applyDot(randomRecv || pick(pool), dd.dps * pct / 100, Math.max(0.5, dd.until - GT), dd.name);
   }
 }
 
@@ -1170,7 +1171,8 @@ function skillRtApplyBrandOps(pEnt, sk, fx, lv, st, targets, floatSel, parts, ou
       if (dcfg.stunDur && t.hp > 0 && !isBossControlImmune(t) && !resistCtrl(monsterDefCfg(t))) {
         applyEffect(t, 'stun', dcfg.stunDur);
       }
-      // chainPct 儲能餘波：每層以（該印記儲能÷層數）×N% 由近而遠彈向其他存活敵（真傷直扣）。
+      // chainPct 儲能餘波：每層以（該印記儲能÷層數）×N% 隨機彈向其他存活敵（真傷直扣）。
+      // 說明文字本就寫「彈向隨機另一敵」，選法因此走 bfChainOrder 的隨機規則。
       // 彈跳對象取自整個戰場而不是本次技能的 targets——技能改成單體之後，
       // 若只在 targets 裡找，餘波會因為沒有第二個目標而完全打不出去。
       if (dcfg.chainPct > 0) {

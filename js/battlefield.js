@@ -320,18 +320,59 @@ function bfNearestOther(from, enemies) {
   return deco[0].ent;
 }
 
-/* 連鎖的下一跳。 */
+/* ---- 彈射／連鎖的目標選法（唯一權威）----
+   使用者定調（2026-08-21）：彈射型飛行物除非技能敘述特別寫明「找最近的敵人」
+   （例：疾風斬【擴散】的「{m} 米內最近的 1 個」、傳奇【處刑者】的「生命值最高」），
+   否則一律在「規定的範圍內隨機」挑目標——全部跳向最近的鄰居會讓整條鏈黏在
+   同一小撮敵人身上，範圍再大也擴散不出去。
+   maxGapPx <= 0＝技能沒有規定彈射範圍（飛刀、寒流爆散、傳奇連鎖閃電…）＝整個戰場都算範圍。
+   候選集合與 bfNearestOthers 完全相同（同樣以邊緣距離 bfEntityGap 過濾、
+   同樣讓沒有座標的高塔實體在「有規定範圍」時落在範圍外），
+   改的只有「從候選裡挑誰」：由最近改為等機率隨機。
+   visited＝本輪已經跳過的名單（不重複跳；呼叫端負責在跳完後補進去）。 */
+function bfRandomOthers(from, enemies, count, maxGapPx, visited) {
+  var live = bfLiveList(enemies);
+  if (!(count > 0)) return [];
+  var useGap = from && bfPos(from);
+  var cands = [];
+  for (var i = 0; i < live.length; i++) {
+    var ent = live[i];
+    if (ent === from) continue;
+    if (visited && visited.indexOf(ent) >= 0) continue;
+    if (maxGapPx > 0) {
+      var d = useGap ? bfEntityGap(from, ent) : bfEntityDistance(ent);
+      if (d > maxGapPx) continue;
+    }
+    cands.push(ent);
+  }
+  if (!cands.length) return [];
+  for (var x = cands.length - 1; x > 0; x--) {   // 洗牌後取前 count 個＝不重複的隨機取樣
+    var j = Math.floor(Math.random() * (x + 1));
+    var tmp = cands[x]; cands[x] = cands[j]; cands[j] = tmp;
+  }
+  return cands.slice(0, count);
+}
+
+/* 範圍內隨機一個「其他」存活敵人（規則說明見 bfRandomOthers）。 */
+function bfRandomOther(from, enemies, maxGapPx, visited) {
+  var picked = bfRandomOthers(from, enemies, 1, maxGapPx, visited);
+  return picked.length ? picked[0] : null;
+}
+
+/* 連鎖的下一跳：範圍內隨機一個其他敵人（沒有規定範圍＝整個戰場）。 */
 function bfChainNext(from, enemies) {
   var live = bfLiveList(enemies);
   if (!live.length) return null;
   if (!from) return bfPickPrimary(live, null);
-  var other = bfNearestOther(from, live);
+  var other = bfRandomOther(from, live, 0, null);
   if (other) return other;
   return live.indexOf(from) >= 0 ? from : bfPickPrimary(live, null);
 }
 
-/* 連鎖順序：從 from 出發，每一跳跳到「離上一個目標最近、且本輪還沒跳過」的敵人。 */
-function bfChainOrder(from, enemies, count) {
+/* 連鎖順序：從 from 出發，每一跳跳到「本輪還沒跳過、且在 maxGapPx 內」的隨機敵人。
+   maxGapPx 省略（或 <= 0）＝技能沒有規定彈射範圍，整個戰場都是候選。
+   全部跳過一輪之後清空紀錄重來（單體時因此仍能打滿次數）。 */
+function bfChainOrder(from, enemies, count, maxGapPx) {
   var live = bfLiveList(enemies);
   if (!live.length || !(count > 0)) return [];
   var order = [];
@@ -351,7 +392,9 @@ function bfChainOrder(from, enemies, count) {
     } else if (pool.indexOf(cur) >= 0) {
       next = cur;
     } else {
-      next = bfNearestOther(cur, pool) || pool[0];
+      /* 有規定彈射範圍時，範圍內沒人就是「跳不到了」——不得退回 pool[0]
+         把鏈硬接到範圍外的敵人身上（沒有規定範圍時維持原本的保底）。 */
+      next = bfRandomOther(cur, pool, maxGapPx, null) || (maxGapPx > 0 ? null : pool[0]);
     }
     if (!next) break;
     order.push(next);

@@ -13,7 +13,7 @@
    ・時間坍縮：施放時對「一般技能」冷卻額外提供 CDR 並突破 60% 上限（總 CDR 於施放時夾 90%）；不影響潛力技能自身冷卻。
    ・混沌雙修：所有技能傷害段套用物↔魔互補加成（skills.js castSkill）。
    ・雷霆過載：電擊攻擊技能（2026-07-22 使用者定調，非純 buff）——本體造成 (atkBase＋atkPer×Lv)% 魔攻
-     的魔法傷害（電屬性 100%、彈跳 bounces 次、與一般技能同規格結算；firePotentialLightning），
+     的魔法傷害（電屬性 100%、於敵群間隨機彈跳 bounces 次、與一般技能同規格結算；firePotentialLightning），
      且持續時間內每 1 秒自動再轟一輪（tickPotentialOverdrive，戰鬥迴圈掛勾）；
      同時期間雷電系技能「整體傷害」×(1＋值%)（castSkill 於 baseVal 乘算，本體自身也吃），
      雷電技能命中追加 (3＋連擊數) 次、各 10% 該擊最終傷害的連鎖；浮字 🌩️ 沿用爆擊樣式（黃字）。
@@ -146,7 +146,8 @@ function firePotentialActive(pEnt, def, live, floatSel, st) {
 }
 
 /* 雷霆過載本體雷擊：造成 (atkBase＋atkPer×Lv)% 魔攻的電屬性傷害（技能屬性化，整段皆為電屬性），
-   於存活敵人間彈跳 bounces 次、每跳皆為完整傷害段（比照多段技能）。
+   於存活敵人間彈跳 bounces 次、每跳皆為完整傷害段（比照多段技能）；
+   彈跳對象＝還沒跳過的存活敵人裡隨機一個（敘述沒有寫「最近」→ js/battlefield.js bfChainOrder）。
    結算與一般技能同規格：爆擊/破甲/真傷/裝備固定元素攻擊/敵種/屬性/全傷全部生效；
    本體即雷電系——施放時掛上的雷電傷害增益（boostVal）對自身同樣乘算。 */
 function firePotentialLightning(pEnt, def, live, floatSel, st, boostVal) {
@@ -158,7 +159,7 @@ function firePotentialLightning(pEnt, def, live, floatSel, st, boostVal) {
   if (boostVal > 0) baseVal *= 1 + boostVal / 100;
   var bounces = def.bounces || 5;
   var out = { killed: false, dmg: 0 };
-  // 由近而遠連鎖：第一跳打最近的敵人，之後每跳跳到離上一個目標最近的鄰居 → js/battlefield.js
+  // 連鎖順序：第一跳打主目標，之後每跳在還沒跳過的存活敵人裡隨機挑 → js/battlefield.js
   var chainOrder = (typeof bfChainOrder === 'function')
     ? bfChainOrder(pEnt && pEnt._lockTarget, live, bounces) : [];
   /* 特效（協議 v17）：把整條彈跳路徑交給顯示層畫成「敵人之間彈射的連鎖雷鏈」；
@@ -249,7 +250,7 @@ function firePotentialOmega(pEnt, def, live, floatSel, st, mult) {
 
 /* 雷霆過載連鎖：由 skills.js castSkill 在雷電系技能命中後呼叫。
    追加 (3＋連擊數) 次、各 chainPortion(10%) 該擊總傷害的連鎖：
-   第一跳打主目標，之後每跳跳到離上一個目標最近的鄰居（→ js/battlefield.js bfChainOrder）。
+   第一跳打主目標，之後每跳在還沒跳過的存活敵人裡隨機挑（→ js/battlefield.js bfChainOrder）。
    sourceCrit＝本擊是否爆擊：連鎖傷害本就內含爆擊倍率，浮字樣式沿用一般技能爆擊（黃字）。
    skDef＝技能定義（可選末參）：§3.5 系別判定統一走 skillElemOf（帶 lightning 標籤即算雷電系）。 */
 function applyPotentialChainLightning(pEnt, fx, targets, totalDmg, comboReps, floatSel, sourceCrit, skDef) {
@@ -265,7 +266,7 @@ function applyPotentialChainLightning(pEnt, fx, targets, totalDmg, comboReps, fl
   // 前綴用 🌩️（雷霆過載 emoji）：與「⚡天罰（神鑄特效，吃物攻）」及連鎖閃電技能本體的 ⚡ 區隔，避免誤判傷害來源
   var floatPrefix = '🌩️' + (sourceCrit ? '爆擊 ' : '');
   /* 彈跳對象取自整個戰場而不是技能自己的 targets：技能改成單體之後，
-     沿用 targets 會讓所有彈跳都落在同一隻身上。第一跳打主目標，之後由近而遠往鄰居擴散。 */
+     沿用 targets 會讓所有彈跳都落在同一隻身上。第一跳打主目標，之後隨機往其他敵人擴散。 */
   var field = (typeof skillRtActiveEnemies === 'function')
     ? skillRtActiveEnemies(targets) : (targets || []).filter(function (m) { return m && m.hp > 0; });
   var first = (targets || []).filter(function (m) { return m && m.hp > 0; })[0] || null;

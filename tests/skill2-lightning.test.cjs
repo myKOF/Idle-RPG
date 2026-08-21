@@ -278,9 +278,10 @@ test('連鎖閃電：上一個目標死亡仍保留為下一段 VFX 的起點', 
   c.castSkill2(p, [dead, next, third], 'chainlightning', 'mv-float');
 
   assert.equal(dead.hp, 0, '第一個目標應死亡');
-  assert.ok(next.hp < next.maxHp, '死亡後仍應繼續命中下一個目標');
+  // 彈射目標是範圍內隨機挑的，因此只能斷言「有人被續打」，不能指定是 B 還是 C
+  assert.ok(next.hp < next.maxHp || third.hp < third.maxHp, '死亡後仍應繼續命中下一個目標');
   assert.ok(specs.some((spec) => spec.variant === 'lightning-chain' &&
-    spec.targets[0] === 'A' && spec.targets[1] === 'B'),
+    spec.targets[0] === 'A' && (spec.targets[1] === 'B' || spec.targets[1] === 'C')),
   '上一個死亡目標仍應保留為下一段閃電鏈的起點');
 });
 

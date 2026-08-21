@@ -12,11 +12,11 @@
 
 importScripts('protocol.js?v=24', 'shim.js?v=4');
 importScripts(
-  '../util.js?v=20260814-skill-summary', '../data.js?v=20260821-ult-evolution-5', '../status.js?v=20260821-ult-evolution-5', '../formula.js?v=20260821-ult-evolution-5', '../battlefield.js?v=20260820-ult-evolution-3', '../stats.js',
+  '../util.js?v=20260814-skill-summary', '../data.js?v=20260821-ult-evolution-5', '../status.js?v=20260821-ult-evolution-5', '../formula.js?v=20260821-ult-evolution-5', '../battlefield.js?v=20260821-bounce-random', '../stats.js',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260820-ult-evolution-3', '../skills2.js?v=20260821-ult-evolution-5', '../talents.js?v=20260811-loadout-cap-clamp',
+  '../skills.js?v=20260821-bounce-random', '../skills2.js?v=20260821-bounce-random', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260820-ult-evolution-3', '../special_rules.js',
-  '../combat.js?v=20260821-ult-evolution-5', '../legendary.js?v=20260821-ult-evolution-5', '../potential.js?v=20260814-skill-min-interval', '../tower.js?v=20260817-projectile-retaliation',
+  '../combat.js?v=20260821-ult-evolution-5', '../legendary.js?v=20260821-bounce-random', '../potential.js?v=20260821-bounce-random', '../tower.js?v=20260817-projectile-retaliation',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260820-ult-evolution-3',
   '../tasks.js'
 );

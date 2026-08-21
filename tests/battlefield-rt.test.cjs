@@ -107,7 +107,7 @@ test('領域的受傷增幅只加在站在領域裡的敵人身上', () => {
   assert.equal(c.skillRtFieldAmpACfg({ atk: 100, dmgType: 'phys', isPlayer: true }).atk, 200);
 });
 
-test('DoT 濺射與印記轉移交給離死者最近的敵人，不再全場隨機', () => {
+test('DoT 濺射與印記轉移交給場上隨機一個存活敵人（技能說明就是寫「隨機」）', () => {
   const c = loadGameContext();
   c.resetSkillRT();
   const stats = {
@@ -123,24 +123,31 @@ test('DoT 濺射與印記轉移交給離死者最近的敵人，不再全場隨�
   const near = enemy(250, 0);   // 就在死者旁邊
   const far = enemy(700, 0);    // 場上最遠
 
-  for (let i = 0; i < 30; i++) {
+  const hit = new Set();
+  for (let i = 0; i < 200; i++) {
     near.dots = []; far.dots = [];
     c.skillRtOnEnemyDeath(dead, [near, far]);
-    assert.equal(near.dots.length, 1, '濺射應落在最近的敵人');
-    assert.equal(far.dots.length, 0, '最遠的敵人不該吃到濺射');
+    assert.equal(near.dots.length + far.dots.length, 1, '每次死亡只濺射給 1 個接收者');
+    if (near.dots.length) hit.add(near);
+    if (far.dots.length) hit.add(far);
   }
+  assert.equal(hit.size, 2, '最遠的敵人也要有機會接到（不是固定給最近的）');
 });
 
-test('連鎖由近而遠擴散：第一跳打主目標，之後跳到最近的鄰居', () => {
+test('連鎖隨機擴散：第一跳打主目標，之後在剩下的敵人之間隨機挑', () => {
   const c = loadGameContext();
   const a = enemy(100, 0);   // 主目標（離我方最近）
   const b = enemy(180, 0);   // 就在 a 旁邊
   const far = enemy(700, 0); // 最遠
-  const order = c.bfChainOrder(a, [a, b, far], 3);
-  assert.equal(order.length, 3);
-  assert.equal(order[0], a, '第一跳打主目標');
-  assert.equal(order[1], b, '第二跳跳到最近的鄰居');
-  assert.equal(order[2], far);
+  const seen = new Set();
+  for (let i = 0; i < 200; i++) {
+    const order = c.bfChainOrder(a, [a, b, far], 3);
+    assert.equal(order.length, 3);
+    assert.equal(order[0], a, '第一跳打主目標');
+    assert.equal(new Set(order).size, 3, '同一輪內不得重複跳同一隻');
+    seen.add(order[1]);
+  }
+  assert.equal(seen.size, 2, '最遠的敵人也要有機會被跳到（不是固定跳最近的）');
 });
 
 test('連鎖的下一跳一定往外跳，不會停在原地', () => {
@@ -149,7 +156,7 @@ test('連鎖的下一跳一定往外跳，不會停在原地', () => {
   const b = enemy(180, 0);
   assert.equal(c.bfChainNext(a, [a, b]), b, '有其他敵人時必須跳走');
   assert.equal(c.bfChainNext(a, [a]), a, '場上只剩自己時仍打自己（維持打滿次數）');
-  assert.equal(c.bfChainNext(null, [b, a]), a, '沒有起點時從離我方最近的開始');
+  assert.equal(c.bfChainNext(null, [b, a]), a, '沒有起點時從離我方最近的開始（起手不是彈射）');
 });
 
 test('場上只有一個敵人時連鎖仍打滿次數（與改造前行為一致）', () => {

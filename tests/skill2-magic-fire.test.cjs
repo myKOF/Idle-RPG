@@ -425,7 +425,10 @@ test('火柱·烈焰衝擊：場域不再追擊，消失時對周圍 6 米造成
   const p = playerEnt();
   const m = enemy(1e9, 100, 0);
   const near = enemy(1e9, 100, 100); // 超出火龍捲 3 米半徑，但仍在烈焰衝擊 6 米內
-  const out = enemy(1e9, 100, 200);
+  /* 【雙重龍捲】的第 2 根柱子是「20 米內隨機 1 個目標」（2026-08-21 選敵通則），
+     out 因此要放在 20 米之外，否則第 2 根柱子有機會落在它身上，本測試要驗的
+     「6 米外不吃烈焰衝擊」就會忽紅忽綠。 */
+  const out = enemy(1e9, 100, 500);
 
   c.castSkill2(p, [m, near, out], 'firepillar', 'mv-float');
   const field = c.SKILL2_RT.grounds[0];
