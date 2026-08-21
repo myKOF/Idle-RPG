@@ -18,17 +18,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 22.05,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 12.05,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 44736357456,
-      "avgDps": 2028859749,
-      "peakDps": 13252885154,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 30424493359452,
+      "avgDps": 2524854220701,
+      "peakDps": 18708772408068,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -40,17 +40,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
       "clearedTime": 11.6,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 5714636261,
-      "avgDps": 492641057,
-      "peakDps": 2779196576,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 25604498578484,
+      "avgDps": 2207284360214,
+      "peakDps": 13481363929946,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -62,17 +62,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.75,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 64.7,
       "totalKills": 1,
       "expectedKills": 1,
       "cleared": true,
-      "totalDamage": 115359451,
-      "avgDps": 153812601,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 18731101984134,
+      "avgDps": 289506985844,
+      "peakDps": 2660730338307,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -96,17 +96,17 @@
         "note": "命中12m全額擴散 + 30%絕對閃避"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 21.9,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 6.3,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 69045283906,
-      "avgDps": 3152752690,
-      "peakDps": 22360189093,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 31900706169336,
+      "avgDps": 5063604153863,
+      "peakDps": 26624563148852,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -119,17 +119,17 @@
         "note": "命中12m全額擴散 + 30%絕對閃避"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 11.55,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 6.3,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 5602572625,
-      "avgDps": 485071223,
-      "peakDps": 3021266034,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 26668147075708,
+      "avgDps": 4233039218366,
+      "peakDps": 22489006433211,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -142,17 +142,17 @@
         "note": "命中12m全額擴散 + 30%絕對閃避"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.75,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 101.4,
       "totalKills": 1,
       "expectedKills": 1,
       "cleared": true,
-      "totalDamage": 112565419,
-      "avgDps": 150087225,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 18711381222602,
+      "avgDps": 184530386811,
+      "peakDps": 1911227940001,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -176,17 +176,17 @@
         "note": "命中堆疊靈魂撕裂最高+300%受傷"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 22.05,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 6.3,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 46968990822,
-      "avgDps": 2130112962,
-      "peakDps": 13709170154,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 27428862223601,
+      "avgDps": 4353787654540,
+      "peakDps": 17119354670043,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -199,17 +199,17 @@
         "note": "命中堆疊靈魂撕裂最高+300%受傷"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 11.55,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 6.95,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 5820648772,
-      "avgDps": 503952275,
-      "peakDps": 3291048924,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 26205850928085,
+      "avgDps": 3770626032818,
+      "peakDps": 19762697143697,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -222,17 +222,17 @@
         "note": "命中堆疊靈魂撕裂最高+300%受傷"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 1.05,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 54.15,
       "totalKills": 1,
       "expectedKills": 1,
       "cleared": true,
-      "totalDamage": 527922008,
-      "avgDps": 502782865,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 18826196566153,
+      "avgDps": 347667526614,
+      "peakDps": 3365846235282,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -256,17 +256,17 @@
         "note": "前方單道8倍重擊 + 普通小怪直接處決秒殺"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 32.6,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 11.55,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 371104137622,
-      "avgDps": 11383562504,
-      "peakDps": 103207626230,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 52048374696276,
+      "avgDps": 4506352787556,
+      "peakDps": 14790589910272,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -279,17 +279,17 @@
         "note": "前方單道8倍重擊 + 普通小怪直接處決秒殺"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 17.3,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 11.55,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 40674540980,
-      "avgDps": 2351129536,
-      "peakDps": 18603677494,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 32063172489083,
+      "avgDps": 2776032250137,
+      "peakDps": 14355318485587,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -302,17 +302,17 @@
         "note": "前方單道8倍重擊 + 普通小怪直接處決秒殺"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.75,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 27.3,
       "totalKills": 1,
       "expectedKills": 1,
       "cleared": true,
-      "totalDamage": 98245032,
-      "avgDps": 130993376,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 20640214757979,
+      "avgDps": 756051822637,
+      "peakDps": 7637803888106,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -334,17 +334,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 33.15,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 116.95,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 204950383708,
-      "avgDps": 6182515346,
-      "peakDps": 85862251776,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 33517945806370,
+      "avgDps": 286600648195,
+      "peakDps": 7518530088398,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -356,17 +356,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 17.35,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 116.95,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 20590666200,
-      "avgDps": 1186781914,
-      "peakDps": 13310750836,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 28142918018535,
+      "avgDps": 240640598705,
+      "peakDps": 4620165142871,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -378,17 +378,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 1.3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 273.1,
       "totalKills": 1,
       "expectedKills": 1,
       "cleared": true,
-      "totalDamage": 1303430529,
-      "avgDps": 1002638868,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 18668055144754,
+      "avgDps": 68356115506,
+      "peakDps": 1743978077631,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -412,17 +412,17 @@
         "note": "迴身四方斬次數+3 + 100%物理傷害"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 31.6,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 42.7,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 257285899390,
-      "avgDps": 8141958841,
-      "peakDps": 107212163169,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 40350962917486,
+      "avgDps": 944987421955,
+      "peakDps": 17802064810867,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -435,17 +435,17 @@
         "note": "迴身四方斬次數+3 + 100%物理傷害"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 17.4,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 99.85,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 27285276528,
-      "avgDps": 1568119341,
-      "peakDps": 20582088290,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 29237008888344,
+      "avgDps": 292809302838,
+      "peakDps": 6229246560018,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -458,17 +458,17 @@
         "note": "迴身四方斬次數+3 + 100%物理傷害"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.85,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 231.8,
       "totalKills": 1,
       "expectedKills": 1,
       "cleared": true,
-      "totalDamage": 1415411045,
-      "avgDps": 1665189465,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 18720719376578,
+      "avgDps": 80762378674,
+      "peakDps": 2091563178491,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -492,17 +492,17 @@
         "note": "每擊生成8段200%風傷龍捲風"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 26.8,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 100.45,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 149166527480,
-      "avgDps": 5565915204,
-      "peakDps": 64487955009,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 33767653140977,
+      "avgDps": 336163794335,
+      "peakDps": 8645243986039,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -515,17 +515,17 @@
         "note": "每擊生成8段200%風傷龍捲風"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 9.95,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 88.4,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 22667932028,
-      "avgDps": 2278184123,
-      "peakDps": 18262485342,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 27940939600887,
+      "avgDps": 316073977386,
+      "peakDps": 5944258454486,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -538,17 +538,17 @@
         "note": "每擊生成8段200%風傷龍捲風"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.8,
-      "totalKills": 1,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 0,
       "expectedKills": 1,
-      "cleared": true,
-      "totalDamage": 1083726874,
-      "avgDps": 1354658592,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "cleared": false,
+      "totalDamage": 13475241690787,
+      "avgDps": 44917472303,
+      "peakDps": 1875564601445,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -572,17 +572,17 @@
         "note": "轉為被動每3秒自動施放 + 範圍擴大30%"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 24.35,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 39.5,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 216877657708,
-      "avgDps": 8906679988,
-      "peakDps": 38166071239,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 32747342272902,
+      "avgDps": 829046639820,
+      "peakDps": 11497343480633,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -595,17 +595,17 @@
         "note": "轉為被動每3秒自動施放 + 範圍擴大30%"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 11.5,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 30.35,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 21984332547,
-      "avgDps": 1911681091,
-      "peakDps": 7874341581,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 28092825194717,
+      "avgDps": 925628507239,
+      "peakDps": 11514465463033,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -618,17 +618,17 @@
         "note": "轉為被動每3秒自動施放 + 範圍擴大30%"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 3,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 136.95,
       "totalKills": 1,
       "expectedKills": 1,
       "cleared": true,
-      "totalDamage": 124192165,
-      "avgDps": 41397388,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 19195152768617,
+      "avgDps": 140161758077,
+      "peakDps": 1567537450686,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -650,17 +650,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 93.7,
-      "totalKills": 200,
-      "expectedKills": 200,
-      "cleared": true,
-      "totalDamage": 37445978674,
-      "avgDps": 399636912,
-      "peakDps": 4145786755,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 11,
+      "expectedKills": 20,
+      "cleared": false,
+      "totalDamage": 16050393064772,
+      "avgDps": 53501310216,
+      "peakDps": 1272927818756,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -672,17 +672,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 34,
-      "totalKills": 25,
-      "expectedKills": 25,
-      "cleared": true,
-      "totalDamage": 6922153418,
-      "avgDps": 203592748,
-      "peakDps": 1967372874,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 2,
+      "expectedKills": 5,
+      "cleared": false,
+      "totalDamage": 20456167474243,
+      "avgDps": 68187224914,
+      "peakDps": 2143032582030,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -694,17 +694,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.95,
-      "totalKills": 1,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 0,
       "expectedKills": 1,
-      "cleared": true,
-      "totalDamage": 557696003,
-      "avgDps": 587048424,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "cleared": false,
+      "totalDamage": 10198716725362,
+      "avgDps": 33995722418,
+      "peakDps": 536028620162,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -728,17 +728,17 @@
         "note": "路徑貫穿40%傷害 + 暴擊頻繁縮短CD"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 56.95,
-      "totalKills": 200,
-      "expectedKills": 200,
-      "cleared": true,
-      "totalDamage": 38026480964,
-      "avgDps": 667716962,
-      "peakDps": 6176347540,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 13,
+      "expectedKills": 20,
+      "cleared": false,
+      "totalDamage": 19851739440627,
+      "avgDps": 66172464802,
+      "peakDps": 1433010656869,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -751,17 +751,17 @@
         "note": "路徑貫穿40%傷害 + 暴擊頻繁縮短CD"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 22.95,
-      "totalKills": 25,
-      "expectedKills": 25,
-      "cleared": true,
-      "totalDamage": 7939757259,
-      "avgDps": 345958922,
-      "peakDps": 2549016014,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 3,
+      "expectedKills": 5,
+      "cleared": false,
+      "totalDamage": 20394732631615,
+      "avgDps": 67982442105,
+      "peakDps": 1395948373097,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -774,17 +774,17 @@
         "note": "路徑貫穿40%傷害 + 暴擊頻繁縮短CD"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.9,
-      "totalKills": 1,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 0,
       "expectedKills": 1,
-      "cleared": true,
-      "totalDamage": 538909660,
-      "avgDps": 598788511,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "cleared": false,
+      "totalDamage": 8249586706876,
+      "avgDps": 27498622356,
+      "peakDps": 756408801404,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -808,17 +808,17 @@
         "note": "擊殺堆疊死亡收割(最高+1000%總傷)"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 117.15,
-      "totalKills": 200,
-      "expectedKills": 200,
-      "cleared": true,
-      "totalDamage": 250954948902,
-      "avgDps": 2142167724,
-      "peakDps": 36247550586,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 10,
+      "expectedKills": 20,
+      "cleared": false,
+      "totalDamage": 16338130875737,
+      "avgDps": 54460436252,
+      "peakDps": 1575620717139,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -831,17 +831,17 @@
         "note": "擊殺堆疊死亡收割(最高+1000%總傷)"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 23.45,
-      "totalKills": 25,
-      "expectedKills": 25,
-      "cleared": true,
-      "totalDamage": 36346339816,
-      "avgDps": 1549950525,
-      "peakDps": 19100126209,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 2,
+      "expectedKills": 5,
+      "cleared": false,
+      "totalDamage": 17733470190559,
+      "avgDps": 59111567302,
+      "peakDps": 1986971737688,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -854,17 +854,17 @@
         "note": "擊殺堆疊死亡收割(最高+1000%總傷)"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.9,
-      "totalKills": 1,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 0,
       "expectedKills": 1,
-      "cleared": true,
-      "totalDamage": 404283827,
-      "avgDps": 449204252,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "cleared": false,
+      "totalDamage": 9426223261999,
+      "avgDps": 31420744207,
+      "peakDps": 720767372183,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -888,17 +888,17 @@
         "note": "全場鎖敵無限追魂刃(每怪各吃1發+100%傷害)"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 41.65,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 216.15,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 145644790859,
-      "avgDps": 3496873730,
-      "peakDps": 33785471884,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 33536587689912,
+      "avgDps": 155154234050,
+      "peakDps": 5272700784979,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -911,17 +911,17 @@
         "note": "全場鎖敵無限追魂刃(每怪各吃1發+100%傷害)"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 15.6,
-      "totalKills": 25,
-      "expectedKills": 25,
-      "cleared": true,
-      "totalDamage": 12625643215,
-      "avgDps": 809336104,
-      "peakDps": 5114222766,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 4,
+      "expectedKills": 5,
+      "cleared": false,
+      "totalDamage": 23272278212592,
+      "avgDps": 77574260709,
+      "peakDps": 2141435836909,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -934,17 +934,17 @@
         "note": "全場鎖敵無限追魂刃(每怪各吃1發+100%傷害)"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.9,
-      "totalKills": 1,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 0,
       "expectedKills": 1,
-      "cleared": true,
-      "totalDamage": 782248980,
-      "avgDps": 869165533,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "cleared": false,
+      "totalDamage": 6846237356149,
+      "avgDps": 22820791187,
+      "peakDps": 686972768352,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -966,17 +966,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 28,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 65.45,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 109972504703,
-      "avgDps": 3927589454,
-      "peakDps": 12749698205,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 42543346359540,
+      "avgDps": 650012931391,
+      "peakDps": 5438082150442,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -988,17 +988,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 16.3,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 35.25,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 42692985076,
-      "avgDps": 2619201538,
-      "peakDps": 7844957839,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 27728622578476,
+      "avgDps": 786627590879,
+      "peakDps": 5878945891034,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -1010,17 +1010,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.85,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 49.25,
       "totalKills": 1,
       "expectedKills": 1,
       "cleared": true,
-      "totalDamage": 4731691968,
-      "avgDps": 5566696433,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 18953907577768,
+      "avgDps": 384850915285,
+      "peakDps": 5559419644796,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -1044,17 +1044,17 @@
         "note": "終結斬單段×連擊數×10倍周圍6m爆發"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 27.3,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 42.7,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 862105000626,
-      "avgDps": 31578937752,
-      "peakDps": 204060458942,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 389614613917383,
+      "avgDps": 9124464026168,
+      "peakDps": 100079425288402,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -1067,17 +1067,17 @@
         "note": "終結斬單段×連擊數×10倍周圍6m爆發"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 12.2,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 7.55,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 201358808494,
-      "avgDps": 16504820368,
-      "peakDps": 119803507246,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 238420505119133,
+      "avgDps": 31578874850216,
+      "peakDps": 57307510903654,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -1090,17 +1090,17 @@
         "note": "終結斬單段×連擊數×10倍周圍6m爆發"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.9,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 11.9,
       "totalKills": 1,
       "expectedKills": 1,
       "cleared": true,
-      "totalDamage": 3378050498,
-      "avgDps": 3753389442,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 29037564448561,
+      "avgDps": 2440131466266,
+      "peakDps": 476630855575,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -1124,17 +1124,17 @@
         "note": "每次斬擊降下400%閃電落雷"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 20.7,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 22.9,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 396077848545,
-      "avgDps": 19134195582,
-      "peakDps": 56870094967,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 57780256972421,
+      "avgDps": 2523155326307,
+      "peakDps": 12450685749951,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -1147,17 +1147,17 @@
         "note": "每次斬擊降下400%閃電落雷"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 11.9,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 55.95,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 49050597760,
-      "avgDps": 4121898971,
-      "peakDps": 11996501281,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 33245298313184,
+      "avgDps": 594196573962,
+      "peakDps": 7720876546885,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -1170,17 +1170,17 @@
         "note": "每次斬擊降下400%閃電落雷"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.75,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 38.3,
       "totalKills": 1,
       "expectedKills": 1,
       "cleared": true,
-      "totalDamage": 117234738,
-      "avgDps": 156312984,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 19624841130094,
+      "avgDps": 512397940734,
+      "peakDps": 3687958550233,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -1204,17 +1204,17 @@
         "note": "月牙斬不再均分傷害，全員全額傷害+100%"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 28.9,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 55.05,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 1293902263679,
-      "avgDps": 44771704626,
-      "peakDps": 171796289471,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 213630987763327,
+      "avgDps": 3880671893975,
+      "peakDps": 34179543414162,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -1227,17 +1227,17 @@
         "note": "月牙斬不再均分傷害，全員全額傷害+100%"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 17.9,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 42.7,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 101261326256,
-      "avgDps": 5657057333,
-      "peakDps": 26920428486,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 55281406652269,
+      "avgDps": 1294646525814,
+      "peakDps": 12998646408241,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -1250,17 +1250,17 @@
         "note": "月牙斬不再均分傷害，全員全額傷害+100%"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.85,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 38.3,
       "totalKills": 1,
       "expectedKills": 1,
       "cleared": true,
-      "totalDamage": 9288677542,
-      "avgDps": 10927855932,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 22321191343825,
+      "avgDps": 582798729604,
+      "peakDps": 6911979652990,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -1282,17 +1282,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 120.05,
-      "totalKills": 151,
-      "expectedKills": 200,
-      "cleared": false,
-      "totalDamage": 8103250454,
-      "avgDps": 67498963,
-      "peakDps": 515681645,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 80.15,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 28132435951192,
+      "avgDps": 350997329397,
+      "peakDps": 9812150983497,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -1304,17 +1304,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 50.4,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 66.3,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 3606500290,
-      "avgDps": 71557545,
-      "peakDps": 456424558,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 25997403465317,
+      "avgDps": 392117699326,
+      "peakDps": 5349492783781,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -1326,17 +1326,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.9,
-      "totalKills": 1,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 0,
       "expectedKills": 1,
-      "cleared": true,
-      "totalDamage": 110765974,
-      "avgDps": 123073304,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "cleared": false,
+      "totalDamage": 11328466729447,
+      "avgDps": 37761555765,
+      "peakDps": 1945287973574,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -1360,17 +1360,17 @@
         "note": "永久24m殺神領域，擊殺疊層增傷(最高+400%)"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 120.05,
-      "totalKills": 152,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 6,
+      "expectedKills": 20,
       "cleared": false,
-      "totalDamage": 13953924985,
-      "avgDps": 116234277,
-      "peakDps": 1100078296,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 9162275057948,
+      "avgDps": 30540916860,
+      "peakDps": 498306478656,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -1383,17 +1383,17 @@
         "note": "永久24m殺神領域，擊殺疊層增傷(最高+400%)"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 54.9,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 140.2,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 5077604957,
-      "avgDps": 92488251,
-      "peakDps": 741797299,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 26732430704343,
+      "avgDps": 190673542827,
+      "peakDps": 6754241827841,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -1406,17 +1406,17 @@
         "note": "永久24m殺神領域，擊殺疊層增傷(最高+400%)"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 1.5,
-      "totalKills": 1,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 0,
       "expectedKills": 1,
-      "cleared": true,
-      "totalDamage": 117720444,
-      "avgDps": 78480296,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "cleared": false,
+      "totalDamage": 12318562690146,
+      "avgDps": 41061875634,
+      "peakDps": 2513001372683,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -1440,17 +1440,17 @@
         "note": "永久24m萬毒血霧，每0.5s疊層劇毒(最高2000%毒傷)"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 20.05,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 3.55,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 461074107,
-      "avgDps": 22996215,
-      "peakDps": 134266723,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 24867308838039,
+      "avgDps": 7004875729025,
+      "peakDps": 12621104539484,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -1463,17 +1463,17 @@
         "note": "永久24m萬毒血霧，每0.5s疊層劇毒(最高2000%毒傷)"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 10.55,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 5.05,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 431811164,
-      "avgDps": 40929968,
-      "peakDps": 133021472,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 24867308838039,
+      "avgDps": 4924219571889,
+      "peakDps": 9958159804341,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -1486,17 +1486,17 @@
         "note": "永久24m萬毒血霧，每0.5s疊層劇毒(最高2000%毒傷)"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 1.1,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 6.1,
       "totalKills": 1,
       "expectedKills": 1,
       "cleared": true,
-      "totalDamage": 0,
-      "avgDps": 0,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 18650481628529,
+      "avgDps": 3057456004677,
+      "peakDps": 5223395261560,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -1520,17 +1520,17 @@
         "note": "流血中毒立即結算全部持續傷害 + 6m爆炸"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 120.05,
-      "totalKills": 156,
-      "expectedKills": 200,
-      "cleared": false,
-      "totalDamage": 8911735571,
-      "avgDps": 74233532,
-      "peakDps": 654950426,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 182.4,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 39574013971157,
+      "avgDps": 216962795894,
+      "peakDps": 33043339616026,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -1543,17 +1543,17 @@
         "note": "流血中毒立即結算全部持續傷害 + 6m爆炸"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 51.1,
-      "totalKills": 25,
-      "expectedKills": 25,
-      "cleared": true,
-      "totalDamage": 3679913742,
-      "avgDps": 72013968,
-      "peakDps": 461856185,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 3,
+      "expectedKills": 5,
+      "cleared": false,
+      "totalDamage": 22184263507326,
+      "avgDps": 73947545024,
+      "peakDps": 7067392064275,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -1566,17 +1566,17 @@
         "note": "流血中毒立即結算全部持續傷害 + 6m爆炸"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 1.6,
-      "totalKills": 1,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 0,
       "expectedKills": 1,
-      "cleared": true,
-      "totalDamage": 125741412,
-      "avgDps": 78588382,
-      "peakDps": 125741412,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "cleared": false,
+      "totalDamage": 10123736775156,
+      "avgDps": 33745789251,
+      "peakDps": 2579917989554,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -1598,17 +1598,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 31.85,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 11.75,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 75164151419,
-      "avgDps": 2359941960,
-      "peakDps": 5619978918,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 28036246660162,
+      "avgDps": 2386063545546,
+      "peakDps": 6310627001908,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -1620,17 +1620,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 11.45,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 6.55,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 16271045573,
-      "avgDps": 1421052015,
-      "peakDps": 4443608978,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 25345367858637,
+      "avgDps": 3869521810479,
+      "peakDps": 7333972756063,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -1642,17 +1642,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.95,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 5.1,
       "totalKills": 1,
       "expectedKills": 1,
       "cleared": true,
-      "totalDamage": 750051429,
-      "avgDps": 789527820,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 18801351573107,
+      "avgDps": 3686539524139,
+      "peakDps": 4944141432668,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -1676,17 +1676,17 @@
         "note": "損血5%換取雙刀亂舞傷害+400%"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 31.85,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 13.15,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 405249104752,
-      "avgDps": 12723676758,
-      "peakDps": 41759569605,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 33340984411551,
+      "avgDps": 2535436076924,
+      "peakDps": 9142755668398,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -1699,17 +1699,17 @@
         "note": "損血5%換取雙刀亂舞傷害+400%"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 13.35,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 6.45,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 76063486502,
-      "avgDps": 5697639438,
-      "peakDps": 26694315163,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 30745021364308,
+      "avgDps": 4766669978963,
+      "peakDps": 9168593795826,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -1722,17 +1722,17 @@
         "note": "損血5%換取雙刀亂舞傷害+400%"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.75,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 3.95,
       "totalKills": 1,
       "expectedKills": 1,
       "cleared": true,
-      "totalDamage": 94698811,
-      "avgDps": 126265081,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 18650482812593,
+      "avgDps": 4721641218378,
+      "peakDps": 8554535512448,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -1756,17 +1756,17 @@
         "note": "雙刀附加神樂灼焰每跳疊層火傷"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 31.5,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 12.45,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 66986095700,
-      "avgDps": 2126542721,
-      "peakDps": 7048352708,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 28038645802644,
+      "avgDps": 2252100064469,
+      "peakDps": 6651866637700,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -1779,17 +1779,17 @@
         "note": "雙刀附加神樂灼焰每跳疊層火傷"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 12.15,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 7.15,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 16500627608,
-      "avgDps": 1358076346,
-      "peakDps": 4380922378,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 24867311354175,
+      "avgDps": 3477945643941,
+      "peakDps": 6511666946548,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -1802,17 +1802,17 @@
         "note": "雙刀附加神樂灼焰每跳疊層火傷"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.95,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 6.05,
       "totalKills": 1,
       "expectedKills": 1,
       "cleared": true,
-      "totalDamage": 841002883,
-      "avgDps": 885266193,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 18650483700641,
+      "avgDps": 3082724578618,
+      "peakDps": 3916601586015,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -1838,17 +1838,17 @@
         "note": "雙持雙手巨劍，雙手詞條+40%雙倍加成"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 32.95,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 8.6,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 163358895587,
-      "avgDps": 4957781353,
-      "peakDps": 12922480991,
-      "atkStat": 3117568,
-      "critDmgStat": 7614.179999999998,
-      "critRateStat": 568.5830499999998
+      "totalDamage": 28510910862115,
+      "avgDps": 3315222193269,
+      "peakDps": 7661546869146,
+      "atkStat": 60478682921,
+      "critDmgStat": 21000.419999999995,
+      "critRateStat": 1374.2608999999998
     },
     "elite": {
       "target": {
@@ -1862,17 +1862,17 @@
         "note": "雙持雙手巨劍，雙手詞條+40%雙倍加成"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 12.85,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 6.9,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 35751817059,
-      "avgDps": 2782242573,
-      "peakDps": 10408193428,
-      "atkStat": 3117568,
-      "critDmgStat": 7614.179999999998,
-      "critRateStat": 568.5830499999998
+      "totalDamage": 30459770393716,
+      "avgDps": 4414459477350,
+      "peakDps": 11268629358405,
+      "atkStat": 60478682921,
+      "critDmgStat": 21000.419999999995,
+      "critRateStat": 1374.2608999999998
     },
     "boss": {
       "target": {
@@ -1886,17 +1886,17 @@
         "note": "雙持雙手巨劍，雙手詞條+40%雙倍加成"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.9,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 4.75,
       "totalKills": 1,
       "expectedKills": 1,
       "cleared": true,
-      "totalDamage": 1173878793,
-      "avgDps": 1304309770,
-      "peakDps": 0,
-      "atkStat": 3117568,
-      "critDmgStat": 7614.179999999998,
-      "critRateStat": 568.5830499999998
+      "totalDamage": 18650483108609,
+      "avgDps": 3926417496549,
+      "peakDps": 7816333692644,
+      "atkStat": 60478682921,
+      "critDmgStat": 21000.419999999995,
+      "critRateStat": 1374.2608999999998
     }
   },
   {
@@ -1920,17 +1920,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 120.05,
-      "totalKills": 189,
-      "expectedKills": 200,
-      "cleared": false,
-      "totalDamage": 17332998784,
-      "avgDps": 144381498,
-      "peakDps": 640036558,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 46.7,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 27350796371667,
+      "avgDps": 585670157852,
+      "peakDps": 2372422694742,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -1943,17 +1943,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 23.15,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 52.3,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 4100638144,
-      "avgDps": 177133397,
-      "peakDps": 856061108,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 25516750429799,
+      "avgDps": 487891977625,
+      "peakDps": 1538591276786,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -1966,17 +1966,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.3,
-      "totalKills": 1,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 0,
       "expectedKills": 1,
-      "cleared": true,
-      "totalDamage": 173055928,
-      "avgDps": 576853093,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "cleared": false,
+      "totalDamage": 13304619610822,
+      "avgDps": 44348732036,
+      "peakDps": 445472134315,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -2002,17 +2002,17 @@
         "note": "每10次反擊射出8m神聖光彈(800%神聖傷害)"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 57,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 18.55,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 84717623592,
-      "avgDps": 1486274098,
-      "peakDps": 26697660058,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 32020585851542,
+      "avgDps": 1726177134854,
+      "peakDps": 6242914577736,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -2026,17 +2026,17 @@
         "note": "每10次反擊射出8m神聖光彈(800%神聖傷害)"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 19.2,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 36.25,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 6175691835,
-      "avgDps": 321650616,
-      "peakDps": 1058164811,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 25565171837937,
+      "avgDps": 705246119667,
+      "peakDps": 5000282615309,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -2050,17 +2050,17 @@
         "note": "每10次反擊射出8m神聖光彈(800%神聖傷害)"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.6,
-      "totalKills": 1,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 0,
       "expectedKills": 1,
-      "cleared": true,
-      "totalDamage": 242330994,
-      "avgDps": 403884990,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "cleared": false,
+      "totalDamage": 13690507605955,
+      "avgDps": 45635025353,
+      "peakDps": 818921730586,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -2086,17 +2086,17 @@
         "note": "死亡30m範圍4000%地系爆發，倒地5s原地滿血復活"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 120.05,
-      "totalKills": 185,
-      "expectedKills": 200,
-      "cleared": false,
-      "totalDamage": 16407210215,
-      "avgDps": 136669806,
-      "peakDps": 971354006,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 39.2,
+      "totalKills": 20,
+      "expectedKills": 20,
+      "cleared": true,
+      "totalDamage": 27869048119474,
+      "avgDps": 710945105089,
+      "peakDps": 1933085101561,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -2110,17 +2110,17 @@
         "note": "死亡30m範圍4000%地系爆發，倒地5s原地滿血復活"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 27.15,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 60.85,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 4320358683,
-      "avgDps": 159129233,
-      "peakDps": 1017128757,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 25531638245886,
+      "avgDps": 419583208642,
+      "peakDps": 2257792746410,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -2134,17 +2134,17 @@
         "note": "死亡30m範圍4000%地系爆發，倒地5s原地滿血復活"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.85,
-      "totalKills": 1,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 0,
       "expectedKills": 1,
-      "cleared": true,
-      "totalDamage": 238850568,
-      "avgDps": 281000668,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "cleared": false,
+      "totalDamage": 13762905292104,
+      "avgDps": 45876350974,
+      "peakDps": 420583762815,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -2170,17 +2170,17 @@
         "note": "近2s失血百分比完全疊加至反擊傷害"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 119.15,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 27.45,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 418593520267,
-      "avgDps": 3513164249,
-      "peakDps": 15115594089,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 166873343247301,
+      "avgDps": 6079174617388,
+      "peakDps": 66011337791932,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "elite": {
       "target": {
@@ -2194,17 +2194,17 @@
         "note": "近2s失血百分比完全疊加至反擊傷害"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 26.05,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 4,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 64792809805,
-      "avgDps": 2487247977,
-      "peakDps": 8141095884,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 43414798095437,
+      "avgDps": 10853699523859,
+      "peakDps": 16448773407239,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     },
     "boss": {
       "target": {
@@ -2218,17 +2218,17 @@
         "note": "近2s失血百分比完全疊加至反擊傷害"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.6,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 44.8,
       "totalKills": 1,
       "expectedKills": 1,
       "cleared": true,
-      "totalDamage": 963771788,
-      "avgDps": 1606286313,
-      "peakDps": 0,
-      "atkStat": 1939192,
-      "critDmgStat": 5996.0999999999985,
-      "critRateStat": 445.7030499999999
+      "totalDamage": 19430971646352,
+      "avgDps": 433727045678,
+      "peakDps": 2974991962855,
+      "atkStat": 37309966154,
+      "critDmgStat": 16479.300000000003,
+      "critRateStat": 1078.1009
     }
   },
   {
@@ -2252,17 +2252,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 44.65,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 183.3,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 75992235201,
-      "avgDps": 1701953756,
-      "peakDps": 5143046204,
-      "atkStat": 2238527,
-      "critDmgStat": 6445.499999999998,
-      "critRateStat": 479.90304999999984
+      "totalDamage": 30275633766526,
+      "avgDps": 165169851427,
+      "peakDps": 2420831573552,
+      "atkStat": 43186915580,
+      "critDmgStat": 17735.100000000002,
+      "critRateStat": 1160.3009
     },
     "elite": {
       "target": {
@@ -2275,17 +2275,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 14.6,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 244.3,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 11636871271,
-      "avgDps": 797045977,
-      "peakDps": 2847650155,
-      "atkStat": 2238527,
-      "critDmgStat": 6445.499999999998,
-      "critRateStat": 479.90304999999984
+      "totalDamage": 26297864743161,
+      "avgDps": 107645782821,
+      "peakDps": 2677072348777,
+      "atkStat": 43186915580,
+      "critDmgStat": 17735.100000000002,
+      "critRateStat": 1160.3009
     },
     "boss": {
       "target": {
@@ -2298,17 +2298,17 @@
         "note": "未點超神進化"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 1.45,
-      "totalKills": 1,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 0,
       "expectedKills": 1,
-      "cleared": true,
-      "totalDamage": 364859516,
-      "avgDps": 251627252,
-      "peakDps": 0,
-      "atkStat": 2238527,
-      "critDmgStat": 6445.499999999998,
-      "critRateStat": 479.90304999999984
+      "cleared": false,
+      "totalDamage": 9454902033044,
+      "avgDps": 31516340110,
+      "peakDps": 696888095978,
+      "atkStat": 43186915580,
+      "critDmgStat": 17735.100000000002,
+      "critRateStat": 1160.3009
     }
   },
   {
@@ -2334,17 +2334,17 @@
         "note": "狂怒普攻傷害+200%且擴散8m全體"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 24.45,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 11.35,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 271227105581,
-      "avgDps": 11093133153,
-      "peakDps": 26190674239,
-      "atkStat": 2238527,
-      "critDmgStat": 6445.499999999998,
-      "critRateStat": 479.90304999999984
+      "totalDamage": 38513630440304,
+      "avgDps": 3393271404432,
+      "peakDps": 7756725590962,
+      "atkStat": 43186915580,
+      "critDmgStat": 17735.100000000002,
+      "critRateStat": 1160.3009
     },
     "elite": {
       "target": {
@@ -2358,17 +2358,17 @@
         "note": "狂怒普攻傷害+200%且擴散8m全體"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 13.35,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 63.25,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 34211843537,
-      "avgDps": 2562684909,
-      "peakDps": 6647529963,
-      "atkStat": 2238527,
-      "critDmgStat": 6445.499999999998,
-      "critRateStat": 479.90304999999984
+      "totalDamage": 26627942978746,
+      "avgDps": 420995145909,
+      "peakDps": 9189465347682,
+      "atkStat": 43186915580,
+      "critDmgStat": 17735.100000000002,
+      "critRateStat": 1160.3009
     },
     "boss": {
       "target": {
@@ -2382,17 +2382,17 @@
         "note": "狂怒普攻傷害+200%且擴散8m全體"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 1.35,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 242.95,
       "totalKills": 1,
       "expectedKills": 1,
       "cleared": true,
-      "totalDamage": 1306731152,
-      "avgDps": 967949001,
-      "peakDps": 0,
-      "atkStat": 2238527,
-      "critDmgStat": 6445.499999999998,
-      "critRateStat": 479.90304999999984
+      "totalDamage": 19257940045066,
+      "avgDps": 79267092180,
+      "peakDps": 2251740145288,
+      "atkStat": 43186915580,
+      "critDmgStat": 17735.100000000002,
+      "critRateStat": 1160.3009
     }
   },
   {
@@ -2418,17 +2418,17 @@
         "note": "禁護盾但每擊殺+4%全傷(最高+800%持續至死)"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 43.15,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 94.1,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 297791259264,
-      "avgDps": 6901303807,
-      "peakDps": 24053945192,
-      "atkStat": 2238527,
-      "critDmgStat": 6445.499999999998,
-      "critRateStat": 479.90304999999984
+      "totalDamage": 31614622043175,
+      "avgDps": 335968353275,
+      "peakDps": 3651614564031,
+      "atkStat": 43186915580,
+      "critDmgStat": 17735.100000000002,
+      "critRateStat": 1160.3009
     },
     "elite": {
       "target": {
@@ -2442,17 +2442,17 @@
         "note": "禁護盾但每擊殺+4%全傷(最高+800%持續至死)"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 16.4,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 244.65,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 16862163018,
-      "avgDps": 1028180672,
-      "peakDps": 4039923830,
-      "atkStat": 2238527,
-      "critDmgStat": 6445.499999999998,
-      "critRateStat": 479.90304999999984
+      "totalDamage": 25690385036369,
+      "avgDps": 105008726901,
+      "peakDps": 2187208727815,
+      "atkStat": 43186915580,
+      "critDmgStat": 17735.100000000002,
+      "critRateStat": 1160.3009
     },
     "boss": {
       "target": {
@@ -2466,17 +2466,17 @@
         "note": "禁護盾但每擊殺+4%全傷(最高+800%持續至死)"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 0.85,
-      "totalKills": 1,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 300,
+      "totalKills": 0,
       "expectedKills": 1,
-      "cleared": true,
-      "totalDamage": 527390083,
-      "avgDps": 620458921,
-      "peakDps": 0,
-      "atkStat": 2238527,
-      "critDmgStat": 6445.499999999998,
-      "critRateStat": 479.90304999999984
+      "cleared": false,
+      "totalDamage": 10474292858084,
+      "avgDps": 34914309527,
+      "peakDps": 1112609099088,
+      "atkStat": 43186915580,
+      "critDmgStat": 17735.100000000002,
+      "critRateStat": 1160.3009
     }
   },
   {
@@ -2502,17 +2502,17 @@
         "note": "每10秒+1000%全傷害超狂爆發(持續2秒)"
       },
       "scenarioType": 1,
-      "scenarioName": "小怪群戰 (200隻)",
-      "clearedTime": 36.55,
-      "totalKills": 200,
-      "expectedKills": 200,
+      "scenarioName": "小怪群戰 (300級 20隻/1波)",
+      "clearedTime": 92.1,
+      "totalKills": 20,
+      "expectedKills": 20,
       "cleared": true,
-      "totalDamage": 209030124545,
-      "avgDps": 5719018455,
-      "peakDps": 45000022064,
-      "atkStat": 2238527,
-      "critDmgStat": 6445.499999999998,
-      "critRateStat": 479.90304999999984
+      "totalDamage": 68906778012866,
+      "avgDps": 748173485482,
+      "peakDps": 14168776231357,
+      "atkStat": 43186915580,
+      "critDmgStat": 17735.100000000002,
+      "critRateStat": 1160.3009
     },
     "elite": {
       "target": {
@@ -2526,17 +2526,17 @@
         "note": "每10秒+1000%全傷害超狂爆發(持續2秒)"
       },
       "scenarioType": 2,
-      "scenarioName": "菁英攻堅 (25隻)",
-      "clearedTime": 13.35,
-      "totalKills": 25,
-      "expectedKills": 25,
+      "scenarioName": "菁英攻堅 (300級 5隻/1波)",
+      "clearedTime": 169.05,
+      "totalKills": 5,
+      "expectedKills": 5,
       "cleared": true,
-      "totalDamage": 34129582824,
-      "avgDps": 2556523058,
-      "peakDps": 19868091347,
-      "atkStat": 2238527,
-      "critDmgStat": 6445.499999999998,
-      "critRateStat": 479.90304999999984
+      "totalDamage": 29099753964604,
+      "avgDps": 172136965185,
+      "peakDps": 7316974646891,
+      "atkStat": 43186915580,
+      "critDmgStat": 17735.100000000002,
+      "critRateStat": 1160.3009
     },
     "boss": {
       "target": {
@@ -2550,17 +2550,17 @@
         "note": "每10秒+1000%全傷害超狂爆發(持續2秒)"
       },
       "scenarioType": 3,
-      "scenarioName": "單體BOSS (1隻)",
-      "clearedTime": 2,
+      "scenarioName": "單體BOSS (300級 1隻/1波)",
+      "clearedTime": 141.25,
       "totalKills": 1,
       "expectedKills": 1,
       "cleared": true,
-      "totalDamage": 509672736,
-      "avgDps": 254836368,
-      "peakDps": 509672736,
-      "atkStat": 2238527,
-      "critDmgStat": 6445.499999999998,
-      "critRateStat": 479.90304999999984
+      "totalDamage": 18919424203192,
+      "avgDps": 133942826217,
+      "peakDps": 3762496156987,
+      "atkStat": 43186915580,
+      "critDmgStat": 17735.100000000002,
+      "critRateStat": 1160.3009
     }
   }
 ]

@@ -112,8 +112,8 @@ function buildStandardEquipment(ctx, target) {
       kind: 'equip',
       slot: slot,
       rarity: 5,
-      level: 100,
-      name: '100級傳奇裝備',
+      level: 300,
+      name: '300級傳奇裝備',
       affixes: affixes,
       upgrade: 40,
       sockets: []
@@ -142,8 +142,8 @@ function runStandardSim(target, scenarioType) {
   const optIdx = target.opt;
 
   ctx.G = ctx.newGameState();
-  ctx.G.player.level = 100;
-  ctx.G.player.reincarnations = 1;
+  ctx.G.player.level = 1000;
+  ctx.G.player.reincarnations = 10;
   ctx.G.player.gold = 1000000000;
   ctx.G.player.skills2 = {
     levels: {
@@ -154,8 +154,8 @@ function runStandardSim(target, scenarioType) {
     }
   };
   ctx.G.player.loadout = ['sg:' + gid];
-  ctx.G.stage.current = 100;
-  ctx.G.stage.zone = 'Icefield';
+  ctx.G.stage.current = 300;
+  ctx.G.stage.zone = 'swamp';
 
   ctx.G.equipment = buildStandardEquipment(ctx, target);
   ctx.G.player.equipment = ctx.G.equipment;
@@ -174,6 +174,8 @@ function runStandardSim(target, scenarioType) {
       pStats.elemDmgUp[e] = (pStats.elemDmgUp[e] || 0) + 1000;
     });
   }
+
+  ctx.bfResetPlayer();
   ctx.FIELD = {
     monsters: [],
     monster: null,
@@ -186,10 +188,10 @@ function runStandardSim(target, scenarioType) {
     dpsWindow: []
   };
 
-  ctx.FIELD.player.hp = 1e9;
-  ctx.FIELD.player.maxHp = 1e9;
-  ctx.FIELD.player.mp = 1e9;
-  ctx.FIELD.player.maxMp = 1e9;
+  ctx.FIELD.player.hp = 1e15;
+  ctx.FIELD.player.maxHp = 1e15;
+  ctx.FIELD.player.mp = 1e15;
+  ctx.FIELD.player.maxMp = 1e15;
 
   ctx.fieldMonsterAttack = function() { return false; };
   // 怪物正常逼近與跑動：保留原生 bfTickApproach
@@ -197,21 +199,17 @@ function runStandardSim(target, scenarioType) {
   ctx.resetSkillRT();
   if (typeof ctx.resetSkill2RT === 'function') ctx.resetSkill2RT();
 
-  let totalWaves = 1;
-  let waveInterval = 2.0;
+  // 使用者指示：不用出 10 波怪，小怪、菁英、BOSS 都只出 1 波，打到死為止
   let mobsPerWave = 1;
   let enemyKind = 'normal';
 
   if (scenarioType === 1) {
-    totalWaves = 10;
     mobsPerWave = 20;
     enemyKind = 'normal';
   } else if (scenarioType === 2) {
-    totalWaves = 5;
     mobsPerWave = 5;
     enemyKind = 'elite';
   } else if (scenarioType === 3) {
-    totalWaves = 1;
     mobsPerWave = 1;
     enemyKind = 'boss';
   }
@@ -227,12 +225,24 @@ function runStandardSim(target, scenarioType) {
     }
   };
 
-  function spawnWave(waveIdx) {
+  // 確保 DoT（如萬毒血霧、流血、燃燒跳傷）之輸出亦計入總傷害與 DPS
+  const origTickStatuses = ctx.tickStatuses;
+  ctx.tickStatuses = function(ent, dt) {
+    const oldHp = ent ? ent.hp : 0;
+    const res = origTickStatuses ? origTickStatuses.apply(this, arguments) : false;
+    if (ent && ent.maxHp > 0 && oldHp > ent.hp) {
+      const dotDmg = oldHp - ent.hp;
+      if (dotDmg > 0) ctx.trackDps(dotDmg);
+    }
+    return res;
+  };
+
+  function spawnWave() {
     const isBoss = enemyKind === 'boss';
     const isElite = enemyKind === 'elite';
-    const s = 100;
+    const s = 300;
     const base = ctx.monsterStatsFor(s, isElite, isBoss);
-    const zn = ctx.ZONE_CONFIG_TABLE ? ctx.ZONE_CONFIG_TABLE['Icefield'] : ctx.ZONES['Icefield'];
+    const zn = ctx.ZONE_CONFIG_TABLE ? ctx.ZONE_CONFIG_TABLE['swamp'] : ctx.ZONES['swamp'];
 
     const newEnemies = [];
     for (let i = 0; i < mobsPerWave; i++) {
@@ -245,7 +255,7 @@ function runStandardSim(target, scenarioType) {
       const mAspd = base.aspd * zn.aspdMult * (Number(mtype.aspdMult) > 0 ? Number(mtype.aspdMult) : 1);
 
       newEnemies.push({
-        id: 'm_' + waveIdx + '_' + i,
+        id: 'm_0_' + i,
         name: mtype.name,
         emoji: mtype.emoji,
         npcId: mtype.id || null,
@@ -285,24 +295,14 @@ function runStandardSim(target, scenarioType) {
   }
 
   const dt = 0.05;
-  const maxSimTime = 120.0;
-  let currentWave = 0;
-  let nextWaveTime = 0;
+  const maxSimTime = 300.0;
   let clearedAtTime = 0;
-  const totalEnemiesToKill = totalWaves * mobsPerWave;
+  const totalEnemiesToKill = mobsPerWave;
 
   ctx.GT = 0;
-  spawnWave(0);
-  currentWave = 1;
-  nextWaveTime = waveInterval;
+  spawnWave();
 
   while (ctx.GT < maxSimTime) {
-    if (currentWave < totalWaves && ctx.GT >= nextWaveTime) {
-      spawnWave(currentWave);
-      currentWave++;
-      nextWaveTime += waveInterval;
-    }
-
     ctx.fieldTick(dt);
     ctx.GT += dt;
 
@@ -319,7 +319,7 @@ function runStandardSim(target, scenarioType) {
         const pDefCfg = ctx.playerDefCfg(p);
         const hitRes = ctx.resolveHit(m, p, mCfg, pDefCfg);
         if (hitRes && !hitRes.miss) {
-          const dmg = hitRes.dmg || 50;
+          const dmg = hitRes.dmg || 50000;
           p.hp = Math.max(1, p.hp - dmg);
           if (typeof ctx.skills2OnPlayerDamaged === 'function') {
             ctx.skills2OnPlayerDamaged(m, p, dmg, hitRes.blocked, hitRes, 'pv-float');
@@ -336,7 +336,7 @@ function runStandardSim(target, scenarioType) {
     }
 
     const liveEnemies = ctx.FIELD.monsters.filter(e => e && e.hp > 0);
-    if (currentWave >= totalWaves && liveEnemies.length === 0) {
+    if (liveEnemies.length === 0) {
       clearedAtTime = ctx.GT;
       break;
     }
@@ -345,7 +345,7 @@ function runStandardSim(target, scenarioType) {
   const combatTime = clearedAtTime || ctx.GT;
   const avgDps = combatTime > 0 ? totalDamageDealt / combatTime : 0;
   const liveAtEnd = ctx.FIELD.monsters.filter(e => e && e.hp > 0).length;
-  const killsCount = (currentWave * mobsPerWave) - liveAtEnd;
+  const killsCount = mobsPerWave - liveAtEnd;
 
   let peakDps = 0;
   const windowSec = 1.0;
@@ -359,7 +359,7 @@ function runStandardSim(target, scenarioType) {
   return {
     target,
     scenarioType,
-    scenarioName: scenarioType === 1 ? '小怪群戰 (200隻)' : scenarioType === 2 ? '菁英攻堅 (25隻)' : '單體BOSS (1隻)',
+    scenarioName: scenarioType === 1 ? '小怪群戰 (300級 20隻/1波)' : scenarioType === 2 ? '菁英攻堅 (300級 5隻/1波)' : '單體BOSS (300級 1隻/1波)',
     clearedTime: Number(combatTime.toFixed(2)),
     totalKills: killsCount,
     expectedKills: totalEnemiesToKill,
@@ -373,7 +373,7 @@ function runStandardSim(target, scenarioType) {
   };
 }
 
-console.log('⚔️ 開始執行全 8 大技能群組（24 招超神進化 + 8 招基礎）嚴格標準化 DPS 模擬測試...\n');
+console.log('⚔️ 開始執行 300 級怪物單波（打到死為止）全 8 大技能群組標準化 DPS 模擬測試...\n');
 
 const results = [];
 
@@ -383,9 +383,9 @@ for (let target of ALL_SKILL_TARGETS) {
   const r2 = runStandardSim(target, 2);
   const r3 = runStandardSim(target, 3);
 
-  console.log(`   - 小怪群戰: ${r1.clearedTime}s | DPS: ${r1.avgDps.toLocaleString()} | 擊殺: ${r1.totalKills}/${r1.expectedKills}`);
-  console.log(`   - 菁英攻堅: ${r2.clearedTime}s | DPS: ${r2.avgDps.toLocaleString()} | 擊殺: ${r2.totalKills}/${r2.expectedKills}`);
-  console.log(`   - 單體BOSS: ${r3.clearedTime}s | DPS: ${r3.avgDps.toLocaleString()} | 擊殺: ${r3.totalKills}/${r3.expectedKills}`);
+  console.log(`   - 小怪 (20隻): ${r1.clearedTime}s | DPS: ${r1.avgDps.toLocaleString()} | 擊殺: ${r1.totalKills}/${r1.expectedKills}`);
+  console.log(`   - 菁英 (5隻): ${r2.clearedTime}s | DPS: ${r2.avgDps.toLocaleString()} | 擊殺: ${r2.totalKills}/${r2.expectedKills}`);
+  console.log(`   - BOSS (1隻): ${r3.clearedTime}s | DPS: ${r3.avgDps.toLocaleString()} | 擊殺: ${r3.totalKills}/${r3.expectedKills}`);
   console.log('------------------------------------------------------------');
 
   results.push({
@@ -397,4 +397,4 @@ for (let target of ALL_SKILL_TARGETS) {
 }
 
 fs.writeFileSync(RESULTS_FILE, JSON.stringify(results, null, 2), 'utf8');
-console.log(`\n✅ 全量 96 場標準化模擬完成！結果已寫入: ${RESULTS_FILE}`);
+console.log(`\n✅ 全量 96 場 300 級單波模擬完成！結果已寫入: ${RESULTS_FILE}`);
