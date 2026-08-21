@@ -154,6 +154,16 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 傳奇特效,danceUnyielding,不屈之誓,0,,,,,,,,0,,暴風之舞持續期間你的死亡延後 10 秒才生效，且這 10 秒內你的傷害提高 100%。,phys,dualdance,,greatsword2h,"{""danceDeathDefer"":{""sec"":10,""pct"":100}}"
 傳奇特效,danceThousandCuts,殺千刀,0,,,,,,,,0,,雙刀亂舞每殺死 1 個敵人就使暴風之舞的持續時間 +0.2 秒。,phys,dualdance,,greatsword2h,"{""danceStormKill"":{""sec"":0.2}}"
 傳奇特效,danceTwinBlades,雙生刃,0,,,,,,,,0,,雙刀亂舞的擊中目標數量 +2 個。,phys,dualdance,,greatsword2h,"{""danceTargetAdd"":{""count"":2}}"
+傳奇特效,counterOath,堅韌誓言,0,,,,,,,,0,,反擊 100 次後獲得無敵狀態，持續 3 秒。,phys,counter,,shield,"{""counterOath"":{""count"":100,""sec"":3}}"
+傳奇特效,counterWrath,怒火,0,,,,,,,,0,,反擊 100 次後獲得怒火狀態，造成的傷害提高 30%，持續 6 秒。,phys,counter,,shield,"{""counterWrath"":{""count"":100,""pct"":30,""sec"":6}}"
+傳奇特效,counterPerfect,完美姿態,0,,,,,,,,0,,每次反擊有 10% 機率造成完美反擊，該次反擊傷害提高 300%。,phys,counter,,shield,"{""counterPerfect"":{""chance"":10,""pct"":300}}"
+傳奇特效,counterBloodPay,以血還血,0,,,,,,,,0,,每次反擊損失自身 1% 生命值，但反擊傷害提高 50%。,phys,counter,,shield,"{""counterBloodPay"":{""hpPct"":1,""pct"":50}}"
+傳奇特效,counterWindBody,風之體,0,,,,,,,,0,,反擊有 10% 機率朝目標射出一道風刃，造成 100% 普攻傷害的風系傷害。,wind,counter,,shield,"{""counterWindBlade"":{""chance"":10,""powerPct"":100}}"
+傳奇特效,rageValor,英勇氣概,0,,,,,,,,0,,嗜血狂怒的攻速額外 +30%（與本體同為突破上限的乘算）。,phys,bloodrage,,greatsword2h,"{""rageAspdPct"":30}"
+傳奇特效,rageBurnBlood,燃血,0,,,,,,,,0,,【血飲術】每造成 1 次自身生命損失就使你造成的傷害 +1%，最多疊 50 層，持續 4 秒。,phys,bloodrage,,greatsword2h,"{""rageBurnBlood"":{""pct"":1,""maxStacks"":50,""sec"":4}}"
+傳奇特效,rageBloodDebt,血債償還,0,,,,,,,,0,,【血飲術】造成的自身生命損失降低 50%。,phys,bloodrage,,greatsword2h,"{""rageSelfCut"":{""reducePct"":50}}"
+傳奇特效,rageZealot,狂熱者,0,,,,,,,,0,,每 0.1 連擊數使【狂血盛宴】的傷害加成再提高 5%（＝每 1 連擊數 +50%）。,phys,bloodrage,,greatsword2h,"{""rageZealotPct"":50}"
+傳奇特效,rageSlaughterer,屠戮者,0,,,,,,,,0,,狂怒期間每殺死 1 個敵人使【嗜血反震】的效果提高 5%，最多疊 10 層，持續 4 秒。,phys,bloodrage,,greatsword2h,"{""rageThornsStack"":{""pct"":5,""maxStacks"":10,""sec"":4}}"
 神鑄特效,dragonBlood,龍血,25,,,,,,,,,hpPct,生命上限提高 {v}%,,,,,
 神鑄特效,godMight,神力,18,,,,,,,,,atkPct;matkPct,物理與魔法攻擊額外提高 {v}%,,,,,
 神鑄特效,godHaste,神速,15,,,,,,,,,aspdPct,攻擊速度提高 {v}%,,,,,

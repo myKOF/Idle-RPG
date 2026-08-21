@@ -1078,6 +1078,69 @@ var PASSIVE_POOL = {
     name: '雙生刃', desc: '雙刀亂舞的擊中目標數量 +2 個。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'dualdance', weaponTypes: ['greatsword2h'],
     fx: { danceTargetAdd: { count: 2 } }
+  },
+
+  /* ---- 新版技能改寫型 第四批（2026-08-21；設計來源「傳奇進化」頁籤）----
+     生效路徑與前三批相同（legendarySkill2Mods 平坦合併 → 施放端讀通用參數鍵）。
+     這一批分兩種部位，補償規則**不同**，改數值前務必先看清楚掛在哪一種：
+       ・反擊＝盾牌（shield，cat offHand）→ 沒有雙手補償，fx 寫多少就是多少。
+       ・嗜血狂怒＝雙手大劍（greatsword2h，cat twoHand）→ legendaryFx 會把 fx 內的
+         數值鍵自動 ×2（白名單鍵除外，見 js/legendary.js LEGENDARY_FX_NON_VALUE_KEYS），
+         desc 寫的是**未乘補償**的底值，口徑與第三批一致。 */
+  counterOath: {
+    name: '堅韌誓言', desc: '反擊 100 次後獲得無敵狀態，持續 3 秒。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'counter', weaponTypes: ['shield'],
+    fx: { counterOath: { count: 100, sec: 3 } }
+  },
+  counterWrath: {
+    name: '怒火', desc: '反擊 100 次後獲得怒火狀態，造成的傷害提高 30%，持續 6 秒。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'counter', weaponTypes: ['shield'],
+    fx: { counterWrath: { count: 100, pct: 30, sec: 6 } }
+  },
+  counterPerfect: {
+    name: '完美姿態', desc: '每次反擊有 10% 機率造成完美反擊，該次反擊傷害提高 300%。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'counter', weaponTypes: ['shield'],
+    fx: { counterPerfect: { chance: 10, pct: 300 } }
+  },
+  counterBloodPay: {
+    name: '以血還血', desc: '每次反擊損失自身 1% 生命值，但反擊傷害提高 50%。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'counter', weaponTypes: ['shield'],
+    fx: { counterBloodPay: { hpPct: 1, pct: 50 } }
+  },
+  counterWindBody: {
+    name: '風之體', desc: '反擊有 10% 機率朝目標射出一道風刃，造成 100% 普攻傷害的風系傷害。',
+    base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'counter', weaponTypes: ['shield'],
+    fx: { counterWindBlade: { chance: 10, powerPct: 100 } }
+  },
+  rageValor: {
+    name: '英勇氣概', desc: '嗜血狂怒的攻速額外 +30%（與本體同為突破上限的乘算）。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'bloodrage', weaponTypes: ['greatsword2h'],
+    fx: { rageAspdPct: 30 }
+  },
+  rageBurnBlood: {
+    name: '燃血', desc: '【血飲術】每造成 1 次自身生命損失就使你造成的傷害 +1%，最多疊 50 層，持續 4 秒。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'bloodrage', weaponTypes: ['greatsword2h'],
+    fx: { rageBurnBlood: { pct: 1, maxStacks: 50, sec: 4 } }
+  },
+  rageBloodDebt: {
+    name: '血債償還', desc: '【血飲術】造成的自身生命損失降低 50%。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'bloodrage', weaponTypes: ['greatsword2h'],
+    /* reducePct 刻意不吃雙手補償（見 js/legendary.js 白名單）：×2 會讓 50% 變成 100%＝
+       完全免除代價，一個取捨就變成純收益；而且【燃血】是靠「每次生命損失」疊層的，
+       損失被歸零之後兩個特效會完全互斥——設計上顯然是要能並存的。 */
+    fx: { rageSelfCut: { reducePct: 50 } }
+  },
+  rageZealot: {
+    name: '狂熱者', desc: '每 0.1 連擊數使【狂血盛宴】的傷害加成再提高 5%（＝每 1 連擊數 +50%）。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'bloodrage', weaponTypes: ['greatsword2h'],
+    /* 設計文檔寫「每 0.1 連擊數 +5%」，這裡換算成同義的「每 1 連擊數 +50%」收成單一數值鍵：
+       用 { per: 0.1, pct: 5 } 這種形狀的話，雙手補償會把分母 per 也 ×2 而讓效果**變弱**。 */
+    fx: { rageZealotPct: 50 }
+  },
+  rageSlaughterer: {
+    name: '屠戮者', desc: '狂怒期間每殺死 1 個敵人使【嗜血反震】的效果提高 5%，最多疊 10 層，持續 4 秒。',
+    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'bloodrage', weaponTypes: ['greatsword2h'],
+    fx: { rageThornsStack: { pct: 5, maxStacks: 10, sec: 4 } }
   }
 };
 

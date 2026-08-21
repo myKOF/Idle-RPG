@@ -880,6 +880,9 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
     if (typeof skillRtFieldAmpACfg === 'function') aCfg = skillRtFieldAmpACfg(aCfg, mEnt);
     // 新版技能【虛弱】：流血中的敵人受到的傷害提高（js/skills2.js；普攻端）
     if (typeof skill2VulnACfg === 'function') aCfg = skill2VulnACfg(aCfg, mEnt);
+    /* 新版技能超神【殺神降臨】：狂怒期間的普攻傷害加成（js/skills2.js）。
+       只掛在這裡——playerAtkCfg 同時服務反擊與新版技能，掛在那裡會變成「所有傷害」。 */
+    if (typeof skill2RageBasicAtkACfg === 'function') aCfg = skill2RageBasicAtkACfg(aCfg);
     if (opts && opts.forceCrit) aCfg.critRate = Math.max(100, aCfg.critRate || 0); // 必定暴擊
     /* 普攻特效（協議 v17）：不再原地出手——發射一道「劍氣」飛向目標，命中時的受擊反饋
        由顯示層（js/vfx.js）處理。浮字延遲與劍氣飛行共用同一個數字（比照技能 travelMs），
@@ -1422,7 +1425,10 @@ function fieldTick(dt) {
     }
     // 玩家行動（受減速時依減速比例放慢；時間扭曲等攻速增益加速）
     //（45 新技能共用排程器已上移至「出怪」空場檢查之前，避免波次間隙排程停擺）
+    /* 新版技能超神【不屈鬥魂】倒地期間：普攻與技能一起停，這是「死了 5 秒」的代價。
+       擋在同一個閘門而不是只擋普攻（暴風之舞那種），因為那 5 秒的設定是人倒下了。 */
     if (!effectActive(p, 'stun') &&
+        !((typeof skill2DownedActive === 'function') && skill2DownedActive()) &&
         (typeof skillCastInProgress !== 'function' || !skillCastInProgress(p))) {
         // 技能優先（依裝載順序；含裝載的潛力技能）
         var sres = pickAndCastSkill(p, enemies, 'mv-float');
@@ -1637,6 +1643,13 @@ function onPlayerFieldDeath() {
         UI.dirty.battle = true;
         return;
     }
+    /* 新版技能超神【不屈鬥魂】（反擊，js/skills2.js）：死亡時全屏地系爆發、倒地數秒後原地復活。
+       排在天地共生之後、不屈之誓之前——天地共生是「立刻滿血站起來」，嚴格優於「先倒 5 秒」；
+       而不屈鬥魂本身又嚴格優於不屈之誓（後者只是把死亡往後推，時間到還是真的死）。 */
+    if (typeof skills2TryLastStand === 'function' && FIELD.player && skills2TryLastStand(FIELD.player)) {
+        UI.dirty.battle = true;
+        return;
+    }
     /* 傳奇【不屈之誓】（雙刀亂舞，js/skills2.js）：暴風之舞期間的死亡延後 10 秒生效。
        排在天地共生之後——天地共生是「原地滿血復活」，嚴格優於「再撐 10 秒然後還是死」，
        兩者都可用時先走前者才不會浪費掉不屈之誓的那一次。 */
@@ -1848,7 +1861,10 @@ var PLAYER_BUFF_ORDER = ['atkUp', 'defUp', 'aspdUp', 'evasionUp', 'critDmgUp', '
     // 超神進化【死亡收割者】：飛刀擊殺疊層的傷害增益（層數與剩餘時間都要看得到）
     'sgDeathReaper',
     // 超神進化【殺神領域】與傳奇【不屈之誓】：兩個都是有層數／倒數的所有傷害增益，玩家要看得到
-    'sgSlayerMark', 'sgDeathDefer'];
+    'sgSlayerMark', 'sgDeathDefer',
+    // 2026-08-21 第四批：反擊【怒火】與嗜血狂怒【燃血】／【屠戮者】／
+    // 超神【戰神屠錄】／【阿修羅霸王拳】——全部都是有層數或倒數的增益
+    'sgCounterWrath', 'sgBurnBlood', 'sgThornsRage', 'sgWarGodKill', 'sgAsuraFist'];
 
 function activePlayerBuffs(ent) {
     if (!ent) return [];
