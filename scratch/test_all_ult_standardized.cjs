@@ -373,15 +373,45 @@ function runStandardSim(target, scenarioType) {
   };
 }
 
-console.log('⚔️ 開始執行 300 級怪物單波（打到死為止）全 8 大技能群組標準化 DPS 模擬測試...\n');
+console.log('⚔️ 開始執行 300 級 0 防禦單波（多輪平均）全 8 大技能群組標準化 DPS 模擬測試...\n');
 
 const results = [];
+const NUM_TRIALS = 3;
 
 for (let target of ALL_SKILL_TARGETS) {
-  console.log(`▶ 測試目標：[${target.groupName}] ${target.name}`);
-  const r1 = runStandardSim(target, 1);
-  const r2 = runStandardSim(target, 2);
-  const r3 = runStandardSim(target, 3);
+  console.log(`▶ 測試目標：[${target.groupName}] ${target.name} (${NUM_TRIALS} 輪平均)`);
+  let mobRes = [], eliteRes = [], bossRes = [];
+  for (let i = 0; i < NUM_TRIALS; i++) {
+    mobRes.push(runStandardSim(target, 1));
+    eliteRes.push(runStandardSim(target, 2));
+    bossRes.push(runStandardSim(target, 3));
+  }
+
+  function avgOf(arr) {
+    const avgDps = arr.reduce((sum, r) => sum + r.avgDps, 0) / arr.length;
+    const avgTime = arr.reduce((sum, r) => sum + r.clearedTime, 0) / arr.length;
+    const kills = Math.round(arr.reduce((sum, r) => sum + r.totalKills, 0) / arr.length);
+    const first = arr[0];
+    return {
+      target: first.target,
+      scenarioType: first.scenarioType,
+      scenarioName: first.scenarioName,
+      clearedTime: Number(avgTime.toFixed(2)),
+      totalKills: kills,
+      expectedKills: first.expectedKills,
+      cleared: kills >= first.expectedKills,
+      totalDamage: Math.round(avgDps * avgTime),
+      avgDps: Math.round(avgDps),
+      peakDps: Math.round(arr.reduce((sum, r) => sum + r.peakDps, 0) / arr.length),
+      atkStat: first.atkStat,
+      critDmgStat: first.critDmgStat,
+      critRateStat: first.critRateStat
+    };
+  }
+
+  const r1 = avgOf(mobRes);
+  const r2 = avgOf(eliteRes);
+  const r3 = avgOf(bossRes);
 
   console.log(`   - 小怪 (20隻): ${r1.clearedTime}s | DPS: ${r1.avgDps.toLocaleString()} | 擊殺: ${r1.totalKills}/${r1.expectedKills}`);
   console.log(`   - 菁英 (5隻): ${r2.clearedTime}s | DPS: ${r2.avgDps.toLocaleString()} | 擊殺: ${r2.totalKills}/${r2.expectedKills}`);
@@ -397,4 +427,5 @@ for (let target of ALL_SKILL_TARGETS) {
 }
 
 fs.writeFileSync(RESULTS_FILE, JSON.stringify(results, null, 2), 'utf8');
-console.log(`\n✅ 全量 96 場 300 級單波模擬完成！結果已寫入: ${RESULTS_FILE}`);
+console.log(`\n✅ 全量 300 級 0 防禦多輪平均模擬完成！結果已寫入: ${RESULTS_FILE}`);
+
