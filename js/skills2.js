@@ -917,7 +917,8 @@ function skill2RageBasicAttackTargets(primary, enemies) {
       var nearbyGap = (typeof bfMeterPx === 'function') ? bfMeterPx(
         (typeof BF_MELEE_METERS === 'number' && BF_MELEE_METERS > 0) ? BF_MELEE_METERS : 5
       ) : 0;
-      var feast = bfNearestOthers(primary, enemies, extras, nearbyGap);
+      // 敘述是「每 1 連擊數使普攻可同時攻擊 1 個敵人」，沒有指定最近＝近戰範圍內隨機
+      var feast = bfRandomOthers(primary, enemies, extras, nearbyGap, null);
       for (var fi = 0; fi < feast.length; fi++) {
         if (targets.indexOf(feast[fi]) < 0) targets.push(feast[fi]);   // 兩個效果的範圍會重疊，不得重複打
       }
@@ -1440,7 +1441,8 @@ function sgProjectileHit(projectile, target, ctx) {
 
   if (projectile.spreadPct > 0 && projectile.spreadCount > 0) {
     var live = ctx.getEnemies ? ctx.getEnemies() : [];
-    var others = bfNearestOthers(target, live, projectile.spreadCount);
+    // 突刺【擴散】：「擴散至周圍的 N 個敵人」沒有指定最近＝隨機（候選同原本＝整個戰場）
+    var others = bfRandomOthers(target, live, projectile.spreadCount, 0, null);
     for (var i = 0; i < others.length; i++) {
       var wasAlive = others[i].hp > 0;
       var beforeSpread = projectile.out.dmg;
@@ -1861,7 +1863,9 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
         var res = sgHitOne(pEnt, st, hitTargets[ti], dmgVal, 'thrust', floatSel, out, sgStaggerMs(hitIdx));
         if (res && !res.miss && lvs[4] > 0) {
           var spreadPct2 = sgVal(t[4].fx, 'pct', lvs[4]);
-          var others = bfNearestOthers(hitTargets[ti], pool, Math.max(1, Math.floor(Number(t[4].fx.count) || 4)));
+          // 「擴散至周圍的 N 個敵人」沒有指定最近＝隨機（候選同原本＝整個戰場）
+          var others = bfRandomOthers(hitTargets[ti], pool,
+            Math.max(1, Math.floor(Number(t[4].fx.count) || 4)), 0, null);
           for (var oi = 0; oi < others.length; oi++) {
             sgDerivedHit(others[oi], res.dmg * spreadPct2 / 100, 'thrust', floatSel, out, g.emoji, sgStaggerMs(hitIdx + 1));
           }
@@ -2004,8 +2008,8 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       targets = bfEnemiesInArea({ x: cleaveCenter.x, y: cleaveCenter.y, r: meleeRangePx }, bfLiveList(pool));
       if (primary && primary.hp > 0 && targets.indexOf(primary) < 0) targets.unshift(primary);
     } else {
-      // 有目標上限時維持原本的主目標＋最近敵人選擇。
-      targets = [primary].concat(bfNearestOthers(primary, pool, Math.max(0, targetCap - 1)));
+      // 有目標上限時：主目標＋其餘隨機（沒有任何敘述指定要挑最近的）。
+      targets = [primary].concat(bfRandomOthers(primary, pool, Math.max(0, targetCap - 1), 0, null));
     }
     // 震碎斬／裂空飛斬：斬擊向前飛出，聯集路徑上的敵人
     if (frontFlyPx > 0 && geomOk) {
@@ -2135,18 +2139,25 @@ function sgKnifeHit(cfg, target, dmgVal, delayMs, bonusPct, derived) {
   return res;
 }
 
-/* 下一個彈射目標：預設是本輪還沒彈過的最近敵人（原本的規則）；
-   傳奇【處刑者】改為在還沒彈過的敵人裡挑生命值最高的。都彈過就允許回跳。 */
+/* 下一個彈射目標：預設是本輪還沒彈過的敵人裡「隨機」一個——飛刀的敘述只寫
+   「在附近的 N 個敵人間彈跳」，沒有規定範圍也沒有寫「最近」，因此候選是整個戰場、
+   挑法是等機率隨機（彈射選法的唯一權威在 js/battlefield.js bfRandomOther）。
+   傳奇【處刑者】是唯一的例外：它的敘述明寫「優先在生命值最高的目標間彈射」，
+   屬於特別指定的規則，維持挑生命值最高者。都彈過就允許回跳。 */
 function sgKnifeNextBounce(cfg, cur, visited) {
-  var near = bfNearestOthers(cur, cfg.pool, cfg.pool.length);
-  var best = null;
-  for (var i = 0; i < near.length; i++) {
-    if (visited.indexOf(near[i]) >= 0) continue;
-    if (!cfg.execPct) return near[i];
-    if (!best || near[i].hp > best.hp) best = near[i];
+  if (cfg.execPct) {
+    var near = bfNearestOthers(cur, cfg.pool, cfg.pool.length);
+    var best = null;
+    for (var i = 0; i < near.length; i++) {
+      if (visited.indexOf(near[i]) >= 0) continue;
+      if (!best || near[i].hp > best.hp) best = near[i];
+    }
+    if (best) return best;
+  } else {
+    var rnd = bfRandomOther(cur, cfg.pool, 0, visited);
+    if (rnd) return rnd;
   }
-  if (best) return best;
-  return (typeof bfNearestOther === 'function') ? bfNearestOther(cur, cfg.pool) : null;
+  return (typeof bfRandomOther === 'function') ? bfRandomOther(cur, cfg.pool, 0, null) : null;
 }
 
 /* 彈射鏈：從 cur 出發連續彈射 bounces 次，所有飛刀來源共用這一支。
@@ -2187,7 +2198,8 @@ function sgKnifeSplit(cfg, from, delayMs) {
   var dmg = cfg.dmgVal * (Number(cfg.split.pct) || 0) / 100;
   if (!(dmg > 0)) return;
   var bounces = Math.max(0, Math.floor(Number(cfg.split.bounces) || 0));
-  var near = bfNearestOthers(from, cfg.pool, count);
+  // 【分裂者】的敘述沒有指定目標規則＝比照彈射，在整個戰場隨機挑（不是最近的 N 個）
+  var near = bfRandomOthers(from, cfg.pool, count, 0, null);
   if (!near.length) return;
   for (var i = 0; i < count; i++) {
     var tgt = near[i % near.length];
@@ -2266,9 +2278,9 @@ function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var targets;
   var kCount;
   if (lvs[4] > 0) {
-    // 迴旋飛刀：全圓形範圍，鎖定周圍最近的 N 個敵人
+    // 迴旋飛刀：全圓形範圍鎖敵；敘述是「向周圍的 N 個敵人丟出飛刀」，沒有指定最近＝隨機
     kCount = Math.max(1, sgRollCount(sgVal(t[4].fx, 'count', lvs[4])) + countAdd);
-    targets = bfSortedTargets(pool).slice(0, kCount);
+    targets = bfRandomOthers(null, pool, kCount, 0, null);
   } else {
     kCount = Math.max(1, Math.floor(Number(t[0].fx.count) || 3) + countAdd);
     if (geomOk) {
@@ -2403,7 +2415,8 @@ function sgGaleOnHit(cfg, target, res) {
   if (cfg.bolt) sgGaleThunderBolt(cfg, target);
   /* 傳奇【雙影】：機率額外對附近 1 個敵人造成傷害。 */
   if (cfg.twin && chance(Number(cfg.twin.chance) || 0)) {
-    var other = bfNearestOthers(target, cfg.pool, 1, bfMeterPx(Number(cfg.twin.m) || 0))[0];
+    // 「額外對附近 1 個敵人造成傷害」沒有指定最近＝範圍內隨機
+    var other = bfRandomOthers(target, cfg.pool, 1, bfMeterPx(Number(cfg.twin.m) || 0), null)[0];
     if (other && other.hp > 0) {
       sgHitOne(cfg.pEnt, cfg.st, other, cfg.dmgVal * (Number(cfg.twin.pct) || 0) / 100,
         'gale', cfg.floatSel, cfg.out, 0);
@@ -2599,7 +2612,8 @@ function sgCastDualdance(pEnt, st, g, lvs, pool, primary, floatSel, out, storm) 
   var strikes = Math.max(1, Math.floor(Number(t[0].fx.count) || 2) +
     (lvs[1] > 0 ? sgRollCount(sgVal(t[1].fx, 'add', lvs[1])) : 0) +
     sgDanceTargetAdd(lg));
-  var targets = bfSortedTargets(pool).slice(0, strikes);
+  // 「對附近 N 個敵人各造成 1 次」沒有指定最近＝隨機（候選同原本＝整個戰場）
+  var targets = bfRandomOthers(null, pool, strikes, 0, null);
   if (!targets.length) targets = [primary];
   sgEmitVfx('dualdance', targets, floatSel, {
     fxKind: 'slash', count: Math.min(5, strikes), variant: storm ? 'dual-storm' : 'dual-slash'
@@ -2842,10 +2856,23 @@ function sgEnemiesNearPlayer(enemies, radiusPx, exclude, count) {
   return out;
 }
 
+/* 我方周圍 radiusPx 內隨機 count 個存活敵人（不重複；count <= 0＝全取）。
+   「範圍內挑 N 個」的通則：技能敘述沒有寫「最近」就是範圍內等機率隨機
+   （規則說明見 js/battlefield.js 的 bfRandomOthers）。候選集合與 sgEnemiesNearPlayer
+   完全相同（含「無座標的高塔實體視為在範圍內」），只有挑法不同。 */
+function sgRandomEnemiesNearPlayer(enemies, radiusPx, exclude, count) {
+  var cands = sgEnemiesNearPlayer(enemies, radiusPx, exclude, 0);
+  for (var i = cands.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = cands[i]; cands[i] = cands[j]; cands[j] = tmp;
+  }
+  return (count > 0) ? cands.slice(0, count) : cands;
+}
+
 /* 我方周圍 radiusPx 內隨機 1 個存活敵人（火龍捲【重生】的落點規則：任意敵人，不是最近的）。 */
 function sgRandomEnemyNearPlayer(enemies, radiusPx, exclude) {
-  var cands = sgEnemiesNearPlayer(enemies, radiusPx, exclude, 0);
-  return cands.length ? cands[Math.floor(Math.random() * cands.length)] : null;
+  var picked = sgRandomEnemiesNearPlayer(enemies, radiusPx, exclude, 1);
+  return picked.length ? picked[0] : null;
 }
 
 /* 【爆燃】（火球術第 5 階）：燃燒結束或敵人死亡時引爆，對我方範圍內數個敵人造成
@@ -2859,7 +2886,8 @@ function sgBurnBlast(ent, enemies, ctx) {
   if (!lvs || lvs[4] < 1 || !(amount > 0)) return;
   var fx = SKILLS2.fireball.tiers[4].fx;
   var count = Math.max(1, Math.floor(Number(fx.count) || 2));
-  var victims = sgEnemiesNearPlayer(enemies, bfMeterPx(Number(fx.m) || 12), ent, count);
+  // 「對我方 m 米內的 count 個敵人」沒有指定最近＝範圍內隨機
+  var victims = sgRandomEnemiesNearPlayer(enemies, bfMeterPx(Number(fx.m) || 12), ent, count);
   if (!victims.length) return;
   var out = { killed: false, dmg: 0, crit: false };
   var per = amount * sgVal(fx, 'pct', lvs[4]) / 100;
@@ -3119,9 +3147,10 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       var splitDmgVal = 0;
       if (lvs[2] > 0) {
         var splitFxPlan = t[2].fx;
-        splitTargets = bfNearestOthers(primary, pool,
+        // 「射向目標 m 米內的敵人」沒有指定最近＝範圍內隨機
+        splitTargets = bfRandomOthers(primary, pool,
           Math.max(1, Math.floor(Number(splitFxPlan.count) || 3)),
-          bfMeterPx(Number(splitFxPlan.m) || 20));
+          bfMeterPx(Number(splitFxPlan.m) || 20), null);
         splitDmgVal = dmgVal * sgVal(splitFxPlan, 'pct', lvs[2]) / 100;
       }
       sgQueueFlyingProjectile(pEnt, st, 'fireball', dmgVal,
@@ -3170,7 +3199,8 @@ function sgCastFirepillar(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     : (lvs[2] > 0 ? Math.max(1, Math.floor(Number(t[2].fx.count) || 2)) : 1);
   var spreadPx = lvs[2] > 0 ? bfMeterPx(Number(t[2].fx.m) || 20) : skills2CastRangePx('firepillar', lvs);
   var spots = [primary];
-  if (count > 1) spots = spots.concat(bfNearestOthers(primary, pool, count - 1, spreadPx));
+  // 「可同時對 m 米內的 count 個目標施放火柱」沒有指定最近＝範圍內隨機
+  if (count > 1) spots = spots.concat(bfRandomOthers(primary, pool, count - 1, spreadPx, null));
 
   for (var i = 0; i < count; i++) {
     // 目標不足時多出來的火龍捲疊在主目標身上（比照雙刀亂舞「只有 1 個敵人就都打同一個」）
@@ -4302,7 +4332,7 @@ function skills2TryRebirth(pEnt) {
    ---------------------------------------------------------------------------
    一道在敵人之間逐跳彈射的閃電鏈：每一跳都接在前一跳的飛行時間之後，
    傷害飄字與特效因此與畫面同步（比照飛刀的彈射鏈）。
-   彈射目標的選法：優先跳向「本輪還沒跳過、且在彈射範圍內」的最近敵人；
+   彈射目標的選法：在「本輪還沒跳過、且在彈射範圍（30 米）內」的敵人裡隨機挑一個；
    都跳過了就結束——第 6 階【雷幻身】才是唯一的例外，它讓玩家自己當中繼點，
    把走訪紀錄清空並繼續彈射（中繼那一下不消耗彈射數，落到敵人身上才算一次）。
    因此單一敵人時整條鏈仍打得完（A→自身→A→…），不必為此另設「單體加成」。
@@ -4345,24 +4375,22 @@ function sgCastChainlightning(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   }
 }
 
-/* 【雷電暴風】的三道鏈盡量從不同的敵人起手；敵人不夠時才輪流重用同一個起點。 */
+/* 【雷電暴風】的三道鏈盡量從不同的敵人起手；敵人不夠時才輪流重用同一個起點。
+   第 1 道從主目標起手，其餘在場上隨機挑（敘述只寫「同時發射 N 道」，沒有指定最近）。 */
 function sgChainStarts(primary, pool, count) {
   var starts = [primary];
-  var sorted = (typeof bfSortedTargets === 'function') ? bfSortedTargets(pool) : [];
-  for (var i = 0; i < sorted.length && starts.length < count; i++) {
-    if (starts.indexOf(sorted[i]) < 0) starts.push(sorted[i]);
+  var rest = (typeof bfRandomOthers === 'function') ? bfRandomOthers(null, pool, pool.length, 0, null) : [];
+  for (var i = 0; i < rest.length && starts.length < count; i++) {
+    if (starts.indexOf(rest[i]) < 0) starts.push(rest[i]);
   }
   return starts;
 }
 
-/* 下一個彈射目標：彈射範圍內、本輪還沒跳過的最近敵人（沒有就回 null）。
-   from 為 null＝從玩家（雷幻身中繼點）出發，改用「離我方最近」排序。 */
+/* 下一個彈射目標：彈射範圍（表定 30 米）內、本輪還沒跳過的敵人裡「隨機」一個
+   （沒有就回 null）。技能敘述只規定了範圍、沒有寫「最近」，所以範圍內等機率隨機。
+   from 為 null＝從玩家（雷幻身中繼點）出發，範圍改以「離我方多遠」計算。 */
 function sgChainNextTarget(from, pool, visited, hopPx) {
-  var near = (typeof bfNearestOthers === 'function') ? bfNearestOthers(from, pool, pool.length, hopPx) : [];
-  for (var i = 0; i < near.length; i++) {
-    if (near[i] && near[i].hp > 0 && visited.indexOf(near[i]) < 0) return near[i];
-  }
-  return null;
+  return (typeof bfRandomOther === 'function') ? bfRandomOther(from, pool, hopPx, visited) : null;
 }
 
 function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
@@ -4388,8 +4416,9 @@ function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
     }
     // 【電殛擴散】：每次彈射時劈向附近的敵人（不占彈射數、不繼續延伸鏈）
     if (isBounce && cfg.splashPct > 0) {
-      var splash = (typeof bfNearestOthers === 'function')
-        ? bfNearestOthers(cur, pool, cfg.splashCount, cfg.splashPx) : [];
+      // 「額外對 m 米內的 count 個敵人」沒有指定最近＝範圍內隨機
+      var splash = (typeof bfRandomOthers === 'function')
+        ? bfRandomOthers(cur, pool, cfg.splashCount, cfg.splashPx, null) : [];
       for (var s = 0; s < splash.length; s++) {
         sgHitOne(pEnt, st, splash[s], cfg.dmgVal * cfg.splashPct / 100, gid, floatSel, out,
           delayMs + sgStaggerMs(s + 1));
@@ -4462,13 +4491,14 @@ function sgCastThunderstrike(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   }
 }
 
-/* 落雷的目標清單：射程內、由近而遠取 count 個；敵人不足時輪流重用
-   （表定就是「對 N 個目標降下落雷」，敵人少於 N 時全落在同一批人身上）。 */
+/* 落雷的目標清單：射程內隨機取 count 個；敵人不足時輪流重用
+   （表定是「對 castM 米內的 N 個目標降下落雷」，沒有指定最近＝射程內隨機；
+   敵人少於 N 時全落在同一批人身上）。第 1 道固定落在施放的主目標身上。 */
 function sgThunderTargets(primary, pool, lvs, count) {
-  var sorted = (typeof bfSortedTargets === 'function') ? bfSortedTargets(pool) : [];
+  var rest = (typeof bfRandomOthers === 'function') ? bfRandomOthers(null, pool, pool.length, 0, null) : [];
   var inRange = [primary];
-  for (var i = 0; i < sorted.length; i++) {
-    if (sorted[i] !== primary && skills2CanReach('thunderstrike', sorted[i], lvs)) inRange.push(sorted[i]);
+  for (var i = 0; i < rest.length; i++) {
+    if (rest[i] !== primary && skills2CanReach('thunderstrike', rest[i], lvs)) inRange.push(rest[i]);
   }
   var out = [];
   for (var k = 0; k < count; k++) out.push(inRange[k % inRange.length]);
@@ -4502,15 +4532,15 @@ function sgQueueThunderBolt(pEnt, st, g, lvs, dmgVal, target, pool, floatSel, ou
         if (stunSec > 0) {
           /* 表定範圍＝「目標本身以及 6 米內的任 1 個敵人」，共 stunCount 個。 */
           var stunned = (m.target && m.target.hp > 0) ? [m.target] : [];
-          var extra = (typeof bfNearestOthers === 'function')
-            ? bfNearestOthers(m.target, m.pool || [], Math.max(0, stunCount - stunned.length), stunPx) : [];
+          var extra = (typeof bfRandomOthers === 'function')
+            ? bfRandomOthers(m.target, m.pool || [], Math.max(0, stunCount - stunned.length), stunPx, null) : [];
           for (var si = 0; si < extra.length; si++) stunned.push(extra[si]);
           for (var vi = 0; vi < stunned.length; vi++) sgTryStun(stunned[vi], stunSec);
         }
-        // 【迅雷重生】：這一道結束後再生一道；目標死了就改劈附近還活著的敵人
+        // 【迅雷重生】：這一道結束後再生一道；目標死了就改劈另一個還活著的敵人（隨機）
         if (regenChance > 0 && regenDone < regenMax && chance(regenChance)) {
           var next = (m.target && m.target.hp > 0) ? m.target
-            : ((typeof bfNearestOther === 'function') ? bfNearestOther(m.target, m.pool || []) : null);
+            : ((typeof bfRandomOther === 'function') ? bfRandomOther(m.target, m.pool || [], 0, null) : null);
           if (next) {
             sgQueueThunderBolt(m.pEnt, m.st, SKILLS2.thunderstrike, skills2Levels('thunderstrike'),
               m.dmgVal, next, m.pool, m.floatSel, m.out, 0, regenDone + 1);
@@ -4862,7 +4892,8 @@ function sgTickFrost(dt, ctx) {
 function sgSpreadFrost(from, enemies, fx, dot) {
   var radius = bfMeterPx(Number(fx.m) || 10);
   var count = Math.max(1, Math.floor(Number(fx.count) || 1));
-  var victims = bfNearestOthers(from, enemies, count, radius);
+  // 「擴散至目標 m 米內的 count 個敵人」沒有指定最近＝範圍內隨機
+  var victims = bfRandomOthers(from, enemies, count, radius, null);
   if (!victims.length) return;
   var spec = { dps: dot.dps, dur: Math.max(0.1, dot.until - GT), interval: dot.interval, stacksRaw: 1 };
   var spread = [];
@@ -5192,12 +5223,9 @@ function sgWaterballShot(pEnt, st, g, lvs, pool, target, floatSel, out, cfg) {
       sgWaterballHit(pEnt, st, victims[vi], cfg, floatSel, out, hopDelay + sgStaggerMs(vi));
     }
     if (b >= hops) break;
-    var next = null;
-    var near = bfNearestOthers(cur, pool, pool.length);
-    for (var ni = 0; ni < near.length; ni++) {
-      if (visited.indexOf(near[ni]) < 0) { next = near[ni]; break; }
-    }
-    if (!next) next = (typeof bfNearestOther === 'function') ? bfNearestOther(cur, pool) : null;
+    /* 【寒流爆散】的敘述沒有規定彈射範圍、也沒有寫「最近」＝整個戰場隨機挑一個
+       還沒彈過的敵人；全部彈過之後才允許回跳（→ js/battlefield.js bfRandomOther）。 */
+    var next = bfRandomOther(cur, pool, 0, visited) || bfRandomOther(cur, pool, 0, null);
     if (!next || next === cur || next.hp <= 0) break;
     visited.push(next);
     var hopTravelMs = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(next) * 1000) : 0;
@@ -5805,7 +5833,8 @@ function sgStormBarrierPulse(rt, lvs, ctx) {
          仍以其底值計，風切才不會因為「跳過第 2 階」而完全沒有傷害。 */
       var body = sgGroupBaseStat(g, st) * sgVal(t[1].fx, 'pct', Math.max(1, lvs[1])) / 100;
       var spec = sgWindRendSpec(g, lvs, 2, body);
-      var picks = sgEnemiesNearPlayer(enemies, radiusPx, null, want);
+      // 「對周圍的 count 個敵人附加風切」沒有指定最近＝範圍內隨機
+      var picks = sgRandomEnemiesNearPlayer(enemies, radiusPx, null, want);
       var marked = [];
       for (var k = 0; k < picks.length; k++) {
         if (spec && sgApplyWindRend(picks[k], spec) >= 0) marked.push(picks[k]);
@@ -5882,7 +5911,8 @@ function sgSpreadWindRend(from, enemies, lvs) {
   var fx = SKILLS2.stormbarrier.tiers[4].fx;
   var count = sgRollCount(sgVal(fx, 'count', lvs[4]));
   if (count <= 0) return;
-  var victims = bfNearestOthers(from, enemies, count, bfMeterPx(Number(fx.m) || 10));
+  // 「擴散至 m 米內的 count 個敵人」沒有指定最近＝範圍內隨機
+  var victims = bfRandomOthers(from, enemies, count, bfMeterPx(Number(fx.m) || 10), null);
   var spread = [];
   for (var i = 0; i < victims.length; i++) {
     if (sgWindRendOn(victims[i])) continue;
@@ -6438,7 +6468,8 @@ function sgTickBloodDots(dt, ctx) {
         // 毒霧感染：毒每次作用時，機率傳染給附近 count 個尚未中毒的敵人（複製剩餘時值）
         if (sids[si] === 'sgPoison' && spreadLv > 0 && chance(sgVal(t[4].fx, 'chance', spreadLv))) {
           var spreadCount = Math.max(1, Math.floor(sgVal(t[4].fx, 'count', spreadLv)));
-          var near = bfNearestOthers(e, enemies, enemies.length);
+          // 「傳染給附近的 count 個敵人」沒有指定最近＝隨機（候選同原本＝整個戰場）
+          var near = bfRandomOthers(e, enemies, enemies.length, 0, null);
           var spreaded = 0;
           for (var ni = 0; ni < near.length; ni++) {
             if (near[ni].hp > 0 && !sgHasDot(near[ni], 'sgPoison')) {
@@ -6684,7 +6715,8 @@ function sgDeathBoom(deadEnt, enemies) {
   var baseVal = st.atk * sgVal(t[0].fx, 'pct', lvs[0]) / 100;
   var boomVal = baseVal * sgVal(t[5].fx, 'pct', lvs[5]) / 100;
   var count = Math.max(1, Math.floor(Number(t[5].fx.count) || 2));
-  var victims = bfNearestOthers(deadEnt, enemies, count);
+  // 「對附近 count 個敵人造成傷害並傳染中毒」沒有指定最近＝隨機（候選同原本＝整個戰場）
+  var victims = bfRandomOthers(deadEnt, enemies, count, 0, null);
   if (!victims.length) return;
   var pEnt = sgCurrentPlayerEnt();
   if (!pEnt) return;

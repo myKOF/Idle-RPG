@@ -258,14 +258,18 @@ test('同距離時隨機挑一個（不是永遠挑同一隻）', () => {
   assert.equal(seen.size, 2, '同距離應該兩隻都有機會被選到');
 });
 
-test('連鎖由近而遠往外擴散，不會原地打同一隻', () => {
+test('連鎖在範圍內隨機擴散：不重複、不原地打同一隻', () => {
   const c = loadBattlefield();
   const a = at(60, 0), b = at(90, 0), d = at(400, 0);
-  const order = c.bfChainOrder(a, [a, b, d], 3);
-  assert.equal(order.length, 3);
-  assert.equal(order[0], a, '第一跳打在起點身上');
-  assert.equal(order[1], b, '第二跳跳到最近的鄰居');
-  assert.equal(order[2], d);
+  const seen = new Set();
+  for (let i = 0; i < 200; i++) {
+    const order = c.bfChainOrder(a, [a, b, d], 3);
+    assert.equal(order.length, 3);
+    assert.equal(order[0], a, '第一跳打在起點身上');
+    assert.equal(new Set(order).size, 3, '候選還沒用完之前不得重複跳同一隻');
+    seen.add(order[1]);
+  }
+  assert.equal(seen.size, 2, '第二跳應在剩下的敵人之間隨機，不是固定跳最近的');
 });
 
 /* ---- 範圍 ---- */

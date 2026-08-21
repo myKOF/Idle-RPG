@@ -483,7 +483,9 @@ function legendaryEmitChainVfx(from, to, floatSel, elem) {
 }
 
 function legendaryScheduleChain(pEnt, spec, floatSel) {
-  // 連鎖不再每跳全場亂數挑：記住上一跳打到誰，下一跳跳到離它最近的鄰居 → js/battlefield.js
+  /* 連鎖記住上一跳打到誰，下一跳從「它以外的存活敵人」裡隨機挑一個 → js/battlefield.js。
+     【閃電飛越】【迅雷穿刺】的敘述都沒有規定彈射範圍、也沒有寫「最近」，
+     所以候選是整個戰場、挑法是等機率隨機（使用者定調 2026-08-21）。 */
   var chainState = { last: null };
   for (var i = 0; i < spec.bounces; i++) {
     (function (delayIndex) {

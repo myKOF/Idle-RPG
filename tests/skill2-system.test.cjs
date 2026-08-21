@@ -514,8 +514,8 @@ test('飛刀彈射：允許回跳到其他目標，但禁止自我彈射', () =>
   const vfx = [];
   c.enemyEventFloatTarget = (ent) => ent.name;
   c.playCombatVfx = (spec) => vfx.push(spec);
-  c.bfNearestOthers = (from) => from === a ? [b] : [a];
-  c.bfNearestOther = (from) => from === a ? b : a;
+  c.bfRandomOthers = (from) => from === a ? [b] : [a];
+  c.bfRandomOther = (from) => from === a ? b : a;
   c.G.player.skills2.levels.knife = [1, 1, 1, 1, 0, 1, 0];
 
   c.castSkill2(p, [a, b], 'knife', 'mv-float');
@@ -530,8 +530,8 @@ test('飛刀彈射：允許回跳到其他目標，但禁止自我彈射', () =>
   // 即使近鄰替身錯誤地回傳目前目標，防線也不得建立自我彈射事件。
   vfx.length = 0;
   const solo = enemy(1e9, 40, 0, 'Solo');
-  c.bfNearestOthers = () => [solo];
-  c.bfNearestOther = () => solo;
+  c.bfRandomOthers = () => [solo];
+  c.bfRandomOther = () => solo;
   c.castSkill2(p, [solo], 'knife', 'mv-float');
   assert.equal(vfx.filter((spec) => spec.variant === 'knife-bounce').length, 0,
     '單一目標不得建立 Solo→Solo');
