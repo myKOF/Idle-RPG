@@ -87,8 +87,7 @@ function buildStandardEquipment(ctx, target) {
   const isTwoHand = !!target.isTwoHand;
   const hasShield = !!target.hasShield;
 
-  // 核心傷害詞條絕對保證完整（嚴禁替換任何傷害相關詞條）
-  // 基礎詞條 pool: atkPct, critDmg, atkFlat, critRate, pPen
+  // 核心傷害詞條絕對一致（所有技能裝備詞條完全相同，不進行個別詞條替換）
   slots.forEach(slot => {
     const isMainWeapon = slot === 'weapon';
     const isOffhand = slot === 'weapon2';
@@ -97,16 +96,9 @@ function buildStandardEquipment(ctx, target) {
       { key: 'atkPct', roll: 100 },
       { key: 'critDmg', roll: 100 },
       { key: 'atkFlat', roll: 100 },
-      { key: 'critRate', roll: 100 }
+      { key: 'critRate', roll: 100 },
+      { key: 'pPen', roll: 100 }
     ];
-
-    // 特殊機制替換規則：
-    // 「反擊」2階進化"招架"為格擋時進行反擊，在盾牌上將第 5 條詞條設為 blockRate（格擋率）
-    if (hasShield && isOffhand) {
-      affixes.push({ key: 'blockRate', roll: 100 });
-    } else {
-      affixes.push({ key: 'pPen', roll: 100 });
-    }
 
     // 雙手武器在雙手槽位可容納第 6 條詞條（雙手補償）
     if ((isTwoHand && isMainWeapon) || (isDualTwoHand && (isMainWeapon || isOffhand))) {
@@ -167,6 +159,19 @@ function runStandardSim(target, scenarioType) {
   ctx.G.player.equipment = ctx.G.equipment;
 
   const pStats = ctx.computeStats();
+
+  // 依照使用者指示之公平基準屬性：
+  // 格擋率 50%，格擋減傷 80%，連擊數 3，全屬性增傷害 +1000%
+  pStats.blockRate = 50;
+  pStats.blockDmgRed = 80;
+  pStats.comboHits = 3;
+  pStats.totalDmgPct = (pStats.totalDmgPct || 0) + 1000;
+  pStats.elemDmgPct = (pStats.elemDmgPct || 0) + 1000;
+  if (ctx.ELEMENTS && pStats.elemDmgUp) {
+    ctx.ELEMENTS.forEach(e => {
+      pStats.elemDmgUp[e] = (pStats.elemDmgUp[e] || 0) + 1000;
+    });
+  }
   ctx.FIELD = {
     monsters: [],
     monster: null,
