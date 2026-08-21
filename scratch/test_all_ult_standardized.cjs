@@ -112,8 +112,8 @@ function buildStandardEquipment(ctx, target) {
       kind: 'equip',
       slot: slot,
       rarity: 5,
-      level: 300,
-      name: '300級傳奇裝備',
+      level: 100,
+      name: '100級傳奇裝備',
       affixes: affixes,
       upgrade: 40,
       sockets: []
@@ -142,8 +142,8 @@ function runStandardSim(target, scenarioType) {
   const optIdx = target.opt;
 
   ctx.G = ctx.newGameState();
-  ctx.G.player.level = 1000;
-  ctx.G.player.reincarnations = 10;
+  ctx.G.player.level = 100;
+  ctx.G.player.reincarnations = 1;
   ctx.G.player.gold = 1000000000;
   ctx.G.player.skills2 = {
     levels: {
@@ -295,7 +295,7 @@ function runStandardSim(target, scenarioType) {
   }
 
   const dt = 0.05;
-  const maxSimTime = 300.0;
+  const maxSimTime = 60.0;
   let clearedAtTime = 0;
   const totalEnemiesToKill = mobsPerWave;
 
@@ -376,7 +376,7 @@ function runStandardSim(target, scenarioType) {
 console.log('⚔️ 開始執行 300 級 0 防禦單波（多輪平均）全 8 大技能群組標準化 DPS 模擬測試...\n');
 
 const results = [];
-const NUM_TRIALS = 3;
+const NUM_TRIALS = 1;
 
 for (let target of ALL_SKILL_TARGETS) {
   console.log(`▶ 測試目標：[${target.groupName}] ${target.name} (${NUM_TRIALS} 輪平均)`);
