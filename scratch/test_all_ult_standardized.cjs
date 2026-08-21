@@ -10,7 +10,9 @@ function createSimContext() {
   const ctx = {
     Math, Object, Array, Number, String, RegExp, console,
     setTimeout() {}, clearTimeout() {}, setInterval() {}, clearInterval() {},
-    location: { hostname: 'localhost' }
+    location: { hostname: 'localhost' },
+    BF_COLS: 10,
+    BF_ROWS: 10
   };
   ctx.window = ctx;
   ctx.self = ctx;
@@ -190,7 +192,7 @@ function runStandardSim(target, scenarioType) {
   ctx.FIELD.player.maxMp = 1e9;
 
   ctx.fieldMonsterAttack = function() { return false; };
-  ctx.bfTickApproach = function() { return []; };
+  // 怪物正常逼近與跑動：保留原生 bfTickApproach
 
   ctx.resetSkillRT();
   if (typeof ctx.resetSkill2RT === 'function') ctx.resetSkill2RT();
@@ -231,8 +233,6 @@ function runStandardSim(target, scenarioType) {
     const s = 100;
     const base = ctx.monsterStatsFor(s, isElite, isBoss);
     const zn = ctx.ZONE_CONFIG_TABLE ? ctx.ZONE_CONFIG_TABLE['Icefield'] : ctx.ZONES['Icefield'];
-    const home = (typeof ctx.bfPlayerPos === 'function') ? ctx.bfPlayerPos() : { x: 0, y: 0 };
-    const ringDist = (typeof ctx.bfContactDist === 'function') ? ctx.bfContactDist() * 1.5 : 80;
 
     const newEnemies = [];
     for (let i = 0; i < mobsPerWave; i++) {
@@ -243,7 +243,6 @@ function runStandardSim(target, scenarioType) {
       const npcAtkMult = Number(mtype.atkMult) > 0 ? Number(mtype.atkMult) : 1;
       const npcDefMult = Number(mtype.defMult) > 0 ? Number(mtype.defMult) : 1;
       const mAspd = base.aspd * zn.aspdMult * (Number(mtype.aspdMult) > 0 ? Number(mtype.aspdMult) : 1);
-      const ang = Math.PI * 2 * (i + waveIdx * 0.3) / mobsPerWave;
 
       newEnemies.push({
         id: 'm_' + waveIdx + '_' + i,
@@ -272,14 +271,15 @@ function runStandardSim(target, scenarioType) {
         _spawnAt: ctx.GT,
         _stage: -1,
         _enterCd: 0,
-        pos: { x: home.x + Math.cos(ang) * ringDist, y: home.y + Math.sin(ang) * ringDist },
         shield: 0,
         buffs: {},
         dots: []
       });
     }
 
-    ctx.FIELD.monsters = ctx.FIELD.monsters.concat(newEnemies);
+    // 野外出怪方式：從外圍生成 (bfSpawnDist ~440px)，朝玩家跑動
+    const placed = ctx.bfPlaceEnemies(newEnemies, ctx.FIELD.monsters);
+    ctx.FIELD.monsters = ctx.FIELD.monsters.concat(placed);
     ctx.markFieldEnemyFloatTargets(ctx.FIELD.monsters);
     ctx.syncFieldPrimary();
   }
