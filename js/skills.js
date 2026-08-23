@@ -3120,7 +3120,10 @@ function pickAndCastSkill(pEnt, target, floatSel) {
           !(typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt))) continue;
       return beginSkillCast({
         kind: 'skill2', pEnt: pEnt, target: target, skillId: sgId,
-        floatSel: floatSel, def: (typeof SKILLS2 !== 'undefined') ? SKILLS2[sgId] : null
+        floatSel: floatSel, def: (typeof SKILLS2 !== 'undefined') ? SKILLS2[sgId] : null,
+        // ready queue uses the loadout key ('sg:<id>'); keep the bare id for castSkill2,
+        // but dequeue the exact key so the skill can re-enter when its cooldown ends.
+        loadoutKey: id
       });
     }
     // 潛力技能（裝載欄鍵 'potential:<id>'）：無法力消耗，依冷卻與存活目標施放，其餘沿用同一套排序。

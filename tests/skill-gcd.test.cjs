@@ -118,6 +118,33 @@ test('技能依冷卻歸零先後輪轉，前排短 CD 不會在首輪壟斷後�
   assert.deepEqual(calls, ids);
 });
 
+test('新版技能使用完整 sg 裝載鍵解除就緒佇列，固定關卡可跨波次重複施放', () => {
+  const context = loadGameContext();
+  const calls = [];
+  context.G.player.loadout = ['sg:alpha', 'sg:beta'];
+  context.SKILLS2 = {
+    alpha: { cost: 0, castTime: 0 },
+    beta: { cost: 0, castTime: 0 }
+  };
+  context.skills2Castable = () => true;
+  context.skills2ActsPassive = () => false;
+  context.skills2CanReach = () => true;
+  context.castSkill2 = (player, target, gid) => {
+    calls.push(gid);
+    player.skillCds['sg:' + gid] = 0.4;
+    return { killed: false, dmg: 0 };
+  };
+
+  const player = playerEntity();
+  const target = { hp: 1000 };
+  for (let i = 0; i < 4; i += 1) {
+    assert.ok(context.pickAndCastSkill(player, [target], 'float-layer'));
+    context.tickSkillCds(player, 0.4);
+  }
+
+  assert.deepEqual(calls, ['alpha', 'beta', 'alpha', 'beta']);
+});
+
 test('多敵人範圍技能每個目標承受完整傷害，不依目標數分攤', () => {
   const context = loadGameContext();
   assert.equal(context.skillDamagePerTarget(10000, 100, 4), 20000);
