@@ -1048,7 +1048,9 @@ function settleEnemyAttackRetaliation(event) {
     /* resolveHit 已先算好反震數值；只有延後事件才在這裡真正扣敵人生命，
        並補上原本由 resolveHit 觸發的「敵人受傷」掛點。 */
     if (!event.thornsApplied && result.thorns > 0) {
-        attacker.hp = Math.max(0, attacker.hp - result.thorns);
+        if (!(typeof gmHpLockActive === 'function' && gmHpLockActive(attacker))) {
+            attacker.hp = Math.max(0, attacker.hp - result.thorns);
+        }
         if (event.defCfg && event.defCfg.isPlayer && typeof skills2OnEnemyDamaged === 'function') {
             skills2OnEnemyDamaged(attacker, result.thorns);
         }

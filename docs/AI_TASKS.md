@@ -1,5 +1,24 @@
 # AI_TASKS.md
 
+## Codex｜新增 HP_lock／MP_lock GM 指令（2026-08-23）
+
+- 狀態：已完成
+- Owner：Codex
+- 任務分類：GM 測試工具／戰鬥資源鎖定
+- 使用者需求：新增 `HP_lock` 與 `MP_lock` 指令；再次輸入同一指令即可解除。HP 鎖定後玩家不再扣血，MP 鎖定後玩家不再扣魔且技能可在沒有 MP 時使用。
+- 前置依賴：既有 `GM_TEST` 執行期旗標、Worker GM 指令執行層與 HP/MP 結算流程。
+- 允許修改：`js/gm_exec.js`、`js/formula.js`、`js/skills.js`、`js/skills2.js`、`js/legendary.js`、`js/combat.js`、`js/worker/sim.worker.js`、`js/bridge.js`、`index.html`、`tests/gm-skill-test-tools.test.cjs`、`tests/skill2-vfx.test.cjs`、`GM_command.md`、`docs/AI_TASKS.md`。
+- 禁止修改：存檔格式、Worker Protocol／`js/worker/protocol.js`、技能與戰鬥數值、非本需求 UI。
+- 技術內容：以 `GM_TEST.hpLock`／`GM_TEST.mpLock` 保存執行期狀態；在共用傷害結算、直接自傷、一般／新版技能耗魔、被動觸發耗魔、魔法盾與自動施放 MP 門檻接線，避免只攔單一路徑。
+- 測試要求：GM 指令切換、一般與新版技能零 MP 施放、直接傷害／DoT／自傷不扣 HP、MP 消耗路徑不扣魔、`node --test tests/gm-skill-test-tools.test.cjs`、`node tools/build_check.cjs`、完整 `npm.cmd test`。
+- 完成條件：兩個指令可重複切換；鎖定僅在執行期生效且不寫入存檔；HP／MP 相關路徑無新增迴歸；快取版本同步。
+- 驗證結果：定向 GM／技能／Worker／VFX 測試 185/185 通過；`node tools/build_check.cjs` 通過（297 個檔案）；修改檔案語法檢查與 `git diff --check` 通過。完整 `npm.cmd test` 仍被既有技能規格測試（`skill2-earth`／`skill2-ice` 等）失敗阻擋，與本任務修改無關。
+- 需要 Claude Review：否（範圍明確，沿用既有旗標與結算收斂點）。
+- 需要 Antigravity 驗證：建議，確認瀏覽器 GM 面板實際輸入與 Worker 狀態同步。
+- 完成後交給：使用者／主整合工作區。
+
+---
+
 ## Antigravity｜全 8 大技能群組（24 招超神進化）標準化 DPS 基準測試與規範更新｜2026-08-21
 
 - 狀態：已完成

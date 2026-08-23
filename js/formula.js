@@ -730,10 +730,19 @@ function towerBossHpDamage(ent, damage) {
   if (!ent || !ent.towerBoss || !(ent.maxHp > 0)) return amount;
   return Math.min(amount, ent.maxHp * TOWER_BOSS_DAMAGE_CAP_PCT / 100);
 }
+/* GM 資源鎖定是執行期測試旗標，不進入存檔；玩家戰鬥實體沿用「沒有 maxHp」辨識，
+   與魔法盾、既有 god 鎖血和 tickStatuses 的口徑一致。 */
+function gmHpLockActive(ent) {
+  return !!(ent && !(ent.maxHp > 0) && typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.hpLock);
+}
+function gmMpLockActive(ent) {
+  return !!(ent && typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.mpLock);
+}
 // 非 resolveHit 的直接傷害也必須經過同一個高塔 BOSS 上限。
 function applyEnemyHpDamage(ent, damage) {
   var amount = towerBossHpDamage(ent, damage);
   if (ent) {
+    if (gmHpLockActive(ent)) amount = 0;
     /* GM 鎖血（僅本機 GM 指令 god → js/gm_exec.js）：我方生命最低鎖 1。
        只對玩家戰鬥實體生效——實體判別沿用 tickStatuses 慣例（敵人才有 maxHp）。 */
     var gmFloor = (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.god && !(ent.maxHp > 0)) ? 1 : 0;
@@ -942,9 +951,10 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     var mpPaid = skills2ManaShieldAbsorb(defender, dmg);
     if (mpPaid > 0) { dmg = Math.max(0, dmg - mpPaid); out.manaShield = mpPaid; }
   }
+  if (dCfg.isPlayer && gmHpLockActive(defender)) dmg = 0;
   out.hpDamage = dmg;
   defender.hp -= dmg;
-  // GM 鎖血（僅本機 GM 指令 god）：我方生命最低鎖 1，不進入下方致死分支
+  // GM 鎖血（僅本機 GM 指令 god）：我方生命最低鎖 1，不進入下方致死分支；HP_lock 直接不扣血
   if (dCfg.isPlayer && typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.god && defender.hp < 1) defender.hp = 1;
   out.dmg = dmg + out.absorbed; // 統計上含護盾吸收量
   if (defender.hp <= 0) {
@@ -973,7 +983,11 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     out.thorns = Math.max(1, Math.round(dCfg.maxHp * dCfg.thornsPct / 100 * globalDamageMultiplier(aCfg.globalDmgRed)));
     /* 魔法投射物的反傷由 combat.js 排到投射物命中時結算；其他攻擊維持同步結算。 */
     if (!dCfg.deferThorns) {
-      attacker.hp = Math.max(0, attacker.hp - out.thorns);
+      if (gmHpLockActive(attacker)) {
+        out.thorns = 0;
+      } else {
+        attacker.hp = Math.max(0, attacker.hp - out.thorns);
+      }
       // 反震也是「敵人受傷」：血飲術反噬同樣通知（防守方為玩家＝攻擊者為敵人）
       if (dCfg.isPlayer && typeof skills2OnEnemyDamaged === 'function') {
         skills2OnEnemyDamaged(attacker, out.thorns);

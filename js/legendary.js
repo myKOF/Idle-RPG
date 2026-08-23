@@ -534,8 +534,10 @@ function legendaryStartVoidFate(pEnt, floatSel) {
       var st = getStats();
       var hpPct = spec.deferredHpLossPct / ticks;
       var hpLoss = Math.min(Math.max(0, pEnt.hp), st.hp * hpPct / 100);
-      pEnt.hp = Math.max(0, pEnt.hp - hpLoss);
-      legendaryOnHealthLost(pEnt, hpLoss, floatSel);
+      if (!(typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt))) {
+        pEnt.hp = Math.max(0, pEnt.hp - hpLoss);
+        legendaryOnHealthLost(pEnt, hpLoss, floatSel);
+      }
       var enemies = ctx && ctx.getEnemies ? ctx.getEnemies() : legendaryActiveEnemies();
       for (var i = 0; i < enemies.length; i++) {
         var damage = Math.max(1, Math.round(enemies[i].maxHp * hpPct * spec.enemyHpLossPerPlayerPct / 100));
@@ -721,10 +723,15 @@ function legendaryOnPlayerDamaged(attacker, pEnt, hpDamage, blocked, hitResult, 
   }
   if (hitResult && hitResult.thorns > 0 && legendaryHas(st, 'magicRecoil') && attacker && attacker.hp > 0) {
     var recoil = legendaryFx('magicRecoil');
-    if (pEnt.mp >= recoil.thornsManaCost) {
-      pEnt.mp -= recoil.thornsManaCost;
+    if ((typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt)) ||
+        pEnt.mp >= recoil.thornsManaCost) {
+      if (!(typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt))) {
+        pEnt.mp -= recoil.thornsManaCost;
+      }
       var extra = Math.max(1, Math.round(hitResult.thorns * recoil.thornsDamagePct / 100));
-      attacker.hp = Math.max(0, attacker.hp - extra);
+      if (!(typeof gmHpLockActive === 'function' && gmHpLockActive(attacker))) {
+        attacker.hp = Math.max(0, attacker.hp - extra);
+      }
       hitResult.thorns += extra;
     }
   }
@@ -917,8 +924,10 @@ function legendaryTickFireSpirit(pEnt, st) {
   if (!rt.nextFireDrainAt) rt.nextFireDrainAt = GT + 1;
   while (rt.nextFireDrainAt <= GT && pEnt.hp > 0) {
     var loss = Math.min(Math.max(0, pEnt.hp), st.hp * spec.selfHpDrainPctPerSec / 100);
-    pEnt.hp = Math.max(0, pEnt.hp - loss);
-    legendaryOnHealthLost(pEnt, loss, 'pv-float');
+    if (!(typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt))) {
+      pEnt.hp = Math.max(0, pEnt.hp - loss);
+      legendaryOnHealthLost(pEnt, loss, 'pv-float');
+    }
     rt.nextFireDrainAt += 1;
   }
 }

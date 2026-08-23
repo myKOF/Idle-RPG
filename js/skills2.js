@@ -1006,7 +1006,7 @@ function skills2OnEnemyDamaged(ent, amount) {
   sgBloodMistDrain(ent);      // 血刃斬傳奇【血霧】吸血
 }
 
-/* 嗜血狂怒【血飲術】（T6）：期間範圍內的敵人每次受傷，你也付出一點生命。 */
+/* 嗜血狂怒【血飲術】（T6）：期間範圍內的敵人每次受傷，你也付出一點生命；HP_lock 時免除代價。 */
 function sgBloodrageBackfire(ent) {
   var lvs = skill2RageLevels();
   if (!lvs || lvs[5] < 1) return;
@@ -1025,6 +1025,7 @@ function sgBloodrageBackfire(ent) {
     selfDmg = selfDmg * (100 - cut) / 100;
   }
   selfDmg = Math.max(1, Math.round(selfDmg));
+  if (typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt)) return;
   var gmFloor = (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.god) ? 1 : 0;
   pEnt.hp = Math.max(gmFloor, pEnt.hp - selfDmg);
   /* 傳奇【燃血】：每一次生命損失疊 1 層。掛在扣血之後而不是之前，
@@ -1144,6 +1145,7 @@ function sgBloodVenomRiteCost(sid) {
   if (!(pct > 0)) return;
   var pEnt = sgCurrentPlayerEnt();
   if (!pEnt || !(pEnt.hp > 1)) return;
+  if (typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt)) return;
   pEnt.hp = Math.max(1, pEnt.hp - Math.max(1, Math.round(pEnt.hp * pct / 100)));
 }
 
@@ -1599,7 +1601,9 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
   if (!primary) return null;
 
   if (!storm) {
-    pEnt.mp = Math.max(0, pEnt.mp - (Number(g.cost) || 0));
+    if (!(typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt))) {
+      pEnt.mp = Math.max(0, pEnt.mp - (Number(g.cost) || 0));
+    }
     if (!pEnt.skillCds) pEnt.skillCds = {};
     pEnt.skillCds[SG_PREFIX + gid] = skills2Cooldown(gid, lvs, pEnt);
   }
@@ -2621,7 +2625,8 @@ function sgCastDualdance(pEnt, st, g, lvs, pool, primary, floatSel, out, storm) 
   if (doom) {
     doomPct = sgUltVal(doom, 'pct');
     var cost = Math.max(0, sgUltVal(doom, 'hpPct'));
-    if (cost > 0 && pEnt.hp > 1) {
+    if (cost > 0 && pEnt.hp > 1 &&
+        !(typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt))) {
       pEnt.hp = Math.max(1, pEnt.hp - Math.max(1, Math.round(pEnt.hp * cost / 100)));
     }
   }
@@ -2749,7 +2754,10 @@ function skills2TryDeathDefer(pEnt) {
   if (!pEnt || !SKILL2_RT) return false;
   var d = SKILL2_RT.deathDefer;
   if (d) {
-    if (d.until > GT) { pEnt.hp = Math.max(1, pEnt.hp); return true; }
+    if (d.until > GT) {
+      if (!(typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt))) pEnt.hp = Math.max(1, pEnt.hp);
+      return true;
+    }
     return false;                       // 已經用過而且到期：這一次是真的死亡
   }
   if (!(SKILL2_RT.storm && SKILL2_RT.storm.until > GT)) return false;
@@ -2757,7 +2765,7 @@ function skills2TryDeathDefer(pEnt) {
   var sec = spec ? Math.max(0, Number(spec.sec) || 0) : 0;
   if (!(sec > 0)) return false;
   SKILL2_RT.deathDefer = { until: GT + sec };
-  pEnt.hp = Math.max(1, pEnt.hp);
+  if (!(typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt))) pEnt.hp = Math.max(1, pEnt.hp);
   applyStatus(pEnt, 'sgDeathDefer', { val: Math.max(0, Number(spec.pct) || 0), dur: sec });
   sgEmitPlayerVfx('dualdance', 'pv-float', { fxKind: 'aura', variant: 'cyclone', dur: Math.min(6, sec) });
   if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '不屈之誓!', 'buff');
@@ -2777,7 +2785,8 @@ function sgTickDeathDefer(ctx) {
      在延後期間冷卻結束、把玩家原地滿血復活並在 onPlayerFieldDeath 就 return，
      RT 因此不會被 resetSkillRT 重建），這裡就會每個 tick 把生命重新歸零＝直接鎖死。 */
   d.done = true;
-  if (ctx.pEnt && ctx.pEnt.hp > 0) ctx.pEnt.hp = 0;
+  if (ctx.pEnt && ctx.pEnt.hp > 0 &&
+      !(typeof gmHpLockActive === 'function' && gmHpLockActive(ctx.pEnt))) ctx.pEnt.hp = 0;
 }
 
 /* ---- 嗜血狂怒（純增益爆發；傷害為 0，訊息由 castSkill2 尾端統一處理） ---- */
@@ -4254,6 +4263,7 @@ function skill2DrainFactor(kind) {
    使用者決策 2026-08-17：法力付得起多少就付多少，餘額仍照扣生命。 */
 function skills2ManaShieldAbsorb(pEnt, dmg) {
   if (!pEnt || !(dmg > 0)) return 0;
+  if (typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt)) return 0;
   var lvs = skill2EarthguardLevels();
   if (!lvs || lvs[4] < 1) return 0;
   var want = dmg * sgVal(SKILLS2.earthguard.tiers[4].fx, 'pct', lvs[4]) / 100;
@@ -5980,6 +5990,7 @@ function skills2TierTriggerMp(gid, tierIdx) {
 function sgCounterPayMp(pEnt, tierIdx) {
   var cost = skills2TierTriggerMp('counter', tierIdx);
   if (cost <= 0) return true;
+  if (typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt)) return true;
   if (!pEnt || !((pEnt.mp || 0) >= cost)) return false;
   pEnt.mp -= cost;
   return true;
@@ -6194,7 +6205,9 @@ function sgCounterApplyLegends(pEnt, st, pct, cfg) {
        扣到 0 由戰鬥迴圈既有的判死路徑接手，與【血飲術】反噬同一個口徑。 */
     var cost = Math.max(1, Math.round(st.hp * (Number(cfg.bloodPay.hpPct) || 0) / 100));
     var gmFloor = (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.god) ? 1 : 0;
-    if (pEnt) pEnt.hp = Math.max(gmFloor, pEnt.hp - cost);
+    if (pEnt && !(typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt))) {
+      pEnt.hp = Math.max(gmFloor, pEnt.hp - cost);
+    }
   }
   if (cfg.warGodPct > 0) pct *= 1 + cfg.warGodPct / 100;  // 超神【戰神體】
   return pct;
@@ -6418,7 +6431,7 @@ function sgTickUltAutoCast(ctx) {
   SKILL2_RT.ultAuto.cleave = GT + gap;
   if (typeof effectActive === 'function' && effectActive(ctx.pEnt, 'stun')) return;
   var cost = Number(SKILLS2.cleave.cost) || 0;
-  if (ctx.pEnt.mp < cost) return;
+  if (ctx.pEnt.mp < cost && !(typeof gmMpLockActive === 'function' && gmMpLockActive(ctx.pEnt))) return;
   var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
   var res = castSkill2(ctx.pEnt, enemies, 'cleave', ctx.floatSel);
   if (!res) return;
