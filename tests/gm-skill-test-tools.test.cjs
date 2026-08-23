@@ -108,6 +108,21 @@ test('HP_lock／MP_lock：重複輸入切換，鎖定時不扣生命且零魔可
   assert.equal(c.GM_TEST.mpLock, false);
 });
 
+test('HP_lock：不讓既有暈眩／倒地狀態卡住技能行動閘門；一般狀態仍會阻擋', () => {
+  const c = loadContext();
+  const p = { hp: 100, effects: { stun: c.GT + 10 }, buffs: {}, dots: [] };
+
+  assert.equal(c.playerActionControlBlocked(p), true, '未鎖血時暈眩仍應阻擋行動');
+  assert.equal(c.executeGMCommand('HP_lock').ok, true);
+  assert.equal(c.playerActionControlBlocked(p), false, 'HP_lock 下暈眩不應卡死技能列');
+
+  p.effects.stun = 0;
+  c.SKILL2_RT.lastStand = { done: false, reviveAt: c.GT + 10, pEnt: p };
+  assert.equal(c.playerActionControlBlocked(p), false, 'HP_lock 下倒地也不應卡死技能列');
+  assert.equal(c.executeGMCommand('HP_lock').ok, true);
+  assert.equal(c.playerActionControlBlocked(p), true, '解除 HP_lock 後倒地應恢復行動阻擋');
+});
+
 /* ---- 2) statset / maxstats ---- */
 
 test('statset：覆寫旗標寫入與清除；maxstats 基準組；非法欄位被拒', () => {

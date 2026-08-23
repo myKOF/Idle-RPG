@@ -199,7 +199,7 @@ function towerTick(dt) {
     if (p.hp <= 0) { endTowerFight(false, 'death'); return; }
   }
 
-  if (!effectActive(p, 'stun') &&
+  if (!playerActionControlBlocked(p, false) &&
       (typeof skillCastInProgress !== 'function' || !skillCastInProgress(p))) {
     var sres = pickAndCastSkill(p, b, 'tb-float');
     if (sres) {

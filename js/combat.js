@@ -32,6 +32,17 @@ function toggleCombatPaused() {
     return setCombatPaused(!COMBAT_PAUSED);
 }
 
+/* GM 鎖血是測試用的無傷狀態：若啟用前角色正好卡在暈眩／倒地閘門，
+   生命雖然不再下降，技能列卻會永遠看似就緒而完全不出手。一般遊戲不走
+   這條例外，只有 HP_lock 啟用時解除這兩個行動阻擋。施法中的硬直仍由
+   skillCastInProgress 自己管理，不在這裡繞過。 */
+function playerActionControlBlocked(pEnt, includeDowned) {
+    if (typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt)) return false;
+    if (effectActive(pEnt, 'stun')) return true;
+    return includeDowned !== false &&
+        (typeof skill2DownedActive === 'function') && skill2DownedActive();
+}
+
 function newPlayerEntity(st) {
     return { hp: st.hp, mp: st.mp, shield: 0, shieldMax: 0, shieldMaxVersion: SHIELD_MAX_VERSION, atkCd: 1 / st.aspd, _targetSwitchCd: 0, skillCds: {}, buffs: {}, dots: [], effects: {}, _lastStandAt: 0, _skillCastRemaining: 0, _skillCastId: '' };
 }
@@ -1429,8 +1440,7 @@ function fieldTick(dt) {
     //（45 新技能共用排程器已上移至「出怪」空場檢查之前，避免波次間隙排程停擺）
     /* 新版技能超神【不屈鬥魂】倒地期間：普攻與技能一起停，這是「死了 5 秒」的代價。
        擋在同一個閘門而不是只擋普攻（暴風之舞那種），因為那 5 秒的設定是人倒下了。 */
-    if (!effectActive(p, 'stun') &&
-        !((typeof skill2DownedActive === 'function') && skill2DownedActive()) &&
+    if (!playerActionControlBlocked(p, true) &&
         (typeof skillCastInProgress !== 'function' || !skillCastInProgress(p))) {
         // 技能優先（依裝載順序；含裝載的潛力技能）
         var sres = pickAndCastSkill(p, enemies, 'mv-float');

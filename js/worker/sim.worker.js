@@ -16,7 +16,7 @@ importScripts(
   '../item.js?v=20260805-tasks',
   '../skills.js?v=20260823-gm-locks', '../skills2.js?v=20260823-gm-locks', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260820-ult-evolution-3', '../special_rules.js',
-  '../combat.js?v=20260823-gm-locks', '../legendary.js?v=20260823-gm-locks', '../potential.js?v=20260821-bounce-random', '../tower.js?v=20260817-projectile-retaliation',
+  '../combat.js?v=20260824-hp-lock-action', '../legendary.js?v=20260823-gm-locks', '../potential.js?v=20260821-bounce-random', '../tower.js?v=20260824-hp-lock-action',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260820-ult-evolution-3',
   '../tasks.js'
 );

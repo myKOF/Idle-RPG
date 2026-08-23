@@ -1,5 +1,25 @@
 # AI_TASKS.md
 
+## Codex｜修正 HP_lock 後技能停止施放（2026-08-24）
+
+- 狀態：已完成
+- Owner：Codex
+- 任務分類：GM 測試工具／戰鬥行動閘門回歸修正
+- 使用者回報：啟用 `HP_lock` 後技能列沒有施放；畫面顯示技能已就緒，且 HP／MP 已凍結。
+- 前置依賴：既有 `HP_lock`／`MP_lock` 執行期旗標與技能施法排程器。
+- 允許修改：`js/combat.js`、`js/tower.js`、`tests/gm-skill-test-tools.test.cjs`、`index.html`、`js/bridge.js`、`js/worker/sim.worker.js`、本文件。
+- 禁止修改：存檔格式、Worker Protocol、技能數值與非 GM 戰鬥行為。
+- 技術內容：GM 鎖血啟用時，玩家行動閘門不得因既有暈眩／倒地狀態而永久阻擋技能自動施放；一般遊戲狀態維持原本的控制規則（高塔沿用原本僅檢查暈眩）。
+- 驗收方式：鎖血下技能可從就緒列進入施法；未鎖血時暈眩／倒地仍會阻止行動；野外與高塔兩條戰鬥路徑同步；快取版號同步。
+- 測試要求：GM 定向測試、技能排程測試、`node tools/build_check.cjs`、`git diff --check`。
+- 實作結果：新增共用 `playerActionControlBlocked` 行動閘門；`HP_lock` 下略過殘留暈眩／倒地阻擋，野外與高塔技能路徑同步；更新戰鬥模組與 Worker 快取版號。
+- 修改檔案：`js/combat.js`、`js/tower.js`、`tests/gm-skill-test-tools.test.cjs`、`index.html`、`js/bridge.js`、`js/worker/sim.worker.js`、本文件。
+- 未修改但檢查過：`js/skills.js` 的就緒佇列與施法鎖、`js/skills2.js` 的新版技能施放入口、`js/formula.js` 的 HP／MP 鎖定結算。
+- 已知風險：HP_lock 是 GM 測試例外；一般遊戲的暈眩、倒地與施法硬直規則不變。
+- 未完成項目：無。
+
+---
+
 ## Codex｜新增 HP_lock／MP_lock GM 指令（2026-08-23）
 
 - 狀態：已完成
