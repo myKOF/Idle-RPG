@@ -572,7 +572,7 @@ function skillRtApplyDamageAmps(pEnt, sk, fx, id, lv, st, targets, pre, parts, f
     parts.push('<span class="log-hl-good">疊滿引爆 +' + fmt1(bm) + '%！</span>');
   }
   // --- resourceConvert：mpDump（奧能梭哈）——耗盡全部剩餘 MP，依每單位被耗 MP 增傷 ---
-  if (fx.mpDump) {
+  if (fx.mpDump && !(typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt))) {
     var dumped = Math.max(0, pEnt.mp || 0);
     if (dumped > 0) {
       pEnt.mp = 0;
@@ -605,7 +605,7 @@ function skillRtApplyDamageAmps(pEnt, sk, fx, id, lv, st, targets, pre, parts, f
     }
   }
   // --- resourceConvert：hpSacrifice（瀝血狂濤）——獻祭當前生命換增傷（不致死：至少留 1 點生命）---
-  if (fx.hpSacrifice) {
+  if (fx.hpSacrifice && !(typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt))) {
     var hs = fx.hpSacrifice;
     var sac = Math.max(0, (pEnt.hp || 0) * (hs.hpPct || 0) / 100);
     sac = Math.min(sac, Math.max(0, pEnt.hp - 1));
@@ -2584,7 +2584,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
   var manaCost = legendaryPrep.manaCost === null
     ? ((typeof legendarySkillManaCost === 'function') ? legendarySkillManaCost(pEnt, id, sk, lv, st) : skillManaCost(sk, lv))
     : legendaryPrep.manaCost;
-  if (!isFreeCast) {
+  if (!isFreeCast && !(typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt))) {
     /* 下限夾 0（與 castSkill2、魔法盾同一慣例）：法力門檻是在「開始吟唱」時檢查的，
        吟唱途中法力可能被其他來源吃掉（反擊逐階扣魔、魔法盾代付傷害），
        不夾就會扣成負數，回復還得先把負數填回來。 */
@@ -2605,6 +2605,10 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
     // 這對沒有 battlefield cell 的高塔 BOSS 尤其重要（目標圖層即 tb-float）。
     vfxTargets: targets.map(function (t) { return enemyEventFloatTarget(t, floatSel); })
   };
+  var skillStatKey = 'skill:' + (typeof statSlot === 'number' ? statSlot : id) + ':' + id + ':' + lv;
+  if (typeof recordRunSkillCast === 'function') {
+    recordRunSkillCast(sk.name, skillStatKey, lv);
+  }
   // 特效：施放當下就發（不等結算），因為玩家看到的是「技能放出去了」，
   // 全部被閃避也一樣要有畫面。目標一律轉成浮字圖層 id，不帶實體參照。
   var vfxExtra = { travelMs: skillVfxTravelMs(targets) };
@@ -2738,8 +2742,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
           floatEnemyEvent(targetEnt, floatSel, sk.emoji + dmgStr, combatDamageFloatClass('enemy-skill', dmgRes), dmgRes.dmg, hitDelayMs);
           trackDps(dmgRes.dmg);
           if (typeof recordRunDamage === 'function') {
-            var statKey = 'skill:' + (typeof statSlot === 'number' ? statSlot : id) + ':' + id + ':' + lv;
-            recordRunDamage(sk.name, dmgRes.dmg, statKey, lv);
+            recordRunDamage(sk.name, dmgRes.dmg, skillStatKey, lv);
           }
         } else {
           floatEnemyEvent(targetEnt, floatSel, 'MISS', 'miss enemy-dodge', undefined, hitDelayMs);
@@ -3113,10 +3116,14 @@ function pickAndCastSkill(pEnt, target, floatSel) {
         ? target.some(function (ent) { return ent && ent.hp > 0 && sgCanReach(ent); })
         : sgCanReach(target);
       if (!sgReachable) continue;
-      if (pEnt.mp < (Number(sgDef.cost) || 0)) continue;
+      if (pEnt.mp < (Number(sgDef.cost) || 0) &&
+          !(typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt))) continue;
       return beginSkillCast({
         kind: 'skill2', pEnt: pEnt, target: target, skillId: sgId,
-        floatSel: floatSel, def: (typeof SKILLS2 !== 'undefined') ? SKILLS2[sgId] : null
+        floatSel: floatSel, def: (typeof SKILLS2 !== 'undefined') ? SKILLS2[sgId] : null,
+        // ready queue uses the loadout key ('sg:<id>'); keep the bare id for castSkill2,
+        // but dequeue the exact key so the skill can re-enter when its cooldown ends.
+        loadoutKey: id
       });
     }
     // 潛力技能（裝載欄鍵 'potential:<id>'）：無法力消耗，依冷卻與存活目標施放，其餘沿用同一套排序。
@@ -3149,7 +3156,8 @@ function pickAndCastSkill(pEnt, target, floatSel) {
     // 45 新技能（freeCast 族）：即將免費施放（freeNext／零式節律）時，跳過 MP 門檻檢查
     var skillCost = (typeof legendarySkillManaCost === 'function')
       ? legendarySkillManaCost(pEnt, id, sk, lv, st) : skillManaCost(sk, lv);
-    if (pEnt.mp < skillCost && !skillRtWouldBeFree(sk, cfx, st)) continue;
+    if (pEnt.mp < skillCost && !skillRtWouldBeFree(sk, cfx, st) &&
+        !(typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt))) continue;
     if (!skillConditionOk(sk, cfx, pEnt, target, st)) continue;
     return beginSkillCast({
       kind: 'skill', pEnt: pEnt, target: target, skillId: id,

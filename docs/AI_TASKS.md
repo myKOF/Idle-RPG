@@ -1,5 +1,44 @@
 # AI_TASKS.md
 
+## Codex｜修正 HP_lock 後技能停止施放（2026-08-24）
+
+- 狀態：已完成
+- Owner：Codex
+- 任務分類：GM 測試工具／戰鬥行動閘門回歸修正
+- 使用者回報：啟用 `HP_lock` 後技能列沒有施放；畫面顯示技能已就緒，且 HP／MP 已凍結。
+- 前置依賴：既有 `HP_lock`／`MP_lock` 執行期旗標與技能施法排程器。
+- 允許修改：`js/combat.js`、`js/tower.js`、`tests/gm-skill-test-tools.test.cjs`、`index.html`、`js/bridge.js`、`js/worker/sim.worker.js`、本文件。
+- 禁止修改：存檔格式、Worker Protocol、技能數值與非 GM 戰鬥行為。
+- 技術內容：GM 鎖血啟用時，玩家行動閘門不得因既有暈眩／倒地狀態而永久阻擋技能自動施放；一般遊戲狀態維持原本的控制規則（高塔沿用原本僅檢查暈眩）。
+- 驗收方式：鎖血下技能可從就緒列進入施法；未鎖血時暈眩／倒地仍會阻止行動；野外與高塔兩條戰鬥路徑同步；快取版號同步。
+- 測試要求：GM 定向測試、技能排程測試、`node tools/build_check.cjs`、`git diff --check`。
+- 實作結果：新增共用 `playerActionControlBlocked` 行動閘門；`HP_lock` 下略過殘留暈眩／倒地阻擋，野外與高塔技能路徑同步；更新戰鬥模組與 Worker 快取版號。
+- 修改檔案：`js/combat.js`、`js/tower.js`、`tests/gm-skill-test-tools.test.cjs`、`index.html`、`js/bridge.js`、`js/worker/sim.worker.js`、本文件。
+- 未修改但檢查過：`js/skills.js` 的就緒佇列與施法鎖、`js/skills2.js` 的新版技能施放入口、`js/formula.js` 的 HP／MP 鎖定結算。
+- 已知風險：HP_lock 是 GM 測試例外；一般遊戲的暈眩、倒地與施法硬直規則不變。
+- 未完成項目：無。
+
+---
+
+## Codex｜新增 HP_lock／MP_lock GM 指令（2026-08-23）
+
+- 狀態：已完成
+- Owner：Codex
+- 任務分類：GM 測試工具／戰鬥資源鎖定
+- 使用者需求：新增 `HP_lock` 與 `MP_lock` 指令；再次輸入同一指令即可解除。HP 鎖定後玩家不再扣血，MP 鎖定後玩家不再扣魔且技能可在沒有 MP 時使用。
+- 前置依賴：既有 `GM_TEST` 執行期旗標、Worker GM 指令執行層與 HP/MP 結算流程。
+- 允許修改：`js/gm_exec.js`、`js/formula.js`、`js/skills.js`、`js/skills2.js`、`js/legendary.js`、`js/combat.js`、`js/worker/sim.worker.js`、`js/bridge.js`、`index.html`、`tests/gm-skill-test-tools.test.cjs`、`tests/skill2-vfx.test.cjs`、`GM_command.md`、`docs/AI_TASKS.md`。
+- 禁止修改：存檔格式、Worker Protocol／`js/worker/protocol.js`、技能與戰鬥數值、非本需求 UI。
+- 技術內容：以 `GM_TEST.hpLock`／`GM_TEST.mpLock` 保存執行期狀態；在共用傷害結算、直接自傷、一般／新版技能耗魔、被動觸發耗魔、魔法盾與自動施放 MP 門檻接線，避免只攔單一路徑。
+- 測試要求：GM 指令切換、一般與新版技能零 MP 施放、直接傷害／DoT／自傷不扣 HP、MP 消耗路徑不扣魔、`node --test tests/gm-skill-test-tools.test.cjs`、`node tools/build_check.cjs`、完整 `npm.cmd test`。
+- 完成條件：兩個指令可重複切換；鎖定僅在執行期生效且不寫入存檔；HP／MP 相關路徑無新增迴歸；快取版本同步。
+- 驗證結果：定向 GM／技能／Worker／VFX 測試 185/185 通過；`node tools/build_check.cjs` 通過（297 個檔案）；修改檔案語法檢查與 `git diff --check` 通過。完整 `npm.cmd test` 仍被既有技能規格測試（`skill2-earth`／`skill2-ice` 等）失敗阻擋，與本任務修改無關。
+- 需要 Claude Review：否（範圍明確，沿用既有旗標與結算收斂點）。
+- 需要 Antigravity 驗證：建議，確認瀏覽器 GM 面板實際輸入與 Worker 狀態同步。
+- 完成後交給：使用者／主整合工作區。
+
+---
+
 ## Antigravity｜全 8 大技能群組（24 招超神進化）標準化 DPS 基準測試與規範更新｜2026-08-21
 
 - 狀態：已完成
@@ -5039,4 +5078,91 @@ p95 速度 338 → 262px/s、最大 341 → 318px/s；平均落後 17px、最大
 - 詳細數據見 `docs/TASK238_ULT_SKILLS_DPS_REPORT.md`。
 
 完成後交給：使用者／主協調者。
+
+## 任務：修正戰鬥統計把命中事件誤當施放次數（2026-08-24）
+
+任務狀態：已完成（2026-08-24）
+
+任務分類：戰鬥統計／技能施放可觀測性
+
+負責 AI：Codex
+
+使用者需求：HP_lock 啟用後畫面看似只有飛刀持續施放；統計表中的飛刀次數快速增加，
+需要確認其它技能是否真的沒有施放，並讓統計表能直接區分施放次數與傷害命中事件。
+
+任務內容：保留現有傷害總量與每次傷害事件統計，新增每個主動技能成功施放時的獨立計數；
+統計表改以「施放次數」與「命中／傷害事件次數」分開顯示，涵蓋一般技能、新版技能群組與潛力技能。
+DoT／追蹤／多段傷害不得被計入施放次數；不改技能冷卻、傷害公式或 HP_lock／MP_lock 行為。
+
+允許修改：
+
+- `js/combat.js`
+- `js/skills.js`
+- `js/skills2.js`
+- `js/potential.js`
+- `index.html`（快取版號）
+- `tests/skill-stats-panel-comprehensive.test.cjs`
+- `docs/AI_TASKS.md`
+
+禁止修改：技能數值表、存檔格式、GM 指令語意、技能排程規則。
+
+前置依賴：`ed592e5`（HP_lock 下解除技能行動卡死）。目標檔案衝突預檢無來源。
+
+測試要求：統計面板定向測試、GM 技能回歸測試、`npm run build`、`git diff --check`。
+
+完成條件：新版統計資料能顯示每個技能的成功施放次數與傷害事件次數；飛刀多段／追蹤命中不再冒充施放次數；
+既有傷害與技能排程測試不退化。
+
+驗證結果：新增統計測試與 HP_lock／技能輪轉回歸測試通過；本次相關定向集合 200 項中 194 項通過，
+其餘 6 項為既有泥沼尺寸／寒冰速度與範圍的參數表漂移，與本次修改無關；`npm run build` 297/297，
+`git diff --check` 通過；本機頁面重新載入後確認使用 `combat.js?v=1.0.39`、`skills.js?v=1.0.28`、
+`skills2.js?v=1.0.66` 且 Worker 存活、錯誤數 0。完整 `npm test` 於既有高 CPU 的 `sim-evaluator`／
+`equip-no-duplicate` 長跑超過 7 分鐘後中止，非測試失敗。
+
+已知風險：舊版 Worker 快照若沒有 `casts` 欄位，統計表會保留舊的單一事件次數顯示；重新整理載入新版後，
+新的戰鬥統計會顯示施放次數與命中／傷害事件次數。
+
+未完成項目：無。
+
+完成後交給：使用者／主整合工作區。
+
+## 任務：修正固定關卡刷怪時新版技能只施放一次（2026-08-24）
+
+任務狀態：已完成（2026-08-24）
+
+任務分類：技能排程／就緒佇列
+
+負責 AI：Codex
+
+使用者需求：正常切換關卡時技能看似正常，但停在同一關重複刷怪後，其它新版技能不再施放，
+只剩飛刀持續造成傷害。
+
+任務內容：修正新版技能群組進入施法工作時，使用完整裝載鍵（`sg:<技能>`）解除就緒佇列；
+補上同一關連續刷怪、技能冷卻歸零後仍能再次輪轉的回歸測試。不改技能數值、冷卻公式或固定關卡規則。
+
+允許修改：
+
+- `js/skills.js`
+- `index.html`（快取版號）
+- `tests/skill-gcd.test.cjs`
+- `docs/AI_TASKS.md`
+
+禁止修改：`js/skills2.js` 技能數值與效果、GM 指令、存檔格式、關卡刷怪規則。
+
+前置依賴：`3d2286c`（技能統計分離施放次數與傷害事件）。目標檔案衝突預檢無來源。
+
+測試要求：技能排程定向測試、GM 回歸測試、`npm run build`、`git diff --check`。
+
+完成條件：同一個 `sg:<技能>` 在首次施放、冷卻歸零、再次施放的循環中都能重新入列；
+固定關卡連續刷怪不再因就緒佇列卡死而只剩單一技能。
+
+驗證結果：新增固定關卡連續刷怪回歸測試通過（`alpha → beta → alpha → beta`）；技能／GM／統計定向測試 25/25，
+`npm run build` 297/297，`git diff --check` 通過；本機頁面重新載入後使用 `skills.js?v=1.0.29`，
+Worker 存活且頁面正常完成載入。
+
+已知風險：既有已卡住的瀏覽器 Worker 仍保留舊的就緒佇列狀態，必須重新整理頁面讓新版 Worker 重建執行期狀態。
+
+未完成項目：無。
+
+完成後交給：使用者／主整合工作區。
 

@@ -15,7 +15,9 @@
      執行期狀態、不入存檔：重新整理（Worker 重建）即全部清除。 */
   var GM_GLOBAL = (typeof self !== 'undefined') ? self
     : ((typeof window !== 'undefined') ? window : globalThis);
-  if (!GM_GLOBAL.GM_TEST) GM_GLOBAL.GM_TEST = { god: false, statOverride: null };
+  if (!GM_GLOBAL.GM_TEST) GM_GLOBAL.GM_TEST = {
+    god: false, hpLock: false, mpLock: false, statOverride: null
+  };
 
   // 安全邊界：不依賴「是否為開發模式」等可被前端變數覆寫的旗標，只接受本機 hostname。
   function isGMHost() {
@@ -842,6 +844,20 @@
       }
       GM_GLOBAL.GM_TEST.god = (godRaw === '1' || godRaw === 'on' || godRaw === 'true');
       return { ok: true, message: GM_GLOBAL.GM_TEST.god ? '鎖血開啟：我方生命最低保留 1，不會死亡' : '鎖血關閉' };
+    }
+    if (command === 'hp_lock') {
+      GM_GLOBAL.GM_TEST.hpLock = !GM_GLOBAL.GM_TEST.hpLock;
+      return {
+        ok: true,
+        message: GM_GLOBAL.GM_TEST.hpLock ? 'HP 鎖定開啟：我方不再扣血' : 'HP 鎖定解除'
+      };
+    }
+    if (command === 'mp_lock') {
+      GM_GLOBAL.GM_TEST.mpLock = !GM_GLOBAL.GM_TEST.mpLock;
+      return {
+        ok: true,
+        message: GM_GLOBAL.GM_TEST.mpLock ? 'MP 鎖定開啟：不扣魔且技能可免費使用' : 'MP 鎖定解除'
+      };
     }
     if (command === 'statset' || command === 'stat') {
       // 屬性基準覆寫：套在 computeStats 所有上限夾制之後（固定值，不受裝備影響）

@@ -32,6 +32,17 @@ function toggleCombatPaused() {
     return setCombatPaused(!COMBAT_PAUSED);
 }
 
+/* GM 鎖血是測試用的無傷狀態：若啟用前角色正好卡在暈眩／倒地閘門，
+   生命雖然不再下降，技能列卻會永遠看似就緒而完全不出手。一般遊戲不走
+   這條例外，只有 HP_lock 啟用時解除這兩個行動阻擋。施法中的硬直仍由
+   skillCastInProgress 自己管理，不在這裡繞過。 */
+function playerActionControlBlocked(pEnt, includeDowned) {
+    if (typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt)) return false;
+    if (effectActive(pEnt, 'stun')) return true;
+    return includeDowned !== false &&
+        (typeof skill2DownedActive === 'function') && skill2DownedActive();
+}
+
 function newPlayerEntity(st) {
     return { hp: st.hp, mp: st.mp, shield: 0, shieldMax: 0, shieldMaxVersion: SHIELD_MAX_VERSION, atkCd: 1 / st.aspd, _targetSwitchCd: 0, skillCds: {}, buffs: {}, dots: [], effects: {}, _lastStandAt: 0, _skillCastRemaining: 0, _skillCastId: '' };
 }
@@ -1048,7 +1059,9 @@ function settleEnemyAttackRetaliation(event) {
     /* resolveHit 已先算好反震數值；只有延後事件才在這裡真正扣敵人生命，
        並補上原本由 resolveHit 觸發的「敵人受傷」掛點。 */
     if (!event.thornsApplied && result.thorns > 0) {
-        attacker.hp = Math.max(0, attacker.hp - result.thorns);
+        if (!(typeof gmHpLockActive === 'function' && gmHpLockActive(attacker))) {
+            attacker.hp = Math.max(0, attacker.hp - result.thorns);
+        }
         if (event.defCfg && event.defCfg.isPlayer && typeof skills2OnEnemyDamaged === 'function') {
             skills2OnEnemyDamaged(attacker, result.thorns);
         }
@@ -1427,8 +1440,7 @@ function fieldTick(dt) {
     //（45 新技能共用排程器已上移至「出怪」空場檢查之前，避免波次間隙排程停擺）
     /* 新版技能超神【不屈鬥魂】倒地期間：普攻與技能一起停，這是「死了 5 秒」的代價。
        擋在同一個閘門而不是只擋普攻（暴風之舞那種），因為那 5 秒的設定是人倒下了。 */
-    if (!effectActive(p, 'stun') &&
-        !((typeof skill2DownedActive === 'function') && skill2DownedActive()) &&
+    if (!playerActionControlBlocked(p, true) &&
         (typeof skillCastInProgress !== 'function' || !skillCastInProgress(p))) {
         // 技能優先（依裝載順序；含裝載的潛力技能）
         var sres = pickAndCastSkill(p, enemies, 'mv-float');
@@ -1764,7 +1776,7 @@ function stageGoMax() {
 /* ---- 塔戰相關邏輯省略 ---- */
 
 window.RUN_STATS = { runCount: 1, maxStage: 1, skills: {} };
-function recordRunDamage(skillName, dmg, statKey, skillLevel) {
+function runStatBucket(skillName, statKey, skillLevel) {
     var key = statKey || skillName;
     if (!RUN_STATS.skills[key]) {
         RUN_STATS.skills[key] = { count: 0, damage: 0 };
@@ -1773,21 +1785,37 @@ function recordRunDamage(skillName, dmg, statKey, skillLevel) {
     // Keep the display metadata on the bucket so same-name skills remain independent.
     if (!stat.name) stat.name = skillName;
     if (typeof skillLevel === 'number') stat.level = skillLevel;
+    return stat;
+}
+
+function recordRunDamage(skillName, dmg, statKey, skillLevel) {
+    var stat = runStatBucket(skillName, statKey, skillLevel);
     stat.count++;
+    stat.hits = (typeof stat.hits === 'number' ? stat.hits : 0) + 1;
     stat.damage += (dmg || 0);
+    RUN_STATS.maxStage = Math.max(RUN_STATS.maxStage, G.stage.current);
+}
+
+/* 成功進入技能效果函式才算一次施放；多段、追蹤、反彈與 DoT 仍由 recordRunDamage
+   記為傷害事件。兩者分開，統計表才不會把飛刀的每次命中誤顯示成一次施放。 */
+function recordRunSkillCast(skillName, statKey, skillLevel) {
+    var stat = runStatBucket(skillName, statKey, skillLevel);
+    stat.casts = (typeof stat.casts === 'number' ? stat.casts : 0) + 1;
     RUN_STATS.maxStage = Math.max(RUN_STATS.maxStage, G.stage.current);
 }
 
 function generateSummaryHtml(current) {
     var totalDmg = 0;
-    var totalCount = 0;
+    var totalEvents = 0;
+    var totalCasts = 0;
     var displayNames = {};
     var nameCounts = {};
     var nameSeen = {};
     for (var key in RUN_STATS.skills) {
         var stat = RUN_STATS.skills[key];
         totalDmg += (stat.damage || 0);
-        totalCount += (stat.count || 0);
+        totalEvents += (typeof stat.hits === 'number' ? stat.hits : (stat.count || 0));
+        totalCasts += (typeof stat.casts === 'number' ? stat.casts : 0);
         if (typeof stat.level === 'number') {
             var rawName = stat.name || key;
             nameCounts[rawName] = (nameCounts[rawName] || 0) + 1;
@@ -1806,7 +1834,7 @@ function generateSummaryHtml(current) {
         }
         displayNames[key] = displayName;
     }
-    if (totalDmg === 0 && totalCount === 0) return '';
+    if (totalDmg === 0 && totalEvents === 0 && totalCasts === 0) return '';
     var html = '<div class="summary-card"' + (current ? ' data-summary-current="true"' : '') + '>';
     html += '<div class="summary-card-title">------------' + (current ? '目前戰鬥（即時統計）' : '第 ' + RUN_STATS.runCount + ' 場戰鬥') + '--------------</div>';
     html += '<div class="summary-card-row"><span style="color:var(--accent)">最高關數</span>：' + RUN_STATS.maxStage + '</div>';
@@ -1815,19 +1843,23 @@ function generateSummaryHtml(current) {
         var sk = RUN_STATS.skills[k];
         skillList.push({
             name: displayNames[k] || (sk && sk.name) || k,
-            count: sk.count || 0,
+            casts: typeof sk.casts === 'number' ? sk.casts : null,
+            hits: typeof sk.hits === 'number' ? sk.hits : (sk.count || 0),
             damage: sk.damage || 0
         });
     }
     skillList.sort(function (a, b) {
         if (b.damage !== a.damage) return b.damage - a.damage;
-        return b.count - a.count;
+        return b.hits - a.hits;
     });
 
     for (var i = 0; i < skillList.length; i++) {
         var item = skillList[i];
         var pct = totalDmg > 0 ? (item.damage / totalDmg * 100).toFixed(1) : '0.0';
-        html += '<div class="summary-card-row"><span style="color:var(--accent)">' + item.name + '</span>：' + fmt(item.count) + '次，傷害 ' + fmt(item.damage) + ' (' + pct + '%)</div>';
+        var eventText = item.casts === null
+            ? fmt(item.hits) + '次'
+            : fmt(item.casts) + '次施放，' + fmt(item.hits) + '次命中/傷害事件';
+        html += '<div class="summary-card-row"><span style="color:var(--accent)">' + item.name + '</span>：' + eventText + '，傷害 ' + fmt(item.damage) + ' (' + pct + '%)</div>';
     }
     html += '</div>';
     return html;

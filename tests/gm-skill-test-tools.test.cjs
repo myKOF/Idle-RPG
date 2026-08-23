@@ -1,9 +1,10 @@
 /* GM 技能測試工具（2026-08-14 技能檢驗流程規範 → docs/SKILL_TEST_SPEC.md）
    守住四件事：
      1. god 鎖血：我方生命最低鎖 1（直接傷害與 DoT 兩條路徑），敵人不受影響
-     2. statset／maxstats：屬性覆寫旗標寫入 GM_TEST（computeStats 尾端合併）
-     3. spawn 演武場：指定數量/敵種/血量倍率、_stage=-1 不計配額、off 清場復原
-     4. sglv：等級直設經過循序解鎖正規化 */
+     2. HP_lock／MP_lock：完全鎖定玩家生命／法力，重複輸入切換
+     3. statset／maxstats：屬性覆寫旗標寫入 GM_TEST（computeStats 尾端合併）
+     4. spawn 演武場：指定數量/敵種/血量倍率、_stage=-1 不計配額、off 清場復原
+     5. sglv：等級直設經過循序解鎖正規化 */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -65,6 +66,61 @@ test('god：我方生命最低鎖 1（applyEnemyHpDamage 與 resolveHit 兩條�
   const p2 = { hp: 50, shield: 0, effects: {}, buffs: {}, dots: [] };
   c.applyEnemyHpDamage(p2, 999999);
   assert.equal(p2.hp, 0, '鎖血關閉後恢復正常');
+});
+
+test('HP_lock／MP_lock：重複輸入切換，鎖定時不扣生命且零魔可施放新版技能', () => {
+  const c = loadContext();
+  const p = { hp: 50, mp: 0, shield: 0, effects: {}, buffs: {}, dots: [] };
+
+  assert.equal(c.executeGMCommand('HP_lock').ok, true);
+  assert.equal(c.GM_TEST.hpLock, true);
+  c.applyEnemyHpDamage(p, 999999);
+  assert.equal(p.hp, 50, 'HP_lock 不得扣除直接傷害');
+
+  const pv = { hp: 100, shield: 0, shieldMax: 0, effects: {}, buffs: {}, dots: [] };
+  c.resolveHit({ hp: 1, maxHp: 100 }, pv,
+    { atk: 1e12, dmgType: 'phys', hit: 999, critRate: 0, critDmg: 150, level: 1 },
+    { def: 0, mdef: 0, level: 1, dodge: 0, isPlayer: true, resist: {}, maxHp: 1000, ccFactor: 1, tenacity: 0 });
+  assert.equal(pv.hp, 100, 'HP_lock 不得扣除 resolveHit 傷害');
+
+  assert.equal(c.executeGMCommand('HP_lock').ok, true);
+  assert.equal(c.GM_TEST.hpLock, false);
+  c.applyEnemyHpDamage(p, 10);
+  assert.equal(p.hp, 40, '解除 HP_lock 後恢復扣血');
+
+  assert.equal(c.executeGMCommand('MP_lock').ok, true);
+  assert.equal(c.GM_TEST.mpLock, true);
+  assert.equal(c.gmMpLockActive(p), true);
+  c.G.player.skills2.levels.thrust = [1, 1, 1, 1, 1, 1, 1];
+  c.getStats = () => ({
+    atk: 1000, matk: 0, hp: 1000, mp: 100, level: 10, aspd: 2, cdr: 0,
+    critRate: 0, critDmg: 150, hit: 100, tenacity: 0,
+    passives: {}, elemAtk: null, elemDmgPct: 0, elemDmgUp: 0,
+    eliteDmg: 0, bossDmg: 0, normalDmg: 0, totalDmgPct: 0, dmgVsElem: null,
+    aoeDmg: 0, globalDmgRed: 0
+  });
+  const target = { hp: 1e9, maxHp: 1e9, def: 0, mdef: 0, level: 1,
+    effects: {}, buffs: {}, dots: [], resist: {}, ctrlRes: 0 };
+  assert.ok(c.castSkill2(p, [target], 'thrust', 'mv-float'), 'MP_lock 下 MP=0 仍可施放新版技能');
+  assert.equal(p.mp, 0, 'MP_lock 不得扣除技能消耗');
+
+  assert.equal(c.executeGMCommand('MP_lock').ok, true);
+  assert.equal(c.GM_TEST.mpLock, false);
+});
+
+test('HP_lock：不讓既有暈眩／倒地狀態卡住技能行動閘門；一般狀態仍會阻擋', () => {
+  const c = loadContext();
+  const p = { hp: 100, effects: { stun: c.GT + 10 }, buffs: {}, dots: [] };
+
+  assert.equal(c.playerActionControlBlocked(p), true, '未鎖血時暈眩仍應阻擋行動');
+  assert.equal(c.executeGMCommand('HP_lock').ok, true);
+  assert.equal(c.playerActionControlBlocked(p), false, 'HP_lock 下暈眩不應卡死技能列');
+
+  p.effects.stun = 0;
+  c.SKILL2_RT.lastStand = { done: false, reviveAt: c.GT + 10, pEnt: p };
+  assert.equal(c.playerActionControlBlocked(p), false, 'HP_lock 下倒地也不應卡死技能列');
+  assert.equal(c.executeGMCommand('HP_lock').ok, true);
+  assert.equal(c.playerActionControlBlocked(p), true, '解除 HP_lock 後倒地應恢復行動阻擋');
 });
 
 /* ---- 2) statset / maxstats ---- */

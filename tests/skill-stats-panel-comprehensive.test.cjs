@@ -150,3 +150,30 @@ test('generateSummaryHtml renders all equipped skills including DoT/support skil
   assert.ok(html.includes('火狩(70級)'));
   assert.ok(html.includes('目前戰鬥（即時統計）'));
 });
+
+test('run stats keep skill casts separate from multi-hit damage events', () => {
+  const env = setupTestEnv();
+
+  env.recordRunSkillCast('飛刀', 'skill2:knife', 70);
+  env.recordRunDamage('飛刀', 100, 'skill2:knife', 70);
+  env.recordRunDamage('飛刀', 120, 'skill2:knife', 70);
+  env.recordRunDamage('飛刀', 80, 'skill2:knife', 70);
+
+  const stat = env.RUN_STATS.skills['skill2:knife'];
+  assert.equal(stat.casts, 1);
+  assert.equal(stat.hits, 3);
+  assert.equal(stat.count, 3, '保留 count 欄位供舊資料與舊呼叫端相容');
+
+  const html = env.generateSummaryHtml(true);
+  assert.ok(html.includes('1次施放，3次命中/傷害事件'));
+});
+
+test('新版技能群組入口 records one cast independently of later damage ticks', () => {
+  const env = setupTestEnv();
+  env.G.player.skills2 = { levels: { firehunt: [10, 10, 10, 10, 10, 10, 10] } };
+  const pEnt = { x: 100, y: 100, hp: 10000, mp: 10000, buffs: {}, effects: {}, skillCds: {} };
+  const target = { x: 150, y: 100, hp: 100000, maxHp: 100000, effects: {}, buffs: {}, dots: [] };
+
+  assert.ok(env.castSkill2(pEnt, [target], 'firehunt', 'mv-float'));
+  assert.equal(env.RUN_STATS.skills['skill2:firehunt'].casts, 1);
+});
