@@ -1776,7 +1776,7 @@ function stageGoMax() {
 /* ---- 塔戰相關邏輯省略 ---- */
 
 window.RUN_STATS = { runCount: 1, maxStage: 1, skills: {} };
-function recordRunDamage(skillName, dmg, statKey, skillLevel) {
+function runStatBucket(skillName, statKey, skillLevel) {
     var key = statKey || skillName;
     if (!RUN_STATS.skills[key]) {
         RUN_STATS.skills[key] = { count: 0, damage: 0 };
@@ -1785,21 +1785,37 @@ function recordRunDamage(skillName, dmg, statKey, skillLevel) {
     // Keep the display metadata on the bucket so same-name skills remain independent.
     if (!stat.name) stat.name = skillName;
     if (typeof skillLevel === 'number') stat.level = skillLevel;
+    return stat;
+}
+
+function recordRunDamage(skillName, dmg, statKey, skillLevel) {
+    var stat = runStatBucket(skillName, statKey, skillLevel);
     stat.count++;
+    stat.hits = (typeof stat.hits === 'number' ? stat.hits : 0) + 1;
     stat.damage += (dmg || 0);
+    RUN_STATS.maxStage = Math.max(RUN_STATS.maxStage, G.stage.current);
+}
+
+/* 成功進入技能效果函式才算一次施放；多段、追蹤、反彈與 DoT 仍由 recordRunDamage
+   記為傷害事件。兩者分開，統計表才不會把飛刀的每次命中誤顯示成一次施放。 */
+function recordRunSkillCast(skillName, statKey, skillLevel) {
+    var stat = runStatBucket(skillName, statKey, skillLevel);
+    stat.casts = (typeof stat.casts === 'number' ? stat.casts : 0) + 1;
     RUN_STATS.maxStage = Math.max(RUN_STATS.maxStage, G.stage.current);
 }
 
 function generateSummaryHtml(current) {
     var totalDmg = 0;
-    var totalCount = 0;
+    var totalEvents = 0;
+    var totalCasts = 0;
     var displayNames = {};
     var nameCounts = {};
     var nameSeen = {};
     for (var key in RUN_STATS.skills) {
         var stat = RUN_STATS.skills[key];
         totalDmg += (stat.damage || 0);
-        totalCount += (stat.count || 0);
+        totalEvents += (typeof stat.hits === 'number' ? stat.hits : (stat.count || 0));
+        totalCasts += (typeof stat.casts === 'number' ? stat.casts : 0);
         if (typeof stat.level === 'number') {
             var rawName = stat.name || key;
             nameCounts[rawName] = (nameCounts[rawName] || 0) + 1;
@@ -1818,7 +1834,7 @@ function generateSummaryHtml(current) {
         }
         displayNames[key] = displayName;
     }
-    if (totalDmg === 0 && totalCount === 0) return '';
+    if (totalDmg === 0 && totalEvents === 0 && totalCasts === 0) return '';
     var html = '<div class="summary-card"' + (current ? ' data-summary-current="true"' : '') + '>';
     html += '<div class="summary-card-title">------------' + (current ? '目前戰鬥（即時統計）' : '第 ' + RUN_STATS.runCount + ' 場戰鬥') + '--------------</div>';
     html += '<div class="summary-card-row"><span style="color:var(--accent)">最高關數</span>：' + RUN_STATS.maxStage + '</div>';
@@ -1827,19 +1843,23 @@ function generateSummaryHtml(current) {
         var sk = RUN_STATS.skills[k];
         skillList.push({
             name: displayNames[k] || (sk && sk.name) || k,
-            count: sk.count || 0,
+            casts: typeof sk.casts === 'number' ? sk.casts : null,
+            hits: typeof sk.hits === 'number' ? sk.hits : (sk.count || 0),
             damage: sk.damage || 0
         });
     }
     skillList.sort(function (a, b) {
         if (b.damage !== a.damage) return b.damage - a.damage;
-        return b.count - a.count;
+        return b.hits - a.hits;
     });
 
     for (var i = 0; i < skillList.length; i++) {
         var item = skillList[i];
         var pct = totalDmg > 0 ? (item.damage / totalDmg * 100).toFixed(1) : '0.0';
-        html += '<div class="summary-card-row"><span style="color:var(--accent)">' + item.name + '</span>：' + fmt(item.count) + '次，傷害 ' + fmt(item.damage) + ' (' + pct + '%)</div>';
+        var eventText = item.casts === null
+            ? fmt(item.hits) + '次'
+            : fmt(item.casts) + '次施放，' + fmt(item.hits) + '次命中/傷害事件';
+        html += '<div class="summary-card-row"><span style="color:var(--accent)">' + item.name + '</span>：' + eventText + '，傷害 ' + fmt(item.damage) + ' (' + pct + '%)</div>';
     }
     html += '</div>';
     return html;

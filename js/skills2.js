@@ -1633,6 +1633,9 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
     case 'stormbarrier': sgCastStormbarrier(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     default: return null;
   }
+  if (!storm && typeof recordRunSkillCast === 'function') {
+    recordRunSkillCast(g.name, 'skill2:' + gid, sgTotalLevel(lvs));
+  }
   if (!storm && typeof floatPlayerSkillCast === 'function') {
     var skillFloat = { emoji: g.emoji, name: g.name };
     if (out._pendingProjectiles > 0) {
@@ -4057,9 +4060,6 @@ function sgCastMire(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   if (lvs[4] > 0) growTo += sgVal(t[4].fx, 'pct', lvs[4]) / 100;
   if (lvs[6] > 0) growTo += sgVal(t[6].fx, 'pct', lvs[6]) / 100;   // 熔岩沼：與第 5 階累加
   var spread = lvs[3] > 0 ? sgRollCount(sgVal(t[3].fx, 'add', lvs[3])) : 0;
-  if (typeof recordRunDamage === 'function') {
-    recordRunDamage(g.name, 0, 'skill2:mire', sgTotalLevel(lvs));
-  }
   sgSpawnGround(pEnt, st, 'mire', {
     kind: 'mire', tgt: primary, floatSel: floatSel,
     length: side, width: side, dmgVal: 0,

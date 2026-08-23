@@ -61,6 +61,9 @@ function castPotentialSkill(pEnt, target, def, floatSel, loadoutKey) {
   var targets = Array.isArray(target)
     ? target.filter(function (e) { return e && e.hp > 0; })
     : (target && target.hp > 0 ? [target] : []);
+  if (typeof recordRunSkillCast === 'function') {
+    recordRunSkillCast(def.name, 'potential:' + def.id, potentialLevel(def.id));
+  }
   if (!pEnt.skillCds) pEnt.skillCds = {};
   pEnt.skillCds[loadoutKey || ('potential:' + def.id)] = potentialActiveCd(def);
   /* 特效：潛力技不經 castSkill，於此自行送一則。有傷害段（dmgType）的走一般推導，

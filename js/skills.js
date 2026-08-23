@@ -2605,6 +2605,10 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
     // 這對沒有 battlefield cell 的高塔 BOSS 尤其重要（目標圖層即 tb-float）。
     vfxTargets: targets.map(function (t) { return enemyEventFloatTarget(t, floatSel); })
   };
+  var skillStatKey = 'skill:' + (typeof statSlot === 'number' ? statSlot : id) + ':' + id + ':' + lv;
+  if (typeof recordRunSkillCast === 'function') {
+    recordRunSkillCast(sk.name, skillStatKey, lv);
+  }
   // 特效：施放當下就發（不等結算），因為玩家看到的是「技能放出去了」，
   // 全部被閃避也一樣要有畫面。目標一律轉成浮字圖層 id，不帶實體參照。
   var vfxExtra = { travelMs: skillVfxTravelMs(targets) };
@@ -2738,8 +2742,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
           floatEnemyEvent(targetEnt, floatSel, sk.emoji + dmgStr, combatDamageFloatClass('enemy-skill', dmgRes), dmgRes.dmg, hitDelayMs);
           trackDps(dmgRes.dmg);
           if (typeof recordRunDamage === 'function') {
-            var statKey = 'skill:' + (typeof statSlot === 'number' ? statSlot : id) + ':' + id + ':' + lv;
-            recordRunDamage(sk.name, dmgRes.dmg, statKey, lv);
+            recordRunDamage(sk.name, dmgRes.dmg, skillStatKey, lv);
           }
         } else {
           floatEnemyEvent(targetEnt, floatSel, 'MISS', 'miss enemy-dodge', undefined, hitDelayMs);
