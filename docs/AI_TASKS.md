@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## Codex｜殞石術落地後觸發火球爆裂（2026-08-24）
+
+- 狀態：已完成
+- Owner：Codex
+- 使用者需求：火球術進化為殞石術後，第 3 階【火球爆裂】仍須在每顆殞石砸地後分裂 3 個小火球，射向附近目標。
+- 修改內容：抽出一般火球共用的小火球投射佇列；殞石落地回呼於落點附近重新選取目標，再建立第 3 階數量與倍率的小火球。小火球沿用原有飛行、命中、燃燒與 VFX 流程。
+- 修改檔案：`js/skills2.js`、`tests/skill2-magic-fire.test.cjs`、`index.html`、`js/bridge.js`、`js/worker/sim.worker.js`、`tests/skill2-vfx.test.cjs`、本文件。
+- 未修改但檢查過：`js/battlefield.js` 的附近目標選擇與距離規則、`js/skills.js` 的新版技能排程、`js/worker/protocol.js`。
+- 驗證方式：火系定向測試、殞石分裂落地後時序測試、JavaScript 語法檢查、建置檢查、快取版號檢查與 `git diff --check`。
+- 已知風險：附近沒有其他存活目標時，小火球數量會少於 3 顆，與一般火球爆裂的既有目標選擇規則一致；尚未進行瀏覽器實機目視驗證。
+- 未完成項目：無。
+- Commit：待建立。
+
+---
+
 ## Codex｜修正 HP_lock 後技能停止施放（2026-08-24）
 
 - 狀態：已完成
