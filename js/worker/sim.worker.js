@@ -14,9 +14,9 @@ importScripts('protocol.js?v=24', 'shim.js?v=5');
 importScripts(
   '../util.js?v=20260814-skill-summary', '../data.js?v=20260824-fire-legendary', '../status.js?v=20260824-starfall-cataclysm', '../formula.js?v=20260823-gm-locks', '../battlefield.js?v=20260821-bounce-random', '../stats.js',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260824-skill-ready-requeue', '../skills2.js?v=20260824-starfall-cataclysm', '../talents.js?v=20260811-loadout-cap-clamp',
+  '../skills.js?v=20260824-skill-ready-requeue', '../skills2.js?v=20260824-autocast-death-gate', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260820-ult-evolution-3', '../special_rules.js',
-  '../combat.js?v=20260824-hp-lock-action', '../legendary.js?v=20260823-gm-locks', '../potential.js?v=20260821-bounce-random', '../tower.js?v=20260824-hp-lock-action',
+  '../combat.js?v=20260824-hp-lock-action', '../legendary.js?v=20260824-autocast-death-gate', '../potential.js?v=20260821-bounce-random', '../tower.js?v=20260824-hp-lock-action',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260820-ult-evolution-3',
   '../tasks.js'
 );

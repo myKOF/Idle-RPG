@@ -930,10 +930,11 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(index, /js\/status\.js\?v=1\.0\.16/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.70/);
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.102/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.72/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260824-starfall-cataclysm'/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.73/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260824-autocast-death-gate'/);
   assert.match(worker, /\.\.\/skills\.js\?v=20260824-skill-ready-requeue/);
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260824-starfall-cataclysm/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260824-autocast-death-gate/);
+  assert.match(worker, /\.\.\/legendary\.js\?v=20260824-autocast-death-gate/);
 });
 
 /* 2026-08-19 回報三連：真空斬系的綠色落雷、風刃地板綠方塊、風刃一格一格移動。

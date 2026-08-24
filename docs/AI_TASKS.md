@@ -1,5 +1,26 @@
 # AI_TASKS.md
 
+## Claude｜自動施放的技能在角色死亡／倒地時停止（2026-08-24）
+
+- 狀態：已完成
+- Owner：Claude
+- 任務分類：戰鬥行動閘門（自動施放）
+- 使用者需求：自動施放的技能（例如地爆天星每隔 N 秒自動出現），應該在角色死亡時停止施放。
+- 技術內容：新增唯一判定入口 `skills2AutoCastBlocked(pEnt)`（死亡或【不屈鬥魂】倒地期），
+  套用到 8 個自動發動的效果；採「排程往後推 dt」的暫停語意，而不是暈眩那種「跳過這一拍」。
+- 修改檔案：`js/skills2.js`、`js/legendary.js`、`index.html`、`js/bridge.js`、
+  `js/worker/sim.worker.js`、`game_formula.md`、`PATCH.md`、
+  `tests/skill2-ult-evolution.test.cjs`、`tests/skill2-vfx.test.cjs`、
+  `tests/worker-shim.test.cjs`、`tests/skill-special-vfx.test.cjs`、本文件。
+- 未修改但檢查過：`js/combat.js`（真死亡與復活倒數本來就不跑排程器）、
+  `js/tower.js`（死亡直接結束該場）、`js/skills.js`（排程器鏈結點不需改）。
+- 已知風險：永久領域（【殺神領域】【萬毒血霧】）與已經生成的場域／飛行物**不在**本次範圍——
+  它們不是「自動施放」，是已經打出去的效果；若使用者認為倒地期間也該停，再擴。
+- 未完成項目：無。
+- Commit：待建立。
+
+---
+
 ## Claude｜地爆天星：倒數狀態、5 秒黑影預警、超巨型暗紅殞石（2026-08-24）
 
 - 狀態：已完成

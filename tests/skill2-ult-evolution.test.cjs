@@ -1651,6 +1651,121 @@ test('【不屈鬥魂】：死亡時地系爆發、倒地期間無法行動，�
   assert.equal(c.skills2TryLastStand(p), false, '冷卻中不得再發動');
 });
 
+/* ---- 15) 自動施放的共同閘門（2026-08-24 使用者決策）----
+   「每隔 N 秒自動發動」的效果在死亡／倒地期間一律暫停。
+   採「暫停」而不是「跳過這一拍」：剩餘時間不變，因此復活時不補發、也不損失蓄力。 */
+
+test('自動施放閘門：死亡與倒地都擋，活著（含不屈之誓的鎖血 1）不擋', () => {
+  const c = loadContext();
+  const p = playerEnt();
+  assert.equal(c.skills2AutoCastBlocked(p), false, '活著就不擋');
+  p.hp = 0;
+  assert.equal(c.skills2AutoCastBlocked(p), true, '死亡＝擋');
+  /* 傳奇【不屈之誓】期間生命被夾在 1（>0），那 10 秒仍要照常施放——
+     該特效的設計就是「延後死亡並在期間傷害 +100%」。 */
+  p.hp = 1;
+  assert.equal(c.skills2AutoCastBlocked(p), false, '鎖血 1 仍算活著');
+  c.SKILL2_RT.lastStand = { done: false, reviveAt: c.GT + 5, pEnt: p };
+  assert.equal(c.skills2AutoCastBlocked(p), true, '【不屈鬥魂】倒地期間＝擋');
+  c.SKILL2_RT.lastStand = null;
+  assert.equal(c.skills2AutoCastBlocked(p), false, '復活後恢復');
+});
+
+test('【地爆天星】倒地期間不落下，倒數與狀態一起往後推', () => {
+  const c = loadContext();
+  stubHits(c); stubVfx(c);
+  const derived = stubDerived(c);
+  c.chance = () => false;
+  maxLevels(c, 'fireball'); equip(c, 'fireball');
+  setUlt(c, 'fireball', 'starfallCataclysm', 1);   // Lv.1：間隔 57 秒
+  const p = playerEnt(); p.mp = 1e9;
+  c.FIELD = { player: p };
+  const m = enemy(1e12, 3 * M, 0);
+
+  c.GT = 0;
+  c.tickSkill2(0.05, tickCtx(c, p, [m]));
+  const at0 = c.SKILL2_RT.starfall.at;
+  const until0 = p.buffs.sgStarfall.until;
+  assert.ok(at0 > 0 && until0 > 0);
+
+  // 倒地 10 秒（reviveAt 拉遠，本段不讓它復活）
+  c.SKILL2_RT.lastStand = { done: false, reviveAt: c.GT + 999, pEnt: p };
+  run(c, p, [m], 10);
+  assert.equal(derived.length, 0, '倒地期間不得落下');
+  assert.ok(Math.abs((c.SKILL2_RT.starfall.at - at0) - 10) < 0.2, '排程往後推了倒地的時間');
+  assert.ok(Math.abs((p.buffs.sgStarfall.until - until0) - 10) < 0.2, '倒數狀態要跟著推，否則面板與實際落下對不上');
+  assert.ok(Math.abs((c.SKILL2_RT.starfall.at - c.GT) - (at0 - 0.05)) < 0.3, '剩餘時間完全沒變');
+
+  // 復活後照常落下，而且不會把倒地期間累積的節拍一次補發
+  c.SKILL2_RT.lastStand = null;
+  c.GT = c.SKILL2_RT.starfall.at + 0.05;
+  c.tickSkill2(0.05, tickCtx(c, p, [m]));
+  assert.equal(derived.length, 1, '復活後到期才落下，而且只落一發');
+});
+
+test('【天霸風神斬】與【阿修羅霸王拳】倒地期間不自動發動', () => {
+  // 天霸風神斬：迴旋斬改為每 N 秒自動施放
+  const c = loadContext();
+  const calls = stubHits(c); stubVfx(c);
+  c.chance = () => false;
+  maxLevels(c, 'cleave'); equip(c, 'cleave');
+  setUlt(c, 'cleave', 'stormGodSlash');
+  const p = playerEnt(); p.mp = 1e9;
+  c.FIELD = { player: p };
+  const m = enemy(1e12, 3 * M, 0);
+  c.GT = 0;
+  c.tickSkill2(0.05, tickCtx(c, p, [m]));      // 起算節拍
+  const next0 = c.SKILL2_RT.ultAuto.cleave;
+  c.SKILL2_RT.lastStand = { done: false, reviveAt: c.GT + 999, pEnt: p };
+  run(c, p, [m], next0 + 2);
+  assert.equal(calls.length, 0, '倒地期間不得自動施放迴旋斬');
+  assert.ok(c.SKILL2_RT.ultAuto.cleave > next0, '節拍往後推而不是停在過去（否則復活瞬間會連發）');
+
+  // 阿修羅霸王拳：每 N 秒給一次全傷害增益
+  const c2 = loadContext();
+  stubHits(c2); stubVfx(c2);
+  c2.chance = () => false;
+  maxLevels(c2, 'bloodrage'); equip(c2, 'bloodrage');
+  setUlt(c2, 'bloodrage', 'asuraFist');
+  const p2 = playerEnt(); p2.mp = 1e9;
+  c2.FIELD = { player: p2 };
+  const m2 = enemy(1e12, 3 * M, 0);
+  c2.GT = 0;
+  c2.tickSkill2(0.05, tickCtx(c2, p2, [m2]));
+  const fist0 = c2.SKILL2_RT.asuraFist;
+  c2.SKILL2_RT.lastStand = { done: false, reviveAt: c2.GT + 999, pEnt: p2 };
+  run(c2, p2, [m2], fist0 + 2);
+  assert.equal(p2.buffs.sgAsuraFist, undefined, '倒地期間不得發動阿修羅霸王拳');
+  assert.ok(c2.SKILL2_RT.asuraFist > fist0, '節拍往後推');
+});
+
+test('傳奇自動觸發（神落天殞／光之碰撞／天譴之誓）與火靈盾自損，倒地期間一起暫停', () => {
+  const c = loadContext(['js/legendary.js']);
+  stubHits(c); stubVfx(c);
+  c.chance = () => false;
+  const p = playerEnt(); p.mp = 1e9;
+  c.FIELD = { player: p };
+  const m = enemy(1e12, 3 * M, 0);
+  setLegendary(c, ['skyfallMeteor', 'lightCollision', 'oathOfCondemnation', 'fireSpiritShield']);
+  const ctx = { pEnt: p, getEnemies: () => [m], floatSel: 'mv-float', onDeaths() {}, onDamage() {} };
+
+  c.GT = 0;
+  c.tickLegendaryEffects(0.05, ctx);   // 起算三條節拍
+  const rt = c.LEGENDARY_RT;
+  const meteor0 = rt.nextMeteorAt, light0 = rt.nextLightAt, charge0 = rt.nextChargeAt;
+  const drain0 = rt.nextFireDrainAt;
+  assert.ok(meteor0 > 0 && light0 > 0 && charge0 > 0 && drain0 > 0);
+
+  c.SKILL2_RT.lastStand = { done: false, reviveAt: c.GT + 999, pEnt: p };
+  const hpBefore = p.hp;
+  for (let t = 0; t < 6; t += 0.05) { c.GT += 0.05; c.tickLegendaryEffects(0.05, ctx); }
+  assert.equal(p.hp, hpBefore, '【火靈盾】倒地期間不得自損——那會把「死了 5 秒」的保護砍斷');
+  assert.ok(Math.abs((rt.nextMeteorAt - meteor0) - 6) < 0.2, '神落天殞的節拍往後推');
+  assert.ok(Math.abs((rt.nextLightAt - light0) - 6) < 0.2, '光之碰撞的節拍往後推');
+  assert.ok(Math.abs((rt.nextChargeAt - charge0) - 6) < 0.2, '天譴之誓的節拍往後推');
+  assert.ok(Math.abs((rt.nextFireDrainAt - drain0) - 6) < 0.2, '火靈盾的節拍往後推（補跳是 while 迴圈，停住會在復活當下一次全灌）');
+});
+
 test('嗜血狂怒的五個傳奇特效：英勇氣概、血債償還、燃血、屠戮者、狂熱者', () => {
   const c = loadContext(['js/legendary.js']);
   stubHits(c); stubVfx(c);

@@ -873,8 +873,18 @@ function legendaryTickFields(ctx) {
   rt.fields = keep;
 }
 
-function legendaryTickAutomaticSkills(ctx, pEnt, st) {
+function legendaryTickAutomaticSkills(ctx, pEnt, st, dt) {
   var rt = legendaryEnsureRT();
+  /* 死亡／倒地期間暫停所有自動觸發（判定入口在 js/skills2.js skills2AutoCastBlocked）。
+     節拍整條往後推 dt，因此剩餘時間不變：既不會在復活瞬間把倒地期間累積的節拍一次補發，
+     也不會白白損失一次蓄力。模組未載入時（Node vm 單檔測試）視為未阻擋，行為與改造前相同。 */
+  if (typeof skills2AutoCastBlocked === 'function' && skills2AutoCastBlocked(pEnt)) {
+    var step = Math.max(0, Number(dt) || 0);
+    if (rt.nextMeteorAt > 0) rt.nextMeteorAt += step;
+    if (rt.nextLightAt > 0) rt.nextLightAt += step;
+    if (rt.nextChargeAt > 0) rt.nextChargeAt += step;
+    return;
+  }
   if (legendaryHas(st, 'skyfallMeteor')) {
     var meteor = legendaryFx('skyfallMeteor').autoTrigger;
     if (!rt.nextMeteorAt) rt.nextMeteorAt = GT + meteor.sec;
@@ -917,9 +927,16 @@ function legendaryTickAutomaticSkills(ctx, pEnt, st) {
   }
 }
 
-function legendaryTickFireSpirit(pEnt, st) {
+function legendaryTickFireSpirit(pEnt, st, dt) {
   var rt = legendaryEnsureRT();
   if (!legendaryHas(st, 'fireSpiritShield')) return;
+  /* 死亡／倒地期間不自損：【不屈鬥魂】倒地時生命被鎖在 1，若這裡照樣每秒扣，
+     會把「死了 5 秒之後原地復活」的保護一刀砍斷（扣到 0 之後下一次判死就是真死）。
+     節拍同樣往後推——補跳是 while 迴圈，單純 return 會在復活當下一次全灌下去。 */
+  if (typeof skills2AutoCastBlocked === 'function' && skills2AutoCastBlocked(pEnt)) {
+    if (rt.nextFireDrainAt > 0) rt.nextFireDrainAt += Math.max(0, Number(dt) || 0);
+    return;
+  }
   var spec = legendaryFx('fireSpiritShield');
   if (!rt.nextFireDrainAt) rt.nextFireDrainAt = GT + 1;
   while (rt.nextFireDrainAt <= GT && pEnt.hp > 0) {
@@ -952,8 +969,8 @@ function tickLegendaryEffects(dt, ctx) {
   var st = getStats();
   legendaryEnsureKnives(pEnt, st);
   legendaryEnsureDolls(pEnt, st);
-  legendaryTickAutomaticSkills(ctx, pEnt, st);
-  legendaryTickFireSpirit(pEnt, st);
+  legendaryTickAutomaticSkills(ctx, pEnt, st, dt);
+  legendaryTickFireSpirit(pEnt, st, dt);
   legendaryTickLightShield(pEnt, st);
   legendaryTickQueue(ctx);
   legendaryTickFields(ctx);
