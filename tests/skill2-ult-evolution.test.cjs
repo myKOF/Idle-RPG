@@ -2,7 +2,7 @@
    設計來源：神力之巔_記事錄.xlsx「傳奇進化」頁籤。
    守住的事：
      1. 資料形狀：thrust／cleave／knife／gale／bloodblade／dualdance／counter／bloodrage
-        各三個超神進化選項，desc 模板的 {鍵} 都在 fx 裡；40 個新傳奇特效只出現在指定武器類型，
+        各三個超神進化選項，desc 模板的 {鍵} 都在 fx 裡；50 個新傳奇特效只出現在指定武器類型，
         relatedSkill 指向新版技能群組
      2. 解鎖與指令：前 7 階全滿才可三選一；選定＝Lv.1 並扣款；重複選擇被拒；
         降到 Lv.0 清除選擇（可重選）；某階降級後效果失效但存檔保留
@@ -149,9 +149,10 @@ function counterMaxSingleStrike(c) {
 
 /* ---- 1) 資料形狀 ---- */
 
-test('超神進化：八個已開放群組各三個選項，欄位齊全且說明模板的參數鍵都存在', () => {
+test('超神進化：十個已開放群組各三個選項，欄位齊全且說明模板的參數鍵都存在', () => {
   const c = loadContext();
-  ['thrust', 'cleave', 'knife', 'gale', 'bloodblade', 'dualdance', 'counter', 'bloodrage'].forEach((gid) => {
+  ['thrust', 'cleave', 'knife', 'gale', 'bloodblade', 'dualdance', 'counter', 'bloodrage',
+    'fireball', 'firepillar'].forEach((gid) => {
     const list = c.sgUltDefs(gid);
     assert.ok(list, gid + ' 應有超神進化');
     assert.equal(list.length, c.SG_ULT_OPTION_COUNT, gid + ' 超神進化必須剛好三選一');
@@ -169,14 +170,16 @@ test('超神進化：八個已開放群組各三個選項，欄位齊全且說�
       });
     });
   });
-  // 其餘 15 個群組尚未開放；火球術當控制組（設計文檔尚未給它超神進化）
-  assert.equal(c.sgUltDefs('fireball'), null);
+  // 其餘 13 個群組尚未開放；火狩當控制組（設計文檔尚未給它超神進化）
+  assert.equal(c.sgUltDefs('firehunt'), null);
   assert.equal(c.sgSlotCount('thrust'), 8);
-  assert.equal(c.sgSlotCount('fireball'), 7);
+  assert.equal(c.sgSlotCount('fireball'), 8);
+  assert.equal(c.sgSlotCount('firepillar'), 8);
+  assert.equal(c.sgSlotCount('firehunt'), 7);
   assert.equal(c.SG_ULT_SLOT, c.SG_TIER_COUNT, '第 8 格的索引＝各階數（0-based 接在最後一階之後）');
 });
 
-test('傳奇進化四十特效：各自只出現在指定武器類型，且關聯到新版技能群組', () => {
+test('傳奇進化五十特效：各自只出現在指定武器類型，且關聯到新版技能群組', () => {
   const c = loadContext();
   const NEW_ONES = {
     piercingFocus: ['凝鋒穿刺', 'dagger1h', 'thrust'],
@@ -221,9 +224,20 @@ test('傳奇進化四十特效：各自只出現在指定武器類型，且關�
     rageBurnBlood: ['燃血', 'greatsword2h', 'bloodrage'],
     rageBloodDebt: ['血債償還', 'greatsword2h', 'bloodrage'],
     rageZealot: ['狂熱者', 'greatsword2h', 'bloodrage'],
-    rageSlaughterer: ['屠戮者', 'greatsword2h', 'bloodrage']
+    rageSlaughterer: ['屠戮者', 'greatsword2h', 'bloodrage'],
+    // 2026-08-24 第五批：火球術（魔杖）／火龍捲（雙手杖）
+    fireballBeadShot: ['連珠火', 'wand1h', 'fireball'],
+    fireballEmber: ['燃燼', 'wand1h', 'fireball'],
+    fireballPool: ['火池', 'wand1h', 'fireball'],
+    fireballHeart: ['烈焰之心', 'wand1h', 'fireball'],
+    fireballBurst: ['爆裂', 'wand1h', 'fireball'],
+    firepillarTracking: ['追蹤烈焰', 'staff2h', 'firepillar'],
+    firepillarSpread: ['火龍擴散', 'staff2h', 'firepillar'],
+    firepillarOutburst: ['火焰爆衝', 'staff2h', 'firepillar'],
+    firepillarDeflagration: ['爆燃', 'staff2h', 'firepillar'],
+    firepillarResonance: ['火龍共鳴', 'staff2h', 'firepillar']
   };
-  assert.equal(Object.keys(NEW_ONES).length, 40);
+  assert.equal(Object.keys(NEW_ONES).length, 50);
   const names = new Set();
   Object.entries(NEW_ONES).forEach(([key, [name, weapon, gid]]) => {
     const def = c.PASSIVE_POOL[key];
@@ -238,7 +252,7 @@ test('傳奇進化四十特效：各自只出現在指定武器類型，且關�
     assert.ok(def.fx && Object.keys(def.fx).length > 0, key + ' 缺 fx 規格');
     names.add(name);
   });
-  assert.equal(names.size, 40, '新特效之間不得同名');
+  assert.equal(names.size, 50, '新特效之間不得同名');
   /* 顯示名稱在整個傳奇特效池裡也必須唯一：玩家只看得到名字，
      兩個效果同名等於裝備詞條無法分辨（設計上的【神速】改名為【神速斬】即為此）。 */
   const allNames = Object.keys(c.PASSIVE_POOL).map((k) => c.PASSIVE_POOL[k].name);
@@ -263,6 +277,13 @@ test('傳奇進化四十特效：各自只出現在指定武器類型，且關�
   assert.ok(c.passiveAllowedForItem('danceTwinBlades', great));
   assert.ok(!c.passiveAllowedForItem('danceTwinBlades', magic2h));
   assert.ok(!c.passiveAllowedForItem('galeWindwalker', magic2h));
+  // 魔法系兩群組：魔杖（單手）與雙手杖不得互串
+  const wand = { weaponType: 'wand1h' };
+  const staff2h = { weaponType: 'staff2h' };
+  assert.ok(c.passiveAllowedForItem('fireballPool', wand));
+  assert.ok(!c.passiveAllowedForItem('fireballPool', staff2h));
+  assert.ok(c.passiveAllowedForItem('firepillarResonance', staff2h));
+  assert.ok(!c.passiveAllowedForItem('firepillarResonance', wand));
 });
 
 /* ---- 2) 解鎖與指令 ---- */
@@ -277,8 +298,8 @@ test('超神進化的唯一解鎖條件＝前 7 階全滿；未滿級時不可�
   assert.equal(c.sgUltUnlockedBy('thrust', c.skills2Levels('thrust')), true);
   assert.equal(c.skills2UltPick('thrust', 0), null, '前 7 階全滿即可三選一');
   // 尚未開放超神進化的群組一律拒絕
-  maxLevels(c, 'fireball');
-  assert.match(c.skills2UltPick('fireball', 0), /尚未開放/);
+  maxLevels(c, 'firehunt');
+  assert.match(c.skills2UltPick('firehunt', 0), /尚未開放/);
 });
 
 test('三選一：選定＝Lv.1 並扣款；已選過不得改選；降到 Lv.0 才可重選', () => {
@@ -313,14 +334,14 @@ test('第 8 格走 skills2Learn／skills2Downgrade 的同一個入口（UI 只�
   maxLevels(c, 'thrust');
   c.G.player.gold = 1e12;
   assert.equal(c.sgIsUltSlot('thrust', c.SG_ULT_SLOT), true);
-  assert.equal(c.sgIsUltSlot('fireball', c.SG_ULT_SLOT), false, '未開放的群組沒有第 8 格');
+  assert.equal(c.sgIsUltSlot('firehunt', c.SG_ULT_SLOT), false, '未開放的群組沒有第 8 格');
   assert.match(c.skills2Learn('thrust', c.SG_ULT_SLOT), /請先選擇/);
   assert.equal(c.skills2UltPick('thrust', 0), null);
   assert.equal(c.skills2Learn('thrust', c.SG_ULT_SLOT), null);
   assert.equal(c.skills2Ult('thrust').lv, 2);
   assert.equal(c.skills2Downgrade('thrust', c.SG_ULT_SLOT), null);
   assert.equal(c.skills2Ult('thrust').lv, 1);
-  assert.match(c.skills2Learn('fireball', c.SG_ULT_SLOT), /未知階數/);
+  assert.match(c.skills2Learn('firehunt', c.SG_ULT_SLOT), /未知階數/);
 });
 
 test('前 7 階任一階離開滿級：超神進化暫時失效，但存檔的選擇與等級原樣保留', () => {
@@ -341,7 +362,7 @@ test('面板快照帶上超神進化的選擇（主執行緒沒有 G，只能靠
   setUlt(c, 'thrust', 'phantomOcta', 3);
   const view = c.skills2PanelView();
   assert.deepEqual(JSON.parse(JSON.stringify(view.ult.thrust)), { pick: 0, lv: 3 });
-  assert.equal(view.ult.fireball, undefined, '沒選過的群組不佔快照欄位');
+  assert.equal(view.ult.firehunt, undefined, '沒選過的群組不佔快照欄位');
   // UI 端以同一支純函式重算，確保「畫面說可以」＝「Worker 說可以」
   const pick = c.sgUltPickOf(view.ult, 'thrust');
   assert.equal(pick.id, 'phantomOcta');
@@ -670,7 +691,7 @@ test('讀檔正規化：越界／非法的超神進化紀錄一律刪除，合�
         ult: {
           thrust: { pick: 0, lv: 99 },        // 超過上限 → 夾回
           cleave: { pick: 9, lv: 3 },         // 選項越界 → 刪除
-          fireball: { pick: 0, lv: 1 },          // 該群組沒有超神進化 → 刪除
+          firehunt: { pick: 0, lv: 1 },          // 該群組沒有超神進化 → 刪除
           gale: { pick: 0, lv: 0 }            // 等級不合法 → 刪除
         }
       },
@@ -683,7 +704,7 @@ test('讀檔正規化：越界／非法的超神進化紀錄一律刪除，合�
   assert.match(norm, /data\.player\.skills2\.ult/);
   // 純函式端：壞資料一律被視為「沒選」
   assert.equal(c.sgUltPickOf(data.player.skills2.ult, 'cleave'), null);
-  assert.equal(c.sgUltPickOf(data.player.skills2.ult, 'fireball'), null);
+  assert.equal(c.sgUltPickOf(data.player.skills2.ult, 'firehunt'), null);
   assert.equal(c.sgUltPickOf(data.player.skills2.ult, 'gale'), null);
   assert.equal(c.sgUltPickOf(data.player.skills2.ult, 'thrust').lv, c.SG_TIER_MAX_LV);
 });
@@ -1780,13 +1801,15 @@ test('嗜血狂怒的三個超神進化：殺神降臨、戰神屠錄、阿修�
   assert.ok(c.skills2AllDamageUpPct(p7) >= c.sgUltVal(fist, 'pct'), '霸王拳必須進 skills2AllDamageUpPct');
 });
 
-test('參數表往返：Skills2 的超神進化列與 Equipment_Affix 的四十個新特效都落表', () => {
+test('參數表往返：Skills2 的超神進化列與 Equipment_Affix 的五十個新特效都落表', () => {
   const skills2Csv = fs.readFileSync(path.join(root, 'config/CSV/Skills2.csv'), 'utf8').replace(/^﻿/, '');
   assert.match(skills2Csv.split(/\r?\n/)[0], /超神ID/, 'Skills2 表要有超神ID 欄');
   ['phantomOcta', 'shadowExecutioner', 'oneStrikeKill', 'voidShatter', 'windChaser', 'stormGodSlash',
     'petalStorm', 'deathReaper', 'soulhunterBlade', 'thunderFlash', 'thunderGodSlash', 'chidori',
     'slayerDomain', 'venomDomain', 'disintegrate', 'doomDance', 'flameKagura', 'asuraDance',
-    'holyBody', 'indomitable', 'warGodBody', 'slayerAdvent', 'warGodRoll', 'asuraFist']
+    'holyBody', 'indomitable', 'warGodBody', 'slayerAdvent', 'warGodRoll', 'asuraFist',
+    'meteorFall', 'starfallCataclysm', 'phoenixPrairie',
+    'infernoTempest', 'eternalInferno', 'dragonDevour']
     .forEach((id) => assert.ok(skills2Csv.includes(id), 'Skills2.csv 應含 ' + id));
   const affixCsv = fs.readFileSync(path.join(root, 'config/CSV/Equipment_Affix.csv'), 'utf8');
   ['piercingFocus', 'thousandWounds', 'sunpiercerLance', 'thunderStab', 'heartrendBleed',
@@ -1796,11 +1819,14 @@ test('參數表往返：Skills2 的超神進化列與 Equipment_Affix 的四十�
     'bloodPoisonBurst', 'bloodVenomRite', 'bloodMist', 'bloodShadow', 'bloodCleaver',
     'danceFrenzy', 'danceBerserker', 'danceUnyielding', 'danceThousandCuts', 'danceTwinBlades',
     'counterOath', 'counterWrath', 'counterPerfect', 'counterBloodPay', 'counterWindBody',
-    'rageValor', 'rageBurnBlood', 'rageBloodDebt', 'rageZealot', 'rageSlaughterer']
+    'rageValor', 'rageBurnBlood', 'rageBloodDebt', 'rageZealot', 'rageSlaughterer',
+    'fireballBeadShot', 'fireballEmber', 'fireballPool', 'fireballHeart', 'fireballBurst',
+    'firepillarTracking', 'firepillarSpread', 'firepillarOutburst', 'firepillarDeflagration',
+    'firepillarResonance']
     .forEach((id) => assert.ok(affixCsv.includes(id), 'Equipment_Affix.csv 應含 ' + id));
   const statusCsv = fs.readFileSync(path.join(root, 'config/CSV/Status.csv'), 'utf8');
   ['sgWindRend', 'sgDeathReaper', 'sgKnifeWaltz',
     'sgSlayerMark', 'sgVenomField', 'sgKagura', 'sgDeathDefer', 'sgBloodMist',
-    'sgCounterWrath', 'sgBurnBlood', 'sgThornsRage', 'sgWarGodKill', 'sgAsuraFist']
+    'sgCounterWrath', 'sgBurnBlood', 'sgThornsRage', 'sgWarGodKill', 'sgAsuraFist', 'sgBurnAmp']
     .forEach((id) => assert.ok(statusCsv.includes(id), 'Status.csv 應含 ' + id));
 });

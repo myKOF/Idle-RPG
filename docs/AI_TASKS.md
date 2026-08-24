@@ -1,5 +1,38 @@
 # AI_TASKS.md
 
+## Claude｜傳奇進化第五批（火球術／火龍捲十特效 ＋ 兩組超神進化）（2026-08-24）
+
+- 狀態：已完成
+- Owner：Claude
+- 任務分類：傳奇特效／超神進化（魔法系第一批）
+- 使用者需求：實作「火球術」與「火龍捲」的 10 個傳奇特效，與其各 3 個超神進化效果。
+- 設計來源：使用者提供的 Google 試算表〈傳奇進化〉頁籤（gid=1805975024）火球術、火龍捲兩段。
+- 前置依賴：先合併 `ai/codex` 的「殞石術落地後觸發火球爆裂」與「調整所有技能CD為15秒」——
+  兩者都改在 `sgCastFireball` 一帶（衝突預檢退出碼 2，已取得使用者同意後才動手）。
+- 前三批的兩條收斂路徑（`legendarySkill2Mods` 傳奇橋、群組層 `ult` 超神進化）原封沿用，沒有新增架構。
+- 技術內容：
+  - PASSIVE_POOL 新增 10 個傳奇特效（池內共 88）：魔杖→火球術＝連珠火／燃燼／火池／烈焰之心／爆裂；
+    雙手杖→火龍捲＝追蹤烈焰／火龍擴散／火焰爆衝／爆燃／火龍共鳴。
+  - SKILLS2 新增 6 個超神進化：火球術＝火殞天落／地爆天星／火鳳遼原；
+    火龍捲＝烈焰暴風／永劫火獄／火龍之吞噬。
+  - 新增共用場域類型 `firepool`（傳奇【火池】與超神【永劫火獄】共用）與游走移動 `wanderM`；
+    新增狀態 `sgBurnAmp`（【爆燃】的燃燒受傷放大，比照【火焰增幅】由引擎累加成單一數值）。
+- 修改檔案：`js/data.js`、`js/skills2.js`、`js/status.js`、`index.html`、`js/bridge.js`、
+  `js/worker/sim.worker.js`、`config/CSV/*` 與 `config/Excel/*`（Equipment_Affix／Skills2／Status）、
+  `game_formula.md`、`GM_command.md`、`PATCH.md`、
+  `tests/skill2-fire-legendary.test.cjs`（新增）、`tests/skill2-ult-evolution.test.cjs`、
+  `tests/legendary-affix.test.cjs`、`tests/skill2-vfx.test.cjs`、本文件。
+- 未修改但檢查過：`js/legendary.js`（傳奇橋不需改）、`js/gm_exec.js`（`sgult` 依 `sgUltDefs` 動態列舉，
+  新群組自動納入）、`js/save.js`（第 8 格正規化與群組無關）、`js/ui.js`（格數走 `sgSlotCount`）。
+- 驗證方式：`node --test` 全量（1714 案例）、`node tools/build_check.cjs`、
+  `config_tables --gen/--sync/--apply` 往返（語意變更 0）、`apply_params` dry-run（554/554 一致）、
+  快取版號同步、`git diff --check`。
+- 已知風險：見 PATCH.md 的「待確認」段（火殞天落的增益範圍、烈焰暴風的倍率量級、爆燃無層數上限）。
+- 未完成項目：尚未進行瀏覽器實機目視驗證與 DPS 基準測試（建議交由 Antigravity）。
+- Commit：待建立。
+
+---
+
 ## Codex｜殞石術落地後觸發火球爆裂（2026-08-24）
 
 - 狀態：已完成

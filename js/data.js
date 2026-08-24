@@ -1141,6 +1141,61 @@ var PASSIVE_POOL = {
     name: '屠戮者', desc: '狂怒期間每殺死 1 個敵人使【嗜血反震】的效果提高 5%，最多疊 10 層，持續 4 秒。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'bloodrage', weaponTypes: ['greatsword2h'],
     fx: { rageThornsStack: { pct: 5, maxStacks: 10, sec: 4 } }
+  },
+  /* ---- 傳奇進化第五批（2026-08-24）：魔法系兩群組 ----
+     魔杖→火球術（fireball）／雙手杖→火龍捲（firepillar）。
+     雙手杖吃 TWO_HAND_EFFECT_VALUE_MULT 的 ×2 補償，因此「數量／段數」一律包在
+     規格物件裡走 LEGENDARY_FX_NON_VALUE_KEYS 的保護鍵（count／hits），
+     比照雙手大劍的【雙生刃】danceTargetAdd：補償放大的是威力，不是次數。 */
+  fireballBeadShot: {
+    name: '連珠火', desc: '火球及殞石的數量 +1 個。',
+    base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'fireball', weaponTypes: ['wand1h'],
+    fx: { fireballCountAdd: { count: 1 } }
+  },
+  fireballEmber: {
+    name: '燃燼', desc: '火球術造成的燃燒效果傷害 +50%。',
+    base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'fireball', weaponTypes: ['wand1h'],
+    fx: { fireballBurnDmgPct: 50 }
+  },
+  fireballPool: {
+    name: '火池', desc: '火球及殞石爆炸後會在地上留下一團半徑 6 米的火池，每 0.5 秒對範圍內的敵人造成 50% 火焰傷害，持續 4 秒。',
+    base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'fireball', weaponTypes: ['wand1h'],
+    fx: { firePool: { m: 6, pct: 50, gap: 0.5, sec: 4 } }
+  },
+  fireballHeart: {
+    name: '烈焰之心', desc: '火球及殞石對燃燒狀態的敵人造成的傷害 +30%。',
+    base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'fireball', weaponTypes: ['wand1h'],
+    fx: { fireballBurningDmgPct: 30 }
+  },
+  fireballBurst: {
+    name: '爆裂', desc: '【火球爆裂】會額外產生 3 個小火球。',
+    base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'fireball', weaponTypes: ['wand1h'],
+    fx: { fireballSplitAdd: { count: 3 } }
+  },
+  firepillarTracking: {
+    name: '追蹤烈焰', desc: '火龍捲會追蹤敵人，移動速度 12 米／秒。',
+    base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'firepillar', weaponTypes: ['staff2h'],
+    fx: { firepillarChase: { mps: 12, m: 30 } }
+  },
+  firepillarSpread: {
+    name: '火龍擴散', desc: '火龍捲的體積增加 30%。',
+    base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'firepillar', weaponTypes: ['staff2h'],
+    fx: { firepillarScalePct: 30 }
+  },
+  firepillarOutburst: {
+    name: '火焰爆衝', desc: '火龍捲的傷害段數 +3 段。',
+    base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'firepillar', weaponTypes: ['staff2h'],
+    fx: { firepillarHitsAdd: { hits: 3 } }
+  },
+  firepillarDeflagration: {
+    name: '爆燃', desc: '火龍捲每造成 1 段傷害就使該敵人受到的燃燒傷害 +10%。',
+    base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'firepillar', weaponTypes: ['staff2h'],
+    fx: { firepillarBurnAmp: { pct: 10 } }
+  },
+  firepillarResonance: {
+    name: '火龍共鳴', desc: '場上每存在 1 道火龍捲，所有火龍捲造成的傷害 +4%。',
+    base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'firepillar', weaponTypes: ['staff2h'],
+    fx: { firepillarResonancePct: 4 }
   }
 };
 
