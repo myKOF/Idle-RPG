@@ -689,7 +689,7 @@ sgult 群組|all 1|2|3|off [等級|max] （直設超神進化的三選一與等�
 
 - 第 2 個參數是**選項編號**（1／2／3，對應技能面板三選一的左中右），`off` ＝清除選擇。
 - 第 3 個參數留白＝`max`（Lv.10）；填 0 等同 `off`。
-- 目前開放超神進化的是 `thrust`（突刺）、`cleave`（迴旋斬）、`knife`（飛刀）、`gale`（疾風斬）、`bloodblade`（血刃斬）、`dualdance`（雙刀亂舞）、`counter`（反擊）、`bloodrage`（嗜血狂怒），`all` 會自動略過其餘群組。
+- 目前開放超神進化的是 `thrust`（突刺）、`cleave`（迴旋斬）、`knife`（飛刀）、`gale`（疾風斬）、`bloodblade`（血刃斬）、`dualdance`（雙刀亂舞）、`counter`（反擊）、`bloodrage`（嗜血狂怒）、`fireball`（火球術）、`firepillar`（火龍捲），`all` 會自動略過其餘群組。
 - **生效前提是該群組前 7 階全部滿級**：沒滿級時指令仍會寫入，但效果暫時失效
   （面板會標「暫時失效」）。要立刻看到效果，先 `sglv thrust max` 再 `sgult thrust 1`。
 
@@ -703,6 +703,12 @@ sgult bloodblade 1                    （血刃斬＝殺神領域：24 米領域
 sgult dualdance 3                     （雙刀亂舞＝修羅亂舞：可同時裝備兩把雙手武器）
 sgult counter 2                       （反擊＝不屈鬥魂：死亡時全屏地系爆發、5 秒後原地復活）
 sgult bloodrage 3                     （嗜血狂怒＝阿修羅霸王拳：每 10 秒全傷害爆發 1 秒）
+sgult fireball 1                      （火球術＝火殞天落：額外連落 8 顆巨大殞石）
+sgult fireball 2                      （火球術＝地爆天星：每 N 秒全場依敵種扣%最大生命）
+sgult fireball 3                      （火球術＝火鳳遼原：殞石 +1 並伴生火球）
+sgult firepillar 1                    （火龍捲＝烈焰暴風：施放道數倍增）
+sgult firepillar 2                    （火龍捲＝永劫火獄：游走並沿路留下火池）
+sgult firepillar 3                    （火龍捲＝火龍之吞噬：聚攏在身邊並拉近敵人）
 sgult all off                         （清除所有超神進化選擇）
 ```
 

@@ -164,6 +164,16 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 傳奇特效,rageBloodDebt,血債償還,0,,,,,,,,0,,【血飲術】造成的自身生命損失降低 50%。,phys,bloodrage,,greatsword2h,"{""rageSelfCut"":{""reducePct"":50}}"
 傳奇特效,rageZealot,狂熱者,0,,,,,,,,0,,每 0.1 連擊數使【狂血盛宴】的傷害加成再提高 5%（＝每 1 連擊數 +50%）。,phys,bloodrage,,greatsword2h,"{""rageZealotPct"":50}"
 傳奇特效,rageSlaughterer,屠戮者,0,,,,,,,,0,,狂怒期間每殺死 1 個敵人使【嗜血反震】的效果提高 5%，最多疊 10 層，持續 4 秒。,phys,bloodrage,,greatsword2h,"{""rageThornsStack"":{""pct"":5,""maxStacks"":10,""sec"":4}}"
+傳奇特效,fireballBeadShot,連珠火,0,,,,,,,,0,,火球及殞石的數量 +1 個。,fire,fireball,,wand1h,"{""fireballCountAdd"":{""count"":1}}"
+傳奇特效,fireballEmber,燃燼,0,,,,,,,,0,,火球術造成的燃燒效果傷害 +50%。,fire,fireball,,wand1h,"{""fireballBurnDmgPct"":50}"
+傳奇特效,fireballPool,火池,0,,,,,,,,0,,火球及殞石爆炸後會在地上留下一團半徑 6 米的火池，每 0.5 秒對範圍內的敵人造成 50% 火焰傷害，持續 4 秒。,fire,fireball,,wand1h,"{""firePool"":{""m"":6,""pct"":50,""gap"":0.5,""sec"":4}}"
+傳奇特效,fireballHeart,烈焰之心,0,,,,,,,,0,,火球及殞石對燃燒狀態的敵人造成的傷害 +30%。,fire,fireball,,wand1h,"{""fireballBurningDmgPct"":30}"
+傳奇特效,fireballBurst,爆裂,0,,,,,,,,0,,【火球爆裂】會額外產生 3 個小火球。,fire,fireball,,wand1h,"{""fireballSplitAdd"":{""count"":3}}"
+傳奇特效,firepillarTracking,追蹤烈焰,0,,,,,,,,0,,火龍捲會追蹤敵人，移動速度 12 米／秒。,fire,firepillar,,staff2h,"{""firepillarChase"":{""mps"":12,""m"":30}}"
+傳奇特效,firepillarSpread,火龍擴散,0,,,,,,,,0,,火龍捲的體積增加 30%。,fire,firepillar,,staff2h,"{""firepillarScalePct"":30}"
+傳奇特效,firepillarOutburst,火焰爆衝,0,,,,,,,,0,,火龍捲的傷害段數 +3 段。,fire,firepillar,,staff2h,"{""firepillarHitsAdd"":{""hits"":3}}"
+傳奇特效,firepillarDeflagration,爆燃,0,,,,,,,,0,,火龍捲每造成 1 段傷害就使該敵人受到的燃燒傷害 +10%。,fire,firepillar,,staff2h,"{""firepillarBurnAmp"":{""pct"":10}}"
+傳奇特效,firepillarResonance,火龍共鳴,0,,,,,,,,0,,場上每存在 1 道火龍捲，所有火龍捲造成的傷害 +4%。,fire,firepillar,,staff2h,"{""firepillarResonancePct"":4}"
 神鑄特效,dragonBlood,龍血,25,,,,,,,,,hpPct,生命上限提高 {v}%,,,,,
 神鑄特效,godMight,神力,18,,,,,,,,,atkPct;matkPct,物理與魔法攻擊額外提高 {v}%,,,,,
 神鑄特效,godHaste,神速,15,,,,,,,,,aspdPct,攻擊速度提高 {v}%,,,,,

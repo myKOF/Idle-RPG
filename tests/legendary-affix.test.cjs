@@ -105,8 +105,9 @@ test('附檔 31 個不重複效果皆進入傳奇特效池，並保留正確武�
   assert.equal(Object.values(context.PASSIVE_POOL).filter((def) => def.name === '劇毒血霧').length, 1);
   /* 2026-08-19：「傳奇進化」10 個新版技能改寫型（突刺 5 ＋ 迴旋斬 5）
      2026-08-20：第二批 10 個（飛刀 5 ＋ 疾風斬 5）；第三批 10 個（血刃斬 5 ＋ 雙刀亂舞 5）；
-     第四批 10 個（反擊 5 ＋ 嗜血狂怒 5） */
-  assert.equal(Object.keys(context.PASSIVE_POOL).length, 78, '既有 7 個效果 ＋ 附檔 31 個 ＋ 傳奇進化 40 個');
+     第四批 10 個（反擊 5 ＋ 嗜血狂怒 5）
+     2026-08-24：第五批 10 個（火球術 5 ＋ 火龍捲 5） */
+  assert.equal(Object.keys(context.PASSIVE_POOL).length, 88, '既有 7 個效果 ＋ 附檔 31 個 ＋ 傳奇進化 50 個');
 });
 
 test('附檔 31 個傳奇特效皆有執行期路由，戰鬥與技能主流程已接線', () => {
